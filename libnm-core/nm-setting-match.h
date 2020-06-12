@@ -23,9 +23,10 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_MATCH_SETTING_NAME      "match"
 
-#define NM_SETTING_MATCH_INTERFACE_NAME    "interface-name"
-#define NM_SETTING_MATCH_KERNEL_COMMAND_LINE    "kernel-command-line"
-#define NM_SETTING_MATCH_DRIVER            "driver"
+#define NM_SETTING_MATCH_INTERFACE_NAME      "interface-name"
+#define NM_SETTING_MATCH_KERNEL_COMMAND_LINE "kernel-command-line"
+#define NM_SETTING_MATCH_DRIVER              "driver"
+#define NM_SETTING_MATCH_PATH                "path"
 
 typedef struct _NMSettingMatchClass NMSettingMatchClass;
 
@@ -87,6 +88,24 @@ NM_AVAILABLE_IN_1_26
 void nm_setting_match_clear_drivers (NMSettingMatch *setting);
 NM_AVAILABLE_IN_1_26
 const char *const *nm_setting_match_get_drivers (NMSettingMatch *setting, guint *length);
+
+
+NM_AVAILABLE_IN_1_26
+guint nm_setting_match_get_num_paths (NMSettingMatch *setting);
+NM_AVAILABLE_IN_1_26
+const char *nm_setting_match_get_path (NMSettingMatch *setting, guint idx);
+NM_AVAILABLE_IN_1_26
+void nm_setting_match_remove_path (NMSettingMatch *setting, guint idx);
+NM_AVAILABLE_IN_1_26
+gboolean nm_setting_match_remove_path_by_value (NMSettingMatch *setting,
+                                                const char *path);
+NM_AVAILABLE_IN_1_26
+void nm_setting_match_add_path (NMSettingMatch *setting,
+                                const char *path);
+NM_AVAILABLE_IN_1_26
+void nm_setting_match_clear_paths (NMSettingMatch *setting);
+NM_AVAILABLE_IN_1_26
+const char *const *nm_setting_match_get_paths (NMSettingMatch *setting, guint *length);
 
 G_END_DECLS
 

@@ -1412,6 +1412,27 @@ nm_platform_link_get_type_name (NMPlatform *self, int ifindex)
 	return obj->link.kind ?: "unknown";
 }
 
+static gboolean
+link_get_udev_property (NMPlatform *self,
+                        int ifindex,
+                        const char *name,
+                        const char **out_value)
+{
+	struct udev_device *udevice = NULL;
+	const char *uproperty;
+
+	udevice = nm_platform_link_get_udev_device (self, ifindex);
+	if (!udevice)
+		return FALSE;
+
+	uproperty = udev_device_get_property_value (udevice, name);
+	if (!uproperty)
+		return FALSE;
+
+	NM_SET_OUT (out_value, uproperty);
+	return TRUE;
+}
+
 /**
  * nm_platform_link_get_unmanaged:
  * @self: platform instance
@@ -1424,26 +1445,14 @@ nm_platform_link_get_type_name (NMPlatform *self, int ifindex)
 gboolean
 nm_platform_link_get_unmanaged (NMPlatform *self, int ifindex, gboolean *unmanaged)
 {
-	const NMPObject *link;
-	struct udev_device *udevice = NULL;
-	const char *uproperty;
+	const char *value;
 
-	_CHECK_SELF (self, klass, FALSE);
+	if (link_get_udev_property (self, ifindex, "NM_UNMANAGED", &value)) {
+		NM_SET_OUT (unmanaged, nm_udev_utils_property_as_boolean (value));
+		return TRUE;
+	}
 
-	link = nmp_cache_lookup_link (nm_platform_get_cache (self), ifindex);
-	if (!link)
-		return FALSE;
-
-	udevice = link->_link.udev.device;
-	if (!udevice)
-		return FALSE;
-
-	uproperty = udev_device_get_property_value (udevice, "NM_UNMANAGED");
-	if (!uproperty)
-		return FALSE;
-
-	*unmanaged = nm_udev_utils_property_as_boolean (uproperty);
-	return TRUE;
+	return FALSE;
 }
 
 /**
@@ -1589,13 +1598,20 @@ nm_platform_link_set_ipv6_token (NMPlatform *self, int ifindex, NMUtilsIPv6Iface
 const char *
 nm_platform_link_get_udi (NMPlatform *self, int ifindex)
 {
-	_CHECK_SELF (self, klass, FALSE);
+	struct udev_device *device;
 
-	g_return_val_if_fail (ifindex >= 0, NULL);
+	device = nm_platform_link_get_udev_device (self, ifindex);
+	return device ? udev_device_get_syspath (device) : NULL;
+}
 
-	if (klass->link_get_udi)
-		return klass->link_get_udi (self, ifindex);
-	return NULL;
+const char *
+nm_platform_link_get_path (NMPlatform *self, int ifindex)
+{
+	const char *value = NULL;
+
+	link_get_udev_property (self, ifindex, "ID_PATH", &value);
+
+	return value;
 }
 
 struct udev_device *

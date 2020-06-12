@@ -22,6 +22,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingMatch,
 	PROP_INTERFACE_NAME,
 	PROP_KERNEL_COMMAND_LINE,
 	PROP_DRIVER,
+	PROP_PATH,
 );
 
 /**
@@ -36,6 +37,7 @@ struct _NMSettingMatch {
 	GArray *interface_name;
 	GArray *kernel_command_line;
 	GArray *driver;
+	GArray *path;
 };
 
 struct _NMSettingMatchClass {
@@ -499,6 +501,156 @@ nm_setting_match_get_drivers (NMSettingMatch *setting, guint *length)
 
 /*****************************************************************************/
 
+/**
+ * nm_setting_match_get_num_paths:
+ * @setting: the #NMSettingMatch
+ *
+ * Returns: the number of configured paths
+ *
+ * Since: 1.26
+ **/
+guint
+nm_setting_match_get_num_paths (NMSettingMatch *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), 0);
+
+	return nm_g_array_len (setting->path);
+}
+
+/**
+ * nm_setting_match_get_path:
+ * @setting: the #NMSettingMatch
+ * @idx: index number of the path to return
+ *
+ * Returns: the path at index @idx
+ *
+ * Since: 1.26
+ **/
+const char *
+nm_setting_match_get_path (NMSettingMatch *setting, guint idx)
+{
+	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), NULL);
+
+	g_return_val_if_fail (setting->path && idx < setting->path->len, NULL);
+
+	return g_array_index (setting->path, const char *, idx);
+}
+
+/**
+ * nm_setting_match_add_path:
+ * @setting: the #NMSettingMatch
+ * @path: the path to add
+ *
+ * Adds a new path to the setting.
+ *
+ * Since: 1.26
+ **/
+void
+nm_setting_match_add_path (NMSettingMatch *setting,
+                           const char *path)
+{
+	g_return_if_fail (NM_IS_SETTING_MATCH (setting));
+	g_return_if_fail (path != NULL);
+	g_return_if_fail (path[0] != '\0');
+
+	nm_strvarray_add (nm_strvarray_ensure (&setting->path), path);
+	_notify (setting, PROP_PATH);
+}
+
+/**
+ * nm_setting_match_remove_path:
+ * @setting: the #NMSettingMatch
+ * @idx: index number of the path
+ *
+ * Removes the path at index @idx.
+ *
+ * Since: 1.26
+ **/
+void
+nm_setting_match_remove_path (NMSettingMatch *setting, guint idx)
+{
+	g_return_if_fail (NM_IS_SETTING_MATCH (setting));
+
+	g_return_if_fail (setting->path && idx < setting->path->len);
+
+	g_array_remove_index (setting->path, idx);
+	_notify (setting, PROP_PATH);
+}
+
+/**
+ * nm_setting_match_remove_path_by_value:
+ * @setting: the #NMSettingMatch
+ * @path: the path to remove
+ *
+ * Removes @path.
+ *
+ * Returns: %TRUE if the path was found and removed; %FALSE if it was not.
+ *
+ * Since: 1.26
+ **/
+gboolean
+nm_setting_match_remove_path_by_value (NMSettingMatch *setting,
+                                       const char *path)
+{
+	guint i;
+
+	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), FALSE);
+	g_return_val_if_fail (path != NULL, FALSE);
+	g_return_val_if_fail (path[0] != '\0', FALSE);
+
+	if (!setting->path)
+		return FALSE;
+
+	for (i = 0; i < setting->path->len; i++) {
+		if (nm_streq (path, g_array_index (setting->path, const char *, i))) {
+			g_array_remove_index (setting->path, i);
+			_notify (setting, PROP_PATH);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/**
+ * nm_setting_match_clear_paths:
+ * @setting: the #NMSettingMatch
+ *
+ * Removes all configured paths.
+ *
+ * Since: 1.26
+ **/
+void
+nm_setting_match_clear_paths (NMSettingMatch *setting)
+{
+	g_return_if_fail (NM_IS_SETTING_MATCH (setting));
+
+	if (nm_g_array_len (setting->path) != 0) {
+		nm_clear_pointer (&setting->path, g_array_unref);
+		_notify (setting, PROP_PATH);
+	}
+}
+
+/**
+ * nm_setting_match_get_paths:
+ * @setting: the #NMSettingMatch
+ * @length: (out) (allow-none): the length of the returned paths array.
+ *
+ * Returns all the paths.
+ *
+ * Returns: (transfer none) (array length=length): the configured paths.
+ *
+ * Since: 1.26
+ **/
+const char *const *
+nm_setting_match_get_paths (NMSettingMatch *setting, guint *length)
+{
+	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), NULL);
+
+	return nm_strvarray_get_strv (&setting->path, length);
+}
+
+/*****************************************************************************/
+
 static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
@@ -514,6 +666,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DRIVER:
 		g_value_set_boxed (value, nm_strvarray_get_strv (&self->driver, NULL));
+		break;
+	case PROP_PATH:
+		g_value_set_boxed (value, nm_strvarray_get_strv (&self->path, NULL));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -536,6 +691,9 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DRIVER:
 		nm_strvarray_set_strv (&self->driver, g_value_get_boxed (value));
+		break;
+	case PROP_PATH:
+		nm_strvarray_set_strv (&self->path, g_value_get_boxed (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -608,6 +766,20 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 				             _("is empty"));
 				g_prefix_error (error, "%s.%s: ", NM_SETTING_MATCH_SETTING_NAME,
 				                NM_SETTING_MATCH_DRIVER);
+				return FALSE;
+			}
+		}
+	}
+
+	if (self->path) {
+		for (i = 0; i < self->path->len; i++) {
+			if (nm_str_is_empty (g_array_index (self->path, const char *, i))) {
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("is empty"));
+				g_prefix_error (error, "%s.%s: ", NM_SETTING_MATCH_SETTING_NAME,
+				                NM_SETTING_MATCH_PATH);
 				return FALSE;
 			}
 		}
@@ -695,6 +867,50 @@ nm_setting_match_class_init (NMSettingMatchClass *klass)
 	 **/
 	obj_properties[PROP_DRIVER] =
 	    g_param_spec_boxed (NM_SETTING_MATCH_DRIVER, "", "",
+	                        G_TYPE_STRV,
+	                        NM_SETTING_PARAM_FUZZY_IGNORE |
+	                        G_PARAM_READWRITE |
+	                        G_PARAM_STATIC_STRINGS);
+
+
+	/**
+	 * NMSettingMatch:path
+	 *
+	 * A list of paths to match against the ID_PATH udev property of
+	 * devices. ID_PATH represents the topological persistent path of a
+	 * device. It typically contains a subsystem string (pci, usb, platform,
+	 * etc.) and a subsystem-specific identifier.
+	 *
+	 * For PCI devices the path has the form
+	 * "pci-$domain:$bus:$device.$function", where each variable is an
+	 * hexadecimal value; for example "pci-0000:0a:00.0".
+	 *
+	 * The path of a device can be obtained with "udevadm info
+	 * /sys/class/net/$dev | grep ID_PATH=" or by looking at the "path"
+	 * property exported by NetworkManager ("nmcli -f general.path device
+	 * show $dev").
+	 *
+	 * Each element of the list is a shell wildcard pattern. When an
+	 * element is prefixed with exclamation mark (!) the condition is
+	 * inverted.
+	 *
+	 * A candidate path is considered matching when both these
+	 * conditions are satisfied: (a) any of the elements not prefixed with '!'
+	 * matches or there aren't such elements; (b) none of the elements
+	 * prefixed with '!' match.
+	 *
+	 * Since: 1.26
+	 **/
+	/* ---ifcfg-rh---
+	 * property: path
+	 * variable: MATCH_PATH
+	 * description: space-separated list of paths to match against the udev
+	 *   property ID_PATHS of devices
+	 * example: MATCH_PATH="pci-0000:01:00.0 pci-0000:0c:00.0"
+	 * ---end---
+	 */
+	obj_properties[PROP_PATH] =
+	    g_param_spec_boxed (NM_SETTING_MATCH_PATH, "", "",
 	                        G_TYPE_STRV,
 	                        NM_SETTING_PARAM_FUZZY_IGNORE |
 	                        G_PARAM_READWRITE |

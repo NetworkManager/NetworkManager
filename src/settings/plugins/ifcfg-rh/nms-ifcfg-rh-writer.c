@@ -2438,6 +2438,17 @@ write_match_setting (NMConnection *connection, shvarFile *ifcfg)
 		}
 		svSetValueStr (ifcfg, "MATCH_KERNEL_COMMAND_LINE", str->str);
 	}
+
+	num = nm_setting_match_get_num_paths (s_match);
+	if (num > 0) {
+		nm_gstring_prepare (&str);
+		for (i = 0; i < num; i++) {
+			name = nm_setting_match_get_path (s_match, i);
+			nm_gstring_add_space_delimiter (str);
+			nm_utils_escaped_tokens_escape_gstr (name, NM_ASCII_SPACES, str);
+		}
+		svSetValueStr (ifcfg, "MATCH_PATH", str->str);
+	}
 }
 
 static void

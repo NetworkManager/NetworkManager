@@ -6265,6 +6265,18 @@ static const NMMetaPropertyInfo *const property_infos_MATCH[] = {
 	        ),
 	    ),
 	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_MATCH_PATH,
+	    .property_type =                &_pt_multilist,
+	    .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+	        PROPERTY_TYP_DATA_SUBTYPE (multilist,
+	            .get_num_fcn_u   =      MULTILIST_GET_NUM_FCN_U       (NMSettingMatch, nm_setting_match_get_num_paths),
+	            .add2_fcn =             MULTILIST_ADD2_FCN            (NMSettingMatch, nm_setting_match_add_path),
+	            .remove_by_idx_fcn_u =  MULTILIST_REMOVE_BY_IDX_FCN_U (NMSettingMatch, nm_setting_match_remove_path),
+	            .remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingMatch, nm_setting_match_remove_path_by_value),
+	            .strsplit_with_spaces = TRUE,
+	        ),
+	    ),
+	),
 	NULL
 };
 

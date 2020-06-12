@@ -7165,18 +7165,6 @@ link_set_noarp (NMPlatform *platform, int ifindex)
 	return (link_change_flags (platform, ifindex, IFF_NOARP, IFF_NOARP) >= 0);
 }
 
-static const char *
-link_get_udi (NMPlatform *platform, int ifindex)
-{
-	const NMPObject *obj = nm_platform_link_get_obj (platform, ifindex, TRUE);
-
-	if (   !obj
-	    || !obj->_link.netlink.is_in_netlink
-	    || !obj->_link.udev.device)
-		return NULL;
-	return udev_device_get_syspath (obj->_link.udev.device);
-}
-
 static int
 link_set_user_ipv6ll_enabled (NMPlatform *platform, int ifindex, gboolean enabled)
 {
@@ -9317,8 +9305,6 @@ nm_linux_platform_class_init (NMLinuxPlatformClass *klass)
 	platform_class->link_set_down = link_set_down;
 	platform_class->link_set_arp = link_set_arp;
 	platform_class->link_set_noarp = link_set_noarp;
-
-	platform_class->link_get_udi = link_get_udi;
 
 	platform_class->link_set_user_ipv6ll_enabled = link_set_user_ipv6ll_enabled;
 	platform_class->link_set_token = link_set_token;

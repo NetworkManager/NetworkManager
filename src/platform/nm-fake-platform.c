@@ -268,7 +268,6 @@ link_add_pre (NMPlatform *platform,
 		g_assert (address_len == 0);
 
 	device->obj = o;
-	device->udi = g_strdup_printf ("fake:%d", ifindex);
 	device->ip6_lladdr = *nmtst_inet6_from_string (ip6_lladdr);
 
 	return device;
@@ -420,7 +419,6 @@ link_delete (NMPlatform *platform, int ifindex)
 		return FALSE;
 
 	obj_old = g_steal_pointer (&device->obj);
-	nm_clear_g_free (&device->udi);
 
 	cache_op = nmp_cache_remove (nm_platform_get_cache (platform),
 	                             obj_old,
@@ -631,16 +629,6 @@ link_set_mtu (NMPlatform *platform, int ifindex, guint32 mtu)
 	obj_tmp->link.mtu = mtu;
 	link_set_obj (platform, device, obj_tmp);
 	return 0;
-}
-
-static const char *
-link_get_udi (NMPlatform *platform, int ifindex)
-{
-	NMFakePlatformLink *device = link_get (platform, ifindex);
-
-	if (!device)
-		return NULL;
-	return device->udi;
 }
 
 static gboolean
@@ -1345,7 +1333,6 @@ finalize (GObject *object)
 	for (i = 0; i < priv->links->len; i++) {
 		NMFakePlatformLink *device = &g_array_index (priv->links, NMFakePlatformLink, i);
 
-		g_free (device->udi);
 		nm_clear_pointer (&device->obj, nmp_object_unref);
 	}
 	g_array_unref (priv->links);
@@ -1370,8 +1357,6 @@ nm_fake_platform_class_init (NMFakePlatformClass *klass)
 
 	platform_class->link_add = link_add;
 	platform_class->link_delete = link_delete;
-
-	platform_class->link_get_udi = link_get_udi;
 
 	platform_class->link_set_up = link_set_up;
 	platform_class->link_set_down = link_set_down;

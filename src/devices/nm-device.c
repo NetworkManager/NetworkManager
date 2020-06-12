@@ -207,6 +207,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMDevice,
 	PROP_UDI,
+	PROP_PATH,
 	PROP_IFACE,
 	PROP_IP_IFACE,
 	PROP_DRIVER,
@@ -281,6 +282,7 @@ typedef struct _NMDevicePrivate {
 	NMDBusTrackObjPath parent_device;
 
 	char *        udi;
+	char *        path;
 	char *        iface;   /* may change, could be renamed by user */
 	int           ifindex;
 
@@ -4238,6 +4240,13 @@ device_link_changed (NMDevice *self)
 		_notify (self, PROP_UDI);
 	}
 
+	str = nm_platform_link_get_path (nm_device_get_platform (self), pllink->ifindex);
+	if (!nm_streq0 (str, priv->path)) {
+		g_free (priv->path);
+		priv->path = g_strdup (str);
+		_notify (self, PROP_PATH);
+	}
+
 	if (!nm_streq0 (pllink->driver, priv->driver)) {
 		g_free (priv->driver);
 		priv->driver = g_strdup (pllink->driver);
@@ -4621,6 +4630,13 @@ nm_device_update_from_platform_link (NMDevice *self, const NMPlatformLink *plink
 		g_free (priv->udi);
 		priv->udi = g_strdup (str);
 		_notify (self, PROP_UDI);
+	}
+
+	str = plink ? nm_platform_link_get_path (nm_device_get_platform (self), plink->ifindex) : NULL;
+	if (g_strcmp0 (str, priv->path)) {
+		g_free (priv->path);
+		priv->path = g_strdup (str);
+		_notify (self, PROP_PATH);
 	}
 
 	str = plink ? plink->name : NULL;
@@ -5152,6 +5168,10 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	if (priv->udi) {
 		nm_clear_g_free (&priv->udi);
 		_notify (self, PROP_UDI);
+	}
+	if (priv->path) {
+		nm_clear_g_free (&priv->path);
+		_notify (self, PROP_PATH);
 	}
 	if (priv->physical_port_id) {
 		nm_clear_g_free (&priv->physical_port_id);
@@ -6275,6 +6295,7 @@ nm_device_match_parent_hwaddr (NMDevice *device,
 static gboolean
 check_connection_compatible (NMDevice *self, NMConnection *connection, GError **error)
 {
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const char *device_iface = nm_device_get_iface (self);
 	gs_free_error GError *local = NULL;
 	gs_free char *conn_iface = NULL;
@@ -6417,6 +6438,13 @@ check_connection_compatible (NMDevice *self, NMConnection *connection, GError **
 		if (!nm_wildcard_match_check (device_driver, patterns, num_patterns)) {
 			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
 			                            "device does not satisfy match.driver property");
+			return FALSE;
+		}
+
+		patterns = nm_setting_match_get_paths (s_match, &num_patterns);
+		if (!nm_wildcard_match_check (priv->path, patterns, num_patterns)) {
+			nm_utils_error_set_literal (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+			                            "device does not satisfy match.path property");
 			return FALSE;
 		}
 	}
@@ -17372,6 +17400,11 @@ get_property (GObject *object, guint prop_id,
 		                     nm_utils_str_utf8safe_escape_cp (priv->udi,
 		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_NONE));
 		break;
+	case PROP_PATH:
+		g_value_take_string (value,
+		                     nm_utils_str_utf8safe_escape_cp (priv->path,
+		                                                      NM_UTILS_STR_UTF8_SAFE_FLAG_NONE));
+		break;
 	case PROP_IFACE:
 		g_value_take_string (value,
 		                     nm_utils_str_utf8safe_escape_cp (priv->iface,
@@ -17889,6 +17922,7 @@ finalize (GObject *object)
 	g_slist_free_full (priv->dad6_failed_addrs, (GDestroyNotify) nmp_object_unref);
 	nm_clear_g_free (&priv->physical_port_id);
 	g_free (priv->udi);
+	g_free (priv->path);
 	g_free (priv->iface);
 	g_free (priv->ip_iface);
 	g_free (priv->driver);
@@ -17973,6 +18007,7 @@ static const NMDBusInterfaceInfoExtended interface_info_device = {
 		),
 		.properties = NM_DEFINE_GDBUS_PROPERTY_INFOS (
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Udi",                  "s",      NM_DEVICE_UDI),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Path",                 "s",      NM_DEVICE_PATH),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Interface",            "s",      NM_DEVICE_IFACE),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("IpInterface",          "s",      NM_DEVICE_IP_IFACE),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Driver",               "s",      NM_DEVICE_DRIVER),
@@ -18067,6 +18102,11 @@ nm_device_class_init (NMDeviceClass *klass)
 	    g_param_spec_string (NM_DEVICE_UDI, "", "",
 	                         NULL,
 	                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+	                         G_PARAM_STATIC_STRINGS);
+	obj_properties[PROP_PATH] =
+	    g_param_spec_string (NM_DEVICE_PATH, "", "",
+	                         NULL,
+	                         G_PARAM_READABLE |
 	                         G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_IFACE] =
 	    g_param_spec_string (NM_DEVICE_IFACE, "", "",

@@ -66,6 +66,7 @@ nm_device_state_reason_check (NMDeviceStateReason reason)
 
 /* Properties */
 #define NM_DEVICE_UDI              "udi"
+#define NM_DEVICE_PATH             "path"
 #define NM_DEVICE_IFACE            "interface"
 #define NM_DEVICE_IP_IFACE         "ip-interface"
 #define NM_DEVICE_DRIVER           "driver"
