@@ -27,6 +27,7 @@
 #include "random-util.h"
 #include "string-util.h"
 #include "strv.h"
+#include "utf8.h"
 #include "web-util.h"
 
 #define MAX_CLIENT_ID_LEN (sizeof(uint32_t) + MAX_DUID_LEN)  /* Arbitrary limit */
@@ -34,6 +35,32 @@
 
 #define RESTART_AFTER_NAK_MIN_USEC (1 * USEC_PER_SEC)
 #define RESTART_AFTER_NAK_MAX_USEC (30 * USEC_PER_MINUTE)
+
+typedef struct sd_dhcp_client_id {
+        uint8_t type;
+        union {
+                struct {
+                        /* 0: Generic (non-LL) (RFC 2132) */
+                        uint8_t data[MAX_CLIENT_ID_LEN];
+                } _packed_ gen;
+                struct {
+                        /* 1: Ethernet Link-Layer (RFC 2132) */
+                        uint8_t haddr[ETH_ALEN];
+                } _packed_ eth;
+                struct {
+                        /* 2 - 254: ARP/Link-Layer (RFC 2132) */
+                        uint8_t haddr[0];
+                } _packed_ ll;
+                struct {
+                        /* 255: Node-specific (RFC 4361) */
+                        be32_t iaid;
+                        struct duid duid;
+                } _packed_ ns;
+                struct {
+                        uint8_t data[MAX_CLIENT_ID_LEN];
+                } _packed_ raw;
+        };
+} _packed_ sd_dhcp_client_id;
 
 struct sd_dhcp_client {
         unsigned n_ref;
@@ -56,37 +83,14 @@ struct sd_dhcp_client {
         uint8_t mac_addr[MAX_MAC_ADDR_LEN];
         size_t mac_addr_len;
         uint16_t arp_type;
-        struct {
-                uint8_t type;
-                union {
-                        struct {
-                                /* 0: Generic (non-LL) (RFC 2132) */
-                                uint8_t data[MAX_CLIENT_ID_LEN];
-                        } _packed_ gen;
-                        struct {
-                                /* 1: Ethernet Link-Layer (RFC 2132) */
-                                uint8_t haddr[ETH_ALEN];
-                        } _packed_ eth;
-                        struct {
-                                /* 2 - 254: ARP/Link-Layer (RFC 2132) */
-                                uint8_t haddr[0];
-                        } _packed_ ll;
-                        struct {
-                                /* 255: Node-specific (RFC 4361) */
-                                be32_t iaid;
-                                struct duid duid;
-                        } _packed_ ns;
-                        struct {
-                                uint8_t data[MAX_CLIENT_ID_LEN];
-                        } _packed_ raw;
-                };
-        } _packed_ client_id;
+        sd_dhcp_client_id client_id;
         size_t client_id_len;
         char *hostname;
         char *vendor_class_identifier;
         char *mudurl;
         char **user_class;
         uint32_t mtu;
+        uint32_t fallback_lease_lifetime;
         uint32_t xid;
         usec_t start_time;
         uint64_t attempt;
@@ -149,6 +153,60 @@ static int client_receive_message_udp(
                 uint32_t revents,
                 void *userdata);
 static void client_stop(sd_dhcp_client *client, int error);
+
+int sd_dhcp_client_id_to_string(const void *data, size_t len, char **ret) {
+        const sd_dhcp_client_id *client_id = data;
+        _cleanup_free_ char *t = NULL;
+        int r = 0;
+
+        assert_return(data, -EINVAL);
+        assert_return(len >= 1, -EINVAL);
+        assert_return(ret, -EINVAL);
+
+        len -= 1;
+        if (len > MAX_CLIENT_ID_LEN)
+                return -EINVAL;
+
+        switch (client_id->type) {
+        case 0:
+                if (utf8_is_printable((char *) client_id->gen.data, len))
+                        r = asprintf(&t, "%.*s", (int) len, client_id->gen.data);
+                else
+                        r = asprintf(&t, "DATA");
+                break;
+        case 1:
+                if (len != sizeof_field(sd_dhcp_client_id, eth))
+                        return -EINVAL;
+
+                r = asprintf(&t, "%x:%x:%x:%x:%x:%x",
+                             client_id->eth.haddr[0],
+                             client_id->eth.haddr[1],
+                             client_id->eth.haddr[2],
+                             client_id->eth.haddr[3],
+                             client_id->eth.haddr[4],
+                             client_id->eth.haddr[5]);
+                break;
+        case 2 ... 254:
+                r = asprintf(&t, "ARP/LL");
+                break;
+        case 255:
+                if (len < 6)
+                        return -EINVAL;
+
+                uint32_t iaid = be32toh(client_id->ns.iaid);
+                uint16_t duid_type = be16toh(client_id->ns.duid.type);
+                if (dhcp_validate_duid_len(duid_type, len - 6, true) < 0)
+                        return -EINVAL;
+
+                r = asprintf(&t, "IAID:0x%x/DUID", iaid);
+                break;
+        }
+
+        if (r < 0)
+                return -ENOMEM;
+        *ret = TAKE_PTR(t);
+        return 0;
+}
 
 int sd_dhcp_client_set_callback(
                 sd_dhcp_client *client,
@@ -612,6 +670,15 @@ int sd_dhcp_client_set_service_type(sd_dhcp_client *client, int type) {
         return 0;
 }
 
+int sd_dhcp_client_set_fallback_lease_lifetime(sd_dhcp_client *client, uint32_t fallback_lease_lifetime) {
+        assert_return(client, -EINVAL);
+        assert_return(fallback_lease_lifetime > 0, -EINVAL);
+
+        client->fallback_lease_lifetime = fallback_lease_lifetime;
+
+        return 0;
+}
+
 static int client_notify(sd_dhcp_client *client, int event) {
         assert(client);
 
@@ -850,11 +917,82 @@ static int dhcp_client_send_raw(
                                             packet, len);
 }
 
+static int client_append_common_discover_request_options(sd_dhcp_client *client, DHCPPacket *packet, size_t *optoffset, size_t optlen) {
+        sd_dhcp_option *j;
+        Iterator i;
+        int r;
+
+        assert(client);
+
+        if (client->hostname) {
+                /* According to RFC 4702 "clients that send the Client FQDN option in
+                   their messages MUST NOT also send the Host Name option". Just send
+                   one of the two depending on the hostname type.
+                */
+                if (dns_name_is_single_label(client->hostname)) {
+                        /* it is unclear from RFC 2131 if client should send hostname in
+                           DHCPDISCOVER but dhclient does and so we do as well
+                        */
+                        r = dhcp_option_append(&packet->dhcp, optlen, optoffset, 0,
+                                               SD_DHCP_OPTION_HOST_NAME,
+                                               strlen(client->hostname), client->hostname);
+                } else
+                        r = client_append_fqdn_option(&packet->dhcp, optlen, optoffset,
+                                                      client->hostname);
+                if (r < 0)
+                        return r;
+        }
+
+        if (client->vendor_class_identifier) {
+                r = dhcp_option_append(&packet->dhcp, optlen, optoffset, 0,
+                                       SD_DHCP_OPTION_VENDOR_CLASS_IDENTIFIER,
+                                       strlen(client->vendor_class_identifier),
+                                       client->vendor_class_identifier);
+                if (r < 0)
+                        return r;
+        }
+
+        if (client->mudurl) {
+                r = dhcp_option_append(&packet->dhcp, optlen, optoffset, 0,
+                                       SD_DHCP_OPTION_MUD_URL,
+                                       strlen(client->mudurl),
+                                       client->mudurl);
+                if (r < 0)
+                        return r;
+        }
+
+        if (client->user_class) {
+                r = dhcp_option_append(&packet->dhcp, optlen, optoffset, 0,
+                                       SD_DHCP_OPTION_USER_CLASS,
+                                       strv_length(client->user_class),
+                                       client->user_class);
+                if (r < 0)
+                        return r;
+        }
+
+        ORDERED_HASHMAP_FOREACH(j, client->extra_options, i) {
+                r = dhcp_option_append(&packet->dhcp, optlen, optoffset, 0,
+                                       j->option, j->length, j->data);
+                if (r < 0)
+                        return r;
+        }
+
+        if (!ordered_hashmap_isempty(client->vendor_options)) {
+                r = dhcp_option_append(
+                                &packet->dhcp, optlen, optoffset, 0,
+                                SD_DHCP_OPTION_VENDOR_SPECIFIC,
+                                ordered_hashmap_size(client->vendor_options), client->vendor_options);
+                if (r < 0)
+                        return r;
+        }
+
+
+        return 0;
+}
+
 static int client_send_discover(sd_dhcp_client *client) {
         _cleanup_free_ DHCPPacket *discover = NULL;
         size_t optoffset, optlen;
-        sd_dhcp_option *j;
-        Iterator i;
         int r;
 
         assert(client);
@@ -881,67 +1019,9 @@ static int client_send_discover(sd_dhcp_client *client) {
                         return r;
         }
 
-        if (client->hostname) {
-                /* According to RFC 4702 "clients that send the Client FQDN option in
-                   their messages MUST NOT also send the Host Name option". Just send
-                   one of the two depending on the hostname type.
-                */
-                if (dns_name_is_single_label(client->hostname)) {
-                        /* it is unclear from RFC 2131 if client should send hostname in
-                           DHCPDISCOVER but dhclient does and so we do as well
-                        */
-                        r = dhcp_option_append(&discover->dhcp, optlen, &optoffset, 0,
-                                               SD_DHCP_OPTION_HOST_NAME,
-                                               strlen(client->hostname), client->hostname);
-                } else
-                        r = client_append_fqdn_option(&discover->dhcp, optlen, &optoffset,
-                                                      client->hostname);
-                if (r < 0)
-                        return r;
-        }
-
-        if (client->vendor_class_identifier) {
-                r = dhcp_option_append(&discover->dhcp, optlen, &optoffset, 0,
-                                       SD_DHCP_OPTION_VENDOR_CLASS_IDENTIFIER,
-                                       strlen(client->vendor_class_identifier),
-                                       client->vendor_class_identifier);
-                if (r < 0)
-                        return r;
-        }
-
-        if (client->mudurl) {
-                r = dhcp_option_append(&discover->dhcp, optlen, &optoffset, 0,
-                                       SD_DHCP_OPTION_MUD_URL,
-                                       strlen(client->mudurl),
-                                       client->mudurl);
-                if (r < 0)
-                        return r;
-        }
-
-        if (client->user_class) {
-                r = dhcp_option_append(&discover->dhcp, optlen, &optoffset, 0,
-                                       SD_DHCP_OPTION_USER_CLASS,
-                                       strv_length(client->user_class),
-                                       client->user_class);
-                if (r < 0)
-                        return r;
-        }
-
-        ORDERED_HASHMAP_FOREACH(j, client->extra_options, i) {
-                r = dhcp_option_append(&discover->dhcp, optlen, &optoffset, 0,
-                                       j->option, j->length, j->data);
-                if (r < 0)
-                        return r;
-        }
-
-        if (!ordered_hashmap_isempty(client->vendor_options)) {
-                r = dhcp_option_append(
-                                &discover->dhcp, optlen, &optoffset, 0,
-                                SD_DHCP_OPTION_VENDOR_SPECIFIC,
-                                ordered_hashmap_size(client->vendor_options), client->vendor_options);
-                if (r < 0)
-                        return r;
-        }
+        r = client_append_common_discover_request_options(client, discover, &optoffset, optlen);
+        if (r < 0)
+                return r;
 
         r = dhcp_option_append(&discover->dhcp, optlen, &optoffset, 0,
                                SD_DHCP_OPTION_END, 0, NULL);
@@ -1034,36 +1114,9 @@ static int client_send_request(sd_dhcp_client *client) {
                 return -EINVAL;
         }
 
-        if (client->hostname) {
-                if (dns_name_is_single_label(client->hostname))
-                        r = dhcp_option_append(&request->dhcp, optlen, &optoffset, 0,
-                                               SD_DHCP_OPTION_HOST_NAME,
-                                               strlen(client->hostname), client->hostname);
-                else
-                        r = client_append_fqdn_option(&request->dhcp, optlen, &optoffset,
-                                                      client->hostname);
-                if (r < 0)
-                        return r;
-        }
-
-        if (client->vendor_class_identifier) {
-                r = dhcp_option_append(&request->dhcp, optlen, &optoffset, 0,
-                                       SD_DHCP_OPTION_VENDOR_CLASS_IDENTIFIER,
-                                       strlen(client->vendor_class_identifier),
-                                       client->vendor_class_identifier);
-                if (r < 0)
-                        return r;
-        }
-
-        if (client->mudurl) {
-                r = dhcp_option_append(&request->dhcp, optlen, &optoffset, 0,
-                                       SD_DHCP_OPTION_MUD_URL,
-                                       strlen(client->mudurl),
-                                       client->mudurl);
-                if (r < 0)
-                        return r;
-        }
-
+        r = client_append_common_discover_request_options(client, request, &optoffset, optlen);
+        if (r < 0)
+                return r;
 
         r = dhcp_option_append(&request->dhcp, optlen, &optoffset, 0,
                                SD_DHCP_OPTION_END, 0, NULL);
@@ -1418,6 +1471,9 @@ static int client_handle_offer(sd_dhcp_client *client, DHCPMessage *offer, size_
 
         lease->next_server = offer->siaddr;
         lease->address = offer->yiaddr;
+
+        if (lease->lifetime == 0 && client->fallback_lease_lifetime > 0)
+                lease->lifetime = client->fallback_lease_lifetime;
 
         if (lease->address == 0 ||
             lease->server_address == 0 ||
@@ -1899,13 +1955,13 @@ static int client_receive_message_raw(
 
         sd_dhcp_client *client = userdata;
         _cleanup_free_ DHCPPacket *packet = NULL;
-        uint8_t cmsgbuf[CMSG_LEN(sizeof(struct tpacket_auxdata))];
+        CMSG_BUFFER_TYPE(CMSG_SPACE(sizeof(struct tpacket_auxdata))) control;
         struct iovec iov = {};
         struct msghdr msg = {
                 .msg_iov = &iov,
                 .msg_iovlen = 1,
-                .msg_control = cmsgbuf,
-                .msg_controllen = sizeof(cmsgbuf),
+                .msg_control = &control,
+                .msg_controllen = sizeof(control),
         };
         struct cmsghdr *cmsg;
         bool checksum = true;
@@ -1927,25 +1983,21 @@ static int client_receive_message_raw(
 
         iov = IOVEC_MAKE(packet, buflen);
 
-        len = recvmsg(fd, &msg, 0);
-        if (len < 0) {
-                if (IN_SET(errno, EAGAIN, EINTR, ENETDOWN))
-                        return 0;
-
-                return log_dhcp_client_errno(client, errno,
+        len = recvmsg_safe(fd, &msg, 0);
+        if (IN_SET(len, -EAGAIN, -EINTR, -ENETDOWN))
+                return 0;
+        if (len < 0)
+                return log_dhcp_client_errno(client, len,
                                              "Could not receive message from raw socket: %m");
-        } else if ((size_t)len < sizeof(DHCPPacket))
+
+        if ((size_t) len < sizeof(DHCPPacket))
                 return 0;
 
-        CMSG_FOREACH(cmsg, &msg)
-                if (cmsg->cmsg_level == SOL_PACKET &&
-                    cmsg->cmsg_type == PACKET_AUXDATA &&
-                    cmsg->cmsg_len == CMSG_LEN(sizeof(struct tpacket_auxdata))) {
-                        struct tpacket_auxdata *aux = (struct tpacket_auxdata*)CMSG_DATA(cmsg);
-
-                        checksum = !(aux->tp_status & TP_STATUS_CSUMNOTREADY);
-                        break;
-                }
+        cmsg = cmsg_find(&msg, SOL_PACKET, PACKET_AUXDATA, CMSG_LEN(sizeof(struct tpacket_auxdata)));
+        if (cmsg) {
+                struct tpacket_auxdata *aux = (struct tpacket_auxdata*) CMSG_DATA(cmsg);
+                checksum = !(aux->tp_status & TP_STATUS_CSUMNOTREADY);
+        }
 
         r = dhcp_packet_verify_headers(packet, len, checksum, client->port);
         if (r < 0)

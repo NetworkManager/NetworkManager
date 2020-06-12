@@ -40,6 +40,7 @@ int fchmod_umask(int fd, mode_t mode);
 int fchmod_opath(int fd, mode_t m);
 
 int fd_warn_permissions(const char *path, int fd);
+int stat_warn_permissions(const char *path, const struct stat *st);
 
 #define laccess(path, mode) faccessat(AT_FDCWD, (path), (mode), AT_SYMLINK_NOFOLLOW)
 
@@ -82,7 +83,7 @@ enum {
         CHASE_SAFE        = 1 << 3, /* Return EPERM if we ever traverse from unprivileged to privileged files or directories */
         CHASE_TRAIL_SLASH = 1 << 4, /* Any trailing slash will be preserved */
         CHASE_STEP        = 1 << 5, /* Just execute a single step of the normalization */
-        CHASE_NOFOLLOW    = 1 << 6, /* Do not follow the path's right-most compontent. With ret_fd, when the path's
+        CHASE_NOFOLLOW    = 1 << 6, /* Do not follow the path's right-most component. With ret_fd, when the path's
                                      * right-most component refers to symlink, return O_PATH fd of the symlink. */
         CHASE_WARN        = 1 << 7, /* Emit an appropriate warning when an error is encountered */
 };
@@ -113,7 +114,13 @@ DEFINE_TRIVIAL_CLEANUP_FUNC(char*, unlink_and_free);
 int access_fd(int fd, int mode);
 
 void unlink_tempfilep(char (*p)[]);
-int unlinkat_deallocate(int fd, const char *name, int flags);
+
+typedef enum UnlinkDeallocateFlags {
+        UNLINK_REMOVEDIR = 1 << 0,
+        UNLINK_ERASE     = 1 << 1,
+} UnlinkDeallocateFlags;
+
+int unlinkat_deallocate(int fd, const char *name, UnlinkDeallocateFlags flags);
 
 int fsync_directory_of_file(int fd);
 int fsync_full(int fd);
@@ -122,3 +129,5 @@ int fsync_path_at(int at_fd, const char *path);
 int syncfs_path(int atfd, const char *path);
 
 int open_parent(const char *path, int flags, mode_t mode);
+
+int path_is_encrypted(const char *path);

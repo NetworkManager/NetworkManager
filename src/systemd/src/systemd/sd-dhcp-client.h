@@ -48,6 +48,7 @@ enum {
         SD_DHCP_OPTION_TIME_OFFSET                 = 2,
         SD_DHCP_OPTION_ROUTER                      = 3,
         SD_DHCP_OPTION_DOMAIN_NAME_SERVER          = 6,
+        SD_DHCP_OPTION_LPR_SERVER                  = 9,
         SD_DHCP_OPTION_HOST_NAME                   = 12,
         SD_DHCP_OPTION_BOOT_FILE_SIZE              = 13,
         SD_DHCP_OPTION_DOMAIN_NAME                 = 15,
@@ -184,6 +185,9 @@ int sd_dhcp_client_get_lease(
 int sd_dhcp_client_set_service_type(
                 sd_dhcp_client *client,
                 int type);
+int sd_dhcp_client_set_fallback_lease_lifetime(
+                sd_dhcp_client *client,
+                uint32_t fallback_lease_lifetime);
 
 int sd_dhcp_client_add_option(sd_dhcp_client *client, sd_dhcp_option *v);
 int sd_dhcp_client_add_vendor_option(sd_dhcp_client *client, sd_dhcp_option *v);
@@ -200,6 +204,8 @@ sd_dhcp_client *sd_dhcp_client_unref(sd_dhcp_client *client);
 /* NOTE: anonymize parameter is used to initialize PRL memory with different
  * options when using RFC7844 Anonymity Profiles */
 int sd_dhcp_client_new(sd_dhcp_client **ret, int anonymize);
+
+int sd_dhcp_client_id_to_string(const void *data, size_t len, char **ret);
 
 int sd_dhcp_client_attach_event(
                 sd_dhcp_client *client,

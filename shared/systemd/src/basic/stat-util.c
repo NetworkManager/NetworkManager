@@ -94,10 +94,10 @@ bool null_or_empty(struct stat *st) {
         if (S_ISREG(st->st_mode) && st->st_size <= 0)
                 return true;
 
-        /* We don't want to hardcode the major/minor of /dev/null,
-         * hence we do a simpler "is this a device node?" check. */
+        /* We don't want to hardcode the major/minor of /dev/null, hence we do a simpler "is this a character
+         * device node?" check. */
 
-        if (S_ISCHR(st->st_mode) || S_ISBLK(st->st_mode))
+        if (S_ISCHR(st->st_mode))
                 return true;
 
         return false;
@@ -107,6 +107,10 @@ int null_or_empty_path(const char *fn) {
         struct stat st;
 
         assert(fn);
+
+        /* If we have the path, let's do an easy text comparison first. */
+        if (path_equal(fn, "/dev/null"))
+                return true;
 
         if (stat(fn, &st) < 0)
                 return -errno;
@@ -178,13 +182,12 @@ int fd_is_fs_type(int fd, statfs_f_type_t magic_value) {
 }
 
 int path_is_fs_type(const char *path, statfs_f_type_t magic_value) {
-        _cleanup_close_ int fd = -1;
+        struct statfs s;
 
-        fd = open(path, O_RDONLY|O_CLOEXEC|O_NOCTTY|O_PATH);
-        if (fd < 0)
+        if (statfs(path, &s) < 0)
                 return -errno;
 
-        return fd_is_fs_type(fd, magic_value);
+        return is_fs_type(&s, magic_value);
 }
 
 bool is_temporary_fs(const struct statfs *s) {
@@ -376,4 +379,37 @@ int device_path_parse_major_minor(const char *path, mode_t *ret_mode, dev_t *ret
                 *ret_devno = devno;
 
         return 0;
+}
+
+int proc_mounted(void) {
+        int r;
+
+        /* A quick check of procfs is properly mounted */
+
+        r = path_is_fs_type("/proc/", PROC_SUPER_MAGIC);
+        if (r == -ENOENT) /* not mounted at all */
+                return false;
+
+        return r;
+}
+
+bool stat_inode_unmodified(const struct stat *a, const struct stat *b) {
+
+        /* Returns if the specified stat structures reference the same, unmodified inode. This check tries to
+         * be reasonably careful when detecting changes: we check both inode and mtime, to cater for file
+         * systems where mtimes are fixed to 0 (think: ostree/nixos type installations). We also check file
+         * size, backing device, inode type and if this refers to a device not the major/minor.
+         *
+         * Note that we don't care if file attributes such as ownership or access mode change, this here is
+         * about contents of the file. The purpose here is to detect file contents changes, and nothing
+         * else. */
+
+        return a && b &&
+                (a->st_mode & S_IFMT) != 0 && /* We use the check for .st_mode if the structure was ever initialized */
+                ((a->st_mode ^ b->st_mode) & S_IFMT) == 0 &&  /* same inode type */
+                a->st_mtime == b->st_mtime &&
+                (!S_ISREG(a->st_mode) || a->st_size == b->st_size) && /* if regular file, compare file size */
+                a->st_dev == b->st_dev &&
+                a->st_ino == b->st_ino &&
+                (!(S_ISCHR(a->st_mode) || S_ISBLK(a->st_mode)) || a->st_rdev == b->st_rdev); /* if device node, also compare major/minor, because we can */
 }

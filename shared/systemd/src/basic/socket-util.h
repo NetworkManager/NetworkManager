@@ -158,6 +158,25 @@ int flush_accept(int fd);
 
 struct cmsghdr* cmsg_find(struct msghdr *mh, int level, int type, socklen_t length);
 
+/* Type-safe, dereferencing version of cmsg_find() */
+#define CMSG_FIND_DATA(mh, level, type, ctype) \
+        ({                                                            \
+                struct cmsghdr *_found;                               \
+                _found = cmsg_find(mh, level, type, CMSG_LEN(sizeof(ctype))); \
+                (ctype*) (_found ? CMSG_DATA(_found) : NULL);         \
+        })
+
+/* Resolves to a type that can carry cmsghdr structures. Make sure things are properly aligned, i.e. the type
+ * itself is placed properly in memory and the size is also aligned to what's appropriate for "cmsghdr"
+ * structures. */
+#define CMSG_BUFFER_TYPE(size)                                          \
+        union {                                                         \
+                struct cmsghdr cmsghdr;                                 \
+                uint8_t buf[size];                                      \
+                uint8_t align_check[(size) >= CMSG_SPACE(0) &&          \
+                                    (size) == CMSG_ALIGN(size) ? 1 : -1]; \
+        }
+
 /*
  * Certain hardware address types (e.g Infiniband) do not fit into sll_addr
  * (8 bytes) and run over the structure. This macro returns the correct size that
@@ -199,3 +218,7 @@ static inline int setsockopt_int(int fd, int level, int optname, int value) {
 
 int socket_bind_to_ifname(int fd, const char *ifname);
 int socket_bind_to_ifindex(int fd, int ifindex);
+
+ssize_t recvmsg_safe(int sockfd, struct msghdr *msg, int flags);
+
+int socket_pass_pktinfo(int fd, bool b);
