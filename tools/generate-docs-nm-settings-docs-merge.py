@@ -145,6 +145,7 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
 
     node_set_attr(setting_node, 'description', settings)
     node_set_attr(setting_node, 'name_upper', settings)
+    node_set_attr(setting_node, 'alias', settings)
 
     for property_name in iter_keys_of_dicts(properties):
 

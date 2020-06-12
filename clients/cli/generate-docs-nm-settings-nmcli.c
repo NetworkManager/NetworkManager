@@ -33,10 +33,14 @@ main (int argc, char *argv[])
 	g_print ("<nm-setting-docs>\n");
 	for (i_sett_infos = 0; i_sett_infos < G_N_ELEMENTS (nm_meta_setting_infos_editor); i_sett_infos++) {
 		const NMMetaSettingInfoEditor *sett_info = &nm_meta_setting_infos_editor[i_sett_infos];
-		gs_free char *tmp1 = NULL;
+		gs_free char *tmp_s1 = NULL;
+		gs_free char *tmp_s2 = NULL;
 
 		g_print ("%s<setting", _indent_level (INDENT));
-		g_print (" name=%s >\n", tmp1 = _xml_escape_attribute (sett_info->general->setting_name));
+		g_print (" name=%s", tmp_s1 = _xml_escape_attribute (sett_info->general->setting_name));
+		if (sett_info->alias)
+			g_print ("\n%salias=%s", _indent_level (INDENT + 9), tmp_s2 = _xml_escape_attribute (sett_info->alias));
+		g_print (" >\n");
 
 		for (i_property = 0; i_property < sett_info->properties_num; i_property++) {
 			const NMMetaPropertyInfo *prop_info = sett_info->properties[i_property];

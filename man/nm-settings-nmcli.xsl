@@ -120,6 +120,11 @@
   <xsl:template match="setting">
     <refsect2>
       <title><xsl:value-of select="@name"/> setting</title>
+      <xsl:if test="@alias">
+        <para>
+          Alias: <xsl:value-of select="@alias"/>
+        </para>
+      </xsl:if>
       <para><xsl:value-of select="@description"/>.</para>
       <para>
         Properties:
