@@ -118,7 +118,8 @@
         <tgroup cols="4">
           <thead>
             <row>
-              <entry>Key Name</entry>
+              <entry>Property Name</entry>
+              <entry>Alias</entry>
               <entry>Value Type</entry>
               <entry>Default Value</entry>
               <entry>Value Description</entry>
@@ -136,6 +137,7 @@
     <xsl:variable name="setting_name" select="../@name"/>
     <row>
       <entry align="left"><xsl:attribute name="id">nm-settings-nmcli.property.<xsl:value-of select="../@name"/>.<xsl:value-of select="@name"/></xsl:attribute><xsl:value-of select="@name"/></entry>
+      <entry align="left"><xsl:value-of select="@alias"/></entry>
       <entry align="left"><xsl:value-of select="@type"/></entry>
       <entry align="left"><xsl:value-of select="@default"/></entry>
       <entry><xsl:value-of select="@description"/><xsl:if test="@type = 'NMSettingSecretFlags (uint32)'"> (see <xref linkend="secrets-flags"/> for flag values)</xsl:if></entry>

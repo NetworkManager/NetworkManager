@@ -166,5 +166,6 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
 
         node_set_attr(property_node, 'default', properties_attrs)
         node_set_attr(property_node, 'description', properties_attrs)
+        node_set_attr(property_node, 'alias', properties_attrs)
 
 ET.ElementTree(root_node).write(gl_output_xml_file)
