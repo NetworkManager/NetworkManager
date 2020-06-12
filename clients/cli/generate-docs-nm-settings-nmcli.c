@@ -42,11 +42,14 @@ main (int argc, char *argv[])
 			const NMMetaPropertyInfo *prop_info = sett_info->properties[i_property];
 			gs_free char *tmp2 = NULL;
 			gs_free char *tmp3 = NULL;
+			gs_free char *tmp4 = NULL;
 
 			g_print ("%s<property", _indent_level (2*INDENT));
 			g_print (" name=%s", tmp2 = _xml_escape_attribute (prop_info->property_name));
 			if (prop_info->property_alias)
 				g_print ("\n%salias=%s", _indent_level (2*INDENT + 10), tmp3 = _xml_escape_attribute (prop_info->property_alias));
+			if (prop_info->describe_doc)
+				g_print ("\n%sdescription=%s", _indent_level (2*INDENT + 10), tmp4 = _xml_escape_attribute (prop_info->describe_doc));
 			g_print (" />\n");
 		}
 
