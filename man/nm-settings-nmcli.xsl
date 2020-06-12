@@ -121,34 +121,43 @@
     <refsect2>
       <title><xsl:value-of select="@name"/> setting</title>
       <para><xsl:value-of select="@description"/>.</para>
-      <informaltable>
-        <tgroup cols="4">
-          <thead>
-            <row>
-              <entry>Property Name</entry>
-              <entry>Alias</entry>
-              <entry>Value Type</entry>
-              <entry>Default Value</entry>
-              <entry>Value Description</entry>
-            </row>
-          </thead>
-          <tbody>
-            <xsl:apply-templates/>
-          </tbody>
-        </tgroup>
-      </informaltable>
+      <para>
+        Properties:
+        <variablelist>
+          <xsl:apply-templates/>
+        </variablelist>
+      </para>
     </refsect2>
   </xsl:template>
 
   <xsl:template match="property">
     <xsl:variable name="setting_name" select="../@name"/>
-    <row>
-      <entry align="left"><xsl:attribute name="id">nm-settings-nmcli.property.<xsl:value-of select="../@name"/>.<xsl:value-of select="@name"/></xsl:attribute><xsl:value-of select="@name"/></entry>
-      <entry align="left"><xsl:value-of select="@alias"/></entry>
-      <entry align="left"><xsl:value-of select="@type"/></entry>
-      <entry align="left"><xsl:value-of select="@default"/></entry>
-      <entry><xsl:value-of select="@description"/><xsl:if test="@type = 'NMSettingSecretFlags (uint32)'"> (see <xref linkend="secrets-flags"/> for flag values)</xsl:if></entry>
-    </row>
+    <varlistentry>
+      <term>
+        <option>
+          <xsl:attribute name="id">nm-settings-nmcli.property.<xsl:value-of select="../@name"/>.<xsl:value-of select="@name"/></xsl:attribute>
+          <xsl:value-of select="@name"/>
+        </option>
+      </term>
+      <listitem>
+        <xsl:if test="@alias">
+          <para>
+            Alias: <xsl:value-of select="@alias"/>
+          </para>
+        </xsl:if>
+        <para>
+          <xsl:value-of select="@description"/>
+          <xsl:if test="@type = 'NMSettingSecretFlags (uint32)'">
+           See <xref linkend="secrets-flags"/> for flag values.
+          </xsl:if>
+        </para>
+        <xsl:if test="@type">
+          <para>
+            Format: <xsl:value-of select="@type"/>
+          </para>
+        </xsl:if>
+      </listitem>
+    </varlistentry>
   </xsl:template>
 
 </xsl:stylesheet>
