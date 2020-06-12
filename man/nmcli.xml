@@ -728,7 +728,7 @@
 
           <para>You can also specify particular fields. For static configuration, use
           setting and property names as described in
-          <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum>
+          <citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle><manvolnum>5</manvolnum>
           </citerefentry> manual page. For active data use GENERAL, IP4, DHCP4, IP6,
           DHCP6, VPN.</para>
 
@@ -882,9 +882,10 @@
           value. An empty value (<literal>""</literal>) resets the property value to
           the default.</para>
 
-          <para>In addition to the properties, you can also use short names for some of
-          the properties. Consult the <link linkend='property_aliases' endterm='property_aliases.title' />
-          section for details.</para>
+          <para>See <citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle><manvolnum>5</manvolnum>
+          </citerefentry> for complete reference of setting and property names, their descriptions
+          and default values. The <replaceable>setting</replaceable> and
+          <replaceable>property</replaceable> can be abbreviated provided they are unique.</para>
 
           <para>If you want to append an item or a flag to the existing value, use
           <literal>+</literal> prefix for the property name or alias. If you want to
@@ -896,11 +897,6 @@
           These are for example multi-value (container) properties or flags like <literal>ipv4.dns</literal>,
           <literal>ip4</literal>, <literal>ipv4.addresses</literal>, <literal>bond.options</literal>,
           <literal>802-1x.phase1-auth-flags</literal> etc.</para>
-
-          <para>See <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum>
-          </citerefentry> for complete reference of setting and property names, their descriptions
-          and default values. The <replaceable>setting</replaceable> and
-          <replaceable>property</replaceable> can be abbreviated provided they are unique.</para>
 
           <para>The connection is identified by its name, UUID or D-Bus path. If
           <replaceable>ID</replaceable> is ambiguous, a keyword <option>id</option>,
@@ -942,9 +938,8 @@
           <para>Create a new connection using specified properties.</para>
 
           <para>You need to describe the newly created connections with the property and value pairs.
-          See <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum>
-          </citerefentry> for the complete reference. You can also use the aliases described in
-          <link linkend='property_aliases' endterm='property_aliases.title' /> section. The syntax is
+          See <citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle><manvolnum>5</manvolnum>
+          </citerefentry> for the complete reference. The syntax is
           the same as of the <command>nmcli connection modify</command> command.</para>
 
           <para>To construct a meaningful connection you at the very least need to set the
@@ -1054,7 +1049,7 @@
           </variablelist>
 
           <para>See also
-          <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum>
+          <citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle><manvolnum>5</manvolnum>
           </citerefentry> for all NetworkManager settings and property names, and their
           descriptions; and
           <link linkend='nmcli-examples'><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry></link>
@@ -1343,13 +1338,9 @@
           <para>This command lets you do temporary changes to a configuration active on
           a particular device. The changes are not preserved in the connection profile.</para>
 
-          <para>See <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum>
+          <para>See <citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle><manvolnum>5</manvolnum>
           </citerefentry> for the list of available properties. Please note that some
           properties can't be changed on an already connected device.</para>
-
-          <para>You can also use the aliases described in
-          <link linkend='property_aliases' endterm='property_aliases.title' /> section. The syntax is
-          the same as of the <command>nmcli connection modify</command> command.</para>
         </listitem>
       </varlistentry>
 
@@ -1715,396 +1706,6 @@
       </varlistentry>
 
     </variablelist>
-
-  </refsect1>
-
-  <refsect1 id='property_aliases'><title id='property_aliases.title'>Property Aliases</title>
-
-    <para>Apart from the property-value pairs, <command>connection add</command>,
-    <command>connection modify</command> and <command>device modify</command> also
-    accept short forms of some properties. They exist for convenience. Some aliases can
-    affect multiple connection properties at once.</para>
-
-   <para>The overview of the aliases is below. An actual connection type is used to
-   disambiguate these options from the options of the same name that are valid for
-   multiple connection types (such as <option>mtu</option>).</para>
-
-    <table><title>Options for all connections</title><tgroup cols="3">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry><entry>Note</entry></row>
-    </thead>
-    <tbody>
-      <row>
-        <entry align="left">type</entry>
-        <entry align="left"><link linkend="nm-settings.property.connection.type">connection.type</link></entry>
-        <entry align="left" valign="top">This alias also accepts values of <option>bond-slave</option>,
-<option>team-slave</option> and <option>bridge-slave</option>. They create
-<option>ethernet</option> connection profiles. Their use is discouraged in
-favor of using a specific type with <option>master</option> option.</entry>
-      </row>
-      <row>
-        <entry align="left">con-name</entry>
-        <entry align="left"><link linkend="nm-settings.property.connection.id">connection.id</link></entry>
-        <entry align="left" valign="top">When not provided a default name is generated: &lt;type&gt;[-&lt;ifname&gt;][-&lt;num&gt;]).</entry>
-      </row>
-      <row><entry align="left">autoconnect</entry><entry align="left"><link linkend="nm-settings.property.connection.autoconnect">connection.autoconnect</link></entry><entry align="left" /></row>
-      <row>
-        <entry align="left">ifname</entry>
-        <entry align="left"><link linkend="nm-settings.property.connection.interface-name">connection.interface-name</link></entry>
-        <entry align="left" valign="top">A value of <literal>*</literal> will be interpreted as
-no value, making the connection profile interface-independent.
-Note: use quotes around <literal>*</literal> to suppress shell expansion.
-For bond, team and bridge connections a default name will be generated if not set.</entry>
-      </row>
-      <row>
-        <entry align="left">master</entry>
-        <entry align="left"><link linkend="nm-settings.property.connection.master">connection.master</link></entry>
-        <entry align="left" valign="top">Value specified here will be canonicalized.
-It can be prefixed with <literal>ifname/</literal>, <literal>uuid/</literal>
-or <literal>id/</literal> to disambiguate it.</entry>
-If the master connection can be found this will set <literal>connection.slave-type</literal>
-property as well.
-      </row>
-      <row><entry align="left">slave-type</entry><entry align="left"><link linkend="nm-settings.property.connection.slave-type">connection.slave-type</link></entry><entry align="left" /></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>PPPoE options</title><tgroup cols="2">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">username</entry><entry align="left"><link linkend="nm-settings.property.pppoe.username">pppoe.username</link></entry></row>
-      <row><entry align="left">password</entry><entry align="left"><link linkend="nm-settings.property.pppoe.password">pppoe.password</link></entry></row>
-      <row><entry align="left">service</entry><entry align="left"><link linkend="nm-settings.property.pppoe.service">pppoe.service</link></entry></row>
-      <row><entry align="left">parent</entry><entry align="left"><link linkend="nm-settings.property.pppoe.parent">pppoe.parent</link></entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>Wired Ethernet options</title><tgroup cols="2">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">mtu</entry><entry align="left"><link linkend="nm-settings.property.802-3-ethernet.mtu">wired.mtu</link></entry></row>
-      <row><entry align="left">mac</entry><entry align="left"><link linkend="nm-settings.property.802-3-ethernet.mac-address">wired.mac-address</link></entry></row>
-      <row><entry align="left">cloned-mac</entry><entry align="left"><link linkend="nm-settings.property.802-3-ethernet.cloned-mac-address">wired.cloned-mac-address</link></entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>Infiniband options</title><tgroup cols="2">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">mtu</entry><entry align="left"><link linkend="nm-settings.property.infiniband.mtu">infiniband.mtu</link></entry></row>
-      <row><entry align="left">mac</entry><entry align="left"><link linkend="nm-settings.property.infiniband.mac-address">infiniband.mac-address</link></entry></row>
-      <row><entry align="left">transport-mode</entry><entry align="left"><link linkend="nm-settings.property.infiniband.transport-mode">infiniband.transport-mode</link></entry></row>
-      <row><entry align="left">parent</entry><entry align="left"><link linkend="nm-settings.property.infiniband.parent">infiniband.parent</link></entry></row>
-      <row><entry align="left">p-key</entry><entry align="left"><link linkend="nm-settings.property.infiniband.p-key">infiniband.p-key</link></entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>Wi-Fi options</title><tgroup cols="2">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">ssid</entry><entry align="left"><link linkend="nm-settings.property.802-11-wireless.ssid">wireless.ssid</link></entry></row>
-      <row><entry align="left">mode</entry><entry align="left"><link linkend="nm-settings.property.802-11-wireless.mode">wireless.mode</link></entry></row>
-      <row><entry align="left">mtu</entry><entry align="left"><link linkend="nm-settings.property.802-11-wireless.mtu">wireless.mtu</link></entry></row>
-      <row><entry align="left">mac</entry><entry align="left"><link linkend="nm-settings.property.802-11-wireless.mac-address">wireless.mac-address</link></entry></row>
-      <row><entry align="left">cloned-mac</entry><entry align="left"><link linkend="nm-settings.property.802-11-wireless.cloned-mac-address">wireless.cloned-mac-address</link></entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>WiMax options</title><tgroup cols="2">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">nsp</entry><entry align="left"><link linkend="nm-settings.property.wimax.network-name">wimax.network-name</link></entry></row>
-      <row><entry align="left">mac</entry><entry align="left"><link linkend="nm-settings.property.wimax.mac-address">wimax.mac-address</link></entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>GSM options</title><tgroup cols="2">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">apn</entry><entry align="left"><link linkend="nm-settings.property.gsm.apn">gsm.apn</link></entry></row>
-      <row><entry align="left">user</entry><entry align="left"><link linkend="nm-settings.property.gsm.username">gsm.username</link></entry></row>
-      <row><entry align="left">password</entry><entry align="left"><link linkend="nm-settings.property.gsm.password">gsm.password</link></entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>CDMA options</title><tgroup cols="2">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">user</entry><entry align="left"><link linkend="nm-settings.property.cdma.username">cdma.username</link></entry></row>
-      <row><entry align="left">password</entry><entry align="left"><link linkend="nm-settings.property.cdma.password">cdma.password</link></entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>Bluetooth options</title><tgroup cols="3">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry><entry>Note</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">addr</entry><entry align="left"><link linkend="nm-settings.property.bluetooth.bdaddr">bluetooth.bdaddr</link></entry><entry align="left" /></row>
-      <row>
-        <entry align="left">bt-type</entry>
-        <entry align="left"><link linkend="nm-settings.property.bluetooth.type">bluetooth.type</link></entry>
-        <entry align="left" valign="top">Apart from the usual <literal>panu</literal>,
-<literal>nap</literal> and <literal>dun</literal> options, the values of
-<literal>dun-gsm</literal> and <literal>dun-cdma</literal> can be used for compatibility
-with older versions. They are equivalent to using <literal>dun</literal> and setting
-appropriate <literal>gsm.*</literal> or <literal>cdma.*</literal> properties.</entry>
-      </row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>VLAN options</title><tgroup cols="2">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">dev</entry><entry align="left"><link linkend="nm-settings.property.vlan.parent">vlan.parent</link></entry></row>
-      <row><entry align="left">id</entry><entry align="left"><link linkend="nm-settings.property.vlan.id">vlan.id</link></entry></row>
-      <row><entry align="left">flags</entry><entry align="left"><link linkend="nm-settings.property.vlan.flags">vlan.flags</link></entry></row>
-      <row><entry align="left">ingress</entry><entry align="left"><link linkend="nm-settings.property.vlan.ingress-priority-map">vlan.ingress-priority-map</link></entry></row>
-      <row><entry align="left">egress</entry><entry align="left"><link linkend="nm-settings.property.vlan.egress-priority-map">vlan.egress-priority-map</link></entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>Bonding options</title><tgroup cols="3">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry><entry>Note</entry></row>
-    </thead>
-    <tbody>
-      <row>
-        <entry align="left">mode</entry>
-        <entry align="left" morerows="7">bond.options</entry>
-        <entry align="left" morerows="7" valign="top">Setting each of these adds the option to <literal>bond.options</literal> property.
-It's equivalent to the <literal>+bond.options 'option=value'</literal> syntax.</entry>
-      </row>
-      <row><entry align="left">primary</entry></row>
-      <row><entry align="left">miimon</entry></row>
-      <row><entry align="left">downdelay</entry></row>
-      <row><entry align="left">updelay</entry></row>
-      <row><entry align="left">arp-interval</entry></row>
-      <row><entry align="left">arp-ip-target</entry></row>
-      <row><entry align="left">lacp-rate</entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>Team options</title><tgroup cols="3">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry><entry>Note</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">config</entry><entry align="left"><link linkend="nm-settings.property.team.config">team.config</link></entry>
-           <entry align="left">Either a filename or a team configuration in JSON format. To enforce one or the other, the value can be prefixed with "file://" or "json://".</entry>
-      </row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>Team port options</title><tgroup cols="3">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry><entry>Note</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">config</entry><entry align="left"><link linkend="nm-settings.property.team-port.config">team-port.config</link></entry>
-           <entry align="left">Either a filename or a team configuration in JSON format. To enforce one or the other, the value can be prefixed with "file://" or "json://".</entry>
-      </row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>Bridge options</title><tgroup cols="2">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">stp</entry><entry align="left"><link linkend="nm-settings.property.bridge.stp">bridge.stp</link></entry></row>
-      <row><entry align="left">priority</entry><entry align="left"><link linkend="nm-settings.property.bridge.priority">bridge.priority</link></entry></row>
-      <row><entry align="left">forward-delay</entry><entry align="left"><link linkend="nm-settings.property.bridge.forward-delay">bridge.forward-delay</link></entry></row>
-      <row><entry align="left">hello-time</entry><entry align="left"><link linkend="nm-settings.property.bridge.hello-time">bridge.hello-time</link></entry></row>
-      <row><entry align="left">max-age</entry><entry align="left"><link linkend="nm-settings.property.bridge.max-age">bridge.max-age</link></entry></row>
-      <row><entry align="left">ageing-time</entry><entry align="left"><link linkend="nm-settings.property.bridge.ageing-time">bridge.ageing-time</link></entry></row>
-      <row><entry align="left">group-forward-mask</entry><entry align="left"><link linkend="nm-settings.property.bridge.group-forward-mask">bridge.group-forward-mask</link></entry></row>
-      <row><entry align="left">multicast-snooping</entry><entry align="left"><link linkend="nm-settings.property.bridge.multicast-snooping">bridge.multicast-snooping</link></entry></row>
-      <row><entry align="left">mac</entry><entry align="left"><link linkend="nm-settings.property.bridge.mac-address">bridge.mac-address</link></entry></row>
-      <row><entry align="left">priority</entry><entry align="left"><link linkend="nm-settings.property.bridge-port.priority">bridge-port.priority</link></entry></row>
-      <row><entry align="left">path-cost</entry><entry align="left"><link linkend="nm-settings.property.bridge-port.path-cost">bridge-port.path-cost</link></entry></row>
-      <row><entry align="left">hairpin</entry><entry align="left"><link linkend="nm-settings.property.bridge-port.hairpin-mode">bridge-port.hairpin-mode</link></entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>VPN options</title><tgroup cols="2">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">vpn-type</entry><entry align="left"><link linkend="nm-settings.property.vpn.service-type">vpn.service-type</link></entry></row>
-      <row><entry align="left">user</entry><entry align="left"><link linkend="nm-settings.property.vpn.user-name">vpn.user-name</link></entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>OLPC Mesh options</title><tgroup cols="2">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">ssid</entry><entry align="left"><link linkend="nm-settings.property.802-11-olpc-mesh.ssid">olpc-mesh.ssid</link></entry></row>
-      <row><entry align="left">channel</entry><entry align="left"><link linkend="nm-settings.property.802-11-olpc-mesh.channel">olpc-mesh.channel</link></entry></row>
-      <row><entry align="left">dhcp-anycast</entry><entry align="left"><link linkend="nm-settings.property.802-11-olpc-mesh.dhcp-anycast-address">olpc-mesh.dhcp-anycast-address</link></entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>ADSL options</title><tgroup cols="2">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">username</entry><entry align="left"><link linkend="nm-settings.property.adsl.username">adsl.username</link></entry></row>
-      <row><entry align="left">protocol</entry><entry align="left"><link linkend="nm-settings.property.adsl.protocol">adsl.protocol</link></entry></row>
-      <row><entry align="left">password</entry><entry align="left"><link linkend="nm-settings.property.adsl.password">adsl.password</link></entry></row>
-      <row><entry align="left">encapsulation</entry><entry align="left"><link linkend="nm-settings.property.adsl.encapsulation">adsl.encapsulation</link></entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>MACVLAN options</title><tgroup cols="2">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">dev</entry><entry align="left"><link linkend="nm-settings.property.macvlan.parent">macvlan.parent</link></entry></row>
-      <row><entry align="left">mode</entry><entry align="left"><link linkend="nm-settings.property.macvlan.mode">macvlan.mode</link></entry></row>
-      <row><entry align="left">tap</entry><entry align="left"><link linkend="nm-settings.property.macvlan.tap">macvlan.tap</link></entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>MACsec options</title><tgroup cols="2">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">dev</entry><entry align="left"><link linkend="nm-settings.property.macsec.parent">macsec.parent</link></entry></row>
-      <row><entry align="left">mode</entry><entry align="left"><link linkend="nm-settings.property.macsec.mode">macsec.mode</link></entry></row>
-      <row><entry align="left">encrypt</entry><entry align="left"><link linkend="nm-settings.property.macsec.encrypt">macsec.encrypt</link></entry></row>
-      <row><entry align="left">cak</entry><entry align="left"><link linkend="nm-settings.property.macsec.cak">macsec.cak</link></entry></row>
-      <row><entry align="left">ckn</entry><entry align="left"><link linkend="nm-settings.property.macsec.ckn">macsec.ckn</link></entry></row>
-      <row><entry align="left">port</entry><entry align="left"><link linkend="nm-settings.property.macsec.port">macsec.port</link></entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>VxLAN options</title><tgroup cols="2">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">id</entry><entry align="left"><link linkend="nm-settings.property.vxlan.id">vxlan.id</link></entry></row>
-      <row><entry align="left">remote</entry><entry align="left"><link linkend="nm-settings.property.vxlan.remote">vxlan.remote</link></entry></row>
-      <row><entry align="left">dev</entry><entry align="left"><link linkend="nm-settings.property.vxlan.parent">vxlan.parent</link></entry></row>
-      <row><entry align="left">local</entry><entry align="left"><link linkend="nm-settings.property.vxlan.local">vxlan.local</link></entry></row>
-      <row><entry align="left">source-port-min</entry><entry align="left"><link linkend="nm-settings.property.vxlan.source-port-min">vxlan.source-port-min</link></entry></row>
-      <row><entry align="left">source-port-max</entry><entry align="left"><link linkend="nm-settings.property.vxlan.source-port-max">vxlan.source-port-max</link></entry></row>
-      <row><entry align="left">destination-port</entry><entry align="left"><link linkend="nm-settings.property.vxlan.destination-port">vxlan.destination-port</link></entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>Tun options</title><tgroup cols="2">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">mode</entry><entry align="left"><link linkend="nm-settings.property.tun.mode">tun.mode</link></entry></row>
-      <row><entry align="left">owner</entry><entry align="left"><link linkend="nm-settings.property.tun.owner">tun.owner</link></entry></row>
-      <row><entry align="left">group</entry><entry align="left"><link linkend="nm-settings.property.tun.group">tun.group</link></entry></row>
-      <row><entry align="left">pi</entry><entry align="left"><link linkend="nm-settings.property.tun.pi">tun.pi</link></entry></row>
-      <row><entry align="left">vnet-hdr</entry><entry align="left"><link linkend="nm-settings.property.tun.vnet-hdr">tun.vnet-hdr</link></entry></row>
-      <row><entry align="left">multi-queue</entry><entry align="left"><link linkend="nm-settings.property.tun.multi-queue">tun.multi-queue</link></entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>IP tunneling options</title><tgroup cols="2">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">mode</entry><entry align="left"><link linkend="nm-settings.property.ip-tunnel.mode">ip-tunnel.mode</link></entry></row>
-      <row><entry align="left">local</entry><entry align="left"><link linkend="nm-settings.property.ip-tunnel.local">ip-tunnel.local</link></entry></row>
-      <row><entry align="left">remote</entry><entry align="left"><link linkend="nm-settings.property.ip-tunnel.remote">ip-tunnel.remote</link></entry></row>
-      <row><entry align="left">dev</entry><entry align="left"><link linkend="nm-settings.property.ip-tunnel.parent">ip-tunnel.parent</link></entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>WPAN options</title><tgroup cols="2">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">mac</entry><entry align="left"><link linkend="nm-settings.property.wpan.mac">wpan.mac</link></entry></row>
-      <row><entry align="left">short-addr</entry><entry align="left"><link linkend="nm-settings.property.wpan.short-addr">wpan.short-addr</link></entry></row>
-      <row><entry align="left">pan-id</entry><entry align="left"><link linkend="nm-settings.property.wpan.pan-id">wpan.pan-id</link></entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>6LoWPAN options</title><tgroup cols="2">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">dev</entry><entry align="left"><link linkend="nm-settings.property.6lowpan.dev">6lowpan.parent</link></entry></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>IPv4 options</title><tgroup cols="3">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry><entry>Note</entry></row>
-    </thead>
-    <tbody>
-      <row>
-        <entry align="left">ip4</entry>
-        <entry align="left"><link linkend="nm-settings.property.ipv4.addresses">ipv4.addresses</link> <link linkend="nm-settings.property.ipv4.method">ipv4.method</link></entry>
-        <entry align="left" valign="top">The alias is equivalent to the <literal>+ipv4.addresses</literal> syntax and also sets <literal>ipv4.method</literal> to <literal>manual</literal>. It can be specified multiple times.</entry>
-      </row>
-      <row><entry align="left">gw4</entry><entry align="left"><link linkend="nm-settings.property.ipv4.gateway">ipv4.gateway</link></entry><entry align="left" /></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>IPv6 options</title><tgroup cols="3">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry><entry>Note</entry></row>
-    </thead>
-    <tbody>
-      <row>
-        <entry align="left">ip6</entry>
-        <entry align="left"><link linkend="nm-settings.property.ipv6.addresses">ipv6.addresses</link> <link linkend="nm-settings.property.ipv6.method">ipv6.method</link></entry>
-        <entry align="left" valign="top">The alias is equivalent to the <literal>+ipv6.addresses</literal> syntax and also sets <literal>ipv6.method</literal> to <literal>manual</literal>. It can be specified multiple times.</entry>
-      </row>
-      <row><entry align="left">gw6</entry><entry align="left"><link linkend="nm-settings.property.ipv6.gateway">ipv6.gateway</link></entry><entry align="left" /></row>
-    </tbody>
-    </tgroup></table>
-
-    <table><title>Proxy options</title><tgroup cols="3">
-    <thead>
-      <row><entry>Alias</entry><entry>Property</entry><entry>Note</entry></row>
-    </thead>
-    <tbody>
-      <row><entry align="left">method</entry><entry align="left"><link linkend="nm-settings.property.proxy.method">proxy.method</link></entry><entry align="left" /></row>
-      <row><entry align="left">browser-only</entry><entry align="left"><link linkend="nm-settings.property.proxy.browser-only">proxy.browser-only</link></entry><entry align="left" /></row>
-      <row><entry align="left">pac-url</entry><entry align="left"><link linkend="nm-settings.property.proxy.pac-url">proxy.pac-url</link></entry><entry align="left" /></row>
-      <row>
-        <entry align="left">pac-script</entry>
-        <entry align="left"><link linkend="nm-settings.property.proxy.pac-script">proxy.pac-script</link></entry>
-        <entry align="left" valign="top">Read the JavaScript PAC (proxy auto-config) script from file or pass it directly on the command line. Prefix the value with "file://" or "js://" to force one or the other.</entry>
-      </row>
-    </tbody>
-    </tgroup></table>
 
   </refsect1>
 
@@ -2802,14 +2403,16 @@ It's equivalent to the <literal>+bond.options 'option=value'</literal> syntax.</
   </refsect1>
 
   <refsect1 id='see_also'><title>See Also</title>
-    <para><link linkend='nmcli-examples'><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry></link>,
+    <para>
+    <link linkend='nmcli-examples'><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry></link>,
+    <link linkend='nm-settings-nmcli'><citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
     <link linkend='nm-online'><citerefentry><refentrytitle>nm-online</refentrytitle><manvolnum>1</manvolnum></citerefentry></link>,
     <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>,
     <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
-    <link linkend='nm-settings'><citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
     <citerefentry><refentrytitle>nm-applet</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
     <citerefentry><refentrytitle>nm-connection-editor</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
-    <citerefentry><refentrytitle>terminal-colors.d</refentrytitle><manvolnum>5</manvolnum></citerefentry>.</para>
+    <citerefentry><refentrytitle>terminal-colors.d</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+    </para>
   </refsect1>
 
 </refentry>

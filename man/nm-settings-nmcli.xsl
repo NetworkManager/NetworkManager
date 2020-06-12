@@ -60,6 +60,13 @@
           <emphasis>describe</emphasis> command that can display description of particular settings
           and properties of this page.
         </para>
+        <para>
+          The <replaceable>setting</replaceable> and
+          <replaceable>property</replaceable> can be abbreviated provided they are unique. The list below
+          also shows aliases that can be used unqualified instead of the full name. For example
+          <literal>connection.interface-name</literal> and <literal>ifname</literal> refer to the same
+          property.
+        </para>
         <xsl:apply-templates/>
         <refsect2 id="secrets-flags">
           <title>Secret flag types:</title>
@@ -100,11 +107,11 @@
 
       <refsect1 id='see_also'><title>See Also</title>
         <para>
-        <link linkend='nm-settings-dbus'><citerefentry><refentrytitle>nm-settings-dbus</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
-        <link linkend='nm-settings-keyfile'><citerefentry><refentrytitle>nm-settings-keyfile</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
-        <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>,
         <link linkend='nmcli'><citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry></link>,
         <link linkend='nmcli-examples'><citerefentry><refentrytitle>nmcli-examples</refentrytitle><manvolnum>7</manvolnum></citerefentry></link>,
+        <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>,
+        <link linkend='nm-settings-dbus'><citerefentry><refentrytitle>nm-settings-dbus</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
+        <link linkend='nm-settings-keyfile'><citerefentry><refentrytitle>nm-settings-keyfile</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
         <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link></para>
       </refsect1>
     </refentry>
