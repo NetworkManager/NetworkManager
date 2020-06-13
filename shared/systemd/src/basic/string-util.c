@@ -21,18 +21,19 @@
 #include "util.h"
 
 int strcmp_ptr(const char *a, const char *b) {
-
         /* Like strcmp(), but tries to make sense of NULL pointers */
+
         if (a && b)
                 return strcmp(a, b);
+        return CMP(a, b); /* Direct comparison of pointers, one of which is NULL */
+}
 
-        if (!a && b)
-                return -1;
+int strcasecmp_ptr(const char *a, const char *b) {
+        /* Like strcasecmp(), but tries to make sense of NULL pointers */
 
-        if (a && !b)
-                return 1;
-
-        return 0;
+        if (a && b)
+                return strcasecmp(a, b);
+        return CMP(a, b); /* Direct comparison of pointers, one of which is NULL */
 }
 
 char* endswith(const char *s, const char *postfix) {
@@ -219,7 +220,6 @@ char *strnappend(const char *s, const char *suffix, size_t b) {
         return r;
 }
 
-#if 0 /* NM_IGNORED */
 char *strjoin_real(const char *x, ...) {
         va_list ap;
         size_t l;
@@ -277,6 +277,7 @@ char *strjoin_real(const char *x, ...) {
         return r;
 }
 
+#if 0 /* NM_IGNORED */
 char *strstrip(char *s) {
         if (!s)
                 return NULL;

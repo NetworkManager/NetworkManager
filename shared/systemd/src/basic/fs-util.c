@@ -10,8 +10,10 @@
 #include <unistd.h>
 
 #include "alloc-util.h"
+#include "blockdev-util.h"
 #include "dirent-util.h"
 #include "fd-util.h"
+#include "fileio.h"
 #include "fs-util.h"
 #include "locale-util.h"
 #include "log.h"
@@ -23,6 +25,7 @@
 #include "parse-util.h"
 #include "path-util.h"
 #include "process-util.h"
+#include "random-util.h"
 #include "stat-util.h"
 #include "stdio-util.h"
 #include "string-util.h"
@@ -342,8 +345,35 @@ int fchmod_opath(int fd, mode_t m) {
          * fchownat() does. */
 
         xsprintf(procfs_path, "/proc/self/fd/%i", fd);
-        if (chmod(procfs_path, m) < 0)
-                return -errno;
+        if (chmod(procfs_path, m) < 0) {
+                if (errno != ENOENT)
+                        return -errno;
+
+                if (proc_mounted() == 0)
+                        return -ENOSYS; /* if we have no /proc/, the concept is not implementable */
+
+                return -ENOENT;
+        }
+
+        return 0;
+}
+
+int stat_warn_permissions(const char *path, const struct stat *st) {
+        assert(path);
+        assert(st);
+
+        /* Don't complain if we are reading something that is not a file, for example /dev/null */
+        if (!S_ISREG(st->st_mode))
+                return 0;
+
+        if (st->st_mode & 0111)
+                log_warning("Configuration file %s is marked executable. Please remove executable permission bits. Proceeding anyway.", path);
+
+        if (st->st_mode & 0002)
+                log_warning("Configuration file %s is marked world-writable. Please remove world writability permission bits. Proceeding anyway.", path);
+
+        if (getpid_cached() == 1 && (st->st_mode & 0044) != 0044)
+                log_warning("Configuration file %s is marked world-inaccessible. This has no effect as configuration data is accessible via APIs without restrictions. Proceeding anyway.", path);
 
         return 0;
 }
@@ -351,23 +381,13 @@ int fchmod_opath(int fd, mode_t m) {
 int fd_warn_permissions(const char *path, int fd) {
         struct stat st;
 
+        assert(path);
+        assert(fd >= 0);
+
         if (fstat(fd, &st) < 0)
                 return -errno;
 
-        /* Don't complain if we are reading something that is not a file, for example /dev/null */
-        if (!S_ISREG(st.st_mode))
-                return 0;
-
-        if (st.st_mode & 0111)
-                log_warning("Configuration file %s is marked executable. Please remove executable permission bits. Proceeding anyway.", path);
-
-        if (st.st_mode & 0002)
-                log_warning("Configuration file %s is marked world-writable. Please remove world writability permission bits. Proceeding anyway.", path);
-
-        if (getpid_cached() == 1 && (st.st_mode & 0044) != 0044)
-                log_warning("Configuration file %s is marked world-inaccessible. This has no effect as configuration data is accessible via APIs without restrictions. Proceeding anyway.", path);
-
-        return 0;
+        return stat_warn_permissions(path, &st);
 }
 
 int touch_file(const char *path, bool parents, usec_t stamp, uid_t uid, gid_t gid, mode_t mode) {
@@ -702,29 +722,31 @@ int unlink_or_warn(const char *filename) {
 
 int inotify_add_watch_fd(int fd, int what, uint32_t mask) {
         char path[STRLEN("/proc/self/fd/") + DECIMAL_STR_MAX(int) + 1];
-        int r;
+        int wd;
 
         /* This is like inotify_add_watch(), except that the file to watch is not referenced by a path, but by an fd */
         xsprintf(path, "/proc/self/fd/%i", what);
 
-        r = inotify_add_watch(fd, path, mask);
-        if (r < 0)
+        wd = inotify_add_watch(fd, path, mask);
+        if (wd < 0)
                 return -errno;
 
-        return r;
+        return wd;
 }
 
 #if 0 /* NM_IGNORED */
 int inotify_add_watch_and_warn(int fd, const char *pathname, uint32_t mask) {
+        int wd;
 
-        if (inotify_add_watch(fd, pathname, mask) < 0) {
+        wd = inotify_add_watch(fd, pathname, mask);
+        if (wd < 0) {
                 if (errno == ENOSPC)
                         return log_error_errno(errno, "Failed to add a watch for %s: inotify watch limit reached", pathname);
 
                 return log_error_errno(errno, "Failed to add a watch for %s: %m", pathname);
         }
 
-        return 0;
+        return wd;
 }
 
 static bool unsafe_transition(const struct stat *a, const struct stat *b) {
@@ -1303,10 +1325,12 @@ void unlink_tempfilep(char (*p)[]) {
                 (void) unlink_noerrno(*p);
 }
 
-int unlinkat_deallocate(int fd, const char *name, int flags) {
+int unlinkat_deallocate(int fd, const char *name, UnlinkDeallocateFlags flags) {
         _cleanup_close_ int truncate_fd = -1;
         struct stat st;
         off_t l, bs;
+
+        assert((flags & ~(UNLINK_REMOVEDIR|UNLINK_ERASE)) == 0);
 
         /* Operates like unlinkat() but also deallocates the file contents if it is a regular file and there's no other
          * link to it. This is useful to ensure that other processes that might have the file open for reading won't be
@@ -1324,7 +1348,7 @@ int unlinkat_deallocate(int fd, const char *name, int flags) {
          * Note that we attempt deallocation, but failure to succeed with that is not considered fatal, as long as the
          * primary job – to delete the file – is accomplished. */
 
-        if ((flags & AT_REMOVEDIR) == 0) {
+        if (!FLAGS_SET(flags, UNLINK_REMOVEDIR)) {
                 truncate_fd = openat(fd, name, O_WRONLY|O_CLOEXEC|O_NOCTTY|O_NOFOLLOW|O_NONBLOCK);
                 if (truncate_fd < 0) {
 
@@ -1340,7 +1364,7 @@ int unlinkat_deallocate(int fd, const char *name, int flags) {
                 }
         }
 
-        if (unlinkat(fd, name, flags) < 0)
+        if (unlinkat(fd, name, FLAGS_SET(flags, UNLINK_REMOVEDIR) ? AT_REMOVEDIR : 0) < 0)
                 return -errno;
 
         if (truncate_fd < 0) /* Don't have a file handle, can't do more ☹️ */
@@ -1351,7 +1375,45 @@ int unlinkat_deallocate(int fd, const char *name, int flags) {
                 return 0;
         }
 
-        if (!S_ISREG(st.st_mode) || st.st_blocks == 0 || st.st_nlink > 0)
+        if (!S_ISREG(st.st_mode))
+                return 0;
+
+        if (FLAGS_SET(flags, UNLINK_ERASE) && st.st_size > 0 && st.st_nlink == 0) {
+                uint64_t left = st.st_size;
+                char buffer[64 * 1024];
+
+                /* If erasing is requested, let's overwrite the file with random data once before deleting
+                 * it. This isn't going to give you shred(1) semantics, but hopefully should be good enough
+                 * for stuff backed by tmpfs at least.
+                 *
+                 * Note that we only erase like this if the link count of the file is zero. If it is higher it
+                 * is still linked by someone else and we'll leave it to them to remove it securely
+                 * eventually! */
+
+                random_bytes(buffer, sizeof(buffer));
+
+                while (left > 0) {
+                        ssize_t n;
+
+                        n = write(truncate_fd, buffer, MIN(sizeof(buffer), left));
+                        if (n < 0) {
+                                log_debug_errno(errno, "Failed to erase data in file '%s', ignoring.", name);
+                                break;
+                        }
+
+                        assert(left >= (size_t) n);
+                        left -= n;
+                }
+
+                /* Let's refresh metadata */
+                if (fstat(truncate_fd, &st) < 0) {
+                        log_debug_errno(errno, "Failed to stat file '%s' for deallocation, ignoring: %m", name);
+                        return 0;
+                }
+        }
+
+        /* Don't dallocate if there's nothing to deallocate or if the file is linked elsewhere */
+        if (st.st_blocks == 0 || st.st_nlink > 0)
                 return 0;
 
         /* If this is a regular file, it actually took up space on disk and there are no other links it's time to
@@ -1489,5 +1551,90 @@ int open_parent(const char *path, int flags, mode_t mode) {
                 return -errno;
 
         return fd;
+}
+
+static int blockdev_is_encrypted(const char *sysfs_path, unsigned depth_left) {
+        _cleanup_free_ char *p = NULL, *uuids = NULL;
+        _cleanup_closedir_ DIR *d = NULL;
+        int r, found_encrypted = false;
+
+        assert(sysfs_path);
+
+        if (depth_left == 0)
+                return -EINVAL;
+
+        p = path_join(sysfs_path, "dm/uuid");
+        if (!p)
+                return -ENOMEM;
+
+        r = read_one_line_file(p, &uuids);
+        if (r != -ENOENT) {
+                if (r < 0)
+                        return r;
+
+                /* The DM device's uuid attribute is prefixed with "CRYPT-" if this is a dm-crypt device. */
+                if (startswith(uuids, "CRYPT-"))
+                        return true;
+        }
+
+        /* Not a dm-crypt device itself. But maybe it is on top of one? Follow the links in the "slaves/"
+         * subdir. */
+
+        p = mfree(p);
+        p = path_join(sysfs_path, "slaves");
+        if (!p)
+                return -ENOMEM;
+
+        d = opendir(p);
+        if (!d) {
+                if (errno == ENOENT) /* Doesn't have slaves */
+                        return false;
+
+                return -errno;
+        }
+
+        for (;;) {
+                _cleanup_free_ char *q = NULL;
+                struct dirent *de;
+
+                errno = 0;
+                de = readdir_no_dot(d);
+                if (!de) {
+                        if (errno != 0)
+                                return -errno;
+
+                        break; /* No more slaves */
+                }
+
+                q = path_join(p, de->d_name);
+                if (!q)
+                        return -ENOMEM;
+
+                r = blockdev_is_encrypted(q, depth_left - 1);
+                if (r < 0)
+                        return r;
+                if (r == 0) /* we found one that is not encrypted? then propagate that immediately */
+                        return false;
+
+                found_encrypted = true;
+        }
+
+        return found_encrypted;
+}
+
+int path_is_encrypted(const char *path) {
+        char p[SYS_BLOCK_PATH_MAX(NULL)];
+        dev_t devt;
+        int r;
+
+        r = get_block_device(path, &devt);
+        if (r < 0)
+                return r;
+        if (r == 0) /* doesn't have a block device */
+                return false;
+
+        xsprintf_sys_block_path(p, NULL, devt);
+
+        return blockdev_is_encrypted(p, 10 /* safety net: maximum recursion depth */);
 }
 #endif /* NM_IGNORED */

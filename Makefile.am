@@ -1824,6 +1824,7 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/nm-sd-utils-shared.h \
 	shared/systemd/sd-adapt-shared/architecture.h \
 	shared/systemd/sd-adapt-shared/arphrd-list.h \
+	shared/systemd/sd-adapt-shared/blockdev-util.h \
 	shared/systemd/sd-adapt-shared/build.h \
 	shared/systemd/sd-adapt-shared/copy.h \
 	shared/systemd/sd-adapt-shared/def.h \
@@ -2026,12 +2027,14 @@ src_libnm_systemd_core_la_SOURCES = \
 	src/systemd/src/systemd/sd-dhcp-option.h \
 	src/systemd/src/systemd/sd-dhcp6-client.h \
 	src/systemd/src/systemd/sd-dhcp6-lease.h \
+	src/systemd/src/systemd/sd-dhcp6-option.h \
 	src/systemd/src/systemd/sd-event.h \
 	src/systemd/src/systemd/sd-id128.h \
 	src/systemd/src/systemd/sd-ipv4acd.h \
 	src/systemd/src/systemd/sd-ipv4ll.h \
 	src/systemd/src/systemd/sd-lldp.h \
-	src/systemd/src/systemd/sd-ndisc.h
+	src/systemd/src/systemd/sd-ndisc.h \
+	$(NULL)
 
 src_libnm_systemd_core_la_CPPFLAGS = $(src_libnm_systemd_core_la_cppflags)
 src_libnm_systemd_core_la_LIBADD = \

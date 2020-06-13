@@ -88,7 +88,9 @@ int read_timestamp_file(const char *fn, usec_t *ret);
 int fputs_with_space(FILE *f, const char *s, const char *separator, bool *space);
 
 typedef enum ReadLineFlags {
-        READ_LINE_ONLY_NUL = 1 << 0,
+        READ_LINE_ONLY_NUL  = 1 << 0,
+        READ_LINE_IS_A_TTY  = 1 << 1,
+        READ_LINE_NOT_A_TTY = 1 << 2,
 } ReadLineFlags;
 
 int read_line_full(FILE *f, size_t limit, ReadLineFlags flags, char **ret);
@@ -104,3 +106,7 @@ static inline int read_nul_string(FILE *f, size_t limit, char **ret) {
 int safe_fgetc(FILE *f, char *ret);
 
 int warn_file_is_world_accessible(const char *filename, struct stat *st, const char *unit, unsigned line);
+
+int sync_rights(int from, int to);
+
+int rename_and_apply_smack_floor_label(const char *temp_path, const char *dest_path);

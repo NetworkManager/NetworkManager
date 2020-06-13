@@ -30,6 +30,18 @@ char *strv_find(char * const *l, const char *name) {
         return NULL;
 }
 
+char *strv_find_case(char * const *l, const char *name) {
+        char * const *i;
+
+        assert(name);
+
+        STRV_FOREACH(i, l)
+                if (strcaseeq(*i, name))
+                        return *i;
+
+        return NULL;
+}
+
 char *strv_find_prefix(char * const *l, const char *name) {
         char * const *i;
 
@@ -944,20 +956,20 @@ static int string_strv_hashmap_put_internal(Hashmap *h, const char *key, const c
         return 1;
 }
 
-int string_strv_hashmap_put(Hashmap **h, const char *key, const char *value) {
+int _string_strv_hashmap_put(Hashmap **h, const char *key, const char *value  HASHMAP_DEBUG_PARAMS) {
         int r;
 
-        r = hashmap_ensure_allocated(h, &string_strv_hash_ops);
+        r = _hashmap_ensure_allocated(h, &string_strv_hash_ops  HASHMAP_DEBUG_PASS_ARGS);
         if (r < 0)
                 return r;
 
         return string_strv_hashmap_put_internal(*h, key, value);
 }
 
-int string_strv_ordered_hashmap_put(OrderedHashmap **h, const char *key, const char *value) {
+int _string_strv_ordered_hashmap_put(OrderedHashmap **h, const char *key, const char *value  HASHMAP_DEBUG_PARAMS) {
         int r;
 
-        r = ordered_hashmap_ensure_allocated(h, &string_strv_hash_ops);
+        r = _ordered_hashmap_ensure_allocated(h, &string_strv_hash_ops  HASHMAP_DEBUG_PASS_ARGS);
         if (r < 0)
                 return r;
 

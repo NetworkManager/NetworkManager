@@ -25,6 +25,7 @@
 #include "fd-util.h"
 #include "fileio.h"
 #include "format-util.h"
+#include "io-util.h"
 #include "log.h"
 #include "macro.h"
 #include "memory-util.h"
@@ -823,10 +824,7 @@ ssize_t send_one_fd_iov_sa(
                 const struct sockaddr *sa, socklen_t len,
                 int flags) {
 
-        union {
-                struct cmsghdr cmsghdr;
-                uint8_t buf[CMSG_SPACE(sizeof(int))];
-        } control = {};
+        CMSG_BUFFER_TYPE(CMSG_SPACE(sizeof(int))) control = {};
         struct msghdr mh = {
                 .msg_name = (struct sockaddr*) sa,
                 .msg_namelen = len,
@@ -855,8 +853,6 @@ ssize_t send_one_fd_iov_sa(
                 cmsg->cmsg_type = SCM_RIGHTS;
                 cmsg->cmsg_len = CMSG_LEN(sizeof(int));
                 memcpy(CMSG_DATA(cmsg), &fd, sizeof(int));
-
-                mh.msg_controllen = CMSG_SPACE(sizeof(int));
         }
         k = sendmsg(transport_fd, &mh, MSG_NOSIGNAL | flags);
         if (k < 0)
@@ -882,17 +878,14 @@ ssize_t receive_one_fd_iov(
                 int flags,
                 int *ret_fd) {
 
-        union {
-                struct cmsghdr cmsghdr;
-                uint8_t buf[CMSG_SPACE(sizeof(int))];
-        } control = {};
+        CMSG_BUFFER_TYPE(CMSG_SPACE(sizeof(int))) control;
         struct msghdr mh = {
                 .msg_control = &control,
                 .msg_controllen = sizeof(control),
                 .msg_iov = iov,
                 .msg_iovlen = iovlen,
         };
-        struct cmsghdr *cmsg, *found = NULL;
+        struct cmsghdr *found;
         ssize_t k;
 
         assert(transport_fd >= 0);
@@ -906,26 +899,18 @@ ssize_t receive_one_fd_iov(
          * combination with send_one_fd().
          */
 
-        k = recvmsg(transport_fd, &mh, MSG_CMSG_CLOEXEC | flags);
+        k = recvmsg_safe(transport_fd, &mh, MSG_CMSG_CLOEXEC | flags);
         if (k < 0)
-                return (ssize_t) -errno;
+                return k;
 
-        CMSG_FOREACH(cmsg, &mh) {
-                if (cmsg->cmsg_level == SOL_SOCKET &&
-                    cmsg->cmsg_type == SCM_RIGHTS &&
-                    cmsg->cmsg_len == CMSG_LEN(sizeof(int))) {
-                        assert(!found);
-                        found = cmsg;
-                        break;
-                }
-        }
-
-        if (!found)
+        found = cmsg_find(&mh, SOL_SOCKET, SCM_RIGHTS, CMSG_LEN(sizeof(int)));
+        if (!found) {
                 cmsg_close_all(&mh);
 
-        /* If didn't receive an FD or any data, return an error. */
-        if (k == 0 && !found)
-                return -EIO;
+                /* If didn't receive an FD or any data, return an error. */
+                if (k == 0)
+                        return -EIO;
+        }
 
         if (found)
                 *ret_fd = *(int*) CMSG_DATA(found);
@@ -991,10 +976,6 @@ fallback:
 
 int flush_accept(int fd) {
 
-        struct pollfd pollfd = {
-                .fd = fd,
-                .events = POLLIN,
-        };
         int r, b;
         socklen_t l = sizeof(b);
 
@@ -1015,12 +996,12 @@ int flush_accept(int fd) {
         for (unsigned iteration = 0;; iteration++) {
                 int cfd;
 
-                r = poll(&pollfd, 1, 0);
+                r = fd_wait_for_event(fd, POLLIN, 0);
                 if (r < 0) {
-                        if (errno == EINTR)
+                        if (r == -EINTR)
                                 continue;
 
-                        return -errno;
+                        return r;
                 }
                 if (r == 0)
                         return 0;
@@ -1043,6 +1024,7 @@ int flush_accept(int fd) {
                 safe_close(cfd);
         }
 }
+#endif /* NM_IGNORED */
 
 struct cmsghdr* cmsg_find(struct msghdr *mh, int level, int type, socklen_t length) {
         struct cmsghdr *cmsg;
@@ -1058,6 +1040,7 @@ struct cmsghdr* cmsg_find(struct msghdr *mh, int level, int type, socklen_t leng
         return NULL;
 }
 
+#if 0 /* NM_IGNORED */
 int socket_ioctl_fd(void) {
         int fd;
 
@@ -1178,4 +1161,47 @@ int socket_bind_to_ifindex(int fd, int ifindex) {
                 return -errno;
 
         return socket_bind_to_ifname(fd, ifname);
+}
+
+ssize_t recvmsg_safe(int sockfd, struct msghdr *msg, int flags) {
+        ssize_t n;
+
+        /* A wrapper around recvmsg() that checks for MSG_CTRUNC, and turns it into an error, in a reasonably
+         * safe way, closing any SCM_RIGHTS fds in the error path.
+         *
+         * Note that unlike our usual coding style this might modify *msg on failure. */
+
+        n = recvmsg(sockfd, msg, flags);
+        if (n < 0)
+                return -errno;
+
+        if (FLAGS_SET(msg->msg_flags, MSG_CTRUNC)) {
+                cmsg_close_all(msg);
+                return -EXFULL; /* a recognizable error code */
+        }
+
+        return n;
+}
+
+int socket_pass_pktinfo(int fd, bool b) {
+        int af;
+        socklen_t sl = sizeof(af);
+
+        if (getsockopt(fd, SOL_SOCKET, SO_DOMAIN, &af, &sl) < 0)
+                return -errno;
+
+        switch (af) {
+
+        case AF_INET:
+                return setsockopt_int(fd, IPPROTO_IP, IP_PKTINFO, b);
+
+        case AF_INET6:
+                return setsockopt_int(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, b);
+
+        case AF_NETLINK:
+                return setsockopt_int(fd, SOL_NETLINK, NETLINK_PKTINFO, b);
+
+        default:
+                return -EAFNOSUPPORT;
+        }
 }

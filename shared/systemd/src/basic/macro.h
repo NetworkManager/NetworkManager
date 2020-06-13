@@ -84,6 +84,14 @@
 #define _variable_no_sanitize_address_
 #endif
 
+/* Apparently there's no has_feature() call defined to check for ubsan, hence let's define this
+ * unconditionally on llvm */
+#if defined(__clang__)
+#define _function_no_sanitize_float_cast_overflow_ __attribute__((no_sanitize("float-cast-overflow")))
+#else
+#define _function_no_sanitize_float_cast_overflow_
+#endif
+
 #if (defined (__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))) || defined (__clang__)
 /* Temporarily disable some warnings */
 #define DISABLE_WARNING_FORMAT_NONLITERAL                               \
@@ -114,6 +122,14 @@
 #  define DISABLE_WARNING_STRINGOP_TRUNCATION                           \
         _Pragma("GCC diagnostic push")
 #endif
+
+#define DISABLE_WARNING_FLOAT_EQUAL \
+        _Pragma("GCC diagnostic push");                                 \
+        _Pragma("GCC diagnostic ignored \"-Wfloat-equal\"")
+
+#define DISABLE_WARNING_TYPE_LIMITS \
+        _Pragma("GCC diagnostic push");                                 \
+        _Pragma("GCC diagnostic ignored \"-Wtype-limits\"")
 
 #define REENABLE_WARNING                                                \
         _Pragma("GCC diagnostic pop")
@@ -441,6 +457,8 @@ static inline int __coverity_check_and_return__(int condition) {
 
 #define char_array_0(x) x[sizeof(x)-1] = 0;
 
+#define sizeof_field(struct_type, member) sizeof(((struct_type *) 0)->member)
+
 /* Returns the number of chars needed to format variables of the
  * specified type as a decimal string. Adds in extra space for a
  * negative '-' prefix (hence works correctly on signed
@@ -460,8 +478,10 @@ static inline int __coverity_check_and_return__(int condition) {
                 ans;                                    \
         })
 
+#define UPDATE_FLAG(orig, flag, b)                      \
+        ((b) ? ((orig) | (flag)) : ((orig) & ~(flag)))
 #define SET_FLAG(v, flag, b) \
-        (v) = (b) ? ((v) | (flag)) : ((v) & ~(flag))
+        (v) = UPDATE_FLAG(v, flag, b)
 #define FLAGS_SET(v, flags) \
         ((~(v) & (flags)) == 0)
 
@@ -591,5 +611,18 @@ static inline int __coverity_check_and_return__(int condition) {
 #define DEFINE_PUBLIC_TRIVIAL_REF_UNREF_FUNC(type, name, free_func)    \
         DEFINE_PUBLIC_TRIVIAL_REF_FUNC(type, name);                    \
         DEFINE_PUBLIC_TRIVIAL_UNREF_FUNC(type, name, free_func);
+
+/* A macro to force copying of a variable from memory. This is useful whenever we want to read something from
+ * memory and want to make sure the compiler won't optimize away the destination variable for us. It's not
+ * supposed to be a full CPU memory barrier, i.e. CPU is still allowed to reorder the reads, but it is not
+ * allowed to remove our local copies of the variables. We want this to work for unaligned memory, hence
+ * memcpy() is great for our purposes. */
+#define READ_NOW(x)                                                     \
+        ({                                                              \
+                typeof(x) _copy;                                        \
+                memcpy(&_copy, &(x), sizeof(_copy));                    \
+                asm volatile ("" : : : "memory");                       \
+                _copy;                                                  \
+        })
 
 #include "log.h"

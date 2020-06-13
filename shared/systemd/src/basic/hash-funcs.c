@@ -11,12 +11,14 @@ void string_hash_func(const char *p, struct siphash *state) {
         siphash24_compress(p, strlen(p) + 1, state);
 }
 
-#if 0 /* NM_IGNORED */
 DEFINE_HASH_OPS(string_hash_ops, char, string_hash_func, string_compare_func);
+DEFINE_HASH_OPS_WITH_KEY_DESTRUCTOR(string_hash_ops_free,
+                                    char, string_hash_func, string_compare_func, free);
 DEFINE_HASH_OPS_FULL(string_hash_ops_free_free,
                      char, string_hash_func, string_compare_func, free,
                      char, free);
 
+#if 0 /* NM_IGNORED */
 void path_hash_func(const char *q, struct siphash *state) {
         size_t n;
 
@@ -56,6 +58,8 @@ void path_hash_func(const char *q, struct siphash *state) {
 }
 
 DEFINE_HASH_OPS(path_hash_ops, char, path_hash_func, path_compare);
+DEFINE_HASH_OPS_WITH_KEY_DESTRUCTOR(path_hash_ops_free,
+                                    char, path_hash_func, path_compare, free);
 #endif /* NM_IGNORED */
 
 void trivial_hash_func(const void *p, struct siphash *state) {

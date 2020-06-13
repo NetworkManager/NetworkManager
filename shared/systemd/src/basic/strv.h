@@ -14,8 +14,12 @@
 #include "string-util.h"
 
 char *strv_find(char * const *l, const char *name) _pure_;
+char *strv_find_case(char * const *l, const char *name) _pure_;
 char *strv_find_prefix(char * const *l, const char *name) _pure_;
 char *strv_find_startswith(char * const *l, const char *name) _pure_;
+
+#define strv_contains(l, s) (!!strv_find((l), (s)))
+#define strv_contains_case(l, s) (!!strv_find_case((l), (s)))
 
 char **strv_free(char **l);
 DEFINE_TRIVIAL_CLEANUP_FUNC(char**, strv_free);
@@ -53,8 +57,6 @@ int strv_compare(char * const *a, char * const *b);
 static inline bool strv_equal(char * const *a, char * const *b) {
         return strv_compare(a, b) == 0;
 }
-
-#define strv_contains(l, s) (!!strv_find((l), (s)))
 
 char **strv_new_internal(const char *x, ...) _sentinel_;
 char **strv_new_ap(const char *x, va_list ap);
@@ -104,14 +106,14 @@ bool strv_overlap(char * const *a, char * const *b) _pure_;
 
 #define STRV_FOREACH_BACKWARDS(s, l)                                \
         for (s = ({                                                 \
-                        char **_l = l;                              \
+                        typeof(l) _l = l;                           \
                         _l ? _l + strv_length(_l) - 1U : NULL;      \
                         });                                         \
              (l) && ((s) >= (l));                                   \
              (s)--)
 
 #define STRV_FOREACH_PAIR(x, y, l)               \
-        for ((x) = (l), (y) = (x+1); (x) && *(x) && *(y); (x) += 2, (y) = (x + 1))
+        for ((x) = (l), (y) = (x) ? (x+1) : NULL; (x) && *(x) && *(y); (x) += 2, (y) = (x + 1))
 
 char **strv_sort(char **l);
 void strv_print(char * const *l);
@@ -154,6 +156,13 @@ void strv_print(char * const *l);
         ({                                                       \
                 const char* _x = (x);                            \
                 _x && strv_contains(STRV_MAKE(__VA_ARGS__), _x); \
+        })
+
+#define STRCASE_IN_SET(x, ...) strv_contains_case(STRV_MAKE(__VA_ARGS__), x)
+#define STRCASEPTR_IN_SET(x, ...)                                    \
+        ({                                                       \
+                const char* _x = (x);                            \
+                _x && strv_contains_case(STRV_MAKE(__VA_ARGS__), _x); \
         })
 
 #define STARTSWITH_SET(p, ...)                                  \
@@ -217,5 +226,7 @@ int fputstrv(FILE *f, char * const *l, const char *separator, bool *space);
         })
 
 extern const struct hash_ops string_strv_hash_ops;
-int string_strv_hashmap_put(Hashmap **h, const char *key, const char *value);
-int string_strv_ordered_hashmap_put(OrderedHashmap **h, const char *key, const char *value);
+int _string_strv_hashmap_put(Hashmap **h, const char *key, const char *value  HASHMAP_DEBUG_PARAMS);
+int _string_strv_ordered_hashmap_put(OrderedHashmap **h, const char *key, const char *value  HASHMAP_DEBUG_PARAMS);
+#define string_strv_hashmap_put(h, k, v) _string_strv_hashmap_put(h, k, v  HASHMAP_DEBUG_SRC_ARGS)
+#define string_strv_ordered_hashmap_put(h, k, v) _string_strv_ordered_hashmap_put(h, k, v  HASHMAP_DEBUG_SRC_ARGS)

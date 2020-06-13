@@ -735,7 +735,8 @@ lease_to_ip6_config (NMDedupMultiIndex *multi_idx,
 {
 	gs_unref_object NMIP6Config *ip6_config = NULL;
 	gs_unref_hashtable GHashTable *options = NULL;
-	struct in6_addr tmp_addr, *dns;
+	struct in6_addr tmp_addr;
+	const struct in6_addr *dns;
 	uint32_t lft_pref, lft_valid;
 	char addr_str[NM_UTILS_INET_ADDRSTRLEN];
 	char **domains;

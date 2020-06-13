@@ -50,7 +50,6 @@ bool unichar_is_valid(char32_t ch) {
         return true;
 }
 
-#if 0 /* NM_IGNORED */
 static bool unichar_is_control(char32_t ch) {
 
         /*
@@ -62,7 +61,6 @@ static bool unichar_is_control(char32_t ch) {
         return (ch < ' ' && !IN_SET(ch, '\t', '\n')) ||
                 (0x7F <= ch && ch <= 0x9F);
 }
-#endif /* NM_IGNORED */
 
 /* count of characters used to encode one unicode char */
 static size_t utf8_encoded_expected_len(uint8_t c) {
@@ -127,7 +125,6 @@ int utf8_encoded_to_unichar(const char *str, char32_t *ret_unichar) {
         return 0;
 }
 
-#if 0 /* NM_IGNORED */
 bool utf8_is_printable_newline(const char* str, size_t length, bool newline) {
         const char *p;
 
@@ -154,7 +151,6 @@ bool utf8_is_printable_newline(const char* str, size_t length, bool newline) {
 
         return true;
 }
-#endif /* NM_IGNORED */
 
 char *utf8_is_valid(const char *str) {
         const char *p;
