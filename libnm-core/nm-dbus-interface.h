@@ -880,6 +880,8 @@ typedef enum /*< flags >*/ {
 #define NM_LLDP_ATTR_IEEE_802_3_POWER_VIA_MDI   "ieee-802-3-power-via-mdi"
 #define NM_LLDP_ATTR_IEEE_802_3_MAX_FRAME_SIZE  "ieee-802-3-max-frame-size"
 
+#define NM_LLDP_ATTR_MUD_URL                 "mud-url"
+
 /* These are deprecated in favor of NM_LLDP_ATTR_IEEE_802_1_VLANS,
  * which can report multiple VLANs */
 #define NM_LLDP_ATTR_IEEE_802_1_VID          "ieee-802-1-vid"

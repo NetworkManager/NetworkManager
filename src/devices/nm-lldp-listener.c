@@ -539,6 +539,7 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 		GVariant *v_ieee_802_3_mac_phy_conf = NULL;
 		GVariant *v_ieee_802_3_power_via_mdi = NULL;
 		GVariant *v_ieee_802_3_max_frame_size = NULL;
+		GVariant *v_mud_url = NULL;
 		GVariantBuilder tmp_builder;
 		GVariant *tmp_variant;
 
@@ -580,8 +581,7 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 				break;
 			}
 
-			if (   memcmp (oui, SD_LLDP_OUI_802_1, sizeof (oui)) != 0
-			    && memcmp (oui, SD_LLDP_OUI_802_3, sizeof (oui)) != 0)
+			if (len <= 6)
 				continue;
 
 			/* skip over leading TLV, OUI and subtype */
@@ -597,8 +597,6 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 				nm_assert (memcmp (data8, check_hdr, sizeof check_hdr) == 0);
 			}
 #endif
-			if (len <= 6)
-				continue;
 			data8 += 6;
 			len -= 6;
 
@@ -690,6 +688,19 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 						v_ieee_802_3_max_frame_size = g_variant_new_uint32 (unaligned_read_be16 (data8));
 					break;
 				}
+			} else if (memcmp (oui, SD_LLDP_OUI_MUD, sizeof (oui)) == 0) {
+				switch (subtype) {
+				case SD_LLDP_OUI_SUBTYPE_MUD_USAGE_DESCRIPTION:
+					if (!v_mud_url) {
+						gs_free char *s_free = NULL;
+						const char *s;
+
+						s = format_string (data8, len, TRUE, &s_free);
+						if (s)
+							v_mud_url = g_variant_new_string (s);
+					}
+					break;
+				}
 			}
 		} while (sd_lldp_neighbor_tlv_next (neigh->neighbor_sd) > 0);
 
@@ -713,6 +724,8 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 			nm_g_variant_builder_add_sv (&builder, NM_LLDP_ATTR_IEEE_802_3_POWER_VIA_MDI, v_ieee_802_3_power_via_mdi);
 		if (v_ieee_802_3_max_frame_size)
 			nm_g_variant_builder_add_sv (&builder, NM_LLDP_ATTR_IEEE_802_3_MAX_FRAME_SIZE, v_ieee_802_3_max_frame_size);
+		if (v_mud_url)
+			nm_g_variant_builder_add_sv (&builder, NM_LLDP_ATTR_MUD_URL, v_mud_url);
 	}
 
 	return (neigh->variant = g_variant_ref_sink (g_variant_builder_end (&builder)));
