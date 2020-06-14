@@ -353,6 +353,45 @@ format_network_address (const guint8 *data, gsize sz)
 	return nm_utils_inet_ntop_dup (family, &a);
 }
 
+static const char *
+format_string (const guint8 *data, gsize len, gboolean allow_trim, char **out_to_free)
+{
+	gboolean is_null_terminated = FALSE;
+
+	nm_assert (out_to_free && !*out_to_free);
+
+	if (allow_trim) {
+		while (   len > 0
+		       && data[len - 1] == '\0') {
+			is_null_terminated = TRUE;
+			len--;
+		}
+	}
+
+	if (len == 0)
+		return NULL;
+
+	if (memchr (data, len, '\0'))
+		return NULL;
+
+	return nm_utils_buf_utf8safe_escape (data,
+	                                     is_null_terminated ? -1 : (gssize) len,
+	                                       NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL
+	                                     | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII,
+	                                     out_to_free);
+}
+
+static char *
+format_string_cp (const guint8 *data, gsize len, gboolean allow_trim)
+{
+	char *s_free = NULL;
+	const char *s;
+
+	s = format_string (data, len, allow_trim, &s_free);
+	nm_assert (!s_free || s == s_free);
+	return s ? (s_free ?: g_strdup (s)) : NULL;
+}
+
 static LldpNeighbor *
 lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd)
 {
@@ -381,7 +420,7 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd)
 	case SD_LLDP_CHASSIS_SUBTYPE_PORT_COMPONENT:
 	case SD_LLDP_CHASSIS_SUBTYPE_INTERFACE_NAME:
 	case SD_LLDP_CHASSIS_SUBTYPE_LOCALLY_ASSIGNED:
-		s_chassis_id = nm_utils_buf_utf8safe_escape_cp (chassis_id, chassis_id_len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII);
+		s_chassis_id = format_string_cp (chassis_id, chassis_id_len, FALSE);
 		break;
 	case SD_LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS:
 		s_chassis_id = nm_utils_hwaddr_ntoa (chassis_id, chassis_id_len);
@@ -402,7 +441,7 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd)
 	case SD_LLDP_PORT_SUBTYPE_PORT_COMPONENT:
 	case SD_LLDP_PORT_SUBTYPE_INTERFACE_NAME:
 	case SD_LLDP_PORT_SUBTYPE_LOCALLY_ASSIGNED:
-		s_port_id = nm_utils_buf_utf8safe_escape_cp (port_id, port_id_len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII);
+		s_port_id = format_string_cp (port_id, port_id_len, FALSE);
 		break;
 	case SD_LLDP_PORT_SUBTYPE_MAC_ADDRESS:
 		s_port_id = nm_utils_hwaddr_ntoa (port_id, port_id_len);
@@ -588,7 +627,7 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 					gs_free char *name_to_free = NULL;
 					const char *name;
 					guint32 vid;
-					int l;
+					gsize l;
 
 					if (len <= 3)
 						continue;
@@ -599,9 +638,11 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 					if (l > 32)
 						continue;
 
-					name = nm_utils_buf_utf8safe_escape (&data8[3], l, 0, &name_to_free);
-					vid = unaligned_read_be16 (&data8[0]);
+					name = format_string (&data8[3], l, TRUE, &name_to_free);
+					if (!name)
+						continue;
 
+					vid = unaligned_read_be16 (&data8[0]);
 					if (!v_ieee_802_1_vid) {
 						v_ieee_802_1_vid = g_variant_new_uint32 (vid);
 						v_ieee_802_1_vlan_name = g_variant_new_string (name);
