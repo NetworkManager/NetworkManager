@@ -5428,7 +5428,7 @@ gboolean
 nm_utils_is_json_object (const char *str, GError **error)
 {
 #if WITH_JSON_VALIDATION
-	json_t *json;
+	nm_auto_decref_json json_t *json = NULL;
 	json_error_t jerror;
 
 	g_return_val_if_fail (!error || !*error, FALSE);
@@ -5465,7 +5465,6 @@ nm_utils_is_json_object (const char *str, GError **error)
 		return FALSE;
 	}
 
-	json_decref (json);
 	return TRUE;
 #else /* !WITH_JSON_VALIDATION */
 	g_return_val_if_fail (!error || !*error, FALSE);
