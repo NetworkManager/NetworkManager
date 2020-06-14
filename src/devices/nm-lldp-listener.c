@@ -329,7 +329,8 @@ parse_management_address_tlv (const uint8_t *data, gsize len)
 	nm_g_variant_builder_add_sv_bytearray (&builder, "address", v_address_arr, v_address_len);
 	nm_g_variant_builder_add_sv_uint32 (&builder, "interface-number-subtype", v_interface_number_subtype);
 	nm_g_variant_builder_add_sv_uint32 (&builder, "interface-number", v_interface_number);
-	nm_g_variant_builder_add_sv_bytearray (&builder, "object-id", v_object_id_arr, v_object_id_len);
+	if (v_object_id_len > 0)
+		nm_g_variant_builder_add_sv_bytearray (&builder, "object-id", v_object_id_arr, v_object_id_len);
 	return g_variant_builder_end (&builder);
 }
 
