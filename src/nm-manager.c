@@ -5023,27 +5023,6 @@ _new_active_connection (NMManager *self,
 	                                                  device);
 }
 
-static gboolean
-active_connection_master_changed (NMActiveConnection *ac)
-{
-	NMConnection *applied, *connection;
-	NMSettingsConnection *settings;
-	NMSettingConnection *s_con1, *s_con2;
-
-	applied = nm_active_connection_get_applied_connection (ac);
-	settings = nm_active_connection_get_settings_connection (ac);
-	connection = nm_settings_connection_get_connection (settings);
-
-	if (applied == connection)
-		return FALSE;
-
-	s_con1 = nm_connection_get_setting_connection (applied);
-	s_con2 = nm_connection_get_setting_connection (connection);
-
-	return !nm_streq0 (nm_setting_connection_get_master (s_con1),
-	                   nm_setting_connection_get_master (s_con2));
-}
-
 static void
 _internal_activation_auth_done (NMManager *self,
                                 NMActiveConnection *active,
@@ -5053,7 +5032,6 @@ _internal_activation_auth_done (NMManager *self,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMActiveConnection *ac;
 	gs_free_error GError *error = NULL;
-	NMActivationReason reason;
 
 	nm_assert (NM_IS_ACTIVE_CONNECTION (active));
 
@@ -5065,20 +5043,13 @@ _internal_activation_auth_done (NMManager *self,
 	 * We also check this earlier, but there we may fail to detect a duplicate
 	 * if the existing active connection was undergoing authorization.
 	 */
-	reason = nm_active_connection_get_activation_reason (active);
-	if (NM_IN_SET (reason, NM_ACTIVATION_REASON_EXTERNAL,
-	                       NM_ACTIVATION_REASON_ASSUME,
-	                       NM_ACTIVATION_REASON_AUTOCONNECT,
-	                       NM_ACTIVATION_REASON_AUTOCONNECT_SLAVES)) {
+	if (NM_IN_SET (nm_active_connection_get_activation_reason (active), NM_ACTIVATION_REASON_EXTERNAL,
+	                                                                    NM_ACTIVATION_REASON_ASSUME,
+	                                                                    NM_ACTIVATION_REASON_AUTOCONNECT)) {
 		c_list_for_each_entry (ac, &priv->active_connections_lst_head, active_connections_lst) {
 			if (   nm_active_connection_get_device (ac) == nm_active_connection_get_device (active)
 			    && nm_active_connection_get_settings_connection (ac) == nm_active_connection_get_settings_connection (active)
 			    && nm_active_connection_get_state (ac) <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
-
-				if (   reason == NM_ACTIVATION_REASON_AUTOCONNECT_SLAVES
-				    && active_connection_master_changed (ac))
-					break;
-
 				g_set_error (&error,
 				             NM_MANAGER_ERROR,
 				             NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,
