@@ -329,7 +329,8 @@ parse_management_address_tlv (const uint8_t *data, gsize len)
 	nm_g_variant_builder_add_sv_bytearray (&builder, "address", v_address_arr, v_address_len);
 	nm_g_variant_builder_add_sv_uint32 (&builder, "interface-number-subtype", v_interface_number_subtype);
 	nm_g_variant_builder_add_sv_uint32 (&builder, "interface-number", v_interface_number);
-	nm_g_variant_builder_add_sv_bytearray (&builder, "object-id", v_object_id_arr, v_object_id_len);
+	if (v_object_id_len > 0)
+		nm_g_variant_builder_add_sv_bytearray (&builder, "object-id", v_object_id_arr, v_object_id_len);
 	return g_variant_builder_end (&builder);
 }
 
@@ -351,6 +352,45 @@ format_network_address (const guint8 *data, gsize sz)
 		return NULL;
 
 	return nm_utils_inet_ntop_dup (family, &a);
+}
+
+static const char *
+format_string (const guint8 *data, gsize len, gboolean allow_trim, char **out_to_free)
+{
+	gboolean is_null_terminated = FALSE;
+
+	nm_assert (out_to_free && !*out_to_free);
+
+	if (allow_trim) {
+		while (   len > 0
+		       && data[len - 1] == '\0') {
+			is_null_terminated = TRUE;
+			len--;
+		}
+	}
+
+	if (len == 0)
+		return NULL;
+
+	if (memchr (data, len, '\0'))
+		return NULL;
+
+	return nm_utils_buf_utf8safe_escape (data,
+	                                     is_null_terminated ? -1 : (gssize) len,
+	                                       NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL
+	                                     | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII,
+	                                     out_to_free);
+}
+
+static char *
+format_string_cp (const guint8 *data, gsize len, gboolean allow_trim)
+{
+	char *s_free = NULL;
+	const char *s;
+
+	s = format_string (data, len, allow_trim, &s_free);
+	nm_assert (!s_free || s == s_free);
+	return s ? (s_free ?: g_strdup (s)) : NULL;
 }
 
 static LldpNeighbor *
@@ -381,7 +421,7 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd)
 	case SD_LLDP_CHASSIS_SUBTYPE_PORT_COMPONENT:
 	case SD_LLDP_CHASSIS_SUBTYPE_INTERFACE_NAME:
 	case SD_LLDP_CHASSIS_SUBTYPE_LOCALLY_ASSIGNED:
-		s_chassis_id = nm_utils_buf_utf8safe_escape_cp (chassis_id, chassis_id_len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII);
+		s_chassis_id = format_string_cp (chassis_id, chassis_id_len, FALSE);
 		break;
 	case SD_LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS:
 		s_chassis_id = nm_utils_hwaddr_ntoa (chassis_id, chassis_id_len);
@@ -402,7 +442,7 @@ lldp_neighbor_new (sd_lldp_neighbor *neighbor_sd)
 	case SD_LLDP_PORT_SUBTYPE_PORT_COMPONENT:
 	case SD_LLDP_PORT_SUBTYPE_INTERFACE_NAME:
 	case SD_LLDP_PORT_SUBTYPE_LOCALLY_ASSIGNED:
-		s_port_id = nm_utils_buf_utf8safe_escape_cp (port_id, port_id_len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII);
+		s_port_id = format_string_cp (port_id, port_id_len, FALSE);
 		break;
 	case SD_LLDP_PORT_SUBTYPE_MAC_ADDRESS:
 		s_port_id = nm_utils_hwaddr_ntoa (port_id, port_id_len);
@@ -500,6 +540,7 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 		GVariant *v_ieee_802_3_mac_phy_conf = NULL;
 		GVariant *v_ieee_802_3_power_via_mdi = NULL;
 		GVariant *v_ieee_802_3_max_frame_size = NULL;
+		GVariant *v_mud_url = NULL;
 		GVariantBuilder tmp_builder;
 		GVariant *tmp_variant;
 
@@ -541,8 +582,7 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 				break;
 			}
 
-			if (   memcmp (oui, SD_LLDP_OUI_802_1, sizeof (oui)) != 0
-			    && memcmp (oui, SD_LLDP_OUI_802_3, sizeof (oui)) != 0)
+			if (len <= 6)
 				continue;
 
 			/* skip over leading TLV, OUI and subtype */
@@ -558,8 +598,6 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 				nm_assert (memcmp (data8, check_hdr, sizeof check_hdr) == 0);
 			}
 #endif
-			if (len <= 6)
-				continue;
 			data8 += 6;
 			len -= 6;
 
@@ -588,7 +626,7 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 					gs_free char *name_to_free = NULL;
 					const char *name;
 					guint32 vid;
-					int l;
+					gsize l;
 
 					if (len <= 3)
 						continue;
@@ -599,9 +637,11 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 					if (l > 32)
 						continue;
 
-					name = nm_utils_buf_utf8safe_escape (&data8[3], l, 0, &name_to_free);
-					vid = unaligned_read_be16 (&data8[0]);
+					name = format_string (&data8[3], l, TRUE, &name_to_free);
+					if (!name)
+						continue;
 
+					vid = unaligned_read_be16 (&data8[0]);
 					if (!v_ieee_802_1_vid) {
 						v_ieee_802_1_vid = g_variant_new_uint32 (vid);
 						v_ieee_802_1_vlan_name = g_variant_new_string (name);
@@ -649,6 +689,19 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 						v_ieee_802_3_max_frame_size = g_variant_new_uint32 (unaligned_read_be16 (data8));
 					break;
 				}
+			} else if (memcmp (oui, SD_LLDP_OUI_MUD, sizeof (oui)) == 0) {
+				switch (subtype) {
+				case SD_LLDP_OUI_SUBTYPE_MUD_USAGE_DESCRIPTION:
+					if (!v_mud_url) {
+						gs_free char *s_free = NULL;
+						const char *s;
+
+						s = format_string (data8, len, TRUE, &s_free);
+						if (s)
+							v_mud_url = g_variant_new_string (s);
+					}
+					break;
+				}
 			}
 		} while (sd_lldp_neighbor_tlv_next (neigh->neighbor_sd) > 0);
 
@@ -672,6 +725,8 @@ lldp_neighbor_to_variant (LldpNeighbor *neigh)
 			nm_g_variant_builder_add_sv (&builder, NM_LLDP_ATTR_IEEE_802_3_POWER_VIA_MDI, v_ieee_802_3_power_via_mdi);
 		if (v_ieee_802_3_max_frame_size)
 			nm_g_variant_builder_add_sv (&builder, NM_LLDP_ATTR_IEEE_802_3_MAX_FRAME_SIZE, v_ieee_802_3_max_frame_size);
+		if (v_mud_url)
+			nm_g_variant_builder_add_sv (&builder, NM_LLDP_ATTR_MUD_URL, v_mud_url);
 	}
 
 	return (neigh->variant = g_variant_ref_sink (g_variant_builder_end (&builder)));
