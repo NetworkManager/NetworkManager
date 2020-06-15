@@ -1289,9 +1289,10 @@ if test "$build_docs" != "yes" -a \
         -f "$srcdir"/man/nm-settings-keyfile.5 -a \
         -f "$srcdir"/man/nm-settings-nmcli.5 -a \
         \
-        -f "$srcdir"/man/nm-settings.xml -a \
-        -f "$srcdir"/man/nm-settings-keyfile.xml -a \
+        -f "$srcdir"/man/nm-settings-dbus.xml -a \
         -f "$srcdir"/man/nm-settings-ifcfg-rh.xml -a \
+        -f "$srcdir"/man/nm-settings-keyfile.xml -a \
+        -f "$srcdir"/man/nm-settings-nmcli.xml -a \
         \
         -f "$srcdir"/docs/api/settings-spec.xml; then
 	use_pregen_docs=yes
