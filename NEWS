@@ -37,7 +37,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Add support for a number of bridge options.
 * Add match for device path, driver and kernel command line for connection
   profiles.
-
+* Fix support for OVS patch interfaces.
+* Support more tc qdiscs: tbf and sfq.
 
 =============================================
 NetworkManager-1.24
