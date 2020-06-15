@@ -1589,10 +1589,10 @@ libnm/nm-settings-docs-gir.xml: tools/generate-docs-nm-settings-docs-gir.py libn
 		--gir $(builddir)/libnm/NM-1.0.gir \
 		--output $@
 
-man/nm-settings-docs-nmcli.xml: clients/cli/generate-docs-nm-settings-nmcli.xml libnm/nm-property-infos-nmcli.xml libnm/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py
+man/nm-settings-docs-nmcli.xml: clients/cli/generate-docs-nm-settings-nmcli.xml libnm/nm-property-infos-nmcli.xml libnm/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py man/common.ent
 	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/tools/generate-docs-nm-settings-docs-merge.py --only-from-first $@ $(wordlist 1,3,$^)
 
-man/nm-settings-docs-%.xml: libnm/nm-property-infos-%.xml libnm/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py
+man/nm-settings-docs-%.xml: libnm/nm-property-infos-%.xml libnm/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py man/common.ent
 	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/tools/generate-docs-nm-settings-docs-merge.py $@ $(wordlist 1,2,$^)
 
 EXTRA_DIST += $(libnm_noinst_data)
