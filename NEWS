@@ -18,6 +18,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   where the iptables rules would not be sufficient.
 * Add MUD URL property for connection profiles (RFC 8520) and set it
   for DHCP and DHCPv6 requests.
+* Expose raw LLDP message on D-Bus and the MUD usage description URL.
 * ifcfg-rh: handle "802-1x.{,phase2-}ca-path". Otherwise setting this
   property silently fails and a profile might accidentally not perform
   any authentication (CVE-2020-10754).
@@ -30,6 +31,13 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   failed. This means, an initial failure to autoconnect to the network will
   no longer block the automatism. A side effect is that existing Wi-Fi profiles
   which previously were blocked may now start to autoconnect.
+* Introduce new manual pages nm-settings-dbus and nm-settings-nmcli.
+* Mark externally managed devices and profiles on D-Bus.
+* Highlight externally managed devices in nmcli.
+* Add support for a number of bridge options.
+* Add match for device path, driver and kernel command line for connection
+  profiles.
+
 
 =============================================
 NetworkManager-1.24
