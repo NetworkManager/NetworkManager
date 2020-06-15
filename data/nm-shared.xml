@@ -20,4 +20,5 @@
   <protocol value='ipv6-icmp'/>
   <service name="dhcp"/>
   <service name="dns"/>
+  <service name="ssh"/>
 </zone>
