@@ -1214,6 +1214,7 @@ static const NMVariantAttributeSpec *const ip_route_attribute_spec[] = {
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_SRC,           G_VARIANT_TYPE_STRING,  .v4 = TRUE, .v6 = TRUE, .str_type = 'a', ),
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_TABLE,         G_VARIANT_TYPE_UINT32,  .v4 = TRUE, .v6 = TRUE,                  ),
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_TOS,           G_VARIANT_TYPE_BYTE,    .v4 = TRUE,                              ),
+	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_TYPE,          G_VARIANT_TYPE_STRING,  .v4 = TRUE, .v6 = TRUE, .str_type = 'T', ),
 	NM_VARIANT_ATTRIBUTE_SPEC_DEFINE (NM_IP_ROUTE_ATTRIBUTE_WINDOW,        G_VARIANT_TYPE_UINT32,  .v4 = TRUE, .v6 = TRUE,                  ),
 	NULL,
 };
@@ -1339,6 +1340,18 @@ nm_ip_route_attribute_validate  (const char *name,
 			}
 			break;
 		}
+		case 'T': /* route type. */
+			if (!NM_IN_SET (nm_utils_route_type_by_name (string),
+			                RTN_UNICAST,
+			                RTN_LOCAL)) {
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("%s is not a valid route type"),
+				             string);
+				return FALSE;
+			}
+			break;
 		default:
 			break;
 		}
@@ -1348,22 +1361,48 @@ nm_ip_route_attribute_validate  (const char *name,
 }
 
 gboolean
-_nm_ip_route_attribute_validate_all (const NMIPRoute *route)
+_nm_ip_route_attribute_validate_all (const NMIPRoute *route, GError **error)
 {
 	GHashTableIter iter;
 	const char *key;
 	GVariant *val;
+	guint8 u8;
 
 	g_return_val_if_fail (route, FALSE);
+	g_return_val_if_fail (!error || !*error, FALSE);
 
 	if (!route->attributes)
 		return TRUE;
 
 	g_hash_table_iter_init (&iter, route->attributes);
 	while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &val)) {
-		if (!nm_ip_route_attribute_validate (key, val, route->family, NULL, NULL))
+		if (!nm_ip_route_attribute_validate (key, val, route->family, NULL, error))
 			return FALSE;
 	}
+
+	if ((val = g_hash_table_lookup (route->attributes,
+	                                NM_IP_ROUTE_ATTRIBUTE_TYPE))) {
+		nm_assert (g_variant_is_of_type (val, G_VARIANT_TYPE_STRING));
+		u8 = nm_utils_route_type_by_name (g_variant_get_string (val, NULL));
+
+		if (   u8 == RTN_LOCAL
+		    && route->family == AF_INET
+		    && (val = g_hash_table_lookup (route->attributes, NM_IP_ROUTE_ATTRIBUTE_SCOPE))) {
+			nm_assert (g_variant_is_of_type (val, G_VARIANT_TYPE_BYTE));
+			u8 = g_variant_get_byte (val);
+
+			if (!NM_IN_SET(u8,
+			               RT_SCOPE_HOST,
+			               RT_SCOPE_NOWHERE)) {
+				g_set_error (error,
+				             NM_CONNECTION_ERROR,
+				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+				             _("route scope is invalid"));
+				return FALSE;
+			}
+		}
+	}
+
 	return TRUE;
 }
 
@@ -5020,6 +5059,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 
 	/* Validate routes */
 	for (i = 0; i < priv->routes->len; i++) {
+		gs_free_error GError *local = NULL;
 		NMIPRoute *route = (NMIPRoute *) priv->routes->pdata[i];
 
 		if (nm_ip_route_get_family (route) != NM_SETTING_IP_CONFIG_GET_FAMILY (setting)) {
@@ -5029,6 +5069,19 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			             _("%d. route is invalid"),
 			             (int) (i + 1));
 			g_prefix_error (error, "%s.%s: ", nm_setting_get_name (setting), NM_SETTING_IP_CONFIG_ROUTES);
+			return FALSE;
+		}
+
+		if (!_nm_ip_route_attribute_validate_all (route, &local)) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("invalid attribute: %s"),
+			             local->message);
+			g_prefix_error (error,
+			                "%s.%s: ",
+			                nm_setting_get_name (setting),
+			                NM_SETTING_IP_CONFIG_ROUTES);
 			return FALSE;
 		}
 	}

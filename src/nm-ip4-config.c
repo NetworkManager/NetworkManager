@@ -860,8 +860,26 @@ _nm_ip_config_merge_route_attributes (int addr_family,
 			(dst) = (dflt); \
 	} G_STMT_END
 
+	if (   (variant = nm_ip_route_get_attribute (s_route, NM_IP_ROUTE_ATTRIBUTE_TYPE))
+	    && g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING)) {
+		guint8 type;
+
+		type = nm_utils_route_type_by_name (g_variant_get_string (variant, NULL));
+		nm_assert (NM_IN_SET (type,
+		                      RTN_UNICAST,
+		                      RTN_LOCAL));
+
+		r->type_coerced = nm_platform_route_type_coerce (type);
+	} else
+		r->type_coerced = nm_platform_route_type_coerce (RTN_UNICAST);
+
 	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_TABLE, table, UINT32, uint32, 0);
-	r->table_coerced = nm_platform_route_table_coerce (table ?: (route_table ?: RT_TABLE_MAIN));
+
+	if (   !table
+	    && r->type_coerced == nm_platform_route_type_coerce (RTN_LOCAL))
+		r->table_coerced = nm_platform_route_table_coerce (RT_TABLE_LOCAL);
+	else
+		r->table_coerced = nm_platform_route_table_coerce (table ?: (route_table ?: RT_TABLE_MAIN));
 
 	if (addr_family == AF_INET) {
 		guint8 scope;

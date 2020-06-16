@@ -800,6 +800,7 @@ typedef struct {
 	union {
 		guint8 uint8;
 		guint32 uint32;
+		const char *str;
 		struct {
 			guint32 uint32;
 			bool lock:1;
@@ -815,6 +816,7 @@ typedef struct {
 
 enum {
 	/* route attributes */
+	PARSE_LINE_ATTR_ROUTE_TYPE,
 	PARSE_LINE_ATTR_ROUTE_TABLE,
 	PARSE_LINE_ATTR_ROUTE_SRC,
 	PARSE_LINE_ATTR_ROUTE_FROM,
@@ -844,6 +846,7 @@ enum {
 #define PARSE_LINE_TYPE_IFNAME            'i'
 #define PARSE_LINE_TYPE_FLAG              'f'
 #define PARSE_LINE_TYPE_ROUTE_SCOPE       'S'
+#define PARSE_LINE_TYPE_STRING            's'
 
 /**
  * parse_route_line:
@@ -875,6 +878,8 @@ parse_route_line (const char *line,
                   GError **error)
 {
 	static const ParseLineInfo parse_infos[] = {
+		[PARSE_LINE_ATTR_ROUTE_TYPE]      = { .key = NM_IP_ROUTE_ATTRIBUTE_TYPE,
+		                                      .type = PARSE_LINE_TYPE_STRING, },
 		[PARSE_LINE_ATTR_ROUTE_TABLE]     = { .key = NM_IP_ROUTE_ATTRIBUTE_TABLE,
 		                                      .type = PARSE_LINE_TYPE_UINT32, },
 		[PARSE_LINE_ATTR_ROUTE_SRC]       = { .key = NM_IP_ROUTE_ATTRIBUTE_SRC,
@@ -1008,6 +1013,23 @@ parse_route_line (const char *line,
 			default:
 				nm_assert_not_reached ();
 			}
+		}
+
+		p_info = &parse_infos[PARSE_LINE_ATTR_ROUTE_TYPE];
+		p_data = &parse_datas[PARSE_LINE_ATTR_ROUTE_TYPE];
+		if (   !p_data->has
+		    && NM_IN_STRSET (w,
+		                     "local",
+		                     "unicast",
+		                     "broadcast"
+		                     "multicast",
+		                     "throw",
+		                     "unreachable",
+		                     "prohibit",
+		                     "blackhole",
+		                     "nat")) {
+			p_data->has = TRUE;
+			goto parse_line_type_string;
 		}
 
 		/* "to" is also accepted unqualified... (once) */
@@ -1160,6 +1182,15 @@ parse_line_type_addr_with_prefix:
 		i_words++;
 		goto next;
 
+parse_line_type_string:
+		s = words[i_words];
+		if (!s)
+			goto err_word_missing_argument;
+
+		p_data->v.str = s;
+		i_words++;
+		goto next;
+
 err_word_missing_argument:
 		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "Missing argument for \"%s\"", w);
@@ -1253,13 +1284,18 @@ next:
 			                           p_info->key,
 			                           g_variant_new_boolean (TRUE));
 			break;
+		case PARSE_LINE_TYPE_STRING:
+			nm_ip_route_set_attribute (route,
+			                           p_info->key,
+			                           g_variant_new_string (p_data->v.str));
+			break;
 		default:
 			nm_assert_not_reached ();
 			break;
 		}
 	}
 
-	nm_assert (_nm_ip_route_attribute_validate_all (route));
+	nm_assert (_nm_ip_route_attribute_validate_all (route, NULL));
 
 	NM_SET_OUT (out_route, g_steal_pointer (&route));
 	return 0;
