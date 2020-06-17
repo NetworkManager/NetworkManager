@@ -1996,11 +1996,10 @@ nm_settings_update_connection (NMSettings *self,
 		 */
 		device = nm_settings_connection_default_wired_get_device (sett_conn);
 		if (device) {
+
 			nm_assert (cur_in_memory);
-			nm_assert (!NM_FLAGS_ANY (nm_settings_connection_get_flags (sett_conn),
-			                            NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
-			                          | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
-			                          | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL));
+			nm_assert (NM_FLAGS_HAS (nm_settings_connection_get_flags (sett_conn),
+			                         NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED));
 
 			default_wired_clear_tag (self, device, sett_conn, FALSE);
 
