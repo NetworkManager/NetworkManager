@@ -796,6 +796,7 @@ finalize (GObject *object)
 	nm_clear_pointer (&self->interface_name, g_array_unref);
 	nm_clear_pointer (&self->kernel_command_line, g_array_unref);
 	nm_clear_pointer (&self->driver, g_array_unref);
+	nm_clear_pointer (&self->path, g_array_unref);
 
 	G_OBJECT_CLASS (nm_setting_match_parent_class)->finalize (object);
 }
