@@ -2515,7 +2515,7 @@ make_tc_setting (shvarFile *ifcfg)
 		NMTCTfilter *tfilter = NULL;
 		gs_free char *value_to_free = NULL;
 		const char *value = NULL;
-		GError *local = NULL;
+		gs_free_error GError *local = NULL;
 
 		value = svGetValueStr (ifcfg, numbered_tag (tag, "FILTER", i), &value_to_free);
 		if (!value)
