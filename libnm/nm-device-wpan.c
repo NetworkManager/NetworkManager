@@ -25,7 +25,7 @@ G_DEFINE_TYPE (NMDeviceWpan, nm_device_wpan, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 /**
- * nm_device_wpan_get_hw_address:
+ * nm_device_wpan_get_hw_address: (skip)
  * @device: a #NMDeviceWpan
  *
  * Gets the active hardware (MAC) address of the #NMDeviceWpan

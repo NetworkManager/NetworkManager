@@ -42,7 +42,7 @@ G_DEFINE_TYPE (NMDeviceBt, nm_device_bt, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 /**
- * nm_device_bt_get_hw_address:
+ * nm_device_bt_get_hw_address: (skip)
  * @device: a #NMDeviceBt
  *
  * Gets the hardware (MAC) address of the #NMDeviceBt

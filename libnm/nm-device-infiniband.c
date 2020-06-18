@@ -38,7 +38,7 @@ G_DEFINE_TYPE (NMDeviceInfiniband, nm_device_infiniband, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 /**
- * nm_device_infiniband_get_hw_address:
+ * nm_device_infiniband_get_hw_address: (skip)
  * @device: a #NMDeviceInfiniband
  *
  * Gets the hardware (MAC) address of the #NMDeviceInfiniband

@@ -41,7 +41,7 @@ G_DEFINE_TYPE (NMDeviceBridge, nm_device_bridge, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 /**
- * nm_device_bridge_get_hw_address:
+ * nm_device_bridge_get_hw_address: (skip)
  * @device: a #NMDeviceBridge
  *
  * Gets the hardware (MAC) address of the #NMDeviceBridge

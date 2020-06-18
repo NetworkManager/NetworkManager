@@ -77,7 +77,7 @@ nm_device_macsec_get_parent (NMDeviceMacsec *device)
 }
 
 /**
- * nm_device_macsec_get_hw_address:
+ * nm_device_macsec_get_hw_address: (skip)
  * @device: a #NMDeviceMacsec
  *
  * Gets the hardware (MAC) address of the #NMDeviceMacsec

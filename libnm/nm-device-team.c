@@ -43,7 +43,7 @@ G_DEFINE_TYPE (NMDeviceTeam, nm_device_team, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 /**
- * nm_device_team_get_hw_address:
+ * nm_device_team_get_hw_address: (skip)
  * @device: a #NMDeviceTeam
  *
  * Gets the hardware (MAC) address of the #NMDeviceTeam
