@@ -345,7 +345,8 @@ _poll_timeout_cb (gpointer user_data)
 {
 	PollTaskData *poll_task_data = user_data;
 
-	_poll_return (poll_task_data, FALSE, NULL);
+	_poll_return (poll_task_data, FALSE, nm_utils_error_new (NM_UTILS_ERROR_UNKNOWN,
+	                                                         "timeout expired"));
 	return G_SOURCE_CONTINUE;
 }
 
