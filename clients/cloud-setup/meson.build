@@ -28,6 +28,7 @@ sources = files(
   'nm-cloud-setup-utils.c',
   'nm-http-client.c',
   'nmcs-provider-ec2.c',
+  'nmcs-provider-gcp.c',
   'nmcs-provider.c',
 )
 

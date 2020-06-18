@@ -12,6 +12,7 @@ ExecStart=@libexecdir@/nm-cloud-setup
 # Opt-in by setting the right environment variable for
 # the provider.
 #Environment=NM_CLOUD_SETUP_EC2=yes
+#Environment=NM_CLOUD_SETUP_GCP=yes
 
 CapabilityBoundingSet=
 LockPersonality=yes
