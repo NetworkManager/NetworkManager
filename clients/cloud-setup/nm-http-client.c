@@ -657,7 +657,7 @@ static gboolean
 _mhandle_timeout_cb (gpointer user_data)
 {
 	_mhandle_action (user_data, CURL_SOCKET_TIMEOUT, 0);
-	return G_SOURCE_CONTINUE;
+	return G_SOURCE_REMOVE;
 }
 
 static int
