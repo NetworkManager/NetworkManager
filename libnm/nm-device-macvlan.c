@@ -116,7 +116,7 @@ nm_device_macvlan_get_tap (NMDeviceMacvlan *device)
 }
 
 /**
- * nm_device_macvlan_get_hw_address:
+ * nm_device_macvlan_get_hw_address: (skip)
  * @device: a #NMDeviceMacvlan
  *
  * Gets the hardware (MAC) address of the #NMDeviceMacvlan

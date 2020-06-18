@@ -50,7 +50,7 @@ G_DEFINE_TYPE (NMDeviceTun, nm_device_tun, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 /**
- * nm_device_tun_get_hw_address:
+ * nm_device_tun_get_hw_address: (skip)
  * @device: a #NMDeviceTun
  *
  * Gets the hardware (MAC) address of the #NMDeviceTun

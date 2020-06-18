@@ -37,7 +37,7 @@ G_DEFINE_TYPE (NMDeviceGeneric, nm_device_generic, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 /**
- * nm_device_generic_get_hw_address:
+ * nm_device_generic_get_hw_address: (skip)
  * @device: a #NMDeviceGeneric
  *
  * Gets the hardware address of the #NMDeviceGeneric

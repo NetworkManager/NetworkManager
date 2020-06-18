@@ -40,7 +40,7 @@ G_DEFINE_TYPE (NMDeviceOlpcMesh, nm_device_olpc_mesh, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 /**
- * nm_device_olpc_mesh_get_hw_address:
+ * nm_device_olpc_mesh_get_hw_address: (skip)
  * @device: a #NMDeviceOlpcMesh
  *
  * Gets the hardware (MAC) address of the #NMDeviceOlpcMesh

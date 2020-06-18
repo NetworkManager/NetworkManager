@@ -43,7 +43,7 @@ G_DEFINE_TYPE (NMDeviceVlan, nm_device_vlan, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 /**
- * nm_device_vlan_get_hw_address:
+ * nm_device_vlan_get_hw_address: (skip)
  * @device: a #NMDeviceVlan
  *
  * Gets the hardware (MAC) address of the #NMDeviceVlan

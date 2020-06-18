@@ -42,7 +42,7 @@ G_DEFINE_TYPE (NMDeviceBond, nm_device_bond, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 /**
- * nm_device_bond_get_hw_address:
+ * nm_device_bond_get_hw_address: (skip)
  * @device: a #NMDeviceBond
  *
  * Gets the hardware (MAC) address of the #NMDeviceBond
