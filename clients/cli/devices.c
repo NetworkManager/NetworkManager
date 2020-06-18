@@ -4192,7 +4192,6 @@ do_device_wifi_hotspot (const NMCCommand *cmd, NmCli *nmc, int argc, const char 
 		g_return_if_fail (s_wsec);
 
 		if (!set_wireless_security_for_hotspot (s_wsec, wifi_mode, caps, password, show_password, &error)) {
-			g_object_unref (connection);
 			g_string_printf (nmc->return_text, _("Error: Invalid 'password': %s."), error->message);
 			g_clear_error (&error);
 			nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
