@@ -114,6 +114,7 @@ _iface_data_free (gpointer data)
 	NMCSProviderGetConfigIfaceData *iface_data = data;
 
 	g_free (iface_data->ipv4s_arr);
+	g_free (iface_data->iproutes_arr);
 
 	nm_g_slice_free (iface_data);
 }
