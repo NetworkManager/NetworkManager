@@ -3290,6 +3290,7 @@ dispose (GObject *object)
 	g_clear_object (&priv->supplicant_manager);
 	g_clear_object (&priv->dbus_connection);
 	nm_clear_g_free (&priv->ifname);
+	nm_clear_g_free (&priv->driver);
 	nm_assert (!priv->net_path);
 }
 
