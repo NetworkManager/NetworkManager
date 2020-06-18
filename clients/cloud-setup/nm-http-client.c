@@ -159,8 +159,8 @@ _ehandle_complete (EHandleData *edata,
 
 	nm_clear_pointer (&edata->timeout_source, nm_g_source_destroy_and_unref);
 
-	 nm_clear_g_cancellable_disconnect (g_task_get_cancellable (edata->task),
-	                                    &edata->cancellable_id);
+	nm_clear_g_cancellable_disconnect (g_task_get_cancellable (edata->task),
+	                                   &edata->cancellable_id);
 
 	if (error_take) {
 		if (nm_utils_error_is_cancelled (error_take))
