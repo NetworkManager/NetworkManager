@@ -6,6 +6,7 @@
 
 #include "nm-cloud-setup-utils.h"
 #include "nmcs-provider-ec2.h"
+#include "nmcs-provider-gcp.h"
 #include "nm-libnm-core-intern/nm-libnm-core-utils.h"
 
 /*****************************************************************************/
@@ -84,6 +85,7 @@ _provider_detect (GCancellable *sigterm_cancellable)
 	};
 	const GType gtypes[] = {
 		NMCS_TYPE_PROVIDER_EC2,
+		NMCS_TYPE_PROVIDER_GCP,
 	};
 	int i;
 	gulong cancellable_signal_id;
