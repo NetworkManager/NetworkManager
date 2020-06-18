@@ -51,7 +51,7 @@ nm_device_6lowpan_get_parent (NMDevice6Lowpan *device)
 }
 
 /**
- * nm_device_6lowpan_get_hw_address:
+ * nm_device_6lowpan_get_hw_address: (skip)
  * @device: a #NMDevice6Lowpan
  *
  * Gets the hardware (MAC) address of the #NMDevice6Lowpan

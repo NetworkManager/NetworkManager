@@ -65,7 +65,7 @@ G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 /**
- * nm_device_wifi_get_hw_address:
+ * nm_device_wifi_get_hw_address: (skip)
  * @device: a #NMDeviceWifi
  *
  * Gets the actual hardware (MAC) address of the #NMDeviceWifi

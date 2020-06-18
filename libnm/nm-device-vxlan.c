@@ -69,7 +69,7 @@ G_DEFINE_TYPE (NMDeviceVxlan, nm_device_vxlan, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 /**
- * nm_device_vxlan_get_hw_address:
+ * nm_device_vxlan_get_hw_address: (skip)
  * @device: a #NMDeviceVxlan
  *
  * Gets the hardware (MAC) address of the #NMDeviceVxlan

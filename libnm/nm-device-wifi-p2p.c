@@ -51,7 +51,7 @@ G_DEFINE_TYPE (NMDeviceWifiP2P, nm_device_wifi_p2p, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 /**
- * nm_device_wifi_p2p_get_hw_address:
+ * nm_device_wifi_p2p_get_hw_address: (skip)
  * @device: a #NMDeviceWifiP2P
  *
  * Gets the actual hardware (MAC) address of the #NMDeviceWifiP2P

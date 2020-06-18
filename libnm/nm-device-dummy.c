@@ -28,7 +28,7 @@ G_DEFINE_TYPE (NMDeviceDummy, nm_device_dummy, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 /**
- * nm_device_dummy_get_hw_address:
+ * nm_device_dummy_get_hw_address: (skip)
  * @device: a #NMDeviceDummy
  *
  * Gets the hardware (MAC) address of the #NMDeviceDummy

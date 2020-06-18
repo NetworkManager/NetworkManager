@@ -46,7 +46,7 @@ G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 /**
- * nm_device_ethernet_get_hw_address:
+ * nm_device_ethernet_get_hw_address: (skip)
  * @device: a #NMDeviceEthernet
  *
  * Gets the active hardware (MAC) address of the #NMDeviceEthernet
