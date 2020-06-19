@@ -74,7 +74,7 @@ stages:
     - date '+%Y%m%d-%H%M%S'; test "$NM_BUILD_TARBALL" != 1 || mv /tmp/NetworkManager-1*.tar.xz /tmp/NetworkManager-1*.src.rpm ./
 
 checkpatch:
-  image: fedora:29
+  image: fedora:32
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; dnf install -y git
