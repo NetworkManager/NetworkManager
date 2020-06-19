@@ -74,11 +74,12 @@ stages:
     - date '+%Y%m%d-%H%M%S'; test "$NM_BUILD_TARBALL" != 1 || mv /tmp/NetworkManager-1*.tar.xz /tmp/NetworkManager-1*.src.rpm ./
 
 checkpatch:
-  image: fedora:29
+  image: fedora:32
   stage: test
   script:
-    - date '+%Y%m%d-%H%M%S'; dnf install -y git
+    - date '+%Y%m%d-%H%M%S'; dnf install -y git black
     - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh 2>&1 | tee checkpatch-out.txt
+    - date '+%Y%m%d-%H%M%S'; black --check .
   allow_failure: true
   artifacts:
     when: on_failure
