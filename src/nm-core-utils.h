@@ -449,8 +449,6 @@ gboolean nm_utils_validate_plugin (const char *path, struct stat *stat, GError *
 char **nm_utils_read_plugin_paths (const char *dirname, const char *prefix);
 char *nm_utils_format_con_diff_for_audit (GHashTable *diff);
 
-GVariant *nm_utils_strdict_to_variant (GHashTable *options);
-
 /*****************************************************************************/
 
 /* this enum is compatible with ICMPV6_ROUTER_PREF_* (from <linux/icmpv6.h>,

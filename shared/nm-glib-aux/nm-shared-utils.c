@@ -478,50 +478,52 @@ nm_utils_gbytes_to_variant_ay (GBytes *bytes)
 GVariant *
 nm_utils_strdict_to_variant_ass (GHashTable *strdict)
 {
-	GHashTableIter iter;
-	const char *key, *value;
+	gs_free NMUtilsNamedValue *values_free = NULL;
+	NMUtilsNamedValue values_prepared[20];
+	const NMUtilsNamedValue *values;
 	GVariantBuilder builder;
-	guint i, len;
+	guint i;
+	guint n;
+
+	values = nm_utils_named_values_from_strdict (strdict,
+	                                             &n,
+	                                             values_prepared,
+	                                             &values_free);
 
 	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{ss}"));
-
-	if (!strdict)
-		goto out;
-	len = g_hash_table_size (strdict);
-	if (!len)
-		goto out;
-
-	g_hash_table_iter_init (&iter, strdict);
-	if (!g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value))
-		nm_assert_not_reached ();
-
-	if (len == 1)
-		g_variant_builder_add (&builder, "{ss}", key, value);
-	else {
-		gs_free NMUtilsNamedValue *idx_free = NULL;
-		NMUtilsNamedValue *idx;
-
-		if (len > 300 / sizeof (NMUtilsNamedValue)) {
-			idx_free = g_new (NMUtilsNamedValue, len);
-			idx = idx_free;
-		} else
-			idx = g_alloca (sizeof (NMUtilsNamedValue) * len);
-
-		i = 0;
-		do {
-			idx[i].name = key;
-			idx[i].value_str = value;
-			i++;
-		} while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value));
-		nm_assert (i == len);
-
-		nm_utils_named_value_list_sort (idx, len, NULL, NULL);
-
-		for (i = 0; i < len; i++)
-			g_variant_builder_add (&builder, "{ss}", idx[i].name, idx[i].value_str);
+	for (i = 0; i < n; i++) {
+		g_variant_builder_add (&builder,
+		                       "{ss}",
+		                       values[i].name,
+		                       values[i].value_str);
 	}
+	return g_variant_builder_end (&builder);
+}
 
-out:
+/*****************************************************************************/
+
+GVariant *
+nm_utils_strdict_to_variant_asv (GHashTable *strdict)
+{
+	gs_free NMUtilsNamedValue *values_free = NULL;
+	NMUtilsNamedValue values_prepared[20];
+	const NMUtilsNamedValue *values;
+	GVariantBuilder builder;
+	guint i;
+	guint n;
+
+	values = nm_utils_named_values_from_strdict (strdict,
+	                                             &n,
+	                                             values_prepared,
+	                                             &values_free);
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
+	for (i = 0; i < n; i++) {
+		g_variant_builder_add (&builder,
+		                       "{sv}",
+		                       values[i].name,
+		                       g_variant_new_string (values[i].value_str));
+	}
 	return g_variant_builder_end (&builder);
 }
 
@@ -2909,15 +2911,23 @@ nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll)
 
 /*****************************************************************************/
 
+G_STATIC_ASSERT (G_STRUCT_OFFSET (NMUtilsNamedValue, name) == 0);
+
 NMUtilsNamedValue *
-nm_utils_named_values_from_str_dict_with_sort (GHashTable *hash,
-                                               guint *out_len,
-                                               GCompareDataFunc compare_func,
-                                               gpointer user_data)
+nm_utils_named_values_from_strdict_full (GHashTable *hash,
+                                         guint *out_len,
+                                         GCompareDataFunc compare_func,
+                                         gpointer user_data,
+                                         NMUtilsNamedValue *provided_buffer,
+                                         guint provided_buffer_len,
+                                         NMUtilsNamedValue **out_allocated_buffer)
 {
 	GHashTableIter iter;
 	NMUtilsNamedValue *values;
 	guint i, len;
+
+	nm_assert (provided_buffer_len == 0 || provided_buffer);
+	nm_assert (!out_allocated_buffer || !*out_allocated_buffer);
 
 	if (   !hash
 	    || !(len = g_hash_table_size (hash))) {
@@ -2925,12 +2935,20 @@ nm_utils_named_values_from_str_dict_with_sort (GHashTable *hash,
 		return NULL;
 	}
 
+	if (provided_buffer_len >= len + 1) {
+		/* the buffer provided by the caller is large enough. Use it. */
+		values = provided_buffer;
+	} else {
+		/* allocate a new buffer. */
+		values = g_new (NMUtilsNamedValue, len + 1);
+		NM_SET_OUT (out_allocated_buffer, values);
+	}
+
 	i = 0;
-	values = g_new (NMUtilsNamedValue, len + 1);
 	g_hash_table_iter_init (&iter, hash);
 	while (g_hash_table_iter_next (&iter,
 	                               (gpointer *) &values[i].name,
-	                               (gpointer *) &values[i].value_ptr))
+	                               &values[i].value_ptr))
 		i++;
 	nm_assert (i == len);
 	values[i].name = NULL;
@@ -4925,7 +4943,7 @@ _nm_utils_format_variant_attributes_full (GString *str,
 
 	for (i = 0; i < num_values; i++) {
 		name = values[i].name;
-		variant = (GVariant *) values[i].value_ptr;
+		variant = values[i].value_ptr;
 		value = NULL;
 
 		if (g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32))
@@ -4969,17 +4987,24 @@ _nm_utils_format_variant_attributes (GHashTable *attributes,
                                      char attr_separator,
                                      char key_value_separator)
 {
+	gs_free NMUtilsNamedValue *values_free = NULL;
+	NMUtilsNamedValue values_prepared[20];
+	const NMUtilsNamedValue *values;
 	GString *str = NULL;
-	gs_free NMUtilsNamedValue *values = NULL;
 	guint len;
 
 	g_return_val_if_fail (attr_separator, NULL);
 	g_return_val_if_fail (key_value_separator, NULL);
 
-	if (!attributes || !g_hash_table_size (attributes))
+	if (!attributes)
 		return NULL;
 
-	values = nm_utils_named_values_from_str_dict (attributes, &len);
+	values = nm_utils_named_values_from_strdict (attributes,
+	                                             &len,
+	                                             values_prepared,
+	                                             &values_free);
+	if (len == 0)
+		return NULL;
 
 	str = g_string_new ("");
 	_nm_utils_format_variant_attributes_full (str,

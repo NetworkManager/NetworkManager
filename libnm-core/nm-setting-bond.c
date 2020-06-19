@@ -368,7 +368,7 @@ static void
 _ensure_options_idx_cache (NMSettingBondPrivate *priv)
 {
 	if (!G_UNLIKELY (priv->options_idx_cache))
-		priv->options_idx_cache = nm_utils_named_values_from_str_dict_with_sort (priv->options, NULL, _get_option_sort, NULL);
+		priv->options_idx_cache = nm_utils_named_values_from_strdict_full (priv->options, NULL, _get_option_sort, NULL, NULL, 0, NULL);
 }
 
 /**

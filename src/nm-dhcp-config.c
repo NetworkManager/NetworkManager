@@ -75,7 +75,7 @@ nm_dhcp_config_set_options (NMDhcpConfig *self,
 	priv = NM_DHCP_CONFIG_GET_PRIVATE (self);
 
 	nm_g_variant_unref (priv->options);
-	priv->options = g_variant_ref_sink (nm_utils_strdict_to_variant (options));
+	priv->options = g_variant_ref_sink (nm_utils_strdict_to_variant_asv (options));
 	_notify (self, PROP_OPTIONS);
 }
 

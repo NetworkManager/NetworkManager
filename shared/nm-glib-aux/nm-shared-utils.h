@@ -422,6 +422,7 @@ gboolean nm_utils_gbytes_equal_mem (GBytes *bytes,
 GVariant *nm_utils_gbytes_to_variant_ay (GBytes *bytes);
 
 GVariant *nm_utils_strdict_to_variant_ass (GHashTable *strdict);
+GVariant *nm_utils_strdict_to_variant_asv (GHashTable *strdict);
 
 /*****************************************************************************/
 
@@ -1446,24 +1447,22 @@ typedef struct {
 	};
 	union {
 		const char *value_str;
-		gconstpointer value_ptr;
+		gpointer value_ptr;
 	};
 } NMUtilsNamedValue;
 
 #define NM_UTILS_NAMED_VALUE_INIT(n, v)     { .name = (n), .value_ptr = (v) }
 
-NMUtilsNamedValue *nm_utils_named_values_from_str_dict_with_sort (GHashTable *hash,
-                                                                  guint *out_len,
-                                                                  GCompareDataFunc compare_func,
-                                                                  gpointer user_data);
+NMUtilsNamedValue *nm_utils_named_values_from_strdict_full (GHashTable *hash,
+                                                            guint *out_len,
+                                                            GCompareDataFunc compare_func,
+                                                            gpointer user_data,
+                                                            NMUtilsNamedValue *provided_buffer,
+                                                            guint provided_buffer_len,
+                                                            NMUtilsNamedValue **out_allocated_buffer);
 
-static inline NMUtilsNamedValue *
-nm_utils_named_values_from_str_dict (GHashTable *hash, guint *out_len)
-{
-	G_STATIC_ASSERT (G_STRUCT_OFFSET (NMUtilsNamedValue, name) == 0);
-
-	return nm_utils_named_values_from_str_dict_with_sort (hash, out_len, nm_strcmp_p_with_data, NULL);
-}
+#define nm_utils_named_values_from_strdict(hash, out_len, array, out_allocated_buffer) \
+	nm_utils_named_values_from_strdict_full ((hash), (out_len), nm_strcmp_p_with_data, NULL, (array), G_N_ELEMENTS (array), (out_allocated_buffer))
 
 gssize nm_utils_named_value_list_find (const NMUtilsNamedValue *arr,
                                        gsize len,

@@ -114,10 +114,13 @@ write_secrets (shvarFile *ifcfg,
                GError **error)
 {
 	nm_auto_shvar_file_close shvarFile *keyfile = NULL;
-	gs_free const char **secrets_keys = NULL;
-	guint i, secrets_keys_n;
+	gs_free NMUtilsNamedValue *secrets_arr_free = NULL;
+	NMUtilsNamedValue secrets_arr_static[30];
+	const NMUtilsNamedValue *secrets_arr;
+	guint secrets_len;
 	GError *local = NULL;
 	gboolean any_secrets = FALSE;
+	guint i;
 
 	keyfile = utils_get_keys_ifcfg (svFileGetName (ifcfg), TRUE);
 	if (!keyfile) {
@@ -126,10 +129,13 @@ write_secrets (shvarFile *ifcfg,
 		return FALSE;
 	}
 
-	secrets_keys = nm_utils_strdict_get_keys (secrets, TRUE, &secrets_keys_n);
-	for (i = 0; i < secrets_keys_n; i++) {
-		const char *k = secrets_keys[i];
-		const char *v = g_hash_table_lookup (secrets, k);
+	secrets_arr = nm_utils_named_values_from_strdict (secrets,
+	                                                  &secrets_len,
+	                                                  secrets_arr_static,
+	                                                  &secrets_arr_free);
+	for (i = 0; i < secrets_len; i++) {
+		const char *k = secrets_arr[i].name;
+		const char *v = secrets_arr[i].value_str;
 
 		if (v) {
 			svSetValueStr (keyfile, k, v);
