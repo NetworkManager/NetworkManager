@@ -23,6 +23,9 @@ G_STATIC_ASSERT (G_STRUCT_OFFSET (NMUtilsNamedValue, value_ptr) == sizeof (const
 
 /*****************************************************************************/
 
+const char _nm_hexchar_table_lower[16] = "0123456789abcdef";
+const char _nm_hexchar_table_upper[16] = "0123456789ABCDEF";
+
 const void *const _NM_PTRARRAY_EMPTY[1] = { NULL };
 
 /*****************************************************************************/

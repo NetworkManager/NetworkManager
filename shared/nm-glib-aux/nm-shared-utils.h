@@ -1809,6 +1809,17 @@ int nm_utils_getpagesize (void);
 
 /*****************************************************************************/
 
+extern const char _nm_hexchar_table_lower[16];
+extern const char _nm_hexchar_table_upper[16];
+
+static inline char
+nm_hexchar (int x, gboolean upper_case)
+{
+	return   upper_case
+	       ? _nm_hexchar_table_upper[x & 15]
+	       : _nm_hexchar_table_lower[x & 15];
+}
+
 char *nm_utils_bin2hexstr_full (gconstpointer addr,
                                 gsize length,
                                 char delimiter,
