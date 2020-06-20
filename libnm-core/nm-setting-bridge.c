@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 
+#include "nm-glib-aux/nm-str-buf.h"
 #include "nm-connection-private.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
@@ -407,25 +408,6 @@ nm_bridge_vlan_new_clone (const NMBridgeVlan *vlan)
 	return copy;
 }
 
-void
-_nm_bridge_vlan_str_append_rest (const NMBridgeVlan *vlan,
-                                 GString *string,
-                                 gboolean leading_space)
-{
-	if (nm_bridge_vlan_is_pvid (vlan)) {
-		if (leading_space)
-			g_string_append_c (string, ' ');
-		g_string_append (string, "pvid");
-		leading_space = TRUE;
-	}
-	if (nm_bridge_vlan_is_untagged (vlan)) {
-		if (leading_space)
-			g_string_append_c (string, ' ');
-		g_string_append (string, "untagged");
-		leading_space = TRUE;
-	}
-}
-
 /**
  * nm_bridge_vlan_to_str:
  * @vlan: the %NMBridgeVlan
@@ -440,7 +422,7 @@ _nm_bridge_vlan_str_append_rest (const NMBridgeVlan *vlan,
 char *
 nm_bridge_vlan_to_str (const NMBridgeVlan *vlan, GError **error)
 {
-	GString *string;
+	NMStrBuf string;
 
 	g_return_val_if_fail (vlan, NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
@@ -449,16 +431,19 @@ nm_bridge_vlan_to_str (const NMBridgeVlan *vlan, GError **error)
 	 * future if more parameters are added to the object that could
 	 * make it invalid. */
 
-	string = g_string_sized_new (28);
+	nm_str_buf_init (&string, NM_UTILS_GET_NEXT_REALLOC_SIZE_32, FALSE);
 
 	if (vlan->vid_start == vlan->vid_end)
-		g_string_append_printf (string, "%u", vlan->vid_start);
+		nm_str_buf_append_printf (&string, "%u", vlan->vid_start);
 	else
-		g_string_append_printf (string, "%u-%u", vlan->vid_start, vlan->vid_end);
+		nm_str_buf_append_printf (&string, "%u-%u", vlan->vid_start, vlan->vid_end);
 
-	_nm_bridge_vlan_str_append_rest (vlan, string, TRUE);
+	if (nm_bridge_vlan_is_pvid (vlan))
+		nm_str_buf_append (&string, " pvid");
+	if (nm_bridge_vlan_is_untagged (vlan))
+		nm_str_buf_append (&string, " untagged");
 
-	return g_string_free (string, FALSE);
+	return nm_str_buf_finalize (&string, NULL);
 }
 
 /**
