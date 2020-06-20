@@ -4841,6 +4841,8 @@ nm_str_buf_append_printf (NMStrBuf *strbuf,
 
 	available = strbuf->_priv_allocated - strbuf->_priv_len;
 
+	nm_assert (available < G_MAXULONG);
+
 	va_start (args, format);
 	l = g_vsnprintf (&strbuf->_priv_str[strbuf->_priv_len],
 	                 available,
