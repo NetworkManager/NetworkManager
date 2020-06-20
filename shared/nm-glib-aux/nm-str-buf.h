@@ -212,6 +212,16 @@ nm_str_buf_append_c4 (NMStrBuf *strbuf,
 }
 
 static inline void
+nm_str_buf_append_c_hex (NMStrBuf *strbuf,
+                         char ch,
+                         gboolean upper_case)
+{
+	nm_str_buf_maybe_expand (strbuf, 3, FALSE);
+	strbuf->_priv_str[strbuf->_priv_len++] = nm_hexchar (((guchar) ch) >> 4, upper_case);
+	strbuf->_priv_str[strbuf->_priv_len++] = nm_hexchar ((guchar) ch, upper_case);
+}
+
+static inline void
 nm_str_buf_append_len (NMStrBuf *strbuf,
                        const char *str,
                        gsize len)
