@@ -1985,6 +1985,8 @@ void nm_indirect_g_free (gpointer arg);
  * via nm_utils_get_next_realloc_size() gives you 232, and so on. By using
  * these sizes, it results in one less allocation, if you anyway don't know the
  * exact size in advance. */
+#define NM_UTILS_GET_NEXT_REALLOC_SIZE_32      ((gsize) 32)
+#define NM_UTILS_GET_NEXT_REALLOC_SIZE_40      ((gsize) 40)
 #define NM_UTILS_GET_NEXT_REALLOC_SIZE_104     ((gsize) 104)
 #define NM_UTILS_GET_NEXT_REALLOC_SIZE_1000    ((gsize) 1000)
 
