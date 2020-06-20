@@ -16,6 +16,7 @@
 #include <arpa/inet.h>
 #include <linux/pkt_sched.h>
 
+#include "nm-glib-aux/nm-str-buf.h"
 #include "nm-glib-aux/nm-secret-utils.h"
 #include "systemd/nm-sd-utils-shared.h"
 #include "nm-libnm-core-intern/nm-common-macros.h"
@@ -2107,79 +2108,81 @@ write_ip_values (GKeyFile *file,
                  const char *gateway,
                  gboolean is_route)
 {
-	nm_auto_free_gstring GString *output = NULL;
-	int addr_family;
-	guint i;
-	const char *addr;
-	const char *gw;
-	guint32 plen;
-	char key_name[64];
-	char *key_name_idx;
+	if (array->len > 0) {
+		nm_auto_str_buf NMStrBuf output = NM_STR_BUF_INIT (2*INET_ADDRSTRLEN + 10, FALSE);
+		int addr_family;
+		guint i;
+		const char *addr;
+		const char *gw;
+		guint32 plen;
+		char key_name[64];
+		char *key_name_idx;
 
-	if (!array->len)
-		return;
+		addr_family =   nm_streq (setting_name, NM_SETTING_IP4_CONFIG_SETTING_NAME)
+		              ? AF_INET
+		              : AF_INET6;
 
-	addr_family =   nm_streq (setting_name, NM_SETTING_IP4_CONFIG_SETTING_NAME)
-	              ? AF_INET
-	              : AF_INET6;
+		strcpy (key_name, is_route ? "route" : "address");
+		key_name_idx = key_name + strlen (key_name);
 
-	strcpy (key_name, is_route ? "route" : "address");
-	key_name_idx = key_name + strlen (key_name);
+		for (i = 0; i < array->len; i++) {
+			gint64 metric = -1;
 
-	output = g_string_sized_new (2*INET_ADDRSTRLEN + 10);
-	for (i = 0; i < array->len; i++) {
-		gint64 metric = -1;
+			if (is_route) {
+				NMIPRoute *route = array->pdata[i];
 
-		if (is_route) {
-			NMIPRoute *route = array->pdata[i];
+				addr = nm_ip_route_get_dest (route);
+				plen = nm_ip_route_get_prefix (route);
+				gw = nm_ip_route_get_next_hop (route);
+				metric = nm_ip_route_get_metric (route);
+			} else {
+				NMIPAddress *address = array->pdata[i];
 
-			addr = nm_ip_route_get_dest (route);
-			plen = nm_ip_route_get_prefix (route);
-			gw = nm_ip_route_get_next_hop (route);
-			metric = nm_ip_route_get_metric (route);
-		} else {
-			NMIPAddress *address = array->pdata[i];
-
-			addr = nm_ip_address_get_address (address);
-			plen = nm_ip_address_get_prefix (address);
-			gw =   (i == 0)
-			     ? gateway
-			     : NULL;
-		}
-
-		g_string_set_size (output, 0);
-		g_string_append_printf (output, "%s/%u", addr, plen);
-		if (   metric != -1
-		    || gw) {
-			/* Older versions of the plugin do not support the form
-			 * "a.b.c.d/plen,,metric", so, we always have to write the
-			 * gateway, even if there isn't one.
-			 * The current version supports reading of the above form.
-			 */
-			if (!gw) {
-				if (addr_family == AF_INET)
-					gw = "0.0.0.0";
-				else
-					gw = "::";
+				addr = nm_ip_address_get_address (address);
+				plen = nm_ip_address_get_prefix (address);
+				gw =   (i == 0)
+				     ? gateway
+				     : NULL;
 			}
 
-			g_string_append_printf (output, ",%s", gw);
-			if (   is_route
-			    && metric != -1)
-				g_string_append_printf (output, ",%lu", (unsigned long) metric);
-		}
+			nm_str_buf_set_size (&output, 0, FALSE, FALSE);
+			nm_str_buf_append_printf (&output, "%s/%u", addr, plen);
+			if (   metric != -1
+			    || gw) {
+				/* Older versions of the plugin do not support the form
+				 * "a.b.c.d/plen,,metric", so, we always have to write the
+				 * gateway, even if there isn't one.
+				 * The current version supports reading of the above form.
+				 */
+				if (!gw) {
+					if (addr_family == AF_INET)
+						gw = "0.0.0.0";
+					else
+						gw = "::";
+				}
 
-		sprintf (key_name_idx, "%u", i + 1);
-		nm_keyfile_plugin_kf_set_string (file, setting_name, key_name, output->str);
+				nm_str_buf_append_c (&output, ',');
+				nm_str_buf_append (&output, gw);
+				if (   is_route
+				    && metric != -1)
+					nm_str_buf_append_printf (&output, ",%lu", (unsigned long) metric);
+			}
 
-		if (is_route) {
-			gs_free char *attributes = NULL;
+			sprintf (key_name_idx, "%u", i + 1);
+			nm_keyfile_plugin_kf_set_string (file,
+			                                 setting_name,
+			                                 key_name,
+			                                 nm_str_buf_get_str (&output));
 
-			attributes = nm_utils_format_variant_attributes (_nm_ip_route_get_attributes (array->pdata[i]),
-			                                                 ',', '=');
-			if (attributes) {
-				g_strlcat (key_name, "_options", sizeof (key_name));
-				nm_keyfile_plugin_kf_set_string (file, setting_name, key_name, attributes);
+			if (is_route) {
+				gs_free char *attributes = NULL;
+
+				attributes = nm_utils_format_variant_attributes (_nm_ip_route_get_attributes (array->pdata[i]),
+				                                                 ',', '=');
+				if (attributes) {
+					g_strlcat (key_name, "_options", sizeof (key_name));
+					nm_keyfile_plugin_kf_set_string (file, setting_name, key_name, attributes);
+				}
 			}
 		}
 	}
@@ -2220,34 +2223,29 @@ bridge_vlan_writer (KeyfileWriterInfo *info,
                     const char *key,
                     const GValue *value)
 {
-	NMBridgeVlan *vlan;
 	GPtrArray *vlans;
-	GString *string;
-	guint i;
 
-	vlans = (GPtrArray *) g_value_get_boxed (value);
-	if (!vlans || !vlans->len)
-		return;
+	vlans = g_value_get_boxed (value);
+	if (   vlans
+	    && vlans->len > 0) {
+		const guint string_initial_size = vlans->len * 10u;
+		nm_auto_str_buf NMStrBuf string = NM_STR_BUF_INIT (string_initial_size, FALSE);
+		guint i;
 
-	string = g_string_new ("");
-	for (i = 0; i < vlans->len; i++) {
-		gs_free char *vlan_str = NULL;
+		for (i = 0; i < vlans->len; i++) {
+			gs_free char *vlan_str = NULL;
 
-		vlan = vlans->pdata[i];
-		vlan_str = nm_bridge_vlan_to_str (vlan, NULL);
-		if (!vlan_str)
-			continue;
-		if (string->len > 0)
-			g_string_append (string, ",");
-		nm_utils_escaped_tokens_escape_gstr_assert (vlan_str, ",", string);
+			vlan_str = nm_bridge_vlan_to_str (vlans->pdata[i], NULL);
+			if (i > 0)
+				nm_str_buf_append_c (&string, ',');
+			nm_utils_escaped_tokens_escape_strbuf_assert (vlan_str, ",", &string);
+		}
+
+		nm_keyfile_plugin_kf_set_string (info->keyfile,
+		                                 nm_setting_get_name (setting),
+		                                 "vlans",
+		                                 nm_str_buf_get_str (&string));
 	}
-
-	nm_keyfile_plugin_kf_set_string (info->keyfile,
-	                                 nm_setting_get_name (setting),
-	                                 "vlans",
-	                                 string->str);
-
-	g_string_free (string, TRUE);
 }
 
 
@@ -2348,17 +2346,21 @@ qdisc_writer (KeyfileWriterInfo *info,
               const char *key,
               const GValue *value)
 {
-	gsize i;
+	nm_auto_free_gstring GString *key_name = NULL;
+	nm_auto_free_gstring GString *value_str = NULL;
 	GPtrArray *array;
+	guint i;
 
-	array = (GPtrArray *) g_value_get_boxed (value);
-	if (!array || !array->len)
+	array = g_value_get_boxed (value);
+	if (   !array
+	    || !array->len)
 		return;
 
 	for (i = 0; i < array->len; i++) {
 		NMTCQdisc *qdisc = array->pdata[i];
-		GString *key_name = g_string_sized_new (16);
-		GString *value_str = g_string_sized_new (60);
+
+		nm_gstring_prepare (&key_name);
+		nm_gstring_prepare (&value_str);
 
 		g_string_append (key_name, "qdisc.");
 		_nm_utils_string_append_tc_parent (key_name, NULL,
@@ -2369,9 +2371,6 @@ qdisc_writer (KeyfileWriterInfo *info,
 		                                 NM_SETTING_TC_CONFIG_SETTING_NAME,
 		                                 key_name->str,
 		                                 value_str->str);
-
-		g_string_free (key_name, TRUE);
-		g_string_free (value_str, TRUE);
 	}
 }
 
@@ -2381,17 +2380,21 @@ tfilter_writer (KeyfileWriterInfo *info,
               const char *key,
               const GValue *value)
 {
-	gsize i;
+	nm_auto_free_gstring GString *key_name = NULL;
+	nm_auto_free_gstring GString *value_str = NULL;
 	GPtrArray *array;
+	guint i;
 
-	array = (GPtrArray *) g_value_get_boxed (value);
-	if (!array || !array->len)
+	array = g_value_get_boxed (value);
+	if (   !array
+	    || !array->len)
 		return;
 
 	for (i = 0; i < array->len; i++) {
 		NMTCTfilter *tfilter = array->pdata[i];
-		GString *key_name = g_string_sized_new (16);
-		GString *value_str = g_string_sized_new (60);
+
+		nm_gstring_prepare (&key_name);
+		nm_gstring_prepare (&value_str);
 
 		g_string_append (key_name, "tfilter.");
 		_nm_utils_string_append_tc_parent (key_name, NULL,
@@ -2402,9 +2405,6 @@ tfilter_writer (KeyfileWriterInfo *info,
 		                                 NM_SETTING_TC_CONFIG_SETTING_NAME,
 		                                 key_name->str,
 		                                 value_str->str);
-
-		g_string_free (key_name, TRUE);
-		g_string_free (value_str, TRUE);
 	}
 }
 
@@ -4309,46 +4309,53 @@ char *
 nm_keyfile_utils_create_filename (const char *name,
                                   gboolean with_extension)
 {
-	GString *str;
-	const char *f = name;
 	/* keyfile used to escape with '*', do not change that behavior.
 	 *
 	 * But for newly added escapings, use '_' instead.
 	 * Also, @with_extension is new-style. */
 	const char ESCAPE_CHAR = with_extension ? '_' : '*';
 	const char ESCAPE_CHAR2 = '_';
+	NMStrBuf str;
+	char *p;
+	gsize len;
+	gsize i;
 
 	g_return_val_if_fail (name && name[0], NULL);
 
-	str = g_string_sized_new (60);
+	nm_str_buf_init (&str, 0, FALSE);
+
+	len = strlen (name);
+
+	p = nm_str_buf_append_len0 (&str, name, len);
 
 	/* Convert '/' to ESCAPE_CHAR */
-	for (f = name; f[0]; f++) {
-		if (f[0] == '/')
-			g_string_append_c (str, ESCAPE_CHAR);
-		else
-			g_string_append_c (str, f[0]);
+	for (i = 0; i < len; i++) {
+		if (p[i] == '/')
+			p[i] = ESCAPE_CHAR;
 	}
 
 	/* nm_keyfile_utils_create_filename() must avoid anything that ignore_filename() would reject.
 	 * We can escape here more aggressivly then what we would read back. */
-	if (str->str[0] == '.')
-		str->str[0] = ESCAPE_CHAR2;
-	if (str->str[str->len - 1] == '~')
-		str->str[str->len - 1] = ESCAPE_CHAR2;
-	if (   check_mkstemp_suffix (str->str)
-	    || check_suffix (str->str, PEM_TAG)
-	    || check_suffix (str->str, DER_TAG))
-		g_string_append_c (str, ESCAPE_CHAR2);
+	if (p[0] == '.')
+		p[0] = ESCAPE_CHAR2;
+	if (p[str.len - 1] == '~')
+		p[str.len - 1] = ESCAPE_CHAR2;
+
+	if (   check_mkstemp_suffix (p)
+	    || check_suffix (p, PEM_TAG)
+	    || check_suffix (p, DER_TAG))
+		nm_str_buf_append_c (&str, ESCAPE_CHAR2);
 
 	if (with_extension)
-		g_string_append (str, NM_KEYFILE_PATH_SUFFIX_NMCONNECTION);
+		nm_str_buf_append (&str, NM_KEYFILE_PATH_SUFFIX_NMCONNECTION);
+
+	p = nm_str_buf_finalize (&str, NULL);
 
 	/* nm_keyfile_utils_create_filename() must mirror ignore_filename() */
-	nm_assert (!strchr (str->str, '/'));
-	nm_assert (!nm_keyfile_utils_ignore_filename (str->str, with_extension));
+	nm_assert (!strchr (p, '/'));
+	nm_assert (!nm_keyfile_utils_ignore_filename (p, with_extension));
 
-	return g_string_free (str, FALSE);;
+	return p;
 }
 
 /*****************************************************************************/
