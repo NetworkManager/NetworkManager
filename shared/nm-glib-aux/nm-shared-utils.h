@@ -631,23 +631,24 @@ nm_utils_escaped_tokens_escape (const char *str,
 	                                            out_to_free);
 }
 
-static inline GString *
-nm_utils_escaped_tokens_escape_gstr_assert (const char *str,
-                                            const char *delimiters,
-                                            GString *gstring)
+/**
+ * nm_utils_escaped_tokens_escape_unnecessary:
+ * @str: the string to check for "escape"
+ * @delimiters: the delimiters
+ *
+ * This asserts that calling nm_utils_escaped_tokens_escape()
+ * on @str has no effect and returns @str directly. This is only
+ * for asserting that @str is safe to not require any escaping.
+ *
+ * Returns: @str
+ */
+static inline const char *
+nm_utils_escaped_tokens_escape_unnecessary (const char *str,
+                                            const char *delimiters)
 {
 #if NM_MORE_ASSERTS > 0
 
-	/* Just appends @str to @gstring, but also assert that
-	 * no escaping is necessary.
-	 *
-	 * Use nm_utils_escaped_tokens_escape_gstr_assert() instead
-	 * of nm_utils_escaped_tokens_escape_gstr(), if you *know* that
-	 * @str contains no delimiters, no backslashes, and no trailing
-	 * whitespace that requires escaping. */
-
 	nm_assert (str);
-	nm_assert (gstring);
 	nm_assert (delimiters);
 
 	{
@@ -660,8 +661,16 @@ nm_utils_escaped_tokens_escape_gstr_assert (const char *str,
 	}
 #endif
 
-	g_string_append (gstring, str);
-	return gstring;
+	return str;
+}
+
+static inline void
+nm_utils_escaped_tokens_escape_gstr_assert (const char *str,
+                                            const char *delimiters,
+                                            GString *gstring)
+{
+	g_string_append (gstring,
+	                 nm_utils_escaped_tokens_escape_unnecessary (str, delimiters));
 }
 
 static inline GString *
