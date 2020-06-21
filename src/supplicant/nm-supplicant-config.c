@@ -10,6 +10,7 @@
 
 #include <stdlib.h>
 
+#include "nm-glib-aux/nm-str-buf.h"
 #include "nm-core-internal.h"
 #include "nm-supplicant-settings-verify.h"
 #include "nm-setting.h"
@@ -341,26 +342,39 @@ wifi_freqs_to_string (gboolean bg_band)
 {
 	static const char *str_2ghz = NULL;
 	static const char *str_5ghz = NULL;
-	const char *str;
+	const char **f_p;
+	const char *f;
 
-	str = bg_band ? str_2ghz : str_5ghz;
+	f_p =   bg_band
+	      ? &str_2ghz
+	      : &str_5ghz;
 
-	if (G_UNLIKELY (str == NULL)) {
-		GString *tmp;
+again:
+	f = g_atomic_pointer_get (f_p);
+
+	if (G_UNLIKELY (!f)) {
+		nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT (400, FALSE);
 		const guint *freqs;
 		int i;
 
-		freqs = bg_band ? nm_utils_wifi_2ghz_freqs () : nm_utils_wifi_5ghz_freqs ();
-		tmp = g_string_sized_new (bg_band ? 70 : 225);
-		for (i = 0; freqs[i]; i++)
-			g_string_append_printf (tmp, i == 0 ? "%d" : " %d", freqs[i]);
-		str = g_string_free (tmp, FALSE);
-		if (bg_band)
-			str_2ghz = str;
-		else
-			str_5ghz = str;
+		freqs =   bg_band
+		        ? nm_utils_wifi_2ghz_freqs ()
+		        : nm_utils_wifi_5ghz_freqs ();
+		for (i = 0; freqs[i]; i++) {
+			if (i > 0)
+				nm_str_buf_append_c (&strbuf, ' ');
+			nm_str_buf_append_printf (&strbuf, "%u", freqs[i]);
+		}
+
+		f = g_strdup (nm_str_buf_get_str (&strbuf));
+
+		if (!g_atomic_pointer_compare_and_exchange (f_p, NULL, f)) {
+			g_free ((char *) f);
+			goto again;
+		}
 	}
-	return str;
+
+	return f;
 }
 
 gboolean
