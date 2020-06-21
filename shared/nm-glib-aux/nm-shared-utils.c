@@ -4871,7 +4871,7 @@ nm_str_buf_append_printf (NMStrBuf *strbuf,
 	nm_assert (l >= 0);
 	nm_assert (l < G_MAXINT);
 
-	if ((gsize) l > available) {
+	if ((gsize) l >= available) {
 		gsize l2 = ((gsize) l) + 1u;
 
 		nm_str_buf_maybe_expand (strbuf, l2, FALSE);
