@@ -286,6 +286,19 @@ nm_str_buf_ensure_trailing_c (NMStrBuf *strbuf, char ch)
 		nm_str_buf_append_c (strbuf, ch);
 }
 
+static inline NMStrBuf *
+nm_str_buf_append_required_delimiter (NMStrBuf *strbuf,
+                                      char delimiter)
+{
+	_nm_str_buf_assert (strbuf);
+
+	/* appends the @delimiter if it is required (that is, if the
+	 * string is not empty). */
+	if (strbuf->len > 0)
+		nm_str_buf_append_c (strbuf, delimiter);
+	return strbuf;
+}
+
 /*****************************************************************************/
 
 static inline gboolean
