@@ -3571,9 +3571,6 @@ nm_utils_file_search_in_paths (const char *progname,
                                gpointer user_data,
                                GError **error)
 {
-	GString *tmp;
-	const char *ret;
-
 	g_return_val_if_fail (!error || !*error, NULL);
 	g_return_val_if_fail (progname && progname[0] && !strchr (progname, '/'), NULL);
 	g_return_val_if_fail (file_test_flags || predicate, NULL);
@@ -3582,32 +3579,35 @@ nm_utils_file_search_in_paths (const char *progname,
 	 * it simpler to pass in a path from configure checks. */
 	if (   try_first
 	    && try_first[0] == '/'
-	    && (file_test_flags == 0 || g_file_test (try_first, file_test_flags))
-	    && (!predicate || predicate (try_first, user_data)))
+	    && (   file_test_flags == 0
+	        || g_file_test (try_first, file_test_flags))
+	    && (   !predicate
+	        || predicate (try_first, user_data)))
 		return g_intern_string (try_first);
 
-	if (!paths || !*paths)
-		goto NOT_FOUND;
+	if (   paths
+	    && paths[0]) {
+		nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT (NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
 
-	tmp = g_string_sized_new (50);
-	for (; *paths; paths++) {
-		if (!*paths)
-			continue;
-		g_string_append (tmp, *paths);
-		if (tmp->str[tmp->len - 1] != '/')
-			g_string_append_c (tmp, '/');
-		g_string_append (tmp, progname);
-		if (   (file_test_flags == 0 || g_file_test (tmp->str, file_test_flags))
-		    && (!predicate || predicate (tmp->str, user_data))) {
-			ret = g_intern_string (tmp->str);
-			g_string_free (tmp, TRUE);
-			return ret;
+		for (; *paths; paths++) {
+			const char *path = *paths;
+			const char *s;
+
+			if (!path[0])
+				continue;
+
+			nm_str_buf_reset (&strbuf, path);
+			nm_str_buf_ensure_trailing_c (&strbuf, '/');
+			s = nm_str_buf_append0 (&strbuf, progname);
+
+			if (   (   file_test_flags == 0
+			        || g_file_test (s, file_test_flags))
+			    && (   !predicate
+			        || predicate (s, user_data)))
+				return g_intern_string (s);
 		}
-		g_string_set_size (tmp, 0);
 	}
-	g_string_free (tmp, TRUE);
 
-NOT_FOUND:
 	g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, _("Could not find \"%s\" binary"), progname);
 	return NULL;
 }
