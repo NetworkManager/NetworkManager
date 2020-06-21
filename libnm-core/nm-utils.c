@@ -2068,8 +2068,8 @@ nm_utils_ip_addresses_from_variant (GVariant *value,
 
 		g_variant_iter_init (&attrs_iter, addr_var);
 		while (g_variant_iter_next (&attrs_iter, "{&sv}", &attr_name, &attr_val)) {
-			if (   strcmp (attr_name, "address") != 0
-			    && strcmp (attr_name, "prefix") != 0)
+			if (!NM_IN_STRSET (attr_name, "address",
+			                              "prefix"))
 				nm_ip_address_set_attribute (addr, attr_name, attr_val);
 			g_variant_unref (attr_val);
 		}
@@ -2194,10 +2194,10 @@ nm_utils_ip_routes_from_variant (GVariant *value,
 
 		g_variant_iter_init (&attrs_iter, route_var);
 		while (g_variant_iter_next (&attrs_iter, "{&sv}", &attr_name, &attr_val)) {
-			if (   strcmp (attr_name, "dest") != 0
-			    && strcmp (attr_name, "prefix") != 0
-			    && strcmp (attr_name, "next-hop") != 0
-			    && strcmp (attr_name, "metric") != 0)
+			if (!NM_IN_STRSET (attr_name, "dest",
+			                              "prefix",
+			                              "next-hop",
+			                              "metric"))
 				nm_ip_route_set_attribute (route, attr_name, attr_val);
 			g_variant_unref (attr_val);
 		}
@@ -2377,7 +2377,8 @@ _nm_utils_string_append_tc_qdisc_rest (GString *string, NMTCQdisc *qdisc)
 	const char *kind = nm_tc_qdisc_get_kind (qdisc);
 	gs_free char *str = NULL;
 
-	if (handle != TC_H_UNSPEC && strcmp (kind, "ingress") != 0) {
+	if (   handle != TC_H_UNSPEC
+	    && !nm_streq (kind, "ingress")) {
 		g_string_append (string, "handle ");
 		_string_append_tc_handle (string, handle);
 		g_string_append_c (string, ' ');
@@ -2469,7 +2470,7 @@ _tc_read_common_opts (const char *str,
 	variant = g_hash_table_lookup (ht, "kind");
 	if (variant) {
 		*kind = g_variant_dup_string (variant, NULL);
-		if (strcmp (*kind, "ingress") == 0) {
+		if (nm_streq (*kind, "ingress")) {
 			if (*parent == TC_H_UNSPEC)
 				*parent = TC_H_INGRESS;
 			if (*handle == TC_H_UNSPEC)
@@ -2525,7 +2526,7 @@ nm_utils_tc_qdisc_from_str (const char *str, GError **error)
 		return NULL;
 
 	for (i = 0; rest && tc_qdisc_attribute_spec[i]; i++) {
-		if (strcmp (tc_qdisc_attribute_spec[i]->kind, kind) == 0) {
+		if (nm_streq (tc_qdisc_attribute_spec[i]->kind, kind)) {
 			options = nm_utils_parse_variant_attributes (rest,
 			                                             ' ', ' ', FALSE,
 			                                             tc_qdisc_attribute_spec[i]->attrs,
@@ -2671,9 +2672,9 @@ nm_utils_tc_action_from_str (const char *str, GError **error)
 	}
 
 	kind = g_variant_get_string (variant, NULL);
-	if (strcmp (kind, "simple") == 0)
+	if (nm_streq (kind, "simple"))
 		attrs = tc_action_simple_attribute_spec;
-	else if (strcmp (kind, "mirred") == 0)
+	else if (nm_streq (kind, "mirred"))
 		attrs = tc_action_mirred_attribute_spec;
 	else
 		attrs = NULL;
@@ -3750,11 +3751,11 @@ nm_utils_wifi_channel_to_freq (guint32 channel, const char *band)
 {
 	int i = 0;
 
-	if (!strcmp (band, "a")) {
+	if (nm_streq (band, "a")) {
 		while (a_table[i].chan && (a_table[i].chan != channel))
 			i++;
 		return a_table[i].freq;
-	} else if (!strcmp (band, "bg")) {
+	} else if (nm_streq (band, "bg")) {
 		while (bg_table[i].chan && (bg_table[i].chan != channel))
 			i++;
 		return bg_table[i].freq;
@@ -3776,17 +3777,17 @@ nm_utils_wifi_channel_to_freq (guint32 channel, const char *band)
 guint32
 nm_utils_wifi_find_next_channel (guint32 channel, int direction, char *band)
 {
-	size_t a_size = sizeof (a_table) / sizeof (struct cf_pair);
-	size_t bg_size = sizeof (bg_table) / sizeof (struct cf_pair);
+	size_t a_size = G_N_ELEMENTS (a_table);
+	size_t bg_size = G_N_ELEMENTS (bg_table);
 	struct cf_pair *pair = NULL;
 
-	if (!strcmp (band, "a")) {
+	if (nm_streq (band, "a")) {
 		if (channel < a_table[0].chan)
 			return a_table[0].chan;
 		if (channel > a_table[a_size - 2].chan)
 			return a_table[a_size - 2].chan;
 		pair = &a_table[0];
-	} else if (!strcmp (band, "bg")) {
+	} else if (nm_streq (band, "bg")) {
 		if (channel < bg_table[0].chan)
 			return bg_table[0].chan;
 		if (channel > bg_table[bg_size - 2].chan)
@@ -3826,9 +3827,9 @@ nm_utils_wifi_is_channel_valid (guint32 channel, const char *band)
 	struct cf_pair *table = NULL;
 	int i = 0;
 
-	if (!strcmp (band, "a"))
+	if (nm_streq (band, "a"))
 		table = a_table;
-	else if (!strcmp (band, "bg"))
+	else if (nm_streq (band, "bg"))
 		table = bg_table;
 	else
 		return FALSE;
@@ -5080,8 +5081,8 @@ nm_utils_bond_mode_string_to_int (const char *mode)
 		return -1;
 
 	for (i = 0; i < G_N_ELEMENTS (bond_mode_table); i++) {
-		if (   strcmp (mode, bond_mode_table[i].str) == 0
-		    || strcmp (mode, bond_mode_table[i].num) == 0)
+		if (NM_IN_STRSET (mode, bond_mode_table[i].str,
+		                        bond_mode_table[i].num))
 			return i;
 	}
 	return -1;
@@ -5139,13 +5140,13 @@ _nm_utils_strstrdictkey_equal  (gconstpointer a, gconstpointer b)
 		return FALSE;
 
 	if (k1->type & STRSTRDICTKEY_ALL_SET) {
-		if (strcmp (k1->data, k2->data) != 0)
+		if (!nm_streq (k1->data, k2->data))
 			return FALSE;
 
 		if (k1->type == STRSTRDICTKEY_ALL_SET) {
 			gsize l = strlen (k1->data) + 1;
 
-			return strcmp (&k1->data[l], &k2->data[l]) == 0;
+			return nm_streq (&k1->data[l], &k2->data[l]);
 		}
 	}
 
@@ -5196,7 +5197,7 @@ validate_dns_option (const char *name,
 		return !!*name;
 
 	for (desc = option_descs; desc->name; desc++) {
-		if (!strcmp (name, desc->name) &&
+		if (nm_streq (name, desc->name) &&
 		    numeric == desc->numeric &&
 		    (!desc->ipv6_only || ipv6))
 			return TRUE;
@@ -5286,26 +5287,21 @@ _nm_utils_dns_option_validate (const char *option,
  */
 gssize _nm_utils_dns_option_find_idx (GPtrArray *array, const char *option)
 {
-	gboolean ret;
-	char *option_name, *tmp_name;
+	gs_free char *option_name = NULL;
 	guint i;
 
 	if (!_nm_utils_dns_option_validate (option, &option_name, NULL, FALSE, NULL))
 		return -1;
 
 	for (i = 0; i < array->len; i++) {
-		if (_nm_utils_dns_option_validate (array->pdata[i], &tmp_name, NULL, FALSE, NULL)) {
-			ret = strcmp (tmp_name, option_name);
-			g_free (tmp_name);
-			if (!ret) {
-				g_free (option_name);
-				return i;
-			}
-		}
+		gs_free char *tmp_name = NULL;
 
+		if (_nm_utils_dns_option_validate (array->pdata[i], &tmp_name, NULL, FALSE, NULL)) {
+			if (nm_streq (tmp_name, option_name))
+				return i;
+		}
 	}
 
-	g_free (option_name);
 	return -1;
 }
 
