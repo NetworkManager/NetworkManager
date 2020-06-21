@@ -20,6 +20,7 @@
 #include "nm-json.h"
 #endif
 
+#include "nm-glib-aux/nm-str-buf.h"
 #include "nm-glib-aux/nm-enum-utils.h"
 #include "nm-glib-aux/nm-time-utils.h"
 #include "nm-glib-aux/nm-secret-utils.h"
@@ -3300,30 +3301,29 @@ nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, g
 char *
 _nm_utils_uuid_generate_from_strings (const char *string1, ...)
 {
-	GString *str;
-	va_list args;
-	const char *s;
-	char *uuid;
-
 	if (!string1)
 		return nm_utils_uuid_generate_from_string (NULL, 0, NM_UTILS_UUID_TYPE_VERSION3, NM_UTILS_UUID_NS);
 
-	str = g_string_sized_new (120); /* effectively allocates power of 2 (128)*/
+	{
+		nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT (NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
+		va_list args;
+		const char *s;
 
-	g_string_append_len (str, string1, strlen (string1) + 1);
+		nm_str_buf_append_len (&str, string1, strlen (string1) + 1u);
 
-	va_start (args, string1);
-	s = va_arg (args, const char *);
-	while (s) {
-		g_string_append_len (str, s, strlen (s) + 1);
+		va_start (args, string1);
 		s = va_arg (args, const char *);
+		while (s) {
+			nm_str_buf_append_len (&str, s, strlen (s) + 1u);
+			s = va_arg (args, const char *);
+		}
+		va_end (args);
+
+		return nm_utils_uuid_generate_from_string (nm_str_buf_get_str_unsafe (&str),
+		                                           str.len,
+		                                           NM_UTILS_UUID_TYPE_VERSION3,
+		                                           NM_UTILS_UUID_NS);
 	}
-	va_end (args);
-
-	uuid = nm_utils_uuid_generate_from_string (str->str, str->len, NM_UTILS_UUID_TYPE_VERSION3, NM_UTILS_UUID_NS);
-
-	g_string_free (str, TRUE);
-	return uuid;
 }
 
 /*****************************************************************************/
