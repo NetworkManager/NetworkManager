@@ -299,6 +299,24 @@ nm_str_buf_append_required_delimiter (NMStrBuf *strbuf,
 	return strbuf;
 }
 
+static inline void
+nm_str_buf_reset (NMStrBuf *strbuf,
+                  const char *str)
+{
+	_nm_str_buf_assert (strbuf);
+
+	if (strbuf->_priv_len > 0) {
+		if (strbuf->_priv_do_bzero_mem) {
+			/* we only clear the memory that we wrote to. */
+			nm_explicit_bzero (strbuf->_priv_str, strbuf->_priv_len);
+		}
+		strbuf->_priv_len = 0;
+	}
+
+	if (str)
+		nm_str_buf_append (strbuf, str);
+}
+
 /*****************************************************************************/
 
 /* Calls nm_utils_escaped_tokens_escape() on @str and appends the
