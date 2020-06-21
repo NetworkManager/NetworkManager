@@ -3621,7 +3621,7 @@ struct cf_pair {
 	guint32 freq;
 };
 
-static struct cf_pair a_table[] = {
+static const struct cf_pair a_table[] = {
 	/* A band */
 	{  7, 5035 },
 	{  8, 5040 },
@@ -3668,10 +3668,60 @@ static struct cf_pair a_table[] = {
 	{ 188, 4945 },
 	{ 192, 4960 },
 	{ 196, 4980 },
-	{ 0, -1 }
+	{ 0, 0 }
 };
 
-static struct cf_pair bg_table[] = {
+static const guint a_table_freqs[G_N_ELEMENTS (a_table)] = {
+	/* A band */
+	5035,
+	5040,
+	5045,
+	5055,
+	5060,
+	5080,
+	5170,
+	5180,
+	5190,
+	5200,
+	5210,
+	5220,
+	5230,
+	5240,
+	5250,
+	5260,
+	5280,
+	5290,
+	5300,
+	5320,
+	5500,
+	5520,
+	5540,
+	5560,
+	5580,
+	5600,
+	5620,
+	5640,
+	5660,
+	5680,
+	5700,
+	5745,
+	5760,
+	5765,
+	5785,
+	5800,
+	5805,
+	5825,
+	4915,
+	4920,
+	4925,
+	4935,
+	4945,
+	4960,
+	4980,
+	0,
+};
+
+static const struct cf_pair bg_table[] = {
 	/* B/G band */
 	{ 1, 2412 },
 	{ 2, 2417 },
@@ -3687,7 +3737,26 @@ static struct cf_pair bg_table[] = {
 	{ 12, 2467 },
 	{ 13, 2472 },
 	{ 14, 2484 },
-	{ 0, -1 }
+	{ 0, 0 }
+};
+
+static const guint bg_table_freqs[G_N_ELEMENTS (bg_table)] = {
+	/* B/G band */
+	2412,
+	2417,
+	2422,
+	2427,
+	2432,
+	2437,
+	2442,
+	2447,
+	2452,
+	2457,
+	2462,
+	2467,
+	2472,
+	2484,
+	0,
 };
 
 /**
@@ -3704,16 +3773,16 @@ nm_utils_wifi_freq_to_channel (guint32 freq)
 	int i = 0;
 
 	if (freq > 4900) {
-		while (a_table[i].chan && (a_table[i].freq != freq))
+		while (   a_table[i].freq
+		       && (a_table[i].freq != freq))
 			i++;
 		return a_table[i].chan;
-	} else {
-		while (bg_table[i].chan && (bg_table[i].freq != freq))
-			i++;
-		return bg_table[i].chan;
 	}
 
-	return 0;
+	while (   bg_table[i].freq
+	       && (bg_table[i].freq != freq))
+		i++;
+	return bg_table[i].chan;
 }
 
 /**
@@ -3749,16 +3818,24 @@ nm_utils_wifi_freq_to_band (guint32 freq)
 guint32
 nm_utils_wifi_channel_to_freq (guint32 channel, const char *band)
 {
-	int i = 0;
+	int i;
+
+	g_return_val_if_fail (band, 0);
 
 	if (nm_streq (band, "a")) {
-		while (a_table[i].chan && (a_table[i].chan != channel))
-			i++;
-		return a_table[i].freq;
-	} else if (nm_streq (band, "bg")) {
-		while (bg_table[i].chan && (bg_table[i].chan != channel))
-			i++;
-		return bg_table[i].freq;
+		for (i = 0; a_table[i].chan; i++) {
+			if (a_table[i].chan == channel)
+				return a_table[i].freq;
+		}
+		return ((guint32) -1);
+	}
+
+	if (nm_streq (band, "bg")) {
+		for (i = 0; bg_table[i].chan; i++) {
+			if (bg_table[i].chan == channel)
+				return bg_table[i].freq;
+		}
+		return ((guint32) -1);
 	}
 
 	return 0;
@@ -3779,7 +3856,7 @@ nm_utils_wifi_find_next_channel (guint32 channel, int direction, char *band)
 {
 	size_t a_size = G_N_ELEMENTS (a_table);
 	size_t bg_size = G_N_ELEMENTS (bg_table);
-	struct cf_pair *pair = NULL;
+	const struct cf_pair *pair;
 
 	if (nm_streq (band, "a")) {
 		if (channel < a_table[0].chan)
@@ -3822,49 +3899,32 @@ nm_utils_wifi_find_next_channel (guint32 channel, int direction, char *band)
 gboolean
 nm_utils_wifi_is_channel_valid (guint32 channel, const char *band)
 {
-	struct cf_pair *table = NULL;
-	int i = 0;
+	guint32 freq;
 
-	if (nm_streq (band, "a"))
-		table = a_table;
-	else if (nm_streq (band, "bg"))
-		table = bg_table;
-	else
-		return FALSE;
+	freq = nm_utils_wifi_channel_to_freq (channel, band);
 
-	while (table[i].chan && (table[i].chan != channel))
-		i++;
-
-	if (table[i].chan != 0)
-		return TRUE;
-	else
-		return FALSE;
+	return !NM_IN_SET (freq, 0u, (guint32) -1);
 }
 
-static const guint *
-_wifi_freqs (gboolean bg_band)
-{
-	static guint *freqs_2ghz = NULL;
-	static guint *freqs_5ghz = NULL;
-	guint *freqs;
-
-	freqs = bg_band ? freqs_2ghz : freqs_5ghz;
-	if (G_UNLIKELY (freqs == NULL)) {
-		struct cf_pair *table;
-		int i;
-
-		table = bg_band ? bg_table : a_table;
-		freqs = g_new0 (guint, bg_band ? G_N_ELEMENTS (bg_table) : G_N_ELEMENTS (a_table));
-		for (i = 0; table[i].chan; i++)
-			freqs[i] = table[i].freq;
-		freqs[i] = 0;
-		if (bg_band)
-			freqs_2ghz = freqs;
-		else
-			freqs_5ghz = freqs;
-	}
-	return freqs;
-}
+#define _nm_assert_wifi_freqs(table, table_freqs) \
+	G_STMT_START { \
+		if (NM_MORE_ASSERT_ONCE (5)) { \
+			int i, j; \
+			\
+			G_STATIC_ASSERT (G_N_ELEMENTS (table) > 0); \
+			G_STATIC_ASSERT (G_N_ELEMENTS (table) == G_N_ELEMENTS (table_freqs)); \
+			\
+			for (i = 0; i < G_N_ELEMENTS (table); i++) { \
+				nm_assert ((i == G_N_ELEMENTS (table) - 1) == (table[i].chan == 0)); \
+				nm_assert ((i == G_N_ELEMENTS (table) - 1) == (table[i].freq == 0)); \
+				nm_assert (table[i].freq == table_freqs[i]); \
+				for (j = 0; j < i; j++) { \
+					nm_assert (table[j].chan != table[i].chan); \
+					nm_assert (table[j].freq != table[i].freq); \
+				} \
+			} \
+		} \
+	} G_STMT_END
 
 /**
  * nm_utils_wifi_2ghz_freqs:
@@ -3878,7 +3938,8 @@ _wifi_freqs (gboolean bg_band)
 const guint *
 nm_utils_wifi_2ghz_freqs (void)
 {
-	return _wifi_freqs (TRUE);
+	_nm_assert_wifi_freqs (bg_table, bg_table_freqs);
+	return bg_table_freqs;
 }
 
 /**
@@ -3893,7 +3954,8 @@ nm_utils_wifi_2ghz_freqs (void)
 const guint *
 nm_utils_wifi_5ghz_freqs (void)
 {
-	return _wifi_freqs (FALSE);
+	_nm_assert_wifi_freqs (a_table, a_table_freqs);
+	return a_table_freqs;
 }
 
 /**
@@ -5027,7 +5089,7 @@ typedef struct {
 	const char *num;
 } BondMode;
 
-static BondMode bond_mode_table[] = {
+static const BondMode bond_mode_table[] = {
 	[0] = { "balance-rr",    "0" },
 	[1] = { "active-backup", "1" },
 	[2] = { "balance-xor",   "2" },

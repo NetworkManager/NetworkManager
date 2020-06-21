@@ -9100,6 +9100,55 @@ test_strsplit_quoted (void)
 
 /*****************************************************************************/
 
+static void
+_do_wifi_ghz_freqs (const guint *freqs, const char *band)
+{
+	int len;
+	int j;
+	int i;
+
+	g_assert (NM_IN_STRSET (band, "a", "bg"));
+	g_assert (freqs);
+	g_assert (freqs[0] != 0);
+
+	for (i = 0; freqs[i]; i++) {
+		for (j = 0; j < i; j++)
+			g_assert (freqs[i] != freqs[j]);
+	}
+	len = i;
+
+	g_assert (nm_utils_wifi_freq_to_channel (0) == 0);
+	g_assert (nm_utils_wifi_channel_to_freq (0, "bg") == -1);
+	g_assert (nm_utils_wifi_channel_to_freq (0, "foo") == 0);
+	g_assert (!nm_utils_wifi_is_channel_valid (0, "bg"));
+	g_assert (!nm_utils_wifi_is_channel_valid (0, "foo"));
+
+	for (i = 0; i < len; i++) {
+		guint freq = freqs[i];
+		guint32 chan;
+		guint32 freq2;
+
+		chan = nm_utils_wifi_freq_to_channel (freq);
+		g_assert (chan != 0);
+
+		freq2 = nm_utils_wifi_channel_to_freq (chan, band);
+		g_assert (freq2 == freq);
+
+		g_assert (nm_utils_wifi_is_channel_valid (chan, band));
+	}
+
+	g_assert (freqs[len] == 0);
+}
+
+static void
+test_nm_utils_wifi_ghz_freqs (void)
+{
+	_do_wifi_ghz_freqs (nm_utils_wifi_2ghz_freqs (), "bg");
+	_do_wifi_ghz_freqs (nm_utils_wifi_5ghz_freqs (), "a");
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -9273,6 +9322,7 @@ int main (int argc, char **argv)
 	g_test_add_data_func ("/core/general/test_integrate_maincontext/2", GUINT_TO_POINTER (2), test_integrate_maincontext);
 
 	g_test_add_func ("/core/general/test_nm_ip_addr_zero", test_nm_ip_addr_zero);
+	g_test_add_func ("/core/general/test_nm_utils_wifi_ghz_freqs", test_nm_utils_wifi_ghz_freqs);
 
 	g_test_add_func ("/core/general/test_strsplit_quoted", test_strsplit_quoted);
 
