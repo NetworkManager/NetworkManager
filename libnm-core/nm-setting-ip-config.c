@@ -11,6 +11,7 @@
 #include <arpa/inet.h>
 #include <linux/fib_rules.h>
 
+#include "nm-glib-aux/nm-str-buf.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-utils.h"
@@ -3404,7 +3405,7 @@ next_words_consumed:
 }
 
 static void
-_rr_string_append_inet_addr (GString *str,
+_rr_string_append_inet_addr (NMStrBuf *str,
                              gboolean is_from /* or else is-to */,
                              gboolean required,
                              int addr_family,
@@ -3415,26 +3416,26 @@ _rr_string_append_inet_addr (GString *str,
 
 	if (addr_len == 0) {
 		if (required) {
-			g_string_append_printf (nm_gstring_add_space_delimiter (str),
-			                        "%s %s/0",
-			                        is_from ? "from" : "to",
-			                          (addr_family == AF_INET)
-			                        ? "0.0.0.0"
-			                        : "::");
+			nm_str_buf_append_printf (nm_str_buf_append_required_delimiter (str, ' '),
+			                          "%s %s/0",
+			                          is_from ? "from" : "to",
+			                            (addr_family == AF_INET)
+			                          ? "0.0.0.0"
+			                          : "::");
 		}
 		return;
 	}
 
-	g_string_append_printf (nm_gstring_add_space_delimiter (str),
-	                        "%s %s",
-	                        is_from ? "from" : "to",
-	                        nm_utils_inet_ntop (addr_family,
-	                                            addr_bin,
-	                                            addr_str));
+	nm_str_buf_append_printf (nm_str_buf_append_required_delimiter (str, ' '),
+	                          "%s %s",
+	                          is_from ? "from" : "to",
+	                          nm_utils_inet_ntop (addr_family,
+	                                              addr_bin,
+	                                              addr_str));
 	if (addr_len != nm_utils_addr_family_to_size (addr_family) * 8) {
-		g_string_append_printf (str,
-		                        "/%u",
-		                        addr_len);
+		nm_str_buf_append_printf (str,
+		                          "/%u",
+		                          addr_len);
 	}
 }
 
@@ -3457,8 +3458,8 @@ nm_ip_routing_rule_to_string (const NMIPRoutingRule *self,
                               GHashTable *extra_args,
                               GError **error)
 {
-	nm_auto_free_gstring GString *str = NULL;
 	int addr_family;
+	NMStrBuf str;
 
 	g_return_val_if_fail (NM_IS_IP_ROUTING_RULE (self, TRUE), NULL);
 
@@ -3494,18 +3495,18 @@ nm_ip_routing_rule_to_string (const NMIPRoutingRule *self,
 		}
 	}
 
-	str = g_string_sized_new (30);
+	nm_str_buf_init (&str, NM_UTILS_GET_NEXT_REALLOC_SIZE_32, FALSE);
 
 	if (self->priority_has) {
-		g_string_append_printf (nm_gstring_add_space_delimiter (str),
-		                        "priority %u",
-		                        (guint) self->priority);
+		nm_str_buf_append_printf (nm_str_buf_append_required_delimiter (&str, ' '),
+		                          "priority %u",
+		                          (guint) self->priority);
 	}
 
 	if (self->invert)
-		g_string_append (nm_gstring_add_space_delimiter (str), "not");
+		nm_str_buf_append (nm_str_buf_append_required_delimiter (&str, ' '), "not");
 
-	_rr_string_append_inet_addr (str,
+	_rr_string_append_inet_addr (&str,
 	                             TRUE,
 	                             (   !self->to_has
 	                              || !self->to_valid),
@@ -3515,7 +3516,7 @@ nm_ip_routing_rule_to_string (const NMIPRoutingRule *self,
 	                             ? self->from_len
 	                             : 0);
 
-	_rr_string_append_inet_addr (str,
+	_rr_string_append_inet_addr (&str,
 	                             FALSE,
 	                             FALSE,
 	                             addr_family,
@@ -3525,88 +3526,88 @@ nm_ip_routing_rule_to_string (const NMIPRoutingRule *self,
 	                             : 0);
 
 	if (self->tos != 0) {
-		g_string_append_printf (nm_gstring_add_space_delimiter (str),
-		                        "tos 0x%02x",
-		                        (guint) self->tos);
+		nm_str_buf_append_printf (nm_str_buf_append_required_delimiter (&str, ' '),
+		                          "tos 0x%02x",
+		                          (guint) self->tos);
 	}
 
 	if (self->ipproto != 0) {
-		g_string_append_printf (nm_gstring_add_space_delimiter (str),
-		                        "ipproto %u",
-		                        (guint) self->ipproto);
+		nm_str_buf_append_printf (nm_str_buf_append_required_delimiter (&str, ' '),
+		                          "ipproto %u",
+		                          (guint) self->ipproto);
 	}
 
 	if (   self->fwmark != 0
 	    || self->fwmask != 0) {
 		if (self->fwmark != 0) {
-			g_string_append_printf (nm_gstring_add_space_delimiter (str),
-			                        "fwmark 0x%x",
-			                        self->fwmark);
+			nm_str_buf_append_printf (nm_str_buf_append_required_delimiter (&str, ' '),
+			                          "fwmark 0x%x",
+			                          self->fwmark);
 		} else {
-			g_string_append_printf (nm_gstring_add_space_delimiter (str),
-			                        "fwmark 0");
+			nm_str_buf_append_printf (nm_str_buf_append_required_delimiter (&str, ' '),
+			                          "fwmark 0");
 		}
 		if (self->fwmask != 0xFFFFFFFFu) {
 			if (self->fwmask != 0)
-				g_string_append_printf (str, "/0x%x", self->fwmask);
+				nm_str_buf_append_printf (&str, "/0x%x", self->fwmask);
 			else
-				g_string_append_printf (str, "/0");
+				nm_str_buf_append_printf (&str, "/0");
 		}
 	}
 
 	if (   self->sport_start != 0
 	    || self->sport_end != 0) {
-		g_string_append_printf (nm_gstring_add_space_delimiter (str),
-		                        "sport %u",
-		                        self->sport_start);
+		nm_str_buf_append_printf (nm_str_buf_append_required_delimiter (&str, ' '),
+		                          "sport %u",
+		                          self->sport_start);
 		if (self->sport_start != self->sport_end) {
-			g_string_append_printf (str,
-			                        "-%u",
-			                        self->sport_end);
+			nm_str_buf_append_printf (&str,
+			                          "-%u",
+			                          self->sport_end);
 		}
 	}
 
 	if (   self->dport_start != 0
 	    || self->dport_end != 0) {
-		g_string_append_printf (nm_gstring_add_space_delimiter (str),
-		                        "dport %u",
-		                        self->dport_start);
+		nm_str_buf_append_printf (nm_str_buf_append_required_delimiter (&str, ' '),
+		                          "dport %u",
+		                          self->dport_start);
 		if (self->dport_start != self->dport_end) {
-			g_string_append_printf (str,
-			                        "-%u",
-			                        self->dport_end);
+			nm_str_buf_append_printf (&str,
+			                          "-%u",
+			                          self->dport_end);
 		}
 	}
 
 	if (self->iifname) {
-		g_string_append (nm_gstring_add_space_delimiter (str),
-		                 "iif ");
-		nm_utils_escaped_tokens_escape_gstr (self->iifname,
-		                                     NM_ASCII_SPACES,
-		                                     str);
+		nm_str_buf_append (nm_str_buf_append_required_delimiter (&str, ' '),
+		                   "iif ");
+		nm_utils_escaped_tokens_escape_strbuf (self->iifname,
+		                                       NM_ASCII_SPACES,
+		                                       &str);
 	}
 
 	if (self->oifname) {
-		g_string_append (nm_gstring_add_space_delimiter (str),
-		                 "oif ");
-		nm_utils_escaped_tokens_escape_gstr (self->oifname,
-		                                     NM_ASCII_SPACES,
-		                                     str);
+		nm_str_buf_append (nm_str_buf_append_required_delimiter (&str, ' '),
+		                   "oif ");
+		nm_utils_escaped_tokens_escape_strbuf (self->oifname,
+		                                       NM_ASCII_SPACES,
+		                                       &str);
 	}
 
 	if (self->table != 0) {
-		g_string_append_printf (nm_gstring_add_space_delimiter (str),
-		                        "table %u",
-		                        (guint) self->table);
+		nm_str_buf_append_printf (nm_str_buf_append_required_delimiter (&str, ' '),
+		                          "table %u",
+		                          (guint) self->table);
 	}
 
 	if (self->suppress_prefixlength != -1) {
-		g_string_append_printf (nm_gstring_add_space_delimiter (str),
-		                        "suppress_prefixlength %d",
-		                        (int) self->suppress_prefixlength);
+		nm_str_buf_append_printf (nm_str_buf_append_required_delimiter (&str, ' '),
+		                          "suppress_prefixlength %d",
+		                          (int) self->suppress_prefixlength);
 	}
 
-	return g_string_free (g_steal_pointer (&str), FALSE);
+	return nm_str_buf_finalize (&str, NULL);
 }
 
 /*****************************************************************************/
