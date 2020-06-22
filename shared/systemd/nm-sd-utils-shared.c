@@ -137,3 +137,43 @@ nm_sd_http_url_is_valid_https (const char *url)
 	nm_assert (_http_url_is_valid (url, FALSE) == http_url_is_valid (url));
 	return _http_url_is_valid (url, TRUE);
 }
+
+/*****************************************************************************/
+
+int
+nmtst_systemd_extract_first_word_all (const char *str, char ***out_strv)
+{
+	gs_unref_ptrarray GPtrArray *arr = NULL;
+
+	/* we implement a str split function to parse `/proc/cmdline`. This
+	 * code should behave like systemd, which uses extract_first_word()
+	 * for that.
+	 *
+	 * As we want to unit-test our implementation to match systemd,
+	 * expose this function for testing. */
+
+	g_assert (out_strv);
+	g_assert (!*out_strv);
+
+	if (!str)
+		return 0;
+
+	arr = g_ptr_array_new_with_free_func (g_free);
+
+	for (;;) {
+		gs_free char *word = NULL;
+		int r;
+
+		r = extract_first_word (&str, &word, NULL, EXTRACT_UNQUOTE | EXTRACT_RELAX);
+		if (r < 0)
+			return r;
+		if (r == 0)
+			break;
+		g_ptr_array_add (arr, g_steal_pointer (&word));
+	}
+
+	g_ptr_array_add (arr, NULL);
+
+	*out_strv = (char **) g_ptr_array_free (g_steal_pointer (&arr), FALSE);
+	return 1;
+}
