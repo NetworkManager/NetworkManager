@@ -71,9 +71,13 @@ ppp_ifindex_set (NMPPPManager *ppp_manager,
                  gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
+	NMDevicePpp *self = NM_DEVICE_PPP (device);
 	gs_free char *old_name = NULL;
+	gs_free_error GError *error = NULL;
 
-	if (!nm_device_take_over_link (device, ifindex, &old_name)) {
+	if (!nm_device_take_over_link (device, ifindex, &old_name, &error)) {
+		_LOGW (LOGD_DEVICE | LOGD_PPP, "could not take control of link %d: %s",
+		       ifindex, error->message);
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED,
 		                         NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
 		return;
