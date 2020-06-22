@@ -3793,10 +3793,8 @@ nm_utils_wifi_find_next_channel (guint32 channel, int direction, char *band)
 		if (channel > bg_table[bg_size - 2].chan)
 			return bg_table[bg_size - 2].chan;
 		pair = &bg_table[0];
-	} else {
-		g_assert_not_reached ();
-		return 0;
-	}
+	} else
+		g_return_val_if_reached (0);
 
 	while (pair->chan) {
 		if (channel == pair->chan)
