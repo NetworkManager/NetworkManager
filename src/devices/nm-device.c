@@ -1746,25 +1746,51 @@ nm_device_get_iface (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->iface;
 }
 
+/**
+ * nm_device_take_over_link:
+ * @self: the #NMDevice
+ * @ifindex: a ifindex
+ * @old_name: (transfer full): on return, the name of the old link, if
+ *   the link was renamed
+ * @error: location to store error, or %NULL
+ *
+ * Given an existing link, move it under the control of a device. In
+ * particular, the link will be renamed to match the device name. If the
+ * link was renamed, the old name is returned in @old_name.
+ *
+ * Returns: %TRUE if the device took control of the link, %FALSE otherwise
+ */
 gboolean
-nm_device_take_over_link (NMDevice *self, int ifindex, char **old_name)
+nm_device_take_over_link (NMDevice *self, int ifindex, char **old_name, GError **error)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const NMPlatformLink *plink;
 	NMPlatform *platform;
-	gboolean up, success = TRUE;
-	gs_free char *name = NULL;
 
-	g_return_val_if_fail (priv->ifindex <= 0, FALSE);
-
+	nm_assert (ifindex > 0);
 	NM_SET_OUT (old_name, NULL);
+
+	if (   priv->ifindex > 0
+	    && priv->ifindex != ifindex) {
+		nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+		                    "the device already has ifindex %d",
+		                    priv->ifindex);
+		return FALSE;
+	}
 
 	platform = nm_device_get_platform (self);
 	plink = nm_platform_link_get (platform, ifindex);
-	if (!plink)
+	if (!plink) {
+		nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+		                    "link %d not found", ifindex);
 		return FALSE;
+	}
 
 	if (!nm_streq (plink->name, nm_device_get_iface (self))) {
+		gboolean up;
+		gboolean success;
+		gs_free char *name = NULL;
+
 		up = NM_FLAGS_HAS (plink->n_ifi_flags, IFF_UP);
 		name = g_strdup (plink->name);
 
@@ -1775,16 +1801,21 @@ nm_device_take_over_link (NMDevice *self, int ifindex, char **old_name)
 		if (up)
 			nm_platform_link_set_up (platform, ifindex, NULL);
 
-		if (success)
-			NM_SET_OUT (old_name, g_steal_pointer (&name));
+		if (!success) {
+			nm_utils_error_set (error, NM_UTILS_ERROR_UNKNOWN,
+			                    "failure renaming link %d", ifindex);
+			return FALSE;
+		}
+
+		NM_SET_OUT (old_name, g_steal_pointer (&name));
 	}
 
-	if (success) {
+	if (priv->ifindex != ifindex) {
 		priv->ifindex = ifindex;
 		_notify (self, PROP_IFINDEX);
 	}
 
-	return success;
+	return TRUE;
 }
 
 int
