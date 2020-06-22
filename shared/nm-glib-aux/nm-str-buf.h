@@ -167,6 +167,19 @@ nm_str_buf_erase (NMStrBuf *strbuf,
 /*****************************************************************************/
 
 static inline void
+nm_str_buf_append_c_repeated (NMStrBuf *strbuf,
+                              char ch,
+                              guint len)
+{
+	if (len > 0) {
+		nm_str_buf_maybe_expand (strbuf, len + 1, FALSE);
+		do {
+			strbuf->_priv_str[strbuf->_priv_len++] = ch;
+		} while (--len > 0);
+	}
+}
+
+static inline void
 nm_str_buf_append_c (NMStrBuf *strbuf,
                      char ch)
 {
