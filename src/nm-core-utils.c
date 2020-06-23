@@ -1698,30 +1698,109 @@ nm_match_spec_join (GSList *specs)
 	return g_string_free (str, FALSE);
 }
 
+static void
+_pattern_parse (const char *input,
+                const char **out_pattern,
+                gboolean *out_is_inverted,
+                gboolean *out_is_mandatory)
+{
+	gboolean is_inverted = FALSE;
+	gboolean is_mandatory = FALSE;
+
+	if (input[0] == '&') {
+		input++;
+		is_mandatory = TRUE;
+		if (input[0] == '!') {
+			input++;
+			is_inverted = TRUE;
+		}
+		goto out;
+	}
+
+	if (input[0] == '|') {
+		input++;
+		if (input[0] == '!') {
+			input++;
+			is_inverted = TRUE;
+		}
+		goto out;
+	}
+
+	if (input[0] == '!') {
+		input++;
+		is_inverted = TRUE;
+		is_mandatory = TRUE;
+		goto out;
+	}
+
+out:
+	if (input[0] == '\\')
+		input++;
+
+	*out_pattern = input;
+	*out_is_inverted = is_inverted;
+	*out_is_mandatory = is_mandatory;
+}
+
 gboolean
 nm_wildcard_match_check (const char *str,
                          const char *const *patterns,
                          guint num_patterns)
 {
-	gsize i, neg = 0;
+	gboolean has_optional = FALSE;
+	gboolean has_any_optional = FALSE;
+	guint i;
 
 	for (i = 0; i < num_patterns; i++) {
-		if (patterns[i][0] == '!') {
-			neg++;
-			if (!str)
-				continue;
-			if (!fnmatch (patterns[i] + 1, str, 0))
+		gboolean is_inverted;
+		gboolean is_mandatory;
+		gboolean match;
+		const char *p;
+
+		_pattern_parse (patterns[i], &p, &is_inverted, &is_mandatory);
+
+		match = (fnmatch (p, str, 0) == 0);
+		if (is_inverted)
+			match = !match;
+
+		if (is_mandatory) {
+			if (!match)
 				return FALSE;
+		} else {
+			has_any_optional = TRUE;
+			if (match)
+				has_optional = TRUE;
 		}
 	}
 
-	if (neg == num_patterns)
-		return TRUE;
+	return    has_optional
+	       || !has_any_optional;
+}
 
-	if (str) {
-		for (i = 0; i < num_patterns; i++) {
-			if (   patterns[i][0] != '!'
-			    && !fnmatch (patterns[i], str, 0))
+/*****************************************************************************/
+
+static gboolean
+_kernel_cmdline_match (const char *const*proc_cmdline,
+                       const char *pattern)
+{
+
+	if (proc_cmdline) {
+		gboolean has_equal = (!!strchr (pattern, '='));
+		gsize pattern_len = strlen (pattern);
+
+		for (; proc_cmdline[0]; proc_cmdline++) {
+			const char *c = proc_cmdline[0];
+
+			if (has_equal) {
+				/* if pattern contains '=' compare full key=value */
+				if (nm_streq (c, pattern))
+					return TRUE;
+				continue;
+			}
+
+			/* otherwise consider pattern as key only */
+			if (   strncmp (c, pattern, pattern_len) == 0
+			    && NM_IN_SET (c[pattern_len], '\0', '='))
 				return TRUE;
 		}
 	}
@@ -1729,86 +1808,48 @@ nm_wildcard_match_check (const char *str,
 	return FALSE;
 }
 
-/*****************************************************************************/
-
 gboolean
 nm_utils_kernel_cmdline_match_check (const char *const*proc_cmdline,
                                      const char *const*patterns,
                                      guint num_patterns,
                                      GError **error)
 {
-	gboolean pos_patterns = FALSE;
+	gboolean has_optional = FALSE;
+	gboolean has_any_optional = FALSE;
 	guint i;
 
 	for (i = 0; i < num_patterns; i++) {
-		const char *patterns_i = patterns[i];
-		const char *const*proc_cmdline_i;
-		gboolean negative = FALSE;
-		gboolean found = FALSE;
-		const char *equal;
+		const char *element = patterns[i];
+		gboolean is_inverted = FALSE;
+		gboolean is_mandatory = FALSE;
+		gboolean match;
+		const char *p;
 
-		if (patterns_i[0] == '!') {
-			++patterns_i;
-			negative = TRUE;
-		} else
-			pos_patterns = TRUE;
+		_pattern_parse (element, &p, &is_inverted, &is_mandatory);
 
-		equal = strchr (patterns_i, '=');
+		match = _kernel_cmdline_match (proc_cmdline, p);
+		if (is_inverted)
+			match = !match;
 
-		proc_cmdline_i = proc_cmdline;
-		while (*proc_cmdline_i) {
-			if (equal) {
-				/* if pattern contains = compare full key=value */
-				found = nm_streq (*proc_cmdline_i, patterns_i);
-			} else {
-				gsize l = strlen (patterns_i);
-
-				/* otherwise consider pattern as key only */
-				if (   strncmp (*proc_cmdline_i, patterns_i, l) == 0
-				    && NM_IN_SET ((*proc_cmdline_i)[l], '\0', '='))
-					found = TRUE;
-			}
-			if (   found
-			    && negative) {
-				/* first negative match */
+		if (is_mandatory) {
+			if (!match) {
 				nm_utils_error_set (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
 				                    "device does not satisfy match.kernel-command-line property %s",
 				                    patterns[i]);
 				return FALSE;
 			}
-			proc_cmdline_i++;
+		} else {
+			has_any_optional = TRUE;
+			if (match)
+				has_optional = TRUE;
 		}
+	}
 
-		/* FIXME(release-blocker): match.interface-name and match.driver have the meaning,
-		 * that any of the matches may yield success. For match.kernel-command-line, we
-		 * do here that all must match. This inconsistency is undesired.
-		 *
-		 * 1) improve gtk-doc documentation explaining how these options match.
-		 *
-		 * 2) possibly unify the behavior so that kernel-command-line behaves like other
-		 *    matches (and ANY may match). Note that this would be contrary to systemd's
-		 *    Conditions, which by default requires that ALL conditions match (AND). We
-		 *    should be consistent within our match options, and not with systemd here.
-		 *
-		 * 2b) Note that systemd supports special token like "=|", to indicate that
-		 *    ANY behavior. If we want, we could also introduce two special prefixes
-		 *    "&..." and "|...", to support either. It's slightly complicated how
-		 *    these work in combinations with "!".
-		 *    Unless we fully decide what we do about this, NMSettingMatch.verify() should
-		 *    reject matches that start with '&' or '|', because these will be reserved for
-		 *    future use.
-		 *
-		 * 3) while fixing this, this code should move to a separate function so we
-		 *    can unit test the match of kernel command lines.
-		 */
-		if (   pos_patterns
-		    && !found) {
-			/* positive patterns configured but no match */
-			nm_utils_error_set (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-			                    "device does not satisfy any match.kernel-command-line property %s...",
-			                    patterns[0]);
-			return FALSE;
-		}
+	if (   !has_optional
+	    && has_any_optional) {
+		nm_utils_error_set (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                    "device does not satisfy any match.kernel-command-line property");
+		return FALSE;
 	}
 
 	return TRUE;
