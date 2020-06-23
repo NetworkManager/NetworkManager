@@ -968,9 +968,16 @@ test_wildcard_match (void)
 	do_test_wildcard_match ("b",      TRUE,  "!!a");
 	do_test_wildcard_match ("!a",     FALSE, "!!a");
 
-	do_test_wildcard_match ("\\",     TRUE,  "\\\\");
+	do_test_wildcard_match ("\\",     TRUE,  "\\\\\\");
 	do_test_wildcard_match ("\\\\",   FALSE, "\\\\");
 	do_test_wildcard_match ("",       FALSE, "\\\\");
+
+	do_test_wildcard_match ("\\a",    TRUE, "\\\\\\a");
+	do_test_wildcard_match ("b",      TRUE, "&!a");
+	do_test_wildcard_match ("a",      FALSE, "&!a");
+	do_test_wildcard_match ("!a",     TRUE, "&\\!a");
+	do_test_wildcard_match ("!a",     TRUE, "|\\!a");
+	do_test_wildcard_match ("!a",     TRUE, "\\!a");
 
 	do_test_wildcard_match ("name",   FALSE, "name[123]");
 	do_test_wildcard_match ("name1",  TRUE,  "name[123]");
@@ -979,6 +986,12 @@ test_wildcard_match (void)
 	do_test_wildcard_match ("name4",  FALSE, "name[123]");
 
 	do_test_wildcard_match ("[a]",    TRUE,  "\\[a\\]");
+
+	do_test_wildcard_match ("aa",     FALSE, "!a*");
+	do_test_wildcard_match ("aa",     FALSE, "&!a*");
+	do_test_wildcard_match ("aa",     FALSE, "|!a*");
+	do_test_wildcard_match ("aa",     FALSE, "&!a*", "aa");
+	do_test_wildcard_match ("aa",     TRUE, "|!a*", "aa");
 }
 
 static NMConnection *
@@ -2146,6 +2159,13 @@ test_kernel_cmdline_match_check (void)
 	_kernel_cmdline_match (TRUE, NM_MAKE_STRV ("a"), NM_MAKE_STRV ("a"));
 	_kernel_cmdline_match (TRUE, NM_MAKE_STRV ("a=b"), NM_MAKE_STRV ("a"));
 	_kernel_cmdline_match (TRUE, NM_MAKE_STRV ("a=b", "b"), NM_MAKE_STRV ("a", "b"));
+	_kernel_cmdline_match (TRUE, NM_MAKE_STRV ("a=b", "b"), NM_MAKE_STRV ("&a", "&b"));
+	_kernel_cmdline_match (FALSE, NM_MAKE_STRV ("a=b", "bc"), NM_MAKE_STRV ("&a", "&b"));
+	_kernel_cmdline_match (FALSE, NM_MAKE_STRV ("a=b", "b"), NM_MAKE_STRV ("&a", "&b", "c"));
+	_kernel_cmdline_match (TRUE, NM_MAKE_STRV ("a=b", "b"), NM_MAKE_STRV ("&a", "&b", "b", "c"));
+	_kernel_cmdline_match (TRUE, NM_MAKE_STRV ("a=b", "b", "c=dd"), NM_MAKE_STRV ("&a", "&b", "c"));
+	_kernel_cmdline_match (FALSE, NM_MAKE_STRV ("a", "b"), NM_MAKE_STRV ("a", "&c"));
+	_kernel_cmdline_match (TRUE, NM_MAKE_STRV ("a", "b"), NM_MAKE_STRV ("a", "|\\c"));
 }
 
 /*****************************************************************************/
