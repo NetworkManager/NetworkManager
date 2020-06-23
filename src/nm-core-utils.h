@@ -230,6 +230,11 @@ gboolean nm_wildcard_match_check (const char *str,
                                   const char *const *patterns,
                                   guint num_patterns);
 
+gboolean nm_utils_kernel_cmdline_match_check (const char *const*proc_cmdline,
+                                              const char *const*patterns,
+                                              guint num_patterns,
+                                              GError **error);
+
 /*****************************************************************************/
 
 gboolean nm_utils_connection_has_default_route (NMConnection *connection,

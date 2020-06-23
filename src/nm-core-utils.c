@@ -1731,6 +1731,91 @@ nm_wildcard_match_check (const char *str,
 
 /*****************************************************************************/
 
+gboolean
+nm_utils_kernel_cmdline_match_check (const char *const*proc_cmdline,
+                                     const char *const*patterns,
+                                     guint num_patterns,
+                                     GError **error)
+{
+	gboolean pos_patterns = FALSE;
+	guint i;
+
+	for (i = 0; i < num_patterns; i++) {
+		const char *patterns_i = patterns[i];
+		const char *const*proc_cmdline_i;
+		gboolean negative = FALSE;
+		gboolean found = FALSE;
+		const char *equal;
+
+		if (patterns_i[0] == '!') {
+			++patterns_i;
+			negative = TRUE;
+		} else
+			pos_patterns = TRUE;
+
+		equal = strchr (patterns_i, '=');
+
+		proc_cmdline_i = proc_cmdline;
+		while (*proc_cmdline_i) {
+			if (equal) {
+				/* if pattern contains = compare full key=value */
+				found = nm_streq (*proc_cmdline_i, patterns_i);
+			} else {
+				gsize l = strlen (patterns_i);
+
+				/* otherwise consider pattern as key only */
+				if (   strncmp (*proc_cmdline_i, patterns_i, l) == 0
+				    && NM_IN_SET ((*proc_cmdline_i)[l], '\0', '='))
+					found = TRUE;
+			}
+			if (   found
+			    && negative) {
+				/* first negative match */
+				nm_utils_error_set (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+				                    "device does not satisfy match.kernel-command-line property %s",
+				                    patterns[i]);
+				return FALSE;
+			}
+			proc_cmdline_i++;
+		}
+
+		/* FIXME(release-blocker): match.interface-name and match.driver have the meaning,
+		 * that any of the matches may yield success. For match.kernel-command-line, we
+		 * do here that all must match. This inconsistency is undesired.
+		 *
+		 * 1) improve gtk-doc documentation explaining how these options match.
+		 *
+		 * 2) possibly unify the behavior so that kernel-command-line behaves like other
+		 *    matches (and ANY may match). Note that this would be contrary to systemd's
+		 *    Conditions, which by default requires that ALL conditions match (AND). We
+		 *    should be consistent within our match options, and not with systemd here.
+		 *
+		 * 2b) Note that systemd supports special token like "=|", to indicate that
+		 *    ANY behavior. If we want, we could also introduce two special prefixes
+		 *    "&..." and "|...", to support either. It's slightly complicated how
+		 *    these work in combinations with "!".
+		 *    Unless we fully decide what we do about this, NMSettingMatch.verify() should
+		 *    reject matches that start with '&' or '|', because these will be reserved for
+		 *    future use.
+		 *
+		 * 3) while fixing this, this code should move to a separate function so we
+		 *    can unit test the match of kernel command lines.
+		 */
+		if (   pos_patterns
+		    && !found) {
+			/* positive patterns configured but no match */
+			nm_utils_error_set (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+			                    "device does not satisfy any match.kernel-command-line property %s...",
+			                    patterns[0]);
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
+/*****************************************************************************/
+
 char *
 nm_utils_new_vlan_name (const char *parent_iface, guint32 vlan_id)
 {
