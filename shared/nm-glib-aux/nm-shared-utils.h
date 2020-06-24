@@ -681,6 +681,10 @@ nm_utils_escaped_tokens_escape_gstr (const char *str,
 
 /*****************************************************************************/
 
+char **nm_utils_strsplit_quoted (const char *str);
+
+/*****************************************************************************/
+
 static inline const char **
 nm_utils_escaped_tokens_options_split_list (const char *str)
 {

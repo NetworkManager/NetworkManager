@@ -13,6 +13,8 @@
 
 #include "nm-std-aux/c-list-util.h"
 #include "nm-glib-aux/nm-enum-utils.h"
+#include "nm-glib-aux/nm-str-buf.h"
+#include "systemd/nm-sd-utils-shared.h"
 
 #include "nm-utils.h"
 #include "nm-setting-private.h"
@@ -8869,7 +8871,232 @@ test_connection_ovs_ifname (gconstpointer test_data)
 	}
 }
 
+/*****************************************************************************/
 
+static gboolean
+_strsplit_quoted_char_needs_escaping (char ch)
+{
+	return    NM_IN_SET (ch, '\'', '\"', '\\')
+	       || strchr (NM_ASCII_WHITESPACES, ch);
+}
+
+static char *
+_strsplit_quoted_create_str_rand (gssize len)
+{
+	NMStrBuf strbuf = NM_STR_BUF_INIT (nmtst_get_rand_uint32 () % 200, nmtst_get_rand_bool ());
+
+	g_assert (len >= -1);
+
+	if (len == -1)
+		len = nmtst_get_rand_word_length (NULL);
+
+	while (len-- > 0) {
+		char ch;
+
+		ch = nmtst_rand_select ('a', ' ', '\\', '"', '\'', nmtst_get_rand_uint32 () % 255 + 1);
+		g_assert (ch);
+		nm_str_buf_append_c (&strbuf, ch);
+	}
+
+	if (!strbuf.allocated)
+		nm_str_buf_maybe_expand (&strbuf, 1, nmtst_get_rand_bool ());
+	return nm_str_buf_finalize (&strbuf, NULL);
+}
+
+static char **
+_strsplit_quoted_create_strv_rand (void)
+{
+	guint len = nmtst_get_rand_word_length (NULL);
+	char **ptr;
+	guint i;
+
+	ptr = g_new (char *, len + 1);
+	for (i = 0; i < len; i++)
+		ptr[i] = _strsplit_quoted_create_str_rand (-1);
+	ptr[i] = NULL;
+	return ptr;
+}
+
+static char *
+_strsplit_quoted_join_strv_rand (const char *const*strv)
+{
+	NMStrBuf strbuf = NM_STR_BUF_INIT (nmtst_get_rand_uint32 () % 200, nmtst_get_rand_bool ());
+	char *result;
+	gsize l;
+	gsize l2;
+	gsize *p_l2 = nmtst_get_rand_bool () ? &l2 : NULL;
+	gsize i;
+
+	g_assert (strv);
+
+	nm_str_buf_append_c_repeated (&strbuf, ' ', nmtst_get_rand_word_length (NULL) / 4);
+	for (i = 0; strv[i]; i++) {
+		const char *s = strv[i];
+		gsize j;
+		char quote;
+
+		nm_str_buf_append_c_repeated (&strbuf, ' ', 1 + nmtst_get_rand_word_length (NULL) / 4);
+
+		j = 0;
+		quote = '\0';
+		while (TRUE) {
+			char ch = s[j++];
+
+			/* extract_first_word*/
+			if (quote != '\0') {
+				if (ch == '\0') {
+					nm_str_buf_append_c (&strbuf, quote);
+					break;
+				}
+				if (   ch == quote
+				    || ch == '\\'
+				    || nmtst_get_rand_uint32 () % 5 == 0)
+					nm_str_buf_append_c (&strbuf, '\\');
+				nm_str_buf_append_c (&strbuf, ch);
+				if (nmtst_get_rand_uint32 () % 3 == 0) {
+					nm_str_buf_append_c (&strbuf, quote);
+					quote = '\0';
+					goto next_maybe_quote;
+				}
+				continue;
+			}
+
+			if (ch == '\0') {
+				if (s == strv[i]) {
+					quote = nmtst_rand_select ('\'', '"');
+					nm_str_buf_append_c_repeated (&strbuf, quote, 2);
+				}
+				break;
+			}
+
+			if (   _strsplit_quoted_char_needs_escaping (ch)
+			    || nmtst_get_rand_uint32 () % 5 == 0)
+				nm_str_buf_append_c (&strbuf, '\\');
+
+			nm_str_buf_append_c (&strbuf, ch);
+
+next_maybe_quote:
+			if (nmtst_get_rand_uint32 () % 5 == 0) {
+				quote = nmtst_rand_select ('\'', '\"');
+				nm_str_buf_append_c (&strbuf, quote);
+				if (nmtst_get_rand_uint32 () % 5 == 0) {
+					nm_str_buf_append_c (&strbuf, quote);
+					quote = '\0';
+				}
+			}
+		}
+	}
+	nm_str_buf_append_c_repeated (&strbuf, ' ', nmtst_get_rand_word_length (NULL) / 4);
+
+	nm_str_buf_maybe_expand (&strbuf, 1, nmtst_get_rand_bool ());
+
+	l = strbuf.len;
+	result = nm_str_buf_finalize (&strbuf, p_l2);
+	g_assert (!p_l2 || l == *p_l2);
+	g_assert (strlen (result) == l);
+	return result;
+}
+
+static void
+_strsplit_quoted_assert_strv (const char *topic,
+                              const char *str,
+                              const char *const*strv1,
+                              const char *const*strv2)
+{
+	nm_auto_str_buf NMStrBuf s1 = { };
+	nm_auto_str_buf NMStrBuf s2 = { };
+	gs_free char *str_escaped = NULL;
+	int i;
+
+	g_assert (str);
+	g_assert (strv1);
+	g_assert (strv2);
+
+	if (_nm_utils_strv_equal ((char **) strv1, (char **) strv2))
+		return;
+
+	for (i = 0; strv1[i]; i++) {
+		gs_free char *s = g_strescape (strv1[i], NULL);
+
+		g_print (">>> [%s] strv1[%d] = \"%s\"\n", topic, i, s);
+		if (i > 0)
+			nm_str_buf_append_c (&s1, ' ');
+		nm_str_buf_append_printf (&s1, "\"%s\"", s);
+	}
+
+	for (i = 0; strv2[i]; i++) {
+		gs_free char *s = g_strescape (strv2[i], NULL);
+
+		g_print (">>> [%s] strv2[%d] = \"%s\"\n", topic, i, s);
+		if (i > 0)
+			nm_str_buf_append_c (&s2, ' ');
+		nm_str_buf_append_printf (&s2, "\"%s\"", s);
+	}
+
+	nm_str_buf_maybe_expand (&s1, 1, FALSE);
+	nm_str_buf_maybe_expand (&s2, 1, FALSE);
+
+	str_escaped = g_strescape (str, NULL);
+	g_error ("compared words differs: [%s] str=\"%s\"; strv1=%s; strv2=%s", topic, str_escaped, nm_str_buf_get_str (&s1), nm_str_buf_get_str (&s2));
+}
+
+static void
+_strsplit_quoted_test (const char *str,
+                       const char *const*strv_expected)
+{
+	gs_strfreev char **strv_systemd = NULL;
+	gs_strfreev char **strv_nm = NULL;
+	int r;
+
+	g_assert (str);
+
+	r = nmtst_systemd_extract_first_word_all (str, &strv_systemd);
+	g_assert_cmpint (r, ==, 1);
+	g_assert (strv_systemd);
+
+	if (!strv_expected)
+		strv_expected = (const char *const*) strv_systemd;
+
+	_strsplit_quoted_assert_strv ("systemd", str, strv_expected, (const char *const*) strv_systemd);
+
+	strv_nm = nm_utils_strsplit_quoted (str);
+	g_assert (strv_nm);
+	_strsplit_quoted_assert_strv ("nm", str, strv_expected, (const char *const*) strv_nm);
+}
+
+static void
+test_strsplit_quoted (void)
+{
+	int i_run;
+
+	_strsplit_quoted_test ("", NM_MAKE_STRV ());
+	_strsplit_quoted_test (" ", NM_MAKE_STRV ());
+	_strsplit_quoted_test ("  ", NM_MAKE_STRV ());
+	_strsplit_quoted_test ("  \t", NM_MAKE_STRV ());
+	_strsplit_quoted_test ("a b", NM_MAKE_STRV ("a", "b"));
+	_strsplit_quoted_test ("a\\ b", NM_MAKE_STRV ("a b"));
+	_strsplit_quoted_test (" a\\ \"b\"", NM_MAKE_STRV ("a b"));
+	_strsplit_quoted_test (" a\\ \"b\" c \n", NM_MAKE_STRV ("a b", "c"));
+
+	for (i_run = 0; i_run < 1000; i_run++) {
+		gs_strfreev char **strv = NULL;
+		gs_free char *str = NULL;
+
+		/* create random strv array and join them carefully so that splitting
+		 * them will yield the original value. */
+		strv = _strsplit_quoted_create_strv_rand ();
+		str = _strsplit_quoted_join_strv_rand ((const char *const*) strv);
+		_strsplit_quoted_test (str, (const char *const*) strv);
+	}
+
+	/* Create random words and assert that systemd and our implementation can
+	 * both split them (and in the exact same way). */
+	for (i_run = 0; i_run < 1000; i_run++) {
+		gs_free char *s = _strsplit_quoted_create_str_rand (nmtst_get_rand_uint32 () % 150);
+
+		_strsplit_quoted_test (s, NULL);
+	}
+}
 
 /*****************************************************************************/
 
@@ -9046,6 +9273,8 @@ int main (int argc, char **argv)
 	g_test_add_data_func ("/core/general/test_integrate_maincontext/2", GUINT_TO_POINTER (2), test_integrate_maincontext);
 
 	g_test_add_func ("/core/general/test_nm_ip_addr_zero", test_nm_ip_addr_zero);
+
+	g_test_add_func ("/core/general/test_strsplit_quoted", test_strsplit_quoted);
 
 	return g_test_run ();
 }
