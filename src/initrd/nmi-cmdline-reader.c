@@ -464,7 +464,7 @@ reader_parse_ip (Reader *reader, const char *sysfs_dir, char *argument)
 	if (NM_IN_STRSET (kind, "none", "off")) {
 		if (nm_setting_ip_config_get_num_addresses (s_ip6) == 0) {
 			g_object_set (s_ip6,
-			              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
+			              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 			              NULL);
 		}
 		if (nm_setting_ip_config_get_num_addresses (s_ip4) == 0) {
@@ -479,7 +479,7 @@ reader_parse_ip (Reader *reader, const char *sysfs_dir, char *argument)
 		              NULL);
 		if (nm_setting_ip_config_get_num_addresses (s_ip6) == 0) {
 			g_object_set (s_ip6,
-			              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+			              NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO,
 			              NULL);
 		}
 	} else if (nm_streq0 (kind, "dhcp6")) {

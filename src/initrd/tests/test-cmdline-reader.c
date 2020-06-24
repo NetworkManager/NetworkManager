@@ -186,11 +186,12 @@ test_if_ip4_manual (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
 	const char *const*ARGV = NM_MAKE_STRV ("ip=192.0.2.2::192.0.2.1:255.255.255.0:"
-	                                       "hostname0.example.com:eth3::192.0.2.53",
+	                                       "hostname0.example.com:eth3:none:192.0.2.53",
 	                                       "ip=203.0.113.2::203.0.113.1:26:"
 	                                       "hostname1.example.com:eth4");
 	NMConnection *connection;
 	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
 	NMIPAddress *ip_addr;
 	gs_free char *hostname = NULL;
 
@@ -219,6 +220,11 @@ test_if_ip4_manual (void)
 	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.0.2.1");
 	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip4), ==, "hostname0.example.com");
 
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	g_assert (s_ip6);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+	g_assert (nm_setting_ip_config_get_may_fail (s_ip6));
+
 	connection = g_hash_table_lookup (connections, "eth4");
 	g_assert (connection);
 	nmtst_assert_connection_verifies_without_normalization (connection);
@@ -237,6 +243,11 @@ test_if_ip4_manual (void)
 	g_assert_cmpint (nm_ip_address_get_prefix (ip_addr), ==, 26);
 	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "203.0.113.1");
 	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip4), ==, "hostname1.example.com");
+
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	g_assert (s_ip6);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+	g_assert (nm_setting_ip_config_get_may_fail (s_ip6));
 }
 
 static void
@@ -1086,7 +1097,7 @@ test_bootif (void)
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
 	g_assert (!nm_setting_ip_config_get_ignore_auto_dns (s_ip6));
 }
 
@@ -1124,7 +1135,7 @@ test_bootif_hwtype (void)
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
 	g_assert (!nm_setting_ip_config_get_ignore_auto_dns (s_ip6));
 
 	connection = g_hash_table_lookup (connections, "bootif_connection");
