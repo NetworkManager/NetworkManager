@@ -38,4 +38,8 @@ gboolean nm_sd_hostname_is_valid(const char *s, bool allow_trailing_dot);
 
 gboolean nm_sd_http_url_is_valid_https (const char *url);
 
+/*****************************************************************************/
+
+int nmtst_systemd_extract_first_word_all (const char *str, char ***out_strv);
+
 #endif /* __NM_SD_UTILS_SHARED_H__ */

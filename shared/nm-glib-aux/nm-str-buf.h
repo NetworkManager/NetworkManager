@@ -39,13 +39,18 @@ _nm_str_buf_assert (NMStrBuf *strbuf)
 	nm_assert (strbuf->_priv_len <= strbuf->_priv_allocated);
 }
 
-#define NM_STR_BUF_INIT(len, do_bzero_mem) \
-	((NMStrBuf) { \
-		._priv_str          = (len) ? g_malloc (len) : NULL, \
-		._priv_allocated    = (len), \
-		._priv_len          = 0, \
-		._priv_do_bzero_mem = (do_bzero_mem), \
-	})
+static inline NMStrBuf
+NM_STR_BUF_INIT (gsize allocated, gboolean do_bzero_mem)
+{
+	NMStrBuf strbuf = {
+		._priv_str          = allocated ? g_malloc (allocated) : NULL,
+		._priv_allocated    = allocated,
+		._priv_len          = 0,
+		._priv_do_bzero_mem = do_bzero_mem,
+	};
+
+	return strbuf;
+}
 
 static inline void
 nm_str_buf_init (NMStrBuf *strbuf,
@@ -160,6 +165,19 @@ nm_str_buf_erase (NMStrBuf *strbuf,
 }
 
 /*****************************************************************************/
+
+static inline void
+nm_str_buf_append_c_repeated (NMStrBuf *strbuf,
+                              char ch,
+                              guint len)
+{
+	if (len > 0) {
+		nm_str_buf_maybe_expand (strbuf, len + 1, FALSE);
+		do {
+			strbuf->_priv_str[strbuf->_priv_len++] = ch;
+		} while (--len > 0);
+	}
+}
 
 static inline void
 nm_str_buf_append_c (NMStrBuf *strbuf,
