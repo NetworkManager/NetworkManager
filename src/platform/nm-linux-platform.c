@@ -7250,7 +7250,7 @@ link_supports_sriov (NMPlatform *platform, int ifindex)
 	nm_auto_pop_netns NMPNetns *netns = NULL;
 	nm_auto_close int dirfd = -1;
 	char ifname[IFNAMSIZ];
-	int total = -1;
+	int num = -1;
 
 	if (!nm_platform_netns_push (platform, &netns))
 		return FALSE;
@@ -7259,13 +7259,13 @@ link_supports_sriov (NMPlatform *platform, int ifindex)
 	if (dirfd < 0)
 		return FALSE;
 
-	total = nm_platform_sysctl_get_int32 (platform,
-	                                      NMP_SYSCTL_PATHID_NETDIR (dirfd,
-	                                                                ifname,
-	                                                                "device/sriov_totalvfs"),
-	                                      -1);
+	num = nm_platform_sysctl_get_int32 (platform,
+	                                    NMP_SYSCTL_PATHID_NETDIR (dirfd,
+	                                                              ifname,
+	                                                              "device/sriov_numvfs"),
+	                                    -1);
 
-	return total > 0;
+	return num != -1;
 }
 
 static int
@@ -7408,15 +7408,7 @@ link_set_sriov_params_async (NMPlatform *platform,
 	                                                                      ifname,
 	                                                                      "device/sriov_totalvfs"),
 	                                            10, 0, G_MAXUINT, 0);
-	if (errno) {
-		g_set_error (&error,
-		             NM_UTILS_ERROR,
-		             NM_UTILS_ERROR_UNKNOWN,
-		             "failed reading sriov_totalvfs value: %s",
-		             nm_strerror_native (errno));
-		goto out_idle;
-	}
-	if (num_vfs > total) {
+	if (!errno && num_vfs > total) {
 		_LOGW ("link: %d only supports %u VFs (requested %u)", ifindex, total, num_vfs);
 		num_vfs = total;
 	}
