@@ -4468,7 +4468,7 @@ nm_client_check_connectivity_finish (NMClient *client,
 	guint32 connectivity;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NM_CONNECTIVITY_UNKNOWN);
-	g_return_val_if_fail (nm_g_task_is_valid (client, result, nm_client_check_connectivity_async), NM_CONNECTIVITY_UNKNOWN);
+	g_return_val_if_fail (nm_g_task_is_valid (result, client, nm_client_check_connectivity_async), NM_CONNECTIVITY_UNKNOWN);
 
 	ret = g_task_propagate_pointer (G_TASK (result), error);
 	if (!ret)
