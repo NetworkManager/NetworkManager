@@ -17892,6 +17892,12 @@ dispose (GObject *object)
 	nm_clear_g_source (&priv->concheck_x[0].p_cur_id);
 	nm_clear_g_source (&priv->concheck_x[1].p_cur_id);
 
+	nm_assert (!priv->sriov.pending);
+	if (priv->sriov.next) {
+		nm_g_slice_free (priv->sriov.next);
+		priv->sriov.next = NULL;
+	}
+
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 
 	if (nm_clear_g_source (&priv->queued_state.id)) {
