@@ -281,7 +281,7 @@ nm_str_buf_is_initalized (NMStrBuf *strbuf)
  *   NUL character is always present after "strbuf->len" characters.
  *   If currently no buffer is allocated, this will return %NULL.
  */
-static inline const char *
+static inline char *
 nm_str_buf_get_str (NMStrBuf *strbuf)
 {
 	_nm_str_buf_assert (strbuf);
