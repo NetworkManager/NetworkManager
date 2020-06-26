@@ -8,6 +8,7 @@ from __future__ import print_function
 
 import os
 import gi
+import xml.sax.saxutils as saxutils
 
 gi.require_version("GIRepository", "2.0")
 from gi.repository import GIRepository
@@ -179,8 +180,8 @@ def settings_sort_key(x):
     return (x_prefix != "setting_connection", x_prefix)
 
 
-def escape(val):
-    return str(val).replace('"', "&quot;")
+def xml_quoteattr(val):
+    return saxutils.quoteattr(str(val))
 
 
 def usage():
@@ -275,11 +276,17 @@ for settingxml in settings:
 
         default_value_as_xml = ""
         if default_value is not None:
-            default_value_as_xml = ' default="%s"' % (escape(default_value))
+            default_value_as_xml = " default=%s" % (xml_quoteattr(default_value))
 
         outfile.write(
-            '    <property name="%s" name_upper="%s" type="%s"%s description="%s" />\n'
-            % (prop, prop_upper, value_type, default_value_as_xml, escape(value_desc))
+            '    <property name="%s" name_upper="%s" type="%s"%s description=%s />\n'
+            % (
+                prop,
+                prop_upper,
+                value_type,
+                default_value_as_xml,
+                xml_quoteattr(value_desc),
+            )
         )
 
     outfile.write("  </setting>\n")
