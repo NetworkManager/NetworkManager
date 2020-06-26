@@ -8,6 +8,8 @@ from __future__ import print_function
 
 import os
 import gi
+import xml.sax.saxutils as saxutils
+
 gi.require_version('GIRepository', '2.0')
 from gi.repository import GIRepository
 import argparse, datetime, re, sys
@@ -163,8 +165,8 @@ def settings_sort_key(x):
     # always sort NMSettingConnection first
     return (x_prefix != "setting_connection", x_prefix);
 
-def escape(val):
-    return str(val).replace('"', '&quot;')
+def xml_quoteattr(val):
+    return saxutils.quoteattr(str(val))
 
 def usage():
     print("Usage: %s --gir FILE --output FILE" % sys.argv[0])
@@ -256,11 +258,11 @@ for settingxml in settings:
             raise Exception("%s.%s needs a documentation description" % (setting.props.name, prop))
 
         if default_value is not None:
-            outfile.write("    <property name=\"%s\" name_upper=\"%s\" type=\"%s\" default=\"%s\" description=\"%s\" />\n" %
-                          (prop, prop_upper, value_type, escape(default_value), escape(value_desc)))
+            outfile.write("    <property name=\"%s\" name_upper=\"%s\" type=\"%s\" default=%s description=%s />\n" %
+                          (prop, prop_upper, value_type, xml_quoteattr(default_value), xml_quoteattr(value_desc)))
         else:
-            outfile.write("    <property name=\"%s\" name_upper=\"%s\" type=\"%s\" description=\"%s\" />\n" %
-                          (prop, prop_upper, value_type, escape(value_desc)))
+            outfile.write("    <property name=\"%s\" name_upper=\"%s\" type=\"%s\" description=%s />\n" %
+                          (prop, prop_upper, value_type, xml_quoteattr(value_desc)))
 
     outfile.write("  </setting>\n")
 
