@@ -39,6 +39,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   profiles.
 * Fix support for OVS patch interfaces.
 * Support more tc qdiscs: tbf and sfq.
+* Add new provider in nm-cloud-setup for Google Cloud Platform which
+  automatically detects and configures the host to receive traffic
+  from internal load balancers.
 
 =============================================
 NetworkManager-1.24
