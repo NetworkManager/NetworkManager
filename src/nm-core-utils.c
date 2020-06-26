@@ -1698,35 +1698,161 @@ nm_match_spec_join (GSList *specs)
 	return g_string_free (str, FALSE);
 }
 
+static void
+_pattern_parse (const char *input,
+                const char **out_pattern,
+                gboolean *out_is_inverted,
+                gboolean *out_is_mandatory)
+{
+	gboolean is_inverted = FALSE;
+	gboolean is_mandatory = FALSE;
+
+	if (input[0] == '&') {
+		input++;
+		is_mandatory = TRUE;
+		if (input[0] == '!') {
+			input++;
+			is_inverted = TRUE;
+		}
+		goto out;
+	}
+
+	if (input[0] == '|') {
+		input++;
+		if (input[0] == '!') {
+			input++;
+			is_inverted = TRUE;
+		}
+		goto out;
+	}
+
+	if (input[0] == '!') {
+		input++;
+		is_inverted = TRUE;
+		is_mandatory = TRUE;
+		goto out;
+	}
+
+out:
+	if (input[0] == '\\')
+		input++;
+
+	*out_pattern = input;
+	*out_is_inverted = is_inverted;
+	*out_is_mandatory = is_mandatory;
+}
+
 gboolean
 nm_wildcard_match_check (const char *str,
                          const char *const *patterns,
                          guint num_patterns)
 {
-	gsize i, neg = 0;
+	gboolean has_optional = FALSE;
+	gboolean has_any_optional = FALSE;
+	guint i;
 
 	for (i = 0; i < num_patterns; i++) {
-		if (patterns[i][0] == '!') {
-			neg++;
-			if (!str)
-				continue;
-			if (!fnmatch (patterns[i] + 1, str, 0))
+		gboolean is_inverted;
+		gboolean is_mandatory;
+		gboolean match;
+		const char *p;
+
+		_pattern_parse (patterns[i], &p, &is_inverted, &is_mandatory);
+
+		match = (fnmatch (p, str, 0) == 0);
+		if (is_inverted)
+			match = !match;
+
+		if (is_mandatory) {
+			if (!match)
 				return FALSE;
+		} else {
+			has_any_optional = TRUE;
+			if (match)
+				has_optional = TRUE;
 		}
 	}
 
-	if (neg == num_patterns)
-		return TRUE;
+	return    has_optional
+	       || !has_any_optional;
+}
 
-	if (str) {
-		for (i = 0; i < num_patterns; i++) {
-			if (   patterns[i][0] != '!'
-			    && !fnmatch (patterns[i], str, 0))
+/*****************************************************************************/
+
+static gboolean
+_kernel_cmdline_match (const char *const*proc_cmdline,
+                       const char *pattern)
+{
+
+	if (proc_cmdline) {
+		gboolean has_equal = (!!strchr (pattern, '='));
+		gsize pattern_len = strlen (pattern);
+
+		for (; proc_cmdline[0]; proc_cmdline++) {
+			const char *c = proc_cmdline[0];
+
+			if (has_equal) {
+				/* if pattern contains '=' compare full key=value */
+				if (nm_streq (c, pattern))
+					return TRUE;
+				continue;
+			}
+
+			/* otherwise consider pattern as key only */
+			if (   strncmp (c, pattern, pattern_len) == 0
+			    && NM_IN_SET (c[pattern_len], '\0', '='))
 				return TRUE;
 		}
 	}
 
 	return FALSE;
+}
+
+gboolean
+nm_utils_kernel_cmdline_match_check (const char *const*proc_cmdline,
+                                     const char *const*patterns,
+                                     guint num_patterns,
+                                     GError **error)
+{
+	gboolean has_optional = FALSE;
+	gboolean has_any_optional = FALSE;
+	guint i;
+
+	for (i = 0; i < num_patterns; i++) {
+		const char *element = patterns[i];
+		gboolean is_inverted = FALSE;
+		gboolean is_mandatory = FALSE;
+		gboolean match;
+		const char *p;
+
+		_pattern_parse (element, &p, &is_inverted, &is_mandatory);
+
+		match = _kernel_cmdline_match (proc_cmdline, p);
+		if (is_inverted)
+			match = !match;
+
+		if (is_mandatory) {
+			if (!match) {
+				nm_utils_error_set (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+				                    "device does not satisfy match.kernel-command-line property %s",
+				                    patterns[i]);
+				return FALSE;
+			}
+		} else {
+			has_any_optional = TRUE;
+			if (match)
+				has_optional = TRUE;
+		}
+	}
+
+	if (   !has_optional
+	    && has_any_optional) {
+		nm_utils_error_set (error, NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+		                    "device does not satisfy any match.kernel-command-line property");
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 /*****************************************************************************/

@@ -968,9 +968,16 @@ test_wildcard_match (void)
 	do_test_wildcard_match ("b",      TRUE,  "!!a");
 	do_test_wildcard_match ("!a",     FALSE, "!!a");
 
-	do_test_wildcard_match ("\\",     TRUE,  "\\\\");
+	do_test_wildcard_match ("\\",     TRUE,  "\\\\\\");
 	do_test_wildcard_match ("\\\\",   FALSE, "\\\\");
 	do_test_wildcard_match ("",       FALSE, "\\\\");
+
+	do_test_wildcard_match ("\\a",    TRUE, "\\\\\\a");
+	do_test_wildcard_match ("b",      TRUE, "&!a");
+	do_test_wildcard_match ("a",      FALSE, "&!a");
+	do_test_wildcard_match ("!a",     TRUE, "&\\!a");
+	do_test_wildcard_match ("!a",     TRUE, "|\\!a");
+	do_test_wildcard_match ("!a",     TRUE, "\\!a");
 
 	do_test_wildcard_match ("name",   FALSE, "name[123]");
 	do_test_wildcard_match ("name1",  TRUE,  "name[123]");
@@ -979,6 +986,12 @@ test_wildcard_match (void)
 	do_test_wildcard_match ("name4",  FALSE, "name[123]");
 
 	do_test_wildcard_match ("[a]",    TRUE,  "\\[a\\]");
+
+	do_test_wildcard_match ("aa",     FALSE, "!a*");
+	do_test_wildcard_match ("aa",     FALSE, "&!a*");
+	do_test_wildcard_match ("aa",     FALSE, "|!a*");
+	do_test_wildcard_match ("aa",     FALSE, "&!a*", "aa");
+	do_test_wildcard_match ("aa",     TRUE, "|!a*", "aa");
 }
 
 static NMConnection *
@@ -2118,6 +2131,46 @@ test_nm_utils_dhcp_client_id_systemd_node_specific (gconstpointer test_data)
 /*****************************************************************************/
 
 static void
+_kernel_cmdline_match (gboolean expected_match,
+                       const char *const*proc_cmdline,
+                       const char *const*patterns)
+{
+	gs_free_error GError *error = NULL;
+	GError **p_error = nmtst_get_rand_bool () ? &error : NULL;
+	gboolean match;
+
+	nm_assert (proc_cmdline);
+	nm_assert (patterns);
+
+	match = nm_utils_kernel_cmdline_match_check (proc_cmdline, patterns, NM_PTRARRAY_LEN (patterns), p_error);
+	if (expected_match)
+		nmtst_assert_success (match, error);
+	else {
+		g_assert (!p_error || error);
+		g_assert (!match);
+	}
+}
+
+static void
+test_kernel_cmdline_match_check (void)
+{
+	_kernel_cmdline_match (TRUE, NM_MAKE_STRV (""), NM_MAKE_STRV (""));
+	_kernel_cmdline_match (FALSE, NM_MAKE_STRV (""), NM_MAKE_STRV ("a"));
+	_kernel_cmdline_match (TRUE, NM_MAKE_STRV ("a"), NM_MAKE_STRV ("a"));
+	_kernel_cmdline_match (TRUE, NM_MAKE_STRV ("a=b"), NM_MAKE_STRV ("a"));
+	_kernel_cmdline_match (TRUE, NM_MAKE_STRV ("a=b", "b"), NM_MAKE_STRV ("a", "b"));
+	_kernel_cmdline_match (TRUE, NM_MAKE_STRV ("a=b", "b"), NM_MAKE_STRV ("&a", "&b"));
+	_kernel_cmdline_match (FALSE, NM_MAKE_STRV ("a=b", "bc"), NM_MAKE_STRV ("&a", "&b"));
+	_kernel_cmdline_match (FALSE, NM_MAKE_STRV ("a=b", "b"), NM_MAKE_STRV ("&a", "&b", "c"));
+	_kernel_cmdline_match (TRUE, NM_MAKE_STRV ("a=b", "b"), NM_MAKE_STRV ("&a", "&b", "b", "c"));
+	_kernel_cmdline_match (TRUE, NM_MAKE_STRV ("a=b", "b", "c=dd"), NM_MAKE_STRV ("&a", "&b", "c"));
+	_kernel_cmdline_match (FALSE, NM_MAKE_STRV ("a", "b"), NM_MAKE_STRV ("a", "&c"));
+	_kernel_cmdline_match (TRUE, NM_MAKE_STRV ("a", "b"), NM_MAKE_STRV ("a", "|\\c"));
+}
+
+/*****************************************************************************/
+
+static void
 test_connectivity_state_cmp (void)
 {
 	NMConnectivityState a;
@@ -2229,6 +2282,7 @@ main (int argc, char **argv)
 	g_test_add_data_func ("/general/nm_utils_dhcp_client_id_systemd_node_specific/1", GINT_TO_POINTER (1), test_nm_utils_dhcp_client_id_systemd_node_specific);
 
 	g_test_add_func ("/core/general/test_connectivity_state_cmp", test_connectivity_state_cmp);
+	g_test_add_func ("/core/general/test_kernel_cmdline_match_check", test_kernel_cmdline_match_check);
 
 	return g_test_run ();
 }
