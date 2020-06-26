@@ -10533,8 +10533,11 @@ act_stage3_ip_config_start (NMDevice *self,
 					platform = nm_device_get_platform (self);
 
 					if (ifindex > 0) {
+						gs_unref_object NMIP6Config *config = nm_device_ip6_config_new (self);
+
 						nm_platform_ip_route_flush (platform, AF_INET6, ifindex);
 						nm_platform_ip_address_flush (platform, AF_INET6, ifindex);
+						nm_device_set_ip_config (self, AF_INET6, (NMIPConfig *) config, FALSE, NULL);
 					}
 				} else {
 					gboolean ipv6ll_handle_old = priv->ipv6ll_handle;
