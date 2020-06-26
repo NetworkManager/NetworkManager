@@ -23,6 +23,9 @@ G_STATIC_ASSERT (G_STRUCT_OFFSET (NMUtilsNamedValue, value_ptr) == sizeof (const
 
 /*****************************************************************************/
 
+const char _nm_hexchar_table_lower[16] = "0123456789abcdef";
+const char _nm_hexchar_table_upper[16] = "0123456789ABCDEF";
+
 const void *const _NM_PTRARRAY_EMPTY[1] = { NULL };
 
 /*****************************************************************************/
@@ -4966,7 +4969,12 @@ nm_str_buf_append_printf (NMStrBuf *strbuf,
 	nm_assert (l < G_MAXINT);
 
 	if ((gsize) l >= available) {
-		gsize l2 = ((gsize) l) + 1u;
+		gsize l2;
+
+		if (l == 0)
+			return;
+
+		l2 = ((gsize) l) + 1u;
 
 		nm_str_buf_maybe_expand (strbuf, l2, FALSE);
 

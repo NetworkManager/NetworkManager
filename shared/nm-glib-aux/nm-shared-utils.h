@@ -631,23 +631,24 @@ nm_utils_escaped_tokens_escape (const char *str,
 	                                            out_to_free);
 }
 
-static inline GString *
-nm_utils_escaped_tokens_escape_gstr_assert (const char *str,
-                                            const char *delimiters,
-                                            GString *gstring)
+/**
+ * nm_utils_escaped_tokens_escape_unnecessary:
+ * @str: the string to check for "escape"
+ * @delimiters: the delimiters
+ *
+ * This asserts that calling nm_utils_escaped_tokens_escape()
+ * on @str has no effect and returns @str directly. This is only
+ * for asserting that @str is safe to not require any escaping.
+ *
+ * Returns: @str
+ */
+static inline const char *
+nm_utils_escaped_tokens_escape_unnecessary (const char *str,
+                                            const char *delimiters)
 {
 #if NM_MORE_ASSERTS > 0
 
-	/* Just appends @str to @gstring, but also assert that
-	 * no escaping is necessary.
-	 *
-	 * Use nm_utils_escaped_tokens_escape_gstr_assert() instead
-	 * of nm_utils_escaped_tokens_escape_gstr(), if you *know* that
-	 * @str contains no delimiters, no backslashes, and no trailing
-	 * whitespace that requires escaping. */
-
 	nm_assert (str);
-	nm_assert (gstring);
 	nm_assert (delimiters);
 
 	{
@@ -660,8 +661,16 @@ nm_utils_escaped_tokens_escape_gstr_assert (const char *str,
 	}
 #endif
 
-	g_string_append (gstring, str);
-	return gstring;
+	return str;
+}
+
+static inline void
+nm_utils_escaped_tokens_escape_gstr_assert (const char *str,
+                                            const char *delimiters,
+                                            GString *gstring)
+{
+	g_string_append (gstring,
+	                 nm_utils_escaped_tokens_escape_unnecessary (str, delimiters));
 }
 
 static inline GString *
@@ -1809,6 +1818,17 @@ int nm_utils_getpagesize (void);
 
 /*****************************************************************************/
 
+extern const char _nm_hexchar_table_lower[16];
+extern const char _nm_hexchar_table_upper[16];
+
+static inline char
+nm_hexchar (int x, gboolean upper_case)
+{
+	return   upper_case
+	       ? _nm_hexchar_table_upper[x & 15]
+	       : _nm_hexchar_table_lower[x & 15];
+}
+
 char *nm_utils_bin2hexstr_full (gconstpointer addr,
                                 gsize length,
                                 char delimiter,
@@ -1985,6 +2005,8 @@ void nm_indirect_g_free (gpointer arg);
  * via nm_utils_get_next_realloc_size() gives you 232, and so on. By using
  * these sizes, it results in one less allocation, if you anyway don't know the
  * exact size in advance. */
+#define NM_UTILS_GET_NEXT_REALLOC_SIZE_32      ((gsize) 32)
+#define NM_UTILS_GET_NEXT_REALLOC_SIZE_40      ((gsize) 40)
 #define NM_UTILS_GET_NEXT_REALLOC_SIZE_104     ((gsize) 104)
 #define NM_UTILS_GET_NEXT_REALLOC_SIZE_1000    ((gsize) 1000)
 

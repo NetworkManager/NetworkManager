@@ -504,8 +504,9 @@ static const char *
 _keyfile_key_encode (const char *name,
                      char **out_to_free)
 {
-	gsize len, i;
-	GString *str;
+	NMStrBuf str;
+	gsize len;
+	gsize i;
 
 	nm_assert (name);
 	nm_assert (out_to_free && !*out_to_free);
@@ -555,14 +556,15 @@ _keyfile_key_encode (const char *name,
 
 	len = i + strlen (&name[i]);
 	nm_assert (len == strlen (name));
-	str = g_string_sized_new (len + 15);
+
+	nm_str_buf_init (&str, len + 15u, FALSE);
 
 	if (name[0] == ' ') {
 		nm_assert (i == 0);
-		g_string_append (str, "\\20");
+		nm_str_buf_append (&str, "\\20");
 		i = 1;
 	} else
-		g_string_append_len (str, name, i);
+		nm_str_buf_append_len (&str, name, i);
 
 	for (;; i++) {
 		const guchar ch = (guchar) name[i];
@@ -577,21 +579,24 @@ _keyfile_key_encode (const char *name,
 		        && g_ascii_isxdigit (name[i + 1])
 		        && g_ascii_isxdigit (name[i + 2]))
 		    || (   ch == ' '
-		        && name[i + 1] == '\0'))
-			g_string_append_printf (str, "\\%02X", ch);
-		else
-			g_string_append_c (str, (char) ch);
+		        && name[i + 1] == '\0')) {
+			nm_str_buf_append_c (&str, '\\');
+			nm_str_buf_append_c_hex (&str, ch, TRUE);
+		} else
+			nm_str_buf_append_c (&str, (char) ch);
 	}
 
-	return (*out_to_free = g_string_free (str, FALSE));
+	return (*out_to_free = nm_str_buf_finalize (&str, NULL));
 }
 
 static const char *
 _keyfile_key_decode (const char *key,
                      char **out_to_free)
 {
-	gsize i, len;
-	GString *str;
+	char *out;
+	gsize len;
+	gsize i;
+	gsize j;
 
 	nm_assert (key);
 	nm_assert (out_to_free && !*out_to_free);
@@ -617,9 +622,12 @@ _keyfile_key_decode (const char *key,
 		return "";
 
 	nm_assert (len == strlen (key));
-	str = g_string_sized_new (len + 3);
 
-	g_string_append_len (str, key, i);
+	out = g_new (char, len + 1u);
+
+	memcpy (out, key, sizeof (char) * i);
+
+	j = i;
 	for (;;) {
 		const char ch = key[i];
 		char ch1, ch2;
@@ -633,16 +641,18 @@ _keyfile_key_decode (const char *key,
 		    && g_ascii_isxdigit ((ch2 = key[i + 2]))) {
 			v = (g_ascii_xdigit_value (ch1) << 4) + g_ascii_xdigit_value (ch2);
 			if (v != 0) {
-				g_string_append_c (str, (char) v);
+				out[j++] = (char) v;
 				i += 3;
 				continue;
 			}
 		}
-		g_string_append_c (str, ch);
+		out[j++] = ch;
 		i++;
 	}
 
-	return (*out_to_free = g_string_free (str, FALSE));
+	nm_assert (j <= len);
+	out[j] = '\0';
+	return (*out_to_free = out);
 }
 
 /*****************************************************************************/

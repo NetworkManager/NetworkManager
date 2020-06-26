@@ -10,8 +10,8 @@
 
 #include <stdlib.h>
 
+#include "nm-glib-aux/nm-str-buf.h"
 #include "nm-core-internal.h"
-
 #include "nm-supplicant-settings-verify.h"
 #include "nm-setting.h"
 #include "nm-libnm-core-intern/nm-auth-subject.h"
@@ -342,26 +342,39 @@ wifi_freqs_to_string (gboolean bg_band)
 {
 	static const char *str_2ghz = NULL;
 	static const char *str_5ghz = NULL;
-	const char *str;
+	const char **f_p;
+	const char *f;
 
-	str = bg_band ? str_2ghz : str_5ghz;
+	f_p =   bg_band
+	      ? &str_2ghz
+	      : &str_5ghz;
 
-	if (G_UNLIKELY (str == NULL)) {
-		GString *tmp;
+again:
+	f = g_atomic_pointer_get (f_p);
+
+	if (G_UNLIKELY (!f)) {
+		nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT (400, FALSE);
 		const guint *freqs;
 		int i;
 
-		freqs = bg_band ? nm_utils_wifi_2ghz_freqs () : nm_utils_wifi_5ghz_freqs ();
-		tmp = g_string_sized_new (bg_band ? 70 : 225);
-		for (i = 0; freqs[i]; i++)
-			g_string_append_printf (tmp, i == 0 ? "%d" : " %d", freqs[i]);
-		str = g_string_free (tmp, FALSE);
-		if (bg_band)
-			str_2ghz = str;
-		else
-			str_5ghz = str;
+		freqs =   bg_band
+		        ? nm_utils_wifi_2ghz_freqs ()
+		        : nm_utils_wifi_5ghz_freqs ();
+		for (i = 0; freqs[i]; i++) {
+			if (i > 0)
+				nm_str_buf_append_c (&strbuf, ' ');
+			nm_str_buf_append_printf (&strbuf, "%u", freqs[i]);
+		}
+
+		f = g_strdup (nm_str_buf_get_str (&strbuf));
+
+		if (!g_atomic_pointer_compare_and_exchange (f_p, NULL, f)) {
+			g_free ((char *) f);
+			goto again;
+		}
 	}
-	return str;
+
+	return f;
 }
 
 gboolean
@@ -464,9 +477,9 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
 
 	mode = nm_setting_wireless_get_mode (setting);
-	is_adhoc = (mode && !strcmp (mode, "adhoc")) ? TRUE : FALSE;
-	is_ap = (mode && !strcmp (mode, "ap")) ? TRUE : FALSE;
-	is_mesh = (mode && !strcmp (mode, "mesh")) ? TRUE : FALSE;
+	is_adhoc = nm_streq0 (mode, "adhoc");
+	is_ap = nm_streq0 (mode, "ap");
+	is_mesh = nm_streq0 (mode, "mesh");
 	if (is_adhoc || is_ap)
 		priv->ap_scan = 2;
 	else
@@ -540,9 +553,9 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 		} else {
 			const char *freqs = NULL;
 
-			if (!strcmp (band, "a"))
+			if (nm_streq (band, "a"))
 				freqs = wifi_freqs_to_string (FALSE);
-			else if (!strcmp (band, "bg"))
+			else if (nm_streq (band, "bg"))
 				freqs = wifi_freqs_to_string (TRUE);
 
 			if (freqs && !nm_supplicant_config_add_option (self, "freq_list", freqs, strlen (freqs), NULL, error))
@@ -888,10 +901,10 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 	}
 
 	/* Only WPA-specific things when using WPA */
-	if (   !strcmp (key_mgmt, "wpa-psk")
-	    || !strcmp (key_mgmt, "wpa-eap")
-	    || !strcmp (key_mgmt, "sae")
-	    || !strcmp (key_mgmt, "owe")) {
+	if (NM_IN_STRSET (key_mgmt, "wpa-psk",
+	                            "wpa-eap",
+	                            "sae",
+	                            "owe")) {
 		if (!ADD_STRING_LIST_VAL (self, setting, wireless_security, proto, protos, "proto", ' ', TRUE, NULL, error))
 			return FALSE;
 		if (!ADD_STRING_LIST_VAL (self, setting, wireless_security, pairwise, pairwise, "pairwise", ' ', TRUE, NULL, error))
@@ -914,7 +927,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 	}
 
 	/* WEP keys if required */
-	if (!strcmp (key_mgmt, "none")) {
+	if (nm_streq (key_mgmt, "none")) {
 		NMWepKeyType wep_type = nm_setting_wireless_security_get_wep_key_type (setting);
 		const char *wep0 = nm_setting_wireless_security_get_wep_key (setting, 0);
 		const char *wep1 = nm_setting_wireless_security_get_wep_key (setting, 1);
@@ -939,9 +952,9 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 		}
 	}
 
-	if (auth_alg && !strcmp (auth_alg, "leap")) {
+	if (nm_streq0 (auth_alg, "leap")) {
 		/* LEAP */
-		if (!strcmp (key_mgmt, "ieee8021x")) {
+		if (nm_streq (key_mgmt, "ieee8021x")) {
 			const char *tmp;
 
 			tmp = nm_setting_wireless_security_get_leap_username (setting);
@@ -961,7 +974,8 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 		}
 	} else {
 		/* 802.1x for Dynamic WEP and WPA-Enterprise */
-		if (!strcmp (key_mgmt, "ieee8021x") || !strcmp (key_mgmt, "wpa-eap")) {
+		if (NM_IN_STRSET (key_mgmt, "ieee8021x",
+		                            "wpa-eap")) {
 			if (!setting_8021x) {
 				g_set_error (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
 				             "Cannot set key-mgmt %s with missing 8021x setting", key_mgmt);
@@ -971,7 +985,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 				return FALSE;
 		}
 
-		if (!strcmp (key_mgmt, "wpa-eap")) {
+		if (nm_streq (key_mgmt, "wpa-eap")) {
 			/* When using WPA-Enterprise, we want to use Proactive Key Caching (also
 			 * called Opportunistic Key Caching) to avoid full EAP exchanges when
 			 * roaming between access points in the same mobility group.
@@ -1135,9 +1149,9 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	phase1 = g_string_new (NULL);
 	peapver = nm_setting_802_1x_get_phase1_peapver (setting);
 	if (peapver) {
-		if (!strcmp (peapver, "0"))
+		if (nm_streq (peapver, "0"))
 			g_string_append (phase1, "peapver=0");
-		else if (!strcmp (peapver, "1"))
+		else if (nm_streq (peapver, "1"))
 			g_string_append (phase1, "peapver=1");
 	}
 
@@ -1153,7 +1167,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 			g_string_append_c (phase1, ' ');
 		g_string_append_printf (phase1, "fast_provisioning=%s", value);
 
-		if (strcmp (value, "0") != 0)
+		if (!nm_streq (value, "0"))
 			fast_provisoning_allowed = TRUE;
 	}
 

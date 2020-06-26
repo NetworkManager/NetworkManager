@@ -20,6 +20,7 @@
 #include "nm-json.h"
 #endif
 
+#include "nm-glib-aux/nm-str-buf.h"
 #include "nm-glib-aux/nm-enum-utils.h"
 #include "nm-glib-aux/nm-time-utils.h"
 #include "nm-glib-aux/nm-secret-utils.h"
@@ -2067,8 +2068,8 @@ nm_utils_ip_addresses_from_variant (GVariant *value,
 
 		g_variant_iter_init (&attrs_iter, addr_var);
 		while (g_variant_iter_next (&attrs_iter, "{&sv}", &attr_name, &attr_val)) {
-			if (   strcmp (attr_name, "address") != 0
-			    && strcmp (attr_name, "prefix") != 0)
+			if (!NM_IN_STRSET (attr_name, "address",
+			                              "prefix"))
 				nm_ip_address_set_attribute (addr, attr_name, attr_val);
 			g_variant_unref (attr_val);
 		}
@@ -2193,10 +2194,10 @@ nm_utils_ip_routes_from_variant (GVariant *value,
 
 		g_variant_iter_init (&attrs_iter, route_var);
 		while (g_variant_iter_next (&attrs_iter, "{&sv}", &attr_name, &attr_val)) {
-			if (   strcmp (attr_name, "dest") != 0
-			    && strcmp (attr_name, "prefix") != 0
-			    && strcmp (attr_name, "next-hop") != 0
-			    && strcmp (attr_name, "metric") != 0)
+			if (!NM_IN_STRSET (attr_name, "dest",
+			                              "prefix",
+			                              "next-hop",
+			                              "metric"))
 				nm_ip_route_set_attribute (route, attr_name, attr_val);
 			g_variant_unref (attr_val);
 		}
@@ -2376,7 +2377,8 @@ _nm_utils_string_append_tc_qdisc_rest (GString *string, NMTCQdisc *qdisc)
 	const char *kind = nm_tc_qdisc_get_kind (qdisc);
 	gs_free char *str = NULL;
 
-	if (handle != TC_H_UNSPEC && strcmp (kind, "ingress") != 0) {
+	if (   handle != TC_H_UNSPEC
+	    && !nm_streq (kind, "ingress")) {
 		g_string_append (string, "handle ");
 		_string_append_tc_handle (string, handle);
 		g_string_append_c (string, ' ');
@@ -2468,7 +2470,7 @@ _tc_read_common_opts (const char *str,
 	variant = g_hash_table_lookup (ht, "kind");
 	if (variant) {
 		*kind = g_variant_dup_string (variant, NULL);
-		if (strcmp (*kind, "ingress") == 0) {
+		if (nm_streq (*kind, "ingress")) {
 			if (*parent == TC_H_UNSPEC)
 				*parent = TC_H_INGRESS;
 			if (*handle == TC_H_UNSPEC)
@@ -2524,7 +2526,7 @@ nm_utils_tc_qdisc_from_str (const char *str, GError **error)
 		return NULL;
 
 	for (i = 0; rest && tc_qdisc_attribute_spec[i]; i++) {
-		if (strcmp (tc_qdisc_attribute_spec[i]->kind, kind) == 0) {
+		if (nm_streq (tc_qdisc_attribute_spec[i]->kind, kind)) {
 			options = nm_utils_parse_variant_attributes (rest,
 			                                             ' ', ' ', FALSE,
 			                                             tc_qdisc_attribute_spec[i]->attrs,
@@ -2670,9 +2672,9 @@ nm_utils_tc_action_from_str (const char *str, GError **error)
 	}
 
 	kind = g_variant_get_string (variant, NULL);
-	if (strcmp (kind, "simple") == 0)
+	if (nm_streq (kind, "simple"))
 		attrs = tc_action_simple_attribute_spec;
-	else if (strcmp (kind, "mirred") == 0)
+	else if (nm_streq (kind, "mirred"))
 		attrs = tc_action_mirred_attribute_spec;
 	else
 		attrs = NULL;
@@ -3300,30 +3302,29 @@ nm_utils_uuid_generate_from_string (const char *s, gssize slen, int uuid_type, g
 char *
 _nm_utils_uuid_generate_from_strings (const char *string1, ...)
 {
-	GString *str;
-	va_list args;
-	const char *s;
-	char *uuid;
-
 	if (!string1)
 		return nm_utils_uuid_generate_from_string (NULL, 0, NM_UTILS_UUID_TYPE_VERSION3, NM_UTILS_UUID_NS);
 
-	str = g_string_sized_new (120); /* effectively allocates power of 2 (128)*/
+	{
+		nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT (NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
+		va_list args;
+		const char *s;
 
-	g_string_append_len (str, string1, strlen (string1) + 1);
+		nm_str_buf_append_len (&str, string1, strlen (string1) + 1u);
 
-	va_start (args, string1);
-	s = va_arg (args, const char *);
-	while (s) {
-		g_string_append_len (str, s, strlen (s) + 1);
+		va_start (args, string1);
 		s = va_arg (args, const char *);
+		while (s) {
+			nm_str_buf_append_len (&str, s, strlen (s) + 1u);
+			s = va_arg (args, const char *);
+		}
+		va_end (args);
+
+		return nm_utils_uuid_generate_from_string (nm_str_buf_get_str_unsafe (&str),
+		                                           str.len,
+		                                           NM_UTILS_UUID_TYPE_VERSION3,
+		                                           NM_UTILS_UUID_NS);
 	}
-	va_end (args);
-
-	uuid = nm_utils_uuid_generate_from_string (str->str, str->len, NM_UTILS_UUID_TYPE_VERSION3, NM_UTILS_UUID_NS);
-
-	g_string_free (str, TRUE);
-	return uuid;
 }
 
 /*****************************************************************************/
@@ -3571,9 +3572,6 @@ nm_utils_file_search_in_paths (const char *progname,
                                gpointer user_data,
                                GError **error)
 {
-	GString *tmp;
-	const char *ret;
-
 	g_return_val_if_fail (!error || !*error, NULL);
 	g_return_val_if_fail (progname && progname[0] && !strchr (progname, '/'), NULL);
 	g_return_val_if_fail (file_test_flags || predicate, NULL);
@@ -3582,32 +3580,35 @@ nm_utils_file_search_in_paths (const char *progname,
 	 * it simpler to pass in a path from configure checks. */
 	if (   try_first
 	    && try_first[0] == '/'
-	    && (file_test_flags == 0 || g_file_test (try_first, file_test_flags))
-	    && (!predicate || predicate (try_first, user_data)))
+	    && (   file_test_flags == 0
+	        || g_file_test (try_first, file_test_flags))
+	    && (   !predicate
+	        || predicate (try_first, user_data)))
 		return g_intern_string (try_first);
 
-	if (!paths || !*paths)
-		goto NOT_FOUND;
+	if (   paths
+	    && paths[0]) {
+		nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT (NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
 
-	tmp = g_string_sized_new (50);
-	for (; *paths; paths++) {
-		if (!*paths)
-			continue;
-		g_string_append (tmp, *paths);
-		if (tmp->str[tmp->len - 1] != '/')
-			g_string_append_c (tmp, '/');
-		g_string_append (tmp, progname);
-		if (   (file_test_flags == 0 || g_file_test (tmp->str, file_test_flags))
-		    && (!predicate || predicate (tmp->str, user_data))) {
-			ret = g_intern_string (tmp->str);
-			g_string_free (tmp, TRUE);
-			return ret;
+		for (; *paths; paths++) {
+			const char *path = *paths;
+			const char *s;
+
+			if (!path[0])
+				continue;
+
+			nm_str_buf_reset (&strbuf, path);
+			nm_str_buf_ensure_trailing_c (&strbuf, '/');
+			s = nm_str_buf_append0 (&strbuf, progname);
+
+			if (   (   file_test_flags == 0
+			        || g_file_test (s, file_test_flags))
+			    && (   !predicate
+			        || predicate (s, user_data)))
+				return g_intern_string (s);
 		}
-		g_string_set_size (tmp, 0);
 	}
-	g_string_free (tmp, TRUE);
 
-NOT_FOUND:
 	g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, _("Could not find \"%s\" binary"), progname);
 	return NULL;
 }
@@ -3620,7 +3621,7 @@ struct cf_pair {
 	guint32 freq;
 };
 
-static struct cf_pair a_table[] = {
+static const struct cf_pair a_table[] = {
 	/* A band */
 	{  7, 5035 },
 	{  8, 5040 },
@@ -3667,10 +3668,60 @@ static struct cf_pair a_table[] = {
 	{ 188, 4945 },
 	{ 192, 4960 },
 	{ 196, 4980 },
-	{ 0, -1 }
+	{ 0, 0 }
 };
 
-static struct cf_pair bg_table[] = {
+static const guint a_table_freqs[G_N_ELEMENTS (a_table)] = {
+	/* A band */
+	5035,
+	5040,
+	5045,
+	5055,
+	5060,
+	5080,
+	5170,
+	5180,
+	5190,
+	5200,
+	5210,
+	5220,
+	5230,
+	5240,
+	5250,
+	5260,
+	5280,
+	5290,
+	5300,
+	5320,
+	5500,
+	5520,
+	5540,
+	5560,
+	5580,
+	5600,
+	5620,
+	5640,
+	5660,
+	5680,
+	5700,
+	5745,
+	5760,
+	5765,
+	5785,
+	5800,
+	5805,
+	5825,
+	4915,
+	4920,
+	4925,
+	4935,
+	4945,
+	4960,
+	4980,
+	0,
+};
+
+static const struct cf_pair bg_table[] = {
 	/* B/G band */
 	{ 1, 2412 },
 	{ 2, 2417 },
@@ -3686,7 +3737,26 @@ static struct cf_pair bg_table[] = {
 	{ 12, 2467 },
 	{ 13, 2472 },
 	{ 14, 2484 },
-	{ 0, -1 }
+	{ 0, 0 }
+};
+
+static const guint bg_table_freqs[G_N_ELEMENTS (bg_table)] = {
+	/* B/G band */
+	2412,
+	2417,
+	2422,
+	2427,
+	2432,
+	2437,
+	2442,
+	2447,
+	2452,
+	2457,
+	2462,
+	2467,
+	2472,
+	2484,
+	0,
 };
 
 /**
@@ -3703,16 +3773,16 @@ nm_utils_wifi_freq_to_channel (guint32 freq)
 	int i = 0;
 
 	if (freq > 4900) {
-		while (a_table[i].chan && (a_table[i].freq != freq))
+		while (   a_table[i].freq
+		       && (a_table[i].freq != freq))
 			i++;
 		return a_table[i].chan;
-	} else {
-		while (bg_table[i].chan && (bg_table[i].freq != freq))
-			i++;
-		return bg_table[i].chan;
 	}
 
-	return 0;
+	while (   bg_table[i].freq
+	       && (bg_table[i].freq != freq))
+		i++;
+	return bg_table[i].chan;
 }
 
 /**
@@ -3748,16 +3818,24 @@ nm_utils_wifi_freq_to_band (guint32 freq)
 guint32
 nm_utils_wifi_channel_to_freq (guint32 channel, const char *band)
 {
-	int i = 0;
+	int i;
 
-	if (!strcmp (band, "a")) {
-		while (a_table[i].chan && (a_table[i].chan != channel))
-			i++;
-		return a_table[i].freq;
-	} else if (!strcmp (band, "bg")) {
-		while (bg_table[i].chan && (bg_table[i].chan != channel))
-			i++;
-		return bg_table[i].freq;
+	g_return_val_if_fail (band, 0);
+
+	if (nm_streq (band, "a")) {
+		for (i = 0; a_table[i].chan; i++) {
+			if (a_table[i].chan == channel)
+				return a_table[i].freq;
+		}
+		return ((guint32) -1);
+	}
+
+	if (nm_streq (band, "bg")) {
+		for (i = 0; bg_table[i].chan; i++) {
+			if (bg_table[i].chan == channel)
+				return bg_table[i].freq;
+		}
+		return ((guint32) -1);
 	}
 
 	return 0;
@@ -3776,26 +3854,24 @@ nm_utils_wifi_channel_to_freq (guint32 channel, const char *band)
 guint32
 nm_utils_wifi_find_next_channel (guint32 channel, int direction, char *band)
 {
-	size_t a_size = sizeof (a_table) / sizeof (struct cf_pair);
-	size_t bg_size = sizeof (bg_table) / sizeof (struct cf_pair);
-	struct cf_pair *pair = NULL;
+	size_t a_size = G_N_ELEMENTS (a_table);
+	size_t bg_size = G_N_ELEMENTS (bg_table);
+	const struct cf_pair *pair;
 
-	if (!strcmp (band, "a")) {
+	if (nm_streq (band, "a")) {
 		if (channel < a_table[0].chan)
 			return a_table[0].chan;
 		if (channel > a_table[a_size - 2].chan)
 			return a_table[a_size - 2].chan;
 		pair = &a_table[0];
-	} else if (!strcmp (band, "bg")) {
+	} else if (nm_streq (band, "bg")) {
 		if (channel < bg_table[0].chan)
 			return bg_table[0].chan;
 		if (channel > bg_table[bg_size - 2].chan)
 			return bg_table[bg_size - 2].chan;
 		pair = &bg_table[0];
-	} else {
-		g_assert_not_reached ();
-		return 0;
-	}
+	} else
+		g_return_val_if_reached (0);
 
 	while (pair->chan) {
 		if (channel == pair->chan)
@@ -3823,49 +3899,32 @@ nm_utils_wifi_find_next_channel (guint32 channel, int direction, char *band)
 gboolean
 nm_utils_wifi_is_channel_valid (guint32 channel, const char *band)
 {
-	struct cf_pair *table = NULL;
-	int i = 0;
+	guint32 freq;
 
-	if (!strcmp (band, "a"))
-		table = a_table;
-	else if (!strcmp (band, "bg"))
-		table = bg_table;
-	else
-		return FALSE;
+	freq = nm_utils_wifi_channel_to_freq (channel, band);
 
-	while (table[i].chan && (table[i].chan != channel))
-		i++;
-
-	if (table[i].chan != 0)
-		return TRUE;
-	else
-		return FALSE;
+	return !NM_IN_SET (freq, 0u, (guint32) -1);
 }
 
-static const guint *
-_wifi_freqs (gboolean bg_band)
-{
-	static guint *freqs_2ghz = NULL;
-	static guint *freqs_5ghz = NULL;
-	guint *freqs;
-
-	freqs = bg_band ? freqs_2ghz : freqs_5ghz;
-	if (G_UNLIKELY (freqs == NULL)) {
-		struct cf_pair *table;
-		int i;
-
-		table = bg_band ? bg_table : a_table;
-		freqs = g_new0 (guint, bg_band ? G_N_ELEMENTS (bg_table) : G_N_ELEMENTS (a_table));
-		for (i = 0; table[i].chan; i++)
-			freqs[i] = table[i].freq;
-		freqs[i] = 0;
-		if (bg_band)
-			freqs_2ghz = freqs;
-		else
-			freqs_5ghz = freqs;
-	}
-	return freqs;
-}
+#define _nm_assert_wifi_freqs(table, table_freqs) \
+	G_STMT_START { \
+		if (NM_MORE_ASSERT_ONCE (5)) { \
+			int i, j; \
+			\
+			G_STATIC_ASSERT (G_N_ELEMENTS (table) > 0); \
+			G_STATIC_ASSERT (G_N_ELEMENTS (table) == G_N_ELEMENTS (table_freqs)); \
+			\
+			for (i = 0; i < G_N_ELEMENTS (table); i++) { \
+				nm_assert ((i == G_N_ELEMENTS (table) - 1) == (table[i].chan == 0)); \
+				nm_assert ((i == G_N_ELEMENTS (table) - 1) == (table[i].freq == 0)); \
+				nm_assert (table[i].freq == table_freqs[i]); \
+				for (j = 0; j < i; j++) { \
+					nm_assert (table[j].chan != table[i].chan); \
+					nm_assert (table[j].freq != table[i].freq); \
+				} \
+			} \
+		} \
+	} G_STMT_END
 
 /**
  * nm_utils_wifi_2ghz_freqs:
@@ -3879,7 +3938,8 @@ _wifi_freqs (gboolean bg_band)
 const guint *
 nm_utils_wifi_2ghz_freqs (void)
 {
-	return _wifi_freqs (TRUE);
+	_nm_assert_wifi_freqs (bg_table, bg_table_freqs);
+	return bg_table_freqs;
 }
 
 /**
@@ -3894,7 +3954,8 @@ nm_utils_wifi_2ghz_freqs (void)
 const guint *
 nm_utils_wifi_5ghz_freqs (void)
 {
-	return _wifi_freqs (FALSE);
+	_nm_assert_wifi_freqs (a_table, a_table_freqs);
+	return a_table_freqs;
 }
 
 /**
@@ -5028,7 +5089,7 @@ typedef struct {
 	const char *num;
 } BondMode;
 
-static BondMode bond_mode_table[] = {
+static const BondMode bond_mode_table[] = {
 	[0] = { "balance-rr",    "0" },
 	[1] = { "active-backup", "1" },
 	[2] = { "balance-xor",   "2" },
@@ -5080,8 +5141,8 @@ nm_utils_bond_mode_string_to_int (const char *mode)
 		return -1;
 
 	for (i = 0; i < G_N_ELEMENTS (bond_mode_table); i++) {
-		if (   strcmp (mode, bond_mode_table[i].str) == 0
-		    || strcmp (mode, bond_mode_table[i].num) == 0)
+		if (NM_IN_STRSET (mode, bond_mode_table[i].str,
+		                        bond_mode_table[i].num))
 			return i;
 	}
 	return -1;
@@ -5139,13 +5200,13 @@ _nm_utils_strstrdictkey_equal  (gconstpointer a, gconstpointer b)
 		return FALSE;
 
 	if (k1->type & STRSTRDICTKEY_ALL_SET) {
-		if (strcmp (k1->data, k2->data) != 0)
+		if (!nm_streq (k1->data, k2->data))
 			return FALSE;
 
 		if (k1->type == STRSTRDICTKEY_ALL_SET) {
 			gsize l = strlen (k1->data) + 1;
 
-			return strcmp (&k1->data[l], &k2->data[l]) == 0;
+			return nm_streq (&k1->data[l], &k2->data[l]);
 		}
 	}
 
@@ -5196,7 +5257,7 @@ validate_dns_option (const char *name,
 		return !!*name;
 
 	for (desc = option_descs; desc->name; desc++) {
-		if (!strcmp (name, desc->name) &&
+		if (nm_streq (name, desc->name) &&
 		    numeric == desc->numeric &&
 		    (!desc->ipv6_only || ipv6))
 			return TRUE;
@@ -5286,26 +5347,21 @@ _nm_utils_dns_option_validate (const char *option,
  */
 gssize _nm_utils_dns_option_find_idx (GPtrArray *array, const char *option)
 {
-	gboolean ret;
-	char *option_name, *tmp_name;
+	gs_free char *option_name = NULL;
 	guint i;
 
 	if (!_nm_utils_dns_option_validate (option, &option_name, NULL, FALSE, NULL))
 		return -1;
 
 	for (i = 0; i < array->len; i++) {
-		if (_nm_utils_dns_option_validate (array->pdata[i], &tmp_name, NULL, FALSE, NULL)) {
-			ret = strcmp (tmp_name, option_name);
-			g_free (tmp_name);
-			if (!ret) {
-				g_free (option_name);
-				return i;
-			}
-		}
+		gs_free char *tmp_name = NULL;
 
+		if (_nm_utils_dns_option_validate (array->pdata[i], &tmp_name, NULL, FALSE, NULL)) {
+			if (nm_streq (tmp_name, option_name))
+				return i;
+		}
 	}
 
-	g_free (option_name);
 	return -1;
 }
 
