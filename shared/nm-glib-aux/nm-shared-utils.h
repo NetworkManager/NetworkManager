@@ -807,6 +807,11 @@ gboolean nm_utils_parse_inaddr_prefix (int addr_family,
                                        char **out_addr,
                                        int *out_prefix);
 
+gboolean nm_utils_parse_next_line (const char **inout_ptr,
+                                   gsize *inout_len,
+                                   const char **out_line,
+                                   gsize *out_line_len);
+
 gint64 nm_g_ascii_strtoll (const char *nptr,
                            char **endptr,
                            guint base);

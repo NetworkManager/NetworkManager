@@ -6,6 +6,7 @@
 
 #include "nm-cloud-setup-utils.h"
 #include "nmcs-provider-ec2.h"
+#include "nmcs-provider-gcp.h"
 #include "nm-libnm-core-intern/nm-libnm-core-utils.h"
 
 /*****************************************************************************/
@@ -84,6 +85,7 @@ _provider_detect (GCancellable *sigterm_cancellable)
 	};
 	const GType gtypes[] = {
 		NMCS_TYPE_PROVIDER_EC2,
+		NMCS_TYPE_PROVIDER_GCP,
 	};
 	int i;
 	gulong cancellable_signal_id;
@@ -276,21 +278,21 @@ _nmc_skip_connection (NMConnection *connection)
 static gboolean
 _nmc_mangle_connection (NMDevice *device,
                         NMConnection *connection,
-                        gboolean is_single_nic,
                         const NMCSProviderGetConfigIfaceData *config_data,
                         gboolean *out_changed)
 {
 	NMSettingIPConfig *s_ip;
-	gboolean addrs_changed;
-	gboolean routes_changed;
-	gboolean rules_changed;
 	gsize i;
 	in_addr_t gateway;
 	gint64 rt_metric;
 	guint32 rt_table;
+	NMIPRoute *route_entry;
+	gboolean addrs_changed = FALSE;
+	gboolean rules_changed = FALSE;
+	gboolean routes_changed = FALSE;
 	gs_unref_ptrarray GPtrArray *addrs_new = NULL;
 	gs_unref_ptrarray GPtrArray *rules_new = NULL;
-	nm_auto_unref_ip_route NMIPRoute *route_new = NULL;
+	gs_unref_ptrarray GPtrArray *routes_new = NULL;
 
 	if (!nm_streq0 (nm_connection_get_connection_type (connection), NM_SETTING_WIRED_SETTING_NAME))
 		return FALSE;
@@ -299,62 +301,80 @@ _nmc_mangle_connection (NMDevice *device,
 	if (!s_ip)
 		return FALSE;
 
-	addrs_new = g_ptr_array_new_full (config_data->ipv4s_len, (GDestroyNotify) nm_ip_address_unref);
-	for (i = 0; i < config_data->ipv4s_len; i++) {
-		NMIPAddress *entry;
+	addrs_new = g_ptr_array_new_full (config_data->ipv4s_len,
+	                                  (GDestroyNotify) nm_ip_address_unref);
+	rules_new = g_ptr_array_new_full (config_data->ipv4s_len,
+	                                  (GDestroyNotify) nm_ip_routing_rule_unref);
+	routes_new = g_ptr_array_new_full (config_data->iproutes_len + !!config_data->ipv4s_len,
+	                                   (GDestroyNotify) nm_ip_route_unref);
 
-		entry = nm_ip_address_new_binary (AF_INET,
-		                                  &config_data->ipv4s_arr[i],
-		                                  config_data->cidr_prefix,
-		                                  NULL);
-		if (entry)
-			g_ptr_array_add (addrs_new, entry);
+	if (   config_data->has_ipv4s
+	    && config_data->has_cidr) {
+		for (i = 0; i < config_data->ipv4s_len; i++) {
+			NMIPAddress *entry;
+
+			entry = nm_ip_address_new_binary (AF_INET,
+			                                  &config_data->ipv4s_arr[i],
+			                                  config_data->cidr_prefix,
+			                                  NULL);
+			if (entry)
+				g_ptr_array_add (addrs_new, entry);
+		}
+
+		gateway = nm_utils_ip4_address_clear_host_address (config_data->cidr_addr, config_data->cidr_prefix);
+		((guint8 *) &gateway)[3] += 1;
+
+		rt_metric = 10;
+		rt_table = 30400 + config_data->iface_idx;
+
+		route_entry = nm_ip_route_new_binary (AF_INET,
+		                                      &nm_ip_addr_zero,
+		                                      0,
+		                                      &gateway,
+		                                      rt_metric,
+		                                      NULL);
+		nm_ip_route_set_attribute (route_entry,
+		                           NM_IP_ROUTE_ATTRIBUTE_TABLE,
+		                           g_variant_new_uint32 (rt_table));
+		g_ptr_array_add (routes_new, route_entry);
+
+		for (i = 0; i < config_data->ipv4s_len; i++) {
+			NMIPRoutingRule *entry;
+			char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+
+			entry = nm_ip_routing_rule_new (AF_INET);
+			nm_ip_routing_rule_set_priority (entry, rt_table);
+			nm_ip_routing_rule_set_from (entry,
+			                             _nm_utils_inet4_ntop (config_data->ipv4s_arr[i], sbuf),
+			                             32);
+			nm_ip_routing_rule_set_table (entry, rt_table);
+
+			nm_assert (nm_ip_routing_rule_validate  (entry, NULL));
+
+			g_ptr_array_add (rules_new, entry);
+		}
 	}
 
-	gateway = nm_utils_ip4_address_clear_host_address (config_data->cidr_addr, config_data->cidr_prefix);
-	((guint8 *) &gateway)[3] += 1;
+	for (i = 0; i < config_data->iproutes_len; ++i)
+		g_ptr_array_add (routes_new, config_data->iproutes_arr[i]);
 
-	rt_metric = 10;
-	rt_table = 30400 + config_data->iface_idx;
-
-	route_new = nm_ip_route_new_binary (AF_INET,
-	                                    &nm_ip_addr_zero,
-	                                    0,
-	                                    &gateway,
-	                                    rt_metric,
-	                                    NULL);
-	nm_ip_route_set_attribute (route_new,
-	                           NM_IP_ROUTE_ATTRIBUTE_TABLE,
-	                           g_variant_new_uint32 (rt_table));
-
-	rules_new = g_ptr_array_new_full (config_data->ipv4s_len, (GDestroyNotify) nm_ip_routing_rule_unref);
-	for (i = 0; i < config_data->ipv4s_len; i++) {
-		NMIPRoutingRule *entry;
-		char sbuf[NM_UTILS_INET_ADDRSTRLEN];
-
-		entry = nm_ip_routing_rule_new (AF_INET);
-		nm_ip_routing_rule_set_priority (entry, rt_table);
-		nm_ip_routing_rule_set_from (entry,
-		                             _nm_utils_inet4_ntop (config_data->ipv4s_arr[i], sbuf),
-		                             32);
-		nm_ip_routing_rule_set_table (entry, rt_table);
-
-		nm_assert (nm_ip_routing_rule_validate  (entry, NULL));
-
-		g_ptr_array_add (rules_new, entry);
+	if (addrs_new->len) {
+		addrs_changed = nmcs_setting_ip_replace_ipv4_addresses (s_ip,
+		                                                        (NMIPAddress **) addrs_new->pdata,
+		                                                        addrs_new->len);
 	}
 
-	addrs_changed = nmcs_setting_ip_replace_ipv4_addresses (s_ip,
-	                                                        (NMIPAddress **) addrs_new->pdata,
-	                                                        addrs_new->len);
+	if (routes_new->len) {
+		routes_changed = nmcs_setting_ip_replace_ipv4_routes (s_ip,
+		                                                      (NMIPRoute **) routes_new->pdata,
+		                                                      routes_new->len);
+	}
 
-	routes_changed = nmcs_setting_ip_replace_ipv4_routes (s_ip,
-	                                                      &route_new,
-	                                                      1);
-
-	rules_changed = nmcs_setting_ip_replace_ipv4_rules (s_ip,
-	                                                    (NMIPRoutingRule **) rules_new->pdata,
-	                                                    rules_new->len);
+	if (rules_new->len) {
+		rules_changed = nmcs_setting_ip_replace_ipv4_rules (s_ip,
+		                                                    (NMIPRoutingRule **) rules_new->pdata,
+		                                                    rules_new->len);
+	}
 
 	NM_SET_OUT (out_changed,    addrs_changed
 	                         || routes_changed
@@ -438,7 +458,6 @@ try_again:
 
 	if (!_nmc_mangle_connection (device,
 	                             applied_connection,
-	                             is_single_nic,
 	                             config_data,
 	                             &changed)) {
 		_LOGD ("config device %s: device has no suitable applied connection. Skip", hwaddr);

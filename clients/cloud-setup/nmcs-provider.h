@@ -18,6 +18,9 @@ typedef struct {
 	bool has_ipv4s:1;
 	bool has_cidr:1;
 
+	NMIPRoute **iproutes_arr;
+	gsize iproutes_len;
+
 	/* TRUE, if the configuration was requested via hwaddrs argument to
 	 * nmcs_provider_get_config(). */
 	bool was_requested:1;
@@ -29,8 +32,9 @@ nmcs_provider_get_config_iface_data_is_valid (const NMCSProviderGetConfigIfaceDa
 {
 	return    config_data
 	       && config_data->iface_idx >= 0
-	       && config_data->has_cidr
-	       && config_data->has_ipv4s;
+	       && (   (   config_data->has_ipv4s
+	               && config_data->has_cidr)
+	           || config_data->iproutes_len);
 }
 
 NMCSProviderGetConfigIfaceData *nmcs_provider_get_config_iface_data_new (gboolean was_requested);
