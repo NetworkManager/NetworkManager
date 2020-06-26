@@ -16,7 +16,7 @@ typedef struct {
 	GMainContext *context;
 	CURLM *mhandle;
 	GSource *mhandle_source_timeout;
-	GSource *mhandle_source_socket;
+	GHashTable *source_sockets_hashtable;
 } NMHttpClientPrivate;
 
 struct _NMHttpClient {
@@ -119,6 +119,7 @@ typedef struct {
 	CURL *ehandle;
 	char *url;
 	GString *recv_data;
+	struct curl_slist *headers;
 	gssize max_data;
 	gulong cancellable_id;
 } EHandleData;
@@ -145,6 +146,8 @@ _ehandle_free (EHandleData *edata)
 
 	if (edata->recv_data)
 		g_string_free (edata->recv_data, TRUE);
+	if (edata->headers)
+		curl_slist_free_all (edata->headers);
 	g_free (edata->url);
 	nm_g_slice_free (edata);
 }
@@ -159,8 +162,8 @@ _ehandle_complete (EHandleData *edata,
 
 	nm_clear_pointer (&edata->timeout_source, nm_g_source_destroy_and_unref);
 
-	 nm_clear_g_cancellable_disconnect (g_task_get_cancellable (edata->task),
-	                                    &edata->cancellable_id);
+	nm_clear_g_cancellable_disconnect (g_task_get_cancellable (edata->task),
+	                                   &edata->cancellable_id);
 
 	if (error_take) {
 		if (nm_utils_error_is_cancelled (error_take))
@@ -260,12 +263,14 @@ nm_http_client_get (NMHttpClient *self,
                     const char *url,
                     int timeout_msec,
                     gssize max_data,
+                    const char *const *http_headers,
                     GCancellable *cancellable,
                     GAsyncReadyCallback callback,
                     gpointer user_data)
 {
 	NMHttpClientPrivate *priv;
 	EHandleData *edata;
+	guint i;
 
 	g_return_if_fail (NM_IS_HTTP_CLIENT (self));
 	g_return_if_fail (url);
@@ -281,6 +286,7 @@ nm_http_client_get (NMHttpClient *self,
 		.recv_data      = g_string_sized_new (NM_MIN (max_data, 245)),
 		.max_data       = max_data,
 		.url            = g_strdup (url),
+		.headers        = NULL,
 	};
 
 	nmcs_wait_for_objects_register (edata->task);
@@ -301,6 +307,23 @@ nm_http_client_get (NMHttpClient *self,
 	curl_easy_setopt (edata->ehandle, CURLOPT_WRITEFUNCTION, _get_writefunction_cb);
 	curl_easy_setopt (edata->ehandle, CURLOPT_WRITEDATA, edata);
 	curl_easy_setopt (edata->ehandle, CURLOPT_PRIVATE, edata);
+
+	if (http_headers) {
+		for (i = 0; http_headers[i]; ++i) {
+			struct curl_slist *tmp;
+
+			tmp = curl_slist_append (edata->headers,
+			                         http_headers[i]);
+			if (!tmp) {
+				curl_slist_free_all (tmp);
+				_LOGE ("curl: curl_slist_append() failed adding %s", http_headers[i]);
+				continue;
+			}
+			edata->headers = tmp;
+		}
+
+		curl_easy_setopt (edata->ehandle, CURLOPT_HTTPHEADER, edata->headers);
+	}
 
 	if (timeout_msec > 0) {
 		edata->timeout_source = _source_attach (self,
@@ -362,6 +385,7 @@ nm_http_client_get_finish (NMHttpClient *self,
 typedef struct {
 	GTask *task;
 	char *uri;
+	const char *const *http_headers;
 	NMHttpClientPollGetCheckFcn check_fcn;
 	gpointer check_user_data;
 	GBytes *response_data;
@@ -378,6 +402,7 @@ _poll_get_data_free (gpointer data)
 	g_free (poll_get_data->uri);
 
 	nm_clear_pointer (&poll_get_data->response_data, g_bytes_unref);
+	g_strfreev ((char **) poll_get_data->http_headers);
 
 	nm_g_slice_free (poll_get_data);
 }
@@ -397,6 +422,7 @@ _poll_get_probe_start_fcn (GCancellable *cancellable,
 	                    poll_get_data->uri,
 	                    poll_get_data->request_timeout_ms,
 	                    poll_get_data->request_max_data,
+	                    poll_get_data->http_headers,
 	                    cancellable,
 	                    callback,
 	                    user_data);
@@ -476,6 +502,7 @@ nm_http_client_poll_get (NMHttpClient *self,
                          gssize request_max_data,
                          int poll_timeout_ms,
                          int ratelimit_timeout_ms,
+                         const char *const *http_headers,
                          GCancellable *cancellable,
                          NMHttpClientPollGetCheckFcn check_fcn,
                          gpointer check_user_data,
@@ -502,6 +529,7 @@ nm_http_client_poll_get (NMHttpClient *self,
 		.check_fcn          = check_fcn,
 		.check_user_data    = check_user_data,
 		.response_code      = -1,
+		.http_headers       =  NM_CAST_STRV_CC (g_strdupv ((char **) http_headers)),
 	};
 
 	nmcs_wait_for_objects_register (poll_get_data->task);
@@ -615,12 +643,13 @@ _mhandle_socket_cb (int fd,
 static int
 _mhandle_socketfunction_cb (CURL *e_handle, curl_socket_t fd, int what, void *user_data, void *socketp)
 {
+	GSource *source_socket;
 	NMHttpClient *self = user_data;
 	NMHttpClientPrivate *priv = NM_HTTP_CLIENT_GET_PRIVATE (self);
 
 	(void) _NM_ENSURE_TYPE (int, fd);
 
-	nm_clear_g_source_inst (&priv->mhandle_source_socket);
+	g_hash_table_remove (priv->source_sockets_hashtable, GINT_TO_POINTER (fd));
 
 	if (what != CURL_POLL_REMOVE) {
 		GIOCondition condition = 0;
@@ -635,13 +664,17 @@ _mhandle_socketfunction_cb (CURL *e_handle, curl_socket_t fd, int what, void *us
 			condition = 0;
 
 		if (condition) {
-			priv->mhandle_source_socket = nm_g_unix_fd_source_new (fd,
-			                                                       condition,
-			                                                       G_PRIORITY_DEFAULT,
-			                                                       _mhandle_socket_cb,
-			                                                       self,
+			source_socket = nm_g_unix_fd_source_new (fd,
+			                                         condition,
+			                                         G_PRIORITY_DEFAULT,
+			                                         _mhandle_socket_cb,
+			                                         self,
 			                                                       NULL);
-			g_source_attach (priv->mhandle_source_socket, priv->context);
+			g_source_attach (source_socket, priv->context);
+
+			g_hash_table_insert (priv->source_sockets_hashtable,
+			                     GINT_TO_POINTER (fd),
+			                     source_socket);
 		}
 	}
 
@@ -652,7 +685,7 @@ static gboolean
 _mhandle_timeout_cb (gpointer user_data)
 {
 	_mhandle_action (user_data, CURL_SOCKET_TIMEOUT, 0);
-	return G_SOURCE_CONTINUE;
+	return G_SOURCE_REMOVE;
 }
 
 static int
@@ -678,6 +711,12 @@ _mhandle_timerfunction_cb (CURLM *multi, long timeout_msec, void *user_data)
 static void
 nm_http_client_init (NMHttpClient *self)
 {
+	NMHttpClientPrivate *priv = NM_HTTP_CLIENT_GET_PRIVATE (self);
+
+	priv->source_sockets_hashtable = g_hash_table_new_full (nm_direct_hash,
+	                                                        NULL,
+	                                                        NULL,
+	                                                        (GDestroyNotify) nm_g_source_destroy_and_unref);
 }
 
 static void
@@ -714,9 +753,9 @@ dispose (GObject *object)
 	NMHttpClientPrivate *priv = NM_HTTP_CLIENT_GET_PRIVATE (self);
 
 	nm_clear_pointer (&priv->mhandle, curl_multi_cleanup);
+	nm_clear_pointer (&priv->source_sockets_hashtable, g_hash_table_unref);
 
 	nm_clear_g_source_inst (&priv->mhandle_source_timeout);
-	nm_clear_g_source_inst (&priv->mhandle_source_socket);
 
 	G_OBJECT_CLASS (nm_http_client_parent_class)->dispose (object);
 }

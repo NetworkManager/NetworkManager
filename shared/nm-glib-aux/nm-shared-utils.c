@@ -1074,6 +1074,47 @@ nm_utils_parse_inaddr_prefix (int addr_family,
 	return TRUE;
 }
 
+gboolean
+nm_utils_parse_next_line (const char **inout_ptr,
+                          gsize *inout_len,
+                          const char **out_line,
+                          gsize *out_line_len)
+{
+	const char *line_start;
+	const char *line_end;
+
+	g_return_val_if_fail (inout_ptr, FALSE);
+	g_return_val_if_fail (inout_len, FALSE);
+	g_return_val_if_fail (out_line, FALSE);
+
+	if (*inout_len <= 0)
+		goto error;
+
+	line_start = *inout_ptr;
+	line_end = memchr (line_start, '\n', *inout_len);
+	if (!line_end)
+		line_end = memchr (line_start, '\0', *inout_len);
+	if (!line_end) {
+		line_end = line_start + *inout_len;
+		NM_SET_OUT (inout_len, 0);
+	} else
+		NM_SET_OUT (inout_len, *inout_len - (line_end - line_start) - 1);
+
+	NM_SET_OUT (out_line, line_start);
+	NM_SET_OUT (out_line_len, (gsize) (line_end - line_start));
+
+	if (*inout_len > 0)
+		NM_SET_OUT (inout_ptr, line_end + 1);
+	else
+		NM_SET_OUT (inout_ptr, NULL);
+	return TRUE;
+
+error:
+	NM_SET_OUT (out_line, NULL);
+	NM_SET_OUT (out_line_len, 0);
+	return FALSE;
+}
+
 /*****************************************************************************/
 
 gboolean
