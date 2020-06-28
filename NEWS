@@ -3,11 +3,6 @@ NetworkManager-1.26
 Overview of changes since NetworkManager-1.24
 =============================================
 
-This is a snapshot of NetworkManager 1.26 development series.
-The API is subject to change and not guaranteed to be compatible
-with the later release.
-USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
-
 * Add a new build option 'firewalld-zone'; when enabled,
   NetworkManager installs a firewalld zone for connection sharing and
   puts interfaces using IPv4 or IPv6 shared mode in this zone during
@@ -16,6 +11,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   masquerading and open needed ports for DHCP and DNS. The new option
   is useful on systems using firewalld with the nftables backend,
   where the iptables rules would not be sufficient.
+* Extend the syntax for 'match' setting properties with '|', '&', '!'
+  and '\\'.
 * Add MUD URL property for connection profiles (RFC 8520) and set it
   for DHCP and DHCPv6 requests.
 * Expose raw LLDP message on D-Bus and the MUD usage description URL.
