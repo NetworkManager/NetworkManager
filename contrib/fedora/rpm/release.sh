@@ -22,7 +22,7 @@ die_usage() {
     echo "FAIL: $@"
     echo
     echo "Usage:"
-    echo "  $0 [devel|rc1|rc|major|minor] [--no-test] [--no-find-backports] [--no-cleanup]"
+    echo "  $0 [devel|rc1|rc|major|minor] [--no-test] [--no-find-backports] [--no-cleanup] [--allow-local-branches]"
     exit 1
 }
 
@@ -120,6 +120,7 @@ VERSION_STR="$(IFS=.; echo "${VERSION_ARR[*]}")"
 RELEASE_MODE=""
 DRY_RUN=1
 FIND_BACKPORTS=1
+ALLOW_LOCAL_BRANCHES=0
 while [ "$#" -ge 1 ]; do
     A="$1"
     shift
@@ -142,6 +143,12 @@ while [ "$#" -ge 1 ]; do
             ;;
         --no-cleanup)
             DO_CLEANUP=0
+            ;;
+        --allow-local-branches)
+            # by default, the script errors out if the relevant branch (master, nm-1-Y) are not the same
+            # as the remote branch on origin. You should not do a release if you have local changes
+            # that differ from upstream. Set this flag to override that check.
+            ALLOW_LOCAL_BRANCHES=1
             ;;
         *)
             die_usage "unknown argument \"$A\""
@@ -194,8 +201,10 @@ esac
 
 git fetch || die "git fetch failed"
 
-git_same_ref "$CUR_BRANCH" "refs/heads/$CUR_BRANCH" || die "Current branch $CUR_BRANCH is not a branch??"
-git_same_ref "$CUR_BRANCH" "refs/remotes/$ORIGIN/$CUR_BRANCH" || die "Current branch $CUR_BRANCH seems not up to date. Git pull?"
+if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
+    git_same_ref "$CUR_BRANCH" "refs/heads/$CUR_BRANCH" || die "Current branch $CUR_BRANCH is not a branch??"
+    git_same_ref "$CUR_BRANCH" "refs/remotes/$ORIGIN/$CUR_BRANCH" || die "Current branch $CUR_BRANCH seems not up to date. Git pull?"
+fi
 
 NEWER_BRANCHES=()
 if [ "$CUR_BRANCH" != master ]; then
@@ -207,13 +216,17 @@ if [ "$CUR_BRANCH" != master ]; then
             git show-ref --verify --quiet "refs/heads/$b" && die "unexpectedly branch $b exists"
             break
         fi
-        git_same_ref "$b" "refs/heads/$b" || die "branch $b is not a branch??"
-        git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date. Git pull?"
+        if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
+            git_same_ref "$b" "refs/heads/$b" || die "branch $b is not a branch??"
+            git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date. Git pull?"
+        fi
         NEWER_BRANCHES+=("refs/heads/$b")
     done
     b=master
-    git_same_ref "$b" "refs/heads/$b" || die "branch $b is not a branch??"
-    git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date. Git pull?"
+    if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
+        git_same_ref "$b" "refs/heads/$b" || die "branch $b is not a branch??"
+        git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date. Git pull?"
+    fi
 fi
 
 if [ $FIND_BACKPORTS = 1 ]; then
@@ -248,6 +261,7 @@ case "$RELEASE_MODE" in
         git tag -s -a -m "Tag $b (development)" "$b-dev" HEAD || die "failed to tag devel version"
         TAGS+=("$b-dev")
         CLEANUP_REFS+=("refs/tags/$b-dev")
+        TAR_VERSION="$BUILD_TAG"
         ;;
     devel)
         git checkout -B "$TMP_BRANCH"
@@ -260,6 +274,7 @@ case "$RELEASE_MODE" in
         TAGS+=("$b-dev")
         CLEANUP_REFS+=("refs/tags/$b-dev")
         BUILD_TAG="$b-dev"
+        TAR_VERSION="$b"
         ;;
     rc)
         git checkout -B "$TMP_BRANCH"
@@ -273,6 +288,7 @@ case "$RELEASE_MODE" in
         TAGS+=("$t")
         CLEANUP_REFS+=("refs/tags/$t")
         BUILD_TAG="$t"
+        TAR_VERSION="$b"
         ;;
     *)
         die "Release mode $RELEASE_MODE not yet implemented"
@@ -286,7 +302,7 @@ if [ -n "$BUILD_TAG" ]; then
 
     ./contrib/fedora/rpm/build_clean.sh -r || die "build release failed"
 
-    RELEASE_FILE="NetworkManager-${BUILD_TAG%-dev}.tar.xz"
+    RELEASE_FILE="NetworkManager-$TAR_VERSION.tar.xz"
 
     test -f "./$RELEASE_FILE" \
     && test -f "./$RELEASE_FILE.sig" \
