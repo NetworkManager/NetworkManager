@@ -180,11 +180,12 @@ case "$RELEASE_MODE" in
         number_is_odd "${VERSION_ARR[1]}" || die "cannot do devel release on top of version $VERSION_STR"
         if [ "$RELEASE_MODE" = devel ]; then
             [ "$((${VERSION_ARR[2]} + 1))" -lt 90 ] || die "devel release must have a micro version smaller than 90 but current version is $VERSION_STR"
+            [ "$CUR_BRANCH" == master ] || die "devel release can only be on master"
         else
             [ "${VERSION_ARR[2]}" -ge 90 ] || die "rc release must have a micro version larger than ${VERSION_ARR[0]}.90 but current version is $VERSION_STR"
             RC_VERSION="$((${VERSION_ARR[2]} - 90))"
+            [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))" ] || die "devel release can only be on \"nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))\" branch"
         fi
-        [ "$CUR_BRANCH" == master ] || die "devel release can only be on master"
         ;;
     *)
         die "Release mode $RELEASE_MODE not yet implemented"
