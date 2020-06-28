@@ -243,6 +243,8 @@ BUILD_TAG=
 
 CLEANUP_CHECKOUT_BRANCH="$CUR_BRANCH"
 
+CLEANUP_REFS+=("$TMP_BRANCH")
+
 case "$RELEASE_MODE" in
     minor)
         git checkout -B "$TMP_BRANCH"
@@ -315,7 +317,7 @@ fi
 
 if [ -n "$RELEASE_FILE" ]; then
     do_command rsync -va --append-verify -P "/tmp/$RELEASE_FILE" master.gnome.org: || die "failed to rsync \"/tmp/$RELEASE_FILE\""
-    do_command ssh master.gnome.org ftpadmin install "$RELEASE_FILE" || die "ftpadmin install failed"
+    do_command ssh master.gnome.org ftpadmin install --unattended "$RELEASE_FILE" || die "ftpadmin install failed"
 fi
 
 git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
