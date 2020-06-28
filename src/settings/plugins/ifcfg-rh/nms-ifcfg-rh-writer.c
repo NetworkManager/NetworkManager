@@ -2099,7 +2099,15 @@ get_route_attributes_string (NMIPRoute *route, int family)
 
 	str = g_string_new ("");
 
+	attr = nm_ip_route_get_attribute (route, NM_IP_ROUTE_ATTRIBUTE_TYPE);
+	if (   attr
+	    && nm_ip_route_attribute_validate (NM_IP_ROUTE_ATTRIBUTE_TYPE, attr, family, NULL, NULL))
+		g_string_append_printf (str, "%s ", g_variant_get_string (attr, NULL));
+
 	for (i = 0; i < len; i++) {
+		if (nm_streq (names[i], NM_IP_ROUTE_ATTRIBUTE_TYPE))
+			continue;
+
 		attr = nm_ip_route_get_attribute (route, names[i]);
 
 		if (!nm_ip_route_attribute_validate (names[i], attr, family, NULL, NULL))

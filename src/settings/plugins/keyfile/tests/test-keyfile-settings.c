@@ -274,7 +274,7 @@ test_read_valid_wired_connection (void)
 	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "2.3.4.6");
 
 	/* IPv4 routes */
-	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip4), ==, 13);
+	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip4), ==, 14);
 	check_ip_route (s_ip4, 0, "5.6.7.8", 32, NULL, -1);
 	check_ip_route (s_ip4, 1, "1.2.3.0", 24, "2.3.4.8", 99);
 	check_ip_route (s_ip4, 2, "1.1.1.2", 12, NULL, -1);
@@ -288,6 +288,7 @@ test_read_valid_wired_connection (void)
 	check_ip_route (s_ip4, 10, "1.1.1.10", 21, NULL, 0);
 	check_ip_route (s_ip4, 11, "1.1.1.10", 20, NULL, 0);
 	check_ip_route (s_ip4, 12, "1.1.1.11", 21, NULL, 21);
+	check_ip_route (s_ip4, 13, "1.2.3.4", 32, NULL, -1);
 
 	/* Route attributes */
 	route = nm_setting_ip_config_get_route (s_ip4, 12);
@@ -297,6 +298,12 @@ test_read_valid_wired_connection (void)
 	nmtst_assert_route_attribute_uint32  (route, NM_IP_ROUTE_ATTRIBUTE_MTU, 1430);
 	nmtst_assert_route_attribute_boolean (route, NM_IP_ROUTE_ATTRIBUTE_LOCK_CWND, TRUE);
 	nmtst_assert_route_attribute_string  (route, NM_IP_ROUTE_ATTRIBUTE_SRC, "7.7.7.7");
+	nmtst_assert_route_attribute_string  (route, NM_IP_ROUTE_ATTRIBUTE_TYPE, "unicast");
+
+	route = nm_setting_ip_config_get_route (s_ip4, 13);
+	g_assert (route);
+
+	nmtst_assert_route_attribute_string  (route, NM_IP_ROUTE_ATTRIBUTE_TYPE, "local");
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);

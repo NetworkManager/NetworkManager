@@ -36,7 +36,9 @@ routes9=1.1.1.9/19,0.0.0.0,0
 route10=1.1.1.10/21,,0
 routes10=1.1.1.10/20,,0
 routes11=1.1.1.11/21,,21
-routes11_options=cwnd=10,lock-cwnd=true,mtu=1430,src=7.7.7.7
+routes11_options=cwnd=10,lock-cwnd=true,mtu=1430,src=7.7.7.7,type=unicast
+routes12=1.2.3.4/32
+routes12_options=type=local
 address30=1.2.3.30/24
 addresses30=1.2.3.30/25
 addresses31=1.2.3.31/25

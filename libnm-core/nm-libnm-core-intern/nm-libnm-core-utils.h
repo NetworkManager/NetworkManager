@@ -112,4 +112,8 @@ NMClientPermission nm_auth_permission_from_string (const char *str);
 NMClientPermissionResult nm_client_permission_result_from_string (const char *nm);
 const char *nm_client_permission_result_to_string (NMClientPermissionResult permission);
 
+guint8 nm_utils_route_type_by_name (const char *name);
+
+const char *nm_utils_route_type2str (guint8 val, char *buf, gsize len);
+
 #endif /* __NM_LIBNM_SHARED_UTILS_H__ */

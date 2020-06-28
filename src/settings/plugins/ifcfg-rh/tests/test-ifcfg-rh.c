@@ -1323,7 +1323,7 @@ test_read_wired_static_routes (void)
 	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 
 	/* Routes */
-	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip4), ==, 3);
+	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip4), ==, 4);
 
 	ip4_route = nm_setting_ip_config_get_route (s_ip4, 0);
 	g_assert (ip4_route);
@@ -1367,6 +1367,13 @@ test_read_wired_static_routes (void)
 	nmtst_assert_route_attribute_boolean (ip4_route, NM_IP_ROUTE_ATTRIBUTE_ONLINK, TRUE);
 	nmtst_assert_route_attribute_byte (ip4_route, NM_IP_ROUTE_ATTRIBUTE_SCOPE, 253);
 
+	ip4_route = nm_setting_ip_config_get_route (s_ip4, 3);
+	g_assert (ip4_route);
+	g_assert_cmpstr (nm_ip_route_get_dest (ip4_route), ==, "1.2.3.4");
+	g_assert_cmpint (nm_ip_route_get_prefix (ip4_route), ==, 32);
+	nmtst_assert_route_attribute_string (ip4_route, NM_IP_ROUTE_ATTRIBUTE_TYPE, "local");
+	nmtst_assert_route_attribute_byte (ip4_route, NM_IP_ROUTE_ATTRIBUTE_SCOPE, 254);
+
 	g_object_unref (connection);
 }
 
@@ -1402,7 +1409,7 @@ test_read_wired_static_routes_legacy (void)
 	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 
 	/* Routes */
-	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip4), ==, 4);
+	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip4), ==, 5);
 
 	/* Route #1 */
 	ip4_route = nm_setting_ip_config_get_route (s_ip4, 0);
@@ -1442,6 +1449,13 @@ test_read_wired_static_routes_legacy (void)
 	g_assert_cmpint (nm_ip_route_get_prefix (ip4_route), ==, 32);
 	g_assert_cmpstr (nm_ip_route_get_next_hop (ip4_route), ==, NULL);
 	g_assert_cmpint (nm_ip_route_get_metric (ip4_route), ==, 18);
+
+
+	/* Route #5 */
+	ip4_route = nm_setting_ip_config_get_route (s_ip4, 4);
+	g_assert (ip4_route != NULL);
+	g_assert_cmpstr (nm_ip_route_get_dest (ip4_route), ==, "1.2.3.4");
+	nmtst_assert_route_attribute_string (ip4_route, NM_IP_ROUTE_ATTRIBUTE_TYPE, "local");
 
 	g_object_unref (connection);
 }
