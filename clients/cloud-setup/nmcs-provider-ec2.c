@@ -90,13 +90,12 @@ _detect_get_meta_data_done_cb (GObject *source,
 	gs_unref_object GTask *task = user_data;
 	gs_free_error GError *get_error = NULL;
 	gs_free_error GError *error = NULL;
-	gboolean success;
 
-	success = nm_http_client_poll_get_finish (NM_HTTP_CLIENT (source),
-	                                          result,
-	                                          NULL,
-	                                          NULL,
-	                                          &get_error);
+	nm_http_client_poll_get_finish (NM_HTTP_CLIENT (source),
+	                                result,
+	                                NULL,
+	                                NULL,
+	                                &get_error);
 
 	if (nm_utils_error_is_cancelled (get_error)) {
 		g_task_return_error (task, g_steal_pointer (&get_error));
@@ -108,14 +107,6 @@ _detect_get_meta_data_done_cb (GObject *source,
 		                    NM_UTILS_ERROR_UNKNOWN,
 		                    "failure to get EC2 metadata: %s",
 		                    get_error->message);
-		g_task_return_error (task, g_steal_pointer (&error));
-		return;
-	}
-
-	if (!success) {
-		nm_utils_error_set (&error,
-		                    NM_UTILS_ERROR_UNKNOWN,
-		                    "failure to detect EC2 metadata");
 		g_task_return_error (task, g_steal_pointer (&error));
 		return;
 	}
@@ -191,30 +182,27 @@ _get_config_fetch_done_cb (NMHttpClient *http_client,
                            gboolean is_local_ipv4)
 {
 	GetConfigIfaceData *iface_data;
-	NMCSProviderGetConfigTaskData *get_config_data;
 	const char *hwaddr = NULL;
 	gs_unref_bytes GBytes *response_data = NULL;
 	gs_free_error GError *error = NULL;
-	gboolean success;
-	NMCSProviderGetConfigIfaceData *config_iface_data;
 
 	nm_utils_user_data_unpack (user_data, &iface_data, &hwaddr);
 
-	success = nm_http_client_poll_get_finish (http_client,
-	                                          result,
-	                                          NULL,
-	                                          &response_data,
-	                                          &error);
+	nm_http_client_poll_get_finish (http_client,
+	                                result,
+	                                NULL,
+	                                &response_data,
+	                                &error);
+
 	if (nm_utils_error_is_cancelled (error))
 		return;
 
-	get_config_data = iface_data->get_config_data;
-
-	config_iface_data = g_hash_table_lookup (get_config_data->result_dict, hwaddr);
-
-	if (success) {
+	if (!error) {
+		NMCSProviderGetConfigIfaceData *config_iface_data;
 		in_addr_t tmp_addr;
 		int tmp_prefix;
+
+		config_iface_data = g_hash_table_lookup (iface_data->get_config_data->result_dict, hwaddr);
 
 		if (is_local_ipv4) {
 			gs_free const char **s_addrs = NULL;
