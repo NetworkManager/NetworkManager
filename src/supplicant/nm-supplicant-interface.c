@@ -44,6 +44,7 @@ typedef struct {
 	gpointer user_data;
 	guint fail_on_idle_id;
 	guint blobs_left;
+	guint calls_left;
 	struct _AddNetworkData *add_network_data;
 } AssocData;
 
@@ -157,6 +158,8 @@ typedef struct _NMSupplicantInterfacePrivate {
 	bool           prop_scan_active:1;
 	bool           prop_scan_ssid:1;
 
+	bool           ap_isolate_supported:1;
+	bool           ap_isolate_needs_reset:1;
 } NMSupplicantInterfacePrivate;
 
 struct _NMSupplicantInterfaceClass {
@@ -436,6 +439,20 @@ _remove_network (NMSupplicantInterface *self)
 	                              g_variant_new ("(o)", net_path),
 	                              G_VARIANT_TYPE ("()"),
 	                              "remove-network");
+
+	if (   priv->ap_isolate_supported
+	    && priv->ap_isolate_needs_reset) {
+		_dbus_connection_call_simple (self,
+		                              DBUS_INTERFACE_PROPERTIES,
+		                              "Set",
+		                              g_variant_new ("(ssv)",
+		                                             NM_WPAS_DBUS_IFACE_INTERFACE,
+		                                             "ApIsolate",
+		                                             g_variant_new_string ("0")),
+		                              G_VARIANT_TYPE ("()"),
+		                              "reset-ap-isolation");
+	}
+	priv->ap_isolate_needs_reset = FALSE;
 }
 
 /*****************************************************************************/
@@ -1868,6 +1885,9 @@ _properties_changed_main (NMSupplicantInterface *self,
 		}
 	}
 
+	if (nm_g_variant_lookup (properties, "ApIsolate", "&s", &v_s))
+		priv->ap_isolate_supported = TRUE;
+
 	if (do_log_driver_info) {
 		_LOGD ("supplicant interface for ifindex=%d, ifname=%s%s%s, driver=%s%s%s (requested %s)",
 		       priv->ifindex,
@@ -2227,26 +2247,12 @@ assoc_add_network_cb (GObject *source, GAsyncResult *result, gpointer user_data)
 }
 
 static void
-assoc_set_ap_scan_cb (GVariant *ret, GError *error, gpointer user_data)
+add_network (NMSupplicantInterface *self)
 {
-	NMSupplicantInterface *self;
 	NMSupplicantInterfacePrivate *priv;
 	AddNetworkData *add_network_data;
 
-	if (nm_utils_error_is_cancelled (error))
-		return;
-
-	self = NM_SUPPLICANT_INTERFACE (user_data);
 	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
-
-	if (error) {
-		assoc_return (self, error, "failure to set AP scan mode");
-		return;
-	}
-
-	_LOGT ("assoc["NM_HASH_OBFUSCATE_PTR_FMT"]: interface ap_scan set to %d",
-	       NM_HASH_OBFUSCATE_PTR (priv->assoc_data),
-	       nm_supplicant_config_get_ap_scan (priv->assoc_data->cfg));
 
 	/* the association does not keep @self alive. We want to be able to remove
 	 * the network again, even if @self is already gone. Hence, track the data
@@ -2274,6 +2280,62 @@ assoc_set_ap_scan_cb (GVariant *ret, GError *error, gpointer user_data)
 	                       NULL,
 	                       assoc_add_network_cb,
 	                       add_network_data);
+}
+
+static void
+assoc_set_ap_isolation (GVariant *ret, GError *error, gpointer user_data)
+{
+	NMSupplicantInterface *self;
+	NMSupplicantInterfacePrivate *priv;
+	gboolean value;
+
+	if (nm_utils_error_is_cancelled (error))
+		return;
+
+	self = NM_SUPPLICANT_INTERFACE (user_data);
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (error) {
+		assoc_return (self, error, "failure to set AP isolation");
+		return;
+	}
+
+	value = nm_supplicant_config_get_ap_isolation (priv->assoc_data->cfg);
+	_LOGT ("assoc["NM_HASH_OBFUSCATE_PTR_FMT"]: interface AP isolation set to %d",
+	       NM_HASH_OBFUSCATE_PTR (priv->assoc_data),
+	       value);
+
+	priv->ap_isolate_needs_reset = value;
+
+	nm_assert (priv->assoc_data->calls_left > 0);
+	if (--priv->assoc_data->calls_left == 0)
+		add_network (self);
+}
+
+static void
+assoc_set_ap_scan_cb (GVariant *ret, GError *error, gpointer user_data)
+{
+	NMSupplicantInterface *self;
+	NMSupplicantInterfacePrivate *priv;
+
+	if (nm_utils_error_is_cancelled (error))
+		return;
+
+	self = NM_SUPPLICANT_INTERFACE (user_data);
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (error) {
+		assoc_return (self, error, "failure to set AP scan mode");
+		return;
+	}
+
+	_LOGT ("assoc["NM_HASH_OBFUSCATE_PTR_FMT"]: interface ap_scan set to %d",
+	       NM_HASH_OBFUSCATE_PTR (priv->assoc_data),
+	       nm_supplicant_config_get_ap_scan (priv->assoc_data->cfg));
+
+	nm_assert (priv->assoc_data->calls_left > 0);
+	if (--priv->assoc_data->calls_left == 0)
+		add_network (self);
 }
 
 static gboolean
@@ -2312,6 +2374,7 @@ nm_supplicant_interface_assoc (NMSupplicantInterface *self,
 {
 	NMSupplicantInterfacePrivate *priv;
 	AssocData *assoc_data;
+	gboolean ap_isolation;
 
 	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
 	g_return_if_fail (NM_IS_SUPPLICANT_CONFIG (cfg));
@@ -2343,6 +2406,7 @@ nm_supplicant_interface_assoc (NMSupplicantInterface *self,
 	}
 
 	assoc_data->cancellable = g_cancellable_new();
+	assoc_data->calls_left++;
 	nm_dbus_connection_call_set (priv->dbus_connection,
 	                             priv->name_owner->str,
 	                             priv->object_path->str,
@@ -2353,6 +2417,31 @@ nm_supplicant_interface_assoc (NMSupplicantInterface *self,
 	                             assoc_data->cancellable,
 	                             assoc_set_ap_scan_cb,
 	                             self);
+
+	ap_isolation = nm_supplicant_config_get_ap_isolation (priv->assoc_data->cfg);
+	if (!priv->ap_isolate_supported) {
+		if (ap_isolation) {
+			_LOGW ("assoc["NM_HASH_OBFUSCATE_PTR_FMT"]: requested AP isolation but the supplicant doesn't support it",
+			       NM_HASH_OBFUSCATE_PTR (assoc_data));
+		}
+	} else {
+		assoc_data->calls_left++;
+		/* It would be smarter to change the property only when necessary.
+		 * However, wpa_supplicant doesn't send the PropertiesChanged
+		 * signal for ApIsolate, and so to know the current value we would
+		 * need first a Get call. It seems simpler to just set the value
+		 * we want. */
+		nm_dbus_connection_call_set (priv->dbus_connection,
+		                             priv->name_owner->str,
+		                             priv->object_path->str,
+		                             NM_WPAS_DBUS_IFACE_INTERFACE,
+		                             "ApIsolate",
+		                             g_variant_new_string (ap_isolation ? "1" : "0"),
+		                             DBUS_TIMEOUT_MSEC,
+		                             assoc_data->cancellable,
+		                             assoc_set_ap_isolation,
+		                             self);
+	}
 }
 
 /*****************************************************************************/
