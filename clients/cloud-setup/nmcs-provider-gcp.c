@@ -384,8 +384,6 @@ _get_net_ifaces_list_cb (GObject *source,
 	gs_free_error GError *error = NULL;
 	GCPData *gcp_data = user_data;
 	const char *response_str;
-	const char *token_start;
-	const char *token_end;
 	gsize response_len;
 	const char *line;
 	gsize line_len;
@@ -416,16 +414,16 @@ _get_net_ifaces_list_cb (GObject *source,
 		GCPIfaceData *iface_data;
 		gssize iface_idx;
 
-		token_start = line;
-		token_end = memchr (token_start, '/', line_len);
-
-		if (!token_end)
+		if (line_len == 0)
 			continue;
 
-		g_string_truncate (gstr, 0);
-		g_string_append_len (gstr, token_start, token_end - token_start);
-		iface_idx = _nm_utils_ascii_str_to_int64 (gstr->str, 10, 0, G_MAXSSIZE, -1);
+		/* Truncate the string. It's safe to do, because we own @response_data an it has an
+		 * extra NUL character after the buffer. */
+		((char *) line)[line_len] = '\0';
+		if (line[line_len - 1] == '/')
+			((char *) line)[--line_len] = '\0';
 
+		iface_idx = _nm_utils_ascii_str_to_int64 (line, 10, 0, G_MAXSSIZE, -1);
 		if (iface_idx < 0)
 			continue;
 
@@ -487,7 +485,6 @@ get_config (NMCSProvider *provider,
 		.n_ifaces_pending = 0,
 		.error = NULL,
 		.success = FALSE,
-
 	};
 
 	nm_http_client_poll_get (nmcs_provider_get_http_client (provider),
