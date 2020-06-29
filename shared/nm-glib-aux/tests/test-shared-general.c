@@ -773,6 +773,109 @@ test_nm_str_buf (void)
 
 /*****************************************************************************/
 
+static void
+test_nm_utils_parse_next_line (void)
+{
+	const char *data;
+	const char *data0;
+	gsize data_len;
+	const char *line_start;
+	gsize line_len;
+	int i_run;
+	gsize j, k;
+
+	data = NULL;
+	data_len = 0;
+	g_assert (!nm_utils_parse_next_line (&data, &data_len, &line_start, &line_len));
+
+	for (i_run = 0; i_run < 1000; i_run++) {
+		gs_unref_ptrarray GPtrArray *strv = g_ptr_array_new_with_free_func (g_free);
+		gs_unref_ptrarray GPtrArray *strv2 = g_ptr_array_new_with_free_func (g_free);
+		gsize strv_len = nmtst_get_rand_word_length (NULL);
+		nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT (0, nmtst_get_rand_bool ());
+
+		/* create a list of random words. */
+		for (j = 0; j < strv_len; j++) {
+			gsize w_len = nmtst_get_rand_word_length (NULL);
+			NMStrBuf w_buf = NM_STR_BUF_INIT (nmtst_get_rand_uint32 () % (w_len + 1), nmtst_get_rand_bool ());
+
+			for (k = 0; k < w_len; k++)
+				nm_str_buf_append_c (&w_buf, '0' + (k % 10));
+			nm_str_buf_maybe_expand (&w_buf, 1, TRUE);
+			g_ptr_array_add (strv, nm_str_buf_finalize (&w_buf, NULL));
+		}
+
+		/* join the list of random words with (random) line delimiters
+		 * ("\0", "\n", "\r" or EOF). */
+		for (j = 0; j < strv_len; j++) {
+			nm_str_buf_append (&strbuf, strv->pdata[j]);
+again:
+			switch (nmtst_get_rand_uint32 () % 5) {
+			case 0:
+				nm_str_buf_append_c (&strbuf, '\0');
+				break;
+			case 1:
+				if (   strbuf.len > 0
+				    && (nm_str_buf_get_str_unsafe (&strbuf))[strbuf.len - 1] == '\r') {
+					/* the previous line was empty and terminated by "\r". We
+					 * must not join with "\n". Retry. */
+					goto again;
+				}
+				nm_str_buf_append_c (&strbuf, '\n');
+				break;
+			case 2:
+				nm_str_buf_append_c (&strbuf, '\r');
+				break;
+			case 3:
+				nm_str_buf_append (&strbuf, "\r\n");
+				break;
+			case 4:
+				/* the last word randomly is delimited or not, but not if the last
+				 * word is "". */
+				if (j + 1 < strv_len) {
+					/* it's not the last word. Retry. */
+					goto again;
+				}
+				g_assert (j == strv_len - 1);
+				if (((const char *) strv->pdata[j])[0] == '\0') {
+					/* if the last word was "", we need a delimiter (to parse it back).
+					 * Retry. */
+					goto again;
+				}
+				/* The final delimiter gets omitted. It's EOF. */
+				break;
+			}
+		}
+
+		data0 = nm_str_buf_get_str_unsafe (&strbuf);
+		if (   !data0
+		    && nmtst_get_rand_bool ()) {
+			nm_str_buf_maybe_expand (&strbuf, 1, TRUE);
+			data0 = nm_str_buf_get_str_unsafe (&strbuf);
+			g_assert (data0);
+		}
+		data_len = strbuf.len;
+		g_assert ((data_len > 0 && data0) || data_len == 0);
+		data = data0;
+		while (nm_utils_parse_next_line (&data, &data_len, &line_start, &line_len)) {
+			g_assert (line_start);
+			g_assert (line_start >= data0);
+			g_assert (line_start < &data0[strbuf.len]);
+			g_assert (!memchr (line_start, '\0', line_len));
+			g_ptr_array_add (strv2, g_strndup (line_start, line_len));
+		}
+		g_assert (data_len == 0);
+		if (data0)
+			g_assert (data == &data0[strbuf.len]);
+		else
+			g_assert (!data);
+
+		g_assert (_nm_utils_strv_cmp_n ((const char *const*) strv->pdata, strv->len, (const char *const*) strv2->pdata, strv2->len) == 0);
+	}
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -794,6 +897,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/general/test_string_table_lookup", test_string_table_lookup);
 	g_test_add_func ("/general/test_nm_utils_get_next_realloc_size", test_nm_utils_get_next_realloc_size);
 	g_test_add_func ("/general/test_nm_str_buf", test_nm_str_buf);
+	g_test_add_func ("/general/test_nm_utils_parse_next_line", test_nm_utils_parse_next_line);
 
 	return g_test_run ();
 }
