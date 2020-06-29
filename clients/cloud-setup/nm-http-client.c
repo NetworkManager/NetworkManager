@@ -351,6 +351,21 @@ nm_http_client_get (NMHttpClient *self,
 	}
 }
 
+/**
+ * nm_http_client_get_finish:
+ * @self: the #NMHttpClient instance
+ * @result: the #GAsyncResult which to complete.
+ * @out_response_code: (allow-none) (out): the HTTP response code or -1 on other error.
+ * @out_response_data: (allow-none) (transfer full): the HTTP response data, if any.
+ *   The GBytes buffer is guaranteed to have a trailing NUL character *after* the
+ *   returned buffer size. That means, you can always trust that the buffer is NUL terminated
+ *   and that there is one additional hidden byte after the data.
+ *   Also, the returned buffer is allocated just for you. While GBytes is immutable, you are
+ *   allowed to modify the buffer as it's not used by anybody else.
+ * @error: the error
+ *
+ * Returns: %TRUE on success.
+ */
 gboolean
 nm_http_client_get_finish (NMHttpClient *self,
                            GAsyncResult *result,
