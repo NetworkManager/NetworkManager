@@ -505,10 +505,12 @@ _poll_get_done_cb (GObject *source,
 
 	success = nmcs_utils_poll_finish (result, NULL, &error);
 
+	nm_assert ((!!success) == (!error));
+
 	if (error)
 		g_task_return_error (poll_get_data->task, g_steal_pointer (&error));
 	else
-		g_task_return_boolean (poll_get_data->task, success);
+		g_task_return_boolean (poll_get_data->task, TRUE);
 
 	g_object_unref (poll_get_data->task);
 }
@@ -587,10 +589,11 @@ nm_http_client_poll_get_finish (NMHttpClient *self,
 	task = G_TASK (result);
 
 	success = g_task_propagate_boolean (task, &local_error);
-	if (   local_error
-	    || !success) {
-		if (local_error)
-			g_propagate_error (error, g_steal_pointer (&local_error));
+
+	nm_assert ((!!success) == (!local_error));
+
+	if (local_error) {
+		g_propagate_error (error, g_steal_pointer (&local_error));
 		NM_SET_OUT (out_response_code, -1);
 		NM_SET_OUT (out_response_data, NULL);
 		return FALSE;
@@ -600,7 +603,6 @@ nm_http_client_poll_get_finish (NMHttpClient *self,
 
 	NM_SET_OUT (out_response_code, poll_get_data->response_code);
 	NM_SET_OUT (out_response_data, g_steal_pointer (&poll_get_data->response_data));
-
 	return TRUE;
 }
 

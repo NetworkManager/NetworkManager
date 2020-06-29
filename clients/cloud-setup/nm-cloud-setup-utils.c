@@ -258,7 +258,6 @@ _poll_task_data_free (gpointer data)
 
 static void
 _poll_return (PollTaskData *poll_task_data,
-              gboolean success,
               GError *error_take)
 {
 	nm_clear_g_source_inst (&poll_task_data->source_next_poll);
@@ -271,7 +270,7 @@ _poll_return (PollTaskData *poll_task_data,
 	if (error_take)
 		g_task_return_error (poll_task_data->task, g_steal_pointer (&error_take));
 	else
-		g_task_return_boolean (poll_task_data->task, success);
+		g_task_return_boolean (poll_task_data->task, TRUE);
 
 	g_object_unref (poll_task_data->task);
 }
@@ -302,7 +301,7 @@ _poll_done_cb (GObject *source,
 
 	if (   error
 	    || is_finished) {
-		_poll_return (poll_task_data, TRUE, g_steal_pointer (&error));
+		_poll_return (poll_task_data, g_steal_pointer (&error));
 		return;
 	}
 
@@ -346,8 +345,8 @@ _poll_timeout_cb (gpointer user_data)
 {
 	PollTaskData *poll_task_data = user_data;
 
-	_poll_return (poll_task_data, FALSE, nm_utils_error_new (NM_UTILS_ERROR_UNKNOWN,
-	                                                         "timeout expired"));
+	_poll_return (poll_task_data, nm_utils_error_new (NM_UTILS_ERROR_UNKNOWN,
+	                                                  "timeout expired"));
 	return G_SOURCE_CONTINUE;
 }
 
@@ -360,13 +359,13 @@ _poll_cancelled_cb (GObject *object, gpointer user_data)
 	nm_clear_g_signal_handler (g_task_get_cancellable (poll_task_data->task),
 	                           &poll_task_data->cancellable_id);
 	nm_utils_error_set_cancelled (&error, FALSE, NULL);
-	_poll_return (poll_task_data, FALSE, error);
+	_poll_return (poll_task_data, error);
 }
 
 /**
  * nmcs_utils_poll:
  * @poll_timeout_ms: if >= 0, then this is the overall timeout for how long we poll.
- *   When this timeout expires, the request completes with failure (but no error set).
+ *   When this timeout expires, the request completes with failure (and error set).
  * @ratelimit_timeout_ms: if > 0, we ratelimit the starts from one prope_start_fcn
  *   call to the next.
  * @sleep_timeout_ms: if > 0, then we wait after a probe finished this timeout
@@ -459,7 +458,8 @@ nmcs_utils_poll (int poll_timeout_ms,
  *   %FALSE will be returned.
  *   If the probe returned a failure, this returns %FALSE and the error
  *   provided by @probe_finish_fcn.
- *   If the request times out, this returns %FALSE without error set.
+ *   If the request times out, this returns %FALSE with error set.
+ *   Error is always set if (and only if) the function returns %FALSE.
  */
 gboolean
 nmcs_utils_poll_finish (GAsyncResult *result,
