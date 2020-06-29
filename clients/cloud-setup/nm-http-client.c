@@ -7,6 +7,7 @@
 #include <curl/curl.h>
 
 #include "nm-cloud-setup-utils.h"
+#include "nm-glib-aux/nm-str-buf.h"
 
 #define NM_CURL_DEBUG 0
 
@@ -118,7 +119,7 @@ typedef struct {
 	CURLcode ehandle_result;
 	CURL *ehandle;
 	char *url;
-	GString *recv_data;
+	NMStrBuf recv_data;
 	struct curl_slist *headers;
 	gssize max_data;
 	gulong cancellable_id;
@@ -144,8 +145,7 @@ _ehandle_free (EHandleData *edata)
 
 	g_object_unref (edata->task);
 
-	if (edata->recv_data)
-		g_string_free (edata->recv_data, TRUE);
+	nm_str_buf_destroy (&edata->recv_data);
 	if (edata->headers)
 		curl_slist_free_all (edata->headers);
 	g_free (edata->url);
@@ -191,12 +191,15 @@ _ehandle_complete (EHandleData *edata,
 		_LOG2E (edata, "failed to get response code from curl easy handle");
 
 	_LOG2D (edata, "success getting %"G_GSIZE_FORMAT" bytes (response code %ld)",
-	        edata->recv_data->len,
+	        edata->recv_data.len,
 	        response_code);
 
 	_LOG2T (edata, "received %"G_GSIZE_FORMAT" bytes: [[%s]]",
-	       edata->recv_data->len,
-	       nm_utils_buf_utf8safe_escape (edata->recv_data->str, edata->recv_data->len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL, &str_tmp_1));
+	       edata->recv_data.len,
+	       nm_utils_buf_utf8safe_escape (nm_str_buf_get_str (&edata->recv_data),
+	                                     edata->recv_data.len,
+	                                     NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
+	                                     &str_tmp_1));
 
 	_ehandle_free_ehandle (edata);
 
@@ -205,7 +208,7 @@ _ehandle_complete (EHandleData *edata,
 		.response_code = response_code,
 		/* This ensures that response_data is always NUL terminated. This is an important guarantee
 		 * that NMHttpClient makes. */
-		.response_data = g_string_free_to_bytes (g_steal_pointer (&edata->recv_data)),
+		.response_data = nm_str_buf_finalize_to_gbytes (&edata->recv_data),
 	};
 
 	g_task_return_pointer (edata->task, get_result, _get_result_free);
@@ -225,14 +228,14 @@ _get_writefunction_cb (char *ptr, size_t size, size_t nmemb, void *user_data)
 	nmemb *= size;
 
 	if (edata->max_data >= 0) {
-		nm_assert (edata->recv_data->len <= edata->max_data);
-		nconsume = (((gsize) edata->max_data) - edata->recv_data->len);
+		nm_assert (edata->recv_data.len <= edata->max_data);
+		nconsume = (((gsize) edata->max_data) - edata->recv_data.len);
 		if (nconsume > nmemb)
 			nconsume = nmemb;
 	} else
 		nconsume = nmemb;
 
-	g_string_append_len (edata->recv_data, ptr, nconsume);
+	nm_str_buf_append_len (&edata->recv_data, ptr, nconsume);
 	return nconsume;
 }
 
@@ -283,7 +286,7 @@ nm_http_client_get (NMHttpClient *self,
 	edata = g_slice_new (EHandleData);
 	*edata = (EHandleData) {
 		.task           = nm_g_task_new (self, cancellable, nm_http_client_get, callback, user_data),
-		.recv_data      = g_string_sized_new (NM_MIN (max_data, 245)),
+		.recv_data      = NM_STR_BUF_INIT (0, FALSE),
 		.max_data       = max_data,
 		.url            = g_strdup (url),
 		.headers        = NULL,
