@@ -1481,6 +1481,7 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 	NMSettingBridge *s_bridge;
 	guint32 u32;
 	guint64 u64;
+	guint u;
 	gboolean b;
 	const char *s;
 	GString *opts;
@@ -1522,10 +1523,10 @@ write_bridge_setting (NMConnection *connection, shvarFile *ifcfg, gboolean *wire
 		}
 	}
 
-	u32 = nm_setting_bridge_get_ageing_time (s_bridge);
-	if (u32 != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_AGEING_TIME)) {
+	u = nm_setting_bridge_get_ageing_time (s_bridge);
+	if (u != get_setting_default_uint (s_bridge, NM_SETTING_BRIDGE_AGEING_TIME)) {
 		nm_gstring_add_space_delimiter (opts);
-		g_string_append_printf (opts, "ageing_time=%u", u32);
+		g_string_append_printf (opts, "ageing_time=%u", u);
 	}
 
 	s = nm_setting_bridge_get_group_address (s_bridge);
