@@ -367,7 +367,7 @@ nm_http_client_get (NMHttpClient *self,
  *   allowed to modify the buffer as it's not used by anybody else.
  * @error: the error
  *
- * Returns: %TRUE on success.
+ * Returns: %TRUE on success or %FALSE with an error code.
  */
 gboolean
 nm_http_client_get_finish (NMHttpClient *self,
@@ -382,6 +382,9 @@ nm_http_client_get_finish (NMHttpClient *self,
 	g_return_val_if_fail (nm_g_task_is_valid (result, self, nm_http_client_get), FALSE);
 
 	get_result = g_task_propagate_pointer (G_TASK (result), error);
+
+	nm_assert ((!!get_result) == (!error));
+
 	if (!get_result) {
 		NM_SET_OUT (out_response_code, -1);
 		NM_SET_OUT (out_response_data, NULL);
@@ -394,7 +397,6 @@ nm_http_client_get_finish (NMHttpClient *self,
 	NM_SET_OUT (out_response_data, g_steal_pointer (&get_result->response_data));
 
 	_get_result_free (get_result);
-
 	return TRUE;
 }
 
@@ -465,11 +467,14 @@ _poll_get_probe_finish_fcn (GObject *source,
 	                                     &response_data,
 	                                     &local_error);
 
-	if (!success) {
+	nm_assert ((!!success) == (!local_error));
+
+	if (local_error) {
 		if (nm_utils_error_is_cancelled (local_error)) {
 			g_propagate_error (error, g_steal_pointer (&local_error));
 			return TRUE;
 		}
+		/* any other error. Continue polling. */
 		return FALSE;
 	}
 
@@ -486,8 +491,10 @@ _poll_get_probe_finish_fcn (GObject *source,
 		return TRUE;
 	}
 
-	if (!success)
+	if (!success) {
+		/* Not yet ready. Continue polling. */
 		return FALSE;
+	}
 
 	poll_get_data->response_code = response_code;
 	poll_get_data->response_data = g_steal_pointer (&response_data);
