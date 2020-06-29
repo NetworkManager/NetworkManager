@@ -207,7 +207,11 @@ rpmbuild --define "_topdir $TEMP" $RPM_BUILD_OPTION "$TEMPSPEC" $NM_RPMBUILD_ARG
 LS_EXTRA=()
 
 if [ "$SIGN_SOURCE" = 1 ]; then
-    gpg --output "$SOURCE.sig" --armor --detach-sig "$SOURCE" || die "ERROR: failure to sign $SOURCE"
+    SIGNKEY="$(git config --get user.signingkey)"
+    if [ "$SIGNKEY" != "" ]; then
+        SIGNKEY="--local-user $(printf '%q' "$SIGNKEY")"
+    fi
+    gpg $SIGNKEY --output "$SOURCE.sig" --armor --detach-sig "$SOURCE" || die "ERROR: failure to sign $SOURCE"
     LS_EXTRA+=("$SOURCE.sig")
 fi
 
