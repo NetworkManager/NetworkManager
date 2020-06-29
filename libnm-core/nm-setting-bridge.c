@@ -1973,8 +1973,9 @@ nm_setting_bridge_class_init (NMSettingBridgeClass *klass)
 	 * Sets bridge's multicast router. Multicast-snooping must be enabled
 	 * for this option to work.
 	 *
-	 * Supported values are: 'auto', 'disabled', 'enabled'.
-	 * If not specified the default value is 'auto'.
+	 * Supported values are: 'auto', 'disabled', 'enabled' to which kernel
+	 * assigns the numbers 1, 0, and 2, respectively.
+	 * If not specified the default value is 'auto' (1).
 	 **/
 	/* ---ifcfg-rh---
 	 * property: multicast-router
