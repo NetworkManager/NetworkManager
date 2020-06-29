@@ -357,7 +357,6 @@ _poll_cancelled_cb (GObject *object, gpointer user_data)
 	PollTaskData *poll_task_data = user_data;
 	GError *error = NULL;
 
-	_LOGD (">> poll cancelled");
 	nm_clear_g_signal_handler (g_task_get_cancellable (poll_task_data->task),
 	                           &poll_task_data->cancellable_id);
 	nm_utils_error_set_cancelled (&error, FALSE, NULL);
