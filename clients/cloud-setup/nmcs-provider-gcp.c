@@ -321,7 +321,7 @@ _get_config_iface_cb (GObject *source,
 	gs_free_error GError *error = NULL;
 	gs_free const char *hwaddr = NULL;
 	gs_free const char *uri = NULL;
-	gs_free char *str = NULL;
+	char sbuf[100];
 	GCPData *gcp_data;
 
 	gcp_data = iface_data->gcp_data;
@@ -350,11 +350,10 @@ _get_config_iface_cb (GObject *source,
 	       iface_data->iface_idx,
 	       hwaddr);
 
-	str = g_strdup_printf ("%"G_GSSIZE_FORMAT"/forwarded-ips/",
-	                       iface_data->iface_idx);
+	nm_sprintf_buf (sbuf, "%"G_GSSIZE_FORMAT"/forwarded-ips/", iface_data->iface_idx);
 
 	nm_http_client_poll_get (NM_HTTP_CLIENT (source),
-	                         (uri = _gcp_uri_interfaces (str)),
+	                         (uri = _gcp_uri_interfaces (sbuf)),
 	                         HTTP_TIMEOUT_MS,
 	                         HTTP_REQ_MAX_DATA,
 	                         HTTP_POLL_TIMEOUT_MS,
@@ -379,7 +378,6 @@ _get_net_ifaces_list_cb (GObject *source,
                          gpointer user_data)
 {
 	gs_unref_ptrarray GPtrArray *ifaces_arr = NULL;
-	nm_auto_free_gstring GString *gstr = NULL;
 	gs_unref_bytes GBytes *response = NULL;
 	gs_free_error GError *error = NULL;
 	GCPData *gcp_data = user_data;
@@ -405,7 +403,6 @@ _get_net_ifaces_list_cb (GObject *source,
 	nm_assert (response_str[response_len] == 0);
 
 	ifaces_arr = g_ptr_array_new ();
-	gstr = g_string_new (NULL);
 
 	while (nm_utils_parse_next_line (&response_str,
 	                                 &response_len,
@@ -443,14 +440,15 @@ _get_net_ifaces_list_cb (GObject *source,
 	for (i = 0; i < ifaces_arr->len; ++i) {
 		GCPIfaceData *data = ifaces_arr->pdata[i];
 		gs_free const char *uri = NULL;
+		char sbuf[100];
 
 		_LOGD ("GCP interface[%"G_GSSIZE_FORMAT"]: retrieving configuration",
 		       data->iface_idx);
 
-		g_string_printf (gstr, "%"G_GSSIZE_FORMAT"/mac", data->iface_idx);
+		nm_sprintf_buf (sbuf, "%"G_GSSIZE_FORMAT"/mac", data->iface_idx);
 
 		nm_http_client_poll_get (NM_HTTP_CLIENT (source),
-		                         (uri = _gcp_uri_interfaces (gstr->str)),
+		                         (uri = _gcp_uri_interfaces (sbuf)),
 		                         HTTP_TIMEOUT_MS,
 		                         HTTP_REQ_MAX_DATA,
 		                         HTTP_POLL_TIMEOUT_MS,
