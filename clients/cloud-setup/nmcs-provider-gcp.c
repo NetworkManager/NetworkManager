@@ -255,21 +255,20 @@ _get_config_ips_list_cb (GObject *source,
 	                                 &response_len,
 	                                 &line,
 	                                 &line_len)) {
-		nm_auto_free_gstring GString *gstr = NULL;
 		gint64 fip_index;
 
-		gstr = g_string_new_len (line, line_len);
-		fip_index = _nm_utils_ascii_str_to_int64 (gstr->str, 10, 0, G_MAXINT64, -1);
+		/* Truncate the string. It's safe to do, because we own @response_data an it has an
+		 * extra NUL character after the buffer. */
+		((char *) line)[line_len] = '\0';
 
-		if (fip_index < 0) {
+		fip_index = _nm_utils_ascii_str_to_int64 (line, 10, 0, G_MAXINT64, -1);
+		if (fip_index < 0)
 			continue;
-		}
 
-		g_string_printf (gstr,
-		                 "%"G_GSSIZE_FORMAT"/forwarded-ips/%"G_GINT64_FORMAT,
-		                 iface_data->iface_idx,
-		                 fip_index);
-		g_ptr_array_add (uri_arr, g_string_free (g_steal_pointer (&gstr), FALSE));
+		g_ptr_array_add (uri_arr,
+		                 g_strdup_printf ("%"G_GSSIZE_FORMAT"/forwarded-ips/%"G_GINT64_FORMAT,
+		                                  iface_data->iface_idx,
+		                                  fip_index));
 	}
 
 	iface_data->n_fips_pending = uri_arr->len;
