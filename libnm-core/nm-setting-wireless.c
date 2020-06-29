@@ -43,6 +43,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingWireless,
 	PROP_POWERSAVE,
 	PROP_MAC_ADDRESS_RANDOMIZATION,
 	PROP_WAKE_ON_WLAN,
+	PROP_AP_ISOLATION,
 );
 
 typedef struct {
@@ -55,13 +56,14 @@ typedef struct {
 	char *device_mac_address;
 	char *cloned_mac_address;
 	char *generate_mac_address_mask;
+	NMSettingMacRandomization mac_address_randomization;
+	NMTernary ap_isolation;
 	guint32 channel;
 	guint32 rate;
 	guint32 tx_power;
 	guint32 mtu;
 	guint32 powersave;
 	guint32 wowl;
-	NMSettingMacRandomization mac_address_randomization;
 	bool hidden:1;
 } NMSettingWirelessPrivate;
 
@@ -739,6 +741,22 @@ _to_dbus_fcn_seen_bssids (const NMSettInfoSetting *sett_info,
 	return g_variant_new_strv ((const char *const*) priv->seen_bssids->pdata, priv->seen_bssids->len);
 }
 
+/**
+ * nm_setting_wireless_get_ap_isolation:
+ * @setting: the #NMSettingWireless
+ *
+ * Returns: the #NMSettingWireless:ap-isolation property of the setting
+ *
+ * Since: 1.28
+ */
+NMTernary
+nm_setting_wireless_get_ap_isolation (NMSettingWireless *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), NM_TERNARY_DEFAULT);
+
+	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->ap_isolation;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -934,6 +952,17 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
+	if (   priv->ap_isolation != NM_TERNARY_DEFAULT
+	    && !nm_streq0 (priv->mode, NM_SETTING_WIRELESS_MODE_AP)) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _("AP isolation can be set only in AP mode"));
+		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIRELESS_SETTING_NAME,
+		                NM_SETTING_WIRELESS_AP_ISOLATION);
+		return FALSE;
+	}
+
 	/* from here on, check for NM_SETTING_VERIFY_NORMALIZABLE conditions. */
 
 	if (priv->cloned_mac_address) {
@@ -1094,6 +1123,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_WAKE_ON_WLAN:
 		g_value_set_uint (value, nm_setting_wireless_get_wake_on_wlan (setting));
 		break;
+	case PROP_AP_ISOLATION:
+		g_value_set_enum (value, priv->ap_isolation);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1203,6 +1235,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_WAKE_ON_WLAN:
 		priv->wowl = g_value_get_uint (value);
 		break;
+	case PROP_AP_ISOLATION:
+		priv->ap_isolation = g_value_get_enum (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1221,6 +1256,7 @@ nm_setting_wireless_init (NMSettingWireless *setting)
 	g_array_set_clear_func (priv->mac_address_blacklist, (GDestroyNotify) clear_blacklist_item);
 
 	priv->wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT;
+	priv->ap_isolation = NM_TERNARY_DEFAULT;
 }
 
 /**
@@ -1766,6 +1802,44 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	obj_properties[PROP_WAKE_ON_WLAN] =
 	    g_param_spec_uint (NM_SETTING_WIRELESS_WAKE_ON_WLAN, "", "",
 	                       0, G_MAXUINT32, NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT,
+	                       G_PARAM_READWRITE |
+	                       G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingWireless:ap-isolation
+	 *
+	 * Configures AP isolation, which prevents communication between
+	 * wireless devices connected to this AP. This property can be set
+	 * to a value different from %NM_TERNARY_DEFAULT only when the
+	 * interface is configured in AP mode.
+	 *
+	 * If set to %NM_TERNARY_TRUE, devices are not able to communicate
+	 * with each other. The increases security because it protects
+	 * devices against attacks from other clients in the network. At
+	 * the same time, it prevents devices to access resources on the
+	 * same wireless networks as file shares, printers, etc.
+	 *
+	 * If set to %NM_TERNARY_FALSE, devices can talk to each other.
+	 *
+	 * When set to %NM_TERNARY_DEFAULT, the global default is used; in
+	 * case the global default is unspecified it is assumed to be
+	 * %NM_TERNARY_FALSE.
+	 *
+	 * Since: 1.28
+	 **/
+	/* ---ifcfg-rh---
+	 * property: ap-isolation
+	 * variable: AP_ISOLATION(+)
+	 * values: "yes", "no"
+	 * default: missing variable means global default
+	 * description: Whether AP isolation is enabled
+	 * ---end---
+	 */
+	obj_properties[PROP_AP_ISOLATION] =
+	    g_param_spec_enum (NM_SETTING_WIRELESS_AP_ISOLATION, "", "",
+	                       NM_TYPE_TERNARY,
+	                       NM_TERNARY_DEFAULT,
+	                       NM_SETTING_PARAM_FUZZY_IGNORE |
 	                       G_PARAM_READWRITE |
 	                       G_PARAM_STATIC_STRINGS);
 

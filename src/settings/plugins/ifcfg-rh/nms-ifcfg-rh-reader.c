@@ -4021,6 +4021,7 @@ make_wireless_setting (shvarFile *ifcfg,
 	gint64 chan = 0;
 	NMSettingMacRandomization mac_randomization;
 	NMSettingWirelessPowersave powersave = NM_SETTING_WIRELESS_POWERSAVE_DEFAULT;
+	NMTernary ternary;
 
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
 
@@ -4223,6 +4224,14 @@ make_wireless_setting (shvarFile *ifcfg,
 	              NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION,
 	              mac_randomization,
 	              NULL);
+
+	ternary = svGetValueTernary (ifcfg, "AP_ISOLATION");
+	if (ternary != NM_TERNARY_DEFAULT) {
+		g_object_set (s_wireless,
+		              NM_SETTING_WIRELESS_AP_ISOLATION,
+		              ternary,
+		              NULL);
+	}
 
 	return NM_SETTING (s_wireless);
 

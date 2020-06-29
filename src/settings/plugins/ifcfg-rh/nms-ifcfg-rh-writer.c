@@ -953,6 +953,8 @@ write_wireless_setting (NMConnection *connection,
 		break;
 	}
 
+	svSetValueTernary (ifcfg, "AP_ISOLATION", nm_setting_wireless_get_ap_isolation (s_wireless));
+
 	svSetValueStr (ifcfg, "TYPE", TYPE_WIRELESS);
 
 	return TRUE;
