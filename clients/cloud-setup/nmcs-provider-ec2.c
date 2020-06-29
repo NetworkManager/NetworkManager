@@ -487,7 +487,7 @@ _get_config_metadata_ready_check (long response_code,
 		if (!response_parsed)
 			response_parsed = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 
-		mac_data = g_malloc (sizeof (GetConfigMetadataData) + 1 + p_start_l);
+		mac_data = g_malloc (sizeof (GetConfigMetadataMac) + 1 + p_start_l);
 		mac_data->iface_idx = iface_idx_counter++;
 		memcpy (mac_data->path, p_start, p_start_l);
 		mac_data->path[p_start_l] = '\0';
