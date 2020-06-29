@@ -436,7 +436,9 @@ _get_config_metadata_ready_check (long response_code,
 	GetConfigMetadataData *metadata_data = check_user_data;
 	gs_unref_hashtable GHashTable *response_parsed = NULL;
 	const guint8 *r_data;
+	const char *cur_line;
 	gsize r_len;
+	gsize cur_line_len;
 	GHashTableIter h_iter;
 	gboolean has_all;
 	const char *c_hwaddr;
@@ -452,47 +454,30 @@ _get_config_metadata_ready_check (long response_code,
 	/* NMHttpClient guarantees that there is a trailing NUL after the data. */
 	nm_assert (r_data[r_len] == 0);
 
-	while (r_len > 0) {
-		const guint8 *p_eol;
-		const char *p_start;
-		gsize p_start_l;
-		gsize p_start_l_2;
-		char *hwaddr;
+	while (nm_utils_parse_next_line ((const char **) &r_data, &r_len, &cur_line, &cur_line_len)) {
 		GetConfigMetadataMac *mac_data;
+		char *hwaddr;
 
-		p_start = (const char *) r_data;
-
-		p_eol = memchr (r_data, '\n', r_len);
-		if (p_eol) {
-			p_start_l = (p_eol - r_data);
-			r_len -= p_start_l + 1;
-			r_data = &p_eol[1];
-		} else {
-			p_start_l = r_len;
-			r_data = &r_data[r_len];
-			r_len = 0;
-		}
-
-		if (p_start_l == 0)
+		if (cur_line_len == 0)
 			continue;
 
-		p_start_l_2 = p_start_l;
-		if (p_start[p_start_l_2 - 1] == '/') {
-			/* trim the trailing "/". */
-			p_start_l_2--;
-		}
+		/* Truncate the string. It's safe to do, because we own @response_data an it has an
+		 * extra NUL character after the buffer. */
+		((char *) cur_line)[cur_line_len] = '\0';
 
-		hwaddr = nmcs_utils_hwaddr_normalize (p_start, p_start_l_2);
+		hwaddr = nmcs_utils_hwaddr_normalize (cur_line,
+		                                        cur_line[cur_line_len - 1u] == '/'
+		                                      ? (gssize) (cur_line_len - 1u)
+		                                      : -1);
 		if (!hwaddr)
 			continue;
 
 		if (!response_parsed)
 			response_parsed = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 
-		mac_data = g_malloc (sizeof (GetConfigMetadataMac) + 1 + p_start_l);
+		mac_data = g_malloc (sizeof (GetConfigMetadataMac) + 1u + cur_line_len);
 		mac_data->iface_idx = iface_idx_counter++;
-		memcpy (mac_data->path, p_start, p_start_l);
-		mac_data->path[p_start_l] = '\0';
+		memcpy (mac_data->path, cur_line, cur_line_len + 1u);
 
 		g_hash_table_insert (response_parsed, hwaddr, mac_data);
 	}
