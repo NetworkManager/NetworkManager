@@ -246,10 +246,11 @@ _get_config_ips_list_cb (GObject *source,
 	if (error)
 		goto fips_error;
 
+	response_str = g_bytes_get_data (response, &response_len);
+	/* NMHttpClient guarantees that there is a trailing NUL after the data. */
+	nm_assert (response_str[response_len] == 0);
 
 	uri_arr = g_ptr_array_new_with_free_func (g_free);
-	response_str = g_bytes_get_data (response, &response_len);
-
 	while (nm_utils_parse_next_line (&response_str,
 	                                 &response_len,
 	                                 &line,
@@ -403,6 +404,9 @@ _get_net_ifaces_list_cb (GObject *source,
 	}
 
 	response_str = g_bytes_get_data (response, &response_len);
+	/* NMHttpClient guarantees that there is a trailing NUL after the data. */
+	nm_assert (response_str[response_len] == 0);
+
 	ifaces_arr = g_ptr_array_new ();
 	gstr = g_string_new (NULL);
 

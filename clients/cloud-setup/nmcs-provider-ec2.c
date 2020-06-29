@@ -449,6 +449,8 @@ _get_config_metadata_ready_check (long response_code,
 	}
 
 	r_data = g_bytes_get_data (response_data, &r_len);
+	/* NMHttpClient guarantees that there is a trailing NUL after the data. */
+	nm_assert (r_data[r_len] == 0);
 
 	while (r_len > 0) {
 		const guint8 *p_eol;
