@@ -6,6 +6,7 @@
 
 #include "nm-glib-aux/nm-time-utils.h"
 #include "nm-glib-aux/nm-logging-base.h"
+#include "nm-glib-aux/nm-str-buf.h"
 
 /*****************************************************************************/
 
@@ -565,15 +566,13 @@ nmcs_utils_uri_build_concat_v (const char *base,
                                const char **components,
                                gsize n_components)
 {
-	GString *uri;
+	NMStrBuf strbuf = NM_STR_BUF_INIT (NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
 
 	nm_assert (base);
 	nm_assert (base[0]);
 	nm_assert (!NM_STR_HAS_SUFFIX (base, "/"));
 
-	uri = g_string_sized_new (100);
-
-	g_string_append (uri, base);
+	nm_str_buf_append (&strbuf, base);
 
 	if (   n_components > 0
 	    && components[0]
@@ -583,18 +582,18 @@ nmcs_utils_uri_build_concat_v (const char *base,
 		 *
 		 * We only do that for the first component. */
 	} else
-		g_string_append_c (uri, '/');
+		nm_str_buf_append_c (&strbuf, '/');
 
 	while (n_components > 0) {
 		if (!components[0]) {
-			/* we allow NULL, to indicate nothing to append*/
+			/* we allow NULL, to indicate nothing to append */
 		} else
-			g_string_append (uri, components[0]);
+			nm_str_buf_append (&strbuf, components[0]);
 		components++;
 		n_components--;
 	}
 
-	return g_string_free (uri, FALSE);
+	return nm_str_buf_finalize (&strbuf, NULL);
 }
 
 /*****************************************************************************/
