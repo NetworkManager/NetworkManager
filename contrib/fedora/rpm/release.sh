@@ -79,11 +79,11 @@ do_command() {
 }
 
 parse_version() {
-    local MAJ="$(sed -n '1,20 s/^m4_define(\[nm_major_version\], \[\([0-9]\+\)\])$/\1/p' configure.ac)"
-    local MIN="$(sed -n '1,20 s/^m4_define(\[nm_minor_version\], \[\([0-9]\+\)\])$/\1/p' configure.ac)"
-    local MIC="$(sed -n '1,20 s/^m4_define(\[nm_micro_version\], \[\([0-9]\+\)\])$/\1/p' configure.ac)"
+    local MAJ="$(sed -n '1,20 s/^m4_define(\[nm_major_version\], \[\([0-9]\+\)\])$/\1/p' ./configure.ac)"
+    local MIN="$(sed -n '1,20 s/^m4_define(\[nm_minor_version\], \[\([0-9]\+\)\])$/\1/p' ./configure.ac)"
+    local MIC="$(sed -n '1,20 s/^m4_define(\[nm_micro_version\], \[\([0-9]\+\)\])$/\1/p' ./configure.ac)"
 
-    re='^[0-9]+ [0-9]+ [0-9]+$'
+    re='^[0-9][1-9]* [0-9][1-9]* [0-9][1-9]*$'
     [[ "$MAJ $MIN $MIC" =~ $re ]] || return 1
     echo "$MAJ $MIN $MIC"
 }
@@ -193,6 +193,8 @@ VERSION_STR="$(IFS=.; echo "${VERSION_ARR[*]}")"
 
 echo "Current version before release: $VERSION_STR (do \"$RELEASE_MODE\" release)"
 
+grep -q "version: '${VERSION_ARR[0]}.${VERSION_ARR[1]}.${VERSION_ARR[2]}'," ./meson.build || die "meson.build does not have expected version"
+
 TMP="$(git status --porcelain)" || die "git status failed"
 test -z "$TMP" || die "git working directory is not clean (git status --porcelain)"
 
@@ -204,14 +206,16 @@ TMP_BRANCH=release-branch
 
 if [ "$CUR_BRANCH" = master ]; then
     number_is_odd "${VERSION_ARR[1]}" || die "Unexpected version number on master. Should be an odd development version"
+    [ "$RELEASE_MODE" = devel -o "$RELEASE_MODE" = rc1 ] || "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
 else
-    re='^nm-[0-9]+-[0-9]+$'
+    re='^nm-[0-9][1-9]*-[0-9][1-9]*$'
     [[ "$CUR_BRANCH" =~ $re ]] || die "Unexpected current branch $CUR_BRANCH. Should be master or nm-?-??"
     if number_is_odd "${VERSION_ARR[1]}"; then
         # we are on a release candiate branch.
-        [ "$RELEASE_MODE" = rc ] || "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
+        [ "$RELEASE_MODE" = rc -o "$RELEASE_MODE" = major ] || "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
         [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))" ] || die "Unexpected current branch $CUR_BRANCH. Should be nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))"
     else
+        [ "$RELEASE_MODE" = minor ] || "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
         [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-${VERSION_ARR[1]}" ] || die "Unexpected current branch $CUR_BRANCH. Should be nm-${VERSION_ARR[0]}-${VERSION_ARR[1]}"
     fi
 fi
