@@ -328,7 +328,7 @@ test_ip6_route (void)
 
 	g_assert (nm_platform_ip6_address_add (NM_PLATFORM_GET, ifindex, pref_src, 128, in6addr_any,
 	                                       NM_PLATFORM_LIFETIME_PERMANENT, NM_PLATFORM_LIFETIME_PERMANENT, 0));
-	accept_signals (route_added, 0, 2);
+	accept_signals (route_added, 0, 3);
 
 	_wait_for_ipv6_addr_non_tentative (NM_PLATFORM_GET, 200, ifindex, 1, &pref_src);
 
