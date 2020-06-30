@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "nm-libnm-core-intern/nm-libnm-core-utils.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-connection-private.h"
@@ -447,34 +448,30 @@ validate_list (const char *name, const char *value, const OptionMeta *option_met
 }
 
 static gboolean
-validate_ip (const char *name, const char *value)
+validate_ip (const char *name, const char *value, GError **error)
 {
-	gs_free char *value_clone = NULL;
-	struct in_addr addr;
+	gs_free const char **addrs = NULL;
+	gsize i;
 
-	if (!value || !value[0])
+	addrs = nm_utils_bond_option_arp_ip_targets_split (value);
+	if (!addrs) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("'%s' option is empty"),
+		             name);
 		return FALSE;
-
-	value_clone = g_strdup (value);
-	value = value_clone;
-	for (;;) {
-		char *eow;
-
-		/* we do not skip over empty words. E.g
-		 * "192.168.1.1," is an error.
-		 *
-		 * ... for no particular reason. */
-
-		eow = strchr (value, ',');
-		if (eow)
-			*eow = '\0';
-
-		if (inet_pton (AF_INET, value, &addr) != 1)
+	}
+	for (i = 0; addrs[i]; i++) {
+		if (!nm_utils_parse_inaddr_bin (AF_INET, addrs[i], NULL, NULL)) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("'%s' is not a valid IPv4 address for '%s' option"),
+			             addrs[i],
+			             name);
 			return FALSE;
-
-		if (!eow)
-			break;
-		value = eow + 1;
+		}
 	}
 	return TRUE;
 }
@@ -483,6 +480,65 @@ static gboolean
 validate_ifname (const char *name, const char *value)
 {
 	return nm_utils_ifname_valid_kernel (value, NULL);
+}
+
+static gboolean
+_setting_bond_validate_option (const char *name,
+                               const char *value,
+                               GError **error)
+{
+	const OptionMeta *option_meta;
+	gboolean success;
+
+	option_meta = _get_option_meta (name);
+	if (!option_meta) {
+		if (!name) {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("missing option name"));
+		} else {
+			g_set_error (error,
+			             NM_CONNECTION_ERROR,
+			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			             _("invalid option '%s'"),
+			             name);
+		}
+		return FALSE;
+	}
+
+	if (!value)
+		return TRUE;
+
+	switch (option_meta->opt_type) {
+	case NM_BOND_OPTION_TYPE_INT:
+		success = validate_int (name, value, option_meta);
+		goto handle_error;
+	case NM_BOND_OPTION_TYPE_BOTH:
+		success = (   validate_int (name, value, option_meta)
+		           || validate_list (name, value, option_meta));
+		goto handle_error;
+	case NM_BOND_OPTION_TYPE_IP:
+		nm_assert (nm_streq0 (name, NM_SETTING_BOND_OPTION_ARP_IP_TARGET));
+		return validate_ip (name, value, error);
+	case NM_BOND_OPTION_TYPE_MAC:
+		success = nm_utils_hwaddr_valid (value, ETH_ALEN);
+		goto handle_error;
+	case NM_BOND_OPTION_TYPE_IFNAME:
+		success = validate_ifname (name, value);
+		goto handle_error;
+	}
+
+	nm_assert_not_reached ();
+handle_error:
+	if (!success) {
+		g_set_error (error,
+		             NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		             _("invalid value '%s' for option '%s'"),
+		             value, name);
+	}
+	return success;
 }
 
 /**
@@ -500,31 +556,7 @@ gboolean
 nm_setting_bond_validate_option (const char *name,
                                  const char *value)
 {
-	const OptionMeta *option_meta;
-
-	option_meta = _get_option_meta (name);
-	if (!option_meta)
-		return FALSE;
-
-	if (!value)
-		return TRUE;
-
-	switch (option_meta->opt_type) {
-	case NM_BOND_OPTION_TYPE_INT:
-		return validate_int (name, value, option_meta);
-	case NM_BOND_OPTION_TYPE_BOTH:
-		return (   validate_int (name, value, option_meta)
-		        || validate_list (name, value, option_meta));
-	case NM_BOND_OPTION_TYPE_IP:
-		return validate_ip (name, value);
-	case NM_BOND_OPTION_TYPE_MAC:
-		return nm_utils_hwaddr_valid (value, ETH_ALEN);
-	case NM_BOND_OPTION_TYPE_IFNAME:
-		return validate_ifname (name, value);
-	}
-
-	nm_assert_not_reached ();
-	return FALSE;
+	return _setting_bond_validate_option (name, value, NULL);
 }
 
 /**
@@ -750,12 +782,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			n = &priv->options_idx_cache[i];
 
 			if (   !n->value_str
-			    || !nm_setting_bond_validate_option (n->name, n->value_str)) {
-				g_set_error (error,
-				             NM_CONNECTION_ERROR,
-				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-				             _("invalid option '%s' or its value '%s'"),
-				             n->name, n->value_str);
+			    || !_setting_bond_validate_option (n->name, n->value_str, error)) {
 				g_prefix_error (error,
 				                "%s.%s: ",
 				                NM_SETTING_BOND_SETTING_NAME,
@@ -902,9 +929,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	 */
 	arp_ip_target = _bond_get_option (self, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
 	if (arp_interval > 0) {
-		char **addrs;
-		guint32 addr;
-
 		if (!arp_ip_target) {
 			g_set_error (error,
 			             NM_CONNECTION_ERROR,
@@ -918,38 +942,6 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 			                NM_SETTING_BOND_OPTIONS);
 			return FALSE;
 		}
-
-		addrs = g_strsplit (arp_ip_target, ",", -1);
-		if (!addrs[0]) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("'%s' option is empty"),
-			             NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
-			g_prefix_error (error, "%s.%s: ",
-			                NM_SETTING_BOND_SETTING_NAME,
-			                NM_SETTING_BOND_OPTIONS);
-			g_strfreev (addrs);
-			return FALSE;
-		}
-
-		for (i = 0; addrs[i]; i++) {
-			if (!inet_pton (AF_INET, addrs[i], &addr)) {
-				g_set_error (error,
-				             NM_CONNECTION_ERROR,
-				             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-				             _("'%s' is not a valid IPv4 address for '%s' option"),
-				             NM_SETTING_BOND_OPTION_ARP_IP_TARGET,
-				             addrs[i]);
-				g_prefix_error (error,
-				                "%s.%s: ",
-				                NM_SETTING_BOND_SETTING_NAME,
-				                NM_SETTING_BOND_OPTIONS);
-				g_strfreev (addrs);
-				return FALSE;
-			}
-		}
-		g_strfreev (addrs);
 	} else {
 		if (arp_ip_target) {
 			g_set_error (error,
