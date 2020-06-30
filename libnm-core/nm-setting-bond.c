@@ -251,9 +251,7 @@ _bond_get_option_normalized (NMSettingBond* self,
                              const char* option,
                              gboolean get_default_only)
 {
-	const char *arp_interval_str;
 	const char *mode_str;
-	gint64 arp_interval;
 	NMBondMode mode;
 	const char *value = NULL;
 
@@ -262,6 +260,7 @@ _bond_get_option_normalized (NMSettingBond* self,
 
 	mode_str = _bond_get_option_or_default (self, NM_SETTING_BOND_OPTION_MODE);
 	mode = _nm_setting_bond_mode_from_string (mode_str);
+
 	if (mode == NM_BOND_MODE_UNKNOWN) {
 		/* the mode is unknown, consequently, there is no normalized/default
 		 * value either. */
@@ -274,46 +273,44 @@ _bond_get_option_normalized (NMSettingBond* self,
 	/* Apply custom NetworkManager policies here */
 	if (!get_default_only) {
 		if (NM_IN_STRSET (option,
-		                  NM_SETTING_BOND_OPTION_UPDELAY,
-		                  NM_SETTING_BOND_OPTION_DOWNDELAY,
-		                  NM_SETTING_BOND_OPTION_MIIMON)) {
+		                  NM_SETTING_BOND_OPTION_ARP_INTERVAL,
+		                  NM_SETTING_BOND_OPTION_ARP_IP_TARGET)) {
+			int miimon;
+
 			/* if arp_interval is explicitly set and miimon is not, then disable miimon
 			 * (and related updelay and downdelay) as recommended by the kernel docs */
-			arp_interval_str = _bond_get_option (self, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
-			arp_interval = _nm_utils_ascii_str_to_int64 (arp_interval_str, 10, 0, G_MAXINT, 0);
-
-			if (!arp_interval || _bond_get_option (self, NM_SETTING_BOND_OPTION_MIIMON)) {
-				value = _bond_get_option (self, option);
-			} else {
-				return NULL;
+			miimon = _nm_utils_ascii_str_to_int64 (_bond_get_option (self, NM_SETTING_BOND_OPTION_MIIMON),
+			                                       10, 0, G_MAXINT, 0);
+			if (miimon != 0) {
+				/* miimon is enabled. arp_interval values are unset. */
+				if (nm_streq (option, NM_SETTING_BOND_OPTION_ARP_INTERVAL))
+					return "0";
+				return "";
 			}
+			value = _bond_get_option (self, option);
 		} else if (NM_IN_STRSET (option,
 		                         NM_SETTING_BOND_OPTION_NUM_GRAT_ARP,
 		                         NM_SETTING_BOND_OPTION_NUM_UNSOL_NA)) {
 			/* just get one of the 2, at kernel level they're the same bond option */
 			value = _bond_get_option (self, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP);
-			if (!value) {
+			if (!value)
 				value = _bond_get_option (self, NM_SETTING_BOND_OPTION_NUM_UNSOL_NA);
-			}
-		} else {
+		} else
 			value = _bond_get_option (self, option);
-		}
+
+		if (value)
+			return value;
 	}
 
-	if (!value) {
-		/* Apply rules that change the default value of an option */
-		if (nm_streq (option, NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM)) {
-			/* The default value depends on the current mode */
-			if (NM_IN_STRSET (mode_str, "4", "802.3ad"))
-				return "00:00:00:00:00:00";
-			else
-				return "";
-		} else {
-			return _bond_get_option_or_default (self, option);
-		}
+	/* Apply rules that change the default value of an option */
+	if (nm_streq (option, NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM)) {
+		/* The default value depends on the current mode */
+		if (mode == NM_BOND_MODE_8023AD)
+			return "00:00:00:00:00:00";
+		return "";
 	}
 
-	return value;
+	return _bond_get_option_or_default (self, option);
 }
 
 const char*
@@ -686,9 +683,8 @@ nm_setting_bond_get_option_default (NMSettingBond *setting, const char *name)
 {
 	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), NULL);
 
-	if (!name) {
+	if (!name)
 		return NULL;
-	}
 
 	return _bond_get_option_normalized (setting,
 	                                    name,
