@@ -1,12 +1,41 @@
 #!/bin/bash
 
+# Script for doing NetworkManager releases.
 #
-# You need to start with a clean working directory of NetworkManager
-# and all branches up to date.
+# Run with --help for usage.
 #
+# There are 5 modes:
+#
+#  - "devel" : on master branch to tag "1.25.2-dev"
+#  - "rc1"   : the first release candidate on "master" branch which branches off
+#              "nm-1-26" branch. The tag is "1.26-rc1" with version number 1.25.90.
+#  - "rc"    : further release candidates on RC branch "nm-1-26". For example
+#              "1.26-rc2" with version number 1.25.91.
+#  - "major" : on stable branch nm-1-26 to release 1.26.0. This also merged
+#              the release with master branch and does a devel tag like "1.27.2-dev"
+#  - "minor" : on a stable branch nm-1-26 to do minor release 1.26.4 and bump
+#              to "1.26.5-dev".
+#
+# Requisites:
+#
+#   * You need to start with a clean working directory (git clean -fdx)
+#
+#   * Run in a "clean" environment, no unusual environment variables set.
+#
+#   * First, ensure that you have ssh keys for master.gnome.org installed (and ssh-agent running)
+#     Also, ensure you have a GPG key that you want to use for signing. Also, have gpg-agent running
+#     and possibly configure `git config --get user.signingkey` for the proper key.
+#
+#   * Your git repository needs a remote "origin" that points to the upstream git repository.
+#
+#   * All your (relevant) local branches (master and nm-1-*) must be up to date with their
+#     remote tracking branches for origin.
+#
+# Run with --no-test to do the actual release.
 
 die() {
-    echo "FAIL: $@"
+    echo -n "FAIL: "
+    echo_color 31 "$@"
     exit 1
 }
 
@@ -18,11 +47,21 @@ echo_color() {
     echo -e -n '\033[0m'
 }
 
-die_usage() {
-    echo "FAIL: $@"
-    echo
+print_usage() {
     echo "Usage:"
-    echo "  $0 [devel|rc1|rc|major|minor] [--no-test] [--no-find-backports] [--no-cleanup] [--allow-local-branches]"
+    echo "  $BASH_SOURCE [devel|rc1|rc|major|minor] [--no-test] [--no-find-backports] [--no-cleanup] [--allow-local-branches]"
+}
+
+die_help() {
+    print_usage
+    exit 0
+}
+
+die_usage() {
+    echo -n "FAIL: "
+    echo_color 31 "$@"
+    echo
+    print_usage
     exit 1
 }
 
@@ -108,32 +147,15 @@ cd "$DIR" &&
 test -f ./src/NetworkManagerUtils.h &&
 test -f ./contrib/fedora/rpm/build_clean.sh || die "cannot find NetworkManager base directory"
 
-TMP="$(git status --porcelain)" || die "git status failed"
-test -z "$TMP" || die "git working directory is not clean (git status --porcelain)"
-
-TMP="$(LANG=C git clean -ndx)" || die "git clean -ndx failed"
-test -z "$TMP" || die "git working directory is not clean (git clean -ndx)"
-
-VERSION_ARR=( $(parse_version) ) || die "cannot detect NetworkManager version"
-VERSION_STR="$(IFS=.; echo "${VERSION_ARR[*]}")"
-
 RELEASE_MODE=""
 DRY_RUN=1
 FIND_BACKPORTS=1
 ALLOW_LOCAL_BRANCHES=0
+HELP_AND_EXIT=1
 while [ "$#" -ge 1 ]; do
     A="$1"
     shift
-    if [ -z "$RELEASE_MODE" ]; then
-        case "$A" in
-            devel|rc1|rc|major|minor)
-                RELEASE_MODE="$A"
-                ;;
-            *)
-                ;;
-        esac
-        continue
-    fi
+    HELP_AND_EXIT=0
     case "$A" in
         --no-test)
             DRY_RUN=0
@@ -150,14 +172,32 @@ while [ "$#" -ge 1 ]; do
             # that differ from upstream. Set this flag to override that check.
             ALLOW_LOCAL_BRANCHES=1
             ;;
+        --help|-h)
+            die_help
+            ;;
+        devel|rc1|rc|major|minor)
+            [ -z "$RELEASE_MODE" ] || die_usage "duplicate release-mode"
+            RELEASE_MODE="$A"
+            ;;
         *)
             die_usage "unknown argument \"$A\""
             ;;
     esac
 done
+[ "$HELP_AND_EXIT" = 1 ] && die_help
+
 [ -n "$RELEASE_MODE" ] || die_usage "specify the desired release mode"
 
-echo "Current version before release: $VERSION_STR (do $RELEASE_MODE release)"
+VERSION_ARR=( $(parse_version) ) || die "cannot detect NetworkManager version"
+VERSION_STR="$(IFS=.; echo "${VERSION_ARR[*]}")"
+
+echo "Current version before release: $VERSION_STR (do \"$RELEASE_MODE\" release)"
+
+TMP="$(git status --porcelain)" || die "git status failed"
+test -z "$TMP" || die "git working directory is not clean (git status --porcelain)"
+
+TMP="$(LANG=C git clean -ndx)" || die "git clean -ndx failed"
+test -z "$TMP" || die "git working directory is not clean? (git clean -ndx)"
 
 CUR_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 TMP_BRANCH=release-branch
@@ -203,7 +243,7 @@ git fetch || die "git fetch failed"
 
 if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
     git_same_ref "$CUR_BRANCH" "refs/heads/$CUR_BRANCH" || die "Current branch $CUR_BRANCH is not a branch??"
-    git_same_ref "$CUR_BRANCH" "refs/remotes/$ORIGIN/$CUR_BRANCH" || die "Current branch $CUR_BRANCH seems not up to date. Git pull?"
+    git_same_ref "$CUR_BRANCH" "refs/remotes/$ORIGIN/$CUR_BRANCH" || die "Current branch $CUR_BRANCH seems not up to date with refs/remotes/$ORIGIN/$CUR_BRANCH. Git pull?"
 fi
 
 NEWER_BRANCHES=()
@@ -218,15 +258,19 @@ if [ "$CUR_BRANCH" != master ]; then
         fi
         if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
             git_same_ref "$b" "refs/heads/$b" || die "branch $b is not a branch??"
-            git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date. Git pull?"
+            git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date with refs/remotes/$ORIGIN/$b. Git pull?"
         fi
         NEWER_BRANCHES+=("refs/heads/$b")
     done
     b=master
     if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
         git_same_ref "$b" "refs/heads/$b" || die "branch $b is not a branch??"
-        git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date. Git pull?"
+        git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date with refs/remotes/$ORIGIN/$b. Git pull?"
     fi
+fi
+
+if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
+    cmp <(git show origin/master:contrib/fedora/rpm/release.sh) "$BASH_SOURCE" || die "$BASH_SOURCE is not identical to \`git show origin/master:contrib/fedora/rpm/release.sh\`"
 fi
 
 if [ $FIND_BACKPORTS = 1 ]; then
