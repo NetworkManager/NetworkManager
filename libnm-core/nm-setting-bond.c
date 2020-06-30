@@ -262,7 +262,11 @@ _bond_get_option_normalized (NMSettingBond* self,
 
 	mode_str = _bond_get_option_or_default (self, NM_SETTING_BOND_OPTION_MODE);
 	mode = _nm_setting_bond_mode_from_string (mode_str);
-	g_return_val_if_fail (mode != NM_BOND_MODE_UNKNOWN, NULL);
+	if (mode == NM_BOND_MODE_UNKNOWN) {
+		/* the mode is unknown, consequently, there is no normalized/default
+		 * value either. */
+		return NULL;
+	}
 
 	if (!_nm_setting_bond_option_supported (option, mode))
 		return NULL;
