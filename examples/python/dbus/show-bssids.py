@@ -4,7 +4,6 @@
 # Copyright (C) 2010 Red Hat, Inc.
 #
 
-
 # This example prints out all the AP BSSIDs that all Wi-Fi devices on the
 # machine can see.  Useful for location-based services like Skyhook that
 # can geolocate you based on the APs you can see.

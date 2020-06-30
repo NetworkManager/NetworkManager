@@ -13,7 +13,7 @@
 
 import dbus, sys, uuid
 from dbus.mainloop.glib import DBusGMainLoop
-from gi.repository import GObject
+from gi.repository import GLib
 
 DBusGMainLoop(set_as_default=True)
 
@@ -94,7 +94,7 @@ ac = manager.ActivateConnection(bond_path, "/", "/")
 print("Activating bond: %s (%s)" % (bond_name, ac))
 
 # Monitor the active bond connection
-loop = GObject.MainLoop()
+loop = GLib.MainLoop()
 
 
 def properties_changed(props):

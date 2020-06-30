@@ -8,17 +8,15 @@
 # Run this script without any arguments to list the available connection uuids.
 
 # The uuid of the connection to activate
-CONNECTION_UUID = "ac6dc9b2-85ef-4311-83d8-add5d7db3f59"
+CONNECTION_UUID = "c08142a4-00d9-45bd-a3b1-7610fe146374"
 
 # UID to use. Note that NM only allows the owner of the connection to activate it.
 # UID=1000
 UID = 0
 
-import sys
-import os
-import dbus
+import sys, os, dbus
 from dbus.mainloop.glib import DBusGMainLoop
-import gobject
+from gi.repository import GLib
 
 DBusGMainLoop(set_as_default=True)
 
@@ -156,5 +154,5 @@ if get_active_connection_path(CONNECTION_UUID):
 
 print("Activating connection...")
 activate_connection(connection_path, device_path)
-loop = gobject.MainLoop()
+loop = GLib.MainLoop()
 loop.run()

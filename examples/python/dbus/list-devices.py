@@ -4,11 +4,17 @@
 # Copyright (C) 2011 - 2012 Red Hat, Inc.
 #
 
-import dbus
+import dbus, socket, struct
 
 # This example lists basic information about network interfaces known to NM
 
 # For the types see include/NetworkManager.h
+
+
+def int_to_ip(ip_int):
+    return socket.inet_ntoa(struct.pack("=I", ip_int))
+
+
 devtypes = {
     1: "Ethernet",
     2: "Wi-Fi",
@@ -56,19 +62,23 @@ manager = dbus.Interface(proxy, "org.freedesktop.NetworkManager")
 
 # Get all devices known to NM and print their properties
 devices = manager.GetDevices()
+
 for d in devices:
     dev_proxy = bus.get_object("org.freedesktop.NetworkManager", d)
     prop_iface = dbus.Interface(dev_proxy, "org.freedesktop.DBus.Properties")
     props = prop_iface.GetAll("org.freedesktop.NetworkManager.Device")
+
     print("============================")
 
     print("Interface: %s" % props["Interface"])
+    print("Ip 4 Address: %s" % int_to_ip(props["Ip4Address"]))
+    print("Ip 4 Config: %s" % props["Ip4Config"])
+
     try:
         devtype = devtypes[props["DeviceType"]]
     except KeyError:
         devtype = "Unknown"
     print("Type: %s" % devtype)
-
     print("Driver: %s" % props["Driver"])
 
     try:

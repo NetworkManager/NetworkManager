@@ -16,16 +16,14 @@
 
 import socket, struct, dbus, uuid
 
-# Helper functions
+
 def ip_to_int(ip_string):
     return struct.unpack("=I", socket.inet_aton(ip_string))[0]
 
 
-def int_to_ip(ip_int):
-    return socket.inet_ntoa(struct.pack("=I", ip_int))
-
-
+# full duplex
 s_wired = dbus.Dictionary({"duplex": "full"})
+
 s_con = dbus.Dictionary(
     {"type": "802-3-ethernet", "uuid": str(uuid.uuid4()), "id": "MyConnectionExample"}
 )
@@ -46,7 +44,6 @@ s_ip6 = dbus.Dictionary({"method": "ignore"})
 con = dbus.Dictionary(
     {"802-3-ethernet": s_wired, "connection": s_con, "ipv4": s_ip4, "ipv6": s_ip6}
 )
-
 
 print("Creating connection:", s_con["id"], "-", s_con["uuid"])
 

@@ -3,14 +3,14 @@
 #
 # Copyright (C) 2016 Red Hat, Inc.
 #
-
-import dbus, sys
-
 # This example takes a list of device interface names as a parameter
 # and tells NetworkManager to create a checkpoint on those devices. It
 # is then possible to restore or destroy the checkpoint.
 
 # Get a proxy for the base NetworkManager object
+
+import dbus, sys
+
 bus = dbus.SystemBus()
 proxy = bus.get_object(
     "org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager"
@@ -20,7 +20,7 @@ allDevs = manager.GetDevices()
 
 
 def Usage():
-    print "Usage: %s <ROLLBACK-INTERVAL> [INTERFACE]..." % sys.argv[0]
+    print("Usage: %s <ROLLBACK-INTERVAL> [INTERFACE]..." % sys.argv[0])
     sys.exit(1)
 
 
@@ -54,12 +54,12 @@ for arg in sys.argv[2:]:
 checkpoint = manager.CheckpointCreate(devList, interval, 1)
 # DESTROY_ALL
 
-choice = raw_input("Do you want to rollback [y/n]? ").lower()
+choice = input("Do you want to rollback [y/n]? ").lower()
 if choice == "y":
-    print "Rollback checkpoint"
+    print("Rollback checkpoint")
     results = manager.CheckpointRollback(checkpoint)
     for d in results:
-        print "  - device %s: result %u" % (d, results[d])
+        print("  - device %s: result %u" % (d, results[d]))
 else:
-    print "Destroy checkpoint"
+    print("Destroy checkpoint")
     manager.CheckpointDestroy(checkpoint)

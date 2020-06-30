@@ -13,8 +13,7 @@
 # values, and add them to the settings that we pass to Update().
 #
 
-import dbus
-import sys
+import dbus, sys
 
 bus = dbus.SystemBus()
 

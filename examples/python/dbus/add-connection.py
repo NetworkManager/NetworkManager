@@ -18,11 +18,13 @@
 import dbus, uuid
 
 s_wired = dbus.Dictionary({"duplex": "full"})
+
 s_con = dbus.Dictionary(
     {"type": "802-3-ethernet", "uuid": str(uuid.uuid4()), "id": "MyConnectionExample"}
 )
 
 addr1 = dbus.Dictionary({"address": "10.1.2.3", "prefix": dbus.UInt32(8)})
+
 s_ip4 = dbus.Dictionary(
     {
         "address-data": dbus.Array([addr1], signature=dbus.Signature("a{sv}")),
@@ -37,9 +39,7 @@ con = dbus.Dictionary(
     {"802-3-ethernet": s_wired, "connection": s_con, "ipv4": s_ip4, "ipv6": s_ip6}
 )
 
-
 print("Creating connection:", s_con["id"], "-", s_con["uuid"])
-
 bus = dbus.SystemBus()
 proxy = bus.get_object(
     "org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager/Settings"

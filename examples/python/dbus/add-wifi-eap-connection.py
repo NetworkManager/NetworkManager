@@ -50,10 +50,9 @@ con = dbus.Dictionary(
         "ipv6": s_ip6,
     }
 )
-
+print("Creating connection:", s_con["id"], "-", s_con["uuid"])
 
 bus = dbus.SystemBus()
-
 proxy = bus.get_object(
     "org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager/Settings"
 )

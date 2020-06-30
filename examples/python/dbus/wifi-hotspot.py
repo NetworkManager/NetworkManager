@@ -50,22 +50,15 @@ def usage():
 
 
 bus = dbus.SystemBus()
-service_name = "org.freedesktop.NetworkManager"
-proxy = bus.get_object(service_name, "/org/freedesktop/NetworkManager/Settings")
+proxy = bus.get_object(
+    "org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager/Settings"
+)
 settings = dbus.Interface(proxy, "org.freedesktop.NetworkManager.Settings")
-
-if len(sys.argv) != 3:
-    usage()
-
-iface = sys.argv[1]
-proxy = bus.get_object(service_name, "/org/freedesktop/NetworkManager")
-nm = dbus.Interface(proxy, "org.freedesktop.NetworkManager")
-devpath = nm.GetDeviceByIpIface(iface)
 
 # Find our existing hotspot connection
 connection_path = None
 for path in settings.ListConnections():
-    proxy = bus.get_object(service_name, path)
+    proxy = bus.get_object("org.freedesktop.NetworkManager", path)
     settings_connection = dbus.Interface(
         proxy, "org.freedesktop.NetworkManager.Settings.Connection"
     )
@@ -78,13 +71,25 @@ for path in settings.ListConnections():
 if not connection_path:
     connection_path = settings.AddConnection(con)
 
+
+if len(sys.argv) != 3:
+    usage()
+
+# Get device using iface
+iface = sys.argv[1]
+proxy = bus.get_object(
+    "org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager"
+)
+nm = dbus.Interface(proxy, "org.freedesktop.NetworkManager")
+devpath = nm.GetDeviceByIpIface(iface)
+
 # Now start or stop the hotspot on the requested device
-proxy = bus.get_object(service_name, devpath)
+proxy = bus.get_object("org.freedesktop.NetworkManager", devpath)
 device = dbus.Interface(proxy, "org.freedesktop.NetworkManager.Device")
 operation = sys.argv[2]
 if operation == "up":
     acpath = nm.ActivateConnection(connection_path, devpath, "/")
-    proxy = bus.get_object(service_name, acpath)
+    proxy = bus.get_object("org.freedesktop.NetworkManager", acpath)
     active_props = dbus.Interface(proxy, "org.freedesktop.DBus.Properties")
 
     # Wait for the hotspot to start up
