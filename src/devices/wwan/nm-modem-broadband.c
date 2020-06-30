@@ -20,9 +20,22 @@
 
 #define NM_MODEM_BROADBAND_MODEM "modem"
 
-#define MODEM_CAPS_3GPP(caps) (caps & (MM_MODEM_CAPABILITY_GSM_UMTS |    \
-                                       MM_MODEM_CAPABILITY_LTE |         \
-                                       MM_MODEM_CAPABILITY_LTE_ADVANCED))
+static gboolean
+MODEM_CAPS_3GPP (MMModemCapability caps)
+{
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+	/* MM_MODEM_CAPABILITY_LTE_ADVANCED is marked as deprecated since ModemManager 1.14.0.
+	 *
+	 * The flag probably was never used, it certainly isn't used since 1.14.0.
+	 *
+	 * Still, just to be sure, there is no harm in checking it here. Suppress the
+	 * warning, it should have no bad effect.
+	 */
+	return NM_FLAGS_ANY (caps, (  MM_MODEM_CAPABILITY_GSM_UMTS
+	                            | MM_MODEM_CAPABILITY_LTE
+	                            | MM_MODEM_CAPABILITY_LTE_ADVANCED));
+	G_GNUC_END_IGNORE_DEPRECATIONS
+}
 
 #define MODEM_CAPS_3GPP2(caps) (caps & (MM_MODEM_CAPABILITY_CDMA_EVDO))
 
