@@ -62,7 +62,7 @@
     <!--
         NameserverData:
 
-        The nameservers in use. Currently only the value "address"
+        The nameservers in use. Currently, only the value "address"
         is recognized (with an IP address string).
 
         Since: 1.14

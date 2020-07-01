@@ -280,7 +280,7 @@ nm_auth_chain_set_data_unsafe (NMAuthChain *self,
 	g_return_if_fail (self);
 	g_return_if_fail (tag);
 
-	/* The tag must not yet exist. Otherwise we'd have to first search the
+	/* The tag must not yet exist. Otherwise, we'd have to first search the
 	 * list for an existing entry. That usage pattern is not supported. */
 	nm_assert (!_get_data (self, tag));
 

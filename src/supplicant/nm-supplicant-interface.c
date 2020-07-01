@@ -1235,7 +1235,7 @@ parse_capabilities (NMSupplicantInterface *self, GVariant *capabilities)
 		const gint32 WPAS_MAX_SCAN_SSIDS = 16;
 
 		/* Even if supplicant claims that 20 SSIDs are supported, the Scan request
-		 * still only accepts WPAS_MAX_SCAN_SSIDS SSIDs. Otherwise the D-Bus
+		 * still only accepts WPAS_MAX_SCAN_SSIDS SSIDs. Otherwise, the D-Bus
 		 * request will be rejected with "fi.w1.wpa_supplicant1.InvalidArgs"
 		 * Body: ('Did not receive correct message arguments.', 'Too many ssids specified. Specify at most four')
 		 * */

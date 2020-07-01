@@ -5003,7 +5003,7 @@ realize_start_setup (NMDevice *self,
 	                               is_unmanaged_external_down (self, TRUE));
 
 	/* Unmanaged the loopback device with an explicit NM_UNMANAGED_BY_TYPE flag.
-	 * Later we might want to manage 'lo' too. Currently that doesn't work because
+	 * Later we might want to manage 'lo' too. Currently, that doesn't work because
 	 * NetworkManager might down the interface or remove the 127.0.0.1 address. */
 	nm_device_set_unmanaged_flags (self,
 	                               NM_UNMANAGED_BY_TYPE,
@@ -5494,7 +5494,7 @@ nm_device_is_master (NMDevice *self)
  * @self: the device
  *
  * If @self has been enslaved by another device, this returns that
- * device. Otherwise it returns %NULL. (In particular, note that if
+ * device. Otherwise, it returns %NULL. (In particular, note that if
  * @self is in the process of activating as a slave, but has not yet
  * been enslaved by its master, this will return %NULL.)
  *
@@ -14877,7 +14877,7 @@ nm_device_update_metered (NMDevice *self)
 			value = NM_METERED_GUESS_YES;
 	}
 
-	/* Otherwise look at connection type. For Bluetooth, we look at the type of
+	/* Otherwise, look at connection type. For Bluetooth, we look at the type of
 	 * Bluetooth sharing: for PANU/DUN (where we are receiving internet from
 	 * another device) we set GUESS_YES; for NAP (where we are sharing internet
 	 * to another device) we set GUESS_NO. We ignore WiMAX here as it’s no

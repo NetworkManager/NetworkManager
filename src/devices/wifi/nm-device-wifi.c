@@ -2460,7 +2460,7 @@ supplicant_iface_state (NMDeviceWifi *self,
 				break;
 		}
 
-		/* Otherwise it might be a stupid driver or some transient error, so
+		/* Otherwise, it might be a stupid driver or some transient error, so
 		 * let the supplicant try to reconnect a few more times.  Give it more
 		 * time if a scan is in progress since the link might be dropped during
 		 * the scan but will be re-established when the scan is done.

@@ -174,7 +174,7 @@ AC_ARG_ENABLE(ifupdown, AS_HELP_STRING([--enable-ifupdown], [enable ifupdown con
 # Default alternative plugins by distribution
 AS_IF([test -z "$enable_ifcfg_rh" -a -d /etc/sysconfig/network-scripts], enable_ifcfg_rh=yes)
 AS_IF([test -z "$enable_ifupdown" -a -f /etc/debian_version],            enable_ifupdown=yes)
-# Otherwise plugins default to "no"
+# Otherwise, plugins default to "no"
 AS_IF([test -z "$enable_ifcfg_rh"], enable_ifcfg_rh=no)
 AS_IF([test -z "$enable_ifupdown"], enable_ifupdown=no)
 # Create automake conditionals
@@ -915,7 +915,7 @@ if test "$config_dns_rc_manager_default" != "" -a \
 fi
 # Use netconfig by default on SUSE
 AS_IF([test -z "$with_netconfig" -a -f /etc/SuSE-release], with_netconfig=yes)
-# Otherwise default to "no"
+# Otherwise, default to "no"
 AS_IF([test -z "$with_resolvconf"], with_resolvconf=no)
 AS_IF([test -z "$with_netconfig"], with_netconfig=no)
 

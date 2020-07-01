@@ -1007,7 +1007,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
 	/* If we're re-activating a PPPoE connection a short while after
 	 * a previous PPPoE connection was torn down, wait a bit to allow the
-	 * remote side to handle the disconnection.  Otherwise the peer may
+	 * remote side to handle the disconnection.  Otherwise, the peer may
 	 * get confused and fail to negotiate the new connection. (rh #1023503)
 	 *
 	 * FIXME(shutdown): when exiting, we also need to wait before quiting,

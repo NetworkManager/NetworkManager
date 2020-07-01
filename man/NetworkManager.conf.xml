@@ -403,7 +403,7 @@ no-auto-default=*
         <term><varname>debug</varname></term>
         <listitem><para>Comma separated list of options to aid
         debugging. This value will be combined with the environment
-        variable <literal>NM_DEBUG</literal>. Currently the following
+        variable <literal>NM_DEBUG</literal>. Currently, the following
         values are supported:</para>
         <para>
           <literal>RLIMIT_CORE</literal>: set ulimit -c unlimited
@@ -478,7 +478,7 @@ no-auto-default=*
           <listitem><para>Set devices that should be ignored by
            NetworkManager.
           </para>
-          <para>See <xref linkend="device-spec"/> for the syntax how to
+          <para>See <xref linkend="device-spec"/> for the syntax on how to
            specify a device.
           </para>
           <para>
@@ -1031,7 +1031,7 @@ managed=1
           <term><varname>wifi.backend</varname></term>
           <listitem>
             <para>
-              Specify the Wi-Fi backend used for the device. Currently supported
+              Specify the Wi-Fi backend used for the device. Currently, supported
               are <literal>wpa_supplicant</literal> and <literal>iwd</literal> (experimental).
             </para>
           </listitem>
@@ -1048,7 +1048,7 @@ managed=1
           </listitem>
         </varlistentry>
         <varlistentry id="sriov-num-vfs">
-          <term><varname>sriov-num-vfs</varname></term>
+         , <term><varname>sriov-num-vfs</varname></term>
           <listitem>
             <para>
               Specify the number of virtual functions (VF) to enable

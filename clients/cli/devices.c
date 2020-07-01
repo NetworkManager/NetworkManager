@@ -806,7 +806,7 @@ usage_device_modify (void)
 	              "\n"
 	              "ARGUMENTS := <ifname> ([+|-]<setting>.<property> <value>)+\n"
 	              "\n"
-	              "Modify one or more properties currently active on the device without modifying\n"
+	              "Modify one or more properties that are currently active on the device without modifying\n"
 	              "the connection profile. The changes have immediate effect. For multi-valued\n"
 	              "properties you can use optional '+' or '-' prefix to the property name.\n"
 	              "The '+' sign allows appending items instead of overwriting the whole value.\n"

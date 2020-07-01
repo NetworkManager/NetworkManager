@@ -5376,7 +5376,7 @@ read_properties:
 		const char *slave_type = nm_setting_connection_get_slave_type (s_con);
 
 		/* If only bother when there's a type, which is not guaranteed at this point.
-		 * Otherwise the validation will fail anyway. */
+		 * Otherwise, the validation will fail anyway. */
 		if (type) {
 			gs_free char *try_name = NULL;
 			gs_free char *default_name = NULL;
@@ -6713,7 +6713,7 @@ editor_sub_usage (const char *command)
 			g_print (_("remove [<value>|<index>|<option name>]  :: delete the value\n\n"
 			           "Removes the property value. For single-valued properties, this sets the\n"
 			           "property back to its default value. For container-type properties, this removes\n"
-			           "all the values of that property, or you can specify an argument to remove just\n"
+			           "all the values of that property or you can specify an argument to remove just\n"
 			           "a single item or option. The argument is either a value or index of the item to\n"
 			           "remove, or an option name (for properties with named options).\n\n"
 			           "Examples: nmcli ipv4.dns> remove 8.8.8.8\n"

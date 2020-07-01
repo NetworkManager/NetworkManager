@@ -1504,7 +1504,7 @@ again:
 
 		objs_sync = g_ptr_array_new_with_free_func ((GDestroyNotify) nmp_object_unref);
 
-		/* ensure that priorities are unique. Otherwise it confuses the test, because
+		/* ensure that priorities are unique. Otherwise, it confuses the test, because
 		 * kernel may wrongly be unable to add/delete routes based on a wrong match
 		 * (rh#1685816, rh#1685816). */
 		for (i = 0; i < objs->len; i++) {

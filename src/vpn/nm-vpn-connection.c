@@ -300,7 +300,7 @@ _get_settings_connection (NMVpnConnection *self, gboolean allow_missing)
 {
 	NMSettingsConnection *con;
 
-	/* Currently we operate on the assumption, that the settings-connection
+	/* Currently, we operate on the assumption, that the settings-connection
 	 * never changes after it is set (though initially, it might be unset).
 	 * Later we might want to change that, but then we need fixes here too. */
 

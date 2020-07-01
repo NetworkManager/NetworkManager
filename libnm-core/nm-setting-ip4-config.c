@@ -197,7 +197,7 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	if (   NM_FLAGS_ANY (nm_setting_ip_config_get_dhcp_hostname_flags (s_ip),
 	                     NM_DHCP_HOSTNAME_FLAGS_FQDN_MASK)
 	    && !priv->dhcp_fqdn) {
-		/* Currently we send a FQDN option only when ipv4.dhcp-fqdn is set */
+		/* Currently, we send a FQDN option only when ipv4.dhcp-fqdn is set */
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,

@@ -1003,7 +1003,7 @@ _obj_register (NMDBusManager *self,
 
 	nm_assert (!c_list_is_empty (&obj->internal.registration_lst_head));
 
-	/* Currently the interfaces of an object do not changed and strictly depend on the object glib type.
+	/* Currently, the interfaces of an object do not changed and strictly depend on the object glib type.
 	 * We don't need more flixibility, and it simplifies the code. Hence, now emit interface-added
 	 * signal for the new object.
 	 *

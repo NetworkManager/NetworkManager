@@ -2364,7 +2364,7 @@ nm_manager_rfkill_update (NMManager *self, RfKillType rtype)
 	if (rtype != RFKILL_TYPE_UNKNOWN)
 		manager_rfkill_update_one_type (self, &priv->radio_states[rtype], rtype);
 	else {
-		/* Otherwise sync all radio types */
+		/* Otherwise, sync all radio types */
 		for (i = 0; i < RFKILL_TYPE_MAX; i++)
 			manager_rfkill_update_one_type (self, &priv->radio_states[i], i);
 	}
@@ -2817,7 +2817,7 @@ recheck_assume_connection (NMManager *self,
 			 * We've managed to steal the lease used by initramfs before it
 			 * killed off the dhclient. We need to take ownership of the configured
 			 * connection and act like the device was configured by us.
-			 * Otherwise the address would just expire.
+			 * Otherwise, the address would just expire.
 			 */
 			_LOG2I (LOGD_DEVICE, device, "assume: taking over an initramfs-configured connection");
 			activation_type_assume = TRUE;
@@ -3774,7 +3774,7 @@ found_better:
 		    && g_hash_table_contains (unavailable_devices, device))
 			continue;
 
-		/* determine the priority of this device. Currently this priority is independent
+		/* determine the priority of this device. Currently, this priority is independent
 		 * of the profile (connection) and the device's details (aside the state).
 		 *
 		 * Maybe nm_device_check_connection_available() should instead return a priority,
@@ -5367,7 +5367,7 @@ impl_manager_activate_connection (NMDBusObject *obj,
 	device_path = nm_dbus_path_not_empty (device_path);
 
 	/* If the connection path is given and valid, that connection is activated.
-	 * Otherwise the "best" connection for the device is chosen and activated,
+	 * Otherwise, the "best" connection for the device is chosen and activated,
 	 * regardless of whether that connection is autoconnect-enabled or not
 	 * (since this is an explicit request, not an auto-activation request).
 	 */

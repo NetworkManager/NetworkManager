@@ -338,7 +338,7 @@ make_connection_name (shvarFile *ifcfg,
 	if (name)
 		return name;
 
-	/* Otherwise construct a new NAME */
+	/* Otherwise, construct a new NAME */
 	if (!prefix)
 		prefix = "System";
 

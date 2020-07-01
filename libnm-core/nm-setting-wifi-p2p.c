@@ -240,7 +240,7 @@ nm_setting_wifi_p2p_class_init (NMSettingWifiP2PClass *setting_wifi_p2p_class)
 	/**
 	 * NMSettingWifiP2P:peer:
 	 *
-	 * The P2P device that should be connected to. Currently this is the only
+	 * The P2P device that should be connected to. Currently, this is the only
 	 * way to create or join a group.
 	 *
 	 * Since: 1.16

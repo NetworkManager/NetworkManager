@@ -2580,7 +2580,7 @@ _obj_handle_dbus_iface_changes (NMClient *self,
 			nm_assert (db_prop_data < &db_iface_data->prop_datas[db_iface_data->dbus_iface.meta->n_dbus_properties]);
 			nm_assert (db_prop_data->prop_data_value);
 
-			/* Currently NMLDBusObject forgets about the variant. Theoretically, it could cache
+			/* Currently, NMLDBusObject forgets about the variant. Theoretically, it could cache
 			 * it, but there is no need because we update the property in nmobj (which extracts and
 			 * keeps the property value itself).
 			 *
@@ -5235,7 +5235,7 @@ nm_client_add_and_activate_connection_finish (NMClient *client,
  * track the activation to its completion.
  *
  * This is identical to nm_client_add_and_activate_connection_async() but takes
- * a further @options parameter. Currently the following options are supported
+ * a further @options parameter. Currently, the following options are supported
  * by the daemon:
  *  * "persist": A string describing how the connection should be stored.
  *               The default is "disk", but it can be modified to "memory" (until
@@ -5274,7 +5274,7 @@ nm_client_add_and_activate_connection2 (NMClient *client,
  * @result: the result passed to the #GAsyncReadyCallback
  * @error: location for a #GError, or %NULL
  * @out_result: (allow-none) (transfer full): the output result
- *   of type "a{sv}" returned by D-Bus' AddAndActivate2 call. Currently no
+ *   of type "a{sv}" returned by D-Bus' AddAndActivate2 call. Currently, no
  *   output is implemented yet.
  *
  * Gets the result of a call to nm_client_add_and_activate_connection2().

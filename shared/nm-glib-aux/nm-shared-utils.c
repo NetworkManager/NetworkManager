@@ -3358,7 +3358,7 @@ nm_utils_strv_make_deep_copied_n (const char **strv, gsize len)
  *
  * Note that if @len is non-negative, then it still must not
  * contain any %NULL pointers within the first @len elements.
- * Otherwise you would leak elements if you try to free the
+ * Otherwise, you would leak elements if you try to free the
  * array with g_strfreev(). Allowing that would be error prone.
  *
  * Returns: (transfer full): a clone of the strv array. Always
@@ -4983,7 +4983,7 @@ _nm_str_buf_ensure_size (NMStrBuf *strbuf,
 {
 	_nm_str_buf_assert (strbuf);
 
-	/* Currently this only supports strictly growing the buffer. */
+	/* Currently, this only supports strictly growing the buffer. */
 	nm_assert (new_size > strbuf->_priv_allocated);
 
 	if (!reserve_exact) {

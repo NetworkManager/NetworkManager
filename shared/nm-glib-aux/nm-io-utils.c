@@ -357,7 +357,7 @@ nm_utils_file_set_contents (const char *filename,
 
 	/* If the final destination exists and is > 0 bytes, we want to sync the
 	 * newly written file to ensure the data is on disk when we rename over
-	 * the destination. Otherwise if we get a system crash we can lose both
+	 * the destination. Otherwise, if we get a system crash we can lose both
 	 * the new and the old file on some filesystems. (I.E. those that don't
 	 * guarantee the data is written to the disk before the metadata.)
 	 */

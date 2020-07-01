@@ -2089,7 +2089,7 @@ _clear_secrets_by_secret_flags_cb (NMSetting *setting,
 		/* Can't use bitops with SECRET_FLAG_NONE so handle that specifically */
 		remove_secret = (flags != NM_SETTING_SECRET_FLAG_NONE);
 	} else {
-		/* Otherwise if the secret has at least one of the desired flags keep it */
+		/* Otherwise, if the secret has at least one of the desired flags keep it */
 		remove_secret = !NM_FLAGS_ANY (flags, filter_flags);
 	}
 

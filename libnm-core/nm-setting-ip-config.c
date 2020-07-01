@@ -746,7 +746,7 @@ nm_ip_route_unref (NMIPRoute *route)
  * nm_ip_route_equal_full:
  * @route: the #NMIPRoute
  * @other: the #NMIPRoute to compare @route to.
- * @cmp_flags: tune how to compare attributes. Currently only
+ * @cmp_flags: tune how to compare attributes. Currently, only
  *   NM_IP_ROUTE_EQUAL_CMP_FLAGS_NONE (0) and NM_IP_ROUTE_EQUAL_CMP_FLAGS_WITH_ATTRS (1)
  *   is supported.
  *
@@ -3031,7 +3031,7 @@ _rr_string_addr_family_from_flags (NMIPRoutingRuleAsStringFlags to_string_flags)
  * @to_string_flags: #NMIPRoutingRuleAsStringFlags for controlling the
  *   string conversion.
  * @extra_args: (allow-none): extra arguments for controlling the string
- *   conversion. Currently not extra arguments are supported.
+ *   conversion. Currently, not extra arguments are supported.
  * @error: (allow-none) (out): the error reason.
  *
  * Returns: (transfer full): the new #NMIPRoutingRule or %NULL on error.
@@ -3445,7 +3445,7 @@ _rr_string_append_inet_addr (NMStrBuf *str,
  * @to_string_flags: #NMIPRoutingRuleAsStringFlags for controlling the
  *   string conversion.
  * @extra_args: (allow-none): extra arguments for controlling the string
- *   conversion. Currently not extra arguments are supported.
+ *   conversion. Currently, not extra arguments are supported.
  * @error: (allow-none) (out): the error reason.
  *
  * Returns: (transfer full): the string representation or %NULL on error.
@@ -5977,7 +5977,7 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 *
 	 * Flags for the DHCP hostname and FQDN.
 	 *
-	 * Currently this property only includes flags to control the FQDN flags
+	 * Currently, this property only includes flags to control the FQDN flags
 	 * set in the DHCP FQDN option. Supported FQDN flags are
 	 * %NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE,
 	 * %NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED and

@@ -66,12 +66,12 @@
     <!--
         AddConnection2:
         @settings: New connection settings, properties, and (optionally) secrets.
-        @flags: optional flags argument. Currently the following flags are supported:
+        @flags: optional flags argument. Currently, the following flags are supported:
           "0x1" (to-disk),
           "0x2" (in-memory),
           "0x20" (block-autoconnect).
           Unknown flags cause the call to fail.
-        @args: optional arguments dictionary, for extensibility. Currently no
+        @args: optional arguments dictionary, for extensibility. Currently, no
           arguments are accepted. Specifying unknown keys causes the call
           to fail.
         @path: Object path of the new connection that was just added.

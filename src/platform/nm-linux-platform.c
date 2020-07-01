@@ -514,7 +514,7 @@ G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
             /* The %m format specifier (GNU extension) would already allow you to specify the error
              * message conveniently (and nm_log would get that right too). But we don't want to depend
              * on that, so instead append the message at the end.
-             * Currently users are expected not to use %m in the format string. */ \
+             * Currently, users are expected not to use %m in the format string. */ \
             _LOG_print (__level, __domain, __errsv, self, \
                         _NM_UTILS_MACRO_FIRST (__VA_ARGS__) ": %s (%d)" \
                         _NM_UTILS_MACRO_REST (__VA_ARGS__), \

@@ -841,7 +841,7 @@ _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
 
 	g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
 
-	/* Currently only one particular property asks us to "handle_emptyunset".
+	/* Currently, only one particular property asks us to "handle_emptyunset".
 	 * So, don't implement it (yet) for the other types, where it's unneeded. */
 	nm_assert (   !handle_emptyunset
 	           || (   gtype_prop == G_TYPE_STRV

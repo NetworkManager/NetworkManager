@@ -1566,7 +1566,7 @@ intern_config_read (const char *filename,
 out:
 	/*
 	 * If user configuration specifies global DNS options, the DNS
-	 * options in internal configuration must be deleted. Otherwise a
+	 * options in internal configuration must be deleted. Otherwise, a
 	 * deletion of options from user configuration may cause the
 	 * internal options to appear again.
 	 */

@@ -266,7 +266,7 @@ nm_utils_array_remove_at_indexes (GArray *array, const guint *indexes_to_delete,
 			mm_len++;
 		else {
 			/* we require indexes_to_delete to contain non-repeated, ascending
-			 * indexes. Otherwise we would need to presort the indexes. */
+			 * indexes. Otherwise, we would need to presort the indexes. */
 			while (TRUE) {
 				guint dd;
 
@@ -631,7 +631,7 @@ _sleep_duration_convert_ms_to_us (guint32 sleep_duration_msec)
  * Set to zero, to use the default (meaning 20 wakeups per seconds).
  *
  * Kill a child process synchronously and wait. The function first checks if the child already terminated
- * and if it did, return the exit status. Otherwise send one @sig signal. @sig  will always be
+ * and if it did, return the exit status. Otherwise, send one @sig signal. @sig  will always be
  * sent unless the child already exited. If the child does not exit within @wait_before_kill_msec milliseconds,
  * the function will send %SIGKILL and waits for the child indefinitely. If @wait_before_kill_msec is zero, no
  * %SIGKILL signal will be sent.

@@ -105,7 +105,7 @@
         Update2:
         @settings: New connection settings, properties, and (optionally) secrets.
           Provide an empty array, to use the current settings.
-        @flags: optional flags argument. Currently supported flags are:
+        @flags: optional flags argument. Currently, supported flags are:
           "0x1" (to-disk),
           "0x2" (in-memory),
           "0x4" (in-memory-detached),
@@ -114,7 +114,7 @@
           "0x20" (block-autoconnect),
           "0x40" (no-reapply).
           Unknown flags cause the call to fail.
-        @args: optional arguments dictionary, for extensibility. Currently no
+        @args: optional arguments dictionary, for extensibility. Currently, no
           arguments are accepted. Specifying unknown keys causes the call
           to fail.
         @result: output argument, currently no results are returned.

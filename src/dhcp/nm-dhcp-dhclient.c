@@ -627,7 +627,7 @@ get_duid (NMDhcpClient *client)
 			return duid;
 	}
 
-	/* Otherwise read the default machine-wide DUID */
+	/* Otherwise, read the default machine-wide DUID */
 	_LOGD ("looking for default DUID in '%s'", priv->def_leasefile);
 	duid = nm_dhcp_dhclient_read_duid (priv->def_leasefile, &error);
 	if (error) {

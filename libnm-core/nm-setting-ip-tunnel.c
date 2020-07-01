@@ -816,7 +816,7 @@ nm_setting_ip_tunnel_class_init (NMSettingIPTunnelClass *klass)
 	/**
 	 * NMSettingIPTunnel:flags:
 	 *
-	 * Tunnel flags. Currently the following values are supported:
+	 * Tunnel flags. Currently, the following values are supported:
 	 * %NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT, %NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_TCLASS,
 	 * %NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FLOWLABEL, %NM_IP_TUNNEL_FLAG_IP6_MIP6_DEV,
 	 * %NM_IP_TUNNEL_FLAG_IP6_RCV_DSCP_COPY, %NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FWMARK.

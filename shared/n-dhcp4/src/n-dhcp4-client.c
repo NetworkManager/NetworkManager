@@ -549,7 +549,7 @@ void n_dhcp4_log_queue_fmt(NDhcp4LogQueue *log_queue,
         if (level > log_queue->log_level)
                 return;
 
-        /* Currently the logging queue is only implemented for
+        /* Currently, the logging queue is only implemented for
          * the client. Nobody would enable logging except a
          * client instance. */
         c_assert(log_queue->is_client);

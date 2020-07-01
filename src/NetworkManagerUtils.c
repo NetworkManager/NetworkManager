@@ -96,7 +96,7 @@ get_new_connection_name (NMConnection *const*existing_connections,
 	if (preferred)
 		return g_strdup (preferred);
 
-	/* Otherwise find the next available unique connection name using the given
+	/* Otherwise, find the next available unique connection name using the given
 	 * connection name template.
 	 */
 	for (i = 1; TRUE; i++) {
@@ -1096,7 +1096,7 @@ nm_shutdown_wait_obj_unregister (NMShutdownWaitObjHandle *handle)
  * clearly a directory).
  *
  * Returns: if @abs_filename is a file inside @abs_path, returns the
- *   trailing part of @abs_filename which is the filename. Otherwise
+ *   trailing part of @abs_filename which is the filename. Otherwise,
  *   %NULL.
  */
 const char *

@@ -737,9 +737,9 @@ nm_wireguard_peer_remove_allowed_ip (NMWireGuardPeer *self,
  * nm_wireguard_peer_is_valid:
  * @self: the #NMWireGuardPeer instance
  * @check_secrets: if %TRUE, non-secret properties are validated.
- *   Otherwise they are ignored for this purpose.
+ *   Otherwise, they are ignored for this purpose.
  * @check_non_secrets: if %TRUE, secret properties are validated.
- *   Otherwise they are ignored for this purpose.
+ *   Otherwise, they are ignored for this purpose.
  * @error: the #GError location for returning the failure reason.
  *
  * Returns:  %TRUE if the peer is valid or fails with an error
@@ -2458,7 +2458,7 @@ nm_setting_wireguard_class_init (NMSettingWireGuardClass *klass)
 	 * NMSettingWireGuard:fwmark:
 	 *
 	 * The use of fwmark is optional and is by default off. Setting it to 0
-	 * disables it. Otherwise it is a 32-bit fwmark for outgoing packets.
+	 * disables it. Otherwise, it is a 32-bit fwmark for outgoing packets.
 	 *
 	 * Note that "ip4-auto-default-route" or "ip6-auto-default-route" enabled,
 	 * implies to automatically choose a fwmark.

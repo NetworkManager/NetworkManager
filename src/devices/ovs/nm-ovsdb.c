@@ -1012,7 +1012,7 @@ ovsdb_got_update (NMOvsdb *self, json_t *msg)
 				       ovs_interface->connection_uuid ? ", " : "",
 				       ovs_interface->connection_uuid ?: "");
 				if (g_strcmp0 (ovs_interface->type, "internal") == 0) {
-					/* Currently the factory only creates NMDevices for
+					/* Currently, the factory only creates NMDevices for
 					 * internal interfaces. Ignore the rest. */
 					g_signal_emit (self, signals[DEVICE_REMOVED], 0,
 					               ovs_interface->name, NM_DEVICE_TYPE_OVS_INTERFACE);
@@ -1037,7 +1037,7 @@ ovsdb_got_update (NMOvsdb *self, json_t *msg)
 				       ovs_interface->connection_uuid ? ", " : "",
 				       ovs_interface->connection_uuid ?: "");
 				if (g_strcmp0 (ovs_interface->type, "internal") == 0) {
-					/* Currently the factory only creates NMDevices for
+					/* Currently, the factory only creates NMDevices for
 					 * internal interfaces. Ignore the rest. */
 					g_signal_emit (self, signals[DEVICE_ADDED], 0,
 					               ovs_interface->name, NM_DEVICE_TYPE_OVS_INTERFACE);

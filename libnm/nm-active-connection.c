@@ -158,7 +158,7 @@ nm_active_connection_get_connection_type (NMActiveConnection *connection)
  *
  * Gets the path of the "specific object" used at activation.
  *
- * Currently there is no single method that will allow you to automatically turn
+ * Currently, there is no single method that will allow you to automatically turn
  * this into an appropriate #NMObject; you need to know what kind of object it
  * is based on other information. (Eg, if @connection corresponds to a Wi-Fi
  * connection, then the specific object will be an #NMAccessPoint, and you can

@@ -1305,7 +1305,7 @@ nm_setting_sriov_class_init (NMSettingSriovClass *klass)
 	 *   "2 mac=00:11:22:33:44:55 spoof-check=true".
 	 *
 	 * Multiple VFs can be specified using a comma as separator.
-	 * Currently the following attributes are supported: mac,
+	 * Currently, the following attributes are supported: mac,
 	 * spoof-check, trust, min-tx-rate, max-tx-rate, vlans.
 	 *
 	 * The "vlans" attribute is represented as a semicolon-separated
