@@ -1741,3 +1741,8 @@ global:
 	nm_setting_option_set_boolean;
 	nm_setting_option_set_uint32;
 } libnm_1_24_0;
+
+libnm_1_28_0 {
+global:
+	nm_setting_wireless_get_ap_isolation;
+} libnm_1_26_0;

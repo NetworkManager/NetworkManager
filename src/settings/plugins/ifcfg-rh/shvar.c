@@ -1214,6 +1214,20 @@ svGetValueBoolean (shvarFile *s, const char *key, int fallback)
 	return svParseBoolean (value, fallback);
 }
 
+/* svGetValueTernary:
+ * @s: fhe file
+ * @key: the name of the key to read
+ *
+ * Reads a value @key and converts it to a NMTernary value.
+ *
+ * Returns: the parsed NMTernary
+ */
+NMTernary
+svGetValueTernary (shvarFile *s, const char *key)
+{
+	return svGetValueBoolean (s, key, NM_TERNARY_DEFAULT);
+}
+
 /* svGetValueInt64:
  * @s: fhe file
  * @key: the name of the key to read
@@ -1426,6 +1440,15 @@ gboolean
 svSetValueBoolean (shvarFile *s, const char *key, gboolean value)
 {
 	return svSetValue (s, key, value ? "yes" : "no");
+}
+
+gboolean
+svSetValueTernary (shvarFile *s, const char *key, NMTernary value)
+{
+	if (NM_IN_SET (value, NM_TERNARY_TRUE, NM_TERNARY_FALSE))
+		return svSetValueBoolean (s, key, (gboolean) value);
+	else
+		return svUnsetValue (s, key);
 }
 
 gboolean

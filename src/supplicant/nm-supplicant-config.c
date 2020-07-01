@@ -34,6 +34,7 @@ typedef struct {
 	guint32 ap_scan;
 	bool fast_required:1;
 	bool dispose_has_run:1;
+	bool ap_isolation:1;
 } NMSupplicantConfigPrivate;
 
 struct _NMSupplicantConfig {
@@ -1521,3 +1522,14 @@ nm_supplicant_config_add_no_security (NMSupplicantConfig *self, GError **error)
 	return nm_supplicant_config_add_option (self, "key_mgmt", "NONE", -1, NULL, error);
 }
 
+gboolean
+nm_supplicant_config_get_ap_isolation (NMSupplicantConfig *self)
+{
+	return self->_priv.ap_isolation;
+}
+
+void
+nm_supplicant_config_set_ap_isolation (NMSupplicantConfig *self, gboolean ap_isolation)
+{
+	self->_priv.ap_isolation = ap_isolation;
+}

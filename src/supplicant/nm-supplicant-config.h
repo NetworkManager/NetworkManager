@@ -69,4 +69,8 @@ gboolean nm_supplicant_config_add_setting_macsec (NMSupplicantConfig *self,
 
 gboolean nm_supplicant_config_enable_pmf_akm (NMSupplicantConfig *self,
                                               GError **error);
+
+void     nm_supplicant_config_set_ap_isolation (NMSupplicantConfig *self, gboolean ap_isolation);
+gboolean nm_supplicant_config_get_ap_isolation (NMSupplicantConfig *self);
+
 #endif /* __NETWORKMANAGER_SUPPLICANT_CONFIG_H__ */

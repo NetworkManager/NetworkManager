@@ -806,6 +806,10 @@ ipv6.ip6-privacy=0
           <listitem><para>If left unspecified, default value of 60 seconds is used.</para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>wifi.ap-isolation</varname></term>
+          <listitem><para>If left unspecified, AP isolation is disabled.</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>wifi.cloned-mac-address</varname></term>
           <listitem><para>If left unspecified, it defaults to "preserve".</para></listitem>
         </varlistentry>

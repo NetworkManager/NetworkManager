@@ -2810,6 +2810,7 @@ build_supplicant_config (NMDeviceWifi *self,
 	NMSettingWirelessSecurity *s_wireless_sec;
 	NMSettingWirelessSecurityPmf pmf;
 	NMSettingWirelessSecurityFils fils;
+	NMTernary ap_isolation;
 
 	g_return_val_if_fail (priv->sup_iface, NULL);
 
@@ -2836,6 +2837,17 @@ build_supplicant_config (NMDeviceWifi *self,
 		g_prefix_error (error, "bgscan: ");
 		goto error;
 	}
+
+	ap_isolation = nm_setting_wireless_get_ap_isolation (s_wireless);
+	if (ap_isolation == NM_TERNARY_DEFAULT) {
+		ap_isolation = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+		                                                            "wifi.ap-isolation",
+		                                                            NM_DEVICE (self),
+		                                                            NM_TERNARY_FALSE,
+		                                                            NM_TERNARY_TRUE,
+		                                                            NM_TERNARY_FALSE);
+	}
+	nm_supplicant_config_set_ap_isolation (config, ap_isolation == NM_TERNARY_TRUE);
 
 	s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
 	if (s_wireless_sec) {

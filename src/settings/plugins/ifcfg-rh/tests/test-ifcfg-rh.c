@@ -3967,6 +3967,54 @@ test_write_wifi_band_a (void)
 }
 
 static void
+test_write_wifi_ap_mode (void)
+{
+	nmtst_auto_unlinkfile char *testfile = NULL;
+	gs_unref_object NMConnection *connection = NULL;
+	gs_unref_object NMConnection *reread = NULL;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	gs_unref_bytes GBytes *ssid = NULL;
+
+	connection = nm_simple_connection_new ();
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wi-Fi AP Mode",
+	              NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_a (),
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_bytes_new ("MySSID", NM_STRLEN ("MySSID"));
+
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_MODE, "ap",
+	              NM_SETTING_WIRELESS_BAND, "a",
+	              NM_SETTING_WIRELESS_CHANNEL, (guint) 196,
+	              NM_SETTING_WIRELESS_AP_ISOLATION, NM_TERNARY_TRUE,
+	              NULL);
+
+	nmtst_assert_connection_verifies (connection);
+
+	_writer_new_connec_exp (connection,
+	                        TEST_SCRATCH_DIR,
+	                        TEST_IFCFG_DIR"/ifcfg-Test_Write_WiFi_AP_Mode.cexpected",
+	                        &testfile);
+
+	reread = _connection_from_file (testfile, NULL, TYPE_WIRELESS, NULL);
+
+	nmtst_assert_connection_equals (connection, TRUE, reread, FALSE);
+}
+
+static void
 test_read_wifi_band_a_channel_mismatch (void)
 {
 	gs_free_error GError *error = NULL;
@@ -10645,6 +10693,7 @@ int main (int argc, char **argv)
 	g_test_add_func (TPATH "wifi/write-wpa-then-wep-with-perms", test_write_wifi_wpa_then_wep_with_perms);
 	g_test_add_func (TPATH "wifi/write-hidden", test_write_wifi_hidden);
 	g_test_add_func (TPATH "wifi/write-band-a", test_write_wifi_band_a);
+	g_test_add_func (TPATH "wifi/write-ap-mode", test_write_wifi_ap_mode);
 
 	g_test_add_func (TPATH "s390/read-qeth-static", test_read_wired_qeth_static);
 	g_test_add_func (TPATH "s390/write-qeth-dhcp", test_write_wired_qeth_dhcp);
