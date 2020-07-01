@@ -253,7 +253,7 @@ libudev_dep = dependency('libudev', version: '>= 175')
 dbus_dep = dependency('dbus-1', version: '>= 1.1')
 libndp_dep = dependency('libndp')
 
-jansson_dep = dependency('jansson', version: '>= 2.5', required: false)
+jansson_dep = dependency('jansson', version: '>= 2.7', required: false)
 config_h.set10('WITH_JANSSON', jansson_dep.found())
 
 jansson_msg = 'no'
