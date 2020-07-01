@@ -14,7 +14,7 @@
 #include "nm-std-aux/c-list-util.h"
 #include "nm-glib-aux/nm-enum-utils.h"
 #include "nm-glib-aux/nm-str-buf.h"
-#include "nm-glib-aux/nm-json.h"
+#include "nm-glib-aux/nm-json-aux.h"
 #include "systemd/nm-sd-utils-shared.h"
 
 #include "nm-utils.h"

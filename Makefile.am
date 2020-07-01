@@ -403,8 +403,6 @@ shared_nm_glib_aux_libnm_glib_aux_la_SOURCES = \
 	shared/nm-glib-aux/nm-jansson.h \
 	shared/nm-glib-aux/nm-json-aux.c \
 	shared/nm-glib-aux/nm-json-aux.h \
-	shared/nm-glib-aux/nm-json.c \
-	shared/nm-glib-aux/nm-json.h \
 	shared/nm-glib-aux/nm-keyfile-aux.c \
 	shared/nm-glib-aux/nm-keyfile-aux.h \
 	shared/nm-glib-aux/nm-logging-base.c \
