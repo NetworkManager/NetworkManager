@@ -118,6 +118,14 @@ link_changed (NMDevice *device,
 	priv->waiting_for_interface = FALSE;
 
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG) {
+		if (!nm_device_hw_addr_set_cloned (device,
+		                                   nm_device_get_applied_connection (device),
+		                                   FALSE)) {
+			nm_device_state_changed (device,
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+			return;
+		}
 		nm_device_bring_up (device, TRUE, NULL);
 		nm_device_activate_schedule_stage3_ip_config_start (device);
 	}
@@ -188,6 +196,13 @@ act_stage3_ip_config_start (NMDevice *device,
 		_LOGT (LOGD_DEVICE, "waiting for link to appear");
 		priv->waiting_for_interface = TRUE;
 		return NM_ACT_STAGE_RETURN_POSTPONE;
+	}
+
+	if (!nm_device_hw_addr_set_cloned (device,
+	                                   nm_device_get_applied_connection (device),
+	                                   FALSE)) {
+		*out_failure_reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
+		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
 	return NM_DEVICE_CLASS (nm_device_ovs_interface_parent_class)->act_stage3_ip_config_start (device, addr_family, out_config, out_failure_reason);
