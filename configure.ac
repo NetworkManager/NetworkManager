@@ -596,6 +596,8 @@ if test "$have_jansson" = "yes"; then
 	fi
 	AC_DEFINE_UNQUOTED(JANSSON_SONAME, "$JANSSON_SONAME", [Define to path to the Jansson shared library])
 else
+	have_jansson=no
+	JANSSON_SONAME=
 	AC_DEFINE(WITH_JANSSON, 0, [Define if JANSSON is enabled])
 fi
 AM_CONDITIONAL(WITH_JANSSON, test "${have_jansson}" = "yes")
@@ -621,21 +623,6 @@ if test "${enable_teamdctl}" = "yes"; then
 	LIBTEAMDCTL_CFLAGS=`echo $LIBTEAMDCTL_CFLAGS | sed -e 's:/teamdctl.h::'`
 fi
 AM_CONDITIONAL(WITH_TEAMDCTL, test "${enable_teamdctl}" = "yes")
-
-# Jansson for team configuration validation
-AC_ARG_ENABLE(json-validation,
-              AS_HELP_STRING([--enable-json-validation], [Enable JSON validation in libnm]),
-              [enable_json_validation=${enableval}],
-              [enable_json_validation=${have_jansson}])
-if test "${enable_json_validation}" = "no"; then
-	AC_DEFINE(WITH_JSON_VALIDATION, 0, [Define if JSON validation in libnm is enabled])
-else
-	if test "$have_jansson" = "no"; then
-		AC_MSG_ERROR([jansson is needed for team configuration validation. Use --disable-json-validation to build without it.])
-	fi
-		AC_DEFINE(WITH_JSON_VALIDATION, 1, [Define if JSON validation in libnm is enabled])
-fi
-AM_CONDITIONAL(WITH_JSON_VALIDATION, test "${enable_json_validation}" != "no")
 
 # we usually compile with polkit support. --enable-polkit=yes|no only sets the
 # default configuration for main.auth-polkit. User can always enable/disable polkit
@@ -1366,6 +1353,7 @@ echo "  nmcli: $build_nmcli"
 echo "  nmtui: $build_nmtui"
 echo "  nm-cloud-setup: $with_nm_cloud_setup"
 echo "  iwd: $ac_with_iwd"
+echo "  jansson: $have_jansson${JANSSON_SONAME:+ (soname: $JANSSON_SONAME)}"
 echo
 
 echo "Configuration plugins (main.plugins=${config_plugins_default})"
@@ -1398,7 +1386,6 @@ echo "  valgrind: $with_valgrind   $with_valgrind_suppressions"
 echo "  code coverage: $enable_code_coverage"
 echo "  LTO: $enable_lto"
 echo "  linker garbage collection: $enable_ld_gc"
-echo "  JSON validation for libnm: $enable_json_validation"
 echo "  crypto: $with_crypto (have-gnutls: $have_crypto_gnutls, have-nss: $have_crypto_nss)"
 echo "  sanitizers: $sanitizers"
 echo "  Mozilla Public Suffix List: $with_libpsl"

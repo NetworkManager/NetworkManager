@@ -1116,7 +1116,6 @@ _link_watcher_to_json (const NMTeamLinkWatcher *link_watcher,
 	g_string_append (gstr, " }");
 }
 
-#if WITH_JSON_VALIDATION
 static NMTeamLinkWatcher *
 _link_watcher_from_json (const NMJsonVt *vt,
                          const nm_json_t *root_js_obj,
@@ -1219,7 +1218,6 @@ fail:
 	*out_unrecognized_content = TRUE;
 	return NULL;
 }
-#endif
 
 /*****************************************************************************/
 
@@ -1642,7 +1640,6 @@ nm_team_setting_config_get (const NMTeamSetting *self)
 
 /*****************************************************************************/
 
-#if WITH_JSON_VALIDATION
 static gboolean
 _attr_data_match_keys (const TeamAttrData *attr_data,
                        const char *const*keys,
@@ -1701,6 +1698,8 @@ _js_parse_locate_keys (const NMJsonVt *vt,
 	nm_json_t *cur_val2;
 	nm_json_t *cur_val3;
 
+	nm_assert (vt);
+
 #define _handle(_self, _cur_key, _cur_val, _keys, _level, _found_keys, _out_unrecognized_content) \
 	({ \
 		const TeamAttrData *_attr_data; \
@@ -1749,6 +1748,8 @@ _js_parse_unpack (const NMJsonVt *vt,
                   GPtrArray **out_ptr_array_master_runner_tx_hash_free)
 {
 	const TeamAttrData *attr_data;
+
+	nm_assert (vt);
 
 	for (attr_data = &team_attr_datas[TEAM_ATTR_IDX_CONFIG + 1]; attr_data < &team_attr_datas[G_N_ELEMENTS (team_attr_datas)]; attr_data++) {
 		NMValueTypUnion *p_out_val;
@@ -1838,11 +1839,11 @@ _js_parse_unpack (const NMJsonVt *vt,
 			*out_unrecognized_content = TRUE;
 	}
 }
-#endif
 
 guint32
 nm_team_setting_config_set (NMTeamSetting *self, const char *js_str)
 {
+	const NMJsonVt *vt;
 	guint32 changed_flags = 0;
 	gboolean do_set_default = TRUE;
 	gboolean new_js_str_invalid = FALSE;
@@ -1872,14 +1873,10 @@ nm_team_setting_config_set (NMTeamSetting *self, const char *js_str)
 	} else
 		changed_flags |= nm_team_attribute_to_flags (NM_TEAM_ATTRIBUTE_CONFIG);
 
-#if WITH_JSON_VALIDATION
-	{
+	if ((vt = nm_json_vt ())) {
 		nm_auto_decref_json nm_json_t *root_js_obj = NULL;
-		const NMJsonVt *vt;
 
-		if ((vt = nm_json_vt ()))
-			root_js_obj = vt->nm_json_loads (js_str, 0, NULL);
-
+		root_js_obj = vt->nm_json_loads (js_str, 0, NULL);
 		if (   !root_js_obj
 		    || !nm_json_is_object (root_js_obj))
 			new_js_str_invalid = TRUE;
@@ -1914,8 +1911,6 @@ nm_team_setting_config_set (NMTeamSetting *self, const char *js_str)
 			                                    val_lst);
 		}
 	}
-
-#endif
 
 	if (do_set_default)
 		changed_flags |= _team_setting_set_default (self);
@@ -2231,6 +2226,7 @@ nm_team_setting_reset_from_dbus (NMTeamSetting *self,
 	GVariantIter iter;
 	const char *v_key;
 	GVariant *v_val;
+	const NMJsonVt *vt;
 
 	*out_changed = 0;
 
@@ -2280,10 +2276,12 @@ nm_team_setting_reset_from_dbus (NMTeamSetting *self,
 		variants[attr_data->team_attr] = g_steal_pointer (&v_val_free);
 	}
 
+	vt = nm_json_vt ();
+
 	if (variants[NM_TEAM_ATTRIBUTE_LINK_WATCHERS]) {
 
 		if (   variants[NM_TEAM_ATTRIBUTE_CONFIG]
-		    && WITH_JSON_VALIDATION
+		    && vt
 		    && !NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
 			/* we don't require the content of the "link-watchers" and we also
 			 * don't perform strict validation. No need to parse it. */
@@ -2291,7 +2289,7 @@ nm_team_setting_reset_from_dbus (NMTeamSetting *self,
 			gs_free_error GError *local = NULL;
 
 			/* We might need the parsed v_link_watchers array below (because there is no JSON
-			 * "config" present or because we don't build WITH_JSON_VALIDATION).
+			 * "config" present or because we don't have json support).
 			 *
 			 * Or we might run with NM_SETTING_PARSE_FLAGS_STRICT. In that mode, we may not necessarily
 			 * require that the entire setting as a whole validates (if a JSON config is present and
@@ -2319,7 +2317,7 @@ nm_team_setting_reset_from_dbus (NMTeamSetting *self,
 	                                            ? g_variant_get_string (variants[NM_TEAM_ATTRIBUTE_CONFIG], NULL)
 	                                            : NULL);
 
-	if (   WITH_JSON_VALIDATION
+	if (   vt
 	    && variants[NM_TEAM_ATTRIBUTE_CONFIG]) {
 		/* for team settings, the JSON must be able to express all possible options. That means,
 		 * if the GVariant contains both the JSON "config" and other options, then the other options

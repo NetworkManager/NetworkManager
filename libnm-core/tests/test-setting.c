@@ -8,6 +8,7 @@
 #include <linux/pkt_sched.h>
 #include <net/if.h>
 
+#include "nm-glib-aux/nm-json.h"
 #include "nm-core-internal.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
@@ -29,15 +30,6 @@
 #include "nm-utils/nm-test-utils.h"
 
 #define TEST_CERT_DIR NM_BUILD_SRCDIR"/libnm-core/tests/certs"
-
-/*****************************************************************************/
-
-/* assert that the define is just a plain integer (boolean). */
-
-G_STATIC_ASSERT (   (WITH_JSON_VALIDATION) == 1
-                 || (WITH_JSON_VALIDATION) == 0);
-
-_nm_unused static const int _with_json_validation = WITH_JSON_VALIDATION;
 
 /*****************************************************************************/
 
@@ -1000,7 +992,7 @@ _test_team_config_sync (const char *team_config,
 	guint i, j;
 	gboolean found;
 
-	if (!WITH_JSON_VALIDATION) {
+	if (!nm_json_vt ()) {
 		g_test_skip ("team test requires JSON validation");
 		return;
 	}
@@ -1265,7 +1257,7 @@ _test_team_port_config_sync (const char *team_port_config,
 	guint i, j;
 	gboolean found;
 
-	if (!WITH_JSON_VALIDATION) {
+	if (!nm_json_vt ()) {
 		g_test_skip ("team test requires JSON validation");
 		return;
 	}
@@ -1397,7 +1389,7 @@ _check_team_setting (NMSetting *setting)
 	                         : nm_setting_team_get_config (NM_SETTING_TEAM (setting)),
 	                         NULL);
 
-	if (WITH_JSON_VALIDATION)
+	if (nm_json_vt ())
 		nmtst_assert_setting_is_equal (setting, setting2, NM_SETTING_COMPARE_FLAG_EXACT);
 
 	g_clear_object (&setting2);

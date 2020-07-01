@@ -212,9 +212,6 @@
 /* Define if JANSSON is enabled */
 #mesondefine WITH_JANSSON
 
-/* Define if JSON validation in libnm is enabled */
-#mesondefine WITH_JSON_VALIDATION
-
 /* Define if you have libpsl */
 #mesondefine WITH_LIBPSL
 

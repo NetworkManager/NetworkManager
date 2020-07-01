@@ -5490,7 +5490,6 @@ _nm_utils_is_json_object_no_validation (const char *str, GError **error)
 gboolean
 nm_utils_is_json_object (const char *str, GError **error)
 {
-#if WITH_JSON_VALIDATION
 	nm_auto_decref_json nm_json_t *json = NULL;
 	const NMJsonVt *vt;
 	nm_json_error_t jerror;
@@ -5530,19 +5529,6 @@ nm_utils_is_json_object (const char *str, GError **error)
 	}
 
 	return TRUE;
-#else /* !WITH_JSON_VALIDATION */
-	g_return_val_if_fail (!error || !*error, FALSE);
-
-	if (!str || !str[0]) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     str ? _("value is NULL") : _("value is empty"));
-		return FALSE;
-	}
-
-	return _nm_utils_is_json_object_no_validation (str, error);
-#endif
 }
 
 static char *
