@@ -11,36 +11,36 @@
 /*****************************************************************************/
 
 static inline GString *
-nm_json_aux_gstr_append_delimiter (GString *gstr)
+nm_json_gstr_append_delimiter (GString *gstr)
 {
 	g_string_append (gstr, ", ");
 	return gstr;
 }
 
-void nm_json_aux_gstr_append_string_len (GString *gstr,
-                                         const char *str,
-                                         gsize n);
+void nm_json_gstr_append_string_len (GString *gstr,
+                                     const char *str,
+                                     gsize n);
 
-void nm_json_aux_gstr_append_string (GString *gstr,
-                                     const char *str);
+void nm_json_gstr_append_string (GString *gstr,
+                                 const char *str);
 
 static inline void
-nm_json_aux_gstr_append_bool (GString *gstr,
-                              gboolean v)
+nm_json_gstr_append_bool (GString *gstr,
+                          gboolean v)
 {
 	g_string_append (gstr, v ? "true" : "false");
 }
 
 static inline void
-nm_json_aux_gstr_append_int64 (GString *gstr,
-                               gint64 v)
+nm_json_gstr_append_int64 (GString *gstr,
+                           gint64 v)
 {
 	g_string_append_printf (gstr, "%"G_GINT64_FORMAT, v);
 }
 
-void nm_json_aux_gstr_append_obj_name (GString *gstr,
-                                       const char *key,
-                                       char start_container);
+void nm_json_gstr_append_obj_name (GString *gstr,
+                                   const char *key,
+                                   char start_container);
 
 /*****************************************************************************/
 
@@ -285,10 +285,10 @@ nm_value_type_to_json (NMValueType value_type,
 	nm_assert (gstr);
 
 	switch (value_type) {
-	case NM_VALUE_TYPE_BOOL:   nm_json_aux_gstr_append_bool   (gstr, *((const bool        *) p_field)); return;
-	case NM_VALUE_TYPE_INT32:  nm_json_aux_gstr_append_int64  (gstr, *((const gint32      *) p_field)); return;
-	case NM_VALUE_TYPE_INT:    nm_json_aux_gstr_append_int64  (gstr, *((const int         *) p_field)); return;
-	case NM_VALUE_TYPE_STRING: nm_json_aux_gstr_append_string (gstr, *((const char *const *) p_field)); return;
+	case NM_VALUE_TYPE_BOOL:   nm_json_gstr_append_bool   (gstr, *((const bool        *) p_field)); return;
+	case NM_VALUE_TYPE_INT32:  nm_json_gstr_append_int64  (gstr, *((const gint32      *) p_field)); return;
+	case NM_VALUE_TYPE_INT:    nm_json_gstr_append_int64  (gstr, *((const int         *) p_field)); return;
+	case NM_VALUE_TYPE_STRING: nm_json_gstr_append_string (gstr, *((const char *const *) p_field)); return;
 	case NM_VALUE_TYPE_UNSPEC:
 		break;
 	}

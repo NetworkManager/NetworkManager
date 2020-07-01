@@ -459,9 +459,9 @@ _team_attr_data_to_json (const TeamAttrData *attr_data,
 	_team_attr_data_ASSERT (attr_data);
 	nm_assert (p_field);
 
-	nm_json_aux_gstr_append_obj_name (gstr,
-	                                  attr_data->js_keys[attr_data->js_keys_len - 1],
-	                                  '\0');
+	nm_json_gstr_append_obj_name (gstr,
+	                              attr_data->js_keys[attr_data->js_keys_len - 1],
+	                              '\0');
 
 	if (attr_data->value_type != NM_VALUE_TYPE_UNSPEC) {
 		nm_value_type_to_json (attr_data->value_type, gstr, p_field);
@@ -481,7 +481,7 @@ _team_attr_data_to_json (const TeamAttrData *attr_data,
 			g_string_append (gstr, "[ ");
 			for (i = 0; i < v_ptrarray->len; i++) {
 				if (i > 0)
-					nm_json_aux_gstr_append_delimiter (gstr);
+					nm_json_gstr_append_delimiter (gstr);
 				_link_watcher_to_json (v_ptrarray->pdata[i], gstr);
 			}
 			g_string_append (gstr, " ]");
@@ -499,8 +499,8 @@ _team_attr_data_to_json (const TeamAttrData *attr_data,
 			g_string_append (gstr, "[ ");
 			for (i = 0; i < v_ptrarray->len; i++) {
 				if (i > 0)
-					nm_json_aux_gstr_append_delimiter (gstr);
-				nm_json_aux_gstr_append_string (gstr, v_ptrarray->pdata[i]);
+					nm_json_gstr_append_delimiter (gstr);
+				nm_json_gstr_append_string (gstr, v_ptrarray->pdata[i]);
 			}
 			g_string_append (gstr, i > 0 ? " ]" : "]");
 		}
@@ -670,7 +670,7 @@ _team_setting_field_to_json (const NMTeamSetting *self,
 		return FALSE;
 
 	if (prepend_delimiter)
-		nm_json_aux_gstr_append_delimiter (gstr);
+		nm_json_gstr_append_delimiter (gstr);
 	_team_attr_data_to_json (attr_data,
 	                         self->d.is_port,
 	                         gstr,
@@ -1107,8 +1107,8 @@ _link_watcher_to_json (const NMTeamLinkWatcher *link_watcher,
 		if (is_first)
 			is_first = FALSE;
 		else
-			nm_json_aux_gstr_append_delimiter (gstr);
-		nm_json_aux_gstr_append_obj_name (gstr, attr_data->js_key, '\0');
+			nm_json_gstr_append_delimiter (gstr);
+		nm_json_gstr_append_obj_name (gstr, attr_data->js_key, '\0');
 		nm_value_type_to_json (attr_data->value_type, gstr, &p_val->val);
 	}
 
@@ -1573,15 +1573,15 @@ nm_team_setting_config_get (const NMTeamSetting *self)
 
 				nm_assert (list_is_empty);
 
-				nm_json_aux_gstr_append_obj_name (gstr, "runner", '{');
+				nm_json_gstr_append_obj_name (gstr, "runner", '{');
 
 				if (_team_setting_fields_to_json_maybe (self, gstr, !list_is_empty2, attr_lst_runner_pt1, G_N_ELEMENTS (attr_lst_runner_pt1)))
 					list_is_empty2 = FALSE;
 
 				if (_team_setting_has_fields_any_v (self, attr_lst_runner_pt2, G_N_ELEMENTS (attr_lst_runner_pt2))) {
 					if (!list_is_empty2)
-						nm_json_aux_gstr_append_delimiter (gstr);
-					nm_json_aux_gstr_append_obj_name (gstr, "tx_balancer", '{');
+						nm_json_gstr_append_delimiter (gstr);
+					nm_json_gstr_append_obj_name (gstr, "tx_balancer", '{');
 					if (!_team_setting_fields_to_json_maybe (self, gstr, FALSE, attr_lst_runner_pt2, G_N_ELEMENTS (attr_lst_runner_pt2)))
 						nm_assert_not_reached ();
 					g_string_append (gstr, " }");
@@ -1598,8 +1598,8 @@ nm_team_setting_config_get (const NMTeamSetting *self)
 
 			if (_team_setting_has_fields_any_v (self, attr_lst_notify_peers, G_N_ELEMENTS (attr_lst_notify_peers))) {
 				if (!list_is_empty)
-					nm_json_aux_gstr_append_delimiter (gstr);
-				nm_json_aux_gstr_append_obj_name (gstr, "notify_peers", '{');
+					nm_json_gstr_append_delimiter (gstr);
+				nm_json_gstr_append_obj_name (gstr, "notify_peers", '{');
 				if (!_team_setting_fields_to_json_maybe (self, gstr, FALSE, attr_lst_notify_peers, G_N_ELEMENTS (attr_lst_notify_peers)))
 					nm_assert_not_reached ();
 				g_string_append (gstr, " }");
@@ -1608,8 +1608,8 @@ nm_team_setting_config_get (const NMTeamSetting *self)
 
 			if (_team_setting_has_fields_any_v (self, attr_lst_mcast_rejoin, G_N_ELEMENTS (attr_lst_mcast_rejoin))) {
 				if (!list_is_empty)
-					nm_json_aux_gstr_append_delimiter (gstr);
-				nm_json_aux_gstr_append_obj_name (gstr, "mcast_rejoin", '{');
+					nm_json_gstr_append_delimiter (gstr);
+				nm_json_gstr_append_obj_name (gstr, "mcast_rejoin", '{');
 				if (!_team_setting_fields_to_json_maybe (self, gstr, FALSE, attr_lst_mcast_rejoin, G_N_ELEMENTS (attr_lst_mcast_rejoin)))
 					nm_assert_not_reached ();
 				g_string_append (gstr, " }");

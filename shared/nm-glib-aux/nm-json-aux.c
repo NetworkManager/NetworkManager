@@ -98,9 +98,9 @@ _gstr_append_string_len (GString *gstr,
 }
 
 void
-nm_json_aux_gstr_append_string_len (GString *gstr,
-                                    const char *str,
-                                    gsize n)
+nm_json_gstr_append_string_len (GString *gstr,
+                                const char *str,
+                                gsize n)
 {
 	g_return_if_fail (gstr);
 
@@ -108,8 +108,8 @@ nm_json_aux_gstr_append_string_len (GString *gstr,
 }
 
 void
-nm_json_aux_gstr_append_string (GString *gstr,
-                                const char *str)
+nm_json_gstr_append_string (GString *gstr,
+                            const char *str)
 {
 	g_return_if_fail (gstr);
 
@@ -120,14 +120,14 @@ nm_json_aux_gstr_append_string (GString *gstr,
 }
 
 void
-nm_json_aux_gstr_append_obj_name (GString *gstr,
-                                  const char *key,
-                                  char start_container)
+nm_json_gstr_append_obj_name (GString *gstr,
+                              const char *key,
+                              char start_container)
 {
 	g_return_if_fail (gstr);
 	g_return_if_fail (key);
 
-	nm_json_aux_gstr_append_string (gstr, key);
+	nm_json_gstr_append_string (gstr, key);
 
 	if (start_container != '\0') {
 		nm_assert (NM_IN_SET (start_container, '[', '{'));
