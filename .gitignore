@@ -131,6 +131,7 @@ test-*.trs
 /examples/C/qt/monitor-nm-running
 /examples/C/qt/monitor-nm-running.moc
 
+/shared/nm-glib-aux/tests/test-json-aux
 /shared/nm-glib-aux/tests/test-shared-general
 /shared/nm-version-macros.h
 
