@@ -16,10 +16,7 @@
 #include <sys/stat.h>
 #include <linux/pkt_sched.h>
 
-#if WITH_JSON_VALIDATION
-#include "nm-json.h"
-#endif
-
+#include "nm-glib-aux/nm-json.h"
 #include "nm-glib-aux/nm-str-buf.h"
 #include "nm-glib-aux/nm-enum-utils.h"
 #include "nm-glib-aux/nm-time-utils.h"

@@ -403,6 +403,8 @@ shared_nm_glib_aux_libnm_glib_aux_la_SOURCES = \
 	shared/nm-glib-aux/nm-jansson.h \
 	shared/nm-glib-aux/nm-json-aux.c \
 	shared/nm-glib-aux/nm-json-aux.h \
+	shared/nm-glib-aux/nm-json.c \
+	shared/nm-glib-aux/nm-json.h \
 	shared/nm-glib-aux/nm-keyfile-aux.c \
 	shared/nm-glib-aux/nm-keyfile-aux.h \
 	shared/nm-glib-aux/nm-logging-base.c \
@@ -1031,13 +1033,6 @@ libnm_core_lib_c_real = \
 	libnm-core/nm-vpn-plugin-info.c \
 	$(NULL)
 
-if WITH_JSON_VALIDATION
-libnm_core_lib_h_priv += \
-	libnm-core/nm-json.h
-libnm_core_lib_c_real += \
-	libnm-core/nm-json.c
-endif
-
 libnm_core_lib_c_mkenums = \
 	libnm-core/nm-core-enum-types.c
 
@@ -1091,11 +1086,6 @@ libnm_core_libnm_core_la_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\""libnm"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE \
 	$(NULL)
-
-if WITH_JSON_VALIDATION
-libnm_core_libnm_core_la_CPPFLAGS += $(JANSSON_CFLAGS)
-libnm_core_libnm_core_la_CPPFLAGS += -fcommon
-endif
 
 libnm_core_libnm_core_la_SOURCES = \
 	$(libnm_core_lib_h_pub_real) \

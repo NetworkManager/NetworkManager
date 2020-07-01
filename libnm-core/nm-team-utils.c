@@ -11,7 +11,7 @@
 
 #include "nm-errors.h"
 #include "nm-utils-private.h"
-#include "nm-json.h"
+#include "nm-glib-aux/nm-json.h"
 #include "nm-glib-aux/nm-json-aux.h"
 #include "nm-core-internal.h"
 #include "nm-setting-team.h"
