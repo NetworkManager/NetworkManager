@@ -569,6 +569,94 @@ test_bond (void)
 }
 
 static void
+test_bond_ip (void)
+{
+	gs_unref_hashtable GHashTable *connections = NULL;
+	const char *const*ARGV = NM_MAKE_STRV ("bond=bond0:eth0,eth1",
+	                                       "ip=192.168.1.1::192.168.1.254:24::bond0:none:1480:01:02:03:04:05:06",
+	                                       "nameserver=4.8.15.16");
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
+	NMSettingWired *s_wired;
+	NMSettingBond *s_bond;
+	NMIPAddress *ip_addr;
+	const char *master_uuid;
+	gs_free char *hostname = NULL;
+
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV, &hostname);
+	g_assert (connections);
+	g_assert_cmpint (g_hash_table_size (connections), ==, 3);
+	g_assert_cmpstr (hostname, ==, NULL);
+
+	connection = g_hash_table_lookup (connections, "bond0");
+	g_assert (connection);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+	g_assert_cmpstr (nm_connection_get_connection_type (connection), ==, NM_SETTING_BOND_SETTING_NAME);
+	g_assert_cmpstr (nm_connection_get_id (connection), ==, "bond0");
+	master_uuid = nm_connection_get_uuid (connection);
+	g_assert (master_uuid);
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_assert (s_wired);
+	g_assert_cmpint (nm_setting_wired_get_mtu (s_wired), ==, 1480);
+	g_assert_cmpstr (nm_setting_wired_get_cloned_mac_address (s_wired), ==, "01:02:03:04:05:06");
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	g_assert (s_ip4);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip4), ==, 1);
+	ip_addr = nm_setting_ip_config_get_address (s_ip4, 0);
+	g_assert (ip_addr);
+	g_assert_cmpstr (nm_ip_address_get_address (ip_addr), ==, "192.168.1.1");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip_addr), ==, 24);
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip4), ==, "192.168.1.254");
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip4), ==, 1);
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip4, 0), ==, "4.8.15.16");
+	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip4), ==, 0);
+
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	g_assert (s_ip6);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+	g_assert (!nm_setting_ip_config_get_ignore_auto_dns (s_ip6));
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip6), ==, 0);
+	g_assert (!nm_setting_ip_config_get_gateway (s_ip6));
+	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip6), ==, 0);
+
+	s_bond = nm_connection_get_setting_bond (connection);
+	g_assert (s_bond);
+	g_assert_cmpint (nm_setting_bond_get_num_options (s_bond), ==, 1);
+	g_assert_cmpstr (nm_setting_bond_get_option_by_name (s_bond, "mode"), ==, "balance-rr");
+
+	connection = g_hash_table_lookup (connections, "eth0");
+	g_assert (connection);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+	g_assert_cmpstr (nm_connection_get_id (connection), ==, "eth0");
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "eth0");
+	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BOND_SETTING_NAME);
+	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, master_uuid);
+	g_assert_cmpint (nm_setting_connection_get_multi_connect (s_con), ==, NM_CONNECTION_MULTI_CONNECT_SINGLE);
+
+	connection = g_hash_table_lookup (connections, "eth1");
+	g_assert (connection);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+	g_assert_cmpstr (nm_connection_get_id (connection), ==, "eth1");
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
+	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "eth1");
+	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BOND_SETTING_NAME);
+	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, master_uuid);
+	g_assert_cmpint (nm_setting_connection_get_multi_connect (s_con), ==, NM_CONNECTION_MULTI_CONNECT_SINGLE);
+}
+
+static void
 test_bond_default (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
@@ -772,6 +860,71 @@ test_bridge_default (void)
 	g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
 	g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, master_uuid);
 	g_assert_cmpint (nm_setting_connection_get_multi_connect (s_con), ==, NM_CONNECTION_MULTI_CONNECT_SINGLE);
+}
+
+static void
+test_bridge_ip (void)
+{
+	gs_unref_hashtable GHashTable *connections = NULL;
+	const char *const*ARGV = NM_MAKE_STRV ("ip=bridge123:auto:1280:00:11:22:33:CA:fe",
+	                                       "bridge=bridge123:eth0,eth1,eth2,eth3,eth4,eth5,eth6,eth7,eth8,eth9");
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingIPConfig *s_ip4;
+	NMSettingIPConfig *s_ip6;
+	NMSettingWired *s_wired;
+	NMSettingBridge *s_bridge;
+	const char *master_uuid;
+	gs_free char *hostname = NULL;
+	guint i;
+
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV, &hostname);
+	g_assert (connections);
+	g_assert_cmpint (g_hash_table_size (connections), ==, 11);
+	g_assert_cmpstr (hostname, ==, NULL);
+
+	connection = g_hash_table_lookup (connections, "bridge123");
+	g_assert (connection);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+	g_assert_cmpstr (nm_connection_get_connection_type (connection), ==, NM_SETTING_BRIDGE_SETTING_NAME);
+	g_assert_cmpstr (nm_connection_get_id (connection), ==, "bridge123");
+	master_uuid = nm_connection_get_uuid (connection);
+	g_assert (master_uuid);
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_assert (s_wired);
+	g_assert_cmpint (nm_setting_wired_get_mtu (s_wired), ==, 1280);
+	g_assert_cmpstr (nm_setting_wired_get_cloned_mac_address (s_wired), ==, "00:11:22:33:CA:FE");
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	g_assert (s_ip4);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	g_assert (s_ip6);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+
+	s_bridge = nm_connection_get_setting_bridge (connection);
+	g_assert (s_bridge);
+
+	for (i = 0; i < 10; i++) {
+		char ifname[16];
+
+		nm_sprintf_buf (ifname, "eth%u", i);
+
+		connection = g_hash_table_lookup (connections, ifname);
+		g_assert (connection);
+		nmtst_assert_connection_verifies_without_normalization (connection);
+		g_assert_cmpstr (nm_connection_get_id (connection), ==, ifname);
+
+		s_con = nm_connection_get_setting_connection (connection);
+		g_assert (s_con);
+		g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
+		g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, ifname);
+		g_assert_cmpstr (nm_setting_connection_get_slave_type (s_con), ==, NM_SETTING_BRIDGE_SETTING_NAME);
+		g_assert_cmpstr (nm_setting_connection_get_master (s_con), ==, master_uuid);
+		g_assert_cmpint (nm_setting_connection_get_multi_connect (s_con), ==, NM_CONNECTION_MULTI_CONNECT_SINGLE);
+	}
 }
 
 static void
@@ -1244,10 +1397,12 @@ int main (int argc, char **argv)
 	g_test_add_func ("/initrd/cmdline/some_more", test_some_more);
 	g_test_add_func ("/initrd/cmdline/bootdev", test_bootdev);
 	g_test_add_func ("/initrd/cmdline/bond", test_bond);
+	g_test_add_func ("/initrd/cmdline/bond/ip", test_bond_ip);
 	g_test_add_func ("/initrd/cmdline/bond/default", test_bond_default);
 	g_test_add_func ("/initrd/cmdline/team", test_team);
 	g_test_add_func ("/initrd/cmdline/bridge", test_bridge);
 	g_test_add_func ("/initrd/cmdline/bridge/default", test_bridge_default);
+	g_test_add_func ("/initrd/cmdline/bridge/ip", test_bridge_ip);
 	g_test_add_func ("/initrd/cmdline/ibft/ip_dev", test_ibft_ip_dev);
 	g_test_add_func ("/initrd/cmdline/ibft/ip", test_ibft_ip);
 	g_test_add_func ("/initrd/cmdline/ibft/rd_iscsi_ibft", test_ibft_rd_iscsi_ibft);
