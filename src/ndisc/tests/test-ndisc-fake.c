@@ -47,44 +47,45 @@ match_gateway (const NMNDiscData *rdata, guint idx, const char *addr, guint32 ts
 	g_assert_cmpint (gw->preference, ==, pref);
 }
 
-static void
-match_address (const NMNDiscData *rdata, guint idx, const char *addr, guint32 ts, guint32 lt, guint32 preferred)
-{
-	const NMNDiscAddress *a;
-	char buf[INET6_ADDRSTRLEN];
+#define match_address(rdata, idx, addr, ts, lt, pref) \
+	G_STMT_START { \
+		const NMNDiscData *_rdata = (rdata); \
+		guint _idx = (idx); \
+		const NMNDiscAddress *_a; \
+		\
+		g_assert (_rdata); \
+		g_assert_cmpint (_idx, <, _rdata->addresses_n); \
+		g_assert (_rdata->addresses); \
+		\
+		_a = &_rdata->addresses[_idx]; \
+		\
+		nmtst_assert_ip6_address (&_a->address, (addr)); \
+		g_assert_cmpint (_a->timestamp, ==, (ts)); \
+		g_assert_cmpint (_a->lifetime, ==, (lt)); \
+		g_assert_cmpint (_a->preferred, ==, (pref)); \
+	} G_STMT_END
 
-	g_assert (rdata);
-	g_assert_cmpint (idx, <, rdata->addresses_n);
-	g_assert (rdata->addresses);
-
-	a = &rdata->addresses[idx];
-
-	g_assert_cmpstr (inet_ntop (AF_INET6, &a->address, buf, sizeof (buf)), ==, addr);
-	g_assert_cmpint (a->timestamp, ==, ts);
-	g_assert_cmpint (a->lifetime, ==, lt);
-	g_assert_cmpint (a->preferred, ==, preferred);
-}
-
-static void
-match_route (const NMNDiscData *rdata, guint idx, const char *nw, int plen, const char *gw, guint32 ts, guint32 lt, NMIcmpv6RouterPref pref)
-{
-	const NMNDiscRoute *route;
-	char buf[INET6_ADDRSTRLEN];
-
-	g_assert (rdata);
-	g_assert_cmpint (idx, <, rdata->routes_n);
-	g_assert (rdata->routes);
-	g_assert (plen > 0 && plen <= 128);
-
-	route = &rdata->routes[idx];
-
-	g_assert_cmpstr (inet_ntop (AF_INET6, &route->network, buf, sizeof (buf)), ==, nw);
-	g_assert_cmpint ((int) route->plen, ==, plen);
-	g_assert_cmpstr (inet_ntop (AF_INET6, &route->gateway, buf, sizeof (buf)), ==, gw);
-	g_assert_cmpint (route->timestamp, ==, ts);
-	g_assert_cmpint (route->lifetime, ==, lt);
-	g_assert_cmpint (route->preference, ==, pref);
-}
+#define match_route(rdata, idx, nw, pl, gw, ts, lt, pref) \
+	G_STMT_START { \
+		const NMNDiscData *_rdata = (rdata); \
+		guint _idx = (idx); \
+		const NMNDiscRoute *_r; \
+		int _plen = (pl); \
+		\
+		g_assert (_rdata); \
+		g_assert_cmpint (_idx, <, _rdata->routes_n); \
+		g_assert (_rdata->routes); \
+		g_assert (_plen > 0 && _plen <= 128); \
+		\
+		_r = &_rdata->routes[idx]; \
+		\
+		nmtst_assert_ip6_address (&_r->network, (nw)); \
+		g_assert_cmpint ((int) _r->plen, ==, _plen); \
+		nmtst_assert_ip6_address (&_r->gateway, (gw)); \
+		g_assert_cmpint (_r->timestamp, ==, (ts)); \
+		g_assert_cmpint (_r->lifetime, ==, (lt)); \
+		g_assert_cmpint (_r->preference, ==, (pref)); \
+	} G_STMT_END
 
 static void
 match_dns_server (const NMNDiscData *rdata, guint idx, const char *addr, guint32 ts, guint32 lt)
