@@ -79,7 +79,7 @@ checkpatch:
   script:
     - date '+%Y%m%d-%H%M%S'; dnf install -y git black
     - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh 2>&1 | tee checkpatch-out.txt
-    - date '+%Y%m%d-%H%M%S'; black --check .
+    - date '+%Y%m%d-%H%M%S'; black --check . examples/python/gi/nm-wg-set
   allow_failure: true
   artifacts:
     when: on_failure
