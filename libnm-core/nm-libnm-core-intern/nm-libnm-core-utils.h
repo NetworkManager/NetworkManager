@@ -46,6 +46,10 @@ NM_AUTO_DEFINE_FCN0 (NMWireGuardPeer *, _nm_auto_unref_wgpeer, nm_wireguard_peer
 
 /****************************************************************************/
 
+const char **nm_utils_bond_option_arp_ip_targets_split (const char *arp_ip_target);
+
+/*****************************************************************************/
+
 static inline guint32
 nm_utils_vlan_priority_map_get_max_prio (NMVlanPriorityMap map, gboolean from)
 {

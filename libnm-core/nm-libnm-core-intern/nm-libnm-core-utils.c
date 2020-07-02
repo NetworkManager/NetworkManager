@@ -10,6 +10,14 @@
 
 /*****************************************************************************/
 
+const char **
+nm_utils_bond_option_arp_ip_targets_split (const char *arp_ip_target)
+{
+	return nm_utils_strsplit_set_full (arp_ip_target, ",", NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
+}
+
+/*****************************************************************************/
+
 gboolean
 nm_utils_vlan_priority_map_parse_str (NMVlanPriorityMap map_type,
                                       const char *str,
