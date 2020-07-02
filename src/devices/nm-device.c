@@ -3822,6 +3822,10 @@ nm_device_update_dynamic_ip_setup (NMDevice *self)
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
+	if (   priv->state < NM_DEVICE_STATE_IP_CONFIG
+	    || priv->state > NM_DEVICE_STATE_ACTIVATED)
+		return;
+
 	g_hash_table_remove_all (priv->ip6_saved_properties);
 
 	if (priv->dhcp_data_4.client) {
