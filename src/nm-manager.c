@@ -3044,10 +3044,9 @@ _get_best_connectivity (NMManager *self, int addr_family)
 		gint64 metric;
 
 		r = nm_device_get_best_default_route (dev, addr_family);
-		if (r) {
-			metric = nm_utils_ip_route_metric_normalize (addr_family,
-			                                             NMP_OBJECT_CAST_IP_ROUTE (r)->metric);
-		} else {
+		if (r)
+			metric = NMP_OBJECT_CAST_IP_ROUTE (r)->metric;
+		else {
 			/* if all devices have no default-route, we still include the best
 			 * of all connectivity state of all the devices. */
 			metric = G_MAXINT64;

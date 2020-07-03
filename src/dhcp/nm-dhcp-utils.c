@@ -440,10 +440,10 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
 
 	if (gateway_has) {
 		const NMPlatformIP4Route r = {
-			.rt_source = NM_IP_CONFIG_SOURCE_DHCP,
-			.gateway = gateway,
+			.rt_source     = NM_IP_CONFIG_SOURCE_DHCP,
+			.gateway       = gateway,
 			.table_coerced = nm_platform_route_table_coerce (route_table),
-			.metric = route_metric,
+			.metric        = route_metric,
 		};
 
 		nm_ip4_config_add_route (ip4_config, &r, NULL);

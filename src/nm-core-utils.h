@@ -156,8 +156,13 @@ double nm_utils_exp10 (gint16 e);
  * nm_utils_ip6_route_metric_normalize:
  * @metric: the route metric
  *
- * For IPv6 route, kernel treats the value 0 as IP6_RT_PRIO_USER (1024).
- * Thus, when comparing metric (values), we want to treat zero as NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6.
+ * For IPv6 route, when adding a route via netlink, kernel treats the value 0 as IP6_RT_PRIO_USER (1024).
+ * So, user space cannot add routes with such a metric, and 0 gets "normalized"
+ * to NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6.
+ *
+ * Note that kernel itself can add IPv6 routes with metric zero. Also, you can delete
+ * them, but mostly because with `ip -6 route delete ... metric 0` the 0 acts as a wildcard
+ * and kills the first matching route.
  *
  * Returns: @metric, if @metric is not zero, otherwise 1024.
  */
@@ -174,9 +179,8 @@ nm_utils_ip_route_metric_normalize (int addr_family, guint32 metric)
 }
 
 static inline guint32
-nm_utils_ip_route_metric_penalize (int addr_family, guint32 metric, guint32 penalty)
+nm_utils_ip_route_metric_penalize (guint32 metric, guint32 penalty)
 {
-	metric = nm_utils_ip_route_metric_normalize (addr_family, metric);
 	if (metric < G_MAXUINT32 - penalty)
 		return metric + penalty;
 	return G_MAXUINT32;
