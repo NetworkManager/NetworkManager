@@ -147,24 +147,31 @@ static NMJsonVtInternal *
 _nm_json_vt_internal_load (void)
 {
 	NMJsonVtInternal *v;
-	void *handle = NULL;
-	int mode;
+	const char *soname;
+	void *handle;
 
 	v = g_new0 (NMJsonVtInternal, 1);
 
-#ifndef JANSSON_SONAME
-#define JANSSON_SONAME ""
+#if WITH_JANSSON && defined (JANSSON_SONAME)
+	G_STATIC_ASSERT_EXPR (NM_STRLEN (JANSSON_SONAME) > 0);
+	nm_assert (strlen (JANSSON_SONAME) > 0);
+	soname = JANSSON_SONAME;
+#elif !WITH_JANSSON && !defined (JANSSON_SONAME)
+	soname = NULL;
+#else
+#error "WITH_JANSON and JANSSON_SONAME are defined inconsistently."
 #endif
 
-	mode = RTLD_LAZY | RTLD_LOCAL | RTLD_NODELETE | RTLD_DEEPBIND;
-#if defined (ASAN_BUILD)
-	/* Address sanitizer is incompatible with RTLD_DEEPBIND. */
-	mode &= ~RTLD_DEEPBIND;
+	if (!soname)
+		return v;
+
+	handle = dlopen (soname,   RTLD_LAZY
+	                         | RTLD_LOCAL
+	                         | RTLD_NODELETE
+#if !defined (ASAN_BUILD)
+	                         | RTLD_DEEPBIND
 #endif
-
-	if (strlen (JANSSON_SONAME) > 0)
-		handle = dlopen (JANSSON_SONAME, mode);
-
+	                         | 0);
 	if (!handle)
 		return v;
 

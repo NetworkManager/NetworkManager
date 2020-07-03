@@ -971,6 +971,24 @@ test_dcb_bandwidth_sums (void)
 /*****************************************************************************/
 
 static void
+test_nm_json (void)
+{
+	g_assert (NM_IN_SET (WITH_JANSSON, 0, 1));
+
+#if WITH_JANSSON
+	g_assert (nm_json_vt ());
+#else
+	g_assert (!nm_json_vt ());
+#endif
+
+#if WITH_JANSSON != defined (JANSSON_SONAME)
+#error "WITH_JANSON and JANSSON_SONAME are defined inconsistently."
+#endif
+}
+
+/*****************************************************************************/
+
+static void
 _test_team_config_sync (const char *team_config,
                         int notify_peer_count,
                         int notify_peers_interval,
@@ -4087,6 +4105,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/libnm/settings/bridge/vlans", test_bridge_vlans);
 	g_test_add_func ("/libnm/settings/bridge/verify", test_bridge_verify);
 
+	g_test_add_func ("/libnm/test_nm_json", test_nm_json);
 	g_test_add_func ("/libnm/settings/team/sync_runner_from_config_roundrobin",
 	                 test_runner_roundrobin_sync_from_config);
 	g_test_add_func ("/libnm/settings/team/sync_runner_from_config_broadcast",
