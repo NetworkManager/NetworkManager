@@ -4571,7 +4571,6 @@ nm_platform_ip_route_normalize (int addr_family,
 		r6->table_coerced = nm_platform_route_table_coerce (nm_platform_route_table_uncoerce (r6->table_coerced, TRUE));
 		nm_utils_ip6_address_clear_host_address (&r6->network, &r6->network, r6->plen);
 		r6->rt_source = nmp_utils_ip_config_source_round_trip_rtprot (r6->rt_source),
-		r6->metric = nm_utils_ip6_route_metric_normalize (r6->metric);
 		nm_utils_ip6_address_clear_host_address (&r6->src, &r6->src, r6->src_plen);
 		break;
 	default:
@@ -7463,7 +7462,7 @@ nm_platform_ip6_route_hash_update (const NMPlatformIP6Route *obj, NMPlatformIPRo
 		                     nm_platform_route_table_uncoerce (obj->table_coerced, TRUE),
 		                     *nm_utils_ip6_address_clear_host_address (&a1, &obj->network, obj->plen),
 		                     obj->plen,
-		                     nm_utils_ip6_route_metric_normalize (obj->metric),
+		                     obj->metric,
 		                     *nm_utils_ip6_address_clear_host_address (&a2, &obj->src, obj->src_plen),
 		                     obj->src_plen);
 		break;
@@ -7473,7 +7472,7 @@ nm_platform_ip6_route_hash_update (const NMPlatformIP6Route *obj, NMPlatformIPRo
 		                     nm_platform_route_table_uncoerce (obj->table_coerced, TRUE),
 		                     *nm_utils_ip6_address_clear_host_address (&a1, &obj->network, obj->plen),
 		                     obj->plen,
-		                     nm_utils_ip6_route_metric_normalize (obj->metric),
+		                     obj->metric,
 		                     *nm_utils_ip6_address_clear_host_address (&a2, &obj->src, obj->src_plen),
 		                     obj->src_plen,
 		                     /* on top of WEAK_ID: */
@@ -7487,7 +7486,7 @@ nm_platform_ip6_route_hash_update (const NMPlatformIP6Route *obj, NMPlatformIPRo
 		                     obj->ifindex,
 		                     *nm_utils_ip6_address_clear_host_address (&a1, &obj->network, obj->plen),
 		                     obj->plen,
-		                     nm_utils_ip6_route_metric_normalize (obj->metric),
+		                     obj->metric,
 		                     obj->gateway,
 		                     obj->pref_src,
 		                     *nm_utils_ip6_address_clear_host_address (&a2, &obj->src, obj->src_plen),
@@ -7550,7 +7549,7 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 		               nm_platform_route_table_uncoerce (b->table_coerced, TRUE));
 		NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX (&a->network, &b->network, MIN (a->plen, b->plen));
 		NM_CMP_FIELD (a, b, plen);
-		NM_CMP_DIRECT (nm_utils_ip6_route_metric_normalize (a->metric), nm_utils_ip6_route_metric_normalize (b->metric));
+		NM_CMP_FIELD (a, b, metric);
 		NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX (&a->src, &b->src, MIN (a->src_plen, b->src_plen));
 		NM_CMP_FIELD (a, b, src_plen);
 		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
@@ -7573,10 +7572,7 @@ nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route
 		else
 			NM_CMP_FIELD_IN6ADDR (a, b, network);
 		NM_CMP_FIELD (a, b, plen);
-		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
-			NM_CMP_DIRECT (nm_utils_ip6_route_metric_normalize (a->metric), nm_utils_ip6_route_metric_normalize (b->metric));
-		else
-			NM_CMP_FIELD (a, b, metric);
+		NM_CMP_FIELD (a, b, metric);
 		NM_CMP_FIELD_IN6ADDR (a, b, gateway);
 		NM_CMP_FIELD_IN6ADDR (a, b, pref_src);
 		if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
@@ -8054,14 +8050,6 @@ nm_platform_netns_push (NMPlatform *self, NMPNetns **netns)
 
 /*****************************************************************************/
 
-static guint32
-_vtr_v4_metric_normalize (guint32 metric)
-{
-	return metric;
-}
-
-/*****************************************************************************/
-
 const _NMPlatformVTableRouteUnion nm_platform_vtable_route = {
 	.v4 = {
 		.is_ip4                         = TRUE,
@@ -8070,7 +8058,6 @@ const _NMPlatformVTableRouteUnion nm_platform_vtable_route = {
 		.sizeof_route                   = sizeof (NMPlatformIP4Route),
 		.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, NMPlatformIPRouteCmpType cmp_type)) nm_platform_ip4_route_cmp,
 		.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip4_route_to_string,
-		.metric_normalize               = _vtr_v4_metric_normalize,
 	},
 	.v6 = {
 		.is_ip4                         = FALSE,
@@ -8079,7 +8066,6 @@ const _NMPlatformVTableRouteUnion nm_platform_vtable_route = {
 		.sizeof_route                   = sizeof (NMPlatformIP6Route),
 		.route_cmp                      = (int (*) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, NMPlatformIPRouteCmpType cmp_type)) nm_platform_ip6_route_cmp,
 		.route_to_string                = (const char *(*) (const NMPlatformIPXRoute *route, char *buf, gsize len)) nm_platform_ip6_route_to_string,
-		.metric_normalize               = nm_utils_ip6_route_metric_normalize,
 	},
 };
 

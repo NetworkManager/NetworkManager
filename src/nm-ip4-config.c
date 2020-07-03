@@ -393,10 +393,6 @@ nm_ip_config_iter_ip4_route_init (NMDedupMultiIter *ipconf_iter, const NMIP4Conf
 const NMPObject *
 _nm_ip_config_best_default_route_find_better (const NMPObject *obj_cur, const NMPObject *obj_cmp)
 {
-	int addr_family;
-	int c;
-	guint metric_cur, metric_cmp;
-
 	nm_assert (   !obj_cur
 	           || NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_cur), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
 	nm_assert (   !obj_cmp
@@ -410,17 +406,20 @@ _nm_ip_config_best_default_route_find_better (const NMPObject *obj_cur, const NM
 	 * @obj_cmp is also a default route and returns the best of both. */
 	if (   obj_cmp
 	    && nm_ip_config_best_default_route_is (obj_cmp)) {
+		guint32 metric_cur, metric_cmp;
+
 		if (!obj_cur)
 			return obj_cmp;
 
-		addr_family = NMP_OBJECT_GET_CLASS (obj_cmp)->addr_family;
-		metric_cur = nm_utils_ip_route_metric_normalize (addr_family, NMP_OBJECT_CAST_IP_ROUTE (obj_cur)->metric);
-		metric_cmp = nm_utils_ip_route_metric_normalize (addr_family, NMP_OBJECT_CAST_IP_ROUTE (obj_cmp)->metric);
+		metric_cur = NMP_OBJECT_CAST_IP_ROUTE (obj_cur)->metric;
+		metric_cmp = NMP_OBJECT_CAST_IP_ROUTE (obj_cmp)->metric;
 
 		if (metric_cmp < metric_cur)
 			return obj_cmp;
 
 		if (metric_cmp == metric_cur) {
+			int c;
+
 			/* Routes have the same metric. We still want to deterministically
 			 * prefer one or the other. It's important to consistently choose one
 			 * or the other, so that the order doesn't matter how routes are added
@@ -1002,6 +1001,7 @@ nm_ip4_config_merge_setting (NMIP4Config *self,
 	for (i = 0; i < nroutes; i++) {
 		NMIPRoute *s_route = nm_setting_ip_config_get_route (setting, i);
 		NMPlatformIP4Route route;
+		gint64 m;
 
 		if (nm_ip_route_get_family (s_route) != AF_INET) {
 			nm_assert_not_reached ();
@@ -1015,10 +1015,11 @@ nm_ip4_config_merge_setting (NMIP4Config *self,
 		nm_assert (route.plen <= 32);
 
 		nm_ip_route_get_next_hop_binary (s_route, &route.gateway);
-		if (nm_ip_route_get_metric (s_route) == -1)
+		m = nm_ip_route_get_metric (s_route);
+		if (m < 0)
 			route.metric = route_metric;
 		else
-			route.metric = nm_ip_route_get_metric (s_route);
+			route.metric = m;
 		route.rt_source = NM_IP_CONFIG_SOURCE_USER;
 
 		route.network = nm_utils_ip4_address_clear_host_address (route.network, route.plen);
@@ -1141,8 +1142,10 @@ nm_ip4_config_create_setting (const NMIP4Config *self)
 			continue;
 
 		s_route = nm_ip_route_new_binary (AF_INET,
-		                                  &route->network, route->plen,
-		                                  &route->gateway, route->metric,
+		                                  &route->network,
+		                                  route->plen,
+		                                  &route->gateway,
+		                                  route->metric,
 		                                  NULL);
 		nm_setting_ip_config_add_route (s_ip4, s_route);
 		nm_ip_route_unref (s_route);
@@ -1227,7 +1230,7 @@ nm_ip4_config_merge (NMIP4Config *dst,
 				if (default_route_metric_penalty) {
 					NMPlatformIP4Route r = *r_src;
 
-					r.metric = nm_utils_ip_route_metric_penalize (AF_INET, r.metric, default_route_metric_penalty);
+					r.metric = nm_utils_ip_route_metric_penalize (r.metric, default_route_metric_penalty);
 					_add_route (dst, NULL, &r, NULL);
 					continue;
 				}
@@ -1459,7 +1462,7 @@ nm_ip4_config_subtract (NMIP4Config *dst,
 			 * the routes. */
 			o_lookup = nmp_object_stackinit_obj (&o_lookup_copy, o_src);
 			rr = NMP_OBJECT_CAST_IP4_ROUTE (&o_lookup_copy);
-			rr->metric = nm_utils_ip_route_metric_penalize (AF_INET, rr->metric, default_route_metric_penalty);
+			rr->metric = nm_utils_ip_route_metric_penalize (rr->metric, default_route_metric_penalty);
 		} else
 			o_lookup = o_src;
 
@@ -1610,7 +1613,7 @@ _nm_ip4_config_intersect_helper (NMIP4Config *dst,
 			 * the routes. */
 			o_lookup = nmp_object_stackinit_obj (&o_lookup_copy, o_dst);
 			rr = NMP_OBJECT_CAST_IP4_ROUTE (&o_lookup_copy);
-			rr->metric = nm_utils_ip_route_metric_penalize (AF_INET, rr->metric, default_route_metric_penalty);
+			rr->metric = nm_utils_ip_route_metric_penalize (rr->metric, default_route_metric_penalty);
 		} else
 			o_lookup = o_dst;
 

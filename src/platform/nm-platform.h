@@ -382,7 +382,10 @@ typedef union {
 #define NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4 0
 
 /* Default value for adding an IPv6 route. This is also what iproute2 does.
- * Adding an IPv6 route with metric 0, kernel translates to IP6_RT_PRIO_USER (1024). */
+ * Adding an IPv6 route with metric 0, kernel translates to IP6_RT_PRIO_USER (1024).
+ *
+ * Note that kernel doesn't allow adding IPv6 routes with metric zero via netlink.
+ * It however can itself add routes with metric zero. */
 #define NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6 1024
 
 /* For IPv4, kernel adds a device route (subnet routes) with metric 0 when user
@@ -720,7 +723,6 @@ typedef struct {
 	gsize sizeof_route;
 	int (*route_cmp) (const NMPlatformIPXRoute *a, const NMPlatformIPXRoute *b, NMPlatformIPRouteCmpType cmp_type);
 	const char *(*route_to_string) (const NMPlatformIPXRoute *route, char *buf, gsize len);
-	guint32 (*metric_normalize) (guint32 metric);
 } NMPlatformVTableRoute;
 
 typedef union {

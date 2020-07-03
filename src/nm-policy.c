@@ -442,14 +442,12 @@ get_best_active_connection (NMPolicy *self,
 			 *
 			 * In this case, is it really the best device? Why do we even need the best
 			 * device?? */
-			metric = nm_utils_ip_route_metric_normalize (addr_family,
-			                                             NMP_OBJECT_CAST_IP_ROUTE (r)->metric);
+			metric = NMP_OBJECT_CAST_IP_ROUTE (r)->metric;
 			is_fully_activated = TRUE;
 		} else if (   !fully_activated
 		           && (connection = nm_device_get_applied_connection (device))
 		           && nm_utils_connection_has_default_route (connection, addr_family, NULL)) {
-			metric = nm_utils_ip_route_metric_normalize (addr_family,
-			                                             nm_device_get_route_metric (device, addr_family));
+			metric = nm_device_get_route_metric (device, addr_family);
 			is_fully_activated = FALSE;
 		} else
 			continue;

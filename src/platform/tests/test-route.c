@@ -319,7 +319,7 @@ test_ip6_route (void)
 	guint8 plen = 64;
 	struct in6_addr gateway, pref_src;
 	/* Choose a high metric so that we hopefully don't conflict. */
-	int metric = 22987;
+	const int metric = 22987;
 	int mss = 1000;
 
 	inet_pton (AF_INET6, "2001:db8:a:b:0:0:0:0", &network);
@@ -365,7 +365,7 @@ test_ip6_route (void)
 	rts[0].ifindex = ifindex;
 	rts[0].gateway = in6addr_any;
 	rts[0].pref_src = in6addr_any;
-	rts[0].metric = nm_utils_ip6_route_metric_normalize (metric);
+	rts[0].metric = metric;
 	rts[0].mss = mss;
 	rts[1].rt_source = nmp_utils_ip_config_source_round_trip_rtprot (NM_IP_CONFIG_SOURCE_USER);
 	rts[1].network = network;
@@ -373,7 +373,7 @@ test_ip6_route (void)
 	rts[1].ifindex = ifindex;
 	rts[1].gateway = gateway;
 	rts[1].pref_src = pref_src;
-	rts[1].metric = nm_utils_ip6_route_metric_normalize (metric);
+	rts[1].metric = metric;
 	rts[1].mss = mss;
 	rts[2].rt_source = nmp_utils_ip_config_source_round_trip_rtprot (NM_IP_CONFIG_SOURCE_USER);
 	rts[2].network = in6addr_any;
@@ -381,7 +381,7 @@ test_ip6_route (void)
 	rts[2].ifindex = ifindex;
 	rts[2].gateway = gateway;
 	rts[2].pref_src = in6addr_any;
-	rts[2].metric = nm_utils_ip6_route_metric_normalize (metric);
+	rts[2].metric = metric;
 	rts[2].mss = mss;
 	g_assert_cmpint (routes->len, ==, 3);
 	nmtst_platform_ip6_routes_equal_aptr ((const NMPObject *const*) routes->pdata, rts, routes->len, TRUE);
@@ -586,7 +586,13 @@ test_ip6_route_get (void)
 
 	NMTST_WAIT_ASSERT (100, {
 		nmtstp_wait_for_signal (NM_PLATFORM_GET, 10);
-		if (nmtstp_ip6_route_get (NM_PLATFORM_GET, ifindex, nmtst_inet6_from_string ("fd01:abcd::"), 64, 0, NULL, 0))
+		if (nmtstp_ip6_route_get (NM_PLATFORM_GET,
+		                          ifindex,
+		                          nmtst_inet6_from_string ("fd01:abcd::"),
+		                          64,
+		                          NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6,
+		                          NULL,
+		                          0))
 			break;
 	});
 
