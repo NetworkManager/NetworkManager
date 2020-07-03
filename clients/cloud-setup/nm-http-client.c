@@ -383,7 +383,7 @@ nm_http_client_get_finish (NMHttpClient *self,
 
 	get_result = g_task_propagate_pointer (G_TASK (result), error);
 
-	nm_assert ((!!get_result) == (!error));
+	nm_assert (!error || (!!get_result) == (!*error));
 
 	if (!get_result) {
 		NM_SET_OUT (out_response_code, -1);
