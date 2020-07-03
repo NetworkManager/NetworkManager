@@ -130,22 +130,27 @@ main (int argc, char *argv[])
 	g_hash_table_foreach (connections, output_conn, connections_dir);
 	g_hash_table_destroy (connections);
 
-	if (g_mkdir_with_parents (initrd_dir, 0755) != 0) {
-		errsv = errno;
-		_LOGW (LOGD_CORE, "%s: %s", initrd_dir, nm_strerror_native (errsv));
-		return 1;
-	}
-
-	if (hostname) {
-		gs_free char *hostname_file = NULL;
-		gs_free char *data = NULL;
-
-		hostname_file = g_strdup_printf ("%s/hostname", initrd_dir);
-		data = g_strdup_printf ("%s\n", hostname);
-
-		if (!g_file_set_contents (hostname_file, data, strlen (data), &error)) {
-			_LOGW (LOGD_CORE, "%s: %s", hostname_file, error->message);
+	if (dump_to_stdout) {
+		if (hostname)
+			g_print ("\n*** Hostname '%s' ***\n", hostname);
+	} else {
+		if (g_mkdir_with_parents (initrd_dir, 0755) != 0) {
+			errsv = errno;
+			_LOGW (LOGD_CORE, "%s: %s", initrd_dir, nm_strerror_native (errsv));
 			return 1;
+		}
+
+		if (hostname) {
+			gs_free char *hostname_file = NULL;
+			gs_free char *data = NULL;
+
+			hostname_file = g_strdup_printf ("%s/hostname", initrd_dir);
+			data = g_strdup_printf ("%s\n", hostname);
+
+			if (!g_file_set_contents (hostname_file, data, strlen (data), &error)) {
+				_LOGW (LOGD_CORE, "%s: %s", hostname_file, error->message);
+				return 1;
+			}
 		}
 	}
 
