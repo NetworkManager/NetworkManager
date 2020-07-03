@@ -78,8 +78,8 @@ match_gateway (const NMNDiscData *rdata, guint idx, const char *addr, guint32 ts
 		nmtst_assert_ip6_address (&_a->address, (addr)); \
 		g_assert_cmpint (_a->timestamp, >=, _ts); \
 		g_assert_cmpint (_a->timestamp, <=, _ts + 1); \
-		g_assert_cmpint (_a->lifetime, ==, (lt)); \
-		g_assert_cmpint (_a->preferred, ==, (pref)); \
+		g_assert_cmpint (_a->timestamp + _a->lifetime, ==, _ts + (lt)); \
+		g_assert_cmpint (_a->timestamp + _a->preferred, ==, _ts + (pref)); \
 	} G_STMT_END
 
 #define match_route(rdata, idx, nw, pl, gw, ts, lt, pref) \
@@ -387,7 +387,7 @@ test_preference_changed_cb (NMNDisc *ndisc, const NMNDiscData *rdata, guint chan
 		match_gateway (rdata, 0, "fe80::1", data->timestamp1 + 2, 10, NM_ICMPV6_ROUTER_PREF_HIGH);
 		match_gateway (rdata, 1, "fe80::2", data->timestamp1 + 1, 10, NM_ICMPV6_ROUTER_PREF_MEDIUM);
 		g_assert_cmpint (rdata->addresses_n, ==, 2);
-		match_address (rdata, 0, "2001:db8:a:a::1", data->timestamp1 + 2, 9, 9);
+		match_address (rdata, 0, "2001:db8:a:a::1", data->timestamp1 + 3, 9, 9);
 		match_address (rdata, 1, "2001:db8:a:b::1", data->timestamp1 + 1, 10, 10);
 		g_assert_cmpint (rdata->routes_n, ==, 2);
 		match_route (rdata, 0, "2001:db8:a:a::", 64, "fe80::1", data->timestamp1 + 2, 10, 15);
