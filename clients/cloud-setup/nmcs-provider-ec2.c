@@ -90,13 +90,12 @@ _detect_get_meta_data_done_cb (GObject *source,
 	gs_unref_object GTask *task = user_data;
 	gs_free_error GError *get_error = NULL;
 	gs_free_error GError *error = NULL;
-	gboolean success;
 
-	success = nm_http_client_poll_get_finish (NM_HTTP_CLIENT (source),
-	                                          result,
-	                                          NULL,
-	                                          NULL,
-	                                          &get_error);
+	nm_http_client_poll_get_finish (NM_HTTP_CLIENT (source),
+	                                result,
+	                                NULL,
+	                                NULL,
+	                                &get_error);
 
 	if (nm_utils_error_is_cancelled (get_error)) {
 		g_task_return_error (task, g_steal_pointer (&get_error));
@@ -108,14 +107,6 @@ _detect_get_meta_data_done_cb (GObject *source,
 		                    NM_UTILS_ERROR_UNKNOWN,
 		                    "failure to get EC2 metadata: %s",
 		                    get_error->message);
-		g_task_return_error (task, g_steal_pointer (&error));
-		return;
-	}
-
-	if (!success) {
-		nm_utils_error_set (&error,
-		                    NM_UTILS_ERROR_UNKNOWN,
-		                    "failure to detect EC2 metadata");
 		g_task_return_error (task, g_steal_pointer (&error));
 		return;
 	}
@@ -191,30 +182,27 @@ _get_config_fetch_done_cb (NMHttpClient *http_client,
                            gboolean is_local_ipv4)
 {
 	GetConfigIfaceData *iface_data;
-	NMCSProviderGetConfigTaskData *get_config_data;
 	const char *hwaddr = NULL;
 	gs_unref_bytes GBytes *response_data = NULL;
 	gs_free_error GError *error = NULL;
-	gboolean success;
-	NMCSProviderGetConfigIfaceData *config_iface_data;
 
 	nm_utils_user_data_unpack (user_data, &iface_data, &hwaddr);
 
-	success = nm_http_client_poll_get_finish (http_client,
-	                                          result,
-	                                          NULL,
-	                                          &response_data,
-	                                          &error);
+	nm_http_client_poll_get_finish (http_client,
+	                                result,
+	                                NULL,
+	                                &response_data,
+	                                &error);
+
 	if (nm_utils_error_is_cancelled (error))
 		return;
 
-	get_config_data = iface_data->get_config_data;
-
-	config_iface_data = g_hash_table_lookup (get_config_data->result_dict, hwaddr);
-
-	if (success) {
+	if (!error) {
+		NMCSProviderGetConfigIfaceData *config_iface_data;
 		in_addr_t tmp_addr;
 		int tmp_prefix;
+
+		config_iface_data = g_hash_table_lookup (iface_data->get_config_data->result_dict, hwaddr);
 
 		if (is_local_ipv4) {
 			gs_free const char **s_addrs = NULL;
@@ -436,7 +424,9 @@ _get_config_metadata_ready_check (long response_code,
 	GetConfigMetadataData *metadata_data = check_user_data;
 	gs_unref_hashtable GHashTable *response_parsed = NULL;
 	const guint8 *r_data;
+	const char *cur_line;
 	gsize r_len;
+	gsize cur_line_len;
 	GHashTableIter h_iter;
 	gboolean has_all;
 	const char *c_hwaddr;
@@ -449,48 +439,33 @@ _get_config_metadata_ready_check (long response_code,
 	}
 
 	r_data = g_bytes_get_data (response_data, &r_len);
+	/* NMHttpClient guarantees that there is a trailing NUL after the data. */
+	nm_assert (r_data[r_len] == 0);
 
-	while (r_len > 0) {
-		const guint8 *p_eol;
-		const char *p_start;
-		gsize p_start_l;
-		gsize p_start_l_2;
-		char *hwaddr;
+	while (nm_utils_parse_next_line ((const char **) &r_data, &r_len, &cur_line, &cur_line_len)) {
 		GetConfigMetadataMac *mac_data;
+		char *hwaddr;
 
-		p_start = (const char *) r_data;
-
-		p_eol = memchr (r_data, '\n', r_len);
-		if (p_eol) {
-			p_start_l = (p_eol - r_data);
-			r_len -= p_start_l + 1;
-			r_data = &p_eol[1];
-		} else {
-			p_start_l = r_len;
-			r_data = &r_data[r_len];
-			r_len = 0;
-		}
-
-		if (p_start_l == 0)
+		if (cur_line_len == 0)
 			continue;
 
-		p_start_l_2 = p_start_l;
-		if (p_start[p_start_l_2 - 1] == '/') {
-			/* trim the trailing "/". */
-			p_start_l_2--;
-		}
+		/* Truncate the string. It's safe to do, because we own @response_data an it has an
+		 * extra NUL character after the buffer. */
+		((char *) cur_line)[cur_line_len] = '\0';
 
-		hwaddr = nmcs_utils_hwaddr_normalize (p_start, p_start_l_2);
+		hwaddr = nmcs_utils_hwaddr_normalize (cur_line,
+		                                        cur_line[cur_line_len - 1u] == '/'
+		                                      ? (gssize) (cur_line_len - 1u)
+		                                      : -1);
 		if (!hwaddr)
 			continue;
 
 		if (!response_parsed)
 			response_parsed = g_hash_table_new_full (nm_str_hash, g_str_equal, g_free, g_free);
 
-		mac_data = g_malloc (sizeof (GetConfigMetadataData) + 1 + p_start_l);
+		mac_data = g_malloc (sizeof (GetConfigMetadataMac) + 1u + cur_line_len);
 		mac_data->iface_idx = iface_idx_counter++;
-		memcpy (mac_data->path, p_start, p_start_l);
-		mac_data->path[p_start_l] = '\0';
+		memcpy (mac_data->path, cur_line, cur_line_len + 1u);
 
 		g_hash_table_insert (response_parsed, hwaddr, mac_data);
 	}

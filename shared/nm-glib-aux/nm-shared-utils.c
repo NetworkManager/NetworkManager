@@ -1080,39 +1080,53 @@ nm_utils_parse_next_line (const char **inout_ptr,
                           const char **out_line,
                           gsize *out_line_len)
 {
+	gboolean eol_is_carriage_return;
 	const char *line_start;
-	const char *line_end;
+	gsize line_len;
 
-	g_return_val_if_fail (inout_ptr, FALSE);
-	g_return_val_if_fail (inout_len, FALSE);
-	g_return_val_if_fail (out_line, FALSE);
+	nm_assert (inout_ptr);
+	nm_assert (inout_len);
+	nm_assert (*inout_len == 0 || *inout_ptr);
+	nm_assert (out_line);
+	nm_assert (out_line_len);
 
-	if (*inout_len <= 0)
-		goto error;
+	if (G_UNLIKELY (*inout_len == 0))
+		return FALSE;
 
 	line_start = *inout_ptr;
-	line_end = memchr (line_start, '\n', *inout_len);
-	if (!line_end)
-		line_end = memchr (line_start, '\0', *inout_len);
-	if (!line_end) {
-		line_end = line_start + *inout_len;
-		NM_SET_OUT (inout_len, 0);
-	} else
-		NM_SET_OUT (inout_len, *inout_len - (line_end - line_start) - 1);
 
-	NM_SET_OUT (out_line, line_start);
-	NM_SET_OUT (out_line_len, (gsize) (line_end - line_start));
+	eol_is_carriage_return = FALSE;
+	for (line_len = 0; ; line_len++) {
+		if (line_len >= *inout_len) {
+			/* if we consumed the entire line, we place the pointer at
+			 * one character after the end. */
+			*inout_ptr = &line_start[line_len];
+			*inout_len = 0;
+			goto done;
+		}
+		switch (line_start[line_len]) {
+		case '\r':
+			eol_is_carriage_return = TRUE;
+			/* fall-through*/
+		case '\0':
+		case '\n':
+			*inout_ptr = &line_start[line_len + 1];
+			*inout_len = *inout_len - line_len - 1u;
+			if (   eol_is_carriage_return
+			    && *inout_len > 0
+			    && (*inout_ptr)[0] == '\n') {
+				/* also consume "\r\n" as one. */
+				(*inout_len)--;
+				(*inout_ptr)++;
+			}
+			goto done;
+		}
+	}
 
-	if (*inout_len > 0)
-		NM_SET_OUT (inout_ptr, line_end + 1);
-	else
-		NM_SET_OUT (inout_ptr, NULL);
+done:
+	*out_line = line_start;
+	*out_line_len = line_len;
 	return TRUE;
-
-error:
-	NM_SET_OUT (out_line, NULL);
-	NM_SET_OUT (out_line_len, 0);
-	return FALSE;
 }
 
 /*****************************************************************************/

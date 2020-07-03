@@ -429,6 +429,23 @@ nm_str_buf_finalize (NMStrBuf *strbuf,
 	return g_steal_pointer (&strbuf->_priv_str);
 }
 
+static inline GBytes *
+nm_str_buf_finalize_to_gbytes (NMStrBuf *strbuf)
+{
+	char *s;
+	gsize l;
+
+	/* this always returns a non-NULL, newly allocated GBytes instance.
+	 * The data buffer always has an additional NUL character after
+	 * the data, and the data is allocated with malloc.
+	 *
+	 * That means, the caller who takes ownership of the GBytes can
+	 * safely modify the content of the buffer (including the additional
+	 * NUL sentinel). */
+	s = nm_str_buf_finalize (strbuf, &l);
+	return g_bytes_new_take (s ?: g_new0 (char, 1), l);
+}
+
 /**
  * nm_str_buf_destroy:
  * @strbuf: an initialized #NMStrBuf
