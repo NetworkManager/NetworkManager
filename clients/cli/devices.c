@@ -168,14 +168,14 @@ _metagen_device_detail_general_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 		return nm_device_get_product (d);
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_DRIVER:
 		s = nm_device_get_driver (d);
-		return s ?: nmc_meta_generic_get_str_i18n (N_("(unknown)"), get_type);
+		return s ?: nmc_meta_generic_get_unknown (get_type);
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_DRIVER_VERSION:
 		return nm_device_get_driver_version (d);
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_FIRMWARE_VERSION:
 		return nm_device_get_firmware_version (d);
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_HWADDR:
 		s = nm_device_get_hw_address (d);
-		return s ?: nmc_meta_generic_get_str_i18n (N_("(unknown)"), get_type);
+		return s ?: nmc_meta_generic_get_unknown (get_type);
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_MTU:
 		return (*out_to_free = g_strdup_printf ("%u", (guint) nm_device_get_mtu (d)));
 	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_GENERAL_STATE:
