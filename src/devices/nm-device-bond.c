@@ -248,13 +248,17 @@ set_bond_attr_or_default (NMDevice *device,
                           const char *opt)
 {
 	NMDeviceBond *self = NM_DEVICE_BOND (device);
-	const char *value = nm_setting_bond_get_option_or_default (s_bond, opt);
+	const char *value;
 
-	if (value) {
-		_set_bond_attr (device, opt, value);
-	} else {
-		_LOGD (LOGD_BOND, "bond option %s rejected due to incompatibility", opt);
+	value = nm_setting_bond_get_option_or_default (s_bond, opt);
+	if (!value) {
+		if (   _LOGT_ENABLED (LOGD_BOND)
+		    && nm_setting_bond_get_option_by_name (s_bond, opt))
+			_LOGT (LOGD_BOND, "bond option '%s' not set as it conflicts with other options", opt);
+		return;
 	}
+
+	_set_bond_attr (device, opt, value);
 }
 
 static gboolean
