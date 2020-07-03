@@ -6082,11 +6082,11 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 	char s_network[INET_ADDRSTRLEN], s_gateway[INET_ADDRSTRLEN];
 	char s_pref_src[INET_ADDRSTRLEN];
 	char str_dev[TO_STRING_DEV_BUF_SIZE];
-	char str_type[30];
 	char str_table[30];
 	char str_scope[30], s_source[50];
 	char str_tos[32], str_window[32], str_cwnd[32], str_initcwnd[32], str_initrwnd[32], str_mtu[32];
 	char str_rtm_flags[_RTM_FLAGS_TO_STRING_MAXLEN];
+	char str_type[30];
 
 	if (!nm_utils_to_string_buffer_init_null (route, &buf, &len))
 		return buf;
@@ -6097,7 +6097,7 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 	_to_string_dev (NULL, route->ifindex, str_dev, sizeof (str_dev));
 
 	g_snprintf (buf, len,
-	            "%s" /* type */
+	            "type %s " /* type */
 	            "%s" /* table */
 	            "%s/%d"
 	            " via %s"
@@ -6115,7 +6115,7 @@ nm_platform_ip4_route_to_string (const NMPlatformIP4Route *route, char *buf, gsi
 	            "%s" /* initrwnd */
 	            "%s" /* mtu */
 	            "",
-	            route->type_coerced ? nm_sprintf_buf (str_type, "type %s ", nm_utils_route_type2str (nm_platform_route_type_uncoerce (route->type_coerced), NULL, 0)) : "",
+	            nm_utils_route_type2str (nm_platform_route_type_uncoerce (route->type_coerced), str_type, sizeof (str_type)),
 	            route->table_coerced ? nm_sprintf_buf (str_table, "table %u ", nm_platform_route_table_uncoerce (route->table_coerced, FALSE)) : "",
 	            s_network,
 	            route->plen,
@@ -6185,7 +6185,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	_to_string_dev (NULL, route->ifindex, str_dev, sizeof (str_dev));
 
 	g_snprintf (buf, len,
-	            "%s" /* type */
+	            "type %s " /* type */
 	            "%s" /* table */
 	            "%s/%d"
 	            " via %s"
@@ -6203,7 +6203,7 @@ nm_platform_ip6_route_to_string (const NMPlatformIP6Route *route, char *buf, gsi
 	            "%s" /* mtu */
 	            "%s" /* pref */
 	            "",
-	            route->type_coerced ? nm_sprintf_buf (str_type, "type %s ", nm_utils_route_type2str (nm_platform_route_type_uncoerce (route->type_coerced), NULL, 0)) : "",
+	            nm_utils_route_type2str (nm_platform_route_type_uncoerce (route->type_coerced), str_type, sizeof (str_type)),
 	            route->table_coerced ? nm_sprintf_buf (str_table, "table %u ", nm_platform_route_table_uncoerce (route->table_coerced, FALSE)) : "",
 	            s_network,
 	            route->plen,
