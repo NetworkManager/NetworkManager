@@ -289,6 +289,24 @@ nmc_meta_generic_get_str_i18n (const char *s, NMMetaAccessorGetType get_type)
 }
 
 static inline const char *
+nmc_meta_generic_get_str_i18n_null (const char *s, NMMetaAccessorGetType get_type)
+{
+	if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE) {
+		/* in parsable mode, return NULL. That is useful if @s is a pretty string
+		 * to describe a missing value (like "(unknown)"). We don't want to print
+		 * that for parsable mode. */
+		return NULL;
+	}
+	return nmc_meta_generic_get_str_i18n (s, get_type);
+}
+
+static inline const char *
+nmc_meta_generic_get_unknown (NMMetaAccessorGetType get_type)
+{
+	return nmc_meta_generic_get_str_i18n_null (N_("(unknown)"), get_type);
+}
+
+static inline const char *
 nmc_meta_generic_get_bool (gboolean val, NMMetaAccessorGetType get_type)
 {
 	return nmc_meta_generic_get_str_i18n (val ? N_("yes") : N_("no"), get_type);
