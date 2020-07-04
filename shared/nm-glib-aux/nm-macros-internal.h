@@ -1038,31 +1038,11 @@ nm_str_realloc (char *str)
 
 /*****************************************************************************/
 
-/* glib/C provides the following kind of assertions:
- *   - assert() -- disable with NDEBUG
- *   - g_return_if_fail() -- disable with G_DISABLE_CHECKS
- *   - g_assert() -- disable with G_DISABLE_ASSERT
- * but they are all enabled by default and usually even production builds have
- * these kind of assertions enabled. It also means, that disabling assertions
- * is an untested configuration, and might have bugs.
- *
- * Add our own assertion macro nm_assert(), which is disabled by default and must
- * be explicitly enabled. They are useful for more expensive checks or checks that
- * depend less on runtime conditions (that is, are generally expected to be true). */
-
-#ifndef NM_MORE_ASSERTS
-#define NM_MORE_ASSERTS 0
-#endif
-
-#if NM_MORE_ASSERTS
-#define nm_assert(cond) G_STMT_START { g_assert (cond); } G_STMT_END
-#define nm_assert_se(cond) G_STMT_START { if (G_LIKELY (cond)) { ; } else { g_assert (FALSE && (cond)); } } G_STMT_END
-#define nm_assert_not_reached() G_STMT_START { g_assert_not_reached (); } G_STMT_END
-#else
-#define nm_assert(cond) G_STMT_START { if (FALSE) { if (cond) { } } } G_STMT_END
-#define nm_assert_se(cond) G_STMT_START { if (G_LIKELY (cond)) { ; } } G_STMT_END
-#define nm_assert_not_reached() G_STMT_START { ; } G_STMT_END
-#endif
+/* redefine assertions to use g_assert*() */
+#undef _nm_assert_call
+#undef _nm_assert_call_not_reached
+#define _nm_assert_call(cond)         g_assert(cond)
+#define _nm_assert_call_not_reached() g_assert_not_reached()
 
 /* Usage:
  *
