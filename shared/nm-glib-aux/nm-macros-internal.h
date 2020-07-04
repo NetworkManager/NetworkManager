@@ -16,53 +16,6 @@
 
 /*****************************************************************************/
 
-#define _nm_packed           __attribute__ ((__packed__))
-#define _nm_unused           __attribute__ ((__unused__))
-#define _nm_used             __attribute__ ((__used__))
-#define _nm_pure             __attribute__ ((__pure__))
-#define _nm_const            __attribute__ ((__const__))
-#define _nm_printf(a,b)      __attribute__ ((__format__ (__printf__, a, b)))
-#define _nm_align(s)         __attribute__ ((__aligned__ (s)))
-#define _nm_section(s)       __attribute__ ((__section__ (s)))
-#define _nm_alignof(type)    __alignof (type)
-#define _nm_alignas(type)    _nm_align (_nm_alignof (type))
-#define nm_auto(fcn)         __attribute__ ((__cleanup__(fcn)))
-
-
-/* This is required to make LTO working.
- *
- * See https://gitlab.freedesktop.org/NetworkManager/NetworkManager/merge_requests/76#note_112694
- *     https://gcc.gnu.org/bugzilla/show_bug.cgi?id=48200#c28
- */
-#ifndef __clang__
-#define _nm_externally_visible __attribute__ ((__externally_visible__))
-#else
-#define _nm_externally_visible
-#endif
-
-
-#if __GNUC__ >= 7
-#define _nm_fallthrough      __attribute__ ((__fallthrough__))
-#else
-#define _nm_fallthrough
-#endif
-
-/*****************************************************************************/
-
-#ifdef thread_local
-#define _nm_thread_local thread_local
-/*
- * Don't break on glibc < 2.16 that doesn't define __STDC_NO_THREADS__
- * see http://gcc.gnu.org/bugzilla/show_bug.cgi?id=53769
- */
-#elif __STDC_VERSION__ >= 201112L && !(defined(__STDC_NO_THREADS__) || (defined(__GNU_LIBRARY__) && __GLIBC__ == 2 && __GLIBC_MINOR__ < 16))
-#define _nm_thread_local _Thread_local
-#else
-#define _nm_thread_local __thread
-#endif
-
-/*****************************************************************************/
-
 /* most of our code is single-threaded with a mainloop. Hence, we usually don't need
  * any thread-safety. Sometimes, we do need thread-safety (nm-logging), but we can
  * avoid locking if we are on the main-thread by:
