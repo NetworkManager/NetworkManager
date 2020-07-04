@@ -2228,7 +2228,7 @@ _string_append_tc_handle (GString *string, guint32 handle)
  *
  * This is used to either write out the parent handle to the tc qdisc string
  * or to pretty-format (use symbolic name for root) the key in keyfile.
- * The presence of prefix determnines which one is the case.
+ * The presence of prefix determines which one is the case.
  *
  * Private API due to general ugliness and overall uselessness for anything
  * sensible.
@@ -4080,7 +4080,7 @@ fail:
  * @out_length: the output length in case of success.
  *
  * Parses @asc and converts it to binary form in @buffer.
- * Bytes in @asc can be sepatared by colons (:), or hyphens (-), but not mixed.
+ * Bytes in @asc can be separated by colons (:), or hyphens (-), but not mixed.
  *
  * It is like nm_utils_hwaddr_aton(), but contrary to that it
  * can parse addresses of any length. That is, you don't need
@@ -4107,7 +4107,7 @@ _nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize buffer_length, gs
  * the size of the buffer in bytes.
  *
  * Parses @asc and converts it to binary form in @buffer.
- * Bytes in @asc can be sepatared by colons (:), or hyphens (-), but not mixed.
+ * Bytes in @asc can be separated by colons (:), or hyphens (-), but not mixed.
  *
  * Return value: @buffer, or %NULL if @asc couldn't be parsed
  *   or would be shorter or longer than @length.

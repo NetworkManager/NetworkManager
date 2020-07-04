@@ -1171,9 +1171,9 @@ _con_get_try_complete_early (Request *req)
  * Requests secrets for a connection.
  *
  * This function cannot fail. The callback will be invoked
- * asynchrnously, but it will always be invoked exactly once.
+ * asynchronously, but it will always be invoked exactly once.
  * Even for cancellation and disposing of @self. In those latter
- * cases, the callback is invoked synchrnously during the cancellation/
+ * cases, the callback is invoked synchronously during the cancellation/
  * disposal.
  *
  * Returns: a call-id to cancel the call.

@@ -808,7 +808,7 @@ nm_setting_connection_add_secondary (NMSettingConnection *setting,
  * @setting: the #NMSettingConnection
  * @idx: index number of the secondary connection UUID
  *
- * Removes the secondary coonnection UUID at index @idx.
+ * Removes the secondary connection UUID at index @idx.
  **/
 void
 nm_setting_connection_remove_secondary (NMSettingConnection *setting, guint32 idx)
@@ -832,7 +832,7 @@ nm_setting_connection_remove_secondary (NMSettingConnection *setting, guint32 id
  * @setting: the #NMSettingConnection
  * @sec_uuid: the secondary connection UUID to remove
  *
- * Removes the secondary coonnection UUID @sec_uuid.
+ * Removes the secondary connection UUID @sec_uuid.
  *
  * Returns: %TRUE if the secondary connection UUID was found and removed; %FALSE if it was not.
  **/

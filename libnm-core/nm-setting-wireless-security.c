@@ -665,7 +665,7 @@ nm_setting_wireless_security_get_wep_key (NMSettingWirelessSecurity *setting, gu
  * @setting: the #NMSettingWirelessSecurity
  * @idx: the index of the key (0..3 inclusive)
  * @key: the WEP key as a string, in either hexadecimal, ASCII, or passphrase
- * form as determiend by the value of the #NMSettingWirelessSecurity:wep-key-type
+ * form as determined by the value of the #NMSettingWirelessSecurity:wep-key-type
  * property.
  *
  * Sets a WEP key in the given index.

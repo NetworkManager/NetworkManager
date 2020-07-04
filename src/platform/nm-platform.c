@@ -2414,7 +2414,7 @@ nm_platform_link_tun_add (NMPlatform *self,
 	g_return_val_if_fail (props, -NME_BUG);
 	g_return_val_if_fail (NM_IN_SET (props->type, IFF_TUN, IFF_TAP), -NME_BUG);
 
-	/* creating a non-persistant device requires that the caller handles
+	/* creating a non-persistent device requires that the caller handles
 	 * the file descriptor. */
 	g_return_val_if_fail (props->persist || out_fd, -NME_BUG);
 

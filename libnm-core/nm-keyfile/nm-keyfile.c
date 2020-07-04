@@ -473,7 +473,7 @@ openconnect_fix_secret_flags (NMSetting *setting)
 	/* Huge hack.  There were some openconnect changes that needed to happen
 	 * pretty late, too late to get into distros.  Migration has already
 	 * happened for many people, and their secret flags are wrong.  But we
-	 * don't want to requrie re-migration, so we have to fix it up here. Ugh.
+	 * don't want to require re-migration, so we have to fix it up here. Ugh.
 	 */
 
 	if (!NM_IS_SETTING_VPN (setting))
@@ -4335,7 +4335,7 @@ nm_keyfile_utils_create_filename (const char *name,
 	}
 
 	/* nm_keyfile_utils_create_filename() must avoid anything that ignore_filename() would reject.
-	 * We can escape here more aggressivly then what we would read back. */
+	 * We can escape here more aggressively then what we would read back. */
 	if (p[0] == '.')
 		p[0] = ESCAPE_CHAR2;
 	if (p[str.len - 1] == '~')

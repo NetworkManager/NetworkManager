@@ -32,9 +32,9 @@ _LOG_DECLARE_SELF(NMDeviceWireGuard);
  *   prompt, as the secret is cached (good??). */
 
 /* TODO: unlike for other VPNs, we don't inject a direct route to the peers. That means,
- *   you might get a routing sceneraio where the peer (VPN server) is reachable via the VPN.
+ *   you might get a routing scenario where the peer (VPN server) is reachable via the VPN.
  *   How we handle adding routes to external gateway for other peers, has severe issues
- *   as well. We may use policy-routing like wg-quick does. See also disussions at
+ *   as well. We may use policy-routing like wg-quick does. See also discussions at
  *   https://www.wireguard.com/netns/#improving-the-classic-solutions */
 
 /* TODO: honor the TTL of DNS to determine when to retry resolving endpoints. */
@@ -62,7 +62,7 @@ G_STATIC_ASSERT (NM_WIREGUARD_SYMMETRIC_KEY_LEN == NMP_WIREGUARD_SYMMETRIC_KEY_L
 #define NEXT_TRY_AT_NSEC_PAST ((gint64) 1)
 
 /* like %NEXT_TRY_AT_NSEC_ASAP, but used for indicating to retry ASAP for a @retry_in_msec value.
- * That is a relative time duraction, contrary to @next_try_at_nsec which is an absolute
+ * That is a relative time duration, contrary to @next_try_at_nsec which is an absolute
  * timestamp. */
 #define RETRY_IN_MSEC_ASAP ((gint64) G_MAXINT64)
 
@@ -289,7 +289,7 @@ _auto_default_route_get_auto_priority (const char *uuid)
 	 * - use the connection's UUID as stable seed for the "random" number.
 	 * - have it smaller than RANGE_TOP (32766u - 1000u), where 32766u is the priority of the default
 	 *   rules
-	 * - we add 2 rules (PRIO_WIDTH). Hence only pick even priorites.
+	 * - we add 2 rules (PRIO_WIDTH). Hence only pick even priorities.
 	 * - pick one out of AUTO_RANDOM_RANGE. */
 
 	rnd_seed = c_siphash_hash (NM_HASH_SEED_16 (0x99, 0x22, 0x4d, 0x7c, 0x37, 0xda, 0x8e, 0x7b, 0x2f, 0x55, 0x16, 0x7b, 0x75, 0xda, 0x42, 0xdc),

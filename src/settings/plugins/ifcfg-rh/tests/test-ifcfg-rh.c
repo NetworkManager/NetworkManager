@@ -96,7 +96,7 @@ _assert_reread_same_FIXME (NMConnection *connection, NMConnection *reread)
 	/* FIXME: these assertion failures should not happen as we expect
 	 * that re-reading a connection after write yields the same result.
 	 *
-	 * Needs investation and fixing. */
+	 * Needs investigation and fixing. */
 	nmtst_assert_connection_verifies_without_normalization (reread);
 
 	connection_normalized = nmtst_connection_duplicate_and_normalize (connection);
@@ -9576,7 +9576,7 @@ do_svUnescape_combine_ansi_append (GString *str_val, GString *str_exp, const Une
 	if (honor_needs_ascii_separator && data->needs_ascii_separator) {
 		/* the string has an open escape sequence. We must ensure that when
 		 * combining it with another sequence, that they don't merge into
-		 * something diffent. for example "\xa" + "a" must not result in
+		 * something different. for example "\xa" + "a" must not result in
 		 * "\xaa". Instead, we add a space in between to get "\xa a". */
 		g_string_append (str_val, " ");
 		g_string_append (str_exp, " ");

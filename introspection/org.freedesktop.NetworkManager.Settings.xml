@@ -71,7 +71,7 @@
           "0x2" (in-memory),
           "0x20" (block-autoconnect).
           Unknown flags cause the call to fail.
-        @args: optional arguments dictionary, for extensibility. Currently, no
+        @args: optional arguments dictionary, for extentibility. Currently, no
           arguments are accepted. Specifying unknown keys causes the call
           to fail.
         @path: Object path of the new connection that was just added.
@@ -82,7 +82,7 @@
         Either the flags 0x1 (to-disk) or 0x2 (in-memory) must be specified.
         The effect is whether to behave like AddConnection or AddConnectionUnsaved.
         If 0x20 (block-autoconnect) is specified, autoconnect for the new profile
-        is blocked from the beginnin. Otherwise, the profile might automatically
+        is blocked from the beginning. Otherwise, the profile might automatically
         connect if a suitable device is around.
 
         AddConnection2 is a extensible alternative to AddConnection, and AddConnectionUnsaved.

@@ -227,7 +227,7 @@ _c_public_ uint64_t c_siphash_finalize(CSipHash *state) {
  *
  *         CSipHash state;
  *         c_siphash_init(&state, seed);
- *         c_siphash_apend(&state, bytes, n_bytes);
+ *         c_siphash_append(&state, bytes, n_bytes);
  *         return c_siphash_finalize(&state);
  *
  * Unlike the streaming API, this is a one-shot call suitable for any data that

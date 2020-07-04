@@ -730,7 +730,7 @@ add_wep_key (NMSupplicantConfig *self,
 			                               sizeof (buffer),
 			                               NULL)) {
 				g_set_error (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
-				             "cannot add wep-key %s to suplicant config because key is not hex",
+				             "cannot add wep-key %s to supplicant config because key is not hex",
 				             name);
 				return FALSE;
 			}
@@ -746,7 +746,7 @@ add_wep_key (NMSupplicantConfig *self,
 				return FALSE;
 		} else {
 			g_set_error (error, NM_SUPPLICANT_ERROR, NM_SUPPLICANT_ERROR_CONFIG,
-			             "Cannot add wep-key %s to suplicant config because key-length %u is invalid",
+			             "Cannot add wep-key %s to supplicant config because key-length %u is invalid",
 			             name, (guint) key_len);
 			return FALSE;
 		}

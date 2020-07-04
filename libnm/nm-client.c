@@ -2610,7 +2610,7 @@ _obj_handle_dbus_changes (NMClient *self,
 
 	_ASSERT_dbobj (dbobj, self);
 
-	/* In a first step we only remember all the changes that that a D-Bus message brings
+	/* In a first step we only remember all the changes that a D-Bus message brings
 	 * and queue the object to process them.
 	 *
 	 * Here (in step 2) we look at what changed on D-Bus and propagate those changes
@@ -4425,7 +4425,7 @@ nm_client_get_permission_result (NMClient *client, NMClientPermission permission
  *   means that no permissions result was yet received. All permissions
  *   are unknown. %NM_TERNARY_TRUE means that the permissions got received
  *   and are cached. %%NM_TERNARY_FALSE means that permissions are cached,
- *   but they are invalided as as "CheckPermissions" signal was received
+ *   but they are invalided as "CheckPermissions" signal was received
  *   in the meantime.
  *
  * Since: 1.24
@@ -8356,7 +8356,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 * NMClient:capabilities: (type GArray(guint32))
 	 *
 	 * The list of capabilities numbers as guint32 or %NULL if
-	 * there are no capabitilies. The numeric value correspond
+	 * there are no capabilities. The numeric value correspond
 	 * to %NMCapability enum.
 	 *
 	 * Since: 1.24

@@ -2363,7 +2363,7 @@ assoc_fail_on_idle_cb (gpointer user_data)
  *
  * The callback is invoked exactly once (always) and always asynchronously.
  * The pending association can be aborted via nm_supplicant_interface_disconnect()
- * or by destroying @self. In that case, the @callback is invoked synchornously with
+ * or by destroying @self. In that case, the @callback is invoked synchronously with
  * an error reason indicating cancellation/disposing (see nm_utils_error_is_cancelled()).
  */
 void

@@ -1089,9 +1089,9 @@ nm_g_object_ref (gpointer obj)
 static inline void
 nm_g_object_unref (gpointer obj)
 {
-	/* g_object_unref() doesn't accept NULL. Usully, we workaround that
+	/* g_object_unref() doesn't accept NULL. Usually, we workaround that
 	 * by using g_clear_object(), but sometimes that is not convenient
-	 * (for example as as destroy function for a hash table that can contain
+	 * (for example as destroy function for a hash table that can contain
 	 * NULL values). */
 	if (obj)
 		g_object_unref (obj);

@@ -1304,7 +1304,7 @@ ip4_start (NMDhcpClient *client,
 
 	/*
 	 * FIXME:
-	 * Select, or configure, a reasonable start delay, to protect poor servers beeing flooded.
+	 * Select, or configure, a reasonable start delay, to protect poor servers being flooded.
 	 */
 	n_dhcp4_client_probe_config_set_start_delay (config, 1);
 

@@ -85,9 +85,9 @@ nm_str_buf_maybe_expand (NMStrBuf *strbuf,
  * nm_str_buf_set_size:
  * @strbuf: the initialized #NMStrBuf
  * @new_len: the new length
- * @honor_do_bzero_mem: if %TRUE, the shrinked memory will be cleared, if
+ * @honor_do_bzero_mem: if %TRUE, the shrunk memory will be cleared, if
  *   do_bzero_mem is set. This should be usually set to %TRUE, unless
- *   you know that the shrinked memory does not contain data that requires to be
+ *   you know that the shrunk memory does not contain data that requires to be
  *   cleared. When growing the size, this value has no effect.
  * @reserve_exact: when growing the buffer, reserve the exact amount of bytes.
  *   If %FALSE, the buffer may allocate more memory than requested to grow

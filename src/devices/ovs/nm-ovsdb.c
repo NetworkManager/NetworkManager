@@ -1220,7 +1220,7 @@ ovsdb_got_echo (NMOvsdb *self, json_int_t id, json_t *data)
 /**
  * ovsdb_got_msg::
  *
- * Called when when a complete JSON object was seen and unmarshalled.
+ * Called when a complete JSON object was seen and unmarshalled.
  * Either finishes a method call or processes a method call.
  */
 static void

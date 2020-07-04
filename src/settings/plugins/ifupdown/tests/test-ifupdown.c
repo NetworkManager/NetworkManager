@@ -190,7 +190,7 @@ dump_blocks (if_parser *parser)
 		g_print("'%s' '%s'\n", n->type, n->name);
 
 		// each key-value pair within a block is indented & separated by a tab
-		// (single quotes used to show typ & name baoundaries)
+		// (single quotes used to show type & name boundaries)
 		c_list_for_each_entry (m, &n->data_lst_head, data_lst)
 			g_print("\t'%s'\t'%s'\n", m->key, m->data);
 

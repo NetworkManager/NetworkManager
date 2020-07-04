@@ -57,7 +57,7 @@ nm_sd_utils_unbase64char (char ch, gboolean accept_padding_equal)
  * @l: the length of @p. @p is not treated as NUL terminated string but
  *   merely as a buffer of ascii characters.
  * @secure: whether the temporary memory will be cleared to avoid leaving
- *   secrets in memory (see also nm_explict_bzero()).
+ *   secrets in memory (see also nm_explicit_bzero()).
  * @mem: (transfer full): the decoded buffer on success.
  * @len: the length of @mem on success.
  *

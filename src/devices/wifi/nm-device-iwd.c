@@ -1922,7 +1922,7 @@ schedule_periodic_scan (NMDeviceIwd *self, gboolean initial_scan)
 	 * (initial_scan && disconnected) override priv->scanning below
 	 * because of an IWD quirk where a device will often be in the
 	 * autoconnect state and scanning at the time of our initial_scan,
-	 * but our logic will the send it a Disconnect() causeing IWD to
+	 * but our logic will the send it a Disconnect() causing IWD to
 	 * exit autoconnect and interrupt the ongoing scan, meaning that
 	 * we still want a new scan ASAP.
 	 */

@@ -78,7 +78,7 @@ typedef enum {
  * @NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DEFAULT: Attempt whichever method AP supports
  * @NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DISABLED: WPS can not be used.
  * @NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_AUTO: Use WPS, any method
- * @NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PBC: use WPS push-buthon method
+ * @NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PBC: use WPS push-button method
  * @NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN: use PIN method
  *
  * Configure the use of WPS by a connection while it activates.

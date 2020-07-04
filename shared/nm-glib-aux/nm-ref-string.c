@@ -70,7 +70,7 @@ _ASSERT (const RefString *rstr0)
  * nm_ref_string_new_len:
  * @cstr: the string to intern. Must contain @len bytes.
  *   If @len is zero, @cstr may be %NULL. Note that it is
- *   accetable that the string contains a NUL character
+ *   acceptable that the string contains a NUL character
  *   within the first @len bytes. That is, the string is
  *   not treated as a NUL terminated string, but as binary.
  *   Also, contrary to strncpy(), this will read all the
@@ -83,7 +83,7 @@ _ASSERT (const RefString *rstr0)
  * (at position @len).
  *
  * Note that NMRefString are always interned/deduplicated. If such a string
- * already exists, the existing instance will be refered and returned.
+ * already exists, the existing instance will be referred and returned.
  *
  *
  * Since all NMRefString are shared and interned, you may use

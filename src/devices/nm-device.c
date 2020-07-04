@@ -2193,7 +2193,7 @@ _stats_refresh_rate_real (guint refresh_rate_ms)
 		return 0;
 
 	if (refresh_rate_ms < STATS_REFRESH_RATE_MS_MIN) {
-		/* you cannot set the refresh-rate arbitrarly small. E.g.
+		/* you cannot set the refresh-rate arbitrarily small. E.g.
 		 * setting to 1ms is just killing. Have a lowest number. */
 		return STATS_REFRESH_RATE_MS_MIN;
 	}
@@ -3239,7 +3239,7 @@ concheck_update_state (NMDevice *self,
 		/* If the connectivity check is disabled and we obtain a fake
 		 * result, make an optimistic guess. */
 		if (priv->state == NM_DEVICE_STATE_ACTIVATED) {
-			/* FIXME: the fake connectivity state depends on the availablility of
+			/* FIXME: the fake connectivity state depends on the availability of
 			 * a default route. However, we have no mechanism that rechecks the
 			 * value if a device route appears/disappears after the device
 			 * was activated. */
@@ -3252,7 +3252,7 @@ concheck_update_state (NMDevice *self,
 	}
 
 	if (priv->concheck_x[IS_IPv4].state == state) {
-		/* we got a connectivty update, but the state didn't change. If we were probing,
+		/* we got a connectivity update, but the state didn't change. If we were probing,
 		 * we bump the probe frequency. */
 		if (allow_periodic_bump)
 			concheck_periodic_schedule_set (self, addr_family, CONCHECK_SCHEDULE_RETURNED_BUMP);
@@ -8881,7 +8881,7 @@ connection_requires_carrier (NMConnection *connection)
 	gboolean ip4_used = FALSE, ip6_used = FALSE;
 
 	/* We can progress to IP_CONFIG now, so that we're enslaved.
-	 * That may actually cause carrier to go up and thus continue acivation. */
+	 * That may actually cause carrier to go up and thus continue activation. */
 	s_con = nm_connection_get_setting_connection (connection);
 	if (nm_setting_connection_get_master (s_con))
 		return FALSE;

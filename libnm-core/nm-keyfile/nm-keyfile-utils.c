@@ -526,7 +526,7 @@ _keyfile_key_encode (const char *name,
 	 */
 
 	if (!name[0]) {
-		/* empty keys are are backslash encoded. Note that usually
+		/* empty keys are backslash encoded. Note that usually
 		 * \\00 is not a valid encode, the only exception is the empty
 		 * word. */
 		return "\\00";
@@ -699,7 +699,7 @@ nm_keyfile_key_decode (const char *key,
 		const char *key2;
 
 		key2 = _keyfile_key_encode (name, &to_free2);
-		/* key2, the result of decode+encode may not be idential
+		/* key2, the result of decode+encode may not be identical
 		 * to the original key. That is, decode() is a surjective
 		 * function mapping different keys to the same name.
 		 * However, decode() behaves injective for input that

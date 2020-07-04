@@ -58,7 +58,7 @@ NM_UTILS_LOOKUP_STR_DEFINE (_geterror,
  * our own defines. For numbers that don't fall into this range, the numbers
  * are identical to the common error numbers.
  *
- * Idential to strerror(), g_strerror(), nm_strerror_native() for error numbers
+ * Identical to strerror(), g_strerror(), nm_strerror_native() for error numbers
  * that are not in the reserved range of NetworkManager specific errors.
  *
  * Returns: (transfer none): the string representation of the error number.
@@ -97,7 +97,7 @@ nm_strerror (int nmerr)
  * string may be longer than @buf_size.
  *
  * Returns: (transfer none): a NUL terminated error message. This is either a static
- *   string (that is never freed), or the provided @buf argumnt.
+ *   string (that is never freed), or the provided @buf argument.
  */
 const char *
 nm_strerror_native_r (int errsv, char *buf, gsize buf_size)

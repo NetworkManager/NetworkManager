@@ -203,7 +203,7 @@ static void test_misc(int non_constant_expr) {
         /*
          * Div Round Up: Normal division, but round up to next integer, instead
          * of clipping. Also verify that it does not suffer from the integer
-         * overflow in the prevalant, alternative implementation:
+         * overflow in the prevalent, alternative implementation:
          *      [(x + y - 1) / y].
          */
         {

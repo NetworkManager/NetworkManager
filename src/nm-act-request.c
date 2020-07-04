@@ -135,7 +135,7 @@ get_secrets_cb (NMSettingsConnection *connection,
  * @callback:
  * @callback_data:
  *
- * Asnychronously starts the request for secrets. This function cannot
+ * Asynchronously starts the request for secrets. This function cannot
  * fail.
  *
  * The return call-id can be used to cancel the request. You are

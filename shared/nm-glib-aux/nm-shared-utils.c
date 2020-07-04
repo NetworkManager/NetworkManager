@@ -377,7 +377,7 @@ nm_utils_gbytes_equal_mem (GBytes *bytes,
 	gsize l;
 
 	if (!bytes) {
-		/* as a special case, let %NULL GBytes compare idential
+		/* as a special case, let %NULL GBytes compare identical
 		 * to an empty array. */
 		return (mem_len == 0);
 	}
@@ -1479,7 +1479,7 @@ nm_utils_dbus_path_cmp (const char *dbus_path_a, const char *dbus_path_b)
 	if (n_a == -1 && n_b == -1)
 		goto comp_l;
 
-	/* both components must be convertiable to a number. If they are not,
+	/* both components must be convertible to a number. If they are not,
 	 * (and only one of them is), then we must always strictly sort numeric parts
 	 * after non-numeric components. If we wouldn't, we wouldn't have
 	 * a total order.
@@ -3744,7 +3744,7 @@ nm_utils_g_slist_find_str (const GSList *list,
  * @b: the right #GSList of strings to compare.
  *
  * Compares two string lists. The data elements are compared with
- * strcmp(), alloing %NULL elements.
+ * strcmp(), allowing %NULL elements.
  *
  * Returns: 0, 1, or -1, depending on how the lists compare.
  */
@@ -4011,7 +4011,7 @@ nm_utils_memeqzero (gconstpointer data, gsize length)
  * Returns: the binary value converted to a hex string. If @out is given,
  *   this always returns @out. If @out is %NULL, a newly allocated string
  *   is returned. This never returns %NULL, for buffers of length zero
- *   an empty string is returend.
+ *   an empty string is returned.
  */
 char *
 nm_utils_bin2hexstr_full (gconstpointer addr,

@@ -578,11 +578,11 @@ static int n_acd_handle_timeout(NAcd *acd) {
         int r;
 
         /*
-         * Read the current time once, and handle all timouts that triggered
+         * Read the current time once, and handle all timeouts that triggered
          * before the current time. Rereading the current time in each loop
          * might risk creating a live-lock, and the fact that we read the
          * time after reading the timer guarantees that the timeout which
-         * woke us up is hanlded.
+         * woke us up is handled.
          *
          * When there are no more timeouts to handle at the given time, we
          * rearm the timer to potentially wake us up again in the future.

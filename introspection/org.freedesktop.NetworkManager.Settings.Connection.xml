@@ -62,7 +62,7 @@
 
     <!--
         GetSecrets:
-        @setting_name: Name of the setting to return secrets for. If empty, all all secrets will be returned.
+        @setting_name: Name of the setting to return secrets for. If empty, all secrets will be returned.
         @secrets: Nested settings maps containing secrets.
 
         Get the secrets belonging to this network configuration. Only secrets from
@@ -114,7 +114,7 @@
           "0x20" (block-autoconnect),
           "0x40" (no-reapply).
           Unknown flags cause the call to fail.
-        @args: optional arguments dictionary, for extensibility. Currently, no
+        @args: optional arguments dictionary, for extentibility. Currently, no
           arguments are accepted. Specifying unknown keys causes the call
           to fail.
         @result: output argument, currently no results are returned.

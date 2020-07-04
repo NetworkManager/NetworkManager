@@ -1010,7 +1010,7 @@ act_stage1_prepare (NMDevice *device, NMDeviceStateReason *out_failure_reason)
 	 * remote side to handle the disconnection.  Otherwise, the peer may
 	 * get confused and fail to negotiate the new connection. (rh #1023503)
 	 *
-	 * FIXME(shutdown): when exiting, we also need to wait before quiting,
+	 * FIXME(shutdown): when exiting, we also need to wait before quitting,
 	 * at least for additional NM_SHUTDOWN_TIMEOUT_MS seconds because
 	 * otherwise after restart the device won't work for the first seconds.
 	 */

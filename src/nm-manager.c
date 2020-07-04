@@ -700,7 +700,7 @@ initited:
 		/* on systems where a lot of devices are created and go away, the index contains
 		 * a lot of stale entries. We must from time to time clean them up.
 		 *
-		 * Do do this cleanup, whenever we have more enties then 2 times the number of links. */
+		 * Do do this cleanup, whenever we have more entries then 2 times the number of links. */
 		if (G_UNLIKELY (g_hash_table_size (priv->device_route_metrics) > NM_MAX (20, n_links * 2))) {
 			/* from time to time, we need to do some house-keeping and prune stale entries.
 			 * Otherwise, on a system where interfaces frequently come and go (docker), we
@@ -3300,7 +3300,7 @@ _register_device_factory (NMDeviceFactory *factory, gpointer user_data)
 /*****************************************************************************/
 
 void
-nm_manager_notify_device_availibility_maybe_changed (NMManager *self)
+nm_manager_notify_device_availability_maybe_changed (NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *device;

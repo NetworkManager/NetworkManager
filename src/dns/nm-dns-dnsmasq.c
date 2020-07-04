@@ -268,7 +268,7 @@ _gl_pid_spawn_register_for_termination (void)
 {
 	if (   gl_pid.pid > 0
 	    && !gl_pid.terminate_handle) {
-		/* Create a shtudown handle as a reminder that the currently running process must be terminated
+		/* Create a shutdown handle as a reminder that the currently running process must be terminated
 		 * first. This also happens to block shutdown... */
 		gl_pid.terminate_handle = nm_shutdown_wait_obj_register_handle_full (g_strdup_printf ("kill-dnsmasq-process-%"G_PID_FORMAT, gl_pid.pid), TRUE);
 	}
@@ -287,7 +287,7 @@ _gl_pid_spawn_register_for_termination (void)
  * for two purposes:
  *
  *  - signal that the dnsmasq process was spawned (or failed to be spawned).
- *  - signal that the dnsmasq process quit (if it was spawned sucessfully before).
+ *  - signal that the dnsmasq process quit (if it was spawned successfully before).
  *
  * Depending on the arguments, the callee can see what's the case.
  */
@@ -540,7 +540,7 @@ _gl_pid_spawn_next_step (void)
  * @dm_binary: the binary name for dnsmasq to spawn. We could
  *   detect it ad-hoc right when needing it. But that would be
  *   asynchronously, and if dnsmasq is not in $PATH, we want to
- *   fail right away (synchrounously). Hence, @dm_binary is
+ *   fail right away (synchronously). Hence, @dm_binary is
  *   an argument.
  * @cancellable: abort the operation. This will invoke the callback
  *   a last time. Also, if the dnsmasq process is currently running,

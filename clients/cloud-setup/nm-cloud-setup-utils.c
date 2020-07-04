@@ -371,7 +371,7 @@ _poll_cancelled_cb (GObject *object, gpointer user_data)
  * @sleep_timeout_ms: if > 0, then we wait after a probe finished this timeout
  *   before the next. Together with @ratelimit_timeout_ms this determines how
  *   frequently we probe.
- * @probe_start_fcn: used to start a (asynchrnous) probe. A probe must be completed
+ * @probe_start_fcn: used to start a (asynchronous) probe. A probe must be completed
  *   by calling the provided callback. While a probe is in progress, we will not
  *   start another. This function is already invoked the first time synchronously,
  *   during nmcs_utils_poll().

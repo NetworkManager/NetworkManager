@@ -3091,7 +3091,7 @@ nm_ip_routing_rule_from_string (const char *str,
 	 * - iproute2 in may regards is flexible about the command lines. For example
 	 *   - for tables it accepts table names from /etc/iproute2/rt_tables. We only
 	 *     accept the special aliases "main", "local", and "default".
-	 *   - key names like "preference" can be abbreviated to "prefe", we don't do that.
+	 *   - key names like "preference" can be abbreviated to "pref", we don't do that.
 	 *   - the "preference"/"priority" may be unspecified, in which kernel automatically
 	 *     chooses an unused priority (during `ip rule add`). We don't allow for that, the
 	 *     priority must be explicitly set.
@@ -3127,7 +3127,7 @@ nm_ip_routing_rule_from_string (const char *str,
 		}
 
 		/* iproute2 matches keywords with any partial prefix. We don't allow
-		 * for that flexiblity. */
+		 * for that flexibility. */
 
 		if (NM_IN_STRSET (word0, "from")) {
 			if (!word1)

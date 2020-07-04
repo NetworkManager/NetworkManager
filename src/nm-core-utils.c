@@ -2475,7 +2475,7 @@ again:
 			gsize seed_len;
 
 			if (!allow_fake) {
-				/* we don't allow generating (and memoizing) a fake key.
+				/* we don't allow generating (and memorizing) a fake key.
 				 * Signal that no valid machine-id exists. */
 				return NULL;
 			}
@@ -3322,14 +3322,14 @@ nm_utils_stable_id_parse (const char *stable_id,
 			_stable_id_append (str, hwaddr);
 		else if (g_str_has_prefix (&stable_id[i], "${RANDOM}")) {
 			/* RANDOM makes not so much sense for cloned-mac-address
-			 * as the result is similar to specyifing "cloned-mac-address=random".
+			 * as the result is similar to specifying "cloned-mac-address=random".
 			 * It makes however sense for RFC 7217 Stable Privacy IPv6 addresses
 			 * where this is effectively the only way to generate a different
 			 * (random) host identifier for each connect.
 			 *
 			 * With RANDOM, the user can switch the lifetime of the
 			 * generated cloned-mac-address and IPv6 host identifier
-			 * by toggeling only the stable-id property of the connection.
+			 * by toggling only the stable-id property of the connection.
 			 * With RANDOM being the most short-lived, ~non-stable~ variant.
 			 */
 			if (str)
@@ -3423,7 +3423,7 @@ _set_stable_privacy (NMUtilsStableType stable_type,
 		 * That is no real problem and it is still impossible to
 		 * force a collision here, because of how the remaining
 		 * fields are hashed. That is, as we also hash @host_id_len
-		 * and the terminating '\0' of @network_id, it is unambigiously
+		 * and the terminating '\0' of @network_id, it is unambiguously
 		 * possible to revert the process and deduce the @stable_type.
 		 */
 		g_checksum_update (sum, &stable_type_uint8, sizeof (stable_type_uint8));

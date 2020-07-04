@@ -269,7 +269,7 @@ _do_test_nm_utils_strsplit_set_f_one (NMUtilsStrsplitSetFlags flags,
 	g_assert (!NM_FLAGS_ANY (flags, ~(  NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING
 	                                  | NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY)));
 
-	/* assert that the epected words are valid (and don't contain unescaped delimiters). */
+	/* assert that the expected words are valid (and don't contain unescaped delimiters). */
 	for (i = 0; i < words_len; i++) {
 		const char *w = exp_words[i];
 
@@ -7845,7 +7845,7 @@ _do_test_utils_str_utf8safe_unescape (const char *str, const char *expected, gsi
 
 	if (   expected
 	    && l == strlen (expected)) {
-		/* there are no embeeded NULs. Check that nm_utils_str_utf8safe_unescape() yields the same result. */
+		/* there are no embedded NULs. Check that nm_utils_str_utf8safe_unescape() yields the same result. */
 		s = nm_utils_str_utf8safe_unescape (str, NM_UTILS_STR_UTF8_SAFE_FLAG_NONE, &str_free_1);
 		g_assert_cmpstr (s, ==, expected);
 		if (strchr (str, '\\')) {

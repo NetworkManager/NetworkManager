@@ -80,7 +80,7 @@ nm_auth_chain_parent_lst_list (NMAuthChain *self)
 
 /* Caller must free returned error description */
 gboolean nm_auth_is_subject_in_acl (NMConnection *connection,
-                                    NMAuthSubject *subect,
+                                    NMAuthSubject *subject,
                                     char **out_error_desc);
 
 gboolean nm_auth_is_subject_in_acl_set_error (NMConnection *connection,

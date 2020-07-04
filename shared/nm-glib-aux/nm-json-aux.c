@@ -78,7 +78,7 @@ _gstr_append_string_len (GString *gstr,
 			 * JSON can only contain UTF-8 and even the escape sequences can only escape Unicode
 			 * codepoints (but not binary).
 			 *
-			 * The argument is not a a string (in any known encoding), hence we cannot represent
+			 * The argument is not a string (in any known encoding), hence we cannot represent
 			 * it as a JSON string (which are unicode strings).
 			 *
 			 * Print an underscore instead of the invalid char :) */

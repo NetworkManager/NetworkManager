@@ -523,7 +523,7 @@
         ConnectivityCheckEnabled:
 
         Indicates whether connectivity checking is enabled.  This
-        property can also be written to to disable connectivity
+        property can also be written to disable connectivity
         checking (as a privacy control panel might want to do).
     -->
     <property name="ConnectivityCheckEnabled" type="b" access="readwrite"/>

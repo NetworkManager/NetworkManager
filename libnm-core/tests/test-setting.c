@@ -3977,10 +3977,10 @@ test_setting_metadata (void)
 				    || (pt   == &nm_sett_info_propert_type_plain_u && pt_2 == &nm_sett_info_propert_type_deprecated_ignore_u)
 				    || (pt_2 == &nm_sett_info_propert_type_plain_u && pt   == &nm_sett_info_propert_type_deprecated_ignore_u)) {
 					/* These are known to be duplicated. This is the case for
-					 *   "gsm.network-type"  and plain properies like "802-11-wireless-security.fils" ("i" D-Bus type)
-					 *   "gsm.allowed-bands" and plain properies like "802-11-olpc-mesh.channel" ("u" D-Bus type)
+					 *   "gsm.network-type"  and plain properties like "802-11-wireless-security.fils" ("i" D-Bus type)
+					 *   "gsm.allowed-bands" and plain properties like "802-11-olpc-mesh.channel" ("u" D-Bus type)
 					 * While the content/behaviour of the property types are identical, their purpose
-					 * is different. So allowe them.
+					 * is different. So allow them.
 					 */
 					continue;
 				}

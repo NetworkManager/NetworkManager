@@ -1303,7 +1303,7 @@ _rule_fuzzy_equal (const NMPObject *obj,
 		break;
 	case RTM_DELRULE:
 		/* when deleting a rule with RTM_DELRULE, kernel tries to find the
-		 * cadidate to delete. It might delete the wrong rule (rh#1685816). */
+		 * candidate to delete. It might delete the wrong rule (rh#1685816). */
 		if (rr->action == FR_ACT_UNSPEC)
 			rr_co.action = FR_ACT_UNSPEC;
 		if (rr->iifname[0] == '\0')

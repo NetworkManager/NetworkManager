@@ -244,7 +244,7 @@ int packet_sendto_udp(int sockfd,
  * @buf:                buffor for payload
  * @n_buf:              max length of payload in bytes
  * @n_transmittedp:     output argument for number transmitted bytes
- * @src:                return argumnet for source address, or NULL, see ip(7)
+ * @src:                return argument for source address, or NULL, see ip(7)
  *
  * Receives an UDP packet on a AF_PACKET socket. The difference between
  * this and recvfrom() on an AF_INET socket is that the packet will be

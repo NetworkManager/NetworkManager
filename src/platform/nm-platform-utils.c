@@ -219,7 +219,7 @@ again:
 		 * calling it again should have no bad effect (just setting the same thing more than once).
 		 *
 		 * The only potential bad thing is if there was a race involving swapping names, and we just
-		 * set the ioctl option on the wrong device. But then the bad thing already happend and
+		 * set the ioctl option on the wrong device. But then the bad thing already happenned and
 		 * we cannot detect it (nor do anything about it). At least, we can retry and set the
 		 * option on the right interface. */
 		retry = (try_count < 5);

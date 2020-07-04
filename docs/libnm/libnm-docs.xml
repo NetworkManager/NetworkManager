@@ -235,7 +235,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
             <listitem>
               <para>
                 Instead of calling g_dbus_connection_call_sync(), use the
-                asynchronous g_dbus_connection_call(). If we would use a sepaate
+                asynchronous g_dbus_connection_call(). If we would use a separate
                 GMainContext for all D-Bus related calls, we could ensure that
                 while we block for the response, we iterate the internal main context.
                 This might be nice, because all events are processed in order and

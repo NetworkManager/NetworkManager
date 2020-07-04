@@ -1814,7 +1814,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *klass)
 	 * interface is configured in AP mode.
 	 *
 	 * If set to %NM_TERNARY_TRUE, devices are not able to communicate
-	 * with each other. The increases security because it protects
+	 * with each other. This increases security because it protects
 	 * devices against attacks from other clients in the network. At
 	 * the same time, it prevents devices to access resources on the
 	 * same wireless networks as file shares, printers, etc.

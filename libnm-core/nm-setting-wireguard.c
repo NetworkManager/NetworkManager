@@ -30,7 +30,7 @@ G_DEFINE_BOXED_TYPE (NMWireGuardPeer, nm_wireguard_peer, _wireguard_peer_dup, nm
 
 /* NMWireGuardPeer can also track invalid allowed-ip settings, and only reject
  * them later during is_valid(). Such values are marked by a leading 'X' character
- * in the @allowed_ips. It is expected, that such values are the expception, and
+ * in the @allowed_ips. It is expected, that such values are the exception, and
  * commonly not present. */
 #define ALLOWED_IP_INVALID_X     'X'
 #define ALLOWED_IP_INVALID_X_STR "X"
@@ -157,7 +157,7 @@ nm_wireguard_peer_ref (NMWireGuardPeer *self)
  * @self: (allow-none): the #NMWireGuardPeer instance
  *
  * Drop a reference to @self. If the last reference is dropped,
- * the instance is freed and all accociate data released.
+ * the instance is freed and all associate data released.
  *
  * This is not thread-safe.
  *

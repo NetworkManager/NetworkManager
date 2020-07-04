@@ -165,7 +165,7 @@ gboolean nm_utils_memeqzero_secret (gconstpointer data, gsize length);
  * Otherwise, this will allocate a new buffer of the desired size, copy over the
  * old data, and bzero the old buffer before freeing it. As such, it also behaves
  * similar to g_realloc(), with the overhead of nm_explicit_bzero() and using
- * malloc/free intead of realloc().
+ * malloc/free instead of realloc().
  *
  * Returns: the new allocated buffer. Think of it behaving like g_realloc().
  */
@@ -200,7 +200,7 @@ nm_secret_mem_realloc (gpointer m_old, gboolean do_bzero_mem, gsize cur_len, gsi
  * Otherwise, this will try to allocate a new buffer of the desired size, copy over the
  * old data, and bzero the old buffer before freeing it. As such, it also behaves
  * similar to g_try_realloc(), with the overhead of nm_explicit_bzero() and using
- * malloc/free intead of realloc().
+ * malloc/free instead of realloc().
  *
  * Returns: the new allocated buffer or NULL. Think of it behaving like g_try_realloc().
  */

@@ -99,7 +99,7 @@ nm_hash_update (NMHashState *state, const void *ptr, gsize n)
 	nm_assert (n == 0 || ptr);
 
 	/* Note: the data passed in here might be sensitive data (secrets),
-	 * that we should nm_explicty_zero() afterwards. However, since
+	 * that we should nm_explicit_bzero() afterwards. However, since
 	 * we are using siphash24 with a random key, that is not really
 	 * necessary. Something to keep in mind, if we ever move away from
 	 * this hash implementation. */
