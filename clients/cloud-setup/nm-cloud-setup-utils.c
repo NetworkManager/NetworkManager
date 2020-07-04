@@ -389,8 +389,8 @@ _poll_cancelled_cb (GObject *object, gpointer user_data)
  */
 void
 nmcs_utils_poll (int poll_timeout_ms,
-                 int sleep_timeout_ms,
                  int ratelimit_timeout_ms,
+                 int sleep_timeout_ms,
                  NMCSUtilsPollProbeStartFcn probe_start_fcn,
                  NMCSUtilsPollProbeFinishFcn probe_finish_fcn,
                  gpointer probe_user_data,
