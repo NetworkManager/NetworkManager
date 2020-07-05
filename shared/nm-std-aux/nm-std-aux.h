@@ -109,6 +109,8 @@
 
 /*****************************************************************************/
 
+#define NM_N_ELEMENTS(arr)  (sizeof (arr) / sizeof ((arr)[0]))
+
 #define NM_PASTE_ARGS(identifier1,identifier2) identifier1 ## identifier2
 #define NM_PASTE(identifier1,identifier2)      NM_PASTE_ARGS (identifier1, identifier2)
 
