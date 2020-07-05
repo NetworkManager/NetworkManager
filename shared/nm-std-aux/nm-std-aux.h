@@ -174,4 +174,20 @@
 
 /*****************************************************************************/
 
+/* Note: @value is only evaluated when *out_val is present.
+ * Thus,
+ *    NM_SET_OUT (out_str, g_strdup ("hallo"));
+ * does the right thing.
+ */
+#define NM_SET_OUT(out_val, value) \
+	({ \
+		typeof(*(out_val)) *_out_val = (out_val); \
+		\
+		if (_out_val) { \
+			*_out_val = (value); \
+		} \
+		\
+		(!!_out_val); \
+	})
+
 #endif /* __NM_STD_AUX_H__ */

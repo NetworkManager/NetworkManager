@@ -430,20 +430,6 @@ NM_G_ERROR_MSG (GError *error)
 		_n; \
 	})
 
-/* Note: @value is only evaluated when *out_val is present.
- * Thus,
- *    NM_SET_OUT (out_str, g_strdup ("hallo"));
- * does the right thing.
- */
-#define NM_SET_OUT(out_val, value) \
-	G_STMT_START { \
-		typeof(*(out_val)) *_out_val = (out_val); \
-		\
-		if (_out_val) { \
-			*_out_val = (value); \
-		} \
-	} G_STMT_END
-
 /*****************************************************************************/
 
 #ifndef _NM_CC_SUPPORT_AUTO_TYPE
