@@ -456,6 +456,24 @@ nm_ip6_config_update_routes_metric (NMIP6Config *self, gint64 metric)
 	g_object_thaw_notify (G_OBJECT (self));
 }
 
+static void
+_add_multicast_route6 (NMIP6Config *self, int ifindex)
+{
+	nm_auto_nmpobj NMPObject *r = NULL;
+	NMPlatformIP6Route *route;
+
+	r = nmp_object_new (NMP_OBJECT_TYPE_IP6_ROUTE, NULL);
+	route = NMP_OBJECT_CAST_IP6_ROUTE (r);
+	route->ifindex = ifindex;
+	route->network.s6_addr[0] = 0xffu;
+	route->plen = 8;
+	route->table_coerced = nm_platform_route_table_coerce (RT_TABLE_LOCAL);
+	route->type_coerced = nm_platform_route_type_coerce (RTN_UNICAST);
+	route->metric = 256;
+
+	_add_route (self, r, NULL, NULL);
+}
+
 void
 nm_ip6_config_add_dependent_routes (NMIP6Config *self,
                                     guint32 route_table,
@@ -475,6 +493,9 @@ nm_ip6_config_add_dependent_routes (NMIP6Config *self,
 	 * device-routes (onlink) to NMIP6Config.
 	 *
 	 * For manually added IPv6 routes, add the device routes explicitly. */
+
+	/* Pre-generate multicast route */
+	_add_multicast_route6 (self, ifindex);
 
 	nm_ip_config_iter_ip6_address_for_each (&iter, self, &my_addr) {
 		NMPlatformIP6Route *route;
