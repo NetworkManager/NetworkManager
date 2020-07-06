@@ -132,6 +132,7 @@ reader_get_default_connection (Reader *reader)
 		                                NULL,
 		                                NM_SETTING_WIRED_SETTING_NAME,
 		                                NM_CONNECTION_MULTI_CONNECT_MULTIPLE);
+		nm_connection_add_setting (con, nm_setting_wired_new ());
 		reader->default_connection = con;
 	}
 	return reader->default_connection;
