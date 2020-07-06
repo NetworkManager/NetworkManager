@@ -15307,17 +15307,19 @@ nm_device_cleanup (NMDevice *self, NMDeviceStateReason reason, CleanupType clean
 
 	nm_device_update_metered (self);
 
-	/* during device cleanup, we want to reset the MAC address of the device
-	 * to the initial state.
-	 *
-	 * We certainly want to do that when reaching the UNMANAGED state... */
-	if (nm_device_get_state (self) <= NM_DEVICE_STATE_UNMANAGED)
-		nm_device_hw_addr_reset (self, "unmanage");
-	else {
-		/* for other device states (UNAVAILABLE, DISCONNECTED), allow the
-		 * device to overwrite the reset behavior, so that Wi-Fi can set
-		 * a randomized MAC address used during scanning. */
-		NM_DEVICE_GET_CLASS (self)->deactivate_reset_hw_addr (self);
+	if (ifindex > 0) {
+		/* during device cleanup, we want to reset the MAC address of the device
+		 * to the initial state.
+		 *
+		 * We certainly want to do that when reaching the UNMANAGED state... */
+		if (nm_device_get_state (self) <= NM_DEVICE_STATE_UNMANAGED)
+			nm_device_hw_addr_reset (self, "unmanage");
+		else {
+			/* for other device states (UNAVAILABLE, DISCONNECTED), allow the
+			 * device to overwrite the reset behavior, so that Wi-Fi can set
+			 * a randomized MAC address used during scanning. */
+			NM_DEVICE_GET_CLASS (self)->deactivate_reset_hw_addr (self);
+		}
 	}
 
 	priv->mtu_source = NM_DEVICE_MTU_SOURCE_NONE;

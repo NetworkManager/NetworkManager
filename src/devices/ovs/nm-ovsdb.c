@@ -309,6 +309,18 @@ _set_bridge_ports (json_t *params, const char *ifname, json_t *new_ports)
 	);
 }
 
+static void
+_set_bridge_mac (json_t *params, const char *ifname, const char *mac)
+{
+	json_array_append_new (params,
+		json_pack ("{s:s, s:s, s:{s:[s, [[s, s]]]}, s:[[s, s, s]]}",
+		           "op", "update", "table", "Bridge",
+		           "row", "other_config", "map",
+		           "hwaddr", mac,
+		           "where", "name", "==", ifname)
+	);
+}
+
 /**
  * _expect_port_interfaces:
  *
@@ -352,15 +364,16 @@ _set_port_interfaces (json_t *params, const char *ifname, json_t *new_interfaces
  * Returns an commands that adds new interface from a given connection.
  */
 static void
-_insert_interface (json_t *params, NMConnection *interface, NMDevice *interface_device)
+_insert_interface (json_t *params,
+                   NMConnection *interface,
+                   NMDevice *interface_device,
+                   const char *cloned_mac)
 {
 	const char *type = NULL;
 	NMSettingOvsInterface *s_ovs_iface;
 	NMSettingOvsDpdk *s_ovs_dpdk;
 	NMSettingOvsPatch *s_ovs_patch;
 	json_t *options = json_array ();
-	gs_free char *cloned_mac = NULL;
-	gs_free_error GError *error = NULL;
 	json_t *row;
 	guint32 mtu = 0;
 
@@ -374,18 +387,6 @@ _insert_interface (json_t *params, NMConnection *interface, NMDevice *interface_
 		s_wired = _nm_connection_get_setting (interface, NM_TYPE_SETTING_WIRED);
 		if (s_wired)
 			mtu = nm_setting_wired_get_mtu (s_wired);
-	}
-
-	if (!nm_device_hw_addr_get_cloned (interface_device,
-	                                   interface,
-	                                   FALSE,
-	                                   &cloned_mac,
-	                                   NULL,
-	                                   &error)) {
-		_LOGW ("Cannot determine cloned mac for OVS %s '%s': %s",
-		       "interface",
-		       nm_connection_get_interface_name (interface),
-		       error->message);
 	}
 
 	json_array_append_new (options, json_string ("map"));
@@ -489,7 +490,11 @@ _insert_port (json_t *params, NMConnection *port, json_t *new_interfaces)
  * Returns an commands that adds new bridge from a given connection.
  */
 static void
-_insert_bridge (json_t *params, NMConnection *bridge, NMDevice *bridge_device, json_t *new_ports)
+_insert_bridge (json_t *params,
+                NMConnection *bridge,
+                NMDevice *bridge_device,
+                json_t *new_ports,
+                const char *cloned_mac)
 {
 	NMSettingOvsBridge *s_ovs_bridge;
 	const char *fail_mode = NULL;
@@ -498,22 +503,8 @@ _insert_bridge (json_t *params, NMConnection *bridge, NMDevice *bridge_device, j
 	gboolean stp_enable = FALSE;
 	const char *datapath_type = NULL;
 	json_t *row;
-	gs_free_error GError *error = NULL;
-	gs_free char *cloned_mac = NULL;
 
 	s_ovs_bridge = nm_connection_get_setting_ovs_bridge (bridge);
-
-	if (!nm_device_hw_addr_get_cloned (bridge_device,
-	                                   bridge,
-	                                   FALSE,
-	                                   &cloned_mac,
-	                                   NULL,
-	                                   &error)) {
-		_LOGW ("Cannot determine cloned mac for OVS %s '%s': %s",
-		       "bridge",
-		       nm_connection_get_interface_name (bridge),
-		       error->message);
-	}
 
 	row = json_object ();
 
@@ -585,6 +576,9 @@ _add_interface (NMOvsdb *self, json_t *params,
 	const char *bridge_uuid;
 	const char *port_uuid;
 	const char *interface_uuid;
+	const char *bridge_name;
+	const char *port_name;
+	const char *interface_name;
 	OpenvswitchBridge *ovs_bridge = NULL;
 	OpenvswitchPort *ovs_port = NULL;
 	OpenvswitchInterface *ovs_interface = NULL;
@@ -595,6 +589,10 @@ _add_interface (NMOvsdb *self, json_t *params,
 	nm_auto_decref_json json_t *interfaces = NULL;
 	nm_auto_decref_json json_t *new_interfaces = NULL;
 	gboolean has_interface = FALSE;
+	gboolean interface_is_internal;
+	gs_free char *bridge_cloned_mac = NULL;
+	gs_free char *interface_cloned_mac = NULL;
+	GError *error = NULL;
 	int pi;
 	int ii;
 
@@ -605,11 +603,51 @@ _add_interface (NMOvsdb *self, json_t *params,
 	new_ports = json_array ();
 	new_interfaces = json_array ();
 
+	bridge_name = nm_connection_get_interface_name (bridge);
+	port_name = nm_connection_get_interface_name (port);
+	interface_name = nm_connection_get_interface_name (interface);
+	interface_is_internal = nm_streq0 (bridge_name, interface_name);
+
+	/* Determine cloned MAC addresses */
+	if (!nm_device_hw_addr_get_cloned (bridge_device,
+	                                   bridge,
+	                                   FALSE,
+	                                   &bridge_cloned_mac,
+	                                   NULL,
+	                                   &error)) {
+		_LOGW ("Cannot determine cloned mac for OVS %s '%s': %s",
+		       "bridge",
+		       bridge_name,
+		       error->message);
+		g_clear_error (&error);
+	}
+
+	if (!nm_device_hw_addr_get_cloned (interface_device,
+	                                   interface,
+	                                   FALSE,
+	                                   &interface_cloned_mac,
+	                                   NULL,
+	                                   &error)) {
+		_LOGW ("Cannot determine cloned mac for OVS %s '%s': %s",
+		       "interface",
+		       interface_name,
+		       error->message);
+		g_clear_error (&error);
+	}
+
+	if (   interface_is_internal
+	    && !bridge_cloned_mac
+	    && interface_cloned_mac) {
+		_LOGT ("'%s' is a local ovs-interface, the MAC will be set on ovs-bridge '%s'",
+		       interface_name, bridge_name);
+		bridge_cloned_mac = g_steal_pointer (&interface_cloned_mac);
+	}
+
 	g_hash_table_iter_init (&iter, priv->bridges);
 	while (g_hash_table_iter_next (&iter, (gpointer) &bridge_uuid, (gpointer) &ovs_bridge)) {
 		json_array_append_new (bridges, json_pack ("[s, s]", "uuid", bridge_uuid));
 
-		if (   g_strcmp0 (ovs_bridge->name, nm_connection_get_interface_name (bridge)) != 0
+		if (   g_strcmp0 (ovs_bridge->name, bridge_name) != 0
 		    || g_strcmp0 (ovs_bridge->connection_uuid, nm_connection_get_uuid (bridge)) != 0)
 			continue;
 
@@ -623,7 +661,7 @@ _add_interface (NMOvsdb *self, json_t *params,
 				/* This would be a violation of ovsdb's reference integrity (a bug). */
 				_LOGW ("Unknown port '%s' in bridge '%s'", port_uuid, bridge_uuid);
 				continue;
-			} else if (   strcmp (ovs_port->name, nm_connection_get_interface_name (port)) != 0
+			} else if (   strcmp (ovs_port->name, port_name) != 0
 			           || g_strcmp0 (ovs_port->connection_uuid, nm_connection_get_uuid (port)) != 0) {
 				continue;
 			}
@@ -637,7 +675,7 @@ _add_interface (NMOvsdb *self, json_t *params,
 				if (!ovs_interface) {
 					/* This would be a violation of ovsdb's reference integrity (a bug). */
 					_LOGW ("Unknown interface '%s' in port '%s'", interface_uuid, port_uuid);
-				} else if (   strcmp (ovs_interface->name, nm_connection_get_interface_name (interface)) == 0
+				} else if (   strcmp (ovs_interface->name, interface_name) == 0
 				           && g_strcmp0 (ovs_interface->connection_uuid, nm_connection_get_uuid (interface)) == 0) {
 					has_interface = TRUE;
 				}
@@ -660,12 +698,14 @@ _add_interface (NMOvsdb *self, json_t *params,
 			_expect_ovs_bridges (params, priv->db_uuid, bridges);
 			json_array_append_new (new_bridges, json_pack ("[s, s]", "named-uuid", "rowBridge"));
 			_set_ovs_bridges (params, priv->db_uuid, new_bridges);
-			_insert_bridge (params, bridge, bridge_device, new_ports);
+			_insert_bridge (params, bridge, bridge_device, new_ports, bridge_cloned_mac);
 		} else {
 			/* Bridge already exists. */
 			g_return_if_fail (ovs_bridge);
 			_expect_bridge_ports (params, ovs_bridge->name, ports);
-			_set_bridge_ports (params, nm_connection_get_interface_name (bridge), new_ports);
+			_set_bridge_ports (params, bridge_name, new_ports);
+			if (bridge_cloned_mac && interface_is_internal)
+				_set_bridge_mac (params, bridge_name, bridge_cloned_mac);
 		}
 
 		json_array_append_new (new_ports, json_pack ("[s, s]", "named-uuid", "rowPort"));
@@ -674,11 +714,11 @@ _add_interface (NMOvsdb *self, json_t *params,
 		/* Port already exists */
 		g_return_if_fail (ovs_port);
 		_expect_port_interfaces (params, ovs_port->name, interfaces);
-		_set_port_interfaces (params, nm_connection_get_interface_name (port), new_interfaces);
+		_set_port_interfaces (params, port_name, new_interfaces);
 	}
 
 	if (!has_interface) {
-		_insert_interface (params, interface, interface_device);
+		_insert_interface (params, interface, interface_device, interface_cloned_mac);
 		json_array_append_new (new_interfaces, json_pack ("[s, s]", "named-uuid", "rowInterface"));
 	}
 }
