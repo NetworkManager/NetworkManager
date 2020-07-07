@@ -5,6 +5,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <stdbool.h>
 
 /*****************************************************************************/
 
@@ -309,7 +310,7 @@ nm_streq0 (const char *s1, const char *s2)
         type _x = (x);                                              \
                                                                     \
         /* trigger a -Wenum-compare warning */                      \
-        nm_assert (TRUE || _x == (x));                              \
+        nm_assert (true || _x == (x));                              \
                                                                     \
         !!_NM_IN_SET_EVAL_N2(op, _x, n, __VA_ARGS__);               \
     })
@@ -381,7 +382,7 @@ _NM_IN_STRSET_streq (const char *x, const char *s)
 
 #define NM_STRCHAR_ALL(str, ch_iter, predicate) \
 	({ \
-		int _val = TRUE; \
+		int _val = true; \
 		const char *_str = (str); \
 		\
 		if (_str) { \
@@ -393,7 +394,7 @@ _NM_IN_STRSET_streq (const char *x, const char *s)
 						_str++; \
 						continue; \
 					} \
-					_val = FALSE; \
+					_val = false; \
 				} \
 				break; \
 			} \
@@ -403,7 +404,7 @@ _NM_IN_STRSET_streq (const char *x, const char *s)
 
 #define NM_STRCHAR_ANY(str, ch_iter, predicate) \
 	({ \
-		int _val = FALSE; \
+		int _val = false; \
 		const char *_str = (str); \
 		\
 		if (_str) { \
@@ -417,7 +418,7 @@ _NM_IN_STRSET_streq (const char *x, const char *s)
 						_str++; \
 						continue; \
 					} \
-					_val = TRUE; \
+					_val = true; \
 				} \
 				break; \
 			} \
