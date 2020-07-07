@@ -1657,17 +1657,7 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro)
  * Workaround that by re-defining _G_BOOLEAN_EXPR()
  **/
 #undef  _G_BOOLEAN_EXPR
-#define __NM_G_BOOLEAN_EXPR_IMPL(v, expr) \
-	({ \
-		int NM_UNIQ_T(V, v); \
-		\
-		if (expr) \
-			NM_UNIQ_T(V, v) = 1; \
-		else \
-			NM_UNIQ_T(V, v) = 0; \
-		NM_UNIQ_T(V, v); \
-	})
-#define _G_BOOLEAN_EXPR(expr) __NM_G_BOOLEAN_EXPR_IMPL (NM_UNIQ, expr)
+#define _G_BOOLEAN_EXPR(expr) NM_BOOLEAN_EXPR (expr)
 #endif
 
 /*****************************************************************************/

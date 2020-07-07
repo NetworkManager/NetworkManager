@@ -54,17 +54,29 @@
 
 /*****************************************************************************/
 
-#if defined(__GNUC__) && (__GNUC__ > 2) && defined(__OPTIMIZE__)
-#define NM_BOOLEAN_EXPR(expr) \
+#define NM_PASTE_ARGS(identifier1,identifier2) identifier1 ## identifier2
+#define NM_PASTE(identifier1,identifier2)      NM_PASTE_ARGS (identifier1, identifier2)
+
+/* Taken from systemd's UNIQ_T and UNIQ macros. */
+
+#define NM_UNIQ_T(x, uniq) NM_PASTE(__unique_prefix_, NM_PASTE(x, uniq))
+#define NM_UNIQ __COUNTER__
+
+/*****************************************************************************/
+
+#define _NM_BOOLEAN_EXPR_IMPL(v, expr) \
 	({ \
-		int _g_boolean_var_; \
+		int NM_UNIQ_T(V, v); \
 		\
 		if (expr) \
-			_g_boolean_var_ = 1; \
-		else  \
-			_g_boolean_var_ = 0; \
-		_g_boolean_var_; \
+			NM_UNIQ_T(V, v) = 1; \
+		else \
+			NM_UNIQ_T(V, v) = 0; \
+		NM_UNIQ_T(V, v); \
 	})
+#define NM_BOOLEAN_EXPR(expr) _NM_BOOLEAN_EXPR_IMPL (NM_UNIQ, expr)
+
+#if defined(__GNUC__) && (__GNUC__ > 2) && defined(__OPTIMIZE__)
 #define NM_LIKELY(expr)   (__builtin_expect (NM_BOOLEAN_EXPR (expr), 1))
 #define NM_UNLIKELY(expr) (__builtin_expect (NM_BOOLEAN_EXPR (expr), 0))
 #else
@@ -111,14 +123,6 @@
 /*****************************************************************************/
 
 #define NM_N_ELEMENTS(arr)  (sizeof (arr) / sizeof ((arr)[0]))
-
-#define NM_PASTE_ARGS(identifier1,identifier2) identifier1 ## identifier2
-#define NM_PASTE(identifier1,identifier2)      NM_PASTE_ARGS (identifier1, identifier2)
-
-/* Taken from systemd's UNIQ_T and UNIQ macros. */
-
-#define NM_UNIQ_T(x, uniq) NM_PASTE(__unique_prefix_, NM_PASTE(x, uniq))
-#define NM_UNIQ __COUNTER__
 
 /*****************************************************************************/
 
