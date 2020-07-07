@@ -1600,51 +1600,6 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro)
 
 /*****************************************************************************/
 
-/**
- * The boolean type _Bool is C99 while we mostly stick to C89. However, _Bool is too
- * convenient to miss and is effectively available in gcc and clang. So, just use it.
- *
- * Usually, one would include "stdbool.h" to get the "bool" define which aliases
- * _Bool. We provide this define here, because we want to make use of it anywhere.
- * (also, stdbool.h is again C99).
- *
- * Using _Bool has advantages over gboolean:
- *
- * - commonly _Bool is one byte large, instead of gboolean's 4 bytes (because gboolean
- *   is a typedef for int). Especially when having boolean fields in a struct, we can
- *   thereby easily save some space.
- *
- * - _Bool type guarantees that two "true" expressions compare equal. E.g. the following
- *   will not work:
- *        gboolean v1 = 1;
- *        gboolean v2 = 2;
- *        g_assert_cmpint (v1, ==, v2); // will fail
- *   For that, we often to use !! to coerce gboolean values to 0 or 1:
- *        g_assert_cmpint (!!v2, ==, TRUE);
- *   With _Bool type, this will be handled properly by the compiler.
- *
- * - For structs, we might want to safe even more space and use bitfields:
- *       struct s1 {
- *           gboolean v1:1;
- *       };
- *   But the problem here is that gboolean is signed, so that
- *   v1 will be either 0 or -1 (not 1, TRUE). Thus, the following
- *   fails:
- *      struct s1 s = { .v1 = TRUE, };
- *      g_assert_cmpint (s1.v1, ==, TRUE);
- *   It will however work just fine with bool/_Bool while retaining the
- *   notion of having a boolean value.
- *
- * Also, add the defines for "true" and "false". Those are nicely highlighted by the editor
- * as special types, contrary to glib's "TRUE"/"FALSE".
- */
-
-#ifndef bool
-#define bool _Bool
-#define true    1
-#define false   0
-#endif
-
 #ifdef _G_BOOLEAN_EXPR
 /* g_assert() uses G_LIKELY(), which in turn uses _G_BOOLEAN_EXPR().
  * As glib's implementation uses a local variable _g_boolean_var_,
