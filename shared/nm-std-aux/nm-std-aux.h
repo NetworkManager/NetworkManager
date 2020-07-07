@@ -520,4 +520,22 @@ NM_AUTO_DEFINE_FCN_VOID0 (void *, _nm_auto_free_impl, free)
 		_changed; \
 	})
 
+#define nm_clear_free(pp) nm_clear_pointer (pp, free)
+
+/*****************************************************************************/
+
+static inline void *
+_nm_steal_pointer (void *pp)
+{
+	void **ptr = (void **) pp;
+	void *ref;
+
+	ref = *ptr;
+	*ptr = NULL;
+	return ref;
+}
+
+#define nm_steal_pointer(pp) \
+	((typeof (*(pp))) _nm_steal_pointer (pp))
+
 #endif /* __NM_STD_AUX_H__ */
