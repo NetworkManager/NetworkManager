@@ -2895,7 +2895,7 @@ nm_utils_sriov_vf_to_str (const NMSriovVF *vf, gboolean omit_index, GError **err
 	if (num_attrs > 0) {
 		if (!omit_index)
 			g_string_append_c (str, ' ');
-		_nm_utils_format_variant_attributes_full (str, values, num_attrs, ' ', '=');
+		_nm_utils_format_variant_attributes_full (str, values, num_attrs, NULL, ' ', '=');
 	}
 
 	vlan_ids = nm_sriov_vf_get_vlan_ids (vf, &num_vlans);
@@ -5808,6 +5808,7 @@ nm_utils_format_variant_attributes (GHashTable *attributes,
                                     char key_value_separator)
 {
 	return _nm_utils_format_variant_attributes (attributes,
+	                                            NULL,
 	                                            attr_separator,
 	                                            key_value_separator);
 }
