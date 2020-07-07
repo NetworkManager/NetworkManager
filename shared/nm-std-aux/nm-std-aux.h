@@ -4,6 +4,7 @@
 #define __NM_STD_AUX_H__
 
 #include <assert.h>
+#include <string.h>
 
 /*****************************************************************************/
 
@@ -173,6 +174,252 @@
 	                         && __builtin_types_compatible_p (typeof (_A), typeof (_B))), \
 	                        ((_A) > (_B)) ? (_A) : (_B),                            \
 	                        ((void)  0)))
+
+/*****************************************************************************/
+
+#define NM_SWAP(a, b) \
+	do { \
+		typeof (a) _tmp; \
+		\
+		_tmp = (a); \
+		(a) = (b); \
+		(b) = _tmp; \
+	} while (0)
+
+/*****************************************************************************/
+
+/* macro to return strlen() of a compile time string. */
+#define NM_STRLEN(str)     ( sizeof (""str"") - 1u )
+
+/* returns the length of a NULL terminated array of pointers,
+ * like g_strv_length() does. The difference is:
+ *  - it operates on arrays of pointers (of any kind, requiring no cast).
+ *  - it accepts NULL to return zero. */
+#define NM_PTRARRAY_LEN(array) \
+	({ \
+		typeof (*(array)) *const _array = (array); \
+		size_t _n = 0; \
+		\
+		if (_array) { \
+			_nm_unused const void * _type_check_is_pointer = _array[0]; \
+			\
+			while (_array[_n]) \
+				_n++; \
+		} \
+		_n; \
+	})
+
+/*****************************************************************************/
+
+static inline int
+nm_strcmp0 (const char *s1, const char *s2)
+{
+	int c;
+
+	/* like g_strcmp0(), but this is inlinable.
+	 *
+	 * Also, it is guaranteed to return either -1, 0, or 1. */
+	if (s1 == s2)
+		return 0;
+	if (!s1)
+		return -1;
+	if (!s2)
+		return 1;
+	c = strcmp (s1, s2);
+	if (c < 0)
+		return -1;
+	if (c > 0)
+		return 1;
+	return 0;
+}
+
+static inline int
+nm_streq (const char *s1, const char *s2)
+{
+	return strcmp (s1, s2) == 0;
+}
+
+static inline int
+nm_streq0 (const char *s1, const char *s2)
+{
+	return    (s1 == s2)
+	       || (s1 && s2 && strcmp (s1, s2) == 0);
+}
+
+#define NM_STR_HAS_PREFIX(str, prefix) \
+	({ \
+		const char *const _str_has_prefix = (str); \
+		\
+		nm_assert (strlen (prefix) == NM_STRLEN (prefix)); \
+		\
+		   _str_has_prefix \
+		&& (strncmp (_str_has_prefix, ""prefix"", NM_STRLEN (prefix)) == 0); \
+	})
+
+#define NM_STR_HAS_SUFFIX(str, suffix) \
+	({ \
+		const char *const _str_has_suffix = (str); \
+		size_t _l; \
+		\
+		nm_assert (strlen (suffix) == NM_STRLEN (suffix)); \
+		\
+		(   _str_has_suffix \
+		 && ((_l = strlen (_str_has_suffix)) >= NM_STRLEN (suffix)) \
+		 && (memcmp (&_str_has_suffix[_l - NM_STRLEN (suffix)], \
+		             ""suffix"", \
+		             NM_STRLEN (suffix)) == 0)); \
+	})
+
+/* whether @str starts with the string literal @prefix and is followed by
+ * some other text. It is like NM_STR_HAS_PREFIX() && !nm_streq() together. */
+#define NM_STR_HAS_PREFIX_WITH_MORE(str, prefix) \
+	({ \
+		const char *const _str_has_prefix_with_more = (str); \
+		\
+		   NM_STR_HAS_PREFIX (_str_has_prefix_with_more, ""prefix"") \
+		&& _str_has_prefix_with_more[NM_STRLEN (prefix)] != '\0'; \
+	})
+
+/*****************************************************************************/
+
+#define _NM_IN_SET_EVAL_1( op, _x, y)           (_x == (y))
+#define _NM_IN_SET_EVAL_2( op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_1  (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_3( op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_2  (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_4( op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_3  (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_5( op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_4  (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_6( op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_5  (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_7( op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_6  (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_8( op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_7  (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_9( op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_8  (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_10(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_9  (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_11(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_10 (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_12(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_11 (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_13(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_12 (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_14(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_13 (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_15(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_14 (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_16(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_15 (op, _x, __VA_ARGS__)
+
+#define _NM_IN_SET_EVAL_N2(op, _x, n, ...)      (_NM_IN_SET_EVAL_##n(op, _x, __VA_ARGS__))
+#define _NM_IN_SET_EVAL_N(op, type, x, n, ...)                      \
+    ({                                                              \
+        type _x = (x);                                              \
+                                                                    \
+        /* trigger a -Wenum-compare warning */                      \
+        nm_assert (TRUE || _x == (x));                              \
+                                                                    \
+        !!_NM_IN_SET_EVAL_N2(op, _x, n, __VA_ARGS__);               \
+    })
+
+#define _NM_IN_SET(op, type, x, ...)        _NM_IN_SET_EVAL_N(op, type, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
+
+/* Beware that this does short-circuit evaluation (use "||" instead of "|")
+ * which has a possibly unexpected non-function-like behavior.
+ * Use NM_IN_SET_SE if you need all arguments to be evaluated. */
+#define NM_IN_SET(x, ...)                   _NM_IN_SET(||, typeof (x), x, __VA_ARGS__)
+
+/* "SE" stands for "side-effect". Contrary to NM_IN_SET(), this does not do
+ * short-circuit evaluation, which can make a difference if the arguments have
+ * side-effects. */
+#define NM_IN_SET_SE(x, ...)                _NM_IN_SET(|,  typeof (x), x, __VA_ARGS__)
+
+/* the *_TYPED forms allow to explicitly select the type of "x". This is useful
+ * if "x" doesn't support typeof (bitfields) or you want to gracefully convert
+ * a type using automatic type conversion rules (but not forcing the conversion
+ * with a cast). */
+#define NM_IN_SET_TYPED(type, x, ...)       _NM_IN_SET(||, type,       x, __VA_ARGS__)
+#define NM_IN_SET_SE_TYPED(type, x, ...)    _NM_IN_SET(|,  type,       x, __VA_ARGS__)
+
+/*****************************************************************************/
+
+static inline int
+_NM_IN_STRSET_streq (const char *x, const char *s)
+{
+	return s && strcmp (x, s) == 0;
+}
+
+#define _NM_IN_STRSET_EVAL_1( op, _x, y)        _NM_IN_STRSET_streq (_x, y)
+#define _NM_IN_STRSET_EVAL_2( op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_1  (op, _x, __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_3( op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_2  (op, _x, __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_4( op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_3  (op, _x, __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_5( op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_4  (op, _x, __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_6( op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_5  (op, _x, __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_7( op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_6  (op, _x, __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_8( op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_7  (op, _x, __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_9( op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_8  (op, _x, __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_10(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_9  (op, _x, __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_11(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_10 (op, _x, __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_12(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_11 (op, _x, __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_13(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_12 (op, _x, __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_14(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_13 (op, _x, __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_15(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_14 (op, _x, __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_16(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_15 (op, _x, __VA_ARGS__)
+
+#define _NM_IN_STRSET_EVAL_N2(op, _x, n, ...)   (_NM_IN_STRSET_EVAL_##n(op, _x, __VA_ARGS__))
+#define _NM_IN_STRSET_EVAL_N(op, x, n, ...)                       \
+    ({                                                            \
+        const char *_x = (x);                                     \
+        (   ((_x == NULL) && _NM_IN_SET_EVAL_N2    (op, ((const char *) NULL), n, __VA_ARGS__)) \
+         || ((_x != NULL) && _NM_IN_STRSET_EVAL_N2 (op, _x,                    n, __VA_ARGS__)) \
+        ); \
+    })
+
+/* Beware that this does short-circuit evaluation (use "||" instead of "|")
+ * which has a possibly unexpected non-function-like behavior.
+ * Use NM_IN_STRSET_SE if you need all arguments to be evaluated. */
+#define NM_IN_STRSET(x, ...)               _NM_IN_STRSET_EVAL_N(||, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
+
+/* "SE" stands for "side-effect". Contrary to NM_IN_STRSET(), this does not do
+ * short-circuit evaluation, which can make a difference if the arguments have
+ * side-effects. */
+#define NM_IN_STRSET_SE(x, ...)            _NM_IN_STRSET_EVAL_N(|, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
+
+/*****************************************************************************/
+
+#define NM_STRCHAR_ALL(str, ch_iter, predicate) \
+	({ \
+		int _val = TRUE; \
+		const char *_str = (str); \
+		\
+		if (_str) { \
+			for (;;) { \
+				const char ch_iter = _str[0]; \
+				\
+				if (ch_iter != '\0') { \
+					if (predicate) {\
+						_str++; \
+						continue; \
+					} \
+					_val = FALSE; \
+				} \
+				break; \
+			} \
+		} \
+		_val; \
+	})
+
+#define NM_STRCHAR_ANY(str, ch_iter, predicate) \
+	({ \
+		int _val = FALSE; \
+		const char *_str = (str); \
+		\
+		if (_str) { \
+			for (;;) { \
+				const char ch_iter = _str[0]; \
+				\
+				if (ch_iter != '\0') { \
+					if (predicate) { \
+						; \
+					} else { \
+						_str++; \
+						continue; \
+					} \
+					_val = TRUE; \
+				} \
+				break; \
+			} \
+		} \
+		_val; \
+	})
 
 /*****************************************************************************/
 
