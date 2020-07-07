@@ -38,34 +38,6 @@
 
 /*****************************************************************************/
 
-#define NM_AUTO_DEFINE_FCN_VOID(CastType, name, func) \
-static inline void name (void *v) \
-{ \
-	func (*((CastType *) v)); \
-}
-
-#define NM_AUTO_DEFINE_FCN_VOID0(CastType, name, func) \
-static inline void name (void *v) \
-{ \
-	if (*((CastType *) v)) \
-		func (*((CastType *) v)); \
-}
-
-#define NM_AUTO_DEFINE_FCN(Type, name, func) \
-static inline void name (Type *v) \
-{ \
-	func (*v); \
-}
-
-#define NM_AUTO_DEFINE_FCN0(Type, name, func) \
-static inline void name (Type *v) \
-{ \
-	if (*v) \
-		func (*v); \
-}
-
-/*****************************************************************************/
-
 /**
  * gs_free:
  *
@@ -180,23 +152,6 @@ NM_AUTO_DEFINE_FCN0 (GKeyFile *, gs_local_keyfile_unref, g_key_file_unref)
 /*****************************************************************************/
 
 static inline int nm_close (int fd);
-
-/**
- * nm_auto_free:
- *
- * Call free() on a variable location when it goes out of scope.
- * This is for pointers that are allocated with malloc() instead of
- * g_malloc().
- *
- * In practice, since glib 2.45, g_malloc()/g_free() always wraps malloc()/free().
- * See bgo#751592. In that case, it would be safe to free pointers allocated with
- * malloc() with gs_free or g_free().
- *
- * However, let's never mix them. To free malloc'ed memory, always use
- * free() or nm_auto_free.
- */
-NM_AUTO_DEFINE_FCN_VOID0 (void *, _nm_auto_free_impl, free)
-#define nm_auto_free nm_auto(_nm_auto_free_impl)
 
 NM_AUTO_DEFINE_FCN0 (GVariantIter *, _nm_auto_free_variant_iter, g_variant_iter_free)
 #define nm_auto_free_variant_iter nm_auto(_nm_auto_free_variant_iter)
@@ -874,32 +829,6 @@ nm_g_object_unref (gpointer obj)
 			nm_g_object_ref (_obj); \
 			*_pp = _obj; \
 			nm_g_object_unref (_p); \
-			_changed = TRUE; \
-		} \
-		_changed; \
-	})
-
-#define nm_clear_pointer(pp, destroy) \
-	({ \
-		typeof (*(pp)) *_pp = (pp); \
-		typeof (*_pp) _p; \
-		gboolean _changed = FALSE; \
-		\
-		if (   _pp \
-		    && (_p = *_pp)) { \
-			_nm_unused gconstpointer _p_check_is_pointer = _p; \
-			\
-			*_pp = NULL; \
-			/* g_clear_pointer() assigns @destroy first to a local variable, so that
-			 * you can call "g_clear_pointer (pp, (GDestroyNotify) destroy);" without
-			 * gcc emitting a warning. We don't do that, hence, you cannot cast
-			 * "destroy" first.
-			 *
-			 * On the upside: you are not supposed to cast fcn, because the pointer
-			 * types are preserved. If you really need a cast, you should cast @pp.
-			 * But that is hardly ever necessary. */ \
-			(destroy) (_p); \
-			\
 			_changed = TRUE; \
 		} \
 		_changed; \

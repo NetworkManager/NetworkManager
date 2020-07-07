@@ -444,4 +444,80 @@ _NM_IN_STRSET_streq (const char *x, const char *s)
 		(!!_out_val); \
 	})
 
+/*****************************************************************************/
+
+#define NM_AUTO_DEFINE_FCN_VOID(CastType, name, func) \
+static inline void name (void *v) \
+{ \
+	func (*((CastType *) v)); \
+}
+
+#define NM_AUTO_DEFINE_FCN_VOID0(CastType, name, func) \
+static inline void name (void *v) \
+{ \
+	if (*((CastType *) v)) \
+		func (*((CastType *) v)); \
+}
+
+#define NM_AUTO_DEFINE_FCN(Type, name, func) \
+static inline void name (Type *v) \
+{ \
+	func (*v); \
+}
+
+#define NM_AUTO_DEFINE_FCN0(Type, name, func) \
+static inline void name (Type *v) \
+{ \
+	if (*v) \
+		func (*v); \
+}
+
+/*****************************************************************************/
+
+/**
+ * nm_auto_free:
+ *
+ * Call free() on a variable location when it goes out of scope.
+ * This is for pointers that are allocated with malloc() instead of
+ * g_malloc().
+ *
+ * In practice, since glib 2.45, g_malloc()/g_free() always wraps malloc()/free().
+ * See bgo#751592. In that case, it would be safe to free pointers allocated with
+ * malloc() with gs_free or g_free().
+ *
+ * However, let's never mix them. To free malloc'ed memory, always use
+ * free() or nm_auto_free.
+ */
+NM_AUTO_DEFINE_FCN_VOID0 (void *, _nm_auto_free_impl, free)
+#define nm_auto_free nm_auto(_nm_auto_free_impl)
+
+/*****************************************************************************/
+
+#define nm_clear_pointer(pp, destroy) \
+	({ \
+		typeof (*(pp)) *_pp = (pp); \
+		typeof (*_pp) _p; \
+		int _changed = false; \
+		\
+		if (   _pp \
+		    && (_p = *_pp)) { \
+			_nm_unused const void *_p_check_is_pointer = _p; \
+			\
+			*_pp = NULL; \
+			\
+			/* g_clear_pointer() assigns @destroy first to a local variable, so that
+			 * you can call "g_clear_pointer (pp, (GDestroyNotify) destroy);" without
+			 * gcc emitting a warning. We don't do that, hence, you cannot cast
+			 * "destroy" first.
+			 *
+			 * On the upside: you are not supposed to cast fcn, because the pointer
+			 * types are preserved. If you really need a cast, you should cast @pp.
+			 * But that is hardly ever necessary. */ \
+			(destroy) (_p); \
+			\
+			_changed = true; \
+		} \
+		_changed; \
+	})
+
 #endif /* __NM_STD_AUX_H__ */
