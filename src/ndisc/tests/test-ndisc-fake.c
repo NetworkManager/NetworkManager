@@ -76,8 +76,8 @@ match_gateway (const NMNDiscData *rdata, guint idx, const char *addr, guint32 ts
 		_a = &_rdata->addresses[_idx]; \
 		\
 		nmtst_assert_ip6_address (&_a->address, (addr)); \
-		g_assert_cmpint (_a->timestamp, >=, _ts); \
 		g_assert_cmpint (_a->timestamp, <=, _ts + 1); \
+		g_assert_cmpint ((int) _a->timestamp, >=, (int) _ts - 1); \
 		g_assert_cmpint (_a->timestamp + _a->lifetime, ==, _ts + (lt)); \
 		g_assert_cmpint (_a->timestamp + _a->preferred, ==, _ts + (pref)); \
 	} G_STMT_END
