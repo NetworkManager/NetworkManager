@@ -5075,11 +5075,13 @@ _nm_utils_format_variant_attributes_full (GString *str,
 		g_string_append (str, escaped);
 		g_free (escaped);
 
-		g_string_append_c (str, key_value_separator);
+		if (!s || !*s || !(*s)->no_value) {
+			g_string_append_c (str, key_value_separator);
 
-		escaped = attribute_escape (value, attr_separator, key_value_separator);
-		g_string_append (str, escaped);
-		g_free (escaped);
+			escaped = attribute_escape (value, attr_separator, key_value_separator);
+			g_string_append (str, escaped);
+			g_free (escaped);
+		}
 
 		sep = attr_separator;
 	}
