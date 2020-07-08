@@ -207,4 +207,5 @@ NM_UTILS_ENUM2STR_DEFINE (nm_utils_route_type2str, guint8,
 	NM_UTILS_ENUM2STR (RTN_THROW, "throw"),
 	NM_UTILS_ENUM2STR (RTN_UNICAST, "unicast"),
 	NM_UTILS_ENUM2STR (RTN_UNREACHABLE, "unreachable"),
+	NM_UTILS_ENUM2STR (RTN_UNSPEC, "unspecified"),
 );

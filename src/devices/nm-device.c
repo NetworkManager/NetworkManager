@@ -411,8 +411,8 @@ typedef struct _NMDevicePrivate {
 	bool            v4_route_table_initialized:1;
 	bool            v6_route_table_initialized:1;
 
-	bool            v4_route_table_full_sync_before:1;
-	bool            v6_route_table_full_sync_before:1;
+	bool            v4_route_table_all_sync_before:1;
+	bool            v6_route_table_all_sync_before:1;
 
 	NMDeviceAutoconnectBlockedFlags autoconnect_blocked_flags:5;
 
@@ -2737,34 +2737,59 @@ _get_route_table_sync_mode_stateful (NMDevice *self,
                                      int addr_family)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	gboolean full_sync_now;
-	gboolean full_sync_eff;
+	NMDedupMultiIter ipconf_iter;
+	gboolean all_sync_now;
+	gboolean all_sync_eff;
 
-	full_sync_now = _get_route_table (self, addr_family) != 0u;
+	all_sync_now = _get_route_table (self, addr_family) != 0u;
 
-	if (full_sync_now)
-		full_sync_eff = TRUE;
+	if (!all_sync_now) {
+		/* If there's a local route switch to all-sync in order
+		 * to properly manage the local table */
+		if (addr_family == AF_INET) {
+			const NMPlatformIP4Route *route;
+
+			nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, priv->con_ip_config_4, &route) {
+				if (nm_platform_route_type_uncoerce (route->type_coerced) == RTN_LOCAL) {
+					all_sync_now = TRUE;
+					break;
+				}
+			}
+		} else {
+			const NMPlatformIP6Route *route;
+
+			nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, priv->con_ip_config_6, &route) {
+				if (nm_platform_route_type_uncoerce (route->type_coerced) == RTN_LOCAL) {
+					all_sync_now = TRUE;
+					break;
+				}
+			}
+		}
+	}
+
+	if (all_sync_now)
+		all_sync_eff = TRUE;
 	else {
-		/* When we change from full-sync to no full-sync, we do a last full-sync one
-		 * more time. For that, we determine the effective full-state based on the
-		 * cached/previous full-sync flag.
+		/* When we change from all-sync to no all-sync, we do a last all-sync one
+		 * more time. For that, we determine the effective all-state based on the
+		 * cached/previous all-sync flag.
 		 *
 		 * The purpose of this is to support reapply of route-table (and thus the
-		 * full-sync mode). If reapply toggles from full-sync to no-full-sync, we must
+		 * all-sync mode). If reapply toggles from all-sync to no-all-sync, we must
 		 * sync one last time. */
 		if (addr_family == AF_INET)
-			full_sync_eff = priv->v4_route_table_full_sync_before;
+			all_sync_eff = priv->v4_route_table_all_sync_before;
 		else
-			full_sync_eff = priv->v6_route_table_full_sync_before;
+			all_sync_eff = priv->v6_route_table_all_sync_before;
 	}
 
 	if (addr_family == AF_INET)
-		priv->v4_route_table_full_sync_before = full_sync_now;
+		priv->v4_route_table_all_sync_before = all_sync_now;
 	else
-		priv->v6_route_table_full_sync_before = full_sync_now;
+		priv->v6_route_table_all_sync_before = all_sync_now;
 
-	return   full_sync_eff
-	       ? NM_IP_ROUTE_TABLE_SYNC_MODE_FULL
+	return   all_sync_eff
+	       ? NM_IP_ROUTE_TABLE_SYNC_MODE_ALL
 	       : NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN;
 }
 
@@ -13244,7 +13269,8 @@ nm_device_set_ip_config (NMDevice *self,
 		if (IS_IPv4) {
 			success = nm_ip4_config_commit (NM_IP4_CONFIG (new_config),
 			                                nm_device_get_platform (self),
-			                                _get_route_table_sync_mode_stateful (self, addr_family));
+			                                _get_route_table_sync_mode_stateful (self,
+			                                                                     AF_INET));
 			nm_platform_ip4_dev_route_blacklist_set (nm_device_get_platform (self),
 			                                         nm_ip_config_get_ifindex (new_config),
 			                                         ip4_dev_route_blacklist);
@@ -13253,7 +13279,8 @@ nm_device_set_ip_config (NMDevice *self,
 
 			success = nm_ip6_config_commit (NM_IP6_CONFIG (new_config),
 			                                nm_device_get_platform (self),
-			                                _get_route_table_sync_mode_stateful (self, addr_family),
+			                                _get_route_table_sync_mode_stateful (self,
+			                                                                     AF_INET6),
 			                                &temporary_not_available);
 
 			if (!_rt6_temporary_not_available_set (self, temporary_not_available))
@@ -15498,8 +15525,8 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 	priv->v4_route_table_initialized = FALSE;
 	priv->v6_route_table_initialized = FALSE;
 
-	priv->v4_route_table_full_sync_before = FALSE;
-	priv->v6_route_table_full_sync_before = FALSE;
+	priv->v4_route_table_all_sync_before = FALSE;
+	priv->v6_route_table_all_sync_before = FALSE;
 
 	priv->default_route_metric_penalty_ip4_has = FALSE;
 	priv->default_route_metric_penalty_ip6_has = FALSE;
