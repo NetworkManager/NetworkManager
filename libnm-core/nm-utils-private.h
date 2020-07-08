@@ -13,16 +13,6 @@
 #include "nm-setting-private.h"
 #include "nm-setting-ip-config.h"
 
-struct _NMVariantAttributeSpec {
-	char *name;
-	const GVariantType *type;
-	bool v4:1;
-	bool v6:1;
-	bool no_value:1;
-	bool consumes_rest:1;
-	char str_type;
-};
-
 #define NM_VARIANT_ATTRIBUTE_SPEC_DEFINE(_name, _type, ...) \
 	(&((const NMVariantAttributeSpec) { \
 		.name          = _name, \

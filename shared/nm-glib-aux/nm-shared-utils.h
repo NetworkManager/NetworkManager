@@ -2068,13 +2068,27 @@ nm_strvarray_set_strv (GArray **array, const char *const*strv)
 
 /*****************************************************************************/
 
+struct _NMVariantAttributeSpec {
+	char *name;
+	const GVariantType *type;
+	bool v4:1;
+	bool v6:1;
+	bool no_value:1;
+	bool consumes_rest:1;
+	char str_type;
+};
+
+typedef struct _NMVariantAttributeSpec NMVariantAttributeSpec;
+
 void _nm_utils_format_variant_attributes_full (GString *str,
                                                const NMUtilsNamedValue *values,
                                                guint num_values,
+                                               const NMVariantAttributeSpec *const *spec,
                                                char attr_separator,
                                                char key_value_separator);
 
 char *_nm_utils_format_variant_attributes (GHashTable *attributes,
+                                           const NMVariantAttributeSpec *const *spec,
                                            char attr_separator,
                                            char key_value_separator);
 

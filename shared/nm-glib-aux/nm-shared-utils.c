@@ -5021,9 +5021,11 @@ void
 _nm_utils_format_variant_attributes_full (GString *str,
                                           const NMUtilsNamedValue *values,
                                           guint num_values,
+                                          const NMVariantAttributeSpec *const *spec,
                                           char attr_separator,
                                           char key_value_separator)
 {
+	const NMVariantAttributeSpec *const *s;
 	const char *name, *value;
 	GVariant *variant;
 	char *escaped;
@@ -5035,6 +5037,17 @@ _nm_utils_format_variant_attributes_full (GString *str,
 		name = values[i].name;
 		variant = values[i].value_ptr;
 		value = NULL;
+		s = NULL;
+
+		if (spec) {
+			for (s = spec; *s; s++) {
+				if (nm_streq0 ((*s)->name, name))
+					break;
+			}
+
+			if (!*s)
+				continue;
+		}
 
 		if (g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32))
 			value = nm_sprintf_buf (buf, "%u", g_variant_get_uint32 (variant));
@@ -5062,11 +5075,13 @@ _nm_utils_format_variant_attributes_full (GString *str,
 		g_string_append (str, escaped);
 		g_free (escaped);
 
-		g_string_append_c (str, key_value_separator);
+		if (!s || !*s || !(*s)->no_value) {
+			g_string_append_c (str, key_value_separator);
 
-		escaped = attribute_escape (value, attr_separator, key_value_separator);
-		g_string_append (str, escaped);
-		g_free (escaped);
+			escaped = attribute_escape (value, attr_separator, key_value_separator);
+			g_string_append (str, escaped);
+			g_free (escaped);
+		}
 
 		sep = attr_separator;
 	}
@@ -5074,6 +5089,7 @@ _nm_utils_format_variant_attributes_full (GString *str,
 
 char *
 _nm_utils_format_variant_attributes (GHashTable *attributes,
+                                     const NMVariantAttributeSpec *const *spec,
                                      char attr_separator,
                                      char key_value_separator)
 {
@@ -5100,6 +5116,7 @@ _nm_utils_format_variant_attributes (GHashTable *attributes,
 	_nm_utils_format_variant_attributes_full (str,
 	                                          values,
 	                                          len,
+	                                          spec,
 	                                          attr_separator,
 	                                          key_value_separator);
 	return g_string_free (str, FALSE);

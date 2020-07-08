@@ -4757,6 +4757,10 @@ _nl_msg_new_qdisc (int nlmsg_type,
 		NLA_PUT_U32 (msg, TCA_TBF_BURST, qdisc->tbf.burst);
 
 		nla_nest_end (msg, tc_options);
+	} else if (nm_streq (qdisc->kind, "prio")) {
+		struct tc_prio_qopt opt = {3, { 1, 2, 2, 2, 1, 2, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1 } };
+
+		NLA_PUT (msg, TCA_OPTIONS, sizeof (opt), &opt);
 	} else {
 		if (!(tc_options = nla_nest_start (msg, TCA_OPTIONS)))
 			goto nla_put_failure;

@@ -2591,11 +2591,21 @@ _string_append_tc_action (GString *string, NMTCAction *action, GError **error)
 {
 	const char *kind = nm_tc_action_get_kind (action);
 	gs_free char *str = NULL;
+	const NMVariantAttributeSpec *const *attrs;
+
+	if (nm_streq (kind, "simple"))
+		attrs = tc_action_simple_attribute_spec;
+	else if (nm_streq (kind, "mirred"))
+		attrs = tc_action_mirred_attribute_spec;
+	else
+		attrs = NULL;
+
 
 	g_string_append (string, kind);
 
-	str = nm_utils_format_variant_attributes (_nm_tc_action_get_attributes (action),
-	                                          ' ', ' ');
+	str = _nm_utils_format_variant_attributes (_nm_tc_action_get_attributes (action),
+	                                           attrs,
+	                                           ' ', ' ');
 	if (str) {
 		g_string_append_c (string, ' ');
 		g_string_append (string, str);
@@ -2895,7 +2905,7 @@ nm_utils_sriov_vf_to_str (const NMSriovVF *vf, gboolean omit_index, GError **err
 	if (num_attrs > 0) {
 		if (!omit_index)
 			g_string_append_c (str, ' ');
-		_nm_utils_format_variant_attributes_full (str, values, num_attrs, ' ', '=');
+		_nm_utils_format_variant_attributes_full (str, values, num_attrs, NULL, ' ', '=');
 	}
 
 	vlan_ids = nm_sriov_vf_get_vlan_ids (vf, &num_vlans);
@@ -5808,6 +5818,7 @@ nm_utils_format_variant_attributes (GHashTable *attributes,
                                     char key_value_separator)
 {
 	return _nm_utils_format_variant_attributes (attributes,
+	                                            NULL,
 	                                            attr_separator,
 	                                            key_value_separator);
 }
