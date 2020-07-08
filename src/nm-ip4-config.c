@@ -671,6 +671,28 @@ nm_ip4_config_update_routes_metric (NMIP4Config *self, gint64 metric)
 	g_object_thaw_notify (G_OBJECT (self));
 }
 
+static void
+_add_local_route_from_addr4 (NMIP4Config *self,
+                            const NMPlatformIP4Address *addr,
+                            int ifindex)
+{
+	nm_auto_nmpobj NMPObject *r = NULL;
+	NMPlatformIP4Route *route;
+
+	r = nmp_object_new (NMP_OBJECT_TYPE_IP4_ROUTE, NULL);
+	route = NMP_OBJECT_CAST_IP4_ROUTE (r);
+	route->ifindex = ifindex;
+	route->rt_source = NM_IP_CONFIG_SOURCE_KERNEL;
+	route->network = addr->address;
+	route->plen = 32;
+	route->pref_src = addr->address;
+	route->table_coerced = nm_platform_route_table_coerce (RT_TABLE_LOCAL);
+	route->type_coerced = nm_platform_route_type_coerce (RTN_LOCAL);
+	route->scope_inv = nm_platform_route_scope_inv (RT_SCOPE_HOST);
+
+	_add_route (self, r, NULL, NULL);
+}
+
 void
 nm_ip4_config_add_dependent_routes (NMIP4Config *self,
                                     guint32 route_table,
@@ -706,6 +728,8 @@ nm_ip4_config_add_dependent_routes (NMIP4Config *self,
 
 		if (my_addr->external)
 			continue;
+
+		_add_local_route_from_addr4 (self, my_addr, ifindex);
 
 		if (_ipv4_is_zeronet (network)) {
 			/* Kernel doesn't add device-routes for destinations that

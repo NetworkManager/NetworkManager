@@ -4230,17 +4230,8 @@ nm_platform_ip_route_get_prune_list (NMPlatform *self,
 		} else if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN) {
 			if (!nm_platform_route_table_is_main (NMP_OBJECT_CAST_IP_ROUTE (obj)->table_coerced))
 				continue;
-		} else {
+		} else
 			nm_assert (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_ALL);
-
-			/* IPv6 routes having metric 0 and routes having rt_source == NM_IP_CONFIG_SOURCE_RTPROT_KERNEL
-			 * are entirely managed by kernel, let's not touch them */
-			if (addr_family == AF_INET6 && NMP_OBJECT_CAST_IP6_ROUTE (obj)->metric == 0)
-				continue;
-			if (   nm_platform_route_table_uncoerce (NMP_OBJECT_CAST_IP_ROUTE (obj)->table_coerced, TRUE) == RT_TABLE_LOCAL
-			    && NMP_OBJECT_CAST_IP_ROUTE (obj)->rt_source == NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
-				continue;
-		}
 
 		g_ptr_array_add (routes_prune, (gpointer) nmp_object_ref (obj));
 	}
