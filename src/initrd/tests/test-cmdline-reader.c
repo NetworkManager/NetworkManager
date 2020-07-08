@@ -138,7 +138,7 @@ test_if_dhcp6 (void)
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_DHCP);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
 	g_assert (!nm_setting_ip_config_get_ignore_auto_dns (s_ip6));
 }
 
@@ -963,7 +963,7 @@ test_team (void)
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
-	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_DHCP);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
 	g_assert (!nm_setting_ip_config_get_ignore_auto_dns (s_ip6));
 	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip6), ==, 0);
 	g_assert (!nm_setting_ip_config_get_gateway (s_ip6));
