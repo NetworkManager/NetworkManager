@@ -4323,6 +4323,13 @@ nm_platform_ip_route_sync (NMPlatform *self,
 				continue;
 			}
 
+			if (   !IS_IPv4
+			    && NMP_OBJECT_CAST_IP6_ROUTE (conf_o)->metric == 0) {
+				/* User space cannot add routes with metric 0. However, kernel can, and we might track such
+				 * routes in @route as they are present external. Skip them silently. */
+				continue;
+			}
+
 			plat_entry = nm_platform_lookup_entry (self,
 			                                       NMP_CACHE_ID_TYPE_OBJECT_TYPE,
 			                                       conf_o);
