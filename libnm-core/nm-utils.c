@@ -2375,7 +2375,7 @@ _nm_utils_string_append_tc_qdisc_rest (GString *string, NMTCQdisc *qdisc)
 	gs_free char *str = NULL;
 
 	if (   handle != TC_H_UNSPEC
-	    && !nm_streq (kind, "ingress")) {
+	    && !NM_IN_STRSET (kind, "ingress", "clsact")) {
 		g_string_append (string, "handle ");
 		_string_append_tc_handle (string, handle);
 		g_string_append_c (string, ' ');
@@ -2467,7 +2467,7 @@ _tc_read_common_opts (const char *str,
 	variant = g_hash_table_lookup (ht, "kind");
 	if (variant) {
 		*kind = g_variant_dup_string (variant, NULL);
-		if (nm_streq (*kind, "ingress")) {
+		if (NM_IN_STRSET (*kind, "ingress", "clsact")) {
 			if (*parent == TC_H_UNSPEC)
 				*parent = TC_H_INGRESS;
 			if (*handle == TC_H_UNSPEC)

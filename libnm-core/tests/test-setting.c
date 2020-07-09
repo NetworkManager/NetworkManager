@@ -2308,6 +2308,14 @@ test_tc_config_qdisc (void)
 	nm_tc_qdisc_unref (qdisc1);
 	nm_tc_qdisc_unref (qdisc2);
 
+	qdisc1 = nm_utils_tc_qdisc_from_str ("clsact", &error);
+	nmtst_assert_success (qdisc1, error);
+	str = nm_utils_tc_qdisc_to_str (qdisc1, &error);
+	nmtst_assert_success (str, error);
+	g_assert_cmpstr (str, ==, "clsact");
+	nm_tc_qdisc_unref (qdisc1);
+	g_free (str);
+
 #define CHECK_ATTRIBUTE(qdisc, name, vtype, type, value) \
 	variant = nm_tc_qdisc_get_attribute (qdisc, name); \
 	g_assert (variant); \
