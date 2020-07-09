@@ -642,6 +642,39 @@ shared_nm_glib_aux_tests_test_shared_general_LDADD = \
 
 ###############################################################################
 
+if WITH_JANSSON
+
+check_programs += shared/nm-glib-aux/tests/test-json-aux
+
+shared_nm_glib_aux_tests_test_json_aux_CPPFLAGS = \
+	$(dflt_cppflags) \
+	-I$(srcdir)/shared \
+	-DNETWORKMANAGER_COMPILATION_TEST \
+	-DNETWORKMANAGER_COMPILATION='(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_PROG)' \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(JANSSON_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	$(NULL)
+
+shared_nm_glib_aux_tests_test_json_aux_LDFLAGS = \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_EXEC_LDFLAGS) \
+	$(NULL)
+
+shared_nm_glib_aux_tests_test_json_aux_LDADD = \
+	$(JANSSON_LIBS) \
+	shared/nm-glib-aux/libnm-glib-aux.la \
+	shared/systemd/libnm-systemd-logging-stub.la \
+	shared/nm-std-aux/libnm-std-aux.la \
+	shared/libcsiphash.la \
+	$(GLIB_LIBS) \
+	$(NULL)
+
+endif
+
+###############################################################################
+
 noinst_LTLIBRARIES += introspection/libnmdbus.la
 
 introspection_libnmdbus_la_CPPFLAGS = $(GLIB_CFLAGS)
@@ -1031,13 +1064,6 @@ libnm_core_lib_c_real = \
 	libnm-core/nm-vpn-plugin-info.c \
 	$(NULL)
 
-if WITH_JSON_VALIDATION
-libnm_core_lib_h_priv += \
-	libnm-core/nm-json.h
-libnm_core_lib_c_real += \
-	libnm-core/nm-json.c
-endif
-
 libnm_core_lib_c_mkenums = \
 	libnm-core/nm-core-enum-types.c
 
@@ -1091,11 +1117,6 @@ libnm_core_libnm_core_la_CPPFLAGS = \
 	-DG_LOG_DOMAIN=\""libnm"\" \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE \
 	$(NULL)
-
-if WITH_JSON_VALIDATION
-libnm_core_libnm_core_la_CPPFLAGS += $(JANSSON_CFLAGS)
-libnm_core_libnm_core_la_CPPFLAGS += -fcommon
-endif
 
 libnm_core_libnm_core_la_SOURCES = \
 	$(libnm_core_lib_h_pub_real) \

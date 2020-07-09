@@ -11,7 +11,6 @@
 
 #include "nm-errors.h"
 #include "nm-utils-private.h"
-#include "nm-json.h"
 #include "nm-glib-aux/nm-json-aux.h"
 #include "nm-core-internal.h"
 #include "nm-setting-team.h"
@@ -460,9 +459,9 @@ _team_attr_data_to_json (const TeamAttrData *attr_data,
 	_team_attr_data_ASSERT (attr_data);
 	nm_assert (p_field);
 
-	nm_json_aux_gstr_append_obj_name (gstr,
-	                                  attr_data->js_keys[attr_data->js_keys_len - 1],
-	                                  '\0');
+	nm_json_gstr_append_obj_name (gstr,
+	                              attr_data->js_keys[attr_data->js_keys_len - 1],
+	                              '\0');
 
 	if (attr_data->value_type != NM_VALUE_TYPE_UNSPEC) {
 		nm_value_type_to_json (attr_data->value_type, gstr, p_field);
@@ -482,7 +481,7 @@ _team_attr_data_to_json (const TeamAttrData *attr_data,
 			g_string_append (gstr, "[ ");
 			for (i = 0; i < v_ptrarray->len; i++) {
 				if (i > 0)
-					nm_json_aux_gstr_append_delimiter (gstr);
+					nm_json_gstr_append_delimiter (gstr);
 				_link_watcher_to_json (v_ptrarray->pdata[i], gstr);
 			}
 			g_string_append (gstr, " ]");
@@ -500,8 +499,8 @@ _team_attr_data_to_json (const TeamAttrData *attr_data,
 			g_string_append (gstr, "[ ");
 			for (i = 0; i < v_ptrarray->len; i++) {
 				if (i > 0)
-					nm_json_aux_gstr_append_delimiter (gstr);
-				nm_json_aux_gstr_append_string (gstr, v_ptrarray->pdata[i]);
+					nm_json_gstr_append_delimiter (gstr);
+				nm_json_gstr_append_string (gstr, v_ptrarray->pdata[i]);
 			}
 			g_string_append (gstr, i > 0 ? " ]" : "]");
 		}
@@ -671,7 +670,7 @@ _team_setting_field_to_json (const NMTeamSetting *self,
 		return FALSE;
 
 	if (prepend_delimiter)
-		nm_json_aux_gstr_append_delimiter (gstr);
+		nm_json_gstr_append_delimiter (gstr);
 	_team_attr_data_to_json (attr_data,
 	                         self->d.is_port,
 	                         gstr,
@@ -1108,29 +1107,29 @@ _link_watcher_to_json (const NMTeamLinkWatcher *link_watcher,
 		if (is_first)
 			is_first = FALSE;
 		else
-			nm_json_aux_gstr_append_delimiter (gstr);
-		nm_json_aux_gstr_append_obj_name (gstr, attr_data->js_key, '\0');
+			nm_json_gstr_append_delimiter (gstr);
+		nm_json_gstr_append_obj_name (gstr, attr_data->js_key, '\0');
 		nm_value_type_to_json (attr_data->value_type, gstr, &p_val->val);
 	}
 
 	g_string_append (gstr, " }");
 }
 
-#if WITH_JSON_VALIDATION
 static NMTeamLinkWatcher *
-_link_watcher_from_json (const json_t *root_js_obj,
+_link_watcher_from_json (const NMJsonVt *vt,
+                         const nm_json_t *root_js_obj,
                          gboolean *out_unrecognized_content)
 {
 	NMValueTypUnioMaybe args[G_N_ELEMENTS (link_watcher_attr_datas)] = { };
 	const char *j_key;
-	json_t *j_val;
+	nm_json_t *j_val;
 	const char *v_name;
 	NMTeamLinkWatcher *result = NULL;
 
-	if (!json_is_object (root_js_obj))
+	if (!nm_json_is_object (root_js_obj))
 		goto fail;
 
-	json_object_foreach ((json_t *) root_js_obj, j_key, j_val) {
+	nm_json_object_foreach (vt, (nm_json_t *) root_js_obj, j_key, j_val) {
 		const LinkWatcherAttrData *attr_data = NULL;
 		NMValueTypUnioMaybe *parse_result;
 
@@ -1154,7 +1153,7 @@ _link_watcher_from_json (const json_t *root_js_obj,
 		if (parse_result->has)
 			*out_unrecognized_content = TRUE;
 
-		if (!nm_value_type_from_json (attr_data->value_type, j_val, &parse_result->val))
+		if (!nm_value_type_from_json (vt, attr_data->value_type, j_val, &parse_result->val))
 			*out_unrecognized_content = TRUE;
 		else
 			parse_result->has = TRUE;
@@ -1218,7 +1217,6 @@ fail:
 	*out_unrecognized_content = TRUE;
 	return NULL;
 }
-#endif
 
 /*****************************************************************************/
 
@@ -1575,15 +1573,15 @@ nm_team_setting_config_get (const NMTeamSetting *self)
 
 				nm_assert (list_is_empty);
 
-				nm_json_aux_gstr_append_obj_name (gstr, "runner", '{');
+				nm_json_gstr_append_obj_name (gstr, "runner", '{');
 
 				if (_team_setting_fields_to_json_maybe (self, gstr, !list_is_empty2, attr_lst_runner_pt1, G_N_ELEMENTS (attr_lst_runner_pt1)))
 					list_is_empty2 = FALSE;
 
 				if (_team_setting_has_fields_any_v (self, attr_lst_runner_pt2, G_N_ELEMENTS (attr_lst_runner_pt2))) {
 					if (!list_is_empty2)
-						nm_json_aux_gstr_append_delimiter (gstr);
-					nm_json_aux_gstr_append_obj_name (gstr, "tx_balancer", '{');
+						nm_json_gstr_append_delimiter (gstr);
+					nm_json_gstr_append_obj_name (gstr, "tx_balancer", '{');
 					if (!_team_setting_fields_to_json_maybe (self, gstr, FALSE, attr_lst_runner_pt2, G_N_ELEMENTS (attr_lst_runner_pt2)))
 						nm_assert_not_reached ();
 					g_string_append (gstr, " }");
@@ -1600,8 +1598,8 @@ nm_team_setting_config_get (const NMTeamSetting *self)
 
 			if (_team_setting_has_fields_any_v (self, attr_lst_notify_peers, G_N_ELEMENTS (attr_lst_notify_peers))) {
 				if (!list_is_empty)
-					nm_json_aux_gstr_append_delimiter (gstr);
-				nm_json_aux_gstr_append_obj_name (gstr, "notify_peers", '{');
+					nm_json_gstr_append_delimiter (gstr);
+				nm_json_gstr_append_obj_name (gstr, "notify_peers", '{');
 				if (!_team_setting_fields_to_json_maybe (self, gstr, FALSE, attr_lst_notify_peers, G_N_ELEMENTS (attr_lst_notify_peers)))
 					nm_assert_not_reached ();
 				g_string_append (gstr, " }");
@@ -1610,8 +1608,8 @@ nm_team_setting_config_get (const NMTeamSetting *self)
 
 			if (_team_setting_has_fields_any_v (self, attr_lst_mcast_rejoin, G_N_ELEMENTS (attr_lst_mcast_rejoin))) {
 				if (!list_is_empty)
-					nm_json_aux_gstr_append_delimiter (gstr);
-				nm_json_aux_gstr_append_obj_name (gstr, "mcast_rejoin", '{');
+					nm_json_gstr_append_delimiter (gstr);
+				nm_json_gstr_append_obj_name (gstr, "mcast_rejoin", '{');
 				if (!_team_setting_fields_to_json_maybe (self, gstr, FALSE, attr_lst_mcast_rejoin, G_N_ELEMENTS (attr_lst_mcast_rejoin)))
 					nm_assert_not_reached ();
 				g_string_append (gstr, " }");
@@ -1641,7 +1639,6 @@ nm_team_setting_config_get (const NMTeamSetting *self)
 
 /*****************************************************************************/
 
-#if WITH_JSON_VALIDATION
 static gboolean
 _attr_data_match_keys (const TeamAttrData *attr_data,
                        const char *const*keys,
@@ -1686,18 +1683,21 @@ _attr_data_find_by_json_key (gboolean is_port,
 }
 
 static void
-_js_parse_locate_keys (NMTeamSetting *self,
-                       json_t *root_js_obj,
-                       json_t *found_keys[static _NM_TEAM_ATTRIBUTE_NUM],
+_js_parse_locate_keys (const NMJsonVt *vt,
+                       NMTeamSetting *self,
+                       nm_json_t *root_js_obj,
+                       nm_json_t *found_keys[static _NM_TEAM_ATTRIBUTE_NUM],
                        gboolean *out_unrecognized_content)
 {
 	const char *keys[3];
 	const char *cur_key1;
 	const char *cur_key2;
 	const char *cur_key3;
-	json_t *cur_val1;
-	json_t *cur_val2;
-	json_t *cur_val3;
+	nm_json_t *cur_val1;
+	nm_json_t *cur_val2;
+	nm_json_t *cur_val3;
+
+	nm_assert (vt);
 
 #define _handle(_self, _cur_key, _cur_val, _keys, _level, _found_keys, _out_unrecognized_content) \
 	({ \
@@ -1713,18 +1713,18 @@ _js_parse_locate_keys (NMTeamSetting *self,
 			(_found_keys)[_attr_data->team_attr] = (_cur_val); \
 			_handled = TRUE; \
 		} else if (   !_attr_data \
-		           || !json_is_object ((_cur_val))) { \
+		           || !nm_json_is_object ((_cur_val))) { \
 			*(_out_unrecognized_content) = TRUE; \
 			_handled = TRUE; \
 		} \
 		_handled; \
 	})
 
-	json_object_foreach (root_js_obj, cur_key1, cur_val1) {
+	nm_json_object_foreach (vt, root_js_obj, cur_key1, cur_val1) {
 		if (!_handle (self, cur_key1, cur_val1, keys, 1, found_keys, out_unrecognized_content)) {
-			json_object_foreach (cur_val1, cur_key2, cur_val2) {
+			nm_json_object_foreach (vt, cur_val1, cur_key2, cur_val2) {
 				if (!_handle (self, cur_key2, cur_val2, keys, 2, found_keys, out_unrecognized_content)) {
-					json_object_foreach (cur_val2, cur_key3, cur_val3) {
+					nm_json_object_foreach (vt, cur_val2, cur_key3, cur_val3) {
 						if (!_handle (self, cur_key3, cur_val3, keys, 3, found_keys, out_unrecognized_content))
 							*out_unrecognized_content = TRUE;
 					}
@@ -1737,8 +1737,9 @@ _js_parse_locate_keys (NMTeamSetting *self,
 }
 
 static void
-_js_parse_unpack (gboolean is_port,
-                  json_t *found_keys[static _NM_TEAM_ATTRIBUTE_NUM],
+_js_parse_unpack (const NMJsonVt *vt,
+                  gboolean is_port,
+                  nm_json_t *found_keys[static _NM_TEAM_ATTRIBUTE_NUM],
                   bool out_has_lst[static _NM_TEAM_ATTRIBUTE_NUM],
                   NMValueTypUnion out_val_lst[static _NM_TEAM_ATTRIBUTE_NUM],
                   gboolean *out_unrecognized_content,
@@ -1747,10 +1748,12 @@ _js_parse_unpack (gboolean is_port,
 {
 	const TeamAttrData *attr_data;
 
+	nm_assert (vt);
+
 	for (attr_data = &team_attr_datas[TEAM_ATTR_IDX_CONFIG + 1]; attr_data < &team_attr_datas[G_N_ELEMENTS (team_attr_datas)]; attr_data++) {
 		NMValueTypUnion *p_out_val;
 		gboolean valid = FALSE;
-		json_t *arg_js_obj;
+		nm_json_t *arg_js_obj;
 
 		if (!_team_attr_data_is_relevant (attr_data, is_port))
 			continue;
@@ -1764,25 +1767,27 @@ _js_parse_unpack (gboolean is_port,
 		p_out_val = &out_val_lst[attr_data->team_attr];
 
 		if (attr_data->value_type != NM_VALUE_TYPE_UNSPEC)
-			valid = nm_value_type_from_json (attr_data->value_type, arg_js_obj, p_out_val);
+			valid = nm_value_type_from_json (vt, attr_data->value_type, arg_js_obj, p_out_val);
 		else if (attr_data->team_attr == NM_TEAM_ATTRIBUTE_LINK_WATCHERS) {
 			GPtrArray *link_watchers = NULL;
 			NMTeamLinkWatcher *link_watcher;
 
 			nm_assert (out_ptr_array_link_watchers_free && !*out_ptr_array_link_watchers_free);
-			if (json_is_array (arg_js_obj)) {
+			if (nm_json_is_array (arg_js_obj)) {
 				gsize i, len;
 
-				len = json_array_size (arg_js_obj);
+				len = vt->nm_json_array_size (arg_js_obj);
 				link_watchers = g_ptr_array_new_full (len, (GDestroyNotify) nm_team_link_watcher_unref);
 				for (i = 0; i < len; i++) {
-					link_watcher = _link_watcher_from_json (json_array_get (arg_js_obj, i),
+					link_watcher = _link_watcher_from_json (vt,
+					                                        vt->nm_json_array_get (arg_js_obj, i),
 					                                        out_unrecognized_content);
 					if (link_watcher)
 						g_ptr_array_add (link_watchers, link_watcher);
 				}
 			} else {
-				link_watcher = _link_watcher_from_json (arg_js_obj,
+				link_watcher = _link_watcher_from_json (vt,
+				                                        arg_js_obj,
 				                                        out_unrecognized_content);
 				if (link_watcher) {
 					link_watchers = g_ptr_array_new_full (1, (GDestroyNotify) nm_team_link_watcher_unref);
@@ -1799,16 +1804,17 @@ _js_parse_unpack (gboolean is_port,
 			GPtrArray *strv = NULL;
 
 			nm_assert (out_ptr_array_master_runner_tx_hash_free && !*out_ptr_array_master_runner_tx_hash_free);
-			if (json_is_array (arg_js_obj)) {
+			if (nm_json_is_array (arg_js_obj)) {
 				gsize i, len;
 
-				len = json_array_size (arg_js_obj);
+				len = vt->nm_json_array_size (arg_js_obj);
 				if (len > 0) {
 					strv = g_ptr_array_sized_new (len);
 					for (i = 0; i < len; i++) {
 						const char *v_string;
 
-						if (   nm_jansson_json_as_string (json_array_get (arg_js_obj, i),
+						if (   nm_jansson_json_as_string (vt,
+						                                  vt->nm_json_array_get (arg_js_obj, i),
 						                                  &v_string) <= 0
 						    || !v_string
 						    || v_string[0] == '\0') {
@@ -1832,11 +1838,11 @@ _js_parse_unpack (gboolean is_port,
 			*out_unrecognized_content = TRUE;
 	}
 }
-#endif
 
 guint32
 nm_team_setting_config_set (NMTeamSetting *self, const char *js_str)
 {
+	const NMJsonVt *vt;
 	guint32 changed_flags = 0;
 	gboolean do_set_default = TRUE;
 	gboolean new_js_str_invalid = FALSE;
@@ -1866,30 +1872,29 @@ nm_team_setting_config_set (NMTeamSetting *self, const char *js_str)
 	} else
 		changed_flags |= nm_team_attribute_to_flags (NM_TEAM_ATTRIBUTE_CONFIG);
 
-#if WITH_JSON_VALIDATION
-	{
-		nm_auto_decref_json json_t *root_js_obj = NULL;
+	if ((vt = nm_json_vt ())) {
+		nm_auto_decref_json nm_json_t *root_js_obj = NULL;
 
-		if (nm_jansson_load ())
-			root_js_obj = json_loads (js_str, 0, NULL);
-
+		root_js_obj = vt->nm_json_loads (js_str, 0, NULL);
 		if (   !root_js_obj
-		    || !json_is_object (root_js_obj))
+		    || !nm_json_is_object (root_js_obj))
 			new_js_str_invalid = TRUE;
 		else {
 			gboolean unrecognized_content = FALSE;
 			bool has_lst[_NM_TEAM_ATTRIBUTE_NUM] = { FALSE, };
 			NMValueTypUnion val_lst[_NM_TEAM_ATTRIBUTE_NUM];
-			json_t *found_keys[_NM_TEAM_ATTRIBUTE_NUM] = { NULL, };
+			nm_json_t *found_keys[_NM_TEAM_ATTRIBUTE_NUM] = { NULL, };
 			gs_unref_ptrarray GPtrArray *ptr_array_master_runner_tx_hash_free = NULL;
 			gs_unref_ptrarray GPtrArray *ptr_array_link_watchers_free = NULL;
 
-			_js_parse_locate_keys (self,
+			_js_parse_locate_keys (vt,
+			                       self,
 			                       root_js_obj,
 			                       found_keys,
 			                       &unrecognized_content);
 
-			_js_parse_unpack (self->d.is_port,
+			_js_parse_unpack (vt,
+			                  self->d.is_port,
 			                  found_keys,
 			                  has_lst,
 			                  val_lst,
@@ -1905,8 +1910,6 @@ nm_team_setting_config_set (NMTeamSetting *self, const char *js_str)
 			                                    val_lst);
 		}
 	}
-
-#endif
 
 	if (do_set_default)
 		changed_flags |= _team_setting_set_default (self);
@@ -2222,6 +2225,7 @@ nm_team_setting_reset_from_dbus (NMTeamSetting *self,
 	GVariantIter iter;
 	const char *v_key;
 	GVariant *v_val;
+	const NMJsonVt *vt;
 
 	*out_changed = 0;
 
@@ -2271,10 +2275,12 @@ nm_team_setting_reset_from_dbus (NMTeamSetting *self,
 		variants[attr_data->team_attr] = g_steal_pointer (&v_val_free);
 	}
 
+	vt = nm_json_vt ();
+
 	if (variants[NM_TEAM_ATTRIBUTE_LINK_WATCHERS]) {
 
 		if (   variants[NM_TEAM_ATTRIBUTE_CONFIG]
-		    && WITH_JSON_VALIDATION
+		    && vt
 		    && !NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
 			/* we don't require the content of the "link-watchers" and we also
 			 * don't perform strict validation. No need to parse it. */
@@ -2282,7 +2288,7 @@ nm_team_setting_reset_from_dbus (NMTeamSetting *self,
 			gs_free_error GError *local = NULL;
 
 			/* We might need the parsed v_link_watchers array below (because there is no JSON
-			 * "config" present or because we don't build WITH_JSON_VALIDATION).
+			 * "config" present or because we don't have json support).
 			 *
 			 * Or we might run with NM_SETTING_PARSE_FLAGS_STRICT. In that mode, we may not necessarily
 			 * require that the entire setting as a whole validates (if a JSON config is present and
@@ -2310,7 +2316,7 @@ nm_team_setting_reset_from_dbus (NMTeamSetting *self,
 	                                            ? g_variant_get_string (variants[NM_TEAM_ATTRIBUTE_CONFIG], NULL)
 	                                            : NULL);
 
-	if (   WITH_JSON_VALIDATION
+	if (   vt
 	    && variants[NM_TEAM_ATTRIBUTE_CONFIG]) {
 		/* for team settings, the JSON must be able to express all possible options. That means,
 		 * if the GVariant contains both the JSON "config" and other options, then the other options

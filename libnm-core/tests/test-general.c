@@ -14,6 +14,7 @@
 #include "nm-std-aux/c-list-util.h"
 #include "nm-glib-aux/nm-enum-utils.h"
 #include "nm-glib-aux/nm-str-buf.h"
+#include "nm-glib-aux/nm-json-aux.h"
 #include "systemd/nm-sd-utils-shared.h"
 
 #include "nm-utils.h"
@@ -7125,17 +7126,19 @@ test_nm_utils_check_valid_json (void)
 {
 	_json_config_check_valid (NULL, FALSE);
 	_json_config_check_valid ("", FALSE);
-#if WITH_JSON_VALIDATION
-	_json_config_check_valid ("{ }", TRUE);
-	_json_config_check_valid ("{ \"a\" : 1 }", TRUE);
-	_json_config_check_valid ("{ \"a\" : }", FALSE);
-#else
+
 	/* Without JSON library everything except empty string is considered valid */
+	nmtst_json_vt_reset (FALSE);
 	_json_config_check_valid ("{ }", TRUE);
 	_json_config_check_valid ("{'%!-a1} ", TRUE);
 	_json_config_check_valid (" {'%!-a1}", TRUE);
 	_json_config_check_valid ("{'%!-a1", FALSE);
-#endif
+
+	if (nmtst_json_vt_reset (TRUE)) {
+		_json_config_check_valid ("{ }", TRUE);
+		_json_config_check_valid ("{ \"a\" : 1 }", TRUE);
+		_json_config_check_valid ("{ \"a\" : }", FALSE);
+	}
 }
 
 static void
@@ -7172,86 +7175,96 @@ _team_config_equal_check (const char *conf1,
 static void
 test_nm_utils_team_config_equal (void)
 {
-	_team_config_equal_check ("",
-	                          "",
-	                          TRUE,
-	                          TRUE);
-	_team_config_equal_check ("",
-	                          " ",
-	                          TRUE,
-	                          TRUE);
-	_team_config_equal_check ("{}",
-	                          "{ }",
-	                          TRUE,
-	                          TRUE);
-	_team_config_equal_check ("{}",
-	                          "{",
-	                          TRUE,
-	                          TRUE);
-	_team_config_equal_check ("{ \"a\": 1 }",
-	                          "{ \"a\": 1 }",
-	                          TRUE,
-	                          TRUE);
-	_team_config_equal_check ("{ \"a\": 1 }",
-	                          "{ \"a\":   1 }",
-	                          TRUE,
-	                          TRUE);
+	int with_json_vt;
 
-	/* team config */
-	_team_config_equal_check ("{ }",
-	                          "{ \"runner\" :  { \"name\" : \"random\"} }",
-	                          FALSE,
-	                          !WITH_JSON_VALIDATION);
-	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"roundrobin\"} }",
-	                          "{ \"runner\" :  { \"name\" : \"random\"} }",
-	                          FALSE,
-	                          !WITH_JSON_VALIDATION);
-	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"random\"} }",
-	                          "{ \"runner\" :  { \"name\" : \"random\"} }",
-	                          FALSE,
-	                          TRUE);
-	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"loadbalance\"} }",
-	                          "{ \"runner\" :  { \"name\" : \"loadbalance\"} }",
-	                          FALSE,
-	                          TRUE);
-	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"random\"}, \"ports\" : { \"eth0\" : {} } }",
-	                          "{ \"runner\" :  { \"name\" : \"random\"}, \"ports\" : { \"eth1\" : {} } }",
-	                          FALSE,
-	                          TRUE);
-	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"lacp\"} }",
-	                          "{ \"runner\" :  { \"name\" : \"lacp\", \"tx_hash\" : [ \"eth\", \"ipv4\", \"ipv6\" ] } }",
-	                          FALSE,
-	                          !WITH_JSON_VALIDATION);
-	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"roundrobin\"} }",
-	                          "{ \"runner\" :  { \"name\" : \"roundrobin\", \"tx_hash\" : [ \"eth\", \"ipv4\", \"ipv6\" ] } }",
-	                          FALSE,
-	                          !WITH_JSON_VALIDATION);
-	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"lacp\"} }",
-	                          "{ \"runner\" :  { \"name\" : \"lacp\", \"tx_hash\" : [ \"eth\" ] } }",
-	                          FALSE,
-	                          !WITH_JSON_VALIDATION);
+	for (with_json_vt = 0; with_json_vt < 2; with_json_vt++) {
+		const NMJsonVt *vt;
 
-	/* team port config */
-	_team_config_equal_check ("{ }",
-	                          "{ \"link_watch\" :  { \"name\" : \"ethtool\"} }",
-	                          TRUE,
-	                          !WITH_JSON_VALIDATION);
-	_team_config_equal_check ("{ }",
-	                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
-	                          TRUE,
-	                          TRUE);
-	_team_config_equal_check ("{ \"link_watch\" :  { \"name\" : \"ethtool\"} }",
-	                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
-	                          TRUE,
-	                          !WITH_JSON_VALIDATION);
-	_team_config_equal_check ("{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
-	                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
-	                          TRUE,
-	                          TRUE);
-	_team_config_equal_check ("{ \"link_watch\" :  { \"name\" : \"arp_ping\"}, \"ports\" : { \"eth0\" : {} } }",
-	                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"}, \"ports\" : { \"eth1\" : {} } }",
-	                          TRUE,
-	                          TRUE);
+		vt = nmtst_json_vt_reset (!!with_json_vt);
+
+		_team_config_equal_check ("",
+		                          "",
+		                          TRUE,
+		                          TRUE);
+		_team_config_equal_check ("",
+		                          " ",
+		                          TRUE,
+		                          TRUE);
+		_team_config_equal_check ("{}",
+		                          "{ }",
+		                          TRUE,
+		                          TRUE);
+		_team_config_equal_check ("{}",
+		                          "{",
+		                          TRUE,
+		                          TRUE);
+		_team_config_equal_check ("{ \"a\": 1 }",
+		                          "{ \"a\": 1 }",
+		                          TRUE,
+		                          TRUE);
+		_team_config_equal_check ("{ \"a\": 1 }",
+		                          "{ \"a\":   1 }",
+		                          TRUE,
+		                          TRUE);
+
+		/* team config */
+		_team_config_equal_check ("{ }",
+		                          "{ \"runner\" :  { \"name\" : \"random\"} }",
+		                          FALSE,
+		                          !vt);
+		_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"roundrobin\"} }",
+		                          "{ \"runner\" :  { \"name\" : \"random\"} }",
+		                          FALSE,
+		                          !vt);
+		_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"random\"} }",
+		                          "{ \"runner\" :  { \"name\" : \"random\"} }",
+		                          FALSE,
+		                          TRUE);
+		_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"loadbalance\"} }",
+		                          "{ \"runner\" :  { \"name\" : \"loadbalance\"} }",
+		                          FALSE,
+		                          TRUE);
+		_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"random\"}, \"ports\" : { \"eth0\" : {} } }",
+		                          "{ \"runner\" :  { \"name\" : \"random\"}, \"ports\" : { \"eth1\" : {} } }",
+		                          FALSE,
+		                          TRUE);
+		_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"lacp\"} }",
+		                          "{ \"runner\" :  { \"name\" : \"lacp\", \"tx_hash\" : [ \"eth\", \"ipv4\", \"ipv6\" ] } }",
+		                          FALSE,
+		                          !vt);
+		_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"roundrobin\"} }",
+		                          "{ \"runner\" :  { \"name\" : \"roundrobin\", \"tx_hash\" : [ \"eth\", \"ipv4\", \"ipv6\" ] } }",
+		                          FALSE,
+		                          !vt);
+		_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"lacp\"} }",
+		                          "{ \"runner\" :  { \"name\" : \"lacp\", \"tx_hash\" : [ \"eth\" ] } }",
+		                          FALSE,
+		                          !vt);
+
+		/* team port config */
+		_team_config_equal_check ("{ }",
+		                          "{ \"link_watch\" :  { \"name\" : \"ethtool\"} }",
+		                          TRUE,
+		                          !vt);
+		_team_config_equal_check ("{ }",
+		                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
+		                          TRUE,
+		                          TRUE);
+		_team_config_equal_check ("{ \"link_watch\" :  { \"name\" : \"ethtool\"} }",
+		                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
+		                          TRUE,
+		                          !vt);
+		_team_config_equal_check ("{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
+		                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
+		                          TRUE,
+		                          TRUE);
+		_team_config_equal_check ("{ \"link_watch\" :  { \"name\" : \"arp_ping\"}, \"ports\" : { \"eth0\" : {} } }",
+		                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"}, \"ports\" : { \"eth1\" : {} } }",
+		                          TRUE,
+		                          TRUE);
+	}
+
+	nmtst_json_vt_reset (TRUE);
 }
 
 /*****************************************************************************/

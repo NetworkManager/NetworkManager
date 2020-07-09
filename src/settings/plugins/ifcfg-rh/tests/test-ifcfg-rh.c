@@ -15,6 +15,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "nm-glib-aux/nm-json-aux.h"
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"
@@ -9129,7 +9130,7 @@ test_read_team_master_invalid (gconstpointer user_data)
 	gs_free_error GError *error = NULL;
 	gs_unref_object NMConnection *connection = NULL;
 
-	if (WITH_JSON_VALIDATION) {
+	if (nm_json_vt ()) {
 		_connection_from_file_fail (PATH_NAME, NULL, TYPE_ETHERNET, &error);
 
 		g_assert_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);

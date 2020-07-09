@@ -16,10 +16,7 @@
 #include <sys/stat.h>
 #include <linux/pkt_sched.h>
 
-#if WITH_JSON_VALIDATION
-#include "nm-json.h"
-#endif
-
+#include "nm-glib-aux/nm-json-aux.h"
 #include "nm-glib-aux/nm-str-buf.h"
 #include "nm-glib-aux/nm-enum-utils.h"
 #include "nm-glib-aux/nm-time-utils.h"
@@ -5493,9 +5490,9 @@ _nm_utils_is_json_object_no_validation (const char *str, GError **error)
 gboolean
 nm_utils_is_json_object (const char *str, GError **error)
 {
-#if WITH_JSON_VALIDATION
-	nm_auto_decref_json json_t *json = NULL;
-	json_error_t jerror;
+	nm_auto_decref_json nm_json_t *json = NULL;
+	const NMJsonVt *vt;
+	nm_json_error_t jerror;
 
 	g_return_val_if_fail (!error || !*error, FALSE);
 
@@ -5507,10 +5504,10 @@ nm_utils_is_json_object (const char *str, GError **error)
 		return FALSE;
 	}
 
-	if (!nm_jansson_load ())
+	if (!(vt = nm_json_vt ()))
 		return _nm_utils_is_json_object_no_validation (str, error);
 
-	json = json_loads (str, JSON_REJECT_DUPLICATES, &jerror);
+	json = vt->nm_json_loads (str, NM_JSON_REJECT_DUPLICATES, &jerror);
 	if (!json) {
 		g_set_error (error,
 		             NM_CONNECTION_ERROR,
@@ -5523,7 +5520,7 @@ nm_utils_is_json_object (const char *str, GError **error)
 
 	/* valid JSON (depending on the definition) can also be a literal.
 	 * Here we only allow objects. */
-	if (!json_is_object (json)) {
+	if (!nm_json_is_object (json)) {
 		g_set_error_literal (error,
 		                     NM_CONNECTION_ERROR,
 		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -5532,19 +5529,6 @@ nm_utils_is_json_object (const char *str, GError **error)
 	}
 
 	return TRUE;
-#else /* !WITH_JSON_VALIDATION */
-	g_return_val_if_fail (!error || !*error, FALSE);
-
-	if (!str || !str[0]) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     str ? _("value is NULL") : _("value is empty"));
-		return FALSE;
-	}
-
-	return _nm_utils_is_json_object_no_validation (str, error);
-#endif
 }
 
 static char *
