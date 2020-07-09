@@ -892,15 +892,11 @@ ip6_start (NMDhcpClient *client,
 	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (client);
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
 	nm_auto (sd_dhcp6_client_unrefp) sd_dhcp6_client *sd_client = NULL;
-	GBytes *hwaddr;
 	const char *hostname;
 	int r, i;
 	const guint8 *duid_arr;
 	gsize duid_len;
 	GBytes *duid;
-	const uint8_t *hwaddr_arr;
-	gsize hwaddr_len;
-	int arp_type;
 
 	g_return_val_if_fail (!priv->client4, FALSE);
 	g_return_val_if_fail (!priv->client6, FALSE);
@@ -942,22 +938,6 @@ ip6_start (NMDhcpClient *client,
 	r = sd_dhcp6_client_attach_event (sd_client, NULL, 0);
 	if (r < 0) {
 		nm_utils_error_set_errno (error, r, "failed to attach event: %s");
-		return FALSE;
-	}
-
-	hwaddr = nm_dhcp_client_get_hw_addr (client);
-	if (   !hwaddr
-	    || !(hwaddr_arr = g_bytes_get_data (hwaddr, &hwaddr_len))
-	    || (arp_type = nm_utils_arp_type_detect_from_hwaddrlen (hwaddr_len)) < 0) {
-		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "invalid MAC address");
-		return FALSE;
-	}
-	r = sd_dhcp6_client_set_mac (sd_client,
-	                             hwaddr_arr,
-	                             hwaddr_len,
-	                             (guint16) arp_type);
-	if (r < 0) {
-		nm_utils_error_set_errno (error, r, "failed to set MAC address: %s");
 		return FALSE;
 	}
 

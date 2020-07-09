@@ -239,21 +239,27 @@ client_start (NMDhcpManager *self,
 	g_return_val_if_fail (!dhcp_client_id || g_bytes_get_size (dhcp_client_id) >= 2, NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
 
-	if (!hwaddr || !bcast_hwaddr) {
-		nm_utils_error_set (error,
-		                    NM_UTILS_ERROR_UNKNOWN,
-		                    "missing %s address",
-		                    hwaddr ? "broadcast" : "MAC");
-		return NULL;
-	}
+	if (addr_family == AF_INET) {
+		if (!hwaddr || !bcast_hwaddr) {
+			nm_utils_error_set (error,
+			                    NM_UTILS_ERROR_UNKNOWN,
+			                    "missing %s address",
+			                    hwaddr ? "broadcast" : "MAC");
+			return NULL;
+		}
 
-	hwaddr_len = g_bytes_get_size (hwaddr);
-	if (   hwaddr_len == 0
-	    || hwaddr_len > NM_UTILS_HWADDR_LEN_MAX) {
-		nm_utils_error_set (error,
-		                    NM_UTILS_ERROR_UNKNOWN,
-		                    "invalid MAC address");
-		g_return_val_if_reached (NULL) ;
+		hwaddr_len = g_bytes_get_size (hwaddr);
+		if (   hwaddr_len == 0
+		    || hwaddr_len > NM_UTILS_HWADDR_LEN_MAX) {
+			nm_utils_error_set (error,
+			                    NM_UTILS_ERROR_UNKNOWN,
+			                    "invalid MAC address");
+			g_return_val_if_reached (NULL) ;
+		}
+		nm_assert (g_bytes_get_size (hwaddr) == g_bytes_get_size (bcast_hwaddr));
+	} else {
+		hwaddr = NULL;
+		bcast_hwaddr = NULL;
 	}
 
 	if (hostname) {
@@ -266,8 +272,6 @@ client_start (NMDhcpManager *self,
 			hostname = NULL;
 		}
 	}
-
-	nm_assert (g_bytes_get_size (hwaddr) == g_bytes_get_size (bcast_hwaddr));
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
@@ -453,8 +457,6 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
                            NMDedupMultiIndex *multi_idx,
                            const char *iface,
                            int ifindex,
-                           GBytes *hwaddr,
-                           GBytes *bcast_hwaddr,
                            const struct in6_addr *ll_addr,
                            const char *uuid,
                            guint32 route_table,
@@ -488,8 +490,8 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
 	                     multi_idx,
 	                     iface,
 	                     ifindex,
-	                     hwaddr,
-	                     bcast_hwaddr,
+	                     NULL,
+	                     NULL,
 	                     uuid,
 	                     route_table,
 	                     route_metric,
