@@ -609,7 +609,8 @@ nm_setting_bond_add_option (NMSettingBond *setting,
 
 	g_return_val_if_fail (NM_IS_SETTING_BOND (setting), FALSE);
 
-	if (!value || !nm_setting_bond_validate_option (name, value))
+	if (   !value
+	    || !nm_setting_bond_validate_option (name, value))
 		return FALSE;
 
 	priv = NM_SETTING_BOND_GET_PRIVATE (setting);

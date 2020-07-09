@@ -16,6 +16,25 @@ nm_utils_bond_option_arp_ip_targets_split (const char *arp_ip_target)
 	return nm_utils_strsplit_set_full (arp_ip_target, ",", NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
 }
 
+void
+_nm_setting_bond_remove_options_miimon (NMSettingBond *s_bond)
+{
+	g_return_if_fail (NM_IS_SETTING_BOND (s_bond));
+
+	nm_setting_bond_remove_option (s_bond, NM_SETTING_BOND_OPTION_MIIMON);
+	nm_setting_bond_remove_option (s_bond, NM_SETTING_BOND_OPTION_UPDELAY);
+	nm_setting_bond_remove_option (s_bond, NM_SETTING_BOND_OPTION_DOWNDELAY);
+}
+
+void
+_nm_setting_bond_remove_options_arp_interval (NMSettingBond *s_bond)
+{
+	g_return_if_fail (NM_IS_SETTING_BOND (s_bond));
+
+	nm_setting_bond_remove_option (s_bond, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
+	nm_setting_bond_remove_option (s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
+}
+
 /*****************************************************************************/
 
 gboolean
