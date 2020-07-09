@@ -524,4 +524,11 @@ extern const NMMetaPropertyTypDataNested nm_meta_property_typ_data_bond;
 
 /*****************************************************************************/
 
+gboolean _nm_meta_setting_bond_add_option (NMSetting *setting,
+                                           const char *name,
+                                           const char *value,
+                                           GError **error);
+
+/*****************************************************************************/
+
 #endif /* __NM_META_SETTING_DESC_H__ */

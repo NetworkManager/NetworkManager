@@ -2357,8 +2357,8 @@ _get_fcn_bond_options (ARGS_GET_FCN)
 	RETURN_STR_TO_FREE (g_string_free (str, FALSE));
 }
 
-static gboolean
-_optionlist_set_fcn_bond_options (NMSetting *setting,
+gboolean
+_nm_meta_setting_bond_add_option (NMSetting *setting,
                                   const char *name,
                                   const char *value,
                                   GError **error)
@@ -2366,8 +2366,14 @@ _optionlist_set_fcn_bond_options (NMSetting *setting,
 	gs_free char *tmp_value = NULL;
 	char *p;
 
-	if (!value) {
-		nm_setting_bond_remove_option (NM_SETTING_BOND (setting), name);
+	if (   !value
+	    || !value[0]) {
+		if (!nm_setting_bond_remove_option (NM_SETTING_BOND (setting), name)) {
+			nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
+			                    _("failed to unset bond option \"%s\""),
+			                    name);
+			return FALSE;
+		}
 		return TRUE;
 	}
 
@@ -2388,6 +2394,15 @@ _optionlist_set_fcn_bond_options (NMSetting *setting,
 		                    name);
 		return FALSE;
 	}
+
+	if (nm_streq (name, NM_SETTING_BOND_OPTION_ARP_INTERVAL)) {
+		if (_nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT, 0) > 0)
+			_nm_setting_bond_remove_options_miimon (NM_SETTING_BOND (setting));
+	} else if (nm_streq (name, NM_SETTING_BOND_OPTION_MIIMON)) {
+		if (_nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT, 0) > 0)
+			_nm_setting_bond_remove_options_arp_interval (NM_SETTING_BOND (setting));
+	}
+
 	return TRUE;
 }
 
@@ -4883,7 +4898,7 @@ static const NMMetaPropertyInfo property_info_BOND_OPTIONS =
 	    ),
 	    .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
 	        PROPERTY_TYP_DATA_SUBTYPE (optionlist,
-	            .set_fcn =              _optionlist_set_fcn_bond_options,
+	            .set_fcn =              _nm_meta_setting_bond_add_option,
 	        ),
 	        .nested =                   &nm_meta_property_typ_data_bond,
 	    ),

@@ -5,6 +5,7 @@
 
 /****************************************************************************/
 
+#include "nm-setting-bond.h"
 #include "nm-setting-bridge.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-ip-config.h"
@@ -47,6 +48,9 @@ NM_AUTO_DEFINE_FCN0 (NMWireGuardPeer *, _nm_auto_unref_wgpeer, nm_wireguard_peer
 /****************************************************************************/
 
 const char **nm_utils_bond_option_arp_ip_targets_split (const char *arp_ip_target);
+
+void _nm_setting_bond_remove_options_miimon (NMSettingBond *s_bond);
+void _nm_setting_bond_remove_options_arp_interval (NMSettingBond *s_bond);
 
 /*****************************************************************************/
 
