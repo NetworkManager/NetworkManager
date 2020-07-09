@@ -7,7 +7,11 @@
 
 #include <errno.h>
 #include <sys/ioctl.h>
+#if 0 /* NM_IGNORED */
 #include <linux/if_arp.h>
+#else /* NM_IGNORED */
+#include <net/if_arp.h>
+#endif /* NM_IGNORED */
 #include <linux/if_infiniband.h>
 
 #include "sd-dhcp6-client.h"
