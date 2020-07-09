@@ -16,6 +16,7 @@
 
 #include "nmt-page-bond.h"
 
+#include "nm-libnm-core-intern/nm-libnm-core-utils.h"
 #include "nmt-mac-entry.h"
 #include "nmt-address-list.h"
 #include "nmt-slave-list.h"
@@ -193,6 +194,22 @@ slaves_changed (GObject    *object,
 		nmt_newt_component_set_sensitive (NMT_NEWT_COMPONENT (priv->mode), TRUE);
 }
 
+static void
+_bond_add_option (NMSettingBond *s_bond,
+                  const char *option,
+                  const char *value)
+{
+	if (nm_str_is_empty (value))
+		nm_setting_bond_remove_option (s_bond, option);
+	else
+		nm_setting_bond_add_option (s_bond, option, value);
+
+	if (nm_streq (option, NM_SETTING_BOND_OPTION_ARP_INTERVAL))
+		_nm_setting_bond_remove_options_miimon (s_bond);
+	else if (nm_streq (option, NM_SETTING_BOND_OPTION_MIIMON))
+		_nm_setting_bond_remove_options_arp_interval (s_bond);
+}
+
 #define WIDGET_CHANGED_FUNC(widget, func, option) \
 static void \
 widget ## _widget_changed (GObject    *object, \
@@ -206,7 +223,7 @@ widget ## _widget_changed (GObject    *object, \
         return; \
     \
     priv->updating = TRUE; \
-    nm_setting_bond_add_option (priv->s_bond, option, func (priv->widget)); \
+    _bond_add_option (priv->s_bond, option, func (priv->widget)); \
     priv->updating = FALSE; \
 }
 
@@ -230,7 +247,7 @@ mode_widget_changed (GObject    *object,
 
 	mode = nmt_newt_popup_get_active_id (priv->mode);
 	priv->updating = TRUE;
-	nm_setting_bond_add_option (priv->s_bond, NM_SETTING_BOND_OPTION_MODE, mode);
+	_bond_add_option (priv->s_bond, NM_SETTING_BOND_OPTION_MODE, mode);
 	priv->updating = FALSE;
 
 	if (!strcmp (mode, "balance-tlb") || !strcmp (mode, "balance-alb")) {
@@ -241,8 +258,8 @@ mode_widget_changed (GObject    *object,
 
 	if (!strcmp (mode, "active-backup")) {
 		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->primary), TRUE);
-		nm_setting_bond_add_option (priv->s_bond, NM_SETTING_BOND_OPTION_PRIMARY,
-		                            nmt_newt_entry_get_text (priv->primary));
+		_bond_add_option (priv->s_bond, NM_SETTING_BOND_OPTION_PRIMARY,
+		                  nmt_newt_entry_get_text (priv->primary));
 	} else {
 		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->primary), FALSE);
 		nm_setting_bond_remove_option (priv->s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
@@ -296,7 +313,7 @@ arp_ip_target_widget_changed (GObject    *object,
 	target = g_strjoinv (",", ips);
 
 	priv->updating = TRUE;
-	nm_setting_bond_add_option (priv->s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET, target);
+	_bond_add_option (priv->s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET, target);
 	priv->updating = FALSE;
 
 	g_free (target);
