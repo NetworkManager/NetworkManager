@@ -614,6 +614,7 @@ typedef struct _NMDevicePrivate {
 		SriovOp *pending;    /* SR-IOV operation currently running */
 		SriovOp *next;       /* next SR-IOV operation scheduled */
 	} sriov;
+	guint sriov_reset_pending;
 
 	struct {
 		guint timeout_id;
@@ -4765,15 +4766,12 @@ sriov_op_cb (GError *error, gpointer user_data)
 
 	nm_assert (op == priv->sriov.pending);
 
-	priv->sriov.pending = NULL;
-
 	g_clear_object (&op->cancellable);
 
 	if (op->callback)
 		op->callback (error, op->callback_data);
 
-	nm_assert (!priv->sriov.pending);
-
+	priv->sriov.pending = NULL;
 	nm_g_slice_free (op);
 
 	if (priv->sriov.next) {
@@ -4791,6 +4789,8 @@ sriov_op_queue_op (NMDevice *self,
 	if (priv->sriov.next) {
 		SriovOp *op_next = g_steal_pointer (&priv->sriov.next);
 
+		priv->sriov.next = op;
+
 		/* Cancel the next operation immediately */
 		if (op_next->callback) {
 			gs_free_error GError *error = NULL;
@@ -4800,17 +4800,10 @@ sriov_op_queue_op (NMDevice *self,
 		}
 
 		nm_g_slice_free (op_next);
+		return;
+	}
 
-		if (!priv->sriov.pending) {
-			/* This (having "next" set but "pending" not) can only happen if we are
-			 * called from inside the callback again.
-			 *
-			 * That means we append the new request as "next" and return. Once
-			 * the callback returns, it will schedule the request. */
-			priv->sriov.next = op;
-			return;
-		}
-	} else if (priv->sriov.pending) {
+	if (priv->sriov.pending) {
 		priv->sriov.next = op;
 		g_cancellable_cancel (priv->sriov.pending->cancellable);
 		return;
@@ -15927,24 +15920,48 @@ deactivate_ready (NMDevice *self, NMDeviceStateReason reason)
 	if (priv->dispatcher.call_id)
 		return;
 
-	if (   priv->sriov.pending
-	    || priv->sriov.next)
+	if (priv->sriov_reset_pending > 0)
 		return;
 
-	nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, reason);
+	if (priv->state == NM_DEVICE_STATE_DEACTIVATING)
+		nm_device_queue_state (self, NM_DEVICE_STATE_DISCONNECTED, reason);
 }
 
 static void
-sriov_deactivate_cb (GError *error, gpointer user_data)
+sriov_reset_on_deactivate_cb (GError *error, gpointer user_data)
 {
 	NMDevice *self;
+	NMDevicePrivate *priv;
 	gpointer reason;
 
-	if (nm_utils_error_is_cancelled_or_disposing (error))
+	nm_utils_user_data_unpack (user_data, &self, &reason);
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	nm_assert (priv->sriov_reset_pending > 0);
+	priv->sriov_reset_pending--;
+
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
-	nm_utils_user_data_unpack (user_data, &self, &reason);
 	deactivate_ready (self, (NMDeviceStateReason) reason);
+}
+
+static void
+sriov_reset_on_failure_cb (GError *error, gpointer user_data)
+{
+	NMDevice *self = user_data;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	nm_assert (priv->sriov_reset_pending > 0);
+	priv->sriov_reset_pending--;
+
+	if (nm_utils_error_is_cancelled (error))
+		return;
+
+	if (priv->state == NM_DEVICE_STATE_FAILED) {
+		nm_device_queue_state (self,
+		                       NM_DEVICE_STATE_DISCONNECTED,
+		                       NM_DEVICE_STATE_REASON_NONE);
+	}
 }
 
 static void
@@ -16273,10 +16290,11 @@ _set_state_full (NMDevice *self,
 
 			if (   priv->ifindex > 0
 			    && (s_sriov = nm_device_get_applied_setting (self, NM_TYPE_SETTING_SRIOV))) {
+				priv->sriov_reset_pending++;
 				sriov_op_queue (self,
 				                0,
 				                NM_TERNARY_TRUE,
-				                sriov_deactivate_cb,
+				                sriov_reset_on_deactivate_cb,
 				                nm_utils_user_data_pack (self, (gpointer) reason));
 			}
 		}
@@ -16328,6 +16346,16 @@ _set_state_full (NMDevice *self,
 		if (sett_conn && !nm_settings_connection_get_timestamp (sett_conn, NULL))
 			nm_settings_connection_update_timestamp (sett_conn, (guint64) 0);
 
+		if (   priv->ifindex > 0
+		    && (s_sriov = nm_device_get_applied_setting (self, NM_TYPE_SETTING_SRIOV))) {
+			priv->sriov_reset_pending++;
+			sriov_op_queue (self,
+			                0,
+			                NM_TERNARY_TRUE,
+			                sriov_reset_on_failure_cb,
+			                self);
+			break;
+		}
 		/* Schedule the transition to DISCONNECTED.  The device can't transition
 		 * immediately because we can't change states again from the state
 		 * handler for a variety of reasons.
@@ -17891,6 +17919,12 @@ dispose (GObject *object)
 
 	nm_clear_g_source (&priv->concheck_x[0].p_cur_id);
 	nm_clear_g_source (&priv->concheck_x[1].p_cur_id);
+
+	nm_assert (!priv->sriov.pending);
+	if (priv->sriov.next) {
+		nm_g_slice_free (priv->sriov.next);
+		priv->sriov.next = NULL;
+	}
 
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 
