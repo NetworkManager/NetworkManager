@@ -35,6 +35,27 @@ _nm_setting_bond_remove_options_arp_interval (NMSettingBond *s_bond)
 	nm_setting_bond_remove_option (s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
 }
 
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE (
+	_nm_setting_bond_mode_from_string,
+	NMBondMode,
+	{ g_return_val_if_fail (name, NM_BOND_MODE_UNKNOWN); },
+	{ return NM_BOND_MODE_UNKNOWN; },
+	{ "0",             NM_BOND_MODE_ROUNDROBIN   },
+	{ "1",             NM_BOND_MODE_ACTIVEBACKUP },
+	{ "2",             NM_BOND_MODE_XOR          },
+	{ "3",             NM_BOND_MODE_BROADCAST    },
+	{ "4",             NM_BOND_MODE_8023AD       },
+	{ "5",             NM_BOND_MODE_TLB          },
+	{ "6",             NM_BOND_MODE_ALB          },
+	{ "802.3ad",       NM_BOND_MODE_8023AD       },
+	{ "active-backup", NM_BOND_MODE_ACTIVEBACKUP },
+	{ "balance-alb",   NM_BOND_MODE_ALB          },
+	{ "balance-rr",    NM_BOND_MODE_ROUNDROBIN   },
+	{ "balance-tlb",   NM_BOND_MODE_TLB          },
+	{ "balance-xor",   NM_BOND_MODE_XOR          },
+	{ "broadcast",     NM_BOND_MODE_BROADCAST    },
+);
+
 /*****************************************************************************/
 
 gboolean
