@@ -16,6 +16,7 @@
 
 #include "nmt-page-bond.h"
 
+#include "nm-libnm-core-intern/nm-libnm-core-utils.h"
 #include "nmt-mac-entry.h"
 #include "nmt-address-list.h"
 #include "nmt-slave-list.h"
@@ -51,6 +52,14 @@ typedef struct {
 	GType slave_type;
 	gboolean updating;
 } NmtPageBondPrivate;
+
+/*****************************************************************************/
+
+static void arp_ip_target_widget_changed (GObject    *object,
+                                          GParamSpec *pspec,
+                                          gpointer    user_data);
+
+/*****************************************************************************/
 
 NmtEditorPage *
 nmt_page_bond_new (NMConnection   *conn,
@@ -97,8 +106,10 @@ bond_options_changed (GObject    *object,
 	NMSettingBond *s_bond = NM_SETTING_BOND (object);
 	NmtPageBond *bond = NMT_PAGE_BOND (user_data);
 	NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE (bond);
+	gs_free const char **ips = NULL;
 	const char *val;
-	char **ips;
+	gboolean visible_mii;
+	NMBondMode mode;
 
 	if (priv->updating)
 		return;
@@ -108,54 +119,47 @@ bond_options_changed (GObject    *object,
 	val = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_MODE);
 	nmt_newt_popup_set_active_id (priv->mode, val);
 
-	if (!strcmp (val, "active-backup")) {
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->primary), TRUE);
-		val = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
-		nmt_newt_entry_set_text (priv->primary, val);
-	} else
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->primary), FALSE);
+	mode = _nm_setting_bond_mode_from_string (val ?: "");
+
+	val = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
+	nmt_newt_entry_set_text (priv->primary, val);
+
+	nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->primary), mode == NM_BOND_MODE_ACTIVEBACKUP);
 
 	if (priv->monitoring_mode == NMT_PAGE_BOND_MONITORING_UNKNOWN) {
 		val = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
-		if (val && strcmp (val, "0") != 0)
+		if (_nm_utils_ascii_str_to_int64 (val, 10, 0, G_MAXINT, 0) > 0)
 			priv->monitoring_mode = NMT_PAGE_BOND_MONITORING_ARP;
 		else
 			priv->monitoring_mode = NMT_PAGE_BOND_MONITORING_MII;
 	}
 	nmt_newt_popup_set_active (priv->monitoring, priv->monitoring_mode);
 
-	if (priv->monitoring_mode == NMT_PAGE_BOND_MONITORING_MII) {
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->miimon), TRUE);
-		val = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_MIIMON);
-		nmt_newt_entry_set_text (priv->miimon, val);
+	val = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_MIIMON);
+	nmt_newt_entry_set_text (priv->miimon, val ?: "0");
 
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->updelay), TRUE);
-		val = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_UPDELAY);
-		nmt_newt_entry_set_text (priv->updelay, val);
+	val = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_UPDELAY);
+	nmt_newt_entry_set_text (priv->updelay, val ?: "0");
 
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->downdelay), TRUE);
-		val = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_DOWNDELAY);
-		nmt_newt_entry_set_text (priv->downdelay, val);
+	val = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_DOWNDELAY);
+	nmt_newt_entry_set_text (priv->downdelay, val ?: "0");
 
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->arp_interval), FALSE);
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->arp_ip_target), FALSE);
-	} else {
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->arp_interval), TRUE);
-		val = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
-		nmt_newt_entry_set_text (priv->arp_interval, val);
+	val = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
+	nmt_newt_entry_set_text (priv->arp_interval, val ?: "0");
 
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->arp_ip_target), TRUE);
-		val = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
-		ips = g_strsplit (val, ",", -1);
-		g_object_set (G_OBJECT (priv->arp_ip_target),
-		              "strings", ips,
-		              NULL);
-		g_strfreev (ips);
+	val = nm_setting_bond_get_option_by_name (s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
+	ips = nm_utils_bond_option_arp_ip_targets_split (val);
+	g_object_set (G_OBJECT (priv->arp_ip_target),
+	              "strings", ips ?: NM_PTRARRAY_EMPTY (const char *),
+	              NULL);
 
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->miimon), FALSE);
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->updelay), FALSE);
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->downdelay), FALSE);
-	}
+	visible_mii = (priv->monitoring_mode == NMT_PAGE_BOND_MONITORING_MII);
+
+	nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->miimon), visible_mii);
+	nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->updelay), visible_mii);
+	nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->downdelay), visible_mii);
+	nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->arp_interval), !visible_mii);
+	nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->arp_ip_target), !visible_mii);
 
 	priv->updating = FALSE;
 }
@@ -193,7 +197,23 @@ slaves_changed (GObject    *object,
 		nmt_newt_component_set_sensitive (NMT_NEWT_COMPONENT (priv->mode), TRUE);
 }
 
-#define WIDGET_CHANGED_FUNC(widget, func, option) \
+static void
+_bond_add_option (NMSettingBond *s_bond,
+                  const char *option,
+                  const char *value)
+{
+	if (nm_str_is_empty (value))
+		nm_setting_bond_remove_option (s_bond, option);
+	else
+		nm_setting_bond_add_option (s_bond, option, value);
+
+	if (nm_streq (option, NM_SETTING_BOND_OPTION_ARP_INTERVAL))
+		_nm_setting_bond_remove_options_miimon (s_bond);
+	else if (nm_streq (option, NM_SETTING_BOND_OPTION_MIIMON))
+		_nm_setting_bond_remove_options_arp_interval (s_bond);
+}
+
+#define WIDGET_CHANGED_FUNC(widget, func, option, dflt) \
 static void \
 widget ## _widget_changed (GObject    *object, \
                            GParamSpec *pspec, \
@@ -201,20 +221,22 @@ widget ## _widget_changed (GObject    *object, \
 { \
     NmtPageBond *bond = NMT_PAGE_BOND (user_data); \
     NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE (bond); \
+    const char *v; \
     \
     if (priv->updating) \
         return; \
     \
+    v = func (priv->widget); \
     priv->updating = TRUE; \
-    nm_setting_bond_add_option (priv->s_bond, option, func (priv->widget)); \
+    _bond_add_option (priv->s_bond, option, v ?: dflt); \
     priv->updating = FALSE; \
 }
 
-WIDGET_CHANGED_FUNC (primary, nmt_newt_entry_get_text, NM_SETTING_BOND_OPTION_PRIMARY)
-WIDGET_CHANGED_FUNC (miimon, nmt_newt_entry_get_text, NM_SETTING_BOND_OPTION_MIIMON)
-WIDGET_CHANGED_FUNC (updelay, nmt_newt_entry_get_text, NM_SETTING_BOND_OPTION_UPDELAY)
-WIDGET_CHANGED_FUNC (downdelay, nmt_newt_entry_get_text, NM_SETTING_BOND_OPTION_DOWNDELAY)
-WIDGET_CHANGED_FUNC (arp_interval, nmt_newt_entry_get_text, NM_SETTING_BOND_OPTION_ARP_INTERVAL)
+WIDGET_CHANGED_FUNC (primary, nmt_newt_entry_get_text, NM_SETTING_BOND_OPTION_PRIMARY, NULL)
+WIDGET_CHANGED_FUNC (miimon, nmt_newt_entry_get_text, NM_SETTING_BOND_OPTION_MIIMON, "0")
+WIDGET_CHANGED_FUNC (updelay, nmt_newt_entry_get_text, NM_SETTING_BOND_OPTION_UPDELAY, "0")
+WIDGET_CHANGED_FUNC (downdelay, nmt_newt_entry_get_text, NM_SETTING_BOND_OPTION_DOWNDELAY, "0")
+WIDGET_CHANGED_FUNC (arp_interval, nmt_newt_entry_get_text, NM_SETTING_BOND_OPTION_ARP_INTERVAL, "0")
 
 static void
 mode_widget_changed (GObject    *object,
@@ -230,7 +252,7 @@ mode_widget_changed (GObject    *object,
 
 	mode = nmt_newt_popup_get_active_id (priv->mode);
 	priv->updating = TRUE;
-	nm_setting_bond_add_option (priv->s_bond, NM_SETTING_BOND_OPTION_MODE, mode);
+	_bond_add_option (priv->s_bond, NM_SETTING_BOND_OPTION_MODE, mode);
 	priv->updating = FALSE;
 
 	if (!strcmp (mode, "balance-tlb") || !strcmp (mode, "balance-alb")) {
@@ -241,8 +263,8 @@ mode_widget_changed (GObject    *object,
 
 	if (!strcmp (mode, "active-backup")) {
 		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->primary), TRUE);
-		nm_setting_bond_add_option (priv->s_bond, NM_SETTING_BOND_OPTION_PRIMARY,
-		                            nmt_newt_entry_get_text (priv->primary));
+		_bond_add_option (priv->s_bond, NM_SETTING_BOND_OPTION_PRIMARY,
+		                  nmt_newt_entry_get_text (priv->primary));
 	} else {
 		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->primary), FALSE);
 		nm_setting_bond_remove_option (priv->s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
@@ -256,25 +278,27 @@ monitoring_widget_changed (GObject    *object,
 {
 	NmtPageBond *bond = NMT_PAGE_BOND (user_data);
 	NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE (bond);
+	gboolean visible_mii;
 
 	if (priv->updating)
 		return;
 
 	priv->monitoring_mode = nmt_newt_popup_get_active (priv->monitoring);
-	if (priv->monitoring_mode == NMT_PAGE_BOND_MONITORING_MII) {
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->miimon), TRUE);
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->updelay), TRUE);
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->downdelay), TRUE);
+	visible_mii = (priv->monitoring_mode == NMT_PAGE_BOND_MONITORING_MII);
 
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->arp_interval), FALSE);
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->arp_ip_target), FALSE);
+	nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->miimon), visible_mii);
+	nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->updelay), visible_mii);
+	nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->downdelay), visible_mii);
+	nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->arp_interval), !visible_mii);
+	nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->arp_ip_target), !visible_mii);
+
+	if (visible_mii) {
+		miimon_widget_changed (NULL, NULL, bond);
+		updelay_widget_changed (NULL, NULL, bond);
+		downdelay_widget_changed (NULL, NULL, bond);
 	} else {
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->arp_interval), TRUE);
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->arp_ip_target), TRUE);
-
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->miimon), FALSE);
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->updelay), FALSE);
-		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->downdelay), FALSE);
+		arp_interval_widget_changed (NULL, NULL, bond);
+		arp_ip_target_widget_changed (NULL, NULL, bond);
 	}
 }
 
@@ -296,7 +320,7 @@ arp_ip_target_widget_changed (GObject    *object,
 	target = g_strjoinv (",", ips);
 
 	priv->updating = TRUE;
-	nm_setting_bond_add_option (priv->s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET, target);
+	_bond_add_option (priv->s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET, target);
 	priv->updating = FALSE;
 
 	g_free (target);

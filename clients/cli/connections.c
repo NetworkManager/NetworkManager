@@ -4273,45 +4273,36 @@ set_bond_option (NmCli *nmc, NMConnection *con, const OptionInfo *option, const 
 {
 	NMSettingBond *s_bond;
 	gboolean success;
+	gs_free char *name = NULL;
+	char *p;
 
 	s_bond = nm_connection_get_setting_bond (con);
 	g_return_val_if_fail (s_bond, FALSE);
 
-	if (!value)
-		return TRUE;
+	name = g_strdup (option->option);
+	for (p = name; p[0]; p++) {
+		if (p[0] == '-')
+			p[0] = '_';
+	}
 
-	if (strcmp (option->option, "mode") == 0) {
-		value = nmc_bond_validate_mode (value, error);
-		if (!value)
-			return FALSE;
+	if (nm_str_is_empty (value)) {
+		nm_setting_bond_remove_option (s_bond, name);
+		success = TRUE;
+	} else
+		success = _nm_meta_setting_bond_add_option (NM_SETTING (s_bond), name, value, error);
 
-		if (g_strcmp0 (value, "active-backup") == 0) {
-			const char *primary[] = { "primary", NULL };
-			enable_options (NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS, primary);
+	if (!success)
+		return FALSE;
+
+	if (success) {
+		if (nm_streq (name, NM_SETTING_BOND_OPTION_MODE)) {
+			value = nmc_bond_validate_mode (value, error);
+			if (nm_streq (value, "active-backup")) {
+				enable_options (NM_SETTING_BOND_SETTING_NAME,
+				                NM_SETTING_BOND_OPTIONS,
+				                NM_MAKE_STRV ("primary"));
+			}
 		}
-
-		success = nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_MODE, value);
-	} else if (strcmp (option->option, "primary") == 0)
-		success = nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_PRIMARY, value);
-	else if (strcmp (option->option, "miimon") == 0)
-		success = nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_MIIMON, value);
-	else if (strcmp (option->option, "downdelay") == 0)
-		success = nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_DOWNDELAY, value);
-	else if (strcmp (option->option, "updelay") == 0)
-		success = nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_UPDELAY, value);
-	else if (strcmp (option->option, "arp-interval") == 0)
-		success = nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_ARP_INTERVAL, value);
-	else if (strcmp (option->option, "arp-ip-target") == 0)
-		success = nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET, value);
-	else if (strcmp (option->option, "lacp-rate") == 0)
-		success = nm_setting_bond_add_option (s_bond, NM_SETTING_BOND_OPTION_LACP_RATE, value);
-	else
-		g_return_val_if_reached (FALSE);
-
-	if (!success) {
-		g_set_error (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		             _("Error: error adding bond option '%s=%s'."),
-		             option->option, value);
 	}
 
 	return success;

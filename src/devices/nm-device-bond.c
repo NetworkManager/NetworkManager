@@ -85,6 +85,16 @@ _set_bond_attr (NMDevice *device, const char *attr, const char *value)
 	return ret;
 }
 
+#define _set_bond_attr_take(device, attr, value) \
+	G_STMT_START { \
+		gs_free char *_tmp = (value); \
+		\
+		_set_bond_attr (device, NM_SETTING_BOND_OPTION_ARP_IP_TARGET, _tmp); \
+	} G_STMT_END
+
+#define _set_bond_attr_printf(device, attr, fmt, ...) \
+	_set_bond_attr_take ((device), (attr), g_strdup_printf (fmt, __VA_ARGS__))
+
 static gboolean
 ignore_option (NMSettingBond *s_bond, const char *option, const char *value)
 {
@@ -173,22 +183,59 @@ master_update_slave_connection (NMDevice *self,
 static void
 set_arp_targets (NMDevice *device,
                  NMBondMode mode,
-                 const char *value,
-                 const char *delim,
-                 const char *prefix)
+                 const char *cur_arp_ip_target,
+                 const char *new_arp_ip_target)
 {
-	gs_free const char **value_v = NULL;
+	gs_unref_ptrarray GPtrArray *free_list = NULL;
+	gs_free const char **cur_strv = NULL;
+	gs_free const char **new_strv = NULL;
+	gsize cur_len;
+	gsize new_len;
 	gsize i;
+	gsize j;
 
-	value_v = nm_utils_strsplit_set (value, delim);
-	if (!value_v)
-		return;
-	for (i = 0; value_v[i]; i++) {
-		gs_free char *tmp = NULL;
+	cur_strv = nm_utils_strsplit_set_full (cur_arp_ip_target, NM_ASCII_SPACES, NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
+	new_strv = nm_utils_bond_option_arp_ip_targets_split (new_arp_ip_target);
 
-		tmp = g_strdup_printf ("%s%s", prefix, value_v[i]);
-		_set_bond_attr (device, NM_SETTING_BOND_OPTION_ARP_IP_TARGET, tmp);
+	cur_len = NM_PTRARRAY_LEN (cur_strv);
+	new_len = NM_PTRARRAY_LEN (new_strv);
+
+	if (new_len > 0) {
+		for (j = 0, i = 0; i < new_len; i++) {
+			const char *s;
+			in_addr_t a4;
+
+			s = new_strv[i];
+			if (nm_utils_parse_inaddr_bin (AF_INET, s, NULL, &a4)) {
+				char sbuf[INET_ADDRSTRLEN];
+
+				_nm_utils_inet4_ntop (a4, sbuf);
+				if (!nm_streq (s, sbuf)) {
+					if (!free_list)
+						free_list = g_ptr_array_new_with_free_func (g_free);
+					s = g_strdup (sbuf);
+					g_ptr_array_add (free_list, (gpointer) s);
+				}
+			}
+
+			if (nm_utils_strv_find_first ((char **) new_strv, i, s) < 0)
+				new_strv[j++] = s;
+		}
+		new_strv[j] = NULL;
+		new_len = j;
 	}
+
+	if (   cur_len == 0
+	    && new_len == 0)
+		return;
+
+	if (_nm_utils_strv_equal ((char **) cur_strv, (char **) new_strv))
+		return;
+
+	for (i = 0; i < cur_len; i++)
+		_set_bond_attr_printf (device, NM_SETTING_BOND_OPTION_ARP_IP_TARGET, "-%s", cur_strv[i]);
+	for (i = 0; i < new_len; i++)
+		_set_bond_attr_printf (device, NM_SETTING_BOND_OPTION_ARP_IP_TARGET, "+%s", new_strv[i]);
 }
 
 /*
@@ -201,13 +248,17 @@ set_bond_attr_or_default (NMDevice *device,
                           const char *opt)
 {
 	NMDeviceBond *self = NM_DEVICE_BOND (device);
-	const char *value = nm_setting_bond_get_option_or_default (s_bond, opt);
+	const char *value;
 
-	if (value) {
-		_set_bond_attr (device, opt, value);
-	} else {
-		_LOGD (LOGD_BOND, "bond option %s rejected due to incompatibility", opt);
+	value = nm_setting_bond_get_option_or_default (s_bond, opt);
+	if (!value) {
+		if (   _LOGT_ENABLED (LOGD_BOND)
+		    && nm_setting_bond_get_option_by_name (s_bond, opt))
+			_LOGT (LOGD_BOND, "bond option '%s' not set as it conflicts with other options", opt);
+		return;
 	}
+
+	_set_bond_attr (device, opt, value);
 }
 
 static gboolean
@@ -218,8 +269,7 @@ apply_bonding_config (NMDeviceBond *self)
 	NMSettingBond *s_bond;
 	NMBondMode mode;
 	const char *mode_str;
-	const char *value;
-	char *contents;
+	gs_free char *cur_arp_ip_target = NULL;
 
 	s_bond = nm_device_get_applied_setting (device, NM_TYPE_SETTING_BOND);
 	g_return_val_if_fail (s_bond, FALSE);
@@ -241,13 +291,13 @@ apply_bonding_config (NMDeviceBond *self)
 	set_bond_attr_or_default (device, s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
 
 	/* ARP targets: clear and initialize the list */
-	contents = nm_platform_sysctl_master_get_option (nm_device_get_platform (device),
-	                                                 ifindex,
-	                                                 NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
-	set_arp_targets (device, mode, contents, " \n", "-");
-	value = nm_setting_bond_get_option_or_default (s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
-	set_arp_targets (device, mode, value, ",", "+");
-	g_free (contents);
+	cur_arp_ip_target = nm_platform_sysctl_master_get_option (nm_device_get_platform (device),
+	                                                          ifindex,
+	                                                          NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
+	set_arp_targets (device,
+	                 mode,
+	                 cur_arp_ip_target,
+	                 nm_setting_bond_get_option_or_default (s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET));
 
 	set_bond_attr_or_default (device, s_bond, NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM);
 	set_bond_attr_or_default (device, s_bond, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE);
