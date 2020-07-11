@@ -1830,6 +1830,7 @@ done2:
 		}
 	}
 
+	nm_assert (ptr && ptr[0]);
 	return ptr;
 }
 

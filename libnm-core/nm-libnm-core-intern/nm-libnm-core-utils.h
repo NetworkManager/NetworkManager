@@ -5,6 +5,7 @@
 
 /****************************************************************************/
 
+#include "nm-setting-bond.h"
 #include "nm-setting-bridge.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-ip-config.h"
@@ -45,6 +46,29 @@ NM_AUTO_DEFINE_FCN0 (NMTeamLinkWatcher *, _nm_auto_unref_team_link_watcher, nm_t
 NM_AUTO_DEFINE_FCN0 (NMWireGuardPeer *, _nm_auto_unref_wgpeer, nm_wireguard_peer_unref)
 
 /****************************************************************************/
+
+const char **nm_utils_bond_option_arp_ip_targets_split (const char *arp_ip_target);
+
+void _nm_setting_bond_remove_options_miimon (NMSettingBond *s_bond);
+void _nm_setting_bond_remove_options_arp_interval (NMSettingBond *s_bond);
+
+typedef enum {
+	NM_BOND_MODE_UNKNOWN      = -1,
+
+	/* The numeric values correspond to kernel's numbering of the modes. */
+	NM_BOND_MODE_ROUNDROBIN   = 0,
+	NM_BOND_MODE_ACTIVEBACKUP = 1,
+	NM_BOND_MODE_XOR          = 2,
+	NM_BOND_MODE_BROADCAST    = 3,
+	NM_BOND_MODE_8023AD       = 4,
+	NM_BOND_MODE_TLB          = 5,
+	NM_BOND_MODE_ALB          = 6,
+	_NM_BOND_MODE_NUM,
+} NMBondMode;
+
+NMBondMode _nm_setting_bond_mode_from_string (const char *str);
+
+/*****************************************************************************/
 
 static inline guint32
 nm_utils_vlan_priority_map_get_max_prio (NMVlanPriorityMap map, gboolean from)
