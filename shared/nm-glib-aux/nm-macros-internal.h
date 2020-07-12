@@ -151,8 +151,6 @@ NM_AUTO_DEFINE_FCN0 (GKeyFile *, gs_local_keyfile_unref, g_key_file_unref)
 
 /*****************************************************************************/
 
-static inline int nm_close (int fd);
-
 NM_AUTO_DEFINE_FCN0 (GVariantIter *, _nm_auto_free_variant_iter, g_variant_iter_free)
 #define nm_auto_free_variant_iter nm_auto(_nm_auto_free_variant_iter)
 
@@ -182,30 +180,6 @@ _nm_auto_free_gstring (GString **str)
 		g_string_free (*str, TRUE);
 }
 #define nm_auto_free_gstring nm_auto(_nm_auto_free_gstring)
-
-static inline void
-_nm_auto_close (int *pfd)
-{
-	if (*pfd >= 0) {
-		int errsv = errno;
-
-		(void) nm_close (*pfd);
-		errno = errsv;
-	}
-}
-#define nm_auto_close nm_auto(_nm_auto_close)
-
-static inline void
-_nm_auto_fclose (FILE **pfd)
-{
-	if (*pfd) {
-		int errsv = errno;
-
-		(void) fclose (*pfd);
-		errno = errsv;
-	}
-}
-#define nm_auto_fclose nm_auto(_nm_auto_fclose)
 
 static inline void
 _nm_auto_protect_errno (int *p_saved_errno)
@@ -1545,55 +1519,6 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro)
 #endif
 
 /*****************************************************************************/
-
-/**
- * nm_steal_int:
- * @p_val: pointer to an int type.
- *
- * Returns: *p_val and sets *p_val to zero the same time.
- *   Accepts %NULL, in which case also numeric 0 will be returned.
- */
-#define nm_steal_int(p_val) \
-	({ \
-		typeof (p_val) const _p_val = (p_val); \
-		typeof (*_p_val) _val = 0; \
-		\
-		if (   _p_val \
-		    && (_val = *_p_val)) { \
-			*_p_val = 0; \
-		} \
-		_val; \
-	})
-
-static inline int
-nm_steal_fd (int *p_fd)
-{
-	int fd;
-
-	if (   p_fd
-	    && ((fd = *p_fd) >= 0)) {
-		*p_fd = -1;
-		return fd;
-	}
-	return -1;
-}
-
-/**
- * nm_close:
- *
- * Like close() but throws an assertion if the input fd is
- * invalid.  Closing an invalid fd is a programming error, so
- * it's better to catch it early.
- */
-static inline int
-nm_close (int fd)
-{
-	int r;
-
-	r = close (fd);
-	nm_assert (r != -1 || fd < 0 || errno != EBADF);
-	return r;
-}
 
 #define NM_PID_T_INVAL ((pid_t) -1)
 

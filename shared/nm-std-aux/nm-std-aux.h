@@ -6,6 +6,9 @@
 #include <assert.h>
 #include <string.h>
 #include <stdbool.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <errno.h>
 
 /*****************************************************************************/
 
@@ -428,6 +431,25 @@ _NM_IN_STRSET_streq (const char *x, const char *s)
 
 /*****************************************************************************/
 
+/**
+ * nm_close:
+ *
+ * Like close() but throws an assertion if the input fd is
+ * invalid.  Closing an invalid fd is a programming error, so
+ * it's better to catch it early.
+ */
+static inline int
+nm_close (int fd)
+{
+	int r;
+
+	r = close (fd);
+	nm_assert (r != -1 || fd < 0 || errno != EBADF);
+	return r;
+}
+
+/*****************************************************************************/
+
 /* Note: @value is only evaluated when *out_val is present.
  * Thus,
  *    NM_SET_OUT (out_str, g_strdup ("hallo"));
@@ -493,6 +515,32 @@ NM_AUTO_DEFINE_FCN_VOID0 (void *, _nm_auto_free_impl, free)
 
 /*****************************************************************************/
 
+static inline void
+_nm_auto_close (int *pfd)
+{
+	if (*pfd >= 0) {
+		int errsv = errno;
+
+		(void) nm_close (*pfd);
+		errno = errsv;
+	}
+}
+#define nm_auto_close nm_auto(_nm_auto_close)
+
+static inline void
+_nm_auto_fclose (FILE **pfd)
+{
+	if (*pfd) {
+		int errsv = errno;
+
+		(void) fclose (*pfd);
+		errno = errsv;
+	}
+}
+#define nm_auto_fclose nm_auto(_nm_auto_fclose)
+
+/*****************************************************************************/
+
 #define nm_clear_pointer(pp, destroy) \
 	({ \
 		typeof (*(pp)) *_pp = (pp); \
@@ -537,5 +585,37 @@ _nm_steal_pointer (void *pp)
 
 #define nm_steal_pointer(pp) \
 	((typeof (*(pp))) _nm_steal_pointer (pp))
+
+/**
+ * nm_steal_int:
+ * @p_val: pointer to an int type.
+ *
+ * Returns: *p_val and sets *p_val to zero the same time.
+ *   Accepts %NULL, in which case also numeric 0 will be returned.
+ */
+#define nm_steal_int(p_val) \
+	({ \
+		typeof (p_val) const _p_val = (p_val); \
+		typeof (*_p_val) _val = 0; \
+		\
+		if (   _p_val \
+		    && (_val = *_p_val)) { \
+			*_p_val = 0; \
+		} \
+		_val; \
+	})
+
+static inline int
+nm_steal_fd (int *p_fd)
+{
+	int fd;
+
+	if (   p_fd
+	    && ((fd = *p_fd) >= 0)) {
+		*p_fd = -1;
+		return fd;
+	}
+	return -1;
+}
 
 #endif /* __NM_STD_AUX_H__ */
