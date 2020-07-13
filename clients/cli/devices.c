@@ -2268,10 +2268,19 @@ typedef struct {
 } ModifyInfo;
 
 static void
+modify_info_free (ModifyInfo *info)
+{
+	g_strfreev (info->argv);
+	nm_g_slice_free (info);
+}
+
+NM_AUTO_DEFINE_FCN_VOID0 (ModifyInfo *, _auto_free_modify_info, modify_info_free)
+
+static void
 modify_reapply_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (object);
-	ModifyInfo *info = user_data;
+	nm_auto (_auto_free_modify_info) ModifyInfo *info = user_data;
 	NmCli *nmc = info->nmc;
 	GError *error = NULL;
 
@@ -2289,7 +2298,6 @@ modify_reapply_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 		         nm_device_get_iface (device));
 	}
 
-	g_slice_free (ModifyInfo, info);
 	quit ();
 }
 
@@ -2299,7 +2307,7 @@ modify_get_applied_cb (GObject *object,
                        gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (object);
-	ModifyInfo *info = user_data;
+	nm_auto (_auto_free_modify_info) ModifyInfo *info = user_data;
 	NmCli *nmc = info->nmc;
 	gs_free_error GError *error = NULL;
 	NMConnection *connection;
@@ -2317,7 +2325,6 @@ modify_get_applied_cb (GObject *object,
 		                 nm_object_get_path (NM_OBJECT (device)),
 		                 error->message);
 		nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-		g_slice_free (ModifyInfo, info);
 		quit ();
 		return;
 	}
@@ -2328,22 +2335,29 @@ modify_get_applied_cb (GObject *object,
 	if (!nmc_process_connection_properties (info->nmc, connection, &argc, &argv, TRUE, &error)) {
 		g_string_assign (nmc->return_text, error->message);
 		nmc->return_value = error->code;
-		g_slice_free (ModifyInfo, info);
 		quit ();
 		return;
 	}
 
-	if (nmc->complete)
+	if (nmc->complete) {
 		quit ();
-	else
-		nm_device_reapply_async (device, connection, version_id, 0, NULL, modify_reapply_cb, info);
+		return;
+	}
+
+	nm_device_reapply_async (device,
+	                         connection,
+	                         version_id,
+	                         0,
+	                         NULL,
+	                         modify_reapply_cb,
+	                         g_steal_pointer (&info));
 }
 
 static void
 do_device_modify (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const*argv)
 {
 	NMDevice *device = NULL;
-	ModifyInfo *info = NULL;
+	ModifyInfo *info;
 	gs_free_error GError *error = NULL;
 
 	next_arg (nmc, &argc, &argv, NULL);
@@ -2360,10 +2374,12 @@ do_device_modify (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
 	nmc->nowait_flag = (nmc->timeout == 0);
 	nmc->should_wait++;
 
-	info = g_slice_new0 (ModifyInfo);
-	info->nmc = nmc;
-	info->argc = argc;
-	info->argv = nm_utils_strv_dup ((char **) argv, argc, TRUE);
+	info = g_slice_new (ModifyInfo);
+	*info = (ModifyInfo) {
+		.nmc  = nmc,
+		.argc = argc,
+		.argv = nm_utils_strv_dup ((char **) argv, argc, TRUE),
+	};
 
 	nm_device_get_applied_connection_async (device, 0, NULL, modify_get_applied_cb, info);
 }
