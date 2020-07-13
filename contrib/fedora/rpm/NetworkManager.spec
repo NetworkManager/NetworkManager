@@ -815,7 +815,7 @@ intltoolize --automake --copy --force
 	--with-config-dns-rc-manager-default=%{dns_rc_manager_default} \
 	--with-config-logging-backend-default=%{logging_backend_default}
 
-make %{?_smp_mflags}
+%make_build
 
 %endif
 
@@ -823,7 +823,7 @@ make %{?_smp_mflags}
 %if %{with meson}
 %meson_install
 %else
-make install DESTDIR=%{buildroot}
+%make_install
 %endif
 
 cp %{SOURCE1} %{buildroot}%{_sysconfdir}/%{name}/
