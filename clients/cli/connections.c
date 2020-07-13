@@ -4709,12 +4709,17 @@ nmc_process_connection_properties (NmCli *nmc,
 		ensure_settings (connection, slv_settings);
 		ensure_settings (connection, type_settings);
 
-		option_orig = **argv;
-		if (!option_orig) {
+		if (*argc <= 0) {
 			g_set_error_literal (error, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
 			                     _("Error: <setting>.<property> argument is missing."));
 			return FALSE;
 		}
+
+		nm_assert (argv);
+		nm_assert (*argv);
+		nm_assert (**argv);
+
+		option_orig = **argv;
 
 		switch (option_orig[0]) {
 		case '+': modifier = NM_META_ACCESSOR_MODIFIER_ADD; option = &option_orig[1]; break;
