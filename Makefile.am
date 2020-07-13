@@ -4861,6 +4861,8 @@ clients_cloud_setup_nm_cloud_setup_SOURCES = \
 	clients/cloud-setup/nmcs-provider-ec2.h \
 	clients/cloud-setup/nmcs-provider-gcp.c \
 	clients/cloud-setup/nmcs-provider-gcp.h \
+	clients/cloud-setup/nmcs-provider-azure.c \
+	clients/cloud-setup/nmcs-provider-azure.h \
 	$(NULL)
 
 clients_cloud_setup_nm_cloud_setup_CPPFLAGS = \

@@ -13,6 +13,7 @@ ExecStart=@libexecdir@/nm-cloud-setup
 # the provider.
 #Environment=NM_CLOUD_SETUP_EC2=yes
 #Environment=NM_CLOUD_SETUP_GCP=yes
+#Environment=NM_CLOUD_SETUP_AZURE=yes
 
 CapabilityBoundingSet=
 LockPersonality=yes
