@@ -208,7 +208,7 @@ TMP_BRANCH=release-branch
 
 if [ "$CUR_BRANCH" = master ]; then
     number_is_odd "${VERSION_ARR[1]}" || die "Unexpected version number on master. Should be an odd development version"
-    [ "$RELEASE_MODE" = devel -o "$RELEASE_MODE" = rc1 ] || die "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
+    [ "$RELEASE_MODE" = devel -o "$RELEASE_MODE" = rc1 -o "$RELEASE_MODE" = major-post ] || die "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
 else
     re='^nm-[0-9][1-9]*-[0-9][1-9]*$'
     [[ "$CUR_BRANCH" =~ $re ]] || die "Unexpected current branch $CUR_BRANCH. Should be master or nm-?-??"
@@ -244,6 +244,11 @@ case "$RELEASE_MODE" in
         number_is_odd "${VERSION_ARR[1]}" || die "cannot do major release on top of version $VERSION_STR"
         [ "${VERSION_ARR[2]}" -ge 90 ] || die "parent version for major release must have a micro version larger than ${VERSION_ARR[0]}.90 but current version is $VERSION_STR"
         [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))" ] || die "major release can only be on \"nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))\" branch"
+        ;;
+    major-post)
+        number_is_odd "${VERSION_ARR[1]}" || die "cannot do major-post release on top of version $VERSION_STR"
+        [ "$((${VERSION_ARR[2]} + 1))" -lt 90 ] || die "major-post release must have a micro version smaller than 90 but current version is $VERSION_STR"
+        [ "$CUR_BRANCH" == master ] || die "major-post release can only be on master"
         ;;
     *)
         die "Release mode $RELEASE_MODE not yet implemented"
@@ -359,6 +364,23 @@ case "$RELEASE_MODE" in
         CLEANUP_REFS+=("refs/tags/$b2-dev")
 
         BUILD_TAG="$b"
+        TAR_VERSION="$b"
+        ;;
+    major-post)
+        git checkout -B "$TMP_BRANCH" "${VERSION_ARR[0]}.$((${VERSION_ARR[1]} - 1)).0" || die "merge0"
+        git merge -Xours --commit -m tmp master || die "merge1"
+        git rm --cached -r . || die "merge2"
+        git checkout master -- . || die "merge3"
+        b="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$((${VERSION_ARR[2]} + 1))"
+        git commit --amend -m tmp -a || die "failed to commit major version bump"
+        test x = "x$(git diff master HEAD)" || die "there is a diff after merge!"
+
+        set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" "$((${VERSION_ARR[2]} + 1))"
+        git commit --amend -m "release: bump version to $b (development)" -a || die "failed to commit major version bump"
+        git tag -s -a -m "Tag $b (development)" "$b-dev" HEAD || die "failed to tag release"
+        TAGS+=("$b-dev")
+        CLEANUP_REFS+=("refs/tags/$b-dev")
+        BUILD_TAG="$b-dev"
         TAR_VERSION="$b"
         ;;
     *)
