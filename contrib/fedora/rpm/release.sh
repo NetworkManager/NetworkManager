@@ -4,7 +4,7 @@
 #
 # Run with --help for usage.
 #
-# There are 5 modes:
+# There are 6 modes:
 #
 #  - "devel" : on master branch to tag "1.25.2-dev"
 #  - "rc1"   : the first release candidate on "master" branch which branches off
@@ -367,6 +367,11 @@ case "$RELEASE_MODE" in
         TAR_VERSION="$b"
         ;;
     major-post)
+        # We create a merge commit with the content of current "master", with two
+        # parent commits $THE_RELEASE and "master". But we want that the first parent
+        # is the release, so that `git log --first-parent` follows the path with the
+        # release candidates, and not the devel part during that time. Hence this
+        # switcheroo here.
         git checkout -B "$TMP_BRANCH" "${VERSION_ARR[0]}.$((${VERSION_ARR[1]} - 1)).0" || die "merge0"
         git merge -Xours --commit -m tmp master || die "merge1"
         git rm --cached -r . || die "merge2"
