@@ -13,6 +13,8 @@
 #              "1.26-rc2" with version number 1.25.91.
 #  - "major" : on stable branch nm-1-26 to release 1.26.0. This also merged
 #              the release with master branch and does a devel tag like "1.27.2-dev"
+#  - "major-post": after a "major" release, merge the release branch with master and
+#              do another devel snapshot on master.
 #  - "minor" : on a stable branch nm-1-26 to do minor release 1.26.4 and bump
 #              to "1.26.5-dev".
 #
@@ -49,7 +51,7 @@ echo_color() {
 
 print_usage() {
     echo "Usage:"
-    echo "  $BASH_SOURCE [devel|rc1|rc|major|minor] [--no-test] [--no-find-backports] [--no-cleanup] [--allow-local-branches]"
+    echo "  $BASH_SOURCE [devel|rc1|rc|major|major-post|minor] [--no-test] [--no-find-backports] [--no-cleanup] [--allow-local-branches]"
 }
 
 die_help() {
@@ -175,7 +177,7 @@ while [ "$#" -ge 1 ]; do
         --help|-h)
             die_help
             ;;
-        devel|rc1|rc|major|minor)
+        devel|rc1|rc|major|major-post|minor)
             [ -z "$RELEASE_MODE" ] || die_usage "duplicate release-mode"
             RELEASE_MODE="$A"
             ;;
@@ -206,16 +208,16 @@ TMP_BRANCH=release-branch
 
 if [ "$CUR_BRANCH" = master ]; then
     number_is_odd "${VERSION_ARR[1]}" || die "Unexpected version number on master. Should be an odd development version"
-    [ "$RELEASE_MODE" = devel -o "$RELEASE_MODE" = rc1 ] || "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
+    [ "$RELEASE_MODE" = devel -o "$RELEASE_MODE" = rc1 ] || die "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
 else
     re='^nm-[0-9][1-9]*-[0-9][1-9]*$'
     [[ "$CUR_BRANCH" =~ $re ]] || die "Unexpected current branch $CUR_BRANCH. Should be master or nm-?-??"
     if number_is_odd "${VERSION_ARR[1]}"; then
         # we are on a release candiate branch.
-        [ "$RELEASE_MODE" = rc -o "$RELEASE_MODE" = major ] || "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
+        [ "$RELEASE_MODE" = rc -o "$RELEASE_MODE" = major ] || die "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
         [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))" ] || die "Unexpected current branch $CUR_BRANCH. Should be nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))"
     else
-        [ "$RELEASE_MODE" = minor ] || "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
+        [ "$RELEASE_MODE" = minor ] || die "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
         [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-${VERSION_ARR[1]}" ] || die "Unexpected current branch $CUR_BRANCH. Should be nm-${VERSION_ARR[0]}-${VERSION_ARR[1]}"
     fi
 fi
@@ -227,16 +229,21 @@ case "$RELEASE_MODE" in
         number_is_odd  "${VERSION_ARR[2]}" || die "cannot do minor release on top of version $VERSION_STR"
         [ "$CUR_BRANCH" != master ] || die "cannot do a minor release on master"
         ;;
-    devel|rc)
+    devel)
         number_is_odd "${VERSION_ARR[1]}" || die "cannot do devel release on top of version $VERSION_STR"
-        if [ "$RELEASE_MODE" = devel ]; then
-            [ "$((${VERSION_ARR[2]} + 1))" -lt 90 ] || die "devel release must have a micro version smaller than 90 but current version is $VERSION_STR"
-            [ "$CUR_BRANCH" == master ] || die "devel release can only be on master"
-        else
-            [ "${VERSION_ARR[2]}" -ge 90 ] || die "rc release must have a micro version larger than ${VERSION_ARR[0]}.90 but current version is $VERSION_STR"
-            RC_VERSION="$((${VERSION_ARR[2]} - 88))"
-            [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))" ] || die "devel release can only be on \"nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))\" branch"
-        fi
+        [ "$((${VERSION_ARR[2]} + 1))" -lt 90 ] || die "devel release must have a micro version smaller than 90 but current version is $VERSION_STR"
+        [ "$CUR_BRANCH" == master ] || die "devel release can only be on master"
+        ;;
+    rc)
+        number_is_odd "${VERSION_ARR[1]}" || die "cannot do rc release on top of version $VERSION_STR"
+        [ "${VERSION_ARR[2]}" -ge 90 ] || die "rc release must have a micro version larger than ${VERSION_ARR[0]}.90 but current version is $VERSION_STR"
+        RC_VERSION="$((${VERSION_ARR[2]} - 88))"
+        [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))" ] || die "devel release can only be on \"nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))\" branch"
+        ;;
+    major)
+        number_is_odd "${VERSION_ARR[1]}" || die "cannot do major release on top of version $VERSION_STR"
+        [ "${VERSION_ARR[2]}" -ge 90 ] || die "parent version for major release must have a micro version larger than ${VERSION_ARR[0]}.90 but current version is $VERSION_STR"
+        [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))" ] || die "major release can only be on \"nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))\" branch"
         ;;
     *)
         die "Release mode $RELEASE_MODE not yet implemented"
@@ -291,12 +298,11 @@ BUILD_TAG=
 
 CLEANUP_CHECKOUT_BRANCH="$CUR_BRANCH"
 
-CLEANUP_REFS+=("$TMP_BRANCH")
+git checkout -B "$TMP_BRANCH"
+CLEANUP_REFS+=("refs/heads/$TMP_BRANCH")
 
 case "$RELEASE_MODE" in
     minor)
-        git checkout -B "$TMP_BRANCH"
-        CLEANUP_REFS+=("refs/heads/$TMP_BRANCH")
         set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" $(("${VERSION_ARR[2]}" + 1))
         git commit -m "release: bump version to ${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))" -a || die "failed to commit release"
         set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" $(("${VERSION_ARR[2]}" + 2))
@@ -314,8 +320,6 @@ case "$RELEASE_MODE" in
         TAR_VERSION="$BUILD_TAG"
         ;;
     devel)
-        git checkout -B "$TMP_BRANCH"
-        CLEANUP_REFS+=("refs/heads/$TMP_BRANCH")
         set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" $(("${VERSION_ARR[2]}" + 1))
         git commit -m "release: bump version to ${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1)) (development)" -a || die "failed to commit devel version bump"
 
@@ -327,8 +331,6 @@ case "$RELEASE_MODE" in
         TAR_VERSION="$b"
         ;;
     rc)
-        git checkout -B "$TMP_BRANCH"
-        CLEANUP_REFS+=("refs/heads/$TMP_BRANCH")
         b="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))"
         t="${VERSION_ARR[0]}.$(("${VERSION_ARR[1]}" + 1))-rc$RC_VERSION"
         set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" $(("${VERSION_ARR[2]}" + 1))
@@ -338,6 +340,25 @@ case "$RELEASE_MODE" in
         TAGS+=("$t")
         CLEANUP_REFS+=("refs/tags/$t")
         BUILD_TAG="$t"
+        TAR_VERSION="$b"
+        ;;
+    major)
+        b="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 1)).0"
+        b2="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 1)).1"
+
+        set_version_number "${VERSION_ARR[0]}" "$((${VERSION_ARR[1]} + 1))" 0
+        git commit -m "release: bump version to $b" -a || die "failed to commit major version bump"
+        git tag -s -a -m "Tag $b" "$b" HEAD || die "failed to tag release"
+        TAGS+=("$b")
+        CLEANUP_REFS+=("refs/tags/$b")
+
+        set_version_number "${VERSION_ARR[0]}" "$((${VERSION_ARR[1]} + 1))" 1
+        git commit -m "release: bump version to $b2 (development)" -a || die "failed to commit another bump after major version bump"
+        git tag -s -a -m "Tag $b (development)" "$b2-dev" HEAD || die "failed to tag release"
+        TAGS+=("$b2-dev")
+        CLEANUP_REFS+=("refs/tags/$b2-dev")
+
+        BUILD_TAG="$b"
         TAR_VERSION="$b"
         ;;
     *)
