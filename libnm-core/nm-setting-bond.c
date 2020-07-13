@@ -531,6 +531,8 @@ _setting_bond_validate_option (const char *name,
 	}
 
 	nm_assert_not_reached ();
+	success = FALSE;
+
 handle_error:
 	if (!success) {
 		g_set_error (error,
