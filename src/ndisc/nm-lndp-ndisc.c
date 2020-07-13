@@ -122,7 +122,7 @@ receive_ra (struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 	/* DHCP level:
 	 *
 	 * The problem with DHCP level is what to do if subsequent
-	 * router advertisements carry different flags. Currently we just
+	 * router advertisements carry different flags. Currently, we just
 	 * rewrite the flag with every inbound RA.
 	 */
 	{

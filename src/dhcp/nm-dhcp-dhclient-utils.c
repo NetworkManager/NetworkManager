@@ -404,7 +404,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 				if (client_id)
 					continue;
 
-				/* Otherwise capture and return the existing client id */
+				/* Otherwise, capture and return the existing client id */
 				if (out_new_client_id)
 					nm_clear_pointer (out_new_client_id, g_bytes_unref);
 				NM_SET_OUT (out_new_client_id, read_client_id (p));

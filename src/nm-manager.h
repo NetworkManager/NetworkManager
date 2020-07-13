@@ -191,7 +191,7 @@ void nm_manager_dbus_set_property_handle (NMDBusObject *obj,
 
 NMMetered nm_manager_get_metered (NMManager *self);
 
-void nm_manager_notify_device_availibility_maybe_changed (NMManager *self);
+void nm_manager_notify_device_availability_maybe_changed (NMManager *self);
 
 /*****************************************************************************/
 

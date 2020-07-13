@@ -115,7 +115,7 @@ typedef enum {
 	 * For the ID we can only recognize route fields that we actually implement.
 	 * However, kernel supports more routing options, some of them also part of
 	 * the ID. NetworkManager is oblivious to these options and will wrongly think
-	 * that two routes are idential, while they are not. That can lead to an
+	 * that two routes are identical, while they are not. That can lead to an
 	 * inconsistent platform cache. Not much what we can do about that, except
 	 * implementing all options that kernel supports *sigh*. See rh#1337860.
 	 */
@@ -414,7 +414,7 @@ typedef union {
 	/* RTA_METRICS:
 	 *
 	 * For IPv4 routes, these properties are part of their
-	 * ID (meaning: you can add otherwise idential IPv4 routes that
+	 * ID (meaning: you can add otherwise identical IPv4 routes that
 	 * only differ by the metric property).
 	 * On the other hand, for IPv6 you cannot add two IPv6 routes that only differ
 	 * by an RTA_METRICS property.
@@ -625,7 +625,7 @@ typedef struct {
 	guint32 quantum;
 	guint32 ce_threshold; /* TCA_FQ_CODEL_CE_THRESHOLD: kernel internally stores this value as
 	                       *   ((val64 * NSEC_PER_USEC) >> CODEL_SHIFT). The default value (in
-	                       *   the domain with this coersion) is CODEL_DISABLED_THRESHOLD (INT_MAX).
+	                       *   the domain with this coercion) is CODEL_DISABLED_THRESHOLD (INT_MAX).
 	                       *   That means, "disabled" is expressed on RTM_NEWQDISC netlink API by absence of the
 	                       *   netlink attribute but also as the special value 0x83126E97u
 	                       *   (NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED).

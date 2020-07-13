@@ -1110,7 +1110,7 @@ check_scanning_prohibited (NMDeviceIwd *self, gboolean periodic)
  *
  * Check if the connection settings already have the secrets corresponding
  * to the IWD agent method that was invoked.  If they do, send the method reply
- * with the appropriate secrets.  Otherwise return the missing secret's setting
+ * with the appropriate secrets.  Otherwise, return the missing secret's setting
  * name and key so the caller can send a NM secrets request with this data.
  * Return TRUE in either case, return FALSE if an error is detected.
  */
@@ -1922,7 +1922,7 @@ schedule_periodic_scan (NMDeviceIwd *self, gboolean initial_scan)
 	 * (initial_scan && disconnected) override priv->scanning below
 	 * because of an IWD quirk where a device will often be in the
 	 * autoconnect state and scanning at the time of our initial_scan,
-	 * but our logic will the send it a Disconnect() causeing IWD to
+	 * but our logic will the send it a Disconnect() causing IWD to
 	 * exit autoconnect and interrupt the ongoing scan, meaning that
 	 * we still want a new scan ASAP.
 	 */
@@ -2140,7 +2140,7 @@ state_changed (NMDeviceIwd *self, const char *new_state)
 	if (NM_IN_STRSET (new_state, "connecting", "connected", "roaming")) {
 		/* If we were connecting, do nothing, the confirmation of
 		 * a connection success is handled in the Device.Connect
-		 * method return callback.  Otherwise IWD must have connected
+		 * method return callback.  Otherwise, IWD must have connected
 		 * without Network Manager's will so for simplicity force a
 		 * disconnect.
 		 */

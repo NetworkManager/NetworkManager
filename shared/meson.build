@@ -113,15 +113,17 @@ nm_test_utils_impl_source = files('nm-test-utils-impl.c')
 
 nm_vpn_plugin_utils_source = files('nm-utils/nm-vpn-plugin-utils.c')
 
-c_flags = [
-  '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-  '-DNETWORKMANAGER_COMPILATION=0',
-]
-
 libnm_std_aux = static_library(
   'nm-std-aux',
-  sources: 'nm-std-aux/c-list-util.c',
-  c_args: c_flags,
+  sources: [
+    'nm-std-aux/c-list-util.c',
+    'nm-std-aux/nm-std-utils.c',
+  ],
+  include_directories: top_inc,
+  c_args: [
+    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
+    '-DNETWORKMANAGER_COMPILATION=0',
+  ],
 )
 
 sources = files(

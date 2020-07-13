@@ -266,7 +266,7 @@ nms_keyfile_nmmeta_write (const char *dirname,
 		}
 	} else {
 		/* we only have the "loaded_path" to store. That is commonly used for the tombstones to
-		 * link to /dev/null. A symlink is sufficient to store that ammount of information.
+		 * link to /dev/null. A symlink is sufficient to store that amount of information.
 		 * No need to bother with a keyfile. */
 		if (symlink (loaded_path, full_filename_tmp) != 0) {
 			errsv = -NM_ERRNO_NATIVE (errno);

@@ -1506,7 +1506,7 @@
               <term><option>private</option></term>
               <listitem>
                 <para>if set to <literal>yes</literal>, the connection will only be visible
-                to the user who created it. Otherwise the connection is system-wide, which is
+                to the user who created it. Otherwise, the connection is system-wide, which is
                 the default.</para>
               </listitem>
             </varlistentry>
@@ -1514,7 +1514,7 @@
               <term><option>hidden</option></term>
               <listitem>
                 <para>set to <literal>yes</literal> when connecting for the first time to an
-                AP not broadcasting its SSID. Otherwise the SSID would not be found and the
+                AP not broadcasting its SSID. Otherwise, the SSID would not be found and the
                 connection attempt would fail.</para>
               </listitem>
             </varlistentry>
@@ -1749,35 +1749,35 @@
       <varlistentry>
         <term><option>connectivity-full</option></term>
         <listitem>
-          <para>Conectivity state when Internet is reachable.</para>
+          <para>Connectivity state when Internet is reachable.</para>
         </listitem>
       </varlistentry>
 
       <varlistentry>
         <term><option>connectivity-limited</option></term>
         <listitem>
-          <para>Conectivity state when only a local network reachable.</para>
+          <para>Connectivity state when only a local network reachable.</para>
         </listitem>
       </varlistentry>
 
       <varlistentry>
         <term><option>connectivity-none</option></term>
         <listitem>
-          <para>Conectivity state when the network is disconnected.</para>
+          <para>Connectivity state when the network is disconnected.</para>
         </listitem>
       </varlistentry>
 
       <varlistentry>
         <term><option>connectivity-portal</option></term>
         <listitem>
-          <para>Conectivity state when a captive portal hijacked the connection.</para>
+          <para>Connectivity state when a captive portal hijacked the connection.</para>
         </listitem>
       </varlistentry>
 
       <varlistentry>
         <term><option>connectivity-unknown</option></term>
         <listitem>
-          <para>Conectivity state when a connectivity check didn't run.</para>
+          <para>Connectivity state when a connectivity check didn't run.</para>
         </listitem>
       </varlistentry>
 

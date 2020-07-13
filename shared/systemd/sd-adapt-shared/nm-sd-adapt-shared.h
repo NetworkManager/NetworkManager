@@ -91,7 +91,7 @@ G_STMT_START { \
 /*****************************************************************************/
 
 /* systemd cannot be compiled with "-Wdeclaration-after-statement". In particular
- * in combintation with assert_cc(). */
+ * in combination with assert_cc(). */
 NM_PRAGMA_WARNING_DISABLE ("-Wdeclaration-after-statement")
 
 /*****************************************************************************/

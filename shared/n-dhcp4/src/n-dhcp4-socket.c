@@ -22,7 +22,7 @@
 
 /**
  * n_dhcp4_c_socket_packet_new() - create a new DHCP4 client packet socket
- * @sockfdp:            return argumnet for the new socket
+ * @sockfdp:            return argument for the new socket
  * @ifindex:            interface index to bind to
  *
  * Create a new AF_PACKET/SOCK_DGRAM socket usable to listen to and send DHCP client
@@ -129,7 +129,7 @@ int n_dhcp4_c_socket_packet_new(int *sockfdp, int ifindex) {
 
 /**
  * n_dhcp4_c_socket_udp_new() - create a new DHCP4 client UDP socket
- * @sockfdp:            return argumnet for the new socket
+ * @sockfdp:            return argument for the new socket
  * @ifindex:            interface index to bind to
  * @client_addr:        client address to bind to
  * @server_addr:        server address to connect to
@@ -230,7 +230,7 @@ int n_dhcp4_c_socket_udp_new(int *sockfdp,
 
 /**
  * n_dhcp4_s_socket_packet_new() - create a new DHCP4 server packet socket
- * @sockfdp:            return argumnet for the new socket
+ * @sockfdp:            return argument for the new socket
  *
  * Create a new AF_PACKET/SOCK_DGRAM socket usable to send DHCP packets to clients
  * before they have an IP address configured, on the given interface.
@@ -251,7 +251,7 @@ int n_dhcp4_s_socket_packet_new(int *sockfdp) {
 
 /**
  * n_dhcp4_s_socket_udp_new() - create a new DHCP4 server UDP socket
- * @sockfdp:            return argumnet for the new socket
+ * @sockfdp:            return argument for the new socket
  * @ifindex:            intercafe index to bind to
  *
  * Create a new AF_INET/SOCK_DGRAM socket usable to listen to DHCP server packets,

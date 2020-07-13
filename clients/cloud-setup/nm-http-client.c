@@ -7,6 +7,7 @@
 #include <curl/curl.h>
 
 #include "nm-cloud-setup-utils.h"
+#include "nm-glib-aux/nm-str-buf.h"
 
 #define NM_CURL_DEBUG 0
 
@@ -118,7 +119,7 @@ typedef struct {
 	CURLcode ehandle_result;
 	CURL *ehandle;
 	char *url;
-	GString *recv_data;
+	NMStrBuf recv_data;
 	struct curl_slist *headers;
 	gssize max_data;
 	gulong cancellable_id;
@@ -144,8 +145,7 @@ _ehandle_free (EHandleData *edata)
 
 	g_object_unref (edata->task);
 
-	if (edata->recv_data)
-		g_string_free (edata->recv_data, TRUE);
+	nm_str_buf_destroy (&edata->recv_data);
 	if (edata->headers)
 		curl_slist_free_all (edata->headers);
 	g_free (edata->url);
@@ -191,12 +191,15 @@ _ehandle_complete (EHandleData *edata,
 		_LOG2E (edata, "failed to get response code from curl easy handle");
 
 	_LOG2D (edata, "success getting %"G_GSIZE_FORMAT" bytes (response code %ld)",
-	        edata->recv_data->len,
+	        edata->recv_data.len,
 	        response_code);
 
 	_LOG2T (edata, "received %"G_GSIZE_FORMAT" bytes: [[%s]]",
-	       edata->recv_data->len,
-	       nm_utils_buf_utf8safe_escape (edata->recv_data->str, edata->recv_data->len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL, &str_tmp_1));
+	       edata->recv_data.len,
+	       nm_utils_buf_utf8safe_escape (nm_str_buf_get_str (&edata->recv_data),
+	                                     edata->recv_data.len,
+	                                     NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
+	                                     &str_tmp_1));
 
 	_ehandle_free_ehandle (edata);
 
@@ -205,7 +208,7 @@ _ehandle_complete (EHandleData *edata,
 		.response_code = response_code,
 		/* This ensures that response_data is always NUL terminated. This is an important guarantee
 		 * that NMHttpClient makes. */
-		.response_data = g_string_free_to_bytes (g_steal_pointer (&edata->recv_data)),
+		.response_data = nm_str_buf_finalize_to_gbytes (&edata->recv_data),
 	};
 
 	g_task_return_pointer (edata->task, get_result, _get_result_free);
@@ -225,14 +228,14 @@ _get_writefunction_cb (char *ptr, size_t size, size_t nmemb, void *user_data)
 	nmemb *= size;
 
 	if (edata->max_data >= 0) {
-		nm_assert (edata->recv_data->len <= edata->max_data);
-		nconsume = (((gsize) edata->max_data) - edata->recv_data->len);
+		nm_assert (edata->recv_data.len <= edata->max_data);
+		nconsume = (((gsize) edata->max_data) - edata->recv_data.len);
 		if (nconsume > nmemb)
 			nconsume = nmemb;
 	} else
 		nconsume = nmemb;
 
-	g_string_append_len (edata->recv_data, ptr, nconsume);
+	nm_str_buf_append_len (&edata->recv_data, ptr, nconsume);
 	return nconsume;
 }
 
@@ -283,7 +286,7 @@ nm_http_client_get (NMHttpClient *self,
 	edata = g_slice_new (EHandleData);
 	*edata = (EHandleData) {
 		.task           = nm_g_task_new (self, cancellable, nm_http_client_get, callback, user_data),
-		.recv_data      = g_string_sized_new (NM_MIN (max_data, 245)),
+		.recv_data      = NM_STR_BUF_INIT (0, FALSE),
 		.max_data       = max_data,
 		.url            = g_strdup (url),
 		.headers        = NULL,
@@ -351,6 +354,21 @@ nm_http_client_get (NMHttpClient *self,
 	}
 }
 
+/**
+ * nm_http_client_get_finish:
+ * @self: the #NMHttpClient instance
+ * @result: the #GAsyncResult which to complete.
+ * @out_response_code: (allow-none) (out): the HTTP response code or -1 on other error.
+ * @out_response_data: (allow-none) (transfer full): the HTTP response data, if any.
+ *   The GBytes buffer is guaranteed to have a trailing NUL character *after* the
+ *   returned buffer size. That means, you can always trust that the buffer is NUL terminated
+ *   and that there is one additional hidden byte after the data.
+ *   Also, the returned buffer is allocated just for you. While GBytes is immutable, you are
+ *   allowed to modify the buffer as it's not used by anybody else.
+ * @error: the error
+ *
+ * Returns: %TRUE on success or %FALSE with an error code.
+ */
 gboolean
 nm_http_client_get_finish (NMHttpClient *self,
                            GAsyncResult *result,
@@ -364,6 +382,9 @@ nm_http_client_get_finish (NMHttpClient *self,
 	g_return_val_if_fail (nm_g_task_is_valid (result, self, nm_http_client_get), FALSE);
 
 	get_result = g_task_propagate_pointer (G_TASK (result), error);
+
+	nm_assert (!error || (!!get_result) == (!*error));
+
 	if (!get_result) {
 		NM_SET_OUT (out_response_code, -1);
 		NM_SET_OUT (out_response_data, NULL);
@@ -376,7 +397,6 @@ nm_http_client_get_finish (NMHttpClient *self,
 	NM_SET_OUT (out_response_data, g_steal_pointer (&get_result->response_data));
 
 	_get_result_free (get_result);
-
 	return TRUE;
 }
 
@@ -447,11 +467,14 @@ _poll_get_probe_finish_fcn (GObject *source,
 	                                     &response_data,
 	                                     &local_error);
 
-	if (!success) {
+	nm_assert ((!!success) == (!local_error));
+
+	if (local_error) {
 		if (nm_utils_error_is_cancelled (local_error)) {
 			g_propagate_error (error, g_steal_pointer (&local_error));
 			return TRUE;
 		}
+		/* any other error. Continue polling. */
 		return FALSE;
 	}
 
@@ -468,8 +491,10 @@ _poll_get_probe_finish_fcn (GObject *source,
 		return TRUE;
 	}
 
-	if (!success)
+	if (!success) {
+		/* Not yet ready. Continue polling. */
 		return FALSE;
+	}
 
 	poll_get_data->response_code = response_code;
 	poll_get_data->response_data = g_steal_pointer (&response_data);
@@ -487,10 +512,12 @@ _poll_get_done_cb (GObject *source,
 
 	success = nmcs_utils_poll_finish (result, NULL, &error);
 
+	nm_assert ((!!success) == (!error));
+
 	if (error)
 		g_task_return_error (poll_get_data->task, g_steal_pointer (&error));
 	else
-		g_task_return_boolean (poll_get_data->task, success);
+		g_task_return_boolean (poll_get_data->task, TRUE);
 
 	g_object_unref (poll_get_data->task);
 }
@@ -569,10 +596,11 @@ nm_http_client_poll_get_finish (NMHttpClient *self,
 	task = G_TASK (result);
 
 	success = g_task_propagate_boolean (task, &local_error);
-	if (   local_error
-	    || !success) {
-		if (local_error)
-			g_propagate_error (error, g_steal_pointer (&local_error));
+
+	nm_assert ((!!success) == (!local_error));
+
+	if (local_error) {
+		g_propagate_error (error, g_steal_pointer (&local_error));
 		NM_SET_OUT (out_response_code, -1);
 		NM_SET_OUT (out_response_data, NULL);
 		return FALSE;
@@ -582,7 +610,6 @@ nm_http_client_poll_get_finish (NMHttpClient *self,
 
 	NM_SET_OUT (out_response_code, poll_get_data->response_code);
 	NM_SET_OUT (out_response_data, g_steal_pointer (&poll_get_data->response_data));
-
 	return TRUE;
 }
 

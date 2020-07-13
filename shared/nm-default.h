@@ -261,6 +261,8 @@ _nm_g_return_if_fail_warning (const char *log_domain,
 
 /*****************************************************************************/
 
+#include "nm-std-aux/nm-std-aux.h"
+#include "nm-std-aux/nm-std-utils.h"
 #include "nm-glib-aux/nm-macros-internal.h"
 #include "nm-glib-aux/nm-shared-utils.h"
 #include "nm-glib-aux/nm-errno.h"

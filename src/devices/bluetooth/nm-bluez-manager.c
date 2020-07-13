@@ -935,7 +935,7 @@ _conn_track_update (NMBluezManager *self,
 	}
 
 	if (!cdata_el) {
-		_LOGT ("connecton: track for %s, %s: %s (%s)",
+		_LOGT ("connection: track for %s, %s: %s (%s)",
 		       nm_bluetooth_capability_to_string (bt_type, sbuf_cap, sizeof (sbuf_cap)),
 		       bdaddr,
 		       nm_settings_connection_get_uuid (sett_conn),
@@ -962,7 +962,7 @@ out_remove:
 		GHashTableIter iter;
 		BzDBusObj *bzobj;
 
-		_LOGT ("connecton: untrack for %s, %s: %s (%s)",
+		_LOGT ("connection: untrack for %s, %s: %s (%s)",
 		       nm_bluetooth_capability_to_string (cdata_el_remove->cdata_hd->bt_type, sbuf_cap, sizeof (sbuf_cap)),
 		       cdata_el_remove->cdata_hd->bdaddr,
 		       nm_settings_connection_get_uuid (sett_conn),
@@ -1564,7 +1564,7 @@ _process_change_idle_cb (gpointer user_data)
 	_process_change_idle_all (self, &emit_device_availability_changed);
 
 	if (emit_device_availability_changed)
-		nm_manager_notify_device_availibility_maybe_changed (priv->manager);
+		nm_manager_notify_device_availability_maybe_changed (priv->manager);
 
 	return G_SOURCE_CONTINUE;
 }
@@ -2232,7 +2232,7 @@ _cleanup_for_name_owner (NMBluezManager *self)
 	nm_assert (g_hash_table_size (priv->bzobjs) == 0);
 
 	if (emit_device_availability_changed)
-		nm_manager_notify_device_availibility_maybe_changed (priv->manager);
+		nm_manager_notify_device_availability_maybe_changed (priv->manager);
 }
 
 static void
@@ -2481,7 +2481,7 @@ _connect_dun_step2_cb (NMBluez5DunContext *context,
 	bzobj = user_data;
 
 	if (rfcomm_dev) {
-		/* We want to early notifiy about the rfcomm path. That is because we might still delay
+		/* We want to early notify about the rfcomm path. That is because we might still delay
 		 * to signal full activation longer (asynchronously). But the earliest time the callback
 		 * is invoked with the rfcomm path, we just created the device synchronously.
 		 *

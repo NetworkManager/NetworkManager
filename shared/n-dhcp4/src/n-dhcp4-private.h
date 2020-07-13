@@ -263,7 +263,7 @@ struct NDhcp4ClientProbeConfig {
         bool inform_only;
         bool init_reboot;
         struct in_addr requested_ip;
-        struct drand48_data entropy;    /* entropy pool */
+        unsigned short int entropy[3];
         uint64_t ms_start_delay;        /* max ms to wait before starting probe */
         NDhcp4ClientProbeOption *options[UINT8_MAX + 1];
         int8_t request_parameters[UINT8_MAX + 1];

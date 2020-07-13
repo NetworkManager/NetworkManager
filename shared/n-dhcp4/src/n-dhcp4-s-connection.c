@@ -375,7 +375,7 @@ int n_dhcp4_s_connection_nak_new(NDhcp4SConnection *connection,
 
         /*
          * The RFC is a bit unclear on how NAK should be sent, on the
-         * one hand it says that they should be unconditinoally broadcast
+         * one hand it says that they should be unconditionally broadcast
          * (unless going through a relay agent), on the other, when they
          * do go through a relay agent, they will not be. We treat them
          * as any other reply and only broadcast when the broadcast bit

@@ -72,7 +72,7 @@ typedef struct {
 	 * UUID, or parent device permanent hardware address for @connection.
 	 *
 	 * Returns: the parent interface name, parent connection UUID, parent
-	 *   device permenent hardware address, or %NULL
+	 *   device permanent hardware address, or %NULL
 	 */
 	const char * (*get_connection_parent) (NMDeviceFactory *factory,
 	                                       NMConnection *connection);

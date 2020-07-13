@@ -272,7 +272,7 @@ nm_setting_vlan_get_num_priorities (NMSettingVlan *setting, NMVlanPriorityMap ma
  * Retrieve one of the entries of the #NMSettingVlan:ingress_priority_map
  * or #NMSettingVlan:egress_priority_map properties of this setting.
  *
- * Returns: returns %TRUE if @idx is in range. Otherwise %FALSE.
+ * Returns: returns %TRUE if @idx is in range. Otherwise, %FALSE.
  **/
 gboolean
 nm_setting_vlan_get_priority (NMSettingVlan *setting,

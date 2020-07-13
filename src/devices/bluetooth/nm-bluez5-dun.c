@@ -256,7 +256,7 @@ _connect_create_rfcomm (NMBluez5DunContext *context)
 		 * not yet fully connected. However, we notify the caller about "what we learned
 		 * so far". Note that this happens synchronously.
 		 *
-		 * The purpose is that once we proceed synchrnously, modem-manager races with
+		 * The purpose is that once we proceed synchronously, modem-manager races with
 		 * the detection of the modem. We want to notify the caller first about the
 		 * device name. */
 		context->cdat->callback (NULL,

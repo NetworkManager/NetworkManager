@@ -353,7 +353,7 @@ _storages_consolidate (NMSIfcfgRHPlugin *self,
 		storage = storages_modified->pdata[i];
 
 		if (!storage->dirty) {
-			/* the entry is no longer dirty. In the meantime we already emited
+			/* the entry is no longer dirty. In the meantime we already emitted
 			 * another signal for it. */
 			continue;
 		}

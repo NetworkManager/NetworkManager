@@ -640,7 +640,7 @@ nm_vpn_plugin_info_list_find_service_type (GSList *list, const char *name)
 	if (info)
 		return g_strdup (NM_VPN_PLUGIN_INFO_GET_PRIVATE (info)->service);
 
-	/* check the hard-coded list of short-names. They all have have the same
+	/* check the hard-coded list of short-names. They all have the same
 	 * well-known prefix org.freedesktop.NetworkManager and the name. */
 	if (nm_utils_strv_find_first ((char **) known_names, G_N_ELEMENTS (known_names), name) >= 0)
 		return g_strdup_printf ("%s.%s", NM_DBUS_INTERFACE, name);

@@ -1024,7 +1024,7 @@ typedef enum { /*< flags >*/
  * @NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES: The master has any slave devices attached.
  *   This only makes sense if the device is a master.
  * @NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY: the lifetime
- *   of the activation is bound to the visilibity of the connection profile,
+ *   of the activation is bound to the visibility of the connection profile,
  *   which in turn depends on "connection.permissions" and whether a session
  *   for the user exists. Since: 1.16
  * @NM_ACTIVATION_STATE_FLAG_EXTERNAL: the active connection was generated to
@@ -1087,7 +1087,7 @@ typedef enum { /*< flags >*/
  *   as %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY, with one difference: when later deleting
  *   the profile, the original profile will not be deleted. Instead a nmmeta
  *   file is written to /run to indicate that the profile is gone.
- *   Note that if such a nmmeta tombstone file exists and hides a file in persistant
+ *   Note that if such a nmmeta tombstone file exists and hides a file in persistent
  *   storage, then when re-adding the profile with the same UUID, then the original
  *   storage is taken over again.
  * @NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY: this is like %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY,

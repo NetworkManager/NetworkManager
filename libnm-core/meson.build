@@ -196,12 +196,6 @@ links = [
 
 libnm_core_c_args = common_c_flags
 
-if enable_json_validation
-  libnm_core_sources += files('nm-json.c')
-  deps += jansson_dep
-  libnm_core_c_args += ['-fcommon']
-endif
-
 libnm_core = static_library(
   'nm-core',
   sources: libnm_core_sources + libnm_core_enum_sources + nm_meta_setting_source + [nm_version_macro_header],

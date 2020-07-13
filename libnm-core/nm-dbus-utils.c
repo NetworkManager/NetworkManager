@@ -201,7 +201,7 @@ _nm_dbus_typecheck_response (GVariant *response,
  * will also check that the response matches that type signature, and return
  * an error if not.
  *
- * Returns: %NULL if @error is set. Otherwise a #GVariant tuple with
+ * Returns: %NULL if @error is set. Otherwise, a #GVariant tuple with
  * return values. Free with g_variant_unref().
  */
 GVariant *

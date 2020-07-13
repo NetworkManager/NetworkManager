@@ -1437,7 +1437,7 @@ _vt_cmd_plobj_id_cmp (ip4_address, NMPlatformIP4Address,
                       NM_CMP_FIELD (obj1, obj2, ifindex);
                       NM_CMP_FIELD (obj1, obj2, plen);
                       NM_CMP_FIELD (obj1, obj2, address);
-                      /* for IPv4 addresses, you can add the same local address with differing peer-adddress
+                      /* for IPv4 addresses, you can add the same local address with differing peer-address
                        * (IFA_ADDRESS), provided that their net-part differs. */
                       NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX (obj1->peer_address, obj2->peer_address, obj1->plen);
 )

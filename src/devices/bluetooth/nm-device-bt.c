@@ -892,7 +892,7 @@ connect_bz_cb (NMBluezManager *bz_mgr,
 	}
 
 	if (!priv->is_connected) {
-		/* we got the callback from NMBluezManager with succes. We actually should be
+		/* we got the callback from NMBluezManager with success. We actually should be
 		 * connected and this line shouldn't be reached. */
 		nm_assert_not_reached ();
 		_LOGE (LOGD_BT, "bluetooth is unexpectedly not in connected state");

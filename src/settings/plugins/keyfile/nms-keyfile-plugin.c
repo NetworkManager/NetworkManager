@@ -529,7 +529,7 @@ _storages_consolidate (NMSKeyfilePlugin *self,
 		storage = storages_modified->pdata[i];
 
 		if (!storage->is_dirty) {
-			/* the entry is no longer is_dirty. In the meantime we already emited
+			/* the entry is no longer is_dirty. In the meantime we already emitted
 			 * another signal for it. */
 			continue;
 		}

@@ -234,7 +234,7 @@ nm_secret_agent_old_get_context_busy_watcher (NMSecretAgentOld *self)
  * Returns: the current D-Bus name owner. While this property
  *   is set while registering, it really only makes sense when
  *   the nm_secret_agent_old_get_registered() indicates that
- *   registration is successfull.
+ *   registration is successful.
  *
  * Since: 1.24
  */
@@ -1974,7 +1974,7 @@ nm_secret_agent_old_class_init (NMSecretAgentOldClass *class)
 	 * In particular, if this property is %TRUE at construct time, then the
 	 * agent will register itself with NetworkManager during
 	 * construction/initialization and initialization will only complete
-	 * after registration is completed (either successfully or unsucessfully).
+	 * after registration is completed (either successfully or unsuccessfully).
 	 * Since 1.24, a failure to register will no longer cause initialization
 	 * of #NMSecretAgentOld to fail.
 	 *

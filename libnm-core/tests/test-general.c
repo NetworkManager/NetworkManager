@@ -14,6 +14,7 @@
 #include "nm-std-aux/c-list-util.h"
 #include "nm-glib-aux/nm-enum-utils.h"
 #include "nm-glib-aux/nm-str-buf.h"
+#include "nm-glib-aux/nm-json-aux.h"
 #include "systemd/nm-sd-utils-shared.h"
 
 #include "nm-utils.h"
@@ -269,7 +270,7 @@ _do_test_nm_utils_strsplit_set_f_one (NMUtilsStrsplitSetFlags flags,
 	g_assert (!NM_FLAGS_ANY (flags, ~(  NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING
 	                                  | NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY)));
 
-	/* assert that the epected words are valid (and don't contain unescaped delimiters). */
+	/* assert that the expected words are valid (and don't contain unescaped delimiters). */
 	for (i = 0; i < words_len; i++) {
 		const char *w = exp_words[i];
 
@@ -7125,17 +7126,19 @@ test_nm_utils_check_valid_json (void)
 {
 	_json_config_check_valid (NULL, FALSE);
 	_json_config_check_valid ("", FALSE);
-#if WITH_JSON_VALIDATION
-	_json_config_check_valid ("{ }", TRUE);
-	_json_config_check_valid ("{ \"a\" : 1 }", TRUE);
-	_json_config_check_valid ("{ \"a\" : }", FALSE);
-#else
+
 	/* Without JSON library everything except empty string is considered valid */
+	nmtst_json_vt_reset (FALSE);
 	_json_config_check_valid ("{ }", TRUE);
 	_json_config_check_valid ("{'%!-a1} ", TRUE);
 	_json_config_check_valid (" {'%!-a1}", TRUE);
 	_json_config_check_valid ("{'%!-a1", FALSE);
-#endif
+
+	if (nmtst_json_vt_reset (TRUE)) {
+		_json_config_check_valid ("{ }", TRUE);
+		_json_config_check_valid ("{ \"a\" : 1 }", TRUE);
+		_json_config_check_valid ("{ \"a\" : }", FALSE);
+	}
 }
 
 static void
@@ -7172,86 +7175,96 @@ _team_config_equal_check (const char *conf1,
 static void
 test_nm_utils_team_config_equal (void)
 {
-	_team_config_equal_check ("",
-	                          "",
-	                          TRUE,
-	                          TRUE);
-	_team_config_equal_check ("",
-	                          " ",
-	                          TRUE,
-	                          TRUE);
-	_team_config_equal_check ("{}",
-	                          "{ }",
-	                          TRUE,
-	                          TRUE);
-	_team_config_equal_check ("{}",
-	                          "{",
-	                          TRUE,
-	                          TRUE);
-	_team_config_equal_check ("{ \"a\": 1 }",
-	                          "{ \"a\": 1 }",
-	                          TRUE,
-	                          TRUE);
-	_team_config_equal_check ("{ \"a\": 1 }",
-	                          "{ \"a\":   1 }",
-	                          TRUE,
-	                          TRUE);
+	int with_json_vt;
 
-	/* team config */
-	_team_config_equal_check ("{ }",
-	                          "{ \"runner\" :  { \"name\" : \"random\"} }",
-	                          FALSE,
-	                          !WITH_JSON_VALIDATION);
-	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"roundrobin\"} }",
-	                          "{ \"runner\" :  { \"name\" : \"random\"} }",
-	                          FALSE,
-	                          !WITH_JSON_VALIDATION);
-	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"random\"} }",
-	                          "{ \"runner\" :  { \"name\" : \"random\"} }",
-	                          FALSE,
-	                          TRUE);
-	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"loadbalance\"} }",
-	                          "{ \"runner\" :  { \"name\" : \"loadbalance\"} }",
-	                          FALSE,
-	                          TRUE);
-	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"random\"}, \"ports\" : { \"eth0\" : {} } }",
-	                          "{ \"runner\" :  { \"name\" : \"random\"}, \"ports\" : { \"eth1\" : {} } }",
-	                          FALSE,
-	                          TRUE);
-	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"lacp\"} }",
-	                          "{ \"runner\" :  { \"name\" : \"lacp\", \"tx_hash\" : [ \"eth\", \"ipv4\", \"ipv6\" ] } }",
-	                          FALSE,
-	                          !WITH_JSON_VALIDATION);
-	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"roundrobin\"} }",
-	                          "{ \"runner\" :  { \"name\" : \"roundrobin\", \"tx_hash\" : [ \"eth\", \"ipv4\", \"ipv6\" ] } }",
-	                          FALSE,
-	                          !WITH_JSON_VALIDATION);
-	_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"lacp\"} }",
-	                          "{ \"runner\" :  { \"name\" : \"lacp\", \"tx_hash\" : [ \"eth\" ] } }",
-	                          FALSE,
-	                          !WITH_JSON_VALIDATION);
+	for (with_json_vt = 0; with_json_vt < 2; with_json_vt++) {
+		const NMJsonVt *vt;
 
-	/* team port config */
-	_team_config_equal_check ("{ }",
-	                          "{ \"link_watch\" :  { \"name\" : \"ethtool\"} }",
-	                          TRUE,
-	                          !WITH_JSON_VALIDATION);
-	_team_config_equal_check ("{ }",
-	                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
-	                          TRUE,
-	                          TRUE);
-	_team_config_equal_check ("{ \"link_watch\" :  { \"name\" : \"ethtool\"} }",
-	                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
-	                          TRUE,
-	                          !WITH_JSON_VALIDATION);
-	_team_config_equal_check ("{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
-	                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
-	                          TRUE,
-	                          TRUE);
-	_team_config_equal_check ("{ \"link_watch\" :  { \"name\" : \"arp_ping\"}, \"ports\" : { \"eth0\" : {} } }",
-	                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"}, \"ports\" : { \"eth1\" : {} } }",
-	                          TRUE,
-	                          TRUE);
+		vt = nmtst_json_vt_reset (!!with_json_vt);
+
+		_team_config_equal_check ("",
+		                          "",
+		                          TRUE,
+		                          TRUE);
+		_team_config_equal_check ("",
+		                          " ",
+		                          TRUE,
+		                          TRUE);
+		_team_config_equal_check ("{}",
+		                          "{ }",
+		                          TRUE,
+		                          TRUE);
+		_team_config_equal_check ("{}",
+		                          "{",
+		                          TRUE,
+		                          TRUE);
+		_team_config_equal_check ("{ \"a\": 1 }",
+		                          "{ \"a\": 1 }",
+		                          TRUE,
+		                          TRUE);
+		_team_config_equal_check ("{ \"a\": 1 }",
+		                          "{ \"a\":   1 }",
+		                          TRUE,
+		                          TRUE);
+
+		/* team config */
+		_team_config_equal_check ("{ }",
+		                          "{ \"runner\" :  { \"name\" : \"random\"} }",
+		                          FALSE,
+		                          !vt);
+		_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"roundrobin\"} }",
+		                          "{ \"runner\" :  { \"name\" : \"random\"} }",
+		                          FALSE,
+		                          !vt);
+		_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"random\"} }",
+		                          "{ \"runner\" :  { \"name\" : \"random\"} }",
+		                          FALSE,
+		                          TRUE);
+		_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"loadbalance\"} }",
+		                          "{ \"runner\" :  { \"name\" : \"loadbalance\"} }",
+		                          FALSE,
+		                          TRUE);
+		_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"random\"}, \"ports\" : { \"eth0\" : {} } }",
+		                          "{ \"runner\" :  { \"name\" : \"random\"}, \"ports\" : { \"eth1\" : {} } }",
+		                          FALSE,
+		                          TRUE);
+		_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"lacp\"} }",
+		                          "{ \"runner\" :  { \"name\" : \"lacp\", \"tx_hash\" : [ \"eth\", \"ipv4\", \"ipv6\" ] } }",
+		                          FALSE,
+		                          !vt);
+		_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"roundrobin\"} }",
+		                          "{ \"runner\" :  { \"name\" : \"roundrobin\", \"tx_hash\" : [ \"eth\", \"ipv4\", \"ipv6\" ] } }",
+		                          FALSE,
+		                          !vt);
+		_team_config_equal_check ("{ \"runner\" :  { \"name\" : \"lacp\"} }",
+		                          "{ \"runner\" :  { \"name\" : \"lacp\", \"tx_hash\" : [ \"eth\" ] } }",
+		                          FALSE,
+		                          !vt);
+
+		/* team port config */
+		_team_config_equal_check ("{ }",
+		                          "{ \"link_watch\" :  { \"name\" : \"ethtool\"} }",
+		                          TRUE,
+		                          !vt);
+		_team_config_equal_check ("{ }",
+		                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
+		                          TRUE,
+		                          TRUE);
+		_team_config_equal_check ("{ \"link_watch\" :  { \"name\" : \"ethtool\"} }",
+		                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
+		                          TRUE,
+		                          !vt);
+		_team_config_equal_check ("{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
+		                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"} }",
+		                          TRUE,
+		                          TRUE);
+		_team_config_equal_check ("{ \"link_watch\" :  { \"name\" : \"arp_ping\"}, \"ports\" : { \"eth0\" : {} } }",
+		                          "{ \"link_watch\" :  { \"name\" : \"arp_ping\"}, \"ports\" : { \"eth1\" : {} } }",
+		                          TRUE,
+		                          TRUE);
+	}
+
+	nmtst_json_vt_reset (TRUE);
 }
 
 /*****************************************************************************/
@@ -7845,7 +7858,7 @@ _do_test_utils_str_utf8safe_unescape (const char *str, const char *expected, gsi
 
 	if (   expected
 	    && l == strlen (expected)) {
-		/* there are no embeeded NULs. Check that nm_utils_str_utf8safe_unescape() yields the same result. */
+		/* there are no embedded NULs. Check that nm_utils_str_utf8safe_unescape() yields the same result. */
 		s = nm_utils_str_utf8safe_unescape (str, NM_UTILS_STR_UTF8_SAFE_FLAG_NONE, &str_free_1);
 		g_assert_cmpstr (s, ==, expected);
 		if (strchr (str, '\\')) {
@@ -9100,6 +9113,55 @@ test_strsplit_quoted (void)
 
 /*****************************************************************************/
 
+static void
+_do_wifi_ghz_freqs (const guint *freqs, const char *band)
+{
+	int len;
+	int j;
+	int i;
+
+	g_assert (NM_IN_STRSET (band, "a", "bg"));
+	g_assert (freqs);
+	g_assert (freqs[0] != 0);
+
+	for (i = 0; freqs[i]; i++) {
+		for (j = 0; j < i; j++)
+			g_assert (freqs[i] != freqs[j]);
+	}
+	len = i;
+
+	g_assert (nm_utils_wifi_freq_to_channel (0) == 0);
+	g_assert (nm_utils_wifi_channel_to_freq (0, "bg") == -1);
+	g_assert (nm_utils_wifi_channel_to_freq (0, "foo") == 0);
+	g_assert (!nm_utils_wifi_is_channel_valid (0, "bg"));
+	g_assert (!nm_utils_wifi_is_channel_valid (0, "foo"));
+
+	for (i = 0; i < len; i++) {
+		guint freq = freqs[i];
+		guint32 chan;
+		guint32 freq2;
+
+		chan = nm_utils_wifi_freq_to_channel (freq);
+		g_assert (chan != 0);
+
+		freq2 = nm_utils_wifi_channel_to_freq (chan, band);
+		g_assert (freq2 == freq);
+
+		g_assert (nm_utils_wifi_is_channel_valid (chan, band));
+	}
+
+	g_assert (freqs[len] == 0);
+}
+
+static void
+test_nm_utils_wifi_ghz_freqs (void)
+{
+	_do_wifi_ghz_freqs (nm_utils_wifi_2ghz_freqs (), "bg");
+	_do_wifi_ghz_freqs (nm_utils_wifi_5ghz_freqs (), "a");
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -9273,6 +9335,7 @@ int main (int argc, char **argv)
 	g_test_add_data_func ("/core/general/test_integrate_maincontext/2", GUINT_TO_POINTER (2), test_integrate_maincontext);
 
 	g_test_add_func ("/core/general/test_nm_ip_addr_zero", test_nm_ip_addr_zero);
+	g_test_add_func ("/core/general/test_nm_utils_wifi_ghz_freqs", test_nm_utils_wifi_ghz_freqs);
 
 	g_test_add_func ("/core/general/test_strsplit_quoted", test_strsplit_quoted);
 

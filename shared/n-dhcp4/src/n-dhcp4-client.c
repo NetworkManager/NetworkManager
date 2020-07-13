@@ -146,14 +146,14 @@ _c_public_ void n_dhcp4_client_config_set_transport(NDhcp4ClientConfig *config, 
  *
  * Background: OFFER and ACK messages from DHCP servers to clients are unicast
  *             to the IP address handed out, even before the IP address has
- *             been configured on the taregt interface. This usually works
+ *             been configured on the target interface. This usually works
  *             because the correct destination hardware address is explicitly
  *             set on the outgoing packets, rather than being resolved (which
  *             would not work). However, some hardware does not accept incoming
  *             IP packets destined for addresses they do not own, even if the
  *             hardware address is correct. In this case, the server must
  *             broadcast the replies in order for the client to receive them.
- *             In general, unneccesary broadcasting is something one wants to
+ *             In general, unnecessary broadcasting is something one wants to
  *             avoid, and some networks will not deliver broadcasts to the
  *             client at all, in which case this flag must not be set.
  */
@@ -549,7 +549,7 @@ void n_dhcp4_log_queue_fmt(NDhcp4LogQueue *log_queue,
         if (level > log_queue->log_level)
                 return;
 
-        /* Currently the logging queue is only implemented for
+        /* Currently, the logging queue is only implemented for
          * the client. Nobody would enable logging except a
          * client instance. */
         c_assert(log_queue->is_client);
@@ -953,7 +953,7 @@ _c_public_ int n_dhcp4_client_update_mtu(NDhcp4Client *client, uint16_t mtu) {
  * This creates a new probe on @client. Probes represent DHCP requests and
  * track the state over the entire lifetime of a lease. Once a probe is created
  * it will start looking for DHCP servers, request a lease from them, and renew
- * the lease continously whenever it expires. Furthermore, if a lease cannot be
+ * the lease continuously whenever it expires. Furthermore, if a lease cannot be
  * renewed, a new lease will be requested.
  *
  * The API allows for many probes to be run at the same time. However, the DHCP

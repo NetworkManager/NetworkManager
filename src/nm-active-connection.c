@@ -751,7 +751,7 @@ nm_active_connection_get_master (NMActiveConnection *self)
  * @self: the #NMActiveConnection
  *
  * Returns: %TRUE if the connection has a master connection, and that
- * master connection is ready to accept slaves.  Otherwise %FALSE.
+ * master connection is ready to accept slaves.  Otherwise, %FALSE.
  */
 gboolean
 nm_active_connection_get_master_ready (NMActiveConnection *self)

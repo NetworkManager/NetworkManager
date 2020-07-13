@@ -403,7 +403,7 @@ no-auto-default=*
         <term><varname>debug</varname></term>
         <listitem><para>Comma separated list of options to aid
         debugging. This value will be combined with the environment
-        variable <literal>NM_DEBUG</literal>. Currently the following
+        variable <literal>NM_DEBUG</literal>. Currently, the following
         values are supported:</para>
         <para>
           <literal>RLIMIT_CORE</literal>: set ulimit -c unlimited
@@ -478,7 +478,7 @@ no-auto-default=*
           <listitem><para>Set devices that should be ignored by
            NetworkManager.
           </para>
-          <para>See <xref linkend="device-spec"/> for the syntax how to
+          <para>See <xref linkend="device-spec"/> for the syntax on how to
            specify a device.
           </para>
           <para>
@@ -806,6 +806,10 @@ ipv6.ip6-privacy=0
           <listitem><para>If left unspecified, default value of 60 seconds is used.</para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>wifi.ap-isolation</varname></term>
+          <listitem><para>If left unspecified, AP isolation is disabled.</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>wifi.cloned-mac-address</varname></term>
           <listitem><para>If left unspecified, it defaults to "preserve".</para></listitem>
         </varlistentry>
@@ -1027,7 +1031,7 @@ managed=1
           <term><varname>wifi.backend</varname></term>
           <listitem>
             <para>
-              Specify the Wi-Fi backend used for the device. Currently supported
+              Specify the Wi-Fi backend used for the device. Currently, supported
               are <literal>wpa_supplicant</literal> and <literal>iwd</literal> (experimental).
             </para>
           </listitem>
@@ -1044,7 +1048,7 @@ managed=1
           </listitem>
         </varlistentry>
         <varlistentry id="sriov-num-vfs">
-          <term><varname>sriov-num-vfs</varname></term>
+         , <term><varname>sriov-num-vfs</varname></term>
           <listitem>
             <para>
               Specify the number of virtual functions (VF) to enable
@@ -1247,7 +1251,7 @@ enable=nm-version-min:1.2
 
 # Match against the maximum allowed version. The example matches
 # versions 1.2.0, 1.2.2, 1.2.4. Again, only the last version digit
-# is allowed to be smaller. So this would not match match on 1.1.10.
+# is allowed to be smaller. So this would not match on 1.1.10.
 [.config]
 enable=nm-version-max:1.2.6
 </programlisting>

@@ -1309,7 +1309,7 @@ _rule_fuzzy_equal (const NMPObject *obj,
 		break;
 	case RTM_DELRULE:
 		/* when deleting a rule with RTM_DELRULE, kernel tries to find the
-		 * cadidate to delete. It might delete the wrong rule (rh#1685816). */
+		 * candidate to delete. It might delete the wrong rule (rh#1685816). */
 		if (rr->action == FR_ACT_UNSPEC)
 			rr_co.action = FR_ACT_UNSPEC;
 		if (rr->iifname[0] == '\0')
@@ -1510,7 +1510,7 @@ again:
 
 		objs_sync = g_ptr_array_new_with_free_func ((GDestroyNotify) nmp_object_unref);
 
-		/* ensure that priorities are unique. Otherwise it confuses the test, because
+		/* ensure that priorities are unique. Otherwise, it confuses the test, because
 		 * kernel may wrongly be unable to add/delete routes based on a wrong match
 		 * (rh#1685816, rh#1685816). */
 		for (i = 0; i < objs->len; i++) {

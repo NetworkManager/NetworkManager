@@ -515,7 +515,7 @@ can_show_graphics (void)
  * Converts @strength into a 4-character-wide graphical representation of
  * strength suitable for printing to stdout. If the current locale and terminal
  * support it, this will use unicode graphics characters to represent
- * "bars". Otherwise it will use 0 to 4 asterisks.
+ * "bars". Otherwise, it will use 0 to 4 asterisks.
  *
  * Returns: the graphical representation of the access point strength
  */

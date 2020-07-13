@@ -146,7 +146,7 @@ static gboolean
 _get_running (NMFirewallManagerPrivate *priv)
 {
 	/* when starting, we need to asynchronously check whether there is
-	 * a name owner. During that time we optimistially assume that the
+	 * a name owner. During that time we optimistically assume that the
 	 * service is indeed running. That is the time when we queue the
 	 * requests, and they will be started once the get-name-owner call
 	 * returns. */

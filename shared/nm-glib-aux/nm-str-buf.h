@@ -85,9 +85,9 @@ nm_str_buf_maybe_expand (NMStrBuf *strbuf,
  * nm_str_buf_set_size:
  * @strbuf: the initialized #NMStrBuf
  * @new_len: the new length
- * @honor_do_bzero_mem: if %TRUE, the shrinked memory will be cleared, if
+ * @honor_do_bzero_mem: if %TRUE, the shrunk memory will be cleared, if
  *   do_bzero_mem is set. This should be usually set to %TRUE, unless
- *   you know that the shrinked memory does not contain data that requires to be
+ *   you know that the shrunk memory does not contain data that requires to be
  *   cleared. When growing the size, this value has no effect.
  * @reserve_exact: when growing the buffer, reserve the exact amount of bytes.
  *   If %FALSE, the buffer may allocate more memory than requested to grow
@@ -212,6 +212,16 @@ nm_str_buf_append_c4 (NMStrBuf *strbuf,
 }
 
 static inline void
+nm_str_buf_append_c_hex (NMStrBuf *strbuf,
+                         char ch,
+                         gboolean upper_case)
+{
+	nm_str_buf_maybe_expand (strbuf, 3, FALSE);
+	strbuf->_priv_str[strbuf->_priv_len++] = nm_hexchar (((guchar) ch) >> 4, upper_case);
+	strbuf->_priv_str[strbuf->_priv_len++] = nm_hexchar ((guchar) ch, upper_case);
+}
+
+static inline void
 nm_str_buf_append_len (NMStrBuf *strbuf,
                        const char *str,
                        gsize len)
@@ -225,6 +235,25 @@ nm_str_buf_append_len (NMStrBuf *strbuf,
 	}
 }
 
+static inline char *
+nm_str_buf_append_len0 (NMStrBuf *strbuf,
+                        const char *str,
+                        gsize len)
+{
+	_nm_str_buf_assert (strbuf);
+
+	/* this is basically like nm_str_buf_append_len() and
+	 * nm_str_buf_get_str() in one. */
+
+	nm_str_buf_maybe_expand (strbuf, len + 1u, FALSE);
+	if (len > 0) {
+		memcpy (&strbuf->_priv_str[strbuf->_priv_len], str, len);
+		strbuf->_priv_len += len;
+	}
+	strbuf->_priv_str[strbuf->_priv_len] = '\0';
+	return strbuf->_priv_str;
+}
+
 static inline void
 nm_str_buf_append (NMStrBuf *strbuf,
                    const char *str)
@@ -232,6 +261,15 @@ nm_str_buf_append (NMStrBuf *strbuf,
 	nm_assert (str);
 
 	nm_str_buf_append_len (strbuf, str, strlen (str));
+}
+
+static inline char *
+nm_str_buf_append0 (NMStrBuf *strbuf,
+                    const char *str)
+{
+	nm_assert (str);
+
+	return nm_str_buf_append_len0 (strbuf, str, strlen (str));
 }
 
 void nm_str_buf_append_printf (NMStrBuf *strbuf,
@@ -246,6 +284,65 @@ nm_str_buf_ensure_trailing_c (NMStrBuf *strbuf, char ch)
 	if (   strbuf->_priv_len == 0
 	    || strbuf->_priv_str[strbuf->_priv_len - 1] != ch)
 		nm_str_buf_append_c (strbuf, ch);
+}
+
+static inline NMStrBuf *
+nm_str_buf_append_required_delimiter (NMStrBuf *strbuf,
+                                      char delimiter)
+{
+	_nm_str_buf_assert (strbuf);
+
+	/* appends the @delimiter if it is required (that is, if the
+	 * string is not empty). */
+	if (strbuf->len > 0)
+		nm_str_buf_append_c (strbuf, delimiter);
+	return strbuf;
+}
+
+static inline void
+nm_str_buf_reset (NMStrBuf *strbuf,
+                  const char *str)
+{
+	_nm_str_buf_assert (strbuf);
+
+	if (strbuf->_priv_len > 0) {
+		if (strbuf->_priv_do_bzero_mem) {
+			/* we only clear the memory that we wrote to. */
+			nm_explicit_bzero (strbuf->_priv_str, strbuf->_priv_len);
+		}
+		strbuf->_priv_len = 0;
+	}
+
+	if (str)
+		nm_str_buf_append (strbuf, str);
+}
+
+/*****************************************************************************/
+
+/* Calls nm_utils_escaped_tokens_escape() on @str and appends the
+ * result to @strbuf. */
+static inline void
+nm_utils_escaped_tokens_escape_strbuf (const char *str,
+                                       const char *delimiters,
+                                       NMStrBuf *strbuf)
+{
+	gs_free char *str_to_free = NULL;
+
+	nm_assert (str);
+
+	nm_str_buf_append (strbuf,
+	                   nm_utils_escaped_tokens_escape (str, delimiters, &str_to_free));
+}
+
+/* Calls nm_utils_escaped_tokens_escape_unnecessary() on @str and appends the
+ * string to @strbuf. */
+static inline void
+nm_utils_escaped_tokens_escape_strbuf_assert (const char *str,
+                                              const char *delimiters,
+                                              NMStrBuf *strbuf)
+{
+	nm_str_buf_append (strbuf,
+	                   nm_utils_escaped_tokens_escape_unnecessary (str, delimiters));
 }
 
 /*****************************************************************************/
@@ -330,6 +427,23 @@ nm_str_buf_finalize (NMStrBuf *strbuf,
 	/* the buffer is in invalid state afterwards, however, we clear it
 	 * so far, that nm_auto_str_buf and nm_str_buf_destroy() is happy.  */
 	return g_steal_pointer (&strbuf->_priv_str);
+}
+
+static inline GBytes *
+nm_str_buf_finalize_to_gbytes (NMStrBuf *strbuf)
+{
+	char *s;
+	gsize l;
+
+	/* this always returns a non-NULL, newly allocated GBytes instance.
+	 * The data buffer always has an additional NUL character after
+	 * the data, and the data is allocated with malloc.
+	 *
+	 * That means, the caller who takes ownership of the GBytes can
+	 * safely modify the content of the buffer (including the additional
+	 * NUL sentinel). */
+	s = nm_str_buf_finalize (strbuf, &l);
+	return g_bytes_new_take (s ?: g_new0 (char, 1), l);
 }
 
 /**

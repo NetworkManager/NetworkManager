@@ -1,12 +1,43 @@
 #!/bin/bash
 
+# Script for doing NetworkManager releases.
 #
-# You need to start with a clean working directory of NetworkManager
-# and all branches up to date.
+# Run with --help for usage.
 #
+# There are 5 modes:
+#
+#  - "devel" : on master branch to tag "1.25.2-dev"
+#  - "rc1"   : the first release candidate on "master" branch which branches off
+#              "nm-1-26" branch. The tag is "1.26-rc1" with version number 1.25.90.
+#  - "rc"    : further release candidates on RC branch "nm-1-26". For example
+#              "1.26-rc2" with version number 1.25.91.
+#  - "major" : on stable branch nm-1-26 to release 1.26.0. This also merged
+#              the release with master branch and does a devel tag like "1.27.2-dev"
+#  - "major-post": after a "major" release, merge the release branch with master and
+#              do another devel snapshot on master.
+#  - "minor" : on a stable branch nm-1-26 to do minor release 1.26.4 and bump
+#              to "1.26.5-dev".
+#
+# Requisites:
+#
+#   * You need to start with a clean working directory (git clean -fdx)
+#
+#   * Run in a "clean" environment, no unusual environment variables set.
+#
+#   * First, ensure that you have ssh keys for master.gnome.org installed (and ssh-agent running)
+#     Also, ensure you have a GPG key that you want to use for signing. Also, have gpg-agent running
+#     and possibly configure `git config --get user.signingkey` for the proper key.
+#
+#   * Your git repository needs a remote "origin" that points to the upstream git repository.
+#
+#   * All your (relevant) local branches (master and nm-1-*) must be up to date with their
+#     remote tracking branches for origin.
+#
+# Run with --no-test to do the actual release.
 
 die() {
-    echo "FAIL: $@"
+    echo -n "FAIL: "
+    echo_color 31 "$@"
     exit 1
 }
 
@@ -18,11 +49,21 @@ echo_color() {
     echo -e -n '\033[0m'
 }
 
-die_usage() {
-    echo "FAIL: $@"
-    echo
+print_usage() {
     echo "Usage:"
-    echo "  $0 [devel|rc1|rc|major|minor] [--no-test] [--no-find-backports] [--no-cleanup] [--allow-local-branches]"
+    echo "  $BASH_SOURCE [devel|rc1|rc|major|major-post|minor] [--no-test] [--no-find-backports] [--no-cleanup] [--allow-local-branches]"
+}
+
+die_help() {
+    print_usage
+    exit 0
+}
+
+die_usage() {
+    echo -n "FAIL: "
+    echo_color 31 "$@"
+    echo
+    print_usage
     exit 1
 }
 
@@ -40,11 +81,11 @@ do_command() {
 }
 
 parse_version() {
-    local MAJ="$(sed -n '1,20 s/^m4_define(\[nm_major_version\], \[\([0-9]\+\)\])$/\1/p' configure.ac)"
-    local MIN="$(sed -n '1,20 s/^m4_define(\[nm_minor_version\], \[\([0-9]\+\)\])$/\1/p' configure.ac)"
-    local MIC="$(sed -n '1,20 s/^m4_define(\[nm_micro_version\], \[\([0-9]\+\)\])$/\1/p' configure.ac)"
+    local MAJ="$(sed -n '1,20 s/^m4_define(\[nm_major_version\], \[\([0-9]\+\)\])$/\1/p' ./configure.ac)"
+    local MIN="$(sed -n '1,20 s/^m4_define(\[nm_minor_version\], \[\([0-9]\+\)\])$/\1/p' ./configure.ac)"
+    local MIC="$(sed -n '1,20 s/^m4_define(\[nm_micro_version\], \[\([0-9]\+\)\])$/\1/p' ./configure.ac)"
 
-    re='^[0-9]+ [0-9]+ [0-9]+$'
+    re='^[0-9][1-9]* [0-9][1-9]* [0-9][1-9]*$'
     [[ "$MAJ $MIN $MIC" =~ $re ]] || return 1
     echo "$MAJ $MIN $MIC"
 }
@@ -108,32 +149,15 @@ cd "$DIR" &&
 test -f ./src/NetworkManagerUtils.h &&
 test -f ./contrib/fedora/rpm/build_clean.sh || die "cannot find NetworkManager base directory"
 
-TMP="$(git status --porcelain)" || die "git status failed"
-test -z "$TMP" || die "git working directory is not clean (git status --porcelain)"
-
-TMP="$(LANG=C git clean -ndx)" || die "git clean -ndx failed"
-test -z "$TMP" || die "git working directory is not clean (git clean -ndx)"
-
-VERSION_ARR=( $(parse_version) ) || die "cannot detect NetworkManager version"
-VERSION_STR="$(IFS=.; echo "${VERSION_ARR[*]}")"
-
 RELEASE_MODE=""
 DRY_RUN=1
 FIND_BACKPORTS=1
 ALLOW_LOCAL_BRANCHES=0
+HELP_AND_EXIT=1
 while [ "$#" -ge 1 ]; do
     A="$1"
     shift
-    if [ -z "$RELEASE_MODE" ]; then
-        case "$A" in
-            devel|rc1|rc|major|minor)
-                RELEASE_MODE="$A"
-                ;;
-            *)
-                ;;
-        esac
-        continue
-    fi
+    HELP_AND_EXIT=0
     case "$A" in
         --no-test)
             DRY_RUN=0
@@ -150,28 +174,50 @@ while [ "$#" -ge 1 ]; do
             # that differ from upstream. Set this flag to override that check.
             ALLOW_LOCAL_BRANCHES=1
             ;;
+        --help|-h)
+            die_help
+            ;;
+        devel|rc1|rc|major|major-post|minor)
+            [ -z "$RELEASE_MODE" ] || die_usage "duplicate release-mode"
+            RELEASE_MODE="$A"
+            ;;
         *)
             die_usage "unknown argument \"$A\""
             ;;
     esac
 done
+[ "$HELP_AND_EXIT" = 1 ] && die_help
+
 [ -n "$RELEASE_MODE" ] || die_usage "specify the desired release mode"
 
-echo "Current version before release: $VERSION_STR (do $RELEASE_MODE release)"
+VERSION_ARR=( $(parse_version) ) || die "cannot detect NetworkManager version"
+VERSION_STR="$(IFS=.; echo "${VERSION_ARR[*]}")"
+
+echo "Current version before release: $VERSION_STR (do \"$RELEASE_MODE\" release)"
+
+grep -q "version: '${VERSION_ARR[0]}.${VERSION_ARR[1]}.${VERSION_ARR[2]}'," ./meson.build || die "meson.build does not have expected version"
+
+TMP="$(git status --porcelain)" || die "git status failed"
+test -z "$TMP" || die "git working directory is not clean (git status --porcelain)"
+
+TMP="$(LANG=C git clean -ndx)" || die "git clean -ndx failed"
+test -z "$TMP" || die "git working directory is not clean? (git clean -ndx)"
 
 CUR_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 TMP_BRANCH=release-branch
 
 if [ "$CUR_BRANCH" = master ]; then
     number_is_odd "${VERSION_ARR[1]}" || die "Unexpected version number on master. Should be an odd development version"
+    [ "$RELEASE_MODE" = devel -o "$RELEASE_MODE" = rc1 -o "$RELEASE_MODE" = major-post ] || die "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
 else
-    re='^nm-[0-9]+-[0-9]+$'
+    re='^nm-[0-9][1-9]*-[0-9][1-9]*$'
     [[ "$CUR_BRANCH" =~ $re ]] || die "Unexpected current branch $CUR_BRANCH. Should be master or nm-?-??"
     if number_is_odd "${VERSION_ARR[1]}"; then
         # we are on a release candiate branch.
-        [ "$RELEASE_MODE" = rc ] || "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
+        [ "$RELEASE_MODE" = rc -o "$RELEASE_MODE" = major ] || die "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
         [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))" ] || die "Unexpected current branch $CUR_BRANCH. Should be nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))"
     else
+        [ "$RELEASE_MODE" = minor ] || die "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
         [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-${VERSION_ARR[1]}" ] || die "Unexpected current branch $CUR_BRANCH. Should be nm-${VERSION_ARR[0]}-${VERSION_ARR[1]}"
     fi
 fi
@@ -183,16 +229,26 @@ case "$RELEASE_MODE" in
         number_is_odd  "${VERSION_ARR[2]}" || die "cannot do minor release on top of version $VERSION_STR"
         [ "$CUR_BRANCH" != master ] || die "cannot do a minor release on master"
         ;;
-    devel|rc)
+    devel)
         number_is_odd "${VERSION_ARR[1]}" || die "cannot do devel release on top of version $VERSION_STR"
-        if [ "$RELEASE_MODE" = devel ]; then
-            [ "$((${VERSION_ARR[2]} + 1))" -lt 90 ] || die "devel release must have a micro version smaller than 90 but current version is $VERSION_STR"
-            [ "$CUR_BRANCH" == master ] || die "devel release can only be on master"
-        else
-            [ "${VERSION_ARR[2]}" -ge 90 ] || die "rc release must have a micro version larger than ${VERSION_ARR[0]}.90 but current version is $VERSION_STR"
-            RC_VERSION="$((${VERSION_ARR[2]} - 88))"
-            [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))" ] || die "devel release can only be on \"nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))\" branch"
-        fi
+        [ "$((${VERSION_ARR[2]} + 1))" -lt 90 ] || die "devel release must have a micro version smaller than 90 but current version is $VERSION_STR"
+        [ "$CUR_BRANCH" == master ] || die "devel release can only be on master"
+        ;;
+    rc)
+        number_is_odd "${VERSION_ARR[1]}" || die "cannot do rc release on top of version $VERSION_STR"
+        [ "${VERSION_ARR[2]}" -ge 90 ] || die "rc release must have a micro version larger than ${VERSION_ARR[0]}.90 but current version is $VERSION_STR"
+        RC_VERSION="$((${VERSION_ARR[2]} - 88))"
+        [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))" ] || die "devel release can only be on \"nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))\" branch"
+        ;;
+    major)
+        number_is_odd "${VERSION_ARR[1]}" || die "cannot do major release on top of version $VERSION_STR"
+        [ "${VERSION_ARR[2]}" -ge 90 ] || die "parent version for major release must have a micro version larger than ${VERSION_ARR[0]}.90 but current version is $VERSION_STR"
+        [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))" ] || die "major release can only be on \"nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))\" branch"
+        ;;
+    major-post)
+        number_is_odd "${VERSION_ARR[1]}" || die "cannot do major-post release on top of version $VERSION_STR"
+        [ "$((${VERSION_ARR[2]} + 1))" -lt 90 ] || die "major-post release must have a micro version smaller than 90 but current version is $VERSION_STR"
+        [ "$CUR_BRANCH" == master ] || die "major-post release can only be on master"
         ;;
     *)
         die "Release mode $RELEASE_MODE not yet implemented"
@@ -203,7 +259,7 @@ git fetch || die "git fetch failed"
 
 if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
     git_same_ref "$CUR_BRANCH" "refs/heads/$CUR_BRANCH" || die "Current branch $CUR_BRANCH is not a branch??"
-    git_same_ref "$CUR_BRANCH" "refs/remotes/$ORIGIN/$CUR_BRANCH" || die "Current branch $CUR_BRANCH seems not up to date. Git pull?"
+    git_same_ref "$CUR_BRANCH" "refs/remotes/$ORIGIN/$CUR_BRANCH" || die "Current branch $CUR_BRANCH seems not up to date with refs/remotes/$ORIGIN/$CUR_BRANCH. Git pull?"
 fi
 
 NEWER_BRANCHES=()
@@ -218,15 +274,19 @@ if [ "$CUR_BRANCH" != master ]; then
         fi
         if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
             git_same_ref "$b" "refs/heads/$b" || die "branch $b is not a branch??"
-            git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date. Git pull?"
+            git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date with refs/remotes/$ORIGIN/$b. Git pull?"
         fi
         NEWER_BRANCHES+=("refs/heads/$b")
     done
     b=master
     if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
         git_same_ref "$b" "refs/heads/$b" || die "branch $b is not a branch??"
-        git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date. Git pull?"
+        git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date with refs/remotes/$ORIGIN/$b. Git pull?"
     fi
+fi
+
+if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
+    cmp <(git show origin/master:contrib/fedora/rpm/release.sh) "$BASH_SOURCE" || die "$BASH_SOURCE is not identical to \`git show origin/master:contrib/fedora/rpm/release.sh\`"
 fi
 
 if [ $FIND_BACKPORTS = 1 ]; then
@@ -243,12 +303,11 @@ BUILD_TAG=
 
 CLEANUP_CHECKOUT_BRANCH="$CUR_BRANCH"
 
-CLEANUP_REFS+=("$TMP_BRANCH")
+git checkout -B "$TMP_BRANCH"
+CLEANUP_REFS+=("refs/heads/$TMP_BRANCH")
 
 case "$RELEASE_MODE" in
     minor)
-        git checkout -B "$TMP_BRANCH"
-        CLEANUP_REFS+=("refs/heads/$TMP_BRANCH")
         set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" $(("${VERSION_ARR[2]}" + 1))
         git commit -m "release: bump version to ${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))" -a || die "failed to commit release"
         set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" $(("${VERSION_ARR[2]}" + 2))
@@ -266,8 +325,6 @@ case "$RELEASE_MODE" in
         TAR_VERSION="$BUILD_TAG"
         ;;
     devel)
-        git checkout -B "$TMP_BRANCH"
-        CLEANUP_REFS+=("refs/heads/$TMP_BRANCH")
         set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" $(("${VERSION_ARR[2]}" + 1))
         git commit -m "release: bump version to ${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1)) (development)" -a || die "failed to commit devel version bump"
 
@@ -279,8 +336,6 @@ case "$RELEASE_MODE" in
         TAR_VERSION="$b"
         ;;
     rc)
-        git checkout -B "$TMP_BRANCH"
-        CLEANUP_REFS+=("refs/heads/$TMP_BRANCH")
         b="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))"
         t="${VERSION_ARR[0]}.$(("${VERSION_ARR[1]}" + 1))-rc$RC_VERSION"
         set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" $(("${VERSION_ARR[2]}" + 1))
@@ -290,6 +345,42 @@ case "$RELEASE_MODE" in
         TAGS+=("$t")
         CLEANUP_REFS+=("refs/tags/$t")
         BUILD_TAG="$t"
+        TAR_VERSION="$b"
+        ;;
+    major)
+        b="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 1)).0"
+        b2="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 1)).1"
+
+        set_version_number "${VERSION_ARR[0]}" "$((${VERSION_ARR[1]} + 1))" 0
+        git commit -m "release: bump version to $b" -a || die "failed to commit major version bump"
+        git tag -s -a -m "Tag $b" "$b" HEAD || die "failed to tag release"
+        TAGS+=("$b")
+        CLEANUP_REFS+=("refs/tags/$b")
+
+        set_version_number "${VERSION_ARR[0]}" "$((${VERSION_ARR[1]} + 1))" 1
+        git commit -m "release: bump version to $b2 (development)" -a || die "failed to commit another bump after major version bump"
+        git tag -s -a -m "Tag $b (development)" "$b2-dev" HEAD || die "failed to tag release"
+        TAGS+=("$b2-dev")
+        CLEANUP_REFS+=("refs/tags/$b2-dev")
+
+        BUILD_TAG="$b"
+        TAR_VERSION="$b"
+        ;;
+    major-post)
+        git checkout -B "$TMP_BRANCH" "${VERSION_ARR[0]}.$((${VERSION_ARR[1]} - 1)).0" || die "merge0"
+        git merge -Xours --commit -m tmp master || die "merge1"
+        git rm --cached -r . || die "merge2"
+        git checkout master -- . || die "merge3"
+        b="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$((${VERSION_ARR[2]} + 1))"
+        git commit --amend -m tmp -a || die "failed to commit major version bump"
+        test x = "x$(git diff master HEAD)" || die "there is a diff after merge!"
+
+        set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" "$((${VERSION_ARR[2]} + 1))"
+        git commit --amend -m "release: bump version to $b (development)" -a || die "failed to commit major version bump"
+        git tag -s -a -m "Tag $b (development)" "$b-dev" HEAD || die "failed to tag release"
+        TAGS+=("$b-dev")
+        CLEANUP_REFS+=("refs/tags/$b-dev")
+        BUILD_TAG="$b-dev"
         TAR_VERSION="$b"
         ;;
     *)

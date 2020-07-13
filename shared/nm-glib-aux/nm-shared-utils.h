@@ -422,6 +422,7 @@ gboolean nm_utils_gbytes_equal_mem (GBytes *bytes,
 GVariant *nm_utils_gbytes_to_variant_ay (GBytes *bytes);
 
 GVariant *nm_utils_strdict_to_variant_ass (GHashTable *strdict);
+GVariant *nm_utils_strdict_to_variant_asv (GHashTable *strdict);
 
 /*****************************************************************************/
 
@@ -630,23 +631,24 @@ nm_utils_escaped_tokens_escape (const char *str,
 	                                            out_to_free);
 }
 
-static inline GString *
-nm_utils_escaped_tokens_escape_gstr_assert (const char *str,
-                                            const char *delimiters,
-                                            GString *gstring)
+/**
+ * nm_utils_escaped_tokens_escape_unnecessary:
+ * @str: the string to check for "escape"
+ * @delimiters: the delimiters
+ *
+ * This asserts that calling nm_utils_escaped_tokens_escape()
+ * on @str has no effect and returns @str directly. This is only
+ * for asserting that @str is safe to not require any escaping.
+ *
+ * Returns: @str
+ */
+static inline const char *
+nm_utils_escaped_tokens_escape_unnecessary (const char *str,
+                                            const char *delimiters)
 {
 #if NM_MORE_ASSERTS > 0
 
-	/* Just appends @str to @gstring, but also assert that
-	 * no escaping is necessary.
-	 *
-	 * Use nm_utils_escaped_tokens_escape_gstr_assert() instead
-	 * of nm_utils_escaped_tokens_escape_gstr(), if you *know* that
-	 * @str contains no delimiters, no backslashes, and no trailing
-	 * whitespace that requires escaping. */
-
 	nm_assert (str);
-	nm_assert (gstring);
 	nm_assert (delimiters);
 
 	{
@@ -659,8 +661,16 @@ nm_utils_escaped_tokens_escape_gstr_assert (const char *str,
 	}
 #endif
 
-	g_string_append (gstring, str);
-	return gstring;
+	return str;
+}
+
+static inline void
+nm_utils_escaped_tokens_escape_gstr_assert (const char *str,
+                                            const char *delimiters,
+                                            GString *gstring)
+{
+	g_string_append (gstring,
+	                 nm_utils_escaped_tokens_escape_unnecessary (str, delimiters));
 }
 
 static inline GString *
@@ -996,7 +1006,7 @@ nm_g_set_error_take (GError **error, GError *error_take)
  * NMUtilsError:
  * @NM_UTILS_ERROR_UNKNOWN: unknown or unclassified error
  * @NM_UTILS_ERROR_CANCELLED_DISPOSING: when disposing an object that has
- *   pending aynchronous operations, the operation is cancelled with this
+ *   pending asynchronous operations, the operation is cancelled with this
  *   error reason. Depending on the usage, this might indicate a bug because
  *   usually the target object should stay alive as long as there are pending
  *   operations.
@@ -1455,24 +1465,22 @@ typedef struct {
 	};
 	union {
 		const char *value_str;
-		gconstpointer value_ptr;
+		gpointer value_ptr;
 	};
 } NMUtilsNamedValue;
 
 #define NM_UTILS_NAMED_VALUE_INIT(n, v)     { .name = (n), .value_ptr = (v) }
 
-NMUtilsNamedValue *nm_utils_named_values_from_str_dict_with_sort (GHashTable *hash,
-                                                                  guint *out_len,
-                                                                  GCompareDataFunc compare_func,
-                                                                  gpointer user_data);
+NMUtilsNamedValue *nm_utils_named_values_from_strdict_full (GHashTable *hash,
+                                                            guint *out_len,
+                                                            GCompareDataFunc compare_func,
+                                                            gpointer user_data,
+                                                            NMUtilsNamedValue *provided_buffer,
+                                                            guint provided_buffer_len,
+                                                            NMUtilsNamedValue **out_allocated_buffer);
 
-static inline NMUtilsNamedValue *
-nm_utils_named_values_from_str_dict (GHashTable *hash, guint *out_len)
-{
-	G_STATIC_ASSERT (G_STRUCT_OFFSET (NMUtilsNamedValue, name) == 0);
-
-	return nm_utils_named_values_from_str_dict_with_sort (hash, out_len, nm_strcmp_p_with_data, NULL);
-}
+#define nm_utils_named_values_from_strdict(hash, out_len, array, out_allocated_buffer) \
+	nm_utils_named_values_from_strdict_full ((hash), (out_len), nm_strcmp_p_with_data, NULL, (array), G_N_ELEMENTS (array), (out_allocated_buffer))
 
 gssize nm_utils_named_value_list_find (const NMUtilsNamedValue *arr,
                                        gsize len,
@@ -1734,7 +1742,7 @@ static inline gboolean
 nm_utils_process_state_is_dead (char pstate)
 {
 	/* "/proc/[pid]/stat" returns a state as the 3rd fields (see `man 5 proc`).
-	 * Some of these states indicate the the process is effectively dead (or a zombie).
+	 * Some of these states indicate the process is effectively dead (or a zombie).
 	 */
 	return NM_IN_SET (pstate, 'Z', 'x', 'X');
 }
@@ -1814,6 +1822,17 @@ nm_strv_ptrarray_take_gstring (GPtrArray *cmd,
 int nm_utils_getpagesize (void);
 
 /*****************************************************************************/
+
+extern const char _nm_hexchar_table_lower[16];
+extern const char _nm_hexchar_table_upper[16];
+
+static inline char
+nm_hexchar (int x, gboolean upper_case)
+{
+	return   upper_case
+	       ? _nm_hexchar_table_upper[x & 15]
+	       : _nm_hexchar_table_lower[x & 15];
+}
 
 char *nm_utils_bin2hexstr_full (gconstpointer addr,
                                 gsize length,
@@ -1974,30 +1993,6 @@ void nm_indirect_g_free (gpointer arg);
 
 /*****************************************************************************/
 
-/* nm_utils_get_next_realloc_size() is used to grow buffers exponentially, when
- * the final size is unknown. As such, it has borders for which it allocates
- * certain buffer sizes.
- *
- * The use of these defines is to get favorable allocation sequences.
- * For example, nm_str_buf_init() asks for an initial allocation size. Note that
- * it reserves the exactly requested amount, under the assumption that the
- * user may know how many bytes will be required. However, often the caller
- * doesn't know in advance, and NMStrBuf grows exponentially by calling
- * nm_utils_get_next_realloc_size().
- * Imagine you call nm_str_buf_init() with an initial buffer size 100, and you
- * add one character at a time. Then the first reallocation will increase the
- * buffer size only from 100 to 104.
- * If you however start with an initial buffer size of 104, then the next reallocation
- * via nm_utils_get_next_realloc_size() gives you 232, and so on. By using
- * these sizes, it results in one less allocation, if you anyway don't know the
- * exact size in advance. */
-#define NM_UTILS_GET_NEXT_REALLOC_SIZE_104     ((gsize) 104)
-#define NM_UTILS_GET_NEXT_REALLOC_SIZE_1000    ((gsize) 1000)
-
-gsize nm_utils_get_next_realloc_size (gboolean true_realloc, gsize requested);
-
-/*****************************************************************************/
-
 typedef enum {
 	NMU_IFACE_ANY,
 	NMU_IFACE_KERNEL,
@@ -2073,13 +2068,27 @@ nm_strvarray_set_strv (GArray **array, const char *const*strv)
 
 /*****************************************************************************/
 
+struct _NMVariantAttributeSpec {
+	char *name;
+	const GVariantType *type;
+	bool v4:1;
+	bool v6:1;
+	bool no_value:1;
+	bool consumes_rest:1;
+	char str_type;
+};
+
+typedef struct _NMVariantAttributeSpec NMVariantAttributeSpec;
+
 void _nm_utils_format_variant_attributes_full (GString *str,
                                                const NMUtilsNamedValue *values,
                                                guint num_values,
+                                               const NMVariantAttributeSpec *const *spec,
                                                char attr_separator,
                                                char key_value_separator);
 
 char *_nm_utils_format_variant_attributes (GHashTable *attributes,
+                                           const NMVariantAttributeSpec *const *spec,
                                            char attr_separator,
                                            char key_value_separator);
 

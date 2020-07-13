@@ -2580,7 +2580,7 @@ _obj_handle_dbus_iface_changes (NMClient *self,
 			nm_assert (db_prop_data < &db_iface_data->prop_datas[db_iface_data->dbus_iface.meta->n_dbus_properties]);
 			nm_assert (db_prop_data->prop_data_value);
 
-			/* Currently NMLDBusObject forgets about the variant. Theoretically, it could cache
+			/* Currently, NMLDBusObject forgets about the variant. Theoretically, it could cache
 			 * it, but there is no need because we update the property in nmobj (which extracts and
 			 * keeps the property value itself).
 			 *
@@ -2610,7 +2610,7 @@ _obj_handle_dbus_changes (NMClient *self,
 
 	_ASSERT_dbobj (dbobj, self);
 
-	/* In a first step we only remember all the changes that that a D-Bus message brings
+	/* In a first step we only remember all the changes that a D-Bus message brings
 	 * and queue the object to process them.
 	 *
 	 * Here (in step 2) we look at what changed on D-Bus and propagate those changes
@@ -4425,7 +4425,7 @@ nm_client_get_permission_result (NMClient *client, NMClientPermission permission
  *   means that no permissions result was yet received. All permissions
  *   are unknown. %NM_TERNARY_TRUE means that the permissions got received
  *   and are cached. %%NM_TERNARY_FALSE means that permissions are cached,
- *   but they are invalided as as "CheckPermissions" signal was received
+ *   but they are invalided as "CheckPermissions" signal was received
  *   in the meantime.
  *
  * Since: 1.24
@@ -5235,7 +5235,7 @@ nm_client_add_and_activate_connection_finish (NMClient *client,
  * track the activation to its completion.
  *
  * This is identical to nm_client_add_and_activate_connection_async() but takes
- * a further @options parameter. Currently the following options are supported
+ * a further @options parameter. Currently, the following options are supported
  * by the daemon:
  *  * "persist": A string describing how the connection should be stored.
  *               The default is "disk", but it can be modified to "memory" (until
@@ -5274,7 +5274,7 @@ nm_client_add_and_activate_connection2 (NMClient *client,
  * @result: the result passed to the #GAsyncReadyCallback
  * @error: location for a #GError, or %NULL
  * @out_result: (allow-none) (transfer full): the output result
- *   of type "a{sv}" returned by D-Bus' AddAndActivate2 call. Currently no
+ *   of type "a{sv}" returned by D-Bus' AddAndActivate2 call. Currently, no
  *   output is implemented yet.
  *
  * Gets the result of a call to nm_client_add_and_activate_connection2().
@@ -8356,7 +8356,7 @@ nm_client_class_init (NMClientClass *client_class)
 	 * NMClient:capabilities: (type GArray(guint32))
 	 *
 	 * The list of capabilities numbers as guint32 or %NULL if
-	 * there are no capabitilies. The numeric value correspond
+	 * there are no capabilities. The numeric value correspond
 	 * to %NMCapability enum.
 	 *
 	 * Since: 1.24

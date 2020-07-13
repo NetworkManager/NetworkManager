@@ -266,7 +266,7 @@ nm_utils_array_remove_at_indexes (GArray *array, const guint *indexes_to_delete,
 			mm_len++;
 		else {
 			/* we require indexes_to_delete to contain non-repeated, ascending
-			 * indexes. Otherwise we would need to presort the indexes. */
+			 * indexes. Otherwise, we would need to presort the indexes. */
 			while (TRUE) {
 				guint dd;
 
@@ -631,7 +631,7 @@ _sleep_duration_convert_ms_to_us (guint32 sleep_duration_msec)
  * Set to zero, to use the default (meaning 20 wakeups per seconds).
  *
  * Kill a child process synchronously and wait. The function first checks if the child already terminated
- * and if it did, return the exit status. Otherwise send one @sig signal. @sig  will always be
+ * and if it did, return the exit status. Otherwise, send one @sig signal. @sig  will always be
  * sent unless the child already exited. If the child does not exit within @wait_before_kill_msec milliseconds,
  * the function will send %SIGKILL and waits for the child indefinitely. If @wait_before_kill_msec is zero, no
  * %SIGKILL signal will be sent.
@@ -2475,7 +2475,7 @@ again:
 			gsize seed_len;
 
 			if (!allow_fake) {
-				/* we don't allow generating (and memoizing) a fake key.
+				/* we don't allow generating (and memorizing) a fake key.
 				 * Signal that no valid machine-id exists. */
 				return NULL;
 			}
@@ -3322,14 +3322,14 @@ nm_utils_stable_id_parse (const char *stable_id,
 			_stable_id_append (str, hwaddr);
 		else if (g_str_has_prefix (&stable_id[i], "${RANDOM}")) {
 			/* RANDOM makes not so much sense for cloned-mac-address
-			 * as the result is similar to specyifing "cloned-mac-address=random".
+			 * as the result is similar to specifying "cloned-mac-address=random".
 			 * It makes however sense for RFC 7217 Stable Privacy IPv6 addresses
 			 * where this is effectively the only way to generate a different
 			 * (random) host identifier for each connect.
 			 *
 			 * With RANDOM, the user can switch the lifetime of the
 			 * generated cloned-mac-address and IPv6 host identifier
-			 * by toggeling only the stable-id property of the connection.
+			 * by toggling only the stable-id property of the connection.
 			 * With RANDOM being the most short-lived, ~non-stable~ variant.
 			 */
 			if (str)
@@ -3423,7 +3423,7 @@ _set_stable_privacy (NMUtilsStableType stable_type,
 		 * That is no real problem and it is still impossible to
 		 * force a collision here, because of how the remaining
 		 * fields are hashed. That is, as we also hash @host_id_len
-		 * and the terminating '\0' of @network_id, it is unambigiously
+		 * and the terminating '\0' of @network_id, it is unambiguously
 		 * possible to revert the process and deduce the @stable_type.
 		 */
 		g_checksum_update (sum, &stable_type_uint8, sizeof (stable_type_uint8));
@@ -4224,28 +4224,6 @@ nm_utils_parse_dns_domain (const char *domain, gboolean *is_routing)
 		NM_SET_OUT (is_routing, FALSE);
 
 	return domain;
-}
-
-/*****************************************************************************/
-
-GVariant *
-nm_utils_strdict_to_variant (GHashTable *options)
-{
-	GVariantBuilder builder;
-	gs_free NMUtilsNamedValue *values = NULL;
-	guint i;
-	guint n;
-
-	values = nm_utils_named_values_from_str_dict (options, &n);
-
-	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
-	for (i = 0; i < n; i++) {
-		g_variant_builder_add (&builder,
-		                       "{sv}",
-		                       values[i].name,
-		                       g_variant_new_string (values[i].value_str));
-	}
-	return g_variant_builder_end (&builder);
 }
 
 /*****************************************************************************/

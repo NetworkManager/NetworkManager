@@ -5,6 +5,7 @@
 
 #include "nm-default.h"
 
+#include "nm-glib-aux/nm-json-aux.h"
 #include "nm-keyfile/nm-keyfile-utils.h"
 #include "nm-keyfile/nm-keyfile-internal.h"
 #include "nm-simple-connection.h"
@@ -627,7 +628,7 @@ test_team_conf_read_invalid (void)
 	gs_unref_object NMConnection *con = NULL;
 	NMSettingTeam *s_team;
 
-	if (!WITH_JSON_VALIDATION) {
+	if (!nm_json_vt ()) {
 		g_test_skip ("team test requires JSON validation");
 		return;
 	}

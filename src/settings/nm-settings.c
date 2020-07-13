@@ -1748,7 +1748,7 @@ nm_settings_add_connection (NMSettings *self,
 				/* We have a nmmeta tombstone that indicates that a storage is shadowed.
 				 *
 				 * This happens when deleting a in-memory profile that was decoupled from
-				 * the persitant storage with NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED.
+				 * the persistent storage with NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED.
 				 * We need to take over this storage again... */
 				break;
 			}

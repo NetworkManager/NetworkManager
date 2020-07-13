@@ -85,7 +85,7 @@ static inline void test_setup(void) {
         /*
          * Move into a new network and mount namespace both associated
          * with a new user namespace where the current eUID is mapped to
-         * 0. Then create a a private instance of /run/netns. This ensures
+         * 0. Then create a private instance of /run/netns. This ensures
          * that any network devices or network namespaces are private to
          * the test process.
          */

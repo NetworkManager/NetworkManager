@@ -287,7 +287,7 @@ nmt_newt_form_iterate (NmtNewtForm *form)
 
 	if (es.reason == NEWT_EXIT_COMPONENT) {
 		/* The user hit Return/Space on a component; update the form focus
-		 * to point that that component, and activate it.
+		 * to point that component, and activate it.
 		 */
 		focus = nmt_newt_widget_find_component (priv->content, es.u.co);
 		if (focus) {

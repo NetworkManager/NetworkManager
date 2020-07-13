@@ -219,7 +219,7 @@ typedef struct {
 		 * "struct udev", but doesn't own it.
 		 *
 		 * Hence, the udev.device shall not be used after the library
-		 * context is is destroyed.
+		 * context is destroyed.
 		 *
 		 * In case of NMPObjectLink instances that you obtained from the
 		 * platform cache, that means that you shall no keep references

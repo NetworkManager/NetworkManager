@@ -2460,7 +2460,7 @@ supplicant_iface_state (NMDeviceWifi *self,
 				break;
 		}
 
-		/* Otherwise it might be a stupid driver or some transient error, so
+		/* Otherwise, it might be a stupid driver or some transient error, so
 		 * let the supplicant try to reconnect a few more times.  Give it more
 		 * time if a scan is in progress since the link might be dropped during
 		 * the scan but will be re-established when the scan is done.
@@ -2563,6 +2563,15 @@ supplicant_iface_notify_current_bss (NMSupplicantInterface *iface,
 		       (old_ssid_s = _nm_utils_ssid_to_string (old_ssid)),
 		       new_bssid ?: "(none)",
 		       (new_ssid_s = _nm_utils_ssid_to_string (new_ssid)));
+
+		if (new_bssid) {
+			/* The new AP could be in a different layer 3 network
+			 * and so the old DHCP lease could be no longer valid.
+			 * Also, some APs (e.g. Cisco) can be configured to drop
+			 * all traffic until DHCP completes. To support such
+			 * cases, renew the lease when roaming to a new AP. */
+			nm_device_update_dynamic_ip_setup (NM_DEVICE (self));
+		}
 
 		set_current_ap (self, new_ap, TRUE);
 	}
@@ -2801,6 +2810,7 @@ build_supplicant_config (NMDeviceWifi *self,
 	NMSettingWirelessSecurity *s_wireless_sec;
 	NMSettingWirelessSecurityPmf pmf;
 	NMSettingWirelessSecurityFils fils;
+	NMTernary ap_isolation;
 
 	g_return_val_if_fail (priv->sup_iface, NULL);
 
@@ -2827,6 +2837,17 @@ build_supplicant_config (NMDeviceWifi *self,
 		g_prefix_error (error, "bgscan: ");
 		goto error;
 	}
+
+	ap_isolation = nm_setting_wireless_get_ap_isolation (s_wireless);
+	if (ap_isolation == NM_TERNARY_DEFAULT) {
+		ap_isolation = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+		                                                            "wifi.ap-isolation",
+		                                                            NM_DEVICE (self),
+		                                                            NM_TERNARY_FALSE,
+		                                                            NM_TERNARY_TRUE,
+		                                                            NM_TERNARY_FALSE);
+	}
+	nm_supplicant_config_set_ap_isolation (config, ap_isolation == NM_TERNARY_TRUE);
 
 	s_wireless_sec = nm_connection_get_setting_wireless_security (connection);
 	if (s_wireless_sec) {

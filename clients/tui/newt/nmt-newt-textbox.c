@@ -40,7 +40,7 @@ enum {
 
 /**
  * NmtNewtTextboxFlags:
- * @NMT_NEWT_TEXTBOX_SCROLLABLE: the textbox should be scollable.
+ * @NMT_NEWT_TEXTBOX_SCROLLABLE: the textbox should be scrollable.
  * @NMT_NEWT_TEXTBOX_SET_BACKGROUND: the textbox should have a
  *   white background
  *

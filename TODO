@@ -23,7 +23,7 @@ possibly get inspired by nm-connection-editor.
 
 * Add Azure support to nm-cloud-setup.
 
-nm-cloud-setup currently only works for EC2 (and only for IPv4). Add support for Azure
+Currently, nm-cloud-setup only works for EC2 (and only for IPv4). Add support for Azure
 cloud. See for example SUSE's cloud-netconfig which supports Azure
 (https://github.com/SUSE-Enceladus/cloud-netconfig,
 https://www.suse.com/c/multi-nic-cloud-netconfig-ec2-azure/). Note that cloud-netconfig
@@ -33,7 +33,7 @@ anyway be almost impossible, because one is written in bash and the other in C.
 
 * Improve our gitlab-ci integration.
 
-Currently our .gitlab-ci starts various base containers and first installs
+Currently, our .gitlab-ci starts various base containers and first installs
 the necessary dependencies. That takes time and consumes bandwidth, we should
 instead use more suitable containers. We should instead use ci-templates from
 https://gitlab.freedesktop.org/freedesktop/ci-templates.
@@ -110,7 +110,7 @@ connected before the drop.
 * VPN IP Methods
 
 Some VPNs (openvpn with TAP for example) require that DHCP is run on a
-pseudo-ethernet device to obtain addressing information.  This is not currently
+pseudo-ethernet device to obtain addressing information.  Currenty, this is not
 possible, but NM already has all the code for DHCP.  Thus, a new "method"
 key should be defined in include/NetworkManagerVPN.h to allow for DHCP to
 be performed if the VPN service daemon requests it in the IP4Config or IP6Config

@@ -808,7 +808,7 @@ nm_setting_connection_add_secondary (NMSettingConnection *setting,
  * @setting: the #NMSettingConnection
  * @idx: index number of the secondary connection UUID
  *
- * Removes the secondary coonnection UUID at index @idx.
+ * Removes the secondary connection UUID at index @idx.
  **/
 void
 nm_setting_connection_remove_secondary (NMSettingConnection *setting, guint32 idx)
@@ -832,7 +832,7 @@ nm_setting_connection_remove_secondary (NMSettingConnection *setting, guint32 id
  * @setting: the #NMSettingConnection
  * @sec_uuid: the secondary connection UUID to remove
  *
- * Removes the secondary coonnection UUID @sec_uuid.
+ * Removes the secondary connection UUID @sec_uuid.
  *
  * Returns: %TRUE if the secondary connection UUID was found and removed; %FALSE if it was not.
  **/
@@ -1758,7 +1758,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * name is included, so that different interfaces yield different addresses.
 	 *
 	 * The '$' character is treated special to perform dynamic substitutions
-	 * at runtime. Currently supported are "${CONNECTION}", "${DEVICE}", "${MAC}",
+	 * at runtime. Currently, supported are "${CONNECTION}", "${DEVICE}", "${MAC}",
 	 * "${BOOT}", "${RANDOM}".
 	 * These effectively create unique IDs per-connection, per-device, per-boot,
 	 * or every time. Note that "${DEVICE}" corresponds to the interface name of the
@@ -2128,7 +2128,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * NMSettingConnection:secondaries:
 	 *
 	 * List of connection UUIDs that should be activated when the base
-	 * connection itself is activated. Currently only VPN connections are
+	 * connection itself is activated. Currently, only VPN connections are
 	 * supported.
 	 **/
 	/* ---ifcfg-rh---
@@ -2222,7 +2222,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * to use a global default. If the global default is not set, the authentication
 	 * retries for 3 times before failing the connection.
 	 *
-	 * Currently this only applies to 802-1x authentication.
+	 * Currently, this only applies to 802-1x authentication.
 	 *
 	 * Since: 1.10
 	 **/
@@ -2252,7 +2252,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * If unspecified, "default" ultimately depends on the DNS plugin (which
 	 * for systemd-resolved currently means "no").
 	 *
-	 * This feature requires a plugin which supports mDNS. Otherwise the
+	 * This feature requires a plugin which supports mDNS. Otherwise, the
 	 * setting has no effect. One such plugin is dns-systemd-resolved.
 *
 	 * Since: 1.12
@@ -2287,7 +2287,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * If unspecified, "default" ultimately depends on the DNS plugin (which
 	 * for systemd-resolved currently means "yes").
 	 *
-	 * This feature requires a plugin which supports LLMNR. Otherwise the
+	 * This feature requires a plugin which supports LLMNR. Otherwise, the
 	 * setting has no effect. One such plugin is dns-systemd-resolved.
 	 *
 	 * Since: 1.14

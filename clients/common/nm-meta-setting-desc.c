@@ -834,14 +834,14 @@ _get_fcn_gobject_impl (const NMMetaPropertyInfo *property_info,
 	                                                     G_TYPE_HASH_TABLE);
 
 	if (glib_handles_str_transform) {
-		/* We rely on the type convertion of the gobject property to string. */
+		/* We rely on the type conversion of the gobject property to string. */
 		g_value_init (&val, G_TYPE_STRING);
 	} else
 		g_value_init (&val, gtype_prop);
 
 	g_object_get_property (G_OBJECT (setting), property_info->property_name, &val);
 
-	/* Currently only one particular property asks us to "handle_emptyunset".
+	/* Currently, only one particular property asks us to "handle_emptyunset".
 	 * So, don't implement it (yet) for the other types, where it's unneeded. */
 	nm_assert (   !handle_emptyunset
 	           || (   gtype_prop == G_TYPE_STRV
@@ -3294,7 +3294,7 @@ _set_fcn_objlist (ARGS_SET_FCN)
 	}
 
 	for (i = 0; i < nstrv; i++) {
-		/* FIXME: there is the problem here that set_fcn() might succed on the first item
+		/* FIXME: there is the problem here that set_fcn() might succeed on the first item
 		 * (modifying it), and fail to parse the second one.
 		 *
 		 * Optimally, we would first parse all input strings before starting the
@@ -7506,6 +7506,9 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
 	            ),
 	        ),
 	    ),
+	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_AP_ISOLATION,
+	    .property_type =                &_pt_gobject_enum,
 	),
 	NULL
 };

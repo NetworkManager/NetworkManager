@@ -738,7 +738,7 @@ nm_supplicant_manager_create_interface (NMSupplicantManager *self,
 	c_list_link_tail (&priv->create_iface_lst_head, &handle->create_iface_lst);
 
 	if (!priv->dbus_connection) {
-		_LOGT ("create-iface["NM_HASH_OBFUSCATE_PTR_FMT"]: new request interface %d (driver %s). Fail bacause no D-Bus connection to talk to wpa_supplicant...",
+		_LOGT ("create-iface["NM_HASH_OBFUSCATE_PTR_FMT"]: new request interface %d (driver %s). Fail because no D-Bus connection to talk to wpa_supplicant...",
 		       NM_HASH_OBFUSCATE_PTR (handle),
 		       ifindex,
 		       nm_supplicant_driver_to_string (driver));

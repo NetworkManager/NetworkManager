@@ -2225,7 +2225,7 @@ _stats_refresh_rate_real (guint refresh_rate_ms)
 		return 0;
 
 	if (refresh_rate_ms < STATS_REFRESH_RATE_MS_MIN) {
-		/* you cannot set the refresh-rate arbitrarly small. E.g.
+		/* you cannot set the refresh-rate arbitrarily small. E.g.
 		 * setting to 1ms is just killing. Have a lowest number. */
 		return STATS_REFRESH_RATE_MS_MIN;
 	}
@@ -3296,7 +3296,7 @@ concheck_update_state (NMDevice *self,
 		/* If the connectivity check is disabled and we obtain a fake
 		 * result, make an optimistic guess. */
 		if (priv->state == NM_DEVICE_STATE_ACTIVATED) {
-			/* FIXME: the fake connectivity state depends on the availablility of
+			/* FIXME: the fake connectivity state depends on the availability of
 			 * a default route. However, we have no mechanism that rechecks the
 			 * value if a device route appears/disappears after the device
 			 * was activated. */
@@ -3309,7 +3309,7 @@ concheck_update_state (NMDevice *self,
 	}
 
 	if (priv->concheck_x[IS_IPv4].state == state) {
-		/* we got a connectivty update, but the state didn't change. If we were probing,
+		/* we got a connectivity update, but the state didn't change. If we were probing,
 		 * we bump the probe frequency. */
 		if (allow_periodic_bump)
 			concheck_periodic_schedule_set (self, addr_family, CONCHECK_SCHEDULE_RETURNED_BUMP);
@@ -5052,7 +5052,7 @@ realize_start_setup (NMDevice *self,
 	                               is_unmanaged_external_down (self, TRUE));
 
 	/* Unmanaged the loopback device with an explicit NM_UNMANAGED_BY_TYPE flag.
-	 * Later we might want to manage 'lo' too. Currently that doesn't work because
+	 * Later we might want to manage 'lo' too. Currently, that doesn't work because
 	 * NetworkManager might down the interface or remove the 127.0.0.1 address. */
 	nm_device_set_unmanaged_flags (self,
 	                               NM_UNMANAGED_BY_TYPE,
@@ -5543,7 +5543,7 @@ nm_device_is_master (NMDevice *self)
  * @self: the device
  *
  * If @self has been enslaved by another device, this returns that
- * device. Otherwise it returns %NULL. (In particular, note that if
+ * device. Otherwise, it returns %NULL. (In particular, note that if
  * @self is in the process of activating as a slave, but has not yet
  * been enslaved by its master, this will return %NULL.)
  *
@@ -8930,7 +8930,7 @@ connection_requires_carrier (NMConnection *connection)
 	gboolean ip4_used = FALSE, ip6_used = FALSE;
 
 	/* We can progress to IP_CONFIG now, so that we're enslaved.
-	 * That may actually cause carrier to go up and thus continue acivation. */
+	 * That may actually cause carrier to go up and thus continue activation. */
 	s_con = nm_connection_get_setting_connection (connection);
 	if (nm_setting_connection_get_master (s_con))
 		return FALSE;
@@ -14928,7 +14928,7 @@ nm_device_update_metered (NMDevice *self)
 			value = NM_METERED_GUESS_YES;
 	}
 
-	/* Otherwise look at connection type. For Bluetooth, we look at the type of
+	/* Otherwise, look at connection type. For Bluetooth, we look at the type of
 	 * Bluetooth sharing: for PANU/DUN (where we are receiving internet from
 	 * another device) we set GUESS_YES; for NAP (where we are sharing internet
 	 * to another device) we set GUESS_NO. We ignore WiMAX here as it’s no
@@ -18428,6 +18428,7 @@ nm_device_class_init (NMDeviceClass *klass)
 /* Connection defaults from plugins */
 NM_CON_DEFAULT_NOP ("cdma.mtu");
 NM_CON_DEFAULT_NOP ("gsm.mtu");
+NM_CON_DEFAULT_NOP ("wifi.ap-isolation");
 NM_CON_DEFAULT_NOP ("wifi.powersave");
 NM_CON_DEFAULT_NOP ("wifi.wake-on-wlan");
 NM_CON_DEFAULT_NOP ("wifi-sec.pmf");

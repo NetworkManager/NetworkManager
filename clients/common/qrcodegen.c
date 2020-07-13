@@ -970,7 +970,7 @@ struct qrcodegen_Segment qrcodegen_makeEci(long assignVal, uint8_t buf[]) {
 
 
 // Calculates the number of bits needed to encode the given segments at the given version.
-// Returns a non-negative number if successful. Otherwise returns -1 if a segment has too
+// Returns a non-negative number if successful. Otherwise, returns -1 if a segment has too
 // many characters to fit its length field, or the total bits exceeds INT16_MAX.
 testable int getTotalBits(const struct qrcodegen_Segment segs[], size_t len, int version) {
 	assert(segs != NULL || len == 0);

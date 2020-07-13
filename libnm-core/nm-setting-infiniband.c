@@ -97,7 +97,7 @@ nm_setting_infiniband_get_transport_mode (NMSettingInfiniband *setting)
  * @setting: the #NMSettingInfiniband
  *
  * Returns the P_Key to use for this device. A value of -1 means to
- * use the default P_Key (aka "the P_Key at index 0"). Otherwise it is
+ * use the default P_Key (aka "the P_Key at index 0"). Otherwise, it is
  * a 16-bit unsigned integer.
  *
  * Returns: the IPoIB P_Key
@@ -448,7 +448,7 @@ nm_setting_infiniband_class_init (NMSettingInfinibandClass *klass)
 	 * NMSettingInfiniband:p-key:
 	 *
 	 * The InfiniBand P_Key to use for this device. A value of -1 means to use
-	 * the default P_Key (aka "the P_Key at index 0").  Otherwise it is a 16-bit
+	 * the default P_Key (aka "the P_Key at index 0"). Otherwise, it is a 16-bit
 	 * unsigned integer, whose high bit is set if it is a "full membership"
 	 * P_Key.
 	 **/

@@ -805,6 +805,7 @@ nms_ifcfg_rh_utils_is_numbered_tag_impl (const char *key,
 const NMSIfcfgKeyTypeInfo nms_ifcfg_well_known_keys[] = {
 	_KEY_TYPE ("ACD_TIMEOUT",                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("ADDRESS",                                     NMS_IFCFG_KEY_TYPE_IS_NUMBERED ),
+	_KEY_TYPE ("AP_ISOLATION",                                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("ARPING_WAIT",                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("AUTH_RETRIES",                                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("AUTOCONNECT_PRIORITY",                        NMS_IFCFG_KEY_TYPE_IS_PLAIN ),

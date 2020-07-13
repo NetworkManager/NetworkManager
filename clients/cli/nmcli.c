@@ -287,7 +287,7 @@ matches_arg (NmCli *nmc,
 
 	if (arg) {
 		/* If there's a "=" separator, replace it with NUL so that matches()
-		 * works and consider the part after it to be the arguemnt's value. */
+		 * works and consider the part after it to be the argument's value. */
 		s = strchr (opt, '=');
 		if (s) {
 			opt = nm_strndup_a (300, opt, s - opt, &opt_free);

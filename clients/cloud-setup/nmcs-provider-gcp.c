@@ -46,13 +46,12 @@ _detect_get_meta_data_done_cb (GObject *source,
 	gs_unref_object GTask *task = user_data;
 	gs_free_error GError *get_error = NULL;
 	gs_free_error GError *error = NULL;
-	gboolean success;
 
-	success = nm_http_client_poll_get_finish (NM_HTTP_CLIENT (source),
-	                                          result,
-	                                          NULL,
-	                                          NULL,
-	                                          &get_error);
+	nm_http_client_poll_get_finish (NM_HTTP_CLIENT (source),
+	                                result,
+	                                NULL,
+	                                NULL,
+	                                &get_error);
 
 	if (nm_utils_error_is_cancelled (get_error)) {
 		g_task_return_error (task, g_steal_pointer (&get_error));
@@ -64,14 +63,6 @@ _detect_get_meta_data_done_cb (GObject *source,
 		                    NM_UTILS_ERROR_UNKNOWN,
 		                    "failure to get GCP metadata: %s",
 		                    get_error->message);
-		g_task_return_error (task, g_steal_pointer (&error));
-		return;
-	}
-
-	if (!success) {
-		nm_utils_error_set (&error,
-		                    NM_UTILS_ERROR_UNKNOWN,
-		                    "failure to detect GCP metadata");
 		g_task_return_error (task, g_steal_pointer (&error));
 		return;
 	}
@@ -246,29 +237,29 @@ _get_config_ips_list_cb (GObject *source,
 	if (error)
 		goto fips_error;
 
+	response_str = g_bytes_get_data (response, &response_len);
+	/* NMHttpClient guarantees that there is a trailing NUL after the data. */
+	nm_assert (response_str[response_len] == 0);
 
 	uri_arr = g_ptr_array_new_with_free_func (g_free);
-	response_str = g_bytes_get_data (response, &response_len);
-
 	while (nm_utils_parse_next_line (&response_str,
 	                                 &response_len,
 	                                 &line,
 	                                 &line_len)) {
-		nm_auto_free_gstring GString *gstr = NULL;
 		gint64 fip_index;
 
-		gstr = g_string_new_len (line, line_len);
-		fip_index = _nm_utils_ascii_str_to_int64 (gstr->str, 10, 0, G_MAXINT64, -1);
+		/* Truncate the string. It's safe to do, because we own @response_data an it has an
+		 * extra NUL character after the buffer. */
+		((char *) line)[line_len] = '\0';
 
-		if (fip_index < 0) {
+		fip_index = _nm_utils_ascii_str_to_int64 (line, 10, 0, G_MAXINT64, -1);
+		if (fip_index < 0)
 			continue;
-		}
 
-		g_string_printf (gstr,
-		                 "%"G_GSSIZE_FORMAT"/forwarded-ips/%"G_GINT64_FORMAT,
-		                 iface_data->iface_idx,
-		                 fip_index);
-		g_ptr_array_add (uri_arr, g_string_free (g_steal_pointer (&gstr), FALSE));
+		g_ptr_array_add (uri_arr,
+		                 g_strdup_printf ("%"G_GSSIZE_FORMAT"/forwarded-ips/%"G_GINT64_FORMAT,
+		                                  iface_data->iface_idx,
+		                                  fip_index));
 	}
 
 	iface_data->n_fips_pending = uri_arr->len;
@@ -321,7 +312,7 @@ _get_config_iface_cb (GObject *source,
 	gs_free_error GError *error = NULL;
 	gs_free const char *hwaddr = NULL;
 	gs_free const char *uri = NULL;
-	gs_free char *str = NULL;
+	char sbuf[100];
 	GCPData *gcp_data;
 
 	gcp_data = iface_data->gcp_data;
@@ -350,11 +341,10 @@ _get_config_iface_cb (GObject *source,
 	       iface_data->iface_idx,
 	       hwaddr);
 
-	str = g_strdup_printf ("%"G_GSSIZE_FORMAT"/forwarded-ips/",
-	                       iface_data->iface_idx);
+	nm_sprintf_buf (sbuf, "%"G_GSSIZE_FORMAT"/forwarded-ips/", iface_data->iface_idx);
 
 	nm_http_client_poll_get (NM_HTTP_CLIENT (source),
-	                         (uri = _gcp_uri_interfaces (str)),
+	                         (uri = _gcp_uri_interfaces (sbuf)),
 	                         HTTP_TIMEOUT_MS,
 	                         HTTP_REQ_MAX_DATA,
 	                         HTTP_POLL_TIMEOUT_MS,
@@ -379,13 +369,10 @@ _get_net_ifaces_list_cb (GObject *source,
                          gpointer user_data)
 {
 	gs_unref_ptrarray GPtrArray *ifaces_arr = NULL;
-	nm_auto_free_gstring GString *gstr = NULL;
 	gs_unref_bytes GBytes *response = NULL;
 	gs_free_error GError *error = NULL;
 	GCPData *gcp_data = user_data;
 	const char *response_str;
-	const char *token_start;
-	const char *token_end;
 	gsize response_len;
 	const char *line;
 	gsize line_len;
@@ -403,8 +390,10 @@ _get_net_ifaces_list_cb (GObject *source,
 	}
 
 	response_str = g_bytes_get_data (response, &response_len);
+	/* NMHttpClient guarantees that there is a trailing NUL after the data. */
+	nm_assert (response_str[response_len] == 0);
+
 	ifaces_arr = g_ptr_array_new ();
-	gstr = g_string_new (NULL);
 
 	while (nm_utils_parse_next_line (&response_str,
 	                                 &response_len,
@@ -413,16 +402,16 @@ _get_net_ifaces_list_cb (GObject *source,
 		GCPIfaceData *iface_data;
 		gssize iface_idx;
 
-		token_start = line;
-		token_end = memchr (token_start, '/', line_len);
-
-		if (!token_end)
+		if (line_len == 0)
 			continue;
 
-		g_string_truncate (gstr, 0);
-		g_string_append_len (gstr, token_start, token_end - token_start);
-		iface_idx = _nm_utils_ascii_str_to_int64 (gstr->str, 10, 0, G_MAXSSIZE, -1);
+		/* Truncate the string. It's safe to do, because we own @response_data an it has an
+		 * extra NUL character after the buffer. */
+		((char *) line)[line_len] = '\0';
+		if (line[line_len - 1] == '/')
+			((char *) line)[--line_len] = '\0';
 
+		iface_idx = _nm_utils_ascii_str_to_int64 (line, 10, 0, G_MAXSSIZE, -1);
 		if (iface_idx < 0)
 			continue;
 
@@ -442,14 +431,15 @@ _get_net_ifaces_list_cb (GObject *source,
 	for (i = 0; i < ifaces_arr->len; ++i) {
 		GCPIfaceData *data = ifaces_arr->pdata[i];
 		gs_free const char *uri = NULL;
+		char sbuf[100];
 
 		_LOGD ("GCP interface[%"G_GSSIZE_FORMAT"]: retrieving configuration",
 		       data->iface_idx);
 
-		g_string_printf (gstr, "%"G_GSSIZE_FORMAT"/mac", data->iface_idx);
+		nm_sprintf_buf (sbuf, "%"G_GSSIZE_FORMAT"/mac", data->iface_idx);
 
 		nm_http_client_poll_get (NM_HTTP_CLIENT (source),
-		                         (uri = _gcp_uri_interfaces (gstr->str)),
+		                         (uri = _gcp_uri_interfaces (sbuf)),
 		                         HTTP_TIMEOUT_MS,
 		                         HTTP_REQ_MAX_DATA,
 		                         HTTP_POLL_TIMEOUT_MS,
@@ -484,7 +474,6 @@ get_config (NMCSProvider *provider,
 		.n_ifaces_pending = 0,
 		.error = NULL,
 		.success = FALSE,
-
 	};
 
 	nm_http_client_poll_get (nmcs_provider_get_http_client (provider),

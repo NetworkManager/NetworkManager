@@ -7,8 +7,8 @@ dnl  - add corresponding NM_VERSION_x_y_z macros in
 dnl    "shared/nm-version-macros.h.in"
 dnl  - update number in meson.build
 m4_define([nm_major_version], [1])
-m4_define([nm_minor_version], [26])
-m4_define([nm_micro_version], [0])
+m4_define([nm_minor_version], [27])
+m4_define([nm_micro_version], [1])
 m4_define([nm_version],
           [nm_major_version.nm_minor_version.nm_micro_version])
 
@@ -174,7 +174,7 @@ AC_ARG_ENABLE(ifupdown, AS_HELP_STRING([--enable-ifupdown], [enable ifupdown con
 # Default alternative plugins by distribution
 AS_IF([test -z "$enable_ifcfg_rh" -a -d /etc/sysconfig/network-scripts], enable_ifcfg_rh=yes)
 AS_IF([test -z "$enable_ifupdown" -a -f /etc/debian_version],            enable_ifupdown=yes)
-# Otherwise plugins default to "no"
+# Otherwise, plugins default to "no"
 AS_IF([test -z "$enable_ifcfg_rh"], enable_ifcfg_rh=no)
 AS_IF([test -z "$enable_ifupdown"], enable_ifupdown=no)
 # Create automake conditionals
@@ -583,7 +583,7 @@ PKG_CHECK_MODULES(UUID, uuid)
 
 # Teamd control checks
 
-PKG_CHECK_MODULES(JANSSON, [jansson >= 2.5], [have_jansson=yes], [have_jansson=no])
+PKG_CHECK_MODULES(JANSSON, [jansson >= 2.7], [have_jansson=yes], [have_jansson=no])
 if test "$have_jansson" = "yes"; then
 	AC_DEFINE(WITH_JANSSON, 1, [Define if JANSSON is enabled])
 
@@ -596,6 +596,8 @@ if test "$have_jansson" = "yes"; then
 	fi
 	AC_DEFINE_UNQUOTED(JANSSON_SONAME, "$JANSSON_SONAME", [Define to path to the Jansson shared library])
 else
+	have_jansson=no
+	JANSSON_SONAME=
 	AC_DEFINE(WITH_JANSSON, 0, [Define if JANSSON is enabled])
 fi
 AM_CONDITIONAL(WITH_JANSSON, test "${have_jansson}" = "yes")
@@ -621,21 +623,6 @@ if test "${enable_teamdctl}" = "yes"; then
 	LIBTEAMDCTL_CFLAGS=`echo $LIBTEAMDCTL_CFLAGS | sed -e 's:/teamdctl.h::'`
 fi
 AM_CONDITIONAL(WITH_TEAMDCTL, test "${enable_teamdctl}" = "yes")
-
-# Jansson for team configuration validation
-AC_ARG_ENABLE(json-validation,
-              AS_HELP_STRING([--enable-json-validation], [Enable JSON validation in libnm]),
-              [enable_json_validation=${enableval}],
-              [enable_json_validation=${have_jansson}])
-if test "${enable_json_validation}" = "no"; then
-	AC_DEFINE(WITH_JSON_VALIDATION, 0, [Define if JSON validation in libnm is enabled])
-else
-	if test "$have_jansson" = "no"; then
-		AC_MSG_ERROR([jansson is needed for team configuration validation. Use --disable-json-validation to build without it.])
-	fi
-		AC_DEFINE(WITH_JSON_VALIDATION, 1, [Define if JSON validation in libnm is enabled])
-fi
-AM_CONDITIONAL(WITH_JSON_VALIDATION, test "${enable_json_validation}" != "no")
 
 # we usually compile with polkit support. --enable-polkit=yes|no only sets the
 # default configuration for main.auth-polkit. User can always enable/disable polkit
@@ -915,7 +902,7 @@ if test "$config_dns_rc_manager_default" != "" -a \
 fi
 # Use netconfig by default on SUSE
 AS_IF([test -z "$with_netconfig" -a -f /etc/SuSE-release], with_netconfig=yes)
-# Otherwise default to "no"
+# Otherwise, default to "no"
 AS_IF([test -z "$with_resolvconf"], with_resolvconf=no)
 AS_IF([test -z "$with_netconfig"], with_netconfig=no)
 
@@ -1272,6 +1259,10 @@ else
 	have_introspection=no
 fi
 
+# check for python black. And check if all files are formatted with python black
+AC_PATH_PROG(BLACK, black)
+AM_CONDITIONAL(WITH_PYTHON_BLACK, test "${BLACK}" != "")
+
 # check for pregenerated manpages and documentation to be installed
 use_pregen_docs=no
 if test "$build_docs" != "yes" -a \
@@ -1362,6 +1353,7 @@ echo "  nmcli: $build_nmcli"
 echo "  nmtui: $build_nmtui"
 echo "  nm-cloud-setup: $with_nm_cloud_setup"
 echo "  iwd: $ac_with_iwd"
+echo "  jansson: $have_jansson${JANSSON_SONAME:+ (soname: $JANSSON_SONAME)}"
 echo
 
 echo "Configuration plugins (main.plugins=${config_plugins_default})"
@@ -1394,7 +1386,6 @@ echo "  valgrind: $with_valgrind   $with_valgrind_suppressions"
 echo "  code coverage: $enable_code_coverage"
 echo "  LTO: $enable_lto"
 echo "  linker garbage collection: $enable_ld_gc"
-echo "  JSON validation for libnm: $enable_json_validation"
 echo "  crypto: $with_crypto (have-gnutls: $have_crypto_gnutls, have-nss: $have_crypto_nss)"
 echo "  sanitizers: $sanitizers"
 echo "  Mozilla Public Suffix List: $with_libpsl"

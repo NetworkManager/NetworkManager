@@ -526,7 +526,7 @@ _nest_end (struct nl_msg *msg, struct nlattr *start, int keep_empty)
 	if (pad > 0) {
 		/*
 		 * Data inside attribute does not end at a alignment boundary.
-		 * Pad accordingly and accoun for the additional space in
+		 * Pad accordingly and account for the additional space in
 		 * the message. nlmsg_reserve() may never fail in this situation,
 		 * the allocate message buffer must be a multiple of NLMSG_ALIGNTO.
 		 */
@@ -1184,7 +1184,7 @@ continue_reading:
 			goto skip;
 
 		/* Data got lost, report back to user. The default action is to
-		 * quit parsing. The user may overrule this action by retuning
+		 * quit parsing. The user may overrule this action by returning
 		 * NL_SKIP or NL_PROCEED (dangerous) */
 		else if (hdr->nlmsg_type == NLMSG_OVERRUN) {
 			nmerr = -NME_NL_MSG_OVERFLOW;

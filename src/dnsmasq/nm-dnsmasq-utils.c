@@ -42,7 +42,7 @@ nm_dnsmasq_utils_get_range (const NMPlatformIP4Address *addr,
 		 *
 		 * In this case, only a /24 portion of the subnet is used.
 		 * No particular reason for that, but it's unlikely that a user
-		 * would use NetworkManager's shared method when having hundered
+		 * would use NetworkManager's shared method when having hundred
 		 * of DHCP clients. So, restrict the range to the same /24 in
 		 * which the host address lies.
 		 */

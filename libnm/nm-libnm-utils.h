@@ -38,7 +38,7 @@ typedef enum {
 	 * for unknown D-Bus API that could just result because we run against a
 	 * newer NetworkManager version (such warnings are more graceful, because
 	 * we want that libnm can be forward compatible against newer servers).
-	 * Critial warnings should be emitted when NetworkManager exposes something
+	 * Critical warnings should be emitted when NetworkManager exposes something
 	 * on D-Bus that breaks the current expectations. Usually NetworkManager
 	 * should not break API, hence such issues are more severe. */
 	_NML_DBUS_LOG_LEVEL_WARN        = 0x08,

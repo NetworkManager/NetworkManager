@@ -625,7 +625,7 @@ create_resolv_conf (const char *const*searches,
 
 			if (search_base_idx > 0) {
 				if (str->len - search_base_idx + 1 + l > 254) {
-					/* this entry crosses the 256 character boundery. Older glibc versions
+					/* this entry crosses the 256 character boundary. Older glibc versions
 					 * would truncate the entry at this point.
 					 *
 					 * Fill the line with spaces to cross the 256 char boundary and continue
@@ -977,7 +977,7 @@ update_resolv_conf (NMDnsManager *self,
 		             RESOLV_CONF_TMP,
 		             nm_strerror_native (errsv));
 		_LOGT ("update-resolv-conf: write internal file %s succeeded "
-		       "but canot delete temporary file %s: %s",
+		       "but cannot delete temporary file %s: %s",
 		       MY_RESOLV_CONF, RESOLV_CONF_TMP, nm_strerror_native (errsv));
 		return SR_ERROR;
 	}

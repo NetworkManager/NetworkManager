@@ -84,6 +84,7 @@ typedef enum { /*< flags >*/
 #define NM_SETTING_WIRELESS_POWERSAVE   "powersave"
 #define NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION   "mac-address-randomization"
 #define NM_SETTING_WIRELESS_WAKE_ON_WLAN "wake-on-wlan"
+#define NM_SETTING_WIRELESS_AP_ISOLATION "ap-isolation"
 
 /**
  * NM_SETTING_WIRELESS_MODE_ADHOC:
@@ -204,6 +205,9 @@ gboolean          nm_setting_wireless_ap_security_compatible (NMSettingWireless 
 
 NM_AVAILABLE_IN_1_12
 NMSettingWirelessWakeOnWLan  nm_setting_wireless_get_wake_on_wlan (NMSettingWireless *setting);
+
+NM_AVAILABLE_IN_1_28
+NMTernary nm_setting_wireless_get_ap_isolation (NMSettingWireless *setting);
 
 G_END_DECLS
 

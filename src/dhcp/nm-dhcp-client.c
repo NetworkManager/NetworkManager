@@ -824,7 +824,7 @@ maybe_add_option (NMDhcpClient *self,
 
 		/* dhclient has no special labels for private dhcp options: it uses "unknown_xyz"
 		 * labels for that. We need to identify those to alias them to our "private_xyz"
-		 * format unsed in the internal dchp plugins.
+		 * format unused in the internal dchp plugins.
 		 */
 		if ((priv_opt_num = label_is_unknown_xyz (key)) > 0) {
 			gs_free guint8 *check_val = NULL;

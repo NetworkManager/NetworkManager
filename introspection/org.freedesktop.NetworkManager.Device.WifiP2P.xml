@@ -31,7 +31,7 @@
 
     <!--
         StartFind:
-        @options: Options of find. Currently 'timeout' option with value of "i"
+        @options: Options of find. Currently, 'timeout' option with value of "i"
                   in the range of 1-600 seconds is supported. The default is
                   30 seconds.
 

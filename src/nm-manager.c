@@ -700,7 +700,7 @@ initited:
 		/* on systems where a lot of devices are created and go away, the index contains
 		 * a lot of stale entries. We must from time to time clean them up.
 		 *
-		 * Do do this cleanup, whenever we have more enties then 2 times the number of links. */
+		 * Do do this cleanup, whenever we have more entries then 2 times the number of links. */
 		if (G_UNLIKELY (g_hash_table_size (priv->device_route_metrics) > NM_MAX (20, n_links * 2))) {
 			/* from time to time, we need to do some house-keeping and prune stale entries.
 			 * Otherwise, on a system where interfaces frequently come and go (docker), we
@@ -2364,7 +2364,7 @@ nm_manager_rfkill_update (NMManager *self, RfKillType rtype)
 	if (rtype != RFKILL_TYPE_UNKNOWN)
 		manager_rfkill_update_one_type (self, &priv->radio_states[rtype], rtype);
 	else {
-		/* Otherwise sync all radio types */
+		/* Otherwise, sync all radio types */
 		for (i = 0; i < RFKILL_TYPE_MAX; i++)
 			manager_rfkill_update_one_type (self, &priv->radio_states[i], i);
 	}
@@ -2817,7 +2817,7 @@ recheck_assume_connection (NMManager *self,
 			 * We've managed to steal the lease used by initramfs before it
 			 * killed off the dhclient. We need to take ownership of the configured
 			 * connection and act like the device was configured by us.
-			 * Otherwise the address would just expire.
+			 * Otherwise, the address would just expire.
 			 */
 			_LOG2I (LOGD_DEVICE, device, "assume: taking over an initramfs-configured connection");
 			activation_type_assume = TRUE;
@@ -3299,7 +3299,7 @@ _register_device_factory (NMDeviceFactory *factory, gpointer user_data)
 /*****************************************************************************/
 
 void
-nm_manager_notify_device_availibility_maybe_changed (NMManager *self)
+nm_manager_notify_device_availability_maybe_changed (NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	NMDevice *device;
@@ -3773,7 +3773,7 @@ found_better:
 		    && g_hash_table_contains (unavailable_devices, device))
 			continue;
 
-		/* determine the priority of this device. Currently this priority is independent
+		/* determine the priority of this device. Currently, this priority is independent
 		 * of the profile (connection) and the device's details (aside the state).
 		 *
 		 * Maybe nm_device_check_connection_available() should instead return a priority,
@@ -5366,7 +5366,7 @@ impl_manager_activate_connection (NMDBusObject *obj,
 	device_path = nm_dbus_path_not_empty (device_path);
 
 	/* If the connection path is given and valid, that connection is activated.
-	 * Otherwise the "best" connection for the device is chosen and activated,
+	 * Otherwise, the "best" connection for the device is chosen and activated,
 	 * regardless of whether that connection is autoconnect-enabled or not
 	 * (since this is an explicit request, not an auto-activation request).
 	 */

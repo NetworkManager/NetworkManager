@@ -2661,7 +2661,7 @@ nm_setting_option_get_uint32 (NMSetting *setting,
  *
  * Note that not all setting types support options. It is a bug
  * setting a variant to a setting that doesn't support it.
- * Currently only #NMSettingEthtool supports it.
+ * Currently, only #NMSettingEthtool supports it.
  *
  * Since: 1.26
  */

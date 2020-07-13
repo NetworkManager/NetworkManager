@@ -152,7 +152,7 @@ G_STATIC_ASSERT (RTA_MAX == (__RTA_MAX - 1));
 
 /*****************************************************************************/
 
-/* Appeared in in kernel prior to 3.13 dated 19 January, 2014 */
+/* Appeared in the kernel prior to 3.13 dated 19 January, 2014 */
 #ifndef ARPHRD_6LOWPAN
 #define ARPHRD_6LOWPAN 825
 #endif
@@ -271,7 +271,7 @@ struct _ifla_vf_vlan_info {
 
 /*****************************************************************************/
 
-/* Appeared in in kernel 4.0 dated April 12, 2015 */
+/* Appeared in the kernel 4.0 dated April 12, 2015 */
 #ifndef BRIDGE_VLAN_INFO_RANGE_BEGIN
 #define BRIDGE_VLAN_INFO_RANGE_BEGIN    (1 << 3) /* VLAN is start of vlan range */
 #define BRIDGE_VLAN_INFO_RANGE_END      (1 << 4) /* VLAN is end of vlan range */
@@ -514,7 +514,7 @@ G_DEFINE_TYPE (NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
             /* The %m format specifier (GNU extension) would already allow you to specify the error
              * message conveniently (and nm_log would get that right too). But we don't want to depend
              * on that, so instead append the message at the end.
-             * Currently users are expected not to use %m in the format string. */ \
+             * Currently, users are expected not to use %m in the format string. */ \
             _LOG_print (__level, __domain, __errsv, self, \
                         _NM_UTILS_MACRO_FIRST (__VA_ARGS__) ": %s (%d)" \
                         _NM_UTILS_MACRO_REST (__VA_ARGS__), \
@@ -1050,12 +1050,12 @@ _linktype_get_type (NMPlatform *platform,
 		 * it means that their type may not have been determined correctly
 		 * due to race conditions while accessing sysfs.
 		 *
-		 * This way, we save edditional ethtool/sysctl lookups, but moreover,
+		 * This way, we save additional ethtool/sysctl lookups, but moreover,
 		 * we keep the linktype stable and don't change it as long as the link
 		 * exists.
 		 *
 		 * Note that kernel *can* reuse the ifindex (on integer overflow, and
-		 * when moving interfce to other netns). Thus here there is a tiny potential
+		 * when moving interface to other netns). Thus here there is a tiny potential
 		 * of messing stuff up. */
 		if (   obj
 		    && obj->_link.netlink.is_in_netlink
@@ -2602,7 +2602,7 @@ again:
 						             &p->endpoint) < 0)
 							goto toobig_peers;
 					} else {
-						/* I think there is no way to clear an endpoint, though there shold be. */
+						/* I think there is no way to clear an endpoint, though there should be. */
 						nm_assert (p->endpoint.sa.sa_family == AF_UNSPEC);
 					}
 				}
@@ -2839,7 +2839,7 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	if (!tb[IFLA_MTU]) {
 		/* Kernel has two places that send RTM_GETLINK messages:
 		 * net/core/rtnetlink.c and net/wireless/ext-core.c.
-		 * Unfotunatelly ext-core.c sets only IFLA_WIRELESS and
+		 * Unfortunately ext-core.c sets only IFLA_WIRELESS and
 		 * IFLA_IFNAME. This confuses code in this function, because
 		 * it cannot get complete set of data for the interface and
 		 * later incomplete object this function creates is used to
@@ -3162,7 +3162,7 @@ _new_from_nl_addr (struct nlmsghdr *nlh, gboolean id_only)
 		 * If IFA_LOCAL is missing, IFA_ADDRESS is @address and @peer_address
 		 * is :: (all-zero).
 		 *
-		 * If unexpectely IFA_ADDRESS is missing, make the best of it -- but it _should_
+		 * If unexpectedly IFA_ADDRESS is missing, make the best of it -- but it _should_
 		 * actually be there. */
 		if (tb[IFA_ADDRESS] || tb[IFA_LOCAL]) {
 			if (tb[IFA_LOCAL]) {
@@ -4758,6 +4758,10 @@ _nl_msg_new_qdisc (int nlmsg_type,
 		NLA_PUT_U32 (msg, TCA_TBF_BURST, qdisc->tbf.burst);
 
 		nla_nest_end (msg, tc_options);
+	} else if (nm_streq (qdisc->kind, "prio")) {
+		struct tc_prio_qopt opt = {3, { 1, 2, 2, 2, 1, 2, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1 } };
+
+		NLA_PUT (msg, TCA_OPTIONS, sizeof (opt), &opt);
 	} else {
 		if (!(tc_options = nla_nest_start (msg, TCA_OPTIONS)))
 			goto nla_put_failure;
@@ -8729,7 +8733,7 @@ continue_reading:
 			 * NL_PROCEED. */
 		} else if (hdr->nlmsg_type == NLMSG_OVERRUN) {
 			/* Data got lost, report back to user. The default action is to
-			 * quit parsing. The user may overrule this action by retuning
+			 * quit parsing. The user may overrule this action by returning
 			 * NL_SKIP or NL_PROCEED (dangerous) */
 			err = -NME_NL_MSG_OVERFLOW;
 			abort_parsing = TRUE;

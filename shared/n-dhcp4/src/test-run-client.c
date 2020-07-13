@@ -440,7 +440,7 @@ static void print_help(void) {
                "     --ifindex IDX                     Index of interface to run on\n"
                "     --mac HEX                         Hardware address to use\n"
                "     --broadcast-mac HEX               Broadcast hardware address to use\n"
-               "     --requested-ip IP                 Requested IP adress\n"
+               "     --requested-ip IP                 Requested IP address\n"
                "     --requested-lifetime SECS         Requested lease lifetime in seconds\n"
                "     --requested-parameters P1,P2,...  Requested parameters\n"
                "     --client-id HEX                   Client Identifier to use\n"

@@ -14,7 +14,7 @@
  * NMUtilsFileGetContentsFlags:
  * @NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE: no flag
  * @NM_UTILS_FILE_GET_CONTENTS_FLAG_SECRET: if present, ensure that no
- *   data is left in memory. Essentially, it means to call explicity_bzero()
+ *   data is left in memory. Essentially, it means to call nm_explicit_bzero()
  *   to not leave key material on the heap (when reading secrets).
  */
 typedef enum {

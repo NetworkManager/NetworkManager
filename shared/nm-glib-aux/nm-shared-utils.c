@@ -23,6 +23,9 @@ G_STATIC_ASSERT (G_STRUCT_OFFSET (NMUtilsNamedValue, value_ptr) == sizeof (const
 
 /*****************************************************************************/
 
+const char _nm_hexchar_table_lower[16] = "0123456789abcdef";
+const char _nm_hexchar_table_upper[16] = "0123456789ABCDEF";
+
 const void *const _NM_PTRARRAY_EMPTY[1] = { NULL };
 
 /*****************************************************************************/
@@ -91,75 +94,6 @@ nm_ip_addr_set_from_untrusted (int addr_family,
 
 G_STATIC_ASSERT (ETH_ALEN == sizeof (struct ether_addr));
 G_STATIC_ASSERT (ETH_ALEN == 6);
-
-/*****************************************************************************/
-
-gsize
-nm_utils_get_next_realloc_size (gboolean true_realloc, gsize requested)
-{
-	gsize n, x;
-
-	/* https://doc.qt.io/qt-5/containers.html#growth-strategies */
-
-	if (requested <= 40) {
-		/* small allocations. Increase in small steps of 8 bytes.
-		 *
-		 * We get thus sizes of 8, 16, 32, 40. */
-		if (requested <= 8)
-			return 8;
-		if (requested <= 16)
-			return 16;
-		if (requested <= 32)
-			return 32;
-
-		/* The return values for < 104 are essentially hard-coded, and the choice here is
-		 * made without very strong reasons.
-		 *
-		 * We want to stay 24 bytes below the power-of-two border 64. Hence, return 40 here.
-		 * However, the next step then is already 104 (128 - 24). It's a larger gap than in
-		 * the steps before.
-		 *
-		 * It's not clear whether some of the steps should be adjusted (or how exactly). */
-		return 40;
-	}
-
-	if (   requested <= 0x2000u - 24u
-	    || G_UNLIKELY (!true_realloc)) {
-		/* mid sized allocations. Return next power of two, minus 24 bytes extra space
-		 * at the beginning.
-		 * That means, we double the size as we grow.
-		 *
-		 * With !true_realloc, it means that the caller does not intend to call
-		 * realloc() but instead clone the buffer. This is for example the case, when we
-		 * want to nm_explicit_bzero() the old buffer. In that case we really want to grow
-		 * the buffer exponentially every time and not increment in page sizes of 4K (below).
-		 *
-		 * We get thus sizes of 104, 232, 488, 1000, 2024, 4072, 8168... */
-
-		if (G_UNLIKELY (requested > G_MAXSIZE / 2u - 24u))
-			return G_MAXSIZE;
-
-		x = requested + 24u;
-		n = 128u;
-		while (n < x) {
-			n <<= 1;
-			nm_assert (n > 128u);
-		}
-
-		nm_assert (n > 24u && n - 24u >= requested);
-		return n - 24u;
-	}
-
-	if (G_UNLIKELY (requested > G_MAXSIZE - 0x1000u - 24u))
-		return G_MAXSIZE;
-
-	/* For large allocations (with !true_realloc) we allocate memory in chunks of
-	 * 4K (- 24 bytes extra), assuming that the memory gets mmapped and thus
-	 * realloc() is efficient by just reordering pages. */
-	n = ((requested + (0x0FFFu + 24u)) & ~((gsize) 0x0FFFu)) - 24u;
-	nm_assert (n >= requested);
-	return n;
-}
 
 /*****************************************************************************/
 
@@ -443,7 +377,7 @@ nm_utils_gbytes_equal_mem (GBytes *bytes,
 	gsize l;
 
 	if (!bytes) {
-		/* as a special case, let %NULL GBytes compare idential
+		/* as a special case, let %NULL GBytes compare identical
 		 * to an empty array. */
 		return (mem_len == 0);
 	}
@@ -478,50 +412,52 @@ nm_utils_gbytes_to_variant_ay (GBytes *bytes)
 GVariant *
 nm_utils_strdict_to_variant_ass (GHashTable *strdict)
 {
-	GHashTableIter iter;
-	const char *key, *value;
+	gs_free NMUtilsNamedValue *values_free = NULL;
+	NMUtilsNamedValue values_prepared[20];
+	const NMUtilsNamedValue *values;
 	GVariantBuilder builder;
-	guint i, len;
+	guint i;
+	guint n;
+
+	values = nm_utils_named_values_from_strdict (strdict,
+	                                             &n,
+	                                             values_prepared,
+	                                             &values_free);
 
 	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{ss}"));
-
-	if (!strdict)
-		goto out;
-	len = g_hash_table_size (strdict);
-	if (!len)
-		goto out;
-
-	g_hash_table_iter_init (&iter, strdict);
-	if (!g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value))
-		nm_assert_not_reached ();
-
-	if (len == 1)
-		g_variant_builder_add (&builder, "{ss}", key, value);
-	else {
-		gs_free NMUtilsNamedValue *idx_free = NULL;
-		NMUtilsNamedValue *idx;
-
-		if (len > 300 / sizeof (NMUtilsNamedValue)) {
-			idx_free = g_new (NMUtilsNamedValue, len);
-			idx = idx_free;
-		} else
-			idx = g_alloca (sizeof (NMUtilsNamedValue) * len);
-
-		i = 0;
-		do {
-			idx[i].name = key;
-			idx[i].value_str = value;
-			i++;
-		} while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value));
-		nm_assert (i == len);
-
-		nm_utils_named_value_list_sort (idx, len, NULL, NULL);
-
-		for (i = 0; i < len; i++)
-			g_variant_builder_add (&builder, "{ss}", idx[i].name, idx[i].value_str);
+	for (i = 0; i < n; i++) {
+		g_variant_builder_add (&builder,
+		                       "{ss}",
+		                       values[i].name,
+		                       values[i].value_str);
 	}
+	return g_variant_builder_end (&builder);
+}
 
-out:
+/*****************************************************************************/
+
+GVariant *
+nm_utils_strdict_to_variant_asv (GHashTable *strdict)
+{
+	gs_free NMUtilsNamedValue *values_free = NULL;
+	NMUtilsNamedValue values_prepared[20];
+	const NMUtilsNamedValue *values;
+	GVariantBuilder builder;
+	guint i;
+	guint n;
+
+	values = nm_utils_named_values_from_strdict (strdict,
+	                                             &n,
+	                                             values_prepared,
+	                                             &values_free);
+
+	g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
+	for (i = 0; i < n; i++) {
+		g_variant_builder_add (&builder,
+		                       "{sv}",
+		                       values[i].name,
+		                       g_variant_new_string (values[i].value_str));
+	}
 	return g_variant_builder_end (&builder);
 }
 
@@ -1075,39 +1011,53 @@ nm_utils_parse_next_line (const char **inout_ptr,
                           const char **out_line,
                           gsize *out_line_len)
 {
+	gboolean eol_is_carriage_return;
 	const char *line_start;
-	const char *line_end;
+	gsize line_len;
 
-	g_return_val_if_fail (inout_ptr, FALSE);
-	g_return_val_if_fail (inout_len, FALSE);
-	g_return_val_if_fail (out_line, FALSE);
+	nm_assert (inout_ptr);
+	nm_assert (inout_len);
+	nm_assert (*inout_len == 0 || *inout_ptr);
+	nm_assert (out_line);
+	nm_assert (out_line_len);
 
-	if (*inout_len <= 0)
-		goto error;
+	if (G_UNLIKELY (*inout_len == 0))
+		return FALSE;
 
 	line_start = *inout_ptr;
-	line_end = memchr (line_start, '\n', *inout_len);
-	if (!line_end)
-		line_end = memchr (line_start, '\0', *inout_len);
-	if (!line_end) {
-		line_end = line_start + *inout_len;
-		NM_SET_OUT (inout_len, 0);
-	} else
-		NM_SET_OUT (inout_len, *inout_len - (line_end - line_start) - 1);
 
-	NM_SET_OUT (out_line, line_start);
-	NM_SET_OUT (out_line_len, (gsize) (line_end - line_start));
+	eol_is_carriage_return = FALSE;
+	for (line_len = 0; ; line_len++) {
+		if (line_len >= *inout_len) {
+			/* if we consumed the entire line, we place the pointer at
+			 * one character after the end. */
+			*inout_ptr = &line_start[line_len];
+			*inout_len = 0;
+			goto done;
+		}
+		switch (line_start[line_len]) {
+		case '\r':
+			eol_is_carriage_return = TRUE;
+			/* fall-through*/
+		case '\0':
+		case '\n':
+			*inout_ptr = &line_start[line_len + 1];
+			*inout_len = *inout_len - line_len - 1u;
+			if (   eol_is_carriage_return
+			    && *inout_len > 0
+			    && (*inout_ptr)[0] == '\n') {
+				/* also consume "\r\n" as one. */
+				(*inout_len)--;
+				(*inout_ptr)++;
+			}
+			goto done;
+		}
+	}
 
-	if (*inout_len > 0)
-		NM_SET_OUT (inout_ptr, line_end + 1);
-	else
-		NM_SET_OUT (inout_ptr, NULL);
+done:
+	*out_line = line_start;
+	*out_line_len = line_len;
 	return TRUE;
-
-error:
-	NM_SET_OUT (out_line, NULL);
-	NM_SET_OUT (out_line_len, 0);
-	return FALSE;
 }
 
 /*****************************************************************************/
@@ -1529,7 +1479,7 @@ nm_utils_dbus_path_cmp (const char *dbus_path_a, const char *dbus_path_b)
 	if (n_a == -1 && n_b == -1)
 		goto comp_l;
 
-	/* both components must be convertiable to a number. If they are not,
+	/* both components must be convertible to a number. If they are not,
 	 * (and only one of them is), then we must always strictly sort numeric parts
 	 * after non-numeric components. If we wouldn't, we wouldn't have
 	 * a total order.
@@ -3045,15 +2995,23 @@ nm_utils_fd_read_loop_exact (int fd, void *buf, size_t nbytes, bool do_poll)
 
 /*****************************************************************************/
 
+G_STATIC_ASSERT (G_STRUCT_OFFSET (NMUtilsNamedValue, name) == 0);
+
 NMUtilsNamedValue *
-nm_utils_named_values_from_str_dict_with_sort (GHashTable *hash,
-                                               guint *out_len,
-                                               GCompareDataFunc compare_func,
-                                               gpointer user_data)
+nm_utils_named_values_from_strdict_full (GHashTable *hash,
+                                         guint *out_len,
+                                         GCompareDataFunc compare_func,
+                                         gpointer user_data,
+                                         NMUtilsNamedValue *provided_buffer,
+                                         guint provided_buffer_len,
+                                         NMUtilsNamedValue **out_allocated_buffer)
 {
 	GHashTableIter iter;
 	NMUtilsNamedValue *values;
 	guint i, len;
+
+	nm_assert (provided_buffer_len == 0 || provided_buffer);
+	nm_assert (!out_allocated_buffer || !*out_allocated_buffer);
 
 	if (   !hash
 	    || !(len = g_hash_table_size (hash))) {
@@ -3061,12 +3019,20 @@ nm_utils_named_values_from_str_dict_with_sort (GHashTable *hash,
 		return NULL;
 	}
 
+	if (provided_buffer_len >= len + 1) {
+		/* the buffer provided by the caller is large enough. Use it. */
+		values = provided_buffer;
+	} else {
+		/* allocate a new buffer. */
+		values = g_new (NMUtilsNamedValue, len + 1);
+		NM_SET_OUT (out_allocated_buffer, values);
+	}
+
 	i = 0;
-	values = g_new (NMUtilsNamedValue, len + 1);
 	g_hash_table_iter_init (&iter, hash);
 	while (g_hash_table_iter_next (&iter,
 	                               (gpointer *) &values[i].name,
-	                               (gpointer *) &values[i].value_ptr))
+	                               &values[i].value_ptr))
 		i++;
 	nm_assert (i == len);
 	values[i].name = NULL;
@@ -3324,7 +3290,7 @@ nm_utils_strv_make_deep_copied_n (const char **strv, gsize len)
  *
  * Note that if @len is non-negative, then it still must not
  * contain any %NULL pointers within the first @len elements.
- * Otherwise you would leak elements if you try to free the
+ * Otherwise, you would leak elements if you try to free the
  * array with g_strfreev(). Allowing that would be error prone.
  *
  * Returns: (transfer full): a clone of the strv array. Always
@@ -3779,7 +3745,7 @@ nm_utils_g_slist_find_str (const GSList *list,
  * @b: the right #GSList of strings to compare.
  *
  * Compares two string lists. The data elements are compared with
- * strcmp(), alloing %NULL elements.
+ * strcmp(), allowing %NULL elements.
  *
  * Returns: 0, 1, or -1, depending on how the lists compare.
  */
@@ -4046,7 +4012,7 @@ nm_utils_memeqzero (gconstpointer data, gsize length)
  * Returns: the binary value converted to a hex string. If @out is given,
  *   this always returns @out. If @out is %NULL, a newly allocated string
  *   is returned. This never returns %NULL, for buffers of length zero
- *   an empty string is returend.
+ *   an empty string is returned.
  */
 char *
 nm_utils_bin2hexstr_full (gconstpointer addr,
@@ -4949,7 +4915,7 @@ _nm_str_buf_ensure_size (NMStrBuf *strbuf,
 {
 	_nm_str_buf_assert (strbuf);
 
-	/* Currently this only supports strictly growing the buffer. */
+	/* Currently, this only supports strictly growing the buffer. */
 	nm_assert (new_size > strbuf->_priv_allocated);
 
 	if (!reserve_exact) {
@@ -5056,9 +5022,11 @@ void
 _nm_utils_format_variant_attributes_full (GString *str,
                                           const NMUtilsNamedValue *values,
                                           guint num_values,
+                                          const NMVariantAttributeSpec *const *spec,
                                           char attr_separator,
                                           char key_value_separator)
 {
+	const NMVariantAttributeSpec *const *s;
 	const char *name, *value;
 	GVariant *variant;
 	char *escaped;
@@ -5068,8 +5036,19 @@ _nm_utils_format_variant_attributes_full (GString *str,
 
 	for (i = 0; i < num_values; i++) {
 		name = values[i].name;
-		variant = (GVariant *) values[i].value_ptr;
+		variant = values[i].value_ptr;
 		value = NULL;
+		s = NULL;
+
+		if (spec) {
+			for (s = spec; *s; s++) {
+				if (nm_streq0 ((*s)->name, name))
+					break;
+			}
+
+			if (!*s)
+				continue;
+		}
 
 		if (g_variant_is_of_type (variant, G_VARIANT_TYPE_UINT32))
 			value = nm_sprintf_buf (buf, "%u", g_variant_get_uint32 (variant));
@@ -5097,11 +5076,13 @@ _nm_utils_format_variant_attributes_full (GString *str,
 		g_string_append (str, escaped);
 		g_free (escaped);
 
-		g_string_append_c (str, key_value_separator);
+		if (!s || !*s || !(*s)->no_value) {
+			g_string_append_c (str, key_value_separator);
 
-		escaped = attribute_escape (value, attr_separator, key_value_separator);
-		g_string_append (str, escaped);
-		g_free (escaped);
+			escaped = attribute_escape (value, attr_separator, key_value_separator);
+			g_string_append (str, escaped);
+			g_free (escaped);
+		}
 
 		sep = attr_separator;
 	}
@@ -5109,25 +5090,34 @@ _nm_utils_format_variant_attributes_full (GString *str,
 
 char *
 _nm_utils_format_variant_attributes (GHashTable *attributes,
+                                     const NMVariantAttributeSpec *const *spec,
                                      char attr_separator,
                                      char key_value_separator)
 {
+	gs_free NMUtilsNamedValue *values_free = NULL;
+	NMUtilsNamedValue values_prepared[20];
+	const NMUtilsNamedValue *values;
 	GString *str = NULL;
-	gs_free NMUtilsNamedValue *values = NULL;
 	guint len;
 
 	g_return_val_if_fail (attr_separator, NULL);
 	g_return_val_if_fail (key_value_separator, NULL);
 
-	if (!attributes || !g_hash_table_size (attributes))
+	if (!attributes)
 		return NULL;
 
-	values = nm_utils_named_values_from_str_dict (attributes, &len);
+	values = nm_utils_named_values_from_strdict (attributes,
+	                                             &len,
+	                                             values_prepared,
+	                                             &values_free);
+	if (len == 0)
+		return NULL;
 
 	str = g_string_new ("");
 	_nm_utils_format_variant_attributes_full (str,
 	                                          values,
 	                                          len,
+	                                          spec,
 	                                          attr_separator,
 	                                          key_value_separator);
 	return g_string_free (str, FALSE);

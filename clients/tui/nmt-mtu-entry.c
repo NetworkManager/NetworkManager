@@ -13,7 +13,7 @@
  * contains a valid MTU.
  *
  * The entry also has an attached #NmtNewtLabel. When the entry value
- * is "0", the label will read "(default)". Otherwise it reads "bytes",
+ * is "0", the label will read "(default)". Otherwise, it reads "bytes",
  * indicating the units used by the entry.
  */
 

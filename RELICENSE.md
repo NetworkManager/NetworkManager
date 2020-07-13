@@ -73,6 +73,7 @@ Consent/Disapproval List
 
 - [Y] Aleksander Morgado <aleksander@aleksander.es>
 - [Y] Alfonso Sánchez-Beato <alfonso.sanchez-beato@canonical.com> (Canonical, Ltd.)
+- [Y] Andrew Zaborowski <andrew.zaborowski@intel.com> (Intel Corporation)
 - [Y] Antoine Faure <antoine.faure@sigfox.com> (Sigfox)
 - [Y] Antony Mee <antony@onlymee.co.uk>
 - [Y] Atul Anand <atulhjp@gmail.com>
@@ -126,13 +127,13 @@ The contributors above may have contributed the code on behalf of a company
 that holds the copyright. This list tracks such legal entities. The contributor
 list above indicates whether a contributor provided code for a legal entity here.
 
-- [?] Intel Corporation
 - [?] Novell, Inc.
 - [?] SUSE
 
 - [Y] Canonical, Ltd.
 - [Y] Endless Mobile, Inc.
 - [Y] Endless OS LLC
+- [Y] Intel Corporation
 - [Y] One Laptop per Child
 - [Y] Pengutronix
 - [Y] Red Hat, Inc.

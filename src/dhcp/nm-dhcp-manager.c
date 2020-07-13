@@ -94,7 +94,7 @@ _client_factory_get_gtype (const NMDhcpClientFactory *client_factory,
 	 * Supporting reloading the plugin would also require to re-evalate the decisions from
 	 * the "Device List Format". Likewise, having per-address family plugins would make the
 	 * "main.dhcp" setting and "dhcp-plugin:" match non-sensical because these configurations
-	 * currently are address family independet.
+	 * currently are address family independent.
 	 *
 	 * So actually, we don't want that complexity. We want to phase out all plugins in favor
 	 * of the internal plugin.

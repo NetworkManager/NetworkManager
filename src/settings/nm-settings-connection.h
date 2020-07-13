@@ -80,7 +80,7 @@ typedef enum {
 
 	/* Update in-memory (i.e. persist to /run). If the profile is currently on disk,
 	 * then a reference to the profile is remembered as "shadowed-storage".
-	 * Later, when storing again to persistant storage, the shawowed-storage is
+	 * Later, when storing again to persistent storage, the shadowed-storage is
 	 * updated. When deleting the profile, the shadowed-storage is also deleted
 	 * from disk.
 	 *
@@ -90,7 +90,7 @@ typedef enum {
 	/* Update in-memory (i.e. persist to /run). This is almost like
 	 * %NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY, except the in-memory profile
 	 * remembers not to own the shadowed-storage ("shadowed-owned").
-	 * The diffrence is that when deleting the in-memory profile, the original
+	 * The difference is that when deleting the in-memory profile, the original
 	 * profile is not deleted but instead the nmmeta tombstone remembers the
 	 * shadowed-storage and re-used it when re-adding the profile.
 	 *

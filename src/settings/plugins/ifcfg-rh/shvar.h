@@ -66,6 +66,8 @@ const char **svGetKeysSorted (shvarFile *s,
  */
 int svGetValueBoolean (shvarFile *s, const char *key, int def);
 
+NMTernary svGetValueTernary (shvarFile *s, const char *key);
+
 gint64 svGetValueInt64 (shvarFile *s, const char *key, guint base, gint64 min, gint64 max, gint64 fallback);
 
 gboolean svGetValueEnum (shvarFile *s, const char *key,
@@ -84,6 +86,7 @@ gboolean svSetValueBoolean_cond_true (shvarFile *s, const char *key, gboolean va
 gboolean svSetValueInt64 (shvarFile *s, const char *key, gint64 value);
 gboolean svSetValueInt64_cond (shvarFile *s, const char *key, gboolean do_set, gint64 value);
 gboolean svSetValueEnum (shvarFile *s, const char *key, GType gtype, int value);
+gboolean svSetValueTernary (shvarFile *s, const char *key, NMTernary value);
 
 gboolean svUnsetValue (shvarFile *s, const char *key);
 gboolean svUnsetAll (shvarFile *s, SvKeyType match_key_type);

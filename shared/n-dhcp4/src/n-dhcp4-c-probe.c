@@ -221,7 +221,7 @@ _c_public_ void n_dhcp4_client_probe_config_set_requested_ip(NDhcp4ClientProbeCo
  * delay is specified to be a random value in the range 1000 to 10.000 ms.
  * However, there does not appear to be any particular reason to
  * unconditionally wait at least one second, so we move the range down to
- * start at 0 ms. The reaon for the random delay is to avoid network-wide
+ * start at 0 ms. The reason for the random delay is to avoid network-wide
  * events causing too much simultaneous network traffic. However, on modern
  * networks, a more reasonable value may be in the 10 ms range.
  */
@@ -236,7 +236,7 @@ _c_public_ void n_dhcp4_client_probe_config_set_start_delay(NDhcp4ClientProbeCon
  *
  * This adds an option to the list of options to request from the server.
  *
- * A server may send options that we do not requst, and it may omit options
+ * A server may send options that we do not request, and it may omit options
  * that we do request. However, to increase the likelyhood of uniform behavior
  * between server implementations, we do not expose options that were not
  * explicitly requested.
@@ -316,10 +316,9 @@ static void n_dhcp4_client_probe_config_initialize_random_seed(NDhcp4ClientProbe
         unsigned short int seed16v[3];
         const uint8_t *p;
         uint64_t u64;
-        int r;
 
         /*
-         * Initialize seed48_r(3)
+         * Initialize config's entropy buffer for successive jrand48(3) calls.
          *
          * We need random jitter for all timeouts and delays, used to reduce
          * network traffic during bursts. This is not meant as security measure
@@ -360,8 +359,7 @@ static void n_dhcp4_client_probe_config_initialize_random_seed(NDhcp4ClientProbe
         seed16v[1] = (u64 >> 16) ^ (u64 >>  0);
         seed16v[2] = (u64 >> 32) ^ (u64 >> 16);
 
-        r = seed48_r(seed16v, &config->entropy);
-        c_assert(!r);
+        memcpy(config->entropy, seed16v, sizeof(seed16v));
 }
 
 /**
@@ -374,13 +372,7 @@ static void n_dhcp4_client_probe_config_initialize_random_seed(NDhcp4ClientProbe
  * Return: the random data.
  */
 uint32_t n_dhcp4_client_probe_config_get_random(NDhcp4ClientProbeConfig *config) {
-        long int result;
-        int r;
-
-        r = mrand48_r(&config->entropy, &result);
-        c_assert(!r);
-
-        return result;
+        return jrand48(config->entropy);
 };
 
 /**

@@ -2089,7 +2089,7 @@ _clear_secrets_by_secret_flags_cb (NMSetting *setting,
 		/* Can't use bitops with SECRET_FLAG_NONE so handle that specifically */
 		remove_secret = (flags != NM_SETTING_SECRET_FLAG_NONE);
 	} else {
-		/* Otherwise if the secret has at least one of the desired flags keep it */
+		/* Otherwise, if the secret has at least one of the desired flags keep it */
 		remove_secret = !NM_FLAGS_ANY (flags, filter_flags);
 	}
 
@@ -2101,7 +2101,7 @@ _clear_secrets_by_secret_flags_cb (NMSetting *setting,
  * @self: the #NMConnection to filter (will be modified)
  * @filter_flags: the secret flags to control whether to drop/remove
  *   a secret or to keep it. The meaning of the filter flags is to
- *   preseve the secrets. The secrets that have matching (see below)
+ *   preserve the secrets. The secrets that have matching (see below)
  *   flags are kept, the others are dropped.
  *
  * Removes/drops secrets from @self according to @filter_flags.
@@ -2370,8 +2370,8 @@ nm_connection_for_each_setting_value (NMConnection *connection,
 
 /**
  * _nm_connection_aggregate:
- * @connecition: the #NMConnection for which values are to be aggregated.
- * @type: one of the supported aggrate types.
+ * @connection: the #NMConnection for which values are to be aggregated.
+ * @type: one of the supported aggregate types.
  * @arg: the input/output argument that depends on @type.
  *
  * For example, with %NM_CONNECTION_AGGREGATE_ANY_SECRETS and
