@@ -8,6 +8,7 @@
 #include "nm-device-bond.h"
 
 #include <stdlib.h>
+#include <net/if.h>
 
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
@@ -261,6 +262,40 @@ set_bond_attr_or_default (NMDevice *device,
 	_set_bond_attr (device, opt, value);
 }
 
+static void
+set_bond_attr_active_slave (NMDevice *device, NMSettingBond *s_bond)
+{
+	NMDeviceBond *self = NM_DEVICE_BOND (device);
+	const NMPlatformLink *plink;
+	const char *value;
+	const char *error_reason;
+	int ifindex;
+
+	value = nm_setting_bond_get_option_or_default (s_bond, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE);
+	if (!value)
+		return;
+
+	if (!nm_str_is_empty (value)) {
+		ifindex = nm_device_get_ifindex (device);
+		plink = nm_platform_link_get_by_ifname (nm_device_get_platform (device), value);
+		if (!plink)
+			error_reason = "does not exist";
+		else if (plink->master != ifindex)
+			error_reason = "is not yet enslaved";
+		else if (!NM_FLAGS_HAS (plink->n_ifi_flags, IFF_UP))
+			error_reason = "is not up";
+		else
+			error_reason = NULL;
+
+		if (error_reason) {
+			_LOGT (LOGD_BOND, "bond option 'active_slave' not set as device \"%s\" %s", value, error_reason);
+			return;
+		}
+	}
+
+	_set_bond_attr (device, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE, value);
+}
+
 static gboolean
 apply_bonding_config (NMDeviceBond *self)
 {
@@ -300,7 +335,7 @@ apply_bonding_config (NMDeviceBond *self)
 	                 nm_setting_bond_get_option_or_default (s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET));
 
 	set_bond_attr_or_default (device, s_bond, NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM);
-	set_bond_attr_or_default (device, s_bond, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE);
+	set_bond_attr_active_slave (device, s_bond);
 	set_bond_attr_or_default (device, s_bond, NM_SETTING_BOND_OPTION_AD_ACTOR_SYS_PRIO);
 	set_bond_attr_or_default (device, s_bond, NM_SETTING_BOND_OPTION_AD_SELECT);
 	set_bond_attr_or_default (device, s_bond, NM_SETTING_BOND_OPTION_AD_USER_PORT_KEY);
@@ -378,7 +413,7 @@ enslave_slave (NMDevice *device,
 				if (nm_streq0 (active, nm_device_get_iface (slave))) {
 					nm_platform_sysctl_master_set_option (nm_device_get_platform (device),
 					                                      nm_device_get_ifindex (device),
-					                                      "active_slave",
+					                                      NM_SETTING_BOND_OPTION_ACTIVE_SLAVE,
 					                                      active);
 					_LOGD (LOGD_BOND, "setting slave %s as active one for master %s",
 					       active, nm_device_get_iface (device));
@@ -577,10 +612,8 @@ reapply_connection (NMDevice *device, NMConnection *con_old, NMConnection *con_n
 	mode = _nm_setting_bond_mode_from_string (value);
 	g_return_if_fail (mode != NM_BOND_MODE_UNKNOWN);
 
-	/* Primary */
 	set_bond_attr_or_default (device, s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
-	/* Active slave */
-	set_bond_attr_or_default (device, s_bond, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE);
+	set_bond_attr_active_slave (device, s_bond);
 }
 
 /*****************************************************************************/
