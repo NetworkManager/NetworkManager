@@ -371,6 +371,7 @@ teamd_ready (NMDeviceTeam *self)
 		success = teamd_read_config (self);
 
 	if (!success) {
+		teamd_cleanup (self, TRUE);
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
 		return;
 	}
