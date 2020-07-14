@@ -672,9 +672,11 @@ nm_ip4_config_update_routes_metric (NMIP4Config *self, gint64 metric)
 }
 
 static void
-_add_local_route_from_addr4 (NMIP4Config *self,
-                            const NMPlatformIP4Address *addr,
-                            int ifindex)
+_add_local_route_from_addr4 (NMIP4Config *               self,
+                             const NMPlatformIP4Address *addr,
+                             int                         ifindex,
+                             guint32                     route_table,
+                             gboolean                    is_vrf)
 {
 	nm_auto_nmpobj NMPObject *r = NULL;
 	NMPlatformIP4Route *route;
@@ -686,18 +688,19 @@ _add_local_route_from_addr4 (NMIP4Config *self,
 	route->network = addr->address;
 	route->plen = 32;
 	route->pref_src = addr->address;
-	route->table_coerced = nm_platform_route_table_coerce (RT_TABLE_LOCAL);
 	route->type_coerced = nm_platform_route_type_coerce (RTN_LOCAL);
 	route->scope_inv = nm_platform_route_scope_inv (RT_SCOPE_HOST);
+	route->table_coerced = nm_platform_route_table_coerce (is_vrf ? route_table : RT_TABLE_LOCAL);
 
 	_add_route (self, r, NULL, NULL);
 }
 
 void
 nm_ip4_config_add_dependent_routes (NMIP4Config *self,
-                                    guint32 route_table,
-                                    guint32 route_metric,
-                                    GPtrArray **out_ip4_dev_route_blacklist)
+                                    guint32      route_table,
+                                    guint32      route_metric,
+                                    gboolean     is_vrf,
+                                    GPtrArray ** out_ip4_dev_route_blacklist)
 {
 	GPtrArray *ip4_dev_route_blacklist = NULL;
 	const NMPlatformIP4Address *my_addr;
@@ -729,7 +732,7 @@ nm_ip4_config_add_dependent_routes (NMIP4Config *self,
 		if (my_addr->external)
 			continue;
 
-		_add_local_route_from_addr4 (self, my_addr, ifindex);
+		_add_local_route_from_addr4 (self, my_addr, ifindex, route_table, is_vrf);
 
 		if (_ipv4_is_zeronet (network)) {
 			/* Kernel doesn't add device-routes for destinations that

@@ -93,8 +93,9 @@ NMIP6Config *nm_ip6_config_capture (struct _NMDedupMultiIndex *multi_idx, NMPlat
                                     NMSettingIP6ConfigPrivacy use_temporary);
 
 void nm_ip6_config_add_dependent_routes (NMIP6Config *self,
-                                         guint32 route_table,
-                                         guint32 route_metric);
+                                         guint32      route_table,
+                                         guint32      route_metric,
+                                         gboolean     is_vrf);
 
 gboolean nm_ip6_config_commit (const NMIP6Config *self,
                                NMPlatform *platform,
