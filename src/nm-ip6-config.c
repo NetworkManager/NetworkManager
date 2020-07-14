@@ -475,27 +475,32 @@ _add_multicast_route6 (NMIP6Config *self, int ifindex)
 }
 
 static void
-_add_local_route_from_addr6 (NMIP6Config *self, const NMPlatformIP6Address *addr, int ifindex)
+_add_local_route_from_addr6 (NMIP6Config *               self,
+                             const NMPlatformIP6Address *addr,
+                             int                         ifindex,
+                             guint32                     route_table,
+                             gboolean                    is_vrf)
 {
 	nm_auto_nmpobj NMPObject *r = NULL;
-	NMPlatformIP6Route *route;
+	NMPlatformIP6Route *      route;
 
 	r = nmp_object_new (NMP_OBJECT_TYPE_IP6_ROUTE, NULL);
 	route = NMP_OBJECT_CAST_IP6_ROUTE (r);
 	route->ifindex = ifindex;
 	route->network = addr->address;
 	route->plen = 128;
-	route->table_coerced = nm_platform_route_table_coerce (RT_TABLE_LOCAL);
 	route->type_coerced = nm_platform_route_type_coerce (RTN_LOCAL);
 	route->metric = 0;
+	route->table_coerced = nm_platform_route_table_coerce (is_vrf ? route_table : RT_TABLE_LOCAL);
 
 	_add_route (self, r, NULL, NULL);
 }
 
 void
 nm_ip6_config_add_dependent_routes (NMIP6Config *self,
-                                    guint32 route_table,
-                                    guint32 route_metric)
+                                    guint32      route_table,
+                                    guint32      route_metric,
+                                    gboolean     is_vrf)
 {
 	const NMPlatformIP6Address *my_addr;
 	const NMPlatformIP6Route *my_route;
@@ -524,7 +529,7 @@ nm_ip6_config_add_dependent_routes (NMIP6Config *self,
 			continue;
 
 		/* Pre-generate local route added by kernel */
-		_add_local_route_from_addr6 (self, my_addr, ifindex);
+		_add_local_route_from_addr6 (self, my_addr, ifindex, route_table, is_vrf);
 
 		if (NM_FLAGS_HAS (my_addr->n_ifa_flags, IFA_F_NOPREFIXROUTE))
 			continue;
