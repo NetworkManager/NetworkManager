@@ -1067,7 +1067,7 @@ bound4_handle (NMDhcpNettools *self, NDhcp4ClientLease *lease, gboolean extended
 	                          options);
 }
 
-static gboolean
+static void
 dhcp4_event_handle (NMDhcpNettools *self,
                     NDhcp4ClientEvent *event)
 {
@@ -1083,19 +1083,19 @@ dhcp4_event_handle (NMDhcpNettools *self,
 		r = n_dhcp4_client_lease_get_server_identifier (event->offer.lease, &server_id);
 		if (r) {
 			_LOGW ("selecting lease failed: %d", r);
-			return TRUE;
+			return;
 		}
 
 		if (nm_dhcp_client_server_id_is_rejected (NM_DHCP_CLIENT (self), &server_id)) {
 			_LOGD ("server-id %s is in the reject-list, ignoring",
 			       nm_utils_inet_ntop (AF_INET, &server_id, addr_str));
-			return TRUE;
+			return;
 		}
 
 		r = n_dhcp4_client_lease_select (event->offer.lease);
 		if (r) {
 			_LOGW ("selecting lease failed: %d", r);
-			return TRUE;
+			return;
 		}
 		break;
 	case N_DHCP4_CLIENT_EVENT_RETRACTED:
@@ -1131,8 +1131,6 @@ dhcp4_event_handle (NMDhcpNettools *self,
 		_LOGW ("unhandled DHCP event %d", event->event);
 		break;
 	}
-
-	return TRUE;
 }
 
 static gboolean
