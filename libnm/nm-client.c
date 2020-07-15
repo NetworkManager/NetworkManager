@@ -276,6 +276,8 @@ typedef struct {
 	NMLDBusObject *dbobj_settings;
 	NMLDBusObject *dbobj_dns_manager;
 
+	gsize log_call_counter;
+
 	guint8 *permissions;
 	GCancellable *permissions_cancellable;
 
@@ -489,8 +491,15 @@ _nm_client_dbus_call_simple_cb (GObject *source, GAsyncResult *result, gpointer 
 	GAsyncReadyCallback callback;
 	gpointer user_data;
 	gs_unref_object GObject *context_busy_watcher = NULL;
+	gpointer obfuscated_self_ptr;
+	gpointer log_call_counter_ptr;
 
-	nm_utils_user_data_unpack (data, &callback, &user_data, &context_busy_watcher);
+	nm_utils_user_data_unpack (data, &callback, &user_data, &context_busy_watcher, &obfuscated_self_ptr, &log_call_counter_ptr);
+
+	NML_DBUS_LOG (_NML_NMCLIENT_LOG_LEVEL_COERCE (NML_DBUS_LOG_LEVEL_TRACE),
+	              "nmclient["NM_HASH_OBFUSCATE_PTR_FMT"]: call[%"G_GSIZE_FORMAT"] completed",
+	              (guint64) GPOINTER_TO_SIZE (obfuscated_self_ptr),
+	              GPOINTER_TO_SIZE (log_call_counter_ptr));
 
 	callback (source, result, user_data);
 }
@@ -511,6 +520,7 @@ _nm_client_dbus_call_simple (NMClient *self,
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
 	nm_auto_pop_gmaincontext GMainContext *dbus_context = NULL;
 	gs_free char *log_str = NULL;
+	gsize log_call_counter;
 
 	nm_assert (priv->name_owner);
 	nm_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
@@ -523,8 +533,11 @@ _nm_client_dbus_call_simple (NMClient *self,
 
 	dbus_context = nm_g_main_context_push_thread_default_if_necessary (priv->dbus_context);
 
+	log_call_counter = ++priv->log_call_counter;
+
 	NML_NMCLIENT_LOG_T (self,
-	                    "call D-Bus method on %s: %s, %s.%s -> %s (%s)",
+	                    "call[%"G_GSIZE_FORMAT"] D-Bus method on %s: %s, %s.%s -> %s (%s)",
+	                    log_call_counter,
 	                    priv->name_owner,
 	                    object_path,
 	                    interface_name,
@@ -545,7 +558,11 @@ _nm_client_dbus_call_simple (NMClient *self,
 	                        timeout_msec,
 	                        cancellable,
 	                        _nm_client_dbus_call_simple_cb,
-	                        nm_utils_user_data_pack (callback, user_data, g_object_ref (priv->context_busy_watcher)));
+	                        nm_utils_user_data_pack (callback,
+	                                                 user_data,
+	                                                 g_object_ref (priv->context_busy_watcher),
+	                                                 GSIZE_TO_POINTER (NM_HASH_OBFUSCATE_PTR (self)),
+	                                                 GSIZE_TO_POINTER (log_call_counter)));
 }
 
 void
