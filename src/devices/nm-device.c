@@ -68,6 +68,7 @@
 
 #include "nm-device-generic.h"
 #include "nm-device-vlan.h"
+#include "nm-device-vrf.h"
 #include "nm-device-wireguard.h"
 
 #include "nm-device-logging.h"
@@ -8097,15 +8098,21 @@ ip_config_merge_and_apply (NMDevice *self,
 	}
 
 	if (commit) {
+		gboolean is_vrf;
+
+		is_vrf = priv->master && nm_device_get_device_type (priv->master) == NM_DEVICE_TYPE_VRF;
+
 		if (IS_IPv4) {
 			nm_ip4_config_add_dependent_routes (NM_IP4_CONFIG (composite),
 			                                    nm_device_get_route_table (self, addr_family),
 			                                    nm_device_get_route_metric (self, addr_family),
+			                                    is_vrf,
 			                                    &ip4_dev_route_blacklist);
 		} else {
 			nm_ip6_config_add_dependent_routes (NM_IP6_CONFIG (composite),
 			                                    nm_device_get_route_table (self, addr_family),
-			                                    nm_device_get_route_metric (self, addr_family));
+			                                    nm_device_get_route_metric (self, addr_family),
+			                                    is_vrf);
 		}
 	}
 
