@@ -510,6 +510,7 @@ _nm_client_dbus_call_simple (NMClient *self,
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
 	nm_auto_pop_gmaincontext GMainContext *dbus_context = NULL;
+	gs_free char *log_str = NULL;
 
 	nm_assert (priv->name_owner);
 	nm_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
@@ -521,6 +522,17 @@ _nm_client_dbus_call_simple (NMClient *self,
 	nm_assert (reply_type);
 
 	dbus_context = nm_g_main_context_push_thread_default_if_necessary (priv->dbus_context);
+
+	NML_NMCLIENT_LOG_T (self,
+	                    "call D-Bus method on %s: %s, %s.%s -> %s (%s)",
+	                    priv->name_owner,
+	                    object_path,
+	                    interface_name,
+	                    method_name,
+	                    (const char *) reply_type ?: "???",
+	                      parameters
+	                    ? (log_str = g_variant_print (parameters, TRUE))
+	                    : "NULL");
 
 	g_dbus_connection_call (priv->dbus_connection,
 	                        priv->name_owner,
