@@ -55,6 +55,8 @@ typedef enum {
 	                                  | NML_DBUS_LOG_LEVEL_DEBUG,
 	NML_DBUS_LOG_LEVEL_ERROR        =   _NML_DBUS_LOG_LEVEL_ERROR
 	                                  | NML_DBUS_LOG_LEVEL_WARN,
+
+	NML_DBUS_LOG_STDOUT             = 0x20,
 } NMLDBusLogLevel;
 
 #undef _LOGL_TRACE
@@ -74,7 +76,7 @@ extern volatile int _nml_dbus_log_level;
 int _nml_dbus_log_level_init (void);
 
 static inline gboolean
-nml_dbus_log_enabled (NMLDBusLogLevel level)
+nml_dbus_log_enabled_full (NMLDBusLogLevel level, gboolean *out_use_stdout)
 {
 	int l;
 
@@ -90,25 +92,35 @@ nml_dbus_log_enabled (NMLDBusLogLevel level)
 		l = _nml_dbus_log_level_init ();
 
 	nm_assert (l & _NML_DBUS_LOG_LEVEL_INITIALIZED);
+	NM_SET_OUT (out_use_stdout, NM_FLAGS_HAS (l, NML_DBUS_LOG_STDOUT));
 	if (level == NML_DBUS_LOG_LEVEL_ANY)
 		return l != _NML_DBUS_LOG_LEVEL_INITIALIZED;
 	return !!(((NMLDBusLogLevel) l) & level);
 }
 
+static inline gboolean
+nml_dbus_log_enabled (NMLDBusLogLevel level)
+{
+	return nml_dbus_log_enabled_full (level, NULL);
+}
+
 void _nml_dbus_log (NMLDBusLogLevel level,
+                    gboolean use_stdout,
                     const char *fmt,
-                    ...) _nm_printf (2, 3);
+                    ...) _nm_printf (3, 4);
 
 #define NML_DBUS_LOG(level, ...) \
 	G_STMT_START { \
+		gboolean _use_stdout; \
+		\
 		G_STATIC_ASSERT (   (level) == _NML_DBUS_LOG_LEVEL_NONE \
 		                 || (level) == NML_DBUS_LOG_LEVEL_TRACE \
 		                 || (level) == NML_DBUS_LOG_LEVEL_DEBUG \
 		                 || (level) == NML_DBUS_LOG_LEVEL_WARN \
 		                 || (level) == NML_DBUS_LOG_LEVEL_ERROR); \
 		\
-		if (nml_dbus_log_enabled (level)) { \
-			_nml_dbus_log ((level), __VA_ARGS__); \
+		if (nml_dbus_log_enabled_full (level, &_use_stdout)) { \
+			_nml_dbus_log ((level), _use_stdout, __VA_ARGS__); \
 		} \
 	} G_STMT_END
 

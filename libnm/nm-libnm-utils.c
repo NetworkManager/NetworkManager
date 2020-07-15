@@ -24,6 +24,7 @@ _nml_dbus_log_level_init (void)
 		{ "debug",   _NML_DBUS_LOG_LEVEL_DEBUG },
 		{ "warning", _NML_DBUS_LOG_LEVEL_WARN },
 		{ "error",   _NML_DBUS_LOG_LEVEL_ERROR },
+		{ "stdout",  NML_DBUS_LOG_STDOUT },
 	};
 	int l;
 
@@ -41,6 +42,7 @@ _nml_dbus_log_level_init (void)
 
 void
 _nml_dbus_log (NMLDBusLogLevel level,
+               gboolean use_stdout,
                const char *fmt,
                ...) {
 	NMLDBusLogLevel configured_log_level;
@@ -91,11 +93,19 @@ _nml_dbus_log (NMLDBusLogLevel level,
 
 	ts = nm_utils_clock_gettime_nsec (CLOCK_BOOTTIME);
 
-	g_printerr ("libnm-dbus: %s[%"G_GINT64_FORMAT".%05"G_GINT64_FORMAT"] %s\n",
-	            prefix,
-	            ts / NM_UTILS_NSEC_PER_SEC,
-	            (ts / (NM_UTILS_NSEC_PER_SEC / 10000)) % 10000,
-	            msg);
+	if (use_stdout) {
+		g_print ("libnm-dbus: %s[%"G_GINT64_FORMAT".%05"G_GINT64_FORMAT"] %s\n",
+		         prefix,
+		         ts / NM_UTILS_NSEC_PER_SEC,
+		         (ts / (NM_UTILS_NSEC_PER_SEC / 10000)) % 10000,
+		         msg);
+	} else {
+		g_printerr ("libnm-dbus: %s[%"G_GINT64_FORMAT".%05"G_GINT64_FORMAT"] %s\n",
+		            prefix,
+		            ts / NM_UTILS_NSEC_PER_SEC,
+		            (ts / (NM_UTILS_NSEC_PER_SEC / 10000)) % 10000,
+		            msg);
+	}
 }
 
 /*****************************************************************************/
