@@ -55,6 +55,7 @@ test_config (const char *orig,
 	                                      use_fqdn,
 	                                      hostname_flags,
 	                                      mud_url,
+	                                      NULL,
 	                                      "/path/to/dhclient.conf",
 	                                      orig,
 	                                      &new_client_id);

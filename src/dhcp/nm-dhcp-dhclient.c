@@ -148,6 +148,7 @@ merge_dhclient_config (NMDhcpDhclient *self,
                        gboolean use_fqdn,
                        NMDhcpHostnameFlags hostname_flags,
                        const char *mud_url,
+                       const char *const *reject_servers,
                        const char *orig_path,
                        GBytes **out_new_client_id,
                        GError **error)
@@ -178,6 +179,7 @@ merge_dhclient_config (NMDhcpDhclient *self,
 	                                      use_fqdn,
 	                                      hostname_flags,
 	                                      mud_url,
+	                                      reject_servers,
 	                                      orig_path,
 	                                      orig,
 	                                      out_new_client_id);
@@ -271,6 +273,7 @@ create_dhclient_config (NMDhcpDhclient *self,
                         gboolean use_fqdn,
                         NMDhcpHostnameFlags hostname_flags,
                         const char *mud_url,
+                        const char *const *reject_servers,
                         GBytes **out_new_client_id)
 {
 	gs_free char *orig = NULL;
@@ -300,6 +303,7 @@ create_dhclient_config (NMDhcpDhclient *self,
 	                            use_fqdn,
 	                            hostname_flags,
 	                            mud_url,
+	                            reject_servers,
 	                            orig,
 	                            out_new_client_id,
 	                            &error)) {
@@ -501,6 +505,7 @@ ip4_start (NMDhcpClient *client,
 	                                          nm_dhcp_client_get_use_fqdn (client),
 	                                          nm_dhcp_client_get_hostname_flags (client),
 	                                          nm_dhcp_client_get_mud_url (client),
+	                                          nm_dhcp_client_get_reject_servers (client),
 	                                          &new_client_id);
 	if (!priv->conf_file) {
 		nm_utils_error_set_literal (error,
@@ -546,6 +551,7 @@ ip6_start (NMDhcpClient *client,
 	                                          TRUE,
 	                                          nm_dhcp_client_get_hostname_flags (client),
 	                                          nm_dhcp_client_get_mud_url (client),
+	                                          NULL,
 	                                          NULL);
 	if (!priv->conf_file) {
 		nm_utils_error_set_literal (error,

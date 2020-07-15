@@ -307,6 +307,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
                                 gboolean use_fqdn,
                                 NMDhcpHostnameFlags hostname_flags,
                                 const char *mud_url,
+                                const char *const *reject_servers,
                                 const char *orig_path,
                                 const char *orig_contents,
                                 GBytes **out_new_client_id)
@@ -319,6 +320,7 @@ nm_dhcp_dhclient_create_config (const char *interface,
 
 	g_return_val_if_fail (!anycast_addr || nm_utils_hwaddr_valid (anycast_addr, ETH_ALEN), NULL);
 	g_return_val_if_fail (NM_IN_SET (addr_family, AF_INET, AF_INET6), NULL);
+	g_return_val_if_fail (!reject_servers || addr_family == AF_INET, NULL);
 	nm_assert (!out_new_client_id || !*out_new_client_id);
 
 	new_contents = g_string_new (_("# Created by NetworkManager\n"));
@@ -473,6 +475,18 @@ nm_dhcp_dhclient_create_config (const char *interface,
 	}
 
 	add_mud_url_config (new_contents, mud_url, addr_family);
+
+	if (   reject_servers
+	    && reject_servers[0]) {
+		g_string_append (new_contents, "reject ");
+		for (i = 0; reject_servers[i]; i++) {
+			if (i != 0)
+				g_string_append (new_contents, ", ");
+			g_string_append (new_contents, reject_servers[i]);
+		}
+		g_string_append (new_contents, ";\n");
+	}
+
 	if (addr_family == AF_INET) {
 		add_ip4_config (new_contents, client_id, hostname, use_fqdn, hostname_flags);
 		add_request (reqs, "rfc3442-classless-static-routes");

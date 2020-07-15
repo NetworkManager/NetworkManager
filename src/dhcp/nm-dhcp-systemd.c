@@ -524,6 +524,10 @@ dhcp_event_cb (sd_dhcp_client *client, int event, gpointer user_data)
 {
 	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (user_data);
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
+	char addr_str[INET_ADDRSTRLEN];
+	sd_dhcp_lease *lease;
+	struct in_addr addr;
+	int r;
 
 	nm_assert (priv->client4 == client);
 
@@ -544,6 +548,17 @@ dhcp_event_cb (sd_dhcp_client *client, int event, gpointer user_data)
 		bound4_handle (self, FALSE);
 		break;
 	case SD_DHCP_CLIENT_EVENT_SELECTING:
+		r = sd_dhcp_client_get_lease (priv->client4, &lease);
+		if (r < 0)
+			return r;
+		r = sd_dhcp_lease_get_server_identifier (lease, &addr);
+		if (r < 0)
+			return r;
+		if (nm_dhcp_client_server_id_is_rejected (NM_DHCP_CLIENT (user_data), &addr)) {
+			_LOGD ("server-id %s is in the reject-list, ignoring",
+			       nm_utils_inet_ntop (AF_INET, &addr, addr_str));
+			return -ENOMSG;
+		}
 		break;
 	default:
 		_LOGW ("unhandled DHCP event %d", event);
