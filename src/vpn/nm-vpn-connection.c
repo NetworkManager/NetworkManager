@@ -1447,6 +1447,20 @@ get_route_table (NMVpnConnection *self,
 	return route_table ?: (fallback_main ? RT_TABLE_MAIN : 0);
 }
 
+static gboolean
+_is_device_vrf (NMVpnConnection *self)
+{
+	NMDevice *parent;
+	NMDevice *master;
+
+	parent = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (self));
+	if (!parent)
+		return FALSE;
+
+	master = nm_device_get_master (parent);
+	return master && nm_device_get_link_type (master) == NM_LINK_TYPE_VRF;
+}
+
 static void
 nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 {
@@ -1646,6 +1660,7 @@ nm_vpn_connection_ip4_config_get (NMVpnConnection *self, GVariant *dict)
 	nm_ip4_config_add_dependent_routes (config,
 	                                    route_table,
 	                                    nm_vpn_connection_get_ip4_route_metric (self),
+	                                    _is_device_vrf (self),
 	                                    &priv->ip4_dev_route_blacklist);
 
 	if (priv->ip4_config) {
@@ -1840,9 +1855,7 @@ next:
 		nm_ip6_config_add_route (config, &r, NULL);
 	}
 
-	nm_ip6_config_add_dependent_routes (config,
-	                                    route_table,
-	                                    route_metric);
+	nm_ip6_config_add_dependent_routes (config, route_table, route_metric, _is_device_vrf (self));
 
 	if (priv->ip6_config) {
 		nm_ip6_config_replace (priv->ip6_config, config, NULL);

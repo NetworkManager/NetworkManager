@@ -41,11 +41,13 @@
 static struct {
 	GMainLoop *main_loop;
 	int ifindex;
+	gboolean is_vrf_device;
 
 	guint dad_failed_id;
 	CList dad_failed_lst_head;
 } gl/*obal*/ = {
 	.ifindex = -1,
+	.is_vrf_device = FALSE,
 };
 
 static struct {
@@ -120,6 +122,7 @@ dhcp4_state_changed (NMDhcpClient *client,
 		nm_ip4_config_add_dependent_routes (existing,
 		                                    RT_TABLE_MAIN,
 		                                    global_opt.priority_v4,
+		                                    gl.is_vrf_device,
 		                                    &ip4_dev_route_blacklist);
 		if (!nm_ip4_config_commit (existing,
 		                           NM_PLATFORM_GET,
@@ -236,7 +239,8 @@ ndisc_config_changed (NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_in
 	nm_ip6_config_merge (existing, ndisc_config, NM_IP_CONFIG_MERGE_DEFAULT, 0);
 	nm_ip6_config_add_dependent_routes (existing,
 	                                    RT_TABLE_MAIN,
-	                                    global_opt.priority_v6);
+	                                    global_opt.priority_v6,
+	                                    gl.is_vrf_device);
 	if (!nm_ip6_config_commit (existing,
 	                           NM_PLATFORM_GET,
 	                           NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN,
@@ -480,6 +484,11 @@ main (int argc, char *argv[])
 	if (pllink) {
 		hwaddr = nmp_link_address_get_as_bytes (&pllink->l_address);
 		bcast_hwaddr = nmp_link_address_get_as_bytes (&pllink->l_broadcast);
+
+		if (pllink->master > 0) {
+			gl.is_vrf_device
+			    = nm_platform_link_get_type (NM_PLATFORM_GET, pllink->master) == NM_LINK_TYPE_VRF;
+		}
 	}
 
 	if (global_opt.iid_str) {
