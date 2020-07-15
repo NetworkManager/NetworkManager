@@ -121,7 +121,11 @@
 %global dns_rc_manager_default file
 %endif
 
+%if 0%{?rhel} > 8 || 0%{?fedora} > 32
+%global config_plugins_default keyfile,ifcfg-rh
+%else
 %global config_plugins_default ifcfg-rh
+%endif
 
 %if 0%{?fedora}
 # Although eBPF would be available on Fedora's kernel, it seems
