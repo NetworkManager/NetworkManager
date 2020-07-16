@@ -1807,7 +1807,7 @@ device_state_changed (NMDevice *device,
 		if (   sett_conn
 		    && old_state >= NM_DEVICE_STATE_PREPARE
 		    && old_state <= NM_DEVICE_STATE_ACTIVATED) {
-			gboolean block_no_secrets = FALSE;
+			gboolean blocked = FALSE;
 			int tries;
 			guint64 con_v;
 
@@ -1827,15 +1827,32 @@ device_state_changed (NMDevice *device,
 				 */
 				con_v = nm_settings_connection_get_last_secret_agent_version_id (sett_conn);
 				if (   con_v == 0
-				    || con_v == nm_agent_manager_get_agent_version_id (priv->agent_mgr))
-					block_no_secrets = TRUE;
+				    || con_v == nm_agent_manager_get_agent_version_id (priv->agent_mgr)) {
+					_LOGD (LOGD_DEVICE, "connection '%s' now blocked from autoconnect due to no secrets",
+					       nm_settings_connection_get_id (sett_conn));
+					nm_settings_connection_autoconnect_blocked_reason_set (sett_conn,
+					                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS,
+					                                                       TRUE);
+					blocked = TRUE;
+				}
+			} else if (nm_device_state_reason_check (reason) == NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED) {
+				/* A connection that fails due to dependency-failed is not
+				 * able to reconnect until the master connection activates
+				 * again; when this happens, the master clears the blocked
+				 * reason for all its slaves in activate_slave_connections()
+				 * and tries to reconnect them. For this to work, the slave
+				 * should be marked as blocked when it fails with
+				 * dependency-failed.
+				 */
+				_LOGD (LOGD_DEVICE, "connection '%s' now blocked from autoconnect due to failed dependency",
+				       nm_settings_connection_get_id (sett_conn));
+				nm_settings_connection_autoconnect_blocked_reason_set (sett_conn,
+				                                                       NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
+				                                                       TRUE);
+				blocked = TRUE;
 			}
 
-			if (block_no_secrets) {
-				_LOGD (LOGD_DEVICE, "connection '%s' now blocked from autoconnect due to no secrets",
-				       nm_settings_connection_get_id (sett_conn));
-				nm_settings_connection_autoconnect_blocked_reason_set (sett_conn, NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS, TRUE);
-			} else {
+			if (!blocked) {
 				tries = nm_settings_connection_autoconnect_retries_get (sett_conn);
 				if (tries > 0) {
 					_LOGD (LOGD_DEVICE, "connection '%s' failed to autoconnect; %d tries left",
