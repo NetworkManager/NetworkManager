@@ -23,6 +23,7 @@ typedef struct _NMDBusManager        NMDBusManager;
 typedef struct _NMConfig             NMConfig;
 typedef struct _NMConfigData         NMConfigData;
 typedef struct _NMConnectivity       NMConnectivity;
+typedef struct _NML3Cfg              NML3Cfg;
 typedef struct _NMDevice             NMDevice;
 typedef struct _NMDhcpConfig         NMDhcpConfig;
 typedef struct _NMProxyConfig        NMProxyConfig;

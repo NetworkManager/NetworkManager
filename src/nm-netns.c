@@ -11,6 +11,7 @@
 
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
+#include "nm-l3cfg.h"
 #include "platform/nm-platform.h"
 #include "platform/nmp-netns.h"
 #include "platform/nmp-rules-manager.h"
@@ -25,6 +26,7 @@ typedef struct {
 	NMPlatform *platform;
 	NMPNetns *platform_netns;
 	NMPRulesManager *rules_manager;
+	GHashTable *l3cfgs;
 } NMNetnsPrivate;
 
 struct _NMNetns {
@@ -39,6 +41,18 @@ struct _NMNetnsClass {
 G_DEFINE_TYPE (NMNetns, nm_netns, G_TYPE_OBJECT);
 
 #define NM_NETNS_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMNetns, NM_IS_NETNS)
+
+/*****************************************************************************/
+
+#define _NMLOG_DOMAIN      LOGD_CORE
+#define _NMLOG_PREFIX_NAME "netns"
+#define _NMLOG(level, ...) \
+    G_STMT_START { \
+        nm_log ((level), (_NMLOG_DOMAIN), NULL, NULL, \
+                "netns["NM_HASH_OBFUSCATE_PTR_FMT"]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                NM_HASH_OBFUSCATE_PTR (self) \
+                _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    } G_STMT_END
 
 /*****************************************************************************/
 
@@ -68,6 +82,80 @@ NMDedupMultiIndex *
 nm_netns_get_multi_idx (NMNetns *self)
 {
 	return nm_platform_get_multi_idx (NM_NETNS_GET_PRIVATE (self)->platform);
+}
+
+/*****************************************************************************/
+
+typedef struct {
+	int ifindex;
+	NML3Cfg *l3cfg;
+} L3CfgData;
+
+static void
+_l3cfg_data_free (gpointer ptr)
+{
+	L3CfgData *l3cfg_data = ptr;
+
+	nm_g_slice_free (l3cfg_data);
+}
+
+static void
+_l3cfg_weak_notify (gpointer data,
+                    GObject *where_the_object_was)
+{
+	NMNetns *self = NM_NETNS (data);
+	NMNetnsPrivate *priv = NM_NETNS_GET_PRIVATE(data);
+	NML3Cfg *l3cfg = NM_L3CFG (where_the_object_was);
+	int ifindex = nm_l3cfg_get_ifindex (l3cfg);
+
+	if (!g_hash_table_remove (priv->l3cfgs, &ifindex))
+		nm_assert_not_reached ();
+
+	if (NM_UNLIKELY (g_hash_table_size (priv->l3cfgs) == 0))
+		g_object_unref (self);
+}
+
+NML3Cfg *
+nm_netns_access_l3cfg (NMNetns *self,
+                       int ifindex)
+{
+	NMNetnsPrivate *priv;
+	L3CfgData *l3cfg_data;
+
+	g_return_val_if_fail (NM_IS_NETNS (self), NULL);
+	g_return_val_if_fail (ifindex > 0, NULL);
+
+	priv = NM_NETNS_GET_PRIVATE (self);
+
+	l3cfg_data = g_hash_table_lookup (priv->l3cfgs, &ifindex);
+
+	if (l3cfg_data) {
+		nm_log_trace (LOGD_CORE,
+		              "l3cfg["NM_HASH_OBFUSCATE_PTR_FMT",ifindex=%d] %s",
+		              NM_HASH_OBFUSCATE_PTR (l3cfg_data->l3cfg),
+		              ifindex,
+		              "referenced");
+		return g_object_ref (l3cfg_data->l3cfg);
+	}
+
+	l3cfg_data = g_slice_new (L3CfgData);
+	*l3cfg_data = (L3CfgData) {
+		.ifindex = ifindex,
+		.l3cfg   = nm_l3cfg_new (self, ifindex),
+	};
+
+	if (!g_hash_table_add (priv->l3cfgs, l3cfg_data))
+		nm_assert_not_reached ();
+
+	if (NM_UNLIKELY (g_hash_table_size (priv->l3cfgs) == 1))
+		g_object_ref (self);
+
+	g_object_weak_ref (G_OBJECT (l3cfg_data->l3cfg),
+	                   _l3cfg_weak_notify,
+	                   self);
+
+	/* Transfer ownership! We keep only a weak ref. */
+	return l3cfg_data->l3cfg;
 }
 
 /*****************************************************************************/
@@ -108,6 +196,8 @@ constructed (GObject *object)
 
 	if (!priv->platform)
 		g_return_if_reached ();
+
+	priv->l3cfgs = g_hash_table_new_full (nm_pint_hash, nm_pint_equals, _l3cfg_data_free, NULL);
 
 	priv->platform_netns = nm_platform_netns_get (priv->platform);
 
@@ -152,7 +242,10 @@ dispose (GObject *object)
 	NMNetns *self = NM_NETNS (object);
 	NMNetnsPrivate *priv = NM_NETNS_GET_PRIVATE (self);
 
+	nm_assert (nm_g_hash_table_size (priv->l3cfgs) == 0);
+
 	g_clear_object (&priv->platform);
+	g_clear_pointer (&priv->l3cfgs, g_hash_table_unref);
 
 	nm_clear_pointer (&priv->rules_manager, nmp_rules_manager_unref);
 
