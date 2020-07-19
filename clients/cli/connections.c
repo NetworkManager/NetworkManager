@@ -70,7 +70,7 @@ NM_UTILS_LOOKUP_STR_DEFINE (active_connection_state_to_string, NMActiveConnectio
 	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_DEACTIVATING, N_("deactivating")),
 	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,  N_("deactivated")),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (NM_ACTIVE_CONNECTION_STATE_UNKNOWN),
-)
+);
 
 static
 NM_UTILS_LOOKUP_STR_DEFINE (vpn_connection_state_to_string, NMVpnConnectionState,
@@ -83,7 +83,7 @@ NM_UTILS_LOOKUP_STR_DEFINE (vpn_connection_state_to_string, NMVpnConnectionState
 	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_FAILED,        N_("VPN connection failed")),
 	NM_UTILS_LOOKUP_ITEM (NM_VPN_CONNECTION_STATE_DISCONNECTED,  N_("VPN disconnected")),
 	NM_UTILS_LOOKUP_ITEM_IGNORE (NM_VPN_CONNECTION_STATE_UNKNOWN),
-)
+);
 
 /*****************************************************************************/
 

@@ -725,6 +725,7 @@ _notify##suffix (obj_type *obj, _PropertyEnums##suffix prop) \
 { \
 	_nm_gobject_notify_together_impl##suffix (obj, 1, &prop); \
 } \
+_NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
 #define NM_GOBJECT_PROPERTIES_DEFINE_BASE(...) \
 	NM_GOBJECT_PROPERTIES_DEFINE_BASE_FULL (, __VA_ARGS__); \
@@ -1018,7 +1019,7 @@ fcn_name (lookup_type val) \
 		(void) 0; \
 	}; \
 	{ unknown_val; } \
-}
+} _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
 #define NM_UTILS_LOOKUP_STR_DEFINE(fcn_name, lookup_type, unknown_val, ...) \
 	NM_UTILS_LOOKUP_DEFINE (fcn_name, lookup_type, const char *, unknown_val, __VA_ARGS__)

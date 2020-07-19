@@ -263,7 +263,7 @@ NM_UTILS_LOOKUP_STR_DEFINE (nmc_device_state_to_string, NMDeviceState,
 	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_DEACTIVATING, N_("deactivating")),
 	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_FAILED,       N_("connection failed")),
 	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_UNKNOWN,      N_("unknown")),
-)
+);
 
 static
 NM_UTILS_LOOKUP_STR_DEFINE (_device_state_to_string, NMDeviceState,
@@ -278,7 +278,7 @@ NM_UTILS_LOOKUP_STR_DEFINE (_device_state_to_string, NMDeviceState,
 	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_DEACTIVATING, N_("deactivating (externally)")),
 	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_FAILED,       N_("deactivating (externally)")),
 	NM_UTILS_LOOKUP_ITEM_IGNORE_OTHER (),
-)
+);
 
 const char *
 nmc_device_state_to_string_with_external (NMDevice *device)
@@ -304,7 +304,7 @@ NM_UTILS_LOOKUP_STR_DEFINE (nmc_device_metered_to_string, NMMetered,
 	NM_UTILS_LOOKUP_ITEM (NM_METERED_GUESS_YES, N_("yes (guessed)")),
 	NM_UTILS_LOOKUP_ITEM (NM_METERED_GUESS_NO,  N_("no (guessed)")),
 	NM_UTILS_LOOKUP_ITEM (NM_METERED_UNKNOWN,   N_("unknown")),
-)
+);
 
 NM_UTILS_LOOKUP_STR_DEFINE (nmc_device_reason_to_string, NMDeviceStateReason,
 	/* TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason) */
@@ -377,7 +377,7 @@ NM_UTILS_LOOKUP_STR_DEFINE (nmc_device_reason_to_string, NMDeviceStateReason,
 	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_IP_METHOD_UNSUPPORTED,          N_("The selected IP method is not supported")),
 	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED,     N_("Failed to configure SR-IOV parameters")),
 	NM_UTILS_LOOKUP_ITEM (NM_DEVICE_STATE_REASON_PEER_NOT_FOUND,                 N_("The Wi-Fi P2P peer could not be found")),
-)
+);
 
 NM_UTILS_LOOKUP_STR_DEFINE (nm_active_connection_state_reason_to_string, NMActiveConnectionStateReason,
 	/* TRANSLATORS: Unknown reason for a connection state change (NMActiveConnectionStateReason) */
@@ -397,7 +397,7 @@ NM_UTILS_LOOKUP_STR_DEFINE (nm_active_connection_state_reason_to_string, NMActiv
 	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_REASON_DEPENDENCY_FAILED,     N_("Master connection failed")),
 	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REALIZE_FAILED, N_("Could not create a software link")),
 	NM_UTILS_LOOKUP_ITEM (NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_REMOVED,        N_("The device disappeared")),
-)
+);
 
 NMActiveConnectionState
 nmc_activation_get_effective_state (NMActiveConnection *active,
