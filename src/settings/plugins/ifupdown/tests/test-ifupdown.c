@@ -135,7 +135,7 @@ expected_free (Expected *e)
 	g_free (e);
 }
 
-NM_AUTO_DEFINE_FCN_VOID0 (Expected *, _nm_auto_free_expected, expected_free)
+NM_AUTO_DEFINE_FCN_VOID0 (Expected *, _nm_auto_free_expected, expected_free);
 #define nm_auto_free_expected nm_auto(_nm_auto_free_expected)
 
 static void

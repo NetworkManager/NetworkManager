@@ -1336,7 +1336,7 @@ nm_g_source_destroy_and_unref (GSource *source)
 NM_AUTO_DEFINE_FCN0 (GSource *, _nm_auto_destroy_and_unref_gsource, nm_g_source_destroy_and_unref);
 #define nm_auto_destroy_and_unref_gsource nm_auto(_nm_auto_destroy_and_unref_gsource)
 
-NM_AUTO_DEFINE_FCN0 (GMainContext *, _nm_auto_pop_gmaincontext, g_main_context_pop_thread_default)
+NM_AUTO_DEFINE_FCN0 (GMainContext *, _nm_auto_pop_gmaincontext, g_main_context_pop_thread_default);
 #define nm_auto_pop_gmaincontext nm_auto (_nm_auto_pop_gmaincontext)
 
 static inline gboolean
@@ -1379,7 +1379,7 @@ nm_g_source_attach (GSource *source,
 	return source;
 }
 
-NM_AUTO_DEFINE_FCN0 (GMainContext *, _nm_auto_unref_gmaincontext, g_main_context_unref)
+NM_AUTO_DEFINE_FCN0 (GMainContext *, _nm_auto_unref_gmaincontext, g_main_context_unref);
 #define nm_auto_unref_gmaincontext nm_auto (_nm_auto_unref_gmaincontext)
 
 static inline GMainContext *

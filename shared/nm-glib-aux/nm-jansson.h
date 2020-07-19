@@ -22,7 +22,7 @@
              n = json_object_iter_next(object, json_object_key_to_iter(key)))
 #endif
 
-NM_AUTO_DEFINE_FCN0 (json_t *, _nm_auto_decref_json, json_decref)
+NM_AUTO_DEFINE_FCN0 (json_t *, _nm_auto_decref_json, json_decref);
 #define nm_auto_decref_json nm_auto(_nm_auto_decref_json)
 
 #endif /* WITH_JANSON */

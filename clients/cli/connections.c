@@ -120,7 +120,7 @@ _add_connection_info_free (AddConnectionInfo *info)
 	nm_g_slice_free (info);
 }
 
-NM_AUTO_DEFINE_FCN (AddConnectionInfo *, _nm_auto_free_add_connection_info, _add_connection_info_free)
+NM_AUTO_DEFINE_FCN (AddConnectionInfo *, _nm_auto_free_add_connection_info, _add_connection_info_free);
 
 #define nm_auto_free_add_connection_info nm_auto (_nm_auto_free_add_connection_info)
 

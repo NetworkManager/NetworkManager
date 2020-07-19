@@ -694,7 +694,7 @@ NMLDBusObject *nml_dbus_object_ref (NMLDBusObject *dbobj);
 
 void nml_dbus_object_unref (NMLDBusObject *dbobj);
 
-NM_AUTO_DEFINE_FCN0 (NMLDBusObject *, _nm_auto_unref_nml_dbusobj, nml_dbus_object_unref)
+NM_AUTO_DEFINE_FCN0 (NMLDBusObject *, _nm_auto_unref_nml_dbusobj, nml_dbus_object_unref);
 #define nm_auto_unref_nml_dbusobj nm_auto (_nm_auto_unref_nml_dbusobj)
 
 gpointer nml_dbus_object_get_property_location (NMLDBusObject *dbobj,

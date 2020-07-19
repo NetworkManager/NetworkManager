@@ -32,7 +32,7 @@ nm_ref_string_unref (NMRefString *rstr)
 		_nm_ref_string_unref_non_null (rstr);
 }
 
-NM_AUTO_DEFINE_FCN_VOID0 (NMRefString *, _nm_auto_ref_string, _nm_ref_string_unref_non_null)
+NM_AUTO_DEFINE_FCN_VOID0 (NMRefString *, _nm_auto_ref_string, _nm_ref_string_unref_non_null);
 #define nm_auto_ref_string nm_auto(_nm_auto_ref_string)
 
 /*****************************************************************************/

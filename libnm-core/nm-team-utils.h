@@ -127,7 +127,7 @@ NMTeamSetting *nm_team_setting_new (gboolean is_port,
 
 void nm_team_setting_free (NMTeamSetting *self);
 
-NM_AUTO_DEFINE_FCN0 (NMTeamSetting *, _nm_auto_free_team_setting, nm_team_setting_free)
+NM_AUTO_DEFINE_FCN0 (NMTeamSetting *, _nm_auto_free_team_setting, nm_team_setting_free);
 #define nm_auto_free_team_setting nm_auto (_nm_auto_free_team_setting)
 
 /*****************************************************************************/

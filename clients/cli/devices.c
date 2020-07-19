@@ -1893,7 +1893,7 @@ add_and_activate_info_free (AddAndActivateInfo *info)
 	nm_g_slice_free (info);
 }
 
-NM_AUTO_DEFINE_FCN0 (AddAndActivateInfo *, _nm_auto_free_add_and_activate_info, add_and_activate_info_free)
+NM_AUTO_DEFINE_FCN0 (AddAndActivateInfo *, _nm_auto_free_add_and_activate_info, add_and_activate_info_free);
 #define nm_auto_free_add_and_activate_info nm_auto (_nm_auto_free_add_and_activate_info)
 
 static void
@@ -2274,7 +2274,7 @@ modify_info_free (ModifyInfo *info)
 	nm_g_slice_free (info);
 }
 
-NM_AUTO_DEFINE_FCN_VOID0 (ModifyInfo *, _auto_free_modify_info, modify_info_free)
+NM_AUTO_DEFINE_FCN_VOID0 (ModifyInfo *, _auto_free_modify_info, modify_info_free);
 
 static void
 modify_reapply_cb (GObject *object, GAsyncResult *result, gpointer user_data)

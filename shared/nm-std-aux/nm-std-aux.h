@@ -476,27 +476,27 @@ nm_close (int fd)
 static inline void name (void *v) \
 { \
 	func (*((CastType *) v)); \
-}
+} _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
 #define NM_AUTO_DEFINE_FCN_VOID0(CastType, name, func) \
 static inline void name (void *v) \
 { \
 	if (*((CastType *) v)) \
 		func (*((CastType *) v)); \
-}
+} _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
 #define NM_AUTO_DEFINE_FCN(Type, name, func) \
 static inline void name (Type *v) \
 { \
 	func (*v); \
-}
+} _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
 #define NM_AUTO_DEFINE_FCN0(Type, name, func) \
 static inline void name (Type *v) \
 { \
 	if (*v) \
 		func (*v); \
-}
+} _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
 /*****************************************************************************/
 
@@ -514,7 +514,7 @@ static inline void name (Type *v) \
  * However, let's never mix them. To free malloc'ed memory, always use
  * free() or nm_auto_free.
  */
-NM_AUTO_DEFINE_FCN_VOID0 (void *, _nm_auto_free_impl, free)
+NM_AUTO_DEFINE_FCN_VOID0 (void *, _nm_auto_free_impl, free);
 #define nm_auto_free nm_auto(_nm_auto_free_impl)
 
 /*****************************************************************************/

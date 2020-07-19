@@ -19,31 +19,31 @@
 /****************************************************************************/
 
 #define nm_auto_unref_ip_address nm_auto (_nm_ip_address_unref)
-NM_AUTO_DEFINE_FCN0 (NMIPAddress *, _nm_ip_address_unref, nm_ip_address_unref)
+NM_AUTO_DEFINE_FCN0 (NMIPAddress *, _nm_ip_address_unref, nm_ip_address_unref);
 
 #define nm_auto_unref_ip_route nm_auto (_nm_auto_unref_ip_route)
-NM_AUTO_DEFINE_FCN0 (NMIPRoute *, _nm_auto_unref_ip_route, nm_ip_route_unref)
+NM_AUTO_DEFINE_FCN0 (NMIPRoute *, _nm_auto_unref_ip_route, nm_ip_route_unref);
 
 #define nm_auto_unref_ip_routing_rule nm_auto(_nm_auto_unref_ip_routing_rule)
-NM_AUTO_DEFINE_FCN0 (NMIPRoutingRule *, _nm_auto_unref_ip_routing_rule, nm_ip_routing_rule_unref)
+NM_AUTO_DEFINE_FCN0 (NMIPRoutingRule *, _nm_auto_unref_ip_routing_rule, nm_ip_routing_rule_unref);
 
 #define nm_auto_unref_sriov_vf nm_auto (_nm_auto_unref_sriov_vf)
-NM_AUTO_DEFINE_FCN0 (NMSriovVF *, _nm_auto_unref_sriov_vf, nm_sriov_vf_unref)
+NM_AUTO_DEFINE_FCN0 (NMSriovVF *, _nm_auto_unref_sriov_vf, nm_sriov_vf_unref);
 
 #define nm_auto_unref_tc_qdisc nm_auto (_nm_auto_unref_tc_qdisc)
-NM_AUTO_DEFINE_FCN0 (NMTCQdisc *, _nm_auto_unref_tc_qdisc, nm_tc_qdisc_unref)
+NM_AUTO_DEFINE_FCN0 (NMTCQdisc *, _nm_auto_unref_tc_qdisc, nm_tc_qdisc_unref);
 
 #define nm_auto_unref_tc_tfilter nm_auto (_nm_auto_unref_tc_tfilter)
-NM_AUTO_DEFINE_FCN0 (NMTCTfilter *, _nm_auto_unref_tc_tfilter, nm_tc_tfilter_unref)
+NM_AUTO_DEFINE_FCN0 (NMTCTfilter *, _nm_auto_unref_tc_tfilter, nm_tc_tfilter_unref);
 
 #define nm_auto_unref_bridge_vlan nm_auto (_nm_auto_unref_bridge_vlan)
-NM_AUTO_DEFINE_FCN0 (NMBridgeVlan *, _nm_auto_unref_bridge_vlan, nm_bridge_vlan_unref)
+NM_AUTO_DEFINE_FCN0 (NMBridgeVlan *, _nm_auto_unref_bridge_vlan, nm_bridge_vlan_unref);
 
 #define nm_auto_unref_team_link_watcher nm_auto (_nm_auto_unref_team_link_watcher)
-NM_AUTO_DEFINE_FCN0 (NMTeamLinkWatcher *, _nm_auto_unref_team_link_watcher, nm_team_link_watcher_unref)
+NM_AUTO_DEFINE_FCN0 (NMTeamLinkWatcher *, _nm_auto_unref_team_link_watcher, nm_team_link_watcher_unref);
 
 #define nm_auto_unref_wgpeer nm_auto (_nm_auto_unref_wgpeer)
-NM_AUTO_DEFINE_FCN0 (NMWireGuardPeer *, _nm_auto_unref_wgpeer, nm_wireguard_peer_unref)
+NM_AUTO_DEFINE_FCN0 (NMWireGuardPeer *, _nm_auto_unref_wgpeer, nm_wireguard_peer_unref);
 
 /****************************************************************************/
 

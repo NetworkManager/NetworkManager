@@ -44,7 +44,7 @@
  * Call g_free() on a variable location when it goes out of scope.
  */
 #define gs_free nm_auto(gs_local_free)
-NM_AUTO_DEFINE_FCN_VOID0 (void *, gs_local_free, g_free)
+NM_AUTO_DEFINE_FCN_VOID0 (void *, gs_local_free, g_free);
 
 /**
  * gs_unref_object:
@@ -54,7 +54,7 @@ NM_AUTO_DEFINE_FCN_VOID0 (void *, gs_local_free, g_free)
  * %NULL.
  */
 #define gs_unref_object nm_auto(gs_local_obj_unref)
-NM_AUTO_DEFINE_FCN_VOID0 (GObject *, gs_local_obj_unref, g_object_unref)
+NM_AUTO_DEFINE_FCN_VOID0 (GObject *, gs_local_obj_unref, g_object_unref);
 
 /**
  * gs_unref_variant:
@@ -64,7 +64,7 @@ NM_AUTO_DEFINE_FCN_VOID0 (GObject *, gs_local_obj_unref, g_object_unref)
  * %NULL.
  */
 #define gs_unref_variant nm_auto(gs_local_variant_unref)
-NM_AUTO_DEFINE_FCN0 (GVariant *, gs_local_variant_unref, g_variant_unref)
+NM_AUTO_DEFINE_FCN0 (GVariant *, gs_local_variant_unref, g_variant_unref);
 
 /**
  * gs_unref_array:
@@ -75,7 +75,7 @@ NM_AUTO_DEFINE_FCN0 (GVariant *, gs_local_variant_unref, g_variant_unref)
 
  */
 #define gs_unref_array nm_auto(gs_local_array_unref)
-NM_AUTO_DEFINE_FCN0 (GArray *, gs_local_array_unref, g_array_unref)
+NM_AUTO_DEFINE_FCN0 (GArray *, gs_local_array_unref, g_array_unref);
 
 /**
  * gs_unref_ptrarray:
@@ -86,7 +86,7 @@ NM_AUTO_DEFINE_FCN0 (GArray *, gs_local_array_unref, g_array_unref)
 
  */
 #define gs_unref_ptrarray nm_auto(gs_local_ptrarray_unref)
-NM_AUTO_DEFINE_FCN0 (GPtrArray *, gs_local_ptrarray_unref, g_ptr_array_unref)
+NM_AUTO_DEFINE_FCN0 (GPtrArray *, gs_local_ptrarray_unref, g_ptr_array_unref);
 
 /**
  * gs_unref_hashtable:
@@ -96,7 +96,7 @@ NM_AUTO_DEFINE_FCN0 (GPtrArray *, gs_local_ptrarray_unref, g_ptr_array_unref)
  * be %NULL.
  */
 #define gs_unref_hashtable nm_auto(gs_local_hashtable_unref)
-NM_AUTO_DEFINE_FCN0 (GHashTable *, gs_local_hashtable_unref, g_hash_table_unref)
+NM_AUTO_DEFINE_FCN0 (GHashTable *, gs_local_hashtable_unref, g_hash_table_unref);
 
 /**
  * gs_free_slist:
@@ -105,7 +105,7 @@ NM_AUTO_DEFINE_FCN0 (GHashTable *, gs_local_hashtable_unref, g_hash_table_unref)
  * of scope.
  */
 #define gs_free_slist nm_auto(gs_local_free_slist)
-NM_AUTO_DEFINE_FCN0 (GSList *, gs_local_free_slist, g_slist_free)
+NM_AUTO_DEFINE_FCN0 (GSList *, gs_local_free_slist, g_slist_free);
 
 /**
  * gs_unref_bytes:
@@ -115,7 +115,7 @@ NM_AUTO_DEFINE_FCN0 (GSList *, gs_local_free_slist, g_slist_free)
  * be %NULL.
  */
 #define gs_unref_bytes nm_auto(gs_local_bytes_unref)
-NM_AUTO_DEFINE_FCN0 (GBytes *, gs_local_bytes_unref, g_bytes_unref)
+NM_AUTO_DEFINE_FCN0 (GBytes *, gs_local_bytes_unref, g_bytes_unref);
 
 /**
  * gs_strfreev:
@@ -123,7 +123,7 @@ NM_AUTO_DEFINE_FCN0 (GBytes *, gs_local_bytes_unref, g_bytes_unref)
  * Call g_strfreev() on a variable location when it goes out of scope.
  */
 #define gs_strfreev nm_auto(gs_local_strfreev)
-NM_AUTO_DEFINE_FCN0 (char **, gs_local_strfreev, g_strfreev)
+NM_AUTO_DEFINE_FCN0 (char **, gs_local_strfreev, g_strfreev);
 
 /**
  * gs_free_error:
@@ -131,7 +131,7 @@ NM_AUTO_DEFINE_FCN0 (char **, gs_local_strfreev, g_strfreev)
  * Call g_error_free() on a variable location when it goes out of scope.
  */
 #define gs_free_error nm_auto(gs_local_free_error)
-NM_AUTO_DEFINE_FCN0 (GError *, gs_local_free_error, g_error_free)
+NM_AUTO_DEFINE_FCN0 (GError *, gs_local_free_error, g_error_free);
 
 /**
  * gs_unref_keyfile:
@@ -139,7 +139,7 @@ NM_AUTO_DEFINE_FCN0 (GError *, gs_local_free_error, g_error_free)
  * Call g_key_file_unref() on a variable location when it goes out of scope.
  */
 #define gs_unref_keyfile nm_auto(gs_local_keyfile_unref)
-NM_AUTO_DEFINE_FCN0 (GKeyFile *, gs_local_keyfile_unref, g_key_file_unref)
+NM_AUTO_DEFINE_FCN0 (GKeyFile *, gs_local_keyfile_unref, g_key_file_unref);
 
 /*****************************************************************************/
 
@@ -151,26 +151,26 @@ NM_AUTO_DEFINE_FCN0 (GKeyFile *, gs_local_keyfile_unref, g_key_file_unref)
 
 /*****************************************************************************/
 
-NM_AUTO_DEFINE_FCN0 (GVariantIter *, _nm_auto_free_variant_iter, g_variant_iter_free)
+NM_AUTO_DEFINE_FCN0 (GVariantIter *, _nm_auto_free_variant_iter, g_variant_iter_free);
 #define nm_auto_free_variant_iter nm_auto(_nm_auto_free_variant_iter)
 
-NM_AUTO_DEFINE_FCN0 (GVariantBuilder *, _nm_auto_unref_variant_builder, g_variant_builder_unref)
+NM_AUTO_DEFINE_FCN0 (GVariantBuilder *, _nm_auto_unref_variant_builder, g_variant_builder_unref);
 #define nm_auto_unref_variant_builder nm_auto(_nm_auto_unref_variant_builder)
 
 #define nm_auto_clear_variant_builder nm_auto(g_variant_builder_clear)
 
-NM_AUTO_DEFINE_FCN0 (GList *, _nm_auto_free_list, g_list_free)
+NM_AUTO_DEFINE_FCN0 (GList *, _nm_auto_free_list, g_list_free);
 #define nm_auto_free_list nm_auto(_nm_auto_free_list)
 
-NM_AUTO_DEFINE_FCN0 (GChecksum *, _nm_auto_checksum_free, g_checksum_free)
+NM_AUTO_DEFINE_FCN0 (GChecksum *, _nm_auto_checksum_free, g_checksum_free);
 #define nm_auto_free_checksum nm_auto(_nm_auto_checksum_free)
 
 #define nm_auto_unset_gvalue nm_auto(g_value_unset)
 
-NM_AUTO_DEFINE_FCN_VOID0 (void *, _nm_auto_unref_gtypeclass, g_type_class_unref)
+NM_AUTO_DEFINE_FCN_VOID0 (void *, _nm_auto_unref_gtypeclass, g_type_class_unref);
 #define nm_auto_unref_gtypeclass nm_auto(_nm_auto_unref_gtypeclass)
 
-NM_AUTO_DEFINE_FCN0 (GByteArray *, _nm_auto_unref_bytearray, g_byte_array_unref)
+NM_AUTO_DEFINE_FCN0 (GByteArray *, _nm_auto_unref_bytearray, g_byte_array_unref);
 #define nm_auto_unref_bytearray nm_auto(_nm_auto_unref_bytearray)
 
 static inline void
@@ -194,7 +194,7 @@ NM_AUTO_DEFINE_FCN0 (GSource *, _nm_auto_unref_gsource, g_source_unref);
 NM_AUTO_DEFINE_FCN0 (guint, _nm_auto_remove_source, g_source_remove);
 #define nm_auto_remove_source nm_auto(_nm_auto_remove_source)
 
-NM_AUTO_DEFINE_FCN0 (GIOChannel *, _nm_auto_unref_io_channel, g_io_channel_unref)
+NM_AUTO_DEFINE_FCN0 (GIOChannel *, _nm_auto_unref_io_channel, g_io_channel_unref);
 #define nm_auto_unref_io_channel nm_auto(_nm_auto_unref_io_channel)
 
 NM_AUTO_DEFINE_FCN0 (GMainLoop *, _nm_auto_unref_gmainloop, g_main_loop_unref);
@@ -1524,7 +1524,7 @@ nm_decode_version (guint version, guint *major, guint *minor, guint *micro)
 
 /*****************************************************************************/
 
-NM_AUTO_DEFINE_FCN_VOID0 (GMutex *, _nm_auto_unlock_g_mutex, g_mutex_unlock)
+NM_AUTO_DEFINE_FCN_VOID0 (GMutex *, _nm_auto_unlock_g_mutex, g_mutex_unlock);
 
 #define nm_auto_unlock_g_mutex nm_auto (_nm_auto_unlock_g_mutex)
 

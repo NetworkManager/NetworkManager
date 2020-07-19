@@ -92,7 +92,7 @@ static gboolean _connect_sdp_session_start (NMBluez5DunContext *context,
 
 /*****************************************************************************/
 
-NM_AUTO_DEFINE_FCN0 (NMBluez5DunContext *, _nm_auto_free_context, _context_free)
+NM_AUTO_DEFINE_FCN0 (NMBluez5DunContext *, _nm_auto_free_context, _context_free);
 #define nm_auto_free_context nm_auto(_nm_auto_free_context)
 
 /*****************************************************************************/

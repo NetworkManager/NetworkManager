@@ -646,7 +646,7 @@ gboolean nm_sock_addr_endpoint_get_fixed_sockaddr (NMSockAddrEndpoint *self,
                                                    gpointer sockaddr);
 
 #define nm_auto_unref_sockaddrendpoint nm_auto(_nm_auto_unref_sockaddrendpoint)
-NM_AUTO_DEFINE_FCN0 (NMSockAddrEndpoint *, _nm_auto_unref_sockaddrendpoint, nm_sock_addr_endpoint_unref)
+NM_AUTO_DEFINE_FCN0 (NMSockAddrEndpoint *, _nm_auto_unref_sockaddrendpoint, nm_sock_addr_endpoint_unref);
 
 /*****************************************************************************/
 
