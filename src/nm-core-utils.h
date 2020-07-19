@@ -37,7 +37,8 @@ nm_singleton_instance_register (void) \
 { \
 	g_object_weak_ref (G_OBJECT (singleton_instance), _singleton_instance_weak_ref_cb, NULL); \
 	_nm_singleton_instance_register_destruction (G_OBJECT (singleton_instance)); \
-}
+} \
+_NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
 void _nm_singleton_instance_register_destruction (GObject *instance);
 
