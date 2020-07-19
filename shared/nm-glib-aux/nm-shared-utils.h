@@ -1980,12 +1980,15 @@ guint nm_utils_parse_debug_string (const char *string,
 static inline gboolean
 nm_utils_strdup_reset (char **dst, const char *src)
 {
+	char *old;
+
 	nm_assert (dst);
 
 	if (nm_streq0 (*dst, src))
 		return FALSE;
-	g_free (*dst);
+	old = *dst;
 	*dst = g_strdup (src);
+	g_free (old);
 	return TRUE;
 }
 
