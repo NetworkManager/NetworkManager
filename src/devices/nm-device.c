@@ -284,8 +284,15 @@ typedef struct _NMDevicePrivate {
 
 	char *        udi;
 	char *        path;
-	char *        iface;   /* may change, could be renamed by user */
-	int           ifindex;
+
+	union {
+		const char *const iface;
+		char *            iface_;
+	};
+	union {
+		const int ifindex;
+		int       ifindex_;
+	};
 
 	int parent_ifindex;
 
@@ -303,8 +310,14 @@ typedef struct _NMDevicePrivate {
 	bool update_ip_config_completed_v4:1;
 	bool update_ip_config_completed_v6:1;
 
-	char *        ip_iface;
-	int           ip_ifindex;
+	union {
+		const char *const ip_iface;
+		char *            ip_iface_;
+	};
+	union {
+		const int ip_ifindex;
+		int       ip_ifindex_;
+	};
 	NMDeviceType  type;
 	char *        type_desc;
 	NMLinkType    link_type;
@@ -1813,7 +1826,7 @@ nm_device_take_over_link (NMDevice *self, int ifindex, char **old_name, GError *
 	}
 
 	if (priv->ifindex != ifindex) {
-		priv->ifindex = ifindex;
+		priv->ifindex_ = ifindex;
 		_notify (self, PROP_IFINDEX);
 	}
 
@@ -1918,10 +1931,10 @@ _set_ip_ifindex (NMDevice *self,
 	       NM_PRINT_FMT_QUOTE_STRING (ifname),
 	       ifindex);
 
-	priv->ip_ifindex = ifindex;
+	priv->ip_ifindex_ = ifindex;
 	if (!eq_name) {
-		g_free (priv->ip_iface);
-		priv->ip_iface = g_strdup (ifname);
+		g_free (priv->ip_iface_);
+		priv->ip_iface_ = g_strdup (ifname);
 		_notify (self, PROP_IP_IFACE);
 	}
 
@@ -2010,10 +2023,12 @@ _ip_iface_update (NMDevice *self, const char *ip_iface)
 		return FALSE;
 
 	_LOGI (LOGD_DEVICE, "ip-ifname: interface index %d renamed ip_iface (%d) from '%s' to '%s'",
-	       priv->ifindex, priv->ip_ifindex,
-	       priv->ip_iface, ip_iface);
-	g_free (priv->ip_iface);
-	priv->ip_iface = g_strdup (ip_iface);
+	       priv->ifindex,
+	       priv->ip_ifindex,
+	       priv->ip_iface,
+	       ip_iface);
+	g_free (priv->ip_iface_);
+	priv->ip_iface_ = g_strdup (ip_iface);
 	_notify (self, PROP_IP_IFACE);
 	return TRUE;
 }
@@ -4328,8 +4343,8 @@ device_link_changed (NMDevice *self)
 	if (pllink->name[0] && strcmp (priv->iface, pllink->name) != 0) {
 		_LOGI (LOGD_DEVICE, "interface index %d renamed iface from '%s' to '%s'",
 		       priv->ifindex, priv->iface, pllink->name);
-		g_free (priv->iface);
-		priv->iface = g_strdup (pllink->name);
+		g_free (priv->iface_);
+		priv->iface_ = g_strdup (pllink->name);
 
 		/* If the device has no explicit ip_iface, then changing iface changes ip_iface too. */
 		ip_ifname_changed = !priv->ip_iface;
@@ -4702,11 +4717,8 @@ nm_device_update_from_platform_link (NMDevice *self, const NMPlatformLink *plink
 	}
 
 	str = plink ? plink->name : NULL;
-	if (str && g_strcmp0 (str, priv->iface)) {
-		g_free (priv->iface);
-		priv->iface = g_strdup (str);
+	if (nm_utils_strdup_reset (&priv->iface_, str))
 		_notify (self, PROP_IFACE);
-	}
 
 	str = plink ? plink->driver : NULL;
 	if (g_strcmp0 (str, priv->driver) != 0) {
@@ -4728,7 +4740,7 @@ nm_device_update_from_platform_link (NMDevice *self, const NMPlatformLink *plink
 
 	ifindex = plink ? plink->ifindex : 0;
 	if (priv->ifindex != ifindex) {
-		priv->ifindex = ifindex;
+		priv->ifindex_ = ifindex;
 		_notify (self, PROP_IFINDEX);
 		NM_DEVICE_GET_CLASS (self)->link_changed (self, plink);
 	}
@@ -5202,11 +5214,11 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 	_parent_set_ifindex (self, 0, FALSE);
 
 	if (priv->ifindex > 0) {
-		priv->ifindex = 0;
+		priv->ifindex_ = 0;
 		_notify (self, PROP_IFINDEX);
 	}
-	priv->ip_ifindex = 0;
-	if (nm_clear_g_free (&priv->ip_iface))
+	priv->ip_ifindex_ = 0;
+	if (nm_clear_g_free (&priv->ip_iface_))
 		_notify (self, PROP_IP_IFACE);
 
 	_set_mtu (self, 0);
@@ -17632,7 +17644,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_IFACE:
 		/* construct-only */
-		priv->iface = g_value_dup_string (value);
+		priv->iface_ = g_value_dup_string (value);
 		break;
 	case PROP_DRIVER:
 		/* construct-only */
@@ -17774,7 +17786,7 @@ constructor (GType type,
 		pllink = nm_platform_link_get_by_ifname (nm_device_get_platform (self), priv->iface);
 
 		if (pllink && link_type_compatible (self, pllink->type, NULL, NULL)) {
-			priv->ifindex = pllink->ifindex;
+			priv->ifindex_ = pllink->ifindex;
 			priv->up = NM_FLAGS_HAS (pllink->n_ifi_flags, IFF_UP);
 		}
 	}
@@ -17895,7 +17907,7 @@ dispose (GObject *object)
 	carrier_disconnected_action_cancel (self);
 
 	if (priv->ifindex > 0) {
-		priv->ifindex = 0;
+		priv->ifindex_ = 0;
 		_notify (self, PROP_IFINDEX);
 	}
 
@@ -17959,8 +17971,8 @@ finalize (GObject *object)
 	nm_clear_g_free (&priv->physical_port_id);
 	g_free (priv->udi);
 	g_free (priv->path);
-	g_free (priv->iface);
-	g_free (priv->ip_iface);
+	g_free (priv->iface_);
+	g_free (priv->ip_iface_);
 	g_free (priv->driver);
 	g_free (priv->driver_version);
 	g_free (priv->firmware_version);
