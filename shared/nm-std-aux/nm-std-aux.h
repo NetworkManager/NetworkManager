@@ -58,6 +58,10 @@
 
 /*****************************************************************************/
 
+#define _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON struct _nm_dummy_struct_for_trailing_semicolon
+
+/*****************************************************************************/
+
 #define NM_PASTE_ARGS(identifier1,identifier2) identifier1 ## identifier2
 #define NM_PASTE(identifier1,identifier2)      NM_PASTE_ARGS (identifier1, identifier2)
 
