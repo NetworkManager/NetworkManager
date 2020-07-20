@@ -2197,17 +2197,23 @@ _stats_update_counters (NMDevice *self,
                         guint64 rx_bytes)
 {
 	NMDevicePrivate *priv;
+	gboolean tx_changed = FALSE;
+	gboolean rx_changed = FALSE;
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (priv->stats.tx_bytes != tx_bytes) {
 		priv->stats.tx_bytes = tx_bytes;
-		_notify (self, PROP_STATISTICS_TX_BYTES);
+		tx_changed = TRUE;
 	}
 	if (priv->stats.rx_bytes != rx_bytes) {
 		priv->stats.rx_bytes = rx_bytes;
-		_notify (self, PROP_STATISTICS_RX_BYTES);
+		rx_changed = TRUE;
 	}
+
+	nm_gobject_notify_together (self,
+	                            tx_changed ? PROP_STATISTICS_TX_BYTES : PROP_0,
+	                            rx_changed ? PROP_STATISTICS_RX_BYTES : PROP_0);
 }
 
 static void
