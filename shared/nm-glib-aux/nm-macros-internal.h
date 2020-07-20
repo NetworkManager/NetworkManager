@@ -825,6 +825,26 @@ nm_g_object_unref (gpointer obj)
 		_changed; \
 	})
 
+#define nm_g_object_ref_set_take(pp, obj) \
+	({ \
+		typeof (*(pp)) *const _pp = (pp); \
+		typeof (*_pp) const _obj = (obj); \
+		typeof (*_pp) _p; \
+		gboolean _changed = FALSE; \
+		\
+		nm_assert (!_pp || !*_pp || G_IS_OBJECT (*_pp)); \
+		nm_assert (!_obj || G_IS_OBJECT (_obj)); \
+		\
+		if (   _pp \
+		    && ((_p = *_pp) != _obj)) { \
+			*_pp = _obj; \
+			nm_g_object_unref (_p); \
+			_changed = TRUE; \
+		} else \
+			nm_g_object_unref (_obj); \
+		_changed; \
+	})
+
 /* basically, replaces
  *   g_clear_pointer (&location, g_free)
  * with
