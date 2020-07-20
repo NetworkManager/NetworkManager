@@ -358,23 +358,17 @@ _nmc_mangle_connection (NMDevice *device,
 	for (i = 0; i < config_data->iproutes_len; ++i)
 		g_ptr_array_add (routes_new, config_data->iproutes_arr[i]);
 
-	if (addrs_new->len) {
-		addrs_changed = nmcs_setting_ip_replace_ipv4_addresses (s_ip,
-		                                                        (NMIPAddress **) addrs_new->pdata,
-		                                                        addrs_new->len);
-	}
+	addrs_changed = nmcs_setting_ip_replace_ipv4_addresses (s_ip,
+	                                                        (NMIPAddress **) addrs_new->pdata,
+	                                                        addrs_new->len);
 
-	if (routes_new->len) {
-		routes_changed = nmcs_setting_ip_replace_ipv4_routes (s_ip,
-		                                                      (NMIPRoute **) routes_new->pdata,
-		                                                      routes_new->len);
-	}
+	routes_changed = nmcs_setting_ip_replace_ipv4_routes (s_ip,
+	                                                      (NMIPRoute **) routes_new->pdata,
+	                                                      routes_new->len);
 
-	if (rules_new->len) {
-		rules_changed = nmcs_setting_ip_replace_ipv4_rules (s_ip,
-		                                                    (NMIPRoutingRule **) rules_new->pdata,
-		                                                    rules_new->len);
-	}
+	rules_changed = nmcs_setting_ip_replace_ipv4_rules (s_ip,
+	                                                    (NMIPRoutingRule **) rules_new->pdata,
+	                                                    rules_new->len);
 
 	NM_SET_OUT (out_changed,    addrs_changed
 	                         || routes_changed
