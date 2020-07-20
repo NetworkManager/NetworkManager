@@ -1331,7 +1331,7 @@ find_device_by_iface (NMManager *self,
 
 	c_list_for_each_entry (candidate, &priv->devices_lst_head, devices_lst) {
 
-		if (strcmp (nm_device_get_iface (candidate), iface))
+		if (!nm_streq (nm_device_get_iface (candidate), iface))
 			continue;
 		if (connection && !nm_device_check_connection_compatible (candidate, connection, NULL))
 			continue;
@@ -2967,7 +2967,7 @@ device_ip_iface_changed (NMDevice *device,
 	 */
 	c_list_for_each_entry (candidate, &priv->devices_lst_head, devices_lst) {
 		if (   candidate != device
-		    && g_strcmp0 (nm_device_get_iface (candidate), ip_iface) == 0
+		    && nm_streq0 (nm_device_get_iface (candidate), ip_iface)
 		    && nm_device_get_device_type (candidate) == device_type
 		    && nm_device_is_real (candidate)) {
 			remove_device (self, candidate, FALSE);
@@ -3335,7 +3335,7 @@ platform_link_added (NMManager *self,
 		if (nm_device_get_link_type (candidate) != plink->type)
 			continue;
 
-		if (strcmp (nm_device_get_iface (candidate), plink->name))
+		if (!nm_streq (nm_device_get_iface (candidate), plink->name))
 			continue;
 
 		if (nm_device_is_real (candidate)) {
@@ -4397,8 +4397,8 @@ compare_slaves (gconstpointer a, gconstpointer b, gpointer sort_by_name)
 		return -1;
 
 	if (GPOINTER_TO_INT (sort_by_name)) {
-		return g_strcmp0 (nm_device_get_iface (a_info->device),
-		                  nm_device_get_iface (b_info->device));
+		return nm_strcmp0 (nm_device_get_iface (a_info->device),
+		                   nm_device_get_iface (b_info->device));
 	}
 
 	return nm_device_get_ifindex (a_info->device) - nm_device_get_ifindex (b_info->device);

@@ -4135,7 +4135,7 @@ device_recheck_slave_status (NMDevice *self, const NMPlatformLink *plink)
 
 	if (   master == NULL
 	    && plink_master
-	    && g_strcmp0 (plink_master->name, "ovs-system") == 0
+	    && nm_streq0 (plink_master->name, "ovs-system")
 	    && plink_master->type == NM_LINK_TYPE_OPENVSWITCH) {
 		_LOGD (LOGD_DEVICE, "the device claimed by openvswitch");
 		return;
@@ -4340,7 +4340,8 @@ device_link_changed (NMDevice *self)
 	got_hw_addr = (!had_hw_addr && priv->hw_addr);
 	nm_device_update_permanent_hw_address (self, FALSE);
 
-	if (pllink->name[0] && strcmp (priv->iface, pllink->name) != 0) {
+	if (   pllink->name[0]
+	    && !nm_streq (priv->iface, pllink->name)) {
 		_LOGI (LOGD_DEVICE, "interface index %d renamed iface from '%s' to '%s'",
 		       priv->ifindex, priv->iface, pllink->name);
 		g_free (priv->iface_);
@@ -4603,7 +4604,7 @@ nm_device_realize_start (NMDevice *self,
 	NM_SET_OUT (out_compatible, TRUE);
 
 	if (plink) {
-		if (g_strcmp0 (nm_device_get_iface (self), plink->name) != 0) {
+		if (!nm_streq0 (nm_device_get_iface (self), plink->name)) {
 			NM_SET_OUT (out_compatible, FALSE);
 			g_set_error_literal (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED,
 			                     "Device interface name does not match platform link");
@@ -4703,14 +4704,14 @@ nm_device_update_from_platform_link (NMDevice *self, const NMPlatformLink *plink
 	g_return_if_fail (plink == NULL || link_type_compatible (self, plink->type, NULL, NULL));
 
 	str = plink ? nm_platform_link_get_udi (nm_device_get_platform (self), plink->ifindex) : NULL;
-	if (g_strcmp0 (str, priv->udi)) {
+	if (!nm_streq0 (str, priv->udi)) {
 		g_free (priv->udi);
 		priv->udi = g_strdup (str);
 		_notify (self, PROP_UDI);
 	}
 
 	str = plink ? nm_platform_link_get_path (nm_device_get_platform (self), plink->ifindex) : NULL;
-	if (g_strcmp0 (str, priv->path)) {
+	if (!nm_streq0 (str, priv->path)) {
 		g_free (priv->path);
 		priv->path = g_strdup (str);
 		_notify (self, PROP_PATH);
@@ -4721,7 +4722,7 @@ nm_device_update_from_platform_link (NMDevice *self, const NMPlatformLink *plink
 		_notify (self, PROP_IFACE);
 
 	str = plink ? plink->driver : NULL;
-	if (g_strcmp0 (str, priv->driver) != 0) {
+	if (!nm_streq0 (str, priv->driver)) {
 		g_free (priv->driver);
 		priv->driver = g_strdup (str);
 		_notify (self, PROP_DRIVER);
@@ -5500,7 +5501,7 @@ nm_device_master_check_slave_physical_port (NMDevice *self, NMDevice *slave,
 			continue;
 
 		existing_physical_port_id = nm_device_get_physical_port_id (info->slave);
-		if (!g_strcmp0 (slave_physical_port_id, existing_physical_port_id)) {
+		if (nm_streq0 (slave_physical_port_id, existing_physical_port_id)) {
 			_LOGW (log_domain, "slave %s shares a physical port with existing slave %s",
 			       nm_device_get_ip_iface (slave),
 			       nm_device_get_ip_iface (info->slave));
@@ -6242,8 +6243,8 @@ nm_device_generate_connection (NMDevice *self,
 	/* Ignore any IPv6LL-only, not master connections without slaves,
 	 * unless they are in the assume-ipv6ll-only list.
 	 */
-	if (   g_strcmp0 (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0
-	    && g_strcmp0 (ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL) == 0
+	if (   nm_streq0 (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)
+	    && nm_streq0 (ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)
 	    && !nm_setting_connection_get_master (NM_SETTING_CONNECTION (s_con))
 	    && c_list_is_empty (&priv->slaves)
 	    && !nm_config_data_get_assume_ipv6ll_only (NM_CONFIG_GET_DATA, self)) {
@@ -6497,7 +6498,7 @@ nm_device_check_slave_connection_compatible (NMDevice *self, NMConnection *slave
 	if (!slave_type)
 		return FALSE;
 
-	return strcmp (connection_type, slave_type) == 0;
+	return nm_streq (connection_type, slave_type);
 }
 
 /**
@@ -9153,7 +9154,7 @@ dhcp6_state_changed (NMDhcpClient *client,
 		if (   ip6_config
 		    && event_id
 		    && priv->dhcp6.event_id
-		    && !strcmp (event_id, priv->dhcp6.event_id)) {
+		    && nm_streq (event_id, priv->dhcp6.event_id)) {
 			NMDedupMultiIter ipconf_iter;
 			const NMPlatformIP6Address *a;
 
@@ -14865,8 +14866,8 @@ nm_device_reapply_settings_immediately (NMDevice *self)
 	s_con_settings = nm_connection_get_setting_connection (nm_settings_connection_get_connection (settings_connection));
 	s_con_applied = nm_connection_get_setting_connection (applied_connection);
 
-	if (g_strcmp0 ((zone = nm_setting_connection_get_zone (s_con_settings)),
-	               nm_setting_connection_get_zone (s_con_applied)) != 0) {
+	if (!nm_streq0 ((zone = nm_setting_connection_get_zone (s_con_settings)),
+	                nm_setting_connection_get_zone (s_con_applied))) {
 
 		version_id = nm_active_connection_version_id_bump ((NMActiveConnection *) self->_priv->act_request.obj);
 		_LOGD (LOGD_DEVICE, "reapply setting: zone = %s%s%s (version-id %llu)", NM_PRINT_FMT_QUOTE_STRING (zone), (unsigned long long) version_id);
@@ -15372,7 +15373,7 @@ nm_device_add_pending_action (NMDevice *self, const char *action, gboolean asser
 
 	/* Check if the action is already pending. Cannot add duplicate actions */
 	for (iter = priv->pending_actions; iter; iter = iter->next) {
-		if (!strcmp (action, iter->data)) {
+		if (nm_streq (action, iter->data)) {
 			if (assert_not_yet_pending) {
 				_LOGW (LOGD_DEVICE, "add_pending_action (%d): '%s' already pending",
 				       count + g_slist_length (iter), action);
@@ -15423,7 +15424,7 @@ nm_device_remove_pending_action (NMDevice *self, const char *action, gboolean as
 
 	for (iter = priv->pending_actions; iter; iter = next) {
 		next = iter->next;
-		if (!strcmp (action, iter->data)) {
+		if (nm_streq (action, iter->data)) {
 			_LOGD (LOGD_DEVICE, "remove_pending_action (%d): '%s'",
 			       count + g_slist_length (iter->next), /* length excluding 'iter' */
 			       action);
