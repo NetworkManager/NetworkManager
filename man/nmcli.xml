@@ -1671,7 +1671,7 @@
 
         <listitem>
           <para>Register <command>nmcli</command> as a NetworkManager secret agent and listen for secret
-          requests. You do usually not need this command, because <command>nmcli</command> can handle
+          requests. You usually do not need this command, because <command>nmcli</command> can handle
           secrets when connecting to networks. However, you may find the command useful
           when you use another tool for activating connections and you do not have a
           secret agent available (like nm-applet).</para>
