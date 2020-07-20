@@ -2003,36 +2003,6 @@ nm_device_set_ip_iface (NMDevice *self, const char *ifname)
 	return ifindex > 0;
 }
 
-static gboolean
-_ip_iface_update (NMDevice *self, const char *ip_iface)
-{
-	NMDevicePrivate *priv;
-
-	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
-
-	g_return_val_if_fail (priv->ip_iface, FALSE);
-	g_return_val_if_fail (priv->ip_ifindex > 0, FALSE);
-	g_return_val_if_fail (ip_iface, FALSE);
-
-	if (!ip_iface[0])
-		return FALSE;
-
-	if (nm_streq (priv->ip_iface, ip_iface))
-		return FALSE;
-
-	_LOGI (LOGD_DEVICE, "ip-ifname: interface index %d renamed ip_iface (%d) from '%s' to '%s'",
-	       priv->ifindex,
-	       priv->ip_ifindex,
-	       priv->ip_iface,
-	       ip_iface);
-	g_free (priv->ip_iface_);
-	priv->ip_iface_ = g_strdup (ip_iface);
-	_notify (self, PROP_IP_IFACE);
-	return TRUE;
-}
-
 /*****************************************************************************/
 
 int
@@ -4469,23 +4439,42 @@ device_ip_link_changed (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const NMPlatformLink *pllink;
+	const char *ip_iface;
 
 	priv->device_ip_link_changed_id = 0;
 
-	if (!priv->ip_ifindex)
+	if (priv->ip_ifindex <= 0)
 		return G_SOURCE_REMOVE;
+
+	nm_assert (priv->ip_iface);
 
 	pllink = nm_platform_link_get (nm_device_get_platform (self), priv->ip_ifindex);
 	if (!pllink)
 		return G_SOURCE_REMOVE;
 
-	if (priv->ifindex <= 0 && pllink->mtu)
+	if (   priv->ifindex <= 0
+	    && pllink->mtu)
 		_set_mtu (self, pllink->mtu);
 
 	_stats_update_counters_from_pllink (self, pllink);
 
-	if (_ip_iface_update (self, pllink->name))
+	ip_iface = pllink->name;
+
+	if (!ip_iface[0])
+		return FALSE;
+
+	if (!nm_streq (priv->ip_iface, ip_iface)) {
+		_LOGI (LOGD_DEVICE, "ip-ifname: interface index %d renamed ip_iface (%d) from '%s' to '%s'",
+		       priv->ifindex,
+		       priv->ip_ifindex,
+		       priv->ip_iface,
+		       ip_iface);
+		g_free (priv->ip_iface_);
+		priv->ip_iface_ = g_strdup (ip_iface);
+		_notify (self, PROP_IP_IFACE);
+
 		nm_device_update_dynamic_ip_setup (self);
+	}
 
 	return G_SOURCE_REMOVE;
 }
