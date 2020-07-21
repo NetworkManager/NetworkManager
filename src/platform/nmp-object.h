@@ -614,6 +614,25 @@ nmp_object_unref (const NMPObject *obj)
 		_changed; \
 	})
 
+static inline gboolean
+nmp_object_ref_set (const NMPObject **pp, const NMPObject *obj)
+{
+	gboolean _changed = FALSE;
+	const NMPObject *p;
+
+	nm_assert (!pp || !*pp || NMP_OBJECT_IS_VALID (*pp));
+	nm_assert (!obj || NMP_OBJECT_IS_VALID (obj));
+
+	if (   pp
+	    && ((p = *pp) != obj)) {
+		nmp_object_ref (obj);
+		*pp = obj;
+		nmp_object_unref (p);
+		_changed = TRUE;
+	}
+	return _changed;
+}
+
 NMPObject *nmp_object_new (NMPObjectType obj_type, gconstpointer plobj);
 NMPObject *nmp_object_new_link (int ifindex);
 
