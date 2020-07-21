@@ -1039,4 +1039,22 @@ nmp_object_link_get_ifname (const NMPObject *obj)
 	return NMP_OBJECT_CAST_LINK (obj)->name;
 }
 
+static inline gboolean
+nmp_object_ip_route_is_best_defaut_route (const NMPObject *obj)
+{
+	const NMPlatformIPRoute *r = NMP_OBJECT_CAST_IP_ROUTE (obj);
+
+	/* return whether @obj is considered a default-route.
+	 *
+	 * NMIP4Config/NMIP6Config tracks the (best) default-route explicitly, because
+	 * at various places we act differently depending on whether there is a default-route
+	 * configured.
+	 *
+	 * Note that this only considers the main routing table. */
+	return    r
+	       && NM_PLATFORM_IP_ROUTE_IS_DEFAULT (r)
+	       && nm_platform_route_table_is_main (r->table_coerced)
+	       && r->type_coerced == nm_platform_route_type_coerce (1 /* RTN_UNICAST */);
+}
+
 #endif /* __NMP_OBJECT_H__ */
