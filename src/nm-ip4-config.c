@@ -3227,6 +3227,9 @@ out_addresses_cached:
 
 			nm_assert (_route_valid (route));
 
+			if (route->type_coerced != nm_platform_route_type_coerce (RTN_UNICAST))
+				continue;
+
 			g_variant_builder_init (&route_builder, G_VARIANT_TYPE ("a{sv}"));
 			g_variant_builder_add (&route_builder, "{sv}",
 			                       "dest",
