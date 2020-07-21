@@ -5993,8 +5993,9 @@ do_sleep_wake (NMManager *self, gboolean sleeping_changed)
 	} else {
 		_LOGD (LOGD_SUSPEND, "sleep: %s...", waking_from_suspend ? "waking up" : "re-enabling");
 
+		sleep_devices_clear (self);
+
 		if (waking_from_suspend) {
-			sleep_devices_clear (self);
 			c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
 				if (nm_device_is_software (device))
 					continue;
