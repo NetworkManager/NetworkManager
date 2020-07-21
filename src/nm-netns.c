@@ -286,6 +286,8 @@ constructed (GObject *object)
 	G_OBJECT_CLASS (nm_netns_parent_class)->constructed (object);
 
 	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, G_CALLBACK (_platform_signal_cb), &priv->_self_signal_user_data);
+	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (_platform_signal_cb), &priv->_self_signal_user_data);
+	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (_platform_signal_cb), &priv->_self_signal_user_data);
 }
 
 NMNetns *

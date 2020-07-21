@@ -72,4 +72,21 @@ nm_l3cfg_get_platform (const NML3Cfg *self)
 	return self->priv.platform;
 }
 
+/*****************************************************************************/
+
+typedef enum {
+	NM_L3CFG_PROPERTY_EMIT_TYPE_ANY,
+	NM_L3CFG_PROPERTY_EMIT_TYPE_IP4_ROUTE,
+	NM_L3CFG_PROPERTY_EMIT_TYPE_IP6_ROUTE,
+} NML3CfgPropertyEmitType;
+
+void nm_l3cfg_property_emit_register (NML3Cfg *self,
+                                      GObject *target_obj,
+                                      const GParamSpec *target_property,
+                                      NML3CfgPropertyEmitType emit_type);
+
+void nm_l3cfg_property_emit_unregister (NML3Cfg *self,
+                                        GObject *target_obj,
+                                        const GParamSpec *target_property);
+
 #endif /* __NM_L3CFG_H__ */
