@@ -131,6 +131,7 @@ sources = files(
   'nm-auth-manager.c',
   'nm-auth-utils.c',
   'nm-dbus-manager.c',
+  'nm-l3-config-data.c',
   'nm-l3cfg.c',
   'nm-checkpoint.c',
   'nm-checkpoint-manager.c',
