@@ -286,6 +286,16 @@ typedef struct _NMDevicePrivate {
 	char *        path;
 
 	union {
+		NML3Cfg *const l3cfg;
+		NML3Cfg *l3cfg_;
+	};
+
+	union {
+		NML3Cfg *const ip_l3cfg;
+		NML3Cfg *ip_l3cfg_;
+	};
+
+	union {
 		const char *const iface;
 		char *            iface_;
 	};
@@ -1761,6 +1771,45 @@ nm_device_get_iface (NMDevice *self)
 	return NM_DEVICE_GET_PRIVATE (self)->iface;
 }
 
+static gboolean
+_set_ifindex (NMDevice *self, int ifindex, gboolean is_ip_ifindex)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gs_unref_object NML3Cfg *l3cfg_old = NULL;
+	NML3Cfg **p_l3cfg;
+	int *p_ifindex;
+
+	if (ifindex < 0)
+		ifindex = 0;
+
+	p_ifindex =   is_ip_ifindex
+	            ? &priv->ip_ifindex_
+	            : &priv->ifindex_;
+
+	if (*p_ifindex == ifindex)
+		return FALSE;
+
+	*p_ifindex = ifindex;
+
+	p_l3cfg =   is_ip_ifindex
+	          ? &priv->ip_l3cfg_
+	          : &priv->l3cfg_;
+
+	l3cfg_old = g_steal_pointer (p_l3cfg);
+	if (ifindex > 0)
+		*p_l3cfg = nm_netns_access_l3cfg (priv->netns, ifindex);
+
+	_LOGD (LOGD_DEVICE,
+	       "ifindex: set %sifindex %d%s%s%s%s%s%s",
+	       is_ip_ifindex ? "ip-" : "",
+	       ifindex,
+	       NM_PRINT_FMT_QUOTED (l3cfg_old, " (old-l3cfg: ", nm_hash_obfuscated_ptr_str_a (l3cfg_old), ")", ""),
+	       NM_PRINT_FMT_QUOTED (*p_l3cfg, " (l3cfg: ", nm_hash_obfuscated_ptr_str_a (*p_l3cfg), ")", ""));
+
+	_notify (self, PROP_IFINDEX);
+	return TRUE;
+}
+
 /**
  * nm_device_take_over_link:
  * @self: the #NMDevice
@@ -1825,10 +1874,7 @@ nm_device_take_over_link (NMDevice *self, int ifindex, char **old_name, GError *
 		NM_SET_OUT (old_name, g_steal_pointer (&name));
 	}
 
-	if (priv->ifindex != ifindex) {
-		priv->ifindex_ = ifindex;
-		_notify (self, PROP_IFINDEX);
-	}
+	_set_ifindex (self, ifindex, FALSE);
 
 	return TRUE;
 }
@@ -1931,7 +1977,8 @@ _set_ip_ifindex (NMDevice *self,
 	       NM_PRINT_FMT_QUOTE_STRING (ifname),
 	       ifindex);
 
-	priv->ip_ifindex_ = ifindex;
+	_set_ifindex (self, ifindex, TRUE);
+
 	if (!eq_name) {
 		g_free (priv->ip_iface_);
 		priv->ip_iface_ = g_strdup (ifname);
@@ -4690,7 +4737,7 @@ nm_device_update_from_platform_link (NMDevice *self, const NMPlatformLink *plink
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	const char *str;
-	int ifindex;
+	gboolean ifindex_changed;
 	guint32 mtu;
 
 	if (!NM_DEVICE_GET_CLASS (self)->can_update_from_platform_link (self, plink))
@@ -4735,12 +4782,12 @@ nm_device_update_from_platform_link (NMDevice *self, const NMPlatformLink *plink
 	mtu = plink ? plink->mtu : 0;
 	_set_mtu (self, mtu);
 
-	ifindex = plink ? plink->ifindex : 0;
-	if (priv->ifindex != ifindex) {
-		priv->ifindex_ = ifindex;
-		_notify (self, PROP_IFINDEX);
+	ifindex_changed = _set_ifindex (self,
+	                                plink ? plink->ifindex : 0,
+	                                FALSE);
+
+	if (ifindex_changed)
 		NM_DEVICE_GET_CLASS (self)->link_changed (self, plink);
-	}
 
 	device_update_interface_flags (self, plink);
 }
@@ -5210,11 +5257,8 @@ nm_device_unrealize (NMDevice *self, gboolean remove_resources, GError **error)
 
 	_parent_set_ifindex (self, 0, FALSE);
 
-	if (priv->ifindex > 0) {
-		priv->ifindex_ = 0;
-		_notify (self, PROP_IFINDEX);
-	}
-	priv->ip_ifindex_ = 0;
+	_set_ifindex (self, 0, FALSE);
+	_set_ifindex (self, 0, TRUE);
 	if (nm_clear_g_free (&priv->ip_iface_))
 		_notify (self, PROP_IP_IFACE);
 
@@ -17783,7 +17827,7 @@ constructor (GType type,
 		pllink = nm_platform_link_get_by_ifname (nm_device_get_platform (self), priv->iface);
 
 		if (pllink && link_type_compatible (self, pllink->type, NULL, NULL)) {
-			priv->ifindex_ = pllink->ifindex;
+			_set_ifindex (self, pllink->ifindex, FALSE);
 			priv->up = NM_FLAGS_HAS (pllink->n_ifi_flags, IFF_UP);
 		}
 	}
@@ -17903,10 +17947,8 @@ dispose (GObject *object)
 
 	carrier_disconnected_action_cancel (self);
 
-	if (priv->ifindex > 0) {
-		priv->ifindex_ = 0;
-		_notify (self, PROP_IFINDEX);
-	}
+	_set_ifindex (self, 0, FALSE);
+	_set_ifindex (self, 0, TRUE);
 
 	if (priv->settings) {
 		g_signal_handlers_disconnect_by_func (priv->settings, cp_connection_added, self);
