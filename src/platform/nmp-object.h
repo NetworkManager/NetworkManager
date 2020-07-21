@@ -995,4 +995,14 @@ nm_platform_lookup_object_by_addr_family (NMPlatform *platform,
 	return nm_platform_lookup (platform, &lookup);
 }
 
+/*****************************************************************************/
+
+static inline const char *
+nmp_object_link_get_ifname (const NMPObject *obj)
+{
+	if (!obj)
+		return NULL;
+	return NMP_OBJECT_CAST_LINK (obj)->name;
+}
+
 #endif /* __NMP_OBJECT_H__ */
