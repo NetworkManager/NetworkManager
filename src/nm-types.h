@@ -236,6 +236,17 @@ typedef enum {
 	NMP_OBJECT_TYPE_MAX = __NMP_OBJECT_TYPE_LAST - 1,
 } NMPObjectType;
 
+static inline guint32
+nmp_object_type_to_flags (NMPObjectType obj_type)
+{
+	G_STATIC_ASSERT_EXPR (NMP_OBJECT_TYPE_MAX < 32);
+
+	nm_assert (_NM_INT_NOT_NEGATIVE (obj_type));
+	nm_assert (obj_type < NMP_OBJECT_TYPE_MAX);
+
+	return ((guint32) 1u) << obj_type;
+}
+
 /**
  * NMIPConfigMergeFlags:
  * @NM_IP_CONFIG_MERGE_DEFAULT: no flags set

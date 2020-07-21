@@ -28,6 +28,12 @@ GType nm_l3cfg_get_type (void);
 
 NML3Cfg *nm_l3cfg_new (NMNetns *netns, int ifindex);
 
+/*****************************************************************************/
+
+void _nm_l3cfg_notify_platform_change_on_idle (NML3Cfg *self, guint32 obj_type_flags);
+
+/*****************************************************************************/
+
 static inline int
 nm_l3cfg_get_ifindex (const NML3Cfg *self)
 {

@@ -35,6 +35,13 @@ G_DEFINE_TYPE (NML3Cfg, nm_l3cfg, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+void
+_nm_l3cfg_notify_platform_change_on_idle (NML3Cfg *self, guint32 obj_type_flags)
+{
+}
+
+/*****************************************************************************/
+
 static void
 set_property (GObject *object,
               guint prop_id,
