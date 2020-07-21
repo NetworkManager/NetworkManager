@@ -88,7 +88,6 @@ nm_ip_config_best_default_route_is (const NMPObject *obj)
 }
 
 const NMPObject *_nm_ip_config_best_default_route_find_better (const NMPObject *obj_cur, const NMPObject *obj_cmp);
-gboolean _nm_ip_config_best_default_route_set (const NMPObject **best_default_route, const NMPObject *new_candidate);
 gboolean _nm_ip_config_best_default_route_merge (const NMPObject **best_default_route, const NMPObject *new_candidate);
 
 /*****************************************************************************/

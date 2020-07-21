@@ -437,22 +437,11 @@ _nm_ip_config_best_default_route_find_better (const NMPObject *obj_cur, const NM
 }
 
 gboolean
-_nm_ip_config_best_default_route_set (const NMPObject **best_default_route, const NMPObject *new_candidate)
-{
-	if (new_candidate == *best_default_route)
-		return FALSE;
-	nmp_object_ref (new_candidate);
-	nm_clear_nmp_object (best_default_route);
-	*best_default_route = new_candidate;
-	return TRUE;
-}
-
-gboolean
 _nm_ip_config_best_default_route_merge (const NMPObject **best_default_route, const NMPObject *new_candidate)
 {
 	new_candidate = _nm_ip_config_best_default_route_find_better (*best_default_route,
 	                                                              new_candidate);
-	return _nm_ip_config_best_default_route_set (best_default_route, new_candidate);
+	return nmp_object_ref_set (best_default_route, new_candidate);
 }
 
 const NMPObject *
@@ -1505,8 +1494,8 @@ nm_ip4_config_subtract (NMIP4Config *dst,
 		}
 	}
 	if (changed_default_route) {
-		_nm_ip_config_best_default_route_set (&dst_priv->best_default_route,
-		                                      _nm_ip4_config_best_default_route_find (dst));
+		nmp_object_ref_set (&dst_priv->best_default_route,
+		                    _nm_ip4_config_best_default_route_find (dst));
 		_notify (dst, PROP_GATEWAY);
 	}
 	if (changed)
@@ -1659,7 +1648,7 @@ _nm_ip4_config_intersect_helper (NMIP4Config *dst,
 			nm_assert_not_reached ();
 		changed = TRUE;
 	}
-	if (_nm_ip_config_best_default_route_set (&dst_priv->best_default_route, new_best_default_route)) {
+	if (nmp_object_ref_set (&dst_priv->best_default_route, new_best_default_route)) {
 		nm_assert (changed);
 		_notify (dst, PROP_GATEWAY);
 	}
@@ -1896,7 +1885,7 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 			new_best_default_route = _nm_ip_config_best_default_route_find_better (new_best_default_route, obj_new);
 		}
 		nm_dedup_multi_index_dirty_remove_idx (dst_priv->multi_idx, &dst_priv->idx_ip4_routes, FALSE);
-		if (_nm_ip_config_best_default_route_set (&dst_priv->best_default_route, new_best_default_route))
+		if (nmp_object_ref_set (&dst_priv->best_default_route, new_best_default_route))
 			_notify (dst, PROP_GATEWAY);
 		_notify_routes (dst);
 	}
@@ -2990,8 +2979,8 @@ nm_ip4_config_nmpobj_remove (NMIP4Config *self,
 		break;
 	case NMP_OBJECT_TYPE_IP4_ROUTE:
 		if (priv->best_default_route == obj_old) {
-			if (_nm_ip_config_best_default_route_set (&priv->best_default_route,
-			                                          _nm_ip4_config_best_default_route_find (self)))
+			if (nmp_object_ref_set (&priv->best_default_route,
+			                        _nm_ip4_config_best_default_route_find (self)))
 				_notify (self, PROP_GATEWAY);
 		}
 		_notify_routes (self);

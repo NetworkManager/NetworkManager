@@ -1120,8 +1120,8 @@ nm_ip6_config_subtract (NMIP6Config *dst,
 		}
 	}
 	if (changed_default_route) {
-		_nm_ip_config_best_default_route_set (&dst_priv->best_default_route,
-		                                      _nm_ip6_config_best_default_route_find (dst));
+		nmp_object_ref_set (&dst_priv->best_default_route,
+		                    _nm_ip6_config_best_default_route_find (dst));
 		_notify (dst, PROP_GATEWAY);
 	}
 	if (changed)
@@ -1244,7 +1244,7 @@ _nm_ip6_config_intersect_helper (NMIP6Config *dst,
 			nm_assert_not_reached ();
 		changed = TRUE;
 	}
-	if (_nm_ip_config_best_default_route_set (&dst_priv->best_default_route, new_best_default_route)) {
+	if (nmp_object_ref_set (&dst_priv->best_default_route, new_best_default_route)) {
 		nm_assert (changed);
 		_notify (dst, PROP_GATEWAY);
 	}
@@ -1481,7 +1481,7 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 			new_best_default_route = _nm_ip_config_best_default_route_find_better (new_best_default_route, obj_new);
 		}
 		nm_dedup_multi_index_dirty_remove_idx (dst_priv->multi_idx, &dst_priv->idx_ip6_routes, FALSE);
-		if (_nm_ip_config_best_default_route_set (&dst_priv->best_default_route, new_best_default_route))
+		if (nmp_object_ref_set (&dst_priv->best_default_route, new_best_default_route))
 			_notify (dst, PROP_GATEWAY);
 		_notify_routes (dst);
 	}
@@ -1955,7 +1955,7 @@ nm_ip6_config_reset_routes_ndisc (NMIP6Config *self,
 	if (nm_dedup_multi_index_dirty_remove_idx (priv->multi_idx, &priv->idx_ip6_routes, FALSE) > 0)
 		changed = TRUE;
 
-	if (_nm_ip_config_best_default_route_set (&priv->best_default_route, new_best_default_route)) {
+	if (nmp_object_ref_set (&priv->best_default_route, new_best_default_route)) {
 		changed = TRUE;
 		_notify (self, PROP_GATEWAY);
 	}
@@ -2458,8 +2458,8 @@ nm_ip6_config_nmpobj_remove (NMIP6Config *self,
 		break;
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
 		if (priv->best_default_route == obj_old) {
-			if (_nm_ip_config_best_default_route_set (&priv->best_default_route,
-			                                          _nm_ip6_config_best_default_route_find (self)))
+			if (nmp_object_ref_set (&priv->best_default_route,
+			                        _nm_ip6_config_best_default_route_find (self)))
 				_notify (self, PROP_GATEWAY);
 		}
 		_notify_routes (self);
