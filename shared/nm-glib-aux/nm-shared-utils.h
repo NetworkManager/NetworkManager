@@ -1519,6 +1519,18 @@ nm_g_array_len (const GArray *arr)
 	return arr ? arr->len : 0u;
 }
 
+#define nm_g_array_append_new(arr, type) \
+	({ \
+		GArray *_arr = (arr); \
+		gsize _l; \
+		\
+		nm_assert (_arr); \
+		_l = ((gsize) _arr->len) + 1u; \
+		nm_assert (_l > _arr->len); \
+		g_array_set_size (_arr, _l); \
+		&g_array_index (arr, type, _l); \
+	})
+
 /*****************************************************************************/
 
 static inline guint
