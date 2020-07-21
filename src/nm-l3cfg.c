@@ -5,6 +5,7 @@
 #include "nm-l3cfg.h"
 
 #include "platform/nm-platform.h"
+#include "platform/nmp-object.h"
 #include "nm-netns.h"
 
 /*****************************************************************************/
@@ -35,9 +36,43 @@ G_DEFINE_TYPE (NML3Cfg, nm_l3cfg, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+static void
+_load_link (NML3Cfg *self, gboolean initial)
+{
+	nm_auto_nmpobj const NMPObject *obj_old = NULL;
+	const NMPObject *obj;
+	const char *ifname;
+	const char *ifname_old;
+
+	obj = nm_platform_link_get_obj (self->priv.platform, self->priv.ifindex, TRUE);
+
+	if (   initial
+	    && obj == self->priv.pllink)
+		return;
+
+	obj_old = g_steal_pointer (&self->priv.pllink);
+	self->priv.pllink = nmp_object_ref (obj);
+
+	ifname_old = nmp_object_link_get_ifname (obj_old);
+	ifname = nmp_object_link_get_ifname (self->priv.pllink);
+
+	if (initial) {
+		_LOGT ("link ifname changed: %s%s%s (initial)",
+		        NM_PRINT_FMT_QUOTE_STRING (ifname));
+	} else if (!nm_streq0 (ifname, ifname_old)) {
+		_LOGT ("link ifname changed: %s%s%s (was %s%s%s)",
+		        NM_PRINT_FMT_QUOTE_STRING (ifname),
+		        NM_PRINT_FMT_QUOTE_STRING (ifname_old));
+	}
+}
+
+/*****************************************************************************/
+
 void
 _nm_l3cfg_notify_platform_change_on_idle (NML3Cfg *self, guint32 obj_type_flags)
 {
+	if (NM_FLAGS_ANY (obj_type_flags, nmp_object_type_to_flags (NMP_OBJECT_TYPE_LINK)))
+		_load_link (self, FALSE);
 }
 
 /*****************************************************************************/
@@ -89,6 +124,8 @@ constructed (GObject *object)
 	       NM_HASH_OBFUSCATE_PTR (self->priv.netns));
 
 	G_OBJECT_CLASS (nm_l3cfg_parent_class)->constructed (object);
+
+	_load_link (self, TRUE);
 }
 
 NML3Cfg *
@@ -110,6 +147,8 @@ finalize (GObject *object)
 
 	g_clear_object (&self->priv.netns);
 	g_clear_object (&self->priv.platform);
+
+	nm_clear_pointer (&self->priv.pllink, nmp_object_unref);
 
 	_LOGT ("finalized");
 

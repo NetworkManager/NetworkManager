@@ -3,6 +3,8 @@
 #ifndef __NM_L3CFG_H__
 #define __NM_L3CFG_H__
 
+#include "platform/nmp-object.h"
+
 #define NM_TYPE_L3CFG            (nm_l3cfg_get_type ())
 #define NM_L3CFG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_L3CFG, NML3Cfg))
 #define NM_L3CFG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_L3CFG, NML3CfgClass))
@@ -19,6 +21,7 @@ struct _NML3Cfg {
 		NMNetns *netns;
 		NMPlatform *platform;
 		int ifindex;
+		const NMPObject *pllink;
 	} priv;
 };
 
@@ -40,6 +43,14 @@ nm_l3cfg_get_ifindex (const NML3Cfg *self)
 	nm_assert (NM_IS_L3CFG (self));
 
 	return self->priv.ifindex;
+}
+
+static inline const char *
+nm_l3cfg_get_ifname (const NML3Cfg *self)
+{
+	nm_assert (NM_IS_L3CFG (self));
+
+	return nmp_object_link_get_ifname (self->priv.pllink);
 }
 
 static inline NMNetns *
