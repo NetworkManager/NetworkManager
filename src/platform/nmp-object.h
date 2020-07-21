@@ -556,6 +556,21 @@ _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX (NMPObjectType obj_type)
 #define NMP_OBJECT_CAST_TFILTER(obj)       _NMP_OBJECT_CAST (obj, tfilter,       NMP_OBJECT_TYPE_TFILTER)
 #define NMP_OBJECT_CAST_LNK_WIREGUARD(obj) _NMP_OBJECT_CAST (obj, lnk_wireguard, NMP_OBJECT_TYPE_LNK_WIREGUARD)
 
+static inline int
+NMP_OBJECT_GET_ADDR_FAMILY (const NMPObject *obj)
+{
+	switch (NMP_OBJECT_GET_TYPE (obj)) {
+	case NMP_OBJECT_TYPE_IP4_ADDRESS:
+	case NMP_OBJECT_TYPE_IP4_ROUTE:
+		return AF_INET;
+	case NMP_OBJECT_TYPE_IP6_ADDRESS:
+	case NMP_OBJECT_TYPE_IP6_ROUTE:
+		return AF_INET6;
+	default:
+		return AF_UNSPEC;
+	}
+}
+
 static inline const NMPObject *
 nmp_object_ref (const NMPObject *obj)
 {
