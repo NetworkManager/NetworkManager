@@ -15,6 +15,10 @@ NM_GOBJECT_PROPERTIES_DEFINE (NML3Cfg,
 	PROP_IFINDEX,
 );
 
+typedef struct _NML3CfgPrivate {
+	int dummy;
+} NML3CfgPrivate;
+
 struct _NML3CfgClass {
 	GObjectClass parent;
 };
@@ -107,6 +111,11 @@ set_property (GObject *object,
 static void
 nm_l3cfg_init (NML3Cfg *self)
 {
+	NML3CfgPrivate *p;
+
+	p = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_L3CFG, NML3CfgPrivate);
+
+	self->priv.p = p;
 }
 
 static void
@@ -159,6 +168,8 @@ static void
 nm_l3cfg_class_init (NML3CfgClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+	g_type_class_add_private (klass, sizeof (NML3CfgPrivate));
 
 	object_class->set_property = set_property;
 	object_class->constructed  = constructed;

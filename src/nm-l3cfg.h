@@ -15,6 +15,8 @@
 #define NM_L3CFG_NETNS   "netns"
 #define NM_L3CFG_IFINDEX "ifindex"
 
+struct _NML3CfgPrivate;
+
 struct _NML3Cfg {
 	GObject parent;
 	struct {
@@ -22,6 +24,7 @@ struct _NML3Cfg {
 		NMPlatform *platform;
 		int ifindex;
 		const NMPObject *pllink;
+		struct _NML3CfgPrivate *p;
 	} priv;
 };
 
