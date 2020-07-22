@@ -770,7 +770,7 @@ update_system_hostname (NMPolicy *self, const char *msg)
 		/* Grab a hostname out of the device's DHCP6 config */
 		dhcp6_config = nm_device_get_dhcp6_config (get_default_device (self, AF_INET6));
 		if (dhcp6_config) {
-			dhcp_hostname = nm_dhcp6_config_get_option (dhcp6_config, "host_name");
+			dhcp_hostname = nm_dhcp6_config_get_option (dhcp6_config, "fqdn_fqdn");
 			if (dhcp_hostname && dhcp_hostname[0]) {
 				p = nm_str_skip_leading_spaces (dhcp_hostname);
 				if (p[0]) {
