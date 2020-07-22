@@ -984,6 +984,50 @@ nmtst_rand_perm_gslist (GRand *rand, GSList *list)
 	return result;
 }
 
+static inline void
+nmtst_stable_rand (guint64 seed,
+                   gpointer buf,
+                   gsize len)
+{
+	const guint64 C = 1442695040888963407llu;
+	const guint64 A = 6364136223846793005llu;
+	guint8 *b;
+	union {
+		guint8 a[sizeof (guint64)];
+		guint64 n;
+	} n;
+
+	/* We want a stable random generator that is in our control and does not
+	 * depend on glibc/glib versions.
+	 * Use a linear congruential generator (x[n+1] = (A * x[n] + C) % M)
+	 * https://en.wikipedia.org/wiki/Linear_congruential_generator
+	 *
+	 * We choose (Knuth’s LCG MMIX)
+	 *   A = 6364136223846793005llu
+	 *   C = 1442695040888963407llu
+	 *   M = 2^64
+	 */
+
+	g_assert (len == 0 || buf);
+
+	n.n = seed;
+	b = buf;
+	for (; len > 0; len--, b++) {
+		n.n = (A * n.n + C);
+
+		/* let's combine the 64 bits randomness in one byte. By xor-ing, it's
+		 * also independent of endianness. */
+		b[0] =   n.a[0]
+		       ^ n.a[1]
+		       ^ n.a[2]
+		       ^ n.a[3]
+		       ^ n.a[4]
+		       ^ n.a[5]
+		       ^ n.a[6]
+		       ^ n.a[7];
+	}
+}
+
 /*****************************************************************************/
 
 /**
