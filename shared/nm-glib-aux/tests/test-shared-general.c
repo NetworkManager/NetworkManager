@@ -17,6 +17,16 @@
 
 /*****************************************************************************/
 
+G_STATIC_ASSERT (NM_AF_UNSPEC == AF_UNSPEC);
+G_STATIC_ASSERT (NM_AF_INET   == AF_INET);
+G_STATIC_ASSERT (NM_AF_INET6  == AF_INET6);
+
+G_STATIC_ASSERT (NM_AF_INET_SIZE   == sizeof (in_addr_t));
+G_STATIC_ASSERT (NM_AF_INET_SIZE   == sizeof (struct in_addr));
+G_STATIC_ASSERT (NM_AF_INET6_SIZE  == sizeof (struct in6_addr));
+
+/*****************************************************************************/
+
 static void
 test_gpid (void)
 {

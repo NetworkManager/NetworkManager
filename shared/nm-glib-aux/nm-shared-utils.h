@@ -68,42 +68,6 @@ G_STATIC_ASSERT (sizeof (int) == sizeof (gint32));
 
 /*****************************************************************************/
 
-static inline char
-nm_utils_addr_family_to_char (int addr_family)
-{
-	switch (addr_family) {
-	case AF_UNSPEC: return 'X';
-	case AF_INET:   return '4';
-	case AF_INET6:  return '6';
-	}
-	g_return_val_if_reached ('?');
-}
-
-static inline gsize
-nm_utils_addr_family_to_size (int addr_family)
-{
-	switch (addr_family) {
-	case AF_INET:  return sizeof (in_addr_t);
-	case AF_INET6: return sizeof (struct in6_addr);
-	}
-	g_return_val_if_reached (0);
-}
-
-static inline int
-nm_utils_addr_family_from_size (gsize len)
-{
-	switch (len) {
-	case sizeof (in_addr_t):       return AF_INET;
-	case sizeof (struct in6_addr): return AF_INET6;
-	}
-	return AF_UNSPEC;
-}
-
-#define nm_assert_addr_family(addr_family) \
-	nm_assert (NM_IN_SET ((addr_family), AF_INET, AF_INET6))
-
-/*****************************************************************************/
-
 typedef struct {
 	union {
 		guint8 addr_ptr[1];
