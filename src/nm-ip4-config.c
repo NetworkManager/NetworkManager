@@ -549,6 +549,21 @@ _addresses_sort_cmp (gconstpointer a, gconstpointer b, gpointer user_data)
 	return memcmp (&n1, &n2, sizeof (guint32));
 }
 
+int
+nmtst_ip4_config_addresses_sort_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b)
+{
+	NMPObject o_a;
+	NMPObject o_b;
+	NMPObject *p_o_a = &o_a;
+	NMPObject *p_o_b = &o_b;
+
+	g_assert (a);
+	g_assert (b);
+	nmp_object_stackinit (&o_a, NMP_OBJECT_TYPE_IP4_ADDRESS, a);
+	nmp_object_stackinit (&o_b, NMP_OBJECT_TYPE_IP4_ADDRESS, b);
+	return _addresses_sort_cmp (&p_o_a, &p_o_b, NULL);
+}
+
 /*****************************************************************************/
 
 static int

@@ -1943,6 +1943,13 @@ int nm_platform_lnk_wireguard_cmp (const NMPlatformLnkWireGuard *a, const NMPlat
 int nm_platform_ip4_address_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b);
 int nm_platform_ip6_address_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b);
 
+int nm_platform_ip4_address_pretty_sort_cmp (const NMPlatformIP4Address *a1,
+                                             const NMPlatformIP4Address *a2);
+
+int nm_platform_ip6_address_pretty_sort_cmp (const NMPlatformIP6Address *a1,
+                                             const NMPlatformIP6Address *a2,
+                                             gboolean prefer_temp);
+
 int nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, NMPlatformIPRouteCmpType cmp_type);
 int nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, NMPlatformIPRouteCmpType cmp_type);
 

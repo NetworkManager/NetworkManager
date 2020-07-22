@@ -7202,6 +7202,138 @@ nm_platform_lnk_wireguard_cmp (const NMPlatformLnkWireGuard *a, const NMPlatform
 	return 0;
 }
 
+static int
+_address_pretty_sort_get_prio_4 (in_addr_t addr)
+{
+	if (nm_utils_ip4_address_is_link_local (addr))
+		return 0;
+	return 1;
+}
+
+int
+nm_platform_ip4_address_pretty_sort_cmp (const NMPlatformIP4Address *a1,
+                                         const NMPlatformIP4Address *a2)
+{
+	in_addr_t n1;
+	in_addr_t n2;
+	int p1;
+	int p2;
+
+	nm_assert (a1);
+	nm_assert (a2);
+
+	/* Sort by address type. For example link local will
+	 * be sorted *after* a global address. */
+	p1 = _address_pretty_sort_get_prio_4 (a1->address);
+	p2 = _address_pretty_sort_get_prio_4 (a2->address);
+	if (p1 != p2)
+		return p1 > p2 ? -1 : 1;
+
+	/* Sort the addresses based on their source. */
+	if (a1->addr_source != a2->addr_source)
+		return a1->addr_source > a2->addr_source ? -1 : 1;
+
+	if ((a1->label[0] == '\0') != (a2->label[0] == '\0'))
+		return (a1->label[0] == '\0') ? -1 : 1;
+
+	/* Finally, sort addresses lexically. We compare only the
+	 * network part so that the order of addresses in the same
+	 * subnet (and thus also the primary/secondary role) is
+	 * preserved.
+	 */
+	n1 = a1->address & _nm_utils_ip4_prefix_to_netmask (a1->plen);
+	n2 = a2->address & _nm_utils_ip4_prefix_to_netmask (a2->plen);
+
+	return memcmp (&n1, &n2, sizeof (guint32));
+}
+
+static int
+_address_pretty_sort_get_prio_6 (const struct in6_addr *addr)
+{
+	if (IN6_IS_ADDR_V4MAPPED (addr))
+		return 0;
+	if (IN6_IS_ADDR_V4COMPAT (addr))
+		return 1;
+	if (IN6_IS_ADDR_UNSPECIFIED (addr))
+		return 2;
+	if (IN6_IS_ADDR_LOOPBACK (addr))
+		return 3;
+	if (IN6_IS_ADDR_LINKLOCAL (addr))
+		return 4;
+	if (IN6_IS_ADDR_SITELOCAL (addr))
+		return 5;
+	return 6;
+}
+
+int
+nm_platform_ip6_address_pretty_sort_cmp (const NMPlatformIP6Address *a1,
+                                         const NMPlatformIP6Address *a2,
+                                         gboolean prefer_temp)
+{
+	gboolean ipv6_privacy1;
+	gboolean ipv6_privacy2;
+	gboolean perm1;
+	gboolean perm2;
+	gboolean tent1;
+	gboolean tent2;
+	int p1;
+	int p2;
+	int c;
+
+	nm_assert (a1);
+	nm_assert (a2);
+
+	/* tentative addresses are always sorted back... */
+	/* sort tentative addresses after non-tentative. */
+	tent1 = (a1->n_ifa_flags & IFA_F_TENTATIVE);
+	tent2 = (a2->n_ifa_flags & IFA_F_TENTATIVE);
+	if (tent1 != tent2)
+		return tent1 ? 1 : -1;
+
+	/* Sort by address type. For example link local will
+	 * be sorted *after* site local or global. */
+	p1 = _address_pretty_sort_get_prio_6 (&a1->address);
+	p2 = _address_pretty_sort_get_prio_6 (&a2->address);
+	if (p1 != p2)
+		return p1 > p2 ? -1 : 1;
+
+	ipv6_privacy1 = !!(a1->n_ifa_flags & (IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY));
+	ipv6_privacy2 = !!(a2->n_ifa_flags & (IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY));
+	if (ipv6_privacy1 || ipv6_privacy2) {
+		gboolean public1 = TRUE, public2 = TRUE;
+
+		if (ipv6_privacy1) {
+			if (a1->n_ifa_flags & IFA_F_TEMPORARY)
+				public1 = prefer_temp;
+			else
+				public1 = !prefer_temp;
+		}
+		if (ipv6_privacy2) {
+			if (a2->n_ifa_flags & IFA_F_TEMPORARY)
+				public2 = prefer_temp;
+			else
+				public2 = !prefer_temp;
+		}
+
+		if (public1 != public2)
+			return public1 ? -1 : 1;
+	}
+
+	/* Sort the addresses based on their source. */
+	if (a1->addr_source != a2->addr_source)
+		return a1->addr_source > a2->addr_source ? -1 : 1;
+
+	/* sort permanent addresses before non-permanent. */
+	perm1 = (a1->n_ifa_flags & IFA_F_PERMANENT);
+	perm2 = (a2->n_ifa_flags & IFA_F_PERMANENT);
+	if (perm1 != perm2)
+		return perm1 ? -1 : 1;
+
+	/* finally sort addresses lexically */
+	c = memcmp (&a1->address, &a2->address, sizeof (a2->address));
+	return c != 0 ? c : memcmp (a1, a2, sizeof (*a1));
+}
+
 void
 nm_platform_ip4_address_hash_update (const NMPlatformIP4Address *obj, NMHashState *h)
 {

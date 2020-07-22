@@ -220,4 +220,6 @@ void nm_ip6_config_reset_routes_ndisc (NMIP6Config *self,
 
 void nm_ip6_config_update_routes_metric (NMIP6Config *self, gint64 metric);
 
+int nmtst_ip6_config_addresses_sort_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b, gboolean prefer_temp);
+
 #endif /* __NETWORKMANAGER_IP6_CONFIG_H__ */

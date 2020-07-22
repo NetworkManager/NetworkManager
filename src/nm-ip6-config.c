@@ -290,6 +290,14 @@ _addresses_sort_cmp (const NMPlatformIP6Address *a1,
 	return c != 0 ? c : memcmp (a1, a2, sizeof (*a1));
 }
 
+int
+nmtst_ip6_config_addresses_sort_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b, gboolean prefer_temp)
+{
+	g_assert (a);
+	g_assert (b);
+	return _addresses_sort_cmp (a, b, prefer_temp);
+}
+
 static int
 _addresses_sort_cmp_prop (gconstpointer a, gconstpointer b, gpointer user_data)
 {
