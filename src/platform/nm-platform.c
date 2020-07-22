@@ -7216,25 +7216,20 @@ nm_platform_ip4_address_pretty_sort_cmp (const NMPlatformIP4Address *a1,
 {
 	in_addr_t n1;
 	in_addr_t n2;
-	int p1;
-	int p2;
 
 	nm_assert (a1);
 	nm_assert (a2);
 
 	/* Sort by address type. For example link local will
 	 * be sorted *after* a global address. */
-	p1 = _address_pretty_sort_get_prio_4 (a1->address);
-	p2 = _address_pretty_sort_get_prio_4 (a2->address);
-	if (p1 != p2)
-		return p1 > p2 ? -1 : 1;
+	NM_CMP_DIRECT (_address_pretty_sort_get_prio_4 (a2->address),
+	               _address_pretty_sort_get_prio_4 (a1->address));
 
 	/* Sort the addresses based on their source. */
-	if (a1->addr_source != a2->addr_source)
-		return a1->addr_source > a2->addr_source ? -1 : 1;
+	NM_CMP_DIRECT (a2->addr_source, a1->addr_source);
 
-	if ((a1->label[0] == '\0') != (a2->label[0] == '\0'))
-		return (a1->label[0] == '\0') ? -1 : 1;
+	NM_CMP_DIRECT ((a2->label[0] == '\0'),
+	               (a1->label[0] == '\0'));
 
 	/* Finally, sort addresses lexically. We compare only the
 	 * network part so that the order of addresses in the same
@@ -7243,8 +7238,8 @@ nm_platform_ip4_address_pretty_sort_cmp (const NMPlatformIP4Address *a1,
 	 */
 	n1 = a1->address & _nm_utils_ip4_prefix_to_netmask (a1->plen);
 	n2 = a2->address & _nm_utils_ip4_prefix_to_netmask (a2->plen);
-
-	return memcmp (&n1, &n2, sizeof (guint32));
+	NM_CMP_DIRECT_MEMCMP (&n1, &n2, sizeof (guint32));
+	return 0;
 }
 
 static int
@@ -7272,35 +7267,26 @@ nm_platform_ip6_address_pretty_sort_cmp (const NMPlatformIP6Address *a1,
 {
 	gboolean ipv6_privacy1;
 	gboolean ipv6_privacy2;
-	gboolean perm1;
-	gboolean perm2;
-	gboolean tent1;
-	gboolean tent2;
-	int p1;
-	int p2;
-	int c;
 
 	nm_assert (a1);
 	nm_assert (a2);
 
 	/* tentative addresses are always sorted back... */
 	/* sort tentative addresses after non-tentative. */
-	tent1 = (a1->n_ifa_flags & IFA_F_TENTATIVE);
-	tent2 = (a2->n_ifa_flags & IFA_F_TENTATIVE);
-	if (tent1 != tent2)
-		return tent1 ? 1 : -1;
+	NM_CMP_DIRECT (NM_FLAGS_HAS (a1->n_ifa_flags, IFA_F_TENTATIVE),
+	               NM_FLAGS_HAS (a2->n_ifa_flags, IFA_F_TENTATIVE));
 
 	/* Sort by address type. For example link local will
 	 * be sorted *after* site local or global. */
-	p1 = _address_pretty_sort_get_prio_6 (&a1->address);
-	p2 = _address_pretty_sort_get_prio_6 (&a2->address);
-	if (p1 != p2)
-		return p1 > p2 ? -1 : 1;
+	NM_CMP_DIRECT (_address_pretty_sort_get_prio_6 (&a2->address),
+	               _address_pretty_sort_get_prio_6 (&a1->address));
 
-	ipv6_privacy1 = !!(a1->n_ifa_flags & (IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY));
-	ipv6_privacy2 = !!(a2->n_ifa_flags & (IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY));
-	if (ipv6_privacy1 || ipv6_privacy2) {
-		gboolean public1 = TRUE, public2 = TRUE;
+	ipv6_privacy1 = NM_FLAGS_ANY (a1->n_ifa_flags, IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY);
+	ipv6_privacy2 = NM_FLAGS_ANY (a2->n_ifa_flags, IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY);
+	if (   ipv6_privacy1
+	    || ipv6_privacy2) {
+		gboolean public1 = TRUE;
+		gboolean public2 = TRUE;
 
 		if (ipv6_privacy1) {
 			if (a1->n_ifa_flags & IFA_F_TEMPORARY)
@@ -7315,23 +7301,20 @@ nm_platform_ip6_address_pretty_sort_cmp (const NMPlatformIP6Address *a1,
 				public2 = !prefer_temp;
 		}
 
-		if (public1 != public2)
-			return public1 ? -1 : 1;
+		NM_CMP_DIRECT (public2, public1);
 	}
 
 	/* Sort the addresses based on their source. */
-	if (a1->addr_source != a2->addr_source)
-		return a1->addr_source > a2->addr_source ? -1 : 1;
+	NM_CMP_DIRECT (a2->addr_source, a1->addr_source);
 
 	/* sort permanent addresses before non-permanent. */
-	perm1 = (a1->n_ifa_flags & IFA_F_PERMANENT);
-	perm2 = (a2->n_ifa_flags & IFA_F_PERMANENT);
-	if (perm1 != perm2)
-		return perm1 ? -1 : 1;
+	NM_CMP_DIRECT (NM_FLAGS_HAS (a2->n_ifa_flags, IFA_F_PERMANENT),
+	               NM_FLAGS_HAS (a1->n_ifa_flags, IFA_F_PERMANENT));
 
 	/* finally sort addresses lexically */
-	c = memcmp (&a1->address, &a2->address, sizeof (a2->address));
-	return c != 0 ? c : memcmp (a1, a2, sizeof (*a1));
+	NM_CMP_DIRECT_IN6ADDR (&a1->address, &a2->address);
+	NM_CMP_DIRECT_MEMCMP (a1, a2, sizeof (*a1));
+	return 0;
 }
 
 void

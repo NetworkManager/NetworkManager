@@ -686,11 +686,11 @@ test_platform_ip_address_pretty_sort_cmp (gconstpointer test_data)
 			}
 
 #define _NORM(c) (((c) < 0) ? -1 : ((c) > 0))
-			g_assert_cmpint (_NORM (c1), >=, -1);
-			g_assert_cmpint (_NORM (c1), <=,  1);
-			g_assert_cmpint (_NORM (c1), ==, -_NORM (c2));
-			g_assert_cmpint (_NORM (c1), ==, _NORM (c3));
-			g_assert_cmpint (_NORM (c1), ==, -_NORM (c4));
+			g_assert_cmpint (c1, >=, -1);
+			g_assert_cmpint (c1, <=,  1);
+			g_assert_cmpint (c1, ==, -c2);
+			g_assert_cmpint (c1, ==, _NORM (c3));
+			g_assert_cmpint (c1, ==, -_NORM (c4));
 		}
 	}
 
