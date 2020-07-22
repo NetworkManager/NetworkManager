@@ -141,4 +141,9 @@ GPtrArray *nm_utils_tfilters_from_tc_setting (NMPlatform *platform,
                                               NMSettingTCConfig *s_tc,
                                               int ip_ifindex);
 
+void nm_utils_ip_route_attribute_to_platform (int addr_family,
+                                              NMIPRoute *s_route,
+                                              NMPlatformIPRoute *r,
+                                              guint32 route_table);
+
 #endif /* __NETWORKMANAGER_UTILS_H__ */

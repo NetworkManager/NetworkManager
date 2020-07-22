@@ -721,10 +721,10 @@ nm_ip6_config_merge_setting (NMIP6Config *self,
 
 		nm_utils_ip6_address_clear_host_address (&route.network, &route.network, route.plen);
 
-		_nm_ip_config_merge_route_attributes (AF_INET6,
-		                                      s_route,
-		                                      NM_PLATFORM_IP_ROUTE_CAST (&route),
-		                                      route_table);
+		nm_utils_ip_route_attribute_to_platform (AF_INET6,
+		                                         s_route,
+		                                         NM_PLATFORM_IP_ROUTE_CAST (&route),
+		                                         route_table);
 		_add_route (self, NULL, &route, NULL);
 	}
 
