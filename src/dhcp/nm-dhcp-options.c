@@ -182,6 +182,7 @@ const NMDhcpOption _nm_dhcp_option_dhcp6_options[] = {
 	REQ (NM_DHCP_OPTION_DHCP6_DNS_SERVERS,                      "dhcp6_name_servers",  TRUE ),
 	REQ (NM_DHCP_OPTION_DHCP6_DOMAIN_LIST,                      "dhcp6_domain_search", TRUE ),
 	REQ (NM_DHCP_OPTION_DHCP6_SNTP_SERVERS,                     "dhcp6_sntp_servers",  TRUE ),
+	REQ (NM_DHCP_OPTION_DHCP6_FQDN,                             "fqdn_fqdn",           FALSE ),
 
 	/* Internal values */
 	REQ (NM_DHCP_OPTION_DHCP6_NM_IP_ADDRESS,                    "ip6_address",         FALSE ),
