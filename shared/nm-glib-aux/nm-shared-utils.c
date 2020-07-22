@@ -965,7 +965,7 @@ nm_utils_parse_inaddr_prefix_bin (int addr_family,
 
 	slash = strchr (text, '/');
 	if (slash)
-		addrstr = addrstr_free = g_strndup (text, slash - text);
+		addrstr = nm_strndup_a (300, text, slash - text, &addrstr_free);
 	else
 		addrstr = text;
 
@@ -975,9 +975,12 @@ nm_utils_parse_inaddr_prefix_bin (int addr_family,
 	if (slash) {
 		/* For IPv4, `ip addr add` supports the prefix-length as a netmask. We don't
 		 * do that. */
-		prefix = _nm_utils_ascii_str_to_int64 (slash + 1, 10,
+		prefix = _nm_utils_ascii_str_to_int64 (&slash[1],
+		                                       10,
 		                                       0,
-		                                       addr_family == AF_INET ? 32 : 128,
+		                                         addr_family == AF_INET
+		                                       ? 32
+		                                       : 128,
 		                                       -1);
 		if (prefix == -1)
 			return FALSE;
