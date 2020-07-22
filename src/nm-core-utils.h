@@ -446,7 +446,18 @@ guint32 nm_utils_lifetime_get (guint32 timestamp,
                                gint32 now,
                                guint32 *out_preferred);
 
-gboolean nm_utils_ip4_address_is_link_local (in_addr_t addr);
+/*****************************************************************************/
+
+#define NM_IPV4LL_NETWORK ((in_addr_t) (htonl (0xA9FE0000lu)))
+#define NM_IPV4LL_NETMASK ((in_addr_t) (htonl (0xFFFF0000lu)))
+
+static inline gboolean
+nm_utils_ip4_address_is_link_local (in_addr_t addr)
+{
+	return (addr & NM_IPV4LL_NETMASK) == NM_IPV4LL_NETWORK;
+}
+
+/*****************************************************************************/
 
 const char *nm_utils_dnsmasq_status_to_string (int status, char *dest, gsize size);
 
