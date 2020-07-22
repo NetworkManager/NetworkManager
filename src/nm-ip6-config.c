@@ -213,110 +213,19 @@ _notify_routes (NMIP6Config *self)
 /*****************************************************************************/
 
 static int
-_addresses_sort_cmp_get_prio (const struct in6_addr *addr)
-{
-	if (IN6_IS_ADDR_V4MAPPED (addr))
-		return 0;
-	if (IN6_IS_ADDR_V4COMPAT (addr))
-		return 1;
-	if (IN6_IS_ADDR_UNSPECIFIED (addr))
-		return 2;
-	if (IN6_IS_ADDR_LOOPBACK (addr))
-		return 3;
-	if (IN6_IS_ADDR_LINKLOCAL (addr))
-		return 4;
-	if (IN6_IS_ADDR_SITELOCAL (addr))
-		return 5;
-	return 6;
-}
-
-static int
-_addresses_sort_cmp (const NMPlatformIP6Address *a1,
-                     const NMPlatformIP6Address *a2,
-                     gboolean prefer_temp)
-{
-	int p1, p2, c;
-	gboolean perm1, perm2, tent1, tent2;
-	gboolean ipv6_privacy1, ipv6_privacy2;
-
-	/* tentative addresses are always sorted back... */
-	/* sort tentative addresses after non-tentative. */
-	tent1 = (a1->n_ifa_flags & IFA_F_TENTATIVE);
-	tent2 = (a2->n_ifa_flags & IFA_F_TENTATIVE);
-	if (tent1 != tent2)
-		return tent1 ? 1 : -1;
-
-	/* Sort by address type. For example link local will
-	 * be sorted *after* site local or global. */
-	p1 = _addresses_sort_cmp_get_prio (&a1->address);
-	p2 = _addresses_sort_cmp_get_prio (&a2->address);
-	if (p1 != p2)
-		return p1 > p2 ? -1 : 1;
-
-	ipv6_privacy1 = !!(a1->n_ifa_flags & (IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY));
-	ipv6_privacy2 = !!(a2->n_ifa_flags & (IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY));
-	if (ipv6_privacy1 || ipv6_privacy2) {
-		gboolean public1 = TRUE, public2 = TRUE;
-
-		if (ipv6_privacy1) {
-			if (a1->n_ifa_flags & IFA_F_TEMPORARY)
-				public1 = prefer_temp;
-			else
-				public1 = !prefer_temp;
-		}
-		if (ipv6_privacy2) {
-			if (a2->n_ifa_flags & IFA_F_TEMPORARY)
-				public2 = prefer_temp;
-			else
-				public2 = !prefer_temp;
-		}
-
-		if (public1 != public2)
-			return public1 ? -1 : 1;
-	}
-
-	/* Sort the addresses based on their source. */
-	if (a1->addr_source != a2->addr_source)
-		return a1->addr_source > a2->addr_source ? -1 : 1;
-
-	/* sort permanent addresses before non-permanent. */
-	perm1 = (a1->n_ifa_flags & IFA_F_PERMANENT);
-	perm2 = (a2->n_ifa_flags & IFA_F_PERMANENT);
-	if (perm1 != perm2)
-		return perm1 ? -1 : 1;
-
-	/* finally sort addresses lexically */
-	c = memcmp (&a1->address, &a2->address, sizeof (a2->address));
-	return c != 0 ? c : memcmp (a1, a2, sizeof (*a1));
-}
-
-int
-nmtst_ip6_config_addresses_sort_cmp (const NMPlatformIP6Address *a, const NMPlatformIP6Address *b, gboolean prefer_temp)
-{
-	g_assert (a);
-	g_assert (b);
-	return _addresses_sort_cmp (a, b, prefer_temp);
-}
-
-static int
 _addresses_sort_cmp_prop (gconstpointer a, gconstpointer b, gpointer user_data)
 {
-	return _addresses_sort_cmp (NMP_OBJECT_CAST_IP6_ADDRESS (*((const NMPObject **) a)),
-	                            NMP_OBJECT_CAST_IP6_ADDRESS (*((const NMPObject **) b)),
-	                            ((NMSettingIP6ConfigPrivacy) GPOINTER_TO_INT (user_data)) == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
+	return nm_platform_ip6_address_pretty_sort_cmp (NMP_OBJECT_CAST_IP6_ADDRESS (*((const NMPObject **) a)),
+	                                                NMP_OBJECT_CAST_IP6_ADDRESS (*((const NMPObject **) b)),
+	                                                (((NMSettingIP6ConfigPrivacy) GPOINTER_TO_INT (user_data)) == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR));
 }
 
 static int
 sort_captured_addresses (const CList *lst_a, const CList *lst_b, gconstpointer user_data)
 {
-	const NMPlatformIP6Address *addr_a = NMP_OBJECT_CAST_IP6_ADDRESS (c_list_entry (lst_a, NMDedupMultiEntry, lst_entries)->obj);
-	const NMPlatformIP6Address *addr_b = NMP_OBJECT_CAST_IP6_ADDRESS (c_list_entry (lst_b, NMDedupMultiEntry, lst_entries)->obj);
-
-	nm_assert (addr_a);
-	nm_assert (addr_b);
-
-	return _addresses_sort_cmp (addr_a, addr_b,
-	                            ((NMSettingIP6ConfigPrivacy) GPOINTER_TO_INT (user_data)) == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
+	return nm_platform_ip6_address_pretty_sort_cmp (NMP_OBJECT_CAST_IP6_ADDRESS (c_list_entry (lst_a, NMDedupMultiEntry, lst_entries)->obj),
+	                                                NMP_OBJECT_CAST_IP6_ADDRESS (c_list_entry (lst_b, NMDedupMultiEntry, lst_entries)->obj),
+	                                                (((NMSettingIP6ConfigPrivacy) GPOINTER_TO_INT (user_data)) == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR));
 }
 
 gboolean

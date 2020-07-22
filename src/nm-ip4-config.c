@@ -506,62 +506,10 @@ _notify_routes (NMIP4Config *self)
 /*****************************************************************************/
 
 static int
-_addresses_sort_cmp_get_prio (in_addr_t addr)
-{
-	if (nm_utils_ip4_address_is_link_local (addr))
-		return 0;
-	return 1;
-}
-
-static int
 _addresses_sort_cmp (gconstpointer a, gconstpointer b, gpointer user_data)
 {
-	int p1, p2;
-	const NMPlatformIP4Address *a1 = NMP_OBJECT_CAST_IP4_ADDRESS (*((const NMPObject **) a));
-	const NMPlatformIP4Address *a2 = NMP_OBJECT_CAST_IP4_ADDRESS (*((const NMPObject **) b));
-	guint32 n1, n2;
-
-	nm_assert (a1);
-	nm_assert (a2);
-
-	/* Sort by address type. For example link local will
-	 * be sorted *after* a global address. */
-	p1 = _addresses_sort_cmp_get_prio (a1->address);
-	p2 = _addresses_sort_cmp_get_prio (a2->address);
-	if (p1 != p2)
-		return p1 > p2 ? -1 : 1;
-
-	/* Sort the addresses based on their source. */
-	if (a1->addr_source != a2->addr_source)
-		return a1->addr_source > a2->addr_source ? -1 : 1;
-
-	if ((a1->label[0] == '\0') != (a2->label[0] == '\0'))
-		return (a1->label[0] == '\0') ? -1 : 1;
-
-	/* Finally, sort addresses lexically. We compare only the
-	 * network part so that the order of addresses in the same
-	 * subnet (and thus also the primary/secondary role) is
-	 * preserved.
-	 */
-	n1 = a1->address & _nm_utils_ip4_prefix_to_netmask (a1->plen);
-	n2 = a2->address & _nm_utils_ip4_prefix_to_netmask (a2->plen);
-
-	return memcmp (&n1, &n2, sizeof (guint32));
-}
-
-int
-nmtst_ip4_config_addresses_sort_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b)
-{
-	NMPObject o_a;
-	NMPObject o_b;
-	NMPObject *p_o_a = &o_a;
-	NMPObject *p_o_b = &o_b;
-
-	g_assert (a);
-	g_assert (b);
-	nmp_object_stackinit (&o_a, NMP_OBJECT_TYPE_IP4_ADDRESS, a);
-	nmp_object_stackinit (&o_b, NMP_OBJECT_TYPE_IP4_ADDRESS, b);
-	return _addresses_sort_cmp (&p_o_a, &p_o_b, NULL);
+	return nm_platform_ip4_address_pretty_sort_cmp (NMP_OBJECT_CAST_IP4_ADDRESS (*((const NMPObject **) a)),
+	                                                NMP_OBJECT_CAST_IP4_ADDRESS (*((const NMPObject **) b)));
 }
 
 /*****************************************************************************/

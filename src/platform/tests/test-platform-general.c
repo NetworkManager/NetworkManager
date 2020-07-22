@@ -9,7 +9,6 @@
 
 #include "platform/nm-platform-utils.h"
 #include "platform/nm-linux-platform.h"
-#include "nm-ip4-config.h"
 
 #include "nm-test-utils-core.h"
 
@@ -670,27 +669,18 @@ test_platform_ip_address_pretty_sort_cmp (gconstpointer test_data)
 			const NMPlatformIPXAddress *b = (gconstpointer) (&addresses[j * ELM_SIZE]);
 			int c1;
 			int c2;
-			int c3;
-			int c4;
 
 			if (addr_family == AF_INET) {
 				c1 = nm_platform_ip4_address_pretty_sort_cmp (&a->a4, &b->a4);
 				c2 = nm_platform_ip4_address_pretty_sort_cmp (&b->a4, &a->a4);
-				c3 = nmtst_ip4_config_addresses_sort_cmp (&a->a4, &b->a4);
-				c4 = nmtst_ip4_config_addresses_sort_cmp (&b->a4, &a->a4);
 			} else {
 				c1 = nm_platform_ip6_address_pretty_sort_cmp (&a->a6, &b->a6, IPV6_PREFER_TEMP);
 				c2 = nm_platform_ip6_address_pretty_sort_cmp (&b->a6, &a->a6, IPV6_PREFER_TEMP);
-				c3 = nmtst_ip6_config_addresses_sort_cmp (&a->a6, &b->a6, IPV6_PREFER_TEMP);
-				c4 = nmtst_ip6_config_addresses_sort_cmp (&b->a6, &a->a6, IPV6_PREFER_TEMP);
 			}
 
-#define _NORM(c) (((c) < 0) ? -1 : ((c) > 0))
 			g_assert_cmpint (c1, >=, -1);
 			g_assert_cmpint (c1, <=,  1);
 			g_assert_cmpint (c1, ==, -c2);
-			g_assert_cmpint (c1, ==, _NORM (c3));
-			g_assert_cmpint (c1, ==, -_NORM (c4));
 		}
 	}
 

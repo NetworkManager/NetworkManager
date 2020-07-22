@@ -603,6 +603,4 @@ nm_ip_config_intersect_alloc (const NMIPConfig *a,
 	}
 }
 
-int nmtst_ip4_config_addresses_sort_cmp (const NMPlatformIP4Address *a, const NMPlatformIP4Address *b);
-
 #endif /* __NETWORKMANAGER_IP4_CONFIG_H__ */
