@@ -1349,20 +1349,17 @@ nm_utils_ip_route_attribute_to_platform (int addr_family,
 	if (   addr_family == AF_INET6
 	    && (variant = nm_ip_route_get_attribute (s_route, NM_IP_ROUTE_ATTRIBUTE_FROM))
 	    && g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING)) {
-		gs_free char *string = NULL;
-		guint8 plen = 128;
-		char *sep;
+		int prefix;
 
-		string = g_variant_dup_string (variant, NULL);
-		sep = strchr (string, '/');
-		if (sep) {
-			*sep = 0;
-			plen = _nm_utils_ascii_str_to_int64 (sep + 1, 10, 1, 128, 255);
-		}
-		if (   plen <= 128
-		    && inet_pton (AF_INET6, string, &addr) == 1) {
+		if (nm_utils_parse_inaddr_prefix_bin (addr_family,
+		                                      g_variant_get_string (variant, NULL),
+		                                      NULL,
+		                                      &addr,
+		                                      &prefix)) {
+			if (prefix < 0)
+				prefix = 128;
 			r6->src = addr.addr6;
-			r6->src_plen = plen;
+			r6->src_plen = prefix;
 		}
 	}
 #undef GET_ATTR
