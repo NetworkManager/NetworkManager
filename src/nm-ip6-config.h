@@ -105,7 +105,7 @@ void nm_ip6_config_merge_setting (NMIP6Config *self,
                                   NMSettingIPConfig *setting,
                                   guint32 route_table,
                                   guint32 route_metric);
-NMSetting *nm_ip6_config_create_setting (const NMIP6Config *self);
+NMSetting *nm_ip6_config_create_setting (const NMIP6Config *self, gboolean maybe_ipv6_disabled);
 
 void nm_ip6_config_merge (NMIP6Config *dst,
                           const NMIP6Config *src,

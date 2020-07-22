@@ -6169,6 +6169,26 @@ nm_device_master_update_slave_connection (NMDevice *self,
 	return FALSE;
 }
 
+static gboolean
+_get_maybe_ipv6_disabled (NMDevice *self)
+{
+	NMPlatform *platform;
+	int ifindex;
+	const char *path;
+	char ifname[IFNAMSIZ];
+
+	ifindex = nm_device_get_ip_ifindex (self);
+	if (ifindex <= 0)
+		return FALSE;
+
+	platform = nm_device_get_platform (self);
+	if (!nm_platform_if_indextoname (platform, ifindex, ifname))
+		return FALSE;
+
+	path = nm_sprintf_bufa (128, "/proc/sys/net/ipv6/conf/%s/disable_ipv6", ifname);
+	return (nm_platform_sysctl_get_int32 (platform, NMP_SYSCTL_PATHID_ABSOLUTE (path), 0) == 0);
+}
+
 NMConnection *
 nm_device_generate_connection (NMDevice *self,
                                NMDevice *master,
@@ -6237,7 +6257,7 @@ nm_device_generate_connection (NMDevice *self,
 		s_ip4 = nm_ip4_config_create_setting (priv->ip_config_4);
 		nm_connection_add_setting (connection, s_ip4);
 
-		s_ip6 = nm_ip6_config_create_setting (priv->ip_config_6);
+		s_ip6 = nm_ip6_config_create_setting (priv->ip_config_6, _get_maybe_ipv6_disabled (self));
 		nm_connection_add_setting (connection, s_ip6);
 
 		nm_connection_add_setting (connection, nm_setting_proxy_new ());
@@ -13415,9 +13435,10 @@ nm_device_set_ip_config (NMDevice *self,
 			new_connection = nm_simple_connection_new_clone (nm_settings_connection_get_connection (settings_connection));
 
 			nm_connection_add_setting (new_connection,
-			                           IS_IPv4
-			                             ? nm_ip4_config_create_setting (priv->ip_config_4)
-			                             : nm_ip6_config_create_setting (priv->ip_config_6));
+			                             IS_IPv4
+			                           ? nm_ip4_config_create_setting (priv->ip_config_4)
+			                           : nm_ip6_config_create_setting (priv->ip_config_6,
+			                                                           _get_maybe_ipv6_disabled (self)));
 
 			nm_settings_connection_update (settings_connection,
 			                               new_connection,
