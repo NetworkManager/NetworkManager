@@ -5,6 +5,7 @@
 
 #include "nm-glib-aux/nm-dedup-multi.h"
 #include "nm-setting-connection.h"
+#include "nm-setting-ip6-config.h"
 #include "platform/nm-platform.h"
 
 typedef struct _NML3ConfigData NML3ConfigData;
@@ -20,13 +21,18 @@ gboolean nm_l3_config_data_is_sealed (NML3ConfigData *self);
 const NMDedupMultiHeadEntry *nm_l3_config_data_lookup_addresses (const NML3ConfigData *self, int addr_family);
 const NMDedupMultiHeadEntry *nm_l3_config_data_lookup_routes (const NML3ConfigData *self, int addr_family);
 
-NML3ConfigData *nm_l3_config_data_new_from_connection (NMDedupMultiIndex *multi_index,
+NML3ConfigData *nm_l3_config_data_new_from_connection (NMDedupMultiIndex *multi_idx,
                                                        int ifindex,
                                                        NMConnection *connection,
                                                        NMSettingConnectionMdns mdns,
                                                        NMSettingConnectionLlmnr llmnr,
                                                        guint32 route_table,
                                                        guint32 route_metric);
+
+NML3ConfigData *nm_l3_config_data_new_from_platform (NMDedupMultiIndex *multi_idx,
+                                                     int ifindex,
+                                                     NMPlatform *platform,
+                                                     NMSettingIP6ConfigPrivacy ipv6_privacy_rfc4941);
 
 /*****************************************************************************/
 

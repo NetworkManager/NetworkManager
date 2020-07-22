@@ -4,6 +4,9 @@
 
 #include "nm-l3-config-data.h"
 
+#include <linux/if.h>
+#include <linux/if_addr.h>
+
 #include "nm-core-internal.h"
 #include "platform/nm-platform.h"
 #include "platform/nmp-object.h"
@@ -846,7 +849,7 @@ _init_from_connection_ip (NML3ConfigData *self,
 }
 
 NML3ConfigData *
-nm_l3_config_data_new_from_connection (NMDedupMultiIndex *multi_index,
+nm_l3_config_data_new_from_connection (NMDedupMultiIndex *multi_idx,
                                        int ifindex,
                                        NMConnection *connection,
                                        NMSettingConnectionMdns mdns,
@@ -856,13 +859,114 @@ nm_l3_config_data_new_from_connection (NMDedupMultiIndex *multi_index,
 {
 	NML3ConfigData *self;
 
-	self = nm_l3_config_data_new (multi_index);
+	self = nm_l3_config_data_new (multi_idx);
 
 	_init_from_connection_ip (self, AF_INET,  ifindex, connection, route_table, route_metric);
 	_init_from_connection_ip (self, AF_INET6, ifindex, connection, route_table, route_metric);
 
 	self->mdns = mdns;
 	self->llmnr = llmnr;
+
+	return self;
+}
+
+static int
+sort_captured_addresses_4 (const CList *lst_a, const CList *lst_b, gconstpointer user_data)
+{
+	const NMPlatformIP4Address *addr_a = NMP_OBJECT_CAST_IP4_ADDRESS (c_list_entry (lst_a, NMDedupMultiEntry, lst_entries)->obj);
+	const NMPlatformIP4Address *addr_b = NMP_OBJECT_CAST_IP4_ADDRESS (c_list_entry (lst_b, NMDedupMultiEntry, lst_entries)->obj);
+
+	nm_assert (addr_a);
+	nm_assert (addr_b);
+
+	/* Primary addresses first */
+	return NM_FLAGS_HAS (addr_a->n_ifa_flags, IFA_F_SECONDARY) -
+	       NM_FLAGS_HAS (addr_b->n_ifa_flags, IFA_F_SECONDARY);
+}
+
+static int
+sort_captured_addresses_6 (const CList *lst_a, const CList *lst_b, gconstpointer user_data)
+{
+	NMSettingIP6ConfigPrivacy ipv6_privacy_rfc4941 = GPOINTER_TO_INT (user_data);
+	const NMPlatformIP6Address *addr_a = NMP_OBJECT_CAST_IP6_ADDRESS (c_list_entry (lst_a, NMDedupMultiEntry, lst_entries)->obj);
+	const NMPlatformIP6Address *addr_b = NMP_OBJECT_CAST_IP6_ADDRESS (c_list_entry (lst_b, NMDedupMultiEntry, lst_entries)->obj);
+
+	return nm_platform_ip6_address_pretty_sort_cmp (addr_a,
+	                                                addr_b,
+	                                                ipv6_privacy_rfc4941 == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
+}
+
+static void
+_init_from_platform (NML3ConfigData *self,
+                     int addr_family,
+                     int ifindex,
+                     NMPlatform *platform,
+                     NMSettingIP6ConfigPrivacy ipv6_privacy_rfc4941)
+{
+	const gboolean IS_IPv4 = NM_IS_IPv4 (addr_family);
+	const NMDedupMultiHeadEntry *head_entry;
+	const NMPObject *plobj = NULL;
+	NMDedupMultiIter iter;
+
+	nm_assert_addr_family (addr_family);
+	nm_assert (ifindex > 0);
+
+	head_entry = nm_platform_lookup_object (platform,
+	                                          IS_IPv4
+	                                        ? NMP_OBJECT_TYPE_IP4_ADDRESS
+	                                        : NMP_OBJECT_TYPE_IP6_ADDRESS,
+	                                        ifindex);
+	if (head_entry) {
+		nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
+			if (!_l3_config_data_add_obj (self->multi_idx,
+			                              &self->idx_addresses_x[IS_IPv4],
+			                              ifindex,
+			                              plobj,
+			                              NULL,
+			                              FALSE,
+			                              TRUE,
+			                              NULL,
+			                              NULL))
+				nm_assert_not_reached ();
+		}
+		head_entry = nm_l3_config_data_lookup_addresses (self, addr_family);
+		nm_assert (head_entry);
+		nm_dedup_multi_head_entry_sort (head_entry,
+		                                  IS_IPv4
+		                                ? sort_captured_addresses_4
+		                                : sort_captured_addresses_6,
+		                                GINT_TO_POINTER (ipv6_privacy_rfc4941));
+	}
+
+	head_entry = nm_platform_lookup_object (platform,
+	                                          IS_IPv4
+	                                        ? NMP_OBJECT_TYPE_IP4_ROUTE
+	                                        : NMP_OBJECT_TYPE_IP6_ROUTE,
+	                                        ifindex);
+	nmp_cache_iter_for_each (&iter, head_entry, &plobj)
+		_nm_l3_config_data_add_route (self, addr_family, ifindex, plobj, NULL, NULL, NULL);
+}
+
+NML3ConfigData *
+nm_l3_config_data_new_from_platform (NMDedupMultiIndex *multi_idx,
+                                     int ifindex,
+                                     NMPlatform *platform,
+                                     NMSettingIP6ConfigPrivacy ipv6_privacy_rfc4941)
+{
+
+	NML3ConfigData *self;
+
+	nm_assert (NM_IS_PLATFORM (platform));
+	nm_assert (ifindex > 0);
+
+	/* Slaves have no IP configuration */
+	if (nm_platform_link_get_master (platform, ifindex) > 0)
+		return NULL;
+
+	self = nm_l3_config_data_new (multi_idx);
+
+	_init_from_platform (self, AF_INET,  ifindex, platform, ipv6_privacy_rfc4941);
+	_init_from_platform (self, AF_INET6, ifindex, platform, ipv6_privacy_rfc4941);
 
 	return self;
 }
