@@ -568,15 +568,20 @@ static void
 test_multiple_bootdev(void)
 {
     gs_unref_hashtable GHashTable *connections = NULL;
-    const char *const *            ARGV =
-        NM_MAKE_STRV("nameserver=1.2.3.4", "ip=eth3:auto6", "ip=eth4:dhcp", "bootdev=eth4");
+
+    const char *const *ARGV = NM_MAKE_STRV("nameserver=1.2.3.4",
+                                           "ip=eth3:auto6",
+                                           "ip=eth4:dhcp",
+                                           "ip=eth5:link6",
+                                           "bootdev=eth4");
+
     NMConnection *       connection;
     NMSettingConnection *s_con;
     NMSettingIPConfig *  s_ip4;
     NMSettingIPConfig *  s_ip6;
 
     connections = _parse_cons(ARGV);
-    g_assert_cmpint(g_hash_table_size(connections), ==, 2);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 3);
 
     connection = g_hash_table_lookup(connections, "eth3");
     g_assert(connection);
@@ -599,6 +604,17 @@ test_multiple_bootdev(void)
     g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
     g_assert_cmpint(nm_setting_ip_config_get_num_dns(s_ip4), ==, 1);
     g_assert_cmpstr(nm_setting_ip_config_get_dns(s_ip4, 0), ==, "1.2.3.4");
+
+    connection = g_hash_table_lookup(connections, "eth5");
+    g_assert(connection);
+    s_con = nm_connection_get_setting_connection(connection);
+    g_assert(s_con);
+    g_assert_cmpint(nm_setting_connection_get_wait_device_timeout(s_con), ==, -1);
+    s_ip6 = nm_connection_get_setting_ip6_config(connection);
+    g_assert(s_ip6);
+    g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip6),
+                    ==,
+                    NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL);
 }
 
 static void

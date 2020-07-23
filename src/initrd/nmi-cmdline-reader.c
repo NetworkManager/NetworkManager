@@ -421,7 +421,7 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
 
     tmp = get_word(&argument, ':');
     if (!*argument) {
-        /* ip={dhcp|on|any|dhcp6|auto6|ibft} */
+        /* ip={dhcp|on|any|dhcp6|auto6|link6|ibft} */
         kind = tmp;
     } else {
         tmp2 = get_word(&argument, ':');
@@ -434,8 +434,9 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
                          "dhcp6",
                          "auto",
                          "auto6",
+                         "link6",
                          "ibft")) {
-            /* <ifname>:{none|off|dhcp|on|any|dhcp6|auto|auto6|ibft} */
+            /* <ifname>:{none|off|dhcp|on|any|dhcp6|auto|auto6|link6|ibft} */
             iface_spec = tmp;
             kind       = tmp2;
         } else {
@@ -597,6 +598,19 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
         }
     } else if (NM_IN_STRSET(kind, "auto6", "dhcp6")) {
         g_object_set(s_ip4, NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE, NULL);
+        if (nm_setting_ip_config_get_num_addresses(s_ip4) == 0) {
+            g_object_set(s_ip4,
+                         NM_SETTING_IP_CONFIG_METHOD,
+                         NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+                         NULL);
+        }
+    } else if (nm_streq0(kind, "link6")) {
+        g_object_set(s_ip6,
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+                     NM_SETTING_IP_CONFIG_MAY_FAIL,
+                     FALSE,
+                     NULL);
         if (nm_setting_ip_config_get_num_addresses(s_ip4) == 0) {
             g_object_set(s_ip4,
                          NM_SETTING_IP_CONFIG_METHOD,
