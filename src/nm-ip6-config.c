@@ -1296,8 +1296,8 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 		const NMPlatformIP6Address *r_src = NULL;
 		const NMPlatformIP6Address *r_dst = NULL;
 
-		has = nm_ip_config_iter_ip6_address_next (&ipconf_iter_src, &r_src);
-		if (has != nm_ip_config_iter_ip6_address_next (&ipconf_iter_dst, &r_dst)) {
+		has = nm_platform_dedup_multi_iter_next_ip6_address (&ipconf_iter_src, &r_src);
+		if (has != nm_platform_dedup_multi_iter_next_ip6_address (&ipconf_iter_dst, &r_dst)) {
 			are_equal = FALSE;
 			has_relevant_changes = TRUE;
 			break;
@@ -1344,8 +1344,8 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 		const NMPlatformIP6Route *r_src = NULL;
 		const NMPlatformIP6Route *r_dst = NULL;
 
-		has = nm_ip_config_iter_ip6_route_next (&ipconf_iter_src, &r_src);
-		if (has != nm_ip_config_iter_ip6_route_next (&ipconf_iter_dst, &r_dst)) {
+		has = nm_platform_dedup_multi_iter_next_ip6_route (&ipconf_iter_src, &r_src);
+		if (has != nm_platform_dedup_multi_iter_next_ip6_route (&ipconf_iter_dst, &r_dst)) {
 			are_equal = FALSE;
 			has_relevant_changes = TRUE;
 			break;

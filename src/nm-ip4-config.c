@@ -1657,8 +1657,8 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 		const NMPlatformIP4Address *r_src = NULL;
 		const NMPlatformIP4Address *r_dst = NULL;
 
-		has = nm_ip_config_iter_ip4_address_next (&ipconf_iter_src, &r_src);
-		if (has != nm_ip_config_iter_ip4_address_next (&ipconf_iter_dst, &r_dst)) {
+		has = nm_platform_dedup_multi_iter_next_ip4_address (&ipconf_iter_src, &r_src);
+		if (has != nm_platform_dedup_multi_iter_next_ip4_address (&ipconf_iter_dst, &r_dst)) {
 			are_equal = FALSE;
 			has_relevant_changes = TRUE;
 			break;
@@ -1704,8 +1704,8 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 		const NMPlatformIP4Route *r_src = NULL;
 		const NMPlatformIP4Route *r_dst = NULL;
 
-		has = nm_ip_config_iter_ip4_route_next (&ipconf_iter_src, &r_src);
-		if (has != nm_ip_config_iter_ip4_route_next (&ipconf_iter_dst, &r_dst)) {
+		has = nm_platform_dedup_multi_iter_next_ip4_route (&ipconf_iter_src, &r_src);
+		if (has != nm_platform_dedup_multi_iter_next_ip4_route (&ipconf_iter_dst, &r_dst)) {
 			are_equal = FALSE;
 			has_relevant_changes = TRUE;
 			break;

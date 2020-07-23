@@ -35,36 +35,14 @@ void nm_ip_config_dedup_multi_idx_type_init (NMIPConfigDedupMultiIdxType *idx_ty
 void nm_ip_config_iter_ip4_address_init (NMDedupMultiIter *iter, const NMIP4Config *self);
 void nm_ip_config_iter_ip4_route_init (NMDedupMultiIter *iter, const NMIP4Config *self);
 
-static inline gboolean
-nm_ip_config_iter_ip4_address_next (NMDedupMultiIter *ipconf_iter, const NMPlatformIP4Address **out_address)
-{
-	gboolean has_next;
-
-	has_next = nm_dedup_multi_iter_next (ipconf_iter);
-	if (out_address)
-		*out_address = has_next ? NMP_OBJECT_CAST_IP4_ADDRESS (ipconf_iter->current->obj) : NULL;
-	return has_next;
-}
-
-static inline gboolean
-nm_ip_config_iter_ip4_route_next (NMDedupMultiIter *ipconf_iter, const NMPlatformIP4Route **out_route)
-{
-	gboolean has_next;
-
-	has_next = nm_dedup_multi_iter_next (ipconf_iter);
-	if (out_route)
-		*out_route = has_next ? NMP_OBJECT_CAST_IP4_ROUTE (ipconf_iter->current->obj) : NULL;
-	return has_next;
-}
-
 #define nm_ip_config_iter_ip4_address_for_each(iter, self, address) \
     for (nm_ip_config_iter_ip4_address_init ((iter), (self)); \
-         nm_ip_config_iter_ip4_address_next ((iter), (address)); \
+         nm_platform_dedup_multi_iter_next_ip4_address ((iter), (address)); \
          )
 
 #define nm_ip_config_iter_ip4_route_for_each(iter, self, route) \
     for (nm_ip_config_iter_ip4_route_init ((iter), (self)); \
-         nm_ip_config_iter_ip4_route_next ((iter), (route)); \
+         nm_platform_dedup_multi_iter_next_ip4_route ((iter), (route)); \
          )
 
 /*****************************************************************************/
