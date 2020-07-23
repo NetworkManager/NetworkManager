@@ -525,6 +525,14 @@ char **_nm_utils_strv_cleanup (char **strv,
 
 /*****************************************************************************/
 
+static inline gpointer
+nm_copy_func_g_strdup (gconstpointer arg, gpointer user_data)
+{
+	return g_strdup (arg);
+}
+
+/*****************************************************************************/
+
 static inline const char **
 nm_utils_escaped_tokens_split (const char *str,
                                const char *delimiters)
