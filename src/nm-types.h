@@ -23,6 +23,7 @@ typedef struct _NMDBusManager        NMDBusManager;
 typedef struct _NMConfig             NMConfig;
 typedef struct _NMConfigData         NMConfigData;
 typedef struct _NMConnectivity       NMConnectivity;
+typedef struct _NML3Cfg              NML3Cfg;
 typedef struct _NMDevice             NMDevice;
 typedef struct _NMDhcpConfig         NMDhcpConfig;
 typedef struct _NMProxyConfig        NMProxyConfig;
@@ -234,6 +235,17 @@ typedef enum {
 	__NMP_OBJECT_TYPE_LAST,
 	NMP_OBJECT_TYPE_MAX = __NMP_OBJECT_TYPE_LAST - 1,
 } NMPObjectType;
+
+static inline guint32
+nmp_object_type_to_flags (NMPObjectType obj_type)
+{
+	G_STATIC_ASSERT_EXPR (NMP_OBJECT_TYPE_MAX < 32);
+
+	nm_assert (_NM_INT_NOT_NEGATIVE (obj_type));
+	nm_assert (obj_type < NMP_OBJECT_TYPE_MAX);
+
+	return ((guint32) 1u) << obj_type;
+}
 
 /**
  * NMIPConfigMergeFlags:

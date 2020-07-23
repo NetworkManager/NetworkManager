@@ -352,6 +352,19 @@ nm_hash_obfuscate_ptr (guint static_seed, gconstpointer val)
  * values in a global context. */
 #define NM_HASH_OBFUSCATE_PTR(ptr) (nm_hash_obfuscate_ptr (1678382159u, ptr))
 
+static inline const char *
+nm_hash_obfuscated_ptr_str (gconstpointer ptr, char buf[static 17])
+{
+	int l;
+
+	nm_assert (buf);
+	l = g_snprintf (buf, 17, NM_HASH_OBFUSCATE_PTR_FMT, NM_HASH_OBFUSCATE_PTR (ptr));
+	nm_assert (l < 17);
+	return buf;
+}
+
+#define nm_hash_obfuscated_ptr_str_a(ptr) (nm_hash_obfuscated_ptr_str ((ptr), g_alloca (17)))
+
 /*****************************************************************************/
 
 #endif /* __NM_HASH_UTILS_H__ */

@@ -1186,7 +1186,7 @@ nm_utils_qdiscs_from_tc_setting (NMPlatform *platform,
 			GET_ATTR ("limit",        qdisc->tbf.limit,             UINT32,  uint32,  0);
 			GET_ATTR ("latency",      qdisc->tbf.latency,           UINT32,  uint32,  0);
 		}
-#undef GET_ADDR
+#undef GET_ATTR
 
 		g_ptr_array_add (qdiscs, q);
 	}
@@ -1263,3 +1263,106 @@ nm_utils_tfilters_from_tc_setting (NMPlatform *platform,
 
 	return tfilters;
 }
+
+void
+nm_utils_ip_route_attribute_to_platform (int addr_family,
+                                         NMIPRoute *s_route,
+                                         NMPlatformIPRoute *r,
+                                         guint32 route_table)
+{
+	GVariant *variant;
+	guint32 table;
+	NMIPAddr addr;
+	NMPlatformIP4Route *r4 = (NMPlatformIP4Route *) r;
+	NMPlatformIP6Route *r6 = (NMPlatformIP6Route *) r;
+	gboolean onlink;
+
+	nm_assert (s_route);
+	nm_assert_addr_family (addr_family);
+	nm_assert (r);
+
+#define GET_ATTR(name, dst, variant_type, type, dflt) \
+	G_STMT_START { \
+		GVariant *_variant = nm_ip_route_get_attribute (s_route, ""name""); \
+		\
+		if (   _variant \
+		    && g_variant_is_of_type (_variant, G_VARIANT_TYPE_ ## variant_type)) \
+			(dst) = g_variant_get_ ## type (_variant); \
+		else \
+			(dst) = (dflt); \
+	} G_STMT_END
+
+	if (   (variant = nm_ip_route_get_attribute (s_route, NM_IP_ROUTE_ATTRIBUTE_TYPE))
+	    && g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING)) {
+		guint8 type;
+
+		type = nm_utils_route_type_by_name (g_variant_get_string (variant, NULL));
+		nm_assert (NM_IN_SET (type,
+		                      RTN_UNICAST,
+		                      RTN_LOCAL));
+
+		r->type_coerced = nm_platform_route_type_coerce (type);
+	} else
+		r->type_coerced = nm_platform_route_type_coerce (RTN_UNICAST);
+
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_TABLE, table, UINT32, uint32, 0);
+
+	if (   !table
+	    && r->type_coerced == nm_platform_route_type_coerce (RTN_LOCAL))
+		r->table_coerced = nm_platform_route_table_coerce (RT_TABLE_LOCAL);
+	else
+		r->table_coerced = nm_platform_route_table_coerce (table ?: (route_table ?: RT_TABLE_MAIN));
+
+	if (addr_family == AF_INET) {
+		guint8 scope;
+
+		GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_TOS,        r4->tos,           BYTE,     byte, 0);
+		GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_SCOPE,      scope,             BYTE,     byte, RT_SCOPE_NOWHERE);
+		r4->scope_inv = nm_platform_route_scope_inv (scope);
+	}
+
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_ONLINK,         onlink,            BOOLEAN,  boolean, FALSE);
+
+	r->r_rtm_flags = ((onlink) ? (unsigned) RTNH_F_ONLINK : 0u);
+
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_WINDOW,         r->window,         UINT32,   uint32, 0);
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_CWND,           r->cwnd,           UINT32,   uint32, 0);
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_INITCWND,       r->initcwnd,       UINT32,   uint32, 0);
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_INITRWND,       r->initrwnd,       UINT32,   uint32, 0);
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_MTU,            r->mtu,            UINT32,   uint32, 0);
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_WINDOW,    r->lock_window,    BOOLEAN,  boolean, FALSE);
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_CWND,      r->lock_cwnd,      BOOLEAN,  boolean, FALSE);
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_INITCWND,  r->lock_initcwnd,  BOOLEAN,  boolean, FALSE);
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_INITRWND,  r->lock_initrwnd,  BOOLEAN,  boolean, FALSE);
+	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_MTU,       r->lock_mtu,       BOOLEAN,  boolean, FALSE);
+
+	if (   (variant = nm_ip_route_get_attribute (s_route, NM_IP_ROUTE_ATTRIBUTE_SRC))
+	    && g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING)) {
+		if (inet_pton (addr_family, g_variant_get_string (variant, NULL), &addr) == 1) {
+			if (addr_family == AF_INET)
+				r4->pref_src = addr.addr4;
+			else
+				r6->pref_src = addr.addr6;
+		}
+	}
+
+	if (   addr_family == AF_INET6
+	    && (variant = nm_ip_route_get_attribute (s_route, NM_IP_ROUTE_ATTRIBUTE_FROM))
+	    && g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING)) {
+		int prefix;
+
+		if (nm_utils_parse_inaddr_prefix_bin (addr_family,
+		                                      g_variant_get_string (variant, NULL),
+		                                      NULL,
+		                                      &addr,
+		                                      &prefix)) {
+			if (prefix < 0)
+				prefix = 128;
+			r6->src = addr.addr6;
+			r6->src_plen = prefix;
+		}
+	}
+#undef GET_ATTR
+}
+
+

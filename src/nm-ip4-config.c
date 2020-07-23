@@ -400,12 +400,12 @@ _nm_ip_config_best_default_route_find_better (const NMPObject *obj_cur, const NM
 	               && NM_IN_SET (NMP_OBJECT_GET_TYPE (obj_cmp), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE))
 	           || NMP_OBJECT_GET_TYPE (obj_cur) == NMP_OBJECT_GET_TYPE (obj_cmp));
 	nm_assert (   !obj_cur
-	           || nm_ip_config_best_default_route_is (obj_cur));
+	           || nmp_object_ip_route_is_best_defaut_route (obj_cur));
 
 	/* assumes that @obj_cur is already the best default route (or NULL). It checks whether
 	 * @obj_cmp is also a default route and returns the best of both. */
 	if (   obj_cmp
-	    && nm_ip_config_best_default_route_is (obj_cmp)) {
+	    && nmp_object_ip_route_is_best_defaut_route (obj_cmp)) {
 		guint32 metric_cur, metric_cmp;
 
 		if (!obj_cur)
@@ -437,22 +437,11 @@ _nm_ip_config_best_default_route_find_better (const NMPObject *obj_cur, const NM
 }
 
 gboolean
-_nm_ip_config_best_default_route_set (const NMPObject **best_default_route, const NMPObject *new_candidate)
-{
-	if (new_candidate == *best_default_route)
-		return FALSE;
-	nmp_object_ref (new_candidate);
-	nm_clear_nmp_object (best_default_route);
-	*best_default_route = new_candidate;
-	return TRUE;
-}
-
-gboolean
 _nm_ip_config_best_default_route_merge (const NMPObject **best_default_route, const NMPObject *new_candidate)
 {
 	new_candidate = _nm_ip_config_best_default_route_find_better (*best_default_route,
 	                                                              new_candidate);
-	return _nm_ip_config_best_default_route_set (best_default_route, new_candidate);
+	return nmp_object_ref_set (best_default_route, new_candidate);
 }
 
 const NMPObject *
@@ -859,110 +848,6 @@ nm_ip4_config_commit (const NMIP4Config *self,
 }
 
 void
-_nm_ip_config_merge_route_attributes (int addr_family,
-                                      NMIPRoute *s_route,
-                                      NMPlatformIPRoute *r,
-                                      guint32 route_table)
-{
-	GVariant *variant;
-	guint32 table;
-	NMIPAddr addr;
-	NMPlatformIP4Route *r4 = (NMPlatformIP4Route *) r;
-	NMPlatformIP6Route *r6 = (NMPlatformIP6Route *) r;
-	gboolean onlink;
-
-	nm_assert (s_route);
-	nm_assert_addr_family (addr_family);
-	nm_assert (r);
-
-#define GET_ATTR(name, dst, variant_type, type, dflt) \
-	G_STMT_START { \
-		GVariant *_variant = nm_ip_route_get_attribute (s_route, ""name""); \
-		\
-		if (   _variant \
-		    && g_variant_is_of_type (_variant, G_VARIANT_TYPE_ ## variant_type)) \
-			(dst) = g_variant_get_ ## type (_variant); \
-		else \
-			(dst) = (dflt); \
-	} G_STMT_END
-
-	if (   (variant = nm_ip_route_get_attribute (s_route, NM_IP_ROUTE_ATTRIBUTE_TYPE))
-	    && g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING)) {
-		guint8 type;
-
-		type = nm_utils_route_type_by_name (g_variant_get_string (variant, NULL));
-		nm_assert (NM_IN_SET (type,
-		                      RTN_UNICAST,
-		                      RTN_LOCAL));
-
-		r->type_coerced = nm_platform_route_type_coerce (type);
-	} else
-		r->type_coerced = nm_platform_route_type_coerce (RTN_UNICAST);
-
-	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_TABLE, table, UINT32, uint32, 0);
-
-	if (   !table
-	    && r->type_coerced == nm_platform_route_type_coerce (RTN_LOCAL))
-		r->table_coerced = nm_platform_route_table_coerce (RT_TABLE_LOCAL);
-	else
-		r->table_coerced = nm_platform_route_table_coerce (table ?: (route_table ?: RT_TABLE_MAIN));
-
-	if (addr_family == AF_INET) {
-		guint8 scope;
-
-		GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_TOS,        r4->tos,           BYTE,     byte, 0);
-		GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_SCOPE,      scope,             BYTE,     byte, RT_SCOPE_NOWHERE);
-		r4->scope_inv = nm_platform_route_scope_inv (scope);
-	}
-
-	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_ONLINK,         onlink,            BOOLEAN,  boolean, FALSE);
-
-	r->r_rtm_flags = ((onlink) ? (unsigned) RTNH_F_ONLINK : 0u);
-
-	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_WINDOW,         r->window,         UINT32,   uint32, 0);
-	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_CWND,           r->cwnd,           UINT32,   uint32, 0);
-	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_INITCWND,       r->initcwnd,       UINT32,   uint32, 0);
-	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_INITRWND,       r->initrwnd,       UINT32,   uint32, 0);
-	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_MTU,            r->mtu,            UINT32,   uint32, 0);
-	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_WINDOW,    r->lock_window,    BOOLEAN,  boolean, FALSE);
-	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_CWND,      r->lock_cwnd,      BOOLEAN,  boolean, FALSE);
-	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_INITCWND,  r->lock_initcwnd,  BOOLEAN,  boolean, FALSE);
-	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_INITRWND,  r->lock_initrwnd,  BOOLEAN,  boolean, FALSE);
-	GET_ATTR (NM_IP_ROUTE_ATTRIBUTE_LOCK_MTU,       r->lock_mtu,       BOOLEAN,  boolean, FALSE);
-
-	if (   (variant = nm_ip_route_get_attribute (s_route, NM_IP_ROUTE_ATTRIBUTE_SRC))
-	    && g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING)) {
-		if (inet_pton (addr_family, g_variant_get_string (variant, NULL), &addr) == 1) {
-			if (addr_family == AF_INET)
-				r4->pref_src = addr.addr4;
-			else
-				r6->pref_src = addr.addr6;
-		}
-	}
-
-	if (   addr_family == AF_INET6
-	    && (variant = nm_ip_route_get_attribute (s_route, NM_IP_ROUTE_ATTRIBUTE_FROM))
-	    && g_variant_is_of_type (variant, G_VARIANT_TYPE_STRING)) {
-		gs_free char *string = NULL;
-		guint8 plen = 128;
-		char *sep;
-
-		string = g_variant_dup_string (variant, NULL);
-		sep = strchr (string, '/');
-		if (sep) {
-			*sep = 0;
-			plen = _nm_utils_ascii_str_to_int64 (sep + 1, 10, 1, 128, 255);
-		}
-		if (   plen <= 128
-		    && inet_pton (AF_INET6, string, &addr) == 1) {
-			r6->src = addr.addr6;
-			r6->src_plen = plen;
-		}
-	}
-#undef GET_ATTR
-}
-
-void
 nm_ip4_config_merge_setting (NMIP4Config *self,
                              NMSettingIPConfig *setting,
                              NMSettingConnectionMdns mdns,
@@ -1051,10 +936,10 @@ nm_ip4_config_merge_setting (NMIP4Config *self,
 
 		route.network = nm_utils_ip4_address_clear_host_address (route.network, route.plen);
 
-		_nm_ip_config_merge_route_attributes (AF_INET,
-		                                      s_route,
-		                                      NM_PLATFORM_IP_ROUTE_CAST (&route),
-		                                      route_table);
+		nm_utils_ip_route_attribute_to_platform (AF_INET,
+		                                         s_route,
+		                                         NM_PLATFORM_IP_ROUTE_CAST (&route),
+		                                         route_table);
 		_add_route (self, NULL, &route, NULL);
 	}
 
@@ -1505,8 +1390,8 @@ nm_ip4_config_subtract (NMIP4Config *dst,
 		}
 	}
 	if (changed_default_route) {
-		_nm_ip_config_best_default_route_set (&dst_priv->best_default_route,
-		                                      _nm_ip4_config_best_default_route_find (dst));
+		nmp_object_ref_set (&dst_priv->best_default_route,
+		                    _nm_ip4_config_best_default_route_find (dst));
 		_notify (dst, PROP_GATEWAY);
 	}
 	if (changed)
@@ -1659,7 +1544,7 @@ _nm_ip4_config_intersect_helper (NMIP4Config *dst,
 			nm_assert_not_reached ();
 		changed = TRUE;
 	}
-	if (_nm_ip_config_best_default_route_set (&dst_priv->best_default_route, new_best_default_route)) {
+	if (nmp_object_ref_set (&dst_priv->best_default_route, new_best_default_route)) {
 		nm_assert (changed);
 		_notify (dst, PROP_GATEWAY);
 	}
@@ -1896,7 +1781,7 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 			new_best_default_route = _nm_ip_config_best_default_route_find_better (new_best_default_route, obj_new);
 		}
 		nm_dedup_multi_index_dirty_remove_idx (dst_priv->multi_idx, &dst_priv->idx_ip4_routes, FALSE);
-		if (_nm_ip_config_best_default_route_set (&dst_priv->best_default_route, new_best_default_route))
+		if (nmp_object_ref_set (&dst_priv->best_default_route, new_best_default_route))
 			_notify (dst, PROP_GATEWAY);
 		_notify_routes (dst);
 	}
@@ -2990,8 +2875,8 @@ nm_ip4_config_nmpobj_remove (NMIP4Config *self,
 		break;
 	case NMP_OBJECT_TYPE_IP4_ROUTE:
 		if (priv->best_default_route == obj_old) {
-			if (_nm_ip_config_best_default_route_set (&priv->best_default_route,
-			                                          _nm_ip4_config_best_default_route_find (self)))
+			if (nmp_object_ref_set (&priv->best_default_route,
+			                        _nm_ip4_config_best_default_route_find (self)))
 				_notify (self, PROP_GATEWAY);
 		}
 		_notify_routes (self);

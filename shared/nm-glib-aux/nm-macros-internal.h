@@ -700,24 +700,40 @@ static GParamSpec *obj_properties##suffix[_PROPERTY_ENUMS_LAST##suffix] = { NULL
 static inline void \
 _nm_gobject_notify_together_impl##suffix (obj_type *obj, guint n, const _PropertyEnums##suffix *props) \
 { \
-	const gboolean freeze_thaw = (n > 1); \
+	GObject *const gobj = (GObject *) obj; \
+	GParamSpec *pspec_first = NULL; \
+	gboolean frozen = FALSE; \
 	\
 	nm_assert (G_IS_OBJECT (obj)); \
 	nm_assert (n > 0); \
 	\
-	if (freeze_thaw) \
-		g_object_freeze_notify ((GObject *) obj); \
 	while (n-- > 0) { \
 		const _PropertyEnums##suffix prop = *props++; \
+		GParamSpec *pspec; \
 		\
-		if (prop != PROP_0##suffix) { \
-			nm_assert ((gsize) prop < G_N_ELEMENTS (obj_properties##suffix)); \
-			nm_assert (obj_properties##suffix[prop]); \
-			g_object_notify_by_pspec ((GObject *) obj, obj_properties##suffix[prop]); \
+		if (prop == PROP_0##suffix) \
+			continue; \
+		\
+		nm_assert ((gsize) prop < G_N_ELEMENTS (obj_properties##suffix)); \
+		pspec = obj_properties##suffix[prop]; \
+		nm_assert (pspec); \
+		\
+		if (!frozen) { \
+			if (!pspec_first) { \
+				pspec_first = pspec; \
+				continue; \
+			} \
+			frozen = TRUE; \
+			g_object_freeze_notify (gobj); \
+			g_object_notify_by_pspec (gobj, pspec_first); \
 		} \
+		g_object_notify_by_pspec (gobj, pspec); \
 	} \
-	if (freeze_thaw) \
-		g_object_thaw_notify ((GObject *) obj); \
+	\
+	if (frozen) \
+		g_object_thaw_notify (gobj); \
+	else if (pspec_first) \
+		g_object_notify_by_pspec (gobj, pspec_first); \
 } \
 \
 _nm_unused static inline void \
@@ -806,6 +822,26 @@ nm_g_object_unref (gpointer obj)
 			nm_g_object_unref (_p); \
 			_changed = TRUE; \
 		} \
+		_changed; \
+	})
+
+#define nm_g_object_ref_set_take(pp, obj) \
+	({ \
+		typeof (*(pp)) *const _pp = (pp); \
+		typeof (*_pp) const _obj = (obj); \
+		typeof (*_pp) _p; \
+		gboolean _changed = FALSE; \
+		\
+		nm_assert (!_pp || !*_pp || G_IS_OBJECT (*_pp)); \
+		nm_assert (!_obj || G_IS_OBJECT (_obj)); \
+		\
+		if (   _pp \
+		    && ((_p = *_pp) != _obj)) { \
+			*_pp = _obj; \
+			nm_g_object_unref (_p); \
+			_changed = TRUE; \
+		} else \
+			nm_g_object_unref (_obj); \
 		_changed; \
 	})
 

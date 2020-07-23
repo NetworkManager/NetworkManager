@@ -68,42 +68,6 @@ G_STATIC_ASSERT (sizeof (int) == sizeof (gint32));
 
 /*****************************************************************************/
 
-static inline char
-nm_utils_addr_family_to_char (int addr_family)
-{
-	switch (addr_family) {
-	case AF_UNSPEC: return 'X';
-	case AF_INET:   return '4';
-	case AF_INET6:  return '6';
-	}
-	g_return_val_if_reached ('?');
-}
-
-static inline gsize
-nm_utils_addr_family_to_size (int addr_family)
-{
-	switch (addr_family) {
-	case AF_INET:  return sizeof (in_addr_t);
-	case AF_INET6: return sizeof (struct in6_addr);
-	}
-	g_return_val_if_reached (0);
-}
-
-static inline int
-nm_utils_addr_family_from_size (gsize len)
-{
-	switch (len) {
-	case sizeof (in_addr_t):       return AF_INET;
-	case sizeof (struct in6_addr): return AF_INET6;
-	}
-	return AF_UNSPEC;
-}
-
-#define nm_assert_addr_family(addr_family) \
-	nm_assert (NM_IN_SET ((addr_family), AF_INET, AF_INET6))
-
-/*****************************************************************************/
-
 typedef struct {
 	union {
 		guint8 addr_ptr[1];
@@ -1555,6 +1519,18 @@ nm_g_array_len (const GArray *arr)
 	return arr ? arr->len : 0u;
 }
 
+#define nm_g_array_append_new(arr, type) \
+	({ \
+		GArray *_arr = (arr); \
+		gsize _l; \
+		\
+		nm_assert (_arr); \
+		_l = ((gsize) _arr->len) + 1u; \
+		nm_assert (_l > _arr->len); \
+		g_array_set_size (_arr, _l); \
+		&g_array_index (arr, type, _l); \
+	})
+
 /*****************************************************************************/
 
 static inline guint
@@ -1779,6 +1755,17 @@ GSource *nm_utils_g_main_context_create_integrate_source (GMainContext *internal
 
 /*****************************************************************************/
 
+static inline GPtrArray *
+nm_strv_ptrarray_ensure (GPtrArray **p_arr)
+{
+	nm_assert (p_arr);
+
+	if (G_UNLIKELY (!*p_arr))
+		*p_arr = g_ptr_array_new_with_free_func (g_free);
+
+	return *p_arr;
+}
+
 static inline void
 nm_strv_ptrarray_add_string_take (GPtrArray *cmd,
                                   char *str)
@@ -1815,6 +1802,22 @@ nm_strv_ptrarray_take_gstring (GPtrArray *cmd,
 	nm_strv_ptrarray_add_string_take (cmd,
 	                                  g_string_free (g_steal_pointer (gstr),
 	                                                 FALSE));
+}
+
+static inline gssize
+nm_strv_ptrarray_find_first (const GPtrArray *strv,
+                             const char *str)
+{
+	if (!strv)
+		return -1;
+	return nm_utils_strv_find_first ((char **) strv->pdata, strv->len, str);
+}
+
+static inline gboolean
+nm_strv_ptrarray_contains (const GPtrArray *strv,
+                           const char *str)
+{
+	return nm_strv_ptrarray_find_first (strv, str) >= 0;
 }
 
 /*****************************************************************************/

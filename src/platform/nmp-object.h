@@ -556,6 +556,21 @@ _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX (NMPObjectType obj_type)
 #define NMP_OBJECT_CAST_TFILTER(obj)       _NMP_OBJECT_CAST (obj, tfilter,       NMP_OBJECT_TYPE_TFILTER)
 #define NMP_OBJECT_CAST_LNK_WIREGUARD(obj) _NMP_OBJECT_CAST (obj, lnk_wireguard, NMP_OBJECT_TYPE_LNK_WIREGUARD)
 
+static inline int
+NMP_OBJECT_GET_ADDR_FAMILY (const NMPObject *obj)
+{
+	switch (NMP_OBJECT_GET_TYPE (obj)) {
+	case NMP_OBJECT_TYPE_IP4_ADDRESS:
+	case NMP_OBJECT_TYPE_IP4_ROUTE:
+		return AF_INET;
+	case NMP_OBJECT_TYPE_IP6_ADDRESS:
+	case NMP_OBJECT_TYPE_IP6_ROUTE:
+		return AF_INET6;
+	default:
+		return AF_UNSPEC;
+	}
+}
+
 static inline const NMPObject *
 nmp_object_ref (const NMPObject *obj)
 {
@@ -598,6 +613,25 @@ nmp_object_unref (const NMPObject *obj)
 		} \
 		_changed; \
 	})
+
+static inline gboolean
+nmp_object_ref_set (const NMPObject **pp, const NMPObject *obj)
+{
+	gboolean _changed = FALSE;
+	const NMPObject *p;
+
+	nm_assert (!pp || !*pp || NMP_OBJECT_IS_VALID (*pp));
+	nm_assert (!obj || NMP_OBJECT_IS_VALID (obj));
+
+	if (   pp
+	    && ((p = *pp) != obj)) {
+		nmp_object_ref (obj);
+		*pp = obj;
+		nmp_object_unref (p);
+		_changed = TRUE;
+	}
+	return _changed;
+}
 
 NMPObject *nmp_object_new (NMPObjectType obj_type, gconstpointer plobj);
 NMPObject *nmp_object_new_link (int ifindex);
@@ -993,6 +1027,34 @@ nm_platform_lookup_object_by_addr_family (NMPlatform *platform,
 
 	nmp_lookup_init_object_by_addr_family (&lookup, obj_type, addr_family);
 	return nm_platform_lookup (platform, &lookup);
+}
+
+/*****************************************************************************/
+
+static inline const char *
+nmp_object_link_get_ifname (const NMPObject *obj)
+{
+	if (!obj)
+		return NULL;
+	return NMP_OBJECT_CAST_LINK (obj)->name;
+}
+
+static inline gboolean
+nmp_object_ip_route_is_best_defaut_route (const NMPObject *obj)
+{
+	const NMPlatformIPRoute *r = NMP_OBJECT_CAST_IP_ROUTE (obj);
+
+	/* return whether @obj is considered a default-route.
+	 *
+	 * NMIP4Config/NMIP6Config tracks the (best) default-route explicitly, because
+	 * at various places we act differently depending on whether there is a default-route
+	 * configured.
+	 *
+	 * Note that this only considers the main routing table. */
+	return    r
+	       && NM_PLATFORM_IP_ROUTE_IS_DEFAULT (r)
+	       && nm_platform_route_table_is_main (r->table_coerced)
+	       && r->type_coerced == nm_platform_route_type_coerce (1 /* RTN_UNICAST */);
 }
 
 #endif /* __NMP_OBJECT_H__ */

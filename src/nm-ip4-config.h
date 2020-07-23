@@ -69,26 +69,7 @@ nm_ip_config_iter_ip4_route_next (NMDedupMultiIter *ipconf_iter, const NMPlatfor
 
 /*****************************************************************************/
 
-static inline gboolean
-nm_ip_config_best_default_route_is (const NMPObject *obj)
-{
-	const NMPlatformIPRoute *r = NMP_OBJECT_CAST_IP_ROUTE (obj);
-
-	/* return whether @obj is considered a default-route.
-	 *
-	 * NMIP4Config/NMIP6Config tracks the (best) default-route explicitly, because
-	 * at various places we act differently depending on whether there is a default-route
-	 * configured.
-	 *
-	 * Note that this only considers the main routing table. */
-	return    r
-	       && NM_PLATFORM_IP_ROUTE_IS_DEFAULT (r)
-	       && nm_platform_route_table_is_main (r->table_coerced)
-	       && r->type_coerced == nm_platform_route_type_coerce (1 /*RTN_UNICAST*/);
-}
-
 const NMPObject *_nm_ip_config_best_default_route_find_better (const NMPObject *obj_cur, const NMPObject *obj_cmp);
-gboolean _nm_ip_config_best_default_route_set (const NMPObject **best_default_route, const NMPObject *new_candidate);
 gboolean _nm_ip_config_best_default_route_merge (const NMPObject **best_default_route, const NMPObject *new_candidate);
 
 /*****************************************************************************/
@@ -107,11 +88,6 @@ const NMDedupMultiEntry *_nm_ip_config_lookup_ip_route (const NMDedupMultiIndex 
                                                         const NMIPConfigDedupMultiIdxType *idx_type,
                                                         const NMPObject *needle,
                                                         NMPlatformIPRouteCmpType cmp_type);
-
-void _nm_ip_config_merge_route_attributes (int addr_family,
-                                           NMIPRoute *s_route,
-                                           NMPlatformIPRoute *r,
-                                           guint32 route_table);
 
 /*****************************************************************************/
 

@@ -2170,6 +2170,11 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-checkpoint-manager.c \
 	src/nm-checkpoint-manager.h \
 	\
+	src/nm-l3-config-data.c \
+	src/nm-l3-config-data.h \
+	src/nm-l3cfg.c \
+	src/nm-l3cfg.h \
+	\
 	src/devices/nm-acd-manager.c \
 	src/devices/nm-acd-manager.h \
 	src/devices/nm-lldp-listener.c \

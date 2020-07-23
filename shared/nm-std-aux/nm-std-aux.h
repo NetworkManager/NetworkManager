@@ -622,4 +622,58 @@ nm_steal_fd (int *p_fd)
 	return -1;
 }
 
+/*****************************************************************************/
+
+#define NM_AF_UNSPEC 0  /* AF_UNSPEC */
+#define NM_AF_INET   2  /* AF_INET   */
+#define NM_AF_INET6  10 /* AF_INET6  */
+
+#define NM_AF_INET_SIZE  4  /* sizeof (in_addr_t)      */
+#define NM_AF_INET6_SIZE 16 /* sizeof (stuct in6_addr) */
+
+static inline char
+nm_utils_addr_family_to_char (int addr_family)
+{
+	switch (addr_family) {
+	case NM_AF_UNSPEC: return 'X';
+	case NM_AF_INET:   return '4';
+	case NM_AF_INET6:  return '6';
+	}
+	nm_assert_not_reached ();
+	return '?';
+}
+
+static inline size_t
+nm_utils_addr_family_to_size (int addr_family)
+{
+	switch (addr_family) {
+	case NM_AF_INET:  return NM_AF_INET_SIZE;
+	case NM_AF_INET6: return NM_AF_INET6_SIZE;
+	}
+	nm_assert_not_reached ();
+	return 0;
+}
+
+static inline int
+nm_utils_addr_family_from_size (size_t len)
+{
+	switch (len) {
+	case NM_AF_INET_SIZE:  return NM_AF_INET;
+	case NM_AF_INET6_SIZE: return NM_AF_INET6;
+	}
+	return NM_AF_UNSPEC;
+}
+
+#define nm_assert_addr_family(addr_family) \
+	nm_assert (NM_IN_SET ((addr_family), NM_AF_INET, NM_AF_INET6))
+
+#define NM_IS_IPv4(addr_family) \
+	({ \
+		const int _addr_family = (addr_family); \
+		\
+		nm_assert_addr_family (_addr_family); \
+		\
+		(_addr_family == NM_AF_INET); \
+	})
+
 #endif /* __NM_STD_AUX_H__ */
