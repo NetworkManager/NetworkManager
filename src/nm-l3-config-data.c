@@ -46,6 +46,8 @@ struct _NML3ConfigData {
 		const NMPObject *best_default_route_x[2];
 	};
 
+	GArray *wins_4;
+
 	union {
 		struct {
 			GArray *nameservers_6;
@@ -98,6 +100,89 @@ struct _NML3ConfigData {
 
 /*****************************************************************************/
 
+static GArray *
+_garray_inaddr_ensure (GArray **p_arr,
+                       int addr_family)
+{
+	nm_assert (p_arr);
+	nm_assert_addr_family (addr_family);
+
+	if (G_UNLIKELY (!*p_arr)) {
+		*p_arr = g_array_new (FALSE,
+		                      FALSE,
+		                      nm_utils_addr_family_to_size (addr_family));
+	}
+	return *p_arr;
+}
+
+static GArray *
+_garray_inaddr_clone (GArray *src,
+                      int addr_family)
+{
+	const gsize elt_size = nm_utils_addr_family_to_size (addr_family);
+	GArray *dst;
+
+	nm_assert_addr_family (addr_family);
+
+	if (   !src
+	    || src->len == 0)
+		return NULL;
+
+	dst = g_array_sized_new (FALSE, FALSE, elt_size, src->len);
+	g_array_set_size (dst, src->len);
+	memcpy (dst->data, src->data, src->len * elt_size);
+	return dst;
+}
+
+static gssize
+_garray_inaddr_find (GArray *arr,
+                     int addr_family,
+                     gconstpointer needle,
+                     /* (const NMIPAddr **) */ gpointer out_addr)
+{
+	guint i;
+
+	nm_assert_addr_family (addr_family);
+	nm_assert (needle);
+
+	if (arr) {
+		const gsize elt_size = nm_utils_addr_family_to_size (addr_family);
+		const char *p;
+
+		p = arr->data;
+		for (i = 0; i < arr->len; i++, p += elt_size) {
+			if (memcmp (p, needle, elt_size) == 0) {
+				NM_SET_OUT ((gconstpointer *) out_addr, p);
+				return i;
+			}
+		}
+	}
+	NM_SET_OUT ((gconstpointer *) out_addr, NULL);
+	return -1;
+}
+
+static gboolean
+_garray_inaddr_add (GArray **p_arr,
+                    int addr_family,
+                    gconstpointer addr)
+{
+	nm_assert (p_arr);
+	nm_assert_addr_family (addr_family);
+	nm_assert (addr);
+
+	if (!*p_arr)
+		_garray_inaddr_ensure (p_arr, addr_family);
+	else {
+		if (_garray_inaddr_find (*p_arr, addr_family, addr, NULL) >= 0)
+			return FALSE;
+	}
+
+	g_array_append_vals (*p_arr, addr, 1);
+	return TRUE;
+}
+
+/*****************************************************************************/
+
 static gboolean
 _route_valid_4 (const NMPlatformIP4Route *r)
 {
@@ -139,21 +224,6 @@ NM_IS_L3_CONFIG_DATA (const NML3ConfigData *self, gboolean allow_sealed)
 	       && self->ref_count > 0
 	       && (   allow_sealed
 	           || !self->is_sealed);
-}
-
-static GArray *
-_garray_ensure_for_addrbin (GArray **p_arr,
-                            int addr_family)
-{
-	nm_assert (p_arr);
-	nm_assert_addr_family (addr_family);
-
-	if (G_UNLIKELY (!*p_arr)) {
-		*p_arr = g_array_new (FALSE,
-		                      FALSE,
-		                      nm_utils_addr_family_to_size (addr_family));
-	}
-	return *p_arr;
 }
 
 static void
@@ -262,6 +332,8 @@ nm_l3_config_data_unref (NML3ConfigData *self)
 	nmp_object_unref (self->best_default_route_4);
 	nmp_object_unref (self->best_default_route_6);
 
+	nm_clear_pointer (&self->wins_4, g_array_unref);
+
 	nm_clear_pointer (&self->nameservers_4, g_array_unref);
 	nm_clear_pointer (&self->nameservers_6, g_array_unref);
 
@@ -282,27 +354,31 @@ nm_l3_config_data_unref (NML3ConfigData *self)
 /*****************************************************************************/
 
 const NMDedupMultiHeadEntry *
-nm_l3_config_data_lookup_addresses (const NML3ConfigData *self,
-                                    int addr_family)
+nm_l3_config_data_lookup_objs (const NML3ConfigData *self, NMPObjectType obj_type)
 {
+	const DedupMultiIdxType *idx;
+
 	nm_assert (NM_IS_L3_CONFIG_DATA (self, TRUE));
-	nm_assert_addr_family (addr_family);
 
-	return nm_dedup_multi_index_lookup_head (self->multi_idx,
-	                                         &self->idx_addresses_x[NM_IS_IPv4 (addr_family)].parent,
-	                                         NULL);
-}
+	switch (obj_type) {
+	case NMP_OBJECT_TYPE_IP4_ADDRESS:
+		idx = &self->idx_addresses_4;
+		break;
+	case NMP_OBJECT_TYPE_IP6_ADDRESS:
+		idx = &self->idx_addresses_6;
+		break;
+	case NMP_OBJECT_TYPE_IP4_ROUTE:
+		idx = &self->idx_routes_4;
+		break;
+	case NMP_OBJECT_TYPE_IP6_ROUTE:
+		idx = &self->idx_routes_6;
+		break;
+	default:
+		nm_assert_not_reached ();
+		return NULL;
+	}
 
-const NMDedupMultiHeadEntry *
-nm_l3_config_data_lookup_routes (const NML3ConfigData *self,
-                                 int addr_family)
-{
-	nm_assert (NM_IS_L3_CONFIG_DATA (self, TRUE));
-	nm_assert_addr_family (addr_family);
-
-	return nm_dedup_multi_index_lookup_head (self->multi_idx,
-	                                         &self->idx_routes_x[NM_IS_IPv4 (addr_family)].parent,
-	                                         NULL);
+	return nm_dedup_multi_index_lookup_head (self->multi_idx, &idx->parent, NULL);
 }
 
 int
@@ -493,6 +569,37 @@ _l3_config_best_default_route_find_better (const NMPObject *obj_cur, const NMPOb
 	return obj_cur;
 }
 
+gboolean
+nm_l3_config_data_add_address (NML3ConfigData *self,
+                               int addr_family,
+                               const NMPObject *obj_new,
+                               const NMPlatformIPAddress *pl_new,
+                               const NMPObject **out_obj_new)
+{
+	const NMPObject *new;
+	gboolean changed;
+
+	nm_assert (NM_IS_L3_CONFIG_DATA (self, FALSE));
+	nm_assert_addr_family (addr_family);
+	nm_assert ((!pl_new) != (!obj_new));
+	nm_assert (   !obj_new
+	           || NMP_OBJECT_GET_ADDR_FAMILY (obj_new) == addr_family);
+
+	changed = _l3_config_data_add_obj (self->multi_idx,
+	                                     addr_family == AF_INET
+	                                   ? &self->idx_addresses_4
+	                                   : &self->idx_addresses_6,
+	                                   self->ifindex,
+	                                   obj_new,
+	                                   (const NMPlatformObject *) pl_new,
+	                                   TRUE,
+	                                   FALSE,
+	                                   NULL,
+	                                   &new);
+	NM_SET_OUT (out_obj_new, nmp_object_ref (new));
+	return changed;
+}
+
 static gboolean
 _l3_config_best_default_route_merge (const NMPObject **best_default_route, const NMPObject *new_candidate)
 {
@@ -502,12 +609,12 @@ _l3_config_best_default_route_merge (const NMPObject **best_default_route, const
 }
 
 gboolean
-_nm_l3_config_data_add_route (NML3ConfigData *self,
-                              int addr_family,
-                              const NMPObject *obj_new,
-                              const NMPlatformIPRoute *pl_new,
-                              const NMPObject **out_obj_new,
-                              gboolean *out_changed_best_default_route)
+nm_l3_config_data_add_route (NML3ConfigData *self,
+                             int addr_family,
+                             const NMPObject *obj_new,
+                             const NMPlatformIPRoute *pl_new,
+                             const NMPObject **out_obj_new,
+                             gboolean *out_changed_best_default_route)
 {
 	const gboolean IS_IPv4 = NM_IS_IPv4 (addr_family);
 	nm_auto_nmpobj const NMPObject *obj_old = NULL;
@@ -554,31 +661,6 @@ _nm_l3_config_data_add_route (NML3ConfigData *self,
 	return changed;
 }
 
-gboolean
-_nm_l3_config_data_add_address (NML3ConfigData *self,
-                                int addr_family,
-                                const NMPObject *obj_new,
-                                const NMPlatformIPAddress *pl_new)
-{
-	nm_assert (NM_IS_L3_CONFIG_DATA (self, FALSE));
-	nm_assert_addr_family (addr_family);
-	nm_assert ((!pl_new) != (!obj_new));
-	nm_assert (   !obj_new
-	           || NMP_OBJECT_GET_ADDR_FAMILY (obj_new) == addr_family);
-
-	return _l3_config_data_add_obj (self->multi_idx,
-	                                  addr_family == AF_INET
-	                                ? &self->idx_addresses_4
-	                                : &self->idx_addresses_6,
-	                                self->ifindex,
-	                                obj_new,
-	                                (const NMPlatformObject *) pl_new,
-	                                TRUE,
-	                                FALSE,
-	                                NULL,
-	                                NULL);
-}
-
 /*****************************************************************************/
 
 static gboolean
@@ -591,7 +673,7 @@ _check_and_add_domain (GPtrArray **p_arr, const char *domain)
 	g_return_val_if_fail (domain, FALSE);
 
 	if (domain[0] == '\0')
-		g_return_val_if_reached (FALSE);
+		return FALSE;
 
 	if (domain[0] == '.' || strstr (domain, ".."))
 		return FALSE;
@@ -612,9 +694,34 @@ _check_and_add_domain (GPtrArray **p_arr, const char *domain)
 }
 
 gboolean
-_nm_l3_config_data_add_domain (NML3ConfigData *self,
-                               int addr_family,
-                               const char *domain)
+nm_l3_config_data_add_nameserver (NML3ConfigData *self,
+                                  int addr_family,
+                                  gconstpointer /* (const NMIPAddr *) */ nameserver)
+{
+	nm_assert (NM_IS_L3_CONFIG_DATA (self, FALSE));
+	nm_assert_addr_family (addr_family);
+	nm_assert (nameserver);
+
+	return _garray_inaddr_add (&self->nameservers_x[NM_IS_IPv4 (addr_family)],
+	                           addr_family,
+	                           nameserver);
+}
+
+gboolean
+nm_l3_config_data_add_wins (NML3ConfigData *self,
+                            in_addr_t wins)
+{
+	nm_assert (NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	return _garray_inaddr_add (&self->wins_4,
+	                           AF_INET,
+	                           &wins);
+}
+
+gboolean
+nm_l3_config_data_add_domain (NML3ConfigData *self,
+                              int addr_family,
+                              const char *domain)
 {
 	nm_assert (NM_IS_L3_CONFIG_DATA (self, FALSE));
 	nm_assert_addr_family (addr_family);
@@ -623,9 +730,9 @@ _nm_l3_config_data_add_domain (NML3ConfigData *self,
 }
 
 gboolean
-_nm_l3_config_data_add_search (NML3ConfigData *self,
-                               int addr_family,
-                               const char *search)
+nm_l3_config_data_add_search (NML3ConfigData *self,
+                              int addr_family,
+                              const char *search)
 {
 	nm_assert (NM_IS_L3_CONFIG_DATA (self, FALSE));
 	nm_assert_addr_family (addr_family);
@@ -634,9 +741,9 @@ _nm_l3_config_data_add_search (NML3ConfigData *self,
 }
 
 gboolean
-_nm_l3_config_data_add_dns_option (NML3ConfigData *self,
-                                   int addr_family,
-                                   const char *dns_option)
+nm_l3_config_data_add_dns_option (NML3ConfigData *self,
+                                  int addr_family,
+                                  const char *dns_option)
 {
 	GPtrArray **p_arr;
 
@@ -645,8 +752,8 @@ _nm_l3_config_data_add_dns_option (NML3ConfigData *self,
 
 	g_return_val_if_fail (dns_option, FALSE);
 
-	if (!dns_option[0])
-		g_return_val_if_reached (FALSE);
+	if (dns_option[0] == '\0')
+		return FALSE;
 
 	p_arr = &self->dns_options_x[NM_IS_IPv4 (addr_family)];
 
@@ -659,9 +766,9 @@ _nm_l3_config_data_add_dns_option (NML3ConfigData *self,
 }
 
 gboolean
-_nm_l3_config_data_set_dns_priority (NML3ConfigData *self,
-                                     int addr_family,
-                                     int dns_priority)
+nm_l3_config_data_set_dns_priority (NML3ConfigData *self,
+                                    int addr_family,
+                                    int dns_priority)
 {
 	int *p_val;
 
@@ -729,7 +836,7 @@ _init_from_connection_ip (NML3ConfigData *self,
 			};
 		}
 
-		_nm_l3_config_data_add_route (self, addr_family, NULL, &r.rx, NULL, NULL);
+		nm_l3_config_data_add_route (self, addr_family, NULL, &r.rx, NULL, NULL);
 	}
 
 	naddresses = nm_setting_ip_config_get_num_addresses (s_ip);
@@ -769,7 +876,7 @@ _init_from_connection_ip (NML3ConfigData *self,
 			nm_assert (a.a6.plen <= 128);
 		}
 
-		_nm_l3_config_data_add_address (self, addr_family, NULL, &a.ax);
+		nm_l3_config_data_add_address (self, addr_family, NULL, &a.ax, NULL);
 	}
 
 	nroutes = nm_setting_ip_config_get_num_routes (s_ip);
@@ -823,7 +930,7 @@ _init_from_connection_ip (NML3ConfigData *self,
 		                                         &r.rx,
 		                                         route_table);
 
-		_nm_l3_config_data_add_route (self, addr_family, NULL, &r.rx, NULL, NULL);
+		nm_l3_config_data_add_route (self, addr_family, NULL, &r.rx, NULL, NULL);
 	}
 
 	nnameservers = nm_setting_ip_config_get_num_dns (s_ip);
@@ -834,29 +941,27 @@ _init_from_connection_ip (NML3ConfigData *self,
 		s = nm_setting_ip_config_get_dns (s_ip, i);
 		if (!nm_utils_parse_inaddr_bin (addr_family, s, NULL, &ip))
 			continue;
-		g_array_append_vals (_garray_ensure_for_addrbin (&self->nameservers_x[IS_IPv4], addr_family),
-		                     &ip,
-		                     1);
+		nm_l3_config_data_add_nameserver (self, addr_family, &ip);
 	}
 
 	nsearches = nm_setting_ip_config_get_num_dns_searches (s_ip);
 	for (i = 0; i < nsearches; i++) {
-		_nm_l3_config_data_add_search (self,
-		                               addr_family,
-		                               nm_setting_ip_config_get_dns_search (s_ip, i));
+		nm_l3_config_data_add_search (self,
+		                              addr_family,
+		                              nm_setting_ip_config_get_dns_search (s_ip, i));
 	}
 
 	idx = 0;
 	while ((idx = nm_setting_ip_config_next_valid_dns_option (s_ip, i)) >= 0) {
-		_nm_l3_config_data_add_dns_option (self,
-		                                   addr_family,
-		                                   nm_setting_ip_config_get_dns_option (s_ip, i));
+		nm_l3_config_data_add_dns_option (self,
+		                                  addr_family,
+		                                  nm_setting_ip_config_get_dns_option (s_ip, i));
 		idx++;
 	}
 
-	_nm_l3_config_data_set_dns_priority (self,
-	                                     addr_family,
-	                                     nm_setting_ip_config_get_dns_priority (s_ip));
+	nm_l3_config_data_set_dns_priority (self,
+	                                    addr_family,
+	                                    nm_setting_ip_config_get_dns_priority (s_ip));
 }
 
 NML3ConfigData *
@@ -954,7 +1059,7 @@ _init_from_platform (NML3ConfigData *self,
 	                                        : NMP_OBJECT_TYPE_IP6_ROUTE,
 	                                        self->ifindex);
 	nmp_cache_iter_for_each (&iter, head_entry, &plobj)
-		_nm_l3_config_data_add_route (self, addr_family, plobj, NULL, NULL, NULL);
+		nm_l3_config_data_add_route (self, addr_family, plobj, NULL, NULL, NULL);
 }
 
 NML3ConfigData *
@@ -977,6 +1082,55 @@ nm_l3_config_data_new_from_platform (NMDedupMultiIndex *multi_idx,
 
 	_init_from_platform (self, AF_INET,  platform, ipv6_privacy_rfc4941);
 	_init_from_platform (self, AF_INET6, platform, ipv6_privacy_rfc4941);
+
+	return self;
+}
+
+/*****************************************************************************/
+
+NML3ConfigData *
+nm_l3_config_data_new_clone (const NML3ConfigData *src,
+                             int ifindex)
+{
+	NML3ConfigData *self;
+	NMDedupMultiIter iter;
+	const NMPObject *obj;
+
+	nm_assert (NM_IS_L3_CONFIG_DATA (src, TRUE));
+
+	/* pass 0, to use the original ifindex. You can also use this function to
+	 * copy the configuration for a different ifindex. */
+	nm_assert (ifindex >= 0);
+	if (ifindex <= 0)
+		ifindex = src->ifindex;
+
+	self = nm_l3_config_data_new (src->multi_idx, ifindex);
+
+	nm_l3_config_data_iter_obj_for_each (iter, src, obj, NMP_OBJECT_TYPE_IP4_ADDRESS)
+		nm_l3_config_data_add_address (self, AF_INET, obj, NULL, NULL);
+	nm_l3_config_data_iter_obj_for_each (iter, src, obj, NMP_OBJECT_TYPE_IP6_ADDRESS)
+		nm_l3_config_data_add_address (self, AF_INET6, obj, NULL, NULL);
+	nm_l3_config_data_iter_obj_for_each (iter, src, obj, NMP_OBJECT_TYPE_IP4_ROUTE)
+		nm_l3_config_data_add_route (self, AF_INET, obj, NULL, NULL, NULL);
+	nm_l3_config_data_iter_obj_for_each (iter, src, obj, NMP_OBJECT_TYPE_IP6_ROUTE)
+		nm_l3_config_data_add_route (self, AF_INET6, obj, NULL, NULL, NULL);
+
+	nm_assert (self->best_default_route_4 == src->best_default_route_4);
+	nm_assert (self->best_default_route_6 == src->best_default_route_6);
+
+	self->wins_4         = _garray_inaddr_clone (src->wins_4, AF_INET);
+	self->nameservers_4  = _garray_inaddr_clone (src->nameservers_4, AF_INET);
+	self->nameservers_6  = _garray_inaddr_clone (src->nameservers_6, AF_INET6);
+	self->domains_4      = nm_strv_ptrarray_clone (src->domains_4, TRUE);
+	self->domains_6      = nm_strv_ptrarray_clone (src->domains_6, TRUE);
+	self->searches_4     = nm_strv_ptrarray_clone (src->searches_4, TRUE);
+	self->searches_6     = nm_strv_ptrarray_clone (src->searches_6, TRUE);
+	self->dns_options_4  = nm_strv_ptrarray_clone (src->dns_options_4, TRUE);
+	self->dns_options_6  = nm_strv_ptrarray_clone (src->dns_options_6, TRUE);
+	self->dns_priority_4 = src->dns_priority_4;
+	self->dns_priority_6 = src->dns_priority_6;
+	self->mdns           = src->mdns;
+	self->llmnr          = src->llmnr;
 
 	return self;
 }
