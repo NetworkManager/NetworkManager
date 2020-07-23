@@ -10,16 +10,14 @@
 
 typedef struct _NML3ConfigData NML3ConfigData;
 
-NML3ConfigData *nm_l3_config_data_new (NMDedupMultiIndex *multi_idx);
+NML3ConfigData *nm_l3_config_data_new (NMDedupMultiIndex *multi_idx,
+                                       int ifindex);
 NML3ConfigData *nm_l3_config_data_ref (NML3ConfigData *self);
 NML3ConfigData *nm_l3_config_data_ref_and_seal (NML3ConfigData *self);
 NML3ConfigData *nm_l3_config_data_seal (NML3ConfigData *self);
 void nm_l3_config_data_unref (NML3ConfigData *self);
 
 gboolean nm_l3_config_data_is_sealed (NML3ConfigData *self);
-
-const NMDedupMultiHeadEntry *nm_l3_config_data_lookup_addresses (const NML3ConfigData *self, int addr_family);
-const NMDedupMultiHeadEntry *nm_l3_config_data_lookup_routes (const NML3ConfigData *self, int addr_family);
 
 NML3ConfigData *nm_l3_config_data_new_from_connection (NMDedupMultiIndex *multi_idx,
                                                        int ifindex,
@@ -36,15 +34,20 @@ NML3ConfigData *nm_l3_config_data_new_from_platform (NMDedupMultiIndex *multi_id
 
 /*****************************************************************************/
 
+const NMDedupMultiHeadEntry *nm_l3_config_data_lookup_addresses (const NML3ConfigData *self, int addr_family);
+const NMDedupMultiHeadEntry *nm_l3_config_data_lookup_routes (const NML3ConfigData *self, int addr_family);
+
+int nm_l3_config_data_get_ifindex (const NML3ConfigData *self);
+
+/*****************************************************************************/
+
 gboolean _nm_l3_config_data_add_address (NML3ConfigData *self,
                                          int addr_family,
-                                         int ifindex,
                                          const NMPObject *obj_new,
                                          const NMPlatformIPAddress *pl_new);
 
 gboolean _nm_l3_config_data_add_route (NML3ConfigData *self,
                                        int addr_family,
-                                       int ifindex,
                                        const NMPObject *obj_new,
                                        const NMPlatformIPRoute *pl_new,
                                        const NMPObject **out_obj_new,
