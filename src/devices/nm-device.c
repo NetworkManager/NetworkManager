@@ -10268,14 +10268,25 @@ _commit_mtu (NMDevice *self, const NMIP4Config *config)
 			if (!nm_device_sysctl_ip_conf_set (self, AF_INET6, "mtu",
 			                                   nm_sprintf_buf (sbuf, "%u", (unsigned) ip6_mtu))) {
 				int errsv = errno;
+				NMLogLevel level = LOGL_WARN;
+				const char *msg = NULL;
 
-				_NMLOG (anticipated_failure && errsv == EINVAL ? LOGL_DEBUG : LOGL_WARN,
-				        LOGD_DEVICE,
-				        "mtu: failure to set IPv6 MTU%s",
-				        anticipated_failure && errsv == EINVAL
-				           ? ": Is the underlying MTU value successfully set?"
-				           : "");
 				success = FALSE;
+
+				if (anticipated_failure && errsv == EINVAL) {
+					level = LOGL_DEBUG;
+					msg = "Is the underlying MTU value successfully set?";
+				} else if (!g_file_test ("/proc/sys/net/ipv6", G_FILE_TEST_IS_DIR)) {
+					level = LOGL_DEBUG;
+					msg = "IPv6 is disabled";
+					success = TRUE;
+				}
+
+				_NMLOG (level,
+				        LOGD_DEVICE,
+				        "mtu: failure to set IPv6 MTU%s%s",
+				        msg ? ": " : "",
+				        msg ?: "");
 			}
 			priv->carrier_wait_until_ms = nm_utils_get_monotonic_timestamp_msec () + CARRIER_WAIT_TIME_AFTER_MTU_MS;
 		}
