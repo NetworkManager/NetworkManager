@@ -12,15 +12,18 @@ typedef struct _NML3ConfigData NML3ConfigData;
 
 NML3ConfigData *nm_l3_config_data_new (NMDedupMultiIndex *multi_idx,
                                        int ifindex);
-NML3ConfigData *nm_l3_config_data_ref (NML3ConfigData *self);
-NML3ConfigData *nm_l3_config_data_ref_and_seal (NML3ConfigData *self);
-NML3ConfigData *nm_l3_config_data_seal (NML3ConfigData *self);
-void nm_l3_config_data_unref (NML3ConfigData *self);
+const NML3ConfigData *nm_l3_config_data_ref (const NML3ConfigData *self);
+const NML3ConfigData *nm_l3_config_data_ref_and_seal (const NML3ConfigData *self);
+const NML3ConfigData *nm_l3_config_data_seal (const NML3ConfigData *self);
+void nm_l3_config_data_unref (const NML3ConfigData *self);
 
-NM_AUTO_DEFINE_FCN0 (NML3ConfigData *, _nm_auto_unref_l3cfg, nm_l3_config_data_unref);
+NM_AUTO_DEFINE_FCN0 (const NML3ConfigData *, _nm_auto_unref_l3cfg, nm_l3_config_data_unref);
 #define nm_auto_unref_l3cfg nm_auto (_nm_auto_unref_l3cfg)
 
-gboolean nm_l3_config_data_is_sealed (NML3ConfigData *self);
+NM_AUTO_DEFINE_FCN0 (NML3ConfigData *, _nm_auto_unref_l3cfg_init, nm_l3_config_data_unref);
+#define nm_auto_unref_l3cfg_init nm_auto (_nm_auto_unref_l3cfg_init)
+
+gboolean nm_l3_config_data_is_sealed (const NML3ConfigData *self);
 
 NML3ConfigData *nm_l3_config_data_new_clone (const NML3ConfigData *src,
                                              int ifindex);

@@ -282,73 +282,84 @@ nm_l3_config_data_new (NMDedupMultiIndex *multi_idx,
 	return self;
 }
 
-NML3ConfigData *
-nm_l3_config_data_ref (NML3ConfigData *self)
+const NML3ConfigData *
+nm_l3_config_data_ref (const NML3ConfigData *self)
 {
 	nm_assert (NM_IS_L3_CONFIG_DATA (self, TRUE));
-	self->ref_count++;
+	((NML3ConfigData *) self)->ref_count++;
 	return self;
 }
 
-NML3ConfigData *
-nm_l3_config_data_ref_and_seal (NML3ConfigData *self)
+const NML3ConfigData *
+nm_l3_config_data_ref_and_seal (const NML3ConfigData *self)
 {
 	nm_assert (NM_IS_L3_CONFIG_DATA (self, TRUE));
-	self->is_sealed = TRUE;
-	self->ref_count++;
+	((NML3ConfigData *) self)->is_sealed = TRUE;
+	((NML3ConfigData *) self)->ref_count++;
 	return self;
 }
 
-NML3ConfigData *
-nm_l3_config_data_seal (NML3ConfigData *self)
+const NML3ConfigData *
+nm_l3_config_data_seal (const NML3ConfigData *self)
 {
 	nm_assert (NM_IS_L3_CONFIG_DATA (self, TRUE));
-	self->is_sealed = TRUE;
+	((NML3ConfigData *) self)->is_sealed = TRUE;
 	return self;
 }
 
 gboolean
-nm_l3_config_data_is_sealed (NML3ConfigData *self)
+nm_l3_config_data_is_sealed (const NML3ConfigData *self)
 {
 	nm_assert (NM_IS_L3_CONFIG_DATA (self, TRUE));
 	return self->is_sealed;
 }
 
 void
-nm_l3_config_data_unref (NML3ConfigData *self)
+nm_l3_config_data_unref (const NML3ConfigData *self)
 {
+	NML3ConfigData *mutable;
+
 	if (!self)
 		return;
 
 	nm_assert (NM_IS_L3_CONFIG_DATA (self, TRUE));
-	if (--self->ref_count > 0)
+
+	/* NML3ConfigData aims to be an immutable, ref-counted type. The mode of operation
+	 * is to create/initialize the instance once, then seal it and pass around the reference.
+	 *
+	 * That means, also ref/unref operate on const pointers (otherwise, you'd have to cast all
+	 * the time). Hence, we cast away the constness during ref/unref/seal operations. */
+
+	mutable = (NML3ConfigData *) self;
+
+	if (--mutable->ref_count > 0)
 		return;
 
-	nm_dedup_multi_index_remove_idx (self->multi_idx, &self->idx_addresses_4.parent);
-	nm_dedup_multi_index_remove_idx (self->multi_idx, &self->idx_addresses_6.parent);
-	nm_dedup_multi_index_remove_idx (self->multi_idx, &self->idx_routes_4.parent);
-	nm_dedup_multi_index_remove_idx (self->multi_idx, &self->idx_routes_6.parent);
+	nm_dedup_multi_index_remove_idx (mutable->multi_idx, &mutable->idx_addresses_4.parent);
+	nm_dedup_multi_index_remove_idx (mutable->multi_idx, &mutable->idx_addresses_6.parent);
+	nm_dedup_multi_index_remove_idx (mutable->multi_idx, &mutable->idx_routes_4.parent);
+	nm_dedup_multi_index_remove_idx (mutable->multi_idx, &mutable->idx_routes_6.parent);
 
-	nmp_object_unref (self->best_default_route_4);
-	nmp_object_unref (self->best_default_route_6);
+	nmp_object_unref (mutable->best_default_route_4);
+	nmp_object_unref (mutable->best_default_route_6);
 
-	nm_clear_pointer (&self->wins_4, g_array_unref);
+	nm_clear_pointer (&mutable->wins_4, g_array_unref);
 
-	nm_clear_pointer (&self->nameservers_4, g_array_unref);
-	nm_clear_pointer (&self->nameservers_6, g_array_unref);
+	nm_clear_pointer (&mutable->nameservers_4, g_array_unref);
+	nm_clear_pointer (&mutable->nameservers_6, g_array_unref);
 
-	nm_clear_pointer (&self->domains_4, g_ptr_array_unref);
-	nm_clear_pointer (&self->domains_6, g_ptr_array_unref);
+	nm_clear_pointer (&mutable->domains_4, g_ptr_array_unref);
+	nm_clear_pointer (&mutable->domains_6, g_ptr_array_unref);
 
-	nm_clear_pointer (&self->searches_4, g_ptr_array_unref);
-	nm_clear_pointer (&self->searches_6, g_ptr_array_unref);
+	nm_clear_pointer (&mutable->searches_4, g_ptr_array_unref);
+	nm_clear_pointer (&mutable->searches_6, g_ptr_array_unref);
 
-	nm_clear_pointer (&self->dns_options_4, g_ptr_array_unref);
-	nm_clear_pointer (&self->dns_options_6, g_ptr_array_unref);
+	nm_clear_pointer (&mutable->dns_options_4, g_ptr_array_unref);
+	nm_clear_pointer (&mutable->dns_options_6, g_ptr_array_unref);
 
-	nm_dedup_multi_index_unref (self->multi_idx);
+	nm_dedup_multi_index_unref (mutable->multi_idx);
 
-	nm_g_slice_free (self);
+	nm_g_slice_free (mutable);
 }
 
 /*****************************************************************************/
