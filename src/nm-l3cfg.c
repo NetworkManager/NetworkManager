@@ -10,6 +10,16 @@
 
 /*****************************************************************************/
 
+typedef struct {
+	NML3ConfigDatMergeInfo merge_info;
+	gconstpointer tag;
+	guint64 pseudo_timestamp;
+	int priority;
+	bool dirty:1;
+} L3ConfigData;
+
+/*****************************************************************************/
+
 NM_GOBJECT_PROPERTIES_DEFINE (NML3Cfg,
 	PROP_NETNS,
 	PROP_IFINDEX,
@@ -17,6 +27,9 @@ NM_GOBJECT_PROPERTIES_DEFINE (NML3Cfg,
 
 typedef struct _NML3CfgPrivate {
 	GArray *property_emit_list;
+	GArray *l3_config_datas;
+	const NML3ConfigData *combined_l3cfg;
+	guint64 pseudo_timestamp_counter;
 } NML3CfgPrivate;
 
 struct _NML3CfgClass {
@@ -226,6 +239,331 @@ nm_l3cfg_property_emit_unregister (NML3Cfg *self,
 
 /*****************************************************************************/
 
+static GArray *
+_l3_config_datas_ensure (GArray **p_arr)
+{
+	if (!*p_arr)
+		*p_arr = g_array_new (FALSE, FALSE, sizeof (L3ConfigData));
+	return *p_arr;
+}
+
+#define _l3_config_datas_at(l3_config_datas, idx) \
+	(&g_array_index ((l3_config_datas), L3ConfigData, (idx)))
+
+static gssize
+_l3_config_datas_find_next (GArray *l3_config_datas,
+                            guint start_idx,
+                            gconstpointer needle_tag,
+                            const NML3ConfigData *needle_l3cfg)
+{
+	guint i;
+
+	nm_assert (l3_config_datas);
+	nm_assert (start_idx <= l3_config_datas->len);
+
+	for (i = start_idx; i < l3_config_datas->len; i++) {
+		const L3ConfigData *l3_config_data = _l3_config_datas_at (l3_config_datas, i);
+
+		if (   NM_IN_SET (needle_tag, NULL, l3_config_data->tag)
+		    && NM_IN_SET (needle_l3cfg, NULL, l3_config_data->merge_info.l3cfg))
+			return i;
+	}
+	return -1;
+}
+
+static void
+_l3_config_datas_remove_index_fast (GArray *arr,
+                                    guint idx)
+{
+	L3ConfigData *l3_config_data;
+
+	nm_assert (arr);
+	nm_assert (idx < arr->len);
+
+	l3_config_data = _l3_config_datas_at (arr, idx);
+
+	nm_l3_config_data_unref (l3_config_data->merge_info.l3cfg);
+
+	g_array_remove_index_fast (arr, idx);
+}
+
+void
+nm_l3cfg_mark_config_dirty (NML3Cfg *self,
+                            gconstpointer tag,
+                            gboolean dirty)
+{
+	GArray *l3_config_datas;
+	gssize idx;
+
+	nm_assert (NM_IS_L3CFG (self));
+	nm_assert (tag);
+
+	l3_config_datas = self->priv.p->l3_config_datas;
+	if (!l3_config_datas)
+		return;
+
+	idx = 0;
+	while (TRUE) {
+		idx = _l3_config_datas_find_next (l3_config_datas,
+		                                  idx,
+		                                  tag,
+		                                  NULL);
+		if (idx < 0)
+			return;
+
+		_l3_config_datas_at (l3_config_datas, idx)->dirty = dirty;
+		idx++;
+	}
+}
+
+void
+nm_l3cfg_add_config (NML3Cfg *self,
+                     gconstpointer tag,
+                     gboolean replace_same_tag,
+                     const NML3ConfigData *l3cfg,
+                     int priority,
+                     guint32 default_route_penalty_4,
+                     guint32 default_route_penalty_6,
+                     NML3ConfigMergeFlags merge_flags)
+{
+	GArray *l3_config_datas;
+	L3ConfigData *l3_config_data;
+	gssize idx;
+	gboolean changed = FALSE;
+
+	nm_assert (NM_IS_L3CFG (self));
+	nm_assert (tag);
+	nm_assert (l3cfg);
+	nm_assert (nm_l3_config_data_get_ifindex (l3cfg) == self->priv.ifindex);
+
+	l3_config_datas = _l3_config_datas_ensure (&self->priv.p->l3_config_datas);
+
+	idx = _l3_config_datas_find_next (l3_config_datas,
+	                                  0,
+	                                  tag,
+	                                  replace_same_tag ? NULL : l3cfg);
+
+	if (replace_same_tag) {
+		gssize idx2;
+
+		idx2 = idx;
+		idx = -1;
+		while (TRUE) {
+			l3_config_data = _l3_config_datas_at (l3_config_datas, idx2);
+
+			if (l3_config_data->merge_info.l3cfg == l3cfg) {
+				nm_assert (idx == -1);
+				idx = idx2;
+				continue;
+			}
+
+			changed = TRUE;
+			_l3_config_datas_remove_index_fast (l3_config_datas, idx2);
+
+			idx2 = _l3_config_datas_find_next (l3_config_datas, idx2, tag, NULL);
+			if (idx2 < 0)
+				break;
+		}
+	}
+
+	if (idx < 0) {
+		l3_config_data = nm_g_array_append_new (l3_config_datas, L3ConfigData);
+		*l3_config_data = (L3ConfigData) {
+			.tag                                = tag,
+			.merge_info.l3cfg                   = nm_l3_config_data_ref_and_seal (l3cfg),
+			.merge_info.merge_flags             = merge_flags,
+			.merge_info.default_route_penalty_4 = default_route_penalty_4,
+			.merge_info.default_route_penalty_6 = default_route_penalty_6,
+			.priority                           = priority,
+			.pseudo_timestamp                   = ++self->priv.p->pseudo_timestamp_counter,
+			.dirty                              = FALSE,
+		};
+		changed = TRUE;
+	} else {
+		l3_config_data = _l3_config_datas_at (l3_config_datas, idx);
+		l3_config_data->dirty = FALSE;
+		nm_assert (l3_config_data->tag == tag);
+		nm_assert (l3_config_data->merge_info.l3cfg == l3cfg);
+		if (l3_config_data->priority != priority) {
+			l3_config_data->priority = priority;
+			changed = TRUE;
+		}
+		if (l3_config_data->merge_info.merge_flags != merge_flags) {
+			l3_config_data->merge_info.merge_flags = merge_flags;
+			changed = TRUE;
+		}
+		if (l3_config_data->merge_info.default_route_penalty_4 != default_route_penalty_4) {
+			l3_config_data->merge_info.default_route_penalty_4 = default_route_penalty_4;
+			changed = TRUE;
+		}
+		if (l3_config_data->merge_info.default_route_penalty_6 != default_route_penalty_6) {
+			l3_config_data->merge_info.default_route_penalty_6 = default_route_penalty_6;
+			changed = TRUE;
+		}
+	}
+
+	if (changed)
+		self->priv.changed_configs = TRUE;
+}
+
+static void
+_l3cfg_remove_config (NML3Cfg *self,
+                      gconstpointer tag,
+                      gboolean only_dirty,
+                      const NML3ConfigData *l3cfg)
+{
+	GArray *l3_config_datas;
+	gssize idx;
+
+	nm_assert (NM_IS_L3CFG (self));
+	nm_assert (tag);
+
+	l3_config_datas = self->priv.p->l3_config_datas;
+	if (!l3_config_datas)
+		return;
+
+	idx = 0;
+	while (TRUE) {
+		idx = _l3_config_datas_find_next (l3_config_datas,
+		                                  idx,
+		                                  tag,
+		                                  l3cfg);
+		if (idx < 0)
+			return;
+
+		if (   only_dirty
+		    && !_l3_config_datas_at (l3_config_datas, idx)->dirty) {
+			idx++;
+			continue;
+		}
+
+		self->priv.changed_configs = TRUE;
+		_l3_config_datas_remove_index_fast (l3_config_datas, idx);
+		if (!l3cfg)
+			return;
+	}
+}
+
+void
+nm_l3cfg_remove_config (NML3Cfg *self,
+                        gconstpointer tag,
+                        const NML3ConfigData *ifcfg)
+{
+	nm_assert (ifcfg);
+
+	_l3cfg_remove_config (self, tag, FALSE, ifcfg);
+}
+
+void
+nm_l3cfg_remove_config_all (NML3Cfg *self,
+                            gconstpointer tag,
+                            gboolean only_dirty)
+{
+	_l3cfg_remove_config (self, tag, only_dirty, NULL);
+}
+
+/*****************************************************************************/
+
+static int
+_l3_config_combine_sort_fcn (gconstpointer p_a,
+                             gconstpointer p_b,
+                             gpointer user_data)
+{
+	const L3ConfigData *a = *((L3ConfigData **) p_a);
+	const L3ConfigData *b = *((L3ConfigData **) p_b);
+
+	nm_assert (a);
+	nm_assert (b);
+	nm_assert (nm_l3_config_data_get_ifindex (a->merge_info.l3cfg) == nm_l3_config_data_get_ifindex (b->merge_info.l3cfg));
+
+	/* we sort the entries with higher priority (more important, lower numerical value)
+	 * first. */
+	NM_CMP_FIELD (a, b, priority);
+
+	/* if the priority is not unique, we sort them in the order they were added,
+	 * with the oldest first (lower numerical value). */
+	NM_CMP_FIELD (a, b, pseudo_timestamp);
+
+	return nm_assert_unreachable_val (0);
+}
+
+static const NML3ConfigData *
+_l3cfg_combine_config (GArray *l3_config_datas,
+                       NMDedupMultiIndex *multi_idx,
+                       int ifindex)
+{
+	gs_free L3ConfigData **infos_heap = NULL;
+	NML3ConfigData *l3cfg;
+	L3ConfigData **infos;
+	guint i;
+
+	if (   !l3_config_datas
+	    || l3_config_datas->len == 0)
+		return NULL;
+
+	if (l3_config_datas->len == 1)
+		return nm_l3_config_data_ref (_l3_config_datas_at (l3_config_datas, 0)->merge_info.l3cfg);
+
+	if (l3_config_datas->len < 300 / sizeof (infos[0]))
+		infos = g_alloca (l3_config_datas->len * sizeof (infos[0]));
+	else {
+		infos_heap = g_new (L3ConfigData *, l3_config_datas->len);
+		infos = infos_heap;
+	}
+
+	for (i = 0; i < l3_config_datas->len; i++)
+		infos[i] = _l3_config_datas_at (l3_config_datas, i);
+
+	g_qsort_with_data (infos,
+	                   l3_config_datas->len,
+	                   sizeof (infos[0]),
+	                   _l3_config_combine_sort_fcn,
+	                   NULL);
+
+	nm_assert (&infos[0]->merge_info == (NML3ConfigDatMergeInfo *) infos[0]);
+
+	l3cfg = nm_l3_config_data_new_combined (multi_idx,
+	                                        ifindex,
+	                                        (const NML3ConfigDatMergeInfo *const*) infos,
+	                                        l3_config_datas->len);
+
+	nm_assert (l3cfg);
+	nm_assert (nm_l3_config_data_get_ifindex (l3cfg) == ifindex);
+
+	return nm_l3_config_data_seal (l3cfg);
+}
+
+_nm_unused
+static gboolean
+_l3cfg_update_combined_config (NML3Cfg *self,
+                               const NML3ConfigData **out_old /* transfer reference */)
+{
+	nm_auto_unref_l3cfg const NML3ConfigData *l3cfg_old = NULL;
+	nm_auto_unref_l3cfg const NML3ConfigData *l3cfg = NULL;
+
+	nm_assert (NM_IS_L3CFG (self));
+	nm_assert (!out_old || !*out_old);
+
+	if (!self->priv.changed_configs)
+		return FALSE;
+
+	self->priv.changed_configs = FALSE;
+
+	l3cfg = _l3cfg_combine_config (self->priv.p->l3_config_datas,
+	                               nm_platform_get_multi_idx (self->priv.platform),
+	                               self->priv.ifindex);
+
+	if (nm_l3_config_data_equal (l3cfg, self->priv.p->combined_l3cfg))
+		return FALSE;
+
+	l3cfg_old = g_steal_pointer (&self->priv.p->combined_l3cfg);
+	self->priv.p->combined_l3cfg = nm_l3_config_data_seal (g_steal_pointer (&l3cfg));
+	NM_SET_OUT (out_old, nm_l3_config_data_ref (self->priv.p->combined_l3cfg));
+	return TRUE;
+}
+
+/*****************************************************************************/
+
 static void
 set_property (GObject *object,
               guint prop_id,
@@ -303,6 +641,8 @@ finalize (GObject *object)
 
 	g_clear_object (&self->priv.netns);
 	g_clear_object (&self->priv.platform);
+
+	nm_clear_pointer (&self->priv.p->combined_l3cfg, nm_l3_config_data_unref);
 
 	nm_clear_pointer (&self->priv.pllink, nmp_object_unref);
 

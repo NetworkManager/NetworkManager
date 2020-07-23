@@ -43,9 +43,39 @@ typedef enum {
 	NM_L3_CONFIG_ADD_FLAGS_APPEND_FORCE = (1ull << 2),
 } NML3ConfigAddFlags;
 
+/**
+ * NML3ConfigMergeFlags:
+ * @NM_L3_CONFIG_MERGE_FLAGS_NONE: no flags set
+ * @NM_L3_CONFIG_MERGE_FLAGS_NO_ROUTES: don't merge routes
+ * @NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES: don't merge default routes.
+ *   Note that if the respective NML3ConfigData has NM_L3_CONFIG_DAT_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES
+ *   set, this flag gets ignored during merge.
+ * @NM_L3_CONFIG_MERGE_FLAGS_NO_DNS: don't merge DNS information
+ * @NM_L3_CONFIG_MERGE_FLAGS_EXTERNAL: mark new addresses as external
+ */
+typedef enum {
+	NM_L3_CONFIG_MERGE_FLAGS_NONE              = 0,
+	NM_L3_CONFIG_MERGE_FLAGS_NO_ROUTES         = (1LL << 0),
+	NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES = (1LL << 1),
+	NM_L3_CONFIG_MERGE_FLAGS_NO_DNS            = (1LL << 2),
+	NM_L3_CONFIG_MERGE_FLAGS_EXTERNAL          = (1LL << 3),
+} NML3ConfigMergeFlags;
+
 /*****************************************************************************/
 
 typedef struct _NML3ConfigData NML3ConfigData;
+
+typedef struct {
+	const NML3ConfigData *l3cfg;
+	NML3ConfigMergeFlags merge_flags;
+	union {
+		struct {
+			guint32 default_route_penalty_6;
+			guint32 default_route_penalty_4;
+		};
+		guint32 default_route_penalty_x[2];
+	};
+} NML3ConfigDatMergeInfo;
 
 NML3ConfigData *nm_l3_config_data_new (NMDedupMultiIndex *multi_idx,
                                        int ifindex);
@@ -75,6 +105,11 @@ NML3ConfigData *nm_l3_config_data_new_from_platform (NMDedupMultiIndex *multi_id
                                                      int ifindex,
                                                      NMPlatform *platform,
                                                      NMSettingIP6ConfigPrivacy ipv6_privacy_rfc4941);
+
+NML3ConfigData *nm_l3_config_data_new_combined (NMDedupMultiIndex *multi_idx,
+                                                int ifindex,
+                                                const NML3ConfigDatMergeInfo *const*merge_infos,
+                                                guint merge_infos_len);
 
 /*****************************************************************************/
 
