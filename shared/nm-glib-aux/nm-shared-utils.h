@@ -1809,6 +1809,16 @@ nm_strv_ptrarray_ensure (GPtrArray **p_arr)
 	return *p_arr;
 }
 
+static inline GPtrArray *
+nm_strv_ptrarray_clone (const GPtrArray *src, gboolean null_if_empty)
+{
+	if (   !src
+	    || (   null_if_empty
+	        && src->len == 0))
+		return NULL;
+	return nm_g_ptr_array_copy ((GPtrArray *) src, nm_copy_func_g_strdup, NULL, g_free);
+}
+
 static inline void
 nm_strv_ptrarray_add_string_take (GPtrArray *cmd,
                                   char *str)
