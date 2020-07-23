@@ -8,6 +8,14 @@
 #include "nm-setting-ip6-config.h"
 #include "platform/nm-platform.h"
 
+typedef enum {
+	NM_L3_CONFIG_DAT_FLAGS_NONE                           = 0,
+
+	/* if set, then the merge flag NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES gets
+	 * ignored during merge. */
+	NM_L3_CONFIG_DAT_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES = (1ull << 0),
+} NML3ConfigDatFlags;
+
 typedef struct _NML3ConfigData NML3ConfigData;
 
 NML3ConfigData *nm_l3_config_data_new (NMDedupMultiIndex *multi_idx,
@@ -95,6 +103,28 @@ nm_l3_config_data_lookup_routes (const NML3ConfigData *self, int addr_family)
 /*****************************************************************************/
 
 int nm_l3_config_data_get_ifindex (const NML3ConfigData *self);
+
+/*****************************************************************************/
+
+NML3ConfigDatFlags nm_l3_config_data_get_flags (const NML3ConfigData *self);
+
+void nm_l3_config_data_set_flags_full (NML3ConfigData *self,
+                                       NML3ConfigDatFlags flags,
+                                       NML3ConfigDatFlags mask);
+
+static inline void
+nm_l3_config_data_set_flags (NML3ConfigData *self,
+                             NML3ConfigDatFlags flags)
+{
+	nm_l3_config_data_set_flags_full (self, flags, flags);
+}
+
+static inline void
+nm_l3_config_data_unset_flags (NML3ConfigData *self,
+                               NML3ConfigDatFlags flags)
+{
+	nm_l3_config_data_set_flags_full (self, NM_L3_CONFIG_DAT_FLAGS_NONE, flags);
+}
 
 /*****************************************************************************/
 

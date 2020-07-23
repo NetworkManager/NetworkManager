@@ -95,6 +95,8 @@ struct _NML3ConfigData {
 
 	int ref_count;
 
+	NML3ConfigDatFlags flags;
+
 	bool is_sealed:1;
 };
 
@@ -272,6 +274,7 @@ nm_l3_config_data_new (NMDedupMultiIndex *multi_idx,
 		.multi_idx = nm_dedup_multi_index_ref (multi_idx),
 		.mdns      = NM_SETTING_CONNECTION_MDNS_DEFAULT,
 		.llmnr     = NM_SETTING_CONNECTION_LLMNR_DEFAULT,
+		.flags     = NM_L3_CONFIG_DAT_FLAGS_NONE,
 	};
 
 	_idx_type_init (&self->idx_addresses_4, NMP_OBJECT_TYPE_IP4_ADDRESS);
@@ -392,12 +395,36 @@ nm_l3_config_data_lookup_objs (const NML3ConfigData *self, NMPObjectType obj_typ
 	return nm_dedup_multi_index_lookup_head (self->multi_idx, &idx->parent, NULL);
 }
 
+/*****************************************************************************/
+
 int
 nm_l3_config_data_get_ifindex (const NML3ConfigData *self)
 {
 	nm_assert (NM_IS_L3_CONFIG_DATA (self, TRUE));
 
 	return self->ifindex;
+}
+
+/*****************************************************************************/
+
+NML3ConfigDatFlags
+nm_l3_config_data_get_flags (const NML3ConfigData *self)
+{
+	nm_assert (NM_IS_L3_CONFIG_DATA (self, TRUE));
+
+	return self->flags;
+}
+
+void
+nm_l3_config_data_set_flags_full (NML3ConfigData *self,
+                                  NML3ConfigDatFlags flags,
+                                  NML3ConfigDatFlags mask)
+{
+	nm_assert (NM_IS_L3_CONFIG_DATA (self, FALSE));
+	nm_assert (!NM_FLAGS_ANY (flags, ~mask));
+
+	self->flags =   (self->flags & ~mask)
+	              | (flags & mask);
 }
 
 /*****************************************************************************/
