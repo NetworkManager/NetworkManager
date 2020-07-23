@@ -1539,6 +1539,41 @@ nm_g_ptr_array_len (const GPtrArray *arr)
 	return arr ? arr->len : 0u;
 }
 
+GPtrArray *_nm_g_ptr_array_copy (GPtrArray *array,
+                                 GCopyFunc func,
+                                 gpointer user_data,
+                                 GDestroyNotify element_free_func);
+
+/**
+ * nm_g_ptr_array_copy:
+ * @array: the #GPtrArray to clone.
+ * @func: the copy function.
+ * @user_data: the user data for the copy function
+ * @element_free_func: the free function of the elements. @array MUST have
+ *   the same element_free_func. This argument is only used on older
+ *   glib, that doesn't support g_ptr_array_copy().
+ *
+ * This is a replacement for g_ptr_array_copy(), which is not available
+ * before glib 2.62. Since GPtrArray does not allow to access the internal
+ * element_free_func, we cannot add a compatibility implementation of g_ptr_array_copy()
+ * and the user must provide a suitable destroy function.
+ *
+ * Note that the @element_free_func MUST correspond to free function set in @array.
+ */
+#if GLIB_CHECK_VERSION(2,62,0)
+#define nm_g_ptr_array_copy(array, func, user_data, element_free_func) \
+	({ \
+		_nm_unused GDestroyNotify const _element_free_func = (element_free_func); \
+		\
+		G_GNUC_BEGIN_IGNORE_DEPRECATIONS; \
+		g_ptr_array_copy ((array), (func), (user_data)); \
+		G_GNUC_END_IGNORE_DEPRECATIONS; \
+	})
+#else
+#define nm_g_ptr_array_copy(array, func, user_data, element_free_func) \
+	_nm_g_ptr_array_copy ((array), (func), (user_data), (element_free_func))
+#endif
+
 /*****************************************************************************/
 
 static inline guint

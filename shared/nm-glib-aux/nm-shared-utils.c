@@ -2188,6 +2188,29 @@ _nm_utils_strv_cleanup (char **strv,
 
 /*****************************************************************************/
 
+GPtrArray *
+_nm_g_ptr_array_copy (GPtrArray *array,
+                      GCopyFunc func,
+                      gpointer user_data,
+                      GDestroyNotify element_free_func)
+{
+	GPtrArray *new_array;
+	guint i;
+
+	g_return_val_if_fail (array, NULL);
+
+	new_array = g_ptr_array_new_full (array->len, element_free_func);
+	for (i = 0; i < array->len; i++) {
+		g_ptr_array_add (new_array,
+		                   func
+		                 ? func (array->pdata[i], user_data)
+		                 : array->pdata[i]);
+	}
+	return new_array;
+}
+
+/*****************************************************************************/
+
 int
 _nm_utils_ascii_str_to_bool (const char *str,
                              int default_value)
