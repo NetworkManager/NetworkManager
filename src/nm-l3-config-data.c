@@ -449,8 +449,7 @@ _l3_config_data_add_obj (NMDedupMultiIndex *multi_idx,
                          int ifindex,
                          const NMPObject *obj_new,
                          const NMPlatformObject *pl_new,
-                         gboolean merge,
-                         gboolean append_force,
+                         NML3ConfigAddFlags add_flags,
                          const NMPObject **out_obj_old /* returns a reference! */,
                          const NMPObject **out_obj_new /* does not return a reference */)
 {
@@ -458,6 +457,8 @@ _l3_config_data_add_obj (NMDedupMultiIndex *multi_idx,
 	const NMDedupMultiEntry *entry_old;
 	const NMDedupMultiEntry *entry_new;
 
+	nm_assert (   NM_FLAGS_HAS (add_flags, NM_L3_CONFIG_ADD_FLAGS_MERGE)
+	           != NM_FLAGS_HAS (add_flags, NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE));
 	nm_assert (multi_idx);
 	nm_assert (idx_type);
 	nm_assert (ifindex > 0);
@@ -488,14 +489,17 @@ _l3_config_data_add_obj (NMDedupMultiIndex *multi_idx,
 		gboolean modified = FALSE;
 		const NMPObject *obj_old = entry_old->obj;
 
+		if (NM_FLAGS_HAS (add_flags, NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE)) {
+			nm_dedup_multi_entry_set_dirty (entry_old, FALSE);
+			goto append_force_and_out;
+		}
+
 		if (nmp_object_equal (obj_new, obj_old)) {
 			nm_dedup_multi_entry_set_dirty (entry_old, FALSE);
 			goto append_force_and_out;
 		}
 
-		/* if @merge, we merge the new object with the existing one.
-		 * Otherwise, we replace it entirely. */
-		if (merge) {
+		if (NM_FLAGS_HAS (add_flags, NM_L3_CONFIG_ADD_FLAGS_MERGE)) {
 			switch (idx_type->obj_type) {
 			case NMP_OBJECT_TYPE_IP4_ADDRESS:
 			case NMP_OBJECT_TYPE_IP6_ADDRESS:
@@ -546,7 +550,7 @@ _l3_config_data_add_obj (NMDedupMultiIndex *multi_idx,
 	if (!nm_dedup_multi_index_add_full (multi_idx,
 	                                    &idx_type->parent,
 	                                    obj_new,
-	                                      append_force
+	                                      NM_FLAGS_HAS (add_flags, NM_L3_CONFIG_ADD_FLAGS_APPEND_FORCE)
 	                                    ? NM_DEDUP_MULTI_IDX_MODE_APPEND_FORCE
 	                                    : NM_DEDUP_MULTI_IDX_MODE_APPEND,
 	                                    NULL,
@@ -565,7 +569,7 @@ _l3_config_data_add_obj (NMDedupMultiIndex *multi_idx,
 append_force_and_out:
 	NM_SET_OUT (out_obj_old, nmp_object_ref (entry_old->obj));
 	NM_SET_OUT (out_obj_new, entry_old->obj);
-	if (append_force) {
+	if (NM_FLAGS_HAS (add_flags, NM_L3_CONFIG_ADD_FLAGS_APPEND_FORCE)) {
 		if (nm_dedup_multi_entry_reorder (entry_old, NULL, TRUE))
 			return TRUE;
 	}
@@ -622,11 +626,12 @@ _l3_config_best_default_route_find_better (const NMPObject *obj_cur, const NMPOb
 }
 
 gboolean
-nm_l3_config_data_add_address (NML3ConfigData *self,
-                               int addr_family,
-                               const NMPObject *obj_new,
-                               const NMPlatformIPAddress *pl_new,
-                               const NMPObject **out_obj_new)
+nm_l3_config_data_add_address_full (NML3ConfigData *self,
+                                    int addr_family,
+                                    const NMPObject *obj_new,
+                                    const NMPlatformIPAddress *pl_new,
+                                    NML3ConfigAddFlags add_flags,
+                                    const NMPObject **out_obj_new)
 {
 	const NMPObject *new;
 	gboolean changed;
@@ -644,8 +649,7 @@ nm_l3_config_data_add_address (NML3ConfigData *self,
 	                                   self->ifindex,
 	                                   obj_new,
 	                                   (const NMPlatformObject *) pl_new,
-	                                   TRUE,
-	                                   FALSE,
+	                                   add_flags,
 	                                   NULL,
 	                                   &new);
 	NM_SET_OUT (out_obj_new, nmp_object_ref (new));
@@ -661,12 +665,13 @@ _l3_config_best_default_route_merge (const NMPObject **best_default_route, const
 }
 
 gboolean
-nm_l3_config_data_add_route (NML3ConfigData *self,
-                             int addr_family,
-                             const NMPObject *obj_new,
-                             const NMPlatformIPRoute *pl_new,
-                             const NMPObject **out_obj_new,
-                             gboolean *out_changed_best_default_route)
+nm_l3_config_data_add_route_full (NML3ConfigData *self,
+                                  int addr_family,
+                                  const NMPObject *obj_new,
+                                  const NMPlatformIPRoute *pl_new,
+                                  NML3ConfigAddFlags add_flags,
+                                  const NMPObject **out_obj_new,
+                                  gboolean *out_changed_best_default_route)
 {
 	const gboolean IS_IPv4 = NM_IS_IPv4 (addr_family);
 	nm_auto_nmpobj const NMPObject *obj_old = NULL;
@@ -690,8 +695,7 @@ nm_l3_config_data_add_route (NML3ConfigData *self,
 	                             self->ifindex,
 	                             obj_new,
 	                             (const NMPlatformObject *) pl_new,
-	                             TRUE,
-	                             FALSE,
+	                             add_flags,
 	                             &obj_old,
 	                             &obj_new_2)) {
 
@@ -972,7 +976,7 @@ _init_from_connection_ip (NML3ConfigData *self,
 			};
 		}
 
-		nm_l3_config_data_add_route (self, addr_family, NULL, &r.rx, NULL, NULL);
+		nm_l3_config_data_add_route (self, addr_family, NULL, &r.rx);
 	}
 
 	naddresses = nm_setting_ip_config_get_num_addresses (s_ip);
@@ -1012,7 +1016,7 @@ _init_from_connection_ip (NML3ConfigData *self,
 			nm_assert (a.a6.plen <= 128);
 		}
 
-		nm_l3_config_data_add_address (self, addr_family, NULL, &a.ax, NULL);
+		nm_l3_config_data_add_address (self, addr_family, NULL, &a.ax);
 	}
 
 	nroutes = nm_setting_ip_config_get_num_routes (s_ip);
@@ -1066,7 +1070,7 @@ _init_from_connection_ip (NML3ConfigData *self,
 		                                         &r.rx,
 		                                         route_table);
 
-		nm_l3_config_data_add_route (self, addr_family, NULL, &r.rx, NULL, NULL);
+		nm_l3_config_data_add_route (self, addr_family, NULL, &r.rx);
 	}
 
 	nnameservers = nm_setting_ip_config_get_num_dns (s_ip);
@@ -1174,8 +1178,7 @@ _init_from_platform (NML3ConfigData *self,
 			                              self->ifindex,
 			                              plobj,
 			                              NULL,
-			                              FALSE,
-			                              TRUE,
+			                              NM_L3_CONFIG_ADD_FLAGS_APPEND_FORCE,
 			                              NULL,
 			                              NULL))
 				nm_assert_not_reached ();
@@ -1195,7 +1198,7 @@ _init_from_platform (NML3ConfigData *self,
 	                                        : NMP_OBJECT_TYPE_IP6_ROUTE,
 	                                        self->ifindex);
 	nmp_cache_iter_for_each (&iter, head_entry, &plobj)
-		nm_l3_config_data_add_route (self, addr_family, plobj, NULL, NULL, NULL);
+		nm_l3_config_data_add_route (self, addr_family, plobj, NULL);
 }
 
 NML3ConfigData *
@@ -1243,13 +1246,13 @@ nm_l3_config_data_new_clone (const NML3ConfigData *src,
 	self = nm_l3_config_data_new (src->multi_idx, ifindex);
 
 	nm_l3_config_data_iter_obj_for_each (iter, src, obj, NMP_OBJECT_TYPE_IP4_ADDRESS)
-		nm_l3_config_data_add_address (self, AF_INET, obj, NULL, NULL);
+		nm_l3_config_data_add_address (self, AF_INET, obj, NULL);
 	nm_l3_config_data_iter_obj_for_each (iter, src, obj, NMP_OBJECT_TYPE_IP6_ADDRESS)
-		nm_l3_config_data_add_address (self, AF_INET6, obj, NULL, NULL);
+		nm_l3_config_data_add_address (self, AF_INET6, obj, NULL);
 	nm_l3_config_data_iter_obj_for_each (iter, src, obj, NMP_OBJECT_TYPE_IP4_ROUTE)
-		nm_l3_config_data_add_route (self, AF_INET, obj, NULL, NULL, NULL);
+		nm_l3_config_data_add_route (self, AF_INET, obj, NULL);
 	nm_l3_config_data_iter_obj_for_each (iter, src, obj, NMP_OBJECT_TYPE_IP6_ROUTE)
-		nm_l3_config_data_add_route (self, AF_INET6, obj, NULL, NULL, NULL);
+		nm_l3_config_data_add_route (self, AF_INET6, obj, NULL);
 
 	nm_assert (self->best_default_route_4 == src->best_default_route_4);
 	nm_assert (self->best_default_route_6 == src->best_default_route_6);

@@ -16,6 +16,27 @@ typedef enum {
 	NM_L3_CONFIG_DAT_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES = (1ull << 0),
 } NML3ConfigDatFlags;
 
+typedef enum {
+	NM_L3_CONFIG_ADD_FLAGS_NONE         = 0,
+
+	/* If the object does not yet exist, it will be added. If it already exists,
+	 * by default the object will be replaced. With this flag, the new object will
+	 * be merged with the existing one. */
+	NM_L3_CONFIG_ADD_FLAGS_MERGE        = (1ull << 0),
+
+	/* If the object does not yet exist, it will be added. If it already exists,
+	 * by default the object will be replaced. With this flag, the add will have
+	 * no effect and the existing object will be kept. */
+	NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE    = (1ull << 1),
+
+	/* A new object gets appended by default. If the object already exists,
+	 * by default it will not be moved. With APPEND-FORCE, we will always move
+	 * an existing object to the end of the list. */
+	NM_L3_CONFIG_ADD_FLAGS_APPEND_FORCE = (1ull << 2),
+} NML3ConfigAddFlags;
+
+/*****************************************************************************/
+
 typedef struct _NML3ConfigData NML3ConfigData;
 
 NML3ConfigData *nm_l3_config_data_new (NMDedupMultiIndex *multi_idx,
@@ -151,41 +172,72 @@ nm_l3_config_data_unset_flags (NML3ConfigData *self,
 
 /*****************************************************************************/
 
-gboolean nm_l3_config_data_add_address (NML3ConfigData *self,
-                                        int addr_family,
-                                        const NMPObject *obj_new,
-                                        const NMPlatformIPAddress *pl_new,
-                                        const NMPObject **out_obj_new);
+gboolean nm_l3_config_data_add_address_full (NML3ConfigData *self,
+                                             int addr_family,
+                                             const NMPObject *obj_new,
+                                             const NMPlatformIPAddress *pl_new,
+                                             NML3ConfigAddFlags add_flags,
+                                             const NMPObject **out_obj_new);
+
+static inline gboolean
+nm_l3_config_data_add_address (NML3ConfigData *self,
+                               int addr_family,
+                               const NMPObject *obj_new,
+                               const NMPlatformIPAddress *pl_new)
+{
+	return nm_l3_config_data_add_address_full (self,
+	                                           addr_family,
+	                                           obj_new,
+	                                           pl_new,
+	                                           NM_L3_CONFIG_ADD_FLAGS_MERGE,
+	                                           NULL);
+}
 
 static inline gboolean
 nm_l3_config_data_add_address_4 (NML3ConfigData *self, const NMPlatformIP4Address *addr)
 {
-	return nm_l3_config_data_add_address (self, AF_INET, NULL, NM_PLATFORM_IP_ADDRESS_CAST (addr), NULL);
+	return nm_l3_config_data_add_address (self, AF_INET, NULL, NM_PLATFORM_IP_ADDRESS_CAST (addr));
 }
 
 static inline gboolean
 nm_l3_config_data_add_address_6 (NML3ConfigData *self, const NMPlatformIP6Address *addr)
 {
-	return nm_l3_config_data_add_address (self, AF_INET6, NULL, NM_PLATFORM_IP_ADDRESS_CAST (addr), NULL);
+	return nm_l3_config_data_add_address (self, AF_INET6, NULL, NM_PLATFORM_IP_ADDRESS_CAST (addr));
 }
 
-gboolean nm_l3_config_data_add_route (NML3ConfigData *self,
-                                      int addr_family,
-                                      const NMPObject *obj_new,
-                                      const NMPlatformIPRoute *pl_new,
-                                      const NMPObject **out_obj_new,
-                                      gboolean *out_changed_best_default_route);
+gboolean nm_l3_config_data_add_route_full (NML3ConfigData *self,
+                                           int addr_family,
+                                           const NMPObject *obj_new,
+                                           const NMPlatformIPRoute *pl_new,
+                                           NML3ConfigAddFlags add_flags,
+                                           const NMPObject **out_obj_new,
+                                           gboolean *out_changed_best_default_route);
+
+static inline gboolean
+nm_l3_config_data_add_route (NML3ConfigData *self,
+                             int addr_family,
+                             const NMPObject *obj_new,
+                             const NMPlatformIPRoute *pl_new)
+{
+	return nm_l3_config_data_add_route_full (self,
+	                                         addr_family,
+	                                         obj_new,
+	                                         pl_new,
+	                                         NM_L3_CONFIG_ADD_FLAGS_MERGE,
+	                                         NULL,
+	                                         NULL);
+}
 
 static inline gboolean
 nm_l3_config_data_add_route_4 (NML3ConfigData *self, const NMPlatformIP4Route *rt)
 {
-	return nm_l3_config_data_add_route (self, AF_INET, NULL, NM_PLATFORM_IP_ROUTE_CAST (rt), NULL, NULL);
+	return nm_l3_config_data_add_route (self, AF_INET, NULL, NM_PLATFORM_IP_ROUTE_CAST (rt));
 }
 
 static inline gboolean
 nm_l3_config_data_add_route_6 (NML3ConfigData *self, const NMPlatformIP6Route *rt)
 {
-	return nm_l3_config_data_add_route (self, AF_INET6, NULL, NM_PLATFORM_IP_ROUTE_CAST (rt), NULL, NULL);
+	return nm_l3_config_data_add_route (self, AF_INET6, NULL, NM_PLATFORM_IP_ROUTE_CAST (rt));
 }
 
 gboolean nm_l3_config_data_add_nameserver (NML3ConfigData *self,
