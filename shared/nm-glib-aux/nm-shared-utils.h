@@ -1879,6 +1879,20 @@ nm_strv_ptrarray_contains (const GPtrArray *strv,
 	return nm_strv_ptrarray_find_first (strv, str) >= 0;
 }
 
+static inline int
+nm_strv_ptrarray_cmp (const GPtrArray *a,
+                      const GPtrArray *b)
+{
+	/* _nm_utils_strv_cmp_n() will treat NULL and empty arrays the same.
+	 * That means, an empty strv array can both be represented by NULL
+	 * and an array of length zero.
+	 * If you need to distinguish between these case, do that yourself. */
+	return _nm_utils_strv_cmp_n ((const char *const*) nm_g_ptr_array_pdata (a),
+	                             nm_g_ptr_array_len (a),
+	                             (const char *const*) nm_g_ptr_array_pdata (b),
+	                             nm_g_ptr_array_len (b));
+}
+
 /*****************************************************************************/
 
 int nm_utils_getpagesize (void);
