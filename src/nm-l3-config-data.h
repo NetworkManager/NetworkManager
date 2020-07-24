@@ -51,6 +51,23 @@ NML3ConfigData *nm_l3_config_data_new_from_platform (NMDedupMultiIndex *multi_id
 
 /*****************************************************************************/
 
+int nm_l3_config_data_get_ifindex (const NML3ConfigData *self);
+
+static inline gboolean
+NM_IS_L3_CONFIG_DATA (const NML3ConfigData *self)
+{
+	/* NML3ConfigData is not an NMObject, so we cannot ask which type it has.
+	 * This check here is really only useful for assertions, and there it is
+	 * enough to check whether the pointer is not NULL.
+	 *
+	 * Additionally, also call nm_l3_config_data_get_ifindex(), which does more
+	 * checks during nm_assert(). */
+	nm_assert (nm_l3_config_data_get_ifindex (self) > 0);
+	return !!self;
+}
+
+/*****************************************************************************/
+
 const NMDedupMultiHeadEntry *nm_l3_config_data_lookup_objs (const NML3ConfigData *self, NMPObjectType obj_type);
 
 static inline const NMDedupMultiHeadEntry *
@@ -99,10 +116,6 @@ nm_l3_config_data_lookup_routes (const NML3ConfigData *self, int addr_family)
     for (nm_dedup_multi_iter_init (&(iter), nm_l3_config_data_lookup_routes ((self), AF_INET6)); \
          nm_platform_dedup_multi_iter_next_ip6_route  (&(iter), &(route)); \
          )
-
-/*****************************************************************************/
-
-int nm_l3_config_data_get_ifindex (const NML3ConfigData *self);
 
 /*****************************************************************************/
 
