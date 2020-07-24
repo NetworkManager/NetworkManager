@@ -1547,6 +1547,12 @@ nm_g_ptr_array_len (const GPtrArray *arr)
 	return arr ? arr->len : 0u;
 }
 
+static inline gpointer *
+nm_g_ptr_array_pdata (const GPtrArray *arr)
+{
+	return arr ? arr->pdata : NULL;
+}
+
 GPtrArray *_nm_g_ptr_array_copy (GPtrArray *array,
                                  GCopyFunc func,
                                  gpointer user_data,
