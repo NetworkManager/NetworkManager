@@ -2251,7 +2251,7 @@ nm_connection_to_dbus_full (NMConnection *connection,
 	GVariantBuilder builder;
 	gboolean any = FALSE;
 	gs_free NMSetting **settings = NULL;
-	guint settings_len;
+	guint settings_len = 0;
 	guint i;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
