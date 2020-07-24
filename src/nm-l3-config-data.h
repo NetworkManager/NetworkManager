@@ -68,6 +68,16 @@ NM_IS_L3_CONFIG_DATA (const NML3ConfigData *self)
 
 /*****************************************************************************/
 
+int nm_l3_config_data_cmp (const NML3ConfigData *a, const NML3ConfigData *b);
+
+static inline gboolean
+nm_l3_config_data_equal (const NML3ConfigData *a, const NML3ConfigData *b)
+{
+	return nm_l3_config_data_cmp (a, b) == 0;
+}
+
+/*****************************************************************************/
+
 const NMDedupMultiHeadEntry *nm_l3_config_data_lookup_objs (const NML3ConfigData *self, NMPObjectType obj_type);
 
 static inline const NMDedupMultiHeadEntry *

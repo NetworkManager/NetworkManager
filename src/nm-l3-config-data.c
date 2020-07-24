@@ -183,6 +183,20 @@ _garray_inaddr_add (GArray **p_arr,
 	return TRUE;
 }
 
+static int
+_garray_inaddr_cmp (const GArray *a, const GArray *b, int addr_family)
+{
+	guint l;
+
+	l = nm_g_array_len (a);
+	NM_CMP_DIRECT (l, nm_g_array_len (b));
+
+	if (l > 0)
+		NM_CMP_DIRECT_MEMCMP (a->data, b->data, l * nm_utils_addr_family_to_size (addr_family));
+
+	return 0;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -819,6 +833,90 @@ nm_l3_config_data_set_dns_priority (NML3ConfigData *self,
 
 	*p_val = dns_priority;
 	return TRUE;
+}
+
+/*****************************************************************************/
+
+static int
+_dedup_multi_index_cmp (const NML3ConfigData *a,
+                        const NML3ConfigData *b,
+                        NMPObjectType obj_type)
+{
+	const NMDedupMultiHeadEntry *h_a = nm_l3_config_data_lookup_objs (a, obj_type);
+	const NMDedupMultiHeadEntry *h_b = nm_l3_config_data_lookup_objs (b, obj_type);
+	NMDedupMultiIter iter_a;
+	NMDedupMultiIter iter_b;
+
+	NM_CMP_SELF (h_a, h_b);
+	NM_CMP_DIRECT (h_a->len, h_b->len);
+
+	nm_assert (h_a->len > 0);
+
+	nm_dedup_multi_iter_init (&iter_a, h_a);
+	nm_dedup_multi_iter_init (&iter_b, h_b);
+
+	while (TRUE) {
+		const NMPObject *obj_a;
+		const NMPObject *obj_b;
+		gboolean have_a;
+		gboolean have_b;
+
+		have_a = nm_platform_dedup_multi_iter_next_obj (&iter_a, &obj_a, obj_type);
+		if (!have_a) {
+			nm_assert (!nm_platform_dedup_multi_iter_next_obj (&iter_b, &obj_b, obj_type));
+			break;
+		}
+
+		have_b = nm_platform_dedup_multi_iter_next_obj (&iter_b, &obj_b, obj_type);
+		nm_assert (have_b);
+
+		NM_CMP_RETURN (nmp_object_cmp (obj_a, obj_b));
+	}
+
+	return 0;
+}
+
+int
+nm_l3_config_data_cmp (const NML3ConfigData *a, const NML3ConfigData *b)
+{
+	int IS_IPv4;
+
+	NM_CMP_SELF (a, b);
+
+	NM_CMP_DIRECT (a->ifindex, b->ifindex);
+
+	_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP4_ADDRESS);
+	_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP6_ADDRESS);
+	_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP4_ROUTE);
+	_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP6_ROUTE);
+
+	for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+		const int addr_family = IS_IPv4 ? AF_INET : AF_INET6;
+
+		NM_CMP_RETURN (nmp_object_cmp (a->best_default_route_x[IS_IPv4], b->best_default_route_x[IS_IPv4]));
+
+		NM_CMP_RETURN (_garray_inaddr_cmp (a->nameservers_x[IS_IPv4], b->nameservers_x[IS_IPv4], addr_family));
+
+		NM_CMP_RETURN (nm_strv_ptrarray_cmp (a->domains_x[IS_IPv4], b->domains_x[IS_IPv4]));
+		NM_CMP_RETURN (nm_strv_ptrarray_cmp (a->searches_x[IS_IPv4], b->searches_x[IS_IPv4]));
+		NM_CMP_RETURN (nm_strv_ptrarray_cmp (a->dns_options_x[IS_IPv4], b->dns_options_x[IS_IPv4]));
+
+		NM_CMP_DIRECT (a->dns_priority_x[IS_IPv4], b->dns_priority_x[IS_IPv4]);
+	}
+
+	NM_CMP_RETURN (_garray_inaddr_cmp (a->wins_4, b->wins_4, AF_INET));
+	NM_CMP_DIRECT (a->mdns, b->mdns);
+	NM_CMP_DIRECT (a->llmnr, b->llmnr);
+	NM_CMP_DIRECT (a->flags, b->flags);
+
+	/* these fields are not considered by cmp():
+	 *
+	 * - multi_idx
+	 * - ref_count
+	 * - is_sealed
+	 */
+
+	return 0;
 }
 
 /*****************************************************************************/
