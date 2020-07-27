@@ -614,30 +614,6 @@ nm_ip4_config_update_routes_metric (NMIP4Config *self, gint64 metric)
 	g_object_thaw_notify (G_OBJECT (self));
 }
 
-static void
-_add_local_route_from_addr4 (NMIP4Config *               self,
-                             const NMPlatformIP4Address *addr,
-                             int                         ifindex,
-                             guint32                     route_table,
-                             gboolean                    is_vrf)
-{
-	nm_auto_nmpobj NMPObject *r = NULL;
-	NMPlatformIP4Route *route;
-
-	r = nmp_object_new (NMP_OBJECT_TYPE_IP4_ROUTE, NULL);
-	route = NMP_OBJECT_CAST_IP4_ROUTE (r);
-	route->ifindex = ifindex;
-	route->rt_source = NM_IP_CONFIG_SOURCE_KERNEL;
-	route->network = addr->address;
-	route->plen = 32;
-	route->pref_src = addr->address;
-	route->type_coerced = nm_platform_route_type_coerce (RTN_LOCAL);
-	route->scope_inv = nm_platform_route_scope_inv (RT_SCOPE_HOST);
-	route->table_coerced = nm_platform_route_table_coerce (is_vrf ? route_table : RT_TABLE_LOCAL);
-
-	_add_route (self, r, NULL, NULL);
-}
-
 void
 nm_ip4_config_add_dependent_routes (NMIP4Config *self,
                                     guint32      route_table,
@@ -675,7 +651,19 @@ nm_ip4_config_add_dependent_routes (NMIP4Config *self,
 		if (my_addr->external)
 			continue;
 
-		_add_local_route_from_addr4 (self, my_addr, ifindex, route_table, is_vrf);
+		/* Pre-generate local route added by kernel */
+		r = nmp_object_new (NMP_OBJECT_TYPE_IP4_ROUTE, NULL);
+		route = NMP_OBJECT_CAST_IP4_ROUTE (r);
+		route->ifindex = ifindex;
+		route->rt_source = NM_IP_CONFIG_SOURCE_KERNEL;
+		route->network = my_addr->address;
+		route->plen = 32;
+		route->pref_src = my_addr->address;
+		route->type_coerced = nm_platform_route_type_coerce (RTN_LOCAL);
+		route->scope_inv = nm_platform_route_scope_inv (RT_SCOPE_HOST);
+		route->table_coerced = nm_platform_route_table_coerce (is_vrf ? route_table : RT_TABLE_LOCAL);
+		_add_route (self, r, NULL, NULL);
+		nm_clear_pointer (&r, nmp_object_unref);
 
 		if (nm_utils_ip4_address_is_zeronet (network)) {
 			/* Kernel doesn't add device-routes for destinations that
