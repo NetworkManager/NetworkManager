@@ -7290,8 +7290,16 @@ enum TEST_IS_POWER_OF_TWP_ENUM_UNSIGNED_64 {
 	G_STMT_START { \
 		typeof (x) x1 = (x); \
 		type x2 = (type) x1; \
+		gboolean val; \
 		\
-		g_assert_cmpint (expect, ==, nm_utils_is_power_of_two (x1)); \
+		val = nm_utils_is_power_of_two (x1); \
+		g_assert_cmpint (expect, ==, val); \
+		if (x1 != 0) \
+			g_assert_cmpint (val, ==, nm_utils_is_power_of_two_or_zero (x1)); \
+		else { \
+			g_assert (nm_utils_is_power_of_two_or_zero (x1)); \
+			g_assert (!val); \
+		} \
 		if (   ((typeof (x1)) x2) == x1 \
 		    && ((typeof (x2)) x1) == x2 \
 		    && x2 > 0) { \
@@ -7317,6 +7325,9 @@ test_nm_utils_is_power_of_two (void)
 	int i, j;
 	GRand *rand = nmtst_get_rand ();
 	int numbits;
+
+	g_assert (!nm_utils_is_power_of_two (0));
+	g_assert (nm_utils_is_power_of_two_or_zero (0));
 
 	for (i = -1; i < 64; i++) {
 

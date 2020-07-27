@@ -1017,16 +1017,6 @@ nm_g_variant_take_ref (GVariant *v)
 
 /*****************************************************************************/
 
-/* Determine whether @x is a power of two (@x being an integer type).
- * Basically, this returns TRUE, if @x has exactly one bit set.
- * For negative values and zero, this always returns FALSE. */
-#define nm_utils_is_power_of_two(x) ({ \
-		typeof(x) __x = (x); \
-		\
-		(    (__x > ((typeof(__x)) 0)) \
-		 && ((__x & (__x - (((typeof(__x)) 1)))) == ((typeof(__x)) 0))); \
-	})
-
 #define NM_DIV_ROUND_UP(x, y) \
 	({ \
 		const typeof(x) _x = (x); \
