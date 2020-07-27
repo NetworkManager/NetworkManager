@@ -111,6 +111,13 @@ NML3ConfigData *nm_l3_config_data_new_combined (NMDedupMultiIndex *multi_idx,
                                                 const NML3ConfigDatMergeInfo *const*merge_infos,
                                                 guint merge_infos_len);
 
+void nm_l3_config_data_add_dependent_routes (NML3ConfigData *self,
+                                             int addr_family,
+                                             guint32 route_table,
+                                             guint32 route_metric,
+                                             gboolean is_vrf,
+                                             GPtrArray **out_ip4_dev_route_blacklist);
+
 /*****************************************************************************/
 
 int nm_l3_config_data_get_ifindex (const NML3ConfigData *self);
@@ -139,6 +146,13 @@ nm_l3_config_data_equal (const NML3ConfigData *a, const NML3ConfigData *b)
 }
 
 /*****************************************************************************/
+
+const NMDedupMultiEntry *nm_l3_config_data_lookup_route_obj (const NML3ConfigData *self,
+                                                             const NMPObject *needle);
+
+const NMDedupMultiEntry *nm_l3_config_data_lookup_route (const NML3ConfigData *self,
+                                                         int addr_family,
+                                                         const NMPlatformIPRoute *needle);
 
 const NMDedupMultiHeadEntry *nm_l3_config_data_lookup_objs (const NML3ConfigData *self, NMPObjectType obj_type);
 

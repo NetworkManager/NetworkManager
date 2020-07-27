@@ -4936,6 +4936,8 @@ nm_platform_ip4_dev_route_blacklist_set (NMPlatform *self,
 	nm_assert (NM_IS_PLATFORM (self));
 	nm_assert (ifindex > 0);
 
+	/* TODO: the blacklist should be maintained by NML3Cfg. */
+
 	priv = NM_PLATFORM_GET_PRIVATE (self);
 
 	/* first, expire all for current ifindex... */
