@@ -14,6 +14,14 @@ typedef enum {
 	/* if set, then the merge flag NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES gets
 	 * ignored during merge. */
 	NM_L3_CONFIG_DAT_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES = (1ull << 0),
+
+	NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY_4             = (1ull << 1),
+	NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY_6             = (1ull << 2),
+#define NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY(is_ipv4) (  (is_ipv4) \
+                                                          ? NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY_4 \
+                                                          : NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY_6)
+	NM_L3_CONFIG_DAT_FLAGS_HAS_MTU                        = (1ull << 3),
+
 } NML3ConfigDatFlags;
 
 typedef enum {
@@ -60,8 +68,6 @@ NML3ConfigData *nm_l3_config_data_new_clone (const NML3ConfigData *src,
 NML3ConfigData *nm_l3_config_data_new_from_connection (NMDedupMultiIndex *multi_idx,
                                                        int ifindex,
                                                        NMConnection *connection,
-                                                       NMSettingConnectionMdns mdns,
-                                                       NMSettingConnectionLlmnr llmnr,
                                                        guint32 route_table,
                                                        guint32 route_metric);
 
@@ -240,12 +246,30 @@ nm_l3_config_data_add_route_6 (NML3ConfigData *self, const NMPlatformIP6Route *r
 	return nm_l3_config_data_add_route (self, AF_INET6, NULL, NM_PLATFORM_IP_ROUTE_CAST (rt));
 }
 
+gboolean nm_l3_config_data_set_mdns (NML3ConfigData *self,
+                                     NMSettingConnectionMdns mdns);
+
+gboolean nm_l3_config_data_set_llmnr (NML3ConfigData *self,
+                                      NMSettingConnectionLlmnr llmnr);
+
+gboolean nm_l3_config_data_set_metered (NML3ConfigData *self,
+                                        NMTernary metered);
+
+gboolean nm_l3_config_data_set_mtu (NML3ConfigData *self,
+                                    guint32 mtu);
+
 gboolean nm_l3_config_data_add_nameserver (NML3ConfigData *self,
                                            int addr_family,
                                            gconstpointer /* (const NMIPAddr *) */ nameserver);
 
 gboolean nm_l3_config_data_add_wins (NML3ConfigData *self,
                                      in_addr_t wins);
+
+gboolean nm_l3_config_data_add_nis_server (NML3ConfigData *self,
+                                           in_addr_t nis_server);
+
+gboolean nm_l3_config_data_set_nis_domain (NML3ConfigData *self,
+                                           const char *nis_domain);
 
 gboolean nm_l3_config_data_add_domain (NML3ConfigData *self,
                                        int addr_family,

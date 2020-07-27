@@ -46,7 +46,10 @@ struct _NML3ConfigData {
 		const NMPObject *best_default_route_x[2];
 	};
 
-	GArray *wins_4;
+	GArray *wins;
+	GArray *nis_servers;
+
+	char *nis_domain;
 
 	union {
 		struct {
@@ -80,6 +83,10 @@ struct _NML3ConfigData {
 		GPtrArray *dns_options_x[2];
 	};
 
+	int ifindex;
+
+	int ref_count;
+
 	union {
 		struct {
 			int dns_priority_6;
@@ -91,11 +98,11 @@ struct _NML3ConfigData {
 	NMSettingConnectionMdns mdns;
 	NMSettingConnectionLlmnr llmnr;
 
-	int ifindex;
-
-	int ref_count;
-
 	NML3ConfigDatFlags flags;
+
+	guint32 mtu;
+
+	NMTernary metered:3;
 
 	bool is_sealed:1;
 };
@@ -118,7 +125,7 @@ _garray_inaddr_ensure (GArray **p_arr,
 }
 
 static GArray *
-_garray_inaddr_clone (GArray *src,
+_garray_inaddr_clone (const GArray *src,
                       int addr_family)
 {
 	const gsize elt_size = nm_utils_addr_family_to_size (addr_family);
@@ -289,6 +296,7 @@ nm_l3_config_data_new (NMDedupMultiIndex *multi_idx,
 		.mdns      = NM_SETTING_CONNECTION_MDNS_DEFAULT,
 		.llmnr     = NM_SETTING_CONNECTION_LLMNR_DEFAULT,
 		.flags     = NM_L3_CONFIG_DAT_FLAGS_NONE,
+		.metered   = NM_TERNARY_DEFAULT,
 	};
 
 	_idx_type_init (&self->idx_addresses_4, NMP_OBJECT_TYPE_IP4_ADDRESS);
@@ -360,7 +368,8 @@ nm_l3_config_data_unref (const NML3ConfigData *self)
 	nmp_object_unref (mutable->best_default_route_4);
 	nmp_object_unref (mutable->best_default_route_6);
 
-	nm_clear_pointer (&mutable->wins_4, g_array_unref);
+	nm_clear_pointer (&mutable->wins, g_array_unref);
+	nm_clear_pointer (&mutable->nis_servers, g_array_unref);
 
 	nm_clear_pointer (&mutable->nameservers_4, g_array_unref);
 	nm_clear_pointer (&mutable->nameservers_6, g_array_unref);
@@ -375,6 +384,8 @@ nm_l3_config_data_unref (const NML3ConfigData *self)
 	nm_clear_pointer (&mutable->dns_options_6, g_ptr_array_unref);
 
 	nm_dedup_multi_index_unref (mutable->multi_idx);
+
+	g_free (mutable->nis_domain);
 
 	nm_g_slice_free (mutable);
 }
@@ -436,6 +447,7 @@ nm_l3_config_data_set_flags_full (NML3ConfigData *self,
 {
 	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
 	nm_assert (!NM_FLAGS_ANY (flags, ~mask));
+	nm_assert (!NM_FLAGS_ANY (mask, ~NM_L3_CONFIG_DAT_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES));
 
 	self->flags =   (self->flags & ~mask)
 	              | (flags & mask);
@@ -457,8 +469,8 @@ _l3_config_data_add_obj (NMDedupMultiIndex *multi_idx,
 	const NMDedupMultiEntry *entry_old;
 	const NMDedupMultiEntry *entry_new;
 
-	nm_assert (   NM_FLAGS_HAS (add_flags, NM_L3_CONFIG_ADD_FLAGS_MERGE)
-	           != NM_FLAGS_HAS (add_flags, NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE));
+	nm_assert (nm_utils_is_power_of_two_or_zero (add_flags & (  NM_L3_CONFIG_ADD_FLAGS_MERGE
+	                                                          | NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE)));
 	nm_assert (multi_idx);
 	nm_assert (idx_type);
 	nm_assert (ifindex > 0);
@@ -769,9 +781,29 @@ nm_l3_config_data_add_wins (NML3ConfigData *self,
 {
 	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
 
-	return _garray_inaddr_add (&self->wins_4,
+	return _garray_inaddr_add (&self->wins,
 	                           AF_INET,
 	                           &wins);
+}
+
+gboolean
+nm_l3_config_data_add_nis_server (NML3ConfigData *self,
+                                  in_addr_t nis_server)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	return _garray_inaddr_add (&self->nis_servers,
+	                           AF_INET,
+	                           &nis_server);
+}
+
+gboolean
+nm_l3_config_data_set_nis_domain (NML3ConfigData *self,
+                                  const char *nis_domain)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	return nm_utils_strdup_reset (&self->nis_domain, nis_domain);
 }
 
 gboolean
@@ -826,16 +858,72 @@ nm_l3_config_data_set_dns_priority (NML3ConfigData *self,
                                     int addr_family,
                                     int dns_priority)
 {
-	int *p_val;
+	const gboolean IS_IPv4 = NM_IS_IPv4 (addr_family);
+	const NML3ConfigDatFlags has_dns_priority_flag = NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY (IS_IPv4);
 
 	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
 	nm_assert_addr_family (addr_family);
 
-	p_val = &self->dns_priority_x[NM_IS_IPv4 (addr_family)];
-	if (*p_val == dns_priority)
+	if (   self->dns_priority_x[IS_IPv4] == dns_priority
+	    && NM_FLAGS_ANY (self->flags, has_dns_priority_flag))
 		return FALSE;
 
-	*p_val = dns_priority;
+	self->flags |= has_dns_priority_flag;
+	self->dns_priority_x[IS_IPv4] = dns_priority;
+	return TRUE;
+}
+
+gboolean
+nm_l3_config_data_set_mdns (NML3ConfigData *self,
+                            NMSettingConnectionMdns mdns)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	if (self->mdns == mdns)
+		return FALSE;
+
+	self->mdns = mdns;
+	return TRUE;
+}
+
+gboolean
+nm_l3_config_data_set_llmnr (NML3ConfigData *self,
+                             NMSettingConnectionLlmnr llmnr)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	if (self->llmnr == llmnr)
+		return FALSE;
+
+	self->llmnr = llmnr;
+	return TRUE;
+}
+
+gboolean
+nm_l3_config_data_set_metered (NML3ConfigData *self,
+                               NMTernary metered)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	if (self->metered == metered)
+		return FALSE;
+
+	self->metered = metered;
+	return TRUE;
+}
+
+gboolean
+nm_l3_config_data_set_mtu (NML3ConfigData *self,
+                           guint32 mtu)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	if (   self->mtu == mtu
+	    && NM_FLAGS_HAS (self->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_MTU))
+		return FALSE;
+
+	self->mtu = mtu;
+	self->flags |= NM_L3_CONFIG_DAT_FLAGS_HAS_MTU;
 	return TRUE;
 }
 
@@ -889,6 +977,8 @@ nm_l3_config_data_cmp (const NML3ConfigData *a, const NML3ConfigData *b)
 
 	NM_CMP_DIRECT (a->ifindex, b->ifindex);
 
+	NM_CMP_DIRECT (a->flags, b->flags);
+
 	_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP4_ADDRESS);
 	_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP6_ADDRESS);
 	_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP4_ROUTE);
@@ -905,13 +995,18 @@ nm_l3_config_data_cmp (const NML3ConfigData *a, const NML3ConfigData *b)
 		NM_CMP_RETURN (nm_strv_ptrarray_cmp (a->searches_x[IS_IPv4], b->searches_x[IS_IPv4]));
 		NM_CMP_RETURN (nm_strv_ptrarray_cmp (a->dns_options_x[IS_IPv4], b->dns_options_x[IS_IPv4]));
 
-		NM_CMP_DIRECT (a->dns_priority_x[IS_IPv4], b->dns_priority_x[IS_IPv4]);
+		if (NM_FLAGS_ANY (a->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY (IS_IPv4)))
+			NM_CMP_DIRECT (a->dns_priority_x[IS_IPv4], b->dns_priority_x[IS_IPv4]);
 	}
 
-	NM_CMP_RETURN (_garray_inaddr_cmp (a->wins_4, b->wins_4, AF_INET));
+	NM_CMP_RETURN (_garray_inaddr_cmp (a->wins, b->wins, AF_INET));
+	NM_CMP_RETURN (_garray_inaddr_cmp (a->nis_servers, b->nis_servers, AF_INET));
+	NM_CMP_FIELD_STR0 (a, b, nis_domain);
 	NM_CMP_DIRECT (a->mdns, b->mdns);
 	NM_CMP_DIRECT (a->llmnr, b->llmnr);
-	NM_CMP_DIRECT (a->flags, b->flags);
+	if (NM_FLAGS_HAS (a->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_MTU))
+		NM_CMP_DIRECT (a->mtu, b->mtu);
+	NM_CMP_DIRECT_UNSAFE (a->metered, b->metered);
 
 	/* these fields are not considered by cmp():
 	 *
@@ -1108,8 +1203,6 @@ NML3ConfigData *
 nm_l3_config_data_new_from_connection (NMDedupMultiIndex *multi_idx,
                                        int ifindex,
                                        NMConnection *connection,
-                                       NMSettingConnectionMdns mdns,
-                                       NMSettingConnectionLlmnr llmnr,
                                        guint32 route_table,
                                        guint32 route_metric)
 {
@@ -1119,10 +1212,6 @@ nm_l3_config_data_new_from_connection (NMDedupMultiIndex *multi_idx,
 
 	_init_from_connection_ip (self, AF_INET,  connection, route_table, route_metric);
 	_init_from_connection_ip (self, AF_INET6, connection, route_table, route_metric);
-
-	self->mdns = mdns;
-	self->llmnr = llmnr;
-
 	return self;
 }
 
@@ -1257,7 +1346,7 @@ nm_l3_config_data_new_clone (const NML3ConfigData *src,
 	nm_assert (self->best_default_route_4 == src->best_default_route_4);
 	nm_assert (self->best_default_route_6 == src->best_default_route_6);
 
-	self->wins_4         = _garray_inaddr_clone (src->wins_4, AF_INET);
+	self->wins           = _garray_inaddr_clone (src->wins, AF_INET);
 	self->nameservers_4  = _garray_inaddr_clone (src->nameservers_4, AF_INET);
 	self->nameservers_6  = _garray_inaddr_clone (src->nameservers_6, AF_INET6);
 	self->domains_4      = nm_strv_ptrarray_clone (src->domains_4, TRUE);
@@ -1270,6 +1359,8 @@ nm_l3_config_data_new_clone (const NML3ConfigData *src,
 	self->dns_priority_6 = src->dns_priority_6;
 	self->mdns           = src->mdns;
 	self->llmnr          = src->llmnr;
+
+	/* TODO: some fields are not cloned. Will be done next. */
 
 	return self;
 }
