@@ -262,6 +262,12 @@ gboolean nm_utils_ipaddr_is_normalized (int addr_family,
             return (_a < _b) ? -1 : 1; \
     } G_STMT_END
 
+#define NM_CMP_DIRECT_UNSAFE(a, b) \
+    G_STMT_START { \
+        if ((a) != (b)) \
+            return ((a) < (b)) ? -1 : 1; \
+    } G_STMT_END
+
 /* In the general case, direct pointer comparison is undefined behavior in C.
  * Avoid that by casting pointers to void* and then to uintptr_t. This comparison
  * is not really meaningful, except that it provides some kind of stable sort order
