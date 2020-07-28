@@ -674,6 +674,9 @@ nmp_object_id_equal (const NMPObject *obj1, const NMPObject *obj2)
 	return nmp_object_id_cmp (obj1, obj2) == 0;
 }
 
+guint nmp_object_indirect_id_hash (gconstpointer a);
+gboolean nmp_object_indirect_id_equal (gconstpointer a, gconstpointer b);
+
 gboolean nmp_object_is_alive (const NMPObject *obj);
 gboolean nmp_object_is_visible (const NMPObject *obj);
 

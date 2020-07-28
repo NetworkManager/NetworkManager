@@ -1570,6 +1570,25 @@ _vt_cmd_plobj_hash_update_routing_rule (const NMPlatformObject *obj, NMHashState
 	return nm_platform_routing_rule_hash_update ((const NMPlatformRoutingRule *) obj, NM_PLATFORM_ROUTING_RULE_CMP_TYPE_FULL, h);
 }
 
+guint
+nmp_object_indirect_id_hash (gconstpointer a)
+{
+	const NMPObject *const*p_obj = a;
+
+	return nmp_object_id_hash (*p_obj);
+}
+
+gboolean
+nmp_object_indirect_id_equal (gconstpointer a, gconstpointer b)
+{
+	const NMPObject *const*p_obj_a = a;
+	const NMPObject *const*p_obj_b = b;
+
+	return nmp_object_id_equal (*p_obj_a, *p_obj_b);
+}
+
+/*****************************************************************************/
+
 gboolean
 nmp_object_is_alive (const NMPObject *obj)
 {
