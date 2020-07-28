@@ -301,6 +301,9 @@ gboolean nm_l3_config_data_set_mdns (NML3ConfigData *self,
 gboolean nm_l3_config_data_set_llmnr (NML3ConfigData *self,
                                       NMSettingConnectionLlmnr llmnr);
 
+NMIPRouteTableSyncMode nm_l3_config_data_get_route_table_sync (const NML3ConfigData *self,
+                                                               int addr_family);
+
 gboolean nm_l3_config_data_set_route_table_sync (NML3ConfigData *self,
                                                  int addr_family,
                                                  NMIPRouteTableSyncMode route_table_sync);

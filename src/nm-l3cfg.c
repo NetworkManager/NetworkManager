@@ -533,7 +533,6 @@ _l3cfg_combine_config (GArray *l3_config_datas,
 	return nm_l3_config_data_seal (l3cfg);
 }
 
-_nm_unused
 static gboolean
 _l3cfg_update_combined_config (NML3Cfg *self,
                                const NML3ConfigData **out_old /* transfer reference */)
@@ -556,10 +555,77 @@ _l3cfg_update_combined_config (NML3Cfg *self,
 	if (nm_l3_config_data_equal (l3cfg, self->priv.p->combined_l3cfg))
 		return FALSE;
 
+	_LOGT ("desired IP configuration changed");
+
 	l3cfg_old = g_steal_pointer (&self->priv.p->combined_l3cfg);
 	self->priv.p->combined_l3cfg = nm_l3_config_data_seal (g_steal_pointer (&l3cfg));
 	NM_SET_OUT (out_old, nm_l3_config_data_ref (self->priv.p->combined_l3cfg));
 	return TRUE;
+}
+
+/*****************************************************************************/
+
+gboolean
+nm_l3cfg_platform_commit (NML3Cfg *self,
+                          int addr_family)
+{
+	gs_unref_ptrarray GPtrArray *addresses = NULL;
+	gs_unref_ptrarray GPtrArray *routes = NULL;
+	gs_unref_ptrarray GPtrArray *routes_prune = NULL;
+	gs_unref_ptrarray GPtrArray *routes_temporary_not_available = NULL;
+	NMIPRouteTableSyncMode route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE;
+	gboolean success = TRUE;
+	int IS_IPv4;
+
+	g_return_val_if_fail (NM_IS_L3CFG (self), FALSE);
+
+	if (addr_family == AF_UNSPEC) {
+		if (!nm_l3cfg_platform_commit (self, AF_INET))
+			success = FALSE;
+		if (!nm_l3cfg_platform_commit (self, AF_INET6))
+			success = FALSE;
+		return success;
+	}
+
+	_l3cfg_update_combined_config (self, NULL);
+
+	IS_IPv4 = NM_IS_IPv4 (addr_family);
+
+	_LOGT ("committing IPv%c configuration...", nm_utils_addr_family_to_char (addr_family));
+
+	if (self->priv.p->combined_l3cfg) {
+		addresses = nm_dedup_multi_objs_to_ptr_array_head (nm_l3_config_data_lookup_objs (self->priv.p->combined_l3cfg,
+		                                                                                  NMP_OBJECT_TYPE_IP_ADDRESS (IS_IPv4)),
+		                                                   NULL, NULL);
+
+		routes = nm_dedup_multi_objs_to_ptr_array_head (nm_l3_config_data_lookup_objs (self->priv.p->combined_l3cfg,
+		                                                                               NMP_OBJECT_TYPE_IP_ROUTE (IS_IPv4)),
+		                                                NULL, NULL);
+
+		route_table_sync = nm_l3_config_data_get_route_table_sync (self->priv.p->combined_l3cfg, addr_family);
+	}
+
+	if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_NONE)
+		route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_ALL;
+
+	routes_prune = nm_platform_ip_route_get_prune_list (self->priv.platform,
+	                                                    addr_family,
+	                                                    self->priv.ifindex,
+	                                                    route_table_sync);
+
+	nm_platform_ip4_address_sync (self->priv.platform,
+	                              self->priv.ifindex,
+	                              addresses);
+
+	if (!nm_platform_ip_route_sync (self->priv.platform,
+	                                addr_family,
+	                                self->priv.ifindex,
+	                                routes,
+	                                routes_prune,
+	                                &routes_temporary_not_available))
+		success = FALSE;
+
+	return success;
 }
 
 /*****************************************************************************/

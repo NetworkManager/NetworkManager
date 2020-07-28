@@ -114,4 +114,9 @@ void nm_l3cfg_remove_config_all (NML3Cfg *self,
                                  gconstpointer tag,
                                  gboolean only_dirty);
 
+/*****************************************************************************/
+
+gboolean nm_l3cfg_platform_commit (NML3Cfg *self,
+                                   int addr_family);
+
 #endif /* __NM_L3CFG_H__ */

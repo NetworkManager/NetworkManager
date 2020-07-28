@@ -1035,6 +1035,16 @@ nm_l3_config_data_set_llmnr (NML3ConfigData *self,
 	return TRUE;
 }
 
+NMIPRouteTableSyncMode
+nm_l3_config_data_get_route_table_sync (const NML3ConfigData *self,
+                                        int addr_family)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+	nm_assert_addr_family (addr_family);
+
+	return self->route_table_sync_x[NM_IS_IPv4 (addr_family)];
+}
+
 gboolean
 nm_l3_config_data_set_route_table_sync (NML3ConfigData *self,
                                         int addr_family,
