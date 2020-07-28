@@ -54,9 +54,10 @@ nm_dedup_multi_idx_type_init (NMDedupMultiIdxType *idx_type,
 	nm_assert (idx_type);
 	nm_assert (klass);
 
-	memset (idx_type, 0, sizeof (*idx_type));
-	idx_type->klass = klass;
-	c_list_init (&idx_type->lst_idx_head);
+	*idx_type = (NMDedupMultiIdxType) {
+		.klass        = klass,
+		.lst_idx_head = C_LIST_INIT (idx_type->lst_idx_head),
+	};
 
 	ASSERT_idx_type (idx_type);
 }
