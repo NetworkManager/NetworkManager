@@ -64,7 +64,6 @@ typedef struct {
 		NMDedupMultiIdxType idx_ip6_routes;
 	};
 	NMIPConfigFlags config_flags;
-	bool ipv6_disabled;
 } NMIP6ConfigPrivate;
 
 struct _NMIP6Config {
@@ -214,102 +213,19 @@ _notify_routes (NMIP6Config *self)
 /*****************************************************************************/
 
 static int
-_addresses_sort_cmp_get_prio (const struct in6_addr *addr)
-{
-	if (IN6_IS_ADDR_V4MAPPED (addr))
-		return 0;
-	if (IN6_IS_ADDR_V4COMPAT (addr))
-		return 1;
-	if (IN6_IS_ADDR_UNSPECIFIED (addr))
-		return 2;
-	if (IN6_IS_ADDR_LOOPBACK (addr))
-		return 3;
-	if (IN6_IS_ADDR_LINKLOCAL (addr))
-		return 4;
-	if (IN6_IS_ADDR_SITELOCAL (addr))
-		return 5;
-	return 6;
-}
-
-static int
-_addresses_sort_cmp (const NMPlatformIP6Address *a1,
-                     const NMPlatformIP6Address *a2,
-                     gboolean prefer_temp)
-{
-	int p1, p2, c;
-	gboolean perm1, perm2, tent1, tent2;
-	gboolean ipv6_privacy1, ipv6_privacy2;
-
-	/* tentative addresses are always sorted back... */
-	/* sort tentative addresses after non-tentative. */
-	tent1 = (a1->n_ifa_flags & IFA_F_TENTATIVE);
-	tent2 = (a2->n_ifa_flags & IFA_F_TENTATIVE);
-	if (tent1 != tent2)
-		return tent1 ? 1 : -1;
-
-	/* Sort by address type. For example link local will
-	 * be sorted *after* site local or global. */
-	p1 = _addresses_sort_cmp_get_prio (&a1->address);
-	p2 = _addresses_sort_cmp_get_prio (&a2->address);
-	if (p1 != p2)
-		return p1 > p2 ? -1 : 1;
-
-	ipv6_privacy1 = !!(a1->n_ifa_flags & (IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY));
-	ipv6_privacy2 = !!(a2->n_ifa_flags & (IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY));
-	if (ipv6_privacy1 || ipv6_privacy2) {
-		gboolean public1 = TRUE, public2 = TRUE;
-
-		if (ipv6_privacy1) {
-			if (a1->n_ifa_flags & IFA_F_TEMPORARY)
-				public1 = prefer_temp;
-			else
-				public1 = !prefer_temp;
-		}
-		if (ipv6_privacy2) {
-			if (a2->n_ifa_flags & IFA_F_TEMPORARY)
-				public2 = prefer_temp;
-			else
-				public2 = !prefer_temp;
-		}
-
-		if (public1 != public2)
-			return public1 ? -1 : 1;
-	}
-
-	/* Sort the addresses based on their source. */
-	if (a1->addr_source != a2->addr_source)
-		return a1->addr_source > a2->addr_source ? -1 : 1;
-
-	/* sort permanent addresses before non-permanent. */
-	perm1 = (a1->n_ifa_flags & IFA_F_PERMANENT);
-	perm2 = (a2->n_ifa_flags & IFA_F_PERMANENT);
-	if (perm1 != perm2)
-		return perm1 ? -1 : 1;
-
-	/* finally sort addresses lexically */
-	c = memcmp (&a1->address, &a2->address, sizeof (a2->address));
-	return c != 0 ? c : memcmp (a1, a2, sizeof (*a1));
-}
-
-static int
 _addresses_sort_cmp_prop (gconstpointer a, gconstpointer b, gpointer user_data)
 {
-	return _addresses_sort_cmp (NMP_OBJECT_CAST_IP6_ADDRESS (*((const NMPObject **) a)),
-	                            NMP_OBJECT_CAST_IP6_ADDRESS (*((const NMPObject **) b)),
-	                            ((NMSettingIP6ConfigPrivacy) GPOINTER_TO_INT (user_data)) == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
+	return nm_platform_ip6_address_pretty_sort_cmp (NMP_OBJECT_CAST_IP6_ADDRESS (*((const NMPObject **) a)),
+	                                                NMP_OBJECT_CAST_IP6_ADDRESS (*((const NMPObject **) b)),
+	                                                (((NMSettingIP6ConfigPrivacy) GPOINTER_TO_INT (user_data)) == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR));
 }
 
 static int
 sort_captured_addresses (const CList *lst_a, const CList *lst_b, gconstpointer user_data)
 {
-	const NMPlatformIP6Address *addr_a = NMP_OBJECT_CAST_IP6_ADDRESS (c_list_entry (lst_a, NMDedupMultiEntry, lst_entries)->obj);
-	const NMPlatformIP6Address *addr_b = NMP_OBJECT_CAST_IP6_ADDRESS (c_list_entry (lst_b, NMDedupMultiEntry, lst_entries)->obj);
-
-	nm_assert (addr_a);
-	nm_assert (addr_b);
-
-	return _addresses_sort_cmp (addr_a, addr_b,
-	                            ((NMSettingIP6ConfigPrivacy) GPOINTER_TO_INT (user_data)) == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR);
+	return nm_platform_ip6_address_pretty_sort_cmp (NMP_OBJECT_CAST_IP6_ADDRESS (c_list_entry (lst_a, NMDedupMultiEntry, lst_entries)->obj),
+	                                                NMP_OBJECT_CAST_IP6_ADDRESS (c_list_entry (lst_b, NMDedupMultiEntry, lst_entries)->obj),
+	                                                (((NMSettingIP6ConfigPrivacy) GPOINTER_TO_INT (user_data)) == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR));
 }
 
 gboolean
@@ -373,8 +289,6 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 	const NMDedupMultiHeadEntry *head_entry;
 	NMDedupMultiIter iter;
 	const NMPObject *plobj = NULL;
-	char ifname[IFNAMSIZ];
-	char *path;
 
 	nm_assert (ifindex > 0);
 
@@ -415,12 +329,6 @@ nm_ip6_config_capture (NMDedupMultiIndex *multi_idx, NMPlatform *platform, int i
 
 	nmp_cache_iter_for_each (&iter, head_entry, &plobj)
 		_add_route (self, plobj, NULL, NULL);
-
-	if (nm_platform_if_indextoname (platform, ifindex, ifname)) {
-		path = nm_sprintf_bufa (128, "/proc/sys/net/ipv6/conf/%s/disable_ipv6", ifname);
-		if (nm_platform_sysctl_get_int32 (platform, NMP_SYSCTL_PATHID_ABSOLUTE (path), 0) != 0)
-			priv->ipv6_disabled = TRUE;
-	}
 
 	return self;
 }
@@ -757,7 +665,7 @@ nm_ip6_config_merge_setting (NMIP6Config *self,
 }
 
 NMSetting *
-nm_ip6_config_create_setting (const NMIP6Config *self)
+nm_ip6_config_create_setting (const NMIP6Config *self, gboolean maybe_ipv6_disabled)
 {
 	const NMIP6ConfigPrivate *priv;
 	NMSettingIPConfig *s_ip6;
@@ -822,7 +730,7 @@ nm_ip6_config_create_setting (const NMIP6Config *self)
 
 	/* Use 'ignore' if the method wasn't previously set */
 	if (!method) {
-		method =   priv->ipv6_disabled
+		method =   maybe_ipv6_disabled
 		         ? NM_SETTING_IP6_CONFIG_METHOD_DISABLED
 		         : NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
 	}
@@ -893,13 +801,11 @@ nm_ip6_config_merge (NMIP6Config *dst,
 	NMDedupMultiIter ipconf_iter;
 	const NMPlatformIP6Address *address = NULL;
 	const NMIP6ConfigPrivate *src_priv;
-	NMIP6ConfigPrivate *dst_priv;
 
 	g_return_if_fail (src != NULL);
 	g_return_if_fail (dst != NULL);
 
 	src_priv = NM_IP6_CONFIG_GET_PRIVATE (src);
-	dst_priv = NM_IP6_CONFIG_GET_PRIVATE (dst);
 
 	g_object_freeze_notify (G_OBJECT (dst));
 
@@ -964,9 +870,6 @@ nm_ip6_config_merge (NMIP6Config *dst,
 	/* DNS priority */
 	if (nm_ip6_config_get_dns_priority (src))
 		nm_ip6_config_set_dns_priority (dst, nm_ip6_config_get_dns_priority (src));
-
-	if (src_priv->ipv6_disabled)
-		dst_priv->ipv6_disabled = src_priv->ipv6_disabled;
 
 	g_object_thaw_notify (G_OBJECT (dst));
 }
@@ -1393,8 +1296,8 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 		const NMPlatformIP6Address *r_src = NULL;
 		const NMPlatformIP6Address *r_dst = NULL;
 
-		has = nm_ip_config_iter_ip6_address_next (&ipconf_iter_src, &r_src);
-		if (has != nm_ip_config_iter_ip6_address_next (&ipconf_iter_dst, &r_dst)) {
+		has = nm_platform_dedup_multi_iter_next_ip6_address (&ipconf_iter_src, &r_src);
+		if (has != nm_platform_dedup_multi_iter_next_ip6_address (&ipconf_iter_dst, &r_dst)) {
 			are_equal = FALSE;
 			has_relevant_changes = TRUE;
 			break;
@@ -1441,8 +1344,8 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 		const NMPlatformIP6Route *r_src = NULL;
 		const NMPlatformIP6Route *r_dst = NULL;
 
-		has = nm_ip_config_iter_ip6_route_next (&ipconf_iter_src, &r_src);
-		if (has != nm_ip_config_iter_ip6_route_next (&ipconf_iter_dst, &r_dst)) {
+		has = nm_platform_dedup_multi_iter_next_ip6_route (&ipconf_iter_src, &r_src);
+		if (has != nm_platform_dedup_multi_iter_next_ip6_route (&ipconf_iter_dst, &r_dst)) {
 			are_equal = FALSE;
 			has_relevant_changes = TRUE;
 			break;
@@ -1570,11 +1473,6 @@ nm_ip6_config_replace (NMIP6Config *dst, const NMIP6Config *src, gboolean *relev
 
 	if (src_priv->privacy != dst_priv->privacy) {
 		nm_ip6_config_set_privacy (dst, src_priv->privacy);
-		has_minor_changes = TRUE;
-	}
-
-	if (src_priv->ipv6_disabled != dst_priv->ipv6_disabled) {
-		dst_priv->ipv6_disabled = src_priv->ipv6_disabled;
 		has_minor_changes = TRUE;
 	}
 

@@ -506,47 +506,10 @@ _notify_routes (NMIP4Config *self)
 /*****************************************************************************/
 
 static int
-_addresses_sort_cmp_get_prio (in_addr_t addr)
-{
-	if (nm_utils_ip4_address_is_link_local (addr))
-		return 0;
-	return 1;
-}
-
-static int
 _addresses_sort_cmp (gconstpointer a, gconstpointer b, gpointer user_data)
 {
-	int p1, p2;
-	const NMPlatformIP4Address *a1 = NMP_OBJECT_CAST_IP4_ADDRESS (*((const NMPObject **) a));
-	const NMPlatformIP4Address *a2 = NMP_OBJECT_CAST_IP4_ADDRESS (*((const NMPObject **) b));
-	guint32 n1, n2;
-
-	nm_assert (a1);
-	nm_assert (a2);
-
-	/* Sort by address type. For example link local will
-	 * be sorted *after* a global address. */
-	p1 = _addresses_sort_cmp_get_prio (a1->address);
-	p2 = _addresses_sort_cmp_get_prio (a2->address);
-	if (p1 != p2)
-		return p1 > p2 ? -1 : 1;
-
-	/* Sort the addresses based on their source. */
-	if (a1->addr_source != a2->addr_source)
-		return a1->addr_source > a2->addr_source ? -1 : 1;
-
-	if ((a1->label[0] == '\0') != (a2->label[0] == '\0'))
-		return (a1->label[0] == '\0') ? -1 : 1;
-
-	/* Finally, sort addresses lexically. We compare only the
-	 * network part so that the order of addresses in the same
-	 * subnet (and thus also the primary/secondary role) is
-	 * preserved.
-	 */
-	n1 = a1->address & _nm_utils_ip4_prefix_to_netmask (a1->plen);
-	n2 = a2->address & _nm_utils_ip4_prefix_to_netmask (a2->plen);
-
-	return memcmp (&n1, &n2, sizeof (guint32));
+	return nm_platform_ip4_address_pretty_sort_cmp (NMP_OBJECT_CAST_IP4_ADDRESS (*((const NMPObject **) a)),
+	                                                NMP_OBJECT_CAST_IP4_ADDRESS (*((const NMPObject **) b)));
 }
 
 /*****************************************************************************/
@@ -1694,8 +1657,8 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 		const NMPlatformIP4Address *r_src = NULL;
 		const NMPlatformIP4Address *r_dst = NULL;
 
-		has = nm_ip_config_iter_ip4_address_next (&ipconf_iter_src, &r_src);
-		if (has != nm_ip_config_iter_ip4_address_next (&ipconf_iter_dst, &r_dst)) {
+		has = nm_platform_dedup_multi_iter_next_ip4_address (&ipconf_iter_src, &r_src);
+		if (has != nm_platform_dedup_multi_iter_next_ip4_address (&ipconf_iter_dst, &r_dst)) {
 			are_equal = FALSE;
 			has_relevant_changes = TRUE;
 			break;
@@ -1741,8 +1704,8 @@ nm_ip4_config_replace (NMIP4Config *dst, const NMIP4Config *src, gboolean *relev
 		const NMPlatformIP4Route *r_src = NULL;
 		const NMPlatformIP4Route *r_dst = NULL;
 
-		has = nm_ip_config_iter_ip4_route_next (&ipconf_iter_src, &r_src);
-		if (has != nm_ip_config_iter_ip4_route_next (&ipconf_iter_dst, &r_dst)) {
+		has = nm_platform_dedup_multi_iter_next_ip4_route (&ipconf_iter_src, &r_src);
+		if (has != nm_platform_dedup_multi_iter_next_ip4_route (&ipconf_iter_dst, &r_dst)) {
 			are_equal = FALSE;
 			has_relevant_changes = TRUE;
 			break;

@@ -1057,4 +1057,63 @@ nmp_object_ip_route_is_best_defaut_route (const NMPObject *obj)
 	       && r->type_coerced == nm_platform_route_type_coerce (1 /* RTN_UNICAST */);
 }
 
+/*****************************************************************************/
+
+static inline gboolean
+nm_platform_dedup_multi_iter_next_obj (NMDedupMultiIter *ipconf_iter, const NMPObject **out_obj, NMPObjectType assert_obj_type)
+{
+	gboolean has_next;
+
+	has_next = nm_dedup_multi_iter_next (ipconf_iter);
+	nm_assert (   assert_obj_type == NMP_OBJECT_TYPE_UNKNOWN
+	           || !has_next
+	           || NMP_OBJECT_GET_TYPE (ipconf_iter->current->obj) == assert_obj_type);
+	NM_SET_OUT (out_obj, has_next ? ipconf_iter->current->obj : NULL);
+	return has_next;
+}
+
+static inline gboolean
+nm_platform_dedup_multi_iter_next_ip4_address (NMDedupMultiIter *ipconf_iter, const NMPlatformIP4Address **out_address)
+{
+	gboolean has_next;
+
+	has_next = nm_dedup_multi_iter_next (ipconf_iter);
+	if (out_address)
+		*out_address = has_next ? NMP_OBJECT_CAST_IP4_ADDRESS (ipconf_iter->current->obj) : NULL;
+	return has_next;
+}
+
+static inline gboolean
+nm_platform_dedup_multi_iter_next_ip4_route (NMDedupMultiIter *ipconf_iter, const NMPlatformIP4Route **out_route)
+{
+	gboolean has_next;
+
+	has_next = nm_dedup_multi_iter_next (ipconf_iter);
+	if (out_route)
+		*out_route = has_next ? NMP_OBJECT_CAST_IP4_ROUTE (ipconf_iter->current->obj) : NULL;
+	return has_next;
+}
+
+static inline gboolean
+nm_platform_dedup_multi_iter_next_ip6_address (NMDedupMultiIter *ipconf_iter, const NMPlatformIP6Address **out_address)
+{
+	gboolean has_next;
+
+	has_next = nm_dedup_multi_iter_next (ipconf_iter);
+	if (out_address)
+		*out_address = has_next ? NMP_OBJECT_CAST_IP6_ADDRESS (ipconf_iter->current->obj) : NULL;
+	return has_next;
+}
+
+static inline gboolean
+nm_platform_dedup_multi_iter_next_ip6_route (NMDedupMultiIter *ipconf_iter, const NMPlatformIP6Route **out_route)
+{
+	gboolean has_next;
+
+	has_next = nm_dedup_multi_iter_next (ipconf_iter);
+	if (out_route)
+		*out_route = has_next ? NMP_OBJECT_CAST_IP6_ROUTE (ipconf_iter->current->obj) : NULL;
+	return has_next;
+}
+
 #endif /* __NMP_OBJECT_H__ */

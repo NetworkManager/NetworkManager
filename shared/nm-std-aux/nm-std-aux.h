@@ -125,6 +125,12 @@
 #define nm_assert_not_reached() do { ; } while (0)
 #endif
 
+#define nm_assert_unreachable_val(val) \
+	({ \
+		nm_assert_not_reached (); \
+		(val); \
+	})
+
 #define NM_STATIC_ASSERT(cond)      static_assert(cond, "")
 #define NM_STATIC_ASSERT_EXPR(cond) ({ NM_STATIC_ASSERT (cond); 1; })
 
