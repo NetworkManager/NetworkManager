@@ -16,6 +16,15 @@
 #define NM_L3CFG_NETNS   "netns"
 #define NM_L3CFG_IFINDEX "ifindex"
 
+#define NM_L3CFG_SIGNAL_NOTIFY "l3cfg-notify"
+
+typedef enum {
+	NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED,
+	_NM_L3_CONFIG_NOTIFY_TYPE_NUM,
+} NML3ConfigNotifyType;
+
+#define NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED_DETAIL "routes-temporary-not-available"
+
 struct _NML3CfgPrivate;
 
 struct _NML3Cfg {
@@ -117,6 +126,7 @@ void nm_l3cfg_remove_config_all (NML3Cfg *self,
 /*****************************************************************************/
 
 gboolean nm_l3cfg_platform_commit (NML3Cfg *self,
-                                   int addr_family);
+                                   int addr_family,
+                                   gboolean *out_final_failure_for_temporary_not_available);
 
 #endif /* __NM_L3CFG_H__ */

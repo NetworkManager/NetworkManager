@@ -25,11 +25,25 @@ NM_GOBJECT_PROPERTIES_DEFINE (NML3Cfg,
 	PROP_IFINDEX,
 );
 
+enum {
+	SIGNAL_NOTIFY,
+	LAST_SIGNAL,
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
+static GQuark signal_notify_quarks[_NM_L3_CONFIG_NOTIFY_TYPE_NUM];
+
 typedef struct _NML3CfgPrivate {
 	GArray *property_emit_list;
 	GArray *l3_config_datas;
 	const NML3ConfigData *combined_l3cfg;
+
+	GHashTable *routes_temporary_not_available_hash;
+
 	guint64 pseudo_timestamp_counter;
+
+	guint routes_temporary_not_available_id;
 } NML3CfgPrivate;
 
 struct _NML3CfgClass {
@@ -54,6 +68,23 @@ G_DEFINE_TYPE (NML3Cfg, nm_l3cfg, G_TYPE_OBJECT)
 /*****************************************************************************/
 
 static void _property_emit_notify (NML3Cfg *self, NML3CfgPropertyEmitType emit_type);
+
+/*****************************************************************************/
+
+static void
+_l3cfg_emit_signal_notify (NML3Cfg *self,
+                           NML3ConfigNotifyType notify_type,
+                           gpointer pay_load)
+{
+	nm_assert (_NM_INT_NOT_NEGATIVE (notify_type));
+	nm_assert (notify_type < G_N_ELEMENTS (signal_notify_quarks));
+
+	g_signal_emit (self,
+	               signals[SIGNAL_NOTIFY],
+	               signal_notify_quarks[notify_type],
+	               (int) notify_type,
+	               pay_load);
+}
 
 /*****************************************************************************/
 
@@ -565,25 +596,209 @@ _l3cfg_update_combined_config (NML3Cfg *self,
 
 /*****************************************************************************/
 
+typedef struct {
+	const NMPObject *obj;
+	gint64 timestamp_msec;
+	bool dirty;
+} RoutesTemporaryNotAvailableData;
+
+static void
+_routes_temporary_not_available_data_free (gpointer user_data)
+{
+	RoutesTemporaryNotAvailableData *data = user_data;
+
+	nmp_object_unref (data->obj);
+	nm_g_slice_free (data);
+}
+
+#define ROUTES_TEMPORARY_NOT_AVAILABLE_MAX_AGE_MSEC ((gint64) 20000)
+
+static gboolean
+_routes_temporary_not_available_timeout (gpointer user_data)
+{
+	RoutesTemporaryNotAvailableData *data;
+	NML3Cfg *self = NM_L3CFG (user_data);
+	GHashTableIter iter;
+	gint64 expiry_threshold_msec;
+	gboolean any_expired = FALSE;
+	gint64 now_msec;
+	gint64 oldest_msec;
+
+	self->priv.p->routes_temporary_not_available_id = 0;
+
+	if (!self->priv.p->routes_temporary_not_available_hash)
+		return G_SOURCE_REMOVE;
+
+	/* we check the timeouts again. That is, because we allow to remove
+	 * entries from routes_temporary_not_available_hash, without rescheduling
+	 * out timeouts. */
+
+	now_msec = nm_utils_get_monotonic_timestamp_msec ();
+
+	expiry_threshold_msec = now_msec - ROUTES_TEMPORARY_NOT_AVAILABLE_MAX_AGE_MSEC;
+	oldest_msec = G_MAXINT64;
+
+	g_hash_table_iter_init (&iter, self->priv.p->routes_temporary_not_available_hash);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &data, NULL)) {
+		if (data->timestamp_msec >= expiry_threshold_msec) {
+			any_expired = TRUE;
+			break;
+		}
+		if (data->timestamp_msec < oldest_msec)
+			oldest_msec = data->timestamp_msec;
+	}
+
+	if (any_expired) {
+		/* a route expired. We emit a signal, but we don't schedule it again. That will
+		 * only happen if the user calls nm_l3cfg_platform_commit() again. */
+		_l3cfg_emit_signal_notify (self, NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED, NULL);
+		return G_SOURCE_REMOVE;
+	}
+
+	if (oldest_msec != G_MAXINT64) {
+		/* we have a timeout still. Reschedule. */
+		self->priv.p->routes_temporary_not_available_id = g_timeout_add (oldest_msec + ROUTES_TEMPORARY_NOT_AVAILABLE_MAX_AGE_MSEC - now_msec,
+		                                                                 _routes_temporary_not_available_timeout,
+		                                                                 self);
+	}
+	return G_SOURCE_REMOVE;
+}
+
+static gboolean
+_routes_temporary_not_available_update (NML3Cfg *self,
+                                        int addr_family,
+                                        GPtrArray *routes_temporary_not_available_arr)
+{
+
+	RoutesTemporaryNotAvailableData *data;
+	GHashTableIter iter;
+	gint64 oldest_msec;
+	gint64 now_msec;
+	gboolean prune_all = FALSE;
+	gboolean success = TRUE;
+	guint i;
+
+	now_msec = nm_utils_get_monotonic_timestamp_msec ();
+
+	if (nm_g_ptr_array_len (routes_temporary_not_available_arr) <= 0) {
+		prune_all = TRUE;
+		goto out_prune;
+	}
+
+	if (self->priv.p->routes_temporary_not_available_hash) {
+		g_hash_table_iter_init (&iter, self->priv.p->routes_temporary_not_available_hash);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &data, NULL)) {
+			if (NMP_OBJECT_GET_ADDR_FAMILY (data->obj) == addr_family)
+				data->dirty = TRUE;
+		}
+	} else {
+		self->priv.p->routes_temporary_not_available_hash = g_hash_table_new_full (nmp_object_indirect_id_hash,
+		                                                                           nmp_object_indirect_id_equal,
+		                                                                           _routes_temporary_not_available_data_free,
+		                                                                           NULL);
+	}
+
+	for (i = 0; i < routes_temporary_not_available_arr->len; i++) {
+		const NMPObject *o = routes_temporary_not_available_arr->pdata[i];
+		char sbuf[1024];
+
+		nm_assert (NMP_OBJECT_GET_TYPE (o) == NMP_OBJECT_TYPE_IP_ROUTE (NM_IS_IPv4 (addr_family)));
+
+		data = g_hash_table_lookup (self->priv.p->routes_temporary_not_available_hash, &o);
+
+		if (data) {
+			if (!data->dirty)
+				continue;
+
+			nm_assert (   data->timestamp_msec > 0
+			           && data->timestamp_msec <= now_msec);
+
+			if (now_msec > data->timestamp_msec + ROUTES_TEMPORARY_NOT_AVAILABLE_MAX_AGE_MSEC) {
+
+				/* timeout. Could not add this address. */
+				_LOGW ("failure to add IPv%c route: %s",
+				       nm_utils_addr_family_to_char (addr_family),
+				       nmp_object_to_string (o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof (sbuf)));
+				success = FALSE;
+				continue;
+			}
+
+			data->dirty = FALSE;
+			continue;
+		}
+
+		_LOGT ("(temporarily) unable to add IPv%c route: %s",
+		       nm_utils_addr_family_to_char (addr_family),
+		       nmp_object_to_string (o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof (sbuf)));
+
+		data = g_slice_new (RoutesTemporaryNotAvailableData);
+		*data = (RoutesTemporaryNotAvailableData) {
+			.obj            = nmp_object_ref (o),
+			.timestamp_msec = now_msec,
+			.dirty          = FALSE,
+		};
+		g_hash_table_add (self->priv.p->routes_temporary_not_available_hash, data);
+	}
+
+out_prune:
+	oldest_msec = G_MAXINT64;
+
+	if (self->priv.p->routes_temporary_not_available_hash) {
+		g_hash_table_iter_init (&iter, self->priv.p->routes_temporary_not_available_hash);
+		while (g_hash_table_iter_next (&iter, (gpointer *) &data, NULL)) {
+			nm_assert (   NMP_OBJECT_GET_ADDR_FAMILY (data->obj) == addr_family
+			           || !data->dirty);
+			if (   !prune_all
+			    && !data->dirty) {
+				if (data->timestamp_msec < oldest_msec)
+					oldest_msec = data->timestamp_msec;
+				continue;
+			}
+			g_hash_table_iter_remove (&iter);
+		}
+		if (oldest_msec != G_MAXINT64)
+			nm_clear_pointer (&self->priv.p->routes_temporary_not_available_hash, g_hash_table_unref);
+	}
+
+	nm_clear_g_source (&self->priv.p->routes_temporary_not_available_id);
+	if (oldest_msec != G_MAXINT64) {
+		nm_assert (oldest_msec + ROUTES_TEMPORARY_NOT_AVAILABLE_MAX_AGE_MSEC < now_msec);
+		self->priv.p->routes_temporary_not_available_id = g_timeout_add (oldest_msec + ROUTES_TEMPORARY_NOT_AVAILABLE_MAX_AGE_MSEC - now_msec,
+		                                                                 _routes_temporary_not_available_timeout,
+		                                                                 self);
+	}
+
+	return success;
+}
+
+/*****************************************************************************/
+
 gboolean
 nm_l3cfg_platform_commit (NML3Cfg *self,
-                          int addr_family)
+                          int addr_family,
+                          gboolean *out_final_failure_for_temporary_not_available)
 {
 	gs_unref_ptrarray GPtrArray *addresses = NULL;
 	gs_unref_ptrarray GPtrArray *routes = NULL;
 	gs_unref_ptrarray GPtrArray *routes_prune = NULL;
-	gs_unref_ptrarray GPtrArray *routes_temporary_not_available = NULL;
+	gs_unref_ptrarray GPtrArray *routes_temporary_not_available_arr = NULL;
 	NMIPRouteTableSyncMode route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE;
+	gboolean final_failure_for_temporary_not_available = FALSE;
 	gboolean success = TRUE;
 	int IS_IPv4;
 
 	g_return_val_if_fail (NM_IS_L3CFG (self), FALSE);
 
 	if (addr_family == AF_UNSPEC) {
-		if (!nm_l3cfg_platform_commit (self, AF_INET))
+		gboolean final_failure_for_temporary_not_available_6 = FALSE;
+
+		if (!nm_l3cfg_platform_commit (self, AF_INET, &final_failure_for_temporary_not_available))
 			success = FALSE;
-		if (!nm_l3cfg_platform_commit (self, AF_INET6))
+		if (!nm_l3cfg_platform_commit (self, AF_INET6, &final_failure_for_temporary_not_available_6))
 			success = FALSE;
+		NM_SET_OUT (out_final_failure_for_temporary_not_available,
+		            (   final_failure_for_temporary_not_available
+		             || final_failure_for_temporary_not_available_6));
 		return success;
 	}
 
@@ -622,9 +837,16 @@ nm_l3cfg_platform_commit (NML3Cfg *self,
 	                                self->priv.ifindex,
 	                                routes,
 	                                routes_prune,
-	                                &routes_temporary_not_available))
+	                                &routes_temporary_not_available_arr))
 		success = FALSE;
 
+	final_failure_for_temporary_not_available = FALSE;
+	if (!_routes_temporary_not_available_update (self,
+	                                             addr_family,
+	                                             routes_temporary_not_available_arr))
+		final_failure_for_temporary_not_available = TRUE;
+
+	NM_SET_OUT (out_final_failure_for_temporary_not_available, final_failure_for_temporary_not_available);
 	return success;
 }
 
@@ -705,6 +927,9 @@ finalize (GObject *object)
 
 	nm_assert (nm_g_array_len (self->priv.p->property_emit_list) == 0u);
 
+	nm_clear_g_source (&self->priv.p->routes_temporary_not_available_id);
+	nm_clear_pointer (&self->priv.p->routes_temporary_not_available_hash, g_hash_table_unref);
+
 	g_clear_object (&self->priv.netns);
 	g_clear_object (&self->priv.platform);
 
@@ -744,4 +969,17 @@ nm_l3cfg_class_init (NML3CfgClass *klass)
 	                       G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+
+	signals[SIGNAL_NOTIFY] =
+	    g_signal_new (NM_L3CFG_SIGNAL_NOTIFY,
+	                  G_OBJECT_CLASS_TYPE (object_class),
+	                    G_SIGNAL_DETAILED
+	                  | G_SIGNAL_RUN_FIRST,
+	                  0, NULL, NULL, NULL,
+	                  G_TYPE_NONE,
+	                  2,
+	                  G_TYPE_INT /* NML3ConfigNotifyType */,
+	                  G_TYPE_POINTER /* pay-load */ );
+
+	signal_notify_quarks[NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED] = g_quark_from_static_string (NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED_DETAIL);
 }
