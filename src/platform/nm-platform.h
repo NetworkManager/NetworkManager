@@ -1848,6 +1848,18 @@ gboolean nm_platform_ip_address_flush (NMPlatform *self,
 void nm_platform_ip_route_normalize (int addr_family,
                                      NMPlatformIPRoute *route);
 
+static inline gconstpointer
+nm_platform_ip_route_get_gateway (int addr_family,
+                                  const NMPlatformIPRoute *route)
+{
+	nm_assert_addr_family (addr_family);
+	nm_assert (route);
+
+	if (NM_IS_IPv4 (addr_family))
+		return &((NMPlatformIP4Route *) route)->gateway;
+	return &((NMPlatformIP6Route *) route)->gateway;
+}
+
 int nm_platform_ip_route_add (NMPlatform *self,
                               NMPNlmFlags flags,
                               const NMPObject *route);
