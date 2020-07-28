@@ -501,6 +501,12 @@ lease_parse_address_list (NDhcp4ClientLease *lease,
 			}
 			nm_ip4_config_add_nameserver (ip4_config, addr.s_addr);
 			break;
+		case NM_DHCP_OPTION_DHCP4_NIS_SERVERS:
+			nm_ip4_config_add_nis_server (ip4_config, addr.s_addr);
+			break;
+		case NM_DHCP_OPTION_DHCP4_NETBIOS_NAMESERVER:
+			nm_ip4_config_add_wins (ip4_config, addr.s_addr);
+			break;
 		default:
 			nm_assert_not_reached ();
 		}
@@ -898,6 +904,35 @@ lease_parse_wpad (NDhcp4ClientLease *lease,
 }
 
 static void
+lease_parse_nis_domain (NDhcp4ClientLease *lease,
+                        NMIP4Config *ip4_config,
+                        GHashTable *options)
+{
+	gs_free char *str_free = NULL;
+	const char *str;
+	uint8_t *data;
+	size_t n_data;
+	guint i;
+	int r;
+
+	r = n_dhcp4_client_lease_query (lease, NM_DHCP_OPTION_DHCP4_NIS_DOMAIN, &data, &n_data);
+	if (r)
+		return;
+
+	for (i = 0; i < n_data; i++) {
+		if (!nm_is_ascii ((char) data[i]))
+			return;
+	}
+
+	str = nm_strndup_a (300, (const char *) data, n_data, &str_free);
+	nm_dhcp_option_add_option (options,
+	                           _nm_dhcp_option_dhcp4_options,
+	                           NM_DHCP_OPTION_DHCP4_NIS_DOMAIN,
+	                           str);
+	nm_ip4_config_set_nis_domain (ip4_config, str);
+}
+
+static void
 lease_parse_private_options (NDhcp4ClientLease *lease,
                              GHashTable *options)
 {
@@ -959,6 +994,9 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	lease_parse_ntps (lease, options);
 	lease_parse_root_path (lease, options);
 	lease_parse_wpad (lease, options);
+	lease_parse_nis_domain (lease, ip4_config, options);
+	lease_parse_address_list (lease, ip4_config, NM_DHCP_OPTION_DHCP4_NIS_SERVERS, options);
+	lease_parse_address_list (lease, ip4_config, NM_DHCP_OPTION_DHCP4_NETBIOS_NAMESERVER, options);
 	lease_parse_private_options (lease, options);
 
 	NM_SET_OUT (out_options, g_steal_pointer (&options));
