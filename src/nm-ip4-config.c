@@ -343,15 +343,6 @@ nm_ip4_config_get_multi_idx (const NMIP4Config *self)
 
 /*****************************************************************************/
 
-static gboolean
-_ipv4_is_zeronet (in_addr_t network)
-{
-	/* Same as ipv4_is_zeronet() from kernel's include/linux/in.h. */
-	return (network & htonl(0xff000000)) == htonl(0x00000000);
-}
-
-/*****************************************************************************/
-
 const NMDedupMultiHeadEntry *
 nm_ip4_config_lookup_addresses (const NMIP4Config *self)
 {
@@ -686,7 +677,7 @@ nm_ip4_config_add_dependent_routes (NMIP4Config *self,
 
 		_add_local_route_from_addr4 (self, my_addr, ifindex, route_table, is_vrf);
 
-		if (_ipv4_is_zeronet (network)) {
+		if (nm_utils_ip4_address_is_zeronet (network)) {
 			/* Kernel doesn't add device-routes for destinations that
 			 * start with 0.x.y.z. Skip them. */
 			continue;
