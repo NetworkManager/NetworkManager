@@ -301,6 +301,10 @@ gboolean nm_l3_config_data_set_mdns (NML3ConfigData *self,
 gboolean nm_l3_config_data_set_llmnr (NML3ConfigData *self,
                                       NMSettingConnectionLlmnr llmnr);
 
+gboolean nm_l3_config_data_set_route_table_sync (NML3ConfigData *self,
+                                                 int addr_family,
+                                                 NMIPRouteTableSyncMode route_table_sync);
+
 gboolean nm_l3_config_data_set_metered (NML3ConfigData *self,
                                         NMTernary metered);
 

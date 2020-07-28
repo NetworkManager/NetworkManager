@@ -96,6 +96,14 @@ struct _NML3ConfigData {
 		int dns_priority_x[2];
 	};
 
+	union {
+		struct {
+			NMIPRouteTableSyncMode route_table_sync_6;
+			NMIPRouteTableSyncMode route_table_sync_4;
+		};
+		NMIPRouteTableSyncMode route_table_sync_x[2];
+	};
+
 	NMSettingConnectionMdns mdns;
 	NMSettingConnectionLlmnr llmnr;
 
@@ -359,13 +367,15 @@ nm_l3_config_data_new (NMDedupMultiIndex *multi_idx,
 
 	self = g_slice_new (NML3ConfigData);
 	*self = (NML3ConfigData) {
-		.ref_count = 1,
-		.ifindex   = ifindex,
-		.multi_idx = nm_dedup_multi_index_ref (multi_idx),
-		.mdns      = NM_SETTING_CONNECTION_MDNS_DEFAULT,
-		.llmnr     = NM_SETTING_CONNECTION_LLMNR_DEFAULT,
-		.flags     = NM_L3_CONFIG_DAT_FLAGS_NONE,
-		.metered   = NM_TERNARY_DEFAULT,
+		.ref_count          = 1,
+		.ifindex            = ifindex,
+		.multi_idx          = nm_dedup_multi_index_ref (multi_idx),
+		.mdns               = NM_SETTING_CONNECTION_MDNS_DEFAULT,
+		.llmnr              = NM_SETTING_CONNECTION_LLMNR_DEFAULT,
+		.flags              = NM_L3_CONFIG_DAT_FLAGS_NONE,
+		.metered            = NM_TERNARY_DEFAULT,
+		.route_table_sync_4 = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
+		.route_table_sync_6 = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
 	};
 
 	_idx_type_init (&self->idx_addresses_4, NMP_OBJECT_TYPE_IP4_ADDRESS);
@@ -1026,6 +1036,23 @@ nm_l3_config_data_set_llmnr (NML3ConfigData *self,
 }
 
 gboolean
+nm_l3_config_data_set_route_table_sync (NML3ConfigData *self,
+                                        int addr_family,
+                                        NMIPRouteTableSyncMode route_table_sync)
+{
+	const gboolean IS_IPv4 = NM_IS_IPv4 (addr_family);
+
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+	nm_assert_addr_family (addr_family);
+
+	if (self->route_table_sync_x[IS_IPv4] == route_table_sync)
+		return FALSE;
+
+	self->route_table_sync_x [IS_IPv4] = route_table_sync;
+	return TRUE;
+}
+
+gboolean
 nm_l3_config_data_set_metered (NML3ConfigData *self,
                                NMTernary metered)
 {
@@ -1123,6 +1150,8 @@ nm_l3_config_data_cmp (const NML3ConfigData *a, const NML3ConfigData *b)
 
 		if (NM_FLAGS_ANY (a->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY (IS_IPv4)))
 			NM_CMP_DIRECT (a->dns_priority_x[IS_IPv4], b->dns_priority_x[IS_IPv4]);
+
+		NM_CMP_DIRECT (a->route_table_sync_x[IS_IPv4], b->route_table_sync_x[IS_IPv4]);
 	}
 
 	NM_CMP_RETURN (_garray_inaddr_cmp (a->wins, b->wins, AF_INET));
@@ -1823,6 +1852,9 @@ _init_merge (NML3ConfigData *self,
 			self->dns_priority_x[IS_IPv4] = src->dns_priority_x[IS_IPv4];
 			self->flags |= has_dns_priority_flag;
 		}
+
+		if (self->route_table_sync_x[IS_IPv4] == NM_IP_ROUTE_TABLE_SYNC_MODE_NONE)
+			self->route_table_sync_x[IS_IPv4] = src->route_table_sync_x[IS_IPv4];
 	}
 
 	if (!NM_FLAGS_HAS (merge_flags, NM_L3_CONFIG_MERGE_FLAGS_NO_DNS)) {
