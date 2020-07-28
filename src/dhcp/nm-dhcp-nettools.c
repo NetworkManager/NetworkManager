@@ -468,9 +468,10 @@ lease_parse_address (NDhcp4ClientLease *lease,
 }
 
 static void
-lease_parse_domain_name_servers (NDhcp4ClientLease *lease,
-                                 NMIP4Config *ip4_config,
-                                 GHashTable *options)
+lease_parse_address_list (NDhcp4ClientLease *lease,
+                          NMIP4Config *ip4_config,
+                          NMDhcpOptionDhcp4Options option,
+                          GHashTable *options)
 {
 	nm_auto_free_gstring GString *str = NULL;
 	char addr_str[NM_UTILS_INET_ADDRSTRLEN];
@@ -479,7 +480,7 @@ lease_parse_domain_name_servers (NDhcp4ClientLease *lease,
 	size_t n_data;
 	int r;
 
-	r = n_dhcp4_client_lease_query (lease, NM_DHCP_OPTION_DHCP4_DOMAIN_NAME_SERVER, &data, &n_data);
+	r = n_dhcp4_client_lease_query (lease, option, &data, &n_data);
 	if (r)
 		return;
 
@@ -490,18 +491,24 @@ lease_parse_domain_name_servers (NDhcp4ClientLease *lease,
 		_nm_utils_inet4_ntop (addr.s_addr, addr_str);
 		g_string_append (nm_gstring_add_space_delimiter (str), addr_str);
 
-		if (   addr.s_addr == 0
-		    || nm_ip4_addr_is_localhost (addr.s_addr)) {
-			/* Skip localhost addresses, like also networkd does.
-			 * See https://github.com/systemd/systemd/issues/4524. */
-			continue;
+		switch (option) {
+		case NM_DHCP_OPTION_DHCP4_DOMAIN_NAME_SERVER:
+			if (   addr.s_addr == 0
+			    || nm_ip4_addr_is_localhost (addr.s_addr)) {
+				/* Skip localhost addresses, like also networkd does.
+				 * See https://github.com/systemd/systemd/issues/4524. */
+				continue;
+			}
+			nm_ip4_config_add_nameserver (ip4_config, addr.s_addr);
+			break;
+		default:
+			nm_assert_not_reached ();
 		}
-		nm_ip4_config_add_nameserver (ip4_config, addr.s_addr);
 	}
 
 	nm_dhcp_option_add_option (options,
 	                           _nm_dhcp_option_dhcp4_options,
-	                           NM_DHCP_OPTION_DHCP4_DOMAIN_NAME_SERVER,
+	                           option,
 	                           str->str);
 }
 
@@ -942,7 +949,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 		return NULL;
 
 	lease_parse_routes (lease, ip4_config, options, route_table, route_metric);
-	lease_parse_domain_name_servers (lease, ip4_config, options);
+	lease_parse_address_list (lease, ip4_config, NM_DHCP_OPTION_DHCP4_DOMAIN_NAME_SERVER, options);
 	lease_parse_domainname (lease, ip4_config, options);
 	lease_parse_search_domains (lease, ip4_config, options);
 	lease_parse_mtu (lease, ip4_config, options);
