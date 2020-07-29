@@ -11,7 +11,7 @@
 #define HTTP_TIMEOUT_MS 3000
 
 #define NM_AZURE_METADATA_HEADER    "Metadata:true"
-#define NM_AZURE_HOST               "localhost:8080"
+#define NM_AZURE_HOST               "169.254.169.254"
 #define NM_AZURE_BASE               "http://" NM_AZURE_HOST
 #define NM_AZURE_API_VERSION        "?format=text&api-version=2017-04-02"
 #define NM_AZURE_METADATA_URL_BASE  /* $NM_AZURE_BASE/$NM_AZURE_API_VERSION */ "/metadata/instance/network/interface/"
