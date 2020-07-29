@@ -1806,7 +1806,9 @@ _set_ifindex (NMDevice *self, int ifindex, gboolean is_ip_ifindex)
 	       NM_PRINT_FMT_QUOTED (l3cfg_old, " (old-l3cfg: ", nm_hash_obfuscated_ptr_str_a (l3cfg_old), ")", ""),
 	       NM_PRINT_FMT_QUOTED (*p_l3cfg, " (l3cfg: ", nm_hash_obfuscated_ptr_str_a (*p_l3cfg), ")", ""));
 
-	_notify (self, PROP_IFINDEX);
+	if (!is_ip_ifindex)
+		_notify (self, PROP_IFINDEX);
+
 	return TRUE;
 }
 
