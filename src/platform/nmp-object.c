@@ -3046,6 +3046,9 @@ ASSERT_nmp_cache_is_consistent (const NMPCache *cache)
 
 /*****************************************************************************/
 
+/* below, ensure that addr_family get's automatically initialize to AF_UNSPEC. */
+G_STATIC_ASSERT (AF_UNSPEC == 0);
+
 const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 	[NMP_OBJECT_TYPE_LINK - 1] = {
 		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
