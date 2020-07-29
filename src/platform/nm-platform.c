@@ -3577,8 +3577,11 @@ _addr_array_clean_expired (int addr_family, int ifindex, GPtrArray *array, guint
 			goto clear_and_next;
 		}
 
-		if (!nm_utils_lifetime_get (a->timestamp, a->lifetime, a->preferred,
-		                            now, NULL))
+		if (!nm_utils_lifetime_get (a->timestamp,
+		                            a->lifetime,
+		                            a->preferred,
+		                            now,
+		                            NULL))
 			goto clear_and_next;
 
 		if (idx) {
@@ -4061,9 +4064,9 @@ next_plat:
 		                                  known_address->ax.preferred,
 		                                  now,
 		                                  &preferred);
+		nm_assert (lifetime > 0);
+
 		if (IS_IPv4) {
-			if (lifetime <= 0)
-				goto delete_and_next2;
 			if (!nm_platform_ip4_address_add (self,
 			                                  ifindex,
 			                                  known_address->a4.address,
@@ -4073,8 +4076,9 @@ next_plat:
 			                                  lifetime,
 			                                  preferred,
 			                                  ifa_flags,
-			                                  known_address->a4.label))
-				goto delete_and_next2;
+			                                  known_address->a4.label)) {
+				/* ignore error, for unclear reasons. */
+			}
 		} else {
 			if (!nm_platform_ip6_address_add (self,
 			                                  ifindex,
@@ -4087,11 +4091,6 @@ next_plat:
 			                                  | known_address->a6.n_ifa_flags))
 				return FALSE;
 		}
-		continue;
-
-delete_and_next2:
-		nmp_object_unref (o);
-		known_addresses->pdata[i_know] = NULL;
 	}
 
 	return TRUE;
