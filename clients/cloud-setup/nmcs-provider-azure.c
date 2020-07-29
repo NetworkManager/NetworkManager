@@ -103,7 +103,6 @@ typedef struct {
 	NMCSProviderGetConfigTaskData *config_data;
 	guint n_ifaces_pending;
 	GError *error;
-	bool success:1;
 } AzureData;
 
 typedef struct {
@@ -126,30 +125,34 @@ _get_config_maybe_task_return (AzureData *azure_data,
                                GError *error_take)
 {
 	NMCSProviderGetConfigTaskData *config_data =  azure_data->config_data;
-	gs_free_error GError *azure_error = NULL;
 
 	if (error_take) {
-		nm_clear_error (&azure_data->error);
-		azure_data->error = error_take;
+		if (!azure_data->error)
+			azure_data->error = error_take;
+		else if (   !nm_utils_error_is_cancelled (azure_data->error)
+		         && nm_utils_error_is_cancelled (error_take)) {
+			nm_clear_error (&azure_data->error);
+			azure_data->error = error_take;
+		} else
+			g_error_free (error_take);
 	}
 
 	if (azure_data->n_ifaces_pending > 0)
 		return;
 
-	azure_error = azure_data->error;
-
-	if (azure_error) {
-		if (nm_utils_error_is_cancelled (azure_error))
+	if (azure_data->error) {
+		if (nm_utils_error_is_cancelled (azure_data->error))
 			_LOGD ("get-config: cancelled");
 		else
-			_LOGD ("get-config: failed: %s", azure_error->message);
-		g_task_return_error (config_data->task, g_steal_pointer (&azure_error));
+			_LOGD ("get-config: failed: %s", azure_data->error->message);
+		g_task_return_error (config_data->task, g_steal_pointer (&azure_data->error));
 	} else {
 		_LOGD ("get-config: success");
 		g_task_return_pointer (config_data->task,
 		                       g_hash_table_ref (config_data->result_dict),
 		                       (GDestroyNotify) g_hash_table_unref);
 	}
+
 	nm_g_slice_free (azure_data);
 	g_object_unref (config_data->task);
 }
@@ -218,7 +221,6 @@ _get_config_fetch_done_cb (NMHttpClient *http_client,
 			iface_get_config->cidr_prefix = tmp_prefix;
 			iface_get_config->has_cidr = TRUE;
 		}
-		azure_data->success = TRUE;
 	}
 
 done:
@@ -533,7 +535,6 @@ get_config (NMCSProvider *provider,
 	*azure_data = (AzureData) {
 		.config_data = get_config_data,
 		.n_ifaces_pending = 0,
-		.success = FALSE,
 	};
 
 	nm_http_client_poll_get (nmcs_provider_get_http_client (provider),
