@@ -49,6 +49,10 @@ NML3Cfg *nm_l3cfg_new (NMNetns *netns, int ifindex);
 
 void _nm_l3cfg_notify_platform_change_on_idle (NML3Cfg *self, guint32 obj_type_flags);
 
+void _nm_l3cfg_notify_platform_change (NML3Cfg *self,
+                                       NMPlatformSignalChangeType change_type,
+                                       const NMPObject *obj);
+
 /*****************************************************************************/
 
 static inline int
@@ -125,7 +129,26 @@ void nm_l3cfg_remove_config_all (NML3Cfg *self,
 
 /*****************************************************************************/
 
+typedef enum {
+	/* ASSUME means to keep any pre-existing extra routes/addresses, while
+	 * also not adding routes/addresses that are not present yet. This is to
+	 * gracefully take over after restart, where the existing IP configuration
+	 * should not change. */
+	NM_L3_CFG_COMMIT_TYPE_ASSUME,
+
+	/* UPDATE means to add new addresses/routes, while also removing addresses/routes
+	 * that are no longer present (but were previously configured by NetworkManager).
+	 * Routes/addresses that were removed externally won't be re-added, and routes/addresses
+	 * that are added externally won't be removed. */
+	NM_L3_CFG_COMMIT_TYPE_UPDATE,
+
+	/* This is a full sync. It configures the IP addresses/routes that are indicated,
+	 * while removing the existing ones from the interface. */
+	NM_L3_CFG_COMMIT_TYPE_REAPPLY,
+} NML3CfgCommitType;
+
 gboolean nm_l3cfg_platform_commit (NML3Cfg *self,
+                                   NML3CfgCommitType commit_type,
                                    int addr_family,
                                    gboolean *out_final_failure_for_temporary_not_available);
 

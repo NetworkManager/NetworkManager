@@ -41,7 +41,25 @@ typedef struct _NML3CfgPrivate {
 
 	GHashTable *routes_temporary_not_available_hash;
 
+	GHashTable *externally_removed_objs_hash;
+
 	guint64 pseudo_timestamp_counter;
+
+	union {
+		struct {
+			guint externally_removed_objs_cnt_addresses_6;
+			guint externally_removed_objs_cnt_addresses_4;
+		};
+		guint externally_removed_objs_cnt_addresses_x[2];
+	};
+
+	union {
+		struct {
+			guint externally_removed_objs_cnt_routes_6;
+			guint externally_removed_objs_cnt_routes_4;
+		};
+		guint externally_removed_objs_cnt_routes_x[2];
+	};
 
 	guint routes_temporary_not_available_id;
 } NML3CfgPrivate;
@@ -71,6 +89,15 @@ static void _property_emit_notify (NML3Cfg *self, NML3CfgPropertyEmitType emit_t
 
 /*****************************************************************************/
 
+static
+NM_UTILS_ENUM2STR_DEFINE (_l3_cfg_commit_type_to_string, NML3CfgCommitType,
+	NM_UTILS_ENUM2STR (NM_L3_CFG_COMMIT_TYPE_ASSUME,  "assume"),
+	NM_UTILS_ENUM2STR (NM_L3_CFG_COMMIT_TYPE_UPDATE,  "update"),
+	NM_UTILS_ENUM2STR (NM_L3_CFG_COMMIT_TYPE_REAPPLY, "reapply"),
+);
+
+/*****************************************************************************/
+
 static void
 _l3cfg_emit_signal_notify (NML3Cfg *self,
                            NML3ConfigNotifyType notify_type,
@@ -84,6 +111,188 @@ _l3cfg_emit_signal_notify (NML3Cfg *self,
 	               signal_notify_quarks[notify_type],
 	               (int) notify_type,
 	               pay_load);
+}
+
+/*****************************************************************************/
+
+static guint *
+_l3cfg_externally_removed_objs_counter (NML3Cfg *self,
+                                        NMPObjectType obj_type)
+{
+	switch (obj_type) {
+	case NMP_OBJECT_TYPE_IP4_ADDRESS:
+		return &self->priv.p->externally_removed_objs_cnt_addresses_4;
+	case NMP_OBJECT_TYPE_IP6_ADDRESS:
+		return &self->priv.p->externally_removed_objs_cnt_addresses_6;
+	case NMP_OBJECT_TYPE_IP4_ROUTE:
+		return &self->priv.p->externally_removed_objs_cnt_routes_4;
+	case NMP_OBJECT_TYPE_IP6_ROUTE:
+		return &self->priv.p->externally_removed_objs_cnt_routes_6;
+	default:
+		return nm_assert_unreachable_val (NULL);
+	}
+}
+
+static void
+_l3cfg_externally_removed_objs_drop (NML3Cfg *self,
+                                     int addr_family)
+{
+	const gboolean IS_IPv4 = NM_IS_IPv4 (addr_family);
+	GHashTableIter iter;
+	const NMPObject *obj;
+
+	nm_assert (NM_IS_L3CFG (self));
+	nm_assert (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET, AF_INET6));
+
+	if (addr_family == AF_UNSPEC) {
+		self->priv.p->externally_removed_objs_cnt_addresses_4 = 0;
+		self->priv.p->externally_removed_objs_cnt_addresses_6 = 0;
+		self->priv.p->externally_removed_objs_cnt_routes_4 = 0;
+		self->priv.p->externally_removed_objs_cnt_routes_6 = 0;
+		if (g_hash_table_size (self->priv.p->externally_removed_objs_hash) > 0)
+			_LOGD ("externally-removed: untrack all");
+		nm_clear_pointer (&self->priv.p->externally_removed_objs_hash, g_hash_table_unref);
+		return;
+	}
+
+	if (   self->priv.p->externally_removed_objs_cnt_addresses_x[IS_IPv4] == 0
+	    && self->priv.p->externally_removed_objs_cnt_routes_x[IS_IPv4] == 0)
+		return;
+
+	_LOGD ("externally-removed: untrack IPv%c",
+	       nm_utils_addr_family_to_char (addr_family));
+
+	g_hash_table_iter_init (&iter, self->priv.p->externally_removed_objs_hash);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &obj, NULL)) {
+		nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ADDRESS,
+		                                                 NMP_OBJECT_TYPE_IP6_ADDRESS,
+		                                                 NMP_OBJECT_TYPE_IP4_ROUTE,
+		                                                 NMP_OBJECT_TYPE_IP6_ROUTE));
+		if (NMP_OBJECT_GET_ADDR_FAMILY (obj) != addr_family)
+			g_hash_table_iter_remove (&iter);
+	}
+	self->priv.p->externally_removed_objs_cnt_addresses_x[IS_IPv4] = 0;
+	self->priv.p->externally_removed_objs_cnt_routes_x[IS_IPv4] = 0;
+
+	if (   self->priv.p->externally_removed_objs_cnt_addresses_x[!IS_IPv4] == 0
+	    && self->priv.p->externally_removed_objs_cnt_routes_x[!IS_IPv4] == 0)
+		nm_clear_pointer (&self->priv.p->externally_removed_objs_hash, g_hash_table_unref);
+}
+
+static void
+_l3cfg_externally_removed_objs_drop_unused (NML3Cfg *self)
+{
+	GHashTableIter h_iter;
+	const NMPObject *obj;
+	char sbuf[sizeof (_nm_utils_to_string_buffer)];
+
+	nm_assert (NM_IS_L3CFG (self));
+
+	if (!self->priv.p->externally_removed_objs_hash)
+		return;
+
+	if (!self->priv.p->combined_l3cfg) {
+		_l3cfg_externally_removed_objs_drop (self, AF_UNSPEC);
+		return;
+	}
+
+	g_hash_table_iter_init (&h_iter, self->priv.p->externally_removed_objs_hash);
+	while (g_hash_table_iter_next (&h_iter, (gpointer *) &obj, NULL)) {
+		if (!nm_l3_config_data_lookup_route_obj (self->priv.p->combined_l3cfg,
+		                                         obj)) {
+			/* The object is no longer tracked in the configuration.
+			 * The externally_removed_objs_hash is to prevent adding entires that were
+			 * removed externally, so if we don't plan to add the entry, we no longer need to track
+			 * it. */
+			(*(_l3cfg_externally_removed_objs_counter (self, NMP_OBJECT_GET_TYPE (obj))))--;
+			g_hash_table_iter_remove (&h_iter);
+			_LOGD ("externally-removed: untrack %s",
+			       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof (sbuf)));
+		}
+	}
+}
+
+static void
+_l3cfg_externally_removed_objs_track (NML3Cfg *self,
+                                      const NMPObject *obj,
+                                      gboolean is_removed)
+{
+	char sbuf[1000];
+
+	nm_assert (NM_IS_L3CFG (self));
+
+	if (!self->priv.p->combined_l3cfg)
+		return;
+
+	if (!is_removed) {
+		/* the object is still (or again) present. It no longer gets hidden. */
+		if (self->priv.p->externally_removed_objs_hash) {
+			if (g_hash_table_remove (self->priv.p->externally_removed_objs_hash,
+			                         obj)) {
+				(*(_l3cfg_externally_removed_objs_counter (self,
+				                                           NMP_OBJECT_GET_TYPE (obj))))--;
+				_LOGD ("externally-removed: untrack %s",
+				       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof (sbuf)));
+			}
+		}
+		return;
+	}
+
+	if (!nm_l3_config_data_lookup_route_obj (self->priv.p->combined_l3cfg,
+	                                         obj)) {
+		/* we don't care about this object, so there is nothing to hide hide */
+		return;
+	}
+
+	if (G_UNLIKELY (!self->priv.p->externally_removed_objs_hash)) {
+		self->priv.p->externally_removed_objs_hash = g_hash_table_new_full ((GHashFunc) nmp_object_id_hash,
+		                                                                    (GEqualFunc) nmp_object_id_equal,
+		                                                                    (GDestroyNotify) nmp_object_unref,
+		                                                                    NULL);
+	}
+
+	if (g_hash_table_add (self->priv.p->externally_removed_objs_hash,
+	                      (gpointer) nmp_object_ref (obj))) {
+		(*(_l3cfg_externally_removed_objs_counter (self,
+		                                           NMP_OBJECT_GET_TYPE (obj))))++;
+		_LOGD ("externally-removed: track %s",
+		       nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof (sbuf)));
+	}
+}
+
+static void
+_l3cfg_externally_removed_objs_pickup (NML3Cfg *self,
+                                       int addr_family)
+{
+	const gboolean IS_IPv4 = NM_IS_IPv4 (addr_family);
+	NMDedupMultiIter iter;
+	const NMPObject *obj;
+
+	if (!self->priv.p->combined_l3cfg)
+		return;
+
+	nm_l3_config_data_iter_obj_for_each (iter, self->priv.p->combined_l3cfg, obj, NMP_OBJECT_TYPE_IP_ADDRESS (IS_IPv4)) {
+		if (!nm_platform_lookup_entry (self->priv.platform,
+		                               NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+		                               obj))
+			_l3cfg_externally_removed_objs_track (self, obj, TRUE);
+	}
+	nm_l3_config_data_iter_obj_for_each (iter, self->priv.p->combined_l3cfg, obj, NMP_OBJECT_TYPE_IP_ROUTE (IS_IPv4)) {
+		if (!nm_platform_lookup_entry (self->priv.platform,
+		                               NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+		                               obj))
+			_l3cfg_externally_removed_objs_track (self, obj, TRUE);
+	}
+}
+
+static gboolean
+_l3cfg_externally_removed_objs_filter (/* const NMDedupMultiObj * */ gconstpointer o,
+                                       gpointer user_data)
+{
+	const NMPObject *obj = o;
+	GHashTable *externally_removed_objs_hash = user_data;
+
+	return !g_hash_table_contains (externally_removed_objs_hash, obj);
 }
 
 /*****************************************************************************/
@@ -129,6 +338,26 @@ _nm_l3cfg_notify_platform_change_on_idle (NML3Cfg *self, guint32 obj_type_flags)
 		_property_emit_notify (self, NM_L3CFG_PROPERTY_EMIT_TYPE_IP4_ROUTE);
 	if (NM_FLAGS_ANY (obj_type_flags, nmp_object_type_to_flags (NMP_OBJECT_TYPE_IP6_ROUTE)))
 		_property_emit_notify (self, NM_L3CFG_PROPERTY_EMIT_TYPE_IP6_ROUTE);
+}
+
+void
+_nm_l3cfg_notify_platform_change (NML3Cfg *self,
+                                  NMPlatformSignalChangeType change_type,
+                                  const NMPObject *obj)
+{
+	nm_assert (NMP_OBJECT_IS_VALID (obj));
+
+	switch (NMP_OBJECT_GET_TYPE (obj)) {
+	case NMP_OBJECT_TYPE_IP4_ADDRESS:
+	case NMP_OBJECT_TYPE_IP6_ADDRESS:
+	case NMP_OBJECT_TYPE_IP4_ROUTE:
+	case NMP_OBJECT_TYPE_IP6_ROUTE:
+		_l3cfg_externally_removed_objs_track (self,
+		                                      obj,
+		                                      change_type == NM_PLATFORM_SIGNAL_REMOVED);
+	default:
+		break;
+	}
 }
 
 /*****************************************************************************/
@@ -775,26 +1004,37 @@ out_prune:
 
 gboolean
 nm_l3cfg_platform_commit (NML3Cfg *self,
+                          NML3CfgCommitType commit_type,
                           int addr_family,
                           gboolean *out_final_failure_for_temporary_not_available)
 {
+	nm_auto_unref_l3cfg const NML3ConfigData *l3cfg_old = NULL;
 	gs_unref_ptrarray GPtrArray *addresses = NULL;
 	gs_unref_ptrarray GPtrArray *routes = NULL;
+	gs_unref_ptrarray GPtrArray *addresses_prune = NULL;
 	gs_unref_ptrarray GPtrArray *routes_prune = NULL;
 	gs_unref_ptrarray GPtrArray *routes_temporary_not_available_arr = NULL;
 	NMIPRouteTableSyncMode route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE;
 	gboolean final_failure_for_temporary_not_available = FALSE;
+	char sbuf_commit_type[50];
+	gboolean combined_changed;
 	gboolean success = TRUE;
 	int IS_IPv4;
 
 	g_return_val_if_fail (NM_IS_L3CFG (self), FALSE);
+	nm_assert (NM_IN_SET (commit_type, NM_L3_CFG_COMMIT_TYPE_REAPPLY,
+	                                   NM_L3_CFG_COMMIT_TYPE_UPDATE,
+	                                   NM_L3_CFG_COMMIT_TYPE_ASSUME));
+
+	if (commit_type == NM_L3_CFG_COMMIT_TYPE_REAPPLY)
+		_l3cfg_externally_removed_objs_drop (self, addr_family);
 
 	if (addr_family == AF_UNSPEC) {
 		gboolean final_failure_for_temporary_not_available_6 = FALSE;
 
-		if (!nm_l3cfg_platform_commit (self, AF_INET, &final_failure_for_temporary_not_available))
+		if (!nm_l3cfg_platform_commit (self, AF_INET, commit_type, &final_failure_for_temporary_not_available))
 			success = FALSE;
-		if (!nm_l3cfg_platform_commit (self, AF_INET6, &final_failure_for_temporary_not_available_6))
+		if (!nm_l3cfg_platform_commit (self, AF_INET6, commit_type, &final_failure_for_temporary_not_available_6))
 			success = FALSE;
 		NM_SET_OUT (out_final_failure_for_temporary_not_available,
 		            (   final_failure_for_temporary_not_available
@@ -802,20 +1042,47 @@ nm_l3cfg_platform_commit (NML3Cfg *self,
 		return success;
 	}
 
-	_l3cfg_update_combined_config (self, NULL);
+	_LOGT ("committing IPv%c configuration (%s)",
+	       nm_utils_addr_family_to_char (addr_family),
+	       _l3_cfg_commit_type_to_string (commit_type, sbuf_commit_type, sizeof (sbuf_commit_type)));
+
+	combined_changed = _l3cfg_update_combined_config (self, &l3cfg_old);
 
 	IS_IPv4 = NM_IS_IPv4 (addr_family);
 
-	_LOGT ("committing IPv%c configuration...", nm_utils_addr_family_to_char (addr_family));
+	if (combined_changed) {
+		/* our combined configuration changed. We may track entries in externally_removed_objs_hash,
+		 * which are not longer to be considered by our configuration. We need to forget about them. */
+		_l3cfg_externally_removed_objs_drop_unused (self);
+	}
+
+	if (commit_type == NM_L3_CFG_COMMIT_TYPE_ASSUME) {
+		/* we need to artificially pre-populate the externally remove hash. */
+		_l3cfg_externally_removed_objs_pickup (self, addr_family);
+	}
 
 	if (self->priv.p->combined_l3cfg) {
+		NMDedupMultiFcnSelectPredicate predicate;
+
+		if (   commit_type != NM_L3_CFG_COMMIT_TYPE_REAPPLY
+		    && self->priv.p->externally_removed_objs_cnt_addresses_x[IS_IPv4] > 0)
+			predicate = _l3cfg_externally_removed_objs_filter;
+		else
+			predicate = NULL;
 		addresses = nm_dedup_multi_objs_to_ptr_array_head (nm_l3_config_data_lookup_objs (self->priv.p->combined_l3cfg,
 		                                                                                  NMP_OBJECT_TYPE_IP_ADDRESS (IS_IPv4)),
-		                                                   NULL, NULL);
+		                                                   predicate,
+		                                                   self->priv.p->externally_removed_objs_hash);
 
+		if (   commit_type != NM_L3_CFG_COMMIT_TYPE_REAPPLY
+		    && self->priv.p->externally_removed_objs_cnt_routes_x[IS_IPv4] > 0)
+			predicate = _l3cfg_externally_removed_objs_filter;
+		else
+			predicate = NULL;
 		routes = nm_dedup_multi_objs_to_ptr_array_head (nm_l3_config_data_lookup_objs (self->priv.p->combined_l3cfg,
 		                                                                               NMP_OBJECT_TYPE_IP_ROUTE (IS_IPv4)),
-		                                                NULL, NULL);
+		                                                predicate,
+		                                                self->priv.p->externally_removed_objs_hash);
 
 		route_table_sync = nm_l3_config_data_get_route_table_sync (self->priv.p->combined_l3cfg, addr_family);
 	}
@@ -823,14 +1090,42 @@ nm_l3cfg_platform_commit (NML3Cfg *self,
 	if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_NONE)
 		route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_ALL;
 
-	routes_prune = nm_platform_ip_route_get_prune_list (self->priv.platform,
-	                                                    addr_family,
-	                                                    self->priv.ifindex,
-	                                                    route_table_sync);
+	if (commit_type == NM_L3_CFG_COMMIT_TYPE_REAPPLY) {
+		addresses_prune = nm_platform_ip_address_get_prune_list (self->priv.platform,
+		                                                         addr_family,
+		                                                         self->priv.ifindex,
+		                                                         TRUE);
+		routes_prune = nm_platform_ip_route_get_prune_list (self->priv.platform,
+		                                                    addr_family,
+		                                                    self->priv.ifindex,
+		                                                    route_table_sync);
+	} else if (commit_type == NM_L3_CFG_COMMIT_TYPE_UPDATE) {
+		/* during update, we do a cross with the previous configuration.
+		 *
+		 * Of course, if an entry is both to be pruned and to be added, then
+		 * the latter wins. So, this works just nicely. */
+		if (l3cfg_old) {
+			const NMDedupMultiHeadEntry *head_entry;
 
-	nm_platform_ip4_address_sync (self->priv.platform,
-	                              self->priv.ifindex,
-	                              addresses);
+			head_entry = nm_l3_config_data_lookup_objs (l3cfg_old,
+			                                            NMP_OBJECT_TYPE_IP_ADDRESS (IS_IPv4));
+			addresses_prune = nm_dedup_multi_objs_to_ptr_array_head (head_entry,
+			                                                         NULL,
+			                                                         NULL);
+
+			head_entry = nm_l3_config_data_lookup_objs (l3cfg_old,
+			                                            NMP_OBJECT_TYPE_IP_ROUTE (IS_IPv4));
+			addresses_prune = nm_dedup_multi_objs_to_ptr_array_head (head_entry,
+			                                                         NULL,
+			                                                         NULL);
+		}
+	}
+
+	nm_platform_ip_address_sync (self->priv.platform,
+	                             addr_family,
+	                             self->priv.ifindex,
+	                             addresses,
+	                             addresses_prune);
 
 	if (!nm_platform_ip_route_sync (self->priv.platform,
 	                                addr_family,
@@ -929,6 +1224,8 @@ finalize (GObject *object)
 
 	nm_clear_g_source (&self->priv.p->routes_temporary_not_available_id);
 	nm_clear_pointer (&self->priv.p->routes_temporary_not_available_hash, g_hash_table_unref);
+
+	nm_clear_pointer (&self->priv.p->externally_removed_objs_hash, g_hash_table_unref);
 
 	g_clear_object (&self->priv.netns);
 	g_clear_object (&self->priv.platform);

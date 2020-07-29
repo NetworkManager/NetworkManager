@@ -122,6 +122,8 @@ void nm_l3_config_data_add_dependent_routes (NML3ConfigData *self,
 
 int nm_l3_config_data_get_ifindex (const NML3ConfigData *self);
 
+NMDedupMultiIndex *nm_l3_config_data_get_multi_idx (const NML3ConfigData *self);
+
 static inline gboolean
 NM_IS_L3_CONFIG_DATA (const NML3ConfigData *self)
 {
@@ -146,6 +148,12 @@ nm_l3_config_data_equal (const NML3ConfigData *a, const NML3ConfigData *b)
 }
 
 /*****************************************************************************/
+
+const NMDedupMultiIdxType *nm_l3_config_data_lookup_index (const NML3ConfigData *self,
+                                                           NMPObjectType obj_type);
+
+const NMDedupMultiEntry *nm_l3_config_data_lookup_obj (const NML3ConfigData *self,
+                                                       const NMPObject *obj);
 
 const NMDedupMultiEntry *nm_l3_config_data_lookup_route_obj (const NML3ConfigData *self,
                                                              const NMPObject *needle);

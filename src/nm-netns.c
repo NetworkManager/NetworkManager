@@ -196,6 +196,7 @@ _platform_signal_cb (NMPlatform *platform,
 	NMNetns *self = NM_NETNS (*p_self);
 	NMNetnsPrivate *priv = NM_NETNS_GET_PRIVATE (self);
 	const NMPObjectType obj_type = obj_type_i;
+	const NMPlatformSignalChangeType change_type = change_type_i;
 	L3CfgData *l3cfg_data;
 
 	l3cfg_data = g_hash_table_lookup (priv->l3cfgs, &ifindex);
@@ -204,12 +205,15 @@ _platform_signal_cb (NMPlatform *platform,
 
 	l3cfg_data->signal_pending_flag |= nmp_object_type_to_flags (obj_type);
 
-	if (!c_list_is_empty (&l3cfg_data->signal_pending_lst))
-		return;
+	if (c_list_is_empty (&l3cfg_data->signal_pending_lst)) {
+		c_list_link_tail (&priv->l3cfg_signal_pending_lst_head, &l3cfg_data->signal_pending_lst);
+		if (priv->signal_pending_idle_id == 0)
+			priv->signal_pending_idle_id = g_idle_add (_platform_signal_on_idle_cb, self);
+	}
 
-	c_list_link_tail (&priv->l3cfg_signal_pending_lst_head, &l3cfg_data->signal_pending_lst);
-	if (priv->signal_pending_idle_id == 0)
-		priv->signal_pending_idle_id = g_idle_add (_platform_signal_on_idle_cb, self);
+	_nm_l3cfg_notify_platform_change (l3cfg_data->l3cfg,
+	                                  change_type,
+	                                  NMP_OBJECT_UP_CAST (platform_object));
 }
 
 /*****************************************************************************/
@@ -288,6 +292,8 @@ constructed (GObject *object)
 	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_LINK_CHANGED, G_CALLBACK (_platform_signal_cb), &priv->_self_signal_user_data);
 	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED, G_CALLBACK (_platform_signal_cb), &priv->_self_signal_user_data);
 	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED, G_CALLBACK (_platform_signal_cb), &priv->_self_signal_user_data);
+	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP4_ADDRESS_CHANGED, G_CALLBACK (_platform_signal_cb), &priv->_self_signal_user_data);
+	g_signal_connect (priv->platform, NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED, G_CALLBACK (_platform_signal_cb), &priv->_self_signal_user_data);
 }
 
 NMNetns *

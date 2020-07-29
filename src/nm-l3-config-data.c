@@ -528,35 +528,59 @@ nm_l3_config_data_lookup_route (const NML3ConfigData *self,
 	                      nmp_object_stackinit (&obj_stack, NMP_OBJECT_TYPE_IP_ROUTE (IS_IPv4), needle));
 }
 
-const NMDedupMultiHeadEntry *
-nm_l3_config_data_lookup_objs (const NML3ConfigData *self, NMPObjectType obj_type)
+const NMDedupMultiIdxType *
+nm_l3_config_data_lookup_index (const NML3ConfigData *self, NMPObjectType obj_type)
 {
-	const DedupMultiIdxType *idx;
-
 	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
 
 	switch (obj_type) {
 	case NMP_OBJECT_TYPE_IP4_ADDRESS:
-		idx = &self->idx_addresses_4;
-		break;
+		return &self->idx_addresses_4.parent;
 	case NMP_OBJECT_TYPE_IP6_ADDRESS:
-		idx = &self->idx_addresses_6;
-		break;
+		return &self->idx_addresses_6.parent;
 	case NMP_OBJECT_TYPE_IP4_ROUTE:
-		idx = &self->idx_routes_4;
-		break;
+		return &self->idx_routes_4.parent;
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
-		idx = &self->idx_routes_6;
-		break;
+		return &self->idx_routes_6.parent;
 	default:
 		nm_assert_not_reached ();
 		return NULL;
 	}
+}
 
-	return nm_dedup_multi_index_lookup_head (self->multi_idx, &idx->parent, NULL);
+const NMDedupMultiHeadEntry *
+nm_l3_config_data_lookup_objs (const NML3ConfigData *self, NMPObjectType obj_type)
+{
+	return nm_dedup_multi_index_lookup_head (self->multi_idx,
+	                                         nm_l3_config_data_lookup_index (self, obj_type),
+	                                         NULL);
+}
+
+const NMDedupMultiEntry *
+nm_l3_config_data_lookup_obj (const NML3ConfigData *self,
+                              const NMPObject *obj)
+{
+	const NMDedupMultiIdxType *idx;
+
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+
+	idx = nm_l3_config_data_lookup_index (self,
+	                                      NMP_OBJECT_GET_TYPE (obj));
+
+	return nm_dedup_multi_index_lookup_obj (self->multi_idx,
+	                                        idx,
+	                                        obj);
 }
 
 /*****************************************************************************/
+
+NMDedupMultiIndex *
+nm_l3_config_data_get_multi_idx (const NML3ConfigData *self)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+
+	return self->multi_idx;
+}
 
 int
 nm_l3_config_data_get_ifindex (const NML3ConfigData *self)
