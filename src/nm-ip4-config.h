@@ -262,7 +262,7 @@ void nm_ip_config_dump (const NMIPConfig *self,
 #include "nm-ip6-config.h"
 
 static inline gboolean
-NM_IS_IP_CONFIG (gconstpointer config, int addr_family)
+NM_IS_IP_CONFIG_ADDR_FAMILY (gconstpointer config, int addr_family)
 {
 	if (addr_family == AF_UNSPEC)
 		return NM_IS_IP4_CONFIG (config) || NM_IS_IP6_CONFIG (config);
@@ -272,6 +272,8 @@ NM_IS_IP_CONFIG (gconstpointer config, int addr_family)
 		return NM_IS_IP6_CONFIG (config);
 	g_return_val_if_reached (FALSE);
 }
+
+#define NM_IS_IP_CONFIG(config) NM_IS_IP_CONFIG_ADDR_FAMILY ((config), AF_UNSPEC)
 
 #if _NM_CC_SUPPORT_GENERIC
 /* _NM_IS_IP_CONFIG() is a bit unusual. If _Generic() is supported,
@@ -307,7 +309,7 @@ NM_IS_IP_CONFIG (gconstpointer config, int addr_family)
 		                NMIP6Config *     : (NM_IS_IP6_CONFIG (_config))); \
 	})
 #else
-#define _NM_IS_IP_CONFIG(typeexpr, config) NM_IS_IP_CONFIG(config, AF_UNSPEC)
+#define _NM_IS_IP_CONFIG(typeexpr, config) NM_IS_IP_CONFIG(config)
 #endif
 
 #define NM_IP_CONFIG_CAST(config) \
