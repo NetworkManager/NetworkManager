@@ -3794,7 +3794,16 @@ ip6_address_scope_cmp (gconstpointer p_a, gconstpointer p_b, gpointer increasing
  *   telling which addresses were successfully added.
  *   Addresses are removed by unrefing the instance via nmp_object_unref()
  *   and leaving a NULL tombstone.
- * @full_sync: Also remove link-local and temporary addresses (IPv6 only).
+ * @addresses_prune: (allow-none): the list of addresses to delete.
+ *   If platform has such an address configured, it will be deleted
+ *   at the beginning of the sync. Note that the array will be modified
+ *   by the function.
+ *   Note that the addresses must be properly sorted, by their priority.
+ *   Create this list with nm_platform_ip_address_get_prune_list() which
+ *   gets the sorting right.
+ * @full_sync: Also remove temporary addresses (IPv6 only).
+ *   In general, only addresses from @addresses_prune will be removed. Setting
+ *   this to FALSE (for IPv6) limits that some addresses won't be removed.
  *
  * A convenience function to synchronize addresses for a specific interface
  * with the least possible disturbance. It simply removes addresses that are
@@ -3807,14 +3816,14 @@ nm_platform_ip_address_sync (NMPlatform *self,
                              int addr_family,
                              int ifindex,
                              GPtrArray *known_addresses,
+                             GPtrArray *addresses_prune,
                              gboolean full_sync)
 {
 	const gint32 now = nm_utils_get_monotonic_timestamp_sec ();
 	const gboolean IS_IPv4 = NM_IS_IPv4 (addr_family);
-	gs_unref_ptrarray GPtrArray *plat_addresses = NULL;
 	gs_unref_hashtable GHashTable *known_addresses_idx = NULL;
+	GPtrArray *plat_addresses;
 	GHashTable *known_subnets = NULL;
-	NMPLookup lookup;
 	guint32 ifa_flags;
 	guint i_plat;
 	guint i_know;
@@ -3835,15 +3844,11 @@ nm_platform_ip_address_sync (NMPlatform *self,
 	if (!_addr_array_clean_expired (addr_family, ifindex, known_addresses, now, &known_addresses_idx))
 		known_addresses = NULL;
 
-	/* @plat_addresses is in decreasing priority order (highest priority addresses first), contrary to
+	/* @plat_addresses must be sorted in decreasing priority order (highest priority addresses first), contrary to
 	 * @known_addresses which is in increasing priority order (lowest priority addresses first). */
-	plat_addresses = nm_platform_lookup_clone (self,
-	                                           nmp_lookup_init_object (&lookup,
-	                                                                   NMP_OBJECT_TYPE_IP_ADDRESS (IS_IPv4),
-	                                                                   ifindex),
-	                                           NULL, NULL);
+	plat_addresses = addresses_prune;
 
-	if (plat_addresses) {
+	if (nm_g_ptr_array_len (plat_addresses) > 0) {
 		/* Delete unknown addresses */
 		if (IS_IPv4) {
 			GHashTable *plat_subnets;
@@ -4152,6 +4157,21 @@ _err_inval_due_to_ipv6_tentative_pref_src (NMPlatform *self, const NMPObject *ob
 		return FALSE;
 
 	return TRUE;
+}
+
+GPtrArray *
+nm_platform_ip_address_get_prune_list (NMPlatform *self,
+                                       int addr_family,
+                                       int ifindex)
+{
+	NMPLookup lookup;
+
+	return nm_platform_lookup_clone (self,
+	                                 nmp_lookup_init_object (&lookup,
+	                                                         NMP_OBJECT_TYPE_IP_ADDRESS (NM_IS_IPv4 (addr_family)),
+	                                                         ifindex),
+	                                 NULL,
+	                                 NULL);
 }
 
 GPtrArray *

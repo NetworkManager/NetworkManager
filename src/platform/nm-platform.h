@@ -1840,18 +1840,38 @@ gboolean nm_platform_ip6_address_add (NMPlatform *self,
 gboolean nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address);
 gboolean nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr address, guint8 plen);
 
-gboolean nm_platform_ip_address_sync (NMPlatform *self, int addr_family, int ifindex, GPtrArray *known_addresses, gboolean full_sync);
+gboolean nm_platform_ip_address_sync (NMPlatform *self,
+                                      int addr_family,
+                                      int ifindex,
+                                      GPtrArray *known_addresses,
+                                      GPtrArray *addresses_prune,
+                                      gboolean full_sync);
+
+GPtrArray *nm_platform_ip_address_get_prune_list (NMPlatform *self,
+                                                 int addr_family,
+                                                 int ifindex);
+
+static inline gboolean
+_nm_platform_ip_address_sync (NMPlatform *self, int addr_family, int ifindex, GPtrArray *known_addresses, gboolean full_sync)
+{
+	gs_unref_ptrarray GPtrArray *addresses_prune = NULL;
+
+	addresses_prune = nm_platform_ip_address_get_prune_list (self,
+	                                                         addr_family,
+	                                                         ifindex);
+	return nm_platform_ip_address_sync (self, addr_family, ifindex, known_addresses, addresses_prune, TRUE);
+}
 
 static inline gboolean
 nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, GPtrArray *known_addresses)
 {
-	return nm_platform_ip_address_sync (self, AF_INET, ifindex, known_addresses, TRUE);
+	return _nm_platform_ip_address_sync (self, AF_INET, ifindex, known_addresses, TRUE);
 }
 
 static inline gboolean
 nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, GPtrArray *known_addresses, gboolean full_sync)
 {
-	return nm_platform_ip_address_sync (self, AF_INET6, ifindex, known_addresses, full_sync);
+	return _nm_platform_ip_address_sync (self, AF_INET6, ifindex, known_addresses, full_sync);
 }
 
 gboolean nm_platform_ip_address_flush (NMPlatform *self,
