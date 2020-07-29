@@ -1844,12 +1844,12 @@ gboolean nm_platform_ip_address_sync (NMPlatform *self,
                                       int addr_family,
                                       int ifindex,
                                       GPtrArray *known_addresses,
-                                      GPtrArray *addresses_prune,
-                                      gboolean full_sync);
+                                      GPtrArray *addresses_prune);
 
 GPtrArray *nm_platform_ip_address_get_prune_list (NMPlatform *self,
                                                  int addr_family,
-                                                 int ifindex);
+                                                 int ifindex,
+                                                 gboolean exclude_ipv6_temporary_addrs);
 
 static inline gboolean
 _nm_platform_ip_address_sync (NMPlatform *self, int addr_family, int ifindex, GPtrArray *known_addresses, gboolean full_sync)
@@ -1858,8 +1858,9 @@ _nm_platform_ip_address_sync (NMPlatform *self, int addr_family, int ifindex, GP
 
 	addresses_prune = nm_platform_ip_address_get_prune_list (self,
 	                                                         addr_family,
-	                                                         ifindex);
-	return nm_platform_ip_address_sync (self, addr_family, ifindex, known_addresses, addresses_prune, TRUE);
+	                                                         ifindex,
+	                                                         !full_sync);
+	return nm_platform_ip_address_sync (self, addr_family, ifindex, known_addresses, addresses_prune);
 }
 
 static inline gboolean

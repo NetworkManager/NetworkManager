@@ -3801,9 +3801,6 @@ ip6_address_scope_cmp (gconstpointer p_a, gconstpointer p_b, gpointer increasing
  *   Note that the addresses must be properly sorted, by their priority.
  *   Create this list with nm_platform_ip_address_get_prune_list() which
  *   gets the sorting right.
- * @full_sync: Also remove temporary addresses (IPv6 only).
- *   In general, only addresses from @addresses_prune will be removed. Setting
- *   this to FALSE (for IPv6) limits that some addresses won't be removed.
  *
  * A convenience function to synchronize addresses for a specific interface
  * with the least possible disturbance. It simply removes addresses that are
@@ -3816,8 +3813,7 @@ nm_platform_ip_address_sync (NMPlatform *self,
                              int addr_family,
                              int ifindex,
                              GPtrArray *known_addresses,
-                             GPtrArray *addresses_prune,
-                             gboolean full_sync)
+                             GPtrArray *addresses_prune)
 {
 	const gint32 now = nm_utils_get_monotonic_timestamp_sec ();
 	const gboolean IS_IPv4 = NM_IS_IPv4 (addr_family);
@@ -3950,12 +3946,7 @@ nm_platform_ip_address_sync (NMPlatform *self,
 				const NMPObject *know_obj;
 				const NMPlatformIP6Address *plat_addr = NMP_OBJECT_CAST_IP6_ADDRESS (plat_obj);
 
-				if (NM_FLAGS_HAS (plat_addr->n_ifa_flags, IFA_F_TEMPORARY)) {
-					if (!full_sync) {
-						/* just mark as handled, without actually deleting the address. */
-						goto clear_and_next;
-					}
-				} else if (known_addresses_idx) {
+				if (known_addresses_idx) {
 					know_obj = g_hash_table_lookup (known_addresses_idx, plat_obj);
 					if (   know_obj
 					    && plat_addr->plen == NMP_OBJECT_CAST_IP6_ADDRESS (know_obj)->plen) {
@@ -3972,7 +3963,6 @@ nm_platform_ip_address_sync (NMPlatform *self,
 				}
 
 				nm_platform_ip6_address_delete (self, ifindex, plat_addr->address, plat_addr->plen);
-clear_and_next:
 				nmp_object_unref (g_steal_pointer (&plat_addresses->pdata[i_plat]));
 			}
 
@@ -4162,16 +4152,44 @@ _err_inval_due_to_ipv6_tentative_pref_src (NMPlatform *self, const NMPObject *ob
 GPtrArray *
 nm_platform_ip_address_get_prune_list (NMPlatform *self,
                                        int addr_family,
-                                       int ifindex)
+                                       int ifindex,
+                                       gboolean exclude_ipv6_temporary_addrs)
 {
+	const gboolean IS_IPv4 = NM_IS_IPv4 (addr_family);
+	const NMDedupMultiHeadEntry *head_entry;
 	NMPLookup lookup;
+	GPtrArray *result;
+	CList *iter;
 
-	return nm_platform_lookup_clone (self,
-	                                 nmp_lookup_init_object (&lookup,
-	                                                         NMP_OBJECT_TYPE_IP_ADDRESS (NM_IS_IPv4 (addr_family)),
-	                                                         ifindex),
-	                                 NULL,
-	                                 NULL);
+	nmp_lookup_init_object (&lookup,
+	                        NMP_OBJECT_TYPE_IP_ADDRESS (NM_IS_IPv4 (addr_family)),
+	                        ifindex);
+
+	head_entry = nm_platform_lookup (self, &lookup);
+
+	if (!head_entry)
+		return NULL;
+
+	result = g_ptr_array_new_full (head_entry->len,
+	                               (GDestroyNotify) nmp_object_unref);
+
+	c_list_for_each (iter, &head_entry->lst_entries_head) {
+		const NMPObject *obj = c_list_entry (iter, NMDedupMultiEntry, lst_entries)->obj;
+
+		if (!IS_IPv4) {
+			if (   exclude_ipv6_temporary_addrs
+			    && NM_FLAGS_HAS (NMP_OBJECT_CAST_IP_ADDRESS (obj)->n_ifa_flags, IFA_F_TEMPORARY))
+				continue;
+		}
+
+		g_ptr_array_add (result, (gpointer) nmp_object_ref (obj));
+	}
+
+	if (result->len == 0) {
+		g_ptr_array_unref (result);
+		return NULL;
+	}
+	return result;
 }
 
 GPtrArray *
