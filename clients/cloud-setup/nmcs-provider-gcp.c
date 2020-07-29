@@ -99,7 +99,6 @@ typedef struct {
 	NMCSProviderGetConfigTaskData *config_data;
 	guint n_ifaces_pending;
 	GError *error;
-	bool success:1;
 } GCPData;
 
 typedef struct {
@@ -114,26 +113,27 @@ _get_config_maybe_task_return (GCPData *gcp_data,
                                GError *error_take)
 {
 	NMCSProviderGetConfigTaskData *config_data =  gcp_data->config_data;
-	gs_free_error GError *gcp_error = NULL;
 
 	if (error_take) {
-		nm_clear_error (&gcp_data->error);
-		gcp_data->error = error_take;
+		if (!gcp_data->error)
+			gcp_data->error = error_take;
+		else if (   !nm_utils_error_is_cancelled (gcp_data->error)
+		         && nm_utils_error_is_cancelled (error_take)) {
+			nm_clear_error (&gcp_data->error);
+			gcp_data->error = error_take;
+		} else
+			g_error_free (error_take);
 	}
 
-	if (gcp_data->n_ifaces_pending)
+	if (gcp_data->n_ifaces_pending > 0)
 		return;
 
-	gcp_error = gcp_data->error;
-
-	if (!gcp_data->success) {
-		nm_assert (gcp_error);
-
-		if (nm_utils_error_is_cancelled (gcp_error))
+	if (gcp_data->error) {
+		if (nm_utils_error_is_cancelled (gcp_data->error))
 			_LOGD ("get-config: cancelled");
 		else
-			_LOGD ("get-config: failed: %s", gcp_error->message);
-		g_task_return_error (config_data->task, g_steal_pointer (&gcp_error));
+			_LOGD ("get-config: failed: %s", gcp_data->error->message);
+		g_task_return_error (config_data->task, g_steal_pointer (&gcp_data->error));
 	} else {
 		_LOGD ("get-config: success");
 		g_task_return_pointer (config_data->task,
@@ -199,15 +199,15 @@ _get_config_fip_cb (GObject *source,
 	                           g_variant_new_string ("local"));
 	routes_arr[iface_get_config->iproutes_len] = route_new;
 	++iface_get_config->iproutes_len;
-	gcp_data->success = TRUE;
 
 iface_done:
 	--iface_data->n_fips_pending;
 	if (iface_data->n_fips_pending == 0) {
 		nm_g_slice_free (iface_data);
 		--gcp_data->n_ifaces_pending;
-		_get_config_maybe_task_return (gcp_data, g_steal_pointer (&error));
 	}
+
+	_get_config_maybe_task_return (gcp_data, g_steal_pointer (&error));
 }
 
 static void
@@ -450,7 +450,6 @@ _get_net_ifaces_list_cb (GObject *source,
 		                         NULL,
 		                         _get_config_iface_cb,
 		                         data);
-
 	}
 
 	if (ifaces_arr->len == 0) {
@@ -473,7 +472,6 @@ get_config (NMCSProvider *provider,
 		.config_data = get_config_data,
 		.n_ifaces_pending = 0,
 		.error = NULL,
-		.success = FALSE,
 	};
 
 	nm_http_client_poll_get (nmcs_provider_get_http_client (provider),
