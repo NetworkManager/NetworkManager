@@ -12,6 +12,7 @@
 
 #include "nm-glib-aux/nm-dedup-multi.h"
 #include "platform/nmp-object.h"
+#include "nm-ip-config.h"
 
 /*****************************************************************************/
 
@@ -272,8 +273,6 @@ NM_IS_IP_CONFIG_ADDR_FAMILY (gconstpointer config, int addr_family)
 		return NM_IS_IP6_CONFIG (config);
 	g_return_val_if_reached (FALSE);
 }
-
-#define NM_IS_IP_CONFIG(config) NM_IS_IP_CONFIG_ADDR_FAMILY ((config), AF_UNSPEC)
 
 #if _NM_CC_SUPPORT_GENERIC
 /* _NM_IS_IP_CONFIG() is a bit unusual. If _Generic() is supported,

@@ -307,15 +307,15 @@ typedef struct {
 } NMIP4ConfigPrivate;
 
 struct _NMIP4Config {
-	NMDBusObject parent;
+	NMIPConfig parent;
 	NMIP4ConfigPrivate _priv;
 };
 
 struct _NMIP4ConfigClass {
-	NMDBusObjectClass parent;
+	NMIPConfigClass parent;
 };
 
-G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_DBUS_OBJECT)
+G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_IP_CONFIG)
 
 #define NM_IP4_CONFIG_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMIP4Config, NM_IS_IP4_CONFIG)
 
@@ -3172,10 +3172,14 @@ static const NMDBusInterfaceInfoExtended interface_info_ip4_config = {
 };
 
 static void
-nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
+nm_ip4_config_class_init (NMIP4ConfigClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (config_class);
-	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (config_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+	NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
+	NMIPConfigClass *ip_config_class = NM_IP_CONFIG_CLASS (klass);
+
+	ip_config_class->is_ipv4 = TRUE;
+	ip_config_class->addr_family = AF_INET;
 
 	dbus_object_class->export_path = NM_DBUS_EXPORT_PATH_NUMBERED (NM_DBUS_PATH"/IP4Config");
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_ip4_config);

@@ -12,6 +12,7 @@
 
 #include "nm-glib-aux/nm-dedup-multi.h"
 #include "platform/nmp-object.h"
+#include "nm-ip-config.h"
 
 /*****************************************************************************/
 
