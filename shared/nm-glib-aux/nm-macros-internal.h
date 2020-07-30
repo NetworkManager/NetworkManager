@@ -1233,6 +1233,16 @@ nm_strcmp_p (gconstpointer a, gconstpointer b)
 
 /*****************************************************************************/
 
+static inline int
+_NM_IN_STRSET_ASCII_CASE_op_streq (const char *x, const char *s)
+{
+	return s && g_ascii_strcasecmp (x, s) == 0;
+}
+
+#define NM_IN_STRSET_ASCII_CASE(x, ...) _NM_IN_STRSET_EVAL_N(||, _NM_IN_STRSET_ASCII_CASE_op_streq, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
+
+/*****************************************************************************/
+
 #define nm_g_slice_free(ptr) \
 	g_slice_free (typeof (*(ptr)), ptr)
 
