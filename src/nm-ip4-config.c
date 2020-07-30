@@ -2956,10 +2956,12 @@ get_property (GObject *object, guint prop_id,
 		nm_assert (!!priv->address_data_variant == !!priv->addresses_variant);
 
 		if (!priv->address_data_variant) {
-			nm_utils_ip4_addresses_to_dbus (nm_ip4_config_lookup_addresses (self),
-			                                priv->best_default_route,
-			                                &priv->address_data_variant,
-			                                &priv->addresses_variant);
+			nm_utils_ip_addresses_to_dbus (AF_INET,
+			                               nm_ip4_config_lookup_addresses (self),
+			                               priv->best_default_route,
+			                               NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
+			                               &priv->address_data_variant,
+			                               &priv->addresses_variant);
 			g_variant_ref_sink (priv->address_data_variant);
 			g_variant_ref_sink (priv->addresses_variant);
 		}
@@ -2974,9 +2976,10 @@ get_property (GObject *object, guint prop_id,
 		nm_assert (!!priv->route_data_variant == !!priv->routes_variant);
 
 		if (!priv->route_data_variant) {
-			nm_utils_ip4_routes_to_dbus (nm_ip4_config_lookup_routes (self),
-			                             &priv->route_data_variant,
-			                             &priv->routes_variant);
+			nm_utils_ip_routes_to_dbus (AF_INET,
+			                            nm_ip4_config_lookup_routes (self),
+			                            &priv->route_data_variant,
+			                            &priv->routes_variant);
 			g_variant_ref_sink (priv->route_data_variant);
 			g_variant_ref_sink (priv->routes_variant);
 		}
