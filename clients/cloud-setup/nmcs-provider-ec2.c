@@ -141,30 +141,43 @@ detect (NMCSProvider *provider,
 
 typedef struct {
 	NMCSProviderGetConfigTaskData *get_config_data;
+	GError *error;
 	GCancellable *cancellable;
 	gulong cancelled_id;
 	guint n_pending;
 } GetConfigIfaceData;
 
 static void
-_get_config_task_return (GetConfigIfaceData *iface_data,
-                         GError *error_take)
+_get_config_task_maybe_return (GetConfigIfaceData *iface_data,
+                               GError *error_take)
 {
 	NMCSProviderGetConfigTaskData *get_config_data = iface_data->get_config_data;
+
+	if (error_take) {
+		if (!iface_data->error)
+			iface_data->error = error_take;
+		else if (   !nm_utils_error_is_cancelled (iface_data->error)
+		         && nm_utils_error_is_cancelled (error_take)) {
+			nm_clear_error (&iface_data->error);
+			iface_data->error = error_take;
+		} else
+			g_error_free (error_take);
+	}
+
+	if (iface_data->n_pending > 0)
+		return;
 
 	nm_clear_g_cancellable_disconnect (g_task_get_cancellable (get_config_data->task),
 	                                   &iface_data->cancelled_id);
 
 	nm_clear_g_cancellable (&iface_data->cancellable);
 
-	nm_g_slice_free (iface_data);
-
-	if (error_take) {
-		if (nm_utils_error_is_cancelled (error_take))
+	if (iface_data->error) {
+		if (nm_utils_error_is_cancelled (iface_data->error))
 			_LOGD ("get-config: cancelled");
 		else
-			_LOGD ("get-config: failed: %s", error_take->message);
-		g_task_return_error (get_config_data->task, error_take);
+			_LOGD ("get-config: failed: %s", iface_data->error->message);
+		g_task_return_error (get_config_data->task, g_steal_pointer (&iface_data->error));
 	} else {
 		_LOGD ("get-config: success");
 		g_task_return_pointer (get_config_data->task,
@@ -172,6 +185,7 @@ _get_config_task_return (GetConfigIfaceData *iface_data,
 		                       (GDestroyNotify) g_hash_table_unref);
 	}
 
+	nm_g_slice_free (iface_data);
 	g_object_unref (get_config_data->task);
 }
 
@@ -193,9 +207,6 @@ _get_config_fetch_done_cb (NMHttpClient *http_client,
 	                                NULL,
 	                                &response_data,
 	                                &error);
-
-	if (nm_utils_error_is_cancelled (error))
-		return;
 
 	if (!error) {
 		NMCSProviderGetConfigIfaceData *config_iface_data;
@@ -240,10 +251,8 @@ _get_config_fetch_done_cb (NMHttpClient *http_client,
 		}
 	}
 
-	if (--iface_data->n_pending > 0)
-		return;
-
-	_get_config_task_return (iface_data, NULL);
+	iface_data->n_pending--;
+	_get_config_task_maybe_return (iface_data, g_steal_pointer (&error));
 }
 
 static void
@@ -272,8 +281,8 @@ _get_config_fetch_cancelled_cb (GObject *object, gpointer user_data)
 
 	nm_clear_g_signal_handler (g_task_get_cancellable (iface_data->get_config_data->task),
 	                           &iface_data->cancelled_id);
-	_get_config_task_return (iface_data,
-	                         nm_utils_error_new_cancelled (FALSE, NULL));
+	_get_config_task_maybe_return (iface_data,
+	                               nm_utils_error_new_cancelled (FALSE, NULL));
 }
 
 typedef struct {
@@ -317,16 +326,16 @@ _get_config_metadata_ready_cb (GObject *source,
 	};
 
 	if (nm_utils_error_is_cancelled (error)) {
-		_get_config_task_return (iface_data, g_steal_pointer (&error));
+		_get_config_task_maybe_return (iface_data, g_steal_pointer (&error));
 		return;
 	}
 
 	/* We ignore errors. Only if we got no response at all, it's a problem.
 	 * Otherwise, we proceed with whatever we could fetch. */
 	if (!response_parsed) {
-		_get_config_task_return (iface_data,
-		                         nm_utils_error_new (NM_UTILS_ERROR_UNKNOWN,
-		                                             "meta data for interfaces not found"));
+		_get_config_task_maybe_return (iface_data,
+		                               nm_utils_error_new (NM_UTILS_ERROR_UNKNOWN,
+		                                                   "meta data for interfaces not found"));
 		return;
 	}
 
@@ -339,8 +348,8 @@ _get_config_metadata_ready_cb (GObject *source,
 		                                      iface_data,
 		                                      NULL);
 		if (cancelled_id == 0) {
-			_get_config_task_return (iface_data,
-			                         nm_utils_error_new_cancelled (FALSE, NULL));
+			_get_config_task_maybe_return (iface_data,
+			                               nm_utils_error_new_cancelled (FALSE, NULL));
 			return;
 		}
 
@@ -411,8 +420,7 @@ _get_config_metadata_ready_cb (GObject *source,
 		                         nm_utils_user_data_pack (iface_data, hwaddr));
 	}
 
-	if (iface_data->n_pending == 0)
-		_get_config_task_return (iface_data, NULL);
+	_get_config_task_maybe_return (iface_data, NULL);
 }
 
 static gboolean
