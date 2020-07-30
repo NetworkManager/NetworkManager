@@ -109,6 +109,8 @@ struct _NML3ConfigData {
 
 	NML3ConfigDatFlags flags;
 
+	NMIPConfigSource source;
+
 	guint32 mtu;
 
 	NMTernary metered:3;
@@ -376,6 +378,7 @@ nm_l3_config_data_new (NMDedupMultiIndex *multi_idx,
 		.metered            = NM_TERNARY_DEFAULT,
 		.route_table_sync_4 = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
 		.route_table_sync_6 = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
+		.source             = NM_IP_CONFIG_SOURCE_UNKNOWN,
 	};
 
 	_idx_type_init (&self->idx_addresses_4, NMP_OBJECT_TYPE_IP4_ADDRESS);
@@ -1114,6 +1117,19 @@ nm_l3_config_data_set_mtu (NML3ConfigData *self,
 	return TRUE;
 }
 
+gboolean
+nm_l3_config_data_set_source (NML3ConfigData *self,
+                              NMIPConfigSource source)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	if (self->source == source)
+		return FALSE;
+
+	self->source = source;
+	return TRUE;
+}
+
 /*****************************************************************************/
 
 static int
@@ -1196,6 +1212,8 @@ nm_l3_config_data_cmp (const NML3ConfigData *a, const NML3ConfigData *b)
 	if (NM_FLAGS_HAS (a->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_MTU))
 		NM_CMP_DIRECT (a->mtu, b->mtu);
 	NM_CMP_DIRECT_UNSAFE (a->metered, b->metered);
+
+	NM_CMP_FIELD (a, b, source);
 
 	/* these fields are not considered by cmp():
 	 *
@@ -1914,6 +1932,8 @@ _init_merge (NML3ConfigData *self,
 		self->mtu = src->mtu;
 		self->flags |= NM_L3_CONFIG_DAT_FLAGS_HAS_MTU;
 	}
+
+	/* self->source does not get merged. */
 }
 
 NML3ConfigData *

@@ -235,6 +235,9 @@ nm_l3_config_data_unset_flags (NML3ConfigData *self,
 
 /*****************************************************************************/
 
+gboolean nm_l3_config_data_set_source (NML3ConfigData *self,
+                                       NMIPConfigSource source);
+
 gboolean nm_l3_config_data_add_address_full (NML3ConfigData *self,
                                              int addr_family,
                                              const NMPObject *obj_new,
