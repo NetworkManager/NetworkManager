@@ -370,47 +370,51 @@ nm_streq0 (const char *s1, const char *s2)
 
 /*****************************************************************************/
 
+#define _NM_IN_SETOP_EVAL_1( op, op_eq, _x, y)        (op_eq (_x, y))
+#define _NM_IN_SETOP_EVAL_2( op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_1  (op, op_eq, _x, __VA_ARGS__)
+#define _NM_IN_SETOP_EVAL_3( op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_2  (op, op_eq, _x, __VA_ARGS__)
+#define _NM_IN_SETOP_EVAL_4( op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_3  (op, op_eq, _x, __VA_ARGS__)
+#define _NM_IN_SETOP_EVAL_5( op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_4  (op, op_eq, _x, __VA_ARGS__)
+#define _NM_IN_SETOP_EVAL_6( op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_5  (op, op_eq, _x, __VA_ARGS__)
+#define _NM_IN_SETOP_EVAL_7( op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_6  (op, op_eq, _x, __VA_ARGS__)
+#define _NM_IN_SETOP_EVAL_8( op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_7  (op, op_eq, _x, __VA_ARGS__)
+#define _NM_IN_SETOP_EVAL_9( op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_8  (op, op_eq, _x, __VA_ARGS__)
+#define _NM_IN_SETOP_EVAL_10(op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_9  (op, op_eq, _x, __VA_ARGS__)
+#define _NM_IN_SETOP_EVAL_11(op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_10 (op, op_eq, _x, __VA_ARGS__)
+#define _NM_IN_SETOP_EVAL_12(op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_11 (op, op_eq, _x, __VA_ARGS__)
+#define _NM_IN_SETOP_EVAL_13(op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_12 (op, op_eq, _x, __VA_ARGS__)
+#define _NM_IN_SETOP_EVAL_14(op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_13 (op, op_eq, _x, __VA_ARGS__)
+#define _NM_IN_SETOP_EVAL_15(op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_14 (op, op_eq, _x, __VA_ARGS__)
+#define _NM_IN_SETOP_EVAL_16(op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_15 (op, op_eq, _x, __VA_ARGS__)
+
+/*****************************************************************************/
+
+#define _NM_IN_STRSET_EVAL_N2(op, op_ed, _x, n, ...)   (_NM_IN_SETOP_EVAL_##n(op, op_ed, _x, __VA_ARGS__))
+#define _NM_IN_STRSET_EVAL_N(op, op_ed, x, n, ...)                       \
+    ({                                                            \
+        const char *_x = (x);                                     \
+        (   ((_x == NULL) && _NM_IN_SET_EVAL_N2    (op,        ((const char *) NULL), n, __VA_ARGS__)) \
+         || ((_x != NULL) && _NM_IN_STRSET_EVAL_N2 (op, op_ed, _x,                    n, __VA_ARGS__)) \
+        ); \
+    })
+
+/*****************************************************************************/
+
 static inline int
-_NM_IN_STRSET_streq (const char *x, const char *s)
+_NM_IN_STRSET_op_streq (const char *x, const char *s)
 {
 	return s && strcmp (x, s) == 0;
 }
 
-#define _NM_IN_STRSET_EVAL_1( op, _x, y)        _NM_IN_STRSET_streq (_x, y)
-#define _NM_IN_STRSET_EVAL_2( op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_1  (op, _x, __VA_ARGS__)
-#define _NM_IN_STRSET_EVAL_3( op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_2  (op, _x, __VA_ARGS__)
-#define _NM_IN_STRSET_EVAL_4( op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_3  (op, _x, __VA_ARGS__)
-#define _NM_IN_STRSET_EVAL_5( op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_4  (op, _x, __VA_ARGS__)
-#define _NM_IN_STRSET_EVAL_6( op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_5  (op, _x, __VA_ARGS__)
-#define _NM_IN_STRSET_EVAL_7( op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_6  (op, _x, __VA_ARGS__)
-#define _NM_IN_STRSET_EVAL_8( op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_7  (op, _x, __VA_ARGS__)
-#define _NM_IN_STRSET_EVAL_9( op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_8  (op, _x, __VA_ARGS__)
-#define _NM_IN_STRSET_EVAL_10(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_9  (op, _x, __VA_ARGS__)
-#define _NM_IN_STRSET_EVAL_11(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_10 (op, _x, __VA_ARGS__)
-#define _NM_IN_STRSET_EVAL_12(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_11 (op, _x, __VA_ARGS__)
-#define _NM_IN_STRSET_EVAL_13(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_12 (op, _x, __VA_ARGS__)
-#define _NM_IN_STRSET_EVAL_14(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_13 (op, _x, __VA_ARGS__)
-#define _NM_IN_STRSET_EVAL_15(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_14 (op, _x, __VA_ARGS__)
-#define _NM_IN_STRSET_EVAL_16(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_15 (op, _x, __VA_ARGS__)
-
-#define _NM_IN_STRSET_EVAL_N2(op, _x, n, ...)   (_NM_IN_STRSET_EVAL_##n(op, _x, __VA_ARGS__))
-#define _NM_IN_STRSET_EVAL_N(op, x, n, ...)                       \
-    ({                                                            \
-        const char *_x = (x);                                     \
-        (   ((_x == NULL) && _NM_IN_SET_EVAL_N2    (op, ((const char *) NULL), n, __VA_ARGS__)) \
-         || ((_x != NULL) && _NM_IN_STRSET_EVAL_N2 (op, _x,                    n, __VA_ARGS__)) \
-        ); \
-    })
-
 /* Beware that this does short-circuit evaluation (use "||" instead of "|")
  * which has a possibly unexpected non-function-like behavior.
  * Use NM_IN_STRSET_SE if you need all arguments to be evaluated. */
-#define NM_IN_STRSET(x, ...)               _NM_IN_STRSET_EVAL_N(||, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
+#define NM_IN_STRSET(x, ...)               _NM_IN_STRSET_EVAL_N(||, _NM_IN_STRSET_op_streq, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
 
 /* "SE" stands for "side-effect". Contrary to NM_IN_STRSET(), this does not do
  * short-circuit evaluation, which can make a difference if the arguments have
  * side-effects. */
-#define NM_IN_STRSET_SE(x, ...)            _NM_IN_STRSET_EVAL_N(|, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
+#define NM_IN_STRSET_SE(x, ...)            _NM_IN_STRSET_EVAL_N(|, _NM_IN_STRSET_op_streq, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
 
 /*****************************************************************************/
 
