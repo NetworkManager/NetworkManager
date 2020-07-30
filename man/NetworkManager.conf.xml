@@ -179,7 +179,7 @@ plugins-=remove-me
         option uses a built-in DHCP client which is not currently as
         featureful as the external clients.</para>
         <para>If this key is missing, it defaults to <literal>&NM_CONFIG_DEFAULT_MAIN_DHCP;</literal>.
-        It the chosen plugin is not available, clients are looked for
+        If the chosen plugin is not available, clients are looked for
         in this order: <literal>dhclient</literal>, <literal>dhcpcd</literal>,
         <literal>internal</literal>.</para></listitem>
       </varlistentry>
