@@ -497,15 +497,6 @@ _notify_routes (NMIP4Config *self)
 /*****************************************************************************/
 
 static int
-_addresses_sort_cmp (gconstpointer a, gconstpointer b, gpointer user_data)
-{
-	return nm_platform_ip4_address_pretty_sort_cmp (NMP_OBJECT_CAST_IP4_ADDRESS (*((const NMPObject **) a)),
-	                                                NMP_OBJECT_CAST_IP4_ADDRESS (*((const NMPObject **) b)));
-}
-
-/*****************************************************************************/
-
-static int
 sort_captured_addresses (const CList *lst_a, const CList *lst_b, gconstpointer user_data)
 {
 	const NMPlatformIP4Address *addr_a = NMP_OBJECT_CAST_IP4_ADDRESS (c_list_entry (lst_a, NMDedupMultiEntry, lst_entries)->obj);
@@ -2952,12 +2943,9 @@ get_property (GObject *object, guint prop_id,
 {
 	NMIP4Config *self = NM_IP4_CONFIG (object);
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
-	const NMDedupMultiHeadEntry *head_entry;
-	NMDedupMultiIter ipconf_iter;
-	const NMPlatformIP4Route *route;
-	GVariantBuilder builder_data, builder_legacy;
-	guint i;
 	char addr_str[NM_UTILS_INET_ADDRSTRLEN];
+	GVariantBuilder builder_data;
+	guint i;
 
 	switch (prop_id) {
 	case PROP_IFINDEX:
@@ -2967,145 +2955,36 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ADDRESSES:
 		nm_assert (!!priv->address_data_variant == !!priv->addresses_variant);
 
-		if (priv->address_data_variant)
-			goto out_addresses_cached;
-
-		g_variant_builder_init (&builder_data, G_VARIANT_TYPE ("aa{sv}"));
-		g_variant_builder_init (&builder_legacy, G_VARIANT_TYPE ("aau"));
-
-		head_entry = nm_ip4_config_lookup_addresses (self);
-		if (head_entry) {
-			gs_free const NMPObject **addresses = NULL;
-			guint naddr;
-
-			addresses = (const NMPObject **) nm_dedup_multi_objs_to_array_head (head_entry, NULL, NULL, &naddr);
-			nm_assert (addresses && naddr);
-
-			g_qsort_with_data (addresses,
-			                   naddr,
-			                   sizeof (addresses[0]),
-			                   _addresses_sort_cmp,
-			                   NULL);
-
-			/* Build address data variant */
-			for (i = 0; i < naddr; i++) {
-				GVariantBuilder addr_builder;
-				const NMPlatformIP4Address *address = NMP_OBJECT_CAST_IP4_ADDRESS (addresses[i]);
-
-				g_variant_builder_init (&addr_builder, G_VARIANT_TYPE ("a{sv}"));
-				g_variant_builder_add (&addr_builder, "{sv}",
-				                       "address",
-				                       g_variant_new_string (_nm_utils_inet4_ntop (address->address, addr_str)));
-				g_variant_builder_add (&addr_builder, "{sv}",
-				                       "prefix",
-				                       g_variant_new_uint32 (address->plen));
-				if (address->peer_address != address->address) {
-					g_variant_builder_add (&addr_builder, "{sv}",
-					                       "peer",
-					                       g_variant_new_string (_nm_utils_inet4_ntop (address->peer_address, addr_str)));
-				}
-
-				if (*address->label) {
-					g_variant_builder_add (&addr_builder, "{sv}",
-					                       NM_IP_ADDRESS_ATTRIBUTE_LABEL,
-					                       g_variant_new_string (address->label));
-				}
-
-				g_variant_builder_add (&builder_data, "a{sv}", &addr_builder);
-
-				{
-					const guint32 dbus_addr[3] = {
-					    address->address,
-					    address->plen,
-					    (   i == 0
-					     && priv->best_default_route)
-					       ? NMP_OBJECT_CAST_IP4_ROUTE (priv->best_default_route)->gateway
-					       : (guint32) 0,
-					};
-
-					g_variant_builder_add (&builder_legacy, "@au",
-					                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
-					                                                  dbus_addr, 3, sizeof (guint32)));
-				}
-			}
+		if (!priv->address_data_variant) {
+			nm_utils_ip4_addresses_to_dbus (nm_ip4_config_lookup_addresses (self),
+			                                priv->best_default_route,
+			                                &priv->address_data_variant,
+			                                &priv->addresses_variant);
+			g_variant_ref_sink (priv->address_data_variant);
+			g_variant_ref_sink (priv->addresses_variant);
 		}
 
-		priv->address_data_variant = g_variant_ref_sink (g_variant_builder_end (&builder_data));
-		priv->addresses_variant = g_variant_ref_sink (g_variant_builder_end (&builder_legacy));
-
-out_addresses_cached:
 		g_value_set_variant (value,
-		                     prop_id == PROP_ADDRESS_DATA ?
-		                     priv->address_data_variant :
-		                     priv->addresses_variant);
+		                       prop_id == PROP_ADDRESS_DATA
+		                     ? priv->address_data_variant
+		                     : priv->addresses_variant);
 		break;
 	case PROP_ROUTE_DATA:
 	case PROP_ROUTES:
 		nm_assert (!!priv->route_data_variant == !!priv->routes_variant);
 
-		if (priv->route_data_variant)
-			goto out_routes_cached;
-
-		g_variant_builder_init (&builder_data, G_VARIANT_TYPE ("aa{sv}"));
-		g_variant_builder_init (&builder_legacy, G_VARIANT_TYPE ("aau"));
-
-		nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, self, &route) {
-			GVariantBuilder route_builder;
-
-			nm_assert (_route_valid (route));
-
-			if (route->type_coerced != nm_platform_route_type_coerce (RTN_UNICAST))
-				continue;
-
-			g_variant_builder_init (&route_builder, G_VARIANT_TYPE ("a{sv}"));
-			g_variant_builder_add (&route_builder, "{sv}",
-			                       "dest",
-			                       g_variant_new_string (_nm_utils_inet4_ntop (route->network, addr_str)));
-			g_variant_builder_add (&route_builder, "{sv}",
-			                       "prefix",
-			                       g_variant_new_uint32 (route->plen));
-			if (route->gateway) {
-				g_variant_builder_add (&route_builder, "{sv}",
-				                       "next-hop",
-				                       g_variant_new_string (_nm_utils_inet4_ntop (route->gateway, addr_str)));
-			}
-			g_variant_builder_add (&route_builder, "{sv}",
-			                       "metric",
-			                       g_variant_new_uint32 (route->metric));
-
-			if (!nm_platform_route_table_is_main (route->table_coerced)) {
-				g_variant_builder_add (&route_builder, "{sv}",
-				                       "table",
-				                       g_variant_new_uint32 (nm_platform_route_table_uncoerce (route->table_coerced, TRUE)));
-			}
-
-			g_variant_builder_add (&builder_data, "a{sv}", &route_builder);
-
-			/* legacy versions of nm_ip4_route_set_prefix() in libnm-util assert that the
-			 * plen is positive. Skip the default routes not to break older clients. */
-			if (   nm_platform_route_table_is_main (route->table_coerced)
-			    && !NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
-				const guint32 dbus_route[4] = {
-				    route->network,
-				    route->plen,
-				    route->gateway,
-				    route->metric,
-				};
-
-				g_variant_builder_add (&builder_legacy, "@au",
-				                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
-				                                                  dbus_route, 4, sizeof (guint32)));
-			}
+		if (!priv->route_data_variant) {
+			nm_utils_ip4_routes_to_dbus (nm_ip4_config_lookup_routes (self),
+			                             &priv->route_data_variant,
+			                             &priv->routes_variant);
+			g_variant_ref_sink (priv->route_data_variant);
+			g_variant_ref_sink (priv->routes_variant);
 		}
 
-		priv->route_data_variant = g_variant_ref_sink (g_variant_builder_end (&builder_data));
-		priv->routes_variant = g_variant_ref_sink (g_variant_builder_end (&builder_legacy));
-
-out_routes_cached:
 		g_value_set_variant (value,
-		                     prop_id == PROP_ROUTE_DATA ?
-		                     priv->route_data_variant :
-		                     priv->routes_variant);
+		                       prop_id == PROP_ROUTE_DATA
+		                     ? priv->route_data_variant
+		                     : priv->routes_variant);
 		break;
 	case PROP_GATEWAY:
 		if (priv->best_default_route) {

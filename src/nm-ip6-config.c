@@ -213,14 +213,6 @@ _notify_routes (NMIP6Config *self)
 /*****************************************************************************/
 
 static int
-_addresses_sort_cmp_prop (gconstpointer a, gconstpointer b, gpointer user_data)
-{
-	return nm_platform_ip6_address_pretty_sort_cmp (NMP_OBJECT_CAST_IP6_ADDRESS (*((const NMPObject **) a)),
-	                                                NMP_OBJECT_CAST_IP6_ADDRESS (*((const NMPObject **) b)),
-	                                                (((NMSettingIP6ConfigPrivacy) GPOINTER_TO_INT (user_data)) == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR));
-}
-
-static int
 sort_captured_addresses (const CList *lst_a, const CList *lst_b, gconstpointer user_data)
 {
 	return nm_platform_ip6_address_pretty_sort_cmp (NMP_OBJECT_CAST_IP6_ADDRESS (c_list_entry (lst_a, NMDedupMultiEntry, lst_entries)->obj),
@@ -2475,11 +2467,6 @@ get_property (GObject *object, guint prop_id,
 {
 	NMIP6Config *self = NM_IP6_CONFIG (object);
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
-	const NMDedupMultiHeadEntry *head_entry;
-	NMDedupMultiIter ipconf_iter;
-	const NMPlatformIP6Route *route;
-	GVariantBuilder builder_data, builder_legacy;
-	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
 	switch (prop_id) {
 	case PROP_IFINDEX:
@@ -2489,131 +2476,37 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ADDRESSES:
 		nm_assert (!!priv->address_data_variant == !!priv->addresses_variant);
 
-		if (priv->address_data_variant)
-			goto out_addresses_cached;
-
-		g_variant_builder_init (&builder_data, G_VARIANT_TYPE ("aa{sv}"));
-		g_variant_builder_init (&builder_legacy, G_VARIANT_TYPE ("a(ayuay)"));
-
-		head_entry = nm_ip6_config_lookup_addresses (self);
-		if (head_entry) {
-			gs_free const NMPObject **addresses = NULL;
-			guint naddr, i;
-
-			addresses = (const NMPObject **) nm_dedup_multi_objs_to_array_head (head_entry, NULL, NULL, &naddr);
-			nm_assert (addresses && naddr);
-
-			g_qsort_with_data (addresses,
-			                   naddr,
-			                   sizeof (addresses[0]),
-			                   _addresses_sort_cmp_prop,
-			                   GINT_TO_POINTER (priv->privacy));
-
-			for (i = 0; i < naddr; i++) {
-				GVariantBuilder addr_builder;
-				const NMPlatformIP6Address *address = NMP_OBJECT_CAST_IP6_ADDRESS (addresses[i]);
-
-				g_variant_builder_init (&addr_builder, G_VARIANT_TYPE ("a{sv}"));
-				g_variant_builder_add (&addr_builder, "{sv}",
-				                       "address",
-				                       g_variant_new_string (_nm_utils_inet6_ntop (&address->address, sbuf)));
-				g_variant_builder_add (&addr_builder, "{sv}",
-				                       "prefix",
-				                       g_variant_new_uint32 (address->plen));
-				if (   !IN6_IS_ADDR_UNSPECIFIED (&address->peer_address)
-				    && !IN6_ARE_ADDR_EQUAL (&address->peer_address, &address->address)) {
-					g_variant_builder_add (&addr_builder, "{sv}",
-					                       "peer",
-					                       g_variant_new_string (_nm_utils_inet6_ntop (&address->peer_address, sbuf)));
-				}
-
-				g_variant_builder_add (&builder_data, "a{sv}", &addr_builder);
-
-				g_variant_builder_add (&builder_legacy, "(@ayu@ay)",
-				                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-				                                                  &address->address, 16, 1),
-				                       address->plen,
-				                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-				                                                  (   i == 0
-				                                                   && priv->best_default_route)
-				                                                     ? &NMP_OBJECT_CAST_IP6_ROUTE (priv->best_default_route)->gateway
-				                                                     : &in6addr_any,
-				                                                  16, 1));
-			}
+		if (!priv->address_data_variant) {
+			nm_utils_ip6_addresses_to_dbus (nm_ip6_config_lookup_addresses (self),
+			                                priv->privacy,
+			                                priv->best_default_route,
+			                                &priv->address_data_variant,
+			                                &priv->addresses_variant);
+			g_variant_ref_sink (priv->address_data_variant);
+			g_variant_ref_sink (priv->addresses_variant);
 		}
-
-		priv->address_data_variant = g_variant_ref_sink (g_variant_builder_end (&builder_data));
-		priv->addresses_variant = g_variant_ref_sink (g_variant_builder_end (&builder_legacy));
-out_addresses_cached:
 		g_value_set_variant (value,
-		                     prop_id == PROP_ADDRESS_DATA ?
-		                     priv->address_data_variant :
-		                     priv->addresses_variant);
+		                       prop_id == PROP_ADDRESS_DATA
+		                     ? priv->address_data_variant
+		                     : priv->addresses_variant);
 		break;
 
 	case PROP_ROUTE_DATA:
 	case PROP_ROUTES:
 		nm_assert (!!priv->route_data_variant == !!priv->routes_variant);
 
-		if (priv->route_data_variant)
-			goto out_routes_cached;
-
-		g_variant_builder_init (&builder_data, G_VARIANT_TYPE ("aa{sv}"));
-		g_variant_builder_init (&builder_legacy, G_VARIANT_TYPE ("a(ayuayu)"));
-
-		nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, self, &route) {
-			GVariantBuilder route_builder;
-
-			nm_assert (_route_valid (route));
-
-			if (route->type_coerced != nm_platform_route_type_coerce (RTN_UNICAST))
-				continue;
-
-			g_variant_builder_init (&route_builder, G_VARIANT_TYPE ("a{sv}"));
-			g_variant_builder_add (&route_builder, "{sv}",
-			                       "dest",
-			                       g_variant_new_string (_nm_utils_inet6_ntop (&route->network, sbuf)));
-			g_variant_builder_add (&route_builder, "{sv}",
-			                       "prefix",
-			                       g_variant_new_uint32 (route->plen));
-			if (!IN6_IS_ADDR_UNSPECIFIED (&route->gateway)) {
-				g_variant_builder_add (&route_builder, "{sv}",
-				                       "next-hop",
-				                       g_variant_new_string (_nm_utils_inet6_ntop (&route->gateway, sbuf)));
-			}
-
-			g_variant_builder_add (&route_builder, "{sv}",
-			                       "metric",
-			                       g_variant_new_uint32 (route->metric));
-
-			if (!nm_platform_route_table_is_main (route->table_coerced)) {
-				g_variant_builder_add (&route_builder, "{sv}",
-				                       "table",
-				                       g_variant_new_uint32 (nm_platform_route_table_uncoerce (route->table_coerced, TRUE)));
-			}
-
-			g_variant_builder_add (&builder_data, "a{sv}", &route_builder);
-
-			/* legacy versions of nm_ip6_route_set_prefix() in libnm-util assert that the
-			 * plen is positive. Skip the default routes not to break older clients. */
-			if (   nm_platform_route_table_is_main (route->table_coerced)
-			    && !NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
-				g_variant_builder_add (&builder_legacy, "(@ayu@ayu)",
-				                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-				                                                  &route->network, 16, 1),
-				                       (guint32) route->plen,
-				                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
-				                                                  &route->gateway, 16, 1),
-				                       (guint32) route->metric);
-			}
+		if (!priv->route_data_variant) {
+			nm_utils_ip6_routes_to_dbus (nm_ip6_config_lookup_routes (self),
+			                             &priv->route_data_variant,
+			                             &priv->routes_variant);
+			g_variant_ref_sink (priv->route_data_variant);
+			g_variant_ref_sink (priv->routes_variant);
 		}
-		priv->route_data_variant = g_variant_ref_sink (g_variant_builder_end (&builder_data));
-		priv->routes_variant = g_variant_ref_sink (g_variant_builder_end (&builder_legacy));
-out_routes_cached:
+
 		g_value_set_variant (value,
-		                     prop_id == PROP_ROUTE_DATA ?
-		                     priv->route_data_variant :
-		                     priv->routes_variant);
+		                       prop_id == PROP_ROUTE_DATA
+		                     ? priv->route_data_variant
+		                     : priv->routes_variant);
 		break;
 	case PROP_GATEWAY:
 		if (priv->best_default_route) {

@@ -1365,4 +1365,338 @@ nm_utils_ip_route_attribute_to_platform (int addr_family,
 #undef GET_ATTR
 }
 
+/*****************************************************************************/
 
+static int
+_addresses_sort_cmp_4 (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	return nm_platform_ip4_address_pretty_sort_cmp (NMP_OBJECT_CAST_IP4_ADDRESS (*((const NMPObject **) a)),
+	                                                NMP_OBJECT_CAST_IP4_ADDRESS (*((const NMPObject **) b)));
+}
+
+static int
+_addresses_sort_cmp_prop_6 (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	return nm_platform_ip6_address_pretty_sort_cmp (NMP_OBJECT_CAST_IP6_ADDRESS (*((const NMPObject **) a)),
+	                                                NMP_OBJECT_CAST_IP6_ADDRESS (*((const NMPObject **) b)),
+	                                                (((NMSettingIP6ConfigPrivacy) GPOINTER_TO_INT (user_data)) == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR));
+}
+
+void
+nm_utils_ip4_addresses_to_dbus (const NMDedupMultiHeadEntry *head_entry,
+                                const NMPObject *best_default_route,
+                                GVariant **out_address_data,
+                                GVariant **out_addresses)
+{
+	char addr_str[NM_UTILS_INET_ADDRSTRLEN];
+	GVariantBuilder builder_data;
+	GVariantBuilder builder_legacy;
+	guint i;
+
+	if (out_address_data)
+		g_variant_builder_init (&builder_data, G_VARIANT_TYPE ("aa{sv}"));
+	if (out_addresses)
+		g_variant_builder_init (&builder_legacy, G_VARIANT_TYPE ("aau"));
+
+	if (head_entry) {
+		gs_free const NMPObject **addresses = NULL;
+		guint naddr;
+
+		addresses = (const NMPObject **) nm_dedup_multi_objs_to_array_head (head_entry, NULL, NULL, &naddr);
+
+		nm_assert (addresses && naddr);
+
+		g_qsort_with_data (addresses,
+		                   naddr,
+		                   sizeof (addresses[0]),
+		                   _addresses_sort_cmp_4,
+		                   NULL);
+
+		/* Build address data variant */
+		for (i = 0; i < naddr; i++) {
+			const NMPlatformIP4Address *address = NMP_OBJECT_CAST_IP4_ADDRESS (addresses[i]);
+
+			if (out_address_data) {
+				GVariantBuilder addr_builder;
+
+				g_variant_builder_init (&addr_builder, G_VARIANT_TYPE ("a{sv}"));
+				g_variant_builder_add (&addr_builder, "{sv}",
+				                       "address",
+				                       g_variant_new_string (_nm_utils_inet4_ntop (address->address, addr_str)));
+				g_variant_builder_add (&addr_builder, "{sv}",
+				                       "prefix",
+				                       g_variant_new_uint32 (address->plen));
+				if (address->peer_address != address->address) {
+					g_variant_builder_add (&addr_builder, "{sv}",
+					                       "peer",
+					                       g_variant_new_string (_nm_utils_inet4_ntop (address->peer_address, addr_str)));
+				}
+
+				if (*address->label) {
+					g_variant_builder_add (&addr_builder, "{sv}",
+					                       NM_IP_ADDRESS_ATTRIBUTE_LABEL,
+					                       g_variant_new_string (address->label));
+				}
+
+				g_variant_builder_add (&builder_data, "a{sv}", &addr_builder);
+			}
+
+			if (out_addresses) {
+				const guint32 dbus_addr[3] = {
+				    address->address,
+				    address->plen,
+				      (   i == 0
+				       && best_default_route)
+				    ? NMP_OBJECT_CAST_IP4_ROUTE (best_default_route)->gateway
+				    : (guint32) 0,
+				};
+
+				g_variant_builder_add (&builder_legacy, "@au",
+				                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
+				                                                  dbus_addr, 3, sizeof (guint32)));
+			}
+		}
+	}
+
+	NM_SET_OUT (out_address_data, g_variant_builder_end (&builder_data));
+	NM_SET_OUT (out_addresses, g_variant_builder_end (&builder_legacy));
+}
+
+void
+nm_utils_ip6_addresses_to_dbus (const NMDedupMultiHeadEntry *head_entry,
+                                NMSettingIP6ConfigPrivacy ipv6_privacy,
+                                const NMPObject *best_default_route,
+                                GVariant **out_address_data,
+                                GVariant **out_addresses)
+{
+	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+	GVariantBuilder builder_data;
+	GVariantBuilder builder_legacy;
+
+	if (out_address_data)
+		g_variant_builder_init (&builder_data, G_VARIANT_TYPE ("aa{sv}"));
+	if (out_addresses)
+		g_variant_builder_init (&builder_legacy, G_VARIANT_TYPE ("a(ayuay)"));
+
+	if (head_entry) {
+		gs_free const NMPObject **addresses = NULL;
+		guint naddr;
+		guint i;
+
+		addresses = (const NMPObject **) nm_dedup_multi_objs_to_array_head (head_entry, NULL, NULL, &naddr);
+
+		nm_assert (addresses && naddr);
+
+		g_qsort_with_data (addresses,
+		                   naddr,
+		                   sizeof (addresses[0]),
+		                   _addresses_sort_cmp_prop_6,
+		                   GINT_TO_POINTER (ipv6_privacy));
+
+		for (i = 0; i < naddr; i++) {
+			const NMPlatformIP6Address *address = NMP_OBJECT_CAST_IP6_ADDRESS (addresses[i]);
+
+			if (out_address_data) {
+				GVariantBuilder addr_builder;
+				g_variant_builder_init (&addr_builder, G_VARIANT_TYPE ("a{sv}"));
+				g_variant_builder_add (&addr_builder, "{sv}",
+				                       "address",
+				                       g_variant_new_string (_nm_utils_inet6_ntop (&address->address, sbuf)));
+				g_variant_builder_add (&addr_builder, "{sv}",
+				                       "prefix",
+				                       g_variant_new_uint32 (address->plen));
+				if (   !IN6_IS_ADDR_UNSPECIFIED (&address->peer_address)
+				    && !IN6_ARE_ADDR_EQUAL (&address->peer_address, &address->address)) {
+					g_variant_builder_add (&addr_builder, "{sv}",
+					                       "peer",
+					                       g_variant_new_string (_nm_utils_inet6_ntop (&address->peer_address, sbuf)));
+				}
+
+				g_variant_builder_add (&builder_data, "a{sv}", &addr_builder);
+			}
+
+			if (out_addresses) {
+				g_variant_builder_add (&builder_legacy, "(@ayu@ay)",
+				                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+				                                                  &address->address, 16, 1),
+				                       address->plen,
+				                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+				                                                    (   i == 0
+				                                                     && best_default_route)
+				                                                  ? &NMP_OBJECT_CAST_IP6_ROUTE (best_default_route)->gateway
+				                                                  : &in6addr_any,
+				                                                  16, 1));
+			}
+		}
+	}
+
+	NM_SET_OUT (out_address_data, g_variant_builder_end (&builder_data));
+	NM_SET_OUT (out_addresses, g_variant_builder_end (&builder_legacy));
+}
+
+static gboolean
+_route_valid_4 (const NMPlatformIP4Route *r)
+{
+	return    r
+	       && r->plen <= 32
+	       && r->network == nm_utils_ip4_address_clear_host_address (r->network, r->plen);
+}
+
+static gboolean
+_route_valid_6 (const NMPlatformIP6Route *r)
+{
+	struct in6_addr n;
+
+	return    r
+	       && r->plen <= 128
+	       && (memcmp (&r->network,
+	                   nm_utils_ip6_address_clear_host_address (&n, &r->network, r->plen),
+	                   sizeof (n)) == 0);
+}
+
+void
+nm_utils_ip4_routes_to_dbus (const NMDedupMultiHeadEntry *head_entry,
+                             GVariant **out_route_data,
+                             GVariant **out_routes)
+{
+	NMDedupMultiIter iter;
+	const NMPlatformIP4Route *route;
+	GVariantBuilder builder_data;
+	GVariantBuilder builder_legacy;
+	char addr_str[NM_UTILS_INET_ADDRSTRLEN];
+
+	if (out_route_data)
+		g_variant_builder_init (&builder_data, G_VARIANT_TYPE ("aa{sv}"));
+	if (out_routes)
+		g_variant_builder_init (&builder_legacy, G_VARIANT_TYPE ("aau"));
+
+	nm_dedup_multi_iter_init (&iter, head_entry);
+	while (nm_platform_dedup_multi_iter_next_ip4_route (&iter, &route)) {
+		GVariantBuilder route_builder;
+
+		nm_assert (_route_valid_4 (route));
+
+		if (route->type_coerced != nm_platform_route_type_coerce (RTN_UNICAST))
+			continue;
+
+		if (out_route_data) {
+			g_variant_builder_init (&route_builder, G_VARIANT_TYPE ("a{sv}"));
+			g_variant_builder_add (&route_builder, "{sv}",
+			                       "dest",
+			                       g_variant_new_string (_nm_utils_inet4_ntop (route->network, addr_str)));
+			g_variant_builder_add (&route_builder, "{sv}",
+			                       "prefix",
+			                       g_variant_new_uint32 (route->plen));
+			if (route->gateway) {
+				g_variant_builder_add (&route_builder, "{sv}",
+				                       "next-hop",
+				                       g_variant_new_string (_nm_utils_inet4_ntop (route->gateway, addr_str)));
+			}
+			g_variant_builder_add (&route_builder, "{sv}",
+			                       "metric",
+			                       g_variant_new_uint32 (route->metric));
+
+			if (!nm_platform_route_table_is_main (route->table_coerced)) {
+				g_variant_builder_add (&route_builder, "{sv}",
+				                       "table",
+				                       g_variant_new_uint32 (nm_platform_route_table_uncoerce (route->table_coerced, TRUE)));
+			}
+
+			g_variant_builder_add (&builder_data, "a{sv}", &route_builder);
+		}
+
+		if (out_routes) {
+			/* legacy versions of nm_ip4_route_set_prefix() in libnm-util assert that the
+			 * plen is positive. Skip the default routes not to break older clients. */
+			if (   nm_platform_route_table_is_main (route->table_coerced)
+			    && !NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
+				const guint32 dbus_route[4] = {
+				    route->network,
+				    route->plen,
+				    route->gateway,
+				    route->metric,
+				};
+
+				g_variant_builder_add (&builder_legacy, "@au",
+				                       g_variant_new_fixed_array (G_VARIANT_TYPE_UINT32,
+				                                                  dbus_route, 4, sizeof (guint32)));
+			}
+		}
+	}
+
+	NM_SET_OUT (out_route_data, g_variant_builder_end (&builder_data));
+	NM_SET_OUT (out_routes, g_variant_builder_end (&builder_legacy));
+}
+
+void
+nm_utils_ip6_routes_to_dbus (const NMDedupMultiHeadEntry *head_entry,
+                             GVariant **out_route_data,
+                             GVariant **out_routes)
+{
+	NMDedupMultiIter iter;
+	char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+	const NMPlatformIP6Route *route;
+	GVariantBuilder builder_data;
+	GVariantBuilder builder_legacy;
+
+	if (out_route_data)
+		g_variant_builder_init (&builder_data, G_VARIANT_TYPE ("aa{sv}"));
+	if (out_routes)
+		g_variant_builder_init (&builder_legacy, G_VARIANT_TYPE ("a(ayuayu)"));
+
+	nm_dedup_multi_iter_init (&iter, head_entry);
+	while (nm_platform_dedup_multi_iter_next_ip6_route (&iter, &route)) {
+
+		nm_assert (_route_valid_6 (route));
+
+		if (route->type_coerced != nm_platform_route_type_coerce (RTN_UNICAST))
+			continue;
+
+		if (out_route_data) {
+			GVariantBuilder route_builder;
+
+			g_variant_builder_init (&route_builder, G_VARIANT_TYPE ("a{sv}"));
+			g_variant_builder_add (&route_builder, "{sv}",
+			                       "dest",
+			                       g_variant_new_string (_nm_utils_inet6_ntop (&route->network, sbuf)));
+			g_variant_builder_add (&route_builder, "{sv}",
+			                       "prefix",
+			                       g_variant_new_uint32 (route->plen));
+			if (!IN6_IS_ADDR_UNSPECIFIED (&route->gateway)) {
+				g_variant_builder_add (&route_builder, "{sv}",
+				                       "next-hop",
+				                       g_variant_new_string (_nm_utils_inet6_ntop (&route->gateway, sbuf)));
+			}
+
+			g_variant_builder_add (&route_builder, "{sv}",
+			                       "metric",
+			                       g_variant_new_uint32 (route->metric));
+
+			if (!nm_platform_route_table_is_main (route->table_coerced)) {
+				g_variant_builder_add (&route_builder, "{sv}",
+				                       "table",
+				                       g_variant_new_uint32 (nm_platform_route_table_uncoerce (route->table_coerced, TRUE)));
+			}
+
+			g_variant_builder_add (&builder_data, "a{sv}", &route_builder);
+		}
+
+		if (out_routes) {
+			/* legacy versions of nm_ip6_route_set_prefix() in libnm-util assert that the
+			 * plen is positive. Skip the default routes not to break older clients. */
+			if (   nm_platform_route_table_is_main (route->table_coerced)
+			    && !NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route)) {
+				g_variant_builder_add (&builder_legacy, "(@ayu@ayu)",
+				                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+				                                                  &route->network, 16, 1),
+				                       (guint32) route->plen,
+				                       g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE,
+				                                                  &route->gateway, 16, 1),
+				                       (guint32) route->metric);
+			}
+		}
+	}
+
+	NM_SET_OUT (out_route_data, g_variant_builder_end (&builder_data));
+	NM_SET_OUT (out_routes, g_variant_builder_end (&builder_legacy));
+}

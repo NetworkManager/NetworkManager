@@ -8,8 +8,9 @@
 #define __NETWORKMANAGER_UTILS_H__
 
 #include "nm-core-utils.h"
-
+#include "nm-glib-aux/nm-dedup-multi.h"
 #include "nm-setting-ip-config.h"
+#include "nm-setting-ip6-config.h"
 #include "platform/nm-platform.h"
 
 /*****************************************************************************/
@@ -145,5 +146,24 @@ void nm_utils_ip_route_attribute_to_platform (int addr_family,
                                               NMIPRoute *s_route,
                                               NMPlatformIPRoute *r,
                                               guint32 route_table);
+
+void nm_utils_ip4_addresses_to_dbus (const NMDedupMultiHeadEntry *head_entry,
+                                     const NMPObject *best_default_route,
+                                     GVariant **out_address_data,
+                                     GVariant **out_addresses);
+
+void nm_utils_ip6_addresses_to_dbus (const NMDedupMultiHeadEntry *head_entry,
+                                     NMSettingIP6ConfigPrivacy ipv6_privacy,
+                                     const NMPObject *best_default_route,
+                                     GVariant **out_address_data,
+                                     GVariant **out_addresses);
+
+void nm_utils_ip4_routes_to_dbus (const NMDedupMultiHeadEntry *head_entry,
+                                  GVariant **out_route_data,
+                                  GVariant **out_routes);
+
+void nm_utils_ip6_routes_to_dbus (const NMDedupMultiHeadEntry *head_entry,
+                                  GVariant **out_route_data,
+                                  GVariant **out_routes);
 
 #endif /* __NETWORKMANAGER_UTILS_H__ */
