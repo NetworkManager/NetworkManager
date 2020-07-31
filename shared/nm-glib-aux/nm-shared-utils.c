@@ -1382,6 +1382,15 @@ nm_strcmp0_p_with_data (gconstpointer a, gconstpointer b, gpointer user_data)
 }
 
 int
+nm_strcmp_ascii_case_with_data (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	const char *s1 = a;
+	const char *s2 = b;
+
+	return g_ascii_strcasecmp (s1, s2);
+}
+
+int
 nm_cmp_uint32_p_with_data (gconstpointer p_a, gconstpointer p_b, gpointer user_data)
 {
 	const guint32 a = *((const guint32 *) p_a);
