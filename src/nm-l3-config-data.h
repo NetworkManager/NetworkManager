@@ -66,7 +66,7 @@ typedef enum {
 typedef struct _NML3ConfigData NML3ConfigData;
 
 typedef struct {
-	const NML3ConfigData *l3cfg;
+	const NML3ConfigData *l3cd;
 	NML3ConfigMergeFlags merge_flags;
 	union {
 		struct {
@@ -84,11 +84,11 @@ const NML3ConfigData *nm_l3_config_data_ref_and_seal (const NML3ConfigData *self
 const NML3ConfigData *nm_l3_config_data_seal (const NML3ConfigData *self);
 void nm_l3_config_data_unref (const NML3ConfigData *self);
 
-NM_AUTO_DEFINE_FCN0 (const NML3ConfigData *, _nm_auto_unref_l3cfg, nm_l3_config_data_unref);
-#define nm_auto_unref_l3cfg nm_auto (_nm_auto_unref_l3cfg)
+NM_AUTO_DEFINE_FCN0 (const NML3ConfigData *, _nm_auto_unref_l3cd, nm_l3_config_data_unref);
+#define nm_auto_unref_l3cd nm_auto (_nm_auto_unref_l3cd)
 
-NM_AUTO_DEFINE_FCN0 (NML3ConfigData *, _nm_auto_unref_l3cfg_init, nm_l3_config_data_unref);
-#define nm_auto_unref_l3cfg_init nm_auto (_nm_auto_unref_l3cfg_init)
+NM_AUTO_DEFINE_FCN0 (NML3ConfigData *, _nm_auto_unref_l3cd_init, nm_l3_config_data_unref);
+#define nm_auto_unref_l3cd_init nm_auto (_nm_auto_unref_l3cd_init)
 
 gboolean nm_l3_config_data_is_sealed (const NML3ConfigData *self);
 

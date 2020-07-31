@@ -1951,7 +1951,7 @@ nm_l3_config_data_new_combined (NMDedupMultiIndex *multi_idx,
 
 	for (i = 0; i < merge_infos_len; i++) {
 		_init_merge (self,
-		             merge_infos[i]->l3cfg,
+		             merge_infos[i]->l3cd,
 		             merge_infos[i]->merge_flags,
 		             merge_infos[i]->default_route_penalty_x);
 	}
