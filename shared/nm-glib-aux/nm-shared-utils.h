@@ -1821,6 +1821,23 @@ nm_strv_ptrarray_ensure (GPtrArray **p_arr)
 	return *p_arr;
 }
 
+static inline const char *const*
+nm_strv_ptrarray_get_unsafe (GPtrArray *arr,
+                             guint *out_len)
+{
+	/* warning: the GPtrArray is not NULL terminated. So, it
+	 * isn't really a strv array (sorry the misnomer). That's why
+	 * the function is potentially "unsafe" and you must provide a
+	 * out_len parameter. */
+	if (   !arr
+	    || arr->len == 0) {
+		*out_len = 0;
+		return NULL;
+	}
+	*out_len = arr->len;
+	return (const char *const*) arr->pdata;
+}
+
 static inline GPtrArray *
 nm_strv_ptrarray_clone (const GPtrArray *src, gboolean null_if_empty)
 {
