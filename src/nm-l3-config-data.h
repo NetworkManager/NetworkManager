@@ -63,8 +63,6 @@ typedef enum {
 
 /*****************************************************************************/
 
-typedef struct _NML3ConfigData NML3ConfigData;
-
 typedef struct {
 	const NML3ConfigData *l3cd;
 	NML3ConfigMergeFlags merge_flags;
