@@ -557,18 +557,15 @@ _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX (NMPObjectType obj_type)
 #define NMP_OBJECT_CAST_LNK_WIREGUARD(obj) _NMP_OBJECT_CAST (obj, lnk_wireguard, NMP_OBJECT_TYPE_LNK_WIREGUARD)
 
 static inline int
+NMP_OBJECT_TYPE_TO_ADDR_FAMILY (NMPObjectType obj_type)
+{
+	return nmp_class_from_type (obj_type)->addr_family;
+}
+
+static inline int
 NMP_OBJECT_GET_ADDR_FAMILY (const NMPObject *obj)
 {
-	switch (NMP_OBJECT_GET_TYPE (obj)) {
-	case NMP_OBJECT_TYPE_IP4_ADDRESS:
-	case NMP_OBJECT_TYPE_IP4_ROUTE:
-		return AF_INET;
-	case NMP_OBJECT_TYPE_IP6_ADDRESS:
-	case NMP_OBJECT_TYPE_IP6_ROUTE:
-		return AF_INET6;
-	default:
-		return AF_UNSPEC;
-	}
+	return NMP_OBJECT_GET_CLASS (obj)->addr_family;
 }
 
 static inline const NMPObject *
@@ -673,6 +670,9 @@ nmp_object_id_equal (const NMPObject *obj1, const NMPObject *obj2)
 {
 	return nmp_object_id_cmp (obj1, obj2) == 0;
 }
+
+guint nmp_object_indirect_id_hash (gconstpointer a);
+gboolean nmp_object_indirect_id_equal (gconstpointer a, gconstpointer b);
 
 gboolean nmp_object_is_alive (const NMPObject *obj);
 gboolean nmp_object_is_visible (const NMPObject *obj);

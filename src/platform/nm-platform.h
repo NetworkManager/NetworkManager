@@ -1839,14 +1839,60 @@ gboolean nm_platform_ip6_address_add (NMPlatform *self,
                                       guint32 flags);
 gboolean nm_platform_ip4_address_delete (NMPlatform *self, int ifindex, in_addr_t address, guint8 plen, in_addr_t peer_address);
 gboolean nm_platform_ip6_address_delete (NMPlatform *self, int ifindex, struct in6_addr address, guint8 plen);
-gboolean nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, GPtrArray *known_addresses);
-gboolean nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, GPtrArray *known_addresses, gboolean full_sync);
+
+gboolean nm_platform_ip_address_sync (NMPlatform *self,
+                                      int addr_family,
+                                      int ifindex,
+                                      GPtrArray *known_addresses,
+                                      GPtrArray *addresses_prune);
+
+GPtrArray *nm_platform_ip_address_get_prune_list (NMPlatform *self,
+                                                 int addr_family,
+                                                 int ifindex,
+                                                 gboolean exclude_ipv6_temporary_addrs);
+
+static inline gboolean
+_nm_platform_ip_address_sync (NMPlatform *self, int addr_family, int ifindex, GPtrArray *known_addresses, gboolean full_sync)
+{
+	gs_unref_ptrarray GPtrArray *addresses_prune = NULL;
+
+	addresses_prune = nm_platform_ip_address_get_prune_list (self,
+	                                                         addr_family,
+	                                                         ifindex,
+	                                                         !full_sync);
+	return nm_platform_ip_address_sync (self, addr_family, ifindex, known_addresses, addresses_prune);
+}
+
+static inline gboolean
+nm_platform_ip4_address_sync (NMPlatform *self, int ifindex, GPtrArray *known_addresses)
+{
+	return _nm_platform_ip_address_sync (self, AF_INET, ifindex, known_addresses, TRUE);
+}
+
+static inline gboolean
+nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, GPtrArray *known_addresses, gboolean full_sync)
+{
+	return _nm_platform_ip_address_sync (self, AF_INET6, ifindex, known_addresses, full_sync);
+}
+
 gboolean nm_platform_ip_address_flush (NMPlatform *self,
                                        int addr_family,
                                        int ifindex);
 
 void nm_platform_ip_route_normalize (int addr_family,
                                      NMPlatformIPRoute *route);
+
+static inline gconstpointer
+nm_platform_ip_route_get_gateway (int addr_family,
+                                  const NMPlatformIPRoute *route)
+{
+	nm_assert_addr_family (addr_family);
+	nm_assert (route);
+
+	if (NM_IS_IPv4 (addr_family))
+		return &((NMPlatformIP4Route *) route)->gateway;
+	return &((NMPlatformIP6Route *) route)->gateway;
+}
 
 int nm_platform_ip_route_add (NMPlatform *self,
                               NMPNlmFlags flags,

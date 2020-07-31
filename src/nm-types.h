@@ -205,10 +205,15 @@ nm_link_type_supports_slaves (NMLinkType link_type)
 typedef enum {
 	NMP_OBJECT_TYPE_UNKNOWN,
 	NMP_OBJECT_TYPE_LINK,
+
+#define NMP_OBJECT_TYPE_IP_ADDRESS(is_ipv4) ((is_ipv4) ? NMP_OBJECT_TYPE_IP4_ADDRESS : NMP_OBJECT_TYPE_IP6_ADDRESS)
 	NMP_OBJECT_TYPE_IP4_ADDRESS,
 	NMP_OBJECT_TYPE_IP6_ADDRESS,
+
+#define NMP_OBJECT_TYPE_IP_ROUTE(is_ipv4) ((is_ipv4) ? NMP_OBJECT_TYPE_IP4_ROUTE : NMP_OBJECT_TYPE_IP6_ROUTE)
 	NMP_OBJECT_TYPE_IP4_ROUTE,
 	NMP_OBJECT_TYPE_IP6_ROUTE,
+
 	NMP_OBJECT_TYPE_ROUTING_RULE,
 
 	NMP_OBJECT_TYPE_QDISC,
@@ -267,6 +272,7 @@ typedef enum {
 
 /**
  * NMIPRouteTableSyncMode:
+ * @NM_IP_ROUTE_TABLE_SYNC_MODE_NONE: indicate an invalid setting.
  * @NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN: only the main table is synced. For all
  *   other tables, NM won't delete any extra routes.
  * @NM_IP_ROUTE_TABLE_SYNC_MODE_FULL: NM will sync all tables, except the
@@ -275,6 +281,7 @@ typedef enum {
  *   local table (255).
  */
 typedef enum {
+	NM_IP_ROUTE_TABLE_SYNC_MODE_NONE        = 0,
 	NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN        = 1,
 	NM_IP_ROUTE_TABLE_SYNC_MODE_FULL        = 2,
 	NM_IP_ROUTE_TABLE_SYNC_MODE_ALL         = 3,

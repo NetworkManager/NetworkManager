@@ -193,6 +193,27 @@
 	                        ((_A) > (_B)) ? (_A) : (_B),                            \
 	                        ((void)  0)))
 
+/* Determine whether @x is a power of two (@x being an integer type).
+ * Basically, this returns TRUE, if @x has exactly one bit set.
+ * For negative values and zero, this always returns FALSE. */
+#define nm_utils_is_power_of_two(x) \
+	({ \
+		typeof(x) _x2 = (x); \
+		const typeof(_x2) _X_0 = ((typeof(_x2)) 0); \
+		const typeof(_x2) _X_1 = ((typeof(_x2)) 1); \
+		\
+		(    (_x2 > _X_0) \
+		 && ((_x2 & (_x2 - _X_1)) == _X_0)); \
+	})
+
+#define nm_utils_is_power_of_two_or_zero(x) \
+	({ \
+		typeof (x) _x1 = (x); \
+		\
+		(   (_x1 == 0) \
+		 || nm_utils_is_power_of_two (_x1)); \
+	})
+
 /*****************************************************************************/
 
 #define NM_SWAP(a, b) \

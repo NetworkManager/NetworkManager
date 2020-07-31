@@ -262,6 +262,12 @@ gboolean nm_utils_ipaddr_is_normalized (int addr_family,
             return (_a < _b) ? -1 : 1; \
     } G_STMT_END
 
+#define NM_CMP_DIRECT_UNSAFE(a, b) \
+    G_STMT_START { \
+        if ((a) != (b)) \
+            return ((a) < (b)) ? -1 : 1; \
+    } G_STMT_END
+
 /* In the general case, direct pointer comparison is undefined behavior in C.
  * Avoid that by casting pointers to void* and then to uintptr_t. This comparison
  * is not really meaningful, except that it provides some kind of stable sort order
@@ -1547,6 +1553,12 @@ nm_g_ptr_array_len (const GPtrArray *arr)
 	return arr ? arr->len : 0u;
 }
 
+static inline gpointer *
+nm_g_ptr_array_pdata (const GPtrArray *arr)
+{
+	return arr ? arr->pdata : NULL;
+}
+
 GPtrArray *_nm_g_ptr_array_copy (GPtrArray *array,
                                  GCopyFunc func,
                                  gpointer user_data,
@@ -1871,6 +1883,20 @@ nm_strv_ptrarray_contains (const GPtrArray *strv,
                            const char *str)
 {
 	return nm_strv_ptrarray_find_first (strv, str) >= 0;
+}
+
+static inline int
+nm_strv_ptrarray_cmp (const GPtrArray *a,
+                      const GPtrArray *b)
+{
+	/* _nm_utils_strv_cmp_n() will treat NULL and empty arrays the same.
+	 * That means, an empty strv array can both be represented by NULL
+	 * and an array of length zero.
+	 * If you need to distinguish between these case, do that yourself. */
+	return _nm_utils_strv_cmp_n ((const char *const*) nm_g_ptr_array_pdata (a),
+	                             nm_g_ptr_array_len (a),
+	                             (const char *const*) nm_g_ptr_array_pdata (b),
+	                             nm_g_ptr_array_len (b));
 }
 
 /*****************************************************************************/

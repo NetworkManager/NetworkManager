@@ -113,6 +113,22 @@ nm_utils_ip4_address_same_prefix_cmp (in_addr_t addr_a, in_addr_t addr_b, guint8
 
 int nm_utils_ip6_address_same_prefix_cmp (const struct in6_addr *addr_a, const struct in6_addr *addr_b, guint8 plen);
 
+static inline int
+nm_utils_ip_address_same_prefix_cmp (int addr_family, gconstpointer addr_a, gconstpointer addr_b, guint8 plen)
+{
+	nm_assert_addr_family (addr_family);
+
+	NM_CMP_SELF (addr_a, addr_b);
+
+	if (NM_IS_IPv4 (addr_family)) {
+		return nm_utils_ip4_address_same_prefix_cmp (*((const in_addr_t *) addr_a),
+		                                             *((const in_addr_t *) addr_b),
+		                                             plen);
+	}
+
+	return nm_utils_ip6_address_same_prefix_cmp (addr_a, addr_b, plen);
+}
+
 static inline gboolean
 nm_utils_ip4_address_same_prefix (in_addr_t addr_a, in_addr_t addr_b, guint8 plen)
 {
@@ -123,6 +139,12 @@ static inline gboolean
 nm_utils_ip6_address_same_prefix (const struct in6_addr *addr_a, const struct in6_addr *addr_b, guint8 plen)
 {
 	return nm_utils_ip6_address_same_prefix_cmp (addr_a, addr_b, plen) == 0;
+}
+
+static inline gboolean
+nm_utils_ip_address_same_prefix (int addr_family, gconstpointer addr_a, gconstpointer addr_b, guint8 plen)
+{
+	return nm_utils_ip_address_same_prefix_cmp (addr_family, addr_a, addr_b, plen) == 0;
 }
 
 #define NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX(a, b, plen) \
@@ -455,6 +477,13 @@ static inline gboolean
 nm_utils_ip4_address_is_link_local (in_addr_t addr)
 {
 	return (addr & NM_IPV4LL_NETMASK) == NM_IPV4LL_NETWORK;
+}
+
+static inline gboolean
+nm_utils_ip4_address_is_zeronet (in_addr_t network)
+{
+	/* Same as ipv4_is_zeronet() from kernel's include/linux/in.h. */
+	return (network & htonl (0xFF000000u)) == htonl (0x00000000u);
 }
 
 /*****************************************************************************/

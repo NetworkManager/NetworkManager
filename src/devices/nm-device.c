@@ -7747,9 +7747,6 @@ ipv4ll_get_ip4_config (NMDevice *self, guint32 lla)
 	return config;
 }
 
-#define IPV4LL_NETWORK (htonl (0xA9FE0000L))
-#define IPV4LL_NETMASK (htonl (0xFFFF0000L))
-
 static void
 nm_device_handle_ipv4ll_event (sd_ipv4ll *ll, int event, void *data)
 {
@@ -7774,7 +7771,7 @@ nm_device_handle_ipv4ll_event (sd_ipv4ll *ll, int event, void *data)
 			return;
 		}
 
-		if ((address.s_addr & IPV4LL_NETMASK) != IPV4LL_NETWORK) {
+		if (!nm_utils_ip4_address_is_link_local (address.s_addr)) {
 			_LOGE (LOGD_AUTOIP4, "invalid address %08x received (not link-local).", address.s_addr);
 			nm_device_ip_method_failed (self, AF_INET, NM_DEVICE_STATE_REASON_AUTOIP_ERROR);
 			return;
