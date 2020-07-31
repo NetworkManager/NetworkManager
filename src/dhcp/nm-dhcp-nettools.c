@@ -14,7 +14,6 @@
 #include <net/if_arp.h>
 
 #include "nm-sd-adapt-shared.h"
-#include "hostname-util.h"
 
 #include "nm-glib-aux/nm-dedup-multi.h"
 #include "nm-std-aux/unaligned.h"
@@ -747,7 +746,7 @@ lease_parse_hostname (NDhcp4ClientLease *lease,
 
 	str = g_string_new_len ((char *)data, n_data);
 
-	if (is_localhost(str->str))
+	if (nm_utils_is_localhost (str->str))
 		return;
 
 	nm_dhcp_option_add_option (options,
@@ -778,7 +777,7 @@ lease_parse_domainname (NDhcp4ClientLease *lease,
 	nm_gstring_prepare (&str);
 
 	for (char **d = domains; *d; d++) {
-		if (is_localhost(*d))
+		if (nm_utils_is_localhost (*d))
 			return;
 
 		g_string_append (nm_gstring_add_space_delimiter (str), *d);
