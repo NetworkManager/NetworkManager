@@ -910,6 +910,37 @@ test_in_strset_ascii_case (void)
 
 /*****************************************************************************/
 
+static void
+test_is_specific_hostname (void)
+{
+	g_assert (!nm_utils_is_specific_hostname (NULL));
+	g_assert (!nm_utils_is_specific_hostname (""));
+	g_assert (!nm_utils_is_specific_hostname ("(none)"));
+	g_assert (nm_utils_is_specific_hostname ("(NONE)"));
+
+	g_assert (!nm_utils_is_specific_hostname ("localhost"));
+	g_assert (!nm_utils_is_specific_hostname ("lOcalHost"));
+	g_assert (!nm_utils_is_specific_hostname ("LOCALHOST"));
+
+	g_assert (!nm_utils_is_specific_hostname ("LOCALHOST.localdomain"));
+
+	g_assert (nm_utils_is_specific_hostname ("xlocalhost"));
+	g_assert (nm_utils_is_specific_hostname ("lOcalHxost"));
+	g_assert (nm_utils_is_specific_hostname ("LOCALxHOST"));
+
+	g_assert (!nm_utils_is_specific_hostname ("foo.LOCALHOST"));
+	g_assert (!nm_utils_is_specific_hostname ("foo.LOCALHOsT6."));
+	g_assert (!nm_utils_is_specific_hostname ("foo.LOCALHOsT6.localdomain6"));
+	g_assert (!nm_utils_is_specific_hostname (".LOCALHOsT6.localdomain6"));
+	g_assert (!nm_utils_is_specific_hostname ("LOCALHOsT6.localdomain6"));
+	g_assert (!nm_utils_is_specific_hostname ("LOCALHOsT6.localdomain6."));
+	g_assert (nm_utils_is_specific_hostname ("LOCALHOsT6.localdomain."));
+
+	g_assert (nm_utils_is_specific_hostname (" "));
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -933,6 +964,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/general/test_nm_str_buf", test_nm_str_buf);
 	g_test_add_func ("/general/test_nm_utils_parse_next_line", test_nm_utils_parse_next_line);
 	g_test_add_func ("/general/test_in_strset_ascii_case", test_in_strset_ascii_case);
+	g_test_add_func ("/general/test_is_specific_hostname", test_is_specific_hostname);
 
 	return g_test_run ();
 }

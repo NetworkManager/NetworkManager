@@ -2195,4 +2195,10 @@ char *_nm_utils_format_variant_attributes (GHashTable *attributes,
                                            char attr_separator,
                                            char key_value_separator);
 
+/*****************************************************************************/
+
+gboolean nm_utils_is_localhost (const char *name);
+
+gboolean nm_utils_is_specific_hostname (const char *name);
+
 #endif /* __NM_SHARED_UTILS_H__ */
