@@ -219,6 +219,20 @@ _garray_inaddr_find (GArray *arr,
 	return -1;
 }
 
+static gconstpointer
+_garray_inaddr_get (GArray *arr,
+                    guint *out_len)
+{
+	nm_assert (out_len);
+
+	if (!arr) {
+		*out_len = 0;
+		return NULL;
+	}
+	*out_len = arr->len;
+	return arr->data;
+}
+
 static gboolean
 _garray_inaddr_add (GArray **p_arr,
                     int addr_family,
@@ -546,8 +560,7 @@ nm_l3_config_data_lookup_index (const NML3ConfigData *self, NMPObjectType obj_ty
 	case NMP_OBJECT_TYPE_IP6_ROUTE:
 		return &self->idx_routes_6.parent;
 	default:
-		nm_assert_not_reached ();
-		return NULL;
+		return nm_assert_unreachable_val (NULL);
 	}
 }
 
@@ -573,6 +586,30 @@ nm_l3_config_data_lookup_obj (const NML3ConfigData *self,
 	return nm_dedup_multi_index_lookup_obj (self->multi_idx,
 	                                        idx,
 	                                        obj);
+}
+
+const NMPObject *
+nmtst_l3_config_data_get_obj_at (const NML3ConfigData *self,
+                                 NMPObjectType obj_type,
+                                 guint i)
+{
+	NMDedupMultiIter iter;
+	guint j;
+
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+
+	j = 0;
+	nm_dedup_multi_iter_init (&iter,
+	                          nm_l3_config_data_lookup_objs (self, obj_type));
+	while (nm_dedup_multi_iter_next (&iter)) {
+		nm_assert (iter.current);
+		nm_assert (NMP_OBJECT_GET_TYPE (iter.current->obj) == obj_type);
+		if (i == j)
+			return iter.current->obj;
+		j++;
+	}
+
+	g_return_val_if_reached (NULL);
 }
 
 /*****************************************************************************/
@@ -892,6 +929,16 @@ nm_l3_config_data_add_route_full (NML3ConfigData *self,
 	return changed;
 }
 
+const NMPObject *
+nm_l3_config_data_get_best_default_route (const NML3ConfigData *self,
+                                          int addr_family)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+	nm_assert_addr_family (addr_family);
+
+	return self->best_default_route_x[NM_IS_IPv4 (addr_family)];
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -924,6 +971,18 @@ _check_and_add_domain (GPtrArray **p_arr, const char *domain)
 	return TRUE;
 }
 
+gconstpointer
+nm_l3_config_data_get_nameservers (const NML3ConfigData *self,
+                                   int addr_family,
+                                   guint *out_len)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+	nm_assert_addr_family (addr_family);
+	nm_assert (out_len);
+
+	return _garray_inaddr_get (self->nameservers_x[NM_IS_IPv4 (addr_family)], out_len);
+}
+
 gboolean
 nm_l3_config_data_add_nameserver (NML3ConfigData *self,
                                   int addr_family,
@@ -936,6 +995,15 @@ nm_l3_config_data_add_nameserver (NML3ConfigData *self,
 	return _garray_inaddr_add (&self->nameservers_x[NM_IS_IPv4 (addr_family)],
 	                           addr_family,
 	                           nameserver);
+}
+
+const in_addr_t *
+nm_l3_config_data_get_wins (const NML3ConfigData *self,
+                            guint *out_len)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+
+	return _garray_inaddr_get (self->wins, out_len);
 }
 
 gboolean
@@ -978,6 +1046,18 @@ nm_l3_config_data_add_domain (NML3ConfigData *self,
 	nm_assert_addr_family (addr_family);
 
 	return _check_and_add_domain (&self->domains_x[NM_IS_IPv4 (addr_family)], domain);
+}
+
+const char *const*
+nm_l3_config_data_get_searches (const NML3ConfigData *self,
+                                int addr_family,
+                                guint *out_len)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+	nm_assert_addr_family (addr_family);
+	nm_assert (out_len);
+
+	return nm_strv_ptrarray_get_unsafe (self->searches_x[NM_IS_IPv4 (addr_family)], out_len);
 }
 
 gboolean
@@ -1089,6 +1169,14 @@ nm_l3_config_data_set_route_table_sync (NML3ConfigData *self,
 	return TRUE;
 }
 
+NMTernary
+nm_l3_config_data_get_metered (const NML3ConfigData *self)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+
+	return self->metered;
+}
+
 gboolean
 nm_l3_config_data_set_metered (NML3ConfigData *self,
                                NMTernary metered)
@@ -1102,18 +1190,24 @@ nm_l3_config_data_set_metered (NML3ConfigData *self,
 	return TRUE;
 }
 
+guint32
+nm_l3_config_data_get_mtu (const NML3ConfigData *self)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+
+	return self->mtu;
+}
+
 gboolean
 nm_l3_config_data_set_mtu (NML3ConfigData *self,
                            guint32 mtu)
 {
 	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
 
-	if (   self->mtu == mtu
-	    && NM_FLAGS_HAS (self->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_MTU))
+	if (self->mtu == mtu)
 		return FALSE;
 
 	self->mtu = mtu;
-	self->flags |= NM_L3_CONFIG_DAT_FLAGS_HAS_MTU;
 	return TRUE;
 }
 
@@ -1209,8 +1303,7 @@ nm_l3_config_data_cmp (const NML3ConfigData *a, const NML3ConfigData *b)
 	NM_CMP_FIELD_STR0 (a, b, nis_domain);
 	NM_CMP_DIRECT (a->mdns, b->mdns);
 	NM_CMP_DIRECT (a->llmnr, b->llmnr);
-	if (NM_FLAGS_HAS (a->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_MTU))
-		NM_CMP_DIRECT (a->mtu, b->mtu);
+	NM_CMP_DIRECT (a->mtu, b->mtu);
 	NM_CMP_DIRECT_UNSAFE (a->metered, b->metered);
 
 	NM_CMP_FIELD (a, b, source);
@@ -1686,15 +1779,17 @@ NML3ConfigData *
 nm_l3_config_data_new_from_connection (NMDedupMultiIndex *multi_idx,
                                        int ifindex,
                                        NMConnection *connection,
-                                       guint32 route_table,
-                                       guint32 route_metric)
+                                       guint32 route_table_4,
+                                       guint32 route_table_6,
+                                       guint32 route_metric_4,
+                                       guint32 route_metric_6)
 {
 	NML3ConfigData *self;
 
 	self = nm_l3_config_data_new (multi_idx, ifindex);
 
-	_init_from_connection_ip (self, AF_INET,  connection, route_table, route_metric);
-	_init_from_connection_ip (self, AF_INET6, connection, route_table, route_metric);
+	_init_from_connection_ip (self, AF_INET,  connection, route_table_4, route_metric_4);
+	_init_from_connection_ip (self, AF_INET6, connection, route_table_6, route_metric_6);
 	return self;
 }
 
@@ -1927,11 +2022,8 @@ _init_merge (NML3ConfigData *self,
 	if (self->metered == NM_TERNARY_DEFAULT)
 		self->metered = src->metered;
 
-	if (   !NM_FLAGS_HAS (self->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_MTU)
-	    && NM_FLAGS_HAS (src->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_MTU)) {
+	if (self->mtu != 0u)
 		self->mtu = src->mtu;
-		self->flags |= NM_L3_CONFIG_DAT_FLAGS_HAS_MTU;
-	}
 
 	/* self->source does not get merged. */
 }
