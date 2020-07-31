@@ -1241,6 +1241,20 @@ _NM_IN_STRSET_ASCII_CASE_op_streq (const char *x, const char *s)
 
 #define NM_IN_STRSET_ASCII_CASE(x, ...) _NM_IN_STRSET_EVAL_N(||, _NM_IN_STRSET_ASCII_CASE_op_streq, x, NM_NARG (__VA_ARGS__), __VA_ARGS__)
 
+#define NM_STR_HAS_SUFFIX_ASCII_CASE(str, suffix) \
+	({ \
+		const char *const _str_has_suffix = (str); \
+		size_t _l; \
+		\
+		nm_assert (strlen (suffix) == NM_STRLEN (suffix)); \
+		\
+		(   _str_has_suffix \
+		 && ((_l = strlen (_str_has_suffix)) >= NM_STRLEN (suffix)) \
+		 && (g_ascii_strncasecmp (&_str_has_suffix[_l - NM_STRLEN (suffix)], \
+		                          ""suffix"", \
+		                          NM_STRLEN (suffix)) == 0)); \
+	})
+
 /*****************************************************************************/
 
 #define nm_g_slice_free(ptr) \
