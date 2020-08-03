@@ -1937,6 +1937,13 @@ supplicant_iface_bss_changed_cb (NMSupplicantInterface *iface,
 	} else {
 		gs_unref_object NMWifiAP *ap = NULL;
 
+		if (!bss_info->bssid_valid) {
+			/* We failed to initialize the info about the AP. This can
+			 * happen due to an error in the D-Bus communication. In this case
+			 * we ignore the info. */
+			return;
+		}
+
 		ap = nm_wifi_ap_new_from_properties (bss_info);
 
 		/* Let the manager try to fill in the SSID from seen-bssids lists */
