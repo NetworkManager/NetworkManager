@@ -1894,11 +1894,13 @@ nm_l3_config_data_new_from_platform (NMDedupMultiIndex *multi_idx,
 
 /*****************************************************************************/
 
-static void
-_init_merge (NML3ConfigData *self,
-             const NML3ConfigData *src,
-             NML3ConfigMergeFlags merge_flags,
-             const guint32 *default_route_penalty_x /* length 2, for IS_IPv4 */)
+void
+nm_l3_config_data_merge (NML3ConfigData *self,
+                        const NML3ConfigData *src,
+                        NML3ConfigMergeFlags merge_flags,
+                        const guint32 *default_route_penalty_x /* length 2, for IS_IPv4 */,
+                        NML3ConfigMergeHookAddObj hook_add_addr,
+                        gpointer hook_user_data)
 {
 	NMDedupMultiIter iter;
 	const NMPObject *obj;
@@ -1915,6 +1917,11 @@ _init_merge (NML3ConfigData *self,
 		                                     src,
 		                                     obj,
 		                                     NMP_OBJECT_TYPE_IP_ADDRESS (IS_IPv4)) {
+
+			if (   hook_add_addr
+			    && !hook_add_addr (src, obj, hook_user_data))
+				continue;
+
 			if (   NM_FLAGS_HAS (merge_flags, NM_L3_CONFIG_MERGE_FLAGS_EXTERNAL)
 			    && !NMP_OBJECT_CAST_IP_ADDRESS (obj)->external) {
 				NMPlatformIPXAddress a;
@@ -2043,30 +2050,6 @@ nm_l3_config_data_new_clone (const NML3ConfigData *src,
 		ifindex = src->ifindex;
 
 	self = nm_l3_config_data_new (src->multi_idx, ifindex);
-	_init_merge (self, src, NM_L3_CONFIG_MERGE_FLAGS_NONE, NULL);
-	return self;
-}
-
-NML3ConfigData *
-nm_l3_config_data_new_combined (NMDedupMultiIndex *multi_idx,
-                                int ifindex,
-                                const NML3ConfigDatMergeInfo *const*merge_infos,
-                                guint merge_infos_len)
-{
-	NML3ConfigData *self;
-	guint i;
-
-	nm_assert (multi_idx);
-	nm_assert (ifindex > 0);
-
-	self = nm_l3_config_data_new (multi_idx, ifindex);
-
-	for (i = 0; i < merge_infos_len; i++) {
-		_init_merge (self,
-		             merge_infos[i]->l3cd,
-		             merge_infos[i]->merge_flags,
-		             merge_infos[i]->default_route_penalty_x);
-	}
-
+	nm_l3_config_data_merge (self, src, NM_L3_CONFIG_MERGE_FLAGS_NONE, NULL, NULL, NULL);
 	return self;
 }

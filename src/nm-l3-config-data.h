@@ -63,18 +63,6 @@ typedef enum {
 
 /*****************************************************************************/
 
-typedef struct {
-	const NML3ConfigData *l3cd;
-	NML3ConfigMergeFlags merge_flags;
-	union {
-		struct {
-			guint32 default_route_penalty_6;
-			guint32 default_route_penalty_4;
-		};
-		guint32 default_route_penalty_x[2];
-	};
-} NML3ConfigDatMergeInfo;
-
 NML3ConfigData *nm_l3_config_data_new (NMDedupMultiIndex *multi_idx,
                                        int ifindex);
 const NML3ConfigData *nm_l3_config_data_ref (const NML3ConfigData *self);
@@ -106,10 +94,16 @@ NML3ConfigData *nm_l3_config_data_new_from_platform (NMDedupMultiIndex *multi_id
                                                      NMPlatform *platform,
                                                      NMSettingIP6ConfigPrivacy ipv6_privacy_rfc4941);
 
-NML3ConfigData *nm_l3_config_data_new_combined (NMDedupMultiIndex *multi_idx,
-                                                int ifindex,
-                                                const NML3ConfigDatMergeInfo *const*merge_infos,
-                                                guint merge_infos_len);
+typedef gboolean (*NML3ConfigMergeHookAddObj) (const NML3ConfigData *l3cd,
+                                               const NMPObject *obj,
+                                               gpointer user_data);
+
+void nm_l3_config_data_merge (NML3ConfigData *self,
+                              const NML3ConfigData *src,
+                              NML3ConfigMergeFlags merge_flags,
+                              const guint32 *default_route_penalty_x /* length 2, for IS_IPv4 */,
+                              NML3ConfigMergeHookAddObj hook_add_addr,
+                              gpointer hook_user_data);
 
 void nm_l3_config_data_add_dependent_routes (NML3ConfigData *self,
                                              int addr_family,

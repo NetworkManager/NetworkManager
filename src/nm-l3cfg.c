@@ -11,7 +11,15 @@
 /*****************************************************************************/
 
 typedef struct {
-	NML3ConfigDatMergeInfo merge_info;
+	const NML3ConfigData *l3cd;
+	NML3ConfigMergeFlags merge_flags;
+	union {
+		struct {
+			guint32 default_route_penalty_6;
+			guint32 default_route_penalty_4;
+		};
+		guint32 default_route_penalty_x[2];
+	};
 	gconstpointer tag;
 	guint64 pseudo_timestamp;
 	int priority;
@@ -525,7 +533,7 @@ _l3_config_datas_find_next (GArray *l3_config_datas,
 		const L3ConfigData *l3_config_data = _l3_config_datas_at (l3_config_datas, i);
 
 		if (   NM_IN_SET (needle_tag, NULL, l3_config_data->tag)
-		    && NM_IN_SET (needle_l3cd, NULL, l3_config_data->merge_info.l3cd))
+		    && NM_IN_SET (needle_l3cd, NULL, l3_config_data->l3cd))
 			return i;
 	}
 	return -1;
@@ -542,7 +550,7 @@ _l3_config_datas_remove_index_fast (GArray *arr,
 
 	l3_config_data = _l3_config_datas_at (arr, idx);
 
-	nm_l3_config_data_unref (l3_config_data->merge_info.l3cd);
+	nm_l3_config_data_unref (l3_config_data->l3cd);
 
 	g_array_remove_index_fast (arr, idx);
 }
@@ -611,7 +619,7 @@ nm_l3cfg_add_config (NML3Cfg *self,
 		while (TRUE) {
 			l3_config_data = _l3_config_datas_at (l3_config_datas, idx2);
 
-			if (l3_config_data->merge_info.l3cd == l3cd) {
+			if (l3_config_data->l3cd == l3cd) {
 				nm_assert (idx == -1);
 				idx = idx2;
 				continue;
@@ -629,35 +637,35 @@ nm_l3cfg_add_config (NML3Cfg *self,
 	if (idx < 0) {
 		l3_config_data = nm_g_array_append_new (l3_config_datas, L3ConfigData);
 		*l3_config_data = (L3ConfigData) {
-			.tag                                = tag,
-			.merge_info.l3cd                    = nm_l3_config_data_ref_and_seal (l3cd),
-			.merge_info.merge_flags             = merge_flags,
-			.merge_info.default_route_penalty_4 = default_route_penalty_4,
-			.merge_info.default_route_penalty_6 = default_route_penalty_6,
-			.priority                           = priority,
-			.pseudo_timestamp                   = ++self->priv.p->pseudo_timestamp_counter,
-			.dirty                              = FALSE,
+			.tag                     = tag,
+			.l3cd                    = nm_l3_config_data_ref_and_seal (l3cd),
+			.merge_flags             = merge_flags,
+			.default_route_penalty_4 = default_route_penalty_4,
+			.default_route_penalty_6 = default_route_penalty_6,
+			.priority                = priority,
+			.pseudo_timestamp        = ++self->priv.p->pseudo_timestamp_counter,
+			.dirty                   = FALSE,
 		};
 		changed = TRUE;
 	} else {
 		l3_config_data = _l3_config_datas_at (l3_config_datas, idx);
 		l3_config_data->dirty = FALSE;
 		nm_assert (l3_config_data->tag == tag);
-		nm_assert (l3_config_data->merge_info.l3cd == l3cd);
+		nm_assert (l3_config_data->l3cd == l3cd);
 		if (l3_config_data->priority != priority) {
 			l3_config_data->priority = priority;
 			changed = TRUE;
 		}
-		if (l3_config_data->merge_info.merge_flags != merge_flags) {
-			l3_config_data->merge_info.merge_flags = merge_flags;
+		if (l3_config_data->merge_flags != merge_flags) {
+			l3_config_data->merge_flags = merge_flags;
 			changed = TRUE;
 		}
-		if (l3_config_data->merge_info.default_route_penalty_4 != default_route_penalty_4) {
-			l3_config_data->merge_info.default_route_penalty_4 = default_route_penalty_4;
+		if (l3_config_data->default_route_penalty_4 != default_route_penalty_4) {
+			l3_config_data->default_route_penalty_4 = default_route_penalty_4;
 			changed = TRUE;
 		}
-		if (l3_config_data->merge_info.default_route_penalty_6 != default_route_penalty_6) {
-			l3_config_data->merge_info.default_route_penalty_6 = default_route_penalty_6;
+		if (l3_config_data->default_route_penalty_6 != default_route_penalty_6) {
+			l3_config_data->default_route_penalty_6 = default_route_penalty_6;
 			changed = TRUE;
 		}
 	}
@@ -734,7 +742,7 @@ _l3_config_combine_sort_fcn (gconstpointer p_a,
 
 	nm_assert (a);
 	nm_assert (b);
-	nm_assert (nm_l3_config_data_get_ifindex (a->merge_info.l3cd) == nm_l3_config_data_get_ifindex (b->merge_info.l3cd));
+	nm_assert (nm_l3_config_data_get_ifindex (a->l3cd) == nm_l3_config_data_get_ifindex (b->l3cd));
 
 	/* we sort the entries with higher priority (more important, lower numerical value)
 	 * first. */
@@ -747,58 +755,17 @@ _l3_config_combine_sort_fcn (gconstpointer p_a,
 	return nm_assert_unreachable_val (0);
 }
 
-static const NML3ConfigData *
-_l3cfg_combine_config (GArray *l3_config_datas,
-                       NMDedupMultiIndex *multi_idx,
-                       int ifindex)
-{
-	gs_free L3ConfigData **infos_heap = NULL;
-	NML3ConfigData *l3cd;
-	L3ConfigData **infos;
-	guint i;
-
-	if (   !l3_config_datas
-	    || l3_config_datas->len == 0)
-		return NULL;
-
-	if (l3_config_datas->len == 1)
-		return nm_l3_config_data_ref (_l3_config_datas_at (l3_config_datas, 0)->merge_info.l3cd);
-
-	if (l3_config_datas->len < 300 / sizeof (infos[0]))
-		infos = g_alloca (l3_config_datas->len * sizeof (infos[0]));
-	else {
-		infos_heap = g_new (L3ConfigData *, l3_config_datas->len);
-		infos = infos_heap;
-	}
-
-	for (i = 0; i < l3_config_datas->len; i++)
-		infos[i] = _l3_config_datas_at (l3_config_datas, i);
-
-	g_qsort_with_data (infos,
-	                   l3_config_datas->len,
-	                   sizeof (infos[0]),
-	                   _l3_config_combine_sort_fcn,
-	                   NULL);
-
-	nm_assert (&infos[0]->merge_info == (NML3ConfigDatMergeInfo *) infos[0]);
-
-	l3cd = nm_l3_config_data_new_combined (multi_idx,
-	                                       ifindex,
-	                                       (const NML3ConfigDatMergeInfo *const*) infos,
-	                                       l3_config_datas->len);
-
-	nm_assert (l3cd);
-	nm_assert (nm_l3_config_data_get_ifindex (l3cd) == ifindex);
-
-	return nm_l3_config_data_seal (l3cd);
-}
-
 static gboolean
 _l3cfg_update_combined_config (NML3Cfg *self,
                                const NML3ConfigData **out_old /* transfer reference */)
 {
 	nm_auto_unref_l3cd const NML3ConfigData *l3cd_old = NULL;
-	nm_auto_unref_l3cd const NML3ConfigData *l3cd = NULL;
+	nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
+	NMDedupMultiIndex *multi_idx;
+	gs_free L3ConfigData **infos_heap = NULL;
+	L3ConfigData **infos;
+	GArray *l3_config_datas;
+	guint i;
 
 	nm_assert (NM_IS_L3CFG (self));
 	nm_assert (!out_old || !*out_old);
@@ -808,9 +775,46 @@ _l3cfg_update_combined_config (NML3Cfg *self,
 
 	self->priv.changed_configs = FALSE;
 
-	l3cd = _l3cfg_combine_config (self->priv.p->l3_config_datas,
-	                              nm_platform_get_multi_idx (self->priv.platform),
-	                              self->priv.ifindex);
+	multi_idx = nm_platform_get_multi_idx (self->priv.platform);
+
+	l3_config_datas = self->priv.p->l3_config_datas;
+
+	if (   l3_config_datas
+	    && l3_config_datas->len > 0) {
+
+		l3cd = nm_l3_config_data_new (multi_idx, self->priv.ifindex);
+
+		if (l3_config_datas->len < 300 / sizeof (infos[0]))
+			infos = g_alloca (l3_config_datas->len * sizeof (infos[0]));
+		else {
+			infos_heap = g_new (L3ConfigData *, l3_config_datas->len);
+			infos = infos_heap;
+		}
+
+		for (i = 0; i < l3_config_datas->len; i++)
+			infos[i] = _l3_config_datas_at (l3_config_datas, i);
+
+		g_qsort_with_data (infos,
+		                   l3_config_datas->len,
+		                   sizeof (infos[0]),
+		                   _l3_config_combine_sort_fcn,
+		                   NULL);
+
+		for (i = 0; i < l3_config_datas->len; i++) {
+			nm_l3_config_data_merge (l3cd,
+			                         infos[i]->l3cd,
+			                         infos[i]->merge_flags,
+			                         infos[i]->default_route_penalty_x,
+			                         NULL,
+			                         NULL);
+		}
+
+		nm_assert (l3cd);
+		nm_assert (nm_l3_config_data_get_ifindex (l3cd) == self->priv.ifindex);
+
+		nm_l3_config_data_seal (l3cd);
+	}
+
 
 	if (nm_l3_config_data_equal (l3cd, self->priv.p->combined_l3cd))
 		return FALSE;
