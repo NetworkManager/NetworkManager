@@ -194,19 +194,16 @@ libnetwork_manager = static_library(
   link_with: nm_links,
 )
 
-deps = [
-  daemon_nm_default_dep,
-  dl_dep,
-  libndp_dep,
-  libudev_dep,
-]
-
-name = 'nm-iface-helper'
-
 executable(
-  name,
-  name + '.c',
-  dependencies: deps,
+  'nm-iface-helper',
+  'nm-iface-helper.c',
+  dependencies: [
+    daemon_nm_default_dep,
+    dl_dep,
+    libndp_dep,
+    libudev_dep,
+    libn_acd_dep,
+  ],
   c_args: daemon_c_flags,
   link_with: nm_links,
   link_args: ldflags_linker_script_binary,

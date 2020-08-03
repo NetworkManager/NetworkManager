@@ -20,10 +20,26 @@
 
 typedef enum {
 	NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED,
+	NM_L3_CONFIG_NOTIFY_TYPE_ACD_FAILED,
+	NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED,
 	_NM_L3_CONFIG_NOTIFY_TYPE_NUM,
 } NML3ConfigNotifyType;
 
-#define NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED_DETAIL "routes-temporary-not-available"
+typedef struct {
+	const NMPObject *obj;
+	const NML3ConfigData *l3cd;
+	gconstpointer tag;
+} NML3ConfigNotifyPayloadAcdFailedSource;
+
+typedef struct {
+	union {
+		struct {
+			in_addr_t addr;
+			guint sources_len;
+			const NML3ConfigNotifyPayloadAcdFailedSource *sources;
+		} acd_failed;
+	};
+} NML3ConfigNotifyPayload;
 
 struct _NML3CfgPrivate;
 
@@ -87,6 +103,8 @@ nm_l3cfg_get_platform (const NML3Cfg *self)
 	return self->priv.platform;
 }
 
+gboolean nm_l3cfg_get_acd_is_pending (NML3Cfg *self);
+
 /*****************************************************************************/
 
 typedef enum {
@@ -117,6 +135,7 @@ void nm_l3cfg_add_config (NML3Cfg *self,
                           int priority,
                           guint32 default_route_penalty_4,
                           guint32 default_route_penalty_6,
+                          guint32 acd_timeout_msec,
                           NML3ConfigMergeFlags merge_flags);
 
 void nm_l3cfg_remove_config (NML3Cfg *self,
@@ -145,6 +164,7 @@ typedef enum {
 	/* This is a full sync. It configures the IP addresses/routes that are indicated,
 	 * while removing the existing ones from the interface. */
 	NM_L3_CFG_COMMIT_TYPE_REAPPLY,
+
 } NML3CfgCommitType;
 
 gboolean nm_l3cfg_platform_commit (NML3Cfg *self,
