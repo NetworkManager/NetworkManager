@@ -290,12 +290,12 @@ if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
 fi
 
 if [ $FIND_BACKPORTS = 1 ]; then
-    git show "$ORIGIN/automation:contrib/rh-utils/find-backports.sh" > ./.git/nm-find-backports.sh \
-    && chmod +x ./.git/nm-find-backports.sh \
-    || die "cannot get contrib/rh-utils/find-backports.sh"
+    git show "$ORIGIN/automation:contrib/rh-utils/find-backports" > ./.git/nm-find-backports \
+    && chmod +x ./.git/nm-find-backports \
+    || die "cannot get contrib/rh-utils/find-backports"
 
-    TMP="$(./.git/nm-find-backports.sh "$(git merge-base master HEAD)" "$CUR_BRANCH" master "${NEWER_BRANCHES[@]}")" || die "nm-find-backports failed"
-    test -z "$TMP" || die "nm-find-backports returned patches that need to be backported: ./.git/nm-find-backports.sh \"\$(git merge-base master HEAD)\" \"$CUR_BRANCH\" master ${NEWER_BRANCHES[@]}"
+    TMP="$(./.git/nm-find-backports "$CUR_BRANCH" master "${NEWER_BRANCHES[@]}" 2>/dev/null)" || die "nm-find-backports failed"
+    test -z "$TMP" || die "nm-find-backports returned patches that need to be backported (ignore with --no-find-backports): ./.git/nm-find-backports \"$CUR_BRANCH\" master ${NEWER_BRANCHES[@]}"
 fi
 
 TAGS=()
