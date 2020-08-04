@@ -8196,7 +8196,10 @@ link_get_wake_on_lan (NMPlatform *platform, int ifindex)
 		if (!wifi_data)
 			return FALSE;
 
-		return nm_wifi_utils_get_wake_on_wlan (wifi_data) != NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE;
+		return !NM_IN_SET (nm_wifi_utils_get_wake_on_wlan (wifi_data),
+		                   NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE,
+		                   NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE);
+
 	} else
 		return FALSE;
 }
