@@ -159,7 +159,7 @@ int sd_dhcp6_client_set_callback(
 int sd_dhcp6_client_set_ifindex(sd_dhcp6_client *client, int ifindex) {
 
         assert_return(client, -EINVAL);
-        assert_return(ifindex >= -1, -EINVAL);
+        assert_return(ifindex > 0, -EINVAL);
         assert_return(IN_SET(client->state, DHCP6_STATE_STOPPED), -EBUSY);
 
         client->ifindex = ifindex;
@@ -1282,6 +1282,13 @@ static int client_parse_message(
 
                         break;
 
+                case SD_DHCP6_OPTION_FQDN:
+                        r = dhcp6_lease_set_fqdn(lease, optval, optlen);
+                        if (r < 0)
+                                return r;
+
+                        break;
+
                 case SD_DHCP6_OPTION_INFORMATION_REFRESH_TIME:
                         if (optlen != 4)
                                 return -EINVAL;
@@ -1489,7 +1496,7 @@ static int client_receive_message(
                         break;
                 }
 
-                _fallthrough_; /* for Soliciation Rapid Commit option check */
+                _fallthrough_; /* for Solicitation Rapid Commit option check */
         case DHCP6_STATE_REQUEST:
         case DHCP6_STATE_RENEW:
         case DHCP6_STATE_REBIND:

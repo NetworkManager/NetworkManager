@@ -376,7 +376,7 @@ int sd_dhcp_client_set_client_id(
         /* For hardware types, log debug message about unexpected data length.
          *
          * Note that infiniband's INFINIBAND_ALEN is 20 bytes long, but only
-         * last last 8 bytes of the address are stable and suitable to put into
+         * the last 8 bytes of the address are stable and suitable to put into
          * the client-id. The caller is advised to account for that. */
         if ((type == ARPHRD_ETHER && data_len != ETH_ALEN) ||
             (type == ARPHRD_INFINIBAND && data_len != 8))
@@ -1441,7 +1441,10 @@ static int client_timeout_t1(sd_event_source *s, uint64_t usec, void *userdata) 
         sd_dhcp_client *client = userdata;
         DHCP_CLIENT_DONT_DESTROY(client);
 
-        client->state = DHCP_STATE_RENEWING;
+        if (client->lease)
+                client->state = DHCP_STATE_RENEWING;
+        else if (client->state != DHCP_STATE_INIT)
+                client->state = DHCP_STATE_INIT_REBOOT;
         client->attempt = 0;
 
         return client_initialize_time_events(client);
@@ -2011,6 +2014,9 @@ static int client_receive_message_raw(
 int sd_dhcp_client_send_renew(sd_dhcp_client *client) {
         assert_return(client, -EINVAL);
         assert_return(client->fd >= 0, -EINVAL);
+
+        if (!client->lease)
+                return 0;
 
         client->start_delay = 0;
         client->attempt = 1;

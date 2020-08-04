@@ -105,7 +105,7 @@ int socket_address_verify(const SocketAddress *a, bool strict) {
                                 if (a->size != offsetof(struct sockaddr_un, sun_path) + (e - a->sockaddr.un.sun_path) + 1)
                                         return -EINVAL;
                         } else {
-                                /* If there's no embedded NUL byte, then then the size needs to match the whole
+                                /* If there's no embedded NUL byte, then the size needs to match the whole
                                  * structure or the structure with one extra NUL byte suffixed. (Yeah, Linux is awful,
                                  * and considers both equivalent: getsockname() even extends sockaddr_un beyond its
                                  * size if the path is non NUL terminated.)*/
@@ -1130,6 +1130,7 @@ int socket_bind_to_ifname(int fd, const char *ifname) {
 
 int socket_bind_to_ifindex(int fd, int ifindex) {
         char ifname[IF_NAMESIZE + 1];
+        int r;
 
         assert(fd >= 0);
 
@@ -1141,10 +1142,9 @@ int socket_bind_to_ifindex(int fd, int ifindex) {
                 return 0;
         }
 
-        if (setsockopt(fd, SOL_SOCKET, SO_BINDTOIFINDEX, &ifindex, sizeof(ifindex)) >= 0)
-                return 0;
-        if (errno != ENOPROTOOPT)
-                return -errno;
+        r = setsockopt_int(fd, SOL_SOCKET, SO_BINDTOIFINDEX, ifindex);
+        if (r != -ENOPROTOOPT)
+                return r;
 
         /* Fall back to SO_BINDTODEVICE on kernels < 5.0 which didn't have SO_BINDTOIFINDEX */
         if (!format_ifname(ifindex, ifname))
