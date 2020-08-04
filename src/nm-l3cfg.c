@@ -279,13 +279,13 @@ _l3cfg_externally_removed_objs_pickup (NML3Cfg *self,
 	if (!self->priv.p->combined_l3cd)
 		return;
 
-	nm_l3_config_data_iter_obj_for_each (iter, self->priv.p->combined_l3cd, obj, NMP_OBJECT_TYPE_IP_ADDRESS (IS_IPv4)) {
+	nm_l3_config_data_iter_obj_for_each (&iter, self->priv.p->combined_l3cd, &obj, NMP_OBJECT_TYPE_IP_ADDRESS (IS_IPv4)) {
 		if (!nm_platform_lookup_entry (self->priv.platform,
 		                               NMP_CACHE_ID_TYPE_OBJECT_TYPE,
 		                               obj))
 			_l3cfg_externally_removed_objs_track (self, obj, TRUE);
 	}
-	nm_l3_config_data_iter_obj_for_each (iter, self->priv.p->combined_l3cd, obj, NMP_OBJECT_TYPE_IP_ROUTE (IS_IPv4)) {
+	nm_l3_config_data_iter_obj_for_each (&iter, self->priv.p->combined_l3cd, &obj, NMP_OBJECT_TYPE_IP_ROUTE (IS_IPv4)) {
 		if (!nm_platform_lookup_entry (self->priv.platform,
 		                               NMP_CACHE_ID_TYPE_OBJECT_TYPE,
 		                               obj))

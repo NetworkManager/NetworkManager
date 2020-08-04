@@ -1339,7 +1339,7 @@ _data_get_direct_route_for_host (const NML3ConfigData *self,
 	if (nm_ip_addr_is_null (addr_family, host))
 		return NULL;
 
-	nm_l3_config_data_iter_obj_for_each (ipconf_iter, self, item_obj, NMP_OBJECT_TYPE_IP_ROUTE (IS_IPv4)) {
+	nm_l3_config_data_iter_obj_for_each (&ipconf_iter, self, &item_obj, NMP_OBJECT_TYPE_IP_ROUTE (IS_IPv4)) {
 		const NMPlatformIPXRoute *item = NMP_OBJECT_CAST_IPX_ROUTE (item_obj);
 
 		if (nm_ip_addr_is_null (addr_family,
@@ -1406,7 +1406,7 @@ nm_l3_config_data_add_dependent_routes (NML3ConfigData *self,
 		nm_l3_config_data_add_route (self, addr_family, NULL, &rx.rx);
 	}
 
-	nm_l3_config_data_iter_obj_for_each (iter, self, my_addr_obj, NMP_OBJECT_TYPE_IP_ADDRESS (IS_IPv4)) {
+	nm_l3_config_data_iter_obj_for_each (&iter, self, &my_addr_obj, NMP_OBJECT_TYPE_IP_ADDRESS (IS_IPv4)) {
 		const NMPlatformIPXAddress *const my_addr = NMP_OBJECT_CAST_IPX_ADDRESS (my_addr_obj);
 
 		if (my_addr->ax.external)
@@ -1541,7 +1541,7 @@ nm_l3_config_data_add_dependent_routes (NML3ConfigData *self,
 		}
 	}
 
-	nm_l3_config_data_iter_obj_for_each (iter, self, my_route_obj, NMP_OBJECT_TYPE_IP_ROUTE (IS_IPv4)) {
+	nm_l3_config_data_iter_obj_for_each (&iter, self, &my_route_obj, NMP_OBJECT_TYPE_IP_ROUTE (IS_IPv4)) {
 		const NMPlatformIPXRoute *my_route = NMP_OBJECT_CAST_IPX_ROUTE (my_route_obj);
 		NMPObject *new_route;
 		NMPlatformIPXRoute *new_r;
@@ -1913,9 +1913,9 @@ nm_l3_config_data_merge (NML3ConfigData *self,
 		const int addr_family = IS_IPv4 ? AF_INET : AF_INET6;
 		const NML3ConfigDatFlags has_dns_priority_flag = NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY (IS_IPv4);
 
-		nm_l3_config_data_iter_obj_for_each (iter,
+		nm_l3_config_data_iter_obj_for_each (&iter,
 		                                     src,
-		                                     obj,
+		                                     &obj,
 		                                     NMP_OBJECT_TYPE_IP_ADDRESS (IS_IPv4)) {
 
 			if (   hook_add_addr
@@ -1950,9 +1950,9 @@ nm_l3_config_data_merge (NML3ConfigData *self,
 		}
 
 		if (!NM_FLAGS_HAS (merge_flags, NM_L3_CONFIG_MERGE_FLAGS_NO_ROUTES)) {
-			nm_l3_config_data_iter_obj_for_each (iter,
+			nm_l3_config_data_iter_obj_for_each (&iter,
 			                                     src,
-			                                     obj,
+			                                     &obj,
 			                                     NMP_OBJECT_TYPE_IP_ROUTE (IS_IPv4)) {
 				if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT (NMP_OBJECT_CAST_IP_ROUTE (obj))) {
 					if (   NM_FLAGS_HAS (merge_flags, NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES)
