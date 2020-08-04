@@ -337,6 +337,10 @@ nm_streq0 (const char *s1, const char *s2)
 #define _NM_IN_SET_EVAL_14(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_13 (op, _x, __VA_ARGS__)
 #define _NM_IN_SET_EVAL_15(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_14 (op, _x, __VA_ARGS__)
 #define _NM_IN_SET_EVAL_16(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_15 (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_17(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_16 (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_18(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_17 (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_19(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_18 (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_20(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_19 (op, _x, __VA_ARGS__)
 
 #define _NM_IN_SET_EVAL_N2(op, _x, n, ...)      (_NM_IN_SET_EVAL_##n(op, _x, __VA_ARGS__))
 #define _NM_IN_SET_EVAL_N(op, type, x, n, ...)                      \
@@ -386,6 +390,10 @@ nm_streq0 (const char *s1, const char *s2)
 #define _NM_IN_SETOP_EVAL_14(op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_13 (op, op_eq, _x, __VA_ARGS__)
 #define _NM_IN_SETOP_EVAL_15(op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_14 (op, op_eq, _x, __VA_ARGS__)
 #define _NM_IN_SETOP_EVAL_16(op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_15 (op, op_eq, _x, __VA_ARGS__)
+#define _NM_IN_SETOP_EVAL_17(op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_16 (op, op_eq, _x, __VA_ARGS__)
+#define _NM_IN_SETOP_EVAL_18(op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_17 (op, op_eq, _x, __VA_ARGS__)
+#define _NM_IN_SETOP_EVAL_19(op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_18 (op, op_eq, _x, __VA_ARGS__)
+#define _NM_IN_SETOP_EVAL_20(op, op_eq, _x, y, ...)   (op_eq (_x, y)) op _NM_IN_SETOP_EVAL_19 (op, op_eq, _x, __VA_ARGS__)
 
 /*****************************************************************************/
 
