@@ -516,14 +516,12 @@ create_and_realize (NMDevice *device,
 static gboolean
 check_changed_options (NMSettingBond *s_a, NMSettingBond *s_b, GError **error)
 {
-	guint i, num;
-	const char *name = NULL, *value_a = NULL, *value_b = NULL;
+	const char **option_list;
 
-	/* Check that options in @s_a have compatible changes in @s_b */
+	option_list = nm_setting_bond_get_valid_options (NULL);
 
-	num = nm_setting_bond_get_num_options (s_a);
-	for (i = 0; i < num; i++) {
-		nm_setting_bond_get_option (s_a, i, &name, &value_a);
+	for (; *option_list; ++option_list) {
+		const char *name = *option_list;
 
 		/* We support changes to these */
 		if (NM_IN_STRSET (name,
@@ -532,15 +530,9 @@ check_changed_options (NMSettingBond *s_a, NMSettingBond *s_b, GError **error)
 			continue;
 		}
 
-		/* Missing in @s_b, but has a default value in @s_a */
-		value_b = nm_setting_bond_get_option_by_name (s_b, name);
-		if (   !value_b
-		    && nm_streq0 (value_a, nm_setting_bond_get_option_default (s_a, name))) {
-			continue;
-		}
-
 		/* Reject any other changes */
-		if (!nm_streq0 (value_a, value_b)) {
+		if (!nm_streq0 (nm_setting_bond_get_option_normalized (s_a, name),
+		                nm_setting_bond_get_option_normalized (s_b, name))) {
 			g_set_error (error,
 			             NM_DEVICE_ERROR,
 			             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
@@ -562,7 +554,6 @@ can_reapply_change (NMDevice *device,
                     GError **error)
 {
 	NMDeviceClass *device_class;
-	NMSettingBond *s_bond_old, *s_bond_new;
 
 	/* Only handle bond setting here, delegate other settings to parent class */
 	if (nm_streq (setting_name, NM_SETTING_BOND_SETTING_NAME)) {
@@ -572,15 +563,7 @@ can_reapply_change (NMDevice *device,
 		                                        NM_SETTING_BOND_OPTIONS))
 			return FALSE;
 
-		s_bond_old = NM_SETTING_BOND (s_old);
-		s_bond_new = NM_SETTING_BOND (s_new);
-
-		if (   !check_changed_options (s_bond_old, s_bond_new, error)
-		    || !check_changed_options (s_bond_new, s_bond_old, error)) {
-			return FALSE;
-		}
-
-		return TRUE;
+		return check_changed_options (NM_SETTING_BOND (s_old), NM_SETTING_BOND (s_new), error);
 	}
 
 	device_class = NM_DEVICE_CLASS (nm_device_bond_parent_class);
