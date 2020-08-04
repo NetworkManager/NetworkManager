@@ -295,6 +295,15 @@ static inline size_t GREEDY_ALLOC_ROUND_UP(size_t l) {
                 UNIQ_T(A, aq) < UNIQ_T(B, bq) ? UNIQ_T(A, aq) : UNIQ_T(B, bq); \
         })
 
+/* evaluates to (void) if _A or _B are not constant or of different types */
+#define CONST_MIN(_A, _B) \
+        (__builtin_choose_expr(                                         \
+                __builtin_constant_p(_A) &&                             \
+                __builtin_constant_p(_B) &&                             \
+                __builtin_types_compatible_p(typeof(_A), typeof(_B)),   \
+                ((_A) < (_B)) ? (_A) : (_B),                            \
+                VOID_0))
+
 #define MIN3(x, y, z)                                   \
         ({                                              \
                 const typeof(x) _c = MIN(x, y);         \
@@ -537,6 +546,12 @@ static inline int __coverity_check_and_return__(int condition) {
                 (x) = (y);                         \
                 (y) = (_t);                        \
         } while (false)
+
+/* Iterates through a specified list of pointers. Accepts NULL pointers, but uses (void*) -1 as internal marker for EOL. */
+#define FOREACH_POINTER(p, x, ...)                                                      \
+        for (typeof(p) *_l = (typeof(p)[]) { ({ p = x; }), ##__VA_ARGS__, (void*) -1 }; \
+             p != (typeof(p)) (void*) -1;                                               \
+             p = *(++_l))
 
 /* Define C11 thread_local attribute even on older gcc compiler
  * version */
