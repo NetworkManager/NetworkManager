@@ -1298,6 +1298,44 @@ _parse_af_inet6 (NMPlatform *platform,
 /*****************************************************************************/
 
 static NMPObject *
+_parse_lnk_bridge (const char *kind, struct nlattr *info_data)
+{
+	static const struct nla_policy policy[] = {
+		[IFLA_BR_FORWARD_DELAY]         = { .type = NLA_U32 },
+		[IFLA_BR_HELLO_TIME]            = { .type = NLA_U32 },
+		[IFLA_BR_MAX_AGE]               = { .type = NLA_U32 },
+		[IFLA_BR_AGEING_TIME]           = { .type = NLA_U32 },
+	};
+	NMPlatformLnkBridge *props;
+	struct nlattr *tb[G_N_ELEMENTS (policy)];
+	NMPObject *obj;
+
+	if (   !info_data
+	    || !nm_streq0 (kind, "bridge"))
+		return NULL;
+
+	if (nla_parse_nested_arr (tb, info_data, policy) < 0)
+		return NULL;
+
+	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_BRIDGE, NULL);
+
+	props = &obj->lnk_bridge;
+
+	if (tb[IFLA_BR_FORWARD_DELAY])
+		props->forward_delay = nla_get_u32 (tb[IFLA_BR_FORWARD_DELAY]);
+	if (tb[IFLA_BR_HELLO_TIME])
+		props->hello_time = nla_get_u32 (tb[IFLA_BR_HELLO_TIME]);
+	if (tb[IFLA_BR_MAX_AGE])
+		props->max_age = nla_get_u32 (tb[IFLA_BR_MAX_AGE]);
+	if (tb[IFLA_BR_AGEING_TIME])
+		props->ageing_time = nla_get_u32 (tb[IFLA_BR_AGEING_TIME]);
+
+	return obj;
+}
+
+/***********************************************************************************/
+
+static NMPObject *
 _parse_lnk_gre (const char *kind, struct nlattr *info_data)
 {
 	static const struct nla_policy policy[] = {
@@ -2933,6 +2971,9 @@ _new_from_nl_link (NMPlatform *platform, const NMPCache *cache, struct nlmsghdr 
 	}
 
 	switch (obj->link.type) {
+	case NM_LINK_TYPE_BRIDGE:
+		lnk_data = _parse_lnk_bridge (nl_info_kind, nl_info_data);
+		break;
 	case NM_LINK_TYPE_GRE:
 	case NM_LINK_TYPE_GRETAP:
 		lnk_data = _parse_lnk_gre (nl_info_kind, nl_info_data);
@@ -3954,6 +3995,20 @@ _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
 	NLA_PUT_STRING (msg, IFLA_INFO_KIND, kind);
 
 	switch (link_type) {
+	case NM_LINK_TYPE_BRIDGE: {
+		const NMPlatformLnkBridge *props = extra_data;
+
+		nm_assert (extra_data);
+
+		if (!(data = nla_nest_start (msg, IFLA_INFO_DATA)))
+			goto nla_put_failure;
+
+		NLA_PUT_U32 (msg, IFLA_BR_FORWARD_DELAY, props->forward_delay);
+		NLA_PUT_U32 (msg, IFLA_BR_HELLO_TIME, props->hello_time);
+		NLA_PUT_U32 (msg, IFLA_BR_MAX_AGE, props->max_age);
+		NLA_PUT_U32 (msg, IFLA_BR_AGEING_TIME, props->ageing_time);
+		break;
+	}
 	case NM_LINK_TYPE_VLAN: {
 		const NMPlatformLnkVlan *props = extra_data;
 

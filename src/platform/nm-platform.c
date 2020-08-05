@@ -1224,6 +1224,10 @@ nm_platform_link_add (NMPlatform *self,
 	            buf[0] = '\0';
 
 	            switch (type) {
+	            case NM_LINK_TYPE_BRIDGE:
+	                nm_utils_strbuf_append_str (&buf_p, &buf_len, ", ");
+	                nm_platform_lnk_bridge_to_string ((const NMPlatformLnkBridge *) extra_data, buf_p, buf_len);
+	                break;
 	            case NM_LINK_TYPE_VLAN:
 	                nm_utils_strbuf_append_str (&buf_p, &buf_len, ", ");
 	                nm_platform_lnk_vlan_to_string ((const NMPlatformLnkVlan *) extra_data, buf_p, buf_len);
@@ -2201,6 +2205,12 @@ _link_get_lnk (NMPlatform *self, int ifindex, NMLinkType link_type, const NMPlat
 
 	lnk = nm_platform_link_get_lnk (self, ifindex, link_type, out_link);
 	return lnk ? &lnk->object : NULL;
+}
+
+const NMPlatformLnkBridge *
+nm_platform_link_get_lnk_bridge (NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+	return _link_get_lnk (self, ifindex, NM_LINK_TYPE_BRIDGE, out_link);
 }
 
 const NMPlatformLnkGre *
@@ -5372,6 +5382,32 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 	return buf;
 }
 
+const NMPlatformLnkBridge nm_platform_lnk_bridge_default = {
+	.forward_delay    = NM_BRIDGE_FORWARD_DELAY_DEF_SYS,
+	.hello_time       = NM_BRIDGE_HELLO_TIME_DEF_SYS,
+	.max_age          = NM_BRIDGE_MAX_AGE_DEF_SYS,
+	.ageing_time      = NM_BRIDGE_AGEING_TIME_DEF_SYS,
+};
+
+const char *
+nm_platform_lnk_bridge_to_string (const NMPlatformLnkBridge *lnk, char *buf, gsize len)
+{
+	if (!nm_utils_to_string_buffer_init_null (lnk, &buf, &len))
+		return buf;
+
+	g_snprintf (buf, len,
+	            "forward_delay %u"
+	            " hello_time %u"
+	            " max_age %u"
+	            " ageing_time %u"
+	            "",
+	            lnk->forward_delay,
+	            lnk->hello_time,
+	            lnk->max_age,
+	            lnk->ageing_time);
+	return buf;
+}
+
 const char *
 nm_platform_lnk_gre_to_string (const NMPlatformLnkGre *lnk, char *buf, gsize len)
 {
@@ -6858,6 +6894,27 @@ nm_platform_link_cmp (const NMPlatformLink *a, const NMPlatformLink *b)
 	NM_CMP_FIELD (a, b, rx_bytes);
 	NM_CMP_FIELD (a, b, tx_packets);
 	NM_CMP_FIELD (a, b, tx_bytes);
+	return 0;
+}
+
+void
+nm_platform_lnk_bridge_hash_update (const NMPlatformLnkBridge *obj, NMHashState *h)
+{
+	nm_hash_update_vals (h,
+	                     obj->forward_delay,
+	                     obj->hello_time,
+	                     obj->max_age,
+	                     obj->ageing_time);
+}
+
+int
+nm_platform_lnk_bridge_cmp (const NMPlatformLnkBridge *a, const NMPlatformLnkBridge *b)
+{
+	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD (a, b, forward_delay);
+	NM_CMP_FIELD (a, b, hello_time);
+	NM_CMP_FIELD (a, b, max_age);
+	NM_CMP_FIELD (a, b, ageing_time);
 	return 0;
 }
 

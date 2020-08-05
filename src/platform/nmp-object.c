@@ -3210,6 +3210,17 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_tfilter_hash_update,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_tfilter_cmp,
 	},
+	[NMP_OBJECT_TYPE_LNK_BRIDGE - 1] = {
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
+		.obj_type                           = NMP_OBJECT_TYPE_LNK_BRIDGE,
+		.sizeof_data                        = sizeof (NMPObjectLnkBridge),
+		.sizeof_public                      = sizeof (NMPlatformLnkBridge),
+		.obj_type_name                      = "bridge",
+		.lnk_link_type                      = NM_LINK_TYPE_BRIDGE,
+		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_bridge_to_string,
+		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_lnk_bridge_hash_update,
+		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_bridge_cmp,
+	},
 	[NMP_OBJECT_TYPE_LNK_GRE - 1] = {
 		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_GRE,

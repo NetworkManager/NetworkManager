@@ -988,6 +988,7 @@ create_and_realize (NMDevice *device,
 	const char *hwaddr;
 	gs_free char *hwaddr_cloned = NULL;
 	guint8 mac_address[NM_UTILS_HWADDR_LEN_MAX];
+	NMPlatformLnkBridge props;
 	int r;
 
 	nm_assert (iface);
@@ -1016,10 +1017,18 @@ create_and_realize (NMDevice *device,
 		}
 	}
 
+	props = (NMPlatformLnkBridge) {
+		.forward_delay = nm_setting_bridge_get_forward_delay (s_bridge) * 100u,
+		.hello_time = nm_setting_bridge_get_hello_time (s_bridge) * 100u,
+		.max_age = nm_setting_bridge_get_max_age (s_bridge) * 100u,
+		.ageing_time = nm_setting_bridge_get_ageing_time (s_bridge) * 100u,
+	};
+
 	r = nm_platform_link_bridge_add (nm_device_get_platform (device),
 	                                 iface,
 	                                 hwaddr ? mac_address : NULL,
 	                                 hwaddr ? ETH_ALEN : 0,
+	                                 &props,
 	                                 out_plink);
 	if (r < 0) {
 		g_set_error (error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_CREATION_FAILED,

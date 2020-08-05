@@ -309,6 +309,14 @@ link_add (NMPlatform *platform,
 	g_assert ((parent != 0) == NM_IN_SET (type, NM_LINK_TYPE_VLAN));
 
 	switch (type) {
+	case NM_LINK_TYPE_BRIDGE: {
+		const NMPlatformLnkBridge *props = extra_data;
+
+		g_assert (props);
+
+		dev_lnk = nmp_object_new (NMP_OBJECT_TYPE_LNK_BRIDGE, props);
+		break;
+	}
 	case NM_LINK_TYPE_VETH:
 		veth_peer = extra_data;
 		g_assert (veth_peer);
