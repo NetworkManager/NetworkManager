@@ -55,7 +55,7 @@ void timer_rearm(Timer *timer) {
         int r;
 
         /*
-         * A timeout value of 0 clears the timer, we sholud only set that if
+         * A timeout value of 0 clears the timer, we should only set that if
          * no timeout exists in the tree.
          */
 
