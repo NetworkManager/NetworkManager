@@ -9,6 +9,8 @@
 #include "nm-connection.h"
 #include "nm-utils.h"
 
+#define NMI_WAIT_DEVICE_TIMEOUT_MS 60000
+
 static inline gboolean
 guess_ip_address_family (const char *str)
 {
