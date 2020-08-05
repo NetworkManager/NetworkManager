@@ -584,7 +584,6 @@ reader_parse_master (Reader *reader,
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	NMSettingBond *s_bond;
 	gs_free char *master_to_free = NULL;
 	const char *master;
 	char *slaves;
@@ -603,8 +602,15 @@ reader_parse_master (Reader *reader,
 	s_con = nm_connection_get_setting_connection (connection);
 	master = nm_setting_connection_get_uuid (s_con);
 
-	if (nm_streq (type_name, NM_SETTING_BOND_SETTING_NAME)) {
-		s_bond = (NMSettingBond *)nm_connection_get_setting_by_name (connection, type_name);
+	if (nm_streq (type_name, NM_SETTING_BRIDGE_SETTING_NAME)) {
+		NMSettingBridge *s_bridge = nm_connection_get_setting_bridge (connection);
+
+		/* Avoid the forwarding delay */
+		g_object_set (s_bridge,
+		              NM_SETTING_BRIDGE_STP, FALSE,
+		              NULL);
+	} else if (nm_streq (type_name, NM_SETTING_BOND_SETTING_NAME)) {
+		NMSettingBond *s_bond = nm_connection_get_setting_bond (connection);
 
 		opts = get_word (&argument, ':');
 		while (opts && *opts) {
