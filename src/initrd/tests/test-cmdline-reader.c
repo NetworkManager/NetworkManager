@@ -774,6 +774,7 @@ test_bridge (void)
 
 	s_bridge = nm_connection_get_setting_bridge (connection);
 	g_assert (s_bridge);
+	g_assert_cmpint (nm_setting_bridge_get_stp (s_bridge), ==, FALSE);
 
 	connection = g_hash_table_lookup (connections, "eth0");
 	g_assert (connection);
