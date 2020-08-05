@@ -1236,7 +1236,7 @@ int n_dhcp4_c_connection_dispatch_io(NDhcp4CConnection *connection,
                 /*
                  * Remember the start time of the transaction, and the base
                  * time of any relative timestamps from the pending request.
-                 * Thes same times applies to the response, and sholud be
+                 * The same time applies to the response, and should be
                  * copied over.
                  */
                 message->userdata.start_time = connection->request->userdata.start_time;

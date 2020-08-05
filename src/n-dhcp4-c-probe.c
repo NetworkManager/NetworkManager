@@ -221,7 +221,7 @@ _c_public_ void n_dhcp4_client_probe_config_set_requested_ip(NDhcp4ClientProbeCo
  * delay is specified to be a random value in the range 1000 to 10.000 ms.
  * However, there does not appear to be any particular reason to
  * unconditionally wait at least one second, so we move the range down to
- * start at 0 ms. The reaon for the random delay is to avoid network-wide
+ * start at 0 ms. The reason for the random delay is to avoid network-wide
  * events causing too much simultaneous network traffic. However, on modern
  * networks, a more reasonable value may be in the 10 ms range.
  */
@@ -236,7 +236,7 @@ _c_public_ void n_dhcp4_client_probe_config_set_start_delay(NDhcp4ClientProbeCon
  *
  * This adds an option to the list of options to request from the server.
  *
- * A server may send options that we do not requst, and it may omit options
+ * A server may send options that we do not request, and it may omit options
  * that we do request. However, to increase the likelyhood of uniform behavior
  * between server implementations, we do not expose options that were not
  * explicitly requested.
