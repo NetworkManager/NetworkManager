@@ -1505,6 +1505,14 @@ _nmtst_assert_ip6_address (const char *file, int line, const struct in6_addr *ad
 }
 #define nmtst_assert_ip6_address(addr, str_expected) _nmtst_assert_ip6_address (__FILE__, __LINE__, addr, str_expected)
 
+#define nmtst_assert_ip_address(addr_family, addr, str_expected) \
+	G_STMT_START { \
+		if (NM_IS_IPv4 (addr_family)) \
+			nmtst_assert_ip4_address (*((const in_addr_t *) (addr)), (str_expected)); \
+		else \
+			nmtst_assert_ip6_address ((const struct in6_addr *) (addr), (str_expected)); \
+	} G_STMT_END
+
 #define nmtst_spawn_sync(working_directory, standard_out, standard_err, assert_exit_status, ...) \
 	__nmtst_spawn_sync (working_directory, standard_out, standard_err, assert_exit_status, ##__VA_ARGS__, NULL)
 static inline int

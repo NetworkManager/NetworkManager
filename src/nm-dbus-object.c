@@ -8,6 +8,7 @@
 #include "nm-dbus-object.h"
 
 #include "nm-dbus-manager.h"
+#include "NetworkManagerUtils.h"
 
 /*****************************************************************************/
 
@@ -142,6 +143,33 @@ nm_dbus_object_unexport (NMDBusObject *self)
 	self->internal.export_version_id = 0;
 
 	self->internal.is_unexporting = FALSE;
+}
+
+static gboolean
+_unexport_on_idle_cb (gpointer user_data)
+{
+	gs_unref_object NMDBusObject *self = user_data;
+
+	nm_dbus_object_unexport (self);
+	return G_SOURCE_REMOVE;
+}
+
+void
+nm_dbus_object_unexport_on_idle (NMDBusObject *self_take)
+{
+	g_return_if_fail (NM_IS_DBUS_OBJECT (self_take));
+
+	g_return_if_fail (self_take->internal.path);
+
+	/* There is no mechanism to cancel or abort the unexport. It will always
+	 * gonna happen.
+	 *
+	 * However, we register it to block shutdown, so that we ensure that it will happen. */
+
+	nm_shutdown_wait_obj_register_object (self_take, "unexport-dbus-obj-on-idle");
+
+	g_idle_add (_unexport_on_idle_cb,
+	            g_steal_pointer (&self_take));
 }
 
 /*****************************************************************************/

@@ -28,16 +28,17 @@ ip4_process_dhcpcd_rfc3442_routes (const char *iface,
                                    NMIP4Config *ip4_config,
                                    guint32 *gwaddr)
 {
-	char **routes, **r;
+	gs_free const char **routes = NULL;
+	const char **r;
 	gboolean have_routes = FALSE;
 
-	routes = g_strsplit (str, " ", 0);
-	if (g_strv_length (routes) == 0)
-		goto out;
+	routes = nm_utils_strsplit_set (str, " ");
+	if (!routes)
+		return FALSE;
 
-	if ((g_strv_length (routes) % 2) != 0) {
+	if ((NM_PTRARRAY_LEN (routes) % 2) != 0) {
 		_LOG2W (LOGD_DHCP4, iface, "  classless static routes provided, but invalid");
-		goto out;
+		return FALSE;
 	}
 
 	for (r = routes; *r; r += 2) {
@@ -82,8 +83,6 @@ ip4_process_dhcpcd_rfc3442_routes (const char *iface,
 		}
 	}
 
-out:
-	g_strfreev (routes);
 	return have_routes;
 }
 
@@ -263,17 +262,21 @@ process_classful_routes (const char *iface,
                          guint32 route_metric,
                          NMIP4Config *ip4_config)
 {
+	gs_free const char **searches = NULL;
+	const char **s;
 	const char *str;
-	char **searches, **s;
 
 	str = g_hash_table_lookup (options, "static_routes");
 	if (!str)
 		return;
 
-	searches = g_strsplit (str, " ", 0);
-	if ((g_strv_length (searches) % 2)) {
+	searches = nm_utils_strsplit_set (str, " ");
+	if (!searches)
+		return;
+
+	if ((NM_PTRARRAY_LEN (searches) % 2) != 0) {
 		_LOG2I (LOGD_DHCP, iface, "  static routes provided, but invalid");
-		goto out;
+		return;
 	}
 
 	for (s = searches; *s; s += 2) {
@@ -313,9 +316,6 @@ process_classful_routes (const char *iface,
 		_LOG2I (LOGD_DHCP, iface, "  static route %s",
 		             nm_platform_ip4_route_to_string (&route, NULL, 0));
 	}
-
-out:
-	g_strfreev (searches);
 }
 
 static void
@@ -324,14 +324,18 @@ process_domain_search (const char *iface,
                        GFunc add_func,
                        gpointer user_data)
 {
-	char **searches, **s;
-	char *unescaped, *p;
+	gs_free const char **searches = NULL;
+	gs_free char *unescaped = NULL;
+	const char **s;
+	char *p;
 	int i;
 
 	g_return_if_fail (str != NULL);
 	g_return_if_fail (add_func != NULL);
 
-	p = unescaped = g_strdup (str);
+	unescaped = g_strdup (str);
+
+	p = unescaped;
 	do {
 		p = strstr (p, "\\032");
 		if (!p)
@@ -344,20 +348,14 @@ process_domain_search (const char *iface,
 
 	if (strchr (unescaped, '\\')) {
 		_LOG2W (LOGD_DHCP, iface, "  invalid domain search: '%s'", unescaped);
-		goto out;
+		return;
 	}
 
-	searches = g_strsplit (unescaped, " ", 0);
-	for (s = searches; *s; s++) {
-		if (strlen (*s)) {
-			_LOG2I (LOGD_DHCP, iface, "  domain search '%s'", *s);
-			add_func (*s, user_data);
-		}
+	searches = nm_utils_strsplit_set (unescaped, " ");
+	for (s = searches; searches && *s; s++) {
+		_LOG2I (LOGD_DHCP, iface, "  domain search '%s'", *s);
+		add_func ((gpointer) *s, user_data);
 	}
-	g_strfreev (searches);
-
-out:
-	g_free (unescaped);
 }
 
 static void
@@ -374,7 +372,7 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
                                        guint32 route_table,
                                        guint32 route_metric)
 {
-	NMIP4Config *ip4_config = NULL;
+	gs_unref_object NMIP4Config *ip4_config = NULL;
 	guint32 tmp_addr;
 	in_addr_t addr;
 	NMPlatformIP4Address address;
@@ -394,7 +392,7 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
 	if (str && (inet_pton (AF_INET, str, &addr) > 0))
 		_LOG2I (LOGD_DHCP4, iface, "  address %s", str);
 	else
-		goto error;
+		return NULL;
 
 	str = g_hash_table_lookup (options, "subnet_mask");
 	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
@@ -422,10 +420,10 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
 		 */
 		str = g_hash_table_lookup (options, "routers");
 		if (str) {
-			char **routers = g_strsplit (str, " ", 0);
-			char **s;
+			gs_free const char **routers = nm_utils_strsplit_set (str, " ");
+			const char **s;
 
-			for (s = routers; *s; s++) {
+			for (s = routers; routers && *s; s++) {
 				/* FIXME: how to handle multiple routers? */
 				if (inet_pton (AF_INET, *s, &gateway) > 0) {
 					_LOG2I (LOGD_DHCP4, iface, "  gateway %s", *s);
@@ -434,7 +432,6 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
 				} else
 					_LOG2W (LOGD_DHCP4, iface, "ignoring invalid gateway '%s'", *s);
 			}
-			g_strfreev (routers);
 		}
 	}
 
@@ -464,10 +461,10 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
 
 	str = g_hash_table_lookup (options, "domain_name_servers");
 	if (str) {
-		char **dns = g_strsplit (str, " ", 0);
-		char **s;
+		gs_free const char **dns = nm_utils_strsplit_set (str, " ");
+		const char **s;
 
-		for (s = dns; *s; s++) {
+		for (s = dns; dns && *s; s++) {
 			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
 				if (tmp_addr) {
 					nm_ip4_config_add_nameserver (ip4_config, tmp_addr);
@@ -476,19 +473,17 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
 			} else
 				_LOG2W (LOGD_DHCP4, iface, "ignoring invalid nameserver '%s'", *s);
 		}
-		g_strfreev (dns);
 	}
 
 	str = g_hash_table_lookup (options, "domain_name");
 	if (str) {
-		char **domains = g_strsplit (str, " ", 0);
-		char **s;
+		gs_free const char **domains = nm_utils_strsplit_set (str, " ");
+		const char **s;
 
-		for (s = domains; *s; s++) {
+		for (s = domains; domains && *s; s++) {
 			_LOG2I (LOGD_DHCP4, iface, "  domain name '%s'", *s);
 			nm_ip4_config_add_domain (ip4_config, *s);
 		}
-		g_strfreev (domains);
 	}
 
 	str = g_hash_table_lookup (options, "domain_search");
@@ -497,10 +492,10 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
 
 	str = g_hash_table_lookup (options, "netbios_name_servers");
 	if (str) {
-		char **nbns = g_strsplit (str, " ", 0);
-		char **s;
+		gs_free const char **nbns = nm_utils_strsplit_set (str, " ");
+		const char **s;
 
-		for (s = nbns; *s; s++) {
+		for (s = nbns; nbns && *s; s++) {
 			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
 				if (tmp_addr) {
 					nm_ip4_config_add_wins (ip4_config, tmp_addr);
@@ -509,7 +504,6 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
 			} else
 				_LOG2W (LOGD_DHCP4, iface, "ignoring invalid WINS server '%s'", *s);
 		}
-		g_strfreev (nbns);
 	}
 
 	str = g_hash_table_lookup (options, "interface_mtu");
@@ -519,7 +513,7 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
 		errno = 0;
 		int_mtu = strtol (str, NULL, 10);
 		if (NM_IN_SET (errno, EINVAL, ERANGE))
-			goto error;
+			return NULL;
 
 		if (int_mtu > 576)
 			nm_ip4_config_set_mtu (ip4_config, int_mtu, NM_IP_CONFIG_SOURCE_DHCP);
@@ -533,10 +527,10 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
 
 	str = g_hash_table_lookup (options, "nis_servers");
 	if (str) {
-		char **nis = g_strsplit (str, " ", 0);
-		char **s;
+		gs_free const char **nis = nm_utils_strsplit_set (str, " ");
+		const char **s;
 
-		for (s = nis; *s; s++) {
+		for (s = nis; nis && *s; s++) {
 			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
 				if (tmp_addr) {
 					nm_ip4_config_add_nis_server (ip4_config, tmp_addr);
@@ -545,17 +539,12 @@ nm_dhcp_utils_ip4_config_from_options (NMDedupMultiIndex *multi_idx,
 			} else
 				_LOG2W (LOGD_DHCP4, iface, "ignoring invalid NIS server '%s'", *s);
 		}
-		g_strfreev (nis);
 	}
 
 	str = g_hash_table_lookup (options, "vendor_encapsulated_options");
 	nm_ip4_config_set_metered (ip4_config, str && strstr (str, "ANDROID_METERED"));
 
-	return ip4_config;
-
-error:
-	g_object_unref (ip4_config);
-	return NULL;
+	return g_steal_pointer (&ip4_config);
 }
 
 /*****************************************************************************/
@@ -621,7 +610,7 @@ nm_dhcp_utils_ip6_config_from_options (NMDedupMultiIndex *multi_idx,
                                        GHashTable *options,
                                        gboolean info_only)
 {
-	NMIP6Config *ip6_config = NULL;
+	gs_unref_object NMIP6Config *ip6_config = NULL;
 	struct in6_addr tmp_addr;
 	NMPlatformIP6Address address;
 	char *str = NULL;
@@ -651,7 +640,7 @@ nm_dhcp_utils_ip6_config_from_options (NMDedupMultiIndex *multi_idx,
 		if (!inet_pton (AF_INET6, str, &tmp_addr)) {
 			_LOG2W (LOGD_DHCP6, iface, "(%s): DHCP returned invalid address '%s'",
 			        iface, str);
-			goto error;
+			return NULL;
 		}
 
 		address.address = tmp_addr;
@@ -660,7 +649,7 @@ nm_dhcp_utils_ip6_config_from_options (NMDedupMultiIndex *multi_idx,
 		_LOG2I (LOGD_DHCP6, iface, "  address %s", str);
 	} else if (info_only == FALSE) {
 		/* No address in Managed mode is a hard error */
-		goto error;
+		return NULL;
 	}
 
 	str = g_hash_table_lookup (options, "host_name");
@@ -669,10 +658,10 @@ nm_dhcp_utils_ip6_config_from_options (NMDedupMultiIndex *multi_idx,
 
 	str = g_hash_table_lookup (options, "dhcp6_name_servers");
 	if (str) {
-		char **dns = g_strsplit (str, " ", 0);
-		char **s;
+		gs_free const char **dns = nm_utils_strsplit_set (str, " ");
+		const char **s;
 
-		for (s = dns; *s; s++) {
+		for (s = dns; dns && *s; s++) {
 			if (inet_pton (AF_INET6, *s, &tmp_addr) > 0) {
 				if (!IN6_IS_ADDR_UNSPECIFIED (&tmp_addr)) {
 					nm_ip6_config_add_nameserver (ip6_config, &tmp_addr);
@@ -681,18 +670,13 @@ nm_dhcp_utils_ip6_config_from_options (NMDedupMultiIndex *multi_idx,
 			} else
 				_LOG2W (LOGD_DHCP6, iface, "ignoring invalid nameserver '%s'", *s);
 		}
-		g_strfreev (dns);
 	}
 
 	str = g_hash_table_lookup (options, "dhcp6_domain_search");
 	if (str)
 		process_domain_search (iface, str, ip6_add_domain_search, ip6_config);
 
-	return ip6_config;
-
-error:
-	g_object_unref (ip6_config);
-	return NULL;
+	return g_steal_pointer (&ip6_config);
 }
 
 char *

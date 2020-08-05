@@ -1247,7 +1247,7 @@ applied_config_init (AppliedConfig *config, gpointer ip_config)
 	           || (!config->orig && !config->current)
 	           || nm_ip_config_get_addr_family (ip_config) == nm_ip_config_get_addr_family (config->orig ?: config->current));
 	nm_assert (   !ip_config
-	           || NM_IS_IP_CONFIG (ip_config, AF_UNSPEC));
+	           || NM_IS_IP_CONFIG (ip_config));
 
 	nm_g_object_ref (ip_config);
 	applied_config_clear (config);

@@ -215,7 +215,7 @@ _ASSERT_ip_config_data (const NMDnsIPConfigData *ip_data)
 {
 	nm_assert (ip_data);
 	_ASSERT_config_data (ip_data->data);
-	nm_assert (NM_IS_IP_CONFIG (ip_data->ip_config, AF_UNSPEC));
+	nm_assert (NM_IS_IP_CONFIG (ip_data->ip_config));
 	nm_assert (c_list_contains (&ip_data->data->data_lst_head, &ip_data->data_lst));
 	nm_assert (ip_data->data->ifindex == nm_ip_config_get_ifindex (ip_data->ip_config));
 }
@@ -228,7 +228,7 @@ _ip_config_data_new (NMDnsConfigData *data,
 	NMDnsIPConfigData *ip_data;
 
 	_ASSERT_config_data (data);
-	nm_assert (NM_IS_IP_CONFIG (ip_config, AF_UNSPEC));
+	nm_assert (NM_IS_IP_CONFIG (ip_config));
 	nm_assert (ip_config_type != NM_DNS_IP_CONFIG_TYPE_REMOVED);
 
 	ip_data = g_slice_new0 (NMDnsIPConfigData);
@@ -1644,7 +1644,7 @@ nm_dns_manager_set_ip_config (NMDnsManager *self,
 	NMDnsIPConfigData **p_best;
 
 	g_return_val_if_fail (NM_IS_DNS_MANAGER (self), FALSE);
-	g_return_val_if_fail (NM_IS_IP_CONFIG (ip_config, AF_UNSPEC), FALSE);
+	g_return_val_if_fail (NM_IS_IP_CONFIG (ip_config), FALSE);
 
 	ifindex = nm_ip_config_get_ifindex (ip_config);
 	g_return_val_if_fail (ifindex > 0, FALSE);

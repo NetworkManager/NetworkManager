@@ -1382,6 +1382,15 @@ nm_strcmp0_p_with_data (gconstpointer a, gconstpointer b, gpointer user_data)
 }
 
 int
+nm_strcmp_ascii_case_with_data (gconstpointer a, gconstpointer b, gpointer user_data)
+{
+	const char *s1 = a;
+	const char *s2 = b;
+
+	return g_ascii_strcasecmp (s1, s2);
+}
+
+int
 nm_cmp_uint32_p_with_data (gconstpointer p_a, gconstpointer p_b, gpointer user_data)
 {
 	const guint32 a = *((const guint32 *) p_a);
@@ -5147,4 +5156,82 @@ _nm_utils_format_variant_attributes (GHashTable *attributes,
 	                                          attr_separator,
 	                                          key_value_separator);
 	return g_string_free (str, FALSE);
+}
+
+/*****************************************************************************/
+
+gboolean
+nm_utils_is_localhost (const char *name)
+{
+	static const char *const NAMES[] = {
+		"localhost",
+		"localhost4",
+		"localhost6",
+		"localhost.localdomain",
+		"localhost4.localdomain4",
+		"localhost6.localdomain6",
+	};
+	gsize name_len;
+	int i;
+
+	if (!name)
+		return FALSE;
+
+	/* This tries to identify local host and domain names
+	 * described in RFC6761 plus the redhatism of localdomain.
+	 *
+	 * Similar to systemd's is_localhost(). */
+
+	name_len = strlen (name);
+
+	if (name_len == 0)
+		return FALSE;
+
+	if (name[name_len - 1] == '.') {
+		/* one trailing dot is fine. Hide it. */
+		name_len--;
+	}
+
+	for (i = 0; i < (int) G_N_ELEMENTS (NAMES); i++) {
+		const char *n = NAMES[i];
+		gsize l = strlen (n);
+		gsize s;
+
+		if (name_len < l)
+			continue;
+
+		s = name_len - l;
+
+		if (g_ascii_strncasecmp (&name[s], n, l) != 0)
+			continue;
+
+		/* we accept the name if it is equal to one of the well-known names,
+		 * or if it is some prefix, a '.' and the well-known name. */
+		if (s == 0)
+			return TRUE;
+		if (name[s - 1] == '.')
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+gboolean
+nm_utils_is_specific_hostname (const char *name)
+{
+	if (nm_str_is_empty (name))
+		return FALSE;
+
+	if (nm_streq (name, "(none)")) {
+		/* This is not a special hostname. Probably an artefact by somebody wrongly
+		 * printing NULL. */
+		return FALSE;
+	}
+
+	if (nm_utils_is_localhost (name))
+		return FALSE;
+
+	/* FIXME: properly validate the hostname, like systemd's hostname_is_valid() */
+
+	return TRUE;
 }

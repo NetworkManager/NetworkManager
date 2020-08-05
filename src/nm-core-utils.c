@@ -2373,20 +2373,6 @@ NM_ASSERT_VALID_PATH_COMPONENT (const char *name)
 	g_assert_not_reached ();
 }
 
-gboolean
-nm_utils_is_specific_hostname (const char *name)
-{
-	if (!name)
-		return FALSE;
-	if (   strcmp (name, "(none)")
-	    && strcmp (name, "localhost")
-	    && strcmp (name, "localhost6")
-	    && strcmp (name, "localhost.localdomain")
-	    && strcmp (name, "localhost6.localdomain6"))
-		return TRUE;
-	return FALSE;
-}
-
 /*****************************************************************************/
 
 typedef struct {

@@ -2120,6 +2120,14 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/nm-dbus-utils.h \
 	src/nm-dbus-object.c \
 	src/nm-dbus-object.h \
+	src/nm-netns.c \
+	src/nm-netns.h \
+	src/nm-l3-config-data.c \
+	src/nm-l3-config-data.h \
+	src/nm-l3cfg.c \
+	src/nm-l3cfg.h \
+	src/nm-ip-config.c \
+	src/nm-ip-config.h \
 	src/nm-ip4-config.c \
 	src/nm-ip4-config.h \
 	src/nm-ip6-config.c \
@@ -2169,11 +2177,6 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-checkpoint.h \
 	src/nm-checkpoint-manager.c \
 	src/nm-checkpoint-manager.h \
-	\
-	src/nm-l3-config-data.c \
-	src/nm-l3-config-data.h \
-	src/nm-l3cfg.c \
-	src/nm-l3cfg.h \
 	\
 	src/devices/nm-acd-manager.c \
 	src/devices/nm-acd-manager.h \
@@ -2315,8 +2318,6 @@ src_libNetworkManager_la_SOURCES = \
 	src/nm-connectivity.h \
 	src/nm-dcb.c \
 	src/nm-dcb.h \
-	src/nm-netns.c \
-	src/nm-netns.h \
 	src/nm-dhcp-config.c \
 	src/nm-dhcp-config.h \
 	src/nm-dispatcher.c \

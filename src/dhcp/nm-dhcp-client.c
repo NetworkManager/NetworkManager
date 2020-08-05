@@ -428,7 +428,7 @@ nm_dhcp_client_set_state (NMDhcpClient *self,
 	gs_free char *event_id = NULL;
 
 	if (NM_IN_SET (new_state, NM_DHCP_STATE_BOUND, NM_DHCP_STATE_EXTENDED)) {
-		g_return_if_fail (NM_IS_IP_CONFIG (ip_config, priv->addr_family));
+		g_return_if_fail (NM_IS_IP_CONFIG_ADDR_FAMILY (ip_config, priv->addr_family));
 		g_return_if_fail (options);
 	} else {
 		g_return_if_fail (!ip_config);

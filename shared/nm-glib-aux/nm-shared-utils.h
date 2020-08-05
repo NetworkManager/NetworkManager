@@ -1427,6 +1427,7 @@ nm_utf8_collate0 (const char *a, const char *b)
 int nm_strcmp_with_data (gconstpointer a, gconstpointer b, gpointer user_data);
 int nm_strcmp_p_with_data (gconstpointer a, gconstpointer b, gpointer user_data);
 int nm_strcmp0_p_with_data (gconstpointer a, gconstpointer b, gpointer user_data);
+int nm_strcmp_ascii_case_with_data (gconstpointer a, gconstpointer b, gpointer user_data);
 int nm_cmp_uint32_p_with_data (gconstpointer p_a, gconstpointer p_b, gpointer user_data);
 int nm_cmp_int2ptr_p_with_data (gconstpointer p_a, gconstpointer p_b, gpointer user_data);
 
@@ -1821,6 +1822,23 @@ nm_strv_ptrarray_ensure (GPtrArray **p_arr)
 	return *p_arr;
 }
 
+static inline const char *const*
+nm_strv_ptrarray_get_unsafe (GPtrArray *arr,
+                             guint *out_len)
+{
+	/* warning: the GPtrArray is not NULL terminated. So, it
+	 * isn't really a strv array (sorry the misnomer). That's why
+	 * the function is potentially "unsafe" and you must provide a
+	 * out_len parameter. */
+	if (   !arr
+	    || arr->len == 0) {
+		*out_len = 0;
+		return NULL;
+	}
+	*out_len = arr->len;
+	return (const char *const*) arr->pdata;
+}
+
 static inline GPtrArray *
 nm_strv_ptrarray_clone (const GPtrArray *src, gboolean null_if_empty)
 {
@@ -2176,5 +2194,11 @@ char *_nm_utils_format_variant_attributes (GHashTable *attributes,
                                            const NMVariantAttributeSpec *const *spec,
                                            char attr_separator,
                                            char key_value_separator);
+
+/*****************************************************************************/
+
+gboolean nm_utils_is_localhost (const char *name);
+
+gboolean nm_utils_is_specific_hostname (const char *name);
 
 #endif /* __NM_SHARED_UTILS_H__ */

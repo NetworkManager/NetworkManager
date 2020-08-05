@@ -1975,8 +1975,8 @@ device_ip_config_changed (NMDevice *device,
 	int addr_family;
 
 	nm_assert (new_config || old_config);
-	nm_assert (!new_config || NM_IS_IP_CONFIG (new_config, AF_UNSPEC));
-	nm_assert (!old_config || NM_IS_IP_CONFIG (old_config, AF_UNSPEC));
+	nm_assert (!new_config || NM_IS_IP_CONFIG (new_config));
+	nm_assert (!old_config || NM_IS_IP_CONFIG (old_config));
 
 	if (new_config) {
 		addr_family = nm_ip_config_get_addr_family (new_config);
