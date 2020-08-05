@@ -118,3 +118,28 @@ For testing, you also want to run NetworkManager with environment variable
 G_DEBUG=fatal-warnings to crash upon G_LOG_LEVEL_CRITICAL and G_LOG_LEVEL_WARNING
 g_log() message. NetworkManager won't use these levels for regular logging
 but for assertions.
+
+
+Git Notes (refs/notes/bugs)
+---------------------------
+
+There are special notes to annotate git commit messages with information
+about "Fixes" and "cherry picked from". Annotating the history is useful
+if it was not done initially because our scripts can make use of it.
+
+The notes it are called "refs/notes/bugs".
+
+So configure:
+
+  $ git config --add 'remote.origin.fetch' 'refs/notes/bugs:refs/notes/bugs'
+  $ git config --add 'notes.displayref' 'refs/notes/bugs'
+
+For example, set notes with
+
+  $ git notes --ref refs/notes/bugs add -m "(cherry picked from $COMMIT_SHA)" HEAD
+
+You should see the notes in git-log output as well.
+
+To resync our local notes use:
+
+  $ git fetch origin refs/notes/bugs:refs/notes/bugs -f
