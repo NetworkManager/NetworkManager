@@ -584,7 +584,6 @@ reader_parse_master (Reader *reader,
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	NMSettingBond *s_bond;
 	gs_free char *master_to_free = NULL;
 	const char *master;
 	char *slaves;
@@ -603,8 +602,15 @@ reader_parse_master (Reader *reader,
 	s_con = nm_connection_get_setting_connection (connection);
 	master = nm_setting_connection_get_uuid (s_con);
 
-	if (nm_streq (type_name, NM_SETTING_BOND_SETTING_NAME)) {
-		s_bond = (NMSettingBond *)nm_connection_get_setting_by_name (connection, type_name);
+	if (nm_streq (type_name, NM_SETTING_BRIDGE_SETTING_NAME)) {
+		NMSettingBridge *s_bridge = nm_connection_get_setting_bridge (connection);
+
+		/* Avoid the forwarding delay */
+		g_object_set (s_bridge,
+		              NM_SETTING_BRIDGE_STP, FALSE,
+		              NULL);
+	} else if (nm_streq (type_name, NM_SETTING_BOND_SETTING_NAME)) {
+		NMSettingBond *s_bond = nm_connection_get_setting_bond (connection);
 
 		opts = get_word (&argument, ':');
 		while (opts && *opts) {
@@ -867,6 +873,30 @@ reader_add_nameservers (Reader *reader, GPtrArray *nameservers)
 	}
 }
 
+static void
+connection_set_needed (NMConnection *connection)
+{
+	NMSettingConnection *s_con;
+
+	s_con = nm_connection_get_setting_connection (connection);
+	if (!nm_streq0 (nm_setting_connection_get_connection_type (s_con),
+	                NM_SETTING_WIRED_SETTING_NAME))
+		return;
+
+	if (nm_str_is_empty (nm_setting_connection_get_interface_name (s_con)))
+		return;
+
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT, NMI_WAIT_DEVICE_TIMEOUT_MS,
+	              NULL);
+}
+
+static void
+connection_set_needed_cb (gpointer key, gpointer value, gpointer user_data)
+{
+	connection_set_needed (value);
+}
+
 GHashTable *
 nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv, char **hostname)
 {
@@ -1001,11 +1031,16 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv, char **
 
 		connection = reader_get_connection (reader, bootdev, NULL, TRUE);
 		reader->bootdev_connection = connection;
+		connection_set_needed (connection);
 	}
 
-	if (neednet && g_hash_table_size (reader->hash) == 0) {
-		/* Make sure there's some connection. */
-		reader_get_default_connection (reader);
+	if (neednet) {
+		if (g_hash_table_size (reader->hash) == 0) {
+			/* Make sure there's some connection. */
+			reader_get_default_connection (reader);
+		}
+
+		g_hash_table_foreach (reader->hash, connection_set_needed_cb, NULL);
 	}
 
 	if (routes)
