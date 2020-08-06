@@ -49,6 +49,7 @@ test_auto (void)
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "Wired Connection");
 	g_assert_cmpint (nm_setting_connection_get_timestamp (s_con), ==, 0);
 	g_assert_cmpint (nm_setting_connection_get_multi_connect (s_con), ==, NM_CONNECTION_MULTI_CONNECT_MULTIPLE);
+	g_assert_cmpint (nm_setting_connection_get_wait_device_timeout (s_con), ==, -1);
 
 	g_assert (nm_setting_connection_get_autoconnect (s_con));
 
@@ -190,6 +191,7 @@ test_if_ip4_manual (void)
 	                                       "ip=203.0.113.2::203.0.113.1:26:"
 	                                       "hostname1.example.com:eth4");
 	NMConnection *connection;
+	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	NMIPAddress *ip_addr;
@@ -204,6 +206,10 @@ test_if_ip4_manual (void)
 	g_assert (connection);
 	nmtst_assert_connection_verifies_without_normalization (connection);
 	g_assert_cmpstr (nm_connection_get_id (connection), ==, "eth3");
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpint (nm_setting_connection_get_wait_device_timeout (s_con), ==, -1);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
@@ -294,6 +300,7 @@ test_multiple_merge (void)
 	const char *const*ARGV = NM_MAKE_STRV ("ip=192.0.2.2:::::eth0",
 	                                       "ip=[2001:db8::2]:::::eth0");
 	NMConnection *connection;
+	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
@@ -309,6 +316,10 @@ test_multiple_merge (void)
 	g_assert (connection);
 	nmtst_assert_connection_verifies_without_normalization (connection);
 	g_assert_cmpstr (nm_connection_get_id (connection), ==, "eth0");
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpint (nm_setting_connection_get_wait_device_timeout (s_con), ==, -1);
 
 	s_wired = nm_connection_get_setting_wired (connection);
 	g_assert (s_wired);
@@ -341,6 +352,7 @@ test_multiple_bootdev (void)
 	                                       "ip=eth4:dhcp",
 	                                       "bootdev=eth4");
 	NMConnection *connection;
+	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	gs_free char *hostname = NULL;
@@ -352,12 +364,18 @@ test_multiple_bootdev (void)
 
 	connection = g_hash_table_lookup (connections, "eth3");
 	g_assert (connection);
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpint (nm_setting_connection_get_wait_device_timeout (s_con), ==, -1);
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
 	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
 
 	connection = g_hash_table_lookup (connections, "eth4");
 	g_assert (connection);
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpint (nm_setting_connection_get_wait_device_timeout (s_con), ==, NMI_WAIT_DEVICE_TIMEOUT_MS);
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
 	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
@@ -388,6 +406,7 @@ test_bootdev (void)
 	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
 	g_assert_cmpstr (nm_setting_connection_get_id (s_con), ==, "ens3");
 	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, "ens3");
+	g_assert_cmpint (nm_setting_connection_get_wait_device_timeout(s_con), ==, NMI_WAIT_DEVICE_TIMEOUT_MS);
 
 	connection = g_hash_table_lookup (connections, "vlan2");
 	g_assert (connection);
@@ -774,6 +793,7 @@ test_bridge (void)
 
 	s_bridge = nm_connection_get_setting_bridge (connection);
 	g_assert (s_bridge);
+	g_assert_cmpint (nm_setting_bridge_get_stp (s_bridge), ==, FALSE);
 
 	connection = g_hash_table_lookup (connections, "eth0");
 	g_assert (connection);
@@ -1255,6 +1275,56 @@ test_bootif_ip (void)
 }
 
 static void
+test_neednet (void)
+{
+	gs_unref_hashtable GHashTable *connections = NULL;
+	const char *const*ARGV = NM_MAKE_STRV ("rd.neednet",
+	                                       "ip=eno1:dhcp",
+	                                       "ip=172.25.1.100::172.25.1.1:24::eno2",
+	                                       "bridge=br0:eno3");
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	gs_free char *hostname = NULL;
+
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV, &hostname);
+	g_assert (connections);
+	g_assert_cmpint (g_hash_table_size (connections), ==, 4);
+	g_assert_cmpstr (hostname, ==, NULL);
+
+	connection = g_hash_table_lookup (connections, "eno1");
+	g_assert (connection);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, "eno1");
+	g_assert_cmpint (nm_setting_connection_get_wait_device_timeout (s_con), ==, NMI_WAIT_DEVICE_TIMEOUT_MS);
+
+	connection = g_hash_table_lookup (connections, "eno2");
+	g_assert (connection);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, "eno2");
+	g_assert_cmpint (nm_setting_connection_get_wait_device_timeout (s_con), ==, NMI_WAIT_DEVICE_TIMEOUT_MS);
+
+	connection = g_hash_table_lookup (connections, "eno3");
+	g_assert (connection);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, "eno3");
+	g_assert_cmpint (nm_setting_connection_get_wait_device_timeout (s_con), ==, NMI_WAIT_DEVICE_TIMEOUT_MS);
+
+	connection = g_hash_table_lookup (connections, "br0");
+	g_assert (connection);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, "br0");
+	g_assert_cmpint (nm_setting_connection_get_wait_device_timeout (s_con), ==, -1);
+}
+
+static void
 test_bootif_no_ip (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
@@ -1450,6 +1520,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/initrd/cmdline/bootif/no_ip", test_bootif_no_ip);
 	g_test_add_func ("/initrd/cmdline/bootif/hwtype", test_bootif_hwtype);
 	g_test_add_func ("/initrd/cmdline/bootif/off", test_bootif_off);
+	g_test_add_func ("/initrd/cmdline/neednet", test_neednet);
 
 	return g_test_run ();
 }
