@@ -732,6 +732,10 @@ NM_G_ERROR_MSG (GError *error)
 #define _NM_IN_SET_EVAL_14(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_13 (op, _x, __VA_ARGS__)
 #define _NM_IN_SET_EVAL_15(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_14 (op, _x, __VA_ARGS__)
 #define _NM_IN_SET_EVAL_16(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_15 (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_17(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_16 (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_18(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_17 (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_19(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_18 (op, _x, __VA_ARGS__)
+#define _NM_IN_SET_EVAL_20(op, _x, y, ...)      (_x == (y)) op _NM_IN_SET_EVAL_19 (op, _x, __VA_ARGS__)
 
 #define _NM_IN_SET_EVAL_N2(op, _x, n, ...)      (_NM_IN_SET_EVAL_##n(op, _x, __VA_ARGS__))
 #define _NM_IN_SET_EVAL_N(op, type, x, n, ...)                      \
@@ -798,6 +802,10 @@ _NM_IN_STRSET_streq (const char *x, const char *s)
 #define _NM_IN_STRSET_EVAL_14(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_13 (op, _x, __VA_ARGS__)
 #define _NM_IN_STRSET_EVAL_15(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_14 (op, _x, __VA_ARGS__)
 #define _NM_IN_STRSET_EVAL_16(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_15 (op, _x, __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_17(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_16 (op, _x, __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_18(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_17 (op, _x, __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_19(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_18 (op, _x, __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_20(op, _x, y, ...)   _NM_IN_STRSET_streq (_x, y) op _NM_IN_STRSET_EVAL_19 (op, _x, __VA_ARGS__)
 
 #define _NM_IN_STRSET_EVAL_N2(op, _x, n, ...)   (_NM_IN_STRSET_EVAL_##n(op, _x, __VA_ARGS__))
 #define _NM_IN_STRSET_EVAL_N(op, x, n, ...)                       \
