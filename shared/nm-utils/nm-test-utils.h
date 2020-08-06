@@ -2207,14 +2207,14 @@ nmtst_assert_setting_is_equal (gconstpointer /* const NMSetting * */ a,
 	g_assert (NM_IS_SETTING (b));
 
 	if (NM_FLAGS_HAS (r, 0x4))
-		NM_SWAP (a, b);
+		NM_SWAP (&a, &b);
 
 	g_assert (nm_setting_compare ((NMSetting *) a,
 	                              (NMSetting *) b,
 	                              flags));
 
 	if (NM_FLAGS_HAS (r, 0x8))
-		NM_SWAP (a, b);
+		NM_SWAP (&a, &b);
 
 	g_assert (nm_setting_diff ((NMSetting *) a,
 	                           (NMSetting *) b,

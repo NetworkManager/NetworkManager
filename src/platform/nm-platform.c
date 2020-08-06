@@ -3772,7 +3772,7 @@ ip6_address_scope_cmp (gconstpointer p_a, gconstpointer p_b, gpointer increasing
 	const NMPlatformIP6Address *b;
 
 	if (!increasing)
-		NM_SWAP (p_a, p_b);
+		NM_SWAP (&p_a, &p_b);
 
 	a = NMP_OBJECT_CAST_IP6_ADDRESS (*(const NMPObject *const*) p_a);
 	b = NMP_OBJECT_CAST_IP6_ADDRESS (*(const NMPObject *const*) p_b);
