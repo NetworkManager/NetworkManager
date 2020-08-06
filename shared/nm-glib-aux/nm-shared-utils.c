@@ -1526,15 +1526,22 @@ comp_l:
 
 /*****************************************************************************/
 
+typedef struct {
+	union {
+		guint8 table[256];
+		guint64 _dummy_for_alignment;
+	};
+} CharLookupTable;
+
 static void
-_char_lookup_table_set_one (guint8 lookup[static 256],
-                             char ch)
+_char_lookup_table_set_one (CharLookupTable *lookup,
+                            char ch)
 {
-	lookup[(guint8) ch] = 1;
+	lookup->table[(guint8) ch] = 1;
 }
 
 static void
-_char_lookup_table_set_all (guint8 lookup[static 256],
+_char_lookup_table_set_all (CharLookupTable *lookup,
                             const char *candidates)
 {
 	while (candidates[0] != '\0')
@@ -1542,24 +1549,26 @@ _char_lookup_table_set_all (guint8 lookup[static 256],
 }
 
 static void
-_char_lookup_table_init (guint8 lookup[static 256],
+_char_lookup_table_init (CharLookupTable *lookup,
                          const char *candidates)
 {
-	memset (lookup, 0, 256);
+	*lookup = (CharLookupTable) {
+		.table = { 0 },
+	};
 	if (candidates)
 		_char_lookup_table_set_all (lookup, candidates);
 }
 
 static gboolean
-_char_lookup_has (const guint8 lookup[static 256],
+_char_lookup_has (const CharLookupTable *lookup,
                   char ch)
 {
-	nm_assert (lookup[(guint8) '\0'] == 0);
-	return lookup[(guint8) ch] != 0;
+	nm_assert (lookup->table[(guint8) '\0'] == 0);
+	return lookup->table[(guint8) ch] != 0;
 }
 
 static gboolean
-_char_lookup_has_all (const guint8 lookup[static 256],
+_char_lookup_has_all (const CharLookupTable *lookup,
                       const char *candidates)
 {
 	if (candidates) {
@@ -1607,7 +1616,7 @@ nm_utils_strsplit_set_full (const char *str,
 	gsize str_len_p1;
 	const char *c_str;
 	char *s;
-	guint8 ch_lookup[256];
+	CharLookupTable ch_lookup;
 	const gboolean f_escaped = NM_FLAGS_HAS (flags, NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED);
 	const gboolean f_allow_escaping = f_escaped || NM_FLAGS_HAS (flags, NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
 	const gboolean f_preserve_empty = NM_FLAGS_HAS (flags, NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY);
@@ -1620,13 +1629,13 @@ nm_utils_strsplit_set_full (const char *str,
 		nm_assert_not_reached ();
 		delimiters = " \t\n";
 	}
-	_char_lookup_table_init (ch_lookup, delimiters);
+	_char_lookup_table_init (&ch_lookup, delimiters);
 
 	nm_assert (   !f_allow_escaping
-	           || !_char_lookup_has (ch_lookup, '\\'));
+	           || !_char_lookup_has (&ch_lookup, '\\'));
 
 	if (!f_preserve_empty) {
-		while (_char_lookup_has (ch_lookup, str[0]))
+		while (_char_lookup_has (&ch_lookup, str[0]))
 			str++;
 	}
 
@@ -1654,7 +1663,7 @@ nm_utils_strsplit_set_full (const char *str,
 	c_str = str;
 	while (TRUE) {
 
-		while (G_LIKELY (!_char_lookup_has (ch_lookup, c_str[0]))) {
+		while (G_LIKELY (!_char_lookup_has (&ch_lookup, c_str[0]))) {
 			if (c_str[0] == '\0')
 				goto done1;
 			c_str++;
@@ -1674,7 +1683,7 @@ nm_utils_strsplit_set_full (const char *str,
 
 		/* if we drop empty tokens, then we now skip over all consecutive delimiters. */
 		if (!f_preserve_empty) {
-			while (_char_lookup_has (ch_lookup, c_str[0]))
+			while (_char_lookup_has (&ch_lookup, c_str[0]))
 				c_str++;
 			if (c_str[0] == '\0')
 				break;
@@ -1707,9 +1716,9 @@ done1:
 			goto done2;
 		}
 		nm_assert (   f_preserve_empty
-		           || !_char_lookup_has (ch_lookup, s[0]));
+		           || !_char_lookup_has (&ch_lookup, s[0]));
 
-		while (!_char_lookup_has (ch_lookup, s[0])) {
+		while (!_char_lookup_has (&ch_lookup, s[0])) {
 			if (G_UNLIKELY (   s[0] == '\\'
 			                && f_allow_escaping)) {
 				s++;
@@ -1722,12 +1731,12 @@ done1:
 				s++;
 		}
 
-		nm_assert (_char_lookup_has (ch_lookup, s[0]));
+		nm_assert (_char_lookup_has (&ch_lookup, s[0]));
 		s[0] = '\0';
 		s++;
 
 		if (!f_preserve_empty) {
-			while (_char_lookup_has (ch_lookup, s[0]))
+			while (_char_lookup_has (&ch_lookup, s[0]))
 				s++;
 			if (s[0] == '\0')
 				goto done2;
@@ -1775,16 +1784,16 @@ done2:
 
 		/* We no longer need ch_lookup for its original purpose. Modify it, so it
 		 * can detect the delimiters, '\\', and (optionally) whitespaces. */
-		_char_lookup_table_set_one (ch_lookup, '\\');
+		_char_lookup_table_set_one (&ch_lookup, '\\');
 		if (f_strstrip)
-			_char_lookup_table_set_all (ch_lookup, NM_ASCII_SPACES);
+			_char_lookup_table_set_all (&ch_lookup, NM_ASCII_SPACES);
 
 		for (i_token = 0; ptr[i_token]; i_token++) {
 			s = (char *) ptr[i_token];
 			j = 0;
 			for (i = 0; s[i] != '\0'; ) {
 				if (   s[i] == '\\'
-				    && _char_lookup_has (ch_lookup, s[i + 1]))
+				    && _char_lookup_has (&ch_lookup, s[i + 1]))
 					i++;
 				s[j++] = s[i++];
 			}
@@ -1805,8 +1814,8 @@ nm_utils_escaped_tokens_escape_full (const char *str,
                                      NMUtilsEscapedTokensEscapeFlags flags,
                                      char **out_to_free)
 {
-	guint8 ch_lookup[256];
-	guint8 ch_lookup_as_needed[256];
+	CharLookupTable ch_lookup;
+	CharLookupTable ch_lookup_as_needed;
 	gboolean has_ch_lookup_as_needed = FALSE;
 	char *ret;
 	gsize str_len;
@@ -1828,65 +1837,65 @@ nm_utils_escaped_tokens_escape_full (const char *str,
 
 	str_len = strlen (str);
 
-	_char_lookup_table_init (ch_lookup, delimiters);
+	_char_lookup_table_init (&ch_lookup, delimiters);
 	if (   !delimiters
 	    || NM_FLAGS_HAS (flags, NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_SPACES)) {
 		flags &= ~(  NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_LEADING_SPACE
 		           | NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_TRAILING_SPACE);
-		_char_lookup_table_set_all (ch_lookup, NM_ASCII_SPACES);
+		_char_lookup_table_set_all (&ch_lookup, NM_ASCII_SPACES);
 	}
 
 	if (NM_FLAGS_HAS (flags, NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_ALWAYS)) {
-		_char_lookup_table_set_one (ch_lookup, '\\');
+		_char_lookup_table_set_one (&ch_lookup, '\\');
 		escape_backslash_as_needed = FALSE;
-	} else if (_char_lookup_has (ch_lookup, '\\'))
+	} else if (_char_lookup_has (&ch_lookup, '\\'))
 		escape_backslash_as_needed = FALSE;
 	else {
 		escape_backslash_as_needed = NM_FLAGS_HAS (flags, NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_AS_NEEDED);
 		if (escape_backslash_as_needed) {
 			if (    NM_FLAGS_ANY (flags,   NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_LEADING_SPACE
 			                             | NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_TRAILING_SPACE)
-			    && !_char_lookup_has_all (ch_lookup, NM_ASCII_SPACES)) {
+			    && !_char_lookup_has_all (&ch_lookup, NM_ASCII_SPACES)) {
 				/* ESCAPE_LEADING_SPACE and ESCAPE_TRAILING_SPACE implies that we escape backslash
 				 * before whitespaces. */
 				if (!has_ch_lookup_as_needed) {
 					has_ch_lookup_as_needed = TRUE;
-					_char_lookup_table_init (ch_lookup_as_needed, NULL);
+					_char_lookup_table_init (&ch_lookup_as_needed, NULL);
 				}
-				_char_lookup_table_set_all (ch_lookup_as_needed, NM_ASCII_SPACES);
+				_char_lookup_table_set_all (&ch_lookup_as_needed, NM_ASCII_SPACES);
 			}
 			if (   delimiters_as_needed
-			    && !_char_lookup_has_all (ch_lookup, delimiters_as_needed)) {
+			    && !_char_lookup_has_all (&ch_lookup, delimiters_as_needed)) {
 				if (!has_ch_lookup_as_needed) {
 					has_ch_lookup_as_needed = TRUE;
-					_char_lookup_table_init (ch_lookup_as_needed, NULL);
+					_char_lookup_table_init (&ch_lookup_as_needed, NULL);
 				}
-				_char_lookup_table_set_all (ch_lookup_as_needed, delimiters_as_needed);
+				_char_lookup_table_set_all (&ch_lookup_as_needed, delimiters_as_needed);
 			}
 		}
 	}
 
 	escape_leading_space =    NM_FLAGS_HAS (flags, NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_LEADING_SPACE)
 	                       && g_ascii_isspace (str[0])
-	                       && !_char_lookup_has (ch_lookup, str[0]);
+	                       && !_char_lookup_has (&ch_lookup, str[0]);
 	if (str_len == 1)
 		escape_trailing_space = FALSE;
 	else {
 		escape_trailing_space =    NM_FLAGS_HAS (flags, NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_TRAILING_SPACE)
 		                        && g_ascii_isspace (str[str_len - 1])
-		                        && !_char_lookup_has (ch_lookup, str[str_len - 1]);
+		                        && !_char_lookup_has (&ch_lookup, str[str_len - 1]);
 	}
 
 	n_escapes = 0;
 	for (i = 0; str[i] != '\0'; i++) {
-		if (_char_lookup_has (ch_lookup, str[i]))
+		if (_char_lookup_has (&ch_lookup, str[i]))
 			n_escapes++;
 		else if (   str[i] == '\\'
 		         && escape_backslash_as_needed
-		         && (   _char_lookup_has (ch_lookup, str[i + 1])
+		         && (   _char_lookup_has (&ch_lookup, str[i + 1])
 		             || NM_IN_SET (str[i + 1], '\0', '\\')
 		             || (   has_ch_lookup_as_needed
-		                 && _char_lookup_has (ch_lookup_as_needed, str[i + 1]))))
+		                 && _char_lookup_has (&ch_lookup_as_needed, str[i + 1]))))
 			n_escapes++;
 	}
 	if (escape_leading_space)
@@ -1910,19 +1919,19 @@ nm_utils_escaped_tokens_escape_full (const char *str,
 		ret[j++] = str[i++];
 	}
 	for (; str[i] != '\0'; i++) {
-		if (_char_lookup_has (ch_lookup, str[i]))
+		if (_char_lookup_has (&ch_lookup, str[i]))
 			ret[j++] = '\\';
 		else if (   str[i] == '\\'
 		         && escape_backslash_as_needed
-		         && (   _char_lookup_has (ch_lookup, str[i + 1])
+		         && (   _char_lookup_has (&ch_lookup, str[i + 1])
 		             || NM_IN_SET (str[i + 1], '\0', '\\')
 		             || (   has_ch_lookup_as_needed
-		                 && _char_lookup_has (ch_lookup_as_needed, str[i + 1]))))
+		                 && _char_lookup_has (&ch_lookup_as_needed, str[i + 1]))))
 			ret[j++] = '\\';
 		ret[j++] = str[i];
 	}
 	if (escape_trailing_space) {
-		nm_assert (   !_char_lookup_has (ch_lookup, ret[j - 1])
+		nm_assert (   !_char_lookup_has (&ch_lookup, ret[j - 1])
 		           && g_ascii_isspace (ret[j - 1]));
 		ret[j] = ret[j - 1];
 		ret[j - 1] = '\\';
@@ -2044,17 +2053,17 @@ nm_utils_strsplit_quoted (const char *str)
 {
 	gs_unref_ptrarray GPtrArray *arr = NULL;
 	gs_free char *str_out = NULL;
-	guint8 ch_lookup[256];
+	CharLookupTable ch_lookup;
 
 	nm_assert (str);
 
-	_char_lookup_table_init (ch_lookup, NM_ASCII_WHITESPACES);
+	_char_lookup_table_init (&ch_lookup, NM_ASCII_WHITESPACES);
 
 	for (;;) {
 		char quote;
 		gsize j;
 
-		while (_char_lookup_has (ch_lookup, str[0]))
+		while (_char_lookup_has (&ch_lookup, str[0]))
 			str++;
 
 		if (str[0] == '\0')
@@ -2093,7 +2102,7 @@ nm_utils_strsplit_quoted (const char *str)
 				str++;
 				continue;
 			}
-			if (_char_lookup_has (ch_lookup, str[0])) {
+			if (_char_lookup_has (&ch_lookup, str[0])) {
 				str++;
 				break;
 			}
