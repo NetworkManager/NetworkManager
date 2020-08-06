@@ -2038,6 +2038,9 @@ int nm_platform_ip6_address_pretty_sort_cmp (const NMPlatformIP6Address *a1,
                                              const NMPlatformIP6Address *a2,
                                              gboolean prefer_temp);
 
+GHashTable *nm_platform_ip4_address_addr_to_hash (NMPlatform *self,
+                                                  int ifindex);
+
 int nm_platform_ip4_route_cmp (const NMPlatformIP4Route *a, const NMPlatformIP4Route *b, NMPlatformIPRouteCmpType cmp_type);
 int nm_platform_ip6_route_cmp (const NMPlatformIP6Route *a, const NMPlatformIP6Route *b, NMPlatformIPRouteCmpType cmp_type);
 
