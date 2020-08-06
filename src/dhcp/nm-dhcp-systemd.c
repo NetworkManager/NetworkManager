@@ -740,6 +740,7 @@ lease_to_ip6_config (NMDedupMultiIndex *multi_idx,
 	uint32_t lft_pref, lft_valid;
 	char addr_str[NM_UTILS_INET_ADDRSTRLEN];
 	char **domains;
+	const char *s;
 	nm_auto_free_gstring GString *str = NULL;
 	int num, i;
 
@@ -806,6 +807,13 @@ lease_to_ip6_config (NMDedupMultiIndex *multi_idx,
 		                           _nm_dhcp_option_dhcp6_options,
 		                           NM_DHCP_OPTION_DHCP6_DOMAIN_LIST,
 		                           str->str);
+	}
+
+	if (sd_dhcp6_lease_get_fqdn (lease, &s) >= 0) {
+		nm_dhcp_option_add_option (options,
+		                           _nm_dhcp_option_dhcp6_options,
+		                           NM_DHCP_OPTION_DHCP6_FQDN,
+		                           s);
 	}
 
 	NM_SET_OUT (out_options, g_steal_pointer (&options));
