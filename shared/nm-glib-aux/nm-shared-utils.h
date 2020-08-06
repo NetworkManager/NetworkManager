@@ -8,6 +8,12 @@
 
 #include <netinet/in.h>
 
+static inline gboolean
+nm_is_ascii (char ch)
+{
+	return ((uint8_t) ch) < 128;
+}
+
 /*****************************************************************************/
 
 pid_t nm_utils_gettid (void);
