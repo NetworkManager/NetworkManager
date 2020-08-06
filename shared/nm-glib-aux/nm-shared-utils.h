@@ -1631,6 +1631,12 @@ nm_g_hash_table_lookup (GHashTable *hash, gconstpointer key)
 }
 
 static inline gboolean
+nm_g_hash_table_contains (GHashTable *hash, gconstpointer key)
+{
+	return hash ? g_hash_table_contains (hash, key) : FALSE;
+}
+
+static inline gboolean
 nm_g_hash_table_remove (GHashTable *hash, gconstpointer key)
 {
 	return hash ? g_hash_table_remove (hash, key) : FALSE;
