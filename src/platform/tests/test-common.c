@@ -1190,12 +1190,23 @@ nmtstp_link_bridge_add (NMPlatform *platform,
 	_init_platform (&platform, external_command);
 
 	if (external_command) {
-		r = nmtstp_run_command ("ip link add %s type bridge forward_delay %u hello_time %u max_age %u ageing_time %u",
+		r = nmtstp_run_command ("ip link add %s type bridge forward_delay %u hello_time %u max_age %u ageing_time %u stp_state %d priority %u group_fwd_mask %#x mcast_last_member_count %u  mcast_startup_query_count %u mcast_last_member_interval %"G_GUINT64_FORMAT" mcast_membership_interval %"G_GUINT64_FORMAT" mcast_querier_interval %"G_GUINT64_FORMAT" mcast_query_interval %"G_GUINT64_FORMAT" mcast_query_response_interval %"G_GUINT64_FORMAT" mcast_startup_query_interval %"G_GUINT64_FORMAT"",
 		                        name,
 		                        lnk->forward_delay,
 		                        lnk->hello_time,
 		                        lnk->max_age,
-		                        lnk->ageing_time);
+		                        lnk->ageing_time,
+		                        (int) lnk->stp_state,
+		                        lnk->priority,
+		                        lnk->group_fwd_mask,
+		                        lnk->mcast_last_member_count,
+		                        lnk->mcast_startup_query_count,
+		                        lnk->mcast_last_member_interval,
+		                        lnk->mcast_membership_interval,
+		                        lnk->mcast_querier_interval,
+		                        lnk->mcast_query_interval,
+		                        lnk->mcast_query_response_interval,
+		                        lnk->mcast_startup_query_interval);
 		g_assert_cmpint (r, ==, 0);
 		pllink = nmtstp_assert_wait_for_link (platform, name, NM_LINK_TYPE_BRIDGE, 100);
 	}

@@ -232,6 +232,16 @@ from_sysfs_multicast_router (const char *value, GValue *out)
 
 /*****************************************************************************/
 
+#define _DEFAULT_IF_ZERO(val, def_val) \
+    ({ \
+        typeof (val) _val = (val); \
+        typeof (val) _def_val = (def_val); \
+        \
+         (_val == 0) \
+        ? _def_val \
+        : _val; \
+    })
+
 typedef struct {
 	const char *name;
 	const char *sysname;
@@ -302,7 +312,6 @@ static const Option master_options[] = {
 	OPTION (NM_SETTING_BRIDGE_GROUP_FORWARD_MASK,
 	        "group_fwd_mask",
 	        OPTION_TYPE_INT (0, 0xFFFF, 0),
-	        .default_if_zero    = TRUE,
 	),
 	OPTION (NM_SETTING_BRIDGE_MULTICAST_HASH_MAX,
 	        "hash_max",
@@ -1018,10 +1027,21 @@ create_and_realize (NMDevice *device,
 	}
 
 	props = (NMPlatformLnkBridge) {
-		.forward_delay = nm_setting_bridge_get_forward_delay (s_bridge) * 100u,
-		.hello_time = nm_setting_bridge_get_hello_time (s_bridge) * 100u,
-		.max_age = nm_setting_bridge_get_max_age (s_bridge) * 100u,
-		.ageing_time = nm_setting_bridge_get_ageing_time (s_bridge) * 100u,
+		.stp_state                     = nm_setting_bridge_get_stp (s_bridge),
+		.forward_delay                 = _DEFAULT_IF_ZERO (nm_setting_bridge_get_forward_delay (s_bridge) * 100u, NM_BRIDGE_FORWARD_DELAY_DEF_SYS),
+		.hello_time                    = _DEFAULT_IF_ZERO (nm_setting_bridge_get_hello_time (s_bridge) * 100u, NM_BRIDGE_HELLO_TIME_DEF_SYS),
+		.max_age                       = _DEFAULT_IF_ZERO (nm_setting_bridge_get_max_age (s_bridge) * 100u, NM_BRIDGE_MAX_AGE_DEF_SYS),
+		.ageing_time                   = _DEFAULT_IF_ZERO (nm_setting_bridge_get_ageing_time (s_bridge) * 100u, NM_BRIDGE_AGEING_TIME_DEF_SYS),
+		.priority                      = nm_setting_bridge_get_priority (s_bridge),
+		.group_fwd_mask                = nm_setting_bridge_get_group_forward_mask (s_bridge),
+		.mcast_last_member_count       = nm_setting_bridge_get_multicast_last_member_count (s_bridge),
+		.mcast_last_member_interval    = nm_setting_bridge_get_multicast_last_member_interval (s_bridge),
+		.mcast_membership_interval     = nm_setting_bridge_get_multicast_membership_interval (s_bridge),
+		.mcast_querier_interval        = nm_setting_bridge_get_multicast_querier_interval (s_bridge),
+		.mcast_query_interval          = nm_setting_bridge_get_multicast_query_interval (s_bridge),
+		.mcast_query_response_interval = nm_setting_bridge_get_multicast_query_response_interval (s_bridge),
+		.mcast_startup_query_count     = nm_setting_bridge_get_multicast_startup_query_count (s_bridge),
+		.mcast_startup_query_interval  = nm_setting_bridge_get_multicast_startup_query_interval (s_bridge),
 	};
 
 	r = nm_platform_link_bridge_add (nm_device_get_platform (device),

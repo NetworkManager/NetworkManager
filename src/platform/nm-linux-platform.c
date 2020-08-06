@@ -1301,10 +1301,21 @@ static NMPObject *
 _parse_lnk_bridge (const char *kind, struct nlattr *info_data)
 {
 	static const struct nla_policy policy[] = {
-		[IFLA_BR_FORWARD_DELAY]         = { .type = NLA_U32 },
-		[IFLA_BR_HELLO_TIME]            = { .type = NLA_U32 },
-		[IFLA_BR_MAX_AGE]               = { .type = NLA_U32 },
-		[IFLA_BR_AGEING_TIME]           = { .type = NLA_U32 },
+		[IFLA_BR_STP_STATE]                  = { .type = NLA_U32 },
+		[IFLA_BR_FORWARD_DELAY]              = { .type = NLA_U32 },
+		[IFLA_BR_HELLO_TIME]                 = { .type = NLA_U32 },
+		[IFLA_BR_MAX_AGE]                    = { .type = NLA_U32 },
+		[IFLA_BR_AGEING_TIME]                = { .type = NLA_U32 },
+		[IFLA_BR_PRIORITY]                   = { .type = NLA_U16 },
+		[IFLA_BR_GROUP_FWD_MASK]             = { .type = NLA_U16 },
+		[IFLA_BR_MCAST_LAST_MEMBER_CNT]      = { .type = NLA_U32 },
+		[IFLA_BR_MCAST_LAST_MEMBER_INTVL]    = { .type = NLA_U64 },
+		[IFLA_BR_MCAST_MEMBERSHIP_INTVL]     = { .type = NLA_U64 },
+		[IFLA_BR_MCAST_QUERIER_INTVL]        = { .type = NLA_U64 },
+		[IFLA_BR_MCAST_QUERY_INTVL]          = { .type = NLA_U64 },
+		[IFLA_BR_MCAST_QUERY_RESPONSE_INTVL] = { .type = NLA_U64 },
+		[IFLA_BR_MCAST_STARTUP_QUERY_CNT]    = { .type = NLA_U32 },
+		[IFLA_BR_MCAST_STARTUP_QUERY_INTVL]  = { .type = NLA_U64 },
 	};
 	NMPlatformLnkBridge *props;
 	struct nlattr *tb[G_N_ELEMENTS (policy)];
@@ -1321,6 +1332,8 @@ _parse_lnk_bridge (const char *kind, struct nlattr *info_data)
 
 	props = &obj->lnk_bridge;
 
+	if (tb[IFLA_BR_STP_STATE])
+		props->stp_state = !!nla_get_u32 (tb[IFLA_BR_STP_STATE]);
 	if (tb[IFLA_BR_FORWARD_DELAY])
 		props->forward_delay = nla_get_u32 (tb[IFLA_BR_FORWARD_DELAY]);
 	if (tb[IFLA_BR_HELLO_TIME])
@@ -1329,6 +1342,26 @@ _parse_lnk_bridge (const char *kind, struct nlattr *info_data)
 		props->max_age = nla_get_u32 (tb[IFLA_BR_MAX_AGE]);
 	if (tb[IFLA_BR_AGEING_TIME])
 		props->ageing_time = nla_get_u32 (tb[IFLA_BR_AGEING_TIME]);
+	if (tb[IFLA_BR_PRIORITY])
+		props->priority = nla_get_u16 (tb[IFLA_BR_PRIORITY]);
+	if (tb[IFLA_BR_GROUP_FWD_MASK])
+		props->group_fwd_mask = nla_get_u16 (tb[IFLA_BR_GROUP_FWD_MASK]);
+	if (tb[IFLA_BR_MCAST_LAST_MEMBER_CNT])
+		props->mcast_last_member_count = nla_get_u32 (tb[IFLA_BR_MCAST_LAST_MEMBER_CNT]);
+	if (tb[IFLA_BR_MCAST_LAST_MEMBER_INTVL])
+		props->mcast_last_member_interval = nla_get_u64 (tb[IFLA_BR_MCAST_LAST_MEMBER_INTVL]);
+	if (tb[IFLA_BR_MCAST_MEMBERSHIP_INTVL])
+		props->mcast_membership_interval = nla_get_u64 (tb[IFLA_BR_MCAST_MEMBERSHIP_INTVL]);
+	if (tb[IFLA_BR_MCAST_QUERIER_INTVL])
+		props->mcast_querier_interval = nla_get_u64 (tb[IFLA_BR_MCAST_QUERIER_INTVL]);
+	if (tb[IFLA_BR_MCAST_QUERY_INTVL])
+		props->mcast_query_interval = nla_get_u64 (tb[IFLA_BR_MCAST_QUERY_INTVL]);
+	if (tb[IFLA_BR_MCAST_QUERY_RESPONSE_INTVL])
+		props->mcast_query_response_interval = nla_get_u64 (tb[IFLA_BR_MCAST_QUERY_RESPONSE_INTVL]);
+	if (tb[IFLA_BR_MCAST_STARTUP_QUERY_CNT])
+		props->mcast_startup_query_count = nla_get_u32 (tb[IFLA_BR_MCAST_STARTUP_QUERY_CNT]);
+	if (tb[IFLA_BR_MCAST_STARTUP_QUERY_INTVL])
+		props->mcast_startup_query_interval = nla_get_u64 (tb[IFLA_BR_MCAST_STARTUP_QUERY_INTVL]);
 
 	return obj;
 }
@@ -4003,10 +4036,21 @@ _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
 		if (!(data = nla_nest_start (msg, IFLA_INFO_DATA)))
 			goto nla_put_failure;
 
+		NLA_PUT_U32 (msg, IFLA_BR_STP_STATE, !!props->stp_state);
 		NLA_PUT_U32 (msg, IFLA_BR_FORWARD_DELAY, props->forward_delay);
 		NLA_PUT_U32 (msg, IFLA_BR_HELLO_TIME, props->hello_time);
 		NLA_PUT_U32 (msg, IFLA_BR_MAX_AGE, props->max_age);
 		NLA_PUT_U32 (msg, IFLA_BR_AGEING_TIME, props->ageing_time);
+		NLA_PUT_U16 (msg, IFLA_BR_PRIORITY, props->priority);
+		NLA_PUT_U16 (msg, IFLA_BR_GROUP_FWD_MASK, props->group_fwd_mask);
+		NLA_PUT_U32 (msg, IFLA_BR_MCAST_LAST_MEMBER_CNT, props->mcast_last_member_count);
+		NLA_PUT_U64 (msg, IFLA_BR_MCAST_LAST_MEMBER_INTVL, props->mcast_last_member_interval);
+		NLA_PUT_U64 (msg, IFLA_BR_MCAST_MEMBERSHIP_INTVL, props->mcast_membership_interval);
+		NLA_PUT_U64 (msg, IFLA_BR_MCAST_QUERIER_INTVL, props->mcast_querier_interval);
+		NLA_PUT_U64 (msg, IFLA_BR_MCAST_QUERY_INTVL, props->mcast_query_interval);
+		NLA_PUT_U64 (msg, IFLA_BR_MCAST_QUERY_RESPONSE_INTVL, props->mcast_query_response_interval);
+		NLA_PUT_U32 (msg, IFLA_BR_MCAST_STARTUP_QUERY_CNT, props->mcast_startup_query_count);
+		NLA_PUT_U64 (msg, IFLA_BR_MCAST_STARTUP_QUERY_INTVL, props->mcast_startup_query_interval);
 		break;
 	}
 	case NM_LINK_TYPE_VLAN: {

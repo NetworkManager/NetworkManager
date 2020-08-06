@@ -5383,10 +5383,21 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 }
 
 const NMPlatformLnkBridge nm_platform_lnk_bridge_default = {
-	.forward_delay    = NM_BRIDGE_FORWARD_DELAY_DEF_SYS,
-	.hello_time       = NM_BRIDGE_HELLO_TIME_DEF_SYS,
-	.max_age          = NM_BRIDGE_MAX_AGE_DEF_SYS,
-	.ageing_time      = NM_BRIDGE_AGEING_TIME_DEF_SYS,
+	.stp_state                     = FALSE,
+	.forward_delay                 = NM_BRIDGE_FORWARD_DELAY_DEF_SYS,
+	.hello_time                    = NM_BRIDGE_HELLO_TIME_DEF_SYS,
+	.max_age                       = NM_BRIDGE_MAX_AGE_DEF_SYS,
+	.ageing_time                   = NM_BRIDGE_AGEING_TIME_DEF_SYS,
+	.priority                      = NM_BRIDGE_PRIORITY_DEF,
+	.group_fwd_mask                = 0,
+	.mcast_last_member_count       = NM_BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEF,
+	.mcast_last_member_interval    = NM_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEF,
+	.mcast_membership_interval     = NM_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_DEF,
+	.mcast_querier_interval        = NM_BRIDGE_MULTICAST_QUERIER_INTERVAL_DEF,
+	.mcast_query_interval          = NM_BRIDGE_MULTICAST_QUERY_INTERVAL_DEF,
+	.mcast_query_response_interval = NM_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_DEF,
+	.mcast_startup_query_count     = NM_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEF,
+	.mcast_startup_query_interval  = NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEF,
 };
 
 const char *
@@ -5400,11 +5411,33 @@ nm_platform_lnk_bridge_to_string (const NMPlatformLnkBridge *lnk, char *buf, gsi
 	            " hello_time %u"
 	            " max_age %u"
 	            " ageing_time %u"
+	            " stp_state %d"
+	            " priority %u"
+	            " group_fwd_mask %#x"
+	            " mcast_last_member_count %u"
+	            " mcast_startup_query_count %u"
+	            " mcast_last_member_interval %"G_GUINT64_FORMAT""
+	            " mcast_membership_interval %"G_GUINT64_FORMAT""
+	            " mcast_querier_interval %"G_GUINT64_FORMAT""
+	            " mcast_query_interval %"G_GUINT64_FORMAT""
+	            " mcast_query_response_interval %"G_GUINT64_FORMAT""
+	            " mcast_startup_query_interval %"G_GUINT64_FORMAT""
 	            "",
 	            lnk->forward_delay,
 	            lnk->hello_time,
 	            lnk->max_age,
-	            lnk->ageing_time);
+	            lnk->ageing_time,
+	            (int) lnk->stp_state,
+	            lnk->priority,
+	            lnk->group_fwd_mask,
+	            lnk->mcast_last_member_count,
+	            lnk->mcast_startup_query_count,
+	            lnk->mcast_last_member_interval,
+	            lnk->mcast_membership_interval,
+	            lnk->mcast_querier_interval,
+	            lnk->mcast_query_interval,
+	            lnk->mcast_query_response_interval,
+	            lnk->mcast_startup_query_interval);
 	return buf;
 }
 
@@ -6901,20 +6934,43 @@ void
 nm_platform_lnk_bridge_hash_update (const NMPlatformLnkBridge *obj, NMHashState *h)
 {
 	nm_hash_update_vals (h,
+	                     (bool) obj->stp_state,
 	                     obj->forward_delay,
 	                     obj->hello_time,
 	                     obj->max_age,
-	                     obj->ageing_time);
+	                     obj->ageing_time,
+	                     obj->priority,
+	                     obj->group_fwd_mask,
+	                     obj->mcast_last_member_count,
+	                     obj->mcast_last_member_interval,
+	                     obj->mcast_membership_interval,
+	                     obj->mcast_querier_interval,
+	                     obj->mcast_query_interval,
+	                     obj->mcast_query_response_interval,
+	                     obj->mcast_startup_query_count,
+	                     obj->mcast_startup_query_interval);
 }
 
 int
 nm_platform_lnk_bridge_cmp (const NMPlatformLnkBridge *a, const NMPlatformLnkBridge *b)
 {
 	NM_CMP_SELF (a, b);
+	NM_CMP_FIELD_BOOL (a, b, stp_state);
 	NM_CMP_FIELD (a, b, forward_delay);
 	NM_CMP_FIELD (a, b, hello_time);
 	NM_CMP_FIELD (a, b, max_age);
 	NM_CMP_FIELD (a, b, ageing_time);
+	NM_CMP_FIELD (a, b, priority);
+	NM_CMP_FIELD (a, b, group_fwd_mask);
+	NM_CMP_FIELD (a, b, mcast_last_member_count);
+	NM_CMP_FIELD (a, b, mcast_last_member_interval);
+	NM_CMP_FIELD (a, b, mcast_membership_interval);
+	NM_CMP_FIELD (a, b, mcast_querier_interval);
+	NM_CMP_FIELD (a, b, mcast_query_interval);
+	NM_CMP_FIELD (a, b, mcast_query_response_interval);
+	NM_CMP_FIELD (a, b, mcast_startup_query_count);
+	NM_CMP_FIELD (a, b, mcast_startup_query_interval);
+
 	return 0;
 }
 
