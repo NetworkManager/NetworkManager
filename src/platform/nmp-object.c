@@ -3051,7 +3051,7 @@ G_STATIC_ASSERT (AF_UNSPEC == 0);
 
 const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 	[NMP_OBJECT_TYPE_LINK - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_LINK,
 		.sizeof_data                        = sizeof (NMPObjectLink),
 		.sizeof_public                      = sizeof (NMPlatformLink),
@@ -3076,7 +3076,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_link_cmp,
 	},
 	[NMP_OBJECT_TYPE_IP4_ADDRESS - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_IP4_ADDRESS,
 		.sizeof_data                        = sizeof (NMPObjectIP4Address),
 		.sizeof_public                      = sizeof (NMPlatformIP4Address),
@@ -3096,7 +3096,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_ip4_address_cmp,
 	},
 	[NMP_OBJECT_TYPE_IP6_ADDRESS - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_IP6_ADDRESS,
 		.sizeof_data                        = sizeof (NMPObjectIP6Address),
 		.sizeof_public                      = sizeof (NMPlatformIP6Address),
@@ -3116,7 +3116,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_ip6_address_cmp
 	},
 	[NMP_OBJECT_TYPE_IP4_ROUTE - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_IP4_ROUTE,
 		.sizeof_data                        = sizeof (NMPObjectIP4Route),
 		.sizeof_public                      = sizeof (NMPlatformIP4Route),
@@ -3136,7 +3136,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_ip4_route_cmp_full,
 	},
 	[NMP_OBJECT_TYPE_IP6_ROUTE - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_IP6_ROUTE,
 		.sizeof_data                        = sizeof (NMPObjectIP6Route),
 		.sizeof_public                      = sizeof (NMPlatformIP6Route),
@@ -3156,7 +3156,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_ip6_route_cmp_full,
 	},
 	[NMP_OBJECT_TYPE_ROUTING_RULE - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_ROUTING_RULE,
 		.sizeof_data                        = sizeof (NMPObjectRoutingRule),
 		.sizeof_public                      = sizeof (NMPlatformRoutingRule),
@@ -3175,7 +3175,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_routing_rule_cmp_full,
 	},
 	[NMP_OBJECT_TYPE_QDISC - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_QDISC,
 		.sizeof_data                        = sizeof (NMPObjectQdisc),
 		.sizeof_public                      = sizeof (NMPlatformQdisc),
@@ -3193,7 +3193,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_qdisc_cmp,
 	},
 	[NMP_OBJECT_TYPE_TFILTER - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_TFILTER,
 		.sizeof_data                        = sizeof (NMPObjectTfilter),
 		.sizeof_public                      = sizeof (NMPlatformTfilter),
@@ -3210,8 +3210,19 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_tfilter_hash_update,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_tfilter_cmp,
 	},
+	[NMP_OBJECT_TYPE_LNK_BRIDGE - 1] = {
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
+		.obj_type                           = NMP_OBJECT_TYPE_LNK_BRIDGE,
+		.sizeof_data                        = sizeof (NMPObjectLnkBridge),
+		.sizeof_public                      = sizeof (NMPlatformLnkBridge),
+		.obj_type_name                      = "bridge",
+		.lnk_link_type                      = NM_LINK_TYPE_BRIDGE,
+		.cmd_plobj_to_string                = (const char *(*) (const NMPlatformObject *obj, char *buf, gsize len)) nm_platform_lnk_bridge_to_string,
+		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_lnk_bridge_hash_update,
+		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_bridge_cmp,
+	},
 	[NMP_OBJECT_TYPE_LNK_GRE - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_GRE,
 		.sizeof_data                        = sizeof (NMPObjectLnkGre),
 		.sizeof_public                      = sizeof (NMPlatformLnkGre),
@@ -3222,7 +3233,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_gre_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_GRETAP - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_GRETAP,
 		.sizeof_data                        = sizeof (NMPObjectLnkGre),
 		.sizeof_public                      = sizeof (NMPlatformLnkGre),
@@ -3233,7 +3244,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_gre_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_INFINIBAND - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_INFINIBAND,
 		.sizeof_data                        = sizeof (NMPObjectLnkInfiniband),
 		.sizeof_public                      = sizeof (NMPlatformLnkInfiniband),
@@ -3244,7 +3255,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_infiniband_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_IP6TNL - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_IP6TNL,
 		.sizeof_data                        = sizeof (NMPObjectLnkIp6Tnl),
 		.sizeof_public                      = sizeof (NMPlatformLnkIp6Tnl),
@@ -3255,7 +3266,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_ip6tnl_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_IP6GRE - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_IP6GRE,
 		.sizeof_data                        = sizeof (NMPObjectLnkIp6Tnl),
 		.sizeof_public                      = sizeof (NMPlatformLnkIp6Tnl),
@@ -3266,7 +3277,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_ip6tnl_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_IP6GRETAP - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_IP6GRETAP,
 		.sizeof_data                        = sizeof (NMPObjectLnkIp6Tnl),
 		.sizeof_public                      = sizeof (NMPlatformLnkIp6Tnl),
@@ -3277,7 +3288,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_ip6tnl_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_IPIP - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_IPIP,
 		.sizeof_data                        = sizeof (NMPObjectLnkIpIp),
 		.sizeof_public                      = sizeof (NMPlatformLnkIpIp),
@@ -3288,7 +3299,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_ipip_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_MACSEC - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_MACSEC,
 		.sizeof_data                        = sizeof (NMPObjectLnkMacsec),
 		.sizeof_public                      = sizeof (NMPlatformLnkMacsec),
@@ -3299,7 +3310,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_macsec_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_MACVLAN - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_MACVLAN,
 		.sizeof_data                        = sizeof (NMPObjectLnkMacvlan),
 		.sizeof_public                      = sizeof (NMPlatformLnkMacvlan),
@@ -3310,7 +3321,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_macvlan_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_MACVTAP - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_MACVTAP,
 		.sizeof_data                        = sizeof (NMPObjectLnkMacvtap),
 		.sizeof_public                      = sizeof (NMPlatformLnkMacvlan),
@@ -3321,7 +3332,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_macvlan_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_SIT - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_SIT,
 		.sizeof_data                        = sizeof (NMPObjectLnkSit),
 		.sizeof_public                      = sizeof (NMPlatformLnkSit),
@@ -3332,7 +3343,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_sit_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_TUN - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_TUN,
 		.sizeof_data                        = sizeof (NMPObjectLnkTun),
 		.sizeof_public                      = sizeof (NMPlatformLnkTun),
@@ -3343,7 +3354,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_tun_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_VLAN - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_VLAN,
 		.sizeof_data                        = sizeof (NMPObjectLnkVlan),
 		.sizeof_public                      = sizeof (NMPlatformLnkVlan),
@@ -3359,7 +3370,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_vlan_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_VRF - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_VRF,
 		.sizeof_data                        = sizeof (NMPObjectLnkVrf),
 		.sizeof_public                      = sizeof (NMPlatformLnkVrf),
@@ -3369,9 +3380,8 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_hash_update              = (void (*) (const NMPlatformObject *obj, NMHashState *h)) nm_platform_lnk_vrf_hash_update,
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_vrf_cmp,
 	},
-
 	[NMP_OBJECT_TYPE_LNK_VXLAN - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_VXLAN,
 		.sizeof_data                        = sizeof (NMPObjectLnkVxlan),
 		.sizeof_public                      = sizeof (NMPlatformLnkVxlan),
@@ -3382,7 +3392,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
 		.cmd_plobj_cmp                      = (int (*) (const NMPlatformObject *obj1, const NMPlatformObject *obj2)) nm_platform_lnk_vxlan_cmp,
 	},
 	[NMP_OBJECT_TYPE_LNK_WIREGUARD - 1] = {
-		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT(),
+		.parent                             = DEDUP_MULTI_OBJ_CLASS_INIT (),
 		.obj_type                           = NMP_OBJECT_TYPE_LNK_WIREGUARD,
 		.sizeof_data                        = sizeof (NMPObjectLnkWireGuard),
 		.sizeof_public                      = sizeof (NMPlatformLnkWireGuard),

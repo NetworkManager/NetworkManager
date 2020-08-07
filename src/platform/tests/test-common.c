@@ -1173,6 +1173,42 @@ nmtstp_ip6_address_del (NMPlatform *platform,
 	} G_STMT_END
 
 const NMPlatformLink *
+nmtstp_link_bridge_add (NMPlatform *platform,
+                        gboolean external_command,
+                        const char *name,
+                        const NMPlatformLnkBridge *lnk,
+                        gboolean *out_not_supported)
+{
+	const NMPlatformLink *pllink = NULL;
+	int r = 0;
+
+	g_assert (nm_utils_ifname_valid_kernel (name, NULL));
+
+	NM_SET_OUT (out_not_supported, FALSE);
+	external_command = nmtstp_run_command_check_external (external_command);
+
+	_init_platform (&platform, external_command);
+
+	if (external_command) {
+		r = nmtstp_run_command ("ip link add %s type bridge forward_delay %u hello_time %u max_age %u ageing_time %u",
+		                        name,
+		                        lnk->forward_delay,
+		                        lnk->hello_time,
+		                        lnk->max_age,
+		                        lnk->ageing_time);
+		g_assert_cmpint (r, ==, 0);
+		pllink = nmtstp_assert_wait_for_link (platform, name, NM_LINK_TYPE_BRIDGE, 100);
+	}
+
+	if (!pllink) {
+		r = nm_platform_link_bridge_add (platform, name, NULL, 0, lnk, &pllink);
+	}
+
+	_assert_pllink (platform, r == 0, pllink, name, NM_LINK_TYPE_BRIDGE);
+
+	return pllink;
+}
+const NMPlatformLink *
 nmtstp_link_veth_add (NMPlatform *platform,
                       gboolean external_command,
                       const char *name,

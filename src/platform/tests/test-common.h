@@ -323,6 +323,11 @@ void nmtstp_link_set_updown (NMPlatform *platform,
                              int ifindex,
                              gboolean up);
 
+const NMPlatformLink *nmtstp_link_bridge_add (NMPlatform *platform,
+                                              gboolean external_command,
+                                              const char *name,
+                                              const NMPlatformLnkBridge *lnk,
+                                              gboolean *out_not_supported);
 const NMPlatformLink *nmtstp_link_veth_add (NMPlatform *platform,
                                             gboolean external_command,
                                             const char *name,

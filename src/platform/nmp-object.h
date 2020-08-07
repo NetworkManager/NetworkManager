@@ -244,6 +244,10 @@ typedef struct {
 } NMPObjectLink;
 
 typedef struct {
+	NMPlatformLnkBridge _public;
+} NMPObjectLnkBridge;
+
+typedef struct {
 	NMPlatformLnkGre _public;
 } NMPObjectLnkGre;
 
@@ -342,6 +346,9 @@ struct _NMPObject {
 
 		NMPlatformLink          link;
 		NMPObjectLink           _link;
+
+		NMPlatformLnkBridge     lnk_bridge;
+		NMPObjectLnkBridge      _lnk_bridge;
 
 		NMPlatformLnkGre        lnk_gre;
 		NMPObjectLnkGre         _lnk_gre;
@@ -487,6 +494,7 @@ _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX (NMPObjectType obj_type)
 
 	case NMP_OBJECT_TYPE_TFILTER:
 
+	case NMP_OBJECT_TYPE_LNK_BRIDGE:
 	case NMP_OBJECT_TYPE_LNK_GRE:
 	case NMP_OBJECT_TYPE_LNK_GRETAP:
 	case NMP_OBJECT_TYPE_LNK_INFINIBAND:

@@ -95,7 +95,12 @@ software_add (NMLinkType link_type, const char *name)
 	case NM_LINK_TYPE_DUMMY:
 		return NMTST_NM_ERR_SUCCESS (nm_platform_link_dummy_add (NM_PLATFORM_GET, name, NULL));
 	case NM_LINK_TYPE_BRIDGE:
-		return NMTST_NM_ERR_SUCCESS (nm_platform_link_bridge_add (NM_PLATFORM_GET, name, NULL, 0, NULL));
+		return NMTST_NM_ERR_SUCCESS (nm_platform_link_bridge_add (NM_PLATFORM_GET,
+		                                                          name,
+		                                                          NULL,
+		                                                          0,
+		                                                          &nm_platform_lnk_bridge_default,
+		                                                          NULL));
 	case NM_LINK_TYPE_BOND:
 		{
 			gboolean bond0_exists = !!nm_platform_link_get_by_ifname (NM_PLATFORM_GET, "bond0");
@@ -116,7 +121,12 @@ software_add (NMLinkType link_type, const char *name)
 
 		/* Don't call link_callback for the bridge interface */
 		parent_added = add_signal_ifname (NM_PLATFORM_SIGNAL_LINK_CHANGED, NM_PLATFORM_SIGNAL_ADDED, link_callback, PARENT_NAME);
-		if (NMTST_NM_ERR_SUCCESS (nm_platform_link_bridge_add (NM_PLATFORM_GET, PARENT_NAME, NULL, 0, NULL)))
+		if (NMTST_NM_ERR_SUCCESS (nm_platform_link_bridge_add (NM_PLATFORM_GET,
+		                                                          PARENT_NAME,
+		                                                          NULL,
+		                                                          0,
+		                                                          &nm_platform_lnk_bridge_default,
+		                                                          NULL)))
 			accept_signal (parent_added);
 		free_signal (parent_added);
 
@@ -510,7 +520,12 @@ test_bridge_addr (void)
 
 	nm_utils_hwaddr_aton ("de:ad:be:ef:00:11", addr, sizeof (addr));
 
-	g_assert (NMTST_NM_ERR_SUCCESS (nm_platform_link_bridge_add (NM_PLATFORM_GET, DEVICE_NAME, addr, sizeof (addr), &plink)));
+	g_assert (NMTST_NM_ERR_SUCCESS (nm_platform_link_bridge_add (NM_PLATFORM_GET,
+	                                                             DEVICE_NAME,
+	                                                             addr,
+	                                                             sizeof (addr),
+	                                                             &nm_platform_lnk_bridge_default,
+	                                                             &plink)));
 	g_assert (plink);
 	link = *plink;
 	g_assert_cmpstr (link.name, ==, DEVICE_NAME);
@@ -946,6 +961,24 @@ test_software_detect (gconstpointer user_data)
 	ifindex_parent = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, PARENT_NAME, NM_LINK_TYPE_DUMMY, 100)->ifindex;
 
 	switch (test_data->link_type) {
+	case NM_LINK_TYPE_BRIDGE: {
+		NMPlatformLnkBridge lnk_bridge = { };
+		gboolean not_supported;
+
+		lnk_bridge.forward_delay = 1560;
+		lnk_bridge.hello_time    = 150;
+		lnk_bridge.max_age       = 2100;
+		lnk_bridge.ageing_time   = 2200;
+
+		if (!nmtstp_link_bridge_add (NULL, ext, DEVICE_NAME, &lnk_bridge, &not_supported)) {
+			if (not_supported) {
+				g_test_skip ("Cannot create Bridge interface because of missing kernel support");
+				goto out_delete_parent;
+			}
+			g_error ("Failed adding Bridge interface");
+		}
+		break;
+	}
 	case NM_LINK_TYPE_GRE: {
 		gboolean gracefully_skip = FALSE;
 
@@ -1311,6 +1344,16 @@ test_software_detect (gconstpointer user_data)
 			g_assert (lnk);
 
 		switch (test_data->link_type) {
+		case NM_LINK_TYPE_BRIDGE: {
+			const NMPlatformLnkBridge *plnk = &lnk->lnk_bridge;
+
+			g_assert (plnk == nm_platform_link_get_lnk_bridge (NM_PLATFORM_GET, ifindex, NULL));
+			g_assert_cmpint (plnk->forward_delay, ==, 1560);
+			g_assert_cmpint (plnk->hello_time   , ==, 150);
+			g_assert_cmpint (plnk->max_age      , ==, 2100);
+			g_assert_cmpint (plnk->ageing_time  , ==, 2200);
+			break;
+		}
 		case NM_LINK_TYPE_GRE: {
 			const NMPlatformLnkGre *plnk = &lnk->lnk_gre;
 
@@ -3352,6 +3395,7 @@ _nmtstp_setup_tests (void)
 	if (nmtstp_is_root_test ()) {
 		g_test_add_func ("/link/external", test_external);
 
+		test_software_detect_add ("/link/software/detect/bridge", NM_LINK_TYPE_BRIDGE, 0);
 		test_software_detect_add ("/link/software/detect/gre", NM_LINK_TYPE_GRE, 0);
 		test_software_detect_add ("/link/software/detect/gretap", NM_LINK_TYPE_GRETAP, 0);
 		test_software_detect_add ("/link/software/detect/ip6tnl/0", NM_LINK_TYPE_IP6TNL, 0);
