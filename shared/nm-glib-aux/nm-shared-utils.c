@@ -1563,8 +1563,13 @@ static gboolean
 _char_lookup_has (const CharLookupTable *lookup,
                   char ch)
 {
+	/* with some optimization levels, the compiler thinks this code
+	 * might access uninitialized @lookup. It is not -- when you look at the
+	 * callers of this function. */
+	NM_PRAGMA_WARNING_DISABLE ("-Wmaybe-uninitialized")
 	nm_assert (lookup->table[(guint8) '\0'] == 0);
 	return lookup->table[(guint8) ch] != 0;
+	NM_PRAGMA_WARNING_REENABLE
 }
 
 static gboolean
