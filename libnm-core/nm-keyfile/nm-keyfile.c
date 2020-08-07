@@ -4227,23 +4227,6 @@ check_mkstemp_suffix (const char *path)
 	return FALSE;
 }
 
-static gboolean
-_check_suffix_impl (const char *base, const char *tag, gsize tag_len)
-{
-	gsize len;
-
-	nm_assert (base);
-	nm_assert (tag);
-	nm_assert (strlen (tag) == tag_len);
-
-	len = strlen (base);
-	if (   len > tag_len
-	    && !g_ascii_strcasecmp (base + len - tag_len, tag))
-		return TRUE;
-	return FALSE;
-}
-#define check_suffix(base, tag) _check_suffix_impl ((base), ""tag"", NM_STRLEN (tag))
-
 #define SWP_TAG ".swp"
 #define SWPX_TAG ".swpx"
 #define PEM_TAG ".pem"
@@ -4277,14 +4260,13 @@ nm_keyfile_utils_ignore_filename (const char *filename, gboolean require_extensi
 		return TRUE;
 	}
 
-	l = strlen (base);
-
 	if (require_extension) {
-		if (   l <= NM_STRLEN (NM_KEYFILE_PATH_SUFFIX_NMCONNECTION)
-		    || !NM_STR_HAS_SUFFIX (base, NM_KEYFILE_PATH_SUFFIX_NMCONNECTION))
+		if (!NM_STR_HAS_SUFFIX_WITH_MORE (base, NM_KEYFILE_PATH_SUFFIX_NMCONNECTION))
 			return TRUE;
 		return FALSE;
 	}
+
+	l = strlen (base);
 
 	/* Ignore backup files */
 	if (base[l - 1] == '~')
@@ -4298,8 +4280,8 @@ nm_keyfile_utils_ignore_filename (const char *filename, gboolean require_extensi
 		return TRUE;
 
 	/* Ignore 802.1x certificates and keys */
-	if (   check_suffix (base, PEM_TAG)
-	    || check_suffix (base, DER_TAG))
+	if (   NM_STR_HAS_SUFFIX_ASCII_CASE_WITH_MORE (base, PEM_TAG)
+	    || NM_STR_HAS_SUFFIX_ASCII_CASE_WITH_MORE (base, DER_TAG))
 		return TRUE;
 
 	return FALSE;
@@ -4342,8 +4324,8 @@ nm_keyfile_utils_create_filename (const char *name,
 		p[str.len - 1] = ESCAPE_CHAR2;
 
 	if (   check_mkstemp_suffix (p)
-	    || check_suffix (p, PEM_TAG)
-	    || check_suffix (p, DER_TAG))
+	    || NM_STR_HAS_SUFFIX_ASCII_CASE_WITH_MORE (p, PEM_TAG)
+	    || NM_STR_HAS_SUFFIX_ASCII_CASE_WITH_MORE (p, DER_TAG))
 		nm_str_buf_append_c (&str, ESCAPE_CHAR2);
 
 	if (with_extension)
