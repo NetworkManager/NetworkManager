@@ -321,6 +321,20 @@ nm_streq0 (const char *s1, const char *s2)
 		&& _str_has_prefix_with_more[NM_STRLEN (prefix)] != '\0'; \
 	})
 
+#define NM_STR_HAS_SUFFIX_WITH_MORE(str, suffix) \
+	({ \
+		const char *const _str_has_suffix = (str); \
+		size_t _l; \
+		\
+		nm_assert (strlen (suffix) == NM_STRLEN (suffix)); \
+		\
+		(   _str_has_suffix \
+		 && ((_l = strlen (_str_has_suffix)) > NM_STRLEN (suffix)) \
+		 && (memcmp (&_str_has_suffix[_l - NM_STRLEN (suffix)], \
+		             ""suffix"", \
+		             NM_STRLEN (suffix)) == 0)); \
+	})
+
 /*****************************************************************************/
 
 #define _NM_IN_SET_EVAL_1( op, _x, y)           (_x == (y))
