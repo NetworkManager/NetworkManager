@@ -158,7 +158,7 @@ if [[ $NO_DIST != 1 ]]; then
         --enable-polkit=yes \
         --with-nm-cloud-setup=yes \
         --with-config-dhcp-default=internal \
-        --with-config-dns-rc-manager-default=symlink \
+        --with-config-dns-rc-manager-default=auto \
         || die "Error autogen.sh"
     if [[ $QUICK == 1 ]]; then
         make dist -j 7 || die "Error make dist"

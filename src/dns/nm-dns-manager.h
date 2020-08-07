@@ -88,12 +88,20 @@ void nm_dns_manager_set_hostname         (NMDnsManager *self,
  * @NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED: do not touch /etc/resolv.conf
  *   (but still write the internal copy -- unless it is symlinked by
  *   /etc/resolv.conf)
+ * @NM_DNS_MANAGER_RESOLV_CONF_MAN_AUTO: if /etc/resolv.conf is marked
+ *   as an immutable file, use "unmanaged" and don't touch /etc/resolv.conf.
+ *   Otherwise, if "systemd-resolved" is enabled (or detected), configure systemd-resolved via D-Bus
+ *   and don't touch /etc/resolv.conf.
+ *   Otherwise, if "resolvconf" application is found, use it.
+ *   As last resort, fallback to "symlink" which writes to /etc/resolv.conf
+ *   if (and only if) the file is missing or not a symlink.
  * @NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE: similar to "unmanaged",
  *   but indicates that resolv.conf cannot be modified.
- * @NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK: NM writes resolv.conf
- *   by symlinking it to the run state directory.
- * @NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE: Like SYMLINK, but instead of
- *   symlinking /etc/resolv.conf, write it as a file.
+ * @NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK: NM writes /etc/resolv.conf
+ *   if the file is missing or not a symlink. An existing symlink is
+ *   left untouched.
+ * @NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE: Write to /etc/resolv.conf directly.
+ *   If it is a file, write it as file, otherwise follow symlinks.
  * @NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF: NM is managing resolv.conf
      through resolvconf
  * @NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG: NM is managing resolv.conf
@@ -103,6 +111,7 @@ void nm_dns_manager_set_hostname         (NMDnsManager *self,
  */
 typedef enum {
 	NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN,
+	NM_DNS_MANAGER_RESOLV_CONF_MAN_AUTO,
 	NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED,
 	NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE,
 	NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK,

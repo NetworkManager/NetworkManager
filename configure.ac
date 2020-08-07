@@ -891,14 +891,15 @@ AC_SUBST(NM_CONFIG_DEFAULT_MAIN_DHCP, $config_dhcp_default)
 
 AC_ARG_WITH(resolvconf, AS_HELP_STRING([--with-resolvconf=yes|no|path], [Enable resolvconf support]))
 AC_ARG_WITH(netconfig, AS_HELP_STRING([--with-netconfig=yes|no], [Enable SUSE netconfig support]))
-AC_ARG_WITH(config-dns-rc-manager-default, AS_HELP_STRING([--with-config-dns-rc-manager-default=symlink|file|netconfig|resolvconf], [Configure default value for main.rc-manager setting]), [config_dns_rc_manager_default=$withval])
+AC_ARG_WITH(config-dns-rc-manager-default, AS_HELP_STRING([--with-config-dns-rc-manager-default=auto|symlink|file|netconfig|resolvconf], [Configure default value for main.rc-manager setting]), [config_dns_rc_manager_default=$withval])
 if test "$config_dns_rc_manager_default" != "" -a \
+        "$config_dns_rc_manager_default" != auto -a \
         "$config_dns_rc_manager_default" != file -a \
         "$config_dns_rc_manager_default" != symlink -a \
         "$config_dns_rc_manager_default" != netconfig -a \
         "$config_dns_rc_manager_default" != resolvconf; then
 	AC_MSG_WARN([Unknown --with-config-dns-rc-manager-default=$config_dns_rc_manager_default setting.])
-	config_dns_rc_manager_default=
+	config_dns_rc_manager_default=auto
 fi
 # Use netconfig by default on SUSE
 AS_IF([test -z "$with_netconfig" -a -f /etc/SuSE-release], with_netconfig=yes)
@@ -912,9 +913,6 @@ if test "$with_resolvconf" = "yes"; then
 		AC_MSG_ERROR(cannot find resolvconf in path. Set the path explicitly via --with-resolvconf=PATH.)
 	fi
 fi
-if test "$with_resolvconf" != "no"; then
-	AS_IF([test -z "$config_dns_rc_manager_default"], config_dns_rc_manager_default=resolvconf)
-fi
 
 if test "$with_netconfig" = "yes"; then
 	AC_PATH_PROGS(with_netconfig, netconfig, yes, /sbin:/usr/sbin:/usr/local/sbin)
@@ -922,11 +920,6 @@ if test "$with_netconfig" = "yes"; then
 		AC_MSG_ERROR(cannot find netconfig in path. Set the path explicitly via --with-netconfig=PATH.)
 	fi
 fi
-if test "$with_netconfig" != "no"; then
-	AS_IF([test -z "$config_dns_rc_manager_default"], config_dns_rc_manager_default=netconfig)
-fi
-
-AS_IF([test -z "$config_dns_rc_manager_default"], config_dns_rc_manager_default=symlink)
 
 if test "$with_resolvconf" != "no"; then
 	AC_DEFINE_UNQUOTED(RESOLVCONF_PATH, "$with_resolvconf", [Path to resolvconf])
