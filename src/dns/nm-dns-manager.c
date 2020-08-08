@@ -574,6 +574,8 @@ again:
 
 	nm_close (fd);
 
+	/* FIXME: don't write to netconfig synchronously. */
+
 	/* Wait until the process exits */
 	if (!nm_utils_kill_child_sync (pid, 0, LOGD_DNS, "netconfig", &status, 1000, 0)) {
 		errsv = errno;
@@ -750,6 +752,8 @@ dispatch_resolvconf (NMDnsManager *self,
 	}
 
 	_LOGI ("Writing DNS information to %s", RESOLVCONF_PATH);
+
+	/* FIXME: don't write to resolvconf synchronously. */
 
 	cmd = g_strconcat (RESOLVCONF_PATH, " -a ", "NetworkManager", NULL);
 	if ((f = popen (cmd, "w")) == NULL) {
