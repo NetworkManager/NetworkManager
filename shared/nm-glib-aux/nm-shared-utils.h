@@ -1974,6 +1974,31 @@ char *nm_utils_bin2hexstr_full (gconstpointer addr,
                                 gboolean upper_case,
                                 char *out);
 
+#define nm_utils_bin2hexstr_a(addr, length, delimiter, upper_case, str_to_free) \
+	({ \
+		gconstpointer _addr = (addr); \
+		gsize _length = (length); \
+		char _delimiter = (delimiter); \
+		char **_str_to_free = (str_to_free); \
+		char *_s; \
+		gsize _s_len; \
+		\
+		nm_assert (_str_to_free); \
+		\
+		_s_len =   _length == 0 \
+		         ? 1u \
+		         : (  _delimiter == '\0' \
+		            ? _length * 2u + 1u \
+		            : _length * 3u); \
+		if (_s_len < 100) \
+			_s = g_alloca (_s_len); \
+		else { \
+			_s = g_malloc (_s_len); \
+			*_str_to_free = _s; \
+		} \
+		nm_utils_bin2hexstr_full (_addr, _length, _delimiter, (upper_case), _s); \
+	})
+
 guint8 *nm_utils_hexstr2bin_full (const char *hexstr,
                                   gboolean allow_0x_prefix,
                                   gboolean delimiter_required,
