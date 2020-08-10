@@ -903,7 +903,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *klass)
 	 * description: Array of IPv4 routes. Each route dictionary contains at
 	 *   least 'dest' and 'prefix' entries, containing the destination IP
 	 *   address as a string, and the prefix length as a uint32. Most routes
-	 *   will also have a 'gateway' entry, containing the gateway IP address as
+	 *   will also have a 'next-hop' entry, containing the next hop IP address as
 	 *   a string. If the route has a 'metric' entry (containing a uint32), that
 	 *   will be used as the metric for the route (otherwise NM will pick a
 	 *   default value appropriate to the device). Additional attributes may
