@@ -118,6 +118,7 @@ Consent/Disapproval List
 - [Y] Thomas Haller <thaller@redhat.com> (Red Hat, Inc.)
 - [Y] Timothy Redaelli <tredaelli@redhat.com> (Red Hat, Inc.)
 - [Y] Yuri Chornoivan <yurchor@ukr.net>
+- [Y] Zephaniah E. Loss-Cutler-Hull <warp@aehallh.com>
 - [Y] luz.paz <luzpaz@users.noreply.github.com>
 
 Copyright Held by Other Legal Entities
