@@ -1349,6 +1349,13 @@ GSource *nm_g_timeout_source_new (guint timeout_msec,
                                   GSourceFunc func,
                                   gpointer user_data,
                                   GDestroyNotify destroy_notify);
+
+GSource *nm_g_timeout_source_new_seconds (guint timeout_sec,
+                                          int priority,
+                                          GSourceFunc func,
+                                          gpointer user_data,
+                                          GDestroyNotify destroy_notify);
+
 GSource *nm_g_unix_fd_source_new (int fd,
                                   GIOCondition io_condition,
                                   int priority,
