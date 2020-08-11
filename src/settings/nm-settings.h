@@ -123,7 +123,8 @@ void nm_settings_device_added (NMSettings *self, NMDevice *device);
 
 void nm_settings_device_removed (NMSettings *self, NMDevice *device, gboolean quitting);
 
-const char *nm_settings_get_startup_complete_blocked_reason (NMSettings *self);
+const char *nm_settings_get_startup_complete_blocked_reason (NMSettings *self,
+                                                             gboolean force_reload);
 
 void nm_settings_kf_db_write (NMSettings *settings);
 

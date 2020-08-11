@@ -376,9 +376,9 @@ typedef struct {
 	GSList *unmanaged_specs;
 	GSList *unrecognized_specs;
 
+	gint64 startup_complete_start_timestamp_msec;
 	GHashTable *startup_complete_idx;
-	NMSettingsConnection *startup_complete_blocked_by;
-	gulong startup_complete_platform_change_id;
+	CList startup_complete_scd_lst_head;
 	guint startup_complete_timeout_id;
 
 	guint connections_len;
@@ -427,7 +427,7 @@ static void default_wired_clear_tag (NMSettings *self,
 static void _clear_connections_cached_list (NMSettingsPrivate *priv);
 
 static void _startup_complete_check (NMSettings *self,
-                                     gint64 now_us);
+                                     gint64 now_msec);
 
 /*****************************************************************************/
 
@@ -465,34 +465,51 @@ _emit_connection_flags_changed (NMSettings *self,
 
 typedef struct {
 	NMSettingsConnection *sett_conn;
-	gint64 start_at;
-	gint64 timeout;
+	CList scd_lst;
+	gint64 timeout_msec;
 } StartupCompleteData;
 
 static void
 _startup_complete_data_destroy (StartupCompleteData *scd)
 {
+	c_list_unlink_stale (&scd->scd_lst);
 	g_object_unref (scd->sett_conn);
-	g_slice_free (StartupCompleteData, scd);
+	nm_g_slice_free (scd);
 }
 
 static gboolean
-_startup_complete_check_is_ready (NMPlatform *platform,
+_startup_complete_check_is_ready (NMSettings *self,
                                   NMSettingsConnection *sett_conn)
 {
-	const NMPlatformLink *plink;
-	const char *ifname;
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+	NMConnection *conn;
+	const CList *tmp_lst;
+	NMDevice *device;
 
-	/* FIXME: instead of just looking for the interface name, it would be better
-	 *        to wait for a device that is compatible with the profile. */
-
-	ifname = nm_connection_get_interface_name (nm_settings_connection_get_connection (sett_conn));
-
-	if (!ifname)
+	if (!priv->manager)
 		return TRUE;
 
-	plink = nm_platform_link_get_by_ifname (platform, ifname);
-	return plink && plink->initialized;
+	conn = nm_settings_connection_get_connection (sett_conn);
+
+	nm_manager_for_each_device (priv->manager, device, tmp_lst) {
+
+		if (!nm_device_is_real (device))
+			continue;
+
+		if (   nm_device_get_state (device) < NM_DEVICE_STATE_UNAVAILABLE
+		    || nm_device_has_pending_action (device)) {
+			/* while a device is not yet available and still has a pending
+			 * action itself, it's not a suitable candidate. */
+			continue;
+		}
+
+		if (!nm_device_check_connection_compatible (device, conn, NULL))
+			continue;
+
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 static gboolean
@@ -507,116 +524,97 @@ _startup_complete_timeout_cb (gpointer user_data)
 }
 
 static void
-_startup_complete_platform_change_cb (NMPlatform *platform,
-                                      int obj_type_i,
-                                      int ifindex,
-                                      const NMPlatformLink *link,
-                                      int change_type_i,
-                                      NMSettings *self)
-{
-	const NMPlatformSignalChangeType change_type = change_type_i;
-	NMSettingsPrivate *priv;
-	const char *ifname;
-
-	if (change_type == NM_PLATFORM_SIGNAL_REMOVED)
-		return;
-
-	if (!link->initialized)
-		return;
-
-	priv = NM_SETTINGS_GET_PRIVATE (self);
-
-	ifname = nm_connection_get_interface_name (nm_settings_connection_get_connection (priv->startup_complete_blocked_by));
-	if (   ifname
-	    && !nm_streq (ifname, link->name))
-		return;
-
-	nm_assert (priv->startup_complete_timeout_id > 0);
-
-	nm_clear_g_source (&priv->startup_complete_timeout_id);
-	priv->startup_complete_timeout_id = g_idle_add (_startup_complete_timeout_cb, self);
-}
-
-static void
 _startup_complete_check (NMSettings *self,
-                         gint64 now_us)
+                         gint64 now_msec)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	gint64 next_expiry;
+	StartupCompleteData *scd_not_ready;
+	StartupCompleteData *scd_safe;
 	StartupCompleteData *scd;
-	NMSettingsConnection *next_sett_conn = NULL;
-	GHashTableIter iter;
+	gint64 elapsed_msec;
+	CList ready_lst;
+
+	if (priv->startup_complete_start_timestamp_msec == 0) {
+		/* we are already done for good or didn't start yet. */
+		return;
+	}
 
 	if (!priv->started) {
-		/* before we are started, we don't setup the timers... */
+		/* before we are started there is no need to evaluate our list because
+		 * we are anyway blocking startup-complete. */
 		return;
 	}
 
-	if (!priv->startup_complete_idx)
+	if (c_list_is_empty (&priv->startup_complete_scd_lst_head))
 		goto ready;
 
-	if (!now_us)
-		now_us = nm_utils_get_monotonic_timestamp_usec ();
+	nm_utils_get_monotonic_timestamp_msec_cached (&now_msec);
 
-	next_expiry = 0;
+	elapsed_msec = now_msec - priv->startup_complete_start_timestamp_msec;
 
-	g_hash_table_iter_init (&iter, priv->startup_complete_idx);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &scd, NULL)) {
-		gint64 expiry;
+	/* We search the entire list whether they all timed-out or found a compatible device.
+	 * We do that by appending elements that are ready to the end of the list, so that
+	 * we hopefully keep testing the elements that are ready already (and can shortcut
+	 * the test in common cases).
+	 *
+	 * Note that all profiles that we wait for need to have their dependencies satisfied
+	 * at the same time. For example, consider connection A is waiting for device A' which is ready.
+	 * Connection B waits for device B', which isn't ready. Once B'/B becomes ready, A/A' must
+	 * still be ready. Otherwise, we would wait for A/A' to become ready again. */
+	scd_not_ready = NULL;
+	c_list_init (&ready_lst);
+	c_list_for_each_entry_safe (scd, scd_safe, &priv->startup_complete_scd_lst_head, scd_lst) {
 
-		if (scd->start_at == 0) {
-			/* once ready, the decision is remembered and there is nothing
-			 * left to check. */
-			continue;
-		}
+		if (scd->timeout_msec <= elapsed_msec)
+			goto next_with_ready;
 
-		expiry = scd->start_at + scd->timeout;
-		if (expiry <= now_us) {
-			scd->start_at = 0;
-			continue;
-		}
+		if (_startup_complete_check_is_ready (self, scd->sett_conn))
+			goto next_with_ready;
 
-		if (_startup_complete_check_is_ready (priv->platform, scd->sett_conn)) {
-			scd->start_at = 0;
-			continue;
-		}
-
-		next_expiry = expiry;
-		next_sett_conn = scd->sett_conn;
-		/* we found one timeout for which to wait. that's good enough. */
+		scd_not_ready = scd;
 		break;
+
+next_with_ready:
+		/* this element is ready. We move it to a temporary list, so that we
+		 * can reorder the list (to next time evaluate the non-ready element first). */
+		nm_c_list_move_tail (&ready_lst, &scd->scd_lst);
 	}
+	c_list_splice (&priv->startup_complete_scd_lst_head, &ready_lst);
 
 	nm_clear_g_source (&priv->startup_complete_timeout_id);
-	nm_g_object_ref_set (&priv->startup_complete_blocked_by, next_sett_conn);
-	if (next_expiry > 0) {
-		nm_assert (priv->startup_complete_blocked_by);
-		if (priv->startup_complete_platform_change_id == 0) {
-			priv->startup_complete_platform_change_id = g_signal_connect (priv->platform,
-			                                                              NM_PLATFORM_SIGNAL_LINK_CHANGED,
-			                                                              G_CALLBACK (_startup_complete_platform_change_cb),
-			                                                              self);
-		}
-		priv->startup_complete_timeout_id = g_timeout_add (NM_MIN (3600u*1000u, (next_expiry - now_us) / 1000u),
+
+	if (scd_not_ready) {
+		gint64 timeout_msec;
+
+		timeout_msec = priv->startup_complete_start_timestamp_msec + scd_not_ready->timeout_msec - nm_utils_get_monotonic_timestamp_msec ();
+		priv->startup_complete_timeout_id = g_timeout_add (NM_CLAMP (0, timeout_msec, 60000),
 		                                                   _startup_complete_timeout_cb,
 		                                                   self);
-		_LOGT ("startup-complete: wait for device \"%s\" due to connection %s (%s)",
-		       nm_connection_get_interface_name (nm_settings_connection_get_connection (priv->startup_complete_blocked_by)),
-		       nm_settings_connection_get_uuid (priv->startup_complete_blocked_by),
-		       nm_settings_connection_get_id (priv->startup_complete_blocked_by));
+		_LOGT ("startup-complete: wait for suitable device for connection \"%s\" (%s) which has \"connection.wait-device-timeout\" set",
+		       nm_settings_connection_get_id (scd_not_ready->sett_conn),
+		       nm_settings_connection_get_uuid (scd_not_ready->sett_conn));
 		return;
 	}
 
-	nm_clear_pointer (&priv->startup_complete_idx, g_hash_table_destroy);
-	nm_clear_g_signal_handler (priv->platform, &priv->startup_complete_platform_change_id);
+	if (_LOGW_ENABLED ()) {
+		c_list_for_each_entry (scd, &priv->startup_complete_scd_lst_head, scd_lst) {
+			if (!_startup_complete_check_is_ready (self, scd->sett_conn)) {
+				_LOGW ("startup-complete: profile \"%s\" (%s) was waiting for non-existing device (with timeout \"connection.wait-device-timeout=%"G_GINT64_FORMAT"\")",
+				       nm_settings_connection_get_id (scd->sett_conn),
+				       nm_settings_connection_get_uuid (scd->sett_conn),
+				       scd->timeout_msec);
+			}
+		}
+	}
 
 ready:
-	_LOGT ("startup-complete: ready, no profiles to wait for");
+	nm_clear_pointer (&priv->startup_complete_idx, g_hash_table_destroy);
+	nm_assert (c_list_is_empty (&priv->startup_complete_scd_lst_head));
 	nm_assert (priv->started);
-	nm_assert (!priv->startup_complete_blocked_by);
+	_LOGT ("startup-complete: ready, no more profiles to wait for");
+	priv->startup_complete_start_timestamp_msec = 0;
 	nm_assert (!priv->startup_complete_idx);
 	nm_assert (priv->startup_complete_timeout_id == 0);
-	nm_assert (priv->startup_complete_platform_change_id == 0);
 	_notify (self, PROP_STARTUP_COMPLETE);
 }
 
@@ -626,75 +624,95 @@ _startup_complete_notify_connection (NMSettings *self,
                                      gboolean forget)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	gint64 timeout;
-	gint64 now_us = 0;
+	StartupCompleteData *scd;
+	gint64 timeout_msec;
+	gint64 now_msec = 0;
+	NMSettingConnection *s_con;
+	gint32 v;
 
-	nm_assert (   !priv->started
-	           || priv->startup_complete_idx);
+	nm_assert (priv->startup_complete_start_timestamp_msec != 0);
 
-	timeout = 0;
-	if (!forget) {
-		NMSettingConnection *s_con;
-		gint32 v;
-
-		s_con = nm_connection_get_setting_connection (nm_settings_connection_get_connection (sett_conn));
-		v = nm_setting_connection_get_wait_device_timeout (s_con);
-		if (v > 0) {
-			nm_assert (nm_setting_connection_get_interface_name (s_con));
-			timeout = ((gint64) v) * 1000;
-		}
-	}
-
-	if (timeout == 0) {
-		if (   !priv->startup_complete_idx
-		    || !g_hash_table_remove (priv->startup_complete_idx, &sett_conn))
+	if (forget) {
+		if (!priv->startup_complete_idx)
 			return;
-	} else {
-		StartupCompleteData *scd;
-
-		if (!priv->startup_complete_idx) {
-			nm_assert (!priv->started);
-			priv->startup_complete_idx = g_hash_table_new_full (nm_pdirect_hash,
-			                                                    nm_pdirect_equal,
-			                                                    NULL,
-			                                                    (GDestroyNotify) _startup_complete_data_destroy);
-			scd = NULL;
-		} else
-			scd = g_hash_table_lookup (priv->startup_complete_idx, &sett_conn);
-		if (!scd) {
-			now_us = nm_utils_get_monotonic_timestamp_usec ();
-			scd = g_slice_new (StartupCompleteData);
-			*scd = (StartupCompleteData) {
-				.sett_conn = g_object_ref (sett_conn),
-				.start_at  = now_us,
-				.timeout   = timeout,
-			};
-			g_hash_table_add (priv->startup_complete_idx, scd);
-		} else {
-			if (scd->start_at == 0) {
-				/* the entry already is ready and no longer relevant. Ignore it. */
-				return;
-			}
-			scd->timeout = timeout;
-		}
+		if (!g_hash_table_remove (priv->startup_complete_idx, &sett_conn))
+			return;
+		goto check;
 	}
 
-	_startup_complete_check (self, now_us);
+	s_con = nm_connection_get_setting_connection (nm_settings_connection_get_connection (sett_conn));
+	v = nm_setting_connection_get_wait_device_timeout (s_con);
+	if (v > 0)
+		timeout_msec = v;
+	else
+		timeout_msec = 0;
+
+	if (!priv->startup_complete_idx) {
+		nm_assert (!priv->started);
+
+		if (timeout_msec == 0)
+			return;
+
+		priv->startup_complete_idx = g_hash_table_new_full (nm_pdirect_hash,
+		                                                    nm_pdirect_equal,
+		                                                    NULL,
+		                                                    (GDestroyNotify) _startup_complete_data_destroy);
+		scd = NULL;
+	} else
+		scd = g_hash_table_lookup (priv->startup_complete_idx, &sett_conn);
+
+	if (!scd) {
+		if (timeout_msec == 0)
+			return;
+		scd = g_slice_new (StartupCompleteData);
+		*scd = (StartupCompleteData) {
+			.sett_conn    = g_object_ref (sett_conn),
+			.timeout_msec = timeout_msec,
+		};
+		g_hash_table_add (priv->startup_complete_idx, scd);
+		c_list_link_tail (&priv->startup_complete_scd_lst_head, &scd->scd_lst);
+	} else {
+		scd->timeout_msec = timeout_msec;
+		nm_c_list_move_front (&priv->startup_complete_scd_lst_head, &scd->scd_lst);
+	}
+
+check:
+	_startup_complete_check (self, now_msec);
 }
 
 const char *
-nm_settings_get_startup_complete_blocked_reason (NMSettings *self)
+nm_settings_get_startup_complete_blocked_reason (NMSettings *self,
+                                                 gboolean force_reload)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
-	const char *uuid = NULL;
+	StartupCompleteData *scd;
+	const char *uuid;
 
-	if (priv->started) {
-		if (!priv->startup_complete_idx)
-			return NULL;
-		if (priv->startup_complete_blocked_by)
-			uuid = nm_settings_connection_get_uuid (priv->startup_complete_blocked_by);
-	}
-	return uuid ?: "unknown";
+	if (priv->startup_complete_start_timestamp_msec == 0)
+		goto out_done;
+
+	if (force_reload)
+		_startup_complete_check (self, 0);
+
+	if (c_list_is_empty (&priv->startup_complete_scd_lst_head))
+		goto out_done;
+
+	scd = c_list_first_entry (&priv->startup_complete_scd_lst_head, StartupCompleteData, scd_lst);
+
+	nm_assert (scd);
+	nm_assert (NM_IS_SETTINGS_CONNECTION (scd->sett_conn));
+	nm_assert (scd == nm_g_hash_table_lookup (priv->startup_complete_idx, &scd->sett_conn));
+
+	uuid = nm_settings_connection_get_uuid (scd->sett_conn);
+	if (uuid)
+		return uuid;
+
+	g_return_val_if_reached ("settings-starting");
+
+out_done:
+	if (!priv->started)
+		return "settings-starting";
+	return NULL;
 }
 
 /*****************************************************************************/
@@ -1142,8 +1160,7 @@ _connection_changed_update (NMSettings *self,
 		_emit_connection_updated (self, sett_conn, update_reason);
 	}
 
-	if (   !priv->started
-	    || priv->startup_complete_idx) {
+	if (priv->startup_complete_start_timestamp_msec != 0) {
 		if (nm_settings_has_connection (self, sett_conn))
 			_startup_complete_notify_connection (self, sett_conn, FALSE);
 	}
@@ -1217,8 +1234,7 @@ _connection_changed_delete (NMSettings *self,
 	nm_key_file_db_remove_key (priv->kf_db_timestamps, uuid);
 	nm_key_file_db_remove_key (priv->kf_db_seen_bssids, uuid);
 
-	if (   !priv->started
-	    || priv->startup_complete_idx)
+	if (priv->startup_complete_start_timestamp_msec != 0)
 		_startup_complete_notify_connection (self, sett_conn, TRUE);
 }
 
@@ -3715,6 +3731,8 @@ nm_settings_start (NMSettings *self, GError **error)
 
 	nm_assert (!priv->started);
 
+	priv->startup_complete_start_timestamp_msec = nm_utils_get_monotonic_timestamp_msec ();
+
 	priv->hostname_manager = g_object_ref (nm_hostname_manager_get ());
 
 	priv->kf_db_timestamps = nm_key_file_db_new (NMSTATEDIR "/timestamps",
@@ -3801,7 +3819,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_boxed (value, nm_utils_strv_make_deep_copied (strv));
 		break;
 	case PROP_STARTUP_COMPLETE:
-		g_value_set_boolean (value, !nm_settings_get_startup_complete_blocked_reason (self));
+		g_value_set_boolean (value, !nm_settings_get_startup_complete_blocked_reason (self, FALSE));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -3838,6 +3856,7 @@ nm_settings_init (NMSettings *self)
 
 	c_list_init (&priv->auth_lst_head);
 	c_list_init (&priv->connections_lst_head);
+	c_list_init (&priv->startup_complete_scd_lst_head);
 
 	c_list_init (&priv->sce_dirty_lst_head);
 	priv->sce_idx = g_hash_table_new_full (nm_pstr_hash, nm_pstr_equal,
@@ -3877,9 +3896,8 @@ dispose (GObject *object)
 	nm_assert (g_hash_table_size (priv->sce_idx) == 0);
 
 	nm_clear_g_source (&priv->startup_complete_timeout_id);
-	nm_clear_g_signal_handler (priv->platform, &priv->startup_complete_platform_change_id);
 	nm_clear_pointer (&priv->startup_complete_idx, g_hash_table_destroy);
-	g_clear_object (&priv->startup_complete_blocked_by);
+	nm_assert (c_list_is_empty (&priv->startup_complete_scd_lst_head));
 
 	while ((iter = c_list_first (&priv->auth_lst_head)))
 		nm_auth_chain_destroy (nm_auth_chain_parent_lst_entry (iter));
