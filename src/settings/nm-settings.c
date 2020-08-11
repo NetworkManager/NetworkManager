@@ -60,6 +60,7 @@
 #include "plugins/keyfile/nms-keyfile-storage.h"
 #include "nm-agent-manager.h"
 #include "nm-config.h"
+#include "nm-manager.h"
 #include "nm-audit-manager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dispatcher.h"
@@ -324,6 +325,7 @@ _sett_conn_entry_find_shadowed_storage (SettConnEntry *sett_conn_entry,
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE (NMSettings,
+	PROP_MANAGER,
 	PROP_UNMANAGED_SPECS,
 	PROP_HOSTNAME,
 	PROP_CAN_MODIFY,
@@ -347,6 +349,8 @@ typedef struct {
 	NMConfig *config;
 
 	NMPlatform *platform;
+
+	NMManager *manager;
 
 	NMHostnameManager *hostname_manager;
 
@@ -3805,6 +3809,26 @@ get_property (GObject *object, guint prop_id,
 	}
 }
 
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMSettings *self = NM_SETTINGS (object);
+	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
+
+	switch (prop_id) {
+	case PROP_MANAGER:
+		/* construct-only */
+		priv->manager = g_value_get_pointer (value);
+		nm_assert (NM_IS_MANAGER (priv->manager));
+		g_object_add_weak_pointer (G_OBJECT (priv->manager), (gpointer *) &priv->manager);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
 /*****************************************************************************/
 
 static void
@@ -3833,9 +3857,13 @@ nm_settings_init (NMSettings *self)
 }
 
 NMSettings *
-nm_settings_new (void)
+nm_settings_new (NMManager *manager)
 {
-	return g_object_new (NM_TYPE_SETTINGS, NULL);
+	nm_assert (NM_IS_MANAGER (manager));
+
+	return g_object_new (NM_TYPE_SETTINGS,
+	                     NM_SETTINGS_MANAGER, manager,
+	                     NULL);
 }
 
 static void
@@ -3915,6 +3943,11 @@ finalize (GObject *object)
 	g_clear_object (&priv->config);
 
 	g_clear_object (&priv->platform);
+
+	if (priv->manager) {
+		g_object_remove_weak_pointer (G_OBJECT (priv->manager), (gpointer *) &priv->manager);
+		priv->manager = NULL;
+	}
 }
 
 static const GDBusSignalInfo signal_info_new_connection = NM_DEFINE_GDBUS_SIGNAL_INFO_INIT (
@@ -4051,8 +4084,15 @@ nm_settings_class_init (NMSettingsClass *class)
 	dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS (&interface_info_settings);
 
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+
+	obj_properties[PROP_MANAGER] =
+	    g_param_spec_pointer (NM_SETTINGS_MANAGER, "", "",
+	                          G_PARAM_CONSTRUCT_ONLY |
+	                          G_PARAM_WRITABLE |
+	                          G_PARAM_STATIC_STRINGS);
 
 	obj_properties[PROP_UNMANAGED_SPECS] =
 	    g_param_spec_boxed (NM_SETTINGS_UNMANAGED_SPECS, "", "",
