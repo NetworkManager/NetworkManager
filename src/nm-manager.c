@@ -7455,7 +7455,7 @@ constructed (GObject *object)
 
 	G_OBJECT_CLASS (nm_manager_parent_class)->constructed (object);
 
-	priv->settings = nm_settings_new ();
+	priv->settings = nm_settings_new (self);
 
 	nm_dbus_object_export (NM_DBUS_OBJECT (priv->settings));
 
