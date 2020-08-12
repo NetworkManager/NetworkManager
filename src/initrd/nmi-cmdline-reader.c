@@ -883,11 +883,8 @@ connection_set_needed (NMConnection *connection)
 	                NM_SETTING_WIRED_SETTING_NAME))
 		return;
 
-	if (nm_str_is_empty (nm_setting_connection_get_interface_name (s_con)))
-		return;
-
 	g_object_set (s_con,
-	              NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT, NMI_WAIT_DEVICE_TIMEOUT_MS,
+	              NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT, (int) NMI_WAIT_DEVICE_TIMEOUT_MS,
 	              NULL);
 }
 
