@@ -2296,9 +2296,9 @@ wired_s390_options_writer_full (KeyfileWriterInfo *info,
 
 	n = nm_setting_wired_get_num_s390_options (s_wired);
 	for (i = 0; i < n; i++) {
+		gs_free char *key_to_free = NULL;
 		const char *opt_key;
 		const char *opt_val;
-		gs_free char *key_to_free = NULL;
 
 		nm_setting_wired_get_s390_option (s_wired, i, &opt_key, &opt_val);
 		nm_keyfile_plugin_kf_set_string (info->keyfile,

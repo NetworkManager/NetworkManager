@@ -144,11 +144,11 @@ nm_keyfile_plugin_kf_get_integer_list_uint (GKeyFile *key_file,
 	gs_free guint *int_values = NULL;
 	gsize i, num_ints;
 
+	NM_SET_OUT (out_length, 0);
+
 	g_return_val_if_fail (key_file != NULL, NULL);
 	g_return_val_if_fail (group_name != NULL, NULL);
 	g_return_val_if_fail (key != NULL, NULL);
-
-	NM_SET_OUT (out_length, 0);
 
 	values = nm_keyfile_plugin_kf_get_string_list (key_file, group_name, key, &num_ints, &key_file_error);
 
