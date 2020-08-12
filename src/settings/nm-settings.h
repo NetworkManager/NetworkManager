@@ -26,6 +26,7 @@
 #define NM_SETTINGS_CAN_MODIFY       "can-modify"
 #define NM_SETTINGS_CONNECTIONS      "connections"
 #define NM_SETTINGS_STARTUP_COMPLETE "startup-complete"
+#define NM_SETTINGS_MANAGER          "manager"
 
 #define NM_SETTINGS_SIGNAL_CONNECTION_ADDED              "connection-added"
 #define NM_SETTINGS_SIGNAL_CONNECTION_UPDATED            "connection-updated"
@@ -53,7 +54,7 @@ GType nm_settings_get_type (void);
 NMSettings *nm_settings_get (void);
 #define NM_SETTINGS_GET (nm_settings_get ())
 
-NMSettings *nm_settings_new (void);
+NMSettings *nm_settings_new (NMManager *manager);
 
 gboolean nm_settings_start (NMSettings *self, GError **error);
 
@@ -122,7 +123,8 @@ void nm_settings_device_added (NMSettings *self, NMDevice *device);
 
 void nm_settings_device_removed (NMSettings *self, NMDevice *device, gboolean quitting);
 
-const char *nm_settings_get_startup_complete_blocked_reason (NMSettings *self);
+const char *nm_settings_get_startup_complete_blocked_reason (NMSettings *self,
+                                                             gboolean force_reload);
 
 void nm_settings_kf_db_write (NMSettings *settings);
 
