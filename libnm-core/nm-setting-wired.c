@@ -490,6 +490,13 @@ nm_setting_wired_get_s390_option (NMSettingWired *setting,
 {
 	NMSettingWiredPrivate *priv;
 
+	/* with LTO and optimization, the compiler complains that the
+	 * output variables are not initialized. In practice, the function
+	 * only sets the output on success. But make the compiler happy.
+	 */
+	NM_SET_OUT (out_key,   NULL);
+	NM_SET_OUT (out_value, NULL);
+
 	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), FALSE);
 
 	priv = NM_SETTING_WIRED_GET_PRIVATE (setting);

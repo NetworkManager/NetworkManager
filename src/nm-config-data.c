@@ -1361,6 +1361,8 @@ nm_config_data_get_device_config (const NMConfigData *self,
 	const MatchSectionInfo *connection_info;
 	char *value = NULL;
 
+	NM_SET_OUT (has_match, FALSE);
+
 	g_return_val_if_fail (self, NULL);
 	g_return_val_if_fail (property && *property, NULL);
 
