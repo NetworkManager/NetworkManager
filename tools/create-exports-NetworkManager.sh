@@ -100,6 +100,7 @@ if [ -f "build.ninja" ]; then
     from_meson=1
     libs=
 else
+    from_meson=
     libs=.libs/
 fi
 
