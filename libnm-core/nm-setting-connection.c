@@ -689,7 +689,7 @@ nm_setting_connection_is_slave_type (NMSettingConnection *setting,
  * @setting: the #NMSettingConnection
  *
  * Returns: the %NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT property with
- *   the timeout in milli seconds. -1 is the default.
+ *   the timeout in milliseconds. -1 is the default.
  *
  * Since: 1.20
  */
@@ -1215,20 +1215,6 @@ after_interface_name:
 		             _("value %d is not valid"), priv->multi_connect);
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME,
 		                NM_SETTING_CONNECTION_MULTI_CONNECT);
-		return FALSE;
-	}
-
-	if (   priv->wait_device_timeout != -1
-	    && !priv->interface_name) {
-		/* currently, only waiting by interface-name is implemented. Hence reject
-		 * configurations that are not implemented (yet). */
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("wait-device-timeout requires %s"),
-		             NM_SETTING_CONNECTION_INTERFACE_NAME);
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_CONNECTION_SETTING_NAME,
-		                NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT);
 		return FALSE;
 	}
 
@@ -2314,10 +2300,9 @@ nm_setting_connection_class_init (NMSettingConnectionClass *klass)
 	 * Timeout in milliseconds to wait for device at startup.
 	 * During boot, devices may take a while to be detected by the driver.
 	 * This property will cause to delay NetworkManager-wait-online.service
-	 * and nm-online to give the device a chance to appear.
-	 *
-	 * Note that this property only works together with NMSettingConnection:interface-name
-	 * to identify the device that will be waited for.
+	 * and nm-online to give the device a chance to appear. This works by
+	 * waiting for the given timeout until a compatible device for the
+	 * profile is available and managed.
 	 *
 	 * The value 0 means no wait time. The default value is -1, which
 	 * currently has the same meaning as no wait time.

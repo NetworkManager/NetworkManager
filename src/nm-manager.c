@@ -1561,13 +1561,6 @@ check_if_startup_complete (NMManager *self)
 	if (!priv->devices_inited)
 		return;
 
-	reason = nm_settings_get_startup_complete_blocked_reason (priv->settings);
-	if (reason) {
-		_LOGD (LOGD_CORE, "startup complete is waiting for connection (%s)",
-		       reason);
-		return;
-	}
-
 	c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
 		reason = nm_device_has_pending_action_reason (device);
 		if (reason) {
@@ -1576,6 +1569,31 @@ check_if_startup_complete (NMManager *self)
 			       reason);
 			return;
 		}
+	}
+
+	/* All NMDevice must be ready. But also NMSettings tracks profiles that wait for
+	 * ready devices via "connection.wait-device-timeout".
+	 *
+	 * Note that we only re-check nm_settings_get_startup_complete_blocked_reason() when
+	 * all of the devices become ready (again).
+	 *
+	 * For example, assume we have device "eth1" and "profile-eth2" which waits for "eth2".
+	 * If "eth1" is ready (no pending action), we only need to re-evaluate "profile-eth2"
+	 * if we have another device ("eth2"), that becomes non-ready (had pending actions)
+	 * and again become ready. We don't need to check "profile-eth2" until "eth2" becomes
+	 * non-ready.
+	 * That is why nm_settings_get_startup_complete_blocked_reason() only has any significance
+	 * if all devices are ready too. It allows us to cut down the number of checks whether
+	 * NMSettings is ready. That's because we don't need to re-evaluate on minor changes of
+	 * a device, only when all devices become managed and ready. */
+
+	g_signal_handlers_block_by_func (priv->settings, settings_startup_complete_changed, self);
+	reason = nm_settings_get_startup_complete_blocked_reason (priv->settings, TRUE);
+	g_signal_handlers_unblock_by_func (priv->settings, settings_startup_complete_changed, self);
+	if (reason) {
+		_LOGD (LOGD_CORE, "startup complete is waiting for connection (%s)",
+		       reason);
+		return;
 	}
 
 	_LOGI (LOGD_CORE, "startup complete");
@@ -7455,7 +7473,7 @@ constructed (GObject *object)
 
 	G_OBJECT_CLASS (nm_manager_parent_class)->constructed (object);
 
-	priv->settings = nm_settings_new ();
+	priv->settings = nm_settings_new (self);
 
 	nm_dbus_object_export (NM_DBUS_OBJECT (priv->settings));
 
