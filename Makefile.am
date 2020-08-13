@@ -4920,6 +4920,7 @@ endif
 
 check-local-clients-tests-test-client: clients/cli/nmcli clients/tests/test-client.py
 	mkdir -p "$(builddir)/clients/tests/"
+	"$(builddir)/clients/cli/nmcli" --version
 	GI_TYPELIB_PATH="$(abs_builddir)/libnm$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}" \
 	LD_LIBRARY_PATH="$(abs_builddir)/libnm/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}" \
 	NM_TEST_CLIENT_BUILDDIR="$(abs_builddir)" \
