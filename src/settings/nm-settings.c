@@ -479,7 +479,8 @@ _startup_complete_data_destroy (StartupCompleteData *scd)
 
 static gboolean
 _startup_complete_check_is_ready (NMSettings *self,
-                                  NMSettingsConnection *sett_conn)
+                                  NMSettingsConnection *sett_conn,
+                                  gboolean ignore_pending_actions)
 {
 	NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE (self);
 	NMConnection *conn;
@@ -497,7 +498,8 @@ _startup_complete_check_is_ready (NMSettings *self,
 			continue;
 
 		if (   nm_device_get_state (device) < NM_DEVICE_STATE_UNAVAILABLE
-		    || nm_device_has_pending_action (device)) {
+		    || (   !ignore_pending_actions
+		        && nm_device_has_pending_action (device))) {
 			/* while a device is not yet available and still has a pending
 			 * action itself, it's not a suitable candidate. */
 			continue;
@@ -568,7 +570,7 @@ _startup_complete_check (NMSettings *self,
 		if (scd->timeout_msec <= elapsed_msec)
 			goto next_with_ready;
 
-		if (_startup_complete_check_is_ready (self, scd->sett_conn))
+		if (_startup_complete_check_is_ready (self, scd->sett_conn, FALSE))
 			goto next_with_ready;
 
 		scd_not_ready = scd;
@@ -598,7 +600,7 @@ next_with_ready:
 
 	if (_LOGW_ENABLED ()) {
 		c_list_for_each_entry (scd, &priv->startup_complete_scd_lst_head, scd_lst) {
-			if (!_startup_complete_check_is_ready (self, scd->sett_conn)) {
+			if (!_startup_complete_check_is_ready (self, scd->sett_conn, TRUE)) {
 				_LOGW ("startup-complete: profile \"%s\" (%s) was waiting for non-existing device (with timeout \"connection.wait-device-timeout=%"G_GINT64_FORMAT"\")",
 				       nm_settings_connection_get_id (scd->sett_conn),
 				       nm_settings_connection_get_uuid (scd->sett_conn),
