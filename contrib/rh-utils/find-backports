@@ -274,6 +274,12 @@ if __name__ == "__main__":
                 else:
                     l.append(c)
 
+    own_commits_cherry_picked_flat = set()
+    for c, p in own_commits_cherry_picked.items():
+        own_commits_cherry_picked_flat.add(c)
+        if p:
+            own_commits_cherry_picked_flat.update(p)
+
     # print(">>> own_commits_cherry_picked")
     # pp.pprint(own_commits_cherry_picked)
 
@@ -295,10 +301,10 @@ if __name__ == "__main__":
                 # print(">>> in cherry_picks_all")
                 continue
             for f in fixes:
-                if f not in own_commits_cherry_picked:
-                    # commit "c" fixes commit "f", but this is one one of our own commits
+                if f not in own_commits_cherry_picked_flat:
+                    # commit "c" fixes commit "f", but this is not one of our own commits
                     # and not interesting.
-                    # print(">>> fixes %s in own_commits_cherry_picked" % (f))
+                    # print(">>> fixes %s not in own_commits_cherry_picked" % (f))
                     continue
                 # print(">>> take %s (fixes %s)" % (c, fixes))
                 fixing_commits[c] = fixes
