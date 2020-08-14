@@ -60,11 +60,20 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 
 	CFLAGS_MORE_WARNINGS="-Wall"
 
+	if test "x$enable_lto" = xyes; then
+		dnl With LTO and optimizations enabled, gcc 10.2.1-1.fc32 is really
+		dnl adamant to warn about correct uses of strncpy. Disable that warning.
+		_CFLAGS_MORE_WARNINGS_DISABLE_LTO="-Wno-stringop-overflow"
+	else
+		_CFLAGS_MORE_WARNINGS_DISABLE_LTO=
+	fi
+
 	if test "x$set_more_warnings" = xerror; then
 		CFLAGS_MORE_WARNINGS="$CFLAGS_MORE_WARNINGS -Werror"
 	fi
 
 	for option in \
+		      $_CFLAGS_MORE_WARNINGS_DISABLE_LTO \
 		      -Wextra \
 		      -Wdeclaration-after-statement \
 		      -Wfloat-equal \
