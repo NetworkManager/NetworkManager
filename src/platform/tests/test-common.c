@@ -1180,6 +1180,7 @@ nmtstp_link_bridge_add (NMPlatform *platform,
                         gboolean *out_not_supported)
 {
 	const NMPlatformLink *pllink = NULL;
+	const NMPlatformLnkBridge *ll = NULL;
 	int r = 0;
 
 	g_assert (nm_utils_ifname_valid_kernel (name, NULL));
@@ -1190,7 +1191,33 @@ nmtstp_link_bridge_add (NMPlatform *platform,
 	_init_platform (&platform, external_command);
 
 	if (external_command) {
-		r = nmtstp_run_command ("ip link add %s type bridge forward_delay %u hello_time %u max_age %u ageing_time %u stp_state %d priority %u group_fwd_mask %#x mcast_last_member_count %u  mcast_startup_query_count %u mcast_last_member_interval %"G_GUINT64_FORMAT" mcast_membership_interval %"G_GUINT64_FORMAT" mcast_querier_interval %"G_GUINT64_FORMAT" mcast_query_interval %"G_GUINT64_FORMAT" mcast_query_response_interval %"G_GUINT64_FORMAT" mcast_startup_query_interval %"G_GUINT64_FORMAT"",
+		char sbuf_gfw[100];
+		char sbuf_mlmc[100];
+		char sbuf_mlmi[100];
+		char sbuf_mmi[100];
+		char sbuf_mqi[100];
+		char sbuf_mqii[100];
+		char sbuf_msqc[100];
+		char sbuf_msqi[100];
+		char sbuf_mqri[100];
+
+		r = nmtstp_run_command ("ip link add %s type bridge "
+		                        "forward_delay %u "
+		                        "hello_time %u "
+		                        "max_age %u "
+		                        "ageing_time %u "
+		                        "stp_state %d "
+		                        "priority %u "
+		                        "%s" /* group_fwd_mask */
+		                        "%s" /* mcast_last_member_count */
+		                        "%s" /* mcast_startup_query_count */
+		                        "%s" /* mcast_last_member_interval */
+		                        "%s" /* mcast_membership_interval */
+		                        "%s" /* mcast_querier_interval */
+		                        "%s" /* mcast_query_interval */
+		                        "%s" /* mcast_query_response_interval */
+		                        "%s" /* mcast_startup_query_interval */
+		                        "",
 		                        name,
 		                        lnk->forward_delay,
 		                        lnk->hello_time,
@@ -1198,17 +1225,37 @@ nmtstp_link_bridge_add (NMPlatform *platform,
 		                        lnk->ageing_time,
 		                        (int) lnk->stp_state,
 		                        lnk->priority,
-		                        lnk->group_fwd_mask,
-		                        lnk->mcast_last_member_count,
-		                        lnk->mcast_startup_query_count,
-		                        lnk->mcast_last_member_interval,
-		                        lnk->mcast_membership_interval,
-		                        lnk->mcast_querier_interval,
-		                        lnk->mcast_query_interval,
-		                        lnk->mcast_query_response_interval,
-		                        lnk->mcast_startup_query_interval);
-		g_assert_cmpint (r, ==, 0);
-		pllink = nmtstp_assert_wait_for_link (platform, name, NM_LINK_TYPE_BRIDGE, 100);
+		                          lnk->group_fwd_mask != 0
+		                        ? nm_sprintf_buf (sbuf_gfw, "group_fwd_mask %#x ", lnk->group_fwd_mask)
+		                        : "",
+		                          lnk->mcast_last_member_count != NM_BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEF
+		                        ? nm_sprintf_buf (sbuf_mlmc, "mcast_last_member_count %u ",lnk->mcast_last_member_count)
+		                        : "",
+		                          lnk->mcast_startup_query_count != NM_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEF
+		                        ? nm_sprintf_buf (sbuf_msqc, "mcast_startup_query_count %u ", lnk->mcast_startup_query_count)
+		                        : "",
+		                          lnk->mcast_last_member_interval != NM_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEF
+		                        ? nm_sprintf_buf (sbuf_mlmi, "mcast_last_member_interval %"G_GUINT64_FORMAT" ", lnk->mcast_last_member_interval)
+		                        : "",
+		                          lnk->mcast_membership_interval != NM_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_DEF
+		                        ? nm_sprintf_buf (sbuf_mmi, "mcast_membership_interval %"G_GUINT64_FORMAT" ", lnk->mcast_membership_interval)
+		                        : "",
+		                          lnk->mcast_querier_interval != NM_BRIDGE_MULTICAST_QUERIER_INTERVAL_DEF
+		                        ? nm_sprintf_buf (sbuf_mqi, "mcast_querier_interval %"G_GUINT64_FORMAT" ", lnk->mcast_querier_interval)
+		                        : "",
+		                          lnk->mcast_query_interval != NM_BRIDGE_MULTICAST_QUERY_INTERVAL_DEF
+		                        ? nm_sprintf_buf (sbuf_mqii, "mcast_query_interval %"G_GUINT64_FORMAT" ", lnk->mcast_query_interval)
+		                        : "",
+		                          lnk->mcast_query_response_interval != NM_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_DEF
+		                        ? nm_sprintf_buf (sbuf_mqri, "mcast_query_response_interval %"G_GUINT64_FORMAT" ", lnk->mcast_query_response_interval)
+		                        : "",
+		                          lnk->mcast_startup_query_interval != NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEF
+		                        ? nm_sprintf_buf (sbuf_msqi, "mcast_startup_query_interval %"G_GUINT64_FORMAT" ", lnk->mcast_startup_query_interval)
+		                        : "");
+		if (r == 0)
+			pllink = nmtstp_assert_wait_for_link (platform, name, NM_LINK_TYPE_BRIDGE, 100);
+		else
+			_LOGI ("Adding bridge device via iproute2 failed. Assume iproute2 is not up to the task.");
 	}
 
 	if (!pllink) {
@@ -1216,6 +1263,24 @@ nmtstp_link_bridge_add (NMPlatform *platform,
 	}
 
 	_assert_pllink (platform, r == 0, pllink, name, NM_LINK_TYPE_BRIDGE);
+
+	ll = NMP_OBJECT_CAST_LNK_BRIDGE (NMP_OBJECT_UP_CAST (pllink)->_link.netlink.lnk);
+
+	g_assert_cmpint (lnk->stp_state,                     ==, ll->stp_state);
+	g_assert_cmpint (lnk->forward_delay,                 ==, ll->forward_delay);
+	g_assert_cmpint (lnk->hello_time,                    ==, ll->hello_time);
+	g_assert_cmpint (lnk->max_age,                       ==, ll->max_age);
+	g_assert_cmpint (lnk->ageing_time,                   ==, ll->ageing_time);
+	g_assert_cmpint (lnk->priority,                      ==, ll->priority);
+	g_assert_cmpint (lnk->group_fwd_mask,                ==, ll->group_fwd_mask);
+	g_assert_cmpint (lnk->mcast_last_member_count,       ==, ll->mcast_last_member_count);
+	g_assert_cmpint (lnk->mcast_last_member_interval,    ==, ll->mcast_last_member_interval);
+	g_assert_cmpint (lnk->mcast_membership_interval,     ==, ll->mcast_membership_interval);
+	g_assert_cmpint (lnk->mcast_querier_interval,        ==, ll->mcast_querier_interval);
+	g_assert_cmpint (lnk->mcast_query_interval,          ==, ll->mcast_query_interval);
+	g_assert_cmpint (lnk->mcast_query_response_interval, ==, ll->mcast_query_response_interval);
+	g_assert_cmpint (lnk->mcast_startup_query_count,     ==, ll->mcast_startup_query_count);
+	g_assert_cmpint (lnk->mcast_startup_query_interval,  ==, ll->mcast_startup_query_interval);
 
 	return pllink;
 }
