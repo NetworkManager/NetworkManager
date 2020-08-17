@@ -107,7 +107,7 @@ lease_to_ip4_config (NMDedupMultiIndex *multi_idx,
 	guint32 rebinding;
 	gs_free nm_sd_dhcp_option *private_options = NULL;
 
-	g_return_val_if_fail (lease != NULL, NULL);
+	nm_assert (lease != NULL);
 
 	if (sd_dhcp_lease_get_address (lease, &a_address) < 0) {
 		nm_utils_error_set_literal (error, NM_UTILS_ERROR_UNKNOWN, "could not get address from lease");
@@ -481,9 +481,9 @@ bound4_handle (NMDhcpSystemd *self, gboolean extended)
 {
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
 	const char *iface = nm_dhcp_client_get_iface (NM_DHCP_CLIENT (self));
-	sd_dhcp_lease *lease;
 	gs_unref_object NMIP4Config *ip4_config = NULL;
 	gs_unref_hashtable GHashTable *options = NULL;
+	sd_dhcp_lease *lease = NULL;
 	GError *error = NULL;
 
 	if (   sd_dhcp_client_get_lease (priv->client4, &lease) < 0
@@ -744,7 +744,7 @@ lease_to_ip6_config (NMDedupMultiIndex *multi_idx,
 	nm_auto_free_gstring GString *str = NULL;
 	int num, i;
 
-	g_return_val_if_fail (lease, NULL);
+	nm_assert (lease);
 
 	ip6_config = nm_ip6_config_new (multi_idx, ifindex);
 
@@ -830,7 +830,7 @@ bound6_handle (NMDhcpSystemd *self)
 	gs_unref_hashtable GHashTable *options = NULL;
 	gs_free_error GError *error = NULL;
 	NMPlatformIP6Address prefix = { 0 };
-	sd_dhcp6_lease *lease;
+	sd_dhcp6_lease *lease = NULL;
 
 	if (   sd_dhcp6_client_get_lease (priv->client6, &lease) < 0
 	    || !lease) {

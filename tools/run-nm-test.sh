@@ -96,12 +96,12 @@ else
         NMTST_USE_VALGRIND=0
     fi
 
-    if [ -n "${NMTST_LIBTOOL-:x}" ]; then
-        NMTST_LIBTOOL=(sh "$SCRIPT_PATH/../libtool" --mode=execute)
-    elif [ -n "${NMTST_LIBTOOL-x}" ]; then
+    if [ -z "${NMTST_LIBTOOL+x}" ]; then
+        NMTST_LIBTOOL=(sh "$SCRIPT_PATH/../libtool" "--mode=execute")
+    elif [ -z "$NMTST_LIBTOOL" ]; then
         NMTST_LIBTOOL=()
     else
-        NMTST_LIBTOOL=($NMTST_LIBTOOL --mode=execute)
+        NMTST_LIBTOOL=("$NMTST_LIBTOOL" "--mode=execute")
     fi
     unset TEST
     while test $# -gt 0; do

@@ -438,8 +438,8 @@ _poll_get_probe_finish_fcn (GObject *source,
 	_nm_unused gs_unref_object GTask *task = poll_get_data->task; /* balance ref from _poll_get_probe_start_fcn() */
 	gboolean success;
 	gs_free_error GError *local_error = NULL;
-	long response_code;
 	gs_unref_bytes GBytes *response_data = NULL;
+	long response_code = -1;
 
 	success = nm_http_client_get_finish (g_task_get_source_object (poll_get_data->task),
 	                                     result,

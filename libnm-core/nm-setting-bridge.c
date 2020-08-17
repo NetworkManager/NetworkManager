@@ -268,6 +268,13 @@ nm_bridge_vlan_get_vid_range (const NMBridgeVlan *vlan,
                               guint16 *vid_start,
                               guint16 *vid_end)
 {
+	/* with LTO and optimization, the compiler complains that the
+	 * output variables are not initialized. In practice, the function
+	 * only sets the output on success. But make the compiler happy.
+	 */
+	NM_SET_OUT (vid_start, 0);
+	NM_SET_OUT (vid_end, 0);
+
 	g_return_val_if_fail (NM_IS_BRIDGE_VLAN (vlan, TRUE), 0);
 
 	NM_SET_OUT (vid_start, vlan->vid_start);

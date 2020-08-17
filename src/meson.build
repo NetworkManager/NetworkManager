@@ -264,8 +264,8 @@ symbol_map_name = 'NetworkManager.ver'
 # add dependencies with link_whole, only supported in meson >= 0.46.
 # Create an executable with full symbols that we use in place of the
 # library to enumerate the symbols.
-network_manager_sym = executable(
-  'nm-full-symbols',
+network_manager_all_sym = executable(
+  'NetworkManager-all-sym',
   'main.c',
   dependencies: nm_deps,
   c_args: daemon_c_flags,
@@ -277,7 +277,7 @@ network_manager_sym = executable(
 ver_script = custom_target(
   symbol_map_name,
   output: symbol_map_name,
-  depends: [network_manager_sym, core_plugins],
+  depends: [network_manager_all_sym, core_plugins],
   command: [create_exports_networkmanager, '--called-from-build', source_root],
 )
 
