@@ -563,6 +563,7 @@ _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX (NMPObjectType obj_type)
 #define NMP_OBJECT_CAST_QDISC(obj)         _NMP_OBJECT_CAST (obj, qdisc,         NMP_OBJECT_TYPE_QDISC)
 #define NMP_OBJECT_CAST_TFILTER(obj)       _NMP_OBJECT_CAST (obj, tfilter,       NMP_OBJECT_TYPE_TFILTER)
 #define NMP_OBJECT_CAST_LNK_WIREGUARD(obj) _NMP_OBJECT_CAST (obj, lnk_wireguard, NMP_OBJECT_TYPE_LNK_WIREGUARD)
+#define NMP_OBJECT_CAST_LNK_BRIDGE(obj)    _NMP_OBJECT_CAST (obj, lnk_bridge,    NMP_OBJECT_TYPE_LNK_BRIDGE)
 
 static inline int
 NMP_OBJECT_TYPE_TO_ADDR_FAMILY (NMPObjectType obj_type)
