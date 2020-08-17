@@ -1346,22 +1346,40 @@ _parse_lnk_bridge (const char *kind, struct nlattr *info_data)
 		props->priority = nla_get_u16 (tb[IFLA_BR_PRIORITY]);
 	if (tb[IFLA_BR_GROUP_FWD_MASK])
 		props->group_fwd_mask = nla_get_u16 (tb[IFLA_BR_GROUP_FWD_MASK]);
+	else
+		props->group_fwd_mask = 0;
 	if (tb[IFLA_BR_MCAST_LAST_MEMBER_CNT])
 		props->mcast_last_member_count = nla_get_u32 (tb[IFLA_BR_MCAST_LAST_MEMBER_CNT]);
+	else
+		props->mcast_last_member_count = NM_BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEF;
 	if (tb[IFLA_BR_MCAST_LAST_MEMBER_INTVL])
 		props->mcast_last_member_interval = nla_get_u64 (tb[IFLA_BR_MCAST_LAST_MEMBER_INTVL]);
+	else
+		props->mcast_last_member_interval = NM_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEF;
 	if (tb[IFLA_BR_MCAST_MEMBERSHIP_INTVL])
 		props->mcast_membership_interval = nla_get_u64 (tb[IFLA_BR_MCAST_MEMBERSHIP_INTVL]);
+	else
+		props->mcast_membership_interval = NM_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_DEF;
 	if (tb[IFLA_BR_MCAST_QUERIER_INTVL])
 		props->mcast_querier_interval = nla_get_u64 (tb[IFLA_BR_MCAST_QUERIER_INTVL]);
+	else
+		props->mcast_querier_interval = NM_BRIDGE_MULTICAST_QUERIER_INTERVAL_DEF;
 	if (tb[IFLA_BR_MCAST_QUERY_INTVL])
 		props->mcast_query_interval = nla_get_u64 (tb[IFLA_BR_MCAST_QUERY_INTVL]);
+	else
+		props->mcast_query_interval = NM_BRIDGE_MULTICAST_QUERY_INTERVAL_DEF;
 	if (tb[IFLA_BR_MCAST_QUERY_RESPONSE_INTVL])
 		props->mcast_query_response_interval = nla_get_u64 (tb[IFLA_BR_MCAST_QUERY_RESPONSE_INTVL]);
+	else
+		props->mcast_query_response_interval = NM_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_DEF;
 	if (tb[IFLA_BR_MCAST_STARTUP_QUERY_CNT])
 		props->mcast_startup_query_count = nla_get_u32 (tb[IFLA_BR_MCAST_STARTUP_QUERY_CNT]);
+	else
+		props->mcast_startup_query_count = NM_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEF;
 	if (tb[IFLA_BR_MCAST_STARTUP_QUERY_INTVL])
 		props->mcast_startup_query_interval = nla_get_u64 (tb[IFLA_BR_MCAST_STARTUP_QUERY_INTVL]);
+	else
+		props->mcast_startup_query_interval = NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEF;
 
 	return obj;
 }
