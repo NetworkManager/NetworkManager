@@ -59,7 +59,11 @@
 %bcond_without regen_docs
 %bcond_with    debug
 %bcond_with    test
+%if 0%{?fedora} >= 33
+%bcond_without lto
+%else
 %bcond_with    lto
+%endif
 %bcond_with    sanitizer
 %if 0%{?fedora}
 %bcond_without connectivity_fedora
@@ -133,6 +137,11 @@
 %else
 %global ebpf_enabled "no"
 %endif
+
+# Fedora 33 enables LTO by default by setting CFLAGS="-flto -ffat-lto-objects".
+# However, we also require "-flto -flto-partition=none", so disable Fedora's
+# default and use our configure option --with-lto instead.
+%define _lto_cflags %{nil}
 
 ###############################################################################
 

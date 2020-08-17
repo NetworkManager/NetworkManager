@@ -592,13 +592,16 @@ nm_wireguard_peer_get_allowed_ip (const NMWireGuardPeer *self,
 {
 	const char *s;
 
+	/* With LTO, the compiler might warn about the g_return_val_if_fail()
+	 * code path not initializing the output argument. Workaround that by
+	 * always setting the out argument. */
+	NM_SET_OUT (out_is_valid, FALSE);
+
 	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, TRUE), NULL);
 
 	if (   !self->allowed_ips
-	    || idx >= self->allowed_ips->len) {
-		NM_SET_OUT (out_is_valid, FALSE);
+	    || idx >= self->allowed_ips->len)
 		return NULL;
-	}
 
 	s = self->allowed_ips->pdata[idx];
 	NM_SET_OUT (out_is_valid, s[0] != ALLOWED_IP_INVALID_X);

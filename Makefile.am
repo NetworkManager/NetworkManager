@@ -2406,7 +2406,26 @@ $(src_libNetworkManagerTest_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 
-src/NetworkManager.ver: src/libNetworkManager.la $(core_plugins)
+noinst_PROGRAMS += src/NetworkManager-all-sym
+
+src_NetworkManager_all_sym_CPPFLAGS = $(src_cppflags)
+
+src_NetworkManager_all_sym_SOURCES = \
+	src/main.c
+
+src_NetworkManager_all_sym_LDADD = \
+	src/libNetworkManager.la \
+	$(GLIB_LIBS) \
+	$(NULL)
+
+src_NetworkManager_all_sym_LDFLAGS = \
+	-rdynamic \
+	$(SANITIZER_EXEC_LDFLAGS) \
+	$(NULL)
+
+$(src_NetworkManager_all_sym_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+
+src/NetworkManager.ver: src/NetworkManager-all-sym $(core_plugins)
 	$(AM_V_GEN) NM="$(NM)" "$(srcdir)/tools/create-exports-NetworkManager.sh" --called-from-build "$(srcdir)"
 
 CLEANFILES += src/NetworkManager.ver
@@ -4934,6 +4953,7 @@ endif
 
 check-local-clients-tests-test-client: clients/cli/nmcli clients/tests/test-client.py
 	mkdir -p "$(builddir)/clients/tests/"
+	"$(builddir)/clients/cli/nmcli" --version
 	GI_TYPELIB_PATH="$(abs_builddir)/libnm$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}" \
 	LD_LIBRARY_PATH="$(abs_builddir)/libnm/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}" \
 	NM_TEST_CLIENT_BUILDDIR="$(abs_builddir)" \

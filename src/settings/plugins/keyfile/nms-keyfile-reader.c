@@ -171,6 +171,7 @@ nms_keyfile_reader_from_file (const char *full_filename,
 	NM_SET_OUT (out_is_nm_generated, NM_TERNARY_DEFAULT);
 	NM_SET_OUT (out_is_volatile, NM_TERNARY_DEFAULT);
 	NM_SET_OUT (out_is_external, NM_TERNARY_DEFAULT);
+	NM_SET_OUT (out_shadowed_owned, NM_TERNARY_DEFAULT);
 
 	if (!nms_keyfile_utils_check_file_permissions (NMS_KEYFILE_FILETYPE_KEYFILE,
 	                                               full_filename,

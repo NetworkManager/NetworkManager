@@ -217,6 +217,7 @@ test-*.trs
 /po/remove-potcdate.sin
 
 /src/NetworkManager
+/src/NetworkManager-all-sym
 /src/NetworkManager.ver
 /src/devices/bluetooth/tests/nm-bt-test
 /src/devices/tests/test-acd

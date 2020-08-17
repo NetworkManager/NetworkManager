@@ -4209,7 +4209,10 @@ nm_utils_hexstr2bin_alloc (const char *hexstr,
 	guint8 *buffer;
 	gsize buffer_len, len;
 
-	g_return_val_if_fail (hexstr, NULL);
+	if (G_UNLIKELY (!hexstr)) {
+		NM_SET_OUT (out_len, 0);
+		g_return_val_if_fail (hexstr, NULL);
+	}
 
 	nm_assert (required_len > 0 || out_len);
 
