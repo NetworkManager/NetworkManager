@@ -182,7 +182,8 @@ int n_dhcp4_c_connection_listen(NDhcp4CConnection *connection) {
 int n_dhcp4_c_connection_connect(NDhcp4CConnection *connection,
                                  const struct in_addr *client,
                                  const struct in_addr *server) {
-        int r, fd_udp;
+        _c_cleanup_(c_closep) int fd_udp = -1;
+        int r;
 
         c_assert(connection->state == N_DHCP4_C_CONNECTION_STATE_PACKET);
 
@@ -200,27 +201,21 @@ int n_dhcp4_c_connection_connect(NDhcp4CConnection *connection,
                               .events = EPOLLIN,
                               .data = { .u32 = N_DHCP4_CLIENT_EPOLL_IO },
                       });
-        if (r < 0) {
-                r = -errno;
-                goto exit_fd;
-        }
+        if (r < 0)
+                return -errno;
 
         r = packet_shutdown(connection->fd_packet);
-        if (r < 0)
-                goto exit_epoll;
+        if (r < 0) {
+                epoll_ctl(connection->fd_epoll, EPOLL_CTL_DEL, fd_udp, NULL);
+                return r;
+        }
 
         connection->state = N_DHCP4_C_CONNECTION_STATE_DRAINING;
         connection->fd_udp = fd_udp;
+        fd_udp = -1;
         connection->client_ip = client->s_addr;
         connection->server_ip = server->s_addr;
-        fd_udp = -1;
         return 0;
-
-exit_epoll:
-        epoll_ctl(connection->fd_epoll, EPOLL_CTL_DEL, fd_udp, NULL);
-exit_fd:
-        close(fd_udp);
-        return r;
 }
 
 void n_dhcp4_c_connection_close(NDhcp4CConnection *connection) {
