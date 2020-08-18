@@ -59,7 +59,7 @@
 %bcond_without regen_docs
 %bcond_with    debug
 %bcond_with    test
-%if 0%{?fedora} >= 33
+%if 0%{?fedora} >= 33 || 0%{?rhel} >= 9
 %bcond_without lto
 %else
 %bcond_with    lto
