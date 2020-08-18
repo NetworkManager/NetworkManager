@@ -108,6 +108,12 @@ t_fedora:31:
   <<: *fedora_install
   image: fedora:31
   <<: *do_build
+  when: manual
+
+t_fedora:32:
+  <<: *fedora_install
+  image: fedora:32
+  <<: *do_build
   variables:
     NM_BUILD_TARBALL: 1
   artifacts:
@@ -117,9 +123,9 @@ t_fedora:31:
       - NetworkManager-1*.tar.xz
       - NetworkManager-1*.src.rpm
 
-t_fedora:32:
+t_fedora:33:
   <<: *fedora_install
-  image: fedora:32
+  image: fedora:33
   <<: *do_build
   when: manual
 
@@ -211,7 +217,7 @@ t_debian:sid:
 pages:
   stage: deploy
   dependencies:
-    - t_fedora:31
+    - t_fedora:32
   script:
     - mv docs-html public
   artifacts:
