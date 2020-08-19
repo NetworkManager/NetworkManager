@@ -1,4 +1,17 @@
 =============================================
+NetworkManager-1.26.2
+Overview of changes since NetworkManager-1.26
+=============================================
+
+* build: various fixes for LTO.
+* dhcp6: export and handle the DHCPv6 FQDN option.
+* core: fix reapply for bond options.
+* core: improve "connection.wait-device-timeout" to handle matching
+  devices not only by interface name and fix race.
+* libnm,core: support "clsact" qdisc.
+* dhcp4: fix bug in internal DHCP client on big endian systems.
+
+=============================================
 NetworkManager-1.26
 Overview of changes since NetworkManager-1.24
 =============================================
