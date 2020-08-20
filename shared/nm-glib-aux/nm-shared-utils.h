@@ -69,6 +69,14 @@ G_STATIC_ASSERT (sizeof (int) == sizeof (gint32));
 /*****************************************************************************/
 
 typedef struct {
+	guint8 ether_addr_octet[6 /*ETH_ALEN*/];
+} NMEtherAddr;
+
+#define NM_ETHER_ADDR_FORMAT_STR "%02X:%02X:%02X:%02X:%02X:%02X"
+#define NM_ETHER_ADDR_FORMAT_VAL(x) (x).ether_addr_octet[0], (x).ether_addr_octet[1], (x).ether_addr_octet[2], (x).ether_addr_octet[3], (x).ether_addr_octet[4], (x).ether_addr_octet[5]
+#define NM_ETHER_ADDR_INIT(...) { .ether_addr_octet = { __VA_ARGS__ }, }
+
+typedef struct {
 	union {
 		guint8 addr_ptr[1];
 		in_addr_t addr4;
