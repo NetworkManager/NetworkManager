@@ -1190,6 +1190,7 @@ nmtstp_link_bridge_add (NMPlatform *platform,
 
 	if (external_command) {
 		char sbuf_gfw[100];
+		char sbuf_mhm[100];
 		char sbuf_mlmc[100];
 		char sbuf_mlmi[100];
 		char sbuf_mmi[100];
@@ -1214,6 +1215,7 @@ nmtstp_link_bridge_add (NMPlatform *platform,
 		                        "mcast_router %u "
 		                        "mcast_query_use_ifaddr %d "
 		                        "mcast_querier %d "
+		                        "%s" /* mcast_hash_max */
 		                        "%s" /* mcast_last_member_count */
 		                        "%s" /* mcast_startup_query_count */
 		                        "%s" /* mcast_last_member_interval */
@@ -1240,6 +1242,9 @@ nmtstp_link_bridge_add (NMPlatform *platform,
 		                        lnk->mcast_router,
 		                        (int) lnk->mcast_query_use_ifaddr,
 		                        (int) lnk->mcast_querier,
+		                          lnk->mcast_hash_max != NM_BRIDGE_MULTICAST_HASH_MAX_DEF
+		                        ? nm_sprintf_buf (sbuf_mhm, "mcast_hash_max %u ",lnk->mcast_hash_max)
+		                        : "",
 		                          lnk->mcast_last_member_count != NM_BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEF
 		                        ? nm_sprintf_buf (sbuf_mlmc, "mcast_last_member_count %u ",lnk->mcast_last_member_count)
 		                        : "",
@@ -1290,6 +1295,7 @@ nmtstp_link_bridge_add (NMPlatform *platform,
 	g_assert_cmpint (lnk->mcast_router,                  ==, ll->mcast_router);
 	g_assert_cmpint (lnk->mcast_query_use_ifaddr,        ==, ll->mcast_query_use_ifaddr);
 	g_assert_cmpint (lnk->mcast_querier,                 ==, ll->mcast_querier);
+	g_assert_cmpint (lnk->mcast_hash_max,                ==, ll->mcast_hash_max);
 	g_assert_cmpint (lnk->mcast_last_member_count,       ==, ll->mcast_last_member_count);
 	g_assert_cmpint (lnk->mcast_startup_query_count,     ==, ll->mcast_startup_query_count);
 	g_assert_cmpint (lnk->mcast_last_member_interval,    ==, ll->mcast_last_member_interval);

@@ -1317,6 +1317,7 @@ _parse_lnk_bridge (const char *kind, struct nlattr *info_data)
 		[IFLA_BR_MCAST_ROUTER]               = { .type = NLA_U8 },
 		[IFLA_BR_MCAST_QUERY_USE_IFADDR]     = { .type = NLA_U8 },
 		[IFLA_BR_MCAST_QUERIER]              = { .type = NLA_U8 },
+		[IFLA_BR_MCAST_HASH_MAX]             = { .type = NLA_U32 },
 		[IFLA_BR_MCAST_LAST_MEMBER_CNT]      = { .type = NLA_U32 },
 		[IFLA_BR_MCAST_STARTUP_QUERY_CNT]    = { .type = NLA_U32 },
 		[IFLA_BR_MCAST_LAST_MEMBER_INTVL]    = { .type = NLA_U64 },
@@ -1377,6 +1378,8 @@ _parse_lnk_bridge (const char *kind, struct nlattr *info_data)
 		props->mcast_query_use_ifaddr = !!nla_get_u8 (tb[IFLA_BR_MCAST_QUERY_USE_IFADDR]);
 	if (tb[IFLA_BR_MCAST_QUERIER])
 		props->mcast_querier = nla_get_u8 (tb[IFLA_BR_MCAST_QUERIER]);
+	if (tb[IFLA_BR_MCAST_HASH_MAX])
+		props->mcast_hash_max = nla_get_u32 (tb[IFLA_BR_MCAST_HASH_MAX]);
 	if (tb[IFLA_BR_MCAST_LAST_MEMBER_CNT])
 		props->mcast_last_member_count = nla_get_u32 (tb[IFLA_BR_MCAST_LAST_MEMBER_CNT]);
 	if (tb[IFLA_BR_MCAST_STARTUP_QUERY_CNT])
@@ -4082,6 +4085,7 @@ _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
 		NLA_PUT_U8 (msg, IFLA_BR_MCAST_ROUTER, props->mcast_router);
 		NLA_PUT_U8 (msg, IFLA_BR_MCAST_QUERY_USE_IFADDR, !!props->mcast_query_use_ifaddr);
 		NLA_PUT_U8 (msg, IFLA_BR_MCAST_QUERIER, !!props->mcast_querier);
+		NLA_PUT_U32 (msg, IFLA_BR_MCAST_HASH_MAX, props->mcast_hash_max);
 		NLA_PUT_U32 (msg, IFLA_BR_MCAST_LAST_MEMBER_CNT, props->mcast_last_member_count);
 		NLA_PUT_U32 (msg, IFLA_BR_MCAST_STARTUP_QUERY_CNT, props->mcast_startup_query_count);
 		NLA_PUT_U64 (msg, IFLA_BR_MCAST_LAST_MEMBER_INTVL, props->mcast_last_member_interval);

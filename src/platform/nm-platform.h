@@ -780,6 +780,7 @@ typedef struct {
 	guint32 max_age;
 	guint32 mcast_last_member_count;
 	guint32 mcast_startup_query_count;
+	guint32 mcast_hash_max;
 	guint64 mcast_last_member_interval;
 	guint64 mcast_membership_interval;
 	guint64 mcast_querier_interval;

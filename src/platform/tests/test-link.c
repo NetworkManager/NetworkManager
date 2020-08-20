@@ -964,6 +964,7 @@ test_software_detect (gconstpointer user_data)
 	switch (test_data->link_type) {
 
 	case NM_LINK_TYPE_BRIDGE:
+
 		lnk_bridge.forward_delay                 = 1560;
 		lnk_bridge.hello_time                    = 150;
 		lnk_bridge.max_age                       = 2100;
@@ -980,6 +981,7 @@ test_software_detect (gconstpointer user_data)
 		lnk_bridge.mcast_router                  = 1;
 		lnk_bridge.mcast_query_use_ifaddr        = TRUE;
 		lnk_bridge.mcast_querier                 = TRUE;
+		lnk_bridge.mcast_hash_max                = 1024;
 		lnk_bridge.mcast_last_member_count       = 2;
 		lnk_bridge.mcast_startup_query_count     = 3;
 		lnk_bridge.mcast_last_member_interval    = 5000;
@@ -1362,6 +1364,7 @@ test_software_detect (gconstpointer user_data)
 			const NMPlatformLnkBridge *plnk = &lnk->lnk_bridge;
 
 			g_assert (plnk == nm_platform_link_get_lnk_bridge (NM_PLATFORM_GET, ifindex, NULL));
+			g_assert_cmpint (nm_platform_lnk_bridge_cmp (&lnk_bridge, plnk), ==, 0);
 			g_assert_cmpint (plnk->forward_delay                 , ==, 1560);
 			g_assert_cmpint (plnk->hello_time                    , ==, 150);
 			g_assert_cmpint (plnk->max_age                       , ==, 2100);
@@ -1375,6 +1378,7 @@ test_software_detect (gconstpointer user_data)
 			g_assert_cmpint (plnk->mcast_router                  , ==, 1);
 			g_assert_cmpint (plnk->mcast_query_use_ifaddr        , ==, TRUE);
 			g_assert_cmpint (plnk->mcast_querier                 , ==, TRUE);
+			g_assert_cmpint (plnk->mcast_hash_max                , ==, 1024);
 			g_assert_cmpint (plnk->mcast_last_member_count       , ==, 2);
 			g_assert_cmpint (plnk->mcast_startup_query_count     , ==, 3);
 			g_assert_cmpint (plnk->mcast_last_member_interval    , ==, 5000);

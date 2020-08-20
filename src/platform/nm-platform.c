@@ -5434,6 +5434,7 @@ const NMPlatformLnkBridge nm_platform_lnk_bridge_default = {
 	.mcast_router                  = 1,
 	.mcast_query_use_ifaddr        = NM_BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEF,
 	.mcast_querier                 = NM_BRIDGE_MULTICAST_QUERIER_DEF,
+	.mcast_hash_max                = NM_BRIDGE_MULTICAST_HASH_MAX_DEF,
 	.mcast_last_member_count       = NM_BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEF,
 	.mcast_startup_query_count     = NM_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEF,
 	.mcast_last_member_interval    = NM_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEF,
@@ -5465,6 +5466,7 @@ nm_platform_lnk_bridge_to_string (const NMPlatformLnkBridge *lnk, char *buf, gsi
 	            " mcast_router %u"
 	            " mcast_query_use_ifaddr %d"
 	            " mcast_querier %d"
+	            " mcast_hash_max %u"
 	            " mcast_last_member_count %u"
 	            " mcast_startup_query_count %u"
 	            " mcast_last_member_interval %"G_GUINT64_FORMAT
@@ -5488,6 +5490,7 @@ nm_platform_lnk_bridge_to_string (const NMPlatformLnkBridge *lnk, char *buf, gsi
 	            lnk->mcast_router,
 	            (int) lnk->mcast_query_use_ifaddr,
 	            (int) lnk->mcast_querier,
+	            lnk->mcast_hash_max,
 	            lnk->mcast_last_member_count,
 	            lnk->mcast_startup_query_count,
 	            lnk->mcast_last_member_interval,
@@ -7000,6 +7003,7 @@ nm_platform_lnk_bridge_hash_update (const NMPlatformLnkBridge *obj, NMHashState 
 	                     obj->vlan_protocol,
 	                     obj->group_fwd_mask,
 	                     obj->group_addr,
+	                     obj->mcast_hash_max,
 	                     obj->mcast_last_member_count,
 	                     obj->mcast_startup_query_count,
 	                     obj->mcast_last_member_interval,
@@ -7035,6 +7039,7 @@ nm_platform_lnk_bridge_cmp (const NMPlatformLnkBridge *a, const NMPlatformLnkBri
 	NM_CMP_FIELD (a, b, mcast_router);
 	NM_CMP_FIELD_BOOL (a, b, mcast_query_use_ifaddr);
 	NM_CMP_FIELD_BOOL (a, b, mcast_querier);
+	NM_CMP_FIELD (a, b, mcast_hash_max);
 	NM_CMP_FIELD (a, b, mcast_last_member_count);
 	NM_CMP_FIELD (a, b, mcast_startup_query_count);
 	NM_CMP_FIELD (a, b, mcast_last_member_interval);
