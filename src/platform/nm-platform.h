@@ -763,21 +763,28 @@ typedef struct {
 } NMPlatformBridgeVlan;
 
 typedef struct {
+	NMEtherAddr group_addr;
+	bool mcast_querier:1;
+	bool mcast_query_use_ifaddr:1;
+	bool mcast_snooping:1;
 	bool stp_state:1;
+	bool vlan_stats_enabled:1;
+	guint16 group_fwd_mask;
+	guint16 priority;
+	guint16 vlan_protocol;
+	guint32 ageing_time;
 	guint32 forward_delay;
 	guint32 hello_time;
 	guint32 max_age;
-	guint32 ageing_time;
-	guint16 priority;
-	guint16 group_fwd_mask;
 	guint32 mcast_last_member_count;
+	guint32 mcast_startup_query_count;
 	guint64 mcast_last_member_interval;
 	guint64 mcast_membership_interval;
 	guint64 mcast_querier_interval;
 	guint64 mcast_query_interval;
 	guint64 mcast_query_response_interval;
-	guint32 mcast_startup_query_count;
 	guint64 mcast_startup_query_interval;
+	guint8 mcast_router;
 } NMPlatformLnkBridge;
 
 extern const NMPlatformLnkBridge nm_platform_lnk_bridge_default;

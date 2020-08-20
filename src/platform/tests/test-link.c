@@ -953,6 +953,7 @@ test_software_detect (gconstpointer user_data)
 	int r;
 	guint i_step;
 	const gboolean ext = test_data->external_command;
+	NMPlatformLnkBridge lnk_bridge = { };
 	NMPlatformLnkTun lnk_tun;
 	NMPlatformLnkGre lnk_gre = { };
 	nm_auto_close int tun_fd = -1;
@@ -962,23 +963,29 @@ test_software_detect (gconstpointer user_data)
 
 	switch (test_data->link_type) {
 	case NM_LINK_TYPE_BRIDGE: {
-		NMPlatformLnkBridge lnk_bridge = { };
 		gboolean not_supported;
 
-		lnk_bridge.stp_state                     = TRUE;
 		lnk_bridge.forward_delay                 = 1560;
 		lnk_bridge.hello_time                    = 150;
 		lnk_bridge.max_age                       = 2100;
 		lnk_bridge.ageing_time                   = 2200;
+		lnk_bridge.stp_state                     = TRUE;
 		lnk_bridge.priority                      = 22;
+		lnk_bridge.vlan_protocol                 = 0x8100;
+		lnk_bridge.vlan_stats_enabled            = TRUE;
 		lnk_bridge.group_fwd_mask                = 8;
+		lnk_bridge.group_addr                    = (NMEtherAddr) { { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x08 } };
+		lnk_bridge.mcast_snooping                = TRUE;
+		lnk_bridge.mcast_router                  = 1;
+		lnk_bridge.mcast_query_use_ifaddr        = TRUE;
+		lnk_bridge.mcast_querier                 = TRUE;
 		lnk_bridge.mcast_last_member_count       = 2;
+		lnk_bridge.mcast_startup_query_count     = 3;
 		lnk_bridge.mcast_last_member_interval    = 5000;
 		lnk_bridge.mcast_membership_interval     = 25000;
 		lnk_bridge.mcast_querier_interval        = 26000;
 		lnk_bridge.mcast_query_interval          = 12000;
 		lnk_bridge.mcast_query_response_interval = 5200;
-		lnk_bridge.mcast_startup_query_count     = 3;
 		lnk_bridge.mcast_startup_query_interval  = 3000;
 
 		if (!nmtstp_link_bridge_add (NULL, ext, DEVICE_NAME, &lnk_bridge, &not_supported)) {
@@ -1359,20 +1366,27 @@ test_software_detect (gconstpointer user_data)
 			const NMPlatformLnkBridge *plnk = &lnk->lnk_bridge;
 
 			g_assert (plnk == nm_platform_link_get_lnk_bridge (NM_PLATFORM_GET, ifindex, NULL));
-			g_assert_cmpint (plnk->stp_state                     , ==, TRUE);
+			g_assert_cmpint (nm_platform_lnk_bridge_cmp (&lnk_bridge, plnk), ==, 0);
 			g_assert_cmpint (plnk->forward_delay                 , ==, 1560);
 			g_assert_cmpint (plnk->hello_time                    , ==, 150);
 			g_assert_cmpint (plnk->max_age                       , ==, 2100);
 			g_assert_cmpint (plnk->ageing_time                   , ==, 2200);
+			g_assert_cmpint (plnk->stp_state                     , ==, TRUE);
 			g_assert_cmpint (plnk->priority                      , ==, 22);
+			g_assert_cmpint (plnk->vlan_protocol                 , ==, 0x8100);
+			g_assert_cmpint (plnk->vlan_stats_enabled            , ==, TRUE);
 			g_assert_cmpint (plnk->group_fwd_mask                , ==, 8);
+			g_assert_cmpint (plnk->mcast_snooping                , ==, TRUE);
+			g_assert_cmpint (plnk->mcast_router                  , ==, 1);
+			g_assert_cmpint (plnk->mcast_query_use_ifaddr        , ==, TRUE);
+			g_assert_cmpint (plnk->mcast_querier                 , ==, TRUE);
 			g_assert_cmpint (plnk->mcast_last_member_count       , ==, 2);
+			g_assert_cmpint (plnk->mcast_startup_query_count     , ==, 3);
 			g_assert_cmpint (plnk->mcast_last_member_interval    , ==, 5000);
 			g_assert_cmpint (plnk->mcast_membership_interval     , ==, 25000);
 			g_assert_cmpint (plnk->mcast_querier_interval        , ==, 26000);
 			g_assert_cmpint (plnk->mcast_query_interval          , ==, 12000);
 			g_assert_cmpint (plnk->mcast_query_response_interval , ==, 5200);
-			g_assert_cmpint (plnk->mcast_startup_query_count     , ==, 3);
 			g_assert_cmpint (plnk->mcast_startup_query_interval  , ==, 3000);
 
 			break;
