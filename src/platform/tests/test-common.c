@@ -1176,8 +1176,7 @@ const NMPlatformLink *
 nmtstp_link_bridge_add (NMPlatform *platform,
                         gboolean external_command,
                         const char *name,
-                        const NMPlatformLnkBridge *lnk,
-                        gboolean *out_not_supported)
+                        const NMPlatformLnkBridge *lnk)
 {
 	const NMPlatformLink *pllink = NULL;
 	const NMPlatformLnkBridge *ll = NULL;
@@ -1185,7 +1184,6 @@ nmtstp_link_bridge_add (NMPlatform *platform,
 
 	g_assert (nm_utils_ifname_valid_kernel (name, NULL));
 
-	NM_SET_OUT (out_not_supported, FALSE);
 	external_command = nmtstp_run_command_check_external (external_command);
 
 	_init_platform (&platform, external_command);
@@ -1208,7 +1206,14 @@ nmtstp_link_bridge_add (NMPlatform *platform,
 		                        "ageing_time %u "
 		                        "stp_state %d "
 		                        "priority %u "
+		                        "vlan_protocol %u "
+		                        "vlan_stats_enabled %d "
 		                        "%s" /* group_fwd_mask */
+		                        "group_address "NM_ETHER_ADDR_FORMAT_STR" "
+		                        "mcast_snooping %d "
+		                        "mcast_router %u "
+		                        "mcast_query_use_ifaddr %d "
+		                        "mcast_querier %d "
 		                        "%s" /* mcast_last_member_count */
 		                        "%s" /* mcast_startup_query_count */
 		                        "%s" /* mcast_last_member_interval */
@@ -1225,9 +1230,16 @@ nmtstp_link_bridge_add (NMPlatform *platform,
 		                        lnk->ageing_time,
 		                        (int) lnk->stp_state,
 		                        lnk->priority,
+		                        lnk->vlan_protocol,
+		                        (int) lnk->vlan_stats_enabled,
 		                          lnk->group_fwd_mask != 0
 		                        ? nm_sprintf_buf (sbuf_gfw, "group_fwd_mask %#x ", lnk->group_fwd_mask)
 		                        : "",
+		                        NM_ETHER_ADDR_FORMAT_VAL (lnk->group_addr),
+		                        (int) lnk->mcast_snooping,
+		                        lnk->mcast_router,
+		                        (int) lnk->mcast_query_use_ifaddr,
+		                        (int) lnk->mcast_querier,
 		                          lnk->mcast_last_member_count != NM_BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEF
 		                        ? nm_sprintf_buf (sbuf_mlmc, "mcast_last_member_count %u ",lnk->mcast_last_member_count)
 		                        : "",
@@ -1266,20 +1278,25 @@ nmtstp_link_bridge_add (NMPlatform *platform,
 
 	ll = NMP_OBJECT_CAST_LNK_BRIDGE (NMP_OBJECT_UP_CAST (pllink)->_link.netlink.lnk);
 
-	g_assert_cmpint (lnk->stp_state,                     ==, ll->stp_state);
 	g_assert_cmpint (lnk->forward_delay,                 ==, ll->forward_delay);
 	g_assert_cmpint (lnk->hello_time,                    ==, ll->hello_time);
 	g_assert_cmpint (lnk->max_age,                       ==, ll->max_age);
 	g_assert_cmpint (lnk->ageing_time,                   ==, ll->ageing_time);
+	g_assert_cmpint (lnk->stp_state,                     ==, ll->stp_state);
 	g_assert_cmpint (lnk->priority,                      ==, ll->priority);
+	g_assert_cmpint (lnk->vlan_stats_enabled,            ==, ll->vlan_stats_enabled);
 	g_assert_cmpint (lnk->group_fwd_mask,                ==, ll->group_fwd_mask);
+	g_assert_cmpint (lnk->mcast_snooping,                ==, ll->mcast_snooping);
+	g_assert_cmpint (lnk->mcast_router,                  ==, ll->mcast_router);
+	g_assert_cmpint (lnk->mcast_query_use_ifaddr,        ==, ll->mcast_query_use_ifaddr);
+	g_assert_cmpint (lnk->mcast_querier,                 ==, ll->mcast_querier);
 	g_assert_cmpint (lnk->mcast_last_member_count,       ==, ll->mcast_last_member_count);
+	g_assert_cmpint (lnk->mcast_startup_query_count,     ==, ll->mcast_startup_query_count);
 	g_assert_cmpint (lnk->mcast_last_member_interval,    ==, ll->mcast_last_member_interval);
 	g_assert_cmpint (lnk->mcast_membership_interval,     ==, ll->mcast_membership_interval);
 	g_assert_cmpint (lnk->mcast_querier_interval,        ==, ll->mcast_querier_interval);
 	g_assert_cmpint (lnk->mcast_query_interval,          ==, ll->mcast_query_interval);
 	g_assert_cmpint (lnk->mcast_query_response_interval, ==, ll->mcast_query_response_interval);
-	g_assert_cmpint (lnk->mcast_startup_query_count,     ==, ll->mcast_startup_query_count);
 	g_assert_cmpint (lnk->mcast_startup_query_interval,  ==, ll->mcast_startup_query_interval);
 
 	return pllink;
@@ -1959,6 +1976,30 @@ nmtstp_link_set_updown (NMPlatform *platform,
 
 		nmtstp_assert_wait_for_signal_until (platform, end_time);
 	} while (TRUE);
+}
+
+/*****************************************************************************/
+
+gboolean
+nmtstp_kernel_support_get (NMPlatformKernelSupportType type)
+{
+	const NMPlatformLink *pllink;
+	NMTernary v;
+
+	v = nm_platform_kernel_support_get_full (type, FALSE);
+	if (v != NM_TERNARY_DEFAULT)
+		return v != NM_TERNARY_FALSE;
+
+	switch (type) {
+	case NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BR_VLAN_STATS_ENABLED:
+		pllink = nmtstp_link_bridge_add (NULL, -1, "br-test-11", &nm_platform_lnk_bridge_default);
+		nmtstp_link_delete (NULL, -1, pllink->ifindex, NULL, TRUE);
+		v = nm_platform_kernel_support_get_full (type, FALSE);
+		g_assert (v != NM_TERNARY_DEFAULT);
+		return v;
+	default:
+		g_assert_not_reached ();
+	}
 }
 
 /*****************************************************************************/

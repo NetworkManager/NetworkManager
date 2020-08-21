@@ -159,16 +159,36 @@ complete_connection (NMDevice *device,
 }
 
 static void
+to_sysfs_group_address_sys (const char *group_address,  NMEtherAddr *out_addr)
+{
+	if ( group_address == NULL){
+		*out_addr = (NMEtherAddr) NM_ETHER_ADDR_INIT (NM_BRIDGE_GROUP_ADDRESS_DEF_BIN);
+		return;
+	}
+	if (!nm_utils_hwaddr_aton (group_address, out_addr, ETH_ALEN))
+		nm_assert_not_reached();
+}
+
+static void
 from_sysfs_group_address (const char *value, GValue *out)
 {
-	if (!nm_utils_hwaddr_matches (value, -1, "01:80:C2:00:00:00", -1))
+	if (!nm_utils_hwaddr_matches (value, -1, NM_BRIDGE_GROUP_ADDRESS_DEF_STR, -1))
 		g_value_set_string (out, value);
 }
 
 static const char *
 to_sysfs_group_address (GValue *value)
 {
-	return g_value_get_string (value) ?: "01:80:C2:00:00:00";
+	return g_value_get_string (value) ?: NM_BRIDGE_GROUP_ADDRESS_DEF_STR;
+}
+
+static int
+to_sysfs_vlan_protocol_sys (const char *value)
+{
+	if (nm_streq0 (value, "802.1ad"))
+		return ETH_P_8021AD;
+
+	return ETH_P_8021Q;
 }
 
 static void
@@ -196,6 +216,19 @@ to_sysfs_vlan_protocol (GValue *value)
 
 	G_STATIC_ASSERT_EXPR (ETH_P_8021Q == 0x8100);
 	return "0x8100";
+}
+
+static int
+to_sysfs_multicast_router_sys (const char *value)
+{
+	if (nm_streq0 (value, "disabled"))
+		return 0;
+	if (nm_streq0 (value, "auto"))
+		return 1;
+	if (nm_streq0 (value, "enabled"))
+		return 2;
+
+	return 1;
 }
 
 static const char *
@@ -231,7 +264,6 @@ from_sysfs_multicast_router (const char *value, GValue *out)
 }
 
 /*****************************************************************************/
-
 #define _DEFAULT_IF_ZERO(val, def_val) \
     ({ \
         typeof (val) _val = (val); \
@@ -1027,22 +1059,30 @@ create_and_realize (NMDevice *device,
 	}
 
 	props = (NMPlatformLnkBridge) {
-		.stp_state                     = nm_setting_bridge_get_stp (s_bridge),
 		.forward_delay                 = _DEFAULT_IF_ZERO (nm_setting_bridge_get_forward_delay (s_bridge) * 100u, NM_BRIDGE_FORWARD_DELAY_DEF_SYS),
 		.hello_time                    = _DEFAULT_IF_ZERO (nm_setting_bridge_get_hello_time (s_bridge) * 100u, NM_BRIDGE_HELLO_TIME_DEF_SYS),
 		.max_age                       = _DEFAULT_IF_ZERO (nm_setting_bridge_get_max_age (s_bridge) * 100u, NM_BRIDGE_MAX_AGE_DEF_SYS),
 		.ageing_time                   = _DEFAULT_IF_ZERO (nm_setting_bridge_get_ageing_time (s_bridge) * 100u, NM_BRIDGE_AGEING_TIME_DEF_SYS),
+		.stp_state                     = nm_setting_bridge_get_stp (s_bridge),
 		.priority                      = nm_setting_bridge_get_priority (s_bridge),
+		.vlan_protocol                 = to_sysfs_vlan_protocol_sys (nm_setting_bridge_get_vlan_protocol (s_bridge)),
+		.vlan_stats_enabled            = nm_setting_bridge_get_vlan_stats_enabled (s_bridge),
 		.group_fwd_mask                = nm_setting_bridge_get_group_forward_mask (s_bridge),
+		.mcast_snooping                = nm_setting_bridge_get_multicast_snooping (s_bridge),
+		.mcast_router                  = to_sysfs_multicast_router_sys (nm_setting_bridge_get_multicast_router (s_bridge)),
+		.mcast_query_use_ifaddr        = nm_setting_bridge_get_multicast_query_use_ifaddr (s_bridge),
+		.mcast_querier                 = nm_setting_bridge_get_multicast_querier (s_bridge),
 		.mcast_last_member_count       = nm_setting_bridge_get_multicast_last_member_count (s_bridge),
+		.mcast_startup_query_count     = nm_setting_bridge_get_multicast_startup_query_count (s_bridge),
 		.mcast_last_member_interval    = nm_setting_bridge_get_multicast_last_member_interval (s_bridge),
 		.mcast_membership_interval     = nm_setting_bridge_get_multicast_membership_interval (s_bridge),
 		.mcast_querier_interval        = nm_setting_bridge_get_multicast_querier_interval (s_bridge),
 		.mcast_query_interval          = nm_setting_bridge_get_multicast_query_interval (s_bridge),
 		.mcast_query_response_interval = nm_setting_bridge_get_multicast_query_response_interval (s_bridge),
-		.mcast_startup_query_count     = nm_setting_bridge_get_multicast_startup_query_count (s_bridge),
 		.mcast_startup_query_interval  = nm_setting_bridge_get_multicast_startup_query_interval (s_bridge),
 	};
+
+	to_sysfs_group_address_sys (nm_setting_bridge_get_group_address (s_bridge), &props.group_addr);
 
 	r = nm_platform_link_bridge_add (nm_device_get_platform (device),
 	                                 iface,

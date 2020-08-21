@@ -372,6 +372,11 @@ static const struct {
 		.name                 = "FRA_IP_PROTO",
 		.desc                 = "FRA_IP_PROTO, FRA_SPORT_RANGE, FRA_DPORT_RANGE attributes for policy routing rules",
 	},
+	[NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BR_VLAN_STATS_ENABLED] = {
+		.compile_time_default = (IFLA_BR_MAX >= 41 /* IFLA_BR_VLAN_STATS_ENABLED */),
+		.name                 = "IFLA_BR_VLAN_STATS_ENABLE",
+		.desc                 = "IFLA_BR_VLAN_STATS_ENABLE bridge link attribute",
+	},
 };
 
 int
@@ -5383,20 +5388,27 @@ nm_platform_link_to_string (const NMPlatformLink *link, char *buf, gsize len)
 }
 
 const NMPlatformLnkBridge nm_platform_lnk_bridge_default = {
-	.stp_state                     = FALSE,
 	.forward_delay                 = NM_BRIDGE_FORWARD_DELAY_DEF_SYS,
 	.hello_time                    = NM_BRIDGE_HELLO_TIME_DEF_SYS,
 	.max_age                       = NM_BRIDGE_MAX_AGE_DEF_SYS,
 	.ageing_time                   = NM_BRIDGE_AGEING_TIME_DEF_SYS,
+	.stp_state                     = FALSE,
 	.priority                      = NM_BRIDGE_PRIORITY_DEF,
+	.vlan_protocol                 = 0x8100,
+	.vlan_stats_enabled            = NM_BRIDGE_VLAN_STATS_ENABLED_DEF,
 	.group_fwd_mask                = 0,
+	.group_addr                    = NM_ETHER_ADDR_INIT (NM_BRIDGE_GROUP_ADDRESS_DEF_BIN),
+	.mcast_snooping                = NM_BRIDGE_MULTICAST_SNOOPING_DEF,
+	.mcast_router                  = 1,
+	.mcast_query_use_ifaddr        = NM_BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEF,
+	.mcast_querier                 = NM_BRIDGE_MULTICAST_QUERIER_DEF,
 	.mcast_last_member_count       = NM_BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEF,
+	.mcast_startup_query_count     = NM_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEF,
 	.mcast_last_member_interval    = NM_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEF,
 	.mcast_membership_interval     = NM_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_DEF,
 	.mcast_querier_interval        = NM_BRIDGE_MULTICAST_QUERIER_INTERVAL_DEF,
 	.mcast_query_interval          = NM_BRIDGE_MULTICAST_QUERY_INTERVAL_DEF,
 	.mcast_query_response_interval = NM_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_DEF,
-	.mcast_startup_query_count     = NM_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEF,
 	.mcast_startup_query_interval  = NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEF,
 };
 
@@ -5413,15 +5425,22 @@ nm_platform_lnk_bridge_to_string (const NMPlatformLnkBridge *lnk, char *buf, gsi
 	            " ageing_time %u"
 	            " stp_state %d"
 	            " priority %u"
+	            " vlan_protocol %u"
+	            " vlan_stats_enabled %d"
 	            " group_fwd_mask %#x"
+	            " group_address "NM_ETHER_ADDR_FORMAT_STR
+	            " mcast_snooping %d"
+	            " mcast_router %u"
+	            " mcast_query_use_ifaddr %d"
+	            " mcast_querier %d"
 	            " mcast_last_member_count %u"
 	            " mcast_startup_query_count %u"
-	            " mcast_last_member_interval %"G_GUINT64_FORMAT""
-	            " mcast_membership_interval %"G_GUINT64_FORMAT""
-	            " mcast_querier_interval %"G_GUINT64_FORMAT""
-	            " mcast_query_interval %"G_GUINT64_FORMAT""
-	            " mcast_query_response_interval %"G_GUINT64_FORMAT""
-	            " mcast_startup_query_interval %"G_GUINT64_FORMAT""
+	            " mcast_last_member_interval %"G_GUINT64_FORMAT
+	            " mcast_membership_interval %"G_GUINT64_FORMAT
+	            " mcast_querier_interval %"G_GUINT64_FORMAT
+	            " mcast_query_interval %"G_GUINT64_FORMAT
+	            " mcast_query_response_interval %"G_GUINT64_FORMAT
+	            " mcast_startup_query_interval %"G_GUINT64_FORMAT
 	            "",
 	            lnk->forward_delay,
 	            lnk->hello_time,
@@ -5429,7 +5448,14 @@ nm_platform_lnk_bridge_to_string (const NMPlatformLnkBridge *lnk, char *buf, gsi
 	            lnk->ageing_time,
 	            (int) lnk->stp_state,
 	            lnk->priority,
+	            lnk->vlan_protocol,
+	            (int) lnk->vlan_stats_enabled,
 	            lnk->group_fwd_mask,
+	            NM_ETHER_ADDR_FORMAT_VAL (lnk->group_addr),
+	            (int) lnk->mcast_snooping,
+	            lnk->mcast_router,
+	            (int) lnk->mcast_query_use_ifaddr,
+	            (int) lnk->mcast_querier,
 	            lnk->mcast_last_member_count,
 	            lnk->mcast_startup_query_count,
 	            lnk->mcast_last_member_interval,
@@ -6934,41 +6960,56 @@ void
 nm_platform_lnk_bridge_hash_update (const NMPlatformLnkBridge *obj, NMHashState *h)
 {
 	nm_hash_update_vals (h,
-	                     (bool) obj->stp_state,
 	                     obj->forward_delay,
 	                     obj->hello_time,
 	                     obj->max_age,
 	                     obj->ageing_time,
 	                     obj->priority,
+	                     obj->vlan_protocol,
 	                     obj->group_fwd_mask,
+	                     obj->group_addr,
 	                     obj->mcast_last_member_count,
+	                     obj->mcast_startup_query_count,
 	                     obj->mcast_last_member_interval,
 	                     obj->mcast_membership_interval,
 	                     obj->mcast_querier_interval,
 	                     obj->mcast_query_interval,
+	                     obj->mcast_router,
 	                     obj->mcast_query_response_interval,
-	                     obj->mcast_startup_query_count,
-	                     obj->mcast_startup_query_interval);
+	                     obj->mcast_startup_query_interval,
+	                     NM_HASH_COMBINE_BOOLS (guint8,
+	                                            obj->stp_state,
+	                                            obj->mcast_querier,
+	                                            obj->mcast_query_use_ifaddr,
+	                                            obj->mcast_snooping,
+	                                            obj->vlan_stats_enabled));
 }
 
 int
 nm_platform_lnk_bridge_cmp (const NMPlatformLnkBridge *a, const NMPlatformLnkBridge *b)
 {
 	NM_CMP_SELF (a, b);
-	NM_CMP_FIELD_BOOL (a, b, stp_state);
 	NM_CMP_FIELD (a, b, forward_delay);
 	NM_CMP_FIELD (a, b, hello_time);
 	NM_CMP_FIELD (a, b, max_age);
 	NM_CMP_FIELD (a, b, ageing_time);
+	NM_CMP_FIELD_BOOL (a, b, stp_state);
 	NM_CMP_FIELD (a, b, priority);
+	NM_CMP_FIELD (a, b, vlan_protocol);
+	NM_CMP_FIELD_BOOL (a, b, vlan_stats_enabled);
 	NM_CMP_FIELD (a, b, group_fwd_mask);
+	NM_CMP_FIELD_MEMCMP (a, b, group_addr);
+	NM_CMP_FIELD_BOOL (a, b, mcast_snooping);
+	NM_CMP_FIELD (a, b, mcast_router);
+	NM_CMP_FIELD_BOOL (a, b, mcast_query_use_ifaddr);
+	NM_CMP_FIELD_BOOL (a, b, mcast_querier);
 	NM_CMP_FIELD (a, b, mcast_last_member_count);
+	NM_CMP_FIELD (a, b, mcast_startup_query_count);
 	NM_CMP_FIELD (a, b, mcast_last_member_interval);
 	NM_CMP_FIELD (a, b, mcast_membership_interval);
 	NM_CMP_FIELD (a, b, mcast_querier_interval);
 	NM_CMP_FIELD (a, b, mcast_query_interval);
 	NM_CMP_FIELD (a, b, mcast_query_response_interval);
-	NM_CMP_FIELD (a, b, mcast_startup_query_count);
 	NM_CMP_FIELD (a, b, mcast_startup_query_interval);
 
 	return 0;

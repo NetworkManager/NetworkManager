@@ -763,21 +763,28 @@ typedef struct {
 } NMPlatformBridgeVlan;
 
 typedef struct {
+	NMEtherAddr group_addr;
+	bool mcast_querier:1;
+	bool mcast_query_use_ifaddr:1;
+	bool mcast_snooping:1;
 	bool stp_state:1;
+	bool vlan_stats_enabled:1;
+	guint16 group_fwd_mask;
+	guint16 priority;
+	guint16 vlan_protocol;
+	guint32 ageing_time;
 	guint32 forward_delay;
 	guint32 hello_time;
 	guint32 max_age;
-	guint32 ageing_time;
-	guint16 priority;
-	guint16 group_fwd_mask;
 	guint32 mcast_last_member_count;
+	guint32 mcast_startup_query_count;
 	guint64 mcast_last_member_interval;
 	guint64 mcast_membership_interval;
 	guint64 mcast_querier_interval;
 	guint64 mcast_query_interval;
 	guint64 mcast_query_response_interval;
-	guint32 mcast_startup_query_count;
 	guint64 mcast_startup_query_interval;
+	guint8 mcast_router;
 } NMPlatformLnkBridge;
 
 extern const NMPlatformLnkBridge nm_platform_lnk_bridge_default;
@@ -960,6 +967,7 @@ typedef enum {
 	NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_L3MDEV,
 	NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_UID_RANGE,
 	NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_PROTOCOL,
+	NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BR_VLAN_STATS_ENABLED,
 
 	/* this also includes FRA_SPORT_RANGE and FRA_DPORT_RANGE which
 	 * were added at the same time. */
@@ -979,21 +987,31 @@ _nm_platform_kernel_support_detected (NMPlatformKernelSupportType type)
 	nm_assert (   _NM_INT_NOT_NEGATIVE (type)
 	           && type < G_N_ELEMENTS (_nm_platform_kernel_support_state));
 
-	return G_LIKELY (_nm_platform_kernel_support_state[type] != 0);
+	return G_LIKELY (g_atomic_int_get (&_nm_platform_kernel_support_state[type]) != 0);
+}
+
+static inline NMTernary
+nm_platform_kernel_support_get_full (NMPlatformKernelSupportType type,
+                                     gboolean init_if_not_set)
+{
+	int v;
+
+	nm_assert (   _NM_INT_NOT_NEGATIVE (type)
+	           && type < G_N_ELEMENTS (_nm_platform_kernel_support_state));
+
+	v = g_atomic_int_get (&_nm_platform_kernel_support_state[type]);
+	if (G_UNLIKELY (v == 0)) {
+		if (!init_if_not_set)
+			return NM_TERNARY_DEFAULT;
+		v = _nm_platform_kernel_support_init (type, 0);
+	}
+	return (v >= 0);
 }
 
 static inline gboolean
 nm_platform_kernel_support_get (NMPlatformKernelSupportType type)
 {
-	int v;
-
-	nm_assert (_NM_INT_NOT_NEGATIVE (type)
-	           && type < G_N_ELEMENTS (_nm_platform_kernel_support_state));
-
-	v = _nm_platform_kernel_support_state[type];
-	if (G_UNLIKELY (v == 0))
-		v = _nm_platform_kernel_support_init (type, 0);
-	return (v >= 0);
+	return nm_platform_kernel_support_get_full (type, TRUE) != NM_TERNARY_FALSE;
 }
 
 /*****************************************************************************/

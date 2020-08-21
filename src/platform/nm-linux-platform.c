@@ -150,6 +150,8 @@ G_STATIC_ASSERT (RTA_MAX == (__RTA_MAX - 1));
 #define IP6_FLOWINFO_TCLASS_SHIFT       20
 #define IP6_FLOWINFO_FLOWLABEL_MASK     0x000FFFFF
 
+#define IFLA_BR_VLAN_STATS_ENABLED      41
+
 /*****************************************************************************/
 
 /* Appeared in the kernel prior to 3.13 dated 19 January, 2014 */
@@ -1301,20 +1303,27 @@ static NMPObject *
 _parse_lnk_bridge (const char *kind, struct nlattr *info_data)
 {
 	static const struct nla_policy policy[] = {
-		[IFLA_BR_STP_STATE]                  = { .type = NLA_U32 },
 		[IFLA_BR_FORWARD_DELAY]              = { .type = NLA_U32 },
 		[IFLA_BR_HELLO_TIME]                 = { .type = NLA_U32 },
 		[IFLA_BR_MAX_AGE]                    = { .type = NLA_U32 },
 		[IFLA_BR_AGEING_TIME]                = { .type = NLA_U32 },
+		[IFLA_BR_STP_STATE]                  = { .type = NLA_U32 },
 		[IFLA_BR_PRIORITY]                   = { .type = NLA_U16 },
+		[IFLA_BR_VLAN_PROTOCOL]              = { .type = NLA_U16 },
+		[IFLA_BR_VLAN_STATS_ENABLED]         = { .type = NLA_U8 },
 		[IFLA_BR_GROUP_FWD_MASK]             = { .type = NLA_U16 },
+		[IFLA_BR_GROUP_ADDR]                 = { .minlen = sizeof (NMEtherAddr) },
+		[IFLA_BR_MCAST_SNOOPING]             = { .type = NLA_U8 },
+		[IFLA_BR_MCAST_ROUTER]               = { .type = NLA_U8 },
+		[IFLA_BR_MCAST_QUERY_USE_IFADDR]     = { .type = NLA_U8 },
+		[IFLA_BR_MCAST_QUERIER]              = { .type = NLA_U8 },
 		[IFLA_BR_MCAST_LAST_MEMBER_CNT]      = { .type = NLA_U32 },
+		[IFLA_BR_MCAST_STARTUP_QUERY_CNT]    = { .type = NLA_U32 },
 		[IFLA_BR_MCAST_LAST_MEMBER_INTVL]    = { .type = NLA_U64 },
 		[IFLA_BR_MCAST_MEMBERSHIP_INTVL]     = { .type = NLA_U64 },
 		[IFLA_BR_MCAST_QUERIER_INTVL]        = { .type = NLA_U64 },
 		[IFLA_BR_MCAST_QUERY_INTVL]          = { .type = NLA_U64 },
 		[IFLA_BR_MCAST_QUERY_RESPONSE_INTVL] = { .type = NLA_U64 },
-		[IFLA_BR_MCAST_STARTUP_QUERY_CNT]    = { .type = NLA_U32 },
 		[IFLA_BR_MCAST_STARTUP_QUERY_INTVL]  = { .type = NLA_U64 },
 	};
 	NMPlatformLnkBridge *props;
@@ -1331,9 +1340,15 @@ _parse_lnk_bridge (const char *kind, struct nlattr *info_data)
 	obj = nmp_object_new (NMP_OBJECT_TYPE_LNK_BRIDGE, NULL);
 
 	props = &obj->lnk_bridge;
+	*props = nm_platform_lnk_bridge_default;
 
-	if (tb[IFLA_BR_STP_STATE])
-		props->stp_state = !!nla_get_u32 (tb[IFLA_BR_STP_STATE]);
+	if (!_nm_platform_kernel_support_detected (NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BR_VLAN_STATS_ENABLED)) {
+		/* IFLA_BR_VLAN_STATS_ENABLED was added in kernel 4.10 on April 30, 2016.
+		 * See commit 6dada9b10a0818ba72c249526a742c8c41274a73. */
+		_nm_platform_kernel_support_init (NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BR_VLAN_STATS_ENABLED,
+		                                  tb[IFLA_BR_VLAN_STATS_ENABLED] ? 1 : -1);
+	}
+
 	if (tb[IFLA_BR_FORWARD_DELAY])
 		props->forward_delay = nla_get_u32 (tb[IFLA_BR_FORWARD_DELAY]);
 	if (tb[IFLA_BR_HELLO_TIME])
@@ -1342,44 +1357,42 @@ _parse_lnk_bridge (const char *kind, struct nlattr *info_data)
 		props->max_age = nla_get_u32 (tb[IFLA_BR_MAX_AGE]);
 	if (tb[IFLA_BR_AGEING_TIME])
 		props->ageing_time = nla_get_u32 (tb[IFLA_BR_AGEING_TIME]);
+	if (tb[IFLA_BR_STP_STATE])
+		props->stp_state = !!nla_get_u32 (tb[IFLA_BR_STP_STATE]);
 	if (tb[IFLA_BR_PRIORITY])
 		props->priority = nla_get_u16 (tb[IFLA_BR_PRIORITY]);
+	if (tb[IFLA_BR_VLAN_PROTOCOL])
+		props->vlan_protocol = ntohs (nla_get_u16 (tb[IFLA_BR_VLAN_PROTOCOL]));
+	if (tb[IFLA_BR_VLAN_STATS_ENABLED])
+		props->vlan_stats_enabled = nla_get_u8 (tb[IFLA_BR_VLAN_STATS_ENABLED]);
 	if (tb[IFLA_BR_GROUP_FWD_MASK])
 		props->group_fwd_mask = nla_get_u16 (tb[IFLA_BR_GROUP_FWD_MASK]);
-	else
-		props->group_fwd_mask = 0;
+	if (tb[IFLA_BR_GROUP_ADDR])
+		props->group_addr = *nla_data_as (NMEtherAddr, tb[IFLA_BR_GROUP_ADDR]);
+	if (tb[IFLA_BR_MCAST_SNOOPING])
+		props->mcast_snooping = !!nla_get_u8 (tb[IFLA_BR_MCAST_SNOOPING]);
+	if (tb[IFLA_BR_MCAST_ROUTER])
+		props->mcast_router = nla_get_u8 (tb[IFLA_BR_MCAST_ROUTER]);
+	if (tb[IFLA_BR_MCAST_QUERY_USE_IFADDR])
+		props->mcast_query_use_ifaddr = !!nla_get_u8 (tb[IFLA_BR_MCAST_QUERY_USE_IFADDR]);
+	if (tb[IFLA_BR_MCAST_QUERIER])
+		props->mcast_querier = nla_get_u8 (tb[IFLA_BR_MCAST_QUERIER]);
 	if (tb[IFLA_BR_MCAST_LAST_MEMBER_CNT])
 		props->mcast_last_member_count = nla_get_u32 (tb[IFLA_BR_MCAST_LAST_MEMBER_CNT]);
-	else
-		props->mcast_last_member_count = NM_BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEF;
-	if (tb[IFLA_BR_MCAST_LAST_MEMBER_INTVL])
-		props->mcast_last_member_interval = nla_get_u64 (tb[IFLA_BR_MCAST_LAST_MEMBER_INTVL]);
-	else
-		props->mcast_last_member_interval = NM_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEF;
-	if (tb[IFLA_BR_MCAST_MEMBERSHIP_INTVL])
-		props->mcast_membership_interval = nla_get_u64 (tb[IFLA_BR_MCAST_MEMBERSHIP_INTVL]);
-	else
-		props->mcast_membership_interval = NM_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_DEF;
-	if (tb[IFLA_BR_MCAST_QUERIER_INTVL])
-		props->mcast_querier_interval = nla_get_u64 (tb[IFLA_BR_MCAST_QUERIER_INTVL]);
-	else
-		props->mcast_querier_interval = NM_BRIDGE_MULTICAST_QUERIER_INTERVAL_DEF;
-	if (tb[IFLA_BR_MCAST_QUERY_INTVL])
-		props->mcast_query_interval = nla_get_u64 (tb[IFLA_BR_MCAST_QUERY_INTVL]);
-	else
-		props->mcast_query_interval = NM_BRIDGE_MULTICAST_QUERY_INTERVAL_DEF;
-	if (tb[IFLA_BR_MCAST_QUERY_RESPONSE_INTVL])
-		props->mcast_query_response_interval = nla_get_u64 (tb[IFLA_BR_MCAST_QUERY_RESPONSE_INTVL]);
-	else
-		props->mcast_query_response_interval = NM_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_DEF;
 	if (tb[IFLA_BR_MCAST_STARTUP_QUERY_CNT])
 		props->mcast_startup_query_count = nla_get_u32 (tb[IFLA_BR_MCAST_STARTUP_QUERY_CNT]);
-	else
-		props->mcast_startup_query_count = NM_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEF;
+	if (tb[IFLA_BR_MCAST_LAST_MEMBER_INTVL])
+		props->mcast_last_member_interval = nla_get_u64 (tb[IFLA_BR_MCAST_LAST_MEMBER_INTVL]);
+	if (tb[IFLA_BR_MCAST_MEMBERSHIP_INTVL])
+		props->mcast_membership_interval = nla_get_u64 (tb[IFLA_BR_MCAST_MEMBERSHIP_INTVL]);
+	if (tb[IFLA_BR_MCAST_QUERIER_INTVL])
+		props->mcast_querier_interval = nla_get_u64 (tb[IFLA_BR_MCAST_QUERIER_INTVL]);
+	if (tb[IFLA_BR_MCAST_QUERY_INTVL])
+		props->mcast_query_interval = nla_get_u64 (tb[IFLA_BR_MCAST_QUERY_INTVL]);
+	if (tb[IFLA_BR_MCAST_QUERY_RESPONSE_INTVL])
+		props->mcast_query_response_interval = nla_get_u64 (tb[IFLA_BR_MCAST_QUERY_RESPONSE_INTVL]);
 	if (tb[IFLA_BR_MCAST_STARTUP_QUERY_INTVL])
 		props->mcast_startup_query_interval = nla_get_u64 (tb[IFLA_BR_MCAST_STARTUP_QUERY_INTVL]);
-	else
-		props->mcast_startup_query_interval = NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEF;
 
 	return obj;
 }
@@ -4054,20 +4067,28 @@ _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
 		if (!(data = nla_nest_start (msg, IFLA_INFO_DATA)))
 			goto nla_put_failure;
 
-		NLA_PUT_U32 (msg, IFLA_BR_STP_STATE, !!props->stp_state);
 		NLA_PUT_U32 (msg, IFLA_BR_FORWARD_DELAY, props->forward_delay);
 		NLA_PUT_U32 (msg, IFLA_BR_HELLO_TIME, props->hello_time);
 		NLA_PUT_U32 (msg, IFLA_BR_MAX_AGE, props->max_age);
 		NLA_PUT_U32 (msg, IFLA_BR_AGEING_TIME, props->ageing_time);
+		NLA_PUT_U32 (msg, IFLA_BR_STP_STATE, !!props->stp_state);
 		NLA_PUT_U16 (msg, IFLA_BR_PRIORITY, props->priority);
+		NLA_PUT_U16 (msg, IFLA_BR_VLAN_PROTOCOL, htons (props->vlan_protocol));
+		if (props->vlan_stats_enabled)
+			NLA_PUT_U8 (msg, IFLA_BR_VLAN_STATS_ENABLED, !!props->vlan_stats_enabled);
 		NLA_PUT_U16 (msg, IFLA_BR_GROUP_FWD_MASK, props->group_fwd_mask);
+		NLA_PUT (msg, IFLA_BR_GROUP_ADDR, sizeof (props->group_addr), &props->group_addr);
+		NLA_PUT_U8 (msg, IFLA_BR_MCAST_SNOOPING, !!props->mcast_snooping);
+		NLA_PUT_U8 (msg, IFLA_BR_MCAST_ROUTER, props->mcast_router);
+		NLA_PUT_U8 (msg, IFLA_BR_MCAST_QUERY_USE_IFADDR, !!props->mcast_query_use_ifaddr);
+		NLA_PUT_U8 (msg, IFLA_BR_MCAST_QUERIER, !!props->mcast_querier);
 		NLA_PUT_U32 (msg, IFLA_BR_MCAST_LAST_MEMBER_CNT, props->mcast_last_member_count);
+		NLA_PUT_U32 (msg, IFLA_BR_MCAST_STARTUP_QUERY_CNT, props->mcast_startup_query_count);
 		NLA_PUT_U64 (msg, IFLA_BR_MCAST_LAST_MEMBER_INTVL, props->mcast_last_member_interval);
 		NLA_PUT_U64 (msg, IFLA_BR_MCAST_MEMBERSHIP_INTVL, props->mcast_membership_interval);
 		NLA_PUT_U64 (msg, IFLA_BR_MCAST_QUERIER_INTVL, props->mcast_querier_interval);
 		NLA_PUT_U64 (msg, IFLA_BR_MCAST_QUERY_INTVL, props->mcast_query_interval);
 		NLA_PUT_U64 (msg, IFLA_BR_MCAST_QUERY_RESPONSE_INTVL, props->mcast_query_response_interval);
-		NLA_PUT_U32 (msg, IFLA_BR_MCAST_STARTUP_QUERY_CNT, props->mcast_startup_query_count);
 		NLA_PUT_U64 (msg, IFLA_BR_MCAST_STARTUP_QUERY_INTVL, props->mcast_startup_query_interval);
 		break;
 	}
