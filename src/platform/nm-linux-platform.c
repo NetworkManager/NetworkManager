@@ -150,6 +150,8 @@ G_STATIC_ASSERT (RTA_MAX == (__RTA_MAX - 1));
 #define IP6_FLOWINFO_TCLASS_SHIFT       20
 #define IP6_FLOWINFO_FLOWLABEL_MASK     0x000FFFFF
 
+#define IFLA_BR_VLAN_STATS_ENABLED      41
+
 /*****************************************************************************/
 
 /* Appeared in the kernel prior to 3.13 dated 19 January, 2014 */
@@ -1339,6 +1341,13 @@ _parse_lnk_bridge (const char *kind, struct nlattr *info_data)
 
 	props = &obj->lnk_bridge;
 	*props = nm_platform_lnk_bridge_default;
+
+	if (!_nm_platform_kernel_support_detected (NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BR_VLAN_STATS_ENABLED)) {
+		/* IFLA_BR_VLAN_STATS_ENABLED was added in kernel 4.10 on April 30, 2016.
+		 * See commit 6dada9b10a0818ba72c249526a742c8c41274a73. */
+		_nm_platform_kernel_support_init (NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BR_VLAN_STATS_ENABLED,
+		                                  tb[IFLA_BR_VLAN_STATS_ENABLED] ? 1 : -1);
+	}
 
 	if (tb[IFLA_BR_FORWARD_DELAY])
 		props->forward_delay = nla_get_u32 (tb[IFLA_BR_FORWARD_DELAY]);
@@ -4065,7 +4074,8 @@ _nl_msg_new_link_set_linkinfo (struct nl_msg *msg,
 		NLA_PUT_U32 (msg, IFLA_BR_STP_STATE, !!props->stp_state);
 		NLA_PUT_U16 (msg, IFLA_BR_PRIORITY, props->priority);
 		NLA_PUT_U16 (msg, IFLA_BR_VLAN_PROTOCOL, htons (props->vlan_protocol));
-		NLA_PUT_U8 (msg, IFLA_BR_VLAN_STATS_ENABLED, !!props->vlan_stats_enabled);
+		if (props->vlan_stats_enabled)
+			NLA_PUT_U8 (msg, IFLA_BR_VLAN_STATS_ENABLED, !!props->vlan_stats_enabled);
 		NLA_PUT_U16 (msg, IFLA_BR_GROUP_FWD_MASK, props->group_fwd_mask);
 		NLA_PUT (msg, IFLA_BR_GROUP_ADDR, sizeof (props->group_addr), &props->group_addr);
 		NLA_PUT_U8 (msg, IFLA_BR_MCAST_SNOOPING, !!props->mcast_snooping);

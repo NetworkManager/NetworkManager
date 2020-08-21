@@ -971,7 +971,9 @@ test_software_detect (gconstpointer user_data)
 		lnk_bridge.stp_state                     = TRUE;
 		lnk_bridge.priority                      = 22;
 		lnk_bridge.vlan_protocol                 = 0x8100;
-		lnk_bridge.vlan_stats_enabled            = TRUE;
+		lnk_bridge.vlan_stats_enabled            =   nmtstp_kernel_support_get (NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BR_VLAN_STATS_ENABLED)
+		                                           ? TRUE
+		                                           : FALSE;
 		lnk_bridge.group_fwd_mask                = 8;
 		lnk_bridge.group_addr                    = (NMEtherAddr) { { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x08 } };
 		lnk_bridge.mcast_snooping                = TRUE;
@@ -1360,7 +1362,6 @@ test_software_detect (gconstpointer user_data)
 			const NMPlatformLnkBridge *plnk = &lnk->lnk_bridge;
 
 			g_assert (plnk == nm_platform_link_get_lnk_bridge (NM_PLATFORM_GET, ifindex, NULL));
-			g_assert_cmpint (nm_platform_lnk_bridge_cmp (&lnk_bridge, plnk), ==, 0);
 			g_assert_cmpint (plnk->forward_delay                 , ==, 1560);
 			g_assert_cmpint (plnk->hello_time                    , ==, 150);
 			g_assert_cmpint (plnk->max_age                       , ==, 2100);
@@ -1368,7 +1369,7 @@ test_software_detect (gconstpointer user_data)
 			g_assert_cmpint (plnk->stp_state                     , ==, TRUE);
 			g_assert_cmpint (plnk->priority                      , ==, 22);
 			g_assert_cmpint (plnk->vlan_protocol                 , ==, 0x8100);
-			g_assert_cmpint (plnk->vlan_stats_enabled            , ==, TRUE);
+			g_assert_cmpint (plnk->vlan_stats_enabled            , ==, lnk_bridge.vlan_stats_enabled);
 			g_assert_cmpint (plnk->group_fwd_mask                , ==, 8);
 			g_assert_cmpint (plnk->mcast_snooping                , ==, TRUE);
 			g_assert_cmpint (plnk->mcast_router                  , ==, 1);
@@ -1382,7 +1383,7 @@ test_software_detect (gconstpointer user_data)
 			g_assert_cmpint (plnk->mcast_query_interval          , ==, 12000);
 			g_assert_cmpint (plnk->mcast_query_response_interval , ==, 5200);
 			g_assert_cmpint (plnk->mcast_startup_query_interval  , ==, 3000);
-
+			g_assert_cmpint (nm_platform_lnk_bridge_cmp (&lnk_bridge, plnk), ==, 0);
 			break;
 		}
 		case NM_LINK_TYPE_GRE: {

@@ -372,6 +372,11 @@ static const struct {
 		.name                 = "FRA_IP_PROTO",
 		.desc                 = "FRA_IP_PROTO, FRA_SPORT_RANGE, FRA_DPORT_RANGE attributes for policy routing rules",
 	},
+	[NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BR_VLAN_STATS_ENABLED] = {
+		.compile_time_default = (IFLA_BR_MAX >= 41 /* IFLA_BR_VLAN_STATS_ENABLED */),
+		.name                 = "IFLA_BR_VLAN_STATS_ENABLE",
+		.desc                 = "IFLA_BR_VLAN_STATS_ENABLE bridge link attribute",
+	},
 };
 
 int
