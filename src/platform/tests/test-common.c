@@ -1980,6 +1980,23 @@ nmtstp_link_set_updown (NMPlatform *platform,
 
 /*****************************************************************************/
 
+gboolean
+nmtstp_kernel_support_get (NMPlatformKernelSupportType type)
+{
+	NMTernary v;
+
+	v = nm_platform_kernel_support_get_full (type, FALSE);
+	if (v != NM_TERNARY_DEFAULT)
+		return v != NM_TERNARY_FALSE;
+
+	switch (type) {
+	default:
+		g_assert_not_reached ();
+	}
+}
+
+/*****************************************************************************/
+
 struct _NMTstpNamespaceHandle {
 	pid_t pid;
 	int pipe_fd;

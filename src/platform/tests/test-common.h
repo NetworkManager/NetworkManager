@@ -318,6 +318,8 @@ gboolean nmtstp_platform_ip6_route_delete (NMPlatform *platform, int ifindex, st
 const NMPlatformLink *nmtstp_link_get_typed (NMPlatform *platform, int ifindex, const char *name, NMLinkType link_type);
 const NMPlatformLink *nmtstp_link_get (NMPlatform *platform, int ifindex, const char *name);
 
+gboolean nmtstp_kernel_support_get (NMPlatformKernelSupportType type);
+
 void nmtstp_link_set_updown (NMPlatform *platform,
                              gboolean external_command,
                              int ifindex,
