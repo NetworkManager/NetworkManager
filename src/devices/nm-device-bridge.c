@@ -172,14 +172,14 @@ to_sysfs_group_address_sys (const char *group_address,  NMEtherAddr *out_addr)
 static void
 from_sysfs_group_address (const char *value, GValue *out)
 {
-	if (!nm_utils_hwaddr_matches (value, -1, "01:80:C2:00:00:00", -1))
+	if (!nm_utils_hwaddr_matches (value, -1, NM_BRIDGE_GROUP_ADDRESS_DEF_STR, -1))
 		g_value_set_string (out, value);
 }
 
 static const char *
 to_sysfs_group_address (GValue *value)
 {
-	return g_value_get_string (value) ?: "01:80:C2:00:00:00";
+	return g_value_get_string (value) ?: NM_BRIDGE_GROUP_ADDRESS_DEF_STR;
 }
 
 static int
@@ -188,7 +188,7 @@ to_sysfs_vlan_protocol_sys (const char *value)
 	if (nm_streq0 (value, "802.1ad"))
 		return ETH_P_8021AD;
 
-	return 0x8100;
+	return ETH_P_8021Q;
 }
 
 static void
