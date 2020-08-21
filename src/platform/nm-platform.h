@@ -986,21 +986,31 @@ _nm_platform_kernel_support_detected (NMPlatformKernelSupportType type)
 	nm_assert (   _NM_INT_NOT_NEGATIVE (type)
 	           && type < G_N_ELEMENTS (_nm_platform_kernel_support_state));
 
-	return G_LIKELY (_nm_platform_kernel_support_state[type] != 0);
+	return G_LIKELY (g_atomic_int_get (&_nm_platform_kernel_support_state[type]) != 0);
+}
+
+static inline NMTernary
+nm_platform_kernel_support_get_full (NMPlatformKernelSupportType type,
+                                     gboolean init_if_not_set)
+{
+	int v;
+
+	nm_assert (   _NM_INT_NOT_NEGATIVE (type)
+	           && type < G_N_ELEMENTS (_nm_platform_kernel_support_state));
+
+	v = g_atomic_int_get (&_nm_platform_kernel_support_state[type]);
+	if (G_UNLIKELY (v == 0)) {
+		if (!init_if_not_set)
+			return NM_TERNARY_DEFAULT;
+		v = _nm_platform_kernel_support_init (type, 0);
+	}
+	return (v >= 0);
 }
 
 static inline gboolean
 nm_platform_kernel_support_get (NMPlatformKernelSupportType type)
 {
-	int v;
-
-	nm_assert (_NM_INT_NOT_NEGATIVE (type)
-	           && type < G_N_ELEMENTS (_nm_platform_kernel_support_state));
-
-	v = _nm_platform_kernel_support_state[type];
-	if (G_UNLIKELY (v == 0))
-		v = _nm_platform_kernel_support_init (type, 0);
-	return (v >= 0);
+	return nm_platform_kernel_support_get_full (type, TRUE) != NM_TERNARY_FALSE;
 }
 
 /*****************************************************************************/
