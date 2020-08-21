@@ -1176,8 +1176,7 @@ const NMPlatformLink *
 nmtstp_link_bridge_add (NMPlatform *platform,
                         gboolean external_command,
                         const char *name,
-                        const NMPlatformLnkBridge *lnk,
-                        gboolean *out_not_supported)
+                        const NMPlatformLnkBridge *lnk)
 {
 	const NMPlatformLink *pllink = NULL;
 	const NMPlatformLnkBridge *ll = NULL;
@@ -1185,7 +1184,6 @@ nmtstp_link_bridge_add (NMPlatform *platform,
 
 	g_assert (nm_utils_ifname_valid_kernel (name, NULL));
 
-	NM_SET_OUT (out_not_supported, FALSE);
 	external_command = nmtstp_run_command_check_external (external_command);
 
 	_init_platform (&platform, external_command);

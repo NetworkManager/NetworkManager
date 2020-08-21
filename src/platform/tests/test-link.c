@@ -962,9 +962,8 @@ test_software_detect (gconstpointer user_data)
 	ifindex_parent = nmtstp_assert_wait_for_link (NM_PLATFORM_GET, PARENT_NAME, NM_LINK_TYPE_DUMMY, 100)->ifindex;
 
 	switch (test_data->link_type) {
-	case NM_LINK_TYPE_BRIDGE: {
-		gboolean not_supported;
 
+	case NM_LINK_TYPE_BRIDGE:
 		lnk_bridge.forward_delay                 = 1560;
 		lnk_bridge.hello_time                    = 150;
 		lnk_bridge.max_age                       = 2100;
@@ -988,15 +987,10 @@ test_software_detect (gconstpointer user_data)
 		lnk_bridge.mcast_query_response_interval = 5200;
 		lnk_bridge.mcast_startup_query_interval  = 3000;
 
-		if (!nmtstp_link_bridge_add (NULL, ext, DEVICE_NAME, &lnk_bridge, &not_supported)) {
-			if (not_supported) {
-				g_test_skip ("Cannot create Bridge interface because of missing kernel support");
-				goto out_delete_parent;
-			}
+		if (!nmtstp_link_bridge_add (NULL, ext, DEVICE_NAME, &lnk_bridge))
 			g_error ("Failed adding Bridge interface");
-		}
 		break;
-	}
+
 	case NM_LINK_TYPE_GRE: {
 		gboolean gracefully_skip = FALSE;
 
