@@ -2668,6 +2668,11 @@ write_ip4_setting (NMConnection *connection,
 	value = nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4));
 	svSetValueStr (ifcfg, "DHCP_CLIENT_ID", value);
 
+	svSetValue (
+	    ifcfg,
+	    "DHCP_VENDOR_CLASS_IDENTIFIER",
+	    nm_setting_ip4_config_get_dhcp_vendor_class_identifier (NM_SETTING_IP4_CONFIG (s_ip4)));
+
 	value = nm_setting_ip_config_get_dhcp_iaid (s_ip4);
 	svSetValueStr (ifcfg, "DHCP_IAID", value);
 
