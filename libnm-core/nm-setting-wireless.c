@@ -1106,7 +1106,7 @@ get_property (GObject *object, guint prop_id,
 	case PROP_SEEN_BSSIDS:
 		g_value_take_boxed (value,
 		                      priv->seen_bssids
-		                    ? nm_utils_strv_dup (priv->seen_bssids->pdata,
+		                    ? nm_utils_strv_dup ((char **) priv->seen_bssids->pdata,
 		                                         priv->seen_bssids->len,
 		                                         TRUE)
 		                    : NULL);

@@ -8913,7 +8913,7 @@ do_connection_load (const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
 		return;
 	}
 
-	filenames = (const char **) nm_utils_strv_dup ((char **) argv, argc, FALSE);
+	filenames = (const char **) nm_utils_strv_dup (argv, argc, FALSE);
 
 	nm_client_load_connections (nmc->client, (char **) filenames, &failures, NULL, &error);
 	if (error) {

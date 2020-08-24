@@ -3384,16 +3384,15 @@ nm_utils_strv_make_deep_copied_n (const char **strv, gsize len)
  *   cloned or not.
  */
 char **
-nm_utils_strv_dup (gpointer strv,
-                   gssize len,
-                   gboolean deep_copied)
+_nm_utils_strv_dup (const char *const*strv,
+                    gssize len,
+                    gboolean deep_copied)
 {
 	gsize i, l;
 	char **v;
-	const char *const *const src = strv;
 
 	if (len < 0)
-		l = NM_PTRARRAY_LEN (src);
+		l = NM_PTRARRAY_LEN (strv);
 	else
 		l = len;
 	if (l == 0) {
@@ -3405,7 +3404,7 @@ nm_utils_strv_dup (gpointer strv,
 	v = g_new (char *, l + 1);
 	for (i = 0; i < l; i++) {
 
-		if (G_UNLIKELY (!src[i])) {
+		if (G_UNLIKELY (!strv[i])) {
 			/* NULL strings are not allowed. Clear the remainder of the array
 			 * and return it (with assertion failure). */
 			l++;
@@ -3415,9 +3414,9 @@ nm_utils_strv_dup (gpointer strv,
 		}
 
 		if (deep_copied)
-			v[i] = g_strdup (src[i]);
+			v[i] = g_strdup (strv[i]);
 		else
-			v[i] = (char *) src[i];
+			v[i] = (char *) strv[i];
 	}
 	v[l] = NULL;
 	return v;

@@ -1527,9 +1527,11 @@ nm_utils_strv_make_deep_copied_nonnull (const char **strv)
 	return nm_utils_strv_make_deep_copied (strv) ?: g_new0 (char *, 1);
 }
 
-char **nm_utils_strv_dup (gpointer strv,
-                          gssize len,
-                          gboolean deep_copied);
+char **_nm_utils_strv_dup (const char *const*strv,
+                           gssize len,
+                           gboolean deep_copied);
+
+#define nm_utils_strv_dup(strv, len, deep_copied) _nm_utils_strv_dup (NM_CAST_STRV_CC (strv), (len), (deep_copied))
 
 /*****************************************************************************/
 

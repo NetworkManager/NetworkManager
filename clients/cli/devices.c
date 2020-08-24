@@ -2378,7 +2378,7 @@ do_device_modify (const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
 	*info = (ModifyInfo) {
 		.nmc  = nmc,
 		.argc = argc,
-		.argv = nm_utils_strv_dup ((char **) argv, argc, TRUE),
+		.argv = nm_utils_strv_dup (argv, argc, TRUE),
 	};
 
 	nm_device_get_applied_connection_async (device, 0, NULL, modify_get_applied_cb, info);

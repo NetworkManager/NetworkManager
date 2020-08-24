@@ -1277,7 +1277,7 @@ call_cmd (NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, const char *
 		*call = (CmdCall) {
 			.cmd  = cmd,
 			.argc = argc,
-			.argv = nm_utils_strv_dup ((char **) argv, argc, TRUE),
+			.argv = nm_utils_strv_dup (argv, argc, TRUE),
 			.task = task,
 		};
 		nmc_client_new_async (NULL,
