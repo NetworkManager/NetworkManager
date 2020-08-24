@@ -1530,6 +1530,11 @@ char **nm_utils_strv_dup (gpointer strv,
                           gssize len,
                           gboolean deep_copied);
 
+const char **_nm_utils_strv_dup_packed (const char *const*strv,
+                                        gssize len);
+
+#define nm_utils_strv_dup_packed(strv, len) _nm_utils_strv_dup_packed (NM_CAST_STRV_CC (strv), (len))
+
 /*****************************************************************************/
 
 GSList *nm_utils_g_slist_find_str (const GSList *list,
