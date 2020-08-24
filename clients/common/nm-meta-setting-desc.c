@@ -5834,6 +5834,9 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
 	        ),
 	    ),
 	),
+	PROPERTY_INFO_WITH_DESC (NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER,
+	    .property_type =                &_pt_gobject_string,
+	),
 	NULL
 };
 
