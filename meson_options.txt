@@ -49,7 +49,7 @@ option('ifupdown', type: 'boolean', value: false, description: 'enable ifupdown 
 # handlers for resolv.conf
 option('resolvconf', type: 'string', value: '', description: 'Enable resolvconf support')
 option('netconfig', type: 'string', value: '', description: 'Enable SUSE netconfig support')
-option('config_dns_rc_manager_default', type: 'combo', choices: ['symlink', 'file', 'netconfig', 'resolvconf'], value: 'symlink', description: 'Configure default value for main.rc-manager setting')
+option('config_dns_rc_manager_default', type: 'combo', choices: ['auto', 'symlink', 'file', 'netconfig', 'resolvconf'], value: 'auto', description: 'Configure default value for main.rc-manager setting')
 
 # dhcp clients
 option('dhclient', type: 'string', value: '', description: 'Enable dhclient support')

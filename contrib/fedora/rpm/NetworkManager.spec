@@ -115,7 +115,11 @@
 
 %if 0%{?fedora} || 0%{?rhel} > 7
 %global logging_backend_default journal
+%if 0%{?fedora} || 0%{?rhel} > 8
+%global dns_rc_manager_default auto
+%else
 %global dns_rc_manager_default symlink
+%endif
 %else
 %global logging_backend_default syslog
 %global dns_rc_manager_default file
@@ -641,6 +645,8 @@ This tool is still experimental.
 %endif
 	-Ddist_version=%{version}-%{release} \
 	-Dconfig_plugins_default=%{config_plugins_default} \
+	-Dresolvconf=no \
+	-Dnetconfig=no \
 	-Dconfig_dns_rc_manager_default=%{dns_rc_manager_default} \
 	-Dconfig_logging_backend_default=%{logging_backend_default} \
 	-Djson_validation=true
@@ -779,6 +785,8 @@ intltoolize --automake --copy --force
 %endif
 	--with-dist-version=%{version}-%{release} \
 	--with-config-plugins-default=%{config_plugins_default} \
+	--with-resolvconf=no \
+	--with-netconfig=no \
 	--with-config-dns-rc-manager-default=%{dns_rc_manager_default} \
 	--with-config-logging-backend-default=%{logging_backend_default} \
 	--enable-json-validation

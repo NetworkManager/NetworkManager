@@ -42,10 +42,16 @@
 
 #ifndef RESOLVCONF_PATH
 #define RESOLVCONF_PATH "/sbin/resolvconf"
+#define HAS_RESOLVCONF 0
+#else
+#define HAS_RESOLVCONF 1
 #endif
 
 #ifndef NETCONFIG_PATH
 #define NETCONFIG_PATH "/sbin/netconfig"
+#define HAS_NETCONFIG 0
+#else
+#define HAS_NETCONFIG 1
 #endif
 
 /*****************************************************************************/
@@ -182,6 +188,7 @@ domain_is_routing (const char *domain)
 static
 NM_UTILS_LOOKUP_STR_DEFINE (_rc_manager_to_string, NMDnsManagerResolvConfManager,
 	NM_UTILS_LOOKUP_DEFAULT_WARN (NULL),
+	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_AUTO,           "auto"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN,        "unknown"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED,      "unmanaged"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE,      "immutable"),
@@ -574,6 +581,8 @@ again:
 
 	nm_close (fd);
 
+	/* FIXME: don't write to netconfig synchronously. */
+
 	/* Wait until the process exits */
 	if (!nm_utils_kill_child_sync (pid, 0, LOGD_DNS, "netconfig", &status, 1000, 0)) {
 		errsv = errno;
@@ -750,6 +759,8 @@ dispatch_resolvconf (NMDnsManager *self,
 	}
 
 	_LOGI ("Writing DNS information to %s", RESOLVCONF_PATH);
+
+	/* FIXME: don't write to resolvconf synchronously. */
 
 	cmd = g_strconcat (RESOLVCONF_PATH, " -a ", "NetworkManager", NULL);
 	if ((f = popen (cmd, "w")) == NULL) {
@@ -1896,6 +1907,7 @@ _check_resconf_immutable (NMDnsManagerResolvConfManager rc_manager)
 			case NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE:
 			case NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF:
 			case NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG:
+			case NM_DNS_MANAGER_RESOLV_CONF_MAN_AUTO:
 				break;
 			}
 		}
@@ -1995,6 +2007,7 @@ init_resolv_conf_mode (NMDnsManager *self, gboolean force_reload_plugin)
 	gboolean param_changed = FALSE;
 	gboolean plugin_changed = FALSE;
 	gboolean systemd_resolved_changed = FALSE;
+	gboolean rc_manager_was_auto = FALSE;
 
 	mode = nm_config_data_get_dns_mode (nm_config_get_data (priv->config));
 	systemd_resolved = nm_config_data_get_systemd_resolved (nm_config_get_data (priv->config));
@@ -2010,7 +2023,9 @@ init_resolv_conf_mode (NMDnsManager *self, gboolean force_reload_plugin)
 again:
 		if (!man) {
 			/* nop */
-		} else if (NM_IN_STRSET (man, "symlink", "none"))
+		} else if (nm_streq (man, "auto"))
+			rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_AUTO;
+		else if (NM_IN_STRSET (man, "symlink", "none"))
 			rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK;
 		else if (nm_streq (man, "file"))
 			rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE;
@@ -2027,7 +2042,7 @@ again:
 				       man, ""NM_CONFIG_DEFAULT_MAIN_RC_MANAGER);
 			}
 			man = ""NM_CONFIG_DEFAULT_MAIN_RC_MANAGER;
-			rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK;
+			rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_AUTO;
 			goto again;
 		}
 	}
@@ -2066,6 +2081,31 @@ again:
 			plugin_changed = TRUE;
 	}
 
+	if (rc_manager == NM_DNS_MANAGER_RESOLV_CONF_MAN_AUTO) {
+		rc_manager_was_auto = TRUE;
+		if (nm_streq (mode, "systemd-resolved"))
+			rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED;
+		else if (   HAS_RESOLVCONF
+		         && g_file_test (RESOLVCONF_PATH, G_FILE_TEST_IS_EXECUTABLE)) {
+			/* We detect /sbin/resolvconf only at this stage. That means, if you install
+			 * or uninstall openresolv afterwards, you need to reload the DNS settings
+			 * (with SIGHUP or `systemctl reload NetworkManager.service`).
+			 *
+			 * We only accept resolvconf if NetworkManager was built with --with-resolvconf.
+			 * For example, on Fedora the systemd package provides a compat resolvconf
+			 * implementation for systemd-resolved. But using that never makes sense, because
+			 * there we either use full systemd-resolved mode or not. In no case does it
+			 * make sense to call that resolvconf implementation. */
+			rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF;
+		} else if (   HAS_NETCONFIG
+		           && g_file_test (NETCONFIG_PATH, G_FILE_TEST_IS_EXECUTABLE)) {
+			/* Like for resolvconf, we detect only once. We only autoenable this
+			 * option, if NetworkManager was built with netconfig explicitly enabled. */
+			rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG;
+		} else
+			rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK;
+	}
+
 	/* The systemd-resolved plugin is special. We typically always want to keep
 	 * systemd-resolved up to date even if the configured plugin is different. */
 	if (systemd_resolved) {
@@ -2092,10 +2132,11 @@ again:
 	}
 
 	if (param_changed || plugin_changed || systemd_resolved_changed) {
-		_LOGI ("init: dns=%s%s rc-manager=%s%s%s%s",
+		_LOGI ("init: dns=%s%s rc-manager=%s%s%s%s%s",
 		       mode,
 		       (systemd_resolved ? ",systemd-resolved" : ""),
 		       _rc_manager_to_string (rc_manager),
+		       rc_manager_was_auto ? " (auto)" : "",
 		       NM_PRINT_FMT_QUOTED (priv->plugin, ", plugin=",
 		                            nm_dns_plugin_get_name (priv->plugin), "", ""));
 	}
