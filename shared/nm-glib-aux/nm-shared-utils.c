@@ -3422,6 +3422,74 @@ _nm_utils_strv_dup (const char *const*strv,
 	return v;
 }
 
+const char **
+_nm_utils_strv_dup_packed (const char *const*strv,
+                           gssize len)
+
+{
+	const char **result;
+	gsize mem_len;
+	gsize pre_len;
+	gsize len2;
+	char *sbuf;
+	gsize i;
+
+	nm_assert (len >= -1);
+
+	mem_len = 0;
+	if (G_LIKELY (len < 0)) {
+		if (   !strv
+		    || !strv[0]) {
+			/* This function never returns an empty strv array. If you need that, handle it
+			 * yourself. */
+			return NULL;
+		}
+		for (i = 0; strv[i]; i++)
+			mem_len += strlen (strv[i]);
+		len2 = i;
+	} else {
+		if (len == 0)
+			return NULL;
+		len2 = len;
+		for (i = 0; i < len; i++) {
+			if (G_LIKELY (strv[i]))
+				mem_len += strlen (strv[i]);
+		}
+	}
+	mem_len += len2;
+
+	pre_len = sizeof (const char *) * (len2 + 1u);
+
+	result = g_malloc (pre_len + mem_len);
+	sbuf = &(((char *) result)[pre_len]);
+	for (i = 0; i < len2; i++) {
+		gsize l;
+
+		if (G_UNLIKELY (!strv[i])) {
+			/* Technically there is no problem with accepting NULL strings. But that
+			 * does not really result in a strv array, and likely this only happens due
+			 * to a bug. We want to catch such bugs by asserting.
+			 *
+			 * We clear the remainder of the buffer and fail with an assertion. */
+			len2++;
+			for (; i < len2; i++)
+				result[i] = NULL;
+			g_return_val_if_reached (result);;
+		}
+
+		result[i] = sbuf;
+
+		l = strlen (strv[i]) + 1u;
+		memcpy (sbuf, strv[i], l);
+		sbuf += l;
+	}
+	result[i] = NULL;
+	nm_assert (i == len2);
+	nm_assert (sbuf == (&((const char *) result)[pre_len]) + mem_len);
+
+	return result;
+}
+
 /*****************************************************************************/
 
 gssize

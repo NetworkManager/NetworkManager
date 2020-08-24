@@ -941,6 +941,51 @@ test_is_specific_hostname (void)
 
 /*****************************************************************************/
 
+static void
+test_strv_dup_packed (void)
+{
+	gs_unref_ptrarray GPtrArray *src = NULL;
+	int i_run;
+
+
+	src = g_ptr_array_new_with_free_func (g_free);
+
+	for (i_run = 0; i_run < 500; i_run++) {
+		const int strv_len = nmtst_get_rand_word_length (NULL);
+		gs_free const char **strv_cpy = NULL;
+		const char *const*strv_src;
+		int i, j;
+
+		g_ptr_array_set_size (src, 0);
+		for (i = 0; i < strv_len; i++) {
+			const int word_len = nmtst_get_rand_word_length (NULL);
+			NMStrBuf sbuf = NM_STR_BUF_INIT (0, nmtst_get_rand_bool ());
+
+			for (j = 0; j < word_len; j++)
+				nm_str_buf_append_c (&sbuf, 'a' + (nmtst_get_rand_uint32 () % 20));
+
+			g_ptr_array_add (src, nm_str_buf_finalize (&sbuf, NULL) ?: g_new0 (char, 1));
+		}
+		g_ptr_array_add (src, NULL);
+
+		strv_src = (const char *const*) src->pdata;
+		g_assert (strv_src);
+		g_assert (NM_PTRARRAY_LEN (strv_src) == strv_len);
+
+		strv_cpy = nm_utils_strv_dup_packed (strv_src,
+		                                     nmtst_get_rand_bool () ? (gssize) strv_len : (gssize) -1);
+		if (strv_len == 0)
+			g_assert (!strv_cpy);
+		else
+			g_assert (strv_cpy);
+		g_assert (NM_PTRARRAY_LEN (strv_cpy) == strv_len);
+		if (strv_cpy)
+			g_assert (_nm_utils_strv_equal ((char **) strv_cpy, (char **) strv_src));
+	}
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -965,6 +1010,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/general/test_nm_utils_parse_next_line", test_nm_utils_parse_next_line);
 	g_test_add_func ("/general/test_in_strset_ascii_case", test_in_strset_ascii_case);
 	g_test_add_func ("/general/test_is_specific_hostname", test_is_specific_hostname);
+	g_test_add_func ("/general/test_strv_dup_packed", test_strv_dup_packed);
 
 	return g_test_run ();
 }
