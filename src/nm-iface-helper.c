@@ -538,6 +538,7 @@ main (int argc, char *argv[])
 		                                          NM_DHCP_TIMEOUT_DEFAULT,
 		                                          NULL,
 		                                          global_opt.dhcp4_address,
+		                                          NULL,
 		                                          &error);
 		if (!dhcp4_client)
 			g_error ("failure to start DHCP: %s", error->message);
