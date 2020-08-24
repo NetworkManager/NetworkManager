@@ -38,11 +38,13 @@
 NM_GOBJECT_PROPERTIES_DEFINE_BASE (
 	PROP_DHCP_CLIENT_ID,
 	PROP_DHCP_FQDN,
+	PROP_DHCP_VENDOR_CLASS_IDENTIFIER,
 );
 
 typedef struct {
 	char *dhcp_client_id;
 	char *dhcp_fqdn;
+	char *dhcp_vendor_class_identifier;
 } NMSettingIP4ConfigPrivate;
 
 G_DEFINE_TYPE (NMSettingIP4Config, nm_setting_ip4_config, NM_TYPE_SETTING_IP_CONFIG)
@@ -86,6 +88,25 @@ nm_setting_ip4_config_get_dhcp_fqdn (NMSettingIP4Config *setting)
 	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), NULL);
 
 	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dhcp_fqdn;
+}
+
+/**
+ * nm_setting_ip4_config_get_dhcp_vendor_class_identifier:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns the value contained in the #NMSettingIP4Config:dhcp_vendor_class_identifier
+ * property.
+ *
+ * Returns: the vendor class identifier option to send to the DHCP server
+ *
+ * Since: 1.28, 1.26.4
+ **/
+const char *
+nm_setting_ip4_config_get_dhcp_vendor_class_identifier (NMSettingIP4Config *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), NULL);
+
+	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dhcp_vendor_class_identifier;
 }
 
 static gboolean
@@ -204,6 +225,52 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		                     _("FQDN flags requires a FQDN set"));
 		g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS);
 		return FALSE;
+	}
+
+	if (priv->dhcp_vendor_class_identifier) {
+		const char *  bin;
+		gsize         unescaped_len;
+		gs_free char *to_free = NULL;
+
+		if (priv->dhcp_vendor_class_identifier[0] == '\0') {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _ ("property cannot be an empty string"));
+			g_prefix_error (error,
+			                "%s.%s: ",
+			                NM_SETTING_IP4_CONFIG_SETTING_NAME,
+			                NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER);
+			return FALSE;
+		}
+
+		bin = nm_utils_buf_utf8safe_unescape (priv->dhcp_vendor_class_identifier,
+		                                      NM_UTILS_STR_UTF8_SAFE_FLAG_NONE,
+		                                      &unescaped_len,
+		                                      (gpointer *) &to_free);
+		/* a DHCP option cannot be longer than 255 bytes */
+		if (unescaped_len > 255) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _ ("property cannot be longer than 255 bytes"));
+			g_prefix_error (error,
+			                "%s.%s: ",
+			                NM_SETTING_IP4_CONFIG_SETTING_NAME,
+			                NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER);
+			return FALSE;
+		}
+		if (strlen (bin) != unescaped_len) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _ ("property cannot contain any nul bytes"));
+			g_prefix_error (error,
+			                "%s.%s: ",
+			                NM_SETTING_IP4_CONFIG_SETTING_NAME,
+			                NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER);
+			return FALSE;
+		}
 	}
 
 	/* Failures from here on are NORMALIZABLE_ERROR... */
@@ -474,6 +541,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_DHCP_FQDN:
 		g_value_set_string (value, nm_setting_ip4_config_get_dhcp_fqdn (s_ip4));
 		break;
+	case PROP_DHCP_VENDOR_CLASS_IDENTIFIER:
+		g_value_set_string (value, nm_setting_ip4_config_get_dhcp_vendor_class_identifier (s_ip4));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -494,6 +564,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_DHCP_FQDN:
 		g_free (priv->dhcp_fqdn);
 		priv->dhcp_fqdn = g_value_dup_string (value);
+		break;
+	case PROP_DHCP_VENDOR_CLASS_IDENTIFIER:
+		g_free (priv->dhcp_vendor_class_identifier);
+		priv->dhcp_vendor_class_identifier = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -528,6 +602,7 @@ finalize (GObject *object)
 
 	g_free (priv->dhcp_client_id);
 	g_free (priv->dhcp_fqdn);
+	g_free (priv->dhcp_vendor_class_identifier);
 
 	G_OBJECT_CLASS (nm_setting_ip4_config_parent_class)->finalize (object);
 }
@@ -805,6 +880,32 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *klass)
 	                         NULL,
 	                         G_PARAM_READWRITE |
 	                         G_PARAM_STATIC_STRINGS);
+
+	/**
+	 * NMSettingIP4Config:dhcp-vendor-class-identifier:
+	 *
+	 * The Vendor Class Identifier DHCP option (60).
+	 * Special characters in the data string may be escaped using C-style escapes,
+	 * nevertheless this property cannot contain nul bytes.
+	 * If the per-profile value is unspecified (the default),
+	 * a global connection default gets consulted.
+	 * If still unspecified, the DHCP option is not sent to the server.
+	 *
+	 * Since 1.28, 1.26.4
+	 */
+	/* ---ifcfg-rh---
+	 * property: dhcp-vendor-class-identifier
+	 * variable: DHCP_VENDOR_CLASS_IDENTIFIER(+)
+	 * description: The Vendor Class Identifier DHCP option (60).
+	 * example: DHCP_VENDOR_CLASS_IDENTIFIER=foo
+	 * ---end---
+	 */
+	obj_properties[PROP_DHCP_VENDOR_CLASS_IDENTIFIER]
+	    = g_param_spec_string (NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER,
+	                           "",
+	                           "",
+	                           NULL,
+	                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
 	/* IP4-specific property overrides */
 
