@@ -2599,6 +2599,43 @@ _str_buf_append_c_escape_octal (NMStrBuf *strbuf,
 	                      '0' + ((char) ((((guchar) ch)     ) & 07)));
 }
 
+/**
+ * nm_utils_buf_utf8safe_unescape:
+ * @str: (allow-none): the string to unescape. The string itself is a NUL terminated
+ *   ASCII string, that can have C-style backslash escape sequences (which
+ *   are to be unescaped). Non-ASCII characters (e.g. UTF-8) are taken verbatim, so
+ *   it doesn't care that this string is UTF-8. However, usually this is a UTF-8 encoded
+ *   string.
+ * @flags: flags for unescaping. The following flags are supported.
+ *   %NM_UTILS_STR_UTF8_SAFE_UNESCAPE_STRIP_SPACES performs a g_strstrip() on the input string,
+ *   but preserving escaped spaces. For example, "a\\t " gives "a\t" (that is, the escaped space does
+ *   not get stripped). Likewise, the invalid escape sequence "a\\  " results in "a " (stripping
+ *   the unescaped space, but preserving the escaped one).
+ * @out_len: (out): the length of the parsed string.
+ * @to_free: (out): if @str requires unescaping, the function will clone the string. In
+ *   that case, the allocated buffer will be returned here.
+ *
+ * See C-style escapes at https://en.wikipedia.org/wiki/Escape_sequences_in_C#Table_of_escape_sequences.
+ * Note that hex escapes ("\\xhh") and unicode escapes ("\\uhhhh", "\\Uhhhhhhhh") are not supported.
+ *
+ * Also, this function is very similar to g_strcompress() but without issuing g_warning()
+ * assertions and proper handling of "\\000" escape sequences.
+ *
+ * Invalid escape sequences (or non-UTF-8 input) are gracefully accepted. For example "\\ "
+ * is an invalid escape sequence, in this case the backslash is removed and " " gets returned.
+ *
+ * The function never leaks secrets in memory.
+ *
+ * Returns: the unescaped buffer of length @out_len. If @str is %NULL, this returns %NULL
+ *   and sets @out_len to 0. Otherwise, a non-%NULL binary buffer is returned with
+ *   @out_len bytes. Note that the binary buffer is guaranteed to be NUL terminated. That
+ *   is @result[@out_len] is NUL.
+ *   Note that the result is binary, and may have embedded NUL characters and non-UTF-8.
+ *   If the function can avoid cloning the input string, it will return a pointer inside
+ *   the input @str. For example, if there is no backslash, no cloning is necessary. In that
+ *   case, @to_free will be %NULL. Otherwise, @to_free is set to a newly allocated buffer
+ *   containing the unescaped string and returned.
+ */
 gconstpointer
 nm_utils_buf_utf8safe_unescape (const char *str, NMUtilsStrUtf8SafeFlags flags, gsize *out_len, gpointer *to_free)
 {
