@@ -2190,6 +2190,24 @@ nm_strvarray_set_strv (GArray **array, const char *const*strv)
 		nm_strvarray_add (*array, strv[0]);
 }
 
+static inline gboolean
+nm_strvarray_remove_first (GArray *strv, const char *needle)
+{
+	guint i;
+
+	nm_assert (needle);
+
+	if (strv) {
+		for (i = 0; i < strv->len; i++) {
+			if (nm_streq (needle, g_array_index (strv, const char *, i))) {
+				g_array_remove_index (strv, i);
+				return TRUE;
+			}
+		}
+	}
+	return FALSE;
+}
+
 /*****************************************************************************/
 
 struct _NMVariantAttributeSpec {
