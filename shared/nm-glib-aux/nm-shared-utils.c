@@ -3427,6 +3427,8 @@ _nm_utils_strv_dup_packed (const char *const*strv,
                            gssize len)
 
 {
+	gs_free gsize *str_len_free = NULL;
+	gsize *str_len;
 	const char **result;
 	gsize mem_len;
 	gsize pre_len;
@@ -3436,7 +3438,6 @@ _nm_utils_strv_dup_packed (const char *const*strv,
 
 	nm_assert (len >= -1);
 
-	mem_len = 0;
 	if (G_LIKELY (len < 0)) {
 		if (   !strv
 		    || !strv[0]) {
@@ -3444,19 +3445,30 @@ _nm_utils_strv_dup_packed (const char *const*strv,
 			 * yourself. */
 			return NULL;
 		}
-		for (i = 0; strv[i]; i++)
-			mem_len += strlen (strv[i]);
-		len2 = i;
+		len2 = NM_PTRARRAY_LEN (strv);
 	} else {
 		if (len == 0)
 			return NULL;
 		len2 = len;
-		for (i = 0; i < len; i++) {
-			if (G_LIKELY (strv[i]))
-				mem_len += strlen (strv[i]);
-		}
 	}
-	mem_len += len2;
+
+	if (len2 > 300u / sizeof (gsize)) {
+		str_len_free = g_new (gsize, len2);
+		str_len = str_len_free;
+	} else
+		str_len = g_newa (gsize, len2);
+
+	mem_len = 0;
+	for (i = 0; i < len2; i++) {
+		gsize l;
+
+		if (G_LIKELY (strv[i]))
+			l = strlen (strv[i]) + 1u;
+		else
+			l = 0;
+		str_len[i] = l;
+		mem_len += l;
+	}
 
 	pre_len = sizeof (const char *) * (len2 + 1u);
 
@@ -3479,7 +3491,7 @@ _nm_utils_strv_dup_packed (const char *const*strv,
 
 		result[i] = sbuf;
 
-		l = strlen (strv[i]) + 1u;
+		l = str_len[i];
 		memcpy (sbuf, strv[i], l);
 		sbuf += l;
 	}
