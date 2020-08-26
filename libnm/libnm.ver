@@ -1741,3 +1741,8 @@ global:
 	nm_setting_option_set_boolean;
 	nm_setting_option_set_uint32;
 } libnm_1_24_0;
+
+libnm_1_26_4 {
+global:
+	nm_setting_ip4_config_get_dhcp_vendor_class_identifier;
+} libnm_1_26_0;

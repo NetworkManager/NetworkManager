@@ -1804,6 +1804,11 @@ make_ip4_setting (shvarFile *ifcfg,
 		g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, v, NULL);
 
 	nm_clear_g_free (&value);
+	v = svGetValueStr (ifcfg, "DHCP_VENDOR_CLASS_IDENTIFIER", &value);
+	if (v)
+		g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER, v, NULL);
+
+	nm_clear_g_free (&value);
 	v = svGetValueStr (ifcfg, "DHCP_IAID", &value);
 	if (v)
 		g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DHCP_IAID, v, NULL);

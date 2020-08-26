@@ -51,6 +51,7 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMDhcpClient,
 	PROP_HOSTNAME,
 	PROP_HOSTNAME_FLAGS,
 	PROP_MUD_URL,
+	PROP_VENDOR_CLASS_IDENTIFIER,
 );
 
 typedef struct _NMDhcpClientPrivate {
@@ -62,6 +63,7 @@ typedef struct _NMDhcpClientPrivate {
 	GBytes *     client_id;
 	char *       hostname;
 	char *       mud_url;
+	GBytes *     vendor_class_identifier;
 	pid_t        pid;
 	guint        timeout_id;
 	guint        watch_id;
@@ -320,6 +322,14 @@ nm_dhcp_client_get_mud_url (NMDhcpClient *self)
 	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
 
 	return NM_DHCP_CLIENT_GET_PRIVATE (self)->mud_url;
+}
+
+GBytes *
+nm_dhcp_client_get_vendor_class_identifier (NMDhcpClient *self)
+{
+	g_return_val_if_fail (NM_IS_DHCP_CLIENT (self), NULL);
+
+	return NM_DHCP_CLIENT_GET_PRIVATE (self)->vendor_class_identifier;
 }
 
 /*****************************************************************************/
@@ -1076,6 +1086,10 @@ set_property (GObject *object, guint prop_id,
 		/* construct-only */
 		priv->timeout = g_value_get_uint (value);
 		break;
+	case PROP_VENDOR_CLASS_IDENTIFIER:
+		/* construct-only */
+		priv->vendor_class_identifier = g_value_dup_boxed (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1120,6 +1134,7 @@ dispose (GObject *object)
 	nm_clear_pointer (&priv->client_id, g_bytes_unref);
 	nm_clear_pointer (&priv->hwaddr, g_bytes_unref);
 	nm_clear_pointer (&priv->bcast_hwaddr, g_bytes_unref);
+	nm_clear_pointer (&priv->vendor_class_identifier, g_bytes_unref);
 
 	G_OBJECT_CLASS (nm_dhcp_client_parent_class)->dispose (object);
 
@@ -1236,6 +1251,12 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 	                       0, G_MAXUINT32, 0,
 	                       G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
 	                       G_PARAM_STATIC_STRINGS);
+
+	obj_properties[PROP_VENDOR_CLASS_IDENTIFIER] =
+	    g_param_spec_boxed (NM_DHCP_CLIENT_VENDOR_CLASS_IDENTIFIER, "", "",
+	                        G_TYPE_BYTES,
+	                        G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY |
+	                        G_PARAM_STATIC_STRINGS);
 
 	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

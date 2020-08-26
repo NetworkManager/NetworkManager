@@ -1289,6 +1289,7 @@ ip4_start (NMDhcpClient *client,
 	struct in_addr last_addr = { 0 };
 	const char *hostname;
 	const char *mud_url;
+	GBytes *vendor_class_identifier;
 	int r, i;
 
 	g_return_val_if_fail (!priv->probe, FALSE);
@@ -1407,6 +1408,25 @@ ip4_start (NMDhcpClient *client,
 				set_error_nettools (error, r, "failed to set DHCP hostname");
 				return FALSE;
 			}
+		}
+	}
+
+	vendor_class_identifier = nm_dhcp_client_get_vendor_class_identifier (client);
+	if (vendor_class_identifier) {
+		const void *option_data;
+		gsize option_size;
+
+		option_data = g_bytes_get_data (vendor_class_identifier, &option_size);
+		nm_assert (option_data);
+		nm_assert (option_size <= 255);
+
+		r = n_dhcp4_client_probe_config_append_option (config,
+		                                               NM_DHCP_OPTION_DHCP4_VENDOR_CLASS_IDENTIFIER,
+		                                               option_data,
+		                                               option_size);
+		if (r) {
+			set_error_nettools (error, r, "failed to set vendor class identifier");
+			return FALSE;
 		}
 	}
 

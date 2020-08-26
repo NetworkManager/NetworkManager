@@ -741,6 +741,10 @@ ipv6.ip6-privacy=0
            the interface type is used.</para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>ipv4.dhcp-vendor-class-identifier</varname></term>
+          <listitem><para>If left unspecified, the default is to not send the DHCP option to the server.</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>ipv4.dns-priority</varname></term>
           <listitem><para>If unspecified or zero, use 50 for VPN profiles
            and 100 for other profiles.</para></listitem>

@@ -8749,11 +8749,53 @@ out_good:
 	return result;
 }
 
+static GBytes *
+dhcp4_get_vendor_class_identifier (NMDevice *self, NMSettingIP4Config *s_ip4)
+{
+	gs_free char *config_data_prop = NULL;
+	gs_free char *to_free = NULL;
+	gboolean validate = FALSE;
+	const char *conn_prop;
+	GBytes *bytes = NULL;
+	const char *bin;
+	gsize len;
+
+	conn_prop = nm_setting_ip4_config_get_dhcp_vendor_class_identifier (s_ip4);
+
+	if (!conn_prop) {
+		/* set in NetworkManager.conf ? */
+		validate = TRUE;
+		config_data_prop = nm_config_data_get_connection_default (
+		    NM_CONFIG_GET_DATA,
+		    NM_CON_DEFAULT ("ipv4.dhcp-vendor-class-identifier"),
+		    self);
+		conn_prop = config_data_prop;
+	}
+
+	if (conn_prop) {
+		bin = nm_utils_buf_utf8safe_unescape (conn_prop,
+		                                      NM_UTILS_STR_UTF8_SAFE_FLAG_NONE,
+		                                      &len,
+		                                      (gpointer *) &to_free);
+
+		if (validate && (bin[0] == '\0' || len > 255 || strlen (bin) != len))
+			return NULL;
+
+		if (to_free)
+			bytes = g_bytes_new_take (g_steal_pointer (&to_free), len);
+		else
+			bytes = g_bytes_new (bin, len);
+	}
+
+	return bytes;
+}
+
 static NMActStageReturn
 dhcp4_start (NMDevice *self)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMSettingIPConfig *s_ip4;
+	gs_unref_bytes GBytes *vendor_class_identifier = NULL;
 	gs_unref_bytes GBytes *hwaddr = NULL;
 	gs_unref_bytes GBytes *bcast_hwaddr = NULL;
 	gs_unref_bytes GBytes *client_id = NULL;
@@ -8782,6 +8824,8 @@ dhcp4_start (NMDevice *self)
 	}
 
 	client_id = dhcp4_get_client_id (self, connection, hwaddr);
+	vendor_class_identifier
+	    = dhcp4_get_vendor_class_identifier (self, NM_SETTING_IP4_CONFIG (s_ip4));
 
 	g_warn_if_fail (priv->dhcp_data_4.client == NULL);
 	priv->dhcp_data_4.client = nm_dhcp_manager_start_ip4 (nm_dhcp_manager_get (),
@@ -8802,6 +8846,7 @@ dhcp4_start (NMDevice *self)
 	                                                      get_dhcp_timeout (self, AF_INET),
 	                                                      priv->dhcp_anycast_address,
 	                                                      NULL,
+	                                                      vendor_class_identifier,
 	                                                      &error);
 	if (!priv->dhcp_data_4.client) {
 		_LOGW (LOGD_DHCP4, "failure to start DHCP: %s", error->message);
