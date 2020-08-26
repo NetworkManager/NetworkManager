@@ -105,12 +105,14 @@ void nm_l3_config_data_merge (NML3ConfigData *self,
                               NML3ConfigMergeHookAddObj hook_add_addr,
                               gpointer hook_user_data);
 
+GPtrArray *nm_l3_config_data_get_blacklisted_ip4_routes (const NML3ConfigData *self,
+                                                         gboolean is_vrf);
+
 void nm_l3_config_data_add_dependent_routes (NML3ConfigData *self,
                                              int addr_family,
                                              guint32 route_table,
                                              guint32 route_metric,
-                                             gboolean is_vrf,
-                                             GPtrArray **out_ip4_dev_route_blacklist);
+                                             gboolean is_vrf);
 
 /*****************************************************************************/
 

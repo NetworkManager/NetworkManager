@@ -309,6 +309,8 @@ typedef enum {
 	\
 	guint8 plen; \
 	\
+	/* FIXME(l3cfg): the external marker won't be necessary anymore, because we only
+	 *   merge addresses we care about, and ignore (don't remove) external addresses. */ \
 	bool external:1; \
 	\
 	bool use_ip4_broadcast_address:1; \
