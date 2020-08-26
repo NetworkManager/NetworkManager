@@ -872,6 +872,7 @@ const NMSIfcfgKeyTypeInfo nms_ifcfg_well_known_keys[] = {
 	_KEY_TYPE ("DHCP_HOSTNAME",                               NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("DHCP_HOSTNAME_FLAGS",                         NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("DHCP_IAID",                                   NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
+	_KEY_TYPE ("DHCP_REJECT_SERVERS",                         NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("DHCP_SEND_HOSTNAME",                          NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("DHCP_VENDOR_CLASS_IDENTIFIER",                NMS_IFCFG_KEY_TYPE_IS_PLAIN ),
 	_KEY_TYPE ("DHCPv6_DUID",                                 NMS_IFCFG_KEY_TYPE_IS_PLAIN ),

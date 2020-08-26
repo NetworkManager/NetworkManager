@@ -39,6 +39,7 @@
 #define NM_DHCP_CLIENT_IAID_EXPLICIT             "iaid-explicit"
 #define NM_DHCP_CLIENT_HOSTNAME_FLAGS            "hostname-flags"
 #define NM_DHCP_CLIENT_VENDOR_CLASS_IDENTIFIER   "vendor-class-identifier"
+#define NM_DHCP_CLIENT_REJECT_SERVERS            "reject-servers"
 
 #define NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED "state-changed"
 #define NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED "prefix-delegated"
@@ -144,8 +145,10 @@ GBytes *nm_dhcp_client_get_client_id (NMDhcpClient *self);
 
 const char *nm_dhcp_client_get_hostname (NMDhcpClient *self);
 const char *nm_dhcp_client_get_mud_url (NMDhcpClient *self);
+const char *const *nm_dhcp_client_get_reject_servers (NMDhcpClient *self);
 
 NMDhcpHostnameFlags nm_dhcp_client_get_hostname_flags (NMDhcpClient *self);
+
 
 gboolean nm_dhcp_client_get_info_only (NMDhcpClient *self);
 
@@ -207,6 +210,8 @@ void nm_dhcp_client_set_client_id_bin (NMDhcpClient *self,
 
 void nm_dhcp_client_emit_ipv6_prefix_delegated (NMDhcpClient *self,
                                                 const NMPlatformIP6Address *prefix);
+
+gboolean nm_dhcp_client_server_id_is_rejected (NMDhcpClient *self, gconstpointer addr);
 
 /*****************************************************************************
  * Client data

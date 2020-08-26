@@ -1749,5 +1749,9 @@ global:
 
 libnm_1_28_0 {
 global:
+	nm_setting_ip_config_add_dhcp_reject_server;
+	nm_setting_ip_config_clear_dhcp_reject_servers;
+	nm_setting_ip_config_get_dhcp_reject_servers;
+	nm_setting_ip_config_remove_dhcp_reject_server;
 	nm_setting_wireless_get_ap_isolation;
 } libnm_1_26_4;

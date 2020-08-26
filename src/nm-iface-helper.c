@@ -539,6 +539,7 @@ main (int argc, char *argv[])
 		                                          NULL,
 		                                          global_opt.dhcp4_address,
 		                                          NULL,
+		                                          NULL,
 		                                          &error);
 		if (!dhcp4_client)
 			g_error ("failure to start DHCP: %s", error->message);

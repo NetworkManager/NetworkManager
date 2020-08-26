@@ -139,22 +139,15 @@ gboolean
 nm_setting_match_remove_interface_name_by_value (NMSettingMatch *setting,
                                                  const char *interface_name)
 {
-	guint i;
-
 	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), FALSE);
 	g_return_val_if_fail (interface_name != NULL, FALSE);
 	g_return_val_if_fail (interface_name[0] != '\0', FALSE);
 
-	if (!setting->interface_name)
-		return FALSE;
-
-	for (i = 0; i < setting->interface_name->len; i++) {
-		if (nm_streq (interface_name, g_array_index (setting->interface_name, const char *, i))) {
-			g_array_remove_index (setting->interface_name, i);
-			_notify (setting, PROP_INTERFACE_NAME);
-			return TRUE;
-		}
+	if (nm_strvarray_remove_first (setting->interface_name, interface_name)) {
+		_notify (setting, PROP_INTERFACE_NAME);
+		return TRUE;
 	}
+
 	return FALSE;
 }
 
@@ -292,22 +285,15 @@ gboolean
 nm_setting_match_remove_kernel_command_line_by_value (NMSettingMatch *setting,
                                                       const char *kernel_command_line)
 {
-	guint i;
-
 	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), FALSE);
 	g_return_val_if_fail (kernel_command_line != NULL, FALSE);
 	g_return_val_if_fail (kernel_command_line[0] != '\0', FALSE);
 
-	if (!setting->kernel_command_line)
-		return FALSE;
-
-	for (i = 0; i < setting->kernel_command_line->len; i++) {
-		if (nm_streq (kernel_command_line, g_array_index (setting->kernel_command_line, const char *, i))) {
-			g_array_remove_index (setting->kernel_command_line, i);
-			_notify (setting, PROP_KERNEL_COMMAND_LINE);
-			return TRUE;
-		}
+	if (nm_strvarray_remove_first (setting->kernel_command_line, kernel_command_line)) {
+		_notify (setting, PROP_KERNEL_COMMAND_LINE);
+		return TRUE;
 	}
+
 	return FALSE;
 }
 
@@ -442,22 +428,15 @@ gboolean
 nm_setting_match_remove_driver_by_value (NMSettingMatch *setting,
                                          const char *driver)
 {
-	guint i;
-
 	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), FALSE);
 	g_return_val_if_fail (driver != NULL, FALSE);
 	g_return_val_if_fail (driver[0] != '\0', FALSE);
 
-	if (!setting->driver)
-		return FALSE;
-
-	for (i = 0; i < setting->driver->len; i++) {
-		if (nm_streq (driver, g_array_index (setting->driver, const char *, i))) {
-			g_array_remove_index (setting->driver, i);
-			_notify (setting, PROP_DRIVER);
-			return TRUE;
-		}
+	if (nm_strvarray_remove_first (setting->driver, driver)) {
+		_notify (setting, PROP_DRIVER);
+		return TRUE;
 	}
+
 	return FALSE;
 }
 
@@ -592,22 +571,15 @@ gboolean
 nm_setting_match_remove_path_by_value (NMSettingMatch *setting,
                                        const char *path)
 {
-	guint i;
-
 	g_return_val_if_fail (NM_IS_SETTING_MATCH (setting), FALSE);
 	g_return_val_if_fail (path != NULL, FALSE);
 	g_return_val_if_fail (path[0] != '\0', FALSE);
 
-	if (!setting->path)
-		return FALSE;
-
-	for (i = 0; i < setting->path->len; i++) {
-		if (nm_streq (path, g_array_index (setting->path, const char *, i))) {
-			g_array_remove_index (setting->path, i);
-			_notify (setting, PROP_PATH);
-			return TRUE;
-		}
+	if (nm_strvarray_remove_first (setting->path, path)) {
+		_notify (setting, PROP_PATH);
+		return TRUE;
 	}
+
 	return FALSE;
 }
 

@@ -1067,21 +1067,36 @@ bound4_handle (NMDhcpNettools *self, NDhcp4ClientLease *lease, gboolean extended
 	                          options);
 }
 
-static gboolean
+static void
 dhcp4_event_handle (NMDhcpNettools *self,
                     NDhcp4ClientEvent *event)
 {
 	NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE (self);
+	struct in_addr server_id;
+	char addr_str[INET_ADDRSTRLEN];
 	int r;
 
 	_LOGT ("client event %d", event->event);
 
 	switch (event->event) {
 	case N_DHCP4_CLIENT_EVENT_OFFER:
-		/* always accept the first lease */
-		r = n_dhcp4_client_lease_select (event->offer.lease);
-		if (r)
+		r = n_dhcp4_client_lease_get_server_identifier (event->offer.lease, &server_id);
+		if (r) {
 			_LOGW ("selecting lease failed: %d", r);
+			return;
+		}
+
+		if (nm_dhcp_client_server_id_is_rejected (NM_DHCP_CLIENT (self), &server_id)) {
+			_LOGD ("server-id %s is in the reject-list, ignoring",
+			       nm_utils_inet_ntop (AF_INET, &server_id, addr_str));
+			return;
+		}
+
+		r = n_dhcp4_client_lease_select (event->offer.lease);
+		if (r) {
+			_LOGW ("selecting lease failed: %d", r);
+			return;
+		}
 		break;
 	case N_DHCP4_CLIENT_EVENT_RETRACTED:
 	case N_DHCP4_CLIENT_EVENT_EXPIRED:
@@ -1116,8 +1131,6 @@ dhcp4_event_handle (NMDhcpNettools *self,
 		_LOGW ("unhandled DHCP event %d", event->event);
 		break;
 	}
-
-	return TRUE;
 }
 
 static gboolean

@@ -2529,10 +2529,11 @@ write_ip4_setting (NMConnection *connection,
 	NMIPRouteTableSyncMode route_table;
 	int priority;
 	int timeout;
-	GString *searches;
+	nm_auto_free_gstring GString *str = NULL;
 	const char *method = NULL;
 	gboolean has_netmask;
 	NMDhcpHostnameFlags flags;
+	const char *const *strv;
 
 	NM_SET_OUT (out_route_content_svformat, NULL);
 	NM_SET_OUT (out_route_content, NULL);
@@ -2619,14 +2620,12 @@ write_ip4_setting (NMConnection *connection,
 
 	num = nm_setting_ip_config_get_num_dns_searches (s_ip4);
 	if (num > 0) {
-		searches = g_string_new (NULL);
+		nm_gstring_prepare (&str);
 		for (i = 0; i < num; i++) {
-			if (i > 0)
-				g_string_append_c (searches, ' ');
-			g_string_append (searches, nm_setting_ip_config_get_dns_search (s_ip4, i));
+			nm_gstring_add_space_delimiter (str);
+			g_string_append (str, nm_setting_ip_config_get_dns_search (s_ip4, i));
 		}
-		svSetValueStr (ifcfg, "DOMAIN", searches->str);
-		g_string_free (searches, TRUE);
+		svSetValueStr (ifcfg, "DOMAIN", str->str);
 	}
 
 	/* DEFROUTE; remember that it has the opposite meaning from never-default */
@@ -2708,6 +2707,16 @@ write_ip4_setting (NMConnection *connection,
 		svSetValueInt64 (ifcfg, "IPV4_DNS_PRIORITY", priority);
 
 	write_res_options (ifcfg, s_ip4, "RES_OPTIONS");
+
+	strv = nm_setting_ip_config_get_dhcp_reject_servers (s_ip4, &num);
+	if (num > 0) {
+		nm_gstring_prepare (&str);
+		for (i = 0; i < num; i++) {
+			nm_gstring_add_space_delimiter (str);
+			nm_utils_escaped_tokens_escape_gstr (strv[i], NM_ASCII_SPACES, str);
+		}
+		svSetValueStr (ifcfg, "DHCP_REJECT_SERVERS", str->str);
+	}
 
 	return TRUE;
 }

@@ -1979,6 +1979,18 @@ make_ip4_setting (shvarFile *ifcfg,
 	}
 	g_object_set (s_ip4, NM_SETTING_IP_CONFIG_DAD_TIMEOUT, (int) i64, NULL);
 
+	nm_clear_g_free (&value);
+	v = svGetValueStr (ifcfg, "DHCP_REJECT_SERVERS", &value);
+	if (v) {
+		gs_free const char **strv = NULL;
+
+		strv = nm_utils_escaped_tokens_split (v, NM_ASCII_SPACES);
+		if (strv) {
+			for (item = strv; *item; item++)
+				nm_setting_ip_config_add_dhcp_reject_server (s_ip4, *item);
+		}
+	}
+
 	return NM_SETTING (g_steal_pointer (&s_ip4));
 }
 

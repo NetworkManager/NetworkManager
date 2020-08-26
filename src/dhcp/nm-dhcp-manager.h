@@ -49,6 +49,7 @@ NMDhcpClient * nm_dhcp_manager_start_ip4     (NMDhcpManager *manager,
                                               const char *dhcp_anycast_addr,
                                               const char *last_ip_address,
                                               GBytes *vendor_class_identifier,
+                                              const char *const *reject_servers,
                                               GError **error);
 
 NMDhcpClient * nm_dhcp_manager_start_ip6     (NMDhcpManager *manager,
