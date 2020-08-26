@@ -1919,6 +1919,18 @@ gboolean nm_platform_ip_address_flush (NMPlatform *self,
                                        int addr_family,
                                        int ifindex);
 
+static inline gconstpointer
+nm_platform_ip_address_get_peer_address (int addr_family,
+                                         const NMPlatformIPAddress *addr)
+{
+	nm_assert_addr_family (addr_family);
+	nm_assert (addr);
+
+	if (NM_IS_IPv4 (addr_family))
+		return &((NMPlatformIP4Address *) addr)->peer_address;
+	return &((NMPlatformIP6Address *) addr)->peer_address;
+}
+
 void nm_platform_ip_route_normalize (int addr_family,
                                      NMPlatformIPRoute *route);
 
