@@ -225,6 +225,7 @@ client_start (NMDhcpManager *self,
               NMSettingIP6ConfigPrivacy privacy,
               const char *last_ip4_address,
               guint needed_prefixes,
+              GBytes *vendor_class_identifier,
               GError **error)
 {
 	NMDhcpManagerPrivate *priv;
@@ -238,6 +239,9 @@ client_start (NMDhcpManager *self,
 	g_return_val_if_fail (ifindex > 0, NULL);
 	g_return_val_if_fail (uuid != NULL, NULL);
 	g_return_val_if_fail (!dhcp_client_id || g_bytes_get_size (dhcp_client_id) >= 2, NULL);
+	g_return_val_if_fail (   !vendor_class_identifier
+	                      || g_bytes_get_size (vendor_class_identifier) <= 255,
+	                      NULL);
 	g_return_val_if_fail (!error || !*error, NULL);
 
 	if (addr_family == AF_INET) {
@@ -313,6 +317,7 @@ client_start (NMDhcpManager *self,
 	                       NM_DHCP_CLIENT_ROUTE_METRIC, (guint) route_metric,
 	                       NM_DHCP_CLIENT_TIMEOUT, (guint) timeout,
 	                       NM_DHCP_CLIENT_HOSTNAME_FLAGS, (guint) hostname_flags,
+	                       NM_DHCP_CLIENT_VENDOR_CLASS_IDENTIFIER, vendor_class_identifier,
 	                       NM_DHCP_CLIENT_FLAGS, (guint) (0
 	                           | (hostname_use_fqdn ? NM_DHCP_CLIENT_FLAGS_USE_FQDN  : 0)
 	                           | (info_only         ? NM_DHCP_CLIENT_FLAGS_INFO_ONLY : 0)
@@ -393,6 +398,7 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
                            guint32 timeout,
                            const char *dhcp_anycast_addr,
                            const char *last_ip_address,
+                           GBytes *vendor_class_identifier,
                            GError **error)
 {
 	NMDhcpManagerPrivate *priv;
@@ -452,6 +458,7 @@ nm_dhcp_manager_start_ip4 (NMDhcpManager *self,
 	                     0,
 	                     last_ip_address,
 	                     0,
+	                     vendor_class_identifier,
 	                     error);
 }
 
@@ -515,6 +522,7 @@ nm_dhcp_manager_start_ip6 (NMDhcpManager *self,
 	                     privacy,
 	                     NULL,
 	                     needed_prefixes,
+	                     NULL,
 	                     error);
 }
 

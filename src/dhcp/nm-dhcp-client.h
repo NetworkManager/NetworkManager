@@ -22,22 +22,23 @@
 #define NM_IS_DHCP_CLIENT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_DHCP_CLIENT))
 #define NM_DHCP_CLIENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_CLIENT, NMDhcpClientClass))
 
-#define NM_DHCP_CLIENT_ADDR_FAMILY      "addr-family"
-#define NM_DHCP_CLIENT_FLAGS            "flags"
-#define NM_DHCP_CLIENT_HWADDR           "hwaddr"
-#define NM_DHCP_CLIENT_BROADCAST_HWADDR "broadcast-hwaddr"
-#define NM_DHCP_CLIENT_IFINDEX          "ifindex"
-#define NM_DHCP_CLIENT_INTERFACE        "iface"
-#define NM_DHCP_CLIENT_MULTI_IDX        "multi-idx"
-#define NM_DHCP_CLIENT_HOSTNAME         "hostname"
-#define NM_DHCP_CLIENT_MUD_URL          "mud-url"
-#define NM_DHCP_CLIENT_ROUTE_METRIC     "route-metric"
-#define NM_DHCP_CLIENT_ROUTE_TABLE      "route-table"
-#define NM_DHCP_CLIENT_TIMEOUT          "timeout"
-#define NM_DHCP_CLIENT_UUID             "uuid"
-#define NM_DHCP_CLIENT_IAID             "iaid"
-#define NM_DHCP_CLIENT_IAID_EXPLICIT    "iaid-explicit"
-#define NM_DHCP_CLIENT_HOSTNAME_FLAGS   "hostname-flags"
+#define NM_DHCP_CLIENT_ADDR_FAMILY               "addr-family"
+#define NM_DHCP_CLIENT_FLAGS                     "flags"
+#define NM_DHCP_CLIENT_HWADDR                    "hwaddr"
+#define NM_DHCP_CLIENT_BROADCAST_HWADDR          "broadcast-hwaddr"
+#define NM_DHCP_CLIENT_IFINDEX                   "ifindex"
+#define NM_DHCP_CLIENT_INTERFACE                 "iface"
+#define NM_DHCP_CLIENT_MULTI_IDX                 "multi-idx"
+#define NM_DHCP_CLIENT_HOSTNAME                  "hostname"
+#define NM_DHCP_CLIENT_MUD_URL                   "mud-url"
+#define NM_DHCP_CLIENT_ROUTE_METRIC              "route-metric"
+#define NM_DHCP_CLIENT_ROUTE_TABLE               "route-table"
+#define NM_DHCP_CLIENT_TIMEOUT                   "timeout"
+#define NM_DHCP_CLIENT_UUID                      "uuid"
+#define NM_DHCP_CLIENT_IAID                      "iaid"
+#define NM_DHCP_CLIENT_IAID_EXPLICIT             "iaid-explicit"
+#define NM_DHCP_CLIENT_HOSTNAME_FLAGS            "hostname-flags"
+#define NM_DHCP_CLIENT_VENDOR_CLASS_IDENTIFIER   "vendor-class-identifier"
 
 #define NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED "state-changed"
 #define NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED "prefix-delegated"
@@ -149,6 +150,8 @@ NMDhcpHostnameFlags nm_dhcp_client_get_hostname_flags (NMDhcpClient *self);
 gboolean nm_dhcp_client_get_info_only (NMDhcpClient *self);
 
 gboolean nm_dhcp_client_get_use_fqdn (NMDhcpClient *self);
+
+GBytes *nm_dhcp_client_get_vendor_class_identifier (NMDhcpClient *self);
 
 gboolean nm_dhcp_client_start_ip4 (NMDhcpClient *self,
                                    GBytes *client_id,

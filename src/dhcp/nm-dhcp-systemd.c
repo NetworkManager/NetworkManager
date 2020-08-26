@@ -569,6 +569,7 @@ ip4_start (NMDhcpClient *client,
 	int arp_type;
 	GBytes *client_id;
 	gs_unref_bytes GBytes *client_id_new = NULL;
+	GBytes *vendor_class_identifier;
 	const uint8_t *client_id_arr;
 	size_t client_id_len;
 	struct in_addr last_addr = { 0 };
@@ -694,6 +695,24 @@ ip4_start (NMDhcpClient *client,
 		r = sd_dhcp_client_set_mud_url (sd_client, mud_url);
 		if (r < 0) {
 			nm_utils_error_set_errno (error, r, "failed to set DHCP MUDURL: %s");
+			return FALSE;
+		}
+	}
+
+	vendor_class_identifier = nm_dhcp_client_get_vendor_class_identifier (client);
+	if (vendor_class_identifier) {
+		const char *option_data;
+		gsize len;
+
+		option_data = g_bytes_get_data (vendor_class_identifier, &len);
+		nm_assert (option_data);
+		nm_assert (len <= 255);
+
+		option_data = nm_strndup_a (300, option_data, len, NULL);
+
+		r = sd_dhcp_client_set_vendor_class_identifier (sd_client, option_data);
+		if (r < 0) {
+			nm_utils_error_set_errno (error, r, "failed to set DHCP vendor class identifier: %s");
 			return FALSE;
 		}
 	}
