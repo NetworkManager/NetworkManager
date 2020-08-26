@@ -1037,6 +1037,18 @@ nm_l3_config_data_set_nis_domain (NML3ConfigData *self,
 	return nm_utils_strdup_reset (&self->nis_domain, nis_domain);
 }
 
+const char *const*
+nm_l3_config_data_get_domains (const NML3ConfigData *self,
+                               int addr_family,
+                               guint *out_len)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+	nm_assert_addr_family (addr_family);
+	nm_assert (out_len);
+
+	return nm_strv_ptrarray_get_unsafe (self->domains_x[NM_IS_IPv4 (addr_family)], out_len);
+}
+
 gboolean
 nm_l3_config_data_add_domain (NML3ConfigData *self,
                               int addr_family,

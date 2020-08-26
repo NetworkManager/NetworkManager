@@ -410,6 +410,10 @@ gboolean nm_l3_config_data_add_nameserver (NML3ConfigData *self,
 gboolean nm_l3_config_data_add_nis_server (NML3ConfigData *self,
                                            in_addr_t nis_server);
 
+const char *const*nm_l3_config_data_get_domains (const NML3ConfigData *self,
+                                                 int addr_family,
+                                                 guint *out_len);
+
 gboolean nm_l3_config_data_set_nis_domain (NML3ConfigData *self,
                                            const char *nis_domain);
 
