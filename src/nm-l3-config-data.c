@@ -655,6 +655,26 @@ nm_l3_config_data_set_flags_full (NML3ConfigData *self,
 
 /*****************************************************************************/
 
+const NMPObject *
+nm_l3_config_data_get_first_obj (const NML3ConfigData *self,
+                                 NMPObjectType obj_type,
+                                 gboolean (*predicate) (const NMPObject *obj))
+{
+	NMDedupMultiIter iter;
+	const NMPObject *obj;
+
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+
+	nm_l3_config_data_iter_obj_for_each (&iter, self, &obj, obj_type) {
+		if (   !predicate
+		    || predicate (obj))
+			return obj;
+	}
+	return NULL;
+}
+
+/*****************************************************************************/
+
 static gboolean
 _l3_config_data_add_obj (NMDedupMultiIndex *multi_idx,
                          DedupMultiIdxType *idx_type,
@@ -995,6 +1015,19 @@ nm_l3_config_data_add_nameserver (NML3ConfigData *self,
 	return _garray_inaddr_add (&self->nameservers_x[NM_IS_IPv4 (addr_family)],
 	                           addr_family,
 	                           nameserver);
+}
+
+gboolean
+nm_l3_config_data_clear_nameserver (NML3ConfigData *self,
+                                    int addr_family)
+{
+	gs_unref_array GArray *old = NULL;
+
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+	nm_assert_addr_family (addr_family);
+
+	old = g_steal_pointer (&self->nameservers_x[NM_IS_IPv4 (addr_family)]);
+	return (nm_g_array_len (old) > 0);
 }
 
 const in_addr_t *

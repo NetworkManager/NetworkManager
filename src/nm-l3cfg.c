@@ -2994,7 +2994,7 @@ finalize (GObject *object)
 	g_clear_object (&self->priv.netns);
 	g_clear_object (&self->priv.platform);
 
-	nm_clear_pointer (&self->priv.p->combined_l3cd, nm_l3_config_data_unref);
+	nm_clear_l3cd (&self->priv.p->combined_l3cd);
 
 	nm_clear_pointer (&self->priv.pllink, nmp_object_unref);
 
