@@ -28,6 +28,7 @@ typedef struct {
 	/* Parameters to be set for all connections */
 	gboolean ignore_auto_dns;
 	int dhcp_timeout;
+	char *dhcp4_vci;
 } Reader;
 
 static Reader *
@@ -52,6 +53,7 @@ reader_destroy (Reader *reader, gboolean free_hash)
 	g_ptr_array_unref (reader->array);
 	hash = g_steal_pointer (&reader->hash);
 	nm_clear_g_free (&reader->hostname);
+	nm_clear_g_free (&reader->dhcp4_vci);
 	nm_g_slice_free (reader);
 	if (!free_hash)
 		return g_steal_pointer (&hash);
@@ -95,6 +97,7 @@ reader_create_connection (Reader *reader,
 	              NM_SETTING_IP_CONFIG_MAY_FAIL, TRUE,
 	              NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS, reader->ignore_auto_dns,
 	              NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, reader->dhcp_timeout,
+	              NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER, reader->dhcp4_vci,
 	              NULL);
 
 	setting = nm_setting_ip6_config_new ();
@@ -927,6 +930,9 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv, char **
 		else if (nm_streq (tag, "rd.net.timeout.dhcp")) {
 			reader->dhcp_timeout = _nm_utils_ascii_str_to_int64 (argument,
 			                                                     10, 0, G_MAXINT32, 0);
+		} else if (nm_streq (tag, "rd.net.dhcp.vendor-class")) {
+			if (nm_utils_validate_dhcp4_vendor_class_id (argument, NULL))
+				nm_utils_strdup_reset (&reader->dhcp4_vci, argument);
 		}
 	}
 
