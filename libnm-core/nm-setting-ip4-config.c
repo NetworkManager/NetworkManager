@@ -227,51 +227,9 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	if (priv->dhcp_vendor_class_identifier) {
-		const char *  bin;
-		gsize         unescaped_len;
-		gs_free char *to_free = NULL;
-
-		if (priv->dhcp_vendor_class_identifier[0] == '\0') {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _ ("property cannot be an empty string"));
-			g_prefix_error (error,
-			                "%s.%s: ",
-			                NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			                NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER);
-			return FALSE;
-		}
-
-		bin = nm_utils_buf_utf8safe_unescape (priv->dhcp_vendor_class_identifier,
-		                                      NM_UTILS_STR_UTF8_SAFE_FLAG_NONE,
-		                                      &unescaped_len,
-		                                      (gpointer *) &to_free);
-		/* a DHCP option cannot be longer than 255 bytes */
-		if (unescaped_len > 255) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _ ("property cannot be longer than 255 bytes"));
-			g_prefix_error (error,
-			                "%s.%s: ",
-			                NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			                NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER);
-			return FALSE;
-		}
-		if (strlen (bin) != unescaped_len) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _ ("property cannot contain any nul bytes"));
-			g_prefix_error (error,
-			                "%s.%s: ",
-			                NM_SETTING_IP4_CONFIG_SETTING_NAME,
-			                NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER);
-			return FALSE;
-		}
-	}
+	if (   priv->dhcp_vendor_class_identifier
+	    && !nm_utils_validate_dhcp4_vendor_class_id (priv->dhcp_vendor_class_identifier, error))
+		return FALSE;
 
 	/* Failures from here on are NORMALIZABLE_ERROR... */
 

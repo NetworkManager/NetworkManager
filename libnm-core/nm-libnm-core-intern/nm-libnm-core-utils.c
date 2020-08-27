@@ -6,6 +6,8 @@
 
 #include "nm-common-macros.h"
 
+#include "nm-errors.h"
+
 #include <linux/rtnetlink.h>
 
 /*****************************************************************************/
@@ -257,3 +259,56 @@ NM_UTILS_ENUM2STR_DEFINE (nm_utils_route_type2str, guint8,
 	NM_UTILS_ENUM2STR (RTN_UNREACHABLE, "unreachable"),
 	NM_UTILS_ENUM2STR (RTN_UNSPEC, "unspecified"),
 );
+
+gboolean
+nm_utils_validate_dhcp4_vendor_class_id (const char *vci, GError **error)
+{
+	const char *  bin;
+	gsize         unescaped_len;
+	gs_free char *to_free = NULL;
+
+	g_return_val_if_fail (!error || !(*error), FALSE);
+	g_return_val_if_fail (vci, FALSE);
+
+	if (vci[0] == '\0') {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _ ("property cannot be an empty string"));
+		g_prefix_error (error,
+		                "%s.%s: ",
+		                NM_SETTING_IP4_CONFIG_SETTING_NAME,
+		                NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER);
+		return FALSE;
+	}
+
+	bin = nm_utils_buf_utf8safe_unescape (vci,
+	                                      NM_UTILS_STR_UTF8_SAFE_FLAG_NONE,
+	                                      &unescaped_len,
+	                                      (gpointer *) &to_free);
+	/* a DHCP option cannot be longer than 255 bytes */
+	if (unescaped_len > 255) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _ ("property cannot be longer than 255 bytes"));
+		g_prefix_error (error,
+		                "%s.%s: ",
+		                NM_SETTING_IP4_CONFIG_SETTING_NAME,
+		                NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER);
+		return FALSE;
+	}
+	if (strlen (bin) != unescaped_len) {
+		g_set_error_literal (error,
+		                     NM_CONNECTION_ERROR,
+		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+		                     _ ("property cannot contain any nul bytes"));
+		g_prefix_error (error,
+		                "%s.%s: ",
+		                NM_SETTING_IP4_CONFIG_SETTING_NAME,
+		                NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER);
+		return FALSE;
+	}
+
+	return TRUE;
+}

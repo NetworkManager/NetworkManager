@@ -8757,7 +8757,6 @@ dhcp4_get_vendor_class_identifier (NMDevice *self, NMSettingIP4Config *s_ip4)
 {
 	gs_free char *config_data_prop = NULL;
 	gs_free char *to_free = NULL;
-	gboolean validate = FALSE;
 	const char *conn_prop;
 	GBytes *bytes = NULL;
 	const char *bin;
@@ -8767,12 +8766,14 @@ dhcp4_get_vendor_class_identifier (NMDevice *self, NMSettingIP4Config *s_ip4)
 
 	if (!conn_prop) {
 		/* set in NetworkManager.conf ? */
-		validate = TRUE;
 		config_data_prop = nm_config_data_get_connection_default (
 		    NM_CONFIG_GET_DATA,
 		    NM_CON_DEFAULT ("ipv4.dhcp-vendor-class-identifier"),
 		    self);
-		conn_prop = config_data_prop;
+
+		if (   config_data_prop
+		    && nm_utils_validate_dhcp4_vendor_class_id (config_data_prop, NULL))
+			conn_prop = config_data_prop;
 	}
 
 	if (conn_prop) {
@@ -8780,10 +8781,6 @@ dhcp4_get_vendor_class_identifier (NMDevice *self, NMSettingIP4Config *s_ip4)
 		                                      NM_UTILS_STR_UTF8_SAFE_FLAG_NONE,
 		                                      &len,
 		                                      (gpointer *) &to_free);
-
-		if (validate && (bin[0] == '\0' || len > 255 || strlen (bin) != len))
-			return NULL;
-
 		if (to_free)
 			bytes = g_bytes_new_take (g_steal_pointer (&to_free), len);
 		else
