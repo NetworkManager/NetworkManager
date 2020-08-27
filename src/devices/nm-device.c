@@ -5648,6 +5648,9 @@ nm_device_autoconnect_allowed (NMDevice *self)
 			return FALSE;
 	}
 
+	if (priv->delete_on_deactivate_data)
+		return FALSE;
+
 	/* The 'autoconnect-allowed' signal is emitted on a device to allow
 	 * other listeners to block autoconnect on the device if they wish.
 	 * This is mainly used by the OLPC Mesh devices to block autoconnect
@@ -11657,6 +11660,8 @@ delete_on_deactivate_link_delete (gpointer user_data)
 			_LOGD (LOGD_DEVICE, "delete_on_deactivate: unrealizing %d failed (%s)", data->ifindex, error->message);
 	} else if (data->ifindex > 0)
 		nm_platform_link_delete (nm_device_get_platform (self), data->ifindex);
+
+	nm_device_emit_recheck_auto_activate (self);
 
 	g_free (data);
 	return FALSE;
