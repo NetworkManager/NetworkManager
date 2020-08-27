@@ -1558,7 +1558,7 @@ ovsdb_try_connect (NMOvsdb *self)
 	if (priv->client)
 		return;
 
-	/* XXX: This should probably be made configurable via NetworkManager.conf */
+	/* TODO: This should probably be made configurable via NetworkManager.conf */
 	addr = g_unix_socket_address_new (RUNSTATEDIR "/openvswitch/db.sock");
 
 	priv->client = g_socket_client_new ();

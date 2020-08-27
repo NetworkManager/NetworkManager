@@ -3431,8 +3431,8 @@ msgstr "NetworkManaer 未运行。"
 msgid "NetworkManager permissions"
 msgstr "网络管理器权限"
 
-# XXX: 这里考虑一下要不要翻译
-# XXX: Should we translate this?
+# Question: 这里考虑一下要不要翻译
+# Question: Should we translate this?
 #: ../clients/cli/general.c:567
 #, c-format
 msgid "Error: 'general permissions': %s"

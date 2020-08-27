@@ -2084,7 +2084,7 @@ device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 	NMPolicy *self = _PRIV_TO_SELF (priv);
 	ActivateData *data;
 
-	/* XXX is this needed? The delegations are cleaned up
+	/* TODO: is this needed? The delegations are cleaned up
 	 * on transition to deactivated too. */
 	ip6_remove_device_prefix_delegations (self, device);
 
