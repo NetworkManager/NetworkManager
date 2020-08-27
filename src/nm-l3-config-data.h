@@ -52,7 +52,7 @@ typedef enum {
  *   set, this flag gets ignored during merge.
  * @NM_L3_CONFIG_MERGE_FLAGS_NO_DNS: don't merge DNS information
  */
-typedef enum {
+typedef enum _nm_packed {
 	NM_L3_CONFIG_MERGE_FLAGS_NONE              = 0,
 	NM_L3_CONFIG_MERGE_FLAGS_NO_ROUTES         = (1LL << 0),
 	NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES = (1LL << 1),
