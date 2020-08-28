@@ -525,7 +525,7 @@ dhcp_event_cb (sd_dhcp_client *client, int event, gpointer user_data)
 	NMDhcpSystemd *self = NM_DHCP_SYSTEMD (user_data);
 	NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE (self);
 	char addr_str[INET_ADDRSTRLEN];
-	sd_dhcp_lease *lease;
+	sd_dhcp_lease *lease = NULL;
 	struct in_addr addr;
 	int r;
 
