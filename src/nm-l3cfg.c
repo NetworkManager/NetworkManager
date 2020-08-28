@@ -2297,7 +2297,7 @@ nm_l3cfg_mark_config_dirty (NML3Cfg *self,
 	}
 }
 
-void
+gboolean
 nm_l3cfg_add_config (NML3Cfg *self,
                      gconstpointer tag,
                      gboolean replace_same_tag,
@@ -2391,15 +2391,18 @@ nm_l3cfg_add_config (NML3Cfg *self,
 
 	if (changed)
 		self->priv.changed_configs = TRUE;
+
+	return changed;
 }
 
-static void
+static gboolean
 _l3cfg_remove_config (NML3Cfg *self,
                       gconstpointer tag,
                       gboolean only_dirty,
                       const NML3ConfigData *l3cd)
 {
 	GArray *l3_config_datas;
+	gboolean changed;
 	gssize idx;
 
 	nm_assert (NM_IS_L3CFG (self));
@@ -2407,16 +2410,17 @@ _l3cfg_remove_config (NML3Cfg *self,
 
 	l3_config_datas = self->priv.p->l3_config_datas;
 	if (!l3_config_datas)
-		return;
+		return FALSE;
 
 	idx = 0;
+	changed = FALSE;
 	while (TRUE) {
 		idx = _l3_config_datas_find_next (l3_config_datas,
 		                                  idx,
 		                                  tag,
 		                                  l3cd);
 		if (idx < 0)
-			return;
+			return changed;
 
 		if (   only_dirty
 		    && !_l3_config_datas_at (l3_config_datas, idx)->dirty) {
@@ -2426,27 +2430,30 @@ _l3cfg_remove_config (NML3Cfg *self,
 
 		self->priv.changed_configs = TRUE;
 		_l3_config_datas_remove_index_fast (l3_config_datas, idx);
-		if (!l3cd)
-			return;
+		if (l3cd) {
+			/* only one was requested to be removed. We are done. */
+			return TRUE;
+		}
+		changed = TRUE;
 	}
 }
 
-void
+gboolean
 nm_l3cfg_remove_config (NML3Cfg *self,
                         gconstpointer tag,
                         const NML3ConfigData *ifcfg)
 {
 	nm_assert (ifcfg);
 
-	_l3cfg_remove_config (self, tag, FALSE, ifcfg);
+	return _l3cfg_remove_config (self, tag, FALSE, ifcfg);
 }
 
-void
+gboolean
 nm_l3cfg_remove_config_all (NML3Cfg *self,
                             gconstpointer tag,
                             gboolean only_dirty)
 {
-	_l3cfg_remove_config (self, tag, only_dirty, NULL);
+	return _l3cfg_remove_config (self, tag, only_dirty, NULL);
 }
 
 /*****************************************************************************/

@@ -128,23 +128,23 @@ void nm_l3cfg_mark_config_dirty (NML3Cfg *self,
                                  gconstpointer tag,
                                  gboolean dirty);
 
-void nm_l3cfg_add_config (NML3Cfg *self,
-                          gconstpointer tag,
-                          gboolean replace_same_tag,
-                          const NML3ConfigData *l3cd,
-                          int priority,
-                          guint32 default_route_penalty_4,
-                          guint32 default_route_penalty_6,
-                          guint32 acd_timeout_msec,
-                          NML3ConfigMergeFlags merge_flags);
+gboolean nm_l3cfg_add_config (NML3Cfg *self,
+                              gconstpointer tag,
+                              gboolean replace_same_tag,
+                              const NML3ConfigData *l3cd,
+                              int priority,
+                              guint32 default_route_penalty_4,
+                              guint32 default_route_penalty_6,
+                              guint32 acd_timeout_msec,
+                              NML3ConfigMergeFlags merge_flags);
 
-void nm_l3cfg_remove_config (NML3Cfg *self,
-                             gconstpointer tag,
-                             const NML3ConfigData *ifcfg);
-
-void nm_l3cfg_remove_config_all (NML3Cfg *self,
+gboolean nm_l3cfg_remove_config (NML3Cfg *self,
                                  gconstpointer tag,
-                                 gboolean only_dirty);
+                                 const NML3ConfigData *ifcfg);
+
+gboolean nm_l3cfg_remove_config_all (NML3Cfg *self,
+                                     gconstpointer tag,
+                                     gboolean only_dirty);
 
 /*****************************************************************************/
 
