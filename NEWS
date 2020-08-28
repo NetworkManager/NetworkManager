@@ -1,4 +1,16 @@
 ================================================
+NetworkManager-1.22.16
+Overview of changes since NetworkManager-1.22.14
+================================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* ovs: update Open vSwitch support to make it more similar to 1.26.
+  Thereby various bugs are fixed, including setting cloned-mac-address
+  for OVS devices.
+* Various minor bug fixes.
+
+================================================
 NetworkManager-1.22.14
 Overview of changes since NetworkManager-1.22.12
 ================================================
