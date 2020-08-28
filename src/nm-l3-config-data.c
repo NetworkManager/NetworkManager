@@ -2028,25 +2028,6 @@ nm_l3_config_data_merge (NML3ConfigData *self,
 			    && !hook_add_addr (src, obj, hook_user_data))
 				continue;
 
-			if (   NM_FLAGS_HAS (merge_flags, NM_L3_CONFIG_MERGE_FLAGS_EXTERNAL)
-			    && !NMP_OBJECT_CAST_IP_ADDRESS (obj)->external) {
-				NMPlatformIPXAddress a;
-
-				if (IS_IPv4)
-					a.a4 = *NMP_OBJECT_CAST_IP4_ADDRESS (obj);
-				else
-					a.a6 = *NMP_OBJECT_CAST_IP6_ADDRESS (obj);
-				a.ax.ifindex = self->ifindex;
-				a.ax.external = TRUE;
-				nm_l3_config_data_add_address_full (self,
-				                                    addr_family,
-				                                    NULL,
-				                                    &a.ax,
-				                                    NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE,
-				                                    NULL);
-				continue;
-			}
-
 			nm_l3_config_data_add_address_full (self,
 			                                    addr_family,
 			                                    obj,

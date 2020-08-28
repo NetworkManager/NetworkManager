@@ -51,14 +51,12 @@ typedef enum {
  *   Note that if the respective NML3ConfigData has NM_L3_CONFIG_DAT_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES
  *   set, this flag gets ignored during merge.
  * @NM_L3_CONFIG_MERGE_FLAGS_NO_DNS: don't merge DNS information
- * @NM_L3_CONFIG_MERGE_FLAGS_EXTERNAL: mark new addresses as external
  */
 typedef enum {
 	NM_L3_CONFIG_MERGE_FLAGS_NONE              = 0,
 	NM_L3_CONFIG_MERGE_FLAGS_NO_ROUTES         = (1LL << 0),
 	NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES = (1LL << 1),
 	NM_L3_CONFIG_MERGE_FLAGS_NO_DNS            = (1LL << 2),
-	NM_L3_CONFIG_MERGE_FLAGS_EXTERNAL          = (1LL << 3),
 } NML3ConfigMergeFlags;
 
 /*****************************************************************************/
