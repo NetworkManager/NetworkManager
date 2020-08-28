@@ -15664,10 +15664,11 @@ sriov_deactivate_cb (GError *error, gpointer user_data)
 	NMDevice *self;
 	gpointer reason;
 
+	nm_utils_user_data_unpack (user_data, &self, &reason);
+
 	if (nm_utils_error_is_cancelled_or_disposing (error))
 		return;
 
-	nm_utils_user_data_unpack (user_data, &self, &reason);
 	deactivate_ready (self, (NMDeviceStateReason) reason);
 }
 
