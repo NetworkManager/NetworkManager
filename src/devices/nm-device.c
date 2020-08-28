@@ -16000,7 +16000,7 @@ sriov_reset_on_deactivate_cb (GError *error, gpointer user_data)
 	if (nm_utils_error_is_cancelled (error))
 		return;
 
-	deactivate_ready (self, (NMDeviceStateReason) reason);
+	deactivate_ready (self, GPOINTER_TO_INT (reason));
 }
 
 static void
@@ -16353,7 +16353,7 @@ _set_state_full (NMDevice *self,
 				                0,
 				                NM_TERNARY_TRUE,
 				                sriov_reset_on_deactivate_cb,
-				                nm_utils_user_data_pack (self, (gpointer) reason));
+				                nm_utils_user_data_pack (self, GINT_TO_POINTER (reason)));
 			}
 		}
 
