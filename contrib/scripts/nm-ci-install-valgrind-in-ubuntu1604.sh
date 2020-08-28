@@ -13,7 +13,7 @@ set -exv
 #
 # Work around that by installing valgrind from bionic.
 
-grep -q 'PRETTY_NAME="Ubuntu 16.04.6 LTS"' /etc/os-release || exit 0
+grep -q 'PRETTY_NAME="Ubuntu 16.04.[0-9]\+ LTS"' /etc/os-release || exit 0
 dpkg -s valgrind | grep -q 'Version: 1:3.11.0-1ubuntu4.2$' || exit 0
 
 
