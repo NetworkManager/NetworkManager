@@ -403,10 +403,13 @@ if [ -n "$BUILD_TAG" ]; then
     RELEASE_FILE="NetworkManager-$TAR_VERSION.tar.xz"
 
     test -f "./$RELEASE_FILE" \
-    && test -f "./$RELEASE_FILE.sig" \
     || die "release file \"./$RELEASE_FILE\" not found"
 
-    cp "./$RELEASE_FILE" "./$RELEASE_FILE.sig" /tmp || die "failed to copy release tarball to /tmp"
+    cp "./$RELEASE_FILE" /tmp/ || die "failed to copy release tarball to /tmp"
+
+    if test -f "./$RELEASE_FILE.sig" ; then
+        cp "./$RELEASE_FILE.sig" /tmp/ || die "failed to copy signature for tarball to /tmp"
+    fi
 
     git clean -fdx
 fi
