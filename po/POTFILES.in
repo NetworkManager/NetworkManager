@@ -59,6 +59,7 @@ libnm-core/nm-dbus-utils.c
 libnm-core/nm-keyfile/nm-keyfile-utils.c
 libnm-core/nm-keyfile/nm-keyfile.c
 libnm-core/nm-libnm-core-aux/nm-libnm-core-aux.c
+libnm-core/nm-libnm-core-intern/nm-libnm-core-utils.c
 libnm-core/nm-setting-6lowpan.c
 libnm-core/nm-setting-8021x.c
 libnm-core/nm-setting-adsl.c
