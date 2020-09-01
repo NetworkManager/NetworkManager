@@ -18,6 +18,7 @@ AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseLabelsOnASingleLine: false
+#AllowShortEnumsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
@@ -30,7 +31,6 @@ BreakBeforeBraces: Custom
 BraceWrapping:
     AfterCaseLabel: true
     AfterControlStatement: Never
-    AfterEnum: false
     AfterFunction: true
     AfterStruct: false
     AfterUnion: false
