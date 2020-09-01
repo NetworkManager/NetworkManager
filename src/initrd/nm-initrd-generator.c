@@ -83,7 +83,7 @@ main (int argc, char *argv[])
 		{ G_OPTION_REMAINING, '\0', 0, G_OPTION_ARG_STRING_ARRAY, &remaining,       NULL,                                  NULL },
 		{ NULL }
 	};
-	GOptionContext *option_context;
+	gs_free_option_context GOptionContext *option_context = NULL;
 	gs_free_error GError *error = NULL;
 	gs_free char *hostname = NULL;
 	int errsv;
