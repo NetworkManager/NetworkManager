@@ -3,6 +3,16 @@
  * Copyright (C) 2015 Red Hat, Inc.
  */
 
+/* With autotools (and also meson), all our source files are expected to include <config.h>.
+ * as very first header. Then they are expected to include "config-extra.h" and a small set
+ * of headers that we always want to have included (depending on what sources we compile
+ * (as determined by NETWORKMANAGER_COMPILATION define) that can be  "nm-glib-aux/nm-macros-internal.h"
+ * and similar.
+ *
+ * To simplify that, all our source files are only expected to include "nm-default.h" as first,
+ * and thereby rely on getting a basic set of headers already.
+ */
+
 #ifndef __NM_DEFAULT_H__
 #define __NM_DEFAULT_H__
 
