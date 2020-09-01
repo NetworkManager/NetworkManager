@@ -232,6 +232,14 @@ NM_AUTO_DEFINE_FCN0 (GError *, gs_local_free_error, g_error_free)
 #define gs_unref_keyfile nm_auto(gs_local_keyfile_unref)
 NM_AUTO_DEFINE_FCN0 (GKeyFile *, gs_local_keyfile_unref, g_key_file_unref)
 
+/**
+ * gs_free_option_context:
+ *
+ * Call g_option_context_free() on a variable location when it goes out of scope.
+ */
+#define gs_free_option_context nm_auto(gs_local_option_context)
+NM_AUTO_DEFINE_FCN0 (GOptionContext *, gs_local_option_context, g_option_context_free);
+
 /*****************************************************************************/
 
 #include "nm-glib.h"
