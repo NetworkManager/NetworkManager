@@ -4,11 +4,10 @@
 
 #include "nm-libnm-core-utils.h"
 
-#include "nm-common-macros.h"
-
-#include "nm-errors.h"
-
 #include <linux/rtnetlink.h>
+
+#include "nm-common-macros.h"
+#include "nm-errors.h"
 
 /*****************************************************************************/
 
