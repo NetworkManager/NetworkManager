@@ -1485,6 +1485,52 @@ test_bootif_off (void)
 	g_assert_cmpstr (hostname, ==, NULL);
 }
 
+static void
+test_dhcp_vendor_class_id (void)
+{
+	gs_unref_hashtable GHashTable *connections = NULL;
+	const char *const*ARGV = NM_MAKE_STRV ("rd.net.dhcp.vendor-class=testvci",
+	                                       "ip=eno1:dhcp");
+	NMConnection *connection;
+	NMSettingIP4Config *s_ip4;
+	gs_free char *hostname = NULL;
+	gs_free char *vci_long = NULL;
+	char vci_arg_long[512] = {0};
+
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV, &hostname);
+	g_assert (connections);
+	g_assert_cmpint (g_hash_table_size (connections), ==, 1);
+	g_assert_cmpstr (hostname, ==, NULL);
+
+	connection = g_hash_table_lookup (connections, "eno1");
+	g_assert (connection);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting_ip4_config (connection));
+	g_assert_cmpstr (nm_setting_ip4_config_get_dhcp_vendor_class_identifier (s_ip4), ==, "testvci");
+
+	ARGV = NM_MAKE_STRV ("rd.net.dhcp.vendor-class",
+	                     "ip=eno1:dhcp");
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV, &hostname);
+	connection = g_hash_table_lookup (connections, "eno1");
+	g_assert (connection);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting_ip4_config (connection));
+	g_assert (nm_setting_ip4_config_get_dhcp_vendor_class_identifier (s_ip4) == NULL);
+
+
+
+	memset (vci_arg_long, 'A', 400);
+	vci_long = g_strdup_printf ("rd.net.dhcp.vendor-class=%s", vci_arg_long);
+	ARGV = NM_MAKE_STRV (vci_long,
+	                     "ip=eno1:dhcp");
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV, &hostname);
+	connection = g_hash_table_lookup (connections, "eno1");
+	g_assert (connection);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting_ip4_config (connection));
+	g_assert (nm_setting_ip4_config_get_dhcp_vendor_class_identifier (s_ip4) == NULL);
+}
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -1521,6 +1567,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/initrd/cmdline/bootif/hwtype", test_bootif_hwtype);
 	g_test_add_func ("/initrd/cmdline/bootif/off", test_bootif_off);
 	g_test_add_func ("/initrd/cmdline/neednet", test_neednet);
+	g_test_add_func ("/initrd/cmdline/dhcp/vendor_class_id", test_dhcp_vendor_class_id);
 
 	return g_test_run ();
 }
