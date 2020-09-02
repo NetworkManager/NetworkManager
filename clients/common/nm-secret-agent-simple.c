@@ -550,7 +550,7 @@ _auth_dialog_exited (GPid pid, int status, gpointer user_data)
 	RequestData *request = data->request;
 	GPtrArray *secrets = data->secrets;
 	NMSettingVpn *s_vpn = nm_connection_get_setting_vpn (request->connection);
-	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
 	gs_strfreev char **groups = NULL;
 	gs_free char *title = NULL;
 	gs_free char *message = NULL;

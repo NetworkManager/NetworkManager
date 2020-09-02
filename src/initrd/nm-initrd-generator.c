@@ -25,7 +25,7 @@ output_conn (gpointer key, gpointer value, gpointer user_data)
 	const char *basename = key;
 	NMConnection *connection = value;
 	char *connections_dir = user_data;
-	gs_unref_keyfile GKeyFile *file = NULL;
+	nm_auto_unref_keyfile GKeyFile *file = NULL;
 	gs_free char *data = NULL;
 	gs_free_error GError *error = NULL;
 	gsize len;

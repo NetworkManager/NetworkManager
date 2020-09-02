@@ -6322,7 +6322,7 @@ load_history_cmds (const char *uuid)
 static void
 save_history_cmds (const char *uuid)
 {
-	gs_unref_keyfile GKeyFile *kf = NULL;
+	nm_auto_unref_keyfile GKeyFile *kf = NULL;
 	gs_free_error GError *error = NULL;
 	gs_free char *filename = NULL;
 	gs_free char *data = NULL;

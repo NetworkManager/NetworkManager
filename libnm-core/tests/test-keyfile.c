@@ -66,7 +66,7 @@ do_test_encode_key_full (GKeyFile *kf, const char *name, const char *key, const 
 static void
 test_encode_key (void)
 {
-	gs_unref_keyfile GKeyFile *kf = g_key_file_new ();
+	nm_auto_unref_keyfile GKeyFile *kf = g_key_file_new ();
 
 	do_test_encode_key_identity (kf, "a");
 	do_test_encode_key_bijection (kf, "", "\\00");
@@ -209,7 +209,7 @@ _keyfile_convert (NMConnection **con,
 	NMConnection *c0;
 	GKeyFile *k0;
 	gs_unref_object NMConnection *c0_k1_c2 = NULL, *k0_c1 = NULL, *k0_c1_k2_c3 = NULL;
-	gs_unref_keyfile GKeyFile *k0_c1_k2 = NULL, *c0_k1 = NULL, *c0_k1_c2_k3 = NULL;
+	nm_auto_unref_keyfile GKeyFile *k0_c1_k2 = NULL, *c0_k1 = NULL, *c0_k1_c2_k3 = NULL;
 
 	/* convert from @con to @keyfile and check that we can make
 	 * full round trips and obtaining the same result. */
@@ -654,7 +654,7 @@ test_team_conf_read_invalid (void)
 static void
 test_user_1 (void)
 {
-	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
 	gs_unref_object NMConnection *con = NULL;
 	NMSettingUser *s_user;
 
@@ -721,7 +721,7 @@ test_user_1 (void)
 static void
 test_vpn_1 (void)
 {
-	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
 	gs_unref_object NMConnection *con = NULL;
 	NMSettingVpn *s_vpn;
 
@@ -748,7 +748,7 @@ test_vpn_1 (void)
 static void
 test_bridge_vlans (void)
 {
-	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
 	gs_unref_object NMConnection *con = NULL;
 	NMSettingBridge *s_bridge;
 	NMBridgeVlan *vlan;
@@ -798,7 +798,7 @@ test_bridge_vlans (void)
 static void
 test_bridge_port_vlans (void)
 {
-	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
 	gs_unref_object NMConnection *con = NULL;
 	NMSettingBridgePort *s_port;
 	NMBridgeVlan *vlan;
