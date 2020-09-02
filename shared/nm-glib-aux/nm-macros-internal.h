@@ -151,6 +151,39 @@ NM_AUTO_DEFINE_FCN0 (GKeyFile *, gs_local_keyfile_unref, g_key_file_unref);
 
 /*****************************************************************************/
 
+NM_AUTO_DEFINE_FCN_VOID0 (void *, _nm_auto_g_free, g_free);
+#define nm_auto_g_free nm_auto(_nm_auto_g_free)
+
+NM_AUTO_DEFINE_FCN_VOID0 (GObject *, _nm_auto_unref_object, g_object_unref);
+#define nm_auto_unref_object nm_auto(_nm_auto_unref_object)
+
+NM_AUTO_DEFINE_FCN0 (GVariant *, _nm_auto_unref_variant, g_variant_unref);
+#define nm_auto_unref_variant nm_auto(_nm_auto_unref_variant)
+
+NM_AUTO_DEFINE_FCN0 (GArray *, _nm_auto_unref_array, g_array_unref);
+#define nm_auto_unref_array nm_auto(_nm_auto_unref_array)
+
+NM_AUTO_DEFINE_FCN0 (GPtrArray *, _nm_auto_unref_ptrarray, g_ptr_array_unref);
+#define nm_auto_unref_ptrarray nm_auto(_nm_auto_unref_ptrarray)
+
+NM_AUTO_DEFINE_FCN0 (GHashTable *, _nm_auto_unref_hashtable, g_hash_table_unref);
+#define nm_auto_unref_hashtable nm_auto(_nm_auto_unref_hashtable)
+
+NM_AUTO_DEFINE_FCN0 (GSList *, _nm_auto_free_slist, g_slist_free);
+#define nm_auto_free_slist nm_auto(_nm_auto_free_slist)
+
+NM_AUTO_DEFINE_FCN0 (GBytes *, _nm_auto_unref_bytes, g_bytes_unref);
+#define nm_auto_unref_bytes nm_auto(_nm_auto_unref_bytes)
+
+NM_AUTO_DEFINE_FCN0 (char **, _nm_auto_strfreev, g_strfreev);
+#define nm_auto_strfreev nm_auto(_nm_auto_strfreev)
+
+NM_AUTO_DEFINE_FCN0 (GError *, _nm_auto_free_error, g_error_free);
+#define nm_auto_free_error nm_auto(_nm_auto_free_error)
+
+NM_AUTO_DEFINE_FCN0 (GKeyFile *, _nm_auto_unref_keyfile, g_key_file_unref);
+#define nm_auto_unref_keyfile nm_auto(_nm_auto_unref_keyfile)
+
 NM_AUTO_DEFINE_FCN0 (GVariantIter *, _nm_auto_free_variant_iter, g_variant_iter_free);
 #define nm_auto_free_variant_iter nm_auto(_nm_auto_free_variant_iter)
 
