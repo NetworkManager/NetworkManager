@@ -519,6 +519,43 @@
   </refsect1>
 
   <refsect1>
+    <title>/var/lib/NetworkManager/secret-key and /etc/machine-id</title>
+
+    <para>
+      The identity of a machine is important as various settings depend on it. For example,
+      <literal>ipv6.addr-gen-mode=stable</literal> and <literal>ethernet.cloned-mac-address=stable</literal>
+      generate identifiers by hashing the machine's identity. See also the
+      <literal>connection.stable-id</literal> connection property which is a per-profile seed
+      that gets hashed with the machine identity for generating such addresses and identifiers.
+    </para>
+    <para>
+      If you backup and restore a machine, the identity of the machine probably should be preserved.
+      In that case, preserve the files <filename>/var/lib/NetworkManager/secret-key</filename> and
+      <literal>/etc/machine-id</literal>. On the other hand, if you clone a virtual machine, you
+      probably want that the clone has a different identity. There is already existing tooling on Linux for
+      handling <literal>/etc/machine-id</literal> (see
+      <link linkend='machine-id'><citerefentry><refentrytitle>machine-id</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>).
+    </para>
+    <para>
+      The identity of the machine is determined by the <filename>/var/lib/NetworkManager/secret-key</filename>.
+      If such a file does not exist, NetworkManager will create a file with random content. To generate
+      a new identity just delete the file and after restart a new file will be created.
+      The file should be read-only to root and contain at least 16 bytes that will be used to seed the various places
+      where a stable identifier is used.
+    </para>
+    <para>
+      Since 1.16.0, NetworkManager supports a version 2 of secret-keys. For such keys
+      <filename>/var/lib/NetworkManager/secret-key</filename> starts with ASCII <literal>"nm-v2:"</literal>
+      followed by at least 16 bytes of random data.
+      Also, recent versions of NetworkManager always create such kinds of secret-keys, when
+      the file does not yet exist.
+      With version 2 of the secret-key, <literal>/etc/machine-id</literal> is also hashed as part
+      of the generation for addresses and identifiers. The advantage is that you can keep <filename>/var/lib/NetworkManager/secret-key</filename>
+      stable, and only regenerate <literal>/etc/machine-id</literal> when cloning a VM.
+    </para>
+  </refsect1>
+
+  <refsect1>
     <title>Bugs</title>
     <para>
       Please report any bugs you find in NetworkManager at the
