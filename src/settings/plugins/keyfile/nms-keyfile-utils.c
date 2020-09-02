@@ -127,7 +127,7 @@ nms_keyfile_nmmeta_read (const char *dirname,
 		return FALSE;
 
 	if (S_ISREG (st->st_mode)) {
-		gs_unref_keyfile GKeyFile *kf = NULL;
+		nm_auto_unref_keyfile GKeyFile *kf = NULL;
 		gs_free char *v_uuid = NULL;
 
 		kf = g_key_file_new ();
@@ -243,7 +243,7 @@ nms_keyfile_nmmeta_write (const char *dirname,
 	full_filename = g_strndup (full_filename_tmp, strlen (full_filename_tmp) - 1);
 
 	if (shadowed_storage) {
-		gs_unref_keyfile GKeyFile *kf = NULL;
+		nm_auto_unref_keyfile GKeyFile *kf = NULL;
 		gs_free char *contents = NULL;
 		gsize length;
 

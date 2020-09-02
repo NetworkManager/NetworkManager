@@ -395,7 +395,7 @@ get_dispatcher_file (const char *file,
                      GHashTable **out_env,
                      GError **error)
 {
-	gs_unref_keyfile GKeyFile *kf = NULL;
+	nm_auto_unref_keyfile GKeyFile *kf = NULL;
 	gs_strfreev char **keys = NULL;
 	char **iter;
 

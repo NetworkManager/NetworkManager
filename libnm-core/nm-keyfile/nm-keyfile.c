@@ -4093,7 +4093,7 @@ nm_keyfile_write (NMConnection *connection,
                   void *user_data,
                   GError **error)
 {
-	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
 	KeyfileWriterInfo info;
 	gs_free NMSetting **settings = NULL;
 	guint i, j, n_settings = 0;

@@ -801,7 +801,7 @@ test_connection_match_ip4_routes1 (void)
 {
 	gs_unref_object NMConnection *orig = NULL, *copy = NULL;
 	NMConnection *matched;
-	gs_free_slist GSList *connections = NULL;
+	nm_auto_free_slist GSList *connections = NULL;
 	NMSettingIPConfig *s_ip4;
 
 	orig = _match_connection_new ();
@@ -837,7 +837,7 @@ test_connection_match_ip4_routes2 (void)
 {
 	gs_unref_object NMConnection *orig = NULL, *copy = NULL;
 	NMConnection *matched;
-	gs_free_slist GSList *connections = NULL;
+	nm_auto_free_slist GSList *connections = NULL;
 	NMSettingIPConfig *s_ip4;
 
 	orig = _match_connection_new ();
@@ -876,7 +876,7 @@ test_connection_match_ip6_routes (void)
 {
 	gs_unref_object NMConnection *orig = NULL, *copy = NULL;
 	NMConnection *matched;
-	gs_free_slist GSList *connections = NULL;
+	nm_auto_free_slist GSList *connections = NULL;
 	NMSettingIPConfig *s_ip6;
 
 	orig = _match_connection_new ();

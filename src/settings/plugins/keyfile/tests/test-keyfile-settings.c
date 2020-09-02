@@ -802,7 +802,7 @@ test_write_string_ssid (void)
 	gs_free char *testfile = NULL;
 	GBytes *ssid;
 	unsigned char tmpssid[] = { 65, 49, 50, 51, 32, 46, 92, 46, 36, 37, 126, 93 };
-	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
 
 	connection = nm_simple_connection_new ();
 
@@ -880,7 +880,7 @@ test_write_intlist_ssid (void)
 	GBytes *ssid;
 	unsigned char tmpssid[] = { 65, 49, 50, 51, 0, 50, 50 };
 	gs_free_error GError *error = NULL;
-	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
 	int *intlist;
 	gsize len = 0, i;
 
@@ -979,7 +979,7 @@ test_write_intlike_ssid (void)
 	GBytes *ssid;
 	unsigned char tmpssid[] = { 49, 48, 49 };
 	gs_free_error GError *error = NULL;
-	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
 	char *tmp;
 
 	connection = nm_simple_connection_new ();
@@ -1037,7 +1037,7 @@ test_write_intlike_ssid_2 (void)
 	GBytes *ssid;
 	unsigned char tmpssid[] = { 49, 49, 59, 49, 50, 59, 49, 51, 59};
 	gs_free_error GError *error = NULL;
-	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
 	char *tmp;
 
 	connection = nm_simple_connection_new ();
@@ -1533,7 +1533,7 @@ test_write_wired_8021x_tls_connection_path (void)
 	char *tmp, *tmp2;
 	gboolean success;
 	gs_free char *testfile = NULL;
-	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
 	gboolean relative = FALSE;
 	gboolean reread_same = FALSE;
 
@@ -1966,7 +1966,7 @@ test_write_new_wired_group_name (void)
 {
 	NMTST_UUID_INIT (uuid);
 	gs_unref_object NMConnection *connection = NULL;
-	gs_unref_keyfile GKeyFile *kf = NULL;
+	nm_auto_unref_keyfile GKeyFile *kf = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	gs_free char *testfile = NULL;
@@ -2044,7 +2044,7 @@ test_write_new_wireless_group_names (void)
 {
 	NMTST_UUID_INIT (uuid);
 	gs_unref_object NMConnection *connection = NULL;
-	gs_unref_keyfile GKeyFile *kf = NULL;
+	nm_auto_unref_keyfile GKeyFile *kf = NULL;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;

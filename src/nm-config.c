@@ -900,7 +900,7 @@ read_config (GKeyFile *keyfile,
              GPtrArray *warnings,
              GError **error)
 {
-	gs_unref_keyfile GKeyFile *kf = NULL;
+	nm_auto_unref_keyfile GKeyFile *kf = NULL;
 	gs_strfreev char **groups = NULL;
 	gs_free char *path_free = NULL;
 	gsize ngroups;
@@ -1020,8 +1020,8 @@ read_config (GKeyFile *keyfile,
 					} else {
 						gs_free char *old_sval = nm_config_keyfile_get_value (keyfile, group, base_key, NM_CONFIG_GET_VALUE_TYPE_SPEC);
 						gs_free char *new_sval = nm_config_keyfile_get_value (kf, group, key, NM_CONFIG_GET_VALUE_TYPE_SPEC);
-						gs_free_slist GSList *old_specs = nm_match_spec_split (old_sval);
-						gs_free_slist GSList *new_specs = nm_match_spec_split (new_sval);
+						nm_auto_free_slist GSList *old_specs = nm_match_spec_split (old_sval);
+						nm_auto_free_slist GSList *new_specs = nm_match_spec_split (new_sval);
 
 						/* the key is a device spec. This is a special kind of string-list, that
 						 * we must split differently. */
@@ -1049,7 +1049,7 @@ read_config (GKeyFile *keyfile,
 						if (is_string_list)
 							nm_config_keyfile_set_string_list (keyfile, group, base_key, (const char *const*) new->pdata, new->len);
 						else {
-							gs_free_slist GSList *specs = NULL;
+							nm_auto_free_slist GSList *specs = NULL;
 							gs_free char *specs_joined = NULL;
 
 							g_ptr_array_add (new, NULL);
@@ -1210,7 +1210,7 @@ read_entire_config (const NMConfigCmdLineOptions *cli,
                     GPtrArray *warnings,
                     GError **error)
 {
-	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
 	gs_unref_ptrarray GPtrArray *system_confs = NULL;
 	gs_unref_ptrarray GPtrArray *confs = NULL;
 	gs_unref_ptrarray GPtrArray *run_confs = NULL;
@@ -2310,7 +2310,7 @@ nm_config_device_state_load (int ifindex)
 {
 	NMConfigDeviceStateData *device_state;
 	char path[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR"/") + DEVICE_STATE_FILENAME_LEN_MAX + 1];
-	gs_unref_keyfile GKeyFile *kf = NULL;
+	nm_auto_unref_keyfile GKeyFile *kf = NULL;
 	const char *nm_owned_str;
 
 	g_return_val_if_fail (ifindex > 0, NULL);
@@ -2397,7 +2397,7 @@ nm_config_device_state_write (int ifindex,
 {
 	char path[NM_STRLEN (NM_CONFIG_DEVICE_STATE_DIR"/") + DEVICE_STATE_FILENAME_LEN_MAX + 1];
 	GError *local = NULL;
-	gs_unref_keyfile GKeyFile *kf = NULL;
+	nm_auto_unref_keyfile GKeyFile *kf = NULL;
 
 	g_return_val_if_fail (ifindex > 0, FALSE);
 	g_return_val_if_fail (!connection_uuid || *connection_uuid, FALSE);
@@ -2782,8 +2782,8 @@ init_sync (GInitable *initable, GCancellable *cancellable, GError **error)
 {
 	NMConfig *self = NM_CONFIG (initable);
 	NMConfigPrivate *priv = NM_CONFIG_GET_PRIVATE (self);
-	gs_unref_keyfile GKeyFile *keyfile = NULL;
-	gs_unref_keyfile GKeyFile *keyfile_intern = NULL;
+	nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
+	nm_auto_unref_keyfile GKeyFile *keyfile_intern = NULL;
 	gs_free char *config_main_file = NULL;
 	gs_free char *config_description = NULL;
 	gs_strfreev char **no_auto_default = NULL;

@@ -1973,7 +1973,7 @@ nmtst_assert_connection_equals (NMConnection *a, gboolean normalize_a, NMConnect
 
 #ifdef __NM_KEYFILE_INTERNAL_H__
 		{
-			gs_unref_keyfile GKeyFile *kf_a = NULL, *kf_b = NULL;
+			nm_auto_unref_keyfile GKeyFile *kf_a = NULL, *kf_b = NULL;
 			gs_free char *str_a = NULL, *str_b = NULL;
 
 			kf_a = nm_keyfile_write (a, NM_KEYFILE_HANDLER_FLAGS_NONE, NULL, NULL, NULL);
@@ -2300,7 +2300,7 @@ nmtst_assert_hwaddr_equals (gconstpointer hwaddr1, gssize hwaddr1_len, const cha
 static inline NMConnection *
 nmtst_create_connection_from_keyfile (const char *keyfile_str, const char *full_filename)
 {
-	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
 	gs_free_error GError *error = NULL;
 	gboolean success;
 	NMConnection *con;
@@ -2532,7 +2532,7 @@ nmtst_variant_from_string (const GVariantType *variant_type,
 static inline void
 nmtst_keyfile_assert_data (GKeyFile *kf, const char *data, gssize data_len)
 {
-	gs_unref_keyfile GKeyFile *kf2 = NULL;
+	nm_auto_unref_keyfile GKeyFile *kf2 = NULL;
 	gs_free_error GError *error = NULL;
 	gs_free char *d1 = NULL;
 	gs_free char *d2 = NULL;

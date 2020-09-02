@@ -161,7 +161,7 @@ nms_keyfile_reader_from_file (const char *full_filename,
                               NMTernary *out_shadowed_owned,
                               GError **error)
 {
-	gs_unref_keyfile GKeyFile *key_file = NULL;
+	nm_auto_unref_keyfile GKeyFile *key_file = NULL;
 	NMConnection *connection = NULL;
 	GError *verify_error = NULL;
 

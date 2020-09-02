@@ -1562,7 +1562,7 @@ test_ethtool_features (void)
 	gs_unref_object NMConnection *con3 = NULL;
 	gs_unref_variant GVariant *variant = NULL;
 	gs_free_error GError *error = NULL;
-	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
 	NMSettingConnection *s_con;
 	NMSettingEthtool *s_ethtool;
 	NMSettingEthtool *s_ethtool2;
@@ -1636,7 +1636,7 @@ test_ethtool_coalesce (void)
 	gs_unref_object NMConnection *con3 = NULL;
 	gs_unref_variant GVariant *variant = NULL;
 	gs_free_error GError *error = NULL;
-	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
 	NMSettingConnection *s_con;
 	NMSettingEthtool *s_ethtool;
 	NMSettingEthtool *s_ethtool2;
@@ -1721,7 +1721,7 @@ test_ethtool_ring (void)
 	gs_unref_object NMConnection *con3 = NULL;
 	gs_unref_variant GVariant *variant = NULL;
 	gs_free_error GError *error = NULL;
-	gs_unref_keyfile GKeyFile *keyfile = NULL;
+	nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
 	NMSettingConnection *s_con;
 	NMSettingEthtool *s_ethtool;
 	NMSettingEthtool *s_ethtool2;
@@ -3369,7 +3369,7 @@ test_roundtrip_conversion (gconstpointer test_data)
 	 * when converting @con to keyfile. Write @con to keyfile and compare the expected result
 	 * literally. */
 	{
-		gs_unref_keyfile GKeyFile *kf = NULL;
+		nm_auto_unref_keyfile GKeyFile *kf = NULL;
 
 		kf = nm_keyfile_write (con, NM_KEYFILE_HANDLER_FLAGS_NONE, NULL, NULL, &error);
 		nmtst_assert_success (kf, error);
@@ -3464,7 +3464,7 @@ test_roundtrip_conversion (gconstpointer test_data)
 			nmtst_assert_connection_equals (con, nmtst_get_rand_bool (), con2, nmtst_get_rand_bool ());
 
 			{
-				gs_unref_keyfile GKeyFile *kf = NULL;
+				nm_auto_unref_keyfile GKeyFile *kf = NULL;
 
 				kf = nm_keyfile_write (con2, NM_KEYFILE_HANDLER_FLAGS_NONE, NULL, NULL, &error);
 				nmtst_assert_success (kf, error);
@@ -3752,7 +3752,7 @@ test_empty_setting (void)
 	gs_unref_object NMConnection *con2 = NULL;
 	NMSettingBluetooth *s_bt;
 	NMSettingGsm *s_gsm;
-	gs_unref_keyfile GKeyFile *kf = NULL;
+	nm_auto_unref_keyfile GKeyFile *kf = NULL;
 	gs_free_error GError *error = NULL;
 
 	con = nmtst_create_minimal_connection ("bt-empty-gsm", "dca3192a-f2dc-48eb-b806-d0ff788f122c", NM_SETTING_BLUETOOTH_SETTING_NAME, NULL);

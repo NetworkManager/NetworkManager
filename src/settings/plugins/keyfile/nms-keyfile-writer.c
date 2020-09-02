@@ -185,7 +185,7 @@ _internal_write_connection (NMConnection *connection,
                             gboolean *out_reread_same,
                             GError **error)
 {
-	gs_unref_keyfile GKeyFile *kf_file = NULL;
+	nm_auto_unref_keyfile GKeyFile *kf_file = NULL;
 	gs_free char *kf_content_buf = NULL;
 	gsize kf_content_len;
 	gs_free char *path = NULL;
