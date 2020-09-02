@@ -1020,8 +1020,8 @@ read_config (GKeyFile *keyfile,
 					} else {
 						gs_free char *old_sval = nm_config_keyfile_get_value (keyfile, group, base_key, NM_CONFIG_GET_VALUE_TYPE_SPEC);
 						gs_free char *new_sval = nm_config_keyfile_get_value (kf, group, key, NM_CONFIG_GET_VALUE_TYPE_SPEC);
-						gs_free_slist GSList *old_specs = nm_match_spec_split (old_sval);
-						gs_free_slist GSList *new_specs = nm_match_spec_split (new_sval);
+						nm_auto_free_slist GSList *old_specs = nm_match_spec_split (old_sval);
+						nm_auto_free_slist GSList *new_specs = nm_match_spec_split (new_sval);
 
 						/* the key is a device spec. This is a special kind of string-list, that
 						 * we must split differently. */
@@ -1049,7 +1049,7 @@ read_config (GKeyFile *keyfile,
 						if (is_string_list)
 							nm_config_keyfile_set_string_list (keyfile, group, base_key, (const char *const*) new->pdata, new->len);
 						else {
-							gs_free_slist GSList *specs = NULL;
+							nm_auto_free_slist GSList *specs = NULL;
 							gs_free char *specs_joined = NULL;
 
 							g_ptr_array_add (new, NULL);

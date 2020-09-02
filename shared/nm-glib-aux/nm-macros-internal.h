@@ -99,15 +99,6 @@ NM_AUTO_DEFINE_FCN0 (GPtrArray *, gs_local_ptrarray_unref, g_ptr_array_unref);
 NM_AUTO_DEFINE_FCN0 (GHashTable *, gs_local_hashtable_unref, g_hash_table_unref);
 
 /**
- * gs_free_slist:
- *
- * Call g_slist_free() on a variable location when it goes out
- * of scope.
- */
-#define gs_free_slist nm_auto(gs_local_free_slist)
-NM_AUTO_DEFINE_FCN0 (GSList *, gs_local_free_slist, g_slist_free);
-
-/**
  * gs_unref_bytes:
  *
  * Call g_bytes_unref() on a variable location when it goes out
