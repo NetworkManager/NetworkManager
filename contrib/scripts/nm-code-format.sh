@@ -63,7 +63,7 @@ for f in "${FILES[@]}"; do
             clang-format $f > $TMP_FILE
             git --no-pager diff $f $TMP_FILE || true
             rm $TMP_FILE
-            echo "Error: $f code-style is wrong, fix it by running '$(basename $0) -i'"
+            echo "Error: $(basename $f) code-style is wrong, fix it by running '$0 -i $f)"
             exit 1
         fi
    else
