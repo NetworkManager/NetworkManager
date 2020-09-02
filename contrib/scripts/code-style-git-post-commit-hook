@@ -1,0 +1,21 @@
+#!/bin/sh
+
+set -e
+
+DISABLED=${NM_HOOK_DISABLED:0}
+
+if [ "$DISABLED" == 1 ]; then
+    echo "COMMIT HOOK DISABLED"
+    exit 0
+fi
+
+FORMATTER=contrib/scripts/nm-code-format.sh
+
+# Filter only C source files
+CHANGED_FILES=$(git log --pretty='' --name-only -n1 | grep -E '\.c$|\.h$' | tr '\n' ' ')
+
+echo $CHANGED_FILES
+
+if [ -x "$FORMATTER" ] && [ ! -z "$CHANGED_FILES" ]; then
+    "$FORMATTER" "${CHANGED_FILES}"
+fi
