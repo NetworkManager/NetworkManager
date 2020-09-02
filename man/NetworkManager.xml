@@ -559,7 +559,7 @@
     <title>Bugs</title>
     <para>
       Please report any bugs you find in NetworkManager at the
-      <ulink url="https://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager">NetworkManager bug tracker</ulink>.
+      <ulink url="https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/issues">NetworkManager issue tracker</ulink>.
     </para>
   </refsect1>
 
