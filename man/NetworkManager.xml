@@ -503,18 +503,32 @@
   <refsect1>
     <title>Debugging</title>
     <para>
-      The following environment variables are supported to help
-      debugging.  When used in conjunction with the
-      <option>--no-daemon</option> option (thus echoing PPP and DHCP
-      helper output to stdout) these can quickly help pinpoint the
-      source of connection issues.  Also see the
-      <option>--log-level</option> and <option>--log-domains</option>
-      to enable debug logging inside NetworkManager itself.
+      NetworkManager only configures your system. So when your networking setup doesn't
+      work as expected, the first step is to look at your system to understand what is actually
+      configured, and whether that is correct. The second step is to find out how to tell
+      NetworkManager to do the right thing.
     </para>
     <para>
-      <option>NM_PPP_DEBUG</option>: When set to anything, causes
-      NetworkManager to turn on PPP debugging in pppd, which logs
-      all PPP and PPTP frames and client/server exchanges.
+      You can for example try to <command>ping</command> hosts (by
+      IP address or DNS name), look at <command>ip link show</command>, <command>ip address show</command> and <command>ip route show</command>,
+      and look at <filename>/etc/resolv.conf</filename> for name resolution issues.
+      Also look at the connection profiles that you have configured in NetworkManager (<command>nmcli connection</command>
+      and <command>nmcli connection show "$PROFILE"</command>)
+      and the configured interfaces (<command>nmcli device</command>).
+    </para>
+    <para>
+      If that does not suffice, look at the logfiles of NetworkManager. NetworkManager
+      logs to syslog, so depending on your system configuration you can call <command>journalctl</command>
+      to get the logs.
+      By default, NetworkManager logs are not verbose and thus not very helpful for investigating
+      a problem in detail. You can change the logging level at runtime with <command>nmcli general logging level TRACE domains ALL</command>.
+      But usually a better way is to collect full logs from the start, by configuring
+      <literal>level=TRACE</literal> in NetworkManager.conf. See
+      <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>
+      manual. Note that trace logs of NetworkManager are verbose and systemd-journald might rate limit
+      some lines. Possibly disable rate limiting first with the <literal>RateLimitIntervalSec</literal> and
+      <literal>RateLimitBurst</literal> options of journald (see
+      <link linkend='journald.conf'><citerefentry><refentrytitle>journald.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link> manual).
     </para>
   </refsect1>
 
