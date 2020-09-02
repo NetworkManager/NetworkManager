@@ -2467,10 +2467,17 @@ again:
 			}
 
 			if (nm_utils_host_id_get (&seed_bin, &seed_len)) {
-				/* we have no valid machine-id. Generate a fake one by hashing
-				 * the secret-key. This key is commonly persisted, so it should be
-				 * stable across reboots (despite having a broken system without
-				 * proper machine-id). */
+				/* We have no valid machine-id but we have a valid secrey_key.
+				 * Generate a fake machine ID by hashing the secret-key. The secret_key
+				 * is commonly persisted, so it should be stable across reboots (despite
+				 * having a broken system without proper machine-id).
+				 *
+				 * Note that we access the host-id here, which is based on secret_key.
+				 * Also not that the secret_key may be generated based on the machine-id,
+				 * so we have to be careful that they don't depend on each other (and
+				 * no infinite recursion happens. This is done correctly, because the secret-key
+				 * will call _machine_id_get(FALSE), so it won't allow accessing a fake
+				 * machine-id, thus avoiding the problem. */
 				fake_type = "secret-key";
 				hash_seed = "ab085f06-b629-46d1-a553-84eeba5683b6";
 			} else {
@@ -2653,11 +2660,13 @@ _host_id_read (guint8 **out_host_id,
 		secret_arr = _host_id_hash_v2 (file_content.bin, file_content.len, sha256_digest);
 		secret_len = NM_UTILS_CHECKSUM_LENGTH_SHA256;
 		success = TRUE;
+		nm_log_dbg (LOGD_CORE, "secret-key: v2 secret key loaded from \"%s\" (%zu bytes)", SECRET_KEY_FILE, file_content.len);
 		goto out;
 	} else if (file_content.len >= 16) {
 		secret_arr = file_content.bin;
 		secret_len = file_content.len;
 		success = TRUE;
+		nm_log_dbg (LOGD_CORE, "secret-key: v1 secret key loaded from \"%s\" (%zu bytes)", SECRET_KEY_FILE, file_content.len);
 		goto out;
 	} else {
 		/* the secret key is borked. Log a warning, but proceed below to generate
@@ -2713,7 +2722,7 @@ _host_id_read (guint8 **out_host_id,
 			g_clear_error (&error);
 			success = FALSE;
 		} else
-			nm_log_dbg (LOGD_CORE, "secret-key: persist new secret key to \"%s\"", SECRET_KEY_FILE);
+			nm_log_dbg (LOGD_CORE, "secret-key: persist new v2 secret key to \"%s\" (%zu bytes)", SECRET_KEY_FILE, len);
 
 		nm_explicit_bzero (rnd_buf, sizeof (rnd_buf));
 		nm_explicit_bzero (new_content, sizeof (new_content));
