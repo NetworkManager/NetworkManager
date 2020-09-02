@@ -141,14 +141,6 @@ NM_AUTO_DEFINE_FCN0 (GError *, gs_local_free_error, g_error_free);
 #define gs_unref_keyfile nm_auto(gs_local_keyfile_unref)
 NM_AUTO_DEFINE_FCN0 (GKeyFile *, gs_local_keyfile_unref, g_key_file_unref);
 
-/**
- * gs_free_option_context:
- *
- * Call g_option_context_free() on a variable location when it goes out of scope.
- */
-#define gs_free_option_context nm_auto(gs_local_option_context)
-NM_AUTO_DEFINE_FCN0 (GOptionContext *, gs_local_option_context, g_option_context_free);
-
 /*****************************************************************************/
 
 #include "nm-glib.h"
@@ -207,6 +199,9 @@ NM_AUTO_DEFINE_FCN0 (GIOChannel *, _nm_auto_unref_io_channel, g_io_channel_unref
 
 NM_AUTO_DEFINE_FCN0 (GMainLoop *, _nm_auto_unref_gmainloop, g_main_loop_unref);
 #define nm_auto_unref_gmainloop nm_auto(_nm_auto_unref_gmainloop)
+
+NM_AUTO_DEFINE_FCN0 (GOptionContext *, _nm_auto_free_option_context, g_option_context_free);
+#define nm_auto_free_option_context nm_auto(_nm_auto_free_option_context)
 
 static inline void
 _nm_auto_freev (gpointer ptr)
