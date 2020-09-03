@@ -271,6 +271,9 @@ nm_l3_config_data_get_num_routes (const NML3ConfigData *self, int addr_family)
 	                                       : NMP_OBJECT_TYPE_IP6_ROUTE);
 }
 
+gboolean nm_l3_config_data_has_routes_with_type_local (const NML3ConfigData *self,
+                                                       int addr_family);
+
 const NMPObject *nmtst_l3_config_data_get_obj_at (const NML3ConfigData *self,
                                                   NMPObjectType obj_type,
                                                   guint i);

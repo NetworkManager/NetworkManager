@@ -116,6 +116,11 @@ struct _NML3ConfigData {
 	NMTernary metered:3;
 
 	bool is_sealed:1;
+
+	bool has_routes_with_type_local_4_set:1;
+	bool has_routes_with_type_local_6_set:1;
+	bool has_routes_with_type_local_4_val:1;
+	bool has_routes_with_type_local_6_val:1;
 };
 
 /*****************************************************************************/
@@ -614,6 +619,50 @@ nmtst_l3_config_data_get_obj_at (const NML3ConfigData *self,
 
 /*****************************************************************************/
 
+gboolean
+nm_l3_config_data_has_routes_with_type_local (const NML3ConfigData *self, int addr_family)
+{
+	const gboolean IS_IPv4 = NM_IS_IPv4 (addr_family);
+	NML3ConfigData *self_mutable;
+	NMDedupMultiIter iter;
+	const NMPObject *obj;
+	gboolean val;
+
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+	nm_assert_addr_family (addr_family);
+
+	if (IS_IPv4) {
+		if (G_LIKELY (self->has_routes_with_type_local_4_set))
+			return self->has_routes_with_type_local_4_val;
+	} else {
+		if (G_LIKELY (self->has_routes_with_type_local_6_set))
+			return self->has_routes_with_type_local_6_val;
+	}
+
+	val = FALSE;
+	nm_l3_config_data_iter_obj_for_each (&iter, self, &obj, NMP_OBJECT_TYPE_IP_ROUTE (IS_IPv4)) {
+		if (NMP_OBJECT_CAST_IP_ROUTE (obj)->type_coerced == nm_platform_route_type_coerce (RTN_LOCAL)) {
+			val = TRUE;
+			break;
+		}
+	}
+
+	/* the value gets accumulated and cached. Doing that is also permissible to a
+	 * const/sealed instance. Hence, we cast the const-ness away. */
+	self_mutable = (NML3ConfigData *) self;
+	if (IS_IPv4) {
+		self_mutable->has_routes_with_type_local_4_set = TRUE;
+		self_mutable->has_routes_with_type_local_4_val = val;
+	} else {
+		self_mutable->has_routes_with_type_local_6_set = TRUE;
+		self_mutable->has_routes_with_type_local_6_val = val;
+	}
+
+	return val;
+}
+
+/*****************************************************************************/
+
 NMDedupMultiIndex *
 nm_l3_config_data_get_multi_idx (const NML3ConfigData *self)
 {
@@ -920,6 +969,10 @@ nm_l3_config_data_add_route_full (NML3ConfigData *self,
 	           || (   NMP_OBJECT_GET_ADDR_FAMILY (obj_new) == addr_family
 	               && _route_valid (addr_family, NMP_OBJECT_CAST_IP_ROUTE (obj_new))));
 
+	if (IS_IPv4)
+		self->has_routes_with_type_local_4_set = FALSE;
+	else
+		self->has_routes_with_type_local_6_set = FALSE;
 	if (_l3_config_data_add_obj (self->multi_idx,
 	                               addr_family == AF_INET
 	                             ? &self->idx_routes_4
@@ -1945,6 +1998,10 @@ _init_from_platform (NML3ConfigData *self,
 	                                        : NMP_OBJECT_TYPE_IP6_ADDRESS,
 	                                        self->ifindex);
 	if (head_entry) {
+		if (IS_IPv4)
+			self->has_routes_with_type_local_4_set = FALSE;
+		else
+			self->has_routes_with_type_local_6_set = FALSE;
 		nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
 			if (!_l3_config_data_add_obj (self->multi_idx,
 			                              &self->idx_addresses_x[IS_IPv4],
