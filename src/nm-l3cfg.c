@@ -95,6 +95,11 @@ typedef struct {
 	bool announcing_failed_is_retrying:1;
 } AcdData;
 
+struct _NML3CfgCommitTypeHandle {
+	CList commit_type_lst;
+	NML3CfgCommitType commit_type;
+};
+
 typedef struct {
 	const NML3ConfigData *l3cd;
 	NML3ConfigMergeFlags merge_flags;
@@ -130,6 +135,8 @@ typedef struct _NML3CfgPrivate {
 	GArray *property_emit_list;
 	GArray *l3_config_datas;
 	const NML3ConfigData *combined_l3cd;
+
+	CList commit_type_lst_head;
 
 	GHashTable *routes_temporary_not_available_hash;
 
@@ -231,6 +238,8 @@ static AcdData *_l3_acd_data_find (NML3Cfg *self,
 
 static
 NM_UTILS_ENUM2STR_DEFINE (_l3_cfg_commit_type_to_string, NML3CfgCommitType,
+	NM_UTILS_ENUM2STR (NM_L3_CFG_COMMIT_TYPE_AUTO,    "auto"),
+	NM_UTILS_ENUM2STR (NM_L3_CFG_COMMIT_TYPE_NONE,    "none"),
 	NM_UTILS_ENUM2STR (NM_L3_CFG_COMMIT_TYPE_ASSUME,  "assume"),
 	NM_UTILS_ENUM2STR (NM_L3_CFG_COMMIT_TYPE_UPDATE,  "update"),
 	NM_UTILS_ENUM2STR (NM_L3_CFG_COMMIT_TYPE_REAPPLY, "reapply"),
@@ -878,7 +887,7 @@ _l3_acd_platform_commit_acd_update (NML3Cfg *self)
 	_LOGT ("acd: acd update now");
 	self->priv.changed_configs = TRUE;
 	nm_l3cfg_platform_commit (self,
-	                          NM_L3_CFG_COMMIT_TYPE_UPDATE,
+	                          NM_L3_CFG_COMMIT_TYPE_AUTO,
 	                          AF_INET,
 	                          NULL);
 }
@@ -2756,7 +2765,8 @@ _platform_commit (NML3Cfg *self,
 	gboolean success = TRUE;
 
 	nm_assert (NM_IS_L3CFG (self));
-	nm_assert (NM_IN_SET (commit_type, NM_L3_CFG_COMMIT_TYPE_REAPPLY,
+	nm_assert (NM_IN_SET (commit_type, NM_L3_CFG_COMMIT_TYPE_NONE,
+	                                   NM_L3_CFG_COMMIT_TYPE_REAPPLY,
 	                                   NM_L3_CFG_COMMIT_TYPE_UPDATE,
 	                                   NM_L3_CFG_COMMIT_TYPE_ASSUME));
 	nm_assert_addr_family (addr_family);
@@ -2873,7 +2883,9 @@ nm_l3cfg_platform_commit (NML3Cfg *self,
 	gboolean acd_was_pending;
 
 	g_return_val_if_fail (NM_IS_L3CFG (self), FALSE);
-	nm_assert (NM_IN_SET (commit_type, NM_L3_CFG_COMMIT_TYPE_REAPPLY,
+	nm_assert (NM_IN_SET (commit_type, NM_L3_CFG_COMMIT_TYPE_AUTO,
+	                                   NM_L3_CFG_COMMIT_TYPE_NONE,
+	                                   NM_L3_CFG_COMMIT_TYPE_REAPPLY,
 	                                   NM_L3_CFG_COMMIT_TYPE_UPDATE,
 	                                   NM_L3_CFG_COMMIT_TYPE_ASSUME));
 
@@ -2883,6 +2895,9 @@ nm_l3cfg_platform_commit (NML3Cfg *self,
 
 	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET))
 		nm_clear_g_source_inst (&self->priv.p->acd_ready_on_idle_source);
+
+	if (commit_type == NM_L3_CFG_COMMIT_TYPE_AUTO)
+		commit_type = nm_l3cfg_commit_type_get (self);
 
 	if (commit_type == NM_L3_CFG_COMMIT_TYPE_REAPPLY)
 		_l3cfg_externally_removed_objs_drop (self, addr_family);
@@ -2904,6 +2919,101 @@ nm_l3cfg_platform_commit (NML3Cfg *self,
 		_l3cfg_emit_signal_notify (self, NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED, NULL);
 
 	return success;
+}
+
+/*****************************************************************************/
+
+NML3CfgCommitType
+nm_l3cfg_commit_type_get (NML3Cfg *self)
+{
+	NML3CfgCommitTypeHandle *handle;
+
+	nm_assert (NM_IS_L3CFG (self));
+
+	handle = c_list_first_entry (&self->priv.p->commit_type_lst_head, NML3CfgCommitTypeHandle, commit_type_lst);
+	return   handle
+	       ? handle->commit_type
+	       : NM_L3_CFG_COMMIT_TYPE_NONE;
+}
+
+/**
+ * nm_l3cfg_commit_type_register:
+ * @self: the #NML3Cfg
+ * @commit_type: the commit type to register
+ * @existing_handle: instead of being a new registration, update an existing handle.
+ *   This may be %NULL, which is like having no previous registration.
+ *
+ * NML3Cfg needs to know whether it is in charge of an interface (and how "much").
+ * By default, it is not in charge, but various users can register themself with
+ * a certain @commit_type. The "higher" commit type is the used one when calling
+ * nm_l3cfg_platform_commit() with %NM_L3_CFG_COMMIT_TYPE_AUTO.
+ *
+ * Returns: a handle tracking the registration, or %NULL of @commit_type
+ *   is %NM_L3_CFG_COMMIT_TYPE_NONE.
+ */
+NML3CfgCommitTypeHandle *
+nm_l3cfg_commit_type_register (NML3Cfg *self,
+                               NML3CfgCommitType commit_type,
+                               NML3CfgCommitTypeHandle *existing_handle)
+{
+	NML3CfgCommitTypeHandle *handle;
+	NML3CfgCommitTypeHandle *h;
+	gboolean linked;
+
+	nm_assert (NM_IS_L3CFG (self));
+	nm_assert (NM_IN_SET (commit_type, NM_L3_CFG_COMMIT_TYPE_NONE,
+	                                   NM_L3_CFG_COMMIT_TYPE_ASSUME,
+	                                   NM_L3_CFG_COMMIT_TYPE_UPDATE,
+	                                   NM_L3_CFG_COMMIT_TYPE_REAPPLY));
+	nm_assert (   !existing_handle
+	           || c_list_contains (&self->priv.p->commit_type_lst_head, &existing_handle->commit_type_lst));
+
+	if (existing_handle) {
+		if (commit_type == NM_L3_CFG_COMMIT_TYPE_NONE) {
+			nm_l3cfg_commit_type_unregister (self, existing_handle);
+			return NULL;
+		}
+		if (existing_handle->commit_type == commit_type)
+			return existing_handle;
+		c_list_unlink_stale (&existing_handle->commit_type_lst);
+		handle = existing_handle;
+	} else {
+		if (commit_type == NM_L3_CFG_COMMIT_TYPE_NONE)
+			return NULL;
+		handle = g_slice_new (NML3CfgCommitTypeHandle);
+		handle->commit_type = commit_type;
+		if (c_list_is_empty (&self->priv.p->commit_type_lst_head))
+			g_object_ref (self);
+	}
+
+	linked = FALSE;
+	c_list_for_each_entry (h, &self->priv.p->commit_type_lst_head, commit_type_lst) {
+		if (handle->commit_type >= h->commit_type) {
+			c_list_link_before (&self->priv.p->commit_type_lst_head, &handle->commit_type_lst);
+			linked = TRUE;
+		}
+	}
+	if (!linked)
+		c_list_link_tail (&self->priv.p->commit_type_lst_head, &handle->commit_type_lst);
+
+	return handle;
+}
+
+void
+nm_l3cfg_commit_type_unregister (NML3Cfg *self,
+                                 NML3CfgCommitTypeHandle *handle)
+{
+	nm_assert (NM_IS_L3CFG (self));
+
+	if (!handle)
+		return;
+
+	nm_assert (c_list_contains (&self->priv.p->commit_type_lst_head, &handle->commit_type_lst));
+
+	c_list_unlink_stale (&handle->commit_type_lst);
+	if (c_list_is_empty (&self->priv.p->commit_type_lst_head))
+		g_object_unref (self);
+	nm_g_slice_free (handle);
 }
 
 /*****************************************************************************/
@@ -2941,6 +3051,7 @@ nm_l3cfg_init (NML3Cfg *self)
 	self->priv.p = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_L3CFG, NML3CfgPrivate);
 
 	c_list_init (&self->priv.p->acd_lst_head);
+	c_list_init (&self->priv.p->commit_type_lst_head);
 }
 
 static void
@@ -2978,6 +3089,8 @@ static void
 finalize (GObject *object)
 {
 	NML3Cfg *self = NM_L3CFG (object);
+
+	nm_assert (c_list_is_empty (&self->priv.p->commit_type_lst_head));
 
 	nm_clear_g_source_inst (&self->priv.p->acd_ready_on_idle_source);
 
