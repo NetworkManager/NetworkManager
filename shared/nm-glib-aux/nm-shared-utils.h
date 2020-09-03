@@ -1349,6 +1349,13 @@ GSource *nm_g_timeout_source_new (guint timeout_msec,
                                   GSourceFunc func,
                                   gpointer user_data,
                                   GDestroyNotify destroy_notify);
+
+GSource *nm_g_timeout_source_new_seconds (guint timeout_sec,
+                                          int priority,
+                                          GSourceFunc func,
+                                          gpointer user_data,
+                                          GDestroyNotify destroy_notify);
+
 GSource *nm_g_unix_fd_source_new (int fd,
                                   GIOCondition io_condition,
                                   int priority,
@@ -1628,6 +1635,12 @@ static inline gpointer
 nm_g_hash_table_lookup (GHashTable *hash, gconstpointer key)
 {
 	return hash ? g_hash_table_lookup (hash, key) : NULL;
+}
+
+static inline gboolean
+nm_g_hash_table_contains (GHashTable *hash, gconstpointer key)
+{
+	return hash ? g_hash_table_contains (hash, key) : FALSE;
 }
 
 static inline gboolean
@@ -1960,6 +1973,31 @@ char *nm_utils_bin2hexstr_full (gconstpointer addr,
                                 char delimiter,
                                 gboolean upper_case,
                                 char *out);
+
+#define nm_utils_bin2hexstr_a(addr, length, delimiter, upper_case, str_to_free) \
+	({ \
+		gconstpointer _addr = (addr); \
+		gsize _length = (length); \
+		char _delimiter = (delimiter); \
+		char **_str_to_free = (str_to_free); \
+		char *_s; \
+		gsize _s_len; \
+		\
+		nm_assert (_str_to_free); \
+		\
+		_s_len =   _length == 0 \
+		         ? 1u \
+		         : (  _delimiter == '\0' \
+		            ? _length * 2u + 1u \
+		            : _length * 3u); \
+		if (_s_len < 100) \
+			_s = g_alloca (_s_len); \
+		else { \
+			_s = g_malloc (_s_len); \
+			*_str_to_free = _s; \
+		} \
+		nm_utils_bin2hexstr_full (_addr, _length, _delimiter, (upper_case), _s); \
+	})
 
 guint8 *nm_utils_hexstr2bin_full (const char *hexstr,
                                   gboolean allow_0x_prefix,

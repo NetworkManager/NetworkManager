@@ -4521,6 +4521,22 @@ nm_g_timeout_source_new (guint timeout_msec,
 }
 
 GSource *
+nm_g_timeout_source_new_seconds (guint timeout_sec,
+                                 int priority,
+                                 GSourceFunc func,
+                                 gpointer user_data,
+                                 GDestroyNotify destroy_notify)
+{
+	GSource *source;
+
+	source = g_timeout_source_new_seconds (timeout_sec);
+	if (priority != G_PRIORITY_DEFAULT)
+		g_source_set_priority (source, priority);
+	g_source_set_callback (source, func, user_data, destroy_notify);
+	return source;
+}
+
+GSource *
 nm_g_unix_signal_source_new (int signum,
                              int priority,
                              GSourceFunc handler,

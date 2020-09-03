@@ -8149,6 +8149,42 @@ nm_platform_ip_address_cmp_expiry (const NMPlatformIPAddress *a, const NMPlatfor
 	return ta < tb ? -1 : 1;
 }
 
+/*****************************************************************************/
+
+GHashTable *
+nm_platform_ip4_address_addr_to_hash (NMPlatform *self,
+                                      int ifindex)
+{
+	const NMDedupMultiHeadEntry *head_entry;
+	NMDedupMultiIter iter;
+	const NMPObject *obj;
+	NMPLookup lookup;
+	GHashTable *hash;
+
+	g_return_val_if_fail (NM_IS_PLATFORM (self), NULL);
+	g_return_val_if_fail (ifindex > 0, NULL);
+
+	nmp_lookup_init_object (&lookup, NMP_OBJECT_TYPE_IP4_ADDRESS, ifindex);
+
+	head_entry = nmp_cache_lookup (NM_PLATFORM_GET_PRIVATE (self)->cache,
+	                               &lookup);
+
+	if (!head_entry)
+		return NULL;
+
+	hash = g_hash_table_new (nm_direct_hash, NULL);
+
+	nmp_cache_iter_for_each (&iter, head_entry, &obj) {
+		const NMPlatformIP4Address *a = NMP_OBJECT_CAST_IP4_ADDRESS (obj);
+
+		g_hash_table_add (hash, GUINT_TO_POINTER (a->address));
+	}
+
+	return hash;
+}
+
+/*****************************************************************************/
+
 const char *
 nm_platform_signal_change_type_to_string (NMPlatformSignalChangeType change_type)
 {

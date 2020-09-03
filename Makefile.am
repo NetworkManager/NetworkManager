@@ -2470,7 +2470,9 @@ src_nm_iface_helper_LDADD = \
 	shared/nm-std-aux/libnm-std-aux.la \
 	src/libnm-systemd-core.la \
 	shared/systemd/libnm-systemd-shared.la \
+	shared/libnacd.la \
 	shared/libndhcp4.la \
+	shared/libcrbtree.la \
 	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
