@@ -1508,6 +1508,8 @@ test_dhcp_vendor_class_id (void)
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting_ip4_config (connection));
 	g_assert_cmpstr (nm_setting_ip4_config_get_dhcp_vendor_class_identifier (s_ip4), ==, "testvci");
 
+	nm_clear_pointer (&connections, g_hash_table_unref);
+
 	ARGV = NM_MAKE_STRV ("rd.net.dhcp.vendor-class",
 	                     "ip=eno1:dhcp");
 	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV, &hostname);
@@ -1517,7 +1519,7 @@ test_dhcp_vendor_class_id (void)
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting_ip4_config (connection));
 	g_assert (nm_setting_ip4_config_get_dhcp_vendor_class_identifier (s_ip4) == NULL);
 
-
+	nm_clear_pointer (&connections, g_hash_table_unref);
 
 	memset (vci_arg_long, 'A', 400);
 	vci_long = g_strdup_printf ("rd.net.dhcp.vendor-class=%s", vci_arg_long);
