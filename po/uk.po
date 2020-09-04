@@ -8,9 +8,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/NetworkMan"
-"ager/issues\n"
-"POT-Creation-Date: 2020-08-29 03:27+0000\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-09-04 09:54+0200\n"
 "PO-Revision-Date: 2020-08-29 14:14+0300\n"
 "Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
 "Language-Team: Ukrainian <kde-i18n-uk@kde.org>\n"
@@ -4874,7 +4873,6 @@ msgstr "«%s» не є коректним"
 
 #: ../clients/common/nm-meta-setting-desc.c:2159
 #, c-format
-#| msgid "invalid value for \"%s\""
 msgid "invalid IPv4 or subnet \"%s\""
 msgstr "некоректна адреса IPv4 або підмережа «%s»"
 
@@ -4897,7 +4895,6 @@ msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:2386
 #, c-format
-#| msgid "failed to set bond option \"%s\""
 msgid "failed to unset bond option \"%s\""
 msgstr "не вдалося скасувати встановлення параметра bond «%s»"
 
@@ -8288,6 +8285,7 @@ msgstr ""
 "з'єднання (наприклад «bond») або NULL, якщо це з'єднання не є підлеглим."
 
 #: ../clients/common/settings-docs.h.in:171
+#, fuzzy
 msgid ""
 "This represents the identity of the connection used for various purposes. It "
 "allows to configure multiple profiles to share the identity. Also, the "
@@ -8302,20 +8300,21 @@ msgid ""
 "into the generation algorithm. For example, a per-host key is commonly also "
 "included, so that different systems end up generating different IDs. Or with "
 "ipv6.addr-gen-mode=stable-privacy, also the device's name is included, so "
-"that different interfaces yield different addresses. The '$' character is "
-"treated special to perform dynamic substitutions at runtime. Currently, "
-"supported are \"${CONNECTION}\", \"${DEVICE}\", \"${MAC}\", \"${BOOT}\", "
-"\"${RANDOM}\". These effectively create unique IDs per-connection, per-"
-"device, per-boot, or every time. Note that \"${DEVICE}\" corresponds to the "
-"interface name of the device and \"${MAC}\" is the permanent MAC address of "
-"the device. Any unrecognized patterns following '$' are treated verbatim, "
-"however are reserved for future use. You are thus advised to avoid '$' or "
-"escape it as \"$$\". For example, set it to \"${CONNECTION}-${BOOT}-"
-"${DEVICE}\" to create a unique id for this connection that changes with "
-"every reboot and differs depending on the interface where the profile "
-"activates. If the value is unset, a global connection default is consulted. "
-"If the value is still unset, the default is similar to \"${CONNECTION}\" and "
-"uses a unique, fixed ID for the connection."
+"that different interfaces yield different addresses. The per-host key is the "
+"identity of your machine and stored in /var/lib/NetworkManager/secret-key. "
+"The '$' character is treated special to perform dynamic substitutions at "
+"runtime. Currently, supported are \"${CONNECTION}\", \"${DEVICE}\", "
+"\"${MAC}\", \"${BOOT}\", \"${RANDOM}\". These effectively create unique IDs "
+"per-connection, per-device, per-boot, or every time. Note that \"${DEVICE}\" "
+"corresponds to the interface name of the device and \"${MAC}\" is the "
+"permanent MAC address of the device. Any unrecognized patterns following '$' "
+"are treated verbatim, however are reserved for future use. You are thus "
+"advised to avoid '$' or escape it as \"$$\". For example, set it to "
+"\"${CONNECTION}-${BOOT}-${DEVICE}\" to create a unique id for this "
+"connection that changes with every reboot and differs depending on the "
+"interface where the profile activates. If the value is unset, a global "
+"connection default is consulted. If the value is still unset, the default is "
+"similar to \"${CONNECTION}\" and uses a unique, fixed ID for the connection."
 msgstr ""
 "Відповідає ідентифікатору з'єднання, який використовується з різною метою. "
 "Він надає змогу налаштовувати декілька профілів для одного ідентифікатора. "
@@ -8404,14 +8403,6 @@ msgstr ""
 "лише шістнадцяткові цифри і символи «-»)."
 
 #: ../clients/common/settings-docs.h.in:175
-#| msgid ""
-#| "Timeout in milliseconds to wait for device at startup. During boot, "
-#| "devices may take a while to be detected by the driver. This property will "
-#| "cause to delay NetworkManager-wait-online.service and nm-online to give "
-#| "the device a chance to appear. Note that this property only works "
-#| "together with NMSettingConnection:interface-name to identify the device "
-#| "that will be waited for. The value 0 means no wait time. The default "
-#| "value is -1, which currently has the same meaning as no wait time."
 msgid ""
 "Timeout in milliseconds to wait for device at startup. During boot, devices "
 "may take a while to be detected by the driver. This property will cause to "
@@ -8425,11 +8416,10 @@ msgstr ""
 "пристроям може знадобитися певний час для виявлення їх драйвером. "
 "Встановлення цієї властивості призводить до затримки у роботі NetworkManager-"
 "wait-online.service та nm-online, яка надає змогу пристрою з'явитися у "
-"списку пристроїв. Це реалізується очікуванням протягом вказаного періоду"
-" часу, аж доки стане доступним і керованим сумісний із профілем пристрій."
-" Значення 0 означає, що очікування не буде. Типовим "
-"значенням є -1, що у поточній версії означає, що очікування на запуск "
-"пристрою не буде."
+"списку пристроїв. Це реалізується очікуванням протягом вказаного періоду "
+"часу, аж доки стане доступним і керованим сумісний із профілем пристрій. "
+"Значення 0 означає, що очікування не буде. Типовим значенням є -1, що у "
+"поточній версії означає, що очікування на запуск пристрою не буде."
 
 #: ../clients/common/settings-docs.h.in:176
 msgid ""
@@ -9021,11 +9011,12 @@ msgid ""
 "and a prefix length (e.g. \"192.168.122.0/24\"). This property is currently "
 "not implemented for DHCPv6."
 msgstr ""
-"Масив серверів, пропозиції DHCP з яких слід відкидати. Ця властивість корисна"
-" для уникнення отримання даних з помилково налаштованих або ворожих серверів."
-" Для DHCPv4 елементи мають бути адресами IPv4, до яких можна дописувати"
-" символ похилої риски із довжиною префікса (наприклад, \"192.168.122.0/24\")."
-" У поточній версії цю властивість не реалізовано для DHCPv6."
+"Масив серверів, пропозиції DHCP з яких слід відкидати. Ця властивість "
+"корисна для уникнення отримання даних з помилково налаштованих або ворожих "
+"серверів. Для DHCPv4 елементи мають бути адресами IPv4, до яких можна "
+"дописувати символ похилої риски із довжиною префікса (наприклад, "
+"\"192.168.122.0/24\"). У поточній версії цю властивість не реалізовано для "
+"DHCPv6."
 
 #: ../clients/common/settings-docs.h.in:232
 #: ../clients/common/settings-docs.h.in:256
@@ -9066,13 +9057,13 @@ msgid ""
 "default), a global connection default gets consulted. If still unspecified, "
 "the DHCP option is not sent to the server. Since 1.28"
 msgstr ""
-"Параметр ідентифікатора класу виробника DHCP (60). У рядку даних спеціальні"
-" символи може бути екрановано у стилі C. Крім того, значення цієї властивості"
-" не може містити нульових байтів. Якщо значення для профілю не вказано"
-" (типова поведінка), програма спробує визначити параметри за типовими"
-" значення зі параметрів загального з'єднання. Якщо і це не дасть змоги"
-" визначити значення властивості, цей параметр DHCP не буде надіслано на"
-" сервер. Реалізовано з версії 1.28"
+"Параметр ідентифікатора класу виробника DHCP (60). У рядку даних спеціальні "
+"символи може бути екрановано у стилі C. Крім того, значення цієї властивості "
+"не може містити нульових байтів. Якщо значення для профілю не вказано "
+"(типова поведінка), програма спробує визначити параметри за типовими "
+"значення зі параметрів загального з'єднання. Якщо і це не дасть змоги "
+"визначити значення властивості, цей параметр DHCP не буде надіслано на "
+"сервер. Реалізовано з версії 1.28"
 
 #: ../clients/common/settings-docs.h.in:235
 #: ../clients/common/settings-docs.h.in:258
@@ -12277,6 +12268,18 @@ msgstr "некоректне значення «name» — «%s»"
 msgid "attribute '%s' is invalid for \"%s\""
 msgstr "атрибут «%s» є некоректним для «%s»"
 
+#: ../libnm-core/nm-libnm-core-intern/nm-libnm-core-utils.c:276
+msgid "property cannot be an empty string"
+msgstr "властивість не може бути порожнім рядком"
+
+#: ../libnm-core/nm-libnm-core-intern/nm-libnm-core-utils.c:293
+msgid "property cannot be longer than 255 bytes"
+msgstr "значення властивості не може бути довшим за 255 байтів"
+
+#: ../libnm-core/nm-libnm-core-intern/nm-libnm-core-utils.c:304
+msgid "property cannot contain any nul bytes"
+msgstr "значення властивості не може містити нульових байтів"
+
 #: ../libnm-core/nm-setting-6lowpan.c:79
 #, c-format
 msgid "property is not specified"
@@ -12433,19 +12436,16 @@ msgstr "«%s» не є припустимою адресою IPv4 для пар�
 
 #: ../libnm-core/nm-setting-bond.c:500
 #, c-format
-#| msgid "missing filename"
 msgid "missing option name"
 msgstr "не вказано назви параметра"
 
 #: ../libnm-core/nm-setting-bond.c:505
 #, c-format
-#| msgid "invalid action: "
 msgid "invalid option '%s'"
 msgstr "некоректний параметр «%s»"
 
 #: ../libnm-core/nm-setting-bond.c:541
 #, c-format
-#| msgid "invalid int32 value '%s' for attribute '%s'"
 msgid "invalid value '%s' for option '%s'"
 msgstr "некоректне значення «%s» для параметра «%s»"
 
@@ -13043,7 +13043,6 @@ msgstr "у поточній версії підтримку властивост
 
 #: ../libnm-core/nm-setting-ip-config.c:5272
 #, c-format
-#| msgid "'%s' is not a valid IP address"
 msgid "'%s' is not a valid IP or subnet"
 msgstr "«%s» є некоректною IP-адресою або підмережею"
 
@@ -13118,27 +13117,12 @@ msgstr "властивість не можна задавати, якщо вст
 msgid "FQDN flags requires a FQDN set"
 msgstr "для прапорців FQDN потрібен набір FQDN"
 
-#: ../libnm-core/nm-setting-ip4-config.c:239
-#| msgid "this property cannot be empty for '%s=%s'"
-msgid "property cannot be an empty string"
-msgstr "властивість не може бути порожнім рядком"
-
-#: ../libnm-core/nm-setting-ip4-config.c:256
-#| msgid "DHCP option cannot be longer than 255 characters"
-msgid "property cannot be longer than 255 bytes"
-msgstr "значення властивості не може бути довшим за 255 байтів"
-
-#: ../libnm-core/nm-setting-ip4-config.c:267
-#| msgid "property must contain only digits"
-msgid "property cannot contain any nul bytes"
-msgstr "значення властивості не може містити нульових байтів"
-
-#: ../libnm-core/nm-setting-ip4-config.c:283
+#: ../libnm-core/nm-setting-ip4-config.c:241
 #, c-format
 msgid "multiple addresses are not allowed for '%s=%s'"
 msgstr "не можна вказувати декілька адрес у «%s=%s»"
 
-#: ../libnm-core/nm-setting-ip4-config.c:297
+#: ../libnm-core/nm-setting-ip4-config.c:255
 msgid "property should be TRUE when method is set to disabled"
 msgstr ""
 "властивість повинна мати значення TRUE, якщо встановлено метод «disabled»"
@@ -14699,48 +14683,48 @@ msgstr ""
 "значення «%s» типу «%s» є некоректним для властивості «%s» типу «%s» або не "
 "належить до припустимого діапазону значень"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:4936
+#: ../shared/nm-glib-aux/nm-shared-utils.c:4952
 msgid "interface name is missing"
 msgstr "пропущено назву інтерфейсу"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:4942
+#: ../shared/nm-glib-aux/nm-shared-utils.c:4958
 msgid "interface name is too short"
 msgstr "назва інтерфейсу є надто короткою"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:4951
+#: ../shared/nm-glib-aux/nm-shared-utils.c:4967
 msgid "interface name is reserved"
 msgstr "таку назву інтерфейсу зарезервовано"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:4963
+#: ../shared/nm-glib-aux/nm-shared-utils.c:4979
 msgid "interface name contains an invalid character"
 msgstr "назва інтерфейсу містить некоректний символ"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:4969
+#: ../shared/nm-glib-aux/nm-shared-utils.c:4985
 msgid "interface name is longer than 15 characters"
 msgstr "назва інтерфейсу є довшою за 15 символів"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:4992
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5008
 #, c-format
 msgid "'%%' is not allowed in interface names"
 msgstr "«%%» не можна використовувати у назвах інтерфейсів"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5005
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5021
 #, c-format
 msgid "'%s' is not allowed as interface name"
 msgstr "«%s» не можна використовувати як назву інтерфейсу"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5026
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5042
 msgid ""
 "interface name must be alphanumerical with no forward or backward slashes"
 msgstr ""
 "назва інтерфейсу має складатися з літер і цифр без початкового і "
 "завершального символів похилої риски"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5043
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5059
 msgid "interface name must not be empty"
 msgstr "назва інтерфейсу не може бути порожньою"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5049
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5065
 msgid "interface name must be UTF-8 encoded"
 msgstr "назва інтерфейсу має бути набором символів у кодуванні UTF-8"
 
