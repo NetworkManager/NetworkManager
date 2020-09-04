@@ -1174,9 +1174,9 @@ msgid "neither a valid connection nor device given"
 msgstr "有効な接続、デバイスいずれも指定されていません"
 
 #: ../clients/cli/connections.c:2761
-#, c-format
+#, fuzzy, c-format
 msgid "invalid passwd-file '%s' at line %zd: %s"
-msgstr "%zd 行目の無効なパスワードファイル '%s': %s"
+msgstr "無効なパスワードファイル ’%s’: %s"
 
 #: ../clients/cli/connections.c:2767
 #, c-format
@@ -13646,7 +13646,7 @@ msgstr "不明な属性 '%s'"
 #: ../libnm-core/nm-utils.c:5706
 #, c-format
 msgid "missing key-value separator '%c' after '%s'"
-msgstr "'%s' の後に、キー/値のセパレーター '%c' がありません"
+msgstr ""
 
 #: ../libnm-core/nm-utils.c:5722
 #, c-format
