@@ -1343,7 +1343,7 @@ msgid ""
 msgid_plural ""
 "Warning: There are %3$u other connections with the name '%1$s'. Reference "
 "the connection by its uuid '%2$s'\n"
-msgstr[0] "警告：名为 '%1$s' 的连接已存在。使用 uuid '%2$s' 来指代连接\n"
+msgstr[0] ""
 
 #: ../clients/cli/connections.c:4942
 #, c-format
@@ -10146,10 +10146,10 @@ msgid "(No custom routes)"
 msgstr "（没有自定义路由）"
 
 #: ../clients/tui/nmt-page-ip4.c:72 ../clients/tui/nmt-page-ip6.c:73
-#, c-format
+#, fuzzy, c-format
 msgid "One custom route"
 msgid_plural "%d custom routes"
-msgstr[0] "个自定义路由"
+msgstr[0] "（没有自定义路由）"
 
 #: ../clients/tui/nmt-page-ip4.c:115
 msgid "IPv4 CONFIGURATION"
