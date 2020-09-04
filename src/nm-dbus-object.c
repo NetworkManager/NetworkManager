@@ -84,26 +84,27 @@ _create_export_path (NMDBusObjectClass *klass)
  * Returns: the path @self was exported under
  */
 const char *
-nm_dbus_object_export (NMDBusObject *self)
+nm_dbus_object_export (gpointer /* (NMDBusObject *) */ self)
 {
+	NMDBusObject *self1 = self;
 	static guint64 id_counter = 0;
 
-	g_return_val_if_fail (NM_IS_DBUS_OBJECT (self), NULL);
+	g_return_val_if_fail (NM_IS_DBUS_OBJECT (self1), NULL);
 
-	g_return_val_if_fail (!self->internal.path, self->internal.path);
+	g_return_val_if_fail (!self1->internal.path, self1->internal.path);
 
-	nm_assert (!self->internal.is_unexporting);
+	nm_assert (!self1->internal.is_unexporting);
 
-	self->internal.path = _create_export_path (NM_DBUS_OBJECT_GET_CLASS (self));
+	self1->internal.path = _create_export_path (NM_DBUS_OBJECT_GET_CLASS (self1));
 
-	self->internal.export_version_id = ++id_counter;
+	self1->internal.export_version_id = ++id_counter;
 
-	_LOGT ("export: \"%s\"", self->internal.path);
+	_LOGT ("export: \"%s\"", self1->internal.path);
 
-	_nm_dbus_manager_obj_export (self);
+	_nm_dbus_manager_obj_export (self1);
 
-	_emit_exported_changed (self);
-	return self->internal.path;
+	_emit_exported_changed (self1);
+	return self1->internal.path;
 }
 
 /**
@@ -114,13 +115,15 @@ nm_dbus_object_export (NMDBusObject *self)
  * auto-exported on future connections).
  */
 void
-nm_dbus_object_unexport (NMDBusObject *self)
+nm_dbus_object_unexport (gpointer /* (NMDBusObject *) */ self)
 {
-	g_return_if_fail (NM_IS_DBUS_OBJECT (self));
+	NMDBusObject *self1 = self;
 
-	g_return_if_fail (self->internal.path);
+	g_return_if_fail (NM_IS_DBUS_OBJECT (self1));
 
-	_LOGT ("unexport: \"%s\"", self->internal.path);
+	g_return_if_fail (self1->internal.path);
+
+	_LOGT ("unexport: \"%s\"", self1->internal.path);
 
 	/* note that we emit the signal *before* actually unexporting the object.
 	 * The reason is, that listeners want to use this signal to know that
@@ -133,16 +136,16 @@ nm_dbus_object_unexport (NMDBusObject *self)
 	 * The inconvenient part is, that at this point nm_dbus_object_get_path()
 	 * still returns the path. So, the callee needs to handle that. Possibly
 	 * by using "nm_dbus_object_get_path_still_exported()". */
-	self->internal.is_unexporting = TRUE;
+	self1->internal.is_unexporting = TRUE;
 
-	_emit_exported_changed (self);
+	_emit_exported_changed (self1);
 
-	_nm_dbus_manager_obj_unexport (self);
+	_nm_dbus_manager_obj_unexport (self1);
 
-	nm_clear_g_free (&self->internal.path);
-	self->internal.export_version_id = 0;
+	nm_clear_g_free (&self1->internal.path);
+	self1->internal.export_version_id = 0;
 
-	self->internal.is_unexporting = FALSE;
+	self1->internal.is_unexporting = FALSE;
 }
 
 static gboolean
@@ -155,21 +158,27 @@ _unexport_on_idle_cb (gpointer user_data)
 }
 
 void
-nm_dbus_object_unexport_on_idle (NMDBusObject *self_take)
+nm_dbus_object_unexport_on_idle (gpointer /* (NMDBusObject *) */ self_take)
 {
-	g_return_if_fail (NM_IS_DBUS_OBJECT (self_take));
+	NMDBusObject *self = g_steal_pointer (&self_take);
 
-	g_return_if_fail (self_take->internal.path);
+	if (!self)
+		return;
+
+	g_return_if_fail (NM_IS_DBUS_OBJECT (self));
+
+	g_return_if_fail (self->internal.path);
 
 	/* There is no mechanism to cancel or abort the unexport. It will always
 	 * gonna happen.
 	 *
 	 * However, we register it to block shutdown, so that we ensure that it will happen. */
 
-	nm_shutdown_wait_obj_register_object (self_take, "unexport-dbus-obj-on-idle");
+	nm_shutdown_wait_obj_register_object (self, "unexport-dbus-obj-on-idle");
 
+	/* pass on ownership. */
 	g_idle_add (_unexport_on_idle_cb,
-	            g_steal_pointer (&self_take));
+	            g_steal_pointer (&self));
 }
 
 /*****************************************************************************/

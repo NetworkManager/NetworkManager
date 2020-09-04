@@ -163,10 +163,10 @@ nm_dbus_object_get_path_still_exported (NMDBusObject *self)
 	       : self->internal.path;
 }
 
-const char *nm_dbus_object_export      (NMDBusObject *self);
-void        nm_dbus_object_unexport    (NMDBusObject *self);
+const char *nm_dbus_object_export      (gpointer /* (NMDBusObject *) */ self);
+void        nm_dbus_object_unexport    (gpointer /* (NMDBusObject *) */ self);
 
-void        nm_dbus_object_unexport_on_idle (NMDBusObject *self_take);
+void        nm_dbus_object_unexport_on_idle (gpointer /* (NMDBusObject *) */ self_take);
 
 void        _nm_dbus_object_clear_and_unexport (NMDBusObject **location);
 #define nm_dbus_object_clear_and_unexport(location) _nm_dbus_object_clear_and_unexport ((NMDBusObject **) (location))
