@@ -54,6 +54,14 @@ struct _NML3ConfigData {
 
 	union {
 		struct {
+			NMDhcpLease *dhcp_lease_6;
+			NMDhcpLease *dhcp_lease_4;
+		};
+		NMDhcpLease *dhcp_lease_x[2];
+	};
+
+	union {
+		struct {
 			GArray *nameservers_6;
 			GArray *nameservers_4;
 		};
@@ -471,6 +479,9 @@ nm_l3_config_data_unref (const NML3ConfigData *self)
 
 	nm_clear_pointer (&mutable->wins, g_array_unref);
 	nm_clear_pointer (&mutable->nis_servers, g_array_unref);
+
+	nm_clear_pointer (&mutable->dhcp_lease_4, nm_dhcp_lease_unref);
+	nm_clear_pointer (&mutable->dhcp_lease_6, nm_dhcp_lease_unref);
 
 	nm_clear_pointer (&mutable->nameservers_4, g_array_unref);
 	nm_clear_pointer (&mutable->nameservers_6, g_array_unref);
@@ -1324,6 +1335,63 @@ nm_l3_config_data_set_source (NML3ConfigData *self,
 
 /*****************************************************************************/
 
+NMDhcpLease *
+nm_l3_config_data_get_dhcp_lease (const NML3ConfigData *self,
+                                  int addr_family)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+
+	return self->dhcp_lease_x[NM_IS_IPv4 (addr_family)];
+}
+
+gboolean
+nm_l3_config_data_set_dhcp_lease (NML3ConfigData *self,
+                                  int addr_family,
+                                  NMDhcpLease *lease)
+{
+	nm_auto_unref_dhcplease NMDhcpLease *lease_old = NULL;
+	NMDhcpLease **p_lease;
+
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	p_lease = &self->dhcp_lease_x[NM_IS_IPv4 (addr_family)];
+
+	if (*p_lease == lease)
+		return FALSE;
+
+	if (lease)
+		nm_dhcp_lease_ref (lease);
+	lease_old = *p_lease;
+	*p_lease = lease;
+	return TRUE;
+}
+
+gboolean
+nm_l3_config_data_set_dhcp_lease_from_options (NML3ConfigData *self,
+                                               int addr_family,
+                                               GHashTable *options_take)
+{
+	nm_auto_unref_dhcplease NMDhcpLease *lease = NULL;
+	nm_auto_unref_dhcplease NMDhcpLease *lease_old = NULL;
+	NMDhcpLease **p_lease;
+
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	if (options_take)
+		lease = nm_dhcp_lease_new_from_options (g_steal_pointer (&options_take));
+
+	p_lease = &self->dhcp_lease_x[NM_IS_IPv4 (addr_family)];
+
+	if (*p_lease == lease)
+		return FALSE;
+
+	lease_old = *p_lease;
+	*p_lease = g_steal_pointer (&lease);
+	return TRUE;
+}
+
+/*****************************************************************************/
+
 static int
 _dedup_multi_index_cmp (const NML3ConfigData *a,
                         const NML3ConfigData *b,
@@ -1385,6 +1453,13 @@ nm_l3_config_data_cmp (const NML3ConfigData *a, const NML3ConfigData *b)
 		NM_CMP_RETURN (nmp_object_cmp (a->best_default_route_x[IS_IPv4], b->best_default_route_x[IS_IPv4]));
 
 		NM_CMP_RETURN (_garray_inaddr_cmp (a->nameservers_x[IS_IPv4], b->nameservers_x[IS_IPv4], addr_family));
+
+		NM_CMP_RETURN (nm_utils_hashtable_cmp (nm_dhcp_lease_get_options (a->dhcp_lease_x[IS_IPv4]),
+		                                       nm_dhcp_lease_get_options (b->dhcp_lease_x[IS_IPv4]),
+		                                       TRUE,
+		                                       nm_strcmp_with_data,
+		                                       nm_strcmp_with_data,
+		                                       NULL));
 
 		NM_CMP_RETURN (nm_strv_ptrarray_cmp (a->domains_x[IS_IPv4], b->domains_x[IS_IPv4]));
 		NM_CMP_RETURN (nm_strv_ptrarray_cmp (a->searches_x[IS_IPv4], b->searches_x[IS_IPv4]));
@@ -2177,6 +2252,7 @@ nm_l3_config_data_merge (NML3ConfigData *self,
 		self->mtu = src->mtu;
 
 	/* self->source does not get merged. */
+	/* self->dhcp_lease_x does not get merged. */
 }
 
 NML3ConfigData *
