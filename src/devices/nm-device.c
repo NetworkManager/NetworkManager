@@ -537,7 +537,6 @@ typedef struct _NMDevicePrivate {
 	/* DHCPv4 tracking */
 	struct {
 		char *          pac_url;
-		char *          root_path;
 	} dhcp4;
 
 	struct {
@@ -8310,7 +8309,6 @@ dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
 	nm_clear_g_source (&priv->dhcp_data_4.grace_id);
 	priv->dhcp_data_4.grace_pending = FALSE;
 	nm_clear_g_free (&priv->dhcp4.pac_url);
-	nm_clear_g_free (&priv->dhcp4.root_path);
 
 	if (priv->dhcp_data_4.client) {
 		/* Stop any ongoing DHCP transaction on this device */
@@ -8754,9 +8752,6 @@ dhcp4_state_changed (NMDhcpClient *client,
 		g_free (priv->dhcp4.pac_url);
 		priv->dhcp4.pac_url = g_strdup (g_hash_table_lookup (options, "wpad"));
 		nm_device_set_proxy_config (self, priv->dhcp4.pac_url);
-
-		g_free (priv->dhcp4.root_path);
-		priv->dhcp4.root_path = g_strdup (g_hash_table_lookup (options, "root_path"));
 
 		nm_dhcp_config_set_options (priv->dhcp_data_4.config, options);
 		_notify (self, PROP_DHCP4_CONFIG);
