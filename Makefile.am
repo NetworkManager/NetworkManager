@@ -5173,9 +5173,9 @@ include Makefile.examples
 check-po-msgfmt:
 	@echo "check-po-msgfmt: check $(top_srcdir)/po/*.po files with msgfmt -vc"
 	@for f in "$(top_srcdir)/po"/*.po ; do \
-		if ! msgfmt -vc "$$f" &>/dev/null ; then \
-			echo "invalid po file: msgfmt -vc $$f" ; \
-			msgfmt -vc "$$f" ; \
+		if ! msgfmt -vc "$$f" -o /dev/null &>/dev/null ; then \
+			echo "invalid po file: msgfmt -vc $$f -o /dev/null" ; \
+			msgfmt -vc "$$f" -o /dev/null ; \
 			exit 1 ; \
 		fi ; \
 	done
