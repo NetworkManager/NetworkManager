@@ -32,7 +32,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-08-23 16:29+0900\n"
+"POT-Creation-Date: 2020-09-04 09:54+0200\n"
 "PO-Revision-Date: 2020-08-23 16:31+0900\n"
 "Last-Translator: Changwoo Ryu <cwryu@debian.org>\n"
 "Language-Team: GNOME Korea <gnome-kr@googlegroups.com>\n"
@@ -198,8 +198,8 @@ msgstr "오류: 시스템 버스 연결 오류: %s"
 #: ../clients/common/nm-client-utils.c:306
 #: ../clients/common/nm-meta-setting-desc.c:1747
 #: ../clients/common/nm-meta-setting-desc.c:1778
-#: ../clients/common/nm-meta-setting-desc.c:2695
-#: ../clients/common/nm-meta-setting-desc.c:2753
+#: ../clients/common/nm-meta-setting-desc.c:2708
+#: ../clients/common/nm-meta-setting-desc.c:2766
 msgid "unknown"
 msgstr "알 수 없음"
 
@@ -1396,7 +1396,7 @@ msgstr "'%s' (%s) 연결이 성공적으로 추가되었습니다.\n"
 #: ../clients/cli/general.c:93 ../clients/cli/utils.h:312
 #: ../clients/common/nm-client-utils.c:303
 #: ../clients/common/nm-meta-setting-desc.c:871
-#: ../clients/common/nm-meta-setting-desc.c:2690
+#: ../clients/common/nm-meta-setting-desc.c:2703
 msgid "no"
 msgstr "아니요"
 
@@ -1406,7 +1406,7 @@ msgstr "아니요"
 #: ../clients/cli/general.c:92 ../clients/cli/utils.h:312
 #: ../clients/common/nm-client-utils.c:302
 #: ../clients/common/nm-meta-setting-desc.c:871
-#: ../clients/common/nm-meta-setting-desc.c:2687
+#: ../clients/common/nm-meta-setting-desc.c:2700
 msgid "yes"
 msgstr "예"
 
@@ -4126,11 +4126,11 @@ msgstr "페이저 파이프를 복제하는데 실패: %s\n"
 msgid "(unknown)"
 msgstr "(알 수 없음)"
 
-#: ../clients/cli/utils.h:318 ../clients/common/nm-meta-setting-desc.c:4144
+#: ../clients/cli/utils.h:318 ../clients/common/nm-meta-setting-desc.c:4182
 msgid "on"
 msgstr "켜짐"
 
-#: ../clients/cli/utils.h:318 ../clients/common/nm-meta-setting-desc.c:4145
+#: ../clients/cli/utils.h:318 ../clients/common/nm-meta-setting-desc.c:4183
 msgid "off"
 msgstr "꺼짐"
 
@@ -4690,7 +4690,7 @@ msgstr "%s (%s)"
 
 #: ../clients/common/nm-meta-setting-desc.c:1352
 #: ../clients/common/nm-meta-setting-desc.c:1356
-#: ../clients/common/nm-meta-setting-desc.c:4168
+#: ../clients/common/nm-meta-setting-desc.c:4206
 msgid "'%s' is out of range [%"
 msgstr "'%s' 값이 범위 밖에 있습니다 [%"
 
@@ -4792,38 +4792,43 @@ msgid "'%s' is not a valid number (or out of range)"
 msgstr "'%s'은(는) 올바른 숫자가 아닙니다 (또는 범위 밖입니다)"
 
 #: ../clients/common/nm-meta-setting-desc.c:2082
-#: ../clients/common/nm-meta-setting-desc.c:4041
+#: ../clients/common/nm-meta-setting-desc.c:4079
 #: ../libnm-core/nm-setting-ovs-bridge.c:183 ../src/nm-config.c:549
 #, c-format
 msgid "'%s' is not valid"
 msgstr "'%s'이(가) 올바르지 않습니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:2177
+#: ../clients/common/nm-meta-setting-desc.c:2159
+#, fuzzy, c-format
+msgid "invalid IPv4 or subnet \"%s\""
+msgstr "잘못된 값 \"%s\""
+
+#: ../clients/common/nm-meta-setting-desc.c:2190
 msgid "not a valid hex-string"
 msgstr "올바른 16진수 문자가 아닙니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:2193
+#: ../clients/common/nm-meta-setting-desc.c:2206
 #, c-format
 msgid "'%s' is not a valid hex character"
 msgstr "'%s'은(는) 올바른 16진수 문자가 아닙니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:2272
+#: ../clients/common/nm-meta-setting-desc.c:2285
 msgid ""
 "too many arguments. Please only specify a private key file and optionally a "
 "password"
 msgstr "너무 많은 인수. 비밀 키 파일, 그리고 선택적으로 암호만 지정하십시오"
 
-#: ../clients/common/nm-meta-setting-desc.c:2373
+#: ../clients/common/nm-meta-setting-desc.c:2386
 #, c-format
 msgid "failed to unset bond option \"%s\""
 msgstr "\"%s\" 본딩 옵션을 설정하지 못했습니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:2393
+#: ../clients/common/nm-meta-setting-desc.c:2406
 #, c-format
 msgid "failed to set bond option \"%s\""
 msgstr "\"%s\" 본딩 옵션을 설정하지 못했습니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:2419
+#: ../clients/common/nm-meta-setting-desc.c:2432
 #, c-format
 msgid ""
 "Enter a list of bonding options formatted as:\n"
@@ -4861,120 +4866,120 @@ msgstr ""
 #. * hacky: we can not see if the type is already set, because
 #. * nmc_setting_set_property() is called only after the property
 #. * we're setting (type) has been removed.
-#: ../clients/common/nm-meta-setting-desc.c:2484
+#: ../clients/common/nm-meta-setting-desc.c:2497
 #, c-format
 msgid "Can not change the connection type"
 msgstr "연결 유형을 변경할 수 없습니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:2569
+#: ../clients/common/nm-meta-setting-desc.c:2582
 #, c-format
 msgid "invalid permission \"%s\""
 msgstr "잘못된 권한 \"%s\""
 
-#: ../clients/common/nm-meta-setting-desc.c:2669
+#: ../clients/common/nm-meta-setting-desc.c:2682
 #, c-format
 msgid "the value '%s' is not a valid UUID"
 msgstr "값 '%s'은(는) 올바른 UUID가 아닙니다."
 
-#: ../clients/common/nm-meta-setting-desc.c:2740
+#: ../clients/common/nm-meta-setting-desc.c:2753
 msgid "0 (disabled)"
 msgstr "0 (비활성화됨)"
 
-#: ../clients/common/nm-meta-setting-desc.c:2746
+#: ../clients/common/nm-meta-setting-desc.c:2759
 msgid "enabled, "
 msgstr "활성화됨, "
 
-#: ../clients/common/nm-meta-setting-desc.c:2748
+#: ../clients/common/nm-meta-setting-desc.c:2761
 msgid "advertise, "
 msgstr "advertise, "
 
-#: ../clients/common/nm-meta-setting-desc.c:2750
+#: ../clients/common/nm-meta-setting-desc.c:2763
 msgid "willing, "
 msgstr "willing, "
 
-#: ../clients/common/nm-meta-setting-desc.c:2839
+#: ../clients/common/nm-meta-setting-desc.c:2852
 #, c-format
 msgid "'%s' is not a valid DCB flag"
 msgstr "'%s'은(는) 올바른 DCB 플래그가 아닙니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:2866
+#: ../clients/common/nm-meta-setting-desc.c:2879
 msgid "must contain 8 comma-separated numbers"
 msgstr "쉼표로 구분된 8개의 숫자가 들어있어야 합니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:2880
+#: ../clients/common/nm-meta-setting-desc.c:2893
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive) or %u"
 msgstr "'%s'은(는) 0에서 %u 사이 (포함) 숫자 또는 %u 숫자가 아닙니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:2883
+#: ../clients/common/nm-meta-setting-desc.c:2896
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive)"
 msgstr "'%s'은(는) 0에서 %u 사이의 (포함) 숫자가 아닙니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:2904
+#: ../clients/common/nm-meta-setting-desc.c:2917
 #, c-format
 msgid "changes will have no effect until '%s' includes 1 (enabled)"
 msgstr "변경 사항은 '%s'에 1(활성화)이 들어있지 않으면 효과가 없습니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:2934
+#: ../clients/common/nm-meta-setting-desc.c:2947
 #, c-format
 msgid "bandwidth percentages must total 100%%"
 msgstr "대역폭 퍼센트는 총 100%%가 되어야 합니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:3005
-#: ../clients/common/nm-meta-setting-desc.c:3011
+#: ../clients/common/nm-meta-setting-desc.c:3018
+#: ../clients/common/nm-meta-setting-desc.c:3024
 msgid "SIM operator ID must be a 5 or 6 number MCCMNC code"
 msgstr "SIM 통신사 ID는 5 또는 6자리 MCCMNC 코드여야 합니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:3035
+#: ../clients/common/nm-meta-setting-desc.c:3048
 #, c-format
 msgid "'%s' is not a valid IBoIP P_Key"
 msgstr "'%s'은(는) 올바른 IBoIP P_Key가 아닙니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:3058
+#: ../clients/common/nm-meta-setting-desc.c:3071
 msgid "default"
 msgstr "기본값"
 
-#: ../clients/common/nm-meta-setting-desc.c:3222
+#: ../clients/common/nm-meta-setting-desc.c:3235
 #, c-format
 msgid "invalid IPv%c address '%s'"
 msgstr "유효하지 않은 IPv%c 주소 '%s'"
 
-#: ../clients/common/nm-meta-setting-desc.c:3349
+#: ../clients/common/nm-meta-setting-desc.c:3362
 #, c-format
 msgid "invalid gateway address '%s'"
 msgstr "잘못된 게이트웨이 주소 '%s'"
 
-#: ../clients/common/nm-meta-setting-desc.c:3476
+#: ../clients/common/nm-meta-setting-desc.c:3514
 #, c-format
 msgid "'%s' is not a valid channel; use <1-13>"
 msgstr "'%s'은(는) 올바른 채널이 아닙니다: <1-13>을 사용하십시오"
 
-#: ../clients/common/nm-meta-setting-desc.c:3556
+#: ../clients/common/nm-meta-setting-desc.c:3594
 msgid "The valid syntax is: vf [attribute=value]... [,vf [attribute=value]...]"
 msgstr "올바른 구문은: vf [속성=값] ... [, vf [속성=값] ...]"
 
-#: ../clients/common/nm-meta-setting-desc.c:3580
-#: ../clients/common/nm-meta-setting-desc.c:3660
+#: ../clients/common/nm-meta-setting-desc.c:3618
+#: ../clients/common/nm-meta-setting-desc.c:3698
 msgid ""
 "The valid syntax is: '[root | parent <handle>] [handle <handle>] <kind>'"
 msgstr "올바른 구문은: '[root | parent <핸들>] [handle <핸들>] <종류>'"
 
-#: ../clients/common/nm-meta-setting-desc.c:3605
+#: ../clients/common/nm-meta-setting-desc.c:3643
 msgid "The valid syntax is: '<vid>[-<vid>] [pvid] [untagged]'"
 msgstr "올바른 구문은: '<VLAN아이디>[-<VLAN아이디> [pvid] [untagged] '"
 
-#: ../clients/common/nm-meta-setting-desc.c:3801
+#: ../clients/common/nm-meta-setting-desc.c:3839
 #, c-format
 msgid "invalid priority map '%s'"
 msgstr "잘못된 속성 맵 '%s'"
 
-#: ../clients/common/nm-meta-setting-desc.c:3893
+#: ../clients/common/nm-meta-setting-desc.c:3931
 #, c-format
 msgid "'%s' is not valid; 2 or 3 strings should be provided"
 msgstr "'%s'은(는) 올바르지 않습니다: 2개 또는 3개 문자열이어야 합니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:3932
+#: ../clients/common/nm-meta-setting-desc.c:3970
 #, c-format
 msgid ""
 "Enter a list of S/390 options formatted as:\n"
@@ -4985,17 +4990,17 @@ msgstr ""
 "  option = <값>, option = <값>,...\n"
 "올바른 옵션은: %s\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:3967
+#: ../clients/common/nm-meta-setting-desc.c:4005
 #, c-format
 msgid "'%s' is not a valid channel"
 msgstr "'%s'은(는) 올바른 채널이 아닙니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:3973
+#: ../clients/common/nm-meta-setting-desc.c:4011
 #, c-format
 msgid "'%ld' is not a valid channel"
 msgstr "'%ld'은(는) 올바른 채널이 아닙니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:3990
+#: ../clients/common/nm-meta-setting-desc.c:4028
 #: ../libnm-core/nm-setting-sriov.c:438 ../libnm-core/nm-setting-wired.c:765
 #: ../libnm-core/nm-setting-wired.c:778 ../libnm-core/nm-setting-wired.c:831
 #: ../libnm-core/nm-setting-wired.c:874 ../libnm-core/nm-setting-wireless.c:899
@@ -5004,7 +5009,7 @@ msgstr "'%ld'은(는) 올바른 채널이 아닙니다"
 msgid "'%s' is not a valid MAC address"
 msgstr "'%s'은(는) 올바른 MAC 주소가 아닙니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:4050
+#: ../clients/common/nm-meta-setting-desc.c:4088
 #, c-format
 msgid ""
 "'%s' not compatible with %s '%s', please change the key or set the right %s "
@@ -5013,63 +5018,63 @@ msgstr ""
 "'%s'은(는) %s '%s'(와)과 호환되지 않습니다. 키를 변경하거나 올바른 %s(을)를 "
 "먼저 설정하십시오."
 
-#: ../clients/common/nm-meta-setting-desc.c:4060
+#: ../clients/common/nm-meta-setting-desc.c:4098
 #, c-format
 msgid "WEP key is guessed to be of '%s'"
 msgstr "WEP 키가 '%s'의 하나로 보입니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:4065
+#: ../clients/common/nm-meta-setting-desc.c:4103
 #, c-format
 msgid "WEP key index set to '%d'"
 msgstr "WEP 키 인덱스가 '%d'(으)로 설정되었습니다"
 
-#: ../clients/common/nm-meta-setting-desc.c:4104
+#: ../clients/common/nm-meta-setting-desc.c:4142
 #, c-format
 msgid "'%s' is not compatible with '%s' type, please change or delete the key."
 msgstr ""
 "'%s'은(는) '%s' 유형과 호환되지 않습니다. 키를 변경하거나 삭제하십시오."
 
-#: ../clients/common/nm-meta-setting-desc.c:4190
+#: ../clients/common/nm-meta-setting-desc.c:4228
 #, c-format
 msgid "'%s' is not valid; use 'on', 'off', or 'ignore'"
 msgstr "'%s'은(는) 올바르지 않습니다. 'on', 'off' 또는 'ignore'를 사용하십시오"
 
-#: ../clients/common/nm-meta-setting-desc.c:4259
+#: ../clients/common/nm-meta-setting-desc.c:4297
 msgid "Bonding primary interface [none]"
 msgstr "본딩 주요 인터페이스 [없음]"
 
 #. this is a virtual property, only needed during "ask" mode.
-#: ../clients/common/nm-meta-setting-desc.c:4266
+#: ../clients/common/nm-meta-setting-desc.c:4304
 msgid "Bonding monitoring mode"
 msgstr "본딩 모니터링 모드"
 
-#: ../clients/common/nm-meta-setting-desc.c:4275
+#: ../clients/common/nm-meta-setting-desc.c:4313
 msgid "Bonding miimon [100]"
 msgstr "본딩 miimon [100]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4283
+#: ../clients/common/nm-meta-setting-desc.c:4321
 msgid "Bonding downdelay [0]"
 msgstr "본딩 downdelay [0]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4291
+#: ../clients/common/nm-meta-setting-desc.c:4329
 msgid "Bonding updelay [0]"
 msgstr "본딩 updelay [0]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4299
+#: ../clients/common/nm-meta-setting-desc.c:4337
 msgid "Bonding arp-interval [0]"
 msgstr "본딩 arp-interval [0]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4307
+#: ../clients/common/nm-meta-setting-desc.c:4345
 msgid "Bonding arp-ip-target [none]"
 msgstr "본딩 arp-ip-target [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4315
+#: ../clients/common/nm-meta-setting-desc.c:4353
 msgid "LACP rate ('slow' or 'fast') [slow]"
 msgstr "LACP 속도 ('slow' 또는 'fast') [slow]"
 
 #. macro that returns @func as const (guint32(*)(NMSetting*)) type, but checks
 #. * that the actual type is (guint32(*)(type *)).
-#: ../clients/common/nm-meta-setting-desc.c:4482
+#: ../clients/common/nm-meta-setting-desc.c:4520
 msgid ""
 "nmcli can accepts both direct JSON configuration data and a file name "
 "containing the configuration. In the latter case the file is read and the "
@@ -5087,7 +5092,7 @@ msgstr ""
 "\"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n"
 "    set team.config /etc/my-team.conf\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4490
+#: ../clients/common/nm-meta-setting-desc.c:4528
 msgid ""
 "Enter a list of link watchers formatted as dictionaries where the keys are "
 "teamd properties. Dictionary pairs are in the form: key=value and pairs are "
@@ -5134,11 +5139,11 @@ msgstr ""
 "   name=arp_ping source-host=172.16.1.1 target-host=172.16.1.254, "
 "name=ethtool delay-up=3\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4539
+#: ../clients/common/nm-meta-setting-desc.c:4577
 msgid "IEEE 802.15.4 (WPAN) parent device or connection UUID"
 msgstr "IEEE 802.15.4 (WPAN) 상위 장치 또는 연결 UUID"
 
-#: ../clients/common/nm-meta-setting-desc.c:4575
+#: ../clients/common/nm-meta-setting-desc.c:4613
 msgid ""
 "Enter file path to CA certificate (optionally prefixed with file://).\n"
 "  [file://]<file path>\n"
@@ -5150,7 +5155,7 @@ msgstr ""
 "nmcli는 인증서를 원본 블롭 데이터로 지정하도록 지원하지 않습니다.\n"
 "예: /home/cimrman/cacert.crt\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4617
+#: ../clients/common/nm-meta-setting-desc.c:4655
 msgid ""
 "Enter file path to client certificate (optionally prefixed with file://).\n"
 "  [file://]<file path>\n"
@@ -5162,7 +5167,7 @@ msgstr ""
 "nmcli는 인증서를 원본 블롭 데이터로 지정하도록 지원하지 않습니다.\n"
 "예: /home/cimrman/jara.crt\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4674
+#: ../clients/common/nm-meta-setting-desc.c:4712
 msgid ""
 "Enter file path to CA certificate for inner authentication (optionally "
 "prefixed\n"
@@ -5177,7 +5182,7 @@ msgstr ""
 "nmcli는 인증서를 원본 블롭 데이터로 지정하도록 지원하지 않습니다.\n"
 "예: /home/cimrman/ca-zweite-phase.crt\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4717
+#: ../clients/common/nm-meta-setting-desc.c:4755
 msgid ""
 "Enter file path to client certificate for inner authentication (optionally "
 "prefixed\n"
@@ -5192,7 +5197,7 @@ msgstr ""
 "nmcli는 인증서를 원본 블롭 데이터로 지정하도록 지원하지 않습니다.\n"
 "예: /home/cimrman/jara-zweite-phase.crt\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4744
+#: ../clients/common/nm-meta-setting-desc.c:4782
 msgid ""
 "Enter bytes as a list of hexadecimal values.\n"
 "Two formats are accepted:\n"
@@ -5213,8 +5218,8 @@ msgstr ""
 "예: ab0455a6ea3a74C2\n"
 "    ab 4 55 0xa6 ea 3a 74 C2\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4761
-#: ../clients/common/nm-meta-setting-desc.c:4779
+#: ../clients/common/nm-meta-setting-desc.c:4799
+#: ../clients/common/nm-meta-setting-desc.c:4817
 msgid ""
 "Enter path to a private key and the key password (if not set yet):\n"
 "  [file://]<file path> [<password>]\n"
@@ -5226,84 +5231,84 @@ msgstr ""
 "nmcli는 원본 블롭 데이터로 비밀 키를 지정하는 것을 지원하지 않습니다.\n"
 "예: /home/cimrman/jara-priv-key Dardanely\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:4818
+#: ../clients/common/nm-meta-setting-desc.c:4856
 #: ../clients/common/nm-secret-agent-simple.c:268
 #: ../clients/common/nm-secret-agent-simple.c:356
 #: ../clients/tui/nmt-page-dsl.c:53 ../clients/tui/nmt-page-wifi.c:322
 msgid "Username"
 msgstr "사용자 이름"
 
-#: ../clients/common/nm-meta-setting-desc.c:4824
-#: ../clients/common/nm-meta-setting-desc.c:5108
-#: ../clients/common/nm-meta-setting-desc.c:5535
-#: ../clients/common/nm-meta-setting-desc.c:6507
+#: ../clients/common/nm-meta-setting-desc.c:4862
+#: ../clients/common/nm-meta-setting-desc.c:5146
+#: ../clients/common/nm-meta-setting-desc.c:5573
+#: ../clients/common/nm-meta-setting-desc.c:6561
 msgid "Password [none]"
 msgstr "암호 [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4870
+#: ../clients/common/nm-meta-setting-desc.c:4908
 msgid "Bluetooth device address"
 msgstr "블루투스 장치 주소"
 
-#: ../clients/common/nm-meta-setting-desc.c:4918
-#: ../clients/common/nm-meta-setting-desc.c:5588
-#: ../clients/common/nm-meta-setting-desc.c:7215
-#: ../clients/common/nm-meta-setting-desc.c:7253
-#: ../clients/common/nm-meta-setting-desc.c:7435
-#: ../clients/common/nm-meta-setting-desc.c:7668
+#: ../clients/common/nm-meta-setting-desc.c:4956
+#: ../clients/common/nm-meta-setting-desc.c:5626
+#: ../clients/common/nm-meta-setting-desc.c:7269
+#: ../clients/common/nm-meta-setting-desc.c:7307
+#: ../clients/common/nm-meta-setting-desc.c:7489
+#: ../clients/common/nm-meta-setting-desc.c:7722
 msgid "MAC [none]"
 msgstr "MAC [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4924
+#: ../clients/common/nm-meta-setting-desc.c:4962
 msgid "Enable STP [no]"
 msgstr "STP 활성화 [아니오]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4930
+#: ../clients/common/nm-meta-setting-desc.c:4968
 msgid "STP priority [32768]"
 msgstr "STP 우선순위 [32768]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4936
+#: ../clients/common/nm-meta-setting-desc.c:4974
 msgid "Forward delay [15]"
 msgstr "전달 지연 [15]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4942
+#: ../clients/common/nm-meta-setting-desc.c:4980
 msgid "Hello time [2]"
 msgstr "Hello 타임 [2]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4948
+#: ../clients/common/nm-meta-setting-desc.c:4986
 msgid "Max age [20]"
 msgstr "최대 경과 시간 [20]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4954
+#: ../clients/common/nm-meta-setting-desc.c:4992
 msgid "MAC address ageing time [300]"
 msgstr "MAC 주소 에이징 시간 [300]"
 
-#: ../clients/common/nm-meta-setting-desc.c:4964
+#: ../clients/common/nm-meta-setting-desc.c:5002
 msgid "Group forward mask [0]"
 msgstr "그룹 전달 마스크 [0]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5006
+#: ../clients/common/nm-meta-setting-desc.c:5044
 msgid "Enable IGMP snooping [no]"
 msgstr "IGMP 스누핑 활성화 [아니오]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5064
+#: ../clients/common/nm-meta-setting-desc.c:5102
 msgid "Bridge port priority [32]"
 msgstr "브릿지 포트 우선 순위 [32]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5070
+#: ../clients/common/nm-meta-setting-desc.c:5108
 msgid "Bridge port STP path cost [100]"
 msgstr "브릿지 포트 STP 경로 비용 [100]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5076
+#: ../clients/common/nm-meta-setting-desc.c:5114
 msgid "Hairpin [no]"
 msgstr "헤어핀 모드 [아니오]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5102
-#: ../clients/common/nm-meta-setting-desc.c:5529
-#: ../clients/common/nm-meta-setting-desc.c:7061
+#: ../clients/common/nm-meta-setting-desc.c:5140
+#: ../clients/common/nm-meta-setting-desc.c:5567
+#: ../clients/common/nm-meta-setting-desc.c:7115
 msgid "Username [none]"
 msgstr "사용자 이름 [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5204
+#: ../clients/common/nm-meta-setting-desc.c:5242
 msgid ""
 "Enter a list of user permissions. This is a list of user names formatted "
 "as:\n"
@@ -5318,7 +5323,7 @@ msgstr ""
 "\n"
 "예: alice bob charlie\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5257
+#: ../clients/common/nm-meta-setting-desc.c:5295
 msgid ""
 "Enter secondary connections that should be activated when this connection "
 "is\n"
@@ -5339,7 +5344,7 @@ msgstr ""
 "\n"
 "예: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5280
+#: ../clients/common/nm-meta-setting-desc.c:5318
 msgid ""
 "Enter a value which indicates whether the connection is subject to a data\n"
 "quota, usage costs or other limitations. Accepted options are:\n"
@@ -5353,25 +5358,25 @@ msgstr ""
 "'false', 'no', 'off'이면 연결이 종량제가 아닌 경우.\n"
 "'unknown'이면 네트워크 관리자가 몇 가지 추론을 사용하여 값을 선택합니다\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5545
+#: ../clients/common/nm-meta-setting-desc.c:5583
 msgid "APN"
 msgstr "APN"
 
-#: ../clients/common/nm-meta-setting-desc.c:5597
-#: ../clients/common/nm-meta-setting-desc.c:7284
-#: ../clients/common/nm-meta-setting-desc.c:7475
+#: ../clients/common/nm-meta-setting-desc.c:5635
+#: ../clients/common/nm-meta-setting-desc.c:7338
+#: ../clients/common/nm-meta-setting-desc.c:7529
 msgid "MTU [auto]"
 msgstr "MTU [자동]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5616
+#: ../clients/common/nm-meta-setting-desc.c:5654
 msgid "P_KEY [none]"
 msgstr "P_KEY [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5625
+#: ../clients/common/nm-meta-setting-desc.c:5663
 msgid "Parent interface [none]"
 msgstr "상위 인터페이스 [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5652
+#: ../clients/common/nm-meta-setting-desc.c:5690
 msgid ""
 "Enter a list of IPv4 addresses of DNS servers.\n"
 "\n"
@@ -5381,11 +5386,11 @@ msgstr ""
 "\n"
 "예: 8.8.8.8, 8.8.4.4\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5700
+#: ../clients/common/nm-meta-setting-desc.c:5738
 msgid "IPv4 address (IP[/plen]) [none]"
 msgstr "IPv4 주소 (IP[/프리픽스]) [none]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5702
+#: ../clients/common/nm-meta-setting-desc.c:5740
 msgid ""
 "Enter a list of IPv4 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5399,11 +5404,11 @@ msgstr ""
 "\n"
 "예: 192.168.1.5/24, 10.0.0.11/24\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5721
+#: ../clients/common/nm-meta-setting-desc.c:5759
 msgid "IPv4 gateway [none]"
 msgstr "IPv4 게이트웨이 [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5729
+#: ../clients/common/nm-meta-setting-desc.c:5767
 msgid ""
 "Enter a list of IPv4 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5425,7 +5430,7 @@ msgstr ""
 "예: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
 "    10.1.2.0/24\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5769
+#: ../clients/common/nm-meta-setting-desc.c:5807
 msgid ""
 "Enter a list of IPv4 routing rules formatted as:\n"
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
@@ -5435,7 +5440,7 @@ msgstr ""
 "  priority [우선순위] [from [출발]] [to [대상]], ,...\n"
 "\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5860
+#: ../clients/common/nm-meta-setting-desc.c:5914
 msgid ""
 "Enter a list of IPv6 addresses of DNS servers.  If the IPv6 configuration "
 "method is 'auto' these DNS servers are appended to those (if any) returned "
@@ -5454,11 +5459,11 @@ msgstr ""
 "\n"
 "예: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5914
+#: ../clients/common/nm-meta-setting-desc.c:5968
 msgid "IPv6 address (IP[/plen]) [none]"
 msgstr "IPv6 주소 (IP[/프리픽스]) [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5916
+#: ../clients/common/nm-meta-setting-desc.c:5970
 msgid ""
 "Enter a list of IPv6 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5472,11 +5477,11 @@ msgstr ""
 "\n"
 "예: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5935
+#: ../clients/common/nm-meta-setting-desc.c:5989
 msgid "IPv6 gateway [none]"
 msgstr "IPv6 게이트웨이 [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5943
+#: ../clients/common/nm-meta-setting-desc.c:5997
 msgid ""
 "Enter a list of IPv6 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5500,7 +5505,7 @@ msgstr ""
 "beef::3 2\n"
 "    abbe::/64 55\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5983
+#: ../clients/common/nm-meta-setting-desc.c:6037
 msgid ""
 "Enter a list of IPv6 routing rules formatted as:\n"
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
@@ -5510,170 +5515,170 @@ msgstr ""
 "  priority [prio] [from [src]] [to [dst]],, ...\n"
 "\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:6090
-#: ../clients/common/nm-meta-setting-desc.c:7114
+#: ../clients/common/nm-meta-setting-desc.c:6144
+#: ../clients/common/nm-meta-setting-desc.c:7168
 msgid "Parent device [none]"
 msgstr "상위 장치 [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6096
+#: ../clients/common/nm-meta-setting-desc.c:6150
 msgid "Local endpoint [none]"
 msgstr "로컬 엔드포인트 [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6103
-#: ../clients/common/nm-meta-setting-desc.c:7134
+#: ../clients/common/nm-meta-setting-desc.c:6157
+#: ../clients/common/nm-meta-setting-desc.c:7188
 msgid "Remote"
 msgstr "원격"
 
-#: ../clients/common/nm-meta-setting-desc.c:6148
+#: ../clients/common/nm-meta-setting-desc.c:6202
 msgid "MACsec parent device or connection UUID"
 msgstr "MACsec 상위 장치 또는 연결 UUID:"
 
-#: ../clients/common/nm-meta-setting-desc.c:6169
+#: ../clients/common/nm-meta-setting-desc.c:6223
 msgid "Enable encryption [yes]"
 msgstr "암호화 사용 [예]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6175
+#: ../clients/common/nm-meta-setting-desc.c:6229
 #: ../clients/common/nm-secret-agent-simple.c:917
 msgid "MKA CAK"
 msgstr "MKA CAK"
 
-#: ../clients/common/nm-meta-setting-desc.c:6185
+#: ../clients/common/nm-meta-setting-desc.c:6239
 msgid "MKA_CKN"
 msgstr "MKA_CKN"
 
-#: ../clients/common/nm-meta-setting-desc.c:6191
+#: ../clients/common/nm-meta-setting-desc.c:6245
 msgid "SCI port [1]"
 msgstr "SCI 포트 [1]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6217
+#: ../clients/common/nm-meta-setting-desc.c:6271
 msgid "MACVLAN parent device or connection UUID"
 msgstr "MACVLAN 상위 장치 또는 연결 UUID"
 
-#: ../clients/common/nm-meta-setting-desc.c:6238
+#: ../clients/common/nm-meta-setting-desc.c:6292
 msgid "Tap [no]"
 msgstr "탭 모드 [아니오]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6305
-#: ../clients/common/nm-meta-setting-desc.c:7389
+#: ../clients/common/nm-meta-setting-desc.c:6359
+#: ../clients/common/nm-meta-setting-desc.c:7443
 #: ../clients/tui/nmt-page-wifi.c:213
 msgid "SSID"
 msgstr "SSID"
 
-#: ../clients/common/nm-meta-setting-desc.c:6314
+#: ../clients/common/nm-meta-setting-desc.c:6368
 msgid "OLPC Mesh channel [1]"
 msgstr "OLPC 메쉬 채널 [1]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6323
+#: ../clients/common/nm-meta-setting-desc.c:6377
 msgid "DHCP anycast MAC address [none]"
 msgstr "DHCP 애니캐스트 MAC 주소 [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6488
+#: ../clients/common/nm-meta-setting-desc.c:6542
 msgid "PPPoE parent device"
 msgstr "PPPoE 상위 장치"
 
-#: ../clients/common/nm-meta-setting-desc.c:6494
+#: ../clients/common/nm-meta-setting-desc.c:6548
 msgid "Service [none]"
 msgstr "서비스 [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6501
+#: ../clients/common/nm-meta-setting-desc.c:6555
 msgid "PPPoE username"
 msgstr "PPPoE 사용자 이름"
 
-#: ../clients/common/nm-meta-setting-desc.c:6537
+#: ../clients/common/nm-meta-setting-desc.c:6591
 msgid "Browser only [no]"
 msgstr "브라우저 전용 [no]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6543
+#: ../clients/common/nm-meta-setting-desc.c:6597
 msgid "PAC URL"
 msgstr "PAC URL"
 
-#: ../clients/common/nm-meta-setting-desc.c:6549
+#: ../clients/common/nm-meta-setting-desc.c:6603
 msgid "PAC script"
 msgstr "PAC 스크립트"
 
-#: ../clients/common/nm-meta-setting-desc.c:6673
-#: ../clients/common/nm-meta-setting-desc.c:6861
+#: ../clients/common/nm-meta-setting-desc.c:6727
+#: ../clients/common/nm-meta-setting-desc.c:6915
 msgid "Team JSON configuration [none]"
 msgstr "티밍 JSON 구성 [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6964
+#: ../clients/common/nm-meta-setting-desc.c:7018
 msgid "User ID [none]"
 msgstr "사용자 ID [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6970
+#: ../clients/common/nm-meta-setting-desc.c:7024
 msgid "Group ID [none]"
 msgstr "그룹 ID [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6976
+#: ../clients/common/nm-meta-setting-desc.c:7030
 msgid "Enable PI [no]"
 msgstr "PI 활성화 [아니오]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6982
+#: ../clients/common/nm-meta-setting-desc.c:7036
 msgid "Enable VNET header [no]"
 msgstr "VNET 헤더 사용 [아니오]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6988
+#: ../clients/common/nm-meta-setting-desc.c:7042
 msgid "Enable multi queue [no]"
 msgstr "다중 대기열 사용 [아니오]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7001
+#: ../clients/common/nm-meta-setting-desc.c:7055
 msgid "VLAN parent device or connection UUID"
 msgstr "VLAN 상위 장치 또는 연결 UUID"
 
-#: ../clients/common/nm-meta-setting-desc.c:7008
+#: ../clients/common/nm-meta-setting-desc.c:7062
 msgid "VLAN ID (<0-4094>)"
 msgstr "VLAN ID (<0-4094>)"
 
-#: ../clients/common/nm-meta-setting-desc.c:7014
+#: ../clients/common/nm-meta-setting-desc.c:7068
 msgid "VLAN flags (<0-7>) [none]"
 msgstr "VLAN 플래그 ( <0-7> ) [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7023
+#: ../clients/common/nm-meta-setting-desc.c:7077
 msgid "Ingress priority maps [none]"
 msgstr "수신 우선 순위 맵 [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7033
+#: ../clients/common/nm-meta-setting-desc.c:7087
 msgid "Egress priority maps [none]"
 msgstr "송신 우선 순위 맵 [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7101
+#: ../clients/common/nm-meta-setting-desc.c:7155
 msgid "Table [0]"
 msgstr "표 [0]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7121
+#: ../clients/common/nm-meta-setting-desc.c:7175
 msgid "VXLAN ID"
 msgstr "VXLAN ID"
 
-#: ../clients/common/nm-meta-setting-desc.c:7127
+#: ../clients/common/nm-meta-setting-desc.c:7181
 msgid "Local address [none]"
 msgstr "로컬 주소 [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7140
+#: ../clients/common/nm-meta-setting-desc.c:7194
 msgid "Minimum source port [0]"
 msgstr "최소 소스 포트 [0]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7146
+#: ../clients/common/nm-meta-setting-desc.c:7200
 msgid "Maximum source port [0]"
 msgstr "최대 소스 포트 [0]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7152
+#: ../clients/common/nm-meta-setting-desc.c:7206
 msgid "Destination port [8472]"
 msgstr "대상 포트 [8472]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7192
+#: ../clients/common/nm-meta-setting-desc.c:7246
 msgid "Peer"
 msgstr "피어"
 
-#: ../clients/common/nm-meta-setting-desc.c:7222
+#: ../clients/common/nm-meta-setting-desc.c:7276
 msgid "WiMAX NSP name"
 msgstr "WiMAX NSP 이름"
 
-#: ../clients/common/nm-meta-setting-desc.c:7259
-#: ../clients/common/nm-meta-setting-desc.c:7440
+#: ../clients/common/nm-meta-setting-desc.c:7313
+#: ../clients/common/nm-meta-setting-desc.c:7494
 msgid "Cloned MAC [none]"
 msgstr "복제된 MAC [없음]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7292
+#: ../clients/common/nm-meta-setting-desc.c:7346
 msgid ""
 "Enter a list of subchannels (comma or space separated).\n"
 "\n"
@@ -5683,7 +5688,7 @@ msgstr ""
 "\n"
 "예: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:7617
+#: ../clients/common/nm-meta-setting-desc.c:7671
 msgid ""
 "Enter the type of WEP keys. The accepted values are: 0 or unknown, 1 or key, "
 "and 2 or passphrase.\n"
@@ -5691,221 +5696,221 @@ msgstr ""
 "WEP 키 유형을 입력합니다. 사용할 수 있는 값은: 0 또는 unknown, 1 또는 key, 2 "
 "또는 passphrase.\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:7676
+#: ../clients/common/nm-meta-setting-desc.c:7730
 msgid "Short address (<0x0000-0xffff>)"
 msgstr "짧은 주소 (<0x0000-0xffff>)"
 
-#: ../clients/common/nm-meta-setting-desc.c:7692
+#: ../clients/common/nm-meta-setting-desc.c:7746
 msgid "PAN Identifier (<0x0000-0xffff>)"
 msgstr "PAN 식별자 (<0x0000-0xffff>)"
 
-#: ../clients/common/nm-meta-setting-desc.c:7707
+#: ../clients/common/nm-meta-setting-desc.c:7761
 msgid "Page (<default|0-31>)"
 msgstr "페이지 (<default|0-31>)"
 
-#: ../clients/common/nm-meta-setting-desc.c:7721
+#: ../clients/common/nm-meta-setting-desc.c:7775
 msgid "Channel (<default|0-26>)"
 msgstr "채널 (<default|0-26>)"
 
 #. ***************************************************************************
-#: ../clients/common/nm-meta-setting-desc.c:7856
+#: ../clients/common/nm-meta-setting-desc.c:7910
 msgid "6LOWPAN settings"
 msgstr "6LOWPAN 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:7857
+#: ../clients/common/nm-meta-setting-desc.c:7911
 msgid "802-1x settings"
 msgstr "802-1x 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:7858
+#: ../clients/common/nm-meta-setting-desc.c:7912
 #: ../src/devices/adsl/nm-device-adsl.c:117
 msgid "ADSL connection"
 msgstr "ADSL 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:7859
+#: ../clients/common/nm-meta-setting-desc.c:7913
 msgid "bluetooth connection"
 msgstr "본딩 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:7860
+#: ../clients/common/nm-meta-setting-desc.c:7914
 msgid "Bond device"
 msgstr "본딩 장치"
 
-#: ../clients/common/nm-meta-setting-desc.c:7861
+#: ../clients/common/nm-meta-setting-desc.c:7915
 msgid "Bridge device"
 msgstr "브릿지 장치"
 
-#: ../clients/common/nm-meta-setting-desc.c:7862
+#: ../clients/common/nm-meta-setting-desc.c:7916
 msgid "Bridge port"
 msgstr "브릿지 포트"
 
-#: ../clients/common/nm-meta-setting-desc.c:7863
+#: ../clients/common/nm-meta-setting-desc.c:7917
 msgid "CDMA mobile broadband connection"
 msgstr "CDMA 모바일 광대역 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:7864
+#: ../clients/common/nm-meta-setting-desc.c:7918
 msgid "General settings"
 msgstr "일반 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:7865
+#: ../clients/common/nm-meta-setting-desc.c:7919
 msgid "DCB settings"
 msgstr "DCB 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:7866
+#: ../clients/common/nm-meta-setting-desc.c:7920
 msgid "Dummy settings"
 msgstr "더미 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:7867
+#: ../clients/common/nm-meta-setting-desc.c:7921
 msgid "Ethtool settings"
 msgstr "ethtool 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:7868
+#: ../clients/common/nm-meta-setting-desc.c:7922
 msgid "Generic settings"
 msgstr "일반 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:7869
+#: ../clients/common/nm-meta-setting-desc.c:7923
 msgid "GSM mobile broadband connection"
 msgstr "GSM 모바일 광대역 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:7870
+#: ../clients/common/nm-meta-setting-desc.c:7924
 #: ../src/devices/nm-device-infiniband.c:158
 msgid "InfiniBand connection"
 msgstr "인피니밴드 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:7871
+#: ../clients/common/nm-meta-setting-desc.c:7925
 msgid "IPv4 protocol"
 msgstr "IPv4 프로토콜"
 
-#: ../clients/common/nm-meta-setting-desc.c:7872
+#: ../clients/common/nm-meta-setting-desc.c:7926
 msgid "IPv6 protocol"
 msgstr "IPv6 프로토콜"
 
-#: ../clients/common/nm-meta-setting-desc.c:7873
+#: ../clients/common/nm-meta-setting-desc.c:7927
 msgid "IP-tunnel settings"
 msgstr "IP 터널링 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:7874
+#: ../clients/common/nm-meta-setting-desc.c:7928
 msgid "MACsec connection"
 msgstr "MACsec 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:7875
+#: ../clients/common/nm-meta-setting-desc.c:7929
 msgid "macvlan connection"
 msgstr "macvlan 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:7876
+#: ../clients/common/nm-meta-setting-desc.c:7930
 msgid "Match"
 msgstr "일치"
 
-#: ../clients/common/nm-meta-setting-desc.c:7877
+#: ../clients/common/nm-meta-setting-desc.c:7931
 msgid "OLPC Mesh connection"
 msgstr "OLPC 메쉬 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:7878
+#: ../clients/common/nm-meta-setting-desc.c:7932
 msgid "Open vSwitch bridge settings"
 msgstr "Open vSwitch 브릿지 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:7879
+#: ../clients/common/nm-meta-setting-desc.c:7933
 msgid "Open vSwitch DPDK interface settings"
 msgstr "Open vSwitch DPDK 인터페이스 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:7880
+#: ../clients/common/nm-meta-setting-desc.c:7934
 msgid "Open vSwitch interface settings"
 msgstr "Open vSwitch 인터페이스 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:7881
+#: ../clients/common/nm-meta-setting-desc.c:7935
 msgid "Open vSwitch patch interface settings"
 msgstr "Open vSwitch 패치 인터페이스 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:7882
+#: ../clients/common/nm-meta-setting-desc.c:7936
 msgid "Open vSwitch port settings"
 msgstr "Open vSwitch 포트 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:7883
+#: ../clients/common/nm-meta-setting-desc.c:7937
 msgid "PPP settings"
 msgstr "PPP 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:7884
+#: ../clients/common/nm-meta-setting-desc.c:7938
 msgid "PPPoE"
 msgstr "PPPoE"
 
-#: ../clients/common/nm-meta-setting-desc.c:7885
+#: ../clients/common/nm-meta-setting-desc.c:7939
 msgid "Proxy"
 msgstr "프록시"
 
-#: ../clients/common/nm-meta-setting-desc.c:7886
+#: ../clients/common/nm-meta-setting-desc.c:7940
 msgid "Serial settings"
 msgstr "직렬 포트 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:7887
+#: ../clients/common/nm-meta-setting-desc.c:7941
 msgid "SR-IOV settings"
 msgstr "SR-IOV 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:7888
+#: ../clients/common/nm-meta-setting-desc.c:7942
 msgid "Traffic controls"
 msgstr "통신량 통제"
 
-#: ../clients/common/nm-meta-setting-desc.c:7889
+#: ../clients/common/nm-meta-setting-desc.c:7943
 msgid "Team device"
 msgstr "티밍 장치"
 
-#: ../clients/common/nm-meta-setting-desc.c:7890
+#: ../clients/common/nm-meta-setting-desc.c:7944
 msgid "Team port"
 msgstr "티밍 포트"
 
-#: ../clients/common/nm-meta-setting-desc.c:7891
+#: ../clients/common/nm-meta-setting-desc.c:7945
 msgid "Tun device"
 msgstr "TUN 장치"
 
-#: ../clients/common/nm-meta-setting-desc.c:7892
+#: ../clients/common/nm-meta-setting-desc.c:7946
 msgid "User settings"
 msgstr "사용자 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:7893
+#: ../clients/common/nm-meta-setting-desc.c:7947
 #: ../src/devices/nm-device-vlan.c:385
 msgid "VLAN connection"
 msgstr "VLAN 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:7894 ../src/nm-manager.c:5714
+#: ../clients/common/nm-meta-setting-desc.c:7948 ../src/nm-manager.c:5714
 msgid "VPN connection"
 msgstr "VPN 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:7895
+#: ../clients/common/nm-meta-setting-desc.c:7949
 #: ../src/devices/nm-device-vrf.c:175
 msgid "VRF connection"
 msgstr "VRF 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:7896
+#: ../clients/common/nm-meta-setting-desc.c:7950
 #: ../src/devices/nm-device-vxlan.c:354
 msgid "VXLAN connection"
 msgstr "VXLAN 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:7897
+#: ../clients/common/nm-meta-setting-desc.c:7951
 msgid "Wi-Fi P2P connection"
 msgstr "Wi-Fi P2P 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:7898
+#: ../clients/common/nm-meta-setting-desc.c:7952
 msgid "WiMAX connection"
 msgstr "WiMAX 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:7899
+#: ../clients/common/nm-meta-setting-desc.c:7953
 msgid "Wired Ethernet"
 msgstr "유선 이더넷"
 
-#: ../clients/common/nm-meta-setting-desc.c:7900
+#: ../clients/common/nm-meta-setting-desc.c:7954
 msgid "WireGuard VPN settings"
 msgstr "WireGuard VPN 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:7901
+#: ../clients/common/nm-meta-setting-desc.c:7955
 msgid "Wi-Fi connection"
 msgstr "Wi-Fi 연결"
 
-#: ../clients/common/nm-meta-setting-desc.c:7902
+#: ../clients/common/nm-meta-setting-desc.c:7956
 msgid "Wi-Fi security settings"
 msgstr "Wi-Fi 보안 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:7903
+#: ../clients/common/nm-meta-setting-desc.c:7957
 msgid "WPAN settings"
 msgstr "WPAN 설정"
 
-#: ../clients/common/nm-meta-setting-desc.c:8280
+#: ../clients/common/nm-meta-setting-desc.c:8334
 msgid "name"
 msgstr "name"
 
@@ -6834,7 +6839,7 @@ msgstr ""
 #: ../clients/common/settings-docs.h.in:108
 #: ../clients/common/settings-docs.h.in:150
 #: ../clients/common/settings-docs.h.in:200
-#: ../clients/common/settings-docs.h.in:322
+#: ../clients/common/settings-docs.h.in:325
 msgid "Flags indicating how to handle the \"password\" property."
 msgstr "\"password\" 속성의 처리 방법을 나타내는 플래그."
 
@@ -7980,6 +7985,7 @@ msgstr ""
 "면 이 연결이 슬레이브가 아닌 경우 NULL입니다."
 
 #: ../clients/common/settings-docs.h.in:171
+#, fuzzy
 msgid ""
 "This represents the identity of the connection used for various purposes. It "
 "allows to configure multiple profiles to share the identity. Also, the "
@@ -7994,20 +8000,21 @@ msgid ""
 "into the generation algorithm. For example, a per-host key is commonly also "
 "included, so that different systems end up generating different IDs. Or with "
 "ipv6.addr-gen-mode=stable-privacy, also the device's name is included, so "
-"that different interfaces yield different addresses. The '$' character is "
-"treated special to perform dynamic substitutions at runtime. Currently, "
-"supported are \"${CONNECTION}\", \"${DEVICE}\", \"${MAC}\", \"${BOOT}\", "
-"\"${RANDOM}\". These effectively create unique IDs per-connection, per-"
-"device, per-boot, or every time. Note that \"${DEVICE}\" corresponds to the "
-"interface name of the device and \"${MAC}\" is the permanent MAC address of "
-"the device. Any unrecognized patterns following '$' are treated verbatim, "
-"however are reserved for future use. You are thus advised to avoid '$' or "
-"escape it as \"$$\". For example, set it to \"${CONNECTION}-${BOOT}-"
-"${DEVICE}\" to create a unique id for this connection that changes with "
-"every reboot and differs depending on the interface where the profile "
-"activates. If the value is unset, a global connection default is consulted. "
-"If the value is still unset, the default is similar to \"${CONNECTION}\" and "
-"uses a unique, fixed ID for the connection."
+"that different interfaces yield different addresses. The per-host key is the "
+"identity of your machine and stored in /var/lib/NetworkManager/secret-key. "
+"The '$' character is treated special to perform dynamic substitutions at "
+"runtime. Currently, supported are \"${CONNECTION}\", \"${DEVICE}\", "
+"\"${MAC}\", \"${BOOT}\", \"${RANDOM}\". These effectively create unique IDs "
+"per-connection, per-device, per-boot, or every time. Note that \"${DEVICE}\" "
+"corresponds to the interface name of the device and \"${MAC}\" is the "
+"permanent MAC address of the device. Any unrecognized patterns following '$' "
+"are treated verbatim, however are reserved for future use. You are thus "
+"advised to avoid '$' or escape it as \"$$\". For example, set it to "
+"\"${CONNECTION}-${BOOT}-${DEVICE}\" to create a unique id for this "
+"connection that changes with every reboot and differs depending on the "
+"interface where the profile activates. If the value is unset, a global "
+"connection default is consulted. If the value is still unset, the default is "
+"similar to \"${CONNECTION}\" and uses a unique, fixed ID for the connection."
 msgstr ""
 "다양한 목적으로 사용되는 연결의 ID를 나타냅니다. 이 ID를 공유해 여러 프로파일"
 "을 구성합니다. 또한 stable-id에는 상황에 따라 동적으로 결정적으로 대체되는 자"
@@ -8491,12 +8498,12 @@ msgstr ""
 "터널링된 패킷에 할당할 TTL. 특수한 값으로 0이면, 패킷이 TTL 값을 상속합니다."
 
 #: ../clients/common/settings-docs.h.in:224
-#: ../clients/common/settings-docs.h.in:247
+#: ../clients/common/settings-docs.h.in:249
 msgid "Array of IP addresses."
 msgstr "IP 주소의 배열."
 
 #: ../clients/common/settings-docs.h.in:225
-#: ../clients/common/settings-docs.h.in:248
+#: ../clients/common/settings-docs.h.in:250
 msgid ""
 "Timeout in milliseconds used to check for the presence of duplicate IP "
 "addresses on the network.  If an address conflict is detected, the "
@@ -8561,7 +8568,7 @@ msgstr ""
 "버로 전송됩니다. 이 속성과 \"dhcp-hostname\"은 동시에 설정할 수 없습니다."
 
 #: ../clients/common/settings-docs.h.in:228
-#: ../clients/common/settings-docs.h.in:250
+#: ../clients/common/settings-docs.h.in:252
 msgid ""
 "If the \"dhcp-send-hostname\" property is TRUE, then the specified name will "
 "be sent to the DHCP server when acquiring a lease. This property and \"dhcp-"
@@ -8571,7 +8578,7 @@ msgstr ""
 "로 전송됩니다. 이 속성과 \"dhcp-fqdn\"은 동시에 설정할 수 없습니다."
 
 #: ../clients/common/settings-docs.h.in:229
-#: ../clients/common/settings-docs.h.in:251
+#: ../clients/common/settings-docs.h.in:253
 msgid ""
 "Flags for the DHCP hostname and FQDN. Currently, this property only includes "
 "flags to control the FQDN flags set in the DHCP FQDN option. Supported FQDN "
@@ -8603,7 +8610,7 @@ msgstr ""
 "FQDN 플래그가 DHCP 요청으로 전송됩니다."
 
 #: ../clients/common/settings-docs.h.in:230
-#: ../clients/common/settings-docs.h.in:252
+#: ../clients/common/settings-docs.h.in:254
 msgid ""
 "A string containing the \"Identity Association Identifier\" (IAID) used by "
 "the DHCP client. The property is a 32-bit decimal value or a special value "
@@ -8629,7 +8636,17 @@ msgstr ""
 "는 항상 MAC 주소에서 IAID를 가져옵니다."
 
 #: ../clients/common/settings-docs.h.in:231
-#: ../clients/common/settings-docs.h.in:253
+#: ../clients/common/settings-docs.h.in:255
+msgid ""
+"Array of servers from which DHCP offers must be rejected. This property is "
+"useful to avoid getting a lease from misconfigured or rogue servers. For "
+"DHCPv4, each element must be an IPv4 address, optionally followed by a slash "
+"and a prefix length (e.g. \"192.168.122.0/24\"). This property is currently "
+"not implemented for DHCPv6."
+msgstr ""
+
+#: ../clients/common/settings-docs.h.in:232
+#: ../clients/common/settings-docs.h.in:256
 msgid ""
 "If TRUE, a hostname is sent to the DHCP server when acquiring a lease. Some "
 "DHCP servers use this hostname to update DNS databases, essentially "
@@ -8642,8 +8659,8 @@ msgstr ""
 "으로 컴퓨터의 고정 호스트 이름을 제공할 수 있습니다. \"dhcp-hostname\" 속성"
 "이 NULL이고 이 속성이 참이면 컴퓨터의 현재 영구 호스트 이름이 전송됩니다."
 
-#: ../clients/common/settings-docs.h.in:232
-#: ../clients/common/settings-docs.h.in:254
+#: ../clients/common/settings-docs.h.in:233
+#: ../clients/common/settings-docs.h.in:257
 msgid ""
 "A timeout for a DHCP transaction in seconds. If zero (the default), a "
 "globally configured default is used. If still unspecified, a device specific "
@@ -8654,13 +8671,22 @@ msgstr ""
 "값을 사용합니다. 여전히 지정되지 않은 경우 장치 별 제한 시간을 사용됩니다 (보"
 "통 45초). 무한대는 2147483647(MAXINT32)로 설정합니다."
 
-#: ../clients/common/settings-docs.h.in:233
-#: ../clients/common/settings-docs.h.in:255
+#: ../clients/common/settings-docs.h.in:234
+msgid ""
+"The Vendor Class Identifier DHCP option (60). Special characters in the data "
+"string may be escaped using C-style escapes, nevertheless this property "
+"cannot contain nul bytes. If the per-profile value is unspecified (the "
+"default), a global connection default gets consulted. If still unspecified, "
+"the DHCP option is not sent to the server. Since 1.28"
+msgstr ""
+
+#: ../clients/common/settings-docs.h.in:235
+#: ../clients/common/settings-docs.h.in:258
 msgid "Array of IP addresses of DNS servers."
 msgstr "DNS 서버의 IP 주소 배열."
 
-#: ../clients/common/settings-docs.h.in:234
-#: ../clients/common/settings-docs.h.in:256
+#: ../clients/common/settings-docs.h.in:236
+#: ../clients/common/settings-docs.h.in:259
 msgid ""
 "Array of DNS options as described in man 5 resolv.conf. NULL means that the "
 "options are unset and left at the default. In this case NetworkManager will "
@@ -8683,8 +8709,8 @@ msgstr ""
 "conf에 제공하고 모든 기여 프로파일에 \"trust-ad\"가 활성화된 경우에만 적용됩"
 "니다."
 
-#: ../clients/common/settings-docs.h.in:235
-#: ../clients/common/settings-docs.h.in:257
+#: ../clients/common/settings-docs.h.in:237
+#: ../clients/common/settings-docs.h.in:260
 msgid ""
 "DNS servers priority. The relative priority for DNS servers specified by "
 "this setting.  A lower value is better (higher priority). Zero selects a "
@@ -8731,8 +8757,8 @@ msgstr ""
 "이 우선합니다. 연결에서 DNS 우선 순위 값이 음수인 다른 도메인의 하위 도메인"
 "인 도메인을 지정하면 하위 도메인이 무시됩니다."
 
-#: ../clients/common/settings-docs.h.in:236
-#: ../clients/common/settings-docs.h.in:258
+#: ../clients/common/settings-docs.h.in:238
+#: ../clients/common/settings-docs.h.in:261
 msgid ""
 "Array of DNS search domains. Domains starting with a tilde ('~') are "
 "considered 'routing' domains and are used only to decide the interface over "
@@ -8743,8 +8769,8 @@ msgstr ""
 "메인으로 간주하고, 쿼리를 전달할 인터페이스를 지정하는 용도로만 사용합니다. "
 "비공식 호스트 이름을 채우는데 사용하지 않습니다."
 
-#: ../clients/common/settings-docs.h.in:237
-#: ../clients/common/settings-docs.h.in:259
+#: ../clients/common/settings-docs.h.in:239
+#: ../clients/common/settings-docs.h.in:262
 msgid ""
 "The gateway associated with this configuration. This is only meaningful if "
 "\"addresses\" is also set. The gateway's main purpose is to control the next "
@@ -8759,8 +8785,8 @@ msgstr ""
 "값이 none으로 설정되면 자동으로 삭제됩니다. 게이트웨이를 설정하는 대안으로 접"
 "두사 길이로 /0을 사용하여 정적 기본 경로를 구성하십시오."
 
-#: ../clients/common/settings-docs.h.in:238
-#: ../clients/common/settings-docs.h.in:260
+#: ../clients/common/settings-docs.h.in:240
+#: ../clients/common/settings-docs.h.in:263
 msgid ""
 "When \"method\" is set to \"auto\" and this property to TRUE, automatically "
 "configured nameservers and search domains are ignored and only nameservers "
@@ -8771,8 +8797,8 @@ msgstr ""
 "nameservers 및 검색 도메인은 무시되며 \"dns\" 및 \"dns-search\" 속성에 지정"
 "된 이름 서버 및 검색 도메인만 사용됩니다."
 
-#: ../clients/common/settings-docs.h.in:239
-#: ../clients/common/settings-docs.h.in:261
+#: ../clients/common/settings-docs.h.in:241
+#: ../clients/common/settings-docs.h.in:264
 msgid ""
 "When \"method\" is set to \"auto\" and this property to TRUE, automatically "
 "configured routes are ignored and only routes specified in the \"routes\" "
@@ -8781,8 +8807,8 @@ msgstr ""
 "\"method\"가 \"auto\"로 설정되고 이 속성이 참으로 설정되면 자동으로 구성된 경"
 "로는 무시되고 \"routes\" 속성에 지정된 라우팅만 사용됩니다."
 
-#: ../clients/common/settings-docs.h.in:240
-#: ../clients/common/settings-docs.h.in:263
+#: ../clients/common/settings-docs.h.in:242
+#: ../clients/common/settings-docs.h.in:266
 msgid ""
 "If TRUE, allow overall network configuration to proceed even if the "
 "configuration specified by this property times out.  Note that at least one "
@@ -8797,8 +8823,8 @@ msgstr ""
 "NMSettingIP4Config에서 이 속성을 참으로 설정하면 IPv4 구성이 실패했지만 IPv6 "
 "구성이 성공적으로 완료되면 전체 네트워크 구성이 성공할 수 있습니다."
 
-#: ../clients/common/settings-docs.h.in:241
-#: ../clients/common/settings-docs.h.in:264
+#: ../clients/common/settings-docs.h.in:243
+#: ../clients/common/settings-docs.h.in:267
 msgid ""
 "IP configuration method. NMSettingIP4Config and NMSettingIP6Config both "
 "support \"disabled\", \"auto\", \"manual\", and \"link-local\". See the "
@@ -8824,8 +8850,8 @@ msgstr ""
 "습니다. 공유 방법은 공유된 업 링크가 아닌 서브넷과 인터넷을 공유하는 인터페이"
 "스에서 구성해야 합니다."
 
-#: ../clients/common/settings-docs.h.in:242
-#: ../clients/common/settings-docs.h.in:265
+#: ../clients/common/settings-docs.h.in:244
+#: ../clients/common/settings-docs.h.in:268
 msgid ""
 "If TRUE, this connection will never be the default connection for this IP "
 "type, meaning it will never be assigned the default route by NetworkManager."
@@ -8833,8 +8859,8 @@ msgstr ""
 "참이면 이 연결은 이 IP 유형에 대한 기본 연결이 되지 않습니다. 즉 네트워크 관"
 "리자에 의해 기본 경로가 할당되지 않습니다."
 
-#: ../clients/common/settings-docs.h.in:243
-#: ../clients/common/settings-docs.h.in:267
+#: ../clients/common/settings-docs.h.in:245
+#: ../clients/common/settings-docs.h.in:270
 msgid ""
 "The default metric for routes that don't explicitly specify a metric. The "
 "default value -1 means that the metric is chosen automatically based on the "
@@ -8851,8 +8877,8 @@ msgstr ""
 "값). 따라서 이 속성을 0으로 설정한다는 것은 1024로 설정하는 것과 마찬가지입니"
 "다. IPv4의 경우 0은 메트릭의 일반 값입니다."
 
-#: ../clients/common/settings-docs.h.in:244
-#: ../clients/common/settings-docs.h.in:268
+#: ../clients/common/settings-docs.h.in:246
+#: ../clients/common/settings-docs.h.in:271
 msgid ""
 "Enable policy routing (source routing) and set the routing table used when "
 "adding routes. This affects all routes, including device-routes, IPv4LL, "
@@ -8880,12 +8906,12 @@ msgstr ""
 "크 관리자 외부의 라우팅 테이블을 관리하는 사용자의 이전 버전과의 호환성을 유"
 "지하기 위한 것입니다."
 
-#: ../clients/common/settings-docs.h.in:245
-#: ../clients/common/settings-docs.h.in:269
+#: ../clients/common/settings-docs.h.in:247
+#: ../clients/common/settings-docs.h.in:272
 msgid "Array of IP routes."
 msgstr "IP 라우팅의 배열."
 
-#: ../clients/common/settings-docs.h.in:246
+#: ../clients/common/settings-docs.h.in:248
 msgid ""
 "Configure method for creating the address for use with RFC4862 IPv6 "
 "Stateless Address Autoconfiguration. The permitted values are: "
@@ -8922,7 +8948,7 @@ msgstr ""
 "성이 변경되지 않습니다. 이 설정은 \"ip6-privacy\" 속성으로 구성된 개인 정보 "
 "보호 확장과 별개이며이 옵션으로 구성된 임시 주소에는 영향을 미치지 않습니다."
 
-#: ../clients/common/settings-docs.h.in:249
+#: ../clients/common/settings-docs.h.in:251
 msgid ""
 "A string containing the DHCPv6 Unique Identifier (DUID) used by the dhcp "
 "client to identify itself to DHCPv6 servers (RFC 3315). The DUID is carried "
@@ -8971,7 +8997,7 @@ msgstr ""
 "이 설정되지 않은 경우 \"ipv6.dhcp-duid\"에 제공된 전체 값이 사용됩니다. 전체 "
 "값이 제공되지 않으면 기본 \"lease\" 값으로 간주됩니다."
 
-#: ../clients/common/settings-docs.h.in:262
+#: ../clients/common/settings-docs.h.in:265
 msgid ""
 "Configure IPv6 Privacy Extensions for SLAAC, described in RFC4941.  If "
 "enabled, it makes the kernel generate a temporary IPv6 address in addition "
@@ -8999,7 +9025,7 @@ msgstr ""
 "의 \"stable-privacy\" 설정을 사용하여 활성화할 수있는 안정적인 개인 정보 보"
 "호 주소와는 다릅니다."
 
-#: ../clients/common/settings-docs.h.in:266
+#: ../clients/common/settings-docs.h.in:269
 msgid ""
 "A timeout for waiting Router Advertisements in seconds. If zero (the "
 "default), a globally configured default is used. If still unspecified, the "
@@ -9010,7 +9036,7 @@ msgstr ""
 "된 기본값이 사용됩니다. 여전히 지정되지 않은 경우 제한 시간은 장치의 sysctl "
 "설정에 따라 다릅니다. 무한대는 2147483647(MAXINT32)로 설정하십시오."
 
-#: ../clients/common/settings-docs.h.in:270
+#: ../clients/common/settings-docs.h.in:273
 msgid ""
 "Configure the token for draft-chown-6man-tokenised-ipv6-identifiers-02 IPv6 "
 "tokenized interface identifiers. Useful with eui64 addr-gen-mode."
@@ -9018,21 +9044,21 @@ msgstr ""
 "draft-chown-6man-tokenised-ipv6-identifiers-02 IPv6 토큰화된 인터페이스 식별"
 "자에 대한 토큰을 구성합니다. eui64 addr-gen-mode에 유용합니다."
 
-#: ../clients/common/settings-docs.h.in:271
+#: ../clients/common/settings-docs.h.in:274
 msgid "Whether the transmitted traffic must be encrypted."
 msgstr "전송된 트래픽을 암호화해야 하는지 여부."
 
-#: ../clients/common/settings-docs.h.in:272
+#: ../clients/common/settings-docs.h.in:275
 msgid ""
 "The pre-shared CAK (Connectivity Association Key) for MACsec Key Agreement."
 msgstr ""
 "MACsec Key Agreement에 대한 사전 공유 CAK (Connectivity Association Key)."
 
-#: ../clients/common/settings-docs.h.in:273
+#: ../clients/common/settings-docs.h.in:276
 msgid "Flags indicating how to handle the \"mka-cak\" property."
 msgstr "\"mka-cak\" 속성의 처리 방법을 나타내는 플래그."
 
-#: ../clients/common/settings-docs.h.in:274
+#: ../clients/common/settings-docs.h.in:277
 msgid ""
 "The pre-shared CKN (Connectivity-association Key Name) for MACsec Key "
 "Agreement."
@@ -9040,7 +9066,7 @@ msgstr ""
 "MACsec Key Agreement에 대한 사전 공유 CKN (Connectivity-association Key "
 "Name)."
 
-#: ../clients/common/settings-docs.h.in:275
+#: ../clients/common/settings-docs.h.in:278
 msgid ""
 "Specifies how the CAK (Connectivity Association Key) for MKA (MACsec Key "
 "Agreement) is obtained."
@@ -9048,7 +9074,7 @@ msgstr ""
 "MKA(MACsec Key Agreement)에 대한 CAK(Connectivity Association Key)를 얻는 방"
 "법을 지정합니다."
 
-#: ../clients/common/settings-docs.h.in:276
+#: ../clients/common/settings-docs.h.in:279
 msgid ""
 "If given, specifies the parent interface name or parent connection UUID from "
 "which this MACSEC interface should be created.  If this property is not "
@@ -9059,24 +9085,24 @@ msgstr ""
 "위 연결 UUID를 지정합니다. 이 속성이 지정되지 않은 경우, 연결에는 \"mac-"
 "address\" 속성으로 \"802-3-ethernet\" 설정이 있어야 합니다."
 
-#: ../clients/common/settings-docs.h.in:277
+#: ../clients/common/settings-docs.h.in:280
 msgid ""
 "The port component of the SCI (Secure Channel Identifier), between 1 and "
 "65534."
 msgstr "SCI(보안 채널 식별자)의 포트 구성 요소이며 1에서 65534 사이입니다."
 
-#: ../clients/common/settings-docs.h.in:278
+#: ../clients/common/settings-docs.h.in:281
 msgid ""
 "Specifies whether the SCI (Secure Channel Identifier) is included in every "
 "packet."
 msgstr ""
 "SCI(Secure Channel Identifier)가 모든 패킷에 포함되는지 여부를 지정합니다."
 
-#: ../clients/common/settings-docs.h.in:279
+#: ../clients/common/settings-docs.h.in:282
 msgid "Specifies the validation mode for incoming frames."
 msgstr "수신 프레임에 대한 유효성 검사 모드를 지정합니다."
 
-#: ../clients/common/settings-docs.h.in:280
+#: ../clients/common/settings-docs.h.in:283
 msgid ""
 "The macvlan mode, which specifies the communication mechanism between "
 "multiple macvlans on the same lower device."
@@ -9084,7 +9110,7 @@ msgstr ""
 "macvlan 모드는 동일한 하위 장치에 있는 여러 macvlans 간의 통신 메커니즘을 지"
 "정합니다."
 
-#: ../clients/common/settings-docs.h.in:281
+#: ../clients/common/settings-docs.h.in:284
 msgid ""
 "If given, specifies the parent interface name or parent connection UUID from "
 "which this MAC-VLAN interface should be created.  If this property is not "
@@ -9095,15 +9121,15 @@ msgstr ""
 "위 연결 UUID를 지정합니다. 이 속성이 지정되지 않은 경우, 연결에는 \"mac-"
 "address\" 속성이 있는 \"802-3-ethernet\" 설정이 있어야 합니다."
 
-#: ../clients/common/settings-docs.h.in:282
+#: ../clients/common/settings-docs.h.in:285
 msgid "Whether the interface should be put in promiscuous mode."
 msgstr "인터페이스가 무차별 모드로 설정되어야 하는지 여부."
 
-#: ../clients/common/settings-docs.h.in:283
+#: ../clients/common/settings-docs.h.in:286
 msgid "Whether the interface should be a MACVTAP."
 msgstr "인터페이스가 MACVTAP여야 하는지 여부."
 
-#: ../clients/common/settings-docs.h.in:284
+#: ../clients/common/settings-docs.h.in:287
 msgid ""
 "A list of driver names to match. Each element is a shell wildcard pattern. "
 "See NMSettingMatch:interface-name for how special characters '|', '&', '!' "
@@ -9114,7 +9140,7 @@ msgstr ""
 "'|', '&', '!'에 대해서는 NMSettingMatch:interface-name을 참조하십시오. 그리"
 "고 '\\'는 선택적 및 필수적 일치 및 패턴 반전에 사용됩니다."
 
-#: ../clients/common/settings-docs.h.in:285
+#: ../clients/common/settings-docs.h.in:288
 msgid ""
 "A list of interface names to match. Each element is a shell wildcard "
 "pattern. An element can be prefixed with a pipe symbol (|) or an ampersand "
@@ -9142,7 +9168,7 @@ msgstr ""
 "패턴의 시작 부분을 벗어날 수 있습니다. 예를 들어, \"& \\! a\"는 문자 그대로 "
 "\"! a\"와 반드시 일치합니다."
 
-#: ../clients/common/settings-docs.h.in:286
+#: ../clients/common/settings-docs.h.in:289
 msgid ""
 "A list of kernel command line arguments to match. This may be used to check "
 "whether a specific kernel command line option is set (or if prefixed with "
@@ -9162,7 +9188,7 @@ msgstr ""
 "니다. 특수 문자 '|', '&', '!', '\\'가 어떻게 선택적 및 필수적 일치와 패턴 반"
 "전에 사용되는지에 대해서는 NMSettingMatch:interface-name을 참조하십시오."
 
-#: ../clients/common/settings-docs.h.in:287
+#: ../clients/common/settings-docs.h.in:290
 msgid ""
 "A list of paths to match against the ID_PATH udev property of devices. "
 "ID_PATH represents the topological persistent path of a device. It typically "
@@ -9187,32 +9213,32 @@ msgstr ""
 "게 선택적 및 필수적 일치와 패턴 반전에 사용되는지에 대해서는 NMSettingMatch:"
 "interface-name을 참조하십시오."
 
-#: ../clients/common/settings-docs.h.in:288
+#: ../clients/common/settings-docs.h.in:291
 msgid "The data path type. One of \"system\", \"netdev\" or empty."
 msgstr "데이터 경로 유형. \"system\", \"netdev\", 중 하나이거나 비어 있습니다."
 
-#: ../clients/common/settings-docs.h.in:289
+#: ../clients/common/settings-docs.h.in:292
 msgid "The bridge failure mode. One of \"secure\", \"standalone\" or empty."
 msgstr ""
 "브릿지 장애 모드. \"secure\", \"standalone\" 중 하나이거나 비어 있습니다."
 
-#: ../clients/common/settings-docs.h.in:290
+#: ../clients/common/settings-docs.h.in:293
 msgid "Enable or disable multicast snooping."
 msgstr "멀티캐스트 스누핑을 활성화 또는 비활성화합니다."
 
-#: ../clients/common/settings-docs.h.in:291
+#: ../clients/common/settings-docs.h.in:294
 msgid "Enable or disable RSTP."
 msgstr "RSTP를 활성화 또는 비활성화합니다."
 
-#: ../clients/common/settings-docs.h.in:292
+#: ../clients/common/settings-docs.h.in:295
 msgid "Enable or disable STP."
 msgstr "STP를 활성화 또는 비활성화합니다."
 
-#: ../clients/common/settings-docs.h.in:293
+#: ../clients/common/settings-docs.h.in:296
 msgid "Open vSwitch DPDK device arguments."
 msgstr "Open vSwitch DPDK 장치 인수."
 
-#: ../clients/common/settings-docs.h.in:294
+#: ../clients/common/settings-docs.h.in:297
 msgid ""
 "The interface type. Either \"internal\", \"system\", \"patch\", \"dpdk\", or "
 "empty."
@@ -9220,7 +9246,7 @@ msgstr ""
 "인터페이스 유형. \"internal\", \"system\", \"patch\", \"dpdk\" 중 하나 또는 "
 "비어 있습니다."
 
-#: ../clients/common/settings-docs.h.in:295
+#: ../clients/common/settings-docs.h.in:298
 msgid ""
 "Specifies the name of the interface for the other side of the patch. The "
 "patch on the other side must also set this interface as peer."
@@ -9228,29 +9254,29 @@ msgstr ""
 "패치의 다른쪽에 대한 인터페이스 이름을 지정합니다. 다른 쪽의 패치도 이 인터페"
 "이스를 피어로 설정해야 합니다."
 
-#: ../clients/common/settings-docs.h.in:296
+#: ../clients/common/settings-docs.h.in:299
 msgid "The time port must be inactive in order to be considered down."
 msgstr "끝내려면 시간 포트가 비활성 상태여야 합니다."
 
-#: ../clients/common/settings-docs.h.in:297
+#: ../clients/common/settings-docs.h.in:300
 msgid ""
 "Bonding mode. One of \"active-backup\", \"balance-slb\", or \"balance-tcp\"."
 msgstr ""
 "본딩 모드. \"active-backup\", \"balance-slb\", \"balance-tcp\" 중 하나입니다."
 
-#: ../clients/common/settings-docs.h.in:298
+#: ../clients/common/settings-docs.h.in:301
 msgid "The time port must be active before it starts forwarding traffic."
 msgstr "트래픽 포워딩을 시작하기 전에 시간 포트가 활성 상태여야 합니다."
 
-#: ../clients/common/settings-docs.h.in:299
+#: ../clients/common/settings-docs.h.in:302
 msgid "LACP mode. One of \"active\", \"off\", or \"passive\"."
 msgstr "LACP 모드. \"active\", \"off\", \"passive\" 중 하나입니다."
 
-#: ../clients/common/settings-docs.h.in:300
+#: ../clients/common/settings-docs.h.in:303
 msgid "The VLAN tag in the range 0-4095."
 msgstr "VLAN 태그, 0-4095 범위."
 
-#: ../clients/common/settings-docs.h.in:301
+#: ../clients/common/settings-docs.h.in:304
 msgid ""
 "The VLAN mode. One of \"access\", \"native-tagged\", \"native-untagged\", "
 "\"trunk\" or unset."
@@ -9258,7 +9284,7 @@ msgstr ""
 "VLAN 모드. \"access\", \"native-tagged\", \"native-untagged\", \"trunk\" 또"
 "는 설정하지 않습니다."
 
-#: ../clients/common/settings-docs.h.in:302
+#: ../clients/common/settings-docs.h.in:305
 msgid ""
 "If non-zero, instruct pppd to set the serial port to the specified "
 "baudrate.  This value should normally be left as 0 to automatically choose "
@@ -9267,7 +9293,7 @@ msgstr ""
 "0이 아니라면, pppd에서 직렬 포트를 지정된 baudrate로 설정합니다. 자동으로 속"
 "도를 선택하려면 이 값을 0으로 두어야 합니다."
 
-#: ../clients/common/settings-docs.h.in:303
+#: ../clients/common/settings-docs.h.in:306
 msgid ""
 "If TRUE, specify that pppd should set the serial port to use hardware flow "
 "control with RTS and CTS signals.  This value should normally be set to "
@@ -9276,7 +9302,7 @@ msgstr ""
 "참이면 pppd에서 직렬 포트에 RTS와 CTS 신호로 하드웨어 흐름 제어를 사용하도록 "
 "지정합니다. 이 값은 일반적으로 거짓으로 설정해야 합니다."
 
-#: ../clients/common/settings-docs.h.in:304
+#: ../clients/common/settings-docs.h.in:307
 msgid ""
 "If non-zero, instruct pppd to presume the connection to the peer has failed "
 "if the specified number of LCP echo-requests go unanswered by the peer.  The "
@@ -9287,7 +9313,7 @@ msgstr ""
 "면 피어와의 연결이 실패했다고 추정하게 만듭니다. \"lcp-echo-interval\" 속성"
 "은 이 속성이 사용되는 경우 0이 아닌 값으로 설정되어야 합니다."
 
-#: ../clients/common/settings-docs.h.in:305
+#: ../clients/common/settings-docs.h.in:308
 msgid ""
 "If non-zero, instruct pppd to send an LCP echo-request frame to the peer "
 "every n seconds (where n is the specified value).  Note that some PPP peers "
@@ -9298,7 +9324,7 @@ msgstr ""
 "에게 전송합니다. 일부 PPP 피어는 에코 요청에 응답하고 일부는 응답하지 않으므"
 "로 자동으로 인식할 수 없습니다."
 
-#: ../clients/common/settings-docs.h.in:306
+#: ../clients/common/settings-docs.h.in:309
 msgid ""
 "If TRUE, stateful MPPE is used.  See pppd documentation for more information "
 "on stateful MPPE."
@@ -9306,7 +9332,7 @@ msgstr ""
 "참이면 상태 저장 MPPE가 사용됩니다. 상태 저장 MPPE에 대한 자세한 내용은 pppd "
 "문서를 참조하십시오."
 
-#: ../clients/common/settings-docs.h.in:307
+#: ../clients/common/settings-docs.h.in:310
 msgid ""
 "If non-zero, instruct pppd to request that the peer send packets no larger "
 "than the specified size.  If non-zero, the MRU should be between 128 and "
@@ -9315,16 +9341,16 @@ msgstr ""
 "0이 아니면 pppd에게 피어가 지정된 크기보다 크지 않은 패킷을 보내도록 요청합니"
 "다. 0이 아니면 MRU는 128에서 16384 사이여야 합니다."
 
-#: ../clients/common/settings-docs.h.in:308
+#: ../clients/common/settings-docs.h.in:311
 msgid ""
 "If non-zero, instruct pppd to send packets no larger than the specified size."
 msgstr "0이 아니면 pppd에게 지정된 크기보다 크지 않은 패킷을 보내도록 합니다."
 
-#: ../clients/common/settings-docs.h.in:309
+#: ../clients/common/settings-docs.h.in:312
 msgid "If TRUE, Van Jacobsen TCP header compression will not be requested."
 msgstr "참이면 Van Jacobsen TCP 헤더 압축을 요청하지 않습니다."
 
-#: ../clients/common/settings-docs.h.in:310
+#: ../clients/common/settings-docs.h.in:313
 msgid ""
 "If TRUE, do not require the other side (usually the PPP server) to "
 "authenticate itself to the client.  If FALSE, require authentication from "
@@ -9334,35 +9360,35 @@ msgstr ""
 "니다. 거짓이면 원격 측의 인증이 필요합니다. 거의 모든 경우에 이것이 참이여야 "
 "합니다."
 
-#: ../clients/common/settings-docs.h.in:311
+#: ../clients/common/settings-docs.h.in:314
 msgid "If TRUE, BSD compression will not be requested."
 msgstr "참이면, BSD 압축을 요구하지 않습니다."
 
-#: ../clients/common/settings-docs.h.in:312
+#: ../clients/common/settings-docs.h.in:315
 msgid "If TRUE, \"deflate\" compression will not be requested."
 msgstr "참이면, \"deflate\" 압축을 요구하지 않습니다."
 
-#: ../clients/common/settings-docs.h.in:313
+#: ../clients/common/settings-docs.h.in:316
 msgid "If TRUE, the CHAP authentication method will not be used."
 msgstr "참이면, CHAP 인증 방식을 사용하지 않습니다."
 
-#: ../clients/common/settings-docs.h.in:314
+#: ../clients/common/settings-docs.h.in:317
 msgid "If TRUE, the EAP authentication method will not be used."
 msgstr "참이면, EAP 인증 방식을 사용하지 않습니다."
 
-#: ../clients/common/settings-docs.h.in:315
+#: ../clients/common/settings-docs.h.in:318
 msgid "If TRUE, the MSCHAP authentication method will not be used."
 msgstr "참이면, MSCHAP 인증 방식을 사용하지 않습니다."
 
-#: ../clients/common/settings-docs.h.in:316
+#: ../clients/common/settings-docs.h.in:319
 msgid "If TRUE, the MSCHAPv2 authentication method will not be used."
 msgstr "참이면, MSCHAPv2 인증 방식을 사용하지 않습니다."
 
-#: ../clients/common/settings-docs.h.in:317
+#: ../clients/common/settings-docs.h.in:320
 msgid "If TRUE, the PAP authentication method will not be used."
 msgstr "참이면, PAP 인증 방식을 사용하지 않습니다."
 
-#: ../clients/common/settings-docs.h.in:318
+#: ../clients/common/settings-docs.h.in:321
 msgid ""
 "If TRUE, MPPE (Microsoft Point-to-Point Encryption) will be required for the "
 "PPP session.  If either 64-bit or 128-bit MPPE is not available the session "
@@ -9372,7 +9398,7 @@ msgstr ""
 "128비트 MPPE를 사용할 수 없으면 세션이 실패합니다. 모바일 광대역 연결에는 "
 "MPPE를 사용하지 않습니다."
 
-#: ../clients/common/settings-docs.h.in:319
+#: ../clients/common/settings-docs.h.in:322
 msgid ""
 "If TRUE, 128-bit MPPE (Microsoft Point-to-Point Encryption) will be required "
 "for the PPP session, and the \"require-mppe\" property must also be set to "
@@ -9382,7 +9408,7 @@ msgstr ""
 "\"require-mppe\" 속성도 참으로 설정되어야 합니다. 128비트 MPPE를 사용할 수 없"
 "으면 세션이 실패합니다."
 
-#: ../clients/common/settings-docs.h.in:320
+#: ../clients/common/settings-docs.h.in:323
 msgid ""
 "If given, specifies the parent interface name on which this PPPoE connection "
 "should be created.  If this property is not specified, the connection is "
@@ -9393,11 +9419,11 @@ msgstr ""
 "을 지정하지 않으면 NMSettingConnection의 \"interface-name\"에 지정된 인터페이"
 "스에서 연결이 활성화됩니다."
 
-#: ../clients/common/settings-docs.h.in:321
+#: ../clients/common/settings-docs.h.in:324
 msgid "Password used to authenticate with the PPPoE service."
 msgstr "PPPoE 서비스 인증에 사용되는 암호입니다."
 
-#: ../clients/common/settings-docs.h.in:323
+#: ../clients/common/settings-docs.h.in:326
 msgid ""
 "If specified, instruct PPPoE to only initiate sessions with access "
 "concentrators that provide the specified service.  For most providers, this "
@@ -9408,28 +9434,28 @@ msgstr ""
 "니다. 대부분의 통신 서비스 업체의 경우 공란으로 남겨 두어야 합니다. 다중 액세"
 "스 집중기가 있거나 특정 서비스가 필요할 것으로 알려진 경우에만 필요합니다."
 
-#: ../clients/common/settings-docs.h.in:324
+#: ../clients/common/settings-docs.h.in:327
 msgid "Username used to authenticate with the PPPoE service."
 msgstr "PPPoE 서비스로 인증하는데 사용되는 사용자 이름"
 
-#: ../clients/common/settings-docs.h.in:325
+#: ../clients/common/settings-docs.h.in:328
 msgid "Whether the proxy configuration is for browser only."
 msgstr "프록시 구성이 브라우저 전용인지 여부."
 
-#: ../clients/common/settings-docs.h.in:326
+#: ../clients/common/settings-docs.h.in:329
 msgid ""
 "Method for proxy configuration, Default is NM_SETTING_PROXY_METHOD_NONE (0)"
 msgstr "프록시 구성 방법, 기본값은 NM_SETTING_PROXY_METHOD_NONE(0)입니다."
 
-#: ../clients/common/settings-docs.h.in:327
+#: ../clients/common/settings-docs.h.in:330
 msgid "PAC script for the connection."
 msgstr "연결을 위한 PAC 스크립트."
 
-#: ../clients/common/settings-docs.h.in:328
+#: ../clients/common/settings-docs.h.in:331
 msgid "PAC URL for obtaining PAC file."
 msgstr "PAC 파일을 얻기위한 PAC URL."
 
-#: ../clients/common/settings-docs.h.in:329
+#: ../clients/common/settings-docs.h.in:332
 msgid ""
 "Speed to use for communication over the serial port.  Note that this value "
 "usually has no effect for mobile broadband modems as they generally ignore "
@@ -9438,19 +9464,19 @@ msgstr ""
 "직렬 포트에 사용할 통신 속도. 보통 속도 설정을 무시하고 사용 가능한 최고 속도"
 "를 사용하므로, 이 값은 모바일 광대역 모뎀에 영향을 미치지 않습니다."
 
-#: ../clients/common/settings-docs.h.in:330
+#: ../clients/common/settings-docs.h.in:333
 msgid "Byte-width of the serial communication. The 8 in \"8n1\" for example."
 msgstr "직렬 통신의 바이트 너비. 예를 들어 \"8n1\"의 8."
 
-#: ../clients/common/settings-docs.h.in:331
+#: ../clients/common/settings-docs.h.in:334
 msgid "Parity setting of the serial port."
 msgstr "직렬 포트의 패리티 설정."
 
-#: ../clients/common/settings-docs.h.in:332
+#: ../clients/common/settings-docs.h.in:335
 msgid "Time to delay between each byte sent to the modem, in microseconds."
 msgstr "모뎀에 전송된 각 바이트 사이 지연 시간 (마이크로 초)."
 
-#: ../clients/common/settings-docs.h.in:333
+#: ../clients/common/settings-docs.h.in:336
 msgid ""
 "Number of stop bits for communication on the serial port.  Either 1 or 2. "
 "The 1 in \"8n1\" for example."
@@ -9458,7 +9484,7 @@ msgstr ""
 "직렬 포트에서 통신하기 위한 정지 비트의 수. 1 또는 2입니다. 예를 들어 "
 "\"8n1\"의 1."
 
-#: ../clients/common/settings-docs.h.in:334
+#: ../clients/common/settings-docs.h.in:337
 msgid ""
 "Whether to autoprobe virtual functions by a compatible driver. If set to "
 "NM_TERNARY_TRUE (1), the kernel will try to bind VFs to a compatible driver "
@@ -9475,7 +9501,7 @@ msgstr ""
 "이스가 생성되지 않습니다. NM_TERNARY_DEFAULT(-1)로 설정하면 전체 기본값이 사"
 "용됩니다. 전체 기본값이 지정되지 않은 경우 NM_TERNARY_TRUE(1)로 간주됩니다."
 
-#: ../clients/common/settings-docs.h.in:335
+#: ../clients/common/settings-docs.h.in:338
 msgid ""
 "The total number of virtual functions to create. Note that when the sriov "
 "setting is present NetworkManager enforces the number of virtual functions "
@@ -9488,7 +9514,7 @@ msgstr ""
 "재설정합니다. SR-IOV 매개 변수가 변경되지 않도록 연결에 sriov 설정을 추가하"
 "지 마십시오."
 
-#: ../clients/common/settings-docs.h.in:336
+#: ../clients/common/settings-docs.h.in:339
 msgid ""
 "Array of virtual function descriptors. Each VF descriptor is a dictionary "
 "mapping attribute names to GVariant values. The 'index' entry is mandatory "
@@ -9509,15 +9535,15 @@ msgstr ""
 "됩니다. PROTO는 802.1Q의 경우 (기본값) 'q' 또는 802.1ad의 경우 'ad'중 하나일 "
 "수 있습니다."
 
-#: ../clients/common/settings-docs.h.in:337
+#: ../clients/common/settings-docs.h.in:340
 msgid "Array of TC queueing disciplines."
 msgstr "TC 대기열 규율의 배열."
 
-#: ../clients/common/settings-docs.h.in:338
+#: ../clients/common/settings-docs.h.in:341
 msgid "Array of TC traffic filters."
 msgstr "TC 트래픽 필터의 배열."
 
-#: ../clients/common/settings-docs.h.in:339
+#: ../clients/common/settings-docs.h.in:342
 msgid ""
 "The JSON configuration for the team network interface.  The property should "
 "contain raw JSON configuration data suitable for teamd, because the value is "
@@ -9529,8 +9555,8 @@ msgstr ""
 "다. 지정하지 않으면 기본 구성이 사용됩니다. 형식에 대한 자세한 내용은 teamd."
 "conf 매뉴얼 페이지를 참조하십시오."
 
-#: ../clients/common/settings-docs.h.in:340
-#: ../clients/common/settings-docs.h.in:358
+#: ../clients/common/settings-docs.h.in:343
+#: ../clients/common/settings-docs.h.in:361
 msgid ""
 "Link watchers configuration for the connection: each link watcher is defined "
 "by a dictionary, whose keys depend upon the selected link watcher. Available "
@@ -9550,23 +9576,23 @@ msgstr ""
 "incative', 'send-always'. 자세한 내용은 teamd.conf 매뉴얼 페이지를 참조하십시"
 "오."
 
-#: ../clients/common/settings-docs.h.in:341
+#: ../clients/common/settings-docs.h.in:344
 msgid "Corresponds to the teamd mcast_rejoin.count."
 msgstr "teamd mcast_rejoin.count에 해당합니다."
 
-#: ../clients/common/settings-docs.h.in:342
+#: ../clients/common/settings-docs.h.in:345
 msgid "Corresponds to the teamd mcast_rejoin.interval."
 msgstr "teamd mcast_rejoin.interval에 해당합니다."
 
-#: ../clients/common/settings-docs.h.in:343
+#: ../clients/common/settings-docs.h.in:346
 msgid "Corresponds to the teamd notify_peers.count."
 msgstr "teamd notify_peers.count에 해당합니다."
 
-#: ../clients/common/settings-docs.h.in:344
+#: ../clients/common/settings-docs.h.in:347
 msgid "Corresponds to the teamd notify_peers.interval."
 msgstr "teamd notify_peers.interval에 해당합니다."
 
-#: ../clients/common/settings-docs.h.in:345
+#: ../clients/common/settings-docs.h.in:348
 msgid ""
 "Corresponds to the teamd runner.name. Permitted values are: \"roundrobin\", "
 "\"broadcast\", \"activebackup\", \"loadbalance\", \"lacp\", \"random\"."
@@ -9574,43 +9600,43 @@ msgstr ""
 "teamd runner.name에 해당합니다. 허용되는 값은: \"roundrobin\", \"broadcast"
 "\", \"activebackup\", \"loadbalance\", \"lacp\", \"random\"."
 
-#: ../clients/common/settings-docs.h.in:346
+#: ../clients/common/settings-docs.h.in:349
 msgid "Corresponds to the teamd runner.active."
 msgstr "teamd runner.active에 해당합니다."
 
-#: ../clients/common/settings-docs.h.in:347
+#: ../clients/common/settings-docs.h.in:350
 msgid "Corresponds to the teamd runner.agg_select_policy."
 msgstr "teamd runner.agg_select_policy에 해당합니다."
 
-#: ../clients/common/settings-docs.h.in:348
+#: ../clients/common/settings-docs.h.in:351
 msgid "Corresponds to the teamd runner.fast_rate."
 msgstr "teamd runner.fast_rate에 해당합니다."
 
-#: ../clients/common/settings-docs.h.in:349
+#: ../clients/common/settings-docs.h.in:352
 msgid "Corresponds to the teamd runner.hwaddr_policy."
 msgstr "teamd runner.hwaddr_policy에 해당합니다."
 
-#: ../clients/common/settings-docs.h.in:350
+#: ../clients/common/settings-docs.h.in:353
 msgid "Corresponds to the teamd runner.min_ports."
 msgstr "teamd runner.min_ports에 해당합니다."
 
-#: ../clients/common/settings-docs.h.in:351
+#: ../clients/common/settings-docs.h.in:354
 msgid "Corresponds to the teamd runner.sys_prio."
 msgstr "teamd runner.sys_prio에 해당합니다."
 
-#: ../clients/common/settings-docs.h.in:352
+#: ../clients/common/settings-docs.h.in:355
 msgid "Corresponds to the teamd runner.tx_balancer.name."
 msgstr "teamd runner.tx_balancer.name에 해당합니다."
 
-#: ../clients/common/settings-docs.h.in:353
+#: ../clients/common/settings-docs.h.in:356
 msgid "Corresponds to the teamd runner.tx_balancer.interval."
 msgstr "teamd runner.tx_balancer.interval에 해당합니다."
 
-#: ../clients/common/settings-docs.h.in:354
+#: ../clients/common/settings-docs.h.in:357
 msgid "Corresponds to the teamd runner.tx_hash."
 msgstr "teamd runner.tx_hash에 해당합니다."
 
-#: ../clients/common/settings-docs.h.in:355
+#: ../clients/common/settings-docs.h.in:358
 msgid ""
 "The JSON configuration for the team port. The property should contain raw "
 "JSON configuration data suitable for teamd, because the value is passed "
@@ -9622,19 +9648,19 @@ msgstr ""
 "으면 기본 구성이 사용됩니다. 형식에 대한 자세한 내용은 teamd.conf 파일을 참조"
 "하십시오."
 
-#: ../clients/common/settings-docs.h.in:356
+#: ../clients/common/settings-docs.h.in:359
 msgid "Corresponds to the teamd ports.PORTIFNAME.lacp_key."
 msgstr "teamd ports.포트IF이름.lacp_key에 해당합니다."
 
-#: ../clients/common/settings-docs.h.in:357
+#: ../clients/common/settings-docs.h.in:360
 msgid "Corresponds to the teamd ports.PORTIFNAME.lacp_prio."
 msgstr "teamd ports.포트IF이름.lacp_prio에 해당합니다."
 
-#: ../clients/common/settings-docs.h.in:359
+#: ../clients/common/settings-docs.h.in:362
 msgid "Corresponds to the teamd ports.PORTIFNAME.prio."
 msgstr "teamd ports.포트IF이름.prio에 해당합니다."
 
-#: ../clients/common/settings-docs.h.in:360
+#: ../clients/common/settings-docs.h.in:363
 msgid ""
 "Corresponds to the teamd ports.PORTIFNAME.queue_id. When set to -1 means the "
 "parameter is skipped from the json config."
@@ -9642,11 +9668,11 @@ msgstr ""
 "teamd ports.포트IF이름.queue_id에 해당합니다. -1로 설정하면 json 설정에서 매"
 "개 변수를 건너 뛴다는 의미입니다."
 
-#: ../clients/common/settings-docs.h.in:361
+#: ../clients/common/settings-docs.h.in:364
 msgid "Corresponds to the teamd ports.PORTIFNAME.sticky."
 msgstr "teamd ports.포트IF이름.sticky에 해당합니다."
 
-#: ../clients/common/settings-docs.h.in:362
+#: ../clients/common/settings-docs.h.in:365
 msgid ""
 "The group ID which will own the device. If set to NULL everyone will be able "
 "to use the device."
@@ -9654,7 +9680,7 @@ msgstr ""
 "장치를 소유할 그룹 ID입니다. NULL로 설정하면 모든 사용자가 장치를 사용할 수 "
 "있습니다."
 
-#: ../clients/common/settings-docs.h.in:363
+#: ../clients/common/settings-docs.h.in:366
 msgid ""
 "The operating mode of the virtual device. Allowed values are "
 "NM_SETTING_TUN_MODE_TUN (1) to create a layer 3 device and "
@@ -9663,7 +9689,7 @@ msgstr ""
 "가상 장치의 작동 모드. 허용되는 값은: NM_SETTING_TUN_MODE_TUN (1) 레이어 3 장"
 "치를 생성, NM_SETTING_TUN_MODE_TAP (2) 이더넷과 같이 레이어 2를 생성."
 
-#: ../clients/common/settings-docs.h.in:364
+#: ../clients/common/settings-docs.h.in:367
 msgid ""
 "If the property is set to TRUE, the interface will support multiple file "
 "descriptors (queues) to parallelize packet sending or receiving. Otherwise, "
@@ -9673,7 +9699,7 @@ msgstr ""
 "여러 파일 디스크립터를 (여러 대기열) 지원합니다. 거짓이면 인터페이스가 단일 "
 "대기열만 지원합니다."
 
-#: ../clients/common/settings-docs.h.in:365
+#: ../clients/common/settings-docs.h.in:368
 msgid ""
 "The user ID which will own the device. If set to NULL everyone will be able "
 "to use the device."
@@ -9681,7 +9707,7 @@ msgstr ""
 "장치를 소유할 사용자 ID. NULL로 설정하면 모든 사용자가 장치를 사용할 수 있습"
 "니다."
 
-#: ../clients/common/settings-docs.h.in:366
+#: ../clients/common/settings-docs.h.in:369
 msgid ""
 "If TRUE the interface will prepend a 4 byte header describing the physical "
 "interface to the packets."
@@ -9689,13 +9715,13 @@ msgstr ""
 "참이면 인터페이스에서 패킷에 대한 물리적 인터페이스를 설명하는 4바이트 헤더"
 "를 앞에 붙입니다."
 
-#: ../clients/common/settings-docs.h.in:367
+#: ../clients/common/settings-docs.h.in:370
 msgid ""
 "If TRUE the IFF_VNET_HDR the tunnel packets will include a virtio network "
 "header."
 msgstr "참이면 IFF_VNET_HDR 터널링 패킷에 virtio 네트워크 헤더가 들어갑니다."
 
-#: ../clients/common/settings-docs.h.in:368
+#: ../clients/common/settings-docs.h.in:371
 msgid ""
 "A dictionary of key/value pairs with user data. This data is ignored by "
 "NetworkManager and can be used at the users discretion. The keys only "
@@ -9706,7 +9732,7 @@ msgstr ""
 "서 무시되며, 사용자의 재량에 따라 사용할 수 있습니다. 키는 엄격하게 ASCII 형"
 "식만 지원하지만, 값은 임의의 길이까지 임의의 UTF8 문자열이 될 수 있습니다."
 
-#: ../clients/common/settings-docs.h.in:369
+#: ../clients/common/settings-docs.h.in:372
 msgid ""
 "For outgoing packets, a list of mappings from Linux SKB priorities to 802.1p "
 "priorities.  The mapping is given in the format \"from:to\" where both \"from"
@@ -9716,7 +9742,7 @@ msgstr ""
 "니다. 이 매핑은 \"from:to\" 형식으로 주어지며 \"from\"과 \"to\"는 모두 부호없"
 "는 정수입니다. (예: \"7:3\")"
 
-#: ../clients/common/settings-docs.h.in:370
+#: ../clients/common/settings-docs.h.in:373
 msgid ""
 "One or more flags which control the behavior and features of the VLAN "
 "interface.  Flags include NM_VLAN_FLAG_REORDER_HEADERS (0x1) (reordering of "
@@ -9737,7 +9763,7 @@ msgstr ""
 "전과의 호환성을 유지하기 위해 D-버스 API의 기본값은 0이고 D-버스의 누락된 속"
 "성은 여전히 ​​0으로 간주됩니다."
 
-#: ../clients/common/settings-docs.h.in:371
+#: ../clients/common/settings-docs.h.in:374
 msgid ""
 "The VLAN identifier that the interface created by this connection should be "
 "assigned. The valid range is from 0 to 4094, without the reserved id 4095."
@@ -9745,7 +9771,7 @@ msgstr ""
 "이 연결에 의해 생성된 인터페이스를 할당해야 하는 VLAN 식별자. 올바른 값은 0에"
 "서 4094이며, 4095는 예약 ID로 사용하지 않습니다."
 
-#: ../clients/common/settings-docs.h.in:372
+#: ../clients/common/settings-docs.h.in:375
 msgid ""
 "For incoming packets, a list of mappings from 802.1p priorities to Linux SKB "
 "priorities.  The mapping is given in the format \"from:to\" where both \"from"
@@ -9755,7 +9781,7 @@ msgstr ""
 "록입니다. 매핑은 \"from:to\"형식으로 주어지며 \"from\"과 \"to\"는 모두 부호없"
 "는 정수, 즉 \"7:3\"입니다."
 
-#: ../clients/common/settings-docs.h.in:373
+#: ../clients/common/settings-docs.h.in:376
 msgid ""
 "If given, specifies the parent interface name or parent connection UUID from "
 "which this VLAN interface should be created.  If this property is not "
@@ -9766,7 +9792,7 @@ msgstr ""
 "위 연결 UUID를 지정합니다. 이 속성이 지정되지 않은 경우, 연결에는 \"mac-"
 "address\" 속성으로 \"802-3-ethernet\" 설정이 있어야 합니다."
 
-#: ../clients/common/settings-docs.h.in:374
+#: ../clients/common/settings-docs.h.in:377
 msgid ""
 "Dictionary of key/value pairs of VPN plugin specific data.  Both keys and "
 "values must be strings."
@@ -9774,7 +9800,7 @@ msgstr ""
 "VPN Plugin 특정 데이터의 키/값 쌍 딕셔너리. 키와 값은 모두 문자열이어야 합니"
 "다."
 
-#: ../clients/common/settings-docs.h.in:375
+#: ../clients/common/settings-docs.h.in:378
 msgid ""
 "If the VPN service supports persistence, and this property is TRUE, the VPN "
 "will attempt to stay connected across link changes and outages, until "
@@ -9783,7 +9809,7 @@ msgstr ""
 "VPN 서비스가 지속성을 지원하고 이 속성이 참이면, VPN은 명시적으로 연결이 끊어"
 "질 때까지 링크 변경 및 중단시에도 연결을 유지하려고 시도합니다."
 
-#: ../clients/common/settings-docs.h.in:376
+#: ../clients/common/settings-docs.h.in:379
 msgid ""
 "Dictionary of key/value pairs of VPN plugin specific secrets like passwords "
 "or private keys.  Both keys and values must be strings."
@@ -9791,7 +9817,7 @@ msgstr ""
 "암호 또는 비밀 키와 같은 VPN 플러그인마다 다른 비밀의 키/값 쌍 사전입니다. 키"
 "와 값은 모두 문자열이어야 합니다."
 
-#: ../clients/common/settings-docs.h.in:377
+#: ../clients/common/settings-docs.h.in:380
 msgid ""
 "D-Bus service name of the VPN plugin that this setting uses to connect to "
 "its network.  i.e. org.freedesktop.NetworkManager.vpnc for the vpnc plugin."
@@ -9799,7 +9825,7 @@ msgstr ""
 "이 설정이 해당 네트워크에 연결하는데 사용하는 VPN 플러그 인의 D-버스 서비스 "
 "이름입니다. 즉 vpnc 플러그인의 org.freedesktop.NetworkManager.vpnc."
 
-#: ../clients/common/settings-docs.h.in:378
+#: ../clients/common/settings-docs.h.in:381
 msgid ""
 "Timeout for the VPN service to establish the connection. Some services may "
 "take quite a long time to connect. Value of 0 means a default timeout, which "
@@ -9811,7 +9837,7 @@ msgstr ""
 "60초인 기본 제한 시간을 의미합니다. 0보다 큰 값은 초 단위의 제한 시간을 의미"
 "합니다."
 
-#: ../clients/common/settings-docs.h.in:379
+#: ../clients/common/settings-docs.h.in:382
 msgid ""
 "If the VPN connection requires a user name for authentication, that name "
 "should be provided here.  If the connection is available to more than one "
@@ -9825,35 +9851,35 @@ msgstr ""
 "름을 제공해야 하는 경우 이 속성을 비워 두십시오. 이 속성이 비어 있으면 네트워"
 "크 관리자는 VPN 연결을 요청한 사용자의 사용자 이름을 자동으로 제공합니다."
 
-#: ../clients/common/settings-docs.h.in:380
+#: ../clients/common/settings-docs.h.in:383
 msgid "The routing table for this VRF."
 msgstr "이 VRF의 라우팅 테이블."
 
-#: ../clients/common/settings-docs.h.in:381
+#: ../clients/common/settings-docs.h.in:384
 msgid "Specifies the lifetime in seconds of FDB entries learnt by the kernel."
 msgstr "커널에서 학습한 FDB 항목의 수명을 (초 단위) 지정합니다."
 
-#: ../clients/common/settings-docs.h.in:382
+#: ../clients/common/settings-docs.h.in:385
 msgid ""
 "Specifies the UDP destination port to communicate to the remote VXLAN tunnel "
 "endpoint."
 msgstr "원격 VXLAN 터널링 엔드포인트와 통신할 UDP 대상 포트를 지정합니다."
 
-#: ../clients/common/settings-docs.h.in:383
+#: ../clients/common/settings-docs.h.in:386
 msgid ""
 "Specifies the VXLAN Network Identifier (or VXLAN Segment Identifier) to use."
 msgstr ""
 "사용할 VXLAN 네트워크 식별자를 (또는 VXLAN 세그먼트 식별자) 지정합니다."
 
-#: ../clients/common/settings-docs.h.in:384
+#: ../clients/common/settings-docs.h.in:387
 msgid "Specifies whether netlink LL ADDR miss notifications are generated."
 msgstr "netlink LL ADDR 누락 알림을 생성할지 여부를 지정합니다."
 
-#: ../clients/common/settings-docs.h.in:385
+#: ../clients/common/settings-docs.h.in:388
 msgid "Specifies whether netlink IP ADDR miss notifications are generated."
 msgstr "netlink IP ADDR 누락 알림을 생성할지 여부를 지정합니다."
 
-#: ../clients/common/settings-docs.h.in:386
+#: ../clients/common/settings-docs.h.in:389
 msgid ""
 "Specifies whether unknown source link layer addresses and IP addresses are "
 "entered into the VXLAN device forwarding database."
@@ -9861,7 +9887,7 @@ msgstr ""
 "알 수 없는 소스 링크 계층 주소 및 IP 주소를 VXLAN 장치 전달 데이터베이스에 입"
 "력할지 여부를 지정합니다."
 
-#: ../clients/common/settings-docs.h.in:387
+#: ../clients/common/settings-docs.h.in:390
 msgid ""
 "Specifies the maximum number of FDB entries. A value of zero means that the "
 "kernel will store unlimited entries."
@@ -9869,20 +9895,20 @@ msgstr ""
 "FDB 항목의 최대 수를 지정합니다. 값이 0이면 커널에서 무제한으로 항목을 저장함"
 "을 의미합니다."
 
-#: ../clients/common/settings-docs.h.in:388
+#: ../clients/common/settings-docs.h.in:391
 msgid "If given, specifies the source IP address to use in outgoing packets."
 msgstr "주어진 경우, 보내는 패킷에 사용할 원본 IP 주소를 지정합니다."
 
-#: ../clients/common/settings-docs.h.in:389
+#: ../clients/common/settings-docs.h.in:392
 msgid ""
 "If given, specifies the parent interface name or parent connection UUID."
 msgstr "주어진 경우, 상위 인터페이스 이름 또는 상위 연결 UUID를 지정합니다."
 
-#: ../clients/common/settings-docs.h.in:390
+#: ../clients/common/settings-docs.h.in:393
 msgid "Specifies whether ARP proxy is turned on."
 msgstr "ARP 프록시를 켤지 여부를 지정합니다."
 
-#: ../clients/common/settings-docs.h.in:391
+#: ../clients/common/settings-docs.h.in:394
 msgid ""
 "Specifies the unicast destination IP address to use in outgoing packets when "
 "the destination link layer address is not known in the VXLAN device "
@@ -9891,39 +9917,39 @@ msgstr ""
 "대상 링크 계층 주소를 VXLAN 장치 전달 데이터베이스에서 알 수 없을 때, 나가는 "
 "패킷의 유니캐스트 대상 IP 주소, 또는 조인할 멀티캐스트 IP 주소를 지정합니다."
 
-#: ../clients/common/settings-docs.h.in:392
+#: ../clients/common/settings-docs.h.in:395
 msgid "Specifies whether route short circuit is turned on."
 msgstr "라우팅 줄여 쓰기가 켜져 있는지 여부를 지정합니다."
 
-#: ../clients/common/settings-docs.h.in:393
+#: ../clients/common/settings-docs.h.in:396
 msgid ""
 "Specifies the maximum UDP source port to communicate to the remote VXLAN "
 "tunnel endpoint."
 msgstr "원격 VXLAN 터널링 엔드포인트와 통신할 최대 UDP 소스 포트를 지정합니다."
 
-#: ../clients/common/settings-docs.h.in:394
+#: ../clients/common/settings-docs.h.in:397
 msgid ""
 "Specifies the minimum UDP source port to communicate to the remote VXLAN "
 "tunnel endpoint."
 msgstr ""
 "원격 VXLAN 터널링 엔드 포인트와 통신할 최소 UDP 소스 포트를 지정합니다."
 
-#: ../clients/common/settings-docs.h.in:395
+#: ../clients/common/settings-docs.h.in:398
 msgid "Specifies the TOS value to use in outgoing packets."
 msgstr "송신 패킷에 사용할 TOS 값을 지정합니다."
 
-#: ../clients/common/settings-docs.h.in:396
+#: ../clients/common/settings-docs.h.in:399
 msgid "Specifies the time-to-live value to use in outgoing packets."
 msgstr "송신 패킷에 사용할 TTL (Time-To-Live) 값을 지정합니다."
 
-#: ../clients/common/settings-docs.h.in:397
+#: ../clients/common/settings-docs.h.in:400
 msgid ""
 "The P2P device that should be connected to. Currently, this is the only way "
 "to create or join a group."
 msgstr ""
 "연결할 P2P 장치. 현재 그룹을 만들거나 참가할 수 있는 유일한 방법입니다."
 
-#: ../clients/common/settings-docs.h.in:398
+#: ../clients/common/settings-docs.h.in:401
 msgid ""
 "The Wi-Fi Display (WFD) Information Elements (IEs) to set. Wi-Fi Display "
 "requires a protocol specific information element to be set in certain Wi-Fi "
@@ -9936,7 +9962,7 @@ msgstr ""
 "기에서 지정할 수 있습니다. 이 설정은 Wi-Fi 디스플레이 클라이언트를 구현할 때"
 "만 유용합니다."
 
-#: ../clients/common/settings-docs.h.in:399
+#: ../clients/common/settings-docs.h.in:402
 msgid ""
 "Flags indicating which mode of WPS is to be used. There's little point in "
 "changing the default setting as NetworkManager will automatically determine "
@@ -9945,7 +9971,7 @@ msgstr ""
 "사용할 WPS 모드를 나타내는 플래그. 네트워크 관리자가 사용하기에 가장 적합한 "
 "방법을 자동으로 결정하므로 기본 설정을 변경할 필요는 거의 없습니다."
 
-#: ../clients/common/settings-docs.h.in:400
+#: ../clients/common/settings-docs.h.in:403
 msgid ""
 "If specified, this connection will only apply to the WiMAX device whose MAC "
 "address matches. This property does not change the MAC address of the device "
@@ -9954,7 +9980,7 @@ msgstr ""
 "지정되면, 이 연결을 MAC 주소가 일치하는 WiMAX 장치에만 적용됩니다. 이 속성은 "
 "장치의 MAC 주소를 변경하지 (MAC 스푸핑) 않습니다. 지원 중단 예정: 1"
 
-#: ../clients/common/settings-docs.h.in:401
+#: ../clients/common/settings-docs.h.in:404
 msgid ""
 "Network Service Provider (NSP) name of the WiMAX network this connection "
 "should use. Deprecated: 1"
@@ -9962,7 +9988,7 @@ msgstr ""
 "이 연결에서 사용할 WiMAX 네트워크의 NSP (Network Service Provider) 이름. 지"
 "원 중단 예정: 1"
 
-#: ../clients/common/settings-docs.h.in:402
+#: ../clients/common/settings-docs.h.in:405
 msgid ""
 "The use of fwmark is optional and is by default off. Setting it to 0 "
 "disables it. Otherwise, it is a 32-bit fwmark for outgoing packets. Note "
@@ -9974,7 +10000,7 @@ msgstr ""
 "auto-default-route\" 또는 \"ip6-auto-default-route\"가 활성화되어 있으면 자동"
 "으로 fwmark를 선택합니다."
 
-#: ../clients/common/settings-docs.h.in:403
+#: ../clients/common/settings-docs.h.in:406
 msgid ""
 "Whether to enable special handling of the IPv4 default route. If enabled, "
 "the IPv4 default route from wireguard.peer-routes will be placed to a "
@@ -9998,11 +10024,11 @@ msgstr ""
 "never-default가 설정되어 있지 않고 allowed-ip로 default-route를 사용하는 피어"
 "가 있는 경우, 이 옵션을 기본값으로 두면 이 옵션이 자동으로 활성화됩니다."
 
-#: ../clients/common/settings-docs.h.in:404
+#: ../clients/common/settings-docs.h.in:407
 msgid "Like ip4-auto-default-route, but for the IPv6 default route."
 msgstr "ip4-auto-default-route와 마찬가지이지만, IPv6 기본 라우팅입니다."
 
-#: ../clients/common/settings-docs.h.in:405
+#: ../clients/common/settings-docs.h.in:408
 msgid ""
 "The listen-port. If listen-port is not specified, the port will be chosen "
 "randomly when the interface comes up."
@@ -10010,7 +10036,7 @@ msgstr ""
 "리스닝 포트. 리스닝 포트를 지정하지 않으면 인터페이스가 표시될 때 포트가 임의"
 "로 선택됩니다."
 
-#: ../clients/common/settings-docs.h.in:406
+#: ../clients/common/settings-docs.h.in:409
 msgid ""
 "If non-zero, only transmit packets of the specified size or smaller, "
 "breaking larger packets up into multiple fragments. If zero a default MTU is "
@@ -10021,7 +10047,7 @@ msgstr ""
 "나눕니다. 0이면 기본 MTU를 사용합니다. wg-quick의 MTU 설정과는 달리 활성화시 "
 "현재 경로를 고려하지 않습니다."
 
-#: ../clients/common/settings-docs.h.in:407
+#: ../clients/common/settings-docs.h.in:410
 msgid ""
 "Whether to automatically add routes for the AllowedIPs ranges of the peers. "
 "If TRUE (the default), NetworkManager will automatically add routes in the "
@@ -10042,15 +10068,15 @@ msgstr ""
 "never-default 설정이 활성화되어 있으면, 이 피어의 피어 경로가 자동으로 추가되"
 "지 않습니다."
 
-#: ../clients/common/settings-docs.h.in:408
+#: ../clients/common/settings-docs.h.in:411
 msgid "The 256 bit private-key in base64 encoding."
 msgstr "base64 인코딩의 256 비트 private-key."
 
-#: ../clients/common/settings-docs.h.in:409
+#: ../clients/common/settings-docs.h.in:412
 msgid "Flags indicating how to handle the \"private-key\" property."
 msgstr "\"private-key\" 속성을 처리하는 방법을 나타내는 플래그."
 
-#: ../clients/common/settings-docs.h.in:410
+#: ../clients/common/settings-docs.h.in:413
 msgid ""
 "IEEE 802.15.4 channel. A positive integer or -1, meaning \"do not set, use "
 "whatever the device is already set to\"."
@@ -10058,7 +10084,7 @@ msgstr ""
 "IEEE 802.15.4 채널. 양의 정수 또는 -1. -1이면 \"설정되지 않음, 장치가 이미 설"
 "정한 그대로 사용\" 의미."
 
-#: ../clients/common/settings-docs.h.in:411
+#: ../clients/common/settings-docs.h.in:414
 msgid ""
 "If specified, this connection will only apply to the IEEE 802.15.4 (WPAN) "
 "MAC layer device whose permanent MAC address matches."
@@ -10066,7 +10092,7 @@ msgstr ""
 "이 연결을 지정하면, 이 연결은 영구 MAC 주소가 일치하는 IEEE 802.15.4 (WPAN) "
 "MAC 계층 장치에만 적용됩니다."
 
-#: ../clients/common/settings-docs.h.in:412
+#: ../clients/common/settings-docs.h.in:415
 msgid ""
 "IEEE 802.15.4 channel page. A positive integer or -1, meaning \"do not set, "
 "use whatever the device is already set to\"."
@@ -10074,11 +10100,11 @@ msgstr ""
 "IEEE 802.15.4 채널 페이지. 양의 정수 또는 -1. -1이면 \"설정되지 않음, 장치에 "
 "설정된 값 사용\" 의미."
 
-#: ../clients/common/settings-docs.h.in:413
+#: ../clients/common/settings-docs.h.in:416
 msgid "IEEE 802.15.4 Personal Area Network (PAN) identifier."
 msgstr "IEEE 802.15.4 PAN (Personal Area Network) 식별자."
 
-#: ../clients/common/settings-docs.h.in:414
+#: ../clients/common/settings-docs.h.in:417
 msgid "Short IEEE 802.15.4 address to be used within a restricted environment."
 msgstr "제한된 환경에서 사용되는 짧은 IEEE 802.15.4 주소."
 
@@ -10195,7 +10221,7 @@ msgstr "DSL 연결 %d"
 
 #: ../clients/tui/nm-editor-utils.c:179 ../libnm-core/nm-connection.c:2705
 #: ../libnm/nm-device.c:1587
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5225
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5242
 msgid "Bond"
 msgstr "본딩"
 
@@ -10206,7 +10232,7 @@ msgstr "본딩 연결 %d"
 
 #: ../clients/tui/nm-editor-utils.c:188 ../libnm-core/nm-connection.c:2709
 #: ../libnm/nm-device.c:1591
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5608
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5625
 msgid "Bridge"
 msgstr "브릿지"
 
@@ -10217,7 +10243,7 @@ msgstr "브릿지 연결 %d"
 
 #: ../clients/tui/nm-editor-utils.c:197 ../libnm-core/nm-connection.c:2707
 #: ../libnm/nm-device.c:1589
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5298
+#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5315
 msgid "Team"
 msgstr "티밍"
 
@@ -11402,7 +11428,7 @@ msgstr "예기치 않은 UUID %s, 기대한 값은 %s"
 #: ../libnm-core/nm-setting-connection.c:975
 #: ../libnm-core/nm-setting-connection.c:1004
 #: ../libnm-core/nm-setting-connection.c:1252
-#: ../libnm-core/nm-setting-ip-config.c:4984
+#: ../libnm-core/nm-setting-ip-config.c:5072
 #: ../libnm-core/nm-setting-ip-tunnel.c:367
 #: ../libnm-core/nm-setting-olpc-mesh.c:84
 #: ../libnm-core/nm-setting-ovs-patch.c:77 ../libnm-core/nm-setting-pppoe.c:130
@@ -11693,6 +11719,21 @@ msgstr "잘못된 'name' \"%s\""
 msgid "attribute '%s' is invalid for \"%s\""
 msgstr "'%s' 속성은 \"%s\"에 대해 올바르지 않습니다"
 
+#: ../libnm-core/nm-libnm-core-intern/nm-libnm-core-utils.c:276
+#, fuzzy
+msgid "property cannot be an empty string"
+msgstr "이 속성은 '%s=%s'에 대해 비어 있을 수 없습니다"
+
+#: ../libnm-core/nm-libnm-core-intern/nm-libnm-core-utils.c:293
+#, fuzzy
+msgid "property cannot be longer than 255 bytes"
+msgstr "DHCP 옵션은 255자를 초과할 수 없습니다"
+
+#: ../libnm-core/nm-libnm-core-intern/nm-libnm-core-utils.c:304
+#, fuzzy
+msgid "property cannot contain any nul bytes"
+msgstr "속성에 숫자만 들어있어야 합니다"
+
 #: ../libnm-core/nm-setting-6lowpan.c:79
 #, c-format
 msgid "property is not specified"
@@ -11766,9 +11807,9 @@ msgstr "인증서가 PKCS#11 토큰에 없는 경우 암호가 지원되지 않�
 #: ../libnm-core/nm-setting-connection.c:1224
 #: ../libnm-core/nm-setting-gsm.c:283 ../libnm-core/nm-setting-gsm.c:341
 #: ../libnm-core/nm-setting-gsm.c:378 ../libnm-core/nm-setting-gsm.c:387
-#: ../libnm-core/nm-setting-ip-config.c:4991
-#: ../libnm-core/nm-setting-ip4-config.c:167
-#: ../libnm-core/nm-setting-ip4-config.c:174
+#: ../libnm-core/nm-setting-ip-config.c:5079
+#: ../libnm-core/nm-setting-ip4-config.c:188
+#: ../libnm-core/nm-setting-ip4-config.c:195
 #: ../libnm-core/nm-setting-pppoe.c:137 ../libnm-core/nm-setting-pppoe.c:146
 #: ../libnm-core/nm-setting-vpn.c:559 ../libnm-core/nm-setting-vpn.c:570
 #: ../libnm-core/nm-setting-wimax.c:103
@@ -11791,7 +11832,7 @@ msgstr "이더넷 연결에서만 사용 가능"
 #: ../libnm-core/nm-setting-bluetooth.c:94
 #: ../libnm-core/nm-setting-infiniband.c:163
 #: ../libnm-core/nm-setting-infiniband.c:173
-#: ../libnm-core/nm-setting-ip4-config.c:158
+#: ../libnm-core/nm-setting-ip4-config.c:179
 #: ../libnm-core/nm-setting-ip6-config.c:226
 #: ../libnm-core/nm-setting-ip6-config.c:237
 #: ../libnm-core/nm-setting-olpc-mesh.c:113
@@ -12380,70 +12421,79 @@ msgstr "규칙이 올바르지 않습니다: %s"
 msgid "invalid address family"
 msgstr "잘못된 주소 패밀리"
 
-#: ../libnm-core/nm-setting-ip-config.c:4748
+#: ../libnm-core/nm-setting-ip-config.c:4750
 #, c-format
 msgid "rule #%u is invalid: %s"
 msgstr "#%u 규칙이 올바르지 않습니다: %s"
 
-#: ../libnm-core/nm-setting-ip-config.c:5004
+#: ../libnm-core/nm-setting-ip-config.c:5092
 #, c-format
 msgid "%d. DNS server address is invalid"
 msgstr "%d. DNS 서버 주소가 잘못되었습니다"
 
-#: ../libnm-core/nm-setting-ip-config.c:5020
+#: ../libnm-core/nm-setting-ip-config.c:5108
 #, c-format
 msgid "%d. IP address is invalid"
 msgstr "%d. IP 주소가 잘못되었습니다"
 
-#: ../libnm-core/nm-setting-ip-config.c:5032
+#: ../libnm-core/nm-setting-ip-config.c:5120
 #, c-format
 msgid "%d. IP address has 'label' property with invalid type"
 msgstr "%d. IP 주소에 잘못된 유형의 'label' 속성이 있습니다"
 
-#: ../libnm-core/nm-setting-ip-config.c:5041
+#: ../libnm-core/nm-setting-ip-config.c:5129
 #, c-format
 msgid "%d. IP address has invalid label '%s'"
 msgstr "%d. IP 주소에 잘못된 레이블 '%s'이(가) 있습니다"
 
-#: ../libnm-core/nm-setting-ip-config.c:5055
+#: ../libnm-core/nm-setting-ip-config.c:5143
 msgid "gateway cannot be set if there are no addresses configured"
 msgstr "주소를 구성하지 않으면 게이트웨이를 설정할 수 없습니다"
 
-#: ../libnm-core/nm-setting-ip-config.c:5064
+#: ../libnm-core/nm-setting-ip-config.c:5152
 msgid "gateway is invalid"
 msgstr "게이트웨이가 잘못되었습니다"
 
-#: ../libnm-core/nm-setting-ip-config.c:5079
+#: ../libnm-core/nm-setting-ip-config.c:5167
 #, c-format
 msgid "%d. route is invalid"
 msgstr "%d. 라우팅이 잘못되었습니다"
 
-#: ../libnm-core/nm-setting-ip-config.c:5089
+#: ../libnm-core/nm-setting-ip-config.c:5177
 #, c-format
 msgid "invalid attribute: %s"
 msgstr "잘못된 속성: %s"
 
-#: ../libnm-core/nm-setting-ip-config.c:5108
+#: ../libnm-core/nm-setting-ip-config.c:5196
 #, c-format
 msgid "%u. rule has wrong address-family"
 msgstr "%u. 규칙에 잘못된 주소 패밀리가 있습니다"
 
-#: ../libnm-core/nm-setting-ip-config.c:5117
+#: ../libnm-core/nm-setting-ip-config.c:5205
 #, c-format
 msgid "%u. rule is invalid: %s"
 msgstr "%u. 규칙이 잘못되었습니다: %s"
 
-#: ../libnm-core/nm-setting-ip-config.c:5131
+#: ../libnm-core/nm-setting-ip-config.c:5219
 #, c-format
 msgid "'%s' is not a valid IAID"
 msgstr "'%s'은(는) 올바른 IAID가 아닙니다"
 
-#: ../libnm-core/nm-setting-ip-config.c:5145
+#: ../libnm-core/nm-setting-ip-config.c:5233
 #, c-format
 msgid "the property cannot be set when '%s' is disabled"
 msgstr "'%s' 사용하지 않는 경우 이 속성을 설정할 수 없습니다"
 
-#: ../libnm-core/nm-setting-ip-config.c:5167
+#: ../libnm-core/nm-setting-ip-config.c:5257
+msgid "the property is currently supported only for DHCPv4"
+msgstr ""
+
+#: ../libnm-core/nm-setting-ip-config.c:5272
+#, fuzzy, c-format
+msgid "'%s' is not a valid IP or subnet"
+msgstr "'%s'은(는) 유효한 IP 주소가 아닙니다"
+
+#: ../libnm-core/nm-setting-ip-config.c:5287
 #, c-format
 msgid "a gateway is incompatible with '%s'"
 msgstr "게이트웨이가 '%s'와(과) 호환하지 않습니다"
@@ -12483,15 +12533,15 @@ msgstr "일부 플래그는 선택 모드에서 유효하지 않습니다: %s"
 msgid "wired setting not allowed for mode %s"
 msgstr "모드 %s에서는 유선 설정이 허용되지 않습니다"
 
-#: ../libnm-core/nm-setting-ip4-config.c:112
+#: ../libnm-core/nm-setting-ip4-config.c:133
 #: ../libnm-core/nm-setting-ip6-config.c:178
 #, c-format
 msgid "this property cannot be empty for '%s=%s'"
 msgstr "이 속성은 '%s=%s'에 대해 비어 있을 수 없습니다"
 
-#: ../libnm-core/nm-setting-ip4-config.c:124
-#: ../libnm-core/nm-setting-ip4-config.c:134
-#: ../libnm-core/nm-setting-ip4-config.c:146
+#: ../libnm-core/nm-setting-ip4-config.c:145
+#: ../libnm-core/nm-setting-ip4-config.c:155
+#: ../libnm-core/nm-setting-ip4-config.c:167
 #: ../libnm-core/nm-setting-ip6-config.c:193
 #: ../libnm-core/nm-setting-ip6-config.c:203
 #: ../libnm-core/nm-setting-ip6-config.c:213
@@ -12499,25 +12549,25 @@ msgstr "이 속성은 '%s=%s'에 대해 비어 있을 수 없습니다"
 msgid "this property is not allowed for '%s=%s'"
 msgstr "이 속성은 '%s=%s'에 대해 허용되지 않습니다"
 
-#: ../libnm-core/nm-setting-ip4-config.c:183
+#: ../libnm-core/nm-setting-ip4-config.c:204
 #, c-format
 msgid "'%s' is not a valid FQDN"
 msgstr "'%s'은(는) 유효한 FQDN이 아닙니다"
 
-#: ../libnm-core/nm-setting-ip4-config.c:192
+#: ../libnm-core/nm-setting-ip4-config.c:213
 msgid "property cannot be set when dhcp-hostname is also set"
 msgstr "dhcp-hostname도 설정된 경우 속성을 설정할 수 없습니다"
 
-#: ../libnm-core/nm-setting-ip4-config.c:204
+#: ../libnm-core/nm-setting-ip4-config.c:225
 msgid "FQDN flags requires a FQDN set"
 msgstr "FQDN 플래그에는 FQDN 세트가 필요합니다"
 
-#: ../libnm-core/nm-setting-ip4-config.c:216
+#: ../libnm-core/nm-setting-ip4-config.c:241
 #, c-format
 msgid "multiple addresses are not allowed for '%s=%s'"
 msgstr "'%s=%s'에 대해 여러 개의 주소는 허용되지 않습니다"
 
-#: ../libnm-core/nm-setting-ip4-config.c:230
+#: ../libnm-core/nm-setting-ip4-config.c:255
 msgid "property should be TRUE when method is set to disabled"
 msgstr "메소드를 사용하지 않는 경우 속성이 참이어야 합니다"
 
@@ -12582,8 +12632,8 @@ msgstr "psk 모드에만 유효"
 msgid "non promiscuous operation is allowed only in passthru mode"
 msgstr "무차별 허용이 아닌 작업은 패스스루 모드에서만 허용됩니다"
 
+#: ../libnm-core/nm-setting-match.c:710 ../libnm-core/nm-setting-match.c:724
 #: ../libnm-core/nm-setting-match.c:738 ../libnm-core/nm-setting-match.c:752
-#: ../libnm-core/nm-setting-match.c:766 ../libnm-core/nm-setting-match.c:780
 #, c-format
 msgid "is empty"
 msgstr "비어 있습니다"
@@ -14031,47 +14081,47 @@ msgstr ""
 "유형 '%2$s'의 값 \"%1$s\"이(가) 잘못되었거나 유형 '%4$s'의 속성 '%3$s' 범위에"
 "서 벗어났습니다"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:4820
+#: ../shared/nm-glib-aux/nm-shared-utils.c:4952
 msgid "interface name is missing"
 msgstr "인터페이스 이름이 없습니다"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:4826
+#: ../shared/nm-glib-aux/nm-shared-utils.c:4958
 msgid "interface name is too short"
 msgstr "인터페이스 이름이 너무 짧습니다"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:4835
+#: ../shared/nm-glib-aux/nm-shared-utils.c:4967
 msgid "interface name is reserved"
 msgstr "인터페이스 이름이 예약되었습니다"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:4847
+#: ../shared/nm-glib-aux/nm-shared-utils.c:4979
 msgid "interface name contains an invalid character"
 msgstr "인터페이스 이름에 잘못된 문자가 있습니다"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:4853
+#: ../shared/nm-glib-aux/nm-shared-utils.c:4985
 msgid "interface name is longer than 15 characters"
 msgstr "인터페이스 이름이 15자를 초과합니다"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:4876
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5008
 #, c-format
 msgid "'%%' is not allowed in interface names"
 msgstr "인터페이스 이름에는 '%%' 문자가 허용되지 않습니다"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:4889
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5021
 #, c-format
 msgid "'%s' is not allowed as interface name"
 msgstr "'%s'은(는) 인터페이스 이름으로 사용할 수 없습니다"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:4910
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5042
 msgid ""
 "interface name must be alphanumerical with no forward or backward slashes"
 msgstr ""
 "인터페이스 이름은 영문자나 숫자여야 하며 슬래시나 백슬래시가 없어야 합니다"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:4927
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5059
 msgid "interface name must not be empty"
 msgstr "인터페이스 이름은 비워 둘 수 없습니다"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:4933
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5065
 msgid "interface name must be UTF-8 encoded"
 msgstr "인터페이스 이름은 UTF-8 인코딩이어야 합니다"
 
@@ -14173,11 +14223,11 @@ msgstr "%s이(가) 이미 실행 중입니다 (pid %ld\n"
 msgid "You must be root to run %s!\n"
 msgstr "%s을(를) 실행하려면 root여야 합니다!\n"
 
-#: ../src/dhcp/nm-dhcp-dhclient-utils.c:324
+#: ../src/dhcp/nm-dhcp-dhclient-utils.c:326
 msgid "# Created by NetworkManager\n"
 msgstr "# 네트워크 관리자에서 생성됨\n"
 
-#: ../src/dhcp/nm-dhcp-dhclient-utils.c:337
+#: ../src/dhcp/nm-dhcp-dhclient-utils.c:339
 #, c-format
 msgid ""
 "# Merged from %s\n"
