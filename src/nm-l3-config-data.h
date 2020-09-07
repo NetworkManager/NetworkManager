@@ -51,17 +51,17 @@ typedef enum {
  *   Note that if the respective NML3ConfigData has NM_L3_CONFIG_DAT_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES
  *   set, this flag gets ignored during merge.
  * @NM_L3_CONFIG_MERGE_FLAGS_NO_DNS: don't merge DNS information
- * @NM_L3_CONFIG_MERGE_FLAGS_EXTERNAL: mark new addresses as external
  */
-typedef enum {
+typedef enum _nm_packed {
 	NM_L3_CONFIG_MERGE_FLAGS_NONE              = 0,
 	NM_L3_CONFIG_MERGE_FLAGS_NO_ROUTES         = (1LL << 0),
 	NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES = (1LL << 1),
 	NM_L3_CONFIG_MERGE_FLAGS_NO_DNS            = (1LL << 2),
-	NM_L3_CONFIG_MERGE_FLAGS_EXTERNAL          = (1LL << 3),
 } NML3ConfigMergeFlags;
 
 /*****************************************************************************/
+
+static inline gboolean NM_IS_L3_CONFIG_DATA (const NML3ConfigData *self);
 
 NML3ConfigData *nm_l3_config_data_new (NMDedupMultiIndex *multi_idx,
                                        int ifindex);
@@ -70,11 +70,48 @@ const NML3ConfigData *nm_l3_config_data_ref_and_seal (const NML3ConfigData *self
 const NML3ConfigData *nm_l3_config_data_seal (const NML3ConfigData *self);
 void nm_l3_config_data_unref (const NML3ConfigData *self);
 
+#define nm_clear_l3cd(ptr) nm_clear_pointer ((ptr), nm_l3_config_data_unref)
+
 NM_AUTO_DEFINE_FCN0 (const NML3ConfigData *, _nm_auto_unref_l3cd, nm_l3_config_data_unref);
 #define nm_auto_unref_l3cd nm_auto (_nm_auto_unref_l3cd)
 
 NM_AUTO_DEFINE_FCN0 (NML3ConfigData *, _nm_auto_unref_l3cd_init, nm_l3_config_data_unref);
 #define nm_auto_unref_l3cd_init nm_auto (_nm_auto_unref_l3cd_init)
+
+static inline gboolean
+nm_l3_config_data_reset (const NML3ConfigData **dst, const NML3ConfigData *src)
+{
+	nm_auto_unref_l3cd const NML3ConfigData *old = NULL;
+
+	nm_assert (dst);
+	nm_assert (!*dst || NM_IS_L3_CONFIG_DATA (*dst));
+	nm_assert (!src || NM_IS_L3_CONFIG_DATA (src));
+
+	if (*dst == src)
+		return FALSE;
+	old = *dst;
+	*dst = src ? nm_l3_config_data_ref_and_seal (src) : NULL;
+	return TRUE;
+}
+
+static inline gboolean
+nm_l3_config_data_reset_take (const NML3ConfigData **dst, const NML3ConfigData *src)
+{
+	nm_auto_unref_l3cd const NML3ConfigData *old = NULL;
+
+	nm_assert (dst);
+	nm_assert (!*dst || NM_IS_L3_CONFIG_DATA (*dst));
+	nm_assert (!src || NM_IS_L3_CONFIG_DATA (src));
+
+	if (*dst == src) {
+		if (src)
+			nm_l3_config_data_unref (src);
+		return FALSE;
+	}
+	old = *dst;
+	*dst = src ? nm_l3_config_data_seal (src) : NULL;
+	return TRUE;
+}
 
 gboolean nm_l3_config_data_is_sealed (const NML3ConfigData *self);
 
@@ -105,23 +142,23 @@ void nm_l3_config_data_merge (NML3ConfigData *self,
                               NML3ConfigMergeHookAddObj hook_add_addr,
                               gpointer hook_user_data);
 
+GPtrArray *nm_l3_config_data_get_blacklisted_ip4_routes (const NML3ConfigData *self,
+                                                         gboolean is_vrf);
+
 void nm_l3_config_data_add_dependent_routes (NML3ConfigData *self,
                                              int addr_family,
                                              guint32 route_table,
                                              guint32 route_metric,
-                                             gboolean is_vrf,
-                                             GPtrArray **out_ip4_dev_route_blacklist);
+                                             gboolean is_vrf);
 
 /*****************************************************************************/
 
 int nm_l3_config_data_get_ifindex (const NML3ConfigData *self);
 
-NMDedupMultiIndex *nm_l3_config_data_get_multi_idx (const NML3ConfigData *self);
-
 static inline gboolean
 NM_IS_L3_CONFIG_DATA (const NML3ConfigData *self)
 {
-	/* NML3ConfigData is not an NMObject, so we cannot ask which type it has.
+	/* NML3ConfigData is not an NMObject/GObject, so we cannot ask which type it has.
 	 * This check here is really only useful for assertions, and there it is
 	 * enough to check whether the pointer is not NULL.
 	 *
@@ -130,6 +167,8 @@ NM_IS_L3_CONFIG_DATA (const NML3ConfigData *self)
 	nm_assert (nm_l3_config_data_get_ifindex (self) > 0);
 	return !!self;
 }
+
+NMDedupMultiIndex *nm_l3_config_data_get_multi_idx (const NML3ConfigData *self);
 
 /*****************************************************************************/
 
@@ -232,6 +271,9 @@ nm_l3_config_data_get_num_routes (const NML3ConfigData *self, int addr_family)
 	                                       : NMP_OBJECT_TYPE_IP6_ROUTE);
 }
 
+gboolean nm_l3_config_data_has_routes_with_type_local (const NML3ConfigData *self,
+                                                       int addr_family);
+
 const NMPObject *nmtst_l3_config_data_get_obj_at (const NML3ConfigData *self,
                                                   NMPObjectType obj_type,
                                                   guint i);
@@ -298,6 +340,10 @@ nm_l3_config_data_unset_flags (NML3ConfigData *self,
 
 gboolean nm_l3_config_data_set_source (NML3ConfigData *self,
                                        NMIPConfigSource source);
+
+const NMPObject *nm_l3_config_data_get_first_obj (const NML3ConfigData *self,
+                                                  NMPObjectType obj_type,
+                                                  gboolean (*predicate) (const NMPObject *obj));
 
 gboolean nm_l3_config_data_add_address_full (NML3ConfigData *self,
                                              int addr_family,
@@ -407,8 +453,15 @@ gboolean nm_l3_config_data_add_nameserver (NML3ConfigData *self,
                                            int addr_family,
                                            gconstpointer /* (const NMIPAddr *) */ nameserver);
 
+gboolean nm_l3_config_data_clear_nameserver (NML3ConfigData *self,
+                                             int addr_family);
+
 gboolean nm_l3_config_data_add_nis_server (NML3ConfigData *self,
                                            in_addr_t nis_server);
+
+const char *const*nm_l3_config_data_get_domains (const NML3ConfigData *self,
+                                                 int addr_family,
+                                                 guint *out_len);
 
 gboolean nm_l3_config_data_set_nis_domain (NML3ConfigData *self,
                                            const char *nis_domain);

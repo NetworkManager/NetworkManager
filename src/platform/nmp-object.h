@@ -1066,6 +1066,12 @@ nmp_object_ip_route_is_best_defaut_route (const NMPObject *obj)
 	       && r->type_coerced == nm_platform_route_type_coerce (1 /* RTN_UNICAST */);
 }
 
+static inline gboolean
+nmp_object_ip6_address_is_not_link_local (const NMPObject *obj)
+{
+	return !IN6_IS_ADDR_LINKLOCAL (&NMP_OBJECT_CAST_IP6_ADDRESS (obj)->address);
+}
+
 /*****************************************************************************/
 
 static inline gboolean

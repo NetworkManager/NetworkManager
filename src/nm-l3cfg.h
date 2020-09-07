@@ -128,27 +128,38 @@ void nm_l3cfg_mark_config_dirty (NML3Cfg *self,
                                  gconstpointer tag,
                                  gboolean dirty);
 
-void nm_l3cfg_add_config (NML3Cfg *self,
-                          gconstpointer tag,
-                          gboolean replace_same_tag,
-                          const NML3ConfigData *l3cd,
-                          int priority,
-                          guint32 default_route_penalty_4,
-                          guint32 default_route_penalty_6,
-                          guint32 acd_timeout_msec,
-                          NML3ConfigMergeFlags merge_flags);
+gboolean nm_l3cfg_add_config (NML3Cfg *self,
+                              gconstpointer tag,
+                              gboolean replace_same_tag,
+                              const NML3ConfigData *l3cd,
+                              int priority,
+                              guint32 default_route_penalty_4,
+                              guint32 default_route_penalty_6,
+                              guint32 acd_timeout_msec,
+                              NML3ConfigMergeFlags merge_flags);
 
-void nm_l3cfg_remove_config (NML3Cfg *self,
-                             gconstpointer tag,
-                             const NML3ConfigData *ifcfg);
-
-void nm_l3cfg_remove_config_all (NML3Cfg *self,
+gboolean nm_l3cfg_remove_config (NML3Cfg *self,
                                  gconstpointer tag,
-                                 gboolean only_dirty);
+                                 const NML3ConfigData *ifcfg);
+
+gboolean nm_l3cfg_remove_config_all (NML3Cfg *self,
+                                     gconstpointer tag,
+                                     gboolean only_dirty);
 
 /*****************************************************************************/
 
-typedef enum {
+/* The numeric values of the enum matters: higher number mean more "important".
+ * E.g. "assume" tries to preserve the most settings, while "reapply" forces
+ * all configuration to match. */
+typedef enum _nm_packed {
+
+	/* the NML3Cfg instance tracks with nm_l3cfg_commit_setup_register() the requested commit type.
+	 * Use _NM_L3_CFG_COMMIT_TYPE_AUTO to automatically choose the level as requested. */
+	NM_L3_CFG_COMMIT_TYPE_AUTO,
+
+	/* Don't touch the interface. */
+	NM_L3_CFG_COMMIT_TYPE_NONE,
+
 	/* ASSUME means to keep any pre-existing extra routes/addresses, while
 	 * also not adding routes/addresses that are not present yet. This is to
 	 * gracefully take over after restart, where the existing IP configuration
@@ -171,5 +182,20 @@ gboolean nm_l3cfg_platform_commit (NML3Cfg *self,
                                    NML3CfgCommitType commit_type,
                                    int addr_family,
                                    gboolean *out_final_failure_for_temporary_not_available);
+
+/*****************************************************************************/
+
+NML3CfgCommitType nm_l3cfg_commit_type_get (NML3Cfg *self);
+
+typedef struct _NML3CfgCommitTypeHandle NML3CfgCommitTypeHandle;
+
+NML3CfgCommitTypeHandle *nm_l3cfg_commit_type_register (NML3Cfg *self,
+                                                        NML3CfgCommitType commit_type,
+                                                        NML3CfgCommitTypeHandle *existing_handle);
+
+void nm_l3cfg_commit_type_unregister (NML3Cfg *self,
+                                      NML3CfgCommitTypeHandle *handle);
+
+/*****************************************************************************/
 
 #endif /* __NM_L3CFG_H__ */

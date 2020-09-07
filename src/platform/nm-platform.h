@@ -309,6 +309,8 @@ typedef enum {
 	\
 	guint8 plen; \
 	\
+	/* FIXME(l3cfg): the external marker won't be necessary anymore, because we only
+	 *   merge addresses we care about, and ignore (don't remove) external addresses. */ \
 	bool external:1; \
 	\
 	bool use_ip4_broadcast_address:1; \
@@ -1918,6 +1920,18 @@ nm_platform_ip6_address_sync (NMPlatform *self, int ifindex, GPtrArray *known_ad
 gboolean nm_platform_ip_address_flush (NMPlatform *self,
                                        int addr_family,
                                        int ifindex);
+
+static inline gconstpointer
+nm_platform_ip_address_get_peer_address (int addr_family,
+                                         const NMPlatformIPAddress *addr)
+{
+	nm_assert_addr_family (addr_family);
+	nm_assert (addr);
+
+	if (NM_IS_IPv4 (addr_family))
+		return &((NMPlatformIP4Address *) addr)->peer_address;
+	return &((NMPlatformIP6Address *) addr)->peer_address;
+}
 
 void nm_platform_ip_route_normalize (int addr_family,
                                      NMPlatformIPRoute *route);

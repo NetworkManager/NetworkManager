@@ -116,6 +116,11 @@ struct _NML3ConfigData {
 	NMTernary metered:3;
 
 	bool is_sealed:1;
+
+	bool has_routes_with_type_local_4_set:1;
+	bool has_routes_with_type_local_6_set:1;
+	bool has_routes_with_type_local_4_val:1;
+	bool has_routes_with_type_local_6_val:1;
 };
 
 /*****************************************************************************/
@@ -614,6 +619,50 @@ nmtst_l3_config_data_get_obj_at (const NML3ConfigData *self,
 
 /*****************************************************************************/
 
+gboolean
+nm_l3_config_data_has_routes_with_type_local (const NML3ConfigData *self, int addr_family)
+{
+	const gboolean IS_IPv4 = NM_IS_IPv4 (addr_family);
+	NML3ConfigData *self_mutable;
+	NMDedupMultiIter iter;
+	const NMPObject *obj;
+	gboolean val;
+
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+	nm_assert_addr_family (addr_family);
+
+	if (IS_IPv4) {
+		if (G_LIKELY (self->has_routes_with_type_local_4_set))
+			return self->has_routes_with_type_local_4_val;
+	} else {
+		if (G_LIKELY (self->has_routes_with_type_local_6_set))
+			return self->has_routes_with_type_local_6_val;
+	}
+
+	val = FALSE;
+	nm_l3_config_data_iter_obj_for_each (&iter, self, &obj, NMP_OBJECT_TYPE_IP_ROUTE (IS_IPv4)) {
+		if (NMP_OBJECT_CAST_IP_ROUTE (obj)->type_coerced == nm_platform_route_type_coerce (RTN_LOCAL)) {
+			val = TRUE;
+			break;
+		}
+	}
+
+	/* the value gets accumulated and cached. Doing that is also permissible to a
+	 * const/sealed instance. Hence, we cast the const-ness away. */
+	self_mutable = (NML3ConfigData *) self;
+	if (IS_IPv4) {
+		self_mutable->has_routes_with_type_local_4_set = TRUE;
+		self_mutable->has_routes_with_type_local_4_val = val;
+	} else {
+		self_mutable->has_routes_with_type_local_6_set = TRUE;
+		self_mutable->has_routes_with_type_local_6_val = val;
+	}
+
+	return val;
+}
+
+/*****************************************************************************/
+
 NMDedupMultiIndex *
 nm_l3_config_data_get_multi_idx (const NML3ConfigData *self)
 {
@@ -651,6 +700,26 @@ nm_l3_config_data_set_flags_full (NML3ConfigData *self,
 
 	self->flags =   (self->flags & ~mask)
 	              | (flags & mask);
+}
+
+/*****************************************************************************/
+
+const NMPObject *
+nm_l3_config_data_get_first_obj (const NML3ConfigData *self,
+                                 NMPObjectType obj_type,
+                                 gboolean (*predicate) (const NMPObject *obj))
+{
+	NMDedupMultiIter iter;
+	const NMPObject *obj;
+
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+
+	nm_l3_config_data_iter_obj_for_each (&iter, self, &obj, obj_type) {
+		if (   !predicate
+		    || predicate (obj))
+			return obj;
+	}
+	return NULL;
 }
 
 /*****************************************************************************/
@@ -900,6 +969,10 @@ nm_l3_config_data_add_route_full (NML3ConfigData *self,
 	           || (   NMP_OBJECT_GET_ADDR_FAMILY (obj_new) == addr_family
 	               && _route_valid (addr_family, NMP_OBJECT_CAST_IP_ROUTE (obj_new))));
 
+	if (IS_IPv4)
+		self->has_routes_with_type_local_4_set = FALSE;
+	else
+		self->has_routes_with_type_local_6_set = FALSE;
 	if (_l3_config_data_add_obj (self->multi_idx,
 	                               addr_family == AF_INET
 	                             ? &self->idx_routes_4
@@ -997,6 +1070,19 @@ nm_l3_config_data_add_nameserver (NML3ConfigData *self,
 	                           nameserver);
 }
 
+gboolean
+nm_l3_config_data_clear_nameserver (NML3ConfigData *self,
+                                    int addr_family)
+{
+	gs_unref_array GArray *old = NULL;
+
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+	nm_assert_addr_family (addr_family);
+
+	old = g_steal_pointer (&self->nameservers_x[NM_IS_IPv4 (addr_family)]);
+	return (nm_g_array_len (old) > 0);
+}
+
 const in_addr_t *
 nm_l3_config_data_get_wins (const NML3ConfigData *self,
                             guint *out_len)
@@ -1035,6 +1121,18 @@ nm_l3_config_data_set_nis_domain (NML3ConfigData *self,
 	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
 
 	return nm_utils_strdup_reset (&self->nis_domain, nis_domain);
+}
+
+const char *const*
+nm_l3_config_data_get_domains (const NML3ConfigData *self,
+                               int addr_family,
+                               guint *out_len)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+	nm_assert_addr_family (addr_family);
+	nm_assert (out_len);
+
+	return nm_strv_ptrarray_get_unsafe (self->domains_x[NM_IS_IPv4 (addr_family)], out_len);
 }
 
 gboolean
@@ -1368,16 +1466,101 @@ _data_get_direct_route_for_host (const NML3ConfigData *self,
 
 /*****************************************************************************/
 
+/* Kernel likes to add device routes for all addresses. Normally, we want to suppress that
+ * with IFA_F_NOPREFIXROUTE. But we also want to support kernels that don't support that
+ * flag. So, we collect here all those routes that kernel might add but we don't want.
+ * If the route shows up within a certain timeout of us configuring the address, we assume
+ * that it was (undesirably) added by kernel and we remove it.
+ *
+ * The most common reason is that for each IPv4 address we want to add a corresponding device
+ * route with the right ipv4.route-metric. The route that kernel adds has metric 0, so it is
+ * undesired.
+ *
+ * FIXME(l3cfg): implement handling blacklisted routes.
+ *
+ * For IPv6, IFA_F_NOPREFIXROUTE is supported for a longer time and we don't do such a hack.
+ */
+GPtrArray *
+nm_l3_config_data_get_blacklisted_ip4_routes (const NML3ConfigData *self,
+                                              gboolean is_vrf)
+{
+	gs_unref_ptrarray GPtrArray *ip4_dev_route_blacklist = NULL;
+	const NMPObject *my_addr_obj;
+	NMDedupMultiIter iter;
+
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	/* For IPv6 slaac, we explicitly add the device-routes (onlink).
+	 * As we don't do that for IPv4 and manual IPv6 addresses. Add them here
+	 * as dependent routes. */
+
+	nm_l3_config_data_iter_obj_for_each (&iter, self, &my_addr_obj, NMP_OBJECT_TYPE_IP4_ADDRESS) {
+		const NMPlatformIP4Address *const my_addr = NMP_OBJECT_CAST_IP4_ADDRESS (my_addr_obj);
+		in_addr_t network_4;
+		NMPlatformIPXRoute rx;
+
+		if (my_addr->external)
+			continue;
+
+		nm_assert (my_addr->plen <= 32);
+		if (my_addr->plen == 0)
+			continue;
+
+		network_4 = nm_utils_ip4_address_clear_host_address (my_addr->peer_address,
+		                                                     my_addr->plen);
+
+		if (nm_utils_ip4_address_is_zeronet (network_4)) {
+			/* Kernel doesn't add device-routes for destinations that
+			 * start with 0.x.y.z. Skip them. */
+			continue;
+		}
+
+		if (   my_addr->plen == 32
+		    && my_addr->address == my_addr->peer_address) {
+			/* Kernel doesn't add device-routes for /32 addresses unless
+			 * they have a peer. */
+			continue;
+		}
+
+		rx.r4 = (NMPlatformIP4Route) {
+			.ifindex       = self->ifindex,
+			.rt_source     = NM_IP_CONFIG_SOURCE_KERNEL,
+			.network       = network_4,
+			.plen          = my_addr->plen,
+			.pref_src      = my_addr->address,
+			.table_coerced = nm_platform_route_table_coerce (RT_TABLE_MAIN),
+			.metric        = NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE,
+			.scope_inv     = nm_platform_route_scope_inv (NM_RT_SCOPE_LINK),
+		};
+		nm_platform_ip_route_normalize (AF_INET, &rx.rx);
+
+		if (nm_l3_config_data_lookup_route (self,
+		                                    AF_INET,
+		                                    &rx.rx)) {
+			/* we track such a route explicitly. Don't blacklist it. */
+			continue;
+		}
+
+		if (!ip4_dev_route_blacklist)
+			ip4_dev_route_blacklist = g_ptr_array_new_with_free_func ((GDestroyNotify) nmp_object_unref);
+
+		g_ptr_array_add (ip4_dev_route_blacklist,
+		                 nmp_object_new (NMP_OBJECT_TYPE_IP4_ROUTE, &rx));
+	}
+
+	return g_steal_pointer (&ip4_dev_route_blacklist);
+}
+
+/*****************************************************************************/
+
 void
 nm_l3_config_data_add_dependent_routes (NML3ConfigData *self,
                                         int addr_family,
                                         guint32 route_table,
                                         guint32 route_metric,
-                                        gboolean is_vrf,
-                                        GPtrArray **out_ip4_dev_route_blacklist)
+                                        gboolean is_vrf)
 {
 	const gboolean IS_IPv4 = NM_IS_IPv4 (addr_family);
-	gs_unref_ptrarray GPtrArray *ip4_dev_route_blacklist = NULL;
 	gs_unref_ptrarray GPtrArray *extra_onlink_routes = NULL;
 	const NMPObject *my_addr_obj;
 	const NMPObject *my_route_obj;
@@ -1478,28 +1661,6 @@ nm_l3_config_data_add_dependent_routes (NML3ConfigData *self,
 			};
 			nm_platform_ip_route_normalize (addr_family, &rx.rx);
 			nm_l3_config_data_add_route (self, addr_family, NULL, &rx.rx);
-
-			if (   IS_IPv4
-			    && out_ip4_dev_route_blacklist
-			    && (   route_table != RT_TABLE_MAIN
-			        || route_metric != NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE)) {
-
-				rx.r4.table_coerced = nm_platform_route_table_coerce (RT_TABLE_MAIN);
-				rx.r4.metric = NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE;
-				nm_platform_ip_route_normalize (addr_family, &rx.rx);
-
-				if (nm_l3_config_data_lookup_route (self,
-				                                    addr_family,
-				                                    &rx.rx)) {
-					/* we track such a route explicitly. Don't blacklist it. */
-				} else {
-					if (!ip4_dev_route_blacklist)
-						ip4_dev_route_blacklist = g_ptr_array_new_with_free_func ((GDestroyNotify) nmp_object_unref);
-
-					g_ptr_array_add (ip4_dev_route_blacklist,
-					                 nmp_object_new (NMP_OBJECT_TYPE_IP4_ROUTE, &rx));
-				}
-			}
 		} else {
 			const gboolean has_peer = !IN6_IS_ADDR_UNSPECIFIED (&my_addr->a6.peer_address);
 			int routes_i;
@@ -1590,8 +1751,6 @@ nm_l3_config_data_add_dependent_routes (NML3ConfigData *self,
 			                                  NULL);
 		}
 	}
-
-	NM_SET_OUT (out_ip4_dev_route_blacklist, g_steal_pointer (&ip4_dev_route_blacklist));
 }
 
 /*****************************************************************************/
@@ -1839,6 +1998,10 @@ _init_from_platform (NML3ConfigData *self,
 	                                        : NMP_OBJECT_TYPE_IP6_ADDRESS,
 	                                        self->ifindex);
 	if (head_entry) {
+		if (IS_IPv4)
+			self->has_routes_with_type_local_4_set = FALSE;
+		else
+			self->has_routes_with_type_local_6_set = FALSE;
 		nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
 			if (!_l3_config_data_add_obj (self->multi_idx,
 			                              &self->idx_addresses_x[IS_IPv4],
@@ -1921,25 +2084,6 @@ nm_l3_config_data_merge (NML3ConfigData *self,
 			if (   hook_add_addr
 			    && !hook_add_addr (src, obj, hook_user_data))
 				continue;
-
-			if (   NM_FLAGS_HAS (merge_flags, NM_L3_CONFIG_MERGE_FLAGS_EXTERNAL)
-			    && !NMP_OBJECT_CAST_IP_ADDRESS (obj)->external) {
-				NMPlatformIPXAddress a;
-
-				if (IS_IPv4)
-					a.a4 = *NMP_OBJECT_CAST_IP4_ADDRESS (obj);
-				else
-					a.a6 = *NMP_OBJECT_CAST_IP6_ADDRESS (obj);
-				a.ax.ifindex = self->ifindex;
-				a.ax.external = TRUE;
-				nm_l3_config_data_add_address_full (self,
-				                                    addr_family,
-				                                    NULL,
-				                                    &a.ax,
-				                                    NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE,
-				                                    NULL);
-				continue;
-			}
 
 			nm_l3_config_data_add_address_full (self,
 			                                    addr_family,
