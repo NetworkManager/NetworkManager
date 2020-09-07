@@ -3294,33 +3294,253 @@ nm_utils_hash_values_to_array (GHashTable *hash,
 	return arr;
 }
 
-gboolean
-nm_utils_hashtable_same_keys (const GHashTable *a,
-                              const GHashTable *b)
+static gboolean
+_utils_hashtable_equal (GHashTable *hash_a,
+                        GHashTable *hash_b,
+                        GCompareDataFunc cmp_values,
+                        gpointer user_data)
 {
 	GHashTableIter h;
-	const char *k;
+	gpointer a_key;
+	gpointer a_val;
+	gpointer b_val;
 
-	if (a == b)
-		return TRUE;
-	if (!a || !b)
-		return FALSE;
-	if (g_hash_table_size ((GHashTable *) a) != g_hash_table_size ((GHashTable *) b))
-		return FALSE;
+	nm_assert (hash_a);
+	nm_assert (hash_b);
+	nm_assert (hash_a != hash_b);
+	nm_assert (g_hash_table_size (hash_a) == g_hash_table_size (hash_b));
 
-	g_hash_table_iter_init (&h, (GHashTable *) a);
-	while (g_hash_table_iter_next (&h, (gpointer) &k, NULL)) {
-		if (!g_hash_table_contains ((GHashTable *) b, k))
+	/* We rely on both hashes to have the same hash/equal function. Otherwise, we would have to iterate
+	 * both hashes and check whether all keys/values are present in the respective other hash (which
+	 * would be O(n^2), since we couldn't use the plain lookup function. That is not a useful thing
+	 * for this function. */
+
+	g_hash_table_iter_init (&h, hash_a);
+	while (g_hash_table_iter_next (&h, &a_key, &a_val)) {
+
+		if (!g_hash_table_lookup_extended (hash_b, a_key, NULL, &b_val))
+			return FALSE;
+
+		if (!cmp_values) {
+			/* we accept %NULL compare function to indicate that we don't care about the key. */
+			continue;
+		}
+
+		if (cmp_values (a_val, b_val, user_data) != 0)
 			return FALSE;
 	}
 
+	return TRUE;
+}
+
+/**
+ * nm_utils_hashtable_equal:
+ * @a: (allow-none): the hash table or %NULL
+ * @b: (allow-none): the other hash table or %NULL
+ * @cmp_values: (allow-none): if %NULL, only the keys
+ *   will be compared. Otherwise, this function is used to
+ *   check whether all keys are equal.
+ * @user_data: the argument for @cmp_values.
+ *
+ * It is required that both @a and @b have the same hash and equals
+ * function.
+ *
+ * Returns: %TRUE, if both keys have the same keys and (if
+ *   @cmp_values is given) all values are the same.
+ */
+gboolean
+nm_utils_hashtable_equal (const GHashTable *a,
+                          const GHashTable *b,
+                          GCompareDataFunc cmp_values,
+                          gpointer user_data)
+{
+	GHashTable *hash_a = (GHashTable *) a;
+	GHashTable *hash_b = (GHashTable *) b;
+	gboolean same;
+	guint size;
+
+	if (hash_a == hash_b)
+		return TRUE;
+
+	if (!hash_a || !hash_b)
+		return FALSE;
+
+	size = g_hash_table_size (hash_a);
+	if (size != g_hash_table_size (hash_b))
+		return FALSE;
+
+	if (size == 0)
+		return TRUE;
+
+	same = _utils_hashtable_equal (hash_a, hash_b, cmp_values, user_data);
+
 #if NM_MORE_ASSERTS > 5
-	g_hash_table_iter_init (&h, (GHashTable *) b);
-	while (g_hash_table_iter_next (&h, (gpointer) &k, NULL))
-		nm_assert (g_hash_table_contains ((GHashTable *) a, k));
+	nm_assert (same == _utils_hashtable_equal (hash_b, hash_a, cmp_values, user_data));
 #endif
 
-	return TRUE;
+	return same;
+}
+
+typedef struct {
+	gpointer key;
+	gpointer val;
+} HashTableCmpData;
+
+typedef struct {
+	GCompareDataFunc cmp_keys;
+	gpointer user_data;
+} HashTableUserData;
+
+static int
+_hashtable_cmp_func (gconstpointer a,
+                     gconstpointer b,
+                     gpointer user_data)
+{
+	const HashTableUserData *d = user_data;
+	const HashTableCmpData *d_a = *((const HashTableCmpData *const*) a);
+	const HashTableCmpData *d_b = *((const HashTableCmpData *const*) b);
+
+	NM_CMP_RETURN (d->cmp_keys (d_a, d_b, d->user_data));
+	return 0;
+}
+
+/**
+ * nm_utils_hashtable_cmp:
+ * @a: (allow-none): the hash to compare. May be %NULL.
+ * @b: (allow-none): the other hash to compare. May be %NULL.
+ * @do_fast_precheck: if %TRUE, assume that the hashes are equal
+ *   and that it is worth calling nm_utils_hashtable_equal() first.
+ *   That requires, that both hashes have the same equals function
+ *   which is compatible with the @cmp_keys function.
+ * @cmp_keys: the compare function for keys. Usually, the hash/equal function
+ *   of both hashes corresponds to this function. If you set @do_fast_precheck
+ *   to false, then this is not a requirement.
+ * @cmp_values: (allow-none): if %NULL, only the keys are compared.
+ *   Otherwise, the values must are also compared with this function.
+ *
+ * Both hashes must have keys/values of the same domain, so that
+ * they can be effectively compared with @cmp_keys and @cmp_values.
+ *
+ * %NULL hashes compare equal to %NULL, but not to empty hashes.
+ *
+ * Returns: 0 if both hashes are equal, or -1 or 1 if one of the hashes
+ *   sorts before/after.
+ */
+int
+nm_utils_hashtable_cmp (const GHashTable *a,
+                        const GHashTable *b,
+                        gboolean do_fast_precheck,
+                        GCompareDataFunc cmp_keys,
+                        GCompareDataFunc cmp_values,
+                        gpointer user_data)
+{
+	GHashTable *hash_a = (GHashTable *) a;
+	GHashTable *hash_b = (GHashTable *) b;
+	gs_free HashTableCmpData *cmp_array_free = NULL;
+	HashTableCmpData *cmp_array_a;
+	HashTableCmpData *cmp_array_b;
+	GHashTableIter h;
+	gpointer i_key;
+	gpointer i_val;
+	gsize size2;
+	guint size;
+	guint i;
+
+	nm_assert (cmp_keys);
+
+	NM_CMP_SELF (hash_a, hash_b);
+
+	size = g_hash_table_size (hash_a);
+
+	NM_CMP_DIRECT (size, g_hash_table_size (hash_b));
+
+	if (size == 0)
+		return 0;
+
+	if (do_fast_precheck) {
+		gboolean same;
+
+		/* we expect that the hashes are equal and the caller ensures us that they
+		 * use the same hash/equal functions. Do a fast path check first...
+		 *
+		 * It's unclear whether this is worth it. The full comparison is O(n*ln(n)),
+		 * while the fast check (using the hash lookup) is O(n). But then, the pre-check
+		 * makes additional requirements on the hash's hash/equal functions -- the
+		 * full comparison does not make such requirements. */
+		same = _utils_hashtable_equal (hash_a, hash_b, cmp_values, user_data);
+#if NM_MORE_ASSERTS > 5
+		nm_assert (same == _utils_hashtable_equal (hash_b, hash_a, cmp_values, user_data));
+#endif
+		if (same)
+			return 0;
+	}
+
+	size2 = ((gsize) size) * 2u;
+	if (size2 > 600u / sizeof (HashTableCmpData)) {
+		cmp_array_free = g_new (HashTableCmpData, size2);
+		cmp_array_a  = cmp_array_free;
+	} else
+		cmp_array_a = g_newa (HashTableCmpData, size2);
+	cmp_array_b = &cmp_array_a[size];
+
+	i = 0;
+	g_hash_table_iter_init (&h, hash_a);
+	while (g_hash_table_iter_next (&h, &i_key, &i_val)) {
+		nm_assert (i < size);
+		cmp_array_a[i++] = (HashTableCmpData) {
+			.key  = i_key,
+			.val  = i_val,
+		};
+	}
+	nm_assert (i == size);
+
+	i = 0;
+	g_hash_table_iter_init (&h, hash_b);
+	while (g_hash_table_iter_next (&h, &i_key, &i_val)) {
+		nm_assert (i < size);
+		cmp_array_b[i++] = (HashTableCmpData) {
+			.key  = i_key,
+			.val  = i_val,
+		};
+	}
+	nm_assert (i == size);
+
+	g_qsort_with_data (cmp_array_a,
+	                   size,
+	                   sizeof (HashTableCmpData),
+	                   _hashtable_cmp_func,
+	                   &((HashTableUserData) {
+	                       .cmp_keys  = cmp_keys,
+	                       .user_data = user_data,
+	                   }));
+
+	g_qsort_with_data (cmp_array_b,
+	                   size,
+	                   sizeof (HashTableCmpData),
+	                   _hashtable_cmp_func,
+	                   &((HashTableUserData) {
+	                       .cmp_keys  = cmp_keys,
+	                       .user_data = user_data,
+	                   }));
+
+	for (i = 0; i < size; i++) {
+		NM_CMP_RETURN (cmp_keys (cmp_array_a[i].key,
+		                         cmp_array_b[i].key,
+		                         user_data));
+	}
+
+	if (cmp_values) {
+		for (i = 0; i < size; i++) {
+			NM_CMP_RETURN (cmp_values (cmp_array_a[i].val,
+			                           cmp_array_b[i].val,
+			                           user_data));
+		}
+	}
+
+	/* the fast-precheck should have already told that the arrays are equal. */
+	nm_assert (!do_fast_precheck);
+
+	return 0;
 }
 
 char **
