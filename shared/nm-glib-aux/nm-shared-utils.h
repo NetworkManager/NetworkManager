@@ -1564,14 +1564,14 @@ nm_g_array_len (const GArray *arr)
 
 #define nm_g_array_append_new(arr, type) \
 	({ \
-		GArray *_arr = (arr); \
-		gsize _l; \
+		GArray *const _arr = (arr); \
+		guint _len; \
 		\
 		nm_assert (_arr); \
-		_l = ((gsize) _arr->len) + 1u; \
-		nm_assert (_l > _arr->len); \
-		g_array_set_size (_arr, _l); \
-		&g_array_index (arr, type, _l); \
+		_len = _arr->len; \
+		nm_assert (_len < G_MAXUINT); \
+		g_array_set_size (_arr, _len + 1u); \
+		&g_array_index (arr, type, _len); \
 	})
 
 /*****************************************************************************/
