@@ -220,4 +220,9 @@ void nm_l3cfg_commit_type_unregister (NML3Cfg *self,
 
 /*****************************************************************************/
 
+const NMPObject *nm_l3cfg_get_best_default_route (NML3Cfg *self,
+                                                  int addr_family);
+
+/*****************************************************************************/
+
 #endif /* __NM_L3CFG_H__ */
