@@ -244,8 +244,12 @@ for settingxml in settings:
             "%s needs a gtk-doc block with one-line description" % setting.props.name
         )
     outfile.write(
-        '  <setting name="%s" description="%s" name_upper="%s" >\n'
-        % (setting.props.name, class_desc, get_setting_name_define(settingxml))
+        '  <setting name="%s" description=%s name_upper="%s" >\n'
+        % (
+            setting.props.name,
+            xml_quoteattr(class_desc),
+            get_setting_name_define(settingxml),
+        )
     )
 
     setting_properties = {
