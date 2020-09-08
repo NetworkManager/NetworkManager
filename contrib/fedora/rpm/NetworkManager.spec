@@ -122,6 +122,10 @@
 %global ebpf_enabled "no"
 %endif
 
+# On Fedora 33+, LTO is enabled by default. Newer branches of NetworkManager
+# fix build with LTO, but for this branch we simply disable it.
+%define _lto_cflags %{nil}
+
 ###############################################################################
 
 Name: NetworkManager
