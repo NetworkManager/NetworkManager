@@ -750,6 +750,13 @@ if enable_nm_cloud_setup
 endif
 
 more_asserts = get_option('more_asserts')
+if more_asserts == 'auto'
+  if nm_minor_version % 2 == 0
+    more_asserts = 'no'
+  else
+    more_asserts = 'all'
+  endif
+endif
 if more_asserts == 'no'
   more_asserts = 0
 elif more_asserts == 'all'

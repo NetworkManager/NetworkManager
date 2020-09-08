@@ -63,7 +63,7 @@ option('vapi', type : 'combo', choices : ['auto', 'true', 'false'], description:
 option('docs', type: 'boolean', value: false, description: 'use to build documentation')
 option('tests', type: 'combo', choices: ['yes', 'no', 'root'], value: 'yes', description: 'Build NetworkManager tests')
 option('firewalld_zone', type: 'boolean', value: true, description: 'Install and use firewalld zone for shared mode')
-option('more_asserts', type: 'string', value: 'all', description: 'Enable more assertions for debugging (0 = no, 100 = all, default: all)')
+option('more_asserts', type: 'string', value: 'auto', description: 'Enable more assertions for debugging (0 = no, 100 = all, default: auto)')
 option('more_logging', type: 'boolean', value: true, description: 'Enable more debug logging')
 option('valgrind', type: 'array', value: ['no'], description: 'Use valgrind to memory-check the tests')
 option('valgrind_suppressions', type: 'string', value: '', description: 'Use specific valgrind suppression file')
