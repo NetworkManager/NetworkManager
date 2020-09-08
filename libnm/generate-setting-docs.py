@@ -218,7 +218,14 @@ for settingxml in settings:
     class_desc = get_docs(settingxml)
     if class_desc is None:
         raise Exception("%s needs a gtk-doc block with one-line description" % setting.props.name)
-    outfile.write("  <setting name=\"%s\" description=\"%s\" name_upper=\"%s\" >\n" % (setting.props.name, class_desc, get_setting_name_define (settingxml)))
+    outfile.write(
+        '  <setting name="%s" description=%s name_upper="%s" >\n'
+        % (
+            setting.props.name,
+            xml_quoteattr(class_desc),
+            get_setting_name_define(settingxml),
+        )
+    )
 
     setting_properties = { prop.name: prop for prop in GObject.list_properties(setting) if prop.name != 'name' }
     if args.overrides is None:
