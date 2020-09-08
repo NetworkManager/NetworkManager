@@ -87,6 +87,28 @@ nm_l3cfg_get_ifname (const NML3Cfg *self)
 	return nmp_object_link_get_ifname (self->priv.pllink);
 }
 
+static inline const NMPObject *
+nm_l3cfg_get_plobj (const NML3Cfg *self)
+{
+	if (!self)
+		return NULL;
+
+	nm_assert (NM_IS_L3CFG (self));
+
+	return self->priv.pllink;
+}
+
+static inline const NMPlatformLink *
+nm_l3cfg_get_pllink (const NML3Cfg *self)
+{
+	if (!self)
+		return NULL;
+
+	nm_assert (NM_IS_L3CFG (self));
+
+	return NMP_OBJECT_CAST_LINK (self->priv.pllink);
+}
+
 static inline NMNetns *
 nm_l3cfg_get_netns (const NML3Cfg *self)
 {
