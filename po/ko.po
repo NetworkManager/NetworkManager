@@ -1000,7 +1000,7 @@ msgstr "힌트 : ' %s 자세한 내용은 '를 참조하십시오."
 #: ../clients/cli/connections.c:2522
 #, c-format
 msgid "Connection successfully activated (%s) (D-Bus active path: %s)\n"
-msgstr "연결이 성공적으로 활성화되었습니다 (D-Bus 활성 경로: %s)\n"
+msgstr "연결이 성공적으로 활성화되었습니다 (%s) (D-Bus 활성 경로: %s)\n"
 
 #: ../clients/cli/connections.c:2526 ../clients/cli/connections.c:2676
 #: ../clients/cli/connections.c:6824
@@ -1206,7 +1206,7 @@ msgid ""
 msgid_plural ""
 "Warning: There are %3$u other connections with the name '%1$s'. Reference "
 "the connection by its uuid '%2$s'\n"
-msgstr[0] "경고 : 이름이 ' %1$s '. uuid '로 연결 참조 %2$s '\n"
+msgstr[0] ""
 
 #: ../clients/cli/connections.c:4942
 #, c-format
@@ -3562,10 +3562,10 @@ msgstr "VPN 연결 %s"
 #. TRANSLATORS: prints header line for activated device in plain `nmcli` overview output as
 #. * "<interface-name>: <device-state> to <connection-id>"
 #: ../clients/cli/general.c:1436
-#, c-format
+#, fuzzy, c-format
 msgctxt "nmcli-overview"
 msgid "%s: %s to %s"
-msgstr "에"
+msgstr "%s: %s"
 
 #. TRANSLATORS: prints header line for not active device in plain `nmcli` overview output as
 #. * "<interface-name>: <device-state>"
@@ -5819,9 +5819,9 @@ msgid "unrecognized line at %s:%zu"
 msgstr "인식 할 수없는 라인 %s :%zu"
 
 #: ../clients/common/nm-vpn-helpers.c:685
-#, c-format
+#, fuzzy, c-format
 msgid "invalid value for '%s' at %s:%zu"
-msgstr "잘못된 값 \"%s\": %s"
+msgstr "잘못된 값 \"%s\": %s:%zu"
 
 #: ../clients/common/nm-vpn-helpers.c:690
 #, c-format
@@ -9934,9 +9934,9 @@ msgid "IP tunnel"
 msgstr "IP 터널"
 
 #: ../clients/tui/nm-editor-utils.c:218
-#, c-format
+#, fuzzy, c-format
 msgid "IP tunnel connection %d"
-msgstr "IP 터널 연결"
+msgstr "IP 터널 연결 %d"
 
 #: ../clients/tui/nm-editor-utils.c:233
 #, c-format
@@ -10220,10 +10220,10 @@ msgid "(No custom routes)"
 msgstr "(사용자 설정 라우트가 없음)"
 
 #: ../clients/tui/nmt-page-ip4.c:72 ../clients/tui/nmt-page-ip6.c:73
-#, c-format
+#, fuzzy, c-format
 msgid "One custom route"
 msgid_plural "%d custom routes"
-msgstr[0] "하나의 맞춤 경로"
+msgstr[0] "(사용자 설정 라우트가 없음)"
 
 #: ../clients/tui/nmt-page-ip4.c:115
 msgid "IPv4 CONFIGURATION"
@@ -11648,9 +11648,9 @@ msgstr ""
 "'%s'입니다"
 
 #: ../libnm-core/nm-setting-bridge.c:1187
-#, c-format
+#, fuzzy, c-format
 msgid "value '%d' is out of range <%d-%d>"
-msgstr "'%d' 값은  범위 밖에 있습니다"
+msgstr "'%d' 값은  범위 밖에 있습니다 %d-%d"
 
 #: ../libnm-core/nm-setting-bridge.c:1204
 msgid "is not a valid MAC address"
@@ -11869,14 +11869,14 @@ msgid "Missing IPv6 address"
 msgstr "누락된 IPv6 주소"
 
 #: ../libnm-core/nm-setting-ip-config.c:114
-#, c-format
+#, fuzzy, c-format
 msgid "Invalid IPv4 address '%s'"
-msgstr "잘못된 IPv4 주소"
+msgstr "잘못된 IPv4 주소 %s"
 
 #: ../libnm-core/nm-setting-ip-config.c:114
-#, c-format
+#, fuzzy, c-format
 msgid "Invalid IPv6 address '%s'"
-msgstr "잘못된 IPv6 주소"
+msgstr "잘못된 IPv6 주소 %s"
 
 #: ../libnm-core/nm-setting-ip-config.c:129
 #, c-format
@@ -11900,9 +11900,9 @@ msgstr "알 수없는 속성"
 
 #: ../libnm-core/nm-setting-ip-config.c:1282
 #: ../libnm-core/nm-setting-sriov.c:423
-#, c-format
+#, fuzzy, c-format
 msgid "invalid attribute type '%s'"
-msgstr "올바르지 않은 속성"
+msgstr "올바르지 않은 속성 %s"
 
 #: ../libnm-core/nm-setting-ip-config.c:1293
 #, c-format
@@ -12088,9 +12088,9 @@ msgid "invalid address family"
 msgstr "잘못된 주소 패밀리"
 
 #: ../libnm-core/nm-setting-ip-config.c:4738
-#, c-format
+#, fuzzy, c-format
 msgid "rule #%u is invalid: %s"
-msgstr "이름 '%u' 유효하지 않다."
+msgstr "이름 '%u' 유효하지 않다: %s."
 
 #: ../libnm-core/nm-setting-ip-config.c:4994
 #, c-format
@@ -12136,9 +12136,9 @@ msgid "%u. rule has wrong address-family"
 msgstr "%u. 규칙에 잘못된 주소 계열이 있습니다."
 
 #: ../libnm-core/nm-setting-ip-config.c:5107
-#, c-format
+#, fuzzy, c-format
 msgid "%u. rule is invalid: %s"
-msgstr "이름 '%u' 유효하지 않다."
+msgstr "이름 '%u' 유효하지 않다: %s."
 
 #: ../libnm-core/nm-setting-ip-config.c:5121
 #, c-format
@@ -13293,9 +13293,9 @@ msgid "The connection and device differ in S390 subchannels."
 msgstr "S390 하위 채널에서 연결과 장치가 다릅니다."
 
 #: ../libnm/nm-device-ethernet.c:217
-#, c-format
+#, fuzzy, c-format
 msgid "Invalid device MAC address %s."
-msgstr "잘못된 장치 MAC 주소입니다."
+msgstr "잘못된 장치 MAC 주소입니다 %s."
 
 #: ../libnm/nm-device-ethernet.c:222
 msgid "The MACs of the device and the connection do not match."
