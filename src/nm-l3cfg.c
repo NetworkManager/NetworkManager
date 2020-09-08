@@ -3018,6 +3018,14 @@ nm_l3cfg_commit_type_unregister (NML3Cfg *self,
 
 /*****************************************************************************/
 
+const NML3ConfigData *
+nm_l3cfg_get_combined_l3cd (NML3Cfg *self)
+{
+	nm_assert (NM_IS_L3CFG (self));
+
+	return self->priv.p->combined_l3cd;
+}
+
 const NMPObject *
 nm_l3cfg_get_best_default_route (NML3Cfg *self,
                                  int addr_family)
