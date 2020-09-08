@@ -583,6 +583,8 @@ nm_l3_config_data_lookup_index (const NML3ConfigData *self, NMPObjectType obj_ty
 const NMDedupMultiHeadEntry *
 nm_l3_config_data_lookup_objs (const NML3ConfigData *self, NMPObjectType obj_type)
 {
+	if (!self)
+		return NULL;
 	return nm_dedup_multi_index_lookup_head (self->multi_idx,
 	                                         nm_l3_config_data_lookup_index (self, obj_type),
 	                                         NULL);
