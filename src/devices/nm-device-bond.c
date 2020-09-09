@@ -562,35 +562,6 @@ create_and_realize (NMDevice *device,
 }
 
 static gboolean
-check_changed_options (NMSettingBond *s_a, NMSettingBond *s_b, GError **error)
-{
-	const char **option_list;
-
-	option_list = nm_setting_bond_get_valid_options (NULL);
-
-	for (; *option_list; ++option_list) {
-		const char *name = *option_list;
-
-		/* We support changes to these */
-		if (NM_IN_STRSET (name, OPTIONS_REAPPLY_FULL))
-			continue;
-
-		/* Reject any other changes */
-		if (!nm_streq0 (nm_setting_bond_get_option_normalized (s_a, name),
-		                nm_setting_bond_get_option_normalized (s_b, name))) {
-			g_set_error (error,
-			             NM_DEVICE_ERROR,
-			             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
-			             "Can't reapply '%s' bond option",
-			             name);
-			return FALSE;
-		}
-	}
-
-	return TRUE;
-}
-
-static gboolean
 can_reapply_change (NMDevice *device,
                     const char *setting_name,
                     NMSetting *s_old,
@@ -602,13 +573,38 @@ can_reapply_change (NMDevice *device,
 
 	/* Only handle bond setting here, delegate other settings to parent class */
 	if (nm_streq (setting_name, NM_SETTING_BOND_SETTING_NAME)) {
+		NMSettingBond *s_a = NM_SETTING_BOND (s_old);
+		NMSettingBond *s_b = NM_SETTING_BOND (s_new);
+		const char **option_list;
+
 		if (!nm_device_hash_check_invalid_keys (diffs,
 		                                        NM_SETTING_BOND_SETTING_NAME,
 		                                        error,
 		                                        NM_SETTING_BOND_OPTIONS))
 			return FALSE;
 
-		return check_changed_options (NM_SETTING_BOND (s_old), NM_SETTING_BOND (s_new), error);
+		option_list = nm_setting_bond_get_valid_options (NULL);
+
+		for (; *option_list; ++option_list) {
+			const char *name = *option_list;
+
+			/* We support changes to these */
+			if (NM_IN_STRSET (name, OPTIONS_REAPPLY_FULL))
+				continue;
+
+			/* Reject any other changes */
+			if (!nm_streq0 (nm_setting_bond_get_option_normalized (s_a, name),
+			                nm_setting_bond_get_option_normalized (s_b, name))) {
+				g_set_error (error,
+				             NM_DEVICE_ERROR,
+				             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
+				             "Can't reapply '%s' bond option",
+				             name);
+				return FALSE;
+			}
+		}
+
+		return TRUE;
 	}
 
 	device_class = NM_DEVICE_CLASS (nm_device_bond_parent_class);
