@@ -22,6 +22,30 @@ _LOG_DECLARE_SELF(NMDeviceBond);
 
 /*****************************************************************************/
 
+#define OPTIONS_REAPPLY_SUBSET \
+	NM_SETTING_BOND_OPTION_PRIMARY, \
+	NM_SETTING_BOND_OPTION_MIIMON, \
+	NM_SETTING_BOND_OPTION_UPDELAY, \
+	NM_SETTING_BOND_OPTION_DOWNDELAY, \
+	NM_SETTING_BOND_OPTION_ARP_INTERVAL, \
+	NM_SETTING_BOND_OPTION_ARP_VALIDATE, \
+	NM_SETTING_BOND_OPTION_PRIMARY, \
+	NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM, \
+	NM_SETTING_BOND_OPTION_AD_ACTOR_SYS_PRIO, \
+	NM_SETTING_BOND_OPTION_ALL_SLAVES_ACTIVE, \
+	NM_SETTING_BOND_OPTION_ARP_ALL_TARGETS, \
+	NM_SETTING_BOND_OPTION_FAIL_OVER_MAC, \
+	NM_SETTING_BOND_OPTION_LP_INTERVAL, \
+	NM_SETTING_BOND_OPTION_MIN_LINKS, \
+	NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE, \
+	NM_SETTING_BOND_OPTION_PRIMARY_RESELECT, \
+	NM_SETTING_BOND_OPTION_RESEND_IGMP, \
+	NM_SETTING_BOND_OPTION_USE_CARRIER, \
+	NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY, \
+	NM_SETTING_BOND_OPTION_NUM_GRAT_ARP
+
+/*****************************************************************************/
+
 struct _NMDeviceBond {
 	NMDevice parent;
 };
@@ -542,28 +566,10 @@ check_changed_options (NMSettingBond *s_a, NMSettingBond *s_b, GError **error)
 
 		/* We support changes to these */
 		if (NM_IN_STRSET (name,
-		                  NM_SETTING_BOND_OPTION_PRIMARY,
-		                  NM_SETTING_BOND_OPTION_MIIMON,
-		                  NM_SETTING_BOND_OPTION_UPDELAY,
-		                  NM_SETTING_BOND_OPTION_DOWNDELAY,
-		                  NM_SETTING_BOND_OPTION_ARP_INTERVAL,
-		                  NM_SETTING_BOND_OPTION_ARP_VALIDATE,
-		                  NM_SETTING_BOND_OPTION_PRIMARY,
-		                  NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM,
-		                  NM_SETTING_BOND_OPTION_AD_ACTOR_SYS_PRIO,
-		                  NM_SETTING_BOND_OPTION_ALL_SLAVES_ACTIVE,
-		                  NM_SETTING_BOND_OPTION_ARP_ALL_TARGETS,
-		                  NM_SETTING_BOND_OPTION_FAIL_OVER_MAC,
-		                  NM_SETTING_BOND_OPTION_LP_INTERVAL,
-		                  NM_SETTING_BOND_OPTION_MIN_LINKS,
-		                  NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE,
-		                  NM_SETTING_BOND_OPTION_PRIMARY_RESELECT,
-		                  NM_SETTING_BOND_OPTION_RESEND_IGMP,
-		                  NM_SETTING_BOND_OPTION_USE_CARRIER,
-		                  NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY,
-		                  NM_SETTING_BOND_OPTION_NUM_GRAT_ARP)) {
+		                  OPTIONS_REAPPLY_SUBSET,
+		                  NM_SETTING_BOND_OPTION_ACTIVE_SLAVE,
+		                  NM_SETTING_BOND_OPTION_ARP_IP_TARGET))
 			continue;
-		}
 
 		/* Reject any other changes */
 		if (!nm_streq0 (nm_setting_bond_get_option_normalized (s_a, name),
@@ -638,26 +644,7 @@ reapply_connection (NMDevice *device, NMConnection *con_old, NMConnection *con_n
 
 	set_bond_attrs_or_default (device,
 	                           s_bond,
-	                           NM_MAKE_STRV (NM_SETTING_BOND_OPTION_PRIMARY,
-	                                         NM_SETTING_BOND_OPTION_MIIMON,
-	                                         NM_SETTING_BOND_OPTION_UPDELAY,
-	                                         NM_SETTING_BOND_OPTION_DOWNDELAY,
-	                                         NM_SETTING_BOND_OPTION_ARP_INTERVAL,
-	                                         NM_SETTING_BOND_OPTION_ARP_VALIDATE,
-	                                         NM_SETTING_BOND_OPTION_PRIMARY,
-	                                         NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM,
-	                                         NM_SETTING_BOND_OPTION_AD_ACTOR_SYS_PRIO,
-	                                         NM_SETTING_BOND_OPTION_ALL_SLAVES_ACTIVE,
-	                                         NM_SETTING_BOND_OPTION_ARP_ALL_TARGETS,
-	                                         NM_SETTING_BOND_OPTION_FAIL_OVER_MAC,
-	                                         NM_SETTING_BOND_OPTION_LP_INTERVAL,
-	                                         NM_SETTING_BOND_OPTION_MIN_LINKS,
-	                                         NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE,
-	                                         NM_SETTING_BOND_OPTION_PRIMARY_RESELECT,
-	                                         NM_SETTING_BOND_OPTION_RESEND_IGMP,
-	                                         NM_SETTING_BOND_OPTION_USE_CARRIER,
-	                                         NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY,
-	                                         NM_SETTING_BOND_OPTION_NUM_GRAT_ARP));
+	                           NM_MAKE_STRV (OPTIONS_REAPPLY_SUBSET));
 }
 
 /*****************************************************************************/
