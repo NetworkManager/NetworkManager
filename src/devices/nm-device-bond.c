@@ -182,41 +182,44 @@ update_connection (NMDevice *device, NMConnection *connection)
 
 	/* Read bond options from sysfs and update the Bond setting to match */
 	options = nm_setting_bond_get_valid_options (s_bond);
-	for (; *options; options++) {
+	for (; options[0]; options++) {
+		const char *option = options[0];
+		gs_free char *value = NULL;
 		char *p;
-		gs_free char *value = nm_platform_sysctl_master_get_option (nm_device_get_platform (device),
-		                                                            ifindex,
-		                                                            *options);
+
+		value = nm_platform_sysctl_master_get_option (nm_device_get_platform (device),
+		                                              ifindex,
+		                                              option);
 
 		if (   value
-		    && _nm_setting_bond_get_option_type (s_bond, *options) == NM_BOND_OPTION_TYPE_BOTH) {
+		    && _nm_setting_bond_get_option_type (s_bond, option) == NM_BOND_OPTION_TYPE_BOTH) {
 			p = strchr (value, ' ');
 			if (p)
 				*p = '\0';
 		}
 
 		if (mode == NM_BOND_MODE_UNKNOWN) {
-			if (value && nm_streq (*options, NM_SETTING_BOND_OPTION_MODE))
+			if (value && nm_streq (option, NM_SETTING_BOND_OPTION_MODE))
 				mode = _nm_setting_bond_mode_from_string (value);
 			if (mode == NM_BOND_MODE_UNKNOWN)
 				continue;
 		}
 
-		if (!_nm_setting_bond_option_supported (*options, mode))
+		if (!_nm_setting_bond_option_supported (option, mode))
 			continue;
 
 		if (   value
 		    && value[0]
-		    && !ignore_option (s_bond, *options, value)) {
+		    && !ignore_option (s_bond, option, value)) {
 			/* Replace " " with "," for arp_ip_targets from the kernel */
-			if (strcmp (*options, NM_SETTING_BOND_OPTION_ARP_IP_TARGET) == 0) {
+			if (nm_streq (option, NM_SETTING_BOND_OPTION_ARP_IP_TARGET)) {
 				for (p = value; *p; p++) {
 					if (*p == ' ')
 						*p = ',';
 				}
 			}
 
-			nm_setting_bond_add_option (s_bond, *options, value);
+			nm_setting_bond_add_option (s_bond, option, value);
 		}
 	}
 }
