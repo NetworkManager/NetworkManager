@@ -415,10 +415,10 @@ request_scan_cb (GObject *source,
 
 static void
 _device_wifi_request_scan_async (NMDeviceWifi *device,
-                                   GVariant *options,
-                                   GCancellable *cancellable,
-                                   GAsyncReadyCallback callback,
-                                   gpointer user_data)
+                                 GVariant *options,
+                                 GCancellable *cancellable,
+                                 GAsyncReadyCallback callback,
+                                 gpointer user_data)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	RequestScanInfo *info;
@@ -437,6 +437,8 @@ _device_wifi_request_scan_async (NMDeviceWifi *device,
 		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
 		g_simple_async_result_complete_in_idle (simple);
 		g_object_unref (simple);
+		if (options)
+			nm_g_variant_unref_floating (options);
 		return;
 	}
 
