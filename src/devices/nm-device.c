@@ -11025,7 +11025,7 @@ activate_stage4_ip_config_timeout_4 (NMDevice *self)
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
 
-	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip_config_timeout (self, AF_INET6, &failure_reason);
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip_config_timeout (self, AF_INET, &failure_reason);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
 		return;
 	else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
