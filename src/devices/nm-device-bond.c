@@ -23,7 +23,6 @@ _LOG_DECLARE_SELF(NMDeviceBond);
 /*****************************************************************************/
 
 #define OPTIONS_REAPPLY_SUBSET \
-	NM_SETTING_BOND_OPTION_PRIMARY, \
 	NM_SETTING_BOND_OPTION_MIIMON, \
 	NM_SETTING_BOND_OPTION_UPDELAY, \
 	NM_SETTING_BOND_OPTION_DOWNDELAY, \
