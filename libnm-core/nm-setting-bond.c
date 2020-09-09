@@ -835,7 +835,9 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	primary = _bond_get_option (self, NM_SETTING_BOND_OPTION_PRIMARY);
-	if (bond_mode == NM_BOND_MODE_ACTIVEBACKUP) {
+	if (NM_IN_SET (bond_mode, NM_BOND_MODE_ACTIVEBACKUP,
+	                          NM_BOND_MODE_TLB,
+	                          NM_BOND_MODE_ALB)) {
 		GError *tmp_error = NULL;
 
 		if (primary && !nm_utils_ifname_valid_kernel (primary, &tmp_error)) {
