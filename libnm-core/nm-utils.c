@@ -5814,7 +5814,7 @@ fail:
 gboolean
 nm_utils_is_json_object (const char *str, GError **error)
 {
-	json_t *json;
+	nm_auto_decref_json json_t *json = NULL;
 	json_error_t jerror;
 
 	g_return_val_if_fail (!error || !*error, FALSE);
@@ -5851,7 +5851,6 @@ nm_utils_is_json_object (const char *str, GError **error)
 		return FALSE;
 	}
 
-	json_decref (json);
 	return TRUE;
 }
 
@@ -6355,7 +6354,7 @@ _nm_utils_team_link_watchers_from_variant (GVariant *value)
 		} else {
 			if (!g_variant_lookup (watcher_var, "target-host", "&s", &target_host))
 				goto next;
-			if (!g_variant_lookup (watcher_var, "init_wait", "i", &val1))
+			if (!g_variant_lookup (watcher_var, "init-wait", "i", &val1))
 				val1 = 0;
 			if (!g_variant_lookup (watcher_var, "interval", "i", &val2))
 				val2 = 0;

@@ -838,8 +838,7 @@ parse_route_line (const char *line,
 		                                      .int_base_16 = TRUE,
 		                                      .ignore = (addr_family != AF_INET), },
 		[PARSE_LINE_ATTR_ROUTE_ONLINK]    = { .key = NM_IP_ROUTE_ATTRIBUTE_ONLINK,
-		                                      .type = PARSE_LINE_TYPE_FLAG,
-		                                      .ignore = (addr_family != AF_INET), },
+		                                      .type = PARSE_LINE_TYPE_FLAG, },
 		[PARSE_LINE_ATTR_ROUTE_WINDOW]    = { .key = NM_IP_ROUTE_ATTRIBUTE_WINDOW,
 		                                      .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK, },
 		[PARSE_LINE_ATTR_ROUTE_CWND]      = { .key = NM_IP_ROUTE_ATTRIBUTE_CWND,
@@ -1613,7 +1612,7 @@ make_ip4_setting (shvarFile *ifcfg,
 
 	g_object_set (s_ip4,
 	              NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, svGetValueBoolean (ifcfg, "DHCP_SEND_HOSTNAME", TRUE),
-	              NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, svGetValueInt64 (ifcfg, "IPV4_DHCP_TIMEOUT", 10, 0, G_MAXINT32, 0),
+	              NM_SETTING_IP_CONFIG_DHCP_TIMEOUT, (int) svGetValueInt64 (ifcfg, "IPV4_DHCP_TIMEOUT", 10, 0, G_MAXINT32, 0),
 	              NULL);
 
 	nm_clear_g_free (&value);
@@ -2302,7 +2301,7 @@ make_tc_setting (shvarFile *ifcfg)
 		NMTCTfilter *tfilter = NULL;
 		gs_free char *value_to_free = NULL;
 		const char *value = NULL;
-		GError *local = NULL;
+		gs_free_error GError *local = NULL;
 
 		value = svGetValueStr (ifcfg, numbered_tag (tag, "FILTER", i), &value_to_free);
 		if (!value)

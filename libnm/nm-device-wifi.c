@@ -303,12 +303,13 @@ prepare_scan_options (GVariant *options)
 	else {
 		g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
 		g_variant_iter_init (&iter, options);
-		while (g_variant_iter_loop (&iter, "{sv}", &key, &value))
+		while (g_variant_iter_loop (&iter, "{&sv}", &key, &value))
 		{
 			// FIXME: verify options here?
 			g_variant_builder_add (&builder, "{sv}", key, value);
 		}
 		variant = g_variant_builder_end (&builder);
+		nm_g_variant_unref_floating (options);
 	}
 	return variant;
 }
@@ -324,7 +325,7 @@ _device_wifi_request_scan (NMDeviceWifi *device,
 
 	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), FALSE);
 
-	variant = prepare_scan_options (options);
+	variant = prepare_scan_options (g_steal_pointer (&options));
 
 	ret = nmdbus_device_wifi_call_request_scan_sync (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
 	                                                 variant,
@@ -414,10 +415,10 @@ request_scan_cb (GObject *source,
 
 static void
 _device_wifi_request_scan_async (NMDeviceWifi *device,
-                                   GVariant *options,
-                                   GCancellable *cancellable,
-                                   GAsyncReadyCallback callback,
-                                   gpointer user_data)
+                                 GVariant *options,
+                                 GCancellable *cancellable,
+                                 GAsyncReadyCallback callback,
+                                 gpointer user_data)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	RequestScanInfo *info;
@@ -436,6 +437,8 @@ _device_wifi_request_scan_async (NMDeviceWifi *device,
 		g_simple_async_result_set_op_res_gboolean (simple, TRUE);
 		g_simple_async_result_complete_in_idle (simple);
 		g_object_unref (simple);
+		if (options)
+			nm_g_variant_unref_floating (options);
 		return;
 	}
 
@@ -443,7 +446,7 @@ _device_wifi_request_scan_async (NMDeviceWifi *device,
 	info->device = device;
 	info->simple = simple;
 
-	variant = prepare_scan_options (options);
+	variant = prepare_scan_options (g_steal_pointer (&options));
 
 	priv->scan_info = info;
 	nmdbus_device_wifi_call_request_scan (NM_DEVICE_WIFI_GET_PRIVATE (device)->proxy,
