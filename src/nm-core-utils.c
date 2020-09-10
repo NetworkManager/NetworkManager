@@ -3757,6 +3757,113 @@ nm_utils_dhcp_client_id_systemd_node_specific (guint32 iaid)
 
 /*****************************************************************************/
 
+GBytes *
+nm_utils_generate_duid_llt (int arp_type,
+                            const guint8 *hwaddr,
+                            gsize hwaddr_len,
+                            gint64 time)
+{
+	guint8 *arr;
+	const guint16 duid_type = htons (1);
+	const guint16 hw_type = htons (arp_type);
+	const guint32 duid_time = htonl (NM_MAX (0, time - NM_UTILS_EPOCH_DATETIME_200001010000));
+
+	if (!nm_utils_arp_type_get_hwaddr_relevant_part (arp_type, &hwaddr, &hwaddr_len))
+		nm_assert_not_reached ();
+
+	arr = g_new (guint8, (2u + 2u + 4u) + hwaddr_len);
+
+	memcpy (&arr[0], &duid_type, 2);
+	memcpy (&arr[2], &hw_type, 2);
+	memcpy (&arr[4], &duid_time, 4);
+	memcpy (&arr[8], hwaddr, hwaddr_len);
+
+	return g_bytes_new_take (arr, (2u + 2u + 4u) + hwaddr_len);
+}
+
+GBytes *
+nm_utils_generate_duid_ll (int arp_type,
+                           const guint8 *hwaddr,
+                           gsize hwaddr_len)
+{
+	guint8 *arr;
+	const guint16 duid_type = htons (3);
+	const guint16 hw_type = htons (arp_type);
+
+	if (!nm_utils_arp_type_get_hwaddr_relevant_part (arp_type, &hwaddr, &hwaddr_len))
+		nm_assert_not_reached ();
+
+	arr = g_new (guint8, (2u + 2u) + hwaddr_len);
+
+	memcpy (&arr[0], &duid_type, 2);
+	memcpy (&arr[2], &hw_type, 2);
+	memcpy (&arr[4], hwaddr, hwaddr_len);
+
+	return g_bytes_new_take (arr, (2u + 2u) + hwaddr_len);
+}
+
+GBytes *
+nm_utils_generate_duid_uuid (const NMUuid *uuid)
+{
+	const guint16 duid_type = htons (4);
+	guint8 *duid_buffer;
+
+	nm_assert (uuid);
+
+	/* Generate a DHCP Unique Identifier for DHCPv6 using the
+	 * DUID-UUID method (see RFC 6355 section 4).  Format is:
+	 *
+	 * u16: type (DUID-UUID = 4)
+	 * u8[16]: UUID bytes
+	 */
+	G_STATIC_ASSERT_EXPR (sizeof (duid_type) == 2);
+	G_STATIC_ASSERT_EXPR (sizeof (*uuid) == 16);
+	duid_buffer = g_malloc (18);
+	memcpy (&duid_buffer[0], &duid_type, 2);
+	memcpy (&duid_buffer[2], uuid, 16);
+	return g_bytes_new_take (duid_buffer, 18);
+}
+
+GBytes *
+nm_utils_generate_duid_from_machine_id (void)
+{
+	static GBytes *volatile global_duid = NULL;
+	GBytes *p;
+
+again:
+	p = g_atomic_pointer_get (&global_duid);
+	if (G_UNLIKELY (!p)) {
+		nm_auto_free_checksum GChecksum *sum = NULL;
+		const NMUuid *machine_id;
+		union {
+			guint8 sha256[NM_UTILS_CHECKSUM_LENGTH_SHA256];
+			NMUuid uuid;
+		} digest;
+
+		machine_id = nm_utils_machine_id_bin ();
+
+		/* Hash the machine ID so it's not leaked to the network.
+		 *
+		 * Optimally, we would choose an use case specific seed, but for historic
+		 * reasons we didn't. */
+		sum = g_checksum_new (G_CHECKSUM_SHA256);
+		g_checksum_update (sum, (const guchar *) machine_id, sizeof (*machine_id));
+		nm_utils_checksum_get_digest (sum, digest.sha256);
+
+		G_STATIC_ASSERT_EXPR (sizeof (digest.sha256) > sizeof (digest.uuid));
+		p = nm_utils_generate_duid_uuid (&digest.uuid);
+
+		if (!g_atomic_pointer_compare_and_exchange (&global_duid, NULL, p)) {
+			g_bytes_unref (p);
+			goto again;
+		}
+	}
+
+	return g_bytes_ref (p);
+}
+
+/*****************************************************************************/
+
 /**
  * nm_utils_setpgid:
  * @unused: unused

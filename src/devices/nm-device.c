@@ -9662,111 +9662,6 @@ dhcp6_prefix_delegated (NMDhcpClient *client,
 
 /*****************************************************************************/
 
-/* RFC 3315 defines the epoch for the DUID-LLT time field on Jan 1st 2000. */
-#define EPOCH_DATETIME_200001010000  946684800
-
-static GBytes *
-generate_duid_llt (int arp_type,
-                   const guint8 *hwaddr,
-                   gsize hwaddr_len,
-                   gint64 time)
-{
-	guint8 *arr;
-	const guint16 duid_type = htons (1);
-	const guint16 hw_type = htons (arp_type);
-	const guint32 duid_time = htonl (NM_MAX (0, time - EPOCH_DATETIME_200001010000));
-
-	if (!nm_utils_arp_type_get_hwaddr_relevant_part (arp_type, &hwaddr, &hwaddr_len))
-		nm_assert_not_reached ();
-
-	arr = g_new (guint8, 2 + 2 + 4 + hwaddr_len);
-
-	memcpy (&arr[0], &duid_type, 2);
-	memcpy (&arr[2], &hw_type, 2);
-	memcpy (&arr[4], &duid_time, 4);
-	memcpy (&arr[8], hwaddr, hwaddr_len);
-
-	return g_bytes_new_take (arr, 2 + 2 + 4 + hwaddr_len);
-}
-
-static GBytes *
-generate_duid_ll (int arp_type,
-                  const guint8 *hwaddr,
-                  gsize hwaddr_len)
-{
-	guint8 *arr;
-	const guint16 duid_type = htons (3);
-	const guint16 hw_type = htons (arp_type);
-
-	if (!nm_utils_arp_type_get_hwaddr_relevant_part (arp_type, &hwaddr, &hwaddr_len))
-		nm_assert_not_reached ();
-
-	arr = g_new (guint8, 2 + 2 + hwaddr_len);
-
-	memcpy (&arr[0], &duid_type, 2);
-	memcpy (&arr[2], &hw_type, 2);
-	memcpy (&arr[4], hwaddr, hwaddr_len);
-
-	return g_bytes_new_take (arr, 2 + 2 + hwaddr_len);
-}
-
-static GBytes *
-generate_duid_uuid (const NMUuid *uuid)
-{
-	const guint16 duid_type = htons (4);
-	guint8 *duid_buffer;
-
-	nm_assert (uuid);
-
-	/* Generate a DHCP Unique Identifier for DHCPv6 using the
-	 * DUID-UUID method (see RFC 6355 section 4).  Format is:
-	 *
-	 * u16: type (DUID-UUID = 4)
-	 * u8[16]: UUID bytes
-	 */
-	G_STATIC_ASSERT_EXPR (sizeof (duid_type) == 2);
-	G_STATIC_ASSERT_EXPR (sizeof (*uuid) == 16);
-	duid_buffer = g_malloc (18);
-	memcpy (&duid_buffer[0], &duid_type, 2);
-	memcpy (&duid_buffer[2], uuid, 16);
-	return g_bytes_new_take (duid_buffer, 18);
-}
-
-static GBytes *
-generate_duid_from_machine_id (void)
-{
-	static GBytes *volatile global_duid = NULL;
-	GBytes *p;
-
-again:
-	p = g_atomic_pointer_get (&global_duid);
-	if (G_UNLIKELY (!p)) {
-		nm_auto_free_checksum GChecksum *sum = NULL;
-		const NMUuid *machine_id;
-		union {
-			guint8 sha256[NM_UTILS_CHECKSUM_LENGTH_SHA256];
-			NMUuid uuid;
-		} digest;
-
-		machine_id = nm_utils_machine_id_bin ();
-
-		/* Hash the machine ID so it's not leaked to the network */
-		sum = g_checksum_new (G_CHECKSUM_SHA256);
-		g_checksum_update (sum, (const guchar *) machine_id, sizeof (*machine_id));
-		nm_utils_checksum_get_digest (sum, digest.sha256);
-
-		G_STATIC_ASSERT_EXPR (sizeof (digest.sha256) > sizeof (digest.uuid));
-		p = generate_duid_uuid (&digest.uuid);
-
-		if (!g_atomic_pointer_compare_and_exchange (&global_duid, NULL, p)) {
-			g_bytes_unref (p);
-			goto again;
-		}
-	}
-
-	return g_bytes_ref (p);
-}
-
 static GBytes *
 dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboolean *out_enforce)
 {
@@ -9795,7 +9690,7 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 
 	if (nm_streq (duid, "lease")) {
 		duid_enforce = FALSE;
-		duid_out = generate_duid_from_machine_id ();
+		duid_out = nm_utils_generate_duid_from_machine_id ();
 		goto out_good;
 	}
 
@@ -9821,10 +9716,10 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 		}
 
 		if (nm_streq (duid, "ll"))
-			duid_out = generate_duid_ll (arp_type, hwaddr_bin, hwaddr_len);
+			duid_out = nm_utils_generate_duid_ll (arp_type, hwaddr_bin, hwaddr_len);
 		else {
-			duid_out = generate_duid_llt (arp_type, hwaddr_bin, hwaddr_len,
-			                              nm_utils_host_id_get_timestamp_ns () / NM_UTILS_NSEC_PER_SEC);
+			duid_out = nm_utils_generate_duid_llt (arp_type, hwaddr_bin, hwaddr_len,
+			                                       nm_utils_host_id_get_timestamp_ns () / NM_UTILS_NSEC_PER_SEC);
 		}
 
 		goto out_good;
@@ -9901,10 +9796,10 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 		if (nm_streq (duid, "stable-ll")) {
 			switch (arp_type) {
 			case ARPHRD_ETHER:
-				duid_out = generate_duid_ll (arp_type, digest.hwaddr_eth, sizeof (digest.hwaddr_eth));
+				duid_out = nm_utils_generate_duid_ll (arp_type, digest.hwaddr_eth, sizeof (digest.hwaddr_eth));
 				break;
 			case ARPHRD_INFINIBAND:
-				duid_out = generate_duid_ll (arp_type, digest.hwaddr_infiniband, sizeof (digest.hwaddr_infiniband));
+				duid_out = nm_utils_generate_duid_ll (arp_type, digest.hwaddr_infiniband, sizeof (digest.hwaddr_infiniband));
 				break;
 			default:
 				g_return_val_if_reached (NULL);
@@ -9923,25 +9818,25 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboole
 
 			/* don't use too old timestamps. They cannot be expressed in DUID-LLT and
 			 * would all be truncated to zero. */
-			time = NM_MAX (time, EPOCH_DATETIME_200001010000 + EPOCH_DATETIME_THREE_YEARS);
+			time = NM_MAX (time, NM_UTILS_EPOCH_DATETIME_200001010000 + EPOCH_DATETIME_THREE_YEARS);
 
 			switch (arp_type) {
 			case ARPHRD_ETHER:
 				timestamp = unaligned_read_be32 (&digest.llt_eth.timestamp);
 				time -= timestamp % EPOCH_DATETIME_THREE_YEARS;
-				duid_out = generate_duid_llt (arp_type, digest.llt_eth.hwaddr, sizeof (digest.llt_eth.hwaddr), time);
+				duid_out = nm_utils_generate_duid_llt (arp_type, digest.llt_eth.hwaddr, sizeof (digest.llt_eth.hwaddr), time);
 				break;
 			case ARPHRD_INFINIBAND:
 				timestamp = unaligned_read_be32 (&digest.llt_infiniband.timestamp);
 				time -= timestamp % EPOCH_DATETIME_THREE_YEARS;
-				duid_out = generate_duid_llt (arp_type, digest.llt_infiniband.hwaddr, sizeof (digest.llt_infiniband.hwaddr), time);
+				duid_out = nm_utils_generate_duid_llt (arp_type, digest.llt_infiniband.hwaddr, sizeof (digest.llt_infiniband.hwaddr), time);
 				break;
 			default:
 				g_return_val_if_reached (NULL);
 			}
 		} else {
 			nm_assert (nm_streq (duid, "stable-uuid"));
-			duid_out = generate_duid_uuid (&digest.uuid);
+			duid_out = nm_utils_generate_duid_uuid (&digest.uuid);
 		}
 
 		goto out_good;
@@ -9959,7 +9854,7 @@ out_fail:
 		       duid, duid_error);
 
 		nm_utils_random_bytes (&uuid, sizeof (uuid));
-		duid_out = generate_duid_uuid (&uuid);
+		duid_out = nm_utils_generate_duid_uuid (&uuid);
 	}
 
 out_good:
