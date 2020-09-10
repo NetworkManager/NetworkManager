@@ -766,7 +766,7 @@ fail_invalid_secret:
 		 * wg-quick does, by calling `resolvconf -x`. */
 		g_object_set (s_ip,
 		              NM_SETTING_IP_CONFIG_DNS_PRIORITY,
-		              (int) -10,
+		              (int) -50,
 		              NULL);
 
 		if (data_addr) {
