@@ -442,6 +442,11 @@ typedef struct _NMDevicePrivate {
 		NML3ConfigMergeFlags l3config_merge_flags_x[2];
 	};
 
+	union {
+		const NMDeviceSysIfaceState sys_iface_state;
+		NMDeviceSysIfaceState sys_iface_state_;
+	};
+
 	bool            carrier:1;
 	bool            ignore_carrier:1;
 
@@ -452,8 +457,6 @@ typedef struct _NMDevicePrivate {
 
 	bool            default_route_metric_penalty_ip4_has:1;
 	bool            default_route_metric_penalty_ip6_has:1;
-
-	NMDeviceSysIfaceState sys_iface_state:2;
 
 	bool            v4_route_table_initialized:1;
 	bool            v6_route_table_initialized:1;
@@ -1423,7 +1426,7 @@ nm_device_sys_iface_state_set (NMDevice *self,
 		_LOGT (LOGD_DEVICE, "sys-iface-state: %s -> %s",
 		       _sys_iface_state_to_str (priv->sys_iface_state),
 		       _sys_iface_state_to_str (sys_iface_state));
-		priv->sys_iface_state = sys_iface_state;
+		priv->sys_iface_state_ = sys_iface_state;
 	}
 
 	/* this function only sets a flag, no immediate actions are initiated.
@@ -18091,7 +18094,7 @@ nm_device_init (NMDevice *self)
 	priv->unmanaged_mask = priv->unmanaged_flags;
 	priv->available_connections = g_hash_table_new_full (nm_direct_hash, NULL, g_object_unref, NULL);
 	priv->ip6_saved_properties = g_hash_table_new_full (nm_str_hash, g_str_equal, NULL, g_free);
-	priv->sys_iface_state = NM_DEVICE_SYS_IFACE_STATE_EXTERNAL;
+	priv->sys_iface_state_ = NM_DEVICE_SYS_IFACE_STATE_EXTERNAL;
 
 	priv->v4_commit_first_time = TRUE;
 	priv->v6_commit_first_time = TRUE;

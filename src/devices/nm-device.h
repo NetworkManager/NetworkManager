@@ -16,7 +16,7 @@
 #include "nm-rfkill-manager.h"
 #include "NetworkManagerUtils.h"
 
-typedef enum {
+typedef enum _nm_packed {
 	NM_DEVICE_SYS_IFACE_STATE_EXTERNAL,
 	NM_DEVICE_SYS_IFACE_STATE_ASSUME,
 	NM_DEVICE_SYS_IFACE_STATE_MANAGED,
