@@ -111,9 +111,9 @@ _nm_assert_bond_meta (const OptionMeta *option_meta)
 		            }));
 		return TRUE;
 	case NM_BOND_OPTION_TYPE_IP:
-	case NM_BOND_OPTION_TYPE_IFNAME:
 		nm_assert (option_meta->val);
 		/* fall-through */
+	case NM_BOND_OPTION_TYPE_IFNAME:
 	case NM_BOND_OPTION_TYPE_MAC:
 		nm_assert (!option_meta->list);
 		nm_assert (option_meta->min == 0);
@@ -151,7 +151,7 @@ NM_UTILS_STRING_TABLE_LOOKUP_STRUCT_DEFINE (
 		}
 	},
 	{ return NULL; },
-	{ NM_SETTING_BOND_OPTION_ACTIVE_SLAVE,      { "",           NM_BOND_OPTION_TYPE_IFNAME                                                   } },
+	{ NM_SETTING_BOND_OPTION_ACTIVE_SLAVE,      { NULL,         NM_BOND_OPTION_TYPE_IFNAME                                                   } },
 	{ NM_SETTING_BOND_OPTION_AD_ACTOR_SYS_PRIO, { "65535",      NM_BOND_OPTION_TYPE_INT,   1, 65535                                          } },
 	{ NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM,   { NULL,         NM_BOND_OPTION_TYPE_MAC                                                      } },
 	{ NM_SETTING_BOND_OPTION_AD_SELECT,         { "stable",     NM_BOND_OPTION_TYPE_BOTH,  0, 2,       _option_default_strv_ad_select        } },
@@ -295,6 +295,17 @@ _bond_get_option_normalized (NMSettingBond* self,
 			value = _bond_get_option (self, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP);
 			if (!value)
 				value = _bond_get_option (self, NM_SETTING_BOND_OPTION_NUM_UNSOL_NA);
+		} else if (NM_IN_STRSET (option,
+		                         NM_SETTING_BOND_OPTION_ACTIVE_SLAVE)) {
+			/* "active_slave" is deprecated, and an alias for "primary". The property
+			 * itself always normalizes to %NULL. */
+			value = NULL;
+		} else if (NM_IN_STRSET (option,
+		                         NM_SETTING_BOND_OPTION_PRIMARY)) {
+			/* "active_slave" is deprecated, and an alias for "primary". */
+			value = _bond_get_option (self, NM_SETTING_BOND_OPTION_PRIMARY);
+			if (!value)
+				value = _bond_get_option (self, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE);
 		} else
 			value = _bond_get_option (self, option);
 
@@ -835,7 +846,9 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 	}
 
 	primary = _bond_get_option (self, NM_SETTING_BOND_OPTION_PRIMARY);
-	if (bond_mode == NM_BOND_MODE_ACTIVEBACKUP) {
+	if (NM_IN_SET (bond_mode, NM_BOND_MODE_ACTIVEBACKUP,
+	                          NM_BOND_MODE_TLB,
+	                          NM_BOND_MODE_ALB)) {
 		GError *tmp_error = NULL;
 
 		if (primary && !nm_utils_ifname_valid_kernel (primary, &tmp_error)) {

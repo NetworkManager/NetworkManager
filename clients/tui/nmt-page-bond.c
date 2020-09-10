@@ -211,6 +211,7 @@ _bond_add_option (NMSettingBond *s_bond,
 		_nm_setting_bond_remove_options_miimon (s_bond);
 	else if (nm_streq (option, NM_SETTING_BOND_OPTION_MIIMON))
 		_nm_setting_bond_remove_options_arp_interval (s_bond);
+	nm_setting_bond_remove_option (s_bond, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE);
 }
 
 #define WIDGET_CHANGED_FUNC(widget, func, option, dflt) \
@@ -255,13 +256,16 @@ mode_widget_changed (GObject    *object,
 	_bond_add_option (priv->s_bond, NM_SETTING_BOND_OPTION_MODE, mode);
 	priv->updating = FALSE;
 
-	if (!strcmp (mode, "balance-tlb") || !strcmp (mode, "balance-alb")) {
+	if (NM_IN_STRSET (mode, "balance-tlb",
+	                        "balance-alb")) {
 		nmt_newt_popup_set_active (priv->monitoring, NMT_PAGE_BOND_MONITORING_MII);
 		nmt_newt_component_set_sensitive (NMT_NEWT_COMPONENT (priv->monitoring), FALSE);
 	} else
 		nmt_newt_component_set_sensitive (NMT_NEWT_COMPONENT (priv->monitoring), TRUE);
 
-	if (!strcmp (mode, "active-backup")) {
+	if (NM_IN_STRSET (mode, "active-backup",
+	                        "balance-alb",
+	                        "balance-tlb")) {
 		nmt_newt_widget_set_visible (NMT_NEWT_WIDGET (priv->primary), TRUE);
 		_bond_add_option (priv->s_bond, NM_SETTING_BOND_OPTION_PRIMARY,
 		                  nmt_newt_entry_get_text (priv->primary));
