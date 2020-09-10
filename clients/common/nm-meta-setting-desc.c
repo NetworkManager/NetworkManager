@@ -2376,12 +2376,14 @@ _nm_meta_setting_bond_add_option (NMSetting *setting,
                                   const char *value,
                                   GError **error)
 {
+	NMSettingBond *s_bond = NM_SETTING_BOND (setting);
 	gs_free char *tmp_value = NULL;
+	const char *val2;
 	char *p;
 
 	if (   !value
 	    || !value[0]) {
-		if (!nm_setting_bond_remove_option (NM_SETTING_BOND (setting), name)) {
+		if (!nm_setting_bond_remove_option (s_bond, name)) {
 			nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
 			                    _("failed to unset bond option \"%s\""),
 			                    name);
@@ -2401,7 +2403,7 @@ _nm_meta_setting_bond_add_option (NMSetting *setting,
 				*p = ',';
 	}
 
-	if (!nm_setting_bond_add_option (NM_SETTING_BOND (setting), name, value)) {
+	if (!nm_setting_bond_add_option (s_bond, name, value)) {
 		nm_utils_error_set (error, NM_UTILS_ERROR_INVALID_ARGUMENT,
 		                    _("failed to set bond option \"%s\""),
 		                    name);
@@ -2410,10 +2412,35 @@ _nm_meta_setting_bond_add_option (NMSetting *setting,
 
 	if (nm_streq (name, NM_SETTING_BOND_OPTION_ARP_INTERVAL)) {
 		if (_nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT, 0) > 0)
-			_nm_setting_bond_remove_options_miimon (NM_SETTING_BOND (setting));
+			_nm_setting_bond_remove_options_miimon (s_bond);
 	} else if (nm_streq (name, NM_SETTING_BOND_OPTION_MIIMON)) {
 		if (_nm_utils_ascii_str_to_int64 (value, 10, 0, G_MAXINT, 0) > 0)
-			_nm_setting_bond_remove_options_arp_interval (NM_SETTING_BOND (setting));
+			_nm_setting_bond_remove_options_arp_interval (s_bond);
+	} else if (nm_streq (name, NM_SETTING_BOND_OPTION_PRIMARY)) {
+		if (   (val2 = nm_setting_bond_get_option_by_name (s_bond,
+		                                                   NM_SETTING_BOND_OPTION_ACTIVE_SLAVE))
+		    && !nm_streq (val2, value)) {
+			/* "active_slave" option is deprecated and an alias for "primary". When
+			 * setting "primary" to a different value, remove the deprecated "active_slave"
+			 * setting.
+			 *
+			 * If we wouldn't do this, then the profile would work as requested, but ignoring
+			 * the (redundant, differing) "active_slave" option. That is confusing, thus clean
+			 * it up. */
+			nm_setting_bond_remove_option (s_bond,
+			                               NM_SETTING_BOND_OPTION_ACTIVE_SLAVE);
+		}
+	} else if (nm_streq (name, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE)) {
+		if (   (val2 = nm_setting_bond_get_option_by_name (s_bond,
+		                                                   NM_SETTING_BOND_OPTION_PRIMARY))
+		    && !nm_streq (val2, value)) {
+			/* "active_slave" is a deprecated alias for "primary". NetworkManager will ignore
+			 * "active_slave" if "primary" is set, we thus need to coerce the primary option
+			 * too. */
+			nm_setting_bond_add_option (s_bond,
+			                            NM_SETTING_BOND_OPTION_PRIMARY,
+			                            value);
+		}
 	}
 
 	return TRUE;
