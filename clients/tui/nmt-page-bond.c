@@ -211,6 +211,7 @@ _bond_add_option (NMSettingBond *s_bond,
 		_nm_setting_bond_remove_options_miimon (s_bond);
 	else if (nm_streq (option, NM_SETTING_BOND_OPTION_MIIMON))
 		_nm_setting_bond_remove_options_arp_interval (s_bond);
+	nm_setting_bond_remove_option (s_bond, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE);
 }
 
 #define WIDGET_CHANGED_FUNC(widget, func, option, dflt) \
