@@ -45,6 +45,14 @@ G_DEFINE_TYPE (NMDhcpManager, nm_dhcp_manager, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+static void client_state_changed (NMDhcpClient *client,
+                                  NMDhcpState state,
+                                  GObject *ip_config,
+                                  GVariant *options,
+                                  NMDhcpManager *self);
+
+/*****************************************************************************/
+
 /* default to installed helper, but can be modified for testing */
 const char *nm_dhcp_helper_path = LIBEXECDIR "/nm-dhcp-helper";
 
@@ -161,13 +169,6 @@ get_client_for_ifindex (NMDhcpManager *manager, int addr_family, int ifindex)
 	return NULL;
 }
 
-static void client_state_changed (NMDhcpClient *client,
-                                  NMDhcpState state,
-                                  GObject *ip_config,
-                                  GVariant *options,
-                                  const char *event_id,
-                                  NMDhcpManager *self);
-
 static void
 remove_client (NMDhcpManager *self, NMDhcpClient *client)
 {
@@ -192,7 +193,6 @@ client_state_changed (NMDhcpClient *client,
                       NMDhcpState state,
                       GObject *ip_config,
                       GVariant *options,
-                      const char *event_id,
                       NMDhcpManager *self)
 {
 	if (state >= NM_DHCP_STATE_TIMEOUT)

@@ -8721,7 +8721,6 @@ dhcp4_state_changed (NMDhcpClient *client,
                      NMDhcpState state,
                      NMIP4Config *ip4_config,
                      GHashTable *options,
-                     const char *event_id,
                      gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
@@ -9561,11 +9560,11 @@ dhcp6_state_changed (NMDhcpClient *client,
                      NMDhcpState state,
                      NMIP6Config *ip6_config,
                      GHashTable *options,
-                     const char *event_id,
                      gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gs_free char *event_id = NULL;
 
 	g_return_if_fail (nm_dhcp_client_get_addr_family (client) == AF_INET6);
 	g_return_if_fail (!ip6_config || NM_IS_IP6_CONFIG (ip6_config));
@@ -9581,6 +9580,9 @@ dhcp6_state_changed (NMDhcpClient *client,
 		 * changed event for each of them. Use the event ID to merge IPv6
 		 * addresses from the same transaction into a single configuration.
 		 */
+
+		event_id = nm_dhcp_utils_get_dhcp6_event_id (options);
+
 		if (   ip6_config
 		    && event_id
 		    && priv->dhcp6.event_id
