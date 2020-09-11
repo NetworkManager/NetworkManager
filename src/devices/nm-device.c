@@ -871,6 +871,1076 @@ NM_UTILS_LOOKUP_STR_DEFINE (mtu_source_to_str, NMDeviceMtuSource,
 
 /*****************************************************************************/
 
+static NMSettingIP6ConfigPrivacy
+_ip6_privacy_clamp (NMSettingIP6ConfigPrivacy use_tempaddr)
+{
+	switch (use_tempaddr) {
+	case NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED:
+	case NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR:
+	case NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR:
+		return use_tempaddr;
+	default:
+		return NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
+	}
+}
+
+/*****************************************************************************/
+
+static const char *
+_prop_get_connection_stable_id (NMDevice *self,
+                                NMConnection *connection,
+                                NMUtilsStableType *out_stable_type)
+{
+	NMDevicePrivate *priv;
+
+	nm_assert (NM_IS_DEVICE (self));
+	nm_assert (NM_IS_CONNECTION (connection));
+	nm_assert (out_stable_type);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	/* we cache the generated stable ID for the time of an activation.
+	 *
+	 * The reason is, that we don't want the stable-id to change as long
+	 * as the device is active.
+	 *
+	 * Especially with ${RANDOM} stable-id we want to generate *one* configuration
+	 * for each activation. */
+	if (G_UNLIKELY (!priv->current_stable_id)) {
+		gs_free char *default_id = NULL;
+		gs_free char *generated = NULL;
+		NMUtilsStableType stable_type;
+		NMSettingConnection *s_con;
+		gboolean hwaddr_is_fake;
+		const char *hwaddr;
+		const char *stable_id;
+		const char *uuid;
+
+		s_con = nm_connection_get_setting_connection (connection);
+
+		stable_id = nm_setting_connection_get_stable_id (s_con);
+
+		if (!stable_id) {
+			default_id = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+			                                                    NM_CON_DEFAULT ("connection.stable-id"),
+			                                                    self);
+			stable_id = default_id;
+		}
+
+		uuid = nm_connection_get_uuid (connection);
+
+		/* the cloned-mac-address may be generated based on the stable-id.
+		 * Thus, at this point, we can only use the permanent MAC address
+		 * as seed. */
+		hwaddr = nm_device_get_permanent_hw_address_full (self, TRUE, &hwaddr_is_fake);
+
+		stable_type = nm_utils_stable_id_parse (stable_id,
+		                                        nm_device_get_ip_iface (self),
+		                                        !hwaddr_is_fake ? hwaddr : NULL,
+		                                        nm_utils_boot_id_str (),
+		                                        uuid,
+		                                        &generated);
+
+		/* current_stable_id_type is a bitfield! */
+		priv->current_stable_id_type = stable_type;
+		nm_assert (stable_type <= (NMUtilsStableType) 0x3);
+		nm_assert (stable_type + (NMUtilsStableType) 1 > (NMUtilsStableType) 0);
+		nm_assert (priv->current_stable_id_type == stable_type);
+
+		if (stable_type == NM_UTILS_STABLE_TYPE_UUID)
+			priv->current_stable_id = g_strdup (uuid);
+		else if (stable_type == NM_UTILS_STABLE_TYPE_STABLE_ID)
+			priv->current_stable_id = g_strdup (stable_id);
+		else if (stable_type == NM_UTILS_STABLE_TYPE_GENERATED)
+			priv->current_stable_id = nm_str_realloc (nm_utils_stable_id_generated_complete (generated));
+		else {
+			nm_assert (stable_type == NM_UTILS_STABLE_TYPE_RANDOM);
+			priv->current_stable_id = nm_str_realloc (nm_utils_stable_id_random ());
+		}
+		_LOGT (LOGD_DEVICE,
+		       "stable-id: type=%d, \"%s\""
+		       "%s%s%s",
+		       (int) priv->current_stable_id_type,
+		       priv->current_stable_id,
+		       NM_PRINT_FMT_QUOTED (stable_type == NM_UTILS_STABLE_TYPE_GENERATED, " from \"", generated, "\"", ""));
+	}
+
+	nm_assert (priv->current_stable_id);
+	*out_stable_type = priv->current_stable_id_type;
+	return priv->current_stable_id;
+}
+
+static GBytes *
+_prop_get_ipv6_dhcp_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboolean *out_enforce)
+{
+	NMSettingIPConfig *s_ip6;
+	const char *duid;
+	gs_free char *duid_default = NULL;
+	const char *duid_error;
+	GBytes *duid_out;
+	gboolean duid_enforce = TRUE;
+	gs_free char *logstr1 = NULL;
+	const guint8 *hwaddr_bin;
+	gsize hwaddr_len;
+	int arp_type;
+
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	duid = nm_setting_ip6_config_get_dhcp_duid (NM_SETTING_IP6_CONFIG (s_ip6));
+
+	if (!duid) {
+		duid_default = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+		                                                      NM_CON_DEFAULT ("ipv6.dhcp-duid"),
+		                                                      self);
+		duid = duid_default;
+		if (!duid)
+			duid = "lease";
+	}
+
+	if (nm_streq (duid, "lease")) {
+		duid_enforce = FALSE;
+		duid_out = nm_utils_generate_duid_from_machine_id ();
+		goto out_good;
+	}
+
+	if (!_nm_utils_dhcp_duid_valid (duid, &duid_out)) {
+		duid_error = "invalid duid";
+		goto out_fail;
+	}
+
+	if (duid_out)
+		goto out_good;
+
+	if (NM_IN_STRSET (duid, "ll", "llt")) {
+		if (!hwaddr) {
+			duid_error = "missing link-layer address";
+			goto out_fail;
+		}
+
+		hwaddr_bin = g_bytes_get_data (hwaddr, &hwaddr_len);
+		arp_type = nm_utils_arp_type_detect_from_hwaddrlen (hwaddr_len);
+		if (arp_type < 0) {
+			duid_error = "unsupported link-layer address";
+			goto out_fail;
+		}
+
+		if (nm_streq (duid, "ll"))
+			duid_out = nm_utils_generate_duid_ll (arp_type, hwaddr_bin, hwaddr_len);
+		else {
+			duid_out = nm_utils_generate_duid_llt (arp_type, hwaddr_bin, hwaddr_len,
+			                                       nm_utils_host_id_get_timestamp_ns () / NM_UTILS_NSEC_PER_SEC);
+		}
+
+		goto out_good;
+	}
+
+	if (NM_IN_STRSET (duid, "stable-ll", "stable-llt", "stable-uuid")) {
+		/* preferably, we would salt the checksum differently for each @duid type. We missed
+		 * to do that initially, so most types use the DEFAULT_SALT.
+		 *
+		 * Implementations that are added later, should use a distinct salt instead,
+		 * like "stable-ll"/"stable-llt" with ARPHRD_INFINIBAND below. */
+		const guint32 DEFAULT_SALT = 670531087u;
+		nm_auto_free_checksum GChecksum *sum = NULL;
+		NMUtilsStableType stable_type;
+		const char *stable_id = NULL;
+		guint32 salted_header;
+		const guint8 *host_id;
+		gsize host_id_len;
+		union {
+			guint8 sha256[NM_UTILS_CHECKSUM_LENGTH_SHA256];
+			guint8 hwaddr_eth[ETH_ALEN];
+			guint8 hwaddr_infiniband[INFINIBAND_ALEN];
+			NMUuid uuid;
+			struct _nm_packed {
+				guint8 hwaddr[ETH_ALEN];
+				guint32 timestamp;
+			} llt_eth;
+			struct _nm_packed {
+				guint8 hwaddr[INFINIBAND_ALEN];
+				guint32 timestamp;
+			} llt_infiniband;
+		} digest;
+
+		stable_id = _prop_get_connection_stable_id (self, connection, &stable_type);
+
+		if (NM_IN_STRSET (duid, "stable-ll", "stable-llt")) {
+			/* for stable LL/LLT DUIDs, we still need a hardware address to detect
+			 * the arp-type. Alternatively, we would be able to detect it based on
+			 * other means (e.g. NMDevice type), but instead require the hardware
+			 * address to be present. This is at least consistent with the "ll"/"llt"
+			 * modes above. */
+			if (!hwaddr) {
+				duid_error = "missing link-layer address";
+				goto out_fail;
+			}
+			if ((arp_type = nm_utils_arp_type_detect_from_hwaddrlen (g_bytes_get_size (hwaddr))) < 0) {
+				duid_error = "unsupported link-layer address";
+				goto out_fail;
+			}
+
+			if (arp_type == ARPHRD_ETHER)
+				salted_header = DEFAULT_SALT;
+			else {
+				nm_assert (arp_type == ARPHRD_INFINIBAND);
+				salted_header = 0x42492CEFu + ((guint32) arp_type);
+			}
+		} else {
+			salted_header = DEFAULT_SALT;
+			arp_type = -1;
+		}
+
+		salted_header = htonl (salted_header + ((guint32) stable_type));
+
+		nm_utils_host_id_get (&host_id, &host_id_len);
+
+		sum = g_checksum_new (G_CHECKSUM_SHA256);
+		g_checksum_update (sum, (const guchar *) &salted_header, sizeof (salted_header));
+		g_checksum_update (sum, (const guchar *) stable_id, -1);
+		g_checksum_update (sum, (const guchar *) host_id, host_id_len);
+		nm_utils_checksum_get_digest (sum, digest.sha256);
+
+		G_STATIC_ASSERT_EXPR (sizeof (digest) == sizeof (digest.sha256));
+
+		if (nm_streq (duid, "stable-ll")) {
+			switch (arp_type) {
+			case ARPHRD_ETHER:
+				duid_out = nm_utils_generate_duid_ll (arp_type, digest.hwaddr_eth, sizeof (digest.hwaddr_eth));
+				break;
+			case ARPHRD_INFINIBAND:
+				duid_out = nm_utils_generate_duid_ll (arp_type, digest.hwaddr_infiniband, sizeof (digest.hwaddr_infiniband));
+				break;
+			default:
+				g_return_val_if_reached (NULL);
+			}
+		} else if (nm_streq (duid, "stable-llt")) {
+			gint64 time;
+			guint32 timestamp;
+
+#define EPOCH_DATETIME_THREE_YEARS  (356 * 24 * 3600 * 3)
+
+			/* We want a variable time between the host_id timestamp and three years
+			 * before. Let's compute the time (in seconds) from 0 to 3 years; then we'll
+			 * subtract it from the host_id timestamp.
+			 */
+			time = nm_utils_host_id_get_timestamp_ns () / NM_UTILS_NSEC_PER_SEC;
+
+			/* don't use too old timestamps. They cannot be expressed in DUID-LLT and
+			 * would all be truncated to zero. */
+			time = NM_MAX (time, NM_UTILS_EPOCH_DATETIME_200001010000 + EPOCH_DATETIME_THREE_YEARS);
+
+			switch (arp_type) {
+			case ARPHRD_ETHER:
+				timestamp = unaligned_read_be32 (&digest.llt_eth.timestamp);
+				time -= timestamp % EPOCH_DATETIME_THREE_YEARS;
+				duid_out = nm_utils_generate_duid_llt (arp_type, digest.llt_eth.hwaddr, sizeof (digest.llt_eth.hwaddr), time);
+				break;
+			case ARPHRD_INFINIBAND:
+				timestamp = unaligned_read_be32 (&digest.llt_infiniband.timestamp);
+				time -= timestamp % EPOCH_DATETIME_THREE_YEARS;
+				duid_out = nm_utils_generate_duid_llt (arp_type, digest.llt_infiniband.hwaddr, sizeof (digest.llt_infiniband.hwaddr), time);
+				break;
+			default:
+				g_return_val_if_reached (NULL);
+			}
+		} else {
+			nm_assert (nm_streq (duid, "stable-uuid"));
+			duid_out = nm_utils_generate_duid_uuid (&digest.uuid);
+		}
+
+		goto out_good;
+	}
+
+	g_return_val_if_reached (NULL);
+
+out_fail:
+	nm_assert (!duid_out && duid_error);
+	{
+		NMUuid uuid;
+
+		_LOGW (LOGD_IP6 | LOGD_DHCP6,
+		       "ipv6.dhcp-duid: failure to generate %s DUID: %s. Fallback to random DUID-UUID.",
+		       duid, duid_error);
+
+		nm_utils_random_bytes (&uuid, sizeof (uuid));
+		duid_out = nm_utils_generate_duid_uuid (&uuid);
+	}
+
+out_good:
+	nm_assert (duid_out);
+	_LOGD (LOGD_IP6 | LOGD_DHCP6,
+	       "ipv6.dhcp-duid: generate %s DUID '%s' (%s)",
+	       duid,
+	       (logstr1 = nm_dhcp_utils_duid_to_string (duid_out)),
+	       duid_enforce ? "enforcing" : "prefer lease");
+
+	NM_SET_OUT (out_enforce, duid_enforce);
+	return duid_out;
+}
+
+static gint32
+_prop_get_ipv6_ra_timeout (NMDevice *self)
+{
+	NMConnection *connection;
+	gint32 timeout;
+
+	G_STATIC_ASSERT_EXPR (NM_RA_TIMEOUT_DEFAULT == 0);
+	G_STATIC_ASSERT_EXPR (NM_RA_TIMEOUT_INFINITY == G_MAXINT32);
+
+	connection = nm_device_get_applied_connection (self);
+
+	timeout = nm_setting_ip6_config_get_ra_timeout (NM_SETTING_IP6_CONFIG (nm_connection_get_setting_ip6_config (connection)));
+	nm_assert (timeout >= 0);
+	if (timeout)
+		return timeout;
+
+	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                    NM_CON_DEFAULT ("ipv6.ra-timeout"),
+	                                                    self,
+	                                                    0, G_MAXINT32, 0);
+}
+
+static NMSettingConnectionMdns
+_prop_get_connection_mdns (NMDevice *self)
+{
+	NMConnection *connection;
+	NMSettingConnectionMdns mdns = NM_SETTING_CONNECTION_MDNS_DEFAULT;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), NM_SETTING_CONNECTION_MDNS_DEFAULT);
+
+	connection = nm_device_get_applied_connection (self);
+	if (connection)
+		mdns = nm_setting_connection_get_mdns (nm_connection_get_setting_connection (connection));
+	if (mdns != NM_SETTING_CONNECTION_MDNS_DEFAULT)
+		return mdns;
+
+	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                    NM_CON_DEFAULT ("connection.mdns"),
+	                                                    self,
+	                                                    NM_SETTING_CONNECTION_MDNS_NO,
+	                                                    NM_SETTING_CONNECTION_MDNS_YES,
+	                                                    NM_SETTING_CONNECTION_MDNS_DEFAULT);
+}
+
+static NMSettingConnectionLlmnr
+_prop_get_connection_llmnr (NMDevice *self)
+{
+	NMConnection *connection;
+	NMSettingConnectionLlmnr llmnr = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), NM_SETTING_CONNECTION_LLMNR_DEFAULT);
+
+	connection = nm_device_get_applied_connection (self);
+	if (connection)
+		llmnr = nm_setting_connection_get_llmnr (nm_connection_get_setting_connection (connection));
+	if (llmnr != NM_SETTING_CONNECTION_LLMNR_DEFAULT)
+		return llmnr;
+
+	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                    NM_CON_DEFAULT ("connection.llmnr"),
+	                                                    self,
+	                                                    NM_SETTING_CONNECTION_LLMNR_NO,
+	                                                    NM_SETTING_CONNECTION_LLMNR_YES,
+	                                                    NM_SETTING_CONNECTION_LLMNR_DEFAULT);
+}
+
+static guint32
+_prop_get_ipvx_route_table (NMDevice *self,
+                  int addr_family)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDeviceClass *klass;
+	NMConnection *connection;
+	NMSettingIPConfig *s_ip;
+	guint32 route_table = 0;
+	gboolean is_user_config = TRUE;
+	NMSettingConnection *s_con;
+	NMSettingVrf *s_vrf;
+
+	nm_assert_addr_family (addr_family);
+
+	/* the route table setting affects how we sync routes. We shall
+	 * not change it while the device is active, hence, cache it. */
+	if (addr_family == AF_INET) {
+		if (priv->v4_route_table_initialized)
+			return priv->v4_route_table;
+	} else {
+		if (priv->v6_route_table_initialized)
+			return priv->v6_route_table;
+	}
+
+	connection = nm_device_get_applied_connection (self);
+	if (connection) {
+		s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
+		if (s_ip)
+			route_table = nm_setting_ip_config_get_route_table (s_ip);
+	}
+	if (route_table == 0u) {
+		gint64 v;
+
+		v = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+		                                                   addr_family == AF_INET
+		                                                 ? NM_CON_DEFAULT ("ipv4.route-table")
+		                                                 : NM_CON_DEFAULT ("ipv6.route-table"),
+		                                                 self,
+		                                                 0,
+		                                                 G_MAXUINT32,
+		                                                 -1);
+		if (v != -1) {
+			route_table = v;
+			is_user_config = FALSE;
+		}
+	}
+
+	if (   route_table == 0u
+	    && connection
+	    && (s_con = nm_connection_get_setting_connection (connection))
+	    && (nm_streq0 (nm_setting_connection_get_slave_type (s_con), NM_SETTING_VRF_SETTING_NAME)
+	    && priv->master
+	    && nm_device_get_device_type (priv->master) == NM_DEVICE_TYPE_VRF)) {
+		const NMPlatformLnkVrf *lnk;
+
+		lnk = nm_platform_link_get_lnk_vrf (nm_device_get_platform (self),
+		                                    nm_device_get_ifindex (priv->master),
+		                                    NULL);
+
+		if (lnk)
+			route_table = lnk->table;
+	}
+
+	if (   route_table == 0u
+	    && connection
+	    && (s_vrf = (NMSettingVrf *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VRF))) {
+		route_table = nm_setting_vrf_get_table (s_vrf);
+	}
+
+	klass = NM_DEVICE_GET_CLASS (self);
+	if (klass->coerce_route_table)
+		route_table = klass->coerce_route_table (self, addr_family, route_table, is_user_config);
+
+	if (addr_family == AF_INET) {
+		priv->v4_route_table_initialized = TRUE;
+		priv->v4_route_table = route_table;
+	} else {
+		priv->v6_route_table_initialized = TRUE;
+		priv->v6_route_table = route_table;
+	}
+
+	_LOGT (LOGD_DEVICE,
+	       "ipv%c.route-table = %u%s",
+	       addr_family == AF_INET ? '4' : '6',
+	       (guint) (route_table ?: RT_TABLE_MAIN),
+	       route_table != 0u ? "" : " (policy routing not enabled)");
+
+	return route_table;
+}
+
+static gboolean
+_prop_get_connection_lldp (NMDevice *self)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingConnectionLldp lldp = NM_SETTING_CONNECTION_LLDP_DEFAULT;
+
+	connection = nm_device_get_applied_connection (self);
+	g_return_val_if_fail (connection, FALSE);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_return_val_if_fail (s_con, FALSE);
+
+	lldp = nm_setting_connection_get_lldp (s_con);
+	if (lldp == NM_SETTING_CONNECTION_LLDP_DEFAULT) {
+		lldp = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+		                                                    NM_CON_DEFAULT ("connection.lldp"),
+		                                                    self,
+		                                                    NM_SETTING_CONNECTION_LLDP_DEFAULT,
+		                                                    NM_SETTING_CONNECTION_LLDP_ENABLE_RX,
+		                                                    NM_SETTING_CONNECTION_LLDP_DEFAULT);
+		if (lldp == NM_SETTING_CONNECTION_LLDP_DEFAULT)
+			lldp = NM_SETTING_CONNECTION_LLDP_DISABLE;
+	}
+	return lldp == NM_SETTING_CONNECTION_LLDP_ENABLE_RX;
+}
+
+static guint
+_prop_get_ipv4_dad_timeout (NMDevice *self)
+{
+	NMConnection *connection;
+	NMSettingIPConfig *s_ip4 = NULL;
+	int timeout = -1;
+
+	connection = nm_device_get_applied_connection (self);
+	if (connection)
+		s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	if (s_ip4)
+		timeout = nm_setting_ip_config_get_dad_timeout (s_ip4);
+	if (timeout >= 0)
+		return timeout;
+
+	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                    NM_CON_DEFAULT ("ipv4.dad-timeout"),
+	                                                    self,
+	                                                    0,
+	                                                    NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX,
+	                                                    0);
+}
+
+static guint32
+_prop_get_ipvx_dhcp_timeout (NMDevice *self, int addr_family)
+{
+	NMDeviceClass *klass;
+	NMConnection *connection;
+	int timeout_i;
+	guint32 timeout;
+
+	nm_assert (NM_IS_DEVICE (self));
+	nm_assert_addr_family (addr_family);
+
+	connection = nm_device_get_applied_connection (self);
+
+	timeout_i  = nm_setting_ip_config_get_dhcp_timeout (nm_connection_get_setting_ip_config (connection, addr_family));
+	nm_assert (timeout_i >= 0 && timeout_i <= G_MAXINT32);
+
+	timeout = (guint32) timeout_i;
+	if (timeout)
+		goto out;
+
+	timeout = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                       addr_family == AF_INET
+	                                                         ? NM_CON_DEFAULT ("ipv4.dhcp-timeout")
+	                                                         : NM_CON_DEFAULT ("ipv6.dhcp-timeout"),
+	                                                       self,
+	                                                       0, G_MAXINT32, 0);
+	if (timeout)
+		goto out;
+
+	klass = NM_DEVICE_GET_CLASS (self);
+	if (klass->get_dhcp_timeout_for_device) {
+		timeout = klass->get_dhcp_timeout_for_device (self, addr_family);
+		if (timeout)
+			goto out;
+	}
+
+	timeout = NM_DHCP_TIMEOUT_DEFAULT;
+
+out:
+	G_STATIC_ASSERT_EXPR (G_MAXINT32 == NM_DHCP_TIMEOUT_INFINITY);
+	nm_assert (timeout > 0);
+	nm_assert (timeout <= G_MAXINT32);
+	return timeout;
+}
+
+/**
+ * _prop_get_ipvx_dhcp_iaid:
+ * @self: the #NMDevice
+ * @addr_family: the address family
+ * @connection: the connection
+ * @out_is_explicit: on return, %TRUE if the user set a valid IAID in
+ *   the connection or in global configuration; %FALSE if the connection
+ *   property was empty and no valid global configuration was provided.
+ *
+ * Returns: a IAID value for this device and the given connection.
+ */
+static guint32
+_prop_get_ipvx_dhcp_iaid (NMDevice *self,
+                          int addr_family,
+                          NMConnection *connection,
+                          gboolean *out_is_explicit)
+{
+	NMSettingIPConfig *s_ip;
+	const char *iaid_str;
+	gs_free char *iaid_str_free = NULL;
+	guint32 iaid;
+	const char *iface;
+	const char *fail_reason;
+	gboolean is_explicit = TRUE;
+
+	s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
+	iaid_str = nm_setting_ip_config_get_dhcp_iaid (s_ip);
+	if (!iaid_str) {
+		iaid_str_free = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+		                                                         addr_family == AF_INET
+		                                                       ? NM_CON_DEFAULT ("ipv4.dhcp-iaid")
+		                                                       : NM_CON_DEFAULT ("ipv6.dhcp-iaid"),
+		                                                       self);
+		iaid_str = iaid_str_free;
+		if (!iaid_str) {
+			iaid_str = NM_IAID_IFNAME;
+			is_explicit = FALSE;
+		} else if (!_nm_utils_iaid_verify (iaid_str, NULL)) {
+			_LOGW (LOGD_DEVICE, "invalid global default '%s' for ipv%c.dhcp-iaid",
+			       iaid_str,
+			       nm_utils_addr_family_to_char (addr_family));
+			iaid_str = NM_IAID_IFNAME;
+			is_explicit = FALSE;
+		}
+	}
+
+	if (nm_streq0 (iaid_str, NM_IAID_MAC)) {
+		const NMPlatformLink *pllink;
+
+		pllink = nm_platform_link_get (nm_device_get_platform (self),
+		                               nm_device_get_ip_ifindex (self));
+		if (!pllink || pllink->l_address.len < 4) {
+			fail_reason = "invalid link-layer address";
+			goto out_fail;
+		}
+
+		/* @iaid is in native endianness. Use unaligned_read_be32()
+		 * so that the IAID for a given MAC address is the same on
+		 * BE and LE machines. */
+		iaid = unaligned_read_be32 (&pllink->l_address.data[pllink->l_address.len - 4]);
+		goto out_good;
+	} else if (nm_streq0 (iaid_str, NM_IAID_PERM_MAC)) {
+		guint8 hwaddr_buf[NM_UTILS_HWADDR_LEN_MAX];
+		const char *hwaddr_str;
+		gsize hwaddr_len;
+
+		hwaddr_str = nm_device_get_permanent_hw_address (self);
+		if (!hwaddr_str) {
+			fail_reason = "no permanent link-layer address";
+			goto out_fail;
+		}
+
+		if (!_nm_utils_hwaddr_aton (hwaddr_str, hwaddr_buf, sizeof (hwaddr_buf), &hwaddr_len))
+			g_return_val_if_reached (0);
+
+		if (hwaddr_len < 4) {
+			fail_reason = "invalid link-layer address";
+			goto out_fail;
+		}
+
+		iaid = unaligned_read_be32 (&hwaddr_buf[hwaddr_len - 4]);
+		goto out_good;
+	}  else if (nm_streq (iaid_str, "stable")) {
+		nm_auto_free_checksum GChecksum *sum = NULL;
+		guint8 digest[NM_UTILS_CHECKSUM_LENGTH_SHA1];
+		NMUtilsStableType stable_type;
+		const char *stable_id;
+		guint32 salted_header;
+		const guint8 *host_id;
+		gsize host_id_len;
+
+		stable_id = _prop_get_connection_stable_id (self, connection, &stable_type);
+		salted_header = htonl (53390459 + stable_type);
+		nm_utils_host_id_get (&host_id, &host_id_len);
+		iface = nm_device_get_ip_iface (self);
+
+		sum = g_checksum_new (G_CHECKSUM_SHA1);
+		g_checksum_update (sum, (const guchar *) &salted_header, sizeof (salted_header));
+		g_checksum_update (sum, (const guchar *) stable_id, strlen (stable_id) + 1);
+		g_checksum_update (sum, (const guchar *) iface, strlen (iface) + 1);
+		g_checksum_update (sum, (const guchar *) host_id, host_id_len);
+		nm_utils_checksum_get_digest (sum, digest);
+
+		iaid = unaligned_read_be32 (digest);
+		goto out_good;
+	} else if ((iaid = _nm_utils_ascii_str_to_int64 (iaid_str, 10, 0, G_MAXUINT32, -1)) != -1) {
+		goto out_good;
+	} else {
+		iface = nm_device_get_ip_iface (self);
+		iaid = nm_utils_create_dhcp_iaid (TRUE,
+		                                  (const guint8 *) iface,
+		                                  strlen (iface));
+		goto out_good;
+	}
+
+out_fail:
+	nm_assert (fail_reason);
+	_LOGW (  addr_family == AF_INET
+	       ? (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4)
+	       : (LOGD_DEVICE | LOGD_DHCP6 | LOGD_IP6),
+	       "ipv%c.dhcp-iaid: failure to generate IAID: %s. Using interface-name based IAID",
+	       nm_utils_addr_family_to_char (addr_family), fail_reason);
+	is_explicit = FALSE;
+	iface = nm_device_get_ip_iface (self);
+	iaid = nm_utils_create_dhcp_iaid (TRUE,
+	                                  (const guint8 *) iface,
+	                                  strlen (iface));
+out_good:
+	_LOGD (  addr_family == AF_INET
+	       ? (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4)
+	       : (LOGD_DEVICE | LOGD_DHCP6 | LOGD_IP6),
+	       "ipv%c.dhcp-iaid: using %u (0x%08x) IAID (str: '%s', explicit %d)",
+	       nm_utils_addr_family_to_char (addr_family), iaid, iaid,
+	       iaid_str, is_explicit);
+	NM_SET_OUT (out_is_explicit, is_explicit);
+	return iaid;
+}
+
+static NMDhcpHostnameFlags
+_prop_get_ipvx_dhcp_hostname_flags (NMDevice *self, int addr_family)
+{
+	NMConnection *connection;
+	NMSettingIPConfig *s_ip;
+	NMDhcpHostnameFlags flags;
+	gs_free_error GError *error = NULL;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), NM_DHCP_HOSTNAME_FLAG_NONE);
+
+	connection = nm_device_get_applied_connection (self);
+	s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
+	g_return_val_if_fail (s_ip, NM_DHCP_HOSTNAME_FLAG_NONE);
+
+	if (!nm_setting_ip_config_get_dhcp_send_hostname (s_ip))
+		return NM_DHCP_HOSTNAME_FLAG_NONE;
+
+	flags = nm_setting_ip_config_get_dhcp_hostname_flags (s_ip);
+	if (flags != NM_DHCP_HOSTNAME_FLAG_NONE)
+		return flags;
+
+	flags = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                     addr_family == AF_INET
+	                                                       ? NM_CON_DEFAULT ("ipv4.dhcp-hostname-flags")
+	                                                       : NM_CON_DEFAULT ("ipv6.dhcp-hostname-flags"),
+	                                                     self,
+	                                                     0, NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS,
+	                                                     0);
+
+	if (!_nm_utils_validate_dhcp_hostname_flags (flags, addr_family, &error)) {
+		_LOGW (LOGD_DEVICE, "invalid global default value 0x%x for ipv%d.%s: %s",
+		       (guint) flags,
+		       addr_family == AF_INET ? 4 : 6,
+		       NM_SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS,
+		       error->message);
+		flags = NM_DHCP_HOSTNAME_FLAG_NONE;
+	}
+
+	if (flags != NM_DHCP_HOSTNAME_FLAG_NONE)
+		return flags;
+
+	if (addr_family == AF_INET)
+		return NM_DHCP_HOSTNAME_FLAGS_FQDN_DEFAULT_IP4;
+	else
+		return NM_DHCP_HOSTNAME_FLAGS_FQDN_DEFAULT_IP6;
+}
+
+static const char *
+_prop_get_connection_mud_url (NMDevice *self,
+                              NMSettingConnection *s_con,
+                              char **out_mud_url)
+{
+	const char *mud_url;
+	gs_free char *s = NULL;
+
+	nm_assert (out_mud_url && !*out_mud_url);
+
+	mud_url = nm_setting_connection_get_mud_url (s_con);
+
+	if (mud_url) {
+		if (nm_streq (mud_url, NM_CONNECTION_MUD_URL_NONE))
+			return NULL;
+		return mud_url;
+	}
+
+	s = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+	                                           NM_CON_DEFAULT ("connection.mud-url"),
+	                                           self);
+	if (s) {
+		if (nm_streq (s, NM_CONNECTION_MUD_URL_NONE))
+			return NULL;
+		if (nm_sd_http_url_is_valid_https (s))
+			return (*out_mud_url = g_steal_pointer (&s));
+	}
+
+	return NULL;
+}
+
+static GBytes *
+_prop_get_ipv4_dhcp_client_id (NMDevice *self,
+                               NMConnection *connection,
+                               GBytes *hwaddr)
+{
+	NMSettingIPConfig *s_ip4;
+	const char *client_id;
+	gs_free char *client_id_default = NULL;
+	guint8 *client_id_buf;
+	const char *fail_reason;
+	guint8 hwaddr_bin_buf[NM_UTILS_HWADDR_LEN_MAX];
+	const guint8 *hwaddr_bin;
+	int arp_type;
+	gsize hwaddr_len;
+	GBytes *result;
+	gs_free char *logstr1 = NULL;
+
+	s_ip4 = nm_connection_get_setting_ip4_config (connection);
+	client_id = nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4));
+
+	if (!client_id) {
+		client_id_default = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+		                                                           NM_CON_DEFAULT ("ipv4.dhcp-client-id"),
+		                                                           self);
+		if (client_id_default && client_id_default[0]) {
+			/* a non-empty client-id is always valid, see nm_dhcp_utils_client_id_string_to_bytes().  */
+			client_id = client_id_default;
+		}
+	}
+
+	if (!client_id) {
+		_LOGD (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4,
+		       "ipv4.dhcp-client-id: no explicit client-id configured");
+		return NULL;
+	}
+
+	if (nm_streq (client_id, "mac")) {
+		if (!hwaddr) {
+			fail_reason = "missing link-layer address";
+			goto out_fail;
+		}
+
+		hwaddr_bin = g_bytes_get_data (hwaddr, &hwaddr_len);
+		arp_type = nm_utils_arp_type_detect_from_hwaddrlen (hwaddr_len);
+		if (arp_type < 0) {
+			fail_reason = "unsupported link-layer address";
+			goto out_fail;
+		}
+
+		result = nm_utils_dhcp_client_id_mac (arp_type, hwaddr_bin, hwaddr_len);
+		goto out_good;
+	}
+
+	if (nm_streq (client_id, "perm-mac")) {
+		const char *hwaddr_str;
+
+		hwaddr_str = nm_device_get_permanent_hw_address (self);
+		if (!hwaddr_str) {
+			fail_reason = "missing permanent link-layer address";
+			goto out_fail;
+		}
+
+		if (!_nm_utils_hwaddr_aton (hwaddr_str, hwaddr_bin_buf, sizeof (hwaddr_bin_buf), &hwaddr_len))
+			g_return_val_if_reached (NULL);
+
+		arp_type = nm_utils_arp_type_detect_from_hwaddrlen (hwaddr_len);
+		if (arp_type < 0) {
+			fail_reason = "unsupported permanent link-layer address";
+			goto out_fail;
+		}
+
+		result = nm_utils_dhcp_client_id_mac (arp_type, hwaddr_bin_buf, hwaddr_len);
+		goto out_good;
+	}
+
+	if (nm_streq (client_id, "duid")) {
+		guint32 iaid = _prop_get_ipvx_dhcp_iaid (self, AF_INET, connection, NULL);
+
+		result = nm_utils_dhcp_client_id_systemd_node_specific (iaid);
+		goto out_good;
+	}
+
+	if (nm_streq (client_id, "stable")) {
+		nm_auto_free_checksum GChecksum *sum = NULL;
+		guint8 digest[NM_UTILS_CHECKSUM_LENGTH_SHA1];
+		NMUtilsStableType stable_type;
+		const char *stable_id;
+		guint32 salted_header;
+		const guint8 *host_id;
+		gsize host_id_len;
+
+		stable_id = _prop_get_connection_stable_id (self, connection, &stable_type);
+		salted_header = htonl (2011610591 + stable_type);
+		nm_utils_host_id_get (&host_id, &host_id_len);
+
+		sum = g_checksum_new (G_CHECKSUM_SHA1);
+		g_checksum_update (sum, (const guchar *) &salted_header, sizeof (salted_header));
+		g_checksum_update (sum, (const guchar *) stable_id, strlen (stable_id) + 1);
+		g_checksum_update (sum, (const guchar *) host_id, host_id_len);
+		nm_utils_checksum_get_digest (sum, digest);
+
+		client_id_buf = g_malloc (1 + 15);
+		client_id_buf[0] = 0;
+		memcpy (&client_id_buf[1], digest, 15);
+		result = g_bytes_new_take (client_id_buf, 1 + 15);
+		goto out_good;
+	}
+
+	result = nm_dhcp_utils_client_id_string_to_bytes (client_id);
+	goto out_good;
+
+out_fail:
+	nm_assert (fail_reason);
+	_LOGW (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4,
+	       "ipv4.dhcp-client-id: failure to generate client id (%s). Use random client id",
+	       fail_reason);
+	client_id_buf = g_malloc (1 + 15);
+	client_id_buf[0] = 0;
+	nm_utils_random_bytes (&client_id_buf[1], 15);
+	result = g_bytes_new_take (client_id_buf, 1 + 15);
+
+out_good:
+	nm_assert (result);
+	_LOGD (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4,
+	       "ipv4.dhcp-client-id: use \"%s\" client ID: %s",
+	       client_id,
+	       (logstr1 = nm_dhcp_utils_duid_to_string (result)));
+	return result;
+}
+
+static GBytes *
+_prop_get_ipv4_dhcp_vendor_class_identifier (NMDevice *self, NMSettingIP4Config *s_ip4)
+{
+	gs_free char *config_data_prop = NULL;
+	gs_free char *to_free = NULL;
+	const char *conn_prop;
+	GBytes *bytes = NULL;
+	const char *bin;
+	gsize len;
+
+	conn_prop = nm_setting_ip4_config_get_dhcp_vendor_class_identifier (s_ip4);
+
+	if (!conn_prop) {
+		/* set in NetworkManager.conf ? */
+		config_data_prop = nm_config_data_get_connection_default (
+		    NM_CONFIG_GET_DATA,
+		    NM_CON_DEFAULT ("ipv4.dhcp-vendor-class-identifier"),
+		    self);
+
+		if (   config_data_prop
+		    && nm_utils_validate_dhcp4_vendor_class_id (config_data_prop, NULL))
+			conn_prop = config_data_prop;
+	}
+
+	if (conn_prop) {
+		bin = nm_utils_buf_utf8safe_unescape (conn_prop,
+		                                      NM_UTILS_STR_UTF8_SAFE_FLAG_NONE,
+		                                      &len,
+		                                      (gpointer *) &to_free);
+		if (to_free)
+			bytes = g_bytes_new_take (g_steal_pointer (&to_free), len);
+		else
+			bytes = g_bytes_new (bin, len);
+	}
+
+	return bytes;
+}
+
+static NMSettingIP6ConfigPrivacy
+_prop_get_ipv6_ip6_privacy (NMDevice *self)
+{
+	NMSettingIP6ConfigPrivacy ip6_privacy;
+	NMConnection *connection;
+
+	g_return_val_if_fail (self, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
+
+	/* 1.) First look at the per-connection setting. If it is not -1 (unknown),
+	 * use it. */
+	connection = nm_device_get_applied_connection (self);
+	if (connection) {
+		NMSettingIPConfig *s_ip6 = nm_connection_get_setting_ip6_config (connection);
+
+		if (s_ip6) {
+			ip6_privacy = nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (s_ip6));
+			ip6_privacy = _ip6_privacy_clamp (ip6_privacy);
+			if (ip6_privacy != NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
+				return ip6_privacy;
+		}
+	}
+
+	/* 2.) use the default value from the configuration. */
+	ip6_privacy = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
+	                                                           NM_CON_DEFAULT ("ipv6.ip6-privacy"),
+	                                                           self,
+	                                                           NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
+	                                                           NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
+	                                                           NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
+	if (ip6_privacy != NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
+		return ip6_privacy;
+
+	if (!nm_device_get_ip_ifindex (self))
+		return NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
+
+	/* 3.) No valid default-value configured. Fallback to reading sysctl.
+	 *
+	 * Instead of reading static config files in /etc, just read the current sysctl value.
+	 * This works as NM only writes to "/proc/sys/net/ipv6/conf/IFNAME/use_tempaddr", but leaves
+	 * the "default" entry untouched. */
+	ip6_privacy = nm_platform_sysctl_get_int32 (nm_device_get_platform (self),
+	                                            NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv6/conf/default/use_tempaddr"),
+	                                            NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
+	return _ip6_privacy_clamp (ip6_privacy);
+}
+
+static const char *
+_prop_get_x_cloned_mac_address (NMDevice *self, NMConnection *connection, gboolean is_wifi, char **out_addr)
+{
+	NMSetting *setting;
+	const char *addr = NULL;
+
+	nm_assert (out_addr && !*out_addr);
+
+	setting = nm_connection_get_setting (connection,
+	                                     is_wifi ? NM_TYPE_SETTING_WIRELESS : NM_TYPE_SETTING_WIRED);
+	if (setting) {
+		addr = is_wifi
+		       ? nm_setting_wireless_get_cloned_mac_address ((NMSettingWireless *) setting)
+		       : nm_setting_wired_get_cloned_mac_address ((NMSettingWired *) setting);
+	}
+
+	if (!addr) {
+		gs_free char *a = NULL;
+
+		a = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+		                                             is_wifi
+		                                           ? NM_CON_DEFAULT ("wifi.cloned-mac-address")
+		                                           : NM_CON_DEFAULT ("ethernet.cloned-mac-address"),
+		                                           self);
+
+		addr = NM_CLONED_MAC_PRESERVE;
+
+		if (!a) {
+			if (is_wifi) {
+				NMSettingMacRandomization v;
+
+				/* for backward compatibility, read the deprecated wifi.mac-address-randomization setting. */
+				a = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+				                                           NM_CON_DEFAULT ("wifi.mac-address-randomization"),
+				                                           self);
+				v = _nm_utils_ascii_str_to_int64 (a, 10,
+				                                  NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
+				                                  NM_SETTING_MAC_RANDOMIZATION_ALWAYS,
+				                                  NM_SETTING_MAC_RANDOMIZATION_DEFAULT);
+				if (v == NM_SETTING_MAC_RANDOMIZATION_ALWAYS)
+					addr = NM_CLONED_MAC_RANDOM;
+			}
+		} else if (   NM_CLONED_MAC_IS_SPECIAL (a)
+		           || nm_utils_hwaddr_valid (a, ETH_ALEN))
+			addr = *out_addr = g_steal_pointer (&a);
+	}
+
+	return addr;
+}
+
+static const char *
+_prop_get_x_generate_mac_address_mask (NMDevice *self, NMConnection *connection, gboolean is_wifi, char **out_value)
+{
+	NMSetting *setting;
+	const char *value = NULL;
+	char *a;
+
+	nm_assert (out_value && !*out_value);
+
+	setting = nm_connection_get_setting (connection,
+	                                     is_wifi ? NM_TYPE_SETTING_WIRELESS : NM_TYPE_SETTING_WIRED);
+	if (setting) {
+		value = is_wifi
+		        ? nm_setting_wireless_get_generate_mac_address_mask ((NMSettingWireless *) setting)
+		        : nm_setting_wired_get_generate_mac_address_mask ((NMSettingWired *) setting);
+		if (value)
+			return value;
+	}
+
+	a = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
+	                                           is_wifi
+	                                               ? NM_CON_DEFAULT ("wifi.generate-mac-address-mask")
+	                                               : NM_CON_DEFAULT ("ethernet.generate-mac-address-mask"),
+	                                           self);
+	if (!a)
+		return NULL;
+	*out_value = a;
+	return a;
+}
+
+/*****************************************************************************/
+
 static void
 _ethtool_features_reset (NMDevice *self,
                          NMPlatform *platform,
@@ -1669,92 +2739,6 @@ _add_capabilities (NMDevice *self, NMDeviceCapabilities capabilities)
 		priv->capabilities |= capabilities;
 		_notify (self, PROP_CAPABILITIES);
 	}
-}
-
-/*****************************************************************************/
-
-static const char *
-_prop_get_connection_stable_id (NMDevice *self,
-                                NMConnection *connection,
-                                NMUtilsStableType *out_stable_type)
-{
-	NMDevicePrivate *priv;
-
-	nm_assert (NM_IS_DEVICE (self));
-	nm_assert (NM_IS_CONNECTION (connection));
-	nm_assert (out_stable_type);
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
-
-	/* we cache the generated stable ID for the time of an activation.
-	 *
-	 * The reason is, that we don't want the stable-id to change as long
-	 * as the device is active.
-	 *
-	 * Especially with ${RANDOM} stable-id we want to generate *one* configuration
-	 * for each activation. */
-	if (G_UNLIKELY (!priv->current_stable_id)) {
-		gs_free char *default_id = NULL;
-		gs_free char *generated = NULL;
-		NMUtilsStableType stable_type;
-		NMSettingConnection *s_con;
-		gboolean hwaddr_is_fake;
-		const char *hwaddr;
-		const char *stable_id;
-		const char *uuid;
-
-		s_con = nm_connection_get_setting_connection (connection);
-
-		stable_id = nm_setting_connection_get_stable_id (s_con);
-
-		if (!stable_id) {
-			default_id = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-			                                                    NM_CON_DEFAULT ("connection.stable-id"),
-			                                                    self);
-			stable_id = default_id;
-		}
-
-		uuid = nm_connection_get_uuid (connection);
-
-		/* the cloned-mac-address may be generated based on the stable-id.
-		 * Thus, at this point, we can only use the permanent MAC address
-		 * as seed. */
-		hwaddr = nm_device_get_permanent_hw_address_full (self, TRUE, &hwaddr_is_fake);
-
-		stable_type = nm_utils_stable_id_parse (stable_id,
-		                                        nm_device_get_ip_iface (self),
-		                                        !hwaddr_is_fake ? hwaddr : NULL,
-		                                        nm_utils_boot_id_str (),
-		                                        uuid,
-		                                        &generated);
-
-		/* current_stable_id_type is a bitfield! */
-		priv->current_stable_id_type = stable_type;
-		nm_assert (stable_type <= (NMUtilsStableType) 0x3);
-		nm_assert (stable_type + (NMUtilsStableType) 1 > (NMUtilsStableType) 0);
-		nm_assert (priv->current_stable_id_type == stable_type);
-
-		if (stable_type == NM_UTILS_STABLE_TYPE_UUID)
-			priv->current_stable_id = g_strdup (uuid);
-		else if (stable_type == NM_UTILS_STABLE_TYPE_STABLE_ID)
-			priv->current_stable_id = g_strdup (stable_id);
-		else if (stable_type == NM_UTILS_STABLE_TYPE_GENERATED)
-			priv->current_stable_id = nm_str_realloc (nm_utils_stable_id_generated_complete (generated));
-		else {
-			nm_assert (stable_type == NM_UTILS_STABLE_TYPE_RANDOM);
-			priv->current_stable_id = nm_str_realloc (nm_utils_stable_id_random ());
-		}
-		_LOGT (LOGD_DEVICE,
-		       "stable-id: type=%d, \"%s\""
-		       "%s%s%s",
-		       (int) priv->current_stable_id_type,
-		       priv->current_stable_id,
-		       NM_PRINT_FMT_QUOTED (stable_type == NM_UTILS_STABLE_TYPE_GENERATED, " from \"", generated, "\"", ""));
-	}
-
-	nm_assert (priv->current_stable_id);
-	*out_stable_type = priv->current_stable_id_type;
-	return priv->current_stable_id;
 }
 
 /*****************************************************************************/
@@ -2935,141 +3919,6 @@ nm_device_get_route_metric (NMDevice *self,
 	                                                       nm_device_get_device_type (self));
 out:
 	return nm_utils_ip_route_metric_normalize (addr_family, route_metric);
-}
-
-static NMSettingConnectionMdns
-_prop_get_connection_mdns (NMDevice *self)
-{
-	NMConnection *connection;
-	NMSettingConnectionMdns mdns = NM_SETTING_CONNECTION_MDNS_DEFAULT;
-
-	g_return_val_if_fail (NM_IS_DEVICE (self), NM_SETTING_CONNECTION_MDNS_DEFAULT);
-
-	connection = nm_device_get_applied_connection (self);
-	if (connection)
-		mdns = nm_setting_connection_get_mdns (nm_connection_get_setting_connection (connection));
-	if (mdns != NM_SETTING_CONNECTION_MDNS_DEFAULT)
-		return mdns;
-
-	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-	                                                    NM_CON_DEFAULT ("connection.mdns"),
-	                                                    self,
-	                                                    NM_SETTING_CONNECTION_MDNS_NO,
-	                                                    NM_SETTING_CONNECTION_MDNS_YES,
-	                                                    NM_SETTING_CONNECTION_MDNS_DEFAULT);
-}
-
-static NMSettingConnectionLlmnr
-_prop_get_connection_llmnr (NMDevice *self)
-{
-	NMConnection *connection;
-	NMSettingConnectionLlmnr llmnr = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
-
-	g_return_val_if_fail (NM_IS_DEVICE (self), NM_SETTING_CONNECTION_LLMNR_DEFAULT);
-
-	connection = nm_device_get_applied_connection (self);
-	if (connection)
-		llmnr = nm_setting_connection_get_llmnr (nm_connection_get_setting_connection (connection));
-	if (llmnr != NM_SETTING_CONNECTION_LLMNR_DEFAULT)
-		return llmnr;
-
-	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-	                                                    NM_CON_DEFAULT ("connection.llmnr"),
-	                                                    self,
-	                                                    NM_SETTING_CONNECTION_LLMNR_NO,
-	                                                    NM_SETTING_CONNECTION_LLMNR_YES,
-	                                                    NM_SETTING_CONNECTION_LLMNR_DEFAULT);
-}
-
-static guint32
-_prop_get_ipvx_route_table (NMDevice *self,
-                  int addr_family)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NMDeviceClass *klass;
-	NMConnection *connection;
-	NMSettingIPConfig *s_ip;
-	guint32 route_table = 0;
-	gboolean is_user_config = TRUE;
-	NMSettingConnection *s_con;
-	NMSettingVrf *s_vrf;
-
-	nm_assert_addr_family (addr_family);
-
-	/* the route table setting affects how we sync routes. We shall
-	 * not change it while the device is active, hence, cache it. */
-	if (addr_family == AF_INET) {
-		if (priv->v4_route_table_initialized)
-			return priv->v4_route_table;
-	} else {
-		if (priv->v6_route_table_initialized)
-			return priv->v6_route_table;
-	}
-
-	connection = nm_device_get_applied_connection (self);
-	if (connection) {
-		s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
-		if (s_ip)
-			route_table = nm_setting_ip_config_get_route_table (s_ip);
-	}
-	if (route_table == 0u) {
-		gint64 v;
-
-		v = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-		                                                   addr_family == AF_INET
-		                                                 ? NM_CON_DEFAULT ("ipv4.route-table")
-		                                                 : NM_CON_DEFAULT ("ipv6.route-table"),
-		                                                 self,
-		                                                 0,
-		                                                 G_MAXUINT32,
-		                                                 -1);
-		if (v != -1) {
-			route_table = v;
-			is_user_config = FALSE;
-		}
-	}
-
-	if (   route_table == 0u
-	    && connection
-	    && (s_con = nm_connection_get_setting_connection (connection))
-	    && (nm_streq0 (nm_setting_connection_get_slave_type (s_con), NM_SETTING_VRF_SETTING_NAME)
-	    && priv->master
-	    && nm_device_get_device_type (priv->master) == NM_DEVICE_TYPE_VRF)) {
-		const NMPlatformLnkVrf *lnk;
-
-		lnk = nm_platform_link_get_lnk_vrf (nm_device_get_platform (self),
-		                                    nm_device_get_ifindex (priv->master),
-		                                    NULL);
-
-		if (lnk)
-			route_table = lnk->table;
-	}
-
-	if (   route_table == 0u
-	    && connection
-	    && (s_vrf = (NMSettingVrf *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VRF))) {
-		route_table = nm_setting_vrf_get_table (s_vrf);
-	}
-
-	klass = NM_DEVICE_GET_CLASS (self);
-	if (klass->coerce_route_table)
-		route_table = klass->coerce_route_table (self, addr_family, route_table, is_user_config);
-
-	if (addr_family == AF_INET) {
-		priv->v4_route_table_initialized = TRUE;
-		priv->v4_route_table = route_table;
-	} else {
-		priv->v6_route_table_initialized = TRUE;
-		priv->v6_route_table = route_table;
-	}
-
-	_LOGT (LOGD_DEVICE,
-	       "ipv%c.route-table = %u%s",
-	       addr_family == AF_INET ? '4' : '6',
-	       (guint) (route_table ?: RT_TABLE_MAIN),
-	       route_table != 0u ? "" : " (policy routing not enabled)");
-
-	return route_table;
 }
 
 guint32
@@ -7253,33 +8102,6 @@ lldp_neighbors_changed (NMLldpListener *lldp_listener, GParamSpec *pspec,
 	_notify (self, PROP_LLDP_NEIGHBORS);
 }
 
-static gboolean
-_prop_get_connection_lldp (NMDevice *self)
-{
-	NMConnection *connection;
-	NMSettingConnection *s_con;
-	NMSettingConnectionLldp lldp = NM_SETTING_CONNECTION_LLDP_DEFAULT;
-
-	connection = nm_device_get_applied_connection (self);
-	g_return_val_if_fail (connection, FALSE);
-
-	s_con = nm_connection_get_setting_connection (connection);
-	g_return_val_if_fail (s_con, FALSE);
-
-	lldp = nm_setting_connection_get_lldp (s_con);
-	if (lldp == NM_SETTING_CONNECTION_LLDP_DEFAULT) {
-		lldp = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-		                                                    NM_CON_DEFAULT ("connection.lldp"),
-		                                                    self,
-		                                                    NM_SETTING_CONNECTION_LLDP_DEFAULT,
-		                                                    NM_SETTING_CONNECTION_LLDP_ENABLE_RX,
-		                                                    NM_SETTING_CONNECTION_LLDP_DEFAULT);
-		if (lldp == NM_SETTING_CONNECTION_LLDP_DEFAULT)
-			lldp = NM_SETTING_CONNECTION_LLDP_DISABLE;
-	}
-	return lldp == NM_SETTING_CONNECTION_LLDP_ENABLE_RX;
-}
-
 static NMPlatformVF *
 sriov_vf_config_to_platform (NMDevice *self,
                              NMSriovVF *vf,
@@ -7844,30 +8666,6 @@ nm_device_ip_method_failed (NMDevice *self,
 }
 
 /*****************************************************************************/
-/* IPv4 DAD stuff */
-
-static guint
-_prop_get_ipv4_dad_timeout (NMDevice *self)
-{
-	NMConnection *connection;
-	NMSettingIPConfig *s_ip4 = NULL;
-	int timeout = -1;
-
-	connection = nm_device_get_applied_connection (self);
-	if (connection)
-		s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	if (s_ip4)
-		timeout = nm_setting_ip_config_get_dad_timeout (s_ip4);
-	if (timeout >= 0)
-		return timeout;
-
-	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-	                                                    NM_CON_DEFAULT ("ipv4.dad-timeout"),
-	                                                    self,
-	                                                    0,
-	                                                    NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX,
-	                                                    0);
-}
 
 static void
 acd_data_destroy (gpointer ptr)
@@ -8256,52 +9054,6 @@ ensure_con_ip_config (NMDevice *self, int addr_family)
 }
 
 /*****************************************************************************/
-/* DHCPv4 stuff */
-
-static guint32
-_prop_get_ipvx_dhcp_timeout (NMDevice *self, int addr_family)
-{
-	NMDeviceClass *klass;
-	NMConnection *connection;
-	int timeout_i;
-	guint32 timeout;
-
-	nm_assert (NM_IS_DEVICE (self));
-	nm_assert_addr_family (addr_family);
-
-	connection = nm_device_get_applied_connection (self);
-
-	timeout_i  = nm_setting_ip_config_get_dhcp_timeout (nm_connection_get_setting_ip_config (connection, addr_family));
-	nm_assert (timeout_i >= 0 && timeout_i <= G_MAXINT32);
-
-	timeout = (guint32) timeout_i;
-	if (timeout)
-		goto out;
-
-	timeout = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-	                                                       addr_family == AF_INET
-	                                                         ? NM_CON_DEFAULT ("ipv4.dhcp-timeout")
-	                                                         : NM_CON_DEFAULT ("ipv6.dhcp-timeout"),
-	                                                       self,
-	                                                       0, G_MAXINT32, 0);
-	if (timeout)
-		goto out;
-
-	klass = NM_DEVICE_GET_CLASS (self);
-	if (klass->get_dhcp_timeout_for_device) {
-		timeout = klass->get_dhcp_timeout_for_device (self, addr_family);
-		if (timeout)
-			goto out;
-	}
-
-	timeout = NM_DHCP_TIMEOUT_DEFAULT;
-
-out:
-	G_STATIC_ASSERT_EXPR (G_MAXINT32 == NM_DHCP_TIMEOUT_INFINITY);
-	nm_assert (timeout > 0);
-	nm_assert (timeout <= G_MAXINT32);
-	return timeout;
-}
 
 static void
 dhcp4_cleanup (NMDevice *self, CleanupType cleanup_type, gboolean release)
@@ -8801,390 +9553,6 @@ dhcp4_state_changed (NMDhcpClient *client,
 	}
 }
 
-/**
- * _prop_get_ipvx_dhcp_iaid:
- * @self: the #NMDevice
- * @addr_family: the address family
- * @connection: the connection
- * @out_is_explicit: on return, %TRUE if the user set a valid IAID in
- *   the connection or in global configuration; %FALSE if the connection
- *   property was empty and no valid global configuration was provided.
- *
- * Returns: a IAID value for this device and the given connection.
- */
-static guint32
-_prop_get_ipvx_dhcp_iaid (NMDevice *self,
-                          int addr_family,
-                          NMConnection *connection,
-                          gboolean *out_is_explicit)
-{
-	NMSettingIPConfig *s_ip;
-	const char *iaid_str;
-	gs_free char *iaid_str_free = NULL;
-	guint32 iaid;
-	const char *iface;
-	const char *fail_reason;
-	gboolean is_explicit = TRUE;
-
-	s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
-	iaid_str = nm_setting_ip_config_get_dhcp_iaid (s_ip);
-	if (!iaid_str) {
-		iaid_str_free = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-		                                                         addr_family == AF_INET
-		                                                       ? NM_CON_DEFAULT ("ipv4.dhcp-iaid")
-		                                                       : NM_CON_DEFAULT ("ipv6.dhcp-iaid"),
-		                                                       self);
-		iaid_str = iaid_str_free;
-		if (!iaid_str) {
-			iaid_str = NM_IAID_IFNAME;
-			is_explicit = FALSE;
-		} else if (!_nm_utils_iaid_verify (iaid_str, NULL)) {
-			_LOGW (LOGD_DEVICE, "invalid global default '%s' for ipv%c.dhcp-iaid",
-			       iaid_str,
-			       nm_utils_addr_family_to_char (addr_family));
-			iaid_str = NM_IAID_IFNAME;
-			is_explicit = FALSE;
-		}
-	}
-
-	if (nm_streq0 (iaid_str, NM_IAID_MAC)) {
-		const NMPlatformLink *pllink;
-
-		pllink = nm_platform_link_get (nm_device_get_platform (self),
-		                               nm_device_get_ip_ifindex (self));
-		if (!pllink || pllink->l_address.len < 4) {
-			fail_reason = "invalid link-layer address";
-			goto out_fail;
-		}
-
-		/* @iaid is in native endianness. Use unaligned_read_be32()
-		 * so that the IAID for a given MAC address is the same on
-		 * BE and LE machines. */
-		iaid = unaligned_read_be32 (&pllink->l_address.data[pllink->l_address.len - 4]);
-		goto out_good;
-	} else if (nm_streq0 (iaid_str, NM_IAID_PERM_MAC)) {
-		guint8 hwaddr_buf[NM_UTILS_HWADDR_LEN_MAX];
-		const char *hwaddr_str;
-		gsize hwaddr_len;
-
-		hwaddr_str = nm_device_get_permanent_hw_address (self);
-		if (!hwaddr_str) {
-			fail_reason = "no permanent link-layer address";
-			goto out_fail;
-		}
-
-		if (!_nm_utils_hwaddr_aton (hwaddr_str, hwaddr_buf, sizeof (hwaddr_buf), &hwaddr_len))
-			g_return_val_if_reached (0);
-
-		if (hwaddr_len < 4) {
-			fail_reason = "invalid link-layer address";
-			goto out_fail;
-		}
-
-		iaid = unaligned_read_be32 (&hwaddr_buf[hwaddr_len - 4]);
-		goto out_good;
-	}  else if (nm_streq (iaid_str, "stable")) {
-		nm_auto_free_checksum GChecksum *sum = NULL;
-		guint8 digest[NM_UTILS_CHECKSUM_LENGTH_SHA1];
-		NMUtilsStableType stable_type;
-		const char *stable_id;
-		guint32 salted_header;
-		const guint8 *host_id;
-		gsize host_id_len;
-
-		stable_id = _prop_get_connection_stable_id (self, connection, &stable_type);
-		salted_header = htonl (53390459 + stable_type);
-		nm_utils_host_id_get (&host_id, &host_id_len);
-		iface = nm_device_get_ip_iface (self);
-
-		sum = g_checksum_new (G_CHECKSUM_SHA1);
-		g_checksum_update (sum, (const guchar *) &salted_header, sizeof (salted_header));
-		g_checksum_update (sum, (const guchar *) stable_id, strlen (stable_id) + 1);
-		g_checksum_update (sum, (const guchar *) iface, strlen (iface) + 1);
-		g_checksum_update (sum, (const guchar *) host_id, host_id_len);
-		nm_utils_checksum_get_digest (sum, digest);
-
-		iaid = unaligned_read_be32 (digest);
-		goto out_good;
-	} else if ((iaid = _nm_utils_ascii_str_to_int64 (iaid_str, 10, 0, G_MAXUINT32, -1)) != -1) {
-		goto out_good;
-	} else {
-		iface = nm_device_get_ip_iface (self);
-		iaid = nm_utils_create_dhcp_iaid (TRUE,
-		                                  (const guint8 *) iface,
-		                                  strlen (iface));
-		goto out_good;
-	}
-
-out_fail:
-	nm_assert (fail_reason);
-	_LOGW (  addr_family == AF_INET
-	       ? (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4)
-	       : (LOGD_DEVICE | LOGD_DHCP6 | LOGD_IP6),
-	       "ipv%c.dhcp-iaid: failure to generate IAID: %s. Using interface-name based IAID",
-	       nm_utils_addr_family_to_char (addr_family), fail_reason);
-	is_explicit = FALSE;
-	iface = nm_device_get_ip_iface (self);
-	iaid = nm_utils_create_dhcp_iaid (TRUE,
-	                                  (const guint8 *) iface,
-	                                  strlen (iface));
-out_good:
-	_LOGD (  addr_family == AF_INET
-	       ? (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4)
-	       : (LOGD_DEVICE | LOGD_DHCP6 | LOGD_IP6),
-	       "ipv%c.dhcp-iaid: using %u (0x%08x) IAID (str: '%s', explicit %d)",
-	       nm_utils_addr_family_to_char (addr_family), iaid, iaid,
-	       iaid_str, is_explicit);
-	NM_SET_OUT (out_is_explicit, is_explicit);
-	return iaid;
-}
-
-static NMDhcpHostnameFlags
-_prop_get_ipvx_dhcp_hostname_flags (NMDevice *self, int addr_family)
-{
-	NMConnection *connection;
-	NMSettingIPConfig *s_ip;
-	NMDhcpHostnameFlags flags;
-	gs_free_error GError *error = NULL;
-
-	g_return_val_if_fail (NM_IS_DEVICE (self), NM_DHCP_HOSTNAME_FLAG_NONE);
-
-	connection = nm_device_get_applied_connection (self);
-	s_ip = nm_connection_get_setting_ip_config (connection, addr_family);
-	g_return_val_if_fail (s_ip, NM_DHCP_HOSTNAME_FLAG_NONE);
-
-	if (!nm_setting_ip_config_get_dhcp_send_hostname (s_ip))
-		return NM_DHCP_HOSTNAME_FLAG_NONE;
-
-	flags = nm_setting_ip_config_get_dhcp_hostname_flags (s_ip);
-	if (flags != NM_DHCP_HOSTNAME_FLAG_NONE)
-		return flags;
-
-	flags = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-	                                                     addr_family == AF_INET
-	                                                       ? NM_CON_DEFAULT ("ipv4.dhcp-hostname-flags")
-	                                                       : NM_CON_DEFAULT ("ipv6.dhcp-hostname-flags"),
-	                                                     self,
-	                                                     0, NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS,
-	                                                     0);
-
-	if (!_nm_utils_validate_dhcp_hostname_flags (flags, addr_family, &error)) {
-		_LOGW (LOGD_DEVICE, "invalid global default value 0x%x for ipv%d.%s: %s",
-		       (guint) flags,
-		       addr_family == AF_INET ? 4 : 6,
-		       NM_SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS,
-		       error->message);
-		flags = NM_DHCP_HOSTNAME_FLAG_NONE;
-	}
-
-	if (flags != NM_DHCP_HOSTNAME_FLAG_NONE)
-		return flags;
-
-	if (addr_family == AF_INET)
-		return NM_DHCP_HOSTNAME_FLAGS_FQDN_DEFAULT_IP4;
-	else
-		return NM_DHCP_HOSTNAME_FLAGS_FQDN_DEFAULT_IP6;
-}
-
-static const char *
-_prop_get_connection_mud_url (NMDevice *self,
-                              NMSettingConnection *s_con,
-                              char **out_mud_url)
-{
-	const char *mud_url;
-	gs_free char *s = NULL;
-
-	nm_assert (out_mud_url && !*out_mud_url);
-
-	mud_url = nm_setting_connection_get_mud_url (s_con);
-
-	if (mud_url) {
-		if (nm_streq (mud_url, NM_CONNECTION_MUD_URL_NONE))
-			return NULL;
-		return mud_url;
-	}
-
-	s = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-	                                           NM_CON_DEFAULT ("connection.mud-url"),
-	                                           self);
-	if (s) {
-		if (nm_streq (s, NM_CONNECTION_MUD_URL_NONE))
-			return NULL;
-		if (nm_sd_http_url_is_valid_https (s))
-			return (*out_mud_url = g_steal_pointer (&s));
-	}
-
-	return NULL;
-}
-
-static GBytes *
-_prop_get_ipv4_dhcp_client_id (NMDevice *self,
-                               NMConnection *connection,
-                               GBytes *hwaddr)
-{
-	NMSettingIPConfig *s_ip4;
-	const char *client_id;
-	gs_free char *client_id_default = NULL;
-	guint8 *client_id_buf;
-	const char *fail_reason;
-	guint8 hwaddr_bin_buf[NM_UTILS_HWADDR_LEN_MAX];
-	const guint8 *hwaddr_bin;
-	int arp_type;
-	gsize hwaddr_len;
-	GBytes *result;
-	gs_free char *logstr1 = NULL;
-
-	s_ip4 = nm_connection_get_setting_ip4_config (connection);
-	client_id = nm_setting_ip4_config_get_dhcp_client_id (NM_SETTING_IP4_CONFIG (s_ip4));
-
-	if (!client_id) {
-		client_id_default = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-		                                                           NM_CON_DEFAULT ("ipv4.dhcp-client-id"),
-		                                                           self);
-		if (client_id_default && client_id_default[0]) {
-			/* a non-empty client-id is always valid, see nm_dhcp_utils_client_id_string_to_bytes().  */
-			client_id = client_id_default;
-		}
-	}
-
-	if (!client_id) {
-		_LOGD (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4,
-		       "ipv4.dhcp-client-id: no explicit client-id configured");
-		return NULL;
-	}
-
-	if (nm_streq (client_id, "mac")) {
-		if (!hwaddr) {
-			fail_reason = "missing link-layer address";
-			goto out_fail;
-		}
-
-		hwaddr_bin = g_bytes_get_data (hwaddr, &hwaddr_len);
-		arp_type = nm_utils_arp_type_detect_from_hwaddrlen (hwaddr_len);
-		if (arp_type < 0) {
-			fail_reason = "unsupported link-layer address";
-			goto out_fail;
-		}
-
-		result = nm_utils_dhcp_client_id_mac (arp_type, hwaddr_bin, hwaddr_len);
-		goto out_good;
-	}
-
-	if (nm_streq (client_id, "perm-mac")) {
-		const char *hwaddr_str;
-
-		hwaddr_str = nm_device_get_permanent_hw_address (self);
-		if (!hwaddr_str) {
-			fail_reason = "missing permanent link-layer address";
-			goto out_fail;
-		}
-
-		if (!_nm_utils_hwaddr_aton (hwaddr_str, hwaddr_bin_buf, sizeof (hwaddr_bin_buf), &hwaddr_len))
-			g_return_val_if_reached (NULL);
-
-		arp_type = nm_utils_arp_type_detect_from_hwaddrlen (hwaddr_len);
-		if (arp_type < 0) {
-			fail_reason = "unsupported permanent link-layer address";
-			goto out_fail;
-		}
-
-		result = nm_utils_dhcp_client_id_mac (arp_type, hwaddr_bin_buf, hwaddr_len);
-		goto out_good;
-	}
-
-	if (nm_streq (client_id, "duid")) {
-		guint32 iaid = _prop_get_ipvx_dhcp_iaid (self, AF_INET, connection, NULL);
-
-		result = nm_utils_dhcp_client_id_systemd_node_specific (iaid);
-		goto out_good;
-	}
-
-	if (nm_streq (client_id, "stable")) {
-		nm_auto_free_checksum GChecksum *sum = NULL;
-		guint8 digest[NM_UTILS_CHECKSUM_LENGTH_SHA1];
-		NMUtilsStableType stable_type;
-		const char *stable_id;
-		guint32 salted_header;
-		const guint8 *host_id;
-		gsize host_id_len;
-
-		stable_id = _prop_get_connection_stable_id (self, connection, &stable_type);
-		salted_header = htonl (2011610591 + stable_type);
-		nm_utils_host_id_get (&host_id, &host_id_len);
-
-		sum = g_checksum_new (G_CHECKSUM_SHA1);
-		g_checksum_update (sum, (const guchar *) &salted_header, sizeof (salted_header));
-		g_checksum_update (sum, (const guchar *) stable_id, strlen (stable_id) + 1);
-		g_checksum_update (sum, (const guchar *) host_id, host_id_len);
-		nm_utils_checksum_get_digest (sum, digest);
-
-		client_id_buf = g_malloc (1 + 15);
-		client_id_buf[0] = 0;
-		memcpy (&client_id_buf[1], digest, 15);
-		result = g_bytes_new_take (client_id_buf, 1 + 15);
-		goto out_good;
-	}
-
-	result = nm_dhcp_utils_client_id_string_to_bytes (client_id);
-	goto out_good;
-
-out_fail:
-	nm_assert (fail_reason);
-	_LOGW (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4,
-	       "ipv4.dhcp-client-id: failure to generate client id (%s). Use random client id",
-	       fail_reason);
-	client_id_buf = g_malloc (1 + 15);
-	client_id_buf[0] = 0;
-	nm_utils_random_bytes (&client_id_buf[1], 15);
-	result = g_bytes_new_take (client_id_buf, 1 + 15);
-
-out_good:
-	nm_assert (result);
-	_LOGD (LOGD_DEVICE | LOGD_DHCP4 | LOGD_IP4,
-	       "ipv4.dhcp-client-id: use \"%s\" client ID: %s",
-	       client_id,
-	       (logstr1 = nm_dhcp_utils_duid_to_string (result)));
-	return result;
-}
-
-static GBytes *
-_prop_get_ipv4_dhcp_vendor_class_identifier (NMDevice *self, NMSettingIP4Config *s_ip4)
-{
-	gs_free char *config_data_prop = NULL;
-	gs_free char *to_free = NULL;
-	const char *conn_prop;
-	GBytes *bytes = NULL;
-	const char *bin;
-	gsize len;
-
-	conn_prop = nm_setting_ip4_config_get_dhcp_vendor_class_identifier (s_ip4);
-
-	if (!conn_prop) {
-		/* set in NetworkManager.conf ? */
-		config_data_prop = nm_config_data_get_connection_default (
-		    NM_CONFIG_GET_DATA,
-		    NM_CON_DEFAULT ("ipv4.dhcp-vendor-class-identifier"),
-		    self);
-
-		if (   config_data_prop
-		    && nm_utils_validate_dhcp4_vendor_class_id (config_data_prop, NULL))
-			conn_prop = config_data_prop;
-	}
-
-	if (conn_prop) {
-		bin = nm_utils_buf_utf8safe_unescape (conn_prop,
-		                                      NM_UTILS_STR_UTF8_SAFE_FLAG_NONE,
-		                                      &len,
-		                                      (gpointer *) &to_free);
-		if (to_free)
-			bytes = g_bytes_new_take (g_steal_pointer (&to_free), len);
-		else
-			bytes = g_bytes_new (bin, len);
-	}
-
-	return bytes;
-}
-
 static NMActStageReturn
 dhcp4_start (NMDevice *self)
 {
@@ -9662,215 +10030,6 @@ dhcp6_prefix_delegated (NMDhcpClient *client,
 	 * pool in NMPolicy, which decides about subnet allocation
 	 * on the shared devices. */
 	g_signal_emit (self, signals[IP6_PREFIX_DELEGATED], 0, prefix);
-}
-
-/*****************************************************************************/
-
-static GBytes *
-_prop_get_ipv6_dhcp_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr, gboolean *out_enforce)
-{
-	NMSettingIPConfig *s_ip6;
-	const char *duid;
-	gs_free char *duid_default = NULL;
-	const char *duid_error;
-	GBytes *duid_out;
-	gboolean duid_enforce = TRUE;
-	gs_free char *logstr1 = NULL;
-	const guint8 *hwaddr_bin;
-	gsize hwaddr_len;
-	int arp_type;
-
-	s_ip6 = nm_connection_get_setting_ip6_config (connection);
-	duid = nm_setting_ip6_config_get_dhcp_duid (NM_SETTING_IP6_CONFIG (s_ip6));
-
-	if (!duid) {
-		duid_default = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-		                                                      NM_CON_DEFAULT ("ipv6.dhcp-duid"),
-		                                                      self);
-		duid = duid_default;
-		if (!duid)
-			duid = "lease";
-	}
-
-	if (nm_streq (duid, "lease")) {
-		duid_enforce = FALSE;
-		duid_out = nm_utils_generate_duid_from_machine_id ();
-		goto out_good;
-	}
-
-	if (!_nm_utils_dhcp_duid_valid (duid, &duid_out)) {
-		duid_error = "invalid duid";
-		goto out_fail;
-	}
-
-	if (duid_out)
-		goto out_good;
-
-	if (NM_IN_STRSET (duid, "ll", "llt")) {
-		if (!hwaddr) {
-			duid_error = "missing link-layer address";
-			goto out_fail;
-		}
-
-		hwaddr_bin = g_bytes_get_data (hwaddr, &hwaddr_len);
-		arp_type = nm_utils_arp_type_detect_from_hwaddrlen (hwaddr_len);
-		if (arp_type < 0) {
-			duid_error = "unsupported link-layer address";
-			goto out_fail;
-		}
-
-		if (nm_streq (duid, "ll"))
-			duid_out = nm_utils_generate_duid_ll (arp_type, hwaddr_bin, hwaddr_len);
-		else {
-			duid_out = nm_utils_generate_duid_llt (arp_type, hwaddr_bin, hwaddr_len,
-			                                       nm_utils_host_id_get_timestamp_ns () / NM_UTILS_NSEC_PER_SEC);
-		}
-
-		goto out_good;
-	}
-
-	if (NM_IN_STRSET (duid, "stable-ll", "stable-llt", "stable-uuid")) {
-		/* preferably, we would salt the checksum differently for each @duid type. We missed
-		 * to do that initially, so most types use the DEFAULT_SALT.
-		 *
-		 * Implementations that are added later, should use a distinct salt instead,
-		 * like "stable-ll"/"stable-llt" with ARPHRD_INFINIBAND below. */
-		const guint32 DEFAULT_SALT = 670531087u;
-		nm_auto_free_checksum GChecksum *sum = NULL;
-		NMUtilsStableType stable_type;
-		const char *stable_id = NULL;
-		guint32 salted_header;
-		const guint8 *host_id;
-		gsize host_id_len;
-		union {
-			guint8 sha256[NM_UTILS_CHECKSUM_LENGTH_SHA256];
-			guint8 hwaddr_eth[ETH_ALEN];
-			guint8 hwaddr_infiniband[INFINIBAND_ALEN];
-			NMUuid uuid;
-			struct _nm_packed {
-				guint8 hwaddr[ETH_ALEN];
-				guint32 timestamp;
-			} llt_eth;
-			struct _nm_packed {
-				guint8 hwaddr[INFINIBAND_ALEN];
-				guint32 timestamp;
-			} llt_infiniband;
-		} digest;
-
-		stable_id = _prop_get_connection_stable_id (self, connection, &stable_type);
-
-		if (NM_IN_STRSET (duid, "stable-ll", "stable-llt")) {
-			/* for stable LL/LLT DUIDs, we still need a hardware address to detect
-			 * the arp-type. Alternatively, we would be able to detect it based on
-			 * other means (e.g. NMDevice type), but instead require the hardware
-			 * address to be present. This is at least consistent with the "ll"/"llt"
-			 * modes above. */
-			if (!hwaddr) {
-				duid_error = "missing link-layer address";
-				goto out_fail;
-			}
-			if ((arp_type = nm_utils_arp_type_detect_from_hwaddrlen (g_bytes_get_size (hwaddr))) < 0) {
-				duid_error = "unsupported link-layer address";
-				goto out_fail;
-			}
-
-			if (arp_type == ARPHRD_ETHER)
-				salted_header = DEFAULT_SALT;
-			else {
-				nm_assert (arp_type == ARPHRD_INFINIBAND);
-				salted_header = 0x42492CEFu + ((guint32) arp_type);
-			}
-		} else {
-			salted_header = DEFAULT_SALT;
-			arp_type = -1;
-		}
-
-		salted_header = htonl (salted_header + ((guint32) stable_type));
-
-		nm_utils_host_id_get (&host_id, &host_id_len);
-
-		sum = g_checksum_new (G_CHECKSUM_SHA256);
-		g_checksum_update (sum, (const guchar *) &salted_header, sizeof (salted_header));
-		g_checksum_update (sum, (const guchar *) stable_id, -1);
-		g_checksum_update (sum, (const guchar *) host_id, host_id_len);
-		nm_utils_checksum_get_digest (sum, digest.sha256);
-
-		G_STATIC_ASSERT_EXPR (sizeof (digest) == sizeof (digest.sha256));
-
-		if (nm_streq (duid, "stable-ll")) {
-			switch (arp_type) {
-			case ARPHRD_ETHER:
-				duid_out = nm_utils_generate_duid_ll (arp_type, digest.hwaddr_eth, sizeof (digest.hwaddr_eth));
-				break;
-			case ARPHRD_INFINIBAND:
-				duid_out = nm_utils_generate_duid_ll (arp_type, digest.hwaddr_infiniband, sizeof (digest.hwaddr_infiniband));
-				break;
-			default:
-				g_return_val_if_reached (NULL);
-			}
-		} else if (nm_streq (duid, "stable-llt")) {
-			gint64 time;
-			guint32 timestamp;
-
-#define EPOCH_DATETIME_THREE_YEARS  (356 * 24 * 3600 * 3)
-
-			/* We want a variable time between the host_id timestamp and three years
-			 * before. Let's compute the time (in seconds) from 0 to 3 years; then we'll
-			 * subtract it from the host_id timestamp.
-			 */
-			time = nm_utils_host_id_get_timestamp_ns () / NM_UTILS_NSEC_PER_SEC;
-
-			/* don't use too old timestamps. They cannot be expressed in DUID-LLT and
-			 * would all be truncated to zero. */
-			time = NM_MAX (time, NM_UTILS_EPOCH_DATETIME_200001010000 + EPOCH_DATETIME_THREE_YEARS);
-
-			switch (arp_type) {
-			case ARPHRD_ETHER:
-				timestamp = unaligned_read_be32 (&digest.llt_eth.timestamp);
-				time -= timestamp % EPOCH_DATETIME_THREE_YEARS;
-				duid_out = nm_utils_generate_duid_llt (arp_type, digest.llt_eth.hwaddr, sizeof (digest.llt_eth.hwaddr), time);
-				break;
-			case ARPHRD_INFINIBAND:
-				timestamp = unaligned_read_be32 (&digest.llt_infiniband.timestamp);
-				time -= timestamp % EPOCH_DATETIME_THREE_YEARS;
-				duid_out = nm_utils_generate_duid_llt (arp_type, digest.llt_infiniband.hwaddr, sizeof (digest.llt_infiniband.hwaddr), time);
-				break;
-			default:
-				g_return_val_if_reached (NULL);
-			}
-		} else {
-			nm_assert (nm_streq (duid, "stable-uuid"));
-			duid_out = nm_utils_generate_duid_uuid (&digest.uuid);
-		}
-
-		goto out_good;
-	}
-
-	g_return_val_if_reached (NULL);
-
-out_fail:
-	nm_assert (!duid_out && duid_error);
-	{
-		NMUuid uuid;
-
-		_LOGW (LOGD_IP6 | LOGD_DHCP6,
-		       "ipv6.dhcp-duid: failure to generate %s DUID: %s. Fallback to random DUID-UUID.",
-		       duid, duid_error);
-
-		nm_utils_random_bytes (&uuid, sizeof (uuid));
-		duid_out = nm_utils_generate_duid_uuid (&uuid);
-	}
-
-out_good:
-	nm_assert (duid_out);
-	_LOGD (LOGD_IP6 | LOGD_DHCP6,
-	       "ipv6.dhcp-duid: generate %s DUID '%s' (%s)",
-	       duid,
-	       (logstr1 = nm_dhcp_utils_duid_to_string (duid_out)),
-	       duid_enforce ? "enforcing" : "prefer lease");
-
-	NM_SET_OUT (out_enforce, duid_enforce);
-	return duid_out;
 }
 
 /*****************************************************************************/
@@ -10857,28 +11016,6 @@ ndisc_node_type (NMDevice *self)
 	return NM_NDISC_NODE_TYPE_HOST;
 }
 
-static gint32
-_prop_get_ipv6_ra_timeout (NMDevice *self)
-{
-	NMConnection *connection;
-	gint32 timeout;
-
-	G_STATIC_ASSERT_EXPR (NM_RA_TIMEOUT_DEFAULT == 0);
-	G_STATIC_ASSERT_EXPR (NM_RA_TIMEOUT_INFINITY == G_MAXINT32);
-
-	connection = nm_device_get_applied_connection (self);
-
-	timeout = nm_setting_ip6_config_get_ra_timeout (NM_SETTING_IP6_CONFIG (nm_connection_get_setting_ip6_config (connection)));
-	nm_assert (timeout >= 0);
-	if (timeout)
-		return timeout;
-
-	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-	                                                    NM_CON_DEFAULT ("ipv6.ra-timeout"),
-	                                                    self,
-	                                                    0, G_MAXINT32, 0);
-}
-
 static gboolean
 addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 {
@@ -11055,67 +11192,6 @@ set_nm_ipv6ll (NMDevice *self, gboolean enable)
 		}
 
 	}
-}
-
-/*****************************************************************************/
-
-static NMSettingIP6ConfigPrivacy
-_ip6_privacy_clamp (NMSettingIP6ConfigPrivacy use_tempaddr)
-{
-	switch (use_tempaddr) {
-	case NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED:
-	case NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR:
-	case NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR:
-		return use_tempaddr;
-	default:
-		return NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
-	}
-}
-
-static NMSettingIP6ConfigPrivacy
-_prop_get_ipv6_ip6_privacy (NMDevice *self)
-{
-	NMSettingIP6ConfigPrivacy ip6_privacy;
-	NMConnection *connection;
-
-	g_return_val_if_fail (self, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
-
-	/* 1.) First look at the per-connection setting. If it is not -1 (unknown),
-	 * use it. */
-	connection = nm_device_get_applied_connection (self);
-	if (connection) {
-		NMSettingIPConfig *s_ip6 = nm_connection_get_setting_ip6_config (connection);
-
-		if (s_ip6) {
-			ip6_privacy = nm_setting_ip6_config_get_ip6_privacy (NM_SETTING_IP6_CONFIG (s_ip6));
-			ip6_privacy = _ip6_privacy_clamp (ip6_privacy);
-			if (ip6_privacy != NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
-				return ip6_privacy;
-		}
-	}
-
-	/* 2.) use the default value from the configuration. */
-	ip6_privacy = nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
-	                                                           NM_CON_DEFAULT ("ipv6.ip6-privacy"),
-	                                                           self,
-	                                                           NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
-	                                                           NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
-	                                                           NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
-	if (ip6_privacy != NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
-		return ip6_privacy;
-
-	if (!nm_device_get_ip_ifindex (self))
-		return NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
-
-	/* 3.) No valid default-value configured. Fallback to reading sysctl.
-	 *
-	 * Instead of reading static config files in /etc, just read the current sysctl value.
-	 * This works as NM only writes to "/proc/sys/net/ipv6/conf/IFNAME/use_tempaddr", but leaves
-	 * the "default" entry untouched. */
-	ip6_privacy = nm_platform_sysctl_get_int32 (nm_device_get_platform (self),
-	                                            NMP_SYSCTL_PATHID_ABSOLUTE ("/proc/sys/net/ipv6/conf/default/use_tempaddr"),
-	                                            NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
-	return _ip6_privacy_clamp (ip6_privacy);
 }
 
 /*****************************************************************************/
@@ -17085,86 +17161,6 @@ nm_device_update_permanent_hw_address (NMDevice *self, gboolean force_freeze)
 
 notify_and_out:
 	_notify (self, PROP_PERM_HW_ADDRESS);
-}
-
-static const char *
-_prop_get_x_cloned_mac_address (NMDevice *self, NMConnection *connection, gboolean is_wifi, char **out_addr)
-{
-	NMSetting *setting;
-	const char *addr = NULL;
-
-	nm_assert (out_addr && !*out_addr);
-
-	setting = nm_connection_get_setting (connection,
-	                                     is_wifi ? NM_TYPE_SETTING_WIRELESS : NM_TYPE_SETTING_WIRED);
-	if (setting) {
-		addr = is_wifi
-		       ? nm_setting_wireless_get_cloned_mac_address ((NMSettingWireless *) setting)
-		       : nm_setting_wired_get_cloned_mac_address ((NMSettingWired *) setting);
-	}
-
-	if (!addr) {
-		gs_free char *a = NULL;
-
-		a = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-		                                             is_wifi
-		                                           ? NM_CON_DEFAULT ("wifi.cloned-mac-address")
-		                                           : NM_CON_DEFAULT ("ethernet.cloned-mac-address"),
-		                                           self);
-
-		addr = NM_CLONED_MAC_PRESERVE;
-
-		if (!a) {
-			if (is_wifi) {
-				NMSettingMacRandomization v;
-
-				/* for backward compatibility, read the deprecated wifi.mac-address-randomization setting. */
-				a = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-				                                           NM_CON_DEFAULT ("wifi.mac-address-randomization"),
-				                                           self);
-				v = _nm_utils_ascii_str_to_int64 (a, 10,
-				                                  NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
-				                                  NM_SETTING_MAC_RANDOMIZATION_ALWAYS,
-				                                  NM_SETTING_MAC_RANDOMIZATION_DEFAULT);
-				if (v == NM_SETTING_MAC_RANDOMIZATION_ALWAYS)
-					addr = NM_CLONED_MAC_RANDOM;
-			}
-		} else if (   NM_CLONED_MAC_IS_SPECIAL (a)
-		           || nm_utils_hwaddr_valid (a, ETH_ALEN))
-			addr = *out_addr = g_steal_pointer (&a);
-	}
-
-	return addr;
-}
-
-static const char *
-_prop_get_x_generate_mac_address_mask (NMDevice *self, NMConnection *connection, gboolean is_wifi, char **out_value)
-{
-	NMSetting *setting;
-	const char *value = NULL;
-	char *a;
-
-	nm_assert (out_value && !*out_value);
-
-	setting = nm_connection_get_setting (connection,
-	                                     is_wifi ? NM_TYPE_SETTING_WIRELESS : NM_TYPE_SETTING_WIRED);
-	if (setting) {
-		value = is_wifi
-		        ? nm_setting_wireless_get_generate_mac_address_mask ((NMSettingWireless *) setting)
-		        : nm_setting_wired_get_generate_mac_address_mask ((NMSettingWired *) setting);
-		if (value)
-			return value;
-	}
-
-	a = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
-	                                           is_wifi
-	                                               ? NM_CON_DEFAULT ("wifi.generate-mac-address-mask")
-	                                               : NM_CON_DEFAULT ("ethernet.generate-mac-address-mask"),
-	                                           self);
-	if (!a)
-		return NULL;
-	*out_value = a;
-	return a;
 }
 
 gboolean
