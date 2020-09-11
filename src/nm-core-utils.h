@@ -430,6 +430,26 @@ GBytes *nm_utils_dhcp_client_id_systemd_node_specific (guint32 iaid);
 
 /*****************************************************************************/
 
+/* RFC 3315 defines the epoch for the DUID-LLT time field on Jan 1st 2000. */
+#define NM_UTILS_EPOCH_DATETIME_200001010000  946684800
+
+struct _NMUuid;
+
+GBytes *nm_utils_generate_duid_llt (int arp_type,
+                                    const guint8 *hwaddr,
+                                    gsize hwaddr_len,
+                                    gint64 time);
+
+GBytes *nm_utils_generate_duid_ll (int arp_type,
+                                   const guint8 *hwaddr,
+                                   gsize hwaddr_len);
+
+GBytes *nm_utils_generate_duid_uuid (const struct _NMUuid *uuid);
+
+GBytes *nm_utils_generate_duid_from_machine_id (void);
+
+/*****************************************************************************/
+
 void nm_utils_array_remove_at_indexes (GArray *array, const guint *indexes_to_delete, gsize len);
 
 void nm_utils_setpgid (gpointer unused);

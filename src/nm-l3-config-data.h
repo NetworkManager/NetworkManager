@@ -486,6 +486,17 @@ gboolean nm_l3_config_data_set_dns_priority (NML3ConfigData *self,
                                              int addr_family,
                                              int dns_priority);
 
+struct _NMDhcpLease *nm_l3_config_data_get_dhcp_lease (const NML3ConfigData *self,
+                                                       int addr_family);
+
+gboolean nm_l3_config_data_set_dhcp_lease (NML3ConfigData *self,
+                                           int addr_family,
+                                           struct _NMDhcpLease *lease);
+
+gboolean nm_l3_config_data_set_dhcp_lease_from_options (NML3ConfigData *self,
+                                                        int addr_family,
+                                                        GHashTable *options_take);
+
 static inline const NMIPAddr *
 nmtst_l3_config_data_get_best_gateway (const NML3ConfigData *self,
                                        int addr_family)

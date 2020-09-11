@@ -480,15 +480,8 @@ nm_dhcp_client_set_state (NMDhcpClient *self,
 		}
 	}
 
-	if (   priv->addr_family == AF_INET6
-	    && NM_IN_SET (new_state, NM_DHCP_STATE_BOUND, NM_DHCP_STATE_EXTENDED)) {
-		char *start, *iaid;
-
-		iaid = g_hash_table_lookup (options, "iaid");
-		start = g_hash_table_lookup (options, "life_starts");
-		if (iaid && start)
-			event_id = g_strdup_printf ("%s|%s", iaid, start);
-	}
+	if (priv->addr_family == AF_INET6)
+		event_id = nm_dhcp_utils_get_dhcp6_event_id (options);
 
 	_LOGI ("state changed %s -> %s%s%s%s",
 	       state_to_string (priv->state),
@@ -500,8 +493,7 @@ nm_dhcp_client_set_state (NMDhcpClient *self,
 	               signals[SIGNAL_STATE_CHANGED], 0,
 	               new_state,
 	               ip_config,
-	               options,
-	               event_id);
+	               options);
 }
 
 static gboolean
@@ -1319,7 +1311,11 @@ nm_dhcp_client_class_init (NMDhcpClientClass *client_class)
 	                  G_SIGNAL_RUN_FIRST,
 	                  0,
 	                  NULL, NULL, NULL,
-	                  G_TYPE_NONE, 4, G_TYPE_UINT, G_TYPE_OBJECT, G_TYPE_HASH_TABLE, G_TYPE_STRING);
+	                  G_TYPE_NONE,
+	                  3,
+	                  G_TYPE_UINT,
+	                  G_TYPE_OBJECT,
+	                  G_TYPE_HASH_TABLE);
 
 	signals[SIGNAL_PREFIX_DELEGATED] =
 	    g_signal_new (NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED,

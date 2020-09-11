@@ -1668,6 +1668,11 @@ struct _NMPLookup;
 const struct _NMDedupMultiHeadEntry *nm_platform_lookup (NMPlatform *self,
                                                          const struct _NMPLookup *lookup);
 
+#define nm_platform_iter_obj_for_each(iter, self, lookup, obj) \
+	for (nm_dedup_multi_iter_init ((iter), nm_platform_lookup ((self), (lookup))); \
+	     nm_platform_dedup_multi_iter_next_obj ((iter), (obj), NMP_OBJECT_TYPE_UNKNOWN); \
+	     )
+
 gboolean nm_platform_lookup_predicate_routes_main (const NMPObject *obj,
                                                    gpointer user_data);
 gboolean nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel (const NMPObject *obj,
@@ -2157,5 +2162,10 @@ void nm_platform_ip4_dev_route_blacklist_set (NMPlatform *self,
                                               GPtrArray *ip4_dev_route_blacklist);
 
 struct _NMDedupMultiIndex *nm_platform_get_multi_idx (NMPlatform *self);
+
+/*****************************************************************************/
+
+gboolean nm_platform_ip6_address_match (const NMPlatformIP6Address *addr,
+                                        NMPlatformMatchFlags match_flag);
 
 #endif /* __NETWORKMANAGER_PLATFORM_H__ */

@@ -3018,6 +3018,34 @@ nm_l3cfg_commit_type_unregister (NML3Cfg *self,
 
 /*****************************************************************************/
 
+const NML3ConfigData *
+nm_l3cfg_get_combined_l3cd (NML3Cfg *self)
+{
+	nm_assert (NM_IS_L3CFG (self));
+
+	return self->priv.p->combined_l3cd;
+}
+
+const NMPObject *
+nm_l3cfg_get_best_default_route (NML3Cfg *self,
+                                 int addr_family)
+{
+	nm_assert (NM_IS_L3CFG (self));
+
+	/* we only consider the combined_l3cd. This is a merge of all the l3cd, and the one
+	 * with which we called nm_l3cfg_platform_commit() the last time.
+	 *
+	 * In the meantime, we might have changed the tracked l3_config_datas, but we didn't
+	 * nm_l3cfg_platform_commit() yet. These changes are ignored for this purpose, until
+	 * the user call nm_l3cfg_platform_commit() to re-commit the changes. */
+	if (!self->priv.p->combined_l3cd)
+		return NULL;
+
+	return nm_l3_config_data_get_best_default_route (self->priv.p->combined_l3cd, addr_family);
+}
+
+/*****************************************************************************/
+
 static void
 set_property (GObject *object,
               guint prop_id,

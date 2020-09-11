@@ -38,5 +38,7 @@ gboolean nm_dhcp_utils_get_leasefile_path (int addr_family,
 
 char **nm_dhcp_parse_search_list (guint8 *data, size_t n_data);
 
+char *nm_dhcp_utils_get_dhcp6_event_id (GHashTable *lease);
+
 #endif /* __NETWORKMANAGER_DHCP_UTILS_H__ */
 

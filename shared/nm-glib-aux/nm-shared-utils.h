@@ -1521,8 +1521,24 @@ nm_utils_strdict_get_keys (const GHashTable *hash,
 	                                                    out_length);
 }
 
-gboolean nm_utils_hashtable_same_keys (const GHashTable *a,
-                                       const GHashTable *b);
+gboolean nm_utils_hashtable_equal (const GHashTable *a,
+                                   const GHashTable *b,
+                                   GCompareDataFunc cmp_values,
+                                   gpointer user_data);
+
+static inline gboolean
+nm_utils_hashtable_same_keys (const GHashTable *a,
+                              const GHashTable *b)
+{
+	return nm_utils_hashtable_equal (a, b, NULL, NULL);
+}
+
+int nm_utils_hashtable_cmp (const GHashTable *a,
+                            const GHashTable *b,
+                            gboolean do_fast_precheck,
+                            GCompareDataFunc cmp_keys,
+                            GCompareDataFunc cmp_values,
+                            gpointer user_data);
 
 char **nm_utils_strv_make_deep_copied (const char **strv);
 
@@ -1564,14 +1580,14 @@ nm_g_array_len (const GArray *arr)
 
 #define nm_g_array_append_new(arr, type) \
 	({ \
-		GArray *_arr = (arr); \
-		gsize _l; \
+		GArray *const _arr = (arr); \
+		guint _len; \
 		\
 		nm_assert (_arr); \
-		_l = ((gsize) _arr->len) + 1u; \
-		nm_assert (_l > _arr->len); \
-		g_array_set_size (_arr, _l); \
-		&g_array_index (arr, type, _l); \
+		_len = _arr->len; \
+		nm_assert (_len < G_MAXUINT); \
+		g_array_set_size (_arr, _len + 1u); \
+		&g_array_index (arr, type, _len); \
 	})
 
 /*****************************************************************************/

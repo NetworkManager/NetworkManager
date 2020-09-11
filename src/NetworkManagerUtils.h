@@ -159,4 +159,65 @@ void nm_utils_ip_routes_to_dbus (int addr_family,
                                  GVariant **out_route_data,
                                  GVariant **out_routes);
 
+/*****************************************************************************/
+
+/* For now, all we track about a DHCP lease is the GHashTable with
+ * the options.
+ *
+ * We don't add a separate type for that, but we also don't want to use
+ * GHashTable directly (because most importantly leases should be immutable
+ * and passing a GHashTable pointer around neither makes it clear that
+ * this is a lease nor that it's immutable.
+ *
+ * Instead, add a simple opaque pointer and accessors that cast to a GHashTable.
+ *
+ * It has no overhead at run time, but gives some rudimentary type safety. */
+
+typedef struct _NMDhcpLease NMDhcpLease;
+
+static inline NMDhcpLease *
+nm_dhcp_lease_new_from_options (GHashTable *options_take)
+{
+	/* a NMDhcpLease is really just a GHashTable. But it's also supposed to be *immutable*.
+	 *
+	 * Hence, the API here takes over ownership of the reference to @options_take, that
+	 * is to emphasize that we acquire ownership of the hash, and it should not be modified
+	 * anymore. */
+	return (NMDhcpLease *) options_take;
+}
+
+static inline GHashTable *
+nm_dhcp_lease_get_options (NMDhcpLease *lease)
+{
+	return (GHashTable *) lease;
+}
+
+static inline void
+nm_dhcp_lease_ref (NMDhcpLease *lease)
+{
+	if (lease)
+		g_hash_table_ref ((GHashTable *) lease);
+}
+
+static inline void
+nm_dhcp_lease_unref (NMDhcpLease *lease)
+{
+	if (lease)
+		g_hash_table_unref ((GHashTable *) lease);
+}
+
+static inline const char *
+nm_dhcp_lease_lookup_option (NMDhcpLease *lease,
+                             const char *option)
+{
+	nm_assert (option);
+
+	return nm_g_hash_table_lookup ((GHashTable *) lease, option);
+}
+
+NM_AUTO_DEFINE_FCN (NMDhcpLease *, _nm_auto_unref_dhcplease, nm_dhcp_lease_unref);
+#define nm_auto_unref_dhcplease nm_auto (_nm_auto_unref_dhcplease)
+
+/*****************************************************************************/
+
 #endif /* __NETWORKMANAGER_UTILS_H__ */

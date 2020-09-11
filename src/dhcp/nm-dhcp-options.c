@@ -219,9 +219,9 @@ nm_dhcp_option_request_string (const NMDhcpOption *requests, guint option)
 
 void
 nm_dhcp_option_take_option (GHashTable *options,
-             const NMDhcpOption *requests,
-             guint option,
-             char *value)
+                            const NMDhcpOption *requests,
+                            guint option,
+                            char *value)
 {
 	nm_assert (options);
 	nm_assert (requests);

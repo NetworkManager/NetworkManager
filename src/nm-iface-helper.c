@@ -95,7 +95,6 @@ dhcp4_state_changed (NMDhcpClient *client,
                      NMDhcpState state,
                      NMIP4Config *ip4_config,
                      GHashTable *options,
-                     const char *event_id,
                      gpointer user_data)
 {
 	static NMIP4Config *last_config = NULL;

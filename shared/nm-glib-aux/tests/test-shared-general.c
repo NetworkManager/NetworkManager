@@ -986,6 +986,122 @@ test_strv_dup_packed (void)
 
 /*****************************************************************************/
 
+static int
+_hash_func_cmp_direct (gconstpointer a,
+                       gconstpointer b,
+                       gpointer user_data)
+{
+	NM_CMP_DIRECT (GPOINTER_TO_INT (a), GPOINTER_TO_INT (b));
+	return 0;
+}
+
+static void
+test_utils_hashtable_cmp (void)
+{
+	static struct {
+		int val_i;
+		const char *val_s;
+	} vals[] = {
+		{ 0, "0", },
+		{ 1, "1", },
+		{ 2, "2", },
+		{ 3, "3", },
+		{ 4, "4", },
+		{ 5, "5", },
+		{ 6, "6", },
+		{ 7, "7", },
+		{ 8, "8", },
+		{ 9, "9", },
+		{ 0, "a", },
+		{ 1, "a", },
+		{ 2, "a", },
+		{ 3, "a", },
+		{ 4, "a", },
+		{ 5, "a", },
+		{ 0, "0", },
+		{ 0, "1", },
+		{ 0, "2", },
+		{ 0, "3", },
+		{ 0, "4", },
+		{ 0, "5", },
+	};
+	guint test_run;
+	int is_num_key;
+
+	for (test_run = 0; test_run < 30; test_run++) {
+		for (is_num_key = 0; is_num_key < 2; is_num_key++) {
+			GHashFunc func_key_hash       =  is_num_key ? nm_direct_hash : nm_str_hash;
+			GEqualFunc func_key_equal     =  is_num_key ? g_direct_equal : g_str_equal;
+			GCompareDataFunc func_key_cmp =  is_num_key ? _hash_func_cmp_direct : (GCompareDataFunc) nm_strcmp_with_data;
+			GCompareDataFunc func_val_cmp = !is_num_key ? _hash_func_cmp_direct : (GCompareDataFunc) nm_strcmp_with_data;
+			gs_unref_hashtable GHashTable *h1 = NULL;
+			gs_unref_hashtable GHashTable *h2 = NULL;
+			gboolean has_same_keys;
+			guint i, n;
+
+			h1 = g_hash_table_new (func_key_hash, func_key_equal);
+			h2 = g_hash_table_new (func_key_hash, func_key_equal);
+
+			n = nmtst_get_rand_word_length (NULL);
+			for (i = 0; i < n; i++) {
+				typeof (vals[0]) *v = &vals[nmtst_get_rand_uint32 () % G_N_ELEMENTS (vals)];
+				gconstpointer v_key =  is_num_key ? GINT_TO_POINTER (v->val_i) : v->val_s;
+				gconstpointer v_val = !is_num_key ? GINT_TO_POINTER (v->val_i) : v->val_s;
+
+				g_hash_table_insert (h1, (gpointer) v_key, (gpointer) v_val);
+				g_hash_table_insert (h2, (gpointer) v_key, (gpointer) v_val);
+			}
+
+			g_assert (nm_utils_hashtable_same_keys (h1, h2));
+			g_assert (nm_utils_hashtable_equal (h1, h2, NULL, NULL));
+			g_assert (nm_utils_hashtable_equal (h1, h2, func_val_cmp, NULL));
+			g_assert (nm_utils_hashtable_cmp (h1, h2, FALSE, func_key_cmp, NULL, NULL) == 0);
+			g_assert (nm_utils_hashtable_cmp (h1, h2, TRUE, func_key_cmp, NULL, NULL) == 0);
+			g_assert (nm_utils_hashtable_cmp (h1, h2, FALSE, func_key_cmp, func_val_cmp, NULL) == 0);
+			g_assert (nm_utils_hashtable_cmp (h1, h2, TRUE, func_key_cmp, func_val_cmp, NULL) == 0);
+
+			n = nmtst_get_rand_word_length (NULL) + 1;
+			has_same_keys = TRUE;
+			for (i = 0; i < n; i++) {
+again:
+				{
+					typeof (vals[0]) *v = &vals[nmtst_get_rand_uint32 () % G_N_ELEMENTS (vals)];
+					gconstpointer v_key =  is_num_key ? GINT_TO_POINTER (v->val_i) : v->val_s;
+					gconstpointer v_val = !is_num_key ? GINT_TO_POINTER (v->val_i) : v->val_s;
+					gpointer v_key2;
+					gpointer v_val2;
+
+					if (g_hash_table_lookup_extended (h1, v_key, &v_key2, &v_val2)) {
+						g_assert (func_key_cmp (v_key, v_key2, NULL) == 0);
+						if (func_val_cmp (v_val, v_val2, NULL) == 0)
+							goto again;
+					} else
+						has_same_keys = FALSE;
+
+					g_hash_table_insert (h2, (gpointer) v_key, (gpointer) v_val);
+				}
+			}
+
+			if (has_same_keys) {
+				g_assert (nm_utils_hashtable_same_keys (h1, h2));
+				g_assert (nm_utils_hashtable_equal (h1, h2, NULL, NULL));
+				g_assert (nm_utils_hashtable_cmp (h1, h2, FALSE, func_key_cmp, NULL, NULL) == 0);
+				g_assert (nm_utils_hashtable_cmp (h1, h2, TRUE, func_key_cmp, NULL, NULL) == 0);
+			} else {
+				g_assert (!nm_utils_hashtable_same_keys (h1, h2));
+				g_assert (!nm_utils_hashtable_equal (h1, h2, NULL, NULL));
+				g_assert (nm_utils_hashtable_cmp (h1, h2, FALSE, func_key_cmp, NULL, NULL) != 0);
+				g_assert (nm_utils_hashtable_cmp (h1, h2, TRUE, func_key_cmp, NULL, NULL) != 0);
+			}
+			g_assert (!nm_utils_hashtable_equal (h1, h2, func_val_cmp, NULL));
+			g_assert (nm_utils_hashtable_cmp (h1, h2, FALSE, func_key_cmp, func_val_cmp, NULL) != 0);
+			g_assert (nm_utils_hashtable_cmp (h1, h2, TRUE, func_key_cmp, func_val_cmp, NULL) != 0);
+		}
+	}
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -1011,6 +1127,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/general/test_in_strset_ascii_case", test_in_strset_ascii_case);
 	g_test_add_func ("/general/test_is_specific_hostname", test_is_specific_hostname);
 	g_test_add_func ("/general/test_strv_dup_packed", test_strv_dup_packed);
+	g_test_add_func ("/general/test_utils_hashtable_cmp", test_utils_hashtable_cmp);
 
 	return g_test_run ();
 }
