@@ -5778,6 +5778,11 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * are considered 'routing' domains and are used only to decide the
 	 * interface over which a query must be forwarded; they are not used
 	 * to complete unqualified host names.
+	 *
+	 * When using a DNS plugin that supports Conditional Forwarding or
+	 * Split DNS, then the search domains specify which name servers to
+	 * query. This makes the behavior different from running with plain
+	 * /etc/resolv.conf. For more information see also the dns-priority setting.
 	 **/
 	obj_properties[PROP_DNS_SEARCH] =
 	    g_param_spec_boxed (NM_SETTING_IP_CONFIG_DNS_SEARCH, "", "",
@@ -5817,33 +5822,50 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * DNS servers priority.
 	 *
 	 * The relative priority for DNS servers specified by this setting.  A lower
-	 * value is better (higher priority). Zero selects a globally configured
-	 * default value. If the latter is missing or zero too, it defaults to
-	 * 50 for VPNs (including WireGuard) and 100 for other connections.
+	 * numerical value is better (higher priority).
+	 *
+	 * Negative values have the special effect of excluding other configurations
+	 * with a greater numerical priority value; so in presence of at least one negative
+	 * priority, only DNS servers from connections with the lowest priority value will be used.
+	 * To avoid all DNS leaks, set the priority of the profile that should be used
+	 * to the most negative value of all active connections profiles.
+	 *
+	 * Zero selects a globally configured default value. If the latter is missing
+	 * or zero too, it defaults to 50 for VPNs (including WireGuard) and 100 for
+	 * other connections.
 	 *
 	 * Note that the priority is to order DNS settings for multiple active
 	 * connections.  It does not disambiguate multiple DNS servers within the
 	 * same connection profile.
 	 *
-	 * When using dns=default, servers with higher priority will be on top of
-	 * resolv.conf.  To prioritize a given server over another one within the
-	 * same connection, just specify them in the desired order.  When multiple
-	 * devices have configurations with the same priority, VPNs will be
+	 * When multiple devices have configurations with the same priority, VPNs will be
 	 * considered first, then devices with the best (lowest metric) default
-	 * route and then all other devices.  Negative values have the special
-	 * effect of excluding other configurations with a greater priority value;
-	 * so in presence of at least one negative priority, only DNS servers from
-	 * connections with the lowest priority value will be used.
+	 * route and then all other devices.
 	 *
-	 * When using a DNS resolver that supports Conditional Forwarding as dns=dnsmasq or
-	 * dns=systemd-resolved, each connection is used to query domains in its
-	 * search list.  Queries for domains not present in any search list are
-	 * routed through connections having the '~.' special wildcard domain, which
-	 * is added automatically to connections with the default route (or can be
-	 * added manually).  When multiple connections specify the same domain, the
-	 * one with the highest priority (lowest numerical value) wins.  If a
-	 * connection specifies a domain which is subdomain of another domain with a
-	 * negative DNS priority value, the subdomain is ignored.
+	 * When using dns=default, servers with higher priority will be on top of
+	 * resolv.conf. To prioritize a given server over another one within the
+	 * same connection, just specify them in the desired order.
+	 * Note that commonly the resolver tries name servers in /etc/resolv.conf
+	 * in the order listed, proceeding with the next server in the list
+	 * on failure. See for example the "rotate" option of the dns-options setting.
+	 * If there are any negative DNS priorities, then only name servers from
+	 * the devices with that lowest priority will be considered.
+	 *
+	 * When using a DNS resolver that supports Conditional Forwarding or
+	 * Split DNS (with dns=dnsmasq or dns=systemd-resolved settings), each connection
+	 * is used to query domains in its search list. The search domains determine which
+	 * name servers to ask, and the DNS priority is used to prioritize
+	 * name servers based on the domain.  Queries for domains not present in any
+	 * search list are routed through connections having the '~.' special wildcard
+	 * domain, which is added automatically to connections with the default route
+	 * (or can be added manually).  When multiple connections specify the same domain, the
+	 * one with the best priority (lowest numerical value) wins.  If a sub domain
+	 * is configured on another interface it will be accepted regardless the priority,
+	 * unless parent domain on the other interface has a negative priority, which causes
+	 * the sub domain to be shadowed.
+	 * With Split DNS one can avoid undesired DNS leaks by properly configuring
+	 * DNS priorities and the search domains, so that only name servers of the desired
+	 * interface are configured.
 	 *
 	 * Since: 1.4
 	 **/
@@ -5968,8 +5990,8 @@ nm_setting_ip_config_class_init (NMSettingIPConfigClass *klass)
 	 * NMSettingIPConfig:ignore-auto-dns:
 	 *
 	 * When #NMSettingIPConfig:method is set to "auto" and this property to
-	 * %TRUE, automatically configured nameservers and search domains are
-	 * ignored and only nameservers and search domains specified in the
+	 * %TRUE, automatically configured name servers and search domains are
+	 * ignored and only name servers and search domains specified in the
 	 * #NMSettingIPConfig:dns and #NMSettingIPConfig:dns-search properties, if
 	 * any, are used.
 	 **/
