@@ -2158,4 +2158,9 @@ void nm_platform_ip4_dev_route_blacklist_set (NMPlatform *self,
 
 struct _NMDedupMultiIndex *nm_platform_get_multi_idx (NMPlatform *self);
 
+/*****************************************************************************/
+
+gboolean nm_platform_ip6_address_match (const NMPlatformIP6Address *addr,
+                                        NMPlatformMatchFlags match_flag);
+
 #endif /* __NETWORKMANAGER_PLATFORM_H__ */
