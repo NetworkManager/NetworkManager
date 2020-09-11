@@ -1656,30 +1656,9 @@ nm_ip6_config_find_first_address (const NMIP6Config *self,
 	nm_assert (NM_FLAGS_ANY (match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE__ANY));
 
 	nm_ip_config_iter_ip6_address_for_each (&iter, self, &addr) {
-
-		if (IN6_IS_ADDR_LINKLOCAL (&addr->address)) {
-			if (!NM_FLAGS_HAS (match_flag, NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL))
-				continue;
-		} else {
-			if (!NM_FLAGS_HAS (match_flag, NM_PLATFORM_MATCH_WITH_ADDRTYPE_NORMAL))
-				continue;
-		}
-
-		if (NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_DADFAILED)) {
-			if (!NM_FLAGS_HAS (match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED))
-				continue;
-		} else if (   NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_TENTATIVE)
-		           && !NM_FLAGS_HAS (addr->n_ifa_flags, IFA_F_OPTIMISTIC)) {
-			if (!NM_FLAGS_HAS (match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE_TENTATIVE))
-				continue;
-		} else {
-			if (!NM_FLAGS_HAS (match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL))
-				continue;
-		}
-
-		return addr;
+		if (nm_platform_ip6_address_match (addr, match_flag))
+			return addr;
 	}
-
 	return NULL;
 }
 
