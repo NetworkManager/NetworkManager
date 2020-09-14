@@ -11,8 +11,8 @@
 #              "nm-1-26" branch. The tag is "1.26-rc1" with version number 1.25.90.
 #  - "rc"    : further release candidates on RC branch "nm-1-26". For example
 #              "1.26-rc2" with version number 1.25.91.
-#  - "major" : on stable branch nm-1-26 to release 1.26.0. This also merged
-#              the release with master branch and does a devel tag like "1.27.2-dev"
+#  - "major" : on stable branch nm-1-26 to release 1.26.0 followed by 1.26.1-dev.
+#              You should do a "major-post" release right after.
 #  - "major-post": after a "major" release, merge the release branch with master and
 #              do another devel snapshot on master.
 #  - "minor" : on a stable branch nm-1-26 to do minor release 1.26.4 and bump
@@ -22,7 +22,8 @@
 #
 #   * You need to start with a clean working directory (git clean -fdx)
 #
-#   * Run in a "clean" environment, no unusual environment variables set.
+#   * Run in a "clean" environment, i.e. no unusual environment variables set, on a recent
+#     Fedora, with suitable dependencies installed.
 #
 #   * First, ensure that you have ssh keys for master.gnome.org installed (and ssh-agent running)
 #     Also, ensure you have a GPG key that you want to use for signing. Also, have gpg-agent running
