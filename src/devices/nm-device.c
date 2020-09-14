@@ -1179,7 +1179,7 @@ out_good:
 	return duid_out;
 }
 
-static gint32
+static guint32
 _prop_get_ipv6_ra_timeout (NMDevice *self)
 {
 	NMConnection *connection;
@@ -1191,9 +1191,9 @@ _prop_get_ipv6_ra_timeout (NMDevice *self)
 	connection = nm_device_get_applied_connection (self);
 
 	timeout = nm_setting_ip6_config_get_ra_timeout (NM_SETTING_IP6_CONFIG (nm_connection_get_setting_ip6_config (connection)));
-	nm_assert (timeout >= 0);
-	if (timeout)
+	if (timeout > 0)
 		return timeout;
+	nm_assert (timeout == 0);
 
 	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
 	                                                    NM_CON_DEFAULT ("ipv6.ra-timeout"),
@@ -10981,15 +10981,6 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	return;
 }
 
-static NMNDiscNodeType
-ndisc_node_type (NMDevice *self)
-{
-	if (nm_streq (nm_device_get_effective_ip_config_method (self, AF_INET6),
-	              NM_SETTING_IP4_CONFIG_METHOD_SHARED))
-		return NM_NDISC_NODE_TYPE_ROUTER;
-	return NM_NDISC_NODE_TYPE_HOST;
-}
-
 static gboolean
 addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 {
@@ -10999,6 +10990,12 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	GError *error = NULL;
 	NMUtilsStableType stable_type;
 	const char *stable_id;
+	NMNDiscNodeType node_type;
+	int max_addresses;
+	int router_solicitations;
+	int router_solicitation_interval;
+	guint32 ra_timeout;
+	guint32 default_ra_timeout;
 
 	connection = nm_device_get_applied_connection (self);
 	g_assert (connection);
@@ -11012,6 +11009,27 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting_ip6_config (connection));
 	g_assert (s_ip6);
 
+	if (nm_streq (nm_device_get_effective_ip_config_method (self, AF_INET6),
+	              NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+		node_type = NM_NDISC_NODE_TYPE_ROUTER;
+	else
+		node_type = NM_NDISC_NODE_TYPE_HOST;
+
+	nm_lndp_ndisc_get_sysctl (nm_device_get_platform (self),
+	                          nm_device_get_ip_iface (self),
+	                          &max_addresses,
+	                          &router_solicitations,
+	                          &router_solicitation_interval,
+	                          &default_ra_timeout);
+
+	if (node_type == NM_NDISC_NODE_TYPE_ROUTER)
+		ra_timeout = 0u;
+	else {
+		ra_timeout = _prop_get_ipv6_ra_timeout (self);
+		if (ra_timeout == 0u)
+			ra_timeout = default_ra_timeout;
+	}
+
 	stable_id = _prop_get_connection_stable_id (self, connection, &stable_type);
 	priv->ndisc = nm_lndp_ndisc_new (nm_device_get_platform (self),
 	                                 nm_device_get_ip_ifindex (self),
@@ -11019,8 +11037,11 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	                                 stable_type,
 	                                 stable_id,
 	                                 nm_setting_ip6_config_get_addr_gen_mode (s_ip6),
-	                                 ndisc_node_type (self),
-	                                 _prop_get_ipv6_ra_timeout (self),
+	                                 node_type,
+	                                 max_addresses,
+	                                 router_solicitations,
+	                                 router_solicitation_interval,
+	                                 ra_timeout,
 	                                 &error);
 	if (!priv->ndisc) {
 		_LOGE (LOGD_IP6, "addrconf6: failed to start neighbor discovery: %s", error->message);

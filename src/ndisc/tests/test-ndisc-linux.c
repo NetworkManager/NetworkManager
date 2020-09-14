@@ -25,6 +25,10 @@ main (int argc, char **argv)
 	const char *ifname;
 	NMUtilsIPv6IfaceId iid = { };
 	GError *error = NULL;
+	int max_addresses;
+	int router_solicitations;
+	int router_solicitation_interval;
+	guint32 ra_timeout;
 
 	nmtst_init_with_logging (&argc, &argv, NULL, "DEFAULT");
 
@@ -45,6 +49,13 @@ main (int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
+	nm_lndp_ndisc_get_sysctl (NM_PLATFORM_GET,
+	                          ifname,
+	                          &max_addresses,
+	                          &router_solicitations,
+	                          &router_solicitation_interval,
+	                          &ra_timeout);
+
 	ndisc = nm_lndp_ndisc_new (NM_PLATFORM_GET,
 	                           ifindex,
 	                           ifname,
@@ -52,7 +63,10 @@ main (int argc, char **argv)
 	                           "8ce666e8-d34d-4fb1-b858-f15a7al28086",
 	                           NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
 	                           NM_NDISC_NODE_TYPE_HOST,
-	                           0,
+	                           max_addresses,
+	                           router_solicitations,
+	                           router_solicitation_interval,
+	                           ra_timeout,
 	                           &error);
 	if (!ndisc) {
 		g_print ("Failed to create NMNDisc instance: %s\n", error->message);

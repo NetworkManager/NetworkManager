@@ -360,6 +360,10 @@ nm_fake_ndisc_new (int ifindex, const char *ifname)
 	                     NM_NDISC_NODE_TYPE, (int) NM_NDISC_NODE_TYPE_HOST,
 	                     NM_NDISC_STABLE_TYPE, (int) NM_UTILS_STABLE_TYPE_UUID,
 	                     NM_NDISC_NETWORK_ID, "fake",
+	                     NM_NDISC_MAX_ADDRESSES, NM_NDISC_MAX_ADDRESSES_DEFAULT,
+	                     NM_NDISC_ROUTER_SOLICITATIONS, NM_NDISC_ROUTER_SOLICITATIONS_DEFAULT,
+	                     NM_NDISC_ROUTER_SOLICITATION_INTERVAL, NM_NDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT,
+	                     NM_NDISC_RA_TIMEOUT, 30u,
 	                     NULL);
 }
 

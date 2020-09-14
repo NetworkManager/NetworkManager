@@ -25,6 +25,9 @@ struct _NMNDiscPrivate {
 	/* this *must* be the first field. */
 	NMNDiscDataInternal rdata;
 
+	char *last_error;
+	GSource *ra_timeout_source;
+
 	union {
 		gint32 solicitations_left;
 		gint32 announcements_left;
@@ -37,9 +40,7 @@ struct _NMNDiscPrivate {
 		gint32 last_rs;
 		gint32 last_ra;
 	};
-	guint ra_timeout_id;  /* first RA timeout */
 	guint timeout_id;   /* prefix/dns/etc lifetime timeout */
-	char *last_error;
 	NMUtilsIPv6IfaceId iid;
 
 	/* immutable values: */
@@ -48,7 +49,7 @@ struct _NMNDiscPrivate {
 	char *network_id;
 	NMSettingIP6ConfigAddrGenMode addr_gen_mode;
 	NMUtilsStableType stable_type;
-	gint32 ra_timeout;
+	guint32 ra_timeout;
 	gint32 max_addresses;
 	gint32 router_solicitations;
 	gint32 router_solicitation_interval;
@@ -899,7 +900,7 @@ ndisc_ra_timeout_cb (gpointer user_data)
 {
 	NMNDisc *ndisc = NM_NDISC (user_data);
 
-	NM_NDISC_GET_PRIVATE (ndisc)->ra_timeout_id = 0;
+	nm_clear_g_source_inst (&NM_NDISC_GET_PRIVATE (ndisc)->ra_timeout_source);
 	g_signal_emit (ndisc, signals[RA_TIMEOUT_SIGNAL], 0);
 	return G_SOURCE_REMOVE;
 }
@@ -915,7 +916,7 @@ nm_ndisc_start (NMNDisc *ndisc)
 	priv = NM_NDISC_GET_PRIVATE (ndisc);
 
 	nm_assert (NM_NDISC_GET_CLASS (ndisc)->start);
-	nm_assert (!priv->ra_timeout_id);
+	nm_assert (!priv->ra_timeout_source);
 
 	_LOGD ("starting neighbor discovery for ifindex %d%s",
 	       priv->ifindex,
@@ -929,23 +930,32 @@ nm_ndisc_start (NMNDisc *ndisc)
 	NM_NDISC_GET_CLASS (ndisc)->start (ndisc);
 
 	if (priv->node_type == NM_NDISC_NODE_TYPE_HOST) {
-		gint32 ra_timeout = priv->ra_timeout;
-
 		G_STATIC_ASSERT_EXPR (NM_RA_TIMEOUT_DEFAULT == 0);
 		G_STATIC_ASSERT_EXPR (NM_RA_TIMEOUT_INFINITY == G_MAXINT32);
-		if (ra_timeout != NM_RA_TIMEOUT_INFINITY) {
-			if (ra_timeout == NM_RA_TIMEOUT_DEFAULT) {
-				ra_timeout = NM_MAX ((((gint64) priv->router_solicitations) * priv->router_solicitation_interval) + 1,
-				                     30);
-			}
-			nm_assert (ra_timeout > 0 && ra_timeout < NM_RA_TIMEOUT_INFINITY);
-			_LOGD ("scheduling RA timeout in %d seconds", ra_timeout);
-			priv->ra_timeout_id = g_timeout_add_seconds (ra_timeout, ndisc_ra_timeout_cb, ndisc);
+		nm_assert (priv->ra_timeout > 0u);
+		nm_assert (priv->ra_timeout <= NM_RA_TIMEOUT_INFINITY);
+
+		if (priv->ra_timeout < NM_RA_TIMEOUT_INFINITY) {
+			guint timeout_msec;
+
+			_LOGD ("scheduling RA timeout in %u seconds", priv->ra_timeout);
+			if (priv->ra_timeout < G_MAXUINT / 1000u)
+				timeout_msec = priv->ra_timeout * 1000u;
+			else
+				timeout_msec = G_MAXUINT;
+			priv->ra_timeout_source = nm_g_timeout_source_new (timeout_msec,
+			                                                   G_PRIORITY_DEFAULT,
+			                                                   ndisc_ra_timeout_cb,
+			                                                   ndisc,
+			                                                   NULL);
+			g_source_attach (priv->ra_timeout_source, NULL);
 		}
+
 		solicit_routers (ndisc);
 		return;
 	}
 
+	nm_assert (priv->ra_timeout == 0u);
 	nm_assert (priv->node_type == NM_NDISC_NODE_TYPE_ROUTER);
 	announce_router_initial (ndisc);
 }
@@ -1254,7 +1264,7 @@ nm_ndisc_ra_received (NMNDisc *ndisc, gint32 now, NMNDiscConfigMap changed)
 {
 	NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE (ndisc);
 
-	nm_clear_g_source (&priv->ra_timeout_id);
+	nm_clear_g_source_inst (&priv->ra_timeout_source);
 	nm_clear_g_source (&priv->send_rs_id);
 	nm_clear_g_free (&priv->last_error);
 	check_timestamps (ndisc, now, changed);
@@ -1328,7 +1338,8 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_RA_TIMEOUT:
 		/* construct-only */
-		priv->ra_timeout = g_value_get_int (value);
+		priv->ra_timeout = g_value_get_uint (value);
+		nm_assert (priv->ra_timeout <= NM_RA_TIMEOUT_INFINITY);
 		break;
 	case PROP_ROUTER_SOLICITATIONS:
 		/* construct-only */
@@ -1381,7 +1392,7 @@ dispose (GObject *object)
 	NMNDisc *ndisc = NM_NDISC (object);
 	NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE (ndisc);
 
-	nm_clear_g_source (&priv->ra_timeout_id);
+	nm_clear_g_source_inst (&priv->ra_timeout_source);
 	nm_clear_g_source (&priv->send_rs_id);
 	nm_clear_g_source (&priv->send_ra_id);
 	nm_clear_g_free (&priv->last_error);
@@ -1468,11 +1479,11 @@ nm_ndisc_class_init (NMNDiscClass *klass)
 	                      G_PARAM_STATIC_STRINGS);
 	G_STATIC_ASSERT_EXPR (G_MAXINT32 == NM_RA_TIMEOUT_INFINITY);
 	obj_properties[PROP_RA_TIMEOUT] =
-	    g_param_spec_int (NM_NDISC_RA_TIMEOUT, "", "",
-	                      0, G_MAXINT32, 0,
-	                      G_PARAM_WRITABLE |
-	                      G_PARAM_CONSTRUCT_ONLY |
-	                      G_PARAM_STATIC_STRINGS);
+	    g_param_spec_uint (NM_NDISC_RA_TIMEOUT, "", "",
+	                       0, G_MAXINT32, 0,
+	                       G_PARAM_WRITABLE |
+	                       G_PARAM_CONSTRUCT_ONLY |
+	                       G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_ROUTER_SOLICITATIONS] =
 	    g_param_spec_int (NM_NDISC_ROUTER_SOLICITATIONS, "", "",
 	                      1, G_MAXINT32, NM_NDISC_ROUTER_SOLICITATIONS_DEFAULT,
