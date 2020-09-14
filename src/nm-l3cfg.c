@@ -980,7 +980,7 @@ _l3_acd_nacd_event (int fd,
 			n_acd_probe_get_userdata (event->_acd_event_payload.probe, (void **) &acd_data);
 			_LOGT_acd (acd_data,
 			           "address %s %s from %s",
-			           (addr_str = nm_utils_inet4_ntop (acd_data->addr, sbuf_addr)),
+			           (addr_str = _nm_utils_inet4_ntop (acd_data->addr, sbuf_addr)),
 			             event->event == N_ACD_EVENT_DEFENDED
 			           ? "defended"
 			           : "conflict detected",
@@ -993,7 +993,7 @@ _l3_acd_nacd_event (int fd,
 				_LOGW ("IPv4 address collision detection sees conflict on interface %i%s%s%s for address %s from host %s",
 				       self->priv.ifindex,
 				       NM_PRINT_FMT_QUOTED (self->priv.pllink, " (", NMP_OBJECT_CAST_LINK (self->priv.pllink)->name, ")", ""),
-				       addr_str ?: nm_utils_inet4_ntop (acd_data->addr, sbuf_addr),
+				       addr_str ?: _nm_utils_inet4_ntop (acd_data->addr, sbuf_addr),
 				          sender_str
 				       ?: (sender_str = nm_utils_bin2hexstr_full (event->_acd_event_payload.sender,
 				                                                  event->_acd_event_payload.n_sender,
