@@ -2848,6 +2848,8 @@ _platform_commit (NML3Cfg *self,
 		}
 	}
 
+	/* FIXME(l3cfg): need to honor and set nm_l3_config_data_get_ip6_privacy(). */
+
 	nm_platform_ip_address_sync (self->priv.platform,
 	                             addr_family,
 	                             self->priv.ifindex,

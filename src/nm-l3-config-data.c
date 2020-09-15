@@ -123,6 +123,8 @@ struct _NML3ConfigData {
 
 	NMTernary metered:3;
 
+	NMSettingIP6ConfigPrivacy ip6_privacy:4;
+
 	bool is_sealed:1;
 
 	bool has_routes_with_type_local_4_set:1;
@@ -406,6 +408,7 @@ nm_l3_config_data_new (NMDedupMultiIndex *multi_idx,
 		.route_table_sync_4 = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
 		.route_table_sync_6 = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
 		.source             = NM_IP_CONFIG_SOURCE_UNKNOWN,
+		.ip6_privacy        = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
 	};
 
 	_idx_type_init (&self->idx_addresses_4, NMP_OBJECT_TYPE_IP4_ADDRESS);
@@ -1335,6 +1338,31 @@ nm_l3_config_data_set_source (NML3ConfigData *self,
 	return TRUE;
 }
 
+NMSettingIP6ConfigPrivacy
+nm_l3_config_data_get_ip6_privacy (const NML3ConfigData *self)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	return self->ip6_privacy;
+}
+
+gboolean
+nm_l3_config_data_set_ip6_privacy (NML3ConfigData *self,
+                                   NMSettingIP6ConfigPrivacy ip6_privacy)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+	nm_assert (NM_IN_SET (ip6_privacy, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
+	                                   NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED,
+	                                   NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR,
+	                                   NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR));
+
+	if (self->ip6_privacy == ip6_privacy)
+		return FALSE;
+	self->ip6_privacy = ip6_privacy;
+	nm_assert (self->ip6_privacy == ip6_privacy);
+	return TRUE;
+}
+
 /*****************************************************************************/
 
 NMDhcpLease *
@@ -1480,6 +1508,7 @@ nm_l3_config_data_cmp (const NML3ConfigData *a, const NML3ConfigData *b)
 	NM_CMP_DIRECT (a->llmnr, b->llmnr);
 	NM_CMP_DIRECT (a->mtu, b->mtu);
 	NM_CMP_DIRECT_UNSAFE (a->metered, b->metered);
+	NM_CMP_DIRECT_UNSAFE (a->ip6_privacy, b->ip6_privacy);
 
 	NM_CMP_FIELD (a, b, source);
 
@@ -2249,6 +2278,9 @@ nm_l3_config_data_merge (NML3ConfigData *self,
 
 	if (self->metered == NM_TERNARY_DEFAULT)
 		self->metered = src->metered;
+
+	if (self->ip6_privacy == NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
+		self->ip6_privacy = src->ip6_privacy;
 
 	if (self->mtu != 0u)
 		self->mtu = src->mtu;

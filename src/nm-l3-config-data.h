@@ -486,6 +486,11 @@ gboolean nm_l3_config_data_set_dns_priority (NML3ConfigData *self,
                                              int addr_family,
                                              int dns_priority);
 
+NMSettingIP6ConfigPrivacy nm_l3_config_data_get_ip6_privacy (const NML3ConfigData *self);
+
+gboolean nm_l3_config_data_set_ip6_privacy (NML3ConfigData *self,
+                                            NMSettingIP6ConfigPrivacy ip6_privacy);
+
 struct _NMDhcpLease *nm_l3_config_data_get_dhcp_lease (const NML3ConfigData *self,
                                                        int addr_family);
 
