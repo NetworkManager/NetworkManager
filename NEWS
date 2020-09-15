@@ -15,6 +15,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   setting and runtime detection.
   "resolvconf" and "netconfig" are only considered iff NetworkManager
   was built with the respective options enabled.
+* The long deprecated D-Bus property "Ip4Address" on "org.freedesktop.NetworkManager.Device"
+  interface is not defunct and always returns zero.
 
 =============================================
 NetworkManager-1.26
