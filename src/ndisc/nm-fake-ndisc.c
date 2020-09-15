@@ -337,6 +337,14 @@ start (NMNDisc *ndisc)
 	priv->receive_ra_id = g_timeout_add_seconds (ra->when, receive_ra, ndisc);
 }
 
+static void
+stop (NMNDisc *ndisc)
+{
+	NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE (ndisc);
+
+	nm_clear_g_source (&priv->receive_ra_id);
+}
+
 void
 nm_fake_ndisc_emit_new_ras (NMFakeNDisc *self)
 {
@@ -388,7 +396,8 @@ nm_fake_ndisc_class_init (NMFakeNDiscClass *klass)
 
 	object_class->dispose = dispose;
 
-	ndisc_class->start = start;
+	ndisc_class->start   = start;
+	ndisc_class->stop    = stop;
 	ndisc_class->send_rs = send_rs;
 
 	signals[RS_SENT] =

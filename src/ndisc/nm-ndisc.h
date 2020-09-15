@@ -163,6 +163,7 @@ typedef struct {
 	GObjectClass parent;
 
 	void (*start) (NMNDisc *ndisc);
+	void (*stop) (NMNDisc *ndisc);
 	gboolean (*send_rs) (NMNDisc *ndisc, GError **error);
 	gboolean (*send_ra) (NMNDisc *ndisc, GError **error);
 } NMNDiscClass;
@@ -177,6 +178,7 @@ NMNDiscNodeType nm_ndisc_get_node_type (NMNDisc *self);
 
 gboolean nm_ndisc_set_iid (NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid);
 void nm_ndisc_start (NMNDisc *ndisc);
+void nm_ndisc_stop (NMNDisc *ndisc);
 NMNDiscConfigMap nm_ndisc_dad_failed (NMNDisc *ndisc,
                                       const struct in6_addr *address,
                                       gboolean emit_changed_signal);

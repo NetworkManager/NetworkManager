@@ -960,6 +960,53 @@ nm_ndisc_start (NMNDisc *ndisc)
 	announce_router_initial (ndisc);
 }
 
+void
+nm_ndisc_stop (NMNDisc *ndisc)
+{
+	nm_auto_pop_netns NMPNetns *netns = NULL;
+	NMNDiscDataInternal *rdata;
+	NMNDiscPrivate *priv;
+
+	g_return_if_fail (NM_IS_NDISC (ndisc));
+
+	priv = NM_NDISC_GET_PRIVATE (ndisc);
+
+	nm_assert (NM_NDISC_GET_CLASS (ndisc)->stop);
+
+	_LOGD ("stopping neighbor discovery for ifindex %d",
+	       priv->ifindex);
+
+	if (!nm_ndisc_netns_push (ndisc, &netns))
+		return;
+
+	NM_NDISC_GET_CLASS (ndisc)->stop (ndisc);
+
+	rdata = &priv->rdata;
+
+	g_array_set_size (rdata->gateways, 0);
+	g_array_set_size (rdata->addresses, 0);
+	g_array_set_size (rdata->routes, 0);
+	g_array_set_size (rdata->dns_servers, 0);
+	g_array_set_size (rdata->dns_domains, 0);
+	priv->rdata.public.hop_limit = 64;
+
+	/* Start at very low number so that last_rs - router_solicitation_interval
+	 * is much lower than nm_utils_get_monotonic_timestamp_sec() at startup.
+	 */
+	priv->last_rs = G_MININT32;
+	nm_clear_g_source_inst (&priv->ra_timeout_source);
+	nm_clear_g_source (&priv->send_rs_id);
+	nm_clear_g_source (&priv->send_ra_id);
+	nm_clear_g_free (&priv->last_error);
+	nm_clear_g_source (&priv->timeout_id);
+
+	priv->solicitations_left = 0;
+	priv->announcements_left = 0;
+
+	priv->last_rs = G_MININT32;
+	priv->last_ra = G_MININT32;
+}
+
 NMNDiscConfigMap
 nm_ndisc_dad_failed (NMNDisc *ndisc, const struct in6_addr *address, gboolean emit_changed_signal)
 {
