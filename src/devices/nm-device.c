@@ -17787,7 +17787,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, (priv->capabilities & ~NM_DEVICE_CAP_INTERNAL_MASK));
 		break;
 	case PROP_IP4_ADDRESS:
-		g_value_set_uint (value, 0);
+		g_value_set_variant (value, nm_g_variant_singleton_u_0 ());
 		break;
 	case PROP_CARRIER:
 		g_value_set_boolean (value, priv->carrier);
@@ -18500,10 +18500,11 @@ nm_device_class_init (NMDeviceClass *klass)
 	                       G_PARAM_READABLE |
 	                       G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_IP4_ADDRESS] =
-	    g_param_spec_uint (NM_DEVICE_IP4_ADDRESS, "", "",
-	                       0, G_MAXUINT32, 0, /* FIXME */
-	                       G_PARAM_READABLE |
-	                       G_PARAM_STATIC_STRINGS);
+	    g_param_spec_variant (NM_DEVICE_IP4_ADDRESS, "", "",
+	                          G_VARIANT_TYPE_UINT32,
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_IP4_CONFIG] =
 	    g_param_spec_string (NM_DEVICE_IP4_CONFIG, "", "",
 	                         NULL,
