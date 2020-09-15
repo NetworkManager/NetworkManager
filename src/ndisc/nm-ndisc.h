@@ -219,4 +219,17 @@ nm_ndisc_dad_addr_is_fail_candidate (NMPlatform *platform,
 	return TRUE;
 }
 
+/*****************************************************************************/
+
+struct _NML3ConfigData;
+
+struct _NML3ConfigData *nm_ndisc_data_to_l3cd (NMDedupMultiIndex *multi_idx,
+                                               int ifindex,
+                                               const NMNDiscData *rdata,
+                                               NMSettingIP6ConfigPrivacy ip6_privacy,
+                                               guint32 route_table,
+                                               guint32 route_metric,
+                                               gboolean kernel_support_rta_pref,
+                                               gboolean kernel_support_extended_ifa_flags);
+
 #endif /* __NETWORKMANAGER_NDISC_H__ */

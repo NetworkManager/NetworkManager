@@ -16,6 +16,7 @@
 #include "nm-utils.h"
 #include "platform/nm-platform.h"
 #include "platform/nmp-netns.h"
+#include "nm-l3-config-data.h"
 
 #define _NMLOG_PREFIX_NAME                "ndisc"
 
@@ -90,6 +91,121 @@ G_DEFINE_TYPE (NMNDisc, nm_ndisc, G_TYPE_OBJECT)
 /*****************************************************************************/
 
 static void _config_changed_log (NMNDisc *ndisc, NMNDiscConfigMap changed);
+
+/*****************************************************************************/
+
+NML3ConfigData *
+nm_ndisc_data_to_l3cd (NMDedupMultiIndex *multi_idx,
+                       int ifindex,
+                       const NMNDiscData *rdata,
+                       NMSettingIP6ConfigPrivacy ip6_privacy,
+                       guint32 route_table,
+                       guint32 route_metric,
+                       gboolean kernel_support_rta_pref,
+                       gboolean kernel_support_extended_ifa_flags)
+{
+	nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
+	guint32 ifa_flags;
+	guint8 plen;
+	guint i;
+
+	l3cd = nm_l3_config_data_new (multi_idx,
+	                              ifindex);
+
+	nm_l3_config_data_set_source (l3cd, NM_IP_CONFIG_SOURCE_NDISC);
+
+	nm_l3_config_data_set_ip6_privacy (l3cd, ip6_privacy);
+
+	/* Check, whether kernel is recent enough to help user space handling RA.
+	 * If it's not supported, we have no ipv6-privacy and must add autoconf
+	 * addresses as /128. The reason for the /128 is to prevent the kernel
+	 * from adding a prefix route for this address. */
+	ifa_flags = 0;
+	if (kernel_support_extended_ifa_flags) {
+		ifa_flags |= IFA_F_NOPREFIXROUTE;
+		if (NM_IN_SET (ip6_privacy, NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
+		                            NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR))
+			ifa_flags |= IFA_F_MANAGETEMPADDR;
+		plen = 64;
+	} else
+		plen = 128;
+
+	for (i = 0; i < rdata->addresses_n; i++) {
+		const NMNDiscAddress *ndisc_addr = &rdata->addresses[i];
+		NMPlatformIP6Address a;
+
+		a = (NMPlatformIP6Address) {
+			.ifindex     = ifindex,
+			.address     = ndisc_addr->address,
+			.plen        = plen,
+			.timestamp   = ndisc_addr->timestamp,
+			.lifetime    = ndisc_addr->lifetime,
+			.preferred   = MIN (ndisc_addr->lifetime, ndisc_addr->preferred),
+			.addr_source = NM_IP_CONFIG_SOURCE_NDISC,
+			.n_ifa_flags = ifa_flags,
+		};
+
+		nm_l3_config_data_add_address_6 (l3cd, &a);
+	}
+
+	for (i = 0; i < rdata->routes_n; i++) {
+		const NMNDiscRoute *ndisc_route = &rdata->routes[i];
+		NMPlatformIP6Route r;
+
+		r = (NMPlatformIP6Route) {
+			.ifindex       = ifindex,
+			.network       = ndisc_route->network,
+			.plen          = ndisc_route->plen,
+			.gateway       = ndisc_route->gateway,
+			.rt_source     = NM_IP_CONFIG_SOURCE_NDISC,
+			.table_coerced = nm_platform_route_table_coerce (route_table),
+			.metric        = route_metric,
+			.rt_pref       = ndisc_route->preference,
+		};
+		nm_assert ((NMIcmpv6RouterPref) r.rt_pref == ndisc_route->preference);
+
+		nm_l3_config_data_add_route_6 (l3cd, &r);
+	}
+
+	if (rdata->gateways_n > 0) {
+		const NMIcmpv6RouterPref first_pref = rdata->gateways[0].preference;
+		NMPlatformIP6Route r = {
+			.rt_source     = NM_IP_CONFIG_SOURCE_NDISC,
+			.ifindex       = ifindex,
+			.table_coerced = nm_platform_route_table_coerce (route_table),
+			.metric        = route_metric,
+		};
+
+		for (i = 0; i < rdata->gateways_n; i++) {
+			r.gateway = rdata->gateways[i].address;
+			r.rt_pref = rdata->gateways[i].preference;
+			nm_assert ((NMIcmpv6RouterPref) r.rt_pref == rdata->gateways[i].preference);
+			nm_l3_config_data_add_route_6 (l3cd, &r);
+
+			if (   first_pref != rdata->gateways[i].preference
+			    && !kernel_support_rta_pref) {
+				/* We are unable to configure a router preference. Hence, we skip all gateways
+				 * with a different preference from the first gateway. Note, that the gateways
+				 * are sorted in order of highest to lowest preference. */
+				break;
+			}
+		}
+	}
+
+	for (i = 0; i < rdata->dns_servers_n; i++)
+		nm_l3_config_data_add_nameserver (l3cd, AF_INET6, &rdata->dns_servers[i].address);
+
+	for (i = 0; i < rdata->dns_domains_n; i++)
+		nm_l3_config_data_add_search (l3cd, AF_INET6, rdata->dns_domains[i].domain);
+
+	nm_l3_config_data_set_ndisc_hop_limit (l3cd, rdata->hop_limit);
+	nm_l3_config_data_set_ndisc_reachable_time_msec (l3cd, rdata->reachable_time_ms);
+	nm_l3_config_data_set_ndisc_retrans_timer_msec (l3cd, rdata->retrans_timer_ms);
+
+	nm_l3_config_data_set_ip6_mtu (l3cd, rdata->mtu);
+
+	return g_steal_pointer (&l3cd);
+}
 
 /*****************************************************************************/
 
