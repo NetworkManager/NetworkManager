@@ -1249,6 +1249,8 @@ char *nm_utils_str_utf8safe_unescape_cp (const char *str, NMUtilsStrUtf8SafeFlag
 
 char *nm_utils_str_utf8safe_escape_take (char *str, NMUtilsStrUtf8SafeFlags flags);
 
+GVariant *nm_g_variant_singleton_u_0 (void);
+
 static inline void
 nm_g_variant_unref_floating (GVariant *var)
 {

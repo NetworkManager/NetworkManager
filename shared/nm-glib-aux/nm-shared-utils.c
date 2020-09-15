@@ -405,6 +405,34 @@ nm_utils_gbytes_to_variant_ay (GBytes *bytes)
 
 /*****************************************************************************/
 
+#define _variant_singleton_get(create_variant) \
+	({ \
+		static GVariant *_singleton = NULL; \
+		GVariant *_v; \
+		\
+		again: \
+		_v = g_atomic_pointer_get (&_singleton); \
+		if (G_UNLIKELY (!_v)) { \
+			_v = (create_variant); \
+			nm_assert (_v); \
+			nm_assert (g_variant_is_floating (_v)); \
+			g_variant_ref_sink (_v); \
+			if (!g_atomic_pointer_compare_and_exchange (&_singleton, NULL, _v)) { \
+				g_variant_unref (_v); \
+				goto again; \
+			} \
+		} \
+		_v; \
+	})
+
+GVariant *
+nm_g_variant_singleton_u_0 (void)
+{
+	return _variant_singleton_get (g_variant_new_uint32 (0));
+}
+
+/*****************************************************************************/
+
 /* Convert a hash table with "char *" keys and values to an "a{ss}" GVariant.
  * The keys will be sorted asciibetically.
  * Returns a floating reference.
