@@ -11080,7 +11080,10 @@ addrconf6_cleanup (NMDevice *self)
 	applied_config_clear (&priv->ac_ip6_config);
 	nm_clear_pointer (&priv->rt6_temporary_not_available, g_hash_table_unref);
 	nm_clear_g_source (&priv->rt6_temporary_not_available_id);
-	g_clear_object (&priv->ndisc);
+	if (priv->ndisc) {
+		nm_ndisc_stop (priv->ndisc);
+		g_clear_object (&priv->ndisc);
+	}
 }
 
 /*****************************************************************************/
