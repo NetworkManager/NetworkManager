@@ -439,6 +439,11 @@ guint32 nm_l3_config_data_get_mtu (const NML3ConfigData *self);
 gboolean nm_l3_config_data_set_mtu (NML3ConfigData *self,
                                     guint32 mtu);
 
+guint32 nm_l3_config_data_get_ip6_mtu (const NML3ConfigData *self);
+
+gboolean nm_l3_config_data_set_ip6_mtu (NML3ConfigData *self,
+                                        guint32 ip6_mtu);
+
 const in_addr_t *nm_l3_config_data_get_wins (const NML3ConfigData *self,
                                              guint *out_len);
 

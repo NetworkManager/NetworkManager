@@ -122,6 +122,7 @@ struct _NML3ConfigData {
 	int ndisc_hop_limit_val;
 
 	guint32 mtu;
+	guint32 ip6_mtu;
 	guint32 ndisc_reachable_time_msec_val;
 	guint32 ndisc_retrans_timer_msec_val;
 
@@ -1336,6 +1337,27 @@ nm_l3_config_data_set_mtu (NML3ConfigData *self,
 	return TRUE;
 }
 
+guint32
+nm_l3_config_data_get_ip6_mtu (const NML3ConfigData *self)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+
+	return self->ip6_mtu;
+}
+
+gboolean
+nm_l3_config_data_set_ip6_mtu (NML3ConfigData *self,
+                               guint32 ip6_mtu)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	if (self->ip6_mtu == ip6_mtu)
+		return FALSE;
+
+	self->ip6_mtu = ip6_mtu;
+	return TRUE;
+}
+
 gboolean
 nm_l3_config_data_set_source (NML3ConfigData *self,
                               NMIPConfigSource source)
@@ -1596,6 +1618,7 @@ nm_l3_config_data_cmp (const NML3ConfigData *a, const NML3ConfigData *b)
 	NM_CMP_DIRECT (a->mdns, b->mdns);
 	NM_CMP_DIRECT (a->llmnr, b->llmnr);
 	NM_CMP_DIRECT (a->mtu, b->mtu);
+	NM_CMP_DIRECT (a->ip6_mtu, b->ip6_mtu);
 	NM_CMP_DIRECT_UNSAFE (a->metered, b->metered);
 	NM_CMP_DIRECT_UNSAFE (a->ip6_privacy, b->ip6_privacy);
 
@@ -2400,6 +2423,9 @@ nm_l3_config_data_merge (NML3ConfigData *self,
 
 	if (self->mtu == 0u)
 		self->mtu = src->mtu;
+
+	if (self->ip6_mtu == 0u)
+		self->ip6_mtu = src->ip6_mtu;
 
 	/* self->source does not get merged. */
 	/* self->dhcp_lease_x does not get merged. */
