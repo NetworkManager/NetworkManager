@@ -2282,7 +2282,7 @@ nm_l3_config_data_merge (NML3ConfigData *self,
 	if (self->ip6_privacy == NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
 		self->ip6_privacy = src->ip6_privacy;
 
-	if (self->mtu != 0u)
+	if (self->mtu == 0u)
 		self->mtu = src->mtu;
 
 	/* self->source does not get merged. */
