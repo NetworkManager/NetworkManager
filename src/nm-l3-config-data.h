@@ -458,8 +458,8 @@ gboolean nm_l3_config_data_add_nameserver (NML3ConfigData *self,
                                            int addr_family,
                                            gconstpointer /* (const NMIPAddr *) */ nameserver);
 
-gboolean nm_l3_config_data_clear_nameserver (NML3ConfigData *self,
-                                             int addr_family);
+gboolean nm_l3_config_data_clear_nameservers (NML3ConfigData *self,
+                                              int addr_family);
 
 gboolean nm_l3_config_data_add_nis_server (NML3ConfigData *self,
                                            in_addr_t nis_server);
@@ -478,6 +478,9 @@ gboolean nm_l3_config_data_add_domain (NML3ConfigData *self,
 const char *const*nm_l3_config_data_get_searches (const NML3ConfigData *self,
                                                   int addr_family,
                                                   guint *out_len);
+
+gboolean nm_l3_config_data_clear_searches (NML3ConfigData *self,
+                                           int addr_family);
 
 gboolean nm_l3_config_data_add_search (NML3ConfigData *self,
                                        int addr_family,

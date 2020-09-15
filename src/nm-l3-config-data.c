@@ -1099,8 +1099,8 @@ nm_l3_config_data_add_nameserver (NML3ConfigData *self,
 }
 
 gboolean
-nm_l3_config_data_clear_nameserver (NML3ConfigData *self,
-                                    int addr_family)
+nm_l3_config_data_clear_nameservers (NML3ConfigData *self,
+                                     int addr_family)
 {
 	gs_unref_array GArray *old = NULL;
 
@@ -1195,6 +1195,19 @@ nm_l3_config_data_add_search (NML3ConfigData *self,
 	nm_assert_addr_family (addr_family);
 
 	return _check_and_add_domain (&self->searches_x[NM_IS_IPv4 (addr_family)], search);
+}
+
+gboolean
+nm_l3_config_data_clear_searches (NML3ConfigData *self,
+                                  int addr_family)
+{
+	gs_unref_ptrarray GPtrArray *old = NULL;
+
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+	nm_assert_addr_family (addr_family);
+
+	old = g_steal_pointer (&self->searches_x[NM_IS_IPv4 (addr_family)]);
+	return (nm_g_ptr_array_len (old) > 0);
 }
 
 gboolean
