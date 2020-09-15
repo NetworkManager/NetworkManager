@@ -511,11 +511,14 @@ _scan_notify_allowed (NMDeviceWifi *self, NMTernary do_kickoff)
 		periodic_allowed = FALSE;
 
 		/* Prohibit scans if the supplicant is busy */
-		explicit_allowed = !NM_IN_SET (nm_supplicant_interface_get_state (priv->sup_iface),
-		                               NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING,
-		                               NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED,
-		                               NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE,
-		                               NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE);
+		if (priv->sup_iface) {
+			explicit_allowed = !NM_IN_SET (nm_supplicant_interface_get_state (priv->sup_iface),
+			                               NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATING,
+			                               NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED,
+			                               NM_SUPPLICANT_INTERFACE_STATE_4WAY_HANDSHAKE,
+			                               NM_SUPPLICANT_INTERFACE_STATE_GROUP_HANDSHAKE);
+		} else
+			explicit_allowed = FALSE;
 	}
 
 	if (   explicit_allowed != priv->scan_explicit_allowed
