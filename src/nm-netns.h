@@ -34,4 +34,16 @@ struct _NMDedupMultiIndex *nm_netns_get_multi_idx (NMNetns *self);
 NML3Cfg *nm_netns_access_l3cfg (NMNetns *netns,
                                 int ifindex);
 
+/*****************************************************************************/
+
+typedef struct {
+	in_addr_t addr;
+	int _ref_count;
+	NMNetns *_self;
+} NMNetnsSharedIPHandle;
+
+NMNetnsSharedIPHandle *nm_netns_shared_ip_reserve (NMNetns *self);
+
+void nm_netns_shared_ip_release (NMNetnsSharedIPHandle *handle);
+
 #endif /* __NM_NETNS_H__ */
