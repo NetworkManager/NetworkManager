@@ -8102,7 +8102,7 @@ static const NMDBusInterfaceInfoExtended interface_info_manager = {
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("ActivatingConnection",       "o",     NM_MANAGER_ACTIVATING_CONNECTION),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Startup",                    "b",     NM_MANAGER_STARTUP),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Version",                    "s",     NM_MANAGER_VERSION),
-			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Capabilities",               "u",     NM_MANAGER_CAPABILITIES),
+			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Capabilities",               "au",    NM_MANAGER_CAPABILITIES),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("State",                      "u",     NM_MANAGER_STATE),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("Connectivity",               "u",     NM_MANAGER_CONNECTIVITY),
 			NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L     ("ConnectivityCheckAvailable", "b",     NM_MANAGER_CONNECTIVITY_CHECK_AVAILABLE),
