@@ -119,7 +119,11 @@ struct _NML3ConfigData {
 
 	NMIPConfigSource source;
 
+	int ndisc_hop_limit_val;
+
 	guint32 mtu;
+	guint32 ndisc_reachable_time_msec_val;
+	guint32 ndisc_retrans_timer_msec_val;
 
 	NMTernary metered:3;
 
@@ -131,6 +135,10 @@ struct _NML3ConfigData {
 	bool has_routes_with_type_local_6_set:1;
 	bool has_routes_with_type_local_4_val:1;
 	bool has_routes_with_type_local_6_val:1;
+
+	bool ndisc_hop_limit_set:1;
+	bool ndisc_reachable_time_msec_set:1;
+	bool ndisc_retrans_timer_msec_set:1;
 };
 
 /*****************************************************************************/
@@ -398,17 +406,20 @@ nm_l3_config_data_new (NMDedupMultiIndex *multi_idx,
 
 	self = g_slice_new (NML3ConfigData);
 	*self = (NML3ConfigData) {
-		.ref_count          = 1,
-		.ifindex            = ifindex,
-		.multi_idx          = nm_dedup_multi_index_ref (multi_idx),
-		.mdns               = NM_SETTING_CONNECTION_MDNS_DEFAULT,
-		.llmnr              = NM_SETTING_CONNECTION_LLMNR_DEFAULT,
-		.flags              = NM_L3_CONFIG_DAT_FLAGS_NONE,
-		.metered            = NM_TERNARY_DEFAULT,
-		.route_table_sync_4 = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
-		.route_table_sync_6 = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
-		.source             = NM_IP_CONFIG_SOURCE_UNKNOWN,
-		.ip6_privacy        = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
+		.ref_count                     = 1,
+		.ifindex                       = ifindex,
+		.multi_idx                     = nm_dedup_multi_index_ref (multi_idx),
+		.mdns                          = NM_SETTING_CONNECTION_MDNS_DEFAULT,
+		.llmnr                         = NM_SETTING_CONNECTION_LLMNR_DEFAULT,
+		.flags                         = NM_L3_CONFIG_DAT_FLAGS_NONE,
+		.metered                       = NM_TERNARY_DEFAULT,
+		.route_table_sync_4            = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
+		.route_table_sync_6            = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
+		.source                        = NM_IP_CONFIG_SOURCE_UNKNOWN,
+		.ip6_privacy                   = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
+		.ndisc_hop_limit_set           = FALSE,
+		.ndisc_reachable_time_msec_set = FALSE,
+		.ndisc_retrans_timer_msec_set  = FALSE,
 	};
 
 	_idx_type_init (&self->idx_addresses_4, NMP_OBJECT_TYPE_IP4_ADDRESS);
@@ -1363,6 +1374,84 @@ nm_l3_config_data_set_ip6_privacy (NML3ConfigData *self,
 	return TRUE;
 }
 
+gboolean
+nm_l3_config_data_get_ndisc_hop_limit (const NML3ConfigData *self,
+                                       int *out_val)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	if (!self->ndisc_hop_limit_set) {
+		NM_SET_OUT (out_val, 0);
+		return FALSE;
+	}
+	NM_SET_OUT (out_val, self->ndisc_hop_limit_val);
+	return TRUE;
+}
+
+gboolean
+nm_l3_config_data_set_ndisc_hop_limit (NML3ConfigData *self,
+                                       int val)
+{
+	if (   self->ndisc_hop_limit_set
+	    && self->ndisc_hop_limit_val == val)
+		return FALSE;
+	self->ndisc_hop_limit_set = TRUE;
+	self->ndisc_hop_limit_val = val;
+	return TRUE;
+}
+
+gboolean
+nm_l3_config_data_get_ndisc_reachable_time_msec (const NML3ConfigData *self,
+                                                 guint32 *out_val)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	if (!self->ndisc_reachable_time_msec_set) {
+		NM_SET_OUT (out_val, 0);
+		return FALSE;
+	}
+	NM_SET_OUT (out_val, self->ndisc_reachable_time_msec_val);
+	return TRUE;
+}
+
+gboolean
+nm_l3_config_data_set_ndisc_reachable_time_msec (NML3ConfigData *self,
+                                                 guint32 val)
+{
+	if (   self->ndisc_reachable_time_msec_set
+	    && self->ndisc_reachable_time_msec_val == val)
+		return FALSE;
+	self->ndisc_reachable_time_msec_set = TRUE;
+	self->ndisc_reachable_time_msec_val = val;
+	return TRUE;
+}
+
+gboolean
+nm_l3_config_data_get_ndisc_retrans_timer_msec (const NML3ConfigData *self,
+                                                guint32 *out_val)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	if (!self->ndisc_retrans_timer_msec_set) {
+		NM_SET_OUT (out_val, 0);
+		return FALSE;
+	}
+	NM_SET_OUT (out_val, self->ndisc_retrans_timer_msec_val);
+	return TRUE;
+}
+
+gboolean
+nm_l3_config_data_set_ndisc_retrans_timer_msec (NML3ConfigData *self,
+                                                guint32 val)
+{
+	if (   self->ndisc_retrans_timer_msec_set
+	    && self->ndisc_retrans_timer_msec_val == val)
+		return FALSE;
+	self->ndisc_retrans_timer_msec_set = TRUE;
+	self->ndisc_retrans_timer_msec_val = val;
+	return TRUE;
+}
+
 /*****************************************************************************/
 
 NMDhcpLease *
@@ -1509,6 +1598,18 @@ nm_l3_config_data_cmp (const NML3ConfigData *a, const NML3ConfigData *b)
 	NM_CMP_DIRECT (a->mtu, b->mtu);
 	NM_CMP_DIRECT_UNSAFE (a->metered, b->metered);
 	NM_CMP_DIRECT_UNSAFE (a->ip6_privacy, b->ip6_privacy);
+
+	NM_CMP_DIRECT_UNSAFE (a->ndisc_hop_limit_set, b->ndisc_hop_limit_set);
+	if (a->ndisc_hop_limit_set)
+		NM_CMP_DIRECT (a->ndisc_hop_limit_val, b->ndisc_hop_limit_val);
+
+	NM_CMP_DIRECT_UNSAFE (a->ndisc_reachable_time_msec_set, b->ndisc_reachable_time_msec_set);
+	if (a->ndisc_reachable_time_msec_set)
+		NM_CMP_DIRECT (a->ndisc_reachable_time_msec_val, b->ndisc_reachable_time_msec_val);
+
+	NM_CMP_DIRECT_UNSAFE (a->ndisc_retrans_timer_msec_set, b->ndisc_retrans_timer_msec_set);
+	if (a->ndisc_retrans_timer_msec_set)
+		NM_CMP_DIRECT (a->ndisc_retrans_timer_msec_val, b->ndisc_retrans_timer_msec_val);
 
 	NM_CMP_FIELD (a, b, source);
 
@@ -2281,6 +2382,21 @@ nm_l3_config_data_merge (NML3ConfigData *self,
 
 	if (self->ip6_privacy == NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
 		self->ip6_privacy = src->ip6_privacy;
+
+	if (!self->ndisc_hop_limit_set) {
+		self->ndisc_hop_limit_set = TRUE;
+		self->ndisc_hop_limit_val = src->ndisc_hop_limit_val;
+	}
+
+	if (!self->ndisc_reachable_time_msec_set) {
+		self->ndisc_reachable_time_msec_set = TRUE;
+		self->ndisc_reachable_time_msec_val = src->ndisc_reachable_time_msec_val;
+	}
+
+	if (!self->ndisc_retrans_timer_msec_set) {
+		self->ndisc_retrans_timer_msec_set = TRUE;
+		self->ndisc_retrans_timer_msec_val = src->ndisc_retrans_timer_msec_val;
+	}
 
 	if (self->mtu == 0u)
 		self->mtu = src->mtu;

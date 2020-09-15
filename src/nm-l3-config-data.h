@@ -491,6 +491,21 @@ NMSettingIP6ConfigPrivacy nm_l3_config_data_get_ip6_privacy (const NML3ConfigDat
 gboolean nm_l3_config_data_set_ip6_privacy (NML3ConfigData *self,
                                             NMSettingIP6ConfigPrivacy ip6_privacy);
 
+gboolean nm_l3_config_data_get_ndisc_hop_limit (const NML3ConfigData *self,
+                                                int *out_val);
+gboolean nm_l3_config_data_set_ndisc_hop_limit (NML3ConfigData *self,
+                                                int val);
+
+gboolean nm_l3_config_data_get_ndisc_reachable_time_msec (const NML3ConfigData *self,
+                                                          guint32 *out_val);
+gboolean nm_l3_config_data_set_ndisc_reachable_time_msec (NML3ConfigData *self,
+                                                          guint32 val);
+
+gboolean nm_l3_config_data_get_ndisc_retrans_timer_msec (const NML3ConfigData *self,
+                                                         guint32 *out_val);
+gboolean nm_l3_config_data_set_ndisc_retrans_timer_msec (NML3ConfigData *self,
+                                                         guint32 val);
+
 struct _NMDhcpLease *nm_l3_config_data_get_dhcp_lease (const NML3ConfigData *self,
                                                        int addr_family);
 
