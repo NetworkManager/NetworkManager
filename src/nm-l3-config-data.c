@@ -623,6 +623,28 @@ nm_l3_config_data_lookup_obj (const NML3ConfigData *self,
 	                                        obj);
 }
 
+const NMPlatformIP6Address *
+nm_l3_config_data_lookup_address_6 (const NML3ConfigData *self,
+                                    const struct in6_addr *addr)
+{
+	const NMDedupMultiEntry *head;
+	NMPObject obj_stack;
+
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+
+	/* this works only, because the primary key for a Ipv6 address is the
+	 * ifindex and the "struct in6_addr". */
+	nmp_object_stackinit_id_ip6_address (&obj_stack,
+	                                     self->ifindex,
+	                                     addr);
+
+	head = nm_l3_config_data_lookup_obj (self, &obj_stack);
+	if (!head)
+		return NULL;
+
+	return NMP_OBJECT_CAST_IP6_ADDRESS (head->obj);
+}
+
 const NMPObject *
 nmtst_l3_config_data_get_obj_at (const NML3ConfigData *self,
                                  NMPObjectType obj_type,
