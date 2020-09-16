@@ -2124,6 +2124,8 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/nm-netns.h \
 	src/nm-l3-config-data.c \
 	src/nm-l3-config-data.h \
+	src/nm-l3-ipv4ll.c \
+	src/nm-l3-ipv4ll.h \
 	src/nm-l3cfg.c \
 	src/nm-l3cfg.h \
 	src/nm-ip-config.c \
