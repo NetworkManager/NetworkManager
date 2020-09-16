@@ -620,8 +620,20 @@ _load_link (NML3Cfg *self, gboolean initial)
 void
 _nm_l3cfg_notify_platform_change_on_idle (NML3Cfg *self, guint32 obj_type_flags)
 {
+	NML3ConfigNotifyPayload payload;
+
 	if (NM_FLAGS_ANY (obj_type_flags, nmp_object_type_to_flags (NMP_OBJECT_TYPE_LINK)))
 		_load_link (self, FALSE);
+
+	payload = (NML3ConfigNotifyPayload) {
+		.platform_change_on_idle = {
+			.obj_type_flags = obj_type_flags,
+		},
+	};
+	_l3cfg_emit_signal_notify (self,
+	                           NM_L3_CONFIG_NOTIFY_TYPE_NOTIFY_PLATFORM_CHANGE_ON_IDLE,
+	                           &payload);
+
 	if (NM_FLAGS_ANY (obj_type_flags, nmp_object_type_to_flags (NMP_OBJECT_TYPE_IP4_ROUTE)))
 		_property_emit_notify (self, NM_L3CFG_PROPERTY_EMIT_TYPE_IP4_ROUTE);
 	if (NM_FLAGS_ANY (obj_type_flags, nmp_object_type_to_flags (NMP_OBJECT_TYPE_IP6_ROUTE)))

@@ -3014,6 +3014,7 @@ _dev_l3_cfg_notify_cb (NML3Cfg *l3cfg,
 	case NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED:
 		_dev_l3_cfg_acd_maybe_comlete (self);
 		return;
+	case NM_L3_CONFIG_NOTIFY_TYPE_NOTIFY_PLATFORM_CHANGE_ON_IDLE:
 	case NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED:
 		/* FIXME(l3cfg) */
 		return;

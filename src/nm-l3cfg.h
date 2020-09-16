@@ -22,6 +22,13 @@ typedef enum {
 	NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED,
 	NM_L3_CONFIG_NOTIFY_TYPE_ACD_FAILED,
 	NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED,
+
+	/* NML3Cfg hooks to the NMPlatform signals for link, addresses and routes.
+	 * It re-emits the signal on an idle handler. The purpose is for something
+	 * like NMDevice which is already subscribed to these signals, it can get the
+	 * notifications without also subscribing directly to the platform. */
+	NM_L3_CONFIG_NOTIFY_TYPE_NOTIFY_PLATFORM_CHANGE_ON_IDLE,
+
 	_NM_L3_CONFIG_NOTIFY_TYPE_NUM,
 } NML3ConfigNotifyType;
 
@@ -38,6 +45,10 @@ typedef struct {
 			guint sources_len;
 			const NML3ConfigNotifyPayloadAcdFailedSource *sources;
 		} acd_failed;
+
+		struct {
+			guint32 obj_type_flags;
+		} platform_change_on_idle;
 	};
 } NML3ConfigNotifyPayload;
 

@@ -8,6 +8,7 @@
 #include "nm-netns.h"
 
 #include "nm-glib-aux/nm-dedup-multi.h"
+#include "nm-glib-aux/nm-c-list.h"
 
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
@@ -175,14 +176,27 @@ _platform_signal_on_idle_cb (gpointer user_data)
 	gs_unref_object NMNetns *self = g_object_ref (NM_NETNS (user_data));
 	NMNetnsPrivate *priv = NM_NETNS_GET_PRIVATE (self);
 	L3CfgData *l3cfg_data;
+	CList work_list;
 
-	while ((l3cfg_data = c_list_first_entry (&priv->l3cfg_signal_pending_lst_head, L3CfgData, signal_pending_lst))) {
+	priv->signal_pending_idle_id = 0;
+
+	/* we emit all queued signals together. However, we don't want to hook the
+	 * main loop for longer than the currently queued elements.
+	 *
+	 * If we catch more change events, they will be queued and processed by a future
+	 * idle handler.
+	 *
+	 * Hence, move the list to a temporary list. Isn't CList great? */
+
+	c_list_init (&work_list);
+	c_list_splice (&work_list, &priv->l3cfg_signal_pending_lst_head);
+
+	while ((l3cfg_data = c_list_first_entry (&work_list, L3CfgData, signal_pending_lst))) {
 		c_list_unlink (&l3cfg_data->signal_pending_lst);
 		_nm_l3cfg_notify_platform_change_on_idle (l3cfg_data->l3cfg,
 		                                          nm_steal_int (&l3cfg_data->signal_pending_flag));
 	}
 
-	priv->signal_pending_idle_id = 0;
 	return G_SOURCE_REMOVE;
 }
 
