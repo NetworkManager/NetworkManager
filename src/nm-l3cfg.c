@@ -134,7 +134,10 @@ static guint signals[LAST_SIGNAL] = { 0 };
 typedef struct _NML3CfgPrivate {
 	GArray *property_emit_list;
 	GArray *l3_config_datas;
-	const NML3ConfigData *combined_l3cd;
+
+	const NML3ConfigData *combined_l3cd_merged;
+
+	const NML3ConfigData *combined_l3cd_commited;
 
 	CList commit_type_lst_head;
 
@@ -260,6 +263,14 @@ _l3cfg_emit_signal_notify (NML3Cfg *self,
 	               0,
 	               (int) notify_type,
 	               pay_load);
+}
+
+/*****************************************************************************/
+
+static void
+_l3_changed_configs_set_dirty (NML3Cfg *self)
+{
+	self->priv.changed_configs = TRUE;
 }
 
 /*****************************************************************************/
@@ -423,14 +434,14 @@ _l3cfg_externally_removed_objs_drop_unused (NML3Cfg *self)
 	if (!self->priv.p->externally_removed_objs_hash)
 		return;
 
-	if (!self->priv.p->combined_l3cd) {
+	if (!self->priv.p->combined_l3cd_commited) {
 		_l3cfg_externally_removed_objs_drop (self, AF_UNSPEC);
 		return;
 	}
 
 	g_hash_table_iter_init (&h_iter, self->priv.p->externally_removed_objs_hash);
 	while (g_hash_table_iter_next (&h_iter, (gpointer *) &obj, NULL)) {
-		if (!nm_l3_config_data_lookup_route_obj (self->priv.p->combined_l3cd,
+		if (!nm_l3_config_data_lookup_route_obj (self->priv.p->combined_l3cd_commited,
 		                                         obj)) {
 			/* The object is no longer tracked in the configuration.
 			 * The externally_removed_objs_hash is to prevent adding entires that were
@@ -453,7 +464,7 @@ _l3cfg_externally_removed_objs_track (NML3Cfg *self,
 
 	nm_assert (NM_IS_L3CFG (self));
 
-	if (!self->priv.p->combined_l3cd)
+	if (!self->priv.p->combined_l3cd_commited)
 		return;
 
 	if (!is_removed) {
@@ -470,7 +481,7 @@ _l3cfg_externally_removed_objs_track (NML3Cfg *self,
 		return;
 	}
 
-	if (!nm_l3_config_data_lookup_route_obj (self->priv.p->combined_l3cd,
+	if (!nm_l3_config_data_lookup_route_obj (self->priv.p->combined_l3cd_commited,
 	                                         obj)) {
 		/* we don't care about this object, so there is nothing to hide hide */
 		return;
@@ -500,16 +511,16 @@ _l3cfg_externally_removed_objs_pickup (NML3Cfg *self,
 	NMDedupMultiIter iter;
 	const NMPObject *obj;
 
-	if (!self->priv.p->combined_l3cd)
+	if (!self->priv.p->combined_l3cd_commited)
 		return;
 
-	nm_l3_config_data_iter_obj_for_each (&iter, self->priv.p->combined_l3cd, &obj, NMP_OBJECT_TYPE_IP_ADDRESS (IS_IPv4)) {
+	nm_l3_config_data_iter_obj_for_each (&iter, self->priv.p->combined_l3cd_commited, &obj, NMP_OBJECT_TYPE_IP_ADDRESS (IS_IPv4)) {
 		if (!nm_platform_lookup_entry (self->priv.platform,
 		                               NMP_CACHE_ID_TYPE_OBJECT_TYPE,
 		                               obj))
 			_l3cfg_externally_removed_objs_track (self, obj, TRUE);
 	}
-	nm_l3_config_data_iter_obj_for_each (&iter, self->priv.p->combined_l3cd, &obj, NMP_OBJECT_TYPE_IP_ROUTE (IS_IPv4)) {
+	nm_l3_config_data_iter_obj_for_each (&iter, self->priv.p->combined_l3cd_commited, &obj, NMP_OBJECT_TYPE_IP_ROUTE (IS_IPv4)) {
 		if (!nm_platform_lookup_entry (self->priv.platform,
 		                               NMP_CACHE_ID_TYPE_OBJECT_TYPE,
 		                               obj))
@@ -885,7 +896,7 @@ _l3_acd_platform_commit_acd_update (NML3Cfg *self)
 	 *
 	 * This makes the mechanism also suitable for internally triggering a commit when ACD completes. */
 	_LOGT ("acd: acd update now");
-	self->priv.changed_configs = TRUE;
+	_l3_changed_configs_set_dirty (self);
 	nm_l3cfg_platform_commit (self,
 	                          NM_L3_CFG_COMMIT_TYPE_AUTO,
 	                          AF_INET,
@@ -2086,6 +2097,7 @@ handle_probe_done:
 		_LOGT_acd (acd_data,
 		           "state: acd probe succeed");
 		if (!self->priv.p->acd_ready_on_idle_source) {
+			_l3_changed_configs_set_dirty (self);
 			self->priv.p->acd_ready_on_idle_source = nm_g_idle_source_new (G_PRIORITY_DEFAULT,
 			                                                               _l3_acd_ready_on_idle_cb,
 			                                                               self,
@@ -2399,7 +2411,7 @@ nm_l3cfg_add_config (NML3Cfg *self,
 	}
 
 	if (changed)
-		self->priv.changed_configs = TRUE;
+		_l3_changed_configs_set_dirty (self);
 
 	return changed;
 }
@@ -2437,7 +2449,7 @@ _l3cfg_remove_config (NML3Cfg *self,
 			continue;
 		}
 
-		self->priv.changed_configs = TRUE;
+		_l3_changed_configs_set_dirty (self);
 		_l3_config_datas_remove_index_fast (l3_config_datas, idx);
 		if (l3cd) {
 			/* only one was requested to be removed. We are done. */
@@ -2498,6 +2510,7 @@ _l3_hook_add_addr_cb (const NML3ConfigData *l3cd,
 
 static void
 _l3cfg_update_combined_config (NML3Cfg *self,
+                               gboolean to_commit,
                                const NML3ConfigData **out_old /* transfer reference */,
                                gboolean *out_changed_configs,
                                gboolean *out_changed_combined_l3cd)
@@ -2510,13 +2523,13 @@ _l3cfg_update_combined_config (NML3Cfg *self,
 	guint i;
 
 	nm_assert (NM_IS_L3CFG (self));
-	nm_assert (!out_old || !*out_old);
 
+	nm_assert (!out_old || !*out_old);
 	NM_SET_OUT (out_changed_configs, self->priv.changed_configs);
 	NM_SET_OUT (out_changed_combined_l3cd, FALSE);
 
 	if (!self->priv.changed_configs)
-		return;
+		goto out;
 
 	self->priv.changed_configs = FALSE;
 
@@ -2554,15 +2567,30 @@ _l3cfg_update_combined_config (NML3Cfg *self,
 	}
 
 
-	if (nm_l3_config_data_equal (l3cd, self->priv.p->combined_l3cd))
-		return;
+	if (nm_l3_config_data_equal (l3cd, self->priv.p->combined_l3cd_merged))
+		goto out;
 
-	_LOGT ("desired IP configuration changed");
+	l3cd_old = g_steal_pointer (&self->priv.p->combined_l3cd_merged);
+	self->priv.p->combined_l3cd_merged = nm_l3_config_data_seal (g_steal_pointer (&l3cd));
 
-	l3cd_old = g_steal_pointer (&self->priv.p->combined_l3cd);
-	self->priv.p->combined_l3cd = nm_l3_config_data_seal (g_steal_pointer (&l3cd));
-	NM_SET_OUT (out_old, nm_l3_config_data_ref (self->priv.p->combined_l3cd));
-	NM_SET_OUT (out_changed_combined_l3cd, TRUE);
+	if (!to_commit) {
+		NM_SET_OUT (out_old, g_steal_pointer (&l3cd_old));
+		NM_SET_OUT (out_changed_combined_l3cd, TRUE);
+		_LOGT ("desired IP configuration changed");
+	}
+
+out:
+	if (   to_commit
+	    && self->priv.p->combined_l3cd_commited != self->priv.p->combined_l3cd_merged) {
+		nm_auto_unref_l3cd const NML3ConfigData *l3cd_commited_old = NULL;
+
+		l3cd_commited_old = g_steal_pointer (&self->priv.p->combined_l3cd_commited);
+		self->priv.p->combined_l3cd_commited = nm_l3_config_data_ref (self->priv.p->combined_l3cd_merged);
+
+		NM_SET_OUT (out_old, g_steal_pointer (&l3cd_commited_old));
+		NM_SET_OUT (out_changed_combined_l3cd, TRUE);
+		_LOGT ("desired IP configuration changed for commit");
+	}
 }
 
 /*****************************************************************************/
@@ -2775,7 +2803,7 @@ _platform_commit (NML3Cfg *self,
 	       nm_utils_addr_family_to_char (addr_family),
 	       _l3_cfg_commit_type_to_string (commit_type, sbuf_commit_type, sizeof (sbuf_commit_type)));
 
-	_l3cfg_update_combined_config (self, &l3cd_old, &changed_configs, &changed_combined_l3cd);
+	_l3cfg_update_combined_config (self, TRUE, &l3cd_old, &changed_configs, &changed_combined_l3cd);
 
 	if (changed_combined_l3cd) {
 		/* our combined configuration changed. We may track entries in externally_removed_objs_hash,
@@ -2788,7 +2816,7 @@ _platform_commit (NML3Cfg *self,
 		_l3cfg_externally_removed_objs_pickup (self, addr_family);
 	}
 
-	if (self->priv.p->combined_l3cd) {
+	if (self->priv.p->combined_l3cd_commited) {
 		NMDedupMultiFcnSelectPredicate predicate;
 
 		if (   commit_type != NM_L3_CFG_COMMIT_TYPE_REAPPLY
@@ -2796,7 +2824,7 @@ _platform_commit (NML3Cfg *self,
 			predicate = _l3cfg_externally_removed_objs_filter;
 		else
 			predicate = NULL;
-		addresses = nm_dedup_multi_objs_to_ptr_array_head (nm_l3_config_data_lookup_objs (self->priv.p->combined_l3cd,
+		addresses = nm_dedup_multi_objs_to_ptr_array_head (nm_l3_config_data_lookup_objs (self->priv.p->combined_l3cd_commited,
 		                                                                                  NMP_OBJECT_TYPE_IP_ADDRESS (IS_IPv4)),
 		                                                   predicate,
 		                                                   self->priv.p->externally_removed_objs_hash);
@@ -2806,12 +2834,12 @@ _platform_commit (NML3Cfg *self,
 			predicate = _l3cfg_externally_removed_objs_filter;
 		else
 			predicate = NULL;
-		routes = nm_dedup_multi_objs_to_ptr_array_head (nm_l3_config_data_lookup_objs (self->priv.p->combined_l3cd,
+		routes = nm_dedup_multi_objs_to_ptr_array_head (nm_l3_config_data_lookup_objs (self->priv.p->combined_l3cd_commited,
 		                                                                               NMP_OBJECT_TYPE_IP_ROUTE (IS_IPv4)),
 		                                                predicate,
 		                                                self->priv.p->externally_removed_objs_hash);
 
-		route_table_sync = nm_l3_config_data_get_route_table_sync (self->priv.p->combined_l3cd, addr_family);
+		route_table_sync = nm_l3_config_data_get_route_table_sync (self->priv.p->combined_l3cd_commited, addr_family);
 	}
 
 	if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_NONE)
@@ -3024,29 +3052,30 @@ nm_l3cfg_commit_type_unregister (NML3Cfg *self,
 /*****************************************************************************/
 
 const NML3ConfigData *
-nm_l3cfg_get_combined_l3cd (NML3Cfg *self)
+nm_l3cfg_get_combined_l3cd (NML3Cfg *self,
+                            gboolean get_commited)
 {
 	nm_assert (NM_IS_L3CFG (self));
 
-	return self->priv.p->combined_l3cd;
+	if (get_commited)
+		return self->priv.p->combined_l3cd_commited;
+
+	_l3cfg_update_combined_config (self, FALSE, NULL, NULL, NULL);
+	return self->priv.p->combined_l3cd_merged;
 }
 
 const NMPObject *
 nm_l3cfg_get_best_default_route (NML3Cfg *self,
-                                 int addr_family)
+                                 int addr_family,
+                                 gboolean get_commited)
 {
-	nm_assert (NM_IS_L3CFG (self));
+	const NML3ConfigData *l3cd;
 
-	/* we only consider the combined_l3cd. This is a merge of all the l3cd, and the one
-	 * with which we called nm_l3cfg_platform_commit() the last time.
-	 *
-	 * In the meantime, we might have changed the tracked l3_config_datas, but we didn't
-	 * nm_l3cfg_platform_commit() yet. These changes are ignored for this purpose, until
-	 * the user call nm_l3cfg_platform_commit() to re-commit the changes. */
-	if (!self->priv.p->combined_l3cd)
+	l3cd = nm_l3cfg_get_combined_l3cd (self, get_commited);
+	if (!l3cd)
 		return NULL;
 
-	return nm_l3_config_data_get_best_default_route (self->priv.p->combined_l3cd, addr_family);
+	return nm_l3_config_data_get_best_default_route (l3cd, addr_family);
 }
 
 /*****************************************************************************/
@@ -3147,7 +3176,8 @@ finalize (GObject *object)
 	g_clear_object (&self->priv.netns);
 	g_clear_object (&self->priv.platform);
 
-	nm_clear_l3cd (&self->priv.p->combined_l3cd);
+	nm_clear_l3cd (&self->priv.p->combined_l3cd_merged);
+	nm_clear_l3cd (&self->priv.p->combined_l3cd_commited);
 
 	nm_clear_pointer (&self->priv.pllink, nmp_object_unref);
 
