@@ -1863,7 +1863,7 @@ int nm_platform_link_wireguard_change (NMPlatform *self,
                                        guint peers_len,
                                        NMPlatformWireGuardChangeFlags change_flags);
 
-const NMPlatformIP6Address *nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address);
+const NMPlatformIP6Address *nm_platform_ip6_address_get (NMPlatform *self, int ifindex, const struct in6_addr *address);
 
 gboolean nm_platform_object_delete (NMPlatform *self, const NMPObject *route);
 

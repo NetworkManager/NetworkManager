@@ -915,7 +915,7 @@ _ip_address_add (NMPlatform *platform,
 			g_assert (label == NULL);
 			g_assert (flags == 0);
 
-			a = nm_platform_ip6_address_get (platform, ifindex, address->addr6);
+			a = nm_platform_ip6_address_get (platform, ifindex, &address->addr6);
 			if (   a
 			    && !memcmp (nm_platform_ip6_address_get_peer (a),
 			                (IN6_IS_ADDR_UNSPECIFIED (&peer_address->addr6) || IN6_ARE_ADDR_EQUAL (&address->addr6, &peer_address->addr6))
@@ -1060,7 +1060,7 @@ _ip_address_del (NMPlatform *platform,
 		if (is_v4)
 			had_address = !!nm_platform_ip4_address_get (platform, ifindex, address->addr4, plen, peer_address->addr4);
 		else
-			had_address = !!nm_platform_ip6_address_get (platform, ifindex, address->addr6);
+			had_address = !!nm_platform_ip6_address_get (platform, ifindex, &address->addr6);
 
 		if (is_v4) {
 			success = nmtstp_run_command ("ip address delete %s%s%s/%d dev %s",
@@ -1112,7 +1112,7 @@ _ip_address_del (NMPlatform *platform,
 		} else {
 			const NMPlatformIP6Address *a;
 
-			a = nm_platform_ip6_address_get (platform, ifindex, address->addr6);
+			a = nm_platform_ip6_address_get (platform, ifindex, &address->addr6);
 			if (!a)
 				break;
 		}

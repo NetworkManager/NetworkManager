@@ -12107,7 +12107,7 @@ dad6_add_pending_address (NMDevice *self,
 
 	pl_addr = nm_platform_ip6_address_get (platform,
 	                                       ifindex,
-	                                       *address);
+	                                       address);
 	if (   pl_addr
 	    && NM_FLAGS_HAS (pl_addr->n_ifa_flags, IFA_F_TENTATIVE)
 	    && !NM_FLAGS_HAS (pl_addr->n_ifa_flags, IFA_F_DADFAILED)
