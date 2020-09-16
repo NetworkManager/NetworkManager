@@ -434,8 +434,10 @@ nm_l3_config_data_new (NMDedupMultiIndex *multi_idx,
 const NML3ConfigData *
 nm_l3_config_data_ref (const NML3ConfigData *self)
 {
-	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
-	((NML3ConfigData *) self)->ref_count++;
+	if (self) {
+		nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+		((NML3ConfigData *) self)->ref_count++;
+	}
 	return self;
 }
 
