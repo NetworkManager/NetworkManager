@@ -229,4 +229,8 @@ const NMPObject *nm_l3cfg_get_best_default_route (NML3Cfg *self,
 
 /*****************************************************************************/
 
+gboolean nm_l3cfg_has_commited_ip6_addresses_pending_dad (NML3Cfg *self);
+
+/*****************************************************************************/
+
 #endif /* __NM_L3CFG_H__ */

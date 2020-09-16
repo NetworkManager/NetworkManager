@@ -5,6 +5,7 @@
 #include "nm-l3cfg.h"
 
 #include <net/if.h>
+#include <linux/if_addr.h>
 
 #include "platform/nm-platform.h"
 #include "platform/nmp-object.h"
@@ -3076,6 +3077,55 @@ nm_l3cfg_get_best_default_route (NML3Cfg *self,
 		return NULL;
 
 	return nm_l3_config_data_get_best_default_route (l3cd, addr_family);
+}
+
+/*****************************************************************************/
+
+gboolean
+nm_l3cfg_has_commited_ip6_addresses_pending_dad (NML3Cfg *self)
+{
+	const NML3ConfigData *l3cd;
+	const NMPObject *plat_obj;
+	NMPLookup plat_lookup;
+	NMDedupMultiIter iter;
+
+	nm_assert (NM_IS_L3CFG (self));
+
+	l3cd = nm_l3cfg_get_combined_l3cd (self, TRUE);
+	if (!l3cd)
+		return FALSE;
+
+	/* we iterate over all addresses in platform, and check whether the tentative
+	 * addresses are tracked by our l3cd. Not the other way around, because we assume
+	 * that there are few addresses in platform that are still tentative, so
+	 * we only need to lookup few platform addresses in l3cd.
+	 *
+	 * Of course, all lookups are O(1) anyway, so in any case the operation is
+	 * O(n) (once "n" being the addresses in platform, and once in l3cd). */
+
+	nmp_lookup_init_object (&plat_lookup, NMP_OBJECT_TYPE_IP6_ADDRESS, self->priv.ifindex);
+
+	nm_platform_iter_obj_for_each (&iter,
+	                               self->priv.platform,
+	                               &plat_lookup,
+	                               &plat_obj) {
+		const NMPlatformIP6Address *plat_addr = NMP_OBJECT_CAST_IP6_ADDRESS (plat_obj);
+		const NMDedupMultiEntry *l3cd_entry;
+
+		if (   !NM_FLAGS_HAS (plat_addr->n_ifa_flags, IFA_F_TENTATIVE)
+		    || NM_FLAGS_ANY (plat_addr->n_ifa_flags,   IFA_F_DADFAILED
+		                                             | IFA_F_OPTIMISTIC))
+			continue;
+
+		l3cd_entry = nm_l3_config_data_lookup_obj (l3cd, plat_obj);
+
+		nm_assert (NMP_OBJECT_CAST_IP6_ADDRESS (nm_dedup_multi_entry_get_obj (l3cd_entry)) == nm_l3_config_data_lookup_address_6 (l3cd, &plat_addr->address));
+
+		if (l3cd_entry)
+			return TRUE;
+	}
+
+	return FALSE;
 }
 
 /*****************************************************************************/
