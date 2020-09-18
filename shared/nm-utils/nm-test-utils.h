@@ -1356,7 +1356,7 @@ static inline const char * \
 nmtst_static_##SIZE##_##NUM (const char *str) \
 { \
 	gsize l; \
-	static char buf[SIZE]; \
+	static _nm_thread_local char buf[SIZE]; \
 \
 	if (!str) \
 		return NULL; \
@@ -1378,7 +1378,7 @@ __define_nmtst_static(03, 1024)
 static inline const char *
 nmtst_uuid_generate (void)
 {
-	static char u[37];
+	static _nm_thread_local char u[37];
 	gs_free char *m = NULL;
 
 	m = nm_utils_uuid_generate ();
@@ -1419,7 +1419,7 @@ nmtst_inet4_from_string (const char *str)
 static inline const struct in6_addr *
 nmtst_inet6_from_string (const char *str)
 {
-	static struct in6_addr addr;
+	static _nm_thread_local struct in6_addr addr;
 	int success;
 
 	if (!str)
@@ -1451,7 +1451,7 @@ nmtst_inet_from_string (int addr_family, const char *str)
 static inline const char *
 nmtst_inet_to_string (int addr_family, gconstpointer addr)
 {
-	static char buf[NM_CONST_MAX (INET6_ADDRSTRLEN, INET_ADDRSTRLEN)];
+	static _nm_thread_local char buf[NM_CONST_MAX (INET6_ADDRSTRLEN, INET_ADDRSTRLEN)];
 
 	g_assert (NM_IN_SET (addr_family, AF_INET, AF_INET6));
 	g_assert (addr);
