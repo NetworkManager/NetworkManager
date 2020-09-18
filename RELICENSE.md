@@ -128,14 +128,14 @@ The contributors above may have contributed the code on behalf of a company
 that holds the copyright. This list tracks such legal entities. The contributor
 list above indicates whether a contributor provided code for a legal entity here.
 
-- [?] Novell, Inc.
-- [?] SUSE
-
 - [Y] Canonical, Ltd.
 - [Y] Endless Mobile, Inc.
 - [Y] Endless OS LLC
 - [Y] Intel Corporation
+- [Y] Novell, Inc.
 - [Y] One Laptop per Child
 - [Y] Pengutronix
 - [Y] Red Hat, Inc.
+- [Y] SUSE
 - [Y] Sigfox
+- [Y] Ximian, Inc.
