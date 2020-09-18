@@ -1400,10 +1400,10 @@ nmtst_uuid_generate (void)
 			g_error ("%s:%d: Expects \"%s\" but got \"%s\"", __FILE__, __LINE__, __substr, __str); \
 	} G_STMT_END
 
-static inline guint32
+static inline in_addr_t
 nmtst_inet4_from_string (const char *str)
 {
-	guint32 addr;
+	in_addr_t addr;
 	int success;
 
 	if (!str)
