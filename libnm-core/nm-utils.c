@@ -4878,7 +4878,7 @@ nm_utils_is_uuid (const char *str)
 	return FALSE;
 }
 
-static char _nm_utils_inet_ntop_buffer[NM_UTILS_INET_ADDRSTRLEN];
+static _nm_thread_local char _nm_utils_inet_ntop_buffer[NM_UTILS_INET_ADDRSTRLEN];
 
 /**
  * nm_utils_inet4_ntop: (skip)
@@ -4888,8 +4888,9 @@ static char _nm_utils_inet_ntop_buffer[NM_UTILS_INET_ADDRSTRLEN];
  *  characters. If set to %NULL, it will return a pointer to an internal, static
  *  buffer (shared with nm_utils_inet6_ntop()).  Beware, that the internal
  *  buffer will be overwritten with ever new call of nm_utils_inet4_ntop() or
- *  nm_utils_inet6_ntop() that does not provide its own @dst buffer. Also,
- *  using the internal buffer is not thread safe. When in doubt, pass your own
+ *  nm_utils_inet6_ntop() that does not provide its own @dst buffer. Since
+ *  1.28, the internal buffer is thread local and thus thread safe. Before
+ *  it was not thread safe. When in doubt, pass your own
  *  @dst buffer to avoid these issues.
  *
  * Wrapper for inet_ntop.
@@ -4916,8 +4917,9 @@ nm_utils_inet4_ntop (in_addr_t inaddr, char *dst)
  *  characters. If set to %NULL, it will return a pointer to an internal, static
  *  buffer (shared with nm_utils_inet4_ntop()).  Beware, that the internal
  *  buffer will be overwritten with ever new call of nm_utils_inet4_ntop() or
- *  nm_utils_inet6_ntop() that does not provide its own @dst buffer. Also,
- *  using the internal buffer is not thread safe. When in doubt, pass your own
+ *  nm_utils_inet6_ntop() that does not provide its own @dst buffer. Since
+ *  1.28, the internal buffer is thread local and thus thread safe. Before
+ *  it was not thread safe. When in doubt, pass your own
  *  @dst buffer to avoid these issues.
  *
  * Wrapper for inet_ntop.

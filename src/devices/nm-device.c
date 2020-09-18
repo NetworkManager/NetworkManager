@@ -377,8 +377,6 @@ typedef struct _NMDevicePrivate {
 
 	GCancellable *deactivating_cancellable;
 
-	guint32         ip4_address;
-
 	NMActRequest *  queued_act_request;
 	bool            queued_act_request_is_waiting_for_carrier:1;
 	NMDBusTrackObjPath act_request;
@@ -1179,7 +1177,7 @@ out_good:
 	return duid_out;
 }
 
-static gint32
+static guint32
 _prop_get_ipv6_ra_timeout (NMDevice *self)
 {
 	NMConnection *connection;
@@ -1191,9 +1189,9 @@ _prop_get_ipv6_ra_timeout (NMDevice *self)
 	connection = nm_device_get_applied_connection (self);
 
 	timeout = nm_setting_ip6_config_get_ra_timeout (NM_SETTING_IP6_CONFIG (nm_connection_get_setting_ip6_config (connection)));
-	nm_assert (timeout >= 0);
-	if (timeout)
+	if (timeout > 0)
 		return timeout;
+	nm_assert (timeout == 0);
 
 	return nm_config_data_get_connection_default_int64 (NM_CONFIG_GET_DATA,
 	                                                    NM_CON_DEFAULT ("ipv6.ra-timeout"),
@@ -10981,15 +10979,6 @@ addrconf6_start_with_link_ready (NMDevice *self)
 	return;
 }
 
-static NMNDiscNodeType
-ndisc_node_type (NMDevice *self)
-{
-	if (nm_streq (nm_device_get_effective_ip_config_method (self, AF_INET6),
-	              NM_SETTING_IP4_CONFIG_METHOD_SHARED))
-		return NM_NDISC_NODE_TYPE_ROUTER;
-	return NM_NDISC_NODE_TYPE_HOST;
-}
-
 static gboolean
 addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 {
@@ -10999,6 +10988,12 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	GError *error = NULL;
 	NMUtilsStableType stable_type;
 	const char *stable_id;
+	NMNDiscNodeType node_type;
+	int max_addresses;
+	int router_solicitations;
+	int router_solicitation_interval;
+	guint32 ra_timeout;
+	guint32 default_ra_timeout;
 
 	connection = nm_device_get_applied_connection (self);
 	g_assert (connection);
@@ -11012,6 +11007,27 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	s_ip6 = NM_SETTING_IP6_CONFIG (nm_connection_get_setting_ip6_config (connection));
 	g_assert (s_ip6);
 
+	if (nm_streq (nm_device_get_effective_ip_config_method (self, AF_INET6),
+	              NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+		node_type = NM_NDISC_NODE_TYPE_ROUTER;
+	else
+		node_type = NM_NDISC_NODE_TYPE_HOST;
+
+	nm_lndp_ndisc_get_sysctl (nm_device_get_platform (self),
+	                          nm_device_get_ip_iface (self),
+	                          &max_addresses,
+	                          &router_solicitations,
+	                          &router_solicitation_interval,
+	                          &default_ra_timeout);
+
+	if (node_type == NM_NDISC_NODE_TYPE_ROUTER)
+		ra_timeout = 0u;
+	else {
+		ra_timeout = _prop_get_ipv6_ra_timeout (self);
+		if (ra_timeout == 0u)
+			ra_timeout = default_ra_timeout;
+	}
+
 	stable_id = _prop_get_connection_stable_id (self, connection, &stable_type);
 	priv->ndisc = nm_lndp_ndisc_new (nm_device_get_platform (self),
 	                                 nm_device_get_ip_ifindex (self),
@@ -11019,8 +11035,11 @@ addrconf6_start (NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 	                                 stable_type,
 	                                 stable_id,
 	                                 nm_setting_ip6_config_get_addr_gen_mode (s_ip6),
-	                                 ndisc_node_type (self),
-	                                 _prop_get_ipv6_ra_timeout (self),
+	                                 node_type,
+	                                 max_addresses,
+	                                 router_solicitations,
+	                                 router_solicitation_interval,
+	                                 ra_timeout,
 	                                 &error);
 	if (!priv->ndisc) {
 		_LOGE (LOGD_IP6, "addrconf6: failed to start neighbor discovery: %s", error->message);
@@ -11059,7 +11078,10 @@ addrconf6_cleanup (NMDevice *self)
 	applied_config_clear (&priv->ac_ip6_config);
 	nm_clear_pointer (&priv->rt6_temporary_not_available, g_hash_table_unref);
 	nm_clear_g_source (&priv->rt6_temporary_not_available_id);
-	g_clear_object (&priv->ndisc);
+	if (priv->ndisc) {
+		nm_ndisc_stop (priv->ndisc);
+		g_clear_object (&priv->ndisc);
+	}
 }
 
 /*****************************************************************************/
@@ -12274,24 +12296,6 @@ dnsmasq_cleanup (NMDevice *self)
 	nm_dnsmasq_manager_stop (priv->dnsmasq_manager);
 	g_object_unref (priv->dnsmasq_manager);
 	priv->dnsmasq_manager = NULL;
-}
-
-static void
-_update_ip4_address (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	const NMPlatformIP4Address *address;
-
-	g_return_if_fail (NM_IS_DEVICE (self));
-
-	if (   priv->ip_config_4
-	    && ip_config_valid (priv->state)
-	    && (address = nm_ip4_config_get_first_address (priv->ip_config_4))) {
-		if (address->address != priv->ip4_address) {
-			priv->ip4_address = address->address;
-			_notify (self, PROP_IP4_ADDRESS);
-		}
-	}
 }
 
 gboolean
@@ -13725,9 +13729,6 @@ nm_device_set_ip_config (NMDevice *self,
 
 	if (has_changes) {
 
-		if (IS_IPv4)
-			_update_ip4_address (self);
-
 		if (old_config != priv->ip_config_x[IS_IPv4])
 			_notify (self, IS_IPv4 ? PROP_IP4_CONFIG : PROP_IP6_CONFIG);
 
@@ -14251,8 +14252,6 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 
 	/* Can only get HW address of some devices when they are up */
 	nm_device_update_hw_address (self);
-
-	_update_ip4_address (self);
 
 	/* when the link comes up, we must restore IP configuration if necessary. */
 	if (priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE) {
@@ -15973,12 +15972,6 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 		nm_active_connection_set_default (NM_ACTIVE_CONNECTION (priv->act_request.obj), AF_INET, FALSE);
 		nm_clear_g_signal_handler (priv->act_request.obj, &priv->master_ready_id);
 		act_request_set (self, NULL);
-	}
-
-	/* Clear legacy IPv4 address property */
-	if (priv->ip4_address) {
-		priv->ip4_address = 0;
-		_notify (self, PROP_IP4_ADDRESS);
 	}
 
 	if (cleanup_type == CLEANUP_TYPE_DECONFIGURE) {
@@ -17794,7 +17787,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, (priv->capabilities & ~NM_DEVICE_CAP_INTERNAL_MASK));
 		break;
 	case PROP_IP4_ADDRESS:
-		g_value_set_uint (value, priv->ip4_address);
+		g_value_set_variant (value, nm_g_variant_singleton_u_0 ());
 		break;
 	case PROP_CARRIER:
 		g_value_set_boolean (value, priv->carrier);
@@ -18507,10 +18500,11 @@ nm_device_class_init (NMDeviceClass *klass)
 	                       G_PARAM_READABLE |
 	                       G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_IP4_ADDRESS] =
-	    g_param_spec_uint (NM_DEVICE_IP4_ADDRESS, "", "",
-	                       0, G_MAXUINT32, 0, /* FIXME */
-	                       G_PARAM_READABLE |
-	                       G_PARAM_STATIC_STRINGS);
+	    g_param_spec_variant (NM_DEVICE_IP4_ADDRESS, "", "",
+	                          G_VARIANT_TYPE_UINT32,
+	                          NULL,
+	                          G_PARAM_READABLE |
+	                          G_PARAM_STATIC_STRINGS);
 	obj_properties[PROP_IP4_CONFIG] =
 	    g_param_spec_string (NM_DEVICE_IP4_CONFIG, "", "",
 	                         NULL,

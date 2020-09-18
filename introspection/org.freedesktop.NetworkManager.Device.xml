@@ -100,7 +100,7 @@
         Ip4Address:
 
         DEPRECATED; use the 'Addresses' property of the 'Ip4Config' object
-        instead.
+        instead. This property always returns 0.0.0.0 (numeric 0) as address.
     -->
     <property name="Ip4Address" type="u" access="read"/>
 

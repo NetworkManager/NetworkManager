@@ -535,6 +535,36 @@ start (NMNDisc *ndisc)
 	}
 }
 
+static void
+_cleanup (NMNDisc *ndisc)
+{
+	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE (ndisc);
+
+	nm_clear_g_source_inst (&priv->event_source);
+
+	if (priv->ndp) {
+		switch (nm_ndisc_get_node_type (ndisc)) {
+		case NM_NDISC_NODE_TYPE_HOST:
+			ndp_msgrcv_handler_unregister (priv->ndp, receive_ra, NDP_MSG_RA, nm_ndisc_get_ifindex (ndisc), ndisc);
+			break;
+		case NM_NDISC_NODE_TYPE_ROUTER:
+			ndp_msgrcv_handler_unregister (priv->ndp, receive_rs, NDP_MSG_RS, nm_ndisc_get_ifindex (ndisc), ndisc);
+			break;
+		default:
+			nm_assert_not_reached ();
+			break;
+		}
+		ndp_close (priv->ndp);
+		priv->ndp = NULL;
+	}
+}
+
+static void
+stop (NMNDisc *ndisc)
+{
+	_cleanup (ndisc);
+}
+
 /*****************************************************************************/
 
 static int
@@ -550,6 +580,51 @@ ipv6_sysctl_get (NMPlatform *platform, const char *ifname, const char *property,
 	                                                   defval);
 }
 
+void
+nm_lndp_ndisc_get_sysctl (NMPlatform *platform,
+                          const char *ifname,
+                          int *out_max_addresses,
+                          int *out_router_solicitations,
+                          int *out_router_solicitation_interval,
+                          guint32 *out_default_ra_timeout)
+{
+	int router_solicitation_interval = 0;
+	int router_solicitations = 0;
+
+	if (out_max_addresses) {
+		*out_max_addresses = ipv6_sysctl_get (platform,
+		                                      ifname,
+		                                      "max_addresses",
+		                                      0,
+		                                      G_MAXINT32,
+		                                      NM_NDISC_MAX_ADDRESSES_DEFAULT);
+	}
+	if (out_router_solicitations || out_default_ra_timeout) {
+		router_solicitations = ipv6_sysctl_get (platform,
+		                                        ifname,
+		                                        "router_solicitations",
+		                                        1,
+		                                        G_MAXINT32,
+		                                        NM_NDISC_ROUTER_SOLICITATIONS_DEFAULT);
+		NM_SET_OUT (out_router_solicitations, router_solicitations);
+	}
+	if (out_router_solicitation_interval || out_default_ra_timeout) {
+		router_solicitation_interval = ipv6_sysctl_get (platform,
+		                                                ifname,
+		                                                "router_solicitation_interval",
+		                                                1,
+		                                                G_MAXINT32,
+		                                                NM_NDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT);
+		NM_SET_OUT (out_router_solicitation_interval, router_solicitation_interval);
+	}
+	if (out_default_ra_timeout) {
+		*out_default_ra_timeout = NM_MAX ((((gint64) router_solicitations) * router_solicitation_interval) + 1,
+		                                  30);
+	}
+}
+
+/*****************************************************************************/
+
 static void
 nm_lndp_ndisc_init (NMLndpNDisc *lndp_ndisc)
 {
@@ -563,7 +638,10 @@ nm_lndp_ndisc_new (NMPlatform *platform,
                    const char *network_id,
                    NMSettingIP6ConfigAddrGenMode addr_gen_mode,
                    NMNDiscNodeType node_type,
-                   gint32 ra_timeout,
+                   int max_addresses,
+                   int router_solicitations,
+                   int router_solicitation_interval,
+                   guint32 ra_timeout,
                    GError **error)
 {
 	nm_auto_pop_netns NMPNetns *netns = NULL;
@@ -586,16 +664,10 @@ nm_lndp_ndisc_new (NMPlatform *platform,
 	                      NM_NDISC_NETWORK_ID, network_id,
 	                      NM_NDISC_ADDR_GEN_MODE, (int) addr_gen_mode,
 	                      NM_NDISC_NODE_TYPE, (int) node_type,
-	                      NM_NDISC_MAX_ADDRESSES, ipv6_sysctl_get (platform, ifname,
-	                                                               "max_addresses",
-	                                                               0, G_MAXINT32, NM_NDISC_MAX_ADDRESSES_DEFAULT),
-	                      NM_NDISC_RA_TIMEOUT, (int) ra_timeout,
-	                      NM_NDISC_ROUTER_SOLICITATIONS, ipv6_sysctl_get (platform, ifname,
-	                                                                      "router_solicitations",
-	                                                                      1, G_MAXINT32, NM_NDISC_ROUTER_SOLICITATIONS_DEFAULT),
-	                      NM_NDISC_ROUTER_SOLICITATION_INTERVAL, ipv6_sysctl_get (platform, ifname,
-	                                                                              "router_solicitation_interval",
-	                                                                              1, G_MAXINT32, NM_NDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT),
+	                      NM_NDISC_MAX_ADDRESSES, max_addresses,
+	                      NM_NDISC_ROUTER_SOLICITATIONS, router_solicitations,
+	                      NM_NDISC_ROUTER_SOLICITATION_INTERVAL, router_solicitation_interval,
+	                      NM_NDISC_RA_TIMEOUT, (guint) ra_timeout,
 	                      NULL);
 
 	priv = NM_LNDP_NDISC_GET_PRIVATE (ndisc);
@@ -617,24 +689,8 @@ static void
 dispose (GObject *object)
 {
 	NMNDisc *ndisc = NM_NDISC (object);
-	NMLndpNDiscPrivate *priv = NM_LNDP_NDISC_GET_PRIVATE (ndisc);
 
-	nm_clear_g_source_inst (&priv->event_source);
-
-	if (priv->ndp) {
-		switch (nm_ndisc_get_node_type (ndisc)) {
-		case NM_NDISC_NODE_TYPE_HOST:
-			ndp_msgrcv_handler_unregister (priv->ndp, receive_ra, NDP_MSG_RA, nm_ndisc_get_ifindex (ndisc), ndisc);
-			break;
-		case NM_NDISC_NODE_TYPE_ROUTER:
-			ndp_msgrcv_handler_unregister (priv->ndp, receive_rs, NDP_MSG_RS, nm_ndisc_get_ifindex (ndisc), ndisc);
-			break;
-		default:
-			g_assert_not_reached ();
-		}
-		ndp_close (priv->ndp);
-		priv->ndp = NULL;
-	}
+	_cleanup (ndisc);
 
 	G_OBJECT_CLASS (nm_lndp_ndisc_parent_class)->dispose (object);
 }
@@ -646,7 +702,8 @@ nm_lndp_ndisc_class_init (NMLndpNDiscClass *klass)
 	NMNDiscClass *ndisc_class = NM_NDISC_CLASS (klass);
 
 	object_class->dispose = dispose;
-	ndisc_class->start = start;
-	ndisc_class->send_rs = send_rs;
-	ndisc_class->send_ra = send_ra;
+	ndisc_class->start    = start;
+	ndisc_class->stop     = stop;
+	ndisc_class->send_rs  = send_rs;
+	ndisc_class->send_ra  = send_ra;
 }

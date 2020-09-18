@@ -16,8 +16,8 @@
 #include "platform/nm-platform.h"
 #include "platform/nmp-object.h"
 
-#define NM_RA_TIMEOUT_DEFAULT    ((gint32) 0)
-#define NM_RA_TIMEOUT_INFINITY   G_MAXINT32
+#define NM_RA_TIMEOUT_DEFAULT    ((guint32) 0)
+#define NM_RA_TIMEOUT_INFINITY   ((guint32) G_MAXINT32)
 
 #define NM_TYPE_NDISC            (nm_ndisc_get_type ())
 #define NM_NDISC(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_NDISC, NMNDisc))
@@ -112,15 +112,15 @@ typedef enum {
 	NM_NDISC_NODE_TYPE_ROUTER,
 } NMNDiscNodeType;
 
-#define NM_NDISC_MAX_ADDRESSES_DEFAULT 16
-#define NM_NDISC_ROUTER_SOLICITATIONS_DEFAULT 3          /* RFC4861 MAX_RTR_SOLICITATIONS */
-#define NM_NDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT 4  /* RFC4861 RTR_SOLICITATION_INTERVAL */
-#define NM_NDISC_ROUTER_ADVERTISEMENTS_DEFAULT 3         /* RFC4861 MAX_INITIAL_RTR_ADVERTISEMENTS */
-#define NM_NDISC_ROUTER_ADVERT_DELAY 3                   /* RFC4861 MIN_DELAY_BETWEEN_RAS */
-#define NM_NDISC_ROUTER_ADVERT_INITIAL_INTERVAL 16       /* RFC4861 MAX_INITIAL_RTR_ADVERT_INTERVAL */
-#define NM_NDISC_ROUTER_ADVERT_DELAY_MS 500              /* RFC4861 MAX_RA_DELAY_TIME */
-#define NM_NDISC_ROUTER_ADVERT_MAX_INTERVAL 600          /* RFC4861 MaxRtrAdvInterval default */
-#define NM_NDISC_ROUTER_LIFETIME 900                     /* 1.5 * NM_NDISC_ROUTER_ADVERT_MAX_INTERVAL */
+#define NM_NDISC_MAX_ADDRESSES_DEFAULT                16
+#define NM_NDISC_ROUTER_SOLICITATIONS_DEFAULT         3   /* RFC4861 MAX_RTR_SOLICITATIONS */
+#define NM_NDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT 4   /* RFC4861 RTR_SOLICITATION_INTERVAL */
+#define NM_NDISC_ROUTER_ADVERTISEMENTS_DEFAULT        3   /* RFC4861 MAX_INITIAL_RTR_ADVERTISEMENTS */
+#define NM_NDISC_ROUTER_ADVERT_DELAY                  3   /* RFC4861 MIN_DELAY_BETWEEN_RAS */
+#define NM_NDISC_ROUTER_ADVERT_INITIAL_INTERVAL       16  /* RFC4861 MAX_INITIAL_RTR_ADVERT_INTERVAL */
+#define NM_NDISC_ROUTER_ADVERT_DELAY_MS               500 /* RFC4861 MAX_RA_DELAY_TIME */
+#define NM_NDISC_ROUTER_ADVERT_MAX_INTERVAL           600 /* RFC4861 MaxRtrAdvInterval default */
+#define NM_NDISC_ROUTER_LIFETIME                      900 /* 1.5 * NM_NDISC_ROUTER_ADVERT_MAX_INTERVAL */
 
 struct _NMNDiscPrivate;
 struct _NMNDiscDataInternal;
@@ -163,6 +163,7 @@ typedef struct {
 	GObjectClass parent;
 
 	void (*start) (NMNDisc *ndisc);
+	void (*stop) (NMNDisc *ndisc);
 	gboolean (*send_rs) (NMNDisc *ndisc, GError **error);
 	gboolean (*send_ra) (NMNDisc *ndisc, GError **error);
 } NMNDiscClass;
@@ -177,6 +178,7 @@ NMNDiscNodeType nm_ndisc_get_node_type (NMNDisc *self);
 
 gboolean nm_ndisc_set_iid (NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid);
 void nm_ndisc_start (NMNDisc *ndisc);
+void nm_ndisc_stop (NMNDisc *ndisc);
 NMNDiscConfigMap nm_ndisc_dad_failed (NMNDisc *ndisc,
                                       const struct in6_addr *address,
                                       gboolean emit_changed_signal);
@@ -216,5 +218,18 @@ nm_ndisc_dad_addr_is_fail_candidate (NMPlatform *platform,
 
 	return TRUE;
 }
+
+/*****************************************************************************/
+
+struct _NML3ConfigData;
+
+struct _NML3ConfigData *nm_ndisc_data_to_l3cd (NMDedupMultiIndex *multi_idx,
+                                               int ifindex,
+                                               const NMNDiscData *rdata,
+                                               NMSettingIP6ConfigPrivacy ip6_privacy,
+                                               guint32 route_table,
+                                               guint32 route_metric,
+                                               gboolean kernel_support_rta_pref,
+                                               gboolean kernel_support_extended_ifa_flags);
 
 #endif /* __NETWORKMANAGER_NDISC_H__ */

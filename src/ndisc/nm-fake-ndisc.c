@@ -337,6 +337,14 @@ start (NMNDisc *ndisc)
 	priv->receive_ra_id = g_timeout_add_seconds (ra->when, receive_ra, ndisc);
 }
 
+static void
+stop (NMNDisc *ndisc)
+{
+	NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE (ndisc);
+
+	nm_clear_g_source (&priv->receive_ra_id);
+}
+
 void
 nm_fake_ndisc_emit_new_ras (NMFakeNDisc *self)
 {
@@ -360,6 +368,10 @@ nm_fake_ndisc_new (int ifindex, const char *ifname)
 	                     NM_NDISC_NODE_TYPE, (int) NM_NDISC_NODE_TYPE_HOST,
 	                     NM_NDISC_STABLE_TYPE, (int) NM_UTILS_STABLE_TYPE_UUID,
 	                     NM_NDISC_NETWORK_ID, "fake",
+	                     NM_NDISC_MAX_ADDRESSES, NM_NDISC_MAX_ADDRESSES_DEFAULT,
+	                     NM_NDISC_ROUTER_SOLICITATIONS, NM_NDISC_ROUTER_SOLICITATIONS_DEFAULT,
+	                     NM_NDISC_ROUTER_SOLICITATION_INTERVAL, NM_NDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT,
+	                     NM_NDISC_RA_TIMEOUT, 30u,
 	                     NULL);
 }
 
@@ -384,7 +396,8 @@ nm_fake_ndisc_class_init (NMFakeNDiscClass *klass)
 
 	object_class->dispose = dispose;
 
-	ndisc_class->start = start;
+	ndisc_class->start   = start;
+	ndisc_class->stop    = stop;
 	ndisc_class->send_rs = send_rs;
 
 	signals[RS_SENT] =

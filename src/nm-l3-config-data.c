@@ -119,9 +119,16 @@ struct _NML3ConfigData {
 
 	NMIPConfigSource source;
 
+	int ndisc_hop_limit_val;
+
 	guint32 mtu;
+	guint32 ip6_mtu;
+	guint32 ndisc_reachable_time_msec_val;
+	guint32 ndisc_retrans_timer_msec_val;
 
 	NMTernary metered:3;
+
+	NMSettingIP6ConfigPrivacy ip6_privacy:4;
 
 	bool is_sealed:1;
 
@@ -129,6 +136,10 @@ struct _NML3ConfigData {
 	bool has_routes_with_type_local_6_set:1;
 	bool has_routes_with_type_local_4_val:1;
 	bool has_routes_with_type_local_6_val:1;
+
+	bool ndisc_hop_limit_set:1;
+	bool ndisc_reachable_time_msec_set:1;
+	bool ndisc_retrans_timer_msec_set:1;
 };
 
 /*****************************************************************************/
@@ -396,16 +407,20 @@ nm_l3_config_data_new (NMDedupMultiIndex *multi_idx,
 
 	self = g_slice_new (NML3ConfigData);
 	*self = (NML3ConfigData) {
-		.ref_count          = 1,
-		.ifindex            = ifindex,
-		.multi_idx          = nm_dedup_multi_index_ref (multi_idx),
-		.mdns               = NM_SETTING_CONNECTION_MDNS_DEFAULT,
-		.llmnr              = NM_SETTING_CONNECTION_LLMNR_DEFAULT,
-		.flags              = NM_L3_CONFIG_DAT_FLAGS_NONE,
-		.metered            = NM_TERNARY_DEFAULT,
-		.route_table_sync_4 = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
-		.route_table_sync_6 = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
-		.source             = NM_IP_CONFIG_SOURCE_UNKNOWN,
+		.ref_count                     = 1,
+		.ifindex                       = ifindex,
+		.multi_idx                     = nm_dedup_multi_index_ref (multi_idx),
+		.mdns                          = NM_SETTING_CONNECTION_MDNS_DEFAULT,
+		.llmnr                         = NM_SETTING_CONNECTION_LLMNR_DEFAULT,
+		.flags                         = NM_L3_CONFIG_DAT_FLAGS_NONE,
+		.metered                       = NM_TERNARY_DEFAULT,
+		.route_table_sync_4            = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
+		.route_table_sync_6            = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
+		.source                        = NM_IP_CONFIG_SOURCE_UNKNOWN,
+		.ip6_privacy                   = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
+		.ndisc_hop_limit_set           = FALSE,
+		.ndisc_reachable_time_msec_set = FALSE,
+		.ndisc_retrans_timer_msec_set  = FALSE,
 	};
 
 	_idx_type_init (&self->idx_addresses_4, NMP_OBJECT_TYPE_IP4_ADDRESS);
@@ -1084,8 +1099,8 @@ nm_l3_config_data_add_nameserver (NML3ConfigData *self,
 }
 
 gboolean
-nm_l3_config_data_clear_nameserver (NML3ConfigData *self,
-                                    int addr_family)
+nm_l3_config_data_clear_nameservers (NML3ConfigData *self,
+                                     int addr_family)
 {
 	gs_unref_array GArray *old = NULL;
 
@@ -1180,6 +1195,19 @@ nm_l3_config_data_add_search (NML3ConfigData *self,
 	nm_assert_addr_family (addr_family);
 
 	return _check_and_add_domain (&self->searches_x[NM_IS_IPv4 (addr_family)], search);
+}
+
+gboolean
+nm_l3_config_data_clear_searches (NML3ConfigData *self,
+                                  int addr_family)
+{
+	gs_unref_ptrarray GPtrArray *old = NULL;
+
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+	nm_assert_addr_family (addr_family);
+
+	old = g_steal_pointer (&self->searches_x[NM_IS_IPv4 (addr_family)]);
+	return (nm_g_ptr_array_len (old) > 0);
 }
 
 gboolean
@@ -1322,6 +1350,27 @@ nm_l3_config_data_set_mtu (NML3ConfigData *self,
 	return TRUE;
 }
 
+guint32
+nm_l3_config_data_get_ip6_mtu (const NML3ConfigData *self)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+
+	return self->ip6_mtu;
+}
+
+gboolean
+nm_l3_config_data_set_ip6_mtu (NML3ConfigData *self,
+                               guint32 ip6_mtu)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	if (self->ip6_mtu == ip6_mtu)
+		return FALSE;
+
+	self->ip6_mtu = ip6_mtu;
+	return TRUE;
+}
+
 gboolean
 nm_l3_config_data_set_source (NML3ConfigData *self,
                               NMIPConfigSource source)
@@ -1332,6 +1381,109 @@ nm_l3_config_data_set_source (NML3ConfigData *self,
 		return FALSE;
 
 	self->source = source;
+	return TRUE;
+}
+
+NMSettingIP6ConfigPrivacy
+nm_l3_config_data_get_ip6_privacy (const NML3ConfigData *self)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	return self->ip6_privacy;
+}
+
+gboolean
+nm_l3_config_data_set_ip6_privacy (NML3ConfigData *self,
+                                   NMSettingIP6ConfigPrivacy ip6_privacy)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+	nm_assert (NM_IN_SET (ip6_privacy, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
+	                                   NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED,
+	                                   NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR,
+	                                   NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR));
+
+	if (self->ip6_privacy == ip6_privacy)
+		return FALSE;
+	self->ip6_privacy = ip6_privacy;
+	nm_assert (self->ip6_privacy == ip6_privacy);
+	return TRUE;
+}
+
+gboolean
+nm_l3_config_data_get_ndisc_hop_limit (const NML3ConfigData *self,
+                                       int *out_val)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	if (!self->ndisc_hop_limit_set) {
+		NM_SET_OUT (out_val, 0);
+		return FALSE;
+	}
+	NM_SET_OUT (out_val, self->ndisc_hop_limit_val);
+	return TRUE;
+}
+
+gboolean
+nm_l3_config_data_set_ndisc_hop_limit (NML3ConfigData *self,
+                                       int val)
+{
+	if (   self->ndisc_hop_limit_set
+	    && self->ndisc_hop_limit_val == val)
+		return FALSE;
+	self->ndisc_hop_limit_set = TRUE;
+	self->ndisc_hop_limit_val = val;
+	return TRUE;
+}
+
+gboolean
+nm_l3_config_data_get_ndisc_reachable_time_msec (const NML3ConfigData *self,
+                                                 guint32 *out_val)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	if (!self->ndisc_reachable_time_msec_set) {
+		NM_SET_OUT (out_val, 0);
+		return FALSE;
+	}
+	NM_SET_OUT (out_val, self->ndisc_reachable_time_msec_val);
+	return TRUE;
+}
+
+gboolean
+nm_l3_config_data_set_ndisc_reachable_time_msec (NML3ConfigData *self,
+                                                 guint32 val)
+{
+	if (   self->ndisc_reachable_time_msec_set
+	    && self->ndisc_reachable_time_msec_val == val)
+		return FALSE;
+	self->ndisc_reachable_time_msec_set = TRUE;
+	self->ndisc_reachable_time_msec_val = val;
+	return TRUE;
+}
+
+gboolean
+nm_l3_config_data_get_ndisc_retrans_timer_msec (const NML3ConfigData *self,
+                                                guint32 *out_val)
+{
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+
+	if (!self->ndisc_retrans_timer_msec_set) {
+		NM_SET_OUT (out_val, 0);
+		return FALSE;
+	}
+	NM_SET_OUT (out_val, self->ndisc_retrans_timer_msec_val);
+	return TRUE;
+}
+
+gboolean
+nm_l3_config_data_set_ndisc_retrans_timer_msec (NML3ConfigData *self,
+                                                guint32 val)
+{
+	if (   self->ndisc_retrans_timer_msec_set
+	    && self->ndisc_retrans_timer_msec_val == val)
+		return FALSE;
+	self->ndisc_retrans_timer_msec_set = TRUE;
+	self->ndisc_retrans_timer_msec_val = val;
 	return TRUE;
 }
 
@@ -1479,7 +1631,21 @@ nm_l3_config_data_cmp (const NML3ConfigData *a, const NML3ConfigData *b)
 	NM_CMP_DIRECT (a->mdns, b->mdns);
 	NM_CMP_DIRECT (a->llmnr, b->llmnr);
 	NM_CMP_DIRECT (a->mtu, b->mtu);
+	NM_CMP_DIRECT (a->ip6_mtu, b->ip6_mtu);
 	NM_CMP_DIRECT_UNSAFE (a->metered, b->metered);
+	NM_CMP_DIRECT_UNSAFE (a->ip6_privacy, b->ip6_privacy);
+
+	NM_CMP_DIRECT_UNSAFE (a->ndisc_hop_limit_set, b->ndisc_hop_limit_set);
+	if (a->ndisc_hop_limit_set)
+		NM_CMP_DIRECT (a->ndisc_hop_limit_val, b->ndisc_hop_limit_val);
+
+	NM_CMP_DIRECT_UNSAFE (a->ndisc_reachable_time_msec_set, b->ndisc_reachable_time_msec_set);
+	if (a->ndisc_reachable_time_msec_set)
+		NM_CMP_DIRECT (a->ndisc_reachable_time_msec_val, b->ndisc_reachable_time_msec_val);
+
+	NM_CMP_DIRECT_UNSAFE (a->ndisc_retrans_timer_msec_set, b->ndisc_retrans_timer_msec_set);
+	if (a->ndisc_retrans_timer_msec_set)
+		NM_CMP_DIRECT (a->ndisc_retrans_timer_msec_val, b->ndisc_retrans_timer_msec_val);
 
 	NM_CMP_FIELD (a, b, source);
 
@@ -2250,8 +2416,29 @@ nm_l3_config_data_merge (NML3ConfigData *self,
 	if (self->metered == NM_TERNARY_DEFAULT)
 		self->metered = src->metered;
 
-	if (self->mtu != 0u)
+	if (self->ip6_privacy == NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
+		self->ip6_privacy = src->ip6_privacy;
+
+	if (!self->ndisc_hop_limit_set) {
+		self->ndisc_hop_limit_set = TRUE;
+		self->ndisc_hop_limit_val = src->ndisc_hop_limit_val;
+	}
+
+	if (!self->ndisc_reachable_time_msec_set) {
+		self->ndisc_reachable_time_msec_set = TRUE;
+		self->ndisc_reachable_time_msec_val = src->ndisc_reachable_time_msec_val;
+	}
+
+	if (!self->ndisc_retrans_timer_msec_set) {
+		self->ndisc_retrans_timer_msec_set = TRUE;
+		self->ndisc_retrans_timer_msec_val = src->ndisc_retrans_timer_msec_val;
+	}
+
+	if (self->mtu == 0u)
 		self->mtu = src->mtu;
+
+	if (self->ip6_mtu == 0u)
+		self->ip6_mtu = src->ip6_mtu;
 
 	/* self->source does not get merged. */
 	/* self->dhcp_lease_x does not get merged. */

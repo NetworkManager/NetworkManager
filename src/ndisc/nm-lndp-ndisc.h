@@ -28,7 +28,17 @@ NMNDisc *nm_lndp_ndisc_new (NMPlatform *platform,
                             const char *network_id,
                             NMSettingIP6ConfigAddrGenMode addr_gen_mode,
                             NMNDiscNodeType node_type,
-                            gint32 ra_timeout,
+                            int max_addresses,
+                            int router_solicitations,
+                            int router_solicitation_interval,
+                            guint32 ra_timeout,
                             GError **error);
+
+void nm_lndp_ndisc_get_sysctl (NMPlatform *platform,
+                               const char *ifname,
+                               int *out_max_addresses,
+                               int *out_router_solicitations,
+                               int *out_router_solicitation_interval,
+                               guint32 *out_default_ra_timeout);
 
 #endif /* __NETWORKMANAGER_LNDP_NDISC_H__ */

@@ -439,6 +439,11 @@ guint32 nm_l3_config_data_get_mtu (const NML3ConfigData *self);
 gboolean nm_l3_config_data_set_mtu (NML3ConfigData *self,
                                     guint32 mtu);
 
+guint32 nm_l3_config_data_get_ip6_mtu (const NML3ConfigData *self);
+
+gboolean nm_l3_config_data_set_ip6_mtu (NML3ConfigData *self,
+                                        guint32 ip6_mtu);
+
 const in_addr_t *nm_l3_config_data_get_wins (const NML3ConfigData *self,
                                              guint *out_len);
 
@@ -453,8 +458,8 @@ gboolean nm_l3_config_data_add_nameserver (NML3ConfigData *self,
                                            int addr_family,
                                            gconstpointer /* (const NMIPAddr *) */ nameserver);
 
-gboolean nm_l3_config_data_clear_nameserver (NML3ConfigData *self,
-                                             int addr_family);
+gboolean nm_l3_config_data_clear_nameservers (NML3ConfigData *self,
+                                              int addr_family);
 
 gboolean nm_l3_config_data_add_nis_server (NML3ConfigData *self,
                                            in_addr_t nis_server);
@@ -474,6 +479,9 @@ const char *const*nm_l3_config_data_get_searches (const NML3ConfigData *self,
                                                   int addr_family,
                                                   guint *out_len);
 
+gboolean nm_l3_config_data_clear_searches (NML3ConfigData *self,
+                                           int addr_family);
+
 gboolean nm_l3_config_data_add_search (NML3ConfigData *self,
                                        int addr_family,
                                        const char *search);
@@ -485,6 +493,26 @@ gboolean nm_l3_config_data_add_dns_option (NML3ConfigData *self,
 gboolean nm_l3_config_data_set_dns_priority (NML3ConfigData *self,
                                              int addr_family,
                                              int dns_priority);
+
+NMSettingIP6ConfigPrivacy nm_l3_config_data_get_ip6_privacy (const NML3ConfigData *self);
+
+gboolean nm_l3_config_data_set_ip6_privacy (NML3ConfigData *self,
+                                            NMSettingIP6ConfigPrivacy ip6_privacy);
+
+gboolean nm_l3_config_data_get_ndisc_hop_limit (const NML3ConfigData *self,
+                                                int *out_val);
+gboolean nm_l3_config_data_set_ndisc_hop_limit (NML3ConfigData *self,
+                                                int val);
+
+gboolean nm_l3_config_data_get_ndisc_reachable_time_msec (const NML3ConfigData *self,
+                                                          guint32 *out_val);
+gboolean nm_l3_config_data_set_ndisc_reachable_time_msec (NML3ConfigData *self,
+                                                          guint32 val);
+
+gboolean nm_l3_config_data_get_ndisc_retrans_timer_msec (const NML3ConfigData *self,
+                                                         guint32 *out_val);
+gboolean nm_l3_config_data_set_ndisc_retrans_timer_msec (NML3ConfigData *self,
+                                                         guint32 val);
 
 struct _NMDhcpLease *nm_l3_config_data_get_dhcp_lease (const NML3ConfigData *self,
                                                        int addr_family);

@@ -6047,7 +6047,7 @@ nm_platform_ip4_address_to_string (const NMPlatformIP4Address *address, char *bu
 	            "",
 	            s_address, address->plen,
 	            broadcast_address ? " brd " : "",
-	            broadcast_address ? nm_utils_inet4_ntop (broadcast_address, str_broadcast) : "",
+	            broadcast_address ? _nm_utils_inet4_ntop (broadcast_address, str_broadcast) : "",
 	            str_lft_p,
 	            str_pref_p,
 	            str_time_p,

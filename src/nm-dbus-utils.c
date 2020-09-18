@@ -72,21 +72,35 @@ nm_dbus_utils_get_property (GObject *obj,
                             const char *signature,
                             const char *property_name)
 {
-	GParamSpec *pspec;
 	nm_auto_unset_gvalue GValue value = G_VALUE_INIT;
+	GParamSpec *pspec;
+	GVariant *variant;
 
 	nm_assert (G_IS_OBJECT (obj));
 	nm_assert (g_variant_type_string_is_valid (signature));
 	nm_assert (property_name && property_name[0]);
 
 	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (obj), property_name);
-	if (!pspec)
-		g_return_val_if_reached (NULL);
+
+	nm_assert (pspec);
+
+	nm_assert (   pspec->value_type != G_TYPE_VARIANT
+	           || nm_streq ((char *) (((GParamSpecVariant *) pspec)->type), signature));
 
 	g_value_init (&value, pspec->value_type);
+
 	g_object_get_property (obj, property_name, &value);
+
+	variant = g_dbus_gvalue_to_gvariant (&value, G_VARIANT_TYPE (signature));
+
+	nm_assert (   !variant
+	           || g_variant_is_of_type (variant, G_VARIANT_TYPE (signature)));
+
 	/* returns never-floating variant */
-	return g_dbus_gvalue_to_gvariant (&value, G_VARIANT_TYPE (signature));
+	nm_assert (   !variant
+	           || !g_variant_is_floating (variant));
+
+	return variant;
 }
 
 /*****************************************************************************/
