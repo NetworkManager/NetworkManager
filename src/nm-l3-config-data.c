@@ -683,7 +683,7 @@ nm_l3_config_data_new (NMDedupMultiIndex *multi_idx,
 	};
 
 	_idx_type_init (&self->idx_addresses_4, NMP_OBJECT_TYPE_IP4_ADDRESS);
-	_idx_type_init (&self->idx_addresses_6, NMP_OBJECT_TYPE_IP4_ADDRESS);
+	_idx_type_init (&self->idx_addresses_6, NMP_OBJECT_TYPE_IP6_ADDRESS);
 	_idx_type_init (&self->idx_routes_4, NMP_OBJECT_TYPE_IP4_ROUTE);
 	_idx_type_init (&self->idx_routes_6, NMP_OBJECT_TYPE_IP6_ROUTE);
 
@@ -1859,7 +1859,7 @@ _dedup_multi_index_cmp (const NML3ConfigData *a,
 		have_a = nm_platform_dedup_multi_iter_next_obj (&iter_a, &obj_a, obj_type);
 		if (!have_a) {
 			nm_assert (!nm_platform_dedup_multi_iter_next_obj (&iter_b, &obj_b, obj_type));
-			break;
+			return 0;
 		}
 
 		have_b = nm_platform_dedup_multi_iter_next_obj (&iter_b, &obj_b, obj_type);
@@ -1867,8 +1867,6 @@ _dedup_multi_index_cmp (const NML3ConfigData *a,
 
 		NM_CMP_RETURN (nmp_object_cmp (obj_a, obj_b));
 	}
-
-	return 0;
 }
 
 int
@@ -1882,10 +1880,10 @@ nm_l3_config_data_cmp (const NML3ConfigData *a, const NML3ConfigData *b)
 
 	NM_CMP_DIRECT (a->flags, b->flags);
 
-	_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP4_ADDRESS);
-	_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP6_ADDRESS);
-	_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP4_ROUTE);
-	_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP6_ROUTE);
+	NM_CMP_RETURN (_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP4_ADDRESS));
+	NM_CMP_RETURN (_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP6_ADDRESS));
+	NM_CMP_RETURN (_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP4_ROUTE));
+	NM_CMP_RETURN (_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP6_ROUTE));
 
 	for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
 		const int addr_family = IS_IPv4 ? AF_INET : AF_INET6;
@@ -2705,17 +2703,20 @@ nm_l3_config_data_merge (NML3ConfigData *self,
 	if (self->ip6_privacy == NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
 		self->ip6_privacy = src->ip6_privacy;
 
-	if (!self->ndisc_hop_limit_set) {
+	if (   !self->ndisc_hop_limit_set
+	    && src->ndisc_hop_limit_set) {
 		self->ndisc_hop_limit_set = TRUE;
 		self->ndisc_hop_limit_val = src->ndisc_hop_limit_val;
 	}
 
-	if (!self->ndisc_reachable_time_msec_set) {
+	if (   !self->ndisc_reachable_time_msec_set
+	    && src->ndisc_reachable_time_msec_set) {
 		self->ndisc_reachable_time_msec_set = TRUE;
 		self->ndisc_reachable_time_msec_val = src->ndisc_reachable_time_msec_val;
 	}
 
-	if (!self->ndisc_retrans_timer_msec_set) {
+	if (   !self->ndisc_retrans_timer_msec_set
+	    && src->ndisc_retrans_timer_msec_set) {
 		self->ndisc_retrans_timer_msec_set = TRUE;
 		self->ndisc_retrans_timer_msec_val = src->ndisc_retrans_timer_msec_val;
 	}

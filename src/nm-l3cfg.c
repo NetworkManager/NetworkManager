@@ -29,7 +29,7 @@ ACD_ADDR_SKIP (in_addr_t addr)
 	return addr == 0u;
 }
 
-#define ACD_TRACK_FMT                  "["NM_HASH_OBFUSCATE_PTR_FMT","NM_HASH_OBFUSCATE_PTR_FMT","NM_HASH_OBFUSCATE_PTR_FMT"]"
+#define ACD_TRACK_FMT                  "[l3cd="NM_HASH_OBFUSCATE_PTR_FMT",obj="NM_HASH_OBFUSCATE_PTR_FMT",tag="NM_HASH_OBFUSCATE_PTR_FMT"]"
 #define ACD_TRACK_PTR2(l3cd, obj, tag) NM_HASH_OBFUSCATE_PTR (l3cd), NM_HASH_OBFUSCATE_PTR (obj), NM_HASH_OBFUSCATE_PTR (tag)
 #define ACD_TRACK_PTR(acd_track)       ACD_TRACK_PTR2 ((acd_track)->l3cd, (acd_track)->obj, (acd_track)->tag)
 
@@ -74,6 +74,7 @@ typedef struct {
 	guint32 probing_timeout_msec;
 
 	CList acd_lst;
+	CList acd_notify_complete_lst;
 	CList acd_track_lst_head;
 
 	NML3Cfg *self;
@@ -94,6 +95,8 @@ typedef struct {
 	bool probe_result:1;
 
 	bool announcing_failed_is_retrying:1;
+
+	bool initializing:1;
 } AcdData;
 
 struct _NML3CfgCommitTypeHandle {
@@ -151,6 +154,8 @@ typedef struct _NML3CfgPrivate {
 	GHashTable *acd_lst_hash;
 	CList acd_lst_head;
 
+	CList acd_notify_complete_lst_head;
+
 	NAcd *nacd;
 	GSource *nacd_source;
 
@@ -178,6 +183,8 @@ typedef struct _NML3CfgPrivate {
 	};
 
 	guint routes_temporary_not_available_id;
+
+	bool commit_type_update_sticky:1;
 
 	bool acd_is_pending:1;
 	bool acd_is_announcing:1;
@@ -219,6 +226,8 @@ G_DEFINE_TYPE (NML3Cfg, nm_l3cfg, G_TYPE_OBJECT)
 
 static void _property_emit_notify (NML3Cfg *self, NML3CfgPropertyEmitType emit_type);
 
+static void _l3_acd_data_notify_acd_completed_all (NML3Cfg *self);
+
 static gboolean _acd_has_valid_link (const NMPObject *obj,
                                      const guint8 **out_addr_bin,
                                      gboolean *out_acd_not_supported);
@@ -249,21 +258,70 @@ NM_UTILS_ENUM2STR_DEFINE (_l3_cfg_commit_type_to_string, NML3CfgCommitType,
 	NM_UTILS_ENUM2STR (NM_L3_CFG_COMMIT_TYPE_REAPPLY, "reapply"),
 );
 
+static
+NM_UTILS_ENUM2STR_DEFINE (_l3_config_notify_type_to_string, NML3ConfigNotifyType,
+	NM_UTILS_ENUM2STR (NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED,                          "acd-complete"),
+	NM_UTILS_ENUM2STR (NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE,                "platform-change-on-idle"),
+	NM_UTILS_ENUM2STR (NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT,                            "post-commit"),
+	NM_UTILS_ENUM2STR (NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED, "routes-temporary-not-available-expired"),
+	NM_UTILS_ENUM2STR_IGNORE (_NM_L3_CONFIG_NOTIFY_TYPE_NUM),
+);
+
 /*****************************************************************************/
 
-static void
-_l3cfg_emit_signal_notify (NML3Cfg *self,
-                           NML3ConfigNotifyType notify_type,
-                           const NML3ConfigNotifyPayload *pay_load)
+static const char *
+_l3_config_notify_type_and_payload_to_string (NML3ConfigNotifyType notify_type,
+                                              const NML3ConfigNotifyPayload *payload,
+                                              char *sbuf,
+                                              gsize sbuf_size)
 {
+	char sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+	char *s = sbuf;
+	gsize l = sbuf_size;
+
+	nm_assert (sbuf);
+	nm_assert (sbuf_size > 0);
+
+	_l3_config_notify_type_to_string (notify_type, s, l);
+	nm_utils_strbuf_seek_end (&s, &l);
+
+	switch (notify_type) {
+	case NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED:
+		nm_utils_strbuf_append (&s, &l, ", addr=%s, probe-result=%d",
+		                        _nm_utils_inet4_ntop (payload->acd_completed.addr, sbuf_addr),
+		                        (int) payload->acd_completed.probe_result);
+		break;
+	case NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE:
+		nm_utils_strbuf_append (&s, &l, ", obj-type-flags=0x%x",
+		                        payload->platform_change_on_idle.obj_type_flags);
+		break;
+	default:
+		break;
+	}
+
+	return sbuf;
+}
+
+void
+_nm_l3cfg_emit_signal_notify (NML3Cfg *self,
+                              NML3ConfigNotifyType notify_type,
+                              const NML3ConfigNotifyPayload *payload)
+{
+	char sbuf[100];
+
 	nm_assert (_NM_INT_NOT_NEGATIVE (notify_type));
 	nm_assert (notify_type < _NM_L3_CONFIG_NOTIFY_TYPE_NUM);
+	nm_assert ((!!payload) == NM_IN_SET (notify_type, NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED,
+	                                                  NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE));
+
+	_LOGT ("emit signal (%s)",
+	       _l3_config_notify_type_and_payload_to_string (notify_type, payload, sbuf, sizeof (sbuf)));
 
 	g_signal_emit (self,
 	               signals[SIGNAL_NOTIFY],
 	               0,
 	               (int) notify_type,
-	               pay_load);
+	               payload);
 }
 
 /*****************************************************************************/
@@ -271,6 +329,7 @@ _l3cfg_emit_signal_notify (NML3Cfg *self,
 static void
 _l3_changed_configs_set_dirty (NML3Cfg *self)
 {
+	_LOGT ("configuration changed");
 	self->priv.changed_configs = TRUE;
 }
 
@@ -378,49 +437,17 @@ _l3cfg_externally_removed_objs_counter (NML3Cfg *self,
 }
 
 static void
-_l3cfg_externally_removed_objs_drop (NML3Cfg *self,
-                                     int addr_family)
+_l3cfg_externally_removed_objs_drop (NML3Cfg *self)
 {
-	const gboolean IS_IPv4 = NM_IS_IPv4 (addr_family);
-	GHashTableIter iter;
-	const NMPObject *obj;
-
 	nm_assert (NM_IS_L3CFG (self));
-	nm_assert (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET, AF_INET6));
 
-	if (addr_family == AF_UNSPEC) {
-		self->priv.p->externally_removed_objs_cnt_addresses_4 = 0;
-		self->priv.p->externally_removed_objs_cnt_addresses_6 = 0;
-		self->priv.p->externally_removed_objs_cnt_routes_4 = 0;
-		self->priv.p->externally_removed_objs_cnt_routes_6 = 0;
-		if (g_hash_table_size (self->priv.p->externally_removed_objs_hash) > 0)
-			_LOGD ("externally-removed: untrack all");
-		nm_clear_pointer (&self->priv.p->externally_removed_objs_hash, g_hash_table_unref);
-		return;
-	}
-
-	if (   self->priv.p->externally_removed_objs_cnt_addresses_x[IS_IPv4] == 0
-	    && self->priv.p->externally_removed_objs_cnt_routes_x[IS_IPv4] == 0)
-		return;
-
-	_LOGD ("externally-removed: untrack IPv%c",
-	       nm_utils_addr_family_to_char (addr_family));
-
-	g_hash_table_iter_init (&iter, self->priv.p->externally_removed_objs_hash);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &obj, NULL)) {
-		nm_assert (NM_IN_SET (NMP_OBJECT_GET_TYPE (obj), NMP_OBJECT_TYPE_IP4_ADDRESS,
-		                                                 NMP_OBJECT_TYPE_IP6_ADDRESS,
-		                                                 NMP_OBJECT_TYPE_IP4_ROUTE,
-		                                                 NMP_OBJECT_TYPE_IP6_ROUTE));
-		if (NMP_OBJECT_GET_ADDR_FAMILY (obj) != addr_family)
-			g_hash_table_iter_remove (&iter);
-	}
-	self->priv.p->externally_removed_objs_cnt_addresses_x[IS_IPv4] = 0;
-	self->priv.p->externally_removed_objs_cnt_routes_x[IS_IPv4] = 0;
-
-	if (   self->priv.p->externally_removed_objs_cnt_addresses_x[!IS_IPv4] == 0
-	    && self->priv.p->externally_removed_objs_cnt_routes_x[!IS_IPv4] == 0)
-		nm_clear_pointer (&self->priv.p->externally_removed_objs_hash, g_hash_table_unref);
+	self->priv.p->externally_removed_objs_cnt_addresses_4 = 0;
+	self->priv.p->externally_removed_objs_cnt_addresses_6 = 0;
+	self->priv.p->externally_removed_objs_cnt_routes_4 = 0;
+	self->priv.p->externally_removed_objs_cnt_routes_6 = 0;
+	if (nm_g_hash_table_size (self->priv.p->externally_removed_objs_hash) > 0)
+		_LOGD ("externally-removed: untrack all");
+	nm_clear_pointer (&self->priv.p->externally_removed_objs_hash, g_hash_table_unref);
 }
 
 static void
@@ -436,7 +463,7 @@ _l3cfg_externally_removed_objs_drop_unused (NML3Cfg *self)
 		return;
 
 	if (!self->priv.p->combined_l3cd_commited) {
-		_l3cfg_externally_removed_objs_drop (self, AF_UNSPEC);
+		_l3cfg_externally_removed_objs_drop (self);
 		return;
 	}
 
@@ -482,8 +509,8 @@ _l3cfg_externally_removed_objs_track (NML3Cfg *self,
 		return;
 	}
 
-	if (!nm_l3_config_data_lookup_route_obj (self->priv.p->combined_l3cd_commited,
-	                                         obj)) {
+	if (!nm_l3_config_data_lookup_obj (self->priv.p->combined_l3cd_commited,
+	                                   obj)) {
 		/* we don't care about this object, so there is nothing to hide hide */
 		return;
 	}
@@ -630,9 +657,11 @@ _nm_l3cfg_notify_platform_change_on_idle (NML3Cfg *self, guint32 obj_type_flags)
 			.obj_type_flags = obj_type_flags,
 		},
 	};
-	_l3cfg_emit_signal_notify (self,
-	                           NM_L3_CONFIG_NOTIFY_TYPE_NOTIFY_PLATFORM_CHANGE_ON_IDLE,
-	                           &payload);
+	_nm_l3cfg_emit_signal_notify (self,
+	                              NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE,
+	                              &payload);
+
+	_l3_acd_data_notify_acd_completed_all (self);
 
 	if (NM_FLAGS_ANY (obj_type_flags, nmp_object_type_to_flags (NMP_OBJECT_TYPE_IP4_ROUTE)))
 		_property_emit_notify (self, NM_L3CFG_PROPERTY_EMIT_TYPE_IP4_ROUTE);
@@ -909,11 +938,8 @@ _l3_acd_platform_commit_acd_update (NML3Cfg *self)
 	 *
 	 * This makes the mechanism also suitable for internally triggering a commit when ACD completes. */
 	_LOGT ("acd: acd update now");
-	_l3_changed_configs_set_dirty (self);
 	nm_l3cfg_platform_commit (self,
-	                          NM_L3_CFG_COMMIT_TYPE_AUTO,
-	                          AF_INET,
-	                          NULL);
+	                          NM_L3_CFG_COMMIT_TYPE_AUTO);
 }
 
 static gboolean
@@ -950,6 +976,7 @@ _l3_acd_nacd_event (int fd,
                     gpointer user_data)
 {
 	NML3Cfg *self = user_data;
+	gboolean success = FALSE;
 	int r;
 
 	nm_assert (NM_IS_L3CFG (self));
@@ -958,7 +985,7 @@ _l3_acd_nacd_event (int fd,
 	r = n_acd_dispatch (self->priv.p->nacd);
 	if (!NM_IN_SET (r, 0, N_ACD_E_PREEMPTED)) {
 		_LOGT ("acd: dispatch failed with error %d", r);
-		goto handle_failure;
+		goto out;
 	}
 
 	while (TRUE) {
@@ -968,10 +995,12 @@ _l3_acd_nacd_event (int fd,
 		r = n_acd_pop_event (self->priv.p->nacd, &event);
 		if (r) {
 			_LOGT ("acd: pop-event failed with error %d", r);
-			goto handle_failure;
+			goto out;
 		}
-		if (!event)
-			return G_SOURCE_CONTINUE;
+		if (!event) {
+			success = TRUE;
+			goto out;
+		}
 
 #define _acd_event_payload used
 		G_STATIC_ASSERT_EXPR (G_STRUCT_OFFSET (NAcdEvent, _acd_event_payload) == G_STRUCT_OFFSET (NAcdEvent, defended));
@@ -1040,10 +1069,15 @@ _l3_acd_nacd_event (int fd,
 
 	nm_assert_not_reached ();
 
-handle_failure:
-	/* Something is seriously wrong with our nacd instance. We handle that by resetting the
-	 * ACD instance. */
-	_l3_acd_nacd_instance_reset (self, NM_TERNARY_TRUE, TRUE);
+out:
+	if (!success) {
+		/* Something is seriously wrong with our nacd instance. We handle that by resetting the
+		 * ACD instance. */
+		_l3_acd_nacd_instance_reset (self, NM_TERNARY_TRUE, TRUE);
+	}
+
+	_l3_acd_data_notify_acd_completed_all (self);
+
 	return G_SOURCE_CONTINUE;
 }
 
@@ -1054,6 +1088,7 @@ _l3_acd_nacd_instance_ensure_retry_cb (gpointer user_data)
 
 	nm_clear_g_source_inst (&self->priv.p->nacd_instance_ensure_retry);
 
+	_l3_changed_configs_set_dirty (self);
 	_l3_acd_platform_commit_acd_update (self);
 
 	return G_SOURCE_REMOVE;
@@ -1294,12 +1329,14 @@ _l3_acd_data_add (NML3Cfg *self,
 
 		acd_data = g_slice_new (AcdData);
 		*acd_data = (AcdData) {
-			.self                   = self,
-			.addr                   = addr,
-			.acd_track_lst_head     = C_LIST_INIT (acd_data->acd_track_lst_head),
-			.acd_state              = ACD_STATE_INIT,
-			.probing_timestamp_msec = 0,
-			.probe_result           = FALSE,
+			.self                    = self,
+			.addr                    = addr,
+			.acd_track_lst_head      = C_LIST_INIT (acd_data->acd_track_lst_head),
+			.acd_notify_complete_lst = C_LIST_INIT (acd_data->acd_notify_complete_lst),
+			.acd_state               = ACD_STATE_INIT,
+			.probing_timestamp_msec  = 0,
+			.probe_result            = FALSE,
+			.initializing            = TRUE,
 		};
 		c_list_link_tail (&self->priv.p->acd_lst_head, &acd_data->acd_lst);
 		if (!g_hash_table_add (self->priv.p->acd_lst_hash, acd_data))
@@ -1480,9 +1517,9 @@ _l3_acd_data_timeout_schedule_announce_restart (AcdData *acd_data,
 }
 
 static void
-_l3_acd_data_notify_acd_failed (NML3Cfg *self,
-                                AcdData *acd_data,
-                                gboolean force_all)
+_l3_acd_data_notify_acd_completed (NML3Cfg *self,
+                                   AcdData *acd_data,
+                                   gboolean force_all)
 {
 	gs_free NML3ConfigNotifyPayloadAcdFailedSource *sources_free = NULL;
 	NML3ConfigNotifyPayloadAcdFailedSource *sources = NULL;
@@ -1533,18 +1570,45 @@ _l3_acd_data_notify_acd_failed (NML3Cfg *self,
 	nm_assert (i == n);
 
 	payload = (NML3ConfigNotifyPayload) {
-		.acd_failed = {
-			.addr        = acd_data->addr,
-			.sources_len = n,
-			.sources     = sources,
+		.acd_completed = {
+			.addr         = acd_data->addr,
+			.probe_result = acd_data->probe_result,
+			.sources_len  = n,
+			.sources      = sources,
 		},
 	};
 
-	_l3cfg_emit_signal_notify (self, NM_L3_CONFIG_NOTIFY_TYPE_ACD_FAILED, &payload);
+	_nm_l3cfg_emit_signal_notify (self,
+	                              NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED,
+	                              &payload);
 
 	for (i = 0; i < n; i++) {
 		nmp_object_unref (sources[i].obj);
 		nm_l3_config_data_unref (sources[i].l3cd);
+	}
+}
+
+static void
+_l3_acd_data_notify_acd_completed_queue (NML3Cfg *self, AcdData *acd_data)
+{
+	if (!c_list_is_empty (&acd_data->acd_notify_complete_lst)) {
+		nm_assert (c_list_contains (&self->priv.p->acd_notify_complete_lst_head, &acd_data->acd_notify_complete_lst));
+		return;
+	}
+	c_list_link_tail (&self->priv.p->acd_notify_complete_lst_head, &acd_data->acd_notify_complete_lst);
+}
+
+static void
+_l3_acd_data_notify_acd_completed_all (NML3Cfg *self)
+{
+	gs_unref_object NML3Cfg *self_keep_alive = NULL;
+	AcdData *acd_data;
+
+	while ((acd_data = c_list_first_entry (&self->priv.p->acd_notify_complete_lst_head, AcdData, acd_notify_complete_lst))) {
+		if (!self_keep_alive)
+			self_keep_alive = g_object_ref (self);
+		c_list_unlink (&acd_data->acd_notify_complete_lst);
+		_l3_acd_data_notify_acd_completed (self, acd_data, TRUE);
 	}
 }
 
@@ -1634,14 +1698,12 @@ _l3_acd_data_state_change (NML3Cfg *self,
 		 * ACD_STATE_PROBE_DONE and configure the address right away. This avoids
 		 * that we go through another hop.
 		 */
-		_LOGT_acd (acd_data,
-		           "state: probe-done good (ACD disabled by configuration from the start)");
-		acd_data->acd_state = ACD_STATE_PROBE_DONE;
-		acd_data->probe_result = TRUE;
-		return;
+		log_reason = "ACD disabled by configuration from the start";
+		goto handle_probing_acd_good;
 	}
 
 	case ACD_STATE_CHANGE_MODE_POST_COMMIT:
+		acd_data->initializing = FALSE;
 		goto handle_post_commit;
 
 	case ACD_STATE_CHANGE_MODE_TIMEOUT: {
@@ -1865,6 +1927,7 @@ _l3_acd_data_state_change (NML3Cfg *self,
 		return;
 
 	case ACD_STATE_CHANGE_MODE_INSTANCE_RESET:
+		nm_utils_get_monotonic_timestamp_msec_cached (&now_msec);
 		if (acd_data->acd_state <= ACD_STATE_PROBING) {
 
 			nm_assert (acd_data->acd_state == ACD_STATE_PROBING);
@@ -1890,7 +1953,7 @@ _l3_acd_data_state_change (NML3Cfg *self,
 		acd_data->nacd_probe = n_acd_probe_free (acd_data->nacd_probe);
 		acd_data->acd_state = ACD_STATE_PROBE_DONE;
 		_l3_acd_data_timeout_schedule (acd_data, now_msec, now_msec, TRUE);
-		break;
+		return;
 	}
 
 	nm_assert_not_reached ();
@@ -2045,7 +2108,7 @@ handle_probing_acd_good:
 	switch (acd_data->acd_state) {
 	case ACD_STATE_INIT:
 		_LOGT_acd (acd_data,
-		           "state: probe-done good (%s, inializingbcwin)",
+		           "state: probe-done good (%s, initializing)",
 		           log_reason);
 		acd_data->acd_state = ACD_STATE_PROBE_DONE;
 		acd_data->probe_result = TRUE;
@@ -2080,7 +2143,7 @@ handle_probe_done:
 	nm_assert (NM_IN_SET (acd_data->acd_state, ACD_STATE_PROBE_DONE,
 	                                           ACD_STATE_ANNOUNCING));
 
-	if (state_change_mode == ACD_STATE_CHANGE_MODE_INIT)
+	if (acd_data->initializing)
 		return;
 
 	if (acd_data->acd_state >= ACD_STATE_ANNOUNCING) {
@@ -2100,7 +2163,7 @@ handle_probe_done:
 			acd_data->probing_timestamp_msec = nm_utils_get_monotonic_timestamp_msec_cached (&now_msec);
 			_l3_acd_data_timeout_schedule_probing_full_restart (acd_data, now_msec);
 		}
-		_l3_acd_data_notify_acd_failed (self, acd_data, was_probing);
+		_l3_acd_data_notify_acd_completed_queue (self, acd_data);
 		return;
 	}
 
@@ -2109,8 +2172,10 @@ handle_probe_done:
 		/* probing just completed. Schedule handling the change. */
 		_LOGT_acd (acd_data,
 		           "state: acd probe succeed");
+		_l3_acd_data_notify_acd_completed_queue (self, acd_data);
 		if (!self->priv.p->acd_ready_on_idle_source) {
-			_l3_changed_configs_set_dirty (self);
+			if (state_change_mode != ACD_STATE_CHANGE_MODE_POST_COMMIT)
+				_l3_changed_configs_set_dirty (self);
 			self->priv.p->acd_ready_on_idle_source = nm_g_idle_source_new (G_PRIORITY_DEFAULT,
 			                                                               _l3_acd_ready_on_idle_cb,
 			                                                               self,
@@ -2187,6 +2252,8 @@ _l3_acd_data_process_changes (NML3Cfg *self)
 	if (   !acd_is_pending
 	    && !acd_is_announcing)
 		_l3_acd_nacd_instance_reset (self, NM_TERNARY_DEFAULT, FALSE);
+
+	_l3_acd_data_notify_acd_completed_all (self);
 }
 
 /*****************************************************************************/
@@ -2359,7 +2426,8 @@ nm_l3cfg_add_config (NML3Cfg *self,
 	                                  tag,
 	                                  replace_same_tag ? NULL : l3cd);
 
-	if (replace_same_tag) {
+	if (   replace_same_tag
+	    && idx >= 0) {
 		gssize idx2;
 
 		idx2 = idx;
@@ -2663,7 +2731,7 @@ _routes_temporary_not_available_timeout (gpointer user_data)
 	if (any_expired) {
 		/* a route expired. We emit a signal, but we don't schedule it again. That will
 		 * only happen if the user calls nm_l3cfg_platform_commit() again. */
-		_l3cfg_emit_signal_notify (self, NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED, NULL);
+		_nm_l3cfg_emit_signal_notify (self, NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED, NULL);
 		return G_SOURCE_REMOVE;
 	}
 
@@ -2921,48 +2989,65 @@ _platform_commit (NML3Cfg *self,
 
 gboolean
 nm_l3cfg_platform_commit (NML3Cfg *self,
-                          NML3CfgCommitType commit_type,
-                          int addr_family,
-                          gboolean *out_final_failure_for_temporary_not_available)
+                          NML3CfgCommitType commit_type)
 {
+	gboolean commit_type_detected = FALSE;
 	gboolean success = TRUE;
-	gboolean acd_was_pending;
+	char sbuf_ct[30];
 
 	g_return_val_if_fail (NM_IS_L3CFG (self), FALSE);
-	nm_assert (NM_IN_SET (commit_type, NM_L3_CFG_COMMIT_TYPE_AUTO,
-	                                   NM_L3_CFG_COMMIT_TYPE_NONE,
-	                                   NM_L3_CFG_COMMIT_TYPE_REAPPLY,
+	nm_assert (NM_IN_SET (commit_type, NM_L3_CFG_COMMIT_TYPE_NONE,
+	                                   NM_L3_CFG_COMMIT_TYPE_AUTO,
+	                                   NM_L3_CFG_COMMIT_TYPE_ASSUME,
 	                                   NM_L3_CFG_COMMIT_TYPE_UPDATE,
-	                                   NM_L3_CFG_COMMIT_TYPE_ASSUME));
+	                                   NM_L3_CFG_COMMIT_TYPE_REAPPLY));
 
-	NM_SET_OUT (out_final_failure_for_temporary_not_available, FALSE);
-
-	acd_was_pending = self->priv.p->acd_is_pending;
-
-	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET))
-		nm_clear_g_source_inst (&self->priv.p->acd_ready_on_idle_source);
-
-	if (commit_type == NM_L3_CFG_COMMIT_TYPE_AUTO)
+	switch (commit_type) {
+	case NM_L3_CFG_COMMIT_TYPE_AUTO:
+		/* if in "AUTO" mode we currently have commit-type "UPDATE", that
+		 * causes also the following update to still be "UPDATE". Either
+		 * the same commit */
+		commit_type_detected = TRUE;
 		commit_type = nm_l3cfg_commit_type_get (self);
+		if (commit_type == NM_L3_CFG_COMMIT_TYPE_UPDATE)
+			self->priv.p->commit_type_update_sticky = TRUE;
+		else if (self->priv.p->commit_type_update_sticky) {
+			self->priv.p->commit_type_update_sticky = FALSE;
+			commit_type = NM_L3_CFG_COMMIT_TYPE_UPDATE;
+		}
+		break;
+	case NM_L3_CFG_COMMIT_TYPE_ASSUME:
+		break;
+	case NM_L3_CFG_COMMIT_TYPE_REAPPLY:
+	case NM_L3_CFG_COMMIT_TYPE_UPDATE:
+		self->priv.p->commit_type_update_sticky = FALSE;
+		break;
+	case NM_L3_CFG_COMMIT_TYPE_NONE:
+		break;
+	}
+
+	_LOGT ("platform-commit %s%s",
+	       _l3_cfg_commit_type_to_string (commit_type, sbuf_ct, sizeof (sbuf_ct)),
+	       commit_type_detected ? " (auto)" : "");
+
+	if (commit_type == NM_L3_CFG_COMMIT_TYPE_NONE)
+		return TRUE;
+
+	nm_clear_g_source_inst (&self->priv.p->acd_ready_on_idle_source);
 
 	if (commit_type == NM_L3_CFG_COMMIT_TYPE_REAPPLY)
-		_l3cfg_externally_removed_objs_drop (self, addr_family);
+		_l3cfg_externally_removed_objs_drop (self);
 
-	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET)) {
-		if (!_platform_commit (self, AF_INET, commit_type, out_final_failure_for_temporary_not_available))
-			success = FALSE;
-	}
-	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET6)) {
-		if (!_platform_commit (self, AF_INET6, commit_type, out_final_failure_for_temporary_not_available))
-			success = FALSE;
-	}
+	/* FIXME(l3cfg): handle items currently not configurable in kernel. */
 
-	if (NM_IN_SET (addr_family, AF_UNSPEC, AF_INET))
-		_l3_acd_data_process_changes (self);
+	if (!_platform_commit (self, AF_INET, commit_type, NULL))
+		success = FALSE;
+	if (!_platform_commit (self, AF_INET6, commit_type, NULL))
+		success = FALSE;
 
-	if (   acd_was_pending
-	    && !self->priv.p->acd_is_pending)
-		_l3cfg_emit_signal_notify (self, NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED, NULL);
+	_l3_acd_data_process_changes (self);
+
+	_nm_l3cfg_emit_signal_notify (self, NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT, NULL);
 
 	return success;
 }
@@ -3009,8 +3094,7 @@ nm_l3cfg_commit_type_register (NML3Cfg *self,
 	nm_assert (NM_IS_L3CFG (self));
 	nm_assert (NM_IN_SET (commit_type, NM_L3_CFG_COMMIT_TYPE_NONE,
 	                                   NM_L3_CFG_COMMIT_TYPE_ASSUME,
-	                                   NM_L3_CFG_COMMIT_TYPE_UPDATE,
-	                                   NM_L3_CFG_COMMIT_TYPE_REAPPLY));
+	                                   NM_L3_CFG_COMMIT_TYPE_UPDATE));
 	nm_assert (   !existing_handle
 	           || c_list_contains (&self->priv.p->commit_type_lst_head, &existing_handle->commit_type_lst));
 
@@ -3037,6 +3121,7 @@ nm_l3cfg_commit_type_register (NML3Cfg *self,
 		if (handle->commit_type >= h->commit_type) {
 			c_list_link_before (&self->priv.p->commit_type_lst_head, &handle->commit_type_lst);
 			linked = TRUE;
+			break;
 		}
 	}
 	if (!linked)
@@ -3175,6 +3260,7 @@ nm_l3cfg_init (NML3Cfg *self)
 	self->priv.p = G_TYPE_INSTANCE_GET_PRIVATE (self, NM_TYPE_L3CFG, NML3CfgPrivate);
 
 	c_list_init (&self->priv.p->acd_lst_head);
+	c_list_init (&self->priv.p->acd_notify_complete_lst_head);
 	c_list_init (&self->priv.p->commit_type_lst_head);
 }
 
@@ -3223,6 +3309,7 @@ finalize (GObject *object)
 	_l3_acd_data_prune (self, TRUE);
 
 	nm_assert (c_list_is_empty (&self->priv.p->acd_lst_head));
+	nm_assert (c_list_is_empty (&self->priv.p->acd_notify_complete_lst_head));
 	nm_assert (nm_g_hash_table_size (self->priv.p->acd_lst_hash) == 0);
 
 	nm_clear_pointer (&self->priv.p->acd_lst_hash, g_hash_table_unref);

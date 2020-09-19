@@ -192,6 +192,7 @@ _platform_signal_on_idle_cb (gpointer user_data)
 	c_list_splice (&work_list, &priv->l3cfg_signal_pending_lst_head);
 
 	while ((l3cfg_data = c_list_first_entry (&work_list, L3CfgData, signal_pending_lst))) {
+		nm_assert (NM_IS_L3CFG (l3cfg_data->l3cfg));
 		c_list_unlink (&l3cfg_data->signal_pending_lst);
 		_nm_l3cfg_notify_platform_change_on_idle (l3cfg_data->l3cfg,
 		                                          nm_steal_int (&l3cfg_data->signal_pending_flag));

@@ -2967,12 +2967,7 @@ _dev_l3_platform_commit (NMDevice *self)
 	if (nm_device_sys_iface_state_is_external (self))
 		return TRUE;
 
-	success = nm_l3cfg_platform_commit (priv->l3cfg,
-	                                      nm_device_sys_iface_state_is_external_or_assume (self)
-	                                    ? NM_L3_CFG_COMMIT_TYPE_ASSUME
-	                                    : NM_L3_CFG_COMMIT_TYPE_UPDATE,
-	                                    AF_UNSPEC,
-	                                    NULL);
+	success = nm_l3cfg_platform_commit (priv->l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);
 	return success;
 }
 
@@ -2993,10 +2988,15 @@ _dev_l3_cfg_notify_cb (NML3Cfg *l3cfg,
 	nm_assert (l3cfg == priv->l3cfg);
 
 	switch ((NML3ConfigNotifyType) notify_type_i) {
-	case NM_L3_CONFIG_NOTIFY_TYPE_ACD_FAILED: {
-		const NML3ConfigNotifyPayloadAcdFailedSource *sources = payload->acd_failed.sources;
-		guint sources_len = payload->acd_failed.sources_len;
+	case NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED: {
+		const NML3ConfigNotifyPayloadAcdFailedSource *sources = payload->acd_completed.sources;
+		guint sources_len = payload->acd_completed.sources_len;
 		guint i;
+
+		if (payload->acd_completed.probe_result) {
+			/* FIXME(l3cfg) */
+			return;
+		}
 
 		for (i = 0; i < sources_len; i++) {
 			L3ConfigDataType l3cd_type = _dev_l3_config_data_tag_to_type (self, sources[i].tag);
@@ -3011,7 +3011,7 @@ _dev_l3_cfg_notify_cb (NML3Cfg *l3cfg,
 		_dev_l3_cfg_acd_maybe_comlete (self);
 		return;
 	}
-	case NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED:
+	case NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT:
 		_dev_l3_cfg_acd_maybe_comlete (self);
 		return;
 	case NM_L3_CONFIG_NOTIFY_TYPE_NOTIFY_PLATFORM_CHANGE_ON_IDLE:
