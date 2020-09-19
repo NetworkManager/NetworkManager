@@ -84,6 +84,46 @@ nmtstp_platform_ip6_address_get_all (NMPlatform *self, int ifindex)
 	return _ipx_address_get_all (self, ifindex, NMP_OBJECT_TYPE_IP6_ADDRESS);
 }
 
+const NMPlatformIPAddress *
+nmtstp_platform_ip_address_find (NMPlatform *self,
+                                 int ifindex,
+                                 int addr_family,
+                                 gconstpointer addr)
+{
+	const gboolean IS_IPv4 = NM_IS_IPv4 (addr_family);
+	const NMPlatformIPAddress *found = NULL;
+	NMDedupMultiIter iter;
+	const NMPObject *obj;
+	NMPLookup lookup;
+
+	g_assert (NM_IS_PLATFORM (self));
+	nm_assert (ifindex >= 0);
+	nm_assert_addr_family (addr_family);
+	nm_assert (addr);
+
+	nmp_lookup_init_object (&lookup,
+	                        NMP_OBJECT_TYPE_IP_ADDRESS (IS_IPv4),
+	                        ifindex);
+	nm_platform_iter_obj_for_each (&iter, self, &lookup, &obj) {
+		const NMPlatformIPAddress *a = NMP_OBJECT_CAST_IP_ADDRESS (obj);
+
+		g_assert (NMP_OBJECT_GET_ADDR_FAMILY (obj) == addr_family);
+		g_assert (ifindex <= 0 || a->ifindex == ifindex);
+
+		if (memcmp (addr, a->address_ptr, nm_utils_addr_family_to_size (addr_family)) != 0)
+			continue;
+
+		g_assert (!found);
+		found = a;
+	}
+
+	if (   !IS_IPv4
+	    && ifindex > 0)
+		g_assert (found == (const NMPlatformIPAddress *) nm_platform_ip6_address_get (self, ifindex, addr));
+
+	return found;
+}
+
 /*****************************************************************************/
 
 gboolean
