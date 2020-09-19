@@ -5,11 +5,12 @@ subdir('config')
 test_units = [
   'test-core',
   'test-core-with-expect',
+  'test-dcb',
   'test-ip4-config',
   'test-ip6-config',
-  'test-dcb',
-  'test-wired-defname',
+  'test-l3cfg',
   'test-utils',
+  'test-wired-defname',
 ]
 
 foreach test_unit: test_units
