@@ -13617,7 +13617,7 @@ msgstr "修改所有用户的网络连接"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:24
 msgid "System policy prevents modification of network settings for all users"
-msgstr "系统策略阻止徐该全部用户的共用网络设置"
+msgstr "系统策略阻止所有用户修改网络设置"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:25
 msgid "Modify persistent system hostname"
