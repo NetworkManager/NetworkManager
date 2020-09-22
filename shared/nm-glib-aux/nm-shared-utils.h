@@ -2020,6 +2020,7 @@ char *nm_utils_bin2hexstr_full (gconstpointer addr,
 guint8 *nm_utils_hexstr2bin_full (const char *hexstr,
                                   gboolean allow_0x_prefix,
                                   gboolean delimiter_required,
+                                  gboolean hexdigit_pairs_required,
                                   const char *delimiter_candidates,
                                   gsize required_len,
                                   guint8 *buffer,
@@ -2027,7 +2028,7 @@ guint8 *nm_utils_hexstr2bin_full (const char *hexstr,
                                   gsize *out_len);
 
 #define nm_utils_hexstr2bin_buf(hexstr, allow_0x_prefix, delimiter_required, delimiter_candidates, buffer) \
-    nm_utils_hexstr2bin_full ((hexstr), (allow_0x_prefix), (delimiter_required), (delimiter_candidates), G_N_ELEMENTS (buffer), (buffer), G_N_ELEMENTS (buffer), NULL)
+    nm_utils_hexstr2bin_full ((hexstr), (allow_0x_prefix), (delimiter_required), FALSE, (delimiter_candidates), G_N_ELEMENTS (buffer), (buffer), G_N_ELEMENTS (buffer), NULL)
 
 guint8 *nm_utils_hexstr2bin_alloc (const char *hexstr,
                                    gboolean allow_0x_prefix,

@@ -463,7 +463,7 @@ test_nm_utils_bin2hexstr (void)
 {
 	int n_run;
 
-	for (n_run = 0; n_run < 100; n_run++) {
+	for (n_run = 0; n_run < 500; n_run++) {
 		guint8 buf[100];
 		guint8 buf2[G_N_ELEMENTS (buf) + 1];
 		gsize len = nmtst_get_rand_uint32 () % (G_N_ELEMENTS (buf) + 1);
@@ -471,12 +471,14 @@ test_nm_utils_bin2hexstr (void)
 		gboolean allocate = nmtst_get_rand_bool ();
 		char delimiter = nmtst_get_rand_bool () ? ':' : '\0';
 		gboolean upper_case = nmtst_get_rand_bool ();
+		gboolean hexdigit_pairs_mangled;
 		gsize expected_strlen;
 		char *str_hex;
 		gsize required_len;
 		gboolean outlen_set;
 		gsize outlen;
 		guint8 *bin2;
+		guint i, j;
 
 		nmtst_rand_buf (NULL, buf, len);
 
@@ -502,6 +504,38 @@ test_nm_utils_bin2hexstr (void)
 		                                           ? (ch >= 'A' && ch <= 'F')
 		                                           : (ch >= 'a' && ch <= 'f'))));
 
+		hexdigit_pairs_mangled = FALSE;
+		if (   delimiter
+		    && len > 1
+		    && nmtst_get_rand_bool ()) {
+			/* randomly convert "0?" sequences to single digits, so we can get hexdigit_pairs_required
+			 * parameter. */
+			g_assert (strlen (str_hex) >= 5);
+			g_assert (str_hex[2] == delimiter);
+			i = 0;
+			j = 0;
+			for (;;) {
+				g_assert (g_ascii_isxdigit (str_hex[i]));
+				g_assert (g_ascii_isxdigit (str_hex[i+1]));
+				g_assert (NM_IN_SET (str_hex[i+2], delimiter, '\0'));
+				if (   str_hex[i] == '0'
+				    && nmtst_get_rand_bool ()) {
+					i++;
+					str_hex[j++] = str_hex[i++];
+					hexdigit_pairs_mangled = TRUE;
+				} else {
+					str_hex[j++] = str_hex[i++];
+					str_hex[j++] = str_hex[i++];
+				}
+				if (str_hex[i] == '\0') {
+					str_hex[j] = '\0';
+					break;
+				}
+				g_assert (str_hex[i] == delimiter);
+				str_hex[j++] = str_hex[i++];
+			}
+		}
+
 		required_len = nmtst_get_rand_bool () ? len : 0u;
 
 		outlen_set = required_len == 0 || nmtst_get_rand_bool ();
@@ -511,6 +545,7 @@ test_nm_utils_bin2hexstr (void)
 		bin2 = nm_utils_hexstr2bin_full (str_hex,
 		                                 nmtst_get_rand_bool (),
 		                                 delimiter != '\0' && nmtst_get_rand_bool (),
+		                                 !hexdigit_pairs_mangled && nmtst_get_rand_bool (),
 		                                   delimiter != '\0'
 		                                 ? nmtst_rand_select ((const char *) ":", ":-")
 		                                 : nmtst_rand_select ((const char *) ":", ":-", "", NULL),
@@ -530,6 +565,23 @@ test_nm_utils_bin2hexstr (void)
 		g_assert_cmpmem (buf, len, buf2, len);
 
 		g_assert (buf2[len] == '\0');
+
+		if (hexdigit_pairs_mangled) {
+			/* we mangled the hexstr to contain single digits. Trying to parse with
+			 * hexdigit_pairs_required must now fail. */
+			bin2 = nm_utils_hexstr2bin_full (str_hex,
+			                                 nmtst_get_rand_bool (),
+			                                 delimiter != '\0' && nmtst_get_rand_bool (),
+			                                 TRUE,
+			                                   delimiter != '\0'
+			                                 ? nmtst_rand_select ((const char *) ":", ":-")
+			                                 : nmtst_rand_select ((const char *) ":", ":-", "", NULL),
+			                                 required_len,
+			                                 buf2,
+			                                 len,
+			                                 outlen_set ? &outlen : NULL);
+			g_assert (!bin2);
+		}
 
 		if (allocate)
 			g_free (str_hex);

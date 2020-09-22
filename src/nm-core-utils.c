@@ -2443,6 +2443,7 @@ again:
 			if (nm_utils_hexstr2bin_full (content,
 			                              FALSE,
 			                              FALSE,
+			                              FALSE,
 			                              NULL,
 			                              16,
 			                              (guint8 *) &uuid,

@@ -4041,7 +4041,7 @@ nm_utils_hexstr2bin (const char *hex)
 	return g_bytes_new_take (buffer, len);
 }
 
-#define hwaddr_aton(asc, buffer, buffer_len, out_len) nm_utils_hexstr2bin_full ((asc), FALSE, TRUE, ":-", 0, (buffer), (buffer_len), (out_len))
+#define hwaddr_aton(asc, buffer, buffer_len, out_len) nm_utils_hexstr2bin_full ((asc), FALSE, TRUE, FALSE, ":-", 0, (buffer), (buffer_len), (out_len))
 
 /**
  * nm_utils_hwaddr_atoba:
@@ -5021,7 +5021,7 @@ _nm_utils_dhcp_duid_valid (const char *duid, GBytes **out_duid_bin)
 		return TRUE;
 	}
 
-	if (nm_utils_hexstr2bin_full (duid, FALSE, FALSE, ":", 0, duid_arr, sizeof (duid_arr), &duid_len)) {
+	if (nm_utils_hexstr2bin_full (duid, FALSE, FALSE, FALSE, ":", 0, duid_arr, sizeof (duid_arr), &duid_len)) {
 		/* MAX DUID length is 128 octects + the type code (2 octects). */
 		if (   duid_len > 2
 		    && duid_len <= (128 + 2)) {

@@ -4474,6 +4474,7 @@ guint8 *
 nm_utils_hexstr2bin_full (const char *hexstr,
                           gboolean allow_0x_prefix,
                           gboolean delimiter_required,
+                          gboolean hexdigit_pairs_required,
                           const char *delimiter_candidates,
                           gsize required_len,
                           guint8 *buffer,
@@ -4517,12 +4518,14 @@ nm_utils_hexstr2bin_full (const char *hexstr,
 			/* Fake leading zero */
 			*out++ = i1;
 			if (!d2) {
-				if (!delimiter_has) {
+				if (   !delimiter_has
+				    || hexdigit_pairs_required) {
 					/* when using no delimiter, there must be pairs of hex chars */
 					goto fail;
 				}
 				break;
-			}
+			} else if (hexdigit_pairs_required)
+				goto fail;
 			in += 1;
 		}
 
@@ -4598,6 +4601,7 @@ nm_utils_hexstr2bin_alloc (const char *hexstr,
 	if (nm_utils_hexstr2bin_full (hexstr,
 	                              FALSE,
 	                              delimiter_required,
+	                              FALSE,
 	                              delimiter_candidates,
 	                              required_len,
 	                              buffer,
