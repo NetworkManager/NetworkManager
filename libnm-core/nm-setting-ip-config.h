@@ -455,8 +455,6 @@ guint         nm_setting_ip_config_get_num_dns_options        (NMSettingIPConfig
 gboolean      nm_setting_ip_config_has_dns_options            (NMSettingIPConfig *setting);
 const char   *nm_setting_ip_config_get_dns_option             (NMSettingIPConfig *setting,
                                                                guint              idx);
-int           nm_setting_ip_config_next_valid_dns_option      (NMSettingIPConfig *setting,
-                                                               guint              idx);
 gboolean      nm_setting_ip_config_add_dns_option             (NMSettingIPConfig *setting,
                                                                const char        *dns_option);
 void          nm_setting_ip_config_remove_dns_option          (NMSettingIPConfig *setting,
