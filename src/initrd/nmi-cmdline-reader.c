@@ -78,6 +78,7 @@ reader_create_connection (Reader *reader,
                           const char *basename,
                           const char *id,
                           const char *ifname,
+                          const char *mac,
                           const char *type_name,
                           NMConnectionMultiConnect multi_connect)
 {
@@ -120,6 +121,14 @@ reader_create_connection (Reader *reader,
 	              NM_SETTING_CONNECTION_MULTI_CONNECT, multi_connect,
 	              NULL);
 
+	if (mac) {
+		setting = nm_setting_wired_new ();
+		nm_connection_add_setting (connection, setting);
+		g_object_set (setting,
+		              NM_SETTING_WIRED_MAC_ADDRESS, mac,
+		              NULL);
+	}
+
 	return connection;
 }
 
@@ -133,6 +142,7 @@ reader_get_default_connection (Reader *reader)
 		                                "default_connection",
 		                                "Wired Connection",
 		                                NULL,
+		                                NULL,
 		                                NM_SETTING_WIRED_SETTING_NAME,
 		                                NM_CONNECTION_MULTI_CONNECT_MULTIPLE);
 		nm_connection_add_setting (con, nm_setting_wired_new ());
@@ -143,14 +153,26 @@ reader_get_default_connection (Reader *reader)
 
 static NMConnection *
 reader_get_connection (Reader *reader,
-                       const char *ifname,
+                       const char *iface_spec,
                        const char *type_name,
                        gboolean create_if_missing)
 {
 	NMConnection *connection = NULL;
 	NMSetting *setting;
+	const char *ifname = NULL;
+	gs_free char *mac = NULL;
 
-	if (!ifname) {
+	if (iface_spec) {
+		if (nm_utils_is_valid_iface_name (iface_spec, NULL))
+			ifname = iface_spec;
+		else {
+			mac = nm_utils_hwaddr_canonical (iface_spec, ETH_ALEN);
+			if (!mac)
+				_LOGW (LOGD_CORE, "invalid interface '%s'", iface_spec);
+		}
+	}
+
+	if (!ifname && !mac) {
 		NMConnection *candidate;
 		NMSettingConnection *s_con;
 		guint i;
@@ -178,7 +200,7 @@ reader_get_connection (Reader *reader,
 			}
 		}
 	} else
-		connection = g_hash_table_lookup (reader->hash, (gpointer) ifname);
+		connection = g_hash_table_lookup (reader->hash, (gpointer) ifname ?: mac);
 
 	if (!connection) {
 		if (!create_if_missing)
@@ -187,9 +209,9 @@ reader_get_connection (Reader *reader,
 		if (!type_name)
 			type_name = NM_SETTING_WIRED_SETTING_NAME;
 
-		connection = reader_create_connection (reader, ifname,
-		                                       ifname ?: "Wired Connection",
-		                                       ifname, type_name,
+		connection = reader_create_connection (reader, ifname ?: mac,
+		                                       ifname ?: (mac ?: "Wired Connection"),
+		                                       ifname, mac, type_name,
 		                                       NM_CONNECTION_MULTI_CONNECT_SINGLE);
 	}
 	setting = (NMSetting *) nm_connection_get_setting_connection (connection);
@@ -331,7 +353,7 @@ reader_parse_ip (Reader *reader, const char *sysfs_dir, char *argument)
 	const char *gateway_ip = NULL;
 	const char *netmask = NULL;
 	const char *client_hostname = NULL;
-	const char *ifname = NULL;
+	const char *iface_spec = NULL;
 	const char *mtu = NULL;
 	const char *macaddr = NULL;
 	int client_ip_family = AF_UNSPEC;
@@ -357,9 +379,9 @@ reader_parse_ip (Reader *reader, const char *sysfs_dir, char *argument)
 			gateway_ip = get_word (&argument, ':');
 			netmask = get_word (&argument, ':');
 			client_hostname = get_word (&argument, ':');
-			ifname = get_word (&argument, ':');
+			iface_spec = get_word (&argument, ':');
 		} else {
-			ifname = tmp;
+			iface_spec = tmp;
 		}
 
 		if (client_hostname && !nm_sd_hostname_is_valid (client_hostname, FALSE))
@@ -388,15 +410,15 @@ reader_parse_ip (Reader *reader, const char *sysfs_dir, char *argument)
 		}
 	}
 
-	if (   ifname == NULL
+	if (   iface_spec == NULL
 	    && NM_IN_STRSET (kind, "fw", "ibft")) {
 		reader_read_all_connections_from_fw (reader, sysfs_dir);
 		return;
 	}
 
 	/* Parsing done, construct the NMConnection. */
-	if (ifname)
-		connection = reader_get_connection (reader, ifname, NULL, TRUE);
+	if (iface_spec)
+		connection = reader_get_connection (reader, iface_spec, NULL, TRUE);
 	else
 		connection = reader_get_default_connection (reader);
 
@@ -498,22 +520,36 @@ reader_parse_ip (Reader *reader, const char *sysfs_dir, char *argument)
 			              NULL);
 		}
 	} else if (nm_streq0 (kind, "ibft")) {
-		gs_free char *address_path = g_build_filename (sysfs_dir, "class", "net", ifname, "address", NULL);
-		gs_free char *mac, *mac_up = NULL;
+		NMSettingWired *s_wired;
+		const char *mac = NULL;
+		const char *ifname;
+		gs_free char *mac_free = NULL;
+		gs_free char *address_path = NULL;
 		GHashTable *nic = NULL;
 
-		if (!g_file_get_contents (address_path, &mac, NULL, &error)) {
-			_LOGW (LOGD_CORE, "Can't get a MAC address for %s: %s", ifname, error->message);
-			g_clear_error (&error);
+		if (   (s_wired = nm_connection_get_setting_wired (connection))
+		    && (mac = nm_setting_wired_get_mac_address (s_wired))) {
+			/* got mac from the connection */
+		} else if ((ifname = nm_connection_get_interface_name (connection))) {
+			/* read it from sysfs */
+			address_path = g_build_filename (sysfs_dir, "class", "net", ifname, "address", NULL);
+			if (g_file_get_contents (address_path, &mac_free, NULL, &error)) {
+				g_strchomp (mac_free);
+				mac = mac_free;
+			} else {
+				_LOGW (LOGD_CORE, "Can't get a MAC address for %s: %s", ifname, error->message);
+				g_clear_error (&error);
+			}
 		}
 
 		if (mac) {
-			g_strchomp (mac);
+			gs_free char *mac_up = NULL;
+
 			mac_up = g_ascii_strup (mac, -1);
 			ibft = nmi_ibft_read (sysfs_dir);
 			nic = g_hash_table_lookup (ibft, mac_up);
 			if (!nic)
-				_LOGW (LOGD_CORE, "No iBFT NIC for %s (%s)", ifname, mac_up);
+				_LOGW (LOGD_CORE, "No iBFT NIC for %s (%s)", iface_spec, mac_up);
 		}
 
 		if (nic) {
@@ -1018,15 +1054,14 @@ nmi_cmdline_reader_parse (const char *sysfs_dir, const char *const*argv, char **
 			                                       "bootif_connection",
 			                                       "BOOTIF Connection",
 			                                       NULL,
+			                                       bootif,
 			                                       NM_SETTING_WIRED_SETTING_NAME,
 			                                       NM_CONNECTION_MULTI_CONNECT_SINGLE);
-			s_wired = (NMSettingWired *) nm_setting_wired_new ();
-			nm_connection_add_setting (connection, (NMSetting *) s_wired);
+		} else {
+			g_object_set (s_wired,
+			              NM_SETTING_WIRED_MAC_ADDRESS, bootif,
+			              NULL);
 		}
-
-		g_object_set (s_wired,
-		              NM_SETTING_WIRED_MAC_ADDRESS, bootif,
-		              NULL);
 	}
 
 	if (bootdev) {
