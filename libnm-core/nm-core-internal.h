@@ -443,6 +443,9 @@ gboolean    _nm_utils_dns_option_validate (const char *option, char **out_name,
                                            const NMUtilsDNSOptionDesc *option_descs);
 gssize      _nm_utils_dns_option_find_idx (GPtrArray *array, const char *option);
 
+int nm_setting_ip_config_next_valid_dns_option (NMSettingIPConfig *setting,
+                                                guint              idx);
+
 /*****************************************************************************/
 
 typedef struct _NMUtilsStrStrDictKey NMUtilsStrStrDictKey;

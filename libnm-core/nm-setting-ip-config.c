@@ -3998,8 +3998,6 @@ nm_setting_ip_config_get_dns_option (NMSettingIPConfig *setting, guint idx)
  *
  * Returns: the index, greater or equal than @idx, of the first valid
  * DNS option, or -1 if no valid option is found
- *
- * Since: 1.2
  **/
 int
 nm_setting_ip_config_next_valid_dns_option (NMSettingIPConfig *setting, guint idx)
