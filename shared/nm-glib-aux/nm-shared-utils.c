@@ -3734,7 +3734,7 @@ _nm_utils_strv_dup_packed (const char *const*strv,
 			len2++;
 			for (; i < len2; i++)
 				result[i] = NULL;
-			g_return_val_if_reached (result);;
+			g_return_val_if_reached (result);
 		}
 
 		result[i] = sbuf;

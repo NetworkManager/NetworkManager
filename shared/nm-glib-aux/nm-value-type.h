@@ -150,7 +150,7 @@ nm_value_type_to_variant (NMValueType value_type,
 
 	switch (value_type) {
 	case NM_VALUE_TYPE_BOOL:   return g_variant_new_boolean (*((const bool   *) src));
-	case NM_VALUE_TYPE_INT32:  return g_variant_new_int32   (*((const gint32 *) src));;
+	case NM_VALUE_TYPE_INT32:  return g_variant_new_int32   (*((const gint32 *) src));
 	case NM_VALUE_TYPE_STRING:
 		v_string = *((const char *const*) src);
 		return v_string ? g_variant_new_string (v_string) : NULL;

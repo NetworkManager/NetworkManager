@@ -329,7 +329,7 @@ _ndp_msg_add_option (struct ndp_msg *msg, int len)
 typedef struct {
 	struct nd_opt_hdr header;
 	uint16_t reserved;
-	uint32_t lifetime;;
+	uint32_t lifetime;
 	struct in6_addr addrs[0];
 } NMLndpRdnssOption;
 

@@ -688,7 +688,7 @@ is_ready (NMObject *nmobj)
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (nmobj);
 
 	if (!priv->is_initialized)
-		return FALSE;;
+		return FALSE;
 
 	return NM_OBJECT_CLASS (nm_remote_connection_parent_class)->is_ready (nmobj);
 }

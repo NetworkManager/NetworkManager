@@ -2985,7 +2985,7 @@ nm_ip_routing_rule_to_dbus (const NMIPRoutingRule *self)
 	if (self->suppress_prefixlength != -1)
 		_rr_to_dbus_add (&builder, RR_DBUS_ATTR_SUPPRESS_PREFIXLENGTH, g_variant_new_int32 (self->suppress_prefixlength));
 
-	return g_variant_builder_end (&builder);;
+	return g_variant_builder_end (&builder);
 }
 
 /*****************************************************************************/
@@ -3264,7 +3264,7 @@ nm_ip_routing_rule_from_string (const char *str,
 				continue;
 			if (i64_suppress_prefixlength != -1)
 				goto next_fail_word0_duplicate_key;
-			i64_suppress_prefixlength = _nm_utils_ascii_str_to_int64 (word1, 0, 0, G_MAXINT32, -1);;
+			i64_suppress_prefixlength = _nm_utils_ascii_str_to_int64 (word1, 0, 0, G_MAXINT32, -1);
 			if (i64_suppress_prefixlength == -1)
 				goto next_fail_word1_invalid_value;
 			goto next_words_consumed;

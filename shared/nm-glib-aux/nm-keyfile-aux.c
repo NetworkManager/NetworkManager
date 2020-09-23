@@ -333,7 +333,7 @@ nm_key_file_db_set_string_list (NMKeyFileDB *self,
                                 gssize len)
 {
 	gs_free char *old_value = NULL;
-	gboolean got_dirty = FALSE;;
+	gboolean got_dirty = FALSE;
 
 	g_return_if_fail (_IS_KEY_FILE_DB (self, TRUE, FALSE));
 	g_return_if_fail (key);

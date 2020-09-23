@@ -1126,7 +1126,7 @@ skip:
 		}
 	}
 	*out_peers            = g_steal_pointer (&plpeers);
-	*out_peer_flags       = g_steal_pointer (&plpeer_flags);;
+	*out_peer_flags       = g_steal_pointer (&plpeer_flags);
 	*out_len              = i_good;
 	*out_allowed_ips_data = g_steal_pointer (&allowed_ips);
 }

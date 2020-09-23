@@ -1066,7 +1066,7 @@ parse_line_type_route_scope:
 			                                                0,
 			                                                0,
 			                                                G_MAXUINT8,
-			                                                0);;
+			                                                0);
 			if (errno) {
 				g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				             "Argument for \"%s\" is not a valid number", w);
@@ -1084,7 +1084,7 @@ parse_line_type_uint8:
 		                                                p_info->int_base_16 ? 16 : 10,
 		                                                0,
 		                                                G_MAXUINT8,
-		                                                0);;
+		                                                0);
 		if (errno) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 			             "Argument for \"%s\" is not a valid number", w);
@@ -1106,7 +1106,7 @@ parse_line_type_uint32_with_lock:
 				p_data->v.uint32_with_lock.lock = TRUE;
 			} else
 				p_data->v.uint32_with_lock.lock = FALSE;
-			p_data->v.uint32_with_lock.uint32 = _nm_utils_ascii_str_to_int64 (s, 10, 0, G_MAXUINT32, 0);;
+			p_data->v.uint32_with_lock.uint32 = _nm_utils_ascii_str_to_int64 (s, 10, 0, G_MAXUINT32, 0);
 		} else {
 			p_data->v.uint32 = _nm_utils_ascii_str_to_int64 (s, 10, 0, G_MAXUINT32, 0);
 		}

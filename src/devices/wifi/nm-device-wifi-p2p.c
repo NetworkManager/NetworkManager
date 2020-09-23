@@ -707,7 +707,7 @@ out:
 static void
 check_group_iface_ready (NMDeviceWifiP2P *self)
 {
-	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);;
+	NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE (self);
 
 	if (!priv->group_iface)
 		return;

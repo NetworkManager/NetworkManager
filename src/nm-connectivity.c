@@ -571,7 +571,7 @@ easy_write_cb (void *buffer, size_t size, size_t nmemb, void *userdata)
 		return len;
 	}
 
-	response = _con_config_get_response (cb_data->concheck.con_config);;
+	response = _con_config_get_response (cb_data->concheck.con_config);
 
 	if (response[0] == '\0') {
 		/* no response expected. We are however graceful and accept any

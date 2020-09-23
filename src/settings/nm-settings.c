@@ -1255,7 +1255,7 @@ _connection_changed_process_one (NMSettings *self,
 
 	_sett_conn_entry_sds_update (self, sett_conn_entry);
 
-	sd_best = c_list_first_entry (&sett_conn_entry->sd_lst_head, StorageData, sd_lst);;
+	sd_best = c_list_first_entry (&sett_conn_entry->sd_lst_head, StorageData, sd_lst);
 
 	if (   !sd_best
 	    || !sd_best->connection) {

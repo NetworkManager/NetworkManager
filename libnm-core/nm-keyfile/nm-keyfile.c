@@ -1235,7 +1235,7 @@ unescape_semicolons (char *str)
 	for (i = 0, j = 0; str[i]; ) {
 		if (str[i] == '\\' && str[i+1] == ';')
 			i++;
-		str[j++] = str[i++];;
+		str[j++] = str[i++];
 	}
 	nm_explicit_bzero (&str[j], i - j);
 	return j;
@@ -3848,7 +3848,7 @@ nm_keyfile_read (GKeyFile *keyfile,
 	if (vpn_secrets) {
 		info.group = NM_KEYFILE_GROUP_VPN_SECRETS;
 		_read_setting_vpn_secrets (&info);
-		info.group = NULL;;
+		info.group = NULL;
 		if (info.error)
 			goto out_with_info_error;
 	}

@@ -1626,7 +1626,7 @@ nm_team_setting_config_get (const NMTeamSetting *self)
 		if (!list_is_empty)
 			g_string_append (gstr, " }");
 
-		js_str = g_string_free (gstr, list_is_empty);;
+		js_str = g_string_free (gstr, list_is_empty);
 	}
 
 	/* mutate the constant object. In C++ speak, these fields are "mutable".
