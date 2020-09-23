@@ -86,6 +86,18 @@ void _nm_l3cfg_notify_platform_change(NML3Cfg *                  self,
 
 /*****************************************************************************/
 
+struct _NMDedupMultiIndex;
+
+struct _NMDedupMultiIndex *nm_netns_get_multi_idx(NMNetns *self);
+
+static inline struct _NMDedupMultiIndex *
+nm_l3cfg_get_multi_idx(const NML3Cfg *self)
+{
+    return nm_netns_get_multi_idx(self->priv.netns);
+}
+
+/*****************************************************************************/
+
 static inline int
 nm_l3cfg_get_ifindex(const NML3Cfg *self)
 {
