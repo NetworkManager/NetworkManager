@@ -127,18 +127,25 @@ _test_l3cfg_signal_notify(NML3Cfg *                      l3cfg,
     g_assert(tdata);
     g_assert((!!payload)
              == NM_IN_SET(l3_notify_type,
+                          NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE,
                           NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE,
                           NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED));
 
     if (l3_notify_type == NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE)
         g_assert(payload->platform_change_on_idle.obj_type_flags != 0u);
+    else if (l3_notify_type == NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE) {
+        g_assert(NMP_OBJECT_IS_VALID(payload->platform_change.obj));
+        g_assert(payload->platform_change.change_type != 0);
+    }
 
     switch (tdata->notify_type) {
     case TEST_L3CFG_NOTIFY_TYPE_NONE:
         g_assert_not_reached();
         break;
     case TEST_L3CFG_NOTIFY_TYPE_IDLE_ASSERT_NO_SIGNAL:
-        if (l3_notify_type == NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE)
+        if (NM_IN_SET(l3_notify_type,
+                      NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE,
+                      NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE))
             return;
         g_assert_not_reached();
         return;
@@ -160,12 +167,16 @@ _test_l3cfg_signal_notify(NML3Cfg *                      l3cfg,
                 g_assert_not_reached();
                 return;
             }
+        case NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE:
+            return;
         default:
             g_assert_not_reached();
             return;
         }
     case TEST_L3CFG_NOTIFY_TYPE_WAIT_FOR_ACD_READY_1:
-        if (l3_notify_type == NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE)
+        if (NM_IN_SET(l3_notify_type,
+                      NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE,
+                      NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE))
             return;
         if (l3_notify_type == NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED) {
             g_assert(tdata->notify_data.wait_for_acd_ready_1.cb_count == 0);

@@ -27,6 +27,12 @@ typedef enum {
     NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT,
 
     /* NML3Cfg hooks to the NMPlatform signals for link, addresses and routes.
+     * It re-emits the platform signal.
+     * Contrary to NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE, this even
+     * is re-emitted synchronously. */
+    NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE,
+
+    /* NML3Cfg hooks to the NMPlatform signals for link, addresses and routes.
      * It re-emits the signal on an idle handler. The purpose is for something
      * like NMDevice which is already subscribed to these signals, it can get the
      * notifications without also subscribing directly to the platform. */
@@ -49,6 +55,11 @@ typedef struct {
             bool                                          probe_result : 1;
             const NML3ConfigNotifyPayloadAcdFailedSource *sources;
         } acd_completed;
+
+        struct {
+            const NMPObject *          obj;
+            NMPlatformSignalChangeType change_type;
+        } platform_change;
 
         struct {
             guint32 obj_type_flags;

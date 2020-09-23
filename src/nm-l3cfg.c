@@ -281,6 +281,7 @@ static NM_UTILS_ENUM2STR_DEFINE(
     _l3_config_notify_type_to_string,
     NML3ConfigNotifyType,
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED, "acd-complete"),
+    NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE, "platform-change"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE, "platform-change-on-idle"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT, "post-commit"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED,
@@ -313,6 +314,15 @@ _l3_config_notify_type_and_payload_to_string(NML3ConfigNotifyType           noti
                                _nm_utils_inet4_ntop(payload->acd_completed.addr, sbuf_addr),
                                (int) payload->acd_completed.probe_result);
         break;
+    case NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE:
+        nm_utils_strbuf_append(
+            &s,
+            &l,
+            ", obj-type=%s, change=%s, obj=",
+            NMP_OBJECT_GET_CLASS(payload->platform_change.obj)->obj_type_name,
+            nm_platform_signal_change_type_to_string(payload->platform_change.change_type));
+        nmp_object_to_string(payload->platform_change.obj, NMP_OBJECT_TO_STRING_PUBLIC, s, l);
+        break;
     case NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE:
         nm_utils_strbuf_append(&s,
                                &l,
@@ -331,13 +341,14 @@ _nm_l3cfg_emit_signal_notify(NML3Cfg *                      self,
                              NML3ConfigNotifyType           notify_type,
                              const NML3ConfigNotifyPayload *payload)
 {
-    char sbuf[100];
+    char sbuf[sizeof(_nm_utils_to_string_buffer)];
 
     nm_assert(_NM_INT_NOT_NEGATIVE(notify_type));
     nm_assert(notify_type < _NM_L3_CONFIG_NOTIFY_TYPE_NUM);
     nm_assert((!!payload)
               == NM_IN_SET(notify_type,
                            NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED,
+                           NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE,
                            NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE));
 
     _LOGT("emit signal (%s)",
@@ -682,9 +693,14 @@ _nm_l3cfg_notify_platform_change(NML3Cfg *                  self,
                                  NMPlatformSignalChangeType change_type,
                                  const NMPObject *          obj)
 {
+    NML3ConfigNotifyPayload payload;
+    NMPObjectType           obj_type;
+
     nm_assert(NMP_OBJECT_IS_VALID(obj));
 
-    switch (NMP_OBJECT_GET_TYPE(obj)) {
+    obj_type = NMP_OBJECT_GET_TYPE(obj);
+
+    switch (obj_type) {
     case NMP_OBJECT_TYPE_IP4_ADDRESS:
         _l3_acd_ipv4_addresses_on_link_update(self,
                                               NMP_OBJECT_CAST_IP4_ADDRESS(obj)->address,
@@ -697,6 +713,17 @@ _nm_l3cfg_notify_platform_change(NML3Cfg *                  self,
     default:
         break;
     }
+
+    payload = (NML3ConfigNotifyPayload){
+        .platform_change =
+            {
+                .obj         = obj,
+                .change_type = change_type,
+            },
+    };
+    _nm_l3cfg_emit_signal_notify(self, NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE, &payload);
+
+    nm_assert(NMP_OBJECT_IS_VALID(obj));
 }
 
 /*****************************************************************************/

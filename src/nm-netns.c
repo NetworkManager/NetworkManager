@@ -95,7 +95,7 @@ nm_netns_get_multi_idx(NMNetns *self)
 
 typedef struct {
     int      ifindex;
-    guint32  signal_pending_flag;
+    guint32  signal_pending_obj_type_flags;
     NML3Cfg *l3cfg;
     CList    signal_pending_lst;
 } L3CfgData;
@@ -192,8 +192,9 @@ _platform_signal_on_idle_cb(gpointer user_data)
     while ((l3cfg_data = c_list_first_entry(&work_list, L3CfgData, signal_pending_lst))) {
         nm_assert(NM_IS_L3CFG(l3cfg_data->l3cfg));
         c_list_unlink(&l3cfg_data->signal_pending_lst);
-        _nm_l3cfg_notify_platform_change_on_idle(l3cfg_data->l3cfg,
-                                                 nm_steal_int(&l3cfg_data->signal_pending_flag));
+        _nm_l3cfg_notify_platform_change_on_idle(
+            l3cfg_data->l3cfg,
+            nm_steal_int(&l3cfg_data->signal_pending_obj_type_flags));
     }
 
     return G_SOURCE_REMOVE;
@@ -217,7 +218,7 @@ _platform_signal_cb(NMPlatform *  platform,
     if (!l3cfg_data)
         return;
 
-    l3cfg_data->signal_pending_flag |= nmp_object_type_to_flags(obj_type);
+    l3cfg_data->signal_pending_obj_type_flags |= nmp_object_type_to_flags(obj_type);
 
     if (c_list_is_empty(&l3cfg_data->signal_pending_lst)) {
         c_list_link_tail(&priv->l3cfg_signal_pending_lst_head, &l3cfg_data->signal_pending_lst);
