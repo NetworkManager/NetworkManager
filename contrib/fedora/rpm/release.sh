@@ -57,6 +57,8 @@ print_usage() {
 
 die_help() {
     print_usage
+    echo
+    sed -e '/^# /,/# Run with --no-test/!d' -e 's/^#\($\| \)/  /' "$BASH_SOURCE"
     exit 0
 }
 
@@ -224,6 +226,7 @@ else
 fi
 
 RC_VERSION=
+RELEASE_BRANCH=
 case "$RELEASE_MODE" in
     minor)
         number_is_even "${VERSION_ARR[1]}" &&
@@ -241,6 +244,12 @@ case "$RELEASE_MODE" in
         RC_VERSION="$((${VERSION_ARR[2]} - 88))"
         [ "$CUR_BRANCH" == "nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))" ] || die "devel release can only be on \"nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))\" branch"
         ;;
+    rc1)
+        number_is_odd "${VERSION_ARR[1]}" || die "cannot do rc release on top of version $VERSION_STR"
+        [ "${VERSION_ARR[2]}" -lt 90 ] || die "rc release must have a micro version smaller than ${VERSION_ARR[0]}.${VERSION_ARR[1]}.90 but current version is $VERSION_STR"
+        [ "$CUR_BRANCH" == master ] || die "rc1 release can only be on master"
+        RELEASE_BRANCH="nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))"
+        ;;
     major)
         number_is_odd "${VERSION_ARR[1]}" || die "cannot do major release on top of version $VERSION_STR"
         [ "${VERSION_ARR[2]}" -ge 90 ] || die "parent version for major release must have a micro version larger than ${VERSION_ARR[0]}.90 but current version is $VERSION_STR"
@@ -256,7 +265,7 @@ case "$RELEASE_MODE" in
         ;;
 esac
 
-git fetch || die "git fetch failed"
+git fetch "$ORIGIN" || die "git fetch failed"
 
 if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
     git_same_ref "$CUR_BRANCH" "refs/heads/$CUR_BRANCH" || die "Current branch $CUR_BRANCH is not a branch??"
@@ -286,6 +295,11 @@ if [ "$CUR_BRANCH" != master ]; then
     fi
 fi
 
+if [ -n "$RELEASE_BRANCH" ]; then
+    git show-ref --verify --quiet "refs/remotes/$ORIGIN/$RELEASE_BRANCH" && die "release branch refs/remotes/$ORIGIN/$RELEASE_BRANCH unexpectedly exists already"
+    git show-ref --verify --quiet "refs/heads/$RELEASE_BRANCH" && die "release branch refs/heads/$RELEASE_BRANCH unexpectedly exists already"
+fi
+
 if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
     cmp <(git show origin/master:contrib/fedora/rpm/release.sh) "$BASH_SOURCE" || die "$BASH_SOURCE is not identical to \`git show origin/master:contrib/fedora/rpm/release.sh\`"
 fi
@@ -299,7 +313,7 @@ if [ $FIND_BACKPORTS = 1 ]; then
     test -z "$TMP" || die "nm-find-backports returned patches that need to be backported (ignore with --no-find-backports): ./.git/nm-find-backports \"$CUR_BRANCH\" master ${NEWER_BRANCHES[@]}"
 fi
 
-TAGS=()
+BRANCHES=()
 BUILD_TAG=
 
 CLEANUP_CHECKOUT_BRANCH="$CUR_BRANCH"
@@ -316,12 +330,12 @@ case "$RELEASE_MODE" in
 
         b="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))"
         git tag -s -a -m "Tag $b" "$b" HEAD~ || die "failed to tag release"
-        TAGS+=("$b")
+        BRANCHES+=("$b")
         CLEANUP_REFS+=("refs/tags/$b")
         BUILD_TAG="$b"
         b="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 2))"
         git tag -s -a -m "Tag $b (development)" "$b-dev" HEAD || die "failed to tag devel version"
-        TAGS+=("$b-dev")
+        BRANCHES+=("$b-dev")
         CLEANUP_REFS+=("refs/tags/$b-dev")
         TAR_VERSION="$BUILD_TAG"
         ;;
@@ -331,7 +345,7 @@ case "$RELEASE_MODE" in
 
         b="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$(("${VERSION_ARR[2]}" + 1))"
         git tag -s -a -m "Tag $b (development)" "$b-dev" HEAD || die "failed to tag release"
-        TAGS+=("$b-dev")
+        BRANCHES+=("$b-dev")
         CLEANUP_REFS+=("refs/tags/$b-dev")
         BUILD_TAG="$b-dev"
         TAR_VERSION="$b"
@@ -343,7 +357,19 @@ case "$RELEASE_MODE" in
         git commit -m "release: bump version to $b ($t) (development)" -a || die "failed to commit rc version bump"
 
         git tag -s -a -m "Tag $b ($t) (development)" "$t" HEAD || die "failed to tag release"
-        TAGS+=("$t")
+        BRANCHES+=("$t")
+        CLEANUP_REFS+=("refs/tags/$t")
+        BUILD_TAG="$t"
+        TAR_VERSION="$b"
+        ;;
+    rc1)
+        set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" 90
+        b="${VERSION_ARR[0]}.${VERSION_ARR[1]}.90"
+        t="${VERSION_ARR[0]}.$(("${VERSION_ARR[1]}" + 1))-rc1"
+        git commit -m "release: bump version to $b ($t)" -a || die "failed to commit rc1 version bump"
+
+        git tag -s -a -m "Tag $b ($t) (development)" "$t" HEAD || die "failed to tag release $t"
+        BRANCHES+=("$t")
         CLEANUP_REFS+=("refs/tags/$t")
         BUILD_TAG="$t"
         TAR_VERSION="$b"
@@ -355,13 +381,13 @@ case "$RELEASE_MODE" in
         set_version_number "${VERSION_ARR[0]}" "$((${VERSION_ARR[1]} + 1))" 0
         git commit -m "release: bump version to $b" -a || die "failed to commit major version bump"
         git tag -s -a -m "Tag $b" "$b" HEAD || die "failed to tag release"
-        TAGS+=("$b")
+        BRANCHES+=("$b")
         CLEANUP_REFS+=("refs/tags/$b")
 
         set_version_number "${VERSION_ARR[0]}" "$((${VERSION_ARR[1]} + 1))" 1
         git commit -m "release: bump version to $b2 (development)" -a || die "failed to commit another bump after major version bump"
         git tag -s -a -m "Tag $b (development)" "$b2-dev" HEAD || die "failed to tag release"
-        TAGS+=("$b2-dev")
+        BRANCHES+=("$b2-dev")
         CLEANUP_REFS+=("refs/tags/$b2-dev")
 
         BUILD_TAG="$b"
@@ -384,7 +410,7 @@ case "$RELEASE_MODE" in
         set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" "$((${VERSION_ARR[2]} + 1))"
         git commit --amend -m "release: bump version to $b (development)" -a || die "failed to commit major version bump"
         git tag -s -a -m "Tag $b (development)" "$b-dev" HEAD || die "failed to tag release"
-        TAGS+=("$b-dev")
+        BRANCHES+=("$b-dev")
         CLEANUP_REFS+=("refs/tags/$b-dev")
         BUILD_TAG="$b-dev"
         TAR_VERSION="$b"
@@ -394,14 +420,10 @@ case "$RELEASE_MODE" in
         ;;
 esac
 
-RELEASE_FILE=
-
-if [ -n "$BUILD_TAG" ]; then
+build_tag() {
     git checkout "$BUILD_TAG" || die "failed to checkout $BUILD_TAG"
 
     ./contrib/fedora/rpm/build_clean.sh -r || die "build release failed"
-
-    RELEASE_FILE="NetworkManager-$TAR_VERSION.tar.xz"
 
     test -f "./$RELEASE_FILE" \
     || die "release file \"./$RELEASE_FILE\" not found"
@@ -413,16 +435,46 @@ if [ -n "$BUILD_TAG" ]; then
     fi
 
     git clean -fdx
-fi
+}
 
-if [ -n "$RELEASE_FILE" ]; then
-    do_command rsync -va --append-verify -P "/tmp/$RELEASE_FILE" master.gnome.org: || die "failed to rsync \"/tmp/$RELEASE_FILE\""
-    do_command ssh master.gnome.org ftpadmin install --unattended "$RELEASE_FILE" || die "ftpadmin install failed"
+RELEASE_FILES=()
+if [ -n "$BUILD_TAG" ]; then
+    RELEASE_FILE="NetworkManager-$TAR_VERSION.tar.xz"
+    RELEASE_FILES+=("$RELEASE_FILE")
+    build_tag
 fi
-
 git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
 
-do_command git push "$ORIGIN" "${TAGS[@]}" "$CUR_BRANCH"
+BRANCHES+=( "$CUR_BRANCH" )
+
+if [ "$RELEASE_MODE" = rc1 ]; then
+    git branch "$RELEASE_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
+    BRANCHES+=( "$RELEASE_BRANCH" )
+    CLEANUP_REFS+=( "refs/heads/$RELEASE_BRANCH" )
+fi
+
+if [ "$RELEASE_MODE" = rc1 ]; then
+    git checkout "$TMP_BRANCH"
+    b="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 2)).0"
+    set_version_number "${VERSION_ARR[0]}" "$((${VERSION_ARR[1]} + 2))" 0
+    git commit -m "release: bump version to $b (development)" -a || die "failed to commit devel version bump"
+    git tag -s -a -m "Tag $b (development)" "$b-dev" HEAD || die "failed to tag release"
+    BRANCHES+=("$b-dev")
+    CLEANUP_REFS+=("refs/tags/$b-dev")
+    BUILD_TAG="$b-dev"
+    TAR_VERSION="$b"
+    RELEASE_FILE="NetworkManager-$TAR_VERSION.tar.xz"
+    RELEASE_FILES+=("$RELEASE_FILE")
+    build_tag
+    git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
+fi
+
+do_command git push "$ORIGIN" "${BRANCHES[@]}" || die "failed to to push branches ${BRANCHES[@]} to $ORIGIN"
+
+for r in "${RELEASE_FILES[@]}"; do
+    do_command rsync -va --append-verify -P "/tmp/$r" master.gnome.org: || die "failed to rsync \"/tmp/$r\""
+    do_command ssh master.gnome.org ftpadmin install --unattended "$r" || die "ftpadmin install failed"
+done
 
 if [ "$DRY_RUN" = 0 ]; then
     CLEANUP_REFS=()
