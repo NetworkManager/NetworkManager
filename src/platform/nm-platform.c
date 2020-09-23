@@ -3437,7 +3437,8 @@ nm_platform_lookup_predicate_routes_main(const NMPObject *obj, gpointer user_dat
 {
     nm_assert(
         NM_IN_SET(NMP_OBJECT_GET_TYPE(obj), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
-    return nm_platform_route_table_is_main(obj->ip_route.table_coerced);
+    return nm_platform_route_table_is_main(
+        nm_platform_ip_route_get_effective_table(&obj->ip_route));
 }
 
 gboolean
@@ -3446,7 +3447,7 @@ nm_platform_lookup_predicate_routes_main_skip_rtprot_kernel(const NMPObject *obj
 {
     nm_assert(
         NM_IN_SET(NMP_OBJECT_GET_TYPE(obj), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
-    return nm_platform_route_table_is_main(obj->ip_route.table_coerced)
+    return nm_platform_route_table_is_main(nm_platform_ip_route_get_effective_table(&obj->ip_route))
            && obj->ip_route.rt_source != NM_IP_CONFIG_SOURCE_RTPROT_KERNEL;
 }
 
@@ -4395,11 +4396,12 @@ nm_platform_ip_route_get_prune_list(NMPlatform *           self,
         const NMPObject *obj = c_list_entry(iter, NMDedupMultiEntry, lst_entries)->obj;
 
         if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_FULL) {
-            if (nm_platform_route_table_uncoerce(NMP_OBJECT_CAST_IP_ROUTE(obj)->table_coerced, TRUE)
+            if (nm_platform_ip_route_get_effective_table(NMP_OBJECT_CAST_IP_ROUTE(obj))
                 == RT_TABLE_LOCAL)
                 continue;
         } else if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN) {
-            if (!nm_platform_route_table_is_main(NMP_OBJECT_CAST_IP_ROUTE(obj)->table_coerced))
+            if (!nm_platform_route_table_is_main(
+                    nm_platform_ip_route_get_effective_table(NMP_OBJECT_CAST_IP_ROUTE(obj))))
                 continue;
         } else
             nm_assert(route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_ALL);
@@ -4488,7 +4490,9 @@ nm_platform_ip_route_sync(NMPlatform *self,
                 continue;
             }
 
-            if (!IS_IPv4 && NMP_OBJECT_CAST_IP6_ROUTE(conf_o)->metric == 0) {
+            if (!IS_IPv4
+                && nm_platform_ip6_route_get_effective_metric(NMP_OBJECT_CAST_IP6_ROUTE(conf_o))
+                       == 0) {
                 /* User space cannot add routes with metric 0. However, kernel can, and we might track such
                  * routes in @route as they are present external. Skip them silently. */
                 continue;
@@ -4582,29 +4586,33 @@ sync_route_add:
                     if (vt->is_ip4) {
                         const NMPlatformIP4Route *rt = NMP_OBJECT_CAST_IP4_ROUTE(conf_o);
 
-                        nmp_object_stackinit(&oo,
-                                             NMP_OBJECT_TYPE_IP4_ROUTE,
-                                             &((NMPlatformIP4Route){
-                                                 .ifindex       = rt->ifindex,
-                                                 .network       = rt->gateway,
-                                                 .plen          = 32,
-                                                 .metric        = rt->metric,
-                                                 .rt_source     = rt->rt_source,
-                                                 .table_coerced = rt->table_coerced,
-                                             }));
+                        nmp_object_stackinit(
+                            &oo,
+                            NMP_OBJECT_TYPE_IP4_ROUTE,
+                            &((NMPlatformIP4Route){
+                                .ifindex       = rt->ifindex,
+                                .network       = rt->gateway,
+                                .plen          = 32,
+                                .metric        = nm_platform_ip4_route_get_effective_metric(rt),
+                                .rt_source     = rt->rt_source,
+                                .table_coerced = nm_platform_ip_route_get_effective_table(
+                                    NM_PLATFORM_IP_ROUTE_CAST(rt)),
+                            }));
                     } else {
                         const NMPlatformIP6Route *rt = NMP_OBJECT_CAST_IP6_ROUTE(conf_o);
 
-                        nmp_object_stackinit(&oo,
-                                             NMP_OBJECT_TYPE_IP6_ROUTE,
-                                             &((NMPlatformIP6Route){
-                                                 .ifindex       = rt->ifindex,
-                                                 .network       = rt->gateway,
-                                                 .plen          = 128,
-                                                 .metric        = rt->metric,
-                                                 .rt_source     = rt->rt_source,
-                                                 .table_coerced = rt->table_coerced,
-                                             }));
+                        nmp_object_stackinit(
+                            &oo,
+                            NMP_OBJECT_TYPE_IP6_ROUTE,
+                            &((NMPlatformIP6Route){
+                                .ifindex       = rt->ifindex,
+                                .network       = rt->gateway,
+                                .plen          = 128,
+                                .metric        = nm_platform_ip6_route_get_effective_metric(rt),
+                                .rt_source     = rt->rt_source,
+                                .table_coerced = nm_platform_ip_route_get_effective_table(
+                                    NM_PLATFORM_IP_ROUTE_CAST(rt)),
+                            }));
                     }
 
                     _LOG3D("route-sync: failure to add IPv%c route: %s: %s; try adding direct "
@@ -4760,21 +4768,25 @@ nm_platform_ip_route_normalize(int addr_family, NMPlatformIPRoute *route)
     NMPlatformIP4Route *r4;
     NMPlatformIP6Route *r6;
 
+    route->table_coerced =
+        nm_platform_route_table_coerce(nm_platform_ip_route_get_effective_table(route));
+    route->table_any = FALSE;
+
+    route->rt_source = nmp_utils_ip_config_source_round_trip_rtprot(route->rt_source);
+
     switch (addr_family) {
     case AF_INET:
         r4                = (NMPlatformIP4Route *) route;
-        r4->table_coerced = nm_platform_route_table_coerce(
-            nm_platform_route_table_uncoerce(r4->table_coerced, TRUE));
-        r4->network   = nm_utils_ip4_address_clear_host_address(r4->network, r4->plen);
-        r4->rt_source = nmp_utils_ip_config_source_round_trip_rtprot(r4->rt_source);
-        r4->scope_inv = _ip_route_scope_inv_get_normalized(r4);
+        route->metric     = nm_platform_ip4_route_get_effective_metric(r4);
+        route->metric_any = FALSE;
+        r4->network       = nm_utils_ip4_address_clear_host_address(r4->network, r4->plen);
+        r4->scope_inv     = _ip_route_scope_inv_get_normalized(r4);
         break;
     case AF_INET6:
         r6                = (NMPlatformIP6Route *) route;
-        r6->table_coerced = nm_platform_route_table_coerce(
-            nm_platform_route_table_uncoerce(r6->table_coerced, TRUE));
+        route->metric     = nm_platform_ip6_route_get_effective_metric(r6);
+        route->metric_any = FALSE;
         nm_utils_ip6_address_clear_host_address(&r6->network, &r6->network, r6->plen);
-        r6->rt_source = nmp_utils_ip_config_source_round_trip_rtprot(r6->rt_source),
         nm_utils_ip6_address_clear_host_address(&r6->src, &r6->src, r6->src_plen);
         break;
     default:
@@ -6453,6 +6465,7 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
     char str_tos[32], str_window[32], str_cwnd[32], str_initcwnd[32], str_initrwnd[32], str_mtu[32];
     char str_rtm_flags[_RTM_FLAGS_TO_STRING_MAXLEN];
     char str_type[30];
+    char str_metric[30];
 
     if (!nm_utils_to_string_buffer_init_null(route, &buf, &len))
         return buf;
@@ -6470,30 +6483,33 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
         "%s/%d"
         " via %s"
         "%s"
-        " metric %" G_GUINT32_FORMAT " mss %" G_GUINT32_FORMAT " rt-src %s" /* protocol */
-        "%s"                                                                /* rtm_flags */
-        "%s%s"                                                              /* scope */
-        "%s%s"                                                              /* pref-src */
-        "%s"                                                                /* tos */
-        "%s"                                                                /* window */
-        "%s"                                                                /* cwnd */
-        "%s"                                                                /* initcwnd */
-        "%s"                                                                /* initrwnd */
-        "%s"                                                                /* mtu */
+        " metric %s"
+        " mss %" G_GUINT32_FORMAT " rt-src %s" /* protocol */
+        "%s"                                   /* rtm_flags */
+        "%s%s"                                 /* scope */
+        "%s%s"                                 /* pref-src */
+        "%s"                                   /* tos */
+        "%s"                                   /* window */
+        "%s"                                   /* cwnd */
+        "%s"                                   /* initcwnd */
+        "%s"                                   /* initrwnd */
+        "%s"                                   /* mtu */
         "",
         nm_utils_route_type2str(nm_platform_route_type_uncoerce(route->type_coerced),
                                 str_type,
                                 sizeof(str_type)),
-        route->table_coerced
-            ? nm_sprintf_buf(str_table,
-                             "table %u ",
-                             nm_platform_route_table_uncoerce(route->table_coerced, FALSE))
-            : "",
+        route->table_any
+            ? "table ?? "
+            : (route->table_coerced
+                   ? nm_sprintf_buf(str_table,
+                                    "table %u ",
+                                    nm_platform_route_table_uncoerce(route->table_coerced, FALSE))
+                   : ""),
         s_network,
         route->plen,
         s_gateway,
         str_dev,
-        route->metric,
+        route->metric_any ? "??" : nm_sprintf_buf(str_metric, "%u", route->metric),
         route->mss,
         nmp_utils_ip_config_source_to_string(route->rt_source, s_source, sizeof(s_source)),
         _rtm_flags_to_string_full(str_rtm_flags, sizeof(str_rtm_flags), route->r_rtm_flags),
@@ -6568,6 +6584,7 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
     char str_initrwnd[32];
     char str_mtu[32];
     char str_rtm_flags[_RTM_FLAGS_TO_STRING_MAXLEN];
+    char str_metric[30];
 
     if (!nm_utils_to_string_buffer_init_null(route, &buf, &len))
         return buf;
@@ -6582,81 +6599,84 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
 
     _to_string_dev(NULL, route->ifindex, str_dev, sizeof(str_dev));
 
-    g_snprintf(buf,
-               len,
-               "type %s " /* type */
-               "%s"       /* table */
-               "%s/%d"
-               " via %s"
-               "%s"
-               " metric %" G_GUINT32_FORMAT " mss %" G_GUINT32_FORMAT " rt-src %s" /* protocol */
-               "%s"                                                                /* source */
-               "%s"                                                                /* rtm_flags */
-               "%s%s"                                                              /* pref-src */
-               "%s"                                                                /* window */
-               "%s"                                                                /* cwnd */
-               "%s"                                                                /* initcwnd */
-               "%s"                                                                /* initrwnd */
-               "%s"                                                                /* mtu */
-               "%s"                                                                /* pref */
-               "",
-               nm_utils_route_type2str(nm_platform_route_type_uncoerce(route->type_coerced),
-                                       str_type,
-                                       sizeof(str_type)),
-               route->table_coerced
+    g_snprintf(
+        buf,
+        len,
+        "type %s " /* type */
+        "%s"       /* table */
+        "%s/%d"
+        " via %s"
+        "%s"
+        " metric %s"
+        " mss %" G_GUINT32_FORMAT " rt-src %s" /* protocol */
+        "%s"                                   /* source */
+        "%s"                                   /* rtm_flags */
+        "%s%s"                                 /* pref-src */
+        "%s"                                   /* window */
+        "%s"                                   /* cwnd */
+        "%s"                                   /* initcwnd */
+        "%s"                                   /* initrwnd */
+        "%s"                                   /* mtu */
+        "%s"                                   /* pref */
+        "",
+        nm_utils_route_type2str(nm_platform_route_type_uncoerce(route->type_coerced),
+                                str_type,
+                                sizeof(str_type)),
+        route->table_any
+            ? "table ?? "
+            : (route->table_coerced
                    ? nm_sprintf_buf(str_table,
                                     "table %u ",
                                     nm_platform_route_table_uncoerce(route->table_coerced, FALSE))
-                   : "",
-               s_network,
-               route->plen,
-               s_gateway,
-               str_dev,
-               route->metric,
-               route->mss,
-               nmp_utils_ip_config_source_to_string(route->rt_source, s_source, sizeof(s_source)),
-               route->src_plen || !IN6_IS_ADDR_UNSPECIFIED(&route->src)
-                   ? nm_sprintf_buf(s_src_all,
-                                    " src %s/%u",
-                                    _nm_utils_inet6_ntop(&route->src, s_src),
-                                    (unsigned) route->src_plen)
-                   : "",
-               _rtm_flags_to_string_full(str_rtm_flags, sizeof(str_rtm_flags), route->r_rtm_flags),
-               s_pref_src[0] ? " pref-src " : "",
-               s_pref_src[0] ? s_pref_src : "",
-               route->window || route->lock_window
-                   ? nm_sprintf_buf(str_window,
-                                    " window %s%" G_GUINT32_FORMAT,
-                                    route->lock_window ? "lock " : "",
-                                    route->window)
-                   : "",
-               route->cwnd || route->lock_cwnd ? nm_sprintf_buf(str_cwnd,
-                                                                " cwnd %s%" G_GUINT32_FORMAT,
-                                                                route->lock_cwnd ? "lock " : "",
-                                                                route->cwnd)
-                                               : "",
-               route->initcwnd || route->lock_initcwnd
-                   ? nm_sprintf_buf(str_initcwnd,
-                                    " initcwnd %s%" G_GUINT32_FORMAT,
-                                    route->lock_initcwnd ? "lock " : "",
-                                    route->initcwnd)
-                   : "",
-               route->initrwnd || route->lock_initrwnd
-                   ? nm_sprintf_buf(str_initrwnd,
-                                    " initrwnd %s%" G_GUINT32_FORMAT,
-                                    route->lock_initrwnd ? "lock " : "",
-                                    route->initrwnd)
-                   : "",
-               route->mtu || route->lock_mtu ? nm_sprintf_buf(str_mtu,
-                                                              " mtu %s%" G_GUINT32_FORMAT,
-                                                              route->lock_mtu ? "lock " : "",
-                                                              route->mtu)
-                                             : "",
-               route->rt_pref ? nm_sprintf_buf(
-                   str_pref,
-                   " pref %s",
-                   nm_icmpv6_router_pref_to_string(route->rt_pref, str_pref2, sizeof(str_pref2)))
-                              : "");
+                   : ""),
+        s_network,
+        route->plen,
+        s_gateway,
+        str_dev,
+        route->metric_any ? "??" : nm_sprintf_buf(str_metric, "%u", route->metric),
+        route->mss,
+        nmp_utils_ip_config_source_to_string(route->rt_source, s_source, sizeof(s_source)),
+        route->src_plen || !IN6_IS_ADDR_UNSPECIFIED(&route->src)
+            ? nm_sprintf_buf(s_src_all,
+                             " src %s/%u",
+                             _nm_utils_inet6_ntop(&route->src, s_src),
+                             (unsigned) route->src_plen)
+            : "",
+        _rtm_flags_to_string_full(str_rtm_flags, sizeof(str_rtm_flags), route->r_rtm_flags),
+        s_pref_src[0] ? " pref-src " : "",
+        s_pref_src[0] ? s_pref_src : "",
+        route->window || route->lock_window ? nm_sprintf_buf(str_window,
+                                                             " window %s%" G_GUINT32_FORMAT,
+                                                             route->lock_window ? "lock " : "",
+                                                             route->window)
+                                            : "",
+        route->cwnd || route->lock_cwnd ? nm_sprintf_buf(str_cwnd,
+                                                         " cwnd %s%" G_GUINT32_FORMAT,
+                                                         route->lock_cwnd ? "lock " : "",
+                                                         route->cwnd)
+                                        : "",
+        route->initcwnd || route->lock_initcwnd
+            ? nm_sprintf_buf(str_initcwnd,
+                             " initcwnd %s%" G_GUINT32_FORMAT,
+                             route->lock_initcwnd ? "lock " : "",
+                             route->initcwnd)
+            : "",
+        route->initrwnd || route->lock_initrwnd
+            ? nm_sprintf_buf(str_initrwnd,
+                             " initrwnd %s%" G_GUINT32_FORMAT,
+                             route->lock_initrwnd ? "lock " : "",
+                             route->initrwnd)
+            : "",
+        route->mtu || route->lock_mtu ? nm_sprintf_buf(str_mtu,
+                                                       " mtu %s%" G_GUINT32_FORMAT,
+                                                       route->lock_mtu ? "lock " : "",
+                                                       route->mtu)
+                                      : "",
+        route->rt_pref ? nm_sprintf_buf(
+            str_pref,
+            " pref %s",
+            nm_icmpv6_router_pref_to_string(route->rt_pref, str_pref2, sizeof(str_pref2)))
+                       : "");
 
     return buf;
 }
@@ -7891,67 +7911,75 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
 {
     switch (cmp_type) {
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
-        nm_hash_update_vals(h,
-                            nm_platform_route_table_uncoerce(obj->table_coerced, TRUE),
-                            nm_utils_ip4_address_clear_host_address(obj->network, obj->plen),
-                            obj->plen,
-                            obj->metric,
-                            obj->tos);
+        nm_hash_update_vals(
+            h,
+            nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(obj)),
+            nm_utils_ip4_address_clear_host_address(obj->network, obj->plen),
+            obj->plen,
+            nm_platform_ip4_route_get_effective_metric(obj),
+            obj->tos,
+            NM_HASH_COMBINE_BOOLS(guint8, obj->metric_any, obj->table_any));
         break;
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
-        nm_hash_update_vals(h,
-                            obj->type_coerced,
-                            nm_platform_route_table_uncoerce(obj->table_coerced, TRUE),
-                            nm_utils_ip4_address_clear_host_address(obj->network, obj->plen),
-                            obj->plen,
-                            obj->metric,
-                            obj->tos,
-                            /* on top of WEAK_ID: */
-                            obj->ifindex,
-                            nmp_utils_ip_config_source_round_trip_rtprot(obj->rt_source),
-                            _ip_route_scope_inv_get_normalized(obj),
-                            obj->gateway,
-                            obj->mss,
-                            obj->pref_src,
-                            obj->window,
-                            obj->cwnd,
-                            obj->initcwnd,
-                            obj->initrwnd,
-                            obj->mtu,
-                            obj->r_rtm_flags & RTNH_F_ONLINK,
-                            NM_HASH_COMBINE_BOOLS(guint8,
-                                                  obj->lock_window,
-                                                  obj->lock_cwnd,
-                                                  obj->lock_initcwnd,
-                                                  obj->lock_initrwnd,
-                                                  obj->lock_mtu));
+        nm_hash_update_vals(
+            h,
+            obj->type_coerced,
+            nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(obj)),
+            nm_utils_ip4_address_clear_host_address(obj->network, obj->plen),
+            obj->plen,
+            nm_platform_ip4_route_get_effective_metric(obj),
+            obj->tos,
+            /* on top of WEAK_ID: */
+            obj->ifindex,
+            nmp_utils_ip_config_source_round_trip_rtprot(obj->rt_source),
+            _ip_route_scope_inv_get_normalized(obj),
+            obj->gateway,
+            obj->mss,
+            obj->pref_src,
+            obj->window,
+            obj->cwnd,
+            obj->initcwnd,
+            obj->initrwnd,
+            obj->mtu,
+            obj->r_rtm_flags & RTNH_F_ONLINK,
+            NM_HASH_COMBINE_BOOLS(guint8,
+                                  obj->metric_any,
+                                  obj->table_any,
+                                  obj->lock_window,
+                                  obj->lock_cwnd,
+                                  obj->lock_initcwnd,
+                                  obj->lock_initrwnd,
+                                  obj->lock_mtu));
         break;
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
-        nm_hash_update_vals(h,
-                            obj->type_coerced,
-                            nm_platform_route_table_uncoerce(obj->table_coerced, TRUE),
-                            obj->ifindex,
-                            nm_utils_ip4_address_clear_host_address(obj->network, obj->plen),
-                            obj->plen,
-                            obj->metric,
-                            obj->gateway,
-                            nmp_utils_ip_config_source_round_trip_rtprot(obj->rt_source),
-                            _ip_route_scope_inv_get_normalized(obj),
-                            obj->tos,
-                            obj->mss,
-                            obj->pref_src,
-                            obj->window,
-                            obj->cwnd,
-                            obj->initcwnd,
-                            obj->initrwnd,
-                            obj->mtu,
-                            obj->r_rtm_flags & (RTM_F_CLONED | RTNH_F_ONLINK),
-                            NM_HASH_COMBINE_BOOLS(guint8,
-                                                  obj->lock_window,
-                                                  obj->lock_cwnd,
-                                                  obj->lock_initcwnd,
-                                                  obj->lock_initrwnd,
-                                                  obj->lock_mtu));
+        nm_hash_update_vals(
+            h,
+            obj->type_coerced,
+            nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(obj)),
+            obj->ifindex,
+            nm_utils_ip4_address_clear_host_address(obj->network, obj->plen),
+            obj->plen,
+            nm_platform_ip4_route_get_effective_metric(obj),
+            obj->gateway,
+            nmp_utils_ip_config_source_round_trip_rtprot(obj->rt_source),
+            _ip_route_scope_inv_get_normalized(obj),
+            obj->tos,
+            obj->mss,
+            obj->pref_src,
+            obj->window,
+            obj->cwnd,
+            obj->initcwnd,
+            obj->initrwnd,
+            obj->mtu,
+            obj->r_rtm_flags & (RTM_F_CLONED | RTNH_F_ONLINK),
+            NM_HASH_COMBINE_BOOLS(guint8,
+                                  obj->metric_any,
+                                  obj->table_any,
+                                  obj->lock_window,
+                                  obj->lock_cwnd,
+                                  obj->lock_initcwnd,
+                                  obj->lock_initrwnd,
+                                  obj->lock_mtu));
         break;
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
         nm_hash_update_vals(h,
@@ -7960,7 +7988,7 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                             obj->ifindex,
                             obj->network,
                             obj->plen,
-                            obj->metric,
+                            nm_platform_ip4_route_get_effective_metric(obj),
                             obj->gateway,
                             obj->rt_source,
                             obj->scope_inv,
@@ -7974,6 +8002,8 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                             obj->mtu,
                             obj->r_rtm_flags,
                             NM_HASH_COMBINE_BOOLS(guint8,
+                                                  obj->metric_any,
+                                                  obj->table_any,
                                                   obj->lock_window,
                                                   obj->lock_cwnd,
                                                   obj->lock_initcwnd,
@@ -7992,11 +8022,14 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
     switch (cmp_type) {
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
-        NM_CMP_DIRECT(nm_platform_route_table_uncoerce(a->table_coerced, TRUE),
-                      nm_platform_route_table_uncoerce(b->table_coerced, TRUE));
+        NM_CMP_FIELD_UNSAFE(a, b, table_any);
+        NM_CMP_DIRECT(nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(a)),
+                      nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(b)));
         NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX(a->network, b->network, MIN(a->plen, b->plen));
         NM_CMP_FIELD(a, b, plen);
-        NM_CMP_FIELD(a, b, metric);
+        NM_CMP_FIELD_UNSAFE(a, b, metric_any);
+        if (!a->metric_any)
+            NM_CMP_FIELD(a, b, metric);
         NM_CMP_FIELD(a, b, tos);
         if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
             NM_CMP_FIELD(a, b, ifindex);
@@ -8024,9 +8057,10 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
         NM_CMP_FIELD(a, b, type_coerced);
+        NM_CMP_FIELD_UNSAFE(a, b, table_any);
         if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
-            NM_CMP_DIRECT(nm_platform_route_table_uncoerce(a->table_coerced, TRUE),
-                          nm_platform_route_table_uncoerce(b->table_coerced, TRUE));
+            NM_CMP_DIRECT(nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(a)),
+                          nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(b)));
         } else
             NM_CMP_FIELD(a, b, table_coerced);
         NM_CMP_FIELD(a, b, ifindex);
@@ -8035,7 +8069,9 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
         else
             NM_CMP_FIELD(a, b, network);
         NM_CMP_FIELD(a, b, plen);
-        NM_CMP_FIELD(a, b, metric);
+        NM_CMP_FIELD_UNSAFE(a, b, metric_any);
+        if (!a->metric_any)
+            NM_CMP_FIELD(a, b, metric);
         NM_CMP_FIELD(a, b, gateway);
         if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
             NM_CMP_DIRECT(nmp_utils_ip_config_source_round_trip_rtprot(a->rt_source),
@@ -8078,54 +8114,61 @@ nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
 
     switch (cmp_type) {
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
-        nm_hash_update_vals(h,
-                            nm_platform_route_table_uncoerce(obj->table_coerced, TRUE),
-                            *nm_utils_ip6_address_clear_host_address(&a1, &obj->network, obj->plen),
-                            obj->plen,
-                            obj->metric,
-                            *nm_utils_ip6_address_clear_host_address(&a2, &obj->src, obj->src_plen),
-                            obj->src_plen);
+        nm_hash_update_vals(
+            h,
+            nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(obj)),
+            *nm_utils_ip6_address_clear_host_address(&a1, &obj->network, obj->plen),
+            obj->plen,
+            nm_platform_ip6_route_get_effective_metric(obj),
+            *nm_utils_ip6_address_clear_host_address(&a2, &obj->src, obj->src_plen),
+            obj->src_plen,
+            NM_HASH_COMBINE_BOOLS(guint8, obj->metric_any, obj->table_any));
         break;
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
-        nm_hash_update_vals(h,
-                            obj->type_coerced,
-                            nm_platform_route_table_uncoerce(obj->table_coerced, TRUE),
-                            *nm_utils_ip6_address_clear_host_address(&a1, &obj->network, obj->plen),
-                            obj->plen,
-                            obj->metric,
-                            *nm_utils_ip6_address_clear_host_address(&a2, &obj->src, obj->src_plen),
-                            obj->src_plen,
-                            /* on top of WEAK_ID: */
-                            obj->ifindex,
-                            obj->gateway);
+        nm_hash_update_vals(
+            h,
+            obj->type_coerced,
+            nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(obj)),
+            *nm_utils_ip6_address_clear_host_address(&a1, &obj->network, obj->plen),
+            obj->plen,
+            nm_platform_ip6_route_get_effective_metric(obj),
+            *nm_utils_ip6_address_clear_host_address(&a2, &obj->src, obj->src_plen),
+            obj->src_plen,
+            NM_HASH_COMBINE_BOOLS(guint8, obj->metric_any, obj->table_any),
+            /* on top of WEAK_ID: */
+            obj->ifindex,
+            obj->gateway);
         break;
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
-        nm_hash_update_vals(h,
-                            obj->type_coerced,
-                            nm_platform_route_table_uncoerce(obj->table_coerced, TRUE),
-                            obj->ifindex,
-                            *nm_utils_ip6_address_clear_host_address(&a1, &obj->network, obj->plen),
-                            obj->plen,
-                            obj->metric,
-                            obj->gateway,
-                            obj->pref_src,
-                            *nm_utils_ip6_address_clear_host_address(&a2, &obj->src, obj->src_plen),
-                            obj->src_plen,
-                            nmp_utils_ip_config_source_round_trip_rtprot(obj->rt_source),
-                            obj->mss,
-                            obj->r_rtm_flags & RTM_F_CLONED,
-                            NM_HASH_COMBINE_BOOLS(guint8,
-                                                  obj->lock_window,
-                                                  obj->lock_cwnd,
-                                                  obj->lock_initcwnd,
-                                                  obj->lock_initrwnd,
-                                                  obj->lock_mtu),
-                            obj->window,
-                            obj->cwnd,
-                            obj->initcwnd,
-                            obj->initrwnd,
-                            obj->mtu,
-                            _route_pref_normalize(obj->rt_pref));
+        nm_hash_update_vals(
+            h,
+            obj->type_coerced,
+            nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(obj)),
+            obj->ifindex,
+            *nm_utils_ip6_address_clear_host_address(&a1, &obj->network, obj->plen),
+            obj->plen,
+            nm_platform_ip6_route_get_effective_metric(obj),
+            obj->gateway,
+            obj->pref_src,
+            *nm_utils_ip6_address_clear_host_address(&a2, &obj->src, obj->src_plen),
+            obj->src_plen,
+            nmp_utils_ip_config_source_round_trip_rtprot(obj->rt_source),
+            obj->mss,
+            obj->r_rtm_flags & RTM_F_CLONED,
+            NM_HASH_COMBINE_BOOLS(guint8,
+                                  obj->metric_any,
+                                  obj->table_any,
+                                  obj->lock_window,
+                                  obj->lock_cwnd,
+                                  obj->lock_initcwnd,
+                                  obj->lock_initrwnd,
+                                  obj->lock_mtu),
+            obj->window,
+            obj->cwnd,
+            obj->initcwnd,
+            obj->initrwnd,
+            obj->mtu,
+            _route_pref_normalize(obj->rt_pref));
         break;
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
         nm_hash_update_vals(h,
@@ -8133,8 +8176,7 @@ nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
                             obj->table_coerced,
                             obj->ifindex,
                             obj->network,
-                            obj->plen,
-                            obj->metric,
+                            nm_platform_ip6_route_get_effective_metric(obj),
                             obj->gateway,
                             obj->pref_src,
                             obj->src,
@@ -8143,6 +8185,8 @@ nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
                             obj->mss,
                             obj->r_rtm_flags,
                             NM_HASH_COMBINE_BOOLS(guint8,
+                                                  obj->metric_any,
+                                                  obj->table_any,
                                                   obj->lock_window,
                                                   obj->lock_cwnd,
                                                   obj->lock_initcwnd,
@@ -8167,11 +8211,14 @@ nm_platform_ip6_route_cmp(const NMPlatformIP6Route *a,
     switch (cmp_type) {
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
-        NM_CMP_DIRECT(nm_platform_route_table_uncoerce(a->table_coerced, TRUE),
-                      nm_platform_route_table_uncoerce(b->table_coerced, TRUE));
+        NM_CMP_FIELD_UNSAFE(a, b, table_any);
+        NM_CMP_DIRECT(nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(a)),
+                      nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(b)));
         NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX(&a->network, &b->network, MIN(a->plen, b->plen));
         NM_CMP_FIELD(a, b, plen);
-        NM_CMP_FIELD(a, b, metric);
+        NM_CMP_FIELD_UNSAFE(a, b, metric_any);
+        if (!a->metric_any)
+            NM_CMP_FIELD(a, b, metric);
         NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX(&a->src, &b->src, MIN(a->src_plen, b->src_plen));
         NM_CMP_FIELD(a, b, src_plen);
         if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
@@ -8183,9 +8230,10 @@ nm_platform_ip6_route_cmp(const NMPlatformIP6Route *a,
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
         NM_CMP_FIELD(a, b, type_coerced);
+        NM_CMP_FIELD_UNSAFE(a, b, table_any);
         if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
-            NM_CMP_DIRECT(nm_platform_route_table_uncoerce(a->table_coerced, TRUE),
-                          nm_platform_route_table_uncoerce(b->table_coerced, TRUE));
+            NM_CMP_DIRECT(nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(a)),
+                          nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(b)));
         } else
             NM_CMP_FIELD(a, b, table_coerced);
         NM_CMP_FIELD(a, b, ifindex);
@@ -8194,7 +8242,9 @@ nm_platform_ip6_route_cmp(const NMPlatformIP6Route *a,
         else
             NM_CMP_FIELD_IN6ADDR(a, b, network);
         NM_CMP_FIELD(a, b, plen);
-        NM_CMP_FIELD(a, b, metric);
+        NM_CMP_FIELD_UNSAFE(a, b, metric_any);
+        if (!a->metric_any)
+            NM_CMP_FIELD(a, b, metric);
         NM_CMP_FIELD_IN6ADDR(a, b, gateway);
         NM_CMP_FIELD_IN6ADDR(a, b, pref_src);
         if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
