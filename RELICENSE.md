@@ -99,6 +99,7 @@ Consent/Disapproval List
 - [Y] Jan Tojnar <jtojnar@gmail.com>
 - [Y] Javier Arteaga <jarteaga@jbeta.is>
 - [Y] Jiří Klimeš <blueowl@centrum.cz> (Red Hat, Inc.)
+- [Y] Kjartan Maraas <kmaraas@gnome.org>
 - [Y] Lubomir Rintel <lkundrak@v3.sk> (Red Hat, Inc.)
 - [Y] Mario Sanchez Prada <mario@endlessm.com> (Endless Mobile, Inc.)
 - [Y] Marius Vollmer <mvollmer@redhat.com> (Red Hat, Inc.)
