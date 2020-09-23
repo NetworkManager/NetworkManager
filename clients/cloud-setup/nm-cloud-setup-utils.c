@@ -501,7 +501,9 @@ nmcs_utils_hwaddr_normalize (const char *hwaddr, gssize len)
 		nm_assert (hwaddr);
 		hwaddr = nm_strndup_a (300, hwaddr, len, &hwaddr_clone);
 	}
-	if(!nm_utils_hexstr2bin_full (hwaddr, FALSE, FALSE, FALSE, ":-", sizeof (buf), buf, sizeof (buf), NULL))
+	/* we cannot use _nm_utils_hwaddr_aton() because that requires a delimiter.
+	 * Azure exposes MAC addresses without delimiter, so accept that too. */
+	if (!nm_utils_hexstr2bin_full (hwaddr, FALSE, FALSE, FALSE, ":-", sizeof (buf), buf, sizeof (buf), NULL))
 		return NULL;
 
 	return nm_utils_hwaddr_ntoa (buf, sizeof (buf));
