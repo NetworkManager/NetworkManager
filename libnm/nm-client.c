@@ -60,7 +60,7 @@
 
 /*****************************************************************************/
 
-NM_CACHED_QUARK_FCN ("nm-context-busy-watcher", nm_context_busy_watcher_quark)
+NM_CACHED_QUARK_FCN ("nm-context-busy-watcher", nm_context_busy_watcher_quark);
 
 static void
 _context_busy_watcher_attach_integration_source_cb (gpointer data,
@@ -403,7 +403,7 @@ NM_UTILS_LOOKUP_STR_DEFINE (nml_dbus_obj_state_to_string, NMLDBusObjState,
  *
  * Returns: the error quark used for #NMClient errors.
  **/
-NM_CACHED_QUARK_FCN ("nm-client-error-quark", nm_client_error_quark)
+NM_CACHED_QUARK_FCN ("nm-client-error-quark", nm_client_error_quark);
 
 /*****************************************************************************/
 

@@ -116,7 +116,7 @@ typedef struct {
 GMainLoop *loop = NULL;
 struct termios termios_orig;
 
-NM_CACHED_QUARK_FCN ("nmcli-error-quark", nmcli_error_quark)
+NM_CACHED_QUARK_FCN ("nmcli-error-quark", nmcli_error_quark);
 
 static void
 complete_field_setting (GHashTable *h, NMMetaSettingType setting_type)

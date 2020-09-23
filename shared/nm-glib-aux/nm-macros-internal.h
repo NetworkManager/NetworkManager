@@ -534,7 +534,7 @@ GQuark \
 fcn (void) \
 { \
 	return NM_CACHED_QUARK (string); \
-}
+} struct _dummy_struct_for_trailing_semicolon
 
 /*****************************************************************************/
 

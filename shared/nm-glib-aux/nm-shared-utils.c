@@ -2292,7 +2292,7 @@ _nm_utils_ascii_str_to_bool (const char *str,
 
 /*****************************************************************************/
 
-NM_CACHED_QUARK_FCN ("nm-utils-error-quark", nm_utils_error_quark)
+NM_CACHED_QUARK_FCN ("nm-utils-error-quark", nm_utils_error_quark);
 
 void
 nm_utils_error_set_cancelled (GError **error,

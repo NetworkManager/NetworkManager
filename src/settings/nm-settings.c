@@ -69,10 +69,10 @@
 /*****************************************************************************/
 
 static
-NM_CACHED_QUARK_FCN ("default-wired-connection", _default_wired_connection_quark)
+NM_CACHED_QUARK_FCN ("default-wired-connection", _default_wired_connection_quark);
 
 static
-NM_CACHED_QUARK_FCN ("default-wired-connection-blocked", _default_wired_connection_blocked_quark)
+NM_CACHED_QUARK_FCN ("default-wired-connection-blocked", _default_wired_connection_blocked_quark);
 
 /*****************************************************************************/
 

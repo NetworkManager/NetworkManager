@@ -7,5 +7,5 @@
 
 #include "nm-bt-error.h"
 
-NM_CACHED_QUARK_FCN ("nm-bt-error", nm_bt_error_quark)
+NM_CACHED_QUARK_FCN ("nm-bt-error", nm_bt_error_quark);
 

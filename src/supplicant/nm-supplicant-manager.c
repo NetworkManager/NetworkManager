@@ -90,7 +90,7 @@ NM_DEFINE_SINGLETON_GETTER (NMSupplicantManager, nm_supplicant_manager_get, NM_T
 
 /*****************************************************************************/
 
-NM_CACHED_QUARK_FCN ("nm-supplicant-error-quark", nm_supplicant_error_quark)
+NM_CACHED_QUARK_FCN ("nm-supplicant-error-quark", nm_supplicant_error_quark);
 
 /*****************************************************************************/
 
