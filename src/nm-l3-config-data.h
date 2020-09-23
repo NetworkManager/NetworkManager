@@ -136,6 +136,8 @@ typedef gboolean (*NML3ConfigMergeHookAddObj)(const NML3ConfigData *l3cd,
 void nm_l3_config_data_merge(NML3ConfigData *      self,
                              const NML3ConfigData *src,
                              NML3ConfigMergeFlags  merge_flags,
+                             const guint32 *default_route_table_x /* length 2, for IS_IPv4 */,
+                             const guint32 *default_route_metric_x /* length 2, for IS_IPv4 */,
                              const guint32 *default_route_penalty_x /* length 2, for IS_IPv4 */,
                              NML3ConfigMergeHookAddObj hook_add_addr,
                              gpointer                  hook_user_data);

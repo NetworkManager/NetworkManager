@@ -2514,16 +2514,33 @@ void
 nm_l3_config_data_merge(NML3ConfigData *      self,
                         const NML3ConfigData *src,
                         NML3ConfigMergeFlags  merge_flags,
+                        const guint32 *       default_route_table_x /* length 2, for IS_IPv4 */,
+                        const guint32 *       default_route_metric_x /* length 2, for IS_IPv4 */,
                         const guint32 *       default_route_penalty_x /* length 2, for IS_IPv4 */,
                         NML3ConfigMergeHookAddObj hook_add_addr,
                         gpointer                  hook_user_data)
 {
-    NMDedupMultiIter iter;
-    const NMPObject *obj;
-    int              IS_IPv4;
+    static const guint32 x_default_route_table_x[2]   = {RT_TABLE_MAIN, RT_TABLE_MAIN};
+    static const guint32 x_default_route_metric_x[2]  = {NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6,
+                                                        NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4};
+    static const guint32 x_default_route_penalty_x[2] = {0, 0};
+    NMDedupMultiIter     iter;
+    const NMPObject *    obj;
+    int                  IS_IPv4;
 
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
     nm_assert(_NM_IS_L3_CONFIG_DATA(src, TRUE));
+
+    if (!default_route_table_x)
+        default_route_table_x = x_default_route_table_x;
+    if (!default_route_metric_x)
+        default_route_metric_x = x_default_route_metric_x;
+    if (!default_route_penalty_x)
+        default_route_penalty_x = x_default_route_penalty_x;
+
+    nm_assert(default_route_table_x[0] != 0);
+    nm_assert(default_route_table_x[1] != 0);
+    nm_assert(default_route_metric_x[0] != 0); /* IPv6 route metric cannot be zero. */
 
     for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
         const int                addr_family = IS_IPv4 ? AF_INET : AF_INET6;
@@ -2546,41 +2563,58 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
         if (!NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_NO_ROUTES)) {
             nm_l3_config_data_iter_obj_for_each(&iter, src, &obj, NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4))
             {
-                if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT(NMP_OBJECT_CAST_IP_ROUTE(obj))) {
+                const NMPlatformIPRoute *r_src = NMP_OBJECT_CAST_IP_ROUTE(obj);
+                NMPlatformIPXRoute       r;
+
+#define _ensure_r()                                     \
+    G_STMT_START                                        \
+    {                                                   \
+        if (r_src != &r.rx) {                           \
+            r_src = &r.rx;                              \
+            if (IS_IPv4)                                \
+                r.r4 = *NMP_OBJECT_CAST_IP4_ROUTE(obj); \
+            else                                        \
+                r.r6 = *NMP_OBJECT_CAST_IP6_ROUTE(obj); \
+            r.rx.ifindex = self->ifindex;               \
+        }                                               \
+    }                                                   \
+    G_STMT_END
+
+                if (r_src->table_any) {
+                    _ensure_r();
+                    r.rx.table_any     = FALSE;
+                    r.rx.table_coerced = default_route_table_x[IS_IPv4];
+                }
+
+                if (r_src->metric_any) {
+                    _ensure_r();
+                    r.rx.metric_any = FALSE;
+                    r.rx.metric_any = default_route_metric_x[IS_IPv4];
+                }
+
+                if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT(r_src)) {
                     if (NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES)
                         && !NM_FLAGS_HAS(src->flags,
                                          NM_L3_CONFIG_DAT_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES))
                         continue;
-
                     if (default_route_penalty_x && default_route_penalty_x[IS_IPv4] > 0) {
-                        NMPlatformIPXRoute r;
-
-                        if (IS_IPv4)
-                            r.r4 = *NMP_OBJECT_CAST_IP4_ROUTE(obj);
-                        else
-                            r.r6 = *NMP_OBJECT_CAST_IP6_ROUTE(obj);
-                        r.rx.ifindex = self->ifindex;
+                        _ensure_r();
                         r.rx.metric =
                             nm_utils_ip_route_metric_penalize(r.rx.metric,
                                                               default_route_penalty_x[IS_IPv4]);
-                        nm_l3_config_data_add_route_full(self,
-                                                         addr_family,
-                                                         NULL,
-                                                         &r.rx,
-                                                         NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE,
-                                                         NULL,
-                                                         NULL);
-                        continue;
                     }
                 }
+
                 nm_l3_config_data_add_route_full(self,
                                                  addr_family,
-                                                 obj,
-                                                 NULL,
+                                                 r_src == &r.rx ? NULL : obj,
+                                                 r_src == &r.rx ? r_src : NULL,
                                                  NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE,
                                                  NULL,
                                                  NULL);
             }
+
+#undef _ensure_r
         }
 
         if (!NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_NO_DNS))
@@ -2666,6 +2700,6 @@ nm_l3_config_data_new_clone(const NML3ConfigData *src, int ifindex)
         ifindex = src->ifindex;
 
     self = nm_l3_config_data_new(src->multi_idx, ifindex);
-    nm_l3_config_data_merge(self, src, NM_L3_CONFIG_MERGE_FLAGS_NONE, NULL, NULL, NULL);
+    nm_l3_config_data_merge(self, src, NM_L3_CONFIG_MERGE_FLAGS_NONE, NULL, NULL, NULL, NULL, NULL);
     return self;
 }

@@ -6,6 +6,7 @@
 
 #include <net/if.h>
 #include <linux/if_addr.h>
+#include <linux/rtnetlink.h>
 
 #include "platform/nm-platform.h"
 #include "platform/nmp-object.h"
@@ -111,6 +112,20 @@ struct _NML3CfgCommitTypeHandle {
 typedef struct {
     const NML3ConfigData *l3cd;
     NML3ConfigMergeFlags  merge_flags;
+    union {
+        struct {
+            guint32 default_route_table_6;
+            guint32 default_route_table_4;
+        };
+        guint32 default_route_table_x[2];
+    };
+    union {
+        struct {
+            guint32 default_route_metric_6;
+            guint32 default_route_metric_4;
+        };
+        guint32 default_route_metric_x[2];
+    };
     union {
         struct {
             guint32 default_route_penalty_6;
@@ -2342,6 +2357,10 @@ nm_l3cfg_add_config(NML3Cfg *             self,
                     gboolean              replace_same_tag,
                     const NML3ConfigData *l3cd,
                     int                   priority,
+                    guint32               default_route_table_4,
+                    guint32               default_route_table_6,
+                    guint32               default_route_metric_4,
+                    guint32               default_route_metric_6,
                     guint32               default_route_penalty_4,
                     guint32               default_route_penalty_6,
                     guint32               acd_timeout_msec,
@@ -2355,6 +2374,13 @@ nm_l3cfg_add_config(NML3Cfg *             self,
     nm_assert(tag);
     nm_assert(l3cd);
     nm_assert(nm_l3_config_data_get_ifindex(l3cd) == self->priv.ifindex);
+
+    nm_assert(default_route_metric_6 != 0u); /* IPv6 default route metric cannot be zero. */
+
+    if (default_route_table_4 == 0u)
+        default_route_table_4 = RT_TABLE_MAIN;
+    if (default_route_table_6 == 0u)
+        default_route_table_6 = RT_TABLE_MAIN;
 
     if (!self->priv.p->l3_config_datas) {
         self->priv.p->l3_config_datas = g_array_new(FALSE, FALSE, sizeof(L3ConfigData));
@@ -2396,6 +2422,10 @@ nm_l3cfg_add_config(NML3Cfg *             self,
             .tag                     = tag,
             .l3cd                    = nm_l3_config_data_ref_and_seal(l3cd),
             .merge_flags             = merge_flags,
+            .default_route_table_4   = default_route_table_4,
+            .default_route_table_6   = default_route_table_6,
+            .default_route_metric_4  = default_route_metric_4,
+            .default_route_metric_6  = default_route_metric_6,
             .default_route_penalty_4 = default_route_penalty_4,
             .default_route_penalty_6 = default_route_penalty_6,
             .acd_timeout_msec        = acd_timeout_msec,
@@ -2416,6 +2446,22 @@ nm_l3cfg_add_config(NML3Cfg *             self,
         if (l3_config_data->merge_flags != merge_flags) {
             l3_config_data->merge_flags = merge_flags;
             changed                     = TRUE;
+        }
+        if (l3_config_data->default_route_table_4 != default_route_table_4) {
+            l3_config_data->default_route_table_4 = default_route_table_4;
+            changed                               = TRUE;
+        }
+        if (l3_config_data->default_route_table_6 != default_route_table_6) {
+            l3_config_data->default_route_table_6 = default_route_table_6;
+            changed                               = TRUE;
+        }
+        if (l3_config_data->default_route_metric_4 != default_route_metric_4) {
+            l3_config_data->default_route_metric_4 = default_route_metric_4;
+            changed                                = TRUE;
+        }
+        if (l3_config_data->default_route_metric_6 != default_route_metric_6) {
+            l3_config_data->default_route_metric_6 = default_route_metric_6;
+            changed                                = TRUE;
         }
         if (l3_config_data->default_route_penalty_4 != default_route_penalty_4) {
             l3_config_data->default_route_penalty_4 = default_route_penalty_4;
@@ -2573,6 +2619,8 @@ _l3cfg_update_combined_config(NML3Cfg *              self,
             nm_l3_config_data_merge(l3cd,
                                     l3_config_datas_sorted[i]->l3cd,
                                     l3_config_datas_sorted[i]->merge_flags,
+                                    l3_config_datas_sorted[i]->default_route_table_x,
+                                    l3_config_datas_sorted[i]->default_route_metric_x,
                                     l3_config_datas_sorted[i]->default_route_penalty_x,
                                     _l3_hook_add_addr_cb,
                                     &hook_data);

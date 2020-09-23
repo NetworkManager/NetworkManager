@@ -276,6 +276,10 @@ test_l3cfg(gconstpointer test_data)
                             'a',
                             0,
                             0,
+                            NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4,
+                            NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6,
+                            0,
+                            0,
                             acd_timeout_msec,
                             NM_L3_CONFIG_MERGE_FLAGS_NONE);
     }
