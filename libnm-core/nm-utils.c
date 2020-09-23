@@ -4001,20 +4001,22 @@ nm_utils_wifi_strength_bars (guint8 strength)
  *
  * Returns the length in octets of a hardware address of type @type.
  *
- * It is an error to call this function with any value other than
+ * Before 1.28, it was an error to call this function with any value other than
  * <literal>ARPHRD_ETHER</literal> or <literal>ARPHRD_INFINIBAND</literal>.
  *
- * Return value: the length.
+ * Return value: the length or zero if the type is unrecognized.
  */
 gsize
 nm_utils_hwaddr_len (int type)
 {
-	if (type == ARPHRD_ETHER)
+	switch (type) {
+	case ARPHRD_ETHER:
 		return ETH_ALEN;
-	else if (type == ARPHRD_INFINIBAND)
+	case ARPHRD_INFINIBAND:
 		return INFINIBAND_ALEN;
-
-	g_return_val_if_reached (0);
+	default:
+		return 0;
+	}
 }
 
 /**
@@ -4041,8 +4043,6 @@ nm_utils_hexstr2bin (const char *hex)
 	return g_bytes_new_take (buffer, len);
 }
 
-#define hwaddr_aton(asc, buffer, buffer_len, out_len) nm_utils_hexstr2bin_full ((asc), FALSE, TRUE, FALSE, ":-", 0, (buffer), (buffer_len), (out_len))
-
 /**
  * nm_utils_hwaddr_atoba:
  * @asc: the ASCII representation of a hardware address
@@ -4065,7 +4065,7 @@ nm_utils_hwaddr_atoba (const char *asc, gsize length)
 
 	ba = g_byte_array_sized_new (length);
 	g_byte_array_set_size (ba, length);
-	if (!hwaddr_aton (asc, ba->data, length, &l))
+	if (!_nm_utils_hwaddr_aton (asc, ba->data, length, &l))
 		goto fail;
 	if (length != l)
 		goto fail;
@@ -4074,36 +4074,6 @@ nm_utils_hwaddr_atoba (const char *asc, gsize length)
 fail:
 	g_byte_array_unref (ba);
 	return NULL;
-}
-
-/**
- * _nm_utils_hwaddr_aton:
- * @asc: the ASCII representation of a hardware address
- * @buffer: buffer to store the result into. Must have
- *   at least a size of @buffer_length.
- * @buffer_length: the length of the input buffer @buffer.
- *   The result must fit into that buffer, otherwise
- *   the function fails and returns %NULL.
- * @out_length: the output length in case of success.
- *
- * Parses @asc and converts it to binary form in @buffer.
- * Bytes in @asc can be separated by colons (:), or hyphens (-), but not mixed.
- *
- * It is like nm_utils_hwaddr_aton(), but contrary to that it
- * can parse addresses of any length. That is, you don't need
- * to know the length before-hand.
- *
- * Return value: @buffer, or %NULL if @asc couldn't be parsed.
- */
-guint8 *
-_nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize buffer_length, gsize *out_length)
-{
-	g_return_val_if_fail (asc, NULL);
-	g_return_val_if_fail (buffer, NULL);
-	g_return_val_if_fail (buffer_length > 0, NULL);
-	g_return_val_if_fail (out_length, NULL);
-
-	return hwaddr_aton (asc, buffer, buffer_length, out_length);
 }
 
 /**
@@ -4128,7 +4098,7 @@ nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize length)
 	g_return_val_if_fail (buffer, NULL);
 	g_return_val_if_fail (length > 0 && length <= NM_UTILS_HWADDR_LEN_MAX, NULL);
 
-	if (!hwaddr_aton (asc, buffer, length, &l))
+	if (!_nm_utils_hwaddr_aton (asc, buffer, length, &l))
 		return NULL;
 	if (length != l)
 		return NULL;
@@ -4186,18 +4156,6 @@ nm_utils_hwaddr_ntoa (gconstpointer addr, gsize length)
 	return nm_utils_bin2hexstr_full (addr, length, ':', TRUE, NULL);
 }
 
-const char *
-nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_case, char *buf, gsize buf_len)
-{
-	g_return_val_if_fail (addr, NULL);
-	g_return_val_if_fail (addr_len > 0, NULL);
-	g_return_val_if_fail (buf, NULL);
-	if (buf_len < addr_len * 3)
-		g_return_val_if_reached (NULL);
-
-	return nm_utils_bin2hexstr_full (addr, addr_len, ':', upper_case, buf);
-}
-
 /**
  * nm_utils_hwaddr_valid:
  * @asc: the ASCII representation of a hardware address
@@ -4217,17 +4175,17 @@ nm_utils_hwaddr_valid (const char *asc, gssize length)
 	gsize l;
 
 	g_return_val_if_fail (asc != NULL, FALSE);
+	g_return_val_if_fail (   length >= -1
+	                      && length <= NM_UTILS_HWADDR_LEN_MAX, FALSE);
 
-	if (length > 0 && length <= NM_UTILS_HWADDR_LEN_MAX) {
-		if (!hwaddr_aton (asc, buf, length, &l))
-			return FALSE;
-		return length == l;
-	} else if (length == -1)
-		return !!hwaddr_aton (asc, buf, sizeof (buf), &l);
-	else if (length == 0)
+	if (length == 0)
 		return FALSE;
-	else
-		g_return_val_if_reached (FALSE);
+
+	if (!_nm_utils_hwaddr_aton (asc, buf, sizeof (buf), &l))
+		return FALSE;
+
+	return    length == -1
+	       || length == (gssize) l;
 }
 
 /**
@@ -4250,19 +4208,15 @@ nm_utils_hwaddr_canonical (const char *asc, gssize length)
 	gsize l;
 
 	g_return_val_if_fail (asc, NULL);
-	g_return_val_if_fail (length == -1 || (length > 0 && length <= NM_UTILS_HWADDR_LEN_MAX), NULL);
+	g_return_val_if_fail (   length == -1
+	                      || (   length > 0
+	                          && length <= NM_UTILS_HWADDR_LEN_MAX), NULL);
 
-	if (length > 0 && length <= NM_UTILS_HWADDR_LEN_MAX) {
-		if (!hwaddr_aton (asc, buf, length, &l))
-			return NULL;
-		if (l != length)
-			return NULL;
-	} else if (length == -1) {
-		if (!hwaddr_aton (asc, buf, NM_UTILS_HWADDR_LEN_MAX, &l))
-			return NULL;
-	} else
-		g_return_val_if_reached (NULL);
-
+	if (!_nm_utils_hwaddr_aton (asc, buf, sizeof (buf), &l))
+		return NULL;
+	if (   length != -1
+	    && length != (gssize) l)
+		return NULL;
 	return nm_utils_hwaddr_ntoa (buf, l);
 }
 
@@ -4367,7 +4321,7 @@ nm_utils_hwaddr_matches (gconstpointer hwaddr1,
 	if (hwaddr1_len == -1) {
 		if (hwaddr1 == NULL) {
 			hwaddr1_len = 0;
-		} else if (hwaddr_aton (hwaddr1, buf1, sizeof (buf1), &l)) {
+		} else if (_nm_utils_hwaddr_aton (hwaddr1, buf1, sizeof (buf1), &l)) {
 			hwaddr1 = buf1;
 			hwaddr1_len = l;
 		} else {
@@ -4387,7 +4341,7 @@ nm_utils_hwaddr_matches (gconstpointer hwaddr1,
 	if (hwaddr2_len == -1) {
 		if (hwaddr2 == NULL)
 			l = 0;
-		else if (!hwaddr_aton (hwaddr2, buf2, sizeof (buf2), &l))
+		else if (!_nm_utils_hwaddr_aton (hwaddr2, buf2, sizeof (buf2), &l))
 			return FALSE;
 		if (l != hwaddr1_len)
 			return FALSE;
@@ -4431,7 +4385,7 @@ _nm_utils_hwaddr_to_dbus_impl (const char *str)
 
 	if (!str)
 		return NULL;
-	if (!hwaddr_aton (str, buf, sizeof (buf), &len))
+	if (!_nm_utils_hwaddr_aton (str, buf, sizeof (buf), &len))
 		return NULL;
 
 	return g_variant_new_fixed_array (G_VARIANT_TYPE_BYTE, buf, len, 1);

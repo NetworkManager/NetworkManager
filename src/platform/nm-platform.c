@@ -62,11 +62,11 @@ _nmp_link_address_to_string (const NMPLinkAddress *addr,
 	nm_assert (addr);
 
 	if (addr->len > 0) {
-		if (!nm_utils_hwaddr_ntoa_buf (addr->data,
-		                               addr->len,
-		                               TRUE,
-		                               buf,
-		                               NM_UTILS_HWADDR_LEN_MAX * 3)) {
+		if (!_nm_utils_hwaddr_ntoa (addr->data,
+		                            addr->len,
+		                            TRUE,
+		                            buf,
+		                            NM_UTILS_HWADDR_LEN_MAX * 3)) {
 			buf[0] = '\0';
 			g_return_val_if_reached (buf);
 		}
@@ -1221,7 +1221,7 @@ nm_platform_link_add (NMPlatform *self,
 	        parent > 0 ? ", parent " : "",
 	        parent > 0 ? nm_sprintf_buf (parent_buf, "%d", parent) : "",
 	        address ? ", address: " : "",
-	        address ? nm_utils_hwaddr_ntoa_buf (address, address_len, FALSE, addr_buf, sizeof (addr_buf)) : "",
+	        address ? _nm_utils_hwaddr_ntoa (address, address_len, FALSE, addr_buf, sizeof (addr_buf)) : "",
 	        ({
 	            char *buf_p = buf;
 	            gsize buf_len = sizeof (buf);
@@ -6875,7 +6875,7 @@ nm_platform_vf_to_string (const NMPlatformVF *vf, char *buf, gsize len)
 		return buf;
 
 	if (vf->mac.len) {
-		nm_utils_hwaddr_ntoa_buf (vf->mac.data, vf->mac.len, TRUE, mac, sizeof (mac));
+		_nm_utils_hwaddr_ntoa (vf->mac.data, vf->mac.len, TRUE, mac, sizeof (mac));
 		nm_sprintf_buf (str_mac, " mac %s", mac);
 	} else
 		str_mac[0] = '\0';

@@ -2037,6 +2037,48 @@ guint8 *nm_utils_hexstr2bin_alloc (const char *hexstr,
                                    gsize required_len,
                                    gsize *out_len);
 
+/**
+ * _nm_utils_hwaddr_aton:
+ * @asc: the ASCII representation of a hardware address
+ * @buffer: buffer to store the result into. Must have
+ *   at least a size of @buffer_length.
+ * @buffer_length: the length of the input buffer @buffer.
+ *   The result must fit into that buffer, otherwise
+ *   the function fails and returns %NULL.
+ * @out_length: the output length in case of success.
+ *
+ * Parses @asc and converts it to binary form in @buffer.
+ * Bytes in @asc can be separated by colons (:), or hyphens (-), but not mixed.
+ *
+ * It is like nm_utils_hwaddr_aton(), but contrary to that it
+ * can parse addresses of any length. That is, you don't need
+ * to know the length before-hand.
+ *
+ * Return value: @buffer, or %NULL if @asc couldn't be parsed.
+ */
+static inline guint8 *
+_nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize buffer_length, gsize *out_length)
+{
+	g_return_val_if_fail (asc, NULL);
+	g_return_val_if_fail (buffer, NULL);
+	g_return_val_if_fail (buffer_length > 0, NULL);
+	g_return_val_if_fail (out_length, NULL);
+
+	return nm_utils_hexstr2bin_full (asc, FALSE, TRUE, FALSE, ":-", 0, buffer, buffer_length, out_length);
+}
+
+static inline const char *
+_nm_utils_hwaddr_ntoa (gconstpointer addr, gsize addr_len, gboolean upper_case, char *buf, gsize buf_len)
+{
+	g_return_val_if_fail (addr, NULL);
+	g_return_val_if_fail (addr_len > 0, NULL);
+	g_return_val_if_fail (buf, NULL);
+	if (buf_len < addr_len * 3)
+		g_return_val_if_reached (NULL);
+
+	return nm_utils_bin2hexstr_full (addr, addr_len, ':', upper_case, buf);
+}
+
 /*****************************************************************************/
 
 #define _NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(fcn_name, \
