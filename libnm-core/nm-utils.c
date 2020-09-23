@@ -4217,17 +4217,17 @@ nm_utils_hwaddr_valid (const char *asc, gssize length)
 	gsize l;
 
 	g_return_val_if_fail (asc != NULL, FALSE);
+	g_return_val_if_fail (   length >= -1
+	                      && length <= NM_UTILS_HWADDR_LEN_MAX, FALSE);
 
-	if (length > 0 && length <= NM_UTILS_HWADDR_LEN_MAX) {
-		if (!hwaddr_aton (asc, buf, length, &l))
-			return FALSE;
-		return length == l;
-	} else if (length == -1)
-		return !!hwaddr_aton (asc, buf, sizeof (buf), &l);
-	else if (length == 0)
+	if (length == 0)
 		return FALSE;
-	else
-		g_return_val_if_reached (FALSE);
+
+	if (!hwaddr_aton (asc, buf, sizeof (buf), &l))
+		return FALSE;
+
+	return    length == -1
+	       || length == (gssize) l;
 }
 
 /**
@@ -4250,19 +4250,15 @@ nm_utils_hwaddr_canonical (const char *asc, gssize length)
 	gsize l;
 
 	g_return_val_if_fail (asc, NULL);
-	g_return_val_if_fail (length == -1 || (length > 0 && length <= NM_UTILS_HWADDR_LEN_MAX), NULL);
+	g_return_val_if_fail (   length == -1
+	                      || (   length > 0
+	                          && length <= NM_UTILS_HWADDR_LEN_MAX), NULL);
 
-	if (length > 0 && length <= NM_UTILS_HWADDR_LEN_MAX) {
-		if (!hwaddr_aton (asc, buf, length, &l))
-			return NULL;
-		if (l != length)
-			return NULL;
-	} else if (length == -1) {
-		if (!hwaddr_aton (asc, buf, NM_UTILS_HWADDR_LEN_MAX, &l))
-			return NULL;
-	} else
-		g_return_val_if_reached (NULL);
-
+	if (!hwaddr_aton (asc, buf, sizeof (buf), &l))
+		return NULL;
+	if (   length != -1
+	    && length != (gssize) l)
+		return NULL;
 	return nm_utils_hwaddr_ntoa (buf, l);
 }
 
