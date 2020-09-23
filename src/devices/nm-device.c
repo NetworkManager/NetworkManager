@@ -16990,7 +16990,7 @@ nm_device_update_hw_address (NMDevice *self)
 		_LOGD (LOGD_PLATFORM | LOGD_DEVICE,
 		       "hw-addr: read a MAC address with differing length (%s vs. %s)",
 		       priv->hw_addr,
-		       nm_utils_hwaddr_ntoa_buf (hwaddr, hwaddrlen, TRUE, s_buf, sizeof (s_buf)));
+		       _nm_utils_hwaddr_ntoa (hwaddr, hwaddrlen, TRUE, s_buf, sizeof (s_buf)));
 		return FALSE;
 	}
 

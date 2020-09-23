@@ -339,8 +339,6 @@ guint nm_setting_ethtool_init_features (NMSettingEthtool *setting,
 
 #define NM_UTILS_HWADDR_LEN_MAX_STR (NM_UTILS_HWADDR_LEN_MAX * 3)
 
-const char *nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_case, char *buf, gsize buf_len);
-
 gboolean nm_utils_is_valid_iface_name_utf8safe (const char *utf8safe_name);
 
 GSList *    _nm_utils_hash_values_to_slist (GHashTable *hash);

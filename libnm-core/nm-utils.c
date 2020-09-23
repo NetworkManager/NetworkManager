@@ -4154,18 +4154,6 @@ nm_utils_hwaddr_ntoa (gconstpointer addr, gsize length)
 	return nm_utils_bin2hexstr_full (addr, length, ':', TRUE, NULL);
 }
 
-const char *
-nm_utils_hwaddr_ntoa_buf (gconstpointer addr, gsize addr_len, gboolean upper_case, char *buf, gsize buf_len)
-{
-	g_return_val_if_fail (addr, NULL);
-	g_return_val_if_fail (addr_len > 0, NULL);
-	g_return_val_if_fail (buf, NULL);
-	if (buf_len < addr_len * 3)
-		g_return_val_if_reached (NULL);
-
-	return nm_utils_bin2hexstr_full (addr, addr_len, ':', upper_case, buf);
-}
-
 /**
  * nm_utils_hwaddr_valid:
  * @asc: the ASCII representation of a hardware address

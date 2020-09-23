@@ -2067,6 +2067,18 @@ _nm_utils_hwaddr_aton (const char *asc, gpointer buffer, gsize buffer_length, gs
 	return nm_utils_hexstr2bin_full (asc, FALSE, TRUE, FALSE, ":-", 0, buffer, buffer_length, out_length);
 }
 
+static inline const char *
+_nm_utils_hwaddr_ntoa (gconstpointer addr, gsize addr_len, gboolean upper_case, char *buf, gsize buf_len)
+{
+	g_return_val_if_fail (addr, NULL);
+	g_return_val_if_fail (addr_len > 0, NULL);
+	g_return_val_if_fail (buf, NULL);
+	if (buf_len < addr_len * 3)
+		g_return_val_if_reached (NULL);
+
+	return nm_utils_bin2hexstr_full (addr, addr_len, ':', upper_case, buf);
+}
+
 /*****************************************************************************/
 
 #define _NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(fcn_name, \
