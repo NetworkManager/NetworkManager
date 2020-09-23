@@ -4001,20 +4001,22 @@ nm_utils_wifi_strength_bars (guint8 strength)
  *
  * Returns the length in octets of a hardware address of type @type.
  *
- * It is an error to call this function with any value other than
+ * Before 1.28, it was an error to call this function with any value other than
  * <literal>ARPHRD_ETHER</literal> or <literal>ARPHRD_INFINIBAND</literal>.
  *
- * Return value: the length.
+ * Return value: the length or zero if the type is unrecognized.
  */
 gsize
 nm_utils_hwaddr_len (int type)
 {
-	if (type == ARPHRD_ETHER)
+	switch (type) {
+	case ARPHRD_ETHER:
 		return ETH_ALEN;
-	else if (type == ARPHRD_INFINIBAND)
+	case ARPHRD_INFINIBAND:
 		return INFINIBAND_ALEN;
-
-	g_return_val_if_reached (0);
+	default:
+		return 0;
+	}
 }
 
 /**
