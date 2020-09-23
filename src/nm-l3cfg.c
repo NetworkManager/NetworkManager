@@ -2615,13 +2615,18 @@ _l3cfg_update_combined_config(NML3Cfg *              self,
                                      self->priv.ifindex);
 
         for (i = 0; i < l3_config_datas_len; i++) {
-            hook_data.tag = l3_config_datas_sorted[i]->tag;
+            const L3ConfigData *l3cd_data = l3_config_datas_sorted[i];
+
+            if (NM_FLAGS_HAS(l3cd_data->merge_flags, NM_L3_CONFIG_MERGE_FLAGS_ONLY_FOR_ACD))
+                continue;
+
+            hook_data.tag = l3cd_data->tag;
             nm_l3_config_data_merge(l3cd,
-                                    l3_config_datas_sorted[i]->l3cd,
-                                    l3_config_datas_sorted[i]->merge_flags,
-                                    l3_config_datas_sorted[i]->default_route_table_x,
-                                    l3_config_datas_sorted[i]->default_route_metric_x,
-                                    l3_config_datas_sorted[i]->default_route_penalty_x,
+                                    l3cd_data->l3cd,
+                                    l3cd_data->merge_flags,
+                                    l3cd_data->default_route_table_x,
+                                    l3cd_data->default_route_metric_x,
+                                    l3cd_data->default_route_penalty_x,
                                     _l3_hook_add_addr_cb,
                                     &hook_data);
         }
