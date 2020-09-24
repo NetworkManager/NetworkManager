@@ -16,6 +16,7 @@
 
 #include "alloc-util.h"
 #include "extract-word.h"
+#include "fd-util.h"
 #include "fs-util.h"
 #include "glob-util.h"
 #include "log.h"
@@ -29,15 +30,7 @@
 #include "time-util.h"
 #include "utf8.h"
 
-bool path_is_absolute(const char *p) {
-        return p[0] == '/';
-}
-
 #if 0 /* NM_IGNORED */
-bool is_path(const char *p) {
-        return !!strchr(p, '/');
-}
-
 int path_split_and_make_absolute(const char *p, char ***ret) {
         char **l;
         int r;
@@ -601,9 +594,9 @@ char* path_join_internal(const char *first, ...) {
 }
 
 #if 0 /* NM_IGNORED */
-int find_binary(const char *name, char **ret) {
+int find_executable_full(const char *name, bool use_path_envvar, char **ret) {
         int last_error, r;
-        const char *p;
+        const char *p = NULL;
 
         assert(name);
 
@@ -620,11 +613,10 @@ int find_binary(const char *name, char **ret) {
                 return 0;
         }
 
-        /**
-         * Plain getenv, not secure_getenv, because we want
-         * to actually allow the user to pick the binary.
-         */
-        p = getenv("PATH");
+        if (use_path_envvar)
+                /* Plain getenv, not secure_getenv, because we want to actually allow the user to pick the
+                 * binary. */
+                p = getenv("PATH");
         if (!p)
                 p = DEFAULT_PATH;
 
@@ -647,12 +639,24 @@ int find_binary(const char *name, char **ret) {
                         return -ENOMEM;
 
                 if (access(j, X_OK) >= 0) {
-                        /* Found it! */
+                        _cleanup_free_ char *with_dash;
 
-                        if (ret)
-                                *ret = path_simplify(TAKE_PTR(j), false);
+                        with_dash = strjoin(j, "/");
+                        if (!with_dash)
+                                return -ENOMEM;
 
-                        return 0;
+                        /* If this passes, it must be a directory, and so should be skipped. */
+                        if (access(with_dash, X_OK) >= 0)
+                                continue;
+
+                        /* We can't just `continue` inverting this case, since we need to update last_error. */
+                        if (errno == ENOTDIR) {
+                                /* Found it! */
+                                if (ret)
+                                        *ret = path_simplify(TAKE_PTR(j), false);
+
+                                return 0;
+                        }
                 }
 
                 /* PATH entries which we don't have access to are ignored, as per tradition. */
@@ -698,18 +702,17 @@ bool paths_check_timestamp(const char* const* paths, usec_t *timestamp, bool upd
         return changed;
 }
 
-static int binary_is_good(const char *binary) {
+static int executable_is_good(const char *executable) {
         _cleanup_free_ char *p = NULL, *d = NULL;
         int r;
 
-        r = find_binary(binary, &p);
+        r = find_executable(executable, &p);
         if (r == -ENOENT)
                 return 0;
         if (r < 0)
                 return r;
 
-        /* An fsck that is linked to /bin/true is a non-existent
-         * fsck */
+        /* An fsck that is linked to /bin/true is a non-existent fsck */
 
         r = readlink_malloc(p, &d);
         if (r == -EINVAL) /* not a symlink */
@@ -732,19 +735,7 @@ int fsck_exists(const char *fstype) {
                 return -EINVAL;
 
         checker = strjoina("fsck.", fstype);
-        return binary_is_good(checker);
-}
-
-int mkfs_exists(const char *fstype) {
-        const char *mkfs;
-
-        assert(fstype);
-
-        if (streq(fstype, "auto"))
-                return -EINVAL;
-
-        mkfs = strjoina("mkfs.", fstype);
-        return binary_is_good(mkfs);
+        return executable_is_good(checker);
 }
 
 int parse_path_argument_and_warn(const char *path, bool suppress_root, char **arg) {
@@ -1151,5 +1142,11 @@ bool prefixed_path_strv_contains(char **l, const char *path) {
         }
 
         return false;
+}
+
+bool credential_name_valid(const char *s) {
+        /* We want that credential names are both valid in filenames (since that's our primary way to pass
+         * them around) and as fdnames (which is how we might want to pass them around eventually) */
+        return filename_is_valid(s) && fdname_is_valid(s);
 }
 #endif /* NM_IGNORED */

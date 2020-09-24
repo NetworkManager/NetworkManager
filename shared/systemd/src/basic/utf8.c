@@ -125,7 +125,7 @@ int utf8_encoded_to_unichar(const char *str, char32_t *ret_unichar) {
         return 0;
 }
 
-bool utf8_is_printable_newline(const char* str, size_t length, bool newline) {
+bool utf8_is_printable_newline(const char* str, size_t length, bool allow_newline) {
         const char *p;
 
         assert(str);
@@ -142,7 +142,7 @@ bool utf8_is_printable_newline(const char* str, size_t length, bool newline) {
                 r = utf8_encoded_to_unichar(p, &val);
                 if (r < 0 ||
                     unichar_is_control(val) ||
-                    (!newline && val == '\n'))
+                    (!allow_newline && val == '\n'))
                         return false;
 
                 length -= encoded_len;
@@ -152,18 +152,22 @@ bool utf8_is_printable_newline(const char* str, size_t length, bool newline) {
         return true;
 }
 
-char *utf8_is_valid(const char *str) {
-        const char *p;
+char *utf8_is_valid_n(const char *str, size_t len_bytes) {
+        /* Check if the string is composed of valid utf8 characters. If length len_bytes is given, stop after
+         * len_bytes. Otherwise, stop at NUL. */
 
         assert(str);
 
-        p = str;
-        while (*p) {
+        for (const char *p = str; len_bytes != (size_t) -1 ? (size_t) (p - str) < len_bytes : *p != '\0'; ) {
                 int len;
 
-                len = utf8_encoded_valid_unichar(p, (size_t) -1);
-                if (len < 0)
-                        return NULL;
+                if (_unlikely_(*p == '\0') && len_bytes != (size_t) -1)
+                        return NULL; /* embedded NUL */
+
+                len = utf8_encoded_valid_unichar(p,
+                                                 len_bytes != (size_t) -1 ? len_bytes - (p - str) : (size_t) -1);
+                if (_unlikely_(len < 0))
+                        return NULL; /* invalid character */
 
                 p += len;
         }

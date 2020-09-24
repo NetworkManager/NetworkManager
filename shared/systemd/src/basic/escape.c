@@ -77,7 +77,7 @@ int cescape_char(char c, char *buf) {
         return buf - buf_old;
 }
 
-char *cescape_length(const char *s, size_t n) {
+char* cescape_length(const char *s, size_t n) {
         const char *f;
         char *r, *t;
 
@@ -98,7 +98,7 @@ char *cescape_length(const char *s, size_t n) {
         return r;
 }
 
-char *cescape(const char *s) {
+char* cescape(const char *s) {
         assert(s);
 
         return cescape_length(s, strlen(s));
@@ -363,7 +363,7 @@ int cunescape_length_with_prefix(const char *s, size_t length, const char *prefi
         return t - r;
 }
 
-char *xescape_full(const char *s, const char *bad, size_t console_width, bool eight_bits) {
+char* xescape_full(const char *s, const char *bad, size_t console_width, bool eight_bits) {
         char *ans, *t, *prev, *prev2;
         const char *f;
 
@@ -430,7 +430,7 @@ char *xescape_full(const char *s, const char *bad, size_t console_width, bool ei
         return ans;
 }
 
-char *escape_non_printable_full(const char *str, size_t console_width, bool eight_bit) {
+char* escape_non_printable_full(const char *str, size_t console_width, bool eight_bit) {
         if (eight_bit)
                 return xescape_full(str, "", console_width, true);
         else
@@ -438,7 +438,7 @@ char *escape_non_printable_full(const char *str, size_t console_width, bool eigh
 }
 #endif /* NM_IGNORED */
 
-char *octescape(const char *s, size_t len) {
+char* octescape(const char *s, size_t len) {
         char *r, *t;
         const char *f;
 
@@ -466,7 +466,7 @@ char *octescape(const char *s, size_t len) {
 
 }
 
-static char *strcpy_backslash_escaped(char *t, const char *s, const char *bad, bool escape_tab_nl) {
+static char* strcpy_backslash_escaped(char *t, const char *s, const char *bad, bool escape_tab_nl) {
         assert(bad);
 
         for (; *s; s++) {
@@ -485,7 +485,7 @@ static char *strcpy_backslash_escaped(char *t, const char *s, const char *bad, b
         return t;
 }
 
-char *shell_escape(const char *s, const char *bad) {
+char* shell_escape(const char *s, const char *bad) {
         char *r, *t;
 
         r = new(char, strlen(s)*2+1);

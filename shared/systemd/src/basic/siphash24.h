@@ -6,6 +6,8 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include "time-util.h"
+
 #if 0 /* NM_IGNORED */
 struct siphash {
         uint64_t v0;
@@ -53,6 +55,10 @@ static inline void siphash24_compress_boolean(bool in, struct siphash *state) {
         uint8_t i = in;
 
         siphash24_compress(&i, sizeof i, state);
+}
+
+static inline void siphash24_compress_usec_t(usec_t in, struct siphash *state) {
+        siphash24_compress(&in, sizeof in, state);
 }
 
 static inline void siphash24_compress_string(const char *in, struct siphash *state) {

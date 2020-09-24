@@ -260,44 +260,6 @@ int strv_extend_strv_concat(char ***a, char * const *b, const char *suffix) {
 }
 #endif /* NM_IGNORED */
 
-char **strv_split_full(const char *s, const char *separator, SplitFlags flags) {
-        const char *word, *state;
-        size_t l;
-        size_t n, i;
-        char **r;
-
-        assert(s);
-
-        if (!separator)
-                separator = WHITESPACE;
-
-        s += strspn(s, separator);
-        if (isempty(s))
-                return new0(char*, 1);
-
-        n = 0;
-        _FOREACH_WORD(word, l, s, separator, flags, state)
-                n++;
-
-        r = new(char*, n+1);
-        if (!r)
-                return NULL;
-
-        i = 0;
-        _FOREACH_WORD(word, l, s, separator, flags, state) {
-                r[i] = strndup(word, l);
-                if (!r[i]) {
-                        strv_free(r);
-                        return NULL;
-                }
-
-                i++;
-        }
-
-        r[i] = NULL;
-        return r;
-}
-
 char **strv_split_newlines(const char *s) {
         char **l;
         size_t n;
@@ -321,8 +283,7 @@ char **strv_split_newlines(const char *s) {
         return l;
 }
 
-#if 0 /* NM_IGNORED */
-int strv_split_extract(char ***t, const char *s, const char *separators, ExtractFlags flags) {
+int strv_split_full(char ***t, const char *s, const char *separators, ExtractFlags flags) {
         _cleanup_strv_free_ char **l = NULL;
         size_t n = 0, allocated = 0;
         int r;
@@ -358,6 +319,7 @@ int strv_split_extract(char ***t, const char *s, const char *separators, Extract
         return (int) n;
 }
 
+#if 0 /* NM_IGNORED */
 int strv_split_colon_pairs(char ***t, const char *s) {
         _cleanup_strv_free_ char **l = NULL;
         size_t n = 0, allocated = 0;

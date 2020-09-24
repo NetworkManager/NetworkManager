@@ -144,9 +144,16 @@ static void ipv4acd_client_notify(sd_ipv4acd *acd, int event) {
 }
 
 int sd_ipv4acd_stop(sd_ipv4acd *acd) {
+        IPv4ACDState old_state;
+
         assert_return(acd, -EINVAL);
 
+        old_state = acd->state;
+
         ipv4acd_reset(acd);
+
+        if (old_state == IPV4ACD_STATE_INIT)
+                return 0;
 
         log_ipv4acd(acd, "STOPPED");
 
@@ -437,6 +444,15 @@ int sd_ipv4acd_set_address(sd_ipv4acd *acd, const struct in_addr *address) {
         return 0;
 }
 
+int sd_ipv4acd_get_address(sd_ipv4acd *acd, struct in_addr *address) {
+        assert_return(acd, -EINVAL);
+        assert_return(address, -EINVAL);
+
+        address->s_addr = acd->address;
+
+        return 0;
+}
+
 int sd_ipv4acd_is_running(sd_ipv4acd *acd) {
         assert_return(acd, false);
 
@@ -457,8 +473,7 @@ int sd_ipv4acd_start(sd_ipv4acd *acd, bool reset_conflicts) {
         if (r < 0)
                 return r;
 
-        safe_close(acd->fd);
-        acd->fd = r;
+        CLOSE_AND_REPLACE(acd->fd, r);
         acd->defend_window = 0;
 
         if (reset_conflicts)

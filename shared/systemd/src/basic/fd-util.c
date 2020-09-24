@@ -379,6 +379,7 @@ bool fdname_is_valid(const char *s) {
         return p - s < 256;
 }
 
+#if 0 /* NM_IGNORED */
 int fd_get_path(int fd, char **ret) {
         char procfs_path[STRLEN("/proc/self/fd/") + DECIMAL_STR_MAX(int)];
         int r;
@@ -389,18 +390,15 @@ int fd_get_path(int fd, char **ret) {
                 /* ENOENT can mean two things: that the fd does not exist or that /proc is not mounted. Let's make
                  * things debuggable and distinguish the two. */
 
-                if (access("/proc/self/fd/", F_OK) < 0)
-                        /* /proc is not available or not set up properly, we're most likely in some chroot
-                         * environment. */
-                        return errno == ENOENT ? -EOPNOTSUPP : -errno;
-
+                if (proc_mounted() == 0)
+                        return -ENOSYS;  /* /proc is not available or not set up properly, we're most likely in some chroot
+                                          * environment. */
                 return -EBADF; /* The directory exists, hence it's the fd that doesn't. */
         }
 
         return r;
 }
 
-#if 0 /* NM_IGNORED */
 int move_fd(int from, int to, int cloexec) {
         int r;
 
@@ -736,8 +734,7 @@ int fd_duplicate_data_fd(int fd) {
                 if (f != 0)
                         return -errno;
 
-                safe_close(copy_fd);
-                copy_fd = TAKE_FD(tmp_fd);
+                CLOSE_AND_REPLACE(copy_fd, tmp_fd);
 
                 remains = mfree(remains);
                 remains_size = 0;
@@ -872,8 +869,7 @@ int rearrange_stdio(int original_input_fd, int original_output_fd, int original_
                                 goto finish;
                         }
 
-                        safe_close(null_fd);
-                        null_fd = copy;
+                        CLOSE_AND_REPLACE(null_fd, copy);
                 }
         }
 
@@ -983,7 +979,7 @@ int read_nr_open(void) {
                         return v;
         }
 
-        /* If we fail, fallback to the hard-coded kernel limit of 1024 * 1024. */
+        /* If we fail, fall back to the hard-coded kernel limit of 1024 * 1024. */
         return 1024 * 1024;
 }
 #endif /* NM_IGNORED */

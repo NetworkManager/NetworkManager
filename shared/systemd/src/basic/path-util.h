@@ -44,9 +44,17 @@
 #  define DEFAULT_USER_PATH DEFAULT_PATH
 #endif
 
-bool is_path(const char *p) _pure_;
+static inline bool is_path(const char *p) {
+        assert(p);
+        return strchr(p, '/');
+}
+
+static inline bool path_is_absolute(const char *p) {
+        assert(p);
+        return p[0] == '/';
+}
+
 int path_split_and_make_absolute(const char *p, char ***ret);
-bool path_is_absolute(const char *p) _pure_;
 char* path_make_absolute(const char *p, const char *prefix);
 int safe_getcwd(char **ret);
 int path_make_absolute_cwd(const char *p, char **ret);
@@ -82,12 +90,14 @@ int path_strv_make_absolute_cwd(char **l);
 char** path_strv_resolve(char **l, const char *root);
 char** path_strv_resolve_uniq(char **l, const char *root);
 
-int find_binary(const char *name, char **filename);
+int find_executable_full(const char *name, bool use_path_envvar, char **ret);
+static inline int find_executable(const char *name, char **ret) {
+        return find_executable_full(name, true, ret);
+}
 
 bool paths_check_timestamp(const char* const* paths, usec_t *paths_ts_usec, bool update);
 
 int fsck_exists(const char *fstype);
-int mkfs_exists(const char *fstype);
 
 /* Iterates through the path prefixes of the specified path, going up
  * the tree, to root. Also returns "" (and not "/"!) for the root
@@ -176,3 +186,5 @@ static inline const char *empty_to_root(const char *path) {
 
 bool path_strv_contains(char **l, const char *path);
 bool prefixed_path_strv_contains(char **l, const char *path);
+
+bool credential_name_valid(const char *s);

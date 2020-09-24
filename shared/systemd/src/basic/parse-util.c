@@ -18,6 +18,9 @@
 #include "missing_network.h"
 #include "parse-util.h"
 #include "process-util.h"
+#if HAVE_SECCOMP
+#include "seccomp-util.h"
+#endif
 #include "stat-util.h"
 #include "string-util.h"
 #include "strv.h"
@@ -317,6 +320,7 @@ int parse_errno(const char *t) {
         return e;
 }
 
+#if HAVE_SECCOMP
 int parse_syscall_and_errno(const char *in, char **name, int *error) {
         _cleanup_free_ char *n = NULL;
         char *p;
@@ -335,7 +339,7 @@ int parse_syscall_and_errno(const char *in, char **name, int *error) {
 
         p = strchr(in, ':');
         if (p) {
-                e = parse_errno(p + 1);
+                e = seccomp_parse_errno_or_action(p + 1);
                 if (e < 0)
                         return e;
 
@@ -354,6 +358,7 @@ int parse_syscall_and_errno(const char *in, char **name, int *error) {
 
         return 0;
 }
+#endif
 #endif /* NM_IGNORED */
 
 static const char *mangle_base(const char *s, unsigned *base) {

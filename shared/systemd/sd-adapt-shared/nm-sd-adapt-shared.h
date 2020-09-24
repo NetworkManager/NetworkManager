@@ -88,6 +88,8 @@ G_STMT_START { \
 
 #define ENABLE_GSHADOW FALSE
 
+#define HAVE_SECCOMP 0
+
 /*****************************************************************************/
 
 /* systemd cannot be compiled with "-Wdeclaration-after-statement". In particular

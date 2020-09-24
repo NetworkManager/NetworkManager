@@ -690,7 +690,7 @@ char **replace_env_argv(char **argv, char **env) {
                         if (e) {
                                 int r;
 
-                                r = strv_split_extract(&m, e, WHITESPACE, EXTRACT_RELAX|EXTRACT_UNQUOTE);
+                                r = strv_split_full(&m, e, WHITESPACE, EXTRACT_RELAX|EXTRACT_UNQUOTE);
                                 if (r < 0) {
                                         ret[k] = NULL;
                                         strv_free(ret);
@@ -744,7 +744,6 @@ int getenv_bool(const char *p) {
         return parse_boolean(e);
 }
 
-#if 0 /* NM_IGNORED */
 int getenv_bool_secure(const char *p) {
         const char *e;
 
@@ -754,4 +753,3 @@ int getenv_bool_secure(const char *p) {
 
         return parse_boolean(e);
 }
-#endif /* NM_IGNORED */

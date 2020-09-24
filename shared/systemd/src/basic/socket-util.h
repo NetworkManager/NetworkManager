@@ -120,15 +120,26 @@ int netlink_family_from_string(const char *s) _pure_;
 
 bool sockaddr_equal(const union sockaddr_union *a, const union sockaddr_union *b);
 
-int fd_inc_sndbuf(int fd, size_t n);
-int fd_inc_rcvbuf(int fd, size_t n);
+int fd_set_sndbuf(int fd, size_t n, bool increase);
+static inline int fd_inc_sndbuf(int fd, size_t n) {
+        return fd_set_sndbuf(fd, n, true);
+}
+int fd_set_rcvbuf(int fd, size_t n, bool increase);
+static inline int fd_inc_rcvbuf(int fd, size_t n) {
+        return fd_set_rcvbuf(fd, n, true);
+}
 
 int ip_tos_to_string_alloc(int i, char **s);
 int ip_tos_from_string(const char *s);
 
-bool ifname_valid_full(const char *p, bool alternative);
+typedef enum {
+      IFNAME_VALID_ALTERNATIVE = 1 << 0,
+      IFNAME_VALID_NUMERIC     = 1 << 1,
+      _IFNAME_VALID_ALL        = IFNAME_VALID_ALTERNATIVE | IFNAME_VALID_NUMERIC,
+} IfnameValidFlags;
+bool ifname_valid_full(const char *p, IfnameValidFlags flags);
 static inline bool ifname_valid(const char *p) {
-        return ifname_valid_full(p, false);
+        return ifname_valid_full(p, 0);
 }
 bool address_label_valid(const char *p);
 
@@ -207,6 +218,35 @@ struct cmsghdr* cmsg_find(struct msghdr *mh, int level, int type, socklen_t leng
                          strnlen(_sa->sun_path, sizeof(_sa->sun_path))+1); \
         })
 
+#define SOCKADDR_LEN(sa)                                                \
+        ({                                                              \
+                const union sockaddr_union *__sa = &(sa);               \
+                size_t _len;                                            \
+                switch(__sa->sa.sa_family) {                            \
+                case AF_INET:                                           \
+                        _len = sizeof(struct sockaddr_in);              \
+                        break;                                          \
+                case AF_INET6:                                          \
+                        _len = sizeof(struct sockaddr_in6);             \
+                        break;                                          \
+                case AF_UNIX:                                           \
+                        _len = SOCKADDR_UN_LEN(__sa->un);               \
+                        break;                                          \
+                case AF_PACKET:                                         \
+                        _len = SOCKADDR_LL_LEN(__sa->ll);               \
+                        break;                                          \
+                case AF_NETLINK:                                        \
+                        _len = sizeof(struct sockaddr_nl);              \
+                        break;                                          \
+                case AF_VSOCK:                                          \
+                        _len = sizeof(struct sockaddr_vm);              \
+                        break;                                          \
+                default:                                                \
+                        assert_not_reached("invalid socket family");    \
+                }                                                       \
+                _len;                                                   \
+        })
+
 int socket_ioctl_fd(void);
 
 int sockaddr_un_set_path(struct sockaddr_un *ret, const char *path);
@@ -223,4 +263,11 @@ int socket_bind_to_ifindex(int fd, int ifindex);
 
 ssize_t recvmsg_safe(int sockfd, struct msghdr *msg, int flags);
 
-int socket_pass_pktinfo(int fd, bool b);
+int socket_get_family(int fd, int *ret);
+int socket_set_recvpktinfo(int fd, int af, bool b);
+int socket_set_recverr(int fd, int af, bool b);
+int socket_set_recvttl(int fd, int af, bool b);
+int socket_set_ttl(int fd, int af, int ttl);
+int socket_set_unicast_if(int fd, int af, int ifi);
+int socket_set_freebind(int fd, int af, bool b);
+int socket_set_transparent(int fd, int af, bool b);

@@ -12,6 +12,7 @@
 union in_addr_union {
         struct in_addr in;
         struct in6_addr in6;
+        uint8_t bytes[CONST_MAX(sizeof(struct in_addr), sizeof(struct in6_addr))];
 };
 
 struct in_addr_data {
@@ -26,10 +27,12 @@ int in_addr_is_multicast(int family, const union in_addr_union *u);
 
 bool in4_addr_is_link_local(const struct in_addr *a);
 int in_addr_is_link_local(int family, const union in_addr_union *u);
+bool in6_addr_is_link_local_all_nodes(const struct in6_addr *a);
 
 bool in4_addr_is_localhost(const struct in_addr *a);
 int in_addr_is_localhost(int family, const union in_addr_union *u);
 
+bool in4_addr_is_local_multicast(const struct in_addr *a);
 bool in4_addr_is_non_local(const struct in_addr *a);
 
 bool in4_addr_equal(const struct in_addr *a, const struct in_addr *b);
@@ -40,8 +43,13 @@ int in_addr_prefix_nth(int family, union in_addr_union *u, unsigned prefixlen, u
 int in_addr_random_prefix(int family, union in_addr_union *u, unsigned prefixlen_fixed_part, unsigned prefixlen);
 int in_addr_to_string(int family, const union in_addr_union *u, char **ret);
 int in_addr_prefix_to_string(int family, const union in_addr_union *u, unsigned prefixlen, char **ret);
-int in_addr_ifindex_to_string(int family, const union in_addr_union *u, int ifindex, char **ret);
 int in_addr_port_ifindex_name_to_string(int family, const union in_addr_union *u, uint16_t port, int ifindex, const char *server_name, char **ret);
+static inline int in_addr_ifindex_to_string(int family, const union in_addr_union *u, int ifindex, char **ret) {
+        return in_addr_port_ifindex_name_to_string(family, u, 0, ifindex, NULL, ret);
+}
+static inline int in_addr_port_to_string(int family, const union in_addr_union *u, uint16_t port, char **ret) {
+        return in_addr_port_ifindex_name_to_string(family, u, port, 0, NULL, ret);
+}
 int in_addr_from_string(int family, const char *s, union in_addr_union *ret);
 int in_addr_from_string_auto(const char *s, int *ret_family, union in_addr_union *ret);
 
@@ -73,6 +81,9 @@ static inline size_t FAMILY_ADDRESS_SIZE(int family) {
 /* Workaround for clang, explicitly specify the maximum-size element here.
  * See also oss-fuzz#11344. */
 #define IN_ADDR_NULL ((union in_addr_union) { .in6 = {} })
+
+void in6_addr_hash_func(const struct in6_addr *addr, struct siphash *state);
+int in6_addr_compare_func(const struct in6_addr *a, const struct in6_addr *b);
 
 extern const struct hash_ops in_addr_data_hash_ops;
 extern const struct hash_ops in6_addr_hash_ops;

@@ -630,7 +630,6 @@ static int client_send_message(sd_dhcp6_client *client, usec_t time_now) {
                 IN6ADDR_ALL_DHCP6_RELAY_AGENTS_AND_SERVERS_INIT;
         struct sd_dhcp6_option *j;
         size_t len, optlen = 512;
-        Iterator i;
         uint8_t *opt;
         int r;
         usec_t elapsed_usec;
@@ -865,7 +864,7 @@ static int client_send_message(sd_dhcp6_client *client, usec_t time_now) {
         if (r < 0)
                 return r;
 
-        ORDERED_HASHMAP_FOREACH(j, client->extra_options, i) {
+        ORDERED_HASHMAP_FOREACH(j, client->extra_options) {
                 r = dhcp6_option_append(&opt, &optlen, j->option, j->length, j->data);
                 if (r < 0)
                         return r;
@@ -1701,7 +1700,7 @@ int sd_dhcp6_client_is_running(sd_dhcp6_client *client) {
 
 int sd_dhcp6_client_start(sd_dhcp6_client *client) {
         enum DHCP6State state = DHCP6_STATE_SOLICITATION;
-        int r = 0;
+        int r;
 
         assert_return(client, -EINVAL);
         assert_return(client->event, -EINVAL);
