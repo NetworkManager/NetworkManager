@@ -120,7 +120,7 @@ int rename_noreplace(int olddirfd, const char *oldpath, int newdirfd, const char
         if (!IN_SET(errno, EINVAL, ENOSYS, ENOTTY, EPERM)) /* FAT returns EPERM on link()… */
                 return -errno;
 
-        /* OK, neither RENAME_NOREPLACE nor linkat()+unlinkat() worked. Let's then fallback to the racy TOCTOU
+        /* OK, neither RENAME_NOREPLACE nor linkat()+unlinkat() worked. Let's then fall back to the racy TOCTOU
          * vulnerable accessat(F_OK) check followed by classic, replacing renameat(), we have nothing better. */
 
         if (faccessat(newdirfd, newpath, F_OK, AT_SYMLINK_NOFOLLOW) >= 0)
@@ -229,6 +229,7 @@ int chmod_and_chown(const char *path, mode_t mode, uid_t uid, gid_t gid) {
 int fchmod_and_chown(int fd, mode_t mode, uid_t uid, gid_t gid) {
         bool do_chown, do_chmod;
         struct stat st;
+        int r;
 
         /* Change ownership and access mode of the specified fd. Tries to do so safely, ensuring that at no
          * point in time the access mode is above the old access mode under the old ownership or the new
@@ -259,64 +260,22 @@ int fchmod_and_chown(int fd, mode_t mode, uid_t uid, gid_t gid) {
         if (do_chown && do_chmod) {
                 mode_t minimal = st.st_mode & mode; /* the subset of the old and the new mask */
 
-                if (((minimal ^ st.st_mode) & 07777) != 0)
-                        if (fchmod_opath(fd, minimal & 07777) < 0)
-                                return -errno;
+                if (((minimal ^ st.st_mode) & 07777) != 0) {
+                        r = fchmod_opath(fd, minimal & 07777);
+                        if (r < 0)
+                                return r;
+                }
         }
 
         if (do_chown)
                 if (fchownat(fd, "", uid, gid, AT_EMPTY_PATH) < 0)
                         return -errno;
 
-        if (do_chmod)
-                if (fchmod_opath(fd, mode & 07777) < 0)
-                        return -errno;
-
-        return do_chown || do_chmod;
-}
-
-int chmod_and_chown_unsafe(const char *path, mode_t mode, uid_t uid, gid_t gid) {
-        bool do_chown, do_chmod;
-        struct stat st;
-
-        assert(path);
-
-        /* Change ownership and access mode of the specified path, see description of fchmod_and_chown().
-         * Should only be used on trusted paths. */
-
-        if (lstat(path, &st) < 0)
-                return -errno;
-
-        do_chown =
-                (uid != UID_INVALID && st.st_uid != uid) ||
-                (gid != GID_INVALID && st.st_gid != gid);
-
-        do_chmod =
-                !S_ISLNK(st.st_mode) && /* chmod is not defined on symlinks */
-                ((mode != MODE_INVALID && ((st.st_mode ^ mode) & 07777) != 0) ||
-                 do_chown); /* If we change ownership, make sure we reset the mode afterwards, since chown()
-                             * modifies the access mode too */
-
-        if (mode == MODE_INVALID)
-                mode = st.st_mode; /* If we only shall do a chown(), save original mode, since chown() might break it. */
-        else if ((mode & S_IFMT) != 0 && ((mode ^ st.st_mode) & S_IFMT) != 0)
-                return -EINVAL; /* insist on the right file type if it was specified */
-
-        if (do_chown && do_chmod) {
-                mode_t minimal = st.st_mode & mode; /* the subset of the old and the new mask */
-
-                if (((minimal ^ st.st_mode) & 07777) != 0)
-                        if (chmod(path, minimal & 07777) < 0)
-                                return -errno;
+        if (do_chmod) {
+                r = fchmod_opath(fd, mode & 07777);
+                if (r < 0)
+                        return r;
         }
-
-        if (do_chown)
-                if (lchown(path, uid, gid) < 0)
-                        return -errno;
-
-        if (do_chmod)
-                if (chmod(path, mode & 07777) < 0)
-                        return -errno;
 
         return do_chown || do_chmod;
 }
@@ -760,7 +719,7 @@ static int log_unsafe_transition(int a, int b, const char *path, unsigned flags)
 
         return log_warning_errno(SYNTHETIC_ERRNO(ENOLINK),
                                  "Detected unsafe path transition %s %s %s during canonicalization of %s.",
-                                 n1, special_glyph(SPECIAL_GLYPH_ARROW), n2, path);
+                                 strna(n1), special_glyph(SPECIAL_GLYPH_ARROW), strna(n2), path);
 }
 
 static int log_autofs_mount_point(int fd, const char *path, unsigned flags) {
@@ -773,7 +732,7 @@ static int log_autofs_mount_point(int fd, const char *path, unsigned flags) {
 
         return log_warning_errno(SYNTHETIC_ERRNO(EREMOTE),
                                  "Detected autofs mount point %s during canonicalization of %s.",
-                                 n1, path);
+                                 strna(n1), path);
 }
 
 int chase_symlinks(const char *path, const char *original_root, unsigned flags, char **ret_path, int *ret_fd) {
@@ -1293,16 +1252,25 @@ int chase_symlinks_and_stat(
 
 int access_fd(int fd, int mode) {
         char p[STRLEN("/proc/self/fd/") + DECIMAL_STR_MAX(fd) + 1];
-        int r;
 
         /* Like access() but operates on an already open fd */
 
         xsprintf(p, "/proc/self/fd/%i", fd);
-        r = access(p, mode);
-        if (r < 0)
-                return -errno;
+        if (access(p, mode) < 0) {
+                if (errno != ENOENT)
+                        return -errno;
 
-        return r;
+                /* ENOENT can mean two things: that the fd does not exist or that /proc is not mounted. Let's
+                 * make things debuggable and distinguish the two. */
+
+                if (proc_mounted() == 0)
+                        return -ENOSYS;  /* /proc is not available or not set up properly, we're most likely in some chroot
+                                          * environment. */
+
+                return -EBADF; /* The directory exists, hence it's the fd that doesn't. */
+        }
+
+        return 0;
 }
 
 void unlink_tempfilep(char (*p)[]) {
@@ -1436,9 +1404,9 @@ int fsync_directory_of_file(int fd) {
         if (r < 0) {
                 log_debug_errno(r, "Failed to query /proc/self/fd/%d%s: %m",
                                 fd,
-                                r == -EOPNOTSUPP ? ", ignoring" : "");
+                                r == -ENOSYS ? ", ignoring" : "");
 
-                if (r == -EOPNOTSUPP)
+                if (r == -ENOSYS)
                         /* If /proc is not available, we're most likely running in some
                          * chroot environment, and syncing the directory is not very
                          * important in that case. Let's just silently do nothing. */
