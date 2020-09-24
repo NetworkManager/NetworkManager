@@ -2029,15 +2029,15 @@ write_dcb_setting(NMConnection *connection, shvarFile *ifcfg, GError **error)
 static void
 write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg)
 {
-    guint32                  n, i;
-    GString *                str;
-    const char *             master, *master_iface = NULL, *type;
-    int                      vint;
-    gint32                   vint32;
-    NMSettingConnectionMdns  mdns;
-    NMSettingConnectionLlmnr llmnr;
-    guint32                  vuint32;
-    const char *             tmp, *mud_url;
+    guint32              n, i;
+    nm_auto_free_gstring GString *str = NULL;
+    const char *                  master, *master_iface = NULL, *type;
+    int                           vint;
+    gint32                        vint32;
+    NMSettingConnectionMdns       mdns;
+    NMSettingConnectionLlmnr      llmnr;
+    guint32                       vuint32;
+    const char *                  tmp, *mud_url;
 
     svSetValueStr(ifcfg, "NAME", nm_setting_connection_get_id(s_con));
     svSetValueStr(ifcfg, "UUID", nm_setting_connection_get_uuid(s_con));
@@ -2083,10 +2083,15 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg)
     /* Permissions */
     n = nm_setting_connection_get_num_permissions(s_con);
     if (n > 0) {
-        str = g_string_sized_new(n * 20);
-
+        nm_gstring_prepare(&str);
         for (i = 0; i < n; i++) {
+            const char *ptype = NULL;
             const char *puser = NULL;
+
+            if (!nm_setting_connection_get_permission(s_con, i, &ptype, &puser, NULL))
+                continue;
+            if (!nm_streq(ptype, NM_SETTINGS_CONNECTION_PERMISSION_USER))
+                continue;
 
             /* Items separated by space for consistency with eg
              * IPV6ADDR_SECONDARIES and DOMAIN.
@@ -2094,11 +2099,9 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg)
             if (str->len)
                 g_string_append_c(str, ' ');
 
-            if (nm_setting_connection_get_permission(s_con, i, NULL, &puser, NULL))
-                g_string_append(str, puser);
+            g_string_append(str, puser);
         }
         svSetValueStr(ifcfg, "USERS", str->str);
-        g_string_free(str, TRUE);
     }
 
     svSetValueStr(ifcfg, "ZONE", nm_setting_connection_get_zone(s_con));
@@ -2160,22 +2163,21 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg)
     /* secondary connection UUIDs */
     n = nm_setting_connection_get_num_secondaries(s_con);
     if (n > 0) {
-        str = g_string_sized_new(n * 37);
-
+        nm_gstring_prepare(&str);
         for (i = 0; i < n; i++) {
             const char *uuid;
 
             /* Items separated by space for consistency with eg
              * IPV6ADDR_SECONDARIES and DOMAIN.
              */
+            if (!(uuid = nm_setting_connection_get_secondary(s_con, i)))
+                continue;
+
             if (str->len)
                 g_string_append_c(str, ' ');
-
-            if ((uuid = nm_setting_connection_get_secondary(s_con, i)) != NULL)
-                g_string_append(str, uuid);
+            g_string_append(str, uuid);
         }
         svSetValueStr(ifcfg, "SECONDARY_UUIDS", str->str);
-        g_string_free(str, TRUE);
     }
 
     vuint32 = nm_setting_connection_get_gateway_ping_timeout(s_con);

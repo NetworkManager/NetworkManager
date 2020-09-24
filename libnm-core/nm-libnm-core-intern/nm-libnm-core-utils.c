@@ -314,3 +314,32 @@ nm_utils_validate_dhcp4_vendor_class_id(const char *vci, GError **error)
 
     return TRUE;
 }
+
+gboolean
+nm_settings_connection_validate_permission_user(const char *item, gssize len)
+{
+    gsize l;
+
+    if (!item)
+        return FALSE;
+
+    if (len < 0) {
+        nm_assert(len == -1);
+        l = strlen(item);
+    } else
+        l = (gsize) len;
+
+    if (l == 0)
+        return FALSE;
+
+    if (!g_utf8_validate(item, l, NULL))
+        return FALSE;
+
+    if (l >= 100)
+        return FALSE;
+
+    if (memchr(item, ':', l))
+        return FALSE;
+
+    return TRUE;
+}

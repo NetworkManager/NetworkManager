@@ -359,10 +359,13 @@ nm_settings_connection_check_visibility(NMSettingsConnection *self,
         return TRUE;
 
     for (i = 0; i < num; i++) {
+        const char *ptype;
         const char *user;
         uid_t       uid;
 
-        if (!nm_setting_connection_get_permission(s_con, i, NULL, &user, NULL))
+        if (!nm_setting_connection_get_permission(s_con, i, &ptype, &user, NULL))
+            continue;
+        if (!nm_streq(ptype, NM_SETTINGS_CONNECTION_PERMISSION_USER))
             continue;
         if (!nm_utils_name_to_uid(user, &uid))
             continue;
@@ -407,6 +410,8 @@ nm_settings_connection_check_permission(NMSettingsConnection *self, const char *
     }
 
     for (i = 0; i < num; i++) {
+        const char *ptype;
+
         /* For each user get their secret agent and check if that agent has the
          * required permission.
          *
@@ -414,10 +419,13 @@ nm_settings_connection_check_permission(NMSettingsConnection *self, const char *
          * name or a PID but if the user isn't running an agent they won't have
          * either.
          */
-        if (nm_setting_connection_get_permission(s_con, i, NULL, &puser, NULL)) {
-            if (nm_agent_manager_has_agent_with_permission(priv->agent_mgr, puser, permission))
-                return TRUE;
-        }
+        if (!nm_setting_connection_get_permission(s_con, i, &ptype, &puser, NULL))
+            continue;
+        if (!nm_streq(ptype, NM_SETTINGS_CONNECTION_PERMISSION_USER))
+            continue;
+
+        if (nm_agent_manager_has_agent_with_permission(priv->agent_mgr, puser, permission))
+            return TRUE;
     }
 
     return FALSE;

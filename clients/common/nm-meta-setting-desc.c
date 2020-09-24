@@ -2504,12 +2504,14 @@ static gconstpointer _get_fcn_connection_permissions(ARGS_GET_FCN)
     for (i = 0; i < n; i++) {
         if (!nm_setting_connection_get_permission(s_con, i, &perm_type, &perm_item, NULL))
             continue;
+        if (!nm_streq(perm_type, NM_SETTINGS_CONNECTION_PERMISSION_USER))
+            continue;
 
         if (!perm)
             perm = g_string_new(NULL);
         else
             g_string_append_c(perm, ',');
-        g_string_append_printf(perm, "%s:%s", perm_type, perm_item);
+        g_string_append_printf(perm, NM_SETTINGS_CONNECTION_PERMISSION_USER_PREFIX "%s", perm_item);
     }
 
     NM_SET_OUT(out_is_default, !perm);
@@ -2591,19 +2593,13 @@ static const char *const *_complete_fcn_connection_type(ARGS_COMPLETE_FCN)
     return (const char *const *) (*out_to_free = result);
 }
 
-#define PERM_USER_PREFIX "user:"
-
 static const char *
 _sanitize_connection_permission_user(const char *perm)
 {
-    if (NM_STR_HAS_PREFIX(perm, PERM_USER_PREFIX))
-        perm += NM_STRLEN(PERM_USER_PREFIX);
-
-    if (perm[0] == '\0')
+    if (NM_STR_HAS_PREFIX(perm, NM_SETTINGS_CONNECTION_PERMISSION_USER_PREFIX))
+        perm += NM_STRLEN(NM_SETTINGS_CONNECTION_PERMISSION_USER_PREFIX);
+    if (!nm_settings_connection_validate_permission_user(perm, -1))
         return NULL;
-    if (!g_utf8_validate(perm, -1, NULL))
-        return NULL;
-
     return perm;
 }
 
@@ -2626,19 +2622,25 @@ static gboolean
 _multilist_set_fcn_connection_permissions(NMSetting *setting, const char *item)
 {
     item = _sanitize_connection_permission_user(item);
-    nm_setting_connection_add_permission(NM_SETTING_CONNECTION(setting), "user", item, NULL);
+    if (!item)
+        return FALSE;
+    if (!nm_setting_connection_add_permission(NM_SETTING_CONNECTION(setting),
+                                              NM_SETTINGS_CONNECTION_PERMISSION_USER,
+                                              item,
+                                              NULL))
+        nm_assert_not_reached();
     return TRUE;
 }
 
 static gboolean
 _multilist_remove_by_value_fcn_connection_permissions(NMSetting *setting, const char *item)
 {
-    const char *sanitized;
-
-    sanitized = _sanitize_connection_permission_user(item);
+    item = _sanitize_connection_permission_user(item);
+    if (!item)
+        return FALSE;
     nm_setting_connection_remove_permission_by_value(NM_SETTING_CONNECTION(setting),
-                                                     "user",
-                                                     sanitized ?: item,
+                                                     NM_SETTINGS_CONNECTION_PERMISSION_USER,
+                                                     item,
                                                      NULL);
     return TRUE;
 }

@@ -3208,7 +3208,7 @@ check_permission(NMSettingConnection *s_con, guint32 idx, const char *expected_u
     gboolean    success;
     const char *ptype = NULL, *pitem = NULL, *detail = NULL;
 
-    success = nm_setting_connection_get_permission(s_con, 0, &ptype, &pitem, &detail);
+    success = nm_setting_connection_get_permission(s_con, idx, &ptype, &pitem, &detail);
     g_assert(success);
 
     g_assert_cmpstr(ptype, ==, "user");
@@ -3233,50 +3233,43 @@ test_setting_connection_permissions_helpers(void)
     s_con = NM_SETTING_CONNECTION(nm_setting_connection_new());
 
     /* Ensure a bad [type] is rejected */
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(strcmp(ptype, "user") == 0));
     success = nm_setting_connection_add_permission(s_con, "foobar", "blah", NULL);
-    g_test_assert_expected_messages();
     g_assert(!success);
+    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 0);
 
     /* Ensure a bad [type] is rejected */
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(ptype && ptype[0]));
+    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(ptype));
     success = nm_setting_connection_add_permission(s_con, NULL, "blah", NULL);
     g_test_assert_expected_messages();
     g_assert(!success);
+    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 0);
 
     /* Ensure a bad [item] is rejected */
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(uname));
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(p != NULL));
+    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(pitem));
     success = nm_setting_connection_add_permission(s_con, "user", NULL, NULL);
     g_test_assert_expected_messages();
     g_assert(!success);
+    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 0);
 
     /* Ensure a bad [item] is rejected */
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(uname[0] != '\0'));
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(p != NULL));
     success = nm_setting_connection_add_permission(s_con, "user", "", NULL);
-    g_test_assert_expected_messages();
     g_assert(!success);
+    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 0);
 
     /* Ensure an [item] with ':' is rejected */
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(strchr(uname, ':') == NULL));
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(p != NULL));
     success = nm_setting_connection_add_permission(s_con, "user", "ad:asdf", NULL);
-    g_test_assert_expected_messages();
     g_assert(!success);
+    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 0);
 
     /* Ensure a non-UTF-8 [item] is rejected */
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(g_utf8_validate(uname, -1, NULL) == TRUE));
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(p != NULL));
     success = nm_setting_connection_add_permission(s_con, "user", buf, NULL);
-    g_test_assert_expected_messages();
     g_assert(!success);
+    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 0);
 
     /* Ensure a non-NULL [detail] is rejected */
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(detail == NULL));
     success = nm_setting_connection_add_permission(s_con, "user", "dafasdf", "asdf");
-    g_test_assert_expected_messages();
     g_assert(!success);
+    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 0);
 
     /* Ensure a valid call results in success */
     success = nm_setting_connection_add_permission(s_con, "user", TEST_UNAME, NULL);
@@ -3337,74 +3330,92 @@ add_permission_property(NMSettingConnection *s_con,
 static void
 test_setting_connection_permissions_property(void)
 {
-    NMSettingConnection *s_con;
-    gboolean             success;
-    char                 buf[9] = {0x61, 0x62, 0x63, 0xff, 0xfe, 0xfd, 0x23, 0x01, 0x00};
+    gs_unref_object NMSettingConnection *s_con = NULL;
+    gboolean                             success;
+    char buf[9] = {0x61, 0x62, 0x63, 0xff, 0xfe, 0xfd, 0x23, 0x01, 0x00};
 
     s_con = NM_SETTING_CONNECTION(nm_setting_connection_new());
 
+#define _assert_permission_invalid_at_idx(s_con, idx, expected_item)                            \
+    G_STMT_START                                                                                \
+    {                                                                                           \
+        NMSettingConnection *_s_con = (s_con);                                                  \
+        guint                _idx   = (idx);                                                    \
+        const char *         _ptype;                                                            \
+        const char *         _pitem;                                                            \
+        const char *         _detail;                                                           \
+        const char **        _p_ptype  = nmtst_get_rand_bool() ? &_ptype : NULL;                \
+        const char **        _p_pitem  = nmtst_get_rand_bool() ? &_pitem : NULL;                \
+        const char **        _p_detail = nmtst_get_rand_bool() ? &_detail : NULL;               \
+                                                                                                \
+        g_assert_cmpint(_idx, <, nm_setting_connection_get_num_permissions(_s_con));            \
+        g_assert(                                                                               \
+            nm_setting_connection_get_permission(_s_con, _idx, _p_ptype, _p_pitem, _p_detail)); \
+        if (_p_ptype)                                                                           \
+            g_assert_cmpstr(_ptype, ==, "invalid");                                             \
+        if (_p_pitem) {                                                                         \
+            const char *_expected_item = (expected_item);                                       \
+                                                                                                \
+            if (!_expected_item)                                                                \
+                g_assert_cmpstr(_pitem, !=, NULL);                                              \
+            else                                                                                \
+                g_assert_cmpstr(_pitem, ==, _expected_item);                                    \
+        }                                                                                       \
+        if (_p_detail)                                                                          \
+            g_assert_cmpstr(_detail, ==, NULL);                                                 \
+    }                                                                                           \
+    G_STMT_END
+
     /* Ensure a bad [type] is rejected */
-    NMTST_EXPECT_LIBNM_CRITICAL(
-        NMTST_G_RETURN_MSG(strncmp(str, PERM_USER_PREFIX, strlen(PERM_USER_PREFIX)) == 0));
     add_permission_property(s_con, "foobar", "blah", -1, NULL);
-    g_test_assert_expected_messages();
-    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 0);
+    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 1);
+    _assert_permission_invalid_at_idx(s_con, 0, "foobar:blah:");
 
     /* Ensure a bad [type] is rejected */
-    NMTST_EXPECT_LIBNM_CRITICAL(
-        NMTST_G_RETURN_MSG(strncmp(str, PERM_USER_PREFIX, strlen(PERM_USER_PREFIX)) == 0));
     add_permission_property(s_con, NULL, "blah", -1, NULL);
-    g_test_assert_expected_messages();
-    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 0);
+    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 1);
+    _assert_permission_invalid_at_idx(s_con, 0, ":blah:");
 
     /* Ensure a bad [item] is rejected */
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(last_colon > str));
     add_permission_property(s_con, "user", NULL, -1, NULL);
-    g_test_assert_expected_messages();
-    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 0);
+    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 1);
+    _assert_permission_invalid_at_idx(s_con, 0, "user::");
 
     /* Ensure a bad [item] is rejected */
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(last_colon > str));
     add_permission_property(s_con, "user", "", -1, NULL);
-    g_test_assert_expected_messages();
-    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 0);
+    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 1);
+    _assert_permission_invalid_at_idx(s_con, 0, "user::");
 
     /* Ensure an [item] with ':' in the middle is rejected */
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(str[i] != ':'));
     add_permission_property(s_con, "user", "ad:asdf", -1, NULL);
-    g_test_assert_expected_messages();
-    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 0);
+    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 1);
+    _assert_permission_invalid_at_idx(s_con, 0, "user:ad:asdf:");
 
     /* Ensure an [item] with ':' at the end is rejected */
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(str[i] != ':'));
     add_permission_property(s_con, "user", "adasdfaf:", -1, NULL);
-    g_test_assert_expected_messages();
-    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 0);
+    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 1);
+    _assert_permission_invalid_at_idx(s_con, 0, "user:adasdfaf::");
 
     /* Ensure a non-UTF-8 [item] is rejected */
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(g_utf8_validate(str, -1, NULL) == TRUE));
     add_permission_property(s_con, "user", buf, (int) sizeof(buf), NULL);
-    g_test_assert_expected_messages();
-    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 0);
+    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 1);
+    _assert_permission_invalid_at_idx(s_con, 0, NULL);
 
     /* Ensure a non-NULL [detail] is rejected */
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(*(last_colon + 1) == '\0'));
     add_permission_property(s_con, "user", "dafasdf", -1, "asdf");
-    g_test_assert_expected_messages();
-    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 0);
+    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 1);
+    _assert_permission_invalid_at_idx(s_con, 0, "user:dafasdf:asdf");
 
     /* Ensure a valid call results in success */
     success = nm_setting_connection_add_permission(s_con, "user", TEST_UNAME, NULL);
     g_assert(success);
-    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 1);
-
-    check_permission(s_con, 0, TEST_UNAME);
+    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 2);
+    _assert_permission_invalid_at_idx(s_con, 0, "user:dafasdf:asdf");
+    check_permission(s_con, 1, TEST_UNAME);
 
     /* Now remove that permission and ensure we have 0 permissions */
     nm_setting_connection_remove_permission(s_con, 0);
-    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 0);
-
-    g_object_unref(s_con);
+    g_assert_cmpint(nm_setting_connection_get_num_permissions(s_con), ==, 1);
 }
 
 static void
@@ -4780,7 +4791,7 @@ test_setting_connection_changed_signal(void)
     ASSERT_CHANGED(nm_setting_connection_add_permission(s_con, "user", "billsmith", NULL));
     ASSERT_CHANGED(nm_setting_connection_remove_permission(s_con, 0));
 
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(iter != NULL));
+    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(idx < nm_g_array_len(priv->permissions)));
     ASSERT_UNCHANGED(nm_setting_connection_remove_permission(s_con, 1));
     g_test_assert_expected_messages();
 

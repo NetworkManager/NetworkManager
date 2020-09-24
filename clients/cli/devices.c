@@ -3868,7 +3868,10 @@ do_device_wifi_connect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
 
             /* Connection will only be visible to this user when 'private' is specified */
             if (private)
-                nm_setting_connection_add_permission(s_con, "user", g_get_user_name(), NULL);
+                nm_setting_connection_add_permission(s_con,
+                                                     NM_SETTINGS_CONNECTION_PERMISSION_USER,
+                                                     g_get_user_name() ?: "",
+                                                     NULL);
         }
         if (bssid2_arr || hidden) {
             s_wifi = (NMSettingWireless *) nm_setting_wireless_new();

@@ -142,4 +142,11 @@ const char *nm_utils_route_type2str(guint8 val, char *buf, gsize len);
 
 gboolean nm_utils_validate_dhcp4_vendor_class_id(const char *vci, GError **error);
 
+/*****************************************************************************/
+
+#define NM_SETTINGS_CONNECTION_PERMISSION_USER        "user"
+#define NM_SETTINGS_CONNECTION_PERMISSION_USER_PREFIX "user:"
+
+gboolean nm_settings_connection_validate_permission_user(const char *item, gssize len);
+
 #endif /* __NM_LIBNM_SHARED_UTILS_H__ */
