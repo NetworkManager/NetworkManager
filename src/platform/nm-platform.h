@@ -148,9 +148,16 @@ typedef enum {
 } NMPlatformRoutingRuleCmpType;
 
 typedef struct {
-    guint8 data[20 /* NM_UTILS_HWADDR_LEN_MAX */];
+    union {
+        guint8      data[20 /* NM_UTILS_HWADDR_LEN_MAX */];
+        NMEtherAddr ether_addr;
+    };
     guint8 len;
 } NMPLinkAddress;
+
+/* assert that NMEtherAddr does not affect the alignment of NMPLinkAddress struct. */
+G_STATIC_ASSERT(_nm_alignof(NMEtherAddr) == 1);
+G_STATIC_ASSERT(_nm_alignof(NMPLinkAddress) == 1);
 
 gconstpointer nmp_link_address_get(const NMPLinkAddress *addr, size_t *length);
 GBytes *      nmp_link_address_get_as_bytes(const NMPLinkAddress *addr);
