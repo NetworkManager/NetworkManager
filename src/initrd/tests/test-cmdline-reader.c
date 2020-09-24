@@ -294,11 +294,54 @@ test_if_ip6_manual (void)
 }
 
 static void
+test_if_mac_ifname (void)
+{
+	gs_unref_hashtable GHashTable *connections = NULL;
+	const char *const*ARGV = NM_MAKE_STRV ("ip=[2001:0db8::42]/64::[2001:0db8::01]::"
+	                                       "hostname0:00-11-22-33-44-55::[2001:0db8::53]");
+	NMConnection *connection;
+	NMSettingIPConfig *s_ip6;
+	NMSettingWired *s_wired;
+	NMIPAddress *ip_addr;
+	gs_free char *hostname = NULL;
+
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV, &hostname);
+	g_assert (connections);
+	g_assert_cmpint (g_hash_table_size (connections), ==, 1);
+	g_assert_cmpstr (hostname, ==, "hostname0");
+
+	connection = g_hash_table_lookup (connections, "00:11:22:33:44:55");
+	g_assert (connection);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+	g_assert_cmpstr (nm_connection_get_id (connection), ==, "00:11:22:33:44:55");
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, NULL);
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_assert (s_wired);
+	g_assert_cmpstr (nm_setting_wired_get_mac_address(s_wired), ==, "00:11:22:33:44:55");
+
+	s_ip6 = nm_connection_get_setting_ip6_config (connection);
+	g_assert (s_ip6);
+	g_assert_cmpstr (nm_setting_ip_config_get_method (s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_MANUAL);
+	g_assert (!nm_setting_ip_config_get_ignore_auto_dns (s_ip6));
+	g_assert_cmpint (nm_setting_ip_config_get_num_dns (s_ip6), ==, 1);
+	g_assert_cmpstr (nm_setting_ip_config_get_dns (s_ip6, 0), ==, "2001:db8::53");
+	g_assert_cmpint (nm_setting_ip_config_get_num_routes (s_ip6), ==, 0);
+	g_assert_cmpint (nm_setting_ip_config_get_num_addresses (s_ip6), ==, 1);
+	ip_addr = nm_setting_ip_config_get_address (s_ip6, 0);
+	g_assert (ip_addr);
+	g_assert_cmpstr (nm_ip_address_get_address (ip_addr), ==, "2001:db8::42");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip_addr), ==, 64);
+	g_assert_cmpstr (nm_setting_ip_config_get_gateway (s_ip6), ==, "2001:db8::1");
+	g_assert_cmpstr (nm_setting_ip_config_get_dhcp_hostname (s_ip6), ==, "hostname0");
+}
+
+static void
 test_multiple_merge (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
 	const char *const*ARGV = NM_MAKE_STRV ("ip=192.0.2.2:::::eth0",
-	                                       "ip=[2001:db8::2]:::::eth0");
+	                                       "ip=[2001:db8::2]:::56::eth0");
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
@@ -341,6 +384,7 @@ test_multiple_merge (void)
 	ip_addr = nm_setting_ip_config_get_address (s_ip6, 0);
 	g_assert (ip_addr);
 	g_assert_cmpstr (nm_ip_address_get_address (ip_addr), ==, "2001:db8::2");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip_addr), ==, 56);
 }
 
 static void
@@ -1043,6 +1087,29 @@ test_ibft_ip_dev (void)
 }
 
 static void
+test_ibft_ip_dev_mac (void)
+{
+	const char *const*ARGV = NM_MAKE_STRV ("ip=00-53-06-66-ab-01:ibft");
+	gs_unref_hashtable GHashTable *connections = NULL;
+	NMSettingConnection *s_con;
+	NMConnection *connection;
+	gs_free char *hostname = NULL;
+
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV, &hostname);
+	g_assert (connections);
+	g_assert_cmpint (g_hash_table_size (connections), ==, 1);
+	g_assert_cmpstr (hostname, ==, NULL);
+
+	connection = g_hash_table_lookup (connections, "00:53:06:66:AB:01");
+	g_assert (connection);
+
+	s_con = nm_connection_get_setting_connection (connection);
+	g_assert (s_con);
+	g_assert_cmpstr (nm_setting_connection_get_connection_type (s_con), ==, NM_SETTING_WIRED_SETTING_NAME);
+	g_assert_cmpstr (nm_setting_connection_get_interface_name (s_con), ==, NULL);
+}
+
+static void
 _test_ibft_ip (const char *const*ARGV)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
@@ -1545,6 +1612,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/initrd/cmdline/if_auto_with_mtu_and_mac", test_if_auto_with_mtu_and_mac);
 	g_test_add_func ("/initrd/cmdline/if_ip4_manual", test_if_ip4_manual);
 	g_test_add_func ("/initrd/cmdline/if_ip6_manual", test_if_ip6_manual);
+	g_test_add_func ("/initrd/cmdline/if_mac_ifname", test_if_mac_ifname);
 	g_test_add_func ("/initrd/cmdline/multiple/merge", test_multiple_merge);
 	g_test_add_func ("/initrd/cmdline/multiple/bootdev", test_multiple_bootdev);
 	g_test_add_func ("/initrd/cmdline/nameserver", test_nameserver);
@@ -1558,6 +1626,7 @@ int main (int argc, char **argv)
 	g_test_add_func ("/initrd/cmdline/bridge/default", test_bridge_default);
 	g_test_add_func ("/initrd/cmdline/bridge/ip", test_bridge_ip);
 	g_test_add_func ("/initrd/cmdline/ibft/ip_dev", test_ibft_ip_dev);
+	g_test_add_func ("/initrd/cmdline/ibft/ip_dev_mac", test_ibft_ip_dev_mac);
 	g_test_add_func ("/initrd/cmdline/ibft/ip", test_ibft_ip);
 	g_test_add_func ("/initrd/cmdline/ibft/rd_iscsi_ibft", test_ibft_rd_iscsi_ibft);
 	g_test_add_func ("/initrd/cmdline/ignore_extra", test_ignore_extra);
