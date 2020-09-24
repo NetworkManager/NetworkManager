@@ -86,6 +86,7 @@ Consent/Disapproval List
 - [Y] Dan Williams <dcbw@redhat.com> (Red Hat, Inc.)
 - [Y] Dan Winship <danw@redhat.com> (Red Hat, Inc.)
 - [Y] Daniel Drake <dsd@laptop.org> (One Laptop per Child)
+- [Y] Daniel Gnoutcheff <daniel@gnoutcheff.name>
 - [Y] David Cantrell <dcantrell@redhat.com> (Red Hat, Inc.)
 - [Y] Evan Broder <evan@ebroder.net>
 - [Y] Florian Echtler <floe@butterbrot.org>
