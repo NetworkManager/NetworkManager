@@ -357,7 +357,7 @@ nm_settings_connection_check_visibility (NMSettingsConnection *self,
 
 		if (!nm_setting_connection_get_permission (s_con, i, NULL, &user, NULL))
 			continue;
-		if (!nm_session_monitor_user_to_uid (user, &uid))
+		if (!nm_utils_name_to_uid (user, &uid))
 			continue;
 		if (!nm_session_monitor_session_exists (session_monitor, uid, FALSE))
 			continue;
