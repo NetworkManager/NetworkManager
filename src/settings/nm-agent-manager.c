@@ -869,8 +869,7 @@ _con_get_request_done (NMSecretAgent *agent,
 	Request *req = user_data;
 	GVariant *setting_secrets;
 	const char *agent_dbus_owner;
-	struct passwd *pw;
-	char *agent_uname = NULL;
+	gs_free char *agent_name = NULL;
 
 	g_return_if_fail (call_id == req->current_call_id);
 	g_return_if_fail (agent == req->current);
@@ -921,17 +920,16 @@ _con_get_request_done (NMSecretAgent *agent,
 	_LOGD (agent, "agent returned secrets for request "LOG_REQ_FMT,
 	       LOG_REQ_ARG (req));
 
-	/* Get the agent's username */
-	pw = getpwuid (nm_secret_agent_get_owner_uid (agent));
-	if (pw && strlen (pw->pw_name)) {
+	agent_name = nm_utils_uid_to_name (nm_secret_agent_get_owner_uid (agent));
+	if (   agent_name
+	    && !g_utf8_validate (agent_name, -1, NULL)) {
 		/* Needs to be UTF-8 valid since it may be pushed through D-Bus */
-		if (g_utf8_validate (pw->pw_name, -1, NULL))
-			agent_uname = g_strdup (pw->pw_name);
+		nm_clear_g_free (&agent_name);
 	}
 
 	agent_dbus_owner = nm_secret_agent_get_dbus_owner (agent);
-	req_complete (req, secrets, agent_dbus_owner, agent_uname, NULL);
-	g_free (agent_uname);
+
+	req_complete (req, secrets, agent_dbus_owner, agent_name, NULL);
 }
 
 static void
