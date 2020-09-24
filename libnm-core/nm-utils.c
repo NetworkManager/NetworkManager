@@ -1623,9 +1623,9 @@ nm_utils_ip4_netmask_to_prefix (guint32 netmask)
 	G_STATIC_ASSERT_EXPR (sizeof (int)     == 4);
 	G_STATIC_ASSERT_EXPR (sizeof (netmask) == 4);
 
-	return  (  (netmask != 0)
-	         ? (32 - __builtin_ctz (ntohl (netmask)))
-	         : 0);
+	return  (  (netmask != 0u)
+	         ? (guint32) (32 - __builtin_ctz (ntohl (netmask)))
+	         : 0u);
 }
 
 /**

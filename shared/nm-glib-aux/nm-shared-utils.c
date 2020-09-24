@@ -656,7 +656,7 @@ nm_utils_flags2str (const NMUtilsFlags2StrDesc *descs,
 guint32
 _nm_utils_ip4_prefix_to_netmask (guint32 prefix)
 {
-	return prefix < 32 ? ~htonl(0xFFFFFFFF >> prefix) : 0xFFFFFFFF;
+	return prefix < 32 ? ~htonl(0xFFFFFFFFu >> prefix) : 0xFFFFFFFFu;
 }
 
 gconstpointer
