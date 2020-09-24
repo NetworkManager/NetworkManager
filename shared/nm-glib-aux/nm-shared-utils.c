@@ -7,6 +7,7 @@
 
 #include "nm-shared-utils.h"
 
+#include <pwd.h>
 #include <arpa/inet.h>
 #include <poll.h>
 #include <fcntl.h>
@@ -5635,4 +5636,82 @@ nm_utils_is_specific_hostname (const char *name)
 	/* FIXME: properly validate the hostname, like systemd's hostname_is_valid() */
 
 	return TRUE;
+}
+
+/*****************************************************************************/
+
+/* taken from systemd's uid_to_name(). */
+char *
+nm_utils_uid_to_name (uid_t uid)
+{
+	gs_free char *buf_heap = NULL;
+	char buf_stack[4096];
+	gsize bufsize;
+	char *buf;
+
+	bufsize = sizeof (buf_stack);
+	buf = buf_stack;
+
+	for (;;) {
+		struct passwd pwbuf;
+		struct passwd *pw = NULL;
+		int r;
+
+		r = getpwuid_r (uid, &pwbuf, buf, bufsize, &pw);
+		if (   r == 0
+		    && pw)
+			return nm_strdup_not_empty (pw->pw_name);
+
+		if (r != ERANGE)
+			return NULL;
+
+		if (bufsize > G_MAXSIZE / 2u)
+			return NULL;
+
+		bufsize *= 2u;
+		g_free (buf_heap);
+		buf_heap = g_malloc (bufsize);
+		buf = buf_heap;
+	}
+}
+
+/* taken from systemd's nss_user_record_by_name() */
+gboolean
+nm_utils_name_to_uid (const char *name, uid_t *out_uid)
+{
+	gs_free char *buf_heap = NULL;
+	char buf_stack[4096];
+	gsize bufsize;
+	char *buf;
+
+	if (!name)
+		return nm_assert_unreachable_val (FALSE);
+
+	bufsize = sizeof (buf_stack);
+	buf = buf_stack;
+
+	for (;;) {
+		struct passwd *result;
+		struct passwd pwd;
+		int r;
+
+		r = getpwnam_r (name, &pwd, buf, bufsize, &result);
+		if (r == 0) {
+			if (!result)
+				return FALSE;
+			NM_SET_OUT (out_uid, pwd.pw_uid);
+			return TRUE;
+		}
+
+		if (r != ERANGE)
+			return FALSE;
+
+		if (bufsize > G_MAXSIZE / 2u)
+			return FALSE;
+
+		bufsize *= 2u;
+		g_free (buf_heap);
+		buf_heap = g_malloc (bufsize);
+		buf = buf_heap;
+	}
 }
