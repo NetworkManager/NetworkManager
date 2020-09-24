@@ -96,6 +96,22 @@ typedef struct {
         .ether_addr_octet = {__VA_ARGS__}, \
     }
 
+static inline int
+nm_ether_addr_cmp(const NMEtherAddr *a, const NMEtherAddr *b)
+{
+    NM_CMP_SELF(a, b);
+    NM_CMP_DIRECT_MEMCMP(a, b, sizeof(NMEtherAddr));
+    return 0;
+}
+
+static inline gboolean
+nm_ether_addr_equal(const NMEtherAddr *a, const NMEtherAddr *b)
+{
+    return nm_ether_addr_cmp(a, b) == 0;
+}
+
+/*****************************************************************************/
+
 typedef struct {
     union {
         guint8          addr_ptr[1];
