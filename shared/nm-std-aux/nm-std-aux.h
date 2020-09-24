@@ -44,6 +44,23 @@
 
 /*****************************************************************************/
 
+#ifdef __CHECKER__
+    #define _nm_bitwise __attribute__((__bitwise__))
+    #define _nm_force   __attribute__((__force__))
+#else
+    #define _nm_bitwise
+    #define _nm_force
+#endif
+
+typedef uint16_t _nm_bitwise nm_le16_t;
+typedef uint16_t _nm_bitwise nm_be16_t;
+typedef uint32_t _nm_bitwise nm_le32_t;
+typedef uint32_t _nm_bitwise nm_be32_t;
+typedef uint64_t _nm_bitwise nm_le64_t;
+typedef uint64_t _nm_bitwise nm_be64_t;
+
+/*****************************************************************************/
+
 #ifdef thread_local
     #define _nm_thread_local thread_local
 /*
