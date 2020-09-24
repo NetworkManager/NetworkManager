@@ -20,8 +20,18 @@
 
 typedef enum {
 	NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED,
-	NM_L3_CONFIG_NOTIFY_TYPE_ACD_FAILED,
+
 	NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED,
+
+	/* emitted at the end of nm_l3cfg_platform_commit(). */
+	NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT,
+
+	/* NML3Cfg hooks to the NMPlatform signals for link, addresses and routes.
+	 * It re-emits the signal on an idle handler. The purpose is for something
+	 * like NMDevice which is already subscribed to these signals, it can get the
+	 * notifications without also subscribing directly to the platform. */
+	NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE,
+
 	_NM_L3_CONFIG_NOTIFY_TYPE_NUM,
 } NML3ConfigNotifyType;
 
@@ -36,8 +46,13 @@ typedef struct {
 		struct {
 			in_addr_t addr;
 			guint sources_len;
+			bool probe_result:1;
 			const NML3ConfigNotifyPayloadAcdFailedSource *sources;
-		} acd_failed;
+		} acd_completed;
+
+		struct {
+			guint32 obj_type_flags;
+		} platform_change_on_idle;
 	};
 } NML3ConfigNotifyPayload;
 
@@ -129,6 +144,12 @@ gboolean nm_l3cfg_get_acd_is_pending (NML3Cfg *self);
 
 /*****************************************************************************/
 
+void _nm_l3cfg_emit_signal_notify (NML3Cfg *self,
+                                   NML3ConfigNotifyType notify_type,
+                                   const NML3ConfigNotifyPayload *pay_load);
+
+/*****************************************************************************/
+
 typedef enum {
 	NM_L3CFG_PROPERTY_EMIT_TYPE_ANY,
 	NM_L3CFG_PROPERTY_EMIT_TYPE_IP4_ROUTE,
@@ -201,9 +222,7 @@ typedef enum _nm_packed {
 } NML3CfgCommitType;
 
 gboolean nm_l3cfg_platform_commit (NML3Cfg *self,
-                                   NML3CfgCommitType commit_type,
-                                   int addr_family,
-                                   gboolean *out_final_failure_for_temporary_not_available);
+                                   NML3CfgCommitType commit_type);
 
 /*****************************************************************************/
 
@@ -220,10 +239,16 @@ void nm_l3cfg_commit_type_unregister (NML3Cfg *self,
 
 /*****************************************************************************/
 
-const NML3ConfigData *nm_l3cfg_get_combined_l3cd (NML3Cfg *self);
+const NML3ConfigData *nm_l3cfg_get_combined_l3cd (NML3Cfg *self,
+                                                  gboolean get_commited);
 
 const NMPObject *nm_l3cfg_get_best_default_route (NML3Cfg *self,
-                                                  int addr_family);
+                                                  int addr_family,
+                                                  gboolean get_commited);
+
+/*****************************************************************************/
+
+gboolean nm_l3cfg_has_commited_ip6_addresses_pending_dad (NML3Cfg *self);
 
 /*****************************************************************************/
 

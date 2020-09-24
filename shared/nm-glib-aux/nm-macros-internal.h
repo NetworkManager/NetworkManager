@@ -596,6 +596,9 @@ nm_str_realloc (char *str)
 
 /*****************************************************************************/
 
+#define NM_PRINT_FMT_QUOTED2(cond, prefix, str, str_else) \
+	(cond) ? (prefix) : "", \
+	(cond) ? (str) : (str_else)
 #define NM_PRINT_FMT_QUOTED(cond, prefix, str, suffix, str_else) \
 	(cond) ? (prefix) : "", \
 	(cond) ? (str) : (str_else), \

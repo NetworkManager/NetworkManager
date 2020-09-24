@@ -153,6 +153,14 @@ void nm_l3_config_data_add_dependent_routes (NML3ConfigData *self,
 
 /*****************************************************************************/
 
+void nm_l3_config_data_log (const NML3ConfigData *self,
+                            const char *title,
+                            const char *prefix,
+                            NMLogLevel log_level,
+                            NMLogDomain log_domain);
+
+/*****************************************************************************/
+
 int nm_l3_config_data_get_ifindex (const NML3ConfigData *self);
 
 static inline gboolean
@@ -187,6 +195,9 @@ const NMDedupMultiIdxType *nm_l3_config_data_lookup_index (const NML3ConfigData 
 
 const NMDedupMultiEntry *nm_l3_config_data_lookup_obj (const NML3ConfigData *self,
                                                        const NMPObject *obj);
+
+const NMPlatformIP6Address *nm_l3_config_data_lookup_address_6 (const NML3ConfigData *self,
+                                                                const struct in6_addr *addr);
 
 const NMDedupMultiEntry *nm_l3_config_data_lookup_route_obj (const NML3ConfigData *self,
                                                              const NMPObject *needle);

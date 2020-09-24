@@ -8,8 +8,10 @@
 #include <linux/if_addr.h>
 #include <linux/rtnetlink.h>
 
+#include "nm-glib-aux/nm-enum-utils.h"
 #include "nm-core-internal.h"
 #include "platform/nm-platform.h"
+#include "platform/nm-platform-utils.h"
 #include "platform/nmp-object.h"
 #include "NetworkManagerUtils.h"
 
@@ -257,6 +259,19 @@ _garray_inaddr_get (GArray *arr,
 	return arr->data;
 }
 
+static gconstpointer
+_garray_inaddr_at (GArray *arr,
+                   guint idx,
+                   gboolean IS_IPv4)
+{
+	nm_assert (arr);
+	nm_assert (idx < arr->len);
+
+	if (IS_IPv4)
+		return &g_array_index (arr, in_addr_t, idx);
+	return &g_array_index (arr, struct in6_addr, idx);
+}
+
 static gboolean
 _garray_inaddr_add (GArray **p_arr,
                     int addr_family,
@@ -319,6 +334,250 @@ _strv_ptrarray_merge (GPtrArray **p_dst, const GPtrArray *src)
 
 		g_ptr_array_add (*p_dst, g_strdup (s));
 	}
+}
+
+/*****************************************************************************/
+
+void
+nm_l3_config_data_log (const NML3ConfigData *self,
+                       const char *title,
+                       const char *prefix,
+                       NMLogLevel log_level,
+                       NMLogDomain log_domain)
+{
+	char sbuf[sizeof (_nm_utils_to_string_buffer)];
+	char sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+	int IS_IPv4;
+	guint i;
+
+	if (!nm_logging_enabled (log_level, log_domain))
+		return;
+
+#define _L(...) \
+	_nm_log (log_level, \
+	         log_domain, \
+	         0, \
+	         NULL, \
+	         NULL, \
+	         "%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+	         prefix \
+	         _NM_UTILS_MACRO_REST(__VA_ARGS__))
+
+	if (!prefix)
+		prefix = "";
+
+	if (!self) {
+		_L ("l3cd %s%s%s(NULL)",
+		    NM_PRINT_FMT_QUOTED (title, "\"", title, "\" ", ""));
+		return;
+	}
+
+	nm_assert (!NM_FLAGS_ANY (self->flags, ~(  NM_L3_CONFIG_DAT_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES
+	                                         | NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY_4
+	                                         | NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY_6)));
+
+	_L ("l3cd %s%s%s("NM_HASH_OBFUSCATE_PTR_FMT", ifindex=%d%s%s%s%s)",
+	    NM_PRINT_FMT_QUOTED (title, "\"", title, "\" ", ""),
+	    NM_HASH_OBFUSCATE_PTR (self),
+	    self->ifindex,
+	    NM_PRINT_FMT_QUOTED2 (self->source != NM_IP_CONFIG_SOURCE_UNKNOWN,
+	                          ", source=",
+	                          nmp_utils_ip_config_source_to_string (self->source, sbuf, sizeof (sbuf)),
+	                          ""),
+	      NM_FLAGS_HAS (self->flags, NM_L3_CONFIG_DAT_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES)
+	    ? ", merge-no-default-routes"
+	    : "",
+	    !self->is_sealed ? ", not-sealed" : "");
+
+	if (   self->mtu != 0
+	    || self->ip6_mtu != 0) {
+		_L ("mtu: %u, ip6-mtu: %u",
+		    self->mtu,
+		    self->ip6_mtu);
+	}
+
+	for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+		const int addr_family = IS_IPv4 ? AF_INET : AF_INET6;
+		NMDedupMultiIter iter;
+		const NMPObject *obj;
+
+		i = 0;
+		nm_l3_config_data_iter_obj_for_each (&iter, self, &obj, NMP_OBJECT_TYPE_IP_ADDRESS (IS_IPv4)) {
+			_L ("address%c[%u]: %s",
+			    nm_utils_addr_family_to_char (addr_family),
+			    i,
+			    nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof (sbuf)));
+			i++;
+		}
+
+		if (!IS_IPv4) {
+			if (self->ip6_privacy != NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN) {
+				gs_free char *s = NULL;
+
+				_L ("ip6-privacy: %s",
+				    (s = _nm_utils_enum_to_str_full (nm_setting_ip6_config_privacy_get_type (),
+				                                     self->ip6_privacy,
+				                                     " ",
+				                                     NULL)));
+			}
+		}
+
+		i = 0;
+		nm_l3_config_data_iter_obj_for_each (&iter, self, &obj, NMP_OBJECT_TYPE_IP_ROUTE (IS_IPv4)) {
+			_L ("route%c[%u]: %s%s",
+			    nm_utils_addr_family_to_char (addr_family),
+			    i,
+			    self->best_default_route_x[IS_IPv4] == obj ? "[DEFAULT] " : "",
+			    nmp_object_to_string (obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof (sbuf)));
+			i++;
+		}
+
+		if (self->route_table_sync_x[IS_IPv4] != NM_IP_ROUTE_TABLE_SYNC_MODE_NONE) {
+			_L ("route-table-sync-mode%c: %d",
+			    nm_utils_addr_family_to_char (addr_family),
+			    (int) self->route_table_sync_x[IS_IPv4]);
+		}
+
+		if (!IS_IPv4) {
+			if (   self->ndisc_hop_limit_set
+			    || self->ndisc_reachable_time_msec_set
+			    || self->ndisc_retrans_timer_msec_set) {
+				gsize l = sizeof (sbuf);
+				char *p = sbuf;
+				const char *s_prefix = "ndisc: ";
+
+				if (self->ndisc_hop_limit_set) {
+					nm_utils_strbuf_append (&p,
+					                        &l,
+					                        "%shop-limit=%d",
+					                        s_prefix,
+					                        self->ndisc_hop_limit_val);
+					s_prefix = ", ";
+				}
+				if (self->ndisc_reachable_time_msec_set) {
+					nm_utils_strbuf_append (&p,
+					                        &l,
+					                        "%sreachable-time-msec=%u",
+					                        s_prefix,
+					                        self->ndisc_reachable_time_msec_val);
+					s_prefix = ", ";
+				}
+				if (self->ndisc_retrans_timer_msec_set) {
+					nm_utils_strbuf_append (&p,
+					                        &l,
+					                        "%sretrans-timer-msec=%u",
+					                        s_prefix,
+					                        self->ndisc_retrans_timer_msec_val);
+					s_prefix = ", ";
+				}
+				_L ("%s", sbuf);
+			}
+		}
+
+		if (NM_FLAGS_ANY (self->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY (IS_IPv4))) {
+			_L ("dns-priority%c: %d",
+			    nm_utils_addr_family_to_char (addr_family),
+			    self->dns_priority_x[IS_IPv4]);
+		}
+
+		for (i = 0; i < nm_g_array_len (self->nameservers_x[IS_IPv4]); i++) {
+			_L ("nameserver%c[%u]: %s",
+			    nm_utils_addr_family_to_char (addr_family),
+			    i,
+			    nm_utils_inet_ntop (addr_family,
+			                        _garray_inaddr_at (self->nameservers_x[IS_IPv4], IS_IPv4, i),
+			                        sbuf_addr));
+		}
+
+		for (i = 0; i < nm_g_ptr_array_len (self->domains_x[IS_IPv4]); i++) {
+			_L ("domain%c[%u]: %s",
+			    nm_utils_addr_family_to_char (addr_family),
+			    i,
+			    (const char *) self->domains_x[IS_IPv4]->pdata[i]);
+		}
+
+		for (i = 0; i < nm_g_ptr_array_len (self->searches_x[IS_IPv4]); i++) {
+			_L ("search%c[%u]: %s",
+			    nm_utils_addr_family_to_char (addr_family),
+			    i,
+			    (const char *) self->searches_x[IS_IPv4]->pdata[i]);
+		}
+
+		for (i = 0; i < nm_g_ptr_array_len (self->dns_options_x[IS_IPv4]); i++) {
+			_L ("dns_option%c[%u]: %s",
+			    nm_utils_addr_family_to_char (addr_family),
+			    i,
+			    (const char *) self->dns_options_x[IS_IPv4]->pdata[i]);
+		}
+
+		if (IS_IPv4) {
+			for (i = 0; i < nm_g_array_len (self->wins); i++) {
+				_L ("wins[%u]: %s",
+				    i,
+				    _nm_utils_inet4_ntop (g_array_index (self->wins, in_addr_t, i), sbuf_addr));
+			}
+			for (i = 0; i < nm_g_array_len (self->nis_servers); i++) {
+				_L ("nis-server[%u]: %s",
+				    i,
+				    _nm_utils_inet4_ntop (g_array_index (self->nis_servers, in_addr_t, i), sbuf_addr));
+			}
+			if (self->nis_domain)
+				_L ("nis-domain: %s", self->nis_domain);
+		}
+
+		if (self->dhcp_lease_x[IS_IPv4]) {
+			gs_free NMUtilsNamedValue *options_free = NULL;
+			NMUtilsNamedValue options_buffer[30];
+			NMUtilsNamedValue *options;
+			guint options_len;
+
+			options = nm_utils_named_values_from_strdict (nm_dhcp_lease_get_options (self->dhcp_lease_x[IS_IPv4]),
+			                                              &options_len,
+			                                              options_buffer,
+			                                              &options_free);
+			if (options_len == 0) {
+				_L ("dhcp-lease%c (%u options)",
+				    nm_utils_addr_family_to_char (addr_family),
+				    options_len);
+			}
+			for (i = 0; i < options_len; i++) {
+				_L ("dhcp-lease%c[%u]: \"%s\" => \"%s\"",
+				    nm_utils_addr_family_to_char (addr_family),
+				    i,
+				    options[i].name,
+				    options[i].value_str);
+			}
+		}
+	}
+
+	if (self->mdns != NM_SETTING_CONNECTION_MDNS_DEFAULT) {
+		gs_free char *s = NULL;
+
+		_L ("mdns: %s",
+		    (s = _nm_utils_enum_to_str_full (nm_setting_connection_mdns_get_type (),
+		                                     self->mdns,
+		                                     " ",
+		                                     NULL)));
+	}
+
+	if (self->llmnr != NM_SETTING_CONNECTION_LLMNR_DEFAULT) {
+		gs_free char *s = NULL;
+
+		_L ("llmnr: %s",
+		    (s = _nm_utils_enum_to_str_full (nm_setting_connection_llmnr_get_type (),
+		                                     self->llmnr,
+		                                     " ",
+		                                     NULL)));
+	}
+
+	if (self->metered != NM_TERNARY_DEFAULT) {
+		_L ("metered: %s",
+		      self->metered
+		    ? "yes"
+		    : "no");
+	}
+
+#undef _L
 }
 
 /*****************************************************************************/
@@ -424,7 +683,7 @@ nm_l3_config_data_new (NMDedupMultiIndex *multi_idx,
 	};
 
 	_idx_type_init (&self->idx_addresses_4, NMP_OBJECT_TYPE_IP4_ADDRESS);
-	_idx_type_init (&self->idx_addresses_6, NMP_OBJECT_TYPE_IP4_ADDRESS);
+	_idx_type_init (&self->idx_addresses_6, NMP_OBJECT_TYPE_IP6_ADDRESS);
 	_idx_type_init (&self->idx_routes_4, NMP_OBJECT_TYPE_IP4_ROUTE);
 	_idx_type_init (&self->idx_routes_6, NMP_OBJECT_TYPE_IP6_ROUTE);
 
@@ -434,8 +693,10 @@ nm_l3_config_data_new (NMDedupMultiIndex *multi_idx,
 const NML3ConfigData *
 nm_l3_config_data_ref (const NML3ConfigData *self)
 {
-	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
-	((NML3ConfigData *) self)->ref_count++;
+	if (self) {
+		nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+		((NML3ConfigData *) self)->ref_count++;
+	}
 	return self;
 }
 
@@ -619,6 +880,28 @@ nm_l3_config_data_lookup_obj (const NML3ConfigData *self,
 	return nm_dedup_multi_index_lookup_obj (self->multi_idx,
 	                                        idx,
 	                                        obj);
+}
+
+const NMPlatformIP6Address *
+nm_l3_config_data_lookup_address_6 (const NML3ConfigData *self,
+                                    const struct in6_addr *addr)
+{
+	const NMDedupMultiEntry *head;
+	NMPObject obj_stack;
+
+	nm_assert (_NM_IS_L3_CONFIG_DATA (self, TRUE));
+
+	/* this works only, because the primary key for a Ipv6 address is the
+	 * ifindex and the "struct in6_addr". */
+	nmp_object_stackinit_id_ip6_address (&obj_stack,
+	                                     self->ifindex,
+	                                     addr);
+
+	head = nm_l3_config_data_lookup_obj (self, &obj_stack);
+	if (!head)
+		return NULL;
+
+	return NMP_OBJECT_CAST_IP6_ADDRESS (head->obj);
 }
 
 const NMPObject *
@@ -1321,6 +1604,9 @@ nm_l3_config_data_set_metered (NML3ConfigData *self,
                                NMTernary metered)
 {
 	nm_assert (_NM_IS_L3_CONFIG_DATA (self, FALSE));
+	nm_assert (NM_IN_SET (metered, NM_TERNARY_DEFAULT,
+	                               NM_TERNARY_FALSE,
+	                               NM_TERNARY_TRUE));
 
 	if (self->metered == metered)
 		return FALSE;
@@ -1573,7 +1859,7 @@ _dedup_multi_index_cmp (const NML3ConfigData *a,
 		have_a = nm_platform_dedup_multi_iter_next_obj (&iter_a, &obj_a, obj_type);
 		if (!have_a) {
 			nm_assert (!nm_platform_dedup_multi_iter_next_obj (&iter_b, &obj_b, obj_type));
-			break;
+			return 0;
 		}
 
 		have_b = nm_platform_dedup_multi_iter_next_obj (&iter_b, &obj_b, obj_type);
@@ -1581,8 +1867,6 @@ _dedup_multi_index_cmp (const NML3ConfigData *a,
 
 		NM_CMP_RETURN (nmp_object_cmp (obj_a, obj_b));
 	}
-
-	return 0;
 }
 
 int
@@ -1596,10 +1880,10 @@ nm_l3_config_data_cmp (const NML3ConfigData *a, const NML3ConfigData *b)
 
 	NM_CMP_DIRECT (a->flags, b->flags);
 
-	_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP4_ADDRESS);
-	_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP6_ADDRESS);
-	_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP4_ROUTE);
-	_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP6_ROUTE);
+	NM_CMP_RETURN (_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP4_ADDRESS));
+	NM_CMP_RETURN (_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP6_ADDRESS));
+	NM_CMP_RETURN (_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP4_ROUTE));
+	NM_CMP_RETURN (_dedup_multi_index_cmp (a, b, NMP_OBJECT_TYPE_IP6_ROUTE));
 
 	for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
 		const int addr_family = IS_IPv4 ? AF_INET : AF_INET6;
@@ -2419,17 +2703,20 @@ nm_l3_config_data_merge (NML3ConfigData *self,
 	if (self->ip6_privacy == NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
 		self->ip6_privacy = src->ip6_privacy;
 
-	if (!self->ndisc_hop_limit_set) {
+	if (   !self->ndisc_hop_limit_set
+	    && src->ndisc_hop_limit_set) {
 		self->ndisc_hop_limit_set = TRUE;
 		self->ndisc_hop_limit_val = src->ndisc_hop_limit_val;
 	}
 
-	if (!self->ndisc_reachable_time_msec_set) {
+	if (   !self->ndisc_reachable_time_msec_set
+	    && src->ndisc_reachable_time_msec_set) {
 		self->ndisc_reachable_time_msec_set = TRUE;
 		self->ndisc_reachable_time_msec_val = src->ndisc_reachable_time_msec_val;
 	}
 
-	if (!self->ndisc_retrans_timer_msec_set) {
+	if (   !self->ndisc_retrans_timer_msec_set
+	    && src->ndisc_retrans_timer_msec_set) {
 		self->ndisc_retrans_timer_msec_set = TRUE;
 		self->ndisc_retrans_timer_msec_val = src->ndisc_retrans_timer_msec_val;
 	}

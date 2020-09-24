@@ -314,6 +314,7 @@ if [ $HAS_ERRORS -eq 0 ]; then
         'test-address-linux' | \
         'test-cleanup-linux' | \
         'test-config' | \
+        'test-l3cfg' | \
         'test-link-linux' | \
         'test-lldp' | \
         'test-nm-client' | \

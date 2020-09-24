@@ -4117,12 +4117,14 @@ src_tests_ldadd = \
 check_programs += \
 	src/tests/test-core \
 	src/tests/test-core-with-expect \
+	src/tests/test-dcb \
 	src/tests/test-ip4-config \
 	src/tests/test-ip6-config \
-	src/tests/test-dcb \
+	src/tests/test-l3cfg \
 	src/tests/test-systemd \
+	src/tests/test-utils \
 	src/tests/test-wired-defname \
-	src/tests/test-utils
+	$(NULL)
 
 src_tests_test_ip4_config_CPPFLAGS = $(src_cppflags_test)
 src_tests_test_ip4_config_LDFLAGS = $(src_tests_ldflags)
@@ -4152,13 +4154,18 @@ src_tests_test_utils_CPPFLAGS = $(src_cppflags_test)
 src_tests_test_utils_LDFLAGS = $(src_tests_ldflags)
 src_tests_test_utils_LDADD = $(src_tests_ldadd)
 
-$(src_tests_test_ip4_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_tests_test_ip6_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_tests_test_dcb_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+src_tests_test_l3cfg_CPPFLAGS = $(src_cppflags_test)
+src_tests_test_l3cfg_LDFLAGS = $(src_devices_tests_ldflags)
+src_tests_test_l3cfg_LDADD = $(src_tests_ldadd)
+
 $(src_tests_test_core_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_tests_test_core_with_expect_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_tests_test_wired_defname_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_tests_test_dcb_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_tests_test_ip4_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_tests_test_ip6_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_tests_test_l3cfg_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 $(src_tests_test_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_tests_test_wired_defname_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 src_tests_test_systemd_CPPFLAGS = \
 	$(src_libnm_systemd_core_la_cppflags) \

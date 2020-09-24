@@ -344,7 +344,7 @@ struct _NMPlatformIP4Address {
 	 * addresses that only differ by their peer's network-part.
 	 *
 	 * Beware that for most cases, NetworkManager doesn't want to set an explicit
-	 * peer-address. Hoever, that corresponds to setting the peer address to @address
+	 * peer-address. However, that corresponds to setting the peer address to @address
 	 * itself. Leaving peer-address unset/zero, means explicitly setting the peer
 	 * address to 0.0.0.0, which you probably don't want.
 	 * */
@@ -376,6 +376,12 @@ typedef union {
 } NMPlatformIPXAddress;
 
 #undef __NMPlatformIPAddress_COMMON
+
+#define NM_PLATFORM_IP4_ADDRESS_INIT(...) \
+	(&((const NMPlatformIP4Address) { __VA_ARGS__ }))
+
+#define NM_PLATFORM_IP6_ADDRESS_INIT(...) \
+	(&((const NMPlatformIP6Address) { __VA_ARGS__ }))
 
 /* Default value for adding an IPv4 route. This is also what iproute2 does.
  * Note that contrary to IPv6, you can add routes with metric 0 and it is even
@@ -1863,7 +1869,7 @@ int nm_platform_link_wireguard_change (NMPlatform *self,
                                        guint peers_len,
                                        NMPlatformWireGuardChangeFlags change_flags);
 
-const NMPlatformIP6Address *nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address);
+const NMPlatformIP6Address *nm_platform_ip6_address_get (NMPlatform *self, int ifindex, const struct in6_addr *address);
 
 gboolean nm_platform_object_delete (NMPlatform *self, const NMPObject *route);
 

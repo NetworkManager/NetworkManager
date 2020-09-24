@@ -312,11 +312,6 @@ typedef struct _NMDevicePrivate {
 	};
 
 	union {
-		NML3Cfg *const l3cfg;
-		NML3Cfg *l3cfg_;
-	};
-
-	union {
 		const int ifindex;
 		int       ifindex_;
 	};
@@ -324,8 +319,6 @@ typedef struct _NMDevicePrivate {
 		const int ip_ifindex;
 		int       ip_ifindex_;
 	};
-
-	const NML3ConfigData *l3cds[_L3_CONFIG_DATA_TYPE_NUM];
 
 	NMNetnsSharedIPHandle *shared_ip_handle;
 
@@ -433,14 +426,6 @@ typedef struct _NMDevicePrivate {
 	 * NM changes the MTU it sets @carrier_wait_until_ms to CARRIER_WAIT_TIME_AFTER_MTU_MS
 	 * in the future. This is used to extend the grace period in this particular case. */
 	gint64          carrier_wait_until_ms;
-
-	union {
-		struct {
-			NML3ConfigMergeFlags l3config_merge_flags_6;
-			NML3ConfigMergeFlags l3config_merge_flags_4;
-		};
-		NML3ConfigMergeFlags l3config_merge_flags_x[2];
-	};
 
 	union {
 		const NMDeviceSysIfaceState sys_iface_state;
@@ -2785,246 +2770,6 @@ _set_ip_state (NMDevice *self, int addr_family, NMDeviceIPState new_state)
 
 /*****************************************************************************/
 
-static L3ConfigDataType
-_dev_l3_config_data_tag_to_type (NMDevice *self,
-                                 gconstpointer tag)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	int d;
-
-	if (   tag < ((gpointer) &priv->l3cds[0])
-	    || tag >= ((gpointer) &priv->l3cds[G_N_ELEMENTS (priv->l3cds)]))
-		return _L3_CONFIG_DATA_TYPE_NONE;
-
-	d = ((const NML3ConfigData **) tag) - (&priv->l3cds[0]);
-
-	nm_assert (d >= 0);
-	nm_assert (d < _L3_CONFIG_DATA_TYPE_NUM);
-	nm_assert (tag == &priv->l3cds[d]);
-	return d;
-}
-
-static NML3ConfigMergeFlags
-_dev_l3_get_merge_flags (NMDevice *self,
-                         L3ConfigDataType type)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	NML3ConfigMergeFlags flags;
-	NMConnection *connection;
-	NMSettingIPConfig *s_ip;
-
-	if (G_UNLIKELY (!priv->l3config_merge_flags_has)) {
-		int IS_IPv4;
-
-		connection = nm_device_get_applied_connection (self);
-
-		for (IS_IPv4 = 0; IS_IPv4 < 2; IS_IPv4++) {
-			flags = NM_L3_CONFIG_MERGE_FLAGS_NONE;
-
-			if (   connection
-			    && (s_ip = nm_connection_get_setting_ip_config (connection, IS_IPv4 ? AF_INET : AF_INET6))) {
-
-				if (nm_setting_ip_config_get_ignore_auto_routes (s_ip))
-					flags |= NM_L3_CONFIG_MERGE_FLAGS_NO_ROUTES;
-
-				if (nm_setting_ip_config_get_ignore_auto_dns (s_ip))
-					flags |= NM_L3_CONFIG_MERGE_FLAGS_NO_DNS;
-
-				if (   nm_setting_ip_config_get_never_default (s_ip)
-				    || nm_setting_ip_config_get_gateway (s_ip)) {
-					/* if the connection has an explicit gateway, we also ignore
-					 * the default routes from other sources. */
-					flags |= NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES;
-				}
-			}
-
-			priv->l3config_merge_flags_x[IS_IPv4] = flags;
-		}
-		priv->l3config_merge_flags_has = TRUE;
-	}
-
-	switch (type) {
-
-	case L3_CONFIG_DATA_TYPE_SETTING:
-	case L3_CONFIG_DATA_TYPE_LL_4:
-		return NM_L3_CONFIG_MERGE_FLAGS_NONE;
-
-	case L3_CONFIG_DATA_TYPE_DHCP_4:
-	case L3_CONFIG_DATA_TYPE_DEV_4:
-		return priv->l3config_merge_flags_4;
-
-	case L3_CONFIG_DATA_TYPE_AC_6:
-	case L3_CONFIG_DATA_TYPE_DHCP_6:
-	case L3_CONFIG_DATA_TYPE_DEV_6:
-		return priv->l3config_merge_flags_6;
-
-	case _L3_CONFIG_DATA_TYPE_NUM:
-	case _L3_CONFIG_DATA_TYPE_NONE:
-		break;
-	}
-	return nm_assert_unreachable_val (NM_L3_CONFIG_MERGE_FLAGS_NONE);
-}
-
-_nm_unused /* FIXME(l3cfg) */
-static gboolean
-_dev_l3_register_l3cds_set_one (NMDevice *self,
-                                L3ConfigDataType l3cd_type,
-                                const NML3ConfigData *l3cd)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	nm_auto_unref_l3cd const NML3ConfigData *l3cd_old_free = NULL;
-	const NML3ConfigData *l3cd_old;
-	gboolean changed = FALSE;
-
-	l3cd_old = priv->l3cds[l3cd_type];
-	if (l3cd != priv->l3cds[l3cd_type]) {
-		l3cd_old_free = g_steal_pointer (&priv->l3cds[l3cd_type]);
-		if (l3cd)
-			priv->l3cds[l3cd_type] = nm_l3_config_data_ref_and_seal (l3cd);
-	}
-
-	if (priv->l3cfg) {
-		if (nm_l3cfg_add_config (priv->l3cfg,
-		                         &priv->l3cds[l3cd_type],
-		                         FALSE,
-		                         priv->l3cds[l3cd_type],
-		                         l3cd_type,
-		                         default_route_metric_penalty_get (self, AF_INET),
-		                         default_route_metric_penalty_get (self, AF_INET6),
-		                         _prop_get_ipv4_dad_timeout (self),
-		                         _dev_l3_get_merge_flags (self, l3cd_type)))
-			changed = TRUE;
-
-		if (   l3cd_old
-		    && l3cd_old != l3cd) {
-			if (nm_l3cfg_remove_config (priv->l3cfg, &priv->l3cds[l3cd_type], l3cd_old))
-				changed = TRUE;
-		}
-	}
-
-	return changed;
-}
-
-static gboolean
-_dev_l3_register_l3cds (NMDevice *self,
-                        NML3Cfg *l3cfg,
-                        gboolean do_add /* else remove */)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	guint32 default_route_penalty_4 = 0;
-	guint32 default_route_penalty_6 = 0;
-	guint32 acd_timeout_msec = 0;
-	gboolean is_external;
-	gboolean changed;
-	int i;
-
-	if (!l3cfg)
-		return FALSE;
-
-	is_external = nm_device_sys_iface_state_is_external (self);
-	if (!is_external) {
-		default_route_penalty_4 = default_route_metric_penalty_get (self, AF_INET);
-		default_route_penalty_6 = default_route_metric_penalty_get (self, AF_INET6);
-		acd_timeout_msec = _prop_get_ipv4_dad_timeout (self);
-	}
-
-	changed = FALSE;
-	for (i = 0; i < G_N_ELEMENTS (priv->l3cds); i++) {
-		if (!priv->l3cds[i])
-			continue;
-		if (!do_add) {
-			if (nm_l3cfg_remove_config (l3cfg, &priv->l3cds[i], priv->l3cds[i]))
-				changed = TRUE;
-			continue;
-		}
-		if (is_external)
-			continue;
-		if (nm_l3cfg_add_config (l3cfg,
-		                         &priv->l3cds[i],
-		                         FALSE,
-		                         priv->l3cds[i],
-		                         i,
-		                         default_route_penalty_4,
-		                         default_route_penalty_6,
-		                         acd_timeout_msec,
-		                         _dev_l3_get_merge_flags (self, i)))
-			changed = TRUE;
-	}
-
-	return changed;
-}
-
-_nm_unused /* FIXME(l3cfg) */
-static gboolean
-_dev_l3_platform_commit (NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	gboolean success;
-
-	if (!priv->l3cfg)
-		return FALSE;
-
-	if (nm_device_sys_iface_state_is_external (self))
-		return TRUE;
-
-	success = nm_l3cfg_platform_commit (priv->l3cfg,
-	                                      nm_device_sys_iface_state_is_external_or_assume (self)
-	                                    ? NM_L3_CFG_COMMIT_TYPE_ASSUME
-	                                    : NM_L3_CFG_COMMIT_TYPE_UPDATE,
-	                                    AF_UNSPEC,
-	                                    NULL);
-	return success;
-}
-
-static void
-_dev_l3_cfg_acd_maybe_comlete (NMDevice *self)
-{
-	/* FIXME(l3cfg) */
-}
-
-static void
-_dev_l3_cfg_notify_cb (NML3Cfg *l3cfg,
-                       int notify_type_i,
-                       const NML3ConfigNotifyPayload *payload,
-                       NMDevice *self)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	nm_assert (l3cfg == priv->l3cfg);
-
-	switch ((NML3ConfigNotifyType) notify_type_i) {
-	case NM_L3_CONFIG_NOTIFY_TYPE_ACD_FAILED: {
-		const NML3ConfigNotifyPayloadAcdFailedSource *sources = payload->acd_failed.sources;
-		guint sources_len = payload->acd_failed.sources_len;
-		guint i;
-
-		for (i = 0; i < sources_len; i++) {
-			L3ConfigDataType l3cd_type = _dev_l3_config_data_tag_to_type (self, sources[i].tag);
-
-			if (NM_IN_SET (l3cd_type, L3_CONFIG_DATA_TYPE_DHCP_4)) {
-				nm_dhcp_client_decline (priv->dhcp_data_4.client, "Address conflict detected", NULL);
-				nm_device_ip_method_failed (self, AF_INET,
-				                            NM_DEVICE_STATE_REASON_IP_ADDRESS_DUPLICATE);
-				return;
-			}
-		}
-		_dev_l3_cfg_acd_maybe_comlete (self);
-		return;
-	}
-	case NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED:
-		_dev_l3_cfg_acd_maybe_comlete (self);
-		return;
-	case NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED:
-		/* FIXME(l3cfg) */
-		return;
-	case _NM_L3_CONFIG_NOTIFY_TYPE_NUM:
-		break;
-	}
-	nm_assert_not_reached ();
-}
-
-/*****************************************************************************/
-
 const char *
 nm_device_get_udi (NMDevice *self)
 {
@@ -3045,9 +2790,6 @@ static gboolean
 _set_ifindex (NMDevice *self, int ifindex, gboolean is_ip_ifindex)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	gs_unref_object NML3Cfg *l3cfg_old = NULL;
-	gboolean l3_changed;
-	int ip_ifindex_new;
 	int *p_ifindex;
 
 	if (ifindex < 0)
@@ -3062,46 +2804,13 @@ _set_ifindex (NMDevice *self, int ifindex, gboolean is_ip_ifindex)
 
 	*p_ifindex = ifindex;
 
-	ip_ifindex_new = nm_device_get_ip_ifindex (self);
-
-	if (priv->l3cfg) {
-		if (   ip_ifindex_new <= 0
-		    || ip_ifindex_new != nm_l3cfg_get_ifindex (priv->l3cfg)) {
-			g_signal_handlers_disconnect_by_func (priv->l3cfg,
-			                                      G_CALLBACK (_dev_l3_cfg_notify_cb),
-			                                      self);
-			l3cfg_old = g_steal_pointer (&priv->l3cfg_);
-		}
-	}
-	if (   !priv->l3cfg
-	    && ip_ifindex_new > 0) {
-		priv->l3cfg_ = nm_netns_access_l3cfg (priv->netns, ip_ifindex_new);
-
-		g_signal_connect (priv->l3cfg,
-		                  NM_L3CFG_SIGNAL_NOTIFY,
-		                  G_CALLBACK (_dev_l3_cfg_notify_cb),
-		                  self);
-	}
-
 	_LOGD (LOGD_DEVICE,
-	       "ifindex: set %sifindex %d%s%s%s%s%s%s",
+	       "ifindex: set %sifindex %d",
 	       is_ip_ifindex ? "ip-" : "",
-	       ifindex,
-	       NM_PRINT_FMT_QUOTED (l3cfg_old   && l3cfg_old != priv->l3cfg, " (old-l3cfg: ", nm_hash_obfuscated_ptr_str_a (l3cfg_old),   ")", ""),
-	       NM_PRINT_FMT_QUOTED (priv->l3cfg && l3cfg_old != priv->l3cfg, " (l3cfg: ",     nm_hash_obfuscated_ptr_str_a (priv->l3cfg), ")", ""));
+	       ifindex);
 
 	if (!is_ip_ifindex)
 		_notify (self, PROP_IFINDEX);
-
-	l3_changed = FALSE;
-	if (_dev_l3_register_l3cds (self, priv->l3cfg, TRUE))
-		l3_changed = TRUE;
-	if (_dev_l3_register_l3cds (self, l3cfg_old, FALSE))
-		l3_changed = TRUE;
-
-	if (l3_changed) {
-		/* FIXME(l3cfg) */
-	}
 
 	return TRUE;
 }
@@ -8231,7 +7940,6 @@ activate_stage1_device_prepare (NMDevice *self)
 
 	priv->v4_route_table_initialized = FALSE;
 	priv->v6_route_table_initialized = FALSE;
-	priv->l3config_merge_flags_has = FALSE;
 
 	_set_ip_state (self, AF_INET, NM_DEVICE_IP_STATE_NONE);
 	_set_ip_state (self, AF_INET6, NM_DEVICE_IP_STATE_NONE);
@@ -12107,7 +11815,7 @@ dad6_add_pending_address (NMDevice *self,
 
 	pl_addr = nm_platform_ip6_address_get (platform,
 	                                       ifindex,
-	                                       *address);
+	                                       address);
 	if (   pl_addr
 	    && NM_FLAGS_HAS (pl_addr->n_ifa_flags, IFA_F_TENTATIVE)
 	    && !NM_FLAGS_HAS (pl_addr->n_ifa_flags, IFA_F_DADFAILED)
@@ -12843,7 +12551,6 @@ check_and_reapply_connection (NMDevice *self,
 
 	priv->v4_route_table_initialized = FALSE;
 	priv->v6_route_table_initialized = FALSE;
-	priv->l3config_merge_flags_has = FALSE;
 
 	/**************************************************************************
 	 * Reapply changes
@@ -15925,7 +15632,6 @@ _cleanup_generic_post (NMDevice *self, CleanupType cleanup_type)
 
 	priv->v4_route_table_initialized = FALSE;
 	priv->v6_route_table_initialized = FALSE;
-	priv->l3config_merge_flags_has = FALSE;
 
 	priv->v4_route_table_all_sync_before = FALSE;
 	priv->v6_route_table_all_sync_before = FALSE;

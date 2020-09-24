@@ -84,6 +84,173 @@ nmtstp_platform_ip6_address_get_all (NMPlatform *self, int ifindex)
 	return _ipx_address_get_all (self, ifindex, NMP_OBJECT_TYPE_IP6_ADDRESS);
 }
 
+const NMPlatformIPAddress *
+nmtstp_platform_ip_address_find (NMPlatform *self,
+                                 int ifindex,
+                                 int addr_family,
+                                 gconstpointer addr)
+{
+	const gboolean IS_IPv4 = NM_IS_IPv4 (addr_family);
+	const NMPlatformIPAddress *found = NULL;
+	NMDedupMultiIter iter;
+	const NMPObject *obj;
+	NMPLookup lookup;
+
+	g_assert (NM_IS_PLATFORM (self));
+	nm_assert (ifindex >= 0);
+	nm_assert_addr_family (addr_family);
+	nm_assert (addr);
+
+	nmp_lookup_init_object (&lookup,
+	                        NMP_OBJECT_TYPE_IP_ADDRESS (IS_IPv4),
+	                        ifindex);
+	nm_platform_iter_obj_for_each (&iter, self, &lookup, &obj) {
+		const NMPlatformIPAddress *a = NMP_OBJECT_CAST_IP_ADDRESS (obj);
+
+		g_assert (NMP_OBJECT_GET_ADDR_FAMILY (obj) == addr_family);
+		g_assert (ifindex <= 0 || a->ifindex == ifindex);
+
+		if (memcmp (addr, a->address_ptr, nm_utils_addr_family_to_size (addr_family)) != 0)
+			continue;
+
+		g_assert (!found);
+		found = a;
+	}
+
+	if (   !IS_IPv4
+	    && ifindex > 0)
+		g_assert (found == (const NMPlatformIPAddress *) nm_platform_ip6_address_get (self, ifindex, addr));
+
+	return found;
+}
+
+/*****************************************************************************/
+
+typedef struct {
+	NMIPAddr addr;
+	int addr_family;
+	bool found:1;
+} IPAddressesAssertData;
+
+void
+_nmtstp_platform_ip_addresses_assert (const char *filename,
+                                      int lineno,
+                                      NMPlatform *self,
+                                      int ifindex,
+                                      gboolean force_exact_4,
+                                      gboolean force_exact_6,
+                                      gboolean ignore_ll6,
+                                      guint addrs_len,
+                                      const char *const*addrs)
+{
+	gs_free IPAddressesAssertData *addrs_bin = NULL;
+	int IS_IPv4;
+	guint i;
+
+	g_assert (filename);
+	g_assert (lineno >= 0);
+	g_assert (NM_IS_PLATFORM (self));
+	g_assert (ifindex >= 0);
+
+	addrs_bin = g_new (IPAddressesAssertData, addrs_len);
+
+	for (i = 0; i < addrs_len; i++) {
+		const char *addrstr = addrs[i];
+		int addr_family;
+		NMIPAddr a;
+
+		if (!addrstr) {
+			addr_family = AF_UNSPEC;
+			a = nm_ip_addr_zero;
+		} else if (inet_pton (AF_INET, addrstr, &a) == 1)
+			addr_family = AF_INET;
+		else if (inet_pton (AF_INET6, addrstr, &a) == 1)
+			addr_family = AF_INET6;
+		else
+			g_error ("%s:%d: invalid IP address in argument: %s", filename, lineno, addrstr);
+
+		addrs_bin[i] = (IPAddressesAssertData) {
+			.addr_family = addr_family,
+			.addr        = a,
+			.found       = FALSE,
+		};
+	}
+
+	for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+		const int addr_family = IS_IPv4 ? AF_INET : AF_INET6;
+		gs_unref_ptrarray GPtrArray *plat_addrs = NULL;
+		NMPLookup lookup;
+		guint j;
+
+		plat_addrs = nm_platform_lookup_clone (self,
+		                                       nmp_lookup_init_object (&lookup,
+		                                                               NMP_OBJECT_TYPE_IP_ADDRESS (IS_IPv4),
+		                                                               ifindex),
+		                                       NULL,
+		                                       NULL);
+
+		for (i = 0; i < addrs_len; i++) {
+			IPAddressesAssertData *addr_bin = &addrs_bin[i];
+
+			if (addr_bin->addr_family != addr_family)
+				continue;
+
+			g_assert (!addr_bin->found);
+			for (j = 0; j < nm_g_ptr_array_len (plat_addrs); ) {
+				const NMPlatformIPAddress *a = NMP_OBJECT_CAST_IP_ADDRESS (plat_addrs->pdata[j]);
+
+				if (memcmp (&addr_bin->addr, a->address_ptr, nm_utils_addr_family_to_size (addr_family)) != 0) {
+					j++;
+					continue;
+				}
+
+				g_assert (!addr_bin->found);
+				addr_bin->found = TRUE;
+				g_ptr_array_remove_index_fast (plat_addrs, j);
+			}
+
+			if (!addr_bin->found) {
+				char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+
+				g_error ("%s:%d: IPv%c address %s was not found on ifindex %d",
+				         filename,
+				         lineno,
+				         nm_utils_addr_family_to_char (addr_bin->addr_family),
+				         nm_utils_inet_ntop (addr_bin->addr_family, &addr_bin->addr, sbuf),
+				         ifindex);
+			}
+		}
+		if (   !IS_IPv4
+		    && ignore_ll6
+		    && nm_g_ptr_array_len (plat_addrs) > 0) {
+			/* we prune all remaining, non-matching IPv6 link local addresses. */
+			for (j = 0; j < nm_g_ptr_array_len (plat_addrs); ) {
+				const NMPlatformIPAddress *a = NMP_OBJECT_CAST_IP_ADDRESS (plat_addrs->pdata[j]);
+
+				if (!IN6_IS_ADDR_LINKLOCAL (a->address_ptr)) {
+					j++;
+					continue;
+				}
+
+				g_ptr_array_remove_index_fast (plat_addrs, j);
+			}
+		}
+		if (   (IS_IPv4 ? force_exact_4 : force_exact_6)
+		    && nm_g_ptr_array_len (plat_addrs) > 0) {
+			char sbuf[sizeof (_nm_utils_to_string_buffer)];
+
+			g_error ("%s:%d: %u IPv%c addresses found on ifindex %d that should not be there (one is %s)",
+			         filename,
+			         lineno,
+			         plat_addrs->len,
+			         nm_utils_addr_family_to_char (addr_family),
+			         ifindex,
+			         nmp_object_to_string (plat_addrs->pdata[0], NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof (sbuf)));
+		}
+	}
+
+}
+
 /*****************************************************************************/
 
 gboolean
@@ -915,7 +1082,7 @@ _ip_address_add (NMPlatform *platform,
 			g_assert (label == NULL);
 			g_assert (flags == 0);
 
-			a = nm_platform_ip6_address_get (platform, ifindex, address->addr6);
+			a = nm_platform_ip6_address_get (platform, ifindex, &address->addr6);
 			if (   a
 			    && !memcmp (nm_platform_ip6_address_get_peer (a),
 			                (IN6_IS_ADDR_UNSPECIFIED (&peer_address->addr6) || IN6_ARE_ADDR_EQUAL (&address->addr6, &peer_address->addr6))
@@ -1060,7 +1227,7 @@ _ip_address_del (NMPlatform *platform,
 		if (is_v4)
 			had_address = !!nm_platform_ip4_address_get (platform, ifindex, address->addr4, plen, peer_address->addr4);
 		else
-			had_address = !!nm_platform_ip6_address_get (platform, ifindex, address->addr6);
+			had_address = !!nm_platform_ip6_address_get (platform, ifindex, &address->addr6);
 
 		if (is_v4) {
 			success = nmtstp_run_command ("ip address delete %s%s%s/%d dev %s",
@@ -1112,7 +1279,7 @@ _ip_address_del (NMPlatform *platform,
 		} else {
 			const NMPlatformIP6Address *a;
 
-			a = nm_platform_ip6_address_get (platform, ifindex, address->addr6);
+			a = nm_platform_ip6_address_get (platform, ifindex, &address->addr6);
 			if (!a)
 				break;
 		}

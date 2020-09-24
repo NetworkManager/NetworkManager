@@ -262,6 +262,55 @@ GArray *nmtstp_platform_ip6_address_get_all (NMPlatform *self, int ifindex);
 
 /*****************************************************************************/
 
+const NMPlatformIPAddress *nmtstp_platform_ip_address_find (NMPlatform *self,
+                                                            int ifindex,
+                                                            int addr_family,
+                                                            gconstpointer addr);
+
+static inline const NMPlatformIP4Address *
+nmtstp_platform_ip4_address_find (NMPlatform *self,
+                                  int ifindex,
+                                  in_addr_t addr)
+{
+	return (const NMPlatformIP4Address *) nmtstp_platform_ip_address_find (self, ifindex, AF_INET, &addr);
+}
+
+static inline const NMPlatformIP6Address *
+nmtstp_platform_ip6_address_find (NMPlatform *self,
+                                  int ifindex,
+                                  const struct in6_addr *addr)
+{
+	return (const NMPlatformIP6Address *) nmtstp_platform_ip_address_find (self, ifindex, AF_INET6, addr);
+}
+
+void _nmtstp_platform_ip_addresses_assert (const char *filename,
+                                           int lineno,
+                                           NMPlatform *self,
+                                           int ifindex,
+                                           gboolean force_exact_4,
+                                           gboolean force_exact_6,
+                                           gboolean ignore_ll6,
+                                           guint addrs_len,
+                                           const char *const*addrs);
+
+#define nmtstp_platform_ip_addresses_assert(self, \
+                                            ifindex, \
+                                            force_exact_4, \
+                                            force_exact_6, \
+                                            ignore_ll6, \
+                                            ...) \
+	_nmtstp_platform_ip_addresses_assert (__FILE__, \
+	                                      __LINE__, \
+	                                      (self), \
+	                                      (ifindex), \
+	                                      (force_exact_4), \
+	                                      (force_exact_6), \
+	                                      (ignore_ll6), \
+	                                      NM_NARG (__VA_ARGS__), \
+	                                      ((const char *const[]) { "dummy", ##__VA_ARGS__, NULL }) + 1)
+
+/*****************************************************************************/
+
 static inline gboolean
 _nmtstp_platform_routing_rules_get_all_predicate (const NMPObject *obj,
                                                   gpointer user_data)

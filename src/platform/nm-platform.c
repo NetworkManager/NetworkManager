@@ -3568,14 +3568,16 @@ nm_platform_ip4_address_get (NMPlatform *self, int ifindex, in_addr_t address, g
 }
 
 const NMPlatformIP6Address *
-nm_platform_ip6_address_get (NMPlatform *self, int ifindex, struct in6_addr address)
+nm_platform_ip6_address_get (NMPlatform *self, int ifindex, const struct in6_addr *address)
 {
 	NMPObject obj_id;
 	const NMPObject *obj;
 
 	_CHECK_SELF (self, klass, NULL);
 
-	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, &address);
+	nm_assert (address);
+
+	nmp_object_stackinit_id_ip6_address (&obj_id, ifindex, address);
 	obj = nmp_cache_lookup_obj (nm_platform_get_cache (self), &obj_id);
 	nm_assert (!obj || nmp_object_is_visible (obj));
 	return NMP_OBJECT_CAST_IP6_ADDRESS (obj);
@@ -4186,7 +4188,7 @@ _err_inval_due_to_ipv6_tentative_pref_src (NMPlatform *self, const NMPObject *ob
 	if (IN6_IS_ADDR_UNSPECIFIED (&r->pref_src))
 		return FALSE;
 
-	a = nm_platform_ip6_address_get (self, r->ifindex, r->pref_src);
+	a = nm_platform_ip6_address_get (self, r->ifindex, &r->pref_src);
 	if (!a)
 		return FALSE;
 	if (   !NM_FLAGS_HAS (a->n_ifa_flags, IFA_F_TENTATIVE)
