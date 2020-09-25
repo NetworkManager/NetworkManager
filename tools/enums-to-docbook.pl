@@ -14,6 +14,7 @@
 use strict;
 use warnings;
 
+our $enum_name;
 our $name;
 our $desc;
 our $choice;
@@ -75,6 +76,7 @@ chomp;
 
 if (/^\/\*\*$/) {
 	# Start of a documentation comment
+	$enum_name = undef;
 	$name = '';
 	$desc = '';
 	$choice = undef;
@@ -118,11 +120,24 @@ if (/^\/\*\*$/) {
 } elsif (/^\s+([^,\s]+),?$/) {
 	# A choice without a literal value
 	next unless @choices;
-	die "Saw enum value '$1', but didn't see start of enum before" unless defined $val;
-	my ($this) = grep { $_->[0] eq $1 } @choices;
-	die "Documentation for value '$1' missing" unless $this;
-	$val = inc $val;
-	$this->[2] = "= <literal>$val</literal>";
+
+	if (defined $enum_name) {
+		next unless $enum_name;
+		$val = $1;
+		my ($this) = grep { $_->[0] eq $enum_name } @choices;
+		die "Documentation for value '$1' missing" unless $this;
+		$this->[2] = "= <literal>$val</literal>";
+		$enum_name = undef;
+	} else {
+		die "Saw enum value '$1', but didn't see start of enum before" unless defined $val;
+		my ($this) = grep { $_->[0] eq $1 } @choices;
+		die "Documentation for value '$1' missing" unless $this;
+		$val = inc $val;
+		$this->[2] = "= <literal>$val</literal>";
+	}
+} elsif (/^\s+(\S+)\s+=$/) {
+	next unless @choices;
+	$enum_name = $1
 } elsif (/^\} ([^;]+);/) {
 	# End of an enum
 	next unless defined $name;
