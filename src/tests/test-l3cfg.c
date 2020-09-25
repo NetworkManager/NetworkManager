@@ -302,7 +302,7 @@ test_l3cfg(gconstpointer test_data)
                           LOGD_PLATFORM);
 
     _test_l3cfg_data_set_notify_type(tdata, TEST_L3CFG_NOTIFY_TYPE_COMMIT_1);
-    nm_l3cfg_platform_commit(l3cfg0, NM_L3_CFG_COMMIT_TYPE_REAPPLY);
+    nm_l3cfg_commit(l3cfg0, NM_L3_CFG_COMMIT_TYPE_REAPPLY);
     g_assert_cmpint(tdata->post_commit_event_count, ==, 1);
     _test_l3cfg_data_set_notify_type(tdata, TEST_L3CFG_NOTIFY_TYPE_NONE);
 

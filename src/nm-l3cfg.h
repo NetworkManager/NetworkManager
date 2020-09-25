@@ -242,7 +242,9 @@ typedef enum _nm_packed {
 
 } NML3CfgCommitType;
 
-gboolean nm_l3cfg_platform_commit(NML3Cfg *self, NML3CfgCommitType commit_type);
+void nm_l3cfg_commit(NML3Cfg *self, NML3CfgCommitType commit_type);
+
+void nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self);
 
 /*****************************************************************************/
 

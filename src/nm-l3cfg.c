@@ -178,7 +178,7 @@ typedef struct _NML3CfgPrivate {
     /* This is for rate-limiting the creation of nacd instance. */
     GSource *nacd_instance_ensure_retry;
 
-    GSource *acd_ready_on_idle_source;
+    GSource *commit_on_idle_source;
 
     guint64 pseudo_timestamp_counter;
 
@@ -246,6 +246,8 @@ G_DEFINE_TYPE(NML3Cfg, nm_l3cfg, G_TYPE_OBJECT)
     G_STMT_END
 
 /*****************************************************************************/
+
+static void _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle);
 
 static void _property_emit_notify(NML3Cfg *self, NML3CfgPropertyEmitType emit_type);
 
@@ -962,18 +964,6 @@ _acd_data_find_track(const AcdData *       acd_data,
 
 /*****************************************************************************/
 
-static void
-_l3_acd_platform_commit_acd_update(NML3Cfg *self)
-{
-    /* The idea with NML3Cfg is that multiple users (NMDevice/NMVpnConnection) share one layer 3 configuration
-     * and push their (portion of) IP configuration to it. That implies, that any user may issue nm_l3cfg_platform_commit()
-     * at any time, in order to say that a new configuration is ready.
-     *
-     * This makes the mechanism also suitable for internally triggering a commit when ACD completes. */
-    _LOGT("acd: acd update now");
-    nm_l3cfg_platform_commit(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
-}
-
 static gboolean
 _acd_has_valid_link(const NMPObject *obj,
                     const guint8 **  out_addr_bin,
@@ -1126,8 +1116,7 @@ _l3_acd_nacd_instance_ensure_retry_cb(gpointer user_data)
     nm_clear_g_source_inst(&self->priv.p->nacd_instance_ensure_retry);
 
     _l3_changed_configs_set_dirty(self);
-    _l3_acd_platform_commit_acd_update(self);
-
+    nm_l3cfg_commit(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
     return G_SOURCE_REMOVE;
 }
 
@@ -1148,12 +1137,8 @@ _l3_acd_nacd_instance_reset(NML3Cfg *self, NMTernary start_timer, gboolean acd_d
 
     switch (start_timer) {
     case NM_TERNARY_FALSE:
-        self->priv.p->nacd_instance_ensure_retry =
-            nm_g_idle_source_new(G_PRIORITY_DEFAULT,
-                                 _l3_acd_nacd_instance_ensure_retry_cb,
-                                 self,
-                                 NULL);
-        g_source_attach(self->priv.p->nacd_instance_ensure_retry, NULL);
+        _l3_changed_configs_set_dirty(self);
+        nm_l3cfg_commit_on_idle_schedule(self);
         break;
     case NM_TERNARY_TRUE:
         self->priv.p->nacd_instance_ensure_retry =
@@ -1423,20 +1408,6 @@ _l3_acd_data_add_all(NML3Cfg *self, const L3ConfigData *const *infos, guint info
      * interface. */
     c_list_for_each_entry (acd_data, &self->priv.p->acd_lst_head, acd_lst)
         _l3_acd_data_state_change(self, acd_data, ACD_STATE_CHANGE_MODE_INIT, NULL);
-}
-
-static gboolean
-_l3_acd_ready_on_idle_cb(gpointer user_data)
-{
-    NML3Cfg *self = user_data;
-
-    nm_clear_g_source_inst(&self->priv.p->acd_ready_on_idle_source);
-
-    _LOGT("acd: handle ACD changes on idle");
-
-    _l3_acd_platform_commit_acd_update(self);
-
-    return G_SOURCE_REMOVE;
 }
 
 static gboolean
@@ -2173,13 +2144,9 @@ handle_probe_done:
         /* probing just completed. Schedule handling the change. */
         _LOGT_acd(acd_data, "state: acd probe succeed");
         _l3_acd_data_notify_acd_completed_queue(self, acd_data);
-        if (!self->priv.p->acd_ready_on_idle_source) {
-            if (state_change_mode != ACD_STATE_CHANGE_MODE_POST_COMMIT)
-                _l3_changed_configs_set_dirty(self);
-            self->priv.p->acd_ready_on_idle_source =
-                nm_g_idle_source_new(G_PRIORITY_DEFAULT, _l3_acd_ready_on_idle_cb, self, NULL);
-            g_source_attach(self->priv.p->acd_ready_on_idle_source, NULL);
-        }
+        if (state_change_mode != ACD_STATE_CHANGE_MODE_POST_COMMIT)
+            _l3_changed_configs_set_dirty(self);
+        nm_l3cfg_commit_on_idle_schedule(self);
     }
 
     if (!acd_data->nacd_probe) {
@@ -2251,6 +2218,33 @@ _l3_acd_data_process_changes(NML3Cfg *self)
         _l3_acd_nacd_instance_reset(self, NM_TERNARY_DEFAULT, FALSE);
 
     _l3_acd_data_notify_acd_completed_all(self);
+}
+
+/*****************************************************************************/
+
+static gboolean
+_l3_commit_on_idle_cb(gpointer user_data)
+{
+    NML3Cfg *self = user_data;
+
+    nm_clear_g_source_inst(&self->priv.p->commit_on_idle_source);
+
+    _LOGT("platform commit on idle");
+    _l3_commit(self, NM_L3_CFG_COMMIT_TYPE_AUTO, TRUE);
+    return G_SOURCE_REMOVE;
+}
+
+void
+nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self)
+{
+    nm_assert(NM_IS_L3CFG(self));
+
+    if (self->priv.p->commit_on_idle_source)
+        return;
+
+    self->priv.p->commit_on_idle_source =
+        nm_g_idle_source_new(G_PRIORITY_DEFAULT, _l3_commit_on_idle_cb, self, NULL);
+    g_source_attach(self->priv.p->commit_on_idle_source, NULL);
 }
 
 /*****************************************************************************/
@@ -2746,7 +2740,7 @@ _routes_temporary_not_available_timeout(gpointer user_data)
 
     if (any_expired) {
         /* a route expired. We emit a signal, but we don't schedule it again. That will
-         * only happen if the user calls nm_l3cfg_platform_commit() again. */
+         * only happen if the user calls nm_l3cfg_commit() again. */
         _nm_l3cfg_emit_signal_notify(
             self,
             NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED,
@@ -2872,10 +2866,7 @@ out_prune:
 /*****************************************************************************/
 
 static gboolean
-_platform_commit(NML3Cfg *         self,
-                 int               addr_family,
-                 NML3CfgCommitType commit_type,
-                 gboolean *        out_final_failure_for_temporary_not_available)
+_l3_commit_one(NML3Cfg *self, int addr_family, NML3CfgCommitType commit_type)
 {
     const gboolean           IS_IPv4                                = NM_IS_IPv4(addr_family);
     nm_auto_unref_l3cd const NML3ConfigData *l3cd_old               = NULL;
@@ -3000,19 +2991,19 @@ _platform_commit(NML3Cfg *         self,
                                                 routes_temporary_not_available_arr))
         final_failure_for_temporary_not_available = TRUE;
 
-    if (final_failure_for_temporary_not_available)
-        NM_SET_OUT(out_final_failure_for_temporary_not_available, TRUE);
+    /* FIXME(l3cfg) */
+    (void) final_failure_for_temporary_not_available;
+
     return success;
 }
 
-gboolean
-nm_l3cfg_platform_commit(NML3Cfg *self, NML3CfgCommitType commit_type)
+static void
+_l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
 {
     gboolean commit_type_detected = FALSE;
-    gboolean success              = TRUE;
     char     sbuf_ct[30];
 
-    g_return_val_if_fail(NM_IS_L3CFG(self), FALSE);
+    g_return_if_fail(NM_IS_L3CFG(self));
     nm_assert(NM_IN_SET(commit_type,
                         NM_L3_CFG_COMMIT_TYPE_NONE,
                         NM_L3_CFG_COMMIT_TYPE_AUTO,
@@ -3044,30 +3035,33 @@ nm_l3cfg_platform_commit(NML3Cfg *self, NML3CfgCommitType commit_type)
         break;
     }
 
-    _LOGT("platform-commit %s%s",
+    _LOGT("platform-commit %s%s%s",
           _l3_cfg_commit_type_to_string(commit_type, sbuf_ct, sizeof(sbuf_ct)),
-          commit_type_detected ? " (auto)" : "");
+          commit_type_detected ? " (auto)" : "",
+          is_idle ? " (idle handler)" : "");
 
     if (commit_type == NM_L3_CFG_COMMIT_TYPE_NONE)
-        return TRUE;
+        return;
 
-    nm_clear_g_source_inst(&self->priv.p->acd_ready_on_idle_source);
+    nm_clear_g_source_inst(&self->priv.p->commit_on_idle_source);
 
     if (commit_type == NM_L3_CFG_COMMIT_TYPE_REAPPLY)
         _l3cfg_externally_removed_objs_drop(self);
 
     /* FIXME(l3cfg): handle items currently not configurable in kernel. */
 
-    if (!_platform_commit(self, AF_INET, commit_type, NULL))
-        success = FALSE;
-    if (!_platform_commit(self, AF_INET6, commit_type, NULL))
-        success = FALSE;
+    _l3_commit_one(self, AF_INET, commit_type);
+    _l3_commit_one(self, AF_INET6, commit_type);
 
     _l3_acd_data_process_changes(self);
 
     _nm_l3cfg_emit_signal_notify(self, NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT, NULL);
+}
 
-    return success;
+void
+nm_l3cfg_commit(NML3Cfg *self, NML3CfgCommitType commit_type)
+{
+    _l3_commit(self, commit_type, FALSE);
 }
 
 /*****************************************************************************/
@@ -3095,7 +3089,7 @@ nm_l3cfg_commit_type_get(NML3Cfg *self)
  * NML3Cfg needs to know whether it is in charge of an interface (and how "much").
  * By default, it is not in charge, but various users can register themself with
  * a certain @commit_type. The "higher" commit type is the used one when calling
- * nm_l3cfg_platform_commit() with %NM_L3_CFG_COMMIT_TYPE_AUTO.
+ * nm_l3cfg_commit() with %NM_L3_CFG_COMMIT_TYPE_AUTO.
  *
  * Returns: a handle tracking the registration, or %NULL of @commit_type
  *   is %NM_L3_CFG_COMMIT_TYPE_NONE.
@@ -3311,7 +3305,7 @@ finalize(GObject *object)
 
     nm_assert(c_list_is_empty(&self->priv.p->commit_type_lst_head));
 
-    nm_clear_g_source_inst(&self->priv.p->acd_ready_on_idle_source);
+    nm_clear_g_source_inst(&self->priv.p->commit_on_idle_source);
 
     nm_assert(nm_g_array_len(self->priv.p->property_emit_list) == 0u);
 
