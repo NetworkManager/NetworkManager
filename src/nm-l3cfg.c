@@ -609,13 +609,19 @@ _load_link(NML3Cfg *self, gboolean initial)
     gboolean                        nacd_link_now_up;
     AcdData *                       acd_data;
 
-    obj = nm_platform_link_get_obj(self->priv.platform, self->priv.ifindex, TRUE);
+    if (initial) {
+        obj = nm_platform_link_get_obj(self->priv.platform, self->priv.ifindex, TRUE);
+        self->priv.plobj_next = nmp_object_ref(obj);
+    } else {
+        obj = self->priv.plobj_next;
+        nm_assert(obj == nm_platform_link_get_obj(self->priv.platform, self->priv.ifindex, TRUE));
+    }
 
-    if (initial && obj == self->priv.pllink)
+    if (initial && obj == self->priv.plobj)
         return;
 
-    obj_old           = g_steal_pointer(&self->priv.pllink);
-    self->priv.pllink = nmp_object_ref(obj);
+    obj_old          = g_steal_pointer(&self->priv.plobj);
+    self->priv.plobj = nmp_object_ref(obj);
 
     if (obj && NM_FLAGS_HAS(NMP_OBJECT_CAST_LINK(obj)->n_ifi_flags, IFF_UP)
         && (!obj_old || !NM_FLAGS_HAS(NMP_OBJECT_CAST_LINK(obj_old)->n_ifi_flags, IFF_UP)))
@@ -641,7 +647,7 @@ _load_link(NML3Cfg *self, gboolean initial)
     } else if (nacd_new_valid)
         nacd_changed = TRUE;
     ifname_old = nmp_object_link_get_ifname(obj_old);
-    ifname     = nmp_object_link_get_ifname(self->priv.pllink);
+    ifname     = nmp_object_link_get_ifname(self->priv.plobj);
 
     if (initial) {
         _LOGT("link ifname changed: %s%s%s (initial)", NM_PRINT_FMT_QUOTE_STRING(ifname));
@@ -671,7 +677,7 @@ _nm_l3cfg_notify_platform_change_on_idle(NML3Cfg *self, guint32 obj_type_flags)
 {
     NML3ConfigNotifyPayload payload;
 
-    if (NM_FLAGS_ANY(obj_type_flags, nmp_object_type_to_flags(NMP_OBJECT_TYPE_LINK)))
+    if (self->priv.plobj_next != self->priv.plobj)
         _load_link(self, FALSE);
 
     payload = (NML3ConfigNotifyPayload){
@@ -703,6 +709,15 @@ _nm_l3cfg_notify_platform_change(NML3Cfg *                  self,
     obj_type = NMP_OBJECT_GET_TYPE(obj);
 
     switch (obj_type) {
+    case NMP_OBJECT_TYPE_LINK:
+    {
+        const NMPObject *plobj;
+
+        plobj = (change_type != NM_PLATFORM_SIGNAL_REMOVED) ? obj : NULL;
+        nm_assert(plobj == nm_platform_link_get_obj(self->priv.platform, self->priv.ifindex, TRUE));
+        nmp_object_ref_set(&self->priv.plobj_next, plobj);
+        break;
+    }
     case NMP_OBJECT_TYPE_IP4_ADDRESS:
         _l3_acd_ipv4_addresses_on_link_update(self,
                                               NMP_OBJECT_CAST_IP4_ADDRESS(obj)->address,
@@ -1067,9 +1082,9 @@ _l3_acd_nacd_event(int fd, GIOCondition condition, gpointer user_data)
                 _LOGW("IPv4 address collision detection sees conflict on interface %i%s%s%s for "
                       "address %s from host %s",
                       self->priv.ifindex,
-                      NM_PRINT_FMT_QUOTED(self->priv.pllink,
+                      NM_PRINT_FMT_QUOTED(self->priv.plobj,
                                           " (",
-                                          NMP_OBJECT_CAST_LINK(self->priv.pllink)->name,
+                                          NMP_OBJECT_CAST_LINK(self->priv.plobj)->name,
                                           ")",
                                           ""),
                       addr_str ?: _nm_utils_inet4_ntop(acd_data->addr, sbuf_addr),
@@ -1188,7 +1203,7 @@ again:
         return NULL;
     }
 
-    valid = _acd_has_valid_link(self->priv.pllink, &addr_bin, &acd_not_supported);
+    valid = _acd_has_valid_link(self->priv.plobj, &addr_bin, &acd_not_supported);
     if (!valid)
         goto failed_create_acd;
 
@@ -3331,7 +3346,8 @@ finalize(GObject *object)
     nm_clear_l3cd(&self->priv.p->combined_l3cd_merged);
     nm_clear_l3cd(&self->priv.p->combined_l3cd_commited);
 
-    nm_clear_pointer(&self->priv.pllink, nmp_object_unref);
+    nm_clear_pointer(&self->priv.plobj, nmp_object_unref);
+    nm_clear_pointer(&self->priv.plobj_next, nmp_object_unref);
 
     nm_clear_pointer(&self->priv.p->acd_ipv4_addresses_on_link, g_hash_table_unref);
 

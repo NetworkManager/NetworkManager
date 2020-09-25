@@ -75,7 +75,8 @@ struct _NML3Cfg {
         struct _NML3CfgPrivate *p;
         NMNetns *               netns;
         NMPlatform *            platform;
-        const NMPObject *       pllink;
+        const NMPObject *       plobj;
+        const NMPObject *       plobj_next;
         int                     ifindex;
         bool                    changed_configs : 1;
     } priv;
@@ -117,34 +118,36 @@ nm_l3cfg_get_ifindex(const NML3Cfg *self)
     return self->priv.ifindex;
 }
 
-static inline const char *
-nm_l3cfg_get_ifname(const NML3Cfg *self)
-{
-    nm_assert(NM_IS_L3CFG(self));
-
-    return nmp_object_link_get_ifname(self->priv.pllink);
-}
-
 static inline const NMPObject *
-nm_l3cfg_get_plobj(const NML3Cfg *self)
+nm_l3cfg_get_plobj(const NML3Cfg *self, gboolean get_next)
 {
     if (!self)
         return NULL;
 
     nm_assert(NM_IS_L3CFG(self));
 
-    return self->priv.pllink;
+    if (get_next) {
+        /* This is the instance that we just got reported in the last signal from
+         * the platform cache. It's probably exactly the same as if you would look
+         * into the platform cache.
+         *
+         * On the other hand, we pick up changes only on an idle handler. So the last
+         * decisions were not made based on this, but instead of "plobj". */
+        return self->priv.plobj_next;
+    }
+    return self->priv.plobj;
 }
 
 static inline const NMPlatformLink *
-nm_l3cfg_get_pllink(const NML3Cfg *self)
+nm_l3cfg_get_pllink(const NML3Cfg *self, gboolean get_next)
 {
-    if (!self)
-        return NULL;
+    return NMP_OBJECT_CAST_LINK(nm_l3cfg_get_plobj(self, get_next));
+}
 
-    nm_assert(NM_IS_L3CFG(self));
-
-    return NMP_OBJECT_CAST_LINK(self->priv.pllink);
+static inline const char *
+nm_l3cfg_get_ifname(const NML3Cfg *self, gboolean get_next)
+{
+    return nmp_object_link_get_ifname(nm_l3cfg_get_plobj(self, get_next));
 }
 
 static inline NMNetns *
