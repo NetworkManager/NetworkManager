@@ -281,50 +281,6 @@ ck_finalize (NMSessionMonitor *monitor)
 NM_DEFINE_SINGLETON_GETTER (NMSessionMonitor, nm_session_monitor_get, NM_TYPE_SESSION_MONITOR);
 
 /**
- * nm_session_monitor_uid_to_user:
- * @uid: UID.
- * @out_user: Return location for user name.
- *
- * Translates a UID to a user name.
- */
-gboolean
-nm_session_monitor_uid_to_user (uid_t uid, const char **out_user)
-{
-	struct passwd *pw = getpwuid (uid);
-
-	g_assert (out_user);
-
-	if (!pw)
-		return FALSE;
-
-	*out_user = pw->pw_name;
-
-	return TRUE;
-}
-
-/**
- * nm_session_monitor_user_to_uid:
- * @user: User naee.
- * @out_uid: Return location for UID.
- *
- * Translates a user name to a UID.
- */
-gboolean
-nm_session_monitor_user_to_uid (const char *user, uid_t *out_uid)
-{
-	struct passwd *pw = getpwnam (user);
-
-	g_assert (out_uid);
-
-	if (!pw)
-		return FALSE;
-
-	*out_uid = pw->pw_uid;
-
-	return TRUE;
-}
-
-/**
  * nm_session_monitor_session_exists:
  * @self: the session monitor
  * @uid: A user ID.

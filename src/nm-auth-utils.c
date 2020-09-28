@@ -618,7 +618,7 @@ nm_auth_is_subject_in_acl (NMConnection *connection,
                            char **out_error_desc)
 {
 	NMSettingConnection *s_con;
-	const char *user = NULL;
+	gs_free char *user = NULL;
 	gulong uid;
 
 	g_return_val_if_fail (connection, FALSE);
@@ -635,7 +635,8 @@ nm_auth_is_subject_in_acl (NMConnection *connection,
 	if (0 == uid)
 		return TRUE;
 
-	if (!nm_session_monitor_uid_to_user (uid, &user)) {
+	user = nm_utils_uid_to_name (uid);
+	if (!user) {
 		NM_SET_OUT (out_error_desc,
 		            g_strdup_printf ("Could not determine username for uid %lu", uid));
 		return FALSE;

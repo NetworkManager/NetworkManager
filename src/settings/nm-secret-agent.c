@@ -695,8 +695,7 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 	NMSecretAgent *self;
 	NMSecretAgentPrivate *priv;
 	const char *dbus_owner;
-	struct passwd *pw;
-	char *owner_username = NULL;
+	gs_free char *owner_username = NULL;
 	char *description = NULL;
 	char buf_subject[64];
 	char buf_caps[150];
@@ -715,9 +714,7 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 
 	uid = nm_auth_subject_get_unix_process_uid (subject);
 
-	pw = getpwuid (uid);
-	if (pw && pw->pw_name && pw->pw_name[0])
-		owner_username = g_strdup (pw->pw_name);
+	owner_username = nm_utils_uid_to_name (uid);
 
 	dbus_owner = nm_auth_subject_get_unix_process_dbus_sender (subject);
 
@@ -735,7 +732,7 @@ nm_secret_agent_new (GDBusMethodInvocation *context,
 	       _capabilities_to_string (capabilities, buf_caps, sizeof (buf_caps)));
 
 	priv->identifier = g_strdup (identifier);
-	priv->owner_username = owner_username;
+	priv->owner_username = g_steal_pointer (&owner_username);
 	priv->dbus_owner = g_strdup (dbus_owner);
 	priv->description = description;
 	priv->capabilities = capabilities;

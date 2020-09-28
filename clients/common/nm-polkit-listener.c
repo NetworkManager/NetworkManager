@@ -164,20 +164,14 @@ auth_request_complete (AuthRequest *request, gboolean success)
 
 static gboolean
 uid_to_name (uid_t uid,
-             const char **out_name)
+             gboolean *out_cached,
+             char **out_name)
 {
-	const struct passwd *passwd;
-
-	if (*out_name)
-		return TRUE;
-
-	passwd = getpwuid (uid);
-	if (   !passwd
-	    || !passwd->pw_name)
-		return FALSE;
-
-	*out_name = passwd->pw_name;
-	return TRUE;
+	if (!*out_cached) {
+		*out_cached = TRUE;
+		*out_name = nm_utils_uid_to_name (uid);
+	}
+	return !!(*out_name);
 }
 
 static char *
@@ -205,17 +199,18 @@ choose_identity (GVariant *identities)
 			v = g_variant_lookup_value (details, "uid", G_VARIANT_TYPE_UINT32);
 			if (v) {
 				guint32 uid = g_variant_get_uint32 (v);
-				const char *u = NULL;
+				gs_free char *u = NULL;
+				gboolean cached = FALSE;
 
 				if (user) {
-					if (!uid_to_name (uid, &u))
+					if (!uid_to_name (uid, &cached, &u))
 						continue;
 					if (nm_streq (u, user))
-						return g_strdup (user);
+						return g_steal_pointer (&u);
 				}
 				if (   !username_root
 				    && uid == 0) {
-					if (!uid_to_name (uid, &u))
+					if (!uid_to_name (uid, &cached, &u))
 						continue;
 					username_root = g_strdup (u);
 					if (!user)
@@ -223,7 +218,7 @@ choose_identity (GVariant *identities)
 				}
 				if (   !username_root
 				    && !username_first) {
-					if (!uid_to_name (uid, &u))
+					if (!uid_to_name (uid, &cached, &u))
 						continue;
 					username_first = g_strdup (u);
 				}
