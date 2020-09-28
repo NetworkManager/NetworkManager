@@ -26,8 +26,8 @@ while (( $# )); do
 done
 
 NM_ROOT=$(git rev-parse --show-toplevel)
-EXCLUDE=":(exclude)shared/systemd
-         :(exclude)src/systemd
+EXCLUDE=":(exclude)shared/systemd/src
+         :(exclude)src/systemd/src
          :(exclude)shared/n-dhcp4
          :(exclude)shared/c-list
          :(exclude)shared/c-list
