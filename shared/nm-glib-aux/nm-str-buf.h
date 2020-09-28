@@ -14,8 +14,8 @@ typedef struct _NMStrBuf {
     char *_priv_str;
 
     /* The unions only exist because we allow/encourage read-only access
-	 * to the "len" and "allocated" fields, but modifying the fields is
-	 * only allowed to the NMStrBuf implementation itself. */
+     * to the "len" and "allocated" fields, but modifying the fields is
+     * only allowed to the NMStrBuf implementation itself. */
     union {
         /*const*/ gsize len;
         gsize           _priv_len;
@@ -217,7 +217,7 @@ nm_str_buf_append_len0(NMStrBuf *strbuf, const char *str, gsize len)
     _nm_str_buf_assert(strbuf);
 
     /* this is basically like nm_str_buf_append_len() and
-	 * nm_str_buf_get_str() in one. */
+     * nm_str_buf_get_str() in one. */
 
     nm_str_buf_maybe_expand(strbuf, len + 1u, FALSE);
     if (len > 0) {
@@ -261,7 +261,7 @@ nm_str_buf_append_required_delimiter(NMStrBuf *strbuf, char delimiter)
     _nm_str_buf_assert(strbuf);
 
     /* appends the @delimiter if it is required (that is, if the
-	 * string is not empty). */
+     * string is not empty). */
     if (strbuf->len > 0)
         nm_str_buf_append_c(strbuf, delimiter);
     return strbuf;
@@ -387,7 +387,7 @@ nm_str_buf_finalize(NMStrBuf *strbuf, gsize *out_len)
     strbuf->_priv_str[strbuf->_priv_len] = '\0';
 
     /* the buffer is in invalid state afterwards, however, we clear it
-	 * so far, that nm_auto_str_buf and nm_str_buf_destroy() is happy.  */
+     * so far, that nm_auto_str_buf and nm_str_buf_destroy() is happy.  */
     return g_steal_pointer(&strbuf->_priv_str);
 }
 
@@ -398,12 +398,12 @@ nm_str_buf_finalize_to_gbytes(NMStrBuf *strbuf)
     gsize l;
 
     /* this always returns a non-NULL, newly allocated GBytes instance.
-	 * The data buffer always has an additional NUL character after
-	 * the data, and the data is allocated with malloc.
-	 *
-	 * That means, the caller who takes ownership of the GBytes can
-	 * safely modify the content of the buffer (including the additional
-	 * NUL sentinel). */
+     * The data buffer always has an additional NUL character after
+     * the data, and the data is allocated with malloc.
+     *
+     * That means, the caller who takes ownership of the GBytes can
+     * safely modify the content of the buffer (including the additional
+     * NUL sentinel). */
     s = nm_str_buf_finalize(strbuf, &l);
     return g_bytes_new_take(s ?: g_new0(char, 1), l);
 }
@@ -427,8 +427,8 @@ nm_str_buf_destroy(NMStrBuf *strbuf)
     g_free(strbuf->_priv_str);
 
     /* the buffer is in invalid state afterwards, however, we clear it
-	 * so far, that nm_auto_str_buf is happy when calling
-	 * nm_str_buf_destroy() again.  */
+     * so far, that nm_auto_str_buf is happy when calling
+     * nm_str_buf_destroy() again.  */
     strbuf->_priv_str = NULL;
 }
 

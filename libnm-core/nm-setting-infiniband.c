@@ -225,8 +225,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
             if (strcmp(interface_name, priv->virtual_iface_name) != 0) {
                 /* We don't support renaming software infiniband devices. Later we might, but
-				 * for now just reject such connections.
-				 **/
+                 * for now just reject such connections.
+                 **/
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -247,14 +247,14 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (priv->mtu > NM_INFINIBAND_MAX_MTU) {
         /* Traditionally, MTU for "datagram" mode was limited to 2044
-		 * and for "connected" mode it was 65520.
-		 *
-		 * This is no longer the case, and both transport modes use the same
-		 * maximum of 65520 (NM_INFINIBAND_MAX_MTU).
-		 *
-		 * Note that this is the MTU in the connection profile. Whether
-		 * we will be able to configure large MTUs later (during activation)
-		 * is unknown at this point. */
+         * and for "connected" mode it was 65520.
+         *
+         * This is no longer the case, and both transport modes use the same
+         * maximum of 65520 (NM_INFINIBAND_MAX_MTU).
+         *
+         * Note that this is the MTU in the connection profile. Whether
+         * we will be able to configure large MTUs later (during activation)
+         * is unknown at this point. */
         g_set_error(error,
                     NM_CONNECTION_ERROR,
                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -385,30 +385,30 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
     setting_class->verify = verify;
 
     /**
-	 * NMSettingInfiniband:mac-address:
-	 *
-	 * If specified, this connection will only apply to the IPoIB device whose
-	 * permanent MAC address matches. This property does not change the MAC
-	 * address of the device (i.e. MAC spoofing).
-	 **/
+     * NMSettingInfiniband:mac-address:
+     *
+     * If specified, this connection will only apply to the IPoIB device whose
+     * permanent MAC address matches. This property does not change the MAC
+     * address of the device (i.e. MAC spoofing).
+     **/
     /* ---keyfile---
-	 * property: mac-address
-	 * format: usual hex-digits-and-colons notation
-	 * description: MAC address in traditional hex-digits-and-colons notation, or
-	 *   or semicolon separated list of 20 decimal bytes (obsolete)
-	 * example: mac-address= 80:00:00:6d:fe:80:00:00:00:00:00:00:00:02:55:00:70:33:cf:01
-	 * ---end---
-	 * ---ifcfg-rh---
-	 * property: mac-address
-	 * variable: HWADDR
-	 * description: IBoIP 20-byte hardware address of the device (in traditional
-	 *    hex-digits-and-colons notation).
-	 *    Note that for initscripts this is the current MAC address of the device as found
-	 *    during ifup. For NetworkManager this is the permanent MAC address. Or in case no
-	 *    permanent MAC address exists, the MAC address initially configured on the device.
-	 * example: HWADDR=01:02:03:04:05:06:07:08:09:0A:01:02:03:04:05:06:07:08:09:11
-	 * ---end---
-	 */
+     * property: mac-address
+     * format: usual hex-digits-and-colons notation
+     * description: MAC address in traditional hex-digits-and-colons notation, or
+     *   or semicolon separated list of 20 decimal bytes (obsolete)
+     * example: mac-address= 80:00:00:6d:fe:80:00:00:00:00:00:00:00:02:55:00:70:33:cf:01
+     * ---end---
+     * ---ifcfg-rh---
+     * property: mac-address
+     * variable: HWADDR
+     * description: IBoIP 20-byte hardware address of the device (in traditional
+     *    hex-digits-and-colons notation).
+     *    Note that for initscripts this is the current MAC address of the device as found
+     *    during ifup. For NetworkManager this is the permanent MAC address. Or in case no
+     *    permanent MAC address exists, the MAC address initially configured on the device.
+     * example: HWADDR=01:02:03:04:05:06:07:08:09:0A:01:02:03:04:05:06:07:08:09:11
+     * ---end---
+     */
     obj_properties[PROP_MAC_ADDRESS] = g_param_spec_string(
         NM_SETTING_INFINIBAND_MAC_ADDRESS,
         "",
@@ -420,17 +420,17 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
                                  &nm_sett_info_propert_type_mac_address);
 
     /**
-	 * NMSettingInfiniband:mtu:
-	 *
-	 * If non-zero, only transmit packets of the specified size or smaller,
-	 * breaking larger packets up into multiple frames.
-	 **/
+     * NMSettingInfiniband:mtu:
+     *
+     * If non-zero, only transmit packets of the specified size or smaller,
+     * breaking larger packets up into multiple frames.
+     **/
     /* ---ifcfg-rh---
-	 * property: mtu
-	 * variable: MTU
-	 * description: MTU of the interface.
-	 * ---end---
-	 */
+     * property: mtu
+     * variable: MTU
+     * description: MTU of the interface.
+     * ---end---
+     */
     obj_properties[PROP_MTU] = g_param_spec_uint(NM_SETTING_INFINIBAND_MTU,
                                                  "",
                                                  "",
@@ -441,19 +441,19 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
                                                      | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingInfiniband:transport-mode:
-	 *
-	 * The IP-over-InfiniBand transport mode. Either "datagram" or
-	 * "connected".
-	 **/
+     * NMSettingInfiniband:transport-mode:
+     *
+     * The IP-over-InfiniBand transport mode. Either "datagram" or
+     * "connected".
+     **/
     /* ---ifcfg-rh---
-	 * property: transport-mode
-	 * variable: CONNECTED_MODE
-	 * default: CONNECTED_MODE=no
-	 * description: CONNECTED_MODE=yes for "connected" mode, CONNECTED_MODE=no for
-	 *   "datagram" mode
-	 * ---end---
-	 */
+     * property: transport-mode
+     * variable: CONNECTED_MODE
+     * default: CONNECTED_MODE=no
+     * description: CONNECTED_MODE=yes for "connected" mode, CONNECTED_MODE=no for
+     *   "datagram" mode
+     * ---end---
+     */
     obj_properties[PROP_TRANSPORT_MODE] = g_param_spec_string(
         NM_SETTING_INFINIBAND_TRANSPORT_MODE,
         "",
@@ -462,23 +462,23 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingInfiniband:p-key:
-	 *
-	 * The InfiniBand P_Key to use for this device. A value of -1 means to use
-	 * the default P_Key (aka "the P_Key at index 0"). Otherwise, it is a 16-bit
-	 * unsigned integer, whose high bit is set if it is a "full membership"
-	 * P_Key.
-	 **/
+     * NMSettingInfiniband:p-key:
+     *
+     * The InfiniBand P_Key to use for this device. A value of -1 means to use
+     * the default P_Key (aka "the P_Key at index 0"). Otherwise, it is a 16-bit
+     * unsigned integer, whose high bit is set if it is a "full membership"
+     * P_Key.
+     **/
     /* ---ifcfg-rh---
-	 * property: p-key
-	 * variable: PKEY_ID (and PKEY=yes)
-	 * default: PKEY=no
-	 * description: InfiniBand P_Key. The value can be a hex number prefixed with "0x"
-	 *   or a decimal number.
-	 *   When PKEY_ID is specified, PHYSDEV and DEVICE also must be specified.
-	 * example: PKEY=yes PKEY_ID=2 PHYSDEV=mlx4_ib0 DEVICE=mlx4_ib0.8002
-	 * ---end---
-	 */
+     * property: p-key
+     * variable: PKEY_ID (and PKEY=yes)
+     * default: PKEY=no
+     * description: InfiniBand P_Key. The value can be a hex number prefixed with "0x"
+     *   or a decimal number.
+     *   When PKEY_ID is specified, PHYSDEV and DEVICE also must be specified.
+     * example: PKEY=yes PKEY_ID=2 PHYSDEV=mlx4_ib0 DEVICE=mlx4_ib0.8002
+     * ---end---
+     */
     obj_properties[PROP_P_KEY] =
         g_param_spec_int(NM_SETTING_INFINIBAND_P_KEY,
                          "",
@@ -489,21 +489,21 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingInfiniband:parent:
-	 *
-	 * The interface name of the parent device of this device. Normally %NULL,
-	 * but if the #NMSettingInfiniband:p_key property is set, then you must
-	 * specify the base device by setting either this property or
-	 * #NMSettingInfiniband:mac-address.
-	 **/
+     * NMSettingInfiniband:parent:
+     *
+     * The interface name of the parent device of this device. Normally %NULL,
+     * but if the #NMSettingInfiniband:p_key property is set, then you must
+     * specify the base device by setting either this property or
+     * #NMSettingInfiniband:mac-address.
+     **/
     /* ---ifcfg-rh---
-	 * property: parent
-	 * variable: PHYSDEV (PKEY=yes)
-	 * default: PKEY=no
-	 * description: InfiniBand parent device.
-	 * example: PHYSDEV=ib0
-	 * ---end---
-	 */
+     * property: parent
+     * variable: PHYSDEV (PKEY=yes)
+     * default: PKEY=no
+     * description: InfiniBand parent device.
+     * example: PHYSDEV=ib0
+     * ---end---
+     */
     obj_properties[PROP_PARENT] = g_param_spec_string(
         NM_SETTING_INFINIBAND_PARENT,
         "",

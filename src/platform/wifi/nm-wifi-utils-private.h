@@ -37,8 +37,8 @@ typedef struct {
     gboolean (*get_bssid)(NMWifiUtils *data, guint8 *out_bssid);
 
     /* Return a signal strength percentage 0 - 100% for the current BSSID;
-	 * return -1 on errors or if not associated.
-	 */
+     * return -1 on errors or if not associated.
+     */
     int (*get_qual)(NMWifiUtils *data);
 
     /* OLPC Mesh-only functions */

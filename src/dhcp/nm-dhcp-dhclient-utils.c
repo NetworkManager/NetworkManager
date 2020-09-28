@@ -112,8 +112,8 @@ add_ip4_config(GString *           str,
         nm_assert(p);
 
         /* Allow type 0 (non-hardware address) to be represented as a string
-		 * as long as all the characters are printable.
-		 */
+         * as long as all the characters are printable.
+         */
         for (i = 1; (p[0] == 0) && i < l; i++) {
             if (!g_ascii_isprint(p[i]) || p[i] == '\\' || p[i] == '"')
                 break;
@@ -345,7 +345,7 @@ nm_dhcp_dhclient_create_config(const char *        interface,
                 if (NM_STR_HAS_PREFIX(p, "lease") || NM_STR_HAS_PREFIX(p, "alias")
                     || NM_STR_HAS_PREFIX(p, "interface") || NM_STR_HAS_PREFIX(p, "pseudo")) {
                     /* skip over these blocks, except 'interface' when it
-					 * matches the current interface */
+                     * matches the current interface */
                     blocks_skip++;
                     g_string_append_c(blocks_stack, 'b');
                     if (!intf[0] && NM_STR_HAS_PREFIX(p, "interface")) {
@@ -377,12 +377,12 @@ nm_dhcp_dhclient_create_config(const char *        interface,
                 continue;
 
             /* Some timing parameters in dhclient should not be imported (timeout, retry).
-			 * The retry parameter will be simply not used as we will exit on first failure.
-			 * The timeout one instead may affect NetworkManager behavior: if the timeout
-			 * elapses before dhcp-timeout dhclient will report failure and cause NM to
-			 * fail the dhcp process before dhcp-timeout. So, always skip importing timeout
-			 * as we will need to add one greater than dhcp-timeout.
-			 */
+             * The retry parameter will be simply not used as we will exit on first failure.
+             * The timeout one instead may affect NetworkManager behavior: if the timeout
+             * elapses before dhcp-timeout dhclient will report failure and cause NM to
+             * fail the dhcp process before dhcp-timeout. So, always skip importing timeout
+             * as we will need to add one greater than dhcp-timeout.
+             */
             if (!strncmp(p, TIMEOUT_TAG, strlen(TIMEOUT_TAG))
                 || !strncmp(p, RETRY_TAG, strlen(RETRY_TAG)))
                 continue;
@@ -407,8 +407,8 @@ nm_dhcp_dhclient_create_config(const char *        interface,
             }
 
             /* To let user's FQDN options (except "fqdn.fqdn") override the
-			 * default ones set by NM, add them later
-			 */
+             * default ones set by NM, add them later
+             */
             if (!strncmp(p, FQDN_TAG_PREFIX, NM_STRLEN(FQDN_TAG_PREFIX))) {
                 if (!fqdn_opts)
                     fqdn_opts = g_ptr_array_new_full(5, g_free);
@@ -453,8 +453,8 @@ nm_dhcp_dhclient_create_config(const char *        interface,
         g_string_append_c(new_contents, '\n');
 
     /* ensure dhclient timeout is greater than dhcp-timeout: as dhclient timeout default value is
-	 * 60 seconds, we need this only if dhcp-timeout is greater than 60.
-	 */
+     * 60 seconds, we need this only if dhcp-timeout is greater than 60.
+     */
     if (timeout >= 60) {
         timeout = timeout < G_MAXINT32 ? timeout + 1 : G_MAXINT32;
         g_string_append_printf(new_contents, "timeout %u;\n", timeout);
@@ -567,8 +567,8 @@ nm_dhcp_dhclient_unescape_duid(const char *duid)
     guint8        octal;
 
     /* FIXME: it's wrong to have an "unescape-duid" function. dhclient
-	 * defines a file format with escaping. So we need a general unescape
-	 * function that can handle dhclient syntax. */
+     * defines a file format with escaping. So we need a general unescape
+     * function that can handle dhclient syntax. */
 
     len       = strlen(duid);
     unescaped = g_byte_array_sized_new(len);
@@ -584,7 +584,7 @@ nm_dhcp_dhclient_unescape_duid(const char *duid)
                 i += 2;
             } else {
                 /* FIXME: don't warn on untrusted data. Either signal an error, or accept
-				 * it silently. */
+                 * it silently. */
 
                 /* One of ", ', $, `, \, |, or & */
                 g_warn_if_fail(p[i] == '"' || p[i] == '\'' || p[i] == '$' || p[i] == '`'
@@ -682,9 +682,9 @@ nm_dhcp_dhclient_save_duid(const char *leasefile, GBytes *duid, GError **error)
             const char *l;
 
             /* If we find an uncommented DUID in the file, check if
-			 * equal to the one we are going to write: if so, no need
-			 * to update the lease file, otherwise skip the old DUID.
-			 */
+             * equal to the one we are going to write: if so, no need
+             * to update the lease file, otherwise skip the old DUID.
+             */
             l = nm_str_skip_leading_spaces(str);
             if (g_str_has_prefix(l, DUID_PREFIX)) {
                 gs_strfreev char **split = NULL;

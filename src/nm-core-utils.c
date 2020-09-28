@@ -78,7 +78,7 @@ again:
     }
 
     /* Accessing nm_utils_get_testing() causes us to set the flags to initialized.
-	 * Detecting running tests also based on g_test_initialized(). */
+     * Detecting running tests also based on g_test_initialized(). */
     flags = _NM_UTILS_TEST_INITIALIZED;
     if (g_test_initialized())
         flags |= _NM_UTILS_TEST_GENERAL;
@@ -86,7 +86,7 @@ again:
     g_atomic_int_compare_and_exchange(&_nm_utils_testing, 0, (int) flags);
 
     /* regardless of whether we won the race of initializing _nm_utils_testing,
-	 * go back and read the value again. It must be non-zero by now. */
+     * go back and read the value again. It must be non-zero by now. */
     goto again;
 }
 
@@ -100,7 +100,7 @@ _nm_utils_set_testing(NMUtilsTestFlags flags)
 
     if (!g_atomic_int_compare_and_exchange(&_nm_utils_testing, 0, (int) flags)) {
         /* We only allow setting _nm_utils_set_testing() once, before fetching the
-		 * value with nm_utils_get_testing(). */
+         * value with nm_utils_get_testing(). */
         g_return_if_reached();
     }
 }
@@ -146,7 +146,7 @@ _nm_singleton_instance_register_destruction(GObject *instance)
     g_return_if_fail(G_IS_OBJECT(instance));
 
     /* Don't allow registration after shutdown. We only destroy the singletons
-	 * once. */
+     * once. */
     g_return_if_fail(!_singletons_shutdown);
 
     g_object_weak_ref(instance, _nm_singleton_instance_weak_cb, NULL);
@@ -267,7 +267,7 @@ nm_utils_array_remove_at_indexes(GArray *array, const guint *indexes_to_delete, 
             mm_len++;
         else {
             /* we require indexes_to_delete to contain non-repeated, ascending
-			 * indexes. Otherwise, we would need to presort the indexes. */
+             * indexes. Otherwise, we would need to presort the indexes. */
             while (TRUE) {
                 guint dd;
 
@@ -866,7 +866,7 @@ nm_utils_kill_child_sync(pid_t       pid,
             sleep_time = MIN(wait_until - now, sleep_duration_usec);
             if (loop_count < 20) {
                 /* At the beginning we expect the process to die fast.
-				 * Limit the sleep time, the limit doubles with every iteration. */
+                 * Limit the sleep time, the limit doubles with every iteration. */
                 sleep_time = MIN(sleep_time, (((guint64) 1) << loop_count) * G_USEC_PER_SEC / 2000);
                 loop_count++;
             }
@@ -1104,8 +1104,8 @@ nm_utils_kill_process_sync(pid_t       pid,
         if (max_wait_until != 0 && now >= max_wait_until) {
             if (wait_until_sigkill != 0) {
                 /* wait_before_kill_msec is not larger then max_wait_until but we did not yet send
-				 * SIGKILL. Although we already reached our timeout, we don't want to skip sending
-				 * the signal. Even if we don't wait for the process to disappear. */
+                 * SIGKILL. Although we already reached our timeout, we don't want to skip sending
+                 * the signal. Even if we don't wait for the process to disappear. */
                 nm_log_dbg(log_domain, LOG_NAME_PROCESS_FMT ": sending SIGKILL", LOG_NAME_ARGS);
                 kill(pid, SIGKILL);
             }
@@ -1180,7 +1180,7 @@ nm_utils_kill_process_sync(pid_t       pid,
 
         if (loop_count < 20) {
             /* At the beginning we expect the process to die fast.
-			 * Limit the sleep time, the limit doubles with every iteration. */
+             * Limit the sleep time, the limit doubles with every iteration. */
             sleep_time = MIN(sleep_time, (((guint64) 1) << loop_count) * G_USEC_PER_SEC / 2000);
             loop_count++;
         }
@@ -1241,10 +1241,10 @@ nm_utils_read_link_absolute(const char *link_file, GError **error)
         gs_free char *current_dir = g_get_current_dir();
 
         /* @link_file argument was not an absolute path in the first place.
-		 * That actually may be a bug, because the CWD is not well defined
-		 * in most cases. Anyway, apparently we were able to load the file
-		 * even from a relative path. So, when making the link absolute, we
-		 * also need to prepend the CWD. */
+         * That actually may be a bug, because the CWD is not well defined
+         * in most cases. Anyway, apparently we were able to load the file
+         * even from a relative path. So, when making the link absolute, we
+         * also need to prepend the CWD. */
         ln_abs = g_build_filename(current_dir, dirname, ln, NULL);
     } else
         ln_abs = g_build_filename(dirname, ln, NULL);
@@ -1312,8 +1312,8 @@ match_device_s390_subchannels_parse(const char *s390_subchannels,
         if (!g_ascii_isxdigit(ch) && ch != '.') {
             if (ch == ',') {
                 /* FIXME: currently we consider the first channel and ignore
-				 * everything after the first ',' separator. Maybe we should
-				 * validate all present channels? */
+                 * everything after the first ',' separator. Maybe we should
+                 * validate all present channels? */
                 break;
             }
             return FALSE; /* Invalid chars */
@@ -1420,11 +1420,11 @@ _match_result(gboolean has_except,
         nm_assert(!has_match);
         if (has_match_except) {
             /* one of the "except:" matches matched. The result is an explicit
-			 * negative match. */
+             * negative match. */
             return NM_MATCH_SPEC_NEG_MATCH;
         } else {
             /* none of the "except:" matches matched. The result is a positive match,
-			 * despite there being no positive match. */
+             * despite there being no positive match. */
             return NM_MATCH_SPEC_MATCH;
         }
     }
@@ -1486,20 +1486,20 @@ match_device_eval(const char *spec_str, gboolean allow_fuzzy, MatchDeviceData *m
             return FALSE;
 
         /* support:
-		 * 1) "${DRIVER}"
-		 *   In this case, DRIVER may not contain a '/' character.
-		 *   It matches any driver version.
-		 * 2) "${DRIVER}/${DRIVER_VERSION}"
-		 *   In this case, DRIVER may contains '/' but DRIVER_VERSION
-		 *   may not. A '/' in DRIVER_VERSION may be replaced by '?'.
-		 *
-		 * It follows, that "${DRIVER}/""*" is like 1), but allows
-		 * '/' inside DRIVER.
-		 *
-		 * The fields match to what `nmcli -f GENERAL.DRIVER,GENERAL.DRIVER-VERSION device show`
-		 * gives. However, DRIVER matches literally, while DRIVER_VERSION is a glob
-		 * supporting ? and *.
-		 */
+         * 1) "${DRIVER}"
+         *   In this case, DRIVER may not contain a '/' character.
+         *   It matches any driver version.
+         * 2) "${DRIVER}/${DRIVER_VERSION}"
+         *   In this case, DRIVER may contains '/' but DRIVER_VERSION
+         *   may not. A '/' in DRIVER_VERSION may be replaced by '?'.
+         *
+         * It follows, that "${DRIVER}/""*" is like 1), but allows
+         * '/' inside DRIVER.
+         *
+         * The fields match to what `nmcli -f GENERAL.DRIVER,GENERAL.DRIVER-VERSION device show`
+         * gives. However, DRIVER matches literally, while DRIVER_VERSION is a glob
+         * supporting ? and *.
+         */
 
         t = strrchr(spec_str, '/');
 
@@ -1748,7 +1748,7 @@ nm_match_spec_split(const char *value)
         return NULL;
 
     /* Copied from glibs g_key_file_parse_value_as_string() function
-	 * and adjusted. */
+     * and adjusted. */
 
     string_value = g_new(char, strlen(value) + 1);
 
@@ -2103,12 +2103,12 @@ nm_utils_new_infiniband_name(char *name, const char *parent_name, int p_key)
     g_return_val_if_fail(strlen(parent_name) < IFNAMSIZ, NULL);
 
     /* technically, p_key of 0x0000 and 0x8000 is not allowed either. But we don't
-	 * want to assert against that in nm_utils_new_infiniband_name(). So be more
-	 * resilient here, and accept those. */
+     * want to assert against that in nm_utils_new_infiniband_name(). So be more
+     * resilient here, and accept those. */
     g_return_val_if_fail(p_key >= 0 && p_key <= 0xffff, NULL);
 
     /* If parent+suffix is too long, kernel would just truncate
-	 * the name. We do the same. See ipoib_vlan_add().  */
+     * the name. We do the same. See ipoib_vlan_add().  */
     g_snprintf(name, IFNAMSIZ, "%s.%04x", parent_name, p_key);
     return name;
 }
@@ -2240,7 +2240,7 @@ _log_connection_sort_names_fcn(gconstpointer a, gconstpointer b)
     const LogConnectionSettingItem *v2 = b;
 
     /* we want to first show the items, that disappeared, then the one that changed and
-	 * then the ones that were added. */
+     * then the ones that were added. */
 
     if ((v1->diff_result & NM_SETTING_DIFF_RESULT_IN_A)
         != (v2->diff_result & NM_SETTING_DIFF_RESULT_IN_A))
@@ -2383,7 +2383,7 @@ nm_utils_log_connection_diff(NMConnection *connection,
     }
 
     /* FIXME: it doesn't nicely show the content of NMSettingVpn, because nm_connection_diff() does not
-	 * expand the hash values. */
+     * expand the hash values. */
 
     sorted_hashes = _log_connection_sort_hashes(connection, diff_base, connection_diff);
     if (sorted_hashes->len <= 0)
@@ -2679,11 +2679,11 @@ typedef struct {
         _nul_sentinel; /* just for safety, if somebody accidentally uses the binary in a string context. */
 
     /* depending on whether the string is packed or not (with/without hyphens),
-	 * it's 32 or 36 characters long (plus the trailing NUL).
-	 *
-	 * The difference is that boot-id is a valid RFC 4211 UUID and represented
-	 * as a 36 ascii string (with hyphens). The machine-id technically is not
-	 * a UUID, but just a 32 byte sequence of hexchars. */
+     * it's 32 or 36 characters long (plus the trailing NUL).
+     *
+     * The difference is that boot-id is a valid RFC 4211 UUID and represented
+     * as a 36 ascii string (with hyphens). The machine-id technically is not
+     * a UUID, but just a 32 byte sequence of hexchars. */
     char str[37];
     bool is_fake;
 } UuidData;
@@ -2726,9 +2726,9 @@ again:
         NMUuid          uuid;
 
         /* Get the machine ID from /etc/machine-id; it's always in /etc no matter
-		 * where our configured SYSCONFDIR is.  Alternatively, it might be in
-		 * LOCALSTATEDIR /lib/dbus/machine-id.
-		 */
+         * where our configured SYSCONFDIR is.  Alternatively, it might be in
+         * LOCALSTATEDIR /lib/dbus/machine-id.
+         */
         if (nm_utils_file_get_contents(-1,
                                        "/etc/machine-id",
                                        100 * 1024,
@@ -2769,29 +2769,29 @@ again:
 
             if (!allow_fake) {
                 /* we don't allow generating (and memorizing) a fake key.
-				 * Signal that no valid machine-id exists. */
+                 * Signal that no valid machine-id exists. */
                 return NULL;
             }
 
             if (nm_utils_host_id_get(&seed_bin, &seed_len)) {
                 /* We have no valid machine-id but we have a valid secrey_key.
-				 * Generate a fake machine ID by hashing the secret-key. The secret_key
-				 * is commonly persisted, so it should be stable across reboots (despite
-				 * having a broken system without proper machine-id).
-				 *
-				 * Note that we access the host-id here, which is based on secret_key.
-				 * Also not that the secret_key may be generated based on the machine-id,
-				 * so we have to be careful that they don't depend on each other (and
-				 * no infinite recursion happens. This is done correctly, because the secret-key
-				 * will call _machine_id_get(FALSE), so it won't allow accessing a fake
-				 * machine-id, thus avoiding the problem. */
+                 * Generate a fake machine ID by hashing the secret-key. The secret_key
+                 * is commonly persisted, so it should be stable across reboots (despite
+                 * having a broken system without proper machine-id).
+                 *
+                 * Note that we access the host-id here, which is based on secret_key.
+                 * Also not that the secret_key may be generated based on the machine-id,
+                 * so we have to be careful that they don't depend on each other (and
+                 * no infinite recursion happens. This is done correctly, because the secret-key
+                 * will call _machine_id_get(FALSE), so it won't allow accessing a fake
+                 * machine-id, thus avoiding the problem. */
                 fake_type = "secret-key";
                 hash_seed = "ab085f06-b629-46d1-a553-84eeba5683b6";
             } else {
                 /* the secret-key is not valid/persistent either. That happens when we fail
-				 * to read/write the secret-key to disk. Fallback to boot-id. The boot-id
-				 * itself may be fake and randomly generated ad-hoc, but that is as best
-				 * as it gets.  */
+                 * to read/write the secret-key to disk. Fallback to boot-id. The boot-id
+                 * itself may be fake and randomly generated ad-hoc, but that is as best
+                 * as it gets.  */
                 seed_bin  = (const guint8 *) nm_utils_boot_id_bin();
                 seed_len  = sizeof(NMUuid);
                 fake_type = "boot-id";
@@ -2799,7 +2799,7 @@ again:
             }
 
             /* the fake machine-id is based on secret-key/boot-id, but we hash it
-			 * again, so that they are not literally the same. */
+             * again, so that they are not literally the same. */
             nm_utils_uuid_generate_from_string_bin(&uuid,
                                                    (const char *) seed_bin,
                                                    seed_len,
@@ -2862,25 +2862,25 @@ _host_id_read_timestamp(gboolean      use_secret_key_file,
 
     if (use_secret_key_file && stat(SECRET_KEY_FILE, &st) == 0) {
         /* don't check for overflow or timestamps in the future. We get whatever
-		 * (bogus) date is on the file. */
+         * (bogus) date is on the file. */
         *out_timestamp_ns = nm_utils_timespec_to_nsec(&st.st_mtim);
         return TRUE;
     }
 
     /* generate a fake timestamp based on the host-id.
-	 *
-	 * This really should never happen under normal circumstances. We already
-	 * are in a code path, where the system has a problem (unable to get good randomness
-	 * and/or can't access the secret_key). In such a scenario, a fake timestamp is the
-	 * least of our problems.
-	 *
-	 * At least, generate something sensible so we don't have to worry about the
-	 * timestamp. It is wrong to worry about using a fake timestamp (which is tied to
-	 * the secret_key) if we are unable to access the secret_key file in the first place.
-	 *
-	 * Pick a random timestamp from the past two years. Yes, this timestamp
-	 * is not stable across restarts, but apparently neither is the host-id
-	 * nor the secret_key itself. */
+     *
+     * This really should never happen under normal circumstances. We already
+     * are in a code path, where the system has a problem (unable to get good randomness
+     * and/or can't access the secret_key). In such a scenario, a fake timestamp is the
+     * least of our problems.
+     *
+     * At least, generate something sensible so we don't have to worry about the
+     * timestamp. It is wrong to worry about using a fake timestamp (which is tied to
+     * the secret_key) if we are unable to access the secret_key file in the first place.
+     *
+     * Pick a random timestamp from the past two years. Yes, this timestamp
+     * is not stable across restarts, but apparently neither is the host-id
+     * nor the secret_key itself. */
 
 #define EPOCH_TWO_YEARS (G_GINT64_CONSTANT(2 * 365 * 24 * 3600) * NM_UTILS_NSEC_PER_SEC)
 
@@ -2952,18 +2952,18 @@ _host_id_read(guint8 **out_host_id, gsize *out_host_id_len)
                && memcmp(file_content.bin, SECRET_KEY_V2_PREFIX, NM_STRLEN(SECRET_KEY_V2_PREFIX))
                       == 0) {
         /* for this type of secret key, we require a prefix followed at least SECRET_KEY_LEN (32) bytes. We
-		 * (also) do that, because older versions of NetworkManager wrote exactly 32 bytes without
-		 * prefix, so we won't wrongly interpret such legacy keys as v2 (if they accidentally have
-		 * a SECRET_KEY_V2_PREFIX prefix, they'll still have the wrong size).
-		 *
-		 * Note that below we generate the random seed in base64 encoding. But that is only done
-		 * to write an ASCII file. There is no base64 decoding and the ASCII is hashed as-is.
-		 * We would accept any binary data just as well (provided a suitable prefix and at least
-		 * 32 bytes).
-		 *
-		 * Note that when hashing the v2 content, we also hash the prefix. There is no strong reason,
-		 * except that it seems simpler not to distinguish between the v2 prefix and the content.
-		 * It's all just part of the seed. */
+         * (also) do that, because older versions of NetworkManager wrote exactly 32 bytes without
+         * prefix, so we won't wrongly interpret such legacy keys as v2 (if they accidentally have
+         * a SECRET_KEY_V2_PREFIX prefix, they'll still have the wrong size).
+         *
+         * Note that below we generate the random seed in base64 encoding. But that is only done
+         * to write an ASCII file. There is no base64 decoding and the ASCII is hashed as-is.
+         * We would accept any binary data just as well (provided a suitable prefix and at least
+         * 32 bytes).
+         *
+         * Note that when hashing the v2 content, we also hash the prefix. There is no strong reason,
+         * except that it seems simpler not to distinguish between the v2 prefix and the content.
+         * It's all just part of the seed. */
 
         secret_arr = _host_id_hash_v2(file_content.bin, file_content.len, sha256_digest);
         secret_len = NM_UTILS_CHECKSUM_LENGTH_SHA256;
@@ -2984,7 +2984,7 @@ _host_id_read(guint8 **out_host_id, gsize *out_host_id_len)
         goto out;
     } else {
         /* the secret key is borked. Log a warning, but proceed below to generate
-		 * a new one. */
+         * a new one. */
         nm_log_warn(LOGD_CORE,
                     "secret-key: too short secret key in \"%s\" (generate new key)",
                     SECRET_KEY_FILE);
@@ -3002,10 +3002,10 @@ _host_id_read(guint8 **out_host_id, gsize *out_host_id_len)
         success = nm_utils_random_bytes(rnd_buf, sizeof(rnd_buf));
 
         /* Our key is really binary data. But since we anyway generate a random seed
-		 * (with 32 random bytes), don't write it in binary, but instead create
-		 * an pure ASCII (base64) representation. Note that the ASCII will still be taken
-		 * as-is (no base64 decoding is done). The sole purpose is to write a ASCII file
-		 * instead of a binary. The content is gibberish either way. */
+         * (with 32 random bytes), don't write it in binary, but instead create
+         * an pure ASCII (base64) representation. Note that the ASCII will still be taken
+         * as-is (no base64 decoding is done). The sole purpose is to write a ASCII file
+         * instead of a binary. The content is gibberish either way. */
         memcpy(new_content, SECRET_KEY_V2_PREFIX, NM_STRLEN(SECRET_KEY_V2_PREFIX));
         len = NM_STRLEN(SECRET_KEY_V2_PREFIX);
         len += g_base64_encode_step(rnd_buf,
@@ -3252,8 +3252,8 @@ nm_utils_arp_type_detect_from_hwaddrlen(gsize hwaddr_len)
         return ARPHRD_INFINIBAND;
     default:
         /* Note: if you ever support anything but ethernet and infiniband,
-		 * make sure to look at all callers. They assert that it's one of
-		 * these two. */
+         * make sure to look at all callers. They assert that it's one of
+         * these two. */
         return -EINVAL;
     }
 }
@@ -3361,9 +3361,9 @@ nm_utils_get_ipv6_interface_identifier(NMLinkType          link_type,
     switch (link_type) {
     case NM_LINK_TYPE_INFINIBAND:
         /* Use the port GUID per http://tools.ietf.org/html/rfc4391#section-8,
-		 * making sure to set the 'u' bit to 1.  The GUID is the lower 64 bits
-		 * of the IPoIB interface's hardware address.
-		 */
+         * making sure to set the 'u' bit to 1.  The GUID is the lower 64 bits
+         * of the IPoIB interface's hardware address.
+         */
         g_return_val_if_fail(hwaddr_len == INFINIBAND_ALEN, FALSE);
         memcpy(out_iid->id_u8, hwaddr + INFINIBAND_ALEN - 8, 8);
         out_iid->id_u8[0] |= 0x02;
@@ -3386,9 +3386,9 @@ nm_utils_get_ipv6_interface_identifier(NMLinkType          link_type,
     default:
         if (hwaddr_len == ETH_ALEN) {
             /* Translate 48-bit MAC address to a 64-bit Modified EUI-64.  See
-			 * http://tools.ietf.org/html/rfc4291#appendix-A and the Linux
-			 * kernel's net/ipv6/addrconf.c::ipv6_generate_eui64() function.
-			 */
+             * http://tools.ietf.org/html/rfc4291#appendix-A and the Linux
+             * kernel's net/ipv6/addrconf.c::ipv6_generate_eui64() function.
+             */
             out_iid->id_u8[0] = hwaddr[0];
             out_iid->id_u8[1] = hwaddr[1];
             out_iid->id_u8[2] = hwaddr[2];
@@ -3512,9 +3512,9 @@ nm_utils_stable_id_generated_complete(const char *stable_id_generated)
     char *                           base64;
 
     /* for NM_UTILS_STABLE_TYPE_GENERATED we generate a possibly long string
-	 * by doing text-substitutions in nm_utils_stable_id_parse().
-	 *
-	 * Let's shorten the (possibly) long stable_id to something more compact. */
+     * by doing text-substitutions in nm_utils_stable_id_parse().
+     *
+     * Let's shorten the (possibly) long stable_id to something more compact. */
 
     g_return_val_if_fail(stable_id_generated, NULL);
 
@@ -3523,8 +3523,8 @@ nm_utils_stable_id_generated_complete(const char *stable_id_generated)
     nm_utils_checksum_get_digest(sum, buf);
 
     /* we don't care to use the sha1 sum in common hex representation.
-	 * Use instead base64, it's 27 chars (stripping the padding) vs.
-	 * 40. */
+     * Use instead base64, it's 27 chars (stripping the padding) vs.
+     * 40. */
 
     base64 = g_base64_encode((guchar *) buf, sizeof(buf));
     nm_assert(strlen(base64) == 28);
@@ -3561,41 +3561,41 @@ nm_utils_stable_id_parse(const char *stable_id,
     }
 
     /* the stable-id allows for some dynamic by performing text-substitutions
-	 * of ${...} patterns.
-	 *
-	 * At first, it looks a bit like bash parameter substitution.
-	 * In contrast however, the process is unambiguous so that the resulting
-	 * effective id differs if:
-	 *  - the original, untranslated stable-id differs
-	 *  - or any of the subsitutions differs.
-	 *
-	 * The reason for that is, for example if you specify "${CONNECTION}" in the
-	 * stable-id, then the resulting ID should be always(!) unique for this connection.
-	 * There should be no way another connection could specify any stable-id that results
-	 * in the same addresses to be generated (aside hash collisions).
-	 *
-	 *
-	 * For example: say you have a connection with UUID
-	 * "123e4567-e89b-12d3-a456-426655440000" which happens also to be
-	 * the current boot-id.
-	 * Then:
-	 *   (1) connection.stable-id = <NULL>
-	 *   (2) connection.stable-id = "123e4567-e89b-12d3-a456-426655440000"
-	 *   (3) connection.stable-id = "${CONNECTION}"
-	 *   (3) connection.stable-id = "${BOOT}"
-	 * will all generate different addresses, although in one way or the
-	 * other, they all mangle the uuid "123e4567-e89b-12d3-a456-426655440000".
-	 *
-	 * For example, with stable-id="${FOO}${BAR}" the substitutions
-	 *   - FOO="ab", BAR="c"
-	 *   - FOO="a",  BAR="bc"
-	 * should give a different effective id.
-	 *
-	 * For example, with FOO="x" and BAR="x", the stable-ids
-	 *   - "${FOO}${BAR}"
-	 *   - "${BAR}${FOO}"
-	 * should give a different effective id.
-	 */
+     * of ${...} patterns.
+     *
+     * At first, it looks a bit like bash parameter substitution.
+     * In contrast however, the process is unambiguous so that the resulting
+     * effective id differs if:
+     *  - the original, untranslated stable-id differs
+     *  - or any of the subsitutions differs.
+     *
+     * The reason for that is, for example if you specify "${CONNECTION}" in the
+     * stable-id, then the resulting ID should be always(!) unique for this connection.
+     * There should be no way another connection could specify any stable-id that results
+     * in the same addresses to be generated (aside hash collisions).
+     *
+     *
+     * For example: say you have a connection with UUID
+     * "123e4567-e89b-12d3-a456-426655440000" which happens also to be
+     * the current boot-id.
+     * Then:
+     *   (1) connection.stable-id = <NULL>
+     *   (2) connection.stable-id = "123e4567-e89b-12d3-a456-426655440000"
+     *   (3) connection.stable-id = "${CONNECTION}"
+     *   (3) connection.stable-id = "${BOOT}"
+     * will all generate different addresses, although in one way or the
+     * other, they all mangle the uuid "123e4567-e89b-12d3-a456-426655440000".
+     *
+     * For example, with stable-id="${FOO}${BAR}" the substitutions
+     *   - FOO="ab", BAR="c"
+     *   - FOO="a",  BAR="bc"
+     * should give a different effective id.
+     *
+     * For example, with FOO="x" and BAR="x", the stable-ids
+     *   - "${FOO}${BAR}"
+     *   - "${BAR}${FOO}"
+     * should give a different effective id.
+     */
 
     idx_start = 0;
     for (i = 0; stable_id[i];) {
@@ -3628,30 +3628,30 @@ nm_utils_stable_id_parse(const char *stable_id,
             _stable_id_append(str, hwaddr);
         else if (g_str_has_prefix(&stable_id[i], "${RANDOM}")) {
             /* RANDOM makes not so much sense for cloned-mac-address
-			 * as the result is similar to specifying "cloned-mac-address=random".
-			 * It makes however sense for RFC 7217 Stable Privacy IPv6 addresses
-			 * where this is effectively the only way to generate a different
-			 * (random) host identifier for each connect.
-			 *
-			 * With RANDOM, the user can switch the lifetime of the
-			 * generated cloned-mac-address and IPv6 host identifier
-			 * by toggling only the stable-id property of the connection.
-			 * With RANDOM being the most short-lived, ~non-stable~ variant.
-			 */
+             * as the result is similar to specifying "cloned-mac-address=random".
+             * It makes however sense for RFC 7217 Stable Privacy IPv6 addresses
+             * where this is effectively the only way to generate a different
+             * (random) host identifier for each connect.
+             *
+             * With RANDOM, the user can switch the lifetime of the
+             * generated cloned-mac-address and IPv6 host identifier
+             * by toggling only the stable-id property of the connection.
+             * With RANDOM being the most short-lived, ~non-stable~ variant.
+             */
             if (str)
                 g_string_free(str, TRUE);
             *out_generated = NULL;
             return NM_UTILS_STABLE_TYPE_RANDOM;
         } else {
             /* The text following the '$' is not recognized as valid
-			 * substitution pattern. Treat it verbatim. */
+             * substitution pattern. Treat it verbatim. */
             i++;
 
             /* Note that using unrecognized substitution patterns might
-			 * yield different results with future versions. Avoid that,
-			 * by not using '$' (except for actual substitutions) or escape
-			 * it as "$$" (which is guaranteed to be treated verbatim
-			 * in future). */
+             * yield different results with future versions. Avoid that,
+             * by not using '$' (except for actual substitutions) or escape
+             * it as "$$" (which is guaranteed to be treated verbatim
+             * in future). */
             if (stable_id[i] == '$')
                 i++;
         }
@@ -3682,8 +3682,8 @@ _is_reserved_ipv6_iid(const guint8 *iid)
         return TRUE;
 
     /* 0200:5EFF:FE00:0000 - 0200:5EFF:FE00:5212 (Reserved IPv6 Interface Identifiers corresponding to the IANA Ethernet Block [RFC4291])
-	 * 0200:5EFF:FE00:5213                       (Proxy Mobile IPv6 [RFC6543])
-	 * 0200:5EFF:FE00:5214 - 0200:5EFF:FEFF:FFFF (Reserved IPv6 Interface Identifiers corresponding to the IANA Ethernet Block [RFC4291]) */
+     * 0200:5EFF:FE00:5213                       (Proxy Mobile IPv6 [RFC6543])
+     * 0200:5EFF:FE00:5214 - 0200:5EFF:FEFF:FFFF (Reserved IPv6 Interface Identifiers corresponding to the IANA Ethernet Block [RFC4291]) */
     if (memcmp(iid, (const guint8[]){0x02, 0x00, 0x5E, 0xFF, 0xFE}, 5) == 0)
         return TRUE;
 
@@ -3724,14 +3724,14 @@ _set_stable_privacy(NMUtilsStableType stable_type,
         stable_type_uint8 = (guint8) stable_type;
 
         /* Preferably, we would always like to include the stable-type,
-		 * but for backward compatibility reasons, we cannot for UUID.
-		 *
-		 * That is no real problem and it is still impossible to
-		 * force a collision here, because of how the remaining
-		 * fields are hashed. That is, as we also hash @host_id_len
-		 * and the terminating '\0' of @network_id, it is unambiguously
-		 * possible to revert the process and deduce the @stable_type.
-		 */
+         * but for backward compatibility reasons, we cannot for UUID.
+         *
+         * That is no real problem and it is still impossible to
+         * force a collision here, because of how the remaining
+         * fields are hashed. That is, as we also hash @host_id_len
+         * and the terminating '\0' of @network_id, it is unambiguously
+         * possible to revert the process and deduce the @stable_type.
+         */
         g_checksum_update(sum, &stable_type_uint8, sizeof(stable_type_uint8));
     }
 
@@ -3832,11 +3832,11 @@ _hw_addr_eth_complete(struct ether_addr *addr,
     guint              i;
 
     /* the second LSB of the first octet means
-	 * "globally unique, OUI enforced, BIA (burned-in-address)"
-	 * vs. "locally-administered". By default, set it to
-	 * generate locally-administered addresses.
-	 *
-	 * Maybe be overwritten by a mask below. */
+     * "globally unique, OUI enforced, BIA (burned-in-address)"
+     * vs. "locally-administered". By default, set it to
+     * generate locally-administered addresses.
+     *
+     * Maybe be overwritten by a mask below. */
     addr->ether_addr_octet[0] |= 2;
 
     if (!generate_mac_address_mask || !*generate_mac_address_mask)
@@ -3851,7 +3851,7 @@ _hw_addr_eth_complete(struct ether_addr *addr,
     nm_assert((ouis == NULL) ^ (ouis_len != 0));
     if (ouis) {
         /* g_random_int() is good enough here. It uses a static GRand instance
-		 * that is seeded from /dev/urandom. */
+         * that is seeded from /dev/urandom. */
         oui = ouis[g_random_int() % ouis_len];
         g_free(ouis);
     } else {
@@ -3869,7 +3869,7 @@ _hw_addr_eth_complete(struct ether_addr *addr,
 
 out:
     /* The LSB of the first octet must always be cleared,
-	 * it means Unicast vs. Multicast */
+     * it means Unicast vs. Multicast */
     addr->ether_addr_octet[0] &= ~1;
 }
 
@@ -4025,14 +4025,14 @@ nm_utils_create_dhcp_iaid(gboolean      legacy_unstable_byteorder,
     u32 = (u64 & 0xffffffffu) ^ (u64 >> 32);
     if (legacy_unstable_byteorder) {
         /* legacy systemd code dhcp_identifier_set_iaid() generates the iaid
-		 * dependent on the host endianness. Since this function returns the IAID
-		 * in native-byte order, we need to account for that.
-		 *
-		 * On little endian systems, we want the legacy-behavior is identical to
-		 * the endianness-agnostic behavior. So, we need to swap the bytes on
-		 * big-endian systems.
-		 *
-		 * (https://github.com/systemd/systemd/pull/10614). */
+         * dependent on the host endianness. Since this function returns the IAID
+         * in native-byte order, we need to account for that.
+         *
+         * On little endian systems, we want the legacy-behavior is identical to
+         * the endianness-agnostic behavior. So, we need to swap the bytes on
+         * big-endian systems.
+         *
+         * (https://github.com/systemd/systemd/pull/10614). */
         return htole32(u32);
     } else {
         /* we return the value as-is, in native byte order. */
@@ -4153,11 +4153,11 @@ nm_utils_generate_duid_uuid(const NMUuid *uuid)
     nm_assert(uuid);
 
     /* Generate a DHCP Unique Identifier for DHCPv6 using the
-	 * DUID-UUID method (see RFC 6355 section 4).  Format is:
-	 *
-	 * u16: type (DUID-UUID = 4)
-	 * u8[16]: UUID bytes
-	 */
+     * DUID-UUID method (see RFC 6355 section 4).  Format is:
+     *
+     * u16: type (DUID-UUID = 4)
+     * u8[16]: UUID bytes
+     */
     G_STATIC_ASSERT_EXPR(sizeof(duid_type) == 2);
     G_STATIC_ASSERT_EXPR(sizeof(*uuid) == 16);
     duid_buffer = g_malloc(18);
@@ -4185,9 +4185,9 @@ again:
         machine_id = nm_utils_machine_id_bin();
 
         /* Hash the machine ID so it's not leaked to the network.
-		 *
-		 * Optimally, we would choose an use case specific seed, but for historic
-		 * reasons we didn't. */
+         *
+         * Optimally, we would choose an use case specific seed, but for historic
+         * reasons we didn't. */
         sum = g_checksum_new(G_CHECKSUM_SHA256);
         g_checksum_update(sum, (const guchar *) machine_id, sizeof(*machine_id));
         nm_utils_checksum_get_digest(sum, digest.sha256);
@@ -4289,12 +4289,12 @@ nm_utils_lifetime_rebase_relative_time_on_now(guint32 timestamp, guint32 duratio
 
     if (timestamp == 0) {
         /* if the @timestamp is zero, assume it was just left unset and that the relative
-		 * @duration starts counting from @now. This is convenient to construct an address
-		 * and print it in nm_platform_ip4_address_to_string().
-		 *
-		 * In general it does not make sense to set the @duration without anchoring at
-		 * @timestamp because you don't know the absolute expiration time when looking
-		 * at the address at a later moment. */
+         * @duration starts counting from @now. This is convenient to construct an address
+         * and print it in nm_platform_ip4_address_to_string().
+         *
+         * In general it does not make sense to set the @duration without anchoring at
+         * @timestamp because you don't know the absolute expiration time when looking
+         * at the address at a later moment. */
         timestamp = now;
     }
 
@@ -4321,10 +4321,10 @@ nm_utils_lifetime_get(guint32  timestamp,
 
     if (timestamp == 0 && lifetime == 0) {
         /* We treat lifetime==0 && timestamp==0 addresses as permanent addresses to allow easy
-		 * creation of such addresses (without requiring to set the lifetime fields to
-		 * NM_PLATFORM_LIFETIME_PERMANENT). The real lifetime==0 addresses (E.g. DHCP6 telling us
-		 * to drop an address will have timestamp set.
-		 */
+         * creation of such addresses (without requiring to set the lifetime fields to
+         * NM_PLATFORM_LIFETIME_PERMANENT). The real lifetime==0 addresses (E.g. DHCP6 telling us
+         * to drop an address will have timestamp set.
+         */
         NM_SET_OUT(out_preferred, NM_PLATFORM_LIFETIME_PERMANENT);
         g_return_val_if_fail(preferred == 0, NM_PLATFORM_LIFETIME_PERMANENT);
         return NM_PLATFORM_LIFETIME_PERMANENT;
@@ -4344,9 +4344,9 @@ nm_utils_lifetime_get(guint32  timestamp,
     NM_SET_OUT(out_preferred, MIN(t_preferred, t_lifetime));
 
     /* Assert that non-permanent addresses have a (positive) @timestamp. nm_utils_lifetime_rebase_relative_time_on_now()
-	 * treats addresses with timestamp 0 as *now*. Addresses passed to _address_get_lifetime() always
-	 * should have a valid @timestamp, otherwise on every re-sync, their lifetime will be extended anew.
-	 */
+     * treats addresses with timestamp 0 as *now*. Addresses passed to _address_get_lifetime() always
+     * should have a valid @timestamp, otherwise on every re-sync, their lifetime will be extended anew.
+     */
     g_return_val_if_fail(timestamp != 0
                              || (lifetime == NM_PLATFORM_LIFETIME_PERMANENT
                                  && preferred == NM_PLATFORM_LIFETIME_PERMANENT),
@@ -4948,8 +4948,8 @@ get_max_rate_ht(const guint8 *bytes, guint len, guint32 *out_maxrate)
     guint32       rate;
 
     /* http://standards.ieee.org/getieee802/download/802.11-2012.pdf
-	 * https://mrncciew.com/2014/10/19/cwap-ht-capabilities-ie/
-	 */
+     * https://mrncciew.com/2014/10/19/cwap-ht-capabilities-ie/
+     */
 
     if (len != 26)
         return FALSE;
@@ -4985,7 +4985,7 @@ get_max_rate_vht(const guint8 *bytes, guint len, guint32 *out_maxrate)
     guint8  vht_cap, tx_map;
 
     /* https://tda802dot11.blogspot.it/2014/10/vht-capabilities-element-vht.html
-	 * http://chimera.labs.oreilly.com/books/1234000001739/ch03.html#management_frames */
+     * http://chimera.labs.oreilly.com/books/1234000001739/ch03.html#management_frames */
 
     if (len != 12)
         return FALSE;
@@ -5002,7 +5002,7 @@ get_max_rate_vht(const guint8 *bytes, guint len, guint32 *out_maxrate)
         mcs = 7;
 
     /* Check for 160Mhz wide channel support and
-	 * spatial stream support */
+     * spatial stream support */
     if (vht_cap & (1 << 2)) {
         if (tx_map & 0x30)
             m = get_max_rate_vht_160_ss3(mcs);

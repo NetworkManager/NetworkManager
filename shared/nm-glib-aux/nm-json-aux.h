@@ -141,8 +141,8 @@ static inline void
 nm_json_decref(const NMJsonVt *vt, nm_json_t *json)
 {
     /* Our ref-counting is not threadsafe, unlike libjansson's. But we never
-	 * share one json_t instance between threads, and if we would, we would very likely
-	 * wrap a mutex around it. */
+     * share one json_t instance between threads, and if we would, we would very likely
+     * wrap a mutex around it. */
     if (json && json->refcount != (size_t) -1 && --json->refcount == 0)
         vt->nm_json_delete(json);
 }
@@ -296,7 +296,7 @@ nm_value_type_from_json(const NMJsonVt * vt,
         return (nm_jansson_json_as_int(vt, elem, out_val) > 0);
 
     /* warning: this overwrites/leaks the previous value. You better have *out_val
-	 * point to uninitialized memory or NULL. */
+     * point to uninitialized memory or NULL. */
     case NM_VALUE_TYPE_STRING:
         return (nm_jansson_json_as_string(vt, elem, out_val) > 0);
 

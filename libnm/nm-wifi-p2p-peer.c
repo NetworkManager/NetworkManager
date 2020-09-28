@@ -434,12 +434,12 @@ nm_wifi_p2p_peer_class_init(NMWifiP2PPeerClass *klass)
     object_class->finalize     = finalize;
 
     /**
-	 * NMWifiP2PPeer:flags:
-	 *
-	 * The flags of the P2P peer.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMWifiP2PPeer:flags:
+     *
+     * The flags of the P2P peer.
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_FLAGS] = g_param_spec_flags(NM_WIFI_P2P_PEER_FLAGS,
                                                     "",
                                                     "",
@@ -448,12 +448,12 @@ nm_wifi_p2p_peer_class_init(NMWifiP2PPeerClass *klass)
                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMWifiP2PPeer:name:
-	 *
-	 * The name of the P2P peer.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMWifiP2PPeer:name:
+     *
+     * The name of the P2P peer.
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_NAME] = g_param_spec_string(NM_WIFI_P2P_PEER_NAME,
                                                     "",
                                                     "",
@@ -461,12 +461,12 @@ nm_wifi_p2p_peer_class_init(NMWifiP2PPeerClass *klass)
                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMWifiP2PPeer:manufacturer:
-	 *
-	 * The manufacturer of the P2P peer.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMWifiP2PPeer:manufacturer:
+     *
+     * The manufacturer of the P2P peer.
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_MANUFACTURER] =
         g_param_spec_string(NM_WIFI_P2P_PEER_MANUFACTURER,
                             "",
@@ -475,12 +475,12 @@ nm_wifi_p2p_peer_class_init(NMWifiP2PPeerClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMWifiP2PPeer:model:
-	 *
-	 * The model of the P2P peer.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMWifiP2PPeer:model:
+     *
+     * The model of the P2P peer.
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_MODEL] = g_param_spec_string(NM_WIFI_P2P_PEER_MODEL,
                                                      "",
                                                      "",
@@ -488,12 +488,12 @@ nm_wifi_p2p_peer_class_init(NMWifiP2PPeerClass *klass)
                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMWifiP2PPeer:model-number:
-	 *
-	 * The hardware address of the P2P peer.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMWifiP2PPeer:model-number:
+     *
+     * The hardware address of the P2P peer.
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_MODEL_NUMBER] =
         g_param_spec_string(NM_WIFI_P2P_PEER_MODEL_NUMBER,
                             "",
@@ -502,12 +502,12 @@ nm_wifi_p2p_peer_class_init(NMWifiP2PPeerClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMWifiP2PPeer:serial:
-	 *
-	 * The serial number of the P2P peer.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMWifiP2PPeer:serial:
+     *
+     * The serial number of the P2P peer.
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_SERIAL] = g_param_spec_string(NM_WIFI_P2P_PEER_SERIAL,
                                                       "",
                                                       "",
@@ -515,24 +515,24 @@ nm_wifi_p2p_peer_class_init(NMWifiP2PPeerClass *klass)
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMWifiP2PPeer:wfd-ies:
-	 *
-	 * The WFD information elements of the P2P peer.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMWifiP2PPeer:wfd-ies:
+     *
+     * The WFD information elements of the P2P peer.
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_WFD_IES] = g_param_spec_boxed(NM_WIFI_P2P_PEER_WFD_IES,
                                                       "",
                                                       "",
                                                       G_TYPE_BYTES,
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
     /**
-	 * NMWifiP2PPeer:hw-address:
-	 *
-	 * The hardware address of the P2P peer.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMWifiP2PPeer:hw-address:
+     *
+     * The hardware address of the P2P peer.
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_HW_ADDRESS] =
         g_param_spec_string(NM_WIFI_P2P_PEER_HW_ADDRESS,
                             "",
@@ -541,12 +541,12 @@ nm_wifi_p2p_peer_class_init(NMWifiP2PPeerClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMWifiP2PPeer:strength:
-	 *
-	 * The current signal strength of the P2P peer.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMWifiP2PPeer:strength:
+     *
+     * The current signal strength of the P2P peer.
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_STRENGTH] = g_param_spec_uchar(NM_WIFI_P2P_PEER_STRENGTH,
                                                        "",
                                                        "",
@@ -556,13 +556,13 @@ nm_wifi_p2p_peer_class_init(NMWifiP2PPeerClass *klass)
                                                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMWifiP2PPeer:last-seen:
-	 *
-	 * The timestamp (in CLOCK_BOOTTIME seconds) for the last time the
-	 * P2P peer was found.  A value of -1 means the peer has never been seen.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMWifiP2PPeer:last-seen:
+     *
+     * The timestamp (in CLOCK_BOOTTIME seconds) for the last time the
+     * P2P peer was found.  A value of -1 means the peer has never been seen.
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_LAST_SEEN] = g_param_spec_int(NM_WIFI_P2P_PEER_LAST_SEEN,
                                                       "",
                                                       "",

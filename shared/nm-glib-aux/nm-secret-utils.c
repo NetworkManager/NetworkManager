@@ -44,11 +44,11 @@ nm_free_secret(char *secret)
 
 #if GLIB_CHECK_VERSION(2, 44, 0)
     /* Here we mix malloc() and g_malloc() API. Usually we avoid this,
-	 * however since glib 2.44.0 we are in fact guaranteed that g_malloc()/g_free()
-	 * just wraps malloc()/free(), so this is actually fine.
-	 *
-	 * See https://gitlab.gnome.org/GNOME/glib/commit/3be6ed60aa58095691bd697344765e715a327fc1
-	 */
+     * however since glib 2.44.0 we are in fact guaranteed that g_malloc()/g_free()
+     * just wraps malloc()/free(), so this is actually fine.
+     *
+     * See https://gitlab.gnome.org/GNOME/glib/commit/3be6ed60aa58095691bd697344765e715a327fc1
+     */
     len = malloc_usable_size(secret);
 #else
     len = strlen(secret);
@@ -68,9 +68,9 @@ nm_secret_strchomp(char *secret)
     g_return_val_if_fail(secret, NULL);
 
     /* it's actually identical to g_strchomp(). However,
-	 * the glib function does not document, that it clears the
-	 * memory. For @secret, we don't only want to truncate trailing
-	 * spaces, we want to overwrite them with NUL. */
+     * the glib function does not document, that it clears the
+     * memory. For @secret, we don't only want to truncate trailing
+     * spaces, we want to overwrite them with NUL. */
 
     len = strlen(secret);
     while (len--) {
@@ -96,16 +96,16 @@ nm_secret_copy_to_gbytes(gconstpointer mem, gsize mem_len)
     nm_assert(mem);
 
     /* NUL terminate the buffer.
-	 *
-	 * The entire buffer is already malloc'ed and likely has some room for padding.
-	 * Thus, in many situations, this additional byte will cause no overhead in
-	 * practice.
-	 *
-	 * Even if it causes an overhead, do it just for safety. Yes, the returned
-	 * bytes is not a NUL terminated string and no user must rely on this. Do
-	 * not treat binary data as NUL terminated strings, unless you know what
-	 * you are doing. Anyway, defensive FTW.
-	 */
+     *
+     * The entire buffer is already malloc'ed and likely has some room for padding.
+     * Thus, in many situations, this additional byte will cause no overhead in
+     * practice.
+     *
+     * Even if it causes an overhead, do it just for safety. Yes, the returned
+     * bytes is not a NUL terminated string and no user must rely on this. Do
+     * not treat binary data as NUL terminated strings, unless you know what
+     * you are doing. Anyway, defensive FTW.
+     */
 
     b = nm_secret_buf_new(mem_len + 1);
     memcpy(b->bin, mem, mem_len);

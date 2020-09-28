@@ -460,17 +460,17 @@ nm_pacrunner_manager_remove(NMPacrunnerConfId *conf_id)
 
     if (!conf_id->path) {
         /* There is no ID to destroy the configuration.
-		 *
-		 * That can happen because:
-		 *
-		 *  - pacrunner D-Bus service is not running (no name owner) and we didn't call CreateProxyConfiguration.
-		 *  - CreateProxyConfiguration failed.
-		 *  - CreateProxyConfiguration is in progress.
-		 *
-		 * In all cases there is nothing to do. Note that if CreateProxyConfiguration is in progress
-		 * it has a reference on the conf-id and it will automatically destroy the configuration
-		 * when it completes.
-		 */
+         *
+         * That can happen because:
+         *
+         *  - pacrunner D-Bus service is not running (no name owner) and we didn't call CreateProxyConfiguration.
+         *  - CreateProxyConfiguration failed.
+         *  - CreateProxyConfiguration is in progress.
+         *
+         * In all cases there is nothing to do. Note that if CreateProxyConfiguration is in progress
+         * it has a reference on the conf-id and it will automatically destroy the configuration
+         * when it completes.
+         */
         return;
     }
 
@@ -596,9 +596,9 @@ dispose(GObject *object)
     nm_assert(c_list_is_empty(&priv->conf_id_lst_head));
 
     /* we cancel all pending operations. Note that pacrunner automatically
-	 * removes all configuration once NetworkManager disconnects from
-	 * the bus -- which happens soon after we destroy the pacrunner manager.
-	 */
+     * removes all configuration once NetworkManager disconnects from
+     * the bus -- which happens soon after we destroy the pacrunner manager.
+     */
     nm_clear_g_cancellable(&priv->cancellable);
 
     nm_clear_g_dbus_connection_signal(priv->dbus_connection, &priv->name_owner_changed_id);

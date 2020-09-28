@@ -38,23 +38,23 @@ _t_init_global_state(void)
     }
 
     /* The only failure we tolerate is that CLOCK_BOOTTIME is not supported.
-	 * Other than that, we rely on kernel to not fail on this. */
+     * Other than that, we rely on kernel to not fail on this. */
     g_assert(r == 0);
     g_assert(tp.tv_nsec >= 0 && tp.tv_nsec < NM_UTILS_NSEC_PER_SEC);
 
     /* Calculate an offset for the time stamp.
-	 *
-	 * We always want positive values, because then we can initialize
-	 * a timestamp with 0 and be sure, that it will be less then any
-	 * value nm_utils_get_monotonic_timestamp_*() might return.
-	 * For this to be true also for nm_utils_get_monotonic_timestamp_sec() at
-	 * early boot, we have to shift the timestamp to start counting at
-	 * least from 1 second onward.
-	 *
-	 * Another advantage of shifting is, that this way we make use of the whole 31 bit
-	 * range of signed int, before the time stamp for nm_utils_get_monotonic_timestamp_sec()
-	 * wraps (~68 years).
-	 **/
+     *
+     * We always want positive values, because then we can initialize
+     * a timestamp with 0 and be sure, that it will be less then any
+     * value nm_utils_get_monotonic_timestamp_*() might return.
+     * For this to be true also for nm_utils_get_monotonic_timestamp_sec() at
+     * early boot, we have to shift the timestamp to start counting at
+     * least from 1 second onward.
+     *
+     * Another advantage of shifting is, that this way we make use of the whole 31 bit
+     * range of signed int, before the time stamp for nm_utils_get_monotonic_timestamp_sec()
+     * wraps (~68 years).
+     **/
     offset_sec = (-((gint64) tp.tv_sec)) + 1;
 
     if (!g_once_init_enter(&init_once)) {
@@ -124,9 +124,9 @@ nm_utils_get_monotonic_timestamp_nsec(void)
     p = _t_clock_gettime(&tp);
 
     /* Although the result will always be positive, we return a signed
-	 * integer, which makes it easier to calculate time differences (when
-	 * you want to subtract signed values).
-	 **/
+     * integer, which makes it easier to calculate time differences (when
+     * you want to subtract signed values).
+     **/
     return (((gint64) tp.tv_sec) + p->offset_sec) * NM_UTILS_NSEC_PER_SEC + tp.tv_nsec;
 }
 
@@ -151,9 +151,9 @@ nm_utils_get_monotonic_timestamp_usec(void)
     p = _t_clock_gettime(&tp);
 
     /* Although the result will always be positive, we return a signed
-	 * integer, which makes it easier to calculate time differences (when
-	 * you want to subtract signed values).
-	 **/
+     * integer, which makes it easier to calculate time differences (when
+     * you want to subtract signed values).
+     **/
     return (((gint64) tp.tv_sec) + p->offset_sec) * ((gint64) G_USEC_PER_SEC)
            + (tp.tv_nsec / (NM_UTILS_NSEC_PER_SEC / G_USEC_PER_SEC));
 }
@@ -179,9 +179,9 @@ nm_utils_get_monotonic_timestamp_msec(void)
     p = _t_clock_gettime(&tp);
 
     /* Although the result will always be positive, we return a signed
-	 * integer, which makes it easier to calculate time differences (when
-	 * you want to subtract signed values).
-	 **/
+     * integer, which makes it easier to calculate time differences (when
+     * you want to subtract signed values).
+     **/
     return (((gint64) tp.tv_sec) + p->offset_sec) * ((gint64) 1000)
            + (tp.tv_nsec / (NM_UTILS_NSEC_PER_SEC / 1000));
 }
@@ -243,7 +243,7 @@ nm_utils_monotonic_timestamp_as_boottime(gint64 timestamp, gint64 timestamp_nsec
                          -1);
 
     /* if the caller didn't yet ever fetch a monotonic-timestamp, he cannot pass any meaningful
-	 * value (because he has no idea what these timestamps would be). That would be a bug. */
+     * value (because he has no idea what these timestamps would be). That would be a bug. */
     nm_assert(g_atomic_pointer_get(&p_global_state));
 
     p = _t_get_global_state();

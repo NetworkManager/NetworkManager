@@ -462,10 +462,10 @@ merge_one_ip_config(NMResolvConfData *rc, int ifindex, const NMIPConfig *ip_conf
     }
     if (num_nameservers == 0) {
         /* If the @ip_config contributes no DNS servers, ignore whether trust-ad is set or unset
-		 * for this @ip_config. */
+         * for this @ip_config. */
     } else if (has_trust_ad) {
         /* We only set has_trust_ad to TRUE, if all IP configs agree (or don't contribute).
-		 * Once set to FALSE, it doesn't get reset. */
+         * Once set to FALSE, it doesn't get reset. */
         if (rc->has_trust_ad == NM_TERNARY_DEFAULT)
             rc->has_trust_ad = NM_TERNARY_TRUE;
     } else
@@ -566,8 +566,8 @@ dispatch_netconfig(NMDnsManager *     self,
     str = g_string_new("");
 
     /* NM is writing already-merged DNS information to netconfig, so it
-	 * does not apply to a specific network interface.
-	 */
+     * does not apply to a specific network interface.
+     */
     netconfig_construct_str(self, str, "INTERFACE", "NetworkManager");
     netconfig_construct_strv(self, str, "DNSSEARCH", searches);
     netconfig_construct_strv(self, str, "DNSSERVERS", nameservers);
@@ -634,19 +634,19 @@ create_resolv_conf(const char *const *searches,
 
             if (l == 0 || NM_STRCHAR_ANY(s, ch, NM_IN_SET(ch, ' ', '\t', '\n'))) {
                 /* there should be no such characters in the search entry. Also,
-				 * because glibc parser would treat them as line/word separator.
-				 *
-				 * Skip the value silently. */
+                 * because glibc parser would treat them as line/word separator.
+                 *
+                 * Skip the value silently. */
                 continue;
             }
 
             if (search_base_idx > 0) {
                 if (str->len - search_base_idx + 1 + l > 254) {
                     /* this entry crosses the 256 character boundary. Older glibc versions
-					 * would truncate the entry at this point.
-					 *
-					 * Fill the line with spaces to cross the 256 char boundary and continue
-					 * afterwards. This way, the truncation happens between two search entries. */
+                     * would truncate the entry at this point.
+                     *
+                     * Fill the line with spaces to cross the 256 char boundary and continue
+                     * afterwards. This way, the truncation happens between two search entries. */
                     while (str->len - search_base_idx < 257)
                         g_string_append_c(str, ' ');
                     search_base_idx = 0;
@@ -879,12 +879,12 @@ update_resolv_conf(NMDnsManager *                self,
                 rc_path = rc_path_real;
             else {
                 /* realpath did not resolve a path-name. That either means,
-				 * _PATH_RESCONF:
-				 *   - does not exist
-				 *   - is a plain file
-				 *   - is a dangling symlink
-				 *
-				 * Handle the case, where it is a dangling symlink... */
+                 * _PATH_RESCONF:
+                 *   - does not exist
+                 *   - is a plain file
+                 *   - is a dangling symlink
+                 *
+                 * Handle the case, where it is a dangling symlink... */
                 rc_path_syml = nm_utils_read_link_absolute(_PATH_RESCONF, NULL);
                 if (rc_path_syml)
                     rc_path = rc_path_syml;
@@ -892,8 +892,8 @@ update_resolv_conf(NMDnsManager *                self,
         }
 
         /* we first write to /etc/resolv.conf directly. If that fails,
-		 * we still continue to write to runstatedir but remember the
-		 * error. */
+         * we still continue to write to runstatedir but remember the
+         * error. */
         if (!g_file_set_contents(rc_path, content, -1, &local)) {
             _LOGT("update-resolv-conf: write to %s failed (rc-manager=%s, %s)",
                   rc_path,
@@ -901,7 +901,7 @@ update_resolv_conf(NMDnsManager *                self,
                   local->message);
             g_propagate_error(error, local);
             /* clear @error, so that we don't try reset it. This is the error
-			 * we want to propagate to the caller. */
+             * we want to propagate to the caller. */
             error             = NULL;
             write_file_result = SR_ERROR;
         } else {
@@ -937,8 +937,8 @@ update_resolv_conf(NMDnsManager *                self,
         if (success) {
             errsv = errno;
             /* only set an error here if write_resolv_conf() was successful,
-			 * since its error is more important.
-			 */
+             * since its error is more important.
+             */
             g_set_error(error,
                         NM_MANAGER_ERROR,
                         NM_MANAGER_ERROR_FAILED,
@@ -992,9 +992,9 @@ update_resolv_conf(NMDnsManager *                self,
     }
 
     /* By this point, /etc/resolv.conf exists and is a symlink to our internal
-	 * resolv.conf. We update the symlink so that applications get an inotify
-	 * notification.
-	 */
+     * resolv.conf. We update the symlink so that applications get an inotify
+     * notification.
+     */
     if (unlink(RESOLV_CONF_TMP) != 0 && ((errsv = errno) != ENOENT)) {
         g_set_error(error,
                     NM_MANAGER_ERROR,
@@ -1066,7 +1066,7 @@ compute_hash(NMDnsManager *self, const NMGlobalDnsConfig *global, guint8 buffer[
         const CList *head;
 
         /* FIXME(ip-config-checksum): this relies on the fact that an IP
-		 * configuration without DNS parameters gives a zero checksum. */
+         * configuration without DNS parameters gives a zero checksum. */
         head = _ip_config_lst_head(self);
         c_list_for_each_entry (ip_data, head, ip_config_lst)
             nm_ip_config_hash(ip_data->ip_config, sum, TRUE);
@@ -1209,12 +1209,12 @@ _collect_resolv_conf_data(NMDnsManager *     self,
     }
 
     /* If the hostname is a FQDN ("dcbw.example.com"), then add the domain part of it
-	 * ("example.com") to the searches list, to ensure that we can still resolve its
-	 * non-FQ form ("dcbw") too. (Also, if there are no other search domains specified,
-	 * this makes a good default.) However, if the hostname is the top level of a domain
-	 * (eg, "example.com"), then use the hostname itself as the search (since the user is
-	 * unlikely to want "com" as a search domain).
-	 */
+     * ("example.com") to the searches list, to ensure that we can still resolve its
+     * non-FQ form ("dcbw") too. (Also, if there are no other search domains specified,
+     * this makes a good default.) However, if the hostname is the top level of a domain
+     * (eg, "example.com"), then use the hostname itself as the search (since the user is
+     * unlikely to want "com" as a search domain).
+     */
     if (priv->hostname) {
         const char *hostdomain = strchr(priv->hostname, '.');
 
@@ -1371,14 +1371,14 @@ rebuild_domain_lists(NMDnsManager *self)
         num_dom1 = 0;
 
         /* Add wildcard lookup domain to connections with the default route.
-		 * If there is no default route, add the wildcard domain to all non-VPN
-		 * connections */
+         * If there is no default route, add the wildcard domain to all non-VPN
+         * connections */
         if (default_route_found) {
             /* FIXME: this heuristic of which device has a default route does
-			 * not work with policy routing (as used by default with WireGuard).
-			 * We should have a more stable mechanism where an NMIPConfig indicates
-			 * whether it is suitable for certain operations (like having an automatically
-			 * added "~" domain). */
+             * not work with policy routing (as used by default with WireGuard).
+             * We should have a more stable mechanism where an NMIPConfig indicates
+             * whether it is suitable for certain operations (like having an automatically
+             * added "~" domain). */
             if (nm_ip_config_best_default_route_get(ip_config))
                 domains[num_dom1++] = "~";
         } else {
@@ -1543,8 +1543,8 @@ update_dns(NMDnsManager *self, gboolean no_caching, GError **error)
             _LOGW("update-dns: plugin %s update failed: %s", plugin_name, plugin_error->message);
 
             /* If the plugin failed to update, we shouldn't write out a local
-			 * caching DNS configuration to resolv.conf.
-			 */
+             * caching DNS configuration to resolv.conf.
+             */
             caching = FALSE;
         }
 
@@ -1552,8 +1552,8 @@ plugin_skip:;
     }
 
     /* Clear the generated search list as it points to
-	 * strings owned by IP configurations and we can't
-	 * guarantee they stay alive. */
+     * strings owned by IP configurations and we can't
+     * guarantee they stay alive. */
     clear_domain_lists(self);
 
     update_resolv_conf_no_stub(self,
@@ -1562,9 +1562,9 @@ plugin_skip:;
                                NM_CAST_STRV_CC(options));
 
     /* If caching was successful, we only send 127.0.0.1 to /etc/resolv.conf
-	 * to ensure that the glibc resolver doesn't try to round-robin nameservers,
-	 * but only uses the local caching nameserver.
-	 */
+     * to ensure that the glibc resolver doesn't try to round-robin nameservers,
+     * but only uses the local caching nameserver.
+     */
     if (caching) {
         const char *lladdr = "127.0.0.1";
 
@@ -1590,7 +1590,7 @@ plugin_skip:;
                                         priv->rc_manager);
             resolv_conf_updated = TRUE;
             /* If we have ended with no nameservers avoid updating again resolv.conf
-			 * on stop, as some external changes may be applied to it in the meanwhile */
+             * on stop, as some external changes may be applied to it in the meanwhile */
             if (!nameservers && !options)
                 priv->dns_touched = FALSE;
             break;
@@ -1845,10 +1845,10 @@ nm_dns_manager_stop(NMDnsManager *self)
     _LOGT("stopping...");
 
     /* If we're quitting, leave a valid resolv.conf in place, not one
-	 * pointing to 127.0.0.1 if dnsmasq was active.  But if we haven't
-	 * done any DNS updates yet, there's no reason to touch resolv.conf
-	 * on shutdown.
-	 */
+     * pointing to 127.0.0.1 if dnsmasq was active.  But if we haven't
+     * done any DNS updates yet, there's no reason to touch resolv.conf
+     * on shutdown.
+     */
     if (priv->dns_touched && priv->plugin && NM_IS_DNS_DNSMASQ(priv->plugin)) {
         gs_free_error GError *error = NULL;
 
@@ -1903,8 +1903,8 @@ _check_resconf_immutable(NMDnsManagerResolvConfManager rc_manager)
             switch (rc_manager) {
             case NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK:
                 /* we don't care whether the link-target is immutable.
-				 * If the symlink points to another file, rc-manager=symlink anyway backs off.
-				 * Otherwise, we would only check whether our internal resolv.conf is immutable. */
+                 * If the symlink points to another file, rc-manager=symlink anyway backs off.
+                 * Otherwise, we would only check whether our internal resolv.conf is immutable. */
                 return NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK;
             case NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN:
             case NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED:
@@ -1953,13 +1953,13 @@ _resolvconf_resolved_managed(void)
         nm_auto_free char *real_path = NULL;
 
         /* see if resolv.conf is a symlink with a target that is
-		 * exactly like one of the candidates.
-		 *
-		 * This check will work for symlinks, even if the target
-		 * does not exist and realpath() cannot resolve anything.
-		 *
-		 * We want to handle that, because systemd-resolved might not
-		 * have started yet. */
+         * exactly like one of the candidates.
+         *
+         * This check will work for symlinks, even if the target
+         * does not exist and realpath() cannot resolve anything.
+         *
+         * We want to handle that, because systemd-resolved might not
+         * have started yet. */
         full_path = g_file_read_link(_PATH_RESCONF, NULL);
         if (nm_utils_strv_find_first((char **) RESOLVED_PATHS,
                                      G_N_ELEMENTS(RESOLVED_PATHS),
@@ -1968,13 +1968,13 @@ _resolvconf_resolved_managed(void)
             return TRUE;
 
         /* see if resolv.conf is a symlink that resolves exactly one
-		 * of the candidate paths.
-		 *
-		 * This check will work for symlinks that can be resolved
-		 * to a realpath, but the actual file might not exist.
-		 *
-		 * We want to handle that, because systemd-resolved might not
-		 * have started yet. */
+         * of the candidate paths.
+         *
+         * This check will work for symlinks that can be resolved
+         * to a realpath, but the actual file might not exist.
+         *
+         * We want to handle that, because systemd-resolved might not
+         * have started yet. */
         real_path = realpath(_PATH_RESCONF, NULL);
         if (nm_utils_strv_find_first((char **) RESOLVED_PATHS,
                                      G_N_ELEMENTS(RESOLVED_PATHS),
@@ -1983,16 +1983,16 @@ _resolvconf_resolved_managed(void)
             return TRUE;
 
         /* fall-through and resolve the symlink, to check the file
-		 * it points to (below).
-		 *
-		 * This check is the most reliable, but it only works if
-		 * systemd-resolved already started and created the file. */
+         * it points to (below).
+         *
+         * This check is the most reliable, but it only works if
+         * systemd-resolved already started and created the file. */
         if (stat(_PATH_RESCONF, &st) != 0)
             return FALSE;
     }
 
     /* see if resolv.conf resolves to one of the candidate
-	 * paths (or whether it is hard-linked). */
+     * paths (or whether it is hard-linked). */
     for (i = 0; i < G_N_ELEMENTS(RESOLVED_PATHS); i++) {
         const char *p = RESOLVED_PATHS[i];
 
@@ -2093,25 +2093,25 @@ again:
             rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED;
         else if (HAS_RESOLVCONF && g_file_test(RESOLVCONF_PATH, G_FILE_TEST_IS_EXECUTABLE)) {
             /* We detect /sbin/resolvconf only at this stage. That means, if you install
-			 * or uninstall openresolv afterwards, you need to reload the DNS settings
-			 * (with SIGHUP or `systemctl reload NetworkManager.service`).
-			 *
-			 * We only accept resolvconf if NetworkManager was built with --with-resolvconf.
-			 * For example, on Fedora the systemd package provides a compat resolvconf
-			 * implementation for systemd-resolved. But using that never makes sense, because
-			 * there we either use full systemd-resolved mode or not. In no case does it
-			 * make sense to call that resolvconf implementation. */
+             * or uninstall openresolv afterwards, you need to reload the DNS settings
+             * (with SIGHUP or `systemctl reload NetworkManager.service`).
+             *
+             * We only accept resolvconf if NetworkManager was built with --with-resolvconf.
+             * For example, on Fedora the systemd package provides a compat resolvconf
+             * implementation for systemd-resolved. But using that never makes sense, because
+             * there we either use full systemd-resolved mode or not. In no case does it
+             * make sense to call that resolvconf implementation. */
             rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_RESOLVCONF;
         } else if (HAS_NETCONFIG && g_file_test(NETCONFIG_PATH, G_FILE_TEST_IS_EXECUTABLE)) {
             /* Like for resolvconf, we detect only once. We only autoenable this
-			 * option, if NetworkManager was built with netconfig explicitly enabled. */
+             * option, if NetworkManager was built with netconfig explicitly enabled. */
             rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_NETCONFIG;
         } else
             rc_manager = NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK;
     }
 
     /* The systemd-resolved plugin is special. We typically always want to keep
-	 * systemd-resolved up to date even if the configured plugin is different. */
+     * systemd-resolved up to date even if the configured plugin is different. */
     if (systemd_resolved) {
         if (!priv->sd_resolve_plugin) {
             priv->sd_resolve_plugin  = nm_dns_systemd_resolved_new();
@@ -2162,9 +2162,9 @@ config_changed_cb(NMConfig *          config,
                      NM_CONFIG_CHANGE_DNS_MODE | NM_CONFIG_CHANGE_RC_MANAGER
                          | NM_CONFIG_CHANGE_CAUSE_SIGHUP | NM_CONFIG_CHANGE_CAUSE_DNS_FULL)) {
         /* reload the resolv-conf mode also on SIGHUP (when DNS_MODE didn't change).
-		 * The reason is, that the configuration also depends on whether resolv.conf
-		 * is immutable, thus, without the configuration changing, we always want to
-		 * re-configure the mode. */
+         * The reason is, that the configuration also depends on whether resolv.conf
+         * is immutable, thus, without the configuration changing, we always want to
+         * re-configure the mode. */
         init_resolv_conf_mode(
             self,
             NM_FLAGS_ANY(changes, NM_CONFIG_CHANGE_CAUSE_SIGHUP | NM_CONFIG_CHANGE_CAUSE_DNS_FULL));

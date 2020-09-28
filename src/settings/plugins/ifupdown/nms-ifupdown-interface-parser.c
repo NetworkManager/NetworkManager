@@ -74,7 +74,7 @@ add_data(if_parser *parser, const char *key, const char *data)
     memcpy((char *) ifd->data, data, l_data);
 
     /* Normalize keys. Convert '_' to '-', as ifupdown accepts both variants.
-	 * When querying keys via ifparser_getkey(), use '-'. */
+     * When querying keys via ifparser_getkey(), use '-'. */
     idx = (char *) ifd->key;
     while ((idx = strchr(idx, '_')))
         *(idx++) = '-';
@@ -184,8 +184,8 @@ _recursive_ifparser(if_parser *parser, const char *eni_file, int quiet)
         }
 
         /* There are six different stanzas:
-		 * iface, mapping, auto, allow-*, source, and source-directory.
-		 * Create a block for each of them except source and source-directory.  */
+         * iface, mapping, auto, allow-*, source, and source-directory.
+         * Create a block for each of them except source and source-directory.  */
 
         /* iface stanza takes at least 3 parameters */
         if (nm_streq(token[0], "iface")) {
@@ -200,7 +200,7 @@ _recursive_ifparser(if_parser *parser, const char *eni_file, int quiet)
             add_data(parser, token[2], join_values_with_spaces(value, token + 3));
         }
         /* auto and allow-auto stanzas are equivalent,
-		 * both can take multiple interfaces as parameters: add one block for each */
+         * both can take multiple interfaces as parameters: add one block for each */
         else if (NM_IN_STRSET(token[0], "auto", "allow-auto")) {
             int i;
 

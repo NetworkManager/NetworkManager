@@ -219,10 +219,10 @@ nm_device_vlan_class_init(NMDeviceVlanClass *klass)
     device_class->get_setting_type      = get_setting_type;
 
     /**
-	 * NMDeviceVlan:carrier:
-	 *
-	 * Whether the device has carrier.
-	 **/
+     * NMDeviceVlan:carrier:
+     *
+     * Whether the device has carrier.
+     **/
     obj_properties[PROP_CARRIER] = g_param_spec_boolean(NM_DEVICE_VLAN_CARRIER,
                                                         "",
                                                         "",
@@ -230,10 +230,10 @@ nm_device_vlan_class_init(NMDeviceVlanClass *klass)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceVlan:parent:
-	 *
-	 * The devices's parent device.
-	 **/
+     * NMDeviceVlan:parent:
+     *
+     * The devices's parent device.
+     **/
     obj_properties[PROP_PARENT] = g_param_spec_object(NM_DEVICE_VLAN_PARENT,
                                                       "",
                                                       "",
@@ -241,10 +241,10 @@ nm_device_vlan_class_init(NMDeviceVlanClass *klass)
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceVlan:vlan-id:
-	 *
-	 * The device's VLAN ID.
-	 **/
+     * NMDeviceVlan:vlan-id:
+     *
+     * The device's VLAN ID.
+     **/
     obj_properties[PROP_VLAN_ID] = g_param_spec_uint(NM_DEVICE_VLAN_VLAN_ID,
                                                      "",
                                                      "",

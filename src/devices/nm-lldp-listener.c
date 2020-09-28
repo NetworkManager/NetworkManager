@@ -288,16 +288,16 @@ parse_management_address_tlv(const uint8_t *data, gsize len)
     guint32         v_address_subtype;
 
     /* 802.1AB-2009 - Figure 8-11
-	 *
-	 * - TLV type / length        (2 bytes)
-	 * - address string length    (1 byte)
-	 * - address subtype          (1 byte)
-	 * - address                  (1 to 31 bytes)
-	 * - interface number subtype (1 byte)
-	 * - interface number         (4 bytes)
-	 * - OID string length        (1 byte)
-	 * - OID                      (0 to 128 bytes)
-	 */
+     *
+     * - TLV type / length        (2 bytes)
+     * - address string length    (1 byte)
+     * - address subtype          (1 byte)
+     * - address                  (1 to 31 bytes)
+     * - interface number subtype (1 byte)
+     * - interface number         (4 bytes)
+     * - OID string length        (1 byte)
+     * - OID                      (0 to 128 bytes)
+     */
 
     if (len < 11)
         return NULL;
@@ -449,8 +449,8 @@ lldp_neighbor_new(sd_lldp_neighbor *neighbor_sd)
     }
     if (!s_chassis_id) {
         /* Invalid/unsupported chassis_id? Expose as hex string. This format is not stable, and
-		 * in the future we may add a better string representation for these case (thus
-		 * changing the API). */
+         * in the future we may add a better string representation for these case (thus
+         * changing the API). */
         s_chassis_id = nm_utils_bin2hexstr_full(chassis_id, chassis_id_len, '\0', FALSE, NULL);
     }
 
@@ -470,8 +470,8 @@ lldp_neighbor_new(sd_lldp_neighbor *neighbor_sd)
     }
     if (!s_port_id) {
         /* Invalid/unsupported port_id? Expose as hex string. This format is not stable, and
-		 * in the future we may add a better string representation for these case (thus
-		 * changing the API). */
+         * in the future we may add a better string representation for these case (thus
+         * changing the API). */
         s_port_id = nm_utils_bin2hexstr_full(port_id, port_id_len, '\0', FALSE, NULL);
     }
 
@@ -594,7 +594,7 @@ lldp_neighbor_to_variant(LldpNeighbor *neigh)
                     continue;
 
                 /* in other cases, something is seriously wrong. Abort, but
-				 * keep what we parsed so far. */
+                 * keep what we parsed so far. */
                 break;
             }
 

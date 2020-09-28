@@ -705,10 +705,10 @@ nm_l3_config_data_unref(const NML3ConfigData *self)
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
 
     /* NML3ConfigData aims to be an immutable, ref-counted type. The mode of operation
-	 * is to create/initialize the instance once, then seal it and pass around the reference.
-	 *
-	 * That means, also ref/unref operate on const pointers (otherwise, you'd have to cast all
-	 * the time). Hence, we cast away the constness during ref/unref/seal operations. */
+     * is to create/initialize the instance once, then seal it and pass around the reference.
+     *
+     * That means, also ref/unref operate on const pointers (otherwise, you'd have to cast all
+     * the time). Hence, we cast away the constness during ref/unref/seal operations. */
 
     mutable = (NML3ConfigData *) self;
 
@@ -860,7 +860,7 @@ nm_l3_config_data_lookup_address_6(const NML3ConfigData *self, const struct in6_
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
 
     /* this works only, because the primary key for a Ipv6 address is the
-	 * ifindex and the "struct in6_addr". */
+     * ifindex and the "struct in6_addr". */
     nmp_object_stackinit_id_ip6_address(&obj_stack, self->ifindex, addr);
 
     head = nm_l3_config_data_lookup_obj(self, &obj_stack);
@@ -924,7 +924,7 @@ nm_l3_config_data_has_routes_with_type_local(const NML3ConfigData *self, int add
     }
 
     /* the value gets accumulated and cached. Doing that is also permissible to a
-	 * const/sealed instance. Hence, we cast the const-ness away. */
+     * const/sealed instance. Hence, we cast the const-ness away. */
     self_mutable = (NML3ConfigData *) self;
     if (IS_IPv4) {
         self_mutable->has_routes_with_type_local_4_set = TRUE;
@@ -1024,7 +1024,7 @@ _l3_config_data_add_obj(NMDedupMultiIndex *     multi_idx,
                         NMP_OBJECT_TYPE_IP6_ADDRESS,
                         NMP_OBJECT_TYPE_IP6_ROUTE));
     /* we go through extra lengths to accept a full obj_new object. That one,
-	 * can be reused by increasing the ref-count. */
+     * can be reused by increasing the ref-count. */
     if (!obj_new) {
         nm_assert(pl_new);
         obj_new = nmp_object_stackinit(&obj_new_stackinit, idx_type->obj_type, pl_new);
@@ -1061,10 +1061,10 @@ _l3_config_data_add_obj(NMDedupMultiIndex *     multi_idx,
             case NMP_OBJECT_TYPE_IP4_ADDRESS:
             case NMP_OBJECT_TYPE_IP6_ADDRESS:
                 /* for addresses that we read from the kernel, we keep the timestamps as defined
-				 * by the previous source (item_old). The reason is, that the other source configured the lifetimes
-				 * with "what should be" and the kernel values are "what turned out after configuring it".
-				 *
-				 * For other sources, the longer lifetime wins. */
+                 * by the previous source (item_old). The reason is, that the other source configured the lifetimes
+                 * with "what should be" and the kernel values are "what turned out after configuring it".
+                 *
+                 * For other sources, the longer lifetime wins. */
                 if ((obj_new->ip_address.addr_source == NM_IP_CONFIG_SOURCE_KERNEL
                      && obj_old->ip_address.addr_source != NM_IP_CONFIG_SOURCE_KERNEL)
                     || nm_platform_ip_address_cmp_expiry(NMP_OBJECT_CAST_IP_ADDRESS(obj_old),
@@ -1153,7 +1153,7 @@ _l3_config_best_default_route_find_better(const NMPObject *obj_cur, const NMPObj
     nm_assert(!obj_cur || nmp_object_ip_route_is_best_defaut_route(obj_cur));
 
     /* assumes that @obj_cur is already the best default route (or NULL). It checks whether
-	 * @obj_cmp is also a default route and returns the best of both. */
+     * @obj_cmp is also a default route and returns the best of both. */
     if (obj_cmp && nmp_object_ip_route_is_best_defaut_route(obj_cmp)) {
         guint32 metric_cur, metric_cmp;
 
@@ -1173,9 +1173,9 @@ _l3_config_best_default_route_find_better(const NMPObject *obj_cur, const NMPObj
             int c;
 
             /* Routes have the same metric. We still want to deterministically
-			 * prefer one or the other. It's important to consistently choose one
-			 * or the other, so that the order doesn't matter how routes are added
-			 * (and merged). */
+             * prefer one or the other. It's important to consistently choose one
+             * or the other, so that the order doesn't matter how routes are added
+             * (and merged). */
             c = nmp_object_cmp(obj_cur, obj_cmp);
             if (c != 0)
                 return c < 0 ? obj_cur : obj_cmp;
@@ -1850,11 +1850,11 @@ nm_l3_config_data_cmp(const NML3ConfigData *a, const NML3ConfigData *b)
     NM_CMP_FIELD(a, b, source);
 
     /* these fields are not considered by cmp():
-	 *
-	 * - multi_idx
-	 * - ref_count
-	 * - is_sealed
-	 */
+     *
+     * - multi_idx
+     * - ref_count
+     * - is_sealed
+     */
 
     return 0;
 }
@@ -1938,8 +1938,8 @@ nm_l3_config_data_get_blacklisted_ip4_routes(const NML3ConfigData *self, gboolea
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
 
     /* For IPv6 slaac, we explicitly add the device-routes (onlink).
-	 * As we don't do that for IPv4 and manual IPv6 addresses. Add them here
-	 * as dependent routes. */
+     * As we don't do that for IPv4 and manual IPv6 addresses. Add them here
+     * as dependent routes. */
 
     nm_l3_config_data_iter_obj_for_each(&iter, self, &my_addr_obj, NMP_OBJECT_TYPE_IP4_ADDRESS)
     {
@@ -1958,13 +1958,13 @@ nm_l3_config_data_get_blacklisted_ip4_routes(const NML3ConfigData *self, gboolea
 
         if (nm_utils_ip4_address_is_zeronet(network_4)) {
             /* Kernel doesn't add device-routes for destinations that
-			 * start with 0.x.y.z. Skip them. */
+             * start with 0.x.y.z. Skip them. */
             continue;
         }
 
         if (my_addr->plen == 32 && my_addr->address == my_addr->peer_address) {
             /* Kernel doesn't add device-routes for /32 addresses unless
-			 * they have a peer. */
+             * they have a peer. */
             continue;
         }
 
@@ -2017,8 +2017,8 @@ nm_l3_config_data_add_dependent_routes(NML3ConfigData *self,
     nm_assert_addr_family(addr_family);
 
     /* For IPv6 slaac, we explicitly add the device-routes (onlink).
-	 * As we don't do that for IPv4 and manual IPv6 addresses. Add them here
-	 * as dependent routes. */
+     * As we don't do that for IPv4 and manual IPv6 addresses. Add them here
+     * as dependent routes. */
 
     if (!IS_IPv4) {
         /* Pre-generate multicast route */
@@ -2083,13 +2083,13 @@ nm_l3_config_data_add_dependent_routes(NML3ConfigData *self,
 
             if (nm_utils_ip4_address_is_zeronet(network_4)) {
                 /* Kernel doesn't add device-routes for destinations that
-				 * start with 0.x.y.z. Skip them. */
+                 * start with 0.x.y.z. Skip them. */
                 continue;
             }
 
             if (my_addr->a4.plen == 32 && my_addr->a4.address == my_addr->a4.peer_address) {
                 /* Kernel doesn't add device-routes for /32 addresses unless
-				 * they have a peer. */
+                 * they have a peer. */
                 continue;
             }
         } else {
@@ -2115,7 +2115,7 @@ nm_l3_config_data_add_dependent_routes(NML3ConfigData *self,
             int            routes_i;
 
             /* If we have an IPv6 peer, we add two /128 routes
-			 * (unless, both addresses are identical). */
+             * (unless, both addresses are identical). */
             for (routes_i = 0; routes_i < 2; routes_i++) {
                 struct in6_addr        a6_stack;
                 const struct in6_addr *a6;
@@ -2660,7 +2660,7 @@ nm_l3_config_data_new_clone(const NML3ConfigData *src, int ifindex)
     nm_assert(_NM_IS_L3_CONFIG_DATA(src, TRUE));
 
     /* pass 0, to use the original ifindex. You can also use this function to
-	 * copy the configuration for a different ifindex. */
+     * copy the configuration for a different ifindex. */
     nm_assert(ifindex >= 0);
     if (ifindex <= 0)
         ifindex = src->ifindex;

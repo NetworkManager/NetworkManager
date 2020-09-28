@@ -33,9 +33,9 @@ typedef struct {
     GKeyFile *keyfile;
 
     /* It is convenient for nm_vpn_plugin_info_lookup_property() to return a const char *,
-	 * contrary to what g_key_file_get_string() does. Hence we must cache the returned
-	 * value somewhere... let's put it in an internal hash table.
-	 * This contains a clone of all the strings in keyfile. */
+     * contrary to what g_key_file_get_string() does. Hence we must cache the returned
+     * value somewhere... let's put it in an internal hash table.
+     * This contains a clone of all the strings in keyfile. */
     GHashTable *keys;
 
     gboolean           editor_plugin_loaded;
@@ -290,9 +290,9 @@ _nm_vpn_plugin_info_list_load_dir(const char *              dirname,
     g_dir_close(dir);
 
     /* sort the files so that we have a stable behavior. The directory might contain
-	 * duplicate VPNs, so while nm_vpn_plugin_info_list_load() would load them all, the
-	 * caller probably wants to reject duplicates. Having a stable order means we always
-	 * reject the same files in face of duplicates. */
+     * duplicate VPNs, so while nm_vpn_plugin_info_list_load() would load them all, the
+     * caller probably wants to reject duplicates. Having a stable order means we always
+     * reject the same files in face of duplicates. */
     g_array_sort(array, (GCompareFunc) _sort_files);
 
     for (i = 0; i < array->len; i++)
@@ -320,16 +320,16 @@ nm_vpn_plugin_info_list_load()
     GSList *          infos, *info;
     const char *const dir[] = {
         /* We load plugins from NM_VPN_PLUGIN_DIR *and* DEFAULT_DIR*, with
-		 * preference to the former.
-		 *
-		 * load user directory with highest priority. */
+         * preference to the former.
+         *
+         * load user directory with highest priority. */
         _nm_vpn_plugin_info_get_default_dir_user(),
 
         /* lib directory has higher priority then etc. The reason is that
-		 * etc is deprecated and used by old plugins. We expect newer plugins
-		 * to install their file in lib, where they have higher priority.
-		 *
-		 * Optimally, there are no duplicates anyway, so it doesn't really matter. */
+         * etc is deprecated and used by old plugins. We expect newer plugins
+         * to install their file in lib, where they have higher priority.
+         *
+         * Optimally, there are no duplicates anyway, so it doesn't really matter. */
         _nm_vpn_plugin_info_get_default_dir_lib(),
         _nm_vpn_plugin_info_get_default_dir_etc(),
     };
@@ -461,7 +461,7 @@ nm_vpn_plugin_info_list_add(GSList **list, NMVpnPluginInfo *plugin_info, GError 
         }
 
         /* the plugin must have unique values for certain properties. E.g. two different
-		 * plugins cannot share the same service type. */
+         * plugins cannot share the same service type. */
         if (!_check_no_conflict(plugin_info, iter->data, error))
             return FALSE;
     }
@@ -632,25 +632,25 @@ nm_vpn_plugin_info_list_find_service_type(GSList *list, const char *name)
         return g_strdup(name);
 
     /* try to interpret @name as plugin name, in which case we return
-	 * the main service-type (not an alias). */
+     * the main service-type (not an alias). */
     info = _list_find_by_service(list, name, NULL);
     if (info)
         return g_strdup(NM_VPN_PLUGIN_INFO_GET_PRIVATE(info)->service);
 
     /* check the hard-coded list of short-names. They all have the same
-	 * well-known prefix org.freedesktop.NetworkManager and the name. */
+     * well-known prefix org.freedesktop.NetworkManager and the name. */
     if (nm_utils_strv_find_first((char **) known_names, G_N_ELEMENTS(known_names), name) >= 0)
         return g_strdup_printf("%s.%s", NM_DBUS_INTERFACE, name);
 
     /* try, if there exists a plugin with @name under org.freedesktop.NetworkManager.
-	 * Allow this to be a valid abbreviation. */
+     * Allow this to be a valid abbreviation. */
     n = g_strdup_printf("%s.%s", NM_DBUS_INTERFACE, name);
     if (_list_find_by_service(list, NULL, n))
         return n;
     g_free(n);
 
     /* currently, VPN plugins have no way to define a short-name for their
-	 * alias name, unless the alias name is prefixed by org.freedesktop.NetworkManager. */
+     * alias name, unless the alias name is prefixed by org.freedesktop.NetworkManager. */
 
     return NULL;
 }
@@ -934,8 +934,8 @@ nm_vpn_plugin_info_get_aliases(NMVpnPluginInfo *self)
         return (const char *const *) priv->aliases;
 
     /* For convenience, we always want to return non-NULL, even for empty
-	 * aliases. Hack around that, by making a NULL terminated array using
-	 * the NULL of priv->aliases. */
+     * aliases. Hack around that, by making a NULL terminated array using
+     * the NULL of priv->aliases. */
     return (const char *const *) &priv->aliases;
 }
 
@@ -1052,7 +1052,7 @@ nm_vpn_plugin_info_load_editor_plugin(NMVpnPluginInfo *self, GError **error)
     }
 
     /* We only try once to load the plugin. If we previously tried and it was
-	 * unsuccessful, error out immediately. */
+     * unsuccessful, error out immediately. */
     if (priv->editor_plugin_loaded) {
         g_set_error(error,
                     NM_VPN_PLUGIN_ERROR,
@@ -1151,7 +1151,7 @@ init_sync(GInitable *initable, GCancellable *cancellable, GError **error)
     }
 
     /* we also require "service", because that how we associate NMSettingVpn:service-type with the
-	 * NMVpnPluginInfo. */
+     * NMVpnPluginInfo. */
     priv->service = g_key_file_get_string(priv->keyfile,
                                           NM_VPN_PLUGIN_INFO_KF_GROUP_CONNECTION,
                                           "service",
@@ -1185,7 +1185,7 @@ init_sync(GInitable *initable, GCancellable *cancellable, GError **error)
             char *s;
 
             /* Lookup the value via get_string(). We want that behavior for all our
-			 * values. */
+             * values. */
             s = g_key_file_get_string(priv->keyfile, groups[i], keys[j], NULL);
             if (s)
                 g_hash_table_insert(priv->keys,
@@ -1295,12 +1295,12 @@ nm_vpn_plugin_info_class_init(NMVpnPluginInfoClass *plugin_class)
     object_class->finalize     = finalize;
 
     /**
-	 * NMVpnPluginInfo:name:
-	 *
-	 * The name of the VPN plugin.
-	 *
-	 * Since: 1.2
-	 */
+     * NMVpnPluginInfo:name:
+     *
+     * The name of the VPN plugin.
+     *
+     * Since: 1.2
+     */
     g_object_class_install_property(object_class,
                                     PROP_NAME,
                                     g_param_spec_string(NM_VPN_PLUGIN_INFO_NAME,
@@ -1310,15 +1310,15 @@ nm_vpn_plugin_info_class_init(NMVpnPluginInfoClass *plugin_class)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
     /**
-	 * NMVpnPluginInfo:filename:
-	 *
-	 * The filename from which the info was loaded.
-	 * Can be %NULL if the instance was not loaded from
-	 * a file (i.e. the keyfile instance was passed to the
-	 * constructor).
-	 *
-	 * Since: 1.2
-	 */
+     * NMVpnPluginInfo:filename:
+     *
+     * The filename from which the info was loaded.
+     * Can be %NULL if the instance was not loaded from
+     * a file (i.e. the keyfile instance was passed to the
+     * constructor).
+     *
+     * Since: 1.2
+     */
     g_object_class_install_property(
         object_class,
         PROP_FILENAME,
@@ -1329,14 +1329,14 @@ nm_vpn_plugin_info_class_init(NMVpnPluginInfoClass *plugin_class)
                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 
     /**
-	 * NMVpnPluginInfo:keyfile:
-	 *
-	 * Initialize the instance with a different keyfile instance.
-	 * When passing a keyfile instance, the constructor will not
-	 * try to read from filename.
-	 *
-	 * Since: 1.2
-	 */
+     * NMVpnPluginInfo:keyfile:
+     *
+     * Initialize the instance with a different keyfile instance.
+     * When passing a keyfile instance, the constructor will not
+     * try to read from filename.
+     *
+     * Since: 1.2
+     */
     g_object_class_install_property(
         object_class,
         PROP_KEYFILE,

@@ -190,9 +190,9 @@ _notify_update_prop_state_reason(NMClient *              client,
     guint32          reason    = NM_DEVICE_STATE_REASON_NONE;
 
     /* We ignore the "State" property and the "StateChanged" signal of the device.
-	 * This information is redundant to the "StateReason" property, and we rely
-	 * on that one alone. In the best case, the information is identical. If it
-	 * would not be, then we stick to the information from "StateReason" property. */
+     * This information is redundant to the "StateReason" property, and we rely
+     * on that one alone. In the best case, the information is identical. If it
+     * would not be, then we stick to the information from "StateReason" property. */
 
     if (value)
         g_variant_get(value, "(uu)", &new_state, &reason);
@@ -613,10 +613,10 @@ nm_device_class_init(NMDeviceClass *klass)
     klass->connection_compatible = connection_compatible;
 
     /**
-	 * NMDevice:interface:
-	 *
-	 * The interface of the device.
-	 **/
+     * NMDevice:interface:
+     *
+     * The interface of the device.
+     **/
     obj_properties[PROP_INTERFACE] = g_param_spec_string(NM_DEVICE_INTERFACE,
                                                          "",
                                                          "",
@@ -624,11 +624,11 @@ nm_device_class_init(NMDeviceClass *klass)
                                                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:ip-interface:
-	 *
-	 * The IP interface of the device which should be used for all IP-related
-	 * operations like addressing and routing.
-	 **/
+     * NMDevice:ip-interface:
+     *
+     * The IP interface of the device which should be used for all IP-related
+     * operations like addressing and routing.
+     **/
     obj_properties[PROP_IP_INTERFACE] =
         g_param_spec_string(NM_DEVICE_IP_INTERFACE,
                             "",
@@ -637,10 +637,10 @@ nm_device_class_init(NMDeviceClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:device-type:
-	 *
-	 * The numeric type of the device.
-	 **/
+     * NMDevice:device-type:
+     *
+     * The numeric type of the device.
+     **/
     obj_properties[PROP_DEVICE_TYPE] = g_param_spec_enum(NM_DEVICE_DEVICE_TYPE,
                                                          "",
                                                          "",
@@ -648,29 +648,29 @@ nm_device_class_init(NMDeviceClass *klass)
                                                          NM_DEVICE_TYPE_UNKNOWN,
                                                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
     /**
-	 * NMDevice:udi:
-	 *
-	 * An operating-system specific device hardware identifier; this is not
-	 * unique to a specific hardware device across reboots or hotplugs.  It
-	 * is an opaque string which for some device types (Bluetooth, Modem)
-	 * contains an identifier provided by the underlying hardware service daemon
-	 * such as Bluez or ModemManager, and clients can use this property to
-	 * request more information about the device from those services.
-	 **/
+     * NMDevice:udi:
+     *
+     * An operating-system specific device hardware identifier; this is not
+     * unique to a specific hardware device across reboots or hotplugs.  It
+     * is an opaque string which for some device types (Bluetooth, Modem)
+     * contains an identifier provided by the underlying hardware service daemon
+     * such as Bluez or ModemManager, and clients can use this property to
+     * request more information about the device from those services.
+     **/
     obj_properties[PROP_UDI] =
         g_param_spec_string(NM_DEVICE_UDI, "", "", NULL, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:path:
-	 *
-	 * The device path as exposed by the udev property ID_PATH.
-	 *
-	 * The string is backslash escaped (C escaping) for invalid
-	 * characters. The escaping can be reverted with g_strcompress(),
-	 * however the result may not be valid UTF-8.
-	 *
-	 * Since: 1.26
-	 **/
+     * NMDevice:path:
+     *
+     * The device path as exposed by the udev property ID_PATH.
+     *
+     * The string is backslash escaped (C escaping) for invalid
+     * characters. The escaping can be reverted with g_strcompress(),
+     * however the result may not be valid UTF-8.
+     *
+     * Since: 1.26
+     **/
     obj_properties[PROP_PATH] = g_param_spec_string(NM_DEVICE_PATH,
                                                     "",
                                                     "",
@@ -678,10 +678,10 @@ nm_device_class_init(NMDeviceClass *klass)
                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:driver:
-	 *
-	 * The driver of the device.
-	 **/
+     * NMDevice:driver:
+     *
+     * The driver of the device.
+     **/
     obj_properties[PROP_DRIVER] = g_param_spec_string(NM_DEVICE_DRIVER,
                                                       "",
                                                       "",
@@ -689,10 +689,10 @@ nm_device_class_init(NMDeviceClass *klass)
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:driver-version:
-	 *
-	 * The version of the device driver.
-	 **/
+     * NMDevice:driver-version:
+     *
+     * The version of the device driver.
+     **/
     obj_properties[PROP_DRIVER_VERSION] =
         g_param_spec_string(NM_DEVICE_DRIVER_VERSION,
                             "",
@@ -701,10 +701,10 @@ nm_device_class_init(NMDeviceClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:firmware-version:
-	 *
-	 * The firmware version of the device.
-	 **/
+     * NMDevice:firmware-version:
+     *
+     * The firmware version of the device.
+     **/
     obj_properties[PROP_FIRMWARE_VERSION] =
         g_param_spec_string(NM_DEVICE_FIRMWARE_VERSION,
                             "",
@@ -713,10 +713,10 @@ nm_device_class_init(NMDeviceClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:capabilities:
-	 *
-	 * The capabilities of the device.
-	 **/
+     * NMDevice:capabilities:
+     *
+     * The capabilities of the device.
+     **/
     obj_properties[PROP_CAPABILITIES] =
         g_param_spec_flags(NM_DEVICE_CAPABILITIES,
                            "",
@@ -726,14 +726,14 @@ nm_device_class_init(NMDeviceClass *klass)
                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:real:
-	 *
-	 * Whether the device is real or is a placeholder device that could
-	 * be created automatically by NetworkManager if one of its
-	 * #NMDevice:available-connections was activated.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDevice:real:
+     *
+     * Whether the device is real or is a placeholder device that could
+     * be created automatically by NetworkManager if one of its
+     * #NMDevice:available-connections was activated.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_REAL] = g_param_spec_boolean(NM_DEVICE_REAL,
                                                      "",
                                                      "",
@@ -741,10 +741,10 @@ nm_device_class_init(NMDeviceClass *klass)
                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:managed:
-	 *
-	 * Whether the device is managed by NetworkManager.
-	 **/
+     * NMDevice:managed:
+     *
+     * Whether the device is managed by NetworkManager.
+     **/
     obj_properties[PROP_MANAGED] = g_param_spec_boolean(NM_DEVICE_MANAGED,
                                                         "",
                                                         "",
@@ -752,12 +752,12 @@ nm_device_class_init(NMDeviceClass *klass)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:autoconnect:
-	 *
-	 * Whether the device can auto-activate a connection.
-	 *
-	 * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
-	 **/
+     * NMDevice:autoconnect:
+     *
+     * Whether the device can auto-activate a connection.
+     *
+     * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
+     **/
     obj_properties[PROP_AUTOCONNECT] =
         g_param_spec_boolean(NM_DEVICE_AUTOCONNECT,
                              "",
@@ -766,11 +766,11 @@ nm_device_class_init(NMDeviceClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:firmware-missing:
-	 *
-	 * When %TRUE indicates the device is likely missing firmware required
-	 * for its operation.
-	 **/
+     * NMDevice:firmware-missing:
+     *
+     * When %TRUE indicates the device is likely missing firmware required
+     * for its operation.
+     **/
     obj_properties[PROP_FIRMWARE_MISSING] =
         g_param_spec_boolean(NM_DEVICE_FIRMWARE_MISSING,
                              "",
@@ -779,13 +779,13 @@ nm_device_class_init(NMDeviceClass *klass)
                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:nm-plugin-missing:
-	 *
-	 * When %TRUE indicates that the NetworkManager plugin for the device
-	 * is not installed.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDevice:nm-plugin-missing:
+     *
+     * When %TRUE indicates that the NetworkManager plugin for the device
+     * is not installed.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_NM_PLUGIN_MISSING] =
         g_param_spec_boolean(NM_DEVICE_NM_PLUGIN_MISSING,
                              "",
@@ -794,10 +794,10 @@ nm_device_class_init(NMDeviceClass *klass)
                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:ip4-config:
-	 *
-	 * The #NMIP4Config of the device.
-	 **/
+     * NMDevice:ip4-config:
+     *
+     * The #NMIP4Config of the device.
+     **/
     obj_properties[PROP_IP4_CONFIG] =
         g_param_spec_object(NM_DEVICE_IP4_CONFIG,
                             "",
@@ -806,10 +806,10 @@ nm_device_class_init(NMDeviceClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:dhcp4-config:
-	 *
-	 * The IPv4 #NMDhcpConfig of the device.
-	 **/
+     * NMDevice:dhcp4-config:
+     *
+     * The IPv4 #NMDhcpConfig of the device.
+     **/
     obj_properties[PROP_DHCP4_CONFIG] =
         g_param_spec_object(NM_DEVICE_DHCP4_CONFIG,
                             "",
@@ -818,10 +818,10 @@ nm_device_class_init(NMDeviceClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:ip6-config:
-	 *
-	 * The IPv6 #NMIPConfig of the device.
-	 **/
+     * NMDevice:ip6-config:
+     *
+     * The IPv6 #NMIPConfig of the device.
+     **/
     obj_properties[PROP_IP6_CONFIG] =
         g_param_spec_object(NM_DEVICE_IP6_CONFIG,
                             "",
@@ -830,10 +830,10 @@ nm_device_class_init(NMDeviceClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:dhcp6-config:
-	 *
-	 * The IPv6 #NMDhcpConfig of the device.
-	 **/
+     * NMDevice:dhcp6-config:
+     *
+     * The IPv6 #NMDhcpConfig of the device.
+     **/
     obj_properties[PROP_DHCP6_CONFIG] =
         g_param_spec_object(NM_DEVICE_DHCP6_CONFIG,
                             "",
@@ -842,12 +842,12 @@ nm_device_class_init(NMDeviceClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:ip4-connectivity:
-	 *
-	 * The IPv4 connectivity state of the device.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMDevice:ip4-connectivity:
+     *
+     * The IPv4 connectivity state of the device.
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_IP4_CONNECTIVITY] =
         g_param_spec_enum(NM_DEVICE_IP4_CONNECTIVITY,
                           "",
@@ -857,12 +857,12 @@ nm_device_class_init(NMDeviceClass *klass)
                           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:ip6-connectivity:
-	 *
-	 * The IPv6 connectivity state of the device.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMDevice:ip6-connectivity:
+     *
+     * The IPv6 connectivity state of the device.
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_IP6_CONNECTIVITY] =
         g_param_spec_enum(NM_DEVICE_IP6_CONNECTIVITY,
                           "",
@@ -872,10 +872,10 @@ nm_device_class_init(NMDeviceClass *klass)
                           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:state:
-	 *
-	 * The state of the device.
-	 **/
+     * NMDevice:state:
+     *
+     * The state of the device.
+     **/
     obj_properties[PROP_STATE] = g_param_spec_enum(NM_DEVICE_STATE,
                                                    "",
                                                    "",
@@ -884,10 +884,10 @@ nm_device_class_init(NMDeviceClass *klass)
                                                    G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:state-reason:
-	 *
-	 * The reason for the device state.
-	 **/
+     * NMDevice:state-reason:
+     *
+     * The reason for the device state.
+     **/
     obj_properties[PROP_STATE_REASON] =
         g_param_spec_uint(NM_DEVICE_STATE_REASON,
                           "",
@@ -898,10 +898,10 @@ nm_device_class_init(NMDeviceClass *klass)
                           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:active-connection:
-	 *
-	 * The #NMActiveConnection object that "owns" this device during activation.
-	 **/
+     * NMDevice:active-connection:
+     *
+     * The #NMActiveConnection object that "owns" this device during activation.
+     **/
     obj_properties[PROP_ACTIVE_CONNECTION] =
         g_param_spec_object(NM_DEVICE_ACTIVE_CONNECTION,
                             "",
@@ -910,10 +910,10 @@ nm_device_class_init(NMDeviceClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:available-connections: (type GPtrArray(NMRemoteConnection))
-	 *
-	 * The available connections of the device
-	 **/
+     * NMDevice:available-connections: (type GPtrArray(NMRemoteConnection))
+     *
+     * The available connections of the device
+     **/
     obj_properties[PROP_AVAILABLE_CONNECTIONS] =
         g_param_spec_boxed(NM_DEVICE_AVAILABLE_CONNECTIONS,
                            "",
@@ -922,10 +922,10 @@ nm_device_class_init(NMDeviceClass *klass)
                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:vendor:
-	 *
-	 * The vendor string of the device.
-	 **/
+     * NMDevice:vendor:
+     *
+     * The vendor string of the device.
+     **/
     obj_properties[PROP_VENDOR] = g_param_spec_string(NM_DEVICE_VENDOR,
                                                       "",
                                                       "",
@@ -933,10 +933,10 @@ nm_device_class_init(NMDeviceClass *klass)
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:product:
-	 *
-	 * The product string of the device.
-	 **/
+     * NMDevice:product:
+     *
+     * The product string of the device.
+     **/
     obj_properties[PROP_PRODUCT] = g_param_spec_string(NM_DEVICE_PRODUCT,
                                                        "",
                                                        "",
@@ -944,11 +944,11 @@ nm_device_class_init(NMDeviceClass *klass)
                                                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:physical-port-id:
-	 *
-	 * The physical port ID of the device. (See
-	 * nm_device_get_physical_port_id().)
-	 **/
+     * NMDevice:physical-port-id:
+     *
+     * The physical port ID of the device. (See
+     * nm_device_get_physical_port_id().)
+     **/
     obj_properties[PROP_PHYSICAL_PORT_ID] =
         g_param_spec_string(NM_DEVICE_PHYSICAL_PORT_ID,
                             "",
@@ -957,10 +957,10 @@ nm_device_class_init(NMDeviceClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:mtu:
-	 *
-	 * The MTU of the device.
-	 **/
+     * NMDevice:mtu:
+     *
+     * The MTU of the device.
+     **/
     obj_properties[PROP_MTU] = g_param_spec_uint(NM_DEVICE_MTU,
                                                  "",
                                                  "",
@@ -970,12 +970,12 @@ nm_device_class_init(NMDeviceClass *klass)
                                                  G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:metered:
-	 *
-	 * Whether the device is metered.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDevice:metered:
+     *
+     * Whether the device is metered.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_METERED] = g_param_spec_uint(NM_DEVICE_METERED,
                                                      "",
                                                      "",
@@ -985,10 +985,10 @@ nm_device_class_init(NMDeviceClass *klass)
                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:lldp-neighbors:
-	 *
-	 * The LLDP neighbors.
-	 **/
+     * NMDevice:lldp-neighbors:
+     *
+     * The LLDP neighbors.
+     **/
     obj_properties[PROP_LLDP_NEIGHBORS] =
         g_param_spec_boxed(NM_DEVICE_LLDP_NEIGHBORS,
                            "",
@@ -997,12 +997,12 @@ nm_device_class_init(NMDeviceClass *klass)
                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:interface-flags:
-	 *
-	 * The interface flags.
-	 *
-	 * Since: 1.22
-	 **/
+     * NMDevice:interface-flags:
+     *
+     * The interface flags.
+     *
+     * Since: 1.22
+     **/
     obj_properties[PROP_INTERFACE_FLAGS] =
         g_param_spec_uint(NM_DEVICE_INTERFACE_FLAGS,
                           "",
@@ -1013,12 +1013,12 @@ nm_device_class_init(NMDeviceClass *klass)
                           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDevice:hw-address:
-	 *
-	 * The hardware address of the device.
-	 *
-	 * Since: 1.24
-	 **/
+     * NMDevice:hw-address:
+     *
+     * The hardware address of the device.
+     *
+     * Since: 1.24
+     **/
     obj_properties[PROP_HW_ADDRESS] =
         g_param_spec_string(NM_DEVICE_HW_ADDRESS,
                             "",
@@ -1029,14 +1029,14 @@ nm_device_class_init(NMDeviceClass *klass)
     _nml_dbus_meta_class_init_with_properties(object_class, &_nml_dbus_meta_iface_nm_device);
 
     /**
-	 * NMDevice::state-changed:
-	 * @device: the device object that received the signal
-	 * @new_state: the new state of the device
-	 * @old_state: the previous state of the device
-	 * @reason: the reason describing the state change
-	 *
-	 * Notifies the state change of a #NMDevice.
-	 **/
+     * NMDevice::state-changed:
+     * @device: the device object that received the signal
+     * @new_state: the new state of the device
+     * @old_state: the previous state of the device
+     * @reason: the reason describing the state change
+     *
+     * Notifies the state change of a #NMDevice.
+     **/
     signals[STATE_CHANGED] = g_signal_new("state-changed",
                                           G_OBJECT_CLASS_TYPE(object_class),
                                           G_SIGNAL_RUN_FIRST,
@@ -1209,7 +1209,7 @@ nm_device_get_type_description(NMDevice *device)
     const char *     desc, *typename;
 
     /* BEWARE: this function should return the same value
-	 * as nm_device_get_type_description() in nm-core. */
+     * as nm_device_get_type_description() in nm-core. */
 
     g_return_val_if_fail(NM_IS_DEVICE(device), NULL);
 
@@ -1244,7 +1244,7 @@ _nm_device_notify_update_prop_hw_address(NMClient *              client,
 
     if (!is_new && priv->hw_address_is_new) {
         /* once the instance is marked to honor the new property, the
-		 * changed signal for the old variant gets ignored. */
+         * changed signal for the old variant gets ignored. */
         goto out;
     }
 
@@ -1260,8 +1260,8 @@ _nm_device_notify_update_prop_hw_address(NMClient *              client,
                           _nml_coerce_property_str_not_empty(g_variant_get_string(value, NULL)));
 
     /* always emit a changed signal here, even if "priv->hw_address" might be unchanged.
-	 * We want to emit the signal because we received a PropertiesChanged signal on D-Bus,
-	 * even if nothing actually changed. */
+     * We want to emit the signal because we received a PropertiesChanged signal on D-Bus,
+     * even if nothing actually changed. */
     changed = TRUE;
 
 out:
@@ -1772,8 +1772,8 @@ get_bus_name(NMDevice *device)
         priv->bus_name = g_strdup(_("USB"));
     else {
         /* Use "" instead of NULL so we can tell later that we've
-		 * already tried.
-		 */
+         * already tried.
+         */
         priv->bus_name = g_strdup("");
     }
     udev_device_unref(udevice);
@@ -1812,8 +1812,8 @@ _get_udev_property(NMDevice *  device,
             return NULL;
     }
     /* Walk up the chain of the device and its parents a few steps to grab
-	 * vendor and device ID information off it.
-	 */
+     * vendor and device ID information off it.
+     */
     tmpdev = udev_device;
     while ((count++ < 3) && tmpdev && !enc_value) {
         if (!enc_value)
@@ -1827,7 +1827,7 @@ _get_udev_property(NMDevice *  device,
     udev_device_unref(udev_device);
 
     /* Prefer the hwdata database value over what comes directly
-	 * from the device. */
+     * from the device. */
     if (db_value) {
         g_free(enc_value);
         return db_value;
@@ -1940,8 +1940,8 @@ ensure_description(NMDevice *device)
         short_product = g_strdup(get_type_name(device));
 
     /* Another quick hack; if all of the fixed up vendor string
-	 * is found in product, ignore the vendor.
-	 */
+     * is found in product, ignore the vendor.
+     */
     {
         gs_free char *pdown = g_ascii_strdown(short_product, -1);
         gs_free char *vdown = g_ascii_strdown(priv->short_vendor, -1);
@@ -2040,8 +2040,8 @@ nm_device_disambiguate_names(NMDevice **devices, int num_devices)
         goto done;
 
     /* Try specific names (eg, "Ethernet" and "InfiniBand" rather
-	 * than "Wired")
-	 */
+     * than "Wired")
+     */
     for (i = 0; i < num_devices; i++) {
         if (duplicates[i]) {
             g_free(names[i]);
@@ -2063,11 +2063,11 @@ nm_device_disambiguate_names(NMDevice **devices, int num_devices)
             g_free(names[i]);
             name = get_device_type_name_with_iface(devices[i]);
             /* TRANSLATORS: the first %s is a bus name (eg, "USB") or
-			 * product name, the second is a device type (eg,
-			 * "Ethernet"). You can change this to something like
-			 * "%2$s (%1$s)" if there's no grammatical way to combine
-			 * the strings otherwise.
-			 */
+             * product name, the second is a device type (eg,
+             * "Ethernet"). You can change this to something like
+             * "%2$s (%1$s)" if there's no grammatical way to combine
+             * the strings otherwise.
+             */
             names[i] = g_strdup_printf(C_("long device name", "%s %s"), bus, name);
             g_free(name);
         }
@@ -2095,8 +2095,8 @@ nm_device_disambiguate_names(NMDevice **devices, int num_devices)
         goto done;
 
     /* If dealing with Bluetooth devices, try to distinguish them by
-	 * device name.
-	 */
+     * device name.
+     */
     for (i = 0; i < num_devices; i++) {
         if (duplicates[i] && NM_IS_DEVICE_BT(devices[i])) {
             const char *devname = nm_device_bt_get_name(NM_DEVICE_BT(devices[i]));
@@ -2115,8 +2115,8 @@ nm_device_disambiguate_names(NMDevice **devices, int num_devices)
         goto done;
 
     /* We have multiple identical network cards, so we have to differentiate
-	 * them by interface name.
-	 */
+     * them by interface name.
+     */
     for (i = 0; i < num_devices; i++) {
         if (duplicates[i]) {
             const char *interface = nm_device_get_iface(devices[i]);

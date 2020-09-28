@@ -175,10 +175,10 @@ nmt_ip_entry_class_init(NmtIPEntryClass *entry_class)
     object_class->get_property = nmt_ip_entry_get_property;
 
     /**
-	 * NmtIPEntry:family:
-	 *
-	 * The address family. Eg, %AF_INET
-	 */
+     * NmtIPEntry:family:
+     *
+     * The address family. Eg, %AF_INET
+     */
     g_object_class_install_property(
         object_class,
         PROP_FAMILY,
@@ -190,11 +190,11 @@ nmt_ip_entry_class_init(NmtIPEntryClass *entry_class)
                          0,
                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtIPEntry:prefix:
-	 *
-	 * If %TRUE, the entry accepts address/prefix combinations. If
-	 * %FALSE it accepts just addresses.
-	 */
+     * NmtIPEntry:prefix:
+     *
+     * If %TRUE, the entry accepts address/prefix combinations. If
+     * %FALSE it accepts just addresses.
+     */
     g_object_class_install_property(
         object_class,
         PROP_PREFIX,
@@ -204,12 +204,12 @@ nmt_ip_entry_class_init(NmtIPEntryClass *entry_class)
                              FALSE,
                              G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtIPEntry:optional:
-	 *
-	 * If %TRUE, the entry will be #NmtNewtWidget:valid when it is
-	 * empty. If %FALSE, it will only be valid when it contains a
-	 * valid address or address/prefix.
-	 */
+     * NmtIPEntry:optional:
+     *
+     * If %TRUE, the entry will be #NmtNewtWidget:valid when it is
+     * empty. If %FALSE, it will only be valid when it contains a
+     * valid address or address/prefix.
+     */
     g_object_class_install_property(
         object_class,
         PROP_OPTIONAL,

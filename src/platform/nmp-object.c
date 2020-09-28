@@ -54,25 +54,25 @@ typedef struct {
 
 struct _NMPCache {
     /* the cache contains only one hash table for all object types, and similarly
-	 * it contains only one NMMultiIndex.
-	 * This works, because different object types don't ever compare equal and
-	 * because their index ids also don't overlap.
-	 *
-	 * For routes and addresses, the cache contains an address if (and only if) the
-	 * object was reported via netlink.
-	 * For links, the cache contain a link if it was reported by either netlink
-	 * or udev. That means, a link object can be alive, even if it was already
-	 * removed via netlink.
-	 *
-	 * This effectively merges the udev-device cache into the NMPCache.
-	 */
+     * it contains only one NMMultiIndex.
+     * This works, because different object types don't ever compare equal and
+     * because their index ids also don't overlap.
+     *
+     * For routes and addresses, the cache contains an address if (and only if) the
+     * object was reported via netlink.
+     * For links, the cache contain a link if it was reported by either netlink
+     * or udev. That means, a link object can be alive, even if it was already
+     * removed via netlink.
+     *
+     * This effectively merges the udev-device cache into the NMPCache.
+     */
 
     NMDedupMultiIndex *multi_idx;
 
     /* an idx_type entry for each NMP_CACHE_ID_TYPE. Note that NONE (zero)
-	 * is skipped, so the index is shifted by one: idx_type[cache_id_type - 1].
-	 *
-	 * Don't bother, use _idx_type_get() instead! */
+     * is skipped, so the index is shifted by one: idx_type[cache_id_type - 1].
+     *
+     * Don't bother, use _idx_type_get() instead! */
     DedupMultiIdxType idx_types[NMP_CACHE_ID_TYPE_MAX];
 
     gboolean use_udev;
@@ -226,9 +226,9 @@ nm_sock_addr_union_to_string(const NMSockAddrUnion *sa, char *buf, gsize len)
         return buf;
 
     /* maybe we should use getnameinfo(), but here implement it ourself.
-	 *
-	 * We want to see the actual bytes for debugging (as we understand them),
-	 * and now what getnameinfo() makes of it. Also, it's simpler this way. */
+     *
+     * We want to see the actual bytes for debugging (as we understand them),
+     * and now what getnameinfo() makes of it. Also, it's simpler this way. */
 
     switch (sa->sa.sa_family) {
     case AF_INET:
@@ -300,7 +300,7 @@ _idx_obj_part(const DedupMultiIdxType *idx_type,
     NMPObjectType obj_type;
 
     /* the hash/equals functions are strongly related. So, keep them
-	 * side-by-side and do it all in _idx_obj_part(). */
+     * side-by-side and do it all in _idx_obj_part(). */
 
     nm_assert(idx_type);
     nm_assert(idx_type->parent.klass == &_dedup_multi_idx_type_class);
@@ -321,8 +321,8 @@ _idx_obj_part(const DedupMultiIdxType *idx_type,
     case NMP_CACHE_ID_TYPE_LINK_BY_IFNAME:
         if (NMP_OBJECT_GET_TYPE(obj_a) != NMP_OBJECT_TYPE_LINK) {
             /* first check, whether obj_a is suitable for this idx_type.
-			 * If not, return 0 (which is correct for partitionable(), hash() and equal()
-			 * functions. */
+             * If not, return 0 (which is correct for partitionable(), hash() and equal()
+             * functions. */
             if (h)
                 nm_hash_update_val(h, obj_a);
             return 0;
@@ -652,7 +652,7 @@ _nmp_object_fixup_link_udev_fields(NMPObject **obj_new, NMPObject *obj_orig, gbo
     obj = *obj_new ?: obj_orig;
 
     /* The link contains internal fields that are combined by
-	 * properties from netlink and udev. Update those properties */
+     * properties from netlink and udev. Update those properties */
 
     /* When a link is not in netlink, its udev fields don't matter. */
     if (obj->_link.netlink.is_in_netlink) {
@@ -661,12 +661,12 @@ _nmp_object_fixup_link_udev_fields(NMPObject **obj_new, NMPObject *obj_orig, gbo
             initialized = TRUE;
         else if (!use_udev) {
             /* If we don't use udev, we immediately mark the link as initialized.
-			 *
-			 * For that, we consult @use_udev argument, that is cached via
-			 * nmp_cache_use_udev_get(). It is on purpose not to test
-			 * for a writable /sys on every call. A minor reason for that is
-			 * performance, but the real reason is reproducibility.
-			 * */
+             *
+             * For that, we consult @use_udev argument, that is cached via
+             * nmp_cache_use_udev_get(). It is on purpose not to test
+             * for a writable /sys on every call. A minor reason for that is
+             * performance, but the real reason is reproducibility.
+             * */
             initialized = TRUE;
         }
     }
@@ -1217,9 +1217,9 @@ _vt_cmd_obj_cmp_link(const NMPObject *obj1, const NMPObject *obj2)
             return 1;
 
         /* Only compare based on pointer values. That is ugly because it's not a
-		 * stable sort order.
-		 *
-		 * Have this check as very last. */
+         * stable sort order.
+         *
+         * Have this check as very last. */
         return (obj1->_link.udev.device < obj2->_link.udev.device) ? -1 : 1;
     }
 
@@ -1451,7 +1451,7 @@ nmp_object_id_cmp(const NMPObject *obj1, const NMPObject *obj2)
 
     if (!klass->cmd_plobj_id_cmp) {
         /* the klass doesn't implement ID cmp(). That means, different objects
-		 * never compare equal, but the cmp() according to their pointer value. */
+         * never compare equal, but the cmp() according to their pointer value. */
         NM_CMP_DIRECT_PTR(obj1, obj2);
         return 0;
     }
@@ -1525,7 +1525,7 @@ nmp_object_id_hash_update(const NMPObject *obj, NMHashState *h)
 
     if (!klass->cmd_plobj_id_hash_update) {
         /* The klass doesn't implement ID compare. It means, to use pointer
-		 * equality. */
+         * equality. */
         nm_hash_update_val(h, obj);
         return;
     }
@@ -1679,20 +1679,20 @@ static gboolean
 _vt_cmd_obj_is_alive_ipx_route(const NMPObject *obj)
 {
     /* We want to ignore routes that are RTM_F_CLONED but we still
-	 * let nmp_object_from_nl() create such route objects, instead of
-	 * returning NULL right away.
-	 *
-	 * The idea is, that if we have the same route (according to its id)
-	 * in the cache with !RTM_F_CLONED, an update that changes the route
-	 * to be RTM_F_CLONED must remove the instance.
-	 *
-	 * If nmp_object_from_nl() would just return NULL, we couldn't look
-	 * into the cache to see if it contains a route that now disappears
-	 * (because it changed to be cloned).
-	 *
-	 * Instead we create a dead object, and nmp_cache_update_netlink()
-	 * will remove the old version of the update.
-	 **/
+     * let nmp_object_from_nl() create such route objects, instead of
+     * returning NULL right away.
+     *
+     * The idea is, that if we have the same route (according to its id)
+     * in the cache with !RTM_F_CLONED, an update that changes the route
+     * to be RTM_F_CLONED must remove the instance.
+     *
+     * If nmp_object_from_nl() would just return NULL, we couldn't look
+     * into the cache to see if it contains a route that now disappears
+     * (because it changed to be cloned).
+     *
+     * Instead we create a dead object, and nmp_cache_update_netlink()
+     * will remove the old version of the update.
+     **/
     return NMP_OBJECT_CAST_IP_ROUTE(obj)->ifindex > 0
            && !NM_FLAGS_HAS(obj->ip_route.r_rtm_flags, RTM_F_CLONED);
 }
@@ -1873,7 +1873,7 @@ nmp_cache_link_connected_needs_toggle(const NMPCache * cache,
         return FALSE;
 
     /* if native IFF_LOWER_UP is down, link.connected must also be down
-	 * regardless of the slaves. */
+     * regardless of the slaves. */
     if (!NM_FLAGS_HAS(master->link.n_ifi_flags, IFF_LOWER_UP))
         return !!master->link.connected;
 
@@ -2305,13 +2305,13 @@ static NMDedupMultiIdxMode
 _obj_get_add_mode(const NMPObject *obj)
 {
     /* new objects are usually appended to the list. Except for
-	 * addresses, which are prepended during `ip address add`.
-	 *
-	 * Actually, for routes it is more complicated, because depending on
-	 * `ip route append`, `ip route replace`, `ip route prepend`, the object
-	 * will be added at the tail, at the front, or even replace an element
-	 * in the list. However, that is handled separately by nmp_cache_update_netlink_route()
-	 * and of no concern here. */
+     * addresses, which are prepended during `ip address add`.
+     *
+     * Actually, for routes it is more complicated, because depending on
+     * `ip route append`, `ip route replace`, `ip route prepend`, the object
+     * will be added at the tail, at the front, or even replace an element
+     * in the list. However, that is handled separately by nmp_cache_update_netlink_route()
+     * and of no concern here. */
     if (NM_IN_SET(NMP_OBJECT_GET_TYPE(obj),
                   NMP_OBJECT_TYPE_IP4_ADDRESS,
                   NMP_OBJECT_TYPE_IP6_ADDRESS))
@@ -2385,7 +2385,7 @@ _idxcache_update_other_cache_ids(NMPCache *       cache,
         if (obj_old && nm_dedup_multi_idx_type_id_equal(idx_type, obj_old, obj_new)
             && nm_dedup_multi_idx_type_partition_equal(idx_type, obj_old, obj_new)) {
             /* optimize. We just looked up the @obj_old entry and @obj_new compares equal
-			 * according to idx_obj_id_equal(). entry_new is the same as entry_old. */
+             * according to idx_obj_id_equal(). entry_new is the same as entry_old. */
             entry_new = entry_old;
         } else {
             entry_new = nm_dedup_multi_index_lookup_obj(cache->multi_idx, idx_type, obj_new);
@@ -2440,9 +2440,9 @@ _idxcache_update(NMPCache *                cache,
     nm_auto_nmpobj const NMPObject *obj_old = NULL;
 
     /* we update an object in the cache.
-	 *
-	 * Note that @entry_old MUST be what is currently tracked in multi_idx, and it must
-	 * have the same ID as @obj_new. */
+     *
+     * Note that @entry_old MUST be what is currently tracked in multi_idx, and it must
+     * have the same ID as @obj_new. */
 
     nm_assert(cache);
     nm_assert(entry_old || obj_new);
@@ -2469,11 +2469,11 @@ _idxcache_update(NMPCache *                cache,
         obj_old = nmp_object_ref(entry_old->obj);
 
     /* first update the main index NMP_CACHE_ID_TYPE_OBJECT_TYPE.
-	 * We already know the pre-existing @entry old, so all that
-	 * nm_dedup_multi_index_add_full() effectively does, is update the
-	 * obj reference.
-	 *
-	 * We also get the new boxed object, which we need below. */
+     * We already know the pre-existing @entry old, so all that
+     * nm_dedup_multi_index_add_full() effectively does, is update the
+     * obj reference.
+     *
+     * We also get the new boxed object, which we need below. */
     if (obj_new) {
         nm_auto_nmpobj NMPObject *obj_old2 = NULL;
 
@@ -2494,7 +2494,7 @@ _idxcache_update(NMPCache *                cache,
         nm_dedup_multi_index_remove_entry(cache->multi_idx, entry_old);
 
     /* now update all other indexes. We know the previously boxed entry, and the
-	 * newly boxed one. */
+     * newly boxed one. */
     klass = NMP_OBJECT_GET_CLASS(entry_new ? entry_new->obj : obj_old);
     for (i_idx_type = klass->supported_cache_ids; *i_idx_type; i_idx_type++) {
         NMPCacheIdType id_type = *i_idx_type;
@@ -2534,7 +2534,7 @@ nmp_cache_remove(NMPCache *        cache,
 
     if (equals_by_ptr && obj_old != obj_needle) {
         /* We found an identical object, but we only delete it if it's the same pointer as
-		 * @obj_needle. */
+         * @obj_needle. */
         return NMP_CACHE_OPS_UNCHANGED;
     }
     if (only_dirty && !entry_old->dirty) {
@@ -2568,9 +2568,9 @@ nmp_cache_remove_netlink(NMPCache *        cache,
 
     if (NMP_OBJECT_GET_TYPE(obj_needle) == NMP_OBJECT_TYPE_LINK) {
         /* For nmp_cache_remove_netlink() we have an incomplete @obj_needle instance to be
-		 * removed from netlink. Link objects are alive without being in netlink when they
-		 * have a udev-device. All we want to do in this case is clear the netlink.is_in_netlink
-		 * flag. */
+         * removed from netlink. Link objects are alive without being in netlink when they
+         * have a udev-device. All we want to do in this case is clear the netlink.is_in_netlink
+         * flag. */
 
         NM_SET_OUT(out_obj_old, nmp_object_ref(obj_old));
 
@@ -2647,8 +2647,8 @@ nmp_cache_update_netlink(NMPCache *        cache,
     nm_assert(NMP_OBJECT_IS_VALID(obj_hand_over));
     nm_assert(!NMP_OBJECT_IS_STACKINIT(obj_hand_over));
     /* A link object from netlink must have the udev related fields unset.
-	 * We could implement to handle that, but there is no need to support such
-	 * a use-case */
+     * We could implement to handle that, but there is no need to support such
+     * a use-case */
     nm_assert(NMP_OBJECT_GET_TYPE(obj_hand_over) != NMP_OBJECT_TYPE_LINK
               || (!obj_hand_over->_link.udev.device && !obj_hand_over->link.driver));
     nm_assert(nm_dedup_multi_index_obj_find(cache->multi_idx, obj_hand_over) != obj_hand_over);
@@ -2685,14 +2685,14 @@ nmp_cache_update_netlink(NMPCache *        cache,
             }
             if (obj_old->_link.udev.device) {
                 /* @obj_hand_over is not in netlink.
-				 *
-				 * This is similar to nmp_cache_remove_netlink(), but there we preserve the
-				 * preexisting netlink properties. The use case of that is when kernel_get_object()
-				 * cannot load an object (based on the id of a needle).
-				 *
-				 * Here we keep the data provided from @obj_hand_over. The usecase is when receiving
-				 * a valid @obj_hand_over instance from netlink with RTM_DELROUTE.
-				 */
+                 *
+                 * This is similar to nmp_cache_remove_netlink(), but there we preserve the
+                 * preexisting netlink properties. The use case of that is when kernel_get_object()
+                 * cannot load an object (based on the id of a needle).
+                 *
+                 * Here we keep the data provided from @obj_hand_over. The usecase is when receiving
+                 * a valid @obj_hand_over instance from netlink with RTM_DELROUTE.
+                 */
                 is_alive = TRUE;
             } else
                 is_alive = FALSE;
@@ -2765,8 +2765,8 @@ nmp_cache_update_netlink_route(NMPCache *        cache,
     nm_assert(NMP_OBJECT_IS_VALID(obj_hand_over));
     nm_assert(!NMP_OBJECT_IS_STACKINIT(obj_hand_over));
     /* A link object from netlink must have the udev related fields unset.
-	 * We could implement to handle that, but there is no need to support such
-	 * a use-case */
+     * We could implement to handle that, but there is no need to support such
+     * a use-case */
     nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_hand_over),
                         NMP_OBJECT_TYPE_IP4_ROUTE,
                         NMP_OBJECT_TYPE_IP6_ROUTE));
@@ -2809,12 +2809,12 @@ update_done:
     NM_SET_OUT(out_obj_new, nmp_object_ref(nm_dedup_multi_entry_get_obj(entry_new)));
 
     /* a RTM_GETROUTE event may signal that another object was replaced.
-	 * Find out whether that is the case and return it as @obj_replaced.
-	 *
-	 * Also, fixup the order of @entry_new within NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID
-	 * index. For most parts, we don't care about the order of objects (including routes).
-	 * But NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID we must keep in the correct order, to
-	 * properly find @obj_replaced. */
+     * Find out whether that is the case and return it as @obj_replaced.
+     *
+     * Also, fixup the order of @entry_new within NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID
+     * index. For most parts, we don't care about the order of objects (including routes).
+     * But NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID we must keep in the correct order, to
+     * properly find @obj_replaced. */
     resync_required = FALSE;
     entry_replace   = NULL;
     if (is_dump)
@@ -2824,15 +2824,15 @@ update_done:
         if (NM_FLAGS_HAS(nlmsgflags, NLM_F_REPLACE)
             && nmp_cache_lookup_all(cache, NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID, obj_hand_over)) {
             /* hm. @obj_hand_over was not added, meaning it was not alive.
-			 * However, we track some other objects with the same weak-id.
-			 * It's unclear what that means. To be sure, resync. */
+             * However, we track some other objects with the same weak-id.
+             * It's unclear what that means. To be sure, resync. */
             resync_required = TRUE;
         }
         goto out;
     }
 
     /* FIXME: for routes, we only maintain the order correctly for the BY_WEAK_ID
-	 * index. For all other indexes their order becomes messed up. */
+     * index. For all other indexes their order becomes messed up. */
     entry_cur =
         _lookup_entry_with_idx_type(cache, NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID, entry_new->obj);
     if (!entry_cur) {

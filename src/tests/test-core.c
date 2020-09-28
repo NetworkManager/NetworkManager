@@ -226,8 +226,8 @@ test_nm_utils_log_connection_diff(void)
     NMConnection *connection2;
 
     /* if logging is disabled (the default), nm_utils_log_connection_diff() returns
-	 * early without doing anything. Hence, in the normal testing, this test does nothing.
-	 * It only gets interesting, when run verbosely with NMTST_DEBUG=debug ... */
+     * early without doing anything. Hence, in the normal testing, this test does nothing.
+     * It only gets interesting, when run verbosely with NMTST_DEBUG=debug ... */
 
     nm_log(LOGL_DEBUG, LOGD_CORE, NULL, NULL, "START TEST test_nm_utils_log_connection_diff...");
 
@@ -458,9 +458,9 @@ test_connection_match_ip6_method(void)
     connections = g_slist_append(connections, copy);
 
     /* Check that if the generated connection is IPv6 method=link-local, and the
-	 * candidate is both method=auto and may-faily=true, that the candidate is
-	 * matched.
-	 */
+     * candidate is both method=auto and may-faily=true, that the candidate is
+     * matched.
+     */
     s_ip6 = nm_connection_get_setting_ip6_config(orig);
     g_assert(s_ip6);
     g_object_set(G_OBJECT(s_ip6),
@@ -497,8 +497,8 @@ test_connection_match_ip6_method_ignore(void)
     connections = g_slist_append(connections, copy);
 
     /* Check that if the generated connection is IPv6 method=link-local, and the
-	 * candidate is method=ignore, that the candidate is matched.
-	 */
+     * candidate is method=ignore, that the candidate is matched.
+     */
     s_ip6 = nm_connection_get_setting_ip6_config(orig);
     g_assert(s_ip6);
     g_object_set(G_OBJECT(s_ip6),
@@ -533,8 +533,8 @@ test_connection_match_ip6_method_ignore_auto(void)
     connections = g_slist_append(connections, copy);
 
     /* Check that if the generated connection is IPv6 method=auto, and the
-	 * candidate is method=ignore, that the candidate is matched.
-	 */
+     * candidate is method=ignore, that the candidate is matched.
+     */
     s_ip6 = nm_connection_get_setting_ip6_config(orig);
     g_assert(s_ip6);
     g_object_set(G_OBJECT(s_ip6),
@@ -569,9 +569,9 @@ test_connection_match_ip4_method(void)
     connections = g_slist_append(connections, copy);
 
     /* Check that if the generated connection is IPv4 method=disabled, and the
-	 * candidate is both method=auto and may-faily=true, and the device has no
-	 * carrier that the candidate is matched.
-	 */
+     * candidate is both method=auto and may-faily=true, and the device has no
+     * carrier that the candidate is matched.
+     */
     s_ip4 = nm_connection_get_setting_ip4_config(orig);
     g_assert(s_ip4);
     g_object_set(G_OBJECT(s_ip4),
@@ -612,8 +612,8 @@ test_connection_match_interface_name(void)
     connections = g_slist_append(connections, copy);
 
     /* Check that if the generated connection has an interface name and the
-	 * candidate's interface name is NULL, that the candidate is matched.
-	 */
+     * candidate's interface name is NULL, that the candidate is matched.
+     */
     s_con = nm_connection_get_setting_connection(orig);
     g_assert(s_con);
     g_object_set(G_OBJECT(s_con), NM_SETTING_CONNECTION_INTERFACE_NAME, "em1", NULL);
@@ -695,8 +695,8 @@ test_connection_match_wired2(void)
     connections = g_slist_append(connections, copy);
 
     /* Check that if the generated connection do not have wired setting
-	 * and s390 properties in the existing connection's setting are default,
-	 * the connections match. It can happen if assuming VLAN devices. */
+     * and s390 properties in the existing connection's setting are default,
+     * the connections match. It can happen if assuming VLAN devices. */
     nm_connection_remove_setting(orig, NM_TYPE_SETTING_WIRED);
 
     matched = _match_connection(connections, orig, TRUE, 0, 0);
@@ -759,8 +759,8 @@ test_connection_no_match_ip4_addr(void)
     connections = g_slist_append(connections, copy);
 
     /* Check that if we have two differences, ipv6.method (exception we allow) and
-	 * ipv4.addresses (which is fatal), we don't match the connections.
-	 */
+     * ipv4.addresses (which is fatal), we don't match the connections.
+     */
     s_ip6 = nm_connection_get_setting_ip6_config(orig);
     g_assert(s_ip6);
     g_object_set(G_OBJECT(s_ip6),
@@ -1253,7 +1253,7 @@ _do_test_match_spec_device(const char *       spec_str,
     g_slist_free_full(specs_resplit, g_free);
 
     /* also check the matches in the random order. They must yield the same result because
-	 * matches are inclusive -- except "except:" which always wins. */
+     * matches are inclusive -- except "except:" which always wins. */
     specs_randperm = nmtst_rand_perm_gslist(NULL, g_slist_copy(specs));
 
     for (i = 0; matches && matches[i]; i++) {
@@ -1799,9 +1799,9 @@ test_nm_utils_strbuf_append(void)
                 g_snprintf(t_buf, t_len, "%s", str);
                 if (t_len > 0 && strlen(str) >= buf_len && (nmtst_get_rand_uint32() % 2)) {
                     /* the string was truncated by g_snprintf(). That means, at the last position in the
-					 * buffer is now NUL.
-					 * Replace the NUL by the actual character, and check that nm_utils_strbuf_seek_end()
-					 * does the right thing: NUL terminate the buffer and seek past the end of the buffer. */
+                     * buffer is now NUL.
+                     * Replace the NUL by the actual character, and check that nm_utils_strbuf_seek_end()
+                     * does the right thing: NUL terminate the buffer and seek past the end of the buffer. */
                     g_assert_cmpmem(t_buf, t_len - 1, str, t_len - 1);
                     g_assert(t_buf[t_len - 1] == '\0');
                     g_assert(str[t_len - 1] != '\0');
@@ -1814,15 +1814,15 @@ test_nm_utils_strbuf_append(void)
                     nm_utils_strbuf_seek_end(&t_buf, &t_len);
                     if (buf_len > 0 && strlen(str) + 1 > buf_len) {
                         /* the buffer was truncated by g_snprintf() above.
-						 *
-						 * But nm_utils_strbuf_seek_end() does not recognize that and returns
-						 * a remaining length of 1.
-						 *
-						 * Note that other nm_utils_strbuf_append*() functions recognize
-						 * truncation, and properly set the remaining length to zero.
-						 * As the assertions below check for the behavior of nm_utils_strbuf_append*(),
-						 * we assert here that nm_utils_strbuf_seek_end() behaved as expected, and then
-						 * adjust t_buf/t_len according to the "is-truncated" case. */
+                         *
+                         * But nm_utils_strbuf_seek_end() does not recognize that and returns
+                         * a remaining length of 1.
+                         *
+                         * Note that other nm_utils_strbuf_append*() functions recognize
+                         * truncation, and properly set the remaining length to zero.
+                         * As the assertions below check for the behavior of nm_utils_strbuf_append*(),
+                         * we assert here that nm_utils_strbuf_seek_end() behaved as expected, and then
+                         * adjust t_buf/t_len according to the "is-truncated" case. */
                         g_assert(t_len == 1);
                         g_assert(t_buf == &buf[buf_len - 1]);
                         g_assert(t_buf[0] == '\0');
@@ -1897,8 +1897,8 @@ static void
 test_duplicate_decl_specifier(void)
 {
     /* We're intentionally assigning values to static arrays v_const
-	 * and v_result without using it afterwards just so that valgrind
-	 * doesn't complain about the leak. */
+     * and v_result without using it afterwards just so that valgrind
+     * doesn't complain about the leak. */
     NM_PRAGMA_WARNING_DISABLE("-Wunused-but-set-variable")
 
     /* have some static variables, so that the result is certainly not optimized out. */
@@ -1907,7 +1907,7 @@ test_duplicate_decl_specifier(void)
     const int        v2          = 3;
 
     /* Test that we don't get a compiler warning about duplicate const specifier.
-	 * C99 allows that and it can easily happen in macros. */
+     * C99 allows that and it can easily happen in macros. */
 
 #define TEST_MAX(a, b)            \
     ({                            \
@@ -2267,8 +2267,8 @@ test_machine_id_read(void)
 
     logstate = nmtst_logging_disable(FALSE);
     /* If you run this test as root, without a valid /etc/machine-id,
-	 * the code will try to get the secret-key. That is a bit ugly,
-	 * but no real problem. */
+     * the code will try to get the secret-key. That is a bit ugly,
+     * but no real problem. */
     machine_id = nm_utils_machine_id_bin();
     nmtst_logging_reenable(logstate);
 
@@ -2281,12 +2281,12 @@ test_machine_id_read(void)
     /* double check with systemd's implementation... */
     if (!nm_sd_utils_id128_get_machine(&machine_id_sd)) {
         /* if systemd failed to read /etc/machine-id, the file likely
-		 * is invalid. Our machine-id is fake, and we have nothing to
-		 * compare against. */
+         * is invalid. Our machine-id is fake, and we have nothing to
+         * compare against. */
 
         /* NOTE: this test will fail, if you don't have /etc/machine-id,
-		 * but a valid "LOCALSTATEDIR/lib/dbus/machine-id" file.
-		 * Just don't do that. */
+         * but a valid "LOCALSTATEDIR/lib/dbus/machine-id" file.
+         * Just don't do that. */
         g_assert(nm_utils_machine_id_is_fake());
     } else {
         g_assert(!nm_utils_machine_id_is_fake());
@@ -2378,8 +2378,8 @@ test_nm_utils_dhcp_client_id_systemd_node_specific(gconstpointer test_data)
     gint32              u32;
 
     /* the test already hard-codes the expected values iaid_ifname and duid_id
-	 * above. Still, redo the steps to derive them from the ifname/machine-id
-	 * and double check. */
+     * above. Still, redo the steps to derive them from the ifname/machine-id
+     * and double check. */
     u64 = c_siphash_hash(HASH_KEY, (const guint8 *) d->ifname, strlen(d->ifname));
     g_assert_cmpint(u64, ==, d->ifname_hash_1);
     u32 = be32toh((u64 & 0xffffffffu) ^ (u64 >> 32));
@@ -2410,7 +2410,7 @@ test_nm_utils_dhcp_client_id_systemd_node_specific(gconstpointer test_data)
 #if __BYTE_ORDER == __BIG_ENDIAN
         if (legacy_unstable_byteorder) {
             /* on non-little endian, the legacy behavior is to have the bytes
-			 * swapped. */
+             * swapped. */
             iaid = bswap_32(iaid);
         }
 #endif

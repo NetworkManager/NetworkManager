@@ -474,13 +474,13 @@ nm_platform_process_events_ensure_link(NMPlatform *self, int ifindex, const char
         return NULL;
 
     /* we look into the cache, whether a link for given ifindex/ifname
-	 * exits. If not, we poll the netlink socket, maybe the event
-	 * with the link is waiting.
-	 *
-	 * Then we try again to find the object.
-	 *
-	 * If the link is already cached the first time, we avoid polling
-	 * the netlink socket. */
+     * exits. If not, we poll the netlink socket, maybe the event
+     * with the link is waiting.
+     *
+     * Then we try again to find the object.
+     *
+     * If the link is already cached the first time, we avoid polling
+     * the netlink socket. */
 again:
     obj = nmp_cache_lookup_link_full(
         nm_platform_get_cache(self),
@@ -524,8 +524,8 @@ nm_platform_sysctl_open_netdir(NMPlatform *self, int ifindex, char *out_ifname)
     g_return_val_if_fail(ifindex > 0, -1);
 
     /* we don't have an @ifname_guess argument to make the API nicer.
-	 * But still do a cache-lookup first. Chances are good that we have
-	 * the right ifname cached and save if_indextoname() */
+     * But still do a cache-lookup first. Chances are good that we have
+     * the right ifname cached and save if_indextoname() */
     ifname_guess = nm_platform_link_get_name(self, ifindex);
 
     return nmp_utils_sysctl_open_netdir(ifindex, ifname_guess, out_ifname);
@@ -621,7 +621,7 @@ nm_platform_sysctl_ip_conf_set_ipv6_hop_limit_safe(NMPlatform *self, const char 
                                              -1);
 
     /* only allow increasing the hop-limit to avoid DOS by an attacker
-	 * setting a low hop-limit (CVE-2015-2924, rh#1209902) */
+     * setting a low hop-limit (CVE-2015-2924, rh#1209902) */
 
     if (value < cur)
         return FALSE;
@@ -650,7 +650,7 @@ nm_platform_sysctl_ip_neigh_set_ipv6_reachable_time(NMPlatform *self,
         return TRUE;
 
     /* RFC 4861 says the value can't be greater than one hour.
-	 * Also use a reasonable lower threshold. */
+     * Also use a reasonable lower threshold. */
     clamped = NM_CLAMP(value_ms, 100, 3600000);
     nm_sprintf_buf(path, "/proc/sys/net/ipv6/neigh/%s/base_reachable_time_ms", iface);
     nm_sprintf_buf(str, "%u", clamped);
@@ -783,7 +783,7 @@ nm_platform_sysctl_get_int_checked(NMPlatform *self,
     value = nm_platform_sysctl_get(self, pathid, dirfd, path);
     if (!value) {
         /* nm_platform_sysctl_get() set errno to ENOENT if the file does not exist.
-		 * Propagate/preserve that. */
+         * Propagate/preserve that. */
         if (errno != ENOENT)
             errno = EINVAL;
         return fallback;
@@ -892,8 +892,8 @@ nm_platform_sysctl_ip_conf_get_rp_filter_ipv4(NMPlatform *self,
         return -1;
 
     /* the effectively used value is the rp_filter sysctl value of MAX(all,ifname).
-	 * Note that this is the numerical MAX(), despite rp_filter "1" being more strict
-	 * than "2". */
+     * Note that this is the numerical MAX(), despite rp_filter "1" being more strict
+     * than "2". */
     if (val < 2 && consider_all && !nm_streq(ifname, "all")) {
         val_all = nm_platform_sysctl_ip_conf_get_int_checked(self,
                                                              AF_INET,
@@ -974,7 +974,7 @@ nm_platform_link_get_all(NMPlatform *self, gboolean sort_by_name)
         return NULL;
 
     /* first sort the links by their ifindex or name. Below we will sort
-	 * further by moving children/slaves to the end. */
+     * further by moving children/slaves to the end. */
     g_ptr_array_sort_with_data(links, _link_get_all_presort, GINT_TO_POINTER(sort_by_name));
 
     unseen = g_hash_table_new(nm_direct_hash, NULL);
@@ -1045,7 +1045,7 @@ skip:
         } else {
             nm_assert(first_idx != G_MAXUINT);
             /* There is a loop, pop the first (remaining) element from the list.
-			 * This can happen for veth pairs where each peer is parent of the other end. */
+             * This can happen for veth pairs where each peer is parent of the other end. */
             item = NMP_OBJECT_CAST_LINK(links->pdata[first_idx]);
             nm_assert(item);
             g_hash_table_remove(unseen, GINT_TO_POINTER(item->ifindex));
@@ -1471,11 +1471,11 @@ nm_platform_link_get_type_name(NMPlatform *self, int ifindex)
 
     if (obj->link.type != NM_LINK_TYPE_UNKNOWN) {
         /* We could detect the @link_type. In this case the function returns
-		 * our internal module names, which differs from rtnl_link_get_type():
-		 *   - NM_LINK_TYPE_INFINIBAND (gives "infiniband", instead of "ipoib")
-		 *   - NM_LINK_TYPE_TAP (gives "tap", instead of "tun").
-		 * Note that this functions is only used by NMDeviceGeneric to
-		 * set type_description. */
+         * our internal module names, which differs from rtnl_link_get_type():
+         *   - NM_LINK_TYPE_INFINIBAND (gives "infiniband", instead of "ipoib")
+         *   - NM_LINK_TYPE_TAP (gives "tap", instead of "tun").
+         * Note that this functions is only used by NMDeviceGeneric to
+         * set type_description. */
         return nm_link_type_to_string(obj->link.type);
     }
     /* Link type not detected. Fallback to rtnl_link_get_type()/IFLA_INFO_KIND. */
@@ -1581,7 +1581,7 @@ nm_platform_link_get_ifi_flags(NMPlatform *self, int ifindex, guint requested_fl
         return -ENODEV;
 
     /* Errors are signaled as negative values. That means, you cannot request
-	 * the most significant bit (2^31) with this API. Assert against that. */
+     * the most significant bit (2^31) with this API. Assert against that. */
     nm_assert((int) requested_flags >= 0);
     nm_assert(requested_flags < (guint) G_MAXINT);
 
@@ -2497,7 +2497,7 @@ nm_platform_link_tun_add(NMPlatform *            self,
     g_return_val_if_fail(NM_IN_SET(props->type, IFF_TUN, IFF_TAP), -NME_BUG);
 
     /* creating a non-persistent device requires that the caller handles
-	 * the file descriptor. */
+     * the file descriptor. */
     g_return_val_if_fail(props->persist || out_fd, -NME_BUG);
 
     NM_SET_OUT(out_fd, -1);
@@ -2531,7 +2531,7 @@ nm_platform_link_6lowpan_get_properties(NMPlatform *self, int ifindex, int *out_
     }
 
     /* As of 4.16 kernel does not expose the peer_ifindex as IFA_LINK.
-	 * Find the WPAN device with the same MAC address. */
+     * Find the WPAN device with the same MAC address. */
     if (out_parent) {
         const NMPlatformLink *parent_plink;
 
@@ -2861,7 +2861,7 @@ nm_platform_link_infiniband_get_properties(NMPlatform * self,
     }
 
     /* Could not get the link information via netlink. To support older kernels,
-	 * fallback to reading sysfs. */
+     * fallback to reading sysfs. */
 
     dirfd = nm_platform_sysctl_open_netdir(self, ifindex, ifname_verified);
     if (dirfd < 0)
@@ -2974,7 +2974,7 @@ nm_platform_link_tun_get_properties(NMPlatform *self, int ifindex, NMPlatformLnk
         nm_assert(NMP_OBJECT_GET_CLASS(pllnk)->lnk_link_type == NM_LINK_TYPE_TUN);
 
         /* recent kernels expose tun properties via netlink and thus we have them
-		 * in the platform cache. */
+         * in the platform cache. */
         NM_SET_OUT(out_properties, pllnk->lnk_tun);
         return TRUE;
     }
@@ -3741,9 +3741,9 @@ _addr_array_clean_expired(int          addr_family,
 
         if (addr_family == AF_INET6 && NM_FLAGS_HAS(a->n_ifa_flags, IFA_F_TEMPORARY)) {
             /* temporary addresses are never added explicitly by NetworkManager but
-			 * kernel adds them via mngtempaddr flag.
-			 *
-			 * We drop them from this list. */
+             * kernel adds them via mngtempaddr flag.
+             *
+             * We drop them from this list. */
             goto clear_and_next;
         }
 
@@ -3855,7 +3855,7 @@ ip4_addr_subnets_build_index(const GPtrArray *addresses,
             g_ptr_array_insert(addr_list, position, p_address);
         } else {
             /* we only care about the primary. No need to track the secondaries
-			 * as a GPtrArray. */
+             * as a GPtrArray. */
             nm_assert(ip4_addr_subnets_is_plain_address(addresses, p));
             if (consider_flags && !NM_FLAGS_HAS(address->n_ifa_flags, IFA_F_SECONDARY)) {
                 g_hash_table_insert(subnets, GUINT_TO_POINTER(net), p_address);
@@ -3993,9 +3993,9 @@ nm_platform_ip_address_sync(NMPlatform *self,
     _CHECK_SELF(self, klass, FALSE);
 
     /* The order we want to enforce is only among addresses with the same
-	 * scope, as the kernel keeps addresses sorted by scope. Therefore,
-	 * apply the same sorting to known addresses, so that we don't try to
-	 * unnecessary change the order of addresses with different scopes. */
+     * scope, as the kernel keeps addresses sorted by scope. Therefore,
+     * apply the same sorting to known addresses, so that we don't try to
+     * unnecessary change the order of addresses with different scopes. */
     if (!IS_IPv4) {
         if (known_addresses)
             g_ptr_array_sort_with_data(known_addresses,
@@ -4011,7 +4011,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
         known_addresses = NULL;
 
     /* @plat_addresses must be sorted in decreasing priority order (highest priority addresses first), contrary to
-	 * @known_addresses which is in increasing priority order (lowest priority addresses first). */
+     * @known_addresses which is in increasing priority order (lowest priority addresses first). */
     plat_addresses = addresses_prune;
 
     if (nm_g_ptr_array_len(plat_addresses) > 0) {
@@ -4049,7 +4049,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
                             ip4_addr_subnets_is_secondary(o, known_subnets, known_addresses, NULL);
                         if (secondary == NM_FLAGS_HAS(plat_address->n_ifa_flags, IFA_F_SECONDARY)) {
                             /* if we have an existing known-address, with matching secondary role,
-							 * do not delete the platform-address. */
+                             * do not delete the platform-address. */
                             continue;
                         }
                     }
@@ -4067,11 +4067,11 @@ nm_platform_ip_address_sync(NMPlatform *self,
                                                    &addr_list)
                     && addr_list) {
                     /* If we just deleted a primary addresses and there were
-					 * secondary ones the kernel can do two things, depending on
-					 * version and sysctl setting: delete also secondary addresses
-					 * or promote a secondary to primary. Ensure that secondary
-					 * addresses are deleted, so that we can start with a clean
-					 * slate and add addresses in the right order. */
+                     * secondary ones the kernel can do two things, depending on
+                     * version and sysctl setting: delete also secondary addresses
+                     * or promote a secondary to primary. Ensure that secondary
+                     * addresses are deleted, so that we can start with a clean
+                     * slate and add addresses in the right order. */
                     for (j = 1; j < addr_list->len; j++) {
                         const NMPObject **o;
 
@@ -4106,18 +4106,18 @@ nm_platform_ip_address_sync(NMPlatform *self,
             known_addresses_len = known_addresses ? known_addresses->len : 0;
 
             /* First, compare every address whether it is still a "known address", that is, whether
-			 * to keep it or to delete it.
-			 *
-			 * If we don't find a matching valid address in @known_addresses, we will delete
-			 * plat_addr.
-			 *
-			 * Certain addresses, like temporary addresses, are ignored by this function
-			 * if not run with full_sync. These addresses are usually not managed by NetworkManager
-			 * directly, or at least, they are not managed via nm_platform_ip6_address_sync().
-			 * Only in full_sync mode, we really want to get rid of them (usually, when we take
-			 * the interface down).
-			 *
-			 * Note that we mark handled addresses by setting it to %NULL in @plat_addresses array. */
+             * to keep it or to delete it.
+             *
+             * If we don't find a matching valid address in @known_addresses, we will delete
+             * plat_addr.
+             *
+             * Certain addresses, like temporary addresses, are ignored by this function
+             * if not run with full_sync. These addresses are usually not managed by NetworkManager
+             * directly, or at least, they are not managed via nm_platform_ip6_address_sync().
+             * Only in full_sync mode, we really want to get rid of them (usually, when we take
+             * the interface down).
+             *
+             * Note that we mark handled addresses by setting it to %NULL in @plat_addresses array. */
             for (i_plat = 0; i_plat < plat_addresses->len; i_plat++) {
                 const NMPObject *           plat_obj = plat_addresses->pdata[i_plat];
                 const NMPObject *           know_obj;
@@ -4128,13 +4128,13 @@ nm_platform_ip_address_sync(NMPlatform *self,
                     if (know_obj
                         && plat_addr->plen == NMP_OBJECT_CAST_IP6_ADDRESS(know_obj)->plen) {
                         /* technically, plen is not part of the ID for IPv6 addresses and thus
-						 * @plat_addr is essentially the same address as @know_addr (regrading
-						 * its identity, not its other attributes).
-						 * However, we cannot modify an existing addresses' plen without
-						 * removing and readding it. Thus, only keep plat_addr, if the plen
-						 * matches.
-						 *
-						 * keep this one, and continue */
+                         * @plat_addr is essentially the same address as @know_addr (regrading
+                         * its identity, not its other attributes).
+                         * However, we cannot modify an existing addresses' plen without
+                         * removing and readding it. Thus, only keep plat_addr, if the plen
+                         * matches.
+                         *
+                         * keep this one, and continue */
                         continue;
                     }
                 }
@@ -4144,15 +4144,15 @@ nm_platform_ip_address_sync(NMPlatform *self,
             }
 
             /* Next, we must preserve the priority of the routes. That is, source address
-			 * selection will choose addresses in the order as they are reported by kernel.
-			 * Note that the order in @plat_addresses of the remaining matches is highest
-			 * priority first.
-			 * We need to compare this to the order of addresses with same scope in
-			 * @known_addresses (which has lowest priority first).
-			 *
-			 * If we find a first discrepancy, we need to delete all remaining addresses
-			 * with same scope from that point on, because below we must re-add all the
-			 * addresses in the right order to get their priority right. */
+             * selection will choose addresses in the order as they are reported by kernel.
+             * Note that the order in @plat_addresses of the remaining matches is highest
+             * priority first.
+             * We need to compare this to the order of addresses with same scope in
+             * @known_addresses (which has lowest priority first).
+             *
+             * If we find a first discrepancy, we need to delete all remaining addresses
+             * with same scope from that point on, because below we must re-add all the
+             * addresses in the right order to get their priority right. */
             cur_scope              = IP6_ADDR_SCOPE_LOOPBACK;
             delete_remaining_addrs = FALSE;
             i_plat                 = plat_addresses->len;
@@ -4194,7 +4194,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
                         }
 
                         /* plat_address has no match. Now delete_remaining_addrs is TRUE and we will
-						 * delete all the remaining addresses with cur_scope. */
+                         * delete all the remaining addresses with cur_scope. */
                         break;
                     }
                 }
@@ -4216,8 +4216,8 @@ next_plat:;
                     : 0;
 
     /* Add missing addresses. New addresses are added by kernel with top
-	 * priority.
-	 */
+     * priority.
+     */
     for (i_know = 0; i_know < known_addresses->len; i_know++) {
         const NMPlatformIPXAddress *known_address;
         const NMPObject *           o;
@@ -4297,9 +4297,9 @@ _err_inval_due_to_ipv6_tentative_pref_src(NMPlatform *self, const NMPObject *obj
     nm_assert(NMP_OBJECT_IS_VALID(obj));
 
     /* trying to add an IPv6 route with pref-src fails, if the address is
-	 * still tentative (rh#1452684). We need to hack around that.
-	 *
-	 * Detect it, by guessing whether that's the case. */
+     * still tentative (rh#1452684). We need to hack around that.
+     *
+     * Detect it, by guessing whether that's the case. */
 
     if (NMP_OBJECT_GET_TYPE(obj) != NMP_OBJECT_TYPE_IP6_ROUTE)
         return FALSE;
@@ -4470,8 +4470,8 @@ nm_platform_ip_route_sync(NMPlatform *self,
             if ((i_type == 0 && !VTABLE_IS_DEVICE_ROUTE(vt, conf_o))
                 || (i_type == 1 && VTABLE_IS_DEVICE_ROUTE(vt, conf_o))) {
                 /* we add routes in two runs over @i_type.
-				 *
-				 * First device routes, then gateway routes. */
+                 *
+                 * First device routes, then gateway routes. */
                 continue;
             }
 
@@ -4490,7 +4490,7 @@ nm_platform_ip_route_sync(NMPlatform *self,
 
             if (!IS_IPv4 && NMP_OBJECT_CAST_IP6_ROUTE(conf_o)->metric == 0) {
                 /* User space cannot add routes with metric 0. However, kernel can, and we might track such
-				 * routes in @route as they are present external. Skip them silently. */
+                 * routes in @route as they are present external. Skip them silently. */
                 continue;
             }
 
@@ -4507,7 +4507,7 @@ nm_platform_ip_route_sync(NMPlatform *self,
                     continue;
 
                 /* we need to replace the existing route with a (slightly) different
-				 * one. Delete it first. */
+                 * one. Delete it first. */
                 if (!nm_platform_object_delete(self, plat_o)) {
                     /* ignore error. */
                 }
@@ -4521,8 +4521,8 @@ sync_route_add:
             if (r < 0) {
                 if (r == -EEXIST) {
                     /* Don't fail for EEXIST. It's not clear that the existing route
-					 * is identical to the one that we were about to add. However,
-					 * above we should have deleted conflicting (non-identical) routes. */
+                     * is identical to the one that we were about to add. However,
+                     * above we should have deleted conflicting (non-identical) routes. */
                     if (_LOGD_ENABLED()) {
                         plat_entry =
                             nm_platform_lookup_entry(self, NMP_CACHE_ID_TYPE_OBJECT_TYPE, conf_o);
@@ -4713,15 +4713,15 @@ static guint8
 _ip_route_scope_inv_get_normalized(const NMPlatformIP4Route *route)
 {
     /* in kernel, you cannot set scope to RT_SCOPE_NOWHERE (255).
-	 * That means, in NM, we treat RT_SCOPE_NOWHERE as unset, and detect
-	 * it based on the presence of the gateway. In other words, when adding
-	 * a route with scope RT_SCOPE_NOWHERE (in NetworkManager) to kernel,
-	 * the resulting scope will be either "link" or "universe" (depending
-	 * on the gateway).
-	 *
-	 * Note that internally, we track @scope_inv is the inverse of scope,
-	 * so that the default equals zero (~(RT_SCOPE_NOWHERE)).
-	 **/
+     * That means, in NM, we treat RT_SCOPE_NOWHERE as unset, and detect
+     * it based on the presence of the gateway. In other words, when adding
+     * a route with scope RT_SCOPE_NOWHERE (in NetworkManager) to kernel,
+     * the resulting scope will be either "link" or "universe" (depending
+     * on the gateway).
+     *
+     * Note that internally, we track @scope_inv is the inverse of scope,
+     * so that the default equals zero (~(RT_SCOPE_NOWHERE)).
+     **/
     if (route->scope_inv == 0) {
         if (route->type_coerced == nm_platform_route_type_coerce(RTN_LOCAL))
             return nm_platform_route_scope_inv(RT_SCOPE_HOST);
@@ -5019,9 +5019,9 @@ _ip4_dev_route_blacklist_notify_route(NMPlatform *self, const NMPObject *obj)
     }
 
     /* We cannot delete it right away because we are in the process of receiving netlink messages.
-	 * It may be possible to do so, but complicated and error prone.
-	 *
-	 * Instead, we mark the entry and schedule an idle action (with high priority). */
+     * It may be possible to do so, but complicated and error prone.
+     *
+     * Instead, we mark the entry and schedule an idle action (with high priority). */
     *p_timeout_ms = (*p_timeout_ms) | ((gint64) 1);
     _ip4_dev_route_blacklist_check_schedule(self);
 }
@@ -5065,8 +5065,8 @@ _ip4_dev_route_blacklist_schedule(NMPlatform *self)
     } else {
         if (!priv->ip4_dev_route_blacklist_gc_timeout_id) {
             /* this timeout is only to garbage collect the expired entries from priv->ip4_dev_route_blacklist_hash.
-			 * It can run infrequently, and it doesn't hurt if expired entries linger around a bit
-			 * longer then necessary. */
+             * It can run infrequently, and it doesn't hurt if expired entries linger around a bit
+             * longer then necessary. */
             priv->ip4_dev_route_blacklist_gc_timeout_id =
                 g_timeout_add_seconds(IP4_DEV_ROUTE_BLACKLIST_GC_TIMEOUT_S,
                                       _ip4_dev_route_blacklist_gc_timeout_handle,
@@ -5126,11 +5126,11 @@ nm_platform_ip4_dev_route_blacklist_set(NMPlatform *self,
         while (g_hash_table_iter_next(&iter, (gpointer *) &p_obj, (gpointer *) &p_timeout_ms)) {
             if (NMP_OBJECT_CAST_IP4_ROUTE(p_obj)->ifindex == ifindex) {
                 /* we could g_hash_table_iter_remove(&iter) the current entry.
-				 * Instead, just expire it and let _ip4_dev_route_blacklist_gc_timeout_handle()
-				 * handle it.
-				 *
-				 * The assumption is, that ip4_dev_route_blacklist contains the very same entry
-				 * again, with a new timeout. So, we can un-expire it below. */
+                 * Instead, just expire it and let _ip4_dev_route_blacklist_gc_timeout_handle()
+                 * handle it.
+                 *
+                 * The assumption is, that ip4_dev_route_blacklist contains the very same entry
+                 * again, with a new timeout. So, we can un-expire it below. */
                 *p_timeout_ms = 0;
             }
         }
@@ -5206,7 +5206,7 @@ nm_platform_qdisc_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformQdisc
     _CHECK_SELF(self, klass, -NME_BUG);
 
     /* Note: @qdisc must not be copied or kept alive because the lifetime of qdisc.kind
-	 * is undefined. */
+     * is undefined. */
 
     _LOG3D("adding or updating a qdisc: %s", nm_platform_qdisc_to_string(qdisc, NULL, 0));
     return klass->qdisc_add(self, flags, qdisc);
@@ -5309,7 +5309,7 @@ nm_platform_tfilter_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformTfi
     _CHECK_SELF(self, klass, -NME_BUG);
 
     /* Note: @tfilter must not be copied or kept alive because the lifetime of tfilter.kind
-	 * and tfilter.action.kind is undefined. */
+     * and tfilter.action.kind is undefined. */
 
     _LOG3D("adding or updating a tfilter: %s", nm_platform_tfilter_to_string(tfilter, NULL, 0));
     return klass->tfilter_add(self, flags, tfilter);
@@ -6803,7 +6803,7 @@ nm_platform_routing_rule_to_string(const NMPlatformRoutingRule *routing_rule, ch
 
     if (routing_rule->ip_proto != 0) {
         /* we don't call getprotobynumber(), just print the numeric value.
-		 * This differs from what ip-rule prints. */
+         * This differs from what ip-rule prints. */
         nm_utils_strbuf_append(&buf, &len, " ipproto %u", routing_rule->ip_proto);
     }
 
@@ -6835,10 +6835,10 @@ nm_platform_routing_rule_to_string(const NMPlatformRoutingRule *routing_rule, ch
 
     if (routing_rule->flow) {
         /* FRA_FLOW is only for IPv4, but we want to print the value for all address-families,
-		 * to see when it is set. In practice, this should not be set except for IPv4.
-		 *
-		 * We don't follow the style how ip-rule prints flow/realms. It's confusing. Just
-		 * print the value hex. */
+         * to see when it is set. In practice, this should not be set except for IPv4.
+         *
+         * We don't follow the style how ip-rule prints flow/realms. It's confusing. Just
+         * print the value hex. */
         nm_utils_strbuf_append(&buf, &len, " realms 0x%08x", routing_rule->flow);
     }
 
@@ -6846,7 +6846,7 @@ nm_platform_routing_rule_to_string(const NMPlatformRoutingRule *routing_rule, ch
         G_STATIC_ASSERT_EXPR(RTN_NAT == 10);
 
         /* NAT is deprecated for many years. We don't support RTA_GATEWAY/FRA_UNUSED2
-		 * for the gateway, and so do recent kernels ignore that parameter. */
+         * for the gateway, and so do recent kernels ignore that parameter. */
         nm_utils_strbuf_append_str(&buf, &len, " masquerade");
     } else if (routing_rule->action == FR_ACT_GOTO) {
         if (routing_rule->goto_target != 0)
@@ -7715,7 +7715,7 @@ nm_platform_ip4_address_pretty_sort_cmp(const NMPlatformIP4Address *a1,
     nm_assert(a2);
 
     /* Sort by address type. For example link local will
-	 * be sorted *after* a global address. */
+     * be sorted *after* a global address. */
     NM_CMP_DIRECT(_address_pretty_sort_get_prio_4(a2->address),
                   _address_pretty_sort_get_prio_4(a1->address));
 
@@ -7725,10 +7725,10 @@ nm_platform_ip4_address_pretty_sort_cmp(const NMPlatformIP4Address *a1,
     NM_CMP_DIRECT((a2->label[0] == '\0'), (a1->label[0] == '\0'));
 
     /* Finally, sort addresses lexically. We compare only the
-	 * network part so that the order of addresses in the same
-	 * subnet (and thus also the primary/secondary role) is
-	 * preserved.
-	 */
+     * network part so that the order of addresses in the same
+     * subnet (and thus also the primary/secondary role) is
+     * preserved.
+     */
     n1 = a1->address & _nm_utils_ip4_prefix_to_netmask(a1->plen);
     n2 = a2->address & _nm_utils_ip4_prefix_to_netmask(a2->plen);
     NM_CMP_DIRECT_MEMCMP(&n1, &n2, sizeof(guint32));
@@ -7770,7 +7770,7 @@ nm_platform_ip6_address_pretty_sort_cmp(const NMPlatformIP6Address *a1,
                   NM_FLAGS_HAS(a2->n_ifa_flags, IFA_F_TENTATIVE));
 
     /* Sort by address type. For example link local will
-	 * be sorted *after* site local or global. */
+     * be sorted *after* site local or global. */
     NM_CMP_DIRECT(_address_pretty_sort_get_prio_6(&a2->address),
                   _address_pretty_sort_get_prio_6(&a1->address));
 
@@ -8249,7 +8249,7 @@ nm_platform_routing_rule_hash_update(const NMPlatformRoutingRule *obj,
 
     if (G_UNLIKELY(!NM_IN_SET(obj->addr_family, AF_INET, AF_INET6))) {
         /* the address family is not one of the supported ones. That means, the
-		 * instance will only compare equal to itself (pointer-equality). */
+         * instance will only compare equal to itself (pointer-equality). */
         nm_hash_update_val(h, (gconstpointer) obj);
         return;
     }
@@ -8338,7 +8338,7 @@ nm_platform_routing_rule_cmp(const NMPlatformRoutingRule *a,
 
     if (G_UNLIKELY(!valid)) {
         /* the address family is not one of the supported ones. That means, the
-		 * instance will only compare equal to itself. */
+         * instance will only compare equal to itself. */
         NM_CMP_DIRECT((uintptr_t) a, (uintptr_t) b);
         nm_assert_not_reached();
         return 0;

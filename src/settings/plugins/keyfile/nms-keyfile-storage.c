@@ -69,7 +69,7 @@ cmp_fcn(const NMSKeyfileStorage *a, const NMSKeyfileStorage *b)
     nm_assert(a != b);
 
     /* sort by storage-type, which also has a numeric value according to their
-	 * (inverse) priority. */
+     * (inverse) priority. */
     NM_CMP_FIELD_UNSAFE(b, a, storage_type);
 
     /* meta-data is more important. */

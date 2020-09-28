@@ -20,7 +20,7 @@ typedef enum _NMIPConfigFlags {
     NM_IP_CONFIG_FLAG_NONE = 0,
 
     /* if set, then the merge flag NM_IP_CONFIG_MERGE_NO_DEFAULT_ROUTES gets
-	 * ignored during merge. */
+     * ignored during merge. */
     NM_IP_CONFIG_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES = (1ull << 0),
 } NMIPConfigFlags;
 

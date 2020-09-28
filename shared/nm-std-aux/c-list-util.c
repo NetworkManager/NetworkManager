@@ -71,8 +71,8 @@ _c_list_srt_merge(CList *ls1, CList *ls2, CListSortCmp cmp, const void *user_dat
     ls = &head;
     for (;;) {
         /* while invoking the @cmp function, the list
-		 * elements are not properly linked. Don't try to access
-		 * their next/prev pointers. */
+         * elements are not properly linked. Don't try to access
+         * their next/prev pointers. */
         if (cmp(ls1, ls2, user_data) <= 0) {
             ls->next = ls1;
             ls       = ls1;
@@ -102,16 +102,16 @@ static CList *
 _c_list_sort(CList *ls, CListSortCmp cmp, const void *user_data)
 {
     /* reserve a huge stack-size. We need roughly log2(n) entries, hence this
-	 * is much more we will ever need. We don't guard for stack-overflow either. */
+     * is much more we will ever need. We don't guard for stack-overflow either. */
     SortStack  stack_arr[70];
     SortStack *stack_head = stack_arr;
 
     stack_arr[0].ls1 = ls;
 
     /* A simple top-down, non-recursive, stable merge-sort.
-	 *
-	 * Maybe natural merge-sort would be better, to do better for
-	 * partially sorted lists. */
+     *
+     * Maybe natural merge-sort would be better, to do better for
+     * partially sorted lists. */
 _split:
     stack_head[0].ls2 = _c_list_srt_split(stack_head[0].ls1);
     if (stack_head[0].ls2) {

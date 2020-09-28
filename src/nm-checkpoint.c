@@ -112,8 +112,8 @@ nm_checkpoint_set_timeout_callback(NMCheckpoint *              self,
     NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE(self);
 
     /* in glib world, we would have a GSignal for this. But as there
-	 * is only one subscriber, it's simpler to just set and unset(!)
-	 * the callback this way. */
+     * is only one subscriber, it's simpler to just set and unset(!)
+     * the callback this way. */
     priv->timeout_cb   = callback;
     priv->timeout_data = user_data;
 }
@@ -217,11 +217,11 @@ restore_and_activate_connection(NMCheckpoint *self, DeviceCheckpoint *dev_checkp
     connection = find_settings_connection(self, dev_checkpoint, &need_update, &need_activation);
 
     /* FIXME: we need to ensure to re-create/update the profile for the
-	 *   same settings plugin. E.g. if it was a keyfile in /run or /etc,
-	 *   it must be again. If it was previously handled by a certain settings plugin,
-	 *   so it must again.
-	 *
-	 * FIXME: preserve and restore the right settings flags (volatile, nm-generated). */
+     *   same settings plugin. E.g. if it was a keyfile in /run or /etc,
+     *   it must be again. If it was previously handled by a certain settings plugin,
+     *   so it must again.
+     *
+     * FIXME: preserve and restore the right settings flags (volatile, nm-generated). */
     sett_flags = NM_SETTINGS_CONNECTION_INT_FLAGS_NONE;
     sett_mask  = NM_SETTINGS_CONNECTION_INT_FLAGS_NONE;
 
@@ -276,8 +276,8 @@ restore_and_activate_connection(NMCheckpoint *self, DeviceCheckpoint *dev_checkp
         subject = nm_auth_subject_new_internal();
 
         /* Disconnect the device if needed. This necessary because now
-		 * the manager prevents the reactivation of the same connection by
-		 * an internal subject. */
+         * the manager prevents the reactivation of the same connection by
+         * an internal subject. */
         if (nm_device_get_state(dev_checkpoint->device) > NM_DEVICE_STATE_DISCONNECTED
             && nm_device_get_state(dev_checkpoint->device) < NM_DEVICE_STATE_DEACTIVATING) {
             nm_device_state_changed(dev_checkpoint->device,
@@ -595,11 +595,11 @@ nm_checkpoint_adjust_rollback_timeout(NMCheckpoint *self, guint32 add_timeout)
         rollback_timeout_ms = (now_ms - priv->created_at_ms) + add_timeout_ms;
 
         /* round to nearest integer second. Since NM_CHECKPOINT_ROLLBACK_TIMEOUT is
-		 * in units seconds, it will be able to exactly express the timeout. */
+         * in units seconds, it will be able to exactly express the timeout. */
         rollback_timeout_s = NM_MIN((rollback_timeout_ms + 500) / 1000, (gint64) G_MAXUINT32);
 
         /* we expect the timeout to be positive, because add_timeout_ms is positive.
-		 * We cannot accept a zero, because it means "infinity". */
+         * We cannot accept a zero, because it means "infinity". */
         nm_assert(rollback_timeout_s > 0);
 
         priv->timeout_id =
@@ -702,8 +702,8 @@ nm_checkpoint_new(NMManager *             manager,
         NMDevice *device = devices->pdata[i];
 
         /* As long as the check point instance exists, it will keep a reference
-		 * to the device also if the device gets removed (by rmmod or by deleting
-		 * a connection profile for a software device). */
+         * to the device also if the device gets removed (by rmmod or by deleting
+         * a connection profile for a software device). */
         g_hash_table_insert(priv->devices, device, device_checkpoint_create(self, device));
     }
 

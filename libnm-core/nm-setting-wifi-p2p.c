@@ -239,21 +239,21 @@ nm_setting_wifi_p2p_class_init(NMSettingWifiP2PClass *setting_wifi_p2p_class)
     setting_class->verify = verify;
 
     /**
-	 * NMSettingWifiP2P:peer:
-	 *
-	 * The P2P device that should be connected to. Currently, this is the only
-	 * way to create or join a group.
-	 *
-	 * Since: 1.16
-	 */
+     * NMSettingWifiP2P:peer:
+     *
+     * The P2P device that should be connected to. Currently, this is the only
+     * way to create or join a group.
+     *
+     * Since: 1.16
+     */
     /* ---keyfile---
-	 * property: peer
-	 * format: usual hex-digits-and-colons notation
-	 * description: MAC address in traditional hex-digits-and-colons notation
-	 *   (e.g. 00:22:68:12:79:A2), or semicolon separated list of 6 bytes (obsolete)
-	 *   (e.g. 0;34;104;18;121;162).
-	 * ---end---
-	 */
+     * property: peer
+     * format: usual hex-digits-and-colons notation
+     * description: MAC address in traditional hex-digits-and-colons notation
+     *   (e.g. 00:22:68:12:79:A2), or semicolon separated list of 6 bytes (obsolete)
+     *   (e.g. 0;34;104;18;121;162).
+     * ---end---
+     */
     obj_properties[PROP_PEER] = g_param_spec_string(NM_SETTING_WIFI_P2P_PEER,
                                                     "",
                                                     "",
@@ -261,15 +261,15 @@ nm_setting_wifi_p2p_class_init(NMSettingWifiP2PClass *setting_wifi_p2p_class)
                                                     G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWifiP2P:wps-method:
-	 *
-	 * Flags indicating which mode of WPS is to be used.
-	 *
-	 * There's little point in changing the default setting as NetworkManager will
-	 * automatically determine the best method to use.
-	 *
-	 * Since: 1.16
-	 */
+     * NMSettingWifiP2P:wps-method:
+     *
+     * Flags indicating which mode of WPS is to be used.
+     *
+     * There's little point in changing the default setting as NetworkManager will
+     * automatically determine the best method to use.
+     *
+     * Since: 1.16
+     */
     obj_properties[PROP_WPS_METHOD] = g_param_spec_uint(
         NM_SETTING_WIFI_P2P_WPS_METHOD,
         "",
@@ -280,17 +280,17 @@ nm_setting_wifi_p2p_class_init(NMSettingWifiP2PClass *setting_wifi_p2p_class)
         G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWifiP2P:wfd-ies:
-	 *
-	 * The Wi-Fi Display (WFD) Information Elements (IEs) to set.
-	 *
-	 * Wi-Fi Display requires a protocol specific information element to be
-	 * set in certain Wi-Fi frames. These can be specified here for the
-	 * purpose of establishing a connection.
-	 * This setting is only useful when implementing a Wi-Fi Display client.
-	 *
-	 * Since: 1.16
-	 */
+     * NMSettingWifiP2P:wfd-ies:
+     *
+     * The Wi-Fi Display (WFD) Information Elements (IEs) to set.
+     *
+     * Wi-Fi Display requires a protocol specific information element to be
+     * set in certain Wi-Fi frames. These can be specified here for the
+     * purpose of establishing a connection.
+     * This setting is only useful when implementing a Wi-Fi Display client.
+     *
+     * Since: 1.16
+     */
     obj_properties[PROP_WFD_IES] = g_param_spec_boxed(
         NM_SETTING_WIFI_P2P_WFD_IES,
         "",

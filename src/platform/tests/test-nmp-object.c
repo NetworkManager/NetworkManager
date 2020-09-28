@@ -577,8 +577,8 @@ main(int argc, char **argv)
         enumerator = nm_udev_client_enumerate_new(udev_client);
 
         /* Demand that the device is initialized (udev rules ran,
-		 * device has a stable name now) in case udev is running
-		 * (not in a container). */
+         * device has a stable name now) in case udev is running
+         * (not in a container). */
         if (access("/sys", W_OK) == 0)
             udev_enumerate_add_match_is_initialized(enumerator);
 

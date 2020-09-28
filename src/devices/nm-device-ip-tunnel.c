@@ -82,8 +82,8 @@ ip6tnl_flags_setting_to_plat(NMIPTunnelFlags flags)
     G_STATIC_ASSERT(NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FWMARK == IP6_TNL_F_USE_ORIG_FWMARK);
 
     /* NOTE: "accidentally", the numeric values correspond.
-	 *       For flags added in the future, that might no longer
-	 *       be the case. */
+     *       For flags added in the future, that might no longer
+     *       be the case. */
     return flags & _NM_IP_TUNNEL_FLAG_ALL_IP6TNL;
 }
 
@@ -673,10 +673,10 @@ create_and_realize(NMDevice *             device,
     if (_nm_ip_tunnel_mode_is_layer2(mode)
         && nm_device_hw_addr_get_cloned(device, connection, FALSE, &hwaddr, NULL, NULL) && hwaddr) {
         /* FIXME: we set the MAC address when creating the interface, while the
-		 * NMDevice is still unrealized. As we afterwards realize the device, it
-		 * forgets the parameters for the cloned MAC address, and in stage 1
-		 * it might create a different MAC address. That should be fixed by
-		 * better handling device realization. */
+         * NMDevice is still unrealized. As we afterwards realize the device, it
+         * forgets the parameters for the cloned MAC address, and in stage 1
+         * it might create a different MAC address. That should be fixed by
+         * better handling device realization. */
         if (!nm_utils_hwaddr_aton(hwaddr, mac_address, ETH_ALEN)) {
             g_set_error(error,
                         NM_DEVICE_ERROR,

@@ -361,13 +361,13 @@ sim_get_properties_done(GObject *source, GAsyncResult *result, gpointer user_dat
     _LOGD("sim v_dict is type: %s", g_variant_get_type_string(v_dict));
 
     /*
-	 * TODO:
-	 * 1) optimize by looking up properties ( Online, Interfaces ), instead
-	 *    of iterating
-	 *
-	 * 2) reduce code duplication between all of the get_properties_done
-	 *    functions in this class.
-	 */
+     * TODO:
+     * 1) optimize by looking up properties ( Online, Interfaces ), instead
+     *    of iterating
+     *
+     * 2) reduce code duplication between all of the get_properties_done
+     *    functions in this class.
+     */
 
     g_variant_iter_init(&i, v_dict);
     while (g_variant_iter_next(&i, "{&sv}", &property, &v)) {
@@ -514,13 +514,13 @@ connman_get_properties_done(GObject *source, GAsyncResult *result, gpointer user
     v_dict = g_variant_get_child_value(v_properties, 0);
 
     /*
-	 * TODO:
-	 * 1) optimize by looking up properties ( Online, Interfaces ), instead
-	 *    of iterating
-	 *
-	 * 2) reduce code duplication between all of the get_properties_done
-	 *    functions in this class.
-	 */
+     * TODO:
+     * 1) optimize by looking up properties ( Online, Interfaces ), instead
+     *    of iterating
+     *
+     * 2) reduce code duplication between all of the get_properties_done
+     *    functions in this class.
+     */
 
     g_variant_iter_init(&i, v_dict);
     while (g_variant_iter_next(&i, "{&sv}", &property, &v)) {
@@ -584,8 +584,8 @@ handle_connman_iface(NMModemOfono *self, gboolean found)
         }
 
         /* The connection manager proxy disappeared, we should
-		 * consider the modem disabled.
-		 */
+         * consider the modem disabled.
+         */
         priv->gprs_attached = FALSE;
 
         update_modem_state(self);
@@ -691,13 +691,13 @@ modem_get_properties_done(GObject *source, GAsyncResult *result, gpointer user_d
     }
 
     /*
-	 * TODO:
-	 * 1) optimize by looking up properties ( Online, Interfaces ), instead
-	 *    of iterating
-	 *
-	 * 2) reduce code duplication between all of the get_properties_done
-	 *    functions in this class.
-	 */
+     * TODO:
+     * 1) optimize by looking up properties ( Online, Interfaces ), instead
+     *    of iterating
+     *
+     * 2) reduce code duplication between all of the get_properties_done
+     *    functions in this class.
+     */
 
     g_variant_iter_init(&i, v_dict);
     while (g_variant_iter_next(&i, "{&sv}", &property, &v)) {
@@ -730,11 +730,11 @@ stage1_prepare_done(GObject *source, GAsyncResult *result, gpointer user_data)
 
         nm_modem_emit_prepare_result(NM_MODEM(self), FALSE, NM_DEVICE_STATE_REASON_MODEM_BUSY);
         /*
-		 * FIXME: add code to check for InProgress so that the
-		 * connection doesn't continue to try and activate,
-		 * leading to the connection being disabled, and a 5m
-		 * timeout...
-		 */
+         * FIXME: add code to check for InProgress so that the
+         * connection doesn't continue to try and activate,
+         * leading to the connection being disabled, and a 5m
+         * timeout...
+         */
     }
 }
 
@@ -757,10 +757,10 @@ context_property_changed(GDBusProxy *proxy, const char *property, GVariant *v, g
     _LOGD("PropertyChanged: %s", property);
 
     /*
-	 * TODO: might be a good idea and re-factor this to mimic bluez-device,
-	 * ie. have this function just check the key, and call a sub-func to
-	 * handle the action.
-	 */
+     * TODO: might be a good idea and re-factor this to mimic bluez-device,
+     * ie. have this function just check the key, and call a sub-func to
+     * handle the action.
+     */
 
     if (g_strcmp0(property, "Settings") != 0)
         return;
@@ -968,9 +968,9 @@ context_proxy_new_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     }
 
     /* We have an old copy of the settings from a previous activation,
-	 * clear it so that we can gate getting the IP config from oFono
-	 * on whether or not we have already received them
-	 */
+     * clear it so that we can gate getting the IP config from oFono
+     * on whether or not we have already received them
+     */
     g_clear_object(&priv->ip4_config);
 
     _nm_dbus_signal_connect(priv->context_proxy,
@@ -1156,8 +1156,8 @@ nm_modem_ofono_new(const char *path)
     nm_log_info(LOGD_MB, "ofono: creating new Ofono modem path %s", path);
 
     /* Use short modem name (not its object path) as the NM device name (which
-	 * comes from NM_MODEM_UID)and the device ID.
-	 */
+     * comes from NM_MODEM_UID)and the device ID.
+     */
     basename = g_path_get_basename(path);
 
     return (NMModem *) g_object_new(NM_TYPE_MODEM_OFONO,

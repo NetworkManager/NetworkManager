@@ -132,8 +132,8 @@ acd_error_to_nmerr(int error, gboolean always_fail)
     }
 
     /* so, @error is either zero (indicating success) or one
-	 * of the special status codes like N_ACD_E_*. In both cases,
-	 * return the positive value here. */
+     * of the special status codes like N_ACD_E_*. In both cases,
+     * return the positive value here. */
     if (NM_IN_SET(error, _N_ACD_E_SUCCESS, N_ACD_E_PREEMPTED, N_ACD_E_INVALID_ARGUMENT))
         return error;
 
@@ -404,8 +404,8 @@ nm_acd_manager_announce_addresses(NMAcdManager *self)
 
     if (self->state == STATE_INIT) {
         /* n-acd can't announce without probing, therefore let's
-		 * start a fake probe with zero timeout and then perform
-		 * the announcement. */
+         * start a fake probe with zero timeout and then perform
+         * the announcement. */
         g_hash_table_iter_init(&iter, self->addresses);
         while (g_hash_table_iter_next(&iter, NULL, (gpointer *) &info)) {
             if (!acd_probe_add(self, info, 0))

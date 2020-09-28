@@ -20,8 +20,8 @@ typedef enum {
     NM_AUTH_POLKIT_MODE_ALLOW_ALL,
 
     /* use PolicyKit to authorize requests. Root user (uid 0) always
-	 * gets a free pass, without consulting PolicyKit. If PolicyKit is not
-	 * running, authorization will fail for non root users. */
+     * gets a free pass, without consulting PolicyKit. If PolicyKit is not
+     * running, authorization will fail for non root users. */
     NM_AUTH_POLKIT_MODE_USE_POLKIT,
 
 } NMAuthPolkitMode;
@@ -61,7 +61,7 @@ typedef enum { /*< flags >*/
                NM_CONFIG_GET_VALUE_NO_EMPTY = (1LL << 2),
 
                /* special flag to read device spec. You want to use this before passing the
-	 * value to nm_match_spec_split(). */
+     * value to nm_match_spec_split(). */
                NM_CONFIG_GET_VALUE_TYPE_SPEC = NM_CONFIG_GET_VALUE_RAW,
 } NMConfigGetValueFlags;
 
@@ -69,8 +69,8 @@ typedef enum { /*< flags >*/
                NM_CONFIG_CHANGE_NONE = 0,
 
                /**************************************************************************
-	 * The external cause which triggered the reload/configuration-change
-	 *************************************************************************/
+     * The external cause which triggered the reload/configuration-change
+     *************************************************************************/
 
                NM_CONFIG_CHANGE_CAUSE_SIGHUP          = (1L << 0),
                NM_CONFIG_CHANGE_CAUSE_SIGUSR1         = (1L << 1),
@@ -84,8 +84,8 @@ typedef enum { /*< flags >*/
                NM_CONFIG_CHANGE_CAUSES = ((1L << 8) - 1),
 
                /**************************************************************************
-	 * Following flags describe which property of the configuration changed:
-	 *************************************************************************/
+     * Following flags describe which property of the configuration changed:
+     *************************************************************************/
 
                /* main-file or config-description changed */
                NM_CONFIG_CHANGE_CONFIG_FILES = (1L << 10),

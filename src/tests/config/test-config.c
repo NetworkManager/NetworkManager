@@ -1218,9 +1218,9 @@ test_config_signal(void)
     nm_config_reload(config, expected, FALSE);
 
     /* test with subscribing two signals...
-	 *
-	 * This test exposes glib bug https://bugzilla.redhat.com/show_bug.cgi?id=1260577
-	 * for which we however have a workaround in 'nm-config.c' */
+     *
+     * This test exposes glib bug https://bugzilla.redhat.com/show_bug.cgi?id=1260577
+     * for which we however have a workaround in 'nm-config.c' */
     g_signal_connect(G_OBJECT(config),
                      NM_CONFIG_SIGNAL_CONFIG_CHANGED,
                      G_CALLBACK(_test_signal_config_changed_cb2),
@@ -1389,9 +1389,9 @@ main(int argc, char **argv)
     g_test_add_func("/config/state-file", test_config_state_file);
 
     /* This one has to come last, because it leaves its values in
-	 * nm-config.c's global variables, and there's no way to reset
-	 * those to NULL.
-	 */
+     * nm-config.c's global variables, and there's no way to reset
+     * those to NULL.
+     */
     g_test_add_func("/config/override", test_config_override);
 
     return g_test_run();

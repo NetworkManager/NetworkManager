@@ -238,13 +238,13 @@ struct _NMConfigDeviceStateData {
     guint32 route_metric_default_effective;
 
     /* the UUID of the last settings-connection active
-	 * on the device. */
+     * on the device. */
     const char *connection_uuid;
 
     const char *perm_hw_addr_fake;
 
     /* whether the device was nm-owned (0/1) or -1 for
-	 * non-software devices. */
+     * non-software devices. */
     NMTernary nm_owned : 3;
 };
 

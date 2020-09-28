@@ -152,12 +152,12 @@ nm_device_wireguard_class_init(NMDeviceWireGuardClass *wireguard_class)
     object_class->finalize     = finalize;
 
     /**
-	 * NMDeviceWireGuard:public-key:
-	 *
-	 * 32-byte public key, derived from the current private key.
-	 *
-	 * Since: 1.14
-	 **/
+     * NMDeviceWireGuard:public-key:
+     *
+     * 32-byte public key, derived from the current private key.
+     *
+     * Since: 1.14
+     **/
     obj_properties[PROP_PUBLIC_KEY] = g_param_spec_boxed(NM_DEVICE_WIREGUARD_PUBLIC_KEY,
                                                          "",
                                                          "",
@@ -165,13 +165,13 @@ nm_device_wireguard_class_init(NMDeviceWireGuardClass *wireguard_class)
                                                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceWireGuard:listen-port:
-	 *
-	 * Local UDP listen port.
-	 * Set to 0 to allow a random port to be chosen (default).
-	 *
-	 * Since: 1.14
-	 **/
+     * NMDeviceWireGuard:listen-port:
+     *
+     * Local UDP listen port.
+     * Set to 0 to allow a random port to be chosen (default).
+     *
+     * Since: 1.14
+     **/
     obj_properties[PROP_LISTEN_PORT] = g_param_spec_uint(NM_DEVICE_WIREGUARD_LISTEN_PORT,
                                                          "",
                                                          "",
@@ -181,14 +181,14 @@ nm_device_wireguard_class_init(NMDeviceWireGuardClass *wireguard_class)
                                                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceWireGuard:fwmark:
-	 *
-	 * Optional firewall mark - see ip-rule(8).
-	 * Used when setting routing policy for outgoing encrypted packets.
-	 * Set to 0 to disable the mark (default).
-	 *
-	 * Since: 1.14
-	 **/
+     * NMDeviceWireGuard:fwmark:
+     *
+     * Optional firewall mark - see ip-rule(8).
+     * Used when setting routing policy for outgoing encrypted packets.
+     * Set to 0 to disable the mark (default).
+     *
+     * Since: 1.14
+     **/
     obj_properties[PROP_FWMARK] = g_param_spec_uint(NM_DEVICE_WIREGUARD_FWMARK,
                                                     "",
                                                     "",

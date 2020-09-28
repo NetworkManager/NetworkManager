@@ -73,7 +73,7 @@ typedef enum {
     NMP_NLM_FLAG_F_ECHO = 0x08, /* NLM_F_ECHO, Echo this request */
 
     /* use our own platform enum for the nlmsg-flags. Otherwise, we'd have
-	 * to include <linux/netlink.h> */
+     * to include <linux/netlink.h> */
     NMP_NLM_FLAG_F_REPLACE = 0x100, /* NLM_F_REPLACE, Override existing */
     NMP_NLM_FLAG_F_EXCL    = 0x200, /* NLM_F_EXCL, Do not touch, if it exists */
     NMP_NLM_FLAG_F_CREATE  = 0x400, /* NLM_F_CREATE, Create, if it does not exist */
@@ -82,15 +82,15 @@ typedef enum {
     NMP_NLM_FLAG_FMASK = 0xFFFF, /* a mask for all NMP_NLM_FLAG_F_* flags */
 
     /* instructs NM to suppress logging an error message for any failures
-	 * received from kernel.
-	 *
-	 * It will still log with debug-level, and it will still log
-	 * other failures aside the kernel response. */
+     * received from kernel.
+     *
+     * It will still log with debug-level, and it will still log
+     * other failures aside the kernel response. */
     NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE = 0x10000,
 
     /* the following aliases correspond to iproute2's `ip route CMD` for
-	 * RTM_NEWROUTE, with CMD being one of add, change, replace, prepend,
-	 * append and test. */
+     * RTM_NEWROUTE, with CMD being one of add, change, replace, prepend,
+     * append and test. */
     NMP_NLM_FLAG_ADD     = NMP_NLM_FLAG_F_CREATE | NMP_NLM_FLAG_F_EXCL,
     NMP_NLM_FLAG_CHANGE  = NMP_NLM_FLAG_F_REPLACE,
     NMP_NLM_FLAG_REPLACE = NMP_NLM_FLAG_F_CREATE | NMP_NLM_FLAG_F_REPLACE,
@@ -101,40 +101,40 @@ typedef enum {
 
 typedef enum {
     /* compare fields which kernel considers as similar routes.
-	 * It is a looser comparisong then NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID
-	 * and means that `ip route add` would fail to add two routes
-	 * that have the same NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID.
-	 * On the other hand, `ip route append` would allow that, as
-	 * long as NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID differs. */
+     * It is a looser comparisong then NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID
+     * and means that `ip route add` would fail to add two routes
+     * that have the same NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID.
+     * On the other hand, `ip route append` would allow that, as
+     * long as NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID differs. */
     NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID,
 
     /* compare two routes as kernel would allow to add them with
-	 * `ip route append`. In other words, kernel does not allow you to
-	 * add two routes (at the same time) which compare equal according
-	 * to NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID.
-	 *
-	 * For the ID we can only recognize route fields that we actually implement.
-	 * However, kernel supports more routing options, some of them also part of
-	 * the ID. NetworkManager is oblivious to these options and will wrongly think
-	 * that two routes are identical, while they are not. That can lead to an
-	 * inconsistent platform cache. Not much what we can do about that, except
-	 * implementing all options that kernel supports *sigh*. See rh#1337860.
-	 */
+     * `ip route append`. In other words, kernel does not allow you to
+     * add two routes (at the same time) which compare equal according
+     * to NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID.
+     *
+     * For the ID we can only recognize route fields that we actually implement.
+     * However, kernel supports more routing options, some of them also part of
+     * the ID. NetworkManager is oblivious to these options and will wrongly think
+     * that two routes are identical, while they are not. That can lead to an
+     * inconsistent platform cache. Not much what we can do about that, except
+     * implementing all options that kernel supports *sigh*. See rh#1337860.
+     */
     NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID,
 
     /* compare all fields as they make sense for kernel. For example,
-	 * a route destination 192.168.1.5/24 is not accepted by kernel and
-	 * we treat it identical to 192.168.1.0/24. Semantically these
-	 * routes are identical, but NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL will
-	 * report them as different.
-	 *
-	 * The result shall be identical to call first nm_platform_ip_route_normalize()
-	 * on both routes and then doing a full comparison. */
+     * a route destination 192.168.1.5/24 is not accepted by kernel and
+     * we treat it identical to 192.168.1.0/24. Semantically these
+     * routes are identical, but NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL will
+     * report them as different.
+     *
+     * The result shall be identical to call first nm_platform_ip_route_normalize()
+     * on both routes and then doing a full comparison. */
     NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY,
 
     /* compare all fields. This should have the same effect as memcmp(),
-	 * except allowing for undefined data in holes between field alignment.
-	 */
+     * except allowing for undefined data in holes between field alignment.
+     */
     NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL,
 
 } NMPlatformIPRouteCmpType;
@@ -158,16 +158,16 @@ GBytes *      nmp_link_address_get_as_bytes(const NMPLinkAddress *addr);
 typedef enum {
 
     /* match-flags are strictly inclusive. That means,
-	 * by default nothing is matched, but if you enable a particular
-	 * flag, a candidate that matches passes the check.
-	 *
-	 * In other words: adding more flags can only extend the result
-	 * set of matching objects.
-	 *
-	 * Also, the flags form partitions. Like, an address can be either of
-	 * ADDRTYPE_NORMAL or ADDRTYPE_LINKLOCAL, but never both. Same for
-	 * the ADDRSTATE match types.
-	 */
+     * by default nothing is matched, but if you enable a particular
+     * flag, a candidate that matches passes the check.
+     *
+     * In other words: adding more flags can only extend the result
+     * set of matching objects.
+     *
+     * Also, the flags form partitions. Like, an address can be either of
+     * ADDRTYPE_NORMAL or ADDRTYPE_LINKLOCAL, but never both. Same for
+     * the ADDRSTATE match types.
+     */
     NM_PLATFORM_MATCH_WITH_NONE = 0,
 
     NM_PLATFORM_MATCH_WITH_ADDRTYPE_NORMAL    = (1LL << 0),
@@ -187,7 +187,7 @@ typedef enum {
 
 struct _NMPlatformObject {
     /* the object type has no fields of its own, it is only used to having
-	 * a special pointer type that can be used to indicate "any" type. */
+     * a special pointer type that can be used to indicate "any" type. */
     char _dummy_don_t_use_me;
 };
 
@@ -214,8 +214,8 @@ struct _NMPlatformLink {
     int master;
 
     /* rtnl_link_get_link(), IFLA_LINK.
-	 * If IFLA_LINK_NETNSID indicates that the parent is in another namespace,
-	 * this field be set to (negative) NM_PLATFORM_LINK_OTHER_NETNS. */
+     * If IFLA_LINK_NETNSID indicates that the parent is in another namespace,
+     * this field be set to (negative) NM_PLATFORM_LINK_OTHER_NETNS. */
     int parent;
 
     /* IFF_* flags. Note that the flags in 'struct ifinfomsg' are declared as 'unsigned'. */
@@ -236,8 +236,8 @@ struct _NMPlatformLink {
     NMUtilsIPv6IfaceId inet6_token;
 
     /* The bitwise inverse of rtnl_link_inet6_get_addr_gen_mode(). It is inverse
-	 * to have a default of 0 -- meaning: unspecified. That way, a struct
-	 * initialized with memset(0) has and unset value.*/
+     * to have a default of 0 -- meaning: unspecified. That way, a struct
+     * initialized with memset(0) has and unset value.*/
     guint8 inet6_addr_gen_mode_inv;
 
     /* Statistics */
@@ -247,7 +247,7 @@ struct _NMPlatformLink {
     guint64 tx_bytes;
 
     /* @connected is mostly identical to (@n_ifi_flags & IFF_UP). Except for bridge/bond masters,
-	 * where we coerce the link as disconnect if it has no slaves. */
+     * where we coerce the link as disconnect if it has no slaves. */
     bool connected : 1;
 
     bool initialized : 1;
@@ -287,35 +287,35 @@ typedef enum {
     NMIPConfigSource addr_source;                                                            \
                                                                                              \
     /* Timestamp in seconds in the reference system of nm_utils_get_monotonic_timestamp_*().
-	 *
-	 * The rules are:
-	 * 1 @lifetime==0: @timestamp and @preferred is irrelevant (but mostly set to 0 too). Such addresses
-	 *   are permanent. This rule is so that unset addresses (calloc) are permanent by default.
-	 * 2 @lifetime==@preferred==NM_PLATFORM_LIFETIME_PERMANENT: @timestamp is irrelevant (but mostly
-	 *   set to 0). Such addresses are permanent.
-	 * 3 Non permanent addresses should (almost) always have @timestamp > 0. 0 is not a valid timestamp
-	 *   and never returned by nm_utils_get_monotonic_timestamp_sec(). In this case @valid/@preferred
-	 *   is anchored at @timestamp.
-	 * 4 Non permanent addresses with @timestamp == 0 are implicitly anchored at *now*, thus the time
-	 *   moves as time goes by. This is usually not useful, except e.g. nm_platform_ip[46]_address_add().
-	 *
-	 * Non permanent addresses from DHCP/RA might have the @timestamp set to the moment of when the
-	 * lease was received. Addresses from kernel might have the @timestamp based on the last modification
-	 * time of the addresses. But don't rely on this behaviour, the @timestamp is only defined for anchoring
-	 * @lifetime and @preferred.
-	 */ \
+     *
+     * The rules are:
+     * 1 @lifetime==0: @timestamp and @preferred is irrelevant (but mostly set to 0 too). Such addresses
+     *   are permanent. This rule is so that unset addresses (calloc) are permanent by default.
+     * 2 @lifetime==@preferred==NM_PLATFORM_LIFETIME_PERMANENT: @timestamp is irrelevant (but mostly
+     *   set to 0). Such addresses are permanent.
+     * 3 Non permanent addresses should (almost) always have @timestamp > 0. 0 is not a valid timestamp
+     *   and never returned by nm_utils_get_monotonic_timestamp_sec(). In this case @valid/@preferred
+     *   is anchored at @timestamp.
+     * 4 Non permanent addresses with @timestamp == 0 are implicitly anchored at *now*, thus the time
+     *   moves as time goes by. This is usually not useful, except e.g. nm_platform_ip[46]_address_add().
+     *
+     * Non permanent addresses from DHCP/RA might have the @timestamp set to the moment of when the
+     * lease was received. Addresses from kernel might have the @timestamp based on the last modification
+     * time of the addresses. But don't rely on this behaviour, the @timestamp is only defined for anchoring
+     * @lifetime and @preferred.
+     */ \
     guint32 timestamp;                                                                       \
     guint32 lifetime;  /* seconds since timestamp */                                         \
     guint32 preferred; /* seconds since timestamp */                                         \
                                                                                              \
     /* ifa_flags in 'struct ifaddrmsg' from <linux/if_addr.h>, extended to 32 bit by
-	 * IFA_FLAGS attribute. */         \
+     * IFA_FLAGS attribute. */         \
     guint32 n_ifa_flags;                                                                     \
                                                                                              \
     guint8 plen;                                                                             \
                                                                                              \
     /* FIXME(l3cfg): the external marker won't be necessary anymore, because we only
-	 *   merge addresses we care about, and ignore (don't remove) external addresses. */         \
+     *   merge addresses we care about, and ignore (don't remove) external addresses. */         \
     bool external : 1;                                                                       \
                                                                                              \
     bool use_ip4_broadcast_address : 1;                                                      \
@@ -345,20 +345,20 @@ struct _NMPlatformIP4Address {
     in_addr_t address;
 
     /* The IFA_ADDRESS PTP peer address. This field is rather important, because
-	 * it constitutes the identifier for the IPv4 address (e.g. you can add two
-	 * addresses that only differ by their peer's network-part.
-	 *
-	 * Beware that for most cases, NetworkManager doesn't want to set an explicit
-	 * peer-address. However, that corresponds to setting the peer address to @address
-	 * itself. Leaving peer-address unset/zero, means explicitly setting the peer
-	 * address to 0.0.0.0, which you probably don't want.
-	 * */
+     * it constitutes the identifier for the IPv4 address (e.g. you can add two
+     * addresses that only differ by their peer's network-part.
+     *
+     * Beware that for most cases, NetworkManager doesn't want to set an explicit
+     * peer-address. However, that corresponds to setting the peer address to @address
+     * itself. Leaving peer-address unset/zero, means explicitly setting the peer
+     * address to 0.0.0.0, which you probably don't want.
+     * */
     in_addr_t peer_address; /* PTP peer address */
 
     /* IFA_BROADCAST.
-	 *
-	 * This parameter is ignored unless use_ip4_broadcast_address is TRUE.
-	 * See nm_platform_ip4_broadcast_address_from_addr(). */
+     *
+     * This parameter is ignored unless use_ip4_broadcast_address is TRUE.
+     * See nm_platform_ip4_broadcast_address_from_addr(). */
     in_addr_t broadcast_address;
 
     char label[NMP_IFNAMSIZ];
@@ -407,32 +407,32 @@ typedef union {
     __NMPlatformObjWithIfindex_COMMON;                                              \
                                                                                     \
     /* The NMIPConfigSource. For routes that we receive from cache this corresponds
-	 * to the rtm_protocol field (and is one of the NM_IP_CONFIG_SOURCE_RTPROT_* values).
-	 * When adding a route, the source will be coerced to the protocol using
-	 * nmp_utils_ip_config_source_coerce_to_rtprot().
-	 *
-	 * rtm_protocol is part of the primary key of an IPv4 route (meaning, you can add
-	 * two IPv4 routes that only differ in their rtm_protocol. For IPv6, that is not
-	 * the case.
-	 *
-	 * When deleting an IPv4/IPv6 route, the rtm_protocol field must match (even
-	 * if it is not part of the primary key for IPv6) -- unless rtm_protocol is set
-	 * to zero, in which case the first matching route (with proto ignored) is deleted. */ \
+     * to the rtm_protocol field (and is one of the NM_IP_CONFIG_SOURCE_RTPROT_* values).
+     * When adding a route, the source will be coerced to the protocol using
+     * nmp_utils_ip_config_source_coerce_to_rtprot().
+     *
+     * rtm_protocol is part of the primary key of an IPv4 route (meaning, you can add
+     * two IPv4 routes that only differ in their rtm_protocol. For IPv6, that is not
+     * the case.
+     *
+     * When deleting an IPv4/IPv6 route, the rtm_protocol field must match (even
+     * if it is not part of the primary key for IPv6) -- unless rtm_protocol is set
+     * to zero, in which case the first matching route (with proto ignored) is deleted. */ \
     NMIPConfigSource rt_source;                                                     \
                                                                                     \
     guint8 plen;                                                                    \
                                                                                     \
     /* RTA_METRICS:
-	 *
-	 * For IPv4 routes, these properties are part of their
-	 * ID (meaning: you can add otherwise identical IPv4 routes that
-	 * only differ by the metric property).
-	 * On the other hand, for IPv6 you cannot add two IPv6 routes that only differ
-	 * by an RTA_METRICS property.
-	 *
-	 * When deleting a route, kernel seems to ignore the RTA_METRICS properties.
-	 * That is a problem/bug for IPv4 because you cannot explicitly select which
-	 * route to delete. Kernel just picks the first. See rh#1475642. */                                                                 \
+     *
+     * For IPv4 routes, these properties are part of their
+     * ID (meaning: you can add otherwise identical IPv4 routes that
+     * only differ by the metric property).
+     * On the other hand, for IPv6 you cannot add two IPv6 routes that only differ
+     * by an RTA_METRICS property.
+     *
+     * When deleting a route, kernel seems to ignore the RTA_METRICS properties.
+     * That is a problem/bug for IPv4 because you cannot explicitly select which
+     * route to delete. Kernel just picks the first. See rh#1475642. */                                                                 \
                                                                                     \
     /* RTA_METRICS.RTAX_LOCK (iproute2: "lock" arguments) */                        \
     bool lock_window : 1;                                                           \
@@ -442,15 +442,15 @@ typedef union {
     bool lock_mtu : 1;                                                              \
                                                                                     \
     /* rtnh_flags
-	 *
-	 * Routes with rtm_flags RTM_F_CLONED are hidden by platform and
-	 * do not exist from the point-of-view of platform users.
-	 * Such a route is not alive, according to nmp_object_is_alive().
-	 *
-	 * NOTE: currently we ignore all flags except RTM_F_CLONED
-	 * and RTNH_F_ONLINK.
-	 * We also may not properly consider the flags as part of the ID
-	 * in route-cmp. */                                                                   \
+     *
+     * Routes with rtm_flags RTM_F_CLONED are hidden by platform and
+     * do not exist from the point-of-view of platform users.
+     * Such a route is not alive, according to nmp_object_is_alive().
+     *
+     * NOTE: currently we ignore all flags except RTM_F_CLONED
+     * and RTNH_F_ONLINK.
+     * We also may not properly consider the flags as part of the ID
+     * in route-cmp. */                                                                   \
     unsigned r_rtm_flags;                                                           \
                                                                                     \
     /* RTA_METRICS.RTAX_ADVMSS (iproute2: advmss) */                                \
@@ -475,17 +475,17 @@ typedef union {
     guint32 metric;                                                                 \
                                                                                     \
     /* rtm_table, RTA_TABLE.
-	 *
-	 * This is not the original table ID. Instead, 254 (RT_TABLE_MAIN) and
-	 * zero (RT_TABLE_UNSPEC) are swapped, so that the default is the main
-	 * table. Use nm_platform_route_table_coerce()/nm_platform_route_table_uncoerce(). */                                                        \
+     *
+     * This is not the original table ID. Instead, 254 (RT_TABLE_MAIN) and
+     * zero (RT_TABLE_UNSPEC) are swapped, so that the default is the main
+     * table. Use nm_platform_route_table_coerce()/nm_platform_route_table_uncoerce(). */                                                        \
     guint32 table_coerced;                                                          \
                                                                                     \
     /* rtm_type.
-	 *
-	 * This is not the original type, if type_coerced is 0 then
-	 * it means RTN_UNSPEC otherwise the type value is preserved.
-	 * */                                                                    \
+     *
+     * This is not the original type, if type_coerced is 0 then
+     * it means RTN_UNSPEC otherwise the type value is preserved.
+     * */                                                                    \
     guint8 type_coerced;                                                            \
                                                                                     \
     /*end*/
@@ -515,29 +515,29 @@ struct _NMPlatformIP4Route {
     in_addr_t gateway;
 
     /* RTA_PREFSRC (called "src" by iproute2).
-	 *
-	 * pref_src is part of the ID of an IPv4 route. When deleting a route,
-	 * pref_src must match, unless set to 0.0.0.0 to match any. */
+     *
+     * pref_src is part of the ID of an IPv4 route. When deleting a route,
+     * pref_src must match, unless set to 0.0.0.0 to match any. */
     in_addr_t pref_src;
 
     /* rtm_tos (iproute2: tos)
-	 *
-	 * For IPv4, tos is part of the weak-id (like metric).
-	 *
-	 * For IPv6, tos is ignored by kernel.  */
+     *
+     * For IPv4, tos is part of the weak-id (like metric).
+     *
+     * For IPv6, tos is ignored by kernel.  */
     guint8 tos;
 
     /* The bitwise inverse of the route scope rtm_scope. It is inverted so that the
-	 * default value (RT_SCOPE_NOWHERE) is zero. Use nm_platform_route_scope_inv()
-	 * to convert back and forth between the inverse representation and the
-	 * real value.
-	 *
-	 * rtm_scope is part of the primary key for IPv4 routes. When deleting a route,
-	 * the scope must match, unless it is left at RT_SCOPE_NOWHERE, in which case the first
-	 * matching route is deleted.
-	 *
-	 * For IPv6 routes, the scope is ignored and kernel always assumes global scope.
-	 * Hence, this field is only in NMPlatformIP4Route. */
+     * default value (RT_SCOPE_NOWHERE) is zero. Use nm_platform_route_scope_inv()
+     * to convert back and forth between the inverse representation and the
+     * real value.
+     *
+     * rtm_scope is part of the primary key for IPv4 routes. When deleting a route,
+     * the scope must match, unless it is left at RT_SCOPE_NOWHERE, in which case the first
+     * matching route is deleted.
+     *
+     * For IPv6 routes, the scope is ignored and kernel always assumes global scope.
+     * Hence, this field is only in NMPlatformIP4Route. */
     guint8 scope_inv;
 };
 
@@ -549,28 +549,28 @@ struct _NMPlatformIP6Route {
     struct in6_addr gateway;
 
     /* RTA_PREFSRC (called "src" by iproute2).
-	 *
-	 * pref_src is not part of the ID for an IPv6 route. You cannot add two
-	 * routes that only differ by pref_src.
-	 *
-	 * When deleting a route, pref_src is ignored by kernel. */
+     *
+     * pref_src is not part of the ID for an IPv6 route. You cannot add two
+     * routes that only differ by pref_src.
+     *
+     * When deleting a route, pref_src is ignored by kernel. */
     struct in6_addr pref_src;
 
     /* RTA_SRC and rtm_src_len (called "from" by iproute2).
-	 *
-	 * Kernel clears the host part of src/src_plen.
-	 *
-	 * src/src_plen is part of the ID of a route just like network/plen. That is,
-	 * Not only `ip route append`, but also `ip route add` allows to add routes that only
-	 * differ in their src/src_plen.
-	 */
+     *
+     * Kernel clears the host part of src/src_plen.
+     *
+     * src/src_plen is part of the ID of a route just like network/plen. That is,
+     * Not only `ip route append`, but also `ip route add` allows to add routes that only
+     * differ in their src/src_plen.
+     */
     struct in6_addr src;
     guint8          src_plen;
 
     /* RTA_PREF router preference.
-	 *
-	 * The type is guint8 to keep the struct size small. But the values are compatible with
-	 * the NMIcmpv6RouterPref enum. */
+     *
+     * The type is guint8 to keep the struct size small. But the values are compatible with
+     * the NMIcmpv6RouterPref enum. */
     guint8 rt_pref;
 };
 
@@ -674,7 +674,7 @@ typedef struct {
     __NMPlatformObjWithIfindex_COMMON;
 
     /* beware, kind is embedded in an NMPObject, hence you must
-	 * take care of the lifetime of the string. */
+     * take care of the lifetime of the string. */
     const char *kind;
 
     int     addr_family;
@@ -702,7 +702,7 @@ typedef struct {
 
 typedef struct {
     /* beware, kind is embedded in an NMPObject, hence you must
-	 * take care of the lifetime of the string. */
+     * take care of the lifetime of the string. */
     const char *kind;
 
     union {
@@ -718,7 +718,7 @@ typedef struct {
     __NMPlatformObjWithIfindex_COMMON;
 
     /* beware, kind is embedded in an NMPObject, hence you must
-	 * take care of the lifetime of the string. */
+     * take care of the lifetime of the string. */
     const char *kind;
 
     int              addr_family;
@@ -988,7 +988,7 @@ typedef enum {
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BR_VLAN_STATS_ENABLED,
 
     /* this also includes FRA_SPORT_RANGE and FRA_DPORT_RANGE which
-	 * were added at the same time. */
+     * were added at the same time. */
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_IP_PROTO,
 
     _NM_PLATFORM_KERNEL_SUPPORT_NUM,
@@ -1270,7 +1270,7 @@ nm_platform_ip4_broadcast_address_from_addr(const NMPlatformIP4Address *addr)
         return addr->broadcast_address;
 
     /* the set broadcast-address gets ignored, and we determine a default brd base
-	 * on the peer IFA_ADDRESS. */
+     * on the peer IFA_ADDRESS. */
     if (addr->peer_address != 0u && addr->plen < 31 /* RFC3021 */)
         return nm_platform_ip4_broadcast_address_create(addr->peer_address, addr->plen);
     return 0u;
@@ -1290,11 +1290,11 @@ static inline guint32
 nm_platform_route_table_coerce(guint32 table)
 {
     /* For kernel, the default table is RT_TABLE_MAIN (254).
-	 * We want that in NMPlatformIPRoute.table_coerced a numeric
-	 * zero is the default. Hence, @table_coerced swaps the
-	 * value 0 and 254. Use nm_platform_route_table_coerce()
-	 * and nm_platform_route_table_uncoerce() to convert between
-	 * the two domains. */
+     * We want that in NMPlatformIPRoute.table_coerced a numeric
+     * zero is the default. Hence, @table_coerced swaps the
+     * value 0 and 254. Use nm_platform_route_table_coerce()
+     * and nm_platform_route_table_uncoerce() to convert between
+     * the two domains. */
     switch (table) {
     case 0 /* RT_TABLE_UNSPEC */:
         return 254;
@@ -1334,13 +1334,13 @@ static inline gboolean
 nm_platform_route_table_is_main(guint32 table)
 {
     /* same as
-	 *   nm_platform_route_table_uncoerce (table, TRUE) == RT_TABLE_MAIN
-	 * and
-	 *   nm_platform_route_table_uncoerce (nm_platform_route_table_coerce (table), TRUE) == RT_TABLE_MAIN
-	 *
-	 * That is, the function operates the same on @table and its coerced
-	 * form.
-	 */
+     *   nm_platform_route_table_uncoerce (table, TRUE) == RT_TABLE_MAIN
+     * and
+     *   nm_platform_route_table_uncoerce (nm_platform_route_table_coerce (table), TRUE) == RT_TABLE_MAIN
+     *
+     * That is, the function operates the same on @table and its coerced
+     * form.
+     */
     return table == 0 || table == 254;
 }
 

@@ -96,15 +96,15 @@ get_new_connection_name(NMConnection *const *existing_connections,
         return g_strdup(preferred);
 
     /* Otherwise, find the next available unique connection name using the given
-	 * connection name template.
-	 */
+     * connection name template.
+     */
     for (i = 1; TRUE; i++) {
         char *temp;
 
         /* TRANSLATORS: the first %s is a prefix for the connection id, such
-		 * as "Wired Connection" or "VPN Connection". The %d is a number
-		 * that is combined with the first argument to create a unique
-		 * connection id. */
+         * as "Wired Connection" or "VPN Connection". The %d is a number
+         * that is combined with the first argument to create a unique
+         * connection id. */
         temp = g_strdup_printf(C_("connection id fallback", "%s %u"), fallback_prefix, i);
 
         if (nm_utils_strv_find_first((char **) existing_names, existing_len, temp) < 0)
@@ -332,11 +332,11 @@ check_ip6_method(NMConnection *orig, NMConnection *candidate, GHashTable *settin
         && nm_streq(candidate_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
         && (!candidate_ip6 || nm_setting_ip_config_get_may_fail(candidate_ip6))) {
         /* If the generated connection is 'link-local' and the candidate is both 'auto'
-		 * and may-fail=TRUE, then the candidate is OK to use.  may-fail is included
-		 * in the decision because if the candidate is 'auto' but may-fail=FALSE, then
-		 * the connection could not possibly have been previously activated on the
-		 * device if the device has no non-link-local IPv6 address.
-		 */
+         * and may-fail=TRUE, then the candidate is OK to use.  may-fail is included
+         * in the decision because if the candidate is 'auto' but may-fail=FALSE, then
+         * the connection could not possibly have been previously activated on the
+         * device if the device has no non-link-local IPv6 address.
+         */
         allow = TRUE;
     } else if (NM_IN_STRSET(orig_ip6_method,
                             NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
@@ -344,9 +344,9 @@ check_ip6_method(NMConnection *orig, NMConnection *candidate, GHashTable *settin
                             NM_SETTING_IP6_CONFIG_METHOD_AUTO)
                && nm_streq0(candidate_ip6_method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
         /* If the generated connection method is 'link-local', disabled' or 'auto' and
-		 * the candidate method is 'ignore' we can take the connection, because NM didn't
-		 * simply take care of IPv6.
-		 */
+         * the candidate method is 'ignore' we can take the connection, because NM didn't
+         * simply take care of IPv6.
+         */
         allow = TRUE;
     }
 
@@ -456,13 +456,13 @@ check_ip_routes(NMConnection *orig,
         }
 
         /* if @orig (@routes1) contains /32 routes that are missing in @candidate,
-		 * we accept that.
-		 *
-		 * A /32 may have been added automatically, as a direct-route to the gateway.
-		 * The generated connection (@orig) would contain that route, so we shall ignore
-		 * it.
-		 *
-		 * Likeweise for /128 for IPv6. */
+         * we accept that.
+         *
+         * A /32 may have been added automatically, as a direct-route to the gateway.
+         * The generated connection (@orig) would contain that route, so we shall ignore
+         * it.
+         *
+         * Likeweise for /128 for IPv6. */
         if (nm_ip_route_get_prefix(routes1[i1]) == PLEN)
             continue;
 
@@ -504,10 +504,10 @@ check_ip4_method(NMConnection *orig,
         && (!candidate_ip4 || nm_setting_ip_config_get_may_fail(candidate_ip4))
         && !device_has_carrier) {
         /* If the generated connection is 'disabled' (device had no IP addresses)
-		 * but it has no carrier, that most likely means that IP addressing could
-		 * not complete and thus no IP addresses were assigned.  In that case, allow
-		 * matching to the "auto" method.
-		 */
+         * but it has no carrier, that most likely means that IP addressing could
+         * not complete and thus no IP addresses were assigned.  In that case, allow
+         * matching to the "auto" method.
+         */
         remove_from_hash(settings,
                          props,
                          NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -671,8 +671,8 @@ check_connection_s390_props(NMConnection *orig, NMConnection *candidate, GHashTa
         return TRUE;
 
     /* If the generated connection did not contain wired setting,
-	 * allow it to match to a connection with a wired setting,
-	 * but default (empty) s390-* properties */
+     * allow it to match to a connection with a wired setting,
+     * but default (empty) s390-* properties */
     s_wired_orig = nm_connection_get_setting_wired(orig);
     s_wired_cand = nm_connection_get_setting_wired(candidate);
     if (!s_wired_orig && s_wired_cand) {
@@ -800,8 +800,8 @@ nm_utils_match_connection(NMConnection *const *  connections,
             s_cand = nm_connection_get_setting_connection(candidate);
 
             /* It is indicated that this connection matches. Assume we have
-			 * a match, but check for particular differences that let us
-			 * reject the candidate. */
+             * a match, but check for particular differences that let us
+             * reject the candidate. */
             if (!nm_streq0(nm_setting_connection_get_connection_type(s_orig),
                            nm_setting_connection_get_connection_type(s_cand)))
                 continue;
@@ -875,10 +875,10 @@ nm_match_spec_device_by_pllink(const NMPlatformLink *pllink,
     NMMatchSpecMatchType m;
 
     /* we can only match by certain properties that are available on the
-	 * platform link (and even @pllink might be missing.
-	 *
-	 * It's still useful because of specs like "*" and "except:interface-name:eth0",
-	 * which match even in that case. */
+     * platform link (and even @pllink might be missing.
+     *
+     * It's still useful because of specs like "*" and "except:interface-name:eth0",
+     * which match even in that case. */
     m = nm_match_spec_device(specs,
                              pllink ? pllink->name : NULL,
                              match_device_type,
@@ -964,7 +964,7 @@ _shutdown_waitobj_unregister(NMShutdownWaitObjHandle *handle)
     g_slice_free(NMShutdownWaitObjHandle, handle);
 
     /* FIXME(shutdown): check whether the object list is empty, and
-	 * signal shutdown-complete */
+     * signal shutdown-complete */
 }
 
 static void
@@ -1041,8 +1041,8 @@ nm_shutdown_wait_obj_register_full(gpointer           watched_obj,
     handle  = g_slice_new(NMShutdownWaitObjHandle);
     *handle = (NMShutdownWaitObjHandle){
         /* depending on @free_msg_reason, we take ownership of @msg_reason.
-		 * In either case, we just reference the string without cloning
-		 * it. */
+         * In either case, we just reference the string without cloning
+         * it. */
         .watched_obj     = watched_obj,
         .msg_reason      = msg_reason,
         .free_msg_reason = free_msg_reason,
@@ -1114,12 +1114,12 @@ nm_utils_file_is_in_path(const char *abs_filename, const char *abs_path)
     nm_assert(path <= &abs_filename[strlen(abs_filename)]);
 
     /* we require a non-empty remainder with no slashes. That is, only a filename.
-	 *
-	 * Note this will reject "/var/run/" as not being in "/var",
-	 * while "/var/run" would pass. The function searches for files
-	 * only, so a trailing slash (indicating a directory) is not allowed).
-	 * This is despite that the function cannot determine whether "/var/run"
-	 * is itself a file or a directory. "*/
+     *
+     * Note this will reject "/var/run/" as not being in "/var",
+     * while "/var/run" would pass. The function searches for files
+     * only, so a trailing slash (indicating a directory) is not allowed).
+     * This is despite that the function cannot determine whether "/var/run"
+     * is itself a file or a directory. "*/
     return path[0] && !strchr(path, '/') ? path : NULL;
 }
 
@@ -1602,7 +1602,7 @@ nm_utils_ip_routes_to_dbus(int                          addr_family,
 
         if (out_routes) {
             /* legacy versions of nm_ip[46]_route_set_prefix() in libnm-util assert that the
-			 * plen is positive. Skip the default routes not to break older clients. */
+             * plen is positive. Skip the default routes not to break older clients. */
             if (!nm_platform_route_table_is_main(r->rx.table_coerced)
                 || NM_PLATFORM_IP_ROUTE_IS_DEFAULT(r))
                 continue;

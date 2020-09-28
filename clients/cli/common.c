@@ -487,7 +487,7 @@ found:
             if (!already_tracked) {
                 if (match_by_uuid) {
                     /* the profile is matched exactly (by UUID). We prepend it
-					 * to the list of all found profiles. */
+                     * to the list of all found profiles. */
                     g_ptr_array_insert(result, result_inital_len, g_object_ref(connection));
                 } else
                     g_ptr_array_add(result, g_object_ref(connection));
@@ -521,10 +521,10 @@ nmc_find_active_connection(const GPtrArray *active_cons,
         con = nm_active_connection_get_connection(candidate);
 
         /* When filter_type is NULL, compare connection ID (filter_val)
-		 * against all types. Otherwise, only compare against the specific
-		 * type. If 'path' or 'apath' filter types are specified, comparison
-		 * against numeric index (in addition to the whole path) is allowed.
-		 */
+         * against all types. Otherwise, only compare against the specific
+         * type. If 'path' or 'apath' filter types are specified, comparison
+         * against numeric index (in addition to the whole path) is allowed.
+         */
         if (NM_IN_STRSET(filter_type, NULL, "id")) {
             v = nm_active_connection_get_id(candidate);
             if (complete)
@@ -683,7 +683,7 @@ get_secrets_from_user(const NmcConfig *nmc_config,
         char *                     pwd    = NULL;
 
         /* First try to find the password in provided passwords file,
-		 * then ask user. */
+         * then ask user. */
         if (pwds_hash && (pwd = g_hash_table_lookup(pwds_hash, secret->entry_id))) {
             pwd = g_strdup(pwd);
         } else {
@@ -787,7 +787,7 @@ nmc_secrets_requested(NMSecretAgentSimple *agent,
         nm_secret_agent_simple_response(agent, request_id, secrets);
     else {
         /* Unregister our secret agent on failure, so that another agent
-		 * may be tried */
+         * may be tried */
         if (nmc->secret_agent) {
             nm_secret_agent_old_unregister(NM_SECRET_AGENT_OLD(nmc->secret_agent), NULL, NULL);
             g_clear_object(&nmc->secret_agent);
@@ -1011,8 +1011,8 @@ nmc_readline_echo(const NmcConfig *nmc_config, gboolean echo_on, const char *pro
         saved_history = history_get_history_state();
         history_set_history_state(&passwd_history);
         /* stifling history is important as it tells readline to
-		 * not store anything, otherwise sensitive data could be
-		 * leaked */
+         * not store anything, otherwise sensitive data could be
+         * leaked */
         stifle_history(0);
         rl_redisplay_function = nmc_secret_redisplay;
     }

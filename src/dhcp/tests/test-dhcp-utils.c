@@ -414,8 +414,8 @@ test_dhcpcd_invalid_classless_routes_1(void)
     g_test_assert_expected_messages();
 
     /* Test falling back to old-style static routes if the classless static
-	 * routes are invalid.
-	 */
+     * routes are invalid.
+     */
     g_assert_cmpint(nm_ip4_config_get_num_routes(ip4_config), ==, 3);
     ip4_test_route(ip4_config, 0, expected_route1_dest, expected_route1_gw, 32);
     ip4_test_route(ip4_config, 1, expected_route2_dest, expected_route2_gw, 32);
@@ -445,8 +445,8 @@ test_dhclient_invalid_classless_routes_2(void)
     g_test_assert_expected_messages();
 
     /* Test falling back to old-style static routes if the classless static
-	 * routes are invalid.
-	 */
+     * routes are invalid.
+     */
     g_assert_cmpint(nm_ip4_config_get_num_routes(ip4_config), ==, 3);
     ip4_test_route(ip4_config, 0, expected_route1_dest, expected_route1_gw, 32);
     ip4_test_route(ip4_config, 1, expected_route2_dest, expected_route2_gw, 32);
@@ -476,8 +476,8 @@ test_dhcpcd_invalid_classless_routes_2(void)
     g_test_assert_expected_messages();
 
     /* Test falling back to old-style static routes if the classless static
-	 * routes are invalid.
-	 */
+     * routes are invalid.
+     */
 
     /* Routes */
     g_assert_cmpint(nm_ip4_config_get_num_routes(ip4_config), ==, 3);
@@ -684,9 +684,9 @@ test_ip4_prefix_classless(void)
     const NMPlatformIP4Address * address;
 
     /* Ensure that the missing-subnet-mask handler doesn't mangle classless
-	 * subnet masks at all.  The handler should trigger only if the server
-	 * doesn't send the subnet mask.
-	 */
+     * subnet masks at all.  The handler should trigger only if the server
+     * doesn't send the subnet mask.
+     */
 
     options = fill_table(generic_options, NULL);
     g_hash_table_insert(options, "ip_address", "172.16.54.22");

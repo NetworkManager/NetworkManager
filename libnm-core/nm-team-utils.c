@@ -23,12 +23,12 @@ typedef enum {
     SET_FIELD_MODE_SET   = 1,
 
     /* Sets the field as set, unless the field is at the default.
-	 * This is the case for API that is called from NMSettingTeam/NMSettingTeamPort.
-	 * This means, using libnm API to reset the value of a NMSetting to the default,
-	 * will mark the field as unset.
-	 * This is different from initializing the field when parsing JSON/GVariant. In
-	 * that case an explicitly set field (even set to the default value) will be remembered
-	 * to be set. */
+     * This is the case for API that is called from NMSettingTeam/NMSettingTeamPort.
+     * This means, using libnm API to reset the value of a NMSetting to the default,
+     * will mark the field as unset.
+     * This is different from initializing the field when parsing JSON/GVariant. In
+     * that case an explicitly set field (even set to the default value) will be remembered
+     * to be set. */
     SET_FIELD_MODE_SET_UNLESS_DEFAULT = 2,
 } SetFieldModeEnum;
 
@@ -762,14 +762,14 @@ _team_setting_attribute_changed(NMTeamSetting *     self,
 
     if (!changed) {
         /* a regular attribute was set, but the value did not change.
-		 *
-		 * If we previously were in non-strict mode, then
-		 *
-		 * - switch to strict-mode. Clearly the user set a regular attribute
-		 *   and hence now we want to validate the setting.
-		 *
-		 * - clear the JSON string. We need to regenerate it.
-		 */
+         *
+         * If we previously were in non-strict mode, then
+         *
+         * - switch to strict-mode. Clearly the user set a regular attribute
+         *   and hence now we want to validate the setting.
+         *
+         * - clear the JSON string. We need to regenerate it.
+         */
         if (self->_data_priv.strict_validated)
             return 0;
         changed_flags = nm_team_attribute_to_flags(NM_TEAM_ATTRIBUTE_CONFIG);
@@ -1744,7 +1744,7 @@ nm_team_setting_config_get(const NMTeamSetting *self)
 
     if (_team_setting_check_default(self) == 0) {
         /* the default is set. We signal this as a NULL JSON string.
-		 * Nothing to do. */
+         * Nothing to do. */
         js_str = NULL;
     } else {
         gboolean list_is_empty = TRUE;
@@ -1892,7 +1892,7 @@ nm_team_setting_config_get(const NMTeamSetting *self)
     }
 
     /* mutate the constant object. In C++ speak, these fields are "mutable".
-	 * That is because we construct the JSON string lazily/on-demand. */
+     * That is because we construct the JSON string lazily/on-demand. */
     *((char **) &self->_data_priv._js_str)                = js_str;
     *((bool *) &self->_data_priv._js_str_need_synthetize) = FALSE;
 
@@ -2091,7 +2091,7 @@ _js_parse_unpack(const NMJsonVt *vt,
                                 <= 0
                             || !v_string || v_string[0] == '\0') {
                             /* we remember that there was some invalid content, but parts of the
-							 * list could still be parsed. */
+                             * list could still be parsed. */
                             *out_unrecognized_content = TRUE;
                             continue;
                         }
@@ -2364,7 +2364,7 @@ _team_setting_verify_config(const NMTeamSetting *self, GError **error)
     const char *js_str;
 
     /* we always materialize the JSON string. That is because we want to validate the
-	 * string length of the resulting JSON. */
+     * string length of the resulting JSON. */
     js_str = nm_team_setting_config_get(self);
 
     if (js_str) {
@@ -2534,7 +2534,7 @@ nm_team_setting_reset_from_dbus(NMTeamSetting *                 self,
         attr_data = _team_attr_data_find_for_property_name(self->d.is_port, v_key);
         if (!attr_data) {
             /* _nm_setting_new_from_dbus() already checks for unknown keys. Don't
-			 * do that here. */
+             * do that here. */
             continue;
         }
 
@@ -2567,7 +2567,7 @@ nm_team_setting_reset_from_dbus(NMTeamSetting *                 self,
         }
 
         /* _nm_setting_new_from_dbus() already checks for duplicate keys. Don't
-		 * do that here. */
+         * do that here. */
         nm_g_variant_unref(variants[attr_data->team_attr]);
         variants[attr_data->team_attr] = g_steal_pointer(&v_val_free);
     }
@@ -2578,17 +2578,17 @@ nm_team_setting_reset_from_dbus(NMTeamSetting *                 self,
         if (variants[NM_TEAM_ATTRIBUTE_CONFIG] && vt
             && !NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
             /* we don't require the content of the "link-watchers" and we also
-			 * don't perform strict validation. No need to parse it. */
+             * don't perform strict validation. No need to parse it. */
         } else {
             gs_free_error GError *local = NULL;
 
             /* We might need the parsed v_link_watchers array below (because there is no JSON
-			 * "config" present or because we don't have json support).
-			 *
-			 * Or we might run with NM_SETTING_PARSE_FLAGS_STRICT. In that mode, we may not necessarily
-			 * require that the entire setting as a whole validates (if a JSON config is present and
-			 * we are not "strict_validated") , but we require that we can at least parse the link watchers
-			 * on their own. */
+             * "config" present or because we don't have json support).
+             *
+             * Or we might run with NM_SETTING_PARSE_FLAGS_STRICT. In that mode, we may not necessarily
+             * require that the entire setting as a whole validates (if a JSON config is present and
+             * we are not "strict_validated") , but we require that we can at least parse the link watchers
+             * on their own. */
             v_link_watchers = _nm_utils_team_link_watchers_from_variant(
                 variants[NM_TEAM_ATTRIBUTE_LINK_WATCHERS],
                 NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT),
@@ -2616,8 +2616,8 @@ nm_team_setting_reset_from_dbus(NMTeamSetting *                 self,
 
     if (vt && variants[NM_TEAM_ATTRIBUTE_CONFIG]) {
         /* for team settings, the JSON must be able to express all possible options. That means,
-		 * if the GVariant contains both the JSON "config" and other options, then the other options
-		 * are silently ignored. */
+         * if the GVariant contains both the JSON "config" and other options, then the other options
+         * are silently ignored. */
     } else {
         guint32 extra_changed = 0u;
 
@@ -2670,7 +2670,7 @@ nm_team_setting_reset_from_dbus(NMTeamSetting *                 self,
 
         if (!variants[NM_TEAM_ATTRIBUTE_CONFIG]) {
             /* clear the JSON string so it can be regenerated. But only if we didn't set
-			 * it above. */
+             * it above. */
             self->_data_priv.strict_validated        = TRUE;
             self->_data_priv._js_str_need_synthetize = TRUE;
         }
@@ -2748,10 +2748,10 @@ _nm_team_settings_property_to_dbus(const NMSettInfoSetting *               sett_
 
         if (self->d.strict_validated && !_nm_utils_is_manager_process) {
             /* if we are in strict validating mode on the client side, the JSON is generated
-			 * artificially. In this case, don't send the config via D-Bus to the server.
-			 *
-			 * This also will cause NetworkManager to strictly validate the settings.
-			 * If a JSON "config" is present, strict validation won't be performed. */
+             * artificially. In this case, don't send the config via D-Bus to the server.
+             *
+             * This also will cause NetworkManager to strictly validate the settings.
+             * If a JSON "config" is present, strict validation won't be performed. */
             return NULL;
         }
 

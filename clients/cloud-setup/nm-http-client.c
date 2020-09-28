@@ -204,7 +204,7 @@ _ehandle_complete(EHandleData *edata, GError *error_take)
     *get_result = (GetResult){
         .response_code = response_code,
         /* This ensures that response_data is always NUL terminated. This is an important guarantee
-		 * that NMHttpClient makes. */
+         * that NMHttpClient makes. */
         .response_data = nm_str_buf_finalize_to_gbytes(&edata->recv_data),
     };
 

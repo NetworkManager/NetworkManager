@@ -160,10 +160,10 @@ nmt_editor_page_class_init(NmtEditorPageClass *page_class)
     /* properties */
 
     /**
-	 * NmtEditorPage:connection:
-	 *
-	 * The page's #NMConnection.
-	 */
+     * NmtEditorPage:connection:
+     *
+     * The page's #NMConnection.
+     */
     g_object_class_install_property(
         object_class,
         PROP_CONNECTION,

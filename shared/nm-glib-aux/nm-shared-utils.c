@@ -58,7 +58,7 @@ nm_ip_addr_set_from_untrusted(int           addr_family,
     case AF_UNSPEC:
         if (!out_addr_family) {
             /* when the callers allow undefined @addr_family, they must provide
-			 * an @out_addr_family argument. */
+             * an @out_addr_family argument. */
             nm_assert_not_reached();
             return FALSE;
         }
@@ -83,7 +83,7 @@ nm_ip_addr_set_from_untrusted(int           addr_family,
         break;
     default:
         /* when the callers allow undefined @addr_family, they must provide
-		 * an @out_addr_family argument. */
+         * an @out_addr_family argument. */
         nm_assert(out_addr_family);
         return FALSE;
     }
@@ -130,7 +130,7 @@ _nm_assert_on_main_thread(void)
 
     if (G_LIKELY(tid == seen_tid)) {
         /* we don't care about false positives (when the process forked, and the thread-id
-		 * is accidentally re-used) . It's for assertions only. */
+         * is accidentally re-used) . It's for assertions only. */
         success = TRUE;
     } else {
         pid = getpid();
@@ -138,7 +138,7 @@ _nm_assert_on_main_thread(void)
 
         if (seen_tid == 0 || seen_pid != pid) {
             /* either this is the first time we call the function, or the process
-			 * forked. In both cases, remember the thread-id. */
+             * forked. In both cases, remember the thread-id. */
             seen_tid = tid;
             seen_pid = pid;
             success  = TRUE;
@@ -333,8 +333,8 @@ nm_utils_strbuf_seek_end(char **buf, gsize *len)
 
 truncate:
     /* hm, no NUL character within len bytes.
-	 * Just NUL terminate the array and consume them
-	 * all. */
+     * Just NUL terminate the array and consume them
+     * all. */
     *buf += *len;
     (*buf)[-1] = '\0';
     *len       = 0;
@@ -379,7 +379,7 @@ nm_utils_gbytes_equal_mem(GBytes *bytes, gconstpointer mem_data, gsize mem_len)
 
     if (!bytes) {
         /* as a special case, let %NULL GBytes compare identical
-		 * to an empty array. */
+         * to an empty array. */
         return (mem_len == 0);
     }
 
@@ -531,7 +531,7 @@ nm_strquote(char *buf, gsize buf_len, const char *str)
     nm_utils_strbuf_append_str(&buf, &buf_len, str);
 
     /* if the string was too long we indicate truncation with a
-	 * '^' instead of a closing quote. */
+     * '^' instead of a closing quote. */
     if (G_UNLIKELY(buf_len <= 1)) {
         switch (buf_len) {
         case 1:
@@ -781,7 +781,7 @@ nm_utils_ip_is_site_local(int addr_family, const void *address)
     switch (addr_family) {
     case AF_INET:
         /* RFC1918 private addresses
-		 * 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 */
+         * 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 */
         addr4 = ntohl(*((const in_addr_t *) address));
         return (addr4 & 0xff000000) == 0x0a000000 || (addr4 & 0xfff00000) == 0xac100000
                || (addr4 & 0xffff0000) == 0xc0a80000;
@@ -812,16 +812,16 @@ _parse_legacy_addr4(const char *text, in_addr_t *out_addr, GError **error)
     }
 
     /* OK, inet_aton() accepted the format. That's good, because we want
-	 * to accept IPv4 addresses in octal format, like 255.255.000.000.
-	 * That's what "legacy" means here. inet_pton() doesn't accept those.
-	 *
-	 * But inet_aton() also ignores trailing garbage and formats with fewer than
-	 * 4 digits. That is just too crazy and we don't do that. Perform additional checks
-	 * and reject some forms that inet_aton() accepted.
-	 *
-	 * Note that we still should (of course) accept everything that inet_pton()
-	 * accepts. However this code never gets called if inet_pton() succeeds
-	 * (see below, aside the assertion code). */
+     * to accept IPv4 addresses in octal format, like 255.255.000.000.
+     * That's what "legacy" means here. inet_pton() doesn't accept those.
+     *
+     * But inet_aton() also ignores trailing garbage and formats with fewer than
+     * 4 digits. That is just too crazy and we don't do that. Perform additional checks
+     * and reject some forms that inet_aton() accepted.
+     *
+     * Note that we still should (of course) accept everything that inet_pton()
+     * accepts. However this code never gets called if inet_pton() succeeds
+     * (see below, aside the assertion code). */
 
     if (NM_STRCHAR_ANY(text, ch, (!(ch >= '0' && ch <= '9') && !NM_IN_SET(ch, '.', 'x')))) {
         /* We only accepts '.', digits, and 'x' for "0x". */
@@ -846,7 +846,7 @@ _parse_legacy_addr4(const char *text, in_addr_t *out_addr, GError **error)
 
         if ((i == G_N_ELEMENTS(bin) - 1) != (s == NULL)) {
             /* Exactly for the last digit, we expect to have no more following token.
-			 * But this isn't the case. Abort. */
+             * But this isn't the case. Abort. */
             g_set_error(error,
                         NM_UTILS_ERROR,
                         NM_UTILS_ERROR_INVALID_ARGUMENT,
@@ -861,7 +861,7 @@ _parse_legacy_addr4(const char *text, in_addr_t *out_addr, GError **error)
             int errsv = errno;
 
             /* we do accept octal and hex (even with leading "0x"). But something
-			 * about this token is wrong. */
+             * about this token is wrong. */
             g_set_error(error,
                         NM_UTILS_ERROR,
                         NM_UTILS_ERROR_INVALID_ARGUMENT,
@@ -877,7 +877,7 @@ _parse_legacy_addr4(const char *text, in_addr_t *out_addr, GError **error)
 
     if (memcmp(bin, &a1, sizeof(bin)) != 0) {
         /* our parsing did not agree with what inet_aton() gave. Something
-		 * is wrong. Abort. */
+         * is wrong. Abort. */
         g_set_error(
             error,
             NM_UTILS_ERROR,
@@ -916,7 +916,7 @@ nm_utils_parse_inaddr_bin_full(int         addr_family,
         if (accept_legacy && addr_family == AF_INET
             && _parse_legacy_addr4(text, &addrbin.addr4, NULL)) {
             /* The address is in some legacy format which inet_aton() accepts, but not inet_pton().
-			 * Most likely octal digits (leading zeros). We accept the address. */
+             * Most likely octal digits (leading zeros). We accept the address. */
         } else
             return FALSE;
     }
@@ -927,7 +927,7 @@ nm_utils_parse_inaddr_bin_full(int         addr_family,
         in_addr_t             a;
 
         /* The legacy parser should accept everything that inet_pton() accepts too. Meaning,
-		 * it should strictly parse *more* formats. And of course, parse it the same way. */
+         * it should strictly parse *more* formats. And of course, parse it the same way. */
         if (!_parse_legacy_addr4(text, &a, &error)) {
             char buf[INET_ADDRSTRLEN];
 
@@ -1000,7 +1000,7 @@ nm_utils_parse_inaddr_prefix_bin(int         addr_family,
 
     if (slash) {
         /* For IPv4, `ip addr add` supports the prefix-length as a netmask. We don't
-		 * do that. */
+         * do that. */
         prefix =
             _nm_utils_ascii_str_to_int64(&slash[1], 10, 0, addr_family == AF_INET ? 32 : 128, -1);
         if (prefix == -1)
@@ -1052,7 +1052,7 @@ nm_utils_parse_next_line(const char **inout_ptr,
     for (line_len = 0;; line_len++) {
         if (line_len >= *inout_len) {
             /* if we consumed the entire line, we place the pointer at
-			 * one character after the end. */
+             * one character after the end. */
             *inout_ptr = &line_start[line_len];
             *inout_len = 0;
             goto done;
@@ -1245,7 +1245,7 @@ again:
 #endif
 
     /* Not really much else to do. Return the parsed value and leave errno set
-	 * to the unexpected value. */
+     * to the unexpected value. */
     return v;
 }
 
@@ -1335,7 +1335,7 @@ _nm_utils_ascii_str_to_uint64(const char *str,
 
     if (v != 0 && str[0] == '-') {
         /* As documented, g_ascii_strtoull() accepts negative values, and returns their
-		 * absolute value. We don't. */
+         * absolute value. We don't. */
         errno = ERANGE;
         return fallback;
     }
@@ -1405,11 +1405,11 @@ int
 nm_cmp_int2ptr_p_with_data(gconstpointer p_a, gconstpointer p_b, gpointer user_data)
 {
     /* p_a and p_b are two pointers to a pointer, where the pointer is
-	 * interpreted as a integer using GPOINTER_TO_INT().
-	 *
-	 * That is the case of a hash-table that uses GINT_TO_POINTER() to
-	 * convert integers as pointers, and the resulting keys-as-array
-	 * array. */
+     * interpreted as a integer using GPOINTER_TO_INT().
+     *
+     * That is the case of a hash-table that uses GINT_TO_POINTER() to
+     * convert integers as pointers, and the resulting keys-as-array
+     * array. */
     const int a = GPOINTER_TO_INT(*((gconstpointer *) p_a));
     const int b = GPOINTER_TO_INT(*((gconstpointer *) p_b));
 
@@ -1439,10 +1439,10 @@ _dbus_path_component_as_num(const char *p)
     gint64 n;
 
     /* no odd stuff. No leading zeros, only a non-negative, decimal integer.
-	 *
-	 * Otherwise, there would be multiple ways to encode the same number "10"
-	 * and "010". That is just confusing. A number has no leading zeros,
-	 * if it has, it's not a number (as far as we are concerned here). */
+     *
+     * Otherwise, there would be multiple ways to encode the same number "10"
+     * and "010". That is just confusing. A number has no leading zeros,
+     * if it has, it's not a number (as far as we are concerned here). */
     if (p[0] == '0') {
         if (p[1] != '\0')
             return -1;
@@ -1466,14 +1466,14 @@ nm_utils_dbus_path_cmp(const char *dbus_path_a, const char *dbus_path_b)
     gint64      n_a, n_b;
 
     /* compare function for two D-Bus paths. It behaves like
-	 * strcmp(), except, if both paths have the same prefix,
-	 * and both end in a (positive) number, then the paths
-	 * will be sorted by number. */
+     * strcmp(), except, if both paths have the same prefix,
+     * and both end in a (positive) number, then the paths
+     * will be sorted by number. */
 
     NM_CMP_SELF(dbus_path_a, dbus_path_b);
 
     /* if one or both paths have no slash (and no last component)
-	 * compare the full paths directly. */
+     * compare the full paths directly. */
     if (!(l_a = nm_utils_dbus_path_get_last_component(dbus_path_a))
         || !(l_b = nm_utils_dbus_path_get_last_component(dbus_path_b)))
         goto comp_full;
@@ -1490,20 +1490,20 @@ nm_utils_dbus_path_cmp(const char *dbus_path_a, const char *dbus_path_b)
         goto comp_l;
 
     /* both components must be convertible to a number. If they are not,
-	 * (and only one of them is), then we must always strictly sort numeric parts
-	 * after non-numeric components. If we wouldn't, we wouldn't have
-	 * a total order.
-	 *
-	 * An example of a not total ordering would be:
-	 *   "8"   < "010"  (numeric)
-	 *   "0x"  < "8"    (lexical)
-	 *   "0x"  > "010"  (lexical)
-	 * We avoid this, by forcing that a non-numeric entry "0x" always sorts
-	 * before numeric entries.
-	 *
-	 * Additionally, _dbus_path_component_as_num() would also reject "010" as
-	 * not a valid number.
-	 */
+     * (and only one of them is), then we must always strictly sort numeric parts
+     * after non-numeric components. If we wouldn't, we wouldn't have
+     * a total order.
+     *
+     * An example of a not total ordering would be:
+     *   "8"   < "010"  (numeric)
+     *   "0x"  < "8"    (lexical)
+     *   "0x"  > "010"  (lexical)
+     * We avoid this, by forcing that a non-numeric entry "0x" always sorts
+     * before numeric entries.
+     *
+     * Additionally, _dbus_path_component_as_num() would also reject "010" as
+     * not a valid number.
+     */
     if (n_a == -1)
         return -1;
     if (n_b == -1)
@@ -1558,8 +1558,8 @@ static gboolean
 _char_lookup_has(const CharLookupTable *lookup, char ch)
 {
     /* with some optimization levels, the compiler thinks this code
-	 * might access uninitialized @lookup. It is not -- when you look at the
-	 * callers of this function. */
+     * might access uninitialized @lookup. It is not -- when you look at the
+     * callers of this function. */
     NM_PRAGMA_WARNING_DISABLE("-Wmaybe-uninitialized")
     nm_assert(lookup->table[(guint8) '\0'] == 0);
     return lookup->table[(guint8) ch] != 0;
@@ -1638,9 +1638,9 @@ nm_utils_strsplit_set_full(const char *str, const char *delimiters, NMUtilsStrsp
 
     if (!str[0]) {
         /* We return %NULL here, also with NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY.
-		 * That makes nm_utils_strsplit_set_full() with NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY
-		 * different from g_strsplit_set(), which would in this case return an empty array.
-		 * If you need to handle %NULL, and "" specially, then check the input string first. */
+         * That makes nm_utils_strsplit_set_full() with NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY
+         * different from g_strsplit_set(), which would in this case return an empty array.
+         * If you need to handle %NULL, and "" specially, then check the input string first. */
         return NULL;
     }
 
@@ -1665,8 +1665,8 @@ nm_utils_strsplit_set_full(const char *str, const char *delimiters, NMUtilsStrsp
         }
 
         /* we assume escapings are not frequent. After we found
-		 * this delimiter, check whether it was escaped by counting
-		 * the backslashed before. */
+         * this delimiter, check whether it was escaped by counting
+         * the backslashed before. */
         if (f_allow_escaping && _char_is_escaped(str, c_str)) {
             /* the delimiter is escaped. This was not an accepted delimiter. */
             c_str++;
@@ -1770,7 +1770,7 @@ done2:
         gsize i, j;
 
         /* We no longer need ch_lookup for its original purpose. Modify it, so it
-		 * can detect the delimiters, '\\', and (optionally) whitespaces. */
+         * can detect the delimiters, '\\', and (optionally) whitespaces. */
         _char_lookup_table_set_one(&ch_lookup, '\\');
         if (f_strstrip)
             _char_lookup_table_set_all(&ch_lookup, NM_ASCII_SPACES);
@@ -1846,7 +1846,7 @@ nm_utils_escaped_tokens_escape_full(const char *                    str,
                                  | NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_TRAILING_SPACE)
                 && !_char_lookup_has_all(&ch_lookup, NM_ASCII_SPACES)) {
                 /* ESCAPE_LEADING_SPACE and ESCAPE_TRAILING_SPACE implies that we escape backslash
-				 * before whitespaces. */
+                 * before whitespaces. */
                 if (!has_ch_lookup_as_needed) {
                     has_ch_lookup_as_needed = TRUE;
                     _char_lookup_table_init(&ch_lookup_as_needed, NULL);
@@ -1981,8 +1981,8 @@ nm_utils_escaped_tokens_options_split(char *str, const char **out_key, const cha
                     i++;
             } else if (str[i] == '=') {
                 /* Encounter an unescaped '=' character. When we still parse the key, this
-				 * is the separator we were waiting for. If we are parsing the value,
-				 * we take the character verbatim. */
+                 * is the separator we were waiting for. If we are parsing the value,
+                 * we take the character verbatim. */
                 if (!val) {
                     if (last_space_has) {
                         str[last_space_idx] = '\0';
@@ -2101,7 +2101,7 @@ nm_utils_strsplit_quoted(const char *str)
     g_ptr_array_add(arr, NULL);
 
     /* We want to return an optimally sized strv array, with no excess
-	 * memory allocated. Hence, clone once more. */
+     * memory allocated. Hence, clone once more. */
     return nm_memdup(arr->pdata, sizeof(char *) * arr->len);
 }
 
@@ -2166,7 +2166,7 @@ _nm_utils_strv_cleanup(char **  strv,
 
     if (strip_whitespace) {
         /* we only modify the strings pointed to by @strv if @strip_whitespace is
-		 * requested. Otherwise, the strings themselves are untouched. */
+         * requested. Otherwise, the strings themselves are untouched. */
         for (i = 0; strv[i]; i++)
             g_strstrip(strv[i]);
     }
@@ -2304,7 +2304,7 @@ nm_g_object_set_property(GObject *     object,
     g_return_val_if_fail(!error || !*error, FALSE);
 
     /* g_object_class_find_property() does g_param_spec_get_redirect_target(),
-	 * where we differ from a plain g_object_set_property(). */
+     * where we differ from a plain g_object_set_property(). */
     pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(object), property_name);
 
     if (!pspec) {
@@ -2432,10 +2432,10 @@ nm_g_object_set_property_char(GObject *   object,
                               GError **   error)
 {
     /* glib says about G_TYPE_CHAR:
-	 *
-	 * The type designated by G_TYPE_CHAR is unconditionally an 8-bit signed integer.
-	 *
-	 * This is always a (signed!) char. */
+     *
+     * The type designated by G_TYPE_CHAR is unconditionally an 8-bit signed integer.
+     *
+     * This is always a (signed!) char. */
     _set_property(object, property_name, G_TYPE_CHAR, g_value_set_schar, value, error);
 }
 
@@ -2678,8 +2678,8 @@ nm_utils_buf_utf8safe_unescape(const char *            str,
                 ch = (++str)[0];
                 if (ch >= '0' && ch <= '7') {
                     /* technically, escape sequences larger than \3FF are out of range
-					 * and invalid. We don't check for that, and do the same as
-					 * g_strcompress(): silently clip the value with & 0xFF. */
+                     * and invalid. We don't check for that, and do the same as
+                     * g_strcompress(): silently clip the value with & 0xFF. */
                     v = v * 8 + (ch - '0');
                     ++str;
                 }
@@ -2707,7 +2707,7 @@ nm_utils_buf_utf8safe_unescape(const char *            str,
                 break;
             default:
                 /* Here we handle "\\\\", but all other unexpected escape sequences are really a bug.
-				 * Take them literally, after removing the escape character */
+                 * Take them literally, after removing the escape character */
                 break;
             }
             str++;
@@ -2732,8 +2732,8 @@ nm_utils_buf_utf8safe_unescape(const char *            str,
     }
 
     /* assert that no reallocation was necessary. For one, unescaping should
-	 * never result in a longer string than the input. Also, when unescaping
-	 * secrets, we want to ensure that we don't leak secrets in memory. */
+     * never result in a longer string than the input. Also, when unescaping
+     * secrets, we want to ensure that we don't leak secrets in memory. */
     nm_assert(strbuf.allocated == len + 1u);
 
     return (*to_free = nm_str_buf_finalize(&strbuf, out_len));
@@ -2800,7 +2800,7 @@ nm_utils_buf_utf8safe_escape(gconstpointer           buf,
 
     if (g_utf8_validate(str, buflen, &p) && nul_terminated) {
         /* note that g_utf8_validate() does not allow NUL character inside @str. Good.
-		 * We can treat @str like a NUL terminated string. */
+         * We can treat @str like a NUL terminated string. */
         if (!NM_STRCHAR_ANY(
                 str,
                 ch,
@@ -3009,7 +3009,7 @@ nm_utils_fd_read_loop(int fd, void *buf, size_t nbytes, bool do_poll)
     g_return_val_if_fail(buf, -EINVAL);
 
     /* If called with nbytes == 0, let's call read() at least
-	 * once, to validate the operation */
+     * once, to validate the operation */
 
     if (nbytes > (size_t) SSIZE_MAX)
         return -EINVAL;
@@ -3026,8 +3026,8 @@ nm_utils_fd_read_loop(int fd, void *buf, size_t nbytes, bool do_poll)
 
             if (errsv == EAGAIN && do_poll) {
                 /* We knowingly ignore any return value here,
-				 * and expect that any error/EOF is reported
-				 * via read() */
+                 * and expect that any error/EOF is reported
+                 * via read() */
 
                 (void) nm_utils_fd_wait_for_event(fd, POLLIN, -1);
                 continue;
@@ -3215,7 +3215,7 @@ nm_utils_hash_keys_to_array(GHashTable *     hash,
     gpointer *keys;
 
     /* by convention, we never return an empty array. In that
-	 * case, always %NULL. */
+     * case, always %NULL. */
     if (!hash || g_hash_table_size(hash) == 0) {
         NM_SET_OUT(out_len, 0);
         return NULL;
@@ -3279,9 +3279,9 @@ _utils_hashtable_equal(GHashTable *     hash_a,
     nm_assert(g_hash_table_size(hash_a) == g_hash_table_size(hash_b));
 
     /* We rely on both hashes to have the same hash/equal function. Otherwise, we would have to iterate
-	 * both hashes and check whether all keys/values are present in the respective other hash (which
-	 * would be O(n^2), since we couldn't use the plain lookup function. That is not a useful thing
-	 * for this function. */
+     * both hashes and check whether all keys/values are present in the respective other hash (which
+     * would be O(n^2), since we couldn't use the plain lookup function. That is not a useful thing
+     * for this function. */
 
     g_hash_table_iter_init(&h, hash_a);
     while (g_hash_table_iter_next(&h, &a_key, &a_val)) {
@@ -3426,12 +3426,12 @@ nm_utils_hashtable_cmp(const GHashTable *a,
         gboolean same;
 
         /* we expect that the hashes are equal and the caller ensures us that they
-		 * use the same hash/equal functions. Do a fast path check first...
-		 *
-		 * It's unclear whether this is worth it. The full comparison is O(n*ln(n)),
-		 * while the fast check (using the hash lookup) is O(n). But then, the pre-check
-		 * makes additional requirements on the hash's hash/equal functions -- the
-		 * full comparison does not make such requirements. */
+         * use the same hash/equal functions. Do a fast path check first...
+         *
+         * It's unclear whether this is worth it. The full comparison is O(n*ln(n)),
+         * while the fast check (using the hash lookup) is O(n). But then, the pre-check
+         * makes additional requirements on the hash's hash/equal functions -- the
+         * full comparison does not make such requirements. */
         same = _utils_hashtable_equal(hash_a, hash_b, cmp_values, user_data);
 #if NM_MORE_ASSERTS > 5
         nm_assert(same == _utils_hashtable_equal(hash_b, hash_a, cmp_values, user_data));
@@ -3510,8 +3510,8 @@ nm_utils_strv_make_deep_copied(const char **strv)
     gsize i;
 
     /* it takes a strv list, and copies each
-	 * strings. Note that this updates @strv *in-place*
-	 * and returns it. */
+     * strings. Note that this updates @strv *in-place*
+     * and returns it. */
 
     if (!strv)
         return NULL;
@@ -3527,8 +3527,8 @@ nm_utils_strv_make_deep_copied_n(const char **strv, gsize len)
     gsize i;
 
     /* it takes a strv array with len elements, and copies each
-	 * strings. Note that this updates @strv *in-place*
-	 * and returns it. */
+     * strings. Note that this updates @strv *in-place*
+     * and returns it. */
 
     if (!strv)
         return NULL;
@@ -3576,7 +3576,7 @@ _nm_utils_strv_dup(const char *const *strv, gssize len, gboolean deep_copied)
         l = len;
     if (l == 0) {
         /* this function never returns an empty strv array. If you
-		 * need that, handle it yourself. */
+         * need that, handle it yourself. */
         return NULL;
     }
 
@@ -3584,7 +3584,7 @@ _nm_utils_strv_dup(const char *const *strv, gssize len, gboolean deep_copied)
     for (i = 0; i < l; i++) {
         if (G_UNLIKELY(!strv[i])) {
             /* NULL strings are not allowed. Clear the remainder of the array
-			 * and return it (with assertion failure). */
+             * and return it (with assertion failure). */
             l++;
             for (; i < l; i++)
                 v[i] = NULL;
@@ -3618,7 +3618,7 @@ _nm_utils_strv_dup_packed(const char *const *strv, gssize len)
     if (G_LIKELY(len < 0)) {
         if (!strv || !strv[0]) {
             /* This function never returns an empty strv array. If you need that, handle it
-			 * yourself. */
+             * yourself. */
             return NULL;
         }
         len2 = NM_PTRARRAY_LEN(strv);
@@ -3655,10 +3655,10 @@ _nm_utils_strv_dup_packed(const char *const *strv, gssize len)
 
         if (G_UNLIKELY(!strv[i])) {
             /* Technically there is no problem with accepting NULL strings. But that
-			 * does not really result in a strv array, and likely this only happens due
-			 * to a bug. We want to catch such bugs by asserting.
-			 *
-			 * We clear the remainder of the buffer and fail with an assertion. */
+             * does not really result in a strv array, and likely this only happens due
+             * to a bug. We want to catch such bugs by asserting.
+             *
+             * We clear the remainder of the buffer and fail with an assertion. */
             len2++;
             for (; i < len2; i++)
                 result[i] = NULL;
@@ -3705,9 +3705,9 @@ nm_utils_ptrarray_find_binary_search(gconstpointer *  list,
             cmp = cmpfcn(list[imid], needle, user_data);
             if (cmp == 0) {
                 /* we found a matching entry at index imid.
-				 *
-				 * Does the caller request the first/last index as well (in case that
-				 * there are multiple entries which compare equal). */
+                 *
+                 * Does the caller request the first/last index as well (in case that
+                 * there are multiple entries which compare equal). */
 
                 if (out_idx_first) {
                     i2min = imin;
@@ -3752,7 +3752,7 @@ nm_utils_ptrarray_find_binary_search(gconstpointer *  list,
     }
 
     /* return the inverse of @imin. This is a negative number, but
-	 * also is ~imin the position where the value should be inserted. */
+     * also is ~imin the position where the value should be inserted. */
     imin = ~imin;
     NM_SET_OUT(out_idx_first, imin);
     NM_SET_OUT(out_idx_last, imin);
@@ -3820,7 +3820,7 @@ nm_utils_array_find_binary_search(gconstpointer    list,
     }
 
     /* return the inverse of @imin. This is a negative number, but
-	 * also is ~imin the position where the value should be inserted. */
+     * also is ~imin the position where the value should be inserted. */
     return ~imin;
 }
 
@@ -3921,9 +3921,9 @@ nm_utils_get_start_time_for_pid(pid_t pid, char *out_state, pid_t *out_ppid)
         goto fail;
 
     /* start time is the token at index 19 after the '(process name)' entry - since only this
-	 * field can contain the ')' character, search backwards for this to avoid malicious
-	 * processes trying to fool us
-	 */
+     * field can contain the ')' character, search backwards for this to avoid malicious
+     * processes trying to fool us
+     */
     p = strrchr(contents, ')');
     if (!p)
         goto fail;
@@ -4213,16 +4213,16 @@ _nm_utils_invoke_on_idle_start(gboolean                    use_timeout,
     if (cancellable) {
         if (g_cancellable_is_cancelled(cancellable)) {
             /* the cancellable is already cancelled. We ignore the timeout
-			 * and always schedule an idle action. */
+             * and always schedule an idle action. */
             use_timeout = FALSE;
         } else {
             /* if we are passed a non-cancelled cancellable, we register to the "cancelled"
-			 * signal an invoke the callback synchronously (from the signal handler).
-			 *
-			 * We don't do that,
-			 *  - if the cancellable is already cancelled (because we don't want to invoke
-			 *    the callback synchronously from the caller).
-			 *  - if we have no cancellable at hand. */
+             * signal an invoke the callback synchronously (from the signal handler).
+             *
+             * We don't do that,
+             *  - if the cancellable is already cancelled (because we don't want to invoke
+             *    the callback synchronously from the caller).
+             *  - if we have no cancellable at hand. */
             data->cancelled_id = g_signal_connect(cancellable,
                                                   "cancelled",
                                                   G_CALLBACK(_nm_utils_invoke_on_idle_cb_cancelled),
@@ -4303,7 +4303,7 @@ nm_utils_memeqzero(gconstpointer data, gsize length)
     int                  len;
 
     /* Taken from https://github.com/rustyrussell/ccan/blob/9d2d2c49f053018724bcc6e37029da10b7c3d60d/ccan/mem/mem.c#L92,
-	 * CC-0 licensed. */
+     * CC-0 licensed. */
 
     /* Check first 16 bytes manually */
     for (len = 0; len < 16; len++) {
@@ -4361,7 +4361,7 @@ nm_utils_bin2hexstr_full(gconstpointer addr,
     }
 
     /* @out must contain at least @length*3 bytes if @delimiter is set,
-	 * otherwise, @length*2+1. */
+     * otherwise, @length*2+1. */
 
     if (length > 0) {
         nm_assert(in);
@@ -4771,14 +4771,14 @@ _ctx_integ_source_reacquire(CtxIntegSource *ctx_src)
         return;
 
     /* the parent context now iterates on a different thread.
-	 * We need to release and reacquire the inner context. */
+     * We need to release and reacquire the inner context. */
 
     if (ctx_src->acquired)
         g_main_context_release(ctx_src->context);
 
     if (G_UNLIKELY(!g_main_context_acquire(ctx_src->context))) {
         /* Nobody is supposed to reacquire the context while we use it. This is a bug
-		 * of the user. */
+         * of the user. */
         ctx_src->acquired = FALSE;
         g_return_if_reached();
     }
@@ -4874,8 +4874,8 @@ _ctx_integ_source_prepare(GSource *source, int *out_timeout)
             }
 
             /* How odd. We have duplicate FDs. In fact, currently g_main_context_query() always
-			 * coalesces the FDs and this cannot happen. However, that is not documented behavior,
-			 * so we should not rely on that. So we need to keep a list of indexes... */
+             * coalesces the FDs and this cannot happen. However, that is not documented behavior,
+             * so we should not rely on that. So we need to keep a list of indexes... */
             poll_data->events |= fd->events;
             if (!poll_data->has_many_idx) {
                 int idx0;
@@ -5065,10 +5065,10 @@ nm_utils_g_main_context_create_integrate_source(GMainContext *inner_context)
 
     if (!g_main_context_acquire(inner_context)) {
         /* We require to acquire the context while it's integrated. We need to keep it acquired
-		 * for the entire duration.
-		 *
-		 * This is also necessary because g_source_attach() only wakes up the context, if
-		 * the context is currently acquired. */
+         * for the entire duration.
+         *
+         * This is also necessary because g_source_attach() only wakes up the context, if
+         * the context is currently acquired. */
         g_return_val_if_reached(NULL);
     }
 
@@ -5094,8 +5094,8 @@ nm_utils_ifname_valid_kernel(const char *name, GError **error)
     int i;
 
     /* This function follows kernel's interface validation
-	 * function dev_valid_name() in net/core/dev.c.
-	 */
+     * function dev_valid_name() in net/core/dev.c.
+     */
 
     if (!name) {
         g_set_error_literal(error,
@@ -5152,14 +5152,14 @@ _nm_utils_ifname_valid_kernel(const char *name, GError **error)
 
     if (strchr(name, '%')) {
         /* Kernel's dev_valid_name() accepts (almost) any binary up to 15 chars.
-		 * However, '%' is treated special as a format specifier. Try
-		 *
-		 *   ip link add 'dummy%dx' type dummy
-		 *
-		 * Don't allow that for "connection.interface-name", which either
-		 * matches an existing netdev name (thus, it cannot have a '%') or
-		 * is used to configure a name (in which case we don't want kernel
-		 * to replace the format specifier). */
+         * However, '%' is treated special as a format specifier. Try
+         *
+         *   ip link add 'dummy%dx' type dummy
+         *
+         * Don't allow that for "connection.interface-name", which either
+         * matches an existing netdev name (thus, it cannot have a '%') or
+         * is used to configure a name (in which case we don't want kernel
+         * to replace the format specifier). */
         g_set_error_literal(error,
                             NM_UTILS_ERROR,
                             NM_UTILS_ERROR_UNKNOWN,
@@ -5169,10 +5169,10 @@ _nm_utils_ifname_valid_kernel(const char *name, GError **error)
 
     if (NM_IN_STRSET(name, "all", "default", "bonding_masters")) {
         /* Certain names are not allowed. The "all" and "default" names are reserved
-		 * due to their directories in "/proc/sys/net/ipv4/conf/" and "/proc/sys/net/ipv6/conf/".
-		 *
-		 * Also, there is "/sys/class/net/bonding_masters" file.
-		 */
+         * due to their directories in "/proc/sys/net/ipv4/conf/" and "/proc/sys/net/ipv6/conf/".
+         *
+         * Also, there is "/sys/class/net/bonding_masters" file.
+         */
         nm_utils_error_set(error,
                            NM_UTILS_ERROR_UNKNOWN,
                            _("'%s' is not allowed as interface name"),
@@ -5191,7 +5191,7 @@ _nm_utils_ifname_valid_ovs(const char *name, GError **error)
     /* OVS actually accepts a wider range of chars (all printable UTF-8 chars),
 	 NetworkManager restricts this to ASCII char as it's a safer option for
 	 now since OVS is not well documented on this matter.
-	 */
+     */
     for (ch = name; *ch; ++ch) {
         if (*ch == '\\' || *ch == '/' || !g_ascii_isgraph(*ch)) {
             g_set_error_literal(error,
@@ -5398,7 +5398,7 @@ _nm_utils_format_variant_attributes_full(GString *                            st
             value = g_variant_get_string(variant, NULL);
         else if (g_variant_is_of_type(variant, G_VARIANT_TYPE_BYTESTRING)) {
             /* FIXME: there is no guarantee that the byte array
-			 * is valid UTF-8.*/
+             * is valid UTF-8.*/
             value = g_variant_get_bytestring(variant);
         } else
             continue;
@@ -5474,9 +5474,9 @@ nm_utils_is_localhost(const char *name)
         return FALSE;
 
     /* This tries to identify local host and domain names
-	 * described in RFC6761 plus the redhatism of localdomain.
-	 *
-	 * Similar to systemd's is_localhost(). */
+     * described in RFC6761 plus the redhatism of localdomain.
+     *
+     * Similar to systemd's is_localhost(). */
 
     name_len = strlen(name);
 
@@ -5502,7 +5502,7 @@ nm_utils_is_localhost(const char *name)
             continue;
 
         /* we accept the name if it is equal to one of the well-known names,
-		 * or if it is some prefix, a '.' and the well-known name. */
+         * or if it is some prefix, a '.' and the well-known name. */
         if (s == 0)
             return TRUE;
         if (name[s - 1] == '.')
@@ -5520,7 +5520,7 @@ nm_utils_is_specific_hostname(const char *name)
 
     if (nm_streq(name, "(none)")) {
         /* This is not a special hostname. Probably an artefact by somebody wrongly
-		 * printing NULL. */
+         * printing NULL. */
         return FALSE;
     }
 

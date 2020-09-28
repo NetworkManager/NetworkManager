@@ -655,10 +655,10 @@ nm_device_wifi_class_init(NMDeviceWifiClass *klass)
     device_class->get_setting_type      = get_setting_type;
 
     /**
-	 * NMDeviceWifi:perm-hw-address:
-	 *
-	 * The hardware (MAC) address of the device.
-	 **/
+     * NMDeviceWifi:perm-hw-address:
+     *
+     * The hardware (MAC) address of the device.
+     **/
     obj_properties[PROP_PERM_HW_ADDRESS] =
         g_param_spec_string(NM_DEVICE_WIFI_PERMANENT_HW_ADDRESS,
                             "",
@@ -667,10 +667,10 @@ nm_device_wifi_class_init(NMDeviceWifiClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceWifi:mode:
-	 *
-	 * The mode of the device.
-	 **/
+     * NMDeviceWifi:mode:
+     *
+     * The mode of the device.
+     **/
     obj_properties[PROP_MODE] = g_param_spec_enum(NM_DEVICE_WIFI_MODE,
                                                   "",
                                                   "",
@@ -679,10 +679,10 @@ nm_device_wifi_class_init(NMDeviceWifiClass *klass)
                                                   G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceWifi:bitrate:
-	 *
-	 * The bit rate of the device in kbit/s.
-	 **/
+     * NMDeviceWifi:bitrate:
+     *
+     * The bit rate of the device in kbit/s.
+     **/
     obj_properties[PROP_BITRATE] = g_param_spec_uint(NM_DEVICE_WIFI_BITRATE,
                                                      "",
                                                      "",
@@ -692,10 +692,10 @@ nm_device_wifi_class_init(NMDeviceWifiClass *klass)
                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceWifi:active-access-point:
-	 *
-	 * The active #NMAccessPoint of the device.
-	 **/
+     * NMDeviceWifi:active-access-point:
+     *
+     * The active #NMAccessPoint of the device.
+     **/
     obj_properties[PROP_ACTIVE_ACCESS_POINT] =
         g_param_spec_object(NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT,
                             "",
@@ -704,10 +704,10 @@ nm_device_wifi_class_init(NMDeviceWifiClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceWifi:wireless-capabilities:
-	 *
-	 * The wireless capabilities of the device.
-	 **/
+     * NMDeviceWifi:wireless-capabilities:
+     *
+     * The wireless capabilities of the device.
+     **/
     obj_properties[PROP_WIRELESS_CAPABILITIES] =
         g_param_spec_flags(NM_DEVICE_WIFI_CAPABILITIES,
                            "",
@@ -717,10 +717,10 @@ nm_device_wifi_class_init(NMDeviceWifiClass *klass)
                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceWifi:access-points: (type GPtrArray(NMAccessPoint))
-	 *
-	 * List of all Wi-Fi access points the device can see.
-	 **/
+     * NMDeviceWifi:access-points: (type GPtrArray(NMAccessPoint))
+     *
+     * List of all Wi-Fi access points the device can see.
+     **/
     obj_properties[PROP_ACCESS_POINTS] =
         g_param_spec_boxed(NM_DEVICE_WIFI_ACCESS_POINTS,
                            "",
@@ -729,14 +729,14 @@ nm_device_wifi_class_init(NMDeviceWifiClass *klass)
                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceWifi:last-scan:
-	 *
-	 * The timestamp (in CLOCK_BOOTTIME seconds) for the last finished
-	 * network scan. A value of -1 means the device never scanned for
-	 * access points.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMDeviceWifi:last-scan:
+     *
+     * The timestamp (in CLOCK_BOOTTIME seconds) for the last finished
+     * network scan. A value of -1 means the device never scanned for
+     * access points.
+     *
+     * Since: 1.12
+     **/
     obj_properties[PROP_LAST_SCAN] = g_param_spec_int64(NM_DEVICE_WIFI_LAST_SCAN,
                                                         "",
                                                         "",
@@ -749,12 +749,12 @@ nm_device_wifi_class_init(NMDeviceWifiClass *klass)
                                               &_nml_dbus_meta_iface_nm_device_wireless);
 
     /**
-	 * NMDeviceWifi::access-point-added:
-	 * @device: the Wi-Fi device that received the signal
-	 * @ap: the new access point
-	 *
-	 * Notifies that a #NMAccessPoint is added to the Wi-Fi device.
-	 **/
+     * NMDeviceWifi::access-point-added:
+     * @device: the Wi-Fi device that received the signal
+     * @ap: the new access point
+     *
+     * Notifies that a #NMAccessPoint is added to the Wi-Fi device.
+     **/
     signals[ACCESS_POINT_ADDED] = g_signal_new("access-point-added",
                                                G_OBJECT_CLASS_TYPE(object_class),
                                                G_SIGNAL_RUN_FIRST,
@@ -767,12 +767,12 @@ nm_device_wifi_class_init(NMDeviceWifiClass *klass)
                                                G_TYPE_OBJECT);
 
     /**
-	 * NMDeviceWifi::access-point-removed:
-	 * @device: the Wi-Fi device that received the signal
-	 * @ap: the removed access point
-	 *
-	 * Notifies that a #NMAccessPoint is removed from the Wi-Fi device.
-	 **/
+     * NMDeviceWifi::access-point-removed:
+     * @device: the Wi-Fi device that received the signal
+     * @ap: the removed access point
+     *
+     * Notifies that a #NMAccessPoint is removed from the Wi-Fi device.
+     **/
     signals[ACCESS_POINT_REMOVED] = g_signal_new("access-point-removed",
                                                  G_OBJECT_CLASS_TYPE(object_class),
                                                  G_SIGNAL_RUN_FIRST,

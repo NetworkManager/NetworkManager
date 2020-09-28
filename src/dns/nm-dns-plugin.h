@@ -26,10 +26,10 @@ typedef struct {
     GObjectClass parent;
 
     /* Called when DNS information is changed.  'configs' is an array
-	 * of pointers to NMDnsIPConfigData sorted by priority.
-	 * 'global_config' is the optional global DNS
-	 * configuration.
-	 */
+     * of pointers to NMDnsIPConfigData sorted by priority.
+     * 'global_config' is the optional global DNS
+     * configuration.
+     */
     gboolean (*update)(NMDnsPlugin *            self,
                        const NMGlobalDnsConfig *global_config,
                        const CList *            ip_config_lst_head,
@@ -41,9 +41,9 @@ typedef struct {
     const char *plugin_name;
 
     /* Types should set to TRUE if they start a local caching nameserver
-	 * that listens on localhost and would block any other local caching
-	 * nameserver from operating.
-	 */
+     * that listens on localhost and would block any other local caching
+     * nameserver from operating.
+     */
     bool is_caching : 1;
 
 } NMDnsPluginClass;

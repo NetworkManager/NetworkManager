@@ -304,12 +304,12 @@ nm_device_tun_class_init(NMDeviceTunClass *gre_class)
     device_class->get_setting_type      = get_setting_type;
 
     /**
-	 * NMDeviceTun:mode:
-	 *
-	 * The tunnel mode, either "tun" or "tap".
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceTun:mode:
+     *
+     * The tunnel mode, either "tun" or "tap".
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_MODE] = g_param_spec_string(NM_DEVICE_TUN_MODE,
                                                     "",
                                                     "",
@@ -317,12 +317,12 @@ nm_device_tun_class_init(NMDeviceTunClass *gre_class)
                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceTun:owner:
-	 *
-	 * The uid of the tunnel owner, or -1 if it has no owner.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceTun:owner:
+     *
+     * The uid of the tunnel owner, or -1 if it has no owner.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_OWNER] = g_param_spec_int64(NM_DEVICE_TUN_OWNER,
                                                     "",
                                                     "",
@@ -332,12 +332,12 @@ nm_device_tun_class_init(NMDeviceTunClass *gre_class)
                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceTun:group:
-	 *
-	 * The gid of the tunnel group, or -1 if it has no owner.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceTun:group:
+     *
+     * The gid of the tunnel group, or -1 if it has no owner.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_GROUP] = g_param_spec_int64(NM_DEVICE_TUN_GROUP,
                                                     "",
                                                     "",
@@ -347,13 +347,13 @@ nm_device_tun_class_init(NMDeviceTunClass *gre_class)
                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceTun:no-pi:
-	 *
-	 * The tunnel's "TUN_NO_PI" flag; true if no protocol info is
-	 * prepended to the tunnel packets.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceTun:no-pi:
+     *
+     * The tunnel's "TUN_NO_PI" flag; true if no protocol info is
+     * prepended to the tunnel packets.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_NO_PI] = g_param_spec_boolean(NM_DEVICE_TUN_NO_PI,
                                                       "",
                                                       "",
@@ -361,13 +361,13 @@ nm_device_tun_class_init(NMDeviceTunClass *gre_class)
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceTun:vnet-hdr:
-	 *
-	 * The tunnel's "TUN_VNET_HDR" flag; true if the tunnel packets
-	 * include a virtio network header.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceTun:vnet-hdr:
+     *
+     * The tunnel's "TUN_VNET_HDR" flag; true if the tunnel packets
+     * include a virtio network header.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_VNET_HDR] = g_param_spec_boolean(NM_DEVICE_TUN_VNET_HDR,
                                                          "",
                                                          "",
@@ -375,14 +375,14 @@ nm_device_tun_class_init(NMDeviceTunClass *gre_class)
                                                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceTun:multi-queue:
-	 *
-	 * The tunnel's "TUN_TAP_MQ" flag; true if callers can connect to
-	 * the tap device multiple times, for multiple send/receive
-	 * queues.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceTun:multi-queue:
+     *
+     * The tunnel's "TUN_TAP_MQ" flag; true if callers can connect to
+     * the tap device multiple times, for multiple send/receive
+     * queues.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_MULTI_QUEUE] =
         g_param_spec_boolean(NM_DEVICE_TUN_MULTI_QUEUE,
                              "",

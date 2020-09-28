@@ -576,8 +576,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     if (priv->parent) {
         if (nm_utils_is_uuid(priv->parent)) {
             /* If we have an NMSettingConnection:master with slave-type="vlan",
-			 * then it must be the same UUID.
-			 */
+             * then it must be the same UUID.
+             */
             if (s_con) {
                 const char *master = NULL, *slave_type = NULL;
 
@@ -612,8 +612,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     } else {
         /* If parent is NULL, the parent must be specified via
-		 * NMSettingWired:mac-address.
-		 */
+         * NMSettingWired:mac-address.
+         */
         if (connection && (!s_wired || !nm_setting_wired_get_mac_address(s_wired))) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
@@ -647,8 +647,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (connection && !s_wired) {
         /* technically, a VLAN setting does not require an ethernet setting. However,
-		 * the ifcfg-rh reader always adds a ethernet setting when reading a vlan setting.
-		 * Thus, in order to be consistent, always add one via normalization. */
+         * the ifcfg-rh reader always adds a ethernet setting when reading a vlan setting.
+         * Thus, in order to be consistent, always add one via normalization. */
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
@@ -679,7 +679,7 @@ _override_flags_not_set(NMSetting *         setting,
                         GError **           error)
 {
     /* we changed the default value for FLAGS. When an older client
-	 * doesn't serialize the property, we assume it is the old default. */
+     * doesn't serialize the property, we assume it is the old default. */
     g_object_set(G_OBJECT(setting), NM_SETTING_VLAN_FLAGS, (NMVlanFlags) 0, NULL);
     return TRUE;
 }
@@ -835,19 +835,19 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
     setting_class->verify = verify;
 
     /**
-	 * NMSettingVlan:parent:
-	 *
-	 * If given, specifies the parent interface name or parent connection UUID
-	 * from which this VLAN interface should be created.  If this property is
-	 * not specified, the connection must contain an #NMSettingWired setting
-	 * with a #NMSettingWired:mac-address property.
-	 **/
+     * NMSettingVlan:parent:
+     *
+     * If given, specifies the parent interface name or parent connection UUID
+     * from which this VLAN interface should be created.  If this property is
+     * not specified, the connection must contain an #NMSettingWired setting
+     * with a #NMSettingWired:mac-address property.
+     **/
     /* ---ifcfg-rh---
-	 * property: parent
-	 * variable: DEVICE or PHYSDEV
-	 * description: Parent interface of the VLAN.
-	 * ---end---
-	 */
+     * property: parent
+     * variable: DEVICE or PHYSDEV
+     * description: Parent interface of the VLAN.
+     * ---end---
+     */
     obj_properties[PROP_PARENT] = g_param_spec_string(
         NM_SETTING_VLAN_PARENT,
         "",
@@ -856,17 +856,17 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingVlan:id:
-	 *
-	 * The VLAN identifier that the interface created by this connection should
-	 * be assigned. The valid range is from 0 to 4094, without the reserved id 4095.
-	 **/
+     * NMSettingVlan:id:
+     *
+     * The VLAN identifier that the interface created by this connection should
+     * be assigned. The valid range is from 0 to 4094, without the reserved id 4095.
+     **/
     /* ---ifcfg-rh---
-	 * property: id
-	 * variable: VLAN_ID or DEVICE
-	 * description: VLAN identifier.
-	 * ---end---
-	 */
+     * property: id
+     * variable: VLAN_ID or DEVICE
+     * description: VLAN identifier.
+     * ---end---
+     */
     obj_properties[PROP_ID] =
         g_param_spec_uint(NM_SETTING_VLAN_ID,
                           "",
@@ -877,27 +877,27 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingVlan:flags:
-	 *
-	 * One or more flags which control the behavior and features of the VLAN
-	 * interface.  Flags include %NM_VLAN_FLAG_REORDER_HEADERS (reordering of
-	 * output packet headers), %NM_VLAN_FLAG_GVRP (use of the GVRP protocol),
-	 * and %NM_VLAN_FLAG_LOOSE_BINDING (loose binding of the interface to its
-	 * master device's operating state). %NM_VLAN_FLAG_MVRP (use of the MVRP
-	 * protocol).
-	 *
-	 * The default value of this property is NM_VLAN_FLAG_REORDER_HEADERS,
-	 * but it used to be 0. To preserve backward compatibility, the default-value
-	 * in the D-Bus API continues to be 0 and a missing property on D-Bus
-	 * is still considered as 0.
-	 **/
+     * NMSettingVlan:flags:
+     *
+     * One or more flags which control the behavior and features of the VLAN
+     * interface.  Flags include %NM_VLAN_FLAG_REORDER_HEADERS (reordering of
+     * output packet headers), %NM_VLAN_FLAG_GVRP (use of the GVRP protocol),
+     * and %NM_VLAN_FLAG_LOOSE_BINDING (loose binding of the interface to its
+     * master device's operating state). %NM_VLAN_FLAG_MVRP (use of the MVRP
+     * protocol).
+     *
+     * The default value of this property is NM_VLAN_FLAG_REORDER_HEADERS,
+     * but it used to be 0. To preserve backward compatibility, the default-value
+     * in the D-Bus API continues to be 0 and a missing property on D-Bus
+     * is still considered as 0.
+     **/
     /* ---ifcfg-rh---
-	 * property: flags
-	 * variable: GVRP, MVRP, VLAN_FLAGS
-	 * values: "yes or "no" for GVRP and MVRP; "LOOSE_BINDING" and "NO_REORDER_HDR" for VLAN_FLAGS
-	 * description: VLAN flags.
-	 * ---end---
-	 */
+     * property: flags
+     * variable: GVRP, MVRP, VLAN_FLAGS
+     * values: "yes or "no" for GVRP and MVRP; "LOOSE_BINDING" and "NO_REORDER_HDR" for VLAN_FLAGS
+     * description: VLAN flags.
+     * ---end---
+     */
     obj_properties[PROP_FLAGS] = g_param_spec_flags(NM_SETTING_VLAN_FLAGS,
                                                     "",
                                                     "",
@@ -913,19 +913,19 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
                                   .missing_from_dbus_fcn = _override_flags_not_set, ));
 
     /**
-	 * NMSettingVlan:ingress-priority-map:
-	 *
-	 * For incoming packets, a list of mappings from 802.1p priorities to Linux
-	 * SKB priorities.  The mapping is given in the format "from:to" where both
-	 * "from" and "to" are unsigned integers, ie "7:3".
-	 **/
+     * NMSettingVlan:ingress-priority-map:
+     *
+     * For incoming packets, a list of mappings from 802.1p priorities to Linux
+     * SKB priorities.  The mapping is given in the format "from:to" where both
+     * "from" and "to" are unsigned integers, ie "7:3".
+     **/
     /* ---ifcfg-rh---
-	 * property: ingress-priority-map
-	 * variable: VLAN_INGRESS_PRIORITY_MAP
-	 * description: Ingress priority mapping.
-	 * example: VLAN_INGRESS_PRIORITY_MAP=4:2,3:5
-	 * ---end---
-	 */
+     * property: ingress-priority-map
+     * variable: VLAN_INGRESS_PRIORITY_MAP
+     * description: Ingress priority mapping.
+     * example: VLAN_INGRESS_PRIORITY_MAP=4:2,3:5
+     * ---end---
+     */
     obj_properties[PROP_INGRESS_PRIORITY_MAP] = g_param_spec_boxed(
         NM_SETTING_VLAN_INGRESS_PRIORITY_MAP,
         "",
@@ -934,19 +934,19 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingVlan:egress-priority-map:
-	 *
-	 * For outgoing packets, a list of mappings from Linux SKB priorities to
-	 * 802.1p priorities.  The mapping is given in the format "from:to" where
-	 * both "from" and "to" are unsigned integers, ie "7:3".
-	 **/
+     * NMSettingVlan:egress-priority-map:
+     *
+     * For outgoing packets, a list of mappings from Linux SKB priorities to
+     * 802.1p priorities.  The mapping is given in the format "from:to" where
+     * both "from" and "to" are unsigned integers, ie "7:3".
+     **/
     /* ---ifcfg-rh---
-	 * property: egress-priority-map
-	 * variable: VLAN_EGRESS_PRIORITY_MAP
-	 * description: Egress priority mapping.
-	 * example: VLAN_EGRESS_PRIORITY_MAP=5:4,4:1,3:7
-	 * ---end---
-	 */
+     * property: egress-priority-map
+     * variable: VLAN_EGRESS_PRIORITY_MAP
+     * description: Egress priority mapping.
+     * example: VLAN_EGRESS_PRIORITY_MAP=5:4,4:1,3:7
+     * ---end---
+     */
     obj_properties[PROP_EGRESS_PRIORITY_MAP] = g_param_spec_boxed(
         NM_SETTING_VLAN_EGRESS_PRIORITY_MAP,
         "",
@@ -955,21 +955,21 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /* ---ifcfg-rh---
-	 * property: interface-name
-	 * variable: PHYSDEV and VLAN_ID, or DEVICE
-	 * description: VLAN interface name.
-	 *   If all variables are set, parent device from PHYSDEV takes precedence over DEVICE,
-	 *   but VLAN id from DEVICE takes precedence over VLAN_ID.
-	 * example: PHYSDEV=eth0, VLAN_ID=12; or DEVICE=eth0.12
-	 * ---end---
-	 * ---dbus---
-	 * property: interface-name
-	 * format: string
-	 * description: Deprecated in favor of connection.interface-name, but can
-	 *   be used for backward-compatibility with older daemons, to set the
-	 *   vlan's interface name.
-	 * ---end---
-	 */
+     * property: interface-name
+     * variable: PHYSDEV and VLAN_ID, or DEVICE
+     * description: VLAN interface name.
+     *   If all variables are set, parent device from PHYSDEV takes precedence over DEVICE,
+     *   but VLAN id from DEVICE takes precedence over VLAN_ID.
+     * example: PHYSDEV=eth0, VLAN_ID=12; or DEVICE=eth0.12
+     * ---end---
+     * ---dbus---
+     * property: interface-name
+     * format: string
+     * description: Deprecated in favor of connection.interface-name, but can
+     *   be used for backward-compatibility with older daemons, to set the
+     *   vlan's interface name.
+     * ---end---
+     */
     _nm_properties_override_dbus(properties_override,
                                  "interface-name",
                                  &nm_sett_info_propert_type_deprecated_interface_name);

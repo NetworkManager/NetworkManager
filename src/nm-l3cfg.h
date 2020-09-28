@@ -27,9 +27,9 @@ typedef enum {
     NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT,
 
     /* NML3Cfg hooks to the NMPlatform signals for link, addresses and routes.
-	 * It re-emits the signal on an idle handler. The purpose is for something
-	 * like NMDevice which is already subscribed to these signals, it can get the
-	 * notifications without also subscribing directly to the platform. */
+     * It re-emits the signal on an idle handler. The purpose is for something
+     * like NMDevice which is already subscribed to these signals, it can get the
+     * notifications without also subscribing directly to the platform. */
     NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE,
 
     _NM_L3_CONFIG_NOTIFY_TYPE_NUM,
@@ -191,26 +191,26 @@ gboolean nm_l3cfg_remove_config_all(NML3Cfg *self, gconstpointer tag, gboolean o
 typedef enum _nm_packed {
 
     /* the NML3Cfg instance tracks with nm_l3cfg_commit_setup_register() the requested commit type.
-	 * Use _NM_L3_CFG_COMMIT_TYPE_AUTO to automatically choose the level as requested. */
+     * Use _NM_L3_CFG_COMMIT_TYPE_AUTO to automatically choose the level as requested. */
     NM_L3_CFG_COMMIT_TYPE_AUTO,
 
     /* Don't touch the interface. */
     NM_L3_CFG_COMMIT_TYPE_NONE,
 
     /* ASSUME means to keep any pre-existing extra routes/addresses, while
-	 * also not adding routes/addresses that are not present yet. This is to
-	 * gracefully take over after restart, where the existing IP configuration
-	 * should not change. */
+     * also not adding routes/addresses that are not present yet. This is to
+     * gracefully take over after restart, where the existing IP configuration
+     * should not change. */
     NM_L3_CFG_COMMIT_TYPE_ASSUME,
 
     /* UPDATE means to add new addresses/routes, while also removing addresses/routes
-	 * that are no longer present (but were previously configured by NetworkManager).
-	 * Routes/addresses that were removed externally won't be re-added, and routes/addresses
-	 * that are added externally won't be removed. */
+     * that are no longer present (but were previously configured by NetworkManager).
+     * Routes/addresses that were removed externally won't be re-added, and routes/addresses
+     * that are added externally won't be removed. */
     NM_L3_CFG_COMMIT_TYPE_UPDATE,
 
     /* This is a full sync. It configures the IP addresses/routes that are indicated,
-	 * while removing the existing ones from the interface. */
+     * while removing the existing ones from the interface. */
     NM_L3_CFG_COMMIT_TYPE_REAPPLY,
 
 } NML3CfgCommitType;

@@ -81,9 +81,9 @@ _parse_endpoint(char *str, guint16 *out_port)
     gint16      port;
 
     /* Like
-	 * - https://git.zx2c4.com/WireGuard/tree/src/tools/config.c?id=5e99a6d43fe2351adf36c786f5ea2086a8fe7ab8#n192
-	 * - https://github.com/systemd/systemd/blob/911649fdd43f3a9158b847947724a772a5a45c34/src/network/netdev/wireguard.c#L614
-	 */
+     * - https://git.zx2c4.com/WireGuard/tree/src/tools/config.c?id=5e99a6d43fe2351adf36c786f5ea2086a8fe7ab8#n192
+     * - https://github.com/systemd/systemd/blob/911649fdd43f3a9158b847947724a772a5a45c34/src/network/netdev/wireguard.c#L614
+     */
 
     g_strstrip(str);
 
@@ -272,12 +272,12 @@ nm_sock_addr_endpoint_get_fixed_sockaddr(NMSockAddrEndpoint *self, gpointer sock
         goto good;
 
     /* See if there is an IPv6 scope-id...
-	 *
-	 * Note that it does not make sense to persist connection profiles to disk,
-	 * that refenrence a scope-id (because the interface's ifindex changes on
-	 * reboot). However, we also support runtime only changes like `nmcli device modify`
-	 * where nothing is persisted to disk. At least in that case, passing a scope-id
-	 * might be reasonable. So, parse that too. */
+     *
+     * Note that it does not make sense to persist connection profiles to disk,
+     * that refenrence a scope-id (because the interface's ifindex changes on
+     * reboot). However, we also support runtime only changes like `nmcli device modify`
+     * where nothing is persisted to disk. At least in that case, passing a scope-id
+     * might be reasonable. So, parse that too. */
     s = strchr(self->host, '%');
     if (!s)
         return FALSE;
@@ -500,11 +500,11 @@ static void __attribute__((constructor)) _nm_utils_init(void)
         return;
 
     /* we don't expect this code to run multiple times, nor on multiple threads.
-	 *
-	 * In practice, it would not be a problem if two threads concurrently try to
-	 * run the initialization code below, all code below itself is thread-safe,
-	 * Hence, a poor-man guard "initialized" above is more than sufficient,
-	 * although it does not guarantee that the code is not run concurrently. */
+     *
+     * In practice, it would not be a problem if two threads concurrently try to
+     * run the initialization code below, all code below itself is thread-safe,
+     * Hence, a poor-man guard "initialized" above is more than sufficient,
+     * although it does not guarantee that the code is not run concurrently. */
 
     bindtextdomain(GETTEXT_PACKAGE, NMLOCALEDIR);
     bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8");
@@ -585,9 +585,9 @@ nm_utils_ssid_to_utf8(const guint8 *ssid, gsize len)
 
     if (!converted) {
         /* If there is still no converted string, the SSID probably
-		 * contains characters not valid in the current locale. Convert
-		 * the string to ASCII instead.
-		 */
+         * contains characters not valid in the current locale. Convert
+         * the string to ASCII instead.
+         */
 
         /* Use the printable range of 0x20-0x7E */
         char *valid_chars = " !\"#$%&'()*+,-./0123456789:;<=>?@"
@@ -1070,8 +1070,8 @@ nm_utils_ap_mode_security_valid(NMUtilsSecurityType type, NMDeviceWifiCapabiliti
         return FALSE;
 
     /* Return TRUE for any security that wpa_supplicant's lightweight AP
-	 * mode can handle: which is open, WEP, and WPA/WPA2 PSK.
-	 */
+     * mode can handle: which is open, WEP, and WPA/WPA2 PSK.
+     */
     switch (type) {
     case NMU_SEC_NONE:
     case NMU_SEC_STATIC_WEP:
@@ -2327,12 +2327,12 @@ static const NMVariantAttributeSpec *const tc_qdisc_fq_codel_spec[] = {
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE("quantum", G_VARIANT_TYPE_UINT32, ),
 
     /* 0x83126E97u is not a valid value (it means "disabled"). We should reject that
-	 * value. Or alternatively, reject all values >= MAX_INT(32). */
+     * value. Or alternatively, reject all values >= MAX_INT(32). */
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE("ce_threshold", G_VARIANT_TYPE_UINT32, ),
 
     /* kernel clamps the value at 2^31. Possibly such values should be rejected from configuration
-	 * as they cannot be configured. Leaving the attribute unspecified causes kernel to choose
-	 * a default (currently 32MB). */
+     * as they cannot be configured. Leaving the attribute unspecified causes kernel to choose
+     * a default (currently 32MB). */
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE("memory_limit", G_VARIANT_TYPE_UINT32, ),
 
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE("ecn", G_VARIANT_TYPE_BOOLEAN, .no_value = TRUE, ),
@@ -2946,10 +2946,10 @@ _nm_sriov_vf_parse_vlans(NMSriovVF *vf, const char *str, GError **error)
         gint64             qos    = -1;
 
         /* we accept leading/trailing whitespace around vlans[1]. Hence
-		 * the nm_str_skip_leading_spaces() and g_strchomp() below.
-		 *
-		 * However, we don't accept any whitespace inside the specifier.
-		 * Hence the NM_STRCHAR_ALL() checks. */
+         * the nm_str_skip_leading_spaces() and g_strchomp() below.
+         *
+         * However, we don't accept any whitespace inside the specifier.
+         * Hence the NM_STRCHAR_ALL() checks. */
 
         params = g_strsplit(nm_str_skip_leading_spaces(vlans[i]), ".", 3);
         if (!params || !params[0] || *params[0] == '\0') {
@@ -3123,7 +3123,7 @@ _nm_utils_uuid_unparse(const NMUuid *uuid, char *out_str /*[37]*/)
 
     if (!out_str) {
         /* for convenience, allow %NULL to indicate that a new
-		 * string should be allocated. */
+         * string should be allocated. */
         out_str = g_malloc(37);
     }
     uuid_unparse_lower(uuid->uuid, out_str);
@@ -3454,7 +3454,7 @@ _nm_utils_check_file(const char *              filename,
     }
 
     /* with check_owner enabled, check that the file belongs to the
-	 * owner or root. */
+     * owner or root. */
     if (check_owner >= 0 && (out_st->st_uid != 0 && (gint64) out_st->st_uid != check_owner)) {
         g_set_error(error,
                     NM_VPN_PLUGIN_ERROR,
@@ -3466,7 +3466,7 @@ _nm_utils_check_file(const char *              filename,
     }
 
     /* with check_owner enabled, check that the file cannot be modified
-	 * by other users (except root). */
+     * by other users (except root). */
     if (check_owner >= 0 && NM_FLAGS_ANY(out_st->st_mode, S_IWGRP | S_IWOTH | S_ISUID)) {
         g_set_error(error,
                     NM_VPN_PLUGIN_ERROR,
@@ -3507,11 +3507,11 @@ _nm_utils_check_module_file(const char *              name,
     }
 
     /* Set special error code if the file doesn't exist.
-	 * The VPN package might be split into separate packages,
-	 * so it could be correct that the plugin file is missing.
-	 *
-	 * Note that nm-applet checks for this error code to fail
-	 * gracefully. */
+     * The VPN package might be split into separate packages,
+     * so it could be correct that the plugin file is missing.
+     *
+     * Note that nm-applet checks for this error code to fail
+     * gracefully. */
     if (!g_file_test(name, G_FILE_TEST_EXISTS)) {
         g_set_error(error,
                     G_FILE_ERROR,
@@ -3532,7 +3532,7 @@ _nm_utils_check_module_file(const char *              name,
 
     if (g_str_has_suffix(name, ".la")) {
         /* g_module_open() treats files that end with .la special.
-		 * We don't want to parse the libtool archive. Just error out. */
+         * We don't want to parse the libtool archive. Just error out. */
         g_set_error(error,
                     NM_VPN_PLUGIN_ERROR,
                     NM_VPN_PLUGIN_ERROR_FAILED,
@@ -3582,7 +3582,7 @@ nm_utils_file_search_in_paths(const char *                      progname,
     g_return_val_if_fail(file_test_flags || predicate, NULL);
 
     /* Only consider @try_first if it is a valid, absolute path. This makes
-	 * it simpler to pass in a path from configure checks. */
+     * it simpler to pass in a path from configure checks. */
     if (try_first && try_first[0] == '/'
         && (file_test_flags == 0 || g_file_test(try_first, file_test_flags))
         && (!predicate || predicate(try_first, user_data)))
@@ -4263,8 +4263,8 @@ nm_utils_hwaddr_matches(gconstpointer hwaddr1,
 
     if (G_UNLIKELY(hwaddr1_len <= 0 || hwaddr1_len > NM_UTILS_HWADDR_LEN_MAX)) {
         /* Only valid addresses can compare equal. In particular,
-		 * addresses that are too long or of zero bytes, never
-		 * compare equal. */
+         * addresses that are too long or of zero bytes, never
+         * compare equal. */
         return FALSE;
     }
 
@@ -4377,18 +4377,18 @@ _nm_utils_hwaddr_cloned_data_synth(const NMSettInfoSetting *               sett_
     g_object_get(setting, "cloned-mac-address", &addr, NULL);
 
     /* Before introducing the extended "cloned-mac-address" (and its D-Bus
-	 * field "assigned-mac-address"), libnm's _nm_utils_hwaddr_to_dbus()
-	 * would drop invalid values as it was unable to serialize them.
-	 *
-	 * Now, we would like to send invalid values as "assigned-mac-address"
-	 * over D-Bus and let the server reject them.
-	 *
-	 * However, clients used to set the cloned-mac-address property
-	 * to "" and it just worked as the value was not serialized in
-	 * an ill form.
-	 *
-	 * To preserve that behavior, serialize "" as NULL.
-	 */
+     * field "assigned-mac-address"), libnm's _nm_utils_hwaddr_to_dbus()
+     * would drop invalid values as it was unable to serialize them.
+     *
+     * Now, we would like to send invalid values as "assigned-mac-address"
+     * over D-Bus and let the server reject them.
+     *
+     * However, clients used to set the cloned-mac-address property
+     * to "" and it just worked as the value was not serialized in
+     * an ill form.
+     *
+     * To preserve that behavior, serialize "" as NULL.
+     */
 
     return addr && addr[0] ? g_variant_new_take_string(g_steal_pointer(&addr)) : NULL;
 }
@@ -4547,8 +4547,8 @@ static char *
 _split_word(char *s)
 {
     /* takes @s and truncates the string on the first white-space.
-	 * then it returns the first word afterwards (again seeking
-	 * over leading white-space). */
+     * then it returns the first word afterwards (again seeking
+     * over leading white-space). */
     for (; s[0]; s++) {
         if (g_ascii_isspace(s[0])) {
             s[0] = '\0';
@@ -4577,7 +4577,7 @@ _nm_utils_generate_mac_address_mask_parse(const char *        value,
 
     if (!value || !*value) {
         /* NULL and "" are valid values and both mean the default
-		 * "q */
+         * "q */
         if (out_mask) {
             memset(out_mask, 0, sizeof(*out_mask));
             out_mask->ether_addr_octet[0] |= 0x02;
@@ -4766,10 +4766,10 @@ const char *
 nm_utils_inet4_ntop(in_addr_t inaddr, char *dst)
 {
     /* relying on the static buffer (by leaving @dst as %NULL) is discouraged.
-	 * Don't do that!
-	 *
-	 * However, still support it to be lenient against mistakes and because
-	 * this is public API of libnm. */
+     * Don't do that!
+     *
+     * However, still support it to be lenient against mistakes and because
+     * this is public API of libnm. */
     return _nm_utils_inet4_ntop(inaddr, dst ?: _nm_utils_inet_ntop_buffer);
 }
 
@@ -4796,10 +4796,10 @@ const char *
 nm_utils_inet6_ntop(const struct in6_addr *in6addr, char *dst)
 {
     /* relying on the static buffer (by leaving @dst as %NULL) is discouraged.
-	 * Don't do that!
-	 *
-	 * However, still support it to be lenient against mistakes and because
-	 * this is public API of libnm. */
+     * Don't do that!
+     *
+     * However, still support it to be lenient against mistakes and because
+     * this is public API of libnm. */
     g_return_val_if_fail(in6addr, NULL);
     return _nm_utils_inet6_ntop(in6addr, dst ?: _nm_utils_inet_ntop_buffer);
 }
@@ -5081,8 +5081,8 @@ _nm_utils_strstrdictkey_create(const char *v1, const char *v2)
         return g_malloc0(1);
 
     /* we need to distinguish between ("",NULL) and (NULL,"").
-	 * Thus, in @type we encode which strings we have present
-	 * as not-NULL. */
+     * Thus, in @type we encode which strings we have present
+     * as not-NULL. */
     if (v1) {
         type |= STRSTRDICTKEY_V1_SET;
         l1 = strlen(v1) + 1;
@@ -5367,7 +5367,7 @@ nm_utils_is_json_object(const char *str, GError **error)
     }
 
     /* valid JSON (depending on the definition) can also be a literal.
-	 * Here we only allow objects. */
+     * Here we only allow objects. */
     if (!nm_json_is_object(json)) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
@@ -5706,9 +5706,9 @@ nm_utils_get_timestamp_msec(void)
 
     if (ts == -EINVAL) {
         /* The fallback to CLOCK_MONOTONIC is taken only if we're running on a
-		 * criminally old kernel, prior to 2.6.39 (released on 18 May, 2011).
-		 * That happens during buildcheck on old builders, we don't expect to
-		 * be actually runs on kernels that old. */
+         * criminally old kernel, prior to 2.6.39 (released on 18 May, 2011).
+         * That happens during buildcheck on old builders, we don't expect to
+         * be actually runs on kernels that old. */
         ts = nm_utils_clock_gettime_msec(CLOCK_MONOTONIC);
         if (ts >= 0)
             return ts;

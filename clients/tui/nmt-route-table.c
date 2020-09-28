@@ -272,10 +272,10 @@ nmt_route_table_class_init(NmtRouteTableClass *table_class)
     object_class->finalize     = nmt_route_table_finalize;
 
     /**
-	 * NmtRouteTable:family:
-	 *
-	 * The network address family of the routes, eg %AF_INET
-	 */
+     * NmtRouteTable:family:
+     *
+     * The network address family of the routes, eg %AF_INET
+     */
     g_object_class_install_property(
         object_class,
         PROP_FAMILY,
@@ -287,13 +287,13 @@ nmt_route_table_class_init(NmtRouteTableClass *table_class)
                          -1,
                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtRouteTable:routes:
-	 *
-	 * The array of routes, suitable for binding to #NMSettingIP4Config:routes
-	 * or #NMSettingIP6Config:routes.
-	 *
-	 * Element-type: NMIPRoute
-	 */
+     * NmtRouteTable:routes:
+     *
+     * The array of routes, suitable for binding to #NMSettingIP4Config:routes
+     * or #NMSettingIP6Config:routes.
+     *
+     * Element-type: NMIPRoute
+     */
     g_object_class_install_property(object_class,
                                     PROP_ROUTES,
                                     g_param_spec_boxed("routes",

@@ -216,8 +216,8 @@ parse_ip4(GKeyFile *kf, GVariant **out_props, const char *section, GError **erro
 
     /* search domains */
     /* Use char** for domains. (DBUS_TYPE_G_ARRAY_OF_STRING of NMIP4Config
-	 * becomes G_TYPE_STRV when sending the value over D-Bus)
-	 */
+     * becomes G_TYPE_STRV when sending the value over D-Bus)
+     */
     tmp = g_key_file_get_string(kf, section, "domains", error);
     if (tmp == NULL)
         return FALSE;
@@ -588,7 +588,7 @@ static void
 test_connectivity_changed(void)
 {
     /* These tests will check that the CONNECTIVITY_STATE environment
-	 * variable is only defined for known states, such as 'full'. */
+     * variable is only defined for known states, such as 'full'. */
     test_generic("dispatcher-connectivity-unknown", NULL);
     test_generic("dispatcher-connectivity-full", NULL);
 }
@@ -597,8 +597,8 @@ static void
 test_up_empty_vpn_iface(void)
 {
     /* Test that an empty VPN iface variable, like is passed through D-Bus
-	 * from NM, is ignored by the dispatcher environment construction code.
-	 */
+     * from NM, is ignored by the dispatcher environment construction code.
+     */
     test_generic("dispatcher-up", "");
 }
 

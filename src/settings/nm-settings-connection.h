@@ -27,27 +27,27 @@ typedef enum {
     NM_SETTINGS_CONNECTION_UPDATE_REASON_NONE = 0,
 
     /* with persist-mode != NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY, and
-	 * update tries to update the profile on disk (which can always fail).
-	 * In some cases we want to ignore such failure and proceed. For example,
-	 * when we receive secrets from a secret-agent, we want to update the connection
-	 * at all cost and ignore failures to write them to disk. */
+     * update tries to update the profile on disk (which can always fail).
+     * In some cases we want to ignore such failure and proceed. For example,
+     * when we receive secrets from a secret-agent, we want to update the connection
+     * at all cost and ignore failures to write them to disk. */
     NM_SETTINGS_CONNECTION_UPDATE_REASON_IGNORE_PERSIST_FAILURE = (1u << 0),
 
     /* When updating the profile, force renaming the file on disk. That matters
-	 * only for keyfile plugin. Keyfile prefers a filename based on connection.id.
-	 * When the connection.id changes we might want to rename the file on disk
-	 * (that is, don't overwrite the existing file, but delete it and write it
-	 * with the new name).
-	 * This flag forces such rename. */
+     * only for keyfile plugin. Keyfile prefers a filename based on connection.id.
+     * When the connection.id changes we might want to rename the file on disk
+     * (that is, don't overwrite the existing file, but delete it and write it
+     * with the new name).
+     * This flag forces such rename. */
     NM_SETTINGS_CONNECTION_UPDATE_REASON_FORCE_RENAME = (1u << 1),
 
     /* Usually, changing a profile that is currently active does not immediately
-	 * reapply the changes. The exception are connection.zone and connection.metered
-	 * properties. When this flag is set, then these two properties are reapplied
-	 * right away.
-	 *
-	 * See also %NM_SETTINGS_UPDATE2_FLAG_NO_REAPPLY flag, to prevent partial reapply
-	 * during Update2(). */
+     * reapply the changes. The exception are connection.zone and connection.metered
+     * properties. When this flag is set, then these two properties are reapplied
+     * right away.
+     *
+     * See also %NM_SETTINGS_UPDATE2_FLAG_NO_REAPPLY flag, to prevent partial reapply
+     * during Update2(). */
     NM_SETTINGS_CONNECTION_UPDATE_REASON_REAPPLY_PARTIAL = (1u << 2),
 
     NM_SETTINGS_CONNECTION_UPDATE_REASON_CLEAR_SYSTEM_SECRETS = (1u << 3),
@@ -57,8 +57,8 @@ typedef enum {
     NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_AGENT_SECRETS = (1u << 6),
 
     /* if a profile was greated as default-wired connection for a device, then
-	 * when the user modifies it via D-Bus, the profile should become persisted
-	 * to disk and it the purpose why the profile was created should be forgotten. */
+     * when the user modifies it via D-Bus, the profile should become persisted
+     * to disk and it the purpose why the profile was created should be forgotten. */
     NM_SETTINGS_CONNECTION_UPDATE_REASON_CLEAR_DEFAULT_WIRED = (1u << 7),
 
     NM_SETTINGS_CONNECTION_UPDATE_REASON_BLOCK_AUTOCONNECT = (1u << 8),
@@ -68,49 +68,49 @@ typedef enum {
 typedef enum {
 
     /* if the profile is in-memory, update it in-memory and keep it.
-	 * if the profile is on-disk, update it on-disk, and keep it. */
+     * if the profile is on-disk, update it on-disk, and keep it. */
     NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
 
     /* persist to disk. If the profile is currently in-memory, remove
-	 * it from /run. Depending on the shadowed-storage, the pre-existing
-	 * file is reused when moving the storage.
-	 *
-	 * Corresponds to %NM_SETTINGS_UPDATE2_FLAG_TO_DISK. */
+     * it from /run. Depending on the shadowed-storage, the pre-existing
+     * file is reused when moving the storage.
+     *
+     * Corresponds to %NM_SETTINGS_UPDATE2_FLAG_TO_DISK. */
     NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK,
 
     /* Update in-memory (i.e. persist to /run). If the profile is currently on disk,
-	 * then a reference to the profile is remembered as "shadowed-storage".
-	 * Later, when storing again to persistent storage, the shadowed-storage is
-	 * updated. When deleting the profile, the shadowed-storage is also deleted
-	 * from disk.
-	 *
-	 * Corresponds to %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY. */
+     * then a reference to the profile is remembered as "shadowed-storage".
+     * Later, when storing again to persistent storage, the shadowed-storage is
+     * updated. When deleting the profile, the shadowed-storage is also deleted
+     * from disk.
+     *
+     * Corresponds to %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY. */
     NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
 
     /* Update in-memory (i.e. persist to /run). This is almost like
-	 * %NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY, except the in-memory profile
-	 * remembers not to own the shadowed-storage ("shadowed-owned").
-	 * The difference is that when deleting the in-memory profile, the original
-	 * profile is not deleted but instead the nmmeta tombstone remembers the
-	 * shadowed-storage and re-used it when re-adding the profile.
-	 *
-	 * Corresponds to %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED. */
+     * %NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY, except the in-memory profile
+     * remembers not to own the shadowed-storage ("shadowed-owned").
+     * The difference is that when deleting the in-memory profile, the original
+     * profile is not deleted but instead the nmmeta tombstone remembers the
+     * shadowed-storage and re-used it when re-adding the profile.
+     *
+     * Corresponds to %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED. */
     NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED,
 
     /* Update in-memory (i.e. persist to /run). If the profile is currently on disk,
-	 * delete it from disk.
-	 *
-	 * If the profile is in-memory and has a shadowed-storage, the original profile
-	 * will be deleted from disk.
-	 *
-	 * Corresponds to %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY. */
+     * delete it from disk.
+     *
+     * If the profile is in-memory and has a shadowed-storage, the original profile
+     * will be deleted from disk.
+     *
+     * Corresponds to %NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY. */
     NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY,
 
     /* This only updates the connection in-memory. Note that "in-memory" above
-	 * means to write to keyfile in /run. This mode really means to not notify the
-	 * settings plugin about the change. This should be only used for updating
-	 * secrets.
-	 */
+     * means to write to keyfile in /run. This mode really means to not notify the
+     * settings plugin about the change. This should be only used for updating
+     * secrets.
+     */
     NM_SETTINGS_CONNECTION_PERSIST_MODE_NO_PERSIST,
 
 } NMSettingsConnectionPersistMode;

@@ -155,10 +155,10 @@ _update_s390_subchannels(NMDeviceEthernet *self)
 
     if (priv->subchannels) {
         /* only read the subchannels once. For one, we don't expect them to change
-		 * on multiple invocations. Second, we didn't implement proper reloading.
-		 * Proper reloading might also be complicated, because the subchannels are
-		 * used to match on devices based on a device-spec. Thus, it's not clear
-		 * what it means to change afterwards. */
+         * on multiple invocations. Second, we didn't implement proper reloading.
+         * Proper reloading might also be complicated, because the subchannels are
+         * used to match on devices based on a device-spec. Thus, it's not clear
+         * what it means to change afterwards. */
         return;
     }
 
@@ -570,9 +570,9 @@ supplicant_lnk_timeout_cb(gpointer user_data)
     }
 
     /* Disconnect event during initial authentication and credentials
-	 * ARE checked - we are likely to have wrong key.  Ask the user for
-	 * another one.
-	 */
+     * ARE checked - we are likely to have wrong key.  Ask the user for
+     * another one.
+     */
     if (nm_device_get_state(device) != NM_DEVICE_STATE_CONFIG)
         goto time_out;
 
@@ -640,8 +640,8 @@ supplicant_iface_state_is_completed(NMDeviceEthernet *self, NMSupplicantInterfac
         nm_clear_g_source(&priv->supplicant.con_timeout_id);
 
         /* If this is the initial association during device activation,
-		 * schedule the next activation stage.
-		 */
+         * schedule the next activation stage.
+         */
         if (nm_device_get_state(NM_DEVICE(self)) == NM_DEVICE_STATE_CONFIG) {
             _LOGI(LOGD_DEVICE | LOGD_ETHER,
                   "Activation: (ethernet) Stage 2 of 5 (Device Configure) successful.");
@@ -764,9 +764,9 @@ handle_auth_or_fail(NMDeviceEthernet *self, NMActRequest *req, gboolean new_secr
     _LOGI(LOGD_DEVICE | LOGD_ETHER, "Activation: (ethernet) asking for new secrets");
 
     /* Don't tear down supplicant if the authentication is optional
-	 * because in case of a failure in getting new secrets we want to
-	 * keep the supplicant alive.
-	 */
+     * because in case of a failure in getting new secrets we want to
+     * keep the supplicant alive.
+     */
     if (!wired_auth_is_optional(self))
         supplicant_interface_release(self);
 
@@ -792,17 +792,17 @@ supplicant_connection_timeout_cb(gpointer user_data)
     priv->supplicant.con_timeout_id = 0;
 
     /* Authentication failed; either driver problems, the encryption key is
-	 * wrong, the passwords or certificates were wrong or the Ethernet switch's
-	 * port is not configured for 802.1x. */
+     * wrong, the passwords or certificates were wrong or the Ethernet switch's
+     * port is not configured for 802.1x. */
     _LOGW(LOGD_DEVICE | LOGD_ETHER, "Activation: (ethernet) association took too long.");
 
     req        = nm_device_get_act_request(device);
     connection = nm_act_request_get_settings_connection(req);
 
     /* Ask for new secrets only if we've never activated this connection
-	 * before.  If we've connected before, don't bother the user with dialogs,
-	 * just retry or fail, and if we never connect the user can fix the
-	 * password somewhere else. */
+     * before.  If we've connected before, don't bother the user with dialogs,
+     * just retry or fail, and if we never connect the user can fix the
+     * password somewhere else. */
     if (nm_settings_connection_get_timestamp(connection, &timestamp))
         new_secrets = !timestamp;
 
@@ -977,8 +977,8 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
             NMSettingWired *s_wired;
 
             /* During restart of NetworkManager service we forget the original auto
-			 * negotiation settings. When taking over a device, remember to reset
-			 * the "default" during deactivate. */
+             * negotiation settings. When taking over a device, remember to reset
+             * the "default" during deactivate. */
             s_wired = nm_device_get_applied_setting(device, NM_TYPE_SETTING_WIRED);
             if (s_wired
                 && (nm_setting_wired_get_auto_negotiate(s_wired)
@@ -996,14 +996,14 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     link_negotiation_set(device);
 
     /* If we're re-activating a PPPoE connection a short while after
-	 * a previous PPPoE connection was torn down, wait a bit to allow the
-	 * remote side to handle the disconnection.  Otherwise, the peer may
-	 * get confused and fail to negotiate the new connection. (rh #1023503)
-	 *
-	 * FIXME(shutdown): when exiting, we also need to wait before quitting,
-	 * at least for additional NM_SHUTDOWN_TIMEOUT_MS seconds because
-	 * otherwise after restart the device won't work for the first seconds.
-	 */
+     * a previous PPPoE connection was torn down, wait a bit to allow the
+     * remote side to handle the disconnection.  Otherwise, the peer may
+     * get confused and fail to negotiate the new connection. (rh #1023503)
+     *
+     * FIXME(shutdown): when exiting, we also need to wait before quitting,
+     * at least for additional NM_SHUTDOWN_TIMEOUT_MS seconds because
+     * otherwise after restart the device won't work for the first seconds.
+     */
     if (priv->last_pppoe_time != 0) {
         gint32 delay = nm_utils_get_monotonic_timestamp_sec() - priv->last_pppoe_time;
 
@@ -1238,8 +1238,8 @@ dcb_configure(NMDevice *device)
     }
 
     /* Pause again just in case the device takes the carrier down when
-	 * setting specific DCB attributes.
-	 */
+     * setting specific DCB attributes.
+     */
     _LOGD(LOGD_DCB, "waiting for carrier (postconfig down)");
     priv->dcb_wait       = DCB_WAIT_CARRIER_POSTCONFIG_DOWN;
     priv->dcb_timeout_id = g_timeout_add_seconds(3, dcb_carrier_timeout, device);
@@ -1261,12 +1261,12 @@ dcb_enable(NMDevice *device)
     }
 
     /* Pause for 3 seconds after enabling DCB to let the card reconfigure
-	 * itself.  Drivers will often re-initialize internal settings which
-	 * takes the carrier down for 2 or more seconds.  During this time,
-	 * lldpad will refuse to do anything else with the card since the carrier
-	 * is down.  But NM might get the carrier-down signal long after calling
-	 * "dcbtool dcb on", so we have to first wait for the carrier to go down.
-	 */
+     * itself.  Drivers will often re-initialize internal settings which
+     * takes the carrier down for 2 or more seconds.  During this time,
+     * lldpad will refuse to do anything else with the card since the carrier
+     * is down.  But NM might get the carrier-down signal long after calling
+     * "dcbtool dcb on", so we have to first wait for the carrier to go down.
+     */
     _LOGD(LOGD_DCB, "waiting for carrier (preconfig down)");
     priv->dcb_wait       = DCB_WAIT_CARRIER_PRECONFIG_DOWN;
     priv->dcb_timeout_id = g_timeout_add_seconds(3, dcb_carrier_timeout, device);
@@ -1409,8 +1409,8 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     priv->dcb_handle_carrier_changes = FALSE;
 
     /* 802.1x has to run before any IP configuration since the 802.1x auth
-	 * process opens the port up for normal traffic.
-	 */
+     * process opens the port up for normal traffic.
+     */
     connection_type = nm_setting_connection_get_connection_type(s_con);
     if (nm_streq(connection_type, NM_SETTING_WIRED_SETTING_NAME)) {
         NMSetting8021x *security;
@@ -1585,8 +1585,8 @@ complete_connection(NMDevice *           device,
     s_pppoe = nm_connection_get_setting_pppoe(connection);
 
     /* We can't telepathically figure out the service name or username, so if
-	 * those weren't given, we can't complete the connection.
-	 */
+     * those weren't given, we can't complete the connection.
+     */
     if (s_pppoe && !nm_setting_verify(NM_SETTING(s_pppoe), NULL, error))
         return FALSE;
 
@@ -1597,8 +1597,8 @@ complete_connection(NMDevice *           device,
     }
 
     /* Default to an ethernet-only connection, but if a PPPoE setting was given
-	 * then PPPoE should be our connection type.
-	 */
+     * then PPPoE should be our connection type.
+     */
     nm_utils_complete_generic(
         nm_device_get_platform(device),
         connection,
@@ -1646,7 +1646,7 @@ new_default_connection(NMDevice *self)
         return NULL;
 
     /* Create a stable UUID. The UUID is also the Network_ID for stable-privacy addr-gen-mode,
-	 * thus when it changes we will also generate different IPv6 addresses. */
+     * thus when it changes we will also generate different IPv6 addresses. */
     uuid = _nm_utils_uuid_generate_from_strings("default-wired",
                                                 nm_utils_machine_id_str(),
                                                 defname,
@@ -1729,8 +1729,8 @@ update_connection(NMDevice *device, NMConnection *connection)
                  NULL);
 
     /* If the device reports a permanent address, use that for the MAC address
-	 * and the current MAC, if different, is the cloned MAC.
-	 */
+     * and the current MAC, if different, is the cloned MAC.
+     */
     perm_hw_addr = nm_device_get_permanent_hw_address_full(device, TRUE, &perm_hw_addr_is_fake);
     if (perm_hw_addr && !perm_hw_addr_is_fake) {
         g_object_set(s_wired, NM_SETTING_WIRED_MAC_ADDRESS, perm_hw_addr, NULL);

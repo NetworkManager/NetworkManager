@@ -10,7 +10,7 @@
 
 typedef struct _NMUtilsEnumValueInfo {
     /* currently, this is only used for _nm_utils_enum_from_str_full() to
-	 * declare additional aliases for values. */
+     * declare additional aliases for values. */
     const char *nick;
     int         value;
 } NMUtilsEnumValueInfo;

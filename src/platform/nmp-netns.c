@@ -157,7 +157,7 @@ _netns_stack_get_impl(void)
     _netns_stack = s;
 
     /* at the bottom of the stack we must try to create a netns instance
-	 * that we never pop. It's the base to which we need to return. */
+     * that we never pop. It's the base to which we need to return. */
     netns = _netns_new(&error);
     if (!netns) {
         _LOGE(NULL, "failed to create initial netns: %s", error->message);
@@ -168,8 +168,8 @@ _netns_stack_get_impl(void)
     _stack_push(s, netns, _CLONE_NS_ALL);
 
     /* finally, register a destructor function to cleanup the array. If we fail
-	 * to do so, we will leak NMPNetns instances (and their file descriptor) when the
-	 * thread exits. */
+     * to do so, we will leak NMPNetns instances (and their file descriptor) when the
+     * thread exits. */
     if (pthread_key_create(&key, (void (*)(void *)) g_array_unref) != 0)
         _LOGE(NULL, "failure to initialize thread-local storage");
     else if (pthread_setspecific(key, s) != 0)
@@ -197,7 +197,7 @@ _stack_current_netns(GArray *netns_stack, int ns_types)
     nm_assert(netns_stack && netns_stack->len > 0);
 
     /* we search the stack top-down to find the netns that has
-	 * all @ns_types set. */
+     * all @ns_types set. */
     for (j = netns_stack->len; ns_types && j >= 1;) {
         NetnsInfo *info;
 
@@ -221,7 +221,7 @@ _stack_current_ns_types(GArray *netns_stack, NMPNetns *netns, int ns_types)
     nm_assert(netns_stack && netns_stack->len > 0);
 
     /* we search the stack top-down to check which of @ns_types
-	 * are already set to @netns. */
+     * are already set to @netns. */
     for (j = netns_stack->len; ns_types && j >= 1;) {
         NetnsInfo *info;
 
@@ -508,7 +508,7 @@ nmp_netns_new(void)
 
     if (!_stack_peek(netns_stack)) {
         /* there are no netns instances. We cannot create a new one
-		 * (because after unshare we couldn't return to the original one). */
+         * (because after unshare we couldn't return to the original one). */
         errno = ENOTSUP;
         return NULL;
     }

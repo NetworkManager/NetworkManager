@@ -209,10 +209,10 @@ nm_device_team_class_init(NMDeviceTeamClass *klass)
     device_class->get_setting_type      = get_setting_type;
 
     /**
-	 * NMDeviceTeam:carrier:
-	 *
-	 * Whether the device has carrier.
-	 **/
+     * NMDeviceTeam:carrier:
+     *
+     * Whether the device has carrier.
+     **/
     obj_properties[PROP_CARRIER] = g_param_spec_boolean(NM_DEVICE_TEAM_CARRIER,
                                                         "",
                                                         "",
@@ -220,10 +220,10 @@ nm_device_team_class_init(NMDeviceTeamClass *klass)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceTeam:slaves: (type GPtrArray(NMDevice))
-	 *
-	 * The devices enslaved to the team device.
-	 **/
+     * NMDeviceTeam:slaves: (type GPtrArray(NMDevice))
+     *
+     * The devices enslaved to the team device.
+     **/
     obj_properties[PROP_SLAVES] = g_param_spec_boxed(NM_DEVICE_TEAM_SLAVES,
                                                      "",
                                                      "",
@@ -231,12 +231,12 @@ nm_device_team_class_init(NMDeviceTeamClass *klass)
                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceTeam:config:
-	 *
-	 * The current JSON configuration of the device.
-	 *
-	 * Since: 1.4
-	 **/
+     * NMDeviceTeam:config:
+     *
+     * The current JSON configuration of the device.
+     *
+     * Since: 1.4
+     **/
     obj_properties[PROP_CONFIG] = g_param_spec_string(NM_DEVICE_TEAM_CONFIG,
                                                       "",
                                                       "",

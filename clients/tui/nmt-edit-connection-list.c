@@ -428,11 +428,11 @@ nmt_edit_connection_list_class_init(NmtEditConnectionListClass *list_class)
     /* signals */
 
     /**
-	 * NmtEditConnectionList::add-connection:
-	 * @list: the #NmtEditConnectionList
-	 *
-	 * Emitted when the user clicks the list's "Add" button.
-	 */
+     * NmtEditConnectionList::add-connection:
+     * @list: the #NmtEditConnectionList
+     *
+     * Emitted when the user clicks the list's "Add" button.
+     */
     signals[ADD_CONNECTION] =
         g_signal_new("add-connection",
                      G_OBJECT_CLASS_TYPE(object_class),
@@ -445,13 +445,13 @@ nmt_edit_connection_list_class_init(NmtEditConnectionListClass *list_class)
                      0);
 
     /**
-	 * NmtEditConnectionList::edit-connection:
-	 * @list: the #NmtEditConnectionList
-	 * @connection: the connection to edit
-	 *
-	 * Emitted when the user clicks the list's "Edit" button, or
-	 * hits "Return" on the listbox.
-	 */
+     * NmtEditConnectionList::edit-connection:
+     * @list: the #NmtEditConnectionList
+     * @connection: the connection to edit
+     *
+     * Emitted when the user clicks the list's "Edit" button, or
+     * hits "Return" on the listbox.
+     */
     signals[EDIT_CONNECTION] =
         g_signal_new("edit-connection",
                      G_OBJECT_CLASS_TYPE(object_class),
@@ -465,12 +465,12 @@ nmt_edit_connection_list_class_init(NmtEditConnectionListClass *list_class)
                      NM_TYPE_CONNECTION);
 
     /**
-	 * NmtEditConnectionList::remove-connection:
-	 * @list: the #NmtEditConnectionList
-	 * @connection: the connection to remove
-	 *
-	 * Emitted when the user clicks the list's "Delete" button.
-	 */
+     * NmtEditConnectionList::remove-connection:
+     * @list: the #NmtEditConnectionList
+     * @connection: the connection to remove
+     *
+     * Emitted when the user clicks the list's "Delete" button.
+     */
     signals[REMOVE_CONNECTION] =
         g_signal_new("remove-connection",
                      G_OBJECT_CLASS_TYPE(object_class),
@@ -486,12 +486,12 @@ nmt_edit_connection_list_class_init(NmtEditConnectionListClass *list_class)
     /* properties */
 
     /**
-	 * NmtEditConnectionList:grouped:
-	 *
-	 * If %TRUE, connections should be grouped by type, with headers
-	 * indicating the types (as in the main connection list). If %FALSE,
-	 * they will not be grouped (as in slave connection lists).
-	 */
+     * NmtEditConnectionList:grouped:
+     *
+     * If %TRUE, connections should be grouped by type, with headers
+     * indicating the types (as in the main connection list). If %FALSE,
+     * they will not be grouped (as in slave connection lists).
+     */
     g_object_class_install_property(
         object_class,
         PROP_GROUPED,
@@ -502,21 +502,21 @@ nmt_edit_connection_list_class_init(NmtEditConnectionListClass *list_class)
                              G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 
     /**
-	 * NmtEditConnectionListFilter:
-	 * @list: the #NmtEditConnectionList
-	 * @connection: an #NMConnection
-	 * @user_data: the user data
-	 *
-	 * Decides whether @connection should be displayed in @list.
-	 *
-	 * Returns: %TRUE or %FALSE
-	 */
+     * NmtEditConnectionListFilter:
+     * @list: the #NmtEditConnectionList
+     * @connection: an #NMConnection
+     * @user_data: the user data
+     *
+     * Decides whether @connection should be displayed in @list.
+     *
+     * Returns: %TRUE or %FALSE
+     */
     /**
-	 * NmtEditConnectionList:connection-filter:
-	 *
-	 * A callback function for filtering which connections appear in
-	 * the list.
-	 */
+     * NmtEditConnectionList:connection-filter:
+     *
+     * A callback function for filtering which connections appear in
+     * the list.
+     */
     g_object_class_install_property(
         object_class,
         PROP_CONNECTION_FILTER,
@@ -525,10 +525,10 @@ nmt_edit_connection_list_class_init(NmtEditConnectionListClass *list_class)
                              "",
                              G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtEditConnectionList:connection-filter-data:
-	 *
-	 * Data for the #NmtEditConnectionList:connection-filter.
-	 */
+     * NmtEditConnectionList:connection-filter-data:
+     *
+     * Data for the #NmtEditConnectionList:connection-filter.
+     */
     g_object_class_install_property(
         object_class,
         PROP_CONNECTION_FILTER_DATA,
@@ -538,11 +538,11 @@ nmt_edit_connection_list_class_init(NmtEditConnectionListClass *list_class)
                              G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 
     /**
-	 * NmtEditConnectionList:extra-widget:
-	 *
-	 * An extra button widget to display at the bottom of the button
-	 * box.
-	 */
+     * NmtEditConnectionList:extra-widget:
+     *
+     * An extra button widget to display at the bottom of the button
+     * box.
+     */
     g_object_class_install_property(
         object_class,
         PROP_EXTRA_WIDGET,
@@ -553,12 +553,12 @@ nmt_edit_connection_list_class_init(NmtEditConnectionListClass *list_class)
                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 
     /**
-	 * NmtEditConnectionList:connections:
-	 *
-	 * The list of connections in the widget.
-	 *
-	 * Element-Type: #NMConnection
-	 */
+     * NmtEditConnectionList:connections:
+     *
+     * The list of connections in the widget.
+     *
+     * Element-Type: #NMConnection
+     */
     g_object_class_install_property(object_class,
                                     PROP_CONNECTIONS,
                                     g_param_spec_boxed("connections",
@@ -568,10 +568,10 @@ nmt_edit_connection_list_class_init(NmtEditConnectionListClass *list_class)
                                                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
     /**
-	 * NmtEditConnectionList:num-connections:
-	 *
-	 * The number of connections in the widget.
-	 */
+     * NmtEditConnectionList:num-connections:
+     *
+     * The number of connections in the widget.
+     */
     g_object_class_install_property(object_class,
                                     PROP_NUM_CONNECTIONS,
                                     g_param_spec_int("num-connections",

@@ -22,10 +22,10 @@ typedef enum _nm_packed {
     NM_DEVICE_SYS_IFACE_STATE_MANAGED,
 
     /* the REMOVED state applies when the device is manually set to unmanaged
-	 * or the link was externally removed. In both cases, we move the device
-	 * to UNMANAGED state, without touching the link -- be it, because the link
-	 * is already gone or because we want to release it (give it up).
-	 */
+     * or the link was externally removed. In both cases, we move the device
+     * to UNMANAGED state, without touching the link -- be it, because the link
+     * is already gone or because we want to release it (give it up).
+     */
     NM_DEVICE_SYS_IFACE_STATE_REMOVED,
 } NMDeviceSysIfaceState;
 
@@ -40,15 +40,15 @@ static inline NMDeviceStateReason
 nm_device_state_reason_check(NMDeviceStateReason reason)
 {
     /* the device-state-reason serves mostly informational purpose during a state
-	 * change. In some cases however, decisions are made based on the reason.
-	 * I tend to think that interpreting the state reason to derive some behaviors
-	 * is confusing, because the cause and effect are so far apart.
-	 *
-	 * This function is here to mark source that inspects the reason to make
-	 * a decision -- contrary to places that set the reason. Thus, by grepping
-	 * for nm_device_state_reason_check() you can find the "effect" to a certain
-	 * reason.
-	 */
+     * change. In some cases however, decisions are made based on the reason.
+     * I tend to think that interpreting the state reason to derive some behaviors
+     * is confusing, because the cause and effect are so far apart.
+     *
+     * This function is here to mark source that inspects the reason to make
+     * a decision -- contrary to places that set the reason. Thus, by grepping
+     * for nm_device_state_reason_check() you can find the "effect" to a certain
+     * reason.
+     */
     return reason;
 }
 
@@ -153,24 +153,24 @@ typedef enum { /*< skip >*/
                NM_DEVICE_CHECK_CON_AVAILABLE_NONE = 0,
 
                /* since NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST is a collection of flags with more fine grained
-	 * parts, this flag in general indicates that this is a user-request. */
+     * parts, this flag in general indicates that this is a user-request. */
                _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST = (1L << 0),
 
                /* we also consider devices which have no carrier but are still waiting for the driver
-	 * to detect carrier. Usually, such devices are not yet available, however for a user-request
-	 * they are. They might fail later if carrier doesn't come. */
+     * to detect carrier. Usually, such devices are not yet available, however for a user-request
+     * they are. They might fail later if carrier doesn't come. */
                _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER = (1L << 1),
 
                /* usually, a profile is only available if the Wi-Fi AP is in range. For an
-	 * explicit user request, we also consider profiles for APs that are not (yet)
-	 * visible. */
+     * explicit user request, we also consider profiles for APs that are not (yet)
+     * visible. */
                _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP = (1L << 2),
 
                /* a device can be marked as unmanaged for various reasons. Some of these reasons
-	 * are authoritative, others not. Non-authoritative reasons can be overruled by
-	 * `nmcli device set $DEVICE managed yes`. Also, for an explicit user activation
-	 * request we may want to consider the device as managed. This flag makes devices
-	 * that are unmanaged appear available. */
+     * are authoritative, others not. Non-authoritative reasons can be overruled by
+     * `nmcli device set $DEVICE managed yes`. Also, for an explicit user activation
+     * request we may want to consider the device as managed. This flag makes devices
+     * that are unmanaged appear available. */
                _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_OVERRULE_UNMANAGED = (1L << 3),
 
                /* a collection of flags, that are commonly set for an explicit user-request. */
@@ -197,9 +197,9 @@ typedef enum { /*< skip >*/
                NM_DEVICE_CHECK_DEV_AVAILABLE_NONE = 0,
 
                /* the device is considered available, even if it has no carrier.
-	 *
-	 * For various device types (software devices) we ignore carrier based
-	 * on the type. So, for them, this flag has no effect anyway. */
+     *
+     * For various device types (software devices) we ignore carrier based
+     * on the type. So, for them, this flag has no effect anyway. */
                _NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER = (1L << 0),
 
                NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST =
@@ -219,17 +219,17 @@ typedef struct _NMDeviceClass {
     const char *connection_type_supported;
 
     /* most device types, can only handle profiles of a particular type. This
-	 * is the connection.type setting, as checked by nm_device_check_connection_compatible() */
+     * is the connection.type setting, as checked by nm_device_check_connection_compatible() */
     const char *connection_type_check_compatible;
 
     const NMLinkType *link_types;
 
     /* if the device MTU is set based on parent's one, this specifies
-	 * a delta in the MTU allowed value due the encapsulation overhead */
+     * a delta in the MTU allowed value due the encapsulation overhead */
     guint16 mtu_parent_delta;
 
     /* Whether the device type is a master-type. This depends purely on the
-	 * type (NMDeviceClass), not the actual device instance. */
+     * type (NMDeviceClass), not the actual device instance. */
     bool is_master : 1;
 
     void (*state_changed)(NMDevice *          device,
@@ -240,22 +240,22 @@ typedef struct _NMDeviceClass {
     void (*link_changed)(NMDevice *self, const NMPlatformLink *pllink);
 
     /**
-	 * create_and_realize():
-	 * @self: the #NMDevice
-	 * @connection: the #NMConnection being activated
-	 * @parent: the parent #NMDevice, if any
-	 * @out_plink: on success, a backing kernel network device if one exists.
-	 *   The returned pointer is owned by platform and only valid until the
-	 *   next platform operation.
-	 * @error: location to store error, or %NULL
-	 *
-	 * Create any backing resources (kernel devices, etc) required for this
-	 * device to activate @connection.  If the device is backed by a kernel
-	 * network device, that device should be returned in @out_plink after
-	 * being created.
-	 *
-	 * Returns: %TRUE on success, %FALSE on error
-	 */
+     * create_and_realize():
+     * @self: the #NMDevice
+     * @connection: the #NMConnection being activated
+     * @parent: the parent #NMDevice, if any
+     * @out_plink: on success, a backing kernel network device if one exists.
+     *   The returned pointer is owned by platform and only valid until the
+     *   next platform operation.
+     * @error: location to store error, or %NULL
+     *
+     * Create any backing resources (kernel devices, etc) required for this
+     * device to activate @connection.  If the device is backed by a kernel
+     * network device, that device should be returned in @out_plink after
+     * being created.
+     *
+     * Returns: %TRUE on success, %FALSE on error
+     */
     gboolean (*create_and_realize)(NMDevice *             self,
                                    NMConnection *         connection,
                                    NMDevice *             parent,
@@ -263,32 +263,32 @@ typedef struct _NMDeviceClass {
                                    GError **              error);
 
     /**
-	 * realize_start_notify():
-	 * @self: the #NMDevice
-	 * @pllink: the #NMPlatformLink if backed by a kernel netdevice
-	 *
-	 * Hook for derived classes to be notfied during realize_start_setup()
-	 * and perform additional setup.
-	 *
-	 * The default implementation of NMDevice calls link_changed().
-	 */
+     * realize_start_notify():
+     * @self: the #NMDevice
+     * @pllink: the #NMPlatformLink if backed by a kernel netdevice
+     *
+     * Hook for derived classes to be notfied during realize_start_setup()
+     * and perform additional setup.
+     *
+     * The default implementation of NMDevice calls link_changed().
+     */
     void (*realize_start_notify)(NMDevice *self, const NMPlatformLink *pllink);
 
     /**
-	 * unrealize():
-	 * @self: the #NMDevice
-	 *
-	 * Remove the device backing resources.
-	 */
+     * unrealize():
+     * @self: the #NMDevice
+     *
+     * Remove the device backing resources.
+     */
     gboolean (*unrealize)(NMDevice *self, GError **error);
 
     /**
-	 * unrealize_notify():
-	 * @self: the #NMDevice
-	 *
-	 * Hook for derived classes to clear any properties that depend on backing resources
-	 * (kernel devices, etc). This is called by nm_device_unrealize() during unrealization.
-	 */
+     * unrealize_notify():
+     * @self: the #NMDevice
+     *
+     * Hook for derived classes to clear any properties that depend on backing resources
+     * (kernel devices, etc). This is called by nm_device_unrealize() during unrealization.
+     */
     void (*unrealize_notify)(NMDevice *self);
 
     /* Hardware state (IFF_UP) */
@@ -308,14 +308,14 @@ typedef struct _NMDeviceClass {
     void (*set_enabled)(NMDevice *self, gboolean enabled);
 
     /* let the subclass return additional NMPlatformRoutingRule (in form of NMPObject
-	 * pointers) that shall be added to the rules provided by this device.
-	 * The returned GPtrArray will be g_ptr_array_unref()'ed. The subclass may or
-	 * may not keep an additional reference and return this array again and again. */
+     * pointers) that shall be added to the rules provided by this device.
+     * The returned GPtrArray will be g_ptr_array_unref()'ed. The subclass may or
+     * may not keep an additional reference and return this array again and again. */
     GPtrArray *(*get_extra_rules)(NMDevice *self);
 
     /* allow derived classes to override the result of nm_device_autoconnect_allowed().
-	 * If the value changes, the class should call nm_device_emit_recheck_auto_activate(),
-	 * which emits NM_DEVICE_RECHECK_AUTO_ACTIVATE signal. */
+     * If the value changes, the class should call nm_device_emit_recheck_auto_activate(),
+     * which emits NM_DEVICE_RECHECK_AUTO_ACTIVATE signal. */
     gboolean (*get_autoconnect_allowed)(NMDevice *self);
 
     gboolean (*can_auto_connect)(NMDevice *            self,
@@ -327,7 +327,7 @@ typedef struct _NMDeviceClass {
                                   gboolean *         out_force);
 
     /* allow the subclass to overwrite the routing table. This is mainly useful
-	 * to change from partial mode (route-table=0) to full-sync mode (route-table=254). */
+     * to change from partial mode (route-table=0) to full-sync mode (route-table=254). */
     guint32 (*coerce_route_table)(NMDevice *self,
                                   int       addr_family,
                                   guint32   route_table,
@@ -336,24 +336,24 @@ typedef struct _NMDeviceClass {
     const char *(*get_auto_ip_config_method)(NMDevice *self, int addr_family);
 
     /* Checks whether the connection is compatible with the device using
-	 * only the devices type and characteristics.  Does not use any live
-	 * network information like Wi-Fi scan lists etc.
-	 */
+     * only the devices type and characteristics.  Does not use any live
+     * network information like Wi-Fi scan lists etc.
+     */
     gboolean (*check_connection_compatible)(NMDevice *    self,
                                             NMConnection *connection,
                                             GError **     error);
 
     /* Checks whether the connection is likely available to be activated,
-	 * including any live network information like scan lists.  The connection
-	 * is checked against the object defined by @specific_object, if given.
-	 * Returns TRUE if the connection is available; FALSE if not.
-	 *
-	 * The passed @flags affect whether a connection is considered
-	 * available or not. Adding more flags, means the connection is
-	 * *more* available.
-	 *
-	 * Specifying @specific_object can only reduce the availability of a connection.
-	 */
+     * including any live network information like scan lists.  The connection
+     * is checked against the object defined by @specific_object, if given.
+     * Returns TRUE if the connection is available; FALSE if not.
+     *
+     * The passed @flags affect whether a connection is considered
+     * available or not. Adding more flags, means the connection is
+     * *more* available.
+     *
+     * Specifying @specific_object can only reduce the availability of a connection.
+     */
     gboolean (*check_connection_available)(NMDevice *                     self,
                                            NMConnection *                 connection,
                                            NMDeviceCheckConAvailableFlags flags,
@@ -438,8 +438,8 @@ typedef struct _NMDeviceClass {
     gboolean (*set_platform_mtu)(NMDevice *self, guint32 mtu);
 
     /* Control whether to call stage1 and stage2 callbacks also for assuming
-	 * a device or for external activations. In this case, the callback must
-	 * take care not to touch the device's configuration. */
+     * a device or for external activations. In this case, the callback must
+     * take care not to touch the device's configuration. */
     bool act_stage1_prepare_also_for_external_or_assume : 1;
     bool act_stage2_config_also_for_external_or_assume : 1;
 
@@ -460,7 +460,7 @@ static inline const char *
 _nm_device_get_iface(NMDevice *device)
 {
     /* like nm_device_get_iface(), but gracefully accept NULL without
-	 * asserting. */
+     * asserting. */
     return device ? nm_device_get_iface(device) : NULL;
 }
 
@@ -617,7 +617,7 @@ typedef enum { /*< skip >*/
                NM_UNMANAGED_NONE = 0,
 
                /* these flags are authoritative. If one of them is set,
-	 * the device cannot be managed. */
+     * the device cannot be managed. */
                NM_UNMANAGED_SLEEPING      = (1LL << 0),
                NM_UNMANAGED_QUITTING      = (1LL << 1),
                NM_UNMANAGED_PARENT        = (1LL << 2),
@@ -627,7 +627,7 @@ typedef enum { /*< skip >*/
                NM_UNMANAGED_USER_SETTINGS = (1LL << 6),
 
                /* These flags can be non-effective and be overwritten
-	 * by other flags. */
+     * by other flags. */
                NM_UNMANAGED_BY_DEFAULT    = (1LL << 8),
                NM_UNMANAGED_USER_CONF     = (1LL << 9),
                NM_UNMANAGED_USER_UDEV     = (1LL << 10),

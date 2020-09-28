@@ -259,10 +259,10 @@ activate_connection(NMConnection *connection, NMDevice *device, NMObject *specif
     specific_object_path = specific_object ? nm_object_get_path(specific_object) : NULL;
 
     /* There's no way to cancel an nm_client_activate_connection() /
-	 * nm_client_add_and_activate_connection() call, so we always let them
-	 * complete, even if the user hits Esc; they shouldn't normally take long
-	 * to complete anyway.
-	 */
+     * nm_client_add_and_activate_connection() call, so we always let them
+     * complete, even if the user hits Esc; they shouldn't normally take long
+     * to complete anyway.
+     */
 
     nmt_sync_op_init(&op);
     if (connection) {
@@ -306,8 +306,8 @@ activate_connection(NMConnection *connection, NMDevice *device, NMObject *specif
     }
 
     /* Now wait for the connection to actually reach the ACTIVATED state,
-	 * allowing the user to cancel if it takes too long.
-	 */
+     * allowing the user to cancel if it takes too long.
+     */
     nmt_sync_op_init(&op);
     info.active = ac;
     info.device = device;

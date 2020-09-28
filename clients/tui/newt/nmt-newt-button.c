@@ -203,11 +203,11 @@ nmt_newt_button_class_init(NmtNewtButtonClass *button_class)
     /* signals */
 
     /**
-	 * NmtNewtButton::clicked:
-	 * @button: the #NmtNewtButton
-	 *
-	 * Emitted when the button is clicked.
-	 */
+     * NmtNewtButton::clicked:
+     * @button: the #NmtNewtButton
+     *
+     * Emitted when the button is clicked.
+     */
     signals[CLICKED] = g_signal_new("clicked",
                                     G_OBJECT_CLASS_TYPE(object_class),
                                     G_SIGNAL_RUN_FIRST,
@@ -221,10 +221,10 @@ nmt_newt_button_class_init(NmtNewtButtonClass *button_class)
     /* properties */
 
     /**
-	 * NmtNewtButton:label:
-	 *
-	 * The button's label
-	 */
+     * NmtNewtButton:label:
+     *
+     * The button's label
+     */
     g_object_class_install_property(
         object_class,
         PROP_LABEL,

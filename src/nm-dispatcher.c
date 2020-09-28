@@ -942,8 +942,8 @@ nm_dispatcher_call_cancel(NMDispatcherCallId *call_id)
         g_return_if_reached();
 
     /* Canceling just means the callback doesn't get called, so set the
-	 * DispatcherInfo's callback to NULL.
-	 */
+     * DispatcherInfo's callback to NULL.
+     */
     _LOG3D(call_id, "cancelling dispatcher callback action");
     call_id->callback = NULL;
 }

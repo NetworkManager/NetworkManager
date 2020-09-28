@@ -50,15 +50,15 @@ cert_writer(NMConnection *                    connection,
             const char *p = path + strlen(info->keyfile_dir);
 
             /* If the path is rooted in the keyfile directory, just use a
-			 * relative path instead of an absolute one.
-			 */
+             * relative path instead of an absolute one.
+             */
             if (*p == '/') {
                 while (*p == '/')
                     p++;
                 if (p[0]) {
                     /* If @p looks like an integer list, the following detection will fail too and
-					 * we will file:// qualify the path below. We thus avoid writing a path string
-					 * that would be interpreted as legacy binary format by reader. */
+                     * we will file:// qualify the path below. We thus avoid writing a path string
+                     * that would be interpreted as legacy binary format by reader. */
                     tmp = nm_keyfile_detect_unqualified_path_scheme(info->keyfile_dir,
                                                                     p,
                                                                     -1,
@@ -73,7 +73,7 @@ cert_writer(NMConnection *                    connection,
         }
         if (!accepted_path) {
             /* What we are about to write, must also be understood by the reader.
-			 * Otherwise, add a file:// prefix */
+             * Otherwise, add a file:// prefix */
             tmp =
                 nm_keyfile_detect_unqualified_path_scheme(info->keyfile_dir, path, -1, FALSE, NULL);
             if (tmp) {
@@ -115,8 +115,8 @@ cert_writer(NMConnection *                    connection,
         }
 
         /* Write the raw data out to the standard file so that we can use paths
-		 * from now on instead of pushing around the certificate data.
-		 */
+         * from now on instead of pushing around the certificate data.
+         */
         new_path = g_strdup_printf("%s/%s-%s.%s",
                                    info->keyfile_dir,
                                    nm_connection_get_uuid(connection),
@@ -124,9 +124,9 @@ cert_writer(NMConnection *                    connection,
                                    ext);
 
         /* FIXME(keyfile-parse-in-memory): writer must not access/write to the file system before
-		 * being sure that the entire profile can be written and all circumstances are good to
-		 * proceed. That means, while writing we must only collect the blogs in-memory, and write
-		 * them all in the end together (or not at all). */
+         * being sure that the entire profile can be written and all circumstances are good to
+         * proceed. That means, while writing we must only collect the blogs in-memory, and write
+         * them all in the end together (or not at all). */
         success = nm_utils_file_set_contents(new_path,
                                              (const char *) blob_data,
                                              blob_len,
@@ -135,7 +135,7 @@ cert_writer(NMConnection *                    connection,
                                              &local);
         if (success) {
             /* Write the path value to the keyfile.
-			 * We know, that basename(new_path) starts with a UUID, hence no conflict with "data:;base64,"  */
+             * We know, that basename(new_path) starts with a UUID, hence no conflict with "data:;base64,"  */
             nm_keyfile_plugin_kf_set_string(file,
                                             setting_name,
                                             vtable->setting_key,
@@ -152,11 +152,11 @@ cert_writer(NMConnection *                    connection,
         g_free(new_path);
     } else {
         /* scheme_func() returns UNKNOWN in all other cases. The only valid case
-		 * where a scheme is allowed to be UNKNOWN, is unsetting the value. In this
-		 * case, we don't expect the writer to be called, because the default value
-		 * will not be serialized.
-		 * The only other reason for the scheme to be UNKNOWN is an invalid cert.
-		 * But our connection verifies, so that cannot happen either. */
+         * where a scheme is allowed to be UNKNOWN, is unsetting the value. In this
+         * case, we don't expect the writer to be called, because the default value
+         * will not be serialized.
+         * The only other reason for the scheme to be UNKNOWN is an invalid cert.
+         * But our connection verifies, so that cannot happen either. */
         g_return_if_reached();
     }
 }
@@ -395,8 +395,8 @@ _internal_write_connection(NMConnection *                  connection,
     }
 
     /* In case of updating the connection and changing the file path,
-	 * we need to remove the old one, not to end up with two connections.
-	 */
+     * we need to remove the old one, not to end up with two connections.
+     */
     if (existing_path && !existing_path_read_only && !nm_streq(path, existing_path))
         unlink(existing_path);
 

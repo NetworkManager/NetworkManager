@@ -1170,7 +1170,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                        &interface)
         == -1) {
         /* This doesn't really have to be an error; the key might
-		 * be missing if there really are no bridges present. */
+         * be missing if there really are no bridges present. */
         _LOGD("Bad update: %s", json_error.text);
     }
 
@@ -1216,7 +1216,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                       ovs_interface->connection_uuid ?: "");
                 if (g_strcmp0(ovs_interface->type, "internal") == 0) {
                     /* Currently, the factory only creates NMDevices for
-					 * internal interfaces. Ignore the rest. */
+                     * internal interfaces. Ignore the rest. */
                     g_signal_emit(self,
                                   signals[DEVICE_REMOVED],
                                   0,
@@ -1247,7 +1247,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                       ovs_interface->connection_uuid ?: "");
                 if (g_strcmp0(ovs_interface->type, "internal") == 0) {
                     /* Currently, the factory only creates NMDevices for
-					 * internal interfaces. Ignore the rest. */
+                     * internal interfaces. Ignore the rest. */
                     g_signal_emit(self,
                                   signals[DEVICE_ADDED],
                                   0,
@@ -1256,7 +1256,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                 }
             }
             /* The error is a string. No error is indicated by an empty set,
-			 * because why the fuck not: [ "set": [] ] */
+             * because why the fuck not: [ "set": [] ] */
             if (error && json_is_string(error)) {
                 g_signal_emit(self,
                               signals[INTERFACE_FAILED],
@@ -1524,7 +1524,7 @@ ovsdb_got_msg(NMOvsdb *self, json_t *msg)
         priv->num_failures = 0;
 
         /* Don't progress further commands in case the callback hit an error
-		 * and disconnected us. */
+         * and disconnected us. */
         if (!priv->conn)
             return;
 
@@ -1594,8 +1594,8 @@ ovsdb_read_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
     do {
         priv->bufp = 0;
         /* The callback always eats up only up to a single byte. This makes
-		 * it possible for us to identify complete JSON objects in spite of
-		 * us not knowing the length in advance. */
+         * it possible for us to identify complete JSON objects in spite of
+         * us not knowing the length in advance. */
         msg = json_load_callback(_json_callback, self, JSON_DISABLE_EOF_CHECK, &json_error);
         if (msg) {
             ovsdb_got_msg(self, msg);
@@ -1741,7 +1741,7 @@ _monitor_bridges_cb(NMOvsdb *self, json_t *result, GError *error, gpointer user_
     }
 
     /* Treat the first response the same as the subsequent "update"
-	 * messages we eventually get. */
+     * messages we eventually get. */
     ovsdb_got_update(self, result);
 }
 
@@ -1801,7 +1801,7 @@ ovsdb_try_connect(NMOvsdb *self)
     g_object_unref(addr);
 
     /* Queue a monitor call before any other command, ensuring that we have an up
-	 * to date view of existing bridged that we need for add and remove ops. */
+     * to date view of existing bridged that we need for add and remove ops. */
     ovsdb_call_method(self,
                       OVSDB_MONITOR,
                       NULL,

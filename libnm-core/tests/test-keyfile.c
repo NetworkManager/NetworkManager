@@ -45,7 +45,7 @@ do_test_encode_key_full(GKeyFile *  kf,
         g_assert_cmpstr(key2, ==, key);
 
         /* try to add the encoded key to the keyfile. We expect
-		 * no g_critical warning about invalid key. */
+         * no g_critical warning about invalid key. */
         g_key_file_set_value(kf, "group", key, "dummy");
     }
 
@@ -195,8 +195,8 @@ _nm_keyfile_read(GKeyFile *           keyfile,
             NMSettingConnection *s_con;
 
             /* a non-slave connection must have a proxy setting, but
-			 * keyfile reader does not add that (unless a [proxy] section
-			 * is present. */
+             * keyfile reader does not add that (unless a [proxy] section
+             * is present. */
             s_con = nm_connection_get_setting_connection(con);
             if (s_con && !nm_setting_connection_get_master(s_con)
                 && !nm_connection_get_setting_proxy(con))
@@ -223,7 +223,7 @@ _keyfile_convert(NMConnection **       con,
     nm_auto_unref_keyfile GKeyFile *k0_c1_k2 = NULL, *c0_k1 = NULL, *c0_k1_c2_k3 = NULL;
 
     /* convert from @con to @keyfile and check that we can make
-	 * full round trips and obtaining the same result. */
+     * full round trips and obtaining the same result. */
 
     g_assert(con);
     g_assert(keyfile);
@@ -247,8 +247,8 @@ _keyfile_convert(NMConnection **       con,
         k0_c1_k2_c3 = _nm_keyfile_read(k0_c1_k2, keyfile_name, read_handler, read_data, FALSE);
 
         /* It is a expected behavior, that if @k0 contains a relative path ca-cert, @k0_c1 will
-		 * contain that path as relative. But @k0_c1_k2 and @k0_c1_k2_c3 will have absolute paths.
-		 * In this case, hack up @k0_c1_k2_c3 to contain the same relative path. */
+         * contain that path as relative. But @k0_c1_k2 and @k0_c1_k2_c3 will have absolute paths.
+         * In this case, hack up @k0_c1_k2_c3 to contain the same relative path. */
         s1 = nm_connection_get_setting_802_1x(k0_c1);
         s2 = nm_connection_get_setting_802_1x(k0_c1_k2_c3);
         if (s1 || s2) {
@@ -269,8 +269,8 @@ _keyfile_convert(NMConnection **       con,
                     g_assert(p1[0] != '/' && p2[0] == '/');
 
                     /* one of the paths is a relative path and the other is absolute. This is an
-						 * expected difference.
-						 * Make the paths of s2 identical to s1... */
+                         * expected difference.
+                         * Make the paths of s2 identical to s1... */
                     puri  = g_strconcat(NM_SETTING_802_1X_CERT_SCHEME_PREFIX_PATH, p1, NULL);
                     pfile = g_bytes_new(puri, strlen(puri) + 1);
                     g_object_set(s2, NM_SETTING_802_1X_CA_CERT, pfile, NULL);
@@ -301,7 +301,7 @@ _keyfile_convert(NMConnection **       con,
         *con = g_object_ref(k0_c1);
     else {
         /* finally, if both a keyfile and a connection are given, assert that they are equal
-		 * after a round of conversion. */
+         * after a round of conversion. */
         g_assert(_nm_keyfile_equals(c0_k1, k0_c1_k2, TRUE));
         nmtst_assert_connection_equals(k0_c1, FALSE, c0_k1_c2, FALSE);
     }

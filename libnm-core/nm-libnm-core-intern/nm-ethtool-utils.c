@@ -218,8 +218,8 @@ _ASSERT_data(void)
         d = nm_ethtool_data[id];
         if (i > 0) {
             /* since we assert that all optnames are sorted strictly monotonically increasing,
-			 * it also follows that there are no duplicates in the _by_name.
-			 * It also follows, that all names in nm_ethtool_data are unique. */
+             * it also follows that there are no duplicates in the _by_name.
+             * It also follows, that all names in nm_ethtool_data are unique. */
             if (strcmp(nm_ethtool_data[_by_name[i - 1]]->optname, d->optname) >= 0) {
                 g_error("nm_ethtool_data is not sorted asciibetically: %u/%s should be after %u/%s",
                         i - 1,

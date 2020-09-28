@@ -27,7 +27,7 @@
 
 const NMDhcpClientFactory *const _nm_dhcp_manager_factories[6] = {
 /* the order here matters, as we will try the plugins in this order to find
-	 * the first available plugin. */
+     * the first available plugin. */
 
 #if WITH_DHCPCANON
     &_nm_dhcp_client_factory_dhcpcanon,
@@ -108,8 +108,8 @@ get_option(GVariant *options, const char *key)
     bytes = g_variant_get_fixed_array(value, &len, 1);
 
     /* Since the DHCP options come through environment variables, they should
-	 * already be UTF-8 safe, but just make sure.
-	 */
+     * already be UTF-8 safe, but just make sure.
+     */
     converted = g_malloc(len + 1);
     for (s = bytes, d = converted; s < bytes + len; s++, d++) {
         /* Convert NULLs to spaces and non-ASCII characters to ? */
@@ -228,7 +228,7 @@ new_connection_cb(NMDBusManager *     mgr,
     GError *               error = NULL;
 
     /* it is important to register the object during the new-connection signal,
-	 * as this avoids races with the connecting object. */
+     * as this avoids races with the connecting object. */
     registration_id = _dbus_connection_register_object(self, connection, &error);
     if (!registration_id) {
         _LOGE("failure to register %s for connection %p: %s",

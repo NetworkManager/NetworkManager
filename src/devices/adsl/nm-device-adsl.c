@@ -102,9 +102,9 @@ complete_connection(NMDevice *           device,
     NMSettingAdsl *s_adsl;
 
     /*
-	 * We can't telepathically figure out the username, so if
-	 * it wasn't given, we can't complete the connection.
-	 */
+     * We can't telepathically figure out the username, so if
+     * it wasn't given, we can't complete the connection.
+     */
     s_adsl = nm_connection_get_setting_adsl(connection);
     if (s_adsl && !nm_setting_verify(NM_SETTING(s_adsl), NULL, error))
         return FALSE;
@@ -338,10 +338,10 @@ br2684_create_iface(NMDeviceAdsl *self)
     ni.mtu         = 1500;
 
     /* Loop attempting to create an interface that doesn't exist yet.  The
-	 * kernel can create one for us automatically, but due to API issues it
-	 * cannot return that name to us.  Since we want to know the name right
-	 * away, just brute-force it.
-	 */
+     * kernel can create one for us automatically, but due to API issues it
+     * cannot return that name to us.  Since we want to know the name right
+     * away, just brute-force it.
+     */
     while (TRUE) {
         memset(&ni.ifname, 0, sizeof(ni.ifname));
         g_snprintf(ni.ifname, sizeof(ni.ifname), "nas%u", num++);
@@ -552,9 +552,9 @@ adsl_cleanup(NMDeviceAdsl *self)
     nm_clear_g_source(&priv->nas_update_id);
 
     /* FIXME: kernel has no way of explicitly deleting the 'nasX' interface yet,
-	 * so it gets leaked.  It does get destroyed when it's no longer in use,
-	 * but we have no control over that.
-	 */
+     * so it gets leaked.  It does get destroyed when it's no longer in use,
+     * but we have no control over that.
+     */
     priv->nas_ifindex = 0;
     nm_clear_g_free(&priv->nas_ifname);
 }

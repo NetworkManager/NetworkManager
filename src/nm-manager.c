@@ -401,8 +401,8 @@ _connection_is_vpn(NMConnection *connection)
         return nm_streq(type, NM_SETTING_VPN_SETTING_NAME);
 
     /* we have an incomplete (invalid) connection at hand. That can only
-	 * happen during AddAndActivate. Determine whether it's VPN type based
-	 * on the existence of a [vpn] section. */
+     * happen during AddAndActivate. Determine whether it's VPN type based
+     * on the existence of a [vpn] section. */
     return !!nm_connection_get_setting_vpn(connection);
 }
 
@@ -587,9 +587,9 @@ _device_route_metric_data_new(int ifindex, guint32 aspired_metric, guint32 effec
     nm_assert(ifindex > 0);
 
     /* For IPv4, metrics can use the entire uint32 bit range. For IPv6,
-	 * zero is treated like 1024. Since we handle IPv4 and IPv6 identically,
-	 * we cannot allow a zero metric here.
-	 */
+     * zero is treated like 1024. Since we handle IPv4 and IPv6 identically,
+     * we cannot allow a zero metric here.
+     */
     nm_assert(aspired_metric > 0);
     nm_assert(effective_metric == 0 || aspired_metric <= effective_metric);
 
@@ -677,8 +677,8 @@ _device_route_metric_get(NMManager *  self,
                 continue;
             if (!nm_platform_link_get(priv->platform, device_state->ifindex)) {
                 /* we have the entry in the state file, but (currently) no such
-				 * ifindex exists in platform. Most likely the entry is obsolete,
-				 * hence we skip it. */
+                 * ifindex exists in platform. Most likely the entry is obsolete,
+                 * hence we skip it. */
                 continue;
             }
             if (!g_hash_table_add(
@@ -707,13 +707,13 @@ initited:
         n_links        = all_links_head ? all_links_head->len : 0;
 
         /* on systems where a lot of devices are created and go away, the index contains
-		 * a lot of stale entries. We must from time to time clean them up.
-		 *
-		 * Do do this cleanup, whenever we have more entries then 2 times the number of links. */
+         * a lot of stale entries. We must from time to time clean them up.
+         *
+         * Do do this cleanup, whenever we have more entries then 2 times the number of links. */
         if (G_UNLIKELY(g_hash_table_size(priv->device_route_metrics) > NM_MAX(20, n_links * 2))) {
             /* from time to time, we need to do some house-keeping and prune stale entries.
-			 * Otherwise, on a system where interfaces frequently come and go (docker), we
-			 * keep growing this cache for ifindexes that no longer exist. */
+             * Otherwise, on a system where interfaces frequently come and go (docker), we
+             * keep growing this cache for ifindexes that no longer exist. */
             g_hash_table_iter_init(&h_iter, priv->device_route_metrics);
             while (g_hash_table_iter_next(&h_iter, NULL, (gpointer *) &d2)) {
                 if (!nm_platform_link_get(priv->platform, d2->ifindex))
@@ -727,13 +727,13 @@ initited:
         _device_route_metric_data_new(ifindex, nm_device_get_route_metric_default(device_type), 0);
 
     /* unfortunately, there is no stright forward way to lookup all reserved metrics.
-	 * Note, that we don't only have to know which metrics are currently reserved,
-	 * but also, which metrics are now seemingly un-used but caused another reserved
-	 * metric to be bumped. Hence, the naive O(n^2) search :(
-	 *
-	 * Well, technically, since we limit bumping the metric to 50, this entire
-	 * loop runs at most 50 times, so it's still O(n). Let's just say, it's not
-	 * very efficient. */
+     * Note, that we don't only have to know which metrics are currently reserved,
+     * but also, which metrics are now seemingly un-used but caused another reserved
+     * metric to be bumped. Hence, the naive O(n^2) search :(
+     *
+     * Well, technically, since we limit bumping the metric to 50, this entire
+     * loop runs at most 50 times, so it's still O(n). Let's just say, it's not
+     * very efficient. */
 again:
     g_hash_table_iter_init(&h_iter, priv->device_route_metrics);
     while (g_hash_table_iter_next(&h_iter, NULL, (gpointer *) &d2)) {
@@ -744,28 +744,28 @@ again:
         }
         if (!cleaned && !nm_platform_link_get(priv->platform, d2->ifindex)) {
             /* the metric seems taken, but there is no such interface. This entry
-			 * is stale, forget about it. */
+             * is stale, forget about it. */
             g_hash_table_iter_remove(&h_iter);
             continue;
         }
 
         if (d2->effective_metric == G_MAXUINT32) {
             /* we cannot bump the metric any further. Done.
-			 *
-			 * Actually, this can currently not happen because the aspired_metric
-			 * are small numbers and we limit the bumping to 50. Still, for
-			 * completeness... */
+             *
+             * Actually, this can currently not happen because the aspired_metric
+             * are small numbers and we limit the bumping to 50. Still, for
+             * completeness... */
             data->effective_metric = G_MAXUINT32;
             break;
         }
 
         if (d2->effective_metric - data->aspired_metric >= 50) {
             /* as one active interface reserves an entire range of metrics
-			 * (from aspired_metric to effective_metric), that means if you
-			 * alternatingly activate two interfaces, their metric will
-			 * bump each other.
-			 *
-			 * Limit this, bump the metric at most 50 points. */
+             * (from aspired_metric to effective_metric), that means if you
+             * alternatingly activate two interfaces, their metric will
+             * bump each other.
+             *
+             * Limit this, bump the metric at most 50 points. */
             data->effective_metric = data->aspired_metric + 50;
             break;
         }
@@ -905,10 +905,10 @@ active_connection_state_changed(NMActiveConnection *active, GParamSpec *pspec, N
     state = nm_active_connection_get_state(active);
     if (state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
         /* Destroy active connections from an idle handler to ensure that
-		 * their last property change notifications go out, which wouldn't
-		 * happen if we destroyed them immediately when their state was set
-		 * to DEACTIVATED.
-		 */
+         * their last property change notifications go out, which wouldn't
+         * happen if we destroyed them immediately when their state was set
+         * to DEACTIVATED.
+         */
         if (!priv->ac_cleanup_id)
             priv->ac_cleanup_id = g_idle_add(_active_connection_cleanup, self);
 
@@ -1017,11 +1017,11 @@ active_connection_find(
         return NULL;
 
     /* as an optimization, we only allocate out_all_matching, if there are more
-	 * than one result. If there is only one result, we only return the single
-	 * element and don't bother allocating an array. That's the common case.
-	 *
-	 * Also, in case we have multiple results, we return the *first* one
-	 * as @best_ac. */
+     * than one result. If there is only one result, we only return the single
+     * element and don't bother allocating an array. That's the common case.
+     *
+     * Also, in case we have multiple results, we return the *first* one
+     * as @best_ac. */
     nm_assert(!all || (all->len >= 2 && all->pdata[0] == best_ac));
 
     *out_all_matching = all;
@@ -1043,7 +1043,7 @@ active_connection_find_by_connection(NMManager *             self,
               || connection == nm_settings_connection_get_connection(sett_conn));
 
     /* Depending on whether connection is a settings connection,
-	 * either lookup by object-identity of @connection, or compare the UUID */
+     * either lookup by object-identity of @connection, or compare the UUID */
     return active_connection_find(self,
                                   sett_conn,
                                   sett_conn ? NULL : nm_connection_get_uuid(connection),
@@ -1077,7 +1077,7 @@ _get_activatable_connections_filter(NMSettings *          settings,
         return TRUE;
 
     /* the connection is activatable, if it has no active-connections that are in state
-	 * activated, activating, or waiting to be activated. */
+     * activated, activating, or waiting to be activated. */
     return !active_connection_find(d->self,
                                    sett_conn,
                                    NULL,
@@ -1528,12 +1528,12 @@ manager_device_state_changed(NMDevice *          device,
         G_STATIC_ASSERT_EXPR(DEVICE_STATE_PRUNE_RATELIMIT_MAX < G_MAXUINT8);
         if (priv->device_state_prune_ratelimit_count++ > DEVICE_STATE_PRUNE_RATELIMIT_MAX) {
             /* We write the device state to /run. The state files are named after the
-			 * ifindex (which is assumed to be unique and not repeat -- in practice
-			 * it may repeat). So from time to time, we prune device state files
-			 * for interfaces that no longer exist.
-			 *
-			 * Otherwise, the files might pile up if you create (and destroy) a large
-			 * number of software devices. */
+             * ifindex (which is assumed to be unique and not repeat -- in practice
+             * it may repeat). So from time to time, we prune device state files
+             * for interfaces that no longer exist.
+             *
+             * Otherwise, the files might pile up if you create (and destroy) a large
+             * number of software devices. */
             priv->device_state_prune_ratelimit_count = 0;
             nm_config_device_state_prune_stale(NULL, priv->platform);
         }
@@ -1570,20 +1570,20 @@ check_if_startup_complete(NMManager *self)
     }
 
     /* All NMDevice must be ready. But also NMSettings tracks profiles that wait for
-	 * ready devices via "connection.wait-device-timeout".
-	 *
-	 * Note that we only re-check nm_settings_get_startup_complete_blocked_reason() when
-	 * all of the devices become ready (again).
-	 *
-	 * For example, assume we have device "eth1" and "profile-eth2" which waits for "eth2".
-	 * If "eth1" is ready (no pending action), we only need to re-evaluate "profile-eth2"
-	 * if we have another device ("eth2"), that becomes non-ready (had pending actions)
-	 * and again become ready. We don't need to check "profile-eth2" until "eth2" becomes
-	 * non-ready.
-	 * That is why nm_settings_get_startup_complete_blocked_reason() only has any significance
-	 * if all devices are ready too. It allows us to cut down the number of checks whether
-	 * NMSettings is ready. That's because we don't need to re-evaluate on minor changes of
-	 * a device, only when all devices become managed and ready. */
+     * ready devices via "connection.wait-device-timeout".
+     *
+     * Note that we only re-check nm_settings_get_startup_complete_blocked_reason() when
+     * all of the devices become ready (again).
+     *
+     * For example, assume we have device "eth1" and "profile-eth2" which waits for "eth2".
+     * If "eth1" is ready (no pending action), we only need to re-evaluate "profile-eth2"
+     * if we have another device ("eth2"), that becomes non-ready (had pending actions)
+     * and again become ready. We don't need to check "profile-eth2" until "eth2" becomes
+     * non-ready.
+     * That is why nm_settings_get_startup_complete_blocked_reason() only has any significance
+     * if all devices are ready too. It allows us to cut down the number of checks whether
+     * NMSettings is ready. That's because we don't need to re-evaluate on minor changes of
+     * a device, only when all devices become managed and ready. */
 
     g_signal_handlers_block_by_func(priv->settings, settings_startup_complete_changed, self);
     reason = nm_settings_get_startup_complete_blocked_reason(priv->settings, TRUE);
@@ -1598,7 +1598,7 @@ check_if_startup_complete(NMManager *self)
     priv->startup = FALSE;
 
     /* we no longer care about these signals. Startup-complete only
-	 * happens once. */
+     * happens once. */
     g_signal_handlers_disconnect_by_func(priv->settings,
                                          G_CALLBACK(settings_startup_complete_changed),
                                          self);
@@ -1638,7 +1638,7 @@ again:
     c_list_for_each_entry (candidate, &priv->devices_lst_head, devices_lst) {
         if (nm_device_parent_notify_changed(candidate, device, device_removed)) {
             /* in the unlikely event that this changes anything, we start iterating
-			 * again, to be sure that the device list is up-to-date. */
+             * again, to be sure that the device list is up-to-date. */
             goto again;
         }
     }
@@ -1708,20 +1708,20 @@ remove_device(NMManager *self, NMDevice *device, gboolean quitting)
         gboolean unconfigure_ip_config = !quitting || unmanage;
 
         /* When we don't unmanage the device on shutdown, we want to preserve the DNS
-		 * configuration in resolv.conf. For that, we must leak the configuration
-		 * in NMPolicy/NMDnsManager. We do that, by emitting the device-removed signal
-		 * with device's ip-config object still uncleared. In that case, NMPolicy
-		 * never learns to unconfigure the ip-config objects and does not remove them
-		 * from DNS on shutdown (which is ugly, because we don't cleanup the memory
-		 * properly).
-		 *
-		 * Control that by passing @unconfigure_ip_config.  */
+         * configuration in resolv.conf. For that, we must leak the configuration
+         * in NMPolicy/NMDnsManager. We do that, by emitting the device-removed signal
+         * with device's ip-config object still uncleared. In that case, NMPolicy
+         * never learns to unconfigure the ip-config objects and does not remove them
+         * from DNS on shutdown (which is ugly, because we don't cleanup the memory
+         * properly).
+         *
+         * Control that by passing @unconfigure_ip_config.  */
         nm_device_removed(device, unconfigure_ip_config);
 
         _emit_device_added_removed(self, device, FALSE);
     } else {
         /* unrealize() does not release a slave device from master and
-		 * clear IP configurations, do it here */
+         * clear IP configurations, do it here */
         nm_device_removed(device, TRUE);
     }
 
@@ -1796,8 +1796,8 @@ find_parent_device_for_connection(NMManager *      self,
         return NULL;
 
     /* Check if the parent connection is currently activated or is compatible
-	 * with some known device.
-	 */
+     * with some known device.
+     */
     c_list_for_each_entry (candidate, &priv->devices_lst_head, devices_lst) {
         /* Unmanaged devices are not compatible with any connection */
         if (!nm_device_get_managed(candidate, FALSE))
@@ -2033,8 +2033,8 @@ system_create_virtual_device(NMManager *self, NMConnection *connection)
         }
 
         /* Add device takes a reference that NMManager still owns, so it's
-		 * safe to unref here and still return @device.
-		 */
+         * safe to unref here and still return @device.
+         */
         g_object_unref(device);
     }
 
@@ -2151,8 +2151,8 @@ connection_changed(NMManager *self, NMSettingsConnection *sett_conn)
         return;
 
     /* Maybe the device that was created was needed by some other
-	 * connection's device (parent of a VLAN). Let the connections
-	 * can use the newly created device as a parent know. */
+     * connection's device (parent of a VLAN). Let the connections
+     * can use the newly created device as a parent know. */
     retry_connections_for_parent_device(self, device);
 }
 
@@ -2217,7 +2217,7 @@ connection_flags_changed(NMSettings *settings, NMSettingsConnection *connection,
                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
                                NULL)) {
         /* the connection still has an active-connection. It will be purged
-		 * when the active connection(s) get(s) removed. */
+         * when the active connection(s) get(s) removed. */
         return;
     }
 
@@ -2363,10 +2363,10 @@ manager_rfkill_update_one_type(NMManager *self, RadioState *rstate, RfKillType r
     }
 
     /* And finally update the actual device radio state itself; respect the
-	 * daemon state here because this is never called from user-triggered
-	 * radio changes and we only want to ignore the daemon enabled state when
-	 * handling user radio change requests.
-	 */
+     * daemon state here because this is never called from user-triggered
+     * radio changes and we only want to ignore the daemon enabled state when
+     * handling user radio change requests.
+     */
     new_enabled = radio_enabled_for_rstate(rstate, TRUE);
     if (new_enabled != old_enabled)
         manager_update_radio_enabled(self, rstate, new_enabled);
@@ -2579,9 +2579,9 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
         int master_ifindex = nm_platform_link_get_master(priv->platform, ifindex);
 
         /* Check that the master is activating before assuming a
-		 * slave connection. However, ignore ovs-system master as
-		 * we never manage it.
-		 */
+         * slave connection. However, ignore ovs-system master as
+         * we never manage it.
+         */
         if (master_ifindex
             && nm_platform_link_get_type(priv->platform, master_ifindex)
                    != NM_LINK_TYPE_OPENVSWITCH) {
@@ -2607,16 +2607,16 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
     }
 
     /* The core of the API is nm_device_generate_connection() function and
-	 * update_connection() virtual method and the convenient connection_type
-	 * class attribute. Subclasses supporting the new API must have
-	 * update_connection() implemented, otherwise nm_device_generate_connection()
-	 * returns NULL.
-	 */
+     * update_connection() virtual method and the convenient connection_type
+     * class attribute. Subclasses supporting the new API must have
+     * update_connection() implemented, otherwise nm_device_generate_connection()
+     * returns NULL.
+     */
     connection = nm_device_generate_connection(device, master, &maybe_later, &gen_error);
     if (!connection) {
         if (maybe_later) {
             /* The device can generate a connection, but it failed for now.
-			 * Give it a chance to match a connection from the state file. */
+             * Give it a chance to match a connection from the state file. */
             only_by_uuid = TRUE;
         } else {
             nm_device_assume_state_reset(device);
@@ -2631,14 +2631,14 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
     nm_device_assume_state_get(device, &assume_state_guess_assume, &assume_state_connection_uuid);
 
     /* Now we need to compare the generated connection to each configured
-	 * connection. The comparison function is the heart of the connection
-	 * assumption implementation and it must compare the connections very
-	 * carefully to sort out various corner cases. Also, the comparison is
-	 * not entirely symmetric.
-	 *
-	 * When no configured connection matches the generated connection, we keep
-	 * the generated connection instead.
-	 */
+     * connection. The comparison function is the heart of the connection
+     * assumption implementation and it must compare the connections very
+     * carefully to sort out various corner cases. Also, the comparison is
+     * not entirely symmetric.
+     *
+     * When no configured connection matches the generated connection, we keep
+     * the generated connection instead.
+     */
     if (assume_state_connection_uuid
         && (connection_checked =
                 nm_settings_get_connection_by_uuid(priv->settings, assume_state_connection_uuid))
@@ -2673,7 +2673,7 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
         guint                          len, i, j;
 
         /* the state file doesn't indicate a connection UUID to assume. Search the
-		 * persistent connections for a matching candidate. */
+         * persistent connections for a matching candidate. */
         sett_conns = nm_manager_get_activatable_connections(self, FALSE, FALSE, &len);
         if (len > 0) {
             for (i = 0, j = 0; i < len; i++) {
@@ -2849,11 +2849,11 @@ recheck_assume_connection(NMManager *self, NMDevice *device)
         if (copy_lease(initramfs_lease, connection_lease)) {
             unlink(initramfs_lease);
             /*
-			 * We've managed to steal the lease used by initramfs before it
-			 * killed off the dhclient. We need to take ownership of the configured
-			 * connection and act like the device was configured by us.
-			 * Otherwise, the address would just expire.
-			 */
+             * We've managed to steal the lease used by initramfs before it
+             * killed off the dhclient. We need to take ownership of the configured
+             * connection and act like the device was configured by us.
+             * Otherwise, the address would just expire.
+             */
             _LOG2I(LOGD_DEVICE, device, "assume: taking over an initramfs-configured connection");
             activation_type_assume = TRUE;
 
@@ -2906,16 +2906,16 @@ recheck_assume_connection(NMManager *self, NMDevice *device)
         subject = nm_auth_subject_new_internal();
 
         /* Note: the lifetime of the activation connection is always bound to the profiles visibility
-		 * via NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY.
-		 *
-		 * This only makes a difference, if the profile actually has "connection.permissions"
-		 * set to limit visibility (which is not the case for externally managed, generated profiles).
-		 *
-		 * If we assume a previously active connection whose lifetime was unbound, we now bind it
-		 * after restart. That is not correct, and can mean that the profile becomes subject to
-		 * deactivation after restart (if the user logs out).
-		 *
-		 * This should be improved, but it's unclear how. */
+         * via NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY.
+         *
+         * This only makes a difference, if the profile actually has "connection.permissions"
+         * set to limit visibility (which is not the case for externally managed, generated profiles).
+         *
+         * If we assume a previously active connection whose lifetime was unbound, we now bind it
+         * after restart. That is not correct, and can mean that the profile becomes subject to
+         * deactivation after restart (if the user logs out).
+         *
+         * This should be improved, but it's unclear how. */
         active = _new_active_connection(
             self,
             FALSE,
@@ -2995,10 +2995,10 @@ device_ip_iface_changed(NMDevice *device, GParamSpec *pspec, NMManager *self)
     NMDevice *        candidate;
 
     /* Remove NMDevice objects that are actually child devices of others,
-	 * when the other device finally knows its IP interface name.  For example,
-	 * remove the PPP interface that's a child of a WWAN device, since it's
-	 * not really a standalone NMDevice.
-	 */
+     * when the other device finally knows its IP interface name.  For example,
+     * remove the PPP interface that's a child of a WWAN device, since it's
+     * not really a standalone NMDevice.
+     */
     c_list_for_each_entry (candidate, &priv->devices_lst_head, devices_lst) {
         if (candidate != device && nm_streq0(nm_device_get_iface(candidate), ip_iface)
             && nm_device_get_device_type(candidate) == device_type
@@ -3013,8 +3013,8 @@ static void
 device_iface_changed(NMDevice *device, GParamSpec *pspec, NMManager *self)
 {
     /* Virtual connections may refer to the new device name as
-	 * parent device, retry to activate them.
-	 */
+     * parent device, retry to activate them.
+     */
     retry_connections_for_parent_device(self, device);
 }
 
@@ -3048,7 +3048,7 @@ _get_best_connectivity(NMManager *self, int addr_family)
         best_state = _get_best_connectivity(self, AF_INET);
         if (nm_connectivity_state_cmp(best_state, NM_CONNECTIVITY_FULL) >= 0) {
             /* already FULL IPv4 connectivity. No need to check IPv6, it doesn't get
-			 * better. */
+             * better. */
             return best_state;
         }
         return NM_MAX_WITH_CMP(nm_connectivity_state_cmp,
@@ -3070,13 +3070,13 @@ _get_best_connectivity(NMManager *self, int addr_family)
             metric = NMP_OBJECT_CAST_IP_ROUTE(r)->metric;
         else {
             /* if all devices have no default-route, we still include the best
-			 * of all connectivity state of all the devices. */
+             * of all connectivity state of all the devices. */
             metric = G_MAXINT64;
         }
 
         if (metric > best_metric) {
             /* we already have a default route with better metric. The connectivity state
-			 * of this device is irreleavnt. */
+             * of this device is irreleavnt. */
             continue;
         }
 
@@ -3142,7 +3142,7 @@ _device_realize_finish(NMManager *self, NMDevice *device, const NMPlatformLink *
         return;
 
     /* if we failed to assume a connection for the managed device, but the device
-	 * is still unavailable. Set UNAVAILABLE state again, this time with NOW_MANAGED. */
+     * is still unavailable. Set UNAVAILABLE state again, this time with NOW_MANAGED. */
     nm_device_state_changed(device,
                             NM_DEVICE_STATE_UNAVAILABLE,
                             NM_DEVICE_STATE_REASON_NOW_MANAGED);
@@ -3181,12 +3181,12 @@ add_device(NMManager *self, NMDevice *device, GError **error)
     }
 
     /* Remove existing devices owned by the new device; eg remove ethernet
-	 * ports that are owned by a WWAN modem, since udev may announce them
-	 * before the modem is fully discovered.
-	 *
-	 * FIXME: use parent/child device relationships instead of removing
-	 * the child NMDevice entirely
-	 */
+     * ports that are owned by a WWAN modem, since udev may announce them
+     * before the modem is fully discovered.
+     *
+     * FIXME: use parent/child device relationships instead of removing
+     * the child NMDevice entirely
+     */
     c_list_for_each_entry (candidate, &priv->devices_lst_head, devices_lst) {
         if (nm_device_is_real(candidate) && (iface = nm_device_get_ip_iface(candidate))
             && nm_device_owns_iface(device, iface))
@@ -3246,9 +3246,9 @@ add_device(NMManager *self, NMDevice *device, GError **error)
     }
 
     /* Update global rfkill state for this device type with the device's
-	 * rfkill state, and then set this device's rfkill state based on the
-	 * global state.
-	 */
+     * rfkill state, and then set this device's rfkill state based on the
+     * global state.
+     */
     rtype = nm_device_get_rfkill_type(device);
     if (rtype != RFKILL_TYPE_UNKNOWN) {
         nm_manager_rfkill_update(self, rtype);
@@ -3358,15 +3358,15 @@ platform_link_added(NMManager *                    self,
 
         if (nm_device_is_real(candidate)) {
             /* There's already a realized device with the link's name
-			 * and a different ifindex.
-			 */
+             * and a different ifindex.
+             */
             if (nm_device_get_ifindex(candidate) <= 0)
                 nm_device_update_from_platform_link(candidate, plink);
             else {
                 /* The ifindex of a device can't be changed after
-				 * initialization because it is used as a key by
-				 * the dns-manager.
-				 */
+                 * initialization because it is used as a key by
+                 * the dns-manager.
+                 */
                 _LOGD(LOGD_DEVICE,
                       "(%s): removing old device %p after ifindex change from %d to %d",
                       plink->name,
@@ -3685,31 +3685,31 @@ nm_manager_get_best_device_for_connection(NMManager *           self,
         flags = NM_DEVICE_CHECK_CON_AVAILABLE_NONE;
     else {
         /* if the profile is multi-connect=single, we also consider devices which
-		 * are marked as unmanaged. And explicit user-request shows sufficient user
-		 * intent to make the device managed.
-		 * That is also, because we expect that such profile is suitably tied
-		 * to the intended device. So when an unmanaged device matches, the user's
-		 * intent is clear.
-		 *
-		 * For multi-connect != single devices that is different. The profile
-		 * is not restricted to a particular device.
-		 * For that reason, plain `nmcli connection up "$MULIT_PROFILE"` seems
-		 * less suitable for multi-connect profiles, because the target device is
-		 * left unspecified. Anyway, if a user issues
-		 *
-		 *   $ nmcli device set "$DEVICE" managed no
-		 *   $ nmcli connection up "$MULIT_PROFILE"
-		 *
-		 * then it is reasonable for multi-connect profiles to not consider
-		 * the device a suitable candidate.
-		 *
-		 * This may be seen inconsistent, but I think that it makes a lot of
-		 * sense. Also note that "connection.multi-connect" work quite differently
-		 * in aspects like activation. E.g. `nmcli connection up` of multi-connect
-		 * "single" profile, will deactivate the profile if it is active already.
-		 * That is different from multi-connect profiles, where it will aim to
-		 * activate the profile one more time on an hitherto disconnected device.
-		 */
+         * are marked as unmanaged. And explicit user-request shows sufficient user
+         * intent to make the device managed.
+         * That is also, because we expect that such profile is suitably tied
+         * to the intended device. So when an unmanaged device matches, the user's
+         * intent is clear.
+         *
+         * For multi-connect != single devices that is different. The profile
+         * is not restricted to a particular device.
+         * For that reason, plain `nmcli connection up "$MULIT_PROFILE"` seems
+         * less suitable for multi-connect profiles, because the target device is
+         * left unspecified. Anyway, if a user issues
+         *
+         *   $ nmcli device set "$DEVICE" managed no
+         *   $ nmcli connection up "$MULIT_PROFILE"
+         *
+         * then it is reasonable for multi-connect profiles to not consider
+         * the device a suitable candidate.
+         *
+         * This may be seen inconsistent, but I think that it makes a lot of
+         * sense. Also note that "connection.multi-connect" work quite differently
+         * in aspects like activation. E.g. `nmcli connection up` of multi-connect
+         * "single" profile, will deactivate the profile if it is active already.
+         * That is different from multi-connect profiles, where it will aim to
+         * activate the profile one more time on an hitherto disconnected device.
+         */
         if (multi_connect == NM_CONNECTION_MULTI_CONNECT_SINGLE)
             flags = NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST;
         else
@@ -3724,12 +3724,12 @@ nm_manager_get_best_device_for_connection(NMManager *           self,
                                                       NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
                                                       &all_ac_arr))) {
         /* if we have a profile which may activate on only one device (multi-connect single), then
-		 * we prefer the device on which the profile is already active. It means to reactivate
-		 * the profile on the same device.
-		 *
-		 * If the profile can be activated on multiple devices, we don't do this. In fact, the
-		 * check below for the DeviceActivationPrio will prefer devices which are not already
-		 * activated (with this or another) profile. */
+         * we prefer the device on which the profile is already active. It means to reactivate
+         * the profile on the same device.
+         *
+         * If the profile can be activated on multiple devices, we don't do this. In fact, the
+         * check below for the DeviceActivationPrio will prefer devices which are not already
+         * activated (with this or another) profile. */
 
         ac_device = nm_active_connection_get_device(ac);
         if (ac_device
@@ -3766,7 +3766,7 @@ nm_manager_get_best_device_for_connection(NMManager *           self,
 
                 if (ac_state == ac_state2) {
                     /* active-connections are in their list in the order in which they are connected.
-					 * If we have two with same state, the later (newer) one is preferred. */
+                     * If we have two with same state, the later (newer) one is preferred. */
                     goto found_better;
                 }
 
@@ -3816,23 +3816,23 @@ found_better:
             continue;
 
         /* determine the priority of this device. Currently, this priority is independent
-		 * of the profile (connection) and the device's details (aside the state).
-		 *
-		 * Maybe nm_device_check_connection_available() should instead return a priority,
-		 * as it has more information available.
-		 *
-		 * For example, if you have multiple Wi-Fi devices, currently a user-request would
-		 * also select the device if the AP is not visible. Optimally, if one of the two
-		 * devices sees the AP and the other one doesn't, the former would be preferred.
-		 * For that, the priority would need to be determined by nm_device_check_connection_available(). */
+         * of the profile (connection) and the device's details (aside the state).
+         *
+         * Maybe nm_device_check_connection_available() should instead return a priority,
+         * as it has more information available.
+         *
+         * For example, if you have multiple Wi-Fi devices, currently a user-request would
+         * also select the device if the AP is not visible. Optimally, if one of the two
+         * devices sees the AP and the other one doesn't, the former would be preferred.
+         * For that, the priority would need to be determined by nm_device_check_connection_available(). */
         prio = _device_get_activation_prio(device);
         if (prio <= best.prio && best.device) {
             /* we already have a matching device with a better priority. This candidate
-			 * cannot be better. Skip the check.
-			 *
-			 * Also note, that below we collect the best error message @local_best.
-			 * Since we already have best.device, the error message does not matter
-			 * either, and we can skip nm_device_check_connection_available() altogether. */
+             * cannot be better. Skip the check.
+             *
+             * Also note, that below we collect the best error message @local_best.
+             * Since we already have best.device, the error message does not matter
+             * either, and we can skip nm_device_check_connection_available() altogether. */
             continue;
         }
 
@@ -3843,7 +3843,7 @@ found_better:
                                                  error ? &local : NULL)) {
             if (prio == _DEVICE_ACTIVATION_PRIO_BEST) {
                 /* this device already has the best priority. It cannot get better
-				 * and finish the search. */
+                 * and finish the search. */
                 return device;
             }
             best.prio   = prio;
@@ -4174,14 +4174,14 @@ ensure_master_active_connection(NMManager *           self,
                      NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY);
 
     /* If the master device isn't activated then we need to activate it using
-	 * compatible connection.  If it's already activating we can just proceed.
-	 */
+     * compatible connection.  If it's already activating we can just proceed.
+     */
     if (master_device) {
         NMSettingsConnection *device_connection = nm_device_get_settings_connection(master_device);
 
         /* If we're passed a connection and a device, we require that connection
-		 * be already activated on the device, eg returned from find_master().
-		 */
+         * be already activated on the device, eg returned from find_master().
+         */
         g_assert(!master_connection || master_connection == device_connection);
         if (device_connection
             && !is_compatible_with_slave(nm_settings_connection_get_connection(device_connection),
@@ -4211,8 +4211,8 @@ ensure_master_active_connection(NMManager *           self,
         }
 
         /* If the device is disconnected, find a compatible connection and
-		 * activate it on the device.
-		 */
+         * activate it on the device.
+         */
         if (master_state == NM_DEVICE_STATE_DISCONNECTED || !nm_device_is_real(master_device)) {
             gs_free NMSettingsConnection **connections = NULL;
             guint                          i;
@@ -4226,8 +4226,8 @@ ensure_master_active_connection(NMManager *           self,
                 NMConnection *        cand_conn = nm_settings_connection_get_connection(candidate);
 
                 /* Ensure eg bond/team slave and the candidate master is a
-				 * bond/team master
-				 */
+                 * bond/team master
+                 */
                 if (!is_compatible_with_slave(cand_conn, connection))
                     continue;
 
@@ -4357,9 +4357,9 @@ find_slaves(NMManager *           manager,
     devices = g_hash_table_new(nm_direct_hash, NULL);
 
     /* Search through all connections, not only inactive ones, because
-	 * even if a slave was already active, it might be deactivated during
-	 * master reactivation.
-	 */
+     * even if a slave was already active, it might be deactivated during
+     * master reactivation.
+     */
     all_connections = nm_settings_get_connections_clone(
         priv->settings,
         &n_all_connections,
@@ -4390,7 +4390,7 @@ find_slaves(NMManager *           manager,
 
             if (!slaves) {
                 /* what we allocate is quite likely much too large. Don't bother, it is only
-				 * a temporary buffer. */
+                 * a temporary buffer. */
                 slaves = g_new(SlaveConnectionInfo, n_all_connections);
             }
 
@@ -4497,9 +4497,9 @@ autoconnect_slaves(NMManager *           self,
             const char *         uuid;
 
             /* To avoid loops when autoconnecting slaves, we propagate
-			 * the UUID of the initial connection down to slaves until
-			 * the same connection is found.
-			 */
+             * the UUID of the initial connection down to slaves until
+             * the same connection is found.
+             */
             uuid = g_object_get_qdata(G_OBJECT(master_connection), autoconnect_root_quark());
             if (nm_streq0(nm_settings_connection_get_uuid(slave->connection), uuid)) {
                 _LOGI(LOGD_CORE,
@@ -4586,9 +4586,9 @@ static void
 unmanaged_to_disconnected(NMDevice *device)
 {
     /* when creating the software device, it can happen that the device is
-	 * still unmanaged by NM_UNMANAGED_PLATFORM_INIT because we didn't yet
-	 * get the udev event. At this point, we can no longer delay the activation
-	 * and force the device to be managed. */
+     * still unmanaged by NM_UNMANAGED_PLATFORM_INIT because we didn't yet
+     * get the udev event. At this point, we can no longer delay the activation
+     * and force the device to be managed. */
     nm_device_set_unmanaged_by_flags(device,
                                      NM_UNMANAGED_PLATFORM_INIT,
                                      FALSE,
@@ -4628,27 +4628,27 @@ _activation_bind_lifetime_to_profile_visibility(NMAuthSubject *subject)
     }
 
     /* if the activation was not done by internal decision nor root, there
-	 * are the following cases:
-	 *
-	 * - the connection has "connection.permissions" unset and the profile
-	 *   is not restricted to a user and commonly always visible. It does
-	 *   not hurt to bind the lifetime, because we expect the profile to be
-	 *   visible at the moment. If the profile changes (while still being active),
-	 *   we want to pick-up changes to the visibility and possibly disconnect.
-	 *
-	 * - the connection has "connection.permissions" set, and the current user
-	 *   is the owner:
-	 *
-	 *      - Usually, we would expect that the profile is visible at the moment,
-	 *        and of course we want to bind the lifetime. The moment the user
-	 *        logs out, the connection becomes invisible and disconnects.
-	 *
-	 *      - the profile at this time could already be invisible (e.g. if the
-	 *        user didn't create a proper session (sudo) and manually activates
-	 *        an invisible profile. In this case, we still want to bind the
-	 *        lifetime, and it will disconnect after the user logs in and logs
-	 *        out again. NMKeepAlive takes care of that.
-	 */
+     * are the following cases:
+     *
+     * - the connection has "connection.permissions" unset and the profile
+     *   is not restricted to a user and commonly always visible. It does
+     *   not hurt to bind the lifetime, because we expect the profile to be
+     *   visible at the moment. If the profile changes (while still being active),
+     *   we want to pick-up changes to the visibility and possibly disconnect.
+     *
+     * - the connection has "connection.permissions" set, and the current user
+     *   is the owner:
+     *
+     *      - Usually, we would expect that the profile is visible at the moment,
+     *        and of course we want to bind the lifetime. The moment the user
+     *        logs out, the connection becomes invisible and disconnects.
+     *
+     *      - the profile at this time could already be invisible (e.g. if the
+     *        user didn't create a proper session (sudo) and manually activates
+     *        an invisible profile. In this case, we still want to bind the
+     *        lifetime, and it will disconnect after the user logs in and logs
+     *        out again. NMKeepAlive takes care of that.
+     */
     return NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY;
 }
 
@@ -4727,10 +4727,10 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
     applied = nm_active_connection_get_applied_connection(active);
 
     /* If the device is active and its connection is not visible to the
-	 * user that's requesting this new activation, fail, since other users
-	 * should not be allowed to implicitly deactivate private connections
-	 * by activating a connection of their own.
-	 */
+     * user that's requesting this new activation, fail, since other users
+     * should not be allowed to implicitly deactivate private connections
+     * by activating a connection of their own.
+     */
     existing_connection = nm_device_get_applied_connection(device);
     subject             = nm_active_connection_get_subject(active);
     if (existing_connection
@@ -4858,8 +4858,8 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
     }
 
     /* Ensure there's a master active connection the new connection we're
-	 * activating can depend on.
-	 */
+     * activating can depend on.
+     */
     if (master_connection || master_device) {
         if (master_connection) {
             _LOGD(LOGD_CORE,
@@ -4912,9 +4912,9 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
         }
 
         /* Now that we're activating a slave for that master, make sure the master just
-		 * decides to go unmanaged while we're activating (perhaps because other slaves
-		 * go away leaving him with no kids).
-		 */
+         * decides to go unmanaged while we're activating (perhaps because other slaves
+         * go away leaving him with no kids).
+         */
         if (master_device) {
             nm_device_set_unmanaged_by_flags(master_device,
                                              NM_UNMANAGED_EXTERNAL_DOWN,
@@ -4953,7 +4953,7 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
         guint                        i, n_all;
 
         /* Disconnect the connection if already connected or queued for activation.
-		 * The connection cannot be active multiple times (at the same time).  */
+         * The connection cannot be active multiple times (at the same time).  */
         ac = active_connection_find(self,
                                     sett_conn,
                                     NULL,
@@ -4975,7 +4975,7 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
 
         if (!nm_device_get_managed(device, FALSE)) {
             /* Unexpectedly, the device is still unmanaged. That can happen for example,
-			 * if the device is forcibly unmanaged due to NM_UNMANAGED_USER_SETTINGS. */
+             * if the device is forcibly unmanaged due to NM_UNMANAGED_USER_SETTINGS. */
             g_set_error_literal(error,
                                 NM_MANAGER_ERROR,
                                 NM_MANAGER_ERROR_DEPENDENCY_FAILED,
@@ -4997,8 +4997,8 @@ _internal_activate_generic(NMManager *self, NMActiveConnection *active, GError *
     gboolean          success = FALSE;
 
     /* Ensure activation request is still valid, eg that its device hasn't gone
-	 * away or that some other dependency has not failed.
-	 */
+     * away or that some other dependency has not failed.
+     */
     if (nm_active_connection_get_state(active) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
         g_set_error_literal(error,
                             NM_MANAGER_ERROR,
@@ -5014,12 +5014,12 @@ _internal_activate_generic(NMManager *self, NMActiveConnection *active, GError *
 
     if (success) {
         /* Force an update of the Manager's activating-connection property.
-		 * The device changes state before the AC gets exported, which causes
-		 * the manager's 'activating-connection' property to be NULL since the
-		 * AC only gets a D-Bus path when it's exported.  So now that the AC
-		 * is exported, make sure the manager's activating-connection property
-		 * is up-to-date.
-		 */
+         * The device changes state before the AC gets exported, which causes
+         * the manager's 'activating-connection' property to be NULL since the
+         * AC only gets a D-Bus path when it's exported.  So now that the AC
+         * is exported, make sure the manager's activating-connection property
+         * is up-to-date.
+         */
         policy_activating_ac_changed(G_OBJECT(priv->policy), NULL, self);
     }
 
@@ -5059,8 +5059,8 @@ _new_active_connection(NMManager *            self,
         NMActiveConnection *parent;
 
         /* FIXME: for VPN connections, we don't allow re-activating an
-		 * already active connection. It's a bug, and should be fixed together
-		 * when reworking VPN handling. */
+         * already active connection. It's a bug, and should be fixed together
+         * when reworking VPN handling. */
         if (active_connection_find_by_connection(self,
                                                  sett_conn,
                                                  incompl_conn,
@@ -5151,10 +5151,10 @@ _internal_activation_auth_done(NMManager *         self,
         goto fail;
 
     /* Don't continue with an autoconnect-activation if a more important activation
-	 * already exists.
-	 * We also check this earlier, but there we may fail to detect a duplicate
-	 * if the existing active connection was undergoing authorization.
-	 */
+     * already exists.
+     * We also check this earlier, but there we may fail to detect a duplicate
+     * if the existing active connection was undergoing authorization.
+     */
     if (NM_IN_SET(nm_active_connection_get_activation_reason(active),
                   NM_ACTIVATION_REASON_EXTERNAL,
                   NM_ACTIVATION_REASON_ASSUME,
@@ -5242,10 +5242,10 @@ nm_manager_activate_connection(NMManager *            self,
         return NULL;
 
     /* Look for a active connection that's equivalent and is already pending authorization
-	 * and eventual activation. This is used to de-duplicate concurrent activations which would
-	 * otherwise race and cause the device to disconnect and reconnect repeatedly.
-	 * In particular, this allows the master and multiple slaves to concurrently auto-activate
-	 * while all the slaves would use the same active-connection. */
+     * and eventual activation. This is used to de-duplicate concurrent activations which would
+     * otherwise race and cause the device to disconnect and reconnect repeatedly.
+     * In particular, this allows the master and multiple slaves to concurrently auto-activate
+     * while all the slaves would use the same active-connection. */
     c_list_for_each_entry (async_op_data, &priv->async_op_lst_head, async_op_lst) {
         if (async_op_data->async_op_type != ASYNC_OP_TYPE_AC_AUTH_ACTIVATE_INTERNAL)
             continue;
@@ -5377,7 +5377,7 @@ validate_activation_request(NMManager *            self,
             gs_free char *iface = NULL;
 
             /* VPN and software-device connections don't need a device yet,
-			 * but non-virtual connections do ... */
+             * but non-virtual connections do ... */
             if (!nm_connection_is_virtual(connection)) {
                 g_set_error(error,
                             NM_MANAGER_ERROR,
@@ -5487,10 +5487,10 @@ impl_manager_activate_connection(NMDBusObject *                     obj,
     device_path          = nm_dbus_path_not_empty(device_path);
 
     /* If the connection path is given and valid, that connection is activated.
-	 * Otherwise, the "best" connection for the device is chosen and activated,
-	 * regardless of whether that connection is autoconnect-enabled or not
-	 * (since this is an explicit request, not an auto-activation request).
-	 */
+     * Otherwise, the "best" connection for the device is chosen and activated,
+     * regardless of whether that connection is autoconnect-enabled or not
+     * (since this is an explicit request, not an auto-activation request).
+     */
     if (connection_path) {
         sett_conn = nm_settings_get_connection_by_path(priv->settings, connection_path);
         if (!sett_conn) {
@@ -5670,8 +5670,8 @@ _add_and_activate_auth_done(NMManager *                     self,
     priv = NM_MANAGER_GET_PRIVATE(self);
 
     /* FIXME(shutdown): nm_settings_add_connection_dbus() cannot be cancelled. It should be made
-	 * cancellable and tracked via AsyncOpData to be able to do a clean
-	 * shutdown. */
+     * cancellable and tracked via AsyncOpData to be able to do a clean
+     * shutdown. */
     nm_settings_add_connection_dbus(
         priv->settings,
         connection,
@@ -5791,12 +5791,12 @@ impl_manager_add_and_activate_connection(NMDBusObject *                     obj,
     device_path          = nm_dbus_path_not_empty(device_path);
 
     /* Try to create a new connection with the given settings.
-	 * We allow empty settings for AddAndActivateConnection(). In that case,
-	 * the connection will be completed in nm_utils_complete_generic() or
-	 * nm_device_complete_connection() below. Just make sure we don't expect
-	 * specific data being in the connection till then (especially in
-	 * validate_activation_request()).
-	 */
+     * We allow empty settings for AddAndActivateConnection(). In that case,
+     * the connection will be completed in nm_utils_complete_generic() or
+     * nm_device_complete_connection() below. Just make sure we don't expect
+     * specific data being in the connection till then (especially in
+     * validate_activation_request()).
+     */
     incompl_conn = nm_simple_connection_new();
     if (settings && g_variant_n_children(settings))
         _nm_connection_replace_settings(incompl_conn,
@@ -6069,7 +6069,7 @@ sleep_devices_add(NMManager *self, NMDevice *device, gboolean suspending)
     if (g_hash_table_lookup_extended(priv->sleep_devices, device, NULL, (gpointer *) &handle)) {
         if (suspending) {
             /* if we are suspending, always insert a new handle in sleep_devices.
-			 * Even if we had an old handle, it might be stale by now. */
+             * Even if we had an old handle, it might be stale by now. */
             g_hash_table_insert(priv->sleep_devices,
                                 device,
                                 nm_sleep_monitor_inhibit_take(priv->sleep_monitor));
@@ -6163,15 +6163,15 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
         _LOGD(LOGD_SUSPEND, "sleep: %s...", suspending ? "sleeping" : "disabling");
 
         /* FIXME: are there still hardware devices that need to be disabled around
-		 * suspend/resume?
-		 */
+         * suspend/resume?
+         */
         c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
             if (nm_device_is_software(device)) {
                 /* If a user disables networking we consider that as an
-				 * indication that also software devices must be disconnected.
-				 * But we don't want to destroy them for external events as
-				 * a system suspend.
-				 */
+                 * indication that also software devices must be disconnected.
+                 * But we don't want to destroy them for external events as
+                 * a system suspend.
+                 */
                 if (suspending)
                     continue;
             }
@@ -6211,8 +6211,8 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
                     continue;
 
                 /* Belatedly take down Wake-on-LAN devices; ideally we wouldn't have to do this
-				 * but for now it's the only way to make sure we re-check their connectivity.
-				 */
+                 * but for now it's the only way to make sure we re-check their connectivity.
+                 */
                 if (device_is_wake_on_lan(priv->platform, device))
                     nm_device_set_unmanaged_by_flags(device,
                                                      NM_UNMANAGED_SLEEPING,
@@ -6220,9 +6220,9 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
                                                      NM_DEVICE_STATE_REASON_SLEEPING);
 
                 /* Check if the device is unmanaged but the state transition is still pending.
-				 * If so, change state now so that later we re-manage the device forcing a
-				 * re-check of available connections.
-				 */
+                 * If so, change state now so that later we re-manage the device forcing a
+                 * re-check of available connections.
+                 */
                 if (!nm_device_get_managed(device, FALSE)
                     && nm_device_get_state(device) != NM_DEVICE_STATE_UNMANAGED) {
                     nm_device_state_changed(device,
@@ -6233,8 +6233,8 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
         }
 
         /* Ensure rfkill state is up-to-date since we don't respond to state
-		 * changes during sleep.
-		 */
+         * changes during sleep.
+         */
         nm_manager_rfkill_update(self, RFKILL_TYPE_UNKNOWN);
 
         /* Re-manage managed devices */
@@ -6244,14 +6244,14 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
             if (nm_device_is_software(device)
                 && !nm_device_get_unmanaged_flags(device, NM_UNMANAGED_SLEEPING)) {
                 /* DHCP leases of software devices could have gone stale
-				 * so we need to renew them. */
+                 * so we need to renew them. */
                 nm_device_update_dynamic_ip_setup(device);
                 continue;
             }
 
             /* enable/disable wireless devices since that we don't respond
-			 * to killswitch changes during sleep.
-			 */
+             * to killswitch changes during sleep.
+             */
             for (i = 0; i < RFKILL_TYPE_MAX; i++) {
                 RadioState *rstate  = &priv->radio_states[i];
                 gboolean    enabled = radio_enabled_for_rstate(rstate, TRUE);
@@ -6338,13 +6338,13 @@ impl_manager_sleep(NMDBusObject *                     obj,
     }
 
     /* Unconditionally allow the request.  Previously it was polkit protected
-	 * but unfortunately that doesn't work for short-lived processes like
-	 * pm-utils.  It uses dbus-send without --print-reply, which quits
-	 * immediately after sending the request, and NM is unable to obtain the
-	 * sender's UID as dbus-send has already dropped off the bus.  Thus NM
-	 * fails the request.  Instead, don't validate the request, but rely on
-	 * D-Bus permissions to restrict the call to root.
-	 */
+     * but unfortunately that doesn't work for short-lived processes like
+     * pm-utils.  It uses dbus-send without --print-reply, which quits
+     * immediately after sending the request, and NM is unable to obtain the
+     * sender's UID as dbus-send has already dropped off the bus.  Thus NM
+     * fails the request.  Instead, don't validate the request, but rely on
+     * D-Bus permissions to restrict the call to root.
+     */
     _internal_sleep(self, do_sleep);
     nm_audit_log_control_op(NM_AUDIT_OP_SLEEP_CONTROL,
                             do_sleep ? "on" : "off",
@@ -6556,9 +6556,9 @@ impl_manager_set_logging(NMDBusObject *                     obj,
     const char *domains;
 
     /* The permission is already enforced by the D-Bus daemon, but we ensure
-	 * that the caller is still alive so that clients are forced to wait and
-	 * we'll be able to switch to polkit without breaking behavior.
-	 */
+     * that the caller is still alive so that clients are forced to wait and
+     * we'll be able to switch to polkit without breaking behavior.
+     */
     if (!nm_dbus_manager_ensure_uid(nm_dbus_object_get_manager(NM_DBUS_OBJECT(self)),
                                     invocation,
                                     G_MAXULONG,
@@ -6626,15 +6626,15 @@ device_connectivity_done(NMDevice *                  device,
             || (state == NM_CONNECTIVITY_FULL
                 && priv->connectivity_state == NM_CONNECTIVITY_FULL))) {
         /* despite having a @handle and @state returned by the requests, we always
-		 * return the current connectivity_state. That is, because the connectivity_state
-		 * and the answer to the connectivity check shall agree.
-		 *
-		 * However, if one of the requests (early) returns full connectivity and agrees with
-		 * the accumulated connectivity state, we no longer have to wait. The result is set.
-		 *
-		 * This also works well, because NMDevice first emits change signals to its own
-		 * connectivity state, which is then taken into account for the accumulated global
-		 * state. All this happens, before the callback is invoked. */
+         * return the current connectivity_state. That is, because the connectivity_state
+         * and the answer to the connectivity check shall agree.
+         *
+         * However, if one of the requests (early) returns full connectivity and agrees with
+         * the accumulated connectivity state, we no longer have to wait. The result is set.
+         *
+         * This also works well, because NMDevice first emits change signals to its own
+         * connectivity state, which is then taken into account for the accumulated global
+         * state. All this happens, before the callback is invoked. */
         g_dbus_method_invocation_return_value(
             g_steal_pointer(&data->context),
             g_variant_new("(u)", (guint) priv->connectivity_state));
@@ -6920,17 +6920,17 @@ nm_manager_stop(NMManager *self)
     NMDevice *        device;
 
     /* FIXME(shutdown): we don't do a proper shutdown yet:
-	 *  - need to ensure that all pending async operations are cancelled
-	 *    - e.g. operations in priv->async_op_lst_head
-	 *  - need to ensure that no more asynchronous requests are started,
-	 *    or that they complete quickly, or that they fail quickly.
-	 *  - note that cancelling some operations is not possible synchronously.
-	 *    Hence, stop() only prepares shutdown and tells everybody to not
-	 *    accept new work, and to complete in a timely manner.
-	 *    We need to still iterate the mainloop for a bit, to give everybody
-	 *    the chance to complete.
-	 *    - e.g. see comment at nm_auth_manager_force_shutdown()
-	 */
+     *  - need to ensure that all pending async operations are cancelled
+     *    - e.g. operations in priv->async_op_lst_head
+     *  - need to ensure that no more asynchronous requests are started,
+     *    or that they complete quickly, or that they fail quickly.
+     *  - note that cancelling some operations is not possible synchronously.
+     *    Hence, stop() only prepares shutdown and tells everybody to not
+     *    accept new work, and to complete in a timely manner.
+     *    We need to still iterate the mainloop for a bit, to give everybody
+     *    the chance to complete.
+     *    - e.g. see comment at nm_auth_manager_force_shutdown()
+     */
 
     nm_dbus_manager_stop(nm_dbus_object_get_manager(NM_DBUS_OBJECT(self)));
 
@@ -7008,9 +7008,9 @@ policy_default_ac_changed(GObject *object, GParamSpec *pspec, gpointer user_data
     NMActiveConnection *ac;
 
     /* Note: this assumes that it's not possible for the IP4 default
-	 * route to be going over the default-ip6-device. If that changes,
-	 * we need something more complicated here.
-	 */
+     * route to be going over the default-ip6-device. If that changes,
+     * we need something more complicated here.
+     */
     ac = nm_policy_get_default_ip4_ac(priv->policy);
     if (!ac)
         ac = nm_policy_get_default_ip6_ac(priv->policy);
@@ -7048,12 +7048,12 @@ policy_activating_ac_changed(GObject *object, GParamSpec *pspec, gpointer user_d
     NMActiveConnection *activating, *best;
 
     /* We only look at activating-ip6-ac if activating-ip4-ac
-	 * AND default-ip4-ac are NULL; if default-ip4-ac is
-	 * non-NULL, then activating-ip6-ac is irrelevant, since while
-	 * that AC might become the new default-ip6-ac, it can't
-	 * become primary-connection while default-ip4-ac is set to
-	 * something else.
-	 */
+     * AND default-ip4-ac are NULL; if default-ip4-ac is
+     * non-NULL, then activating-ip6-ac is irrelevant, since while
+     * that AC might become the new default-ip6-ac, it can't
+     * become primary-connection while default-ip4-ac is set to
+     * something else.
+     */
     activating = nm_policy_get_activating_ip4_ac(priv->policy);
     best       = nm_policy_get_default_ip4_ac(priv->policy);
     if (!activating && !best)
@@ -7517,14 +7517,14 @@ manager_radio_user_toggled(NMManager *self, RadioState *rstate, gboolean enabled
     nm_config_state_set(priv->config, TRUE, FALSE, rstate->key, enabled);
 
     /* When the user toggles the radio, their request should override any
-	 * daemon (like ModemManager) enabled state that can be changed.  For WWAN
-	 * for example, we want the WwanEnabled property to reflect the daemon state
-	 * too so that users can toggle the modem powered, but we don't want that
-	 * daemon state to affect whether or not the user *can* turn it on, which is
-	 * what the kernel rfkill state does.  So we ignore daemon enabled state
-	 * when determining what the new state should be since it shouldn't block
-	 * the user's request.
-	 */
+     * daemon (like ModemManager) enabled state that can be changed.  For WWAN
+     * for example, we want the WwanEnabled property to reflect the daemon state
+     * too so that users can toggle the modem powered, but we don't want that
+     * daemon state to affect whether or not the user *can* turn it on, which is
+     * what the kernel rfkill state does.  So we ignore daemon enabled state
+     * when determining what the new state should be since it shouldn't block
+     * the user's request.
+     */
     old_enabled          = radio_enabled_for_rstate(rstate, TRUE);
     rstate->user_enabled = enabled;
     new_enabled          = radio_enabled_for_rstate(rstate, FALSE);
@@ -7665,10 +7665,10 @@ constructed(GObject *object)
                      self);
 
     /*
-	 * Do not delete existing virtual devices to keep connectivity up.
-	 * Virtual devices are reused when NetworkManager is restarted.
-	 * Hence, don't react on NM_SETTINGS_SIGNAL_CONNECTION_REMOVED.
-	 */
+     * Do not delete existing virtual devices to keep connectivity up.
+     * Virtual devices are reused when NetworkManager is restarted.
+     * Hence, don't react on NM_SETTINGS_SIGNAL_CONNECTION_REMOVED.
+     */
 
     priv->policy = nm_policy_new(self, priv->settings);
     g_signal_connect(priv->policy,
@@ -7708,10 +7708,10 @@ constructed(GObject *object)
                      self);
 
     /* Force kernel Wi-Fi/WWAN rfkill state to follow NM saved Wi-Fi/WWAN state
-	 * in case the BIOS doesn't save rfkill state, and to be consistent with user
-	 * changes to the WirelessEnabled/WWANEnabled properties which toggle kernel
-	 * rfkill.
-	 */
+     * in case the BIOS doesn't save rfkill state, and to be consistent with user
+     * changes to the WirelessEnabled/WWANEnabled properties which toggle kernel
+     * rfkill.
+     */
     rfkill_change(self,
                   priv->radio_states[RFKILL_TYPE_WLAN].desc,
                   RFKILL_TYPE_WLAN,
@@ -8509,12 +8509,12 @@ nm_manager_class_init(NMManagerClass *manager_class)
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMManager:metered:
-	 *
-	 * Whether the connectivity is metered.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMManager:metered:
+     *
+     * Whether the connectivity is metered.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_METERED] = g_param_spec_uint(NM_MANAGER_METERED,
                                                      "",
                                                      "",
@@ -8524,12 +8524,12 @@ nm_manager_class_init(NMManagerClass *manager_class)
                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMManager:global-dns-configuration:
-	 *
-	 * The global DNS configuration.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMManager:global-dns-configuration:
+     *
+     * The global DNS configuration.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_GLOBAL_DNS_CONFIGURATION] =
         g_param_spec_variant(NM_MANAGER_GLOBAL_DNS_CONFIGURATION,
                              "",
@@ -8539,12 +8539,12 @@ nm_manager_class_init(NMManagerClass *manager_class)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMManager:all-devices:
-	 *
-	 * All devices, including those that are not realized.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMManager:all-devices:
+     *
+     * All devices, including those that are not realized.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_ALL_DEVICES] =
         g_param_spec_boxed(NM_MANAGER_ALL_DEVICES,
                            "",
@@ -8588,7 +8588,7 @@ nm_manager_class_init(NMManagerClass *manager_class)
                                                   G_TYPE_OBJECT);
 
     /* emitted only for realized devices when a device
-	 * becomes unrealized or removed */
+     * becomes unrealized or removed */
     signals[DEVICE_REMOVED] = g_signal_new(NM_MANAGER_DEVICE_REMOVED,
                                            G_OBJECT_CLASS_TYPE(object_class),
                                            G_SIGNAL_RUN_FIRST,

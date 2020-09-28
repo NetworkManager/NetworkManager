@@ -218,29 +218,29 @@ ip4_process_classless_routes(const char * iface,
     *gwaddr = 0;
 
     /* dhcpd/dhclient in Fedora has support for rfc3442 implemented using a
-	 * slightly different format:
-	 *
-	 * option classless-static-routes = array of (destination-descriptor ip-address);
-	 *
-	 * which results in:
-	 *
-	 * 0 192.168.0.113 25.129.210.177.132 192.168.0.113 7.2 10.34.255.6
-	 *
-	 * dhcpcd supports classless static routes natively and uses this same
-	 * option identifier with the following format:
-	 *
-	 * 192.168.10.0/24 192.168.1.1 10.0.0.0/8 10.17.66.41
-	 */
+     * slightly different format:
+     *
+     * option classless-static-routes = array of (destination-descriptor ip-address);
+     *
+     * which results in:
+     *
+     * 0 192.168.0.113 25.129.210.177.132 192.168.0.113 7.2 10.34.255.6
+     *
+     * dhcpcd supports classless static routes natively and uses this same
+     * option identifier with the following format:
+     *
+     * 192.168.10.0/24 192.168.1.1 10.0.0.0/8 10.17.66.41
+     */
     str = g_hash_table_lookup(options, "classless_static_routes");
 
     /* dhclient doesn't have actual support for rfc3442 classless static routes
-	 * upstream.  Thus, people resort to defining the option in dhclient.conf
-	 * and using arbitrary formats like so:
-	 *
-	 * option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;
-	 *
-	 * See https://lists.isc.org/pipermail/dhcp-users/2008-December/007629.html
-	 */
+     * upstream.  Thus, people resort to defining the option in dhclient.conf
+     * and using arbitrary formats like so:
+     *
+     * option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;
+     *
+     * See https://lists.isc.org/pipermail/dhcp-users/2008-December/007629.html
+     */
     if (!str)
         str = g_hash_table_lookup(options, "rfc3442_classless_static_routes");
 
@@ -428,8 +428,8 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
     nm_platform_ip4_address_set_addr(&address, addr, plen);
 
     /* Routes: if the server returns classless static routes, we MUST ignore
-	 * the 'static_routes' option.
-	 */
+     * the 'static_routes' option.
+     */
     if (!ip4_process_classless_routes(iface,
                                       options,
                                       route_table,
@@ -443,8 +443,8 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
         gateway_has = TRUE;
     } else {
         /* If the gateway wasn't provided as a classless static route with a
-		 * subnet length of 0, try to find it using the old-style 'routers' option.
-		 */
+         * subnet length of 0, try to find it using the old-style 'routers' option.
+         */
         str = g_hash_table_lookup(options, "routers");
         if (str) {
             gs_free const char **routers = nm_utils_strsplit_set(str, " ");
@@ -745,9 +745,9 @@ nm_dhcp_utils_client_id_string_to_bytes(const char *client_id)
         bytes = nm_utils_hexstr2bin(client_id);
 
         /* the result must be at least two bytes long,
-		 * because @client_id contains a delimiter
-		 * but nm_utils_hexstr2bin() does not allow
-		 * leading nor trailing delimiters. */
+         * because @client_id contains a delimiter
+         * but nm_utils_hexstr2bin() does not allow
+         * leading nor trailing delimiters. */
         nm_assert(!bytes || g_bytes_get_size(bytes) >= 2);
     }
     if (!bytes) {

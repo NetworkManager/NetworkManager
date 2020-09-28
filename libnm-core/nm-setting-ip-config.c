@@ -322,13 +322,13 @@ nm_ip_address_cmp_full(const NMIPAddress *a, const NMIPAddress *b, NMIPAddressCm
             while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &value)) {
                 value2 = g_hash_table_lookup(b->attributes, key);
                 /* We cannot really compare GVariants, because g_variant_compare() does
-				 * not work in general. So, don't bother. NM_IP_ADDRESS_CMP_FLAGS_WITH_ATTRS is
-				 * documented to not provide a total order for the attribute contents.
-				 *
-				 * Theoretically, we can implement also a total order. However we should
-				 * not do that by default because it would require us to sort the keys
-				 * first. Most callers don't care about total order, so they shouldn't
-				 * pay the overhead. */
+                 * not work in general. So, don't bother. NM_IP_ADDRESS_CMP_FLAGS_WITH_ATTRS is
+                 * documented to not provide a total order for the attribute contents.
+                 *
+                 * Theoretically, we can implement also a total order. However we should
+                 * not do that by default because it would require us to sort the keys
+                 * first. Most callers don't care about total order, so they shouldn't
+                 * pay the overhead. */
                 if (!value2)
                     return -2;
                 if (!g_variant_equal(value, value2))
@@ -2452,9 +2452,9 @@ nm_ip_routing_rule_cmp(const NMIPRoutingRule *rule, const NMIPRoutingRule *other
     NM_CMP_FIELD(rule, other, ipproto);
 
     /* We compare the plain strings, not the binary values after utf8safe unescaping.
-	 *
-	 * The reason is, that the rules differ already when the direct strings differ, not
-	 * only when the unescaped names differ. */
+     *
+     * The reason is, that the rules differ already when the direct strings differ, not
+     * only when the unescaped names differ. */
     NM_CMP_FIELD_STR0(rule, other, iifname);
     NM_CMP_FIELD_STR0(rule, other, oifname);
 
@@ -2539,19 +2539,19 @@ nm_ip_routing_rule_validate(const NMIPRoutingRule *self, GError **error)
     g_return_val_if_fail(!error || !*error, FALSE);
 
     /* Kernel may be more flexible about validating. We do a strict validation
-	 * here and reject certain settings eagerly. We can always relax it later. */
+     * here and reject certain settings eagerly. We can always relax it later. */
 
     if (!self->priority_has) {
         /* iproute2 accepts not specifying the priority, in which case kernel will select
-		 * an unused priority. We don't allow for that, and will always require the user to
-		 * select a priority.
-		 *
-		 * Note that if the user selects priority 0 or a non-unique priority, this is problematic
-		 * due to kernel bugs rh#1685816 and rh#1685816. It may result in NetworkManager wrongly being
-		 * unable to add a rule or deleting the wrong rule.
-		 * This problem is not at all specific to the priority, it affects all rules that
-		 * have default values which confuse kernel. But setting a unique priority avoids
-		 * this problem nicely. */
+         * an unused priority. We don't allow for that, and will always require the user to
+         * select a priority.
+         *
+         * Note that if the user selects priority 0 or a non-unique priority, this is problematic
+         * due to kernel bugs rh#1685816 and rh#1685816. It may result in NetworkManager wrongly being
+         * unable to add a rule or deleting the wrong rule.
+         * This problem is not at all specific to the priority, it affects all rules that
+         * have default values which confuse kernel. But setting a unique priority avoids
+         * this problem nicely. */
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -2562,9 +2562,9 @@ nm_ip_routing_rule_validate(const NMIPRoutingRule *self, GError **error)
     if (NM_IN_SET(self->action, FR_ACT_TO_TBL)) {
         if (self->table == 0) {
             /* with IPv4, kernel allows a table (in RTM_NEWRULE) of zero to automatically select
-			 * an unused table. We don't. The user needs to specify the table.
-			 *
-			 * For IPv6, kernel doesn't allow a table of zero, so we are consistent here. */
+             * an unused table. We don't. The user needs to specify the table.
+             *
+             * For IPv6, kernel doesn't allow a table of zero, so we are consistent here. */
             g_set_error_literal(error,
                                 NM_CONNECTION_ERROR,
                                 NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -3146,38 +3146,38 @@ nm_ip_routing_rule_from_string(const char *                 str,
         return NULL;
 
     /* NM_IP_ROUTING_RULE_TO_STRING_TYPE_IPROUTE gives a string representation that is
-	 * partly compatibly with iproute2. That is, the part after `ip -[46] rule add $ARGS`.
-	 * There are differences though:
-	 *
-	 * - trying to convert an invalid rule to string may not be possible. The reason is for
-	 *   example that an invalid rule can have nm_ip_routing_rule_get_from() like "bogus",
-	 *   but we don't write that as "from bogus". In general, if you try to convert an invalid
-	 *   rule to string, the operation may fail or the result may itself not be parsable.
-	 *   Of course, valid rules can be converted to string and read back the same (round-trip).
-	 *
-	 * - iproute2 in may regards is flexible about the command lines. For example
-	 *   - for tables it accepts table names from /etc/iproute2/rt_tables. We only
-	 *     accept the special aliases "main", "local", and "default".
-	 *   - key names like "preference" can be abbreviated to "pref", we don't do that.
-	 *   - the "preference"/"priority" may be unspecified, in which kernel automatically
-	 *     chooses an unused priority (during `ip rule add`). We don't allow for that, the
-	 *     priority must be explicitly set.
-	 *
-	 * - iproute2 does not support any escaping. Well, it's the shell that supports quoting
-	 *   and escaping and splits the command line. We need to split the command line ourself,
-	 *   but we don't support full shell quotation.
-	 *   from-string tokenizes words at (ASCII) whitespaces (removing the whitespaces).
-	 *   It also supports backslash escaping (e.g. to contain whitespace), but it does
-	 *   not support special escape sequences. Values are taken literally, meaning
-	 *   "\n\ \111" gives results in "n 111".
-	 *   The strings really shouldn't contain any special characters that require escaping,
-	 *   but that's the rule.
-	 *   This also goes together with the @allow_escaping parameter of nm_utils_strsplit_set().
-	 *   If you concatenate multiple rule expressions with a delimiter, the delimiter inside
-	 *   each word can be backslash escaped, and nm_utils_strsplit_set(allow_escaping=TRUE) will
-	 *   properly split the words, preserving the backslashes, which then will be removed by
-	 *   nm_ip_routing_rule_from_string().
-	 */
+     * partly compatibly with iproute2. That is, the part after `ip -[46] rule add $ARGS`.
+     * There are differences though:
+     *
+     * - trying to convert an invalid rule to string may not be possible. The reason is for
+     *   example that an invalid rule can have nm_ip_routing_rule_get_from() like "bogus",
+     *   but we don't write that as "from bogus". In general, if you try to convert an invalid
+     *   rule to string, the operation may fail or the result may itself not be parsable.
+     *   Of course, valid rules can be converted to string and read back the same (round-trip).
+     *
+     * - iproute2 in may regards is flexible about the command lines. For example
+     *   - for tables it accepts table names from /etc/iproute2/rt_tables. We only
+     *     accept the special aliases "main", "local", and "default".
+     *   - key names like "preference" can be abbreviated to "pref", we don't do that.
+     *   - the "preference"/"priority" may be unspecified, in which kernel automatically
+     *     chooses an unused priority (during `ip rule add`). We don't allow for that, the
+     *     priority must be explicitly set.
+     *
+     * - iproute2 does not support any escaping. Well, it's the shell that supports quoting
+     *   and escaping and splits the command line. We need to split the command line ourself,
+     *   but we don't support full shell quotation.
+     *   from-string tokenizes words at (ASCII) whitespaces (removing the whitespaces).
+     *   It also supports backslash escaping (e.g. to contain whitespace), but it does
+     *   not support special escape sequences. Values are taken literally, meaning
+     *   "\n\ \111" gives results in "n 111".
+     *   The strings really shouldn't contain any special characters that require escaping,
+     *   but that's the rule.
+     *   This also goes together with the @allow_escaping parameter of nm_utils_strsplit_set().
+     *   If you concatenate multiple rule expressions with a delimiter, the delimiter inside
+     *   each word can be backslash escaped, and nm_utils_strsplit_set(allow_escaping=TRUE) will
+     *   properly split the words, preserving the backslashes, which then will be removed by
+     *   nm_ip_routing_rule_from_string().
+     */
 
     addr_family = _rr_string_addr_family_from_flags(to_string_flags);
 
@@ -3194,7 +3194,7 @@ nm_ip_routing_rule_from_string(const char *                 str,
         }
 
         /* iproute2 matches keywords with any partial prefix. We don't allow
-		 * for that flexibility. */
+         * for that flexibility. */
 
         if (NM_IN_STRSET(word0, "from")) {
             if (!word1)
@@ -3214,7 +3214,7 @@ nm_ip_routing_rule_from_string(const char *                 str,
         }
         if (NM_IN_STRSET(word0, "not")) {
             /* we accept multiple "not" specifiers. "not not" still means
-			 * not. */
+             * not. */
             val_invert = TRUE;
             goto next_words_consumed;
         }
@@ -3331,8 +3331,8 @@ nm_ip_routing_rule_from_string(const char *                 str,
         }
 
         /* also the action is still unsupported. For the moment, we only support
-		 * FR_ACT_TO_TBL, which is the default (by not expressing it on the command
-		 * line). */
+         * FR_ACT_TO_TBL, which is the default (by not expressing it on the command
+         * line). */
         g_set_error(error,
                     NM_CONNECTION_ERROR,
                     NM_CONNECTION_ERROR_FAILED,
@@ -3541,13 +3541,13 @@ nm_ip_routing_rule_to_string(const NMIPRoutingRule *      self,
     }
 
     /* It is only guaranteed that valid rules can be expressed as string.
-	 *
-	 * Still, unless requested proceed to convert to string without validating and
-	 * hope for the best.
-	 *
-	 * That is, because self->from_str might contain an invalid IP address (indicated
-	 * by self->from_valid). But we don't support serializing such arbitrary strings
-	 * as "from %s". */
+     *
+     * Still, unless requested proceed to convert to string without validating and
+     * hope for the best.
+     *
+     * That is, because self->from_str might contain an invalid IP address (indicated
+     * by self->from_valid). But we don't support serializing such arbitrary strings
+     * as "from %s". */
     if (NM_FLAGS_HAS(to_string_flags, NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE)) {
         gs_free_error GError *local = NULL;
 
@@ -5541,11 +5541,11 @@ _nm_sett_info_property_override_create_array_ip_config(void)
                                                            .from_dbus_fcn = ip_gateway_set, ));
 
     /* ---dbus---
-	 * property: routing-rules
-	 * format: array of 'a{sv}'
-	 * description: Array of dictionaries for routing rules.
-	 * ---end---
-	 */
+     * property: routing-rules
+     * format: array of 'a{sv}'
+     * description: Array of dictionaries for routing rules.
+     * ---end---
+     */
     _nm_properties_override_dbus(
         properties_override,
         NM_SETTING_IP_CONFIG_ROUTING_RULES,
@@ -5811,28 +5811,28 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
     setting_class->enumerate_values          = enumerate_values;
 
     /**
-	 * NMSettingIPConfig:method:
-	 *
-	 * IP configuration method.
-	 *
-	 * #NMSettingIP4Config and #NMSettingIP6Config both support "disabled",
-	 * "auto", "manual", and "link-local". See the subclass-specific
-	 * documentation for other values.
-	 *
-	 * In general, for the "auto" method, properties such as
-	 * #NMSettingIPConfig:dns and #NMSettingIPConfig:routes specify information
-	 * that is added on to the information returned from automatic
-	 * configuration.  The #NMSettingIPConfig:ignore-auto-routes and
-	 * #NMSettingIPConfig:ignore-auto-dns properties modify this behavior.
-	 *
-	 * For methods that imply no upstream network, such as "shared" or
-	 * "link-local", these properties must be empty.
-	 *
-	 * For IPv4 method "shared", the IP subnet can be configured by adding one
-	 * manual IPv4 address or otherwise 10.42.x.0/24 is chosen. Note that the
-	 * shared method must be configured on the interface which shares the internet
-	 * to a subnet, not on the uplink which is shared.
-	 **/
+     * NMSettingIPConfig:method:
+     *
+     * IP configuration method.
+     *
+     * #NMSettingIP4Config and #NMSettingIP6Config both support "disabled",
+     * "auto", "manual", and "link-local". See the subclass-specific
+     * documentation for other values.
+     *
+     * In general, for the "auto" method, properties such as
+     * #NMSettingIPConfig:dns and #NMSettingIPConfig:routes specify information
+     * that is added on to the information returned from automatic
+     * configuration.  The #NMSettingIPConfig:ignore-auto-routes and
+     * #NMSettingIPConfig:ignore-auto-dns properties modify this behavior.
+     *
+     * For methods that imply no upstream network, such as "shared" or
+     * "link-local", these properties must be empty.
+     *
+     * For IPv4 method "shared", the IP subnet can be configured by adding one
+     * manual IPv4 address or otherwise 10.42.x.0/24 is chosen. Note that the
+     * shared method must be configured on the interface which shares the internet
+     * to a subnet, not on the uplink which is shared.
+     **/
     obj_properties[PROP_METHOD] = g_param_spec_string(
         NM_SETTING_IP_CONFIG_METHOD,
         "",
@@ -5841,10 +5841,10 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPConfig:dns:
-	 *
-	 * Array of IP addresses of DNS servers.
-	 **/
+     * NMSettingIPConfig:dns:
+     *
+     * Array of IP addresses of DNS servers.
+     **/
     obj_properties[PROP_DNS] = g_param_spec_boxed(NM_SETTING_IP_CONFIG_DNS,
                                                   "",
                                                   "",
@@ -5852,18 +5852,18 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                                                   G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPConfig:dns-search:
-	 *
-	 * Array of DNS search domains. Domains starting with a tilde ('~')
-	 * are considered 'routing' domains and are used only to decide the
-	 * interface over which a query must be forwarded; they are not used
-	 * to complete unqualified host names.
-	 *
-	 * When using a DNS plugin that supports Conditional Forwarding or
-	 * Split DNS, then the search domains specify which name servers to
-	 * query. This makes the behavior different from running with plain
-	 * /etc/resolv.conf. For more information see also the dns-priority setting.
-	 **/
+     * NMSettingIPConfig:dns-search:
+     *
+     * Array of DNS search domains. Domains starting with a tilde ('~')
+     * are considered 'routing' domains and are used only to decide the
+     * interface over which a query must be forwarded; they are not used
+     * to complete unqualified host names.
+     *
+     * When using a DNS plugin that supports Conditional Forwarding or
+     * Split DNS, then the search domains specify which name servers to
+     * query. This makes the behavior different from running with plain
+     * /etc/resolv.conf. For more information see also the dns-priority setting.
+     **/
     obj_properties[PROP_DNS_SEARCH] =
         g_param_spec_boxed(NM_SETTING_IP_CONFIG_DNS_SEARCH,
                            "",
@@ -5872,25 +5872,25 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPConfig:dns-options:
-	 *
-	 * Array of DNS options as described in man 5 resolv.conf.
-	 *
-	 * %NULL means that the options are unset and left at the default.
-	 * In this case NetworkManager will use default options. This is
-	 * distinct from an empty list of properties.
-	 *
-	 * The currently supported options are "attempts", "debug", "edns0",
-	 * "inet6", "ip6-bytestring", "ip6-dotint", "ndots", "no-check-names",
-	 * "no-ip6-dotint", "no-reload", "no-tld-query", "rotate", "single-request",
-	 * "single-request-reopen", "timeout", "trust-ad", "use-vc".
-	 *
-	 * The "trust-ad" setting is only honored if the profile contributes
-	 * name servers to resolv.conf, and if all contributing profiles have
-	 * "trust-ad" enabled.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingIPConfig:dns-options:
+     *
+     * Array of DNS options as described in man 5 resolv.conf.
+     *
+     * %NULL means that the options are unset and left at the default.
+     * In this case NetworkManager will use default options. This is
+     * distinct from an empty list of properties.
+     *
+     * The currently supported options are "attempts", "debug", "edns0",
+     * "inet6", "ip6-bytestring", "ip6-dotint", "ndots", "no-check-names",
+     * "no-ip6-dotint", "no-reload", "no-tld-query", "rotate", "single-request",
+     * "single-request-reopen", "timeout", "trust-ad", "use-vc".
+     *
+     * The "trust-ad" setting is only honored if the profile contributes
+     * name servers to resolv.conf, and if all contributing profiles have
+     * "trust-ad" enabled.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_DNS_OPTIONS] =
         g_param_spec_boxed(NM_SETTING_IP_CONFIG_DNS_OPTIONS,
                            "",
@@ -5899,58 +5899,58 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPConfig:dns-priority:
-	 *
-	 * DNS servers priority.
-	 *
-	 * The relative priority for DNS servers specified by this setting.  A lower
-	 * numerical value is better (higher priority).
-	 *
-	 * Negative values have the special effect of excluding other configurations
-	 * with a greater numerical priority value; so in presence of at least one negative
-	 * priority, only DNS servers from connections with the lowest priority value will be used.
-	 * To avoid all DNS leaks, set the priority of the profile that should be used
-	 * to the most negative value of all active connections profiles.
-	 *
-	 * Zero selects a globally configured default value. If the latter is missing
-	 * or zero too, it defaults to 50 for VPNs (including WireGuard) and 100 for
-	 * other connections.
-	 *
-	 * Note that the priority is to order DNS settings for multiple active
-	 * connections.  It does not disambiguate multiple DNS servers within the
-	 * same connection profile.
-	 *
-	 * When multiple devices have configurations with the same priority, VPNs will be
-	 * considered first, then devices with the best (lowest metric) default
-	 * route and then all other devices.
-	 *
-	 * When using dns=default, servers with higher priority will be on top of
-	 * resolv.conf. To prioritize a given server over another one within the
-	 * same connection, just specify them in the desired order.
-	 * Note that commonly the resolver tries name servers in /etc/resolv.conf
-	 * in the order listed, proceeding with the next server in the list
-	 * on failure. See for example the "rotate" option of the dns-options setting.
-	 * If there are any negative DNS priorities, then only name servers from
-	 * the devices with that lowest priority will be considered.
-	 *
-	 * When using a DNS resolver that supports Conditional Forwarding or
-	 * Split DNS (with dns=dnsmasq or dns=systemd-resolved settings), each connection
-	 * is used to query domains in its search list. The search domains determine which
-	 * name servers to ask, and the DNS priority is used to prioritize
-	 * name servers based on the domain.  Queries for domains not present in any
-	 * search list are routed through connections having the '~.' special wildcard
-	 * domain, which is added automatically to connections with the default route
-	 * (or can be added manually).  When multiple connections specify the same domain, the
-	 * one with the best priority (lowest numerical value) wins.  If a sub domain
-	 * is configured on another interface it will be accepted regardless the priority,
-	 * unless parent domain on the other interface has a negative priority, which causes
-	 * the sub domain to be shadowed.
-	 * With Split DNS one can avoid undesired DNS leaks by properly configuring
-	 * DNS priorities and the search domains, so that only name servers of the desired
-	 * interface are configured.
-	 *
-	 * Since: 1.4
-	 **/
+     * NMSettingIPConfig:dns-priority:
+     *
+     * DNS servers priority.
+     *
+     * The relative priority for DNS servers specified by this setting.  A lower
+     * numerical value is better (higher priority).
+     *
+     * Negative values have the special effect of excluding other configurations
+     * with a greater numerical priority value; so in presence of at least one negative
+     * priority, only DNS servers from connections with the lowest priority value will be used.
+     * To avoid all DNS leaks, set the priority of the profile that should be used
+     * to the most negative value of all active connections profiles.
+     *
+     * Zero selects a globally configured default value. If the latter is missing
+     * or zero too, it defaults to 50 for VPNs (including WireGuard) and 100 for
+     * other connections.
+     *
+     * Note that the priority is to order DNS settings for multiple active
+     * connections.  It does not disambiguate multiple DNS servers within the
+     * same connection profile.
+     *
+     * When multiple devices have configurations with the same priority, VPNs will be
+     * considered first, then devices with the best (lowest metric) default
+     * route and then all other devices.
+     *
+     * When using dns=default, servers with higher priority will be on top of
+     * resolv.conf. To prioritize a given server over another one within the
+     * same connection, just specify them in the desired order.
+     * Note that commonly the resolver tries name servers in /etc/resolv.conf
+     * in the order listed, proceeding with the next server in the list
+     * on failure. See for example the "rotate" option of the dns-options setting.
+     * If there are any negative DNS priorities, then only name servers from
+     * the devices with that lowest priority will be considered.
+     *
+     * When using a DNS resolver that supports Conditional Forwarding or
+     * Split DNS (with dns=dnsmasq or dns=systemd-resolved settings), each connection
+     * is used to query domains in its search list. The search domains determine which
+     * name servers to ask, and the DNS priority is used to prioritize
+     * name servers based on the domain.  Queries for domains not present in any
+     * search list are routed through connections having the '~.' special wildcard
+     * domain, which is added automatically to connections with the default route
+     * (or can be added manually).  When multiple connections specify the same domain, the
+     * one with the best priority (lowest numerical value) wins.  If a sub domain
+     * is configured on another interface it will be accepted regardless the priority,
+     * unless parent domain on the other interface has a negative priority, which causes
+     * the sub domain to be shadowed.
+     * With Split DNS one can avoid undesired DNS leaks by properly configuring
+     * DNS priorities and the search domains, so that only name servers of the desired
+     * interface are configured.
+     *
+     * Since: 1.4
+     **/
     obj_properties[PROP_DNS_PRIORITY] =
         g_param_spec_int(NM_SETTING_IP_CONFIG_DNS_PRIORITY,
                          "",
@@ -5961,10 +5961,10 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPConfig:addresses: (type GPtrArray(NMIPAddress))
-	 *
-	 * Array of IP addresses.
-	 **/
+     * NMSettingIPConfig:addresses: (type GPtrArray(NMIPAddress))
+     *
+     * Array of IP addresses.
+     **/
     obj_properties[PROP_ADDRESSES] =
         g_param_spec_boxed(NM_SETTING_IP_CONFIG_ADDRESSES,
                            "",
@@ -5978,18 +5978,18 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                                NM_SETTING_PARAM_LEGACY | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPConfig:gateway:
-	 *
-	 * The gateway associated with this configuration. This is only meaningful
-	 * if #NMSettingIPConfig:addresses is also set.
-	 *
-	 * The gateway's main purpose is to control the next hop of the standard default route on the device.
-	 * Hence, the gateway property conflicts with #NMSettingIPConfig:never-default and will be
-	 * automatically dropped if the IP configuration is set to never-default.
-	 *
-	 * As an alternative to set the gateway, configure a static default route with /0 as prefix
-	 * length.
-	 **/
+     * NMSettingIPConfig:gateway:
+     *
+     * The gateway associated with this configuration. This is only meaningful
+     * if #NMSettingIPConfig:addresses is also set.
+     *
+     * The gateway's main purpose is to control the next hop of the standard default route on the device.
+     * Hence, the gateway property conflicts with #NMSettingIPConfig:never-default and will be
+     * automatically dropped if the IP configuration is set to never-default.
+     *
+     * As an alternative to set the gateway, configure a static default route with /0 as prefix
+     * length.
+     **/
     obj_properties[PROP_GATEWAY] = g_param_spec_string(
         NM_SETTING_IP_CONFIG_GATEWAY,
         "",
@@ -5998,10 +5998,10 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPConfig:routes: (type GPtrArray(NMIPRoute))
-	 *
-	 * Array of IP routes.
-	 **/
+     * NMSettingIPConfig:routes: (type GPtrArray(NMIPRoute))
+     *
+     * Array of IP routes.
+     **/
     obj_properties[PROP_ROUTES] =
         g_param_spec_boxed(NM_SETTING_IP_CONFIG_ROUTES,
                            "",
@@ -6012,19 +6012,19 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                                NM_SETTING_PARAM_LEGACY | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPConfig:route-metric:
-	 *
-	 * The default metric for routes that don't explicitly specify a metric.
-	 * The default value -1 means that the metric is chosen automatically
-	 * based on the device type.
-	 * The metric applies to dynamic routes, manual (static) routes that
-	 * don't have an explicit metric setting, address prefix routes, and
-	 * the default route.
-	 * Note that for IPv6, the kernel accepts zero (0) but coerces it to
-	 * 1024 (user default). Hence, setting this property to zero effectively
-	 * mean setting it to 1024.
-	 * For IPv4, zero is a regular value for the metric.
-	 **/
+     * NMSettingIPConfig:route-metric:
+     *
+     * The default metric for routes that don't explicitly specify a metric.
+     * The default value -1 means that the metric is chosen automatically
+     * based on the device type.
+     * The metric applies to dynamic routes, manual (static) routes that
+     * don't have an explicit metric setting, address prefix routes, and
+     * the default route.
+     * Note that for IPv6, the kernel accepts zero (0) but coerces it to
+     * 1024 (user default). Hence, setting this property to zero effectively
+     * mean setting it to 1024.
+     * For IPv4, zero is a regular value for the metric.
+     **/
     obj_properties[PROP_ROUTE_METRIC] =
         g_param_spec_int64(NM_SETTING_IP_CONFIG_ROUTE_METRIC,
                            "",
@@ -6035,26 +6035,26 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPConfig:route-table:
-	 *
-	 * Enable policy routing (source routing) and set the routing table used when adding routes.
-	 *
-	 * This affects all routes, including device-routes, IPv4LL, DHCP, SLAAC, default-routes
-	 * and static routes. But note that static routes can individually overwrite the setting
-	 * by explicitly specifying a non-zero routing table.
-	 *
-	 * If the table setting is left at zero, it is eligible to be overwritten via global
-	 * configuration. If the property is zero even after applying the global configuration
-	 * value, policy routing is disabled for the address family of this connection.
-	 *
-	 * Policy routing disabled means that NetworkManager will add all routes to the main
-	 * table (except static routes that explicitly configure a different table). Additionally,
-	 * NetworkManager will not delete any extraneous routes from tables except the main table.
-	 * This is to preserve backward compatibility for users who manage routing tables outside
-	 * of NetworkManager.
-	 *
-	 * Since: 1.10
-	 **/
+     * NMSettingIPConfig:route-table:
+     *
+     * Enable policy routing (source routing) and set the routing table used when adding routes.
+     *
+     * This affects all routes, including device-routes, IPv4LL, DHCP, SLAAC, default-routes
+     * and static routes. But note that static routes can individually overwrite the setting
+     * by explicitly specifying a non-zero routing table.
+     *
+     * If the table setting is left at zero, it is eligible to be overwritten via global
+     * configuration. If the property is zero even after applying the global configuration
+     * value, policy routing is disabled for the address family of this connection.
+     *
+     * Policy routing disabled means that NetworkManager will add all routes to the main
+     * table (except static routes that explicitly configure a different table). Additionally,
+     * NetworkManager will not delete any extraneous routes from tables except the main table.
+     * This is to preserve backward compatibility for users who manage routing tables outside
+     * of NetworkManager.
+     *
+     * Since: 1.10
+     **/
     obj_properties[PROP_ROUTE_TABLE] = g_param_spec_uint(
         NM_SETTING_IP_CONFIG_ROUTE_TABLE,
         "",
@@ -6064,12 +6064,12 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
         0,
         G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
     /**
-	 * NMSettingIPConfig:ignore-auto-routes:
-	 *
-	 * When #NMSettingIPConfig:method is set to "auto" and this property to
-	 * %TRUE, automatically configured routes are ignored and only routes
-	 * specified in the #NMSettingIPConfig:routes property, if any, are used.
-	 **/
+     * NMSettingIPConfig:ignore-auto-routes:
+     *
+     * When #NMSettingIPConfig:method is set to "auto" and this property to
+     * %TRUE, automatically configured routes are ignored and only routes
+     * specified in the #NMSettingIPConfig:routes property, if any, are used.
+     **/
     obj_properties[PROP_IGNORE_AUTO_ROUTES] =
         g_param_spec_boolean(NM_SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES,
                              "",
@@ -6078,14 +6078,14 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPConfig:ignore-auto-dns:
-	 *
-	 * When #NMSettingIPConfig:method is set to "auto" and this property to
-	 * %TRUE, automatically configured name servers and search domains are
-	 * ignored and only name servers and search domains specified in the
-	 * #NMSettingIPConfig:dns and #NMSettingIPConfig:dns-search properties, if
-	 * any, are used.
-	 **/
+     * NMSettingIPConfig:ignore-auto-dns:
+     *
+     * When #NMSettingIPConfig:method is set to "auto" and this property to
+     * %TRUE, automatically configured name servers and search domains are
+     * ignored and only name servers and search domains specified in the
+     * #NMSettingIPConfig:dns and #NMSettingIPConfig:dns-search properties, if
+     * any, are used.
+     **/
     obj_properties[PROP_IGNORE_AUTO_DNS] =
         g_param_spec_boolean(NM_SETTING_IP_CONFIG_IGNORE_AUTO_DNS,
                              "",
@@ -6094,13 +6094,13 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPConfig:dhcp-hostname:
-	 *
-	 * If the #NMSettingIPConfig:dhcp-send-hostname property is %TRUE, then the
-	 * specified name will be sent to the DHCP server when acquiring a lease.
-	 * This property and #NMSettingIP4Config:dhcp-fqdn are mutually exclusive and
-	 * cannot be set at the same time.
-	 **/
+     * NMSettingIPConfig:dhcp-hostname:
+     *
+     * If the #NMSettingIPConfig:dhcp-send-hostname property is %TRUE, then the
+     * specified name will be sent to the DHCP server when acquiring a lease.
+     * This property and #NMSettingIP4Config:dhcp-fqdn are mutually exclusive and
+     * cannot be set at the same time.
+     **/
     obj_properties[PROP_DHCP_HOSTNAME] =
         g_param_spec_string(NM_SETTING_IP_CONFIG_DHCP_HOSTNAME,
                             "",
@@ -6109,14 +6109,14 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPConfig:dhcp-send-hostname:
-	 *
-	 * If %TRUE, a hostname is sent to the DHCP server when acquiring a lease.
-	 * Some DHCP servers use this hostname to update DNS databases, essentially
-	 * providing a static hostname for the computer.  If the
-	 * #NMSettingIPConfig:dhcp-hostname property is %NULL and this property is
-	 * %TRUE, the current persistent hostname of the computer is sent.
-	 **/
+     * NMSettingIPConfig:dhcp-send-hostname:
+     *
+     * If %TRUE, a hostname is sent to the DHCP server when acquiring a lease.
+     * Some DHCP servers use this hostname to update DNS databases, essentially
+     * providing a static hostname for the computer.  If the
+     * #NMSettingIPConfig:dhcp-hostname property is %NULL and this property is
+     * %TRUE, the current persistent hostname of the computer is sent.
+     **/
     obj_properties[PROP_DHCP_SEND_HOSTNAME] =
         g_param_spec_boolean(NM_SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME,
                              "",
@@ -6125,12 +6125,12 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPConfig:never-default:
-	 *
-	 * If %TRUE, this connection will never be the default connection for this
-	 * IP type, meaning it will never be assigned the default route by
-	 * NetworkManager.
-	 **/
+     * NMSettingIPConfig:never-default:
+     *
+     * If %TRUE, this connection will never be the default connection for this
+     * IP type, meaning it will never be assigned the default route by
+     * NetworkManager.
+     **/
     obj_properties[PROP_NEVER_DEFAULT] =
         g_param_spec_boolean(NM_SETTING_IP_CONFIG_NEVER_DEFAULT,
                              "",
@@ -6139,16 +6139,16 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPConfig:may-fail:
-	 *
-	 * If %TRUE, allow overall network configuration to proceed even if the
-	 * configuration specified by this property times out.  Note that at least
-	 * one IP configuration must succeed or overall network configuration will
-	 * still fail.  For example, in IPv6-only networks, setting this property to
-	 * %TRUE on the #NMSettingIP4Config allows the overall network configuration
-	 * to succeed if IPv4 configuration fails but IPv6 configuration completes
-	 * successfully.
-	 **/
+     * NMSettingIPConfig:may-fail:
+     *
+     * If %TRUE, allow overall network configuration to proceed even if the
+     * configuration specified by this property times out.  Note that at least
+     * one IP configuration must succeed or overall network configuration will
+     * still fail.  For example, in IPv6-only networks, setting this property to
+     * %TRUE on the #NMSettingIP4Config allows the overall network configuration
+     * to succeed if IPv4 configuration fails but IPv6 configuration completes
+     * successfully.
+     **/
     obj_properties[PROP_MAY_FAIL] =
         g_param_spec_boolean(NM_SETTING_IP_CONFIG_MAY_FAIL,
                              "",
@@ -6157,19 +6157,19 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPConfig:dad-timeout:
-	 *
-	 * Timeout in milliseconds used to check for the presence of duplicate IP
-	 * addresses on the network.  If an address conflict is detected, the
-	 * activation will fail.  A zero value means that no duplicate address
-	 * detection is performed, -1 means the default value (either configuration
-	 * ipvx.dad-timeout override or zero).  A value greater than zero is a
-	 * timeout in milliseconds.
-	 *
-	 * The property is currently implemented only for IPv4.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingIPConfig:dad-timeout:
+     *
+     * Timeout in milliseconds used to check for the presence of duplicate IP
+     * addresses on the network.  If an address conflict is detected, the
+     * activation will fail.  A zero value means that no duplicate address
+     * detection is performed, -1 means the default value (either configuration
+     * ipvx.dad-timeout override or zero).  A value greater than zero is a
+     * timeout in milliseconds.
+     *
+     * The property is currently implemented only for IPv4.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_DAD_TIMEOUT] = g_param_spec_int(
         NM_SETTING_IP_CONFIG_DAD_TIMEOUT,
         "",
@@ -6180,14 +6180,14 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPConfig:dhcp-timeout:
-	 *
-	 * A timeout for a DHCP transaction in seconds. If zero (the default), a
-	 * globally configured default is used. If still unspecified, a device specific
-	 * timeout is used (usually 45 seconds).
-	 *
-	 * Set to 2147483647 (MAXINT32) for infinity.
-	 **/
+     * NMSettingIPConfig:dhcp-timeout:
+     *
+     * A timeout for a DHCP transaction in seconds. If zero (the default), a
+     * globally configured default is used. If still unspecified, a device specific
+     * timeout is used (usually 45 seconds).
+     *
+     * Set to 2147483647 (MAXINT32) for infinity.
+     **/
     obj_properties[PROP_DHCP_TIMEOUT] = g_param_spec_int(
         NM_SETTING_IP_CONFIG_DHCP_TIMEOUT,
         "",
@@ -6198,23 +6198,23 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPConfig:dhcp-iaid:
-	 *
-	 * A string containing the "Identity Association Identifier" (IAID) used
-	 * by the DHCP client. The property is a 32-bit decimal value or a
-	 * special value among "mac", "perm-mac", "ifname" and "stable". When
-	 * set to "mac" (or "perm-mac"), the last 4 bytes of the current (or
-	 * permanent) MAC address are used as IAID. When set to "ifname", the
-	 * IAID is computed by hashing the interface name. The special value
-	 * "stable" can be used to generate an IAID based on the stable-id (see
-	 * connection.stable-id), a per-host key and the interface name. When
-	 * the property is unset, the value from global configuration is used;
-	 * if no global default is set then the IAID is assumed to be
-	 * "ifname". Note that at the moment this property is ignored for IPv6
-	 * by dhclient, which always derives the IAID from the MAC address.
-	 *
-	 * Since: 1.22
-	 **/
+     * NMSettingIPConfig:dhcp-iaid:
+     *
+     * A string containing the "Identity Association Identifier" (IAID) used
+     * by the DHCP client. The property is a 32-bit decimal value or a
+     * special value among "mac", "perm-mac", "ifname" and "stable". When
+     * set to "mac" (or "perm-mac"), the last 4 bytes of the current (or
+     * permanent) MAC address are used as IAID. When set to "ifname", the
+     * IAID is computed by hashing the interface name. The special value
+     * "stable" can be used to generate an IAID based on the stable-id (see
+     * connection.stable-id), a per-host key and the interface name. When
+     * the property is unset, the value from global configuration is used;
+     * if no global default is set then the IAID is assumed to be
+     * "ifname". Note that at the moment this property is ignored for IPv6
+     * by dhclient, which always derives the IAID from the MAC address.
+     *
+     * Since: 1.22
+     **/
     obj_properties[PROP_DHCP_IAID] =
         g_param_spec_string(NM_SETTING_IP_CONFIG_DHCP_IAID,
                             "",
@@ -6223,30 +6223,30 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPConfig:dhcp-hostname-flags:
-	 *
-	 * Flags for the DHCP hostname and FQDN.
-	 *
-	 * Currently, this property only includes flags to control the FQDN flags
-	 * set in the DHCP FQDN option. Supported FQDN flags are
-	 * %NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE,
-	 * %NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED and
-	 * %NM_DHCP_HOSTNAME_FLAG_FQDN_NO_UPDATE.  When no FQDN flag is set and
-	 * %NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS is set, the DHCP FQDN option will
-	 * contain no flag. Otherwise, if no FQDN flag is set and
-	 * %NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS is not set, the standard FQDN flags
-	 * are set in the request:
-	 * %NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE,
-	 * %NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED for IPv4 and
-	 * %NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE for IPv6.
-	 *
-	 * When this property is set to the default value %NM_DHCP_HOSTNAME_FLAG_NONE,
-	 * a global default is looked up in NetworkManager configuration. If that value
-	 * is unset or also %NM_DHCP_HOSTNAME_FLAG_NONE, then the standard FQDN flags
-	 * described above are sent in the DHCP requests.
-	 *
-	 * Since: 1.22
-	 */
+     * NMSettingIPConfig:dhcp-hostname-flags:
+     *
+     * Flags for the DHCP hostname and FQDN.
+     *
+     * Currently, this property only includes flags to control the FQDN flags
+     * set in the DHCP FQDN option. Supported FQDN flags are
+     * %NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE,
+     * %NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED and
+     * %NM_DHCP_HOSTNAME_FLAG_FQDN_NO_UPDATE.  When no FQDN flag is set and
+     * %NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS is set, the DHCP FQDN option will
+     * contain no flag. Otherwise, if no FQDN flag is set and
+     * %NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS is not set, the standard FQDN flags
+     * are set in the request:
+     * %NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE,
+     * %NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED for IPv4 and
+     * %NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE for IPv6.
+     *
+     * When this property is set to the default value %NM_DHCP_HOSTNAME_FLAG_NONE,
+     * a global default is looked up in NetworkManager configuration. If that value
+     * is unset or also %NM_DHCP_HOSTNAME_FLAG_NONE, then the standard FQDN flags
+     * described above are sent in the DHCP requests.
+     *
+     * Since: 1.22
+     */
     obj_properties[PROP_DHCP_HOSTNAME_FLAGS] =
         g_param_spec_uint(NM_SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS,
                           "",
@@ -6257,18 +6257,18 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPConfig:dhcp-reject-servers:
-	 *
-	 * Array of servers from which DHCP offers must be rejected. This property
-	 * is useful to avoid getting a lease from misconfigured or rogue servers.
-	 *
-	 * For DHCPv4, each element must be an IPv4 address, optionally
-	 * followed by a slash and a prefix length (e.g. "192.168.122.0/24").
-	 *
-	 * This property is currently not implemented for DHCPv6.
-	 *
-	 * Since: 1.28
-	 **/
+     * NMSettingIPConfig:dhcp-reject-servers:
+     *
+     * Array of servers from which DHCP offers must be rejected. This property
+     * is useful to avoid getting a lease from misconfigured or rogue servers.
+     *
+     * For DHCPv4, each element must be an IPv4 address, optionally
+     * followed by a slash and a prefix length (e.g. "192.168.122.0/24").
+     *
+     * This property is currently not implemented for DHCPv6.
+     *
+     * Since: 1.28
+     **/
     obj_properties[PROP_DHCP_REJECT_SERVERS] =
         g_param_spec_boxed(NM_SETTING_IP_CONFIG_DHCP_REJECT_SERVERS,
                            "",

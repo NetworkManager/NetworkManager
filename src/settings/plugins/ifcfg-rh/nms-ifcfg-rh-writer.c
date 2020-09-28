@@ -240,8 +240,8 @@ write_object(NMSetting8021x *                s_8021x,
         extension = "pem";
 
     /* If the object path was specified, prefer that over any raw cert data that
-	 * may have been sent.
-	 */
+     * may have been sent.
+     */
     if (value) {
         svSetValueStr(ifcfg, objtype->ifcfg_rh_key, value);
         return TRUE;
@@ -258,14 +258,14 @@ write_object(NMSetting8021x *                s_8021x,
     }
 
     /* If certificate/private key wasn't sent, the connection may no longer be
-	 * 802.1x and thus we clear out the paths and certs.
-	 *
-	 * Since no cert/private key is now being used, delete any standard file
-	 * that was created for this connection, but leave other files alone.
-	 * Thus, for example,
-	 * /etc/sysconfig/network-scripts/ca-cert-Test_Write_Wifi_WPA_EAP-TLS.der
-	 * will be deleted, but /etc/pki/tls/cert.pem will not.
-	 */
+     * 802.1x and thus we clear out the paths and certs.
+     *
+     * Since no cert/private key is now being used, delete any standard file
+     * that was created for this connection, but leave other files alone.
+     * Thus, for example,
+     * /etc/sysconfig/network-scripts/ca-cert-Test_Write_Wifi_WPA_EAP-TLS.der
+     * will be deleted, but /etc/pki/tls/cert.pem will not.
+     */
     standard_file = utils_cert_path(svFileGetName(ifcfg), objtype->vtable->file_suffix, extension);
     g_hash_table_replace(blobs, standard_file, NULL);
     svSetValue(ifcfg, objtype->ifcfg_rh_key, force_write ? "" : NULL);
@@ -292,9 +292,9 @@ write_blobs(GHashTable *blobs, GError **error)
         }
 
         /* Write the raw certificate data out to the standard file so that we
-		 * can use paths from now on instead of pushing around the certificate
-		 * data itself.
-		 */
+         * can use paths from now on instead of pushing around the certificate
+         * data itself.
+         */
         if (!nm_utils_file_set_contents(filename,
                                         (const char *) g_bytes_get_data(blob, NULL),
                                         g_bytes_get_size(blob),
@@ -348,11 +348,11 @@ write_8021x_certs(NMSetting8021x *s_8021x,
         return FALSE;
 
     /* Save the client certificate.
-	 * If there is a private key, always write a property for the
-	 * client certificate even if it is empty, so that the reader
-	 * doesn't have to read the private key file to determine if it
-	 * is a PKCS #12 one which serves also as client certificate.
-	 */
+     * If there is a private key, always write a property for the
+     * client certificate even if it is empty, so that the reader
+     * doesn't have to read the private key file to determine if it
+     * is a PKCS #12 one which serves also as client certificate.
+     */
     if (!write_object(
             s_8021x,
             ifcfg,
@@ -690,9 +690,9 @@ write_wireless_security_setting(NMConnection *connection,
                 gboolean      key_valid = TRUE;
 
                 /* Passphrase needs a different ifcfg key since with WEP, there
-				 * are some passphrases that are indistinguishable from WEP hex
-				 * keys.
-				 */
+                 * are some passphrases that are indistinguishable from WEP hex
+                 * keys.
+                 */
                 if (key_type == NM_WEP_KEY_TYPE_UNKNOWN) {
                     if (nm_utils_wep_key_valid(key, NM_WEP_KEY_TYPE_KEY))
                         key_type = NM_WEP_KEY_TYPE_KEY;
@@ -746,8 +746,8 @@ write_wireless_security_setting(NMConnection *connection,
         cipher = nm_setting_wireless_security_get_pairwise(s_wsec, i);
 
         /* Don't write out WEP40 or WEP104 if for some reason they are set; they
-		 * are not valid pairwise ciphers.
-		 */
+         * are not valid pairwise ciphers.
+         */
         if (strcmp(cipher, "wep40") && strcmp(cipher, "wep104")) {
             tmp = g_ascii_strup(cipher, -1);
             g_string_append(str, tmp);
@@ -870,8 +870,8 @@ write_wireless_setting(NMConnection *connection,
     }
 
     /* If the SSID contains any non-printable characters, we need to use the
-	 * hex notation of the SSID instead.
-	 */
+     * hex notation of the SSID instead.
+     */
     if (ssid_len > 2 && ssid_data[0] == '0' && ssid_data[1] == 'x') {
         hex_ssid = TRUE;
         for (i = 2; i < ssid_len; i++) {
@@ -941,9 +941,9 @@ write_wireless_setting(NMConnection *connection,
     svSetValueStr(ifcfg, "BSSID", bssid);
 
     /* Ensure DEFAULTKEY and SECURITYMODE are cleared unless there's security;
-	 * otherwise there's no way to detect WEP vs. open when WEP keys aren't
-	 * saved.
-	 */
+     * otherwise there's no way to detect WEP vs. open when WEP keys aren't
+     * saved.
+     */
 
     if (nm_connection_get_setting_wireless_security(connection)) {
         if (!write_wireless_security_setting(connection, ifcfg, secrets, adhoc, no_8021x, error))
@@ -1127,7 +1127,7 @@ write_wired_setting(NMConnection *connection, shvarFile *ifcfg, GError **error)
 
             if (strchr(s390_key, '=')) {
                 /* this key cannot be expressed. But after all, it's not valid anyway
-				 * and the connection shouldn't even verify. */
+                 * and the connection shouldn't even verify. */
                 continue;
             }
 
@@ -1190,10 +1190,10 @@ write_ethtool_setting(NMConnection *connection, shvarFile *ifcfg, GError **error
         duplex         = nm_setting_wired_get_duplex(s_wired);
 
         /* autoneg off + speed 0 + duplex NULL, means we want NM
-		 * to skip link configuration which is default. So write
-		 * down link config only if we have auto-negotiate true or
-		 * a valid value for one among speed and duplex.
-		 */
+         * to skip link configuration which is default. So write
+         * down link config only if we have auto-negotiate true or
+         * a valid value for one among speed and duplex.
+         */
         if (auto_negotiate) {
             str = g_string_sized_new(64);
             g_string_printf(str, "autoneg on");
@@ -2089,8 +2089,8 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg)
             const char *puser = NULL;
 
             /* Items separated by space for consistency with eg
-			 * IPV6ADDR_SECONDARIES and DOMAIN.
-			 */
+             * IPV6ADDR_SECONDARIES and DOMAIN.
+             */
             if (str->len)
                 g_string_append_c(str, ' ');
 
@@ -2117,7 +2117,7 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg)
     master = nm_setting_connection_get_master(s_con);
     if (master) {
         /* The reader prefers the *_UUID variants, however we still try to resolve
-		 * it into an interface name, so that legacy tooling is not confused. */
+         * it into an interface name, so that legacy tooling is not confused. */
         if (!nm_utils_get_testing()) {
             /* This is conditional for easier testing. */
             master_iface = nm_manager_iface_for_uuid(NM_MANAGER_GET, master);
@@ -2166,8 +2166,8 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg)
             const char *uuid;
 
             /* Items separated by space for consistency with eg
-			 * IPV6ADDR_SECONDARIES and DOMAIN.
-			 */
+             * IPV6ADDR_SECONDARIES and DOMAIN.
+             */
             if (str->len)
                 g_string_append_c(str, ' ');
 
@@ -2271,7 +2271,7 @@ get_route_attributes_string(NMIPRoute *route, int family)
                 g_string_append_printf(str, "%s lock 0", n);
             } else {
                 /* we also have a corresponding attribute with the numeric value. The
-				 * lock setting is handled above. */
+                 * lock setting is handled above. */
             }
         } else if (nm_streq(names[i], NM_IP_ROUTE_ATTRIBUTE_SCOPE)) {
             g_string_append_printf(str, "%s %u", names[i], (unsigned) g_variant_get_byte(attr));
@@ -2688,7 +2688,7 @@ write_ip4_setting(NMConnection *connection,
         svSetValueStr(ifcfg, "BOOTPROTO", "dhcp");
     else if (!strcmp(method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
         /* Preserve the archaic form of "static" if there actually
-		 * is static configuration. */
+         * is static configuration. */
         if (g_strcmp0(svGetValue(ifcfg, "BOOTPROTO", &tmp), "static") || !num)
             svSetValueStr(ifcfg, "BOOTPROTO", "none");
         g_free(tmp);
@@ -2700,8 +2700,8 @@ write_ip4_setting(NMConnection *connection,
     has_netmask = !!svFindFirstNumberedKey(ifcfg, "NETMASK");
 
     /* Write out IPADDR<n>, PREFIX<n>, GATEWAY<n> for current IP addresses
-	 * without labels. Unset obsolete NETMASK<n>.
-	 */
+     * without labels. Unset obsolete NETMASK<n>.
+     */
     for (i = n = 0; i < num; i++) {
         NMIPAddress *addr;
         guint        prefix;
@@ -2718,10 +2718,10 @@ write_ip4_setting(NMConnection *connection,
 
         if (n == 0) {
             /* Instead of index 0 use un-numbered variables.
-			 * It's needed for compatibility with ifup that only recognizes 'GATEAWAY'
-			 * See https://bugzilla.redhat.com/show_bug.cgi?id=771673
-			 * and https://bugzilla.redhat.com/show_bug.cgi?id=1105770
-			 */
+             * It's needed for compatibility with ifup that only recognizes 'GATEAWAY'
+             * See https://bugzilla.redhat.com/show_bug.cgi?id=771673
+             * and https://bugzilla.redhat.com/show_bug.cgi?id=1105770
+             */
             j = -1;
         } else
             j = n;
@@ -2778,8 +2778,8 @@ write_ip4_setting(NMConnection *connection,
     svSetValueInt64_cond(ifcfg, "DHCP_HOSTNAME_FLAGS", flags != NM_DHCP_HOSTNAME_FLAG_NONE, flags);
 
     /* Missing DHCP_SEND_HOSTNAME means TRUE, and we prefer not write it explicitly
-	 * in that case, because it is NM-specific variable
-	 */
+     * in that case, because it is NM-specific variable
+     */
     svSetValueStr(ifcfg,
                   "DHCP_SEND_HOSTNAME",
                   nm_setting_ip_config_get_dhcp_send_hostname(s_ip4) ? NULL : "no");
@@ -2984,8 +2984,8 @@ write_ip6_setting(NMConnection *connection,
     svSetValueStr(ifcfg, "DHCPV6_HOSTNAME", hostname);
 
     /* Missing DHCPV6_SEND_HOSTNAME means TRUE, and we prefer not write it
-	 * explicitly in that case, because it is NM-specific variable
-	 */
+     * explicitly in that case, because it is NM-specific variable
+     */
     if (!nm_setting_ip_config_get_dhcp_send_hostname(s_ip6))
         svSetValueStr(ifcfg, "DHCPV6_SEND_HOSTNAME", "no");
 
@@ -3431,8 +3431,8 @@ do_write_to_disk(NMConnection *connection,
                  GError **     error)
 {
     /* From here on, we persist data to disk. Before, it was all in-memory
-	 * only. But we loaded the ifcfg files from disk, and managled our
-	 * new settings (in-memory). */
+     * only. But we loaded the ifcfg files from disk, and managled our
+     * new settings (in-memory). */
 
     if (!svWriteFileWithoutDirtyWellknown(ifcfg, 0644, error))
         return FALSE;
@@ -3544,13 +3544,13 @@ nms_ifcfg_rh_writer_write_connection(NMConnection *                  connection,
         return FALSE;
 
     /* Note that we just wrote the connection to disk, and re-read it from there.
-	 * That is racy if somebody else modifies the connection.
-	 * That race is why we must not tread a failure to re-read the profile
-	 * as an error.
-	 *
-	 * FIXME: a much better solution might be, to re-read the connection only based
-	 * on the in-memory representation of what we collected above. But the reader
-	 * does not yet allow to inject the configuration. */
+     * That is racy if somebody else modifies the connection.
+     * That race is why we must not tread a failure to re-read the profile
+     * as an error.
+     *
+     * FIXME: a much better solution might be, to re-read the connection only based
+     * on the in-memory representation of what we collected above. But the reader
+     * does not yet allow to inject the configuration. */
     if (out_reread || out_reread_same) {
         gs_unref_object NMConnection *reread      = NULL;
         gboolean                      reread_same = FALSE;

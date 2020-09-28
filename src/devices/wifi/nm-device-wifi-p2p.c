@@ -38,10 +38,10 @@ typedef struct {
     NMSupplicantManager *sup_mgr;
 
     /* NOTE: In theory management and group ifaces could be identical. However,
-	 * in practice, this cannot happen currently as NMDeviceWifiP2P is only
-	 * created for existing non-P2P interfaces.
-	 * (i.e. a single standalone P2P interface is not supported at this point)
-	 */
+     * in practice, this cannot happen currently as NMDeviceWifiP2P is only
+     * created for existing non-P2P interfaces.
+     * (i.e. a single standalone P2P interface is not supported at this point)
+     */
     NMSupplicantInterface *mgmt_iface;
     NMSupplicantInterface *group_iface;
 
@@ -161,7 +161,7 @@ check_connection_peer_joined(NMDeviceWifiP2P *device)
         return FALSE;
 
     /* Comparing the object path found on the group_iface with the peers
-	 * found on the mgmt_iface is legal. */
+     * found on the mgmt_iface is legal. */
     group = nm_supplicant_interface_get_p2p_group_path(priv->group_iface);
     if (!group)
         return FALSE;
@@ -242,9 +242,9 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
     /* TODO: Allow limitting the interface using the HW-address? */
 
     /* We don't need to check anything else here. The P2P device will only
-	 * exists if we are able to establish a P2P connection, and there should
-	 * be no further restrictions necessary.
-	 */
+     * exists if we are able to establish a P2P connection, and there should
+     * be no further restrictions necessary.
+     */
 
     return TRUE;
 }
@@ -514,7 +514,7 @@ peer_add_remove(NMDeviceWifiP2P *self,
 
     if (is_adding) {
         /* If we are in prepare state, then we are currently runnign a find
-		 * to search for the requested peer. */
+         * to search for the requested peer. */
         if (priv->find_peer_timeout_id != 0) {
             NMConnection *connection;
 
@@ -830,7 +830,7 @@ supplicant_iface_group_started_cb(NMSupplicantInterface *iface,
     priv->group_iface = g_object_ref(group_iface);
 
     /* We need to wait for the interface to be ready and the group
-	 * information to be resolved. */
+     * information to be resolved. */
     g_signal_connect(priv->group_iface,
                      "notify::" NM_SUPPLICANT_INTERFACE_P2P_GROUP_JOINED,
                      G_CALLBACK(supplicant_iface_group_joined_updated_cb),
@@ -907,10 +907,10 @@ device_state_changed(NMDevice *          device,
 
     if (new_state <= NM_DEVICE_STATE_UNAVAILABLE) {
         /* Clean up the supplicant interface because in these states the
-		 * device cannot be used.
-		 * Do not clean up for the UNMANAGED to UNAVAILABLE transition which
-		 * will happen during initialization.
-		 */
+         * device cannot be used.
+         * Do not clean up for the UNMANAGED to UNAVAILABLE transition which
+         * will happen during initialization.
+         */
         if (priv->mgmt_iface && old_state > new_state)
             supplicant_interfaces_release(self, TRUE);
 
@@ -940,7 +940,7 @@ device_state_changed(NMDevice *          device,
         break;
     case NM_DEVICE_STATE_FAILED:
         /* Clear any critical protocol notification in the wifi stack.
-		 * At this point the IP device may have been removed already. */
+         * At this point the IP device may have been removed already. */
         nm_supplicant_manager_set_wfd_ies(priv->sup_mgr, NULL);
         if (nm_device_get_ip_ifindex(device) > 0)
             nm_platform_wifi_indicate_addressing_running(nm_device_get_platform(device),

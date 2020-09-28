@@ -293,13 +293,13 @@ nm_device_modem_class_init(NMDeviceModemClass *modem_class)
     device_class->get_setting_type      = get_setting_type;
 
     /**
-	 * NMDeviceModem:modem-capabilities:
-	 *
-	 * The generic family of access technologies the modem supports.  Not all
-	 * capabilities are available at the same time however; some modems require
-	 * a firmware reload or other reinitialization to switch between eg
-	 * CDMA/EVDO and GSM/UMTS.
-	 **/
+     * NMDeviceModem:modem-capabilities:
+     *
+     * The generic family of access technologies the modem supports.  Not all
+     * capabilities are available at the same time however; some modems require
+     * a firmware reload or other reinitialization to switch between eg
+     * CDMA/EVDO and GSM/UMTS.
+     **/
     obj_properties[PROP_MODEM_CAPABILITIES] =
         g_param_spec_flags(NM_DEVICE_MODEM_MODEM_CAPABILITIES,
                            "",
@@ -309,11 +309,11 @@ nm_device_modem_class_init(NMDeviceModemClass *modem_class)
                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceModem:current-capabilities:
-	 *
-	 * The generic family of access technologies the modem currently supports
-	 * without a firmware reload or reinitialization.
-	 **/
+     * NMDeviceModem:current-capabilities:
+     *
+     * The generic family of access technologies the modem currently supports
+     * without a firmware reload or reinitialization.
+     **/
     obj_properties[PROP_CURRENT_CAPABILITIES] =
         g_param_spec_flags(NM_DEVICE_MODEM_CURRENT_CAPABILITIES,
                            "",
@@ -323,10 +323,10 @@ nm_device_modem_class_init(NMDeviceModemClass *modem_class)
                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceModem:device-id:
-	 *
-	 * Since: 1.20
-	 **/
+     * NMDeviceModem:device-id:
+     *
+     * Since: 1.20
+     **/
     obj_properties[PROP_DEVICE_ID] = g_param_spec_string(NM_DEVICE_MODEM_DEVICE_ID,
                                                          "",
                                                          "",
@@ -334,10 +334,10 @@ nm_device_modem_class_init(NMDeviceModemClass *modem_class)
                                                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceModem:operator-code:
-	 *
-	 * Since: 1.20
-	 **/
+     * NMDeviceModem:operator-code:
+     *
+     * Since: 1.20
+     **/
     obj_properties[PROP_OPERATOR_CODE] =
         g_param_spec_string(NM_DEVICE_MODEM_OPERATOR_CODE,
                             "",
@@ -346,10 +346,10 @@ nm_device_modem_class_init(NMDeviceModemClass *modem_class)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceModem:apn:
-	 *
-	 * Since: 1.20
-	 **/
+     * NMDeviceModem:apn:
+     *
+     * Since: 1.20
+     **/
     obj_properties[PROP_APN] = g_param_spec_string(NM_DEVICE_MODEM_APN,
                                                    "",
                                                    "",

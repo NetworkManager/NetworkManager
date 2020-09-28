@@ -562,12 +562,12 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
     setting_class->verify = verify;
 
     /**
-	 * NMSettingVxlan:parent:
-	 *
-	 * If given, specifies the parent interface name or parent connection UUID.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingVxlan:parent:
+     *
+     * If given, specifies the parent interface name or parent connection UUID.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_PARENT] = g_param_spec_string(
         NM_SETTING_VXLAN_PARENT,
         "",
@@ -575,13 +575,13 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
         NULL,
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
     /**
-	 * NMSettingVxlan:id:
-	 *
-	 * Specifies the VXLAN Network Identifier (or VXLAN Segment Identifier) to
-	 * use.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingVxlan:id:
+     *
+     * Specifies the VXLAN Network Identifier (or VXLAN Segment Identifier) to
+     * use.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_ID] =
         g_param_spec_uint(NM_SETTING_VXLAN_ID,
                           "",
@@ -592,12 +592,12 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingVxlan:local:
-	 *
-	 * If given, specifies the source IP address to use in outgoing packets.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingVxlan:local:
+     *
+     * If given, specifies the source IP address to use in outgoing packets.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_LOCAL] = g_param_spec_string(NM_SETTING_VXLAN_LOCAL,
                                                      "",
                                                      "",
@@ -606,14 +606,14 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
                                                          | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingVxlan:remote:
-	 *
-	 * Specifies the unicast destination IP address to use in outgoing packets
-	 * when the destination link layer address is not known in the VXLAN device
-	 * forwarding database, or the multicast IP address to join.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingVxlan:remote:
+     *
+     * Specifies the unicast destination IP address to use in outgoing packets
+     * when the destination link layer address is not known in the VXLAN device
+     * forwarding database, or the multicast IP address to join.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_REMOTE] = g_param_spec_string(
         NM_SETTING_VXLAN_REMOTE,
         "",
@@ -622,13 +622,13 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingVxlan:source-port-min:
-	 *
-	 * Specifies the minimum UDP source port to communicate to the remote VXLAN
-	 * tunnel endpoint.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingVxlan:source-port-min:
+     *
+     * Specifies the minimum UDP source port to communicate to the remote VXLAN
+     * tunnel endpoint.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_SOURCE_PORT_MIN] =
         g_param_spec_uint(NM_SETTING_VXLAN_SOURCE_PORT_MIN,
                           "",
@@ -639,13 +639,13 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingVxlan:source-port-max:
-	 *
-	 * Specifies the maximum UDP source port to communicate to the remote VXLAN
-	 * tunnel endpoint.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingVxlan:source-port-max:
+     *
+     * Specifies the maximum UDP source port to communicate to the remote VXLAN
+     * tunnel endpoint.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_SOURCE_PORT_MAX] =
         g_param_spec_uint(NM_SETTING_VXLAN_SOURCE_PORT_MAX,
                           "",
@@ -656,13 +656,13 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingVxlan:destination-port:
-	 *
-	 * Specifies the UDP destination port to communicate to the remote VXLAN
-	 * tunnel endpoint.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingVxlan:destination-port:
+     *
+     * Specifies the UDP destination port to communicate to the remote VXLAN
+     * tunnel endpoint.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_DESTINATION_PORT] =
         g_param_spec_uint(NM_SETTING_VXLAN_DESTINATION_PORT,
                           "",
@@ -673,12 +673,12 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingVxlan:ageing:
-	 *
-	 * Specifies the lifetime in seconds of FDB entries learnt by the kernel.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingVxlan:ageing:
+     *
+     * Specifies the lifetime in seconds of FDB entries learnt by the kernel.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_AGEING] =
         g_param_spec_uint(NM_SETTING_VXLAN_AGEING,
                           "",
@@ -689,13 +689,13 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingVxlan:limit:
-	 *
-	 * Specifies the maximum number of FDB entries. A value of zero means that
-	 * the kernel will store unlimited entries.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingVxlan:limit:
+     *
+     * Specifies the maximum number of FDB entries. A value of zero means that
+     * the kernel will store unlimited entries.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_LIMIT] =
         g_param_spec_uint(NM_SETTING_VXLAN_LIMIT,
                           "",
@@ -706,12 +706,12 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingVxlan:tos:
-	 *
-	 * Specifies the TOS value to use in outgoing packets.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingVxlan:tos:
+     *
+     * Specifies the TOS value to use in outgoing packets.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_TOS] =
         g_param_spec_uint(NM_SETTING_VXLAN_TOS,
                           "",
@@ -722,12 +722,12 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingVxlan:ttl:
-	 *
-	 * Specifies the time-to-live value to use in outgoing packets.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingVxlan:ttl:
+     *
+     * Specifies the time-to-live value to use in outgoing packets.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_TTL] =
         g_param_spec_uint(NM_SETTING_VXLAN_TTL,
                           "",
@@ -738,12 +738,12 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingVxlan:proxy:
-	 *
-	 * Specifies whether ARP proxy is turned on.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingVxlan:proxy:
+     *
+     * Specifies whether ARP proxy is turned on.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_PROXY] = g_param_spec_boolean(
         NM_SETTING_VXLAN_PROXY,
         "",
@@ -752,13 +752,13 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingVxlan:learning:
-	 *
-	 * Specifies whether unknown source link layer addresses and IP addresses
-	 * are entered into the VXLAN device forwarding database.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingVxlan:learning:
+     *
+     * Specifies whether unknown source link layer addresses and IP addresses
+     * are entered into the VXLAN device forwarding database.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_LEARNING] = g_param_spec_boolean(
         NM_SETTING_VXLAN_LEARNING,
         "",
@@ -766,12 +766,12 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
         TRUE,
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
     /**
-	 * NMSettingVxlan:rsc:
-	 *
-	 * Specifies whether route short circuit is turned on.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingVxlan:rsc:
+     *
+     * Specifies whether route short circuit is turned on.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_RSC] = g_param_spec_boolean(NM_SETTING_VXLAN_RSC,
                                                     "",
                                                     "",
@@ -779,12 +779,12 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
                                                     G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
                                                         | G_PARAM_STATIC_STRINGS);
     /**
-	 * NMSettingVxlan:l2-miss:
-	 *
-	 * Specifies whether netlink LL ADDR miss notifications are generated.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingVxlan:l2-miss:
+     *
+     * Specifies whether netlink LL ADDR miss notifications are generated.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_L2_MISS] = g_param_spec_boolean(
         NM_SETTING_VXLAN_L2_MISS,
         "",
@@ -793,12 +793,12 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingVxlan:l3-miss:
-	 *
-	 * Specifies whether netlink IP ADDR miss notifications are generated.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingVxlan:l3-miss:
+     *
+     * Specifies whether netlink IP ADDR miss notifications are generated.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_L3_MISS] = g_param_spec_boolean(
         NM_SETTING_VXLAN_L3_MISS,
         "",

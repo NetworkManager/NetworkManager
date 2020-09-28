@@ -45,7 +45,7 @@ nm_settings_plugin_cmp_by_priority(const NMSettingsPlugin *a,
         nm_assert(idx_b >= 0);
 
         /* plugins that appear first in @plugin_list have higher priority.
-		 * That means: smaller index -> higher priority. Reverse sort. */
+         * That means: smaller index -> higher priority. Reverse sort. */
         NM_CMP_DIRECT(idx_b, idx_a);
     }
 

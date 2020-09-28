@@ -186,10 +186,10 @@ nm_device_bond_class_init(NMDeviceBondClass *klass)
     device_class->get_setting_type      = get_setting_type;
 
     /**
-	 * NMDeviceBond:carrier:
-	 *
-	 * Whether the device has carrier.
-	 **/
+     * NMDeviceBond:carrier:
+     *
+     * Whether the device has carrier.
+     **/
     obj_properties[PROP_CARRIER] = g_param_spec_boolean(NM_DEVICE_BOND_CARRIER,
                                                         "",
                                                         "",
@@ -197,10 +197,10 @@ nm_device_bond_class_init(NMDeviceBondClass *klass)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceBond:slaves: (type GPtrArray(NMDevice))
-	 *
-	 * The devices enslaved to the bond device.
-	 **/
+     * NMDeviceBond:slaves: (type GPtrArray(NMDevice))
+     *
+     * The devices enslaved to the bond device.
+     **/
     obj_properties[PROP_SLAVES] = g_param_spec_boxed(NM_DEVICE_BOND_SLAVES,
                                                      "",
                                                      "",

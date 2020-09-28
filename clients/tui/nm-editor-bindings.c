@@ -1069,8 +1069,8 @@ vlan_settings_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
         return;
 
     /* If the id in INTERFACE_NAME changed, and ID is either unset, or was previously
-	 * in sync with INTERFACE_NAME, then update ID.
-	 */
+     * in sync with INTERFACE_NAME, then update ID.
+     */
     if (id != ifname_id && (id == binding->last_ifname_id || id == 0)) {
         binding->updating = TRUE;
         g_object_set(G_OBJECT(binding->s_vlan), NM_SETTING_VLAN_ID, ifname_id, NULL);
@@ -1078,8 +1078,8 @@ vlan_settings_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
     }
 
     /* If the PARENT in INTERFACE_NAME changed, and PARENT is either unset, or was
-	 * previously in sync with INTERFACE_NAME, then update PARENT.
-	 */
+     * previously in sync with INTERFACE_NAME, then update PARENT.
+     */
     if (g_strcmp0(parent, ifname_parent) != 0
         && (g_strcmp0(parent, binding->last_ifname_parent) == 0 || !parent || !*parent)) {
         binding->updating = TRUE;

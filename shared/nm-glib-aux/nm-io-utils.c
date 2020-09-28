@@ -385,11 +385,11 @@ nm_utils_file_set_contents(const char *filename,
     }
 
     /* If the final destination exists and is > 0 bytes, we want to sync the
-	 * newly written file to ensure the data is on disk when we rename over
-	 * the destination. Otherwise, if we get a system crash we can lose both
-	 * the new and the old file on some filesystems. (I.E. those that don't
-	 * guarantee the data is written to the disk before the metadata.)
-	 */
+     * newly written file to ensure the data is on disk when we rename over
+     * the destination. Otherwise, if we get a system crash we can lose both
+     * the new and the old file on some filesystems. (I.E. those that don't
+     * guarantee the data is written to the disk before the metadata.)
+     */
     if (lstat(filename, &statbuf) == 0 && statbuf.st_size > 0) {
         if (fsync(fd) != 0) {
             errsv = NM_ERRNO_NATIVE(errno);
@@ -457,10 +457,10 @@ nm_utils_fd_read(int fd, NMStrBuf *out_string)
     g_return_val_if_fail(out_string, -1);
 
     /* If the buffer size is 0, we allocate NM_UTILS_GET_NEXT_REALLOC_SIZE_1000 (1000 bytes)
-	 * the first time. Afterwards, the buffer grows exponentially.
-	 *
-	 * Note that with @buf_available, we always would read as much buffer as we actually
-	 * have reserved. */
+     * the first time. Afterwards, the buffer grows exponentially.
+     *
+     * Note that with @buf_available, we always would read as much buffer as we actually
+     * have reserved. */
     nm_str_buf_maybe_expand(out_string, NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
 
     buf_available = out_string->allocated - out_string->len;

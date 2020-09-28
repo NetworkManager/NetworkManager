@@ -173,8 +173,8 @@ _nm_dbus_typecheck_response(GVariant *response, const GVariantType *reply_type, 
         return TRUE;
 
     /* This is the same error code that g_dbus_connection_call() returns if
-	 * @reply_type doesn't match.
-	 */
+     * @reply_type doesn't match.
+     */
     g_set_error(error,
                 G_IO_ERROR,
                 G_IO_ERROR_INVALID_ARGUMENT,

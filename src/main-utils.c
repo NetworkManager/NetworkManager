@@ -142,8 +142,8 @@ nm_main_utils_ensure_rundir()
     }
 
     /* NM_CONFIG_DEVICE_STATE_DIR is used to determine whether NM is restarted or not.
-	 * It is important to set NMConfigCmdLineOptions.first_start before creating
-	 * the directory. */
+     * It is important to set NMConfigCmdLineOptions.first_start before creating
+     * the directory. */
     nm_assert(g_str_has_prefix(NM_CONFIG_DEVICE_STATE_DIR, NMRUNDIR "/"));
     if (g_mkdir(NM_CONFIG_DEVICE_STATE_DIR, 0755) != 0) {
         errsv = errno;
@@ -236,16 +236,16 @@ nm_main_utils_early_setup(const char *  progname,
     const char **   opt_loc_log_level = NULL, **opt_loc_log_domains = NULL;
 
     /* Make GIO ignore the remote VFS service; otherwise it tries to use the
-	 * session bus to contact the remote service, and NM shouldn't ever be
-	 * talking on the session bus.  See rh #588745
-	 */
+     * session bus to contact the remote service, and NM shouldn't ever be
+     * talking on the session bus.  See rh #588745
+     */
     setenv("GIO_USE_VFS", "local", 1);
 
     /*
-	 * Set the umask to 0022, which results in 0666 & ~0022 = 0644.
-	 * Otherwise, if root (or an su'ing user) has a wacky umask, we could
-	 * write out an unreadable resolv.conf.
-	 */
+     * Set the umask to 0022, which results in 0666 & ~0022 = 0644.
+     * Otherwise, if root (or an su'ing user) has a wacky umask, we could
+     * write out an unreadable resolv.conf.
+     */
     umask(022);
 
     /* Ensure gettext() gets the right environment (bgo #666516) */

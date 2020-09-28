@@ -72,9 +72,9 @@ modem_added_cb(NMModemManager *manager, NMModem *modem, gpointer user_data)
     driver = nm_modem_get_driver(modem);
 
     /* If it was a Bluetooth modem and no bluetooth device claimed it, ignore
-	 * it.  The rfcomm port (and thus the modem) gets created automatically
-	 * by the Bluetooth code during the connection process.
-	 */
+     * it.  The rfcomm port (and thus the modem) gets created automatically
+     * by the Bluetooth code during the connection process.
+     */
     if (driver && strstr(driver, "bluetooth")) {
         nm_log_dbg(
             LOGD_MB,

@@ -52,7 +52,7 @@ nms_keyfile_nmmeta_check_filename(const char *filename, guint *out_uuid_len)
 
     if (!NM_IN_SET(len, 36, 40)) {
         /* the remaining part of the filename has not the right length to
-		 * contain a UUID (according to nm_utils_is_uuid()). */
+         * contain a UUID (according to nm_utils_is_uuid()). */
         return NULL;
     }
 
@@ -81,7 +81,7 @@ nms_keyfile_nmmeta_filename(const char *dirname, const char *uuid, gboolean temp
                    temporary ? "~" : "")
         >= sizeof(filename)) {
         /* valid uuids are limited in length (nm_utils_is_uuid). The buffer should always
-		 * be large enough. */
+         * be large enough. */
         nm_assert_not_reached();
     }
 
@@ -151,7 +151,7 @@ nms_keyfile_nmmeta_read(const char * dirname,
 
         if (!loaded_path && !shadowed_storage) {
             /* if there is no useful information in the file, it is the same as if
-			 * the file is not present. Signal failure. */
+             * the file is not present. Signal failure. */
             return FALSE;
         }
 
@@ -240,7 +240,7 @@ nms_keyfile_nmmeta_write(const char *dirname,
         f = nm_utils_file_is_in_path(loaded_path, dirname);
         if (f) {
             /* @loaded_path points to a file directly in @dirname.
-			 * Don't use absolute paths. */
+             * Don't use absolute paths. */
             loaded_path = f;
         }
     }
@@ -275,8 +275,8 @@ nms_keyfile_nmmeta_write(const char *dirname,
         }
     } else {
         /* we only have the "loaded_path" to store. That is commonly used for the tombstones to
-		 * link to /dev/null. A symlink is sufficient to store that amount of information.
-		 * No need to bother with a keyfile. */
+         * link to /dev/null. A symlink is sufficient to store that amount of information.
+         * No need to bother with a keyfile. */
         if (symlink(loaded_path, full_filename_tmp) != 0) {
             errsv                                            = -NM_ERRNO_NATIVE(errno);
             full_filename_tmp[strlen(full_filename_tmp) - 1] = '\0';

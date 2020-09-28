@@ -99,11 +99,11 @@ typedef struct {
     const char *syslog_identifier;
 
     /* before we setup syslog (during start), the backend defaults to GLIB, meaning:
-	 * we use g_log() for all logging. At that point, the application is not yet supposed
-	 * to do any logging and doing so indicates a bug.
-	 *
-	 * Afterwards, the backend is either SYSLOG or JOURNAL. From that point, also
-	 * g_log() is redirected to this backend via a logging handler. */
+     * we use g_log() for all logging. At that point, the application is not yet supposed
+     * to do any logging and doing so indicates a bug.
+     *
+     * Afterwards, the backend is either SYSLOG or JOURNAL. From that point, also
+     * g_log() is redirected to this backend via a logging handler. */
     LogBackend log_backend;
 } Global;
 
@@ -117,8 +117,8 @@ static GlobalMain gl_main = {};
 
 static union {
     /* a union with an immutable and a mutable alias for the Global.
-	 * Since nm-logging must be thread-safe, we must take care at which
-	 * places we only read value ("imm") and where we modify them ("mut"). */
+     * Since nm-logging must be thread-safe, we must take care at which
+     * places we only read value ("imm") and where we modify them ("mut"). */
     Global       mut;
     const Global imm;
 } gl = {
@@ -134,9 +134,9 @@ static union {
 
 NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL] = {
     /* nm_logging_setup ("INFO", LOGD_DEFAULT_STRING, NULL, NULL);
-	 *
-	 * Note: LOGD_VPN_PLUGIN is special and must be disabled for
-	 * DEBUG and TRACE levels. */
+     *
+     * Note: LOGD_VPN_PLUGIN is special and must be disabled for
+     * DEBUG and TRACE levels. */
     [LOGL_INFO] = LOGD_DEFAULT,
     [LOGL_WARN] = LOGD_DEFAULT,
     [LOGL_ERR]  = LOGD_DEFAULT,
@@ -305,8 +305,8 @@ nm_logging_setup(const char *level, const char *domains, char **bad_domains, GEr
         NMLogDomain    bits;
 
         /* LOGD_VPN_PLUGIN is protected, that is, when setting ALL or DEFAULT,
-		 * it does not enable the verbose levels DEBUG and TRACE, because that
-		 * may expose sensitive data. */
+         * it does not enable the verbose levels DEBUG and TRACE, because that
+         * may expose sensitive data. */
         NMLogDomain protect = LOGD_NONE;
 
         p = strchr(s, ':');
@@ -321,8 +321,8 @@ nm_logging_setup(const char *level, const char *domains, char **bad_domains, GEr
 
         if (domains_free) {
             /* The caller didn't provide any domains to set (`nmcli general logging level DEBUG`).
-			 * We reset all domains that were previously set, but we still want to protect
-			 * VPN_PLUGIN domain. */
+             * We reset all domains that were previously set, but we still want to protect
+             * VPN_PLUGIN domain. */
             protect = LOGD_VPN_PLUGIN;
         }
 
@@ -401,8 +401,8 @@ nm_logging_setup(const char *level, const char *domains, char **bad_domains, GEr
 
     if (had_platform_debug && !_nm_logging_enabled_lockfree(LOGL_DEBUG, LOGD_PLATFORM)) {
         /* when debug logging is enabled, platform will cache all access to
-		 * sysctl. When the user disables debug-logging, we want to clear that
-		 * cache right away. */
+         * sysctl. When the user disables debug-logging, we want to clear that
+         * cache right away. */
         _nm_logging_clear_platform_logging_cache();
     }
 
@@ -462,8 +462,8 @@ _domains_to_string(gboolean          include_level_override,
     int            i;
 
     /* We don't just return g_strdup() the logging domains that were set during
-	 * nm_logging_setup(), because we want to expand "DEFAULT" and "ALL".
-	 */
+     * nm_logging_setup(), because we want to expand "DEFAULT" and "ALL".
+     */
 
     str = g_string_sized_new(75);
     for (diter = &domain_desc[0]; diter->name; diter++) {
@@ -532,7 +532,7 @@ again:
         nm_utils_strbuf_append_str(&buf_p, &buf_l, LOGD_ALL_STRING);
 
         /* Did you modify the logging domains (or their names)? Adjust the size of
-		 * _all_logging_domains_to_str buffer above to have the exact size. */
+         * _all_logging_domains_to_str buffer above to have the exact size. */
         nm_assert(strlen(_all_logging_domains_to_str) == sizeof(_all_logging_domains_to_str) - 1);
         nm_assert(buf_l == 1);
 
@@ -669,8 +669,8 @@ _nm_log_impl(const char *file,
     if (G_UNLIKELY(mt_require_locking)) {
         G_LOCK(log);
         /* we evaluate logging-enabled under lock. There is still a race that
-		 * we might log the message below *after* logging was disabled. That means,
-		 * when disabling logging, we might still log messages. */
+         * we might log the message below *after* logging was disabled. That means,
+         * when disabling logging, we might still log messages. */
         if (!_nm_logging_enabled_lockfree(level, domain)) {
             G_UNLOCK(log);
             return;
@@ -858,7 +858,7 @@ nm_log_handler(const char *log_domain, GLogLevelFlags level, const char *message
     }
 
     /* we don't need any locking here. The glib log handler gets only registered
-	 * once during nm_logging_init() and the global data is not modified afterwards. */
+     * once during nm_logging_init() and the global data is not modified afterwards. */
     nm_assert(gl.imm.init_done);
 
     if (gl.imm.debug_stderr)
@@ -913,8 +913,8 @@ void
 nm_logging_init_pre(const char *syslog_identifier, char *prefix_take)
 {
     /* this function may be called zero or one times, and only
-	 * - on the main thread
-	 * - not after nm_logging_init(). */
+     * - on the main thread
+     * - not after nm_logging_init(). */
 
     NM_ASSERT_ON_MAIN_THREAD();
 
@@ -951,7 +951,7 @@ nm_logging_init(const char *logging_backend, gboolean debug)
     LogBackend x_log_backend;
 
     /* this function may be called zero or one times, and only on the
-	 * main thread. */
+     * main thread. */
 
     NM_ASSERT_ON_MAIN_THREAD();
 
@@ -967,11 +967,11 @@ nm_logging_init(const char *logging_backend, gboolean debug)
 
     if (nm_streq(logging_backend, NM_LOG_CONFIG_BACKEND_DEBUG)) {
         /* "debug" was wrongly documented as a valid logging backend. It makes no sense however,
-		 * because printing to stderr only makes sense when not demonizing. Whether to daemonize
-		 * is only controlled via command line arguments (--no-daemon, --debug) and not via the
-		 * logging backend from configuration.
-		 *
-		 * Fall back to the default. */
+         * because printing to stderr only makes sense when not demonizing. Whether to daemonize
+         * is only controlled via command line arguments (--no-daemon, --debug) and not via the
+         * logging backend from configuration.
+         *
+         * Fall back to the default. */
         logging_backend        = "" NM_CONFIG_DEFAULT_LOGGING_BACKEND;
         obsolete_debug_backend = TRUE;
     }
@@ -983,7 +983,7 @@ nm_logging_init(const char *logging_backend, gboolean debug)
         x_log_backend = LOG_BACKEND_JOURNAL;
 
         /* We only log the monotonic-timestamp with structured logging (journal).
-		 * Only in this case, fetch the timestamp. */
+         * Only in this case, fetch the timestamp. */
         fetch_monotonic_timestamp = TRUE;
     } else
 #endif
@@ -1006,7 +1006,7 @@ nm_logging_init(const char *logging_backend, gboolean debug)
 
     if (fetch_monotonic_timestamp) {
         /* ensure we read a monotonic timestamp. Reading the timestamp the first
-		 * time causes a logging message. We don't want to do that during _nm_log_impl. */
+         * time causes a logging message. We don't want to do that during _nm_log_impl. */
         nm_utils_get_monotonic_timestamp_nsec();
     }
 

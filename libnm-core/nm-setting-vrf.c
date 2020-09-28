@@ -143,12 +143,12 @@ nm_setting_vrf_class_init(NMSettingVrfClass *klass)
     setting_class->verify = verify;
 
     /**
-	 * NMSettingVrf:table:
-	 *
-	 * The routing table for this VRF.
-	 *
-	 * Since: 1.24
-	 **/
+     * NMSettingVrf:table:
+     *
+     * The routing table for this VRF.
+     *
+     * Since: 1.24
+     **/
     obj_properties[PROP_TABLE] =
         g_param_spec_uint(NM_SETTING_VRF_TABLE,
                           "",

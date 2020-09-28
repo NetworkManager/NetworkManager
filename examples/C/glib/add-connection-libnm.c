@@ -24,8 +24,8 @@ added_cb(GObject *client, GAsyncResult *result, gpointer user_data)
     GError *            error = NULL;
 
     /* NM responded to our request; either handle the resulting error or
-	 * print out the object path of the connection we just added.
-	 */
+     * print out the object path of the connection we just added.
+     */
     remote = nm_client_add_connection_finish(NM_CLIENT(client), result, &error);
 
     if (error) {
@@ -79,8 +79,8 @@ add_connection(NMClient *client, GMainLoop *loop, const char *con_name)
     nm_connection_add_setting(connection, NM_SETTING(s_ip4));
 
     /* Ask the settings service to add the new connection; we'll quit the
-	 * mainloop and exit when the callback is called.
-	 */
+     * mainloop and exit when the callback is called.
+     */
     nm_client_add_connection_async(client, connection, TRUE, NULL, added_cb, loop);
     g_object_unref(connection);
 }

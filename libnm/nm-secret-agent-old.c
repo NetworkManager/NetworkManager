@@ -80,11 +80,11 @@ typedef struct {
     bool registration_force_unregister : 1;
 
     /* This is true, if we either are in the process of RegisterWithCapabilities() or
-	 * are already successfully registered.
-	 *
-	 * This is only TRUE, if the name owner was authenticated to run as root user.
-	 *
-	 * It also means, we should follow up with an Unregister() call during shutdown. */
+     * are already successfully registered.
+     *
+     * This is only TRUE, if the name owner was authenticated to run as root user.
+     *
+     * It also means, we should follow up with an Unregister() call during shutdown. */
     bool registered_against_server : 1;
 
     bool is_initialized : 1;
@@ -723,16 +723,16 @@ nm_secret_agent_old_register(NMSecretAgentOld *self, GCancellable *cancellable, 
         return FALSE;
 
     /* This is a synchronous function, meaning: we are not allowed to iterate
-	 * the caller's GMainContext. This is a catch 22, because we don't want
-	 * to perform synchronous calls that bypasses the ordering of our otherwise
-	 * asynchronous mode of operation. Hence, we always signal success.
-	 * That's why this function is deprecated.
-	 *
-	 * So despite claiming success, we might still be in the process of registering
-	 * or NetworkManager might not be available.
-	 *
-	 * This is a change in behavior with respect to libnm before 1.24.
-	 */
+     * the caller's GMainContext. This is a catch 22, because we don't want
+     * to perform synchronous calls that bypasses the ordering of our otherwise
+     * asynchronous mode of operation. Hence, we always signal success.
+     * That's why this function is deprecated.
+     *
+     * So despite claiming success, we might still be in the process of registering
+     * or NetworkManager might not be available.
+     *
+     * This is a change in behavior with respect to libnm before 1.24.
+     */
     return TRUE;
 }
 
@@ -1145,14 +1145,14 @@ _register_call_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 
     if (error) {
         /* registration apparently failed. However we still keep priv->registered_against_server TRUE, because
-		 *
-		 * - eventually we want to still make an Unregister() call. Even if it probably has no effect,
-		 *   better be sure.
-		 *
-		 * - we actually accept secret request (from the right name owner). We register so that
-		 *   NetworkManager knows that we are here. We don't require the registration to succeed
-		 *   for our purpose. If NetworkManager makes requests for us, despite the registration
-		 *   failing, that is fine. */
+         *
+         * - eventually we want to still make an Unregister() call. Even if it probably has no effect,
+         *   better be sure.
+         *
+         * - we actually accept secret request (from the right name owner). We register so that
+         *   NetworkManager knows that we are here. We don't require the registration to succeed
+         *   for our purpose. If NetworkManager makes requests for us, despite the registration
+         *   failing, that is fine. */
         _LOGT("register: registration failed with error \"%s\"", error->message);
         goto out;
     }
@@ -1227,9 +1227,9 @@ _get_connection_unix_user_cb(GObject *source, GAsyncResult *result, gpointer use
                   error->message);
 
         /* we actually don't do anything and keep the agent unregistered.
-		 *
-		 * We keep priv->registering_cancellable set to not retry this again, until we loose the
-		 * name owner. But the state of the agent is lingering and won't accept any requests. */
+         *
+         * We keep priv->registering_cancellable set to not retry this again, until we loose the
+         * name owner. But the state of the agent is lingering and won't accept any requests. */
         return;
     }
 
@@ -1322,8 +1322,8 @@ _method_call(GDBusConnection *      connection,
 
     if (!priv->name_owner_curr || !priv->registered_against_server) {
         /* priv->registered_against_server means that we started to register, but not necessarily
-		 * that the registration fully succeeded. However, we already authenticated the request
-		 * and so we accept it, even if the registration is not yet complete. */
+         * that the registration fully succeeded. However, we already authenticated the request
+         * and so we accept it, even if the registration is not yet complete. */
         g_dbus_method_invocation_return_error_literal(context,
                                                       NM_SECRET_AGENT_ERROR,
                                                       NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,
@@ -1354,8 +1354,8 @@ _register_state_complete(NMSecretAgentOld *self)
 
     if (!c_list_is_empty(&priv->pending_tasks_register_lst_head)) {
         /* add a dummy sentinel. We want to complete all the task we started
-		 * so far, but as we invoke user callbacks, the user might register
-		 * new tasks. Those we don't complete in this run. */
+         * so far, but as we invoke user callbacks, the user might register
+         * new tasks. Those we don't complete in this run. */
         g_object_ref(self);
         any_tasks_to_complete = TRUE;
         c_list_link_tail(&priv->pending_tasks_register_lst_head,
@@ -1535,7 +1535,7 @@ _register_state_change(NMSecretAgentOld *self)
 
     if (priv->register_state_change_reenter != 1) {
         /* Recursive calls are prevented. Do nothing for now, but repeat
-		 * the state change afterwards. */
+         * the state change afterwards. */
         priv->register_state_change_reenter = 3;
         return;
     }
@@ -1727,7 +1727,7 @@ init_sync(GInitable *initable, GCancellable *cancellable, GError **error)
     _LOGT("init-sync");
 
     /* See NMClient's sync-init method for explanation about why we create
-	 * an internal GMainContext priv->dbus_context. */
+     * an internal GMainContext priv->dbus_context. */
 
     priv->dbus_context = g_main_context_new();
 
@@ -1889,14 +1889,14 @@ nm_secret_agent_old_class_init(NMSecretAgentOldClass *class)
     object_class->finalize     = finalize;
 
     /**
-	 * NMSecretAgentOld:dbus-connection:
-	 *
-	 * The #GDBusConnection used by the instance. You may either set this
-	 * as construct-only property, or otherwise #NMSecretAgentOld will choose
-	 * a connection via g_bus_get() during initialization.
-	 *
-	 * Since: 1.24
-	 **/
+     * NMSecretAgentOld:dbus-connection:
+     *
+     * The #GDBusConnection used by the instance. You may either set this
+     * as construct-only property, or otherwise #NMSecretAgentOld will choose
+     * a connection via g_bus_get() during initialization.
+     *
+     * Since: 1.24
+     **/
     obj_properties[PROP_DBUS_CONNECTION] =
         g_param_spec_object(NM_SECRET_AGENT_OLD_DBUS_CONNECTION,
                             "",
@@ -1905,16 +1905,16 @@ nm_secret_agent_old_class_init(NMSecretAgentOldClass *class)
                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSecretAgentOld:identifier:
-	 *
-	 * Identifies this agent; only one agent in each user session may use the
-	 * same identifier.  Identifier formatting follows the same rules as
-	 * D-Bus bus names with the exception that the ':' character is not
-	 * allowed.  The valid set of characters is "[A-Z][a-z][0-9]_-." and the
-	 * identifier is limited in length to 255 characters with a minimum
-	 * of 3 characters.  An example valid identifier is 'org.gnome.nm-applet'
-	 * (without quotes).
-	 **/
+     * NMSecretAgentOld:identifier:
+     *
+     * Identifies this agent; only one agent in each user session may use the
+     * same identifier.  Identifier formatting follows the same rules as
+     * D-Bus bus names with the exception that the ':' character is not
+     * allowed.  The valid set of characters is "[A-Z][a-z][0-9]_-." and the
+     * identifier is limited in length to 255 characters with a minimum
+     * of 3 characters.  An example valid identifier is 'org.gnome.nm-applet'
+     * (without quotes).
+     **/
     obj_properties[PROP_IDENTIFIER] =
         g_param_spec_string(NM_SECRET_AGENT_OLD_IDENTIFIER,
                             "",
@@ -1923,26 +1923,26 @@ nm_secret_agent_old_class_init(NMSecretAgentOldClass *class)
                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSecretAgentOld:auto-register:
-	 *
-	 * If %TRUE (the default), the agent will always be registered when
-	 * NetworkManager is running; if NetworkManager exits and restarts, the
-	 * agent will re-register itself automatically.
-	 *
-	 * In particular, if this property is %TRUE at construct time, then the
-	 * agent will register itself with NetworkManager during
-	 * construction/initialization and initialization will only complete
-	 * after registration is completed (either successfully or unsuccessfully).
-	 * Since 1.24, a failure to register will no longer cause initialization
-	 * of #NMSecretAgentOld to fail.
-	 *
-	 * If the property is %FALSE, the agent will not automatically register with
-	 * NetworkManager, and nm_secret_agent_old_enable() or
-	 * nm_secret_agent_old_register_async() must be called to register it.
-	 *
-	 * Calling nm_secret_agent_old_enable() has the same effect as setting this
-	 * property.
-	 **/
+     * NMSecretAgentOld:auto-register:
+     *
+     * If %TRUE (the default), the agent will always be registered when
+     * NetworkManager is running; if NetworkManager exits and restarts, the
+     * agent will re-register itself automatically.
+     *
+     * In particular, if this property is %TRUE at construct time, then the
+     * agent will register itself with NetworkManager during
+     * construction/initialization and initialization will only complete
+     * after registration is completed (either successfully or unsuccessfully).
+     * Since 1.24, a failure to register will no longer cause initialization
+     * of #NMSecretAgentOld to fail.
+     *
+     * If the property is %FALSE, the agent will not automatically register with
+     * NetworkManager, and nm_secret_agent_old_enable() or
+     * nm_secret_agent_old_register_async() must be called to register it.
+     *
+     * Calling nm_secret_agent_old_enable() has the same effect as setting this
+     * property.
+     **/
     obj_properties[PROP_AUTO_REGISTER] =
         g_param_spec_boolean(NM_SECRET_AGENT_OLD_AUTO_REGISTER,
                              "",
@@ -1951,10 +1951,10 @@ nm_secret_agent_old_class_init(NMSecretAgentOldClass *class)
                              G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSecretAgentOld:registered:
-	 *
-	 * %TRUE if the agent is registered with NetworkManager, %FALSE if not.
-	 **/
+     * NMSecretAgentOld:registered:
+     *
+     * %TRUE if the agent is registered with NetworkManager, %FALSE if not.
+     **/
     obj_properties[PROP_REGISTERED] =
         g_param_spec_boolean(NM_SECRET_AGENT_OLD_REGISTERED,
                              "",
@@ -1963,13 +1963,13 @@ nm_secret_agent_old_class_init(NMSecretAgentOldClass *class)
                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSecretAgentOld:capabilities:
-	 *
-	 * A bitfield of %NMSecretAgentCapabilities.
-	 *
-	 * Changing this property is possible at any time. In case the secret
-	 * agent is currently registered, this will cause a re-registration.
-	 **/
+     * NMSecretAgentOld:capabilities:
+     *
+     * A bitfield of %NMSecretAgentCapabilities.
+     *
+     * Changing this property is possible at any time. In case the secret
+     * agent is currently registered, this will cause a re-registration.
+     **/
     obj_properties[PROP_CAPABILITIES] =
         g_param_spec_flags(NM_SECRET_AGENT_OLD_CAPABILITIES,
                            "",

@@ -39,18 +39,18 @@ test_gpid(void)
     GPid       pid = 42;
 
     /* We redefine G_PID_FORMAT, because it's only available since glib 2.53.5.
-	 *
-	 * Also, this is the format for GPid, which for glib is always a typedef
-	 * for "int". Add a check for that here.
-	 *
-	 * G_PID_FORMAT is not about pid_t, which might be a smaller int, and which we would
-	 * check with SIZEOF_PID_T. */
+     *
+     * Also, this is the format for GPid, which for glib is always a typedef
+     * for "int". Add a check for that here.
+     *
+     * G_PID_FORMAT is not about pid_t, which might be a smaller int, and which we would
+     * check with SIZEOF_PID_T. */
     G_STATIC_ASSERT(sizeof(GPid) == sizeof(int));
 
     g_assert_cmpstr("" G_PID_FORMAT, ==, "i");
 
     /* check that it's really "int". We will get a compiler warning, if that's not
-	 * the case. */
+     * the case. */
     int_ptr = &pid;
     g_assert_cmpint(*int_ptr, ==, 42);
 }
@@ -281,7 +281,7 @@ _strv_cmp_fuzz_input(const char *const * in,
     gsize        i;
 
     /* Fuzz the input argument. It will return two output arrays that are semantically
-	 * equal the input. */
+     * equal the input. */
 
     if (nmtst_get_rand_bool()) {
         char **ss;
@@ -312,12 +312,12 @@ _strv_cmp_fuzz_input(const char *const * in,
 
     if (nmtst_get_rand_bool()) {
         /* randomly swap the original and the clone. That means, out_s1 is either
-		 * the input argument (as-is) or the sementically equal clone. */
+         * the input argument (as-is) or the sementically equal clone. */
         NM_SWAP(out_s1, out_s2);
     }
     if (nmtst_get_rand_bool()) {
         /* randomly make s1 and s2 the same. This is for testing that
-		 * comparing two identical pointers yields the same result. */
+         * comparing two identical pointers yields the same result. */
         *out_s2 = *out_s1;
     }
 }
@@ -375,7 +375,7 @@ test_strv_cmp(void)
         }                                                                                           \
                                                                                                     \
         /* Compare with self. _strv_cmp_fuzz_input() randomly swapped the arguments (_a1 and _a1x).
-		 * Either way, the arrays must compare equal to their semantically equal alternative. */ \
+         * Either way, the arrays must compare equal to their semantically equal alternative. */ \
         g_assert_cmpint(_nm_utils_strv_cmp_n(_a1, _l1, _a1x, _l1), ==, 0);                          \
         g_assert_cmpint(_nm_utils_strv_cmp_n(_a2, _l2, _a2x, _l2), ==, 0);                          \
                                                                                                     \
@@ -512,7 +512,7 @@ test_nm_utils_bin2hexstr(void)
         hexdigit_pairs_mangled = FALSE;
         if (delimiter && len > 1 && nmtst_get_rand_bool()) {
             /* randomly convert "0?" sequences to single digits, so we can get hexdigit_pairs_required
-			 * parameter. */
+             * parameter. */
             g_assert(strlen(str_hex) >= 5);
             g_assert(str_hex[2] == delimiter);
             i = 0;
@@ -570,7 +570,7 @@ test_nm_utils_bin2hexstr(void)
 
         if (hexdigit_pairs_mangled) {
             /* we mangled the hexstr to contain single digits. Trying to parse with
-			 * hexdigit_pairs_required must now fail. */
+             * hexdigit_pairs_required must now fail. */
             bin2 = nm_utils_hexstr2bin_full(
                 str_hex,
                 nmtst_get_rand_bool(),
@@ -888,7 +888,7 @@ test_nm_utils_parse_next_line(void)
         }
 
         /* join the list of random words with (random) line delimiters
-		 * ("\0", "\n", "\r" or EOF). */
+         * ("\0", "\n", "\r" or EOF). */
         for (j = 0; j < strv_len; j++) {
             nm_str_buf_append(&strbuf, strv->pdata[j]);
 again:
@@ -900,7 +900,7 @@ again:
                 if (strbuf.len > 0
                     && (nm_str_buf_get_str_unsafe(&strbuf))[strbuf.len - 1] == '\r') {
                     /* the previous line was empty and terminated by "\r". We
-					 * must not join with "\n". Retry. */
+                     * must not join with "\n". Retry. */
                     goto again;
                 }
                 nm_str_buf_append_c(&strbuf, '\n');
@@ -913,7 +913,7 @@ again:
                 break;
             case 4:
                 /* the last word randomly is delimited or not, but not if the last
-				 * word is "". */
+                 * word is "". */
                 if (j + 1 < strv_len) {
                     /* it's not the last word. Retry. */
                     goto again;
@@ -921,7 +921,7 @@ again:
                 g_assert(j == strv_len - 1);
                 if (((const char *) strv->pdata[j])[0] == '\0') {
                     /* if the last word was "", we need a delimiter (to parse it back).
-					 * Retry. */
+                     * Retry. */
                     goto again;
                 }
                 /* The final delimiter gets omitted. It's EOF. */

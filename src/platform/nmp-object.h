@@ -120,44 +120,44 @@ typedef enum { /*< skip >*/
                NMP_CACHE_ID_TYPE_NONE,
 
                /* all the objects of a certain type.
-	 *
-	 * This index is special. It is the only one that contains *all* object.
-	 * Other indexes may consider some object as non "partitionable", hence
-	 * they don't track all objects.
-	 *
-	 * Hence, this index type is used when looking at all objects (still
-	 * partitioned by type).
-	 *
-	 * Also, note that links may be considered invisible. This index type
-	 * expose all links, even invisible ones. For addresses/routes, this
-	 * distinction doesn't exist, as all addresses/routes that are alive
-	 * are visible as well. */
+     *
+     * This index is special. It is the only one that contains *all* object.
+     * Other indexes may consider some object as non "partitionable", hence
+     * they don't track all objects.
+     *
+     * Hence, this index type is used when looking at all objects (still
+     * partitioned by type).
+     *
+     * Also, note that links may be considered invisible. This index type
+     * expose all links, even invisible ones. For addresses/routes, this
+     * distinction doesn't exist, as all addresses/routes that are alive
+     * are visible as well. */
                NMP_CACHE_ID_TYPE_OBJECT_TYPE,
 
                /* index for the link objects by ifname. */
                NMP_CACHE_ID_TYPE_LINK_BY_IFNAME,
 
                /* indices for the visible default-routes, ignoring ifindex.
-	 * This index only contains two partitions: all visible default-routes,
-	 * separate for IPv4 and IPv6. */
+     * This index only contains two partitions: all visible default-routes,
+     * separate for IPv4 and IPv6. */
                NMP_CACHE_ID_TYPE_DEFAULT_ROUTES,
 
                /* all the objects that have an ifindex (by object-type) for an ifindex. */
                NMP_CACHE_ID_TYPE_OBJECT_BY_IFINDEX,
 
                /* Consider all the destination fields of a route, that is, the ID without the ifindex
-	 * and gateway (meaning: network/plen,metric).
-	 * The reason for this is that `ip route change` can replace an existing route
-	 * and modify its ifindex/gateway. Effectively, that means it deletes an existing
-	 * route and adds a different one (as the ID of the route changes). However, it only
-	 * sends one RTM_NEWADDR notification without notifying about the deletion. We detect
-	 * that by having this index to contain overlapping routes which require special
-	 * cache-resync. */
+     * and gateway (meaning: network/plen,metric).
+     * The reason for this is that `ip route change` can replace an existing route
+     * and modify its ifindex/gateway. Effectively, that means it deletes an existing
+     * route and adds a different one (as the ID of the route changes). However, it only
+     * sends one RTM_NEWADDR notification without notifying about the deletion. We detect
+     * that by having this index to contain overlapping routes which require special
+     * cache-resync. */
                NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID,
 
                /* a filter for objects that track an explicit address family.
-	 *
-	 * Note that currently on NMPObjectRoutingRule is indexed by this filter. */
+     *
+     * Note that currently on NMPObjectRoutingRule is indexed by this filter. */
                NMP_CACHE_ID_TYPE_OBJECT_BY_ADDR_FAMILY,
 
                __NMP_CACHE_ID_TYPE_MAX,
@@ -215,21 +215,21 @@ typedef struct {
 
     struct {
         /* note that "struct udev_device" references the library context
-		 * "struct udev", but doesn't own it.
-		 *
-		 * Hence, the udev.device shall not be used after the library
-		 * context is destroyed.
-		 *
-		 * In case of NMPObjectLink instances that you obtained from the
-		 * platform cache, that means that you shall no keep references
-		 * to those instances that outlife the NMPlatform instance.
-		 *
-		 * In practice, the requirement is less strict and you'll be even
-		 * fine if the platform instance (and the "struct udev" instance)
-		 * are already destroyed while you still hold onto a reference to
-		 * the NMPObjectLink instance. Just don't make use of udev functions
-		 * that cause access to the udev library context.
-		 */
+         * "struct udev", but doesn't own it.
+         *
+         * Hence, the udev.device shall not be used after the library
+         * context is destroyed.
+         *
+         * In case of NMPObjectLink instances that you obtained from the
+         * platform cache, that means that you shall no keep references
+         * to those instances that outlife the NMPlatform instance.
+         *
+         * In practice, the requirement is less strict and you'll be even
+         * fine if the platform instance (and the "struct udev" instance)
+         * are already destroyed while you still hold onto a reference to
+         * the NMPObjectLink instance. Just don't make use of udev functions
+         * that cause access to the udev library context.
+         */
         struct udev_device *device;
     } udev;
 
@@ -237,8 +237,8 @@ typedef struct {
     GObject *ext_data;
 
     /* FIXME: not every NMPObjectLink should pay the price for tracking
-	 * the wireguard family id. This should be tracked via ext_data, which
-	 * would be exactly the right place. */
+     * the wireguard family id. This should be tracked via ext_data, which
+     * would be exactly the right place. */
     int wireguard_family_id;
 } NMPObjectLink;
 
@@ -447,7 +447,7 @@ NMP_OBJECT_IS_VALID(const NMPObject *obj)
     nm_assert(!obj || (obj && obj->parent._ref_count > 0 && NMP_CLASS_IS_VALID(obj->_class)));
 
     /* There isn't really much to check. Either @obj is NULL, or we must
-	 * assume that it points to valid memory. */
+     * assume that it points to valid memory. */
     return obj != NULL;
 }
 
@@ -589,9 +589,9 @@ nmp_object_ref(const NMPObject *obj)
     }
 
     /* ref and unref accept const pointers. NMPObject is supposed to be shared
-	 * and kept immutable. Disallowing to take/return a reference to a const
-	 * NMPObject is cumbersome, because callers are precisely expected to
-	 * keep a ref on the otherwise immutable object. */
+     * and kept immutable. Disallowing to take/return a reference to a const
+     * NMPObject is cumbersome, because callers are precisely expected to
+     * keep a ref on the otherwise immutable object. */
     g_return_val_if_fail(NMP_OBJECT_IS_VALID(obj), NULL);
     g_return_val_if_fail(obj->parent._ref_count != NM_OBJ_REF_COUNT_STACKINIT, NULL);
 
@@ -863,7 +863,7 @@ nmp_cache_reresolve_main_entry(NMPCache *               cache,
     }
 
     /* we only track the dirty flag for the OBJECT-TYPE index. That means,
-	 * for other lookup types we need to check the dirty flag of the main-entry. */
+     * for other lookup types we need to check the dirty flag of the main-entry. */
     main_entry = nmp_cache_lookup_entry(cache, entry->obj);
 
     nm_assert(main_entry);
@@ -1045,12 +1045,12 @@ nmp_object_ip_route_is_best_defaut_route(const NMPObject *obj)
     const NMPlatformIPRoute *r = NMP_OBJECT_CAST_IP_ROUTE(obj);
 
     /* return whether @obj is considered a default-route.
-	 *
-	 * NMIP4Config/NMIP6Config tracks the (best) default-route explicitly, because
-	 * at various places we act differently depending on whether there is a default-route
-	 * configured.
-	 *
-	 * Note that this only considers the main routing table. */
+     *
+     * NMIP4Config/NMIP6Config tracks the (best) default-route explicitly, because
+     * at various places we act differently depending on whether there is a default-route
+     * configured.
+     *
+     * Note that this only considers the main routing table. */
     return r && NM_PLATFORM_IP_ROUTE_IS_DEFAULT(r)
            && nm_platform_route_table_is_main(r->table_coerced)
            && r->type_coerced == nm_platform_route_type_coerce(1 /* RTN_UNICAST */);

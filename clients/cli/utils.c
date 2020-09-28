@@ -264,9 +264,9 @@ nmc_parse_args(nmc_arg_t *         arg_arr,
             if (strcmp(**argv, p->name) == 0) {
                 if (p->found) {
                     /* Don't allow repeated arguments, because the argument of the same
-					 * name could be used later on the line for another purpose. Assume
-					 * that's the case and return.
-					 */
+                     * name could be used later on the line for another purpose. Assume
+                     * that's the case and return.
+                     */
                     return TRUE;
                 }
 
@@ -347,8 +347,8 @@ void
 nmc_terminal_erase_line(void)
 {
     /* We intentionally use printf(), not g_print() here, to ensure that
-	 * GLib doesn't mistakenly try to convert the string.
-	 */
+     * GLib doesn't mistakenly try to convert the string.
+     */
     printf("\33[2K\r");
     fflush(stdout);
 }
@@ -648,10 +648,10 @@ typedef struct _PrintDataCol {
         const struct _PrintDataCol *parent_col;
 
         /* while constructing the list of columns in _output_selection_append(), we keep track
-		 * of the parent by index. The reason is, that at that point our columns are still
-		 * tracked in a GArray which is growing (hence, the pointers are changing).
-		 * Later, _output_selection_complete() converts the index into the actual pointer.
-		 */
+         * of the parent by index. The reason is, that at that point our columns are still
+         * tracked in a GArray which is growing (hence, the pointers are changing).
+         * Later, _output_selection_complete() converts the index into the actual pointer.
+         */
         guint _parent_idx;
     };
     const NMMetaSelectionItem *selection_item;
@@ -932,7 +932,7 @@ typedef struct {
     bool                title_to_free : 1;
 
     /* whether the column should be printed. If not %TRUE,
-	 * the column will be skipped. */
+     * the column will be skipped. */
     bool to_print : 1;
 
     int width;
@@ -1034,7 +1034,7 @@ _print_fill(const NmcConfig *   nmc_config,
         header_cell->col     = col;
 
         /* by default, the entire column is skipped. That is the case,
-		 * unless we have a cell (below) which opts-in to be printed. */
+         * unless we have a cell (below) which opts-in to be printed. */
         header_cell->to_print = FALSE;
 
         header_cell->title = nm_meta_abstract_info_get_name(info, TRUE);
@@ -1096,13 +1096,13 @@ _print_fill(const NmcConfig *   nmc_config,
             if ((is_default && nmc_config->overview)
                 || NM_FLAGS_HAS(text_out_flags, NM_META_ACCESSOR_GET_OUT_FLAGS_HIDE)) {
                 /* don't mark the entry for display. This is to shorten the output in case
-				 * the property is the default value. But we only do that, if the user
-				 * opts in to this behavior (-overview), or of the property marks itself
-				 * eligible to be hidden.
-				 *
-				 * In general, only new API shall mark itself eligible to be hidden.
-				 * Long established properties cannot, because it would be a change
-				 * in behavior. */
+                 * the property is the default value. But we only do that, if the user
+                 * opts in to this behavior (-overview), or of the property marks itself
+                 * eligible to be hidden.
+                 *
+                 * In general, only new API shall mark itself eligible to be hidden.
+                 * Long established properties cannot, because it would be a change
+                 * in behavior. */
             } else
                 header_cell->to_print = TRUE;
 
@@ -1211,7 +1211,7 @@ _print_skip_column(const NmcConfig *nmc_config, const PrintDataHeaderCell *heade
                       &nmc_meta_type_generic_info)
             && selection_item->sub_selection) {
             /* in tabular form, we skip the "name" entry for sections that have sub-selections.
-			 * That is, for "ipv4.may-fail", but not for "ipv4". */
+             * That is, for "ipv4.may-fail", but not for "ipv4". */
             return TRUE;
         }
     }
@@ -1488,7 +1488,7 @@ nmc_terminal_spawn_pager(const NmcConfig *nmc_config)
             _exit(EXIT_FAILURE);
 
         /* Check whether our parent died before we were able
-		 * to set the death signal */
+         * to set the death signal */
         if (getppid() != parent_pid)
             _exit(EXIT_SUCCESS);
 
@@ -1498,11 +1498,11 @@ nmc_terminal_spawn_pager(const NmcConfig *nmc_config)
         }
 
         /* Debian's alternatives command for pagers is
-		 * called 'pager'. Note that we do not call
-		 * sensible-pagers here, since that is just a
-		 * shell script that implements a logic that
-		 * is similar to this one anyway, but is
-		 * Debian-specific. */
+         * called 'pager'. Note that we do not call
+         * sensible-pagers here, since that is just a
+         * shell script that implements a logic that
+         * is similar to this one anyway, but is
+         * Debian-specific. */
         execlp("pager", "pager", NULL);
 
         execlp("less", "less", NULL);

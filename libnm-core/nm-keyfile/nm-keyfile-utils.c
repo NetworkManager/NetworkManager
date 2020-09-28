@@ -500,23 +500,23 @@ _keyfile_key_encode(const char *name, char **out_to_free)
     nm_assert(out_to_free && !*out_to_free);
 
     /* See g_key_file_is_key_name().
-	 *
-	 * GKeyFile allows all UTF-8 characters (even non-well formed sequences),
-	 * except:
-	 *  - no empty keys
-	 *  - no leading/trailing ' '
-	 *  - no '=', '[', ']'
-	 *
-	 * We do something more strict here. All non-ASCII characters, all non-printable
-	 * characters, and all invalid characters are escaped with "\\XX".
-	 *
-	 * We don't escape \\, unless it is followed by two hex digits.
-	 */
+     *
+     * GKeyFile allows all UTF-8 characters (even non-well formed sequences),
+     * except:
+     *  - no empty keys
+     *  - no leading/trailing ' '
+     *  - no '=', '[', ']'
+     *
+     * We do something more strict here. All non-ASCII characters, all non-printable
+     * characters, and all invalid characters are escaped with "\\XX".
+     *
+     * We don't escape \\, unless it is followed by two hex digits.
+     */
 
     if (!name[0]) {
         /* empty keys are backslash encoded. Note that usually
-		 * \\00 is not a valid encode, the only exception is the empty
-		 * word. */
+         * \\00 is not a valid encode, the only exception is the empty
+         * word. */
         return "\\00";
     }
 
@@ -646,10 +646,10 @@ nm_keyfile_key_encode(const char *name, char **out_to_free)
 
         name2 = _keyfile_key_decode(key, &to_free2);
         /* name2, the result of encode()+decode() is identical to name.
-		 * That is because
-		 *   - encode() is a injective function.
-		 *   - decode() is a surjective function, however for output
-		 *     values of encode() is behaves injective too. */
+         * That is because
+         *   - encode() is a injective function.
+         *   - decode() is a surjective function, however for output
+         *     values of encode() is behaves injective too. */
         nm_assert(nm_streq0(name2, name));
     }
 #endif
@@ -671,10 +671,10 @@ nm_keyfile_key_decode(const char *key, char **out_to_free)
 
         key2 = _keyfile_key_encode(name, &to_free2);
         /* key2, the result of decode+encode may not be identical
-		 * to the original key. That is, decode() is a surjective
-		 * function mapping different keys to the same name.
-		 * However, decode() behaves injective for input that
-		 * are valid output of encode(). */
+         * to the original key. That is, decode() is a surjective
+         * function mapping different keys to the same name.
+         * However, decode() behaves injective for input that
+         * are valid output of encode(). */
         nm_assert(key2);
     }
 #endif

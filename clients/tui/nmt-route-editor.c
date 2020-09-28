@@ -170,11 +170,11 @@ nmt_route_editor_class_init(NmtRouteEditorClass *entry_class)
     object_class->finalize     = nmt_route_editor_finalize;
 
     /**
-	 * NmtRouteEditor:setting:
-	 *
-	 * The #NMSettingIP4Config or #NMSettingIP6Config whose routes are
-	 * being edited.
-	 */
+     * NmtRouteEditor:setting:
+     *
+     * The #NMSettingIP4Config or #NMSettingIP6Config whose routes are
+     * being edited.
+     */
     g_object_class_install_property(
         object_class,
         PROP_SETTING,

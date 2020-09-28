@@ -129,8 +129,8 @@ typedef struct {
                                                        NMDeviceStateReason *out_failure_reason);
 
     /* Request the IP6 config; when the config returns the modem
-	 * subclass should emit the ip6_config_result signal.
-	 */
+     * subclass should emit the ip6_config_result signal.
+     */
     NMActStageReturn (*stage3_ip6_config_request)(NMModem *            self,
                                                   NMDeviceStateReason *out_failure_reason);
 

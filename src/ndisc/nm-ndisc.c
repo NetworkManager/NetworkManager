@@ -110,9 +110,9 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex *       multi_idx,
     nm_l3_config_data_set_ip6_privacy(l3cd, ip6_privacy);
 
     /* Check, whether kernel is recent enough to help user space handling RA.
-	 * If it's not supported, we have no ipv6-privacy and must add autoconf
-	 * addresses as /128. The reason for the /128 is to prevent the kernel
-	 * from adding a prefix route for this address. */
+     * If it's not supported, we have no ipv6-privacy and must add autoconf
+     * addresses as /128. The reason for the /128 is to prevent the kernel
+     * from adding a prefix route for this address. */
     ifa_flags = 0;
     if (kernel_support_extended_ifa_flags) {
         ifa_flags |= IFA_F_NOPREFIXROUTE;
@@ -178,8 +178,8 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex *       multi_idx,
 
             if (first_pref != rdata->gateways[i].preference && !kernel_support_rta_pref) {
                 /* We are unable to configure a router preference. Hence, we skip all gateways
-				 * with a different preference from the first gateway. Note, that the gateways
-				 * are sorted in order of highest to lowest preference. */
+                 * with a different preference from the first gateway. Note, that the gateways
+                 * are sorted in order of highest to lowest preference. */
                 break;
             }
         }
@@ -538,7 +538,7 @@ nm_ndisc_add_address(NMNDisc *ndisc, const NMNDiscAddress *new, gint32 now_s, gb
 
         if (from_ra) {
             /* RFC4862 5.5.3.d, we find an existing address with the same prefix.
-			 * (note that all prefixes at this point have implicitly length /64). */
+             * (note that all prefixes at this point have implicitly length /64). */
             if (memcmp(&item->address, &new->address, 8) == 0) {
                 existing = item;
                 break;
@@ -617,9 +617,9 @@ nm_ndisc_add_address(NMNDisc *ndisc, const NMNDiscAddress *new, gint32 now_s, gb
     }
 
     /* we create at most max_addresses autoconf addresses. This is different from
-	 * what the kernel does, because it considers *all* addresses (including
-	 * static and other temporary addresses).
-	 **/
+     * what the kernel does, because it considers *all* addresses (including
+     * static and other temporary addresses).
+     **/
     if (priv->max_addresses && rdata->addresses->len >= priv->max_addresses)
         return FALSE;
 
@@ -654,12 +654,12 @@ nm_ndisc_add_route(NMNDisc *ndisc, const NMNDiscRoute *new)
 
     if (new->plen == 0 || new->plen > 128) {
         /* Only expect non-default routes.  The router has no idea what the
-		 * local configuration or user preferences are, so sending routes
-		 * with a prefix length of 0 must be ignored by NMNDisc.
-		 *
-		 * Also, upper layers also don't expect that NMNDisc exposes routes
-		 * with a plen or zero or larger then 128.
-		 */
+         * local configuration or user preferences are, so sending routes
+         * with a prefix length of 0 must be ignored by NMNDisc.
+         *
+         * Also, upper layers also don't expect that NMNDisc exposes routes
+         * with a plen or zero or larger then 128.
+         */
         g_return_val_if_reached(FALSE);
     }
 
@@ -902,7 +902,7 @@ announce_router_initial(NMNDisc *ndisc)
         nm_clear_g_source(&priv->send_ra_id);
 
     /* Schedule the initial send rather early. Clamp the delay by minimal
-	 * delay and not the initial advert internal so that we start fast. */
+     * delay and not the initial advert internal so that we start fast. */
     if (G_LIKELY(!priv->send_ra_id)) {
         priv->send_ra_id =
             g_timeout_add_seconds(g_random_int_range(0, NM_NDISC_ROUTER_ADVERT_DELAY),
@@ -1100,8 +1100,8 @@ nm_ndisc_stop(NMNDisc *ndisc)
     priv->rdata.public.hop_limit = 64;
 
     /* Start at very low number so that last_rs - router_solicitation_interval
-	 * is much lower than nm_utils_get_monotonic_timestamp_sec() at startup.
-	 */
+     * is much lower than nm_utils_get_monotonic_timestamp_sec() at startup.
+     */
     priv->last_rs = G_MININT32;
     nm_clear_g_source_inst(&priv->ra_timeout_source);
     nm_clear_g_source(&priv->send_rs_id);
@@ -1534,8 +1534,8 @@ nm_ndisc_init(NMNDisc *ndisc)
     priv->rdata.public.hop_limit = 64;
 
     /* Start at very low number so that last_rs - router_solicitation_interval
-	 * is much lower than nm_utils_get_monotonic_timestamp_sec() at startup.
-	 */
+     * is much lower than nm_utils_get_monotonic_timestamp_sec() at startup.
+     */
     priv->last_rs = G_MININT32;
 }
 

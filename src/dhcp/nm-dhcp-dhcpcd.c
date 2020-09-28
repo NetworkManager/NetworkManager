@@ -87,8 +87,8 @@ ip4_start(NMDhcpClient *client,
     iface = nm_dhcp_client_get_iface(client);
 
     /* dhcpcd does not allow custom pidfiles; the pidfile is always
-	 * RUNSTATEDIR "dhcpcd-<ifname>.pid".
-	 */
+     * RUNSTATEDIR "dhcpcd-<ifname>.pid".
+     */
     priv->pid_file = g_strdup_printf(RUNSTATEDIR "/dhcpcd-%s.pid", iface);
 
     dhcpcd_path = nm_dhcp_dhcpcd_get_path();
@@ -119,9 +119,9 @@ ip4_start(NMDhcpClient *client,
     g_ptr_array_add(argv, (gpointer) nm_dhcp_helper_path);
 
     /* IPv4-only for now.  NetworkManager knows better than dhcpcd when to
-	 * run IPv6, and dhcpcd's automatic Router Solicitations cause problems
-	 * with devices that don't expect them.
-	 */
+     * run IPv6, and dhcpcd's automatic Router Solicitations cause problems
+     * with devices that don't expect them.
+     */
     g_ptr_array_add(argv, (gpointer) "-4");
 
     hostname = nm_dhcp_client_get_hostname(client);

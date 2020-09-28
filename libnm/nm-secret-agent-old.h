@@ -129,15 +129,15 @@ typedef struct {
     /* Virtual methods for subclasses */
 
     /* Called when the subclass should retrieve and return secrets.  Subclass
-	 * must copy or reference any arguments it may require after returning from
-	 * this method, as the arguments will freed (except for 'self', 'callback',
-	 * and 'user_data' of course).
-	 *
-	 * Before version 1.24, if the request is canceled, the callback
-	 * should still be called, but with the NM_SECRET_AGENT_ERROR_AGENT_CANCELED
-	 * error. Since 1.24, invoking the callback has no effect during cancellation
-	 * and may be omitted.
-	 */
+     * must copy or reference any arguments it may require after returning from
+     * this method, as the arguments will freed (except for 'self', 'callback',
+     * and 'user_data' of course).
+     *
+     * Before version 1.24, if the request is canceled, the callback
+     * should still be called, but with the NM_SECRET_AGENT_ERROR_AGENT_CANCELED
+     * error. Since 1.24, invoking the callback has no effect during cancellation
+     * and may be omitted.
+     */
     void (*get_secrets)(NMSecretAgentOld *             self,
                         NMConnection *                 connection,
                         const char *                   connection_path,
@@ -148,23 +148,23 @@ typedef struct {
                         gpointer                       user_data);
 
     /* Called when the subclass should cancel an outstanding request to
-	 * get secrets for a given connection.
-	 *
-	 * Before version 1.24, canceling the request MUST call the callback that was
-	 * passed along with the initial get_secrets call, sending the NM_SECRET_AGENT_ERROR/
-	 * NM_SECRET_AGENT_ERROR_AGENT_CANCELED error to that callback. Since 1.24,
-	 * the get_secrets callback will be ignored during cancellation and may be omitted.
-	 */
+     * get secrets for a given connection.
+     *
+     * Before version 1.24, canceling the request MUST call the callback that was
+     * passed along with the initial get_secrets call, sending the NM_SECRET_AGENT_ERROR/
+     * NM_SECRET_AGENT_ERROR_AGENT_CANCELED error to that callback. Since 1.24,
+     * the get_secrets callback will be ignored during cancellation and may be omitted.
+     */
     void (*cancel_get_secrets)(NMSecretAgentOld *self,
                                const char *      connection_path,
                                const char *      setting_name);
 
     /* Called when the subclass should save the secrets contained in the
-	 * connection to backing storage.  Subclass must copy or reference any
-	 * arguments it may require after returning from this method, as the
-	 * arguments will freed (except for 'self', 'callback', and 'user_data'
-	 * of course).
-	 */
+     * connection to backing storage.  Subclass must copy or reference any
+     * arguments it may require after returning from this method, as the
+     * arguments will freed (except for 'self', 'callback', and 'user_data'
+     * of course).
+     */
     void (*save_secrets)(NMSecretAgentOld *              self,
                          NMConnection *                  connection,
                          const char *                    connection_path,
@@ -172,11 +172,11 @@ typedef struct {
                          gpointer                        user_data);
 
     /* Called when the subclass should delete the secrets contained in the
-	 * connection from backing storage.  Subclass must copy or reference any
-	 * arguments it may require after returning from this method, as the
-	 * arguments will freed (except for 'self', 'callback', and 'user_data'
-	 * of course).
-	 */
+     * connection from backing storage.  Subclass must copy or reference any
+     * arguments it may require after returning from this method, as the
+     * arguments will freed (except for 'self', 'callback', and 'user_data'
+     * of course).
+     */
     void (*delete_secrets)(NMSecretAgentOld *                self,
                            NMConnection *                    connection,
                            const char *                      connection_path,

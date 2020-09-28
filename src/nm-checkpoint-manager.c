@@ -82,7 +82,7 @@ rollback_checkpoint(NMCheckpointManager *self, NMCheckpoint *checkpoint)
         iter = iter->next;
         if (nm_checkpoint_includes_devices_of(cp, checkpoint)) {
             /* the younger checkpoint has overlapping devices and gets obsoleted.
-			 * Destroy it. */
+             * Destroy it. */
             destroy_checkpoint(self, cp, TRUE);
         }
     }
@@ -124,7 +124,7 @@ nm_checkpoint_manager_create(NMCheckpointManager *   self,
 
         nm_manager_for_each_device (manager, device, tmp_lst) {
             /* FIXME: there is no strong reason to skip over unrealized devices.
-			 *        Also, NMCheckpoint anticipates to handle them (in parts). */
+             *        Also, NMCheckpoint anticipates to handle them (in parts). */
             if (!nm_device_is_real(device))
                 continue;
             nm_assert(nm_dbus_object_get_path(NM_DBUS_OBJECT(device)));
@@ -327,11 +327,11 @@ nm_checkpoint_manager_new(NMManager *manager, GParamSpec *spec)
     self = g_slice_new0(NMCheckpointManager);
 
     /* the NMCheckpointManager instance is actually owned by NMManager.
-	 * Thus, we cannot take a reference to it, and we also don't bother
-	 * taking a weak-reference. Instead let GET_MANAGER() assert that
-	 * self->_manager is alive -- which we always expect as the lifetime
-	 * of NMManager shall surpass the lifetime of the NMCheckpointManager
-	 * instance. */
+     * Thus, we cannot take a reference to it, and we also don't bother
+     * taking a weak-reference. Instead let GET_MANAGER() assert that
+     * self->_manager is alive -- which we always expect as the lifetime
+     * of NMManager shall surpass the lifetime of the NMCheckpointManager
+     * instance. */
     self->_manager      = manager;
     self->property_spec = spec;
     c_list_init(&self->checkpoints_lst_head);

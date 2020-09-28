@@ -58,9 +58,9 @@ static gboolean
 can_unmanaged_external_down(NMDevice *self)
 {
     /* Unless running in a container, an udev rule causes these to be
-	 * unmanaged. If there's no udev then we're probably in a container
-	 * and should IFF_UP and configure the veth ourselves even if we
-	 * didn't create it. */
+     * unmanaged. If there's no udev then we're probably in a container
+     * and should IFF_UP and configure the veth ourselves even if we
+     * didn't create it. */
     return FALSE;
 }
 

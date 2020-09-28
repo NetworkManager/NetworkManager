@@ -67,14 +67,14 @@ nm_hash_complete_u64(NMHashState *state)
     nm_assert(state);
 
     /* this returns the native u64 hash value. Note that this differs
-	 * from nm_hash_complete() in two ways:
-	 *
-	 * - the type, guint64 vs. guint.
-	 * - nm_hash_complete() never returns zero.
-	 *
-	 * In practice, nm_hash*() API is implemented via siphash24, so this returns
-	 * the siphash24 value. But that is not guaranteed by the API, and if you need
-	 * siphash24 directly, use c_siphash_*() and nm_hash_siphash42*() API. */
+     * from nm_hash_complete() in two ways:
+     *
+     * - the type, guint64 vs. guint.
+     * - nm_hash_complete() never returns zero.
+     *
+     * In practice, nm_hash*() API is implemented via siphash24, so this returns
+     * the siphash24 value. But that is not guaranteed by the API, and if you need
+     * siphash24 directly, use c_siphash_*() and nm_hash_siphash42*() API. */
     return c_siphash_finalize(&state->_state);
 }
 
@@ -86,8 +86,8 @@ nm_hash_complete(NMHashState *state)
     h = nm_hash_complete_u64(state);
 
     /* we don't ever want to return a zero hash.
-	 *
-	 * NMPObject requires that in _idx_obj_part(), and it's just a good idea. */
+     *
+     * NMPObject requires that in _idx_obj_part(), and it's just a good idea. */
     return (((guint)(h >> 32)) ^ ((guint) h)) ?: 1396707757u;
 }
 
@@ -98,10 +98,10 @@ nm_hash_update(NMHashState *state, const void *ptr, gsize n)
     nm_assert(n == 0 || ptr);
 
     /* Note: the data passed in here might be sensitive data (secrets),
-	 * that we should nm_explicit_bzero() afterwards. However, since
-	 * we are using siphash24 with a random key, that is not really
-	 * necessary. Something to keep in mind, if we ever move away from
-	 * this hash implementation. */
+     * that we should nm_explicit_bzero() afterwards. However, since
+     * we are using siphash24 with a random key, that is not really
+     * necessary. Something to keep in mind, if we ever move away from
+     * this hash implementation. */
     c_siphash_append(&state->_state, ptr, n);
 }
 
@@ -270,12 +270,12 @@ static inline void
 nm_hash_update_mem(NMHashState *state, const void *ptr, gsize n)
 {
     /* This also hashes the length of the data. That means,
-	 * hashing two consecutive binary fields (of arbitrary
-	 * length), will hash differently. That is,
-	 * [[1,1], []] differs from [[1],[1]].
-	 *
-	 * If you have a constant length (sizeof), use nm_hash_update()
-	 * instead. */
+     * hashing two consecutive binary fields (of arbitrary
+     * length), will hash differently. That is,
+     * [[1,1], []] differs from [[1],[1]].
+     *
+     * If you have a constant length (sizeof), use nm_hash_update()
+     * instead. */
     nm_hash_update(state, &n, sizeof(n));
     if (n > 0)
         nm_hash_update(state, ptr, n);

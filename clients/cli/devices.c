@@ -2231,9 +2231,9 @@ do_device_connect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
         return;
 
     /*
-	 * Use nowait_flag instead of should_wait, because exiting has to be postponed
-	 * till connect_device_cb() is called, giving NM time to check our permissions.
-	 */
+     * Use nowait_flag instead of should_wait, because exiting has to be postponed
+     * till connect_device_cb() is called, giving NM time to check our permissions.
+     */
     nmc->nowait_flag = (nmc->timeout == 0);
     nmc->should_wait++;
 
@@ -2285,8 +2285,8 @@ static void
 device_removed_cb(NMClient *client, NMDevice *device, DeviceCbInfo *info)
 {
     /* Success: device has been removed.
-	 * It can also happen when disconnecting a software device.
-	 */
+     * It can also happen when disconnecting a software device.
+     */
     if (!g_slist_find(info->queue, device))
         return;
 
@@ -2767,7 +2767,7 @@ do_device_set(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *ar
         return;
 
     /* when multiple properties are specified, set them in the order as they
-	 * are specified on the command line. */
+     * are specified on the command line. */
     if (values[DEV_SET_AUTOCONNECT].idx >= 0 && values[DEV_SET_MANAGED].idx >= 0
         && values[DEV_SET_MANAGED].idx < values[DEV_SET_AUTOCONNECT].idx) {
         nm_device_set_managed(device, values[DEV_SET_MANAGED].value);
@@ -3189,19 +3189,19 @@ wifi_list_rescan_cb(GObject *source_object, GAsyncResult *res, gpointer user_dat
     if (g_error_matches(error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_NOT_ALLOWED)) {
         if (nm_device_get_state(NM_DEVICE(wifi)) < NM_DEVICE_STATE_DISCONNECTED) {
             /* the device is either unmanaged or unavailable.
-			 *
-			 * If it's unmanaged, we don't expect any scan result and are done.
-			 * If it's unavailable, that usually means that we wait for wpa_supplicant
-			 * to start. In that case, also quit (without scan results). */
+             *
+             * If it's unmanaged, we don't expect any scan result and are done.
+             * If it's unavailable, that usually means that we wait for wpa_supplicant
+             * to start. In that case, also quit (without scan results). */
             force_finished = TRUE;
             done           = TRUE;
         } else {
             /* This likely means that scanning is already in progress. There's
-			 * a good chance we'll get updated results soon; wait for them.
-			 *
-			 * But also, NetworkManager ratelimits (and rejects requests). That
-			 * means, possibly we were just ratelimited, so waiting will not lead
-			 * to a new scan result. Instead, repeatedly ask new scans... */
+             * a good chance we'll get updated results soon; wait for them.
+             *
+             * But also, NetworkManager ratelimits (and rejects requests). That
+             * means, possibly we were just ratelimited, so waiting will not lead
+             * to a new scan result. Instead, repeatedly ask new scans... */
             nm_utils_invoke_on_timeout(1000,
                                        wifi_list_data->scan_cancellable,
                                        wifi_list_rescan_retry_cb,
@@ -3837,8 +3837,8 @@ do_device_wifi_connect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
 
         if (nm_access_point_connection_valid(ap, NM_CONNECTION(avail_con))) {
             /* ap has been checked against bssid1, bssid2 and the ssid
-			 * and now avail_con has been checked against ap.
-			 */
+             * and now avail_con has been checked against ap.
+             */
             connection = g_object_ref(avail_con);
             break;
         }
@@ -3854,7 +3854,7 @@ do_device_wifi_connect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
 
     if (!connection) {
         /* If there are some connection data from user, create a connection and
-		 * fill them into proper settings. */
+         * fill them into proper settings. */
         if (con_name || private || bssid2_arr || hidden)
             connection = nm_simple_connection_new();
 
@@ -3968,9 +3968,9 @@ do_device_wifi_connect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
     // implementing add/edit connections support for nmcli.
 
     /* nowait_flag indicates user input. should_wait says whether quit in start().
-	 * We have to delay exit after add_and_activate_cb() is called, even if
-	 * the user doesn't want to wait, in order to give NM time to check our
-	 * permissions. */
+     * We have to delay exit after add_and_activate_cb() is called, even if
+     * the user doesn't want to wait, in order to give NM time to check our
+     * permissions. */
     nmc->nowait_flag = (nmc->timeout == 0);
     nmc->should_wait++;
 

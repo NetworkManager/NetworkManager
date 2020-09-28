@@ -170,7 +170,7 @@ choose_identity(GVariant *identities)
     const char *  user;
 
     /* Choose identity. First try current user, then root, and else
-	 * take the first one we find. */
+     * take the first one we find. */
 
     user = getenv("USER");
 
@@ -428,10 +428,10 @@ io_watch_have_data(int fd, GIOCondition condition, gpointer user_data)
         }
 
         /* Either an error or EOF happened. The data we parsed so far was not relevant.
-		 * Regardless of what we still have unprocessed in the receive buffers, we are done.
-		 *
-		 * We would expect that the other side completed with SUCCESS or FAILURE. Apparently
-		 * it didn't. If we had any good request, we assume success. */
+         * Regardless of what we still have unprocessed in the receive buffers, we are done.
+         *
+         * We would expect that the other side completed with SUCCESS or FAILURE. Apparently
+         * it didn't. If we had any good request, we assume success. */
         auth_result = request->request_any_response;
         goto out;
     }

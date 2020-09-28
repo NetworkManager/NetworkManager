@@ -29,28 +29,28 @@ struct _shvarLine {
     CList lst;
 
     /* We index variables by their key in shvarFile.lst_idx. One shell variable might
-	 * occur multiple times in a file (in which case the last occurrence wins).
-	 * Hence, we need to keep a list of all the same keys.
-	 *
-	 * This is a pointer to the next shadowed line. */
+     * occur multiple times in a file (in which case the last occurrence wins).
+     * Hence, we need to keep a list of all the same keys.
+     *
+     * This is a pointer to the next shadowed line. */
     struct _shvarLine *prev_shadowed;
 
     /* There are three cases:
-	 *
-	 * 1) the line is not a valid variable assignment (that is, it doesn't
-	 *   start with a "FOO=" with possible whitespace prefix).
-	 *   In that case, @key and @key_with_prefix are %NULL, and the entire
-	 *   original line is in @line. Such entries are ignored for the most part.
-	 *
-	 * 2) if the line can be parsed with a "FOO=" assignment, then @line contains
-	 *   the part after '=', @key_with_prefix contains the key "FOO" with possible
-	 *   whitespace prefix, and @key points into @key_with_prefix skipping over the
-	 *   whitespace.
-	 *
-	 * 3) like 2, but if the value was deleted via svSetValue(), the entry is not removed,
-	 *   but only marked for deletion. That is done by clearing @line but preserving
-	 *   @key/@key_with_prefix.
-	 * */
+     *
+     * 1) the line is not a valid variable assignment (that is, it doesn't
+     *   start with a "FOO=" with possible whitespace prefix).
+     *   In that case, @key and @key_with_prefix are %NULL, and the entire
+     *   original line is in @line. Such entries are ignored for the most part.
+     *
+     * 2) if the line can be parsed with a "FOO=" assignment, then @line contains
+     *   the part after '=', @key_with_prefix contains the key "FOO" with possible
+     *   whitespace prefix, and @key points into @key_with_prefix skipping over the
+     *   whitespace.
+     *
+     * 3) like 2, but if the value was deleted via svSetValue(), the entry is not removed,
+     *   but only marked for deletion. That is done by clearing @line but preserving
+     *   @key/@key_with_prefix.
+     * */
     char *line;
     char *key_with_prefix;
 
@@ -236,9 +236,9 @@ svEscape(const char *s, char **to_free)
             requires_quotes = TRUE;
         else if (s[slen] < ' ') {
             /* if the string contains newline we can only express it using ANSI C quotation
-			 * (as we don't support line continuation).
-			 * Additionally, ANSI control characters look odd with regular quotation, so handle
-			 * them too. */
+             * (as we don't support line continuation).
+             * Additionally, ANSI control characters look odd with regular quotation, so handle
+             * them too. */
             return (*to_free = _escape_ansic(s));
         }
     }
@@ -325,18 +325,18 @@ _gstr_init(GString **str, const char *value, gsize i)
 
     if (!(*str)) {
         /* if @str is not yet initialized, it allocates
-		 * a new GString and copies @i characters from
-		 * @value over.
-		 *
-		 * Unescaping usually does not extend the length of a string,
-		 * so we might be tempted to allocate a fixed buffer of length
-		 * (strlen(value)+CONST).
-		 * However, due to $'\Ux' escapes, the maximum length is some
-		 * (FACTOR*strlen(value) + CONST), which is non trivial to get
-		 * right in all cases. Also, we would have to provision for the
-		 * very unlikely extreme case.
-		 * Instead, use a GString buffer which can grow as needed. But for an
-		 * initial guess, strlen(value) is a good start */
+         * a new GString and copies @i characters from
+         * @value over.
+         *
+         * Unescaping usually does not extend the length of a string,
+         * so we might be tempted to allocate a fixed buffer of length
+         * (strlen(value)+CONST).
+         * However, due to $'\Ux' escapes, the maximum length is some
+         * (FACTOR*strlen(value) + CONST), which is non trivial to get
+         * right in all cases. Also, we would have to provision for the
+         * very unlikely extreme case.
+         * Instead, use a GString buffer which can grow as needed. But for an
+         * initial guess, strlen(value) is a good start */
         *str = g_string_new_len(NULL, strlen(value) + 3);
         if (i)
             g_string_append_len(*str, value, i);
@@ -351,7 +351,7 @@ svUnescape(const char *value, char **to_free)
     int      looks_like_old_svescaped = -1;
 
     /* we handle bash syntax here (note that ifup has #!/bin/bash.
-	 * Thus, see https://www.gnu.org/software/bash/manual/html_node/Quoting.html#Quoting */
+     * Thus, see https://www.gnu.org/software/bash/manual/html_node/Quoting.html#Quoting */
 
     /* @value shall start with the first character after "FOO=" */
 
@@ -359,7 +359,7 @@ svUnescape(const char *value, char **to_free)
     nm_assert(to_free);
 
     /* we don't expect any newlines. They must be filtered out before-hand.
-	 * We also don't support line continuation. */
+     * We also don't support line continuation. */
     nm_assert(!NM_STRCHAR_ANY(value, ch, ch == '\n'));
 
     i = 0;
@@ -371,19 +371,19 @@ svUnescape(const char *value, char **to_free)
             gboolean has_semicolon = (value[i] == ';');
 
             /* starting with space is only allowed, if the entire
-			 * string consists of spaces (possibly terminated by a comment).
-			 * This disallows for example
-			 *   LANG=C ls -1
-			 *   LANG=  ls -1
-			 * but allows
-			 *   LANG= #comment
-			 *
-			 * As a special case, we also allow one trailing semicolon, as long
-			 * it is only followed by whitespace or a #-comment.
-			 *   FOO=;
-			 *   FOO=a;
-			 *   FOO=b ; #hallo
-			 */
+             * string consists of spaces (possibly terminated by a comment).
+             * This disallows for example
+             *   LANG=C ls -1
+             *   LANG=  ls -1
+             * but allows
+             *   LANG= #comment
+             *
+             * As a special case, we also allow one trailing semicolon, as long
+             * it is only followed by whitespace or a #-comment.
+             *   FOO=;
+             *   FOO=a;
+             *   FOO=b ; #hallo
+             */
             j = i + 1;
             while (g_ascii_isspace(value[j])
                    || (!has_semicolon && (has_semicolon = (value[j] == ';'))))
@@ -452,17 +452,17 @@ svUnescape(const char *value, char **to_free)
                         /* Drop the backslash. */
                     } else if (NM_IN_SET(value[i], '\'', '~')) {
                         /* '\'' and '~' in double quotes are not handled special by shell.
-						 * However, old versions of svEscape() would wrongly use double-quoting
-						 * with backslash escaping for these characters (expecting svUnescape()
-						 * to remove the backslash).
-						 *
-						 * In order to preserve previous behavior, we continue to read such
-						 * strings different then shell does. */
+                         * However, old versions of svEscape() would wrongly use double-quoting
+                         * with backslash escaping for these characters (expecting svUnescape()
+                         * to remove the backslash).
+                         *
+                         * In order to preserve previous behavior, we continue to read such
+                         * strings different then shell does. */
 
                         /* Actually, we can relax this. Old svEscape() escaped the entire value
-						 * in a particular way with double quotes.
-						 * If the value doesn't exactly look like something as created by svEscape(),
-						 * don't do the compat hack and preserve the backslash. */
+                         * in a particular way with double quotes.
+                         * If the value doesn't exactly look like something as created by svEscape(),
+                         * don't do the compat hack and preserve the backslash. */
                         if (looks_like_old_svescaped < 0)
                             looks_like_old_svescaped = _looks_like_old_svescaped(value);
                         if (!looks_like_old_svescaped)
@@ -598,7 +598,7 @@ loop_ansic_next:;
 
         if (NM_IN_SET(value[i], '|', '&', '(', ')', '<', '>')) {
             /* shell metacharacters are not supported without quoting.
-			 * Note that ';' is already handled above. */
+             * Note that ';' is already handled above. */
             goto out_error;
         }
 
@@ -687,8 +687,8 @@ void
 _nmtst_svFileSetName(shvarFile *s, const char *fileName)
 {
     /* changing the file name is not supported for regular
-	 * operation. Only allowed to use in tests, otherwise,
-	 * the filename is immutable. */
+     * operation. Only allowed to use in tests, otherwise,
+     * the filename is immutable. */
     g_free(s->fileName);
     s->fileName = g_strdup(fileName);
 }
@@ -842,9 +842,9 @@ _line_link_parse(shvarFile *s, const char *value, gsize len)
         shvarLine *existing_val;
 
         /* Slow-path: we have duplicate keys. Fix the mess we created.
-		 * Unfortunately, g_hash_table_insert() now had to allocate an extra
-		 * array to track the keys/values differently. I wish there was an
-		 * GHashTable API to add a key only if it does not exist yet. */
+         * Unfortunately, g_hash_table_insert() now had to allocate an extra
+         * array to track the keys/values differently. I wish there was an
+         * GHashTable API to add a key only if it does not exist yet. */
 
         if (!g_hash_table_lookup_extended(s->lst_idx,
                                           line,
@@ -922,7 +922,7 @@ svOpenFileInternal(const char *name, gboolean create, GError **error)
     }
 
     /* closefd is set if we opened the file read-only, so go ahead and
-	 * close it, because we can't write to it anyway */
+     * close it, because we can't write to it anyway */
     nm_assert(closefd || fd >= 0);
     return svFile_new(name, !closefd ? nm_steal_fd(&fd) : -1, content);
 }
@@ -1018,7 +1018,7 @@ svGetKeys(shvarFile *s, SvKeyType match_key_type)
         line = c_list_entry(current, shvarLine, lst);
         if (line->key && line->line && _svKeyMatchesType(line->key, match_key_type)) {
             /* we don't clone the keys. The keys are only valid
-			 * until @s gets modified. */
+             * until @s gets modified. */
             if (!keys)
                 keys = g_hash_table_new_full(nm_str_hash, g_str_equal, NULL, NULL);
             g_hash_table_add(keys, (gpointer) line->key);
@@ -1096,8 +1096,8 @@ _svGetValue(shvarFile *s, const char *key, char **to_free)
         v = svUnescape(line->line, to_free);
         if (!v) {
             /* a wrongly quoted value is treated like the empty string.
-			 * See also svWriteFile(), which handles unparsable values
-			 * that way. */
+             * See also svWriteFile(), which handles unparsable values
+             * that way. */
             nm_assert(!*to_free);
             return "";
         }
@@ -1248,7 +1248,7 @@ svGetValueInt64(shvarFile *s, const char *key, guint base, gint64 min, gint64 ma
     if (!value) {
         nm_assert(!to_free);
         /* indicate that the key does not exist (or has a syntax error
-		 * and svUnescape() failed). */
+         * and svUnescape() failed). */
         errno = ENOKEY;
         return fallback;
     }
@@ -1273,7 +1273,7 @@ svGetValueEnum(shvarFile *s, const char *key, GType gtype, int *out_value, GErro
     svalue = _svGetValue(s, key, &to_free);
     if (!svalue) {
         /* don't touch out_value. The caller is supposed
-		 * to initialize it with the default value. */
+         * to initialize it with the default value. */
         return TRUE;
     }
 
@@ -1367,7 +1367,7 @@ svSetValue(shvarFile *s, const char *key, const char *value)
     line = g_hash_table_lookup(s->lst_idx, &key);
     if (line && (l_shadowed = line->prev_shadowed)) {
         /* if we find multiple entries for the same key, we can
-		 * delete the shadowed ones. */
+         * delete the shadowed ones. */
         line->prev_shadowed = NULL;
         changed             = TRUE;
         do {
@@ -1381,7 +1381,7 @@ svSetValue(shvarFile *s, const char *key, const char *value)
     if (!value) {
         if (line) {
             /* We only clear the value, but leave the line entry. This way, if we
-			 * happen to re-add the value, we write it to the same line again. */
+             * happen to re-add the value, we write it to the same line again. */
             if (nm_clear_g_free(&line->line)) {
                 changed = TRUE;
             }

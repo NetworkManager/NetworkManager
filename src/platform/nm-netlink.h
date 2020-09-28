@@ -81,8 +81,8 @@ struct nla_policy {
         G_STATIC_ASSERT_EXPR(G_N_ELEMENTS(tb) > 0);                                           \
                                                                                               \
         /* We allow @policy to be either a C array or NULL. The sizeof()
-		 * must either match the expected array size or the sizeof(NULL),
-		 * but not both. */                      \
+         * must either match the expected array size or the sizeof(NULL),
+         * but not both. */                      \
         G_STATIC_ASSERT_EXPR((sizeof(policy) == G_N_ELEMENTS(tb) * sizeof(struct nla_policy)) \
                              ^ (sizeof(policy) == sizeof(NULL)));                             \
     }                                                                                         \
@@ -144,8 +144,8 @@ nla_data(const struct nlattr *nla)
         nm_assert(nla_len(_nla) >= sizeof(type));                       \
                                                                         \
         /* note that casting the pointer is undefined behavior in C, if
-		 * the data has wrong alignment. Netlink data is aligned to 4 bytes,
-		 * that means, if the alignment is larger than 4, this is invalid. */ \
+         * the data has wrong alignment. Netlink data is aligned to 4 bytes,
+         * that means, if the alignment is larger than 4, this is invalid. */ \
         G_STATIC_ASSERT_EXPR(_nm_alignof(type) <= NLA_ALIGNTO);         \
                                                                         \
         (type *) nla_data(_nla);                                        \
@@ -237,8 +237,8 @@ size_t nla_memcpy(void *dst, const struct nlattr *nla, size_t dstsize);
         size_t                     _srcsize;                             \
                                                                          \
         /* assert that, if @nla is given, that it has the exact expected
-		 * size. This implies that the caller previously verified the length
-		 * of the attribute (via minlen/maxlen at nla_parse()). */ \
+         * size. This implies that the caller previously verified the length
+         * of the attribute (via minlen/maxlen at nla_parse()). */ \
                                                                          \
         if (_nla) {                                                      \
             _srcsize = nla_memcpy(_dst, _nla, _dstsize);                 \

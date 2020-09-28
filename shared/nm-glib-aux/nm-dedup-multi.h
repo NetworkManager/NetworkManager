@@ -27,11 +27,11 @@ typedef enum _NMDedupMultiIdxMode {
     NM_DEDUP_MULTI_IDX_MODE_PREPEND_FORCE,
 
     /* append new objects to the end of the list.
-	 * If the object is already in the cache, don't move it. */
+     * If the object is already in the cache, don't move it. */
     NM_DEDUP_MULTI_IDX_MODE_APPEND,
 
     /* like NM_DEDUP_MULTI_IDX_MODE_APPEND, but if the object
-	 * is already in the cache, move it to the end. */
+     * is already in the cache, move it to the end. */
     NM_DEDUP_MULTI_IDX_MODE_APPEND_FORCE,
 } NMDedupMultiIdxMode;
 
@@ -56,7 +56,7 @@ struct _NMDedupMultiObjClass {
     void (*obj_destroy)(NMDedupMultiObj *obj);
 
     /* the NMDedupMultiObj can be deduplicated. For that the obj_full_hash_update()
-	 * and obj_full_equal() compare *all* fields of the object, even minor ones. */
+     * and obj_full_equal() compare *all* fields of the object, even minor ones. */
     void (*obj_full_hash_update)(const NMDedupMultiObj *obj, struct _NMHashState *h);
     gboolean (*obj_full_equal)(const NMDedupMultiObj *obj_a, const NMDedupMultiObj *obj_b);
 };
@@ -67,9 +67,9 @@ static inline const NMDedupMultiObj *
 nm_dedup_multi_obj_ref(const NMDedupMultiObj *obj)
 {
     /* ref and unref accept const pointers. Objects is supposed to be shared
-	 * and kept immutable. Disallowing to take/return a reference to a const
-	 * NMPObject is cumbersome, because callers are precisely expected to
-	 * keep a ref on the otherwise immutable object. */
+     * and kept immutable. Disallowing to take/return a reference to a const
+     * NMPObject is cumbersome, because callers are precisely expected to
+     * keep a ref on the otherwise immutable object. */
 
     nm_assert(obj);
     nm_assert(obj->_ref_count != NM_OBJ_REF_COUNT_STACKINIT);
@@ -146,12 +146,12 @@ struct _NMDedupMultiIdxTypeClass {
                                  const NMDedupMultiObj *    obj_b);
 
     /* an NMDedupMultiIdxTypeClass which implements partitioning of the
-	 * tracked objects, must implement the idx_obj_partition*() functions.
-	 *
-	 * idx_obj_partitionable() may return NULL if the object cannot be tracked.
-	 * For example, a index for routes by ifindex, may not want to track any
-	 * routes that don't have a valid ifindex. If the idx-type says that the
-	 * object is not partitionable, it is never added to the NMDedupMultiIndex. */
+     * tracked objects, must implement the idx_obj_partition*() functions.
+     *
+     * idx_obj_partitionable() may return NULL if the object cannot be tracked.
+     * For example, a index for routes by ifindex, may not want to track any
+     * routes that don't have a valid ifindex. If the idx-type says that the
+     * object is not partitionable, it is never added to the NMDedupMultiIndex. */
     gboolean (*idx_obj_partitionable)(const NMDedupMultiIdxType *idx_type,
                                       const NMDedupMultiObj *    obj);
     void (*idx_obj_partition_hash_update)(const NMDedupMultiIdxType *idx_type,
@@ -189,7 +189,7 @@ nm_dedup_multi_idx_type_partition_equal(const NMDedupMultiIdxType *             
 
 struct _NMDedupMultiEntry {
     /* this is the list of all entries that share the same head entry.
-	 * All entries compare equal according to idx_obj_partition_equal(). */
+     * All entries compare equal according to idx_obj_partition_equal(). */
     CList lst_entries;
 
     /* const NMDedupMultiObj * */ gconstpointer obj;
@@ -202,7 +202,7 @@ struct _NMDedupMultiEntry {
 
 struct _NMDedupMultiHeadEntry {
     /* this is the list of all entries that share the same head entry.
-	 * All entries compare equal according to idx_obj_partition_equal(). */
+     * All entries compare equal according to idx_obj_partition_equal(). */
     CList lst_entries_head;
 
     const NMDedupMultiIdxType *idx_type;
@@ -220,7 +220,7 @@ static inline gconstpointer
 nm_dedup_multi_entry_get_obj(const NMDedupMultiEntry *entry)
 {
     /* convenience method that allows to skip the %NULL check on
-	 * @entry. Think of the NULL-conditional operator ?. of C# */
+     * @entry. Think of the NULL-conditional operator ?. of C# */
     return entry ? entry->obj : NULL;
 }
 
@@ -230,10 +230,10 @@ static inline void
 nm_dedup_multi_entry_set_dirty(const NMDedupMultiEntry *entry, gboolean dirty)
 {
     /* NMDedupMultiEntry is always exposed as a const object, because it is not
-	 * supposed to be modified outside NMDedupMultiIndex API. Except the "dirty"
-	 * flag. In C++ speak, it is a mutable field.
-	 *
-	 * Add this inline function, to cast-away constness and set the dirty flag. */
+     * supposed to be modified outside NMDedupMultiIndex API. Except the "dirty"
+     * flag. In C++ speak, it is a mutable field.
+     *
+     * Add this inline function, to cast-away constness and set the dirty flag. */
     nm_assert(entry);
     ((NMDedupMultiEntry *) entry)->dirty = dirty;
 }
@@ -338,7 +338,7 @@ nm_dedup_multi_iter_next(NMDedupMultiIter *iter)
         return FALSE;
 
     /* we always look ahead for the next. This way, the user
-	 * may delete the current entry (but no other entries). */
+     * may delete the current entry (but no other entries). */
     iter->current = c_list_entry(iter->_next, NMDedupMultiEntry, lst_entries);
     if (iter->_next->next == iter->_head)
         iter->_next = NULL;
@@ -392,8 +392,8 @@ nm_dedup_multi_head_entry_sort(const NMDedupMultiHeadEntry *head_entry,
 {
     if (head_entry) {
         /* the head entry can be sorted directly without messing up the
-		 * index to which it belongs. Of course, this does mess up any
-		 * NMDedupMultiIter instances. */
+         * index to which it belongs. Of course, this does mess up any
+         * NMDedupMultiIter instances. */
         c_list_sort((CList *) &head_entry->lst_entries_head, cmp, user_data);
     }
 }

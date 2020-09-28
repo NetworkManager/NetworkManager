@@ -202,7 +202,7 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
 
             if (addr_list[i].s_addr == 0 || nm_ip4_addr_is_localhost(addr_list[i].s_addr)) {
                 /* Skip localhost addresses, like also networkd does.
-				 * See https://github.com/systemd/systemd/issues/4524. */
+                 * See https://github.com/systemd/systemd/issues/4524. */
                 continue;
             }
             nm_ip4_config_add_nameserver(ip4_config, addr_list[i].s_addr);
@@ -236,7 +236,7 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
                                   s);
 
         /* Multiple domains sometimes stuffed into option 15 "Domain Name".
-		 * As systemd escapes such characters, split them at \\032. */
+         * As systemd escapes such characters, split them at \\032. */
         domains = g_strsplit(s, "\\032", 0);
         for (d = domains; *d; d++)
             nm_ip4_config_add_domain(ip4_config, *d);
@@ -309,22 +309,22 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
 
             if (option == NM_DHCP_OPTION_DHCP4_STATIC_ROUTE && has_classless_route) {
                 /* RFC 3443: if the DHCP server returns both a Classless Static Routes
-				 * option and a Static Routes option, the DHCP client MUST ignore the
-				 * Static Routes option. */
+                 * option and a Static Routes option, the DHCP client MUST ignore the
+                 * Static Routes option. */
                 continue;
             }
 
             if (r_plen == 0 && option == NM_DHCP_OPTION_DHCP4_STATIC_ROUTE) {
                 /* for option 33 (static route), RFC 2132 says:
-				 *
-				 * The default route (0.0.0.0) is an illegal destination for a static
-				 * route. */
+                 *
+                 * The default route (0.0.0.0) is an illegal destination for a static
+                 * route. */
                 continue;
             }
 
             if (r_plen == 0) {
                 /* if there are multiple default routes, we add them with differing
-				 * metrics. */
+                 * metrics. */
                 m = default_route_metric;
                 if (default_route_metric < G_MAXUINT32)
                     default_route_metric++;
@@ -376,16 +376,16 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
 
             if (has_router_from_classless) {
                 /* If the DHCP server returns both a Classless Static Routes option and a
-				 * Router option, the DHCP client MUST ignore the Router option [RFC 3442].
-				 *
-				 * Be more lenient and ignore the Router option only if Classless Static
-				 * Routes contain a default gateway (as other DHCP backends do).
-				 */
+                 * Router option, the DHCP client MUST ignore the Router option [RFC 3442].
+                 *
+                 * Be more lenient and ignore the Router option only if Classless Static
+                 * Routes contain a default gateway (as other DHCP backends do).
+                 */
                 continue;
             }
 
             /* if there are multiple default routes, we add them with differing
-			 * metrics. */
+             * metrics. */
             m = default_route_metric;
             if (default_route_metric < G_MAXUINT32)
                 default_route_metric++;
@@ -674,7 +674,7 @@ ip4_start(NMDhcpClient *client,
     }
 
     /* Note that we always set a client-id. In particular for infiniband that is necessary,
-	 * see https://tools.ietf.org/html/rfc4390#section-2.1 . */
+     * see https://tools.ietf.org/html/rfc4390#section-2.1 . */
     r = sd_dhcp_client_set_client_id(sd_client,
                                      client_id_arr[0],
                                      client_id_arr + 1,
@@ -697,9 +697,9 @@ ip4_start(NMDhcpClient *client,
     hostname = nm_dhcp_client_get_hostname(client);
     if (hostname) {
         /* FIXME: sd-dhcp decides which hostname/FQDN option to send (12 or 81)
-		 * only based on whether the hostname has a domain part or not. At the
-		 * moment there is no way to force one or another.
-		 */
+         * only based on whether the hostname has a domain part or not. At the
+         * moment there is no way to force one or another.
+         */
         r = sd_dhcp_client_set_hostname(sd_client, hostname);
         if (r < 0) {
             nm_utils_error_set_errno(error, r, "failed to set DHCP hostname: %s");
@@ -1021,7 +1021,7 @@ ip6_start(NMDhcpClient *            client,
         if (needed_prefixes > 1)
             _LOGW("dhcp-client6: only one prefix request is supported");
         /* FIXME: systemd-networkd API only allows to request a
-		 * single prefix */
+         * single prefix */
         r = sd_dhcp6_client_set_prefix_delegation(sd_client, TRUE);
         if (r < 0) {
             nm_utils_error_set_errno(error, r, "failed to enable prefix delegation: %s");

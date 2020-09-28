@@ -25,7 +25,7 @@ _wait_for_ipv4_addr_device_route(NMPlatform *platform,
                                  guint8      plen)
 {
     /* Wait that the addresses gets a device-route. After adding a address,
-	 * the device route is not added immediately. It takes a moment... */
+     * the device route is not added immediately. It takes a moment... */
 
     addr = nm_utils_ip4_address_clear_host_address(addr, plen);
     NMTST_WAIT_ASSERT(400, {
@@ -60,9 +60,9 @@ _wait_for_ipv6_addr_non_tentative(NMPlatform *           platform,
     guint i;
 
     /* Wait that the addresses become non-tentative.  Dummy interfaces are NOARP
-	 * and thus don't do DAD, but the kernel sets the address as tentative for a
-	 * small amount of time, which prevents the immediate addition of the route
-	 * with RTA_PREFSRC */
+     * and thus don't do DAD, but the kernel sets the address as tentative for a
+     * small amount of time, which prevents the immediate addition of the route
+     * with RTA_PREFSRC */
 
     NMTST_WAIT_ASSERT(timeout_msec, {
         gboolean                    should_wait = FALSE;
@@ -1248,7 +1248,7 @@ static guint32
 _rr_rand_choose_u32(guint32 p)
 {
     /* mostly, we just return zero. We want that each rule only has few
-	 * fields set -- having most fields at zero. */
+     * fields set -- having most fields at zero. */
     if ((p % 10000u) < 7500u)
         return 0;
 
@@ -1317,9 +1317,9 @@ _rule_create_random(NMPlatform *platform)
         p = nmtst_get_rand_uint32();
         if ((p % 1000u) < 100) {
             /* if we set src_len/dst_len to zero, the src/dst is actually ignored.
-			 *
-			 * For fuzzying, still set the address. It shall have no further effect.
-			 * */
+             *
+             * For fuzzying, still set the address. It shall have no further effect.
+             * */
             *p_len = (~p) % (addr_size * 8 + 1);
             p      = nmtst_get_rand_uint32();
             if ((p % 3u) == 0) {
@@ -1456,10 +1456,10 @@ _rule_fuzzy_equal(const NMPObject *obj, const NMPObject *obj_comp, int op_type)
     switch (op_type) {
     case RTM_NEWRULE:
         /* when adding rules with RTM_NEWRULE, kernel checks whether an existing
-		 * rule already exists and may fail with EEXIST. This check has issues
-		 * and reject legitimate rules (rh#1686075).
-		 *
-		 * Work around that. */
+         * rule already exists and may fail with EEXIST. This check has issues
+         * and reject legitimate rules (rh#1686075).
+         *
+         * Work around that. */
         if (rr->src_len == 0)
             rr_co.src_len = 0;
         if (rr->dst_len == 0)
@@ -1477,7 +1477,7 @@ _rule_fuzzy_equal(const NMPObject *obj, const NMPObject *obj_comp, int op_type)
         break;
     case RTM_DELRULE:
         /* when deleting a rule with RTM_DELRULE, kernel tries to find the
-		 * candidate to delete. It might delete the wrong rule (rh#1685816). */
+         * candidate to delete. It might delete the wrong rule (rh#1685816). */
         if (rr->action == FR_ACT_UNSPEC)
             rr_co.action = FR_ACT_UNSPEC;
         if (rr->iifname[0] == '\0')
@@ -1646,8 +1646,8 @@ again:
         objs_sync = g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
 
         /* ensure that priorities are unique. Otherwise, it confuses the test, because
-		 * kernel may wrongly be unable to add/delete routes based on a wrong match
-		 * (rh#1685816, rh#1685816). */
+         * kernel may wrongly be unable to add/delete routes based on a wrong match
+         * (rh#1685816, rh#1685816). */
         for (i = 0; i < objs->len; i++) {
             const NMPObject *obj  = objs->pdata[i];
             guint32          prio = NMP_OBJECT_CAST_ROUTING_RULE(obj)->priority;
@@ -1667,7 +1667,7 @@ again:
                                     NULL);
             if (nmtst_get_rand_bool()) {
                 /* this has no effect, because a negative priority (of same absolute value)
-				 * has lower priority than the positive priority above. */
+                 * has lower priority than the positive priority above. */
                 nmp_rules_manager_track(rules_manager,
                                         NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
                                         -1,
@@ -1748,7 +1748,7 @@ again:
                 }
                 if (r == 0) {
                     /* OK, the rule is shadowed by another rule, and kernel does not allow
-					 * us to add this one (rh#1686075). Drop this from the test. */
+                     * us to add this one (rh#1686075). Drop this from the test. */
                     g_ptr_array_remove_index(objs, i);
                     had_an_issue_exist = TRUE;
                     continue;
@@ -1820,11 +1820,11 @@ again:
                 guint k;
 
                 /* When deleting a rule, kernel does a fuzzy match, ignoring for example:
-				 *  - action, if it is FR_ACT_UNSPEC
-				 *  - iifname,oifname if it is unspecified
-				 * rh#1685816
-				 *
-				 * That means, we may have deleted the wrong rule. Which one? */
+                 *  - action, if it is FR_ACT_UNSPEC
+                 *  - iifname,oifname if it is unspecified
+                 * rh#1685816
+                 *
+                 * That means, we may have deleted the wrong rule. Which one? */
                 k = i;
                 for (j = i + 1; j < objs->len; j++) {
                     if (!_platform_has_routing_rule(platform, objs->pdata[j])) {
@@ -1877,7 +1877,7 @@ again:
                     objs_initial->len);
 
     /* the tests passed as good as we could (as good as we implemented workarounds for them).
-	 * Still, with this kernel, not all features were fully tested. Mark the test as skipped. */
+     * Still, with this kernel, not all features were fully tested. Mark the test as skipped. */
     if (had_an_issue_exist)
         g_test_skip("adding a rule failed with EEXIST although it should not (rh#1686075)");
     else if (!_rule_check_kernel_support(platform, -1))

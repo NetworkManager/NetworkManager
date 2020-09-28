@@ -157,8 +157,8 @@ sort_connections(gconstpointer a, gconstpointer b)
     }
 
     /* If one is an NMConnection and the other is an NMAccessPoint, the
-	 * connection comes first.
-	 */
+     * connection comes first.
+     */
     if (nmta->conn)
         return -1;
     else if (nmtb->conn)

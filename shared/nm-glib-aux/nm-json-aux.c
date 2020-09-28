@@ -82,18 +82,18 @@ _gstr_append_string_len(GString *gstr, const char *str, gsize len)
 
         if (end[0] == '\0') {
             /* there is a NUL byte in the string. Technically this is valid UTF-8, so we
-			 * encode it there. However, this will likely result in a truncated string when
-			 * parsing. */
+             * encode it there. However, this will likely result in a truncated string when
+             * parsing. */
             g_string_append(gstr, "\\u0000");
         } else {
             /* the character is not valid UTF-8. There is nothing we can do about it, because
-			 * JSON can only contain UTF-8 and even the escape sequences can only escape Unicode
-			 * codepoints (but not binary).
-			 *
-			 * The argument is not a string (in any known encoding), hence we cannot represent
-			 * it as a JSON string (which are unicode strings).
-			 *
-			 * Print an underscore instead of the invalid char :) */
+             * JSON can only contain UTF-8 and even the escape sequences can only escape Unicode
+             * codepoints (but not binary).
+             *
+             * The argument is not a string (in any known encoding), hence we cannot represent
+             * it as a JSON string (which are unicode strings).
+             *
+             * Print an underscore instead of the invalid char :) */
             g_string_append_c(gstr, '_');
         }
 

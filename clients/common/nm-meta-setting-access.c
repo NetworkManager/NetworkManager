@@ -296,7 +296,7 @@ nm_meta_abstract_info_complete(const NMMetaAbstractInfo *    abstract_info,
         return values;
 
     /* for convenience, we allow the complete_fcn() implementations to
-	 * ignore "text". We filter out invalid matches here. */
+     * ignore "text". We filter out invalid matches here. */
 
     text_len = strlen(text);
 
@@ -403,8 +403,8 @@ _output_selection_pack(const NMMetaAbstractInfo *const *fields_array, GArray *ar
     len = array ? array->len : 0;
 
     /* re-organize the collected output data in one buffer that can be freed using
-	 * g_free(). This makes allocation more complicated, but saves us from special
-	 * handling for free. */
+     * g_free(). This makes allocation more complicated, but saves us from special
+     * handling for free. */
     result = g_malloc0(sizeof(NMMetaSelectionResultList) + (len * sizeof(NMMetaSelectionItem))
                        + (str ? str->len : 0));
     *((guint *) &result->num) = len;

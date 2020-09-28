@@ -25,12 +25,12 @@ MODEM_CAPS_3GPP(MMModemCapability caps)
 {
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     /* MM_MODEM_CAPABILITY_LTE_ADVANCED is marked as deprecated since ModemManager 1.14.0.
-	 *
-	 * The flag probably was never used, it certainly isn't used since 1.14.0.
-	 *
-	 * Still, just to be sure, there is no harm in checking it here. Suppress the
-	 * warning, it should have no bad effect.
-	 */
+     *
+     * The flag probably was never used, it certainly isn't used since 1.14.0.
+     *
+     * Still, just to be sure, there is no harm in checking it here. Suppress the
+     * warning, it should have no bad effect.
+     */
     return NM_FLAGS_ANY(caps,
                         (MM_MODEM_CAPABILITY_GSM_UMTS | MM_MODEM_CAPABILITY_LTE
                          | MM_MODEM_CAPABILITY_LTE_ADVANCED));
@@ -205,7 +205,7 @@ get_capabilities(NMModem *                  _self,
     guint              n_supported;
 
     /* For now, we don't care about the capability combinations, just merge all
-	 * combinations in a single mask */
+     * combinations in a single mask */
     if (mm_modem_get_supported_capabilities(self->_priv.modem_iface, &supported, &n_supported)) {
         guint i;
 
@@ -412,8 +412,8 @@ connect_ready(MMModemSimple *simple_iface, GAsyncResult *res, NMModemBroadband *
             ctx->ip_type_tries++;
         } else {
             /* If the modem/provider lies and the IP type we tried isn't supported,
-			 * retry with the next one, if any.
-			 */
+             * retry with the next one, if any.
+             */
             ctx->ip_types_i++;
             ctx->ip_type_tries = 0;
         }
@@ -1067,7 +1067,7 @@ static_stage3_ip4_config_start(NMModem *            modem,
     NMModemBroadbandPrivate *priv = NM_MODEM_BROADBAND_GET_PRIVATE(self);
 
     /* We schedule it in an idle just to follow the same logic as in the
-	 * generic modem implementation. */
+     * generic modem implementation. */
     nm_clear_g_source(&priv->idle_id_ip4);
     priv->idle_id_ip4 = g_idle_add((GSourceFunc) static_stage3_ip4_done, self);
 
@@ -1196,7 +1196,7 @@ stage3_ip6_config_request(NMModem *modem, NMDeviceStateReason *out_failure_reaso
     NMModemBroadbandPrivate *priv = NM_MODEM_BROADBAND_GET_PRIVATE(self);
 
     /* We schedule it in an idle just to follow the same logic as in the
-	 * generic modem implementation. */
+     * generic modem implementation. */
     nm_clear_g_source(&priv->idle_id_ip6);
     priv->idle_id_ip6 = g_idle_add((GSourceFunc) stage3_ip6_done, self);
 
@@ -1343,9 +1343,9 @@ modem_state_changed(MMModem *                modem,
                     NMModemBroadband *       self)
 {
     /* After the SIM is unlocked MM1 will move the device to INITIALIZING which
-	 * is an unavailable state.  That makes state handling confusing here, so
-	 * suppress this state change and let the modem move from LOCKED to DISABLED.
-	 */
+     * is an unavailable state.  That makes state handling confusing here, so
+     * suppress this state change and let the modem move from LOCKED to DISABLED.
+     */
     if (new_state == MM_MODEM_STATE_INITIALIZING && old_state == MM_MODEM_STATE_LOCKED)
         return;
 
@@ -1495,7 +1495,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         }
 
         /* Note: don't grab the Simple iface here; the Modem interface is the
-		 * only one assumed to be always valid and available */
+         * only one assumed to be always valid and available */
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);

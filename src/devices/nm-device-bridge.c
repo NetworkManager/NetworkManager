@@ -112,8 +112,8 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
         }
 
         /* a bluetooth NAP connection is handled by the bridge.
-		 *
-		 * Proceed... */
+         *
+         * Proceed... */
     } else {
         s_bridge =
             _nm_connection_check_main_setting(connection, NM_SETTING_BRIDGE_SETTING_NAME, error);
@@ -472,8 +472,8 @@ commit_option(NMDevice *device, NMSetting *setting, const Option *option, gboole
             uval = (guint) g_value_get_uint(&val);
 
         /* zero means "unspecified" for some NM properties but isn't in the
-			 * allowed kernel range, so reset the property to the default value.
-			 */
+             * allowed kernel range, so reset the property to the default value.
+             */
         if (option->default_if_zero && uval == 0) {
             if (pspec->value_type == G_TYPE_UINT64)
                 uval = NM_G_PARAM_SPEC_GET_DEFAULT_UINT64(pspec);
@@ -482,10 +482,10 @@ commit_option(NMDevice *device, NMSetting *setting, const Option *option, gboole
         }
 
         /* Linux kernel bridge interfaces use 'centiseconds' for time-based values.
-			 * In reality it's not centiseconds, but depends on HZ and USER_HZ, which
-			 * is almost always works out to be a multiplier of 100, so we can assume
-			 * centiseconds.  See clock_t_to_jiffies().
-			 */
+             * In reality it's not centiseconds, but depends on HZ and USER_HZ, which
+             * is almost always works out to be a multiplier of 100, so we can assume
+             * centiseconds.  See clock_t_to_jiffies().
+             */
         if (option->user_hz_compensate)
             uval *= 100;
 
@@ -762,7 +762,7 @@ bridge_set_vlan_options(NMDevice *device, NMSettingBridge *s_bridge)
     g_return_val_if_fail(length == ETH_ALEN, FALSE);
     if (nm_utils_hwaddr_matches(hwaddr, ETH_ALEN, nm_ip_addr_zero.addr_eth, ETH_ALEN)) {
         /* We need a non-zero MAC address to set the default pvid.
-		 * Retry later. */
+         * Retry later. */
         return TRUE;
     }
 
@@ -773,7 +773,7 @@ bridge_set_vlan_options(NMDevice *device, NMSettingBridge *s_bridge)
         return FALSE;
 
     /* Clear the default PVID so that we later can force the re-creation of
-	 * default PVID VLANs by writing the option again. */
+     * default PVID VLANs by writing the option again. */
     if (!nm_platform_sysctl_master_set_option(plat, ifindex, "default_pvid", "0"))
         return FALSE;
 
@@ -782,7 +782,7 @@ bridge_set_vlan_options(NMDevice *device, NMSettingBridge *s_bridge)
         return FALSE;
 
     /* Now set the default PVID. After this point the kernel creates
-	 * a PVID VLAN on each port, including the bridge itself. */
+     * a PVID VLAN on each port, including the bridge itself. */
     pvid = nm_setting_bridge_get_vlan_default_pvid(s_bridge);
     if (pvid) {
         char value[32];
@@ -793,7 +793,7 @@ bridge_set_vlan_options(NMDevice *device, NMSettingBridge *s_bridge)
     }
 
     /* Create VLANs only after setting the default PVID, so that
-	 * any PVID VLAN overrides the bridge's default PVID. */
+     * any PVID VLAN overrides the bridge's default PVID. */
     g_object_get(s_bridge, NM_SETTING_BRIDGE_VLANS, &vlans, NULL);
     plat_vlans = setting_vlans_to_platform(vlans);
     if (plat_vlans && !nm_platform_link_set_bridge_vlans(plat, ifindex, FALSE, plat_vlans))
@@ -964,7 +964,7 @@ enslave_slave(NMDevice *device, NMDevice *slave, NMConnection *connection, gbool
             plat_vlans = setting_vlans_to_platform(vlans);
 
             /* Since the link was just enslaved, there are no existing VLANs
-			 * (except for the default one) and so there's no need to flush. */
+             * (except for the default one) and so there's no need to flush. */
 
             if (plat_vlans
                 && !nm_platform_link_set_bridge_vlans(nm_device_get_platform(slave),
@@ -1044,10 +1044,10 @@ create_and_realize(NMDevice *             device,
     if (!hwaddr
         && nm_device_hw_addr_get_cloned(device, connection, FALSE, &hwaddr_cloned, NULL, NULL)) {
         /* FIXME: we set the MAC address when creating the interface, while the
-		 * NMDevice is still unrealized. As we afterwards realize the device, it
-		 * forgets the parameters for the cloned MAC address, and in stage 1
-		 * it might create a different MAC address. That should be fixed by
-		 * better handling device realization. */
+         * NMDevice is still unrealized. As we afterwards realize the device, it
+         * forgets the parameters for the cloned MAC address, and in stage 1
+         * it might create a different MAC address. That should be fixed by
+         * better handling device realization. */
         hwaddr = hwaddr_cloned;
     }
 
@@ -1212,8 +1212,8 @@ match_connection(NMDeviceFactory *factory, NMConnection *connection)
 
     if (!g_type_from_name("NMBluezManager")) {
         /* bluetooth NAP connections are handled by bridge factory. However,
-		 * it needs help from the bluetooth plugin, so if the plugin is not loaded,
-		 * we claim not to support it. */
+         * it needs help from the bluetooth plugin, so if the plugin is not loaded,
+         * we claim not to support it. */
         return FALSE;
     }
 

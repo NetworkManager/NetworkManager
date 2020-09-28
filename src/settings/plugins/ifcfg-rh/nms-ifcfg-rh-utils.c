@@ -150,11 +150,11 @@ utils_get_ifcfg_name(const char *file, gboolean only_ifcfg)
     G_STMT_END
 
     /* Do not detect alias files and return 'eth0:0' instead of 'eth0'.
-	 * Unfortunately, we cannot be sure that our files don't contain colons,
-	 * so we cannot reject files with colons.
-	 *
-	 * Instead, you must not call utils_get_ifcfg_name() with an alias file
-	 * or files that are ignored. */
+     * Unfortunately, we cannot be sure that our files don't contain colons,
+     * so we cannot reject files with colons.
+     *
+     * Instead, you must not call utils_get_ifcfg_name() with an alias file
+     * or files that are ignored. */
     MATCH_TAG_AND_RETURN(name, IFCFG_TAG);
     if (!only_ifcfg) {
         MATCH_TAG_AND_RETURN(name, KEYS_TAG);
@@ -300,7 +300,7 @@ utils_has_route_file_new_syntax_content(const char *contents, gsize len)
 
         if (eol) {
             /* restore the line ending. We don't want to mangle the content from
-			 * POV of the caller. */
+             * POV of the caller. */
             eol[0] = '\n';
         }
 
@@ -382,8 +382,8 @@ utils_detect_ifcfg_path(const char *path, gboolean only_ifcfg)
                 *ptr = '\0';
                 if (g_file_test(ifcfg, G_FILE_TEST_EXISTS)) {
                     /* the file has a colon, so it is probably an alias.
-					 * To be ~more~ certain that this is an alias file,
-					 * check whether a corresponding base file exists. */
+                     * To be ~more~ certain that this is an alias file,
+                     * check whether a corresponding base file exists. */
                     if (only_ifcfg)
                         return NULL;
                     return g_steal_pointer(&ifcfg);
@@ -410,8 +410,8 @@ nms_ifcfg_rh_utils_user_key_encode(const char *key, GString *str_buffer)
         char ch = key[i];
 
         /* we encode the key in only upper case letters, digits, and underscore.
-		 * As we expect lower-case letters to be more common, we encode lower-case
-		 * letters as upper case, and upper-case letters with a leading underscore. */
+         * As we expect lower-case letters to be more common, we encode lower-case
+         * letters as upper case, and upper-case letters with a leading underscore. */
 
         if (ch >= '0' && ch <= '9') {
             g_string_append_c(str_buffer, ch);
@@ -491,7 +491,7 @@ nms_ifcfg_rh_utils_user_key_decode(const char *name, GString *str_buffer)
                 if ((ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || (ch == '.')
                     || (ch >= 'a' && ch <= 'z')) {
                     /* such characters are not expected to be encoded via
-					 * octal representation. The encoding is invalid. */
+                     * octal representation. The encoding is invalid. */
                     return FALSE;
                 }
                 g_string_append_c(str_buffer, ch);
@@ -627,17 +627,17 @@ static NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
     { return NM_ETHTOOL_ID_UNKNOWN; },
 
     /* Map the names from kernel/ethtool/ifcfg to NMEthtoolID. Note that ethtool utility has built-in
-	 * features and NetworkManager's API follows the naming of these built-in features, whenever
-	 * they exist.
-	 * For example, NM's "ethtool.feature-ntuple" corresponds to ethtool utility's "ntuple"
-	 * feature. However the underlying kernel feature is called "rx-ntuple-filter" (as reported
-	 * for ETH_SS_FEATURES).
-	 *
-	 * With ethtool utility, whose command line we attempt to parse here, the user can also
-	 * specify the name of the underlying kernel feature directly. So, check whether that is
-	 * the case and if yes, map them to the corresponding NetworkManager's features.
-	 *
-	 * That is why there are duplicate IDs in this list. */
+     * features and NetworkManager's API follows the naming of these built-in features, whenever
+     * they exist.
+     * For example, NM's "ethtool.feature-ntuple" corresponds to ethtool utility's "ntuple"
+     * feature. However the underlying kernel feature is called "rx-ntuple-filter" (as reported
+     * for ETH_SS_FEATURES).
+     *
+     * With ethtool utility, whose command line we attempt to parse here, the user can also
+     * specify the name of the underlying kernel feature directly. So, check whether that is
+     * the case and if yes, map them to the corresponding NetworkManager's features.
+     *
+     * That is why there are duplicate IDs in this list. */
     {"esp-hw-offload", NM_ETHTOOL_ID_FEATURE_ESP_HW_OFFLOAD},
     {"esp-tx-csum-hw-offload", NM_ETHTOOL_ID_FEATURE_ESP_TX_CSUM_HW_OFFLOAD},
     {"fcoe-mtu", NM_ETHTOOL_ID_FEATURE_FCOE_MTU},
@@ -761,9 +761,9 @@ nms_ifcfg_rh_utils_is_numbered_tag_impl(const char *key,
 
     if (key[0] == '\0') {
         /* The key has no number suffix. We treat this also as a numbered
-		 * tag, and it is for certain tags like "IPADDR", but not so much
-		 * for others like "ROUTING_RULE_". The caller may want to handle
-		 * this case specially. */
+         * tag, and it is for certain tags like "IPADDR", but not so much
+         * for others like "ROUTING_RULE_". The caller may want to handle
+         * this case specially. */
         NM_SET_OUT(out_idx, -1);
         return TRUE;
     }
@@ -1065,9 +1065,9 @@ nms_ifcfg_rh_utils_is_well_known_key(const char *key)
         if (NM_FLAGS_ANY(ti->key_flags,
                          NMS_IFCFG_KEY_TYPE_IS_PLAIN | NMS_IFCFG_KEY_TYPE_IS_NUMBERED)) {
             /* These tags are valid on full match.
-			 *
-			 * Note that numbered tags we also treat as valid if they have no
-			 * suffix. That is correct for "IPADDR", but less so for "ROUTING_RULE_". */
+             *
+             * Note that numbered tags we also treat as valid if they have no
+             * suffix. That is correct for "IPADDR", but less so for "ROUTING_RULE_". */
             return ti;
         }
         nm_assert(NM_FLAGS_HAS(ti->key_flags, NMS_IFCFG_KEY_TYPE_IS_PREFIX));
@@ -1076,8 +1076,8 @@ nms_ifcfg_rh_utils_is_well_known_key(const char *key)
     }
 
     /* Not found. Maybe it's a numbered/prefixed key? With idx we got the index where
-	 * we should insert the key. Since the numbered/prefixed keys share a prefix, we can
-	 * find the possible prefix at the index before the insert position. */
+     * we should insert the key. Since the numbered/prefixed keys share a prefix, we can
+     * find the possible prefix at the index before the insert position. */
     idx = ~idx;
     if (idx == 0)
         return NULL;

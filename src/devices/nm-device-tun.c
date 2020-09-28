@@ -169,9 +169,9 @@ update_connection(NMDevice *device, NMConnection *connection)
     const char *        str;
 
     /* Note: since we read tun properties from sysctl for older kernels,
-	 *       we don't get proper change notifications. Make sure that all our
-	 *       tun properties are up to date at this point. We should not do this,
-	 *       if we would entirely rely on netlink events. */
+     *       we don't get proper change notifications. Make sure that all our
+     *       tun properties are up to date at this point. We should not do this,
+     *       if we would entirely rely on netlink events. */
     update_properties(NM_DEVICE_TUN(device));
 
     switch (priv->props.type) {

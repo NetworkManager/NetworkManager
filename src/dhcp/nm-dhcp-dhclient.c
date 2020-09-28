@@ -118,10 +118,10 @@ get_dhclient_leasefile(int         addr_family,
     NM_SET_OUT(out_preferred_path, g_steal_pointer(&path));
 
     /* If the leasefile we're looking for doesn't exist yet in the new location
-	 * (eg, /var/lib/NetworkManager) then look in old locations to maintain
-	 * backwards compatibility with external tools (like dracut) that put
-	 * leasefiles there.
-	 */
+     * (eg, /var/lib/NetworkManager) then look in old locations to maintain
+     * backwards compatibility with external tools (like dracut) that put
+     * leasefiles there.
+     */
 
     /* Old Debian, SUSE, and Mandriva location */
     g_free(path);
@@ -201,9 +201,9 @@ find_existing_config(NMDhcpDhclient *self, int addr_family, const char *iface, c
     char *path;
 
     /* NetworkManager-overridden configuration can be used to ship DHCP config
-	 * with NetworkManager itself. It can be uuid-specific, device-specific
-	 * or generic.
-	 */
+     * with NetworkManager itself. It can be uuid-specific, device-specific
+     * or generic.
+     */
     if (uuid) {
         path = g_strdup_printf(NMCONFDIR "/dhclient%s-%s.conf",
                                _addr_family_to_path_part(addr_family),
@@ -229,13 +229,13 @@ find_existing_config(NMDhcpDhclient *self, int addr_family, const char *iface, c
     g_free(path);
 
     /* Distribution's dhclient configuration is used so that we can use
-	 * configuration shipped with dhclient (if any).
-	 *
-	 * This replaces conditional compilation based on distribution name. Fedora
-	 * and Debian store the configs in /etc/dhcp while upstream defaults to /etc
-	 * which is then used by many other distributions. Some distributions
-	 * (including Fedora) don't even provide a default configuration file.
-	 */
+     * configuration shipped with dhclient (if any).
+     *
+     * This replaces conditional compilation based on distribution name. Fedora
+     * and Debian store the configs in /etc/dhcp while upstream defaults to /etc
+     * which is then used by many other distributions. Some distributions
+     * (including Fedora) don't even provide a default configuration file.
+     */
     path = g_strdup_printf(SYSCONFDIR "/dhcp/dhclient%s-%s.conf",
                            _addr_family_to_path_part(addr_family),
                            iface);
@@ -428,8 +428,8 @@ dhclient_start(NMDhcpClient *client,
     g_ptr_array_add(argv, (gpointer) "-d");
 
     /* Be quiet. dhclient logs to syslog anyway. And we duplicate the syslog
-	 * to stderr in case of NM running with --debug.
-	 */
+     * to stderr in case of NM running with --debug.
+     */
     g_ptr_array_add(argv, (gpointer) "-q");
 
     if (release)
@@ -459,9 +459,9 @@ dhclient_start(NMDhcpClient *client,
     }
 
     /* Usually the system bus address is well-known; but if it's supposed
-	 * to be something else, we need to push it to dhclient, since dhclient
-	 * sanitizes the environment it gives the action scripts.
-	 */
+     * to be something else, we need to push it to dhclient, since dhclient
+     * sanitizes the environment it gives the action scripts.
+     */
     system_bus_address = getenv("DBUS_SYSTEM_BUS_ADDRESS");
     if (system_bus_address) {
         system_bus_address_env = g_strdup_printf("DBUS_SYSTEM_BUS_ADDRESS=%s", system_bus_address);

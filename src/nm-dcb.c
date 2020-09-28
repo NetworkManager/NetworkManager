@@ -216,8 +216,8 @@ _dcb_setup(const char *  iface,
             return FALSE;
     } else {
         /* Ignore disable failure since lldpad <= 0.9.46 does not support disabling
-		 * priority groups without specifying an entire PG config.
-		 */
+         * priority groups without specifying an entire PG config.
+         */
         (void) do_helper(iface, DCBTOOL, run_func, user_data, error, "pg e:0");
     }
 
@@ -359,11 +359,11 @@ carrier_wait(const char *iface, guint secs, gboolean up)
     ifindex = nm_platform_link_get_ifindex(NM_PLATFORM_GET, iface);
     if (ifindex > 0) {
         /* To work around driver quirks and lldpad handling of carrier status,
-		 * we must wait a short period of time to see if the carrier goes
-		 * down, and then wait for the carrier to come back up again.  Otherwise
-		 * subsequent lldpad calls may fail with "Device not found, link down
-		 * or DCB not enabled" errors.
-		 */
+         * we must wait a short period of time to see if the carrier goes
+         * down, and then wait for the carrier to come back up again.  Otherwise
+         * subsequent lldpad calls may fail with "Device not found, link down
+         * or DCB not enabled" errors.
+         */
         nm_log_dbg(LOGD_DCB, "(%s): cleanup waiting for carrier %s", iface, up ? "up" : "down");
         g_usleep(G_USEC_PER_SEC / 4);
         while (nm_platform_link_is_connected(NM_PLATFORM_GET, ifindex) != up && count-- > 0) {
@@ -380,8 +380,8 @@ nm_dcb_cleanup(const char *iface, GError **error)
     _fcoe_cleanup(iface, run_helper, GUINT_TO_POINTER(FCOEADM), NULL);
 
     /* Must pause a bit to wait for carrier-up since disabling FCoE may
-	 * cause the device to take the link down, making lldpad return errors.
-	 */
+     * cause the device to take the link down, making lldpad return errors.
+     */
     carrier_wait(iface, 2, FALSE);
     carrier_wait(iface, 4, TRUE);
 

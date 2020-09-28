@@ -91,8 +91,8 @@ maybe_save_input_and_exit(NmtNewtWidget *widget, gpointer dialog)
     int                       i;
 
     /* This gets invoked when the user types Return in the final entry,
-	 * but the form may not be fully valid in that case.
-	 */
+     * but the form may not be fully valid in that case.
+     */
     if (!nmt_newt_widget_get_valid(priv->secret_grid))
         return;
 
@@ -245,10 +245,10 @@ nmt_password_dialog_class_init(NmtPasswordDialogClass *dialog_class)
     object_class->finalize     = nmt_password_dialog_finalize;
 
     /**
-	 * NmtPasswordDialog:request-id:
-	 *
-	 * The request ID from the #NMSecretAgentSimple
-	 */
+     * NmtPasswordDialog:request-id:
+     *
+     * The request ID from the #NMSecretAgentSimple
+     */
     g_object_class_install_property(
         object_class,
         PROP_REQUEST_ID,
@@ -258,10 +258,10 @@ nmt_password_dialog_class_init(NmtPasswordDialogClass *dialog_class)
                             NULL,
                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtPasswordDialog:prompt:
-	 *
-	 * The prompt text.
-	 */
+     * NmtPasswordDialog:prompt:
+     *
+     * The prompt text.
+     */
     g_object_class_install_property(
         object_class,
         PROP_PROMPT,
@@ -271,12 +271,12 @@ nmt_password_dialog_class_init(NmtPasswordDialogClass *dialog_class)
                             NULL,
                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtPasswordDialog:secrets:
-	 *
-	 * The array of request secrets
-	 *
-	 * Element-Type: #NMSecretAgentSimpleSecret.
-	 */
+     * NmtPasswordDialog:secrets:
+     *
+     * The array of request secrets
+     *
+     * Element-Type: #NMSecretAgentSimpleSecret.
+     */
     g_object_class_install_property(
         object_class,
         PROP_SECRETS,

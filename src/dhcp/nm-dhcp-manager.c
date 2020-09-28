@@ -92,24 +92,24 @@ _client_factory_get_gtype(const NMDhcpClientFactory *client_factory, int addr_fa
     nm_assert_addr_family(addr_family);
 
     /* currently, the chosen DHCP plugin for IPv4 and IPv6 is configured in NetworkManager.conf
-	 * and cannot be reloaded. It would be nice to configure the plugin per address family
-	 * or to be able to reload it.
-	 *
-	 * Note that certain options in NetworkManager.conf depend on the chosen DHCP plugin.
-	 * See "dhcp-plugin:" in "Device List Format" (`man NetworkManager.conf`).
-	 * Supporting reloading the plugin would also require to re-evalate the decisions from
-	 * the "Device List Format". Likewise, having per-address family plugins would make the
-	 * "main.dhcp" setting and "dhcp-plugin:" match non-sensical because these configurations
-	 * currently are address family independent.
-	 *
-	 * So actually, we don't want that complexity. We want to phase out all plugins in favor
-	 * of the internal plugin.
-	 * However, certain existing plugins are well known to not support an address family.
-	 * In those cases, we should just silently fallback to the internal plugin.
-	 *
-	 * This could be a problem with forward compatibility if we ever intended to add IPv6 support
-	 * to those plugins. But we don't intend to do so. The internal plugin is the way forward and
-	 * not extending other plugins. */
+     * and cannot be reloaded. It would be nice to configure the plugin per address family
+     * or to be able to reload it.
+     *
+     * Note that certain options in NetworkManager.conf depend on the chosen DHCP plugin.
+     * See "dhcp-plugin:" in "Device List Format" (`man NetworkManager.conf`).
+     * Supporting reloading the plugin would also require to re-evalate the decisions from
+     * the "Device List Format". Likewise, having per-address family plugins would make the
+     * "main.dhcp" setting and "dhcp-plugin:" match non-sensical because these configurations
+     * currently are address family independent.
+     *
+     * So actually, we don't want that complexity. We want to phase out all plugins in favor
+     * of the internal plugin.
+     * However, certain existing plugins are well known to not support an address family.
+     * In those cases, we should just silently fallback to the internal plugin.
+     *
+     * This could be a problem with forward compatibility if we ever intended to add IPv6 support
+     * to those plugins. But we don't intend to do so. The internal plugin is the way forward and
+     * not extending other plugins. */
 
     if (client_factory->get_type_per_addr_family)
         gtype = client_factory->get_type_per_addr_family(addr_family);
@@ -173,9 +173,9 @@ remove_client(NMDhcpManager *self, NMDhcpClient *client)
     c_list_unlink(&client->dhcp_client_lst);
 
     /* Stopping the client is left up to the controlling device
-	 * explicitly since we may want to quit NetworkManager but not terminate
-	 * the DHCP client.
-	 */
+     * explicitly since we may want to quit NetworkManager but not terminate
+     * the DHCP client.
+     */
 }
 
 static void
@@ -280,11 +280,11 @@ client_start(NMDhcpManager *           self,
     client = get_client_for_ifindex(self, addr_family, ifindex);
     if (client) {
         /* FIXME: we cannot just call synchronously "stop()" and forget about the client.
-		 * We need to wait for the client to be fully stopped because most/all clients
-		 * cannot quit right away.
-		 *
-		 * FIXME(shutdown): also fix this during shutdown, to wait for all DHCP clients
-		 * to be fully stopped. */
+         * We need to wait for the client to be fully stopped because most/all clients
+         * cannot quit right away.
+         *
+         * FIXME(shutdown): also fix this during shutdown, to wait for all DHCP clients
+         * to be fully stopped. */
         remove_client(self, client);
         nm_dhcp_client_stop(client, FALSE);
         g_object_unref(client);
@@ -345,30 +345,30 @@ client_start(NMDhcpManager *           self,
                      self);
 
     /* unfortunately, our implementations work differently per address-family regarding client-id/DUID.
-	 *
-	 * - for IPv4, the calling code may determine a client-id (from NM's connection profile).
-	 *   If present, it is taken. If not present, the DHCP plugin uses a plugin specific default.
-	 *     - for "internal" plugin, the default is just "mac".
-	 *     - for "dhclient", we try to get the configuration from dhclient's /etc/dhcp or fallback
-	 *       to whatever dhclient uses by default.
-	 *   We do it this way, because for dhclient the user may configure a default
-	 *   outside of NM, and we want to honor that. Worse, dhclient could be a wapper
-	 *   script where the wrapper script overwrites the client-id. We need to distinguish
-	 *   between: force a particular client-id and leave it unspecified to whatever dhclient
-	 *   wants.
-	 *
-	 * - for IPv6, the calling code always determines a client-id. It also specifies @enforce_duid,
-	 *   to determine whether the given client-id must be used.
-	 *     - for "internal" plugin @enforce_duid doesn't matter and the given client-id is
-	 *       always used.
-	 *     - for "dhclient", @enforce_duid FALSE means to first try to load the DUID from the
-	 *       lease file, and only otherwise fallback to the given client-id.
-	 *     - other plugins don't support DHCPv6.
-	 *   It's done this way, so that existing dhclient setups don't change behavior on upgrade.
-	 *
-	 * This difference is cumbersome and only exists because of "dhclient" which supports hacking the
-	 * default outside of NetworkManager API.
-	 */
+     *
+     * - for IPv4, the calling code may determine a client-id (from NM's connection profile).
+     *   If present, it is taken. If not present, the DHCP plugin uses a plugin specific default.
+     *     - for "internal" plugin, the default is just "mac".
+     *     - for "dhclient", we try to get the configuration from dhclient's /etc/dhcp or fallback
+     *       to whatever dhclient uses by default.
+     *   We do it this way, because for dhclient the user may configure a default
+     *   outside of NM, and we want to honor that. Worse, dhclient could be a wapper
+     *   script where the wrapper script overwrites the client-id. We need to distinguish
+     *   between: force a particular client-id and leave it unspecified to whatever dhclient
+     *   wants.
+     *
+     * - for IPv6, the calling code always determines a client-id. It also specifies @enforce_duid,
+     *   to determine whether the given client-id must be used.
+     *     - for "internal" plugin @enforce_duid doesn't matter and the given client-id is
+     *       always used.
+     *     - for "dhclient", @enforce_duid FALSE means to first try to load the DUID from the
+     *       lease file, and only otherwise fallback to the given client-id.
+     *     - other plugins don't support DHCPv6.
+     *   It's done this way, so that existing dhclient setups don't change behavior on upgrade.
+     *
+     * This difference is cumbersome and only exists because of "dhclient" which supports hacking the
+     * default outside of NetworkManager API.
+     */
 
     if (addr_family == AF_INET) {
         success = nm_dhcp_client_start_ip4(client,
@@ -430,10 +430,10 @@ nm_dhcp_manager_start_ip4(NMDhcpManager *     self,
 
     if (send_hostname) {
         /* Use, in order of preference:
-		 *  1. FQDN from configuration
-		 *  2. hostname from configuration
-		 *  3. system hostname (only host part)
-		 */
+         *  1. FQDN from configuration
+         *  2. hostname from configuration
+         *  3. system hostname (only host part)
+         */
         if (dhcp_fqdn) {
             hostname = dhcp_fqdn;
             use_fqdn = TRUE;
@@ -652,9 +652,9 @@ nm_dhcp_manager_init(NMDhcpManager *self)
     nm_log_info(LOGD_DHCP, "dhcp-init: Using DHCP client '%s'", client_factory->name);
 
     /* NOTE: currently the DHCP plugin is chosen once at start. It's not
-	 * possible to reload that configuration. If that ever becomes possible,
-	 * beware that the "dhcp-plugin" device spec made decisions based on
-	 * the previous plugin and may need reevaluation. */
+     * possible to reload that configuration. If that ever becomes possible,
+     * beware that the "dhcp-plugin" device spec made decisions based on
+     * the previous plugin and may need reevaluation. */
     priv->client_factory = client_factory;
 }
 

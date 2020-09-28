@@ -311,8 +311,8 @@ check_if_bond_slave(shvarFile *ifcfg, NMSettingConnection *s_con)
     }
 
     /* We should be checking for SLAVE=yes as well, but NM used to not set that,
-	 * so for backward-compatibility, we don't check.
-	 */
+     * so for backward-compatibility, we don't check.
+     */
 }
 
 static void
@@ -362,9 +362,9 @@ make_connection_name(shvarFile * ifcfg,
         prefix = "System";
 
     /* For cosmetic reasons, if the suggested name is the same as
-	 * the ifcfg files name, don't use it.  Mainly for wifi so that
-	 * the SSID is shown in the connection ID instead of just "wlan0".
-	 */
+     * the ifcfg files name, don't use it.  Mainly for wifi so that
+     * the SSID is shown in the connection ID instead of just "wlan0".
+     */
     if (suggested && strcmp(ifcfg_name, suggested))
         full_name = g_strdup_printf("%s %s (%s)", prefix, suggested, ifcfg_name);
     else
@@ -425,7 +425,7 @@ make_connection_setting(const char *file,
         GError *error = NULL;
 
         /* Only validate for NMU_IFACE_KERNEL, because ifcfg plugin anyway
-		 * doesn't support OVS types. */
+         * doesn't support OVS types. */
         if (nm_utils_ifname_valid(v, NMU_IFACE_KERNEL, &error)) {
             g_object_set(s_con, NM_SETTING_CONNECTION_INTERFACE_NAME, v, NULL);
         } else {
@@ -605,8 +605,8 @@ make_connection_setting(const char *file,
                 d *= 1000.0;
 
                 /* We round. Yes, this is not correct to round IEEE 754 floats in general,
-				 * but sufficient for our case where we know that NetworkManager wrote the
-				 * setting with up to 3 digits for the milliseconds. */
+                 * but sufficient for our case where we know that NetworkManager wrote the
+                 * setting with up to 3 digits for the milliseconds. */
                 d += 0.5;
                 if (d >= 0.0 && d <= (double) G_MAXINT32)
                     vint64 = (gint64) d;
@@ -790,10 +790,10 @@ static gboolean
 parse_route_line_is_comment(const char *line)
 {
     /* we obtained the line from a legacy route file. Here we skip
-	 * empty lines and comments.
-	 *
-	 * initscripts compares: "$line" =~ '^[[:space:]]*(\#.*)?$'
-	 */
+     * empty lines and comments.
+     *
+     * initscripts compares: "$line" =~ '^[[:space:]]*(\#.*)?$'
+     */
     while (nm_utils_is_separator(line[0]))
         line++;
     if (NM_IN_SET(line[0], '\0', '#'))
@@ -817,7 +817,7 @@ typedef struct {
     bool disabled_with_options_route : 1;
 
     /* whether the element is to be ignored. Ignord is different from
-	 * "disabled", because we still parse the option, but don't use it. */
+     * "disabled", because we still parse the option, but don't use it. */
     ParseLineAFFlag ignore : 3;
 
     bool int_base_16 : 1;
@@ -829,7 +829,7 @@ typedef struct {
 
 typedef struct {
     /* whether the command line option was found, and @v is
-	 * initialized. */
+     * initialized. */
     bool has : 1;
 
     union {
@@ -1022,20 +1022,20 @@ parse_route_line(const char *line,
     nm_assert(!options_route || nm_ip_route_get_family(options_route) == addr_family);
 
     /* initscripts read the legacy route file line-by-line and
-	 * use it as `ip route add $line`, thus doing split+glob.
-	 * Splitting on IFS (which we consider '<space><tab><newline>')
-	 * and globbing (which we obviously don't do).
-	 *
-	 * I think it's a mess, because it doesn't support escaping or
-	 * quoting. In fact, it can only encode benign values.
-	 *
-	 * We also use the same form for the numbered OPTIONS
-	 * variable. I think it's bad not to support any form of
-	 * escaping. But do that for now.
-	 *
-	 * Maybe later we want to support some form of quotation here.
-	 * Which of course, would be incompatible with initscripts.
-	 */
+     * use it as `ip route add $line`, thus doing split+glob.
+     * Splitting on IFS (which we consider '<space><tab><newline>')
+     * and globbing (which we obviously don't do).
+     *
+     * I think it's a mess, because it doesn't support escaping or
+     * quoting. In fact, it can only encode benign values.
+     *
+     * We also use the same form for the numbered OPTIONS
+     * variable. I think it's bad not to support any form of
+     * escaping. But do that for now.
+     *
+     * Maybe later we want to support some form of quotation here.
+     * Which of course, would be incompatible with initscripts.
+     */
     words_free = nm_utils_strsplit_set(line, " \t\n");
 
     words = words_free ?: NM_PTRARRAY_EMPTY(const char *);
@@ -1060,7 +1060,7 @@ parse_route_line(const char *line,
 
             if (p_data->has) {
                 /* iproute2 for most arguments allows specifying them multiple times.
-				 * Let's not do that. */
+                 * Let's not do that. */
                 g_set_error(error,
                             NM_SETTINGS_ERROR,
                             NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -1228,7 +1228,7 @@ parse_line_type_addr_with_prefix:
                     if (p_info == &parse_infos[PARSE_LINE_ATTR_ROUTE_VIA]
                         && nm_streq(s, "(null)")) {
                         /* Due to a bug, would older versions of NM write "via (null)"
-						 * (rh#1452648). Workaround that, and accept it.*/
+                         * (rh#1452648). Workaround that, and accept it.*/
                         memset(&p_data->v.addr.addr, 0, sizeof(p_data->v.addr.addr));
                     } else {
                         if (unqualified_addr) {
@@ -1374,9 +1374,9 @@ next:;
             break;
         case PARSE_LINE_TYPE_FLAG:
             /* NOTE: the flag (for "onlink") only allows to explicitly set "TRUE".
-			 * There is no way to express an explicit "FALSE" setting
-			 * of this attribute, hence, the file format cannot encode
-			 * that configuration. */
+             * There is no way to express an explicit "FALSE" setting
+             * of this attribute, hence, the file format cannot encode
+             * that configuration. */
             nm_ip_route_set_attribute(route, p_info->key, g_variant_new_boolean(TRUE));
             break;
         case PARSE_LINE_TYPE_STRING:
@@ -1530,7 +1530,7 @@ read_route_file_parse(int                addr_family,
                 PARSE_WARNING("ignoring manual default route: '%s' (%s)", line, filename);
             else {
                 /* we accept all unrecognized lines, because otherwise we would reject the
-				 * entire connection. */
+                 * entire connection. */
                 PARSE_WARNING("ignoring invalid route at \"%s\" (%s:%lu): %s",
                               line,
                               filename,
@@ -1782,10 +1782,10 @@ make_ip4_setting(shvarFile *ifcfg,
     s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();
 
     /* First check if DEFROUTE is set for this device; DEFROUTE has the
-	 * opposite meaning from never-default. The default if DEFROUTE is not
-	 * specified is DEFROUTE=yes which means that this connection can be used
-	 * as a default route
-	 */
+     * opposite meaning from never-default. The default if DEFROUTE is not
+     * specified is DEFROUTE=yes which means that this connection can be used
+     * as a default route
+     */
     i = svGetValueBoolean(ifcfg, "DEFROUTE", -1);
     if (i == -1)
         never_default = FALSE;
@@ -1805,8 +1805,8 @@ make_ip4_setting(shvarFile *ifcfg,
         dns_options = svGetValue(network_ifcfg, "RES_OPTIONS", &dns_options_free);
 
         /* If there was a global gateway device specified, then only connections
-		 * for that device can be the default connection.
-		 */
+         * for that device can be the default connection.
+         */
         if (gatewaydev && v)
             never_default = !!strcmp(v, gatewaydev);
 
@@ -1913,21 +1913,21 @@ make_ip4_setting(shvarFile *ifcfg,
         g_object_set(s_ip4, NM_SETTING_IP_CONFIG_DHCP_IAID, v, NULL);
 
     /* Read static IP addresses.
-	 * Read them even for AUTO method - in this case the addresses are
-	 * added to the automatic ones. Note that this is not currently supported by
-	 * the legacy 'network' service (ifup-eth).
-	 */
+     * Read them even for AUTO method - in this case the addresses are
+     * added to the automatic ones. Note that this is not currently supported by
+     * the legacy 'network' service (ifup-eth).
+     */
     for (i = -1;; i++) {
         NMIPAddress *addr = NULL;
 
         /* gateway will only be set if still unset. Hence, we don't leak gateway
-		 * here by calling read_full_ip4_address() repeatedly */
+         * here by calling read_full_ip4_address() repeatedly */
         if (!read_full_ip4_address(ifcfg, i, NULL, &addr, &gateway, error))
             return NULL;
 
         if (!addr) {
             /* The first mandatory variable is 2-indexed (IPADDR2)
-			 * Variables IPADDR, IPADDR0 and IPADDR1 are optional */
+             * Variables IPADDR, IPADDR0 and IPADDR1 are optional */
             if (i > 1)
                 break;
             continue;
@@ -1963,15 +1963,15 @@ make_ip4_setting(shvarFile *ifcfg,
         PARSE_WARNING("GATEWAY will be ignored when DEFROUTE is disabled");
 
     /* We used to skip saving a lot of unused properties for the ipv4 shared method.
-	 * We want now to persist them but... unfortunately loading DNS or DOMAIN options
-	 * would cause a fail in the ipv4 verify() function. As we don't want any regression
-	 * in the unlikely event that someone has a working ifcfg file for an IPv4 shared ip
-	 * connection with a crafted "DNS" entry... don't load it. So we will avoid failing
-	 * the connection) */
+     * We want now to persist them but... unfortunately loading DNS or DOMAIN options
+     * would cause a fail in the ipv4 verify() function. As we don't want any regression
+     * in the unlikely event that someone has a working ifcfg file for an IPv4 shared ip
+     * connection with a crafted "DNS" entry... don't load it. So we will avoid failing
+     * the connection) */
     if (!nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
         /* DNS servers
-		 * Pick up just IPv4 addresses (IPv6 addresses are taken by make_ip6_setting())
-		 */
+         * Pick up just IPv4 addresses (IPv6 addresses are taken by make_ip6_setting())
+         */
         for (i = 1; i <= 10; i++) {
             char tag[256];
 
@@ -2245,16 +2245,16 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
     s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new();
 
     /* First check if IPV6_DEFROUTE is set for this device; IPV6_DEFROUTE has the
-	 * opposite meaning from never-default. The default if IPV6_DEFROUTE is not
-	 * specified is IPV6_DEFROUTE=yes which means that this connection can be used
-	 * as a default route
-	 */
+     * opposite meaning from never-default. The default if IPV6_DEFROUTE is not
+     * specified is IPV6_DEFROUTE=yes which means that this connection can be used
+     * as a default route
+     */
     never_default = !svGetValueBoolean(ifcfg, "IPV6_DEFROUTE", TRUE);
 
     /* Then check if IPV6_DEFAULTGW or IPV6_DEFAULTDEV is specified;
-	 * they are global and override IPV6_DEFROUTE
-	 * When both are set, the device specified in IPV6_DEFAULTGW takes preference.
-	 */
+     * they are global and override IPV6_DEFROUTE
+     * When both are set, the device specified in IPV6_DEFAULTGW takes preference.
+     */
     if (network_ifcfg) {
         const char *  ipv6_defaultgw, *ipv6_defaultdev;
         gs_free char *ipv6_defaultgw_to_free  = NULL;
@@ -2276,8 +2276,8 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
             default_dev = ipv6_defaultdev;
 
         /* If there was a global default route device specified, then only connections
-		 * for that device can be the default connection.
-		 */
+         * for that device can be the default connection.
+         */
         if (default_dev && v)
             never_default = !!strcmp(v, default_dev);
     }
@@ -2385,8 +2385,8 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
     nm_clear_g_free(&value);
     v = svGetValueStr(ifcfg, "DHCPV6_HOSTNAME", &value);
     /* Use DHCP_HOSTNAME as fallback if it is in FQDN format and ipv6.method is
-	 * auto or dhcp: this is required to support old ifcfg files
-	 */
+     * auto or dhcp: this is required to support old ifcfg files
+     */
     if (!v
         && (!strcmp(method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
             || !strcmp(method, NM_SETTING_IP6_CONFIG_METHOD_DHCP))) {
@@ -2413,10 +2413,10 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
     }
 
     /* Read static IP addresses.
-	 * Read them even for AUTO and DHCP methods - in this case the addresses are
-	 * added to the automatic ones. Note that this is not currently supported by
-	 * the legacy 'network' service (ifup-eth).
-	 */
+     * Read them even for AUTO and DHCP methods - in this case the addresses are
+     * added to the automatic ones. Note that this is not currently supported by
+     * the legacy 'network' service (ifup-eth).
+     */
     ipv6addr = svGetValueStr(ifcfg, "IPV6ADDR", &ipv6addr_to_free);
     ipv6addr_secondaries =
         svGetValueStr(ifcfg, "IPV6ADDR_SECONDARIES", &ipv6addr_secondaries_to_free);
@@ -2485,8 +2485,8 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
         g_object_set(s_ip6, NM_SETTING_IP6_CONFIG_TOKEN, v, NULL);
 
     /* DNS servers
-	 * Pick up just IPv6 addresses (IPv4 addresses are taken by make_ip4_setting())
-	 */
+     * Pick up just IPv6 addresses (IPv4 addresses are taken by make_ip4_setting())
+     */
     for (i = 1; i <= 10; i++) {
         char tag[256];
 
@@ -3132,11 +3132,11 @@ add_one_wep_key(shvarFile *                ifcfg,
             }
 
             /* Remove 's:' prefix.
-			 * Don't convert to hex string. wpa_supplicant takes 'wep_key0' option over D-Bus as byte array
-			 * and converts it to hex string itself. Even though we convert hex string keys into a bin string
-			 * before passing to wpa_supplicant, this prevents two unnecessary conversions. And mainly,
-			 * ASCII WEP key doesn't change to HEX WEP key in UI, which could confuse users.
-			 */
+             * Don't convert to hex string. wpa_supplicant takes 'wep_key0' option over D-Bus as byte array
+             * and converts it to hex string itself. Even though we convert hex string keys into a bin string
+             * before passing to wpa_supplicant, this prevents two unnecessary conversions. And mainly,
+             * ASCII WEP key doesn't change to HEX WEP key in UI, which could confuse users.
+             */
             key = value + 2;
         }
     }
@@ -3285,8 +3285,8 @@ make_wep_setting(shvarFile *ifcfg, const char *file, GError **error)
     }
 
     /* If no WEP keys were given, and the keys are not agent-owned, and no
-	 * default WEP key index was given, then the connection is unencrypted.
-	 */
+     * default WEP key index was given, then the connection is unencrypted.
+     */
     if (!nm_setting_wireless_security_get_wep_key(s_wsec, 0)
         && !nm_setting_wireless_security_get_wep_key(s_wsec, 1)
         && !nm_setting_wireless_security_get_wep_key(s_wsec, 2)
@@ -3360,10 +3360,10 @@ parse_wpa_psk(shvarFile *ifcfg, const char *file, GBytes *ssid, GError **error)
     size_t        plen;
 
     /* Passphrase must be between 10 and 66 characters in length because WPA
-	 * hex keys are exactly 64 characters (no quoting), and WPA passphrases
-	 * are between 8 and 63 characters (inclusive), plus optional quoting if
-	 * the passphrase contains spaces.
-	 */
+     * hex keys are exactly 64 characters (no quoting), and WPA passphrases
+     * are between 8 and 63 characters (inclusive), plus optional quoting if
+     * the passphrase contains spaces.
+     */
 
     /* Try to get keys from the "shadow" key file */
     keys_ifcfg = utils_get_keys_ifcfg(file, FALSE);
@@ -3518,11 +3518,11 @@ eap_tls_reader(const char *    eap_method,
                                   : NM_SETTING_802_1X_CLIENT_CERT_PASSWORD);
 
     /* In the past when the private key and client certificate
-	 * were the same PKCS #12 file we used to write only the
-	 * private key variable. Still support that even if it means
-	 * that we have to look into the file content, which makes
-	 * the connection not self-contained.
-	 */
+     * were the same PKCS #12 file we used to write only the
+     * private key variable. Still support that even if it means
+     * that we have to look into the file content, which makes
+     * the connection not self-contained.
+     */
     if (!client_cert && privkey && !svGetValue(ifcfg, client_cert_var, &value_to_free)) {
         if (phase2)
             format = nm_setting_802_1x_get_phase2_private_key_format(s_8021x);
@@ -3859,9 +3859,9 @@ fill_8021x(shvarFile *ifcfg, const char *file, const char *key_mgmt, gboolean wi
                 goto next;
 
             /* Some EAP methods don't provide keying material, thus they
-			 * cannot be used with Wi-Fi unless they are an inner method
-			 * used with TTLS or PEAP or whatever.
-			 */
+             * cannot be used with Wi-Fi unless they are an inner method
+             * used with TTLS or PEAP or whatever.
+             */
             if (wifi && eap->wifi_phase2_only) {
                 PARSE_WARNING("ignored invalid IEEE_8021X_EAP_METHOD '%s'; not allowed for wifi",
                               lower);
@@ -4256,7 +4256,7 @@ make_wireless_setting(shvarFile *ifcfg, GError **error)
         if (value_len > 2 && (value_len % 2) == 0 && g_str_has_prefix(value, "0x")
             && NM_STRCHAR_ALL(&value[2], ch, g_ascii_isxdigit(ch))) {
             /* interpret the value as hex-digits iff value starts
-			 * with "0x" followed by pairs of hex digits */
+             * with "0x" followed by pairs of hex digits */
             bytes = nm_utils_hexstr2bin(&value[2]);
         } else
             bytes = g_bytes_new(value, value_len);
@@ -4923,7 +4923,7 @@ parse_ethtool_options(shvarFile *ifcfg, NMConnection *connection)
             opts = nm_utils_strsplit_set(ethtool_opts, ";");
             for (iter = opts; iter && iter[0]; iter++) {
                 /* in case of repeated wol_passwords, parse_ethtool_option()
-				 * will do the right thing and clear wol_password before resetting. */
+                 * will do the right thing and clear wol_password before resetting. */
                 parse_ethtool_option(iter[0],
                                      &wol_flags,
                                      &wol_password,
@@ -6012,8 +6012,8 @@ make_vlan_setting(shvarFile *ifcfg, const char *file, GError **error)
                 parent = g_strndup(iface_name, v - iface_name);
                 if (g_str_has_prefix(parent, "vlan")) {
                     /* Like initscripts, if no PHYSDEV and we get an obviously
-					 * invalid parent interface from DEVICE, fail.
-					 */
+                     * invalid parent interface from DEVICE, fail.
+                     */
                     nm_clear_g_free(&parent);
                 }
             }
@@ -6028,8 +6028,8 @@ make_vlan_setting(shvarFile *ifcfg, const char *file, GError **error)
             int device_vlan_id;
 
             /* Grab VLAN ID from interface name; this takes precedence over the
-			 * separate VLAN_ID property for backwards compat.
-			 */
+             * separate VLAN_ID property for backwards compat.
+             */
             device_vlan_id = _nm_utils_ascii_str_to_int64(v, 10, 0, 4095, -1);
             if (device_vlan_id != -1)
                 vlan_id = device_vlan_id;
@@ -6158,9 +6158,9 @@ create_unhandled_connection(const char *filename,
     connection = nm_simple_connection_new();
 
     /* Get NAME, UUID, etc. We need to set a connection type (generic) and add
-	 * an empty type-specific setting as well, to make sure it passes
-	 * nm_connection_verify() later.
-	 */
+     * an empty type-specific setting as well, to make sure it passes
+     * nm_connection_verify() later.
+     */
     s_con = make_connection_setting(filename, ifcfg, NM_SETTING_GENERIC_SETTING_NAME, NULL, NULL);
     nm_connection_add_setting(connection, s_con);
 
@@ -6200,8 +6200,8 @@ check_dns_search_domains(shvarFile *ifcfg, NMSetting *s_ip4, NMSetting *s_ip6)
         return;
 
     /* If there is no IPv4 config or it doesn't contain DNS searches,
-	 * read DOMAIN and put the domains into IPv6.
-	 */
+     * read DOMAIN and put the domains into IPv6.
+     */
     if (!s_ip4 || nm_setting_ip_config_get_num_dns_searches(NM_SETTING_IP_CONFIG(s_ip4)) == 0) {
         /* DNS searches */
         gs_free char *value = NULL;
@@ -6317,8 +6317,8 @@ connection_from_file_full(const char *filename,
         gs_free char *t = NULL;
 
         /* Team and TeamPort types are also accepted by the mere
-		 * presence of TEAM_CONFIG/TEAM_MASTER. They don't require
-		 * DEVICETYPE. */
+         * presence of TEAM_CONFIG/TEAM_MASTER. They don't require
+         * DEVICETYPE. */
         t = svGetValueStr_cp(main_ifcfg, "TEAM_CONFIG");
         if (t)
             type = g_strdup(TYPE_TEAM);
@@ -6373,11 +6373,11 @@ connection_from_file_full(const char *filename,
                 gsize         i;
 
                 /* network-functions detects DEVICETYPE based on the ifcfg-* name and the existence
-				 * of a ifup script:
-				 *    [ -z "$DEVICETYPE" ] && DEVICETYPE=$(echo ${DEVICE} | sed "s/[0-9]*$//")
-				 * later...
-				 *    OTHERSCRIPT="/etc/sysconfig/network-scripts/ifup-${DEVICETYPE}"
-				 * */
+                 * of a ifup script:
+                 *    [ -z "$DEVICETYPE" ] && DEVICETYPE=$(echo ${DEVICE} | sed "s/[0-9]*$//")
+                 * later...
+                 *    OTHERSCRIPT="/etc/sysconfig/network-scripts/ifup-${DEVICETYPE}"
+                 * */
 #define IFUP_PATH_PREFIX "/etc/sysconfig/network-scripts/ifup-"
                 i        = strlen(device);
                 p_path   = g_malloc(NM_STRLEN(IFUP_PATH_PREFIX) + i + 1);
@@ -6416,9 +6416,9 @@ connection_from_file_full(const char *filename,
             }
         } else {
             /* For the unit tests, there won't necessarily be any
-			 * adapters of the connection's type in the system so the
-			 * type can't be tested with ioctls.
-			 */
+             * adapters of the connection's type in the system so the
+             * type can't be tested with ioctls.
+             */
             type = g_strdup(test_type);
         }
 
@@ -6534,9 +6534,9 @@ connection_from_file_full(const char *filename,
         nm_connection_add_setting(connection, s_tc);
 
     /* For backwards compatibility, if IPv4 is disabled or the
-	 * config fails for some reason, we read DOMAIN and put the
-	 * values into IPv6 config instead of IPv4.
-	 */
+     * config fails for some reason, we read DOMAIN and put the
+     * values into IPv6 config instead of IPv4.
+     */
     check_dns_search_domains(main_ifcfg, s_ip4, s_ip6);
 
     s_proxy = make_proxy_setting(main_ifcfg);

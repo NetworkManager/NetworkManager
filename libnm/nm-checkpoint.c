@@ -155,12 +155,12 @@ nm_checkpoint_class_init(NMCheckpointClass *klass)
     _NM_OBJECT_CLASS_INIT_PROPERTY_AO_FIELDS_1(nm_object_class, NMCheckpointPrivate, devices);
 
     /**
-	 * NMCheckpoint:devices: (type GPtrArray(NMDevice))
-	 *
-	 * The devices that are part of this checkpoint.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMCheckpoint:devices: (type GPtrArray(NMDevice))
+     *
+     * The devices that are part of this checkpoint.
+     *
+     * Since: 1.12
+     **/
     obj_properties[PROP_DEVICES] = g_param_spec_boxed(NM_CHECKPOINT_DEVICES,
                                                       "",
                                                       "",
@@ -168,12 +168,12 @@ nm_checkpoint_class_init(NMCheckpointClass *klass)
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMCheckpoint:created:
-	 *
-	 * The timestamp (in CLOCK_BOOTTIME milliseconds) of checkpoint creation.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMCheckpoint:created:
+     *
+     * The timestamp (in CLOCK_BOOTTIME milliseconds) of checkpoint creation.
+     *
+     * Since: 1.12
+     **/
     obj_properties[PROP_CREATED] = g_param_spec_int64(NM_CHECKPOINT_CREATED,
                                                       "",
                                                       "",
@@ -183,12 +183,12 @@ nm_checkpoint_class_init(NMCheckpointClass *klass)
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMCheckpoint:rollback-timeout:
-	 *
-	 * Timeout in seconds for automatic rollback, or zero.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMCheckpoint:rollback-timeout:
+     *
+     * Timeout in seconds for automatic rollback, or zero.
+     *
+     * Since: 1.12
+     **/
     obj_properties[PROP_ROLLBACK_TIMEOUT] =
         g_param_spec_uint(NM_CHECKPOINT_ROLLBACK_TIMEOUT,
                           "",

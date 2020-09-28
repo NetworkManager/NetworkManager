@@ -110,9 +110,9 @@ create_device(NMDeviceFactory *     factory,
         }
 
         /* Ignore monitor-mode and other unhandled interface types.
-		 * FIXME: keep TYPE_MONITOR devices in UNAVAILABLE state and manage
-		 * them if/when they change to a handled type.
-		 */
+         * FIXME: keep TYPE_MONITOR devices in UNAVAILABLE state and manage
+         * them if/when they change to a handled type.
+         */
         mode = nm_platform_wifi_get_mode(NM_PLATFORM_GET, plink->ifindex);
         if (mode == NM_802_11_MODE_UNKNOWN) {
             *out_ignore = TRUE;

@@ -63,7 +63,7 @@ typedef struct _NMModemPrivate {
     char *data_port;
 
     /* TODO: ip_iface is solely used for nm_modem_owns_port().
-	 * We should rework the code that it's not necessary */
+     * We should rework the code that it's not necessary */
     char *ip_iface;
 
     int                ip_ifindex;
@@ -214,10 +214,10 @@ nm_modem_unclaim(NMModem *self)
     g_return_if_fail(priv->claimed);
 
     /* we don't actually unclaim the instance. This instance should not be re-used
-	 * by another owner, that is because we only claim modems as we receive them.
-	 * There is no mechanism that somebody else would later re-use them again.
-	 *
-	 * // priv->claimed = FALSE; */
+     * by another owner, that is because we only claim modems as we receive them.
+     * There is no mechanism that somebody else would later re-use them again.
+     *
+     * // priv->claimed = FALSE; */
 
     g_object_unref(self);
 }
@@ -513,9 +513,9 @@ ppp_ifindex_set(NMPPPManager *ppp_manager, int ifindex, const char *iface, gpoin
 
     if (ifindex <= 0 && iface) {
         /* this might happen, if the ifname was already deleted
-		 * and we failed to resolve ifindex.
-		 *
-		 * Forget about the name. */
+         * and we failed to resolve ifindex.
+         *
+         * Forget about the name. */
         iface = NULL;
     }
     _set_ip_ifindex(self, ifindex, iface);
@@ -533,13 +533,13 @@ ppp_ip4_config(NMPPPManager *ppp_manager, NMIP4Config *config, gpointer user_dat
     gboolean dns_workaround = FALSE;
 
     /* Work around a PPP bug (#1732) which causes many mobile broadband
-	 * providers to return 10.11.12.13 and 10.11.12.14 for the DNS servers.
-	 * Apparently fixed in ppp-2.4.5 but we've had some reports that this is
-	 * not the case.
-	 *
-	 * http://git.ozlabs.org/?p=ppp.git;a=commitdiff_plain;h=2e09ef6886bbf00bc5a9a641110f801e372ffde6
-	 * http://git.ozlabs.org/?p=ppp.git;a=commitdiff_plain;h=f8191bf07df374f119a07910a79217c7618f113e
-	 */
+     * providers to return 10.11.12.13 and 10.11.12.14 for the DNS servers.
+     * Apparently fixed in ppp-2.4.5 but we've had some reports that this is
+     * not the case.
+     *
+     * http://git.ozlabs.org/?p=ppp.git;a=commitdiff_plain;h=2e09ef6886bbf00bc5a9a641110f801e372ffde6
+     * http://git.ozlabs.org/?p=ppp.git;a=commitdiff_plain;h=f8191bf07df374f119a07910a79217c7618f113e
+     */
 
     num = nm_ip4_config_get_num_nameservers(config);
     if (num == 2) {
@@ -555,9 +555,9 @@ ppp_ip4_config(NMPPPManager *ppp_manager, NMIP4Config *config, gpointer user_dat
         }
 
         /* Be somewhat conservative about substitutions; the "bad" nameservers
-		 * could actually be valid in some cases, so only substitute if ppp
-		 * returns *only* the two bad nameservers.
-		 */
+         * could actually be valid in some cases, so only substitute if ppp
+         * returns *only* the two bad nameservers.
+         */
         dns_workaround = (found1 && found2);
     }
 
@@ -641,9 +641,9 @@ ppp_stage3_ip_config_start(NMModem *            self,
     g_return_val_if_fail(NM_IS_ACT_REQUEST(req), NM_ACT_STAGE_RETURN_FAILURE);
 
     /* If we're already running PPP don't restart it; for example, if both
-	 * IPv4 and IPv6 are requested, IPv4 gets started first, but we use the
-	 * same pppd for both v4 and v6.
-	 */
+     * IPv4 and IPv6 are requested, IPv4 gets started first, but we use the
+     * same pppd for both v4 and v6.
+     */
     if (priv->ppp_manager)
         return NM_ACT_STAGE_RETURN_POSTPONE;
 
@@ -662,17 +662,17 @@ ppp_stage3_ip_config_start(NMModem *            self,
     }
 
     /* Check if ModemManager requested a specific IP timeout to be used. If 0 reported,
-	 * use the default one (30s) */
+     * use the default one (30s) */
     if (priv->mm_ip_timeout > 0) {
         _LOGI("using modem-specified IP timeout: %u seconds", priv->mm_ip_timeout);
         ip_timeout = priv->mm_ip_timeout;
     }
 
     /* Some tty drivers and modems ignore port speed, but pppd requires the
-	 * port speed to be > 0 or it exits. If the port speed is 0 pass an
-	 * explicit speed to pppd to prevent the exit.
-	 * https://bugzilla.redhat.com/show_bug.cgi?id=1281731
-	 */
+     * port speed to be > 0 or it exits. If the port speed is 0 pass an
+     * explicit speed to pppd to prevent the exit.
+     * https://bugzilla.redhat.com/show_bug.cgi?id=1281731
+     */
     if (port_speed_is_zero(priv->data_port))
         baud_override = 57600;
 
@@ -790,9 +790,9 @@ nm_modem_ip4_pre_commit(NMModem *modem, NMDevice *device, NMIP4Config *config)
     NMModemPrivate *priv = NM_MODEM_GET_PRIVATE(modem);
 
     /* If the modem has an ethernet-type data interface (ie, not PPP and thus
-	 * not point-to-point) and IP config has a /32 prefix, then we assume that
-	 * ARP will be pointless and we turn it off.
-	 */
+     * not point-to-point) and IP config has a /32 prefix, then we assume that
+     * ARP will be pointless and we turn it off.
+     */
     if (priv->ip4_method == NM_MODEM_IP_METHOD_STATIC
         || priv->ip4_method == NM_MODEM_IP_METHOD_AUTO) {
         const NMPlatformIP4Address *address = nm_ip4_config_get_first_address(config);
@@ -821,8 +821,8 @@ nm_modem_emit_ip6_config_result(NMModem *self, NMIP6Config *config, GError *erro
 
     if (config) {
         /* If the IPv6 configuration only included a Link-Local address, then
-		 * we have to run SLAAC to get the full IPv6 configuration.
-		 */
+         * we have to run SLAAC to get the full IPv6 configuration.
+         */
         nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, config, &addr) {
             if (IN6_IS_ADDR_LINKLOCAL(&addr->address)) {
                 if (!priv->iid.id)
@@ -886,9 +886,9 @@ nm_modem_stage3_ip6_config_start(NMModem *            self,
     case NM_MODEM_IP_METHOD_STATIC:
     case NM_MODEM_IP_METHOD_AUTO:
         /* Both static and DHCP/Auto retrieve a base IP config from the modem
-		 * which in the static case is the full config, and the DHCP/Auto case
-		 * is just the IPv6LL address to use for SLAAC.
-		 */
+         * which in the static case is the full config, and the DHCP/Auto case
+         * is just the IPv6LL address to use for SLAAC.
+         */
         ret = NM_MODEM_GET_CLASS(self)->stage3_ip6_config_request(self, out_failure_reason);
         break;
     default:
@@ -1068,8 +1068,8 @@ nm_modem_act_stage2_config(NMModem *self)
 
     priv = NM_MODEM_GET_PRIVATE(self);
     /* Clear secrets tries counter since secrets were successfully used
-	 * already if we get here.
-	 */
+     * already if we get here.
+     */
     priv->secrets_tries = 0;
 }
 
@@ -1105,9 +1105,9 @@ nm_modem_check_connection_compatible(NMModem *self, NMConnection *connection, GE
         }
 
         /* SIM properties may not be available before the SIM is unlocked, so
-		 * to ensure that autoconnect works, the connection's SIM properties
-		 * are only compared if present on the device.
-		 */
+         * to ensure that autoconnect works, the connection's SIM properties
+         * are only compared if present on the device.
+         */
 
         if (priv->sim_id && (str = nm_setting_gsm_get_sim_id(s_gsm))) {
             if (!nm_streq(str, priv->sim_id)) {
@@ -1304,8 +1304,8 @@ nm_modem_deactivate_async(NMModem *                 self,
 
     if (ppp_manager) {
         /* If we have a PPP manager, stop it.
-		 *
-		 * Pass on the reference in @ppp_manager. */
+         *
+         * Pass on the reference in @ppp_manager. */
         nm_ppp_manager_stop(ppp_manager, ctx->cancellable, _deactivate_ppp_manager_stop_cb, ctx);
         return;
     }
@@ -1409,8 +1409,8 @@ nm_modem_get_ip_ifindex(NMModem *self)
     priv = NM_MODEM_GET_PRIVATE(self);
 
     /* internally we track an unset ip_ifindex as -1.
-	 * For the caller of nm_modem_get_ip_ifindex(), this
-	 * shall be zero too. */
+     * For the caller of nm_modem_get_ip_ifindex(), this
+     * shall be zero too. */
     return priv->ip_ifindex != -1 ? priv->ip_ifindex : 0;
 }
 
@@ -1955,18 +1955,18 @@ nm_modem_class_init(NMModemClass *klass)
                                               G_TYPE_POINTER);
 
     /**
-	 * NMModem::ip6-config-result:
-	 * @modem: the #NMModem  on which the signal is emitted
-	 * @config: the #NMIP6Config to apply to the modem's data port
-	 * @do_slaac: %TRUE if IPv6 SLAAC should be started
-	 * @error: a #GError if any error occurred during IP configuration
-	 *
-	 * This signal is emitted when IPv6 configuration has completed or failed.
-	 * If @error is set the configuration failed.  If @config is set, then
-	 * the details should be applied to the data port before any further
-	 * configuration (like SLAAC) is done.  @do_slaac indicates whether SLAAC
-	 * should be started after applying @config to the data port.
-	 */
+     * NMModem::ip6-config-result:
+     * @modem: the #NMModem  on which the signal is emitted
+     * @config: the #NMIP6Config to apply to the modem's data port
+     * @do_slaac: %TRUE if IPv6 SLAAC should be started
+     * @error: a #GError if any error occurred during IP configuration
+     *
+     * This signal is emitted when IPv6 configuration has completed or failed.
+     * If @error is set the configuration failed.  If @config is set, then
+     * the details should be applied to the data port before any further
+     * configuration (like SLAAC) is done.  @do_slaac indicates whether SLAAC
+     * should be started after applying @config to the data port.
+     */
     signals[IP6_CONFIG_RESULT] = g_signal_new(NM_MODEM_IP6_CONFIG_RESULT,
                                               G_OBJECT_CLASS_TYPE(object_class),
                                               G_SIGNAL_RUN_FIRST,

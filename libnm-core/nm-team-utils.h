@@ -68,16 +68,16 @@ struct _NMTeamSettingData {
     const GPtrArray *link_watchers;
 
     /* this means that @_js_str is unset and needs to be created by
-	 * converting the properties to JSON. This flag indicates that
-	 * we need to re-generate the JSON string on-demand (lazily). */
+     * converting the properties to JSON. This flag indicates that
+     * we need to re-generate the JSON string on-demand (lazily). */
     bool _js_str_need_synthetize;
 
     bool strict_validated : 1;
 
     /* indicates tha the JSON is invalid. Usually, we do a very relaxed validation of
-	 * the JSON config, in case !@strict_validated and accept all unknown fields. This
-	 * flag indicates that the JSON value is not even parsable as JSON. nm_connection_verify()
-	 * would reject such a setting. */
+     * the JSON config, in case !@strict_validated and accept all unknown fields. This
+     * flag indicates that the JSON value is not even parsable as JSON. nm_connection_verify()
+     * would reject such a setting. */
     bool js_str_invalid : 1;
 
     bool is_port : 1;

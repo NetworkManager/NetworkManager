@@ -223,8 +223,8 @@ _nmtst_crypto_decrypt(NMCryptoCipherType cipher,
     }
 
     /* Validate tail padding; last byte is the padding size, and all pad bytes
-	 * should contain the padding size.
-	 */
+     * should contain the padding size.
+     */
     for (i = pad_len; i > 0; i--) {
         if (output.bin[data_len - i] != pad_len) {
             g_set_error(error,
@@ -329,8 +329,8 @@ _nmtst_crypto_encrypt(NMCryptoCipherType cipher,
     }
 
     /* If data->len % ivlen == 0, then we add another complete block
-	 * onto the end so that the decrypter knows there's padding.
-	 */
+     * onto the end so that the decrypter knows there's padding.
+     */
     pad_len = iv_len - (data_len % iv_len);
 
     padded_buf.len = data_len + pad_len;
@@ -419,8 +419,8 @@ _nm_crypto_verify_pkcs12(const guint8 *data, gsize data_len, const char *passwor
         return FALSE;
 
     /* PKCS#12 passwords are apparently UCS2 BIG ENDIAN, and NSS doesn't do
-	 * any conversions for us.
-	 */
+     * any conversions for us.
+     */
     if (password && *password) {
         nm_auto_clear_secret_ptr NMSecretPtr ucs2_password = {0};
 
@@ -522,9 +522,9 @@ _nm_crypto_verify_pkcs8(const guint8 *data,
         return FALSE;
 
     /* NSS apparently doesn't do PKCS#8 natively, but you have to put the
-	 * PKCS#8 key into a PKCS#12 file and import that??  So until we figure
-	 * all that out, we can only assume the password is valid.
-	 */
+     * PKCS#8 key into a PKCS#12 file and import that??  So until we figure
+     * all that out, we can only assume the password is valid.
+     */
     return TRUE;
 }
 

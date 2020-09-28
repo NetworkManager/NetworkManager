@@ -172,10 +172,10 @@ nm_device_olpc_mesh_class_init(NMDeviceOlpcMeshClass *klass)
     device_class->get_setting_type      = get_setting_type;
 
     /**
-	 * NMDeviceOlpcMesh:companion:
-	 *
-	 * The companion device.
-	 **/
+     * NMDeviceOlpcMesh:companion:
+     *
+     * The companion device.
+     **/
     obj_properties[PROP_COMPANION] = g_param_spec_object(NM_DEVICE_OLPC_MESH_COMPANION,
                                                          "",
                                                          "",
@@ -183,10 +183,10 @@ nm_device_olpc_mesh_class_init(NMDeviceOlpcMeshClass *klass)
                                                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceOlpcMesh:active-channel:
-	 *
-	 * The device's active channel.
-	 **/
+     * NMDeviceOlpcMesh:active-channel:
+     *
+     * The device's active channel.
+     **/
     obj_properties[PROP_ACTIVE_CHANNEL] =
         g_param_spec_uint(NM_DEVICE_OLPC_MESH_ACTIVE_CHANNEL,
                           "",

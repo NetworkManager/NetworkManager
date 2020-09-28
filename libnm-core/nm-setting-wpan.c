@@ -309,18 +309,18 @@ nm_setting_wpan_class_init(NMSettingWpanClass *klass)
     setting_class->verify = verify;
 
     /**
-	 * NMSettingWpan:mac-address:
-	 *
-	 * If specified, this connection will only apply to the IEEE 802.15.4 (WPAN)
-	 * MAC layer device whose permanent MAC address matches.
-	 **/
+     * NMSettingWpan:mac-address:
+     *
+     * If specified, this connection will only apply to the IEEE 802.15.4 (WPAN)
+     * MAC layer device whose permanent MAC address matches.
+     **/
     /* ---keyfile---
-	 * property: mac-address
-	 * format: usual hex-digits-and-colons notation
-	 * description: MAC address in hex-digits-and-colons notation
-	 *   (e.g. 76:d8:9b:87:66:60:84:ee).
-	 * ---end---
-	 */
+     * property: mac-address
+     * format: usual hex-digits-and-colons notation
+     * description: MAC address in hex-digits-and-colons notation
+     *   (e.g. 76:d8:9b:87:66:60:84:ee).
+     * ---end---
+     */
     obj_properties[PROP_MAC_ADDRESS] =
         g_param_spec_string(NM_SETTING_WPAN_MAC_ADDRESS,
                             "",
@@ -329,10 +329,10 @@ nm_setting_wpan_class_init(NMSettingWpanClass *klass)
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWpan:pan-id:
-	 *
-	 * IEEE 802.15.4 Personal Area Network (PAN) identifier.
-	 **/
+     * NMSettingWpan:pan-id:
+     *
+     * IEEE 802.15.4 Personal Area Network (PAN) identifier.
+     **/
     obj_properties[PROP_PAN_ID] = g_param_spec_uint(NM_SETTING_WPAN_PAN_ID,
                                                     "",
                                                     "",
@@ -342,10 +342,10 @@ nm_setting_wpan_class_init(NMSettingWpanClass *klass)
                                                     G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWpan:short-address:
-	 *
-	 * Short IEEE 802.15.4 address to be used within a restricted environment.
-	 **/
+     * NMSettingWpan:short-address:
+     *
+     * Short IEEE 802.15.4 address to be used within a restricted environment.
+     **/
     obj_properties[PROP_SHORT_ADDRESS] =
         g_param_spec_uint(NM_SETTING_WPAN_SHORT_ADDRESS,
                           "",
@@ -356,13 +356,13 @@ nm_setting_wpan_class_init(NMSettingWpanClass *klass)
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWpan:page:
-	 *
-	 * IEEE 802.15.4 channel page. A positive integer or -1, meaning "do not
-	 * set, use whatever the device is already set to".
-	 *
-	 * Since: 1.16
-	 **/
+     * NMSettingWpan:page:
+     *
+     * IEEE 802.15.4 channel page. A positive integer or -1, meaning "do not
+     * set, use whatever the device is already set to".
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_PAGE] = g_param_spec_int(NM_SETTING_WPAN_PAGE,
                                                  "",
                                                  "",
@@ -372,13 +372,13 @@ nm_setting_wpan_class_init(NMSettingWpanClass *klass)
                                                  G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWpan:channel:
-	 *
-	 * IEEE 802.15.4 channel. A positive integer or -1, meaning "do not
-	 * set, use whatever the device is already set to".
-	 *
-	 * Since: 1.16
-	 **/
+     * NMSettingWpan:channel:
+     *
+     * IEEE 802.15.4 channel. A positive integer or -1, meaning "do not
+     * set, use whatever the device is already set to".
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_CHANNEL] = g_param_spec_int(NM_SETTING_WPAN_CHANNEL,
                                                     "",
                                                     "",

@@ -26,8 +26,8 @@ again:
     base = g_atomic_pointer_get(&base_cached);
     if (G_UNLIKELY(!base)) {
         /* The base URI can be set via environment variable.
-		 * This is mainly for testing, it's not usually supposed to be configured.
-		 * Consider this private API! */
+         * This is mainly for testing, it's not usually supposed to be configured.
+         * Consider this private API! */
         base = g_getenv(NMCS_ENV_VARIABLE("NM_CLOUD_SETUP_EC2_HOST"));
 
         if (base && base[0] && !strchr(base, '/')) {
@@ -307,7 +307,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
     }
 
     /* We ignore errors. Only if we got no response at all, it's a problem.
-	 * Otherwise, we proceed with whatever we could fetch. */
+     * Otherwise, we proceed with whatever we could fetch. */
     if (!response_parsed) {
         _get_config_task_maybe_return(
             iface_data,
@@ -438,7 +438,7 @@ _get_config_metadata_ready_check(long     response_code,
             continue;
 
         /* Truncate the string. It's safe to do, because we own @response_data an it has an
-		 * extra NUL character after the buffer. */
+         * extra NUL character after the buffer. */
         ((char *) cur_line)[cur_line_len] = '\0';
 
         hwaddr = nmcs_utils_hwaddr_normalize(
@@ -483,9 +483,9 @@ get_config(NMCSProvider *provider, NMCSProviderGetConfigTaskData *get_config_dat
     };
 
     /* First we fetch the "macs/". If the caller requested some particular
-	 * MAC addresses, then we poll until we see them. They might not yet be
-	 * around from the start...
-	 */
+     * MAC addresses, then we poll until we see them. They might not yet be
+     * around from the start...
+     */
     nm_http_client_poll_get(nmcs_provider_get_http_client(provider),
                             (uri = _ec2_uri_interfaces()),
                             HTTP_TIMEOUT_MS,

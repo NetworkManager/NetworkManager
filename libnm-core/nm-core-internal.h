@@ -248,17 +248,17 @@ GVariant *nm_connection_to_dbus_full(NMConnection *                          con
 
 typedef enum {
     /* whether the connection has any secrets.
-	 *
-	 * @arg may be %NULL or a pointer to a gboolean for the result. The return
-	 *   value of _nm_connection_aggregate() is likewise the boolean result. */
+     *
+     * @arg may be %NULL or a pointer to a gboolean for the result. The return
+     *   value of _nm_connection_aggregate() is likewise the boolean result. */
     NM_CONNECTION_AGGREGATE_ANY_SECRETS,
 
     /* whether the connection has any secret with flags NM_SETTING_SECRET_FLAG_NONE.
-	 * Note that this only cares about the flags, not whether the secret is actually
-	 * present.
-	 *
-	 * @arg may be %NULL or a pointer to a gboolean for the result. The return
-	 *   value of _nm_connection_aggregate() is likewise the boolean result. */
+     * Note that this only cares about the flags, not whether the secret is actually
+     * present.
+     *
+     * @arg may be %NULL or a pointer to a gboolean for the result. The return
+     *   value of _nm_connection_aggregate() is likewise the boolean result. */
     NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS,
 } NMConnectionAggregateType;
 
@@ -724,7 +724,7 @@ typedef struct {
     NMSettInfoPropMissingFromDBusFcn missing_from_dbus_fcn;
 
     /* Simpler variants of @to_dbus_fcn/@from_dbus_fcn that operate solely
-	 * on the GValue value of the GObject property. */
+     * on the GValue value of the GObject property. */
     NMSettInfoPropGPropToDBusFcn   gprop_to_dbus_fcn;
     NMSettInfoPropGPropFromDBusFcn gprop_from_dbus_fcn;
 } NMSettInfoPropertType;
@@ -745,16 +745,16 @@ typedef struct {
 
 typedef struct {
     /* if set, then this setting class has no own fields. Instead, its
-	 * data is entirely based on gendata. Meaning: it tracks all data
-	 * as native GVariants.
-	 * It might have some GObject properties, but these are merely accessors
-	 * to the underlying gendata.
-	 *
-	 * Note, that at the moment there are few hooks, to customize the behavior
-	 * of the setting further. They are currently unneeded. This is desired,
-	 * but could be added when there is a good reason.
-	 *
-	 * However, a few hooks there are... see NMSettInfoSettGendata. */
+     * data is entirely based on gendata. Meaning: it tracks all data
+     * as native GVariants.
+     * It might have some GObject properties, but these are merely accessors
+     * to the underlying gendata.
+     *
+     * Note, that at the moment there are few hooks, to customize the behavior
+     * of the setting further. They are currently unneeded. This is desired,
+     * but could be added when there is a good reason.
+     *
+     * However, a few hooks there are... see NMSettInfoSettGendata. */
     const NMSettInfoSettGendata *gendata_info;
 } NMSettInfoSettDetail;
 
@@ -765,15 +765,15 @@ struct _NMSettInfoSetting {
     const NMSettInfoProperty *property_infos;
 
     /* the @property_infos list is sorted by property name. For some uses we need
-	 * a different sort order. If @property_infos_sorted is set, this is the order
-	 * instead. It is used for:
-	 *
-	 *   - nm_setting_enumerate_values()
-	 *   - keyfile writer adding keys to the group.
-	 *
-	 * Note that currently only NMSettingConnection implements here a sort order
-	 * that differs from alphabetical sort of the property names.
-	 */
+     * a different sort order. If @property_infos_sorted is set, this is the order
+     * instead. It is used for:
+     *
+     *   - nm_setting_enumerate_values()
+     *   - keyfile writer adding keys to the group.
+     *
+     * Note that currently only NMSettingConnection implements here a sort order
+     * that differs from alphabetical sort of the property names.
+     */
     const NMSettInfoProperty *const *property_infos_sorted;
 
     guint                property_infos_len;

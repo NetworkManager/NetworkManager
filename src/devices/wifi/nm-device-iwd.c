@@ -244,13 +244,13 @@ insert_ap_from_network(NMDeviceIwd *self,
     }
 
     /* What we get from IWD are networks, or ESSs, that may contain
-	 * multiple APs, or BSSs, each.  We don't get information about any
-	 * specific BSSs within an ESS but we can safely present each ESS
-	 * as an individual BSS to NM, which will be seen as ESSs comprising
-	 * a single BSS each.  NM won't be able to handle roaming but IWD
-	 * already does that.  We fake the BSSIDs as they don't play any
-	 * role either.
-	 */
+     * multiple APs, or BSSs, each.  We don't get information about any
+     * specific BSSs within an ESS but we can safely present each ESS
+     * as an individual BSS to NM, which will be seen as ESSs comprising
+     * a single BSS each.  NM won't be able to handle roaming but IWD
+     * already does that.  We fake the BSSIDs as they don't play any
+     * role either.
+     */
     bssid[0] = 0x00;
     bssid[1] = 0x01;
     bssid[2] = 0x02;
@@ -308,9 +308,9 @@ get_ordered_networks_cb(GObject *source, GAsyncResult *res, gpointer user_data)
     priv = NM_DEVICE_IWD_GET_PRIVATE(self);
 
     /* Depending on whether we're using the Station interface or the Device
-	 * interface for compatibility with IWD <= 0.7, the return signature of
-	 * GetOrderedNetworks will be different.
-	 */
+     * interface for compatibility with IWD <= 0.7, the return signature of
+     * GetOrderedNetworks will be different.
+     */
     compat     = priv->dbus_station_proxy == priv->dbus_device_proxy;
     return_sig = compat ? "(a(osns))" : "(a(on))";
 
@@ -350,9 +350,9 @@ get_ordered_networks_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 
         if (ap == priv->current_ap) {
             /* Normally IWD will prevent the current AP from being
-			 * removed from the list and set a low signal strength,
-			 * but just making sure.
-			 */
+             * removed from the list and set a low signal strength,
+             * but just making sure.
+             */
             continue;
         }
 
@@ -643,8 +643,8 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
 
     if (NM_IN_STRSET(mode, NULL, NM_SETTING_WIRELESS_MODE_INFRA)) {
         /* 8021x networks can only be used if they've been provisioned on the IWD side and
-		 * thus are Known Networks.
-		 */
+         * thus are Known Networks.
+         */
         if (security == NM_IWD_NETWORK_SECURITY_8021X) {
             if (!is_connection_known_network(connection)) {
                 nm_utils_error_set_literal(error,
@@ -717,7 +717,7 @@ check_connection_available(NMDevice *                     device,
     g_return_val_if_fail(s_wifi, FALSE);
 
     /* a connection that is available for a certain @specific_object, MUST
-	 * also be available in general (without @specific_object). */
+     * also be available in general (without @specific_object). */
 
     if (specific_object) {
         ap = nm_wifi_ap_lookup_for_device(NM_DEVICE(self), specific_object);
@@ -754,8 +754,8 @@ check_connection_available(NMDevice *                     device,
     }
 
     /* 8021x networks can only be used if they've been provisioned on the IWD side and
-	 * thus are Known Networks.
-	 */
+     * thus are Known Networks.
+     */
     if (nm_wifi_connection_get_iwd_security(connection, NULL) == NM_IWD_NETWORK_SECURITY_8021X) {
         if (!is_ap_known_network(ap)) {
             nm_utils_error_set_literal(
@@ -818,9 +818,9 @@ complete_connection(NMDevice *           device,
         ap = nm_wifi_aps_find_first_compatible(&priv->aps_lst_head, connection);
         if (!ap) {
             /* If we still don't have an AP, then the WiFI settings needs to be
-			 * fully specified by the client.  Might not be able to find an AP
-			 * if the network isn't broadcasting the SSID for example.
-			 */
+             * fully specified by the client.  Might not be able to find an AP
+             * if the network isn't broadcasting the SSID for example.
+             */
             if (!nm_setting_verify(NM_SETTING(s_wifi), connection, error))
                 return FALSE;
 
@@ -916,14 +916,14 @@ is_available(NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
     NMDeviceState       state = nm_device_get_state(device);
 
     /* Available if either the device is UP and in station mode
-	 * or in AP/Ad-Hoc modes while activating or activated.  Device
-	 * may be temporarily DOWN while activating or deactivating and
-	 * we don't want it to be marked unavailable because of this.
-	 *
-	 * For reference:
-	 * We call nm_device_queue_recheck_available whenever
-	 * priv->enabled changes or priv->dbus_station_proxy changes.
-	 */
+     * or in AP/Ad-Hoc modes while activating or activated.  Device
+     * may be temporarily DOWN while activating or deactivating and
+     * we don't want it to be marked unavailable because of this.
+     *
+     * For reference:
+     * We call nm_device_queue_recheck_available whenever
+     * priv->enabled changes or priv->dbus_station_proxy changes.
+     */
     return priv->dbus_obj && priv->enabled
            && (priv->dbus_station_proxy
                || (state >= NM_DEVICE_STATE_CONFIG && state <= NM_DEVICE_STATE_DEACTIVATING));
@@ -959,16 +959,16 @@ can_auto_connect(NMDevice *device, NMSettingsConnection *sett_conn, char **speci
     g_return_val_if_fail(s_wifi, FALSE);
 
     /* Don't auto-activate AP or Ad-Hoc connections.
-	 * Note the wpa_supplicant backend has the opposite policy.
-	 */
+     * Note the wpa_supplicant backend has the opposite policy.
+     */
     mode = nm_setting_wireless_get_mode(s_wifi);
     if (mode && g_strcmp0(mode, NM_SETTING_WIRELESS_MODE_INFRA) != 0)
         return FALSE;
 
     /* Don't autoconnect to networks that have been tried at least once
-	 * but haven't been successful, since these are often accidental choices
-	 * from the menu and the user may not know the password.
-	 */
+     * but haven't been successful, since these are often accidental choices
+     * from the menu and the user may not know the password.
+     */
     if (nm_settings_connection_get_timestamp(sett_conn, &timestamp)) {
         if (timestamp == 0)
             return FALSE;
@@ -1008,10 +1008,10 @@ scan_cb(GObject *source, GAsyncResult *res, gpointer user_data)
     _notify(self, PROP_LAST_SCAN);
 
     /* On success, priv->scanning becomes true right before or right
-	 * after this callback, so the next automatic scan will be
-	 * scheduled when priv->scanning goes back to false.  On error,
-	 * schedule a retry now.
-	 */
+     * after this callback, so the next automatic scan will be
+     * scheduled when priv->scanning goes back to false.  On error,
+     * schedule a retry now.
+     */
     if (error && !priv->scanning)
         schedule_periodic_scan(self, FALSE);
 }
@@ -1364,8 +1364,8 @@ network_connect_cb(GObject *source, GAsyncResult *res, gpointer user_data)
         gs_free char *dbus_error = NULL;
 
         /* Connection failed; radio problems or if the network wasn't
-		 * open, the passwords or certificates may be wrong.
-		 */
+         * open, the passwords or certificates may be wrong.
+         */
 
         _LOGE(LOGD_DEVICE | LOGD_WIFI,
               "Activation: (wifi) Network.Connect failed: %s",
@@ -1449,9 +1449,9 @@ act_failed_cb(GObject *source, GAsyncResult *res, gpointer user_data)
         return;
 
     /* Change state to FAILED unless already done by state_changed
-	 * which may have been triggered by the station interface
-	 * appearing on DBus.
-	 */
+     * which may have been triggered by the station interface
+     * appearing on DBus.
+     */
     if (nm_device_get_state(device) == NM_DEVICE_STATE_CONFIG)
         nm_device_queue_state(device,
                               NM_DEVICE_STATE_FAILED,
@@ -1636,10 +1636,10 @@ act_set_mode(NMDeviceIwd *self)
     mode = nm_setting_wireless_get_mode(s_wireless);
 
     /* We need to first set interface mode (Device.Mode) to ap or ad-hoc.
-	 * We can't directly queue a call to the Start/StartOpen method on
-	 * the DBus interface that's going to be created after the property
-	 * set call returns.
-	 */
+     * We can't directly queue a call to the Start/StartOpen method on
+     * the DBus interface that's going to be created after the property
+     * set call returns.
+     */
     iwd_mode = nm_streq(mode, NM_SETTING_WIRELESS_MODE_AP) ? "ap" : "ad-hoc";
 
     if (!priv->cancellable)
@@ -1767,11 +1767,11 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
 add_new:
     /* If the user is trying to connect to an AP that NM doesn't yet know about
-	 * (hidden network or something) or starting a Hotspot, create an fake AP
-	 * from the security settings in the connection.  This "fake" AP gets used
-	 * until the real one is found in the scan list (Ad-Hoc or Hidden), or until
-	 * the device is deactivated (Ad-Hoc or Hotspot).
-	 */
+     * (hidden network or something) or starting a Hotspot, create an fake AP
+     * from the security settings in the connection.  This "fake" AP gets used
+     * until the real one is found in the scan list (Ad-Hoc or Hidden), or until
+     * the device is deactivated (Ad-Hoc or Hotspot).
+     */
     ap_fake = nm_wifi_ap_new_fake_from_connection(connection);
     if (!ap_fake)
         g_return_val_if_reached(NM_ACT_STAGE_RETURN_FAILURE);
@@ -1815,9 +1815,9 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
         }
 
         /* 802.1x networks that are not IWD Known Networks will definitely
-		 * fail, for other combinations we will let the Connect call fail
-		 * or ask us for any missing secrets through the Agent.
-		 */
+         * fail, for other combinations we will let the Connect call fail
+         * or ask us for any missing secrets through the Agent.
+         */
         if (nm_connection_get_setting_802_1x(connection) && !is_ap_known_network(ap)) {
             _LOGI(LOGD_DEVICE | LOGD_WIFI,
                   "Activation: (wifi) access point '%s' has 802.1x security but is not configured "
@@ -1869,8 +1869,8 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
             priv->cancellable = g_cancellable_new();
 
         /* Call Network.Connect.  No timeout because IWD already handles
-		 * timeouts.
-		 */
+         * timeouts.
+         */
         g_dbus_proxy_call(network_proxy,
                           "Connect",
                           NULL,
@@ -1963,16 +1963,16 @@ schedule_periodic_scan(NMDeviceIwd *self, gboolean initial_scan)
     g_variant_unref(value);
 
     /* Start scan immediately after a disconnect, mode change or
-	 * device UP, otherwise wait a period dependent on the current
-	 * state.
-	 *
-	 * (initial_scan && disconnected) override priv->scanning below
-	 * because of an IWD quirk where a device will often be in the
-	 * autoconnect state and scanning at the time of our initial_scan,
-	 * but our logic will the send it a Disconnect() causing IWD to
-	 * exit autoconnect and interrupt the ongoing scan, meaning that
-	 * we still want a new scan ASAP.
-	 */
+     * device UP, otherwise wait a period dependent on the current
+     * state.
+     *
+     * (initial_scan && disconnected) override priv->scanning below
+     * because of an IWD quirk where a device will often be in the
+     * autoconnect state and scanning at the time of our initial_scan,
+     * but our logic will the send it a Disconnect() causing IWD to
+     * exit autoconnect and interrupt the ongoing scan, meaning that
+     * we still want a new scan ASAP.
+     */
     if (initial_scan && disconnected)
         interval = 0;
     else if (!priv->periodic_scan_id && !priv->scanning)
@@ -2011,10 +2011,10 @@ device_state_changed(NMDevice *          device,
         break;
     case NM_DEVICE_STATE_UNAVAILABLE:
         /*
-		 * If the device is enabled and the IWD manager is ready,
-		 * transition to DISCONNECTED because the device is now
-		 * ready to use.
-		 */
+         * If the device is enabled and the IWD manager is ready,
+         * transition to DISCONNECTED because the device is now
+         * ready to use.
+         */
         if (priv->enabled && priv->dbus_station_proxy) {
             nm_device_queue_recheck_available(device,
                                               NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
@@ -2176,11 +2176,11 @@ state_changed(NMDeviceIwd *self, const char *new_state)
 
     if (NM_IN_STRSET(new_state, "connecting", "connected", "roaming")) {
         /* If we were connecting, do nothing, the confirmation of
-		 * a connection success is handled in the Device.Connect
-		 * method return callback.  Otherwise, IWD must have connected
-		 * without Network Manager's will so for simplicity force a
-		 * disconnect.
-		 */
+         * a connection success is handled in the Device.Connect
+         * method return callback.  Otherwise, IWD must have connected
+         * without Network Manager's will so for simplicity force a
+         * disconnect.
+         */
         if (iwd_connection)
             return;
 
@@ -2188,17 +2188,17 @@ state_changed(NMDeviceIwd *self, const char *new_state)
         send_disconnect(self);
     } else if (NM_IN_STRSET(new_state, "disconnecting", "disconnected")) {
         /* Call Disconnect on the IWD device object to make sure it
-		 * disables its own autoconnect.
-		 */
+         * disables its own autoconnect.
+         */
         send_disconnect(self);
 
         /*
-		 * If IWD is still handling the Connect call, let our Connect
-		 * callback for the dbus method handle the failure.  The main
-		 * reason we can't handle the failure here is because the method
-		 * callback will have more information on the specific failure
-		 * reason.
-		 */
+         * If IWD is still handling the Connect call, let our Connect
+         * callback for the dbus method handle the failure.  The main
+         * reason we can't handle the failure here is because the method
+         * callback will have more information on the specific failure
+         * reason.
+         */
         if (NM_IN_SET(dev_state, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_NEED_AUTH))
             return;
 
@@ -2212,8 +2212,8 @@ state_changed(NMDeviceIwd *self, const char *new_state)
     }
 
     /* Don't allow new connection until iwd exits disconnecting and no
-	 * Connect callback is pending.
-	 */
+     * Connect callback is pending.
+     */
     if (NM_IN_STRSET(new_state, "disconnected")) {
         priv->can_connect = TRUE;
         if (!can_connect)
@@ -2331,19 +2331,19 @@ powered_changed(NMDeviceIwd *self, gboolean new_powered)
     }
 
     /* We expect one of the three interfaces to always be present when
-	 * device is Powered so if AP and AdHoc are not present we should
-	 * be in station mode.
-	 */
+     * device is Powered so if AP and AdHoc are not present we should
+     * be in station mode.
+     */
     if (new_powered && !priv->dbus_ap_proxy && !priv->dbus_adhoc_proxy) {
         interface = g_dbus_object_get_interface(priv->dbus_obj, NM_IWD_STATION_INTERFACE);
         if (!interface) {
             /* No Station interface on the device object.  Check if the
-			 * "State" property is present on the Device interface, that
-			 * would mean we're dealing with an IWD version from before the
-			 * Device/Station split (0.7 or earlier) and we can easily
-			 * handle that by making priv->dbus_device_proxy and
-			 * priv->dbus_station_proxy both point at the Device interface.
-			 */
+             * "State" property is present on the Device interface, that
+             * would mean we're dealing with an IWD version from before the
+             * Device/Station split (0.7 or earlier) and we can easily
+             * handle that by making priv->dbus_device_proxy and
+             * priv->dbus_station_proxy both point at the Device interface.
+             */
             value = g_dbus_proxy_get_cached_property(priv->dbus_device_proxy, "State");
             if (value) {
                 g_variant_unref(value);
@@ -2534,13 +2534,13 @@ nm_device_iwd_agent_query(NMDeviceIwd *self, GDBusMethodInvocation *invocation)
         return TRUE;
 
     /* Normally require new secrets every time IWD asks for them.
-	 * IWD only queries us if it has not saved the secrets (e.g. by policy)
-	 * or a previous attempt has failed with current secrets so it wants
-	 * a fresh set.  However if this is a new connection it may include
-	 * all of the needed settings already so allow using these, too.
-	 * Connection timestamp is set after activation or after first
-	 * activation failure (to 0).
-	 */
+     * IWD only queries us if it has not saved the secrets (e.g. by policy)
+     * or a previous attempt has failed with current secrets so it wants
+     * a fresh set.  However if this is a new connection it may include
+     * all of the needed settings already so allow using these, too.
+     * Connection timestamp is set after activation or after first
+     * activation failure (to 0).
+     */
     if (nm_settings_connection_get_timestamp(nm_act_request_get_settings_connection(req), NULL))
         get_secret_flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
 

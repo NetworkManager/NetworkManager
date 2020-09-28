@@ -116,10 +116,10 @@ nm_device_adsl_class_init(NMDeviceAdslClass *adsl_class)
     device_class->get_setting_type      = get_setting_type;
 
     /**
-	 * NMDeviceAdsl:carrier:
-	 *
-	 * Whether the device has carrier.
-	 **/
+     * NMDeviceAdsl:carrier:
+     *
+     * Whether the device has carrier.
+     **/
     obj_properties[PROP_CARRIER] = g_param_spec_boolean(NM_DEVICE_ADSL_CARRIER,
                                                         "",
                                                         "",

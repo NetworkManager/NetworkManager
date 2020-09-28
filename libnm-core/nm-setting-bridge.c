@@ -266,9 +266,9 @@ gboolean
 nm_bridge_vlan_get_vid_range(const NMBridgeVlan *vlan, guint16 *vid_start, guint16 *vid_end)
 {
     /* with LTO and optimization, the compiler complains that the
-	 * output variables are not initialized. In practice, the function
-	 * only sets the output on success. But make the compiler happy.
-	 */
+     * output variables are not initialized. In practice, the function
+     * only sets the output on success. But make the compiler happy.
+     */
     NM_SET_OUT(vid_start, 0);
     NM_SET_OUT(vid_end, 0);
 
@@ -431,8 +431,8 @@ nm_bridge_vlan_to_str(const NMBridgeVlan *vlan, GError **error)
     g_return_val_if_fail(!error || !*error, NULL);
 
     /* The function never fails at the moment, but it might in the
-	 * future if more parameters are added to the object that could
-	 * make it invalid. */
+     * future if more parameters are added to the object that could
+     * make it invalid. */
 
     nm_str_buf_init(&string, NM_UTILS_GET_NEXT_REALLOC_SIZE_32, FALSE);
 
@@ -1610,35 +1610,35 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
     setting_class->verify           = verify;
 
     /**
-	 * NMSettingBridge:mac-address:
-	 *
-	 * If specified, the MAC address of bridge. When creating a new bridge, this
-	 * MAC address will be set.
-	 *
-	 * If this field is left unspecified, the "ethernet.cloned-mac-address" is
-	 * referred instead to generate the initial MAC address. Note that setting
-	 * "ethernet.cloned-mac-address" anyway overwrites the MAC address of
-	 * the bridge later while activating the bridge. Hence, this property
-	 * is deprecated.
-	 *
-	 * Deprecated: 1.12: Use the ethernet.cloned-mac-address property instead.
-	 **/
+     * NMSettingBridge:mac-address:
+     *
+     * If specified, the MAC address of bridge. When creating a new bridge, this
+     * MAC address will be set.
+     *
+     * If this field is left unspecified, the "ethernet.cloned-mac-address" is
+     * referred instead to generate the initial MAC address. Note that setting
+     * "ethernet.cloned-mac-address" anyway overwrites the MAC address of
+     * the bridge later while activating the bridge. Hence, this property
+     * is deprecated.
+     *
+     * Deprecated: 1.12: Use the ethernet.cloned-mac-address property instead.
+     **/
     /* ---keyfile---
-	 * property: mac-address
-	 * format: usual hex-digits-and-colons notation
-	 * description: MAC address in traditional hex-digits-and-colons notation,
-	 *   or semicolon separated list of 6 decimal bytes (obsolete)
-	 * example: mac-address=00:22:68:12:79:A2
-	 *  mac-address=0;34;104;18;121;162;
-	 * ---end---
-	 * ---ifcfg-rh---
-	 * property: mac-address
-	 * variable: BRIDGE_MACADDR(+)
-	 * description: MAC address of the bridge. Note that this requires a recent
-	 *   kernel support, originally introduced in 3.15 upstream kernel)
-	 *   BRIDGE_MACADDR for bridges is an NM extension.
-	 * ---end---
-	 */
+     * property: mac-address
+     * format: usual hex-digits-and-colons notation
+     * description: MAC address in traditional hex-digits-and-colons notation,
+     *   or semicolon separated list of 6 decimal bytes (obsolete)
+     * example: mac-address=00:22:68:12:79:A2
+     *  mac-address=0;34;104;18;121;162;
+     * ---end---
+     * ---ifcfg-rh---
+     * property: mac-address
+     * variable: BRIDGE_MACADDR(+)
+     * description: MAC address of the bridge. Note that this requires a recent
+     *   kernel support, originally introduced in 3.15 upstream kernel)
+     *   BRIDGE_MACADDR for bridges is an NM extension.
+     * ---end---
+     */
     obj_properties[PROP_MAC_ADDRESS] = g_param_spec_string(
         NM_SETTING_BRIDGE_MAC_ADDRESS,
         "",
@@ -1650,17 +1650,17 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                  &nm_sett_info_propert_type_mac_address);
 
     /**
-	 * NMSettingBridge:stp:
-	 *
-	 * Controls whether Spanning Tree Protocol (STP) is enabled for this bridge.
-	 **/
+     * NMSettingBridge:stp:
+     *
+     * Controls whether Spanning Tree Protocol (STP) is enabled for this bridge.
+     **/
     /* ---ifcfg-rh---
-	 * property: stp
-	 * variable: STP
-	 * default: no
-	 * description: Span tree protocol participation.
-	 * ---end---
-	 */
+     * property: stp
+     * variable: STP
+     * default: no
+     * description: Span tree protocol participation.
+     * ---end---
+     */
     obj_properties[PROP_STP] = g_param_spec_boolean(NM_SETTING_BRIDGE_STP,
                                                     "",
                                                     "",
@@ -1669,20 +1669,20 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                                         | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:priority:
-	 *
-	 * Sets the Spanning Tree Protocol (STP) priority for this bridge.  Lower
-	 * values are "better"; the lowest priority bridge will be elected the root
-	 * bridge.
-	 **/
+     * NMSettingBridge:priority:
+     *
+     * Sets the Spanning Tree Protocol (STP) priority for this bridge.  Lower
+     * values are "better"; the lowest priority bridge will be elected the root
+     * bridge.
+     **/
     /* ---ifcfg-rh---
-	 * property: priority
-	 * variable: BRIDGING_OPTS: priority=
-	 * values: 0 - 32768
-	 * default: 32768
-	 * description: STP priority.
-	 * ---end---
-	 */
+     * property: priority
+     * variable: BRIDGING_OPTS: priority=
+     * values: 0 - 32768
+     * default: 32768
+     * description: STP priority.
+     * ---end---
+     */
     obj_properties[PROP_PRIORITY] =
         g_param_spec_uint(NM_SETTING_BRIDGE_PRIORITY,
                           "",
@@ -1693,18 +1693,18 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:forward-delay:
-	 *
-	 * The Spanning Tree Protocol (STP) forwarding delay, in seconds.
-	 **/
+     * NMSettingBridge:forward-delay:
+     *
+     * The Spanning Tree Protocol (STP) forwarding delay, in seconds.
+     **/
     /* ---ifcfg-rh---
-	 * property: forward-delay
-	 * variable: DELAY
-	 * values: 2 - 30
-	 * default: 15
-	 * description: STP forwarding delay.
-	 * ---end---
-	 */
+     * property: forward-delay
+     * variable: DELAY
+     * values: 2 - 30
+     * default: 15
+     * description: STP forwarding delay.
+     * ---end---
+     */
     obj_properties[PROP_FORWARD_DELAY] =
         g_param_spec_uint(NM_SETTING_BRIDGE_FORWARD_DELAY,
                           "",
@@ -1715,18 +1715,18 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:hello-time:
-	 *
-	 * The Spanning Tree Protocol (STP) hello time, in seconds.
-	 **/
+     * NMSettingBridge:hello-time:
+     *
+     * The Spanning Tree Protocol (STP) hello time, in seconds.
+     **/
     /* ---ifcfg-rh---
-	 * property: hello-time
-	 * variable: BRIDGING_OPTS: hello_time=
-	 * values: 1 - 10
-	 * default: 2
-	 * description: STP hello time.
-	 * ---end---
-	 */
+     * property: hello-time
+     * variable: BRIDGING_OPTS: hello_time=
+     * values: 1 - 10
+     * default: 2
+     * description: STP hello time.
+     * ---end---
+     */
     obj_properties[PROP_HELLO_TIME] =
         g_param_spec_uint(NM_SETTING_BRIDGE_HELLO_TIME,
                           "",
@@ -1737,18 +1737,18 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:max-age:
-	 *
-	 * The Spanning Tree Protocol (STP) maximum message age, in seconds.
-	 **/
+     * NMSettingBridge:max-age:
+     *
+     * The Spanning Tree Protocol (STP) maximum message age, in seconds.
+     **/
     /* ---ifcfg-rh---
-	 * property: max-age
-	 * variable: BRIDGING_OPTS: max_age=
-	 * values: 6 - 40
-	 * default: 20
-	 * description: STP maximum message age.
-	 * ---end---
-	 */
+     * property: max-age
+     * variable: BRIDGING_OPTS: max_age=
+     * values: 6 - 40
+     * default: 20
+     * description: STP maximum message age.
+     * ---end---
+     */
     obj_properties[PROP_MAX_AGE] =
         g_param_spec_uint(NM_SETTING_BRIDGE_MAX_AGE,
                           "",
@@ -1759,18 +1759,18 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:ageing-time:
-	 *
-	 * The Ethernet MAC address aging time, in seconds.
-	 **/
+     * NMSettingBridge:ageing-time:
+     *
+     * The Ethernet MAC address aging time, in seconds.
+     **/
     /* ---ifcfg-rh---
-	 * property: ageing-time
-	 * variable: BRIDGING_OPTS: ageing_time=
-	 * values: 0 - 1000000
-	 * default: 300
-	 * description: Ethernet MAC ageing time.
-	 * ---end---
-	 */
+     * property: ageing-time
+     * variable: BRIDGING_OPTS: ageing_time=
+     * values: 0 - 1000000
+     * default: 300
+     * description: Ethernet MAC ageing time.
+     * ---end---
+     */
     obj_properties[PROP_AGEING_TIME] =
         g_param_spec_uint(NM_SETTING_BRIDGE_AGEING_TIME,
                           "",
@@ -1781,17 +1781,17 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:group-forward-mask:
-	 *
-	 * A mask of group addresses to forward. Usually, group addresses in
-	 * the range from 01:80:C2:00:00:00 to 01:80:C2:00:00:0F are not
-	 * forwarded according to standards. This property is a mask of 16 bits,
-	 * each corresponding to a group address in that range that must be
-	 * forwarded. The mask can't have bits 0, 1 or 2 set because they are
-	 * used for STP, MAC pause frames and LACP.
-	 *
-	 * Since: 1.10
-	 **/
+     * NMSettingBridge:group-forward-mask:
+     *
+     * A mask of group addresses to forward. Usually, group addresses in
+     * the range from 01:80:C2:00:00:00 to 01:80:C2:00:00:0F are not
+     * forwarded according to standards. This property is a mask of 16 bits,
+     * each corresponding to a group address in that range that must be
+     * forwarded. The mask can't have bits 0, 1 or 2 set because they are
+     * used for STP, MAC pause frames and LACP.
+     *
+     * Since: 1.10
+     **/
     obj_properties[PROP_GROUP_FORWARD_MASK] =
         g_param_spec_uint(NM_SETTING_BRIDGE_GROUP_FORWARD_MASK,
                           "",
@@ -1802,23 +1802,23 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:multicast-snooping:
-	 *
-	 * Controls whether IGMP snooping is enabled for this bridge.
-	 * Note that if snooping was automatically disabled due to hash collisions,
-	 * the system may refuse to enable the feature until the collisions are
-	 * resolved.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingBridge:multicast-snooping:
+     *
+     * Controls whether IGMP snooping is enabled for this bridge.
+     * Note that if snooping was automatically disabled due to hash collisions,
+     * the system may refuse to enable the feature until the collisions are
+     * resolved.
+     *
+     * Since: 1.2
+     **/
     /* ---ifcfg-rh---
-	 * property: multicast-snooping
-	 * variable: BRIDGING_OPTS: multicast_snooping=
-	 * values: 0 or 1
-	 * default: 1
-	 * description: IGMP snooping support.
-	 * ---end---
-	 */
+     * property: multicast-snooping
+     * variable: BRIDGING_OPTS: multicast_snooping=
+     * values: 0 or 1
+     * default: 1
+     * description: IGMP snooping support.
+     * ---end---
+     */
     obj_properties[PROP_MULTICAST_SNOOPING] = g_param_spec_boolean(
         NM_SETTING_BRIDGE_MULTICAST_SNOOPING,
         "",
@@ -1827,20 +1827,20 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:vlan-filtering:
-	 *
-	 * Control whether VLAN filtering is enabled on the bridge.
-	 *
-	 * Since: 1.18
-	 **/
+     * NMSettingBridge:vlan-filtering:
+     *
+     * Control whether VLAN filtering is enabled on the bridge.
+     *
+     * Since: 1.18
+     **/
     /* ---ifcfg-rh---
-	 * property: vlan-filtering
-	 * variable: BRIDGING_OPTS: vlan_filtering=
-	 * values: 0 or 1
-	 * default: 0
-	 * description: VLAN filtering support.
-	 * ---end---
-	 */
+     * property: vlan-filtering
+     * variable: BRIDGING_OPTS: vlan_filtering=
+     * values: 0 or 1
+     * default: 0
+     * description: VLAN filtering support.
+     * ---end---
+     */
     obj_properties[PROP_VLAN_FILTERING] = g_param_spec_boolean(
         NM_SETTING_BRIDGE_VLAN_FILTERING,
         "",
@@ -1849,21 +1849,21 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:vlan-default-pvid:
-	 *
-	 * The default PVID for the ports of the bridge, that is the VLAN id
-	 * assigned to incoming untagged frames.
-	 *
-	 * Since: 1.18
-	 **/
+     * NMSettingBridge:vlan-default-pvid:
+     *
+     * The default PVID for the ports of the bridge, that is the VLAN id
+     * assigned to incoming untagged frames.
+     *
+     * Since: 1.18
+     **/
     /* ---ifcfg-rh---
-	 * property: vlan-default-pvid
-	 * variable: BRIDGING_OPTS: default_pvid=
-	 * values: 0 - 4094
-	 * default: 1
-	 * description: default VLAN PVID.
-	 * ---end---
-	 */
+     * property: vlan-default-pvid
+     * variable: BRIDGING_OPTS: default_pvid=
+     * values: 0 - 4094
+     * default: 1
+     * description: default VLAN PVID.
+     * ---end---
+     */
     obj_properties[PROP_VLAN_DEFAULT_PVID] =
         g_param_spec_uint(NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID,
                           "",
@@ -1874,29 +1874,29 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:vlans: (type GPtrArray(NMBridgeVlan))
-	 *
-	 * Array of bridge VLAN objects. In addition to the VLANs
-	 * specified here, the bridge will also have the default-pvid
-	 * VLAN configured  by the bridge.vlan-default-pvid property.
-	 *
-	 * In nmcli the VLAN list can be specified with the following
-	 * syntax:
-	 *
-	 *  $vid [pvid] [untagged] [, $vid [pvid] [untagged]]...
-	 *
-	 * where $vid is either a single id between 1 and 4094 or a
-	 * range, represented as a couple of ids separated by a dash.
-	 *
-	 * Since: 1.18
-	 **/
+     * NMSettingBridge:vlans: (type GPtrArray(NMBridgeVlan))
+     *
+     * Array of bridge VLAN objects. In addition to the VLANs
+     * specified here, the bridge will also have the default-pvid
+     * VLAN configured  by the bridge.vlan-default-pvid property.
+     *
+     * In nmcli the VLAN list can be specified with the following
+     * syntax:
+     *
+     *  $vid [pvid] [untagged] [, $vid [pvid] [untagged]]...
+     *
+     * where $vid is either a single id between 1 and 4094 or a
+     * range, represented as a couple of ids separated by a dash.
+     *
+     * Since: 1.18
+     **/
     /* ---ifcfg-rh---
-	 * property: vlans
-	 * variable: BRIDGE_VLANS
-	 * description: List of VLANs on the bridge
-	 * example: BRIDGE_VLANS="1 pvid untagged,20,300-400 untagged"
-	 * ---end---
-	 */
+     * property: vlans
+     * variable: BRIDGE_VLANS
+     * description: List of VLANs on the bridge
+     * example: BRIDGE_VLANS="1 pvid untagged,20,300-400 untagged"
+     * ---end---
+     */
     obj_properties[PROP_VLANS] = g_param_spec_boxed(NM_SETTING_BRIDGE_VLANS,
                                                     "",
                                                     "",
@@ -1908,35 +1908,35 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                  &nm_sett_info_propert_type_bridge_vlans);
 
     /* ---dbus---
-	 * property: interface-name
-	 * format: string
-	 * description: Deprecated in favor of connection.interface-name, but can
-	 *   be used for backward-compatibility with older daemons, to set the
-	 *   bridge's interface name.
-	 * ---end---
-	 */
+     * property: interface-name
+     * format: string
+     * description: Deprecated in favor of connection.interface-name, but can
+     *   be used for backward-compatibility with older daemons, to set the
+     *   bridge's interface name.
+     * ---end---
+     */
     _nm_properties_override_dbus(properties_override,
                                  "interface-name",
                                  &nm_sett_info_propert_type_deprecated_interface_name);
 
     /**
-	 * NMSettingBridge:group-address:
-	 *
-	 * If specified, The MAC address of the multicast group this bridge uses for STP.
-	 *
-	 * The address must be a link-local address in standard Ethernet MAC address format,
-	 * ie an address of the form 01:80:C2:00:00:0X, with X in [0, 4..F].
-	 * If not specified the default value is 01:80:C2:00:00:00.
-	 *
-	 * Since: 1.24
-	 **/
+     * NMSettingBridge:group-address:
+     *
+     * If specified, The MAC address of the multicast group this bridge uses for STP.
+     *
+     * The address must be a link-local address in standard Ethernet MAC address format,
+     * ie an address of the form 01:80:C2:00:00:0X, with X in [0, 4..F].
+     * If not specified the default value is 01:80:C2:00:00:00.
+     *
+     * Since: 1.24
+     **/
     /* ---ifcfg-rh---
-	 * property: group-address
-	 * variable: BRIDGING_OPTS: group_address=
-	 * description: STP group address.
-	 * example: BRIDGING_OPTS="group_address=01:80:C2:00:00:0A"
-	 * ---end---
-	 */
+     * property: group-address
+     * variable: BRIDGING_OPTS: group_address=
+     * description: STP group address.
+     * example: BRIDGING_OPTS="group_address=01:80:C2:00:00:0A"
+     * ---end---
+     */
     obj_properties[PROP_GROUP_ADDRESS] = g_param_spec_string(
         NM_SETTING_BRIDGE_GROUP_ADDRESS,
         "",
@@ -1948,24 +1948,24 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                  &nm_sett_info_propert_type_mac_address);
 
     /**
-	 * NMSettingBridge:vlan-protocol:
-	 *
-	 * If specified, the protocol used for VLAN filtering.
-	 *
-	 * Supported values are: '802.1Q', '802.1ad'.
-	 * If not specified the default value is '802.1Q'.
-	 *
-	 * Since: 1.24
-	 **/
+     * NMSettingBridge:vlan-protocol:
+     *
+     * If specified, the protocol used for VLAN filtering.
+     *
+     * Supported values are: '802.1Q', '802.1ad'.
+     * If not specified the default value is '802.1Q'.
+     *
+     * Since: 1.24
+     **/
     /* ---ifcfg-rh---
-	 * property: vlan-protocol
-	 * variable: BRIDGING_OPTS: vlan_protocol=
-	 * description: VLAN filtering protocol.
-	 * example: BRIDGING_OPTS="vlan_protocol=802.1Q"
-	 * ---end---
-	 *
-	 * Since: 1.24
-	 */
+     * property: vlan-protocol
+     * variable: BRIDGING_OPTS: vlan_protocol=
+     * description: VLAN filtering protocol.
+     * example: BRIDGING_OPTS="vlan_protocol=802.1Q"
+     * ---end---
+     *
+     * Since: 1.24
+     */
     obj_properties[PROP_VLAN_PROTOCOL] = g_param_spec_string(
         NM_SETTING_BRIDGE_VLAN_PROTOCOL,
         "",
@@ -1974,19 +1974,19 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:vlan-stats-enabled:
-	 *
-	 * Controls whether per-VLAN stats accounting is enabled.
-	 **/
+     * NMSettingBridge:vlan-stats-enabled:
+     *
+     * Controls whether per-VLAN stats accounting is enabled.
+     **/
     /* ---ifcfg-rh---
-	 * property: vlan-stats-enabled
-	 * variable: BRIDGING_OPTS: vlan_stats_enabled=
-	 * default: 0
-	 * example: BRIDGING_OPTS="vlan_stats_enabled=1"
-	 * ---end---
-	 *
-	 * Since: 1.24
-	 */
+     * property: vlan-stats-enabled
+     * variable: BRIDGING_OPTS: vlan_stats_enabled=
+     * default: 0
+     * example: BRIDGING_OPTS="vlan_stats_enabled=1"
+     * ---end---
+     *
+     * Since: 1.24
+     */
     obj_properties[PROP_VLAN_STATS_ENABLED] = g_param_spec_boolean(
         NM_SETTING_BRIDGE_VLAN_STATS_ENABLED,
         "",
@@ -1995,25 +1995,25 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:multicast-router:
-	 *
-	 * Sets bridge's multicast router. Multicast-snooping must be enabled
-	 * for this option to work.
-	 *
-	 * Supported values are: 'auto', 'disabled', 'enabled' to which kernel
-	 * assigns the numbers 1, 0, and 2, respectively.
-	 * If not specified the default value is 'auto' (1).
-	 **/
+     * NMSettingBridge:multicast-router:
+     *
+     * Sets bridge's multicast router. Multicast-snooping must be enabled
+     * for this option to work.
+     *
+     * Supported values are: 'auto', 'disabled', 'enabled' to which kernel
+     * assigns the numbers 1, 0, and 2, respectively.
+     * If not specified the default value is 'auto' (1).
+     **/
     /* ---ifcfg-rh---
-	 * property: multicast-router
-	 * variable: BRIDGING_OPTS: multicast_router=
-	 * values: auto, enabled, disabled
-	 * default: auto
-	 * example: BRIDGING_OPTS="multicast_router=enabled"
-	 * ---end---
-	 *
-	 * Since: 1.24
-	 */
+     * property: multicast-router
+     * variable: BRIDGING_OPTS: multicast_router=
+     * values: auto, enabled, disabled
+     * default: auto
+     * example: BRIDGING_OPTS="multicast_router=enabled"
+     * ---end---
+     *
+     * Since: 1.24
+     */
     obj_properties[PROP_MULTICAST_ROUTER] = g_param_spec_string(
         NM_SETTING_BRIDGE_MULTICAST_ROUTER,
         "",
@@ -2022,21 +2022,21 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:multicast-query-use-ifaddr:
-	 *
-	 * If enabled the bridge's own IP address is used as
-	 * the source address for IGMP queries otherwise
-	 * the default of 0.0.0.0 is used.
-	 **/
+     * NMSettingBridge:multicast-query-use-ifaddr:
+     *
+     * If enabled the bridge's own IP address is used as
+     * the source address for IGMP queries otherwise
+     * the default of 0.0.0.0 is used.
+     **/
     /* ---ifcfg-rh---
-	 * property: multicast-query-use-ifaddr
-	 * variable: BRIDGING_OPTS: multicast_query_use_ifaddr=
-	 * default: 0
-	 * example: BRIDGING_OPTS="multicast_query-use_ifaddr=1"
-	 * ---end---
-	 *
-	 * Since: 1.24
-	 */
+     * property: multicast-query-use-ifaddr
+     * variable: BRIDGING_OPTS: multicast_query_use_ifaddr=
+     * default: 0
+     * example: BRIDGING_OPTS="multicast_query-use_ifaddr=1"
+     * ---end---
+     *
+     * Since: 1.24
+     */
     obj_properties[PROP_MULTICAST_QUERY_USE_IFADDR] = g_param_spec_boolean(
         NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR,
         "",
@@ -2045,20 +2045,20 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:multicast-querier:
-	 *
-	 * Enable or disable sending of multicast queries by the bridge.
-	 * If not specified the option is disabled.
-	 **/
+     * NMSettingBridge:multicast-querier:
+     *
+     * Enable or disable sending of multicast queries by the bridge.
+     * If not specified the option is disabled.
+     **/
     /* ---ifcfg-rh---
-	 * property: multicast-querier
-	 * variable: BRIDGING_OPTS: multicast_querier=
-	 * default: 0
-	 * example: BRIDGING_OPTS="multicast_querier=1"
-	 * ---end---
-	 *
-	 * Since: 1.24
-	 */
+     * property: multicast-querier
+     * variable: BRIDGING_OPTS: multicast_querier=
+     * default: 0
+     * example: BRIDGING_OPTS="multicast_querier=1"
+     * ---end---
+     *
+     * Since: 1.24
+     */
     obj_properties[PROP_MULTICAST_QUERIER] = g_param_spec_boolean(
         NM_SETTING_BRIDGE_MULTICAST_QUERIER,
         "",
@@ -2067,19 +2067,19 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:multicast-hash-max:
-	 *
-	 * Set maximum size of multicast hash table (value must be a power of 2).
-	 **/
+     * NMSettingBridge:multicast-hash-max:
+     *
+     * Set maximum size of multicast hash table (value must be a power of 2).
+     **/
     /* ---ifcfg-rh---
-	 * property: multicast-hash-max
-	 * variable: BRIDGING_OPTS: multicast_hash_max=
-	 * default: 4096
-	 * example: BRIDGING_OPTS="multicast_hash_max=8192"
-	 * ---end---
-	 *
-	 * Since: 1.26
-	 */
+     * property: multicast-hash-max
+     * variable: BRIDGING_OPTS: multicast_hash_max=
+     * default: 4096
+     * example: BRIDGING_OPTS="multicast_hash_max=8192"
+     * ---end---
+     *
+     * Since: 1.26
+     */
     obj_properties[PROP_MULTICAST_HASH_MAX] =
         g_param_spec_uint(NM_SETTING_BRIDGE_MULTICAST_HASH_MAX,
                           "",
@@ -2090,21 +2090,21 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:multicast-last-member-count:
-	 *
-	 * Set the number of queries the bridge will send before
-	 * stopping forwarding a multicast group after a "leave"
-	 * message has been received.
-	 **/
+     * NMSettingBridge:multicast-last-member-count:
+     *
+     * Set the number of queries the bridge will send before
+     * stopping forwarding a multicast group after a "leave"
+     * message has been received.
+     **/
     /* ---ifcfg-rh---
-	 * property: multicast-last-member-count
-	 * variable: BRIDGING_OPTS: multicast_last_member_count=
-	 * default: 2
-	 * example: BRIDGING_OPTS="multicast_last_member_count=4"
-	 * ---end---
-	 *
-	 * Since: 1.26
-	 */
+     * property: multicast-last-member-count
+     * variable: BRIDGING_OPTS: multicast_last_member_count=
+     * default: 2
+     * example: BRIDGING_OPTS="multicast_last_member_count=4"
+     * ---end---
+     *
+     * Since: 1.26
+     */
     obj_properties[PROP_MULTICAST_LAST_MEMBER_COUNT] =
         g_param_spec_uint(NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_COUNT,
                           "",
@@ -2115,20 +2115,20 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:multicast-last-member-interval:
-	 *
-	 * Set interval (in deciseconds) between queries to find remaining
-	 * members of a group, after a "leave" message is received.
-	 **/
+     * NMSettingBridge:multicast-last-member-interval:
+     *
+     * Set interval (in deciseconds) between queries to find remaining
+     * members of a group, after a "leave" message is received.
+     **/
     /* ---ifcfg-rh---
-	 * property: multicast-last-member-interval
-	 * variable: BRIDGING_OPTS: multicast_last_member_interval=
-	 * default: 100
-	 * example: BRIDGING_OPTS="multicast_last_member_interval=200"
-	 * ---end---
-	 *
-	 * Since: 1.26
-	 */
+     * property: multicast-last-member-interval
+     * variable: BRIDGING_OPTS: multicast_last_member_interval=
+     * default: 100
+     * example: BRIDGING_OPTS="multicast_last_member_interval=200"
+     * ---end---
+     *
+     * Since: 1.26
+     */
     obj_properties[PROP_MULTICAST_LAST_MEMBER_INTERVAL] = g_param_spec_uint64(
         NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL,
         "",
@@ -2139,21 +2139,21 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:multicast-membership-interval:
-	 *
-	 * Set delay (in deciseconds) after which the bridge will
-	 * leave a group, if no membership reports for this
-	 * group are received.
-	 **/
+     * NMSettingBridge:multicast-membership-interval:
+     *
+     * Set delay (in deciseconds) after which the bridge will
+     * leave a group, if no membership reports for this
+     * group are received.
+     **/
     /* ---ifcfg-rh---
-	 * property: multicast-membership-interval
-	 * variable: BRIDGING_OPTS: multicast_membership_interval=
-	 * default: 26000
-	 * example: BRIDGING_OPTS="multicast_membership_interval=16000"
-	 * ---end---
-	 *
-	 * Since: 1.26
-	 */
+     * property: multicast-membership-interval
+     * variable: BRIDGING_OPTS: multicast_membership_interval=
+     * default: 26000
+     * example: BRIDGING_OPTS="multicast_membership_interval=16000"
+     * ---end---
+     *
+     * Since: 1.26
+     */
     obj_properties[PROP_MULTICAST_MEMBERSHIP_INTERVAL] = g_param_spec_uint64(
         NM_SETTING_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL,
         "",
@@ -2164,20 +2164,20 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:multicast-querier-interval:
-	 *
-	 * If no queries are seen after this delay (in deciseconds) has passed,
-	 * the bridge will start to send its own queries.
-	 **/
+     * NMSettingBridge:multicast-querier-interval:
+     *
+     * If no queries are seen after this delay (in deciseconds) has passed,
+     * the bridge will start to send its own queries.
+     **/
     /* ---ifcfg-rh---
-	 * property: multicast-querier-interval
-	 * variable: BRIDGING_OPTS: multicast_querier_interval=
-	 * default: 25500
-	 * example: BRIDGING_OPTS="multicast_querier_interval=20000"
-	 * ---end---
-	 *
-	 * Since: 1.26
-	 */
+     * property: multicast-querier-interval
+     * variable: BRIDGING_OPTS: multicast_querier_interval=
+     * default: 25500
+     * example: BRIDGING_OPTS="multicast_querier_interval=20000"
+     * ---end---
+     *
+     * Since: 1.26
+     */
     obj_properties[PROP_MULTICAST_QUERIER_INTERVAL] = g_param_spec_uint64(
         NM_SETTING_BRIDGE_MULTICAST_QUERIER_INTERVAL,
         "",
@@ -2188,20 +2188,20 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:multicast-query-interval:
-	 *
-	 * Interval (in deciseconds) between queries sent
-	 * by the bridge after the end of the startup phase.
-	 **/
+     * NMSettingBridge:multicast-query-interval:
+     *
+     * Interval (in deciseconds) between queries sent
+     * by the bridge after the end of the startup phase.
+     **/
     /* ---ifcfg-rh---
-	 * property: multicast-query-interval
-	 * variable: BRIDGING_OPTS: multicast_query_interval=
-	 * default: 12500
-	 * example: BRIDGING_OPTS="multicast_query_interval=22500"
-	 * ---end---
-	 *
-	 * Since: 1.26
-	 */
+     * property: multicast-query-interval
+     * variable: BRIDGING_OPTS: multicast_query_interval=
+     * default: 12500
+     * example: BRIDGING_OPTS="multicast_query_interval=22500"
+     * ---end---
+     *
+     * Since: 1.26
+     */
     obj_properties[PROP_MULTICAST_QUERY_INTERVAL] = g_param_spec_uint64(
         NM_SETTING_BRIDGE_MULTICAST_QUERY_INTERVAL,
         "",
@@ -2212,20 +2212,20 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:multicast-query-response-interval:
-	 *
-	 * Set the Max Response Time/Max Response Delay
-	 * (in deciseconds) for IGMP/MLD queries sent by the bridge.
-	 **/
+     * NMSettingBridge:multicast-query-response-interval:
+     *
+     * Set the Max Response Time/Max Response Delay
+     * (in deciseconds) for IGMP/MLD queries sent by the bridge.
+     **/
     /* ---ifcfg-rh---
-	 * property: multicast-query-response-interval
-	 * variable: BRIDGING_OPTS: multicast_query_response_interval=
-	 * default: 1000
-	 * example: BRIDGING_OPTS="multicast_query_response_interval=2000"
-	 * ---end---
-	 *
-	 * Since: 1.26
-	 */
+     * property: multicast-query-response-interval
+     * variable: BRIDGING_OPTS: multicast_query_response_interval=
+     * default: 1000
+     * example: BRIDGING_OPTS="multicast_query_response_interval=2000"
+     * ---end---
+     *
+     * Since: 1.26
+     */
     obj_properties[PROP_MULTICAST_QUERY_RESPONSE_INTERVAL] = g_param_spec_uint64(
         NM_SETTING_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL,
         "",
@@ -2236,19 +2236,19 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:multicast-startup-query-count:
-	 *
-	 * Set the number of IGMP queries to send during startup phase.
-	 **/
+     * NMSettingBridge:multicast-startup-query-count:
+     *
+     * Set the number of IGMP queries to send during startup phase.
+     **/
     /* ---ifcfg-rh---
-	 * property: multicast-startup-query-count
-	 * variable: BRIDGING_OPTS: multicast_startup_query_count=
-	 * default: 2
-	 * example: BRIDGING_OPTS="multicast_startup_query_count=4"
-	 * ---end---
-	 *
-	 * Since: 1.26
-	 */
+     * property: multicast-startup-query-count
+     * variable: BRIDGING_OPTS: multicast_startup_query_count=
+     * default: 2
+     * example: BRIDGING_OPTS="multicast_startup_query_count=4"
+     * ---end---
+     *
+     * Since: 1.26
+     */
     obj_properties[PROP_MULTICAST_STARTUP_QUERY_COUNT] =
         g_param_spec_uint(NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT,
                           "",
@@ -2259,20 +2259,20 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridge:multicast-startup-query-interval:
-	 *
-	 * Sets the time (in deciseconds) between queries sent out
-	 * at startup to determine membership information.
-	 **/
+     * NMSettingBridge:multicast-startup-query-interval:
+     *
+     * Sets the time (in deciseconds) between queries sent out
+     * at startup to determine membership information.
+     **/
     /* ---ifcfg-rh---
-	 * property: multicast-startup-query-interval
-	 * variable: BRIDGING_OPTS: multicast_startup_query_interval=
-	 * default: 3125
-	 * example: BRIDGING_OPTS="multicast_startup_query_interval=4000"
-	 * ---end---
-	 *
-	 * Since: 1.26
-	 */
+     * property: multicast-startup-query-interval
+     * variable: BRIDGING_OPTS: multicast_startup_query_interval=
+     * default: 3125
+     * example: BRIDGING_OPTS="multicast_startup_query_interval=4000"
+     * ---end---
+     *
+     * Since: 1.26
+     */
     obj_properties[PROP_MULTICAST_STARTUP_QUERY_INTERVAL] = g_param_spec_uint64(
         NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL,
         "",

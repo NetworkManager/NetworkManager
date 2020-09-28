@@ -96,7 +96,7 @@ _init_nm_debug(NMConfig *config)
 #if !defined(__SANITIZE_ADDRESS__)
     if (NM_FLAGS_HAS(flags, D_RLIMIT_CORE)) {
         /* only enable this, if explicitly requested, because it might
-		 * expose sensitive data. */
+         * expose sensitive data. */
 
         struct rlimit limit = {
             .rlim_cur = RLIM_INFINITY,
@@ -132,11 +132,11 @@ nm_main_config_reload(int signal)
     nm_log_info(LOGD_CORE, "reload configuration (signal %s)...", strsignal(signal));
 
     /* The signal handler thread is only installed after
-	 * creating NMConfig instance, and on shut down we
-	 * no longer run the mainloop (to reach this point).
-	 *
-	 * Hence, a NMConfig singleton instance must always be
-	 * available. */
+     * creating NMConfig instance, and on shut down we
+     * no longer run the mainloop (to reach this point).
+     *
+     * Hence, a NMConfig singleton instance must always be
+     * available. */
     nm_config_reload(nm_config_get(), reload_flags, TRUE);
 }
 
@@ -270,17 +270,17 @@ _dbus_manager_init(NMConfig *config)
 
     if (c_a_q_type == NM_CONFIG_CONFIGURE_AND_QUIT_ENABLED) {
         /* D-Bus is useless in configure and quit mode -- we're eventually dropping
-		 * off and potential clients would have no way of knowing whether we're
-		 * finished already or didn't start yet.
-		 *
-		 * But we still create a nm_dbus_manager_get_dbus_connection() D-Bus connection
-		 * so that we can talk to other services like firewalld. */
+         * off and potential clients would have no way of knowing whether we're
+         * finished already or didn't start yet.
+         *
+         * But we still create a nm_dbus_manager_get_dbus_connection() D-Bus connection
+         * so that we can talk to other services like firewalld. */
         return nm_dbus_manager_acquire_bus(busmgr, FALSE);
     }
 
     nm_assert(c_a_q_type == NM_CONFIG_CONFIGURE_AND_QUIT_INITRD);
     /* in initrd we don't have D-Bus at all. Don't even try to get the G_BUS_TYPE_SYSTEM
-	 * connection. And of course don't claim the D-Bus name. */
+     * connection. And of course don't claim the D-Bus name. */
     return TRUE;
 }
 
@@ -304,7 +304,7 @@ main(int argc, char *argv[])
     int                     errsv;
 
     /* Known to cause a possible deadlock upon GDBus initialization:
-	 * https://bugzilla.gnome.org/show_bug.cgi?id=674885 */
+     * https://bugzilla.gnome.org/show_bug.cgi?id=674885 */
     g_type_ensure(G_TYPE_SOCKET);
     g_type_ensure(G_TYPE_DBUS_CONNECTION);
     g_type_ensure(NM_TYPE_DBUS_MANAGER);
@@ -314,7 +314,7 @@ main(int argc, char *argv[])
     main_loop = g_main_loop_new(NULL, FALSE);
 
     /* we determine a first-start (contrary to a restart during the same boot)
-	 * based on the existence of NM_CONFIG_DEVICE_STATE_DIR directory. */
+     * based on the existence of NM_CONFIG_DEVICE_STATE_DIR directory. */
     config_cli = nm_config_cmd_line_options_new(
         !g_file_test(NM_CONFIG_DEVICE_STATE_DIR, G_FILE_TEST_IS_DIR));
 
@@ -344,13 +344,13 @@ main(int argc, char *argv[])
     nm_main_utils_ensure_rundir();
 
     /* When running from the build directory, determine our build directory
-	 * base and set helper paths in the build tree */
+     * base and set helper paths in the build tree */
     if (global_opt.run_from_build_dir) {
         char *path, *slash;
         int   g;
 
         /* exe is <basedir>/src/.libs/lt-NetworkManager, so chop off
-		 * the last three components */
+         * the last three components */
         path = realpath("/proc/self/exe", NULL);
         g_assert(path != NULL);
         for (g = 0; g < 3; ++g) {
@@ -360,7 +360,7 @@ main(int argc, char *argv[])
         }
 
         /* don't free these strings, we need them for the entire
-		 * process lifetime */
+         * process lifetime */
         nm_dhcp_helper_path = g_strdup_printf("%s/src/dhcp/nm-dhcp-helper", path);
 
         g_free(path);
@@ -388,15 +388,15 @@ main(int argc, char *argv[])
     _init_nm_debug(config);
 
     /* Initialize logging from config file *only* if not explicitly
-	 * specified by commandline.
-	 */
+     * specified by commandline.
+     */
     if (global_opt.opt_log_level == NULL && global_opt.opt_log_domains == NULL) {
         if (!nm_logging_setup(nm_config_get_log_level(config),
                               nm_config_get_log_domains(config),
                               &bad_domains,
                               &error_invalid_logging_config)) {
             /* ignore error, and print the failure reason below.
-			 * Likewise, print about bad_domains below. */
+             * Likewise, print about bad_domains below. */
         }
     }
 
@@ -497,15 +497,15 @@ main(int argc, char *argv[])
     nm_platform_process_events(NM_PLATFORM_GET);
 
     /* Make sure the loopback interface is up. If interface is down, we bring
-	 * it up and kernel will assign it link-local IPv4 and IPv6 addresses. If
-	 * it was already up, we assume is in clean state.
-	 *
-	 * TODO: it might be desirable to check the list of addresses and compare
-	 * it with a list of expected addresses (one of the protocol families
-	 * could be disabled). The 'lo' interface is sometimes used for assigning
-	 * global addresses so their availability doesn't depend on the state of
-	 * physical interfaces.
-	 */
+     * it up and kernel will assign it link-local IPv4 and IPv6 addresses. If
+     * it was already up, we assume is in clean state.
+     *
+     * TODO: it might be desirable to check the list of addresses and compare
+     * it with a list of expected addresses (one of the protocol families
+     * could be disabled). The 'lo' interface is sometimes used for assigning
+     * global addresses so their availability doesn't depend on the state of
+     * physical interfaces.
+     */
     nm_log_dbg(LOGD_CORE, "setting up local loopback");
     nm_platform_link_set_up(NM_PLATFORM_GET, 1, NULL);
 
@@ -520,9 +520,9 @@ main(int argc, char *argv[])
 done:
 
     /* write the device-state to file. Note that we only persist the
-	 * state here. We don't bother updating the state as devices
-	 * change during regular operation. If NM is killed with SIGKILL,
-	 * it misses to update the state. */
+     * state here. We don't bother updating the state as devices
+     * change during regular operation. If NM is killed with SIGKILL,
+     * it misses to update the state. */
     nm_manager_write_device_state_all(manager);
 
     nm_manager_stop(manager);

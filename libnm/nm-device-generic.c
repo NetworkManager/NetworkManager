@@ -158,11 +158,11 @@ nm_device_generic_class_init(NMDeviceGenericClass *klass)
     device_class->get_setting_type      = get_setting_type;
 
     /**
-	 * NMDeviceGeneric:type-description:
-	 *
-	 * A description of the specific type of device this is, or %NULL
-	 * if not known.
-	 **/
+     * NMDeviceGeneric:type-description:
+     *
+     * A description of the specific type of device this is, or %NULL
+     * if not known.
+     **/
     obj_properties[PROP_TYPE_DESCRIPTION] =
         g_param_spec_string(NM_DEVICE_GENERIC_TYPE_DESCRIPTION,
                             "",

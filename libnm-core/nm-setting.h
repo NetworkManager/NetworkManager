@@ -205,11 +205,11 @@ typedef struct {
                               gpointer                         user_data);
 
     /* compare_property() returns a ternary, where DEFAULT means that the property should not
-	 * be compared due to the compare @flags. A TRUE/FALSE result means that the property is
-	 * equal/not-equal.
-	 *
-	 * @other may be %NULL, in which case the function only determines whether
-	 * the setting should be compared (TRUE) or not (DEFAULT). */
+     * be compared due to the compare @flags. A TRUE/FALSE result means that the property is
+     * equal/not-equal.
+     *
+     * @other may be %NULL, in which case the function only determines whether
+     * the setting should be compared (TRUE) or not (DEFAULT). */
     /*< private >*/
     NMTernary (*compare_property)(const struct _NMSettInfoSetting *sett_info,
                                   guint                            property_idx,

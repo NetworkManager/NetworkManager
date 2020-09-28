@@ -64,7 +64,7 @@ struct _NMActiveConnection {
     struct _NMActiveConnectionPrivate *_priv;
 
     /* active connection can be tracked in a list by NMManager. This is
-	 * the list node. */
+     * the list node. */
     CList active_connections_lst;
 };
 
@@ -72,8 +72,8 @@ typedef struct {
     NMDBusObjectClass parent;
 
     /* re-emits device state changes as a convenience for subclasses for
-	 * device states >= DISCONNECTED.
-	 */
+     * device states >= DISCONNECTED.
+     */
     void (*device_state_changed)(NMActiveConnection *connection,
                                  NMDevice *          device,
                                  NMDeviceState       new_state,

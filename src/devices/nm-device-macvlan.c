@@ -125,8 +125,8 @@ static void
 parent_mtu_maybe_changed(NMDevice *parent, GParamSpec *pspec, gpointer user_data)
 {
     /* the MTU of a macvlan/macvtap device is limited by the parent's MTU.
-	 *
-	 * When the parent's MTU changes, try to re-set the MTU. */
+     *
+     * When the parent's MTU changes, try to re-set the MTU. */
     nm_device_commit_mtu(user_data);
 }
 
@@ -144,8 +144,8 @@ parent_changed_notify(NMDevice *device,
         ->parent_changed_notify(device, old_ifindex, old_parent, new_ifindex, new_parent);
 
     /*  note that @self doesn't have to clear @parent_state_id on dispose,
-	 *  because NMDevice's dispose() will unset the parent, which in turn calls
-	 *  parent_changed_notify(). */
+     *  because NMDevice's dispose() will unset the parent, which in turn calls
+     *  parent_changed_notify(). */
     nm_clear_g_signal_handler(old_parent, &priv->parent_state_id);
     nm_clear_g_signal_handler(old_parent, &priv->parent_mtu_id);
 
@@ -401,8 +401,8 @@ complete_connection(NMDevice *           device,
     }
 
     /* If there's no MACVLAN interface, no parent, and no hardware address in the
-	 * settings, then there's not enough information to complete the setting.
-	 */
+     * settings, then there's not enough information to complete the setting.
+     */
     if (!nm_setting_macvlan_get_parent(s_macvlan)
         && !nm_device_match_parent_hwaddr(device, connection, TRUE)) {
         g_set_error_literal(

@@ -135,10 +135,10 @@ ignore_option(NMSettingBond *s_bond, const char *option, const char *value)
 
     if (nm_streq0(option, NM_SETTING_BOND_OPTION_MIIMON)) {
         /* The default value for miimon, when missing in the setting, is
-		 * 0 if arp_interval is != 0, and 100 otherwise. So, let's ignore
-		 * miimon=0 (which means that miimon is disabled) and accept any
-		 * other value. Adding miimon=100 does not cause any harm.
-		 */
+         * 0 if arp_interval is != 0, and 100 otherwise. So, let's ignore
+         * miimon=0 (which means that miimon is disabled) and accept any
+         * other value. Adding miimon=100 does not cause any harm.
+         */
         defvalue = "0";
     } else
         defvalue = nm_setting_bond_get_option_default(s_bond, option);
@@ -336,8 +336,8 @@ apply_bonding_config(NMDeviceBond *self)
     g_return_val_if_fail(mode != NM_BOND_MODE_UNKNOWN, FALSE);
 
     /* Set mode first, as some other options (e.g. arp_interval) are valid
-	 * only for certain modes.
-	 */
+     * only for certain modes.
+     */
     set_bond_attr_or_default(device, s_bond, NM_SETTING_BOND_OPTION_MODE);
 
     set_bond_arp_ip_targets(device, s_bond);
@@ -415,8 +415,8 @@ release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
 
     if (configure) {
         /* When the last slave is released the bond MAC will be set to a random
-		 * value by kernel; remember the current one and restore it afterwards.
-		 */
+         * value by kernel; remember the current one and restore it afterwards.
+         */
         address = g_strdup(nm_device_get_hw_address(device));
 
         if (ifindex_slave > 0) {
@@ -436,9 +436,9 @@ release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
             nm_device_hw_addr_set(device, address, "restore", FALSE);
 
         /* Kernel bonding code "closes" the slave when releasing it, (which clears
-		 * IFF_UP), so we must bring it back up here to ensure carrier changes and
-		 * other state is noticed by the now-released slave.
-		 */
+         * IFF_UP), so we must bring it back up here to ensure carrier changes and
+         * other state is noticed by the now-released slave.
+         */
         if (ifindex_slave > 0) {
             if (!nm_device_bring_up(slave, TRUE, NULL))
                 _LOGW(LOGD_BOND, "released bond slave could not be brought up.");
@@ -545,7 +545,7 @@ reapply_connection(NMDevice *device, NMConnection *con_old, NMConnection *con_ne
     g_return_if_fail(mode != NM_BOND_MODE_UNKNOWN);
 
     /* Below we set only the bond options that kernel allows to modify
-	 * while keeping the bond interface up */
+     * while keeping the bond interface up */
 
     set_bond_arp_ip_targets(device, s_bond);
 

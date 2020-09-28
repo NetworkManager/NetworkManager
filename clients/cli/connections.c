@@ -163,7 +163,7 @@ static int
 active_connection_get_state_ord(NMActiveConnection *active)
 {
     /* returns an integer related to @active's state, that can be used for sorting
-	 * active connections based on their activation state. */
+     * active connections based on their activation state. */
     if (!active)
         return -2;
 
@@ -291,8 +291,8 @@ get_vpn_connection_type(NMConnection *connection)
         return NULL;
 
     /* The service type is in form of "org.freedesktop.NetworkManager.vpnc".
-	 * Extract end part after last dot, e.g. "vpnc"
-	 */
+     * Extract end part after last dot, e.g. "vpnc"
+     */
     type = nm_setting_vpn_get_service_type(nm_connection_get_setting_vpn(connection));
     if (!type)
         return NULL;
@@ -481,11 +481,11 @@ _con_show_fcn_get_id(NMConnection *c, NMActiveConnection *ac)
     s = s_con ? nm_setting_connection_get_id(s_con) : NULL;
     if (!s && ac) {
         /* note that if we have no s_con, that usually means that the user has no permissions
-		 * to see the connection. We still fall to get the ID from the active-connection,
-		 * which exposes it despite the user having no permissions.
-		 *
-		 * That might be unexpected, because the user is shown an ID, which he later
-		 * is unable to resolve in other operations. */
+         * to see the connection. We still fall to get the ID from the active-connection,
+         * which exposes it despite the user having no permissions.
+         *
+         * That might be unexpected, because the user is shown an ID, which he later
+         * is unable to resolve in other operations. */
         s = nm_active_connection_get_id(ac);
     }
     return s;
@@ -503,7 +503,7 @@ _con_show_fcn_get_type(NMConnection *c, NMActiveConnection *ac, NMMetaAccessorGe
     s = s_con ? nm_setting_connection_get_connection_type(s_con) : NULL;
     if (!s && ac) {
         /* see _con_show_fcn_get_id() for why we fallback to get the value
-		 * from @ac. */
+         * from @ac. */
         s = nm_active_connection_get_connection_type(ac);
     }
     return connection_type_to_display(s, get_type);
@@ -525,16 +525,16 @@ static gconstpointer _metagen_con_show_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARG
 
     if (!row_data->show_active_fields) {
         /* we are not supposed to show any fields of the active connection.
-		 * We only tracked the primary_active to get the coloring right.
-		 * From now on, there is no active connection. */
+         * We only tracked the primary_active to get the coloring right.
+         * From now on, there is no active connection. */
         ac = NULL;
 
         /* in this mode, we expect that we are called only with connections that
-		 * have a [connection] setting and a UUID. Otherwise, the connection is
-		 * effectively invisible to the user, and should be hidden.
-		 *
-		 * But in that case, we expect that the caller pre-filtered this row out.
-		 * So assert(). */
+         * have a [connection] setting and a UUID. Otherwise, the connection is
+         * effectively invisible to the user, and should be hidden.
+         *
+         * But in that case, we expect that the caller pre-filtered this row out.
+         * So assert(). */
         nm_assert(s_con);
         nm_assert(nm_setting_connection_get_uuid(s_con));
     }
@@ -549,7 +549,7 @@ static gconstpointer _metagen_con_show_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARG
         s = s_con ? nm_setting_connection_get_uuid(s_con) : NULL;
         if (!s && ac) {
             /* see _con_show_fcn_get_id() for why we fallback to get the value
-			 * from @ac. */
+             * from @ac. */
             s = nm_active_connection_get_uuid(ac);
         }
         return s;
@@ -726,7 +726,7 @@ static gconstpointer _metagen_con_active_general_get_fcn(NMC_META_GENERIC_INFO_G
         return c ? nm_connection_get_path(c) : NULL;
     case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_ZONE:
         /* this is really ugly, because the zone is not a property of the active-connection,
-		 * but the settings-connection profile. There is no guarantee, that they agree. */
+         * but the settings-connection profile. There is no guarantee, that they agree. */
         return s_con ? nm_setting_connection_get_zone(s_con) : NULL;
     case NMC_GENERIC_INFO_TYPE_CON_ACTIVE_GENERAL_MASTER_PATH:
         dev = nm_active_connection_get_master(ac);
@@ -824,7 +824,7 @@ static gconstpointer _metagen_con_active_vpn_get_fcn(NMC_META_GENERIC_INFO_GET_F
                 nm_assert(k);
                 v = nm_setting_vpn_get_data_item(s_vpn, k);
                 /* update the arr array in-place. Previously it contained
-				 * the constant keys, now it contains the strdup'ed output text. */
+                 * the constant keys, now it contains the strdup'ed output text. */
                 arr2[i] = g_strdup_printf("%s = %s", k, v);
             }
 
@@ -1819,8 +1819,8 @@ con_show_get_items_cmp(gconstpointer pa, gconstpointer pb, gpointer user_data)
             static const NmcSortOrder def[] = {NMC_SORT_ACTIVE, NMC_SORT_NAME, NMC_SORT_PATH};
 
             /* Note: the default order does not consider whether a column is shown.
-			 *       That means, the selection of the output fields, does not affect the
-			 *       order (although there could be an argument that it should). */
+             *       That means, the selection of the output fields, does not affect the
+             *       order (although there could be an argument that it should). */
             order_arr = def;
             order_len = G_N_ELEMENTS(def);
         }
@@ -1900,16 +1900,16 @@ con_show_get_items(NmCli *nmc, gboolean active_only, gboolean show_active_fields
     arr = nm_client_get_connections(nmc->client);
     for (i = 0; i < arr->len; i++) {
         /* Note: libnm will not expose connection that are invisible
-		 * to the user but currently inactive.
-		 *
-		 * That differs from get-active-connection(). If an invisible connection
-		 * is active, we can get its NMActiveConnection. We can even obtain
-		 * the corresponding NMRemoteConnection (although, of course it has
-		 * no visible settings).
-		 *
-		 * I think this inconsistency is a bug in libnm. Anyway, the result is,
-		 * that we print invisible connections if they are active, but otherwise
-		 * we exclude them. */
+         * to the user but currently inactive.
+         *
+         * That differs from get-active-connection(). If an invisible connection
+         * is active, we can get its NMActiveConnection. We can even obtain
+         * the corresponding NMRemoteConnection (although, of course it has
+         * no visible settings).
+         *
+         * I think this inconsistency is a bug in libnm. Anyway, the result is,
+         * that we print invisible connections if they are active, but otherwise
+         * we exclude them. */
         c = arr->pdata[i];
         g_hash_table_insert(row_hash,
                             c,
@@ -1923,7 +1923,7 @@ con_show_get_items(NmCli *nmc, gboolean active_only, gboolean show_active_fields
         c = nm_active_connection_get_connection(ac);
         if (!show_active_fields && !c) {
             /* the active connection has no connection, and we don't show
-			 * any active fields. Skip this row. */
+             * any active fields. Skip this row. */
             continue;
         }
 
@@ -1931,11 +1931,11 @@ con_show_get_items(NmCli *nmc, gboolean active_only, gboolean show_active_fields
 
         if (show_active_fields || !c) {
             /* the active connection either has no connection (in which we create a
-			 * connection-less row), or we are interested in showing each active
-			 * connection in its own row. Add a row. */
+             * connection-less row), or we are interested in showing each active
+             * connection in its own row. Add a row. */
             if (row_data) {
                 /* we create a rowdata for this connection earlier. We drop it, because this
-				 * connection is tracked via the rowdata of the active connection. */
+                 * connection is tracked via the rowdata of the active connection. */
                 g_hash_table_remove(row_hash, c);
                 _metagen_con_show_row_data_destroy(row_data);
             }
@@ -1946,11 +1946,11 @@ con_show_get_items(NmCli *nmc, gboolean active_only, gboolean show_active_fields
         }
 
         /* we add the active connection to the row for the referenced
-		 * connection. We need to group them this way, to print the proper
-		 * color (activated or not) based on primary_active. */
+         * connection. We need to group them this way, to print the proper
+         * color (activated or not) based on primary_active. */
         if (!row_data) {
             /* this is unexpected. The active connection references a connection that
-			 * seemingly no longer exists. It's a bug in libnm. Add a row nonetheless. */
+             * seemingly no longer exists. It's a bug in libnm. Add a row nonetheless. */
             row_data = _metagen_con_show_row_data_new_for_connection(c, show_active_fields);
             g_hash_table_insert(row_hash, c, row_data);
         }
@@ -1973,11 +1973,11 @@ con_show_get_items(NmCli *nmc, gboolean active_only, gboolean show_active_fields
             s_con = nm_connection_get_setting_connection(row_data->connection);
             if (!s_con || !nm_setting_connection_get_uuid(s_con)) {
                 /* we are in a mode, where we only print rows for connection.
-				 * For that we require that all rows are visible to the user,
-				 * meaning: the have a [connection] setting and a UUID.
-				 *
-				 * Otherwise, this connection is likely invisible to the user.
-				 * Skip it. */
+                 * For that we require that all rows are visible to the user,
+                 * meaning: the have a [connection] setting and a UUID.
+                 *
+                 * Otherwise, this connection is likely invisible to the user.
+                 * Skip it. */
                 _metagen_con_show_row_data_destroy(row_data);
                 continue;
             }
@@ -2161,11 +2161,11 @@ do_connections_show(const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
             fields_str = nmc->required_fields;
 
         /* determine whether the user wants to see any fields that are related to active-connections
-		 * (e.g. the apath, the current state, or the device where the profile is active).
-		 *
-		 * If that's the case, then we will show one line for each active connection. In case
-		 * a profile has multiple active connections, it will be listed multiple times.
-		 * If that's not the case, we filter out these duplicate lines. */
+         * (e.g. the apath, the current state, or the device where the profile is active).
+         *
+         * If that's the case, then we will show one line for each active connection. In case
+         * a profile has multiple active connections, it will be listed multiple times.
+         * If that's not the case, we filter out these duplicate lines. */
         selection = nm_meta_selection_create_parse_list(
             (const NMMetaAbstractInfo *const *) metagen_con_show,
             fields_str,
@@ -2219,7 +2219,7 @@ do_connections_show(const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
         nm_clear_g_free(&nmc->required_fields);
 
         /* Before printing the connections check if we have a "--show-secret"
-		 * option after the connection ids */
+         * option after the connection ids */
         if (!nmc->nmc_config.show_secrets && !nmc->complete) {
             int                argc_cp = argc;
             const char *const *argv_cp = argv;
@@ -2276,8 +2276,8 @@ do_connections_show(const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
                     if (!selector
                         && !nm_streq0(*argv, nm_object_get_path(NM_OBJECT(explicit_acon)))) {
                         /* we matched the apath based on the last component alone (note the full D-Bus path).
-						 * That is how nmc_find_active_connection() works, if you pass in a selector.
-						 * Reject it. */
+                         * That is how nmc_find_active_connection() works, if you pass in a selector.
+                         * Reject it. */
                         explicit_acon = NULL;
                     }
                     nm_g_object_ref(explicit_acon);
@@ -2293,10 +2293,10 @@ do_connections_show(const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
             }
 
             /* Print connection details:
-			 * Usually we have both static and active connection.
-			 * But when a connection is private to a user, another user
-			 * may see only the active connection.
-			 */
+             * Usually we have both static and active connection.
+             * But when a connection is private to a user, another user
+             * may see only the active connection.
+             */
 
             if (nmc->complete) {
                 next_arg(nmc, &argc, &argv, NULL);
@@ -2313,7 +2313,7 @@ do_connections_show(const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
                         break;
                     explicit_acon_handled = TRUE;
                     /* the user referenced an "apath". In this case, we can only have at most one connection
-					 * and one apath. */
+                     * and one apath. */
                     con = NM_CONNECTION(nm_active_connection_get_connection(explicit_acon));
                 } else {
                     if (i_found_cons >= found_cons->len)
@@ -2353,8 +2353,8 @@ do_connections_show(const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
 
                         if (i > 0) {
                             /* if there are multiple active connections, separate them with newline.
-							 * that is a bit odd, because we already separate connections with newlines,
-							 * and commonly don't separate the connection from the first active connection. */
+                             * that is a bit odd, because we already separate connections with newlines,
+                             * and commonly don't separate the connection from the first active connection. */
                             g_print("\n");
                         }
 
@@ -2419,8 +2419,8 @@ get_default_active_connection(NmCli *nmc, NMDevice **device)
     }
 
     /* Prefer the default connection if one exists, otherwise return the first
-	 * non-default connection.
-	 */
+     * non-default connection.
+     */
     if (!default_ac && non_default_ac) {
         default_ac = non_default_ac;
         *device    = non_default_device;
@@ -2697,7 +2697,7 @@ progress_active_connection_cb(gpointer user_data)
 
     if (ac_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING) {
         /* If the connection is activating, the device state
-		 * is more interesting. */
+         * is more interesting. */
         ac_devs = nm_active_connection_get_devices(active);
         device  = ac_devs->len > 0 ? g_ptr_array_index(ac_devs, 0) : NULL;
     } else {
@@ -2780,10 +2780,10 @@ activate_connection_cb(GObject *client, GAsyncResult *result, gpointer user_data
                                  G_CALLBACK(device_state_cb),
                                  info);
             /* Both active_connection_state_cb () and device_state_cb () will just
-			 * call check_activated (info). So, just call it once directly after
-			 * connecting on both the signals of the objects and skip the call to
-			 * the callbacks.
-			 */
+             * call check_activated (info). So, just call it once directly after
+             * connecting on both the signals of the objects and skip the call to
+             * the callbacks.
+             */
             check_activated(info);
 
             /* Start progress indication showing VPN states */
@@ -2923,9 +2923,9 @@ do_connection_up(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const 
     int *                 argc_ptr;
 
     /*
-	 * Set default timeout for connection activation.
-	 * Activation can take quite a long time, use 90 seconds.
-	 */
+     * Set default timeout for connection activation.
+     * Activation can take quite a long time, use 90 seconds.
+     */
     if (nmc->timeout == -1)
         nmc->timeout = 90;
 
@@ -3008,9 +3008,9 @@ do_connection_up(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const 
         return;
 
     /* Use nowait_flag instead of should_wait because exiting has to be postponed till
-	 * active_connection_state_cb() is called. That gives NM time to check our permissions
-	 * and we can follow activation progress.
-	 */
+     * active_connection_state_cb() is called. That gives NM time to check our permissions
+     * and we can follow activation progress.
+     */
     nmc->nowait_flag = (nmc->timeout == 0);
     nmc->should_wait++;
 
@@ -3038,7 +3038,7 @@ do_connection_up(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const 
 typedef struct {
     NmCli *nmc;
     /* a list of object that is relevant for the callback. The object
-	 * type differs, and depends on the type of callback. */
+     * type differs, and depends on the type of callback. */
     GPtrArray *   obj_list;
     guint         timeout_id;
     GCancellable *cancellable;
@@ -3386,7 +3386,7 @@ get_valid_settings_array(const char *con_type)
     const NMMetaSettingInfoEditor *setting_info;
 
     /* No connection type yet? Return settings for a generic connection
-	 * (just the "connection" setting), which always makes sense. */
+     * (just the "connection" setting), which always makes sense. */
     if (!con_type)
         return nm_meta_setting_info_valid_parts_default;
 
@@ -3450,11 +3450,11 @@ get_valid_properties_string(const NMMetaSettingValidPartItem *const *array,
             }
 
             /* If postix (so prefix is terminated by a dot), check
-			 * that prefix is not ambiguous */
+             * that prefix is not ambiguous */
             if (postfix) {
                 /* If we have a perfect match, no need to look for others
-				 * prefix and no check on ambiguity should be performed.
-				 * Moreover, erase previous matches from output string */
+                 * prefix and no check on ambiguity should be performed.
+                 * Moreover, erase previous matches from output string */
                 if (nm_streq(prefix, setting_info->general->setting_name)
                     || nm_streq0(prefix, setting_info->alias)) {
                     g_string_erase(str, 0, -1);
@@ -3897,7 +3897,7 @@ static gboolean
 _meta_property_needs_bond_hack(const NMMetaPropertyInfo *property_info)
 {
     /* hack: the bond property data is handled special and not generically.
-	 * Eventually, get rid of explicitly checking whether we handle a bond. */
+     * Eventually, get rid of explicitly checking whether we handle a bond. */
     if (!property_info)
         g_return_val_if_reached(FALSE);
     return property_info->property_typ_data
@@ -4945,8 +4945,8 @@ nmc_process_connection_properties(NmCli *             nmc,
                                   GError **           error)
 {
     /* First check if we have a slave-type, as this would mean we will not
-	 * have ip properties but possibly others, slave-type specific.
-	 */
+     * have ip properties but possibly others, slave-type specific.
+     */
     /* Go through arguments and set properties */
     do {
         const NMMetaSettingValidPartItem *const *type_settings;
@@ -5044,7 +5044,7 @@ nmc_process_connection_properties(NmCli *             nmc,
             GError *      local = NULL;
 
             /* This seems like a <setting>.<property> (such as "connection.id" or "bond.mode"),
-			 * optionally prefixed with "+| or "-". */
+             * optionally prefixed with "+| or "-". */
 
             if (*argc == 1 && nmc->complete)
                 complete_property_name(nmc, connection, modifier, option_sett, option_prop);
@@ -5595,13 +5595,13 @@ read_properties:
     if (argc && !nmc_process_connection_properties(nmc, connection, &argc, &argv, FALSE, &error)) {
         if (g_strcmp0(*argv, "--") == 0 && !seen_dash_dash) {
             /* This is for compatibility with older nmcli that required
-			 * options and properties to be separated with "--" */
+             * options and properties to be separated with "--" */
             seen_dash_dash = TRUE;
             next_arg(nmc, &argc, &argv, NULL);
             goto read_properties;
         } else if (g_strcmp0(*argv, "save") == 0) {
             /* It would be better if "save" was a separate argument and not
-			 * mixed with properties, but there's not much we can do about it now. */
+             * mixed with properties, but there's not much we can do about it now. */
             argc--;
             argv++;
             if (!argc) {
@@ -5634,7 +5634,7 @@ read_properties:
         questionnaire_mandatory(nmc, connection);
 
     /* Traditionally, we didn't ask for these options for ethernet slaves. They don't
-	 * make much sense, since these are likely to be set by the master anyway. */
+     * make much sense, since these are likely to be set by the master anyway. */
     if (nm_setting_connection_get_slave_type(s_con)) {
         disable_options(NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MTU);
         disable_options(NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MAC_ADDRESS);
@@ -5642,14 +5642,14 @@ read_properties:
     }
 
     /* Connection id is special in that it's required but we don't insist
-	 * on getting it from the user -- we just make up something sensible. */
+     * on getting it from the user -- we just make up something sensible. */
     if (!nm_setting_connection_get_id(s_con)) {
         const char *ifname     = nm_setting_connection_get_interface_name(s_con);
         const char *type       = nm_setting_connection_get_connection_type(s_con);
         const char *slave_type = nm_setting_connection_get_slave_type(s_con);
 
         /* If only bother when there's a type, which is not guaranteed at this point.
-		 * Otherwise, the validation will fail anyway. */
+         * Otherwise, the validation will fail anyway. */
         if (type) {
             gs_free char *   try_name     = NULL;
             gs_free char *   default_name = NULL;
@@ -5668,16 +5668,16 @@ read_properties:
     set_default_interface_name(nmc, s_con);
 
     /* Now see if there's something optional that needs to be asked for.
-	 * Keep asking until there's no more things to ask for. */
+     * Keep asking until there's no more things to ask for. */
     do {
         /* This ensures all settings that make sense are present. */
         nm_connection_normalize(connection, NULL, NULL, NULL);
     } while (nmc->ask && questionnaire_one_optional(nmc, connection));
 
     /* Mandatory settings. No good reason to check this other than guarding the user
-	 * from doing something that's not likely to make sense (such as missing ifname
-	 * on a bond/bridge/team, etc.). Added just to preserve traditional behavior, it
-	 * perhaps is a good idea to just remove this. */
+     * from doing something that's not likely to make sense (such as missing ifname
+     * on a bond/bridge/team, etc.). Added just to preserve traditional behavior, it
+     * perhaps is a good idea to just remove this. */
     for (s = 0; s < _NM_META_SETTING_TYPE_NUM; s++) {
         const NMMetaPropertyInfo *const *property_infos;
         guint                            p;
@@ -5972,8 +5972,8 @@ gen_property_names(const char *text, int state)
         valid_settings_main = get_valid_settings_array(nmc_tab_completion.con_type);
 
         /* Support autocompletion of slave-connection parameters
-		 * guessing the slave type from the setting name already
-		 * typed (or autocompleted) */
+         * guessing the slave type from the setting name already
+         * typed (or autocompleted) */
         if (nm_streq0(strv[0], NM_SETTING_TEAM_PORT_SETTING_NAME))
             slv_type = NM_SETTING_TEAM_SETTING_NAME;
         else if (nm_streq0(strv[0], NM_SETTING_BRIDGE_PORT_SETTING_NAME))
@@ -6768,8 +6768,8 @@ editor_main_usage(void)
 {
     g_print("------------------------------------------------------------------------------\n");
     /* TRANSLATORS: do not translate command names and keywords before ::
-	 *              However, you should translate terms enclosed in <>.
-	 */
+     *              However, you should translate terms enclosed in <>.
+     */
     g_print(_("---[ Main menu ]---\n"
               "goto     [<setting> | <prop>]        :: go to a setting or property\n"
               "remove   <setting>[.<prop>] | <prop> :: remove setting or reset property value\n"
@@ -6953,8 +6953,8 @@ editor_sub_help(void)
 {
     g_print("------------------------------------------------------------------------------\n");
     /* TRANSLATORS: do not translate command names and keywords before ::
-	 *              However, you should translate terms enclosed in <>.
-	 */
+     *              However, you should translate terms enclosed in <>.
+     */
     g_print(_("---[ Property menu ]---\n"
               "set      [<value>]               :: set new value\n"
               "add      [<value>]               :: add new option to the property\n"
@@ -7310,9 +7310,9 @@ property_edit_submenu(NmCli *              nmc,
         case NMC_EDITOR_SUB_CMD_SET:
         case NMC_EDITOR_SUB_CMD_ADD:
             /* list, arrays,...: SET replaces the whole property value
-			 *                   ADD adds the new value(s)
-			 * single values:  : both SET and ADD sets the new value
-			 */
+             *                   ADD adds the new value(s)
+             * single values:  : both SET and ADD sets the new value
+             */
             if (!cmd_property_arg) {
                 gs_strfreev char **to_free = NULL;
                 const char *const *avals;
@@ -8266,9 +8266,9 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                     refresh_remote_connection(&weak, &rem_con);
 
                     /* Replace local connection with the remote one to be sure they are equal.
-					 * This mitigates problems with plugins not preserving some properties or
-					 * adding ipv{4,6} settings when not present.
-					 */
+                     * This mitigates problems with plugins not preserving some properties or
+                     * adding ipv{4,6} settings when not present.
+                     */
                     if (con_tmp) {
                         gs_free char *s_name = NULL;
 
@@ -8547,7 +8547,7 @@ editor_init_existing_connection(NMConnection *connection)
     NMSettingConnection *s_con;
 
     /* FIXME: this approach of connecting handlers to do something is fundamentally
-	 * flawed. See the comment in nmc_setting_ip6_connect_handlers(). */
+     * flawed. See the comment in nmc_setting_ip6_connect_handlers(). */
 
     s_ip4      = nm_connection_get_setting_ip4_config(connection);
     s_ip6      = nm_connection_get_setting_ip6_config(connection);
@@ -8670,8 +8670,8 @@ do_connection_edit(const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
         }
 
         /* Duplicate the connection and use that so that we need not
-		 * differentiate existing vs. new later
-		 */
+         * differentiate existing vs. new later
+         */
         connection = nm_simple_connection_new_clone(found_con);
 
         /* Merge secrets into the connection */

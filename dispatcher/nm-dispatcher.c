@@ -73,7 +73,7 @@ struct Request {
     {                                                                                                  \
         if (FALSE) {                                                                                   \
             /* g_message() alone does not warn about invalid format. Add a dummy printf() statement to
-			 * get a compiler warning about wrong format. */ \
+             * get a compiler warning about wrong format. */ \
             printf(__VA_ARGS__);                                                                       \
         }                                                                                              \
         print_cmd(__VA_ARGS__);                                                                        \
@@ -226,8 +226,8 @@ next_request(Request *request)
         }
     } else {
         /* when calling next_request() without explicit @request, we always
-		 * forcefully clear @current_request. That one is certainly
-		 * handled already. */
+         * forcefully clear @current_request. That one is certainly
+         * handled already. */
         gl.current_request = NULL;
 
         request = g_queue_pop_head(gl.requests_waiting);
@@ -302,7 +302,7 @@ complete_script(ScriptInfo *script)
 
     if (wait) {
         /* for "wait" scripts, try to schedule the next blocking script.
-		 * If that is successful, return (as we must wait for its completion). */
+         * If that is successful, return (as we must wait for its completion). */
         if (dispatch_one_script(request))
             return;
     }
@@ -310,16 +310,16 @@ complete_script(ScriptInfo *script)
     nm_assert(!wait || gl.current_request == request);
 
     /* Try to complete the request. @request will be possibly free'd,
-	 * making @script and @request a dangling pointer. */
+     * making @script and @request a dangling pointer. */
     complete_request(request);
 
     if (!wait) {
         /* this was a "no-wait" script. We either completed the request,
-		 * or there is nothing to do. Especially, there is no need to
-		 * queue the next_request() -- because no-wait scripts don't block
-		 * requests. However, if this was the last "no-wait" script and
-		 * there are "wait" scripts ready to run, launch them.
-		 */
+         * or there is nothing to do. Especially, there is no need to
+         * queue the next_request() -- because no-wait scripts don't block
+         * requests. However, if this was the last "no-wait" script and
+         * there are "wait" scripts ready to run, launch them.
+         */
         if (gl.current_request == request && gl.current_request->num_scripts_nowait == 0) {
             if (dispatch_one_script(gl.current_request))
                 return;
@@ -329,14 +329,14 @@ complete_script(ScriptInfo *script)
             return;
     } else {
         /* if the script is a "wait" script, we already tried above to
-		 * dispatch the next script. As we didn't do that, it means we
-		 * just completed the last script of @request and we can continue
-		 * with the next request...
-		 *
-		 * Also, it cannot be that there is another request currently being
-		 * processed because only requests with "wait" scripts can become
-		 * @current_request. As there can only be one "wait" script running
-		 * at any time, it means complete_request() above completed @request. */
+         * dispatch the next script. As we didn't do that, it means we
+         * just completed the last script of @request and we can continue
+         * with the next request...
+         *
+         * Also, it cannot be that there is another request currently being
+         * processed because only requests with "wait" scripts can become
+         * @current_request. As there can only be one "wait" script running
+         * at any time, it means complete_request() above completed @request. */
         nm_assert(!gl.current_request);
     }
 
@@ -347,12 +347,12 @@ complete_script(ScriptInfo *script)
             return;
 
         /* Try to complete the request. It will be either completed
-		 * now, or when all pending "no-wait" scripts return. */
+         * now, or when all pending "no-wait" scripts return. */
         complete_request(request);
 
         /* We can immediately start next_request(), because our current
-		 * @request has obviously no more "wait" scripts either.
-		 * Repeat... */
+         * @request has obviously no more "wait" scripts either.
+         * Repeat... */
     }
 }
 
@@ -501,7 +501,7 @@ script_dispatch(ScriptInfo *script)
     script->dispatched = TRUE;
 
     /* Only for "hostname" action we coerce the interface name to "none". We don't
-	 * do so for "connectivity-check" action. */
+     * do so for "connectivity-check" action. */
 
     argv[0] = script->script;
     argv[1] = request->iface ?: (nm_streq(request->action, NMD_ACTION_HOSTNAME) ? "none" : "");
@@ -808,34 +808,34 @@ _method_call_action(GDBusMethodInvocation *invocation, GVariant *parameters)
 
     if (num_nowait < request->scripts->len) {
         /* The request has at least one wait script.
-		 * Try next_request() to schedule the request for
-		 * execution. This either enqueues the request or
-		 * sets it as gl.current_request. */
+         * Try next_request() to schedule the request for
+         * execution. This either enqueues the request or
+         * sets it as gl.current_request. */
         if (next_request(request)) {
             /* @request is now @current_request. Go ahead and
-			 * schedule the first wait script. */
+             * schedule the first wait script. */
             if (!dispatch_one_script(request)) {
                 /* If that fails, we might be already finished with the
-				 * request. Try complete_request(). */
+                 * request. Try complete_request(). */
                 complete_request(request);
 
                 if (next_request(NULL)) {
                     /* As @request was successfully scheduled as next_request(), there is no
-					 * other request in queue that can be scheduled afterwards. Assert against
-					 * that, but call next_request() to clear current_request. */
+                     * other request in queue that can be scheduled afterwards. Assert against
+                     * that, but call next_request() to clear current_request. */
                     g_assert_not_reached();
                 }
             }
         }
     } else {
         /* The request contains only no-wait scripts. Try to complete
-		 * the request right away (we might have failed to schedule any
-		 * of the scripts). It will be either completed now, or later
-		 * when the pending scripts return.
-		 * We don't enqueue it to gl.requests_waiting.
-		 * There is no need to handle next_request(), because @request is
-		 * not the current request anyway and does not interfere with requests
-		 * that have any "wait" scripts. */
+         * the request right away (we might have failed to schedule any
+         * of the scripts). It will be either completed now, or later
+         * when the pending scripts return.
+         * We don't enqueue it to gl.requests_waiting.
+         * There is no need to handle next_request(), because @request is
+         * not the current request anyway and does not interfere with requests
+         * that have any "wait" scripts. */
         complete_request(request);
     }
 }
@@ -1017,9 +1017,9 @@ main(int argc, char **argv)
     if (gl.debug) {
         if (!g_getenv("G_MESSAGES_DEBUG")) {
             /* we log our regular messages using g_debug() and g_info().
-			 * When we redirect glib logging to syslog, there is no problem.
-			 * But in "debug" mode, glib will no print these messages unless
-			 * we set G_MESSAGES_DEBUG. */
+             * When we redirect glib logging to syslog, there is no problem.
+             * But in "debug" mode, glib will no print these messages unless
+             * we set G_MESSAGES_DEBUG. */
             g_setenv("G_MESSAGES_DEBUG", "all", TRUE);
         }
     } else
@@ -1067,16 +1067,16 @@ done:
 
     if (gl.num_requests_pending > 0) {
         /* this only happens when we quit due to SIGTERM (not due to the idle timer).
-		 *
-		 * Log a warning about pending scripts.
-		 *
-		 * Maybe we should notify NetworkManager that these scripts are left in an unknown state.
-		 * But this is either a bug of a dispatcher script (not terminating in time).
-		 *
-		 * FIXME(shutdown): Also, currently NetworkManager behaves wrongly on shutdown.
-		 * Note that systemd would not terminate NetworkManager-dispatcher before NetworkManager.
-		 * It's NetworkManager's responsibility to keep running long enough so that all requests
-		 * can complete (with a watchdog timer, and a warning that user provided scripts hang). */
+         *
+         * Log a warning about pending scripts.
+         *
+         * Maybe we should notify NetworkManager that these scripts are left in an unknown state.
+         * But this is either a bug of a dispatcher script (not terminating in time).
+         *
+         * FIXME(shutdown): Also, currently NetworkManager behaves wrongly on shutdown.
+         * Note that systemd would not terminate NetworkManager-dispatcher before NetworkManager.
+         * It's NetworkManager's responsibility to keep running long enough so that all requests
+         * can complete (with a watchdog timer, and a warning that user provided scripts hang). */
         _LOG_X_W("exiting but there are still %u requests pending", gl.num_requests_pending);
     }
 

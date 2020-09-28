@@ -64,29 +64,29 @@ nm_utils_random_bytes(void *p, size_t n)
                     return TRUE;
 
                 /* no or partial read. There is not enough entropy.
-				 * Fill the rest reading from urandom, and remember that
-				 * some bits are not high quality. */
+                 * Fill the rest reading from urandom, and remember that
+                 * some bits are not high quality. */
                 nm_assert(r < n);
                 buf += r;
                 n -= r;
                 has_high_quality = FALSE;
 
                 /* At this point, we don't want to read /dev/urandom, because
-				 * the entropy pool is low (early boot?), and asking for more
-				 * entropy causes kernel messages to be logged.
-				 *
-				 * We use our fallback via GRand. Note that g_rand_new() also
-				 * tries to seed itself with data from /dev/urandom, but since
-				 * we reuse the instance, it shouldn't matter. */
+                 * the entropy pool is low (early boot?), and asking for more
+                 * entropy causes kernel messages to be logged.
+                 *
+                 * We use our fallback via GRand. Note that g_rand_new() also
+                 * tries to seed itself with data from /dev/urandom, but since
+                 * we reuse the instance, it shouldn't matter. */
                 avoid_urandom = TRUE;
             } else {
                 if (errno == ENOSYS) {
                     /* no support for getrandom(). We don't know whether
-					 * we urandom will give us good quality. Assume yes. */
+                     * we urandom will give us good quality. Assume yes. */
                     have_syscall = FALSE;
                 } else {
                     /* unknown error. We'll read urandom below, but we don't have
-					 * high-quality randomness. */
+                     * high-quality randomness. */
                     has_high_quality = FALSE;
                 }
             }
@@ -116,10 +116,10 @@ fd_open:
         int                            j;
 
         /* we failed to fill the bytes reading from urandom.
-		 * Fill the bits using GRand pseudo random numbers.
-		 *
-		 * We don't have good quality.
-		 */
+         * Fill the bits using GRand pseudo random numbers.
+         *
+         * We don't have good quality.
+         */
         has_high_quality = FALSE;
 
         if (G_UNLIKELY(!rand))

@@ -537,14 +537,14 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
     device_class->get_setting_type      = get_setting_type;
 
     /**
-	 * NMDeviceVxlan:carrier:
-	 *
-	 * Whether the device has carrier.
-	 *
-	 * Since: 1.2
-	 *
-	 * This property is not implemented yet, and the property is always FALSE.
-	 **/
+     * NMDeviceVxlan:carrier:
+     *
+     * Whether the device has carrier.
+     *
+     * Since: 1.2
+     *
+     * This property is not implemented yet, and the property is always FALSE.
+     **/
     obj_properties[PROP_CARRIER] = g_param_spec_boolean(NM_DEVICE_VXLAN_CARRIER,
                                                         "",
                                                         "",
@@ -552,12 +552,12 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceVxlan:parent:
-	 *
-	 * The devices's parent device.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceVxlan:parent:
+     *
+     * The devices's parent device.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_PARENT] = g_param_spec_object(NM_DEVICE_VXLAN_PARENT,
                                                       "",
                                                       "",
@@ -565,12 +565,12 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceVxlan:id:
-	 *
-	 * The device's VXLAN ID.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceVxlan:id:
+     *
+     * The device's VXLAN ID.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_ID] = g_param_spec_uint(NM_DEVICE_VXLAN_ID,
                                                 "",
                                                 "",
@@ -580,14 +580,14 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
                                                 G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceVxlan:group:
-	 *
-	 * The unicast destination IP address used in outgoing packets when the
-	 * destination link layer address is not known in the VXLAN device
-	 * forwarding database or the multicast IP address joined.
-	 *
-	 * Since: 1.2
-	 */
+     * NMDeviceVxlan:group:
+     *
+     * The unicast destination IP address used in outgoing packets when the
+     * destination link layer address is not known in the VXLAN device
+     * forwarding database or the multicast IP address joined.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_GROUP] = g_param_spec_string(NM_DEVICE_VXLAN_GROUP,
                                                      "",
                                                      "",
@@ -595,12 +595,12 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceVxlan:local:
-	 *
-	 * The source IP address to use in outgoing packets.
-	 *
-	 * Since: 1.2
-	 */
+     * NMDeviceVxlan:local:
+     *
+     * The source IP address to use in outgoing packets.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_LOCAL] = g_param_spec_string(NM_DEVICE_VXLAN_LOCAL,
                                                      "",
                                                      "",
@@ -608,12 +608,12 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceVxlan:tos:
-	 *
-	 * The TOS value to use in outgoing packets.
-	 *
-	 * Since: 1.2
-	 */
+     * NMDeviceVxlan:tos:
+     *
+     * The TOS value to use in outgoing packets.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_TOS] = g_param_spec_uchar(NM_DEVICE_VXLAN_TOS,
                                                   "",
                                                   "",
@@ -623,12 +623,12 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
                                                   G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceVxlan:ttl:
-	 *
-	 * The time-to-live value to use in outgoing packets.
-	 *
-	 * Since: 1.2
-	 */
+     * NMDeviceVxlan:ttl:
+     *
+     * The time-to-live value to use in outgoing packets.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_TTL] = g_param_spec_uchar(NM_DEVICE_VXLAN_TTL,
                                                   "",
                                                   "",
@@ -638,13 +638,13 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
                                                   G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceVxlan:learning:
-	 *
-	 * Whether unknown source link layer addresses and IP addresses are entered
-	 * into the VXLAN device forwarding database.
-	 *
-	 * Since: 1.2
-	 */
+     * NMDeviceVxlan:learning:
+     *
+     * Whether unknown source link layer addresses and IP addresses are entered
+     * into the VXLAN device forwarding database.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_LEARNING] = g_param_spec_boolean(NM_DEVICE_VXLAN_LEARNING,
                                                          "",
                                                          "",
@@ -652,12 +652,12 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
                                                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceVxlan:ageing:
-	 *
-	 * The lifetime in seconds of FDB entries learnt by the kernel.
-	 *
-	 * Since: 1.2
-	 */
+     * NMDeviceVxlan:ageing:
+     *
+     * The lifetime in seconds of FDB entries learnt by the kernel.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_AGEING] = g_param_spec_uint(NM_DEVICE_VXLAN_AGEING,
                                                     "",
                                                     "",
@@ -667,12 +667,12 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceVxlan:limit:
-	 *
-	 * The maximum number of entries that can be added to the forwarding table.
-	 *
-	 * Since: 1.2
-	 */
+     * NMDeviceVxlan:limit:
+     *
+     * The maximum number of entries that can be added to the forwarding table.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_LIMIT] = g_param_spec_uint(NM_DEVICE_VXLAN_LIMIT,
                                                    "",
                                                    "",
@@ -682,13 +682,13 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
                                                    G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceVxlan:dst-port:
-	 *
-	 * The UDP destination port used to communicate with the remote VXLAN tunnel
-	 * endpoint.
-	 *
-	 * Since: 1.2
-	 */
+     * NMDeviceVxlan:dst-port:
+     *
+     * The UDP destination port used to communicate with the remote VXLAN tunnel
+     * endpoint.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_DST_PORT] = g_param_spec_uint(NM_DEVICE_VXLAN_DST_PORT,
                                                       "",
                                                       "",
@@ -698,13 +698,13 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceVxlan:src-port-min:
-	 *
-	 * The minimum UDP source port used to communicate with the remote VXLAN
-	 * tunnel endpoint.
-	 *
-	 * Since: 1.2
-	 */
+     * NMDeviceVxlan:src-port-min:
+     *
+     * The minimum UDP source port used to communicate with the remote VXLAN
+     * tunnel endpoint.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_SRC_PORT_MIN] =
         g_param_spec_uint(NM_DEVICE_VXLAN_SRC_PORT_MIN,
                           "",
@@ -715,13 +715,13 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
                           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceVxlan:src-port-max:
-	 *
-	 * The maximum UDP source port used to communicate with the remote VXLAN
-	 * tunnel endpoint.
-	 *
-	 * Since: 1.2
-	 */
+     * NMDeviceVxlan:src-port-max:
+     *
+     * The maximum UDP source port used to communicate with the remote VXLAN
+     * tunnel endpoint.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_SRC_PORT_MAX] =
         g_param_spec_uint(NM_DEVICE_VXLAN_SRC_PORT_MAX,
                           "",
@@ -732,12 +732,12 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
                           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceVxlan:proxy:
-	 *
-	 * Whether ARP proxy is turned on.
-	 *
-	 * Since: 1.2
-	 */
+     * NMDeviceVxlan:proxy:
+     *
+     * Whether ARP proxy is turned on.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_PROXY] = g_param_spec_boolean(NM_DEVICE_VXLAN_PROXY,
                                                       "",
                                                       "",
@@ -745,12 +745,12 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceVxlan:rsc:
-	 *
-	 * Whether route short circuit is turned on.
-	 *
-	 * Since: 1.2
-	 */
+     * NMDeviceVxlan:rsc:
+     *
+     * Whether route short circuit is turned on.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_RSC] = g_param_spec_boolean(NM_DEVICE_VXLAN_RSC,
                                                     "",
                                                     "",
@@ -758,12 +758,12 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceVxlan:l2miss:
-	 *
-	 * Whether netlink LL ADDR miss notifications are generated.
-	 *
-	 * Since: 1.2
-	 */
+     * NMDeviceVxlan:l2miss:
+     *
+     * Whether netlink LL ADDR miss notifications are generated.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_L2MISS] = g_param_spec_boolean(NM_DEVICE_VXLAN_L2MISS,
                                                        "",
                                                        "",
@@ -771,12 +771,12 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
                                                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceVxlan:l3miss:
-	 *
-	 * Whether netlink IP ADDR miss notifications are generated.
-	 *
-	 * Since: 1.2
-	 */
+     * NMDeviceVxlan:l3miss:
+     *
+     * Whether netlink IP ADDR miss notifications are generated.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_L3MISS] = g_param_spec_boolean(NM_DEVICE_VXLAN_L3MISS,
                                                        "",
                                                        "",

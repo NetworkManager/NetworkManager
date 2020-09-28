@@ -252,8 +252,8 @@ nmc_bond_validate_mode(const char *mode, GError **error)
                                         NULL};
     if (nmc_string_to_uint(mode, TRUE, 0, 6, &mode_int)) {
         /* Translate bonding mode numbers to mode names:
-		 * https://www.kernel.org/doc/Documentation/networking/bonding.txt
-		 */
+         * https://www.kernel.org/doc/Documentation/networking/bonding.txt
+         */
         return valid_modes[mode_int];
     } else
         return nmc_string_is_valid(mode, valid_modes, error);
@@ -500,29 +500,29 @@ nmc_activation_get_effective_state(NMActiveConnection *active,
         if (!device || ac_reason != NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED
             || nm_device_get_active_connection(device) != active) {
             /* (1)
-			 * - we have no device,
-			 * - or, @ac_reason is specific
-			 * - or, @device no longer references the current @active
-			 * >> we complete with @ac_reason. */
+             * - we have no device,
+             * - or, @ac_reason is specific
+             * - or, @device no longer references the current @active
+             * >> we complete with @ac_reason. */
             *reason = gettext(nm_active_connection_state_reason_to_string(ac_reason));
         } else if (dev_state <= NM_DEVICE_STATE_DISCONNECTED
                    || dev_state >= NM_DEVICE_STATE_FAILED) {
             /* (2)
-			 * - not (1)
-			 * - and, the device is no longer in an activated state,
-			 * >> we complete with @dev_reason. */
+             * - not (1)
+             * - and, the device is no longer in an activated state,
+             * >> we complete with @dev_reason. */
             *reason = gettext(nmc_device_reason_to_string(dev_reason));
         } else {
             /* (3)
-			 * we wait for the device go disconnect. We will get a better
-			 * failure reason from the device (2). */
+             * we wait for the device go disconnect. We will get a better
+             * failure reason from the device (2). */
             return NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
         }
         break;
     case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:
         /* activating master connection does not automatically activate any slaves, so their
-		 * active connection state will not progress beyond ACTIVATING state.
-		 * Monitor the device instead. */
+         * active connection state will not progress beyond ACTIVATING state.
+         * Monitor the device instead. */
         if (device
             && (NM_IS_DEVICE_BOND(device) || NM_IS_DEVICE_TEAM(device)
                 || NM_IS_DEVICE_BRIDGE(device))
@@ -844,8 +844,8 @@ nmc_utils_parse_passwd_file(char *   contents /* will be modified */,
 
         if (nm_streq(l_setting, "vpn") && NM_STR_HAS_PREFIX(l_prop, "secret.")) {
             /* in 1.12.0, we wrongly required the VPN secrets to be named
-			 * "vpn.secret". It should be "vpn.secrets". Work around it
-			 * (rh#1628833). */
+             * "vpn.secret". It should be "vpn.secrets". Work around it
+             * (rh#1628833). */
             l_hash_key = g_strdup_printf("vpn.secrets.%s", &l_prop[NM_STRLEN("secret.")]);
         } else
             l_hash_key = g_strdup_printf("%s.%s", l_setting, l_prop);
@@ -866,8 +866,8 @@ nmc_utils_parse_passwd_file(char *   contents /* will be modified */,
 
         if (!g_utf8_validate(l_hash_val, -1, NULL)) {
             /* In some cases it might make sense to support binary secrets (like the WPA-PSK which has no
-			 * defined encoding. However, all API that follows can only handle UTF-8, and no mechanism
-			 * to escape the secrets. Reject non-UTF-8 early. */
+             * defined encoding. However, all API that follows can only handle UTF-8, and no mechanism
+             * to escape the secrets. Reject non-UTF-8 early. */
             NM_SET_OUT(out_error_line, contents_line);
             nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, _("secret is not UTF-8"));
             return NULL;

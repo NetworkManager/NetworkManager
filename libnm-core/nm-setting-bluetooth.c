@@ -142,9 +142,9 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
         if (!gsm && !cdma) {
             /* We can't return MISSING_SETTING here, because we don't know
-			 * whether to prefix the message with NM_SETTING_GSM_SETTING_NAME or
-			 * NM_SETTING_CDMA_SETTING_NAME.
-			 */
+             * whether to prefix the message with NM_SETTING_GSM_SETTING_NAME or
+             * NM_SETTING_CDMA_SETTING_NAME.
+             */
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_SETTING,
@@ -157,8 +157,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     }
     /* PANU doesn't need a 'type' setting since no further configuration
-	 * is required at the interface level.
-	 */
+     * is required at the interface level.
+     */
 
     /* NAP mode needs a bridge setting, and a bridge needs a name. */
     if (nm_streq(type, NM_SETTING_BLUETOOTH_TYPE_NAP)) {
@@ -296,10 +296,10 @@ nm_setting_bluetooth_class_init(NMSettingBluetoothClass *klass)
     setting_class->verify = verify;
 
     /**
-	 * NMSettingBluetooth:bdaddr:
-	 *
-	 * The Bluetooth address of the device.
-	 **/
+     * NMSettingBluetooth:bdaddr:
+     *
+     * The Bluetooth address of the device.
+     **/
     obj_properties[PROP_BDADDR] = g_param_spec_string(
         NM_SETTING_BLUETOOTH_BDADDR,
         "",
@@ -311,11 +311,11 @@ nm_setting_bluetooth_class_init(NMSettingBluetoothClass *klass)
                                  &nm_sett_info_propert_type_mac_address);
 
     /**
-	 * NMSettingBluetooth:type:
-	 *
-	 * Either "dun" for Dial-Up Networking connections or "panu" for Personal
-	 * Area Networking connections to devices supporting the NAP profile.
-	 **/
+     * NMSettingBluetooth:type:
+     *
+     * Either "dun" for Dial-Up Networking connections or "panu" for Personal
+     * Area Networking connections to devices supporting the NAP profile.
+     **/
     obj_properties[PROP_TYPE] = g_param_spec_string(NM_SETTING_BLUETOOTH_TYPE,
                                                     "",
                                                     "",

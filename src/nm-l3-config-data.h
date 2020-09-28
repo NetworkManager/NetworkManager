@@ -13,7 +13,7 @@ typedef enum {
     NM_L3_CONFIG_DAT_FLAGS_NONE = 0,
 
     /* if set, then the merge flag NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES gets
-	 * ignored during merge. */
+     * ignored during merge. */
     NM_L3_CONFIG_DAT_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES = (1ull << 0),
 
     NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY_4 = (1ull << 1),
@@ -28,18 +28,18 @@ typedef enum {
     NM_L3_CONFIG_ADD_FLAGS_NONE = 0,
 
     /* If the object does not yet exist, it will be added. If it already exists,
-	 * by default the object will be replaced. With this flag, the new object will
-	 * be merged with the existing one. */
+     * by default the object will be replaced. With this flag, the new object will
+     * be merged with the existing one. */
     NM_L3_CONFIG_ADD_FLAGS_MERGE = (1ull << 0),
 
     /* If the object does not yet exist, it will be added. If it already exists,
-	 * by default the object will be replaced. With this flag, the add will have
-	 * no effect and the existing object will be kept. */
+     * by default the object will be replaced. With this flag, the add will have
+     * no effect and the existing object will be kept. */
     NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE = (1ull << 1),
 
     /* A new object gets appended by default. If the object already exists,
-	 * by default it will not be moved. With APPEND-FORCE, we will always move
-	 * an existing object to the end of the list. */
+     * by default it will not be moved. With APPEND-FORCE, we will always move
+     * an existing object to the end of the list. */
     NM_L3_CONFIG_ADD_FLAGS_APPEND_FORCE = (1ull << 2),
 } NML3ConfigAddFlags;
 
@@ -165,11 +165,11 @@ static inline gboolean
 NM_IS_L3_CONFIG_DATA(const NML3ConfigData *self)
 {
     /* NML3ConfigData is not an NMObject/GObject, so we cannot ask which type it has.
-	 * This check here is really only useful for assertions, and there it is
-	 * enough to check whether the pointer is not NULL.
-	 *
-	 * Additionally, also call nm_l3_config_data_get_ifindex(), which does more
-	 * checks during nm_assert(). */
+     * This check here is really only useful for assertions, and there it is
+     * enough to check whether the pointer is not NULL.
+     *
+     * Additionally, also call nm_l3_config_data_get_ifindex(), which does more
+     * checks during nm_assert(). */
     nm_assert(nm_l3_config_data_get_ifindex(self) > 0);
     return !!self;
 }

@@ -263,9 +263,9 @@ add_8021x_secrets(RequestData *request, GPtrArray *secrets)
 
     if (NM_IN_STRSET(eap_method, "md5", "leap", "ttls", "peap")) {
         /* TTLS and PEAP are actually much more complicated, but this complication
-		 * is not visible here since we only care about phase2 authentication
-		 * (and don't even care of which one)
-		 */
+         * is not visible here since we only care about phase2 authentication
+         * (and don't even care of which one)
+         */
         secret = _secret_real_new_plain(NM_SECRET_AGENT_SECRET_TYPE_PROPERTY,
                                         _("Username"),
                                         NM_SETTING(s_8021x),
@@ -612,8 +612,8 @@ _auth_dialog_exited(GPid pid, int status, gpointer user_data)
 
 out:
     /* Try to fall back to the hardwired VPN support if the auth dialog fails.
-	 * We may eventually get rid of the whole hardwired secrets handling at some point,
-	 * when the auth helpers are goode enough.. */
+     * We may eventually get rid of the whole hardwired secrets handling at some point,
+     * when the auth helpers are goode enough.. */
     if (error && add_vpn_secrets(request, secrets, &message)) {
         g_clear_error(&error);
         if (!message) {
@@ -660,7 +660,7 @@ _auth_dialog_read_done(GObject *source_object, GAsyncResult *res, gpointer user_
         break;
     case 0:
         /* Done reading. Let's wait for the auth dialog to exit so that we're able to collect the status.
-		 * Remember we can be cancelled in between. */
+         * Remember we can be cancelled in between. */
         data->child_watch_id = g_child_watch_add(data->auth_dialog_pid, _auth_dialog_exited, data);
         data->cancellable    = g_object_ref(data->request->cancellable);
         data->cancellable_id =
@@ -688,7 +688,7 @@ _auth_dialog_write_done(GObject *source_object, GAsyncResult *res, gpointer user
     _nm_unused gs_free char *auth_dialog_request_free = user_data;
 
     /* We don't care about write errors. If there are any problems, the
-	 * reader shall notice. */
+     * reader shall notice. */
     g_output_stream_write_finish(auth_dialog_out, res, NULL);
     g_output_stream_close(auth_dialog_out, NULL, NULL);
 }
@@ -1214,7 +1214,7 @@ cancel_get_secrets(NMSecretAgentOld *agent, const char *connection_path, const c
     request    = g_hash_table_lookup(priv->requests, &request_id);
     if (!request) {
         /* this is really a bug of the caller (or us?). We cannot invoke a callback,
-		 * hence the caller cannot cleanup the request. */
+         * hence the caller cannot cleanup the request. */
         g_return_if_reached();
     }
 
@@ -1266,9 +1266,9 @@ nm_secret_agent_simple_enable(NMSecretAgentSimple *self, const char *path)
     gs_free char *        path_full = NULL;
 
     /* The path is only used to match a request_id with the current
-	 * connection. Since the request_id is "${CONNECTION_PATH}/${SETTING}",
-	 * add a trailing '/' to the path to match the full connection path.
-	 */
+     * connection. Since the request_id is "${CONNECTION_PATH}/${SETTING}",
+     * add a trailing '/' to the path to match the full connection path.
+     */
     path_full = path ? g_strdup_printf("%s/", path) : NULL;
 
     if (!nm_streq0(path_full, priv->path)) {
@@ -1365,27 +1365,27 @@ nm_secret_agent_simple_class_init(NMSecretAgentSimpleClass *klass)
     agent_class->delete_secrets     = delete_secrets;
 
     /**
-	 * NMSecretAgentSimple::request-secrets:
-	 * @agent: the #NMSecretAgentSimple
-	 * @request_id: request ID, to eventually pass to
-	 *   nm_secret_agent_simple_response().
-	 * @title: a title for the password dialog
-	 * @prompt: a prompt message for the password dialog
-	 * @secrets: (element-type #NMSecretAgentSimpleSecret): array of secrets
-	 *   being requested.
-	 *
-	 * Emitted when the agent requires secrets from the user.
-	 *
-	 * The application should ask user for the secrets. For example,
-	 * nmtui should create a password dialog (#NmtPasswordDialog)
-	 * with the given title and prompt, and an entry for each
-	 * element of @secrets. If any of the secrets already have a
-	 * <literal>value</literal> filled in, the corresponding entry
-	 * should be initialized to that value.
-	 *
-	 * When the dialog is complete, the app must call
-	 * nm_secret_agent_simple_response() with the results.
-	 */
+     * NMSecretAgentSimple::request-secrets:
+     * @agent: the #NMSecretAgentSimple
+     * @request_id: request ID, to eventually pass to
+     *   nm_secret_agent_simple_response().
+     * @title: a title for the password dialog
+     * @prompt: a prompt message for the password dialog
+     * @secrets: (element-type #NMSecretAgentSimpleSecret): array of secrets
+     *   being requested.
+     *
+     * Emitted when the agent requires secrets from the user.
+     *
+     * The application should ask user for the secrets. For example,
+     * nmtui should create a password dialog (#NmtPasswordDialog)
+     * with the given title and prompt, and an entry for each
+     * element of @secrets. If any of the secrets already have a
+     * <literal>value</literal> filled in, the corresponding entry
+     * should be initialized to that value.
+     *
+     * When the dialog is complete, the app must call
+     * nm_secret_agent_simple_response() with the results.
+     */
     signals[REQUEST_SECRETS] = g_signal_new(NM_SECRET_AGENT_SIMPLE_REQUEST_SECRETS,
                                             G_TYPE_FROM_CLASS(klass),
                                             0,

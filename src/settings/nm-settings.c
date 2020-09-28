@@ -156,9 +156,9 @@ static gboolean
 _storage_data_is_alive(StorageData *sd)
 {
     /* If the storage tracks a connection, it is considered alive.
-	 *
-	 * Meta-data storages are special: they never track a connection.
-	 * We need to check them specially to know when to drop them. */
+     *
+     * Meta-data storages are special: they never track a connection.
+     * We need to check them specially to know when to drop them. */
     return sd->connection || nm_settings_storage_is_meta_data_alive(sd->storage);
 }
 
@@ -250,28 +250,28 @@ _sett_conn_entry_storage_find_conflicting_storage(SettConnEntry *    sett_conn_e
 
     if (storage_check_including && nm_settings_storage_is_keyfile_run(storage_check_including)) {
         /* the storage we check against is in-memory. It always has highest
-		 * priority, so there can be no other conflicting storages. */
+         * priority, so there can be no other conflicting storages. */
         return NULL;
     }
 
     /* Finds the first (highest priority) storage that has a connection.
-	 * Note that due to tombstones (that have a high priority), the connection
-	 * may not actually be exposed. This is to find hidden/shadowed storages
-	 * that provide a connection. */
+     * Note that due to tombstones (that have a high priority), the connection
+     * may not actually be exposed. This is to find hidden/shadowed storages
+     * that provide a connection. */
     c_list_for_each_entry (sd, &sett_conn_entry->sd_lst_head, sd_lst) {
         nm_assert(NM_IS_SETTINGS_STORAGE(sd->storage));
 
         if (!sd->connection) {
             /* We only consider storages with connection. In particular,
-			 * tombstones are not relevant, because we can delete them to
-			 * resolve the conflict. */
+             * tombstones are not relevant, because we can delete them to
+             * resolve the conflict. */
             continue;
         }
 
         if (sd->storage == storage_check_including) {
             /* ok, the storage is the one we are about to check. All other
-			 * storages are lower priority, so there is no storage that hides
-			 * our storage_check_including. */
+             * storages are lower priority, so there is no storage that hides
+             * our storage_check_including. */
             return NULL;
         }
 
@@ -280,12 +280,12 @@ _sett_conn_entry_storage_find_conflicting_storage(SettConnEntry *    sett_conn_e
                                                plugins)
             <= 0) {
             /* the plugin of the existing storage is less important than @target_plugin.
-			 * We have no conflicting/hiding storage. */
+             * We have no conflicting/hiding storage. */
             return NULL;
         }
 
         /* Found. If we would add the profile to @target_plugin, then it would be hidden
-		 * by existing_storage. */
+         * by existing_storage. */
         return sd->storage;
     }
 
@@ -493,7 +493,7 @@ _startup_complete_check_is_ready(NMSettings *          self,
         if (nm_device_get_state(device) < NM_DEVICE_STATE_UNAVAILABLE
             || (!ignore_pending_actions && nm_device_has_pending_action(device))) {
             /* while a device is not yet available and still has a pending
-			 * action itself, it's not a suitable candidate. */
+             * action itself, it's not a suitable candidate. */
             continue;
         }
 
@@ -534,7 +534,7 @@ _startup_complete_check(NMSettings *self, gint64 now_msec)
 
     if (!priv->started) {
         /* before we are started there is no need to evaluate our list because
-		 * we are anyway blocking startup-complete. */
+         * we are anyway blocking startup-complete. */
         return;
     }
 
@@ -546,14 +546,14 @@ _startup_complete_check(NMSettings *self, gint64 now_msec)
     elapsed_msec = now_msec - priv->startup_complete_start_timestamp_msec;
 
     /* We search the entire list whether they all timed-out or found a compatible device.
-	 * We do that by appending elements that are ready to the end of the list, so that
-	 * we hopefully keep testing the elements that are ready already (and can shortcut
-	 * the test in common cases).
-	 *
-	 * Note that all profiles that we wait for need to have their dependencies satisfied
-	 * at the same time. For example, consider connection A is waiting for device A' which is ready.
-	 * Connection B waits for device B', which isn't ready. Once B'/B becomes ready, A/A' must
-	 * still be ready. Otherwise, we would wait for A/A' to become ready again. */
+     * We do that by appending elements that are ready to the end of the list, so that
+     * we hopefully keep testing the elements that are ready already (and can shortcut
+     * the test in common cases).
+     *
+     * Note that all profiles that we wait for need to have their dependencies satisfied
+     * at the same time. For example, consider connection A is waiting for device A' which is ready.
+     * Connection B waits for device B', which isn't ready. Once B'/B becomes ready, A/A' must
+     * still be ready. Otherwise, we would wait for A/A' to become ready again. */
     scd_not_ready = NULL;
     c_list_init(&ready_lst);
     c_list_for_each_entry_safe (scd, scd_safe, &priv->startup_complete_scd_lst_head, scd_lst) {
@@ -568,7 +568,7 @@ _startup_complete_check(NMSettings *self, gint64 now_msec)
 
 next_with_ready:
         /* this element is ready. We move it to a temporary list, so that we
-		 * can reorder the list (to next time evaluate the non-ready element first). */
+         * can reorder the list (to next time evaluate the non-ready element first). */
         nm_c_list_move_tail(&ready_lst, &scd->scd_lst);
     }
     c_list_splice(&priv->startup_complete_scd_lst_head, &ready_lst);
@@ -830,49 +830,49 @@ _sett_conn_entry_sds_update_cmp_ascending(const StorageData *sd_a,
     bool                      is_keyfile_run_b;
 
     /* Sort storages by priority. More important storages are sorted
-	 * higher (ascending sort). For example, if "sd_a" is more important than
-	 * "sd_b" (sd_a>sd_b), a positive integer is returned. */
+     * higher (ascending sort). For example, if "sd_a" is more important than
+     * "sd_b" (sd_a>sd_b), a positive integer is returned. */
 
     meta_data_a = nm_settings_storage_is_meta_data(sd_a->storage);
     meta_data_b = nm_settings_storage_is_meta_data(sd_b->storage);
 
     /* runtime storages (both connections and meta-data) are always more
-	 * important. */
+     * important. */
     is_keyfile_run_a = nm_settings_storage_is_keyfile_run(sd_a->storage);
     is_keyfile_run_b = nm_settings_storage_is_keyfile_run(sd_b->storage);
     if (is_keyfile_run_a != is_keyfile_run_b) {
         if (!meta_data_a && !meta_data_b) {
             /* Ok, both are non-meta-data providing actual profiles. But one is in /run and one is in
-			 * another storage. In this case we first honor whether one of the storages is explicitly
-			 * prioritized. The prioritize flag is an in-memory hack to overwrite relative priorities
-			 * contrary to what exists on-disk.
-			 *
-			 * This is done because when we use explicit D-Bus API (like update-connection)
-			 * to update a profile, then we really want to prioritize the candidate
-			 * despite having multiple other profiles.
-			 *
-			 * The example is if you have the same UUID twice in /run (one of them shadowed).
-			 * If you move it to disk, then one of the profiles gets deleted and re-created
-			 * on disk, but that on-disk profile must win against the remainging profile in
-			 * /run. At least until the next reload/restart. */
+             * another storage. In this case we first honor whether one of the storages is explicitly
+             * prioritized. The prioritize flag is an in-memory hack to overwrite relative priorities
+             * contrary to what exists on-disk.
+             *
+             * This is done because when we use explicit D-Bus API (like update-connection)
+             * to update a profile, then we really want to prioritize the candidate
+             * despite having multiple other profiles.
+             *
+             * The example is if you have the same UUID twice in /run (one of them shadowed).
+             * If you move it to disk, then one of the profiles gets deleted and re-created
+             * on disk, but that on-disk profile must win against the remainging profile in
+             * /run. At least until the next reload/restart. */
             NM_CMP_FIELD_UNSAFE(sd_a, sd_b, prioritize);
         }
 
         /* in-memory has higher priority. That is regardless of whether any of
-		 * them is meta-data/tombstone or a profile.
-		 *
-		 * That works, because if any of them are tombstones/metadata, then we are in full
-		 * control. There can by only one meta-data file, which is fully owned (and accordingly
-		 * created/deleted) by NetworkManager.
-		 *
-		 * The only case where this might not be right is if we have profiles
-		 * in /run that are shadowed. When we move such a profile to disk, then
-		 * a conflict might arise. That is handled by "prioritize" above! */
+         * them is meta-data/tombstone or a profile.
+         *
+         * That works, because if any of them are tombstones/metadata, then we are in full
+         * control. There can by only one meta-data file, which is fully owned (and accordingly
+         * created/deleted) by NetworkManager.
+         *
+         * The only case where this might not be right is if we have profiles
+         * in /run that are shadowed. When we move such a profile to disk, then
+         * a conflict might arise. That is handled by "prioritize" above! */
         NM_CMP_DIRECT(is_keyfile_run_a, is_keyfile_run_b);
     }
 
     /* After we determined that both profiles are either in /run or not,
-	 * tombstones are always more important than non-tombstones. */
+     * tombstones are always more important than non-tombstones. */
     NM_CMP_DIRECT(meta_data_a && meta_data_a->is_tombstone,
                   meta_data_b && meta_data_b->is_tombstone);
 
@@ -880,8 +880,8 @@ _sett_conn_entry_sds_update_cmp_ascending(const StorageData *sd_a,
     NM_CMP_FIELD_UNSAFE(sd_a, sd_b, prioritize);
 
     /* finally, compare the storages. This basically honors the timestamp
-	 * of the profile and the relative order of the source plugin (via the
-	 * @plugins list). */
+     * of the profile and the relative order of the source plugin (via the
+     * @plugins list). */
     return nm_settings_storage_cmp(sd_a->storage, sd_b->storage, plugins);
 }
 
@@ -906,20 +906,20 @@ _sett_conn_entry_sds_update(NMSettings *self, SettConnEntry *sett_conn_entry)
     nm_assert_storage_data_lst(&sett_conn_entry->dirty_sd_lst_head);
 
     /* we merge the dirty list with the previous list.
-	 *
-	 * The idea is:
-	 *
-	 *  - _connection_changed_track() appends events for the same UUID. Meaning:
-	 *    if the storage is new, it get appended (having lower priority).
-	 *    If it already exist and is an update for an event that we already
-	 *    track it, it keeps the list position in @dirty_sd_lst_head unchanged.
-	 *
-	 *  - during merge, we want to preserve the previous order (with higher
-	 *    priority first in the list).
-	 */
+     *
+     * The idea is:
+     *
+     *  - _connection_changed_track() appends events for the same UUID. Meaning:
+     *    if the storage is new, it get appended (having lower priority).
+     *    If it already exist and is an update for an event that we already
+     *    track it, it keeps the list position in @dirty_sd_lst_head unchanged.
+     *
+     *  - during merge, we want to preserve the previous order (with higher
+     *    priority first in the list).
+     */
 
     /* first go through all storages that we track and check whether they
-	 * got an update...*/
+     * got an update...*/
 
     reprioritize = FALSE;
     c_list_for_each_entry (sd, &sett_conn_entry->dirty_sd_lst_head, sd_lst) {
@@ -949,14 +949,14 @@ _sett_conn_entry_sds_update(NMSettings *self, SettConnEntry *sett_conn_entry)
     nm_assert_storage_data_lst(&sett_conn_entry->sd_lst_head);
 
     /* all remaining (so far unseen) dirty entries are appended to the merged list.
-	 * (append means lower priority). */
+     * (append means lower priority). */
 
     c_list_splice(&sett_conn_entry->sd_lst_head, &sett_conn_entry->dirty_sd_lst_head);
 
     nm_assert_storage_data_lst(&sett_conn_entry->sd_lst_head);
 
     /* we drop the entries that are no longer "alive" (meaning, they no longer
-	 * indicate a connection and are not a tombstone). */
+     * indicate a connection and are not a tombstone). */
     c_list_for_each_entry_safe (sd, sd_safe, &sett_conn_entry->sd_lst_head, sd_lst) {
         if (!_storage_data_is_alive(sd))
             _storage_data_destroy(sd);
@@ -1009,8 +1009,8 @@ _connection_changed_normalize_connection(NMSettingsStorage *storage,
                                           connection_cloned ? NULL : &connection_cloned,
                                           &error)) {
         /* this is most likely a bug in the plugin. It provided a connection that no longer verifies.
-		 * Well, I guess it could also happen when we merge @secrets_to_merge above. In any case
-		 * somewhere is a bug. */
+         * Well, I guess it could also happen when we merge @secrets_to_merge above. In any case
+         * somewhere is a bug. */
         _LOGT("storage[%s," NM_SETTINGS_STORAGE_PRINT_FMT
               "]: plugin provided an invalid connection: %s",
               uuid,
@@ -1093,7 +1093,7 @@ _connection_changed_update(NMSettings *                     self,
         nm_assert(!NM_FLAGS_HAS(sett_flags, NM_SETTINGS_CONNECTION_INT_FLAGS_UNSAVED));
 
         /* Profiles that don't reside in /run, are never nm-generated,
-		 * volatile, and external. */
+         * volatile, and external. */
         sett_mask |= (NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
                       | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
                       | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL);
@@ -1106,9 +1106,9 @@ _connection_changed_update(NMSettings *                     self,
 
     if (is_new) {
         /* FIXME(shutdown): The NMSettings instance can't be disposed
-		 * while there is any exported connection. Ideally we should
-		 * unexport all connections on NMSettings' disposal, but for now
-		 * leak @self on termination when there are connections alive. */
+         * while there is any exported connection. Ideally we should
+         * unexport all connections on NMSettings' disposal, but for now
+         * leak @self on termination when there are connections alive. */
         path = nm_dbus_object_export(NM_DBUS_OBJECT(sett_conn));
     } else
         path = nm_dbus_object_get_path(NM_DBUS_OBJECT(sett_conn));
@@ -1165,10 +1165,10 @@ _connection_changed_delete(NMSettings *          self,
           NM_SETTINGS_STORAGE_PRINT_ARG(storage));
 
     /* When the default wired sett_conn is removed (either deleted or saved to
-	 * a new persistent sett_conn by a plugin), write the MAC address of the
-	 * wired device to the config file and don't create a new default wired
-	 * sett_conn for that device again.
-	 */
+     * a new persistent sett_conn by a plugin), write the MAC address of the
+     * wired device to the config file and don't create a new default wired
+     * sett_conn for that device again.
+     */
     device = nm_settings_connection_default_wired_get_device(sett_conn);
     if (device)
         default_wired_clear_tag(self, device, sett_conn, allow_add_to_no_auto_default);
@@ -1382,7 +1382,7 @@ _connection_changed_track(NMSettings *       self,
     }
 
     /* see _sett_conn_entry_sds_update() for why we append the new events
-	 * and leave existing ones at their position. */
+     * and leave existing ones at their position. */
     sd = _storage_data_find_in_lst(&sett_conn_entry->dirty_sd_lst_head, storage);
     if (sd)
         nm_g_object_ref_set(&sd->connection, connection);
@@ -1482,13 +1482,13 @@ _add_connection_to_first_plugin(NMSettings *                 self,
                                                                                     priv->plugins);
             if (conflicting_storage) {
                 /* we have a connection provided by a plugin with higher priority than the one
-				 * we would want to add the connection. We cannot do that, because doing so
-				 * would result in adding a connection that gets hidden by the existing profile.
-				 * Also, since we test the plugins in order of priority, all following plugins
-				 * are unsuitable.
-				 *
-				 * Multiple connection plugins are so cumbersome, especially if they are unable
-				 * to add the connection. I suggest to disable all plugins except keyfile. */
+                 * we would want to add the connection. We cannot do that, because doing so
+                 * would result in adding a connection that gets hidden by the existing profile.
+                 * Also, since we test the plugins in order of priority, all following plugins
+                 * are unsuitable.
+                 *
+                 * Multiple connection plugins are so cumbersome, especially if they are unable
+                 * to add the connection. I suggest to disable all plugins except keyfile. */
                 _LOGT("add-connection: failed to add %s/'%s': there is an existing "
                       "storage " NM_SETTINGS_STORAGE_PRINT_FMT " with higher priority",
                       nm_connection_get_uuid(new_connection),
@@ -1766,10 +1766,10 @@ nm_settings_add_connection(NMSettings *                    self,
                 NULL));
             if (shadowed_storage) {
                 /* We have a nmmeta tombstone that indicates that a storage is shadowed.
-				 *
-				 * This happens when deleting a in-memory profile that was decoupled from
-				 * the persistent storage with NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED.
-				 * We need to take over this storage again... */
+                 *
+                 * This happens when deleting a in-memory profile that was decoupled from
+                 * the persistent storage with NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED.
+                 * We need to take over this storage again... */
                 break;
             }
         }
@@ -1785,10 +1785,10 @@ nm_settings_add_connection(NMSettings *                    self,
             priv->plugins);
         if (conflicting_storage) {
             /* We cannot add the profile as @shadowed_storage, because there is another, existing storage
-			 * that would hide it. Just add it as new storage. In general, this leads to duplication of profiles,
-			 * but the circumstances where this happens are very exotic (you need at least one additional settings
-			 * plugin, then going through the paths of making shadowed_storage in-memory-detached and delete it,
-			 * and finally adding the conflicting storage outside of NM and restart/reload). */
+             * that would hide it. Just add it as new storage. In general, this leads to duplication of profiles,
+             * but the circumstances where this happens are very exotic (you need at least one additional settings
+             * plugin, then going through the paths of making shadowed_storage in-memory-detached and delete it,
+             * and finally adding the conflicting storage outside of NM and restart/reload). */
             _LOGT("ignore shadowed storage " NM_SETTINGS_STORAGE_PRINT_FMT
                   " due to conflicting storage " NM_SETTINGS_STORAGE_PRINT_FMT,
                   NM_SETTINGS_STORAGE_PRINT_ARG(shadowed_storage),
@@ -1829,8 +1829,8 @@ again_add_connection:
         if (!success) {
             if (!NMS_IS_KEYFILE_STORAGE(update_storage)) {
                 /* hm, the intended storage is not keyfile (it's ifcfg-rh). This settings
-				 * plugin may not support the new connection. So step back and retry adding
-				 * the profile anew. */
+                 * plugin may not support the new connection. So step back and retry adding
+                 * the profile anew. */
                 _LOGT("failure to add profile as existing storage \"%s\": %s",
                       nm_settings_storage_get_filename(update_storage),
                       local->message);
@@ -1894,8 +1894,8 @@ again_delete_tombstone:
                                                      &new_tombstone_storage,
                                                      NULL)) {
             /* Ups, something went wrong. We really need to get rid of the tombstone. At least
-			 * forget about it in-memory. Upong next restart/reload, this might be reverted
-			 * however :( .*/
+             * forget about it in-memory. Upong next restart/reload, this might be reverted
+             * however :( .*/
             if (!simulate) {
                 simulate = TRUE;
                 goto again_delete_tombstone;
@@ -2012,9 +2012,9 @@ nm_settings_update_connection(NMSettings *                     self,
         NMDevice *device;
 
         /* The connection has been changed by the user, it should no longer be
-		 * considered a default wired connection, and should no longer affect
-		 * the no-auto-default configuration option.
-		 */
+         * considered a default wired connection, and should no longer affect
+         * the no-auto-default configuration option.
+         */
         device = nm_settings_connection_default_wired_get_device(sett_conn);
         if (device) {
             nm_assert(cur_in_memory);
@@ -2025,11 +2025,11 @@ nm_settings_update_connection(NMSettings *                     self,
 
             if (NM_IN_SET(persist_mode, NM_SETTINGS_CONNECTION_PERSIST_MODE_NO_PERSIST)) {
                 /* making a default-wired-connection a regular connection implies persisting
-				 * it to disk (unless specified differently).
-				 *
-				 * Actually, this line is probably unreached, because we should not use
-				 * NM_SETTINGS_CONNECTION_PERSIST_MODE_NO_PERSIST to toggle the nm-generated
-				 * flag. */
+                 * it to disk (unless specified differently).
+                 *
+                 * Actually, this line is probably unreached, because we should not use
+                 * NM_SETTINGS_CONNECTION_PERSIST_MODE_NO_PERSIST to toggle the nm-generated
+                 * flag. */
                 nm_assert_not_reached();
                 persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK;
             }
@@ -2046,8 +2046,8 @@ nm_settings_update_connection(NMSettings *                     self,
                             | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
                             | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL)) {
         /* we update the nm-generated/volatile setting of a profile (which is inherently
-		 * in-memory. The caller did not request to persist this to disk, however we need
-		 * to store the flags in run. */
+         * in-memory. The caller did not request to persist this to disk, however we need
+         * to store the flags in run. */
         nm_assert(cur_in_memory);
         persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY;
     }
@@ -2066,13 +2066,13 @@ nm_settings_update_connection(NMSettings *                     self,
 
     if (!new_in_memory) {
         /* Persistent connections cannot be volatile nor nm-generated.
-		 *
-		 * That is obviously true for volatile, as it is enforced by Update2() API.
-		 *
-		 * For nm-generated profiles also, because the nm-generated flag is only stored
-		 * for in-memory profiles. If we would persist the profile to /etc it would loose
-		 * the nm-generated flag after restart/reload, and that cannot be right. If a profile
-		 * ends up on disk, the information who created it gets lost. */
+         *
+         * That is obviously true for volatile, as it is enforced by Update2() API.
+         *
+         * For nm-generated profiles also, because the nm-generated flag is only stored
+         * for in-memory profiles. If we would persist the profile to /etc it would loose
+         * the nm-generated flag after restart/reload, and that cannot be right. If a profile
+         * ends up on disk, the information who created it gets lost. */
         nm_assert(!NM_FLAGS_ANY(sett_flags,
                                 NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
                                     | NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
@@ -2134,7 +2134,7 @@ nm_settings_update_connection(NMSettings *                     self,
             }
         } else if (nm_settings_storage_is_keyfile_lib(cur_storage)) {
             /* the profile is a keyfile in /usr/lib. It cannot be overwritten, we must migrate it
-			 * from /usr/lib to /etc. */
+             * from /usr/lib to /etc. */
         } else
             update_storage = cur_storage;
 
@@ -2253,7 +2253,7 @@ nm_settings_update_connection(NMSettings *                     self,
                   NM_PRINT_FMT_QUOTED(filename, " (file \"", filename, "\")", ""),
                   local->message);
             /* there is no aborting back form this. We must get rid of the connection and
-			 * cannot do better than log a message. Proceed, but remember to write tombstones. */
+             * cannot do better than log a message. Proceed, but remember to write tombstones. */
             if (nm_settings_storage_is_keyfile_run(cur_storage))
                 tombstone_in_memory = TRUE;
             else
@@ -2344,7 +2344,7 @@ nm_settings_delete_connection(NMSettings *          self,
                   local->message);
             g_clear_error(&local);
             /* there is no aborting back form this. We must get rid of the connection and
-			 * cannot do better than log a message. Proceed, but remember to write tombstones. */
+             * cannot do better than log a message. Proceed, but remember to write tombstones. */
             if (nm_settings_storage_is_keyfile_run(cur_storage))
                 tombstone_in_memory = TRUE;
             else
@@ -2363,7 +2363,7 @@ nm_settings_delete_connection(NMSettings *          self,
 
             if (sd->storage == shadowed_storage_unowned) {
                 /* this only happens if we leak a profile on disk after NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_DETACHED.
-				 * We need to write a tombstone and remember the shadowed-storage. */
+                 * We need to write a tombstone and remember the shadowed-storage. */
                 tombstone_in_memory = TRUE;
                 new_shadowed_storage_filename =
                     nm_settings_storage_get_filename(shadowed_storage_unowned);
@@ -2402,9 +2402,9 @@ send_agent_owned_secrets(NMSettings *self, NMSettingsConnection *sett_conn, NMAu
     gs_unref_object NMConnection *for_agent = NULL;
 
     /* Dupe the connection so we can clear out non-agent-owned secrets,
-	 * as agent-owned secrets are the only ones we send back to be saved.
-	 * Only send secrets to agents of the same UID that called update too.
-	 */
+     * as agent-owned secrets are the only ones we send back to be saved.
+     * Only send secrets to agents of the same UID that called update too.
+     */
     for_agent = nm_simple_connection_new_clone(nm_settings_connection_get_connection(sett_conn));
     _nm_connection_clear_secrets_by_secret_flags(for_agent, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
     nm_agent_manager_save_secrets(priv->agent_mgr,
@@ -2453,9 +2453,9 @@ pk_add_cb(NMAuthChain *chain, GDBusMethodInvocation *context, gpointer user_data
                                    &error);
 
         /* The callback may remove the connection from the settings manager (e.g.
-		 * because it's found to be incompatible with the device on AddAndActivate).
-		 * But we need to keep it alive for a bit longer, precisely to check wehther
-		 * it's still known to the setting manager. */
+         * because it's found to be incompatible with the device on AddAndActivate).
+         * But we need to keep it alive for a bit longer, precisely to check wehther
+         * it's still known to the setting manager. */
         nm_g_object_ref(added);
     }
 
@@ -2511,9 +2511,9 @@ nm_settings_add_connection_dbus(NMSettings *                    self,
         goto done;
 
     /* If the caller is the only user in the connection's permissions, then
-	 * we use the 'modify.own' permission instead of 'modify.system'.  If the
-	 * request affects more than just the caller, require 'modify.system'.
-	 */
+     * we use the 'modify.own' permission instead of 'modify.system'.  If the
+     * request affects more than just the caller, require 'modify.system'.
+     */
     s_con = nm_connection_get_setting_connection(connection);
     nm_assert(s_con);
     if (nm_setting_connection_get_num_permissions(s_con) == 1)
@@ -2768,9 +2768,9 @@ impl_settings_load_connections(NMDBusObject *                     obj,
     g_variant_get(parameters, "(^a&s)", &filenames);
 
     /* The permission is already enforced by the D-Bus daemon, but we ensure
-	 * that the caller is still alive so that clients are forced to wait and
-	 * we'll be able to switch to polkit without breaking behavior.
-	 */
+     * that the caller is still alive so that clients are forced to wait and
+     * we'll be able to switch to polkit without breaking behavior.
+     */
     if (!nm_dbus_manager_ensure_uid(nm_dbus_object_get_manager(obj),
                                     invocation,
                                     G_MAXULONG,
@@ -2858,9 +2858,9 @@ impl_settings_reload_connections(NMDBusObject *                     obj,
     NMSettings *self = NM_SETTINGS(obj);
 
     /* The permission is already enforced by the D-Bus daemon, but we ensure
-	 * that the caller is still alive so that clients are forced to wait and
-	 * we'll be able to switch to polkit without breaking behavior.
-	 */
+     * that the caller is still alive so that clients are forced to wait and
+     * we'll be able to switch to polkit without breaking behavior.
+     */
     if (!nm_dbus_manager_ensure_uid(nm_dbus_object_get_manager(obj),
                                     invocation,
                                     G_MAXULONG,
@@ -2888,9 +2888,9 @@ _clear_connections_cached_list(NMSettingsPrivate *priv)
 
 #if NM_MORE_ASSERTS
     /* set the pointer to a bogus value. This makes it more apparent
-	 * if somebody has a reference to the cached list and still uses
-	 * it. That is a bug, this code just tries to make it blow up
-	 * more eagerly. */
+     * if somebody has a reference to the cached list and still uses
+     * it. That is a bug, this code just tries to make it blow up
+     * more eagerly. */
     memset(priv->connections_cached_list,
            0x43,
            sizeof(NMSettingsConnection *) * (priv->connections_len + 1));
@@ -3223,7 +3223,7 @@ add_plugin_load_file(NMSettings *self, const char *pname, GError **error)
     }
 
     /* after accessing the plugin we cannot unload it anymore, because the glib
-	 * types cannot be properly unregistered. */
+     * types cannot be properly unregistered. */
     g_module_make_resident(module);
 
     plugin = (*factory_func)();
@@ -3278,7 +3278,7 @@ load_plugins(NMSettings *self, const char *const *plugins, GError **error)
 
         if (nm_utils_strv_find_first((char **) plugins, iter - plugins, pname) >= 0) {
             /* the plugin is already mentioned in the list previously.
-			 * Don't load a duplicate. */
+             * Don't load a duplicate. */
             continue;
         }
 
@@ -3466,15 +3466,15 @@ device_realized(NMDevice *device, GParamSpec *pspec, NMSettings *self)
     priv = NM_SETTINGS_GET_PRIVATE(self);
 
     /* If the device isn't managed or it already has a default wired connection,
-	 * ignore it.
-	 */
+     * ignore it.
+     */
     if (!NM_DEVICE_GET_CLASS(device)->new_default_connection
         || !nm_device_get_managed(device, FALSE)
         || g_object_get_qdata(G_OBJECT(device), _default_wired_connection_blocked_quark()))
         return;
 
     /* we only check once whether to create the auto-default connection. If we reach this point,
-	 * we mark the creation of the default-wired-connection as blocked. */
+     * we mark the creation of the default-wired-connection as blocked. */
     g_object_set_qdata(G_OBJECT(device), _default_wired_connection_blocked_quark(), device);
 
     if (nm_config_get_no_auto_default_for_device(priv->config, device)) {
@@ -3536,7 +3536,7 @@ nm_settings_device_added(NMSettings *self, NMDevice *device)
         device_realized(device, NULL, self);
     else {
         /* FIXME(shutdown): we need to disconnect this signal handler during
-		 *   shutdown. */
+         *   shutdown. */
         g_signal_connect_after(device,
                                "notify::" NM_DEVICE_REAL,
                                G_CALLBACK(device_realized),
@@ -3556,8 +3556,8 @@ nm_settings_device_removed(NMSettings *self, NMDevice *device, gboolean quitting
         default_wired_clear_tag(self, device, connection, FALSE);
 
         /* Don't delete the default wired connection on shutdown, so that it
-		 * remains up and can be assumed if NM starts again.
-		 */
+         * remains up and can be assumed if NM starts again.
+         */
         if (quitting == FALSE)
             nm_settings_connection_delete(connection, TRUE);
     }
@@ -3585,13 +3585,13 @@ again:
                                          is_visible);
         if (generation != priv->connections_generation) {
             /* the cached list was invalidated. Start again.
-			 *
-			 * Note that nm_settings_connection_recheck_visibility() will do nothing
-			 * if the visibility didn't change (including emitting no signals,
-			 * and not invalidating the list).
-			 *
-			 * Hence, for this to be an endless loop, the settings would have
-			 * to constantly change the visibility flag and also invalidate the list. */
+             *
+             * Note that nm_settings_connection_recheck_visibility() will do nothing
+             * if the visibility didn't change (including emitting no signals,
+             * and not invalidating the list).
+             *
+             * Hence, for this to be an endless loop, the settings would have
+             * to constantly change the visibility flag and also invalidate the list. */
             goto again;
         }
     }
@@ -3776,9 +3776,9 @@ nm_settings_start(NMSettings *self, GError **error)
     _startup_complete_check(self, 0);
 
     /* FIXME(shutdown): we also need a nm_settings_stop() during shutdown.
-	 *
-	 * In particular, we need to remove all in-memory keyfiles from /run that are nm-generated.
-	 * alternatively, the nm-generated flag must also be persisted and loaded to /run. */
+     *
+     * In particular, we need to remove all in-memory keyfiles from /run that are nm-generated.
+     * alternatively, the nm-generated flag must also be persisted and loaded to /run. */
 
     return TRUE;
 }

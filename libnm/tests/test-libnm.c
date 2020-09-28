@@ -2743,8 +2743,8 @@ test_types(void)
             continue;
 
         /* We only test parts of the types, and avoid initializing all the types.
-		 * That is so that other unit tests in this process randomly run with either
-		 * the class instance already initialized or not. */
+         * That is so that other unit tests in this process randomly run with either
+         * the class instance already initialized or not. */
         if ((nmtst_get_rand_uint() % 5) == 0) {
             klass = (klass_unref = g_type_class_ref(gtype));
             g_assert(klass);
@@ -2837,8 +2837,8 @@ test_nml_dbus_meta(void)
             g_assert(g_type_is_a(gtype, NM_TYPE_OBJECT));
 
         /* We only test parts of the types, and avoid initializing all the types.
-		 * That is so that other unit tests in this process randomly run with either
-		 * the class instance already initialized or not. */
+         * That is so that other unit tests in this process randomly run with either
+         * the class instance already initialized or not. */
         if ((nmtst_get_rand_uint() % 5) == 0) {
             klass = (klass_unref = g_type_class_ref(gtype));
             g_assert(klass);
@@ -3062,7 +3062,7 @@ check_dbus_properties:
 
                 if (!nm_utils_g_param_spec_is_default(pspec)) {
                     /* We expect our properties to have a default value of zero/NULL.
-					 * Except those whitelisted here: */
+                     * Except those whitelisted here: */
                     if ((mif == &_nml_dbus_meta_iface_nm_accesspoint
                          && nm_streq(pspec->name, NM_ACCESS_POINT_LAST_SEEN))
                         || (mif == &_nml_dbus_meta_iface_nm_device_vxlan
@@ -3319,7 +3319,7 @@ test_dbus_meta_types(void)
     guint i;
 
     /* These iface<->gtype associations are copied from "nm-client.c"'s obj_nm_for_gdbus_object().
-	 * This is redundant to the meta-data, still check that the meta data matches. */
+     * This is redundant to the meta-data, still check that the meta data matches. */
     for (i = 0; i < G_N_ELEMENTS(list); i++) {
         const struct list_data *d = &list[i];
         const NMLDBusMetaIface *meta_iface;

@@ -344,8 +344,8 @@ is_ibft_vlan_device(GHashTable *nic)
 
     if (s_vlan_id) {
         /* VLAN 0 is normally a valid VLAN ID, but in the iBFT case it
-		 * means "no VLAN".
-		 */
+         * means "no VLAN".
+         */
         if (_nm_utils_ascii_str_to_int64(s_vlan_id, 10, 1, 4095, -1) != -1)
             return TRUE;
     }
@@ -364,8 +364,8 @@ vlan_setting_add_from_block(GHashTable *nic, NMConnection *connection, GError **
     g_assert(connection);
 
     /* This won't fail since this function shouldn't be called unless the
-	 * iBFT VLAN ID exists and is > 0.
-	 */
+     * iBFT VLAN ID exists and is > 0.
+     */
     vlan_id_str = (const char *) g_hash_table_lookup(nic, "vlan");
     g_assert(vlan_id_str);
 

@@ -195,19 +195,19 @@ nmt_newt_checkbox_class_init(NmtNewtCheckboxClass *checkbox_class)
     component_class->build_component = nmt_newt_checkbox_build_component;
 
     /**
-	 * NmtNewtCheckbox:label:
-	 *
-	 * The checkbox's label
-	 */
+     * NmtNewtCheckbox:label:
+     *
+     * The checkbox's label
+     */
     g_object_class_install_property(
         object_class,
         PROP_LABEL,
         g_param_spec_string("label", "", "", NULL, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtCheckbox:active:
-	 *
-	 * The checkbox's checked state
-	 */
+     * NmtNewtCheckbox:active:
+     *
+     * The checkbox's checked state
+     */
     g_object_class_install_property(
         object_class,
         PROP_ACTIVE,

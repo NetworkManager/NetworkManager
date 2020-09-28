@@ -1656,9 +1656,9 @@ test_write_wired_8021x_tls_connection_path(void)
     keyfile = keyfile_load_from_file(testfile);
 
     /* Depending on whether this test is being run from 'make check' or
-	 * 'make distcheck' we might be using relative paths (check) or
-	 * absolute ones (distcheck).
-	 */
+     * 'make distcheck' we might be using relative paths (check) or
+     * absolute ones (distcheck).
+     */
     tmp2 = g_path_get_dirname(testfile);
     if (g_strcmp0(tmp2, TEST_KEYFILES_DIR) == 0)
         relative = TRUE;

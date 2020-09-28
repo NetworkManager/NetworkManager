@@ -264,7 +264,7 @@ _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer u
         if (line_len == 0)
             continue;
         /* Truncate the string. It's safe to do, because we own @response_data an it has an
-		 * extra NULL character after the buffer. */
+         * extra NULL character after the buffer. */
         ((char *) line)[line_len] = '\0';
 
         if (line[line_len - 1] == '/')
@@ -432,7 +432,7 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
             continue;
 
         /* Truncate the string. It's safe to do, because we own @response_data an it has an
-		 * extra NULL character after the buffer. */
+         * extra NULL character after the buffer. */
         ((char *) line)[line_len] = '\0';
 
         if (line[line_len - 1] == '/' && line_len != 0)

@@ -129,16 +129,16 @@ nl80211_send_and_recv(NMWifiUtilsNl80211 *self,
         return err;
 
     /* Loop until one of our NL callbacks says we're done; on success
-	 * done will be 1, on error it will be < 0.
-	 */
+     * done will be 1, on error it will be < 0.
+     */
     while (!done) {
         err = nl_recvmsgs(self->nl_sock, &cb);
         if (err < 0 && err != -EAGAIN) {
             /* Kernel scan list can change while we are dumping it, as new scan
-			 * results from H/W can arrive. BSS info is assured to be consistent
-			 * and we don't need consistent view of whole scan list. Hence do
-			 * not warn on DUMP_INTR error for get scan command.
-			 */
+             * results from H/W can arrive. BSS info is assured to be consistent
+             * and we don't need consistent view of whole scan list. Hence do
+             * not warn on DUMP_INTR error for get scan command.
+             */
             if (err == -NME_NL_DUMP_INTR
                 && genlmsg_hdr(nlmsg_hdr(msg))->cmd == NL80211_CMD_GET_SCAN)
                 break;
@@ -652,8 +652,8 @@ wifi_nl80211_indicate_addressing_running(NMWifiUtils *data, gboolean running)
                                     : 99 /* NL80211_CMD_CRIT_PROTOCOL_STOP */,
                             0);
     /* Despite the DHCP name, we're using this for any type of IP addressing,
-	 * DHCPv4, DHCPv6, and IPv6 SLAAC.
-	 */
+     * DHCPv4, DHCPv6, and IPv6 SLAAC.
+     */
     NLA_PUT_U16(msg, 179 /* NL80211_ATTR_CRIT_PROT_ID */, 1 /* NL80211_CRIT_PROTO_DHCP */);
     if (running) {
         /* Give DHCP 5 seconds to complete */
@@ -756,11 +756,11 @@ nl80211_wiphy_info_handler(struct nl_msg *msg, void *arg)
             case NL80211_CMD_CONNECT:
             case NL80211_CMD_AUTHENTICATE:
                 /* Only devices that support CONNECT or AUTH actually support
-				 * 802.11, unlike say ipw2x00 (up to at least kernel 3.4) which
-				 * has minimal info support, but no actual command support.
-				 * This check mirrors what wpa_supplicant does to determine
-				 * whether or not to use the nl80211 driver.
-				 */
+                 * 802.11, unlike say ipw2x00 (up to at least kernel 3.4) which
+                 * has minimal info support, but no actual command support.
+                 * This check mirrors what wpa_supplicant does to determine
+                 * whether or not to use the nl80211 driver.
+                 */
                 info->supported = TRUE;
                 break;
             default:

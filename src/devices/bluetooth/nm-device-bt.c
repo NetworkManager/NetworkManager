@@ -472,8 +472,8 @@ modem_auth_requested(NMModem *modem, gpointer user_data)
     NMDevice *device = NM_DEVICE(user_data);
 
     /* Auth requests (PIN, PAP/CHAP passwords, etc) only get handled
-	 * during activation.
-	 */
+     * during activation.
+     */
     if (!nm_device_is_activating(device))
         return;
 
@@ -514,9 +514,9 @@ modem_prepare_result(NMModem *modem, gboolean success, guint i_reason, gpointer 
     if (!success) {
         if (nm_device_state_reason_check(reason) == NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT) {
             /* If the connect failed because the SIM PIN was wrong don't allow
-			 * the device to be auto-activated anymore, which would risk locking
-			 * the SIM if the incorrect PIN continues to be used.
-			 */
+             * the device to be auto-activated anymore, which would risk locking
+             * the SIM if the incorrect PIN continues to be used.
+             */
             nm_device_autoconnect_blocked_set(NM_DEVICE(self),
                                               NM_DEVICE_AUTOCONNECT_BLOCKED_WRONG_PIN);
         }
@@ -541,9 +541,9 @@ device_state_changed(NMDevice *          device,
         nm_modem_device_state_changed(priv->modem, new_state, old_state);
 
     /* Need to recheck available connections whenever MM appears or disappears,
-	 * since the device could be both DUN and NAP capable and thus may not
-	 * change state (which rechecks available connections) when MM comes and goes.
-	 */
+     * since the device could be both DUN and NAP capable and thus may not
+     * change state (which rechecks available connections) when MM comes and goes.
+     */
     if (priv->mm_running && NM_FLAGS_HAS(priv->capabilities, NM_BT_CAPABILITY_DUN))
         nm_device_recheck_available_connections(device);
 }
@@ -611,8 +611,8 @@ modem_state_cb(NMModem *modem, int new_state_i, int old_state_i, gpointer user_d
 
     if (new_state <= NM_MODEM_STATE_DISABLING && old_state > NM_MODEM_STATE_DISABLING) {
         /* Will be called whenever something external to NM disables the
-		 * modem directly through ModemManager.
-		 */
+         * modem directly through ModemManager.
+         */
         if (nm_device_is_activating(device) || dev_state == NM_DEVICE_STATE_ACTIVATED) {
             nm_device_state_changed(device,
                                     NM_DEVICE_STATE_DISCONNECTED,
@@ -624,7 +624,7 @@ modem_state_cb(NMModem *modem, int new_state_i, int old_state_i, gpointer user_d
     if (new_state < NM_MODEM_STATE_CONNECTING && old_state >= NM_MODEM_STATE_CONNECTING
         && dev_state >= NM_DEVICE_STATE_NEED_AUTH && dev_state <= NM_DEVICE_STATE_ACTIVATED) {
         /* Fail the device if the modem disconnects unexpectedly while the
-		 * device is activating/activated. */
+         * device is activating/activated. */
         nm_device_state_changed(device,
                                 NM_DEVICE_STATE_FAILED,
                                 NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER);
@@ -673,8 +673,8 @@ modem_try_claim(NMDeviceBt *self, NMModem *modem)
         return FALSE;
 
     /* Can only accept the modem in stage1, but since the interface matched
-	 * what we were expecting, don't let anything else claim the modem either.
-	 */
+     * what we were expecting, don't let anything else claim the modem either.
+     */
     state = nm_device_get_state(NM_DEVICE(self));
     if (state != NM_DEVICE_STATE_PREPARE) {
         _LOGD(LOGD_BT | LOGD_MB,
@@ -779,8 +779,8 @@ connect_watch_link_cb(NMPlatform *    platform,
     NMDeviceBtPrivate *              priv;
 
     /* bluez doesn't notify us when the connection disconnects.
-	 * Neither does NMManager (or NMDevice) tell us when the ip-ifindex goes away.
-	 * This is horrible, and should be improved. For now, watch the link ourself... */
+     * Neither does NMManager (or NMDevice) tell us when the ip-ifindex goes away.
+     * This is horrible, and should be improved. For now, watch the link ourself... */
 
     if (NM_IN_SET(change_type, NM_PLATFORM_SIGNAL_CHANGED, NM_PLATFORM_SIGNAL_REMOVED)) {
         priv = NM_DEVICE_BT_GET_PRIVATE(self);
@@ -796,7 +796,7 @@ connect_wait_modem_timeout(gpointer user_data)
     NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE(self);
 
     /* since this timeout is longer than the connect timeout, we must have already
-	 * hit the connect-timeout first or being connected. */
+     * hit the connect-timeout first or being connected. */
     nm_assert(priv->stage1_bt_state == NM_DEVICE_STAGE_STATE_COMPLETED);
 
     priv->connect_wait_modem_id = 0;
@@ -892,7 +892,7 @@ connect_bz_cb(NMBluezManager *bz_mgr,
 
     if (!priv->is_connected) {
         /* we got the callback from NMBluezManager with success. We actually should be
-		 * connected and this line shouldn't be reached. */
+         * connected and this line shouldn't be reached. */
         nm_assert_not_reached();
         _LOGE(LOGD_BT, "bluetooth is unexpectedly not in connected state");
         nm_device_state_changed(NM_DEVICE(self),
@@ -1043,8 +1043,8 @@ deactivate(NMDevice *device)
             nm_modem_deactivate(priv->modem, device);
 
             /* Since we're killing the Modem object before it'll get the
-			 * state change signal, simulate the state change here.
-			 */
+             * state change signal, simulate the state change here.
+             */
             nm_modem_device_state_changed(priv->modem,
                                           NM_DEVICE_STATE_DISCONNECTED,
                                           NM_DEVICE_STATE_ACTIVATED);

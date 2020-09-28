@@ -94,14 +94,14 @@ typedef struct {
     void (*stop)(NMDhcpClient *self, gboolean release);
 
     /**
-	 * get_duid:
-	 * @self: the #NMDhcpClient
-	 *
-	 * Attempts to find an existing DHCPv6 DUID for this client in the DHCP
-	 * client's persistent configuration.  Returned DUID should be the binary
-	 * representation of the DUID.  If no DUID is found, %NULL should be
-	 * returned.
-	 */
+     * get_duid:
+     * @self: the #NMDhcpClient
+     *
+     * Attempts to find an existing DHCPv6 DUID for this client in the DHCP
+     * client's persistent configuration.  Returned DUID should be the binary
+     * representation of the DUID.  If no DUID is found, %NULL should be
+     * returned.
+     */
     GBytes *(*get_duid)(NMDhcpClient *self);
 } NMDhcpClientClass;
 

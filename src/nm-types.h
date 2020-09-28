@@ -59,12 +59,12 @@ typedef enum {
     NM_ACTIVATION_TYPE_MANAGED = 0,
 
     /* gracefully/seamlessly take over the device. This leaves additional
-	 * IP addresses and does not restore missing manual addresses. */
+     * IP addresses and does not restore missing manual addresses. */
     NM_ACTIVATION_TYPE_ASSUME = 1,
 
     /* external activation. This device is not managed by NM, instead
-	 * a in-memory connection is generated and NM pretends the device
-	 * to be active, but it doesn't do anything really. */
+     * a in-memory connection is generated and NM pretends the device
+     * to be active, but it doesn't do anything really. */
     NM_ACTIVATION_TYPE_EXTERNAL = 2,
 } NMActivationType;
 
@@ -83,7 +83,7 @@ typedef enum {
     NM_IP_CONFIG_SOURCE_UNKNOWN = 0,
 
     /* for routes, the source is mapped to the uint8 field rtm_protocol.
-	 * Reserve the range [1,0x100] for native RTPROT values. */
+     * Reserve the range [1,0x100] for native RTPROT values. */
 
     NM_IP_CONFIG_SOURCE_RTPROT_UNSPEC   = 1 + 0,
     NM_IP_CONFIG_SOURCE_RTPROT_REDIRECT = 1 + 1,

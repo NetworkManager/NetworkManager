@@ -172,7 +172,7 @@ _clear_ip6_subnet(gpointer key, gpointer value, gpointer user_data)
 
     if (device) {
         /* We can not remove a subnet we already started announcing.
-		 * Just un-prefer it. */
+         * Just un-prefer it. */
         subnet->preferred = 0;
         nm_device_use_ip6_subnet(device, subnet);
     }
@@ -244,10 +244,10 @@ ip6_subnet_from_delegation(IP6PrefixDelegation *delegation, NMDevice *device)
             delegation->prefix.address.s6_addr32[1] | htonl(delegation->next_subnet);
 
         /* Out subnet pool management is pretty unsophisticated. We only add
-		 * the subnets and index them by ifindex. That keeps the implementation
-		 * simple and the dead entries make it easy to reuse the same subnet on
-		 * subsequent activations. On the other hand they may waste the subnet
-		 * space. */
+         * the subnets and index them by ifindex. That keeps the implementation
+         * simple and the dead entries make it easy to reuse the same subnet on
+         * subsequent activations. On the other hand they may waste the subnet
+         * space. */
         delegation->next_subnet++;
     }
 
@@ -355,9 +355,9 @@ device_ip6_prefix_delegated(NMDevice *device, NMPlatformIP6Address *prefix, gpoi
     delegation->prefix = *prefix;
 
     /* The newly activated connections are added to the list beginning,
-	 * so traversing it from the beginning makes it likely for newly
-	 * activated connections that have no subnet assigned to be served
-	 * first. That is a simple yet fair policy, which is good. */
+     * so traversing it from the beginning makes it likely for newly
+     * activated connections that have no subnet assigned to be served
+     * first. That is a simple yet fair policy, which is good. */
     nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
         NMDevice *to_device;
 
@@ -414,7 +414,7 @@ get_best_active_connection(NMPolicy *self, int addr_family, gboolean fully_activ
     nm_assert(NM_IN_SET(addr_family, AF_INET, AF_INET6));
 
     /* we prefer the current AC in case of identical metric.
-	 * Hence, try that one first. */
+     * Hence, try that one first. */
     prev_ac = addr_family == AF_INET ? (fully_activated ? priv->default_ac4 : priv->activating_ac4)
                                      : (fully_activated ? priv->default_ac6 : priv->activating_ac6);
     best_ac = NULL;
@@ -437,10 +437,10 @@ get_best_active_connection(NMPolicy *self, int addr_family, gboolean fully_activ
         r = nm_device_get_best_default_route(device, addr_family);
         if (r) {
             /* NOTE: the best route might have rt_source NM_IP_CONFIG_SOURCE_VPN,
-			 * which means it was injected by a VPN, not added by device.
-			 *
-			 * In this case, is it really the best device? Why do we even need the best
-			 * device?? */
+             * which means it was injected by a VPN, not added by device.
+             *
+             * In this case, is it really the best device? Why do we even need the best
+             * device?? */
             metric             = NMP_OBJECT_CAST_IP_ROUTE(r)->metric;
             is_fully_activated = TRUE;
         } else if (!fully_activated && (connection = nm_device_get_applied_connection(device))
@@ -463,8 +463,8 @@ get_best_active_connection(NMPolicy *self, int addr_family, gboolean fully_activ
 
     if (!fully_activated && best_ac && best_is_fully_activated) {
         /* There's a best activating AC only if the best device
-		 * among all activating and already-activated devices is a
-		 * still-activating one. */
+         * among all activating and already-activated devices is a
+         * still-activating one. */
         return NULL;
     }
 
@@ -533,8 +533,8 @@ _get_hostname(NMPolicy *self)
     int              errsv;
 
     /* If there is an in-progress hostname change, return
-	 * the last hostname set as would be set soon...
-	 */
+     * the last hostname set as would be set soon...
+     */
     if (priv->changing_hostname) {
         _LOGT(LOGD_DNS, "get-hostname: \"%s\" (last on set)", priv->last_hostname);
         return g_strdup(priv->last_hostname);
@@ -578,27 +578,27 @@ _set_hostname(NMPolicy *self, const char *new_hostname, const char *msg)
     const char *     name;
 
     /* The incoming hostname *can* be NULL, which will get translated to
-	 * 'localhost.localdomain' or such in the hostname policy code, but we
-	 * keep cur_hostname = NULL in the case because we need to know that
-	 * there was no valid hostname to start with.
-	 */
+     * 'localhost.localdomain' or such in the hostname policy code, but we
+     * keep cur_hostname = NULL in the case because we need to know that
+     * there was no valid hostname to start with.
+     */
 
     /* Clear lookup addresses if we have a hostname, so that we don't
-	 * restart the reverse lookup thread later.
-	 */
+     * restart the reverse lookup thread later.
+     */
     if (new_hostname)
         g_clear_object(&priv->lookup.addr);
 
     /* Update the DNS only if the hostname is actually
-	 * going to change.
-	 */
+     * going to change.
+     */
     if (!nm_streq0(priv->cur_hostname, new_hostname)) {
         g_free(priv->cur_hostname);
         priv->cur_hostname = g_strdup(new_hostname);
 
         /* Notify the DNS manager of the hostname change so that the domain part, if
-		 * present, can be added to the search list.
-		 */
+         * present, can be added to the search list.
+         */
         nm_dns_manager_set_hostname(priv->dns_manager,
                                     priv->cur_hostname,
                                     all_devices_not_active(self));
@@ -627,7 +627,7 @@ _set_hostname(NMPolicy *self, const char *new_hostname, const char *msg)
     _LOGI(LOGD_DNS, "set-hostname: set hostname to '%s' (%s)", name, msg);
 
     /* Ask NMSettings to update the transient hostname using its
-	 * systemd-hostnamed proxy */
+     * systemd-hostnamed proxy */
     nm_hostname_manager_set_transient_hostname(priv->hostname_manager,
                                                name,
                                                settings_set_hostname_cb,
@@ -698,8 +698,8 @@ update_system_hostname(NMPolicy *self, const char *msg)
     nm_clear_g_cancellable(&priv->lookup.cancellable);
 
     /* Check if the hostname was set externally to NM, so that in that case
-	 * we can avoid to fallback to the one we got when we started.
-	 * Consider "not specific" hostnames as equal. */
+     * we can avoid to fallback to the one we got when we started.
+     * Consider "not specific" hostnames as equal. */
     if ((temp_hostname = _get_hostname(self)) && !nm_streq0(temp_hostname, priv->last_hostname)
         && (nm_utils_is_specific_hostname(temp_hostname)
             || nm_utils_is_specific_hostname(priv->last_hostname))) {
@@ -722,13 +722,13 @@ update_system_hostname(NMPolicy *self, const char *msg)
     }
 
     /* Hostname precedence order:
-	 *
-	 * 1) a configured hostname (from settings)
-	 * 2) automatic hostname from the default device's config (DHCP, VPN, etc)
-	 * 3) the last hostname set outside NM
-	 * 4) reverse-DNS of the best device's IPv4 address
-	 *
-	 */
+     *
+     * 1) a configured hostname (from settings)
+     * 2) automatic hostname from the default device's config (DHCP, VPN, etc)
+     * 3) the last hostname set outside NM
+     * 4) reverse-DNS of the best device's IPv4 address
+     *
+     */
 
     /* Try a persistent hostname first */
     configured_hostname = nm_hostname_manager_get_hostname(priv->hostname_manager);
@@ -782,10 +782,10 @@ update_system_hostname(NMPolicy *self, const char *msg)
 
     if (priv->hostname_mode == NM_POLICY_HOSTNAME_MODE_DHCP) {
         /* In dhcp hostname-mode, the hostname is updated only if it comes from
-		 * a DHCP host-name option: if last set was from a host-name option and
-		 * we are here than that connection is gone (with its host-name option),
-		 * so reset the hostname to the previous value
-		 */
+         * a DHCP host-name option: if last set was from a host-name option and
+         * we are here than that connection is gone (with its host-name option),
+         * so reset the hostname to the previous value
+         */
         if (priv->dhcp_hostname) {
             _set_hostname(self, priv->orig_hostname, "reset dhcp hostname");
             priv->dhcp_hostname = FALSE;
@@ -797,23 +797,23 @@ update_system_hostname(NMPolicy *self, const char *msg)
 
     if (!priv->default_ac4 && !priv->default_ac6) {
         /* No best device; fall back to the last hostname set externally
-		 * to NM or if there wasn't one, 'localhost.localdomain'
-		 */
+         * to NM or if there wasn't one, 'localhost.localdomain'
+         */
         _set_hostname(self, priv->orig_hostname, "no default device");
         return;
     }
 
     /* If no automatically-configured hostname, try using the last hostname
-	 * set externally to NM
-	 */
+     * set externally to NM
+     */
     if (priv->orig_hostname) {
         _set_hostname(self, priv->orig_hostname, "from system startup");
         return;
     }
 
     /* No configured hostname, no automatically determined hostname, and no
-	 * bootup hostname. Start reverse DNS of the current IPv4 or IPv6 address.
-	 */
+     * bootup hostname. Start reverse DNS of the current IPv4 or IPv6 address.
+     */
     device     = get_default_device(self, AF_INET);
     ip4_config = device ? nm_device_get_ip4_config(device) : NULL;
 
@@ -845,9 +845,9 @@ update_default_ac(NMPolicy *self, int addr_family, NMActiveConnection *best)
     NMActiveConnection *ac;
 
     /* Clear the 'default[6]' flag on all active connections that aren't the new
-	 * default active connection.  We'll set the new default after; this ensures
-	 * we don't ever have two marked 'default[6]' simultaneously.
-	 */
+     * default active connection.  We'll set the new default after; this ensures
+     * we don't ever have two marked 'default[6]' simultaneously.
+     */
     nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
         if (ac != best)
             nm_active_connection_set_default(ac, addr_family, FALSE);
@@ -957,8 +957,8 @@ update_ip4_routing(NMPolicy *self, gboolean force_update)
     NMActiveConnection *ac;
 
     /* Note that we might have an IPv4 VPN tunneled over an IPv6-only device,
-	 * so we can get (vpn != NULL && best == NULL).
-	 */
+     * so we can get (vpn != NULL && best == NULL).
+     */
     if (!get_best_ip_config(self, AF_INET, &ip_iface, &best_ac, &best, &vpn)) {
         if (nm_clear_g_object(&priv->default_ac4)) {
             _LOGt(LOGD_DNS, "set-default-ac-4: %p", NULL);
@@ -1020,8 +1020,8 @@ update_ip6_routing(NMPolicy *self, gboolean force_update)
     const CList *       tmp_list;
 
     /* Note that we might have an IPv6 VPN tunneled over an IPv4-only device,
-	 * so we can get (vpn != NULL && best == NULL).
-	 */
+     * so we can get (vpn != NULL && best == NULL).
+     */
     if (!get_best_ip_config(self, AF_INET6, &ip_iface, &best_ac, &best, &vpn)) {
         if (nm_clear_g_object(&priv->default_ac6)) {
             _LOGt(LOGD_DNS, "set-default-ac-6: %p", NULL);
@@ -1071,8 +1071,8 @@ update_ip_dns(NMPolicy *self, int addr_family, NMDevice *changed_device)
     ip_config = get_best_ip_config(self, addr_family, &ip_iface, NULL, &device, &vpn);
     if (ip_config) {
         /* Tell the DNS manager this config is preferred by re-adding it with
-		 * a different IP config type.
-		 */
+         * a different IP config type.
+         */
         _dns_manager_set_ip_config(NM_POLICY_GET_PRIVATE(self)->dns_manager,
                                    ip_config,
                                    (vpn || (device && nm_device_is_vpn(device)))
@@ -1160,7 +1160,7 @@ pending_ac_gone(gpointer data, GObject *where_the_object_was)
     NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
 
     /* Active connections should reach the DEACTIVATED state
-	 * before disappearing. */
+     * before disappearing. */
     nm_assert_not_reached();
 
     if (g_hash_table_remove(priv->pending_active_connections, where_the_object_was))
@@ -1175,10 +1175,10 @@ pending_ac_state_changed(NMActiveConnection *ac, guint state, guint reason, NMPo
 
     if (state >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
         /* The AC is being deactivated before the device had a chance
-		 * to move to PREPARE. Schedule a new auto-activation on the
-		 * device, but block the current connection to avoid an activation
-		 * loop.
-		 */
+         * to move to PREPARE. Schedule a new auto-activation on the
+         * device, but block the current connection to avoid an activation
+         * loop.
+         */
         if (reason != NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED) {
             con = nm_active_connection_get_settings_connection(ac);
             nm_settings_connection_autoconnect_blocked_reason_set(
@@ -1289,9 +1289,9 @@ auto_activate_device(NMPolicy *self, NMDevice *device)
     }
 
     /* Subscribe to AC state-changed signal to detect when the
-	 * activation fails in early stages without changing device
-	 * state.
-	 */
+     * activation fails in early stages without changing device
+     * state.
+     */
     if (g_hash_table_add(priv->pending_active_connections, ac)) {
         g_signal_connect(ac,
                          NM_ACTIVE_CONNECTION_STATE_CHANGED,
@@ -1463,8 +1463,8 @@ reset_autoconnect_all(
                     NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS,
                     FALSE)) {
                 /* maybe the connection is still blocked afterwards for other reasons
-				 * and in the larger picture nothing changed. But it's too complicated
-				 * to find out exactly. Just assume, something changed to be sure. */
+                 * and in the larger picture nothing changed. But it's too complicated
+                 * to find out exactly. Just assume, something changed to be sure. */
                 if (!nm_settings_connection_autoconnect_is_blocked(sett_conn))
                     changed = TRUE;
             }
@@ -1779,10 +1779,10 @@ device_state_changed(NMDevice *          device,
     case NM_DEVICE_STATE_REASON_SIM_PIN_INCORRECT:
     case NM_DEVICE_STATE_REASON_GSM_APN_FAILED:
         /* Block autoconnection at settings level if there is any settings-specific
-		 * error reported by the modem (e.g. wrong SIM-PIN or wrong APN). Do not block
-		 * autoconnection at settings level for errors in the device domain (e.g.
-		 * a missing SIM or wrong modem initialization).
-		 */
+         * error reported by the modem (e.g. wrong SIM-PIN or wrong APN). Do not block
+         * autoconnection at settings level for errors in the device domain (e.g.
+         * a missing SIM or wrong modem initialization).
+         */
         if (sett_conn) {
             nm_settings_connection_autoconnect_blocked_reason_set(
                 sett_conn,
@@ -1797,8 +1797,8 @@ device_state_changed(NMDevice *          device,
     switch (new_state) {
     case NM_DEVICE_STATE_FAILED:
         /* Mark the connection invalid if it failed during activation so that
-		 * it doesn't get automatically chosen over and over and over again.
-		 */
+         * it doesn't get automatically chosen over and over and over again.
+         */
         if (sett_conn && old_state >= NM_DEVICE_STATE_PREPARE
             && old_state <= NM_DEVICE_STATE_ACTIVATED) {
             gboolean blocked = FALSE;
@@ -1807,18 +1807,18 @@ device_state_changed(NMDevice *          device,
 
             if (nm_device_state_reason_check(reason) == NM_DEVICE_STATE_REASON_NO_SECRETS) {
                 /* we want to block the connection from auto-connect if it failed due to no-secrets.
-				 * However, if a secret-agent registered, since the connection made the last
-				 * secret-request, we do not block it. The new secret-agent might not yet
-				 * been consulted, and it may be able to provide the secrets.
-				 *
-				 * We detect this by using a version-id of the agent-manager, which increments
-				 * whenever new agents register. Note that the agent-manager's version-id is
-				 * never zero and strictly increasing.
-				 *
-				 * A connection's version-id of zero means that the connection never tried to request secrets.
-				 * That can happen when nm_settings_connection_get_secrets() fails early without actually
-				 * consulting any agents.
-				 */
+                 * However, if a secret-agent registered, since the connection made the last
+                 * secret-request, we do not block it. The new secret-agent might not yet
+                 * been consulted, and it may be able to provide the secrets.
+                 *
+                 * We detect this by using a version-id of the agent-manager, which increments
+                 * whenever new agents register. Note that the agent-manager's version-id is
+                 * never zero and strictly increasing.
+                 *
+                 * A connection's version-id of zero means that the connection never tried to request secrets.
+                 * That can happen when nm_settings_connection_get_secrets() fails early without actually
+                 * consulting any agents.
+                 */
                 con_v = nm_settings_connection_get_last_secret_agent_version_id(sett_conn);
                 if (con_v == 0 || con_v == nm_agent_manager_get_agent_version_id(priv->agent_mgr)) {
                     _LOGD(LOGD_DEVICE,
@@ -1833,13 +1833,13 @@ device_state_changed(NMDevice *          device,
             } else if (nm_device_state_reason_check(reason)
                        == NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED) {
                 /* A connection that fails due to dependency-failed is not
-				 * able to reconnect until the master connection activates
-				 * again; when this happens, the master clears the blocked
-				 * reason for all its slaves in activate_slave_connections()
-				 * and tries to reconnect them. For this to work, the slave
-				 * should be marked as blocked when it fails with
-				 * dependency-failed.
-				 */
+                 * able to reconnect until the master connection activates
+                 * again; when this happens, the master clears the blocked
+                 * reason for all its slaves in activate_slave_connections()
+                 * and tries to reconnect them. For this to work, the slave
+                 * should be marked as blocked when it fails with
+                 * dependency-failed.
+                 */
                 _LOGD(LOGD_DEVICE,
                       "connection '%s' now blocked from autoconnect due to failed dependency",
                       nm_settings_connection_get_id(sett_conn));
@@ -1874,8 +1874,8 @@ device_state_changed(NMDevice *          device,
             nm_settings_connection_autoconnect_retries_reset(sett_conn);
 
             /* And clear secrets so they will always be requested from the
-			 * settings service when the next connection is made.
-			 */
+             * settings service when the next connection is made.
+             */
             nm_settings_connection_clear_secrets(sett_conn, FALSE, FALSE);
         }
 
@@ -1935,8 +1935,8 @@ device_state_changed(NMDevice *          device,
         break;
     case NM_DEVICE_STATE_DISCONNECTED:
         /* Reset retry counts for a device's connections when carrier on; if cable
-		 * was unplugged and plugged in again, we should try to reconnect.
-		 */
+         * was unplugged and plugged in again, we should try to reconnect.
+         */
         if (nm_device_state_reason_check(reason) == NM_DEVICE_STATE_REASON_CARRIER
             && old_state == NM_DEVICE_STATE_UNAVAILABLE)
             reset_autoconnect_all(self, device, FALSE);
@@ -1950,11 +1950,11 @@ device_state_changed(NMDevice *          device,
 
     case NM_DEVICE_STATE_PREPARE:
         /* Reset auto-connect retries of all slaves and schedule them for
-		 * activation. */
+         * activation. */
         activate_slave_connections(self, device);
 
         /* Now that the device state is progressing, we don't care
-		 * anymore for the AC state. */
+         * anymore for the AC state. */
         ac = (NMActiveConnection *) nm_device_get_act_request(device);
         if (ac && g_hash_table_remove(priv->pending_active_connections, ac)) {
             g_signal_handlers_disconnect_by_func(ac, pending_ac_state_changed, self);
@@ -2020,10 +2020,10 @@ device_ip_config_changed(NMDevice *  device,
     nm_dns_manager_begin_updates(priv->dns_manager, __func__);
 
     /* We catch already all the IP events registering on the device state changes but
-	 * the ones where the IP changes but the device state keep stable (i.e., activated):
-	 * ignore IP config changes but when the device is in activated state.
-	 * Prevents unnecessary changes to DNS information.
-	 */
+     * the ones where the IP changes but the device state keep stable (i.e., activated):
+     * ignore IP config changes but when the device is in activated state.
+     * Prevents unnecessary changes to DNS information.
+     */
     if (nm_device_get_state(device) == NM_DEVICE_STATE_ACTIVATED) {
         if (old_config != new_config) {
             if (new_config)
@@ -2138,7 +2138,7 @@ device_removed(NMManager *manager, NMDevice *device, gpointer user_data)
     ActivateData *   data;
 
     /* TODO: is this needed? The delegations are cleaned up
-	 * on transition to deactivated too. */
+     * on transition to deactivated too. */
     ip6_remove_device_prefix_delegations(self, device);
 
     /* Clear any idle callbacks for this device */
@@ -2150,8 +2150,8 @@ device_removed(NMManager *manager, NMDevice *device, gpointer user_data)
         devices_list_unregister(self, device);
 
     /* Don't update routing and DNS here as we've already handled that
-	 * for devices that need it when the device's state changed to UNMANAGED.
-	 */
+     * for devices that need it when the device's state changed to UNMANAGED.
+     */
 }
 
 /*****************************************************************************/
@@ -2369,7 +2369,7 @@ schedule_activate_all(NMPolicy *self)
     NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
 
     /* always restart the idle handler. That way, we settle
-	 * all other events before restarting to activate them. */
+     * all other events before restarting to activate them. */
     nm_clear_g_source(&priv->schedule_activate_all_id);
     priv->schedule_activate_all_id = g_idle_add(schedule_activate_all_cb, self);
 }
@@ -2393,8 +2393,8 @@ firewall_state_changed(NMFirewallManager *manager, gboolean initialized_now, gpo
 
     if (initialized_now) {
         /* the firewall manager was initializing, but all requests
-		 * so fare were queued and are already sent. No need to
-		 * re-update the firewall zone of the devices. */
+         * so fare were queued and are already sent. No need to
+         * re-update the firewall zone of the devices. */
         return;
     }
 
@@ -2413,9 +2413,9 @@ dns_config_changed(NMDnsManager *dns_manager, gpointer user_data)
     NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
 
     /* Restart a thread for reverse-DNS lookup after we are signalled that
-	 * DNS changed. Because the result from a previous run may not be right
-	 * (race in updating DNS and doing the reverse lookup).
-	 */
+     * DNS changed. Because the result from a previous run may not be right
+     * (race in updating DNS and doing the reverse lookup).
+     */
 
     nm_clear_g_cancellable(&priv->lookup.cancellable);
 
@@ -2520,9 +2520,9 @@ secret_agent_registered(NMSettings *settings, NMSecretAgent *agent, gpointer use
     NMPolicy *self = NM_POLICY(user_data);
 
     /* The registered secret agent may provide some missing secrets. Thus we
-	 * reset retries count here and schedule activation, so that the
-	 * connections failed due to missing secrets may re-try auto-connection.
-	 */
+     * reset retries count here and schedule activation, so that the
+     * connections failed due to missing secrets may re-try auto-connection.
+     */
     if (reset_autoconnect_all(self, NULL, TRUE))
         schedule_activate_all(self);
 }
@@ -2797,9 +2797,9 @@ dispose(GObject *object)
     }
 
     /* The manager should have disposed of ActiveConnections already, which
-	 * will have called active_connection_removed() and thus we don't need
-	 * to clean anything up.  Assert that this is TRUE.
-	 */
+     * will have called active_connection_removed() and thus we don't need
+     * to clean anything up.  Assert that this is TRUE.
+     */
     nm_assert(c_list_is_empty(nm_manager_get_active_connections(priv->manager)));
 
     nm_clear_g_source(&priv->reset_retries_id);
@@ -2819,10 +2819,10 @@ dispose(GObject *object)
         g_clear_object(&priv->settings);
 
         /* we don't clear priv->manager as we don't own a reference to it,
-		 * that is, NMManager must outlive NMPolicy anyway.
-		 *
-		 * Hence, we unsubscribe the signals here together with the signals
-		 * for settings. */
+         * that is, NMManager must outlive NMPolicy anyway.
+         *
+         * Hence, we unsubscribe the signals here together with the signals
+         * for settings. */
         g_signal_handlers_disconnect_by_data(priv->manager, priv);
     }
 

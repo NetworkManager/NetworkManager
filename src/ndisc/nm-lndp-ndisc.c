@@ -109,16 +109,16 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
     guint32              val;
 
     /* Router discovery is subject to the following RFC documents:
-	 *
-	 * http://tools.ietf.org/html/rfc4861
-	 * http://tools.ietf.org/html/rfc4862
-	 *
-	 * The biggest difference from good old DHCP is that all configuration
-	 * items have their own lifetimes and they are merged from various
-	 * sources. Router discovery is *not* contract-based, so there is *no*
-	 * single time when the configuration is finished and updates can
-	 * come at any time.
-	 */
+     *
+     * http://tools.ietf.org/html/rfc4861
+     * http://tools.ietf.org/html/rfc4862
+     *
+     * The biggest difference from good old DHCP is that all configuration
+     * items have their own lifetimes and they are merged from various
+     * sources. Router discovery is *not* contract-based, so there is *no*
+     * single time when the configuration is finished and updates can
+     * come at any time.
+     */
     _LOGD("received router advertisement at %d", (int) now);
 
     gateway_addr = *ndp_msg_addrto(msg);
@@ -126,11 +126,11 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
         g_return_val_if_reached(0);
 
     /* DHCP level:
-	 *
-	 * The problem with DHCP level is what to do if subsequent
-	 * router advertisements carry different flags. Currently, we just
-	 * rewrite the flag with every inbound RA.
-	 */
+     *
+     * The problem with DHCP level is what to do if subsequent
+     * router advertisements carry different flags. Currently, we just
+     * rewrite the flag with every inbound RA.
+     */
     {
         NMNDiscDHCPLevel dhcp_level;
 
@@ -142,7 +142,7 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
             dhcp_level = NM_NDISC_DHCP_LEVEL_NONE;
 
         /* when receiving multiple RA (possibly from different routers),
-		 * let's keep the "most managed" level. */
+         * let's keep the "most managed" level. */
         G_STATIC_ASSERT_EXPR(NM_NDISC_DHCP_LEVEL_MANAGED > NM_NDISC_DHCP_LEVEL_OTHERCONF);
         G_STATIC_ASSERT_EXPR(NM_NDISC_DHCP_LEVEL_OTHERCONF > NM_NDISC_DHCP_LEVEL_NONE);
         dhcp_level = MAX(dhcp_level, rdata->public.dhcp_level);
@@ -154,11 +154,11 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
     }
 
     /* Default gateway:
-	 *
-	 * Subsequent router advertisements can represent new default gateways
-	 * on the network. We should present all of them in router preference
-	 * order.
-	 */
+     *
+     * Subsequent router advertisements can represent new default gateways
+     * on the network. We should present all of them in router preference
+     * order.
+     */
     {
         const NMNDiscGateway gateway = {
             .address    = gateway_addr,
@@ -248,10 +248,10 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
             };
 
             /* Pad the lifetime somewhat to give a bit of slack in cases
-			 * where one RA gets lost or something (which can happen on unreliable
-			 * links like Wi-Fi where certain types of frames are not retransmitted).
-			 * Note that 0 has special meaning and is therefore not adjusted.
-			 */
+             * where one RA gets lost or something (which can happen on unreliable
+             * links like Wi-Fi where certain types of frames are not retransmitted).
+             * Note that 0 has special meaning and is therefore not adjusted.
+             */
             if (dns_server.lifetime && dns_server.lifetime < 7200)
                 dns_server.lifetime = 7200;
             if (nm_ndisc_add_dns_server(ndisc, &dns_server))
@@ -270,10 +270,10 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
             };
 
             /* Pad the lifetime somewhat to give a bit of slack in cases
-			 * where one RA gets lost or something (which can happen on unreliable
-			 * links like Wi-Fi where certain types of frames are not retransmitted).
-			 * Note that 0 has special meaning and is therefore not adjusted.
-			 */
+             * where one RA gets lost or something (which can happen on unreliable
+             * links like Wi-Fi where certain types of frames are not retransmitted).
+             * Note that 0 has special meaning and is therefore not adjusted.
+             */
             if (dns_domain.lifetime && dns_domain.lifetime < 7200)
                 dns_domain.lifetime = 7200;
             if (nm_ndisc_add_dns_domain(ndisc, &dns_domain))
@@ -309,9 +309,9 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
             }
         } else {
             /* All sorts of bad things would happen if we accepted this.
-			 * Kernel would set it, but would flush out all IPv6 addresses away
-			 * from the link, even the link-local, and we wouldn't be able to
-			 * listen for further RAs that could fix the MTU. */
+             * Kernel would set it, but would flush out all IPv6 addresses away
+             * from the link, even the link-local, and we wouldn't be able to
+             * listen for further RAs that could fix the MTU. */
             _LOGW("MTU too small for IPv6 ignored: %d", mtu);
         }
     }
@@ -382,7 +382,7 @@ send_ra(NMNDisc *ndisc, GError **error)
     ndp_msgra_router_lifetime_set(ndp_msgra(msg), NM_NDISC_ROUTER_LIFETIME);
 
     /* The device let us know about all addresses that the device got
-	 * whose prefixes are suitable for delegating. Let's announce them. */
+     * whose prefixes are suitable for delegating. Let's announce them. */
     for (i = 0; i < rdata->addresses->len; i++) {
         NMNDiscAddress *address = &g_array_index(rdata->addresses, NMNDiscAddress, i);
         guint32 age      = NM_CLAMP((gint64) now - (gint64) address->timestamp, 0, G_MAXUINT32 - 1);

@@ -73,9 +73,9 @@ typedef struct {
     NMBluezManager *self;
 
     /* Fields name with "d_" prefix are purely cached values from BlueZ's
-	 * ObjectManager D-Bus interface. There is no logic whatsoever about
-	 * them.
-	 */
+     * ObjectManager D-Bus interface. There is no logic whatsoever about
+     * them.
+     */
 
     CList process_change_lst;
 
@@ -133,7 +133,7 @@ typedef struct {
     bool x_device_panu_connection_allow_create : 1;
 
     /* flag to remember last time when we checked wether the object
-	 * was  a suitable adapter that is usable to a device. */
+     * was  a suitable adapter that is usable to a device. */
     bool was_usable_adapter_for_device_before : 1;
 
     char _object_path_intern[];
@@ -259,12 +259,12 @@ static void
 _dbus_call_complete_cb_nop(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
     /* we don't do anything at all. The only reason to register this
-	 * callback is so that GDBusConnection keeps the cancellable alive
-	 * long enough until the call completes.
-	 *
-	 * Note that this cancellable in turn is registered via
-	 * nm_shutdown_wait_obj_register_*(), to block shutdown until
-	 * we are done. */
+     * callback is so that GDBusConnection keeps the cancellable alive
+     * long enough until the call completes.
+     *
+     * Note that this cancellable in turn is registered via
+     * nm_shutdown_wait_obj_register_*(), to block shutdown until
+     * we are done. */
 }
 
 /*****************************************************************************/
@@ -693,7 +693,7 @@ _bzobjs_device_is_usable(const BzDBusObj *bzobj,
             usable_nap = TRUE;
         else if (bzobj->x_device_panu_connection_allow_create) {
             /* We didn't yet try to create a connection. Presume we are going to create
-			 * it when the time comes... */
+             * it when the time comes... */
             usable_nap             = TRUE;
             create_panu_connection = TRUE;
         }
@@ -704,8 +704,8 @@ _bzobjs_device_is_usable(const BzDBusObj *bzobj,
             && nm_device_get_state(NM_DEVICE(bzobj->x_device.device_bt))
                    > NM_DEVICE_STATE_DISCONNECTED) {
             /* The device is still activated... the absence of a profile does not
-			 * render it unusable (yet). But since there is no more profile, the
-			 * device is probably about to disconnect. */
+             * render it unusable (yet). But since there is no more profile, the
+             * device is probably about to disconnect. */
         } else
             goto out_unusable;
     }
@@ -732,9 +732,9 @@ _bzobjs_device_is_connected(const BzDBusObj *bzobj)
         return TRUE;
     if (bzobj->x_device.connect_dun_context) {
         /* As long as we have a dun-context, we consider it connected.
-		 *
-		 * We require NMDeviceBt to try to connect to the modem, and if that fails,
-		 * it will disconnect. */
+         *
+         * We require NMDeviceBt to try to connect to the modem, and if that fails,
+         * it will disconnect. */
         return TRUE;
     }
     return FALSE;
@@ -1128,8 +1128,8 @@ _network_server_vt_register_bridge(const NMBtVTableNetworkServer *vtable,
     bzobj = _network_server_find_available(priv, addr, NULL);
     if (!bzobj) {
         /* The device checked that a network server is available, before
-		 * starting the activation, but for some reason it no longer is.
-		 * Indicate that the activation should not proceed. */
+         * starting the activation, but for some reason it no longer is.
+         * Indicate that the activation should not proceed. */
         if (addr) {
             nm_utils_error_set(error,
                                NM_UTILS_ERROR_UNKNOWN,
@@ -1424,14 +1424,14 @@ _device_process_change(BzDBusObj *bzobj)
             && NM_FLAGS_HAS(bzobj->d_device_capabilities, NM_BT_CAPABILITY_NAP)
             && _conn_track_find_head(self, NM_BT_CAPABILITY_NAP, bzobj->d_device.address)) {
             /* We have a useable device and also a panu-connection. We block future attemps
-			 * to generate a connection. */
+             * to generate a connection. */
             bzobj->x_device_panu_connection_allow_create = FALSE;
         }
         if (bzobj->x_device.panu_connection) {
             if (!NM_FLAGS_HAS(nm_settings_connection_get_flags(bzobj->x_device.panu_connection),
                               NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED)) {
                 /* the connection that we generated earlier still exists, but it's not longer the same
-				 * as it was when we created it. Forget about it, so that we don't delete the profile later... */
+                 * as it was when we created it. Forget about it, so that we don't delete the profile later... */
                 bzobj->x_device.panu_connection = NULL;
             } else {
                 if (!device_is_usable
@@ -1604,11 +1604,11 @@ _dbus_process_changes(NMBluezManager *self, BzDBusObj *bzobj, const char *log_re
     adapter_is_usable_for_device = _bzobjs_adapter_is_usable_for_device(bzobj);
     if (adapter_is_usable_for_device != bzobj->was_usable_adapter_for_device_before) {
         /* this function does not modify bzobj in any other cases except here.
-		 * Usually changes are processed delayed, in the idle handler.
-		 *
-		 * But the bzobj->was_usable_adapter_for_device_before only exists to know whether
-		 * we need to re-check device availability. It is correct to set the flag
-		 * here, right before we checked. */
+         * Usually changes are processed delayed, in the idle handler.
+         *
+         * But the bzobj->was_usable_adapter_for_device_before only exists to know whether
+         * we need to re-check device availability. It is correct to set the flag
+         * here, right before we checked. */
         bzobj->was_usable_adapter_for_device_before = adapter_is_usable_for_device;
         recheck_devices_for_adapter                 = TRUE;
         changes                                     = TRUE;
@@ -1634,7 +1634,7 @@ _dbus_process_changes(NMBluezManager *self, BzDBusObj *bzobj, const char *log_re
         BzDBusObj *    bzobj2;
 
         /* we got a change to the availability of an adapter. We might need to recheck
-		 * all devices that use this adapter... */
+         * all devices that use this adapter... */
         g_hash_table_iter_init(&iter, priv->bzobjs);
         while (g_hash_table_iter_next(&iter, (gpointer *) &bzobj2, NULL)) {
             if (bzobj2 == bzobj)
@@ -2432,11 +2432,11 @@ _connect_returned(NMBluezManager *        self,
           device_name);
 
     /* we already have another over-all timer running. But after we connected the device,
-	 * we still need to wait for bluez to acknowledge the connected state (via D-Bus, for NAP).
-	 * For DUN profiles we likely are already fully connected by now.
-	 *
-	 * Anyway, schedule another timeout that is possibly shorter than the overall, original
-	 * timeout. Now this should go down fast. */
+     * we still need to wait for bluez to acknowledge the connected state (via D-Bus, for NAP).
+     * For DUN profiles we likely are already fully connected by now.
+     *
+     * Anyway, schedule another timeout that is possibly shorter than the overall, original
+     * timeout. Now this should go down fast. */
     bzobj->x_device.c_req_data->timeout_wait_connect_id =
         g_timeout_add(5000, _connect_timeout_wait_connected_cb, bzobj),
     bzobj->x_device.c_req_data->device_name = g_strdup(device_name);
@@ -2471,11 +2471,11 @@ _connect_dun_step2_cb(NMBluez5DunContext *context,
 
     if (rfcomm_dev) {
         /* We want to early notify about the rfcomm path. That is because we might still delay
-		 * to signal full activation longer (asynchronously). But the earliest time the callback
-		 * is invoked with the rfcomm path, we just created the device synchronously.
-		 *
-		 * By already notifying the caller about the path early, it avoids a race where ModemManager
-		 * would find the modem before the bluetooth code considers the profile fully activated. */
+         * to signal full activation longer (asynchronously). But the earliest time the callback
+         * is invoked with the rfcomm path, we just created the device synchronously.
+         *
+         * By already notifying the caller about the path early, it avoids a race where ModemManager
+         * would find the modem before the bluetooth code considers the profile fully activated. */
 
         nm_assert(!error);
         nm_assert(bzobj->x_device.c_req_data);
@@ -2489,7 +2489,7 @@ _connect_dun_step2_cb(NMBluez5DunContext *context,
 
         if (!context) {
             /* No context set. This means, we just got notified about the rfcomm path and need to wait
-			 * longer, for the next callback. */
+             * longer, for the next callback. */
             return;
         }
     }
@@ -2618,12 +2618,12 @@ _connect_disconnect(NMBluezManager *self, BzDBusObj *bzobj, const char *reason)
 
     if (bt_type == NM_BT_CAPABILITY_DUN) {
         /* For DUN devices, we also called org.bluez.Device1.Connect() (because in order
-		 * for nm_bluez5_dun_connect() to succeed, we need to be already connected *why??).
-		 *
-		 * But upon disconnect we don't call Disconnect() because we don't know whether somebody
-		 * else also uses the bluetooth device for other purposes. During disconnect we only
-		 * terminate the DUN connection, but don't disconnect entirely. I think that's the
-		 * best we can do. */
+         * for nm_bluez5_dun_connect() to succeed, we need to be already connected *why??).
+         *
+         * But upon disconnect we don't call Disconnect() because we don't know whether somebody
+         * else also uses the bluetooth device for other purposes. During disconnect we only
+         * terminate the DUN connection, but don't disconnect entirely. I think that's the
+         * best we can do. */
 #if WITH_BLUEZ5_DUN
         nm_clear_pointer(&bzobj->x_device.connect_dun_context, nm_bluez5_dun_disconnect);
 #else
@@ -2858,8 +2858,8 @@ dispose(GObject *object)
     NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
 
     /* FIXME(shutdown): we need a nm_device_factory_stop() hook to first unregister all
-	 *   BzDBusObj instances and do necessary cleanup actions (like disconnecting devices
-	 *   or deleting panu_connection). */
+     *   BzDBusObj instances and do necessary cleanup actions (like disconnecting devices
+     *   or deleting panu_connection). */
 
     nm_assert(c_list_is_empty(&priv->network_server_lst_head));
     nm_assert(c_list_is_empty(&priv->process_change_lst_head));

@@ -16,25 +16,25 @@ enum _NMErrno {
     _NM_ERRNO_RESERVED_FIRST = 100000,
 
     /* when we cannot represent a number as positive number, we resort to this
-	 * number. Basically, the values G_MININT, -NME_ERRNO_SUCCESS, NME_ERRNO_SUCCESS
-	 * and G_MAXINT all map to the same value. */
+     * number. Basically, the values G_MININT, -NME_ERRNO_SUCCESS, NME_ERRNO_SUCCESS
+     * and G_MAXINT all map to the same value. */
     NME_ERRNO_OUT_OF_RANGE = G_MAXINT,
 
     /* Indicate that the original errno was zero. Zero denotes *no error*, but we know something
-	 * went wrong and we want to report some error. This is a placeholder to mean, something
-	 * was wrong, but errno was zero. */
+     * went wrong and we want to report some error. This is a placeholder to mean, something
+     * was wrong, but errno was zero. */
     NME_ERRNO_SUCCESS = G_MAXINT - 1,
 
     /* an unspecified error. */
     NME_UNSPEC = _NM_ERRNO_RESERVED_FIRST,
 
     /* A bug, for example when an assertion failed.
-	 * Should never happen. */
+     * Should never happen. */
     NME_BUG,
 
     /* a native error number (from <errno.h>) cannot be mapped as
-	 * an nm-error, because it is in the range [_NM_ERRNO_RESERVED_FIRST,
-	 * _NM_ERRNO_RESERVED_LAST]. */
+     * an nm-error, because it is in the range [_NM_ERRNO_RESERVED_FIRST,
+     * _NM_ERRNO_RESERVED_LAST]. */
     NME_NATIVE_ERRNO,
 
     /* netlink errors. */

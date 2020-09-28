@@ -22,8 +22,8 @@ typedef enum {
     NMS_IFCFG_KEY_TYPE_IS_PREFIX   = (1u << 3),
 
     /* by default, well knowns keys that are not explicitly set
-	 * by the writer (the unvisited, dirty ones) are removed.
-	 * With this flag, such keys are kept if they are present. */
+     * by the writer (the unvisited, dirty ones) are removed.
+     * With this flag, such keys are kept if they are present. */
     NMS_IFCFG_KEY_TYPE_KEEP_WHEN_DIRTY = (1u << 4),
 
 } NMSIfcfgKeyTypeFlags;
@@ -118,7 +118,7 @@ _nms_ifcfg_rh_utils_numbered_tag(char *buf, gsize buf_len, const char *tag_name,
         _nm_unused char *const _buf = (buf);                                              \
                                                                                           \
         /* some static assert trying to ensure that the buffer is statically allocated.
-		 * It disallows a buffer size of sizeof(gpointer) to catch that. */   \
+         * It disallows a buffer size of sizeof(gpointer) to catch that. */   \
         G_STATIC_ASSERT(G_N_ELEMENTS(buf) == sizeof(buf) && sizeof(buf) != sizeof(char *) \
                         && sizeof(buf) < G_MAXINT);                                       \
         _nms_ifcfg_rh_utils_numbered_tag(buf, sizeof(buf), "" tag_name "", (which));      \

@@ -246,19 +246,19 @@ nmt_password_fields_class_init(NmtPasswordFieldsClass *entry_class)
     object_class->finalize     = nmt_password_fields_finalize;
 
     /**
-	 * NmtPasswordFields:width:
-	 *
-	 * The width in characters of the password entry
-	 */
+     * NmtPasswordFields:width:
+     *
+     * The width in characters of the password entry
+     */
     g_object_class_install_property(
         object_class,
         PROP_WIDTH,
         g_param_spec_int("width", "", "", -1, 80, -1, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtPasswordFields:extras:
-	 *
-	 * The extra widgets to show
-	 */
+     * NmtPasswordFields:extras:
+     *
+     * The extra widgets to show
+     */
     g_object_class_install_property(
         object_class,
         PROP_EXTRAS,
@@ -270,19 +270,19 @@ nmt_password_fields_class_init(NmtPasswordFieldsClass *entry_class)
                           0,
                           G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtPasswordFields:password:
-	 *
-	 * The entered password.
-	 */
+     * NmtPasswordFields:password:
+     *
+     * The entered password.
+     */
     g_object_class_install_property(
         object_class,
         PROP_PASSWORD,
         g_param_spec_string("password", "", "", NULL, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtPasswordFields:always-ask:
-	 *
-	 * The current state of the "Always ask" checkbox.
-	 */
+     * NmtPasswordFields:always-ask:
+     *
+     * The current state of the "Always ask" checkbox.
+     */
     g_object_class_install_property(
         object_class,
         PROP_ALWAYS_ASK,
@@ -292,10 +292,10 @@ nmt_password_fields_class_init(NmtPasswordFieldsClass *entry_class)
                              FALSE,
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtPasswordFields:show-password:
-	 *
-	 * The current state of the "Show password" checkbox.
-	 */
+     * NmtPasswordFields:show-password:
+     *
+     * The current state of the "Show password" checkbox.
+     */
     g_object_class_install_property(
         object_class,
         PROP_SHOW_PASSWORD,

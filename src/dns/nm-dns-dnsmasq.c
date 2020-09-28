@@ -80,9 +80,9 @@ static struct {
     guint watch_id;
 
     /* whether the external process (with the pid from PIDFILE) was already killed.
-	 * This only happens once, once we do that, we remember to not do it again.
-	 * The reason is that later one, when we want to kill the process it's a
-	 * child process. So, we wait for the exit code. */
+     * This only happens once, once we do that, we remember to not do it again.
+     * The reason is that later one, when we want to kill the process it's a
+     * child process. So, we wait for the exit code. */
     bool kill_external_done : 1;
 
     bool terminate_sigkill : 1;
@@ -295,7 +295,7 @@ _gl_pid_spawn_register_for_termination(void)
 {
     if (gl_pid.pid > 0 && !gl_pid.terminate_handle) {
         /* Create a shutdown handle as a reminder that the currently running process must be terminated
-		 * first. This also happens to block shutdown... */
+         * first. This also happens to block shutdown... */
         gl_pid.terminate_handle = nm_shutdown_wait_obj_register_handle_full(
             g_strdup_printf("kill-dnsmasq-process-%" G_PID_FORMAT, gl_pid.pid),
             TRUE);
@@ -362,8 +362,8 @@ _gl_pid_spawn_cancelled_cb(GCancellable *cancellable, GlPidSpawnAsyncData *sdata
         gl_pid.spawn_data = NULL;
 
         /* When the cancellable gets cancelled, we terminate the current dnsmasq instance
-		 * in the background. The only way for keeping dnsmasq running while unregistering
-		 * the callback is by calling _gl_pid_spawn() without a new callback. */
+         * in the background. The only way for keeping dnsmasq running while unregistering
+         * the callback is by calling _gl_pid_spawn() without a new callback. */
         _gl_pid_spawn_register_for_termination();
     } else
         nm_assert_not_reached();
@@ -441,7 +441,7 @@ _gl_pid_spawn_watch_cb(GPid pid, int status, gpointer user_data)
 
     if (gl_pid.pid != pid) {
         /* this can only happen, if we timed out and no longer care about this PID.
-		 * We still kept the watch-id active, to reap the process. Nothing to do. */
+         * We still kept the watch-id active, to reap the process. Nothing to do. */
         return;
     }
 
@@ -456,8 +456,8 @@ _gl_pid_spawn_watch_cb(GPid pid, int status, gpointer user_data)
     if (gl_pid.spawn_data) {
         if (was_stopping) {
             /* The current process was scheduled to be terminated. That means the pending
-			 * spawn_data is not for that former instance, but for starting a new one.
-			 * This spawn-request is not yet complete, instead it's just about to start. */
+             * spawn_data is not for that former instance, but for starting a new one.
+             * This spawn-request is not yet complete, instead it's just about to start. */
         } else
             _gl_pid_spawn_notify(g_steal_pointer(&gl_pid.spawn_data), pid, &status, NULL);
     }
@@ -636,15 +636,15 @@ _gl_pid_spawn(const char *          dm_binary,
                          gl_pid.spawn_data);
 
         /* If dnsmasq is running, we terminate it and start a new instance.
-		 *
-		 * If the user would not provide a new callback, this would mean to fail/abort
-		 * the currently subscribed notification (below). But it would leave the dnsmasq
-		 * instance running in the background.
-		 * This allows the user to say to not care about the current instance
-		 * anymore, but still leave it running.
-		 *
-		 * To kill the dnsmasq process without scheduling a new one, cancel the cancellable
-		 * instead. */
+         *
+         * If the user would not provide a new callback, this would mean to fail/abort
+         * the currently subscribed notification (below). But it would leave the dnsmasq
+         * instance running in the background.
+         * This allows the user to say to not care about the current instance
+         * anymore, but still leave it running.
+         *
+         * To kill the dnsmasq process without scheduling a new one, cancel the cancellable
+         * instead. */
         _gl_pid_spawn_register_for_termination();
     } else {
         nm_assert(!notify);
@@ -656,9 +656,9 @@ _gl_pid_spawn(const char *          dm_binary,
         gs_free_error GError *error = NULL;
 
         /* we don't mark the error as G_IO_ERROR/G_IO_ERROR_CANCELLED. That
-		 * is reserved for cancelling the cancellable. However, the current
-		 * request was obsoleted/replaced by a new one, so we fail it with
-		 * NM_UTILS_ERROR/NM_UTILS_ERROR_CANCELLED_DISPOSING. */
+         * is reserved for cancelling the cancellable. However, the current
+         * request was obsoleted/replaced by a new one, so we fail it with
+         * NM_UTILS_ERROR/NM_UTILS_ERROR_CANCELLED_DISPOSING. */
         nm_utils_error_set_cancelled(&error, TRUE, NULL);
         _gl_pid_spawn_notify(sdata_replace, 0, NULL, error);
     }
@@ -761,10 +761,10 @@ ip_addr_to_string(int addr_family, gconstpointer addr, const char *iface, char *
         else
             _nm_utils_inet6_ntop(addr, buf2);
         /* Need to scope link-local addresses with %<zone-id>. Before dnsmasq 2.58,
-		 * only '@' was supported as delimiter. Since 2.58, '@' and '%' are
-		 * supported. Due to a bug, since 2.73 only '%' works properly as "server"
-		 * address.
-		 */
+         * only '@' was supported as delimiter. Since 2.58, '@' and '%' are
+         * supported. Due to a bug, since 2.73 only '%' works properly as "server"
+         * address.
+         */
         separator = IN6_IS_ADDR_LINKLOCAL(addr) ? "%" : "@";
     }
 
@@ -924,7 +924,7 @@ _main_cleanup(NMDnsDnsmasq *self, gboolean emit_failed)
     nm_clear_g_cancellable(&priv->update_cancellable);
 
     /* cancelling the main_cancellable will also cause _gl_pid_spawn*() to terminate the
-	 * process in the background. */
+     * process in the background. */
     nm_clear_g_cancellable(&priv->main_cancellable);
 
     if (!priv->is_stopped && priv->burst_retry_timeout_id == 0) {
@@ -1061,8 +1061,8 @@ start_dnsmasq(NMDnsDnsmasq *self, gboolean force_start, GError **error)
     dm_binary = nm_utils_find_helper("dnsmasq", DNSMASQ_PATH, NULL);
     if (!dm_binary) {
         /* We resolve the binary name before trying to start it asynchronously.
-		 * The reason is, that if dnsmasq is not installed, we want to fail early,
-		 * so that NMDnsManager can fallback to a non-caching implementation. */
+         * The reason is, that if dnsmasq is not installed, we want to fail early,
+         * so that NMDnsManager can fallback to a non-caching implementation. */
         nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, "could not find dnsmasq binary");
         return FALSE;
     }
@@ -1146,7 +1146,7 @@ stop(NMDnsPlugin *plugin)
     nm_clear_g_source(&priv->burst_retry_timeout_id);
 
     /* Cancelling the cancellable will also terminate the
-	 * process (in the background). */
+     * process (in the background). */
     _main_cleanup(self, FALSE);
 }
 

@@ -1482,7 +1482,7 @@ nmc_command_func_overview(const NMCCommand *cmd, NmCli *nmc, int argc, const cha
         color = nmc_device_state_to_color(device);
         if (ac) {
             /* TRANSLATORS: prints header line for activated device in plain `nmcli` overview output as
-			 * "<interface-name>: <device-state> to <connection-id>" */
+             * "<interface-name>: <device-state> to <connection-id>" */
             tmp = nmc_colorize(&nmc->nmc_config,
                                color,
                                C_("nmcli-overview", "%s: %s to %s"),
@@ -1491,7 +1491,7 @@ nmc_command_func_overview(const NMCCommand *cmd, NmCli *nmc, int argc, const cha
                                nm_active_connection_get_id(ac));
         } else {
             /* TRANSLATORS: prints header line for not active device in plain `nmcli` overview output as
-			 * "<interface-name>: <device-state>" */
+             * "<interface-name>: <device-state>" */
             tmp = nmc_colorize(&nmc->nmc_config,
                                color,
                                C_("nmcli-overview", "%s: %s"),

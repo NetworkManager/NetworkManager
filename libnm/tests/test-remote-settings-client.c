@@ -34,9 +34,9 @@ add_cb(GObject *s, GAsyncResult *result, gpointer user_data)
     g_object_add_weak_pointer(G_OBJECT(gl.remote), (void **) &gl.remote);
 
     /* nm_client_add_connection_finish() adds a ref to @remote, but we
-	 * want the weak pointer to be cleared as soon as @client drops its own ref.
-	 * So drop ours.
-	 */
+     * want the weak pointer to be cleared as soon as @client drops its own ref.
+     * So drop ours.
+     */
     g_object_unref(gl.remote);
 }
 
@@ -357,8 +357,8 @@ test_add_remove_connection(void)
         return;
 
     /* This will cause the test server to immediately delete the connection
-	 * after creating it.
-	 */
+     * after creating it.
+     */
     ret = g_dbus_proxy_call_sync(gl.sinfo->proxy,
                                  "AutoRemoveNextConnection",
                                  NULL,
@@ -478,8 +478,8 @@ main(int argc, char **argv)
     gl.client = nmtstc_client_new(TRUE);
 
     /* FIXME: these tests assume that they get run in order, but g_test_run()
-	 * does not actually guarantee that!
-	 */
+     * does not actually guarantee that!
+     */
     g_test_add_func("/client/add_connection", test_add_connection);
     g_test_add_func("/client/make_invisible", test_make_invisible);
     g_test_add_func("/client/make_visible", test_make_visible);

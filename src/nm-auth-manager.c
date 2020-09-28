@@ -160,7 +160,7 @@ _call_id_free(NMAuthManagerCallId *call_id)
 
     if (call_id->dbus_cancellable) {
         /* we have a pending D-Bus call. We keep the call-id instance alive
-		 * for _call_check_authorize_cb() */
+         * for _call_check_authorize_cb() */
         g_cancellable_cancel(call_id->dbus_cancellable);
         return;
     }
@@ -212,10 +212,10 @@ _call_check_authorize_cb(GObject *proxy, GAsyncResult *res, gpointer user_data)
     gboolean              is_challenge  = FALSE;
 
     /* we need to clear the cancelable, to signal for _call_id_free() that we
-	 * are not in a pending call.
-	 *
-	 * Note how _call_id_free() kept call-id alive, even if the request was
-	 * already cancelled. */
+     * are not in a pending call.
+     *
+     * Note how _call_id_free() kept call-id alive, even if the request was
+     * already cancelled. */
     g_clear_object(&call_id->dbus_cancellable);
 
     self = call_id->self;
@@ -225,20 +225,20 @@ _call_check_authorize_cb(GObject *proxy, GAsyncResult *res, gpointer user_data)
 
     if (nm_utils_error_is_cancelled(error)) {
         /* call_id was cancelled externally, but _call_id_free() kept call_id
-		 * alive (and it has still the reference on @self. */
+         * alive (and it has still the reference on @self. */
 
         if (!priv->main_cancellable) {
             /* we do a forced shutdown. There is no more time for cancelling... */
             _call_id_free(call_id);
 
             /* this shouldn't really happen, because:
-			 * nm_auth_manager_check_authorization() only scheduled the D-Bus request at a time when
-			 * main_cancellable was still set. It means, somebody called force-shutdown
-			 * after call-id was schedule.
-			 * force-shutdown should only be called after:
-			 *   - cancel all pending requests
-			 *   - give enough time to cancel the request and schedule a D-Bus call
-			 *     to CancelCheckAuthorization (below), before issuing force-shutdown. */
+             * nm_auth_manager_check_authorization() only scheduled the D-Bus request at a time when
+             * main_cancellable was still set. It means, somebody called force-shutdown
+             * after call-id was schedule.
+             * force-shutdown should only be called after:
+             *   - cancel all pending requests
+             *   - give enough time to cancel the request and schedule a D-Bus call
+             *     to CancelCheckAuthorization (below), before issuing force-shutdown. */
             g_return_if_reached();
         }
 
@@ -541,28 +541,28 @@ nm_auth_manager_force_shutdown(NMAuthManager *self)
     priv = NM_AUTH_MANAGER_GET_PRIVATE(self);
 
     /* FIXME(shutdown): ensure we properly call this API during shutdown as
-	 * described next. */
+     * described next. */
 
     /* while we have pending requests (NMAuthManagerCallId), the instance
-	 * is kept alive.
-	 *
-	 * Even if the caller cancels all pending call-ids, we still need to keep
-	 * a reference to self, in order to handle pending CancelCheckAuthorization
-	 * requests.
-	 *
-	 * To do a coordinated shutdown, do the following:
-	 * - cancel all pending NMAuthManagerCallId requests.
-	 * - ensure everybody unrefs the NMAuthManager instance. If by that, the instance
-	 *   gets destroyed, the shutdown already completed successfully.
-	 * - Otherwise, the object is kept alive by pending CancelCheckAuthorization requests.
-	 *   wait a certain timeout (1 second) for all requests to complete (by watching
-	 *   for destruction of NMAuthManager).
-	 * - if that doesn't happen within timeout, issue nm_auth_manager_force_shutdown() and
-	 *   wait longer. After that, soon the instance should be destroyed and you
-	 *   did a successful shutdown.
-	 * - if the instance was still not destroyed within a short timeout, you leaked
-	 *   resources. You cannot properly shutdown.
-	 */
+     * is kept alive.
+     *
+     * Even if the caller cancels all pending call-ids, we still need to keep
+     * a reference to self, in order to handle pending CancelCheckAuthorization
+     * requests.
+     *
+     * To do a coordinated shutdown, do the following:
+     * - cancel all pending NMAuthManagerCallId requests.
+     * - ensure everybody unrefs the NMAuthManager instance. If by that, the instance
+     *   gets destroyed, the shutdown already completed successfully.
+     * - Otherwise, the object is kept alive by pending CancelCheckAuthorization requests.
+     *   wait a certain timeout (1 second) for all requests to complete (by watching
+     *   for destruction of NMAuthManager).
+     * - if that doesn't happen within timeout, issue nm_auth_manager_force_shutdown() and
+     *   wait longer. After that, soon the instance should be destroyed and you
+     *   did a successful shutdown.
+     * - if the instance was still not destroyed within a short timeout, you leaked
+     *   resources. You cannot properly shutdown.
+     */
 
     priv->shutting_down = TRUE;
     nm_clear_g_cancellable(&priv->main_cancellable);

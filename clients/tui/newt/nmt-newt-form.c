@@ -281,8 +281,8 @@ nmt_newt_form_iterate(NmtNewtForm *form)
 
     if (es.reason == NEWT_EXIT_COMPONENT) {
         /* The user hit Return/Space on a component; update the form focus
-		 * to point that component, and activate it.
-		 */
+         * to point that component, and activate it.
+         */
         focus = nmt_newt_widget_find_component(priv->content, es.u.co);
         if (focus) {
             nmt_newt_form_set_focus(form, focus);
@@ -572,11 +572,11 @@ nmt_newt_form_class_init(NmtNewtFormClass *form_class)
     /* signals */
 
     /**
-	 * NmtNewtForm::quit:
-	 * @form: the #NmtNewtForm
-	 *
-	 * Emitted when the form quits.
-	 */
+     * NmtNewtForm::quit:
+     * @form: the #NmtNewtForm
+     *
+     * Emitted when the form quits.
+     */
     signals[QUIT] = g_signal_new("quit",
                                  G_OBJECT_CLASS_TYPE(object_class),
                                  G_SIGNAL_RUN_FIRST,
@@ -588,11 +588,11 @@ nmt_newt_form_class_init(NmtNewtFormClass *form_class)
                                  0);
 
     /**
-	 * NmtNewtForm:title:
-	 *
-	 * The form's title. If non-%NULL, this will be displayed above
-	 * the form in its border.
-	 */
+     * NmtNewtForm:title:
+     *
+     * The form's title. If non-%NULL, this will be displayed above
+     * the form in its border.
+     */
     g_object_class_install_property(
         object_class,
         PROP_TITLE,
@@ -602,11 +602,11 @@ nmt_newt_form_class_init(NmtNewtFormClass *form_class)
                             NULL,
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT_ONLY));
     /**
-	 * NmtNewtForm:fullscreen:
-	 *
-	 * If %TRUE, the form will fill the entire "screen" (ie, terminal
-	 * window).
-	 */
+     * NmtNewtForm:fullscreen:
+     *
+     * If %TRUE, the form will fill the entire "screen" (ie, terminal
+     * window).
+     */
     g_object_class_install_property(
         object_class,
         PROP_FULLSCREEN,
@@ -616,11 +616,11 @@ nmt_newt_form_class_init(NmtNewtFormClass *form_class)
                              FALSE,
                              G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT_ONLY));
     /**
-	 * NmtNewtForm:fullscreen-vertical:
-	 *
-	 * If %TRUE, the form will fill the entire "screen" (ie, terminal
-	 * window) vertically, but not necessarily horizontally.
-	 */
+     * NmtNewtForm:fullscreen-vertical:
+     *
+     * If %TRUE, the form will fill the entire "screen" (ie, terminal
+     * window) vertically, but not necessarily horizontally.
+     */
     g_object_class_install_property(
         object_class,
         PROP_FULLSCREEN_VERTICAL,
@@ -630,11 +630,11 @@ nmt_newt_form_class_init(NmtNewtFormClass *form_class)
                              FALSE,
                              G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT_ONLY));
     /**
-	 * NmtNewtForm:fullscreen-horizontal:
-	 *
-	 * If %TRUE, the form will fill the entire "screen" (ie, terminal
-	 * window) horizontally, but not necessarily vertically.
-	 */
+     * NmtNewtForm:fullscreen-horizontal:
+     *
+     * If %TRUE, the form will fill the entire "screen" (ie, terminal
+     * window) horizontally, but not necessarily vertically.
+     */
     g_object_class_install_property(
         object_class,
         PROP_FULLSCREEN_HORIZONTAL,
@@ -644,11 +644,11 @@ nmt_newt_form_class_init(NmtNewtFormClass *form_class)
                              FALSE,
                              G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT_ONLY));
     /**
-	 * NmtNewtForm:x:
-	 *
-	 * The form's x coordinate. By default, the form will be centered
-	 * on the screen.
-	 */
+     * NmtNewtForm:x:
+     *
+     * The form's x coordinate. By default, the form will be centered
+     * on the screen.
+     */
     g_object_class_install_property(
         object_class,
         PROP_X,
@@ -660,11 +660,11 @@ nmt_newt_form_class_init(NmtNewtFormClass *form_class)
                           0,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT_ONLY));
     /**
-	 * NmtNewtForm:y:
-	 *
-	 * The form's y coordinate. By default, the form will be centered
-	 * on the screen.
-	 */
+     * NmtNewtForm:y:
+     *
+     * The form's y coordinate. By default, the form will be centered
+     * on the screen.
+     */
     g_object_class_install_property(
         object_class,
         PROP_Y,
@@ -676,11 +676,11 @@ nmt_newt_form_class_init(NmtNewtFormClass *form_class)
                           0,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT_ONLY));
     /**
-	 * NmtNewtForm:width:
-	 *
-	 * The form's width. By default, this will be determined by the
-	 * width of the form's content.
-	 */
+     * NmtNewtForm:width:
+     *
+     * The form's width. By default, this will be determined by the
+     * width of the form's content.
+     */
     g_object_class_install_property(
         object_class,
         PROP_WIDTH,
@@ -692,11 +692,11 @@ nmt_newt_form_class_init(NmtNewtFormClass *form_class)
                           0,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT_ONLY));
     /**
-	 * NmtNewtForm:height:
-	 *
-	 * The form's height. By default, this will be determined by the
-	 * height of the form's content.
-	 */
+     * NmtNewtForm:height:
+     *
+     * The form's height. By default, this will be determined by the
+     * height of the form's content.
+     */
     g_object_class_install_property(
         object_class,
         PROP_HEIGHT,
@@ -708,10 +708,10 @@ nmt_newt_form_class_init(NmtNewtFormClass *form_class)
                           0,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT_ONLY));
     /**
-	 * NmtNewtForm:padding:
-	 *
-	 * The padding between the form's content and its border.
-	 */
+     * NmtNewtForm:padding:
+     *
+     * The padding between the form's content and its border.
+     */
     g_object_class_install_property(
         object_class,
         PROP_PADDING,
@@ -723,11 +723,11 @@ nmt_newt_form_class_init(NmtNewtFormClass *form_class)
                           1,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT_ONLY));
     /**
-	 * NmtNewtForm:escape-exits:
-	 *
-	 * If %TRUE, then hitting the Escape key will cause the form to
-	 * exit.
-	 */
+     * NmtNewtForm:escape-exits:
+     *
+     * If %TRUE, then hitting the Escape key will cause the form to
+     * exit.
+     */
     g_object_class_install_property(
         object_class,
         PROP_ESCAPE_EXITS,

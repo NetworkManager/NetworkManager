@@ -296,15 +296,15 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
     setting_class->verify = verify;
 
     /**
-	 * NMSettingTun:mode:
-	 *
-	 * The operating mode of the virtual device. Allowed values are
-	 * %NM_SETTING_TUN_MODE_TUN to create a layer 3 device and
-	 * %NM_SETTING_TUN_MODE_TAP to create an Ethernet-like layer 2
-	 * one.
-	 *
-	 * Since: 1.2
-	 */
+     * NMSettingTun:mode:
+     *
+     * The operating mode of the virtual device. Allowed values are
+     * %NM_SETTING_TUN_MODE_TUN to create a layer 3 device and
+     * %NM_SETTING_TUN_MODE_TAP to create an Ethernet-like layer 2
+     * one.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_MODE] =
         g_param_spec_uint(NM_SETTING_TUN_MODE,
                           "",
@@ -315,13 +315,13 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingTun:owner:
-	 *
-	 * The user ID which will own the device. If set to %NULL everyone
-	 * will be able to use the device.
-	 *
-	 * Since: 1.2
-	 */
+     * NMSettingTun:owner:
+     *
+     * The user ID which will own the device. If set to %NULL everyone
+     * will be able to use the device.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_OWNER] = g_param_spec_string(NM_SETTING_TUN_OWNER,
                                                      "",
                                                      "",
@@ -330,13 +330,13 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
                                                          | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingTun:group:
-	 *
-	 * The group ID which will own the device. If set to %NULL everyone
-	 * will be able to use the device.
-	 *
-	 * Since: 1.2
-	 */
+     * NMSettingTun:group:
+     *
+     * The group ID which will own the device. If set to %NULL everyone
+     * will be able to use the device.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_GROUP] = g_param_spec_string(NM_SETTING_TUN_GROUP,
                                                      "",
                                                      "",
@@ -345,13 +345,13 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
                                                          | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingTun:pi:
-	 *
-	 * If %TRUE the interface will prepend a 4 byte header describing the
-	 * physical interface to the packets.
-	 *
-	 * Since: 1.2
-	 */
+     * NMSettingTun:pi:
+     *
+     * If %TRUE the interface will prepend a 4 byte header describing the
+     * physical interface to the packets.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_PI] = g_param_spec_boolean(NM_SETTING_TUN_PI,
                                                    "",
                                                    "",
@@ -360,13 +360,13 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
                                                        | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingTun:vnet-hdr:
-	 *
-	 * If %TRUE the IFF_VNET_HDR the tunnel packets will include a virtio
-	 * network header.
-	 *
-	 * Since: 1.2
-	 */
+     * NMSettingTun:vnet-hdr:
+     *
+     * If %TRUE the IFF_VNET_HDR the tunnel packets will include a virtio
+     * network header.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_VNET_HDR] = g_param_spec_boolean(
         NM_SETTING_TUN_VNET_HDR,
         "",
@@ -375,15 +375,15 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingTun:multi-queue:
-	 *
-	 * If the property is set to %TRUE, the interface will support
-	 * multiple file descriptors (queues) to parallelize packet
-	 * sending or receiving. Otherwise, the interface will only
-	 * support a single queue.
-	 *
-	 * Since: 1.2
-	 */
+     * NMSettingTun:multi-queue:
+     *
+     * If the property is set to %TRUE, the interface will support
+     * multiple file descriptors (queues) to parallelize packet
+     * sending or receiving. Otherwise, the interface will only
+     * support a single queue.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_MULTI_QUEUE] = g_param_spec_boolean(
         NM_SETTING_TUN_MULTI_QUEUE,
         "",

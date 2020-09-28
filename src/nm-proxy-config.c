@@ -73,8 +73,8 @@ nm_proxy_config_merge_setting(NMProxyConfig *config, NMSettingProxy *setting)
         priv->method = NM_PROXY_CONFIG_METHOD_AUTO;
 
         /* Free DHCP Obtained PAC Url (i.e Option 252)
-		 * only when libnm overrides it.
-		 */
+         * only when libnm overrides it.
+         */
         tmp = nm_setting_proxy_get_pac_url(setting);
         if (tmp) {
             g_free(priv->pac_url);

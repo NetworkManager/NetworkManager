@@ -349,7 +349,7 @@ load_factories_from_dir(const char *                      dirname,
         }
 
         /* after loading glib types from the plugin, we cannot unload the library anymore.
-		 * Make it resident. */
+         * Make it resident. */
         g_module_make_resident(plugin);
 
         factory = create_func(&error);

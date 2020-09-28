@@ -159,8 +159,8 @@ typedef enum {
     NM_META_ACCESSOR_GET_OUT_FLAGS_STRV = (1LL << 0),
 
     /* the property allows to be hidden, if and only if, it's value is set to the
-	 * default. This should only be set by new properties, to preserve behavior
-	 * of old properties, which were always printed. */
+     * default. This should only be set by new properties, to preserve behavior
+     * of old properties, which were always printed. */
     NM_META_ACCESSOR_GET_OUT_FLAGS_HIDE = (1LL << 1),
 } NMMetaAccessorGetOutFlags;
 
@@ -231,7 +231,7 @@ struct _NMMetaPropertyType {
                                        char ***                      out_to_free);
 
     /* Whether set_fcn() supports the '-' modifier. That is, whether the property
-	 * is a list type. */
+     * is a list type. */
     bool set_supports_remove : 1;
 };
 
@@ -280,8 +280,8 @@ struct _NMMetaPropertyTypData {
             void (*clear_all_fcn)(NMSetting *setting);
 
             /* some multilist properties distinguish between an empty list and
-			 * and unset. If this function pointer is set, certain behaviors come
-			 * into action to handle that. */
+             * and unset. If this function pointer is set, certain behaviors come
+             * into action to handle that. */
             void (*clear_emptyunset_fcn)(NMSetting *setting,
                                          gboolean   is_set /* or else set default */);
 
@@ -417,15 +417,15 @@ struct _NMMetaSettingInfoEditor {
     guint                            properties_num;
 
     /* a NMConnection has a main type (connection.type), which is a
-	 * main NMSetting instance. Depending on the type, a connection
-	 * may have a list of other allowed settings.
-	 *
-	 * For example, a connection of type "vlan" may have settings
-	 * of type "connection", "vlan", and "wired".
-	 *
-	 * Some setting types a not a main type (NMSettingProxy). They
-	 * don't have valid_settings but are usually referenced by other
-	 * settings to be valid for them. */
+     * main NMSetting instance. Depending on the type, a connection
+     * may have a list of other allowed settings.
+     *
+     * For example, a connection of type "vlan" may have settings
+     * of type "connection", "vlan", and "wired".
+     *
+     * Some setting types a not a main type (NMSettingProxy). They
+     * don't have valid_settings but are usually referenced by other
+     * settings to be valid for them. */
     const NMMetaSettingValidPartItem *const *valid_parts;
 
     void (*setting_init_fcn)(const NMMetaSettingInfoEditor *setting_info,

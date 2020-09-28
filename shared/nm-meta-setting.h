@@ -96,10 +96,10 @@ extern const NMSetting8021xSchemeVtable
 
 typedef enum {
     /* the enum (and their numeric values) are internal API. Do not assign
-	 * any meaning the numeric values, because they already have one:
-	 *
-	 * they are sorted in a way, that corresponds to the asciibetical sort
-	 * order of the corresponding setting-name. */
+     * any meaning the numeric values, because they already have one:
+     *
+     * they are sorted in a way, that corresponds to the asciibetical sort
+     * order of the corresponding setting-name. */
 
     NM_META_SETTING_TYPE_6LOWPAN,
     NM_META_SETTING_TYPE_OLPC_MESH,

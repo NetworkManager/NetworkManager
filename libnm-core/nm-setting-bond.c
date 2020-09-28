@@ -279,7 +279,7 @@ _bond_get_option_normalized(NMSettingBond *self, const char *option, gboolean ge
 
     if (mode == NM_BOND_MODE_UNKNOWN) {
         /* the mode is unknown, consequently, there is no normalized/default
-		 * value either. */
+         * value either. */
         return NULL;
     }
 
@@ -294,7 +294,7 @@ _bond_get_option_normalized(NMSettingBond *self, const char *option, gboolean ge
             int miimon;
 
             /* if arp_interval is explicitly set and miimon is not, then disable miimon
-			 * (and related updelay and downdelay) as recommended by the kernel docs */
+             * (and related updelay and downdelay) as recommended by the kernel docs */
             miimon =
                 _nm_utils_ascii_str_to_int64(_bond_get_option(self, NM_SETTING_BOND_OPTION_MIIMON),
                                              10,
@@ -317,7 +317,7 @@ _bond_get_option_normalized(NMSettingBond *self, const char *option, gboolean ge
                 value = _bond_get_option(self, NM_SETTING_BOND_OPTION_NUM_UNSOL_NA);
         } else if (NM_IN_STRSET(option, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE)) {
             /* "active_slave" is deprecated, and an alias for "primary". The property
-			 * itself always normalizes to %NULL. */
+             * itself always normalizes to %NULL. */
             value = NULL;
         } else if (NM_IN_STRSET(option, NM_SETTING_BOND_OPTION_PRIMARY)) {
             /* "active_slave" is deprecated, and an alias for "primary". */
@@ -798,14 +798,14 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     num_unsol_na = _atoi(_bond_get_option_or_default(self, NM_SETTING_BOND_OPTION_NUM_UNSOL_NA));
 
     /* Option restrictions:
-	 *
-	 * arp_interval conflicts [ alb, tlb ]
-	 * arp_interval needs arp_ip_target
-	 * arp_validate does not work with [ BOND_MODE_8023AD, BOND_MODE_TLB, BOND_MODE_ALB ]
-	 * downdelay needs miimon
-	 * updelay needs miimon
-	 * primary needs [ active-backup, tlb, alb ]
-	 */
+     *
+     * arp_interval conflicts [ alb, tlb ]
+     * arp_interval needs arp_ip_target
+     * arp_validate does not work with [ BOND_MODE_8023AD, BOND_MODE_TLB, BOND_MODE_ALB ]
+     * downdelay needs miimon
+     * updelay needs miimon
+     * primary needs [ active-backup, tlb, alb ]
+     */
 
     /* Verify bond mode */
     mode_str = _bond_get_option(self, NM_SETTING_BOND_OPTION_MODE);
@@ -913,8 +913,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     /* arp_ip_target can only be used with arp_interval, and must
-	 * contain a comma-separated list of IPv4 addresses.
-	 */
+     * contain a comma-separated list of IPv4 addresses.
+     */
     arp_ip_target = _bond_get_option(self, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
     if (arp_interval > 0) {
         if (!arp_ip_target) {
@@ -1017,10 +1017,10 @@ options_equal_asym(NMSettingBond *s_bond, NMSettingBond *s_bond2, NMSettingCompa
     while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &value)) {
         if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)) {
             /* when doing an inferrable match, the active-slave should be ignored
-			 * as it might be differ from the setting in the connection.
-			 *
-			 * Also, the fail_over_mac setting can change, see for example
-			 * https://bugzilla.redhat.com/show_bug.cgi?id=1375558#c8 */
+             * as it might be differ from the setting in the connection.
+             *
+             * Also, the fail_over_mac setting can change, see for example
+             * https://bugzilla.redhat.com/show_bug.cgi?id=1375558#c8 */
             if (NM_IN_STRSET(key, "fail_over_mac", "active_slave"))
                 continue;
         }
@@ -1143,19 +1143,19 @@ nm_setting_bond_class_init(NMSettingBondClass *klass)
     setting_class->compare_property = compare_property;
 
     /**
-	 * NMSettingBond:options: (type GHashTable(utf8,utf8)):
-	 *
-	 * Dictionary of key/value pairs of bonding options.  Both keys and values
-	 * must be strings. Option names must contain only alphanumeric characters
-	 * (ie, [a-zA-Z0-9]).
-	 **/
+     * NMSettingBond:options: (type GHashTable(utf8,utf8)):
+     *
+     * Dictionary of key/value pairs of bonding options.  Both keys and values
+     * must be strings. Option names must contain only alphanumeric characters
+     * (ie, [a-zA-Z0-9]).
+     **/
     /* ---ifcfg-rh---
-	 * property: options
-	 * variable: BONDING_OPTS
-	 * description: Bonding options.
-	 * example: BONDING_OPTS="miimon=100 mode=broadcast"
-	 * ---end---
-	 */
+     * property: options
+     * variable: BONDING_OPTS
+     * description: Bonding options.
+     * example: BONDING_OPTS="miimon=100 mode=broadcast"
+     * ---end---
+     */
     obj_properties[PROP_OPTIONS] = g_param_spec_boxed(
         NM_SETTING_BOND_OPTIONS,
         "",

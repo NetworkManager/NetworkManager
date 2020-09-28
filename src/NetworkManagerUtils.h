@@ -74,16 +74,16 @@ NMPlatformRoutingRule *nm_ip_routing_rule_to_platform(const NMIPRoutingRule *rul
 
 typedef enum {
     /* There is no watched_obj argument, and the shutdown is delayed until the user
-	 * explicitly calls unregister on the returned handle. */
+     * explicitly calls unregister on the returned handle. */
     NM_SHUTDOWN_WAIT_TYPE_HANDLE,
 
     /* The watched_obj argument is a GObject, and shutdown is delayed until the object
-	 * gets destroyed (or unregistered). */
+     * gets destroyed (or unregistered). */
     NM_SHUTDOWN_WAIT_TYPE_OBJECT,
 
     /* The watched_obj argument is a GCancellable, and shutdown is delayed until the object
-	 * gets destroyed (or unregistered). Note that after NM_SHUTDOWN_TIMEOUT_MS, the
-	 * cancellable will be cancelled to notify listeners about the shutdown. */
+     * gets destroyed (or unregistered). Note that after NM_SHUTDOWN_TIMEOUT_MS, the
+     * cancellable will be cancelled to notify listeners about the shutdown. */
     NM_SHUTDOWN_WAIT_TYPE_CANCELLABLE,
 } NMShutdownWaitType;
 
@@ -184,10 +184,10 @@ static inline NMDhcpLease *
 nm_dhcp_lease_new_from_options(GHashTable *options_take)
 {
     /* a NMDhcpLease is really just a GHashTable. But it's also supposed to be *immutable*.
-	 *
-	 * Hence, the API here takes over ownership of the reference to @options_take, that
-	 * is to emphasize that we acquire ownership of the hash, and it should not be modified
-	 * anymore. */
+     *
+     * Hence, the API here takes over ownership of the reference to @options_take, that
+     * is to emphasize that we acquire ownership of the hash, and it should not be modified
+     * anymore. */
     return (NMDhcpLease *) options_take;
 }
 

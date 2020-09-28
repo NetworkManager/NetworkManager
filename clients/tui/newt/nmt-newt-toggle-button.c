@@ -185,28 +185,28 @@ nmt_newt_toggle_button_class_init(NmtNewtToggleButtonClass *button_class)
     widget_class->activated = nmt_newt_toggle_button_activated;
 
     /**
-	 * NmtNewtToggleButton:on-label:
-	 *
-	 * The label the button displays when it is "on".
-	 */
+     * NmtNewtToggleButton:on-label:
+     *
+     * The label the button displays when it is "on".
+     */
     g_object_class_install_property(
         object_class,
         PROP_ON_LABEL,
         g_param_spec_string("on-label", "", "", NULL, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtToggleButton:off-label:
-	 *
-	 * The label the button displays when it is "off".
-	 */
+     * NmtNewtToggleButton:off-label:
+     *
+     * The label the button displays when it is "off".
+     */
     g_object_class_install_property(
         object_class,
         PROP_OFF_LABEL,
         g_param_spec_string("off-label", "", "", NULL, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtToggleButton:active:
-	 *
-	 * Whether the button is currently "on" (%TRUE) or "off" (%FALSE)
-	 */
+     * NmtNewtToggleButton:active:
+     *
+     * Whether the button is currently "on" (%TRUE) or "off" (%FALSE)
+     */
     g_object_class_install_property(
         object_class,
         PROP_ACTIVE,

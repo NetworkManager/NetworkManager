@@ -239,12 +239,12 @@ nm_setting_serial_class_init(NMSettingSerialClass *klass)
     object_class->set_property = set_property;
 
     /**
-	 * NMSettingSerial:baud:
-	 *
-	 * Speed to use for communication over the serial port.  Note that this
-	 * value usually has no effect for mobile broadband modems as they generally
-	 * ignore speed settings and use the highest available speed.
-	 **/
+     * NMSettingSerial:baud:
+     *
+     * Speed to use for communication over the serial port.  Note that this
+     * value usually has no effect for mobile broadband modems as they generally
+     * ignore speed settings and use the highest available speed.
+     **/
     obj_properties[PROP_BAUD] = g_param_spec_uint(NM_SETTING_SERIAL_BAUD,
                                                   "",
                                                   "",
@@ -254,10 +254,10 @@ nm_setting_serial_class_init(NMSettingSerialClass *klass)
                                                   G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingSerial:bits:
-	 *
-	 * Byte-width of the serial communication. The 8 in "8n1" for example.
-	 **/
+     * NMSettingSerial:bits:
+     *
+     * Byte-width of the serial communication. The 8 in "8n1" for example.
+     **/
     obj_properties[PROP_BITS] = g_param_spec_uint(NM_SETTING_SERIAL_BITS,
                                                   "",
                                                   "",
@@ -267,25 +267,25 @@ nm_setting_serial_class_init(NMSettingSerialClass *klass)
                                                   G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingSerial:parity:
-	 *
-	 * Parity setting of the serial port.
-	 **/
+     * NMSettingSerial:parity:
+     *
+     * Parity setting of the serial port.
+     **/
     /* ---keyfile---
-	 * property: parity
-	 * format: 'e', 'o', or 'n'
-	 * description: The connection parity; even, odd, or none. Note that older
-	 *   versions of NetworkManager stored this as an integer: 69 ('E') for even,
-	 *   111 ('o') for odd, or 110 ('n') for none.
-	 * example: parity=n
-	 * ---end---
-	 * ---dbus---
-	 * property: parity
-	 * format: byte
-	 * description: The connection parity: 69 (ASCII 'E') for even parity,
-	 *   111 (ASCII 'o') for odd, 110 (ASCII 'n') for none.
-	 * ---end---
-	 */
+     * property: parity
+     * format: 'e', 'o', or 'n'
+     * description: The connection parity; even, odd, or none. Note that older
+     *   versions of NetworkManager stored this as an integer: 69 ('E') for even,
+     *   111 ('o') for odd, or 110 ('n') for none.
+     * example: parity=n
+     * ---end---
+     * ---dbus---
+     * property: parity
+     * format: byte
+     * description: The connection parity: 69 (ASCII 'E') for even parity,
+     *   111 (ASCII 'o') for odd, 110 (ASCII 'n') for none.
+     * ---end---
+     */
     obj_properties[PROP_PARITY] = g_param_spec_enum(NM_SETTING_SERIAL_PARITY,
                                                     "",
                                                     "",
@@ -300,11 +300,11 @@ nm_setting_serial_class_init(NMSettingSerialClass *klass)
                                   .gprop_from_dbus_fcn = parity_from_dbus, ));
 
     /**
-	 * NMSettingSerial:stopbits:
-	 *
-	 * Number of stop bits for communication on the serial port.  Either 1 or 2.
-	 * The 1 in "8n1" for example.
-	 **/
+     * NMSettingSerial:stopbits:
+     *
+     * Number of stop bits for communication on the serial port.  Either 1 or 2.
+     * The 1 in "8n1" for example.
+     **/
     obj_properties[PROP_STOPBITS] = g_param_spec_uint(NM_SETTING_SERIAL_STOPBITS,
                                                       "",
                                                       "",
@@ -314,10 +314,10 @@ nm_setting_serial_class_init(NMSettingSerialClass *klass)
                                                       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingSerial:send-delay:
-	 *
-	 * Time to delay between each byte sent to the modem, in microseconds.
-	 **/
+     * NMSettingSerial:send-delay:
+     *
+     * Time to delay between each byte sent to the modem, in microseconds.
+     **/
     obj_properties[PROP_SEND_DELAY] =
         g_param_spec_uint64(NM_SETTING_SERIAL_SEND_DELAY,
                             "",

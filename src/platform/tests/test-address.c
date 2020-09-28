@@ -233,8 +233,8 @@ test_ip4_address_general_2(void)
     g_assert(ifindex > 0);
 
     /* Looks like addresses are not announced by kernel when the interface
-	 * is down. Link-local IPv6 address is automatically added.
-	 */
+     * is down. Link-local IPv6 address is automatically added.
+     */
     g_assert(nm_platform_link_set_up(NM_PLATFORM_GET, DEVICE_IFINDEX, NULL));
 
     /* Add/delete notification */

@@ -196,12 +196,12 @@ nmt_newt_entry_numeric_class_init(NmtNewtEntryNumericClass *entry_class)
     object_class->get_property = nmt_newt_entry_numeric_get_property;
 
     /**
-	 * NmtNewtEntryNumeric:minimum:
-	 *
-	 * The minimum #NmtNewtWidget:valid value for the entry. If this
-	 * is non-negative, then the entry will not allow negative numbers
-	 * to be entered.
-	 */
+     * NmtNewtEntryNumeric:minimum:
+     *
+     * The minimum #NmtNewtWidget:valid value for the entry. If this
+     * is non-negative, then the entry will not allow negative numbers
+     * to be entered.
+     */
     g_object_class_install_property(
         object_class,
         PROP_MINIMUM,
@@ -213,10 +213,10 @@ nmt_newt_entry_numeric_class_init(NmtNewtEntryNumericClass *entry_class)
                            0,
                            G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtEntryNumeric:maximum:
-	 *
-	 * The maximum #NmtNewtWidget:valid value for the entry.
-	 */
+     * NmtNewtEntryNumeric:maximum:
+     *
+     * The maximum #NmtNewtWidget:valid value for the entry.
+     */
     g_object_class_install_property(
         object_class,
         PROP_MAXIMUM,
@@ -228,11 +228,11 @@ nmt_newt_entry_numeric_class_init(NmtNewtEntryNumericClass *entry_class)
                            G_MAXINT64,
                            G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtEntryNumeric:optional:
-	 *
-	 * If %TRUE, allow empty string to indicate some default value.
-	 * It means the property is optional and can be left at the default
-	 */
+     * NmtNewtEntryNumeric:optional:
+     *
+     * If %TRUE, allow empty string to indicate some default value.
+     * It means the property is optional and can be left at the default
+     */
     g_object_class_install_property(
         object_class,
         PROP_OPTIONAL,

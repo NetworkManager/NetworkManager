@@ -466,8 +466,8 @@ _notify_maybe_scanning(NMSupplicantInterface *self)
 
     if (!scanning && !c_list_is_empty(&priv->bss_initializing_lst_head)) {
         /* we would change state to indicate we no longer scan. However,
-		 * we still have BSS instances to be initialized. Delay the
-		 * state change further. */
+         * we still have BSS instances to be initialized. Delay the
+         * state change further. */
         return;
     }
 
@@ -1177,8 +1177,8 @@ parse_capabilities(NMSupplicantInterface *self, GVariant *capabilities)
 
     if (g_variant_lookup(capabilities, "Modes", "^a&s", &array)) {
         /* Setting p2p_capable might toggle _prop_p2p_available_get(). However,
-		 * we don't need to check for a property changed notification, because
-		 * the caller did g_object_freeze_notify() and will perform the check. */
+         * we don't need to check for a property changed notification, because
+         * the caller did g_object_freeze_notify() and will perform the check. */
         priv->p2p_capable_property = g_strv_contains(array, "p2p");
         g_free(array);
     }
@@ -1201,10 +1201,10 @@ parse_capabilities(NMSupplicantInterface *self, GVariant *capabilities)
         const gint32 WPAS_MAX_SCAN_SSIDS = 16;
 
         /* Even if supplicant claims that 20 SSIDs are supported, the Scan request
-		 * still only accepts WPAS_MAX_SCAN_SSIDS SSIDs. Otherwise, the D-Bus
-		 * request will be rejected with "fi.w1.wpa_supplicant1.InvalidArgs"
-		 * Body: ('Did not receive correct message arguments.', 'Too many ssids specified. Specify at most four')
-		 * */
+         * still only accepts WPAS_MAX_SCAN_SSIDS SSIDs. Otherwise, the D-Bus
+         * request will be rejected with "fi.w1.wpa_supplicant1.InvalidArgs"
+         * Body: ('Did not receive correct message arguments.', 'Too many ssids specified. Specify at most four')
+         * */
         priv->max_scan_ssids = CLAMP(max_scan_ssids, 0, WPAS_MAX_SCAN_SSIDS);
     }
 
@@ -1536,7 +1536,7 @@ _wps_handle_set_pc_cb(GVariant *res, GError *error, gpointer user_data)
         g_variant_builder_add(&start_args, "{sv}", "Pin", g_variant_new_string(wps_data->pin));
     if (wps_data->bssid) {
         /* The BSSID is in fact not mandatory. If it is not set the supplicant would
-		 * enroll with any BSS in range. */
+         * enroll with any BSS in range. */
         if (!nm_utils_hwaddr_aton(wps_data->bssid, bssid_buf, sizeof(bssid_buf)))
             nm_assert_not_reached();
         g_variant_builder_add(
@@ -1787,11 +1787,11 @@ _properties_changed_main(NMSupplicantInterface *self, GVariant *properties)
 
     if (nm_g_variant_lookup(properties, "DisconnectReason", "i", &v_i32)) {
         /* Disconnect reason is currently only given for deauthentication events,
-		 * not disassociation; currently they are IEEE 802.11 "reason codes",
-		 * defined by (IEEE 802.11-2007, 7.3.1.7, Table 7-22).  Any locally caused
-		 * deauthentication will be negative, while authentications caused by the
-		 * AP will be positive.
-		 */
+         * not disassociation; currently they are IEEE 802.11 "reason codes",
+         * defined by (IEEE 802.11-2007, 7.3.1.7, Table 7-22).  Any locally caused
+         * deauthentication will be negative, while authentications caused by the
+         * AP will be positive.
+         */
         priv->disconnect_reason = v_i32;
     }
 
@@ -1810,10 +1810,10 @@ _properties_changed_main(NMSupplicantInterface *self, GVariant *properties)
             priv->supp_state = state;
             if (priv->state > NM_SUPPLICANT_INTERFACE_STATE_STARTING) {
                 /* Only transition to actual wpa_supplicant interface states (ie,
-				 * anything > STARTING) after the NMSupplicantInterface has had a
-				 * chance to initialize, which is signalled by entering the STARTING
-				 * state.
-				 */
+                 * anything > STARTING) after the NMSupplicantInterface has had a
+                 * chance to initialize, which is signalled by entering the STARTING
+                 * state.
+                 */
                 do_set_state = TRUE;
             }
         }
@@ -2126,10 +2126,10 @@ assoc_add_network_cb(GObject *source, GAsyncResult *result, gpointer user_data)
             const char *net_path;
 
             /* the assoc-request was already cancelled, but the AddNetwork request succeeded.
-			 * Cleanup the created network.
-			 *
-			 * This cleanup action does not work when NetworkManager is about to exit
-			 * and leaves the mainloop. During program shutdown, we may orphan networks. */
+             * Cleanup the created network.
+             *
+             * This cleanup action does not work when NetworkManager is about to exit
+             * and leaves the mainloop. During program shutdown, we may orphan networks. */
             g_variant_get(res, "(&o)", &net_path);
             g_dbus_connection_call(G_DBUS_CONNECTION(source),
                                    name_owner->str,
@@ -2197,11 +2197,11 @@ add_network(NMSupplicantInterface *self)
     priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE(self);
 
     /* the association does not keep @self alive. We want to be able to remove
-	 * the network again, even if @self is already gone. Hence, track the data
-	 * separately.
-	 *
-	 * For that we also have a shutdown_wait_obj so that on exit we still wait
-	 * to handle the response. */
+     * the network again, even if @self is already gone. Hence, track the data
+     * separately.
+     *
+     * For that we also have a shutdown_wait_obj so that on exit we still wait
+     * to handle the response. */
     add_network_data  = g_slice_new(AddNetworkData);
     *add_network_data = (AddNetworkData){
         .assoc_data        = priv->assoc_data,
@@ -2345,8 +2345,8 @@ nm_supplicant_interface_assoc(NMSupplicantInterface *      self,
     if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FAST) == NM_TERNARY_FALSE
         && nm_supplicant_config_fast_required(cfg)) {
         /* Make sure the supplicant supports EAP-FAST before trying to send
-		 * it an EAP-FAST configuration.
-		 */
+         * it an EAP-FAST configuration.
+         */
         assoc_data->fail_on_idle_id = g_idle_add(assoc_fail_on_idle_cb, self);
         return;
     }
@@ -2375,10 +2375,10 @@ nm_supplicant_interface_assoc(NMSupplicantInterface *      self,
     } else {
         assoc_data->calls_left++;
         /* It would be smarter to change the property only when necessary.
-		 * However, wpa_supplicant doesn't send the PropertiesChanged
-		 * signal for ApIsolate, and so to know the current value we would
-		 * need first a Get call. It seems simpler to just set the value
-		 * we want. */
+         * However, wpa_supplicant doesn't send the PropertiesChanged
+         * signal for ApIsolate, and so to know the current value we would
+         * need first a Get call. It seems simpler to just set the value
+         * we want. */
         nm_dbus_connection_call_set(priv->dbus_connection,
                                     priv->name_owner->str,
                                     priv->object_path->str,
@@ -2429,8 +2429,8 @@ scan_request_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     }
 
     /* we don't propagate the error/success. That is, because either answer is not
-	 * reliable. What is important to us is whether the request completed, and
-	 * the current nm_supplicant_interface_get_scanning() state. */
+     * reliable. What is important to us is whether the request completed, and
+     * the current nm_supplicant_interface_get_scanning() state. */
     if (cancelled)
         _LOGD("request-scan: request cancelled");
     else {
@@ -2497,8 +2497,8 @@ nm_supplicant_interface_request_scan(NMSupplicantInterface *                  se
 
     if (callback) {
         /* A callback was provided. This keeps @self alive. The caller
-		 * must provide a cancellable as the caller must never leave an asynchronous
-		 * operation pending indefinitely. */
+         * must provide a cancellable as the caller must never leave an asynchronous
+         * operation pending indefinitely. */
         nm_assert(G_IS_CANCELLABLE(cancellable));
         g_object_ref(self);
     } else {
@@ -2868,7 +2868,7 @@ _signal_handle(NMSupplicantInterface *self,
             }
 
             /* the state eventually reaches one of started, success or failure
-			 * so ignore any other intermediate (unknown) state change. */
+             * so ignore any other intermediate (unknown) state change. */
             if (auth_state != NM_SUPPLICANT_AUTH_STATE_UNKNOWN && auth_state != priv->auth_state) {
                 priv->auth_state = auth_state;
                 _notify(self, PROP_AUTH_STATE);
@@ -2943,9 +2943,9 @@ _signal_handle(NMSupplicantInterface *self,
                 g_variant_get(parameters, "(@a{sv})", &args);
 
                 /* TODO: Group finished is called on the management interface!
-				 *       This means the signal consumer will currently need to assume which
-				 *       interface is finishing or it needs to match the object paths.
-				 */
+                 *       This means the signal consumer will currently need to assume which
+                 *       interface is finishing or it needs to match the object paths.
+                 */
                 if (!g_variant_lookup(args, "interface_object", "&o", &iface_path))
                     return;
 
@@ -3201,10 +3201,10 @@ constructed(GObject *object)
 
     if (_get_capability(priv, NM_SUPPL_CAP_TYPE_AP) == NM_TERNARY_DEFAULT) {
         /* If the global supplicant capabilities property is not present, we can
-		 * fall back to checking whether the ProbeRequest method is supported.  If
-		 * neither of these works we have no way of determining if AP mode is
-		 * supported or not.  hostap 1.0 and earlier don't support either of these.
-		 */
+         * fall back to checking whether the ProbeRequest method is supported.  If
+         * neither of these works we have no way of determining if AP mode is
+         * supported or not.  hostap 1.0 and earlier don't support either of these.
+         */
         priv->starting_pending_count++;
         _dbus_connection_call(self,
                               DBUS_INTERFACE_INTROSPECTABLE,
@@ -3283,9 +3283,9 @@ dispose(GObject *object)
 
     if (priv->wps_data) {
         /* we shut down, but an asynchronous Cancel request is pending.
-		 * We don't want to cancel it, so mark wps-data that @self is gone.
-		 * This way, _wps_handle_cancel_cb() knows it must no longer touch
-		 * @self */
+         * We don't want to cancel it, so mark wps-data that @self is gone.
+         * This way, _wps_handle_cancel_cb() knows it must no longer touch
+         * @self */
         priv->wps_data->self = NULL;
         priv->wps_data       = NULL;
     }

@@ -293,12 +293,12 @@ _storages_consolidate(NMSIfcfgRHPlugin *                     self,
     guint                        i;
 
     /* when we reload all files, we must signal add/update/modify of profiles one-by-one.
-	 * NMSettings then goes ahead and emits further signals and a lot of things happen.
-	 *
-	 * So, first, emit an update of the unmanaged/unrecognized specs that contains *all*
-	 * the unmanaged/unrecognized devices from before and after. Since both unmanaged/unrecognized
-	 * specs have the meaning of "not doing something", it makes sense that we temporarily
-	 * disable that action for the sum of before and after. */
+     * NMSettings then goes ahead and emits further signals and a lot of things happen.
+     *
+     * So, first, emit an update of the unmanaged/unrecognized specs that contains *all*
+     * the unmanaged/unrecognized devices from before and after. Since both unmanaged/unrecognized
+     * specs have the meaning of "not doing something", it makes sense that we temporarily
+     * disable that action for the sum of before and after. */
     _unhandled_specs_merge_storages(self, storages_new);
 
     storages_modified = g_ptr_array_new_with_free_func(g_object_unref);
@@ -366,7 +366,7 @@ _storages_consolidate(NMSIfcfgRHPlugin *                     self,
 
         if (!storage->dirty) {
             /* the entry is no longer dirty. In the meantime we already emitted
-			 * another signal for it. */
+             * another signal for it. */
             continue;
         }
         storage->dirty = FALSE;
@@ -375,8 +375,8 @@ _storages_consolidate(NMSIfcfgRHPlugin *                     self,
                 &priv->storages,
                 nms_ifcfg_rh_storage_get_filename(storage))) {
             /* hm? The profile was deleted in the meantime? That is only possible
-			 * if the signal handler called again into the plugin. In any case, the event
-			 * was already emitted. Skip. */
+             * if the signal handler called again into the plugin. In any case, the event
+             * was already emitted. Skip. */
             continue;
         }
 
@@ -479,7 +479,7 @@ load_connections(NMSettingsPlugin *                     plugin,
                 NMSIfcfgRHStorage *storage2;
 
                 /* the file does not exist. We take that as indication to unload the file
-				 * that was previously loaded... */
+                 * that was previously loaded... */
                 storage2 = nm_sett_util_storages_lookup_by_filename(&priv->storages, full_filename);
                 if (storage2)
                     g_hash_table_add(storages_replaced, g_object_ref(storage2));
@@ -519,15 +519,15 @@ load_connections(NMSettingsPlugin *                     plugin,
             }
 
             /* @storage has a UUID that was just loaded from disk, but we have an entry in cache.
-			 * Reload that file too despite not being told to do so. The reason is to get
-			 * the latest file timestamp so that we get the priorities right. */
+             * Reload that file too despite not being told to do so. The reason is to get
+             * the latest file timestamp so that we get the priorities right. */
 
             storage_new = _load_file(self, full_filename, &local);
             if (storage_new
                 && !nm_streq0(loaded_uuid, nms_ifcfg_rh_storage_get_uuid_opt(storage_new))) {
                 /* the file now references a different UUID. We are not told to reload
-				 * that file, so this means the existing storage (with the previous
-				 * filename and UUID tuple) is no longer valid. */
+                 * that file, so this means the existing storage (with the previous
+                 * filename and UUID tuple) is no longer valid. */
                 g_clear_object(&storage_new);
             }
 
@@ -567,12 +567,12 @@ load_connections_done(NMSettingsPlugin *plugin)
     NMSIfcfgRHPlugin *self = NMS_IFCFG_RH_PLUGIN(plugin);
 
     /* at the beginning of a load, we emit a change signal for unmanaged/unrecognized
-	 * specs that contain the sum of before and after (_unhandled_specs_merge_storages()).
-	 *
-	 * The idea is that while we emit signals about changes to connection, we have
-	 * the sum of all unmanaged/unrecognized devices from before and after.
-	 *
-	 * This if triggered at the end, to reset the specs. */
+     * specs that contain the sum of before and after (_unhandled_specs_merge_storages()).
+     *
+     * The idea is that while we emit signals about changes to connection, we have
+     * the sum of all unmanaged/unrecognized devices from before and after.
+     *
+     * This if triggered at the end, to reset the specs. */
     _unhandled_specs_reset(self);
 
     nm_assert_self(self, TRUE);
@@ -923,11 +923,11 @@ impl_ifcfgrh_get_ifcfg_details(NMSIfcfgRHPlugin *     self,
     }
 
     /* It is ugly that the ifcfg-rh plugin needs to call back into NMSettings this
-	 * way.
-	 * There are alternatives (like invoking a signal), but they are all significant
-	 * extra code (and performance overhead). So the quick and dirty solution here
-	 * is likely to be simpler than getting this right (also from point of readability!).
-	 */
+     * way.
+     * There are alternatives (like invoking a signal), but they are all significant
+     * extra code (and performance overhead). So the quick and dirty solution here
+     * is likely to be simpler than getting this right (also from point of readability!).
+     */
     path = nm_settings_get_dbus_path_for_uuid(nm_settings_get(), uuid);
 
     if (!path) {
@@ -1128,7 +1128,7 @@ _dbus_setup(NMSIfcfgRHPlugin *self)
     }
 
     /* We use a separate D-Bus connection so that org.freedesktop.NetworkManager and com.redhat.ifcfgrh1
-	 * are exported by different connections. */
+     * are exported by different connections. */
     address = g_dbus_address_get_for_bus_sync(G_BUS_TYPE_SYSTEM, NULL, &error);
     if (address == NULL) {
         _LOGW("dbus: failed getting address for system bus: %s", error->message);
@@ -1156,11 +1156,11 @@ config_changed_cb(NMConfig *          config,
     NMSIfcfgRHPluginPrivate *priv;
 
     /* If the dbus connection for some reason is borked the D-Bus service
-	 * won't be offered.
-	 *
-	 * On SIGHUP and SIGUSR1 try to re-connect to D-Bus. So in the unlikely
-	 * event that the D-Bus connection is broken, that allows for recovery
-	 * without need for restarting NetworkManager. */
+     * won't be offered.
+     *
+     * On SIGHUP and SIGUSR1 try to re-connect to D-Bus. So in the unlikely
+     * event that the D-Bus connection is broken, that allows for recovery
+     * without need for restarting NetworkManager. */
     if (!NM_FLAGS_ANY(changes, NM_CONFIG_CHANGE_CAUSE_SIGHUP | NM_CONFIG_CHANGE_CAUSE_SIGUSR1))
         return;
 
@@ -1211,7 +1211,7 @@ dispose(GObject *object)
         g_signal_handlers_disconnect_by_func(priv->config, config_changed_cb, self);
 
     /* FIXME(shutdown) we need a stop method so that we can unregistering the D-Bus service
-	 * when NMSettings is shutting down, and not when the instance gets destroyed. */
+     * when NMSettings is shutting down, and not when the instance gets destroyed. */
     _dbus_clear(self);
 
     nm_sett_util_storages_clear(&priv->storages);

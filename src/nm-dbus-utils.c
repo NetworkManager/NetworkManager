@@ -26,7 +26,7 @@ nm_dbus_utils_interface_info_lookup_property(const GDBusInterfaceInfo *interface
     nm_assert(property_name);
 
     /* there is also g_dbus_interface_info_lookup_property(), however that makes use
-	 * of a global cache. */
+     * of a global cache. */
     if (interface_info->properties) {
         for (i = 0; interface_info->properties[i]; i++) {
             GDBusPropertyInfo *info = interface_info->properties[i];
@@ -51,7 +51,7 @@ nm_dbus_utils_interface_info_lookup_method(const GDBusInterfaceInfo *interface_i
     nm_assert(method_name);
 
     /* there is also g_dbus_interface_info_lookup_property(), however that makes use
-	 * of a global cache. */
+     * of a global cache. */
     if (interface_info->methods) {
         for (i = 0; interface_info->methods[i]; i++) {
             GDBusMethodInfo *info = interface_info->methods[i];
@@ -221,7 +221,7 @@ void
 nm_dbus_track_obj_path_deinit(NMDBusTrackObjPath *track)
 {
     /* we allow deinit() to be called multiple times (e.g. from
-	 * dispose(), which must be re-entrant). */
+     * dispose(), which must be re-entrant). */
     nm_assert(track);
     nm_assert(!track->_notify_target || G_IS_OBJECT(track->_notify_target));
 

@@ -362,9 +362,9 @@ compare_property(const NMSettInfoSetting *sett_info,
         if (set_b) {
             if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)) {
                 /* If we are trying to match a connection in order to assume it (and thus
-				 * @flags contains INFERRABLE), use the "relaxed" matching for team
-				 * configuration. Otherwise, for all other purposes (including connection
-				 * comparison before an update), resort to the default string comparison. */
+                 * @flags contains INFERRABLE), use the "relaxed" matching for team
+                 * configuration. Otherwise, for all other purposes (including connection
+                 * comparison before an update), resort to the default string comparison. */
                 return TRUE;
             }
 
@@ -535,19 +535,19 @@ nm_setting_team_port_class_init(NMSettingTeamPortClass *klass)
     setting_class->init_from_dbus            = init_from_dbus;
 
     /**
-	 * NMSettingTeamPort:config:
-	 *
-	 * The JSON configuration for the team port. The property should contain raw
-	 * JSON configuration data suitable for teamd, because the value is passed
-	 * directly to teamd. If not specified, the default configuration is
-	 * used. See man teamd.conf for the format details.
-	 **/
+     * NMSettingTeamPort:config:
+     *
+     * The JSON configuration for the team port. The property should contain raw
+     * JSON configuration data suitable for teamd, because the value is passed
+     * directly to teamd. If not specified, the default configuration is
+     * used. See man teamd.conf for the format details.
+     **/
     /* ---ifcfg-rh---
-	 * property: config
-	 * variable: TEAM_PORT_CONFIG
-	 * description: Team port configuration in JSON. See man teamd.conf for details.
-	 * ---end---
-	 */
+     * property: config
+     * variable: TEAM_PORT_CONFIG
+     * description: Team port configuration in JSON. See man teamd.conf for details.
+     * ---end---
+     */
     obj_properties[NM_TEAM_ATTRIBUTE_CONFIG] = g_param_spec_string(
         NM_SETTING_TEAM_PORT_CONFIG,
         "",
@@ -559,13 +559,13 @@ nm_setting_team_port_class_init(NMSettingTeamPortClass *klass)
                                  &nm_sett_info_propert_type_team_s);
 
     /**
-	 * NMSettingTeamPort:queue-id:
-	 *
-	 * Corresponds to the teamd ports.PORTIFNAME.queue_id.
-	 * When set to -1 means the parameter is skipped from the json config.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeamPort:queue-id:
+     *
+     * Corresponds to the teamd ports.PORTIFNAME.queue_id.
+     * When set to -1 means the parameter is skipped from the json config.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_PORT_QUEUE_ID] =
         g_param_spec_int(NM_SETTING_TEAM_PORT_QUEUE_ID,
                          "",
@@ -579,12 +579,12 @@ nm_setting_team_port_class_init(NMSettingTeamPortClass *klass)
                                  &nm_sett_info_propert_type_team_i);
 
     /**
-	 * NMSettingTeamPort:prio:
-	 *
-	 * Corresponds to the teamd ports.PORTIFNAME.prio.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeamPort:prio:
+     *
+     * Corresponds to the teamd ports.PORTIFNAME.prio.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_PORT_PRIO] =
         g_param_spec_int(NM_SETTING_TEAM_PORT_PRIO,
                          "",
@@ -598,12 +598,12 @@ nm_setting_team_port_class_init(NMSettingTeamPortClass *klass)
                                  &nm_sett_info_propert_type_team_i);
 
     /**
-	 * NMSettingTeamPort:sticky:
-	 *
-	 * Corresponds to the teamd ports.PORTIFNAME.sticky.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeamPort:sticky:
+     *
+     * Corresponds to the teamd ports.PORTIFNAME.sticky.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_PORT_STICKY] =
         g_param_spec_boolean(NM_SETTING_TEAM_PORT_STICKY,
                              "",
@@ -615,12 +615,12 @@ nm_setting_team_port_class_init(NMSettingTeamPortClass *klass)
                                  &nm_sett_info_propert_type_team_b);
 
     /**
-	 * NMSettingTeamPort:lacp-prio:
-	 *
-	 * Corresponds to the teamd ports.PORTIFNAME.lacp_prio.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeamPort:lacp-prio:
+     *
+     * Corresponds to the teamd ports.PORTIFNAME.lacp_prio.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_PORT_LACP_PRIO] =
         g_param_spec_int(NM_SETTING_TEAM_PORT_LACP_PRIO,
                          "",
@@ -634,12 +634,12 @@ nm_setting_team_port_class_init(NMSettingTeamPortClass *klass)
                                  &nm_sett_info_propert_type_team_i);
 
     /**
-	 * NMSettingTeamPort:lacp-key:
-	 *
-	 * Corresponds to the teamd ports.PORTIFNAME.lacp_key.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeamPort:lacp-key:
+     *
+     * Corresponds to the teamd ports.PORTIFNAME.lacp_key.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_PORT_LACP_KEY] =
         g_param_spec_int(NM_SETTING_TEAM_PORT_LACP_KEY,
                          "",
@@ -653,19 +653,19 @@ nm_setting_team_port_class_init(NMSettingTeamPortClass *klass)
                                  &nm_sett_info_propert_type_team_i);
 
     /**
-	 * NMSettingTeamPort:link-watchers: (type GPtrArray(NMTeamLinkWatcher))
-	 *
-	 * Link watchers configuration for the connection: each link watcher is
-	 * defined by a dictionary, whose keys depend upon the selected link
-	 * watcher. Available link watchers are 'ethtool', 'nsna_ping' and
-	 * 'arp_ping' and it is specified in the dictionary with the key 'name'.
-	 * Available keys are:   ethtool: 'delay-up', 'delay-down', 'init-wait';
-	 * nsna_ping: 'init-wait', 'interval', 'missed-max', 'target-host';
-	 * arp_ping: all the ones in nsna_ping and 'source-host', 'validate-active',
-	 * 'validate-inactive', 'send-always'. See teamd.conf man for more details.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeamPort:link-watchers: (type GPtrArray(NMTeamLinkWatcher))
+     *
+     * Link watchers configuration for the connection: each link watcher is
+     * defined by a dictionary, whose keys depend upon the selected link
+     * watcher. Available link watchers are 'ethtool', 'nsna_ping' and
+     * 'arp_ping' and it is specified in the dictionary with the key 'name'.
+     * Available keys are:   ethtool: 'delay-up', 'delay-down', 'init-wait';
+     * nsna_ping: 'init-wait', 'interval', 'missed-max', 'target-host';
+     * arp_ping: all the ones in nsna_ping and 'source-host', 'validate-active',
+     * 'validate-inactive', 'send-always'. See teamd.conf man for more details.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_LINK_WATCHERS] =
         g_param_spec_boxed(NM_SETTING_TEAM_PORT_LINK_WATCHERS,
                            "",

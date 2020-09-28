@@ -36,14 +36,14 @@ update(NMDnsPlugin *            plugin,
     int                   status;
 
     /* TODO: We currently call a script installed with the dnssec-trigger
-	 * package that queries all information itself. Later, the dependency
-	 * on that package will be optional and the only hard dependency will
-	 * be unbound.
-	 *
-	 * Unbound configuration should be later handled by this plugin directly,
-	 * without calling custom scripts. The dnssec-trigger functionality
-	 * may be eventually merged into NetworkManager.
-	 */
+     * package that queries all information itself. Later, the dependency
+     * on that package will be optional and the only hard dependency will
+     * be unbound.
+     *
+     * Unbound configuration should be later handled by this plugin directly,
+     * without calling custom scripts. The dnssec-trigger functionality
+     * may be eventually merged into NetworkManager.
+     */
     if (!g_spawn_sync("/", argv, NULL, 0, NULL, NULL, NULL, NULL, &status, &local)) {
         nm_utils_error_set(error,
                            NM_UTILS_ERROR_UNKNOWN,

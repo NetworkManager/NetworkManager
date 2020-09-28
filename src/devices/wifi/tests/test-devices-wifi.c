@@ -267,8 +267,8 @@ test_open_ap_empty_connection(void)
     GError *      error = NULL;
 
     /* Test that an empty source connection is correctly filled with the
-	 * SSID and Infra modes of the given AP details.
-	 */
+     * SSID and Infra modes of the given AP details.
+     */
 
     src      = nm_simple_connection_new();
     success  = complete_connection(ssid,
@@ -300,9 +300,9 @@ test_open_ap_leap_connection_1(gconstpointer add_wifi)
     GError *      error = NULL;
 
     /* Test that a basic connection filled with a LEAP username is
-	 * rejected when completion is attempted with an open AP.  LEAP requires
-	 * the AP to have the Privacy bit set.
-	 */
+     * rejected when completion is attempted with an open AP.  LEAP requires
+     * the AP to have the Privacy bit set.
+     */
 
     src = nm_simple_connection_new();
     if (add_wifi)
@@ -336,8 +336,8 @@ test_open_ap_leap_connection_2(void)
     GError *      error = NULL;
 
     /* Test that a basic connection specifying IEEE8021x security (ie, Dynamic
-	 * WEP or LEAP) is rejected when completion is attempted with an open AP.
-	 */
+     * WEP or LEAP) is rejected when completion is attempted with an open AP.
+     */
 
     src = nm_simple_connection_new();
     fill_wifi_empty(src);
@@ -374,8 +374,8 @@ test_open_ap_wep_connection(gconstpointer add_wifi)
     GError * error = NULL;
 
     /* Test that a static WEP connection is rejected when completion is
-	 * attempted with an open AP.
-	 */
+     * attempted with an open AP.
+     */
 
     src = nm_simple_connection_new();
     if (add_wifi)
@@ -447,9 +447,9 @@ static void
 test_open_ap_wpa_psk_connection_1(void)
 {
     /* Test that a WPA-PSK connection filling only the PSK itself and *not*
-	 * filling the wifi setting is rejected when completion is attempted with
-	 * an open AP.
-	 */
+     * filling the wifi setting is rejected when completion is attempted with
+     * an open AP.
+     */
     test_ap_wpa_psk_connection_base(NULL,
                                     NULL,
                                     NM_802_11_AP_FLAGS_NONE,
@@ -464,9 +464,9 @@ static void
 test_open_ap_wpa_psk_connection_2(void)
 {
     /* Test that a WPA-PSK connection filling only the PSK itself and also
-	 * filling the wifi setting is rejected when completion is attempted with
-	 * an open AP.
-	 */
+     * filling the wifi setting is rejected when completion is attempted with
+     * an open AP.
+     */
     test_ap_wpa_psk_connection_base(NULL,
                                     NULL,
                                     NM_802_11_AP_FLAGS_NONE,
@@ -481,8 +481,8 @@ static void
 test_open_ap_wpa_psk_connection_3(void)
 {
     /* Test that a WPA-PSK connection filling the PSK and setting the auth alg
-	 * to 'open' is rejected when completion is attempted with an open AP.
-	 */
+     * to 'open' is rejected when completion is attempted with an open AP.
+     */
     test_ap_wpa_psk_connection_base(NULL,
                                     "open",
                                     NM_802_11_AP_FLAGS_NONE,
@@ -497,9 +497,9 @@ static void
 test_open_ap_wpa_psk_connection_4(void)
 {
     /* Test that a WPA-PSK connection filling the PSK and setting the auth alg
-	 * to 'shared' is rejected when completion is attempted with an open AP.
-	 * Shared auth cannot be used with WPA.
-	 */
+     * to 'shared' is rejected when completion is attempted with an open AP.
+     * Shared auth cannot be used with WPA.
+     */
     test_ap_wpa_psk_connection_base(NULL,
                                     "shared",
                                     NM_802_11_AP_FLAGS_NONE,
@@ -514,8 +514,8 @@ static void
 test_open_ap_wpa_psk_connection_5(void)
 {
     /* Test that a WPA-PSK connection filling the PSK, the auth algorithm, and
-	 * key management is rejected when completion is attempted with an open AP.
-	 */
+     * key management is rejected when completion is attempted with an open AP.
+     */
     test_ap_wpa_psk_connection_base("wpa-psk",
                                     "open",
                                     NM_802_11_AP_FLAGS_NONE,
@@ -745,8 +745,8 @@ test_priv_ap_empty_connection(void)
     GError *      error = NULL;
 
     /* Test that an empty connection is completed to a valid Static WEP
-	 * connection when completed with an AP with the Privacy bit set.
-	 */
+     * connection when completed with an AP with the Privacy bit set.
+     */
 
     src     = nm_simple_connection_new();
     success = complete_connection(ssid,
@@ -788,9 +788,9 @@ test_priv_ap_leap_connection_1(gconstpointer add_wifi)
     GError *      error = NULL;
 
     /* Test that an minimal LEAP connection specifying only key management and
-	 * the LEAP username is completed to a full LEAP connection when completed
-	 * with an AP with the Privacy bit set.
-	 */
+     * the LEAP username is completed to a full LEAP connection when completed
+     * with an AP with the Privacy bit set.
+     */
 
     src = nm_simple_connection_new();
     if (add_wifi)
@@ -806,9 +806,9 @@ test_priv_ap_leap_connection_1(gconstpointer add_wifi)
                                   src,
                                   &error);
     /* We expect success here; since LEAP APs just set the 'privacy' flag
-	 * there's no way to determine from the AP's beacon whether it's static WEP,
-	 * dynamic WEP, or LEAP.
-	 */
+     * there's no way to determine from the AP's beacon whether it's static WEP,
+     * dynamic WEP, or LEAP.
+     */
     expected = create_basic(ssid, NULL, NM_802_11_MODE_INFRA);
     fill_wsec(expected, exp_wsec);
     COMPARE(src, expected, success, error, 0, 0);
@@ -831,9 +831,9 @@ test_priv_ap_leap_connection_2(void)
     GError *      error = NULL;
 
     /* Test that an minimal LEAP connection specifying only key management and
-	 * the LEAP auth alg is completed to a full LEAP connection when completed
-	 * with an AP with the Privacy bit set.
-	 */
+     * the LEAP auth alg is completed to a full LEAP connection when completed
+     * with an AP with the Privacy bit set.
+     */
 
     src = nm_simple_connection_new();
     fill_wifi_empty(src);
@@ -875,9 +875,9 @@ test_priv_ap_dynamic_wep_1(void)
     GError *      error = NULL;
 
     /* Test that an minimal Dynamic WEP connection specifying key management,
-	 * the auth algorithm, and valid 802.1x setting is completed to a valid
-	 * Dynamic WEP connection when completed with an AP with the Privacy bit set.
-	 */
+     * the auth algorithm, and valid 802.1x setting is completed to a valid
+     * Dynamic WEP connection when completed with an AP with the Privacy bit set.
+     */
 
     src = nm_simple_connection_new();
     fill_wifi_empty(src);
@@ -923,9 +923,9 @@ test_priv_ap_dynamic_wep_2(void)
     GError *      error = NULL;
 
     /* Test that an minimal Dynamic WEP connection specifying only the auth
-	 * algorithm and a valid 802.1x setting is completed to a valid Dynamic
-	 * WEP connection when completed with an AP with the Privacy bit set.
-	 */
+     * algorithm and a valid 802.1x setting is completed to a valid Dynamic
+     * WEP connection when completed with an AP with the Privacy bit set.
+     */
 
     src = nm_simple_connection_new();
     fill_wifi_empty(src);
@@ -967,8 +967,8 @@ test_priv_ap_dynamic_wep_3(void)
     GError *      error = NULL;
 
     /* Ensure that a basic connection specifying 'shared' auth and an 802.1x
-	 * setting is rejected, as 802.1x is incompatible with 'shared' auth.
-	 */
+     * setting is rejected, as 802.1x is incompatible with 'shared' auth.
+     */
 
     src = nm_simple_connection_new();
     fill_wifi_empty(src);
@@ -995,9 +995,9 @@ static void
 test_priv_ap_wpa_psk_connection_1(void)
 {
     /* Test that a basic WPA-PSK connection is rejected when completion is
-	 * attempted with an AP with just the Privacy bit set.  Lack of WPA/RSN
-	 * flags means the AP provides Static/Dynamic WEP or LEAP, not WPA.
-	 */
+     * attempted with an AP with just the Privacy bit set.  Lack of WPA/RSN
+     * flags means the AP provides Static/Dynamic WEP or LEAP, not WPA.
+     */
     test_ap_wpa_psk_connection_base(NULL,
                                     NULL,
                                     NM_802_11_AP_FLAGS_PRIVACY,
@@ -1012,9 +1012,9 @@ static void
 test_priv_ap_wpa_psk_connection_2(void)
 {
     /* Test that a basic WPA-PSK connection is rejected when completion is
-	 * attempted with an AP with just the Privacy bit set.  Lack of WPA/RSN
-	 * flags means the AP provides Static/Dynamic WEP or LEAP, not WPA.
-	 */
+     * attempted with an AP with just the Privacy bit set.  Lack of WPA/RSN
+     * flags means the AP provides Static/Dynamic WEP or LEAP, not WPA.
+     */
     test_ap_wpa_psk_connection_base(NULL,
                                     NULL,
                                     NM_802_11_AP_FLAGS_PRIVACY,
@@ -1029,10 +1029,10 @@ static void
 test_priv_ap_wpa_psk_connection_3(void)
 {
     /* Test that a basic WPA-PSK connection specifying only the auth algorithm
-	 * is rejected when completion is attempted with an AP with just the Privacy
-	 * bit set.  Lack of WPA/RSN flags means the AP provides Static/Dynamic WEP
-	 * or LEAP, not WPA.
-	 */
+     * is rejected when completion is attempted with an AP with just the Privacy
+     * bit set.  Lack of WPA/RSN flags means the AP provides Static/Dynamic WEP
+     * or LEAP, not WPA.
+     */
     test_ap_wpa_psk_connection_base(NULL,
                                     "open",
                                     NM_802_11_AP_FLAGS_PRIVACY,
@@ -1047,10 +1047,10 @@ static void
 test_priv_ap_wpa_psk_connection_4(void)
 {
     /* Test that a basic WPA-PSK connection specifying only the auth algorithm
-	 * is rejected when completion is attempted with an AP with just the Privacy
-	 * bit set.  Lack of WPA/RSN flags means the AP provides Static/Dynamic WEP
-	 * or LEAP, not WPA.  Second, 'shared' auth is incompatible with WPA.
-	 */
+     * is rejected when completion is attempted with an AP with just the Privacy
+     * bit set.  Lack of WPA/RSN flags means the AP provides Static/Dynamic WEP
+     * or LEAP, not WPA.  Second, 'shared' auth is incompatible with WPA.
+     */
     test_ap_wpa_psk_connection_base(NULL,
                                     "shared",
                                     NM_802_11_AP_FLAGS_PRIVACY,
@@ -1065,10 +1065,10 @@ static void
 test_priv_ap_wpa_psk_connection_5(void)
 {
     /* Test that a WPA-PSK connection specifying both the key management and
-	 * auth algorithm is rejected when completion is attempted with an AP with
-	 * just the Privacy bit set.  Lack of WPA/RSN flags means the AP provides
-	 * Static/Dynamic WEP or LEAP, not WPA.
-	 */
+     * auth algorithm is rejected when completion is attempted with an AP with
+     * just the Privacy bit set.  Lack of WPA/RSN flags means the AP provides
+     * Static/Dynamic WEP or LEAP, not WPA.
+     */
     test_ap_wpa_psk_connection_base("wpa-psk",
                                     "open",
                                     NM_802_11_AP_FLAGS_PRIVACY,
@@ -1095,9 +1095,9 @@ test_wpa_ap_empty_connection(gconstpointer data)
     GError *      error = NULL;
 
     /* Test that a basic WPA-PSK connection specifying just key management and
-	 * the auth algorithm is completed successfully when given an AP with WPA
-	 * or RSN flags.
-	 */
+     * the auth algorithm is completed successfully when given an AP with WPA
+     * or RSN flags.
+     */
 
     src     = nm_simple_connection_new();
     success = complete_connection(ssid,
@@ -1136,8 +1136,8 @@ test_wpa_ap_leap_connection_1(gconstpointer data)
     GError *      error = NULL;
 
     /* Test that completion of a LEAP connection with a WPA-enabled AP is
-	 * rejected since WPA APs (usually) do not support LEAP.
-	 */
+     * rejected since WPA APs (usually) do not support LEAP.
+     */
 
     src = nm_simple_connection_new();
     fill_wifi_empty(src);
@@ -1172,8 +1172,8 @@ test_wpa_ap_leap_connection_2(gconstpointer data)
     GError *      error = NULL;
 
     /* Test that completion of a LEAP connection with a WPA-enabled AP is
-	 * rejected since WPA APs (usually) do not support LEAP.
-	 */
+     * rejected since WPA APs (usually) do not support LEAP.
+     */
 
     src = nm_simple_connection_new();
     fill_wifi_empty(src);
@@ -1206,8 +1206,8 @@ test_wpa_ap_dynamic_wep_connection(gconstpointer data)
     GError *      error = NULL;
 
     /* Test that completion of a Dynamic WEP connection with a WPA-enabled AP is
-	 * rejected since WPA APs (usually) do not support Dynamic WEP.
-	 */
+     * rejected since WPA APs (usually) do not support Dynamic WEP.
+     */
 
     src = nm_simple_connection_new();
     fill_wifi_empty(src);
@@ -1471,9 +1471,9 @@ main(int argc, char **argv)
     g_test_add_func("/wifi/lock_bssid", test_lock_bssid);
 
     /* Open AP tests; make sure that connections to be completed that have
-	 * various security-related settings already set cause the completion
-	 * to fail.
-	 */
+     * various security-related settings already set cause the completion
+     * to fail.
+     */
     g_test_add_func("/wifi/open_ap/empty_connection", test_open_ap_empty_connection);
     g_test_add_data_func("/wifi/open_ap/leap_connection/1",
                          (gconstpointer) TRUE,

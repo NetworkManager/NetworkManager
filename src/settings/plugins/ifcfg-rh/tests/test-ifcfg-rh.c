@@ -97,9 +97,9 @@ _assert_reread_same_FIXME(NMConnection *connection, NMConnection *reread)
     gs_unref_hashtable GHashTable *settings             = NULL;
 
     /* FIXME: these assertion failures should not happen as we expect
-	 * that re-reading a connection after write yields the same result.
-	 *
-	 * Needs investigation and fixing. */
+     * that re-reading a connection after write yields the same result.
+     *
+     * Needs investigation and fixing. */
     nmtst_assert_connection_verifies_without_normalization(reread);
 
     connection_normalized = nmtst_connection_duplicate_and_normalize(connection);
@@ -170,7 +170,7 @@ _assert_expected_content(NMConnection *connection, const char *filename, const c
             }
 
             /* other '$' is not supported. If need be, support escaping of
-			 * '$' via '$$'. */
+             * '$' via '$$'. */
             g_assert_not_reached();
         }
     }
@@ -623,9 +623,9 @@ test_read_basic(void)
     g_assert_cmpint(nm_setting_connection_get_autoconnect_retries(s_con), ==, -1);
 
     /* UUID can't be tested if the ifcfg does not contain the UUID key, because
-	 * the UUID is generated on the full path of the ifcfg file, which can change
-	 * depending on where the tests are run.
-	 */
+     * the UUID is generated on the full path of the ifcfg file, which can change
+     * depending on where the tests are run.
+     */
 
     /* ===== WIRED SETTING ===== */
     s_wired = nm_connection_get_setting_wired(connection);
@@ -2145,8 +2145,8 @@ test_read_802_1x_ttls_eapgtc(void)
     NMSetting8021x *s_8021x;
 
     /* Test that EAP-* inner methods are correctly read into the
-	 * NMSetting8021x::autheap property.
-	 */
+     * NMSetting8021x::autheap property.
+     */
 
     connection = _connection_from_file(TEST_IFCFG_DIR "/ifcfg-test-wired-802-1x-ttls-eapgtc",
                                        NULL,
@@ -2601,9 +2601,9 @@ test_read_wifi_open(void)
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "System blahblah (test-wifi-open)");
 
     /* UUID can't be tested if the ifcfg does not contain the UUID key, because
-	 * the UUID is generated on the full path of the ifcfg file, which can change
-	 * depending on where the tests are run.
-	 */
+     * the UUID is generated on the full path of the ifcfg file, which can change
+     * depending on where the tests are run.
+     */
 
     g_assert_cmpint(nm_setting_connection_get_timestamp(s_con), ==, 0);
     g_assert(nm_setting_connection_get_autoconnect(s_con));
@@ -2812,9 +2812,9 @@ test_read_wifi_wep(void)
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "System blahblah (test-wifi-wep)");
 
     /* UUID can't be tested if the ifcfg does not contain the UUID key, because
-	 * the UUID is generated on the full path of the ifcfg file, which can change
-	 * depending on where the tests are run.
-	 */
+     * the UUID is generated on the full path of the ifcfg file, which can change
+     * depending on where the tests are run.
+     */
 
     g_assert_cmpint(nm_setting_connection_get_timestamp(s_con), ==, 0);
     g_assert(nm_setting_connection_get_autoconnect(s_con));
@@ -2895,9 +2895,9 @@ test_read_wifi_wep_adhoc(void)
                     "System blahblah (test-wifi-wep-adhoc)");
 
     /* UUID can't be tested if the ifcfg does not contain the UUID key, because
-	 * the UUID is generated on the full path of the ifcfg file, which can change
-	 * depending on where the tests are run.
-	 */
+     * the UUID is generated on the full path of the ifcfg file, which can change
+     * depending on where the tests are run.
+     */
 
     g_assert(!nm_setting_connection_get_autoconnect(s_con));
 
@@ -3181,9 +3181,9 @@ test_read_wifi_wpa_psk(void)
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "System blahblah (test-wifi-wpa-psk)");
 
     /* UUID can't be tested if the ifcfg does not contain the UUID key, because
-	 * the UUID is generated on the full path of the ifcfg file, which can change
-	 * depending on where the tests are run.
-	 */
+     * the UUID is generated on the full path of the ifcfg file, which can change
+     * depending on where the tests are run.
+     */
 
     g_assert_cmpint(nm_setting_connection_get_timestamp(s_con), ==, 0);
     g_assert(nm_setting_connection_get_autoconnect(s_con));
@@ -3710,8 +3710,8 @@ test_read_wifi_dynamic_wep_leap(void)
     g_assert_cmpstr(nm_setting_wireless_security_get_key_mgmt(s_wsec), ==, "ieee8021x");
 
     /* Auth alg should be NULL (open) for dynamic WEP with LEAP as the EAP method;
-	 * only "old-school" LEAP uses 'leap' for the auth alg.
-	 */
+     * only "old-school" LEAP uses 'leap' for the auth alg.
+     */
     g_assert_cmpstr(nm_setting_wireless_security_get_auth_alg(s_wsec), ==, NULL);
 
     /* Expect no old-school LEAP username/password, that'll be in the 802.1x setting */
@@ -4508,9 +4508,9 @@ test_read_wifi_wep_no_keys(void)
                     "System foobar (test-wifi-wep-no-keys)");
 
     /* UUID can't be tested if the ifcfg does not contain the UUID key, because
-	 * the UUID is generated on the full path of the ifcfg file, which can change
-	 * depending on where the tests are run.
-	 */
+     * the UUID is generated on the full path of the ifcfg file, which can change
+     * depending on where the tests are run.
+     */
 
     /* ===== WIRELESS SETTING ===== */
 
@@ -4592,8 +4592,8 @@ test_read_wifi_wep_agent_keys(void)
                                        NULL);
 
     /* Ensure the connection is still marked for wifi security even though
-	 * we don't have any WEP keys because they are agent owned.
-	 */
+     * we don't have any WEP keys because they are agent owned.
+     */
 
     /* ===== WIRELESS SETTING ===== */
     s_wifi = nm_connection_get_setting_wireless(connection);
@@ -5513,9 +5513,9 @@ test_read_write_static_routes_legacy(void)
     g_assert(!nm_setting_ip_config_get_never_default(s_ip4));
 
     /* Save the ifcfg; use a special different scratch dir to ensure that
-	 * we can clean up after the written connection in both the original
-	 * source tree and for 'make distcheck'.
-	 */
+     * we can clean up after the written connection in both the original
+     * source tree and for 'make distcheck'.
+     */
     _writer_new_connec_exp(connection,
                            TEST_SCRATCH_DIR_TMP,
                            TEST_IFCFG_DIR "/ifcfg-test-static-routes-legacy.cexpected",
@@ -5637,8 +5637,8 @@ test_write_wired_static_routes(void)
                                   &reread,
                                   &reread_same);
     /* ifcfg does not support setting onlink=0. It gets lost during write+re-read.
-	 * Assert that it's missing, and patch it to check whether the rest of the
-	 * connection equals. */
+     * Assert that it's missing, and patch it to check whether the rest of the
+     * connection equals. */
     g_assert(!reread_same);
     nmtst_assert_connection_verifies_without_normalization(reread);
     s_ip4 = nm_connection_get_setting_ip4_config(reread);
@@ -5860,9 +5860,9 @@ test_write_wired_8021x_tls(gconstpointer test_data)
     nmtst_file_unlink_if_exists(keyfile);
 
     /* Ensure the reread connection's certificates and private key are paths; no
-	 * matter what scheme was used in the original connection they will be read
-	 * back in as paths.
-	 */
+     * matter what scheme was used in the original connection they will be read
+     * back in as paths.
+     */
     s_8021x = nm_connection_get_setting_802_1x(reread);
     g_assert(s_8021x);
     g_assert_cmpint(nm_setting_802_1x_get_ca_cert_scheme(s_8021x),
@@ -5888,16 +5888,16 @@ test_write_wired_8021x_tls(gconstpointer test_data)
 
     if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
         /* Do a direct compare if using the path scheme since then the
-		 * certificate and key properties should be the same.  If using blob
-		 * scheme the original connection cert/key properties will be blobs
-		 * but the re-read connection is always path scheme, so we wouldn't
-		 * expect it to compare successfully.
-		 */
+         * certificate and key properties should be the same.  If using blob
+         * scheme the original connection cert/key properties will be blobs
+         * but the re-read connection is always path scheme, so we wouldn't
+         * expect it to compare successfully.
+         */
         if (flags != NM_SETTING_SECRET_FLAG_NONE) {
             /* Clear original connection's private key password because flags
-			 * say it's not system-owned, and therefore it should not show up
-			 * in the re-read connection.
-			 */
+             * say it's not system-owned, and therefore it should not show up
+             * in the re-read connection.
+             */
             s_8021x = nm_connection_get_setting_802_1x(connection);
             g_object_set(s_8021x, NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD, NULL, NULL);
         }
@@ -6013,9 +6013,9 @@ test_write_wired_aliases(void)
     nmtst_file_unlink(TEST_SCRATCH_ALIAS_BASE ":3");
 
     /* nm_connection_compare() is not guaranteed to succeed, because the
-	 * aliases get read back in essentially random order. So just
-	 * verify the aliases manually.
-	 */
+     * aliases get read back in essentially random order. So just
+     * verify the aliases manually.
+     */
     s_ip4 = nm_connection_get_setting_ip4_config(connection);
     g_assert(nm_setting_ip_config_get_num_addresses(s_ip4) == num_addresses);
 
@@ -6961,8 +6961,8 @@ test_write_wifi_leap_secret_flags(gconstpointer data)
     g_assert(g_file_test(keyfile, G_FILE_TEST_EXISTS) == FALSE);
 
     /* Remove the LEAP password from the original connection since it wont' be
-	 * in the reread connection, as the password is not system owned.
-	 */
+     * in the reread connection, as the password is not system owned.
+     */
     g_object_set(s_wsec, NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD, NULL, NULL);
     nmtst_assert_connection_equals(connection, TRUE, reread, FALSE);
 }
@@ -7585,8 +7585,8 @@ test_write_wifi_wpa_then_open(void)
     const char *                  ssid_data = "blahblah";
 
     /* Test that writing out a WPA config then changing that to an open
-	 * config doesn't leave various WPA-related keys lying around in the ifcfg.
-	 */
+     * config doesn't leave various WPA-related keys lying around in the ifcfg.
+     */
 
     connection = nm_simple_connection_new();
 
@@ -7700,8 +7700,8 @@ test_write_wifi_wpa_then_wep_with_perms(void)
     const char *                  ssid_data = "SomeSSID";
 
     /* Test that writing out a WPA config then changing that to a WEP
-	 * config works and doesn't cause infinite loop or other issues.
-	 */
+     * config works and doesn't cause infinite loop or other issues.
+     */
 
     connection = nm_simple_connection_new();
     g_assert(connection);
@@ -7906,9 +7906,9 @@ test_write_wifi_dynamic_wep_leap(void)
     nmtst_assert_connection_equals(connection, TRUE, reread, FALSE);
 
     /* Check and make sure that an "old-school" LEAP (Network EAP) connection
-	 * did not get written.  Check first that the auth alg is not set to "LEAP"
-	 * and next that the only IEEE 802.1x EAP method is "LEAP".
-	 */
+     * did not get written.  Check first that the auth alg is not set to "LEAP"
+     * and next that the only IEEE 802.1x EAP method is "LEAP".
+     */
     ifcfg = _svOpenFile(testfile);
     _svGetValue_check(ifcfg, "SECURITYMODE", NULL);
     _svGetValue_check(ifcfg, "IEEE_8021X_EAP_METHODS", "LEAP");
@@ -8210,10 +8210,10 @@ test_write_wifi_wep_agent_keys(void)
     reread = _connection_from_file(testfile, NULL, TYPE_WIRELESS, NULL);
 
     /* Remove the WEP key from the original, because it should not have been
-	 * written out to disk as it was agent-owned.  The new connection should
-	 * not have any WEP keys set.
-	 * Also the new connection should not have WEP key type set.
-	 */
+     * written out to disk as it was agent-owned.  The new connection should
+     * not have any WEP keys set.
+     * Also the new connection should not have WEP key type set.
+     */
     nm_setting_wireless_security_set_wep_key(s_wsec, 0, NULL);
     g_object_set(s_wsec, NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE, NM_WEP_KEY_TYPE_UNKNOWN, NULL);
 
@@ -9041,9 +9041,9 @@ test_write_ethernet_missing_ipv6(void)
 
     /* IP6 setting */
     /*
-	 * We intentionally don't add IPv6 setting here. ifcfg-rh plugin should regard
-	 * missing IPv6 as IPv6 with NM_SETTING_IP6_CONFIG_METHOD_AUTO method.
-	 */
+     * We intentionally don't add IPv6 setting here. ifcfg-rh plugin should regard
+     * missing IPv6 as IPv6 with NM_SETTING_IP6_CONFIG_METHOD_AUTO method.
+     */
 
     nmtst_assert_connection_verifies(connection);
 
@@ -10379,9 +10379,9 @@ do_svUnescape_combine_ansi_append(GString *               str_val,
     g_string_append(str_exp, data->exp);
     if (honor_needs_ascii_separator && data->needs_ascii_separator) {
         /* the string has an open escape sequence. We must ensure that when
-		 * combining it with another sequence, that they don't merge into
-		 * something different. for example "\xa" + "a" must not result in
-		 * "\xaa". Instead, we add a space in between to get "\xa a". */
+         * combining it with another sequence, that they don't merge into
+         * something different. for example "\xa" + "a" must not result in
+         * "\xaa". Instead, we add a space in between to get "\xa a". */
         g_string_append(str_val, " ");
         g_string_append(str_exp, " ");
     }
@@ -10500,7 +10500,7 @@ test_svUnescape(void)
         V1("\"aa\\\"\"b", "aa\"b"),
 
         /* the following is not shell behavior, but kept for backward compatibility
-		 * with old svEscape(). */
+         * with old svEscape(). */
         V0("\"\\'\"", "'"),
         V0("\"\\~\"", "~"),
         V0("\"b\\~b\"", "b~b"),
@@ -10508,7 +10508,7 @@ test_svUnescape(void)
         V0("\"\\~\\'\"", "~'"),
 
         /* the following is shell-behavior, because it doesn't look like written
-		 * by old svEscape(). */
+         * by old svEscape(). */
         V1("\"\\~~\"", "\\~~"),
         V1("\"\\a\\'\"", "\\a\\'"),
         V1("x\"\\~\"", "x\\~"),
@@ -10518,7 +10518,7 @@ test_svUnescape(void)
     };
     const UnescapeTestData data_ansi[] = {
         /* strings inside $''. They cannot be compared directly, but must
-		 * be wrapped by do_svUnescape_combine_ansi(). */
+         * be wrapped by do_svUnescape_combine_ansi(). */
         V1("", ""),
         V1("a", "a"),
         V1("b", "b"),
@@ -10732,9 +10732,9 @@ test_read_vlan_trailing_spaces(void)
     char *         contents = NULL;
 
     /* Ensure there is whitespace at the end of the VLAN interface name,
-	 * to prevent the whitespace getting stripped off and committed mistakenly
-	 * by something in the future.
-	 */
+     * to prevent the whitespace getting stripped off and committed mistakenly
+     * by something in the future.
+     */
     success = g_file_get_contents(testfile, &contents, NULL, &error);
     g_assert_no_error(error);
     g_assert(success);

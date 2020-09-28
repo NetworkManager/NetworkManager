@@ -166,15 +166,15 @@ nm_setting_wireless_ap_security_compatible(NMSettingWireless *        s_wireless
                 return FALSE;
 
             /* quick check; can't use AP if it doesn't support at least one
-			 * WEP cipher in both pairwise and group suites.
-			 */
+             * WEP cipher in both pairwise and group suites.
+             */
             if (!(ap_wpa & (NM_802_11_AP_SEC_PAIR_WEP40 | NM_802_11_AP_SEC_PAIR_WEP104))
                 || !(ap_wpa & (NM_802_11_AP_SEC_GROUP_WEP40 | NM_802_11_AP_SEC_GROUP_WEP104)))
                 return FALSE;
 
             /* Match at least one pairwise cipher with AP's capability if the
-			 * wireless-security setting explicitly lists pairwise ciphers
-			 */
+             * wireless-security setting explicitly lists pairwise ciphers
+             */
             num = nm_setting_wireless_security_get_num_pairwise(s_wireless_sec);
             for (i = 0, found = FALSE; i < num; i++) {
                 cipher = nm_setting_wireless_security_get_pairwise(s_wireless_sec, i);
@@ -195,8 +195,8 @@ nm_setting_wireless_ap_security_compatible(NMSettingWireless *        s_wireless
                 return FALSE;
 
             /* Match at least one group cipher with AP's capability if the
-			 * wireless-security setting explicitly lists group ciphers
-			 */
+             * wireless-security setting explicitly lists group ciphers
+             */
             num = nm_setting_wireless_security_get_num_groups(s_wireless_sec);
             for (i = 0, found = FALSE; i < num; i++) {
                 cipher = nm_setting_wireless_security_get_group(s_wireless_sec, i);
@@ -247,8 +247,8 @@ nm_setting_wireless_ap_security_compatible(NMSettingWireless *        s_wireless
         // the AP's RSN IE instead
 
         /* Match at least one pairwise cipher with AP's capability if the
-		 * wireless-security setting explicitly lists pairwise ciphers
-		 */
+         * wireless-security setting explicitly lists pairwise ciphers
+         */
         num = nm_setting_wireless_security_get_num_pairwise(s_wireless_sec);
         for (i = 0, found = FALSE; i < num; i++) {
             cipher = nm_setting_wireless_security_get_pairwise(s_wireless_sec, i);
@@ -261,8 +261,8 @@ nm_setting_wireless_ap_security_compatible(NMSettingWireless *        s_wireless
             return FALSE;
 
         /* Match at least one group cipher with AP's capability if the
-		 * wireless-security setting explicitly lists group ciphers
-		 */
+         * wireless-security setting explicitly lists group ciphers
+         */
         num = nm_setting_wireless_security_get_num_groups(s_wireless_sec);
         for (i = 0, found = FALSE; i < num; i++) {
             cipher = nm_setting_wireless_security_get_group(s_wireless_sec, i);
@@ -915,8 +915,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     /* generate-mac-address-mask only makes sense with cloned-mac-address "random" or
-	 * "stable". Still, let's not be so strict about that and accept the value
-	 * even if it is unused. */
+     * "stable". Still, let's not be so strict about that and accept the value
+     * even if it is unused. */
     if (!_nm_utils_generate_mac_address_mask_parse(priv->generate_mac_address_mask,
                                                    NULL,
                                                    NULL,
@@ -1236,7 +1236,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
             _nm_utils_hwaddr_canonical_or_invalid(g_value_get_string(value), ETH_ALEN);
         if (bool_val && !priv->cloned_mac_address) {
             /* cloned-mac-address was set before but was now explicitly cleared.
-			 * In this case, we also clear mac-address-randomization flag */
+             * In this case, we also clear mac-address-randomization flag */
             if (priv->mac_address_randomization != NM_SETTING_MAC_RANDOMIZATION_DEFAULT) {
                 priv->mac_address_randomization = NM_SETTING_MAC_RANDOMIZATION_DEFAULT;
                 _notify(NM_SETTING_WIRELESS(object), PROP_MAC_ADDRESS_RANDOMIZATION);
@@ -1366,23 +1366,23 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
     setting_class->compare_property = compare_property;
 
     /**
-	 * NMSettingWireless:ssid:
-	 *
-	 * SSID of the Wi-Fi network. Must be specified.
-	 **/
+     * NMSettingWireless:ssid:
+     *
+     * SSID of the Wi-Fi network. Must be specified.
+     **/
     /* ---keyfile---
-	 * property: ssid
-	 * format: string (or decimal-byte list - obsolete)
-	 * description: SSID of Wi-Fi network.
-	 * example: ssid=Quick Net
-	 * ---end---
-	 * ---ifcfg-rh---
-	 * property: ssid
-	 * variable: ESSID
-	 * description: SSID of Wi-Fi network.
-	 * example: ESSID="Quick Net"
-	 * ---end---
-	 */
+     * property: ssid
+     * format: string (or decimal-byte list - obsolete)
+     * description: SSID of Wi-Fi network.
+     * example: ssid=Quick Net
+     * ---end---
+     * ---ifcfg-rh---
+     * property: ssid
+     * variable: ESSID
+     * description: SSID of Wi-Fi network.
+     * example: ESSID="Quick Net"
+     * ---end---
+     */
     obj_properties[PROP_SSID] = g_param_spec_boxed(NM_SETTING_WIRELESS_SSID,
                                                    "",
                                                    "",
@@ -1390,18 +1390,18 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                                    G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWireless:mode:
-	 *
-	 * Wi-Fi network mode; one of "infrastructure", "mesh", "adhoc" or "ap".  If blank,
-	 * infrastructure is assumed.
-	 **/
+     * NMSettingWireless:mode:
+     *
+     * Wi-Fi network mode; one of "infrastructure", "mesh", "adhoc" or "ap".  If blank,
+     * infrastructure is assumed.
+     **/
     /* ---ifcfg-rh---
-	 * property: mode
-	 * variable: MODE
-	 * values: Ad-Hoc, Managed (Auto)  [case insensitive]
-	 * description: Wi-Fi network mode.
-	 * ---end---
-	 */
+     * property: mode
+     * variable: MODE
+     * values: Ad-Hoc, Managed (Auto)  [case insensitive]
+     * description: Wi-Fi network mode.
+     * ---end---
+     */
     obj_properties[PROP_MODE] = g_param_spec_string(NM_SETTING_WIRELESS_MODE,
                                                     "",
                                                     "",
@@ -1409,24 +1409,24 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                                     G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWireless:band:
-	 *
-	 * 802.11 frequency band of the network.  One of "a" for 5GHz 802.11a or
-	 * "bg" for 2.4GHz 802.11.  This will lock associations to the Wi-Fi network
-	 * to the specific band, i.e. if "a" is specified, the device will not
-	 * associate with the same network in the 2.4GHz band even if the network's
-	 * settings are compatible.  This setting depends on specific driver
-	 * capability and may not work with all drivers.
-	 **/
+     * NMSettingWireless:band:
+     *
+     * 802.11 frequency band of the network.  One of "a" for 5GHz 802.11a or
+     * "bg" for 2.4GHz 802.11.  This will lock associations to the Wi-Fi network
+     * to the specific band, i.e. if "a" is specified, the device will not
+     * associate with the same network in the 2.4GHz band even if the network's
+     * settings are compatible.  This setting depends on specific driver
+     * capability and may not work with all drivers.
+     **/
     /* ---ifcfg-rh---
-	 * property: band
-	 * variable: BAND(+)
-	 * values: a, bg
-	 * description: BAND alone is honored, but CHANNEL overrides BAND since it
-	 *   implies a band.
-	 * example: BAND=bg
-	 * ---end---
-	 */
+     * property: band
+     * variable: BAND(+)
+     * values: a, bg
+     * description: BAND alone is honored, but CHANNEL overrides BAND since it
+     *   implies a band.
+     * example: BAND=bg
+     * ---end---
+     */
     obj_properties[PROP_BAND] = g_param_spec_string(NM_SETTING_WIRELESS_BAND,
                                                     "",
                                                     "",
@@ -1434,22 +1434,22 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                                     G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWireless:channel:
-	 *
-	 * Wireless channel to use for the Wi-Fi connection.  The device will only
-	 * join (or create for Ad-Hoc networks) a Wi-Fi network on the specified
-	 * channel.  Because channel numbers overlap between bands, this property
-	 * also requires the "band" property to be set.
-	 **/
+     * NMSettingWireless:channel:
+     *
+     * Wireless channel to use for the Wi-Fi connection.  The device will only
+     * join (or create for Ad-Hoc networks) a Wi-Fi network on the specified
+     * channel.  Because channel numbers overlap between bands, this property
+     * also requires the "band" property to be set.
+     **/
     /* ---ifcfg-rh---
-	 * property: channel
-	 * variable: CHANNEL
-	 * description: Channel used for the Wi-Fi communication.
-	 *   Channels greater than 14 mean "a" band, otherwise the
-	 *   band is "bg".
-	 * example: CHANNEL=6
-	 * ---end---
-	 */
+     * property: channel
+     * variable: CHANNEL
+     * description: Channel used for the Wi-Fi communication.
+     *   Channels greater than 14 mean "a" band, otherwise the
+     *   band is "bg".
+     * example: CHANNEL=6
+     * ---end---
+     */
     obj_properties[PROP_CHANNEL] = g_param_spec_uint(NM_SETTING_WIRELESS_CHANNEL,
                                                      "",
                                                      "",
@@ -1459,20 +1459,20 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                                      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWireless:bssid:
-	 *
-	 * If specified, directs the device to only associate with the given access
-	 * point.  This capability is highly driver dependent and not supported by
-	 * all devices.  Note: this property does not control the BSSID used when
-	 * creating an Ad-Hoc network and is unlikely to in the future.
-	 **/
+     * NMSettingWireless:bssid:
+     *
+     * If specified, directs the device to only associate with the given access
+     * point.  This capability is highly driver dependent and not supported by
+     * all devices.  Note: this property does not control the BSSID used when
+     * creating an Ad-Hoc network and is unlikely to in the future.
+     **/
     /* ---ifcfg-rh---
-	 * property: bssid
-	 * variable: BSSID(+)
-	 * description: Restricts association only to a single AP.
-	 * example: BSSID=00:1E:BD:64:83:21
-	 * ---end---
-	 */
+     * property: bssid
+     * variable: BSSID(+)
+     * description: Restricts association only to a single AP.
+     * example: BSSID=00:1E:BD:64:83:21
+     * ---end---
+     */
     obj_properties[PROP_BSSID] = g_param_spec_string(NM_SETTING_WIRELESS_BSSID,
                                                      "",
                                                      "",
@@ -1483,19 +1483,19 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                  &nm_sett_info_propert_type_mac_address);
 
     /**
-	 * NMSettingWireless:rate:
-	 *
-	 * If non-zero, directs the device to only use the specified bitrate for
-	 * communication with the access point.  Units are in Kb/s, ie 5500 = 5.5
-	 * Mbit/s.  This property is highly driver dependent and not all devices
-	 * support setting a static bitrate.
-	 **/
+     * NMSettingWireless:rate:
+     *
+     * If non-zero, directs the device to only use the specified bitrate for
+     * communication with the access point.  Units are in Kb/s, ie 5500 = 5.5
+     * Mbit/s.  This property is highly driver dependent and not all devices
+     * support setting a static bitrate.
+     **/
     /* ---ifcfg-rh---
-	 * property: rate
-	 * variable: (none)
-	 * description: This property is not handled by ifcfg-rh plugin.
-	 * ---end---
-	 */
+     * property: rate
+     * variable: (none)
+     * description: This property is not handled by ifcfg-rh plugin.
+     * ---end---
+     */
     obj_properties[PROP_RATE] = g_param_spec_uint(NM_SETTING_WIRELESS_RATE,
                                                   "",
                                                   "",
@@ -1506,18 +1506,18 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                                       | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWireless:tx-power:
-	 *
-	 * If non-zero, directs the device to use the specified transmit power.
-	 * Units are dBm.  This property is highly driver dependent and not all
-	 * devices support setting a static transmit power.
-	 **/
+     * NMSettingWireless:tx-power:
+     *
+     * If non-zero, directs the device to use the specified transmit power.
+     * Units are dBm.  This property is highly driver dependent and not all
+     * devices support setting a static transmit power.
+     **/
     /* ---ifcfg-rh---
-	 * property: tx-power
-	 * variable: (none)
-	 * description: This property is not handled by ifcfg-rh plugin.
-	 * ---end---
-	 */
+     * property: tx-power
+     * variable: (none)
+     * description: This property is not handled by ifcfg-rh plugin.
+     * ---end---
+     */
     obj_properties[PROP_TX_POWER] = g_param_spec_uint(
         NM_SETTING_WIRELESS_TX_POWER,
         "",
@@ -1528,29 +1528,29 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWireless:mac-address:
-	 *
-	 * If specified, this connection will only apply to the Wi-Fi device whose
-	 * permanent MAC address matches. This property does not change the MAC
-	 * address of the device (i.e. MAC spoofing).
-	 **/
+     * NMSettingWireless:mac-address:
+     *
+     * If specified, this connection will only apply to the Wi-Fi device whose
+     * permanent MAC address matches. This property does not change the MAC
+     * address of the device (i.e. MAC spoofing).
+     **/
     /* ---keyfile---
-	 * property: mac-address
-	 * format: usual hex-digits-and-colons notation
-	 * description: MAC address in traditional hex-digits-and-colons notation
-	 *   (e.g. 00:22:68:12:79:A2), or semicolon separated list of 6 bytes (obsolete)
-	 *   (e.g. 0;34;104;18;121;162).
-	 * ---end---
-	 * ---ifcfg-rh---
-	 * property: mac-address
-	 * variable: HWADDR
-	 * description: Hardware address of the device in traditional hex-digits-and-colons
-	 *    notation (e.g. 00:22:68:14:5A:05).
-	 *    Note that for initscripts this is the current MAC address of the device as found
-	 *    during ifup. For NetworkManager this is the permanent MAC address. Or in case no
-	 *    permanent MAC address exists, the MAC address initially configured on the device.
-	 * ---end---
-	 */
+     * property: mac-address
+     * format: usual hex-digits-and-colons notation
+     * description: MAC address in traditional hex-digits-and-colons notation
+     *   (e.g. 00:22:68:12:79:A2), or semicolon separated list of 6 bytes (obsolete)
+     *   (e.g. 0;34;104;18;121;162).
+     * ---end---
+     * ---ifcfg-rh---
+     * property: mac-address
+     * variable: HWADDR
+     * description: Hardware address of the device in traditional hex-digits-and-colons
+     *    notation (e.g. 00:22:68:14:5A:05).
+     *    Note that for initscripts this is the current MAC address of the device as found
+     *    during ifup. For NetworkManager this is the permanent MAC address. Or in case no
+     *    permanent MAC address exists, the MAC address initially configured on the device.
+     * ---end---
+     */
     obj_properties[PROP_MAC_ADDRESS] =
         g_param_spec_string(NM_SETTING_WIRELESS_MAC_ADDRESS,
                             "",
@@ -1562,47 +1562,47 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                  &nm_sett_info_propert_type_mac_address);
 
     /**
-	 * NMSettingWireless:cloned-mac-address:
-	 *
-	 * If specified, request that the device use this MAC address instead.
-	 * This is known as MAC cloning or spoofing.
-	 *
-	 * Beside explicitly specifying a MAC address, the special values "preserve", "permanent",
-	 * "random" and "stable" are supported.
-	 * "preserve" means not to touch the MAC address on activation.
-	 * "permanent" means to use the permanent hardware address of the device.
-	 * "random" creates a random MAC address on each connect.
-	 * "stable" creates a hashed MAC address based on connection.stable-id and a
-	 * machine dependent key.
-	 *
-	 * If unspecified, the value can be overwritten via global defaults, see manual
-	 * of NetworkManager.conf. If still unspecified, it defaults to "preserve"
-	 * (older versions of NetworkManager may use a different default value).
-	 *
-	 * On D-Bus, this field is expressed as "assigned-mac-address" or the deprecated
-	 * "cloned-mac-address".
-	 **/
+     * NMSettingWireless:cloned-mac-address:
+     *
+     * If specified, request that the device use this MAC address instead.
+     * This is known as MAC cloning or spoofing.
+     *
+     * Beside explicitly specifying a MAC address, the special values "preserve", "permanent",
+     * "random" and "stable" are supported.
+     * "preserve" means not to touch the MAC address on activation.
+     * "permanent" means to use the permanent hardware address of the device.
+     * "random" creates a random MAC address on each connect.
+     * "stable" creates a hashed MAC address based on connection.stable-id and a
+     * machine dependent key.
+     *
+     * If unspecified, the value can be overwritten via global defaults, see manual
+     * of NetworkManager.conf. If still unspecified, it defaults to "preserve"
+     * (older versions of NetworkManager may use a different default value).
+     *
+     * On D-Bus, this field is expressed as "assigned-mac-address" or the deprecated
+     * "cloned-mac-address".
+     **/
     /* ---keyfile---
-	 * property: cloned-mac-address
-	 * format: usual hex-digits-and-colons notation
-	 * description: Cloned MAC address in traditional hex-digits-and-colons notation
-	 *   (e.g. 00:22:68:12:79:B2), or semicolon separated list of 6 bytes (obsolete)
-	 *   (e.g. 0;34;104;18;121;178).
-	 * ---end---
-	 * ---ifcfg-rh---
-	 * property: cloned-mac-address
-	 * variable: MACADDR
-	 * description: Cloned (spoofed) MAC address in traditional hex-digits-and-colons
-	 *    notation (e.g. 00:22:68:14:5A:99).
-	 * ---end---
-	 * ---dbus---
-	 * property: cloned-mac-address
-	 * format: byte array
-	 * description: This D-Bus field is deprecated in favor of "assigned-mac-address"
-	 *    which is more flexible and allows specifying special variants like "random".
-	 *    For libnm and nmcli, this field is called "cloned-mac-address".
-	 * ---end---
-	 */
+     * property: cloned-mac-address
+     * format: usual hex-digits-and-colons notation
+     * description: Cloned MAC address in traditional hex-digits-and-colons notation
+     *   (e.g. 00:22:68:12:79:B2), or semicolon separated list of 6 bytes (obsolete)
+     *   (e.g. 0;34;104;18;121;178).
+     * ---end---
+     * ---ifcfg-rh---
+     * property: cloned-mac-address
+     * variable: MACADDR
+     * description: Cloned (spoofed) MAC address in traditional hex-digits-and-colons
+     *    notation (e.g. 00:22:68:14:5A:99).
+     * ---end---
+     * ---dbus---
+     * property: cloned-mac-address
+     * format: byte array
+     * description: This D-Bus field is deprecated in favor of "assigned-mac-address"
+     *    which is more flexible and allows specifying special variants like "random".
+     *    For libnm and nmcli, this field is called "cloned-mac-address".
+     * ---end---
+     */
     obj_properties[PROP_CLONED_MAC_ADDRESS] = g_param_spec_string(
         NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS,
         "",
@@ -1614,60 +1614,60 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                  &nm_sett_info_propert_type_cloned_mac_address);
 
     /* ---dbus---
-	 * property: assigned-mac-address
-	 * format: string
-	 * description: The new field for the cloned MAC address. It can be either
-	 *   a hardware address in ASCII representation, or one of the special values
-	 *   "preserve", "permanent", "random" or "stable".
-	 *   This field replaces the deprecated "cloned-mac-address" on D-Bus, which
-	 *   can only contain explicit hardware addresses. Note that this property
-	 *   only exists in D-Bus API. libnm and nmcli continue to call this property
-	 *   "cloned-mac-address".
-	 * ---end---
-	 */
+     * property: assigned-mac-address
+     * format: string
+     * description: The new field for the cloned MAC address. It can be either
+     *   a hardware address in ASCII representation, or one of the special values
+     *   "preserve", "permanent", "random" or "stable".
+     *   This field replaces the deprecated "cloned-mac-address" on D-Bus, which
+     *   can only contain explicit hardware addresses. Note that this property
+     *   only exists in D-Bus API. libnm and nmcli continue to call this property
+     *   "cloned-mac-address".
+     * ---end---
+     */
     _nm_properties_override_dbus(properties_override,
                                  "assigned-mac-address",
                                  &nm_sett_info_propert_type_assigned_mac_address);
 
     /**
-	 * NMSettingWireless:generate-mac-address-mask:
-	 *
-	 * With #NMSettingWireless:cloned-mac-address setting "random" or "stable",
-	 * by default all bits of the MAC address are scrambled and a locally-administered,
-	 * unicast MAC address is created. This property allows to specify that certain bits
-	 * are fixed. Note that the least significant bit of the first MAC address will
-	 * always be unset to create a unicast MAC address.
-	 *
-	 * If the property is %NULL, it is eligible to be overwritten by a default
-	 * connection setting. If the value is still %NULL or an empty string, the
-	 * default is to create a locally-administered, unicast MAC address.
-	 *
-	 * If the value contains one MAC address, this address is used as mask. The set
-	 * bits of the mask are to be filled with the current MAC address of the device,
-	 * while the unset bits are subject to randomization.
-	 * Setting "FE:FF:FF:00:00:00" means to preserve the OUI of the current MAC address
-	 * and only randomize the lower 3 bytes using the "random" or "stable" algorithm.
-	 *
-	 * If the value contains one additional MAC address after the mask,
-	 * this address is used instead of the current MAC address to fill the bits
-	 * that shall not be randomized. For example, a value of
-	 * "FE:FF:FF:00:00:00 68:F7:28:00:00:00" will set the OUI of the MAC address
-	 * to 68:F7:28, while the lower bits are randomized. A value of
-	 * "02:00:00:00:00:00 00:00:00:00:00:00" will create a fully scrambled
-	 * globally-administered, burned-in MAC address.
-	 *
-	 * If the value contains more than one additional MAC addresses, one of
-	 * them is chosen randomly. For example, "02:00:00:00:00:00 00:00:00:00:00:00 02:00:00:00:00:00"
-	 * will create a fully scrambled MAC address, randomly locally or globally
-	 * administered.
-	 **/
+     * NMSettingWireless:generate-mac-address-mask:
+     *
+     * With #NMSettingWireless:cloned-mac-address setting "random" or "stable",
+     * by default all bits of the MAC address are scrambled and a locally-administered,
+     * unicast MAC address is created. This property allows to specify that certain bits
+     * are fixed. Note that the least significant bit of the first MAC address will
+     * always be unset to create a unicast MAC address.
+     *
+     * If the property is %NULL, it is eligible to be overwritten by a default
+     * connection setting. If the value is still %NULL or an empty string, the
+     * default is to create a locally-administered, unicast MAC address.
+     *
+     * If the value contains one MAC address, this address is used as mask. The set
+     * bits of the mask are to be filled with the current MAC address of the device,
+     * while the unset bits are subject to randomization.
+     * Setting "FE:FF:FF:00:00:00" means to preserve the OUI of the current MAC address
+     * and only randomize the lower 3 bytes using the "random" or "stable" algorithm.
+     *
+     * If the value contains one additional MAC address after the mask,
+     * this address is used instead of the current MAC address to fill the bits
+     * that shall not be randomized. For example, a value of
+     * "FE:FF:FF:00:00:00 68:F7:28:00:00:00" will set the OUI of the MAC address
+     * to 68:F7:28, while the lower bits are randomized. A value of
+     * "02:00:00:00:00:00 00:00:00:00:00:00" will create a fully scrambled
+     * globally-administered, burned-in MAC address.
+     *
+     * If the value contains more than one additional MAC addresses, one of
+     * them is chosen randomly. For example, "02:00:00:00:00:00 00:00:00:00:00:00 02:00:00:00:00:00"
+     * will create a fully scrambled MAC address, randomly locally or globally
+     * administered.
+     **/
     /* ---ifcfg-rh---
-	 * property: generate-mac-address-mask
-	 * variable: GENERATE_MAC_ADDRESS_MASK(+)
-	 * description: the MAC address mask for generating randomized and stable
-	 *   cloned-mac-address.
-	 * ---end---
-	 */
+     * property: generate-mac-address-mask
+     * variable: GENERATE_MAC_ADDRESS_MASK(+)
+     * description: the MAC address mask for generating randomized and stable
+     *   cloned-mac-address.
+     * ---end---
+     */
     obj_properties[PROP_GENERATE_MAC_ADDRESS_MASK] = g_param_spec_string(
         NM_SETTING_WIRELESS_GENERATE_MAC_ADDRESS_MASK,
         "",
@@ -1676,25 +1676,25 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWireless:mac-address-blacklist:
-	 *
-	 * A list of permanent MAC addresses of Wi-Fi devices to which this
-	 * connection should never apply.  Each MAC address should be given in the
-	 * standard hex-digits-and-colons notation (eg "00:11:22:33:44:55").
-	 **/
+     * NMSettingWireless:mac-address-blacklist:
+     *
+     * A list of permanent MAC addresses of Wi-Fi devices to which this
+     * connection should never apply.  Each MAC address should be given in the
+     * standard hex-digits-and-colons notation (eg "00:11:22:33:44:55").
+     **/
     /* ---keyfile---
-	 * property: mac-address-blacklist
-	 * format: list of MACs (separated with semicolons)
-	 * description: MAC address blacklist.
-	 * example: mac-address-blacklist= 00:22:68:12:79:A6;00:22:68:12:79:78
-	 * ---end---
-	 * ---ifcfg-rh---
-	 * property: mac-address-blacklist
-	 * variable: HWADDR_BLACKLIST(+)
-	 * description: It denies usage of the connection for any device whose address
-	 *   is listed.
-	 * ---end---
-	 */
+     * property: mac-address-blacklist
+     * format: list of MACs (separated with semicolons)
+     * description: MAC address blacklist.
+     * example: mac-address-blacklist= 00:22:68:12:79:A6;00:22:68:12:79:78
+     * ---end---
+     * ---ifcfg-rh---
+     * property: mac-address-blacklist
+     * variable: HWADDR_BLACKLIST(+)
+     * description: It denies usage of the connection for any device whose address
+     *   is listed.
+     * ---end---
+     */
     obj_properties[PROP_MAC_ADDRESS_BLACKLIST] = g_param_spec_boxed(
         NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST,
         "",
@@ -1703,21 +1703,21 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWireless:seen-bssids:
-	 *
-	 * A list of BSSIDs (each BSSID formatted as a MAC address like
-	 * "00:11:22:33:44:55") that have been detected as part of the Wi-Fi
-	 * network.  NetworkManager internally tracks previously seen BSSIDs. The
-	 * property is only meant for reading and reflects the BSSID list of
-	 * NetworkManager. The changes you make to this property will not be
-	 * preserved.
-	 **/
+     * NMSettingWireless:seen-bssids:
+     *
+     * A list of BSSIDs (each BSSID formatted as a MAC address like
+     * "00:11:22:33:44:55") that have been detected as part of the Wi-Fi
+     * network.  NetworkManager internally tracks previously seen BSSIDs. The
+     * property is only meant for reading and reflects the BSSID list of
+     * NetworkManager. The changes you make to this property will not be
+     * preserved.
+     **/
     /* ---ifcfg-rh---
-	 * property: seen-bssids
-	 * variable: (none)
-	 * description: This property is not handled by ifcfg-rh plugin.
-	 * ---end---
-	 */
+     * property: seen-bssids
+     * variable: (none)
+     * description: This property is not handled by ifcfg-rh plugin.
+     * ---end---
+     */
     obj_properties[PROP_SEEN_BSSIDS] = g_param_spec_boxed(
         NM_SETTING_WIRELESS_SEEN_BSSIDS,
         "",
@@ -1731,17 +1731,17 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                   .to_dbus_fcn = _to_dbus_fcn_seen_bssids, ));
 
     /**
-	 * NMSettingWireless:mtu:
-	 *
-	 * If non-zero, only transmit packets of the specified size or smaller,
-	 * breaking larger packets up into multiple Ethernet frames.
-	 **/
+     * NMSettingWireless:mtu:
+     *
+     * If non-zero, only transmit packets of the specified size or smaller,
+     * breaking larger packets up into multiple Ethernet frames.
+     **/
     /* ---ifcfg-rh---
-	 * property: mtu
-	 * variable: MTU
-	 * description: MTU of the wireless interface.
-	 * ---end---
-	 */
+     * property: mtu
+     * variable: MTU
+     * description: MTU of the wireless interface.
+     * ---end---
+     */
     obj_properties[PROP_MTU] = g_param_spec_uint(NM_SETTING_WIRELESS_MTU,
                                                  "",
                                                  "",
@@ -1752,29 +1752,29 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                                      | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWireless:hidden:
-	 *
-	 * If %TRUE, indicates that the network is a non-broadcasting network that
-	 * hides its SSID. This works both in infrastructure and AP mode.
-	 *
-	 * In infrastructure mode, various workarounds are used for a more reliable
-	 * discovery of hidden networks, such as probe-scanning the SSID.  However,
-	 * these workarounds expose inherent insecurities with hidden SSID networks,
-	 * and thus hidden SSID networks should be used with caution.
-	 *
-	 * In AP mode, the created network does not broadcast its SSID.
-	 *
-	 * Note that marking the network as hidden may be a privacy issue for you
-	 * (in infrastructure mode) or client stations (in AP mode), as the explicit
-	 * probe-scans are distinctly recognizable on the air.
-	 *
-	 **/
+     * NMSettingWireless:hidden:
+     *
+     * If %TRUE, indicates that the network is a non-broadcasting network that
+     * hides its SSID. This works both in infrastructure and AP mode.
+     *
+     * In infrastructure mode, various workarounds are used for a more reliable
+     * discovery of hidden networks, such as probe-scanning the SSID.  However,
+     * these workarounds expose inherent insecurities with hidden SSID networks,
+     * and thus hidden SSID networks should be used with caution.
+     *
+     * In AP mode, the created network does not broadcast its SSID.
+     *
+     * Note that marking the network as hidden may be a privacy issue for you
+     * (in infrastructure mode) or client stations (in AP mode), as the explicit
+     * probe-scans are distinctly recognizable on the air.
+     *
+     **/
     /* ---ifcfg-rh---
-	 * property: hidden
-	 * variable: SSID_HIDDEN(+)
-	 * description: Whether the network hides the SSID.
-	 * ---end---
-	 */
+     * property: hidden
+     * variable: SSID_HIDDEN(+)
+     * description: Whether the network hides the SSID.
+     * ---end---
+     */
     obj_properties[PROP_HIDDEN] = g_param_spec_boolean(NM_SETTING_WIRELESS_HIDDEN,
                                                        "",
                                                        "",
@@ -1782,24 +1782,24 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWireless:powersave:
-	 *
-	 * One of %NM_SETTING_WIRELESS_POWERSAVE_DISABLE (disable Wi-Fi power
-	 * saving), %NM_SETTING_WIRELESS_POWERSAVE_ENABLE (enable Wi-Fi power
-	 * saving), %NM_SETTING_WIRELESS_POWERSAVE_IGNORE (don't touch currently
-	 * configure setting) or %NM_SETTING_WIRELESS_POWERSAVE_DEFAULT (use the
-	 * globally configured value). All other values are reserved.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingWireless:powersave:
+     *
+     * One of %NM_SETTING_WIRELESS_POWERSAVE_DISABLE (disable Wi-Fi power
+     * saving), %NM_SETTING_WIRELESS_POWERSAVE_ENABLE (enable Wi-Fi power
+     * saving), %NM_SETTING_WIRELESS_POWERSAVE_IGNORE (don't touch currently
+     * configure setting) or %NM_SETTING_WIRELESS_POWERSAVE_DEFAULT (use the
+     * globally configured value). All other values are reserved.
+     *
+     * Since: 1.2
+     **/
     /* ---ifcfg-rh---
-	 * property: powersave
-	 * variable: POWERSAVE(+)
-	 * values: default, ignore, enable, disable
-	 * description: Enables or disables Wi-Fi power saving.
-	 * example: POWERSAVE=enable
-	 * ---end---
-	 */
+     * property: powersave
+     * variable: POWERSAVE(+)
+     * values: default, ignore, enable, disable
+     * description: Enables or disables Wi-Fi power saving.
+     * example: POWERSAVE=enable
+     * ---end---
+     */
     obj_properties[PROP_POWERSAVE] = g_param_spec_uint(NM_SETTING_WIRELESS_POWERSAVE,
                                                        "",
                                                        "",
@@ -1809,26 +1809,26 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWireless:mac-address-randomization:
-	 *
-	 * One of %NM_SETTING_MAC_RANDOMIZATION_DEFAULT (never randomize unless
-	 * the user has set a global default to randomize and the supplicant
-	 * supports randomization),  %NM_SETTING_MAC_RANDOMIZATION_NEVER (never
-	 * randomize the MAC address), or %NM_SETTING_MAC_RANDOMIZATION_ALWAYS
-	 * (always randomize the MAC address). This property is deprecated for
-	 * 'cloned-mac-address'.
-	 *
-	 * Since: 1.2
-	 * Deprecated: 1.4: Deprecated by NMSettingWireless:cloned-mac-address property.
-	 **/
+     * NMSettingWireless:mac-address-randomization:
+     *
+     * One of %NM_SETTING_MAC_RANDOMIZATION_DEFAULT (never randomize unless
+     * the user has set a global default to randomize and the supplicant
+     * supports randomization),  %NM_SETTING_MAC_RANDOMIZATION_NEVER (never
+     * randomize the MAC address), or %NM_SETTING_MAC_RANDOMIZATION_ALWAYS
+     * (always randomize the MAC address). This property is deprecated for
+     * 'cloned-mac-address'.
+     *
+     * Since: 1.2
+     * Deprecated: 1.4: Deprecated by NMSettingWireless:cloned-mac-address property.
+     **/
     /* ---ifcfg-rh---
-	 * property: mac-address-randomization
-	 * variable: MAC_ADDRESS_RANDOMIZATION(+)
-	 * values: default, never, always
-	 * description: Enables or disables Wi-Fi MAC address randomization.
-	 * example: MAC_ADDRESS_RANDOMIZATION=always
-	 * ---end---
-	 */
+     * property: mac-address-randomization
+     * variable: MAC_ADDRESS_RANDOMIZATION(+)
+     * values: default, never, always
+     * description: Enables or disables Wi-Fi MAC address randomization.
+     * example: MAC_ADDRESS_RANDOMIZATION=always
+     * ---end---
+     */
     obj_properties[PROP_MAC_ADDRESS_RANDOMIZATION] =
         g_param_spec_uint(NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION,
                           "",
@@ -1840,18 +1840,18 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
 
     /* Compatibility for deprecated property */
     /* ---ifcfg-rh---
-	 * property: security
-	 * variable: (none)
-	 * description: This property is deprecated and not handled by ifcfg-rh-plugin.
-	 * ---end---
-	 * ---dbus---
-	 * property: security
-	 * description: This property is deprecated, but can be set to the value
-	 *   '802-11-wireless-security' when a wireless security setting is also
-	 *   present in the connection dictionary, for compatibility with very old
-	 *   NetworkManager daemons.
-	 * ---end---
-	 */
+     * property: security
+     * variable: (none)
+     * description: This property is deprecated and not handled by ifcfg-rh-plugin.
+     * ---end---
+     * ---dbus---
+     * property: security
+     * description: This property is deprecated, but can be set to the value
+     *   '802-11-wireless-security' when a wireless security setting is also
+     *   present in the connection dictionary, for compatibility with very old
+     *   NetworkManager daemons.
+     * ---end---
+     */
     _nm_properties_override_dbus(
         properties_override,
         "security",
@@ -1859,23 +1859,23 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                   .to_dbus_fcn = nm_setting_wireless_get_security, ));
 
     /**
-	 * NMSettingWireless:wake-on-wlan:
-	 *
-	 * The #NMSettingWirelessWakeOnWLan options to enable. Not all devices support all options.
-	 * May be any combination of %NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY,
-	 * %NM_SETTING_WIRELESS_WAKE_ON_WLAN_DISCONNECT,
-	 * %NM_SETTING_WIRELESS_WAKE_ON_WLAN_MAGIC,
-	 * %NM_SETTING_WIRELESS_WAKE_ON_WLAN_GTK_REKEY_FAILURE,
-	 * %NM_SETTING_WIRELESS_WAKE_ON_WLAN_EAP_IDENTITY_REQUEST,
-	 * %NM_SETTING_WIRELESS_WAKE_ON_WLAN_4WAY_HANDSHAKE,
-	 * %NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE,
-	 * %NM_SETTING_WIRELESS_WAKE_ON_WLAN_TCP or the special values
-	 * %NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT (to use global settings) and
-	 * %NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE (to disable management of Wake-on-LAN in
-	 * NetworkManager).
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingWireless:wake-on-wlan:
+     *
+     * The #NMSettingWirelessWakeOnWLan options to enable. Not all devices support all options.
+     * May be any combination of %NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY,
+     * %NM_SETTING_WIRELESS_WAKE_ON_WLAN_DISCONNECT,
+     * %NM_SETTING_WIRELESS_WAKE_ON_WLAN_MAGIC,
+     * %NM_SETTING_WIRELESS_WAKE_ON_WLAN_GTK_REKEY_FAILURE,
+     * %NM_SETTING_WIRELESS_WAKE_ON_WLAN_EAP_IDENTITY_REQUEST,
+     * %NM_SETTING_WIRELESS_WAKE_ON_WLAN_4WAY_HANDSHAKE,
+     * %NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE,
+     * %NM_SETTING_WIRELESS_WAKE_ON_WLAN_TCP or the special values
+     * %NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT (to use global settings) and
+     * %NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE (to disable management of Wake-on-LAN in
+     * NetworkManager).
+     *
+     * Since: 1.12
+     **/
     obj_properties[PROP_WAKE_ON_WLAN] =
         g_param_spec_uint(NM_SETTING_WIRELESS_WAKE_ON_WLAN,
                           "",
@@ -1886,35 +1886,35 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWireless:ap-isolation
-	 *
-	 * Configures AP isolation, which prevents communication between
-	 * wireless devices connected to this AP. This property can be set
-	 * to a value different from %NM_TERNARY_DEFAULT only when the
-	 * interface is configured in AP mode.
-	 *
-	 * If set to %NM_TERNARY_TRUE, devices are not able to communicate
-	 * with each other. This increases security because it protects
-	 * devices against attacks from other clients in the network. At
-	 * the same time, it prevents devices to access resources on the
-	 * same wireless networks as file shares, printers, etc.
-	 *
-	 * If set to %NM_TERNARY_FALSE, devices can talk to each other.
-	 *
-	 * When set to %NM_TERNARY_DEFAULT, the global default is used; in
-	 * case the global default is unspecified it is assumed to be
-	 * %NM_TERNARY_FALSE.
-	 *
-	 * Since: 1.28
-	 **/
+     * NMSettingWireless:ap-isolation
+     *
+     * Configures AP isolation, which prevents communication between
+     * wireless devices connected to this AP. This property can be set
+     * to a value different from %NM_TERNARY_DEFAULT only when the
+     * interface is configured in AP mode.
+     *
+     * If set to %NM_TERNARY_TRUE, devices are not able to communicate
+     * with each other. This increases security because it protects
+     * devices against attacks from other clients in the network. At
+     * the same time, it prevents devices to access resources on the
+     * same wireless networks as file shares, printers, etc.
+     *
+     * If set to %NM_TERNARY_FALSE, devices can talk to each other.
+     *
+     * When set to %NM_TERNARY_DEFAULT, the global default is used; in
+     * case the global default is unspecified it is assumed to be
+     * %NM_TERNARY_FALSE.
+     *
+     * Since: 1.28
+     **/
     /* ---ifcfg-rh---
-	 * property: ap-isolation
-	 * variable: AP_ISOLATION(+)
-	 * values: "yes", "no"
-	 * default: missing variable means global default
-	 * description: Whether AP isolation is enabled
-	 * ---end---
-	 */
+     * property: ap-isolation
+     * variable: AP_ISOLATION(+)
+     * values: "yes", "no"
+     * default: missing variable means global default
+     * description: Whether AP isolation is enabled
+     * ---end---
+     */
     obj_properties[PROP_AP_ISOLATION] = g_param_spec_enum(
         NM_SETTING_WIRELESS_AP_ISOLATION,
         "",

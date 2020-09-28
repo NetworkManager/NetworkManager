@@ -202,8 +202,8 @@ struct _NMAgentManagerCallId {
             NMAuthChain *chain;
 
             /* Whether the agent currently being asked for secrets
-			 * has the system.modify privilege.
-			 */
+             * has the system.modify privilege.
+             */
             gboolean current_has_modify;
 
             union {
@@ -411,8 +411,8 @@ _agent_create_auth_chain(NMAgentManager *self, NMSecretAgent *agent, GDBusMethod
 
     if (agent->auth_chain && !context && !agent->fully_registered) {
         /* we restart the authorization check (without a @context), but the currently
-		 * pending auth-chain carries a context. We need to pass it on as we replace
-		 * the auth-chain. */
+         * pending auth-chain carries a context. We need to pass it on as we replace
+         * the auth-chain. */
         context = nm_auth_chain_get_context(agent->auth_chain);
         nm_assert(context);
     }
@@ -588,8 +588,8 @@ request_free(Request *req)
         g_source_remove(req->idle_id);
 
     /* cancel-secrets invokes the done-callback synchronously -- in which case
-	 * the handler just return.
-	 * Hence, we can proceed to free @req... */
+     * the handler just return.
+     * Hence, we can proceed to free @req... */
     nm_secret_agent_cancel_call(req->current, req->current_call_id);
 
     g_object_unref(req->subject);
@@ -735,8 +735,8 @@ request_add_agent(Request *req, NMSecretAgent *agent)
         NMAuthSubject *subject = nm_secret_agent_get_subject(agent);
 
         /* Ensure the caller's username exists in the connection's permissions,
-		 * or that the permissions is empty (ie, visible by everyone).
-		 */
+         * or that the permissions is empty (ie, visible by everyone).
+         */
         if (!nm_auth_is_subject_in_acl(req->con.connection, subject, NULL)) {
             _LOGD(agent,
                   "agent ignored for secrets request " LOG_REQ_FMT " (not in ACL)",
@@ -978,9 +978,9 @@ set_secrets_not_required(NMConnection *connection, GVariant *dict)
             g_variant_iter_init(&setting_iter, setting_dict);
             while (g_variant_iter_next(&setting_iter, "{&sv}", &key_name, &val)) {
                 /* For each secret, set the flag that it's not required; VPN
-				 * secrets need slightly different treatment here since the
-				 * "secrets" property is actually a dictionary of secrets.
-				 */
+                 * secrets need slightly different treatment here since the
+                 * "secrets" property is actually a dictionary of secrets.
+                 */
                 if (strcmp(setting_name, NM_SETTING_VPN_SETTING_NAME) == 0
                     && strcmp(key_name, NM_SETTING_VPN_SECRETS) == 0
                     && g_variant_is_of_type(val, G_VARIANT_TYPE("a{ss}"))) {
@@ -1022,9 +1022,9 @@ _con_get_request_start_proceed(Request *req, gboolean include_system_secrets)
                                                 NULL);
     } else {
         /* Update secret flags in the temporary connection to indicate that
-		 * the system secrets we're not sending to the agent aren't required,
-		 * so the agent can properly validate UI controls and such.
-		 */
+         * the system secrets we're not sending to the agent aren't required,
+         * so the agent can properly validate UI controls and such.
+         */
         if (req->con.get.existing_secrets)
             set_secrets_not_required(tmp, req->con.get.existing_secrets);
     }
@@ -1061,9 +1061,9 @@ _con_get_request_start_validated(NMAuthChain *          chain,
     req->con.chain = NULL;
 
     /* If the agent obtained the 'modify' permission, we send all system secrets
-	 * to it.  If it didn't, we still ask it for secrets, but we don't send
-	 * any system secrets.
-	 */
+     * to it.  If it didn't, we still ask it for secrets, but we don't send
+     * any system secrets.
+     */
     perm = nm_auth_chain_get_data(chain, "perm");
     g_assert(perm);
     if (nm_auth_chain_get_result(chain, perm) == NM_AUTH_CALL_RESULT_YES)
@@ -1091,11 +1091,11 @@ _con_get_request_start(Request *req)
     agent_dbus_owner = nm_secret_agent_get_dbus_owner(req->current);
 
     /* If the request flags allow user interaction, and there are existing
-	 * system secrets (or blank secrets that are supposed to be system-owned),
-	 * check whether the agent has the 'modify' permission before sending those
-	 * secrets to the agent.  We shouldn't leak system-owned secrets to
-	 * unprivileged users.
-	 */
+     * system secrets (or blank secrets that are supposed to be system-owned),
+     * check whether the agent has the 'modify' permission before sending those
+     * secrets to the agent.  We shouldn't leak system-owned secrets to
+     * unprivileged users.
+     */
     if ((req->con.get.flags != NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE)
         && (req->con.get.existing_secrets
             || _nm_connection_aggregate(req->con.connection,
@@ -1113,9 +1113,9 @@ _con_get_request_start(Request *req)
         nm_assert(req->con.chain);
 
         /* If the caller is the only user in the connection's permissions, then
-		 * we use the 'modify.own' permission instead of 'modify.system'.  If the
-		 * request affects more than just the caller, require 'modify.system'.
-		 */
+         * we use the 'modify.own' permission instead of 'modify.system'.  If the
+         * request affects more than just the caller, require 'modify.system'.
+         */
         s_con = nm_connection_get_setting_connection(req->con.connection);
         g_assert(s_con);
         if (nm_setting_connection_get_num_permissions(s_con) == 1)
@@ -1155,10 +1155,10 @@ _con_get_try_complete_early(Request *req)
         return FALSE;
 
     /* The connection already had secrets; check if any more are required.
-	 * If no more are required, we're done.  If secrets are still needed,
-	 * ask a secret agent for more.  This allows admins to provide generic
-	 * secrets but allow additional user-specific ones as well.
-	 */
+     * If no more are required, we're done.  If secrets are still needed,
+     * ask a secret agent for more.  This allows admins to provide generic
+     * secrets but allow additional user-specific ones as well.
+     */
     tmp = nm_simple_connection_new_clone(req->con.connection);
     g_assert(tmp);
 
@@ -1188,15 +1188,15 @@ _con_get_try_complete_early(Request *req)
     /* We don't, so ask some agents for additional secrets */
     if (req->con.get.flags & NM_SECRET_AGENT_GET_SECRETS_FLAG_NO_ERRORS && !req->pending) {
         /* The request initiated from GetSecrets() via DBus,
-		 * don't error out if any secrets are missing. */
+         * don't error out if any secrets are missing. */
         req_complete(req, req->con.get.existing_secrets, NULL, NULL, NULL);
         return TRUE;
     }
 
     /* Couldn't get secrets from system settings, so now we ask the
-	 * agents for secrets.  Let the Agent Manager handle which agents
-	 * we'll ask and in which order.
-	 */
+     * agents for secrets.  Let the Agent Manager handle which agents
+     * we'll ask and in which order.
+     */
     return FALSE;
 }
 
@@ -1248,10 +1248,10 @@ nm_agent_manager_get_secrets(NMAgentManager *             self,
                setting_name);
 
     /* NOTE: a few things in the Request handling depend on existing_secrets
-	 * being NULL if there aren't any system-owned secrets for this connection.
-	 * This in turn depends on nm_connection_to_dbus() and nm_setting_to_hash()
-	 * both returning NULL if they didn't hash anything.
-	 */
+     * being NULL if there aren't any system-owned secrets for this connection.
+     * This in turn depends on nm_connection_to_dbus() and nm_setting_to_hash()
+     * both returning NULL if they didn't hash anything.
+     */
     req = request_new(self, REQUEST_TYPE_CON_GET, nm_connection_get_id(connection), subject);
 
     req->con.path       = g_strdup(path);

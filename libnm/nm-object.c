@@ -287,10 +287,10 @@ nm_object_class_init(NMObjectClass *klass)
     klass->obj_changed_notify = obj_changed_notify;
 
     /**
-	 * NMObject:path:
-	 *
-	 * The D-Bus object path.
-	 **/
+     * NMObject:path:
+     *
+     * The D-Bus object path.
+     **/
     obj_properties[PROP_PATH] = g_param_spec_string(NM_OBJECT_PATH,
                                                     "",
                                                     "",

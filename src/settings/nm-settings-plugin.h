@@ -46,30 +46,30 @@ typedef struct {
     GObjectClass parent;
 
     /*
-	 * Return a string list of specifications of devices which NetworkManager
-	 * should not manage.  Returned list will be freed by the system settings
-	 * service, and each element must be allocated using g_malloc() or its
-	 * variants (g_strdup, g_strdup_printf, etc).
-	 *
-	 * Each string in the list must be in one of the formats recognized by
-	 * nm_device_spec_match_list().
-	 */
+     * Return a string list of specifications of devices which NetworkManager
+     * should not manage.  Returned list will be freed by the system settings
+     * service, and each element must be allocated using g_malloc() or its
+     * variants (g_strdup, g_strdup_printf, etc).
+     *
+     * Each string in the list must be in one of the formats recognized by
+     * nm_device_spec_match_list().
+     */
     GSList *(*get_unmanaged_specs)(NMSettingsPlugin *self);
 
     /*
-	 * Return a string list of specifications of devices for which at least
-	 * one non-NetworkManager-based configuration is defined. Returned list
-	 * will be freed by the system settings service, and each element must be
-	 * allocated using g_malloc() or its variants (g_strdup, g_strdup_printf,
-	 * etc).
-	 *
-	 * Each string in the list must be in one of the formats recognized by
-	 * nm_device_spec_match_list().
-	 */
+     * Return a string list of specifications of devices for which at least
+     * one non-NetworkManager-based configuration is defined. Returned list
+     * will be freed by the system settings service, and each element must be
+     * allocated using g_malloc() or its variants (g_strdup, g_strdup_printf,
+     * etc).
+     *
+     * Each string in the list must be in one of the formats recognized by
+     * nm_device_spec_match_list().
+     */
     GSList *(*get_unrecognized_specs)(NMSettingsPlugin *self);
 
     /* Requests that the plugin load/reload a set of filenames.
-	 */
+     */
     void (*load_connections)(NMSettingsPlugin *                     self,
                              NMSettingsPluginConnectionLoadEntry *  entries,
                              gsize                                  n_entries,
@@ -77,8 +77,8 @@ typedef struct {
                              gpointer                               user_data);
 
     /* Requests that the plugin reload all connection files from disk,
-	 * and emit signals reflecting new, changed, and removed connections.
-	 */
+     * and emit signals reflecting new, changed, and removed connections.
+     */
     void (*reload_connections)(NMSettingsPlugin *                     self,
                                NMSettingsPluginConnectionLoadCallback callback,
                                gpointer                               user_data);

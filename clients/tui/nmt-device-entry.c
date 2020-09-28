@@ -491,10 +491,10 @@ nmt_device_entry_class_init(NmtDeviceEntryClass *deventry_class)
     object_class->finalize     = nmt_device_entry_finalize;
 
     /**
-	 * NmtDeviceEntry:label:
-	 *
-	 * The entry's label
-	 */
+     * NmtDeviceEntry:label:
+     *
+     * The entry's label
+     */
     g_object_class_install_property(
         object_class,
         PROP_LABEL,
@@ -504,21 +504,21 @@ nmt_device_entry_class_init(NmtDeviceEntryClass *deventry_class)
                             NULL,
                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtDeviceEntry:width:
-	 *
-	 * The entry's width in characters
-	 */
+     * NmtDeviceEntry:width:
+     *
+     * The entry's width in characters
+     */
     g_object_class_install_property(
         object_class,
         PROP_WIDTH,
         g_param_spec_int("width", "", "", -1, 80, -1, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtDeviceEntry:hardware-type:
-	 *
-	 * The type of #NMDevice to limit the entry to, or %G_TYPE_NONE
-	 * if the entry is for a virtual device and should not accept
-	 * hardware addresses.
-	 */
+     * NmtDeviceEntry:hardware-type:
+     *
+     * The type of #NMDevice to limit the entry to, or %G_TYPE_NONE
+     * if the entry is for a virtual device and should not accept
+     * hardware addresses.
+     */
     g_object_class_install_property(object_class,
                                     PROP_HARDWARE_TYPE,
                                     g_param_spec_gtype("hardware-type",
@@ -527,10 +527,10 @@ nmt_device_entry_class_init(NmtDeviceEntryClass *deventry_class)
                                                        G_TYPE_NONE,
                                                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtDeviceEntry:interface-name:
-	 *
-	 * The interface name of the device identified by the entry.
-	 */
+     * NmtDeviceEntry:interface-name:
+     *
+     * The interface name of the device identified by the entry.
+     */
     g_object_class_install_property(
         object_class,
         PROP_INTERFACE_NAME,
@@ -540,10 +540,10 @@ nmt_device_entry_class_init(NmtDeviceEntryClass *deventry_class)
                             NULL,
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtDeviceEntry:mac-address:
-	 *
-	 * The hardware address of the device identified by the entry.
-	 */
+     * NmtDeviceEntry:mac-address:
+     *
+     * The hardware address of the device identified by the entry.
+     */
     g_object_class_install_property(
         object_class,
         PROP_MAC_ADDRESS,

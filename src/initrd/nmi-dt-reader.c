@@ -153,10 +153,10 @@ nmi_dt_reader_parse(const char *sysfs_dir)
     tokens = g_strsplit(path, ",", 0);
 
     /*
-	 * Ethernet device settings. Defined by "Open Firmware,
-	 * Recommended Practice: Device Support Extensions, Version 1.0 [1]
-	 * [1] https://www.devicetree.org/open-firmware/practice/devicex/dse1_0a.ps
-	 */
+     * Ethernet device settings. Defined by "Open Firmware,
+     * Recommended Practice: Device Support Extensions, Version 1.0 [1]
+     * [1] https://www.devicetree.org/open-firmware/practice/devicex/dse1_0a.ps
+     */
 
     for (i = 0; tokens[i]; i++) {
         /* Skip these. They have magical meaning for OpenFirmware. */
@@ -184,10 +184,10 @@ nmi_dt_reader_parse(const char *sysfs_dir)
     }
 
     /*
-	 * Network boot configuration. Defined by "Open Firmware,
-	 * Recommended Practice: TFTP Booting Extension, Version 1.0 [1]
-	 * [1] https://www.devicetree.org/open-firmware/practice/obp-tftp/tftp1_0.pdf
-	 */
+     * Network boot configuration. Defined by "Open Firmware,
+     * Recommended Practice: TFTP Booting Extension, Version 1.0 [1]
+     * [1] https://www.devicetree.org/open-firmware/practice/obp-tftp/tftp1_0.pdf
+     */
 
     for (; tokens[i]; i++) {
         if (NM_IN_STRSET(tokens[i], "bootp", "dhcp", "rarp")) {
@@ -219,7 +219,7 @@ nmi_dt_reader_parse(const char *sysfs_dir)
 
     if (tokens[i] && (strchr(tokens[i], '.') || strchr(tokens[i], ':'))) {
         /* yaboot claims the mask can be specified here,
-		 * though it doesn't support it. */
+         * though it doesn't support it. */
         s_netmask = tokens[i];
         i++;
     }

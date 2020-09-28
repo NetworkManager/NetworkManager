@@ -283,12 +283,12 @@ nm_setting_cdma_class_init(NMSettingCdmaClass *klass)
     setting_class->need_secrets   = need_secrets;
 
     /**
-	 * NMSettingCdma:number:
-	 *
-	 * The number to dial to establish the connection to the CDMA-based mobile
-	 * broadband network, if any.  If not specified, the default number (#777)
-	 * is used when required.
-	 **/
+     * NMSettingCdma:number:
+     *
+     * The number to dial to establish the connection to the CDMA-based mobile
+     * broadband network, if any.  If not specified, the default number (#777)
+     * is used when required.
+     **/
     obj_properties[PROP_NUMBER] = g_param_spec_string(NM_SETTING_CDMA_NUMBER,
                                                       "",
                                                       "",
@@ -296,12 +296,12 @@ nm_setting_cdma_class_init(NMSettingCdmaClass *klass)
                                                       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingCdma:username:
-	 *
-	 * The username used to authenticate with the network, if required.  Many
-	 * providers do not require a username, or accept any username.  But if a
-	 * username is required, it is specified here.
-	 **/
+     * NMSettingCdma:username:
+     *
+     * The username used to authenticate with the network, if required.  Many
+     * providers do not require a username, or accept any username.  But if a
+     * username is required, it is specified here.
+     **/
     obj_properties[PROP_USERNAME] = g_param_spec_string(NM_SETTING_CDMA_USERNAME,
                                                         "",
                                                         "",
@@ -309,12 +309,12 @@ nm_setting_cdma_class_init(NMSettingCdmaClass *klass)
                                                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingCdma:password:
-	 *
-	 * The password used to authenticate with the network, if required.  Many
-	 * providers do not require a password, or accept any password.  But if a
-	 * password is required, it is specified here.
-	 **/
+     * NMSettingCdma:password:
+     *
+     * The password used to authenticate with the network, if required.  Many
+     * providers do not require a password, or accept any password.  But if a
+     * password is required, it is specified here.
+     **/
     obj_properties[PROP_PASSWORD] =
         g_param_spec_string(NM_SETTING_CDMA_PASSWORD,
                             "",
@@ -323,10 +323,10 @@ nm_setting_cdma_class_init(NMSettingCdmaClass *klass)
                             G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingCdma:password-flags:
-	 *
-	 * Flags indicating how to handle the #NMSettingCdma:password property.
-	 **/
+     * NMSettingCdma:password-flags:
+     *
+     * Flags indicating how to handle the #NMSettingCdma:password property.
+     **/
     obj_properties[PROP_PASSWORD_FLAGS] =
         g_param_spec_flags(NM_SETTING_CDMA_PASSWORD_FLAGS,
                            "",
@@ -336,13 +336,13 @@ nm_setting_cdma_class_init(NMSettingCdmaClass *klass)
                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingCdma:mtu:
-	 *
-	 * If non-zero, only transmit packets of the specified size or smaller,
-	 * breaking larger packets up into multiple frames.
-	 *
-	 * Since: 1.8
-	 **/
+     * NMSettingCdma:mtu:
+     *
+     * If non-zero, only transmit packets of the specified size or smaller,
+     * breaking larger packets up into multiple frames.
+     *
+     * Since: 1.8
+     **/
     obj_properties[PROP_MTU] = g_param_spec_uint(NM_SETTING_CDMA_MTU,
                                                  "",
                                                  "",

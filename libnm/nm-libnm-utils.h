@@ -34,18 +34,18 @@ typedef enum {
     _NML_DBUS_LOG_LEVEL_DEBUG = 0x04,
 
     /* the difference between a warning and a critical is that it results in
-	 * g_warning() vs. g_critical() messages. Note that we want to use "warnings"
-	 * for unknown D-Bus API that could just result because we run against a
-	 * newer NetworkManager version (such warnings are more graceful, because
-	 * we want that libnm can be forward compatible against newer servers).
-	 * Critical warnings should be emitted when NetworkManager exposes something
-	 * on D-Bus that breaks the current expectations. Usually NetworkManager
-	 * should not break API, hence such issues are more severe. */
+     * g_warning() vs. g_critical() messages. Note that we want to use "warnings"
+     * for unknown D-Bus API that could just result because we run against a
+     * newer NetworkManager version (such warnings are more graceful, because
+     * we want that libnm can be forward compatible against newer servers).
+     * Critical warnings should be emitted when NetworkManager exposes something
+     * on D-Bus that breaks the current expectations. Usually NetworkManager
+     * should not break API, hence such issues are more severe. */
     _NML_DBUS_LOG_LEVEL_WARN  = 0x08,
     _NML_DBUS_LOG_LEVEL_ERROR = 0x10,
 
     /* ANY is only relevant for nml_dbus_log_enabled() to check whether any of the
-	 * options is on. */
+     * options is on. */
     NML_DBUS_LOG_LEVEL_ANY = _NML_DBUS_LOG_LEVEL_INITIALIZED,
 
     NML_DBUS_LOG_LEVEL_TRACE = _NML_DBUS_LOG_LEVEL_TRACE,
@@ -218,8 +218,8 @@ typedef struct _NMLDBusPropertyAO NMLDBusPropertyAO;
 
 typedef enum {
     /* See comments below for NMLDBusMetaIface.interface_prio.
-	 *
-	 * Higher numbers means more important to detect the GObject type. */
+     *
+     * Higher numbers means more important to detect the GObject type. */
     NML_DBUS_META_INTERFACE_PRIO_NONE             = 0,
     NML_DBUS_META_INTERFACE_PRIO_NMCLIENT         = 1,
     NML_DBUS_META_INTERFACE_PRIO_PARENT_TYPE      = 2,
@@ -235,8 +235,8 @@ typedef struct {
     GType (*get_o_type_fcn)(void);
 
     /* Ignore whether the referenced NMObject is ready or not. That means,
-	 * the property is always ready (and if the pointed object itself is
-	 * not yet ready, the property pretends to be %NULL for the moment. */
+     * the property is always ready (and if the pointed object itself is
+     * not yet ready, the property pretends to be %NULL for the moment. */
     bool is_always_ready : 1;
 
 } NMLDBusPropertVTableO;
@@ -277,8 +277,8 @@ typedef struct {
     gboolean (*check_nmobj_visible_fcn)(GObject *nmobj);
 
     /* Ignore whether the referenced NMObject is ready or not. That means,
-	 * the property is always ready (and if the pointed object itself is
-	 * not yet ready, the property pretends to be %NULL for the moment. */
+     * the property is always ready (and if the pointed object itself is
+     * not yet ready, the property pretends to be %NULL for the moment. */
     bool is_always_ready : 1;
 
 } NMLDBusPropertVTableAO;
@@ -463,16 +463,16 @@ struct _NMLDBusMetaIface {
     GType (*get_type_fcn)(void);
 
     /* Usually there is a one-to-one correspondence between the properties
-	 * on D-Bus (dbus_properties) and the GObject properties (obj_properties).
-	 *
-	 * With:
-	 *     meta_iface->obj_properties[o_idx]    (o_idx < n_obj_properties)
-	 *     &meta_iface->dbus_properties[d_idx]  (d_idx < n_dbus_properties)
-	 * it follows that
-	 *     assert (meta_iface->obj_properties_reverse_idx[o_idx] == d_idx)
-	 *     assert (meta_iface->dbus_properties[d_idx].obj_properties_idx == o_idx)
-	 * if (and only if) two properties correspond.
-	 */
+     * on D-Bus (dbus_properties) and the GObject properties (obj_properties).
+     *
+     * With:
+     *     meta_iface->obj_properties[o_idx]    (o_idx < n_obj_properties)
+     *     &meta_iface->dbus_properties[d_idx]  (d_idx < n_dbus_properties)
+     * it follows that
+     *     assert (meta_iface->obj_properties_reverse_idx[o_idx] == d_idx)
+     *     assert (meta_iface->dbus_properties[d_idx].obj_properties_idx == o_idx)
+     * if (and only if) two properties correspond.
+     */
     const GParamSpec *const *  obj_properties;
     const NMLDBusMetaProperty *dbus_properties;
     const guint8 *             obj_properties_reverse_idx;
@@ -481,51 +481,51 @@ struct _NMLDBusMetaIface {
     guint8 n_obj_properties;
 
     /* The offsets "prop_struct_offset" in NMLDBusMetaProperty are based on some base
-	 * struct. If "base_struct_offset" is 0, then the base struct is the GObject pointer
-	 * itself.
-	 * If this is non-null, then we expect at that location a pointer to the offset.
-	 * In this case we need to first find the base pointer via
-	 *   *((gpointer *) ((char *) nmobj + meta_iface->base_struct_offset)).
-	 *
-	 * This covers NMDeviceBridge._priv vs. NMDevice._priv. In the second case,
-	 * _priv is a pointer that we first need to follow.
-	 */
+     * struct. If "base_struct_offset" is 0, then the base struct is the GObject pointer
+     * itself.
+     * If this is non-null, then we expect at that location a pointer to the offset.
+     * In this case we need to first find the base pointer via
+     *   *((gpointer *) ((char *) nmobj + meta_iface->base_struct_offset)).
+     *
+     * This covers NMDeviceBridge._priv vs. NMDevice._priv. In the second case,
+     * _priv is a pointer that we first need to follow.
+     */
     guint8 base_struct_offset;
 
     /* We create the appropriate NMObject GType based on the D-Bus interfaces that
-	 * are present. For example, if we see a "org.freedesktop.NetworkManager.Device.Bridge"
-	 * interface, we create a NMDeviceBridge. Basically, if it looks like a certain
-	 * object (based on the D-Bus interface), we assume it is.
-	 *
-	 * Some interfaces are purely additional ("org.freedesktop.NetworkManager.Device.Statistics")
-	 * and don't determine the NMObject type (%NML_DBUS_META_INTERFACE_PRIO_NONE).
-	 *
-	 * Some interfaces are of a parent type ("org.freedesktop.NetworkManager.Device" for
-	 * NMDevice), and don't determine the type either (%NML_DBUS_META_INTERFACE_PRIO_PARENT_TYPE).
-	 *
-	 * Some interfaces ("org.freedesktop.NetworkManager.AgentManager") belong to NMClient
-	 * itself. Those have priority %NML_DBUS_META_INTERFACE_PRIO_NMCLIENT.
-	 *
-	 * In most cases, each D-Bus object is expected to have only one D-Bus interface
-	 * to determine the type. While theoretically an object
-	 * "/org/freedesktop/NetworkManager/Devices/3" could have interfaces "org.freedesktop.NetworkManager.Device.Bridge"
-	 * and "org.freedesktop.NetworkManager.Device.Bond" at the same time, in practice it doesn't.
-	 * Note that we also assume that once a D-Bus object gets a NMObject, it cannot change (*).
-	 * NetworkManager's API does not add/remove interfaces after exporting the object the
-	 * first time, so in practice each D-Bus object is expected to have a suitable D-Bus
-	 * interface (and only determining interface, which doesn't change). Those interfaces have
-	 * priority %NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH.
-	 *
-	 * (*) note that nothing bad would happen if a faulty NetworkManager would violate that.
-	 * Of course, something would not work correctly, but the D-Bus interface we find is unexpected
-	 * and wrong.
-	 *
-	 * One exception is "org.freedesktop.NetworkManager.Connection.Active". This can either
-	 * be a NMActiveConnection or a NMVpnConnection. Hence, this profile has priority
-	 * %NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_LOW, and depending on whether there is
-	 * a "org.freedesktop.NetworkManager.VPN.Connection" (with high priority), we create
-	 * one or the other type.
-	 */
+     * are present. For example, if we see a "org.freedesktop.NetworkManager.Device.Bridge"
+     * interface, we create a NMDeviceBridge. Basically, if it looks like a certain
+     * object (based on the D-Bus interface), we assume it is.
+     *
+     * Some interfaces are purely additional ("org.freedesktop.NetworkManager.Device.Statistics")
+     * and don't determine the NMObject type (%NML_DBUS_META_INTERFACE_PRIO_NONE).
+     *
+     * Some interfaces are of a parent type ("org.freedesktop.NetworkManager.Device" for
+     * NMDevice), and don't determine the type either (%NML_DBUS_META_INTERFACE_PRIO_PARENT_TYPE).
+     *
+     * Some interfaces ("org.freedesktop.NetworkManager.AgentManager") belong to NMClient
+     * itself. Those have priority %NML_DBUS_META_INTERFACE_PRIO_NMCLIENT.
+     *
+     * In most cases, each D-Bus object is expected to have only one D-Bus interface
+     * to determine the type. While theoretically an object
+     * "/org/freedesktop/NetworkManager/Devices/3" could have interfaces "org.freedesktop.NetworkManager.Device.Bridge"
+     * and "org.freedesktop.NetworkManager.Device.Bond" at the same time, in practice it doesn't.
+     * Note that we also assume that once a D-Bus object gets a NMObject, it cannot change (*).
+     * NetworkManager's API does not add/remove interfaces after exporting the object the
+     * first time, so in practice each D-Bus object is expected to have a suitable D-Bus
+     * interface (and only determining interface, which doesn't change). Those interfaces have
+     * priority %NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH.
+     *
+     * (*) note that nothing bad would happen if a faulty NetworkManager would violate that.
+     * Of course, something would not work correctly, but the D-Bus interface we find is unexpected
+     * and wrong.
+     *
+     * One exception is "org.freedesktop.NetworkManager.Connection.Active". This can either
+     * be a NMActiveConnection or a NMVpnConnection. Hence, this profile has priority
+     * %NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_LOW, and depending on whether there is
+     * a "org.freedesktop.NetworkManager.VPN.Connection" (with high priority), we create
+     * one or the other type.
+     */
     NMLDBusMetaInteracePrio interface_prio : 3;
 };
 
@@ -632,22 +632,22 @@ struct _NMLDBusObject {
     NMRefString *dbus_path;
 
     /* While the object is tracked by NMClient, it is linked with this list.
-	 * The lists are partitioned based on the NMLDBusObjState. */
+     * The lists are partitioned based on the NMLDBusObjState. */
     CList dbus_objects_lst;
 
     /* The list of D-Bus interface NMLDBusObjIfaceData.
-	 *
-	 * Some may be about to be removed (iface_removed) or
-	 * unknown (!dbus_iface_is_wellknown). */
+     *
+     * Some may be about to be removed (iface_removed) or
+     * unknown (!dbus_iface_is_wellknown). */
     CList iface_lst_head;
 
     /* The list of registered NMLDBusObjWatcher. */
     CList watcher_lst_head;
 
     /* When an object changes (e.g. because of new information on D-Bus), we often
-	 * don't process the changes right away, but enqueue the object in a changed
-	 * list. This list goes together with obj_changed_type property below, which
-	 * tracks what changed. */
+     * don't process the changes right away, but enqueue the object in a changed
+     * list. This list goes together with obj_changed_type property below, which
+     * tracks what changed. */
     CList obj_changed_lst;
 
     GObject *nmobj;

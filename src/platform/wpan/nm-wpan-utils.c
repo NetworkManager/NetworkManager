@@ -118,8 +118,8 @@ nl802154_send_and_recv(NMWpanUtils *  self,
         return err;
 
     /* Loop until one of our NL callbacks says we're done; on success
-	 * done will be 1, on error it will be < 0.
-	 */
+     * done will be 1, on error it will be < 0.
+     */
     while (!done) {
         err = nl_recvmsgs(self->nl_sock, &cb);
         if (err < 0 && err != -EAGAIN) {

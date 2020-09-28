@@ -556,13 +556,13 @@ test_platform_ip_address_pretty_sort_cmp(gconstpointer test_data)
     gsize            i, j;
 
     /*
-	 * First we create a list of addresses filled with (stable) random bytes.
-	 * We tweak some fields explicitly (stable randomly), so that we cover all
-	 * relevant cases.
-	 *
-	 * Then we sort the list of addresses, and compare that the result is
-	 * as our EXPECTED_BUFFER.
-	 */
+     * First we create a list of addresses filled with (stable) random bytes.
+     * We tweak some fields explicitly (stable randomly), so that we cover all
+     * relevant cases.
+     *
+     * Then we sort the list of addresses, and compare that the result is
+     * as our EXPECTED_BUFFER.
+     */
 
     addresses = g_malloc(ELM_SIZE * N_ADDRESSES);
     rand_map  = g_malloc(sizeof(rand_map[0]) * N_ADDRESSES);
@@ -640,7 +640,7 @@ test_platform_ip_address_pretty_sort_cmp(gconstpointer test_data)
 
         if (CONSUME_BITS(r, 5) != 0) {
             /* randomly make addr-source the same (so that several addresses compare
-			 * equal). */
+             * equal). */
             a->a4.addr_source = CONSUME_BITS(r, 2);
         }
 

@@ -42,18 +42,18 @@ struct NMConfigCmdLineOptions {
     char *   connectivity_uri;
 
     /* We store interval as signed internally to track whether it's
-	 * set or not via GOptionEntry
-	 */
+     * set or not via GOptionEntry
+     */
     int   connectivity_interval;
     char *connectivity_response;
 
     /* @first_start is not provided by command line. It is a convenient hack
-	 * to pass in an argument to NMConfig. This makes NMConfigCmdLineOptions a
-	 * misnomer.
-	 *
-	 * It is true, if NM is started the first time -- contrary to a restart
-	 * during the same boot up. That is determined by the content of the
-	 * /run/NetworManager state directory. */
+     * to pass in an argument to NMConfig. This makes NMConfigCmdLineOptions a
+     * misnomer.
+     *
+     * It is true, if NM is started the first time -- contrary to a restart
+     * during the same boot up. That is determined by the content of the
+     * /run/NetworManager state directory. */
     bool first_start;
 };
 
@@ -91,24 +91,24 @@ typedef struct {
     char **atomic_section_prefixes;
 
     /* The state. This is actually a mutable data member and it makes sense:
-	 * The regular config is immutable (NMConfigData) and can old be swapped
-	 * as a whole (via nm_config_set_values() or during reload). Thus, it can
-	 * be changed, but it is still immutable and is swapped atomically as a
-	 * whole. Also, we emit a config-changed signal on that occasion.
-	 *
-	 * For state, there are no events. You can query it and set it.
-	 * It only gets read *once* at startup, and later is cached and only
-	 * written out to disk. Hence, no need for the immutable dance here
-	 * because the state changes only on explicit actions from the daemon
-	 * itself. */
+     * The regular config is immutable (NMConfigData) and can old be swapped
+     * as a whole (via nm_config_set_values() or during reload). Thus, it can
+     * be changed, but it is still immutable and is swapped atomically as a
+     * whole. Also, we emit a config-changed signal on that occasion.
+     *
+     * For state, there are no events. You can query it and set it.
+     * It only gets read *once* at startup, and later is cached and only
+     * written out to disk. Hence, no need for the immutable dance here
+     * because the state changes only on explicit actions from the daemon
+     * itself. */
     State *state;
 
     /* the hash table of device states. It is only loaded from disk
-	 * once and kept immutable afterwards.
-	 *
-	 * We also read all state file at once. We don't want to support
-	 * that they are changed outside of NM (at least not while NM is running).
-	 * Hence, we read them once, that's it. */
+     * once and kept immutable afterwards.
+     *
+     * We also read all state file at once. We don't want to support
+     * that they are changed outside of NM (at least not while NM is running).
+     * Hence, we read them once, that's it. */
     GHashTable *device_states;
 
     char **warnings;
@@ -236,7 +236,7 @@ nm_config_keyfile_set_string_list(GKeyFile *         keyfile,
     g_key_file_set_string_list(keyfile, group, key, strv, len);
 
     /* g_key_file_set_string_list() appends a trailing separator to the value.
-	 * We don't like that, get rid of it. */
+     * We don't like that, get rid of it. */
 
     new_value = g_key_file_get_value(keyfile, group, key, NULL);
     if (!new_value)
@@ -245,8 +245,8 @@ nm_config_keyfile_set_string_list(GKeyFile *         keyfile,
     l = strlen(new_value);
     if (l > 0 && new_value[l - 1] == NM_CONFIG_KEYFILE_LIST_SEPARATOR) {
         /* Maybe we should check that value doesn't end with "\\,", i.e.
-		 * with an escaped separator. But the way g_key_file_set_string_list()
-		 * is implemented (currently), it always adds a trailing separator. */
+         * with an escaped separator. But the way g_key_file_set_string_list()
+         * is implemented (currently), it always adds a trailing separator. */
         new_value[l - 1] = '\0';
         g_key_file_set_value(keyfile, group, key, new_value);
     }
@@ -344,8 +344,8 @@ no_auto_default_from_file(const char *no_auto_default_file)
     }
 
     /* The returned buffer here is not at all compact. That means, it has additional
-	 * memory allocations and is larger than needed. That means, you should not keep
-	 * this result around, only process it further and free it. */
+     * memory allocations and is larger than needed. That means, you should not keep
+     * this result around, only process it further and free it. */
     return (char **) list;
 }
 
@@ -417,9 +417,9 @@ nm_config_set_no_auto_default_for_device(NMConfig *self, NMDevice *device)
 
     if (is_fake) {
         /* A fake MAC address, no point in storing it to the file.
-		 * Also, nm_match_spec_device() would ignore fake MAC addresses.
-		 *
-		 * Instead, try the interface-name...  */
+         * Also, nm_match_spec_device() would ignore fake MAC addresses.
+         *
+         * Instead, try the interface-name...  */
         ifname = nm_device_get_ip_iface(device);
         if (!nm_utils_ifname_valid_kernel(ifname, NULL))
             return;
@@ -442,7 +442,7 @@ nm_config_set_no_auto_default_for_device(NMConfig *self, NMDevice *device)
                                                NULL);
     if (idx >= 0) {
         /* @spec is already blocked. We don't have to update our in-memory representation.
-		 * Maybe we should write to no_auto_default_file anew, but let's save that too. */
+         * Maybe we should write to no_auto_default_file anew, but let's save that too. */
         return;
     }
 
@@ -712,7 +712,7 @@ ignore_config_snippet(GKeyFile *keyfile, gboolean is_base_config)
         return FALSE;
 
     /* first, let's try to parse the value as plain boolean. If that is possible, we don't treat
-	 * the value as match-spec. */
+     * the value as match-spec. */
     as_bool = nm_config_keyfile_get_boolean(keyfile,
                                             NM_CONFIG_KEYFILE_GROUP_CONFIG,
                                             NM_CONFIG_KEYFILE_KEY_CONFIG_ENABLE,
@@ -751,16 +751,16 @@ _sort_groups_cmp(const char **pa, const char **pb, gpointer dummy)
 
     if (a_is_connection != b_is_connection) {
         /* one is a [connection*] entry, the other not. We sort [connection*] entries
-		 * after.  */
+         * after.  */
         if (a_is_connection)
             return 1;
         return -1;
     }
     if (a_is_connection) {
         /* both are [connection.\+] entries. Reverse their order.
-		 * One of the sections might be literally [connection]. That section
-		 * is special and its order will be fixed later. It doesn't actually
-		 * matter here how it compares with [connection.\+] sections. */
+         * One of the sections might be literally [connection]. That section
+         * is special and its order will be fixed later. It doesn't actually
+         * matter here how it compares with [connection.\+] sections. */
         return pa > pb ? -1 : 1;
     }
 
@@ -769,16 +769,16 @@ _sort_groups_cmp(const char **pa, const char **pb, gpointer dummy)
 
     if (a_is_device != b_is_device) {
         /* one is a [device*] entry, the other not. We sort [device*] entries
-		 * after.  */
+         * after.  */
         if (a_is_device)
             return 1;
         return -1;
     }
     if (a_is_device) {
         /* both are [device.\+] entries. Reverse their order.
-		 * One of the sections might be literally [device]. That section
-		 * is special and its order will be fixed later. It doesn't actually
-		 * matter here how it compares with [device.\+] sections. */
+         * One of the sections might be literally [device]. That section
+         * is special and its order will be fixed later. It doesn't actually
+         * matter here how it compares with [device.\+] sections. */
         return pa > pb ? -1 : 1;
     }
 
@@ -1002,8 +1002,8 @@ read_config(GKeyFile *  keyfile,
         return TRUE;
 
     /* the config-group is internal to every configuration snippets. It doesn't make sense
-	 * to merge it into the global configuration, and it doesn't make sense to preserve the
-	 * group beyond this point. */
+     * to merge it into the global configuration, and it doesn't make sense to preserve the
+     * group beyond this point. */
     g_key_file_remove_group(kf, NM_CONFIG_KEYFILE_GROUP_CONFIG, NULL);
 
     /* Override the current settings with the new ones */
@@ -1012,13 +1012,13 @@ read_config(GKeyFile *  keyfile,
         ngroups = 0;
 
     /* Within one file we reverse the order of the '[connection.\+] sections.
-	 * Here we merge the current file (@kf) into @keyfile. As we merge multiple
-	 * files, earlier sections (with lower priority) will be added first.
-	 * But within one file, we want a top-to-bottom order. This means we
-	 * must reverse the order within each file.
-	 * At the very end, we will revert the order of all sections again and
-	 * get thus the right behavior. This final reversing is done in
-	 * NMConfigData:_get_connection_infos().  */
+     * Here we merge the current file (@kf) into @keyfile. As we merge multiple
+     * files, earlier sections (with lower priority) will be added first.
+     * But within one file, we want a top-to-bottom order. This means we
+     * must reverse the order within each file.
+     * At the very end, we will revert the order of all sections again and
+     * get thus the right behavior. This final reversing is done in
+     * NMConfigData:_get_connection_infos().  */
     _nm_config_sort_groups(groups, ngroups);
 
     for (g = 0; groups && groups[g]; g++) {
@@ -1105,7 +1105,7 @@ read_config(GKeyFile *  keyfile,
                         nm_auto_free_slist GSList *new_specs = nm_match_spec_split(new_sval);
 
                         /* the key is a device spec. This is a special kind of string-list, that
-						 * we must split differently. */
+                         * we must split differently. */
                         old_val = _nm_utils_slist_to_strv(old_specs, FALSE);
                         new_val = _nm_utils_slist_to_strv(new_specs, FALSE);
                     }
@@ -1152,7 +1152,7 @@ read_config(GKeyFile *  keyfile,
                     }
                 } else {
                     /* For any other settings we don't support extending the option with +/-.
-					 * Just drop the key. */
+                     * Just drop the key. */
                 }
                 continue;
             }
@@ -1197,11 +1197,11 @@ read_base_config(GKeyFile *  keyfile,
     }
 
     /* Even though we prefer NetworkManager.conf, we need to check the
-	 * old nm-system-settings.conf first to preserve compat with older
-	 * setups.  In package managed systems dropping a NetworkManager.conf
-	 * onto the system would make NM use it instead of nm-system-settings.conf,
-	 * changing behavior during an upgrade.  We don't want that.
-	 */
+     * old nm-system-settings.conf first to preserve compat with older
+     * setups.  In package managed systems dropping a NetworkManager.conf
+     * onto the system would make NM use it instead of nm-system-settings.conf,
+     * changing behavior during an upgrade.  We don't want that.
+     */
 
     /* Try deprecated nm-system-settings.conf first */
     if (read_config(keyfile, TRUE, NULL, DEFAULT_CONFIG_MAIN_FILE_OLD, warnings, &my_error)) {
@@ -1228,8 +1228,8 @@ read_base_config(GKeyFile *  keyfile,
     g_clear_error(&my_error);
 
     /* If for some reason no config file exists, use the default
-	 * config file path.
-	 */
+     * config file path.
+     */
     *out_config_main_file = g_strdup(DEFAULT_CONFIG_MAIN_FILE);
     _LOGI("No config file found or given; using %s", DEFAULT_CONFIG_MAIN_FILE);
     return TRUE;
@@ -1366,12 +1366,12 @@ read_entire_config(const NMConfigCmdLineOptions *cli,
     }
 
     /* Merge settings from command line. They overwrite everything read from
-	 * config files. */
+     * config files. */
 
     if (cli) {
         if (cli->plugins) {
             /* plugins is a string list. Set the value directly, so the user has to do proper escaping
-			 * on the command line. */
+             * on the command line. */
             g_key_file_set_value(keyfile, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", cli->plugins);
         }
 
@@ -1597,8 +1597,8 @@ intern_config_read(const char *       filename,
                 continue;
             }
             /* we must set the "was" marker in our keyfile, so that we know that the section
-			 * from user config is overwritten. The value doesn't matter, it's just a marker
-			 * that this section is present. */
+             * from user config is overwritten. The value doesn't matter, it's just a marker
+             * that this section is present. */
             g_key_file_set_value(keyfile_intern,
                                  group,
                                  NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS,
@@ -1631,9 +1631,9 @@ intern_config_read(const char *       filename,
 
                 if (!nm_streq0(value_conf, value_was)) {
                     /* if value_was is no longer the same as @value_conf, it means the user
-					 * changed the configuration since the last write. In this case, we
-					 * drop the value. It also means our file is out-of-date, and we should
-					 * rewrite it. */
+                     * changed the configuration since the last write. In this case, we
+                     * drop the value. It also means our file is out-of-date, and we should
+                     * rewrite it. */
                     needs_rewrite = TRUE;
                     continue;
                 }
@@ -1657,16 +1657,16 @@ intern_config_read(const char *       filename,
 
                 if (!nm_streq0(value_conf, value_was)) {
                     /* if value_was is no longer the same as @value_conf, it means the user
-					 * changed the configuration since the last write. In this case, we
-					 * don't overwrite the user-provided value. It also means our file is
-					 * out-of-date, and we should rewrite it. */
+                     * changed the configuration since the last write. In this case, we
+                     * don't overwrite the user-provided value. It also means our file is
+                     * out-of-date, and we should rewrite it. */
                     needs_rewrite = TRUE;
                     continue;
                 }
                 has_intern = TRUE;
                 /* signal the absence of the value. That means, we must propagate the
-				 * "was" key to NMConfigData, so that it knows to hide the corresponding
-				 * user key. */
+                 * "was" key to NMConfigData, so that it knows to hide the corresponding
+                 * user key. */
                 g_key_file_set_value(keyfile_intern, group, key, "");
             } else
                 needs_rewrite = TRUE;
@@ -1675,11 +1675,11 @@ intern_config_read(const char *       filename,
 
 out:
     /*
-	 * If user configuration specifies global DNS options, the DNS
-	 * options in internal configuration must be deleted. Otherwise, a
-	 * deletion of options from user configuration may cause the
-	 * internal options to appear again.
-	 */
+     * If user configuration specifies global DNS options, the DNS
+     * options in internal configuration must be deleted. Otherwise, a
+     * deletion of options from user configuration may cause the
+     * internal options to appear again.
+     */
     if (nm_config_keyfile_has_global_dns_config(keyfile_conf, FALSE)) {
         if (g_key_file_remove_group(keyfile_intern,
                                     NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS,
@@ -1790,8 +1790,8 @@ intern_config_write(const char *       filename,
                  || (!keys[1] && strcmp(keys[0], NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS) == 0))
                 && !g_key_file_has_group(keyfile_conf, group)) {
                 /* we are about to save an atomic section. However, we don't have any additional
-				 * keys on our own and there is no user-provided (overlapping) section either.
-				 * We don't have to write an empty section (i.e. skip the useless ".was=0#"). */
+                 * keys on our own and there is no user-provided (overlapping) section either.
+                 * We don't have to write an empty section (i.e. skip the useless ".was=0#"). */
                 continue;
             } else {
                 gs_free char *conf_section_is = NULL;
@@ -1828,8 +1828,8 @@ intern_config_write(const char *       filename,
 
                 if (NM_STR_HAS_PREFIX_WITH_MORE(key, NM_CONFIG_KEYFILE_KEYPREFIX_SET)) {
                     /* Setting a key with .set prefix has no meaning, as these keys
-					 * are protected. Just set the value you want to set instead.
-					 * Why did this happen?? */
+                     * are protected. Just set the value you want to set instead.
+                     * Why did this happen?? */
                     g_warn_if_reached();
                 } else if (NM_STR_HAS_PREFIX_WITH_MORE(key, NM_CONFIG_KEYFILE_KEYPREFIX_WAS)) {
                     const char *key_base = &key[NM_STRLEN(NM_CONFIG_KEYFILE_KEYPREFIX_WAS)];
@@ -1842,7 +1842,7 @@ intern_config_write(const char *       filename,
 
                     if (g_key_file_has_key(keyfile_intern, group, key_base, NULL)) {
                         /* There is also a matching key_base entry. Skip processing
-						 * the .was. key ad handle the key_base in the other else branch. */
+                         * the .was. key ad handle the key_base in the other else branch. */
                         continue;
                     }
 
@@ -1856,7 +1856,7 @@ intern_config_write(const char *       filename,
                         value_was = g_key_file_get_value(keyfile_conf, group, key, NULL);
                         if (nm_streq0(value_set, value_was)) {
                             /* there is no point in storing the identical value as we have via
-							 * user configuration. Skip it. */
+                             * user configuration. Skip it. */
                             continue;
                         }
                         if (value_was) {
@@ -1933,8 +1933,8 @@ nm_config_get_match_spec(const GKeyFile *keyfile,
     gs_free char *value = NULL;
 
     /* nm_match_spec_split() already supports full escaping and is basically
-	 * a modified version of g_key_file_parse_value_as_string(). So we first read
-	 * the raw value (g_key_file_get_value()), and do the parsing ourselves. */
+     * a modified version of g_key_file_parse_value_as_string(). So we first read
+     * the raw value (g_key_file_get_value()), and do the parsing ourselves. */
     value = g_key_file_get_value((GKeyFile *) keyfile, group, key, NULL);
     if (out_has_key)
         *out_has_key = !!value;
@@ -2120,12 +2120,12 @@ nm_config_set_values(NMConfig *self,
 
     if (allow_write && (new_data || force_rewrite)) {
         /* We write the internal config file based on the user configuration from
-		 * the last load/reload. That is correct, because the intern properties might
-		 * be in accordance to what NM thinks is currently configured. Even if the files
-		 * on disk changed in the meantime.
-		 * But if they changed, on the next reload with might throw away our just
-		 * written data. That is correct, because from NM's point of view, those
-		 * changes on disk happened in any case *after* now. */
+         * the last load/reload. That is correct, because the intern properties might
+         * be in accordance to what NM thinks is currently configured. Even if the files
+         * on disk changed in the meantime.
+         * But if they changed, on the next reload with might throw away our just
+         * written data. That is correct, because from NM's point of view, those
+         * changes on disk happened in any case *after* now. */
         if (*priv->intern_config_file) {
             keyfile_user = _nm_config_data_get_keyfile_user(priv->config_data);
             if (!intern_config_write(priv->intern_config_file,
@@ -2155,7 +2155,7 @@ static const char *
 state_get_filename(const NMConfigCmdLineOptions *cli)
 {
     /* For an empty filename, we assume the user wants to disable
-	 * state. NMConfig will not try to read it nor write it out. */
+     * state. NMConfig will not try to read it nor write it out. */
     if (!cli->state_file)
         return DEFAULT_STATE_FILE;
     return cli->state_file[0] ? cli->state_file : NULL;
@@ -2229,11 +2229,11 @@ nm_config_state_get(NMConfig *self)
 
     if (G_UNLIKELY(!priv->state)) {
         /* read the state from file lazy on first access. The reason is that
-		 * we want to log a failure to read the file via nm-logging.
-		 *
-		 * So we cannot read the state during construction of NMConfig,
-		 * because at that time nm-logging is not yet configured.
-		 */
+         * we want to log a failure to read the file via nm-logging.
+         *
+         * So we cannot read the state during construction of NMConfig,
+         * because at that time nm-logging is not yet configured.
+         */
         priv->state = state_new_from_file(state_get_filename(&priv->cli));
     }
 
@@ -2275,7 +2275,7 @@ state_write(NMConfig *self)
         _LOGD("state: error writing state file \"%s\": %s", filename, error->message);
         g_clear_error(&error);
         /* we leave the state dirty. That potentially means, that we try to
-		 * write the file over and over again, although it isn't possible. */
+         * write the file over and over again, although it isn't possible. */
         priv->state->p.dirty = TRUE;
     } else
         priv->state->p.dirty = FALSE;
@@ -2299,8 +2299,8 @@ _nm_config_state_set(NMConfig *self, gboolean allow_persist, gboolean force_pers
     va_start(ap, force_persist);
 
     /* We expect that the NMConfigRunStatePropertyType is an integer type <= sizeof (int).
-	 * Smaller would be fine, since the variadic arguments get promoted to int.
-	 * Larger would be a problem, also, because we want that "0" is a valid sentinel. */
+     * Smaller would be fine, since the variadic arguments get promoted to int.
+     * Larger would be a problem, also, because we want that "0" is a valid sentinel. */
     G_STATIC_ASSERT_EXPR(sizeof(NMConfigRunStatePropertyType) <= sizeof(int));
 
     while ((property_type = va_arg(ap, int)) != NM_CONFIG_STATE_PROPERTY_NONE) {
@@ -2412,7 +2412,7 @@ _config_device_state_data_new(int ifindex, GKeyFile *kf)
                                              NM_TERNARY_DEFAULT);
 
     /* metric zero is not a valid metric. While zero valid for IPv4, for IPv6 it is an alias
-	 * for 1024. Since we handle here IPv4 and IPv6 the same, we cannot allow zero. */
+     * for 1024. Since we handle here IPv4 and IPv6 the same, we cannot allow zero. */
     route_metric_default_effective = nm_config_keyfile_get_int64(
         kf,
         DEVICE_RUN_STATE_KEYFILE_GROUP_DEVICE,
@@ -2770,9 +2770,9 @@ nm_config_reload(NMConfig *self, NMConfigChangeFlags reload_flags, gboolean emit
     warnings = g_ptr_array_new_with_free_func(g_free);
 
     /* pass on the original command line options. This means, that
-	 * options specified at command line cannot ever be reloaded from
-	 * file. That seems desirable.
-	 */
+     * options specified at command line cannot ever be reloaded from
+     * file. That seems desirable.
+     */
     keyfile = read_entire_config(&priv->cli,
                                  priv->config_dir,
                                  priv->system_config_dir,
@@ -2917,7 +2917,7 @@ nm_config_setup(const NMConfigCmdLineOptions *cli, char **atomic_section_prefixe
         nm_singleton_instance_register();
 
         /* usually, you would not see this logging line because when creating the
-		 * NMConfig instance, the logging is not yet set up to print debug message. */
+         * NMConfig instance, the logging is not yet set up to print debug message. */
         nm_log_dbg(LOGD_CORE,
                    "setup %s singleton (" NM_HASH_OBFUSCATE_PTR_FMT ")",
                    "NMConfig",

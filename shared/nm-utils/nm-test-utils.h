@@ -381,7 +381,7 @@ __nmtst_init(int *       argc,
         char **d_argv, **i_argv, *nmtst_debug_copy;
 
         /* By setting then NMTST_DEBUG variable, @is_debug is set automatically.
-		 * This can be reverted with no-debug (on command line or environment variable). */
+         * This can be reverted with no-debug (on command line or environment variable). */
         is_debug = TRUE;
 
         nmtst_debug_copy = g_strdup(nmtst_debug);
@@ -394,7 +394,7 @@ __nmtst_init(int *       argc,
                 is_debug = TRUE;
             else if (!g_ascii_strcasecmp(debug, "no-debug")) {
                 /* when specifying the NMTST_DEBUG variable, we set is_debug to true. Use this flag to disable this
-				 * (e.g. for only setting the log-level, but not is_debug). */
+                 * (e.g. for only setting the log-level, but not is_debug). */
                 is_debug = FALSE;
             } else if (!g_ascii_strncasecmp(debug, "log-level=", strlen("log-level="))) {
                 g_free(c_log_level);
@@ -470,17 +470,17 @@ __nmtst_init(int *       argc,
         }
     } else {
         /* We're intentionally assigning a value to static variables
-		 * s_tests_x and p_tests_x without using it afterwards, just
-		 * so that valgrind doesn't complain about the leak. */
+         * s_tests_x and p_tests_x without using it afterwards, just
+         * so that valgrind doesn't complain about the leak. */
         NM_PRAGMA_WARNING_DISABLE("-Wunused-but-set-variable")
 
         /* g_test_init() is a variadic function, so we cannot pass it
-		 * (variadic) arguments. If you need to pass additional parameters,
-		 * call nmtst_init() with argc==NULL and call g_test_init() yourself. */
+         * (variadic) arguments. If you need to pass additional parameters,
+         * call nmtst_init() with argc==NULL and call g_test_init() yourself. */
 
         /* g_test_init() sets g_log_set_always_fatal() for G_LOG_LEVEL_WARNING
-		 * and G_LOG_LEVEL_CRITICAL. So, beware that the test will fail if you
-		 * have any WARN or ERR log messages -- unless you g_test_expect_message(). */
+         * and G_LOG_LEVEL_CRITICAL. So, beware that the test will fail if you
+         * have any WARN or ERR log messages -- unless you g_test_expect_message(). */
         GPtrArray *    arg_array   = g_ptr_array_new();
         gs_free char **arg_array_c = NULL;
         int            arg_array_n, j;
@@ -519,7 +519,7 @@ __nmtst_init(int *       argc,
 
         if (*argc > 1) {
             /* collaps argc/argv by removing the arguments detected
-			 * by g_test_init(). */
+             * by g_test_init(). */
             for (i = 1, j = 1; i < *argc; i++) {
                 if ((*argv)[i] == arg_array_c[j])
                     j++;
@@ -570,7 +570,7 @@ __nmtst_init(int *       argc,
 
     if (!log_level && log_domains) {
         /* if the log level is not specified (but the domain is), we assume
-		 * the caller wants to set it depending on is_debug */
+         * the caller wants to set it depending on is_debug */
         log_level = is_debug ? "DEBUG" : "WARN";
     }
 
@@ -590,15 +590,15 @@ __nmtst_init(int *       argc,
 #endif
     } else if (__nmtst_internal.no_expect_message) {
         /* We have a test that would be assert_logging, but the user specified no_expect_message.
-		 * This transforms g_test_expect_message() into a NOP, but we also have to relax
-		 * g_log_set_always_fatal(), which was set by g_test_init(). */
+         * This transforms g_test_expect_message() into a NOP, but we also have to relax
+         * g_log_set_always_fatal(), which was set by g_test_init(). */
         g_log_set_always_fatal(G_LOG_FATAL_MASK);
 #ifdef _NMTST_INSIDE_CORE
         if (c_log_domains || c_log_level) {
             /* Normally, tests with assert_logging do not overwrite the logging level/domains because
-			 * the logging statements are part of the assertions. But if the test is run with
-			 * no-expect-message *and* the logging is set explicitly via environment variables,
-			 * we still reset the logging. */
+             * the logging statements are part of the assertions. But if the test is run with
+             * no-expect-message *and* the logging is set explicitly via environment variables,
+             * we still reset the logging. */
             gboolean success;
 
             success          = nm_logging_setup(log_level, log_domains, NULL, NULL);
@@ -609,8 +609,8 @@ __nmtst_init(int *       argc,
     } else {
 #if GLIB_CHECK_VERSION(2, 34, 0)
         /* We were called not to set logging levels. This means, that the user
-		 * expects to assert against (all) messages.
-		 * Any uncaught message on >debug level is fatal. */
+         * expects to assert against (all) messages.
+         * Any uncaught message on >debug level is fatal. */
         g_log_set_always_fatal(G_LOG_LEVEL_MASK & ~G_LOG_LEVEL_DEBUG);
 #else
         /* g_test_expect_message() is a NOP, so allow any messages */
@@ -626,11 +626,11 @@ __nmtst_init(int *       argc,
                     || !g_ascii_strcasecmp(c_log_level, "TRACE"))))
         && !g_getenv("G_MESSAGES_DEBUG")) {
         /* if we are @is_debug or @log_level=="DEBUG" and
-		 * G_MESSAGES_DEBUG is unset, we set G_MESSAGES_DEBUG=all.
-		 * To disable this default behaviour, set G_MESSAGES_DEBUG='' */
+         * G_MESSAGES_DEBUG is unset, we set G_MESSAGES_DEBUG=all.
+         * To disable this default behaviour, set G_MESSAGES_DEBUG='' */
 
         /* Note that g_setenv is not thread safe, but you should anyway call
-		 * nmtst_init() at the very start. */
+         * nmtst_init() at the very start. */
         g_setenv("G_MESSAGES_DEBUG", "all", TRUE);
     }
 
@@ -1035,15 +1035,15 @@ nmtst_stable_rand(guint64 seed, gpointer buf, gsize len)
     } n;
 
     /* We want a stable random generator that is in our control and does not
-	 * depend on glibc/glib versions.
-	 * Use a linear congruential generator (x[n+1] = (A * x[n] + C) % M)
-	 * https://en.wikipedia.org/wiki/Linear_congruential_generator
-	 *
-	 * We choose (Knuth’s LCG MMIX)
-	 *   A = 6364136223846793005llu
-	 *   C = 1442695040888963407llu
-	 *   M = 2^64
-	 */
+     * depend on glibc/glib versions.
+     * Use a linear congruential generator (x[n+1] = (A * x[n] + C) % M)
+     * https://en.wikipedia.org/wiki/Linear_congruential_generator
+     *
+     * We choose (Knuth’s LCG MMIX)
+     *   A = 6364136223846793005llu
+     *   C = 1442695040888963407llu
+     *   M = 2^64
+     */
 
     g_assert(len == 0 || buf);
 
@@ -1053,7 +1053,7 @@ nmtst_stable_rand(guint64 seed, gpointer buf, gsize len)
         n.n = (A * n.n + C);
 
         /* let's combine the 64 bits randomness in one byte. By xor-ing, it's
-		 * also independent of endianness. */
+         * also independent of endianness. */
         b[0] = n.a[0] ^ n.a[1] ^ n.a[2] ^ n.a[3] ^ n.a[4] ^ n.a[5] ^ n.a[6] ^ n.a[7];
     }
 }
@@ -1082,38 +1082,38 @@ nmtst_get_rand_word_length(GRand *rand)
         guint   probability;
 
         /* The following python code implements a random sample with this
-		 * distribution:
-		 *
-		 *    def random_histogram(n_tries, scale = None):
-		 *        def probability(n_tok):
-		 *            import math
-		 *            return max(2, math.floor(100 / (2*(n_tok+1))))
-		 *        def n_tokens():
-		 *            import random
-		 *            n_tok = 0
-		 *            while True:
-		 *                if random.randint(0, 0xFFFFFFFF) % probability(n_tok) == 0:
-		 *                   return n_tok
-		 *                n_tok += 1
-		 *        hist = []
-		 *        i = 0;
-		 *        while i < n_tries:
-		 *            n_tok = n_tokens()
-		 *            while n_tok >= len(hist):
-		 *                hist.append(0)
-		 *            hist[n_tok] = hist[n_tok] + 1
-		 *            i += 1
-		 *        if scale is not None:
-		 *            hist = list([round(x / n_tries * scale) for x in hist])
-		 *        return hist
-		 *
-		 * For example, random_histogram(n_tries = 1000000, scale = 1000) may give
-		 *
-		 *   IDX:  [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
-		 *   SEEN: [20, 39, 59, 73, 80, 91, 92, 90, 91, 73, 73, 54, 55, 36, 24, 16, 16,  8,  4,  2,  1,  1,  0,  0,  0,  0,  0,  0,  0,  0]
-		 *
-		 * which give a sense of the probability with this individual results are returned.
-		 */
+         * distribution:
+         *
+         *    def random_histogram(n_tries, scale = None):
+         *        def probability(n_tok):
+         *            import math
+         *            return max(2, math.floor(100 / (2*(n_tok+1))))
+         *        def n_tokens():
+         *            import random
+         *            n_tok = 0
+         *            while True:
+         *                if random.randint(0, 0xFFFFFFFF) % probability(n_tok) == 0:
+         *                   return n_tok
+         *                n_tok += 1
+         *        hist = []
+         *        i = 0;
+         *        while i < n_tries:
+         *            n_tok = n_tokens()
+         *            while n_tok >= len(hist):
+         *                hist.append(0)
+         *            hist[n_tok] = hist[n_tok] + 1
+         *            i += 1
+         *        if scale is not None:
+         *            hist = list([round(x / n_tries * scale) for x in hist])
+         *        return hist
+         *
+         * For example, random_histogram(n_tries = 1000000, scale = 1000) may give
+         *
+         *   IDX:  [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+         *   SEEN: [20, 39, 59, 73, 80, 91, 92, 90, 91, 73, 73, 54, 55, 36, 24, 16, 16,  8,  4,  2,  1,  1,  0,  0,  0,  0,  0,  0,  0,  0]
+         *
+         * which give a sense of the probability with this individual results are returned.
+         */
         probability = NM_MAX(2u, (100u / (2u * (n + 1u))));
         if ((rnd % probability) == 0)
             return n;
@@ -1602,7 +1602,7 @@ __nmtst_spawn_sync(const char *working_directory,
 
     if (assert_exit_status != -1) {
         /* exit status is a guint8 on success. Set @assert_exit_status to -1
-		 * not to check for the exit status. */
+         * not to check for the exit status. */
         g_assert(WIFEXITED(exit_status));
         g_assert_cmpint(WEXITSTATUS(exit_status), ==, assert_exit_status);
     }
@@ -1722,7 +1722,7 @@ _nmtst_assert_resolve_relative_path_equals(const char *f1,
     g_assert(p1 && *p1);
 
     /* Fixme: later we might need to coalesce repeated '/', "./", and "../".
-	 * For now, it's good enough. */
+     * For now, it's good enough. */
     if (g_strcmp0(p1, p2) != 0)
         g_error("%s:%d : filenames don't match \"%s\" vs. \"%s\" // \"%s\" - \"%s\"",
                 file,
@@ -1746,12 +1746,12 @@ nmtst_logging_disable(gboolean always)
     g_assert(nmtst_initialized());
     if (!always && __nmtst_internal.no_expect_message) {
         /* The caller does not want to @always suppress logging. Instead,
-		 * the caller wants to suppress unexpected log messages that would
-		 * fail assertions (since we possibly assert against all unexpected
-		 * log messages).
-		 *
-		 * If the test is run with no-expect-message, then don't suppress
-		 * the loggings, because they also wouldn't fail assertions. */
+         * the caller wants to suppress unexpected log messages that would
+         * fail assertions (since we possibly assert against all unexpected
+         * log messages).
+         *
+         * If the test is run with no-expect-message, then don't suppress
+         * the loggings, because they also wouldn't fail assertions. */
         return NULL;
     }
 
@@ -2355,9 +2355,9 @@ nmtst_assert_hwaddr_equals(gconstpointer hwaddr1,
     g_assert(nm_utils_hwaddr_aton(expected, buf2, hwaddr2_len));
 
     /* Manually check the entire hardware address instead of using
-	 * nm_utils_hwaddr_matches() because that function doesn't compare
-	 * entire InfiniBand addresses for various (legitimate) reasons.
-	 */
+     * nm_utils_hwaddr_matches() because that function doesn't compare
+     * entire InfiniBand addresses for various (legitimate) reasons.
+     */
     success = (hwaddr1_len == hwaddr2_len);
     if (success)
         success = !memcmp(hwaddr1, buf2, hwaddr1_len);

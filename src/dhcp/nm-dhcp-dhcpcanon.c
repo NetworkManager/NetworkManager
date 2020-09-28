@@ -124,9 +124,9 @@ dhcpcanon_start(NMDhcpClient *client,
     }
 
     /* Usually the system bus address is well-known; but if it's supposed
-	 * to be something else, we need to push it to dhcpcanon, since dhcpcanon
-	 * sanitizes the environment it gives the action scripts.
-	 */
+     * to be something else, we need to push it to dhcpcanon, since dhcpcanon
+     * sanitizes the environment it gives the action scripts.
+     */
     system_bus_address = getenv("DBUS_SYSTEM_BUS_ADDRESS");
     if (system_bus_address) {
         system_bus_address_env = g_strdup_printf("DBUS_SYSTEM_BUS_ADDRESS=%s", system_bus_address);

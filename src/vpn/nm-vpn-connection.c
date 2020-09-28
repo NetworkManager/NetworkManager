@@ -115,8 +115,8 @@ typedef struct {
     NMIP6Config *      ip6_config;
 
     /* These config instances are passed on to NMDevice and modified by NMDevice.
-	 * This pointer is only useful for nm_device_replace_vpn4_config() to clear the
-	 * previous configuration. Consider these instances to be owned by NMDevice. */
+     * This pointer is only useful for nm_device_replace_vpn4_config() to clear the
+     * previous configuration. Consider these instances to be owned by NMDevice. */
     NMIP4Config *last_device_ip4_config;
     NMIP6Config *last_device_ip6_config;
 
@@ -258,11 +258,11 @@ _state_to_nm_vpn_state(VpnState state)
     case STATE_DEACTIVATING:
     {
         /* Map DEACTIVATING to ACTIVATED to preserve external API behavior,
-		 * since our API has no DEACTIVATING state of its own.  Since this can
-		 * take some time, and the VPN isn't actually disconnected until it
-		 * hits the DISCONNECTED state, to clients it should still appear
-		 * connected.
-		 */
+         * since our API has no DEACTIVATING state of its own.  Since this can
+         * take some time, and the VPN isn't actually disconnected until it
+         * hits the DISCONNECTED state, to clients it should still appear
+         * connected.
+         */
         return NM_VPN_CONNECTION_STATE_ACTIVATED;
     }
     case STATE_DISCONNECTED:
@@ -305,8 +305,8 @@ _get_settings_connection(NMVpnConnection *self, gboolean allow_missing)
     NMSettingsConnection *con;
 
     /* Currently, we operate on the assumption, that the settings-connection
-	 * never changes after it is set (though initially, it might be unset).
-	 * Later we might want to change that, but then we need fixes here too. */
+     * never changes after it is set (though initially, it might be unset).
+     * Later we might want to change that, but then we need fixes here too. */
 
     con = _nm_active_connection_get_settings_connection(NM_ACTIVE_CONNECTION(self));
     if (!con && !allow_missing)
@@ -400,8 +400,8 @@ vpn_cleanup(NMVpnConnection *self, NMDevice *parent_dev)
     priv->bus_name = NULL;
 
     /* Clear out connection secrets to ensure that the settings service
-	 * gets asked for them next time the connection is activated.
-	 */
+     * gets asked for them next time the connection is activated.
+     */
     nm_active_connection_clear_secrets(NM_ACTIVE_CONNECTION(self));
 }
 
@@ -466,8 +466,8 @@ _set_vpn_state(NMVpnConnection *             self,
     priv->vpn_state = vpn_state;
 
     /* The device gets destroyed by active connection when it enters
-	 * the deactivated state, so we need to ref it for usage below.
-	 */
+     * the deactivated state, so we need to ref it for usage below.
+     */
     if (parent_dev)
         g_object_ref(parent_dev);
 
@@ -482,9 +482,9 @@ _set_vpn_state(NMVpnConnection *             self,
     dispatcher_cleanup(self);
 
     /* The connection gets destroyed by the VPN manager when it enters the
-	 * disconnected/failed state, but we need to keep it around for a bit
-	 * to send out signals and handle the dispatcher.  So ref it.
-	 */
+     * disconnected/failed state, but we need to keep it around for a bit
+     * to send out signals and handle the dispatcher.  So ref it.
+     */
     g_object_ref(self);
 
     old_external_state = _state_to_nm_vpn_state(old_vpn_state);
@@ -508,9 +508,9 @@ _set_vpn_state(NMVpnConnection *             self,
     switch (vpn_state) {
     case STATE_NEED_AUTH:
         /* Do nothing; not part of 'default' because we don't want to touch
-		 * priv->secrets_req as NEED_AUTH is re-entered during interactive
-		 * secrets.
-		 */
+         * priv->secrets_req as NEED_AUTH is re-entered during interactive
+         * secrets.
+         */
         break;
     case STATE_PRE_UP:
         if (!nm_dispatcher_call_vpn(NM_DISPATCHER_ACTION_VPN_PRE_UP,
@@ -678,8 +678,8 @@ device_state_changed(NMActiveConnection *active,
     }
 
     /* FIXME: map device DEACTIVATING state to VPN DEACTIVATING state and
-	 * block device deactivation on VPN deactivation.
-	 */
+     * block device deactivation on VPN deactivation.
+     */
 }
 
 static void
@@ -705,7 +705,7 @@ add_ip4_vpn_gateway_route(NMIP4Config *config,
     nm_assert(ifindex == nm_device_get_ip_ifindex(parent_device));
 
     /* Ask kernel how to reach @vpn_gw. We can only inject the route in
-	 * @parent_device, so whatever we resolve, it can only be on @ifindex. */
+     * @parent_device, so whatever we resolve, it can only be on @ifindex. */
     if (nm_platform_ip_route_get(platform,
                                  AF_INET,
                                  &vpn_gw,
@@ -718,10 +718,10 @@ add_ip4_vpn_gateway_route(NMIP4Config *config,
             const NMPObject *obj;
 
             /* `ip route get` always resolves the route, even if the destination is unreachable.
-			 * In which case, it pretends the destination is directly reachable.
-			 *
-			 * So, only accept direct routes if @vpn_gw is a private network
-			 * or if the parent device also has a direct default route */
+             * In which case, it pretends the destination is directly reachable.
+             *
+             * So, only accept direct routes if @vpn_gw is a private network
+             * or if the parent device also has a direct default route */
             if (nm_platform_route_table_is_main(r->table_coerced)) {
                 if (r->gateway) {
                     parent_gw     = r->gateway;
@@ -752,10 +752,10 @@ add_ip4_vpn_gateway_route(NMIP4Config *config,
 
     if (parent_gw) {
         /* Ensure there's a route to the parent device's gateway through the
-		 * parent device, since if the VPN claims the default route and the VPN
-		 * routes include a subnet that matches the parent device's subnet,
-		 * the parent device's gateway would get routed through the VPN and fail.
-		 */
+         * parent device, since if the VPN claims the default route and the VPN
+         * routes include a subnet that matches the parent device's subnet,
+         * the parent device's gateway would get routed through the VPN and fail.
+         */
         memset(&route, 0, sizeof(route));
         route.network   = parent_gw;
         route.plen      = 32;
@@ -788,7 +788,7 @@ add_ip6_vpn_gateway_route(NMIP6Config *          config,
     nm_assert(ifindex == nm_device_get_ip_ifindex(parent_device));
 
     /* Ask kernel how to reach @vpn_gw. We can only inject the route in
-	 * @parent_device, so whatever we resolve, it can only be on @ifindex. */
+     * @parent_device, so whatever we resolve, it can only be on @ifindex. */
     if (nm_platform_ip_route_get(platform,
                                  AF_INET6,
                                  vpn_gw,
@@ -801,10 +801,10 @@ add_ip6_vpn_gateway_route(NMIP6Config *          config,
             const NMPObject *obj;
 
             /* `ip route get` always resolves the route, even if the destination is unreachable.
-			 * In which case, it pretends the destination is directly reachable.
-			 *
-			 * So, only accept direct routes if @vpn_gw is a private network
-			 * or if the parent device also has a direct default route */
+             * In which case, it pretends the destination is directly reachable.
+             *
+             * So, only accept direct routes if @vpn_gw is a private network
+             * or if the parent device also has a direct default route */
             if (nm_platform_route_table_is_main(r->table_coerced)) {
                 if (!IN6_IS_ADDR_UNSPECIFIED(&r->gateway)) {
                     parent_gw     = &r->gateway;
@@ -835,10 +835,10 @@ add_ip6_vpn_gateway_route(NMIP6Config *          config,
     nm_ip6_config_add_route(config, &route, NULL);
 
     /* Ensure there's a route to the parent device's gateway through the
-	 * parent device, since if the VPN claims the default route and the VPN
-	 * routes include a subnet that matches the parent device's subnet,
-	 * the parent device's gateway would get routed through the VPN and fail.
-	 */
+     * parent device, since if the VPN claims the default route and the VPN
+     * routes include a subnet that matches the parent device's subnet,
+     * the parent device's gateway would get routed through the VPN and fail.
+     */
     if (parent_gw && !IN6_IS_ADDR_UNSPECIFIED(parent_gw)) {
         memset(&route, 0, sizeof(route));
         route.network   = *parent_gw;
@@ -965,8 +965,8 @@ plugin_state_changed(NMVpnConnection *self, NMVpnServiceState new_service_state)
 
     if (new_service_state == NM_VPN_SERVICE_STATE_STOPPED) {
         /* Clear connection secrets to ensure secrets get requested each time the
-		 * connection is activated.
-		 */
+         * connection is activated.
+         */
         nm_active_connection_clear_secrets(NM_ACTIVE_CONNECTION(self));
 
         if ((priv->vpn_state >= STATE_WAITING) && (priv->vpn_state <= STATE_ACTIVATED)) {
@@ -978,8 +978,8 @@ plugin_state_changed(NMVpnConnection *self, NMVpnServiceState new_service_state)
             priv->failure_reason = NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN;
 
             /* If the connection failed, the service cannot persist, but the
-			 * connection can persist, ask listeners to re-activate the connection.
-			 */
+             * connection can persist, ask listeners to re-activate the connection.
+             */
             if (old_state == STATE_ACTIVATED && priv->vpn_state == STATE_FAILED
                 && _connection_only_can_persist(self))
                 g_signal_emit(self, signals[INTERNAL_RETRY_AFTER_FAILURE], 0);
@@ -1105,9 +1105,9 @@ apply_parent_device_config(NMVpnConnection *self)
     ifindex = nm_device_get_ip_ifindex(parent_dev);
     if (ifindex > 0) {
         /* If the VPN didn't return a network interface, it is a route-based
-		 * VPN (like kernel IPSec) and all IP addressing and routing should
-		 * be done on the parent interface instead.
-		 */
+         * VPN (like kernel IPSec) and all IP addressing and routing should
+         * be done on the parent interface instead.
+         */
         if (priv->ip4_config) {
             vpn4_parent_config = nm_ip4_config_new(nm_netns_get_multi_idx(priv->netns), ifindex);
             if (priv->ip_ifindex <= 0)
@@ -1529,8 +1529,8 @@ nm_vpn_connection_ip4_config_get(NMVpnConnection *self, GVariant *dict)
         _LOGI("VPN connection: (IP4 Config Get) reply received from old-style plugin");
 
         /* In the old API, the generic and IPv4 configuration items
-		 * were mixed together.
-		 */
+         * were mixed together.
+         */
         if (!process_generic_config(self, dict))
             return;
 
@@ -1640,10 +1640,10 @@ nm_vpn_connection_ip4_config_get(NMVpnConnection *self, GVariant *dict)
                 if (priv->ip4_external_gw && route.network == priv->ip4_external_gw
                     && route.plen == 32) {
                     /* Ignore host routes to the VPN gateway since NM adds one itself
-					 * below.  Since NM knows more about the routing situation than
-					 * the VPN server, we want to use the NM created route instead of
-					 * whatever the server provides.
-					 */
+                     * below.  Since NM knows more about the routing situation than
+                     * the VPN server, we want to use the NM created route instead of
+                     * whatever the server provides.
+                     */
                     break;
                 }
 
@@ -1839,10 +1839,10 @@ nm_vpn_connection_ip6_config_get(NMVpnConnection *self, GVariant *dict)
             if (priv->ip6_external_gw && IN6_ARE_ADDR_EQUAL(&route.network, priv->ip6_external_gw)
                 && route.plen == 128) {
                 /* Ignore host routes to the VPN gateway since NM adds one itself.
-				 * Since NM knows more about the routing situation than the VPN
-				 * server, we want to use the NM created route instead of whatever
-				 * the server provides.
-				 */
+                 * Since NM knows more about the routing situation than the VPN
+                 * server, we want to use the NM created route instead of whatever
+                 * the server provides.
+                 */
                 goto next;
             }
 
@@ -1919,7 +1919,7 @@ connect_success(NMVpnConnection *self)
     g_assert(s_vpn);
 
     /* Timeout waiting for IP config signal from VPN service
-	 * It is a configured value or 60 seconds */
+     * It is a configured value or 60 seconds */
     timeout = nm_setting_vpn_get_timeout(s_vpn);
     if (timeout == 0) {
         timeout = nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
@@ -2008,8 +2008,8 @@ _hash_with_username(NMConnection *connection, const char *username)
     NMSettingVpn *                s_vpn;
 
     /* Shortcut if we weren't given a username or if there already was one in
-	 * the VPN setting; don't bother duplicating the connection and everything.
-	 */
+     * the VPN setting; don't bother duplicating the connection and everything.
+     */
     s_vpn = nm_connection_get_setting_vpn(connection);
     g_assert(s_vpn);
     if (username == NULL || nm_setting_vpn_get_user_name(s_vpn))
@@ -2039,11 +2039,11 @@ really_activate(NMVpnConnection *self, const char *username)
     g_variant_ref_sink(priv->connect_hash);
 
     /* If at least one agent doesn't support VPN hints, then we can't use
-	 * ConnectInteractive(), because that agent won't be able to pass hints
-	 * from the VPN plugin's interactive secrets requests to the VPN authentication
-	 * dialog and we won't get the secrets we need.  In this case fall back to
-	 * the old Connect() call.
-	 */
+     * ConnectInteractive(), because that agent won't be able to pass hints
+     * from the VPN plugin's interactive secrets requests to the VPN authentication
+     * dialog and we won't get the secrets we need.  In this case fall back to
+     * the old Connect() call.
+     */
     if (nm_agent_manager_all_agents_have_capability(
             nm_agent_manager_get(),
             nm_active_connection_get_subject(NM_ACTIVE_CONNECTION(self)),
@@ -2186,10 +2186,10 @@ _name_owner_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
         _set_vpn_state(self, STATE_NEED_AUTH, NM_ACTIVE_CONNECTION_STATE_REASON_NONE, FALSE);
 
         /* Kick off the secrets requests; first we get existing system secrets
-		 * and ask the plugin if these are sufficient, next we get all existing
-		 * secrets from system and from user agents and ask the plugin again,
-		 * and last we ask the user for new secrets if required.
-		 */
+         * and ask the plugin if these are sufficient, next we get all existing
+         * secrets from system and from user agents and ask the plugin again,
+         * and last we ask the user for new secrets if required.
+         */
         get_secrets(self, SECRETS_REQ_SYSTEM, NULL);
     } else if (!owner && priv->service_running) {
         /* service went away */
@@ -2223,17 +2223,17 @@ _get_log_level(void)
     NMLogLevel level;
 
     /* curiously enough, nm-logging also uses syslog. But it
-	 * maps NMLogLevel differently to the syslog levels then we
-	 * do here.
-	 *
-	 * The reason is, that LOG_NOTICE is already something worth
-	 * highlighting in the journal, but we have 3 levels that are
-	 * lower then LOG_NOTICE (LOGL_TRACE, LOGL_DEBUG, LOGL_INFO),
-	 * On the other hand, syslog only defines LOG_DEBUG and LOG_INFO.
-	 * Thus, we must map them differently.
-	 *
-	 * Inside the VPN plugin, you might want to treat LOG_NOTICE as
-	 * as low severity, not worthy to be highlighted (like NM does). */
+     * maps NMLogLevel differently to the syslog levels then we
+     * do here.
+     *
+     * The reason is, that LOG_NOTICE is already something worth
+     * highlighting in the journal, but we have 3 levels that are
+     * lower then LOG_NOTICE (LOGL_TRACE, LOGL_DEBUG, LOGL_INFO),
+     * On the other hand, syslog only defines LOG_DEBUG and LOG_INFO.
+     * Thus, we must map them differently.
+     *
+     * Inside the VPN plugin, you might want to treat LOG_NOTICE as
+     * as low severity, not worthy to be highlighted (like NM does). */
 
     level = nm_logging_get_level(LOGD_VPN_PLUGIN);
     if (level != _LOGL_OFF) {
@@ -2295,9 +2295,9 @@ nm_vpn_service_daemon_exec(NMVpnConnection *self, GError **error)
     envp[i++] = nm_sprintf_buf(env_log_level, "NM_VPN_LOG_LEVEL=%d", _get_log_level());
 
     /* NM_VPN_LOG_SYSLOG: whether to log to stdout or syslog. If NetworkManager itself runs in
-	 * foreground, we also want the plugin to log to stdout.
-	 * If the plugin runs in background, the plugin should prefer logging to syslog. Otherwise
-	 * logging messages will be lost (unless using journald, in which case it wouldn't matter). */
+     * foreground, we also want the plugin to log to stdout.
+     * If the plugin runs in background, the plugin should prefer logging to syslog. Otherwise
+     * logging messages will be lost (unless using journald, in which case it wouldn't matter). */
     envp[i++] = nm_sprintf_buf(env_log_syslog,
                                "NM_VPN_LOG_SYSLOG=%c",
                                nm_logging_syslog_enabled() ? '1' : '0');
@@ -2463,7 +2463,7 @@ _get_ip_iface_for_device(NMVpnConnection *self, const char **out_iface)
     nm_assert(NM_IS_VPN_CONNECTION(self));
 
     /* the ifindex and the ifname in this case should come together.
-	 * They either must be both set, or none. */
+     * They either must be both set, or none. */
 
     parent_dev = nm_active_connection_get_device(NM_ACTIVE_CONNECTION(self));
     if (!parent_dev)
@@ -2785,15 +2785,15 @@ device_changed(NMActiveConnection *active, NMDevice *new_device, NMDevice *old_d
         return;
 
     /* Route-based VPNs must update their routing and send a new IP config
-	 * since all their routes need to be adjusted for new_device.
-	 */
+     * since all their routes need to be adjusted for new_device.
+     */
     if (priv->ip_ifindex <= 0)
         return;
 
     /* Device changed underneath the VPN connection.  Let the plugin figure
-	 * out that connectivity is down and start its reconnect attempt if it
-	 * needs to.
-	 */
+     * out that connectivity is down and start its reconnect attempt if it
+     * needs to.
+     */
     if (old_device)
         remove_parent_device_config(NM_VPN_CONNECTION(active), old_device);
 

@@ -143,7 +143,7 @@ _ioctl_call(const char *      log_ioctl_type,
     }
 
     /* we might need to retry the request. Backup edata so that we can
-	 * restore it on retry. */
+     * restore it on retry. */
     if (edata_size > 0)
         edata_backup = nm_memdup_maybe_a(500, edata, edata_size, &edata_backup_free);
 
@@ -189,41 +189,41 @@ again:
     /* resolve the name again to see whether the ifindex still has the same name. */
     if (!nmp_utils_if_indextoname(ifindex, known_ifnames[try_count % 2])) {
         /* we could not find the ifindex again. Probably the device just got
-		 * removed.
-		 *
-		 * In both cases we return the error code we got from ioctl above.
-		 * Either it failed because the device was gone already or it still
-		 * managed to complete the call. In both cases, the error code is good. */
+         * removed.
+         *
+         * In both cases we return the error code we got from ioctl above.
+         * Either it failed because the device was gone already or it still
+         * managed to complete the call. In both cases, the error code is good. */
         failure_reason =
             "cannot resolve ifindex after ioctl call. Probably the device was just removed";
         goto out;
     }
 
     /* check whether the ifname changed in the meantime. If yes, would render the result
-	 * invalid. Note that this cannot detect every race regarding renames, for example:
-	 *
-	 *  - if_indextoname(#10) gives eth0
-	 *  - rename(#10) => eth0_tmp
-	 *  - rename(#11) => eth0
-	 *  - ioctl(eth0) (wrongly fetching #11, formerly eth1)
-	 *  - rename(#11) => eth_something
-	 *  - rename(#10) => eth0
-	 *  - if_indextoname(#10) gives eth0
-	 */
+     * invalid. Note that this cannot detect every race regarding renames, for example:
+     *
+     *  - if_indextoname(#10) gives eth0
+     *  - rename(#10) => eth0_tmp
+     *  - rename(#11) => eth0
+     *  - ioctl(eth0) (wrongly fetching #11, formerly eth1)
+     *  - rename(#11) => eth_something
+     *  - rename(#10) => eth0
+     *  - if_indextoname(#10) gives eth0
+     */
     if (!nm_streq(known_ifnames[0], known_ifnames[1])) {
         gboolean retry;
 
         /* we detected a possible(!) rename.
-		 *
-		 * For getters it's straight forward to just retry the call.
-		 *
-		 * For setters we also always retry. If our previous call operated on the right device,
-		 * calling it again should have no bad effect (just setting the same thing more than once).
-		 *
-		 * The only potential bad thing is if there was a race involving swapping names, and we just
-		 * set the ioctl option on the wrong device. But then the bad thing already happenned and
-		 * we cannot detect it (nor do anything about it). At least, we can retry and set the
-		 * option on the right interface. */
+         *
+         * For getters it's straight forward to just retry the call.
+         *
+         * For setters we also always retry. If our previous call operated on the right device,
+         * calling it again should have no bad effect (just setting the same thing more than once).
+         *
+         * The only potential bad thing is if there was a race involving swapping names, and we just
+         * set the ioctl option on the wrong device. But then the bad thing already happenned and
+         * we cannot detect it (nor do anything about it). At least, we can retry and set the
+         * option on the right interface. */
         retry = (try_count < 5);
 
         nm_log_trace(LOGD_PLATFORM,
@@ -388,7 +388,7 @@ ethtool_gstrings_find(const struct ethtool_gstrings *gstrings, const char *needl
     guint32 i;
 
     /* ethtool_get_stringset() always ensures NUL terminated strings at ETH_GSTRING_LEN.
-	 * that means, we cannot possibly request longer names. */
+     * that means, we cannot possibly request longer names. */
     nm_assert(needle && strlen(needle) < ETH_GSTRING_LEN);
 
     for (i = 0; i < gstrings->len; i++) {
@@ -404,7 +404,7 @@ ethtool_get_stringset_index(SocketHandle *shandle, int stringset_id, const char 
     gs_free struct ethtool_gstrings *gstrings = NULL;
 
     /* ethtool_get_stringset() always ensures NUL terminated strings at ETH_GSTRING_LEN.
-	 * that means, we cannot possibly request longer names. */
+     * that means, we cannot possibly request longer names. */
     nm_assert(needle && strlen(needle) < ETH_GSTRING_LEN);
 
     gstrings = ethtool_get_stringset(shandle, stringset_id);
@@ -423,10 +423,10 @@ static const NMEthtoolFeatureInfo _ethtool_feature_infos[_NM_ETHTOOL_ID_FEATURE_
     }
 
     /* the order does only matter for one thing: if it happens that more than one NMEthtoolID
-	 * reference the same kernel-name, then the one that is mentioned *later* will win in
-	 * case these NMEthtoolIDs are set. That mostly only makes sense for ethtool-ids which
-	 * refer to multiple features ("feature-tso"), while also having more specific ids
-	 * ("feature-tx-tcp-segmentation"). */
+     * reference the same kernel-name, then the one that is mentioned *later* will win in
+     * case these NMEthtoolIDs are set. That mostly only makes sense for ethtool-ids which
+     * refer to multiple features ("feature-tso"), while also having more specific ids
+     * ("feature-tx-tcp-segmentation"). */
 
     /* names from ethtool utility, which are aliases for multiple features. */
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_SG, "tx-scatter-gather", "tx-scatter-gather-fraglist"),
@@ -766,8 +766,8 @@ nmp_utils_ethtool_set_features(
             if (do_set && (!s->available || s->never_changed)
                 && (s->active != (requested[i] == NM_TERNARY_TRUE))) {
                 /* we request to change a flag which kernel reported as fixed.
-				 * While the ethtool operation will silently succeed, mark the request
-				 * as failure. */
+                 * While the ethtool operation will silently succeed, mark the request
+                 * as failure. */
                 success = FALSE;
             }
 
@@ -1139,9 +1139,9 @@ nmp_utils_ethtool_get_permanent_address(int ifindex, guint8 *buf, size_t *length
 
     if (NM_IN_SET(pdata[0], 0, 0xFF)) {
         /* Some drivers might return a permanent address of all zeros.
-		 * Reject that (rh#1264024)
-		 *
-		 * Some drivers return a permanent address of all ones. Reject that too */
+         * Reject that (rh#1264024)
+         *
+         * Some drivers return a permanent address of all ones. Reject that too */
         for (i = 1; i < edata.e.size; i++) {
             if (pdata[0] != pdata[i])
                 goto not_all_0or1;
@@ -1163,9 +1163,9 @@ nmp_utils_ethtool_supports_carrier_detect(int ifindex)
     g_return_val_if_fail(ifindex > 0, FALSE);
 
     /* We ignore the result. If the ETHTOOL_GLINK call succeeded, then we
-	 * assume the device supports carrier-detect, otherwise we assume it
-	 * doesn't.
-	 */
+     * assume the device supports carrier-detect, otherwise we assume it
+     * doesn't.
+     */
     return _ethtool_call_once(ifindex, &edata, sizeof(edata)) >= 0;
 }
 
@@ -1349,8 +1349,8 @@ nmp_utils_ethtool_set_link_settings(int                      ifindex,
         return FALSE;
 
     /* FIXME: try first new ETHTOOL_GLINKSETTINGS/SLINKSETTINGS API
-	 * https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=3f1ac7a700d039c61d8d8b99f28d605d489a60cf
-	 */
+     * https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=3f1ac7a700d039c61d8d8b99f28d605d489a60cf
+     */
 
     /* then change the needed ones */
     edata.cmd = ETHTOOL_SSET;
@@ -1525,9 +1525,9 @@ nmp_utils_udev_get_driver(struct udev_device *udevice)
         driver = udev_device_get_driver(parent);
         if (!driver) {
             /* Try the grandparent if it's an ibmebus device or if the
-			 * subsys is NULL which usually indicates some sort of
-			 * platform device like a 'gadget' net interface.
-			 */
+             * subsys is NULL which usually indicates some sort of
+             * platform device like a 'gadget' net interface.
+             */
             subsys = udev_device_get_subsystem(parent);
             if ((g_strcmp0(subsys, "ibmebus") == 0) || (subsys == NULL)) {
                 grandparent = udev_device_get_parent(parent);
@@ -1539,7 +1539,7 @@ nmp_utils_udev_get_driver(struct udev_device *udevice)
 
 out:
     /* Intern the string so we don't have to worry about memory
-	 * management in NMPlatformLink. */
+     * management in NMPlatformLink. */
     return g_intern_string(driver);
 }
 
@@ -1557,8 +1557,8 @@ NMIPConfigSource
 nmp_utils_ip_config_source_round_trip_rtprot(NMIPConfigSource source)
 {
     /* when adding a route to kernel for a give @source, the resulting route
-	 * will be put into the cache with a source of NM_IP_CONFIG_SOURCE_RTPROT_*.
-	 * This function returns that. */
+     * will be put into the cache with a source of NM_IP_CONFIG_SOURCE_RTPROT_*.
+     * This function returns that. */
     return nmp_utils_ip_config_source_from_rtprot(
         nmp_utils_ip_config_source_coerce_to_rtprot(source));
 }
@@ -1567,8 +1567,8 @@ guint8
 nmp_utils_ip_config_source_coerce_to_rtprot(NMIPConfigSource source)
 {
     /* when adding a route to kernel, we coerce the @source field
-	 * to rtm_protocol. This is not lossless as we map different
-	 * source values to the same RTPROT uint8 value. */
+     * to rtm_protocol. This is not lossless as we map different
+     * source values to the same RTPROT uint8 value. */
     if (source <= NM_IP_CONFIG_SOURCE_UNKNOWN)
         return RTPROT_UNSPEC;
 
@@ -1594,17 +1594,17 @@ NMIPConfigSource
 nmp_utils_ip_config_source_coerce_from_rtprot(NMIPConfigSource source)
 {
     /* When we receive a route from kernel and put it into the platform cache,
-	 * we preserve the protocol field by converting it to a NMIPConfigSource
-	 * via nmp_utils_ip_config_source_from_rtprot().
-	 *
-	 * However, that is not the inverse of nmp_utils_ip_config_source_coerce_to_rtprot().
-	 * Instead, to go back to the original value, you need another step:
-	 *   nmp_utils_ip_config_source_coerce_from_rtprot (nmp_utils_ip_config_source_from_rtprot (rtprot)).
-	 *
-	 * This might partly restore the original source value, but of course that
-	 * is not really possible because nmp_utils_ip_config_source_coerce_to_rtprot()
-	 * is not injective.
-	 * */
+     * we preserve the protocol field by converting it to a NMIPConfigSource
+     * via nmp_utils_ip_config_source_from_rtprot().
+     *
+     * However, that is not the inverse of nmp_utils_ip_config_source_coerce_to_rtprot().
+     * Instead, to go back to the original value, you need another step:
+     *   nmp_utils_ip_config_source_coerce_from_rtprot (nmp_utils_ip_config_source_from_rtprot (rtprot)).
+     *
+     * This might partly restore the original source value, but of course that
+     * is not really possible because nmp_utils_ip_config_source_coerce_to_rtprot()
+     * is not injective.
+     * */
     switch (source) {
     case NM_IP_CONFIG_SOURCE_RTPROT_UNSPEC:
         return NM_IP_CONFIG_SOURCE_UNKNOWN;
@@ -1753,8 +1753,8 @@ nmp_utils_sysctl_open_netdir(int ifindex, const char *ifname_guess, char *out_if
             g_return_val_if_reached(-1);
 
         /* we only retry, if the name changed since previous attempt.
-		 * Hence, it is extremely unlikely that this loop runes until the
-		 * end of the @try_count. */
+         * Hence, it is extremely unlikely that this loop runes until the
+         * end of the @try_count. */
         if (nm_streq(ifname, ifname_buf_last_try))
             return -1;
         strcpy(ifname_buf_last_try, ifname);

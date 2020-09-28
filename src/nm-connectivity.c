@@ -213,7 +213,7 @@ cb_data_complete(NMConnectivityCheckHandle *cb_data,
     self = cb_data->self;
 
     /* mark the handle as completing. After this point, nm_connectivity_check_cancel()
-	 * is no longer possible. */
+     * is no longer possible. */
     cb_data->self = NULL;
 
     c_list_unlink_stale(&cb_data->handles_lst);
@@ -221,12 +221,12 @@ cb_data_complete(NMConnectivityCheckHandle *cb_data,
 #if WITH_CONCHECK
     if (cb_data->concheck.curl_ehandle) {
         /* Contrary to what cURL manual claim it is *not* safe to remove
-		 * the easy handle "at any moment"; specifically it's not safe to
-		 * remove *any* handle from within a libcurl callback. That is
-		 * why we queue completed handles in this case.
-		 *
-		 * cb_data_complete() is however only called *not* from within a
-		 * libcurl callback. So, this is fine. */
+         * the easy handle "at any moment"; specifically it's not safe to
+         * remove *any* handle from within a libcurl callback. That is
+         * why we queue completed handles in this case.
+         *
+         * cb_data_complete() is however only called *not* from within a
+         * libcurl callback. So, this is fine. */
         curl_easy_setopt(cb_data->concheck.curl_ehandle, CURLOPT_WRITEFUNCTION, NULL);
         curl_easy_setopt(cb_data->concheck.curl_ehandle, CURLOPT_WRITEDATA, NULL);
         curl_easy_setopt(cb_data->concheck.curl_ehandle, CURLOPT_HEADERFUNCTION, NULL);
@@ -252,8 +252,8 @@ cb_data_complete(NMConnectivityCheckHandle *cb_data,
     cb_data->callback(self, cb_data, state, cb_data->user_data);
 
     /* Note: self might be a danling pointer at this point. It must not be used
-	 * after this point, and all callers must either take a reference first, or
-	 * not use the self pointer too. */
+     * after this point, and all callers must either take a reference first, or
+     * not use the self pointer too. */
 
 #if WITH_CONCHECK
     _con_config_unref(cb_data->concheck.con_config);
@@ -368,8 +368,8 @@ _con_curl_check_connectivity(CURLM *mhandle, int sockfd, int ev_bitmask)
                 == CURLE_OK)) {
             if (response_code == 204) {
                 /* We expected an empty response, and we got a 204 response code (no content).
-				 * We may or may not have received any content (we would ignore it).
-				 * Anyway, the response_code 204 means we are good. */
+                 * We may or may not have received any content (we would ignore it).
+                 * Anyway, the response_code 204 means we are good. */
                 cb_data_queue_completed(cb_data,
                                         NM_CONNECTIVITY_FULL,
                                         "no content, as expected",
@@ -388,16 +388,16 @@ _con_curl_check_connectivity(CURLM *mhandle, int sockfd, int ev_bitmask)
         }
 
         /* If we get here, it means that easy_write_cb() didn't read enough
-		 * bytes to be able to do a match, or that we were asking for no content
-		 * (204 response code) and we actually got some. Either way, that is
-		 * an indication of a captive portal */
+         * bytes to be able to do a match, or that we were asking for no content
+         * (204 response code) and we actually got some. Either way, that is
+         * an indication of a captive portal */
         cb_data_queue_completed(cb_data, NM_CONNECTIVITY_PORTAL, "unexpected short response", NULL);
     }
 
     /* if we return a failure, we don't know what went wrong. It's likely serious, because
-	 * a failure here is not expected. Return FALSE, so that we stop polling the file descriptor.
-	 * Worst case, this leaves the pending connectivity check unhandled, until our regular
-	 * time-out kicks in. */
+     * a failure here is not expected. Return FALSE, so that we stop polling the file descriptor.
+     * Worst case, this leaves the pending connectivity check unhandled, until our regular
+     * time-out kicks in. */
     return success;
 }
 
@@ -428,10 +428,10 @@ typedef struct {
     GSource *source;
 
     /* this is a very simplistic weak-pointer. If ConCurlSockData gets
-	 * destroyed, it will set *destroy_notify to TRUE.
-	 *
-	 * _con_curl_socketevent_cb() uses this to detect whether it can
-	 * safely access @fdp after _con_curl_check_connectivity(). */
+     * destroyed, it will set *destroy_notify to TRUE.
+     *
+     * _con_curl_socketevent_cb() uses this to detect whether it can
+     * safely access @fdp after _con_curl_check_connectivity(). */
     gboolean *destroy_notify;
 
 } ConCurlSockData;
@@ -459,7 +459,7 @@ _con_curl_socketevent_cb(int fd, GIOCondition condition, gpointer user_data)
 
     if (fdp_destroyed) {
         /* hups. fdp got invalidated during _con_curl_check_connectivity(). That's fine,
-		 * just don't touch it. */
+         * just don't touch it. */
     } else {
         nm_assert(fdp->destroy_notify == &fdp_destroyed);
         fdp->destroy_notify = NULL;
@@ -566,24 +566,24 @@ easy_write_cb(void *buffer, size_t size, size_t nmemb, void *userdata)
 
     if (response[0] == '\0') {
         /* no response expected. We are however graceful and accept any
-		 * extra response that we might receive. We determine the empty
-		 * response based on the status code 204.
-		 *
-		 * Continue receiving... */
+         * extra response that we might receive. We determine the empty
+         * response based on the status code 204.
+         *
+         * Continue receiving... */
         cb_data->concheck.response_good_cnt += len;
 
         if (cb_data->concheck.response_good_cnt > (gsize)(100 * 1024)) {
             /* we expect an empty response. We accept either
-			 * 1) status code 204 and any response
-			 * 2) status code 200 and an empty response.
-			 *
-			 * Here, we want to continue receiving data, to see whether we have
-			 * case 1). Arguably, the server shouldn't send us 204 with a non-empty
-			 * response, but we accept that also with a non-empty response, so
-			 * keep receiving.
-			 *
-			 * However, if we get an excessive amount of data, we put a stop on it
-			 * and fail. */
+             * 1) status code 204 and any response
+             * 2) status code 200 and an empty response.
+             *
+             * Here, we want to continue receiving data, to see whether we have
+             * case 1). Arguably, the server shouldn't send us 204 with a non-empty
+             * response, but we accept that also with a non-empty response, so
+             * keep receiving.
+             *
+             * However, if we get an excessive amount of data, we put a stop on it
+             * and fail. */
             cb_data_queue_completed(cb_data,
                                     NM_CONNECTIVITY_PORTAL,
                                     "unexpected non-empty response",
@@ -887,23 +887,23 @@ nm_connectivity_check_start(NMConnectivity *            self,
         }
 
         /* note that we pick up support for systemd-resolved right away when we need it.
-		 * We don't need to remember the setting, because we can (cheaply) check anew
-		 * on each request.
-		 *
-		 * Yes, this makes NMConnectivity singleton dependent on NMDnsManager singleton.
-		 * Well, not really: it makes connectivity-check-start dependent on NMDnsManager
-		 * which merely means, not to start a connectivity check, late during shutdown.
-		 *
-		 * NMDnsSystemdResolved tries to D-Bus activate systemd-resolved only once,
-		 * to not spam syslog with failures messages from dbus-daemon.
-		 * Note that unless NMDnsSystemdResolved tried and failed to start systemd-resolved,
-		 * it guesses that systemd-resolved is activatable and returns %TRUE here. That
-		 * means, while NMDnsSystemdResolved would not try to D-Bus activate systemd-resolved
-		 * more than once, NMConnectivity might -- until NMDnsSystemdResolved tried itself
-		 * and noticed that systemd-resolved is not available.
-		 * This is relatively cumbersome to avoid, because we would have to go through
-		 * NMDnsSystemdResolved trying to asynchronously start the service, to ensure there
-		 * is only one attempt to start the service. */
+         * We don't need to remember the setting, because we can (cheaply) check anew
+         * on each request.
+         *
+         * Yes, this makes NMConnectivity singleton dependent on NMDnsManager singleton.
+         * Well, not really: it makes connectivity-check-start dependent on NMDnsManager
+         * which merely means, not to start a connectivity check, late during shutdown.
+         *
+         * NMDnsSystemdResolved tries to D-Bus activate systemd-resolved only once,
+         * to not spam syslog with failures messages from dbus-daemon.
+         * Note that unless NMDnsSystemdResolved tried and failed to start systemd-resolved,
+         * it guesses that systemd-resolved is activatable and returns %TRUE here. That
+         * means, while NMDnsSystemdResolved would not try to D-Bus activate systemd-resolved
+         * more than once, NMConnectivity might -- until NMDnsSystemdResolved tried itself
+         * and noticed that systemd-resolved is not available.
+         * This is relatively cumbersome to avoid, because we would have to go through
+         * NMDnsSystemdResolved trying to asynchronously start the service, to ensure there
+         * is only one attempt to start the service. */
         has_systemd_resolved = nm_dns_manager_has_systemd_resolved(nm_dns_manager_get());
 
         if (has_systemd_resolved) {
@@ -912,8 +912,8 @@ nm_connectivity_check_start(NMConnectivity *            self,
             dbus_connection = NM_MAIN_DBUS_CONNECTION_GET;
             if (!dbus_connection) {
                 /* we have no D-Bus connection? That might happen in configure and quit mode.
-				 *
-				 * Anyway, something is very odd, just fail connectivity check. */
+                 *
+                 * Anyway, something is very odd, just fail connectivity check. */
                 _LOG2D("start fake request (fail due to no D-Bus connection)");
                 cb_data->completed_state  = NM_CONNECTIVITY_ERROR;
                 cb_data->completed_reason = "no D-Bus connection";

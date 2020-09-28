@@ -279,7 +279,7 @@ send_updates(NMDnsSystemdResolved *self)
     if (!priv->dbus_has_owner) {
         if (priv->try_start_blocked) {
             /* we have no name owner and we already tried poking the service to
-			 * autostart. */
+             * autostart. */
             _LOGT("send-updates: no name owner");
             return;
         }
@@ -306,13 +306,13 @@ send_updates(NMDnsSystemdResolved *self)
         (request_item =
              c_list_first_entry(&priv->request_queue_lst_head, RequestItem, request_queue_lst))) {
         /* Above we explicitly call "StartServiceByName" trying to avoid D-Bus activating systmd-resolved
-		 * multiple times. There is still a race, were we might hit this line although actually
-		 * the service just quit this very moment. In that case, we would try to D-Bus activate the
-		 * service multiple times during each call (something we wanted to avoid).
-		 *
-		 * But this is hard to avoid, because we'd have to check the error failure to detect the reason
-		 * and retry. The race is not critical, because at worst it results in logging a warning
-		 * about failure to start systemd.resolved. */
+         * multiple times. There is still a race, were we might hit this line although actually
+         * the service just quit this very moment. In that case, we would try to D-Bus activate the
+         * service multiple times during each call (something we wanted to avoid).
+         *
+         * But this is hard to avoid, because we'd have to check the error failure to detect the reason
+         * and retry. The race is not critical, because at worst it results in logging a warning
+         * about failure to start systemd.resolved. */
         g_dbus_connection_call(priv->dbus_connection,
                                SYSTEMD_RESOLVED_DBUS_SERVICE,
                                SYSTEMD_RESOLVED_DBUS_PATH,
@@ -420,7 +420,7 @@ name_owner_changed_cb(GDBusConnection *connection,
 
     if (!priv->dbus_initied) {
         /* There was a race and we got a NameOwnerChanged signal before GetNameOwner
-		 * returns. */
+         * returns. */
         priv->dbus_initied = TRUE;
         nm_clear_g_cancellable(&priv->cancellable);
     }

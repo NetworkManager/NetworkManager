@@ -457,28 +457,28 @@ nmt_newt_entry_class_init(NmtNewtEntryClass *entry_class)
     component_class->build_component = nmt_newt_entry_build_component;
 
     /**
-	 * NmtNewtEntry:text
-	 *
-	 * The entry's text
-	 */
+     * NmtNewtEntry:text
+     *
+     * The entry's text
+     */
     g_object_class_install_property(
         object_class,
         PROP_TEXT,
         g_param_spec_string("text", "", "", NULL, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtEntry:width
-	 *
-	 * The entry's width in characters
-	 */
+     * NmtNewtEntry:width
+     *
+     * The entry's width in characters
+     */
     g_object_class_install_property(
         object_class,
         PROP_WIDTH,
         g_param_spec_int("width", "", "", -1, 80, -1, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtEntry:flags
-	 *
-	 * The entry's #NmtNewtEntryFlags
-	 */
+     * NmtNewtEntry:flags
+     *
+     * The entry's #NmtNewtEntryFlags
+     */
     g_object_class_install_property(
         object_class,
         PROP_FLAGS,
@@ -490,11 +490,11 @@ nmt_newt_entry_class_init(NmtNewtEntryClass *entry_class)
                           0,
                           G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtEntry:password
-	 *
-	 * %TRUE if #NmtNewtEntry:flags contains %NMT_NEWT_ENTRY_PASSWORD,
-	 * %FALSE if not.
-	 */
+     * NmtNewtEntry:password
+     *
+     * %TRUE if #NmtNewtEntry:flags contains %NMT_NEWT_ENTRY_PASSWORD,
+     * %FALSE if not.
+     */
     g_object_class_install_property(
         object_class,
         PROP_PASSWORD,

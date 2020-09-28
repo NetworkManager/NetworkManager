@@ -400,8 +400,8 @@ _notify_event_state_changed(NMClient *client, NMClientNotifyEventWithPtr *notify
     NMActiveConnectionPrivate *         priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
 
     /* we expose here the value cache in @priv. In practice, this is the same
-	 * value as we received from the signal. In the unexpected case where they
-	 * differ, the cached value of the current instance would still be more correct. */
+     * value as we received from the signal. In the unexpected case where they
+     * differ, the cached value of the current instance would still be more correct. */
     g_signal_emit(self, signals[STATE_CHANGED], 0, (guint) priv->state, (guint) priv->reason);
 }
 
@@ -433,20 +433,20 @@ is_ready(NMObject *nmobj)
     NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(nmobj);
 
     /* Usually, we don't want to expose our NMObject instances until they are fully initialized.
-	 * For NMRemoteSetting this means to wait until GetSettings() returns.
-	 *
-	 * Note that most object types reference each other (directly or indirectly). E.g. the
-	 * NMActiveConnection refers to the NMRemoteConnection and the NMDevice instance. So,
-	 * we don't want to hide them too long, otherwise basically the entire set of objects
-	 * will be hidden until they are all initialized. So, usually, when a NMObject references
-	 * objects that are not yet initialized, that reference will just be NULL but the object
-	 * will be considered ready already.
-	 *
-	 * For NMActiveConnection referencing a NMRemoteConnection don't do that. Here we wait for the
-	 * NMRemoteConnection to be ready as well. This is somewhat arbitrary special casing, but
-	 * the effect is that when nm_client_add_and_activate*() returns, the NMActiveConnection already
-	 * references a initialized NMRemoteConnection.
-	 */
+     * For NMRemoteSetting this means to wait until GetSettings() returns.
+     *
+     * Note that most object types reference each other (directly or indirectly). E.g. the
+     * NMActiveConnection refers to the NMRemoteConnection and the NMDevice instance. So,
+     * we don't want to hide them too long, otherwise basically the entire set of objects
+     * will be hidden until they are all initialized. So, usually, when a NMObject references
+     * objects that are not yet initialized, that reference will just be NULL but the object
+     * will be considered ready already.
+     *
+     * For NMActiveConnection referencing a NMRemoteConnection don't do that. Here we wait for the
+     * NMRemoteConnection to be ready as well. This is somewhat arbitrary special casing, but
+     * the effect is that when nm_client_add_and_activate*() returns, the NMActiveConnection already
+     * references a initialized NMRemoteConnection.
+     */
     if (!nml_dbus_property_o_is_ready_fully(&priv->property_o[PROPERTY_O_IDX_CONNECTION]))
         return FALSE;
 
@@ -623,10 +623,10 @@ nm_active_connection_class_init(NMActiveConnectionClass *klass)
     _NM_OBJECT_CLASS_INIT_PROPERTY_AO_FIELDS_1(nm_object_class, NMActiveConnectionPrivate, devices);
 
     /**
-	 * NMActiveConnection:connection:
-	 *
-	 * The connection that this is an active instance of.
-	 **/
+     * NMActiveConnection:connection:
+     *
+     * The connection that this is an active instance of.
+     **/
     obj_properties[PROP_CONNECTION] =
         g_param_spec_object(NM_ACTIVE_CONNECTION_CONNECTION,
                             "",
@@ -635,10 +635,10 @@ nm_active_connection_class_init(NMActiveConnectionClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMActiveConnection:id:
-	 *
-	 * The active connection's ID
-	 **/
+     * NMActiveConnection:id:
+     *
+     * The active connection's ID
+     **/
     obj_properties[PROP_ID] = g_param_spec_string(NM_ACTIVE_CONNECTION_ID,
                                                   "",
                                                   "",
@@ -646,10 +646,10 @@ nm_active_connection_class_init(NMActiveConnectionClass *klass)
                                                   G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMActiveConnection:uuid:
-	 *
-	 * The active connection's UUID
-	 **/
+     * NMActiveConnection:uuid:
+     *
+     * The active connection's UUID
+     **/
     obj_properties[PROP_UUID] = g_param_spec_string(NM_ACTIVE_CONNECTION_UUID,
                                                     "",
                                                     "",
@@ -657,10 +657,10 @@ nm_active_connection_class_init(NMActiveConnectionClass *klass)
                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMActiveConnection:type:
-	 *
-	 * The active connection's type
-	 **/
+     * NMActiveConnection:type:
+     *
+     * The active connection's type
+     **/
     obj_properties[PROP_TYPE] = g_param_spec_string(NM_ACTIVE_CONNECTION_TYPE,
                                                     "",
                                                     "",
@@ -668,11 +668,11 @@ nm_active_connection_class_init(NMActiveConnectionClass *klass)
                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMActiveConnection:specific-object-path:
-	 *
-	 * The path to the "specific object" of the active connection; see
-	 * nm_active_connection_get_specific_object_path() for more details.
-	 **/
+     * NMActiveConnection:specific-object-path:
+     *
+     * The path to the "specific object" of the active connection; see
+     * nm_active_connection_get_specific_object_path() for more details.
+     **/
     obj_properties[PROP_SPECIFIC_OBJECT_PATH] =
         g_param_spec_string(NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT_PATH,
                             "",
@@ -681,10 +681,10 @@ nm_active_connection_class_init(NMActiveConnectionClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMActiveConnection:devices: (type GPtrArray(NMDevice))
-	 *
-	 * The devices of the active connection.
-	 **/
+     * NMActiveConnection:devices: (type GPtrArray(NMDevice))
+     *
+     * The devices of the active connection.
+     **/
     obj_properties[PROP_DEVICES] = g_param_spec_boxed(NM_ACTIVE_CONNECTION_DEVICES,
                                                       "",
                                                       "",
@@ -692,10 +692,10 @@ nm_active_connection_class_init(NMActiveConnectionClass *klass)
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMActiveConnection:state:
-	 *
-	 * The state of the active connection.
-	 **/
+     * NMActiveConnection:state:
+     *
+     * The state of the active connection.
+     **/
     obj_properties[PROP_STATE] = g_param_spec_enum(NM_ACTIVE_CONNECTION_STATE,
                                                    "",
                                                    "",
@@ -704,12 +704,12 @@ nm_active_connection_class_init(NMActiveConnectionClass *klass)
                                                    G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMActiveConnection:state-flags:
-	 *
-	 * The state flags of the active connection.
-	 *
-	 * Since: 1.10
-	 **/
+     * NMActiveConnection:state-flags:
+     *
+     * The state flags of the active connection.
+     *
+     * Since: 1.10
+     **/
     obj_properties[PROP_STATE_FLAGS] = g_param_spec_uint(NM_ACTIVE_CONNECTION_STATE_FLAGS,
                                                          "",
                                                          "",
@@ -719,10 +719,10 @@ nm_active_connection_class_init(NMActiveConnectionClass *klass)
                                                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMActiveConnection:default:
-	 *
-	 * Whether the active connection is the default IPv4 one.
-	 **/
+     * NMActiveConnection:default:
+     *
+     * Whether the active connection is the default IPv4 one.
+     **/
     obj_properties[PROP_DEFAULT] = g_param_spec_boolean(NM_ACTIVE_CONNECTION_DEFAULT,
                                                         "",
                                                         "",
@@ -730,10 +730,10 @@ nm_active_connection_class_init(NMActiveConnectionClass *klass)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMActiveConnection:ip4-config:
-	 *
-	 * The IPv4 #NMIPConfig of the connection.
-	 **/
+     * NMActiveConnection:ip4-config:
+     *
+     * The IPv4 #NMIPConfig of the connection.
+     **/
     obj_properties[PROP_IP4_CONFIG] =
         g_param_spec_object(NM_ACTIVE_CONNECTION_IP4_CONFIG,
                             "",
@@ -742,10 +742,10 @@ nm_active_connection_class_init(NMActiveConnectionClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMActiveConnection:dhcp4-config:
-	 *
-	 * The IPv4 #NMDhcpConfig of the connection.
-	 **/
+     * NMActiveConnection:dhcp4-config:
+     *
+     * The IPv4 #NMDhcpConfig of the connection.
+     **/
     obj_properties[PROP_DHCP4_CONFIG] =
         g_param_spec_object(NM_ACTIVE_CONNECTION_DHCP4_CONFIG,
                             "",
@@ -754,10 +754,10 @@ nm_active_connection_class_init(NMActiveConnectionClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMActiveConnection:default6:
-	 *
-	 * Whether the active connection is the default IPv6 one.
-	 **/
+     * NMActiveConnection:default6:
+     *
+     * Whether the active connection is the default IPv6 one.
+     **/
     obj_properties[PROP_DEFAULT6] = g_param_spec_boolean(NM_ACTIVE_CONNECTION_DEFAULT6,
                                                          "",
                                                          "",
@@ -765,10 +765,10 @@ nm_active_connection_class_init(NMActiveConnectionClass *klass)
                                                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMActiveConnection:ip6-config:
-	 *
-	 * The IPv6 #NMIPConfig of the connection.
-	 **/
+     * NMActiveConnection:ip6-config:
+     *
+     * The IPv6 #NMIPConfig of the connection.
+     **/
     obj_properties[PROP_IP6_CONFIG] =
         g_param_spec_object(NM_ACTIVE_CONNECTION_IP6_CONFIG,
                             "",
@@ -777,10 +777,10 @@ nm_active_connection_class_init(NMActiveConnectionClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMActiveConnection:dhcp6-config:
-	 *
-	 * The IPv6 #NMDhcpConfig of the connection.
-	 **/
+     * NMActiveConnection:dhcp6-config:
+     *
+     * The IPv6 #NMDhcpConfig of the connection.
+     **/
     obj_properties[PROP_DHCP6_CONFIG] =
         g_param_spec_object(NM_ACTIVE_CONNECTION_DHCP6_CONFIG,
                             "",
@@ -789,10 +789,10 @@ nm_active_connection_class_init(NMActiveConnectionClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMActiveConnection:vpn:
-	 *
-	 * Whether the active connection is a VPN connection.
-	 **/
+     * NMActiveConnection:vpn:
+     *
+     * Whether the active connection is a VPN connection.
+     **/
     obj_properties[PROP_VPN] = g_param_spec_boolean(NM_ACTIVE_CONNECTION_VPN,
                                                     "",
                                                     "",
@@ -800,10 +800,10 @@ nm_active_connection_class_init(NMActiveConnectionClass *klass)
                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMActiveConnection:master:
-	 *
-	 * The master device if one exists.
-	 **/
+     * NMActiveConnection:master:
+     *
+     * The master device if one exists.
+     **/
     obj_properties[PROP_MASTER] = g_param_spec_object(NM_ACTIVE_CONNECTION_MASTER,
                                                       "",
                                                       "",
@@ -814,17 +814,17 @@ nm_active_connection_class_init(NMActiveConnectionClass *klass)
                                               &_nml_dbus_meta_iface_nm_connection_active);
 
     /* TODO: the state reason should also be exposed as a property in libnm's NMActiveConnection,
-	 * like done for NMDevice's state reason. */
+     * like done for NMDevice's state reason. */
 
     /* TODO: the D-Bus API should also expose the state-reason as a property instead of
-	 * a "StateChanged" signal. Like done for Device's "StateReason".  */
+     * a "StateChanged" signal. Like done for Device's "StateReason".  */
 
     /**
-	 * NMActiveConnection::state-changed:
-	 * @active_connection: the source #NMActiveConnection
-	 * @state: the new state number (#NMActiveConnectionState)
-	 * @reason: the state change reason (#NMActiveConnectionStateReason)
-	 */
+     * NMActiveConnection::state-changed:
+     * @active_connection: the source #NMActiveConnection
+     * @state: the new state number (#NMActiveConnectionState)
+     * @reason: the state change reason (#NMActiveConnectionStateReason)
+     */
     signals[STATE_CHANGED] = g_signal_new("state-changed",
                                           G_OBJECT_CLASS_TYPE(object_class),
                                           G_SIGNAL_RUN_FIRST,

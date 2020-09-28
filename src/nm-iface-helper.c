@@ -181,9 +181,9 @@ ndisc_config_changed(NMNDisc *          ndisc,
         guint32 ifa_flags;
 
         /* Check, whether kernel is recent enough to help user space handling RA.
-		 * If it's not supported, we have no ipv6-privacy and must add autoconf
-		 * addresses as /128. The reason for the /128 is to prevent the kernel
-		 * from adding a prefix route for this address. */
+         * If it's not supported, we have no ipv6-privacy and must add autoconf
+         * addresses as /128. The reason for the /128 is to prevent the kernel
+         * from adding a prefix route for this address. */
         ifa_flags = 0;
         if (nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)) {
             ifa_flags |= IFA_F_NOPREFIXROUTE;
@@ -641,7 +641,7 @@ main(int argc, char *argv[])
 
     if (global_opt.dhcp4_clientid) {
         /* this string is just a plain hex-string. Unlike ipv4.dhcp-client-id, which
-		 * is parsed via nm_dhcp_utils_client_id_string_to_bytes(). */
+         * is parsed via nm_dhcp_utils_client_id_string_to_bytes(). */
         client_id = nm_utils_hexstr2bin(global_opt.dhcp4_clientid);
         if (!client_id || g_bytes_get_size(client_id) < 2) {
             fprintf(stderr,
@@ -703,8 +703,8 @@ main(int argc, char *argv[])
             && (global_opt.stable_id[0] >= '0' && global_opt.stable_id[0] <= '9')
             && global_opt.stable_id[1] == ' ') {
             /* strict parsing of --stable-id, which is the numeric stable-type
-			 * and the ID, joined with one space. For now, only support stable-types
-			 * from 0 to 9. */
+             * and the ID, joined with one space. For now, only support stable-types
+             * from 0 to 9. */
             stable_type = (global_opt.stable_id[0] - '0');
             stable_id   = &global_opt.stable_id[2];
         }
@@ -769,7 +769,7 @@ main(int argc, char *argv[])
 
 const NMDhcpClientFactory *const _nm_dhcp_manager_factories[6] = {
     /* For nm-iface-helper there is no option to choose a DHCP plugin.
-	 * It just uses the "internal" one. */
+     * It just uses the "internal" one. */
     &_nm_dhcp_client_factory_internal,
 };
 

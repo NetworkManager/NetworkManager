@@ -150,8 +150,8 @@ nm_auth_chain_set_cancellable(NMAuthChain *self, GCancellable *cancellable)
     g_return_if_fail(G_IS_CANCELLABLE(cancellable));
 
     /* after the chain is started, the cancellable can no longer be changed.
-	 * No need to handle the complexity of swapping the cancellable *after*
-	 * requests are already started. */
+     * No need to handle the complexity of swapping the cancellable *after*
+     * requests are already started. */
     g_return_if_fail(!self->is_started);
     nm_assert(c_list_is_empty(&self->auth_call_lst_head));
 
@@ -240,9 +240,9 @@ nm_auth_chain_steal_data(NMAuthChain *self, const char *tag)
         return NULL;
 
     /* Make sure the destroy handler isn't called when freeing.
-	 *
-	 * We don't bother to really remove the element from the array.
-	 * Just mark the entry as unused by clearing the tag. */
+     *
+     * We don't bother to really remove the element from the array.
+     * Just mark the entry as unused by clearing the tag. */
     chain_data->destroy = NULL;
     chain_data->tag     = NULL;
     return chain_data->data;
@@ -274,15 +274,15 @@ nm_auth_chain_set_data_unsafe(NMAuthChain *  self,
     g_return_if_fail(tag);
 
     /* The tag must not yet exist. Otherwise, we'd have to first search the
-	 * list for an existing entry. That usage pattern is not supported. */
+     * list for an existing entry. That usage pattern is not supported. */
     nm_assert(!_get_data(self, tag));
 
     if (!data) {
         /* we don't track user data of %NULL.
-		 *
-		 * In the past this had also the meaning of removing a user-data. But since
-		 * nm_auth_chain_set_data() does not allow being called more than once
-		 * for the same tag, we don't need to remove anything. */
+         *
+         * In the past this had also the meaning of removing a user-data. But since
+         * nm_auth_chain_set_data() does not allow being called more than once
+         * for the same tag, we don't need to remove anything. */
         return;
     }
 
@@ -313,14 +313,14 @@ nm_auth_chain_get_result(NMAuthChain *self, const char *permission)
     g_return_val_if_fail(permission, NM_AUTH_CALL_RESULT_UNKNOWN);
 
     /* it is a bug to request the result other than from the done_func()
-	 * callback. You are not supposed to poll for the result but request
-	 * it upon notification. */
+     * callback. You are not supposed to poll for the result but request
+     * it upon notification. */
     nm_assert(self->is_finishing);
 
     auth_call = _find_auth_call(self, permission);
 
     /* it is a bug to request a permission result that was not
-	 * previously requested or which did not complete yet. */
+     * previously requested or which did not complete yet. */
     if (!auth_call)
         g_return_val_if_reached(NM_AUTH_CALL_RESULT_UNKNOWN);
 
@@ -328,7 +328,7 @@ nm_auth_chain_get_result(NMAuthChain *self, const char *permission)
 
     if (self->cancellable_idle_source) {
         /* already cancelled. We always return unknown (even if we happen to
-		 * have already received the response. */
+         * have already received the response. */
         return NM_AUTH_CALL_RESULT_UNKNOWN;
     }
 
@@ -390,7 +390,7 @@ pk_call_cb(NMAuthManager *      auth_manager,
 
     if (call->chain->num_pending_auth_calls == 0) {
         /* we are on an idle-handler or a clean call-stack (non-reentrant) so it's safe
-		 * to invoke the callback right away. */
+         * to invoke the callback right away. */
         _done_and_destroy(self);
     }
 }
@@ -427,7 +427,7 @@ nm_auth_chain_add_call_unsafe(NMAuthChain *self, const char *permission, gboolea
                         NM_AUTH_SUBJECT_TYPE_INTERNAL));
 
     /* duplicate permissions are not supported, also because nm_auth_chain_get_result()
-	 * can only return one-permission. */
+     * can only return one-permission. */
     nm_assert(!_find_auth_call(self, permission));
 
     if (!self->is_started) {
@@ -457,8 +457,8 @@ nm_auth_chain_add_call_unsafe(NMAuthChain *self, const char *permission, gboolea
     };
 
     /* above we assert that no duplicate permissions are added. Still, track the
-	 * new request to the front of the list so that it would shadow an earlier
-	 * call. */
+     * new request to the front of the list so that it would shadow an earlier
+     * call. */
     c_list_link_front(&self->auth_call_lst_head, &call->auth_call_lst);
 
     if (self->cancellable_idle_source) {
@@ -478,8 +478,8 @@ nm_auth_chain_add_call_unsafe(NMAuthChain *self, const char *permission, gboolea
     _ASSERT_call(call);
 
     /* we track auth-calls in a linked list. If we end up requesting too many permissions this
-	 * becomes inefficient. If that ever happens, consider a more efficient data structure for
-	 * a large number of requests. */
+     * becomes inefficient. If that ever happens, consider a more efficient data structure for
+     * a large number of requests. */
     nm_assert(c_list_length(&self->auth_call_lst_head) < 25);
     G_STATIC_ASSERT_EXPR(NM_CLIENT_PERMISSION_LAST < 25);
 }
@@ -579,9 +579,9 @@ _auth_chain_destroy(NMAuthChain *self)
     nm_clear_g_source_inst(&self->cancellable_idle_source);
 
     /* we must first destroy all AuthCall instances before ChainData. The reason is
-	 * that AuthData.permission is not cloned and the lifetime of the string must
-	 * be ensured by the caller. A sensible thing to do for the caller is attach the
-	 * permission string via nm_auth_chain_set_data(). Hence, first free the AuthCall. */
+     * that AuthData.permission is not cloned and the lifetime of the string must
+     * be ensured by the caller. A sensible thing to do for the caller is attach the
+     * permission string via nm_auth_chain_set_data(). Hence, first free the AuthCall. */
     while ((call = c_list_first_entry(&self->auth_call_lst_head, AuthCall, auth_call_lst)))
         auth_call_free(call);
 
@@ -634,8 +634,8 @@ nm_auth_is_subject_in_acl(NMConnection *connection, NMAuthSubject *subject, char
     s_con = nm_connection_get_setting_connection(connection);
     if (!s_con) {
         /* This can only happen when called from AddAndActivate, so we know
-		 * the user will be authorized when the connection is completed.
-		 */
+         * the user will be authorized when the connection is completed.
+         */
         return TRUE;
     }
 

@@ -349,10 +349,10 @@ nm_setting_adsl_class_init(NMSettingAdslClass *klass)
     setting_class->need_secrets   = need_secrets;
 
     /**
-	 * NMSettingAdsl:username:
-	 *
-	 * Username used to authenticate with the ADSL service.
-	 **/
+     * NMSettingAdsl:username:
+     *
+     * Username used to authenticate with the ADSL service.
+     **/
     obj_properties[PROP_USERNAME] = g_param_spec_string(NM_SETTING_ADSL_USERNAME,
                                                         "",
                                                         "",
@@ -360,10 +360,10 @@ nm_setting_adsl_class_init(NMSettingAdslClass *klass)
                                                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingAdsl:password:
-	 *
-	 * Password used to authenticate with the ADSL service.
-	 **/
+     * NMSettingAdsl:password:
+     *
+     * Password used to authenticate with the ADSL service.
+     **/
     obj_properties[PROP_PASSWORD] =
         g_param_spec_string(NM_SETTING_ADSL_PASSWORD,
                             "",
@@ -372,10 +372,10 @@ nm_setting_adsl_class_init(NMSettingAdslClass *klass)
                             G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingAdsl:password-flags:
-	 *
-	 * Flags indicating how to handle the #NMSettingAdsl:password property.
-	 **/
+     * NMSettingAdsl:password-flags:
+     *
+     * Flags indicating how to handle the #NMSettingAdsl:password property.
+     **/
     obj_properties[PROP_PASSWORD_FLAGS] =
         g_param_spec_flags(NM_SETTING_ADSL_PASSWORD_FLAGS,
                            "",
@@ -385,10 +385,10 @@ nm_setting_adsl_class_init(NMSettingAdslClass *klass)
                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingAdsl:protocol:
-	 *
-	 * ADSL connection protocol.  Can be "pppoa", "pppoe" or "ipoatm".
-	 **/
+     * NMSettingAdsl:protocol:
+     *
+     * ADSL connection protocol.  Can be "pppoa", "pppoe" or "ipoatm".
+     **/
     obj_properties[PROP_PROTOCOL] = g_param_spec_string(NM_SETTING_ADSL_PROTOCOL,
                                                         "",
                                                         "",
@@ -396,10 +396,10 @@ nm_setting_adsl_class_init(NMSettingAdslClass *klass)
                                                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingAdsl:encapsulation:
-	 *
-	 * Encapsulation of ADSL connection.  Can be "vcmux" or "llc".
-	 **/
+     * NMSettingAdsl:encapsulation:
+     *
+     * Encapsulation of ADSL connection.  Can be "vcmux" or "llc".
+     **/
     obj_properties[PROP_ENCAPSULATION] =
         g_param_spec_string(NM_SETTING_ADSL_ENCAPSULATION,
                             "",
@@ -408,10 +408,10 @@ nm_setting_adsl_class_init(NMSettingAdslClass *klass)
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingAdsl:vpi:
-	 *
-	 * VPI of ADSL connection
-	 **/
+     * NMSettingAdsl:vpi:
+     *
+     * VPI of ADSL connection
+     **/
     obj_properties[PROP_VPI] = g_param_spec_uint(NM_SETTING_ADSL_VPI,
                                                  "",
                                                  "",
@@ -421,10 +421,10 @@ nm_setting_adsl_class_init(NMSettingAdslClass *klass)
                                                  G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingAdsl:vci:
-	 *
-	 * VCI of ADSL connection
-	 **/
+     * NMSettingAdsl:vci:
+     *
+     * VCI of ADSL connection
+     **/
     obj_properties[PROP_VCI] = g_param_spec_uint(NM_SETTING_ADSL_VCI,
                                                  "",
                                                  "",

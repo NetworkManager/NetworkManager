@@ -157,7 +157,7 @@ _call_id_new(NMSecretAgent *       self,
 
     if (!priv->shutdown_wait_obj_registered) {
         /* self has async requests (that keep self alive). As long as
-		 * we have pending requests, shutdown is blocked. */
+         * we have pending requests, shutdown is blocked. */
         priv->shutdown_wait_obj_registered = TRUE;
         nm_shutdown_wait_obj_register_object(G_OBJECT(self), "secret-agent");
     }
@@ -488,11 +488,11 @@ nm_secret_agent_cancel_call(NMSecretAgent *self, NMSecretAgentCallId *call_id)
     g_return_if_fail(!c_list_is_empty(&call_id->lst));
 
     /* Theoretically, call-id already has a self pointer. But nm_secret_agent_cancel_call() has only
-	 * one user: NMAgentManager. And that one has the self-pointer at hand, so the only purpose of
-	 * the @self argument is to assert that we are cancelling the expected call.
-	 *
-	 * We could drop the @self argument, but that just remove an additional assert-check from
-	 * our code, without making a simplification for the only caller of this function. */
+     * one user: NMAgentManager. And that one has the self-pointer at hand, so the only purpose of
+     * the @self argument is to assert that we are cancelling the expected call.
+     *
+     * We could drop the @self argument, but that just remove an additional assert-check from
+     * our code, without making a simplification for the only caller of this function. */
     g_return_if_fail(self == call_id->self);
 
     priv = NM_SECRET_AGENT_GET_PRIVATE(self);
@@ -516,7 +516,7 @@ nm_secret_agent_cancel_call(NMSecretAgent *self, NMSecretAgentCallId *call_id)
             _call_cancel_cb,
             call_id);
         /* we keep call-id alive, but it will be unlinked from priv->requests.
-		 * _call_cancel_cb() will finally free it later. */
+         * _call_cancel_cb() will finally free it later. */
         free_call_id = FALSE;
     }
 

@@ -127,12 +127,12 @@ nm_device_vrf_class_init(NMDeviceVrfClass *klass)
     device_class->get_setting_type      = get_setting_type;
 
     /**
-	 * NMDeviceVrf:table:
-	 *
-	 * The device's VRF table.
-	 *
-	 * Since: 1.24
-	 **/
+     * NMDeviceVrf:table:
+     *
+     * The device's VRF table.
+     *
+     * Since: 1.24
+     **/
     obj_properties[PROP_TABLE] = g_param_spec_uint(NM_DEVICE_VRF_TABLE,
                                                    "",
                                                    "",

@@ -451,10 +451,10 @@ nm_dhcp_client_set_state(NMDhcpClient *self,
         watch_cleanup(self);
 
     /* The client may send same-state transitions for RENEW/REBIND events and
-	 * the lease may have changed, so handle same-state transitions for the
-	 * EXTENDED and BOUND states.  Ignore same-state transitions for other
-	 * events since the lease won't have changed and the state was already handled.
-	 */
+     * the lease may have changed, so handle same-state transitions for the
+     * EXTENDED and BOUND states.  Ignore same-state transitions for other
+     * events since the lease won't have changed and the state was already handled.
+     */
     if ((priv->state == new_state)
         && !NM_IN_SET(new_state, NM_DHCP_STATE_BOUND, NM_DHCP_STATE_EXTENDED))
         return;
@@ -741,8 +741,8 @@ bytearray_variant_to_string(NMDhcpClient *self, GVariant *value, const char *key
     array = g_variant_get_fixed_array(value, &length, 1);
 
     /* Since the DHCP options come through environment variables, they should
-	 * already be UTF-8 safe, but just make sure.
-	 */
+     * already be UTF-8 safe, but just make sure.
+     */
     str = g_string_sized_new(length);
     for (i = 0; i < length; i++) {
         c = array[i];
@@ -806,20 +806,20 @@ maybe_add_option(NMDhcpClient *self, GHashTable *hash, const char *key, GVariant
         g_hash_table_insert(hash, g_strdup(key), str_value);
 
         /* dhclient has no special labels for private dhcp options: it uses "unknown_xyz"
-		 * labels for that. We need to identify those to alias them to our "private_xyz"
-		 * format unused in the internal dchp plugins.
-		 */
+         * labels for that. We need to identify those to alias them to our "private_xyz"
+         * format unused in the internal dchp plugins.
+         */
         if ((priv_opt_num = label_is_unknown_xyz(key)) > 0) {
             gs_free guint8 *check_val = NULL;
             char *          hex_str   = NULL;
             gsize           len;
 
             /* dhclient passes values from dhcp private options in its own "string" format:
-			 * if the raw values are printable as ascii strings, it will pass the string
-			 * representation; if the values are not printable as an ascii string, it will
-			 * pass a string displaying the hex values (hex string). Try to enforce passing
-			 * always an hex string, converting string representation if needed.
-			 */
+             * if the raw values are printable as ascii strings, it will pass the string
+             * representation; if the values are not printable as an ascii string, it will
+             * pass a string displaying the hex values (hex string). Try to enforce passing
+             * always an hex string, converting string representation if needed.
+             */
             check_val = nm_utils_hexstr2bin_alloc(str_value, FALSE, TRUE, ":", 0, &len);
             hex_str   = nm_utils_bin2hexstr_full(check_val ?: (guint8 *) str_value,
                                                check_val ? len : strlen(str_value),
@@ -912,8 +912,8 @@ nm_dhcp_client_handle_event(gpointer      unused,
 
     if (!IN6_IS_ADDR_UNSPECIFIED(&prefix.address)) {
         /* If we got an IPv6 prefix to delegate, we don't change the state
-		 * of the DHCP client instance. Instead, we just signal the prefix
-		 * to the device. */
+         * of the DHCP client instance. Instead, we just signal the prefix
+         * to the device. */
         nm_dhcp_client_emit_ipv6_prefix_delegated(self, &prefix);
     } else {
         /* Fail if no valid IP config was received */
@@ -1129,9 +1129,9 @@ dispose(GObject *object)
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
     /* Stopping the client is left up to the controlling device
-	 * explicitly since we may want to quit NetworkManager but not terminate
-	 * the DHCP client.
-	 */
+     * explicitly since we may want to quit NetworkManager but not terminate
+     * the DHCP client.
+     */
 
     nm_assert(c_list_is_empty(&self->dhcp_client_lst));
 

@@ -282,8 +282,8 @@ nm_strcmp0(const char *s1, const char *s2)
     int c;
 
     /* like g_strcmp0(), but this is inlinable.
-	 *
-	 * Also, it is guaranteed to return either -1, 0, or 1. */
+     *
+     * Also, it is guaranteed to return either -1, 0, or 1. */
     if (s1 == s2)
         return 0;
     if (!s1)
@@ -686,13 +686,13 @@ _nm_auto_fclose(FILE **pfd)
             *_pp = NULL;                                                             \
                                                                                      \
             /* g_clear_pointer() assigns @destroy first to a local variable, so that
-			 * you can call "g_clear_pointer (pp, (GDestroyNotify) destroy);" without
-			 * gcc emitting a warning. We don't do that, hence, you cannot cast
-			 * "destroy" first.
-			 *
-			 * On the upside: you are not supposed to cast fcn, because the pointer
-			 * types are preserved. If you really need a cast, you should cast @pp.
-			 * But that is hardly ever necessary. */ \
+             * you can call "g_clear_pointer (pp, (GDestroyNotify) destroy);" without
+             * gcc emitting a warning. We don't do that, hence, you cannot cast
+             * "destroy" first.
+             *
+             * On the upside: you are not supposed to cast fcn, because the pointer
+             * types are preserved. If you really need a cast, you should cast @pp.
+             * But that is hardly ever necessary. */ \
             (destroy)(_p);                                                           \
                                                                                      \
             _changed = true;                                                         \

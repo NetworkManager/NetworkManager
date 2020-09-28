@@ -381,16 +381,16 @@ nmt_widget_list_class_init(NmtWidgetListClass *list_class)
     /* signals */
 
     /**
-	 * NmtNewtWidget::add-clicked:
-	 * @list: the #NmtNewtWidgetList
-	 *
-	 * Emitted when the user clicks the "Add" button. The caller can
-	 * decide whether or not to add a new widget, and call
-	 * nmt_widget_list_set_length() with the new length if so.
-	 *
-	 * FIXME: the "Add" button should be insensitive if it's
-	 * not going to work.
-	 */
+     * NmtNewtWidget::add-clicked:
+     * @list: the #NmtNewtWidgetList
+     *
+     * Emitted when the user clicks the "Add" button. The caller can
+     * decide whether or not to add a new widget, and call
+     * nmt_widget_list_set_length() with the new length if so.
+     *
+     * FIXME: the "Add" button should be insensitive if it's
+     * not going to work.
+     */
     signals[ADD_CLICKED] = g_signal_new("add-clicked",
                                         G_OBJECT_CLASS_TYPE(object_class),
                                         G_SIGNAL_RUN_FIRST,
@@ -401,17 +401,17 @@ nmt_widget_list_class_init(NmtWidgetListClass *list_class)
                                         G_TYPE_NONE,
                                         0);
     /**
-	 * NmtNewtWidget::remove-clicked:
-	 * @list: the #NmtNewtWidgetList
-	 * @n: the widget being removed
-	 *
-	 * Emitted when the user clicks one of the "Remove" buttons. The
-	 * caller can decide whether or not to remove the widget, and
-	 * call nmt_widget_list_set_length() with the new length if so.
-	 *
-	 * FIXME: the "Remove" button should be insensitive if it's not
-	 * going to work.
-	 */
+     * NmtNewtWidget::remove-clicked:
+     * @list: the #NmtNewtWidgetList
+     * @n: the widget being removed
+     *
+     * Emitted when the user clicks one of the "Remove" buttons. The
+     * caller can decide whether or not to remove the widget, and
+     * call nmt_widget_list_set_length() with the new length if so.
+     *
+     * FIXME: the "Remove" button should be insensitive if it's not
+     * going to work.
+     */
     signals[REMOVE_CLICKED] = g_signal_new("remove-clicked",
                                            G_OBJECT_CLASS_TYPE(object_class),
                                            G_SIGNAL_RUN_FIRST,
@@ -426,10 +426,10 @@ nmt_widget_list_class_init(NmtWidgetListClass *list_class)
     /* properties */
 
     /**
-	 * NmtWidgetList:create-callback:
-	 *
-	 * Callback called to create a new widget.
-	 */
+     * NmtWidgetList:create-callback:
+     *
+     * Callback called to create a new widget.
+     */
     g_object_class_install_property(
         object_class,
         PROP_CREATE_CALLBACK,
@@ -438,29 +438,29 @@ nmt_widget_list_class_init(NmtWidgetListClass *list_class)
                              "",
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtWidgetList:user-data:
-	 *
-	 * User data for #NmtWidgetList:create-callback
-	 */
+     * NmtWidgetList:user-data:
+     *
+     * User data for #NmtWidgetList:create-callback
+     */
     g_object_class_install_property(
         object_class,
         PROP_USER_DATA,
         g_param_spec_pointer("user-data", "", "", G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtWidgetList:destroy-notify:
-	 *
-	 * #GDestroyNotify for #NmtWidgetList:user-data
-	 */
+     * NmtWidgetList:destroy-notify:
+     *
+     * #GDestroyNotify for #NmtWidgetList:user-data
+     */
     g_object_class_install_property(
         object_class,
         PROP_DESTROY_NOTIFY,
         g_param_spec_pointer("destroy-notify", "", "", G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtWidgetList:length:
-	 *
-	 * The length of the widget list; changing this value will add or
-	 * remove widgets from the list.
-	 */
+     * NmtWidgetList:length:
+     *
+     * The length of the widget list; changing this value will add or
+     * remove widgets from the list.
+     */
     g_object_class_install_property(object_class,
                                     PROP_LENGTH,
                                     g_param_spec_int("length",
@@ -471,11 +471,11 @@ nmt_widget_list_class_init(NmtWidgetListClass *list_class)
                                                      0,
                                                      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtWidgetList:empty-widget:
-	 *
-	 * If non-%NULL, this widget will be displayed when there are
-	 * no "real" widgets in the list.
-	 */
+     * NmtWidgetList:empty-widget:
+     *
+     * If non-%NULL, this widget will be displayed when there are
+     * no "real" widgets in the list.
+     */
     g_object_class_install_property(
         object_class,
         PROP_EMPTY_WIDGET,

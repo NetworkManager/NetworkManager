@@ -152,12 +152,12 @@ nm_device_ovs_bridge_class_init(NMDeviceOvsBridgeClass *klass)
     device_class->get_setting_type      = get_setting_type;
 
     /**
-	 * NMDeviceOvsBridge:slaves: (type GPtrArray(NMDevice))
-	 *
-	 * Gets the ports currently enslaved to the device.
-	 *
-	 * Since: 1.22
-	 */
+     * NMDeviceOvsBridge:slaves: (type GPtrArray(NMDevice))
+     *
+     * Gets the ports currently enslaved to the device.
+     *
+     * Since: 1.22
+     */
     obj_properties[PROP_SLAVES] = g_param_spec_boxed(NM_DEVICE_OVS_BRIDGE_SLAVES,
                                                      "",
                                                      "",

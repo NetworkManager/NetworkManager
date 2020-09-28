@@ -83,12 +83,12 @@ build_signal_parameters(void)
             continue;
 
         /* Value passed as a byte array rather than a string, because there are
-		 * no character encoding guarantees with DHCP, and D-Bus requires
-		 * strings to be UTF-8.
-		 *
-		 * Note that we can't use g_variant_new_bytestring() here, because that
-		 * includes the trailing '\0'. (??!?)
-		 */
+         * no character encoding guarantees with DHCP, and D-Bus requires
+         * strings to be UTF-8.
+         *
+         * Note that we can't use g_variant_new_bytestring() here, because that
+         * includes the trailing '\0'. (??!?)
+         */
         g_variant_builder_add(&builder,
                               "{sv}",
                               name,
@@ -128,10 +128,10 @@ main(int argc, char *argv[])
     gint64                     time_end;
 
     /* Connecting to the unix socket can fail with EAGAIN if there are too
-	 * many pending connections and the server can't accept them in time
-	 * before reaching backlog capacity. Ideally the server should increase
-	 * the backlog length, but GLib doesn't provide a way to change it for a
-	 * GDBus server. Retry for up to 5 seconds in case of failure. */
+     * many pending connections and the server can't accept them in time
+     * before reaching backlog capacity. Ideally the server should increase
+     * the backlog length, but GLib doesn't provide a way to change it for a
+     * GDBus server. Retry for up to 5 seconds in case of failure. */
     time_start = g_get_monotonic_time();
     time_end   = time_start + (5000 * 1000L);
     try_count  = 0;
@@ -193,10 +193,10 @@ do_notify:
             gint64 interval;
 
             /* I am not sure that a race can actually happen, as we register the object
-			 * on the server side during GDBusServer:new-connection signal.
-			 *
-			 * However, there was also a race for subscribing to an event, so let's just
-			 * do some retry. */
+             * on the server side during GDBusServer:new-connection signal.
+             *
+             * However, there was also a race for subscribing to an event, so let's just
+             * do some retry. */
             if (remaining_time > 0) {
                 _LOGi("failure to call notify: %s (retry %u)", error->message, try_count);
                 interval = NM_CLAMP((gint64)(100L * (1L << NM_MIN(try_count, 31))), 5000, 25000);
@@ -209,9 +209,9 @@ do_notify:
         g_clear_error(&error);
 
         /* for backward compatibility, try to emit the signal. There is no stable
-		 * API between the dhcp-helper and NetworkManager. However, while upgrading
-		 * the NetworkManager package, a newer helper might want to notify an
-		 * older server, which still uses the "Event". */
+         * API between the dhcp-helper and NetworkManager. However, while upgrading
+         * the NetworkManager package, a newer helper might want to notify an
+         * older server, which still uses the "Event". */
         if (!g_dbus_connection_emit_signal(connection,
                                            NULL,
                                            "/",

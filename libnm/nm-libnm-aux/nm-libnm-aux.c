@@ -97,10 +97,10 @@ nmc_client_new_waitsync(GCancellable *cancellable,
 
 #if NM_MORE_ASSERTS > 10
     /* The sync initialization of NMClient is generally a bad idea, because it
-	 * brings the overhead of an additional GMainContext. Anyway, since our own
-	 * code no longer uses that, we hardly test those code paths. But they should
-	 * work just the same. Randomly use instead the sync initialization in a debug
-	 * build... */
+     * brings the overhead of an additional GMainContext. Anyway, since our own
+     * code no longer uses that, we hardly test those code paths. But they should
+     * work just the same. Randomly use instead the sync initialization in a debug
+     * build... */
     if ((g_random_int() % 2) == 0) {
         gboolean success;
 
@@ -109,7 +109,7 @@ nmc_client_new_waitsync(GCancellable *cancellable,
         va_end(ap);
 
         /* iterate the context at least once, just so that the behavior from POV of the
-		 * caller is roughly the same. */
+         * caller is roughly the same. */
         g_main_context_iteration(nm_client_get_main_context(nmc), FALSE);
 
         success = g_initable_init(G_INITABLE(nmc), cancellable, error);

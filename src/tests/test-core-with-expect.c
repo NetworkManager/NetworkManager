@@ -332,7 +332,7 @@ do_test_nm_utils_kill_child(void)
     test_nm_utils_kill_child_sync_do("test-s-3-1", pid3s, SIGTERM, 3000, TRUE, &expected_exit_47);
 
     /* pid3s should not be a valid process, hence the call should fail. Note, that there
-	 * is a race here. */
+     * is a race here. */
     NMTST_EXPECT_NM_ERROR(
         "kill child process 'test-s-3-2' (*): failed due to unexpected return value -1 by waitpid "
         "(No child processes, 10) after sending no signal (0)");
@@ -395,7 +395,7 @@ do_test_nm_utils_kill_child(void)
     test_nm_utils_kill_child_async_do("test-a-3-1", pid3a, SIGTERM, 3000, TRUE, &expected_exit_47);
 
     /* pid3a should not be a valid process, hence the call should fail. Note, that there
-	 * is a race here. */
+     * is a race here. */
     NMTST_EXPECT_NM_ERROR(
         "kill child process 'test-a-3-2' (*): failed due to unexpected return value -1 by waitpid "
         "(No child processes, 10) after sending no signal (0)");
@@ -425,12 +425,12 @@ test_nm_utils_kill_child(void)
     pid_t child_pid;
 
     /* the tests spawns several processes, we want to clean them up
-	 * by sending a SIGKILL to the process group.
-	 *
-	 * The current process might be a session leader, which prevents it from
-	 * creating a new process group. Hence, first fork and let the child
-	 * create a new process group, run the tests, and kill all pending
-	 * processes. */
+     * by sending a SIGKILL to the process group.
+     *
+     * The current process might be a session leader, which prevents it from
+     * creating a new process group. Hence, first fork and let the child
+     * create a new process group, run the tests, and kill all pending
+     * processes. */
     child_pid = fork();
     g_assert(child_pid >= 0);
 

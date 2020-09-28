@@ -112,8 +112,8 @@ static void
 parent_mtu_maybe_changed(NMDevice *parent, GParamSpec *pspec, gpointer user_data)
 {
     /* the MTU of a MACsec device is limited by the parent's MTU.
-	 *
-	 * When the parent's MTU changes, try to re-set the MTU. */
+     *
+     * When the parent's MTU changes, try to re-set the MTU. */
     nm_device_commit_mtu(user_data);
 }
 
@@ -131,8 +131,8 @@ parent_changed_notify(NMDevice *device,
         ->parent_changed_notify(device, old_ifindex, old_parent, new_ifindex, new_parent);
 
     /*  note that @self doesn't have to clear @parent_state_id on dispose,
-	 *  because NMDevice's dispose() will unset the parent, which in turn calls
-	 *  parent_changed_notify(). */
+     *  because NMDevice's dispose() will unset the parent, which in turn calls
+     *  parent_changed_notify(). */
     nm_clear_g_signal_handler(old_parent, &priv->parent_state_id);
     nm_clear_g_signal_handler(old_parent, &priv->parent_mtu_id);
 
@@ -358,9 +358,9 @@ supplicant_lnk_timeout_cb(gpointer user_data)
     }
 
     /* Disconnect event during initial authentication and credentials
-	 * ARE checked - we are likely to have wrong key.  Ask the user for
-	 * another one.
-	 */
+     * ARE checked - we are likely to have wrong key.  Ask the user for
+     * another one.
+     */
     if (nm_device_get_state(dev) != NM_DEVICE_STATE_CONFIG)
         goto time_out;
 
@@ -403,8 +403,8 @@ supplicant_iface_state_is_completed(NMDeviceMacsec *self, NMSupplicantInterfaceS
         nm_device_bring_up(NM_DEVICE(self), TRUE, NULL);
 
         /* If this is the initial association during device activation,
-		 * schedule the next activation stage.
-		 */
+         * schedule the next activation stage.
+         */
         if (nm_device_get_state(NM_DEVICE(self)) == NM_DEVICE_STATE_CONFIG) {
             _LOGI(LOGD_DEVICE, "Activation: Stage 2 of 5 (Device Configure) successful.");
             nm_device_activate_schedule_stage3_ip_config_start(NM_DEVICE(self));
@@ -545,8 +545,8 @@ supplicant_connection_timeout_cb(gpointer user_data)
     priv->supplicant.con_timeout_id = 0;
 
     /* Authentication failed; either driver problems, the encryption key is
-	 * wrong, the passwords or certificates were wrong or the Ethernet switch's
-	 * port is not configured for 802.1x. */
+     * wrong, the passwords or certificates were wrong or the Ethernet switch's
+     * port is not configured for 802.1x. */
     _LOGW(LOGD_DEVICE, "Activation: (macsec) association took too long.");
 
     supplicant_interface_release(self);
@@ -556,9 +556,9 @@ supplicant_connection_timeout_cb(gpointer user_data)
     g_return_val_if_fail(connection, G_SOURCE_REMOVE);
 
     /* Ask for new secrets only if we've never activated this connection
-	 * before.  If we've connected before, don't bother the user with dialogs,
-	 * just retry or fail, and if we never connect the user can fix the
-	 * password somewhere else. */
+     * before.  If we've connected before, don't bother the user with dialogs,
+     * just retry or fail, and if we never connect the user can fix the
+     * password somewhere else. */
     if (nm_settings_connection_get_timestamp(connection, &timestamp))
         new_secrets = !timestamp;
 

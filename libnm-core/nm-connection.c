@@ -281,9 +281,9 @@ validate_permissions_type(GVariant *variant, GError **error)
     gboolean  valid = TRUE;
 
     /* Ensure the connection::permissions item (if present) is the correct
-	 * type, otherwise the g_object_set() will throw a warning and ignore the
-	 * error, leaving us with no permissions.
-	 */
+     * type, otherwise the g_object_set() will throw a warning and ignore the
+     * error, leaving us with no permissions.
+     */
     s_con = g_variant_lookup_value(variant,
                                    NM_SETTING_CONNECTION_SETTING_NAME,
                                    NM_VARIANT_TYPE_SETTING);
@@ -414,20 +414,20 @@ _nm_connection_replace_settings(NMConnection *      connection,
         changed = (settings != NULL);
 
     /* Note: @settings might be empty in which case the connection
-	 * has no NMSetting instances... which is fine, just something
-	 * to be aware of. */
+     * has no NMSetting instances... which is fine, just something
+     * to be aware of. */
     for (s = settings; s; s = s->next)
         _nm_connection_add_setting(connection, s->data);
 
     g_slist_free(settings);
 
     /* If verification/normalization fails, the original connection
-	 * is already lost. From an API point of view, it would be nicer
-	 * not to touch the input argument if we fail at the end.
-	 * However, that would require creating a temporary connection
-	 * to validate it first. As none of the caller cares about the
-	 * state of the @connection when normalization fails, just do it
-	 * this way. */
+     * is already lost. From an API point of view, it would be nicer
+     * not to touch the input argument if we fail at the end.
+     * However, that would require creating a temporary connection
+     * to validate it first. As none of the caller cares about the
+     * state of the @connection when normalization fails, just do it
+     * this way. */
     if (NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_NORMALIZE))
         success = nm_connection_normalize(connection, NULL, NULL, error);
     else
@@ -481,14 +481,14 @@ nm_connection_replace_settings_from_connection(NMConnection *connection,
     g_return_if_fail(NM_IS_CONNECTION(new_connection));
 
     /* When 'connection' and 'new_connection' are the same object simply return
-	 * in order not to destroy 'connection'.
-	 */
+     * in order not to destroy 'connection'.
+     */
     if (connection == new_connection)
         return;
 
     /* No need to validate permissions like nm_connection_replace_settings()
-	 * since we're dealing with an NMConnection which has already done that.
-	 */
+     * since we're dealing with an NMConnection which has already done that.
+     */
 
     priv     = NM_CONNECTION_GET_PRIVATE(connection);
     new_priv = NM_CONNECTION_GET_PRIVATE(new_connection);
@@ -759,7 +759,7 @@ _nm_connection_detect_bluetooth_type(NMConnection *self)
     }
 
     /* NULL means the connection is not a bluetooth type, or it needs
-	 * no normalization, as the type is set explicitly. */
+     * no normalization, as the type is set explicitly. */
     return NULL;
 }
 
@@ -969,8 +969,8 @@ _normalize_ip_config(NMConnection *self, GHashTable *parameters)
             }
 
             /* If no IP6 setting was specified, then assume that means IP6 config is
-			 * allowed to fail.
-			 */
+             * allowed to fail.
+             */
             setting = nm_setting_ip6_config_new();
 
             g_object_set(setting,
@@ -1431,12 +1431,12 @@ _nm_connection_verify(NMConnection *connection, GError **error)
         nm_assert(NM_IS_SETTING_CONNECTION(settings[i]) == (i == 0));
 
         /* verify all settings. We stop if we find the first non-normalizable
-		 * @NM_SETTING_VERIFY_ERROR. If we find normalizable errors we continue
-		 * but remember the error to return it to the user.
-		 * @NM_SETTING_VERIFY_NORMALIZABLE_ERROR has a higher priority then
-		 * @NM_SETTING_VERIFY_NORMALIZABLE, so, if we encounter such an error type,
-		 * we remember it instead (to return it as output).
-		 **/
+         * @NM_SETTING_VERIFY_ERROR. If we find normalizable errors we continue
+         * but remember the error to return it to the user.
+         * @NM_SETTING_VERIFY_NORMALIZABLE_ERROR has a higher priority then
+         * @NM_SETTING_VERIFY_NORMALIZABLE, so, if we encounter such an error type,
+         * we remember it instead (to return it as output).
+         **/
         verify_result = _nm_setting_verify(settings[i], connection, &verify_error);
         if (verify_result == NM_SETTING_VERIFY_NORMALIZABLE
             || verify_result == NM_SETTING_VERIFY_NORMALIZABLE_ERROR) {
@@ -1475,7 +1475,7 @@ _nm_connection_verify(NMConnection *connection, GError **error)
                 g_prefix_error(&normalizable_error, "%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME);
 
                 /* having a master without IP config was not a verify() error, accept
-				 * it for backward compatibility. */
+                 * it for backward compatibility. */
                 normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE;
             }
         } else {
@@ -1500,7 +1500,7 @@ _nm_connection_verify(NMConnection *connection, GError **error)
                 g_prefix_error(&normalizable_error, "%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME);
 
                 /* having a master without IP config was not a verify() error, accept
-				 * it for backward compatibility. */
+                 * it for backward compatibility. */
                 normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE;
             }
         } else {
@@ -1525,7 +1525,7 @@ _nm_connection_verify(NMConnection *connection, GError **error)
                 g_prefix_error(&normalizable_error, "%s: ", NM_SETTING_PROXY_SETTING_NAME);
 
                 /* having a master without proxy config was not a verify() error, accept
-				 * it for backward compatibility. */
+                 * it for backward compatibility. */
                 normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE;
             }
         } else {
@@ -1590,15 +1590,15 @@ _connection_normalize(NMConnection *connection,
 
 #if NM_MORE_ASSERTS > 10
     /* only call this _nm_connection_verify() confirms that the connection
-	 * requires normalization and is normalizable. */
+     * requires normalization and is normalizable. */
     nm_assert(NM_IN_SET(_nm_connection_verify(connection, NULL),
                         NM_SETTING_VERIFY_NORMALIZABLE,
                         NM_SETTING_VERIFY_NORMALIZABLE_ERROR));
 #endif
 
     /* Try to perform all kind of normalizations on the settings to fix it.
-	 * We only do this, after verifying that the connection contains no un-normalizable
-	 * errors, because in that case we rather fail without touching the settings. */
+     * We only do this, after verifying that the connection contains no un-normalizable
+     * errors, because in that case we rather fail without touching the settings. */
 
     was_modified = FALSE;
 
@@ -1633,8 +1633,8 @@ _connection_normalize(NMConnection *connection,
 
     if (success != NM_SETTING_VERIFY_SUCCESS) {
         /* we would expect, that after normalization, the connection can be verified.
-		 * Also treat NM_SETTING_VERIFY_NORMALIZABLE as failure, because there is something
-		 * odd going on. */
+         * Also treat NM_SETTING_VERIFY_NORMALIZABLE as failure, because there is something
+         * odd going on. */
         if (error && !*error) {
             g_set_error_literal(error,
                                 NM_CONNECTION_ERROR,
@@ -1755,7 +1755,7 @@ _nm_connection_ensure_normalized(NMConnection * connection,
         if (!allow_modify) {
             if (!out_connection_clone) {
                 /* even NM_SETTING_VERIFY_NORMALIZABLE is treated as an error. We could normalize,
-				 * but are not allowed to (and no out argument is provided for cloning).  */
+                 * but are not allowed to (and no out argument is provided for cloning).  */
                 g_propagate_error(error, g_steal_pointer(&local));
                 return FALSE;
             }
@@ -1899,8 +1899,8 @@ nm_connection_update_secrets(NMConnection *connection,
             setting_dict = g_variant_lookup_value(secrets, setting_name, NM_VARIANT_TYPE_SETTING);
             if (!setting_dict) {
                 /* The connection dictionary didn't contain any secrets for
-				 * @setting_name; just return success.
-				 */
+                 * @setting_name; just return success.
+                 */
                 return TRUE;
             }
         }
@@ -2133,18 +2133,18 @@ _nm_connection_for_each_secret(NMConnection *                 self,
     const char *    setting_name;
 
     /* This function, given a dict of dicts representing new secrets of
-	 * an NMConnection, walks through each toplevel dict (which represents a
-	 * NMSetting), and for each setting, walks through that setting dict's
-	 * properties.  For each property that's a secret, it will check that
-	 * secret's flags in the backing NMConnection object, and call a supplied
-	 * callback.
-	 *
-	 * The one complexity is that the VPN setting's 'secrets' property is
-	 * *also* a dict (since the key/value pairs are arbitrary and known
-	 * only to the VPN plugin itself).  That means we have three levels of
-	 * dicts that we potentially have to traverse here.  The differences
-	 * are handled by the virtual for_each_secret() function.
-	 */
+     * an NMConnection, walks through each toplevel dict (which represents a
+     * NMSetting), and for each setting, walks through that setting dict's
+     * properties.  For each property that's a secret, it will check that
+     * secret's flags in the backing NMConnection object, and call a supplied
+     * callback.
+     *
+     * The one complexity is that the VPN setting's 'secrets' property is
+     * *also* a dict (since the key/value pairs are arbitrary and known
+     * only to the VPN plugin itself).  That means we have three levels of
+     * dicts that we potentially have to traverse here.  The differences
+     * are handled by the virtual for_each_secret() function.
+     */
 
     g_return_val_if_fail(callback, NULL);
 
@@ -2520,13 +2520,13 @@ _nm_connection_get_multi_connect(NMConnection *connection)
     const NMConnectionMultiConnect DEFAULT = NM_CONNECTION_MULTI_CONNECT_SINGLE;
 
     /* connection.multi_connect property cannot be specified via regular
-	 * connection defaults in NetworkManager.conf, because those are per-device,
-	 * and we need to determine the multi_connect independent of a particular
-	 * device.
-	 *
-	 * There is however still a default-value, so theoretically, the default
-	 * value could be specified in NetworkManager.conf. Just not as [connection*]
-	 * and indepdented of a device. */
+     * connection defaults in NetworkManager.conf, because those are per-device,
+     * and we need to determine the multi_connect independent of a particular
+     * device.
+     *
+     * There is however still a default-value, so theoretically, the default
+     * value could be specified in NetworkManager.conf. Just not as [connection*]
+     * and indepdented of a device. */
 
     s_con = nm_connection_get_setting_connection(connection);
     if (!s_con)
@@ -3333,14 +3333,14 @@ static void
 nm_connection_default_init(NMConnectionInterface *iface)
 {
     /**
-	 * NMConnection::secrets-updated:
-	 * @connection: the object on which the signal is emitted
-	 * @setting_name: the setting name of the #NMSetting for which secrets were
-	 * updated
-	 *
-	 * The ::secrets-updated signal is emitted when the secrets of a setting
-	 * have been changed.
-	 */
+     * NMConnection::secrets-updated:
+     * @connection: the object on which the signal is emitted
+     * @setting_name: the setting name of the #NMSetting for which secrets were
+     * updated
+     *
+     * The ::secrets-updated signal is emitted when the secrets of a setting
+     * have been changed.
+     */
     signals[SECRETS_UPDATED] = g_signal_new(NM_CONNECTION_SECRETS_UPDATED,
                                             NM_TYPE_CONNECTION,
                                             G_SIGNAL_RUN_FIRST,
@@ -3353,12 +3353,12 @@ nm_connection_default_init(NMConnectionInterface *iface)
                                             G_TYPE_STRING);
 
     /**
-	 * NMConnection::secrets-cleared:
-	 * @connection: the object on which the signal is emitted
-	 *
-	 * The ::secrets-cleared signal is emitted when the secrets of a connection
-	 * are cleared.
-	 */
+     * NMConnection::secrets-cleared:
+     * @connection: the object on which the signal is emitted
+     *
+     * The ::secrets-cleared signal is emitted when the secrets of a connection
+     * are cleared.
+     */
     signals[SECRETS_CLEARED] = g_signal_new(NM_CONNECTION_SECRETS_CLEARED,
                                             NM_TYPE_CONNECTION,
                                             G_SIGNAL_RUN_FIRST,
@@ -3370,13 +3370,13 @@ nm_connection_default_init(NMConnectionInterface *iface)
                                             0);
 
     /**
-	 * NMConnection::changed:
-	 * @connection: the object on which the signal is emitted
-	 *
-	 * The ::changed signal is emitted when any property of any property
-	 * (including secrets) of any setting of the connection is modified,
-	 * or when settings are added or removed.
-	 */
+     * NMConnection::changed:
+     * @connection: the object on which the signal is emitted
+     *
+     * The ::changed signal is emitted when any property of any property
+     * (including secrets) of any setting of the connection is modified,
+     * or when settings are added or removed.
+     */
     signals[CHANGED] = g_signal_new(NM_CONNECTION_CHANGED,
                                     NM_TYPE_CONNECTION,
                                     G_SIGNAL_RUN_FIRST,

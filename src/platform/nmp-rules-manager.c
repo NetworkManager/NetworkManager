@@ -66,18 +66,18 @@ typedef struct {
     CList            user_tag_lst;
 
     /* track_priority_val zero is special: those are weakly tracked rules.
-	 * That means: NetworkManager will restore them only if it removed them earlier.
-	 * But it will not remove or add them otherwise.
-	 *
-	 * Otherwise, the track_priority_val goes together with track_priority_present.
-	 * In case of one rule being tracked multiple times (with different priorities),
-	 * the one with higher priority wins. See _rules_obj_get_best_data().
-	 * Then, the winning present state either enforces that the rule is present
-	 * or absent.
-	 *
-	 * If a rules is not tracked at all, it is ignored by NetworkManager. Assuming
-	 * that it was added externally by the user. But unlike weakly tracked rules,
-	 * NM will *not* restore such rules if NetworkManager themself removed them. */
+     * That means: NetworkManager will restore them only if it removed them earlier.
+     * But it will not remove or add them otherwise.
+     *
+     * Otherwise, the track_priority_val goes together with track_priority_present.
+     * In case of one rule being tracked multiple times (with different priorities),
+     * the one with higher priority wins. See _rules_obj_get_best_data().
+     * Then, the winning present state either enforces that the rule is present
+     * or absent.
+     *
+     * If a rules is not tracked at all, it is ignored by NetworkManager. Assuming
+     * that it was added externally by the user. But unlike weakly tracked rules,
+     * NM will *not* restore such rules if NetworkManager themself removed them. */
     guint32 track_priority_val;
     bool    track_priority_present : 1;
 
@@ -90,14 +90,14 @@ typedef enum {
     CONFIG_STATE_REMOVED_BY_US = 2,
 
     /* ConfigState encodes whether the rule was touched by us at all (CONFIG_STATE_NONE).
-	 *
-	 * Maybe we would only need to track whether we touched the rule at all. But we
-	 * track it more in detail what we did: did we add it (CONFIG_STATE_ADDED_BY_US)
-	 * or did we remove it (CONFIG_STATE_REMOVED_BY_US)?
-	 * Finally, we need CONFIG_STATE_OWNED_BY_US, which means that we didn't actively
-	 * add/remove it, but whenever we are about to undo the add/remove, we need to do it.
-	 * In that sense, CONFIG_STATE_OWNED_BY_US is really just a flag that we unconditionally
-	 * force the state next time when necessary. */
+     *
+     * Maybe we would only need to track whether we touched the rule at all. But we
+     * track it more in detail what we did: did we add it (CONFIG_STATE_ADDED_BY_US)
+     * or did we remove it (CONFIG_STATE_REMOVED_BY_US)?
+     * Finally, we need CONFIG_STATE_OWNED_BY_US, which means that we didn't actively
+     * add/remove it, but whenever we are about to undo the add/remove, we need to do it.
+     * In that sense, CONFIG_STATE_OWNED_BY_US is really just a flag that we unconditionally
+     * force the state next time when necessary. */
     CONFIG_STATE_OWNED_BY_US = 3,
 } ConfigState;
 
@@ -106,15 +106,15 @@ typedef struct {
     CList            obj_lst_head;
 
     /* indicates whether we configured/removed the rule (during sync()). We need that, so
-	 * if the rule gets untracked, that we know to remove/restore it.
-	 *
-	 * This makes NMPRulesManager stateful (beyond the configuration that indicates
-	 * which rules are tracked).
-	 * After a restart, NetworkManager would no longer remember which rules were added
-	 * by us.
-	 *
-	 * That is partially fixed by NetworkManager taking over the rules that it
-	 * actively configures (see %NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG). */
+     * if the rule gets untracked, that we know to remove/restore it.
+     *
+     * This makes NMPRulesManager stateful (beyond the configuration that indicates
+     * which rules are tracked).
+     * After a restart, NetworkManager would no longer remember which rules were added
+     * by us.
+     *
+     * That is partially fixed by NetworkManager taking over the rules that it
+     * actively configures (see %NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG). */
     ConfigState config_state;
 } RulesObjData;
 
@@ -203,7 +203,7 @@ _rules_obj_get_best_data(RulesObjData *obj_data)
             if (rd_best->track_priority_val == rules_data->track_priority_val) {
                 if (rd_best->track_priority_present || !rules_data->track_priority_present) {
                     /* if the priorities are identical, then "present" wins over
-					 * "!present" (absent). */
+                     * "!present" (absent). */
                     continue;
                 }
             }
@@ -449,14 +449,14 @@ _rules_data_untrack(NMPRulesManager *self,
     if (make_owned_by_us) {
         if (obj_data->config_state == CONFIG_STATE_NONE) {
             /* we need to mark this entry that it requires a touch on the next
-			 * sync. */
+             * sync. */
             obj_data->config_state = CONFIG_STATE_OWNED_BY_US;
         }
     } else if (remove_user_tag_data && c_list_length_is(&rules_data->user_tag_lst, 1))
         g_hash_table_remove(self->by_user_tag, &rules_data->user_tag);
 
     /* if obj_data is marked to be "added_by_us" or "removed_by_us", we need to keep this entry
-	 * around for the next sync -- so that we can undo what we did earlier. */
+     * around for the next sync -- so that we can undo what we did earlier. */
     if (obj_data->config_state == CONFIG_STATE_NONE && c_list_length_is(&rules_data->obj_lst, 1))
         g_hash_table_remove(self->by_obj, &rules_data->obj);
 
@@ -563,7 +563,7 @@ nmp_rules_manager_sync(NMPRulesManager *self, gboolean keep_deleted_rules)
 
             if (!obj_data) {
                 /* this rule is not tracked. It was externally added, hence we
-				 * ignore it. */
+                 * ignore it. */
                 continue;
             }
 

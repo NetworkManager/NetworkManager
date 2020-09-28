@@ -295,8 +295,8 @@ _poke_name_owner_timeout_cb(gpointer user_data)
 
     if (priv->available == NM_TERNARY_DEFAULT) {
         /* the available flag usually only changes together with the name-owner.
-		 * However, if we tries to poke the service but failed to start it (with
-		 * timeout), was also set it as (hard) not available. */
+         * However, if we tries to poke the service but failed to start it (with
+         * timeout), was also set it as (hard) not available. */
         priv->available = NM_TERNARY_FALSE;
         nm_clear_g_source(&priv->available_reset_id);
         priv->available_reset_id = g_timeout_add_seconds(60, _available_reset_cb, self);
@@ -311,7 +311,7 @@ _poke_name_owner_timeout_cb(gpointer user_data)
 
     if (available_changed) {
         /* We delay the emitting of the notification after aborting all
-		 * create-iface handles. */
+         * create-iface handles. */
         g_signal_emit(self, signals[AVAILABLE_CHANGED], 0);
     }
 
@@ -334,7 +334,7 @@ _poke_name_owner_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         _LOGT("poke service \"%s\" succeeded", NM_WPAS_DBUS_SERVICE);
 
     /* in both cases, we react the same: we wait for the name owner to appear
-	 * or hit the timeout. */
+     * or hit the timeout. */
 }
 
 static void
@@ -387,8 +387,8 @@ _create_iface_complete(NMSupplMgrCreateIfaceHandle *handle,
 
     if (handle->shutdown_handle) {
         /* we have a pending CreateInterface request. We keep the handle
-		 * instance alive. This is to remove the device again, once the
-		 * request completes. */
+         * instance alive. This is to remove the device again, once the
+         * request completes. */
         return;
     }
 
@@ -467,7 +467,7 @@ _create_iface_dbus_call_get_interface_cb(GObject *source, GAsyncResult *result, 
             && _nm_dbus_error_has_name(error, NM_WPAS_ERROR_UNKNOWN_IFACE)
             && nm_platform_if_indextoname(NM_PLATFORM_GET, handle->ifindex, ifname)) {
             /* Before, supplicant told us the interface existed. Was there a race?
-			 * Try again. */
+             * Try again. */
             _LOGT("create-iface[" NM_HASH_OBFUSCATE_PTR_FMT
                   "]: D-Bus call failed to get interface. Try to create it again (ifname \"%s\")",
                   NM_HASH_OBFUSCATE_PTR(handle),
@@ -652,20 +652,20 @@ _create_iface_dbus_start(NMSupplicantManager *self, NMSupplMgrCreateIfaceHandle 
     }
 
     /* Our handle keeps @self alive. That means, when NetworkManager shall shut
-	 * down, it's the responsibility of the callers to cancel the handles,
-	 * to initiate coordinated shutdown.
-	 *
-	 * However, we now issue a CreateInterface call. Even if the handle gets cancelled
-	 * (because of shutdown, or because the caller is no longer interested in the
-	 * result), we don't want to cancel this request. Instead, we want to get
-	 * the interface path and remove it right away.
-	 *
-	 * That means, the D-Bus call cannot be cancelled (because we always care about
-	 * the result). Only the @handle can be cancelled, but parts of the handle will
-	 * stick around to complete the task.
-	 *
-	 * See also handle->shutdown_handle.
-	 */
+     * down, it's the responsibility of the callers to cancel the handles,
+     * to initiate coordinated shutdown.
+     *
+     * However, we now issue a CreateInterface call. Even if the handle gets cancelled
+     * (because of shutdown, or because the caller is no longer interested in the
+     * result), we don't want to cancel this request. Instead, we want to get
+     * the interface path and remove it right away.
+     *
+     * That means, the D-Bus call cannot be cancelled (because we always care about
+     * the result). Only the @handle can be cancelled, but parts of the handle will
+     * stick around to complete the task.
+     *
+     * See also handle->shutdown_handle.
+     */
     handle->name_owner  = nm_ref_string_ref(priv->name_owner);
     handle->cancellable = g_cancellable_new();
     _LOGT("create-iface[" NM_HASH_OBFUSCATE_PTR_FMT "]: creating interface (ifname \"%s\")...",
@@ -778,9 +778,9 @@ _create_iface_proceed_all(NMSupplicantManager *self, GError *error)
         CList alt_list;
 
         /* we move the handles we want to proceed to a alternative list.
-		 * That is, because we invoke callbacks to the caller, who might
-		 * create another request right away. We don't want to proceed
-		 * that one. */
+         * That is, because we invoke callbacks to the caller, who might
+         * create another request right away. We don't want to proceed
+         * that one. */
         c_list_init(&alt_list);
         c_list_splice(&alt_list, &priv->create_iface_lst_head);
 
@@ -796,7 +796,7 @@ _create_iface_proceed_all(NMSupplicantManager *self, GError *error)
     }
 
     /* start all the handles. This does not invoke callbacks, so the list of handles
-	 * cannot be modified while we iterate it. */
+     * cannot be modified while we iterate it. */
     c_list_for_each_entry (handle, &priv->create_iface_lst_head, create_iface_lst) {
         _LOGT("create-iface[" NM_HASH_OBFUSCATE_PTR_FMT "]: create interface on %s...",
               NM_HASH_OBFUSCATE_PTR(handle),
@@ -897,14 +897,14 @@ _dbus_get_capabilities_cb(GVariant *res, GError *error, gpointer user_data)
     g_clear_object(&priv->get_capabilities_cancellable);
 
     /* The supplicant only advertises global capabilities if the following
-	 * commit has been applied:
-	 *
-	 * commit 1634ac0654eba8d458640a115efc0a6cde3bac4d
-	 * Author: Dan Williams <dcbw@redhat.com>
-	 * Date:   Sat Sep 29 19:06:30 2012 +0300
-	 *
-	 * dbus: Add global capabilities property
-	 */
+     * commit has been applied:
+     *
+     * commit 1634ac0654eba8d458640a115efc0a6cde3bac4d
+     * Author: Dan Williams <dcbw@redhat.com>
+     * Date:   Sat Sep 29 19:06:30 2012 +0300
+     *
+     * dbus: Add global capabilities property
+     */
     _caps_set(priv, NM_SUPPL_CAP_TYPE_AP, NM_TERNARY_DEFAULT);
     _caps_set(priv, NM_SUPPL_CAP_TYPE_PMF, NM_TERNARY_DEFAULT);
     _caps_set(priv, NM_SUPPL_CAP_TYPE_FILS, NM_TERNARY_DEFAULT);
@@ -1159,16 +1159,16 @@ name_owner_changed(NMSupplicantManager *self, const char *name_owner, gboolean f
     }
 
     /* if supplicant is running (has a name owner), we may use it.
-	 * If this is the first time, and supplicant is not running, we
-	 * may also use it (and assume that we probably could D-Bus activate
-	 * it).
-	 *
-	 * Otherwise, somebody else stopped supplicant. It's no longer useable to
-	 * us and we block auto starting it. The user has to start the service...
-	 *
-	 * Actually, below we reset the hard block after a short timeout. This
-	 * causes the caller to notify that supplicant may now by around and
-	 * retry to D-Bus activate it. */
+     * If this is the first time, and supplicant is not running, we
+     * may also use it (and assume that we probably could D-Bus activate
+     * it).
+     *
+     * Otherwise, somebody else stopped supplicant. It's no longer useable to
+     * us and we block auto starting it. The user has to start the service...
+     *
+     * Actually, below we reset the hard block after a short timeout. This
+     * causes the caller to notify that supplicant may now by around and
+     * retry to D-Bus activate it. */
     if (priv->name_owner)
         available = NM_TERNARY_TRUE;
     else if (first_time)
@@ -1194,7 +1194,7 @@ name_owner_changed(NMSupplicantManager *self, const char *name_owner, gboolean f
     if (!priv->name_owner) {
         if (priv->poke_name_owner_timeout_id) {
             /* we are still poking for the service to start. Don't cancel
-			 * the pending create requests just yet. */
+             * the pending create requests just yet. */
         } else {
             gs_free_error GError *local_error = NULL;
 
@@ -1204,12 +1204,12 @@ name_owner_changed(NMSupplicantManager *self, const char *name_owner, gboolean f
         }
     } else {
         /* We got a name-owner, but we don't do anything. Instead let
-		 * _dbus_get_capabilities_cb() complete and kick of the create-iface
-		 * handles.
-		 *
-		 * Note that before the first name-owner change, all create-iface
-		 * requests fail right away. So we don't have to handle them here
-		 * (by starting to poke the service). */
+         * _dbus_get_capabilities_cb() complete and kick of the create-iface
+         * handles.
+         *
+         * Note that before the first name-owner change, all create-iface
+         * requests fail right away. So we don't have to handle them here
+         * (by starting to poke the service). */
     }
 
     if (available_changed)
@@ -1244,7 +1244,7 @@ name_owner_changed_cb(GDBusConnection *connection,
 
     if (name_owner && priv->name_owner) {
         /* odd, we directly switch from one name owner to the next. Can't allow that.
-		 * First clear the name owner before resetting. */
+         * First clear the name owner before resetting. */
         name_owner_changed(self, NULL, FALSE);
     }
     name_owner_changed(user_data, name_owner, FALSE);

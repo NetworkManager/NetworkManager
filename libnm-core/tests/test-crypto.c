@@ -326,9 +326,9 @@ test_pkcs8(gconstpointer test_data)
 
     test_is_pkcs12(path, TRUE);
     /* Note: NSS and gnutls < 3.5.4 don't support all the ciphers that openssl
-	 * can use with PKCS#8 and thus the password can't be actually verified with
-	 * such libraries.
-	 */
+     * can use with PKCS#8 and thus the password can't be actually verified with
+     * such libraries.
+     */
     test_load_pkcs8(path, password, -1);
 
     g_free(path);

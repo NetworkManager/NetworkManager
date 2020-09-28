@@ -76,8 +76,8 @@ iw_freq_to_uint32(const struct iw_freq *freq)
 {
     if (freq->e == 0) {
         /* Some drivers report channel not frequency.  Convert to a
-		 * frequency; but this assumes that the device is in b/g mode.
-		 */
+         * frequency; but this assumes that the device is in b/g mode.
+         */
         if ((freq->m >= 1) && (freq->m <= 13))
             return 2407 + (5 * freq->m);
         else if (freq->m == 14)
@@ -341,24 +341,24 @@ wext_qual_to_percent(const struct iw_quality *qual, const struct iw_quality *max
           max_qual->updated);
 
     /* Try using the card's idea of the signal quality first as long as it tells us what the max quality is.
-	 * Drivers that fill in quality values MUST treat them as percentages, ie the "Link Quality" MUST be
-	 * bounded by 0 and max_qual->qual, and MUST change in a linear fashion.  Within those bounds, drivers
-	 * are free to use whatever they want to calculate "Link Quality".
-	 */
+     * Drivers that fill in quality values MUST treat them as percentages, ie the "Link Quality" MUST be
+     * bounded by 0 and max_qual->qual, and MUST change in a linear fashion.  Within those bounds, drivers
+     * are free to use whatever they want to calculate "Link Quality".
+     */
     if ((max_qual->qual != 0) && !(max_qual->updated & IW_QUAL_QUAL_INVALID)
         && !(qual->updated & IW_QUAL_QUAL_INVALID))
         percent = (int) (100 * ((double) qual->qual / (double) max_qual->qual));
 
     /* If the driver doesn't specify a complete and valid quality, we have two options:
-	 *
-	 * 1) dBm: driver must specify max_qual->level = 0, and have valid values for
-	 *        qual->level and (qual->noise OR max_qual->noise)
-	 * 2) raw RSSI: driver must specify max_qual->level > 0, and have valid values for
-	 *        qual->level and max_qual->level
-	 *
-	 * This is the WEXT spec.  If this interpretation is wrong, I'll fix it.  Otherwise,
-	 * If drivers don't conform to it, they are wrong and need to be fixed.
-	 */
+     *
+     * 1) dBm: driver must specify max_qual->level = 0, and have valid values for
+     *        qual->level and (qual->noise OR max_qual->noise)
+     * 2) raw RSSI: driver must specify max_qual->level > 0, and have valid values for
+     *        qual->level and max_qual->level
+     *
+     * This is the WEXT spec.  If this interpretation is wrong, I'll fix it.  Otherwise,
+     * If drivers don't conform to it, they are wrong and need to be fixed.
+     */
 
     if ((max_qual->level == 0)
         && !(max_qual->updated & IW_QUAL_LEVEL_INVALID) /* Valid max_qual->level == 0 */
@@ -572,9 +572,9 @@ wext_get_range_ifname(NMWifiUtilsWext *wext,
     wrq.u.data.length  = sizeof(struct iw_range);
 
     /* Need to give some drivers time to recover after suspend/resume
-	 * (ex ipw3945 takes a few seconds to talk to its regulatory daemon;
-	 * see rh bz#362421)
-	 */
+     * (ex ipw3945 takes a few seconds to talk to its regulatory daemon;
+     * see rh bz#362421)
+     */
     while (i-- > 0) {
         if (ioctl(wext->fd, SIOCGIWRANGE, &wrq) == 0) {
             if (response_len)
@@ -650,9 +650,9 @@ wext_get_caps(NMWifiUtilsWext *wext, const char *ifname, struct iw_range *range)
     }
 
     /* There's no way to detect Ad-Hoc/AP mode support with WEXT
-	 * (other than actually trying to do it), so just assume that
-	 * Ad-Hoc is supported and AP isn't.
-	 */
+     * (other than actually trying to do it), so just assume that
+     * Ad-Hoc is supported and AP isn't.
+     */
     caps |= NM_WIFI_DEVICE_CAP_ADHOC;
 
     return caps;
@@ -744,9 +744,9 @@ nm_wifi_utils_wext_new(int ifindex, gboolean check_scan)
     }
 
     /* Check for the ability to scan specific SSIDs.  Until the scan_capa
-	 * field gets added to wireless-tools, need to work around that by casting
-	 * to the custom structure.
-	 */
+     * field gets added to wireless-tools, need to work around that by casting
+     * to the custom structure.
+     */
     scan_capa_range = (struct iw_range_with_scan_capa *) &range;
     if (scan_capa_range->scan_capa & NM_IW_SCAN_CAPA_ESSID) {
         _LOGI(LOGD_PLATFORM | LOGD_WIFI,
@@ -785,14 +785,14 @@ nm_wifi_utils_wext_is_wifi(const char *iface)
     gboolean     is_wifi = FALSE;
 
     /* performing an ioctl on a non-existing name may cause the automatic
-	 * loading of kernel modules, which should be avoided.
-	 *
-	 * Usually, we should thus make sure that an interface with this name
-	 * exists.
-	 *
-	 * Note that wifi_wext_is_wifi() has only one caller which just verified
-	 * that an interface with this name exists.
-	 */
+     * loading of kernel modules, which should be avoided.
+     *
+     * Usually, we should thus make sure that an interface with this name
+     * exists.
+     *
+     * Note that wifi_wext_is_wifi() has only one caller which just verified
+     * that an interface with this name exists.
+     */
 
     fd = socket(PF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
     if (fd >= 0) {

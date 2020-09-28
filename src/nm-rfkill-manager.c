@@ -217,8 +217,8 @@ recheck_killswitches(NMRfkillManager *self)
     for (i = 0; i < RFKILL_TYPE_MAX; i++) {
         if (platform_checked[i] == TRUE) {
             /* blocked platform switch state overrides device state, otherwise
-			 * let the device state stand. (bgo #655773)
-			 */
+             * let the device state stand. (bgo #655773)
+             */
             if (platform_states[i] != RFKILL_UNBLOCKED)
                 poll_states[i] = platform_states[i];
         }

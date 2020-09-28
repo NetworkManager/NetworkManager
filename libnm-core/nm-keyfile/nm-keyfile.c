@@ -328,13 +328,13 @@ build_route(KeyfileReaderInfo *info,
     if (gateway_str && gateway_str[0]) {
         if (!nm_utils_ipaddr_is_valid(family, gateway_str)) {
             /* Try workaround for routes written by broken keyfile writer.
-			 * Due to bug bgo#719851, an older version of writer would have
-			 * written "a:b:c:d::/plen,metric" if the gateway was ::, instead
-			 * of "a:b:c:d::/plen,,metric" or "a:b:c:d::/plen,::,metric"
-			 * Try workaround by interpreting gateway_str as metric to accept such
-			 * invalid routes. This broken syntax should not be not officially
-			 * supported.
-			 **/
+             * Due to bug bgo#719851, an older version of writer would have
+             * written "a:b:c:d::/plen,metric" if the gateway was ::, instead
+             * of "a:b:c:d::/plen,,metric" or "a:b:c:d::/plen,::,metric"
+             * Try workaround by interpreting gateway_str as metric to accept such
+             * invalid routes. This broken syntax should not be not officially
+             * supported.
+             **/
             if (family == AF_INET6 && !metric_str
                 && get_one_int(NULL, NULL, NULL, gateway_str, G_MAXUINT32, &u32)) {
                 metric      = u32;
@@ -448,10 +448,10 @@ openconnect_fix_secret_flags(NMSetting *setting)
     NMSettingSecretFlags flags;
 
     /* Huge hack.  There were some openconnect changes that needed to happen
-	 * pretty late, too late to get into distros.  Migration has already
-	 * happened for many people, and their secret flags are wrong.  But we
-	 * don't want to require re-migration, so we have to fix it up here. Ugh.
-	 */
+     * pretty late, too late to get into distros.  Migration has already
+     * happened for many people, and their secret flags are wrong.  But we
+     * don't want to require re-migration, so we have to fix it up here. Ugh.
+     */
 
     if (!NM_IS_SETTING_VPN(setting))
         return;
@@ -728,9 +728,9 @@ static gboolean
 _build_list_data_is_shadowed(const BuildListData *build_list, gsize build_list_len, gsize idx)
 {
     /* the keyfile contains duplicate keys, which are both returned
-	 * by g_key_file_get_keys() (WHY??).
-	 *
-	 * Skip the earlier one. */
+     * by g_key_file_get_keys() (WHY??).
+     *
+     * Skip the earlier one. */
     return idx + 1 < build_list_len && build_list[idx].key_idx == build_list[idx + 1].key_idx
            && build_list[idx].key_type == build_list[idx + 1].key_type
            && nm_streq(build_list[idx].s_key, build_list[idx + 1].s_key);
@@ -758,7 +758,7 @@ _build_list_match_key_w_name_impl(const char *key,
     }
 
     /* if base_name is followed by a zero, then it must be
-	 * only a zero, nothing else. */
+     * only a zero, nothing else. */
     if (key[0] == '0') {
         if (key[1] != '\0')
             return FALSE;
@@ -1232,20 +1232,20 @@ get_bytes(KeyfileReaderInfo *info,
     GBytes *                  result;
 
     /* New format: just a string
-	 * Old format: integer list; e.g. 11;25;38;
-	 */
+     * Old format: integer list; e.g. 11;25;38;
+     */
     tmp_string = nm_keyfile_plugin_kf_get_string(info->keyfile, setting_name, key, NULL);
     if (!tmp_string)
         return NULL;
 
     /* if the string is empty, we return an empty GBytes array.
-	 * Note that for NM_SETTING_802_1X_PASSWORD_RAW both %NULL and
-	 * an empty GBytes are valid, and shall be destinguished. */
+     * Note that for NM_SETTING_802_1X_PASSWORD_RAW both %NULL and
+     * an empty GBytes are valid, and shall be destinguished. */
     if (!tmp_string[0]) {
         /* note that even if @zero_terminate is TRUE, we return an empty
-		 * byte-array. The reason is that zero_terminate is there to terminate
-		 * *valid* strings. It's not there to terminated invalid (empty) strings.
-		 */
+         * byte-array. The reason is that zero_terminate is there to terminate
+         * *valid* strings. It's not there to terminated invalid (empty) strings.
+         */
         return g_bytes_new_static("", 0);
     }
 
@@ -1314,20 +1314,20 @@ get_bytes(KeyfileReaderInfo *info,
 #undef DIGIT
 
         /* Old format; list of ints. We already did a strict validation of the
-		 * string format before. We expect that this conversion cannot fail. */
+         * string format before. We expect that this conversion cannot fail. */
         if (d > 0) {
             /* note that @zero_terminate does not add a terminating '\0' to
-			 * binary data as an integer list. If the bytes are expressed as
-			 * an integer list, all potential NUL characters are supposed to
-			 * be included there explicitly.
-			 *
-			 * However, in the spirit of defensive programming, we do append a
-			 * NUL character to the buffer, although this character is hidden
-			 * and only a mitigation for bugs. */
+             * binary data as an integer list. If the bytes are expressed as
+             * an integer list, all potential NUL characters are supposed to
+             * be included there explicitly.
+             *
+             * However, in the spirit of defensive programming, we do append a
+             * NUL character to the buffer, although this character is hidden
+             * and only a mitigation for bugs. */
 
             if (d + 10 < bin->len) {
                 /* hm, too much unused memory. Copy the memory to a suitable
-				 * sized buffer. */
+                 * sized buffer. */
                 return nm_secret_copy_to_gbytes(bin->bin, d);
             }
 
@@ -1447,7 +1447,7 @@ nm_keyfile_detect_unqualified_path_scheme(const char *  base_dir,
     /* If there's a trailing zero tell g_utf8_validate() to validate until the zero */
     if (data[data_len - 1] == '\0') {
         /* setting it to -1, would mean we accept data to contain NUL characters before the
-		 * end. Don't accept any NUL in [0 .. data_len-1[ . */
+         * end. Don't accept any NUL in [0 .. data_len-1[ . */
         validate_len = data_len - 1;
     } else
         validate_len = data_len;
@@ -1455,14 +1455,14 @@ nm_keyfile_detect_unqualified_path_scheme(const char *  base_dir,
         return NULL;
 
     /* Might be a bare path without the file:// prefix; in that case
-	 * if it's an absolute path, use that, otherwise treat it as a
-	 * relative path to the current directory.
-	 */
+     * if it's an absolute path, use that, otherwise treat it as a
+     * relative path to the current directory.
+     */
 
     path = get_cert_path(base_dir, (const guint8 *) data, data_len);
 
     /* FIXME(keyfile-parse-in-memory): it is wrong that keyfile reader makes decisions based on
-	 * the file systems content. The serialization/parsing should be entirely in-memory. */
+     * the file systems content. The serialization/parsing should be entirely in-memory. */
     if (!memchr(data, '/', data_len) && !has_cert_ext(path)) {
         if (!consider_exists)
             return NULL;
@@ -1473,10 +1473,10 @@ nm_keyfile_detect_unqualified_path_scheme(const char *  base_dir,
         exists = g_file_test(path, G_FILE_TEST_EXISTS);
 
     /* Construct the proper value as required for the PATH scheme.
-	 *
-	 * When returning TRUE, we must also be sure that @data_len does not look like
-	 * the deprecated format of list of integers. With this implementation that is the
-	 * case, as long as @consider_exists is FALSE. */
+     *
+     * When returning TRUE, we must also be sure that @data_len does not look like
+     * the deprecated format of list of integers. With this implementation that is the
+     * case, as long as @consider_exists is FALSE. */
     path_len    = strlen(path);
     pathuri_len = (NM_STRLEN(NM_KEYFILE_CERT_SCHEME_PREFIX_PATH) + 1) + path_len;
     pathuri     = g_new(char, pathuri_len);
@@ -1542,7 +1542,7 @@ cert_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 
         if (path2[0] != '/') {
             /* we want to read absolute paths because we use keyfile as exchange
-			 * between different processes which might not have the same cwd. */
+             * between different processes which might not have the same cwd. */
             path2_free = get_cert_path(info->base_dir,
                                        (const guint8 *) path2,
                                        bin_len - NM_STRLEN(NM_KEYFILE_CERT_SCHEME_PREFIX_PATH) - 1);
@@ -1550,9 +1550,9 @@ cert_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
         }
 
         /* FIXME(keyfile-parse-in-memory): keyfile reader must not access the file system and
-		 * (in a first step) only operate in memory-only. If the presence of files should be checked,
-		 * then by invoking a callback (and possibly keyfile settings plugin would
-		 * collect the file names to be checked and check them later). */
+         * (in a first step) only operate in memory-only. If the presence of files should be checked,
+         * then by invoking a callback (and possibly keyfile settings plugin would
+         * collect the file names to be checked and check them later). */
         if (!g_file_test(path2, G_FILE_TEST_EXISTS)) {
             handle_warn(info,
                         key,
@@ -1590,7 +1590,7 @@ cert_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
         gs_unref_bytes GBytes *val = NULL;
 
         /* Let's be strict here. We expect valid base64, no funny stuff!!
-		 * We didn't write such invalid data ourselfes and refuse to read it as blob. */
+         * We didn't write such invalid data ourselfes and refuse to read it as blob. */
         if ((valid_base64 = (cdata_len % 4 == 0))) {
             for (i = 0; i < cdata_len; i++) {
                 char c = cdata[i];
@@ -1624,8 +1624,8 @@ cert_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
         if (nm_setting_802_1x_check_cert_scheme(bin_decoded, bin_decoded_len, NULL)
             != NM_SETTING_802_1X_CK_SCHEME_BLOB) {
             /* The blob probably starts with "file://". Setting the cert data will confuse NMSetting8021x.
-			 * In fact this is a limitation of NMSetting8021x which does not support setting blobs that start
-			 * with file://. Just warn and return TRUE to signal that we ~handled~ the setting. */
+             * In fact this is a limitation of NMSetting8021x which does not support setting blobs that start
+             * with file://. Just warn and return TRUE to signal that we ~handled~ the setting. */
             handle_warn(info,
                         key,
                         key,
@@ -1664,9 +1664,9 @@ cert_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
     if (nm_setting_802_1x_check_cert_scheme(bin, bin_len, NULL)
         != NM_SETTING_802_1X_CK_SCHEME_BLOB) {
         /* The blob probably starts with "file://" but contains invalid characters for a path.
-		 * Setting the cert data will confuse NMSetting8021x.
-		 * In fact, NMSetting8021x does not support setting such binary data, so just warn and
-		 * continue. */
+         * Setting the cert data will confuse NMSetting8021x.
+         * In fact, NMSetting8021x does not support setting such binary data, so just warn and
+         * continue. */
         handle_warn(info,
                     key,
                     key,
@@ -1693,17 +1693,17 @@ _parity_from_char(int ch)
             check = 1;
 
             /* In older versions, parity was G_TYPE_CHAR/gint8, and the character
-			 * value was stored as integer.
-			 * For example parity=69 equals parity=E, meaning NM_SETTING_SERIAL_PARITY_EVEN.
-			 *
-			 * That means, certain values are reserved. Assert that these numbers
-			 * are not reused when we extend NMSettingSerialParity enum.
-			 * Actually, since NM_SETTING_SERIAL_PARITY is g_param_spec_enum(),
-			 * we anyway cannot extend the enum without breaking API...
-			 *
-			 * [1] commit "a91e60902e libnm-core: make NMSettingSerial:parity an enum"
-			 * [2] https://cgit.freedesktop.org/NetworkManager/NetworkManager/commit/?id=a91e60902eabae1de93d61323dae6ac894b5d40f
-			 */
+             * value was stored as integer.
+             * For example parity=69 equals parity=E, meaning NM_SETTING_SERIAL_PARITY_EVEN.
+             *
+             * That means, certain values are reserved. Assert that these numbers
+             * are not reused when we extend NMSettingSerialParity enum.
+             * Actually, since NM_SETTING_SERIAL_PARITY is g_param_spec_enum(),
+             * we anyway cannot extend the enum without breaking API...
+             *
+             * [1] commit "a91e60902e libnm-core: make NMSettingSerial:parity an enum"
+             * [2] https://cgit.freedesktop.org/NetworkManager/NetworkManager/commit/?id=a91e60902eabae1de93d61323dae6ac894b5d40f
+             */
             g_assert(G_IS_ENUM_CLASS(klass));
             for (i = 0; i < klass->n_values; i++) {
                 const GEnumValue *v   = &klass->values[i];
@@ -1741,9 +1741,9 @@ parity_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
     gint64                i64;
 
     /* Keyfile traditionally stored this as the ASCII value for 'E', 'o', or 'n'.
-	 * We now accept either that or the (case-insensitive) character itself (but
-	 * still always write it the old way, for backward compatibility).
-	 */
+     * We now accept either that or the (case-insensitive) character itself (but
+     * still always write it the old way, for backward compatibility).
+     */
     tmp_str = nm_keyfile_plugin_kf_get_value(info->keyfile, setting_name, key, &err);
     if (err)
         goto out_err;
@@ -1759,8 +1759,8 @@ parity_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
     if (i64 != G_MININT64 && errno == 0) {
         if ((parity = _parity_from_char(i64)) >= 0) {
             /* another oddity: the string is a valid number. However, if the numeric values
-			 * is one of the supported ASCII codes, accept it (like 69 for 'E').
-			 */
+             * is one of the supported ASCII codes, accept it (like 69 for 'E').
+             */
             goto parity_good;
         }
 
@@ -2102,10 +2102,10 @@ write_ip_values(GKeyFile *  file,
             nm_str_buf_append_printf(&output, "%s/%u", addr, plen);
             if (metric != -1 || gw) {
                 /* Older versions of the plugin do not support the form
-				 * "a.b.c.d/plen,,metric", so, we always have to write the
-				 * gateway, even if there isn't one.
-				 * The current version supports reading of the above form.
-				 */
+                 * "a.b.c.d/plen,,metric", so, we always have to write the
+                 * gateway, even if there isn't one.
+                 * The current version supports reading of the above form.
+                 */
                 if (!gw) {
                     if (addr_family == AF_INET)
                         gw = "0.0.0.0";
@@ -2370,9 +2370,9 @@ write_hash_of_string(GKeyFile *file, NMSetting *setting, const char *key, const 
         property = keys[i];
 
         /* Handle VPN secrets specially; they are nested in the property's hash;
-		 * we don't want to write them if the secret is not saved, not required,
-		 * or owned by a user's secret agent.
-		 */
+         * we don't want to write them if the secret is not saved, not required,
+         * or owned by a user's secret agent.
+         */
         if (vpn_secrets) {
             NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
@@ -2413,8 +2413,8 @@ ssid_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, const 
     }
 
     /* Check whether each byte is printable.  If not, we have to use an
-	 * integer list, otherwise we can just use a string.
-	 */
+     * integer list, otherwise we can just use a string.
+     */
     for (i = 0; i < ssid_len; i++) {
         const char c = ssid_data[i];
 
@@ -2433,7 +2433,7 @@ ssid_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, const 
             ssid = g_strndup((char *) ssid_data, ssid_len);
         else {
             /* Escape semicolons with backslashes to make strings
-			 * containing ';', such as '16;17;' unambiguous */
+             * containing ';', such as '16;17;' unambiguous */
             gsize j = 0;
 
             ssid = g_malloc(ssid_len + semicolons + 1);
@@ -2497,8 +2497,8 @@ cert_writer_default(NMConnection *                    connection,
         g_assert(path);
 
         /* If the path is relative, make it an absolute path.
-		 * Relative paths make a keyfile not easily usable in another
-		 * context. */
+         * Relative paths make a keyfile not easily usable in another
+         * context. */
         if (path[0] && path[0] != '/') {
             base_dir  = g_get_current_dir();
             path_free = g_strconcat(base_dir, "/", path, NULL);
@@ -2507,8 +2507,8 @@ cert_writer_default(NMConnection *                    connection,
             base_dir = g_path_get_dirname(path);
 
         /* path cannot start with "file://" or "data:;base64,", because it is an absolute path.
-		 * Still, make sure that a prefix-less path will be recognized. This can happen
-		 * for example if the path is longer then 500 chars. */
+         * Still, make sure that a prefix-less path will be recognized. This can happen
+         * for example if the path is longer then 500 chars. */
         tmp = nm_keyfile_detect_unqualified_path_scheme(base_dir, path, -1, FALSE, NULL);
         if (tmp)
             nm_clear_g_free(&tmp);
@@ -2518,7 +2518,7 @@ cert_writer_default(NMConnection *                    connection,
         }
 
         /* Path contains at least a '/', hence it cannot be recognized as the old
-		 * binary format consisting of a list of integers. */
+         * binary format consisting of a list of integers. */
 
         nm_keyfile_plugin_kf_set_string(file, setting_name, vtable->setting_key, path);
     } else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
@@ -2543,11 +2543,11 @@ cert_writer_default(NMConnection *                    connection,
                                         vtable->uri_func(setting));
     } else {
         /* scheme_func() returns UNKNOWN in all other cases. The only valid case
-		 * where a scheme is allowed to be UNKNOWN, is unsetting the value. In this
-		 * case, we don't expect the writer to be called, because the default value
-		 * will not be serialized.
-		 * The only other reason for the scheme to be UNKNOWN is an invalid cert.
-		 * But our connection verifies, so that cannot happen either. */
+         * where a scheme is allowed to be UNKNOWN, is unsetting the value. In this
+         * case, we don't expect the writer to be called, because the default value
+         * will not be serialized.
+         * The only other reason for the scheme to be UNKNOWN is an invalid cert.
+         * But our connection verifies, so that cannot happen either. */
         g_return_if_reached();
     }
 }
@@ -2631,8 +2631,8 @@ struct _ParseInfoProperty {
     bool has_parser_full : 1;
 
     /* usually, we skip to write values that have their
-	 * default value. By setting this flag to TRUE, also
-	 * default values are written. */
+     * default value. By setting this flag to TRUE, also
+     * default values are written. */
     bool writer_persist_default : 1;
 };
 
@@ -3021,10 +3021,10 @@ read_one_setting_value(KeyfileReaderInfo *       info,
               == G_PARAM_WRITABLE);
 
     /* Check for the exact key in the GKeyFile if required.  Most setting
-	 * properties map 1:1 to a key in the GKeyFile, but for those properties
-	 * like IP addresses and routes where more than one value is actually
-	 * encoded by the setting property, this won't be true.
-	 */
+     * properties map 1:1 to a key in the GKeyFile, but for those properties
+     * like IP addresses and routes where more than one value is actually
+     * encoded by the setting property, this won't be true.
+     */
     if ((!pip || !pip->parser_no_check_key)
         && !nm_keyfile_plugin_kf_has_key(keyfile, setting_info->setting_name, key, &err)) {
         /* Key doesn't exist or an error occurred, thus nothing to do. */
@@ -3262,17 +3262,17 @@ _read_setting(KeyfileReaderInfo *info)
                 GVariant *            variant;
 
                 /* a GKeyFile can return duplicate keys, there is just no API to make sense
-				 * of them. Skip them. */
+                 * of them. Skip them. */
                 if (k + 1 < n_keys && nm_streq(key, keys[k + 1]))
                     continue;
 
                 /* currently, the API is very simple. The setting class just returns
-				 * the desired variant type, and keyfile reader will try to parse
-				 * it accordingly. Note, that this does currently not allow, that
-				 * a particular key can contain different variant types, nor is it
-				 * very flexible in general.
-				 *
-				 * We add flexibility when we need it. Keep it simple for now. */
+                 * the desired variant type, and keyfile reader will try to parse
+                 * it accordingly. Note, that this does currently not allow, that
+                 * a particular key can contain different variant types, nor is it
+                 * very flexible in general.
+                 *
+                 * We add flexibility when we need it. Keep it simple for now. */
                 variant_type =
                     sett_info->detail.gendata_info->get_variant_type(sett_info, key, &local);
                 if (!variant_type) {
@@ -3365,7 +3365,7 @@ _read_setting_wireguard_peer(KeyfileReaderInfo *info)
     if (!nm_utils_base64secret_normalize(cstr, NM_WIREGUARD_PUBLIC_KEY_LEN, &str)
         || !nm_streq0(str, cstr)) {
         /* the group name must be identical to the normalized(!) key, so that it
-		 * is uniquely identified. */
+         * is uniquely identified. */
         handle_warn(info,
                     NULL,
                     NM_SETTING_WIREGUARD_PEERS,
@@ -3518,7 +3518,7 @@ _read_setting_vpn_secrets(KeyfileReaderInfo *info)
     s_vpn = nm_connection_get_setting_vpn(info->connection);
     if (!s_vpn) {
         /* if we don't also have a [vpn] section (which must be parsed earlier),
-		 * we don't do anything. */
+         * we don't do anything. */
         nm_assert(!g_key_file_has_group(info->keyfile, "vpn"));
         return;
     }
@@ -3654,8 +3654,8 @@ nm_keyfile_read(GKeyFile *            keyfile,
     }
 
     /* Make sure that we have 'interface-name' even if it was specified in the
-	 * "wrong" (ie, deprecated) group.
-	 */
+     * "wrong" (ie, deprecated) group.
+     */
     if (!nm_setting_connection_get_interface_name(s_con)
         && nm_setting_connection_get_connection_type(s_con)) {
         gs_free char *interface_name = NULL;
@@ -3708,13 +3708,13 @@ write_setting_value(KeyfileWriterInfo *       info,
     if (!pip) {
         if (!setting_info) {
             /* the setting type is unknown. That is highly unexpected
-			 * (and as this is currently only called from NetworkManager
-			 * daemon, not possible).
-			 *
-			 * Still, handle it gracefully, because later keyfile writer will become
-			 * public API of libnm, where @setting is (untrusted) user input.
-			 *
-			 * Gracefully here just means: ignore the setting. */
+             * (and as this is currently only called from NetworkManager
+             * daemon, not possible).
+             *
+             * Still, handle it gracefully, because later keyfile writer will become
+             * public API of libnm, where @setting is (untrusted) user input.
+             *
+             * Gracefully here just means: ignore the setting. */
             return;
         }
         if (!property_info->param_spec)
@@ -3733,10 +3733,10 @@ write_setting_value(KeyfileWriterInfo *       info,
     nm_assert(property_info->param_spec);
 
     /* Don't write secrets that are owned by user secret agents or aren't
-	 * supposed to be saved.  VPN secrets are handled specially though since
-	 * the secret flags there are in a third-level hash in the 'secrets'
-	 * property.
-	 */
+     * supposed to be saved.  VPN secrets are handled specially though since
+     * the secret flags there are in a third-level hash in the 'secrets'
+     * property.
+     */
     if ((property_info->param_spec->flags & NM_SETTING_PARAM_SECRET)
         && !NM_IS_SETTING_VPN(setting)) {
         NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
@@ -3885,9 +3885,9 @@ _write_setting_wireguard(NMSetting *setting, KeyfileWriterInfo *info)
         }
 
         /* usually, we don't persist the secret-flags 0 (because they are the default).
-		 * For WireGuard peers, the default secret-flags for preshared-key are 4 (not-required).
-		 * So, in this case behave differently: a missing preshared-key-flag setting means
-		 * "not-required". */
+         * For WireGuard peers, the default secret-flags for preshared-key are 4 (not-required).
+         * So, in this case behave differently: a missing preshared-key-flag setting means
+         * "not-required". */
         if (secret_flags != NM_SETTING_SECRET_FLAG_NOT_REQUIRED) {
             g_key_file_set_int64(info->keyfile,
                                  group,
@@ -3998,9 +3998,9 @@ nm_keyfile_write(NMConnection *        connection,
                                               (guint64) g_variant_get_uint32(v));
                     } else {
                         /* BUG: The variant type is not implemented. Since the connection
-						 * verifies, this can only mean we either wrongly didn't reject
-						 * the connection as invalid, or we didn't properly implement the
-						 * variant type. */
+                         * verifies, this can only mean we either wrongly didn't reject
+                         * the connection as invalid, or we didn't properly implement the
+                         * variant type. */
                         nm_assert_not_reached();
                         continue;
                     }
@@ -4023,7 +4023,7 @@ nm_keyfile_write(NMConnection *        connection,
             /* we have a section for the setting. Nothing to do. */
         } else {
             /* ensure the group is present. There is no API for that, so add and remove
-			 * a dummy key. */
+             * a dummy key. */
             g_key_file_set_value(info.keyfile, setting_alias ?: setting_name, ".X", "1");
             g_key_file_remove_key(info.keyfile, setting_alias ?: setting_name, ".X", NULL);
         }
@@ -4090,8 +4090,8 @@ nm_keyfile_utils_ignore_filename(const char *filename, gboolean require_extensio
 
     if (!base[0]) {
         /* this check above with strrchr() also rejects "/some/path/with/trailing/slash/",
-		 * but that is fine, because such a path would name a directory, and we are not
-		 * interested in directories. */
+         * but that is fine, because such a path would name a directory, and we are not
+         * interested in directories. */
         return TRUE;
     }
 
@@ -4113,9 +4113,9 @@ nm_keyfile_utils_ignore_filename(const char *filename, gboolean require_extensio
         return TRUE;
 
     /* Ignore temporary files
-	 *
-	 * This check is also important to ignore .nmload files (see
-	 * %NM_KEYFILE_PATH_SUFFIX_NMMETA). */
+     *
+     * This check is also important to ignore .nmload files (see
+     * %NM_KEYFILE_PATH_SUFFIX_NMMETA). */
     if (check_mkstemp_suffix(base))
         return TRUE;
 
@@ -4131,9 +4131,9 @@ char *
 nm_keyfile_utils_create_filename(const char *name, gboolean with_extension)
 {
     /* keyfile used to escape with '*', do not change that behavior.
-	 *
-	 * But for newly added escapings, use '_' instead.
-	 * Also, @with_extension is new-style. */
+     *
+     * But for newly added escapings, use '_' instead.
+     * Also, @with_extension is new-style. */
     const char ESCAPE_CHAR  = with_extension ? '_' : '*';
     const char ESCAPE_CHAR2 = '_';
     NMStrBuf   str;
@@ -4156,7 +4156,7 @@ nm_keyfile_utils_create_filename(const char *name, gboolean with_extension)
     }
 
     /* nm_keyfile_utils_create_filename() must avoid anything that ignore_filename() would reject.
-	 * We can escape here more aggressively then what we would read back. */
+     * We can escape here more aggressively then what we would read back. */
     if (p[0] == '.')
         p[0] = ESCAPE_CHAR2;
     if (p[str.len - 1] == '~')
@@ -4241,8 +4241,8 @@ _nm_keyfile_handler_data_warn_get_message(const NMKeyfileHandlerData *handler_da
 
     if (!handler_data->warn.message) {
         /* we cast the const away. @handler_data is const w.r.t. visible mutations
-		 * from POV of the user. Internally, we construct the message in
-		 * a lazy manner. It's like a mutable field in C++. */
+         * from POV of the user. Internally, we construct the message in
+         * a lazy manner. It's like a mutable field in C++. */
         NM_PRAGMA_WARNING_DISABLE("-Wformat-nonliteral")
         ((NMKeyfileHandlerData *) handler_data)->warn.message =
             g_strdup_vprintf(handler_data->warn.fmt,

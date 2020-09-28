@@ -141,8 +141,8 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     }
 
     /* As of kernel 4.16, the 6LoWPAN devices layered on top of WPANs
-	 * need to be DOWN as well as the WPAN device itself in order to
-	 * modify the WPAN properties. */
+     * need to be DOWN as well as the WPAN device itself in order to
+     * modify the WPAN properties. */
     lowpan_plink =
         nm_platform_link_get_by_address(platform, NM_LINK_TYPE_6LOWPAN, hwaddr, hwaddr_len);
     if (lowpan_plink && NM_FLAGS_HAS(lowpan_plink->n_ifi_flags, IFF_UP)) {

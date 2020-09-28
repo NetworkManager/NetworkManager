@@ -92,8 +92,8 @@ _notify_event_state_changed(NMClient *client, NMClientNotifyEventWithPtr *notify
     NMVpnConnectionPrivate *         priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
 
     /* we expose here the value cache in @priv. In practice, this is the same
-	 * value as we received from the signal. In the unexpected case where they
-	 * differ, the cached value of the current instance would still be more correct. */
+     * value as we received from the signal. In the unexpected case where they
+     * differ, the cached value of the current instance would still be more correct. */
     g_signal_emit(self,
                   signals[VPN_STATE_CHANGED],
                   0,
@@ -176,10 +176,10 @@ nm_vpn_connection_class_init(NMVpnConnectionClass *connection_class)
     object_class->finalize     = finalize;
 
     /**
-	 * NMVpnConnection:vpn-state:
-	 *
-	 * The VPN state of the active VPN connection.
-	 **/
+     * NMVpnConnection:vpn-state:
+     *
+     * The VPN state of the active VPN connection.
+     **/
     obj_properties[PROP_VPN_STATE] = g_param_spec_enum(NM_VPN_CONNECTION_VPN_STATE,
                                                        "",
                                                        "",
@@ -188,10 +188,10 @@ nm_vpn_connection_class_init(NMVpnConnectionClass *connection_class)
                                                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMVpnConnection:banner:
-	 *
-	 * The VPN login banner of the active VPN connection.
-	 **/
+     * NMVpnConnection:banner:
+     *
+     * The VPN login banner of the active VPN connection.
+     **/
     obj_properties[PROP_BANNER] = g_param_spec_string(NM_VPN_CONNECTION_BANNER,
                                                       "",
                                                       "",
@@ -202,10 +202,10 @@ nm_vpn_connection_class_init(NMVpnConnectionClass *connection_class)
                                               &_nml_dbus_meta_iface_nm_vpn_connection);
 
     /* TODO: the state reason should also be exposed as a property in libnm's NMVpnConnection,
-	 * like done for NMDevice's state reason. */
+     * like done for NMDevice's state reason. */
 
     /* TODO: the D-Bus API should also expose the state-reason as a property instead of
-	 * a "VpnStateChanged" signal. Like done for Device's "StateReason".  */
+     * a "VpnStateChanged" signal. Like done for Device's "StateReason".  */
 
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     signals[VPN_STATE_CHANGED] = g_signal_new("vpn-state-changed",

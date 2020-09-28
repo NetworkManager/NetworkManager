@@ -85,8 +85,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (nm_utils_is_uuid(priv->parent)) {
         /* If we have an NMSettingConnection:master with slave-type="6lowpan",
-		 * then it must be the same UUID.
-		 */
+         * then it must be the same UUID.
+         */
         if (s_con) {
             const char *master = NULL, *slave_type = NULL;
 
@@ -208,13 +208,13 @@ nm_setting_6lowpan_class_init(NMSetting6LowpanClass *klass)
     setting_class->verify = verify;
 
     /**
-	 * NMSetting6Lowpan:parent:
-	 *
-	 * If given, specifies the parent interface name or parent connection UUID
-	 * from which this 6LowPAN interface should be created.
-	 *
-	 * Since: 1.14
-	 **/
+     * NMSetting6Lowpan:parent:
+     *
+     * If given, specifies the parent interface name or parent connection UUID
+     * from which this 6LowPAN interface should be created.
+     *
+     * Since: 1.14
+     **/
     obj_properties[PROP_PARENT] = g_param_spec_string(
         NM_SETTING_6LOWPAN_PARENT,
         "",

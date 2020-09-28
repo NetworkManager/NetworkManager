@@ -177,7 +177,7 @@ _nm_ref_string_unref_non_null(NMRefString *rstr)
     G_LOCK(gl_lock);
 
     /* in the fast-path above, we already decremented the ref-count to zero.
-	 * We need recheck that the ref-count is still zero. */
+     * We need recheck that the ref-count is still zero. */
 
     if (g_atomic_int_get(&rstr0->ref_count) == 0) {
         if (!g_hash_table_remove(gl_hash, rstr0))

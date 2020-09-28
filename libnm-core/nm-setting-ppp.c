@@ -529,12 +529,12 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
     setting_class->verify = verify;
 
     /**
-	 * NMSettingPpp:noauth:
-	 *
-	 * If %TRUE, do not require the other side (usually the PPP server) to
-	 * authenticate itself to the client.  If %FALSE, require authentication
-	 * from the remote side.  In almost all cases, this should be %TRUE.
-	 **/
+     * NMSettingPpp:noauth:
+     *
+     * If %TRUE, do not require the other side (usually the PPP server) to
+     * authenticate itself to the client.  If %FALSE, require authentication
+     * from the remote side.  In almost all cases, this should be %TRUE.
+     **/
     obj_properties[PROP_NOAUTH] = g_param_spec_boolean(NM_SETTING_PPP_NOAUTH,
                                                        "",
                                                        "",
@@ -542,10 +542,10 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
                                                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPpp:refuse-eap:
-	 *
-	 * If %TRUE, the EAP authentication method will not be used.
-	 **/
+     * NMSettingPpp:refuse-eap:
+     *
+     * If %TRUE, the EAP authentication method will not be used.
+     **/
     obj_properties[PROP_REFUSE_EAP] =
         g_param_spec_boolean(NM_SETTING_PPP_REFUSE_EAP,
                              "",
@@ -554,10 +554,10 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPpp:refuse-pap:
-	 *
-	 * If %TRUE, the PAP authentication method will not be used.
-	 **/
+     * NMSettingPpp:refuse-pap:
+     *
+     * If %TRUE, the PAP authentication method will not be used.
+     **/
     obj_properties[PROP_REFUSE_PAP] =
         g_param_spec_boolean(NM_SETTING_PPP_REFUSE_PAP,
                              "",
@@ -566,10 +566,10 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPpp:refuse-chap:
-	 *
-	 * If %TRUE, the CHAP authentication method will not be used.
-	 **/
+     * NMSettingPpp:refuse-chap:
+     *
+     * If %TRUE, the CHAP authentication method will not be used.
+     **/
     obj_properties[PROP_REFUSE_CHAP] =
         g_param_spec_boolean(NM_SETTING_PPP_REFUSE_CHAP,
                              "",
@@ -578,10 +578,10 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPpp:refuse-mschap:
-	 *
-	 * If %TRUE, the MSCHAP authentication method will not be used.
-	 **/
+     * NMSettingPpp:refuse-mschap:
+     *
+     * If %TRUE, the MSCHAP authentication method will not be used.
+     **/
     obj_properties[PROP_REFUSE_MSCHAP] =
         g_param_spec_boolean(NM_SETTING_PPP_REFUSE_MSCHAP,
                              "",
@@ -590,10 +590,10 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPpp:refuse-mschapv2:
-	 *
-	 * If %TRUE, the MSCHAPv2 authentication method will not be used.
-	 **/
+     * NMSettingPpp:refuse-mschapv2:
+     *
+     * If %TRUE, the MSCHAPv2 authentication method will not be used.
+     **/
     obj_properties[PROP_REFUSE_MSCHAPV2] =
         g_param_spec_boolean(NM_SETTING_PPP_REFUSE_MSCHAPV2,
                              "",
@@ -602,10 +602,10 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPpp:nobsdcomp:
-	 *
-	 * If %TRUE, BSD compression will not be requested.
-	 **/
+     * NMSettingPpp:nobsdcomp:
+     *
+     * If %TRUE, BSD compression will not be requested.
+     **/
     obj_properties[PROP_NOBSDCOMP] = g_param_spec_boolean(
         NM_SETTING_PPP_NOBSDCOMP,
         "",
@@ -614,10 +614,10 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPpp:nodeflate:
-	 *
-	 * If %TRUE, "deflate" compression will not be requested.
-	 **/
+     * NMSettingPpp:nodeflate:
+     *
+     * If %TRUE, "deflate" compression will not be requested.
+     **/
     obj_properties[PROP_NODEFLATE] = g_param_spec_boolean(
         NM_SETTING_PPP_NODEFLATE,
         "",
@@ -626,10 +626,10 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPpp:no-vj-comp:
-	 *
-	 * If %TRUE, Van Jacobsen TCP header compression will not be requested.
-	 **/
+     * NMSettingPpp:no-vj-comp:
+     *
+     * If %TRUE, Van Jacobsen TCP header compression will not be requested.
+     **/
     obj_properties[PROP_NO_VJ_COMP] = g_param_spec_boolean(
         NM_SETTING_PPP_NO_VJ_COMP,
         "",
@@ -638,13 +638,13 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPpp:require-mppe:
-	 *
-	 * If %TRUE, MPPE (Microsoft Point-to-Point Encryption) will be required for
-	 * the PPP session.  If either 64-bit or 128-bit MPPE is not available the
-	 * session will fail.  Note that MPPE is not used on mobile broadband
-	 * connections.
-	 **/
+     * NMSettingPpp:require-mppe:
+     *
+     * If %TRUE, MPPE (Microsoft Point-to-Point Encryption) will be required for
+     * the PPP session.  If either 64-bit or 128-bit MPPE is not available the
+     * session will fail.  Note that MPPE is not used on mobile broadband
+     * connections.
+     **/
     obj_properties[PROP_REQUIRE_MPPE] =
         g_param_spec_boolean(NM_SETTING_PPP_REQUIRE_MPPE,
                              "",
@@ -653,12 +653,12 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPpp:require-mppe-128:
-	 *
-	 * If %TRUE, 128-bit MPPE (Microsoft Point-to-Point Encryption) will be
-	 * required for the PPP session, and the "require-mppe" property must also
-	 * be set to %TRUE.  If 128-bit MPPE is not available the session will fail.
-	 **/
+     * NMSettingPpp:require-mppe-128:
+     *
+     * If %TRUE, 128-bit MPPE (Microsoft Point-to-Point Encryption) will be
+     * required for the PPP session, and the "require-mppe" property must also
+     * be set to %TRUE.  If 128-bit MPPE is not available the session will fail.
+     **/
     obj_properties[PROP_REQUIRE_MPPE_128] =
         g_param_spec_boolean(NM_SETTING_PPP_REQUIRE_MPPE_128,
                              "",
@@ -667,11 +667,11 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPpp:mppe-stateful:
-	 *
-	 * If %TRUE, stateful MPPE is used.  See pppd documentation for more
-	 * information on stateful MPPE.
-	 **/
+     * NMSettingPpp:mppe-stateful:
+     *
+     * If %TRUE, stateful MPPE is used.  See pppd documentation for more
+     * information on stateful MPPE.
+     **/
     obj_properties[PROP_MPPE_STATEFUL] =
         g_param_spec_boolean(NM_SETTING_PPP_MPPE_STATEFUL,
                              "",
@@ -680,12 +680,12 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPpp:crtscts:
-	 *
-	 * If %TRUE, specify that pppd should set the serial port to use hardware
-	 * flow control with RTS and CTS signals.  This value should normally be set
-	 * to %FALSE.
-	 **/
+     * NMSettingPpp:crtscts:
+     *
+     * If %TRUE, specify that pppd should set the serial port to use hardware
+     * flow control with RTS and CTS signals.  This value should normally be set
+     * to %FALSE.
+     **/
     obj_properties[PROP_CRTSCTS] = g_param_spec_boolean(NM_SETTING_PPP_CRTSCTS,
                                                         "",
                                                         "",
@@ -693,12 +693,12 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
                                                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPpp:baud:
-	 *
-	 * If non-zero, instruct pppd to set the serial port to the specified
-	 * baudrate.  This value should normally be left as 0 to automatically
-	 * choose the speed.
-	 **/
+     * NMSettingPpp:baud:
+     *
+     * If non-zero, instruct pppd to set the serial port to the specified
+     * baudrate.  This value should normally be left as 0 to automatically
+     * choose the speed.
+     **/
     obj_properties[PROP_BAUD] = g_param_spec_uint(NM_SETTING_PPP_BAUD,
                                                   "",
                                                   "",
@@ -709,12 +709,12 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
                                                       | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPpp:mru:
-	 *
-	 * If non-zero, instruct pppd to request that the peer send packets no
-	 * larger than the specified size.  If non-zero, the MRU should be between
-	 * 128 and 16384.
-	 */
+     * NMSettingPpp:mru:
+     *
+     * If non-zero, instruct pppd to request that the peer send packets no
+     * larger than the specified size.  If non-zero, the MRU should be between
+     * 128 and 16384.
+     */
     obj_properties[PROP_MRU] = g_param_spec_uint(NM_SETTING_PPP_MRU,
                                                  "",
                                                  "",
@@ -724,11 +724,11 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
                                                  G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPpp:mtu:
-	 *
-	 * If non-zero, instruct pppd to send packets no larger than the specified
-	 * size.
-	 **/
+     * NMSettingPpp:mtu:
+     *
+     * If non-zero, instruct pppd to send packets no larger than the specified
+     * size.
+     **/
     obj_properties[PROP_MTU] = g_param_spec_uint(NM_SETTING_PPP_MTU,
                                                  "",
                                                  "",
@@ -739,13 +739,13 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
                                                      | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPpp:lcp-echo-failure:
-	 *
-	 * If non-zero, instruct pppd to presume the connection to the peer has
-	 * failed if the specified number of LCP echo-requests go unanswered by the
-	 * peer.  The "lcp-echo-interval" property must also be set to a non-zero
-	 * value if this property is used.
-	 **/
+     * NMSettingPpp:lcp-echo-failure:
+     *
+     * If non-zero, instruct pppd to presume the connection to the peer has
+     * failed if the specified number of LCP echo-requests go unanswered by the
+     * peer.  The "lcp-echo-interval" property must also be set to a non-zero
+     * value if this property is used.
+     **/
     obj_properties[PROP_LCP_ECHO_FAILURE] = g_param_spec_uint(
         NM_SETTING_PPP_LCP_ECHO_FAILURE,
         "",
@@ -756,13 +756,13 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPpp:lcp-echo-interval:
-	 *
-	 * If non-zero, instruct pppd to send an LCP echo-request frame to the peer
-	 * every n seconds (where n is the specified value).  Note that some PPP
-	 * peers will respond to echo requests and some will not, and it is not
-	 * possible to autodetect this.
-	 **/
+     * NMSettingPpp:lcp-echo-interval:
+     *
+     * If non-zero, instruct pppd to send an LCP echo-request frame to the peer
+     * every n seconds (where n is the specified value).  Note that some PPP
+     * peers will respond to echo requests and some will not, and it is not
+     * possible to autodetect this.
+     **/
     obj_properties[PROP_LCP_ECHO_INTERVAL] = g_param_spec_uint(
         NM_SETTING_PPP_LCP_ECHO_INTERVAL,
         "",

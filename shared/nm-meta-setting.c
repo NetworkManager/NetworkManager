@@ -568,11 +568,11 @@ out_none:
     int i;
 
     /* this might hint to a bug, but it would be expected for NM_TYPE_SETTING
-		 * and NM_TYPE_SETTING_IP_CONFIG.
-		 *
-		 * Assert that we didn't lookup for a gtype, which we would expect to find.
-		 * An assertion failure here, hints to a bug in nm_setting_*_class_init().
-		 */
+         * and NM_TYPE_SETTING_IP_CONFIG.
+         *
+         * Assert that we didn't lookup for a gtype, which we would expect to find.
+         * An assertion failure here, hints to a bug in nm_setting_*_class_init().
+         */
     for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++)
         nm_assert(nm_meta_setting_infos[i].get_setting_gtype() != gtype);
 }

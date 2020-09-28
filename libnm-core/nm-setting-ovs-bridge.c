@@ -299,12 +299,12 @@ nm_setting_ovs_bridge_class_init(NMSettingOvsBridgeClass *klass)
     setting_class->verify = verify;
 
     /**
-	 * NMSettingOvsBridge:fail-mode:
-	 *
-	 * The bridge failure mode. One of "secure", "standalone" or empty.
-	 *
-	 * Since: 1.10
-	 **/
+     * NMSettingOvsBridge:fail-mode:
+     *
+     * The bridge failure mode. One of "secure", "standalone" or empty.
+     *
+     * Since: 1.10
+     **/
     obj_properties[PROP_FAIL_MODE] = g_param_spec_string(
         NM_SETTING_OVS_BRIDGE_FAIL_MODE,
         "",
@@ -313,12 +313,12 @@ nm_setting_ovs_bridge_class_init(NMSettingOvsBridgeClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingOvsBridge:mcast-snooping-enable:
-	 *
-	 * Enable or disable multicast snooping.
-	 *
-	 * Since: 1.10
-	 **/
+     * NMSettingOvsBridge:mcast-snooping-enable:
+     *
+     * Enable or disable multicast snooping.
+     *
+     * Since: 1.10
+     **/
     obj_properties[PROP_MCAST_SNOOPING_ENABLE] =
         g_param_spec_boolean(NM_SETTING_OVS_BRIDGE_MCAST_SNOOPING_ENABLE,
                              "",
@@ -327,12 +327,12 @@ nm_setting_ovs_bridge_class_init(NMSettingOvsBridgeClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingOvsBridge:rstp-enable:
-	 *
-	 * Enable or disable RSTP.
-	 *
-	 * Since: 1.10
-	 **/
+     * NMSettingOvsBridge:rstp-enable:
+     *
+     * Enable or disable RSTP.
+     *
+     * Since: 1.10
+     **/
     obj_properties[PROP_RSTP_ENABLE] =
         g_param_spec_boolean(NM_SETTING_OVS_BRIDGE_RSTP_ENABLE,
                              "",
@@ -341,12 +341,12 @@ nm_setting_ovs_bridge_class_init(NMSettingOvsBridgeClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingOvsBridge:stp-enable:
-	 *
-	 * Enable or disable STP.
-	 *
-	 * Since: 1.10
-	 **/
+     * NMSettingOvsBridge:stp-enable:
+     *
+     * Enable or disable STP.
+     *
+     * Since: 1.10
+     **/
     obj_properties[PROP_STP_ENABLE] =
         g_param_spec_boolean(NM_SETTING_OVS_BRIDGE_STP_ENABLE,
                              "",
@@ -355,12 +355,12 @@ nm_setting_ovs_bridge_class_init(NMSettingOvsBridgeClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingOvsBridge:datapath-type:
-	 *
-	 * The data path type. One of "system", "netdev" or empty.
-	 *
-	 * Since: 1.20
-	 **/
+     * NMSettingOvsBridge:datapath-type:
+     *
+     * The data path type. One of "system", "netdev" or empty.
+     *
+     * Since: 1.20
+     **/
     obj_properties[PROP_DATAPATH_TYPE] = g_param_spec_string(
         NM_SETTING_OVS_BRIDGE_DATAPATH_TYPE,
         "",

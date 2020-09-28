@@ -51,8 +51,8 @@ static inline gboolean
 nm_ref_string_equals_str(NMRefString *rstr, const char *s)
 {
     /* Note that rstr->len might be greater than strlen(rstr->str). This function does
-	 * not cover that and would ignore everything after the first NUL byte. If you need
-	 * that distinction, this function is not for you. */
+     * not cover that and would ignore everything after the first NUL byte. If you need
+     * that distinction, this function is not for you. */
 
     return rstr ? (s && nm_streq(rstr->str, s)) : (s == NULL);
 }
@@ -70,9 +70,9 @@ NM_IS_REF_STRING(const NMRefString *rstr)
 #endif
 
     /* Technically, %NULL is also a valid NMRefString (according to nm_ref_string_new(),
-	 * nm_ref_string_get_str() and nm_ref_string_unref()). However, NM_IS_REF_STRING()
-	 * does not think so. If callers want to allow %NULL, they need to check
-	 * separately. */
+     * nm_ref_string_get_str() and nm_ref_string_unref()). However, NM_IS_REF_STRING()
+     * does not think so. If callers want to allow %NULL, they need to check
+     * separately. */
     return !!rstr;
 }
 

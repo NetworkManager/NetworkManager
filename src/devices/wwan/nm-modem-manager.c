@@ -53,8 +53,8 @@ typedef struct {
         guint         relaunch_id;
 
         /* this only has one use: that the <info> logging line about
-		 * ModemManager available distinguishes between first-time
-		 * and later name-owner-changed. */
+         * ModemManager available distinguishes between first-time
+         * and later name-owner-changed. */
         enum {
             LOG_AVAILABLE_NOT_INITIALIZED = 0,
             LOG_AVAILABLE_YES,
@@ -259,15 +259,15 @@ modm_handle_name_owner_changed(MMManager *modem_manager, GParamSpec *pspec, NMMo
     g_free(name_owner);
 
     /* Hack alert: GDBusObjectManagerClient won't signal neither 'object-added'
-	 * nor 'object-removed' if it was created while there was no ModemManager in
-	 * the bus. This hack avoids this issue until we get a GIO with the fix
-	 * included... */
+     * nor 'object-removed' if it was created while there was no ModemManager in
+     * the bus. This hack avoids this issue until we get a GIO with the fix
+     * included... */
     modm_clear_manager(self);
     modm_ensure_manager(self);
 
     /* Whenever GDBusObjectManagerClient is fixed, we can just do the following:
-	 * modm_manager_available (self);
-	 */
+     * modm_manager_available (self);
+     */
 }
 
 static void
@@ -362,8 +362,8 @@ modm_manager_new_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 
     if (!modem_manager) {
         /* We're not really supposed to get any error here. If we do get one,
-		 * though, just re-schedule the MMManager creation after some time.
-		 * During this period, name-owner changes won't be followed. */
+         * though, just re-schedule the MMManager creation after some time.
+         * During this period, name-owner changes won't be followed. */
         _LOGW("error creating ModemManager client: %s", error->message);
         /* Setup timeout to relaunch */
         modm_schedule_manager_relaunch(self, MODEM_POKE_INTERVAL);
@@ -398,8 +398,8 @@ modm_ensure_manager(NMModemManager *self)
     g_assert(priv->dbus_connection);
 
     /* Create the GDBusObjectManagerClient. We do not request to autostart, as
-	 * we don't really want the MMManager creation to fail. We can always poke
-	 * later on if we want to request the autostart */
+     * we don't really want the MMManager creation to fail. We can always poke
+     * later on if we want to request the autostart */
     if (!priv->modm.manager) {
         if (!priv->main_cancellable)
             priv->main_cancellable = g_cancellable_new();
@@ -431,7 +431,7 @@ modm_schedule_manager_relaunch(NMModemManager *self, guint n_seconds)
     NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE(self);
 
     /* No need to pass an extra reference to self; timeout/idle will be
-	 * cancelled if the object gets disposed. */
+     * cancelled if the object gets disposed. */
     if (n_seconds)
         priv->modm.relaunch_id =
             g_timeout_add_seconds(n_seconds, (GSourceFunc) modm_schedule_manager_relaunch_cb, self);
@@ -508,8 +508,8 @@ nm_modem_manager_name_owner_ref(NMModemManager *self)
 
     if (priv->modm.proxy_ref_count++ > 0) {
         /* only try once to create the proxy. If proxy creation
-		 * for the first "ref" failed, it's unclear what to do.
-		 * The proxy is hosed. */
+         * for the first "ref" failed, it's unclear what to do.
+         * The proxy is hosed. */
         return;
     }
 
@@ -570,10 +570,10 @@ ofono_create_modem(NMModemManager *self, const char *path)
     NMModem *              modem = NULL;
 
     /* Ensure duplicate modems aren't created.  Because we're not using the
-	 * ObjectManager interface there's a race during oFono startup where we
-	 * receive ModemAdded signals before GetModems() returns, so some of the
-	 * modems returned from GetModems() may already have been created.
-	 */
+     * ObjectManager interface there's a race during oFono startup where we
+     * receive ModemAdded signals before GetModems() returns, so some of the
+     * modems returned from GetModems() may already have been created.
+     */
     if (!g_hash_table_lookup(priv->modems, path)) {
         modem = nm_modem_ofono_new(path);
         if (modem)

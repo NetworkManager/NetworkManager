@@ -118,7 +118,7 @@ nms_keyfile_reader_from_keyfile(GKeyFile *  key_file,
         nm_assert(filename[0] == '/');
 
         /* @base_dir may be NULL, in which case @filename must be an absolute path,
-		 * and the directory is taken as the @base_dir. */
+         * and the directory is taken as the @base_dir. */
         s        = strrchr(filename, '/');
         base_dir = nm_strndup_a(255, filename, s - filename, &base_dir_free);
         if (!profile_dir || nm_streq(base_dir, profile_dir))

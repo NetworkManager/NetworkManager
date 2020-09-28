@@ -22,7 +22,7 @@ typedef struct {
     gsize       iproutes_len;
 
     /* TRUE, if the configuration was requested via hwaddrs argument to
-	 * nmcs_provider_get_config(). */
+     * nmcs_provider_get_config(). */
     bool was_requested : 1;
 
 } NMCSProviderGetConfigIfaceData;

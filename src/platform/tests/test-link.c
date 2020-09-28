@@ -174,14 +174,14 @@ test_link_changed_signal_cb(NMPlatform *              platform,
     const NMPlatformSignalChangeType change_type = change_type_i;
 
     /* test invocation of platform signals with multiple listeners
-	 * connected to the signal. Platform signals have enum-typed
-	 * arguments and there seem to be an issue with invoking such
-	 * signals on s390x and ppc64 archs.
-	 * https://bugzilla.redhat.com/show_bug.cgi?id=1260577
-	 *
-	 * As the test shows, the failure is not reproducible for
-	 * platform signals.
-	 */
+     * connected to the signal. Platform signals have enum-typed
+     * arguments and there seem to be an issue with invoking such
+     * signals on s390x and ppc64 archs.
+     * https://bugzilla.redhat.com/show_bug.cgi?id=1260577
+     *
+     * As the test shows, the failure is not reproducible for
+     * platform signals.
+     */
     g_assert(NM_IS_PLATFORM(platform));
     g_assert(platform == NM_PLATFORM_GET);
 
@@ -226,9 +226,9 @@ test_slave(int master, int type, SignalData *master_changed)
     accept_signal(link_added);
 
     /* Set the slave up to see whether master's IFF_LOWER_UP is set correctly.
-	 *
-	 * See https://bugzilla.redhat.com/show_bug.cgi?id=910348
-	 */
+     *
+     * See https://bugzilla.redhat.com/show_bug.cgi?id=910348
+     */
     g_assert(!nm_platform_link_is_up(NM_PLATFORM_GET, ifindex));
     g_assert(nm_platform_link_set_down(NM_PLATFORM_GET, ifindex));
     g_assert(!nm_platform_link_is_up(NM_PLATFORM_GET, ifindex));
@@ -274,10 +274,10 @@ test_slave(int master, int type, SignalData *master_changed)
     g_assert(test_link_changed_signal_arg2);
 
     /* Master with a disconnected slave is disconnected
-	 *
-	 * For some reason, bonding and teaming slaves are automatically set up. We
-	 * need to set them back down for this test.
-	 */
+     *
+     * For some reason, bonding and teaming slaves are automatically set up. We
+     * need to set them back down for this test.
+     */
     switch (nm_platform_link_get_type(NM_PLATFORM_GET, master)) {
     case NM_LINK_TYPE_BOND:
     case NM_LINK_TYPE_TEAM:
@@ -293,8 +293,8 @@ test_slave(int master, int type, SignalData *master_changed)
     if (nmtstp_is_root_test() && nm_platform_link_is_connected(NM_PLATFORM_GET, master)) {
         if (nm_platform_link_get_type(NM_PLATFORM_GET, master) == NM_LINK_TYPE_TEAM) {
             /* Older team versions (e.g. Fedora 17) have a bug that team master stays
-			 * IFF_LOWER_UP even if its slave is down. Double check it with iproute2 and if
-			 * `ip link` also claims master to be up, accept it. */
+             * IFF_LOWER_UP even if its slave is down. Double check it with iproute2 and if
+             * `ip link` also claims master to be up, accept it. */
             char *stdout_str = NULL;
 
             nmtst_spawn_sync(NULL,
@@ -322,9 +322,9 @@ test_slave(int master, int type, SignalData *master_changed)
     accept_signals(master_changed, 0, 3);
 
     /* Enslave again
-	 *
-	 * Gracefully succeed if already enslaved.
-	 */
+     *
+     * Gracefully succeed if already enslaved.
+     */
     ensure_no_signal(link_changed);
     g_assert(nm_platform_link_enslave(NM_PLATFORM_GET, master, ifindex));
     accept_signals(link_changed, 0, 2);
@@ -357,7 +357,7 @@ test_slave(int master, int type, SignalData *master_changed)
         accept_signals(link_removed, 0, 1);
     } else {
         /* Due to https://bugzilla.redhat.com/show_bug.cgi?id=1285719 , kernel might send a
-		 * wrong RTM_DELLINK message so that we instead see an removed+added signal. */
+         * wrong RTM_DELLINK message so that we instead see an removed+added signal. */
         accept_signal(link_added);
         ensure_no_signal(link_changed);
         accept_signal(link_removed);
@@ -524,7 +524,7 @@ static int
 _system(const char *cmd)
 {
     /* some gcc version really want to warn on -Werror=unused-result. Add a bogus wrapper
-	 * function. */
+     * function. */
     return system(cmd);
 }
 
@@ -1475,11 +1475,11 @@ test_software_detect(gconstpointer user_data)
         lnk_macvlan.tap        = FALSE;
 
         /* Since in old kernel versions sysfs files for macvtaps are not
-		 * namespaced, the creation can fail if a macvtap in another namespace
-		 * has the same index. Try to detect this situation and skip already
-		 * used indexes.
-		 * The fix (17af2bce) is included kernel 4.7, dated 24 July, 2016.
-		 */
+         * namespaced, the creation can fail if a macvtap in another namespace
+         * has the same index. Try to detect this situation and skip already
+         * used indexes.
+         * The fix (17af2bce) is included kernel 4.7, dated 24 July, 2016.
+         */
         for (i = ifindex_parent + 1; i < ifindex_parent + 100; i++) {
             snprintf(buf, sizeof(buf), "/sys/class/macvtap/tap%d", i);
             if (!g_file_test(buf, G_FILE_TEST_IS_SYMLINK))
@@ -1605,7 +1605,7 @@ test_software_detect(gconstpointer user_data)
                 .multi_queue = nmtst_get_rand_bool(),
 
                 /* if we add the device via iproute2 (external), we can only
-				 * create persistent devices. */
+                 * create persistent devices. */
                 .persist = (ext == 1) ? TRUE : nmtst_get_rand_bool(),
             };
             break;
@@ -1654,8 +1654,8 @@ test_software_detect(gconstpointer user_data)
 
             if (test_data->link_type == NM_LINK_TYPE_VXLAN && set_up) {
                 /* On RHEL-7, we need to add a tiny sleep here, otherwise,
-				 * upping the vxlan device fails with EADDRINUSE.
-				 * https://bugzilla.redhat.com/show_bug.cgi?id=1277131 */
+                 * upping the vxlan device fails with EADDRINUSE.
+                 * https://bugzilla.redhat.com/show_bug.cgi?id=1277131 */
                 g_usleep(1);
             }
             nmtstp_link_set_updown(NULL, -1, ifindex, set_up);
@@ -1667,7 +1667,7 @@ test_software_detect(gconstpointer user_data)
 
         if (!lnk && test_data->link_type == NM_LINK_TYPE_TUN) {
             /* this is ok. Kernel apparently does not support tun properties via netlink. We
-			 * fetch them from sysfs below. */
+             * fetch them from sysfs below. */
         } else
             g_assert(lnk);
 
@@ -1833,8 +1833,8 @@ test_software_detect(gconstpointer user_data)
                      == nm_platform_link_get_lnk_tun(NM_PLATFORM_GET, ifindex, NULL));
 
             /* kernel might not expose tun options via netlink. Either way, try
-			 * to read them (either from platform cache, or fallback to sysfs).
-			 * See also: rh#1547213. */
+             * to read them (either from platform cache, or fallback to sysfs).
+             * See also: rh#1547213. */
             if (!nm_platform_link_tun_get_properties(NM_PLATFORM_GET, ifindex, &lnk_tun2))
                 g_assert_not_reached();
 
@@ -1844,9 +1844,9 @@ test_software_detect(gconstpointer user_data)
 
             if (i_step == 0) {
                 /* Before we upped the device for the first time the kernel didn't notify
-				 * us of the owner set after the link creation:
-				 * https://bugzilla.redhat.com/show_bug.cgi?id=1566062
-				 */
+                 * us of the owner set after the link creation:
+                 * https://bugzilla.redhat.com/show_bug.cgi?id=1566062
+                 */
                 break;
             }
 
@@ -1895,7 +1895,7 @@ test_software_detect(gconstpointer user_data)
                 g_assert_cmpint(plnk->dst_port, ==, 4789);
                 if (plnk->src_port_min != 0 || plnk->src_port_max != 0) {
                     /* on some kernels, omitting the port range results in setting
-					 * following default port range. */
+                     * following default port range. */
                     g_assert_cmpint(plnk->src_port_min, ==, 32768);
                     g_assert_cmpint(plnk->src_port_max, ==, 61000);
                 }
@@ -2426,8 +2426,8 @@ test_create_many_links_do(guint n_devices)
         nm_sprintf_buf(name, "t-%05u", i);
         if (EX == 2) {
             /* This mode is different from letting nmtstp_link_dummy_add()
-			 * because in this case we don't process any platform events
-			 * while adding all the links. */
+             * because in this case we don't process any platform events
+             * while adding all the links. */
             nmtstp_run_command_check("ip link add %s type dummy", name);
         } else
             nmtstp_link_dummy_add(NULL, EX, name);
@@ -2516,20 +2516,20 @@ test_nl_bugs_veth(void)
     g_assert(pllink_veth0);
     if (pllink_veth0->parent == 0) {
         /* Kernels prior to 4.1 dated 21 June, 2015 don't support exposing the veth peer
-		 * as IFA_LINK. skip the remainder of the test. */
+         * as IFA_LINK. skip the remainder of the test. */
         goto out;
     }
     g_assert_cmpint(pllink_veth0->parent, ==, ifindex_veth1);
 
     /* The following tests whether we have a workaround for kernel bug
-	 * https://bugzilla.redhat.com/show_bug.cgi?id=1285827 in place. */
+     * https://bugzilla.redhat.com/show_bug.cgi?id=1285827 in place. */
     pllink_veth1 = nm_platform_link_get(NM_PLATFORM_GET, ifindex_veth1);
     g_assert(pllink_veth1);
     g_assert_cmpint(pllink_veth1->parent, ==, ifindex_veth0);
 
     /* move one veth peer to another namespace and check that the
-	 * parent/IFLA_LINK of the remaining peer properly updates
-	 * (https://bugzilla.redhat.com/show_bug.cgi?id=1262908). */
+     * parent/IFLA_LINK of the remaining peer properly updates
+     * (https://bugzilla.redhat.com/show_bug.cgi?id=1262908). */
     ns_handle = nmtstp_namespace_create(CLONE_NEWNET, &error);
     g_assert_no_error(error);
     g_assert(ns_handle);
@@ -2673,7 +2673,7 @@ static void
 _test_netns_setup(gpointer fixture, gconstpointer test_data)
 {
     /* the singleton platform instance has netns support disabled.
-	 * Destroy the instance before the test and re-create it afterwards. */
+     * Destroy the instance before the test and re-create it afterwards. */
     g_object_unref(NM_PLATFORM_GET);
 }
 
@@ -2864,7 +2864,7 @@ test_netns_general(gpointer fixture, gconstpointer test_data)
     _sysctl_assert_eq(platform_2, "/proc/sys/net/ipv6/conf/dummy2a/disable_ipv6", NULL);
 
     /* Kernels prior to 3.19 dated 8 February, 2015 don't support ethtool -i for dummy devices.
-	 * Work around that and skip asserts that are known to fail. */
+     * Work around that and skip asserts that are known to fail. */
     ethtool_support = nmtstp_run_command("ethtool -i dummy1_ > /dev/null") == 0;
     if (ethtool_support) {
         g_assert(nmp_utils_ethtool_get_driver_info(
@@ -3340,7 +3340,7 @@ test_sysctl_netns_switch(void)
     nmtstp_netns_select_random(platforms, G_N_ELEMENTS(platforms), &netns_pop_3);
 
     /* even if we switch to other namespaces, we can still lookup the path correctly,
-	 * either using dirfd or via the platform instance (which switches namespace as needed). */
+     * either using dirfd or via the platform instance (which switches namespace as needed). */
     {
         gs_free char *c = NULL;
 
@@ -3417,7 +3417,7 @@ test_sysctl_netns_switch(void)
     }
 
     /* accessing the path directly, only succeeds iff the current namespace happens to be the namespace
-	 * in which we created the link. */
+     * in which we created the link. */
     {
         gs_free char *c = NULL;
 
@@ -3570,9 +3570,9 @@ _test_netns_mt_thread(gpointer data)
     g_assert(netns_bottom);
 
     /* I don't know why, but we need to create a new netns here at least once.
-	 * Otherwise, setns(, CLONE_NEWNS) below fails with EINVAL (???).
-	 *
-	 * Something is not right here, but what?  */
+     * Otherwise, setns(, CLONE_NEWNS) below fails with EINVAL (???).
+     *
+     * Something is not right here, but what?  */
     netns2 = nmp_netns_new();
     nmp_netns_pop(netns2);
     g_clear_object(&netns2);

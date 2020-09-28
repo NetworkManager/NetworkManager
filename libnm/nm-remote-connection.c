@@ -772,11 +772,11 @@ nm_remote_connection_class_init(NMRemoteConnectionClass *klass)
     nm_object_class->unregister_client = unregister_client;
 
     /**
-	 * NMRemoteConnection:unsaved:
-	 *
-	 * %TRUE if the remote connection contains changes that have not been saved
-	 * to disk, %FALSE if the connection is the same as its on-disk representation.
-	 **/
+     * NMRemoteConnection:unsaved:
+     *
+     * %TRUE if the remote connection contains changes that have not been saved
+     * to disk, %FALSE if the connection is the same as its on-disk representation.
+     **/
     obj_properties[PROP_UNSAVED] = g_param_spec_boolean(NM_REMOTE_CONNECTION_UNSAVED,
                                                         "",
                                                         "",
@@ -784,13 +784,13 @@ nm_remote_connection_class_init(NMRemoteConnectionClass *klass)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMRemoteConnection:flags:
-	 *
-	 * The flags of the connection as unsigned integer. The values
-	 * correspond to the #NMSettingsConnectionFlags enum.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMRemoteConnection:flags:
+     *
+     * The flags of the connection as unsigned integer. The values
+     * correspond to the #NMSettingsConnectionFlags enum.
+     *
+     * Since: 1.12
+     **/
     obj_properties[PROP_FLAGS] = g_param_spec_uint(NM_REMOTE_CONNECTION_FLAGS,
                                                    "",
                                                    "",
@@ -800,13 +800,13 @@ nm_remote_connection_class_init(NMRemoteConnectionClass *klass)
                                                    G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMRemoteConnection:filename:
-	 *
-	 * File that stores the connection in case the connection is
-	 * file-backed.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMRemoteConnection:filename:
+     *
+     * File that stores the connection in case the connection is
+     * file-backed.
+     *
+     * Since: 1.12
+     **/
     obj_properties[PROP_FILENAME] = g_param_spec_string(NM_REMOTE_CONNECTION_FILENAME,
                                                         "",
                                                         "",
@@ -814,16 +814,16 @@ nm_remote_connection_class_init(NMRemoteConnectionClass *klass)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMRemoteConnection:visible:
-	 *
-	 * %TRUE if the remote connection is visible to the current user, %FALSE if
-	 * not.  If the connection is not visible then it is essentially useless; it
-	 * will not contain any settings, and operations such as
-	 * nm_remote_connection_save() and nm_remote_connection_delete() will always
-	 * fail. (#NMRemoteSettings will not normally return non-visible connections
-	 * to callers, but it is possible for a connection's visibility to change
-	 * after you already have a reference to it.)
-	 **/
+     * NMRemoteConnection:visible:
+     *
+     * %TRUE if the remote connection is visible to the current user, %FALSE if
+     * not.  If the connection is not visible then it is essentially useless; it
+     * will not contain any settings, and operations such as
+     * nm_remote_connection_save() and nm_remote_connection_delete() will always
+     * fail. (#NMRemoteSettings will not normally return non-visible connections
+     * to callers, but it is possible for a connection's visibility to change
+     * after you already have a reference to it.)
+     **/
     obj_properties[PROP_VISIBLE] = g_param_spec_boolean(NM_REMOTE_CONNECTION_VISIBLE,
                                                         "",
                                                         "",

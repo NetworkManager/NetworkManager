@@ -150,10 +150,10 @@ static gboolean
 _get_running(NMFirewallManagerPrivate *priv)
 {
     /* when starting, we need to asynchronously check whether there is
-	 * a name owner. During that time we optimistically assume that the
-	 * service is indeed running. That is the time when we queue the
-	 * requests, and they will be started once the get-name-owner call
-	 * returns. */
+     * a name owner. During that time we optimistically assume that the
+     * service is indeed running. That is the time when we queue the
+     * requests, and they will be started once the get-name-owner call
+     * returns. */
     return priv->running || (priv->dbus_connection && !priv->dbus_inited);
 }
 
@@ -243,8 +243,8 @@ _handle_idle_start(NMFirewallManager *self, NMFirewallManagerCallId *call_id)
 {
     if (!call_id->callback) {
         /* if the user did not provide a callback and firewalld is not running,
-		 * there is no point in scheduling an idle-request to fake success. Just
-		 * return right away. */
+         * there is no point in scheduling an idle-request to fake success. Just
+         * return right away. */
         _LOGD(call_id, "complete: drop request simulating success");
         _cb_info_complete(call_id, NULL);
         return FALSE;
@@ -295,7 +295,7 @@ _handle_dbus_cb(GObject *source, GAsyncResult *result, gpointer user_data)
             _LOGD(call_id, "complete: request failed with a non-error (%s)", error->message);
 
             /* The operation failed with an error reason that we don't want
-			 * to propagate. Instead, signal success. */
+             * to propagate. Instead, signal success. */
             g_clear_error(&error);
         } else
             _LOGW(call_id, "complete: request failed (%s)", error->message);
@@ -385,18 +385,18 @@ _start_request(NMFirewallManager *                self,
             _handle_dbus_start(self, call_id);
         if (!call_id->callback) {
             /* if the user did not provide a callback, the call_id is useless.
-			 * Especially, the user cannot use the call-id to cancel the request,
-			 * because he cannot know whether the request is still pending.
-			 *
-			 * Hence, returning %NULL doesn't mean that the request could not be started
-			 * (this function never fails and always starts a request). */
+             * Especially, the user cannot use the call-id to cancel the request,
+             * because he cannot know whether the request is still pending.
+             *
+             * Hence, returning %NULL doesn't mean that the request could not be started
+             * (this function never fails and always starts a request). */
             return NULL;
         }
     } else {
         if (!_handle_idle_start(self, call_id)) {
             /* if the user did not provide a callback and firewalld is not running,
-			 * there is no point in scheduling an idle-request to fake success. Just
-			 * return right away. */
+             * there is no point in scheduling an idle-request to fake success. Just
+             * return right away. */
             return NULL;
         }
     }
@@ -484,13 +484,13 @@ name_owner_changed(NMFirewallManager *self, const char *owner)
         NMFirewallManagerCallId *call_id;
 
         /* We kick of the requests that we have pending. Note that this is
-		 * entirely asynchronous and also we don't invoke any callbacks for
-		 * the user.
-		 * Even _handle_idle_start() just schedules an idle handler. That is,
-		 * because we don't want to callback to the user before emitting the
-		 * DISCONNECTED signal below. Also, emitting callbacks means the user
-		 * can call back to modify the list of pending-calls and we'd have
-		 * to handle reentrancy. */
+         * entirely asynchronous and also we don't invoke any callbacks for
+         * the user.
+         * Even _handle_idle_start() just schedules an idle handler. That is,
+         * because we don't want to callback to the user before emitting the
+         * DISCONNECTED signal below. Also, emitting callbacks means the user
+         * can call back to modify the list of pending-calls and we'd have
+         * to handle reentrancy. */
         c_list_for_each_entry_safe (call_id, call_id_safe, &priv->pending_calls, lst) {
             nm_assert(!call_id->is_idle);
             nm_assert(call_id->dbus.arg);
@@ -500,9 +500,9 @@ name_owner_changed(NMFirewallManager *self, const char *owner)
                 _handle_dbus_start(self, call_id);
             } else {
                 /* we don't want to invoke callbacks to the user right away. That is because
-				 * the user might schedule/cancel more calls, which messes up the order.
-				 *
-				 * Instead, convert the pending calls to idle requests... */
+                 * the user might schedule/cancel more calls, which messes up the order.
+                 *
+                 * Instead, convert the pending calls to idle requests... */
                 nm_clear_pointer(&call_id->dbus.arg, g_variant_unref);
                 call_id->is_idle = TRUE;
                 _LOGD(call_id, "initializing: fake success on idle");
@@ -591,7 +591,7 @@ dispose(GObject *object)
     NMFirewallManagerPrivate *priv = NM_FIREWALL_MANAGER_GET_PRIVATE(self);
 
     /* as every pending operation takes a reference to the manager,
-	 * we don't expect pending operations at this point. */
+     * we don't expect pending operations at this point. */
     nm_assert(c_list_is_empty(&priv->pending_calls));
 
     nm_clear_g_dbus_connection_signal(priv->dbus_connection, &priv->name_owner_changed_id);

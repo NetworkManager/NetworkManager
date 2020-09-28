@@ -138,17 +138,17 @@ static gboolean
 _wait_for_objects_iterate_until_done_idle_cb(gpointer user_data)
 {
     /* This avoids a race where:
-	 *
-	 *   - we check whether there are objects to wait for.
-	 *   - the last object to wait for gets removed (issuing g_main_loop_quit()).
-	 *   - we run the mainloop (and missed our signal).
-	 *
-	 * It's really a missing feature of GMainLoop where the "is-running" flag is always set to
-	 * TRUE by g_main_loop_run(). That means, you cannot catch a g_main_loop_quit() in a race
-	 * free way while not iterating the loop.
-	 *
-	 * Avoid this, by checking once again after we start running the mainloop.
-	 */
+     *
+     *   - we check whether there are objects to wait for.
+     *   - the last object to wait for gets removed (issuing g_main_loop_quit()).
+     *   - we run the mainloop (and missed our signal).
+     *
+     * It's really a missing feature of GMainLoop where the "is-running" flag is always set to
+     * TRUE by g_main_loop_run(). That means, you cannot catch a g_main_loop_quit() in a race
+     * free way while not iterating the loop.
+     *
+     * Avoid this, by checking once again after we start running the mainloop.
+     */
 
     G_LOCK(_wait_for_objects_lock);
     _wait_for_objects_maybe_quit_mainloops_with_lock();
@@ -496,7 +496,7 @@ nmcs_utils_hwaddr_normalize(const char *hwaddr, gssize len)
         hwaddr = nm_strndup_a(300, hwaddr, len, &hwaddr_clone);
     }
     /* we cannot use _nm_utils_hwaddr_aton() because that requires a delimiter.
-	 * Azure exposes MAC addresses without delimiter, so accept that too. */
+     * Azure exposes MAC addresses without delimiter, so accept that too. */
     if (!nm_utils_hexstr2bin_full(hwaddr,
                                   FALSE,
                                   FALSE,
@@ -544,7 +544,7 @@ nmcs_utils_parse_get_full_line(GBytes *mem, const char *needle)
 
     if (line != mem_data && line[-1] != '\n') {
         /* the line must be preceeded either by the begin of the data or
-		 * by a newline. */
+         * by a newline. */
         return NULL;
     }
 
@@ -574,9 +574,9 @@ nmcs_utils_uri_build_concat_v(const char *base, const char **components, gsize n
 
     if (n_components > 0 && components[0] && components[0][0] == '/') {
         /* the first component starts with a slash. We allow that, and don't add a duplicate
-		 * slash. Otherwise, we add a separator after base.
-		 *
-		 * We only do that for the first component. */
+         * slash. Otherwise, we add a separator after base.
+         *
+         * We only do that for the first component. */
     } else
         nm_str_buf_append_c(&strbuf, '/');
 

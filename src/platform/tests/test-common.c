@@ -790,14 +790,14 @@ nmtstp_wait_for_signal(NMPlatform *platform, gint64 timeout_msec)
                                   &data);
 
     /* if timeout_msec is negative, it means the wait-time already expired.
-	 * Maybe, we should do nothing and return right away, without even
-	 * processing events from platform. However, that inconsistency (of not
-	 * processing events from mainloop) is inconvenient.
-	 *
-	 * It's better that on the return of nmtstp_wait_for_signal(), we always
-	 * have no events pending. So, a negative timeout is treated the same as
-	 * a zero timeout: we check whether there are any events pending in platform,
-	 * and quite the mainloop immediately afterwards. But we always check. */
+     * Maybe, we should do nothing and return right away, without even
+     * processing events from platform. However, that inconsistency (of not
+     * processing events from mainloop) is inconvenient.
+     *
+     * It's better that on the return of nmtstp_wait_for_signal(), we always
+     * have no events pending. So, a negative timeout is treated the same as
+     * a zero timeout: we check whether there are any events pending in platform,
+     * and quite the mainloop immediately afterwards. But we always check. */
 
     data.id = g_timeout_add(CLAMP(timeout_msec, 0, G_MAXUINT32), _wait_for_signal_timeout, &data);
 
@@ -880,7 +880,7 @@ nmtstp_wait_for_link_until(NMPlatform *platform,
 
         waited_once = TRUE;
         /* regardless of whether timeout is already reached, we poll the netlink
-		 * socket a bit. */
+         * socket a bit. */
         nmtstp_wait_for_signal(platform, until_ms - now);
     }
 }
@@ -1951,8 +1951,8 @@ nmtstp_link_tun_add(NMPlatform *            platform,
 
     if (!lnk->persist) {
         /* ip tuntap does not support non-persistent devices.
-		 *
-		 * Add this device only via NMPlatform. */
+         *
+         * Add this device only via NMPlatform. */
         if (external_command == -1)
             external_command = FALSE;
     }
@@ -1981,7 +1981,7 @@ nmtstp_link_tun_add(NMPlatform *            platform,
             lnk->multi_queue ? " multi_queue" : "",
             name);
         /* Older versions of iproute2 don't support adding  devices.
-		 * On failure, fallback to using platform code. */
+         * On failure, fallback to using platform code. */
         if (err == 0)
             pllink = nmtstp_assert_wait_for_link(platform, name, NM_LINK_TYPE_TUN, 100);
         else
@@ -2088,7 +2088,7 @@ nmtstp_link_vxlan_add(NMPlatform *              platform,
                                  lnk->src_port_max,
                                  lnk->ageing);
         /* Older versions of iproute2 don't support adding vxlan devices.
-		 * On failure, fallback to using platform code. */
+         * On failure, fallback to using platform code. */
         if (err == 0)
             pllink = nmtstp_assert_wait_for_link(platform, name, NM_LINK_TYPE_VXLAN, 100);
         else
@@ -2491,7 +2491,7 @@ unshare_user(void)
         return FALSE;
 
     /* Since Linux 3.19 we have to disable setgroups() in order to map users.
-	 * Just proceed if the file is not there. */
+     * Just proceed if the file is not there. */
     f = fopen("/proc/self/setgroups", "we");
     if (f) {
         fprintf(f, "deny");

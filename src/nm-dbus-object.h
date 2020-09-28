@@ -17,13 +17,13 @@ typedef struct {
     const char *path;
 
     /* if path is of type NM_DBUS_EXPORT_PATH_NUMBERED(), we need a
-	 * per-class counter when generating a new numbered path.
-	 *
-	 * Each NMDBusObjectClass instance has a shallow clone of the NMDBusObjectClass parent
-	 * instance in every derived type. Hence we cannot embed the counter there directly,
-	 * because it must be shared, e.g. between NMDeviceBond and NMDeviceEthernet.
-	 * Make int_counter a pointer to the actual counter that is used by ever sibling
-	 * class. */
+     * per-class counter when generating a new numbered path.
+     *
+     * Each NMDBusObjectClass instance has a shallow clone of the NMDBusObjectClass parent
+     * instance in every derived type. Hence we cannot embed the counter there directly,
+     * because it must be shared, e.g. between NMDeviceBond and NMDeviceEthernet.
+     * Make int_counter a pointer to the actual counter that is used by ever sibling
+     * class. */
     long long unsigned *int_counter;
 } NMDBusExportPath;
 
@@ -76,11 +76,11 @@ struct _NMDBusObjectInternal {
     CList          registration_lst_head;
 
     /* we perform asynchronous operation on exported objects. For example, we receive
-	 * a Set property call, and asynchronously validate the operation. We must make
-	 * sure that when the authentication is complete, that we are still looking at
-	 * the same (exported) object. In the meantime, the object could have been
-	 * unexported, or even re-exported afterwards. If that happens, we want
-	 * to fail the request. For that, we keep track of a version id.  */
+     * a Set property call, and asynchronously validate the operation. We must make
+     * sure that when the authentication is complete, that we are still looking at
+     * the same (exported) object. In the meantime, the object could have been
+     * unexported, or even re-exported afterwards. If that happens, we want
+     * to fail the request. For that, we keep track of a version id.  */
     guint64 export_version_id;
     bool    is_unexporting : 1;
 };
@@ -157,7 +157,7 @@ nm_dbus_object_get_path_still_exported(NMDBusObject *self)
     g_return_val_if_fail(NM_IS_DBUS_OBJECT(self), NULL);
 
     /* like nm_dbus_object_get_path(), however, while unexporting
-	 * (exported-changed signal), returns %NULL instead of the path. */
+     * (exported-changed signal), returns %NULL instead of the path. */
     return self->internal.is_unexporting ? NULL : self->internal.path;
 }
 

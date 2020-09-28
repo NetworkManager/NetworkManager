@@ -817,8 +817,8 @@ nm_wifi_ap_new_fake_from_connection(NMConnection *connection)
         add_group_ciphers(ap, s_wireless_sec);
     } else if (adhoc && psk) {
         /* Ad-Hoc has special requirements: proto=RSN, pairwise=CCMP and
-		 * group=CCMP.
-		 */
+         * group=CCMP.
+         */
         flags = priv->wpa_flags | NM_802_11_AP_SEC_KEY_MGMT_PSK;
 
         /* Clear ciphers; only CCMP is supported */

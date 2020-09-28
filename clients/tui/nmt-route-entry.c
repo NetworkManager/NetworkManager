@@ -227,10 +227,10 @@ nmt_route_entry_class_init(NmtRouteEntryClass *entry_class)
     widget_class->get_focus_component = nmt_route_entry_get_focus_component;
 
     /**
-	 * NmtRouteEntry:family:
-	 *
-	 * The address family of the route, eg, %AF_INET
-	 */
+     * NmtRouteEntry:family:
+     *
+     * The address family of the route, eg, %AF_INET
+     */
     g_object_class_install_property(
         object_class,
         PROP_FAMILY,
@@ -242,10 +242,10 @@ nmt_route_entry_class_init(NmtRouteEntryClass *entry_class)
                          0,
                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtRouteEntry:ip-entry-width:
-	 *
-	 * The width in characters of the IP address entries
-	 */
+     * NmtRouteEntry:ip-entry-width:
+     *
+     * The width in characters of the IP address entries
+     */
     g_object_class_install_property(
         object_class,
         PROP_IP_ENTRY_WIDTH,
@@ -257,10 +257,10 @@ nmt_route_entry_class_init(NmtRouteEntryClass *entry_class)
                          0,
                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtRouteEntry:metric-entry-width:
-	 *
-	 * The width in characters of the metric entry
-	 */
+     * NmtRouteEntry:metric-entry-width:
+     *
+     * The width in characters of the metric entry
+     */
     g_object_class_install_property(
         object_class,
         PROP_METRIC_ENTRY_WIDTH,
@@ -272,10 +272,10 @@ nmt_route_entry_class_init(NmtRouteEntryClass *entry_class)
                          0,
                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtRouteEntry:route:
-	 *
-	 * The contents of the entries, as an #NMIPRoute.
-	 */
+     * NmtRouteEntry:route:
+     *
+     * The contents of the entries, as an #NMIPRoute.
+     */
     g_object_class_install_property(object_class,
                                     PROP_ROUTE,
                                     g_param_spec_boxed("route",

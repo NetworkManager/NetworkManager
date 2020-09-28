@@ -378,19 +378,19 @@ device_state_changed(NMActiveConnection *active,
     NMActiveConnectionStateReason ac_state_reason = NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN;
 
     /* Decide which device state changes to handle when this active connection
-	 * is not the device's current request.  Two cases here: (a) the AC is
-	 * pending and not yet active, and (b) the AC was active but the device is
-	 * entering DISCONNECTED state (which clears the device's current AC before
-	 * emitting the state change signal).
-	 */
+     * is not the device's current request.  Two cases here: (a) the AC is
+     * pending and not yet active, and (b) the AC was active but the device is
+     * entering DISCONNECTED state (which clears the device's current AC before
+     * emitting the state change signal).
+     */
     if (NM_ACTIVE_CONNECTION(nm_device_get_act_request(device)) != active) {
         /* Some other request is activating; this one must be pending */
         if (new_state >= NM_DEVICE_STATE_PREPARE)
             return;
         else if (new_state == NM_DEVICE_STATE_DISCONNECTED) {
             /* This request hasn't started activating yet; the device is
-			 * disconnecting and cleaning up a previous activation request.
-			 */
+             * disconnecting and cleaning up a previous activation request.
+             */
             if (cur_ac_state < NM_ACTIVE_CONNECTION_STATE_ACTIVATING)
                 return;
 

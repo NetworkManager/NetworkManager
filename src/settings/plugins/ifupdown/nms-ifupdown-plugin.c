@@ -31,8 +31,8 @@ typedef struct {
 
 typedef struct {
     /* Stores an entry for blocks/interfaces read from /e/n/i and (if exists)
-	 * the StorageData associated with the block.
-	 */
+     * the StorageData associated with the block.
+     */
     GHashTable *eni_ifaces;
 
     bool ifupdown_managed : 1;
@@ -123,11 +123,11 @@ reload_connections(NMSettingsPlugin *                     plugin,
         initialize(self);
     else if (!priv->already_reloaded) {
         /* This is the first call to reload, but we are already initialized.
-		 *
-		 * This happens because during start NMSettings first queries unmanaged-specs,
-		 * and then issues a reload call right away.
-		 *
-		 * On future reloads, we really want to load /e/n/i again. */
+         *
+         * This happens because during start NMSettings first queries unmanaged-specs,
+         * and then issues a reload call right away.
+         *
+         * On future reloads, we really want to load /e/n/i again. */
         priv->already_reloaded = TRUE;
     } else {
         eni_ifaces_old   = priv->eni_ifaces;

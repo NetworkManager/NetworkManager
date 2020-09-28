@@ -25,7 +25,7 @@ typedef union {
     const char *v_string;
 
     /* for convenience, also let the union contain other pointer types. These are
-	 * for NM_VALUE_TYPE_UNSPEC. */
+     * for NM_VALUE_TYPE_UNSPEC. */
     gconstpointer *  v_ptr;
     const GPtrArray *v_ptrarray;
 
@@ -144,7 +144,7 @@ nm_value_type_get_from_variant(NMValueType value_type,
 
     case NM_VALUE_TYPE_INT:
         /* "int" also does not have a define variant type, because it's not
-		 * clear how many bits we would need. */
+         * clear how many bits we would need. */
 
         /* fall-through */
     case NM_VALUE_TYPE_UNSPEC:
@@ -169,7 +169,7 @@ nm_value_type_to_variant(NMValueType value_type, gconstpointer src)
 
     case NM_VALUE_TYPE_INT:
         /* "int" also does not have a define variant type, because it's not
-		 * clear how many bits we would need. */
+         * clear how many bits we would need. */
 
         /* fall-through */
     case NM_VALUE_TYPE_UNSPEC:
@@ -192,7 +192,7 @@ nm_value_type_get_variant_type(NMValueType value_type)
 
     case NM_VALUE_TYPE_INT:
         /* "int" also does not have a define variant type, because it's not
-		 * clear how many bits we would need. */
+         * clear how many bits we would need. */
 
         /* fall-through */
     case NM_VALUE_TYPE_UNSPEC:

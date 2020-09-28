@@ -486,7 +486,7 @@ _nmtst_convert_iv(const char *src, gsize *out_len, GError **error)
     c = g_malloc(num + 1);
 
     /* defensively add trailing NUL. This function returns binary data,
-	 * do not assume it's NUL terminated. */
+     * do not assume it's NUL terminated. */
     c[num] = '\0';
 
     for (i = 0; i < num; i++) {
@@ -1034,11 +1034,11 @@ nmtst_crypto_rsa_key_encrypt(const guint8 *data,
         return NULL;
 
     /* What follows is not the most efficient way to construct the pem
-	 * file line-by-line. At least, it makes sure, that the data will be cleared
-	 * again and not left around in memory.
-	 *
-	 * If this would not be test code, we should improve the implementation
-	 * to avoid some of the copying. */
+     * file line-by-line. At least, it makes sure, that the data will be cleared
+     * again and not left around in memory.
+     *
+     * If this would not be test code, we should improve the implementation
+     * to avoid some of the copying. */
     pem = g_ptr_array_new_with_free_func((GDestroyNotify) nm_free_secret);
 
     g_ptr_array_add(pem, g_strdup("-----BEGIN RSA PRIVATE KEY-----\n"));

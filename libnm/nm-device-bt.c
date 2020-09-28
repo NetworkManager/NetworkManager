@@ -243,10 +243,10 @@ nm_device_bt_class_init(NMDeviceBtClass *bt_class)
     device_class->get_setting_type      = get_setting_type;
 
     /**
-	 * NMDeviceBt:name:
-	 *
-	 * The name of the bluetooth device.
-	 **/
+     * NMDeviceBt:name:
+     *
+     * The name of the bluetooth device.
+     **/
     obj_properties[PROP_NAME] = g_param_spec_string(NM_DEVICE_BT_NAME,
                                                     "",
                                                     "",
@@ -254,10 +254,10 @@ nm_device_bt_class_init(NMDeviceBtClass *bt_class)
                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceBt:bt-capabilities:
-	 *
-	 * The device's bluetooth capabilities, a combination of #NMBluetoothCapabilities.
-	 **/
+     * NMDeviceBt:bt-capabilities:
+     *
+     * The device's bluetooth capabilities, a combination of #NMBluetoothCapabilities.
+     **/
     obj_properties[PROP_BT_CAPABILITIES] =
         g_param_spec_flags(NM_DEVICE_BT_CAPABILITIES,
                            "",

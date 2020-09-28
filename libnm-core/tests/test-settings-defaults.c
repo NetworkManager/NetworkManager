@@ -43,8 +43,8 @@ test_defaults(GType type, const char *name)
         gboolean    ok = FALSE;
 
         /* Ignore non-fundamental types since they won't really have
-		 * defaults.
-		 */
+         * defaults.
+         */
         if (!G_TYPE_IS_FUNDAMENTAL(prop_spec->value_type))
             continue;
 

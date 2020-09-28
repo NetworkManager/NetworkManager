@@ -264,7 +264,7 @@ register_agent(NMIwdManager *self)
 
     if (!agent_manager) {
         /* IWD prior to 1.0 dated 30 October, 2019 has the agent manager on a
-		 * different path. */
+         * different path. */
         agent_manager = g_dbus_object_manager_get_interface(priv->object_manager,
                                                             "/",
                                                             NM_IWD_AGENT_MANAGER_INTERFACE);
@@ -424,10 +424,10 @@ mirror_8021x_connection(NMIwdManager *self, const char *name, gboolean create_ne
     }
 
     /* If we already have an NMSettingsConnection matching this
-	 * KnownNetwork, whether it's saved or an in-memory connection
-	 * potentially created by ourselves then we have nothing left to
-	 * do here.
-	 */
+     * KnownNetwork, whether it's saved or an in-memory connection
+     * potentially created by ourselves then we have nothing left to
+     * do here.
+     */
     if (settings_connection || !create_new)
         return settings_connection;
 
@@ -461,11 +461,11 @@ mirror_8021x_connection(NMIwdManager *self, const char *name, gboolean create_ne
     nm_connection_add_setting(connection, setting);
 
     /* "password" and "private-key-password" may be requested by the IWD agent
-	 * from NM and IWD will implement a specific secret cache policy so by
-	 * default respect that policy and don't save copies of those secrets in
-	 * NM settings.  The saved values can not be used anyway because of our
-	 * use of NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW.
-	 */
+     * from NM and IWD will implement a specific secret cache policy so by
+     * default respect that policy and don't save copies of those secrets in
+     * NM settings.  The saved values can not be used anyway because of our
+     * use of NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW.
+     */
     setting = NM_SETTING(g_object_new(NM_TYPE_SETTING_802_1X,
                                       NM_SETTING_802_1X_PASSWORD_FLAGS,
                                       NM_SETTING_SECRET_FLAG_NOT_SAVED,
@@ -506,7 +506,7 @@ mirror_8021x_connection_take_and_delete(NMSettingsConnection *sett_conn)
     flags = nm_settings_connection_get_flags(sett_conn);
 
     /* If connection has not been saved since we created it
-	 * in interface_added it too can be removed now. */
+     * in interface_added it too can be removed now. */
     if (NM_FLAGS_HAS(flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED))
         nm_settings_connection_delete(sett_conn, FALSE);
 
@@ -662,8 +662,8 @@ connection_removed(NMSettings *settings, NMSettingsConnection *sett_conn, gpoint
         g_clear_object(&data->mirror_connection);
 
         /* Don't call Forget for an 8021x network until there's no
-		 * longer *any* matching NMSettingsConnection (debatable)
-		 */
+         * longer *any* matching NMSettingsConnection (debatable)
+         */
         new_mirror_conn = mirror_8021x_connection(self, id.name, FALSE);
         if (new_mirror_conn) {
             data->mirror_connection = g_object_ref(new_mirror_conn);
@@ -729,9 +729,9 @@ release_object_manager(NMIwdManager *self)
         agent_connection = g_dbus_object_manager_client_get_connection(omc);
 
         /* We're is called when we're shutting down (i.e. our DBus connection
-		 * is being closed, and IWD will detect this) or IWD was stopped so
-		 * in either case calling UnregisterAgent will not do anything.
-		 */
+         * is being closed, and IWD will detect this) or IWD was stopped so
+         * in either case calling UnregisterAgent will not do anything.
+         */
         g_dbus_connection_unregister_object(agent_connection, priv->agent_id);
         priv->agent_id = 0;
         nm_clear_g_free(&priv->agent_path);
@@ -950,8 +950,8 @@ dispose(GObject *object)
     }
 
     /* This may trigger mirror connection removals so it happens
-	 * after the g_signal_handlers_disconnect_by_data above.
-	 */
+     * after the g_signal_handlers_disconnect_by_data above.
+     */
     nm_clear_pointer(&priv->known_networks, g_hash_table_destroy);
 
     if (priv->manager) {

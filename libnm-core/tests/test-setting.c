@@ -82,7 +82,7 @@ _connection_new_from_dbus_strict(GVariant *dict, gboolean normalize)
     nmtst_assert_connection_verifies_without_normalization(con_n_s);
 
     /* randomly compare some pairs that we created. They must all be equal,
-	 * after accounting for normalization. */
+     * after accounting for normalization. */
     for (i = 0; i < 10; i++) {
         NMConnection *cons[] = {con_x_0, con_x_s, con_x_e, con_n_0, con_n_s, con_n_e};
         guint         idx_a  = (nmtst_get_rand_uint32() % G_N_ELEMENTS(cons));
@@ -749,9 +749,9 @@ test_dcb_flags_valid(void)
 #define TEST_FLAG(p, f, v)                                                           \
     {                                                                                \
         /* GObject property min/max should ensure the property does not get set to \
-	 * the invalid value, so we ensure the value we just tried to set is 0 and \
-	 * that verify is successful since the property never got set. \
-	 */ \
+     * the invalid value, so we ensure the value we just tried to set is 0 and \
+     * that verify is successful since the property never got set. \
+     */ \
         g_object_set(G_OBJECT(s_dcb), p, v, NULL);                                   \
         g_assert_cmpint(f(s_dcb), ==, 0);                                            \
         success = nm_setting_verify(NM_SETTING(s_dcb), NULL, &error);                \
@@ -862,8 +862,8 @@ test_dcb_app_priorities(void)
         if (verify) {                                                                             \
             if (val != 0) {                                                                       \
                 /* Assert that verify fails because the flags do not include 'enabled' \
-			 * and a value has been set. \
-			 */          \
+             * and a value has been set. \
+             */          \
                 success = nm_setting_verify(NM_SETTING(s_dcb), NULL, &error);                     \
                 g_assert_error(error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY); \
                 g_assert(success == FALSE);                                                       \
@@ -922,8 +922,8 @@ test_dcb_priorities_valid(void)
         nm_setting_dcb_set_priority_group_bandwidth(s_dcb, i, 0);
 
     /* Priority Group Bandwidth must add up to 100% if enabled, which requires
-	 * some dancing for verifying individual values here.
-	 */
+     * some dancing for verifying individual values here.
+     */
     for (i = 0; i < 8; i++) {
         guint other = 7 - (i % 8);
 
@@ -1577,9 +1577,9 @@ _check_team_setting(NMSetting *setting)
     nmtst_assert_setting_dbus_roundtrip(setting);
 
     /* OK, now parse the setting only from the D-Bus variant, but removing the JSON config.
-	 * For that, we have to "drop" the JSON and we do that by resetting the property.
-	 * This causes JSON to be regenerated and it's in a normalized form that will compare
-	 * equal. */
+     * For that, we have to "drop" the JSON and we do that by resetting the property.
+     * This causes JSON to be regenerated and it's in a normalized form that will compare
+     * equal. */
     setting_clone = nm_setting_duplicate(setting);
     setting       = setting_clone;
     if (is_port) {
@@ -2991,8 +2991,8 @@ _rndt_wg_peers_create(void)
         guint            i_aip, n_aip;
 
         /* we don't bother to create a valid curve25519 public key. Of course, libnm cannot
-		 * check whether the public key is bogus or not. Hence, for our purpose a random
-		 * bogus key is good enough. */
+         * check whether the public key is bogus or not. Hence, for our purpose a random
+         * bogus key is good enough. */
         public_key = g_base64_encode(nmtst_rand_buf(NULL, public_key_buf, sizeof(public_key_buf)),
                                      sizeof(public_key_buf));
 
@@ -3524,8 +3524,8 @@ test_roundtrip_conversion(gconstpointer test_data)
     }
 
     /* the first kf_data_arr entry is special: it is the exact result of what we expect
-	 * when converting @con to keyfile. Write @con to keyfile and compare the expected result
-	 * literally. */
+     * when converting @con to keyfile. Write @con to keyfile and compare the expected result
+     * literally. */
     {
         nm_auto_unref_keyfile GKeyFile *kf = NULL;
 
@@ -3533,7 +3533,7 @@ test_roundtrip_conversion(gconstpointer test_data)
         nmtst_assert_success(kf, error);
 
         /* the first kf_data_arr entry is special: it must be what the writer would
-		 * produce again. */
+         * produce again. */
         nmtst_keyfile_assert_data(kf, kf_data_arr->pdata[0], -1);
     }
 
@@ -3553,12 +3553,12 @@ test_roundtrip_conversion(gconstpointer test_data)
 
             if (ETH_MTU > (guint32) G_MAXINT && kf_data_idx == 1) {
                 /* older versions wrote values > 2^21 as signed integers, but the reader would
-				 * always reject such negative values for G_TYPE_UINT.
-				 *
-				 * The test case kf_data_idx #1 still writes the values in the old style.
-				 * The behavior was fixed, but such values are still rejected as invalid.
-				 *
-				 * Patch the setting so that the comparison below succeeds are usual. */
+                 * always reject such negative values for G_TYPE_UINT.
+                 *
+                 * The test case kf_data_idx #1 still writes the values in the old style.
+                 * The behavior was fixed, but such values are still rejected as invalid.
+                 *
+                 * Patch the setting so that the comparison below succeeds are usual. */
                 g_assert_cmpint(nm_setting_wired_get_mtu(s_eth2), ==, 0);
                 g_object_set(s_eth2, NM_SETTING_WIRED_MTU, ETH_MTU, NULL);
             }
@@ -4127,7 +4127,7 @@ test_setting_metadata(void)
                     default_value = ((const GParamSpecString *) sip->param_spec)->default_value;
                     if (default_value) {
                         /* having a string property with a default != NULL is really ugly. They
-						 * should be best avoided... */
+                         * should be best avoided... */
                         if (meta_type == NM_META_SETTING_TYPE_DCB
                             && nm_streq(sip->name, NM_SETTING_DCB_APP_FCOE_MODE)) {
                             /* Whitelist the properties that have a non-NULL default value. */
@@ -4166,7 +4166,7 @@ test_setting_metadata(void)
             g_assert_cmpint(meta_type, ==, NM_META_SETTING_TYPE_CONNECTION);
 
             /* ensure that there are no duplicates, and that all properties are also
-			 * tracked by sis->property_infos. */
+             * tracked by sis->property_infos. */
             for (prop_idx = 0; prop_idx < sis->property_infos_len; prop_idx++) {
                 const NMSettInfoProperty *sip = sis->property_infos_sorted[prop_idx];
 
@@ -4226,16 +4226,16 @@ test_setting_metadata(void)
                     || (pt_2 == &nm_sett_info_propert_type_plain_u
                         && pt == &nm_sett_info_propert_type_deprecated_ignore_u)) {
                     /* These are known to be duplicated. This is the case for
-					 *   "gsm.network-type"  and plain properties like "802-11-wireless-security.fils" ("i" D-Bus type)
-					 *   "gsm.allowed-bands" and plain properties like "802-11-olpc-mesh.channel" ("u" D-Bus type)
-					 * While the content/behaviour of the property types are identical, their purpose
-					 * is different. So allow them.
-					 */
+                     *   "gsm.network-type"  and plain properties like "802-11-wireless-security.fils" ("i" D-Bus type)
+                     *   "gsm.allowed-bands" and plain properties like "802-11-olpc-mesh.channel" ("u" D-Bus type)
+                     * While the content/behaviour of the property types are identical, their purpose
+                     * is different. So allow them.
+                     */
                     continue;
                 }
 
                 /* the property-types with same content should all be shared. Here we have two that
-				 * are the same content, but different instances. Bug. */
+                 * are the same content, but different instances. Bug. */
                 g_error("The identical property type for D-Bus type \"%s\" is used by: %s and %s",
                         (const char *) pt->dbus_type,
                         _PROP_IDX_OWNER(h_property_types, pt),

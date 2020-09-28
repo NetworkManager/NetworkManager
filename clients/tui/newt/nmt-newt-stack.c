@@ -97,9 +97,9 @@ nmt_newt_stack_size_request(NmtNewtWidget *widget, int *width, int *height)
     }
 
     /* We size-request all pages so that embedded NmtPageGrids will
-	 * participate in their size-grouping (so that switching pages
-	 * won't result in the column widths changing).
-	 */
+     * participate in their size-grouping (so that switching pages
+     * won't result in the column widths changing).
+     */
     for (i = 0; i < priv->children->len; i++) {
         nmt_newt_widget_size_request(priv->children->pdata[i], &child_width, &child_height);
         if (i == priv->active) {
@@ -312,10 +312,10 @@ nmt_newt_stack_class_init(NmtNewtStackClass *stack_class)
     container_class->child_validity_changed = nmt_newt_stack_child_validity_changed;
 
     /**
-	 * NmtNewtStack:active:
-	 *
-	 * The index of the active page
-	 */
+     * NmtNewtStack:active:
+     *
+     * The index of the active page
+     */
     g_object_class_install_property(object_class,
                                     PROP_ACTIVE,
                                     g_param_spec_uint("active",
@@ -326,10 +326,10 @@ nmt_newt_stack_class_init(NmtNewtStackClass *stack_class)
                                                       0,
                                                       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtStack:active-id:
-	 *
-	 * The ID of the active page
-	 */
+     * NmtNewtStack:active-id:
+     *
+     * The ID of the active page
+     */
     g_object_class_install_property(
         object_class,
         PROP_ACTIVE_ID,

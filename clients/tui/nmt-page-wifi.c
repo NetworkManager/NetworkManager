@@ -172,9 +172,9 @@ nmt_page_wifi_constructed(GObject *object)
     s_wsec = nm_connection_get_setting_wireless_security(conn);
     if (!s_wsec) {
         /* It makes things simpler if we always have a
-		 * NMSettingWirelessSecurity; we'll hold a ref on one, and add
-		 * it to and remove it from the connection as needed.
-		 */
+         * NMSettingWirelessSecurity; we'll hold a ref on one, and add
+         * it to and remove it from the connection as needed.
+         */
         s_wsec = NM_SETTING_WIRELESS_SECURITY(nm_setting_wireless_security_new());
     }
     priv->s_wsec = g_object_ref_sink(s_wsec);

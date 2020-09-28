@@ -323,8 +323,8 @@ _scan_request_ssids_track(NMDeviceWifiPrivate *priv, const GPtrArray *ssids)
         priv->scan_request_ssids_hash = g_hash_table_new(nm_pgbytes_hash, nm_pgbytes_equal);
 
     /* Do a little dance. New elements shall keep their order as in @ssids, but all
-	 * new elements should be sorted in the list preexisting elements of the list.
-	 * First move the old elements away, and splice them back afterwards. */
+     * new elements should be sorted in the list preexisting elements of the list.
+     * First move the old elements away, and splice them back afterwards. */
     c_list_init(&old_lst_head);
     c_list_splice(&old_lst_head, &priv->scan_request_ssids_lst_head);
 
@@ -350,7 +350,7 @@ _scan_request_ssids_track(NMDeviceWifiPrivate *priv, const GPtrArray *ssids)
     c_list_splice(&priv->scan_request_ssids_lst_head, &old_lst_head);
 
     /* Trim the excess. After our splice with old_lst_head, the list contains the new
-	 * elements (from @ssids) at the front (in there original order), followed by older elements. */
+     * elements (from @ssids) at the front (in there original order), followed by older elements. */
     _scan_request_ssids_remove_all(priv, now_msec, SCAN_REQUEST_SSIDS_MAX_NUM);
 }
 
@@ -370,9 +370,9 @@ nm_device_wifi_scanning_prohibited_track(NMDeviceWifi *self,
     priv = NM_DEVICE_WIFI_GET_PRIVATE(self);
 
     /* We track these with a simple CList. This would be not efficient, if
-	 * there would be many users that need to be tracked at the same time (there
-	 * aren't). In fact, most of the time there is no NMDeviceOlpcMesh and
-	 * nobody tracks itself here. Optimize for that and simplicity. */
+     * there would be many users that need to be tracked at the same time (there
+     * aren't). In fact, most of the time there is no NMDeviceOlpcMesh and
+     * nobody tracks itself here. Optimize for that and simplicity. */
 
     elem = nm_c_list_elem_find_first(&priv->scanning_prohibited_lst_head, iter, iter == tag);
 
@@ -451,8 +451,8 @@ _scan_notify_is_scanning(NMDeviceWifi *self)
 
     if (scanning) {
         /* while the device is activating/activated, we don't need the pending
-		 * action. The pending action exists to delay startup complete, while
-		 * activating that is already achieved via other means. */
+         * action. The pending action exists to delay startup complete, while
+         * activating that is already achieved via other means. */
         if (state <= NM_DEVICE_STATE_DISCONNECTED || state > NM_DEVICE_STATE_ACTIVATED)
             nm_device_add_pending_action(NM_DEVICE(self), NM_PENDING_ACTION_WIFI_SCAN, FALSE);
     }
@@ -488,15 +488,15 @@ _scan_notify_allowed(NMDeviceWifi *self, NMTernary do_kickoff)
         /* something prohibits scanning. */
     } else if (NM_IN_SET(priv->mode, NM_802_11_MODE_ADHOC, NM_802_11_MODE_AP)) {
         /* Don't scan when a an AP or Ad-Hoc connection is active as it will
-		 * disrupt connected clients or peers. */
+         * disrupt connected clients or peers. */
     } else if (NM_IN_SET(state, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_FAILED)) {
         /* Can always scan when disconnected */
         explicit_allowed = TRUE;
         periodic_allowed = TRUE;
     } else if (NM_IN_SET(state, NM_DEVICE_STATE_ACTIVATED)) {
         /* Prohibit periodic scans when connected; we ask the supplicant to
-		 * background scan for us, unless the connection is locked to a specific
-		 * BSSID (in which case scanning is effectively disabled). */
+         * background scan for us, unless the connection is locked to a specific
+         * BSSID (in which case scanning is effectively disabled). */
         periodic_allowed = FALSE;
 
         /* Prohibit scans if the supplicant is busy */
@@ -538,11 +538,11 @@ static gboolean
 unmanaged_on_quit(NMDevice *self)
 {
     /* Wi-Fi devices cannot be assumed and are always taken down.
-	 * However, also when being disconnected, we scan and thus
-	 * set the MAC address to a random value.
-	 *
-	 * We must restore the original MAC address when quitting, thus
-	 * signal to unmanage the device. */
+     * However, also when being disconnected, we scan and thus
+     * set the MAC address to a random value.
+     *
+     * We must restore the original MAC address when quitting, thus
+     * signal to unmanage the device. */
     return TRUE;
 }
 
@@ -731,8 +731,8 @@ periodic_update(NMDeviceWifi *self)
 
     if (nm_device_get_state(NM_DEVICE(self)) != NM_DEVICE_STATE_ACTIVATED) {
         /* BSSID and signal strength have meaningful values only if the device
-		 * is activated and not scanning.
-		 */
+         * is activated and not scanning.
+         */
         return;
     }
 
@@ -742,9 +742,9 @@ periodic_update(NMDeviceWifi *self)
             nm_supplicant_interface_get_state(priv->sup_iface))
         || nm_supplicant_interface_get_scanning(priv->sup_iface)) {
         /* Only update current AP if we're actually talking to something, otherwise
-		 * assume the old one (if any) is still valid until we're told otherwise or
-		 * the connection fails.
-		 */
+         * assume the old one (if any) is still valid until we're told otherwise or
+         * the connection fails.
+         */
         return;
     }
 
@@ -933,8 +933,8 @@ deactivate(NMDevice *device)
     nm_platform_wifi_indicate_addressing_running(nm_device_get_platform(device), ifindex, FALSE);
 
     /* Ensure we're in infrastructure mode after deactivation; some devices
-	 * (usually older ones) don't scan well in adhoc mode.
-	 */
+     * (usually older ones) don't scan well in adhoc mode.
+     */
     if (nm_platform_wifi_get_mode(nm_device_get_platform(device), ifindex)
         != NM_802_11_MODE_INFRA) {
         nm_device_take_down(NM_DEVICE(self), TRUE);
@@ -1074,7 +1074,7 @@ check_connection_available(NMDevice *                     device,
     g_return_val_if_fail(s_wifi, FALSE);
 
     /* a connection that is available for a certain @specific_object, MUST
-	 * also be available in general (without @specific_object). */
+     * also be available in general (without @specific_object). */
 
     if (specific_object) {
         NMWifiAP *ap;
@@ -1096,8 +1096,8 @@ check_connection_available(NMDevice *                     device,
     }
 
     /* Ad-Hoc, AP and Mesh connections are always available because they may be
-	 * started at any time.
-	 */
+     * started at any time.
+     */
     mode = nm_setting_wireless_get_mode(s_wifi);
     if (g_strcmp0(mode, NM_SETTING_WIRELESS_MODE_ADHOC) == 0
         || g_strcmp0(mode, NM_SETTING_WIRELESS_MODE_AP) == 0
@@ -1105,13 +1105,13 @@ check_connection_available(NMDevice *                     device,
         return TRUE;
 
     /* Hidden SSIDs obviously don't always appear in the scan list either.
-	 *
-	 * For an explicit user-activation-request, a connection is considered
-	 * available because for hidden Wi-Fi, clients didn't consistently
-	 * set the 'hidden' property to indicate hidden SSID networks.  If
-	 * activating but the network isn't available let the device recheck
-	 * availability.
-	 */
+     *
+     * For an explicit user-activation-request, a connection is considered
+     * available because for hidden Wi-Fi, clients didn't consistently
+     * set the 'hidden' property to indicate hidden SSID networks.  If
+     * activating but the network isn't available let the device recheck
+     * availability.
+     */
     if (nm_setting_wireless_get_hidden(s_wifi)
         || NM_FLAGS_HAS(flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP))
         return TRUE;
@@ -1172,9 +1172,9 @@ complete_connection(NMDevice *           device,
             ap = nm_wifi_aps_find_first_compatible(&priv->aps_lst_head, connection);
 
             /* If we still don't have an AP, then the WiFI settings needs to be
-			 * fully specified by the client.  Might not be able to find an AP
-			 * if the network isn't broadcasting the SSID for example.
-			 */
+             * fully specified by the client.  Might not be able to find an AP
+             * if the network isn't broadcasting the SSID for example.
+             */
             if (!ap) {
                 if (!nm_setting_verify(NM_SETTING(s_wifi), connection, error))
                     return FALSE;
@@ -1213,17 +1213,17 @@ complete_connection(NMDevice *           device,
 
     if (ssid == NULL) {
         /* The AP must be hidden.  Connecting to a Wi-Fi AP requires the SSID
-		 * as part of the initial handshake, so check the connection details
-		 * for the SSID.  The AP object will still be used for encryption
-		 * settings and such.
-		 */
+         * as part of the initial handshake, so check the connection details
+         * for the SSID.  The AP object will still be used for encryption
+         * settings and such.
+         */
         ssid = nm_setting_wireless_get_ssid(s_wifi);
     }
 
     if (ssid == NULL) {
         /* If there's no SSID on the AP itself, and no SSID in the
-		 * connection data, then we cannot connect at all.  Return an error.
-		 */
+         * connection data, then we cannot connect at all.  Return an error.
+         */
         g_set_error_literal(
             error,
             NM_DEVICE_ERROR,
@@ -1235,8 +1235,8 @@ complete_connection(NMDevice *           device,
 
     if (ap) {
         /* If the SSID is a well-known SSID, lock the connection to the AP's
-		 * specific BSSID so NM doesn't autoconnect to some random wifi net.
-		 */
+         * specific BSSID so NM doesn't autoconnect to some random wifi net.
+         */
         if (!nm_wifi_ap_complete_connection(ap,
                                             connection,
                                             nm_wifi_utils_is_manf_default_ssid(ssid),
@@ -1384,10 +1384,10 @@ _hw_addr_set_scanning(NMDeviceWifi *self, gboolean do_reset)
         gs_free char *hw_addr_scan              = NULL;
 
         /* the random MAC address for scanning expires after a while.
-		 *
-		 * We don't bother with to update the MAC address exactly when
-		 * it expires, instead on the next scan request, we will generate
-		 * a new one.*/
+         *
+         * We don't bother with to update the MAC address exactly when
+         * it expires, instead on the next scan request, we will generate
+         * a new one.*/
         priv->hw_addr_scan_expire = now + SCAN_RAND_MAC_ADDRESS_EXPIRE_SEC;
 
         generate_mac_address_mask =
@@ -1615,7 +1615,7 @@ _scan_request_ssids_build_hidden(NMDeviceWifi *self,
 
         if (n_hidden > 4) {
             /* we allow at most 4 hidden profiles to be actively scanned. The
-			 * reason is speed and to not disclose too many SSIDs. */
+             * reason is speed and to not disclose too many SSIDs. */
             break;
         }
 
@@ -1665,10 +1665,10 @@ _scan_supplicant_request_scan_cb(NMSupplicantInterface *supp_iface,
     _LOGT_scan("scan request completed (D-Bus request)");
 
     /* we just completed a scan request, but possibly the supplicant's state is not yet toggled
-	 * to "scanning". That means, our internal scanning state "priv->scan_is_scanning" would already
-	 * flip to idle, while in a moment the supplicant would toggle the state again.
-	 *
-	 * Artificially keep the scanning state on, for another SCAN_EXTRA_DELAY_MSEC msec. */
+     * to "scanning". That means, our internal scanning state "priv->scan_is_scanning" would already
+     * flip to idle, while in a moment the supplicant would toggle the state again.
+     *
+     * Artificially keep the scanning state on, for another SCAN_EXTRA_DELAY_MSEC msec. */
     nm_clear_g_source_inst(&priv->scan_request_delay_source);
     priv->scan_request_delay_source =
         nm_g_source_attach(nm_g_timeout_source_new(SCAN_EXTRA_DELAY_MSEC,
@@ -1841,8 +1841,8 @@ _scan_kickoff(NMDeviceWifi *self)
                                          self);
 
     /* It's OK to call _scan_notify_is_scanning() again. They mutually call each other,
-	 * but _scan_kickoff() sets "priv->scan_request_cancellable" which will stop
-	 * them from recursing indefinitely. */
+     * but _scan_kickoff() sets "priv->scan_request_cancellable" which will stop
+     * them from recursing indefinitely. */
     _scan_notify_is_scanning(self);
 }
 
@@ -1902,7 +1902,7 @@ try_fill_ssid_for_hidden_ap(NMDeviceWifi *self, NMWifiAP *ap)
     g_return_if_fail(bssid);
 
     /* Look for this AP's BSSID in the seen-bssids list of a connection,
-	 * and if a match is found, copy over the SSID */
+     * and if a match is found, copy over the SSID */
     connections = nm_settings_get_connections(nm_device_get_settings((NMDevice *) self), NULL);
     for (i = 0; connections[i]; i++) {
         NMSettingsConnection *sett_conn = connections[i];
@@ -1937,10 +1937,10 @@ supplicant_iface_bss_changed_cb(NMSupplicantInterface *iface,
             return;
         if (found_ap == priv->current_ap) {
             /* The current AP cannot be removed (to prevent NM indicating that
-			 * it is connected, but to nothing), but it must be removed later
-			 * when the current AP is changed or cleared.  Set 'fake' to
-			 * indicate that this AP is now unknown to the supplicant.
-			 */
+             * it is connected, but to nothing), but it must be removed later
+             * when the current AP is changed or cleared.  Set 'fake' to
+             * indicate that this AP is now unknown to the supplicant.
+             */
             if (nm_wifi_ap_set_fake(found_ap, TRUE))
                 _ap_dump(self, LOGL_DEBUG, found_ap, "updated", 0);
         } else {
@@ -1959,8 +1959,8 @@ supplicant_iface_bss_changed_cb(NMSupplicantInterface *iface,
 
         if (!bss_info->bssid_valid) {
             /* We failed to initialize the info about the AP. This can
-			 * happen due to an error in the D-Bus communication. In this case
-			 * we ignore the info. */
+             * happen due to an error in the D-Bus communication. In this case
+             * we ignore the info. */
             return;
         }
 
@@ -1991,8 +1991,8 @@ supplicant_iface_bss_changed_cb(NMSupplicantInterface *iface,
     }
 
     /* Update the current AP if the supplicant notified a current BSS change
-	 * before it sent the current BSS's scan result.
-	 */
+     * before it sent the current BSS's scan result.
+     */
     if (nm_supplicant_interface_get_current_bss(iface) == bss_info->bss_path)
         supplicant_iface_notify_current_bss(priv->sup_iface, NULL, self);
 
@@ -2051,30 +2051,30 @@ wifi_secrets_cb(NMActRequest *                req,
         _LOGW(LOGD_WIFI, "no secrets: %s", error->message);
 
         /* Even if WPS is still pending, let's abort the activation when the secret
-		 * request returns.
-		 *
-		 * This means, a user can only effectively use WPS when also running a secret
-		 * agent, and pressing the push button while being prompted for the password.
-		 * Note, that in the secret prompt the user can see that WPS is in progress
-		 * (via the NM_SECRET_AGENT_GET_SECRETS_FLAG_WPS_PBC_ACTIVE flag).
-		 *
-		 * Previously, WPS was not cancelled when the secret request returns.
-		 * Note that in common use-cases WPS is enabled in the connection profile
-		 * but it won't succeed (because it's disabled in the AP or because the
-		 * user is not prepared to press the push button).
-		 * That means for example, during boot we would try to autoconnect with WPS.
-		 * At that point, there is no secret-agent running, and WPS is pending for
-		 * full 30 seconds. If in the meantime a secret agent registers (because
-		 * of logging into the DE), the profile is still busy waiting for WPS to time
-		 * out. Only after that delay, autoconnect starts again (note that autoconnect gets
-		 * not blocked in this case, because a secret agent registered in the meantime).
-		 *
-		 * It seems wrong to continue doing WPS if the user is not aware
-		 * that WPS is ongoing. The user is required to perform an action (push button),
-		 * and must be told via the secret prompt.
-		 * If no secret-agent is running, if the user cancels the secret-request, or any
-		 * other error to obtain secrets, the user apparently does not want WPS either.
-		 */
+         * request returns.
+         *
+         * This means, a user can only effectively use WPS when also running a secret
+         * agent, and pressing the push button while being prompted for the password.
+         * Note, that in the secret prompt the user can see that WPS is in progress
+         * (via the NM_SECRET_AGENT_GET_SECRETS_FLAG_WPS_PBC_ACTIVE flag).
+         *
+         * Previously, WPS was not cancelled when the secret request returns.
+         * Note that in common use-cases WPS is enabled in the connection profile
+         * but it won't succeed (because it's disabled in the AP or because the
+         * user is not prepared to press the push button).
+         * That means for example, during boot we would try to autoconnect with WPS.
+         * At that point, there is no secret-agent running, and WPS is pending for
+         * full 30 seconds. If in the meantime a secret agent registers (because
+         * of logging into the DE), the profile is still busy waiting for WPS to time
+         * out. Only after that delay, autoconnect starts again (note that autoconnect gets
+         * not blocked in this case, because a secret agent registered in the meantime).
+         *
+         * It seems wrong to continue doing WPS if the user is not aware
+         * that WPS is ongoing. The user is required to perform an action (push button),
+         * and must be told via the secret prompt.
+         * If no secret-agent is running, if the user cancels the secret-request, or any
+         * other error to obtain secrets, the user apparently does not want WPS either.
+         */
         nm_clear_g_source(&priv->wps_timeout_id);
         nm_device_state_changed(device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NO_SECRETS);
         return;
@@ -2206,9 +2206,9 @@ link_timeout_cb(gpointer user_data)
     priv->link_timeout_id = 0;
 
     /* Disconnect event while activated; the supplicant hasn't been able
-	 * to reassociate within the timeout period, so the connection must
-	 * fail.
-	 */
+     * to reassociate within the timeout period, so the connection must
+     * fail.
+     */
     if (nm_device_get_state(device) != NM_DEVICE_STATE_ACTIVATED)
         return FALSE;
 
@@ -2238,15 +2238,15 @@ need_new_8021x_secrets(NMDeviceWifi *             self,
     g_return_val_if_fail(connection != NULL, FALSE);
 
     /* 802.1x stuff only happens in the supplicant's ASSOCIATED state when it's
-	 * attempting to authenticate with the AP.
-	 */
+     * attempting to authenticate with the AP.
+     */
     if (old_state != NM_SUPPLICANT_INTERFACE_STATE_ASSOCIATED)
         return FALSE;
 
     /* If it's an 802.1x or LEAP connection with "always ask"/unsaved secrets
-	 * then we need to ask again because it might be an OTP token and the PIN
-	 * may have changed.
-	 */
+     * then we need to ask again because it might be an OTP token and the PIN
+     * may have changed.
+     */
 
     s_8021x = nm_connection_get_setting_802_1x(connection);
     if (s_8021x) {
@@ -2302,10 +2302,10 @@ need_new_wpa_psk(NMDeviceWifi *             self,
 
     if (g_strcmp0(key_mgmt, "wpa-psk") == 0) {
 /* -4 (locally-generated WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY) usually
-		 * means the driver missed beacons from the AP.  This usually happens
-		 * due to driver bugs or faulty power-save management.  It doesn't
-		 * indicate that the PSK is wrong.
-		 */
+         * means the driver missed beacons from the AP.  This usually happens
+         * due to driver bugs or faulty power-save management.  It doesn't
+         * indicate that the PSK is wrong.
+         */
 #define LOCAL_WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY -4
         if (disconnect_reason == LOCAL_WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY)
             return FALSE;
@@ -2385,10 +2385,10 @@ supplicant_iface_state_down(NMDeviceWifi *self)
     cleanup_association_attempt(self, FALSE);
 
     /* If the device is already in UNAVAILABLE state then the state change
-	 * is a NOP and the interface won't be re-acquired in the device state
-	 * change handler.  So ensure we have a new one here so that we're
-	 * ready if the supplicant comes back.
-	 */
+     * is a NOP and the interface won't be re-acquired in the device state
+     * change handler.  So ensure we have a new one here so that we're
+     * ready if the supplicant comes back.
+     */
     supplicant_interface_release(self);
     if (priv->failed_iface_count < 5)
         priv->reacquire_iface_id = g_timeout_add_seconds(10, reacquire_interface_cb, self);
@@ -2447,8 +2447,8 @@ supplicant_iface_state(NMDeviceWifi *             self,
         nm_clear_g_source(&priv->wps_timeout_id);
 
         /* If this is the initial association during device activation,
-		 * schedule the next activation stage.
-		 */
+         * schedule the next activation stage.
+         */
         if (devstate == NM_DEVICE_STATE_CONFIG) {
             NMSettingWireless *s_wifi;
             GBytes *           ssid;
@@ -2473,20 +2473,20 @@ supplicant_iface_state(NMDeviceWifi *             self,
     case NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED:
         if ((devstate == NM_DEVICE_STATE_ACTIVATED) || nm_device_is_activating(device)) {
             /* Disconnect of an 802.1x/LEAP connection during authentication,
-			 * or disconnect of a WPA-PSK connection during the 4-way handshake,
-			 * often means secrets are wrong. Not always the case, but until we
-			 * have more information from wpa_supplicant about why the
-			 * disconnect happened this is the best we can do.
-			 */
+             * or disconnect of a WPA-PSK connection during the 4-way handshake,
+             * often means secrets are wrong. Not always the case, but until we
+             * have more information from wpa_supplicant about why the
+             * disconnect happened this is the best we can do.
+             */
             if (handle_8021x_or_psk_auth_fail(self, new_state, old_state, disconnect_reason))
                 break;
         }
 
         /* Otherwise, it might be a stupid driver or some transient error, so
-		 * let the supplicant try to reconnect a few more times.  Give it more
-		 * time if a scan is in progress since the link might be dropped during
-		 * the scan but will be re-established when the scan is done.
-		 */
+         * let the supplicant try to reconnect a few more times.  Give it more
+         * time if a scan is in progress since the link might be dropped during
+         * the scan but will be re-established when the scan is done.
+         */
         if (devstate == NM_DEVICE_STATE_ACTIVATED) {
             if (priv->link_timeout_id == 0) {
                 priv->link_timeout_id =
@@ -2497,8 +2497,8 @@ supplicant_iface_state(NMDeviceWifi *             self,
         break;
     case NM_SUPPLICANT_INTERFACE_STATE_INACTIVE:
         /* we would clear _scan_has_pending_action_set() and trigger a new scan.
-		 * However, we don't want to cancel the current pending action, so force
-		 * a new scan request. */
+         * However, we don't want to cancel the current pending action, so force
+         * a new scan request. */
         break;
     default:
         break;
@@ -2561,9 +2561,9 @@ supplicant_iface_notify_current_bss(NMSupplicantInterface *iface,
         gs_free char *old_ssid_s = NULL;
 
         /* Don't ever replace a "fake" current AP if we don't know about the
-		 * supplicant's current BSS yet.  It'll get replaced when we receive
-		 * the current BSS's scan result.
-		 */
+         * supplicant's current BSS yet.  It'll get replaced when we receive
+         * the current BSS's scan result.
+         */
         if (new_ap == NULL && nm_wifi_ap_get_fake(priv->current_ap))
             return;
 
@@ -2586,10 +2586,10 @@ supplicant_iface_notify_current_bss(NMSupplicantInterface *iface,
 
         if (new_bssid) {
             /* The new AP could be in a different layer 3 network
-			 * and so the old DHCP lease could be no longer valid.
-			 * Also, some APs (e.g. Cisco) can be configured to drop
-			 * all traffic until DHCP completes. To support such
-			 * cases, renew the lease when roaming to a new AP. */
+             * and so the old DHCP lease could be no longer valid.
+             * Also, some APs (e.g. Cisco) can be configured to drop
+             * all traffic until DHCP completes. To support such
+             * cases, renew the lease when roaming to a new AP. */
             nm_device_update_dynamic_ip_setup(NM_DEVICE(self));
         }
 
@@ -2617,8 +2617,8 @@ recheck_p2p_availability(NMDeviceWifi *self)
         gs_free char *iface_name = NULL;
 
         /* Create a P2P device. "p2p-dev-" is the same prefix as chosen by
-		 * wpa_supplicant internally.
-		 */
+         * wpa_supplicant internally.
+         */
         iface_name = g_strconcat("p2p-dev-", nm_device_get_iface(NM_DEVICE(self)), NULL);
 
         priv->p2p_device = nm_device_wifi_p2p_new(iface_name);
@@ -2753,10 +2753,10 @@ supplicant_connection_timeout_cb(gpointer user_data)
         return FALSE;
 
     /* Timed out waiting for a successful connection to the AP; if the AP's
-	 * security requires network-side authentication (like WPA or 802.1x)
-	 * and the connection attempt timed out then it's likely the authentication
-	 * information (passwords, pin codes, etc) are wrong.
-	 */
+     * security requires network-side authentication (like WPA or 802.1x)
+     * and the connection attempt timed out then it's likely the authentication
+     * information (passwords, pin codes, etc) are wrong.
+     */
 
     req = nm_device_get_act_request(device);
     g_assert(req);
@@ -2766,9 +2766,9 @@ supplicant_connection_timeout_cb(gpointer user_data)
 
     if (NM_IN_SET(priv->mode, NM_802_11_MODE_ADHOC, NM_802_11_MODE_MESH, NM_802_11_MODE_AP)) {
         /* In Ad-Hoc and AP modes there's nothing to check the encryption key
-		 * (if any), so supplicant timeouts here are almost certainly the wifi
-		 * driver being really stupid.
-		 */
+         * (if any), so supplicant timeouts here are almost certainly the wifi
+         * driver being really stupid.
+         */
         _LOGW(LOGD_DEVICE | LOGD_WIFI,
               "Activation: (wifi) %s network creation took too long, failing activation",
               priv->mode == NM_802_11_MODE_ADHOC ? "Ad-Hoc" : "Hotspot");
@@ -2785,15 +2785,15 @@ supplicant_connection_timeout_cb(gpointer user_data)
         gboolean new_secrets = TRUE;
 
         /* Connection failed; either driver problems, the encryption key is
-		 * wrong, or the passwords or certificates were wrong.
-		 */
+         * wrong, or the passwords or certificates were wrong.
+         */
         _LOGW(LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi) association took too long");
 
         /* Ask for new secrets only if we've never activated this connection
-		 * before.  If we've connected before, don't bother the user with
-		 * dialogs, just retry or fail, and if we never connect the user can
-		 * fix the password somewhere else.
-		 */
+         * before.  If we've connected before, don't bother the user with
+         * dialogs, just retry or fail, and if we never connect the user can
+         * fix the password somewhere else.
+         */
         if (nm_settings_connection_get_timestamp(nm_act_request_get_settings_connection(req),
                                                  &timestamp))
             new_secrets = !timestamp;
@@ -3035,11 +3035,11 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
     if (!ap) {
         /* If the user is trying to connect to an AP that NM doesn't yet know about
-		 * (hidden network or something), starting a Hotspot or joining a Mesh,
-		 * create a fake APfrom the security settings in the connection.  This "fake"
-		 * AP gets used until the real one is found in the scan list (Ad-Hoc or Hidden),
-		 * or until the device is deactivated (Hotspot).
-		 */
+         * (hidden network or something), starting a Hotspot or joining a Mesh,
+         * create a fake APfrom the security settings in the connection.  This "fake"
+         * AP gets used until the real one is found in the scan list (Ad-Hoc or Hidden),
+         * or until the device is deactivated (Hotspot).
+         */
         ap_fake = nm_wifi_ap_new_fake_from_connection(connection);
         if (!ap_fake)
             g_return_val_if_reached(NM_ACT_STAGE_RETURN_FAILURE);
@@ -3189,9 +3189,9 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     priv->ssid_found = FALSE;
 
     /* Supplicant requires an initial frequency for Ad-Hoc, Hotspot and Mesh;
-	 * if the user didn't specify one and we didn't find an AP that matched
-	 * the connection, just pick a frequency the device supports.
-	 */
+     * if the user didn't specify one and we didn't find an AP that matched
+     * the connection, just pick a frequency the device supports.
+     */
     if (NM_IN_SET(ap_mode, NM_802_11_MODE_ADHOC, NM_802_11_MODE_MESH) || nm_wifi_ap_is_hotspot(ap))
         ensure_hotspot_frequency(self, s_wireless, ap);
 
@@ -3312,13 +3312,13 @@ act_stage4_ip_config_timeout(NMDevice *           device,
     }
 
     /* If IP configuration times out and it's a static WEP connection, that
-	 * usually means the WEP key is wrong.  WEP's Open System auth mode has
-	 * no provision for figuring out if the WEP key is wrong, so you just have
-	 * to wait for DHCP to fail to figure it out.  For all other Wi-Fi security
-	 * types (open, WPA, 802.1x, etc) if the secrets/certs were wrong the
-	 * connection would have failed before IP configuration.
-	 *
-	 * Activation failed, we must have bad encryption key */
+     * usually means the WEP key is wrong.  WEP's Open System auth mode has
+     * no provision for figuring out if the WEP key is wrong, so you just have
+     * to wait for DHCP to fail to figure it out.  For all other Wi-Fi security
+     * types (open, WPA, 802.1x, etc) if the secrets/certs were wrong the
+     * connection would have failed before IP configuration.
+     *
+     * Activation failed, we must have bad encryption key */
     _LOGW(LOGD_DEVICE | LOGD_WIFI,
           "Activation: (wifi) could not get IP configuration for connection '%s'.",
           nm_connection_get_id(connection));
@@ -3351,19 +3351,19 @@ activation_success_handler(NMDevice *device)
     nm_platform_wifi_indicate_addressing_running(nm_device_get_platform(device), ifindex, FALSE);
 
     /* There should always be a current AP, either a fake one because we haven't
-	 * seen a scan result for the activated AP yet, or a real one from the
-	 * supplicant's scan list.
-	 */
+     * seen a scan result for the activated AP yet, or a real one from the
+     * supplicant's scan list.
+     */
     g_warn_if_fail(priv->current_ap);
     if (priv->current_ap) {
         if (nm_wifi_ap_get_fake(priv->current_ap)) {
             gboolean ap_changed = FALSE;
 
             /* If the activation AP hasn't been seen by the supplicant in a scan
-			 * yet, it will be "fake".  This usually happens for Ad-Hoc and
-			 * AP-mode connections.  Fill in the details from the device itself
-			 * until the supplicant sends the scan result.
-			 */
+             * yet, it will be "fake".  This usually happens for Ad-Hoc and
+             * AP-mode connections.  Fill in the details from the device itself
+             * until the supplicant sends the scan result.
+             */
             if (!nm_wifi_ap_get_address(priv->current_ap)) {
                 guint8        bssid[ETH_ALEN] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
                 gs_free char *bssid_str       = NULL;
@@ -3415,8 +3415,8 @@ device_state_changed(NMDevice *          device,
 
     if (new_state <= NM_DEVICE_STATE_UNAVAILABLE) {
         /* Clean up the supplicant interface because in these states the
-		 * device cannot be used.
-		 */
+         * device cannot be used.
+         */
         supplicant_interface_release(self);
 
         nm_clear_g_source(&priv->periodic_update_id);
@@ -3432,9 +3432,9 @@ device_state_changed(NMDevice *          device,
         break;
     case NM_DEVICE_STATE_UNAVAILABLE:
         /* If the device is enabled and the supplicant manager is ready,
-		 * acquire a supplicant interface and transition to DISCONNECTED because
-		 * the device is now ready to use.
-		 */
+         * acquire a supplicant interface and transition to DISCONNECTED because
+         * the device is now ready to use.
+         */
         if (priv->enabled && (nm_device_get_firmware_missing(device) == FALSE)) {
             if (!priv->sup_iface)
                 supplicant_interface_acquire(self);

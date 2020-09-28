@@ -21,8 +21,8 @@ typedef struct {
     gboolean stop_match;
     struct {
         /* have a separate boolean field @has, because a @spec with
-		 * value %NULL does not necessarily mean, that the property
-		 * "match-device" was unspecified. */
+         * value %NULL does not necessarily mean, that the property
+         * "match-device" was unspecified. */
         gboolean has;
         GSList * spec;
     } match_device;
@@ -63,11 +63,11 @@ typedef struct {
     GKeyFile *keyfile_intern;
 
     /* A zero-terminated list of pre-processed information from the
-	 * [connection] sections. This is to speed up lookup. */
+     * [connection] sections. This is to speed up lookup. */
     MatchSectionInfo *connection_infos;
 
     /* A zero-terminated list of pre-processed information from the
-	 * [device] sections. This is to speed up lookup. */
+     * [device] sections. This is to speed up lookup. */
     MatchSectionInfo *device_infos;
 
     struct {
@@ -523,9 +523,9 @@ nm_config_data_is_intern_atomic_group(const NMConfigData *self, const char *grou
         return FALSE;
 
     /* we have a .was entry for the section. That means that the section would be overwritten
-	 * from user configuration. But it doesn't mean that the merged configuration contains this
-	 * groups, because the internal setting could hide the user section.
-	 * Only return TRUE, if we actually have such a group in the merged configuration.*/
+     * from user configuration. But it doesn't mean that the merged configuration contains this
+     * groups, because the internal setting could hide the user section.
+     * Only return TRUE, if we actually have such a group in the merged configuration.*/
     return g_key_file_has_group(priv->keyfile, group);
 }
 
@@ -550,7 +550,7 @@ _merge_keyfiles(GKeyFile *keyfile_user, GKeyFile *keyfile_intern)
         return keyfile;
 
     /* we must reverse the order of the connection settings so that we
-	 * have lowest priority last. */
+     * have lowest priority last. */
     _nm_config_sort_groups(groups, ngroups);
     for (g = 0; groups[g]; g++) {
         const char *       group = groups[g];
@@ -1395,12 +1395,12 @@ _match_section_infos_lookup(const MatchSectionInfo *match_section_infos,
         gboolean match;
 
         /* FIXME: Here we use g_key_file_get_string(). This should be in sync with what keyfile-reader
-		 * does.
-		 *
-		 * Unfortunately that is currently not possible because keyfile-reader does the two steps
-		 * string_to_value(keyfile_to_string(keyfile)) in one. Optimally, keyfile library would
-		 * expose both functions, and we would return here keyfile_to_string(keyfile).
-		 * The caller then could convert the string to the proper value via string_to_value(value). */
+         * does.
+         *
+         * Unfortunately that is currently not possible because keyfile-reader does the two steps
+         * string_to_value(keyfile_to_string(keyfile)) in one. Optimally, keyfile library would
+         * expose both functions, and we would return here keyfile_to_string(keyfile).
+         * The caller then could convert the string to the proper value via string_to_value(value). */
         value = g_key_file_get_string(keyfile, match_section_infos->group_name, property, NULL);
         if (!value && !match_section_infos->stop_match)
             continue;
@@ -1588,10 +1588,10 @@ _match_section_infos_construct(GKeyFile *keyfile, const char *prefix)
     MatchSectionInfo *match_section_infos = NULL;
 
     /* get the list of existing [connection.\+]/[device.\+] sections.
-	 *
-	 * We expect the sections in their right order, with lowest priority
-	 * first. Only exception is the (literal) [connection] section, which
-	 * we will always reorder to the end. */
+     *
+     * We expect the sections in their right order, with lowest priority
+     * first. Only exception is the (literal) [connection] section, which
+     * we will always reorder to the end. */
     groups = g_key_file_get_groups(keyfile, &ngroups);
     if (!groups)
         return NULL;
@@ -1865,7 +1865,7 @@ constructed(GObject *object)
     g_free(str);
 
     /* On missing config value, fallback to 300. On invalid value, disable connectivity checking by setting
-	 * the interval to zero. */
+     * the interval to zero. */
     str = g_key_file_get_string(priv->keyfile,
                                 NM_CONFIG_KEYFILE_GROUP_CONNECTIVITY,
                                 NM_CONFIG_KEYFILE_KEY_CONNECTIVITY_INTERVAL,

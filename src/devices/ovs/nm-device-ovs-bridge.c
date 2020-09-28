@@ -45,7 +45,7 @@ create_and_realize(NMDevice *             device,
                    GError **              error)
 {
     /* The actual backing resources will be created on enslavement by the port
-	 * when it can identify the port and the bridge. */
+     * when it can identify the port and the bridge. */
 
     return TRUE;
 }

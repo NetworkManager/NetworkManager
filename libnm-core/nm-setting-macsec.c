@@ -218,8 +218,8 @@ verify_macsec_key(const char *key, gboolean cak, GError **error)
     int req_len;
 
     /* CAK is a connection secret and can be NULL for various
-	 * reasons (agent-owned, no permissions to get secrets, etc.)
-	 */
+     * reasons (agent-owned, no permissions to get secrets, etc.)
+     */
     if (cak && !key)
         return TRUE;
 
@@ -269,8 +269,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     if (priv->parent) {
         if (nm_utils_is_uuid(priv->parent)) {
             /* If we have an NMSettingConnection:master with slave-type="macsec",
-			 * then it must be the same UUID.
-			 */
+             * then it must be the same UUID.
+             */
             if (s_con) {
                 const char *master = NULL, *slave_type = NULL;
 
@@ -308,8 +308,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     } else {
         /* If parent is NULL, the parent must be specified via
-		 * NMSettingWired:mac-address.
-		 */
+         * NMSettingWired:mac-address.
+         */
         if (connection && (!s_wired || !nm_setting_wired_get_mac_address(s_wired))) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
@@ -527,15 +527,15 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
     setting_class->need_secrets = need_secrets;
 
     /**
-	 * NMSettingMacsec:parent:
-	 *
-	 * If given, specifies the parent interface name or parent connection UUID
-	 * from which this MACSEC interface should be created.  If this property is
-	 * not specified, the connection must contain an #NMSettingWired setting
-	 * with a #NMSettingWired:mac-address property.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMSettingMacsec:parent:
+     *
+     * If given, specifies the parent interface name or parent connection UUID
+     * from which this MACSEC interface should be created.  If this property is
+     * not specified, the connection must contain an #NMSettingWired setting
+     * with a #NMSettingWired:mac-address property.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_PARENT] = g_param_spec_string(
         NM_SETTING_MACSEC_PARENT,
         "",
@@ -544,13 +544,13 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingMacsec:mode:
-	 *
-	 * Specifies how the CAK (Connectivity Association Key) for MKA (MACsec Key
-	 * Agreement) is obtained.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMSettingMacsec:mode:
+     *
+     * Specifies how the CAK (Connectivity Association Key) for MKA (MACsec Key
+     * Agreement) is obtained.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_MODE] =
         g_param_spec_int(NM_SETTING_MACSEC_MODE,
                          "",
@@ -561,12 +561,12 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingMacsec:encrypt:
-	 *
-	 * Whether the transmitted traffic must be encrypted.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMSettingMacsec:encrypt:
+     *
+     * Whether the transmitted traffic must be encrypted.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_ENCRYPT] = g_param_spec_boolean(NM_SETTING_MACSEC_ENCRYPT,
                                                         "",
                                                         "",
@@ -574,13 +574,13 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
                                                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingMacsec:mka-cak:
-	 *
-	 * The pre-shared CAK (Connectivity Association Key) for MACsec
-	 * Key Agreement.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMSettingMacsec:mka-cak:
+     *
+     * The pre-shared CAK (Connectivity Association Key) for MACsec
+     * Key Agreement.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_MKA_CAK] =
         g_param_spec_string(NM_SETTING_MACSEC_MKA_CAK,
                             "",
@@ -589,13 +589,13 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
                             G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingMacsec:mka-cak-flags:
-	 *
-	 * Flags indicating how to handle the #NMSettingMacsec:mka-cak
-	 * property.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMSettingMacsec:mka-cak-flags:
+     *
+     * Flags indicating how to handle the #NMSettingMacsec:mka-cak
+     * property.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_MKA_CAK_FLAGS] =
         g_param_spec_flags(NM_SETTING_MACSEC_MKA_CAK_FLAGS,
                            "",
@@ -605,13 +605,13 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingMacsec:mka-ckn:
-	 *
-	 * The pre-shared CKN (Connectivity-association Key Name) for
-	 * MACsec Key Agreement.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMSettingMacsec:mka-ckn:
+     *
+     * The pre-shared CKN (Connectivity-association Key Name) for
+     * MACsec Key Agreement.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_MKA_CKN] = g_param_spec_string(NM_SETTING_MACSEC_MKA_CKN,
                                                        "",
                                                        "",
@@ -619,12 +619,12 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
                                                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingMacsec:port:
-	 *
-	 * The port component of the SCI (Secure Channel Identifier), between 1 and 65534.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMSettingMacsec:port:
+     *
+     * The port component of the SCI (Secure Channel Identifier), between 1 and 65534.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_PORT] =
         g_param_spec_int(NM_SETTING_MACSEC_PORT,
                          "",
@@ -635,12 +635,12 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingMacsec:validation:
-	 *
-	 * Specifies the validation mode for incoming frames.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMSettingMacsec:validation:
+     *
+     * Specifies the validation mode for incoming frames.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_VALIDATION] =
         g_param_spec_int(NM_SETTING_MACSEC_VALIDATION,
                          "",
@@ -651,13 +651,13 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingMacsec:send-sci:
-	 *
-	 * Specifies whether the SCI (Secure Channel Identifier) is included
-	 * in every packet.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingMacsec:send-sci:
+     *
+     * Specifies whether the SCI (Secure Channel Identifier) is included
+     * in every packet.
+     *
+     * Since: 1.12
+     **/
     obj_properties[PROP_SEND_SCI] =
         g_param_spec_boolean(NM_SETTING_MACSEC_SEND_SCI,
                              "",

@@ -70,7 +70,7 @@ get_autoconnect_allowed(NMDevice *device)
         return FALSE;
 
     /* We must not attempt to autoconnect when the companion is connected or
-	 * connecting, * because we'd tear down its connection. */
+     * connecting, * because we'd tear down its connection. */
     if (nm_device_get_state(priv->companion) > NM_DEVICE_STATE_DISCONNECTED)
         return FALSE;
 
@@ -162,7 +162,7 @@ _mesh_set_channel(NMDeviceOlpcMesh *self, guint32 channel)
         channel = old_channel;
 
     /* We want to call this even if the channel number is the same,
-	 * because that actually starts the mesh with the configured mesh ID. */
+     * because that actually starts the mesh with the configured mesh ID. */
     if (!nm_platform_mesh_set_channel(platform, ifindex, channel))
         return FALSE;
 
@@ -287,7 +287,7 @@ companion_autoconnect_allowed_cb(NMDeviceWifi *companion, gpointer user_data)
     NMDeviceState     state = nm_device_get_state(NM_DEVICE(self));
 
     /* Don't allow the companion to autoconnect while a mesh connection is
-	 * active */
+     * active */
     return (state < NM_DEVICE_STATE_PREPARE) || (state > NM_DEVICE_STATE_ACTIVATED);
 }
 

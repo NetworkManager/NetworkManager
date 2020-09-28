@@ -338,7 +338,7 @@ construct_ip_items(GPtrArray *items, int addr_family, GVariant *ip_config, const
     }
     if (nroutes > 0 || addr_family == AF_INET) {
         /* we also set IP4_NUM_ROUTES=0, but don't do so for addresses and IPv6 routes.
-		 * Historic reasons. */
+         * Historic reasons. */
         _items_add_printf(items, "%sIP%c_NUM_ROUTES=%u", prefix, four_or_six, nroutes);
     }
 }
@@ -375,25 +375,25 @@ construct_device_dhcp_items(GPtrArray *items, int addr_family, GVariant *dhcp_co
                                   g_variant_get_string(val, NULL));
 
                 /* MS Azure sends the server endpoint in the dhcp private
-				 * option 245. cloud-init searches the Azure server endpoint
-				 * value looking for the standard dhclient label used for
-				 * that option, which is "unknown_245".
-				 * The 11-dhclient script shipped with Fedora and RHEL dhcp
-				 * package converts our dispatcher environment vars to the
-				 * dhclient ones (new_<some_option>) and calls dhclient hook
-				 * scripts.
-				 * Let's make cloud-init happy and let's duplicate the dhcp
-				 * option 245 with the legacy name of the default dhclient
-				 * label also when using the internal client.
-				 * Note however that the dhclient plugin will have unknown_
-				 * labels represented as ascii string when possible, falling
-				 * back to hex string otherwise.
-				 * private_ labels instead are always in hex string format.
-				 * This shouldn't affect the MS Azure server endpoint value,
-				 * as it usually belongs to the 240.0.0.0/4 network and so
-				 * is always represented as an hex string. Moreover, cloudinit
-				 * code checks just for an hex value in unknown_245.
-				 */
+                 * option 245. cloud-init searches the Azure server endpoint
+                 * value looking for the standard dhclient label used for
+                 * that option, which is "unknown_245".
+                 * The 11-dhclient script shipped with Fedora and RHEL dhcp
+                 * package converts our dispatcher environment vars to the
+                 * dhclient ones (new_<some_option>) and calls dhclient hook
+                 * scripts.
+                 * Let's make cloud-init happy and let's duplicate the dhcp
+                 * option 245 with the legacy name of the default dhclient
+                 * label also when using the internal client.
+                 * Note however that the dhclient plugin will have unknown_
+                 * labels represented as ascii string when possible, falling
+                 * back to hex string otherwise.
+                 * private_ labels instead are always in hex string format.
+                 * This shouldn't affect the MS Azure server endpoint value,
+                 * as it usually belongs to the 240.0.0.0/4 network and so
+                 * is always represented as an hex string. Moreover, cloudinit
+                 * code checks just for an hex value in unknown_245.
+                 */
                 if (addr_family == AF_INET) {
                     if (nm_streq(key, "private_245"))
                         private_245_val = g_variant_ref(val);
@@ -469,8 +469,8 @@ nm_dispatcher_utils_construct_envp(const char * action,
         _items_add_key(items, NULL, "CONNECTION_FILENAME", filename);
 
     /* Canonicalize the VPN interface name; "" is used when passing it through
-	 * D-Bus so make sure that's fixed up here.
-	 */
+     * D-Bus so make sure that's fixed up here.
+     */
     if (vpn_ip_iface && !vpn_ip_iface[0])
         vpn_ip_iface = NULL;
 
@@ -553,10 +553,10 @@ nm_dispatcher_utils_construct_envp(const char * action,
     }
 
     /* Backwards compat: 'iface' is set in this order:
-	 * 1) VPN interface name
-	 * 2) Device IP interface name
-	 * 3) Device interface anme
-	 */
+     * 1) VPN interface name
+     * 2) Device IP interface name
+     * 3) Device interface anme
+     */
     if (vpn_ip_iface)
         *out_iface = g_strdup(vpn_ip_iface);
     else if (ip_iface)
@@ -566,8 +566,8 @@ nm_dispatcher_utils_construct_envp(const char * action,
 
 done:
     /* The connectivity_state value will only be meaningful for 'connectivity-change' events
-	 * (otherwise it will be "UNKNOWN"), so we only set the environment variable in those cases.
-	 */
+     * (otherwise it will be "UNKNOWN"), so we only set the environment variable in those cases.
+     */
     if (!NM_IN_STRSET(connectivity_state, NULL, "UNKNOWN"))
         _items_add_key(items, NULL, "CONNECTIVITY_STATE", connectivity_state);
 

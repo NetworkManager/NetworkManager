@@ -81,7 +81,7 @@ nmtstc_service_available(NMTstcServiceInfo *info)
         return info;
 
     /* This happens, when test-networkmanager-service.py exits with 77 status
-	 * code. */
+     * code. */
     m = g_strdup_printf("missing dependency for running NetworkManager stub service %s",
                         NMTSTC_NM_SERVICE);
     g_test_skip(m);
@@ -101,9 +101,9 @@ nmtstc_service_init(void)
     g_assert_no_error(error);
 
     /* Spawn the test service. info->keepalive_fd will be a pipe to the service's
-	 * stdin; if it closes, the service will exit immediately. We use this to
-	 * make sure the service exits if the test program crashes.
-	 */
+     * stdin; if it closes, the service will exit immediately. We use this to
+     * make sure the service exits if the test program crashes.
+     */
     g_spawn_async_with_pipes(NULL,
                              (char **) args,
                              NULL,
@@ -154,9 +154,9 @@ nmtstc_service_init(void)
 
             if (WIFEXITED(data.exit_code) && WEXITSTATUS(data.exit_code) == 77) {
                 /* If the stub service exited with status 77 it means that it decided
-				 * that it cannot conduct the tests and the test should be (gracefully)
-				 * skip. The likely reason for that, is that libnm is not available
-				 * via pygobject. */
+                 * that it cannot conduct the tests and the test should be (gracefully)
+                 * skip. The likely reason for that, is that libnm is not available
+                 * via pygobject. */
                 return NULL;
             }
             g_error("test service %s exited with error code %d", NMTSTC_NM_SERVICE, data.exit_code);
@@ -471,12 +471,12 @@ _context_object_new_do(GType       gtype,
     GObject *             obj;
 
     /* Create a GObject instance synchronously, and arbitrarily use either
-	 * the sync or async constructor.
-	 *
-	 * Note that the sync and async construct differ in one important aspect:
-	 * the async constructor iterates the current g_main_context_get_thread_default(),
-	 * while the sync constructor does not! Aside from that, both should behave
-	 * pretty much the same way. */
+     * the sync or async constructor.
+     *
+     * Note that the sync and async construct differ in one important aspect:
+     * the async constructor iterates the current g_main_context_get_thread_default(),
+     * while the sync constructor does not! Aside from that, both should behave
+     * pretty much the same way. */
 
     if (sync) {
         nm_auto_destroy_and_unref_gsource GSource *source = NULL;
@@ -605,16 +605,16 @@ nmtstc_context_object_new_valist(GType       gtype,
         inside_loop = FALSE;
     } else {
         /* The caller allows to iterate the main context. On that point,
-		 * we can both use the synchronous and the asynchronous initialization,
-		 * both should yield the same result. Choose one randomly. */
+         * we can both use the synchronous and the asynchronous initialization,
+         * both should yield the same result. Choose one randomly. */
         sync        = nmtst_get_rand_bool();
         inside_loop = ((nmtst_get_rand_uint32() % 3) == 0);
     }
 
     if (inside_loop) {
         /* Create the obj on an idle handler of the current context.
-		 * In practice, it should make no difference, which this check
-		 * tries to prove. */
+         * In practice, it should make no difference, which this check
+         * tries to prove. */
         return _context_object_new_inside_loop(gtype, sync, first_property_name, var_args);
     }
 

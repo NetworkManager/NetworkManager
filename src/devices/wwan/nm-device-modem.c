@@ -115,23 +115,23 @@ modem_prepare_result(NMModem *modem, gboolean success, guint i_reason, gpointer 
 
     if (!success) {
         /* There are several reasons to block autoconnection at device level:
-		 *
-		 *  - Wrong SIM-PIN: The device won't autoconnect because it doesn't make sense
-		 *    to retry the connection with the same PIN. This error also makes autoconnection
-		 *    blocked at settings level, so not even a modem unplug and replug will allow
-		 *    autoconnection again. It is somewhat redundant to block autoconnection at
-		 *    both device and setting level really.
-		 *
-		 *  - SIM wrong or not inserted: If the modem is reporting a SIM not inserted error,
-		 *    we can block autoconnection at device level, so that if the same device is
-		 *    unplugged and replugged with a SIM (or if a SIM hotplug event happens in MM,
-		 *    recreating the device completely), we can try the autoconnection again.
-		 *
-		 *  - Modem initialization failed: For some reason unknown to NM, the modem wasn't
-		 *    initialized correctly, which leads to an unusable device. A device unplug and
-		 *    replug may solve the issue, so make it a device-level autoconnection blocking
-		 *    reason.
-		 */
+         *
+         *  - Wrong SIM-PIN: The device won't autoconnect because it doesn't make sense
+         *    to retry the connection with the same PIN. This error also makes autoconnection
+         *    blocked at settings level, so not even a modem unplug and replug will allow
+         *    autoconnection again. It is somewhat redundant to block autoconnection at
+         *    both device and setting level really.
+         *
+         *  - SIM wrong or not inserted: If the modem is reporting a SIM not inserted error,
+         *    we can block autoconnection at device level, so that if the same device is
+         *    unplugged and replugged with a SIM (or if a SIM hotplug event happens in MM,
+         *    recreating the device completely), we can try the autoconnection again.
+         *
+         *  - Modem initialization failed: For some reason unknown to NM, the modem wasn't
+         *    initialized correctly, which leads to an unusable device. A device unplug and
+         *    replug may solve the issue, so make it a device-level autoconnection blocking
+         *    reason.
+         */
         switch (nm_device_state_reason_check(reason)) {
         case NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED:
         case NM_DEVICE_STATE_REASON_GSM_SIM_PUK_REQUIRED:
@@ -162,8 +162,8 @@ modem_auth_requested(NMModem *modem, gpointer user_data)
     NMDevice *device = NM_DEVICE(user_data);
 
     /* Auth requests (PIN, PAP/CHAP passwords, etc) only get handled
-	 * during activation.
-	 */
+     * during activation.
+     */
     if (!nm_device_is_activating(device))
         return;
 
@@ -265,8 +265,8 @@ modem_ip6_config_result(NMModem *    modem,
         break;
     default:
         /* Should never get here since we've assured that the IPv6 method
-		 * will either be "auto" or "ignored" when starting IPv6 configuration.
-		 */
+         * will either be "auto" or "ignored" when starting IPv6 configuration.
+         */
         nm_assert_not_reached();
     }
 }
@@ -287,9 +287,9 @@ ip_ifindex_changed_cb(NMModem *modem, GParamSpec *pspec, gpointer user_data)
     }
 
     /* Disable IPv6 immediately on the interface since NM handles IPv6
-	 * internally, and leaving it enabled could allow the kernel's IPv6
-	 * RA handling code to run before NM is ready.
-	 */
+     * internally, and leaving it enabled could allow the kernel's IPv6
+     * RA handling code to run before NM is ready.
+     */
     nm_device_sysctl_ip_conf_set(device, AF_INET6, "disable_ipv6", "1");
 }
 
@@ -339,8 +339,8 @@ modem_state_cb(NMModem *modem, int new_state_i, int old_state_i, gpointer user_d
     if (new_state <= NM_MODEM_STATE_DISABLING && old_state > NM_MODEM_STATE_DISABLING
         && priv->rf_enabled) {
         /* Called when the ModemManager modem enabled state is changed externally
-		 * to NetworkManager (eg something using MM's D-Bus API directly).
-		 */
+         * to NetworkManager (eg something using MM's D-Bus API directly).
+         */
         if (nm_device_is_activating(device) || dev_state == NM_DEVICE_STATE_ACTIVATED) {
             /* user-initiated action, hence DISCONNECTED not FAILED */
             nm_device_state_changed(device,
@@ -353,7 +353,7 @@ modem_state_cb(NMModem *modem, int new_state_i, int old_state_i, gpointer user_d
     if (new_state < NM_MODEM_STATE_CONNECTING && old_state >= NM_MODEM_STATE_CONNECTING
         && dev_state >= NM_DEVICE_STATE_NEED_AUTH && dev_state <= NM_DEVICE_STATE_ACTIVATED) {
         /* Fail the device if the modem disconnects unexpectedly while the
-		 * device is activating/activated. */
+         * device is activating/activated. */
         nm_device_state_changed(device,
                                 NM_DEVICE_STATE_FAILED,
                                 NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER);
@@ -362,8 +362,8 @@ modem_state_cb(NMModem *modem, int new_state_i, int old_state_i, gpointer user_d
 
     if (new_state > NM_MODEM_STATE_LOCKED && old_state == NM_MODEM_STATE_LOCKED) {
         /* If the modem is now unlocked, enable/disable it according to the
-		 * device's enabled/disabled state.
-		 */
+         * device's enabled/disabled state.
+         */
         nm_modem_set_mm_enabled(priv->modem, priv->rf_enabled);
 
         if (dev_state == NM_DEVICE_STATE_NEED_AUTH) {
@@ -661,8 +661,8 @@ set_enabled(NMDevice *device, gboolean enabled)
     NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE(self);
 
     /* Called only by the Manager in response to rfkill switch changes or
-	 * global user WWAN enable/disable preference changes.
-	 */
+     * global user WWAN enable/disable preference changes.
+     */
     priv->rf_enabled = enabled;
 
     if (priv->modem) {
@@ -731,9 +731,9 @@ static guint32
 get_dhcp_timeout_for_device(NMDevice *device, int addr_family)
 {
     /* DHCP is always done by the modem firmware, not by the network, and
-	 * by the time we get around to DHCP the firmware should already know
-	 * the IP addressing details.  So the DHCP timeout can be much shorter.
-	 */
+     * by the time we get around to DHCP the firmware should already know
+     * the IP addressing details.  So the DHCP timeout can be much shorter.
+     */
     return 15;
 }
 

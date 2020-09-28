@@ -68,8 +68,8 @@ rebuild_header(NmtEditorSection *section)
     NmtEditorSectionPrivate *priv = NMT_EDITOR_SECTION_GET_PRIVATE(section);
 
     /* Removing any widget in an NmtEditorGrid removes its whole row, so we can
-	 * remove the existing title/widget/toggle by asking to remove toggle.
-	 */
+     * remove the existing title/widget/toggle by asking to remove toggle.
+     */
     nmt_newt_container_remove(NMT_NEWT_CONTAINER(priv->header), priv->toggle);
 
     nmt_editor_grid_append(priv->header, priv->title, priv->header_widget, priv->toggle);
@@ -222,10 +222,10 @@ nmt_editor_section_class_init(NmtEditorSectionClass *section_class)
     /* properties */
 
     /**
-	 * NmtEditorSection:title:
-	 *
-	 * The section's title.
-	 */
+     * NmtEditorSection:title:
+     *
+     * The section's title.
+     */
     g_object_class_install_property(
         object_class,
         PROP_TITLE,
@@ -236,10 +236,10 @@ nmt_editor_section_class_init(NmtEditorSectionClass *section_class)
                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 
     /**
-	 * NmtEditorSection:show-by-default:
-	 *
-	 * Whether the section should be expanded by default.
-	 */
+     * NmtEditorSection:show-by-default:
+     *
+     * Whether the section should be expanded by default.
+     */
     g_object_class_install_property(
         object_class,
         PROP_SHOW_BY_DEFAULT,
@@ -250,11 +250,11 @@ nmt_editor_section_class_init(NmtEditorSectionClass *section_class)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
     /**
-	 * NmtEditorSection:header-widget:
-	 *
-	 * The widget (if any) that appears between the section title and its toggle
-	 * button.
-	 */
+     * NmtEditorSection:header-widget:
+     *
+     * The widget (if any) that appears between the section title and its toggle
+     * button.
+     */
     g_object_class_install_property(
         object_class,
         PROP_HEADER_WIDGET,

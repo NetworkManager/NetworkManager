@@ -292,21 +292,21 @@ nm_setting_proxy_class_init(NMSettingProxyClass *klass)
     setting_class->verify = verify;
 
     /**
-	 * NMSettingProxy:method:
-	 *
-	 * Method for proxy configuration, Default is %NM_SETTING_PROXY_METHOD_NONE
-	 *
-	 * Since: 1.6
-	 **/
+     * NMSettingProxy:method:
+     *
+     * Method for proxy configuration, Default is %NM_SETTING_PROXY_METHOD_NONE
+     *
+     * Since: 1.6
+     **/
     /* ---ifcfg-rh---
-	 * property: method
-	 * variable: PROXY_METHOD(+)
-	 * default: none
-	 * description: Method for proxy configuration. For "auto", WPAD is used for
-	 *   proxy configuration, or set the PAC file via PAC_URL or PAC_SCRIPT.
-	 * values: none, auto
-	 * ---end---
-	 */
+     * property: method
+     * variable: PROXY_METHOD(+)
+     * default: none
+     * description: Method for proxy configuration. For "auto", WPAD is used for
+     *   proxy configuration, or set the PAC file via PAC_URL or PAC_SCRIPT.
+     * values: none, auto
+     * ---end---
+     */
     obj_properties[PROP_METHOD] = g_param_spec_int(NM_SETTING_PROXY_METHOD,
                                                    "",
                                                    "",
@@ -316,19 +316,19 @@ nm_setting_proxy_class_init(NMSettingProxyClass *klass)
                                                    G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingProxy:browser-only:
-	 *
-	 * Whether the proxy configuration is for browser only.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMSettingProxy:browser-only:
+     *
+     * Whether the proxy configuration is for browser only.
+     *
+     * Since: 1.6
+     **/
     /* ---ifcfg-rh---
-	 * property: browser-only
-	 * variable: BROWSER_ONLY(+)
-	 * default: no
-	 * description: Whether the proxy configuration is for browser only.
-	 * ---end---
-	 */
+     * property: browser-only
+     * variable: BROWSER_ONLY(+)
+     * default: no
+     * description: Whether the proxy configuration is for browser only.
+     * ---end---
+     */
     obj_properties[PROP_BROWSER_ONLY] =
         g_param_spec_boolean(NM_SETTING_PROXY_BROWSER_ONLY,
                              "",
@@ -337,19 +337,19 @@ nm_setting_proxy_class_init(NMSettingProxyClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingProxy:pac-url:
-	 *
-	 * PAC URL for obtaining PAC file.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMSettingProxy:pac-url:
+     *
+     * PAC URL for obtaining PAC file.
+     *
+     * Since: 1.6
+     **/
     /* ---ifcfg-rh---
-	 * property: pac-url
-	 * variable: PAC_URL(+)
-	 * description: URL for PAC file.
-	 * example: PAC_URL=http://wpad.mycompany.com/wpad.dat
-	 * ---end---
-	 */
+     * property: pac-url
+     * variable: PAC_URL(+)
+     * description: URL for PAC file.
+     * example: PAC_URL=http://wpad.mycompany.com/wpad.dat
+     * ---end---
+     */
     obj_properties[PROP_PAC_URL] = g_param_spec_string(NM_SETTING_PROXY_PAC_URL,
                                                        "",
                                                        "",
@@ -357,19 +357,19 @@ nm_setting_proxy_class_init(NMSettingProxyClass *klass)
                                                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingProxy:pac-script:
-	 *
-	 * PAC script for the connection.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMSettingProxy:pac-script:
+     *
+     * PAC script for the connection.
+     *
+     * Since: 1.6
+     **/
     /* ---ifcfg-rh---
-	 * property: pac-script
-	 * variable: PAC_SCRIPT(+)
-	 * description: Path of the PAC script.
-	 * example: PAC_SCRIPT=/home/joe/proxy.pac
-	 * ---end---
-	 */
+     * property: pac-script
+     * variable: PAC_SCRIPT(+)
+     * description: Path of the PAC script.
+     * example: PAC_SCRIPT=/home/joe/proxy.pac
+     * ---end---
+     */
     obj_properties[PROP_PAC_SCRIPT] =
         g_param_spec_string(NM_SETTING_PROXY_PAC_SCRIPT,
                             "",

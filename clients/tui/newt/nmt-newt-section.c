@@ -262,10 +262,10 @@ adjust_border_for_allocation(NmtNewtSectionPrivate *priv, int height)
     int i;
 
     /* We have to use a series of one-line labels rather than a multi-line
-	 * textbox, because newt will hide any component that's partially offscreen,
-	 * but we want the on-screen portion of the border to show even if part of
-	 * it is offscreen.
-	 */
+     * textbox, because newt will hide any component that's partially offscreen,
+     * but we want the on-screen portion of the border to show even if part of
+     * it is offscreen.
+     */
 
     if (height == 1) {
         nmt_newt_widget_set_visible(priv->border_closed_label, TRUE);
@@ -379,10 +379,10 @@ nmt_newt_section_class_init(NmtNewtSectionClass *section_class)
     /* properties */
 
     /**
-	 * NmtNewtSection:show-border:
-	 *
-	 * %TRUE if the section should show a border along the left side.
-	 */
+     * NmtNewtSection:show-border:
+     *
+     * %TRUE if the section should show a border along the left side.
+     */
     g_object_class_install_property(
         object_class,
         PROP_SHOW_BORDER,
@@ -393,11 +393,11 @@ nmt_newt_section_class_init(NmtNewtSectionClass *section_class)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
     /**
-	 * NmtNewtSection:open:
-	 *
-	 * %TRUE if the section is open (ie, its body is visible), %FALSE
-	 * if not.
-	 */
+     * NmtNewtSection:open:
+     *
+     * %TRUE if the section is open (ie, its body is visible), %FALSE
+     * if not.
+     */
     g_object_class_install_property(
         object_class,
         PROP_OPEN,

@@ -80,7 +80,7 @@ test_dhcp_create(void)
 
     if (/* never true */ client4 == (gpointer) &r) {
         /* we don't want to call this, but ensure that the linker
-		 * includes all these symbols. */
+         * includes all these symbols. */
         sd_dhcp_client_start(client4);
     }
 

@@ -242,12 +242,12 @@ nm_device_macvlan_class_init(NMDeviceMacvlanClass *klass)
     device_class->get_setting_type      = get_setting_type;
 
     /**
-	 * NMDeviceMacvlan:parent:
-	 *
-	 * The devices's parent device.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceMacvlan:parent:
+     *
+     * The devices's parent device.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_PARENT] = g_param_spec_object(NM_DEVICE_MACVLAN_PARENT,
                                                       "",
                                                       "",
@@ -255,12 +255,12 @@ nm_device_macvlan_class_init(NMDeviceMacvlanClass *klass)
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceMacvlan:mode:
-	 *
-	 * The MACVLAN mode.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceMacvlan:mode:
+     *
+     * The MACVLAN mode.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_MODE] = g_param_spec_string(NM_DEVICE_MACVLAN_MODE,
                                                     "",
                                                     "",
@@ -268,12 +268,12 @@ nm_device_macvlan_class_init(NMDeviceMacvlanClass *klass)
                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceMacvlan:no-promisc:
-	 *
-	 * Whether the device has the no-promiscuos flag.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceMacvlan:no-promisc:
+     *
+     * Whether the device has the no-promiscuos flag.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_NO_PROMISC] =
         g_param_spec_boolean(NM_DEVICE_MACVLAN_NO_PROMISC,
                              "",
@@ -282,12 +282,12 @@ nm_device_macvlan_class_init(NMDeviceMacvlanClass *klass)
                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceMacvlan:tap:
-	 *
-	 * Whether the device is a MACVTAP.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceMacvlan:tap:
+     *
+     * Whether the device is a MACVTAP.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_TAP] = g_param_spec_boolean(NM_DEVICE_MACVLAN_TAP,
                                                     "",
                                                     "",

@@ -357,12 +357,12 @@ nm_device_wifi_p2p_class_init(NMDeviceWifiP2PClass *klass)
     device_class->get_type_description  = get_type_description;
 
     /**
-	 * NMDeviceWifiP2P:peers: (type GPtrArray(NMWifiP2PPeer))
-	 *
-	 * List of all Wi-Fi P2P peers the device can see.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMDeviceWifiP2P:peers: (type GPtrArray(NMWifiP2PPeer))
+     *
+     * List of all Wi-Fi P2P peers the device can see.
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_PEERS] = g_param_spec_boxed(NM_DEVICE_WIFI_P2P_PEERS,
                                                     "",
                                                     "",
@@ -373,14 +373,14 @@ nm_device_wifi_p2p_class_init(NMDeviceWifiP2PClass *klass)
                                               &_nml_dbus_meta_iface_nm_device_wifip2p);
 
     /**
-	 * NMDeviceWifiP2P::peer-added:
-	 * @device: the Wi-Fi P2P device that received the signal
-	 * @peer: the new access point
-	 *
-	 * Notifies that a #NMWifiP2PPeer is added to the Wi-Fi P2P device.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMDeviceWifiP2P::peer-added:
+     * @device: the Wi-Fi P2P device that received the signal
+     * @peer: the new access point
+     *
+     * Notifies that a #NMWifiP2PPeer is added to the Wi-Fi P2P device.
+     *
+     * Since: 1.16
+     **/
     signals[PEER_ADDED] = g_signal_new("peer-added",
                                        G_OBJECT_CLASS_TYPE(object_class),
                                        G_SIGNAL_RUN_FIRST,
@@ -393,14 +393,14 @@ nm_device_wifi_p2p_class_init(NMDeviceWifiP2PClass *klass)
                                        G_TYPE_OBJECT);
 
     /**
-	 * NMDeviceWifiP2P::peer-removed:
-	 * @device: the Wi-Fi P2P device that received the signal
-	 * @peer: the removed access point
-	 *
-	 * Notifies that a #NMWifiP2PPeer is removed from the Wi-Fi P2P device.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMDeviceWifiP2P::peer-removed:
+     * @device: the Wi-Fi P2P device that received the signal
+     * @peer: the removed access point
+     *
+     * Notifies that a #NMWifiP2PPeer is removed from the Wi-Fi P2P device.
+     *
+     * Since: 1.16
+     **/
     signals[PEER_REMOVED] = g_signal_new("peer-removed",
                                          G_OBJECT_CLASS_TYPE(object_class),
                                          G_SIGNAL_RUN_FIRST,

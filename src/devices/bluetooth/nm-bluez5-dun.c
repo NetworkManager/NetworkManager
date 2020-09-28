@@ -229,11 +229,11 @@ _connect_create_rfcomm(NMBluez5DunContext *context)
         errsv = NM_ERRNO_NATIVE(errno);
         if (errsv == EBADFD) {
             /* hm. We use a non-blocking socket to connect. Above getsockopt(SOL_SOCKET,SO_ERROR) indicated
-			 * success, but still now we fail with EBADFD. I think that is a bug and we should get the
-			 * failure during connect().
-			 *
-			 * Anyway, craft a less confusing error message than
-			 * "failed to create rfcomm device: File descriptor in bad state (77)". */
+             * success, but still now we fail with EBADFD. I think that is a bug and we should get the
+             * failure during connect().
+             *
+             * Anyway, craft a less confusing error message than
+             * "failed to create rfcomm device: File descriptor in bad state (77)". */
             g_set_error(&error,
                         NM_BT_ERROR,
                         NM_BT_ERROR_DUN_CONNECT_FAILED,
@@ -256,12 +256,12 @@ _connect_create_rfcomm(NMBluez5DunContext *context)
     r = _connect_open_tty(context);
     if (r < 0) {
         /* we created the rfcomm device, but cannot yet open it. That means, we are
-		 * not yet fully connected. However, we notify the caller about "what we learned
-		 * so far". Note that this happens synchronously.
-		 *
-		 * The purpose is that once we proceed synchronously, modem-manager races with
-		 * the detection of the modem. We want to notify the caller first about the
-		 * device name. */
+         * not yet fully connected. However, we notify the caller about "what we learned
+         * so far". Note that this happens synchronously.
+         *
+         * The purpose is that once we proceed synchronously, modem-manager races with
+         * the detection of the modem. We want to notify the caller first about the
+         * device name. */
         context->cdat->callback(NULL,
                                 context->rfcomm_tty_path,
                                 NULL,

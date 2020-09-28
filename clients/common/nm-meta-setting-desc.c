@@ -45,7 +45,7 @@ static GType
 _gtype_property_get_gtype(GType gtype, const char *property_name)
 {
     /* given @gtype, a type for a GObject, lookup the property @property_name
-	 * and return its value_type. */
+     * and return its value_type. */
     if (G_TYPE_IS_CLASSED(gtype)) {
         GParamSpec *             param_spec;
         nm_auto_unref_gtypeclass GTypeClass *gtypeclass = g_type_class_ref(gtype);
@@ -178,8 +178,8 @@ _value_strsplit(const char *value, ValueStrsplitMode split_mode, gsize *out_len)
     gs_free const char **strv = NULL;
 
     /* FIXME: some modes should support backslash escaping.
-	 * In particular, to distinguish from _value_str_as_index_list(), which
-	 * does not accept '\\'. */
+     * In particular, to distinguish from _value_str_as_index_list(), which
+     * does not accept '\\'. */
 
     /* note that all modes remove empty tokens (",", "a,,b", ",,"). */
     switch (split_mode) {
@@ -213,7 +213,7 @@ _value_strsplit_assert_unsplitable(const char *str)
     gsize                j, l;
 
     /* Assert that we cannot split the token and that it
-	 * has no unescaped delimiters. */
+     * has no unescaped delimiters. */
 
     strv_test = _value_strsplit(str, VALUE_STRSPLIT_MODE_ESCAPED_TOKENS, NULL);
     nm_assert(NM_PTRARRAY_LEN(strv_test) == 1);
@@ -378,7 +378,7 @@ _parse_ip_route(int family, const char *str, GError **error)
             while (
                 g_hash_table_iter_next(&iter, (gpointer *) &iter_key, (gpointer *) &iter_value)) {
                 /* need to sink the reference, because nm_utils_parse_variant_attributes() returns
-				 * floating refs. */
+                 * floating refs. */
                 g_variant_ref_sink(iter_value);
 
                 if (!nm_ip_route_attribute_validate(iter_key, iter_value, family, NULL, error)) {
@@ -850,7 +850,7 @@ _get_fcn_gobject_impl(const NMMetaPropertyInfo *property_info,
     g_object_get_property(G_OBJECT(setting), property_info->property_name, &val);
 
     /* Currently, only one particular property asks us to "handle_emptyunset".
-	 * So, don't implement it (yet) for the other types, where it's unneeded. */
+     * So, don't implement it (yet) for the other types, where it's unneeded. */
     nm_assert(!handle_emptyunset || (gtype_prop == G_TYPE_STRV && !glib_handles_str_transform));
 
     if (gtype_prop == G_TYPE_STRING) {
@@ -859,7 +859,7 @@ _get_fcn_gobject_impl(const NMMetaPropertyInfo *property_info,
         if (property_info->property_typ_data
             && property_info->property_typ_data->subtype.gobject_string.handle_emptyunset) {
             /* This string property can both be empty and NULL. We need to
-			 * signal them differently. */
+             * signal them differently. */
             cstr = g_value_get_string(&val);
             nm_assert((!!is_default) == (cstr == NULL));
             RETURN_STR_EMPTYUNSET(get_type, is_default, NULL);
@@ -1188,7 +1188,7 @@ static gconstpointer _get_fcn_gobject_enum(ARGS_GET_FCN)
     }
 
     /* the gobject_enum.value_infos are currently ignored for the getter. They
-	 * only declare additional aliases for the setter. */
+     * only declare additional aliases for the setter. */
 
     if (property_info->property_typ_data)
         value_infos = property_info->property_typ_data->subtype.gobject_enum.value_infos_get;
@@ -1226,14 +1226,14 @@ static gboolean _set_fcn_gobject_string(ARGS_SET_FCN)
         if (property_info->property_typ_data->subtype.gobject_string.handle_emptyunset) {
             if (value && value[0] && NM_STRCHAR_ALL(value, ch, ch == ' ')) {
                 /* this string property can both be %NULL and empty. To express that, we coerce
-				 * a value of all whitespaces to dropping the first whitespace. That means,
-				 * " " gives "", "  " gives " ", and so on.
-				 *
-				 * This way the user can set the string value to "" (meaning NULL) and to
-				 * " " (meaning ""), and any other string.
-				 *
-				 * This is and non-obvious escaping mechanism. But out of all the possible
-				 * solutions, it seems the most sensible one. */
+                 * a value of all whitespaces to dropping the first whitespace. That means,
+                 * " " gives "", "  " gives " ", and so on.
+                 *
+                 * This way the user can set the string value to "" (meaning NULL) and to
+                 * " " (meaning ""), and any other string.
+                 *
+                 * This is and non-obvious escaping mechanism. But out of all the possible
+                 * solutions, it seems the most sensible one. */
                 value++;
             }
         }
@@ -1666,7 +1666,7 @@ static const char *const *_values_fcn_gobject_enum(ARGS_VALUES_FCN)
     }
 
     /* the gobject_enum.value_infos are currently ignored for the list of
-	 * values. They only declare additional (hidden) aliases for the setter. */
+     * values. They only declare additional (hidden) aliases for the setter. */
 
     v = nm_utils_strv_make_deep_copied(nm_utils_enum_get_values(gtype, min, max));
     return (const char *const *) (*out_to_free = v);
@@ -1927,7 +1927,7 @@ static gboolean _set_fcn_multilist(ARGS_SET_FCN)
     else if (property_info->property_typ_data->subtype.multilist.clear_emptyunset_fcn
              && _is_default(property_info, setting)) {
         /* the property is already the default. But we hav here a '+' / '-' modifier, so
-		 * that always makes it non-default (empty) first. */
+         * that always makes it non-default (empty) first. */
         _multilist_clear_property(property_info, setting, TRUE);
     }
 
@@ -2143,7 +2143,7 @@ static const char *const *_complete_fcn_vpn_service_type(ARGS_COMPLETE_FCN)
 
     if (!text || !*text) {
         /* If the prompt text is empty or contains no '.',
-		 * filter out full names. */
+         * filter out full names. */
         for (i = 0, j = 0; values[i]; i++) {
             if (strchr(values[i], '.')) {
                 g_free(values[i]);
@@ -2439,20 +2439,20 @@ _nm_meta_setting_bond_add_option(NMSetting * setting,
         if ((val2 = nm_setting_bond_get_option_by_name(s_bond, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE))
             && !nm_streq(val2, value)) {
             /* "active_slave" option is deprecated and an alias for "primary". When
-			 * setting "primary" to a different value, remove the deprecated "active_slave"
-			 * setting.
-			 *
-			 * If we wouldn't do this, then the profile would work as requested, but ignoring
-			 * the (redundant, differing) "active_slave" option. That is confusing, thus clean
-			 * it up. */
+             * setting "primary" to a different value, remove the deprecated "active_slave"
+             * setting.
+             *
+             * If we wouldn't do this, then the profile would work as requested, but ignoring
+             * the (redundant, differing) "active_slave" option. That is confusing, thus clean
+             * it up. */
             nm_setting_bond_remove_option(s_bond, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE);
         }
     } else if (nm_streq(name, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE)) {
         if ((val2 = nm_setting_bond_get_option_by_name(s_bond, NM_SETTING_BOND_OPTION_PRIMARY))
             && !nm_streq(val2, value)) {
             /* "active_slave" is a deprecated alias for "primary". NetworkManager will ignore
-			 * "active_slave" if "primary" is set, we thus need to coerce the primary option
-			 * too. */
+             * "active_slave" if "primary" is set, we thus need to coerce the primary option
+             * too. */
             nm_setting_bond_add_option(s_bond, NM_SETTING_BOND_OPTION_PRIMARY, value);
         }
     }
@@ -2526,12 +2526,12 @@ static gboolean _set_fcn_connection_type(ARGS_SET_FCN)
 
     if (nm_setting_connection_get_uuid(NM_SETTING_CONNECTION(setting))) {
         /* Don't allow setting type unless the connection is brand new.
-		 * Just because it's a bad idea and the user wouldn't probably want that.
-		 * No technical reason, really.
-		 * Also, using uuid to see if the connection is brand new is a bit
-		 * hacky: we can not see if the type is already set, because
-		 * nmc_setting_set_property() is called only after the property
-		 * we're setting (type) has been removed. */
+         * Just because it's a bad idea and the user wouldn't probably want that.
+         * No technical reason, really.
+         * Also, using uuid to see if the connection is brand new is a bit
+         * hacky: we can not see if the type is already set, because
+         * nmc_setting_set_property() is called only after the property
+         * we're setting (type) has been removed. */
         g_set_error(error, 1, 0, _("Can not change the connection type"));
         return FALSE;
     }
@@ -2661,7 +2661,7 @@ static const char *const *_complete_fcn_connection_master(ARGS_COMPLETE_FCN)
 
     if ((!text || !*text) && operation_context && operation_context->connection) {
         /* if we have no text yet, initially only complete for matching
-		 * slave-type. */
+         * slave-type. */
         s_con = nm_connection_get_setting_connection(operation_context->connection);
         if (s_con)
             expected_type = nm_setting_connection_get_slave_type(s_con);
@@ -3339,16 +3339,16 @@ static gboolean _set_fcn_objlist(ARGS_SET_FCN)
 
     for (i = 0; i < nstrv; i++) {
         /* FIXME: there is the problem here that set_fcn() might succeed on the first item
-		 * (modifying it), and fail to parse the second one.
-		 *
-		 * Optimally, we would first parse all input strings before starting the
-		 * modify the setting. The setting should only be modified if (and only if)
-		 * the entire operation succeeds to set all items.
-		 *
-		 * Currently, in interactive mode this leads to odd behavior.
-		 *
-		 * This does not only affect objlist.set_fcn() or _pt_objlist properties.
-		 * E.g. we also call _gobject_property_reset() before validating the input. */
+         * (modifying it), and fail to parse the second one.
+         *
+         * Optimally, we would first parse all input strings before starting the
+         * modify the setting. The setting should only be modified if (and only if)
+         * the entire operation succeeds to set all items.
+         *
+         * Currently, in interactive mode this leads to odd behavior.
+         *
+         * This does not only affect objlist.set_fcn() or _pt_objlist properties.
+         * E.g. we also call _gobject_property_reset() before validating the input. */
         if (!property_info->property_typ_data->subtype.objlist
                  .set_fcn(setting, !_SET_FCN_DO_REMOVE(modifier, value), strv[i], error))
             return FALSE;
@@ -3395,8 +3395,8 @@ static gboolean _set_fcn_ip_config_gateway(ARGS_SET_FCN)
     }
 
     /* Since commit c1907a218a6b6bfe8175eb6ed87a523aaabc69ae, having a gateway and never-default=yes
-	 * will be normalized away. That means, when we set a gateway, we also want to unset never-default,
-	 * otherwise the operation gets silently reverted. */
+     * will be normalized away. That means, when we set a gateway, we also want to unset never-default,
+     * otherwise the operation gets silently reverted. */
     g_object_set(setting,
                  property_info->property_name,
                  value,
@@ -3467,11 +3467,11 @@ _objlist_set_fcn_ip_config_routing_rules(NMSetting * setting,
         return FALSE;
 
     /* also for @do_add, we first always search whether such a rule already exist
-	 * and remove the first occurrence.
-	 *
-	 * The effect is, that we don't add multiple times the same rule,
-	 * and that if the rule already exists, it gets moved to the end (append).
-	 */
+     * and remove the first occurrence.
+     *
+     * The effect is, that we don't add multiple times the same rule,
+     * and that if the rule already exists, it gets moved to the end (append).
+     */
     n = nm_setting_ip_config_get_num_routing_rules(s_ip);
     for (i = 0; i < n; i++) {
         NMIPRoutingRule *rr;
@@ -4529,7 +4529,7 @@ static const NMMetaPropertyType _pt_objlist = {
 
 #define MTU_GET_FCN(type, func) \
 	/* macro that returns @func as const (guint32(*)(NMSetting*)) type, but checks
-	 * that the actual type is (guint32(*)(type *)). */ \
+     * that the actual type is (guint32(*)(type *)). */ \
 	((guint32 (*) (NMSetting *)) ((sizeof (func == ((guint32 (*) (type *)) func))) ? func : func) )
 
 #define TEAM_DESCRIBE_MESSAGE \

@@ -46,7 +46,7 @@ create_and_realize(NMDevice *             device,
                    GError **              error)
 {
     /* The port will be added to ovsdb when an interface is enslaved,
-	 * because there's no such thing like an empty port. */
+     * because there's no such thing like an empty port. */
 
     return TRUE;
 }
@@ -148,7 +148,7 @@ release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
                                del_iface_cb,
                                g_object_ref(slave));
         /* Open VSwitch is going to delete this one. We must ignore what happens
-		 * next with the interface. */
+         * next with the interface. */
         if (NM_IS_DEVICE_OVS_INTERFACE(slave))
             nm_device_update_from_platform_link(slave, NULL);
     } else

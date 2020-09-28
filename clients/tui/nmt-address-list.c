@@ -237,10 +237,10 @@ nmt_address_list_class_init(NmtAddressListClass *list_class)
     widget_list_class->remove_clicked = nmt_address_list_remove_clicked;
 
     /**
-	 * NmtAddressList:list-type:
-	 *
-	 * The type of address the list holds.
-	 */
+     * NmtAddressList:list-type:
+     *
+     * The type of address the list holds.
+     */
     g_object_class_install_property(
         object_class,
         PROP_LIST_TYPE,
@@ -252,10 +252,10 @@ nmt_address_list_class_init(NmtAddressListClass *list_class)
                           0,
                           G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtAddressList:strings:
-	 *
-	 * The strings in the list's entries.
-	 */
+     * NmtAddressList:strings:
+     *
+     * The strings in the list's entries.
+     */
     g_object_class_install_property(object_class,
                                     PROP_STRINGS,
                                     g_param_spec_boxed("strings",

@@ -67,15 +67,15 @@ void _nm_singleton_instance_register_destruction(GObject *instance);
     _nm_unused static void _nmtst_##GETTER##_reset(TYPE *instance)                          \
     {                                                                                       \
         /* usually, the singleton can only be created once (and further instantiations
-	 * are guarded by an assert). For testing, we need to reset the singleton to
-	 * allow multiple instantiations. */      \
+     * are guarded by an assert). For testing, we need to reset the singleton to
+     * allow multiple instantiations. */      \
         g_assert(G_IS_OBJECT(instance));                                                    \
         g_assert(instance == singleton_instance);                                           \
         g_assert(_already_created_##GETTER);                                                \
         g_object_unref(instance);                                                           \
                                                                                             \
         /* require that the last unref also destroyed the singleton. If this fails,
-	 * somebody still keeps a reference. Fix your test! */         \
+     * somebody still keeps a reference. Fix your test! */         \
         g_assert(!singleton_instance);                                                      \
         _already_created_##GETTER = FALSE;                                                  \
     }
@@ -388,11 +388,11 @@ gboolean nm_utils_get_ipv6_interface_identifier(NMLinkType          link_type,
 
 typedef enum {
     /* The stable type. Note that this value is encoded in the
-	 * generated addresses, thus the numbers MUST not change.
-	 *
-	 * Also note, if we ever allocate ID 255, we must take care
-	 * that nm_utils_ipv6_addr_set_stable_privacy() extends the
-	 * uint8 encoding of this value. */
+     * generated addresses, thus the numbers MUST not change.
+     *
+     * Also note, if we ever allocate ID 255, we must take care
+     * that nm_utils_ipv6_addr_set_stable_privacy() extends the
+     * uint8 encoding of this value. */
     NM_UTILS_STABLE_TYPE_UUID      = 0,
     NM_UTILS_STABLE_TYPE_STABLE_ID = 1,
     NM_UTILS_STABLE_TYPE_GENERATED = 2,

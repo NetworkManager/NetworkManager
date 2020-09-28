@@ -533,8 +533,8 @@ nm_supplicant_config_add_setting_wireless(NMSupplicantConfig *self,
     }
 
     /* Except for Ad-Hoc, Hotspot and Mesh, request that the driver probe for the
-	 * specific SSID we want to associate with.
-	 */
+     * specific SSID we want to associate with.
+     */
     if (!(is_adhoc || is_ap || is_mesh)) {
         if (!nm_supplicant_config_add_option(self, "scan_ssid", "1", -1, NULL, error))
             return FALSE;
@@ -590,33 +590,33 @@ nm_supplicant_config_add_bgscan(NMSupplicantConfig *self, NMConnection *connecti
     g_assert(s_wifi);
 
     /* Don't scan when a shared connection (either AP or Ad-Hoc) is active;
-	 * it will disrupt connected clients.
-	 */
+     * it will disrupt connected clients.
+     */
     if (NM_IN_STRSET(nm_setting_wireless_get_mode(s_wifi),
                      NM_SETTING_WIRELESS_MODE_AP,
                      NM_SETTING_WIRELESS_MODE_ADHOC))
         return TRUE;
 
     /* Don't scan when the connection is locked to a specific AP, since
-	 * intra-ESS roaming (which requires periodic scanning) isn't being
-	 * used due to the specific AP lock. (bgo #513820)
-	 */
+     * intra-ESS roaming (which requires periodic scanning) isn't being
+     * used due to the specific AP lock. (bgo #513820)
+     */
     if (nm_setting_wireless_get_bssid(s_wifi))
         return TRUE;
 
     /* Default to a very long bgscan interval when signal is OK on the assumption
-	 * that either (a) there aren't multiple APs and we don't need roaming, or
-	 * (b) since EAP/802.1x isn't used and thus there are fewer steps to fail
-	 * during a roam, we can wait longer before scanning for roam candidates.
-	 */
+     * that either (a) there aren't multiple APs and we don't need roaming, or
+     * (b) since EAP/802.1x isn't used and thus there are fewer steps to fail
+     * during a roam, we can wait longer before scanning for roam candidates.
+     */
     bgscan = "simple:30:-70:86400";
 
     /* If using WPA Enterprise, Dynamic WEP or we have seen more than one AP use
-	 * a shorter bgscan interval on the assumption that this is a multi-AP ESS
-	 * in which we want more reliable roaming between APs. Thus trigger scans
-	 * when the signal is still somewhat OK so we have an up-to-date roam
-	 * candidate list when the signal gets bad.
-	 */
+     * a shorter bgscan interval on the assumption that this is a multi-AP ESS
+     * in which we want more reliable roaming between APs. Thus trigger scans
+     * when the signal is still somewhat OK so we have an up-to-date roam
+     * candidate list when the signal gets bad.
+     */
     if (nm_setting_wireless_get_num_seen_bssids(s_wifi) > 1
         || ((s_wsec = nm_connection_get_setting_wireless_security(connection))
             && NM_IN_STRSET(nm_setting_wireless_security_get_key_mgmt(s_wsec),
@@ -878,10 +878,10 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
 
         if (psk_len >= 8 && psk_len <= 63) {
             /* Use NM_SUPPL_OPT_TYPE_STRING here so that it gets pushed to the
-			 * supplicant as a string, and therefore gets quoted,
-			 * and therefore the supplicant will interpret it as a
-			 * passphrase and not a hex key.
-			 */
+             * supplicant as a string, and therefore gets quoted,
+             * and therefore the supplicant will interpret it as a
+             * passphrase and not a hex key.
+             */
             if (!nm_supplicant_config_add_option_with_type(self,
                                                            "psk",
                                                            psk,
@@ -892,8 +892,8 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
                 return FALSE;
         } else if (nm_streq(key_mgmt, "sae")) {
             /* If the SAE password doesn't comply with WPA-PSK limitation,
-			 * we need to call it "sae_password" instead of "psk".
-			 */
+             * we need to call it "sae_password" instead of "psk".
+             */
             if (!nm_supplicant_config_add_option_with_type(self,
                                                            "sae_password",
                                                            psk,
@@ -1070,9 +1070,9 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
 
         if (nm_streq(key_mgmt, "wpa-eap")) {
             /* When using WPA-Enterprise, we want to use Proactive Key Caching (also
-			 * called Opportunistic Key Caching) to avoid full EAP exchanges when
-			 * roaming between access points in the same mobility group.
-			 */
+             * called Opportunistic Key Caching) to avoid full EAP exchanges when
+             * roaming between access points in the same mobility group.
+             */
             if (!nm_supplicant_config_add_option(self,
                                                  "proactive_key_caching",
                                                  "1",
@@ -1104,8 +1104,8 @@ add_pkcs11_uri_with_pin(NMSupplicantConfig *       self,
         return TRUE;
 
     /* We ignore the attributes -- RFC 7512 suggests that some of them
-	 * might be unsafe and we want to be on the safe side. Also, we're
-	 * installing our attributes, so this makes things a bit easier for us. */
+     * might be unsafe and we want to be on the safe side. Also, we're
+     * installing our attributes, so this makes things a bit easier for us. */
     split = g_strsplit(uri, "&", 2);
     if (split[1])
         nm_log_info(LOGD_SUPPLICANT, "URI attributes ignored");
@@ -1117,8 +1117,8 @@ add_pkcs11_uri_with_pin(NMSupplicantConfig *       self,
         g_free(escaped);
     } else if (!(pin_flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)) {
         /* Include an empty PIN to indicate the login is still needed.
-		 * Probably a token that has a PIN path and the actual PIN will
-		 * be entered using a protected path. */
+         * Probably a token that has a PIN path and the actual PIN will
+         * be entered using a protected path. */
         pin_qattr = g_strdup("pin-value=");
     }
 
@@ -1191,7 +1191,7 @@ nm_supplicant_config_add_setting_8021x(NMSupplicantConfig *self,
     }
 
     /* Build the "eap" option string while we check for EAP methods needing
-	 * special handling: PEAP + GTC, FAST, external */
+     * special handling: PEAP + GTC, FAST, external */
     eap_str = g_string_new(NULL);
     num_eap = nm_setting_802_1x_get_num_eap_methods(setting);
     for (i = 0; i < num_eap; i++) {
@@ -1225,7 +1225,7 @@ nm_supplicant_config_add_setting_8021x(NMSupplicantConfig *self,
         return FALSE;
 
     /* Adjust the fragment size according to MTU, but do not set it higher than 1280-14
-	 * for better compatibility */
+     * for better compatibility */
     hdrs = 14; /* EAPOL + EAP-TLS */
     frag = 1280 - hdrs;
     if (mtu > hdrs)
@@ -1308,8 +1308,8 @@ nm_supplicant_config_add_setting_8021x(NMSupplicantConfig *self,
             return FALSE;
     } else {
         /* PAC file is not specified.
-		 * If provisioning is allowed, use an blob format.
-		 */
+         * If provisioning is allowed, use an blob format.
+         */
         if (fast_provisoning_allowed) {
             gs_free char *blob_name = NULL;
 
@@ -1330,7 +1330,7 @@ nm_supplicant_config_add_setting_8021x(NMSupplicantConfig *self,
     }
 
     /* If user wants to use system CA certs, either populate ca_path (if the path
-	 * is a directory) or ca_cert (the path is a file name) */
+     * is a directory) or ca_cert (the path is a file name) */
     if (nm_setting_802_1x_get_system_ca_certs(setting)) {
         if (g_file_test(SYSTEM_CA_PATH, G_FILE_TEST_IS_DIR))
             ca_path_override = SYSTEM_CA_PATH;
@@ -1517,9 +1517,9 @@ nm_supplicant_config_add_setting_8021x(NMSupplicantConfig *self,
         if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH
             || format == NM_SETTING_802_1X_CK_FORMAT_PKCS12) {
             /* Only add the private key password for PKCS#12 blobs and
-			 * all path schemes, since in both of these cases the private key
-			 * isn't decrypted at all.
-			 */
+             * all path schemes, since in both of these cases the private key
+             * isn't decrypted at all.
+             */
             value = nm_setting_802_1x_get_private_key_password(setting);
             if (!add_string_val(self, value, "private_key_passwd", FALSE, "<hidden>", error))
                 return FALSE;
@@ -1527,8 +1527,8 @@ nm_supplicant_config_add_setting_8021x(NMSupplicantConfig *self,
 
         if (format != NM_SETTING_802_1X_CK_FORMAT_PKCS12) {
             /* Only add the client cert if the private key is not PKCS#12, as
-			 * wpa_supplicant configuration directs us to do.
-			 */
+             * wpa_supplicant configuration directs us to do.
+             */
             switch (nm_setting_802_1x_get_client_cert_scheme(setting)) {
             case NM_SETTING_802_1X_CK_SCHEME_BLOB:
                 bytes = nm_setting_802_1x_get_client_cert_blob(setting);
@@ -1606,9 +1606,9 @@ nm_supplicant_config_add_setting_8021x(NMSupplicantConfig *self,
         if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH
             || format == NM_SETTING_802_1X_CK_FORMAT_PKCS12) {
             /* Only add the private key password for PKCS#12 blobs and
-			 * all path schemes, since in both of these cases the private key
-			 * isn't decrypted at all.
-			 */
+             * all path schemes, since in both of these cases the private key
+             * isn't decrypted at all.
+             */
             value = nm_setting_802_1x_get_phase2_private_key_password(setting);
             if (!add_string_val(self, value, "private_key2_passwd", FALSE, "<hidden>", error))
                 return FALSE;
@@ -1616,8 +1616,8 @@ nm_supplicant_config_add_setting_8021x(NMSupplicantConfig *self,
 
         if (format != NM_SETTING_802_1X_CK_FORMAT_PKCS12) {
             /* Only add the client cert if the private key is not PKCS#12, as
-			 * wpa_supplicant configuration directs us to do.
-			 */
+             * wpa_supplicant configuration directs us to do.
+             */
             switch (nm_setting_802_1x_get_phase2_client_cert_scheme(setting)) {
             case NM_SETTING_802_1X_CK_SCHEME_BLOB:
                 bytes = nm_setting_802_1x_get_phase2_client_cert_blob(setting);

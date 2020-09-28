@@ -623,207 +623,207 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     setting_class->verify = verify;
 
     /* ---ifcfg-rh---
-	 * property: method
-	 * variable: IPV6INIT, IPV6FORWARDING, IPV6_AUTOCONF, DHCPV6C, IPV6_DISABLED
-	 * default:  IPV6INIT=yes; IPV6FORWARDING=no; IPV6_AUTOCONF=!IPV6FORWARDING, DHCPV6=no
-	 * description: Method used for IPv6 protocol configuration.
-	 *   ignore ~ IPV6INIT=no; auto ~ IPV6_AUTOCONF=yes; dhcp ~ IPV6_AUTOCONF=no and DHCPV6C=yes;
-	 *   disabled ~ IPV6_DISABLED=yes
-	 * ---end---
-	 */
+     * property: method
+     * variable: IPV6INIT, IPV6FORWARDING, IPV6_AUTOCONF, DHCPV6C, IPV6_DISABLED
+     * default:  IPV6INIT=yes; IPV6FORWARDING=no; IPV6_AUTOCONF=!IPV6FORWARDING, DHCPV6=no
+     * description: Method used for IPv6 protocol configuration.
+     *   ignore ~ IPV6INIT=no; auto ~ IPV6_AUTOCONF=yes; dhcp ~ IPV6_AUTOCONF=no and DHCPV6C=yes;
+     *   disabled ~ IPV6_DISABLED=yes
+     * ---end---
+     */
 
     /* ---keyfile---
-	 * property: dns
-	 * format: list of DNS IP addresses
-	 * description: List of DNS servers.
-	 * example: dns=2001:4860:4860::8888;2001:4860:4860::8844;
-	 * ---end---
-	 * ---ifcfg-rh---
-	 * property: dns
-	 * variable: DNS1, DNS2, ...
-	 * format:   string
-	 * description: List of DNS servers. NetworkManager uses the variables both
-	 *   for IPv4 and IPv6.
-	 * ---end---
-	 */
+     * property: dns
+     * format: list of DNS IP addresses
+     * description: List of DNS servers.
+     * example: dns=2001:4860:4860::8888;2001:4860:4860::8844;
+     * ---end---
+     * ---ifcfg-rh---
+     * property: dns
+     * variable: DNS1, DNS2, ...
+     * format:   string
+     * description: List of DNS servers. NetworkManager uses the variables both
+     *   for IPv4 and IPv6.
+     * ---end---
+     */
 
     /* ---ifcfg-rh---
-	 * property: dns-search
-	 * variable: IPV6_DOMAIN(+)
-	 * format:   string (space-separated domains)
-	 * description: List of DNS search domains.
-	 * ---end---
-	 */
+     * property: dns-search
+     * variable: IPV6_DOMAIN(+)
+     * format:   string (space-separated domains)
+     * description: List of DNS search domains.
+     * ---end---
+     */
 
     /* ---keyfile---
-	 * property: addresses
-	 * variable: address1, address2, ...
-	 * format: address/plen
-	 * description: List of static IP addresses.
-	 * example: address1=abbe::cafe/96 address2=2001::1234
-	 * ---end---
-	 * ---ifcfg-rh---
-	 * property: addresses
-	 * variable: IPV6ADDR, IPV6ADDR_SECONDARIES
-	 * description: List of static IP addresses.
-	 * example: IPV6ADDR=ab12:9876::1
-	 *   IPV6ADDR_SECONDARIES="ab12:9876::2 ab12:9876::3"
-	 * ---end---
-	 */
+     * property: addresses
+     * variable: address1, address2, ...
+     * format: address/plen
+     * description: List of static IP addresses.
+     * example: address1=abbe::cafe/96 address2=2001::1234
+     * ---end---
+     * ---ifcfg-rh---
+     * property: addresses
+     * variable: IPV6ADDR, IPV6ADDR_SECONDARIES
+     * description: List of static IP addresses.
+     * example: IPV6ADDR=ab12:9876::1
+     *   IPV6ADDR_SECONDARIES="ab12:9876::2 ab12:9876::3"
+     * ---end---
+     */
 
     /* ---keyfile---
-	 * property: gateway
-	 * variable: gateway
-	 * format: string
-	 * description: Gateway IP addresses as a string.
-	 * example: gateway=abbe::1
-	 * ---end---
-	 * ---ifcfg-rh---
-	 * property: gateway
-	 * variable: IPV6_DEFAULTGW
-	 * description: Gateway IP address.
-	 * example: IPV6_DEFAULTGW=abbe::1
-	 * ---end---
-	 */
+     * property: gateway
+     * variable: gateway
+     * format: string
+     * description: Gateway IP addresses as a string.
+     * example: gateway=abbe::1
+     * ---end---
+     * ---ifcfg-rh---
+     * property: gateway
+     * variable: IPV6_DEFAULTGW
+     * description: Gateway IP address.
+     * example: IPV6_DEFAULTGW=abbe::1
+     * ---end---
+     */
 
     /* ---keyfile---
-	 * property: routes
-	 * variable: route1, route2, ...
-	 * format: route/plen[,gateway,metric]
-	 * description: List of IP routes.
-	 * example: route1=2001:4860:4860::/64,2620:52:0:2219:222:68ff:fe11:5403
-	 * ---end---
-	 * ---ifcfg-rh---
-	 * property: routes
-	 * variable: (none)
-	 * description: List of static routes. They are not stored in ifcfg-* file,
-	 *   but in route6-* file instead in the form of command line for 'ip route add'.
-	 * ---end---
-	 */
+     * property: routes
+     * variable: route1, route2, ...
+     * format: route/plen[,gateway,metric]
+     * description: List of IP routes.
+     * example: route1=2001:4860:4860::/64,2620:52:0:2219:222:68ff:fe11:5403
+     * ---end---
+     * ---ifcfg-rh---
+     * property: routes
+     * variable: (none)
+     * description: List of static routes. They are not stored in ifcfg-* file,
+     *   but in route6-* file instead in the form of command line for 'ip route add'.
+     * ---end---
+     */
 
     /* ---ifcfg-rh---
-	 * property: ignore-auto-routes
-	 * variable: IPV6_PEERROUTES(+)
-	 * default: yes
-	 * description: IPV6_PEERROUTES has the opposite meaning as 'ignore-auto-routes' property.
-	 * ---end---
-	 */
+     * property: ignore-auto-routes
+     * variable: IPV6_PEERROUTES(+)
+     * default: yes
+     * description: IPV6_PEERROUTES has the opposite meaning as 'ignore-auto-routes' property.
+     * ---end---
+     */
 
     /* ---ifcfg-rh---
-	 * property: ignore-auto-dns
-	 * variable: IPV6_PEERDNS(+)
-	 * default: yes
-	 * description: IPV6_PEERDNS has the opposite meaning as 'ignore-auto-dns' property.
-	 * ---end---
-	 */
+     * property: ignore-auto-dns
+     * variable: IPV6_PEERDNS(+)
+     * default: yes
+     * description: IPV6_PEERDNS has the opposite meaning as 'ignore-auto-dns' property.
+     * ---end---
+     */
 
     /* ---ifcfg-rh---
-	 * property: dhcp-hostname
-	 * variable: DHCPV6_HOSTNAME
-	 * description: Hostname to send the DHCP server.
-	 * ---end---
-	 */
+     * property: dhcp-hostname
+     * variable: DHCPV6_HOSTNAME
+     * description: Hostname to send the DHCP server.
+     * ---end---
+     */
 
     /* ---ifcfg-rh---
-	 * property: dhcp-timeout
-	 * variable: IPV6_DHCP_TIMEOUT(+)
-	 * description: A timeout after which the DHCP transaction fails in case of no response.
-	 * example: IPV6_DHCP_TIMEOUT=10
-	 * ---end---
-	 */
+     * property: dhcp-timeout
+     * variable: IPV6_DHCP_TIMEOUT(+)
+     * description: A timeout after which the DHCP transaction fails in case of no response.
+     * example: IPV6_DHCP_TIMEOUT=10
+     * ---end---
+     */
 
     /* ---ifcfg-rh---
-	 * property: dhcp-hostname-flags
-	 * variable: DHCPV6_HOSTNAME_FLAGS
-	 * description: flags for the DHCP hostname property
-	 * example: DHCPV6_HOSTNAME_FLAGS=5
-	 */
+     * property: dhcp-hostname-flags
+     * variable: DHCPV6_HOSTNAME_FLAGS
+     * description: flags for the DHCP hostname property
+     * example: DHCPV6_HOSTNAME_FLAGS=5
+     */
 
     /* ---ifcfg-rh---
-	 * property: never-default
-	 * variable: IPV6_DEFROUTE(+), (and IPV6_DEFAULTGW, IPV6_DEFAULTDEV in /etc/sysconfig/network)
-	 * default: IPV6_DEFROUTE=yes (when no variable specified)
-	 * description: IPV6_DEFROUTE=no tells NetworkManager that this connection
-	 *   should not be assigned the default IPv6 route. IPV6_DEFROUTE has the opposite
-	 *   meaning as 'never-default' property.
-	 * ---end---
-	 */
+     * property: never-default
+     * variable: IPV6_DEFROUTE(+), (and IPV6_DEFAULTGW, IPV6_DEFAULTDEV in /etc/sysconfig/network)
+     * default: IPV6_DEFROUTE=yes (when no variable specified)
+     * description: IPV6_DEFROUTE=no tells NetworkManager that this connection
+     *   should not be assigned the default IPv6 route. IPV6_DEFROUTE has the opposite
+     *   meaning as 'never-default' property.
+     * ---end---
+     */
 
     /* ---ifcfg-rh---
-	 * property: may-fail
-	 * variable: IPV6_FAILURE_FATAL(+)
-	 * default: no
-	 * description: IPV6_FAILURE_FATAL has the opposite meaning as 'may-fail' property.
-	 * ---end---
-	 */
+     * property: may-fail
+     * variable: IPV6_FAILURE_FATAL(+)
+     * default: no
+     * description: IPV6_FAILURE_FATAL has the opposite meaning as 'may-fail' property.
+     * ---end---
+     */
 
     /* ---ifcfg-rh---
-	 * property: route-metric
-	 * variable: IPV6_ROUTE_METRIC(+)
-	 * default: -1
-	 * description: IPV6_ROUTE_METRIC is the default IPv6 metric for routes on this connection.
-	 *   If set to -1, a default metric based on the device type is used.
-	 * ---end---
-	 */
+     * property: route-metric
+     * variable: IPV6_ROUTE_METRIC(+)
+     * default: -1
+     * description: IPV6_ROUTE_METRIC is the default IPv6 metric for routes on this connection.
+     *   If set to -1, a default metric based on the device type is used.
+     * ---end---
+     */
 
     /* ---ifcfg-rh---
-	 * property: route-table
-	 * variable: IPV6_ROUTE_TABLE(+)
-	 * default: 0
-	 * description: IPV6_ROUTE_TABLE enables policy-routing and sets the default routing table.
-	 * ---end---
-	 */
+     * property: route-table
+     * variable: IPV6_ROUTE_TABLE(+)
+     * default: 0
+     * description: IPV6_ROUTE_TABLE enables policy-routing and sets the default routing table.
+     * ---end---
+     */
 
     /* ---ifcfg-rh---
-	 * property: dns-priority
-	 * variable: IPV6_DNS_PRIORITY(+)
-	 * description: The priority for DNS servers of this connection. Lower values have higher priority.
-	 *    If zero, the default value will be used (50 for VPNs, 100 for other connections).
-	 *    A negative value prevents DNS from other connections with greater values to be used.
-	 * default: 0
-	 * example: IPV6_DNS_PRIORITY=20
-	 * ---end---
-	 */
+     * property: dns-priority
+     * variable: IPV6_DNS_PRIORITY(+)
+     * description: The priority for DNS servers of this connection. Lower values have higher priority.
+     *    If zero, the default value will be used (50 for VPNs, 100 for other connections).
+     *    A negative value prevents DNS from other connections with greater values to be used.
+     * default: 0
+     * example: IPV6_DNS_PRIORITY=20
+     * ---end---
+     */
 
     /* ---ifcfg-rh---
-	 * property: dns-options
-	 * variable: IPV6_RES_OPTIONS(+)
-	 * description: List of DNS options to be added to /etc/resolv.conf
-	 * example: IPV6_RES_OPTIONS=ndots:2 timeout:3
-	 * ---end---
-	 */
+     * property: dns-options
+     * variable: IPV6_RES_OPTIONS(+)
+     * description: List of DNS options to be added to /etc/resolv.conf
+     * example: IPV6_RES_OPTIONS=ndots:2 timeout:3
+     * ---end---
+     */
 
     /**
-	 * NMSettingIP6Config:ip6-privacy:
-	 *
-	 * Configure IPv6 Privacy Extensions for SLAAC, described in RFC4941.  If
-	 * enabled, it makes the kernel generate a temporary IPv6 address in
-	 * addition to the public one generated from MAC address via modified
-	 * EUI-64.  This enhances privacy, but could cause problems in some
-	 * applications, on the other hand.  The permitted values are: -1: unknown,
-	 * 0: disabled, 1: enabled (prefer public address), 2: enabled (prefer temporary
-	 * addresses).
-	 *
-	 * Having a per-connection setting set to "-1" (unknown) means fallback to
-	 * global configuration "ipv6.ip6-privacy".
-	 *
-	 * If also global configuration is unspecified or set to "-1", fallback to read
-	 * "/proc/sys/net/ipv6/conf/default/use_tempaddr".
-	 *
-	 * Note that this setting is distinct from the Stable Privacy addresses
-	 * that can be enabled with the "addr-gen-mode" property's "stable-privacy"
-	 * setting as another way of avoiding host tracking with IPv6 addresses.
-	 **/
+     * NMSettingIP6Config:ip6-privacy:
+     *
+     * Configure IPv6 Privacy Extensions for SLAAC, described in RFC4941.  If
+     * enabled, it makes the kernel generate a temporary IPv6 address in
+     * addition to the public one generated from MAC address via modified
+     * EUI-64.  This enhances privacy, but could cause problems in some
+     * applications, on the other hand.  The permitted values are: -1: unknown,
+     * 0: disabled, 1: enabled (prefer public address), 2: enabled (prefer temporary
+     * addresses).
+     *
+     * Having a per-connection setting set to "-1" (unknown) means fallback to
+     * global configuration "ipv6.ip6-privacy".
+     *
+     * If also global configuration is unspecified or set to "-1", fallback to read
+     * "/proc/sys/net/ipv6/conf/default/use_tempaddr".
+     *
+     * Note that this setting is distinct from the Stable Privacy addresses
+     * that can be enabled with the "addr-gen-mode" property's "stable-privacy"
+     * setting as another way of avoiding host tracking with IPv6 addresses.
+     **/
     /* ---ifcfg-rh---
-	 * property: ip6-privacy
-	 * variable: IPV6_PRIVACY, IPV6_PRIVACY_PREFER_PUBLIC_IP(+)
-	 * values: IPV6_PRIVACY: no, yes (rfc3041 or rfc4941);
-	 *   IPV6_PRIVACY_PREFER_PUBLIC_IP: yes, no
-	 * default: no
-	 * description: Configure IPv6 Privacy Extensions for SLAAC (RFC4941).
-	 * example: IPV6_PRIVACY=rfc3041 IPV6_PRIVACY_PREFER_PUBLIC_IP=yes
-	 * ---end---
-	 */
+     * property: ip6-privacy
+     * variable: IPV6_PRIVACY, IPV6_PRIVACY_PREFER_PUBLIC_IP(+)
+     * values: IPV6_PRIVACY: no, yes (rfc3041 or rfc4941);
+     *   IPV6_PRIVACY_PREFER_PUBLIC_IP: yes, no
+     * default: no
+     * description: Configure IPv6 Privacy Extensions for SLAAC (RFC4941).
+     * example: IPV6_PRIVACY=rfc3041 IPV6_PRIVACY_PREFER_PUBLIC_IP=yes
+     * ---end---
+     */
     obj_properties[PROP_IP6_PRIVACY] =
         g_param_spec_enum(NM_SETTING_IP6_CONFIG_IP6_PRIVACY,
                           "",
@@ -833,46 +833,46 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIP6Config:addr-gen-mode:
-	 *
-	 * Configure method for creating the address for use with RFC4862 IPv6
-	 * Stateless Address Autoconfiguration. The permitted values are:
-	 * %NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64 or
-	 * %NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY.
-	 *
-	 * If the property is set to EUI64, the addresses will be generated
-	 * using the interface tokens derived from hardware address. This makes
-	 * the host part of the address to stay constant, making it possible
-	 * to track host's presence when it changes networks. The address changes
-	 * when the interface hardware is replaced.
-	 *
-	 * The value of stable-privacy enables use of cryptographically
-	 * secure hash of a secret host-specific key along with the connection's
-	 * stable-id and the network address as specified by RFC7217.
-	 * This makes it impossible to use the address track host's presence,
-	 * and makes the address stable when the network interface hardware is
-	 * replaced.
-	 *
-	 * On D-Bus, the absence of an addr-gen-mode setting equals enabling
-	 * stable-privacy. For keyfile plugin, the absence of the setting
-	 * on disk means EUI64 so that the property doesn't change on upgrade
-	 * from older versions.
-	 *
-	 * Note that this setting is distinct from the Privacy Extensions as
-	 * configured by "ip6-privacy" property and it does not affect the
-	 * temporary addresses configured with this option.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingIP6Config:addr-gen-mode:
+     *
+     * Configure method for creating the address for use with RFC4862 IPv6
+     * Stateless Address Autoconfiguration. The permitted values are:
+     * %NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64 or
+     * %NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY.
+     *
+     * If the property is set to EUI64, the addresses will be generated
+     * using the interface tokens derived from hardware address. This makes
+     * the host part of the address to stay constant, making it possible
+     * to track host's presence when it changes networks. The address changes
+     * when the interface hardware is replaced.
+     *
+     * The value of stable-privacy enables use of cryptographically
+     * secure hash of a secret host-specific key along with the connection's
+     * stable-id and the network address as specified by RFC7217.
+     * This makes it impossible to use the address track host's presence,
+     * and makes the address stable when the network interface hardware is
+     * replaced.
+     *
+     * On D-Bus, the absence of an addr-gen-mode setting equals enabling
+     * stable-privacy. For keyfile plugin, the absence of the setting
+     * on disk means EUI64 so that the property doesn't change on upgrade
+     * from older versions.
+     *
+     * Note that this setting is distinct from the Privacy Extensions as
+     * configured by "ip6-privacy" property and it does not affect the
+     * temporary addresses configured with this option.
+     *
+     * Since: 1.2
+     **/
     /* ---ifcfg-rh---
-	 * property: addr-gen-mode
-	 * variable: IPV6_ADDR_GEN_MODE
-	 * values: IPV6_ADDR_GEN_MODE: eui64, stable-privacy
-	 * default: eui64
-	 * description: Configure IPv6 Stable Privacy addressing for SLAAC (RFC7217).
-	 * example: IPV6_ADDR_GEN_MODE=stable-privacy
-	 * ---end---
-	 */
+     * property: addr-gen-mode
+     * variable: IPV6_ADDR_GEN_MODE
+     * values: IPV6_ADDR_GEN_MODE: eui64, stable-privacy
+     * default: eui64
+     * description: Configure IPv6 Stable Privacy addressing for SLAAC (RFC7217).
+     * example: IPV6_ADDR_GEN_MODE=stable-privacy
+     * ---end---
+     */
     obj_properties[PROP_ADDR_GEN_MODE] =
         g_param_spec_int(NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
                          "",
@@ -883,20 +883,20 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIP6Config:token:
-	 *
-	 * Configure the token for draft-chown-6man-tokenised-ipv6-identifiers-02
-	 * IPv6 tokenized interface identifiers. Useful with eui64 addr-gen-mode.
-	 *
-	 * Since: 1.4
-	 **/
+     * NMSettingIP6Config:token:
+     *
+     * Configure the token for draft-chown-6man-tokenised-ipv6-identifiers-02
+     * IPv6 tokenized interface identifiers. Useful with eui64 addr-gen-mode.
+     *
+     * Since: 1.4
+     **/
     /* ---ifcfg-rh---
-	 * property: token
-	 * variable: IPV6_TOKEN
-	 * description: The IPv6 tokenized interface identifier token
-	 * example: IPV6_TOKEN=::53
-	 * ---end---
-	 */
+     * property: token
+     * variable: IPV6_TOKEN
+     * description: The IPv6 tokenized interface identifier token
+     * example: IPV6_TOKEN=::53
+     * ---end---
+     */
     obj_properties[PROP_TOKEN] = g_param_spec_string(NM_SETTING_IP6_CONFIG_TOKEN,
                                                      "",
                                                      "",
@@ -905,23 +905,23 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                                                          | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIP6Config:ra-timeout:
-	 *
-	 * A timeout for waiting Router Advertisements in seconds. If zero (the default), a
-	 * globally configured default is used. If still unspecified, the timeout depends on the
-	 * sysctl settings of the device.
-	 *
-	 * Set to 2147483647 (MAXINT32) for infinity.
-	 *
-	 * Since: 1.24
-	 **/
+     * NMSettingIP6Config:ra-timeout:
+     *
+     * A timeout for waiting Router Advertisements in seconds. If zero (the default), a
+     * globally configured default is used. If still unspecified, the timeout depends on the
+     * sysctl settings of the device.
+     *
+     * Set to 2147483647 (MAXINT32) for infinity.
+     *
+     * Since: 1.24
+     **/
     /* ---ifcfg-rh---
-	 * property: dhcp-timeout
-	 * variable: IPV6_RA_TIMEOUT(+)
-	 * description: A timeout for waiting Router Advertisements in seconds.
-	 * example: IPV6_RA_TIMEOUT=10
-	 * ---end---
-	 */
+     * property: dhcp-timeout
+     * variable: IPV6_RA_TIMEOUT(+)
+     * description: A timeout for waiting Router Advertisements in seconds.
+     * example: IPV6_RA_TIMEOUT=10
+     * ---end---
+     */
 
     obj_properties[PROP_RA_TIMEOUT] = g_param_spec_int(
         NM_SETTING_IP6_CONFIG_RA_TIMEOUT,
@@ -933,50 +933,50 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIP6Config:dhcp-duid:
-	 *
-	 * A string containing the DHCPv6 Unique Identifier (DUID) used by the dhcp
-	 * client to identify itself to DHCPv6 servers (RFC 3315). The DUID is carried
-	 * in the Client Identifier option.
-	 * If the property is a hex string ('aa:bb:cc') it is interpreted as a binary
-	 * DUID and filled as an opaque value in the Client Identifier option.
-	 *
-	 * The special value "lease" will retrieve the DUID previously used from the
-	 * lease file belonging to the connection. If no DUID is found and "dhclient"
-	 * is the configured dhcp client, the DUID is searched in the system-wide
-	 * dhclient lease file. If still no DUID is found, or another dhcp client is
-	 * used, a global and permanent DUID-UUID (RFC 6355) will be generated based
-	 * on the machine-id.
-	 *
-	 * The special values "llt" and "ll" will generate a DUID of type LLT or LL
-	 * (see RFC 3315) based on the current MAC address of the device. In order to
-	 * try providing a stable DUID-LLT, the time field will contain a constant
-	 * timestamp that is used globally (for all profiles) and persisted to disk.
-	 *
-	 * The special values "stable-llt", "stable-ll" and "stable-uuid" will generate
-	 * a DUID of the corresponding type, derived from the connection's stable-id and
-	 * a per-host unique key. You may want to include the "${DEVICE}" or "${MAC}" specifier
-	 * in the stable-id, in case this profile gets activated on multiple devices.
-	 * So, the link-layer address of "stable-ll" and "stable-llt" will be a generated
-	 * address derived from the stable id. The DUID-LLT time value in the "stable-llt"
-	 * option will be picked among a static timespan of three years (the upper bound
-	 * of the interval is the same constant timestamp used in "llt").
-	 *
-	 * When the property is unset, the global value provided for "ipv6.dhcp-duid" is
-	 * used. If no global value is provided, the default "lease" value is assumed.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingIP6Config:dhcp-duid:
+     *
+     * A string containing the DHCPv6 Unique Identifier (DUID) used by the dhcp
+     * client to identify itself to DHCPv6 servers (RFC 3315). The DUID is carried
+     * in the Client Identifier option.
+     * If the property is a hex string ('aa:bb:cc') it is interpreted as a binary
+     * DUID and filled as an opaque value in the Client Identifier option.
+     *
+     * The special value "lease" will retrieve the DUID previously used from the
+     * lease file belonging to the connection. If no DUID is found and "dhclient"
+     * is the configured dhcp client, the DUID is searched in the system-wide
+     * dhclient lease file. If still no DUID is found, or another dhcp client is
+     * used, a global and permanent DUID-UUID (RFC 6355) will be generated based
+     * on the machine-id.
+     *
+     * The special values "llt" and "ll" will generate a DUID of type LLT or LL
+     * (see RFC 3315) based on the current MAC address of the device. In order to
+     * try providing a stable DUID-LLT, the time field will contain a constant
+     * timestamp that is used globally (for all profiles) and persisted to disk.
+     *
+     * The special values "stable-llt", "stable-ll" and "stable-uuid" will generate
+     * a DUID of the corresponding type, derived from the connection's stable-id and
+     * a per-host unique key. You may want to include the "${DEVICE}" or "${MAC}" specifier
+     * in the stable-id, in case this profile gets activated on multiple devices.
+     * So, the link-layer address of "stable-ll" and "stable-llt" will be a generated
+     * address derived from the stable id. The DUID-LLT time value in the "stable-llt"
+     * option will be picked among a static timespan of three years (the upper bound
+     * of the interval is the same constant timestamp used in "llt").
+     *
+     * When the property is unset, the global value provided for "ipv6.dhcp-duid" is
+     * used. If no global value is provided, the default "lease" value is assumed.
+     *
+     * Since: 1.12
+     **/
     /* ---ifcfg-rh---
-	 * property: dhcp-duid
-	 * variable: DHCPV6_DUID(+)
-	 * description: A string sent to the DHCPv6 server to identify the local machine.
-	 *   Apart from the special values "lease", "stable-llt", "stable-ll", "stable-uuid",
-	 *   "llt" and "ll" a binary value in hex format is expected. An hex string where
-	 *   each octet is separated by a colon is also accepted.
-	 * example: DHCPV6_DUID=LL; DHCPV6_DUID=0301deadbeef0001; DHCPV6_DUID=03:01:de:ad:be:ef:00:01
-	 * ---end---
-	 */
+     * property: dhcp-duid
+     * variable: DHCPV6_DUID(+)
+     * description: A string sent to the DHCPv6 server to identify the local machine.
+     *   Apart from the special values "lease", "stable-llt", "stable-ll", "stable-uuid",
+     *   "llt" and "ll" a binary value in hex format is expected. An hex string where
+     *   each octet is separated by a colon is also accepted.
+     * example: DHCPV6_DUID=LL; DHCPV6_DUID=0301deadbeef0001; DHCPV6_DUID=03:01:de:ad:be:ef:00:01
+     * ---end---
+     */
     obj_properties[PROP_DHCP_DUID] =
         g_param_spec_string(NM_SETTING_IP6_CONFIG_DHCP_DUID,
                             "",
@@ -987,11 +987,11 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     /* IP6-specific property overrides */
 
     /* ---dbus---
-	 * property: dns
-	 * format: array of byte array
-	 * description: Array of IP addresses of DNS servers (in network byte order)
-	 * ---end---
-	 */
+     * property: dns
+     * format: array of byte array
+     * description: Array of IP addresses of DNS servers (in network byte order)
+     * ---end---
+     */
     _nm_properties_override_gobj(
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_DNS),
@@ -1000,19 +1000,19 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                                   .gprop_from_dbus_fcn = ip6_dns_from_dbus, ));
 
     /* ---dbus---
-	 * property: addresses
-	 * format: array of legacy IPv6 address struct (a(ayuay))
-	 * description: Deprecated in favor of the 'address-data' and 'gateway'
-	 *   properties, but this can be used for backward-compatibility with older
-	 *   daemons. Note that if you send this property the daemon will ignore
-	 *   'address-data' and 'gateway'.
-	 *
-	 *   Array of IPv6 address structures.  Each IPv6 address structure is
-	 *   composed of an IPv6 address, a prefix length (1 - 128), and an IPv6
-	 *   gateway address. The gateway may be zeroed out if no gateway exists for
-	 *   that subnet.
-	 * ---end---
-	 */
+     * property: addresses
+     * format: array of legacy IPv6 address struct (a(ayuay))
+     * description: Deprecated in favor of the 'address-data' and 'gateway'
+     *   properties, but this can be used for backward-compatibility with older
+     *   daemons. Note that if you send this property the daemon will ignore
+     *   'address-data' and 'gateway'.
+     *
+     *   Array of IPv6 address structures.  Each IPv6 address structure is
+     *   composed of an IPv6 address, a prefix length (1 - 128), and an IPv6
+     *   gateway address. The gateway may be zeroed out if no gateway exists for
+     *   that subnet.
+     * ---end---
+     */
     _nm_properties_override_gobj(
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ADDRESSES),
@@ -1021,14 +1021,14 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                                   .from_dbus_fcn = ip6_addresses_set, ));
 
     /* ---dbus---
-	 * property: address-data
-	 * format: array of vardict
-	 * description: Array of IPv6 addresses. Each address dictionary contains at
-	 *   least 'address' and 'prefix' entries, containing the IP address as a
-	 *   string, and the prefix length as a uint32. Additional attributes may
-	 *   also exist on some addresses.
-	 * ---end---
-	 */
+     * property: address-data
+     * format: array of vardict
+     * description: Array of IPv6 addresses. Each address dictionary contains at
+     *   least 'address' and 'prefix' entries, containing the IP address as a
+     *   string, and the prefix length as a uint32. Additional attributes may
+     *   also exist on some addresses.
+     * ---end---
+     */
     _nm_properties_override_dbus(
         properties_override,
         "address-data",
@@ -1037,19 +1037,19 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                                   .from_dbus_fcn = ip6_address_data_set, ));
 
     /* ---dbus---
-	 * property: routes
-	 * format: array of legacy IPv6 route struct (a(ayuayu))
-	 * description: Deprecated in favor of the 'route-data' property, but this
-	 *   can be used for backward-compatibility with older daemons. Note that if
-	 *   you send this property the daemon will ignore 'route-data'.
-	 *
-	 *   Array of IPv6 route structures.  Each IPv6 route structure is
-	 *   composed of an IPv6 address, a prefix length (1 - 128), an IPv6
-	 *   next hop address (which may be zeroed out if there is no next hop),
-	 *   and a metric. If the metric is 0, NM will choose an appropriate
-	 *   default metric for the device.
-	 * ---end---
-	 */
+     * property: routes
+     * format: array of legacy IPv6 route struct (a(ayuayu))
+     * description: Deprecated in favor of the 'route-data' property, but this
+     *   can be used for backward-compatibility with older daemons. Note that if
+     *   you send this property the daemon will ignore 'route-data'.
+     *
+     *   Array of IPv6 route structures.  Each IPv6 route structure is
+     *   composed of an IPv6 address, a prefix length (1 - 128), an IPv6
+     *   next hop address (which may be zeroed out if there is no next hop),
+     *   and a metric. If the metric is 0, NM will choose an appropriate
+     *   default metric for the device.
+     * ---end---
+     */
     _nm_properties_override_gobj(
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ROUTES),
@@ -1058,18 +1058,18 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                                   .from_dbus_fcn = ip6_routes_set, ));
 
     /* ---dbus---
-	 * property: route-data
-	 * format: array of vardict
-	 * description: Array of IPv6 routes. Each route dictionary contains at
-	 *   least 'dest' and 'prefix' entries, containing the destination IP
-	 *   address as a string, and the prefix length as a uint32. Most routes
-	 *   will also have a 'next-hop' entry, containing the next hop IP address as
-	 *   a string. If the route has a 'metric' entry (containing a uint32), that
-	 *   will be used as the metric for the route (otherwise NM will pick a
-	 *   default value appropriate to the device). Additional attributes may
-	 *   also exist on some routes.
-	 * ---end---
-	 */
+     * property: route-data
+     * format: array of vardict
+     * description: Array of IPv6 routes. Each route dictionary contains at
+     *   least 'dest' and 'prefix' entries, containing the destination IP
+     *   address as a string, and the prefix length as a uint32. Most routes
+     *   will also have a 'next-hop' entry, containing the next hop IP address as
+     *   a string. If the route has a 'metric' entry (containing a uint32), that
+     *   will be used as the metric for the route (otherwise NM will pick a
+     *   default value appropriate to the device). Additional attributes may
+     *   also exist on some routes.
+     * ---end---
+     */
     _nm_properties_override_dbus(properties_override,
                                  "route-data",
                                  NM_SETT_INFO_PROPERT_TYPE(.dbus_type = NM_G_VARIANT_TYPE("aa{sv}"),

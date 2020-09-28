@@ -179,10 +179,10 @@ nm_device_bridge_class_init(NMDeviceBridgeClass *klass)
     device_class->get_setting_type      = get_setting_type;
 
     /**
-	 * NMDeviceBridge:carrier:
-	 *
-	 * Whether the device has carrier.
-	 **/
+     * NMDeviceBridge:carrier:
+     *
+     * Whether the device has carrier.
+     **/
     obj_properties[PROP_CARRIER] = g_param_spec_boolean(NM_DEVICE_BRIDGE_CARRIER,
                                                         "",
                                                         "",
@@ -190,10 +190,10 @@ nm_device_bridge_class_init(NMDeviceBridgeClass *klass)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceBridge:slaves: (type GPtrArray(NMDevice))
-	 *
-	 * The devices enslaved to the bridge device.
-	 **/
+     * NMDeviceBridge:slaves: (type GPtrArray(NMDevice))
+     *
+     * The devices enslaved to the bridge device.
+     **/
     obj_properties[PROP_SLAVES] = g_param_spec_boxed(NM_DEVICE_BRIDGE_SLAVES,
                                                      "",
                                                      "",

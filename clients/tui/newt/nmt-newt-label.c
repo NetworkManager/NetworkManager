@@ -265,19 +265,19 @@ nmt_newt_label_class_init(NmtNewtLabelClass *label_class)
     component_class->build_component = nmt_newt_label_build_component;
 
     /**
-	 * NmtNewtLabel:text:
-	 *
-	 * The label's text
-	 */
+     * NmtNewtLabel:text:
+     *
+     * The label's text
+     */
     g_object_class_install_property(
         object_class,
         PROP_TEXT,
         g_param_spec_string("text", "", "", NULL, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtLabel:style:
-	 *
-	 * The label's #NmtNewtLabelStyle
-	 */
+     * NmtNewtLabel:style:
+     *
+     * The label's #NmtNewtLabelStyle
+     */
     g_object_class_install_property(object_class,
                                     PROP_STYLE,
                                     g_param_spec_int("style",
@@ -288,10 +288,10 @@ nmt_newt_label_class_init(NmtNewtLabelClass *label_class)
                                                      0,
                                                      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtLabel:highlight:
-	 *
-	 * Whether the label is highlighted.
-	 */
+     * NmtNewtLabel:highlight:
+     *
+     * Whether the label is highlighted.
+     */
     g_object_class_install_property(
         object_class,
         PROP_HIGHLIGHT,

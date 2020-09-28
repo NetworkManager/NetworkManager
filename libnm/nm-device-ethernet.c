@@ -213,7 +213,7 @@ connection_compatible(NMDevice *device, NMConnection *connection, GError **error
         s_mac     = nm_setting_wired_get_mac_address(s_wired);
         if (perm_addr) {
             /* Virtual devices will have empty permanent addr but they should not be excluded
-			 * from the MAC address check specified in the connection */
+             * from the MAC address check specified in the connection */
             if (*perm_addr == 0)
                 perm_addr = nm_device_get_hw_address(NM_DEVICE(device));
 
@@ -349,10 +349,10 @@ nm_device_ethernet_class_init(NMDeviceEthernetClass *eth_class)
     device_class->get_setting_type      = get_setting_type;
 
     /**
-	 * NMDeviceEthernet:perm-hw-address:
-	 *
-	 * The permanent hardware (MAC) address of the device.
-	 **/
+     * NMDeviceEthernet:perm-hw-address:
+     *
+     * The permanent hardware (MAC) address of the device.
+     **/
     obj_properties[PROP_PERM_HW_ADDRESS] =
         g_param_spec_string(NM_DEVICE_ETHERNET_PERMANENT_HW_ADDRESS,
                             "",
@@ -361,10 +361,10 @@ nm_device_ethernet_class_init(NMDeviceEthernetClass *eth_class)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceEthernet:speed:
-	 *
-	 * The speed of the device.
-	 **/
+     * NMDeviceEthernet:speed:
+     *
+     * The speed of the device.
+     **/
     obj_properties[PROP_SPEED] = g_param_spec_uint(NM_DEVICE_ETHERNET_SPEED,
                                                    "",
                                                    "",
@@ -374,10 +374,10 @@ nm_device_ethernet_class_init(NMDeviceEthernetClass *eth_class)
                                                    G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceEthernet:carrier:
-	 *
-	 * Whether the device has carrier.
-	 **/
+     * NMDeviceEthernet:carrier:
+     *
+     * Whether the device has carrier.
+     **/
     obj_properties[PROP_CARRIER] = g_param_spec_boolean(NM_DEVICE_ETHERNET_CARRIER,
                                                         "",
                                                         "",
@@ -385,13 +385,13 @@ nm_device_ethernet_class_init(NMDeviceEthernetClass *eth_class)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceEthernet:s390-subchannels:
-	 *
-	 * Identifies subchannels of this network device used for
-	 * communication with z/VM or s390 host.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceEthernet:s390-subchannels:
+     *
+     * Identifies subchannels of this network device used for
+     * communication with z/VM or s390 host.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_S390_SUBCHANNELS] =
         g_param_spec_boxed(NM_DEVICE_ETHERNET_S390_SUBCHANNELS,
                            "",

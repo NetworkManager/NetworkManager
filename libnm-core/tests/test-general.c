@@ -142,9 +142,9 @@ _test_hash_str(const char *str)
     v = nm_hash_complete(&h);
 
     /* assert that hashing a string and a buffer yields the
-	 * same result.
-	 *
-	 * I think that is a desirable property. */
+     * same result.
+     *
+     * I think that is a desirable property. */
     nm_hash_init(&h, SEED);
     nm_hash_update_mem(&h, str, strlen(str));
     v2 = nm_hash_complete(&h);
@@ -167,8 +167,8 @@ _test_hash_str(const char *str)
         nm_hash_init(&h3, 10);                                                     \
                                                                                    \
         /* assert that it doesn't matter, whether we hash the values individually,
-		 * or all at once, or via the convenience macros nm_hash_update_val()
-		 * and nm_hash_update_vals(). */ \
+         * or all at once, or via the convenience macros nm_hash_update_val()
+         * and nm_hash_update_vals(). */ \
         for (i = 0; i < G_N_ELEMENTS(v); i++) {                                    \
             nm_hash_update(&h0, &v[i], sizeof(type));                              \
             nm_hash_update_val(&h1, v[i]);                                         \
@@ -300,7 +300,7 @@ _do_test_nm_utils_strsplit_set_f_one(NMUtilsStrsplitSetFlags flags,
     initial_offset = (f_preserve_empty || !str) ? 0u : strspn(str, DELIMITERS);
 
     /* first compare our expected values with what g_strsplit_set() would
-	 * do. */
+     * do. */
     words_g = str ? g_strsplit_set(str, DELIMITERS, -1) : NULL;
     if (str == NULL) {
         g_assert_cmpint(words_len, ==, 0);
@@ -365,9 +365,9 @@ _do_test_nm_utils_strsplit_set_f_one(NMUtilsStrsplitSetFlags flags,
     }
 
     /* while strsplit removes all delimiters, we can relatively easily find them
-	 * in the original string. Assert that the original string and the pointer offsets
-	 * of words correspond. In particular, find idx_delim_after and idx_delim_before
-	 * to determine which delimiter was after/before a word. */
+     * in the original string. Assert that the original string and the pointer offsets
+     * of words correspond. In particular, find idx_delim_after and idx_delim_before
+     * to determine which delimiter was after/before a word. */
     {
         gsize idx_word_start;
         gsize idx_delim_after_old = G_MAXSIZE;
@@ -379,9 +379,9 @@ _do_test_nm_utils_strsplit_set_f_one(NMUtilsStrsplitSetFlags flags,
             gsize       idx_delim_before;
 
             /* find the delimiter *after* words[i]. We can do that by looking at the next
-			 * word and calculating the pointer difference.
-			 *
-			 * The delimiter after the very last word is '\0' and requires strlen() to find. */
+             * word and calculating the pointer difference.
+             *
+             * The delimiter after the very last word is '\0' and requires strlen() to find. */
             idx_delim_after = initial_offset + ((words[i] - words[0]) + l_i);
             if (idx_delim_after != idx_word_start + l_i) {
                 g_assert(!f_preserve_empty);
@@ -408,7 +408,7 @@ _do_test_nm_utils_strsplit_set_f_one(NMUtilsStrsplitSetFlags flags,
             /* find the delimiter *before* words[i]. */
             if (i == 0) {
                 /* there is only a delimiter *before*, with !f_preserve_empty and leading
-				 * delimiters. */
+                 * delimiters. */
                 idx_delim_before = G_MAXSIZE;
                 if (initial_offset > 0) {
                     g_assert(!f_preserve_empty);
@@ -755,8 +755,8 @@ _escaped_tokens_create_random_word_full(const char *const *tokens, gsize n_token
     }
 
     /* reallocate the string, so that we don't have any excess memory from
-	 * the GString buffer. This is so that valgrind may better detect an out
-	 * or range access. */
+     * the GString buffer. This is so that valgrind may better detect an out
+     * or range access. */
     return nm_str_realloc(g_string_free(gstr, FALSE));
 }
 
@@ -967,10 +967,10 @@ test_nm_utils_escaped_tokens(void)
             if (i_option % 2u == 1 && nmtst_get_rand_uint32() % 5 == 0
                 && strlen(options->pdata[options->len - 1]) > 0u) {
                 /* For some options, leave the value unset and only generate a key.
-				 *
-				 * If key is "", then we cannot do that, because the test below would try
-				 * to append "" to the combined list, which the parser then would drop.
-				 * Only test omitting the value, if strlen() of the key is positive. */
+                 *
+                 * If key is "", then we cannot do that, because the test below would try
+                 * to append "" to the combined list, which the parser then would drop.
+                 * Only test omitting the value, if strlen() of the key is positive. */
             } else
                 word = _escaped_tokens_create_random_word();
             g_ptr_array_add(options, word);
@@ -1032,18 +1032,18 @@ test_nm_utils_escaped_tokens(void)
         g_assert_cmpint(NM_PTRARRAY_LEN(strv_split), ==, num_options);
 
         /* Above we show a full round-trip of random option key-value pairs, that they can
-		 * without loss escape, concatenate, split-list, and split. This proofed that every
-		 * option key-value pair can be represented as a combined string and parsed back.
-		 *
-		 * Now, just check that we can also parse arbitrary random words in nm_utils_escaped_tokens_options_split().
-		 * split() is a non-injective surjective function. As we check the round-trip above for random words, where
-		 * options-split() is the last step, we show that every random word can be the output of the function
-		 * (which shows, the surjective part).
-		 *
-		 * But multiple random input arguments, may map to the same output argument (non-injective).
-		 * Just test whether we can handle random input words without crashing. For that, just use the
-		 * above generate list of random words.
-		 */
+         * without loss escape, concatenate, split-list, and split. This proofed that every
+         * option key-value pair can be represented as a combined string and parsed back.
+         *
+         * Now, just check that we can also parse arbitrary random words in nm_utils_escaped_tokens_options_split().
+         * split() is a non-injective surjective function. As we check the round-trip above for random words, where
+         * options-split() is the last step, we show that every random word can be the output of the function
+         * (which shows, the surjective part).
+         *
+         * But multiple random input arguments, may map to the same output argument (non-injective).
+         * Just test whether we can handle random input words without crashing. For that, just use the
+         * above generate list of random words.
+         */
         for (i = 0; i < 1u + 2u * i_option; i++) {
             gs_free char *str = NULL;
             const char *  cstr;
@@ -1726,9 +1726,9 @@ del_iter_func(const char *key, const char *value, gpointer user_data)
     int       i;
 
     /* Record how many times this function gets called; it should get called
-	 * exactly as many times as there are keys in the hash table, regardless
-	 * of what keys we delete from the table.
-	 */
+     * exactly as many times as there are keys in the hash table, regardless
+     * of what keys we delete from the table.
+     */
     info->called++;
 
     /* During the iteration, remove a bunch of stuff from the table */
@@ -1774,8 +1774,8 @@ test_setting_vpn_modify_during_foreach(void)
     }
 
     /* And make sure the foreach callback was called the same number of times
-	 * as there were keys in the table at the beginning of the foreach.
-	 */
+     * as there were keys in the table at the beginning of the foreach.
+     */
     g_assert_cmpint(info.called, ==, TO_DEL_NUM * 2);
 
     g_object_unref(s_vpn);
@@ -1812,8 +1812,8 @@ test_setting_ip4_config_labels(void)
     g_assert(label == NULL);
 
     /* The 'address-labels' property should be omitted from the serialization if
-	 * there are no non-NULL labels.
-	 */
+     * there are no non-NULL labels.
+     */
     conn = nmtst_create_minimal_connection("label test", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
     nm_connection_add_setting(conn, nm_setting_duplicate(NM_SETTING(s_ip4)));
     dict = nm_connection_to_dbus(conn, NM_CONNECTION_SERIALIZE_ALL);
@@ -1876,8 +1876,8 @@ test_setting_ip4_config_labels(void)
     g_assert(label == NULL);
 
     /* If we serialize as the daemon, the labels should appear in the D-Bus
-	 * serialization under both 'address-labels' and 'address-data'.
-	 */
+     * serialization under both 'address-labels' and 'address-data'.
+     */
     conn = nmtst_create_minimal_connection("label test", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
     nm_connection_add_setting(conn, NM_SETTING(s_ip4));
     _nm_utils_is_manager_process = TRUE;
@@ -1915,8 +1915,8 @@ test_setting_ip4_config_labels(void)
     g_variant_unref(setting_dict);
 
     /* We should be able to deserialize the labels from either 'address-labels'
-	 * or 'address-data'.
-	 */
+     * or 'address-data'.
+     */
     dict2 = g_variant_ref(dict);
 
     NMTST_VARIANT_EDITOR(
@@ -2018,8 +2018,8 @@ test_setting_ip4_config_address_data(void)
     nmtst_assert_setting_verifies(NM_SETTING(s_ip4));
 
     /* The client-side D-Bus serialization should include the attributes in
-	 * "address-data", and should not have an "addresses" property.
-	 */
+     * "address-data", and should not have an "addresses" property.
+     */
     conn = nmtst_create_minimal_connection("address-data test",
                                            NULL,
                                            NM_SETTING_WIRED_SETTING_NAME,
@@ -2512,8 +2512,8 @@ test_connection_to_dbus_setting_name(void)
     dict = nm_connection_to_dbus(connection, NM_CONNECTION_SERIALIZE_ALL);
 
     /* Make sure the keys of the first level dict are setting names, not
-	 * the GType name of the setting objects.
-	 */
+     * the GType name of the setting objects.
+     */
     g_assert(_variant_contains(dict, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME));
 
     g_variant_unref(dict);
@@ -2727,15 +2727,15 @@ test_setting_new_from_dbus_bad(void)
     GError *      error = NULL;
 
     /* We want to test:
-	 * - ordinary scalar properties
-	 * - string properties
-	 * - GBytes-valued properties (which are handled specially by set_property_from_dbus())
-	 * - enum/flags-valued properties
-	 * - overridden properties
-	 * - transformed properties
-	 *
-	 * No single setting class has examples of all of these, so we need two settings.
-	 */
+     * - ordinary scalar properties
+     * - string properties
+     * - GBytes-valued properties (which are handled specially by set_property_from_dbus())
+     * - enum/flags-valued properties
+     * - overridden properties
+     * - transformed properties
+     *
+     * No single setting class has examples of all of these, so we need two settings.
+     */
 
     conn = nm_simple_connection_new();
 
@@ -3927,8 +3927,8 @@ test_connection_bad_base_types(void)
     GError *      error = NULL;
 
     /* Test various non-base connection types to make sure they are rejected;
-	 * using a fake 'wired' connection so the rest of it verifies
-	 */
+     * using a fake 'wired' connection so the rest of it verifies
+     */
 
     /* Connection setting */
     connection = nm_simple_connection_new();
@@ -4353,8 +4353,8 @@ test_setting_compare_secrets(gconstpointer test_data)
     gs_unref_object            NMSetting *new = NULL;
 
     /* Make sure that a connection with transient/unsaved secrets compares
-	 * successfully to the same connection without those secrets.
-	 */
+     * successfully to the same connection without those secrets.
+     */
 
     old = nm_setting_wireless_security_new();
     g_object_set(old,
@@ -4433,8 +4433,8 @@ test_setting_compare_vpn_secrets(gconstpointer test_data)
     gboolean                   success;
 
     /* Make sure that a connection with transient/unsaved secrets compares
-	 * successfully to the same connection without those secrets.
-	 */
+     * successfully to the same connection without those secrets.
+     */
 
     old = nm_setting_vpn_new();
     nm_setting_vpn_add_secret(NM_SETTING_VPN(old), "foobarbaz", "really secret password");
@@ -4650,7 +4650,7 @@ _netmask_to_prefix(guint32 netmask)
     g_assert_cmpint(prefix, <=, 32);
 
     /* we re-implemented the netmask-to-prefix code differently. Check
-	 * that they agree. */
+     * that they agree. */
     g_assert_cmpint(prefix, ==, nm_utils_ip4_netmask_to_prefix(netmask));
 
     return prefix;
@@ -4706,7 +4706,7 @@ test_ip4_netmask_to_prefix(void)
                 continue;
 
             /* create an invalid netmask with holes and check that the function
-			 * returns the longest prefix. */
+             * returns the longest prefix. */
             prefix_holey = _netmask_to_prefix(netmask_holey);
 
             g_assert_cmpint(i, ==, prefix_holey);
@@ -5193,7 +5193,7 @@ test_setting_old_uuid(void)
     gs_unref_object NMSetting *setting = NULL;
 
     /* NetworkManager-0.9.4.0 generated 40-character UUIDs with no dashes,
-	 * like this one. Test that we maintain compatibility. */
+     * like this one. Test that we maintain compatibility. */
     const char *uuid = "f43bec2cdd60e5da381ebb1eb1fa39f3cc52660c";
 
     setting = nm_setting_connection_new();
@@ -5312,8 +5312,8 @@ test_connection_normalize_virtual_iface_name(void)
     g_object_unref(con);
 
     /* But removing connection.interface-name should result in vlan.connection-name
-	 * being "promoted".
-	 */
+     * being "promoted".
+     */
     NMTST_VARIANT_EDITOR(connection_dict,
                          NMTST_VARIANT_DROP_PROPERTY(NM_SETTING_CONNECTION_SETTING_NAME,
                                                      NM_SETTING_CONNECTION_INTERFACE_NAME););
@@ -5838,8 +5838,8 @@ test_connection_normalize_gateway_never_default(void)
     g_assert_cmpstr("1.1.1.254", ==, nm_setting_ip_config_get_gateway(s_ip4));
 
     /* Now set never-default to TRUE and check that the gateway is
-	 * removed during normalization
-	 * */
+     * removed during normalization
+     * */
     g_object_set(s_ip4, NM_SETTING_IP_CONFIG_NEVER_DEFAULT, TRUE, NULL);
 
     nmtst_assert_connection_verifies_after_normalization(con,
@@ -5880,8 +5880,8 @@ test_connection_normalize_may_fail(void)
     nmtst_assert_connection_verifies_and_normalizable(con);
 
     /* Now set method=disabled/ignore and check that may-fail becomes TRUE
-	 * after normalization
-	 * */
+     * after normalization
+     * */
     g_object_set(s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED, NULL);
     g_object_set(s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
 
@@ -5922,8 +5922,8 @@ test_connection_normalize_shared_addresses(void)
     nmtst_assert_connection_verifies_and_normalizable(con);
 
     /* Now we add other addresses and check that they are
-	 * removed during normalization
-	 * */
+     * removed during normalization
+     * */
     addr = nm_ip_address_new(AF_INET, "2.2.2.2", 24, &error);
     g_assert_no_error(error);
     nm_setting_ip_config_add_address(s_ip4, addr);
@@ -6345,8 +6345,8 @@ test_setting_ip4_gateway(void)
     nmtst_assert_ip4_address(addr_vals_0[0], "192.168.1.10");
 
     /* When serializing on the daemon side, ipv4.gateway is copied to the first
-	 * entry of ipv4.addresses
-	 */
+     * entry of ipv4.addresses
+     */
     conn  = nmtst_create_minimal_connection("test_setting_ip4_gateway",
                                            NULL,
                                            NM_SETTING_WIRED_SETTING_NAME,
@@ -6398,8 +6398,8 @@ test_setting_ip4_gateway(void)
     g_variant_unref(ip4_dict);
 
     /* When deserializing an old-style connection, the first non-0 gateway in
-	 * ipv4.addresses is copied to :gateway.
-	 */
+     * ipv4.addresses is copied to :gateway.
+     */
     NMTST_VARIANT_EDITOR(
         conn_dict,
         NMTST_VARIANT_DROP_PROPERTY(NM_SETTING_IP4_CONFIG_SETTING_NAME,
@@ -6500,8 +6500,8 @@ test_setting_ip6_gateway(void)
     GError *           error             = NULL;
 
     /* When serializing on the daemon side, ipv6.gateway is copied to the first
-	 * entry of ipv6.addresses
-	 */
+     * entry of ipv6.addresses
+     */
     conn  = nmtst_create_minimal_connection("test_setting_ip6_gateway",
                                            NULL,
                                            NM_SETTING_WIRED_SETTING_NAME,
@@ -6555,8 +6555,8 @@ test_setting_ip6_gateway(void)
     g_variant_unref(ip6_dict);
 
     /* When deserializing an old-style connection, the first non-0 gateway in
-	 * ipv6.addresses is copied to :gateway.
-	 */
+     * ipv6.addresses is copied to :gateway.
+     */
     NMTST_VARIANT_EDITOR(
         conn_dict,
         NMTST_VARIANT_DROP_PROPERTY(NM_SETTING_IP6_CONFIG_SETTING_NAME,
@@ -8280,7 +8280,7 @@ test_nm_utils_is_power_of_two(void)
         if (xyes != 0) {
 again:
             /* Find another @xno, that is not a power of two. Do that,
-			 * by randomly setting bits. */
+             * by randomly setting bits. */
             numbits = g_rand_int_range(rand, 1, 65);
             while (xno != ~((guint64) 0) && numbits > 0) {
                 guint64 v = (((guint64) 1) << g_rand_int_range(rand, 0, 64));
@@ -8512,7 +8512,7 @@ test_nm_utils_ptrarray_find_binary_search_with_duplicates(void)
     for (i_test = 0; i_test < N_TEST; i_test++) {
         for (i_len = 0; i_len < BIN_SEARCH_W_DUPS_LEN; i_len++) {
             /* fill with random numbers... surely there are some duplicates
-			 * there... or maybe even there are none... */
+             * there... or maybe even there are none... */
             for (i = 0; i < i_len; i++)
                 arr[i] =
                     GINT_TO_POINTER(nmtst_get_rand_uint32() % (i_len + BIN_SEARCH_W_DUPS_JITTER));
@@ -8884,8 +8884,8 @@ _do_test_utils_str_utf8safe(const char *            str,
         g_assert_cmpstr(buf_safe, ==, str_safe);
 
         /* nm_utils_buf_utf8safe_escape() can only return a pointer equal to the input string,
-		 * if and only if str_len is negative. Otherwise, the input str won't be NUL terminated
-		 * and cannot be returned. */
+         * if and only if str_len is negative. Otherwise, the input str won't be NUL terminated
+         * and cannot be returned. */
         g_assert(buf_safe != str);
         g_assert(buf_safe == str_free_1);
     } else
@@ -9425,7 +9425,7 @@ test_nm_set_out(void)
     int       call_count;
 
     /* NM_SET_OUT() has an unexpected non-function like behavior
-	 * wrt. side-effects of the value argument. Test it */
+     * wrt. side-effects of the value argument. Test it */
 
     p_val      = &val;
     call_count = 0;
@@ -10121,14 +10121,14 @@ test_strsplit_quoted(void)
         gs_free char *     str  = NULL;
 
         /* create random strv array and join them carefully so that splitting
-		 * them will yield the original value. */
+         * them will yield the original value. */
         strv = _strsplit_quoted_create_strv_rand();
         str  = _strsplit_quoted_join_strv_rand((const char *const *) strv);
         _strsplit_quoted_test(str, (const char *const *) strv);
     }
 
     /* Create random words and assert that systemd and our implementation can
-	 * both split them (and in the exact same way). */
+     * both split them (and in the exact same way). */
     for (i_run = 0; i_run < 1000; i_run++) {
         gs_free char *s = _strsplit_quoted_create_str_rand(nmtst_get_rand_uint32() % 150);
 

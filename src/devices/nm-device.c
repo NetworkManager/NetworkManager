@@ -138,8 +138,8 @@ typedef void (*AcdCallback)(NMDevice *, NMIP4Config **, gboolean);
 
 typedef enum {
     /* The various NML3ConfigData types that we track explicitly. Note that
-	 * their relative order matters: higher numbers in this enum means more
-	 * important (and during merge overwrites other settings). */
+     * their relative order matters: higher numbers in this enum means more
+     * important (and during merge overwrites other settings). */
     L3_CONFIG_DATA_TYPE_LL_4,
     L3_CONFIG_DATA_TYPE_AC_6,
     L3_CONFIG_DATA_TYPE_DHCP_4,
@@ -421,11 +421,11 @@ typedef struct _NMDevicePrivate {
     guint32 v6_route_table;
 
     /* when carrier goes away, we give a grace period of _get_carrier_wait_ms()
-	 * until taking action.
-	 *
-	 * When changing MTU, the device might take longer then that. So, whenever
-	 * NM changes the MTU it sets @carrier_wait_until_ms to CARRIER_WAIT_TIME_AFTER_MTU_MS
-	 * in the future. This is used to extend the grace period in this particular case. */
+     * until taking action.
+     *
+     * When changing MTU, the device might take longer then that. So, whenever
+     * NM changes the MTU it sets @carrier_wait_until_ms to CARRIER_WAIT_TIME_AFTER_MTU_MS
+     * in the future. This is used to extend the grace period in this particular case. */
     gint64 carrier_wait_until_ms;
 
     union {
@@ -514,7 +514,7 @@ typedef struct _NMDevicePrivate {
     };
 
     /* Extra device configuration, injected by the subclass of NMDevice.
-	 * This is used for example by NMDeviceModem for WWAN configuration. */
+     * This is used for example by NMDeviceModem for WWAN configuration. */
     union {
         struct {
             AppliedConfig dev2_ip_config_6;
@@ -634,11 +634,11 @@ typedef struct _NMDevicePrivate {
         guint p_max_interval;
 
         /* the current interval. If we are probing, the interval might be lower
-		 * then the configured max interval. */
+         * then the configured max interval. */
         guint p_cur_interval;
 
         /* the timestamp, when we last scheduled the timer p_cur_id with current interval
-		 * p_cur_interval. */
+         * p_cur_interval. */
         gint64 p_cur_basetime_ns;
 
         NMConnectivityState state;
@@ -906,12 +906,12 @@ _prop_get_connection_stable_id(NMDevice *         self,
     priv = NM_DEVICE_GET_PRIVATE(self);
 
     /* we cache the generated stable ID for the time of an activation.
-	 *
-	 * The reason is, that we don't want the stable-id to change as long
-	 * as the device is active.
-	 *
-	 * Especially with ${RANDOM} stable-id we want to generate *one* configuration
-	 * for each activation. */
+     *
+     * The reason is, that we don't want the stable-id to change as long
+     * as the device is active.
+     *
+     * Especially with ${RANDOM} stable-id we want to generate *one* configuration
+     * for each activation. */
     if (G_UNLIKELY(!priv->current_stable_id)) {
         gs_free char *       default_id = NULL;
         gs_free char *       generated  = NULL;
@@ -937,8 +937,8 @@ _prop_get_connection_stable_id(NMDevice *         self,
         uuid = nm_connection_get_uuid(connection);
 
         /* the cloned-mac-address may be generated based on the stable-id.
-		 * Thus, at this point, we can only use the permanent MAC address
-		 * as seed. */
+         * Thus, at this point, we can only use the permanent MAC address
+         * as seed. */
         hwaddr = nm_device_get_permanent_hw_address_full(self, TRUE, &hwaddr_is_fake);
 
         stable_type = nm_utils_stable_id_parse(stable_id,
@@ -1053,10 +1053,10 @@ _prop_get_ipv6_dhcp_duid(NMDevice *    self,
 
     if (NM_IN_STRSET(duid, "stable-ll", "stable-llt", "stable-uuid")) {
         /* preferably, we would salt the checksum differently for each @duid type. We missed
-		 * to do that initially, so most types use the DEFAULT_SALT.
-		 *
-		 * Implementations that are added later, should use a distinct salt instead,
-		 * like "stable-ll"/"stable-llt" with ARPHRD_INFINIBAND below. */
+         * to do that initially, so most types use the DEFAULT_SALT.
+         *
+         * Implementations that are added later, should use a distinct salt instead,
+         * like "stable-ll"/"stable-llt" with ARPHRD_INFINIBAND below. */
         const guint32         DEFAULT_SALT   = 670531087u;
         nm_auto_free_checksum GChecksum *sum = NULL;
         NMUtilsStableType                stable_type;
@@ -1083,10 +1083,10 @@ _prop_get_ipv6_dhcp_duid(NMDevice *    self,
 
         if (NM_IN_STRSET(duid, "stable-ll", "stable-llt")) {
             /* for stable LL/LLT DUIDs, we still need a hardware address to detect
-			 * the arp-type. Alternatively, we would be able to detect it based on
-			 * other means (e.g. NMDevice type), but instead require the hardware
-			 * address to be present. This is at least consistent with the "ll"/"llt"
-			 * modes above. */
+             * the arp-type. Alternatively, we would be able to detect it based on
+             * other means (e.g. NMDevice type), but instead require the hardware
+             * address to be present. This is at least consistent with the "ll"/"llt"
+             * modes above. */
             if (!hwaddr) {
                 duid_error = "missing link-layer address";
                 goto out_fail;
@@ -1142,13 +1142,13 @@ _prop_get_ipv6_dhcp_duid(NMDevice *    self,
 #define EPOCH_DATETIME_THREE_YEARS (356 * 24 * 3600 * 3)
 
             /* We want a variable time between the host_id timestamp and three years
-			 * before. Let's compute the time (in seconds) from 0 to 3 years; then we'll
-			 * subtract it from the host_id timestamp.
-			 */
+             * before. Let's compute the time (in seconds) from 0 to 3 years; then we'll
+             * subtract it from the host_id timestamp.
+             */
             time = nm_utils_host_id_get_timestamp_ns() / NM_UTILS_NSEC_PER_SEC;
 
             /* don't use too old timestamps. They cannot be expressed in DUID-LLT and
-			 * would all be truncated to zero. */
+             * would all be truncated to zero. */
             time = NM_MAX(time, NM_UTILS_EPOCH_DATETIME_200001010000 + EPOCH_DATETIME_THREE_YEARS);
 
             switch (arp_type) {
@@ -1291,7 +1291,7 @@ _prop_get_ipvx_route_table(NMDevice *self, int addr_family)
     nm_assert_addr_family(addr_family);
 
     /* the route table setting affects how we sync routes. We shall
-	 * not change it while the device is active, hence, cache it. */
+     * not change it while the device is active, hence, cache it. */
     if (addr_family == AF_INET) {
         if (priv->v4_route_table_initialized)
             return priv->v4_route_table;
@@ -1518,8 +1518,8 @@ _prop_get_ipvx_dhcp_iaid(NMDevice *    self,
         }
 
         /* @iaid is in native endianness. Use unaligned_read_be32()
-		 * so that the IAID for a given MAC address is the same on
-		 * BE and LE machines. */
+         * so that the IAID for a given MAC address is the same on
+         * BE and LE machines. */
         iaid = unaligned_read_be32(&pllink->l_address.data[pllink->l_address.len - 4]);
         goto out_good;
     } else if (nm_streq0(iaid_str, NM_IAID_PERM_MAC)) {
@@ -1850,7 +1850,7 @@ _prop_get_ipv6_ip6_privacy(NMDevice *self)
     g_return_val_if_fail(self, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 
     /* 1.) First look at the per-connection setting. If it is not -1 (unknown),
-	 * use it. */
+     * use it. */
     connection = nm_device_get_applied_connection(self);
     if (connection) {
         NMSettingIPConfig *s_ip6 = nm_connection_get_setting_ip6_config(connection);
@@ -1878,10 +1878,10 @@ _prop_get_ipv6_ip6_privacy(NMDevice *self)
         return NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
 
     /* 3.) No valid default-value configured. Fallback to reading sysctl.
-	 *
-	 * Instead of reading static config files in /etc, just read the current sysctl value.
-	 * This works as NM only writes to "/proc/sys/net/ipv6/conf/IFNAME/use_tempaddr", but leaves
-	 * the "default" entry untouched. */
+     *
+     * Instead of reading static config files in /etc, just read the current sysctl value.
+     * This works as NM only writes to "/proc/sys/net/ipv6/conf/IFNAME/use_tempaddr", but leaves
+     * the "default" entry untouched. */
     ip6_privacy = nm_platform_sysctl_get_int32(
         nm_device_get_platform(self),
         NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv6/conf/default/use_tempaddr"),
@@ -2269,12 +2269,12 @@ nm_device_is_vpn(NMDevice *self)
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
 
     /* NetworkManager currently treats VPN connections (loaded from NetworkManager VPN plugins)
-	 * differently. Those are considered VPNs.
-	 * However, some native device types may also be considered VPNs...
-	 *
-	 * We should avoid distinguishing between is-vpn and "regular" devices. Is an (unencrypted)
-	 * IP tunnel a VPN? Is MACSec on top of an IP tunnel a VPN?
-	 * Sometimes we differentiate, but avoid unless reasonable. */
+     * differently. Those are considered VPNs.
+     * However, some native device types may also be considered VPNs...
+     *
+     * We should avoid distinguishing between is-vpn and "regular" devices. Is an (unencrypted)
+     * IP tunnel a VPN? Is MACSec on top of an IP tunnel a VPN?
+     * Sometimes we differentiate, but avoid unless reasonable. */
 
     return NM_IS_DEVICE_WIREGUARD(self);
 }
@@ -2503,8 +2503,8 @@ nm_device_sys_iface_state_set(NMDevice *self, NMDeviceSysIfaceState sys_iface_st
     }
 
     /* this function only sets a flag, no immediate actions are initiated.
-	 *
-	 * If you change this, make sure that all callers are fine with such actions. */
+     *
+     * If you change this, make sure that all callers are fine with such actions. */
 
     nm_assert(priv->sys_iface_state == sys_iface_state);
 }
@@ -2657,9 +2657,9 @@ set_ipv6_token(NMDevice *self, NMUtilsIPv6IfaceId iid, const char *token_str)
     gint64                val;
 
     /* Setting the kernel token is not strictly necessary as the
-	 * IPv6 address is generated in userspace. However it is
-	 * convenient so that users can see the token with iproute
-	 * ('ip token'). */
+     * IPv6 address is generated in userspace. However it is
+     * convenient so that users can see the token with iproute
+     * ('ip token'). */
     platform = nm_device_get_platform(self);
     ifindex  = nm_device_get_ip_ifindex(self);
     link     = nm_platform_link_get(platform, ifindex);
@@ -2670,9 +2670,9 @@ set_ipv6_token(NMDevice *self, NMUtilsIPv6IfaceId iid, const char *token_str)
     }
 
     /* The kernel allows setting a token only when 'accept_ra'
-	 * is 1: temporarily flip it if necessary; unfortunately
-	 * this will also generate an additional Router Solicitation
-	 * from kernel. */
+     * is 1: temporarily flip it if necessary; unfortunately
+     * this will also generate an additional Router Solicitation
+     * from kernel. */
     val = nm_device_sysctl_ip_conf_get_int_checked(self,
                                                    AF_INET6,
                                                    "accept_ra",
@@ -2769,9 +2769,9 @@ _set_ip_state(NMDevice *self, int addr_family, NMDeviceIPState new_state)
 
     if (new_state == NM_DEVICE_IP_STATE_DONE) {
         /* we only set the IPx_READY flag once we reach NM_DEVICE_IP_STATE_DONE state. We don't
-		 * ever clear it, even if we later enter NM_DEVICE_IP_STATE_FAIL state.
-		 *
-		 * This is not documented/guaranteed behavior, but seems to make sense for now. */
+         * ever clear it, even if we later enter NM_DEVICE_IP_STATE_FAIL state.
+         *
+         * This is not documented/guaranteed behavior, but seems to make sense for now. */
         _active_connection_set_state_flags(self,
                                            addr_family == AF_INET
                                                ? NM_ACTIVATION_STATE_FLAG_IP4_READY
@@ -3268,7 +3268,7 @@ _stats_refresh_rate_real(guint refresh_rate_ms)
 
     if (refresh_rate_ms < STATS_REFRESH_RATE_MS_MIN) {
         /* you cannot set the refresh-rate arbitrarily small. E.g.
-		 * setting to 1ms is just killing. Have a lowest number. */
+         * setting to 1ms is just killing. Have a lowest number. */
         return STATS_REFRESH_RATE_MS_MIN;
     }
 
@@ -3306,8 +3306,8 @@ _stats_set_refresh_rate(NMDevice *self, guint refresh_rate_ms)
         return;
 
     /* trigger an initial refresh of the data whenever the refresh-rate changes.
-	 * As we process the result in an idle handler with device_link_changed(),
-	 * we don't get the result right away. */
+     * As we process the result in an idle handler with device_link_changed(),
+     * we don't get the result right away. */
     ifindex = nm_device_get_ip_ifindex(self);
     if (ifindex > 0)
         nm_platform_link_refresh(nm_device_get_platform(self), ifindex);
@@ -3343,9 +3343,9 @@ get_ip_iface_identifier(NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
 
     if (pllink->type == NM_LINK_TYPE_6LOWPAN) {
         /* If the underlying IEEE 802.15.4 device has a short address we generate
-		 * a "pseudo 48-bit address" that's to be used in the same fashion as a
-		 * wired Ethernet address. The mechanism is specified in Section 6. of
-		 * RFC 4944 */
+         * a "pseudo 48-bit address" that's to be used in the same fashion as a
+         * wired Ethernet address. The mechanism is specified in Section 6. of
+         * RFC 4944 */
         guint16 pan_id;
         guint16 short_addr;
 
@@ -3467,27 +3467,27 @@ guint32
 nm_device_get_route_metric_default(NMDeviceType device_type)
 {
     /* Device 'priority' is used for the default route-metric and is based on
-	 * the device type. The settings ipv4.route-metric and ipv6.route-metric
-	 * can overwrite this default.
-	 *
-	 * For both IPv4 and IPv6 we use the same default values.
-	 *
-	 * The route-metric is used for the metric of the routes of device.
-	 * This also applies to the default route. Therefore it affects also
-	 * which device is the "best".
-	 *
-	 * For comparison, note that iproute2 by default adds IPv4 routes with
-	 * metric 0, and IPv6 routes with metric 1024. The latter is the IPv6
-	 * "user default" in the kernel (NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6).
-	 * In kernel, the full uint32_t range is available for route
-	 * metrics (except for IPv6, where 0 means 1024).
-	 */
+     * the device type. The settings ipv4.route-metric and ipv6.route-metric
+     * can overwrite this default.
+     *
+     * For both IPv4 and IPv6 we use the same default values.
+     *
+     * The route-metric is used for the metric of the routes of device.
+     * This also applies to the default route. Therefore it affects also
+     * which device is the "best".
+     *
+     * For comparison, note that iproute2 by default adds IPv4 routes with
+     * metric 0, and IPv6 routes with metric 1024. The latter is the IPv6
+     * "user default" in the kernel (NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6).
+     * In kernel, the full uint32_t range is available for route
+     * metrics (except for IPv6, where 0 means 1024).
+     */
 
     switch (device_type) {
     /* 50 is also used for VPN plugins (NM_VPN_ROUTE_METRIC_DEFAULT).
-	 *
-	 * Note that returning 50 from this function means that this device-type is
-	 * in some aspects a VPN. */
+     *
+     * Note that returning 50 from this function means that this device-type is
+     * in some aspects a VPN. */
     case NM_DEVICE_TYPE_WIREGUARD:
         return NM_VPN_ROUTE_METRIC_DEFAULT;
 
@@ -3560,7 +3560,7 @@ default_route_metric_penalty_detect(NMDevice *self, int addr_family)
     const gboolean   IS_IPv4 = (addr_family == AF_INET);
 
     /* currently we don't differentiate between IPv4 and IPv6 when detecting
-	 * connectivity. */
+     * connectivity. */
     if (priv->concheck_x[IS_IPv4].state != NM_CONNECTIVITY_FULL
         && nm_connectivity_check_enabled(concheck_get_mgr(self)))
         return TRUE;
@@ -3597,9 +3597,9 @@ nm_device_get_route_metric(NMDevice *self, int addr_family)
         s_ip = nm_connection_get_setting_ip_config(connection, addr_family);
 
         /* Slave interfaces don't have IP settings, but we may get here when
-		 * external changes are made or when noticing IP changes when starting
-		 * the slave connection.
-		 */
+         * external changes are made or when noticing IP changes when starting
+         * the slave connection.
+         */
         if (s_ip) {
             route_metric = nm_setting_ip_config_get_route_metric(s_ip);
             if (route_metric >= 0)
@@ -3608,8 +3608,8 @@ nm_device_get_route_metric(NMDevice *self, int addr_family)
     }
 
     /* use the current NMConfigData, which makes this configuration reloadable.
-	 * Note that that means that the route-metric might change between SIGHUP.
-	 * You must cache the returned value if that is a problem. */
+     * Note that that means that the route-metric might change between SIGHUP.
+     * You must cache the returned value if that is a problem. */
     property     = addr_family == AF_INET ? NM_CON_DEFAULT("ipv4.route-metric")
                                           : NM_CON_DEFAULT("ipv6.route-metric");
     route_metric = nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
@@ -3651,7 +3651,7 @@ _get_route_table_sync_mode_stateful(NMDevice *self, int addr_family)
 
     if (!all_sync_now) {
         /* If there's a local route switch to all-sync in order
-		 * to properly manage the local table */
+         * to properly manage the local table */
         if (addr_family == AF_INET) {
             const NMPlatformIP4Route *route;
 
@@ -3677,12 +3677,12 @@ _get_route_table_sync_mode_stateful(NMDevice *self, int addr_family)
         all_sync_eff = TRUE;
     else {
         /* When we change from all-sync to no all-sync, we do a last all-sync one
-		 * more time. For that, we determine the effective all-state based on the
-		 * cached/previous all-sync flag.
-		 *
-		 * The purpose of this is to support reapply of route-table (and thus the
-		 * all-sync mode). If reapply toggles from all-sync to no-all-sync, we must
-		 * sync one last time. */
+         * more time. For that, we determine the effective all-state based on the
+         * cached/previous all-sync flag.
+         *
+         * The purpose of this is to support reapply of route-table (and thus the
+         * all-sync mode). If reapply toggles from all-sync to no-all-sync, we must
+         * sync one last time. */
         if (addr_family == AF_INET)
             all_sync_eff = priv->v4_route_table_all_sync_before;
         else
@@ -3730,7 +3730,7 @@ nm_device_get_type_description(NMDevice *self)
     g_return_val_if_fail(self != NULL, NULL);
 
     /* Beware: this function should return the same
-	 * value as nm_device_get_type_description() in libnm. */
+     * value as nm_device_get_type_description() in libnm. */
 
     return NM_DEVICE_GET_CLASS(self)->get_type_description(self);
 }
@@ -3743,17 +3743,17 @@ get_type_description(NMDevice *self)
     nm_assert(NM_IS_DEVICE(self));
 
     /* the default implementation for the description just returns the (modified)
-	 * class name and depends entirely on the type of self. Note that we cache the
-	 * description in the klass itself.
-	 *
-	 * Also note, that as the GObject class gets inited, it inherrits the fields
-	 * of the parent class. That means, if NMDeviceVethClass was initialized after
-	 * NMDeviceEthernetClass already has the description cached in the class
-	 * (because we already fetched the description for an ethernet device),
-	 * then default_type_description will wrongly contain "ethernet".
-	 * To avoid that, and catch the situation, also cache the klass for
-	 * which the description was cached. If that doesn't match, it was
-	 * inherited and we need to reset it. */
+     * class name and depends entirely on the type of self. Note that we cache the
+     * description in the klass itself.
+     *
+     * Also note, that as the GObject class gets inited, it inherrits the fields
+     * of the parent class. That means, if NMDeviceVethClass was initialized after
+     * NMDeviceEthernetClass already has the description cached in the class
+     * (because we already fetched the description for an ethernet device),
+     * then default_type_description will wrongly contain "ethernet".
+     * To avoid that, and catch the situation, also cache the klass for
+     * which the description was cached. If that doesn't match, it was
+     * inherited and we need to reset it. */
     klass = NM_DEVICE_GET_CLASS(self);
     if (G_UNLIKELY(klass->default_type_description_klass != klass)) {
         const char *typename;
@@ -3928,7 +3928,7 @@ concheck_is_possible(NMDevice *self)
         return FALSE;
 
     /* we enable periodic checks for every device state (except UNKNOWN). Especially with
-	 * unmanaged devices, it is interesting to know whether we have connectivity on that device. */
+     * unmanaged devices, it is interesting to know whether we have connectivity on that device. */
     if (priv->state == NM_DEVICE_STATE_UNKNOWN)
         return FALSE;
 
@@ -3959,8 +3959,8 @@ concheck_periodic_schedule_do(NMDevice *self, int addr_family, gint64 now_ns)
     nm_assert(priv->concheck_x[IS_IPv4].p_cur_interval > 0);
 
     /* we schedule the timeout based on our current settings cur-interval and cur-basetime.
-	 * Before calling concheck_periodic_schedule_do(), make sure that these properties are
-	 * correct. */
+     * Before calling concheck_periodic_schedule_do(), make sure that these properties are
+     * correct. */
 
     expiry = priv->concheck_x[IS_IPv4].p_cur_basetime_ns
              + (priv->concheck_x[IS_IPv4].p_cur_interval * NM_UTILS_NSEC_PER_SEC);
@@ -4005,12 +4005,12 @@ concheck_periodic_schedule_set(NMDevice *self, int addr_family, ConcheckSchedule
 
     if (!priv->concheck_x[IS_IPv4].p_cur_id) {
         /* we currently don't have a timeout scheduled. No need to reschedule
-		 * another one... */
+         * another one... */
         if (NM_IN_SET(mode,
                       CONCHECK_SCHEDULE_UPDATE_INTERVAL,
                       CONCHECK_SCHEDULE_UPDATE_INTERVAL_RESTART)) {
             /* ... unless, we are about to start periodic checks after update-interval.
-			 * In this case, fall through and restart the periodic checks below. */
+             * In this case, fall through and restart the periodic checks below. */
             mode = CONCHECK_SCHEDULE_UPDATE_INTERVAL_RESTART;
         } else
             return;
@@ -4034,10 +4034,10 @@ concheck_periodic_schedule_set(NMDevice *self, int addr_family, ConcheckSchedule
 
         if (priv->concheck_x[IS_IPv4].p_cur_interval <= priv->concheck_x[IS_IPv4].p_max_interval) {
             /* we currently have a shorter interval set, than what we now have. Either,
-			 * because we are probing, or because the previous max interval was shorter.
-			 *
-			 * Either way, the current timer is set just fine. Nothing to do, we will
-			 * probe our way up. */
+             * because we are probing, or because the previous max interval was shorter.
+             *
+             * Either way, the current timer is set just fine. Nothing to do, we will
+             * probe our way up. */
             return;
         }
 
@@ -4048,18 +4048,18 @@ concheck_periodic_schedule_set(NMDevice *self, int addr_family, ConcheckSchedule
         priv->concheck_x[IS_IPv4].p_cur_interval = priv->concheck_x[IS_IPv4].p_max_interval;
         if (cur_expiry <= now_ns) {
             /* Since the last time we scheduled a periodic check, already more than the
-			 * new max_interval passed. We need to start a check right away (and
-			 * schedule a timeout in cur-interval in the future). */
+             * new max_interval passed. We need to start a check right away (and
+             * schedule a timeout in cur-interval in the future). */
             priv->concheck_x[IS_IPv4].p_cur_basetime_ns = now_ns;
             if (concheck_periodic_schedule_do(self, addr_family, now_ns))
                 concheck_start(self, addr_family, NULL, NULL, TRUE);
         } else {
             /* we are reducing the max-interval to a shorter interval that we have currently
-			 * scheduled (with cur_interval).
-			 *
-			 * However, since the last time we scheduled the check, not even the new max-interval
-			 * expired. All we need to do, is reschedule the timer to expire sooner. The cur_basetime
-			 * is unchanged. */
+             * scheduled (with cur_interval).
+             *
+             * However, since the last time we scheduled the check, not even the new max-interval
+             * expired. All we need to do, is reschedule the timer to expire sooner. The cur_basetime
+             * is unchanged. */
             concheck_periodic_schedule_do(self, addr_family, now_ns);
         }
         return;
@@ -4089,16 +4089,16 @@ concheck_periodic_schedule_set(NMDevice *self, int addr_family, ConcheckSchedule
         }
         if (any_periodic_pending) {
             /* we reached a timeout to schedule a new periodic request, however we still
-			 * have period requests pending that didn't complete yet. We need to bump the
-			 * interval already. */
+             * have period requests pending that didn't complete yet. We need to bump the
+             * interval already. */
             priv->concheck_x[IS_IPv4].p_cur_interval =
                 NM_MIN(old_interval * 2, priv->concheck_x[IS_IPv4].p_max_interval);
         }
 
         /* we just reached a timeout. The expected expiry (exp_expiry) should be
-		 * pretty close to now_ns.
-		 *
-		 * We want to reschedule the timeout at exp_expiry (aka now) + cur_interval. */
+         * pretty close to now_ns.
+         *
+         * We want to reschedule the timeout at exp_expiry (aka now) + cur_interval. */
         nm_utils_get_monotonic_timestamp_nsec_cached(&now_ns);
         exp_expiry =
             priv->concheck_x[IS_IPv4].p_cur_basetime_ns + (old_interval * NM_UTILS_NSEC_PER_SEC);
@@ -4111,10 +4111,10 @@ concheck_periodic_schedule_set(NMDevice *self, int addr_family, ConcheckSchedule
             handle = concheck_start(self, addr_family, NULL, NULL, TRUE);
             if (old_interval != priv->concheck_x[IS_IPv4].p_cur_interval) {
                 /* we just bumped the interval already when scheduling this check.
-				 * When the handle returns, don't bump a second time.
-				 *
-				 * But if we reach the timeout again before the handle returns (this
-				 * code here) we will still bump the interval. */
+                 * When the handle returns, don't bump a second time.
+                 *
+                 * But if we reach the timeout again before the handle returns (this
+                 * code here) we will still bump the interval. */
                 handle->is_periodic_bump_on_complete = FALSE;
             }
         }
@@ -4122,7 +4122,7 @@ concheck_periodic_schedule_set(NMDevice *self, int addr_family, ConcheckSchedule
     }
 
     /* we just got an event that we lost connectivity (that is, concheck returned). We reset
-	 * the interval to min/max or increase the probe interval (bump). */
+     * the interval to min/max or increase the probe interval (bump). */
     case CONCHECK_SCHEDULE_RETURNED_MIN:
         priv->concheck_x[IS_IPv4].p_cur_interval =
             NM_MIN(priv->concheck_x[IS_IPv4].p_max_interval, CONCHECK_P_PROBE_INTERVAL);
@@ -4138,11 +4138,11 @@ concheck_periodic_schedule_set(NMDevice *self, int addr_family, ConcheckSchedule
     }
 
     /* we are here, because we returned from a connectivity check and adjust the current interval.
-	 *
-	 * But note that we calculate the new timeout based on the time when we scheduled the
-	 * last check, instead of counting from now. The reason is that we want that the times
-	 * when we schedule checks be at precise intervals, without including the time it took for
-	 * the connectivity check. */
+     *
+     * But note that we calculate the new timeout based on the time when we scheduled the
+     * last check, instead of counting from now. The reason is that we want that the times
+     * when we schedule checks be at precise intervals, without including the time it took for
+     * the connectivity check. */
     new_expiry = priv->concheck_x[IS_IPv4].p_cur_basetime_ns
                  + (priv->concheck_x[IS_IPv4].p_cur_interval * NM_UTILS_NSEC_PER_SEC);
     tdiff = NM_MAX(new_expiry - nm_utils_get_monotonic_timestamp_nsec_cached(&now_ns), 0);
@@ -4172,7 +4172,7 @@ concheck_update_interval(NMDevice *self, int addr_family, gboolean check_now)
 
     if (!new_interval) {
         /* this will cancel any potentially pending timeout because max-interval is zero.
-		 * But it logs a nice message... */
+         * But it logs a nice message... */
         concheck_periodic_schedule_do(self, addr_family, 0);
 
         /* also update the fake connectivity state. */
@@ -4203,7 +4203,7 @@ concheck_update_state(NMDevice *          self,
     const gboolean   IS_IPv4 = (addr_family == AF_INET);
 
     /* @state is a result of the connectivity check. We only expect a precise
-	 * number of possible values. */
+     * number of possible values. */
     nm_assert(NM_IN_SET(state,
                         NM_CONNECTIVITY_LIMITED,
                         NM_CONNECTIVITY_PORTAL,
@@ -4214,18 +4214,18 @@ concheck_update_state(NMDevice *          self,
 
     if (state == NM_CONNECTIVITY_ERROR) {
         /* on error, we don't change the current connectivity state,
-		 * except making UNKNOWN to NONE. */
+         * except making UNKNOWN to NONE. */
         state = priv->concheck_x[IS_IPv4].state;
         if (state == NM_CONNECTIVITY_UNKNOWN)
             state = NM_CONNECTIVITY_NONE;
     } else if (state == NM_CONNECTIVITY_FAKE) {
         /* If the connectivity check is disabled and we obtain a fake
-		 * result, make an optimistic guess. */
+         * result, make an optimistic guess. */
         if (priv->state == NM_DEVICE_STATE_ACTIVATED) {
             /* FIXME: the fake connectivity state depends on the availability of
-			 * a default route. However, we have no mechanism that rechecks the
-			 * value if a device route appears/disappears after the device
-			 * was activated. */
+             * a default route. However, we have no mechanism that rechecks the
+             * value if a device route appears/disappears after the device
+             * was activated. */
             if (nm_device_get_best_default_route(self, AF_UNSPEC))
                 state = NM_CONNECTIVITY_FULL;
             else
@@ -4236,21 +4236,21 @@ concheck_update_state(NMDevice *          self,
 
     if (priv->concheck_x[IS_IPv4].state == state) {
         /* we got a connectivity update, but the state didn't change. If we were probing,
-		 * we bump the probe frequency. */
+         * we bump the probe frequency. */
         if (allow_periodic_bump)
             concheck_periodic_schedule_set(self, addr_family, CONCHECK_SCHEDULE_RETURNED_BUMP);
         return;
     }
     /* we need to update the probe interval before emitting signals. Emitting
-	 * a signal might call back into NMDevice and change the probe settings.
-	 * So, do that first. */
+     * a signal might call back into NMDevice and change the probe settings.
+     * So, do that first. */
     if (state == NM_CONNECTIVITY_FULL) {
         /* we reached full connectivity state. Stop probing by setting the
-		 * interval to the max. */
+         * interval to the max. */
         concheck_periodic_schedule_set(self, addr_family, CONCHECK_SCHEDULE_RETURNED_MAX);
     } else if (priv->concheck_x[IS_IPv4].state == NM_CONNECTIVITY_FULL) {
         /* we are about to loose connectivity. (re)start probing by setting
-		 * the timeout interval to the min. */
+         * the timeout interval to the min. */
         concheck_periodic_schedule_set(self, addr_family, CONCHECK_SCHEDULE_RETURNED_MIN);
     } else {
         if (allow_periodic_bump)
@@ -4308,8 +4308,8 @@ concheck_handle_complete(NMDeviceConnectivityHandle *handle, GError *error)
     const gboolean IS_IPv4 = (handle->addr_family == AF_INET);
 
     /* The moment we invoke the callback, we unlink it. It signals
-	 * that @handle is handled -- as far as the callee of callback
-	 * is concerned. */
+     * that @handle is handled -- as far as the callee of callback
+     * is concerned. */
     c_list_unlink(&handle->concheck_lst);
 
     if (handle->c_handle)
@@ -4352,8 +4352,8 @@ concheck_cb(NMConnectivity *           connectivity,
 
     if (state == NM_CONNECTIVITY_CANCELLED) {
         /* the only place where we nm_connectivity_check_cancel(@c_handle), is
-		 * from inside concheck_handle_complete(). This is a recursive call,
-		 * nothing to do. */
+         * from inside concheck_handle_complete(). This is a recursive call,
+         * nothing to do. */
         _LOGT(LOGD_CONCHECK,
               "connectivity: [IPv%c] complete check (seq:%llu, cancelled)",
               nm_utils_addr_family_to_char(handle->addr_family),
@@ -4380,7 +4380,7 @@ concheck_cb(NMConnectivity *           connectivity,
           nm_connectivity_state_to_string(state));
 
     /* find out, if there are any periodic checks pending (either whether they
-	 * were scheduled before or after @handle. */
+     * were scheduled before or after @handle. */
     any_periodic_before = FALSE;
     any_periodic_after  = FALSE;
     c_list_for_each_entry (other_handle, &priv->concheck_lst_head, concheck_lst) {
@@ -4395,17 +4395,17 @@ concheck_cb(NMConnectivity *           connectivity,
     }
     if (NM_IN_SET(state, NM_CONNECTIVITY_ERROR)) {
         /* the request failed. We consider this periodic check only as completed if
-		 * this was a periodic check, and there are not checks pending (either
-		 * before or after this one).
-		 *
-		 * We allow_periodic_bump, if the request failed and there are
-		 * still other requests periodic pending. */
+         * this was a periodic check, and there are not checks pending (either
+         * before or after this one).
+         *
+         * We allow_periodic_bump, if the request failed and there are
+         * still other requests periodic pending. */
         allow_periodic_bump =
             handle->is_periodic_bump_on_complete && !any_periodic_before && !any_periodic_after;
     } else {
         /* the request succeeded. This marks the completion of a periodic check,
-		 * if this handle was periodic, or any previously scheduled one (that
-		 * we are going to complete below). */
+         * if this handle was periodic, or any previously scheduled one (that
+         * we are going to complete below). */
         allow_periodic_bump = handle->is_periodic_bump_on_complete || any_periodic_before;
     }
 
@@ -4415,22 +4415,22 @@ concheck_cb(NMConnectivity *           connectivity,
     handle_is_alive = FALSE;
 
     /* we might have invoked callbacks during concheck_update_state(). The caller might have
-	 * cancelled and thus destroyed @handle. We have to check whether handle is still alive,
-	 * by searching it in the list of alive handles.
-	 *
-	 * Also, we might want to complete all pending callbacks that were started before
-	 * @handle, as they are automatically obsoleted. */
+     * cancelled and thus destroyed @handle. We have to check whether handle is still alive,
+     * by searching it in the list of alive handles.
+     *
+     * Also, we might want to complete all pending callbacks that were started before
+     * @handle, as they are automatically obsoleted. */
 check_handles:
     c_list_for_each_entry (other_handle, &priv->concheck_lst_head, concheck_lst) {
         if (other_handle->addr_family != handle->addr_family)
             continue;
         if (other_handle->seq >= seq) {
             /* it's not guaranteed that @handle is still in the list. It might already
-			 * be canceled while invoking callbacks for a previous other_handle.
-			 * If it is already cancelled, @handle is a dangling pointer.
-			 *
-			 * Since @seq is assigned uniquely and increasing, either @other_handle is
-			 * @handle (and thus, handle is alive), or it isn't. */
+             * be canceled while invoking callbacks for a previous other_handle.
+             * If it is already cancelled, @handle is a dangling pointer.
+             *
+             * Since @seq is assigned uniquely and increasing, either @other_handle is
+             * @handle (and thus, handle is alive), or it isn't. */
             if (other_handle == handle)
                 handle_is_alive = TRUE;
             break;
@@ -4440,19 +4440,19 @@ check_handles:
 
         if (!NM_IN_SET(state, NM_CONNECTIVITY_ERROR)) {
             /* we also want to complete handles that were started before the current
-			 * @handle. Their response is out-dated. */
+             * @handle. Their response is out-dated. */
             concheck_handle_complete(other_handle, NULL);
 
             /* we invoked callbacks, other handles might be cancelled and removed from the list.
-			 * Need to iterate the list from the start. */
+             * Need to iterate the list from the start. */
             goto check_handles;
         }
     }
 
     if (!handle_is_alive) {
         /* We didn't find @handle in the list of alive handles. Thus, the handles
-		 * was cancelled while we were invoking events. Nothing to do, and don't
-		 * touch the dangling pointer. */
+         * was cancelled while we were invoking events. Nothing to do, and don't
+         * touch the dangling pointer. */
         return;
     }
 
@@ -4547,7 +4547,7 @@ nm_device_check_connectivity_cancel(NMDeviceConnectivityHandle *handle)
     g_return_if_fail(!c_list_is_empty(&handle->concheck_lst));
 
     /* nobody has access to periodic handles, and cannot cancel
-	 * them externally. */
+     * them externally. */
     nm_assert(!handle->is_periodic);
 
     nm_utils_error_set_cancelled(&cancelled_error, FALSE, "NMDevice");
@@ -4637,8 +4637,8 @@ nm_device_master_enslave_slave(NMDevice *self, NMDevice *slave, NMConnection *co
     nm_device_slave_notify_enslave(info->slave, success);
 
     /* Ensure the device's hardware address is up-to-date; it often changes
-	 * when slaves change.
-	 */
+     * when slaves change.
+     */
     nm_device_update_hw_address(self);
 
     /* Send ARP announcements if did not yet and have addresses. */
@@ -4646,9 +4646,9 @@ nm_device_master_enslave_slave(NMDevice *self, NMDevice *slave, NMConnection *co
         nm_device_arp_announce(self);
 
     /* Restart IP configuration if we're waiting for slaves.  Do this
-	 * after updating the hardware address as IP config may need the
-	 * new address.
-	 */
+     * after updating the hardware address as IP config may need the
+     * new address.
+     */
     if (success) {
         if (priv->ip_state_4 == NM_DEVICE_IP_STATE_WAIT)
             nm_device_activate_stage3_ip4_start(self);
@@ -4658,8 +4658,8 @@ nm_device_master_enslave_slave(NMDevice *self, NMDevice *slave, NMConnection *co
     }
 
     /* Since slave devices don't have their own IP configuration,
-	 * set the MTU here.
-	 */
+     * set the MTU here.
+     */
     _commit_mtu(slave, NM_DEVICE_GET_PRIVATE(slave)->ip_config_4);
 
     return success;
@@ -4721,7 +4721,7 @@ nm_device_master_release_one_slave(NMDevice *          self,
     nm_device_slave_notify_release(slave, reason);
 
     /* keep both alive until the end of the function.
-	 * Transfers ownership from slave_priv->master.  */
+     * Transfers ownership from slave_priv->master.  */
     self_free = self;
 
     c_list_unlink(&info->lst_slave);
@@ -4738,8 +4738,8 @@ nm_device_master_release_one_slave(NMDevice *          self,
     }
 
     /* Ensure the device's hardware address is up-to-date; it often changes
-	 * when slaves change.
-	 */
+     * when slaves change.
+     */
     nm_device_update_hw_address(self);
     nm_device_set_unmanaged_by_flags(slave,
                                      NM_UNMANAGED_IS_SLAVE,
@@ -4793,8 +4793,8 @@ set_unmanaged_external_down(NMDevice *self, gboolean only_if_unmanaged)
     ext_flags = is_unmanaged_external_down(self, FALSE);
     if (ext_flags != NM_UNMAN_FLAG_OP_SET_UNMANAGED) {
         /* Ensure the assume check is queued before any queued state changes
-		 * from the transition to UNAVAILABLE.
-		 */
+         * from the transition to UNAVAILABLE.
+         */
         nm_device_queue_recheck_assume(self);
     }
 
@@ -4883,7 +4883,7 @@ carrier_changed(NMDevice *self, gboolean carrier)
             if (priv->state == NM_DEVICE_STATE_ACTIVATED)
                 nm_device_update_dynamic_ip_setup(self);
             /* If needed, also resume IP configuration that is
-			 * waiting for carrier. */
+             * waiting for carrier. */
             if (nm_device_activate_ip4_state_in_wait(self))
                 nm_device_activate_stage3_ip4_start(self);
             if (nm_device_activate_ip6_state_in_wait(self))
@@ -4893,9 +4893,9 @@ carrier_changed(NMDevice *self, gboolean carrier)
         /* fall-through and change state of device */
     } else if (priv->is_enslaved && !carrier) {
         /* Slaves don't deactivate when they lose carrier; for
-		 * bonds/teams in particular that would be actively
-		 * counterproductive.
-		 */
+         * bonds/teams in particular that would be actively
+         * counterproductive.
+         */
         return;
     }
 
@@ -4906,16 +4906,16 @@ carrier_changed(NMDevice *self, gboolean carrier)
                                   NM_DEVICE_STATE_REASON_CARRIER);
         } else if (priv->state == NM_DEVICE_STATE_DISCONNECTED) {
             /* If the device is already in DISCONNECTED state without a carrier
-			 * (probably because it is tagged for carrier ignore) ensure that
-			 * when the carrier appears, auto connections are rechecked for
-			 * the device.
-			 */
+             * (probably because it is tagged for carrier ignore) ensure that
+             * when the carrier appears, auto connections are rechecked for
+             * the device.
+             */
             nm_device_emit_recheck_auto_activate(self);
         } else if (priv->state == NM_DEVICE_STATE_ACTIVATED) {
             /* If the device is active without a carrier (probably because it is
-			 * tagged for carrier ignore) ensure that when the carrier appears we
-			 * renew DHCP leases and such.
-			 */
+             * tagged for carrier ignore) ensure that when the carrier appears we
+             * renew DHCP leases and such.
+             */
             nm_device_update_dynamic_ip_setup(self);
         }
     } else {
@@ -5064,7 +5064,7 @@ device_recheck_slave_status(NMDevice *self, const NMPlatformLink *plink)
     if (priv->master) {
         if (plink->master > 0 && plink->master == nm_device_get_ifindex(priv->master)) {
             /* call add-slave again. We expect @self already to be added to
-			 * the master, but this also triggers a recheck-assume. */
+             * the master, but this also triggers a recheck-assume. */
             nm_device_master_add_slave(priv->master, self, FALSE);
             return;
         }
@@ -5124,10 +5124,10 @@ ndisc_set_router_config(NMNDisc *ndisc, NMDevice *self)
             continue;
 
         /* resolve the timestamps relative to a new base.
-		 *
-		 * Note that for convenience, platform @addr might have timestamp and/or
-		 * lifetime unset. We don't allow that flexibility for ndisc and require
-		 * well defined timestamps. */
+         *
+         * Note that for convenience, platform @addr might have timestamp and/or
+         * lifetime unset. We don't allow that flexibility for ndisc and require
+         * well defined timestamps. */
         if (addr->timestamp) {
             nm_assert(addr->timestamp < G_MAXINT32);
             base = addr->timestamp;
@@ -5290,8 +5290,8 @@ device_link_changed(NMDevice *self)
         nm_device_recheck_available_connections(self);
 
         /* Let any connections that use the new interface name have a chance
-		 * to auto-activate on the device.
-		 */
+         * to auto-activate on the device.
+         */
         nm_device_emit_recheck_auto_activate(self);
     }
 
@@ -5325,16 +5325,16 @@ device_link_changed(NMDevice *self)
         reason = NM_DEVICE_STATE_REASON_NOW_MANAGED;
 
         /* If the device is a external-down candidated but no longer has external
-		 * down set, we must clear the platform-unmanaged flag with reason
-		 * "assumed". */
+         * down set, we must clear the platform-unmanaged flag with reason
+         * "assumed". */
         if (nm_device_get_unmanaged_mask(self, NM_UNMANAGED_EXTERNAL_DOWN)
             && !nm_device_get_unmanaged_flags(self, NM_UNMANAGED_EXTERNAL_DOWN)) {
             /* actually, user-udev overwrites external-down. So we only assume the device,
-			 * when it is a external-down candidate, which is not managed via udev. */
+             * when it is a external-down candidate, which is not managed via udev. */
             if (!nm_device_get_unmanaged_mask(self, NM_UNMANAGED_USER_UDEV)) {
                 /* Ensure the assume check is queued before any queued state changes
-				 * from the transition to UNAVAILABLE.
-				 */
+                 * from the transition to UNAVAILABLE.
+                 */
                 nm_device_queue_recheck_assume(self);
                 reason = NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED;
             }
@@ -5349,7 +5349,7 @@ device_link_changed(NMDevice *self)
 
     if (priv->up && (!was_up || seen_down)) {
         /* the link was down and just came up. That happens for example, while changing MTU.
-		 * We must restore IP configuration. */
+         * We must restore IP configuration. */
         if (NM_IN_SET(priv->ip_state_4, NM_DEVICE_IP_STATE_CONF, NM_DEVICE_IP_STATE_DONE)) {
             if (!ip_config_merge_and_apply(self, AF_INET, TRUE))
                 _LOGW(LOGD_IP4, "failed applying IP4 config after link comes up again");
@@ -5367,10 +5367,10 @@ device_link_changed(NMDevice *self)
 
     if (got_hw_addr && !priv->up && nm_device_get_state(self) == NM_DEVICE_STATE_UNAVAILABLE) {
         /*
-		 * If the device is UNAVAILABLE, any previous try to
-		 * bring it up probably has failed because of the
-		 * invalid hardware address; try again.
-		 */
+         * If the device is UNAVAILABLE, any previous try to
+         * bring it up probably has failed because of the
+         * invalid hardware address; try again.
+         */
         nm_device_bring_up(self, TRUE, NULL);
         nm_device_queue_recheck_available(self,
                                           NM_DEVICE_STATE_REASON_NONE,
@@ -5781,23 +5781,23 @@ sriov_op_queue(NMDevice *              self,
     SriovOp *op;
 
     /* We usually never want to cancel an async write operation, unless it's superseded
-	 * by a newer operation (that resets the state). That is, because we need to ensure
-	 * that we never end up doing two concurrent writes (since we write on a background
-	 * thread, that would be unordered/racy).
-	 * Of course, since we queue requests only per-device, when devices get renamed we
-	 * might end up writing the same sysctl concurrently still. But that's really
-	 * unlikely, and don't rename after udev completes!
-	 *
-	 * The "next" operation is not yet even started. It can be replaced/canceled right away
-	 * when a newer request comes.
-	 * The "pending" operation is currently ongoing, and we may cancel it if
-	 * we have a follow-up operation (queued in "next"). Unless we have a such
-	 * a newer request, we cannot cancel it!
-	 *
-	 * FIXME(shutdown): However, during shutdown we don't have a follow-up write request to cancel
-	 * this operation and we have to give it at least some time to complete. The solution is that
-	 * we register a way to abort the last call during shutdown, and after NM_SHUTDOWN_TIMEOUT_MS
-	 * grace period we pull the plug and cancel it. */
+     * by a newer operation (that resets the state). That is, because we need to ensure
+     * that we never end up doing two concurrent writes (since we write on a background
+     * thread, that would be unordered/racy).
+     * Of course, since we queue requests only per-device, when devices get renamed we
+     * might end up writing the same sysctl concurrently still. But that's really
+     * unlikely, and don't rename after udev completes!
+     *
+     * The "next" operation is not yet even started. It can be replaced/canceled right away
+     * when a newer request comes.
+     * The "pending" operation is currently ongoing, and we may cancel it if
+     * we have a follow-up operation (queued in "next"). Unless we have a such
+     * a newer request, we cannot cancel it!
+     *
+     * FIXME(shutdown): However, during shutdown we don't have a follow-up write request to cancel
+     * this operation and we have to give it at least some time to complete. The solution is that
+     * we register a way to abort the last call during shutdown, and after NM_SHUTDOWN_TIMEOUT_MS
+     * grace period we pull the plug and cancel it. */
 
     op  = g_slice_new(SriovOp);
     *op = (SriovOp){
@@ -5847,7 +5847,7 @@ static void
 realize_start_notify(NMDevice *self, const NMPlatformLink *pllink)
 {
     /* the default implementation of realize_start_notify() just calls
-	 * link_changed() -- which by default does nothing. */
+     * link_changed() -- which by default does nothing. */
     NM_DEVICE_GET_CLASS(self)->link_changed(self, pllink);
 }
 
@@ -5888,7 +5888,7 @@ realize_start_setup(NMDevice *            self,
     gboolean             unmanaged;
 
     /* plink is a NMPlatformLink type, however, we require it to come from the platform
-	 * cache (where else would it come from?). */
+     * cache (where else would it come from?). */
     nm_assert(!plink || NMP_OBJECT_GET_TYPE(NMP_OBJECT_UP_CAST(plink)) == NMP_OBJECT_TYPE_LINK);
 
     g_return_if_fail(NM_IS_DEVICE(self));
@@ -5998,14 +5998,14 @@ realize_start_setup(NMDevice *            self,
     nm_device_set_unmanaged_flags(self, NM_UNMANAGED_USER_EXPLICIT, unmanaged_user_explicit);
 
     /* Do not manage externally created software devices until they are IFF_UP
-	 * or have IP addressing */
+     * or have IP addressing */
     nm_device_set_unmanaged_flags(self,
                                   NM_UNMANAGED_EXTERNAL_DOWN,
                                   is_unmanaged_external_down(self, TRUE));
 
     /* Unmanaged the loopback device with an explicit NM_UNMANAGED_BY_TYPE flag.
-	 * Later we might want to manage 'lo' too. Currently, that doesn't work because
-	 * NetworkManager might down the interface or remove the 127.0.0.1 address. */
+     * Later we might want to manage 'lo' too. Currently, that doesn't work because
+     * NetworkManager might down the interface or remove the 127.0.0.1 address. */
     nm_device_set_unmanaged_flags(self, NM_UNMANAGED_BY_TYPE, is_loopback(self));
 
     nm_device_set_unmanaged_by_user_udev(self);
@@ -6056,8 +6056,8 @@ static void
 unrealize_notify(NMDevice *self)
 {
     /* Stub implementation for unrealize_notify(). It does nothing,
-	 * but allows derived classes to uniformly invoke the parent
-	 * implementation. */
+     * but allows derived classes to uniformly invoke the parent
+     * implementation. */
 }
 
 static gboolean
@@ -6229,8 +6229,8 @@ nm_device_notify_availability_maybe_changed(NMDevice *self)
         return;
 
     /* A device could have stayed disconnected because it would
-	 * want to register with a network server that now become
-	 * available. */
+     * want to register with a network server that now become
+     * available. */
     nm_device_recheck_available_connections(self);
     if (g_hash_table_size(priv->available_connections) > 0)
         nm_device_emit_recheck_auto_activate(self);
@@ -6378,11 +6378,11 @@ nm_device_master_add_slave(NMDevice *self, NMDevice *slave, gboolean configure)
         _active_connection_set_state_flags(self, NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES);
 
         /* no need to emit
-		 *
-		 *   _notify (slave, PROP_MASTER);
-		 *
-		 * because slave_priv->is_enslaved is not true, thus the value
-		 * didn't change yet. */
+         *
+         *   _notify (slave, PROP_MASTER);
+         *
+         * because slave_priv->is_enslaved is not true, thus the value
+         * didn't change yet. */
 
         g_warn_if_fail(!NM_FLAGS_HAS(slave_priv->unmanaged_mask, NM_UNMANAGED_IS_SLAVE));
         nm_device_set_unmanaged_by_flags(slave,
@@ -6432,10 +6432,10 @@ nm_device_master_check_slave_physical_port(NMDevice *self, NMDevice *slave, NMLo
                   nm_device_get_ip_iface(slave),
                   nm_device_get_ip_iface(info->slave));
             /* Since this function will get called for every slave, we only have
-			 * to warn about the first match we find; if there are other matches
-			 * later in the list, we will have already warned about them matching
-			 * @existing earlier.
-			 */
+             * to warn about the first match we find; if there are other matches
+             * later in the list, we will have already warned about them matching
+             * @existing earlier.
+             */
             return;
         }
     }
@@ -6537,7 +6537,7 @@ check_ip_state(NMDevice *self, gboolean may_fail, gboolean full_state_update)
         return;
 
     /* Don't progress into IP_CHECK or SECONDARIES if we're waiting for the
-	 * master to enslave us. */
+     * master to enslave us. */
     if (nm_active_connection_get_master(NM_ACTIVE_CONNECTION(priv->act_request.obj))
         && !priv->is_enslaved)
         return;
@@ -6566,17 +6566,17 @@ check_ip_state(NMDevice *self, gboolean may_fail, gboolean full_state_update)
         && (priv->ip_state_6 == NM_DEVICE_IP_STATE_FAIL
             || (ip6_disabled && priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE))) {
         /* Either both methods failed, or only one failed and the other is
-		 * disabled */
+         * disabled */
         if (nm_device_sys_iface_state_is_external_or_assume(self)) {
             /* We have assumed configuration, but couldn't redo it. No problem,
-			 * move to check state. */
+             * move to check state. */
             _set_ip_state(self, AF_INET, NM_DEVICE_IP_STATE_DONE);
             _set_ip_state(self, AF_INET6, NM_DEVICE_IP_STATE_DONE);
             state = NM_DEVICE_STATE_IP_CHECK;
         } else if (may_fail && get_ip_config_may_fail(self, AF_INET)
                    && get_ip_config_may_fail(self, AF_INET6)) {
             /* Couldn't start either IPv6 and IPv4 autoconfiguration,
-			 * but both are allowed to fail. */
+             * but both are allowed to fail. */
             state = NM_DEVICE_STATE_SECONDARIES;
         } else {
             /* Autoconfiguration attempted without success. */
@@ -6721,7 +6721,7 @@ nm_device_removed(NMDevice *self, gboolean unconfigure_ip_config)
     priv = NM_DEVICE_GET_PRIVATE(self);
     if (priv->master) {
         /* this is called when something externally messes with the slave or during shut-down.
-		 * Release the slave from master, but don't touch the device. */
+         * Release the slave from master, but don't touch the device. */
         nm_device_master_release_one_slave(priv->master,
                                            self,
                                            FALSE,
@@ -6919,11 +6919,11 @@ nm_device_autoconnect_allowed(NMDevice *self)
         return FALSE;
 
     /* The 'autoconnect-allowed' signal is emitted on a device to allow
-	 * other listeners to block autoconnect on the device if they wish.
-	 * This is mainly used by the OLPC Mesh devices to block autoconnect
-	 * on their companion Wi-Fi device as they share radio resources and
-	 * cannot be connected at the same time.
-	 */
+     * other listeners to block autoconnect on the device if they wish.
+     * This is mainly used by the OLPC Mesh devices to block autoconnect
+     * on their companion Wi-Fi device as they share radio resources and
+     * cannot be connected at the same time.
+     */
 
     g_value_init(&instance, G_TYPE_OBJECT);
     g_value_set_object(&instance, self);
@@ -6932,7 +6932,7 @@ nm_device_autoconnect_allowed(NMDevice *self)
     g_value_set_boolean(&retval, TRUE);
 
     /* Use g_signal_emitv() rather than g_signal_emit() to avoid the return
-	 * value being changed if no handlers are connected */
+     * value being changed if no handlers are connected */
     g_signal_emitv(&instance, signals[AUTOCONNECT_ALLOWED], 0, &retval);
     g_value_unset(&instance);
 
@@ -6971,12 +6971,12 @@ nm_device_can_auto_connect(NMDevice *self, NMSettingsConnection *sett_conn, char
     g_return_val_if_fail(!specific_object || !*specific_object, FALSE);
 
     /* the caller must ensure that nm_device_autoconnect_allowed() returns
-	 * TRUE as well. This is done, because nm_device_can_auto_connect()
-	 * has only one caller, and it iterates over a list of available
-	 * connections.
-	 *
-	 * Hence, we don't need to re-check nm_device_autoconnect_allowed()
-	 * over and over again. The caller is supposed to do that. */
+     * TRUE as well. This is done, because nm_device_can_auto_connect()
+     * has only one caller, and it iterates over a list of available
+     * connections.
+     *
+     * Hence, we don't need to re-check nm_device_autoconnect_allowed()
+     * over and over again. The caller is supposed to do that. */
     nm_assert(nm_device_autoconnect_allowed(self));
 
     if (!nm_device_check_connection_available(self,
@@ -7192,8 +7192,8 @@ nm_device_generate_connection(NMDevice *self,
     }
 
     /* Ignore the connection if it has no IP configuration,
-	 * no slave configuration, and is not a master interface.
-	 */
+     * no slave configuration, and is not a master interface.
+     */
     ip4_method = nm_utils_get_ip_config_method(connection, AF_INET);
     ip6_method = nm_utils_get_ip_config_method(connection, AF_INET6);
     if (nm_streq0(ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)
@@ -7212,8 +7212,8 @@ nm_device_generate_connection(NMDevice *self,
     }
 
     /* Ignore any IPv6LL-only, not master connections without slaves,
-	 * unless they are in the assume-ipv6ll-only list.
-	 */
+     * unless they are in the assume-ipv6ll-only list.
+     */
     if (nm_streq0(ip4_method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)
         && nm_streq0(ip6_method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)
         && !nm_setting_connection_get_master(NM_SETTING_CONNECTION(s_con))
@@ -7290,9 +7290,9 @@ nm_device_match_parent(NMDevice *self, const char *parent)
         NMConnection *connection;
 
         /* If the parent is a UUID, the connection matches when there is
-		 * no connection active on the device or when a connection with
-		 * that UUID is active.
-		 */
+         * no connection active on the device or when a connection with
+         * that UUID is active.
+         */
         connection = nm_device_get_applied_connection(parent_device);
         if (connection && !nm_streq0(parent, nm_connection_get_uuid(connection)))
             return FALSE;
@@ -7349,8 +7349,8 @@ check_connection_compatible(NMDevice *self, NMConnection *connection, GError **e
             return FALSE;
     } else if (klass->check_connection_compatible == check_connection_compatible) {
         /* the device class does not implement check_connection_compatible nor set
-		 * connection_type_check_compatible. That means, it is by default not compatible
-		 * with any connection type. */
+         * connection_type_check_compatible. That means, it is by default not compatible
+         * with any connection type. */
         nm_utils_error_set_literal(error,
                                    NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                                    "device does not support any connections");
@@ -7360,8 +7360,8 @@ check_connection_compatible(NMDevice *self, NMConnection *connection, GError **e
     conn_iface = nm_manager_get_connection_iface(NM_MANAGER_GET, connection, NULL, NULL, &local);
 
     /* We always need a interface name for virtual devices, but for
-	 * physical ones a connection without interface name is fine for
-	 * any device. */
+     * physical ones a connection without interface name is fine for
+     * any device. */
     if (!conn_iface) {
         if (nm_connection_is_virtual(connection)) {
             nm_utils_error_set(error,
@@ -7495,15 +7495,15 @@ unmanaged_on_quit(NMDevice *self)
     NMConnection *connection;
 
     /* NMDeviceWifi overwrites this function to always unmanage wifi devices.
-	 *
-	 * For all other types, if the device type can assume connections, we leave
-	 * it up on quit.
-	 *
-	 * Originally, we would only keep devices up that can be assumed afterwards.
-	 * However, that meant we unmanged layer-2 only devices. So, this was step
-	 * by step refined to unmanage less (commit 25aaaab3, rh#1311988, rh#1333983).
-	 * But there are more scenarios where we also want to keep the device up
-	 * (rh#1378418, rh#1371126). */
+     *
+     * For all other types, if the device type can assume connections, we leave
+     * it up on quit.
+     *
+     * Originally, we would only keep devices up that can be assumed afterwards.
+     * However, that meant we unmanged layer-2 only devices. So, this was step
+     * by step refined to unmanage less (commit 25aaaab3, rh#1311988, rh#1333983).
+     * But there are more scenarios where we also want to keep the device up
+     * (rh#1378418, rh#1371126). */
     if (!nm_device_can_assume_connections(self))
         return TRUE;
 
@@ -8027,10 +8027,10 @@ activate_stage1_device_prepare(NMDevice *self)
             }
 
             /* When changing the number of VFs the kernel can block
-			 * for very long time in the write to sysfs, especially
-			 * if autoprobe-drivers is enabled. Do it asynchronously
-			 * to avoid blocking the entire NM process.
-			 */
+             * for very long time in the write to sysfs, especially
+             * if autoprobe-drivers is enabled. Do it asynchronously
+             * to avoid blocking the entire NM process.
+             */
             sriov_op_queue(self,
                            nm_setting_sriov_get_total_vfs(s_sriov),
                            autoprobe,
@@ -8221,8 +8221,8 @@ _routing_rules_sync(NMDevice *self, NMTernary set_mode)
                 nm_ip_routing_rule_to_platform(rule, &plrule);
 
                 /* We track this rule, but we also make it explicitly not weakly-tracked
-				 * (meaning to untrack NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG at
-				 * the same time). */
+                 * (meaning to untrack NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG at
+                 * the same time). */
                 nmp_rules_manager_track(rules_manager,
                                         &plrule,
                                         10,
@@ -8254,18 +8254,18 @@ _routing_rules_sync(NMDevice *self, NMTernary set_mode)
     keep_deleted_rules = FALSE;
     if (set_mode == NM_TERNARY_DEFAULT) {
         /* when exiting NM, we leave the device up and the rules configured.
-		 * We just all nmp_rules_manager_sync() to forget about the synced rules,
-		 * but we don't actually delete them.
-		 *
-		 * FIXME: that is a problem after restart of NetworkManager, because these
-		 * rules will look like externally added, and NM will no longer remove
-		 * them.
-		 * To fix that, we could during "assume" mark the rules of the profile
-		 * as owned (and "added" by the device). The problem with that is that it
-		 * wouldn't cover rules that devices add by internal decision (not because
-		 * of a setting in the profile, e.g. WireGuard could setup policy routing).
-		 * Maybe it would be better to remember these orphaned rules at exit in a
-		 * file and track them after restart again. */
+         * We just all nmp_rules_manager_sync() to forget about the synced rules,
+         * but we don't actually delete them.
+         *
+         * FIXME: that is a problem after restart of NetworkManager, because these
+         * rules will look like externally added, and NM will no longer remove
+         * them.
+         * To fix that, we could during "assume" mark the rules of the profile
+         * as owned (and "added" by the device). The problem with that is that it
+         * wouldn't cover rules that devices add by internal decision (not because
+         * of a setting in the profile, e.g. WireGuard could setup policy routing).
+         * Maybe it would be better to remember these orphaned rules at exit in a
+         * file and track them after restart again. */
         keep_deleted_rules = TRUE;
     }
     nmp_rules_manager_sync(rules_manager, keep_deleted_rules);
@@ -8850,7 +8850,7 @@ ip_config_merge_and_apply(NMDevice *self, int addr_family, gboolean commit)
             ignore_auto_dns    = nm_setting_ip_config_get_ignore_auto_dns(s_ip);
 
             /* if the connection has an explicit gateway, we also ignore
-			 * the default routes from other sources. */
+             * the default routes from other sources. */
             ignore_default_routes = nm_setting_ip_config_get_never_default(s_ip)
                                     || nm_setting_ip_config_get_gateway(s_ip);
 
@@ -8962,8 +8962,8 @@ ip_config_merge_and_apply(NMDevice *self, int addr_family, gboolean commit)
                            0);
 
     /* Merge WWAN config *last* to ensure modem-given settings overwrite
-	 * any external stuff set by pppd or other scripts.
-	 */
+     * any external stuff set by pppd or other scripts.
+     */
     config = applied_config_get_current(&priv->dev2_ip_config_x[IS_IPv4]);
     if (config) {
         nm_ip_config_merge(composite,
@@ -8989,7 +8989,7 @@ ip_config_merge_and_apply(NMDevice *self, int addr_family, gboolean commit)
     }
 
     /* Merge user overrides into the composite config. For assumed connections,
-	 * con_ip_config_x is empty. */
+     * con_ip_config_x is empty. */
     if (priv->con_ip_config_x[IS_IPv4]) {
         nm_ip_config_merge(composite,
                            priv->con_ip_config_x[IS_IPv4],
@@ -9060,9 +9060,9 @@ dhcp4_lease_change(NMDevice *self, NMIP4Config *config, gboolean bound)
     }
 
     /* TODO: we should perform DAD again whenever we obtain a
-	 * new lease after an expiry. But what should we do if
-	 * a duplicate address is detected? Fail the connection;
-	 * restart DHCP; continue without an address? */
+     * new lease after an expiry. But what should we do if
+     * a duplicate address is detected? Fail the connection;
+     * restart DHCP; continue without an address? */
     if (bound && !nm_dhcp_client_accept(priv->dhcp_data_4.client, &error)) {
         _LOGW(LOGD_DHCP4, "error accepting lease: %s", error->message);
         return FALSE;
@@ -9112,15 +9112,15 @@ dhcp_grace_period_start(NMDevice *self, int addr_family)
     guint32          timeout;
 
     /* In any other case (expired lease, assumed connection, etc.),
-	 * wait for some time before failing the IP method.
-	 */
+     * wait for some time before failing the IP method.
+     */
     if (priv->dhcp_data_x[IS_IPv4].grace_pending) {
         /* already pending. */
         return FALSE;
     }
 
     /* Start a grace period equal to the DHCP timeout multiplied
-	 * by a constant factor. */
+     * by a constant factor. */
     timeout = _prop_get_ipvx_dhcp_timeout(self, addr_family);
     if (timeout == NM_DHCP_TIMEOUT_INFINITY)
         _LOGI(LOGD_DHCP_from_addr_family(addr_family),
@@ -9160,18 +9160,18 @@ dhcp4_fail(NMDevice *self, NMDhcpState dhcp_state)
         goto clear_config;
 
     /* ... and also if there are static addresses configured
-	 * on the interface.
-	 */
+     * on the interface.
+     */
     if (priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE && priv->con_ip_config_4
         && nm_ip4_config_get_num_addresses(priv->con_ip_config_4) > 0)
         goto clear_config;
 
     /* Fail the method when one of the following is true:
-	 * 1) the DHCP client terminated: it does not make sense to start a grace
-	 *    period without a client running;
-	 * 2) we failed to get an initial lease AND the client was
-	 *    not active before.
-	 */
+     * 1) the DHCP client terminated: it does not make sense to start a grace
+     *    period without a client running;
+     * 2) we failed to get an initial lease AND the client was
+     *    not active before.
+     */
     if (dhcp_state == NM_DHCP_STATE_TERMINATED
         || (!priv->dhcp_data_4.was_active && priv->ip_state_4 == NM_DEVICE_IP_STATE_CONF)) {
         nm_device_activate_schedule_ip_config_timeout(self, AF_INET);
@@ -9235,8 +9235,8 @@ dhcp4_state_changed(NMDhcpClient *client,
         priv->dhcp_data_4.grace_pending = FALSE;
 
         /* After some failures, we have been able to renew the lease:
-		 * update the ip state
-		 */
+         * update the ip state
+         */
         if (priv->ip_state_4 == NM_DEVICE_IP_STATE_FAIL)
             _set_ip_state(self, AF_INET, NM_DEVICE_IP_STATE_CONF);
 
@@ -9459,7 +9459,7 @@ connection_requires_carrier(NMConnection *connection)
     gboolean             ip4_used = FALSE, ip6_used = FALSE;
 
     /* We can progress to IP_CONFIG now, so that we're enslaved.
-	 * That may actually cause carrier to go up and thus continue activation. */
+     * That may actually cause carrier to go up and thus continue activation. */
     s_con = nm_connection_get_setting_connection(connection);
     if (nm_setting_connection_get_master(s_con))
         return FALSE;
@@ -9467,8 +9467,8 @@ connection_requires_carrier(NMConnection *connection)
     ip4_carrier_wanted = connection_ip_method_requires_carrier(connection, AF_INET, &ip4_used);
     if (ip4_carrier_wanted) {
         /* If IPv4 wants a carrier and cannot fail, the whole connection
-		 * requires a carrier regardless of the IPv6 method.
-		 */
+         * requires a carrier regardless of the IPv6 method.
+         */
         s_ip4 = nm_connection_get_setting_ip4_config(connection);
         if (s_ip4 && !nm_setting_ip_config_get_may_fail(s_ip4))
             return TRUE;
@@ -9477,16 +9477,16 @@ connection_requires_carrier(NMConnection *connection)
     ip6_carrier_wanted = connection_ip_method_requires_carrier(connection, AF_INET6, &ip6_used);
     if (ip6_carrier_wanted) {
         /* If IPv6 wants a carrier and cannot fail, the whole connection
-		 * requires a carrier regardless of the IPv4 method.
-		 */
+         * requires a carrier regardless of the IPv4 method.
+         */
         s_ip6 = nm_connection_get_setting_ip6_config(connection);
         if (s_ip6 && !nm_setting_ip_config_get_may_fail(s_ip6))
             return TRUE;
     }
 
     /* If an IP version wants a carrier and the other IP version isn't
-	 * used, the connection requires carrier since it will just fail without one.
-	 */
+     * used, the connection requires carrier since it will just fail without one.
+     */
     if (ip4_carrier_wanted && !ip6_used)
         return TRUE;
     if (ip6_carrier_wanted && !ip4_used)
@@ -9504,9 +9504,9 @@ have_any_ready_slaves(NMDevice *self)
     CList *          iter;
 
     /* Any enslaved slave is "ready" in the generic case as it's
-	 * at least >= NM_DEVCIE_STATE_IP_CONFIG and has had Layer 2
-	 * properties set up.
-	 */
+     * at least >= NM_DEVCIE_STATE_IP_CONFIG and has had Layer 2
+     * properties set up.
+     */
     c_list_for_each (iter, &priv->slaves) {
         info = c_list_entry(iter, SlaveInfo, lst_slave);
         if (NM_DEVICE_GET_PRIVATE(info->slave)->is_enslaved)
@@ -9594,18 +9594,18 @@ dhcp6_fail(NMDevice *self, NMDhcpState dhcp_state)
 
     if (is_dhcp_managed) {
         /* ... and also if there are static addresses configured
-		 * on the interface.
-		 */
+         * on the interface.
+         */
         if (priv->ip_state_6 == NM_DEVICE_IP_STATE_DONE && priv->con_ip_config_6
             && nm_ip6_config_get_num_addresses(priv->con_ip_config_6))
             goto clear_config;
 
         /* Fail the method when one of the following is true:
-		 * 1) the DHCP client terminated: it does not make sense to start a grace
-		 *    period without a client running;
-		 * 2) we failed to get an initial lease AND the client was
-		 *    not active before.
-		 */
+         * 1) the DHCP client terminated: it does not make sense to start a grace
+         *    period without a client running;
+         * 2) we failed to get an initial lease AND the client was
+         *    not active before.
+         */
         if (dhcp_state == NM_DHCP_STATE_TERMINATED
             || (!priv->dhcp_data_6.was_active && priv->ip_state_6 == NM_DEVICE_IP_STATE_CONF)) {
             nm_device_activate_schedule_ip_config_timeout(self, AF_INET6);
@@ -9653,9 +9653,9 @@ dhcp6_state_changed(NMDhcpClient *client,
         nm_clear_g_source(&priv->dhcp_data_6.grace_id);
         priv->dhcp_data_6.grace_pending = FALSE;
         /* If the server sends multiple IPv6 addresses, we receive a state
-		 * changed event for each of them. Use the event ID to merge IPv6
-		 * addresses from the same transaction into a single configuration.
-		 */
+         * changed event for each of them. Use the event ID to merge IPv6
+         * addresses from the same transaction into a single configuration.
+         */
 
         event_id = nm_dhcp_utils_get_dhcp6_event_id(options);
 
@@ -9678,8 +9678,8 @@ dhcp6_state_changed(NMDhcpClient *client,
         }
 
         /* After long time we have been able to renew the lease:
-		 * update the ip state
-		 */
+         * update the ip state
+         */
         if (priv->ip_state_6 == NM_DEVICE_IP_STATE_FAIL)
             _set_ip_state(self, AF_INET6, NM_DEVICE_IP_STATE_CONF);
 
@@ -9710,9 +9710,9 @@ dhcp6_state_changed(NMDhcpClient *client,
         break;
     case NM_DHCP_STATE_TERMINATED:
         /* In IPv6 info-only mode, the client doesn't handle leases so it
-		 * may exit right after getting a response from the server.  That's
-		 * normal.  In that case we just ignore the exit.
-		 */
+         * may exit right after getting a response from the server.  That's
+         * normal.  In that case we just ignore the exit.
+         */
         if (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_OTHERCONF)
             break;
         /* fall-through */
@@ -9731,8 +9731,8 @@ dhcp6_prefix_delegated(NMDhcpClient *client, NMPlatformIP6Address *prefix, gpoin
     NMDevice *self = NM_DEVICE(user_data);
 
     /* Just re-emit. The device just contributes the prefix to the
-	 * pool in NMPolicy, which decides about subnet allocation
-	 * on the shared devices. */
+     * pool in NMPolicy, which decides about subnet allocation
+     * on the shared devices. */
     g_signal_emit(self, signals[IP6_PREFIX_DELEGATED], 0, prefix);
 }
 
@@ -10089,7 +10089,7 @@ check_and_add_ipv6ll_addr(NMDevice *self)
 
         if (priv->linklocal6_timeout_id) {
             /* We already started and attempt to add a LL address. For the EUI-64
-			 * mode we can't pick a new one, we'll just fail. */
+             * mode we can't pick a new one, we'll just fail. */
             _LOGW(LOGD_IP6, "linklocal6: DAD failed for an EUI-64 address");
             linklocal6_failed(self);
             return;
@@ -10133,10 +10133,10 @@ linklocal6_start(NMDevice *self)
     check_and_add_ipv6ll_addr(self);
 
     /* Depending on the network and what the 'dad_transmits' and 'retrans_time_ms'
-	 * sysctl values are, DAD for the IPv6LL address may take quite a while.
-	 * FIXME: use dad/retrans sysctl values if they are higher than a minimum time.
-	 * (rh #1101809)
-	 */
+     * sysctl values are, DAD for the IPv6LL address may take quite a while.
+     * FIXME: use dad/retrans sysctl values if they are higher than a minimum time.
+     * (rh #1101809)
+     */
     priv->linklocal6_timeout_id = g_timeout_add_seconds(15, linklocal6_timeout_cb, self);
     return FALSE;
 }
@@ -10247,9 +10247,9 @@ nm_device_get_configured_mtu_wired_parent(NMDevice *         self,
 
     if (parent_mtu && mtu > parent_mtu) {
         /* Trying to set a MTU that is out of range from configuration:
-		 * fall back to the parent MTU and set force flag so that it
-		 * overrides an MTU with higher priority already configured.
-		 */
+         * fall back to the parent MTU and set force flag so that it
+         * overrides an MTU with higher priority already configured.
+         */
         *out_source = NM_DEVICE_MTU_SOURCE_PARENT;
         *out_force  = TRUE;
         return parent_mtu;
@@ -10284,9 +10284,9 @@ _set_mtu(NMDevice *self, guint32 mtu)
 
     if (priv->master) {
         /* changing the MTU of a slave, might require the master to reset
-		 * its MTU. Note that the master usually cannot set a MTU larger
-		 * then the slave's. Hence, when the slave increases the MTU,
-		 * master might want to retry setting the MTU. */
+         * its MTU. Note that the master usually cannot set a MTU larger
+         * then the slave's. Hence, when the slave increases the MTU,
+         * master might want to retry setting the MTU. */
         nm_device_commit_mtu(priv->master);
     }
 }
@@ -10325,7 +10325,7 @@ _commit_mtu(NMDevice *self, const NMIP4Config *config)
     if (!nm_device_get_applied_connection(self)
         || nm_device_sys_iface_state_is_external_or_assume(self)) {
         /* we don't tamper with the MTU of disconnected and
-		 * external/assumed devices. */
+         * external/assumed devices. */
         return;
     }
 
@@ -10334,25 +10334,25 @@ _commit_mtu(NMDevice *self, const NMIP4Config *config)
         gboolean force = FALSE;
 
         /* We take the MTU from various sources: (in order of increasing
-		 * priority) parent link, IP configuration (which contains the
-		 * MTU from DHCP/PPP), connection profile.
-		 *
-		 * We could just compare it with the platform MTU and apply it
-		 * when different, but this would revert at random times manual
-		 * changes done by the user with the MTU from the connection.
-		 *
-		 * Instead, we remember the source of the currently configured
-		 * MTU and apply the new one only when the new source has a
-		 * higher priority, so that we don't set a MTU from same source
-		 * multiple times. An exception to this is for the PARENT
-		 * source, since we need to keep tracking the parent MTU when it
-		 * changes.
-		 *
-		 * The subclass can set the @force argument to TRUE to signal that the
-		 * returned MTU should be applied even if it has a lower priority. This
-		 * is useful when the value from a lower source should
-		 * preempt the one from higher ones.
-		 */
+         * priority) parent link, IP configuration (which contains the
+         * MTU from DHCP/PPP), connection profile.
+         *
+         * We could just compare it with the platform MTU and apply it
+         * when different, but this would revert at random times manual
+         * changes done by the user with the MTU from the connection.
+         *
+         * Instead, we remember the source of the currently configured
+         * MTU and apply the new one only when the new source has a
+         * higher priority, so that we don't set a MTU from same source
+         * multiple times. An exception to this is for the PARENT
+         * source, since we need to keep tracking the parent MTU when it
+         * changes.
+         *
+         * The subclass can set the @force argument to TRUE to signal that the
+         * returned MTU should be applied even if it has a lower priority. This
+         * is useful when the value from a lower source should
+         * preempt the one from higher ones.
+         */
 
         if (NM_DEVICE_GET_CLASS(self)->get_configured_mtu)
             mtu = NM_DEVICE_GET_CLASS(self)->get_configured_mtu(self, &source, &force);
@@ -10393,11 +10393,11 @@ _commit_mtu(NMDevice *self, const NMIP4Config *config)
                              NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
                              NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
             /* the interface has IPv6 enabled. The MTU with IPv6 cannot be smaller
-			 * then 1280.
-			 *
-			 * For slave-devices (that don't have @s_ip6 we) don't do this fixup because
-			 * it's anyway an unsolved problem when the slave configures a conflicting
-			 * MTU. */
+             * then 1280.
+             *
+             * For slave-devices (that don't have @s_ip6 we) don't do this fixup because
+             * it's anyway an unsolved problem when the slave configures a conflicting
+             * MTU. */
             mtu_desired = 1280;
         }
     }
@@ -10405,8 +10405,8 @@ _commit_mtu(NMDevice *self, const NMIP4Config *config)
     ip6_mtu = priv->ip6_mtu;
     if (!ip6_mtu && priv->mtu_source == NM_DEVICE_MTU_SOURCE_NONE) {
         /* initially, if the IPv6 MTU is not specified, grow it as large as the
-		 * link MTU @mtu_desired. Only exception is, if @mtu_desired is so small
-		 * to disable IPv6. */
+         * link MTU @mtu_desired. Only exception is, if @mtu_desired is so small
+         * to disable IPv6. */
         if (mtu_desired >= 1280)
             ip6_mtu = mtu_desired;
     }
@@ -10462,7 +10462,7 @@ _commit_mtu(NMDevice *self, const NMIP4Config *config)
 
         if (!priv->mtu_initial && !priv->ip6_mtu_initial) {
             /* before touching any of the MTU parameters, record the
-			 * original setting to restore on deactivation. */
+             * original setting to restore on deactivation. */
             priv->mtu_initial     = mtu_plat;
             priv->ip6_mtu_initial = _IP6_MTU_SYS();
         }
@@ -10554,9 +10554,9 @@ ndisc_config_changed(NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_int
         guint32 ifa_flags;
 
         /* Check, whether kernel is recent enough to help user space handling RA.
-		 * If it's not supported, we have no ipv6-privacy and must add autoconf
-		 * addresses as /128. The reason for the /128 is to prevent the kernel
-		 * from adding a prefix route for this address. */
+         * If it's not supported, we have no ipv6-privacy and must add autoconf
+         * addresses as /128. The reason for the /128 is to prevent the kernel
+         * from adding a prefix route for this address. */
         ifa_flags = 0;
         if (nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)) {
             ifa_flags |= IFA_F_NOPREFIXROUTE;
@@ -10674,20 +10674,20 @@ ndisc_ra_timeout(NMNDisc *ndisc, NMDevice *self)
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     /* We don't want to stop listening for router advertisements completely,
-	 * but instead let device activation continue activating.  If an RA
-	 * shows up later, we'll use it as long as the device is not disconnected.
-	 */
+     * but instead let device activation continue activating.  If an RA
+     * shows up later, we'll use it as long as the device is not disconnected.
+     */
 
     _LOGD(LOGD_IP6, "timed out waiting for IPv6 router advertisement");
     if (priv->ip_state_6 == NM_DEVICE_IP_STATE_CONF) {
         /* If RA is our only source of addressing information and we don't
-		 * ever receive one, then time out IPv6.  But if there is other
-		 * IPv6 configuration, like manual IPv6 addresses or external IPv6
-		 * config, consider that sufficient for IPv6 success.
-		 *
-		 * FIXME: it doesn't seem correct to determine this based on which
-		 *        addresses we find inside priv->ip_config_6.
-		 */
+         * ever receive one, then time out IPv6.  But if there is other
+         * IPv6 configuration, like manual IPv6 addresses or external IPv6
+         * config, consider that sufficient for IPv6 success.
+         *
+         * FIXME: it doesn't seem correct to determine this based on which
+         *        addresses we find inside priv->ip_config_6.
+         */
         if (priv->ip_config_6
             && nm_ip6_config_find_first_address(priv->ip_config_6,
                                                 NM_PLATFORM_MATCH_WITH_ADDRTYPE_NORMAL
@@ -10711,7 +10711,7 @@ addrconf6_start_with_link_ready(NMDevice *self)
         nm_ndisc_set_iid(priv->ndisc, iid);
     } else {
         /* Don't abort the addrconf at this point -- if ndisc needs the iid
-		 * it will notice this itself. */
+         * it will notice this itself. */
         _LOGI(LOGD_IP6, "addrconf6: no interface identifier; IPv6 address creation may fail");
     }
 
@@ -10959,8 +10959,8 @@ ip_requires_slaves(NMDevice *self, int addr_family)
         return nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
     /* SLAAC, DHCP, and Link-Local depend on connectivity (and thus slaves)
-	 * to complete addressing.  SLAAC and DHCP need a peer to provide a prefix.
-	 */
+     * to complete addressing.  SLAAC and DHCP need a peer to provide a prefix.
+     */
     return NM_IN_STRSET(method,
                         NM_SETTING_IP6_CONFIG_METHOD_AUTO,
                         NM_SETTING_IP6_CONFIG_METHOD_DHCP);
@@ -10994,8 +10994,8 @@ act_stage3_ip_config_start(NMDevice *           self,
 
     if (nm_device_is_master(self) && ip_requires_slaves(self, addr_family)) {
         /* If the master has no ready slaves, and depends on slaves for
-		 * a successful IP configuration attempt, then postpone IP addressing.
-		 */
+         * a successful IP configuration attempt, then postpone IP addressing.
+         */
         if (!have_any_ready_slaves(self)) {
             _LOGI(LOGD_DEVICE | LOGD_IP,
                   "IPv%c config waiting until slaves are ready",
@@ -11086,13 +11086,13 @@ act_stage3_ip_config_start(NMDevice *           self,
             if (!nm_device_sys_iface_state_is_external(self)) {
                 if (priv->master) {
                     /* If a device only has an IPv6 link-local address,
-					 * we don't generate an assumed connection. Therefore,
-					 * when a new slave connection (without IP configuration)
-					 * is activated on the device, the link-local address
-					 * remains configured. The IP configuration of an activated
-					 * slave should not depend on the previous state. Flush
-					 * addresses and routes on activation.
-					 */
+                     * we don't generate an assumed connection. Therefore,
+                     * when a new slave connection (without IP configuration)
+                     * is activated on the device, the link-local address
+                     * remains configured. The IP configuration of an activated
+                     * slave should not depend on the previous state. Flush
+                     * addresses and routes on activation.
+                     */
                     ifindex  = nm_device_get_ip_ifindex(self);
                     platform = nm_device_get_platform(self);
 
@@ -11107,9 +11107,9 @@ act_stage3_ip_config_start(NMDevice *           self,
                     gboolean ipv6ll_handle_old = priv->ipv6ll_handle;
 
                     /* When activating an IPv6 'ignore' connection we need to revert back
-					 * to kernel IPv6LL, but the kernel won't actually assign an address
-					 * to the interface until disable_ipv6 is bounced.
-					 */
+                     * to kernel IPv6LL, but the kernel won't actually assign an address
+                     * to the interface until disable_ipv6 is bounced.
+                     */
                     set_nm_ipv6ll(self, FALSE);
                     if (ipv6ll_handle_old)
                         nm_device_sysctl_ip_conf_set(self, AF_INET6, "disable_ipv6", "1");
@@ -11120,15 +11120,15 @@ act_stage3_ip_config_start(NMDevice *           self,
         }
 
         /* Ensure the MTU makes sense. If it was below 1280 the kernel would not
-		 * expose any ipv6 sysctls or allow presence of any addresses on the interface,
-		 * including LL, which * would make it impossible to autoconfigure MTU to a
-		 * correct value. */
+         * expose any ipv6 sysctls or allow presence of any addresses on the interface,
+         * including LL, which * would make it impossible to autoconfigure MTU to a
+         * correct value. */
         _commit_mtu(self, priv->ip_config_4);
 
         /* Any method past this point requires an IPv6LL address. Use NM-controlled
-		 * IPv6LL if this is not an assumed connection, since assumed connections
-		 * will already have IPv6 set up.
-		 */
+         * IPv6LL if this is not an assumed connection, since assumed connections
+         * will already have IPv6 set up.
+         */
         if (!nm_device_sys_iface_state_is_external_or_assume(self))
             set_nm_ipv6ll(self, TRUE);
 
@@ -11137,9 +11137,9 @@ act_stage3_ip_config_start(NMDevice *           self,
         set_disable_ipv6(self, "0");
 
         /* Synchronize external IPv6 configuration with kernel, since
-		 * linklocal6_start() uses the information there to determine if we can
-		 * proceed with the selected method (SLAAC, DHCP, link-local).
-		 */
+         * linklocal6_start() uses the information there to determine if we can
+         * proceed with the selected method (SLAAC, DHCP, link-local).
+         */
         nm_platform_process_events(nm_device_get_platform(self));
         g_clear_object(&priv->ext_ip6_config_captured);
         priv->ext_ip6_config_captured =
@@ -11272,8 +11272,8 @@ nm_device_activate_stage3_ip6_start(NMDevice *self)
         if (!ip6_config)
             ip6_config = nm_device_ip6_config_new(self);
         /* Here we get a static IPv6 config, like for Shared where it's
-		 * autogenerated or from modems where it comes from ModemManager.
-		 */
+         * autogenerated or from modems where it comes from ModemManager.
+         */
         nm_assert(!applied_config_get_current(&priv->ac_ip6_config));
         applied_config_init(&priv->ac_ip6_config, ip6_config);
         nm_device_activate_schedule_ip_config_result(self, AF_INET6, NULL);
@@ -11689,15 +11689,15 @@ start_sharing(NMDevice *self, NMIP4Config *config, GError **error)
     switch (nm_setting_connection_get_metered(s_con)) {
     case NM_METERED_YES:
         /* honor the metered flag. Note that reapply on the device does not affect
-		 * the metered setting. This is different from other profiles, where the
-		 * metered flag of an activated profile can be changed (reapplied). */
+         * the metered setting. This is different from other profiles, where the
+         * metered flag of an activated profile can be changed (reapplied). */
         announce_android_metered = TRUE;
         break;
     case NM_METERED_UNKNOWN:
         /* we pick up the current value and announce it. But again, we cannot update
-		 * the announced setting without restarting dnsmasq. That means, if the default
-		 * route changes w.r.t. being metered, then the shared connection does not get
-		 * updated before reactivating. */
+         * the announced setting without restarting dnsmasq. That means, if the default
+         * route changes w.r.t. being metered, then the shared connection does not get
+         * updated before reactivating. */
         announce_android_metered =
             NM_IN_SET(nm_manager_get_metered(NM_MANAGER_GET), NM_METERED_YES, NM_METERED_GUESS_YES);
         break;
@@ -11755,8 +11755,8 @@ nm_device_arp_announce(NMDevice *self)
         return;
 
     /* We only care about manually-configured addresses; DHCP- and autoip-configured
-	 * ones should already have been seen on the network at this point.
-	 */
+     * ones should already have been seen on the network at this point.
+     */
     connection = nm_device_get_applied_connection(self);
     if (!connection)
         return;
@@ -11839,8 +11839,8 @@ activate_stage5_ip_config_result_4(NMDevice *self)
     }
 
     /* If IPv4 wasn't the first to complete, and DHCP was used, then ensure
-	 * dispatcher scripts get the DHCP lease information.
-	 */
+     * dispatcher scripts get the DHCP lease information.
+     */
     if (priv->dhcp_data_4.client && nm_device_activate_ip4_state_in_conf(self)
         && (nm_device_get_state(self) > NM_DEVICE_STATE_IP_CONFIG)) {
         nm_dispatcher_call_device(NM_DISPATCHER_ACTION_DHCP4_CHANGE, self, NULL, NULL, NULL, NULL);
@@ -11853,9 +11853,9 @@ activate_stage5_ip_config_result_4(NMDevice *self)
         SlaveInfo *info;
 
         /* Skip announcement if there are no device enslaved, for two reasons:
-		 * 1) the master has a temporary MAC address until the first slave comes
-		 * 2) announcements are going to be dropped anyway without slaves
-		 */
+         * 1) the master has a temporary MAC address until the first slave comes
+         * 2) announcements are going to be dropped anyway without slaves
+         */
         do_announce = FALSE;
 
         c_list_for_each (iter, &priv->slaves) {
@@ -11893,8 +11893,8 @@ nm_device_activate_schedule_ip_config_result(NMDevice *self, int addr_family, NM
         applied_config_init(&priv->dev_ip_config_4, config);
     } else {
         /* If IP had previously failed, move it back to NM_DEVICE_IP_STATE_CONF since we
-		 * clearly now have configuration.
-		 */
+         * clearly now have configuration.
+         */
         if (priv->ip_state_6 == NM_DEVICE_IP_STATE_FAIL)
             _set_ip_state(self, AF_INET6, NM_DEVICE_IP_STATE_CONF);
     }
@@ -11966,8 +11966,8 @@ dad6_get_pending_addresses(NMDevice *self)
     }
 
     /* We are interested only in addresses that we have explicitly configured,
-	 * not in externally added ones.
-	 */
+     * not in externally added ones.
+     */
     for (i = 0; i < G_N_ELEMENTS(confs); i++) {
         if (!confs[i])
             continue;
@@ -12010,8 +12010,8 @@ activate_stage5_ip_config_result_6(NMDevice *self)
             && priv->ip_state_6 == NM_DEVICE_IP_STATE_CONF) {
             if (applied_config_get_current(&priv->dhcp6.ip6_config)) {
                 /* If IPv6 wasn't the first IP to complete, and DHCP was used,
-				 * then ensure dispatcher scripts get the DHCP lease information.
-				 */
+                 * then ensure dispatcher scripts get the DHCP lease information.
+                 */
                 nm_dispatcher_call_device(NM_DISPATCHER_ACTION_DHCP6_CHANGE,
                                           self,
                                           NULL,
@@ -12079,7 +12079,7 @@ act_request_set(NMDevice *self, NMActRequest *act_request)
         return;
 
     /* always clear the public flag. The few callers that set a new @act_request
-	 * don't want that the property is public yet.  */
+     * don't want that the property is public yet.  */
     nm_dbus_track_obj_path_set(&priv->act_request, act_request, FALSE);
 
     if (act_request) {
@@ -12352,11 +12352,11 @@ nm_device_reactivate_ip4_config(NMDevice *         self,
             gint64 metric_old, metric_new;
 
             /* For dynamic IP methods (DHCP, IPv4LL, WWAN) the route metric is
-			 * set at activation/renewal time using the value from static
-			 * configuration. To support runtime change we need to update the
-			 * dynamic configuration in place and tell the DHCP client the new
-			 * value to use for future renewals.
-			 */
+             * set at activation/renewal time using the value from static
+             * configuration. To support runtime change we need to update the
+             * dynamic configuration in place and tell the DHCP client the new
+             * value to use for future renewals.
+             */
             metric_old = nm_setting_ip_config_get_route_metric(s_ip4_old);
             metric_new = nm_setting_ip_config_get_route_metric(s_ip4_new);
 
@@ -12486,12 +12486,12 @@ can_reapply_change(NMDevice *  self,
 {
     if (nm_streq(setting_name, NM_SETTING_CONNECTION_SETTING_NAME)) {
         /* Whitelist allowed properties from "connection" setting which are
-		 * allowed to differ.
-		 *
-		 * This includes UUID, there is no principal problem with reapplying a
-		 * connection and changing its UUID. In fact, disallowing it makes it
-		 * cumbersome for the user to reapply any connection but the original
-		 * settings-connection. */
+         * allowed to differ.
+         *
+         * This includes UUID, there is no principal problem with reapplying a
+         * connection and changing its UUID. In fact, disallowing it makes it
+         * cumbersome for the user to reapply any connection but the original
+         * settings-connection. */
         return nm_device_hash_check_invalid_keys(diffs,
                                                  NM_SETTING_CONNECTION_SETTING_NAME,
                                                  error,
@@ -12584,8 +12584,8 @@ check_and_reapply_connection(NMDevice *    self,
     }
 
     /**************************************************************************
-	 * check for unsupported changes and reject to reapply
-	 *************************************************************************/
+     * check for unsupported changes and reject to reapply
+     *************************************************************************/
     if (diffs) {
         char *      setting_name;
         GHashTable *setting_diff;
@@ -12617,8 +12617,8 @@ check_and_reapply_connection(NMDevice *    self,
     }
 
     /**************************************************************************
-	 * Update applied connection
-	 *************************************************************************/
+     * Update applied connection
+     *************************************************************************/
 
     if (diffs)
         nm_active_connection_version_id_bump((NMActiveConnection *) priv->act_request.obj);
@@ -12637,8 +12637,8 @@ check_and_reapply_connection(NMDevice *    self,
             NMSettingConnection *s_con_a, *s_con_n;
 
             /* we allow re-applying a connection with differing ID, UUID, STABLE_ID and AUTOCONNECT.
-			 * This is for convenience but these values are not actually changeable. So, check
-			 * if they changed, and if the did revert to the original values. */
+             * This is for convenience but these values are not actually changeable. So, check
+             * if they changed, and if the did revert to the original values. */
             s_con_a = nm_connection_get_setting_connection(applied);
             s_con_n = nm_connection_get_setting_connection(connection);
 
@@ -12680,14 +12680,14 @@ check_and_reapply_connection(NMDevice *    self,
     priv->v6_route_table_initialized = FALSE;
 
     /**************************************************************************
-	 * Reapply changes
-	 *
-	 * Note that reapply_connection() is called as very first. This is for example
-	 * important for NMDeviceWireGuard, which implements coerce_route_table()
-	 * and get_extra_rules().
-	 * That is because NMDeviceWireGuard caches settings, so during reapply that
-	 * cache must be updated *first*.
-	 *************************************************************************/
+     * Reapply changes
+     *
+     * Note that reapply_connection() is called as very first. This is for example
+     * important for NMDeviceWireGuard, which implements coerce_route_table()
+     * and get_extra_rules().
+     * That is because NMDeviceWireGuard caches settings, so during reapply that
+     * cache must be updated *first*.
+     *************************************************************************/
     klass->reapply_connection(self, con_old, con_new);
 
     if (priv->state >= NM_DEVICE_STATE_CONFIG)
@@ -13225,15 +13225,15 @@ _device_activate(NMDevice *self, NMActRequest *req)
     nm_assert(nm_device_is_real(self));
 
     /* Ensure the activation request is still valid; the master may have
-	 * already failed in which case activation of this device should not proceed.
-	 */
+     * already failed in which case activation of this device should not proceed.
+     */
     if (nm_active_connection_get_state(NM_ACTIVE_CONNECTION(req))
         >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING)
         return;
 
     if (!nm_device_get_managed(self, FALSE)) {
         /* It's unclear why the device would be unmanaged at this point.
-		 * Just to be sure, handle it and error out. */
+         * Just to be sure, handle it and error out. */
         _LOGE(LOGD_DEVICE,
               "Activation: failed activating connection '%s' because device is still unmanaged",
               nm_active_connection_get_settings_connection_id((NMActiveConnection *) req));
@@ -13286,7 +13286,7 @@ _carrier_wait_check_act_request_must_queue(NMDevice *self, NMActRequest *req)
     NMConnection *   connection;
 
     /* If we have carrier or if we are not waiting for it, the activation
-	 * request is not blocked waiting for carrier. */
+     * request is not blocked waiting for carrier. */
     if (priv->carrier)
         return FALSE;
     if (priv->carrier_wait_id == 0)
@@ -13302,12 +13302,12 @@ _carrier_wait_check_act_request_must_queue(NMDevice *self, NMActRequest *req)
                                               NULL,
                                               NULL)) {
         /* We passed all @flags we have, and no @specific_object.
-		 * This equals maximal availability, if a connection is not available
-		 * in this case, it is not waiting for carrier.
-		 *
-		 * Actually, why are we even trying to activate it? Strange, but whatever
-		 * the reason, don't wait for carrier.
-		 */
+         * This equals maximal availability, if a connection is not available
+         * in this case, it is not waiting for carrier.
+         *
+         * Actually, why are we even trying to activate it? Strange, but whatever
+         * the reason, don't wait for carrier.
+         */
         return FALSE;
     }
 
@@ -13319,11 +13319,11 @@ _carrier_wait_check_act_request_must_queue(NMDevice *self, NMActRequest *req)
             NULL,
             NULL)) {
         /* The connection was available with flags ALL, and it is still available
-		 * if we pretend not to wait for carrier. That means that the
-		 * connection is available now, and does not wait for carrier.
-		 *
-		 * Since the flags increase the availability of a connection, when checking
-		 * ALL&~WAITING_CARRIER, it means that we certainly would wait for carrier. */
+         * if we pretend not to wait for carrier. That means that the
+         * connection is available now, and does not wait for carrier.
+         *
+         * Since the flags increase the availability of a connection, when checking
+         * ALL&~WAITING_CARRIER, it means that we certainly would wait for carrier. */
         return FALSE;
     }
 
@@ -13359,13 +13359,13 @@ nm_device_disconnect_active_connection(NMActiveConnection *          active,
             nm_device_state_changed(self, NM_DEVICE_STATE_DEACTIVATING, device_reason);
         } else {
             /* @active is the current ac of @self, but it's going down already.
-			 * Nothing to do. */
+             * Nothing to do. */
         }
         return;
     }
 
     /* the active connection references this device, but it's neither the
-	 * queued_act_request nor the current act_request. Just set it to fail... */
+     * queued_act_request nor the current act_request. Just set it to fail... */
 do_fail:
     nm_active_connection_set_state_fail(active, active_reason, NULL);
 }
@@ -13437,10 +13437,10 @@ nm_device_is_activating(NMDevice *self)
         return TRUE;
 
     /* There's a small race between the time when stage 1 is scheduled
-	 * and when the device actually sets STATE_PREPARE when the activation
-	 * handler is actually run.  If there's an activation handler scheduled
-	 * we're activating anyway.
-	 */
+     * and when the device actually sets STATE_PREPARE when the activation
+     * handler is actually run.  If there's an activation handler scheduled
+     * we're activating anyway.
+     */
     return priv->activation_source_id_4 != 0;
 }
 
@@ -13560,7 +13560,7 @@ nm_device_set_ip_config(NMDevice *  self,
 
     if (new_config && old_config) {
         /* has_changes is set only on relevant changes, because when the configuration changes,
-		 * this causes a re-read and reset. This should only happen for relevant changes */
+         * this causes a re-read and reset. This should only happen for relevant changes */
         nm_ip_config_replace(old_config, new_config, &has_changes);
         if (has_changes) {
             _LOGD(LOGD_IP_from_af(addr_family),
@@ -13651,9 +13651,9 @@ _replace_vpn_config_in_list(GSList **plist, GObject *old, GObject *new)
     GSList *old_link;
 
     /* Below, assert that @new is not yet tracked, but still behave
-	 * correctly in any case. Don't complain for missing @old since
-	 * it could have been removed when the parent device became
-	 * unmanaged. */
+     * correctly in any case. Don't complain for missing @old since
+     * it could have been removed when the parent device became
+     * unmanaged. */
 
     if (old && (old_link = g_slist_find(*plist, old))) {
         if (old != new) {
@@ -13905,7 +13905,7 @@ ip_check_ping_watch_cb(GPid pid, int status, gpointer user_data)
         ip_check_pre_up(self);
     } else {
         /* If ping exited with an error it may have returned early,
-		 * wait 1 second and restart it */
+         * wait 1 second and restart it */
         priv->gw_ping.watch = g_timeout_add_seconds(1, respawn_ping_cb, self);
     }
 }
@@ -13964,9 +13964,9 @@ nm_device_start_ip_check(NMDevice *self)
     NMLogDomain          log_domain = LOGD_IP4;
 
     /* Shouldn't be any active ping here, since IP_CHECK happens after the
-	 * first IP method completes.  Any subsequently completing IP method doesn't
-	 * get checked.
-	 */
+     * first IP method completes.  Any subsequently completing IP method doesn't
+     * get checked.
+     */
     g_return_if_fail(!priv->gw_ping.watch);
     g_return_if_fail(!priv->gw_ping.timeout);
     g_return_if_fail(!priv->gw_ping.pid);
@@ -14097,25 +14097,25 @@ nm_device_bring_up(NMDevice *self, gboolean block, gboolean *no_firmware)
     }
 
     /* some ethernet devices fail to report capabilities unless the device
-	 * is up. Re-read the capabilities. */
+     * is up. Re-read the capabilities. */
     capabilities = 0;
     if (NM_DEVICE_GET_CLASS(self)->get_generic_capabilities)
         capabilities |= NM_DEVICE_GET_CLASS(self)->get_generic_capabilities(self);
     _add_capabilities(self, capabilities);
 
     /* Devices that support carrier detect must be IFF_UP to report carrier
-	 * changes; so after setting the device IFF_UP we must suppress startup
-	 * complete (via a pending action) until either the carrier turns on, or
-	 * a timeout is reached.
-	 */
+     * changes; so after setting the device IFF_UP we must suppress startup
+     * complete (via a pending action) until either the carrier turns on, or
+     * a timeout is reached.
+     */
     if (nm_device_has_capability(self, NM_DEVICE_CAP_CARRIER_DETECT)) {
         gint64 now_ms, until_ms;
 
         /* we start a grace period of 5 seconds during which we will schedule
-		 * a pending action whenever we have no carrier.
-		 *
-		 * If during that time carrier goes away, we declare the interface
-		 * as not ready. */
+         * a pending action whenever we have no carrier.
+         *
+         * If during that time carrier goes away, we declare the interface
+         * as not ready. */
         nm_clear_g_source(&priv->carrier_wait_id);
         if (!priv->carrier)
             nm_device_add_pending_action(self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
@@ -14257,9 +14257,9 @@ update_ext_ip_config(NMDevice *self, int addr_family, gboolean intersect_configs
         if (priv->ext_ip_config_4) {
             if (intersect_configs) {
                 /* This function was called upon external changes. Remove the configuration
-				 * (addresses,routes) that is no longer present externally from the internal
-				 * config. This way, we don't re-add addresses that were manually removed
-				 * by the user. */
+                 * (addresses,routes) that is no longer present externally from the internal
+                 * config. This way, we don't re-add addresses that were manually removed
+                 * by the user. */
                 if (priv->con_ip_config_4) {
                     nm_ip4_config_intersect(priv->con_ip_config_4,
                                             priv->ext_ip_config_4,
@@ -14276,8 +14276,8 @@ update_ext_ip_config(NMDevice *self, int addr_family, gboolean intersect_configs
             }
 
             /* Remove parts from ext_ip_config_4 to only contain the information that
-			 * was configured externally -- we already have the same configuration from
-			 * internal origins. */
+             * was configured externally -- we already have the same configuration from
+             * internal origins. */
             if (priv->con_ip_config_4) {
                 nm_ip4_config_subtract(priv->ext_ip_config_4,
                                        priv->con_ip_config_4,
@@ -14312,9 +14312,9 @@ update_ext_ip_config(NMDevice *self, int addr_family, gboolean intersect_configs
 
             if (intersect_configs) {
                 /* This function was called upon external changes. Remove the configuration
-				 * (addresses,routes) that is no longer present externally from the internal
-				 * config. This way, we don't re-add addresses that were manually removed
-				 * by the user. */
+                 * (addresses,routes) that is no longer present externally from the internal
+                 * config. This way, we don't re-add addresses that were manually removed
+                 * by the user. */
                 if (priv->con_ip_config_6) {
                     nm_ip6_config_intersect(priv->con_ip_config_6,
                                             priv->ext_ip_config_6,
@@ -14336,8 +14336,8 @@ update_ext_ip_config(NMDevice *self, int addr_family, gboolean intersect_configs
             }
 
             /* Remove parts from ext_ip_config_6 to only contain the information that
-			 * was configured externally -- we already have the same configuration from
-			 * internal origins. */
+             * was configured externally -- we already have the same configuration from
+             * internal origins. */
             if (priv->con_ip_config_6) {
                 nm_ip6_config_subtract(priv->ext_ip_config_6,
                                        priv->con_ip_config_6,
@@ -14415,9 +14415,9 @@ queued_ip_config_change(NMDevice *self, int addr_family)
         return G_SOURCE_CONTINUE;
 
     /* If a commit is scheduled, this function would potentially interfere with
-	 * it changing IP configurations before they are applied. Postpone the
-	 * update in such case.
-	 */
+     * it changing IP configurations before they are applied. Postpone the
+     * update in such case.
+     */
     if (priv->activation_source_id_x[IS_IPv4] != 0
         && priv->activation_source_func_x[IS_IPv4] == activate_stage5_ip_config_result_x[IS_IPv4])
         return G_SOURCE_CONTINUE;
@@ -14428,8 +14428,8 @@ queued_ip_config_change(NMDevice *self, int addr_family)
 
     if (!IS_IPv4) {
         /* Check whether we need to complete waiting for link-local.
-		 * We are also called from an idle handler, so no problem doing state transitions
-		 * now. */
+         * We are also called from an idle handler, so no problem doing state transitions
+         * now. */
         linklocal6_check_complete(self);
     }
 
@@ -14472,10 +14472,10 @@ queued_ip_config_change(NMDevice *self, int addr_family)
                 nm_ndisc_emit_config_change(priv->ndisc, ndisc_config_changed);
 
             /* If no IPv6 link-local address exists but other addresses do then we
-			 * must add the LL address to remain conformant with RFC 3513 chapter 2.1
-			 * ("Addressing Model"): "All interfaces are required to have at least
-			 * one link-local unicast address".
-			 */
+             * must add the LL address to remain conformant with RFC 3513 chapter 2.1
+             * ("Addressing Model"): "All interfaces are required to have at least
+             * one link-local unicast address".
+             */
             if (priv->ip_config_6 && nm_ip6_config_get_num_addresses(priv->ip_config_6))
                 need_ipv6ll = TRUE;
             if (need_ipv6ll)
@@ -14641,27 +14641,27 @@ static gboolean
 _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean for_user_request)
 {
     /* Evaluate the managed state based on the unmanaged flags.
-	 *
-	 * Some flags are authoritative, meaning they always cause
-	 * the device to be unmanaged (e.g. @NM_UNMANAGED_PLATFORM_INIT).
-	 *
-	 * OTOH, some flags can be overwritten. For example NM_UNMANAGED_USER_UDEV
-	 * is ignored once NM_UNMANAGED_USER_EXPLICIT is set. The idea is that
-	 * the flag from the configuration has no effect once the user explicitly
-	 * touches the unmanaged flags. */
+     *
+     * Some flags are authoritative, meaning they always cause
+     * the device to be unmanaged (e.g. @NM_UNMANAGED_PLATFORM_INIT).
+     *
+     * OTOH, some flags can be overwritten. For example NM_UNMANAGED_USER_UDEV
+     * is ignored once NM_UNMANAGED_USER_EXPLICIT is set. The idea is that
+     * the flag from the configuration has no effect once the user explicitly
+     * touches the unmanaged flags. */
 
     if (for_user_request) {
         /* @for_user_request can make the result only ~more~ managed.
-		 * If the flags already indicate a managed state for a non-user-request,
-		 * then it is also managed for an explicit user-request.
-		 *
-		 * Effectively, this check is redundant, as the code below already
-		 * already ensures that. Still, express this invariant explicitly here. */
+         * If the flags already indicate a managed state for a non-user-request,
+         * then it is also managed for an explicit user-request.
+         *
+         * Effectively, this check is redundant, as the code below already
+         * already ensures that. Still, express this invariant explicitly here. */
         if (_get_managed_by_flags(flags, mask, FALSE))
             return TRUE;
 
         /* A for-user-request, is effectively the same as pretending
-		 * that user-explicit flag is cleared. */
+         * that user-explicit flag is cleared. */
         mask |= NM_UNMANAGED_USER_EXPLICIT;
         flags &= ~NM_UNMANAGED_USER_EXPLICIT;
     }
@@ -14669,22 +14669,22 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
     if (NM_FLAGS_ANY(mask, NM_UNMANAGED_USER_SETTINGS)
         && !NM_FLAGS_ANY(flags, NM_UNMANAGED_USER_SETTINGS)) {
         /* NM_UNMANAGED_USER_SETTINGS can only explicitly unmanage a device. It cannot
-		 * *manage* it. Having NM_UNMANAGED_USER_SETTINGS explicitly not set, is the
-		 * same as having it not set at all. */
+         * *manage* it. Having NM_UNMANAGED_USER_SETTINGS explicitly not set, is the
+         * same as having it not set at all. */
         mask &= ~NM_UNMANAGED_USER_SETTINGS;
     }
 
     if (NM_FLAGS_ANY(mask, NM_UNMANAGED_USER_UDEV)) {
         /* configuration from udev or nm-config overwrites the by-default flag
-		 * which is based on the device type.
-		 * configuration from udev overwrites external-down */
+         * which is based on the device type.
+         * configuration from udev overwrites external-down */
         flags &= ~(NM_UNMANAGED_BY_DEFAULT | NM_UNMANAGED_EXTERNAL_DOWN);
     }
 
     if (NM_FLAGS_ANY(mask, NM_UNMANAGED_USER_CONF)) {
         /* configuration from NetworkManager.conf overwrites the by-default flag
-		 * which is based on the device type.
-		 * It also overwrites the udev configuration and external-down */
+         * which is based on the device type.
+         * It also overwrites the udev configuration and external-down */
         flags &= ~(NM_UNMANAGED_BY_DEFAULT | NM_UNMANAGED_USER_UDEV | NM_UNMANAGED_EXTERNAL_DOWN);
     }
 
@@ -14695,7 +14695,7 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
 
     if (NM_FLAGS_HAS(mask, NM_UNMANAGED_USER_EXPLICIT)) {
         /* if the device is managed by user-decision, certain other flags
-		 * are ignored. */
+         * are ignored. */
         flags &= ~(NM_UNMANAGED_BY_DEFAULT | NM_UNMANAGED_USER_UDEV | NM_UNMANAGED_USER_CONF
                    | NM_UNMANAGED_EXTERNAL_DOWN);
     }
@@ -14981,13 +14981,13 @@ nm_device_set_unmanaged_by_user_settings(NMDevice *self)
 
     if (nm_device_get_unmanaged_flags(self, NM_UNMANAGED_PLATFORM_INIT)) {
         /* the device is already unmanaged due to platform-init.
-		 *
-		 * We want to delay evaluating the device spec, because it will freeze
-		 * the permanent MAC address. That should not be done, before the platform
-		 * link is fully initialized (via UDEV).
-		 *
-		 * Note that when clearing NM_UNMANAGED_PLATFORM_INIT, we will re-evaluate
-		 * whether the device is unmanaged by user-settings. */
+         *
+         * We want to delay evaluating the device spec, because it will freeze
+         * the permanent MAC address. That should not be done, before the platform
+         * link is fully initialized (via UDEV).
+         *
+         * Note that when clearing NM_UNMANAGED_PLATFORM_INIT, we will re-evaluate
+         * whether the device is unmanaged by user-settings. */
         return;
     }
 
@@ -15202,10 +15202,10 @@ nm_device_update_metered(NMDevice *self)
     }
 
     /* Otherwise, look at connection type. For Bluetooth, we look at the type of
-	 * Bluetooth sharing: for PANU/DUN (where we are receiving internet from
-	 * another device) we set GUESS_YES; for NAP (where we are sharing internet
-	 * to another device) we set GUESS_NO. We ignore WiMAX here as it’s no
-	 * longer supported by NetworkManager. */
+     * Bluetooth sharing: for PANU/DUN (where we are receiving internet from
+     * another device) we set GUESS_YES; for NAP (where we are sharing internet
+     * to another device) we set GUESS_NO. We ignore WiMAX here as it’s no
+     * longer supported by NetworkManager. */
     if (value == NM_METERED_INVALID
         && nm_connection_is_type(connection, NM_SETTING_BLUETOOTH_SETTING_NAME)) {
         if (_nm_connection_get_setting_bluetooth_for_nap(connection)) {
@@ -15369,7 +15369,7 @@ nm_device_check_connection_available(NMDevice *                     self,
 #if NM_MORE_ASSERTS >= 2
     {
         /* The meaning of the flags is so that *adding* a flag relaxes a condition, thus making
-		 * the device *more* available. Assert against that requirement by testing all the flags. */
+         * the device *more* available. Assert against that requirement by testing all the flags. */
         NMDeviceCheckConAvailableFlags i, j, k;
         gboolean available_all[NM_DEVICE_CHECK_CON_AVAILABLE_ALL + 1] = {FALSE};
 
@@ -15422,23 +15422,23 @@ check_connection_available(NMDevice *                     self,
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     /* Connections which require a network connection are not available when
-	 * the device has no carrier, even with ignore-carrer=TRUE.
-	 */
+     * the device has no carrier, even with ignore-carrer=TRUE.
+     */
     if (priv->carrier || !connection_requires_carrier(connection))
         return TRUE;
 
     if (NM_FLAGS_HAS(flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER)
         && priv->carrier_wait_id != 0) {
         /* The device has no carrier though the connection requires it.
-		 *
-		 * If we are still waiting for carrier, the connection is available
-		 * for an explicit user-request. */
+         *
+         * If we are still waiting for carrier, the connection is available
+         * for an explicit user-request. */
         return TRUE;
     }
 
     /* master types are always available even without carrier.
-	 * Making connection non-available would un-enslave slaves which
-	 * is not desired. */
+     * Making connection non-available would un-enslave slaves which
+     * is not desired. */
     if (nm_device_is_master(self))
         return TRUE;
 
@@ -15524,8 +15524,8 @@ nm_device_get_best_connection(NMDevice *self, const char *specific_object, GErro
         guint64 candidate_timestamp = 0;
 
         /* If a specific object is given, only include connections that are
-		 * compatible with it.
-		 */
+         * compatible with it.
+         */
         if (specific_object /* << Optimization: we know that the connection is available without @specific_object.  */
             && !nm_device_check_connection_available(
                 self,
@@ -15726,7 +15726,7 @@ nm_device_has_pending_action_reason(NMDevice *self)
         if (!priv->pending_actions->next && nm_device_get_state(self) == NM_DEVICE_STATE_ACTIVATED
             && nm_streq(priv->pending_actions->data, NM_PENDING_ACTION_CARRIER_WAIT)) {
             /* if the device is already in activated state, and the only reason
-			 * why it appears still busy is "carrier-wait", then we are already complete. */
+             * why it appears still busy is "carrier-wait", then we are already complete. */
             return NULL;
         }
 
@@ -15736,7 +15736,7 @@ nm_device_has_pending_action_reason(NMDevice *self)
     if (nm_device_is_real(self)
         && nm_device_get_unmanaged_flags(self, NM_UNMANAGED_PLATFORM_INIT)) {
         /* as long as the platform link is not yet initialized, we have a pending
-		 * action. */
+         * action. */
         return NM_PENDING_ACTION_LINK_INIT;
     }
 
@@ -15816,8 +15816,8 @@ _cleanup_generic_post(NMDevice *self, CleanupType cleanup_type)
     priv->linklocal6_dad_counter = 0;
 
     /* Clean up IP configs; this does not actually deconfigure the
-	 * interface; the caller must flush routes and addresses explicitly.
-	 */
+     * interface; the caller must flush routes and addresses explicitly.
+     */
     nm_device_set_ip_config(self, AF_INET, NULL, TRUE, NULL);
     nm_device_set_ip_config(self, AF_INET6, NULL, TRUE, NULL);
     g_clear_object(&priv->proxy_config);
@@ -15845,7 +15845,7 @@ _cleanup_generic_post(NMDevice *self, CleanupType cleanup_type)
     priv->vpn_configs_6 = NULL;
 
     /* We no longer accept the delegations. nm_device_set_ip_config(NULL)
-	 * above disables them. */
+     * above disables them. */
     nm_assert(priv->needs_ip6_subnet == FALSE);
 
     if (priv->act_request.obj) {
@@ -15858,15 +15858,15 @@ _cleanup_generic_post(NMDevice *self, CleanupType cleanup_type)
 
     if (cleanup_type == CLEANUP_TYPE_DECONFIGURE) {
         /* Check if the device was deactivated, and if so, delete_link.
-		 * Don't call delete_link synchronously because we are currently
-		 * handling a state change -- which is not reentrant. */
+         * Don't call delete_link synchronously because we are currently
+         * handling a state change -- which is not reentrant. */
         delete_on_deactivate_check_and_schedule(self, nm_device_get_ip_ifindex(self));
     }
 
     /* ip_iface should be cleared after flushing all routes and addresses, since
-	 * those are identified by ip_iface, not by iface (which might be a tty
-	 * or ATM device).
-	 */
+     * those are identified by ip_iface, not by iface (which might be a tty
+     * or ATM device).
+     */
     _set_ip_ifindex(self, 0, NULL);
 }
 
@@ -15948,15 +15948,15 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
 
     if (ifindex > 0) {
         /* during device cleanup, we want to reset the MAC address of the device
-		 * to the initial state.
-		 *
-		 * We certainly want to do that when reaching the UNMANAGED state... */
+         * to the initial state.
+         *
+         * We certainly want to do that when reaching the UNMANAGED state... */
         if (nm_device_get_state(self) <= NM_DEVICE_STATE_UNMANAGED)
             nm_device_hw_addr_reset(self, "unmanage");
         else {
             /* for other device states (UNAVAILABLE, DISCONNECTED), allow the
-			 * device to overwrite the reset behavior, so that Wi-Fi can set
-			 * a randomized MAC address used during scanning. */
+             * device to overwrite the reset behavior, so that Wi-Fi can set
+             * a randomized MAC address used during scanning. */
             NM_DEVICE_GET_CLASS(self)->deactivate_reset_hw_addr(self);
         }
     }
@@ -16305,30 +16305,30 @@ deactivate_dispatcher_complete(NMDispatcherCallId *call_id, gpointer user_data)
 
     if (NM_DEVICE_GET_CLASS(self)->deactivate_async) {
         /* FIXME: the virtual function deactivate_async() has only this caller here.
-		 * And the NMDevice subtypes are well aware of the circumstances when they
-		 * are called. We shall make the function less generic and thus (as the scope
-		 * is narrower) more convenient.
-		 *
-		 * - Drop the callback argument. Instead, when deactivate_async() completes, the
-		 *   subtype shall call a method _nm_device_deactivate_async_done(). Because as
-		 *   it is currently, subtypes need to pretend this callback and the user-data
-		 *   would be opaque, and carry it around. When it's in fact very clear what this
-		 *   is.
-		 *
-		 * - Also drop the GCancellable argument. Upon cancellation, NMDevice shall
-		 *   call another virtual function deactivate_async_abort(). As it is currently,
-		 *   callers need to register to the cancelled signal of the cancellable. It
-		 *   seems simpler to just implement the deactivate_async_abort() function.
-		 *   On the other hand, some implementations actually use the GCancellable.
-		 *   So, NMDevice shall do both: it shall both pass a cancellable, but also
-		 *   invoke deactivate_async_abort(). It allow the implementation to honor
-		 *   whatever is simpler for their purpose.
-		 *
-		 * - sometimes, the subclass can complete right away. Scheduling the completion
-		 *   in an idle handler is cumbersome. Allow the function to return FALSE to
-		 *   indicate that the device is already deactivated and the callback (or
-		 *   _nm_device_deactivate_async_done()) won't be invoked.
-		 */
+         * And the NMDevice subtypes are well aware of the circumstances when they
+         * are called. We shall make the function less generic and thus (as the scope
+         * is narrower) more convenient.
+         *
+         * - Drop the callback argument. Instead, when deactivate_async() completes, the
+         *   subtype shall call a method _nm_device_deactivate_async_done(). Because as
+         *   it is currently, subtypes need to pretend this callback and the user-data
+         *   would be opaque, and carry it around. When it's in fact very clear what this
+         *   is.
+         *
+         * - Also drop the GCancellable argument. Upon cancellation, NMDevice shall
+         *   call another virtual function deactivate_async_abort(). As it is currently,
+         *   callers need to register to the cancelled signal of the cancellable. It
+         *   seems simpler to just implement the deactivate_async_abort() function.
+         *   On the other hand, some implementations actually use the GCancellable.
+         *   So, NMDevice shall do both: it shall both pass a cancellable, but also
+         *   invoke deactivate_async_abort(). It allow the implementation to honor
+         *   whatever is simpler for their purpose.
+         *
+         * - sometimes, the subclass can complete right away. Scheduling the completion
+         *   in an idle handler is cumbersome. Allow the function to return FALSE to
+         *   indicate that the device is already deactivated and the callback (or
+         *   _nm_device_deactivate_async_done()) won't be invoked.
+         */
         priv->deactivating_cancellable = g_cancellable_new();
         NM_DEVICE_GET_CLASS(self)->deactivate_async(self,
                                                     priv->deactivating_cancellable,
@@ -16365,9 +16365,9 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
     }
 
     /* Do nothing if state isn't changing, but as a special case allow
-	 * re-setting UNAVAILABLE if the device is missing firmware so that we
-	 * can retry device initialization.
-	 */
+     * re-setting UNAVAILABLE if the device is missing firmware so that we
+     * can retry device initialization.
+     */
     if ((priv->state == state)
         && (state != NM_DEVICE_STATE_UNAVAILABLE || !priv->firmware_missing)) {
         _LOGD(LOGD_DEVICE,
@@ -16388,8 +16388,8 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
           _sys_iface_state_to_str(priv->sys_iface_state));
 
     /* in order to prevent triggering any callback caused
-	 * by the device not having any pending action anymore
-	 * we add one here that gets removed at the end of the function */
+     * by the device not having any pending action anymore
+     * we add one here that gets removed at the end of the function */
     nm_device_add_pending_action(self, NM_PENDING_ACTION_IN_STATE_CHANGE, TRUE);
     priv->in_state_changed = TRUE;
 
@@ -16437,8 +16437,8 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
     }
 
     /* Handle the new state here; but anything that could trigger
-	 * another state change should be done below.
-	 */
+     * another state change should be done below.
+     */
     switch (state) {
     case NM_DEVICE_STATE_UNMANAGED:
         nm_device_set_firmware_missing(self, FALSE);
@@ -16477,29 +16477,29 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
             }
 
             /* Ensure the device gets deactivated in response to stuff like
-			 * carrier changes or rfkill.  But don't deactivate devices that are
-			 * about to assume a connection since that defeats the purpose of
-			 * assuming the device's existing connection.
-			 *
-			 * Note that we "deactivate" the device even when coming from
-			 * UNMANAGED, to ensure that it's in a clean state.
-			 */
+             * carrier changes or rfkill.  But don't deactivate devices that are
+             * about to assume a connection since that defeats the purpose of
+             * assuming the device's existing connection.
+             *
+             * Note that we "deactivate" the device even when coming from
+             * UNMANAGED, to ensure that it's in a clean state.
+             */
             nm_device_cleanup(self, reason, CLEANUP_TYPE_DECONFIGURE);
         }
         break;
     case NM_DEVICE_STATE_DISCONNECTED:
         if (old_state > NM_DEVICE_STATE_DISCONNECTED) {
             /* Ensure devices that previously assumed a connection now have
-			 * userspace IPv6LL enabled.
-			 */
+             * userspace IPv6LL enabled.
+             */
             set_nm_ipv6ll(self, TRUE);
 
             nm_device_cleanup(self, reason, CLEANUP_TYPE_DECONFIGURE);
         } else if (old_state < NM_DEVICE_STATE_DISCONNECTED) {
             if (priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED) {
                 /* Ensure IPv6 is set up as it may not have been done when
-				 * entering the UNAVAILABLE state depending on the reason.
-				 */
+                 * entering the UNAVAILABLE state depending on the reason.
+                 */
                 ip6_managed_setup(self);
             }
         }
@@ -16510,8 +16510,8 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
     case NM_DEVICE_STATE_NEED_AUTH:
         if (old_state > NM_DEVICE_STATE_NEED_AUTH) {
             /* Clean up any half-done IP operations if the device's layer2
-			 * finds out it needs authentication during IP config.
-			 */
+             * finds out it needs authentication during IP config.
+             */
             _cleanup_ip_pre(self, AF_INET, CLEANUP_TYPE_DECONFIGURE);
             _cleanup_ip_pre(self, AF_INET6, CLEANUP_TYPE_DECONFIGURE);
         }
@@ -16545,11 +16545,11 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
     switch (state) {
     case NM_DEVICE_STATE_UNAVAILABLE:
         /* If the device can activate now (ie, it's got a carrier, the supplicant
-		 * is active, or whatever) schedule a delayed transition to DISCONNECTED
-		 * to get things rolling.  The device can't transition immediately because
-		 * we can't change states again from the state handler for a variety of
-		 * reasons.
-		 */
+         * is active, or whatever) schedule a delayed transition to DISCONNECTED
+         * to get things rolling.  The device can't transition immediately because
+         * we can't change states again from the state handler for a variety of
+         * reasons.
+         */
         if (nm_device_is_available(self, NM_DEVICE_CHECK_DEV_AVAILABLE_NONE)) {
             nm_device_queue_recheck_available(self,
                                               NM_DEVICE_STATE_REASON_NONE,
@@ -16562,7 +16562,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
         _cancel_activation(self);
 
         /* We cache the ignore_carrier state to not react on config-reloads while the connection
-		 * is active. But on deactivating, reset the ignore-carrier flag to the current state. */
+         * is active. But on deactivating, reset the ignore-carrier flag to the current state. */
         priv->ignore_carrier = nm_config_data_get_ignore_carrier(NM_CONFIG_GET_DATA, self);
 
         if (quitting) {
@@ -16611,11 +16611,11 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
         break;
     case NM_DEVICE_STATE_FAILED:
         /* Usually upon failure the activation chain is interrupted in
-		 * one of the stages; but in some cases the device fails for
-		 * external events (as a failure of master connection) while
-		 * the activation sequence is running and so we need to ensure
-		 * that the chain is terminated here.
-		 */
+         * one of the stages; but in some cases the device fails for
+         * external events (as a failure of master connection) while
+         * the activation sequence is running and so we need to ensure
+         * that the chain is terminated here.
+         */
         _cancel_activation(self);
 
         sett_conn = nm_device_get_settings_connection(self);
@@ -16627,10 +16627,10 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
         nm_device_master_release_slaves(self);
 
         /* If the connection doesn't yet have a timestamp, set it to zero so that
-		 * we can distinguish between connections we've tried to activate and have
-		 * failed (zero timestamp), connections that succeeded (non-zero timestamp),
-		 * and those we haven't tried yet (no timestamp).
-		 */
+         * we can distinguish between connections we've tried to activate and have
+         * failed (zero timestamp), connections that succeeded (non-zero timestamp),
+         * and those we haven't tried yet (no timestamp).
+         */
         if (sett_conn && !nm_settings_connection_get_timestamp(sett_conn, NULL))
             nm_settings_connection_update_timestamp(sett_conn, (guint64) 0);
 
@@ -16641,9 +16641,9 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
             break;
         }
         /* Schedule the transition to DISCONNECTED.  The device can't transition
-		 * immediately because we can't change states again from the state
-		 * handler for a variety of reasons.
-		 */
+         * immediately because we can't change states again from the state
+         * handler for a variety of reasons.
+         */
         nm_device_queue_state(self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
         break;
     case NM_DEVICE_STATE_IP_CHECK:
@@ -16655,8 +16655,8 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
             nm_device_start_ip_check(self);
 
         /* IP-related properties are only valid when the device has IP configuration;
-		 * now that it does, ensure their change notifications are emitted.
-		 */
+         * now that it does, ensure their change notifications are emitted.
+         */
         notify_ip_properties(self);
         break;
     case NM_DEVICE_STATE_SECONDARIES:
@@ -16680,8 +16680,8 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
     }
 
     /* IP-related properties are only valid when the device has IP configuration.
-	 * If it no longer does, ensure their change notifications are emitted.
-	 */
+     * If it no longer does, ensure their change notifications are emitted.
+     */
     if (ip_config_valid(old_state) && !ip_config_valid(state))
         notify_ip_properties(self);
 
@@ -16721,8 +16721,8 @@ queued_state_set(gpointer user_data)
           "change state");
 
     /* Clear queued state struct before triggering state change, since
-	 * the state change may queue another state.
-	 */
+     * the state change may queue another state.
+     */
     priv->queued_state.id = 0;
     new_state             = priv->queued_state.state;
     new_reason            = priv->queued_state.reason;
@@ -16758,7 +16758,7 @@ nm_device_queue_state(NMDevice *self, NMDeviceState state, NMDeviceStateReason r
     }
 
     /* Add pending action for the new state before clearing the queued states, so
-	 * that we don't accidentally pop all pending states and reach 'startup complete'  */
+     * that we don't accidentally pop all pending states and reach 'startup complete'  */
     nm_device_add_pending_action(self, queued_state_to_string(state), TRUE);
 
     /* We should only ever have one delayed state transition at a time */
@@ -16861,10 +16861,10 @@ nm_device_update_hw_address(NMDevice *self)
         char s_buf[NM_UTILS_HWADDR_LEN_MAX_STR];
 
         /* we cannot change the address length of a device once it is set (except
-		 * unrealizing the device).
-		 *
-		 * The reason is that the permanent and initial MAC addresses also must have the
-		 * same address length, so it's unclear what it would mean that the length changes. */
+         * unrealizing the device).
+         *
+         * The reason is that the permanent and initial MAC addresses also must have the
+         * same address length, so it's unclear what it would mean that the length changes. */
         _LOGD(LOGD_PLATFORM | LOGD_DEVICE,
               "hw-addr: read a MAC address with differing length (%s vs. %s)",
               priv->hw_addr,
@@ -16886,8 +16886,8 @@ nm_device_update_hw_address(NMDevice *self)
         || (priv->hw_addr_type == HW_ADDR_TYPE_UNSET && priv->state < NM_DEVICE_STATE_PREPARE
             && !nm_device_is_activating(self))) {
         /* when we get a hw_addr the first time or while the device
-		 * is not activated (with no explicit hw address set), always
-		 * update our initial hw-address as well. */
+         * is not activated (with no explicit hw address set), always
+         * update our initial hw-address as well. */
         nm_device_update_initial_hw_address(self);
     }
     return TRUE;
@@ -16901,7 +16901,7 @@ nm_device_update_initial_hw_address(NMDevice *self)
     if (priv->hw_addr && !nm_streq0(priv->hw_addr_initial, priv->hw_addr)) {
         if (priv->hw_addr_initial && priv->hw_addr_type != HW_ADDR_TYPE_UNSET) {
             /* once we have the initial hw address set, we only allow
-			 * update if the currently type is "unset". */
+             * update if the currently type is "unset". */
             return;
         }
         g_free(priv->hw_addr_initial);
@@ -16923,10 +16923,10 @@ nm_device_update_permanent_hw_address(NMDevice *self, gboolean force_freeze)
 
     if (priv->hw_addr_perm) {
         /* the permanent hardware address is only read once and not
-		 * re-read later.
-		 *
-		 * Except during unrealize/realize cycles, where we clear the permanent
-		 * hardware address during unrealization. */
+         * re-read later.
+         *
+         * Except during unrealize/realize cycles, where we clear the permanent
+         * hardware address during unrealization. */
         return;
     }
 
@@ -16935,12 +16935,12 @@ nm_device_update_permanent_hw_address(NMDevice *self, gboolean force_freeze)
         return;
 
     /* the user is advised to configure stable MAC addresses for software devices via
-	 * UDEV. Thus, check whether the link is fully initialized. */
+     * UDEV. Thus, check whether the link is fully initialized. */
     pllink = nm_platform_link_get(nm_device_get_platform(self), ifindex);
     if (!pllink || !pllink->initialized) {
         if (!force_freeze) {
             /* we can afford to wait. Back off and leave the permanent MAC address
-			 * undecided for now. */
+             * undecided for now. */
             return;
         }
         /* try to refresh the link just to give UDEV a bit more time... */
@@ -16952,9 +16952,9 @@ nm_device_update_permanent_hw_address(NMDevice *self, gboolean force_freeze)
 
     if (!priv->hw_addr_len) {
         /* we need the current MAC address because we require the permanent MAC address
-		 * to have the same length as the current address.
-		 *
-		 * Abort if there is no current MAC address. */
+         * to have the same length as the current address.
+         *
+         * Abort if there is no current MAC address. */
         return;
     }
 
@@ -16968,16 +16968,16 @@ nm_device_update_permanent_hw_address(NMDevice *self, gboolean force_freeze)
     }
 
     /* we failed to read a permanent MAC address, thus we use a fake address,
-	 * that is the current MAC address of the device.
-	 *
-	 * Note that the permanet MAC address of a NMDevice instance does not change
-	 * after being set once. Thus, we use now a fake address and stick to that
-	 * (until we unrealize the device). */
+     * that is the current MAC address of the device.
+     *
+     * Note that the permanet MAC address of a NMDevice instance does not change
+     * after being set once. Thus, we use now a fake address and stick to that
+     * (until we unrealize the device). */
     priv->hw_addr_perm_fake = TRUE;
 
     /* We also persist our choice of the fake address to the device state
-	 * file to use the same address on restart of NetworkManager.
-	 * First, try to reload the address from the state file. */
+     * file to use the same address on restart of NetworkManager.
+     * First, try to reload the address from the state file. */
     dev_state = nm_config_device_state_get(nm_config_get(), ifindex);
     if (dev_state && dev_state->perm_hw_addr_fake
         && nm_utils_hwaddr_aton(dev_state->perm_hw_addr_fake, buf, priv->hw_addr_len)
@@ -17071,8 +17071,8 @@ _hw_addr_set(NMDevice *        self,
 
     if (nm_device_get_device_type(self) == NM_DEVICE_TYPE_WIFI) {
         /* Always take the device down for Wi-Fi because
-		 * wpa_supplicant needs it to properly detect the MAC
-		 * change. */
+         * wpa_supplicant needs it to properly detect the MAC
+         * change. */
         retry_down     = FALSE;
         was_taken_down = TRUE;
         nm_device_take_down(self, FALSE);
@@ -17110,18 +17110,18 @@ again:
                   detail);
 
             /* The platform call indicated success, however the address is not
-			 * as expected. That is either due to a driver issue (brcmfmac, bgo#770456,
-			 * rh#1374023) or a race where externally the MAC address was reset.
-			 * The race is rather unlikely.
-			 *
-			 * The alternative would be to postpone the activation in case the
-			 * MAC address is not yet ready and poll without blocking. However,
-			 * that is rather complicated and it is not expected that this case
-			 * happens for regular drivers.
-			 * Note that brcmfmac can block NetworkManager for 500 msec while
-			 * taking down the device. Let's add another 100 msec to that.
-			 *
-			 * wait/poll up to 100 msec until it changes. */
+             * as expected. That is either due to a driver issue (brcmfmac, bgo#770456,
+             * rh#1374023) or a race where externally the MAC address was reset.
+             * The race is rather unlikely.
+             *
+             * The alternative would be to postpone the activation in case the
+             * MAC address is not yet ready and poll without blocking. However,
+             * that is rather complicated and it is not expected that this case
+             * happens for regular drivers.
+             * Note that brcmfmac can block NetworkManager for 500 msec while
+             * taking down the device. Let's add another 100 msec to that.
+             *
+             * wait/poll up to 100 msec until it changes. */
 
             poll_end = nm_utils_get_monotonic_timestamp_usec() + (100 * 1000);
             for (;;) {
@@ -17166,8 +17166,8 @@ handle_fail:
 
     if (retry_down) {
         /* changing the MAC address failed, but also the device was up (and we did not yet try to take
-		 * it down). Optimally, we change the MAC address without taking the device down, but some
-		 * devices don't like that. So, retry with taking the device down. */
+         * it down). Optimally, we change the MAC address without taking the device down, but some
+         * devices don't like that. So, retry with taking the device down. */
         retry_down     = FALSE;
         was_taken_down = TRUE;
         nm_device_take_down(self, FALSE);
@@ -17196,9 +17196,9 @@ nm_device_hw_addr_set(NMDevice *self, const char *addr, const char *detail, gboo
 
     if (set_permanent) {
         /* The type is set to PERMANENT by NMDeviceVlan when taking the MAC
-		 * address from the parent and by NMDeviceWifi when setting a random MAC
-		 * address during scanning.
-		 */
+         * address from the parent and by NMDeviceWifi when setting a random MAC
+         * address during scanning.
+         */
         priv->hw_addr_type = HW_ADDR_TYPE_PERMANENT;
     }
 
@@ -17289,8 +17289,8 @@ _hw_addr_get_cloned(NMDevice *    self,
     } else if (NM_IN_STRSET(addr, NM_CLONED_MAC_RANDOM)) {
         if (priv->hw_addr_type == HW_ADDR_TYPE_GENERATED) {
             /* hm, we already use a generate MAC address. Most certainly, that is from the same
-			 * activation request, so we should not create a new random address, instead keep
-			 * the current. */
+             * activation request, so we should not create a new random address, instead keep
+             * the current. */
             goto out_no_action;
         }
         hw_addr_generated = nm_utils_hw_addr_gen_random_eth(
@@ -17316,7 +17316,7 @@ _hw_addr_get_cloned(NMDevice *    self,
 
         if (priv->hw_addr_type == HW_ADDR_TYPE_GENERATED) {
             /* hm, we already use a generate MAC address. Most certainly, that is from the same
-			 * activation request, so let's skip creating the stable address anew. */
+             * activation request, so let's skip creating the stable address anew. */
             goto out_no_action;
         }
 
@@ -17430,7 +17430,7 @@ nm_device_hw_addr_reset(NMDevice *self, const char *detail)
     addr               = nm_device_get_initial_hw_address(self);
     if (!addr) {
         /* as hw_addr_type is not UNSET, we expect that we can get an
-		 * initial address to which to reset. */
+         * initial address to which to reset. */
         g_return_val_if_reached(FALSE);
     }
 
@@ -17450,8 +17450,8 @@ nm_device_get_permanent_hw_address_full(NMDevice *self,
 
     if (!priv->hw_addr_perm && force_freeze) {
         /* somebody requests a permanent MAC address, but we don't have it set
-		 * yet. We cannot delay it any longer and try to get it without waiting
-		 * for UDEV. */
+         * yet. We cannot delay it any longer and try to get it without waiting
+         * for UDEV. */
         nm_device_update_permanent_hw_address(self, TRUE);
     }
 
@@ -17649,8 +17649,8 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     switch (prop_id) {
     case PROP_UDI:
         /* UDI is (depending on the device type) a path to sysfs and can contain
-		 * non-UTF-8.
-		 *   ip link add name $'d\xccf\\c' type dummy  */
+         * non-UTF-8.
+         *   ip link add name $'d\xccf\\c' type dummy  */
         g_value_take_string(
             value,
             nm_utils_str_utf8safe_escape_cp(priv->udi, NM_UTILS_STR_UTF8_SAFE_FLAG_NONE));
@@ -18177,8 +18177,8 @@ dispose(GObject *object)
 
     if (nm_clear_g_source(&priv->queued_state.id)) {
         /* FIXME: we'd expect the queud_state to be already cleared and this statement
-		 * not being necessary. Add this check here to hopefully investigate crash
-		 * rh#1270247. */
+         * not being necessary. Add this check here to hopefully investigate crash
+         * rh#1270247. */
         g_return_if_reached();
     }
 }
@@ -18217,7 +18217,7 @@ finalize(GObject *object)
     G_OBJECT_CLASS(nm_device_parent_class)->finalize(object);
 
     /* for testing, NMDeviceTest does not invoke NMDevice::constructed,
-	 * and thus @settings might be unset. */
+     * and thus @settings might be unset. */
     nm_g_object_unref(priv->settings);
     nm_g_object_unref(priv->manager);
 

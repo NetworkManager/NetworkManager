@@ -23,8 +23,8 @@ const NMDhcpOption _nm_dhcp_option_dhcp4_options[] = {
     REQ(NM_DHCP_OPTION_DHCP4_INTERFACE_MTU, "interface_mtu", TRUE),
     REQ(NM_DHCP_OPTION_DHCP4_BROADCAST, "broadcast_address", TRUE),
     /* RFC 3442: The Classless Static Routes option code MUST appear in the parameter
-	 *   request list prior to both the Router option code and the Static
-	 *   Routes option code, if present. */
+     *   request list prior to both the Router option code and the Static
+     *   Routes option code, if present. */
     REQ(NM_DHCP_OPTION_DHCP4_CLASSLESS_STATIC_ROUTE, "rfc3442_classless_static_routes", TRUE),
     REQ(NM_DHCP_OPTION_DHCP4_ROUTER, "routers", TRUE),
     REQ(NM_DHCP_OPTION_DHCP4_STATIC_ROUTE, "static_routes", TRUE),
@@ -174,8 +174,8 @@ const NMDhcpOption _nm_dhcp_option_dhcp6_options[] = {
     REQ(NM_DHCP_OPTION_DHCP6_CLIENTID, "dhcp6_client_id", FALSE),
 
     /* Don't request server ID by default; some servers don't reply to
-	 * Information Requests that request the Server ID.
-	 */
+     * Information Requests that request the Server ID.
+     */
     REQ(NM_DHCP_OPTION_DHCP6_SERVERID, "dhcp6_server_id", FALSE),
 
     REQ(NM_DHCP_OPTION_DHCP6_DNS_SERVERS, "dhcp6_name_servers", TRUE),

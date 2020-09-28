@@ -34,18 +34,18 @@ nm_dnsmasq_utils_get_range(const NMPlatformIP4Address *addr,
 
     if (prefix < 24) {
         /* if the subnet is larger then /24, we partition it and treat it
-		 * like it would be a /24.
-		 *
-		 * Hence, the resulting range will always be between x.x.x.1/24
-		 * and x.x.x.254/24, with x.x.x.0 being the network address of the
-		 * host.
-		 *
-		 * In this case, only a /24 portion of the subnet is used.
-		 * No particular reason for that, but it's unlikely that a user
-		 * would use NetworkManager's shared method when having hundred
-		 * of DHCP clients. So, restrict the range to the same /24 in
-		 * which the host address lies.
-		 */
+         * like it would be a /24.
+         *
+         * Hence, the resulting range will always be between x.x.x.1/24
+         * and x.x.x.254/24, with x.x.x.0 being the network address of the
+         * host.
+         *
+         * In this case, only a /24 portion of the subnet is used.
+         * No particular reason for that, but it's unlikely that a user
+         * would use NetworkManager's shared method when having hundred
+         * of DHCP clients. So, restrict the range to the same /24 in
+         * which the host address lies.
+         */
         prefix = 24;
     }
 
@@ -56,8 +56,8 @@ nm_dnsmasq_utils_get_range(const NMPlatformIP4Address *addr,
     host    = ntohl(host);
 
     /* if host is the network or broadcast address, coerce it to
-	 * one above or below. Usually, we wouldn't expect the user
-	 * to pick such an address. */
+     * one above or below. Usually, we wouldn't expect the user
+     * to pick such an address. */
     if (host == (host & netmask))
         host++;
     else if (host == (host | ~netmask))
@@ -68,17 +68,17 @@ nm_dnsmasq_utils_get_range(const NMPlatformIP4Address *addr,
     last  = (host | ~netmask) - 1;
 
     /* Depending on whether host is above or below the middle of
-	 * the subnet, the larger part if handed out.
-	 *
-	 * If the host is in the lower half, the range starts
-	 * at the lower end with the host (plus reserved), until the
-	 * broadcast address
-	 *
-	 * If the host is in the upper half, the range starts above
-	 * the network-address and goes up until the host (except reserved).
-	 *
-	 * reserved is up to 8 addresses, 10% of the determined range.
-	 */
+     * the subnet, the larger part if handed out.
+     *
+     * If the host is in the lower half, the range starts
+     * at the lower end with the host (plus reserved), until the
+     * broadcast address
+     *
+     * If the host is in the upper half, the range starts above
+     * the network-address and goes up until the host (except reserved).
+     *
+     * reserved is up to 8 addresses, 10% of the determined range.
+     */
     mid = (host & netmask) | (((first + last) / 2) & ~netmask);
     if (host > mid) {
         /* use lower range */

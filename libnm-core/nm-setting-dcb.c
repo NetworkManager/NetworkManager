@@ -545,8 +545,8 @@ check_uint_array(const guint *     array,
             }
         } else {
             /* If the feature is disabled, sum must equal 0%, which was checked
-			 * by the for() loop above.
-			 */
+             * by the for() loop above.
+             */
             g_assert_cmpint(sum, ==, 0);
         }
     }
@@ -922,20 +922,20 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
     setting_class->verify = verify;
 
     /**
-	 * NMSettingDcb:app-fcoe-flags:
-	 *
-	 * Specifies the #NMSettingDcbFlags for the DCB FCoE application.  Flags may
-	 * be any combination of %NM_SETTING_DCB_FLAG_ENABLE,
-	 * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
-	 **/
+     * NMSettingDcb:app-fcoe-flags:
+     *
+     * Specifies the #NMSettingDcbFlags for the DCB FCoE application.  Flags may
+     * be any combination of %NM_SETTING_DCB_FLAG_ENABLE,
+     * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
+     **/
     /* ---ifcfg-rh---
-	 * property: app-fcoe-flags
-	 * variable: DCB_APP_FCOE_ENABLE, DCB_APP_FCOE_ADVERTISE, DCB_APP_FCOE_WILLING
-	 * description: FCOE flags.
-	 * default: no
-	 * example: DCB_APP_FCOE_ENABLE=yes DCB_APP_FCOE_ADVERTISE=yes
-	 * ---end---
-	 */
+     * property: app-fcoe-flags
+     * variable: DCB_APP_FCOE_ENABLE, DCB_APP_FCOE_ADVERTISE, DCB_APP_FCOE_WILLING
+     * description: FCOE flags.
+     * default: no
+     * example: DCB_APP_FCOE_ENABLE=yes DCB_APP_FCOE_ADVERTISE=yes
+     * ---end---
+     */
     obj_properties[PROP_APP_FCOE_FLAGS] =
         g_param_spec_flags(NM_SETTING_DCB_APP_FCOE_FLAGS,
                            "",
@@ -945,19 +945,19 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingDcb:app-fcoe-priority:
-	 *
-	 * The highest User Priority (0 - 7) which FCoE frames should use, or -1 for
-	 * default priority.  Only used when the #NMSettingDcb:app-fcoe-flags
-	 * property includes the %NM_SETTING_DCB_FLAG_ENABLE flag.
-	 **/
+     * NMSettingDcb:app-fcoe-priority:
+     *
+     * The highest User Priority (0 - 7) which FCoE frames should use, or -1 for
+     * default priority.  Only used when the #NMSettingDcb:app-fcoe-flags
+     * property includes the %NM_SETTING_DCB_FLAG_ENABLE flag.
+     **/
     /* ---ifcfg-rh---
-	 * property: app-fcoe-priority
-	 * variable: DCB_APP_FCOE_PRIORITY
-	 * values: 0 - 7
-	 * description: Priority of FCoE frames.
-	 * ---end---
-	 */
+     * property: app-fcoe-priority
+     * variable: DCB_APP_FCOE_PRIORITY
+     * values: 0 - 7
+     * description: Priority of FCoE frames.
+     * ---end---
+     */
     obj_properties[PROP_APP_FCOE_PRIORITY] =
         g_param_spec_int(NM_SETTING_DCB_APP_FCOE_PRIORITY,
                          "",
@@ -968,19 +968,19 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingDcb:app-fcoe-mode:
-	 *
-	 * The FCoE controller mode; either %NM_SETTING_DCB_FCOE_MODE_FABRIC
-	 * (default) or %NM_SETTING_DCB_FCOE_MODE_VN2VN.
-	 **/
+     * NMSettingDcb:app-fcoe-mode:
+     *
+     * The FCoE controller mode; either %NM_SETTING_DCB_FCOE_MODE_FABRIC
+     * (default) or %NM_SETTING_DCB_FCOE_MODE_VN2VN.
+     **/
     /* ---ifcfg-rh---
-	 * property: app-fcoe-mode
-	 * variable: DCB_APP_FCOE_MODE
-	 * values: fabric, vn2vn
-	 * default: fabric
-	 * description: FCoE controller mode.
-	 * ---end---
-	 */
+     * property: app-fcoe-mode
+     * variable: DCB_APP_FCOE_MODE
+     * values: fabric, vn2vn
+     * default: fabric
+     * description: FCoE controller mode.
+     * ---end---
+     */
     obj_properties[PROP_APP_FCOE_MODE] =
         g_param_spec_string(NM_SETTING_DCB_APP_FCOE_MODE,
                             "",
@@ -989,19 +989,19 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingDcb:app-iscsi-flags:
-	 *
-	 * Specifies the #NMSettingDcbFlags for the DCB iSCSI application.  Flags
-	 * may be any combination of %NM_SETTING_DCB_FLAG_ENABLE,
-	 * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
-	 **/
+     * NMSettingDcb:app-iscsi-flags:
+     *
+     * Specifies the #NMSettingDcbFlags for the DCB iSCSI application.  Flags
+     * may be any combination of %NM_SETTING_DCB_FLAG_ENABLE,
+     * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
+     **/
     /* ---ifcfg-rh---
-	 * property: app-iscsi-flags
-	 * variable: DCB_APP_ISCSI_ENABLE, DCB_APP_ISCSI_ADVERTISE, DCB_APP_ISCSI_WILLING
-	 * default: no
-	 * description: iSCSI flags.
-	 * ---end---
-	 */
+     * property: app-iscsi-flags
+     * variable: DCB_APP_ISCSI_ENABLE, DCB_APP_ISCSI_ADVERTISE, DCB_APP_ISCSI_WILLING
+     * default: no
+     * description: iSCSI flags.
+     * ---end---
+     */
     obj_properties[PROP_APP_ISCSI_FLAGS] =
         g_param_spec_flags(NM_SETTING_DCB_APP_ISCSI_FLAGS,
                            "",
@@ -1011,19 +1011,19 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingDcb:app-iscsi-priority:
-	 *
-	 * The highest User Priority (0 - 7) which iSCSI frames should use, or -1
-	 * for default priority. Only used when the #NMSettingDcb:app-iscsi-flags
-	 * property includes the %NM_SETTING_DCB_FLAG_ENABLE flag.
-	 **/
+     * NMSettingDcb:app-iscsi-priority:
+     *
+     * The highest User Priority (0 - 7) which iSCSI frames should use, or -1
+     * for default priority. Only used when the #NMSettingDcb:app-iscsi-flags
+     * property includes the %NM_SETTING_DCB_FLAG_ENABLE flag.
+     **/
     /* ---ifcfg-rh---
-	 * property: app-iscsi-priority
-	 * variable: DCB_APP_ISCSI_PRIORITY
-	 * values: 0 - 7
-	 * description: Priority of iSCSI frames.
-	 * ---end---
-	 */
+     * property: app-iscsi-priority
+     * variable: DCB_APP_ISCSI_PRIORITY
+     * values: 0 - 7
+     * description: Priority of iSCSI frames.
+     * ---end---
+     */
     obj_properties[PROP_APP_ISCSI_PRIORITY] =
         g_param_spec_int(NM_SETTING_DCB_APP_ISCSI_PRIORITY,
                          "",
@@ -1034,19 +1034,19 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingDcb:app-fip-flags:
-	 *
-	 * Specifies the #NMSettingDcbFlags for the DCB FIP application.  Flags may
-	 * be any combination of %NM_SETTING_DCB_FLAG_ENABLE,
-	 * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
-	 **/
+     * NMSettingDcb:app-fip-flags:
+     *
+     * Specifies the #NMSettingDcbFlags for the DCB FIP application.  Flags may
+     * be any combination of %NM_SETTING_DCB_FLAG_ENABLE,
+     * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
+     **/
     /* ---ifcfg-rh---
-	 * property: app-fip-flags
-	 * variable: DCB_APP_FIP_ENABLE, DCB_APP_FIP_ADVERTISE, DCB_APP_FIP_WILLING
-	 * default: no
-	 * description: FIP flags.
-	 * ---end---
-	 */
+     * property: app-fip-flags
+     * variable: DCB_APP_FIP_ENABLE, DCB_APP_FIP_ADVERTISE, DCB_APP_FIP_WILLING
+     * default: no
+     * description: FIP flags.
+     * ---end---
+     */
     obj_properties[PROP_APP_FIP_FLAGS] =
         g_param_spec_flags(NM_SETTING_DCB_APP_FIP_FLAGS,
                            "",
@@ -1056,19 +1056,19 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingDcb:app-fip-priority:
-	 *
-	 * The highest User Priority (0 - 7) which FIP frames should use, or -1 for
-	 * default priority.  Only used when the #NMSettingDcb:app-fip-flags
-	 * property includes the %NM_SETTING_DCB_FLAG_ENABLE flag.
-	 **/
+     * NMSettingDcb:app-fip-priority:
+     *
+     * The highest User Priority (0 - 7) which FIP frames should use, or -1 for
+     * default priority.  Only used when the #NMSettingDcb:app-fip-flags
+     * property includes the %NM_SETTING_DCB_FLAG_ENABLE flag.
+     **/
     /* ---ifcfg-rh---
-	 * property: app-fip-priority
-	 * variable: DCB_APP_FIP_PRIORITY
-	 * values: 0 - 7
-	 * description: Priority of FIP frames.
-	 * ---end---
-	 */
+     * property: app-fip-priority
+     * variable: DCB_APP_FIP_PRIORITY
+     * values: 0 - 7
+     * description: Priority of FIP frames.
+     * ---end---
+     */
     obj_properties[PROP_APP_FIP_PRIORITY] =
         g_param_spec_int(NM_SETTING_DCB_APP_FIP_PRIORITY,
                          "",
@@ -1079,19 +1079,19 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingDcb:priority-flow-control-flags:
-	 *
-	 * Specifies the #NMSettingDcbFlags for DCB Priority Flow Control (PFC).
-	 * Flags may be any combination of %NM_SETTING_DCB_FLAG_ENABLE,
-	 * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
-	 **/
+     * NMSettingDcb:priority-flow-control-flags:
+     *
+     * Specifies the #NMSettingDcbFlags for DCB Priority Flow Control (PFC).
+     * Flags may be any combination of %NM_SETTING_DCB_FLAG_ENABLE,
+     * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
+     **/
     /* ---ifcfg-rh---
-	 * property: priority-flow-control-flags
-	 * variable: DCB_PFC_ENABLE, DCB_PFC_ADVERTISE, DCB_PFC_WILLING
-	 * default: no
-	 * description: Priority flow control flags.
-	 * ---end---
-	 */
+     * property: priority-flow-control-flags
+     * variable: DCB_PFC_ENABLE, DCB_PFC_ADVERTISE, DCB_PFC_WILLING
+     * default: no
+     * description: Priority flow control flags.
+     * ---end---
+     */
     obj_properties[PROP_PFC_FLAGS] = g_param_spec_flags(NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS,
                                                         "",
                                                         "",
@@ -1100,20 +1100,20 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
                                                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingDcb:priority-flow-control: (type GArray(gboolean))
-	 *
-	 * An array of 8 boolean values, where the array index corresponds to the User
-	 * Priority (0 - 7) and the value indicates whether or not the corresponding
-	 * priority should transmit priority pause.
-	 **/
+     * NMSettingDcb:priority-flow-control: (type GArray(gboolean))
+     *
+     * An array of 8 boolean values, where the array index corresponds to the User
+     * Priority (0 - 7) and the value indicates whether or not the corresponding
+     * priority should transmit priority pause.
+     **/
     /* ---ifcfg-rh---
-	 * property: priority-flow-control
-	 * variable: DCB_PFC_UP
-	 * description: Priority flow control values. String of 8 "0" and "1", where "0".
-	 *   means "do not transmit priority pause", "1" means "transmit pause".
-	 * example: DCB_PFC_UP=01101110
-	 * ---end---
-	 */
+     * property: priority-flow-control
+     * variable: DCB_PFC_UP
+     * description: Priority flow control values. String of 8 "0" and "1", where "0".
+     *   means "do not transmit priority pause", "1" means "transmit pause".
+     * example: DCB_PFC_UP=01101110
+     * ---end---
+     */
     obj_properties[PROP_PRIORITY_FLOW_CONTROL] =
         g_param_spec_boxed(NM_SETTING_DCB_PRIORITY_FLOW_CONTROL,
                            "",
@@ -1125,19 +1125,19 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
                                  &nm_sett_info_propert_type_dcb_au);
 
     /**
-	 * NMSettingDcb:priority-group-flags:
-	 *
-	 * Specifies the #NMSettingDcbFlags for DCB Priority Groups.  Flags may be
-	 * any combination of %NM_SETTING_DCB_FLAG_ENABLE,
-	 * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
-	 **/
+     * NMSettingDcb:priority-group-flags:
+     *
+     * Specifies the #NMSettingDcbFlags for DCB Priority Groups.  Flags may be
+     * any combination of %NM_SETTING_DCB_FLAG_ENABLE,
+     * %NM_SETTING_DCB_FLAG_ADVERTISE, and %NM_SETTING_DCB_FLAG_WILLING.
+     **/
     /* ---ifcfg-rh---
-	 * property: priority-group-flags
-	 * variable: DCB_PG_ENABLE, DCB_PG_ADVERTISE, DCB_PG_WILLING
-	 * default: no
-	 * description: Priority groups flags.
-	 * ---end---
-	 */
+     * property: priority-group-flags
+     * variable: DCB_PG_ENABLE, DCB_PG_ADVERTISE, DCB_PG_WILLING
+     * default: no
+     * description: Priority groups flags.
+     * ---end---
+     */
     obj_properties[PROP_PRIORITY_GROUP_FLAGS] =
         g_param_spec_flags(NM_SETTING_DCB_PRIORITY_GROUP_FLAGS,
                            "",
@@ -1147,20 +1147,20 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingDcb:priority-group-id: (type GArray(guint))
-	 *
-	 * An array of 8 uint values, where the array index corresponds to the User
-	 * Priority (0 - 7) and the value indicates the Priority Group ID.  Allowed
-	 * Priority Group ID values are 0 - 7 or 15 for the unrestricted group.
-	 **/
+     * NMSettingDcb:priority-group-id: (type GArray(guint))
+     *
+     * An array of 8 uint values, where the array index corresponds to the User
+     * Priority (0 - 7) and the value indicates the Priority Group ID.  Allowed
+     * Priority Group ID values are 0 - 7 or 15 for the unrestricted group.
+     **/
     /* ---ifcfg-rh---
-	 * property: priority-group-id
-	 * variable: DCB_PG_ID
-	 * description: Priority groups values. String of eight priorities (0 - 7) or "f"
-	 *   (unrestricted).
-	 * example: DCB_PG_ID=1205f173
-	 * ---end---
-	 */
+     * property: priority-group-id
+     * variable: DCB_PG_ID
+     * description: Priority groups values. String of eight priorities (0 - 7) or "f"
+     *   (unrestricted).
+     * example: DCB_PG_ID=1205f173
+     * ---end---
+     */
     obj_properties[PROP_PRIORITY_GROUP_ID] =
         g_param_spec_boxed(NM_SETTING_DCB_PRIORITY_GROUP_ID,
                            "",
@@ -1172,20 +1172,20 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
                                  &nm_sett_info_propert_type_dcb_au);
 
     /**
-	 * NMSettingDcb:priority-group-bandwidth: (type GArray(guint))
-	 *
-	 * An array of 8 uint values, where the array index corresponds to the
-	 * Priority Group ID (0 - 7) and the value indicates the percentage of link
-	 * bandwidth allocated to that group.  Allowed values are 0 - 100, and the
-	 * sum of all values must total 100 percents.
-	 **/
+     * NMSettingDcb:priority-group-bandwidth: (type GArray(guint))
+     *
+     * An array of 8 uint values, where the array index corresponds to the
+     * Priority Group ID (0 - 7) and the value indicates the percentage of link
+     * bandwidth allocated to that group.  Allowed values are 0 - 100, and the
+     * sum of all values must total 100 percents.
+     **/
     /* ---ifcfg-rh---
-	 * property: priority-group-bandwidth
-	 * variable: DCB_PG_PCT
-	 * description: Priority groups values. Eight bandwidths (in percent), separated with commas.
-	 * example: DCB_PG_PCT=10,5,10,15,10,10,10,30
-	 * ---end---
-	 */
+     * property: priority-group-bandwidth
+     * variable: DCB_PG_PCT
+     * description: Priority groups values. Eight bandwidths (in percent), separated with commas.
+     * example: DCB_PG_PCT=10,5,10,15,10,10,10,30
+     * ---end---
+     */
     obj_properties[PROP_PRIORITY_GROUP_BANDWIDTH] =
         g_param_spec_boxed(NM_SETTING_DCB_PRIORITY_GROUP_BANDWIDTH,
                            "",
@@ -1197,22 +1197,22 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
                                  &nm_sett_info_propert_type_dcb_au);
 
     /**
-	 * NMSettingDcb:priority-bandwidth: (type GArray(guint))
-	 *
-	 * An array of 8 uint values, where the array index corresponds to the User
-	 * Priority (0 - 7) and the value indicates the percentage of bandwidth of
-	 * the priority's assigned group that the priority may use.  The sum of all
-	 * percentages for priorities which belong to the same group must total 100
-	 * percents.
-	 **/
+     * NMSettingDcb:priority-bandwidth: (type GArray(guint))
+     *
+     * An array of 8 uint values, where the array index corresponds to the User
+     * Priority (0 - 7) and the value indicates the percentage of bandwidth of
+     * the priority's assigned group that the priority may use.  The sum of all
+     * percentages for priorities which belong to the same group must total 100
+     * percents.
+     **/
     /* ---ifcfg-rh---
-	 * property: priority-bandwidth
-	 * variable: DCB_PG_UPPCT
-	 * description: Priority values. Eight bandwidths (in percent), separated with commas.
-	 *   The sum of the numbers must be 100.
-	 * example: DCB_PG_UPPCT=7,13,10,10,15,15,10,20
-	 * ---end---
-	 */
+     * property: priority-bandwidth
+     * variable: DCB_PG_UPPCT
+     * description: Priority values. Eight bandwidths (in percent), separated with commas.
+     *   The sum of the numbers must be 100.
+     * example: DCB_PG_UPPCT=7,13,10,10,15,15,10,20
+     * ---end---
+     */
     obj_properties[PROP_PRIORITY_BANDWIDTH] =
         g_param_spec_boxed(NM_SETTING_DCB_PRIORITY_BANDWIDTH,
                            "",
@@ -1224,20 +1224,20 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
                                  &nm_sett_info_propert_type_dcb_au);
 
     /**
-	 * NMSettingDcb:priority-strict-bandwidth: (type GArray(gboolean))
-	 *
-	 * An array of 8 boolean values, where the array index corresponds to the User
-	 * Priority (0 - 7) and the value indicates whether or not the priority may
-	 * use all of the bandwidth allocated to its assigned group.
-	 **/
+     * NMSettingDcb:priority-strict-bandwidth: (type GArray(gboolean))
+     *
+     * An array of 8 boolean values, where the array index corresponds to the User
+     * Priority (0 - 7) and the value indicates whether or not the priority may
+     * use all of the bandwidth allocated to its assigned group.
+     **/
     /* ---ifcfg-rh---
-	 * property: priority-strict-bandwidth
-	 * variable: DCB_PG_STRICT
-	 * description: Priority values. String of eight "0" or "1", where "0" means
-	 *   "may not utilize all bandwidth", "1" means "may utilize all bandwidth".
-	 * example: DCB_PG_STRICT=01101110
-	 * ---end---
-	 */
+     * property: priority-strict-bandwidth
+     * variable: DCB_PG_STRICT
+     * description: Priority values. String of eight "0" or "1", where "0" means
+     *   "may not utilize all bandwidth", "1" means "may utilize all bandwidth".
+     * example: DCB_PG_STRICT=01101110
+     * ---end---
+     */
     obj_properties[PROP_PRIORITY_STRICT_BANDWIDTH] =
         g_param_spec_boxed(NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH,
                            "",
@@ -1249,19 +1249,19 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
                                  &nm_sett_info_propert_type_dcb_au);
 
     /**
-	 * NMSettingDcb:priority-traffic-class: (type GArray(guint))
-	 *
-	 * An array of 8 uint values, where the array index corresponds to the User
-	 * Priority (0 - 7) and the value indicates the traffic class (0 - 7) to
-	 * which the priority is mapped.
-	 **/
+     * NMSettingDcb:priority-traffic-class: (type GArray(guint))
+     *
+     * An array of 8 uint values, where the array index corresponds to the User
+     * Priority (0 - 7) and the value indicates the traffic class (0 - 7) to
+     * which the priority is mapped.
+     **/
     /* ---ifcfg-rh---
-	 * property: priority-traffic-class
-	 * variable: DCB_PG_UP2TC
-	 * description: Priority values. String of eight traffic class values (0 - 7).
-	 * example: DCB_PG_UP2TC=01623701
-	 * ---end---
-	 */
+     * property: priority-traffic-class
+     * variable: DCB_PG_UP2TC
+     * description: Priority values. String of eight traffic class values (0 - 7).
+     * example: DCB_PG_UP2TC=01623701
+     * ---end---
+     */
     obj_properties[PROP_PRIORITY_TRAFFIC_CLASS] =
         g_param_spec_boxed(NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS,
                            "",

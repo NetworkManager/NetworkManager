@@ -107,13 +107,13 @@ _nm_setting_ovs_interface_verify_interface_type(NMSettingOvsInterface *self,
     connection_type = nm_connection_get_connection_type(connection);
     if (!connection_type) {
         /* if we have an ovs-interface, then the connection type must be either
-		 * "ovs-interface" (for non "system" type) or anything else (for "system" type).
-		 *
-		 * The connection type usually can be normalized based on the presence of a
-		 * base setting. However, in this case, if the connection type is missing,
-		 * that is too complicate to guess what the user wanted.
-		 *
-		 * Require the use to be explicit and fail. */
+         * "ovs-interface" (for non "system" type) or anything else (for "system" type).
+         *
+         * The connection type usually can be normalized based on the presence of a
+         * base setting. However, in this case, if the connection type is missing,
+         * that is too complicate to guess what the user wanted.
+         *
+         * Require the use to be explicit and fail. */
         g_set_error(error,
                     NM_CONNECTION_ERROR,
                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -408,12 +408,12 @@ nm_setting_ovs_interface_class_init(NMSettingOvsInterfaceClass *klass)
     setting_class->verify = verify;
 
     /**
-	 * NMSettingOvsInterface:type:
-	 *
-	 * The interface type. Either "internal", "system", "patch", "dpdk", or empty.
-	 *
-	 * Since: 1.10
-	 **/
+     * NMSettingOvsInterface:type:
+     *
+     * The interface type. Either "internal", "system", "patch", "dpdk", or empty.
+     *
+     * Since: 1.10
+     **/
     obj_properties[PROP_TYPE] = g_param_spec_string(NM_SETTING_OVS_INTERFACE_TYPE,
                                                     "",
                                                     "",

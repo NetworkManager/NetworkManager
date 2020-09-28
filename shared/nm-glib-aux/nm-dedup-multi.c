@@ -14,12 +14,12 @@
 
 typedef struct {
     /* the stack-allocated lookup entry. It has a compatible
-	 * memory layout with NMDedupMultiEntry and NMDedupMultiHeadEntry.
-	 *
-	 * It is recognizable by having lst_entries_sentinel.next set to NULL.
-	 * Contrary to the other entries, which have lst_entries.next
-	 * always non-NULL.
-	 * */
+     * memory layout with NMDedupMultiEntry and NMDedupMultiHeadEntry.
+     *
+     * It is recognizable by having lst_entries_sentinel.next set to NULL.
+     * Contrary to the other entries, which have lst_entries.next
+     * always non-NULL.
+     * */
     CList                      lst_entries_sentinel;
     const NMDedupMultiObj *    obj;
     const NMDedupMultiIdxType *idx_type;
@@ -150,8 +150,8 @@ _entry_unpack(const NMDedupMultiEntry *   entry,
     ASSERT_idx_type(*out_idx_type);
 
     /* for lookup of the head, we allow to omit object, but only
-	 * if the idx_type does not partition the objects. Otherwise, we
-	 * require a obj to compare. */
+     * if the idx_type does not partition the objects. Otherwise, we
+     * require a obj to compare. */
     nm_assert(!*out_lookup_head || (*out_obj || !(*out_idx_type)->klass->idx_obj_partition_equal));
 
     /* lookup of the object requires always an object. */
@@ -602,8 +602,8 @@ nm_dedup_multi_index_remove_obj(NMDedupMultiIndex *                          sel
     }
 
     /* since we are about to remove the object, we obviously pass
-	 * a reference to @out_obj, the caller MUST unref the object,
-	 * if he chooses to provide @out_obj. */
+     * a reference to @out_obj, the caller MUST unref the object,
+     * if he chooses to provide @out_obj. */
     NM_SET_OUT(out_obj, nm_dedup_multi_obj_ref(entry->obj));
 
     _remove_entry(self, (NMDedupMultiEntry *) entry, NULL);
@@ -844,7 +844,7 @@ again:
         if (--(((NMDedupMultiObj *) obj)->_ref_count) <= 0) {
             if (obj->_multi_idx) {
                 /* restore the ref-count to 1 and release the object first
-				 * from the index. Then, retry again to unref. */
+                 * from the index. Then, retry again to unref. */
                 ((NMDedupMultiObj *) obj)->_ref_count++;
                 nm_dedup_multi_index_obj_release(obj->_multi_idx, obj);
                 nm_assert(obj->_ref_count == 1);

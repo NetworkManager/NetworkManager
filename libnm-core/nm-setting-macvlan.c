@@ -129,8 +129,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     } else {
         /* If parent is NULL, the parent must be specified via
-		 * NMSettingWired:mac-address.
-		 */
+         * NMSettingWired:mac-address.
+         */
         if (connection && (!s_wired || !nm_setting_wired_get_mac_address(s_wired))) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
@@ -265,15 +265,15 @@ nm_setting_macvlan_class_init(NMSettingMacvlanClass *klass)
     setting_class->verify = verify;
 
     /**
-	 * NMSettingMacvlan:parent:
-	 *
-	 * If given, specifies the parent interface name or parent connection UUID
-	 * from which this MAC-VLAN interface should be created.  If this property is
-	 * not specified, the connection must contain an #NMSettingWired setting
-	 * with a #NMSettingWired:mac-address property.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingMacvlan:parent:
+     *
+     * If given, specifies the parent interface name or parent connection UUID
+     * from which this MAC-VLAN interface should be created.  If this property is
+     * not specified, the connection must contain an #NMSettingWired setting
+     * with a #NMSettingWired:mac-address property.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_PARENT] = g_param_spec_string(
         NM_SETTING_MACVLAN_PARENT,
         "",
@@ -282,13 +282,13 @@ nm_setting_macvlan_class_init(NMSettingMacvlanClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingMacvlan:mode:
-	 *
-	 * The macvlan mode, which specifies the communication mechanism between multiple
-	 * macvlans on the same lower device.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingMacvlan:mode:
+     *
+     * The macvlan mode, which specifies the communication mechanism between multiple
+     * macvlans on the same lower device.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_MODE] =
         g_param_spec_uint(NM_SETTING_MACVLAN_MODE,
                           "",
@@ -299,12 +299,12 @@ nm_setting_macvlan_class_init(NMSettingMacvlanClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingMacvlan:promiscuous:
-	 *
-	 * Whether the interface should be put in promiscuous mode.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingMacvlan:promiscuous:
+     *
+     * Whether the interface should be put in promiscuous mode.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_PROMISCUOUS] = g_param_spec_boolean(
         NM_SETTING_MACVLAN_PROMISCUOUS,
         "",
@@ -313,12 +313,12 @@ nm_setting_macvlan_class_init(NMSettingMacvlanClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingMacvlan:tap:
-	 *
-	 * Whether the interface should be a MACVTAP.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingMacvlan:tap:
+     *
+     * Whether the interface should be a MACVTAP.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_TAP] = g_param_spec_boolean(NM_SETTING_MACVLAN_TAP,
                                                     "",
                                                     "",

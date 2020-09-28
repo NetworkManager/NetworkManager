@@ -1281,9 +1281,9 @@ compare_property(const NMSettInfoSetting *sett_info,
         if (set_b) {
             if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)) {
                 /* If we are trying to match a connection in order to assume it (and thus
-				 * @flags contains INFERRABLE), use the "relaxed" matching for team
-				 * configuration. Otherwise, for all other purposes (including connection
-				 * comparison before an update), resort to the default string comparison. */
+                 * @flags contains INFERRABLE), use the "relaxed" matching for team
+                 * configuration. Otherwise, for all other purposes (including connection
+                 * comparison before an update), resort to the default string comparison. */
                 return TRUE;
             }
 
@@ -1491,19 +1491,19 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
     setting_class->init_from_dbus            = init_from_dbus;
 
     /**
-	 * NMSettingTeam:config:
-	 *
-	 * The JSON configuration for the team network interface.  The property
-	 * should contain raw JSON configuration data suitable for teamd, because
-	 * the value is passed directly to teamd. If not specified, the default
-	 * configuration is used.  See man teamd.conf for the format details.
-	 **/
+     * NMSettingTeam:config:
+     *
+     * The JSON configuration for the team network interface.  The property
+     * should contain raw JSON configuration data suitable for teamd, because
+     * the value is passed directly to teamd. If not specified, the default
+     * configuration is used.  See man teamd.conf for the format details.
+     **/
     /* ---ifcfg-rh---
-	 * property: config
-	 * variable: TEAM_CONFIG
-	 * description: Team configuration in JSON. See man teamd.conf for details.
-	 * ---end---
-	 */
+     * property: config
+     * variable: TEAM_CONFIG
+     * description: Team configuration in JSON. See man teamd.conf for details.
+     * ---end---
+     */
     obj_properties[NM_TEAM_ATTRIBUTE_CONFIG] = g_param_spec_string(
         NM_SETTING_TEAM_CONFIG,
         "",
@@ -1515,12 +1515,12 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
                                  &nm_sett_info_propert_type_team_s);
 
     /**
-	 * NMSettingTeam:notify-peers-count:
-	 *
-	 * Corresponds to the teamd notify_peers.count.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeam:notify-peers-count:
+     *
+     * Corresponds to the teamd notify_peers.count.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_MASTER_NOTIFY_PEERS_COUNT] =
         g_param_spec_int(NM_SETTING_TEAM_NOTIFY_PEERS_COUNT,
                          "",
@@ -1534,12 +1534,12 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
                                  &nm_sett_info_propert_type_team_i);
 
     /**
-	 * NMSettingTeam:notify-peers-interval:
-	 *
-	 * Corresponds to the teamd notify_peers.interval.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeam:notify-peers-interval:
+     *
+     * Corresponds to the teamd notify_peers.interval.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_MASTER_NOTIFY_PEERS_INTERVAL] =
         g_param_spec_int(NM_SETTING_TEAM_NOTIFY_PEERS_INTERVAL,
                          "",
@@ -1553,12 +1553,12 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
                                  &nm_sett_info_propert_type_team_i);
 
     /**
-	 * NMSettingTeam:mcast-rejoin-count:
-	 *
-	 * Corresponds to the teamd mcast_rejoin.count.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeam:mcast-rejoin-count:
+     *
+     * Corresponds to the teamd mcast_rejoin.count.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_MASTER_MCAST_REJOIN_COUNT] =
         g_param_spec_int(NM_SETTING_TEAM_MCAST_REJOIN_COUNT,
                          "",
@@ -1572,12 +1572,12 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
                                  &nm_sett_info_propert_type_team_i);
 
     /**
-	 * NMSettingTeam:mcast-rejoin-interval:
-	 *
-	 * Corresponds to the teamd mcast_rejoin.interval.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeam:mcast-rejoin-interval:
+     *
+     * Corresponds to the teamd mcast_rejoin.interval.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_MASTER_MCAST_REJOIN_INTERVAL] =
         g_param_spec_int(NM_SETTING_TEAM_MCAST_REJOIN_INTERVAL,
                          "",
@@ -1591,14 +1591,14 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
                                  &nm_sett_info_propert_type_team_i);
 
     /**
-	 * NMSettingTeam:runner:
-	 *
-	 * Corresponds to the teamd runner.name.
-	 * Permitted values are: "roundrobin", "broadcast", "activebackup",
-	 * "loadbalance", "lacp", "random".
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeam:runner:
+     *
+     * Corresponds to the teamd runner.name.
+     * Permitted values are: "roundrobin", "broadcast", "activebackup",
+     * "loadbalance", "lacp", "random".
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER] =
         g_param_spec_string(NM_SETTING_TEAM_RUNNER,
                             "",
@@ -1610,12 +1610,12 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
                                  &nm_sett_info_propert_type_team_s);
 
     /**
-	 * NMSettingTeam:runner-hwaddr-policy:
-	 *
-	 * Corresponds to the teamd runner.hwaddr_policy.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeam:runner-hwaddr-policy:
+     *
+     * Corresponds to the teamd runner.hwaddr_policy.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_HWADDR_POLICY] =
         g_param_spec_string(NM_SETTING_TEAM_RUNNER_HWADDR_POLICY,
                             "",
@@ -1627,12 +1627,12 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
                                  &nm_sett_info_propert_type_team_s);
 
     /**
-	 * NMSettingTeam:runner-tx-hash:
-	 *
-	 * Corresponds to the teamd runner.tx_hash.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeam:runner-tx-hash:
+     *
+     * Corresponds to the teamd runner.tx_hash.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_HASH] = g_param_spec_boxed(
         NM_SETTING_TEAM_RUNNER_TX_HASH,
         "",
@@ -1644,12 +1644,12 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
                                  &nm_sett_info_propert_type_team_as);
 
     /**
-	 * NMSettingTeam:runner-tx-balancer:
-	 *
-	 * Corresponds to the teamd runner.tx_balancer.name.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeam:runner-tx-balancer:
+     *
+     * Corresponds to the teamd runner.tx_balancer.name.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER] =
         g_param_spec_string(NM_SETTING_TEAM_RUNNER_TX_BALANCER,
                             "",
@@ -1661,12 +1661,12 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
                                  &nm_sett_info_propert_type_team_s);
 
     /**
-	 * NMSettingTeam:runner-tx-balancer-interval:
-	 *
-	 * Corresponds to the teamd runner.tx_balancer.interval.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeam:runner-tx-balancer-interval:
+     *
+     * Corresponds to the teamd runner.tx_balancer.interval.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_TX_BALANCER_INTERVAL] =
         g_param_spec_int(NM_SETTING_TEAM_RUNNER_TX_BALANCER_INTERVAL,
                          "",
@@ -1681,12 +1681,12 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
         &nm_sett_info_propert_type_team_i);
 
     /**
-	 * NMSettingTeam:runner-active:
-	 *
-	 * Corresponds to the teamd runner.active.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeam:runner-active:
+     *
+     * Corresponds to the teamd runner.active.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_ACTIVE] =
         g_param_spec_boolean(NM_SETTING_TEAM_RUNNER_ACTIVE,
                              "",
@@ -1698,12 +1698,12 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
                                  &nm_sett_info_propert_type_team_b);
 
     /**
-	 * NMSettingTeam:runner-fast-rate:
-	 *
-	 * Corresponds to the teamd runner.fast_rate.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeam:runner-fast-rate:
+     *
+     * Corresponds to the teamd runner.fast_rate.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_FAST_RATE] =
         g_param_spec_boolean(NM_SETTING_TEAM_RUNNER_FAST_RATE,
                              "",
@@ -1715,12 +1715,12 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
                                  &nm_sett_info_propert_type_team_b);
 
     /**
-	 * NMSettingTeam:runner-sys-prio:
-	 *
-	 * Corresponds to the teamd runner.sys_prio.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeam:runner-sys-prio:
+     *
+     * Corresponds to the teamd runner.sys_prio.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_SYS_PRIO] =
         g_param_spec_int(NM_SETTING_TEAM_RUNNER_SYS_PRIO,
                          "",
@@ -1734,12 +1734,12 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
                                  &nm_sett_info_propert_type_team_i);
 
     /**
-	 * NMSettingTeam:runner-min-ports:
-	 *
-	 * Corresponds to the teamd runner.min_ports.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeam:runner-min-ports:
+     *
+     * Corresponds to the teamd runner.min_ports.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_MIN_PORTS] =
         g_param_spec_int(NM_SETTING_TEAM_RUNNER_MIN_PORTS,
                          "",
@@ -1753,12 +1753,12 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
                                  &nm_sett_info_propert_type_team_i);
 
     /**
-	 * NMSettingTeam:runner-agg-select-policy:
-	 *
-	 * Corresponds to the teamd runner.agg_select_policy.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeam:runner-agg-select-policy:
+     *
+     * Corresponds to the teamd runner.agg_select_policy.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_MASTER_RUNNER_AGG_SELECT_POLICY] =
         g_param_spec_string(NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY,
                             "",
@@ -1770,19 +1770,19 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
                                  &nm_sett_info_propert_type_team_s);
 
     /**
-	 * NMSettingTeam:link-watchers: (type GPtrArray(NMTeamLinkWatcher))
-	 *
-	 * Link watchers configuration for the connection: each link watcher is
-	 * defined by a dictionary, whose keys depend upon the selected link
-	 * watcher. Available link watchers are 'ethtool', 'nsna_ping' and
-	 * 'arp_ping' and it is specified in the dictionary with the key 'name'.
-	 * Available keys are:   ethtool: 'delay-up', 'delay-down', 'init-wait';
-	 * nsna_ping: 'init-wait', 'interval', 'missed-max', 'target-host';
-	 * arp_ping: all the ones in nsna_ping and 'source-host', 'validate-active',
-	 * 'validate-inactive', 'send-always'. See teamd.conf man for more details.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingTeam:link-watchers: (type GPtrArray(NMTeamLinkWatcher))
+     *
+     * Link watchers configuration for the connection: each link watcher is
+     * defined by a dictionary, whose keys depend upon the selected link
+     * watcher. Available link watchers are 'ethtool', 'nsna_ping' and
+     * 'arp_ping' and it is specified in the dictionary with the key 'name'.
+     * Available keys are:   ethtool: 'delay-up', 'delay-down', 'init-wait';
+     * nsna_ping: 'init-wait', 'interval', 'missed-max', 'target-host';
+     * arp_ping: all the ones in nsna_ping and 'source-host', 'validate-active',
+     * 'validate-inactive', 'send-always'. See teamd.conf man for more details.
+     *
+     * Since: 1.12
+     **/
     obj_properties[NM_TEAM_ATTRIBUTE_LINK_WATCHERS] =
         g_param_spec_boxed(NM_SETTING_TEAM_LINK_WATCHERS,
                            "",
@@ -1794,13 +1794,13 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
                                  &nm_sett_info_propert_type_team_link_watchers);
 
     /* ---dbus---
-	 * property: interface-name
-	 * format: string
-	 * description: Deprecated in favor of connection.interface-name, but can
-	 *   be used for backward-compatibility with older daemons, to set the
-	 *   team's interface name.
-	 * ---end---
-	 */
+     * property: interface-name
+     * format: string
+     * description: Deprecated in favor of connection.interface-name, but can
+     *   be used for backward-compatibility with older daemons, to set the
+     *   team's interface name.
+     * ---end---
+     */
     _nm_properties_override_dbus(properties_override,
                                  "interface-name",
                                  &nm_sett_info_propert_type_deprecated_interface_name);

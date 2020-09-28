@@ -299,23 +299,23 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
 
         /* APNs roughly follow the same rules as DNS domain names.  Allowed
-		 * characters are a-z, 0-9, . and -.  GSM 03.03 Section 9.1 states:
-		 *
-		 *   The syntax of the APN shall follow the Name Syntax defined in
-		 *   RFC 2181 [14] and RFC 1035 [15]. The APN consists of one or
-		 *   more labels. Each label is coded as one octet length field
-		 *   followed by that number of octets coded as 8 bit ASCII characters.
-		 *   Following RFC 1035 [15] the labels should consist only of the
-		 *   alphabetic characters (A-Z and a-z), digits (0-9) and the
-		 *   dash (-). The case of alphabetic characters is not significant.
-		 *
-		 * A dot (.) is commonly used to separate parts of the APN, and
-		 * apparently the underscore (_) is used as well.  RFC 2181 indicates
-		 * that no restrictions of any kind are placed on DNS labels, and thus
-		 * it would appear that none are placed on APNs either, but many modems
-		 * and networks will fail to accept APNs that include odd characters
-		 * like space ( ) and such.
-		 */
+         * characters are a-z, 0-9, . and -.  GSM 03.03 Section 9.1 states:
+         *
+         *   The syntax of the APN shall follow the Name Syntax defined in
+         *   RFC 2181 [14] and RFC 1035 [15]. The APN consists of one or
+         *   more labels. Each label is coded as one octet length field
+         *   followed by that number of octets coded as 8 bit ASCII characters.
+         *   Following RFC 1035 [15] the labels should consist only of the
+         *   alphabetic characters (A-Z and a-z), digits (0-9) and the
+         *   dash (-). The case of alphabetic characters is not significant.
+         *
+         * A dot (.) is commonly used to separate parts of the APN, and
+         * apparently the underscore (_) is used as well.  RFC 2181 indicates
+         * that no restrictions of any kind are placed on DNS labels, and thus
+         * it would appear that none are placed on APNs either, but many modems
+         * and networks will fail to accept APNs that include odd characters
+         * like space ( ) and such.
+         */
         for (i = 0; i < apn_len; i++) {
             if (!g_ascii_isalnum(priv->apn[i]) && (priv->apn[i] != '.') && (priv->apn[i] != '_')
                 && (priv->apn[i] != '-')) {
@@ -643,14 +643,14 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
     setting_class->need_secrets   = need_secrets;
 
     /**
-	 * NMSettingGsm:auto-config:
-	 *
-	 * When %TRUE, the settings such as APN, username, or password will
-	 * default to values that match the network the modem will register
-	 * to in the Mobile Broadband Provider database.
-	 *
-	 * Since: 1.22
-	 **/
+     * NMSettingGsm:auto-config:
+     *
+     * When %TRUE, the settings such as APN, username, or password will
+     * default to values that match the network the modem will register
+     * to in the Mobile Broadband Provider database.
+     *
+     * Since: 1.22
+     **/
     obj_properties[PROP_AUTO_CONFIG] =
         g_param_spec_boolean(NM_SETTING_GSM_AUTO_CONFIG,
                              "",
@@ -659,13 +659,13 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingGsm:number:
-	 *
-	 * Legacy setting that used to help establishing PPP data sessions for
-	 * GSM-based modems.
-	 *
-	 * Deprecated: 1.16: User-provided values for this setting are no longer used.
-	 **/
+     * NMSettingGsm:number:
+     *
+     * Legacy setting that used to help establishing PPP data sessions for
+     * GSM-based modems.
+     *
+     * Deprecated: 1.16: User-provided values for this setting are no longer used.
+     **/
     obj_properties[PROP_NUMBER] = g_param_spec_string(NM_SETTING_GSM_NUMBER,
                                                       "",
                                                       "",
@@ -673,12 +673,12 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
                                                       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingGsm:username:
-	 *
-	 * The username used to authenticate with the network, if required.  Many
-	 * providers do not require a username, or accept any username.  But if a
-	 * username is required, it is specified here.
-	 **/
+     * NMSettingGsm:username:
+     *
+     * The username used to authenticate with the network, if required.  Many
+     * providers do not require a username, or accept any username.  But if a
+     * username is required, it is specified here.
+     **/
     obj_properties[PROP_USERNAME] = g_param_spec_string(NM_SETTING_GSM_USERNAME,
                                                         "",
                                                         "",
@@ -686,12 +686,12 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
                                                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingGsm:password:
-	 *
-	 * The password used to authenticate with the network, if required.  Many
-	 * providers do not require a password, or accept any password.  But if a
-	 * password is required, it is specified here.
-	 **/
+     * NMSettingGsm:password:
+     *
+     * The password used to authenticate with the network, if required.  Many
+     * providers do not require a password, or accept any password.  But if a
+     * password is required, it is specified here.
+     **/
     obj_properties[PROP_PASSWORD] =
         g_param_spec_string(NM_SETTING_GSM_PASSWORD,
                             "",
@@ -700,10 +700,10 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
                             G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingGsm:password-flags:
-	 *
-	 * Flags indicating how to handle the #NMSettingGsm:password property.
-	 **/
+     * NMSettingGsm:password-flags:
+     *
+     * Flags indicating how to handle the #NMSettingGsm:password property.
+     **/
     obj_properties[PROP_PASSWORD_FLAGS] =
         g_param_spec_flags(NM_SETTING_GSM_PASSWORD_FLAGS,
                            "",
@@ -713,16 +713,16 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingGsm:apn:
-	 *
-	 * The GPRS Access Point Name specifying the APN used when establishing a
-	 * data session with the GSM-based network.  The APN often determines how
-	 * the user will be billed for their network usage and whether the user has
-	 * access to the Internet or just a provider-specific walled-garden, so it
-	 * is important to use the correct APN for the user's mobile broadband plan.
-	 * The APN may only be composed of the characters a-z, 0-9, ., and - per GSM
-	 * 03.60 Section 14.9.
-	 **/
+     * NMSettingGsm:apn:
+     *
+     * The GPRS Access Point Name specifying the APN used when establishing a
+     * data session with the GSM-based network.  The APN often determines how
+     * the user will be billed for their network usage and whether the user has
+     * access to the Internet or just a provider-specific walled-garden, so it
+     * is important to use the correct APN for the user's mobile broadband plan.
+     * The APN may only be composed of the characters a-z, 0-9, ., and - per GSM
+     * 03.60 Section 14.9.
+     **/
     obj_properties[PROP_APN] = g_param_spec_string(NM_SETTING_GSM_APN,
                                                    "",
                                                    "",
@@ -730,14 +730,14 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
                                                    G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingGsm:network-id:
-	 *
-	 * The Network ID (GSM LAI format, ie MCC-MNC) to force specific network
-	 * registration.  If the Network ID is specified, NetworkManager will
-	 * attempt to force the device to register only on the specified network.
-	 * This can be used to ensure that the device does not roam when direct
-	 * roaming control of the device is not otherwise possible.
-	 **/
+     * NMSettingGsm:network-id:
+     *
+     * The Network ID (GSM LAI format, ie MCC-MNC) to force specific network
+     * registration.  If the Network ID is specified, NetworkManager will
+     * attempt to force the device to register only on the specified network.
+     * This can be used to ensure that the device does not roam when direct
+     * roaming control of the device is not otherwise possible.
+     **/
     obj_properties[PROP_NETWORK_ID] =
         g_param_spec_string(NM_SETTING_GSM_NETWORK_ID,
                             "",
@@ -746,12 +746,12 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingGsm:pin:
-	 *
-	 * If the SIM is locked with a PIN it must be unlocked before any other
-	 * operations are requested.  Specify the PIN here to allow operation of the
-	 * device.
-	 **/
+     * NMSettingGsm:pin:
+     *
+     * If the SIM is locked with a PIN it must be unlocked before any other
+     * operations are requested.  Specify the PIN here to allow operation of the
+     * device.
+     **/
     obj_properties[PROP_PIN] =
         g_param_spec_string(NM_SETTING_GSM_PIN,
                             "",
@@ -760,10 +760,10 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
                             G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingGsm:pin-flags:
-	 *
-	 * Flags indicating how to handle the #NMSettingGsm:pin property.
-	 **/
+     * NMSettingGsm:pin-flags:
+     *
+     * Flags indicating how to handle the #NMSettingGsm:pin property.
+     **/
     obj_properties[PROP_PIN_FLAGS] = g_param_spec_flags(NM_SETTING_GSM_PIN_FLAGS,
                                                         "",
                                                         "",
@@ -772,11 +772,11 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
                                                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingGsm:home-only:
-	 *
-	 * When %TRUE, only connections to the home network will be allowed.
-	 * Connections to roaming networks will not be made.
-	 **/
+     * NMSettingGsm:home-only:
+     *
+     * When %TRUE, only connections to the home network will be allowed.
+     * Connections to roaming networks will not be made.
+     **/
     obj_properties[PROP_HOME_ONLY] =
         g_param_spec_boolean(NM_SETTING_GSM_HOME_ONLY,
                              "",
@@ -785,14 +785,14 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingGsm:device-id:
-	 *
-	 * The device unique identifier (as given by the WWAN management service)
-	 * which this connection applies to.  If given, the connection will only
-	 * apply to the specified device.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingGsm:device-id:
+     *
+     * The device unique identifier (as given by the WWAN management service)
+     * which this connection applies to.  If given, the connection will only
+     * apply to the specified device.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_DEVICE_ID] =
         g_param_spec_string(NM_SETTING_GSM_DEVICE_ID,
                             "",
@@ -801,15 +801,15 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingGsm:sim-id:
-	 *
-	 * The SIM card unique identifier (as given by the WWAN management service)
-	 * which this connection applies to.  If given, the connection will apply
-	 * to any device also allowed by #NMSettingGsm:device-id which contains a
-	 * SIM card matching the given identifier.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingGsm:sim-id:
+     *
+     * The SIM card unique identifier (as given by the WWAN management service)
+     * which this connection applies to.  If given, the connection will apply
+     * to any device also allowed by #NMSettingGsm:device-id which contains a
+     * SIM card matching the given identifier.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_SIM_ID] = g_param_spec_string(NM_SETTING_GSM_SIM_ID,
                                                       "",
                                                       "",
@@ -817,16 +817,16 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
                                                       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingGsm:sim-operator-id:
-	 *
-	 * A MCC/MNC string like "310260" or "21601" identifying the specific
-	 * mobile network operator which this connection applies to.  If given,
-	 * the connection will apply to any device also allowed by
-	 * #NMSettingGsm:device-id and #NMSettingGsm:sim-id which contains a SIM
-	 * card provisioned by the given operator.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingGsm:sim-operator-id:
+     *
+     * A MCC/MNC string like "310260" or "21601" identifying the specific
+     * mobile network operator which this connection applies to.  If given,
+     * the connection will apply to any device also allowed by
+     * #NMSettingGsm:device-id and #NMSettingGsm:sim-id which contains a SIM
+     * card provisioned by the given operator.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_SIM_OPERATOR_ID] =
         g_param_spec_string(NM_SETTING_GSM_SIM_OPERATOR_ID,
                             "",
@@ -835,13 +835,13 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingGsm:mtu:
-	 *
-	 * If non-zero, only transmit packets of the specified size or smaller,
-	 * breaking larger packets up into multiple frames.
-	 *
-	 * Since: 1.8
-	 **/
+     * NMSettingGsm:mtu:
+     *
+     * If non-zero, only transmit packets of the specified size or smaller,
+     * breaking larger packets up into multiple frames.
+     *
+     * Since: 1.8
+     **/
     obj_properties[PROP_MTU] = g_param_spec_uint(NM_SETTING_GSM_MTU,
                                                  "",
                                                  "",

@@ -58,9 +58,9 @@ nmt_newt_dialog_g_log_handler(const char *   log_domain,
                                    message);
 
     /* newtWinMessage() wraps the window too narrowly by default, so
-	 * we don't want to use that. But we intentionally avoid using any
-	 * NmtNewt classes, to avoid possible error recursion.
-	 */
+     * we don't want to use that. But we intentionally avoid using any
+     * NmtNewt classes, to avoid possible error recursion.
+     */
 
     newtGetScreenSize(&screen_width, &screen_height);
     text = newtTextboxReflowed(-1, -1, full_message, MAX(70, screen_width - 10), 0, 0, 0);

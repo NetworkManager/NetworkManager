@@ -557,13 +557,13 @@ nmt_newt_widget_class_init(NmtNewtWidgetClass *widget_class)
     /* signals */
 
     /**
-	 * NmtNewtWidget::needs-rebuild:
-	 * @widget: the #NmtNewtWidget
-	 *
-	 * Emitted when nmt_newt_widget_need_rebuild() is called on @widget
-	 * or any of its children. This signal propagates up the container
-	 * hierarchy, eventually reaching the top-level #NmtNewtForm.
-	 */
+     * NmtNewtWidget::needs-rebuild:
+     * @widget: the #NmtNewtWidget
+     *
+     * Emitted when nmt_newt_widget_need_rebuild() is called on @widget
+     * or any of its children. This signal propagates up the container
+     * hierarchy, eventually reaching the top-level #NmtNewtForm.
+     */
     signals[NEEDS_REBUILD] = g_signal_new("needs-rebuild",
                                           G_OBJECT_CLASS_TYPE(object_class),
                                           G_SIGNAL_RUN_FIRST,
@@ -575,11 +575,11 @@ nmt_newt_widget_class_init(NmtNewtWidgetClass *widget_class)
                                           0);
 
     /**
-	 * NmtNewtWidget::activated:
-	 * @widget: the #NmtNewtWidget
-	 *
-	 * Emitted when the widget's #newtComponent is activated.
-	 */
+     * NmtNewtWidget::activated:
+     * @widget: the #NmtNewtWidget
+     *
+     * Emitted when the widget's #newtComponent is activated.
+     */
     signals[ACTIVATED] = g_signal_new("activated",
                                       G_OBJECT_CLASS_TYPE(object_class),
                                       G_SIGNAL_RUN_FIRST,
@@ -593,10 +593,10 @@ nmt_newt_widget_class_init(NmtNewtWidgetClass *widget_class)
     /* properties */
 
     /**
-	 * NmtNewtWidget:parent:
-	 *
-	 * The widget's parent widget, or %NULL if it has no parent.
-	 */
+     * NmtNewtWidget:parent:
+     *
+     * The widget's parent widget, or %NULL if it has no parent.
+     */
     g_object_class_install_property(object_class,
                                     PROP_PARENT,
                                     g_param_spec_object("parent",
@@ -605,32 +605,32 @@ nmt_newt_widget_class_init(NmtNewtWidgetClass *widget_class)
                                                         NMT_TYPE_NEWT_WIDGET,
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtWidget:visible:
-	 *
-	 * Whether the widget is visible. Invisible widgets do not get
-	 * realized or sized.
-	 */
+     * NmtNewtWidget:visible:
+     *
+     * Whether the widget is visible. Invisible widgets do not get
+     * realized or sized.
+     */
     g_object_class_install_property(
         object_class,
         PROP_VISIBLE,
         g_param_spec_boolean("visible", "", "", TRUE, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtWidget:valid:
-	 *
-	 * Whether the widget's content is considered valid. Components
-	 * determine their own validity. A container, by default, is
-	 * considered valid if all of its children are valid.
-	 */
+     * NmtNewtWidget:valid:
+     *
+     * Whether the widget's content is considered valid. Components
+     * determine their own validity. A container, by default, is
+     * considered valid if all of its children are valid.
+     */
     g_object_class_install_property(
         object_class,
         PROP_VALID,
         g_param_spec_boolean("valid", "", "", TRUE, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtWidget:exit-on-activate:
-	 *
-	 * If %TRUE, the widget will call nmt_newt_form_quit() on its form
-	 * when it is activated.
-	 */
+     * NmtNewtWidget:exit-on-activate:
+     *
+     * If %TRUE, the widget will call nmt_newt_form_quit() on its form
+     * when it is activated.
+     */
     g_object_class_install_property(
         object_class,
         PROP_EXIT_ON_ACTIVATE,

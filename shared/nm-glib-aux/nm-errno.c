@@ -170,8 +170,8 @@ nm_strerror_native(int errsv)
 
         if (pthread_key_create(&key, g_free) != 0 || pthread_setspecific(key, buf) != 0) {
             /* Failure. We will leak the buffer when the thread exits.
-			 *
-			 * Nothing we can do about it really. For Debug builds we fail with an assertion. */
+             *
+             * Nothing we can do about it really. For Debug builds we fail with an assertion. */
             nm_assert_not_reached();
         }
         errno = errno_saved;

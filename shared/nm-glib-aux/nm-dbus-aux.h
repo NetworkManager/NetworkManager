@@ -97,10 +97,10 @@ nm_dbus_connection_signal_subscribe_properties_changed(GDBusConnection *   dbus_
     nm_assert(bus_name);
 
     /* it seems that using a non-unique name causes problems that we get signals
-	 * also from unrelated senders. Usually, you are anyway monitoring the name-owner,
-	 * so you should have the unique name at hand.
-	 *
-	 * If not, investigate this, ensure that it works, and lift this restriction. */
+     * also from unrelated senders. Usually, you are anyway monitoring the name-owner,
+     * so you should have the unique name at hand.
+     *
+     * If not, investigate this, ensure that it works, and lift this restriction. */
     nm_assert(g_dbus_is_unique_name(bus_name));
 
     return g_dbus_connection_signal_subscribe(dbus_connection,

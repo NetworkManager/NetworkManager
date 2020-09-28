@@ -153,13 +153,13 @@ typedef struct {
     GDBusServer *server;
 
     /* With peer bus connections, we'll get a new connection for each
-	 * client.  For each connection we create an ObjectManager for
-	 * that connection to handle exporting our objects.
-	 *
-	 * Note that even for connections that don't export any objects
-	 * we'll still create GDBusObjectManager since that's where we store
-	 * the pointer to the GDBusConnection.
-	 */
+     * client.  For each connection we create an ObjectManager for
+     * that connection to handle exporting our objects.
+     *
+     * Note that even for connections that don't export any objects
+     * we'll still create GDBusObjectManager since that's where we store
+     * the pointer to the GDBusConnection.
+     */
     CList object_mgr_lst_head;
 
     NMDBusManager *manager;
@@ -214,9 +214,9 @@ close_connection_in_idle(gpointer user_data)
                   info->connection);
 
     /* FIXME: there's a bug (754730) in GLib for which the connection
-	 * is marked as closed when the remote peer vanishes but its
-	 * resources are not cleaned up.  Work around it by explicitly
-	 * closing the connection in that case. */
+     * is marked as closed when the remote peer vanishes but its
+     * resources are not cleaned up.  Work around it by explicitly
+     * closing the connection in that case. */
     if (info->remote_peer_vanished)
         g_dbus_connection_close(info->connection, NULL, NULL, NULL);
 
@@ -261,7 +261,7 @@ private_server_closed_connection(GDBusConnection *conn,
     g_object_ref(s->manager);
 
     /* Delay the close of connection to ensure that D-Bus signals
-	 * are handled */
+     * are handled */
     g_idle_add(close_connection_in_idle, info);
 }
 
@@ -292,10 +292,10 @@ private_server_new_connection(GDBusServer *server, GDBusConnection *conn, gpoint
           NM_HASH_OBFUSCATE_PTR(conn));
 
     /* Emit this for the manager.
-	 *
-	 * It is essential to do this from the "new-connection" signal handler, as
-	 * at that point no messages from the connection are yet processed
-	 * (which avoids races with registering objects). */
+     *
+     * It is essential to do this from the "new-connection" signal handler, as
+     * at that point no messages from the connection are yet processed
+     * (which avoids races with registering objects). */
     g_signal_emit(s->manager, signals[PRIVATE_CONNECTION_NEW], s->detail, conn, manager);
     return TRUE;
 }
@@ -527,12 +527,12 @@ _get_caller_info_ensure(NMDBusManager *self,
 #define CALLER_INFO_MAX_AGE (NM_UTILS_NSEC_PER_SEC * 1)
 
     /* Linear search the cache for the sender.
-	 *
-	 * The number of cached caller-infos is limited. Hence, it's O(1) and
-	 * the list is reasonably short.
-	 * Also, the entire caching assumes that we repeatedly ask for the
-	 * same sender. That means, we expect to find the right caller info
-	 * at the front of the list. */
+     *
+     * The number of cached caller-infos is limited. Hence, it's O(1) and
+     * the list is reasonably short.
+     * Also, the entire caching assumes that we repeatedly ask for the
+     * same sender. That means, we expect to find the right caller info
+     * at the front of the list. */
     num         = 1;
     caller_info = NULL;
     c_list_for_each_entry (ci, &priv->caller_info_lst_head, caller_info_lst) {
@@ -911,7 +911,7 @@ static const GDBusInterfaceVTable dbus_vtable = {
     .get_property = dbus_vtable_get_property,
 
     /* set_property is handled via method_call as well. We need to authenticate
-	 * which requires an asynchronous handler. */
+     * which requires an asynchronous handler. */
     .set_property = NULL,
 };
 
@@ -947,11 +947,11 @@ _obj_register(NMDBusManager *self, NMDBusObject *obj)
 
         if (prev_interface_infos == klass->interface_infos) {
             /* derived classes inherrit the interface-infos from the parent class.
-			 * For convenience, we allow the subclass to leave interface-infos untouched,
-			 * but it means we must ignore the parent's interface, because we already
-			 * handled it.
-			 *
-			 * Note that the loop goes from the parent classes to child classes */
+             * For convenience, we allow the subclass to leave interface-infos untouched,
+             * but it means we must ignore the parent's interface, because we already
+             * handled it.
+             *
+             * Note that the loop goes from the parent classes to child classes */
             continue;
         }
         prev_interface_infos = klass->interface_infos;
@@ -993,18 +993,18 @@ _obj_register(NMDBusManager *self, NMDBusObject *obj)
     nm_assert(!c_list_is_empty(&obj->internal.registration_lst_head));
 
     /* Currently, the interfaces of an object do not changed and strictly depend on the object glib type.
-	 * We don't need more flexibility, and it simplifies the code. Hence, now emit interface-added
-	 * signal for the new object.
-	 *
-	 * Warning: note that if @obj's notify signal is currently blocked via g_object_freeze_notify(),
-	 * we might emit properties with an inconsistent (internal) state. There is no easy solution,
-	 * because we have to emit the signal now, and we don't know what the correct desired state
-	 * of the properties is.
-	 * Another problem is, upon unfreezing the signals, we immediately send PropertiesChanged
-	 * notifications out. Which is a bit odd, as we just export the object.
-	 *
-	 * In general, it's ok to export an object with frozen signals. But you better make sure
-	 * that all properties are in a self-consistent state when exporting the object. */
+     * We don't need more flexibility, and it simplifies the code. Hence, now emit interface-added
+     * signal for the new object.
+     *
+     * Warning: note that if @obj's notify signal is currently blocked via g_object_freeze_notify(),
+     * we might emit properties with an inconsistent (internal) state. There is no easy solution,
+     * because we have to emit the signal now, and we don't know what the correct desired state
+     * of the properties is.
+     * Another problem is, upon unfreezing the signals, we immediately send PropertiesChanged
+     * notifications out. Which is a bit odd, as we just export the object.
+     *
+     * In general, it's ok to export an object with frozen signals. But you better make sure
+     * that all properties are in a self-consistent state when exporting the object. */
     g_dbus_connection_emit_signal(priv->main_dbus_connection,
                                   NULL,
                                   OBJECT_MANAGER_SERVER_BASE_PATH,
@@ -1167,12 +1167,12 @@ _nm_dbus_manager_obj_notify(NMDBusObject *obj, guint n_pspecs, const GParamSpec 
     }
 
     /* do a naive search for the matching NMDBusPropertyInfoExtended infos. Since the number of
-	 * (interfaces x properties) is static and possibly small, this naive search is effectively
-	 * O(1). We might wanna introduce some index to lookup the properties in question faster.
-	 *
-	 * The nice part of this implementation is however, that the order in which properties
-	 * are added to the GVariant is strictly defined to be the order in which the D-Bus property-info
-	 * is declared. Getting a defined ordering with some smart lookup would be hard. */
+     * (interfaces x properties) is static and possibly small, this naive search is effectively
+     * O(1). We might wanna introduce some index to lookup the properties in question faster.
+     *
+     * The nice part of this implementation is however, that the order in which properties
+     * are added to the GVariant is strictly defined to be the order in which the D-Bus property-info
+     * is declared. Getting a defined ordering with some smart lookup would be hard. */
     c_list_for_each_entry (reg_data, &obj->internal.registration_lst_head, registration_lst) {
         const NMDBusInterfaceInfoExtended *interface_info = _reg_data_get_interface_info(reg_data);
         gboolean                           has_properties = FALSE;
@@ -1223,7 +1223,7 @@ _nm_dbus_manager_obj_notify(NMDBusObject *obj, guint n_pspecs, const GParamSpec 
 
         if (G_UNLIKELY(interface_info == &nm_interface_info_device_statistics)) {
             /* we treat the Device.Statistics signal special, because we need to
-			 * emit a signal also for it (below). */
+             * emit a signal also for it (below). */
             nm_assert(!device_statistics_args);
             device_statistics_args = g_variant_ref_sink(args);
         }
@@ -1241,8 +1241,8 @@ _nm_dbus_manager_obj_notify(NMDBusObject *obj, guint n_pspecs, const GParamSpec 
 
     if (G_UNLIKELY(device_statistics_args)) {
         /* this is a special interface: it has a legacy PropertiesChanged signal,
-		 * however, contrary to other interfaces with ~regular~ legacy signals,
-		 * we only notify about properties that actually belong to this interface. */
+         * however, contrary to other interfaces with ~regular~ legacy signals,
+         * we only notify about properties that actually belong to this interface. */
         g_dbus_connection_emit_signal(priv->main_dbus_connection,
                                       NULL,
                                       obj->internal.path,
@@ -1257,22 +1257,22 @@ _nm_dbus_manager_obj_notify(NMDBusObject *obj, guint n_pspecs, const GParamSpec 
         gs_unref_variant GVariant *args = NULL;
 
         /* The legacy PropertyChanged signal on the NetworkManager D-Bus interface is
-		 * deprecated for the standard signal on org.freedesktop.DBus.Properties. However,
-		 * for backward compatibility, we still need to emit it.
-		 *
-		 * Due to a bug in dbus-glib in NetworkManager <= 1.0, the signal would
-		 * not only notify about properties that were actually on the corresponding
-		 * D-Bus interface. Instead, it would notify about all relevant properties
-		 * on all interfaces that had such a signal.
-		 *
-		 * For example, "HwAddress" gets emitted both on "fdo.NM.Device.Ethernet"
-		 * and "fdo.NM.Device.Veth" for veth interfaces, although only the former
-		 * actually has such a property.
-		 * Also note that "fdo.NM.Device" interface has no legacy signal. All notifications
-		 * about its properties are instead emitted on the interfaces of the subtypes.
-		 *
-		 * See bgo#770629 and commit bef26a2e69f51259095fa080221db73de09fd38d.
-		 */
+         * deprecated for the standard signal on org.freedesktop.DBus.Properties. However,
+         * for backward compatibility, we still need to emit it.
+         *
+         * Due to a bug in dbus-glib in NetworkManager <= 1.0, the signal would
+         * not only notify about properties that were actually on the corresponding
+         * D-Bus interface. Instead, it would notify about all relevant properties
+         * on all interfaces that had such a signal.
+         *
+         * For example, "HwAddress" gets emitted both on "fdo.NM.Device.Ethernet"
+         * and "fdo.NM.Device.Veth" for veth interfaces, although only the former
+         * actually has such a property.
+         * Also note that "fdo.NM.Device" interface has no legacy signal. All notifications
+         * about its properties are instead emitted on the interfaces of the subtypes.
+         *
+         * See bgo#770629 and commit bef26a2e69f51259095fa080221db73de09fd38d.
+         */
         args = g_variant_ref_sink(g_variant_new("(a{sv})", &legacy_builder));
         c_list_for_each_entry (reg_data, &obj->internal.registration_lst_head, registration_lst) {
             const NMDBusInterfaceInfoExtended *interface_info =
@@ -1399,10 +1399,10 @@ dbus_vtable_objmgr_method_call(GDBusConnection *      connection,
         GVariantBuilder interfaces_builder;
 
         /* note that we are called on an idle handler. Hence, all properties are
-		 * supposed to be in a consistent state. That is true, if you always
-		 * g_object_thaw_notify() before returning to the mainloop. Keeping
-		 * signals frozen between while returning from the current call stack
-		 * is anyway a very fragile thing, easy to get wrong. Don't do that. */
+         * supposed to be in a consistent state. That is true, if you always
+         * g_object_thaw_notify() before returning to the mainloop. Keeping
+         * signals frozen between while returning from the current call stack
+         * is anyway a very fragile thing, easy to get wrong. Don't do that. */
         g_variant_builder_add(&array_builder,
                               "{oa{sa{sv}}}",
                               obj->internal.path,
@@ -1489,10 +1489,10 @@ nm_dbus_manager_acquire_bus(NMDBusManager *self, gboolean request_name)
     priv = NM_DBUS_MANAGER_GET_PRIVATE(self);
 
     /* Create the D-Bus connection and registering the name synchronously.
-	 * That is necessary because we need to exit right away if we can't
-	 * acquire the name despite connecting to the bus successfully.
-	 * It means that something is gravely broken -- such as another NetworkManager
-	 * instance running. */
+     * That is necessary because we need to exit right away if we can't
+     * acquire the name despite connecting to the bus successfully.
+     * It means that something is gravely broken -- such as another NetworkManager
+     * instance running. */
     priv->main_dbus_connection = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &error);
     if (!priv->main_dbus_connection) {
         _LOGE("cannot connect to D-Bus: %s", error->message);
@@ -1564,9 +1564,9 @@ nm_dbus_manager_stop(NMDBusManager *self)
     priv->shutting_down = TRUE;
 
     /* during shutdown we also clear the set-property-handler. It's no longer
-	 * possible to set a property, because doing so would require authorization,
-	 * which is async, which is just complicated to get right. No more property
-	 * setting from now on. */
+     * possible to set a property, because doing so would require authorization,
+     * which is async, which is just complicated to get right. No more property
+     * setting from now on. */
     priv->set_property_handler      = NULL;
     priv->set_property_handler_data = NULL;
 }
@@ -1602,7 +1602,7 @@ dispose(GObject *object)
     CallerInfo *          caller_info;
 
     /* All exported NMDBusObject instances keep the manager alive, so we don't
-	 * expect any remaining objects. */
+     * expect any remaining objects. */
     nm_assert(!priv->objects_by_path || g_hash_table_size(priv->objects_by_path) == 0);
     nm_assert(c_list_is_empty(&priv->objects_lst_head));
 
@@ -1691,8 +1691,8 @@ _new_unix_process(GDBusMethodInvocation *context,
 
     g_return_val_if_fail(dbus_sender && *dbus_sender, NULL);
     /* polkit glib library stores uid and pid as int. There might be some
-	 * pitfalls if the id ever happens to be larger then that. Just assert against
-	 * it here. */
+     * pitfalls if the id ever happens to be larger then that. Just assert against
+     * it here. */
     g_return_val_if_fail(uid <= MIN(G_MAXINT, G_MAXINT32), NULL);
     g_return_val_if_fail(pid > 0 && pid <= MIN(G_MAXINT, G_MAXINT32), NULL);
 
@@ -1700,8 +1700,8 @@ _new_unix_process(GDBusMethodInvocation *context,
 
     if (nm_auth_subject_get_subject_type(self) != NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS) {
         /* this most likely happened because the process is gone (start_time==0).
-		 * Either that is not assert-worthy, or constructed() already asserted.
-		 * Just return NULL. */
+         * Either that is not assert-worthy, or constructed() already asserted.
+         * Just return NULL. */
         g_clear_object(&self);
     }
     return self;

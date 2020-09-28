@@ -44,7 +44,7 @@ typedef struct {
     gsize len;
 
     /* the data pointer. This pointer must be allocated with malloc (at least
-	 * when used with nm_secret_ptr_clear()). */
+     * when used with nm_secret_ptr_clear()). */
     union {
         char *  str;
         void *  ptr;

@@ -345,11 +345,11 @@ nm_session_monitor_class_init(NMSessionMonitorClass *klass)
     gobject_class->finalize = finalize;
 
     /**
-	 * NMSessionMonitor::changed:
-	 * @monitor: A #NMSessionMonitor
-	 *
-	 * Emitted when something changes.
-	 */
+     * NMSessionMonitor::changed:
+     * @monitor: A #NMSessionMonitor
+     *
+     * Emitted when something changes.
+     */
     signals[CHANGED] = g_signal_new(NM_SESSION_MONITOR_CHANGED,
                                     NM_TYPE_SESSION_MONITOR,
                                     G_SIGNAL_RUN_LAST,

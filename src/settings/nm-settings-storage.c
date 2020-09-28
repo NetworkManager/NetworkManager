@@ -20,9 +20,9 @@ nm_settings_storage_cmp(NMSettingsStorage *a, NMSettingsStorage *b, const GSList
     NMSettingsStorageClass *klass;
 
     /* Sort by priority.
-	 *
-	 * If a > b (by priority), we return a positive number (as one
-	 * would expect by a cmp() function). */
+     *
+     * If a > b (by priority), we return a positive number (as one
+     * would expect by a cmp() function). */
 
     nm_assert(NM_IS_SETTINGS_STORAGE(a));
     nm_assert(NM_IS_SETTINGS_STORAGE(b));
@@ -39,7 +39,7 @@ nm_settings_storage_cmp(NMSettingsStorage *a, NMSettingsStorage *b, const GSList
     klass = NM_SETTINGS_STORAGE_GET_CLASS(a);
     if (klass != NM_SETTINGS_STORAGE_GET_CLASS(b)) {
         /* one plugin must return storages of the same type. Otherwise, it's
-		 * unclear how cmp_fcn() should compare them. */
+         * unclear how cmp_fcn() should compare them. */
         nm_assert_not_reached();
         return 0;
     }

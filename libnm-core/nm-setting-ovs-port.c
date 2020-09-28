@@ -371,13 +371,13 @@ nm_setting_ovs_port_class_init(NMSettingOvsPortClass *klass)
     setting_class->verify = verify;
 
     /**
-	 * NMSettingOvsPort:vlan-mode:
-	 *
-	 * The VLAN mode. One of "access", "native-tagged", "native-untagged",
-	 * "trunk" or unset.
-	 *
-	 * Since: 1.10
-	 **/
+     * NMSettingOvsPort:vlan-mode:
+     *
+     * The VLAN mode. One of "access", "native-tagged", "native-untagged",
+     * "trunk" or unset.
+     *
+     * Since: 1.10
+     **/
     obj_properties[PROP_VLAN_MODE] = g_param_spec_string(
         NM_SETTING_OVS_PORT_VLAN_MODE,
         "",
@@ -386,12 +386,12 @@ nm_setting_ovs_port_class_init(NMSettingOvsPortClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingOvsPort:tag:
-	 *
-	 * The VLAN tag in the range 0-4095.
-	 *
-	 * Since: 1.10
-	 **/
+     * NMSettingOvsPort:tag:
+     *
+     * The VLAN tag in the range 0-4095.
+     *
+     * Since: 1.10
+     **/
     obj_properties[PROP_TAG] =
         g_param_spec_uint(NM_SETTING_OVS_PORT_TAG,
                           "",
@@ -402,12 +402,12 @@ nm_setting_ovs_port_class_init(NMSettingOvsPortClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingOvsPort:lacp:
-	 *
-	 * LACP mode. One of "active", "off", or "passive".
-	 *
-	 * Since: 1.10
-	 **/
+     * NMSettingOvsPort:lacp:
+     *
+     * LACP mode. One of "active", "off", or "passive".
+     *
+     * Since: 1.10
+     **/
     obj_properties[PROP_LACP] = g_param_spec_string(NM_SETTING_OVS_PORT_LACP,
                                                     "",
                                                     "",
@@ -416,12 +416,12 @@ nm_setting_ovs_port_class_init(NMSettingOvsPortClass *klass)
                                                         | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingOvsPort:bond-mode:
-	 *
-	 * Bonding mode. One of "active-backup", "balance-slb", or "balance-tcp".
-	 *
-	 * Since: 1.10
-	 **/
+     * NMSettingOvsPort:bond-mode:
+     *
+     * Bonding mode. One of "active-backup", "balance-slb", or "balance-tcp".
+     *
+     * Since: 1.10
+     **/
     obj_properties[PROP_BOND_MODE] = g_param_spec_string(
         NM_SETTING_OVS_PORT_BOND_MODE,
         "",
@@ -430,12 +430,12 @@ nm_setting_ovs_port_class_init(NMSettingOvsPortClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingOvsPort:bond-updelay:
-	 *
-	 * The time port must be active before it starts forwarding traffic.
-	 *
-	 * Since: 1.10
-	 **/
+     * NMSettingOvsPort:bond-updelay:
+     *
+     * The time port must be active before it starts forwarding traffic.
+     *
+     * Since: 1.10
+     **/
     obj_properties[PROP_BOND_UPDELAY] =
         g_param_spec_uint(NM_SETTING_OVS_PORT_BOND_UPDELAY,
                           "",
@@ -446,12 +446,12 @@ nm_setting_ovs_port_class_init(NMSettingOvsPortClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingOvsPort:bond-downdelay:
-	 *
-	 * The time port must be inactive in order to be considered down.
-	 *
-	 * Since: 1.10
-	 **/
+     * NMSettingOvsPort:bond-downdelay:
+     *
+     * The time port must be inactive in order to be considered down.
+     *
+     * Since: 1.10
+     **/
     obj_properties[PROP_BOND_DOWNDELAY] =
         g_param_spec_uint(NM_SETTING_OVS_PORT_BOND_DOWNDELAY,
                           "",

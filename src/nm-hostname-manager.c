@@ -368,9 +368,9 @@ nm_hostname_manager_write_hostname(NMHostnameManager *self, const char *hostname
     }
 
     /* If the hostname file is a symbolic link, follow it to find where the
-	 * real file is located, otherwise g_file_set_contents will attempt to
-	 * replace the link with a plain file.
-	 */
+     * real file is located, otherwise g_file_set_contents will attempt to
+     * replace the link with a plain file.
+     */
     if (lstat(file, &file_stat) == 0 && S_ISLNK(file_stat.st_mode)
         && (link_path = nm_utils_read_link_absolute(file, NULL)))
         file = link_path;

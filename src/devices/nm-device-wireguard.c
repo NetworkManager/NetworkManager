@@ -81,14 +81,14 @@ typedef struct {
     NMSockAddrUnion sockaddr;
 
     /* the timestamp (in nm_utils_get_monotonic_timestamp_nsec() scale) when we want
-	 * to retry resolving the endpoint (again).
-	 *
-	 * It may be set to %NEXT_TRY_AT_NSEC_ASAP to indicate to re-resolve as soon as possible.
-	 *
-	 * A @sockaddr is either fixed or it has
-	 *   - @cancellable set to indicate an ongoing request
-	 *   - @next_try_at_nsec set to a positive value, indicating when
-	 *     we ought to retry. */
+     * to retry resolving the endpoint (again).
+     *
+     * It may be set to %NEXT_TRY_AT_NSEC_ASAP to indicate to re-resolve as soon as possible.
+     *
+     * A @sockaddr is either fixed or it has
+     *   - @cancellable set to indicate an ongoing request
+     *   - @next_try_at_nsec set to a positive value, indicating when
+     *     we ought to retry. */
     gint64 next_try_at_nsec;
 
     guint resolv_fail_count;
@@ -249,14 +249,14 @@ _auto_default_route_get_auto_fwmark(const char *uuid)
     guint64 rnd_seed;
 
     /* we use the generated number as fwmark but also as routing table for
-	 * the default-route.
-	 *
-	 * We pick a number
-	 *
-	 * - based on the connection's UUID (as stable seed).
-	 * - larger than 51820u (arbitrarily)
-	 * - one out of AUTO_RANDOM_RANGE
-	 */
+     * the default-route.
+     *
+     * We pick a number
+     *
+     * - based on the connection's UUID (as stable seed).
+     * - larger than 51820u (arbitrarily)
+     * - one out of AUTO_RANDOM_RANGE
+     */
 
     rnd_seed = c_siphash_hash(NM_HASH_SEED_16(0xb9,
                                               0x39,
@@ -289,12 +289,12 @@ _auto_default_route_get_auto_priority(const char *uuid)
     guint64       rnd_seed;
 
     /* we pick a priority for the routing rules as follows:
-	 *
-	 * - use the connection's UUID as stable seed for the "random" number.
-	 * - have it smaller than RANGE_TOP (32766u - 1000u), where 32766u is the priority of the default
-	 *   rules
-	 * - we add 2 rules (PRIO_WIDTH). Hence only pick even priorities.
-	 * - pick one out of AUTO_RANDOM_RANGE. */
+     *
+     * - use the connection's UUID as stable seed for the "random" number.
+     * - have it smaller than RANGE_TOP (32766u - 1000u), where 32766u is the priority of the default
+     *   rules
+     * - we add 2 rules (PRIO_WIDTH). Hence only pick even priorities.
+     * - pick one out of AUTO_RANDOM_RANGE. */
 
     rnd_seed = c_siphash_hash(NM_HASH_SEED_16(0x99,
                                               0x22,
@@ -573,9 +573,9 @@ _peers_resolve_retry_timeout(gpointer user_data)
 
         if (peer_data->ep_resolv.cancellable) {
             /* we are currently resolving a name. We don't need the global
-			 * watchdog to guard this peer. No need to adjust @next for
-			 * this one, when the currently ongoing resolving completes, we
-			 * may reschedule. Skip. */
+             * watchdog to guard this peer. No need to adjust @next for
+             * this one, when the currently ongoing resolving completes, we
+             * may reschedule. Skip. */
             continue;
         }
 
@@ -583,7 +583,7 @@ _peers_resolve_retry_timeout(gpointer user_data)
             || now >= peer_data->ep_resolv.next_try_at_nsec) {
             _peers_resolve_start(self, peer_data);
             /* same here. Now we are resolving. We don't need the global
-			 * watchdog. Skip w.r.t. finding @next. */
+             * watchdog. Skip w.r.t. finding @next. */
             continue;
         }
 
@@ -608,16 +608,16 @@ _peers_resolve_retry_reschedule(NMDeviceWireGuard *self, gint64 new_next_try_at_
 
     if (priv->resolve_next_try_id && priv->resolve_next_try_at <= new_next_try_at_nsec) {
         /* we already have an earlier timeout scheduled (possibly for
-		 * another peer that expires sooner). Don't reschedule now.
-		 * Even if the scheduled timeout expires too early, we will
-		 * compute the right next-timeout and reschedule then. */
+         * another peer that expires sooner). Don't reschedule now.
+         * Even if the scheduled timeout expires too early, we will
+         * compute the right next-timeout and reschedule then. */
         return;
     }
 
     now = nm_utils_get_monotonic_timestamp_nsec();
 
     /* schedule at most one day ahead. No problem if we expire earlier
-	 * than expected. Also, rate-limit to 500 msec. */
+     * than expected. Also, rate-limit to 500 msec. */
     interval_ms = NM_CLAMP((new_next_try_at_nsec - now) / NM_UTILS_NSEC_PER_MSEC,
                            (gint64) 500,
                            (gint64)(24 * 60 * 60 * 1000));
@@ -761,11 +761,11 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 
     if (sockaddr.sa.sa_family == AF_UNSPEC) {
         /* we failed to resolve the name. There is no need to reset the previous
-		 * sockaddr. Either it was already AF_UNSPEC, or we had a good name
-		 * from resolving before. In that case, we don't want to throw away
-		 * a possibly good IP address, since WireGuard supports automatic roaming
-		 * anyway. Either the IP address is still good (and we would wrongly
-		 * reject it), or it isn't -- in which case it does not hurt much. */
+         * sockaddr. Either it was already AF_UNSPEC, or we had a good name
+         * from resolving before. In that case, we don't want to throw away
+         * a possibly good IP address, since WireGuard supports automatic roaming
+         * anyway. Either the IP address is still good (and we would wrongly
+         * reject it), or it isn't -- in which case it does not hurt much. */
     } else {
         if (nm_sock_addr_union_cmp(&peer_data->ep_resolv.sockaddr, &sockaddr) != 0)
             changed = TRUE;
@@ -774,7 +774,7 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 
     if (resolv_error || peer_data->ep_resolv.sockaddr.sa.sa_family == AF_UNSPEC) {
         /* while it technically did not fail, something is probably odd. Retry frequently to
-		 * resolve the name, like we would do for normal failures. */
+         * resolve the name, like we would do for normal failures. */
         retry_in_msec = _peers_retry_in_msec(peer_data, TRUE);
         _LOGT(LOGD_DEVICE,
               "wireguard-peer[%s]: no %sresults for endpoint \"%s\" (retry %s)",
@@ -800,7 +800,7 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
         NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
 
         /* schedule the job in the background, to give multiple resolve events time
-		 * to complete. */
+         * to complete. */
         nm_clear_g_source(&priv->link_config_delayed_id);
         priv->link_config_delayed_id = g_idle_add_full(G_PRIORITY_DEFAULT_IDLE + 1,
                                                        link_config_delayed_resolver_cb,
@@ -822,10 +822,10 @@ _peers_resolve_start(NMDeviceWireGuard *self, PeerData *peer_data)
     peer_data->ep_resolv.cancellable = g_cancellable_new();
 
     /* set a special next-try timestamp. It is positive, and indicates
-	 * that we are in the process of trying.
-	 * This timestamp however already lies in the past, but that is correct,
-	 * because we are currently in the process of trying. We will determine
-	 * a next-try timestamp once the try completes. */
+     * that we are in the process of trying.
+     * This timestamp however already lies in the past, but that is correct,
+     * because we are currently in the process of trying. We will determine
+     * a next-try timestamp once the try completes. */
     peer_data->ep_resolv.next_try_at_nsec = NEXT_TRY_AT_NSEC_PAST;
 
     host = nm_sock_addr_endpoint_get_host(_nm_wireguard_peer_get_endpoint(peer_data->peer));
@@ -907,7 +907,7 @@ _peers_update(NMDeviceWireGuard *self,
     if (endpoint && nm_sock_addr_endpoint_get_host(endpoint)) {
         if (!nm_sock_addr_endpoint_get_fixed_sockaddr(endpoint, &sockaddr)) {
             /* we have an endpoint, but it's not a static IP address. We need to resolve
-			 * the names. */
+             * the names. */
             sockaddr_fixed = FALSE;
         }
     }
@@ -1044,8 +1044,8 @@ _peers_get_platform_list(NMDeviceWireGuardPrivate *           priv,
             *plf |= NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_KEEPALIVE_INTERVAL;
 
         /* if the peer has an endpoint but it is not yet resolved (not ready),
-		 * we still configure it and leave the endpoint unspecified. Later,
-		 * when we can resolve the endpoint, we will update. */
+         * we still configure it and leave the endpoint unspecified. Later,
+         * when we can resolve the endpoint, we will update. */
         plp->endpoint = peer_data->ep_resolv.sockaddr;
         if (plp->endpoint.sa.sa_family == AF_UNSPEC) {
             /* we don't actually ever clear endpoints, if we don't have better information. */
@@ -1089,7 +1089,7 @@ _peers_get_platform_list(NMDeviceWireGuardPrivate *           priv,
                                                          &addrbin,
                                                          &prefix)) {
                     /* the address is really not expected to be invalid, because then
-					 * the connection would not verify. Anyway, silently skip it. */
+                     * the connection would not verify. Anyway, silently skip it. */
                     continue;
                 }
 
@@ -1338,9 +1338,9 @@ static void
 _dns_config_changed(NMDnsManager *dns_manager, NMDeviceWireGuard *self)
 {
     /* when the DNS configuration changes, we re-resolve the peer addresses.
-	 *
-	 * Possibly, we should also do that when the default-route changes, but it's
-	 * hard to figure out when that happens. */
+     *
+     * Possibly, we should also do that when the default-route changes, but it's
+     * hard to figure out when that happens. */
     _peers_resolve_reresolve_all(self);
 }
 
@@ -1483,7 +1483,7 @@ link_config_delayed(NMDeviceWireGuard *self, const char *reason)
         now = nm_utils_get_monotonic_timestamp_nsec();
         if (now < priv->link_config_last_at + LINK_CONFIG_RATE_LIMIT_NSEC) {
             /* we ratelimit calls to link_config(), because we call this whenever a resolver
-			 * completes. */
+             * completes. */
             _LOGT(LOGD_DEVICE, "wireguard link config (%s) (postponed)", reason);
             priv->link_config_delayed_id =
                 g_timeout_add(NM_MAX((priv->link_config_last_at + LINK_CONFIG_RATE_LIMIT_NSEC - now)
@@ -1568,27 +1568,27 @@ _get_dev2_ip_config(NMDeviceWireGuard *self, int addr_family)
     s_wg = NM_SETTING_WIREGUARD(nm_connection_get_setting(connection, NM_TYPE_SETTING_WIREGUARD));
 
     /* Differences to `wg-quick`.
-	 *
-	 * `wg-quick` supports the "Table" setting with 3 modes:
-	 *
-	 * a1) "off": this is what we do with "peer-routes" disabled.
-	 *
-	 * a2) an explicit routing table. This is our behavior with "peer-routes" on. In this case
-	 *   we honor the "ipv4.route-table" and "ipv6.route-table" settings. One difference is that
-	 *   `wg-quick` would resolve table names from /etc/iproute2/rt_tables. Our connection profiles
-	 *   only contain table numbers, so that conversion from name to table must have happened
-	 *   before already.
-	 *
-	 * a3) "auto" (the default). In this case, `wg-quick` would only add the route to the
-	 *   main table, if the AllowedIP range is not yet reachable on the link. With "peer-routes"
-	 *   enabled, we don't check for that and always add the routes to the main-table
-	 *   (with 'ipv4.route-table' and 'ipv6.route-table' set to zero or RT_TABLE_MAIN (254)).
-	 *
-	 *   Also, in "auto" mode, `wg-quick` would add special handling for /0 routes and pick
-	 *   an empty table to configure policy routing to avoid routing loops. This handling
-	 *   of routing-loops via policy routing is not yet done, and requires a separate solution
-	 *   from constructing the peer-routes here.
-	 */
+     *
+     * `wg-quick` supports the "Table" setting with 3 modes:
+     *
+     * a1) "off": this is what we do with "peer-routes" disabled.
+     *
+     * a2) an explicit routing table. This is our behavior with "peer-routes" on. In this case
+     *   we honor the "ipv4.route-table" and "ipv6.route-table" settings. One difference is that
+     *   `wg-quick` would resolve table names from /etc/iproute2/rt_tables. Our connection profiles
+     *   only contain table numbers, so that conversion from name to table must have happened
+     *   before already.
+     *
+     * a3) "auto" (the default). In this case, `wg-quick` would only add the route to the
+     *   main table, if the AllowedIP range is not yet reachable on the link. With "peer-routes"
+     *   enabled, we don't check for that and always add the routes to the main-table
+     *   (with 'ipv4.route-table' and 'ipv6.route-table' set to zero or RT_TABLE_MAIN (254)).
+     *
+     *   Also, in "auto" mode, `wg-quick` would add special handling for /0 routes and pick
+     *   an empty table to configure policy routing to avoid routing loops. This handling
+     *   of routing-loops via policy routing is not yet done, and requires a separate solution
+     *   from constructing the peer-routes here.
+     */
     if (!nm_setting_wireguard_get_peer_routes(s_wg))
         return NULL;
 
@@ -1650,9 +1650,9 @@ _get_dev2_ip_config(NMDeviceWireGuard *self, int addr_family)
 
             if (prefix == 0 && auto_default_route_enabled) {
                 /* In auto-default-route mode, we place the default route in a table that
-				 * has the same number as the fwmark. wg-quick does that too. If you don't
-				 * like that, configure the rules and the default-route explicitly in the
-				 * connection profile. */
+                 * has the same number as the fwmark. wg-quick does that too. If you don't
+                 * like that, configure the rules and the default-route explicitly in the
+                 * connection profile. */
                 rtable_coerced = nm_platform_route_table_coerce(priv->auto_default_route_fwmark);
             }
 
@@ -1703,25 +1703,25 @@ static guint32
 get_configured_mtu(NMDevice *device, NMDeviceMtuSource *out_source, gboolean *out_force)
 {
     /* When "MTU" for `wg-quick up` is unset, it calls `ip route get` for
-	 * each configured endpoint, to determine the suitable MTU how to reach
-	 * each endpoint.
-	 * For `wg-quick` this works very well, because whenever the script runs it
-	 * determines the best setting at that point in time. It's simply not concerned
-	 * with what happens later (and it's not around anyway).
-	 *
-	 * NetworkManager sticks around, so the right MTU would need to be re-determined
-	 * whenever anything relevant changes. Which basically means, to re-evaluate whenever
-	 * something related to addresses or routing changes (which happens all the time).
-	 *
-	 * The correct MTU indeed depends on the MTU setting of other interfaces (or routes).
-	 * But it's still odd, that activating/deactivating a seemingly unrelated interface
-	 * would trigger an MTU change. It's odd to explain/document and odd to implemented
-	 * -- despite this being the reality.
-	 *
-	 * For now, only support configuring an explicit MTU, or leave the setting untouched.
-	 * The same limitation also applies to other "ip-tunnel" types, where we could use
-	 * similar smarts for autodetecting the MTU.
-	 */
+     * each configured endpoint, to determine the suitable MTU how to reach
+     * each endpoint.
+     * For `wg-quick` this works very well, because whenever the script runs it
+     * determines the best setting at that point in time. It's simply not concerned
+     * with what happens later (and it's not around anyway).
+     *
+     * NetworkManager sticks around, so the right MTU would need to be re-determined
+     * whenever anything relevant changes. Which basically means, to re-evaluate whenever
+     * something related to addresses or routing changes (which happens all the time).
+     *
+     * The correct MTU indeed depends on the MTU setting of other interfaces (or routes).
+     * But it's still odd, that activating/deactivating a seemingly unrelated interface
+     * would trigger an MTU change. It's odd to explain/document and odd to implemented
+     * -- despite this being the reality.
+     *
+     * For now, only support configuring an explicit MTU, or leave the setting untouched.
+     * The same limitation also applies to other "ip-tunnel" types, where we could use
+     * similar smarts for autodetecting the MTU.
+     */
     return nm_device_get_configured_mtu_from_connection(device,
                                                         NM_TYPE_SETTING_WIREGUARD,
                                                         out_source);
@@ -1764,8 +1764,8 @@ can_reapply_change(NMDevice *  device,
 {
     if (nm_streq(setting_name, NM_SETTING_WIREGUARD_SETTING_NAME)) {
         /* Most, but not all WireGuard settings can be reapplied. Whitelist.
-		 *
-		 * MTU cannot be reapplied. */
+         *
+         * MTU cannot be reapplied. */
         return nm_device_hash_check_invalid_keys(diffs,
                                                  NM_SETTING_WIREGUARD_SETTING_NAME,
                                                  error,

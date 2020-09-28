@@ -73,14 +73,14 @@ _is_alive(NMKeepAlive *self)
     if (priv->dbus_client_watching) {
         if (_is_alive_dbus_client(self)) {
             /* no matter what, the keep-alive is alive, because there is a D-Bus client
-			 * still around keeping it alive. */
+             * still around keeping it alive. */
             return TRUE;
         }
         /* the D-Bus client is gone. The only other binding (below) for the connection's
-		 * visibility cannot keep the instance alive.
-		 *
-		 * As such, a D-Bus client watch is authoritative and overrules other conditions (that
-		 * we have so far). */
+         * visibility cannot keep the instance alive.
+         *
+         * As such, a D-Bus client watch is authoritative and overrules other conditions (that
+         * we have so far). */
         return FALSE;
     }
 
@@ -88,11 +88,11 @@ _is_alive(NMKeepAlive *self)
         && !NM_FLAGS_HAS(nm_settings_connection_get_flags(priv->connection),
                          NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE)) {
         /* note that we only declare the keep-alive as dead due to invisible
-		 * connection, if
-		 *    (1) we monitor a connection, obviously
-		 *    (2) the connection was visible earlier and is no longer. It was
-		 *        was invisible all the time, it does not suffice.
-		 */
+         * connection, if
+         *    (1) we monitor a connection, obviously
+         *    (2) the connection was visible earlier and is no longer. It was
+         *        was invisible all the time, it does not suffice.
+         */
         return FALSE;
     }
 
@@ -134,16 +134,16 @@ connection_flags_changed(NMSettingsConnection *connection, NMKeepAlive *self)
         && NM_FLAGS_HAS(nm_settings_connection_get_flags(priv->connection),
                         NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE)) {
         /* the profile was never visible but now it becomes visible.
-		 * Remember that.
-		 *
-		 * Before this happens (that is, if the device was invisible all along),
-		 * the keep alive instance is considered alive (w.r.t. watching the connection).
-		 *
-		 * The reason is to allow a user to manually activate an invisible profile and keep
-		 * it alive. At least, as long until the user logs out the first time (which is the
-		 * first time, the profiles changes from visible to invisible).
-		 *
-		 * Yes, that is odd. How to improve? */
+         * Remember that.
+         *
+         * Before this happens (that is, if the device was invisible all along),
+         * the keep alive instance is considered alive (w.r.t. watching the connection).
+         *
+         * The reason is to allow a user to manually activate an invisible profile and keep
+         * it alive. At least, as long until the user logs out the first time (which is the
+         * first time, the profiles changes from visible to invisible).
+         *
+         * Yes, that is odd. How to improve? */
         priv->connection_was_visible = TRUE;
     }
     _notify_alive(self);
@@ -223,8 +223,8 @@ _is_alive_dbus_client(NMKeepAlive *self)
 
     if (!priv->dbus_client_confirmed) {
         /* it's unconfirmed that the D-Bus client is really alive.
-		 * It looks like it is, but as we are claiming that to be
-		 * the case, issue an async GetNameOwner call to make sure. */
+         * It looks like it is, but as we are claiming that to be
+         * the case, issue an async GetNameOwner call to make sure. */
         priv->dbus_client_confirmed           = TRUE;
         priv->dbus_client_confirm_cancellable = g_cancellable_new();
 
@@ -439,18 +439,18 @@ _nm_keep_alive_set_owner(NMKeepAlive *self, GObject *owner)
     nm_assert(!owner || G_IS_OBJECT(owner));
 
     /* it's bad style to reset the owner object. You are supposed to
-	 * set it once, and clear it once. That's it. */
+     * set it once, and clear it once. That's it. */
     nm_assert(!owner || !priv->owner);
 
     /* optimally, we would take a reference to @owner. But the
-	 * owner already owns a reference to the keep-alive, so we cannot
-	 * just own a reference back.
-	 *
-	 * We could register a weak-pointer here. But instead, declare that
-	 * owner is required to set itself as owner when creating the
-	 * keep-alive instance, and unset itself when it lets go of the
-	 * keep-alive instance (at latest, when the owner itself gets destroyed).
-	 */
+     * owner already owns a reference to the keep-alive, so we cannot
+     * just own a reference back.
+     *
+     * We could register a weak-pointer here. But instead, declare that
+     * owner is required to set itself as owner when creating the
+     * keep-alive instance, and unset itself when it lets go of the
+     * keep-alive instance (at latest, when the owner itself gets destroyed).
+     */
     priv->owner = owner;
 }
 

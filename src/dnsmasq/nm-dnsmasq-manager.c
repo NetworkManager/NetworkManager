@@ -120,11 +120,11 @@ create_dm_cmd_line(const char *       iface,
     }
 
     /* dnsmasq may read from its default config file location, which if that
-	 * location is a valid config file, it will combine with the options here
-	 * and cause undesirable side-effects.  Like sending bogus IP addresses
-	 * as the gateway or whatever.  So tell dnsmasq not to use any config file
-	 * at all.
-	 */
+     * location is a valid config file, it will combine with the options here
+     * and cause undesirable side-effects.  Like sending bogus IP addresses
+     * as the gateway or whatever.  So tell dnsmasq not to use any config file
+     * at all.
+     */
     nm_strv_ptrarray_add_string_dup(cmd, "--conf-file=/dev/null");
 
     nm_strv_ptrarray_add_string_dup(cmd, "--no-hosts");
@@ -134,9 +134,9 @@ create_dm_cmd_line(const char *       iface,
     nm_strv_ptrarray_add_string_dup(cmd, "--clear-on-reload");
 
     /* Use strict order since in the case of VPN connections, the VPN's
-	 * nameservers will be first in resolv.conf, and those need to be tried
-	 * first by dnsmasq to successfully resolve names from the VPN.
-	 */
+     * nameservers will be first in resolv.conf, and those need to be tried
+     * first by dnsmasq to successfully resolve names from the VPN.
+     */
     nm_strv_ptrarray_add_string_dup(cmd, "--strict-order");
 
     _nm_utils_inet4_ntop(listen_address->address, listen_address_s);
@@ -179,7 +179,7 @@ create_dm_cmd_line(const char *       iface,
 
     if (announce_android_metered) {
         /* force option 43 to announce ANDROID_METERED. Do this, even if the client
-		 * did not ask for this option. See https://www.lorier.net/docs/android-metered.html */
+         * did not ask for this option. See https://www.lorier.net/docs/android-metered.html */
         nm_strv_ptrarray_add_string_dup(cmd, "--dhcp-option-force=43,ANDROID_METERED");
     }
 

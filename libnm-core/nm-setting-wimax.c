@@ -213,13 +213,13 @@ nm_setting_wimax_class_init(NMSettingWimaxClass *klass)
     setting_class->verify = verify;
 
     /**
-	 * NMSettingWimax:network-name:
-	 *
-	 * Network Service Provider (NSP) name of the WiMAX network this connection
-	 * should use.
-	 *
-	 * Deprecated: 1.2: WiMAX is no longer supported.
-	 **/
+     * NMSettingWimax:network-name:
+     *
+     * Network Service Provider (NSP) name of the WiMAX network this connection
+     * should use.
+     *
+     * Deprecated: 1.2: WiMAX is no longer supported.
+     **/
     obj_properties[PROP_NETWORK_NAME] =
         g_param_spec_string(NM_SETTING_WIMAX_NETWORK_NAME,
                             "",
@@ -228,14 +228,14 @@ nm_setting_wimax_class_init(NMSettingWimaxClass *klass)
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWimax:mac-address:
-	 *
-	 * If specified, this connection will only apply to the WiMAX device whose
-	 * MAC address matches. This property does not change the MAC address of the
-	 * device (known as MAC spoofing).
-	 *
-	 * Deprecated: 1.2: WiMAX is no longer supported.
-	 **/
+     * NMSettingWimax:mac-address:
+     *
+     * If specified, this connection will only apply to the WiMAX device whose
+     * MAC address matches. This property does not change the MAC address of the
+     * device (known as MAC spoofing).
+     *
+     * Deprecated: 1.2: WiMAX is no longer supported.
+     **/
     obj_properties[PROP_MAC_ADDRESS] =
         g_param_spec_string(NM_SETTING_WIMAX_MAC_ADDRESS,
                             "",

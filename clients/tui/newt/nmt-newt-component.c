@@ -123,8 +123,8 @@ nmt_newt_component_size_allocate(NmtNewtWidget *widget, int x, int y, int width,
     newtGrid                 grid;
 
     /* You can't directly place a newtComponent, so we create a newtGrid,
-	 * position the component within that, and then place the grid.
-	 */
+     * position the component within that, and then place the grid.
+     */
     grid = newtCreateGrid(1, 1);
     newtGridSetField(grid,
                      0,
@@ -267,21 +267,21 @@ nmt_newt_component_class_init(NmtNewtComponentClass *component_class)
     /* properties */
 
     /**
-	 * NmtNewtComponent:component:
-	 *
-	 * The component's #newtComponent
-	 */
+     * NmtNewtComponent:component:
+     *
+     * The component's #newtComponent
+     */
     g_object_class_install_property(
         object_class,
         PROP_COMPONENT,
         g_param_spec_pointer("component", "", "", G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtComponent:sensitive:
-	 *
-	 * Whether the component is sensitive. Insensitive components will
-	 * be skipped over in the keyboard tab chain, and may be displayed
-	 * differently.
-	 */
+     * NmtNewtComponent:sensitive:
+     *
+     * Whether the component is sensitive. Insensitive components will
+     * be skipped over in the keyboard tab chain, and may be displayed
+     * differently.
+     */
     g_object_class_install_property(
         object_class,
         PROP_SENSITIVE,

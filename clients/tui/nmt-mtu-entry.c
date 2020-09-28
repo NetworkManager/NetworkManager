@@ -160,10 +160,10 @@ nmt_mtu_entry_class_init(NmtMtuEntryClass *entry_class)
     object_class->get_property = nmt_mtu_entry_get_property;
 
     /**
-	 * NmtMtuEntry:mtu:
-	 *
-	 * The contents of the entry, as a number.
-	 */
+     * NmtMtuEntry:mtu:
+     *
+     * The contents of the entry, as a number.
+     */
     g_object_class_install_property(object_class,
                                     PROP_MTU,
                                     g_param_spec_int("mtu",

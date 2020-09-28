@@ -87,7 +87,7 @@ typedef enum { /*< flags >*/
                /* NOTE: if adding flags update nm-setting-vlan.c::verify() */
 
                /* NOTE: these flags must correspond to the value from the kernel
-	 * header files. */
+     * header files. */
 } NMVlanFlags;
 
 #define NM_VLAN_FLAGS_ALL                                                          \

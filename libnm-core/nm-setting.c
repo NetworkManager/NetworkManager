@@ -61,10 +61,10 @@ static NMSettingPriority
 _get_base_type_priority(const NMMetaSettingInfo *setting_info, GType gtype)
 {
     /* Historical oddity: PPPoE is a base-type even though it's not
-	 * priority 1.  It needs to be sorted *after* lower-level stuff like
-	 * Wi-Fi security or 802.1x for secrets, but it's still allowed as a
-	 * base type.
-	 */
+     * priority 1.  It needs to be sorted *after* lower-level stuff like
+     * Wi-Fi security or 802.1x for secrets, but it's still allowed as a
+     * base type.
+     */
 
     if (setting_info) {
         if (NM_IN_SET(setting_info->setting_priority,
@@ -298,7 +298,7 @@ _property_infos_sort(const NMSettInfoProperty *property_infos,
         return NULL;
     if (G_TYPE_FROM_CLASS(setting_class) != NM_TYPE_SETTING_CONNECTION) {
         /* we only do something special for certain setting types. This one,
-		 * has just alphabetical sorting. */
+         * has just alphabetical sorting. */
         return NULL;
     }
 
@@ -514,26 +514,26 @@ void
 _nm_setting_emit_property_changed(NMSetting *setting)
 {
     /* Some settings have "properties" that are not implemented as GObject properties.
-	 *
-	 * For example:
-	 *
-	 *   - gendata-base settings like NMSettingEthtool. Here properties are just
-	 *     GVariant values in the gendata hash.
-	 *
-	 *   - NMSettingWireGuard's peers are not backed by a GObject property. Instead
-	 *     there is C-API to access/modify peers.
-	 *
-	 * We still want to emit property-changed notifications for such properties,
-	 * in particular because NMConnection registers to such signals to re-emit
-	 * it as NM_CONNECTION_CHANGED signal. In fact, there are unlikely any other
-	 * uses of such a property-changed signal, because generally it doesn't make
-	 * too much sense.
-	 *
-	 * So, instead of adding yet another (artificial) signal "setting-changed",
-	 * hijack the "notify" signal and just notify about changes of the "name".
-	 * Of course, the "name" doesn't really ever change, because it's tied to
-	 * the GObject's type.
-	 */
+     *
+     * For example:
+     *
+     *   - gendata-base settings like NMSettingEthtool. Here properties are just
+     *     GVariant values in the gendata hash.
+     *
+     *   - NMSettingWireGuard's peers are not backed by a GObject property. Instead
+     *     there is C-API to access/modify peers.
+     *
+     * We still want to emit property-changed notifications for such properties,
+     * in particular because NMConnection registers to such signals to re-emit
+     * it as NM_CONNECTION_CHANGED signal. In fact, there are unlikely any other
+     * uses of such a property-changed signal, because generally it doesn't make
+     * too much sense.
+     *
+     * So, instead of adding yet another (artificial) signal "setting-changed",
+     * hijack the "notify" signal and just notify about changes of the "name".
+     * Of course, the "name" doesn't really ever change, because it's tied to
+     * the GObject's type.
+     */
     _notify(setting, PROP_NAME);
 }
 
@@ -786,17 +786,17 @@ _nm_setting_new_from_dbus(GType               setting_type,
                             NM_SETTING_PARSE_FLAGS_STRICT | NM_SETTING_PARSE_FLAGS_BEST_EFFORT));
 
     /* connection_dict is not technically optional, but some tests in test-general
-	 * don't bother with it in cases where they know it's not needed.
-	 */
+     * don't bother with it in cases where they know it's not needed.
+     */
     if (connection_dict)
         g_return_val_if_fail(g_variant_is_of_type(connection_dict, NM_VARIANT_TYPE_CONNECTION),
                              NULL);
 
     /* Build the setting object from the properties we know about; we assume
-	 * that any propreties in @setting_dict that we don't know about can
-	 * either be ignored or else has a backward-compatibility equivalent
-	 * that we do know about.
-	 */
+     * that any propreties in @setting_dict that we don't know about can
+     * either be ignored or else has a backward-compatibility equivalent
+     * that we do know about.
+     */
     setting = (NMSetting *) g_object_new(setting_type, NULL);
 
     if (NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
@@ -884,12 +884,12 @@ init_from_dbus(NMSetting *                     setting,
         _nm_setting_option_notify(setting, TRUE);
 
         /* Currently, only NMSettingEthtool supports gendata based options, and
-		 * that one has no other properties (except "name"). That means, we
-		 * consumed all options above.
-		 *
-		 * In the future it may be interesting to have settings that are both
-		 * based on gendata and regular properties. In that case, we would need
-		 * to handle this case differently. */
+         * that one has no other properties (except "name"). That means, we
+         * consumed all options above.
+         *
+         * In the future it may be interesting to have settings that are both
+         * based on gendata and regular properties. In that case, we would need
+         * to handle this case differently. */
         nm_assert(nm_streq(G_OBJECT_TYPE_NAME(setting), "NMSettingEthtool"));
         nm_assert(sett_info->property_infos_len == 1);
 
@@ -1294,25 +1294,25 @@ _nm_setting_should_compare_secret_property(NMSetting *           setting,
     if (other) {
         if (!nm_setting_get_secret_flags(other, secret_name, &b_secret_flags, NULL)) {
             /* secret-name may not be a valid secret for @other. That is fine, we ignore that
-			 * and treat @b_secret_flags as NM_SETTING_SECRET_FLAG_NONE.
-			 *
-			 * This can happen with VPN secrets, where the caller knows that @secret_name
-			 * is a secret for setting, but it may not be a secret for @other. Accept that.
-			 *
-			 * Mark @other as missing. */
+             * and treat @b_secret_flags as NM_SETTING_SECRET_FLAG_NONE.
+             *
+             * This can happen with VPN secrets, where the caller knows that @secret_name
+             * is a secret for setting, but it may not be a secret for @other. Accept that.
+             *
+             * Mark @other as missing. */
             other = NULL;
         }
     }
 
     /* when @setting has the secret-flags that should be ignored,
-	 * we skip the comparison if:
-	 *
-	 *   - @other is not present,
-	 *   - @other does not have a secret named @secret_name
-	 *   - @other also has the secret flat to be ignored.
-	 *
-	 * This makes the check symmetric (aside the fact that @setting must
-	 * have the secret while @other may not -- which is asymmetric). */
+     * we skip the comparison if:
+     *
+     *   - @other is not present,
+     *   - @other does not have a secret named @secret_name
+     *   - @other also has the secret flat to be ignored.
+     *
+     * This makes the check symmetric (aside the fact that @setting must
+     * have the secret while @other may not -- which is asymmetric). */
     if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS)
         && NM_FLAGS_HAS(a_secret_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED)
         && (!other || NM_FLAGS_HAS(b_secret_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED)))
@@ -1582,14 +1582,14 @@ _nm_setting_diff(NMConnection *        con_a,
     }
 
     /* If the caller is calling this function in a pattern like this to get
-	 * complete diffs:
-	 *
-	 * nm_setting_diff (A, B, FALSE, &results);
-	 * nm_setting_diff (B, A, TRUE, &results);
-	 *
-	 * and wants us to invert the results so that the second invocation comes
-	 * out correctly, do that here.
-	 */
+     * complete diffs:
+     *
+     * nm_setting_diff (A, B, FALSE, &results);
+     * nm_setting_diff (B, A, TRUE, &results);
+     *
+     * and wants us to invert the results so that the second invocation comes
+     * out correctly, do that here.
+     */
     if (invert_results) {
         a_result         = NM_SETTING_DIFF_RESULT_IN_B;
         b_result         = NM_SETTING_DIFF_RESULT_IN_A;
@@ -1658,18 +1658,18 @@ _nm_setting_diff(NMConnection *        con_a,
                                  | NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)
                 && b && compare_result == NM_TERNARY_FALSE) {
                 /* we have setting @b and the property is not the same. But we also are instructed
-				 * to ignore secrets based on the flags.
-				 *
-				 * Note that compare_property() called with two settings will ignore secrets
-				 * based on the flags, but it will do so if *both* settings have the flag we
-				 * look for. So that is symmetric behavior and good.
-				 *
-				 * But for the purpose of diff(), we do a asymmetric comparison because and
-				 * we want to skip testing the property if setting @a alone indicates to do
-				 * so.
-				 *
-				 * We need to double-check whether the property should be ignored by
-				 * looking at @a alone. */
+                 * to ignore secrets based on the flags.
+                 *
+                 * Note that compare_property() called with two settings will ignore secrets
+                 * based on the flags, but it will do so if *both* settings have the flag we
+                 * look for. So that is symmetric behavior and good.
+                 *
+                 * But for the purpose of diff(), we do a asymmetric comparison because and
+                 * we want to skip testing the property if setting @a alone indicates to do
+                 * so.
+                 *
+                 * We need to double-check whether the property should be ignored by
+                 * looking at @a alone. */
                 if (_compare_property(sett_info, i, con_a, a, NULL, NULL, flags)
                     == NM_TERNARY_DEFAULT)
                     continue;
@@ -1741,14 +1741,14 @@ _nm_setting_diff(NMConnection *        con_a,
 
     if (!compared_any && !b) {
         /* special case: the setting has no properties, and the opposite
-		 * setting @b is not given. The settings differ, and we signal that
-		 * by returning an empty results hash. */
+         * setting @b is not given. The settings differ, and we signal that
+         * by returning an empty results hash. */
         diff_found = TRUE;
     }
 
     if (diff_found) {
         /* if there is a difference, we always return FALSE. It also means, we might
-		 * have allocated a new @results hash, and return it to the caller. */
+         * have allocated a new @results hash, and return it to the caller. */
         return FALSE;
     } else {
         if (results_created) {
@@ -1757,7 +1757,7 @@ _nm_setting_diff(NMConnection *        con_a,
             *results = NULL;
         } else {
             /* we found no diff, and return false. However, the input
-			 * @result is returned unmodified. */
+             * @result is returned unmodified. */
         }
         return TRUE;
     }
@@ -1809,8 +1809,8 @@ nm_setting_enumerate_values(NMSetting *setting, NMSettingValueIterFn func, gpoin
         guint              n_properties;
 
         /* the properties of this setting are not real GObject properties.
-		 * Hence, this API makes little sense (or does it?). Still, call
-		 * @func with each value. */
+         * Hence, this API makes little sense (or does it?). Still, call
+         * @func with each value. */
         n_properties = _nm_setting_option_get_all(setting, &names, NULL);
         if (n_properties > 0) {
             gs_strfreev char **keys = g_strdupv((char **) names);
@@ -1828,7 +1828,7 @@ nm_setting_enumerate_values(NMSetting *setting, NMSettingValueIterFn func, gpoin
                 g_value_init(&value, G_TYPE_VARIANT);
                 g_value_set_variant(&value, val);
                 /* call it will GParamFlags 0. It shall indicate that this
-				 * is not a "real" GObject property. */
+                 * is not a "real" GObject property. */
                 func(setting, keys[i], &value, 0, user_data);
                 g_value_unset(&value);
             }
@@ -2051,9 +2051,9 @@ update_one_secret(NMSetting *setting, const char *key, GVariant *value, GError *
 
     if (g_variant_is_of_type(value, G_VARIANT_TYPE_STRING) && G_IS_PARAM_SPEC_STRING(prop_spec)) {
         /* String is expected to be a common case. Handle it specially and check
-		 * whether the value is already set. Otherwise, we just reset the
-		 * property and assume the value got modified.
-		 */
+         * whether the value is already set. Otherwise, we just reset the
+         * property and assume the value got modified.
+         */
         char *v;
 
         g_object_get(G_OBJECT(setting), prop_spec->name, &v, NULL);
@@ -2419,23 +2419,23 @@ _nm_setting_option_notify(NMSetting *setting, gboolean names_changed)
 
     if (names_changed) {
         /* if only the values changed, it's sufficient to invalidate the
-		 * values cache. Otherwise, the names cache must be invalidated too. */
+         * values cache. Otherwise, the names cache must be invalidated too. */
         nm_clear_g_free(&gendata->names);
     }
 
     /* Note, currently there is no way to notify the subclass when gendata changed.
-	 * gendata is only changed in two situations:
-	 *   1) from within NMSetting itself, for example when creating a NMSetting instance
-	 *      from keyfile or a D-Bus GVariant.
-	 *   2) actively from the subclass itself
-	 * For 2), we don't need the notification, because the subclass knows that something
-	 * changed.
-	 * For 1), we currently don't need the notification either, because all that the subclass
-	 * currently would do, is emit a g_object_notify() signal. However, 1) only happens when
-	 * the setting instance is newly created, at that point, nobody listens to the signal.
-	 *
-	 * If we ever need it, then we would need to call a virtual function to notify the subclass
-	 * that gendata changed. */
+     * gendata is only changed in two situations:
+     *   1) from within NMSetting itself, for example when creating a NMSetting instance
+     *      from keyfile or a D-Bus GVariant.
+     *   2) actively from the subclass itself
+     * For 2), we don't need the notification, because the subclass knows that something
+     * changed.
+     * For 1), we currently don't need the notification either, because all that the subclass
+     * currently would do, is emit a g_object_notify() signal. However, 1) only happens when
+     * the setting instance is newly created, at that point, nobody listens to the signal.
+     *
+     * If we ever need it, then we would need to call a virtual function to notify the subclass
+     * that gendata changed. */
 
 out:
     _nm_setting_emit_property_changed(setting);
@@ -2683,17 +2683,17 @@ nm_setting_option_set(NMSetting *setting, const char *opt_name, GVariant *varian
     }
 
     /* Currently, it is a bug setting any option, unless the setting type supports it.
-	 * And currently, only NMSettingEthtool supports it.
-	 *
-	 * In the future, more setting types may support it. Or we may relax this so
-	 * that options can be attached to all setting types (to indicate "unsupported"
-	 * settings for forward compatibility).
-	 *
-	 * As it is today, internal code will only add gendata options to NMSettingEthtool,
-	 * and there exists not public API to add such options. Still, it is permissible
-	 * to call get(), clear() and set(variant=NULL) also on settings that don't support
-	 * it, as these operations don't add options.
-	 */
+     * And currently, only NMSettingEthtool supports it.
+     *
+     * In the future, more setting types may support it. Or we may relax this so
+     * that options can be attached to all setting types (to indicate "unsupported"
+     * settings for forward compatibility).
+     *
+     * As it is today, internal code will only add gendata options to NMSettingEthtool,
+     * and there exists not public API to add such options. Still, it is permissible
+     * to call get(), clear() and set(variant=NULL) also on settings that don't support
+     * it, as these operations don't add options.
+     */
     g_return_if_fail(
         _nm_setting_class_get_sett_info(NM_SETTING_GET_CLASS(setting))->detail.gendata_info);
 
@@ -2703,9 +2703,9 @@ nm_setting_option_set(NMSetting *setting, const char *opt_name, GVariant *varian
     changed_value = changed_name || !g_variant_equal(old_variant, variant);
 
     /* We always want to replace the variant, even if it has
-	 * the same value according to g_variant_equal(). The reason
-	 * is that we want to take a reference on @variant, because
-	 * that is what the user might expect. */
+     * the same value according to g_variant_equal(). The reason
+     * is that we want to take a reference on @variant, because
+     * that is what the user might expect. */
     g_hash_table_insert(hash, g_strdup(opt_name), g_variant_ref_sink(variant));
 
     if (changed_value)
@@ -2844,12 +2844,12 @@ nm_setting_class_init(NMSettingClass *setting_class)
     setting_class->init_from_dbus            = init_from_dbus;
 
     /**
-	 * NMSetting:name:
-	 *
-	 * The setting's name, which uniquely identifies the setting within the
-	 * connection.  Each setting type has a name unique to that type, for
-	 * example "ppp" or "802-11-wireless" or "802-3-ethernet".
-	 **/
+     * NMSetting:name:
+     *
+     * The setting's name, which uniquely identifies the setting within the
+     * connection.  Each setting type has a name unique to that type, for
+     * example "ppp" or "802-11-wireless" or "802-3-ethernet".
+     **/
     obj_properties[PROP_NAME] = g_param_spec_string(NM_SETTING_NAME,
                                                     "",
                                                     "",

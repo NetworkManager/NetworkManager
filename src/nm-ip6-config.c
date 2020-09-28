@@ -371,9 +371,9 @@ nm_ip6_config_add_dependent_routes(NMIP6Config *self,
     g_return_if_fail(ifindex > 0);
 
     /* For IPv6 addresses received via SLAAC/autoconf, we explicitly add the
-	 * device-routes (onlink) to NMIP6Config.
-	 *
-	 * For manually added IPv6 routes, add the device routes explicitly. */
+     * device-routes (onlink) to NMIP6Config.
+     *
+     * For manually added IPv6 routes, add the device routes explicitly. */
 
     /* Pre-generate multicast route */
     {
@@ -424,7 +424,7 @@ nm_ip6_config_add_dependent_routes(NMIP6Config *self,
         has_peer = !IN6_IS_ADDR_UNSPECIFIED(&my_addr->peer_address);
 
         /* If we have an IPv6 peer, we add two /128 routes
-		 * (unless, both addresses are identical). */
+         * (unless, both addresses are identical). */
         routes_n =
             (has_peer && !IN6_ARE_ADDR_EQUAL(&my_addr->address, &my_addr->peer_address)) ? 2 : 1;
 
@@ -973,8 +973,8 @@ nm_ip6_config_subtract(NMIP6Config *      dst,
             NMPlatformIP6Route *rr;
 
             /* the default route was penalized when merging it to the combined ip-config.
-			 * When subtracting the routes, we must re-do that process when comparing
-			 * the routes. */
+             * When subtracting the routes, we must re-do that process when comparing
+             * the routes. */
             o_lookup = nmp_object_stackinit_obj(&o_lookup_copy, o_src);
             rr       = NMP_OBJECT_CAST_IP6_ROUTE(&o_lookup_copy);
             rr->metric =
@@ -1093,8 +1093,8 @@ _nm_ip6_config_intersect_helper(NMIP6Config *      dst,
             NMPlatformIP6Route *rr;
 
             /* the default route was penalized when merging it to the combined ip-config.
-			 * When intersecting the routes, we must re-do that process when comparing
-			 * the routes. */
+             * When intersecting the routes, we must re-do that process when comparing
+             * the routes. */
             o_lookup = nmp_object_stackinit_obj(&o_lookup_copy, o_dst);
             rr       = NMP_OBJECT_CAST_IP6_ROUTE(&o_lookup_copy);
             rr->metric =
@@ -1450,7 +1450,7 @@ nm_ip6_config_replace(NMIP6Config *dst, const NMIP6Config *src, gboolean *releva
 
 #if NM_MORE_ASSERTS
     /* config_equal does not compare *all* the fields, therefore, we might have has_minor_changes
-	 * regardless of config_equal. But config_equal must correspond to has_relevant_changes. */
+     * regardless of config_equal. But config_equal must correspond to has_relevant_changes. */
     nm_assert(config_equal == !has_relevant_changes);
 #endif
 
@@ -1778,8 +1778,8 @@ nm_ip6_config_reset_routes_ndisc(NMIP6Config *         self,
 
             if (first_pref != gateways[i].preference && !kernel_support_rta_pref) {
                 /* We are unable to configure a router preference. Hence, we skip all gateways
-				 * with a different preference from the first gateway. Note, that the gateways
-				 * are sorted in order of highest to lowest preference. */
+                 * with a different preference from the first gateway. Note, that the gateways
+                 * are sorted in order of highest to lowest preference. */
                 break;
             }
         }

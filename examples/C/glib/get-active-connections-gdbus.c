@@ -130,10 +130,10 @@ get_active_connection_details(const char *obj_path)
     GError *    error = NULL;
 
     /* This function gets the backing Connection object that describes the
-	 * network configuration that the ActiveConnection object is actually using.
-	 * The ActiveConnection object contains the mapping between the configuration
-	 * and the actual network interfaces that are using that configuration.
-	 */
+     * network configuration that the ActiveConnection object is actually using.
+     * The ActiveConnection object contains the mapping between the configuration
+     * and the actual network interfaces that are using that configuration.
+     */
 
     /* Create a D-Bus object proxy for the active connection object's properties */
     props_proxy = g_dbus_proxy_new_for_bus_sync(G_BUS_TYPE_SYSTEM,
@@ -241,8 +241,8 @@ main(int argc, char *argv[])
     GDBusProxy *props_proxy;
 
     /* Create a D-Bus proxy to get the object properties from the NM Manager
-	 * object.  NM_DBUS_* defines are from nm-dbus-interface.h.
-	 */
+     * object.  NM_DBUS_* defines are from nm-dbus-interface.h.
+     */
     props_proxy = g_dbus_proxy_new_for_bus_sync(G_BUS_TYPE_SYSTEM,
                                                 G_DBUS_PROXY_FLAGS_NONE,
                                                 NULL,

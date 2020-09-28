@@ -18,9 +18,9 @@ typedef enum { /*< skip >*/
                RFKILL_TYPE_WWAN = 1,
 
                /* UNKNOWN and MAX should always be 1 more than
-	 * the last rfkill type since RFKILL_TYPE_MAX is
-	 * used as an array size.
-	 */
+     * the last rfkill type since RFKILL_TYPE_MAX is
+     * used as an array size.
+     */
                RFKILL_TYPE_UNKNOWN, /* KEEP LAST */
                RFKILL_TYPE_MAX = RFKILL_TYPE_UNKNOWN
 } RfKillType;

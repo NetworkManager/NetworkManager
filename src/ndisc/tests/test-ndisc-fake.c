@@ -396,9 +396,9 @@ test_preference_changed(void)
     guint        id;
 
     /* Test that when a low-preference and medium gateway send advertisements,
-	 * that if the low-preference gateway switches to high-preference, we do
-	 * not get duplicates in the gateway list.
-	 */
+     * that if the low-preference gateway switches to high-preference, we do
+     * not get duplicates in the gateway list.
+     */
 
     id = nm_fake_ndisc_add_ra(ndisc, 1, NM_NDISC_DHCP_LEVEL_NONE, 4, 1500);
     g_assert(id);
@@ -459,9 +459,9 @@ test_dns_solicit_loop_rs_sent(NMFakeNDisc *ndisc, TestData *data)
         }
 
         /* On all but the first solicitation, which should be triggered by the
-		 * DNS servers reaching 1/2 lifetime, emit a new RA without the DNS
-		 * servers again.
-		 */
+         * DNS servers reaching 1/2 lifetime, emit a new RA without the DNS
+         * servers again.
+         */
         id = nm_fake_ndisc_add_ra(ndisc, 0, NM_NDISC_DHCP_LEVEL_NONE, 4, 1500);
         g_assert(id);
         nm_fake_ndisc_add_gateway(ndisc, id, "fe80::1", now, 10, NM_ICMPV6_ROUTER_PREF_MEDIUM);
@@ -485,11 +485,11 @@ test_dns_solicit_loop(void)
     guint        id;
 
     /* Ensure that no solicitation loop happens when DNS servers or domains
-	 * stop being sent in advertisements.  This can happen if two routers
-	 * send RAs, but the one sending DNS info stops responding, or if one
-	 * router removes the DNS info from the RA without zero-lifetiming them
-	 * first.
-	 */
+     * stop being sent in advertisements.  This can happen if two routers
+     * send RAs, but the one sending DNS info stops responding, or if one
+     * router removes the DNS info from the RA without zero-lifetiming them
+     * first.
+     */
 
     id = nm_fake_ndisc_add_ra(ndisc, 1, NM_NDISC_DHCP_LEVEL_NONE, 4, 1500);
     g_assert(id);

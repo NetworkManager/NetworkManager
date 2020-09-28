@@ -115,9 +115,9 @@ test_acd_common(test_fixture *fixture, TestInfo *info)
         return;
 
     /* first, try with a short waittime. We hope that this is long enough
-	 * to successfully complete the test. Only if that's not the case, we
-	 * assume the computer is currently busy (high load) and we retry with
-	 * a longer timeout. */
+     * to successfully complete the test. Only if that's not the case, we
+     * assume the computer is currently busy (high load) and we retry with
+     * a longer timeout. */
     wait_time = WAIT_TIME_OPTIMISTIC;
 again:
 
@@ -163,7 +163,7 @@ again:
 
         if (wait_time == WAIT_TIME_OPTIMISTIC) {
             /* probably we just had a glitch and the system took longer than
-			 * expected. Re-verify with a large timeout this time. */
+             * expected. Re-verify with a large timeout this time. */
             wait_time = 1000;
             goto again;
         }

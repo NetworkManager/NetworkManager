@@ -824,8 +824,8 @@ _nm_tc_tfilter_hash(NMTCTfilter *tfilter)
                 guint attr_hash;
 
                 /* g_variant_hash() works only for basic types, thus
-				 * we ignore any non-basic attribute. Actions differing
-				 * only for non-basic attributes will collide. */
+                 * we ignore any non-basic attribute. Actions differing
+                 * only for non-basic attributes will collide. */
                 attr_hash = g_variant_hash(variant);
                 nm_hash_update_val(&h, attr_hash);
             }
@@ -1807,17 +1807,17 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
     setting_class->verify           = verify;
 
     /**
-	 * NMSettingTCConfig:qdiscs: (type GPtrArray(NMTCQdisc))
-	 *
-	 * Array of TC queueing disciplines.
-	 **/
+     * NMSettingTCConfig:qdiscs: (type GPtrArray(NMTCQdisc))
+     *
+     * Array of TC queueing disciplines.
+     **/
     /* ---ifcfg-rh---
-	 * property: qdiscs
-	 * variable: QDISC1(+), QDISC2(+), ...
-	 * description: Queueing disciplines
-	 * example: QDISC1=ingress, QDISC2="root handle 1234: fq_codel"
-	 * ---end---
-	 */
+     * property: qdiscs
+     * variable: QDISC1(+), QDISC2(+), ...
+     * description: Queueing disciplines
+     * example: QDISC1=ingress, QDISC2="root handle 1234: fq_codel"
+     * ---end---
+     */
     obj_properties[PROP_QDISCS] = g_param_spec_boxed(NM_SETTING_TC_CONFIG_QDISCS,
                                                      "",
                                                      "",
@@ -1831,17 +1831,17 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
                                                            .from_dbus_fcn = tc_qdiscs_set, ));
 
     /**
-	 * NMSettingTCConfig:tfilters: (type GPtrArray(NMTCTfilter))
-	 *
-	 * Array of TC traffic filters.
-	 **/
+     * NMSettingTCConfig:tfilters: (type GPtrArray(NMTCTfilter))
+     *
+     * Array of TC traffic filters.
+     **/
     /* ---ifcfg-rh---
-	 * property: qdiscs
-	 * variable: FILTER1(+), FILTER2(+), ...
-	 * description: Traffic filters
-	 * example: FILTER1="parent ffff: matchall action simple sdata Input", ...
-	 * ---end---
-	 */
+     * property: qdiscs
+     * variable: FILTER1(+), FILTER2(+), ...
+     * description: Traffic filters
+     * example: FILTER1="parent ffff: matchall action simple sdata Input", ...
+     * ---end---
+     */
     obj_properties[PROP_TFILTERS] = g_param_spec_boxed(
         NM_SETTING_TC_CONFIG_TFILTERS,
         "",

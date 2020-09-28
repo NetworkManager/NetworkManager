@@ -84,43 +84,43 @@ nm_context_busy_watcher_integrate_source(GMainContext *outer_context,
     g_source_attach(source, outer_context);
 
     /* The problem is...
-	 *
-	 * NMClient is associated with a GMainContext, just like its underlying GDBusConnection
-	 * also queues signals and callbacks on that main context. During operation, NMClient
-	 * will schedule async operations which will return asynchronously on the GMainContext.
-	 *
-	 * Note that depending on whether NMClient got initialized synchronously or asynchronously,
-	 * it has an internal priv->dbus_context that is different from the outer priv->main_context.
-	 * However, the problem is in both cases.
-	 *
-	 * So, as long as there are pending D-Bus calls, the GMainContext is referenced and kept alive.
-	 * When NMClient gets destroyed, the pending calls get cancelled, but the async callback are still
-	 * scheduled to return.
-	 * That means, the main context stays alive until it gets iterated long enough so that all pending
-	 * operations are completed.
-	 *
-	 * Note that pending operations don't keep NMClient alive, so NMClient can already be gone by
-	 * then, but the user still should iterate the main context long enough to process the (cancelled)
-	 * callbacks... at least, if the user cares about whether the remaining memory and file descriptors
-	 * of the GMainContext can be reclaimed.
-	 *
-	 * In hindsight, maybe pending references should kept NMClient alive. But then NMClient would
-	 * need a special "shutdown()" API that the user must invoke, because unrefing would no longer
-	 * be enough to ensure a shutdown (imagine a situation where NMClient receives a constant flow
-	 * of "CheckPermissions" signals, which keeps retriggering an async request). Anyway, we cannot
-	 * add such a shutdown API now, as it would break client's expectations that they can just unref
-	 * the NMClient to destroy it.
-	 *
-	 * So, we allow NMClient to unref, but the user is advised to keep iterating the main context.
-	 * But for how long? Here comes nm_client_get_context_busy_watcher() into play. The user may
-	 * subscribe a weak pointer to that instance and should keep iterating as long as the object
-	 * exists.
-	 *
-	 * Now, back to synchronous initialization. Here we have the internal priv->dbus_context context.
-	 * We also cannot remove that context right away, instead we need to keep it integrated in the
-	 * caller's priv->main_context as long as we have pending calls: that is, as long as the
-	 * context-busy-watcher is alive.
-	 */
+     *
+     * NMClient is associated with a GMainContext, just like its underlying GDBusConnection
+     * also queues signals and callbacks on that main context. During operation, NMClient
+     * will schedule async operations which will return asynchronously on the GMainContext.
+     *
+     * Note that depending on whether NMClient got initialized synchronously or asynchronously,
+     * it has an internal priv->dbus_context that is different from the outer priv->main_context.
+     * However, the problem is in both cases.
+     *
+     * So, as long as there are pending D-Bus calls, the GMainContext is referenced and kept alive.
+     * When NMClient gets destroyed, the pending calls get cancelled, but the async callback are still
+     * scheduled to return.
+     * That means, the main context stays alive until it gets iterated long enough so that all pending
+     * operations are completed.
+     *
+     * Note that pending operations don't keep NMClient alive, so NMClient can already be gone by
+     * then, but the user still should iterate the main context long enough to process the (cancelled)
+     * callbacks... at least, if the user cares about whether the remaining memory and file descriptors
+     * of the GMainContext can be reclaimed.
+     *
+     * In hindsight, maybe pending references should kept NMClient alive. But then NMClient would
+     * need a special "shutdown()" API that the user must invoke, because unrefing would no longer
+     * be enough to ensure a shutdown (imagine a situation where NMClient receives a constant flow
+     * of "CheckPermissions" signals, which keeps retriggering an async request). Anyway, we cannot
+     * add such a shutdown API now, as it would break client's expectations that they can just unref
+     * the NMClient to destroy it.
+     *
+     * So, we allow NMClient to unref, but the user is advised to keep iterating the main context.
+     * But for how long? Here comes nm_client_get_context_busy_watcher() into play. The user may
+     * subscribe a weak pointer to that instance and should keep iterating as long as the object
+     * exists.
+     *
+     * Now, back to synchronous initialization. Here we have the internal priv->dbus_context context.
+     * We also cannot remove that context right away, instead we need to keep it integrated in the
+     * caller's priv->main_context as long as we have pending calls: that is, as long as the
+     * context-busy-watcher is alive.
+     */
 
     g_object_weak_ref(context_busy_watcher,
                       _context_busy_watcher_attach_integration_source_cb,
@@ -131,7 +131,7 @@ nm_context_busy_watcher_integrate_source(GMainContext *outer_context,
 
 typedef struct {
     /* It is quite wasteful to require 2 pointers per property (of an instance) only to track whether
-	 * the property got changed. But it's convenient! */
+     * the property got changed. But it's convenient! */
     CList changed_prop_lst;
 
     GVariant *prop_data_value;
@@ -147,9 +147,9 @@ typedef struct {
     CList changed_prop_lst_head;
 
     /* We also keep track of non-well known interfaces. The presence of a D-Bus interface
-	 * is what makes a D-Bus alive or not. As we should track all D-Bus objects, we also
-	 * need to track whether there are any interfaces on it -- even if we otherwise don't
-	 * care about the interface. */
+     * is what makes a D-Bus alive or not. As we should track all D-Bus objects, we also
+     * need to track whether there are any interfaces on it -- even if we otherwise don't
+     * care about the interface. */
     bool dbus_iface_is_wellknown : 1;
 
     /* if TRUE, the interface is about to be removed. */
@@ -738,7 +738,7 @@ _nm_client_set_property_sync_legacy(NMClient *  self,
     nm_assert(val);
 
     /* A synchronous D-Bus call that is not cancellable an ignores the return value.
-	 * This function only exists for backward compatibility. */
+     * This function only exists for backward compatibility. */
     ret = g_dbus_connection_call_sync(priv->dbus_connection,
                                       priv->name_owner,
                                       object_path,
@@ -797,7 +797,7 @@ _nm_client_queue_notify_object(NMClient *self, gpointer nmobj, const GParamSpec 
 
     if (base->is_disposing) {
         /* Don't emit property changed signals once the NMClient
-		 * instance is about to shut down. */
+         * instance is about to shut down. */
         nm_assert(nmobj == self);
         return;
     }
@@ -1182,9 +1182,9 @@ nml_dbus_object_iface_data_get(NMLDBusObject *dbobj,
 
     if (count > 20) {
         /* We track the list of interfaces that an object has in a linked list.
-		 * That is efficient and convenient, if we assume that each object only has a small
-		 * number of interfaces (which very much should be the case). Here, something is very
-		 * odd, maybe there is a bug or the server side is misbehaving. Anyway, error out. */
+         * That is efficient and convenient, if we assume that each object only has a small
+         * number of interfaces (which very much should be the case). Here, something is very
+         * odd, maybe there is a bug or the server side is misbehaving. Anyway, error out. */
         return NULL;
     }
 
@@ -1208,7 +1208,7 @@ nml_dbus_object_iface_data_get(NMLDBusObject *dbobj,
         c_list_link_front(&dbobj->iface_lst_head, &db_iface_data->iface_lst);
     } else {
         /* Intentionally don't initialize the other fields. We are not supposed
-		 * to touch them, and a valgrind warning would be preferable. */
+         * to touch them, and a valgrind warning would be preferable. */
         db_iface_data->dbus_iface.name         = nm_ref_string_new(dbus_iface_name);
         db_iface_data->dbus_iface_is_wellknown = FALSE;
         db_iface_data->iface_removed           = FALSE;
@@ -1336,17 +1336,17 @@ nml_dbus_object_obj_changed_link(NMClient *            self,
         NMClientPrivate *priv;
 
         /* We set the changed-type flag. Need to queue the object in the
-		 * changed list. */
+         * changed list. */
         nm_assert(c_list_is_empty(&dbobj->obj_changed_lst));
         priv = NM_CLIENT_GET_PRIVATE(self);
         c_list_link_tail(&priv->obj_changed_lst_head, &dbobj->obj_changed_lst);
     } else {
         /* The object has changes flags and must be linked already. Note that
-		 * this may be priv->obj_changed_lst_head, or a temporary list on the
-		 * stack.
-		 *
-		 * This dance with the temporary list is done to ensure we can enqueue
-		 * objects while we process the changes. */
+         * this may be priv->obj_changed_lst_head, or a temporary list on the
+         * stack.
+         *
+         * This dance with the temporary list is done to ensure we can enqueue
+         * objects while we process the changes. */
         nm_assert(!c_list_is_empty(&dbobj->obj_changed_lst));
     }
 
@@ -1558,9 +1558,9 @@ _dbobjs_obj_watcher_register_o(NMClient *               self,
     obj_watcher->_priv.notify_fcn = notify_fcn;
 
     /* we must enqueue the item in the front of the list. That is, because while
-	 * invoking notify_fcn(), we iterate the watchers front-to-end. As we want to
-	 * allow the callee to register new watches and unregister itself, this is
-	 * the right way to do it. */
+     * invoking notify_fcn(), we iterate the watchers front-to-end. As we want to
+     * allow the callee to register new watches and unregister itself, this is
+     * the right way to do it. */
     c_list_link_front(&dbobj->watcher_lst_head, &obj_watcher->_priv.watcher_lst);
 
     return obj_watcher;
@@ -2171,16 +2171,16 @@ nml_dbus_property_ao_notify(NMClient *              self,
 
             if (pr_ao_data) {
                 /* With this implementation we cannot track the same path multiple times.
-				 * Of course, for none of the properties where we use this, the server
-				 * should expose the same path more than once, so this limitation is fine
-				 * (maybe even preferable to drop duplicates form NMClient's API). */
+                 * Of course, for none of the properties where we use this, the server
+                 * should expose the same path more than once, so this limitation is fine
+                 * (maybe even preferable to drop duplicates form NMClient's API). */
                 nm_assert(pr_ao_data->obj_watcher.dbobj->dbus_path == dbus_path_r);
                 if (!changed_prop && pr_ao_data->is_notified) {
                     /* The order of a notified entry changed. That means, we need to signal
-					 * a change of the property. This detection of a change is not always
-					 * correct, in particular we might detect some changes when there were
-					 * none. That's not a serious problem, and fixing it would be expensive
-					 * to implement. */
+                     * a change of the property. This detection of a change is not always
+                     * correct, in particular we might detect some changes when there were
+                     * none. That's not a serious problem, and fixing it would be expensive
+                     * to implement. */
                     changed_prop = (c_list_first(&stale_lst_head) != &pr_ao_data->data_lst);
                 }
                 nm_c_list_move_tail(&pr_ao->data_lst_head, &pr_ao_data->data_lst);
@@ -2588,9 +2588,9 @@ _obj_handle_dbus_iface_changes(NMClient *           self,
 
     if (!type_compatible) {
         /* on D-Bus, we have this interface associate with the object, but apparently
-		 * it is not compatible. This is either a bug, or NetworkManager exposed an
-		 * unexpected interface on D-Bus object for which we create a certain NMObject
-		 * type. */
+         * it is not compatible. This is either a bug, or NetworkManager exposed an
+         * unexpected interface on D-Bus object for which we create a certain NMObject
+         * type. */
         return;
     }
 
@@ -2619,12 +2619,12 @@ _obj_handle_dbus_iface_changes(NMClient *           self,
             nm_assert(db_prop_data->prop_data_value);
 
             /* Currently, NMLDBusObject forgets about the variant. Theoretically, it could cache
-			 * it, but there is no need because we update the property in nmobj (which extracts and
-			 * keeps the property value itself).
-			 *
-			 * Note that we only consume the variant here when we process it.
-			 * That implies that we already created a NMObject for the dbobj
-			 * instance. Unless that happens, we cache the last seen property values. */
+             * it, but there is no need because we update the property in nmobj (which extracts and
+             * keeps the property value itself).
+             *
+             * Note that we only consume the variant here when we process it.
+             * That implies that we already created a NMObject for the dbobj
+             * instance. Unless that happens, we cache the last seen property values. */
             prop_data_value = g_steal_pointer(&db_prop_data->prop_data_value);
 
             i_prop = (db_prop_data - &db_iface_data->prop_datas[0]);
@@ -2644,14 +2644,14 @@ _obj_handle_dbus_changes(NMClient *self, NMLDBusObject *dbobj)
     _ASSERT_dbobj(dbobj, self);
 
     /* In a first step we only remember all the changes that a D-Bus message brings
-	 * and queue the object to process them.
-	 *
-	 * Here (in step 2) we look at what changed on D-Bus and propagate those changes
-	 * to the NMObject instance.
-	 *
-	 * Note that here we still must not emit any GObject signals. That follows later,
-	 * and again if the object changes, we will just queue that we handle the changes
-	 * later. */
+     * and queue the object to process them.
+     *
+     * Here (in step 2) we look at what changed on D-Bus and propagate those changes
+     * to the NMObject instance.
+     *
+     * Note that here we still must not emit any GObject signals. That follows later,
+     * and again if the object changes, we will just queue that we handle the changes
+     * later. */
 
     c_list_for_each_entry_safe (db_iface_data,
                                 db_iface_data_safe,
@@ -2667,15 +2667,15 @@ _obj_handle_dbus_changes(NMClient *self, NMLDBusObject *dbobj)
 
     if (G_UNLIKELY(!dbobj->nmobj) && !c_list_is_empty(&dbobj->iface_lst_head)) {
         /* Try to create a NMObject for this D-Bus object. Note that we detect the type
-		 * based on the interfaces that it has, and if we make a choice once, we don't
-		 * change. That means, one D-Bus object can only be of one type. */
+         * based on the interfaces that it has, and if we make a choice once, we don't
+         * change. That means, one D-Bus object can only be of one type. */
 
         if (NM_IN_SET(dbobj->dbus_path,
                       _dbus_path_nm,
                       _dbus_path_settings,
                       _dbus_path_dns_manager)) {
             /* For the main types, we don't detect them based on the interfaces present,
-			 * but on the path names. Of course, both should correspond anyway. */
+             * but on the path names. Of course, both should correspond anyway. */
             NML_NMCLIENT_LOG_T(self,
                                "[%s]: register NMClient for D-Bus object",
                                dbobj->dbus_path->str);
@@ -2785,9 +2785,9 @@ _dbus_handle_obj_changed_nmobj(NMClient *self)
     nm_assert(!nml_dbus_object_obj_changed_any_linked(self, ~NML_DBUS_OBJ_CHANGED_TYPE_NMOBJ));
 
     /* First we notify all watchers that these objects changed. Note that we only do that
-	 * here for the list before processing the changes below in a loop. That is, because
-	 * processing changes can again enqueue changed objects, and we only want to want to
-	 * notify watchers for the events that happened earlier (not repeatedly notify them). */
+     * here for the list before processing the changes below in a loop. That is, because
+     * processing changes can again enqueue changed objects, and we only want to want to
+     * notify watchers for the events that happened earlier (not repeatedly notify them). */
     c_list_splice(&obj_changed_tmp_lst_head, &priv->obj_changed_lst_head);
     while (
         (dbobj = c_list_first_entry(&obj_changed_tmp_lst_head, NMLDBusObject, obj_changed_lst))) {
@@ -2846,11 +2846,11 @@ _dbus_handle_obj_changed_dbus(NMClient *self, const char *log_context)
     priv = NM_CLIENT_GET_PRIVATE(self);
 
     /* We move the changed list onto a temporary list and consume that.
-	 * Note that nml_dbus_object_obj_changed_consume() will move the object
-	 * back to the original list if there are changes of another type.
-	 *
-	 * This is done so that we can enqueue more changes while processing the
-	 * change list. */
+     * Note that nml_dbus_object_obj_changed_consume() will move the object
+     * back to the original list if there are changes of another type.
+     *
+     * This is done so that we can enqueue more changes while processing the
+     * change list. */
     c_list_splice(&obj_changed_tmp_lst_head, &priv->obj_changed_lst_head);
 
     while (
@@ -2879,7 +2879,7 @@ _dbus_handle_obj_changed_dbus(NMClient *self, const char *log_context)
     }
 
     /* D-Bus changes can only be enqueued in an earlier stage. We don't expect
-	 * anymore changes of type D-Bus at this point. */
+     * anymore changes of type D-Bus at this point. */
     nm_assert(!nml_dbus_object_obj_changed_any_linked(self, NML_DBUS_OBJ_CHANGED_TYPE_DBUS));
 }
 
@@ -3247,7 +3247,7 @@ _dbus_get_managed_objects_cb(GObject *source, GAsyncResult *result, gpointer use
     if (!managed_objects) {
         NML_NMCLIENT_LOG_D(self, "GetManagedObjects() call failed: %s", error->message);
         /* hm, now that's odd. Maybe NetworkManager just quit and we are about to get
-		 * a name-owner changed signal soon. Treat this as if we got no managed objects at all. */
+         * a name-owner changed signal soon. Treat this as if we got no managed objects at all. */
     } else
         NML_NMCLIENT_LOG_D(self, "GetManagedObjects() completed");
 
@@ -3265,7 +3265,7 @@ _dbus_get_managed_objects_cb(GObject *source, GAsyncResult *result, gpointer use
     }
 
     /* always call _dbus_handle_changes(), even if nothing changed. We need this to complete
-	 * initialization. */
+     * initialization. */
     _dbus_handle_changes(self, "get-managed-objects", TRUE);
 }
 
@@ -3524,7 +3524,7 @@ _dbus_check_permissions_start_cb(GObject *source, GAsyncResult *result, gpointer
 
     if (!ret) {
         /* when the call completes, we always pretend success. Even a failure means
-		 * that we fetched the permissions, however they are all unknown. */
+         * that we fetched the permissions, however they are all unknown. */
         NML_NMCLIENT_LOG_T(self, "GetPermissions call failed: %s", error->message);
         goto out;
     }
@@ -3895,7 +3895,7 @@ _request_wait_start(GTask *     task_take,
                                    NULL);
         if (id == 0) {
             /* the callback was invoked synchronously, which destroyed @request_data.
-			 * We must not touch @info anymore. */
+             * We must not touch @info anymore. */
         } else
             request_data->cancellable_id = id;
     }
@@ -4578,10 +4578,10 @@ nm_client_check_connectivity(NMClient *client, GCancellable *cancellable, GError
     g_variant_get(ret, "(u)", &connectivity);
 
     /* upon receiving the synchronous response, we hack the NMClient state
-	 * and update the property outside the ordered D-Bus messages (like
-	 * "PropertiesChanged" signals).
-	 *
-	 * This is really ugly, we shouldn't do this. */
+     * and update the property outside the ordered D-Bus messages (like
+     * "PropertiesChanged" signals).
+     *
+     * This is really ugly, we shouldn't do this. */
 
     priv = NM_CLIENT_GET_PRIVATE(client);
 
@@ -5636,9 +5636,9 @@ _add_connection_call(NMClient *                    self,
         settings = g_variant_new_array(G_VARIANT_TYPE("{sa{sv}}"), NULL, 0);
 
     /* Although AddConnection2() being capable to handle also AddConnection() and
-	 * AddConnectionUnsaved() variants, we prefer to use the old D-Bus methods when
-	 * they are sufficient. The reason is that libnm should avoid hard dependencies
-	 * on 1.20 API whenever possible. */
+     * AddConnectionUnsaved() variants, we prefer to use the old D-Bus methods when
+     * they are sufficient. The reason is that libnm should avoid hard dependencies
+     * on 1.20 API whenever possible. */
     if (ignore_out_result && flags == NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK) {
         _nm_client_dbus_call(self,
                              self,
@@ -6974,8 +6974,8 @@ _init_release_all(NMClient *self)
     _dbus_handle_changes(self, "release-all", FALSE);
 
     /* We require that when we remove all D-Bus interfaces, that all object will go
-	 * away. Note that a NMLDBusObject can be alive due to a NMLDBusObjWatcher, but
-	 * even those should be all cleaned up. */
+     * away. Note that a NMLDBusObject can be alive due to a NMLDBusObjWatcher, but
+     * even those should be all cleaned up. */
     nm_assert(c_list_is_empty(&priv->obj_changed_lst_head));
     nm_assert(c_list_is_empty(&priv->dbus_objects_lst_head_watched_only));
     nm_assert(c_list_is_empty(&priv->dbus_objects_lst_head_on_dbus));
@@ -7007,9 +7007,9 @@ name_owner_changed(NMClient *self, const char *name_owner)
         nm_clear_g_dbus_connection_signal(priv->dbus_connection, &priv->name_owner_changed_id);
 
         /* Our instance was initialized synchronously. Usually we must henceforth
-		 * stick to a internal main context. But now we have no name-owner...
-		 * at this point, we anyway are going to do a full resync. Swap the main
-		 * contexts again. */
+         * stick to a internal main context. But now we have no name-owner...
+         * at this point, we anyway are going to do a full resync. Swap the main
+         * contexts again. */
 
         old_context_busy_watcher   = g_steal_pointer(&priv->context_busy_watcher);
         priv->context_busy_watcher = g_object_ref(
@@ -7165,32 +7165,32 @@ nml_cleanup_context_busy_watcher_on_idle(GObject *context_busy_watcher_take, GMa
     nm_assert(context);
 
     /* Technically, we cancelled all pending actions (and these actions
-	 * (GTask) keep the context_busy_watcher object alive). Also, we passed
-	 * no destroy notify to g_dbus_connection_signal_subscribe().
-	 * That means, there should be no other unaccounted GSource'es left.
-	 *
-	 * However, we really need to be sure that the context_busy_watcher's
-	 * lifetime matches the time that the context is busy. That is especially
-	 * important with synchronous initialization, where the context-busy-watcher
-	 * keeps the inner GMainContext integrated in the caller's.
-	 * We must not g_source_destroy() that integration too early.
-	 *
-	 * So to be really sure all this is given, always schedule one last
-	 * cleanup idle action with low priority. This should be the last
-	 * thing related to this instance that keeps the context busy.
-	 *
-	 * Note that we could also *not* take a reference on @context
-	 * and unref @context_busy_watcher via the GDestroyNotify. That would
-	 * allow for the context to be wrapped up early, and when the last user
-	 * gives up the reference to the context, the destroy notify could complete
-	 * without even invoke the idle handler. However, that destroy notify may
-	 * not be called in the right thread. So, we want to be sure that we unref
-	 * the context-busy-watcher in the right context. Hence, we always take an
-	 * additional reference and always cleanup in the idle handler. This means:
-	 * the user *MUST* always keep iterating the context after NMClient got destroyed.
-	 * But that is not a severe limitation, because the user anyway must be prepared
-	 * to do that. That is because in many cases it is necessary anyway (and the user
-	 * wouldn't know a priory when not). This way, it is just always necessary. */
+     * (GTask) keep the context_busy_watcher object alive). Also, we passed
+     * no destroy notify to g_dbus_connection_signal_subscribe().
+     * That means, there should be no other unaccounted GSource'es left.
+     *
+     * However, we really need to be sure that the context_busy_watcher's
+     * lifetime matches the time that the context is busy. That is especially
+     * important with synchronous initialization, where the context-busy-watcher
+     * keeps the inner GMainContext integrated in the caller's.
+     * We must not g_source_destroy() that integration too early.
+     *
+     * So to be really sure all this is given, always schedule one last
+     * cleanup idle action with low priority. This should be the last
+     * thing related to this instance that keeps the context busy.
+     *
+     * Note that we could also *not* take a reference on @context
+     * and unref @context_busy_watcher via the GDestroyNotify. That would
+     * allow for the context to be wrapped up early, and when the last user
+     * gives up the reference to the context, the destroy notify could complete
+     * without even invoke the idle handler. However, that destroy notify may
+     * not be called in the right thread. So, we want to be sure that we unref
+     * the context-busy-watcher in the right context. Hence, we always take an
+     * additional reference and always cleanup in the idle handler. This means:
+     * the user *MUST* always keep iterating the context after NMClient got destroyed.
+     * But that is not a severe limitation, because the user anyway must be prepared
+     * to do that. That is because in many cases it is necessary anyway (and the user
+     * wouldn't know a priory when not). This way, it is just always necessary. */
 
     cleanup_source =
         nm_g_idle_source_new(G_PRIORITY_LOW + 10,
@@ -7511,7 +7511,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
             NMClientInstanceFlags flags = v_uint;
 
             /* After object construction, we only allow to toggle certain flags and
-			 * ignore all other flags. */
+             * ignore all other flags. */
 
             if ((priv->instance_flags ^ flags)
                 & NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS) {
@@ -7587,36 +7587,36 @@ init_sync(GInitable *initable, GCancellable *cancellable, GError **error)
     g_return_val_if_fail(!priv->dbus_context, FALSE);
 
     /* when using init_sync(), we use a separate internal GMainContext for
-	 * all D-Bus operations and use our regular async-init code. That means,
-	 * also in sync-init, we don't actually block waiting for our D-Bus requests,
-	 * instead, we only block (g_main_loop_run()) for the overall result.
-	 *
-	 * Doing this has a performance overhead. Also, we cannot ever fall back
-	 * to the regular main-context (not unless we lose the main-owner and
-	 * need to re-initialize). The reason is that we receive events on our
-	 * dbus_context, and this cannot be brought in sync -- short of full
-	 * reinitalizing. Therefor, using sync init not only is slower during
-	 * construction of the object, but NMClient will stick to the dual GMainContext
-	 * mode.
-	 *
-	 * Aside from this downside, the solution is good:
-	 *
-	 * - we don't duplicate the implementation of async-init.
-	 * - we don't iterate the main-context of the caller while waiting for
-	 *   initialization to happen
-	 * - we still invoke all changes under the main_context of the caller.
-	 * - all D-Bus events strictly go through dbus_context and are in order.
-	 */
+     * all D-Bus operations and use our regular async-init code. That means,
+     * also in sync-init, we don't actually block waiting for our D-Bus requests,
+     * instead, we only block (g_main_loop_run()) for the overall result.
+     *
+     * Doing this has a performance overhead. Also, we cannot ever fall back
+     * to the regular main-context (not unless we lose the main-owner and
+     * need to re-initialize). The reason is that we receive events on our
+     * dbus_context, and this cannot be brought in sync -- short of full
+     * reinitalizing. Therefor, using sync init not only is slower during
+     * construction of the object, but NMClient will stick to the dual GMainContext
+     * mode.
+     *
+     * Aside from this downside, the solution is good:
+     *
+     * - we don't duplicate the implementation of async-init.
+     * - we don't iterate the main-context of the caller while waiting for
+     *   initialization to happen
+     * - we still invoke all changes under the main_context of the caller.
+     * - all D-Bus events strictly go through dbus_context and are in order.
+     */
 
     dbus_context       = g_main_context_new();
     priv->dbus_context = g_main_context_ref(dbus_context);
 
     /* We have an inner context. Note that if we loose the name owner, we have a chance
-	 * to resync and drop the inner context. That means, requests made against the inner
-	 * context have a different lifetime. Hence, we create a separate tracking
-	 * object. This "wraps" the outer context-busy-watcher and references it, so
-	 * that the work together. Grep for nm_context_busy_watcher_quark() to
-	 * see how this works. */
+     * to resync and drop the inner context. That means, requests made against the inner
+     * context have a different lifetime. Hence, we create a separate tracking
+     * object. This "wraps" the outer context-busy-watcher and references it, so
+     * that the work together. Grep for nm_context_busy_watcher_quark() to
+     * see how this works. */
     parent_context_busy_watcher = g_steal_pointer(&priv->context_busy_watcher);
     priv->context_busy_watcher  = g_object_new(G_TYPE_OBJECT, NULL);
     g_object_set_qdata_full(priv->context_busy_watcher,
@@ -8013,15 +8013,15 @@ nm_client_class_init(NMClientClass *client_class)
     object_class->dispose      = dispose;
 
     /**
-	 * NMClient:dbus-connection:
-	 *
-	 * The #GDBusConnection to use.
-	 *
-	 * If this is not set during object construction, the D-Bus connection will
-	 * automatically be chosen during async/sync initalization via g_bus_get().
-	 *
-	 * Since: 1.22
-	 */
+     * NMClient:dbus-connection:
+     *
+     * The #GDBusConnection to use.
+     *
+     * If this is not set during object construction, the D-Bus connection will
+     * automatically be chosen during async/sync initalization via g_bus_get().
+     *
+     * Since: 1.22
+     */
     obj_properties[PROP_DBUS_CONNECTION] = g_param_spec_object(
         NM_CLIENT_DBUS_CONNECTION,
         "",
@@ -8030,19 +8030,19 @@ nm_client_class_init(NMClientClass *client_class)
         G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:instance-flags:
-	 *
-	 * #NMClientInstanceFlags for the instance. These affect behavior of #NMClient.
-	 * This is a construct property and you may only set most flags only during
-	 * construction.
-	 *
-	 * The flag %NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS can be toggled any time,
-	 * even after constructing the instance. Note that you may want to watch NMClient:permissions-state
-	 * property to know whether permissions are ready. Note that permissions are only fetched
-	 * when NMClient has a D-Bus name owner.
-	 *
-	 * Since: 1.24
-	 */
+     * NMClient:instance-flags:
+     *
+     * #NMClientInstanceFlags for the instance. These affect behavior of #NMClient.
+     * This is a construct property and you may only set most flags only during
+     * construction.
+     *
+     * The flag %NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS can be toggled any time,
+     * even after constructing the instance. Note that you may want to watch NMClient:permissions-state
+     * property to know whether permissions are ready. Note that permissions are only fetched
+     * when NMClient has a D-Bus name owner.
+     *
+     * Since: 1.24
+     */
     obj_properties[PROP_INSTANCE_FLAGS] = g_param_spec_uint(
         NM_CLIENT_INSTANCE_FLAGS,
         "",
@@ -8053,12 +8053,12 @@ nm_client_class_init(NMClientClass *client_class)
         G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:dbus-name-owner:
-	 *
-	 * The name owner of the NetworkManager D-Bus service.
-	 *
-	 * Since: 1.22
-	 **/
+     * NMClient:dbus-name-owner:
+     *
+     * The name owner of the NetworkManager D-Bus service.
+     *
+     * Since: 1.22
+     **/
     obj_properties[PROP_DBUS_NAME_OWNER] =
         g_param_spec_string(NM_CLIENT_DBUS_NAME_OWNER,
                             "",
@@ -8067,10 +8067,10 @@ nm_client_class_init(NMClientClass *client_class)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:version:
-	 *
-	 * The NetworkManager version.
-	 **/
+     * NMClient:version:
+     *
+     * The NetworkManager version.
+     **/
     obj_properties[PROP_VERSION] = g_param_spec_string(NM_CLIENT_VERSION,
                                                        "",
                                                        "",
@@ -8078,10 +8078,10 @@ nm_client_class_init(NMClientClass *client_class)
                                                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:state:
-	 *
-	 * The current daemon state.
-	 **/
+     * NMClient:state:
+     *
+     * The current daemon state.
+     **/
     obj_properties[PROP_STATE] = g_param_spec_enum(NM_CLIENT_STATE,
                                                    "",
                                                    "",
@@ -8090,10 +8090,10 @@ nm_client_class_init(NMClientClass *client_class)
                                                    G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:startup:
-	 *
-	 * Whether the daemon is still starting up.
-	 **/
+     * NMClient:startup:
+     *
+     * Whether the daemon is still starting up.
+     **/
     obj_properties[PROP_STARTUP] = g_param_spec_boolean(NM_CLIENT_STARTUP,
                                                         "",
                                                         "",
@@ -8101,10 +8101,10 @@ nm_client_class_init(NMClientClass *client_class)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:nm-running:
-	 *
-	 * Whether the daemon is running.
-	 **/
+     * NMClient:nm-running:
+     *
+     * Whether the daemon is running.
+     **/
     obj_properties[PROP_NM_RUNNING] =
         g_param_spec_boolean(NM_CLIENT_NM_RUNNING,
                              "",
@@ -8113,12 +8113,12 @@ nm_client_class_init(NMClientClass *client_class)
                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:networking-enabled:
-	 *
-	 * Whether networking is enabled.
-	 *
-	 * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
-	 */
+     * NMClient:networking-enabled:
+     *
+     * Whether networking is enabled.
+     *
+     * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
+     */
     obj_properties[PROP_NETWORKING_ENABLED] =
         g_param_spec_boolean(NM_CLIENT_NETWORKING_ENABLED,
                              "",
@@ -8127,12 +8127,12 @@ nm_client_class_init(NMClientClass *client_class)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:wireless-enabled:
-	 *
-	 * Whether wireless is enabled.
-	 *
-	 * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
-	 **/
+     * NMClient:wireless-enabled:
+     *
+     * Whether wireless is enabled.
+     *
+     * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
+     **/
     obj_properties[PROP_WIRELESS_ENABLED] =
         g_param_spec_boolean(NM_CLIENT_WIRELESS_ENABLED,
                              "",
@@ -8141,10 +8141,10 @@ nm_client_class_init(NMClientClass *client_class)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:wireless-hardware-enabled:
-	 *
-	 * Whether the wireless hardware is enabled.
-	 **/
+     * NMClient:wireless-hardware-enabled:
+     *
+     * Whether the wireless hardware is enabled.
+     **/
     obj_properties[PROP_WIRELESS_HARDWARE_ENABLED] =
         g_param_spec_boolean(NM_CLIENT_WIRELESS_HARDWARE_ENABLED,
                              "",
@@ -8153,12 +8153,12 @@ nm_client_class_init(NMClientClass *client_class)
                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:wwan-enabled:
-	 *
-	 * Whether WWAN functionality is enabled.
-	 *
-	 * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
-	 */
+     * NMClient:wwan-enabled:
+     *
+     * Whether WWAN functionality is enabled.
+     *
+     * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
+     */
     obj_properties[PROP_WWAN_ENABLED] =
         g_param_spec_boolean(NM_CLIENT_WWAN_ENABLED,
                              "",
@@ -8167,10 +8167,10 @@ nm_client_class_init(NMClientClass *client_class)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:wwan-hardware-enabled:
-	 *
-	 * Whether the WWAN hardware is enabled.
-	 **/
+     * NMClient:wwan-hardware-enabled:
+     *
+     * Whether the WWAN hardware is enabled.
+     **/
     obj_properties[PROP_WWAN_HARDWARE_ENABLED] =
         g_param_spec_boolean(NM_CLIENT_WWAN_HARDWARE_ENABLED,
                              "",
@@ -8179,12 +8179,12 @@ nm_client_class_init(NMClientClass *client_class)
                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:wimax-enabled:
-	 *
-	 * Whether WiMAX functionality is enabled.
-	 *
-	 * Deprecated: 1.22: WiMAX is no longer supported and this always returns FALSE. The setter has no effect.
-	 */
+     * NMClient:wimax-enabled:
+     *
+     * Whether WiMAX functionality is enabled.
+     *
+     * Deprecated: 1.22: WiMAX is no longer supported and this always returns FALSE. The setter has no effect.
+     */
     obj_properties[PROP_WIMAX_ENABLED] =
         g_param_spec_boolean(NM_CLIENT_WIMAX_ENABLED,
                              "",
@@ -8193,12 +8193,12 @@ nm_client_class_init(NMClientClass *client_class)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:wimax-hardware-enabled:
-	 *
-	 * Whether the WiMAX hardware is enabled.
-	 *
-	 * Deprecated: 1.22: WiMAX is no longer supported and this always returns FALSE.
-	 **/
+     * NMClient:wimax-hardware-enabled:
+     *
+     * Whether the WiMAX hardware is enabled.
+     *
+     * Deprecated: 1.22: WiMAX is no longer supported and this always returns FALSE.
+     **/
     obj_properties[PROP_WIMAX_HARDWARE_ENABLED] =
         g_param_spec_boolean(NM_CLIENT_WIMAX_HARDWARE_ENABLED,
                              "",
@@ -8207,10 +8207,10 @@ nm_client_class_init(NMClientClass *client_class)
                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:active-connections: (type GPtrArray(NMActiveConnection))
-	 *
-	 * The active connections.
-	 **/
+     * NMClient:active-connections: (type GPtrArray(NMActiveConnection))
+     *
+     * The active connections.
+     **/
     obj_properties[PROP_ACTIVE_CONNECTIONS] =
         g_param_spec_boxed(NM_CLIENT_ACTIVE_CONNECTIONS,
                            "",
@@ -8219,10 +8219,10 @@ nm_client_class_init(NMClientClass *client_class)
                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:connectivity:
-	 *
-	 * The network connectivity state.
-	 */
+     * NMClient:connectivity:
+     *
+     * The network connectivity state.
+     */
     obj_properties[PROP_CONNECTIVITY] =
         g_param_spec_enum(NM_CLIENT_CONNECTIVITY,
                           "",
@@ -8232,12 +8232,12 @@ nm_client_class_init(NMClientClass *client_class)
                           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient::connectivity-check-available
-	 *
-	 * Whether a connectivity checking service has been configured.
-	 *
-	 * Since: 1.10
-	 */
+     * NMClient::connectivity-check-available
+     *
+     * Whether a connectivity checking service has been configured.
+     *
+     * Since: 1.10
+     */
     obj_properties[PROP_CONNECTIVITY_CHECK_AVAILABLE] =
         g_param_spec_boolean(NM_CLIENT_CONNECTIVITY_CHECK_AVAILABLE,
                              "",
@@ -8246,14 +8246,14 @@ nm_client_class_init(NMClientClass *client_class)
                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient::connectivity-check-enabled
-	 *
-	 * Whether a connectivity checking service has been enabled.
-	 *
-	 * Since: 1.10
-	 *
-	 * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
-	 */
+     * NMClient::connectivity-check-enabled
+     *
+     * Whether a connectivity checking service has been enabled.
+     *
+     * Since: 1.10
+     *
+     * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
+     */
     obj_properties[PROP_CONNECTIVITY_CHECK_ENABLED] =
         g_param_spec_boolean(NM_CLIENT_CONNECTIVITY_CHECK_ENABLED,
                              "",
@@ -8262,12 +8262,12 @@ nm_client_class_init(NMClientClass *client_class)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:connectivity-check-uri:
-	 *
-	 * The used URI for connectivity checking.
-	 *
-	 * Since: 1.22
-	 **/
+     * NMClient:connectivity-check-uri:
+     *
+     * The used URI for connectivity checking.
+     *
+     * Since: 1.22
+     **/
     obj_properties[PROP_CONNECTIVITY_CHECK_URI] =
         g_param_spec_string(NM_CLIENT_CONNECTIVITY_CHECK_URI,
                             "",
@@ -8276,11 +8276,11 @@ nm_client_class_init(NMClientClass *client_class)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:primary-connection:
-	 *
-	 * The #NMActiveConnection of the device with the default route;
-	 * see nm_client_get_primary_connection() for more details.
-	 **/
+     * NMClient:primary-connection:
+     *
+     * The #NMActiveConnection of the device with the default route;
+     * see nm_client_get_primary_connection() for more details.
+     **/
     obj_properties[PROP_PRIMARY_CONNECTION] =
         g_param_spec_object(NM_CLIENT_PRIMARY_CONNECTION,
                             "",
@@ -8289,11 +8289,11 @@ nm_client_class_init(NMClientClass *client_class)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:activating-connection:
-	 *
-	 * The #NMActiveConnection of the activating connection that is
-	 * likely to become the new #NMClient:primary-connection.
-	 **/
+     * NMClient:activating-connection:
+     *
+     * The #NMActiveConnection of the activating connection that is
+     * likely to become the new #NMClient:primary-connection.
+     **/
     obj_properties[PROP_ACTIVATING_CONNECTION] =
         g_param_spec_object(NM_CLIENT_ACTIVATING_CONNECTION,
                             "",
@@ -8302,10 +8302,10 @@ nm_client_class_init(NMClientClass *client_class)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:devices: (type GPtrArray(NMDevice))
-	 *
-	 * List of real network devices.  Does not include placeholder devices.
-	 **/
+     * NMClient:devices: (type GPtrArray(NMDevice))
+     *
+     * List of real network devices.  Does not include placeholder devices.
+     **/
     obj_properties[PROP_DEVICES] = g_param_spec_boxed(NM_CLIENT_DEVICES,
                                                       "",
                                                       "",
@@ -8313,11 +8313,11 @@ nm_client_class_init(NMClientClass *client_class)
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:all-devices: (type GPtrArray(NMDevice))
-	 *
-	 * List of both real devices and device placeholders.
-	 * Since: 1.2
-	 **/
+     * NMClient:all-devices: (type GPtrArray(NMDevice))
+     *
+     * List of both real devices and device placeholders.
+     * Since: 1.2
+     **/
     obj_properties[PROP_ALL_DEVICES] =
         g_param_spec_boxed(NM_CLIENT_ALL_DEVICES,
                            "",
@@ -8326,13 +8326,13 @@ nm_client_class_init(NMClientClass *client_class)
                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:connections: (type GPtrArray(NMRemoteConnection))
-	 *
-	 * The list of configured connections that are available to the user. (Note
-	 * that this differs from the underlying D-Bus property, which may also
-	 * contain the object paths of connections that the user does not have
-	 * permission to read the details of.)
-	 */
+     * NMClient:connections: (type GPtrArray(NMRemoteConnection))
+     *
+     * The list of configured connections that are available to the user. (Note
+     * that this differs from the underlying D-Bus property, which may also
+     * contain the object paths of connections that the user does not have
+     * permission to read the details of.)
+     */
     obj_properties[PROP_CONNECTIONS] =
         g_param_spec_boxed(NM_CLIENT_CONNECTIONS,
                            "",
@@ -8341,11 +8341,11 @@ nm_client_class_init(NMClientClass *client_class)
                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:hostname:
-	 *
-	 * The machine hostname stored in persistent configuration. This can be
-	 * modified by calling nm_client_save_hostname().
-	 */
+     * NMClient:hostname:
+     *
+     * The machine hostname stored in persistent configuration. This can be
+     * modified by calling nm_client_save_hostname().
+     */
     obj_properties[PROP_HOSTNAME] = g_param_spec_string(NM_CLIENT_HOSTNAME,
                                                         "",
                                                         "",
@@ -8353,10 +8353,10 @@ nm_client_class_init(NMClientClass *client_class)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:can-modify:
-	 *
-	 * If %TRUE, adding and modifying connections is supported.
-	 */
+     * NMClient:can-modify:
+     *
+     * If %TRUE, adding and modifying connections is supported.
+     */
     obj_properties[PROP_CAN_MODIFY] =
         g_param_spec_boolean(NM_CLIENT_CAN_MODIFY,
                              "",
@@ -8365,12 +8365,12 @@ nm_client_class_init(NMClientClass *client_class)
                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:metered:
-	 *
-	 * Whether the connectivity is metered.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMClient:metered:
+     *
+     * Whether the connectivity is metered.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_METERED] = g_param_spec_uint(NM_CLIENT_METERED,
                                                      "",
                                                      "",
@@ -8380,12 +8380,12 @@ nm_client_class_init(NMClientClass *client_class)
                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:dns-mode:
-	 *
-	 * The current DNS processing mode.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMClient:dns-mode:
+     *
+     * The current DNS processing mode.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_DNS_MODE] = g_param_spec_string(NM_CLIENT_DNS_MODE,
                                                         "",
                                                         "",
@@ -8393,12 +8393,12 @@ nm_client_class_init(NMClientClass *client_class)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:dns-rc-manager:
-	 *
-	 * The current resolv.conf management mode.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMClient:dns-rc-manager:
+     *
+     * The current resolv.conf management mode.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_DNS_RC_MANAGER] =
         g_param_spec_string(NM_CLIENT_DNS_RC_MANAGER,
                             "",
@@ -8407,13 +8407,13 @@ nm_client_class_init(NMClientClass *client_class)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:dns-configuration: (type GPtrArray(NMDnsEntry))
-	 *
-	 * The current DNS configuration, represented as an array
-	 * of #NMDnsEntry objects.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMClient:dns-configuration: (type GPtrArray(NMDnsEntry))
+     *
+     * The current DNS configuration, represented as an array
+     * of #NMDnsEntry objects.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_DNS_CONFIGURATION] =
         g_param_spec_boxed(NM_CLIENT_DNS_CONFIGURATION,
                            "",
@@ -8422,12 +8422,12 @@ nm_client_class_init(NMClientClass *client_class)
                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:checkpoints: (type GPtrArray(NMCheckpoint))
-	 *
-	 * The list of active checkpoints.
-	 *
-	 * Since: 1.12
-	 */
+     * NMClient:checkpoints: (type GPtrArray(NMCheckpoint))
+     *
+     * The list of active checkpoints.
+     *
+     * Since: 1.12
+     */
     obj_properties[PROP_CHECKPOINTS] =
         g_param_spec_boxed(NM_CLIENT_CHECKPOINTS,
                            "",
@@ -8436,14 +8436,14 @@ nm_client_class_init(NMClientClass *client_class)
                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:capabilities: (type GArray(guint32))
-	 *
-	 * The list of capabilities numbers as guint32 or %NULL if
-	 * there are no capabilities. The numeric value correspond
-	 * to %NMCapability enum.
-	 *
-	 * Since: 1.24
-	 */
+     * NMClient:capabilities: (type GArray(guint32))
+     *
+     * The list of capabilities numbers as guint32 or %NULL if
+     * there are no capabilities. The numeric value correspond
+     * to %NMCapability enum.
+     *
+     * Since: 1.24
+     */
     obj_properties[PROP_CAPABILITIES] =
         g_param_spec_boxed(NM_CLIENT_CAPABILITIES,
                            "",
@@ -8452,24 +8452,24 @@ nm_client_class_init(NMClientClass *client_class)
                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMClient:permissions-state:
-	 *
-	 * The state of the cached permissions. The value %NM_TERNARY_DEFAULT
-	 * means that no permissions are yet received (or not yet requested).
-	 * %NM_TERNARY_TRUE means that permissions are received, cached and up
-	 * to date. %NM_TERNARY_FALSE means that permissions were received and are
-	 * cached, but in the meantime a "CheckPermissions" signal was received
-	 * that invalidated the cached permissions.
-	 * Note that NMClient will always emit a notify::permissions-state signal
-	 * when a "CheckPermissions" signal got received or after new permissions
-	 * got received (that is regardless whether the value of the permission state
-	 * actually changed). With this you can watch the permissions-state property
-	 * to know whether the permissions are ready. Note that while NMClient has
-	 * no D-Bus name owner, no permissions are fetched (and this property won't
-	 * change).
-	 *
-	 * Since: 1.24
-	 */
+     * NMClient:permissions-state:
+     *
+     * The state of the cached permissions. The value %NM_TERNARY_DEFAULT
+     * means that no permissions are yet received (or not yet requested).
+     * %NM_TERNARY_TRUE means that permissions are received, cached and up
+     * to date. %NM_TERNARY_FALSE means that permissions were received and are
+     * cached, but in the meantime a "CheckPermissions" signal was received
+     * that invalidated the cached permissions.
+     * Note that NMClient will always emit a notify::permissions-state signal
+     * when a "CheckPermissions" signal got received or after new permissions
+     * got received (that is regardless whether the value of the permission state
+     * actually changed). With this you can watch the permissions-state property
+     * to know whether the permissions are ready. Note that while NMClient has
+     * no D-Bus name owner, no permissions are fetched (and this property won't
+     * change).
+     *
+     * Since: 1.24
+     */
     obj_properties[PROP_PERMISSIONS_STATE] =
         g_param_spec_enum(NM_CLIENT_PERMISSIONS_STATE,
                           "",
@@ -8484,13 +8484,13 @@ nm_client_class_init(NMClientClass *client_class)
                                               &_nml_dbus_meta_iface_nm_dnsmanager);
 
     /**
-	 * NMClient::device-added:
-	 * @client: the client that received the signal
-	 * @device: (type NMDevice): the new device
-	 *
-	 * Notifies that a #NMDevice is added.  This signal is not emitted for
-	 * placeholder devices.
-	 **/
+     * NMClient::device-added:
+     * @client: the client that received the signal
+     * @device: (type NMDevice): the new device
+     *
+     * Notifies that a #NMDevice is added.  This signal is not emitted for
+     * placeholder devices.
+     **/
     signals[DEVICE_ADDED] = g_signal_new(NM_CLIENT_DEVICE_ADDED,
                                          G_OBJECT_CLASS_TYPE(object_class),
                                          G_SIGNAL_RUN_FIRST,
@@ -8503,13 +8503,13 @@ nm_client_class_init(NMClientClass *client_class)
                                          G_TYPE_OBJECT);
 
     /**
-	 * NMClient::device-removed:
-	 * @client: the client that received the signal
-	 * @device: (type NMDevice): the removed device
-	 *
-	 * Notifies that a #NMDevice is removed.  This signal is not emitted for
-	 * placeholder devices.
-	 **/
+     * NMClient::device-removed:
+     * @client: the client that received the signal
+     * @device: (type NMDevice): the removed device
+     *
+     * Notifies that a #NMDevice is removed.  This signal is not emitted for
+     * placeholder devices.
+     **/
     signals[DEVICE_REMOVED] = g_signal_new(NM_CLIENT_DEVICE_REMOVED,
                                            G_OBJECT_CLASS_TYPE(object_class),
                                            G_SIGNAL_RUN_FIRST,
@@ -8522,13 +8522,13 @@ nm_client_class_init(NMClientClass *client_class)
                                            G_TYPE_OBJECT);
 
     /**
-	 * NMClient::any-device-added:
-	 * @client: the client that received the signal
-	 * @device: (type NMDevice): the new device
-	 *
-	 * Notifies that a #NMDevice is added.  This signal is emitted for both
-	 * regular devices and placeholder devices.
-	 **/
+     * NMClient::any-device-added:
+     * @client: the client that received the signal
+     * @device: (type NMDevice): the new device
+     *
+     * Notifies that a #NMDevice is added.  This signal is emitted for both
+     * regular devices and placeholder devices.
+     **/
     signals[ANY_DEVICE_ADDED] = g_signal_new(NM_CLIENT_ANY_DEVICE_ADDED,
                                              G_OBJECT_CLASS_TYPE(object_class),
                                              G_SIGNAL_RUN_FIRST,
@@ -8541,13 +8541,13 @@ nm_client_class_init(NMClientClass *client_class)
                                              G_TYPE_OBJECT);
 
     /**
-	 * NMClient::any-device-removed:
-	 * @client: the client that received the signal
-	 * @device: (type NMDevice): the removed device
-	 *
-	 * Notifies that a #NMDevice is removed.  This signal is emitted for both
-	 * regular devices and placeholder devices.
-	 **/
+     * NMClient::any-device-removed:
+     * @client: the client that received the signal
+     * @device: (type NMDevice): the removed device
+     *
+     * Notifies that a #NMDevice is removed.  This signal is emitted for both
+     * regular devices and placeholder devices.
+     **/
     signals[ANY_DEVICE_REMOVED] = g_signal_new(NM_CLIENT_ANY_DEVICE_REMOVED,
                                                G_OBJECT_CLASS_TYPE(object_class),
                                                G_SIGNAL_RUN_FIRST,
@@ -8560,13 +8560,13 @@ nm_client_class_init(NMClientClass *client_class)
                                                G_TYPE_OBJECT);
 
     /**
-	 * NMClient::permission-changed:
-	 * @client: the client that received the signal
-	 * @permission: a permission from #NMClientPermission
-	 * @result: the permission's result, one of #NMClientPermissionResult
-	 *
-	 * Notifies that a permission has changed
-	 **/
+     * NMClient::permission-changed:
+     * @client: the client that received the signal
+     * @permission: a permission from #NMClientPermission
+     * @result: the permission's result, one of #NMClientPermissionResult
+     *
+     * Notifies that a permission has changed
+     **/
     signals[PERMISSION_CHANGED] = g_signal_new(NM_CLIENT_PERMISSION_CHANGED,
                                                G_OBJECT_CLASS_TYPE(object_class),
                                                G_SIGNAL_RUN_FIRST,
@@ -8579,12 +8579,12 @@ nm_client_class_init(NMClientClass *client_class)
                                                G_TYPE_UINT,
                                                G_TYPE_UINT);
     /**
-	 * NMClient::connection-added:
-	 * @client: the settings object that received the signal
-	 * @connection: the new connection
-	 *
-	 * Notifies that a #NMConnection has been added.
-	 **/
+     * NMClient::connection-added:
+     * @client: the settings object that received the signal
+     * @connection: the new connection
+     *
+     * Notifies that a #NMConnection has been added.
+     **/
     signals[CONNECTION_ADDED] = g_signal_new(NM_CLIENT_CONNECTION_ADDED,
                                              G_OBJECT_CLASS_TYPE(object_class),
                                              G_SIGNAL_RUN_FIRST,
@@ -8597,12 +8597,12 @@ nm_client_class_init(NMClientClass *client_class)
                                              NM_TYPE_REMOTE_CONNECTION);
 
     /**
-	 * NMClient::connection-removed:
-	 * @client: the settings object that received the signal
-	 * @connection: the removed connection
-	 *
-	 * Notifies that a #NMConnection has been removed.
-	 **/
+     * NMClient::connection-removed:
+     * @client: the settings object that received the signal
+     * @connection: the removed connection
+     *
+     * Notifies that a #NMConnection has been removed.
+     **/
     signals[CONNECTION_REMOVED] = g_signal_new(NM_CLIENT_CONNECTION_REMOVED,
                                                G_OBJECT_CLASS_TYPE(object_class),
                                                G_SIGNAL_RUN_FIRST,
@@ -8615,12 +8615,12 @@ nm_client_class_init(NMClientClass *client_class)
                                                NM_TYPE_REMOTE_CONNECTION);
 
     /**
-	 * NMClient::active-connection-added:
-	 * @client: the settings object that received the signal
-	 * @active_connection: the new active connection
-	 *
-	 * Notifies that a #NMActiveConnection has been added.
-	 **/
+     * NMClient::active-connection-added:
+     * @client: the settings object that received the signal
+     * @active_connection: the new active connection
+     *
+     * Notifies that a #NMActiveConnection has been added.
+     **/
     signals[ACTIVE_CONNECTION_ADDED] = g_signal_new(NM_CLIENT_ACTIVE_CONNECTION_ADDED,
                                                     G_OBJECT_CLASS_TYPE(object_class),
                                                     G_SIGNAL_RUN_FIRST,
@@ -8633,12 +8633,12 @@ nm_client_class_init(NMClientClass *client_class)
                                                     NM_TYPE_ACTIVE_CONNECTION);
 
     /**
-	 * NMClient::active-connection-removed:
-	 * @client: the settings object that received the signal
-	 * @active_connection: the removed active connection
-	 *
-	 * Notifies that a #NMActiveConnection has been removed.
-	 **/
+     * NMClient::active-connection-removed:
+     * @client: the settings object that received the signal
+     * @active_connection: the removed active connection
+     *
+     * Notifies that a #NMActiveConnection has been removed.
+     **/
     signals[ACTIVE_CONNECTION_REMOVED] = g_signal_new(NM_CLIENT_ACTIVE_CONNECTION_REMOVED,
                                                       G_OBJECT_CLASS_TYPE(object_class),
                                                       G_SIGNAL_RUN_FIRST,

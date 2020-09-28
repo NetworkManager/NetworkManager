@@ -139,8 +139,8 @@ complete_one(gpointer key, gpointer value, gpointer user_data)
     if ((!*last && !strchr(name, '.')) || matches(last, name)) {
         if (option != prefix) {
             /* value prefix was not a standalone argument,
-			 * it was part of --option=<value> argument.
-			 * Repeat the part leading to "=". */
+             * it was part of --option=<value> argument.
+             * Repeat the part leading to "=". */
             g_print("%s=", option);
         }
         g_print("%.*s%s%s\n",
@@ -201,8 +201,8 @@ complete_option_with_value(const char *option, const char *prefix, ...)
         if (!*prefix || matches(prefix, candidate)) {
             if (option != prefix) {
                 /* value prefix was not a standalone argument,
-				 * it was part of --option=<value> argument.
-				 * Repeat the part leading to "=". */
+                 * it was part of --option=<value> argument.
+                 * Repeat the part leading to "=". */
                 g_print("%s=", option);
             }
             g_print("%s\n", candidate);
@@ -262,13 +262,13 @@ matches_arg(NmCli *nmc, int *argc, const char *const **argv, const char *pattern
 
     if (opt[1] == '-') {
         /* We know one '-' was already seen by the caller.
-		 * Skip it if there's a second one*/
+         * Skip it if there's a second one*/
         opt++;
     }
 
     if (arg) {
         /* If there's a "=" separator, replace it with NUL so that matches()
-		 * works and consider the part after it to be the argument's value. */
+         * works and consider the part after it to be the argument's value. */
         s = strchr(opt, '=');
         if (s) {
             opt     = nm_strndup_a(300, opt, s - opt, &opt_free);
@@ -284,7 +284,7 @@ matches_arg(NmCli *nmc, int *argc, const char *const **argv, const char *pattern
             *arg = g_steal_pointer(&arg_tmp);
         else {
             /* We need a value, but the option didn't contain a "=<value>" part.
-			 * Proceed to the next argument. */
+             * Proceed to the next argument. */
             if (*argc <= 1) {
                 g_string_printf(nmc->return_text,
                                 _("Error: missing argument for '%s' option."),
@@ -564,8 +564,8 @@ parse_color_scheme(char *       palette_buffer,
     int i;
 
     /* This reads through the raw color scheme file contents, identifying the
-	 * color names and sequences, putting in terminating NULs in place, so that
-	 * pointers into the buffer can readily be used as strings in the palette. */
+     * color names and sequences, putting in terminating NULs in place, so that
+     * pointers into the buffer can readily be used as strings in the palette. */
     while (1) {
         /* Leading whitespace. */
         while (nm_utils_is_separator(*p) || *p == '\n')
@@ -819,8 +819,8 @@ process_command_line(NmCli *nmc, int argc, char **argv_orig)
             nmc->required_fields                 = g_strdup(value);
             nmc->nmc_config_mutable.print_output = NMC_PRINT_TERSE;
             /* We want fixed tabular mode here, but just set the mode specified and rely on defaults:
-			 * in this way we allow use of "-m multiline" to swap the output mode also if placed
-			 * before the "-g <field>" option (-g may be still more practical and easy to remember than -t -f).
+             * in this way we allow use of "-m multiline" to swap the output mode also if placed
+             * before the "-g <field>" option (-g may be still more practical and easy to remember than -t -f).
 			*/
             nmc->mode_specified = TRUE;
         } else if (matches_arg(nmc, &argc, &argv, "-nocheck", NULL)) {

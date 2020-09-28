@@ -47,11 +47,11 @@ verify_leap(NMSettingWirelessSecurity *s_wsec,
     leap_username = nm_setting_wireless_security_get_leap_username(s_wsec);
 
     /* One (or both) of two things indicates we want LEAP:
-	 * 1) auth_alg == 'leap'
-	 * 2) valid leap_username
+     * 1) auth_alg == 'leap'
+     * 2) valid leap_username
      *
      * LEAP always requires a LEAP username.
-	 */
+     */
 
     if (auth_alg) {
         if (!strcmp(auth_alg, "leap")) {
@@ -97,8 +97,8 @@ verify_leap(NMSettingWirelessSecurity *s_wsec,
     }
 
     /* At this point if auth_alg is set it must be 'leap', and if key_mgmt
-	 * is set it must be 'ieee8021x'.
-	 */
+     * is set it must be 'ieee8021x'.
+     */
     if (leap_username) {
         if (auth_alg)
             g_assert(strcmp(auth_alg, "leap") == 0);
@@ -610,8 +610,8 @@ nm_wifi_utils_complete_connection(GBytes *      ap_ssid,
     }
 
     /* For now mesh requires channel and band, fill them only if both not present.
-	 * Do not check existing values against an existing ap/mesh point,
-	 * mesh join will start a new network if required */
+     * Do not check existing values against an existing ap/mesh point,
+     * mesh join will start a new network if required */
     if (mesh) {
         const char *band;
         guint32     channel;
@@ -732,8 +732,8 @@ nm_wifi_utils_complete_connection(GBytes *      ap_ssid,
 
             if (s_8021x) {
                 /* Dynamic WEP requires a valid 802.1x setting since we can't
-				 * autocomplete 802.1x.
-				 */
+                 * autocomplete 802.1x.
+                 */
                 if (!nm_setting_verify(NM_SETTING(s_8021x), NULL, error))
                     return FALSE;
             }
@@ -802,13 +802,13 @@ nm_wifi_utils_complete_connection(GBytes *      ap_ssid,
                      "open",
                      NULL);
         /* Leave proto/pairwise/group as client set them; if they are unset the
-		 * supplicant will figure out the best combination at connect time.
-		 */
+         * supplicant will figure out the best combination at connect time.
+         */
 
         /* 802.1x also requires the client to completely fill in the 8021x
-		 * setting.  Since there's so much configuration required for it, there's
-		 * no way it can be automatically completed.
-		 */
+         * setting.  Since there's so much configuration required for it, there's
+         * no way it can be automatically completed.
+         */
     } else if ((key_mgmt && !strcmp(key_mgmt, "sae"))
                || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE)) {
         g_object_set(s_wsec,
@@ -836,8 +836,8 @@ nm_wifi_utils_complete_connection(GBytes *      ap_ssid,
                      "open",
                      NULL);
         /* Leave proto/pairwise/group as client set them; if they are unset the
-		 * supplicant will figure out the best combination at connect time.
-		 */
+         * supplicant will figure out the best combination at connect time.
+         */
     } else {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
@@ -856,11 +856,11 @@ nm_wifi_utils_is_manf_default_ssid(GBytes *ssid)
     gsize         ssid_l;
     int           i;
     /*
-	 * List of manufacturer default SSIDs that are often unchanged by users.
-	 *
-	 * NOTE: this list should *not* contain networks that you would like to
-	 * automatically roam to like "Starbucks" or "AT&T" or "T-Mobile HotSpot".
-	 */
+     * List of manufacturer default SSIDs that are often unchanged by users.
+     *
+     * NOTE: this list should *not* contain networks that you would like to
+     * automatically roam to like "Starbucks" or "AT&T" or "T-Mobile HotSpot".
+     */
     static const char *manf_defaults[] = {
         "linksys",
         "linksys-a",

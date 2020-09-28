@@ -41,25 +41,25 @@ _ASSERT_enum_values_info(GType type, const NMUtilsEnumValueInfo *value_infos)
             enum_value = g_enum_get_value_by_nick(G_ENUM_CLASS(klass), value_infos->nick);
             if (enum_value) {
                 /* we do allow specifying the same name via @value_infos and @type.
-				 * That might make sense, if @type comes from a library where older versions
-				 * of the library don't yet support the value. In this case, the caller can
-				 * provide the nick via @value_infos, to support the older library version.
-				 * And then, when actually running against a newer library version where
-				 * @type knows the nick, we have this situation.
-				 *
-				 * Another reason for specifying a nick both in @value_infos and @type,
-				 * is to specify an alias which is not used with highest preference. For
-				 * example, if you add an alias "disabled" for "none" (both numerically
-				 * equal), then the first alias in @value_infos will be preferred over
-				 * the name from @type. So, to still use "none" as preferred name, you may
-				 * explicitly specify the "none" alias in @value_infos before "disabled".
-				 *
-				 * However, what never is allowed, is to use a name (nick) to re-number
-				 * the value. That is, if both @value_infos and @type contain a particular
-				 * nick, their numeric values must agree as well.
-				 * Allowing this, would be very confusing, because the name would have a different
-				 * value from the regular GLib GEnum API.
-				 */
+                 * That might make sense, if @type comes from a library where older versions
+                 * of the library don't yet support the value. In this case, the caller can
+                 * provide the nick via @value_infos, to support the older library version.
+                 * And then, when actually running against a newer library version where
+                 * @type knows the nick, we have this situation.
+                 *
+                 * Another reason for specifying a nick both in @value_infos and @type,
+                 * is to specify an alias which is not used with highest preference. For
+                 * example, if you add an alias "disabled" for "none" (both numerically
+                 * equal), then the first alias in @value_infos will be preferred over
+                 * the name from @type. So, to still use "none" as preferred name, you may
+                 * explicitly specify the "none" alias in @value_infos before "disabled".
+                 *
+                 * However, what never is allowed, is to use a name (nick) to re-number
+                 * the value. That is, if both @value_infos and @type contain a particular
+                 * nick, their numeric values must agree as well.
+                 * Allowing this, would be very confusing, because the name would have a different
+                 * value from the regular GLib GEnum API.
+                 */
                 g_assert(enum_value->value == value_infos->value);
             }
         } else {

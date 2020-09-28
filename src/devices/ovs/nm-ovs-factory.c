@@ -167,8 +167,8 @@ ovsdb_interface_failed(NMOvsdb *        ovsdb,
     }
 
     /* The patch interface which gets created first is expected to
-	 * fail because the second patch doesn't exist yet. Ignore all
-	 * failures of patch interfaces. */
+     * fail because the second patch doesn't exist yet. Ignore all
+     * failures of patch interfaces. */
     if (connection && (c = nm_settings_connection_get_connection(connection))
         && (type = nm_connection_get_connection_type(c))
         && nm_streq0(type, NM_SETTING_OVS_INTERFACE_SETTING_NAME)

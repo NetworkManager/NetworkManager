@@ -377,7 +377,7 @@ typedef enum {
 
 typedef enum {
     /* Negative values are errors from kernel. Add dummy member to
-	 * make enum signed. */
+     * make enum signed. */
     _WAIT_FOR_NL_RESPONSE_RESULT_SYSTEM_ERROR = G_MININT,
 
     WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN = 0,
@@ -434,11 +434,11 @@ typedef struct {
 
     struct {
         /* which delayed actions are scheduled, as marked in @flags.
-		 * Some types have additional arguments in the fields below. */
+         * Some types have additional arguments in the fields below. */
         DelayedActionType flags;
 
         /* counter that a refresh all action is in progress, separated
-		 * by type. */
+         * by type. */
         int refresh_all_in_progress[_REFRESH_ALL_TYPE_NUM];
 
         GPtrArray *list_master_connected;
@@ -623,19 +623,19 @@ typedef struct {
     const char *type_string;
 
     /* IFLA_INFO_KIND / rtnl_link_get_type() where applicable; the rtnl type
-	 * should only be specified if the device type can be created without
-	 * additional parameters, and if the device type can be determined from
-	 * the rtnl_type.  eg, tun/tap should not be specified since both
-	 * tun and tap devices use "tun", and InfiniBand should not be
-	 * specified because a PKey is required at creation. Drivers set this
-	 * value from their 'struct rtnl_link_ops' structure.
-	 */
+     * should only be specified if the device type can be created without
+     * additional parameters, and if the device type can be determined from
+     * the rtnl_type.  eg, tun/tap should not be specified since both
+     * tun and tap devices use "tun", and InfiniBand should not be
+     * specified because a PKey is required at creation. Drivers set this
+     * value from their 'struct rtnl_link_ops' structure.
+     */
     const char *rtnl_type;
 
     /* uevent DEVTYPE where applicable, from /sys/class/net/<ifname>/uevent;
-	 * drivers set this value from their SET_NETDEV_DEV() call and the
-	 * 'struct device_type' name member.
-	 */
+     * drivers set this value from their SET_NETDEV_DEV() call and the
+     * 'struct device_type' name member.
+     */
     const char *devtype;
 } LinkDesc;
 
@@ -900,13 +900,13 @@ _addrtime_timestamp_to_nm(guint32 timestamp, gint32 *out_now_nm)
     NM_SET_OUT(out_now_nm, now_nm / 1000);
 
     /* converting the timestamp into nm_utils_get_monotonic_timestamp_msec() scale is
-	 * a good guess but fails in the following situations:
-	 *
-	 * - If the address existed before start of the process, the timestamp in nm scale would
-	 *   be negative or zero. In this case we default to 1.
-	 * - during hibernation, the CLOCK_MONOTONIC/timestamp drifts from
-	 *   nm_utils_get_monotonic_timestamp_msec() scale.
-	 */
+     * a good guess but fails in the following situations:
+     *
+     * - If the address existed before start of the process, the timestamp in nm scale would
+     *   be negative or zero. In this case we default to 1.
+     * - during hibernation, the CLOCK_MONOTONIC/timestamp drifts from
+     *   nm_utils_get_monotonic_timestamp_msec() scale.
+     */
     if (result <= 1000)
         return 1;
 
@@ -1054,17 +1054,17 @@ _linktype_get_type(NMPlatform *      platform,
         obj = _lookup_cached_link(cache, ifindex, completed_from_cache, link_cached);
 
         /* If we detected the link type before, we stick to that
-		 * decision unless the "kind" or "name" changed. If "name" changed,
-		 * it means that their type may not have been determined correctly
-		 * due to race conditions while accessing sysfs.
-		 *
-		 * This way, we save additional ethtool/sysctl lookups, but moreover,
-		 * we keep the linktype stable and don't change it as long as the link
-		 * exists.
-		 *
-		 * Note that kernel *can* reuse the ifindex (on integer overflow, and
-		 * when moving interface to other netns). Thus here there is a tiny potential
-		 * of messing stuff up. */
+         * decision unless the "kind" or "name" changed. If "name" changed,
+         * it means that their type may not have been determined correctly
+         * due to race conditions while accessing sysfs.
+         *
+         * This way, we save additional ethtool/sysctl lookups, but moreover,
+         * we keep the linktype stable and don't change it as long as the link
+         * exists.
+         *
+         * Note that kernel *can* reuse the ifindex (on integer overflow, and
+         * when moving interface to other netns). Thus here there is a tiny potential
+         * of messing stuff up. */
         if (obj && obj->_link.netlink.is_in_netlink
             && !NM_IN_SET(obj->link.type, NM_LINK_TYPE_UNKNOWN, NM_LINK_TYPE_NONE)
             && nm_streq(ifname, obj->link.name) && (!kind || nm_streq0(kind, obj->link.kind))) {
@@ -1075,10 +1075,10 @@ _linktype_get_type(NMPlatform *      platform,
     }
 
     /* we intern kind to not require us to keep the pointer alive. Essentially
-	 * leaking it in a global cache. That should be safe enough, because the
-	 * kind comes only from kernel messages, which depend on the number of
-	 * available drivers. So, there is not the danger that we leak uncontrolled
-	 * many kinds. */
+     * leaking it in a global cache. That should be safe enough, because the
+     * kind comes only from kernel messages, which depend on the number of
+     * available drivers. So, there is not the danger that we leak uncontrolled
+     * many kinds. */
     *out_kind = g_intern_string(kind);
 
     if (kind) {
@@ -1112,8 +1112,8 @@ _linktype_get_type(NMPlatform *      platform,
 
             if (arptype == 256) {
                 /* Some s390 CTC-type devices report 256 for the encapsulation type
-				 * for some reason, but we need to call them Ethernet.
-				 */
+                 * for some reason, but we need to call them Ethernet.
+                 */
                 if (nm_streq(driver_info.driver, "ctcm"))
                     return NM_LINK_TYPE_ETHERNET;
             }
@@ -1136,8 +1136,8 @@ _linktype_get_type(NMPlatform *      platform,
                 if (link_type != NM_LINK_TYPE_NONE) {
                     if (link_type == NM_LINK_TYPE_BNEP && arptype != ARPHRD_ETHER) {
                         /* Both BNEP and 6lowpan use DEVTYPE=bluetooth, so we must
-						 * use arptype to distinguish between them.
-						 */
+                         * use arptype to distinguish between them.
+                         */
                     } else
                         return link_type;
                 }
@@ -1150,23 +1150,23 @@ _linktype_get_type(NMPlatform *      platform,
 
         if (arptype == ARPHRD_ETHER) {
             /* Misc non-upstream WWAN drivers.  rmnet is Qualcomm's proprietary
-			 * modem interface, ccmni is MediaTek's.  FIXME: these drivers should
-			 * really set devtype=WWAN.
-			 */
+             * modem interface, ccmni is MediaTek's.  FIXME: these drivers should
+             * really set devtype=WWAN.
+             */
             if (g_str_has_prefix(ifname, "rmnet") || g_str_has_prefix(ifname, "rev_rmnet")
                 || g_str_has_prefix(ifname, "ccmni"))
                 return NM_LINK_TYPE_WWAN_NET;
 
             /* Standard wired ethernet interfaces don't report an rtnl_link_type, so
-			 * only allow fallback to Ethernet if no type is given.  This should
-			 * prevent future virtual network drivers from being treated as Ethernet
-			 * when they should be Generic instead.
-			 */
+             * only allow fallback to Ethernet if no type is given.  This should
+             * prevent future virtual network drivers from being treated as Ethernet
+             * when they should be Generic instead.
+             */
             if (!kind && !devtype)
                 return NM_LINK_TYPE_ETHERNET;
 
             /* The USB gadget interfaces behave and look like ordinary ethernet devices
-			 * aside from the DEVTYPE. */
+             * aside from the DEVTYPE. */
             if (nm_streq0(devtype, "gadget"))
                 return NM_LINK_TYPE_ETHERNET;
 
@@ -1264,8 +1264,8 @@ _parse_af_inet6(NMPlatform *        platform,
     }
 
     /* Hack to detect support addrgenmode of the kernel. We only parse
-	 * netlink messages that we receive from kernel, hence this check
-	 * is valid. */
+     * netlink messages that we receive from kernel, hence this check
+     * is valid. */
     if (!_nm_platform_kernel_support_detected(NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL)) {
         /* IFLA_INET6_ADDR_GEN_MODE was added in kernel 3.17, dated 5 October, 2014. */
         _nm_platform_kernel_support_init(NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL,
@@ -1276,7 +1276,7 @@ _parse_af_inet6(NMPlatform *        platform,
         i6_addr_gen_mode_inv = _nm_platform_uint8_inv(nla_get_u8(tb[IFLA_INET6_ADDR_GEN_MODE]));
         if (i6_addr_gen_mode_inv == 0) {
             /* an inverse addrgenmode of zero is unexpected. We need to reserve zero
-			 * to signal "unset". */
+             * to signal "unset". */
             return FALSE;
         }
         addr_gen_mode_valid = TRUE;
@@ -1341,7 +1341,7 @@ _parse_lnk_bridge(const char *kind, struct nlattr *info_data)
     if (!_nm_platform_kernel_support_detected(
             NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BR_VLAN_STATS_ENABLED)) {
         /* IFLA_BR_VLAN_STATS_ENABLED was added in kernel 4.10 on April 30, 2016.
-		 * See commit 6dada9b10a0818ba72c249526a742c8c41274a73. */
+         * See commit 6dada9b10a0818ba72c249526a742c8c41274a73. */
         _nm_platform_kernel_support_init(NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BR_VLAN_STATS_ENABLED,
                                          tb[IFLA_BR_VLAN_STATS_ENABLED] ? 1 : -1);
     }
@@ -1906,7 +1906,7 @@ _vlan_qos_mapping_from_nla(struct nlattr *          nlattr,
         guint             i, j;
 
         /* The sorting is necessary, because for egress mapping, kernel
-		 * doesn't sent the items strictly sorted by the from field. */
+         * doesn't sent the items strictly sorted by the from field. */
         g_ptr_array_sort_with_data(array, _vlan_qos_mapping_cmp_from_ptr, NULL);
 
         list = g_new(NMVlanQosMapping, array->len);
@@ -1917,8 +1917,8 @@ _vlan_qos_mapping_from_nla(struct nlattr *          nlattr,
             map = array->pdata[i];
 
             /* kernel doesn't really send us duplicates. Just be extra cautious
-			 * because we want strong guarantees about the sort order and uniqueness
-			 * of our mapping list (for simpler equality comparison). */
+             * because we want strong guarantees about the sort order and uniqueness
+             * of our mapping list (for simpler equality comparison). */
             if (j > 0 && list[j - 1].from == map->from)
                 list[j - 1] = *map;
             else
@@ -2209,7 +2209,7 @@ _wireguard_update_from_peers_nla(CList *peers, GArray **p_allowed_ips, struct nl
                    NMP_WIREGUARD_PUBLIC_KEY_LEN)) {
         G_STATIC_ASSERT_EXPR(NMP_WIREGUARD_PUBLIC_KEY_LEN == sizeof(peer_c->data.public_key));
         /* this message is a continuation of the previous peer.
-		 * Only parse WGPEER_A_ALLOWEDIPS below. */
+         * Only parse WGPEER_A_ALLOWEDIPS below. */
     } else {
         /* otherwise, start a new peer */
         peer_c = g_slice_new0(WireGuardPeerConstruct);
@@ -2318,7 +2318,7 @@ _wireguard_get_device_cb(struct nl_msg *msg, void *arg)
 
     if (parse_data->obj) {
         /* we already have an object instance. This means the netlink message
-		 * is a continuation, only providing more WGDEVICE_A_PEERS data below. */
+         * is a continuation, only providing more WGDEVICE_A_PEERS data below. */
     } else {
         NMPObject *             obj;
         NMPlatformLnkWireGuard *props;
@@ -2329,8 +2329,8 @@ _wireguard_get_device_cb(struct nl_msg *msg, void *arg)
         if (tb[WGDEVICE_A_PRIVATE_KEY]) {
             nla_memcpy(props->private_key, tb[WGDEVICE_A_PRIVATE_KEY], sizeof(props->private_key));
             /* FIXME(netlink-bzero-secret): extend netlink library to wipe memory. For now,
-			 * just hack it here (yes, this does not cover all places where the
-			 * private key was copied). */
+             * just hack it here (yes, this does not cover all places where the
+             * private key was copied). */
             nm_explicit_bzero(nla_data(tb[WGDEVICE_A_PRIVATE_KEY]),
                               nla_len(tb[WGDEVICE_A_PRIVATE_KEY]));
         }
@@ -2353,8 +2353,8 @@ _wireguard_get_device_cb(struct nl_msg *msg, void *arg)
                                                   &parse_data->allowed_ips,
                                                   attr)) {
                 /* we ignore the error of parsing one peer.
-				 * _wireguard_update_from_peers_nla() leaves the @peers array in the
-				 * desired state. */
+                 * _wireguard_update_from_peers_nla() leaves the @peers array in the
+                 * desired state. */
             }
         }
     }
@@ -2406,7 +2406,7 @@ _wireguard_read_info(NMPlatform *    platform /* used only as logging context */
     c_list_init(&parse_data.peers);
 
     /* we ignore errors, and return whatever we could successfully
-	 * parse. */
+     * parse. */
     nl_recvmsgs(genl,
                 &((const struct nl_cb){
                     .valid_cb  = _wireguard_get_device_cb,
@@ -2427,32 +2427,32 @@ _wireguard_read_info(NMPlatform *    platform /* used only as logging context */
     }
 
     /* we receive peers/allowed-ips possibly in separate netlink messages. Hence, while
-	 * parsing the dump, we don't know upfront how many peers/allowed-ips we will receive.
-	 *
-	 * We solve that, by collecting all peers with a CList. It's done this way,
-	 * because a GArray would require growing the array, but we want to bzero()
-	 * the preshared-key of each peer while reallocating. The CList apprach avoids
-	 * that.
-	 *
-	 * For allowed-ips, we instead track one GArray, which are all appended
-	 * there. The realloc/resize of the GArray is fine there. However,
-	 * while we build the GArray, we don't yet have the final pointers.
-	 * Hence, while constructing, we track the indexes with peer->_construct_idx_*
-	 * fields. These indexes must be converted to actual pointers blow.
-	 *
-	 * This is all done during parsing. In the final NMPObjectLnkWireGuard we
-	 * don't want the CList anymore and repackage the NMPObject tightly. The
-	 * reason is, that NMPObject instances are immutable and long-living. Spend
-	 * a bit effort below during construction to obtain a most suitable representation
-	 * in this regard. */
+     * parsing the dump, we don't know upfront how many peers/allowed-ips we will receive.
+     *
+     * We solve that, by collecting all peers with a CList. It's done this way,
+     * because a GArray would require growing the array, but we want to bzero()
+     * the preshared-key of each peer while reallocating. The CList apprach avoids
+     * that.
+     *
+     * For allowed-ips, we instead track one GArray, which are all appended
+     * there. The realloc/resize of the GArray is fine there. However,
+     * while we build the GArray, we don't yet have the final pointers.
+     * Hence, while constructing, we track the indexes with peer->_construct_idx_*
+     * fields. These indexes must be converted to actual pointers blow.
+     *
+     * This is all done during parsing. In the final NMPObjectLnkWireGuard we
+     * don't want the CList anymore and repackage the NMPObject tightly. The
+     * reason is, that NMPObject instances are immutable and long-living. Spend
+     * a bit effort below during construction to obtain a most suitable representation
+     * in this regard. */
     obj->_lnk_wireguard.peers_len = c_list_length(&parse_data.peers);
     obj->_lnk_wireguard.peers     = obj->_lnk_wireguard.peers_len > 0
                                         ? g_new(NMPWireGuardPeer, obj->_lnk_wireguard.peers_len)
                                         : NULL;
 
     /* duplicate allowed_ips instead of using the pointer. The GArray possibly has more
-	 * space allocated then we need, and we want to get rid of this excess buffer.
-	 * Note that NMPObject instance is possibly put into the cache and long-living. */
+     * space allocated then we need, and we want to get rid of this excess buffer.
+     * Note that NMPObject instance is possibly put into the cache and long-living. */
     obj->_lnk_wireguard._allowed_ips_buf_len = allowed_ips ? allowed_ips->len : 0u;
     obj->_lnk_wireguard._allowed_ips_buf =
         obj->_lnk_wireguard._allowed_ips_buf_len > 0
@@ -2553,8 +2553,8 @@ _wireguard_refresh_link(NMPlatform *platform, int wireguard_family_id, int ifind
         return plink;
 
     /* we use nmp_cache_update_netlink() to re-inject the new object into the cache.
-	 * For that, we need to clone it, and tweak it so that it's suitable. It's a bit
-	 * of a hack, in particular that we need to clear driver and udev-device. */
+     * For that, we need to clone it, and tweak it so that it's suitable. It's a bit
+     * of a hack, in particular that we need to clear driver and udev-device. */
     obj                            = nmp_object_clone(plink, FALSE);
     obj->_link.wireguard_family_id = wireguard_family_id;
     nmp_object_unref(obj->_link.netlink.lnk);
@@ -2610,15 +2610,15 @@ _wireguard_create_change_nlmsgs(NMPlatform *                              platfo
     G_STMT_END
 
     /* Adapted from LGPL-2.1+ code [1].
-	 *
-	 * [1] https://git.zx2c4.com/WireGuard/tree/contrib/examples/embeddable-wg-library/wireguard.c?id=5e99a6d43fe2351adf36c786f5ea2086a8fe7ab8#n1073 */
+     *
+     * [1] https://git.zx2c4.com/WireGuard/tree/contrib/examples/embeddable-wg-library/wireguard.c?id=5e99a6d43fe2351adf36c786f5ea2086a8fe7ab8#n1073 */
 
     idx_peer_curr        = IDX_NIL;
     idx_allowed_ips_curr = IDX_NIL;
 
     /* TODO: for the moment, we always reset all peers and allowed-ips (WGDEVICE_F_REPLACE_PEERS, WGPEER_F_REPLACE_ALLOWEDIPS).
-	 * The platform API should be extended to also support partial updates. In particular, configuring the same configuration
-	 * multiple times, should not clear and re-add all settings, but rather sync the existing settings with the desired configuration. */
+     * The platform API should be extended to also support partial updates. In particular, configuring the same configuration
+     * multiple times, should not clear and re-add all settings, but rather sync the existing settings with the desired configuration. */
 
 again:
 
@@ -2680,7 +2680,7 @@ again:
                                   | NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_HAS_ALLOWEDIPS
                                   | NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_REPLACE_ALLOWEDIPS)) {
                 /* no flags set. We take that as indication to skip configuring the peer
-				 * entirely. */
+                 * entirely. */
                 nm_assert(p_flags == NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_NONE);
                 continue;
             }
@@ -2964,17 +2964,17 @@ _new_from_nl_link(NMPlatform *     platform,
 
     if (!tb[IFLA_MTU]) {
         /* Kernel has two places that send RTM_GETLINK messages:
-		 * net/core/rtnetlink.c and net/wireless/ext-core.c.
-		 * Unfortunately ext-core.c sets only IFLA_WIRELESS and
-		 * IFLA_IFNAME. This confuses code in this function, because
-		 * it cannot get complete set of data for the interface and
-		 * later incomplete object this function creates is used to
-		 * overwrite existing data in NM's cache.
-		 * Since ext-core.c doesn't set IFLA_MTU we can use it as a
-		 * signal to ignore incoming message.
-		 * To some extent this is a hack and correct approach is to
-		 * merge objects per-field.
-		 */
+         * net/core/rtnetlink.c and net/wireless/ext-core.c.
+         * Unfortunately ext-core.c sets only IFLA_WIRELESS and
+         * IFLA_IFNAME. This confuses code in this function, because
+         * it cannot get complete set of data for the interface and
+         * later incomplete object this function creates is used to
+         * overwrite existing data in NM's cache.
+         * Since ext-core.c doesn't set IFLA_MTU we can use it as a
+         * signal to ignore incoming message.
+         * To some extent this is a hack and correct approach is to
+         * merge objects per-field.
+         */
         return NULL;
     }
     obj->link.mtu = nla_get_u32(tb[IFLA_MTU]);
@@ -3129,11 +3129,11 @@ _new_from_nl_link(NMPlatform *     platform,
                 && link_cached->_link.netlink.lnk
                 && (!lnk_data || nmp_object_equal(lnk_data, link_cached->_link.netlink.lnk))) {
                 /* We always try to look into the cache and reuse the object there.
-				 * We do that, because we consider the lnk object as immutable and don't
-				 * modify it after creating. Hence we can share it and reuse.
-				 *
-				 * Also, sometimes the info-data is missing for updates. In this case
-				 * we want to keep the previously received lnk_data. */
+                 * We do that, because we consider the lnk object as immutable and don't
+                 * modify it after creating. Hence we can share it and reuse.
+                 *
+                 * Also, sometimes the info-data is missing for updates. In this case
+                 * we want to keep the previously received lnk_data. */
                 nmp_object_unref(lnk_data);
                 lnk_data = nmp_object_ref(link_cached->_link.netlink.lnk);
             }
@@ -3188,8 +3188,8 @@ _new_from_nl_link(NMPlatform *     platform,
         struct nl_sock * genl         = NM_LINUX_PLATFORM_GET_PRIVATE(platform)->genl;
 
         /* The WireGuard kernel module does not yet send link update
-		 * notifications, so we don't actually update the cache. For
-		 * now, always refetch link data here. */
+         * notifications, so we don't actually update the cache. For
+         * now, always refetch link data here. */
 
         _lookup_cached_link(cache, obj->link.ifindex, completed_from_cache, &link_cached);
         if (link_cached && link_cached->_link.netlink.is_in_netlink
@@ -3266,7 +3266,7 @@ _new_from_nl_addr(struct nlmsghdr *nlh, gboolean id_only)
     _check_addr_or_return_null(tb, IFA_LOCAL, addr_len);
     if (is_v4) {
         /* For IPv4, kernel omits IFA_LOCAL/IFA_ADDRESS if (and only if) they
-		 * are effectively 0.0.0.0 (all-zero). */
+         * are effectively 0.0.0.0 (all-zero). */
         if (tb[IFA_LOCAL])
             memcpy(&obj->ip4_address.address, nla_data(tb[IFA_LOCAL]), addr_len);
         if (tb[IFA_ADDRESS])
@@ -3278,12 +3278,12 @@ _new_from_nl_addr(struct nlmsghdr *nlh, gboolean id_only)
         obj->ip4_address.use_ip4_broadcast_address = TRUE;
     } else {
         /* For IPv6, IFA_ADDRESS is always present.
-		 *
-		 * If IFA_LOCAL is missing, IFA_ADDRESS is @address and @peer_address
-		 * is :: (all-zero).
-		 *
-		 * If unexpectedly IFA_ADDRESS is missing, make the best of it -- but it _should_
-		 * actually be there. */
+         *
+         * If IFA_LOCAL is missing, IFA_ADDRESS is @address and @peer_address
+         * is :: (all-zero).
+         *
+         * If unexpectedly IFA_ADDRESS is missing, make the best of it -- but it _should_
+         * actually be there. */
         if (tb[IFA_ADDRESS] || tb[IFA_LOCAL]) {
             if (tb[IFA_LOCAL]) {
                 memcpy(&obj->ip6_address.address, nla_data(tb[IFA_LOCAL]), addr_len);
@@ -3375,8 +3375,8 @@ _new_from_nl_route(struct nlmsghdr *nlh, gboolean id_only)
     rtm = nlmsg_data(nlh);
 
     /*****************************************************************
-	 * only handle ~supported~ routes.
-	 *****************************************************************/
+     * only handle ~supported~ routes.
+     *****************************************************************/
 
     if (!NM_IN_SET(rtm->rtm_family, AF_INET, AF_INET6))
         return NULL;
@@ -3396,8 +3396,8 @@ _new_from_nl_route(struct nlmsghdr *nlh, gboolean id_only)
         return NULL;
 
     /*****************************************************************
-	 * parse nexthops. Only handle routes with one nh.
-	 *****************************************************************/
+     * parse nexthops. Only handle routes with one nh.
+     *****************************************************************/
 
     if (tb[RTA_MULTIPATH]) {
         size_t            tlen = nla_len(tb[RTA_MULTIPATH]);
@@ -3454,13 +3454,13 @@ rta_multipath_done:;
 
         if (!nh.is_present) {
             /* If no nexthops have been provided via RTA_MULTIPATH
-			 * we add it as regular nexthop to maintain backwards
-			 * compatibility */
+             * we add it as regular nexthop to maintain backwards
+             * compatibility */
             nh.ifindex = ifindex;
             nh.gateway = gateway;
         } else {
             /* Kernel supports new style nexthop configuration,
-			 * verify that it is a duplicate and ignore old-style nexthop. */
+             * verify that it is a duplicate and ignore old-style nexthop. */
             if (nh.ifindex != ifindex || memcmp(&nh.gateway, &gateway, addr_len) != 0)
                 return NULL;
         }
@@ -3559,7 +3559,7 @@ rta_multipath_done:;
     if (!is_v4) {
         if (!_nm_platform_kernel_support_detected(NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF)) {
             /* Detect support for RTA_PREF by inspecting the netlink message.
-			 * RTA_PREF was added in kernel 4.1, dated 21 June, 2015. */
+             * RTA_PREF was added in kernel 4.1, dated 21 June, 2015. */
             _nm_platform_kernel_support_init(NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF,
                                              tb[RTA_PREF] ? 1 : -1);
         }
@@ -3753,17 +3753,17 @@ _new_from_nl_routing_rule(struct nlmsghdr *nlh, gboolean id_only)
     if (tb[FRA_L3MDEV]) {
         if (!_nm_platform_kernel_support_detected(NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_L3MDEV)) {
             /* support for FRA_L3MDEV was added in 96c63fa7393d0a346acfe5a91e0c7d4c7782641b,
-			 * kernel 4.8, 3 October 2017.
-			 *
-			 * We can only detect support if the attribute is present. A missing attribute
-			 * is not conclusive. */
+             * kernel 4.8, 3 October 2017.
+             *
+             * We can only detect support if the attribute is present. A missing attribute
+             * is not conclusive. */
             _nm_platform_kernel_support_init(NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_L3MDEV, 1);
         }
 
         /* actually, kernel only allows this attribute to be missing or
-		 * "1". Still, encode it as full uint8.
-		 *
-		 * Note that FRA_L3MDEV and FRA_TABLE are mutally exclusive. */
+         * "1". Still, encode it as full uint8.
+         *
+         * Note that FRA_L3MDEV and FRA_TABLE are mutally exclusive. */
         props->l3mdev = nla_get_u8(tb[FRA_L3MDEV]);
     }
 
@@ -3774,7 +3774,7 @@ _new_from_nl_routing_rule(struct nlmsghdr *nlh, gboolean id_only)
 
     if (!_nm_platform_kernel_support_detected(NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_PROTOCOL)) {
         /* FRA_PROTOCOL was added in kernel 4.17, dated 3 June, 2018.
-		 * See commit 1b71af6053af1bd2f849e9fda4f71c1e3f145dcf. */
+         * See commit 1b71af6053af1bd2f849e9fda4f71c1e3f145dcf. */
         _nm_platform_kernel_support_init(NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_PROTOCOL,
                                          tb[FRA_PROTOCOL] ? 1 : -1);
     }
@@ -3791,10 +3791,10 @@ _new_from_nl_routing_rule(struct nlmsghdr *nlh, gboolean id_only)
 
     if (!_nm_platform_kernel_support_detected(NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_IP_PROTO)) {
         /* support for FRA_IP_PROTO, FRA_SPORT_RANGE, and FRA_DPORT_RANGE was added together
-		 * by bfff4862653bb96001ab57c1edd6d03f48e5f035, kernel 4.17, 4 June 2018.
-		 *
-		 * Unfortunately, a missing attribute does not tell us anything about support.
-		 * We can only tell for sure when we have support, but not when we don't have.  */
+         * by bfff4862653bb96001ab57c1edd6d03f48e5f035, kernel 4.17, 4 June 2018.
+         *
+         * Unfortunately, a missing attribute does not tell us anything about support.
+         * We can only tell for sure when we have support, but not when we don't have.  */
         if (tb[FRA_IP_PROTO] || tb[FRA_SPORT_RANGE] || tb[FRA_DPORT_RANGE])
             _nm_platform_kernel_support_init(NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_IP_PROTO, 1);
     }
@@ -3806,10 +3806,10 @@ _new_from_nl_routing_rule(struct nlmsghdr *nlh, gboolean id_only)
     if (tb[FRA_UID_RANGE]) {
         if (!_nm_platform_kernel_support_detected(NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_UID_RANGE)) {
             /* support for FRA_UID_RANGE was added in 622ec2c9d52405973c9f1ca5116eb1c393adfc7d,
-			 * kernel 4.10, 19 February 2017.
-			 *
-			 * We can only detect support if the attribute is present. A missing attribute
-			 * is not conclusive. */
+             * kernel 4.10, 19 February 2017.
+             *
+             * We can only detect support if the attribute is present. A missing attribute
+             * is not conclusive. */
             _nm_platform_kernel_support_init(NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_UID_RANGE, 1);
         }
 
@@ -4439,7 +4439,7 @@ _nl_msg_new_link_set_linkinfo_vlan(struct nl_msg *         msg,
     nm_assert(msg);
 
     /* We must not create an empty IFLA_LINKINFO section. Otherwise, kernel
-	 * rejects the request as invalid. */
+     * rejects the request as invalid. */
     if (flags_mask != 0 || vlan_id >= 0)
         has_any_vlan_properties = TRUE;
     if (!has_any_vlan_properties && ingress_qos && ingress_qos_len > 0) {
@@ -4486,7 +4486,7 @@ _nl_msg_new_link_set_linkinfo_vlan(struct nl_msg *         msg,
 
         for (i = 0; i < ingress_qos_len; i++) {
             /* Silently ignore invalid mappings. Kernel would truncate
-			 * them and modify the wrong mapping. */
+             * them and modify the wrong mapping. */
             if (VLAN_XGRESS_PRIO_VALID(ingress_qos[i].from)) {
                 if (!qos) {
                     if (!(qos = nla_nest_start(msg, IFLA_VLAN_INGRESS_QOS)))
@@ -4633,11 +4633,11 @@ _nl_msg_new_address(int           nlmsg_type,
 
     if (flags & ~((guint32) 0xFF)) {
         /* only set the IFA_FLAGS attribute, if they actually contain additional
-		 * flags that are not already set to am.ifa_flags.
-		 *
-		 * Older kernels refuse RTM_NEWADDR and RTM_NEWROUTE messages with EINVAL
-		 * if they contain unknown netlink attributes. See net/core/rtnetlink.c, which
-		 * was fixed by kernel commit 661d2967b3f1b34eeaa7e212e7b9bbe8ee072b59. */
+         * flags that are not already set to am.ifa_flags.
+         *
+         * Older kernels refuse RTM_NEWADDR and RTM_NEWROUTE messages with EINVAL
+         * if they contain unknown netlink attributes. See net/core/rtnetlink.c, which
+         * was fixed by kernel commit 661d2967b3f1b34eeaa7e212e7b9bbe8ee072b59. */
         NLA_PUT_U32(msg, IFA_FLAGS, flags);
     }
 
@@ -4776,11 +4776,11 @@ _nl_msg_new_routing_rule(int nlmsg_type, int nlmsg_flags, const NMPlatformRoutin
         && routing_rule->action == FR_ACT_TO_TBL && routing_rule->l3mdev == 0
         && table == RT_TABLE_UNSPEC) {
         /* for IPv6, this setting is invalid and rejected by kernel. That's fine.
-		 *
-		 * for IPv4, kernel will automatically assign an unused table. That's not
-		 * fine, because we don't know what we will get.
-		 *
-		 * The caller must not allow that to happen. */
+         *
+         * for IPv4, kernel will automatically assign an unused table. That's not
+         * fine, because we don't know what we will get.
+         *
+         * The caller must not allow that to happen. */
         nm_assert_not_reached();
     }
 
@@ -5196,10 +5196,10 @@ sysctl_set_internal(NMPlatform *platform,
     _log_dbg_sysctl_set(platform, pathid, dirfd, path, value);
 
     /* Most sysfs and sysctl options don't care about a trailing LF, while some
-	 * (like infiniband) do.  So always add the LF.  Also, neither sysfs nor
-	 * sysctl support partial writes so the LF must be added to the string we're
-	 * about to write.
-	 */
+     * (like infiniband) do.  So always add the LF.  Also, neither sysfs nor
+     * sysctl support partial writes so the LF must be added to the string we're
+     * about to write.
+     */
     len = strlen(value) + 1;
     nm_assert(len > 0);
     if (len > 512)
@@ -5231,7 +5231,7 @@ sysctl_set_internal(NMPlatform *platform,
         } else if (errsv == EINVAL
                    && nm_utils_sysctl_ip_conf_is_path(AF_INET6, path, NULL, "mtu")) {
             /* setting the MTU can fail under regular conditions. Suppress
-			 * logging a warning. */
+             * logging a warning. */
             level = LOGL_DEBUG;
         }
 
@@ -5984,8 +5984,8 @@ delayed_action_handle_one(NMPlatform *platform)
         return FALSE;
 
     /* First process DELAYED_ACTION_TYPE_MASTER_CONNECTED actions.
-	 * This type of action is entirely cache-internal and is here to resolve a
-	 * cache inconsistency. It should be fixed right away. */
+     * This type of action is entirely cache-internal and is here to resolve a
+     * cache inconsistency. It should be fixed right away. */
     if (NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_MASTER_CONNECTED)) {
         nm_assert(priv->delayed_action.list_master_connected->len > 0);
 
@@ -6006,7 +6006,7 @@ delayed_action_handle_one(NMPlatform *platform)
     nm_assert(priv->delayed_action.list_master_connected->len == 0);
 
     /* Next we prefer read-netlink, because the buffer size is limited and we want to process events
-	 * from netlink early. */
+     * from netlink early. */
     if (NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_READ_NETLINK)) {
         _LOGt_delayed_action(DELAYED_ACTION_TYPE_READ_NETLINK, NULL, "handle");
         priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_READ_NETLINK;
@@ -6160,7 +6160,7 @@ cache_prune_one_type(NMPlatform *platform, const NMPLookup *lookup)
         const NMDedupMultiEntry *main_entry;
 
         /* we only track the dirty flag for the OBJECT-TYPE index. That means,
-		 * for other lookup types we need to check the dirty flag of the main-entry. */
+         * for other lookup types we need to check the dirty flag of the main-entry. */
         main_entry = nmp_cache_reresolve_main_entry(cache, iter.current, lookup);
         if (!main_entry->dirty)
             continue;
@@ -6291,9 +6291,9 @@ cache_on_change(NMPlatform *     platform,
             int ifindex = -1;
 
             /* removal of a link could be caused by moving the link to another netns.
-			 * In this case, we potentially have to update other links that have this link as parent.
-			 * Currently, kernel misses to sent us a notification in this case
-			 * (https://bugzilla.redhat.com/show_bug.cgi?id=1262908). */
+             * In this case, we potentially have to update other links that have this link as parent.
+             * Currently, kernel misses to sent us a notification in this case
+             * (https://bugzilla.redhat.com/show_bug.cgi?id=1262908). */
 
             if (cache_op == NMP_CACHE_OPS_REMOVED
                 && obj_old /* <-- nonsensical, make coverity happy */
@@ -6329,8 +6329,8 @@ cache_on_change(NMPlatform *     platform,
                     || (NM_FLAGS_HAS(obj_old->link.n_ifi_flags, IFF_LOWER_UP)
                         && !NM_FLAGS_HAS(obj_new->link.n_ifi_flags, IFF_LOWER_UP)))) {
                 /* FIXME: I suspect that IFF_LOWER_UP must not be considered, and I
-				 * think kernel does send RTM_DELROUTE events for IPv6 routes, so
-				 * we might not need to refresh IPv6 routes. */
+                 * think kernel does send RTM_DELROUTE events for IPv6 routes, so
+                 * we might not need to refresh IPv6 routes. */
                 delayed_action_schedule(platform,
                                         DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES
                                             | DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,
@@ -6358,33 +6358,33 @@ cache_on_change(NMPlatform *     platform,
                              NM_LINK_TYPE_VLAN,
                              NM_LINK_TYPE_VXLAN)) {
                 /* certain link-types also come with a IFLA_INFO_DATA/lnk_data. It may happen that
-				 * kernel didn't send this notification, thus when we first learn about a link
-				 * that lacks an lnk_data we re-request it again.
-				 *
-				 * For example https://bugzilla.redhat.com/show_bug.cgi?id=1284001 */
+                 * kernel didn't send this notification, thus when we first learn about a link
+                 * that lacks an lnk_data we re-request it again.
+                 *
+                 * For example https://bugzilla.redhat.com/show_bug.cgi?id=1284001 */
                 re_request_link = TRUE;
             } else if (obj_new->link.type == NM_LINK_TYPE_TUN && obj_new->_link.netlink.lnk
                        && (lnk_tun = &(obj_new->_link.netlink.lnk)->lnk_tun) && !lnk_tun->persist
                        && lnk_tun->pi && !lnk_tun->vnet_hdr && !lnk_tun->multi_queue
                        && !lnk_tun->owner_valid && !lnk_tun->group_valid) {
                 /* kernel has/had a know issue that the first notification for TUN device would
-				 * be sent with invalid parameters. The message looks like that kind, so refetch
-				 * it. */
+                 * be sent with invalid parameters. The message looks like that kind, so refetch
+                 * it. */
                 re_request_link = TRUE;
             } else if (obj_new->link.type == NM_LINK_TYPE_VETH && obj_new->link.parent == 0) {
                 /* the initial notification when adding a veth pair can lack the parent/IFLA_LINK
-				 * (https://bugzilla.redhat.com/show_bug.cgi?id=1285827).
-				 * Request it again. */
+                 * (https://bugzilla.redhat.com/show_bug.cgi?id=1285827).
+                 * Request it again. */
                 re_request_link = TRUE;
             } else if (obj_new->link.type == NM_LINK_TYPE_ETHERNET
                        && obj_new->link.l_address.len == 0) {
                 /* Due to a kernel bug, we sometimes receive spurious NEWLINK
-				 * messages after a wifi interface has disappeared. Since the
-				 * link is not present anymore we can't determine its type and
-				 * thus it will show up as a Ethernet one, with no address
-				 * specified.  Request the link again to check if it really
-				 * exists.  https://bugzilla.redhat.com/show_bug.cgi?id=1302037
-				 */
+                 * messages after a wifi interface has disappeared. Since the
+                 * link is not present anymore we can't determine its type and
+                 * thus it will show up as a Ethernet one, with no address
+                 * specified.  Request the link again to check if it really
+                 * exists.  https://bugzilla.redhat.com/show_bug.cgi?id=1302037
+                 */
                 re_request_link = TRUE;
             }
             if (re_request_link) {
@@ -6437,7 +6437,7 @@ cache_on_change(NMPlatform *     platform,
     case NMP_OBJECT_TYPE_IP6_ADDRESS:
     {
         /* Address deletion is sometimes accompanied by route deletion. We need to
-			 * check all routes belonging to the same interface. */
+             * check all routes belonging to the same interface. */
         if (cache_op == NMP_CACHE_OPS_REMOVED) {
             delayed_action_schedule(platform,
                                     (klass->obj_type == NMP_OBJECT_TYPE_IP4_ADDRESS)
@@ -6457,8 +6457,8 @@ static guint32
 _nlh_seq_next_get(NMLinuxPlatformPrivate *priv)
 {
     /* generate a new sequence number, but never return zero.
-	 * Wrapping numbers are not a problem, because we don't rely
-	 * on strictly increasing sequence numbers. */
+     * Wrapping numbers are not a problem, because we don't rely
+     * on strictly increasing sequence numbers. */
     return (++priv->nlh_seq_next) ?: (++priv->nlh_seq_next);
 }
 
@@ -6682,9 +6682,9 @@ do_request_all_no_delayed_actions(NMPlatform *platform, DelayedActionType action
     action_type_prune = action_type;
 
     /* calling nmp_cache_dirty_set_all_main() with a non-main lookup-index requires an extra
-	 * cache lookup for every entry.
-	 *
-	 * Avoid that, by special casing routing-rules here. */
+     * cache lookup for every entry.
+     *
+     * Avoid that, by special casing routing-rules here. */
     if (NM_FLAGS_ALL(action_type_prune, DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL)) {
         NMPLookup lookup;
 
@@ -6819,10 +6819,10 @@ event_seq_check(NMPlatform *            platform,
 
             if (data->seq_number == seq_number) {
                 /* We potentially receive many parts partial responses for the same sequence number.
-				 * Thus, we only remember the result, and collect it later. */
+                 * Thus, we only remember the result, and collect it later. */
                 if (data->seq_result < 0) {
                     /* we already saw an error for this sequence number.
-					 * Preserve it. */
+                     * Preserve it. */
                 } else if (seq_result != WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN
                            || data->seq_result == WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN)
                     data->seq_result = seq_result;
@@ -6857,18 +6857,18 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
     if (!_nm_platform_kernel_support_detected(NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)
         && msghdr->nlmsg_type == RTM_NEWADDR) {
         /* IFA_FLAGS is set for IPv4 and IPv6 addresses. It was added first to IPv6,
-		 * but if we encounter an IPv4 address with IFA_FLAGS, we surely have support. */
+         * but if we encounter an IPv4 address with IFA_FLAGS, we surely have support. */
         if (nlmsg_valid_hdr(msghdr, sizeof(struct ifaddrmsg))
             && NM_IN_SET(((struct ifaddrmsg *) nlmsg_data(msghdr))->ifa_family,
                          AF_INET,
                          AF_INET6)) {
             /* see if the nl_msg contains the IFA_FLAGS attribute. If it does,
-			 * we assume, that the kernel supports extended flags, IFA_F_MANAGETEMPADDR
-			 * and IFA_F_NOPREFIXROUTE for IPv6. They were added together in kernel 3.14,
-			 * dated 30 March, 2014.
-			 *
-			 * For IPv4, IFA_F_NOPREFIXROUTE was added later, but there is no easy
-			 * way to detect kernel support. */
+             * we assume, that the kernel supports extended flags, IFA_F_MANAGETEMPADDR
+             * and IFA_F_NOPREFIXROUTE for IPv6. They were added together in kernel 3.14,
+             * dated 30 March, 2014.
+             *
+             * For IPv4, IFA_F_NOPREFIXROUTE was added later, but there is no easy
+             * way to detect kernel support. */
             _nm_platform_kernel_support_init(
                 NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS,
                 !!nlmsg_find_attr(msghdr, sizeof(struct ifaddrmsg), IFA_FLAGS) ? 1 : -1);
@@ -6886,7 +6886,7 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
                   RTM_DELQDISC,
                   RTM_DELTFILTER)) {
         /* The event notifies about a deleted object. We don't need to initialize all
-		 * fields of the object. */
+         * fields of the object. */
         is_del = TRUE;
     }
 
@@ -6944,7 +6944,7 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
             gboolean                        is_ipv6;
 
             /* IPv4 routes that are a response to RTM_GETROUTE must have
-			 * the cloned flag while IPv6 routes don't have to. */
+             * the cloned flag while IPv6 routes don't have to. */
             is_ipv6 = NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_IP6_ROUTE;
             if (is_ipv6 || NM_FLAGS_HAS(obj->ip_route.r_rtm_flags, RTM_F_CLONED)) {
                 nm_assert(is_ipv6 || !nmp_object_is_alive(obj));
@@ -6986,16 +6986,16 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
                     const NMDedupMultiEntry *entry_replace;
 
                     /* we found an object that is to be replaced by the RTM_NEWROUTE message.
-					 * While we invoke the signal, the platform cache might change and invalidate
-					 * the findings. Mitigate that (for the most part), by marking the entry as
-					 * dirty and only delete @obj_replace if it is still dirty afterwards.
-					 *
-					 * Yes, there is a tiny tiny chance for still getting it wrong. But in practice,
-					 * the signal handlers do not cause to call the platform again, so the cache
-					 * is not really changing. -- if they would, it would anyway be dangerous to overflow
-					 * the stack and it's not ensured that the processing of netlink messages is
-					 * reentrant (maybe it is).
-					 */
+                     * While we invoke the signal, the platform cache might change and invalidate
+                     * the findings. Mitigate that (for the most part), by marking the entry as
+                     * dirty and only delete @obj_replace if it is still dirty afterwards.
+                     *
+                     * Yes, there is a tiny tiny chance for still getting it wrong. But in practice,
+                     * the signal handlers do not cause to call the platform again, so the cache
+                     * is not really changing. -- if they would, it would anyway be dangerous to overflow
+                     * the stack and it's not ensured that the processing of netlink messages is
+                     * reentrant (maybe it is).
+                     */
                     entry_replace = nmp_cache_lookup_entry(cache, obj_replace);
                     nm_assert(entry_replace && entry_replace->obj == obj_replace);
                     nm_dedup_multi_entry_set_dirty(entry_replace, TRUE);
@@ -7007,7 +7007,7 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
 
             if (obj_replace) {
                 /* the RTM_NEWROUTE message indicates that another route was replaced.
-				 * Remove it now. */
+                 * Remove it now. */
                 cache_op = nmp_cache_remove(cache, obj_replace, TRUE, only_dirty, NULL);
                 if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
                     nm_assert(cache_op == NMP_CACHE_OPS_REMOVED);
@@ -7018,7 +7018,7 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
 
             if (resync_required) {
                 /* we'd like to avoid such resyncs as they are expensive and we should only rely on the
-				 * netlink events. This needs investigation. */
+                 * netlink events. This needs investigation. */
                 _LOGT("schedule resync of routes after RTM_NEWROUTE");
                 delayed_action_schedule(platform,
                                         delayed_action_refresh_from_needle_object(obj),
@@ -7146,12 +7146,12 @@ do_add_addrroute(NMPlatform *     platform,
 
     if (NMP_OBJECT_GET_TYPE(obj_id) == NMP_OBJECT_TYPE_IP6_ADDRESS) {
         /* In rare cases, the object is not yet ready as we received the ACK from
-		 * kernel. Need to refetch.
-		 *
-		 * We want to safe the expensive refetch, thus we look first into the cache
-		 * whether the object exists.
-		 *
-		 * rh#1484434 */
+         * kernel. Need to refetch.
+         *
+         * We want to safe the expensive refetch, thus we look first into the cache
+         * whether the object exists.
+         *
+         * rh#1484434 */
         if (!nmp_cache_lookup_obj(nm_platform_get_cache(platform), obj_id))
             do_request_one_type_by_needle_object(platform, obj_id);
     }
@@ -7219,12 +7219,12 @@ do_delete_object(NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *n
                   NMP_OBJECT_TYPE_QDISC,
                   NMP_OBJECT_TYPE_TFILTER)) {
         /* In rare cases, the object is still there after we receive the ACK from
-		 * kernel. Need to refetch.
-		 *
-		 * We want to safe the expensive refetch, thus we look first into the cache
-		 * whether the object exists.
-		 *
-		 * rh#1484434 */
+         * kernel. Need to refetch.
+         *
+         * We want to safe the expensive refetch, thus we look first into the cache
+         * whether the object exists.
+         *
+         * rh#1484434 */
         if (nmp_cache_lookup_obj(nm_platform_get_cache(platform), obj_id))
             do_request_one_type_by_needle_object(platform, obj_id);
     }
@@ -7273,7 +7273,7 @@ retry:
     }
 
     /* always refetch the link after changing it. There seems to be issues
-	 * and we sometimes lack events. Nuke it from the orbit... */
+     * and we sometimes lack events. Nuke it from the orbit... */
     delayed_action_schedule(platform, DELAYED_ACTION_TYPE_REFRESH_LINK, GINT_TO_POINTER(ifindex));
 
     delayed_action_handle_all(platform, FALSE);
@@ -7305,7 +7305,7 @@ retry:
                          data->set_address.length)
                       == 0) {
         /* workaround ENFILE which may be wrongly returned (bgo #770456).
-		 * If the MAC address is as expected, assume success? */
+         * If the MAC address is as expected, assume success? */
         log_result = "success";
         log_detail = " (assume success changing address)";
         result     = 0;
@@ -7344,12 +7344,12 @@ link_add(NMPlatform *           platform,
 
     if (type == NM_LINK_TYPE_BOND) {
         /* When the kernel loads the bond module, either via explicit modprobe
-		 * or automatically in response to creating a bond master, it will also
-		 * create a 'bond0' interface.  Since the bond we're about to create may
-		 * or may not be named 'bond0' prevent potential confusion about a bond
-		 * that the user didn't want by telling the bonding module not to create
-		 * bond0 automatically.
-		 */
+         * or automatically in response to creating a bond master, it will also
+         * create a 'bond0' interface.  Since the bond we're about to create may
+         * or may not be named 'bond0' prevent potential confusion about a bond
+         * that the user didn't want by telling the bonding module not to create
+         * bond0 automatically.
+         */
         if (!g_file_test("/sys/class/net/bonding_masters", G_FILE_TEST_EXISTS))
             (void) nm_utils_modprobe(NULL, TRUE, "bonding", "max_bonds=0", NULL);
     }
@@ -7507,9 +7507,9 @@ link_supports_carrier_detect(NMPlatform *platform, int ifindex)
         return FALSE;
 
     /* We use netlink for the actual carrier detection, but netlink can't tell
-	 * us whether the device actually supports carrier detection in the first
-	 * place. We assume any device that does implements one of these two APIs.
-	 */
+     * us whether the device actually supports carrier detection in the first
+     * place. We assume any device that does implements one of these two APIs.
+     */
     return nmp_utils_ethtool_supports_carrier_detect(ifindex)
            || nmp_utils_mii_supports_carrier_detect(ifindex);
 }
@@ -7688,11 +7688,11 @@ link_set_sriov_params_async(NMPlatform *            platform,
     }
 
     /*
-	 * Take special care when setting new values:
-	 *  - don't touch anything if the right values are already set
-	 *  - to change the number of VFs or autoprobe we need to destroy existing VFs
-	 *  - the autoprobe setting is irrelevant when numvfs is zero
-	 */
+     * Take special care when setting new values:
+     *  - don't touch anything if the right values are already set
+     *  - to change the number of VFs or autoprobe we need to destroy existing VFs
+     *  - the autoprobe setting is irrelevant when numvfs is zero
+     */
     current_num = nm_platform_sysctl_get_int_checked(
         platform,
         NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname, "device/sriov_numvfs"),
@@ -7710,7 +7710,7 @@ link_set_sriov_params_async(NMPlatform *            platform,
 
     if (current_autoprobe == -1 && errno == ENOENT) {
         /* older kernel versions don't have this sysctl. Assume the value is
-		 * "1". */
+         * "1". */
         current_autoprobe = 1;
     }
 
@@ -7814,9 +7814,9 @@ link_set_sriov_vfs(NMPlatform *platform, int ifindex, const NMPlatformVF *const 
         }
 
         /* Kernel only supports one VLAN per VF now. If this
-		 * changes in the future, we need to figure out how to
-		 * clear existing VLANs and set new ones in one message
-		 * with the new API.*/
+         * changes in the future, we need to figure out how to
+         * clear existing VLANs and set new ones in one message
+         * with the new API.*/
         if (vf->num_vlans > 1) {
             _LOGW("multiple VLANs per VF are not supported at the moment");
             return FALSE;
@@ -8031,14 +8031,14 @@ _vlan_change_vlan_qos_mapping_create(gboolean                is_ingress_map,
     if (current_n_map) {
         if (is_ingress_map) {
             /* For the ingress-map, there are only 8 entries (0 to 7).
-			 * When the user requests to reset all entries, we don't actually
-			 * need the cached entries, we can just explicitly clear all possible
-			 * ones.
-			 *
-			 * That makes only a real difference in case our cache is out-of-date.
-			 *
-			 * For the egress map we cannot do that, because there are far too
-			 * many. There we can only clear the entries that we know about. */
+             * When the user requests to reset all entries, we don't actually
+             * need the cached entries, we can just explicitly clear all possible
+             * ones.
+             *
+             * That makes only a real difference in case our cache is out-of-date.
+             *
+             * For the egress map we cannot do that, because there are far too
+             * many. There we can only clear the entries that we know about. */
             for (i = 0; i < INGRESS_RANGE_LEN; i++) {
                 map[i].from = i;
                 map[i].to   = 0;
@@ -8751,12 +8751,12 @@ ip_route_get(NMPlatform *  platform,
         delayed_action_handle_all(platform, FALSE);
 
         /* Retry, if we failed due to a cache resync. That can happen when the netlink
-		 * socket fills up and we lost the response. */
+         * socket fills up and we lost the response. */
     } while (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC && ++try_count < 10);
 
     if (seq_result < 0) {
         /* negative seq_result is an errno from kernel. Map it to negative
-		 * int (which are also errno). */
+         * int (which are also errno). */
         return (int) seq_result;
     }
 
@@ -8824,7 +8824,7 @@ qdisc_add(NMPlatform *platform, NMPNlmFlags flags, const NMPlatformQdisc *qdisc)
     nm_auto_nlmsg struct nl_msg *msg = NULL;
 
     /* Note: @qdisc must not be copied or kept alive because the lifetime of qdisc.kind
-	 * is undefined. */
+     * is undefined. */
 
     msg = _nl_msg_new_qdisc(RTM_NEWQDISC, flags, qdisc);
 
@@ -8868,7 +8868,7 @@ tfilter_add(NMPlatform *platform, NMPNlmFlags flags, const NMPlatformTfilter *tf
     nm_auto_nlmsg struct nl_msg *msg = NULL;
 
     /* Note: @tfilter must not be copied or kept alive because the lifetime of tfilter.kind
-	 * and tfilter.action.kind is undefined. */
+     * and tfilter.action.kind is undefined. */
 
     msg = _nl_msg_new_tfilter(RTM_NEWTFILTER, flags, tfilter);
 
@@ -8936,7 +8936,7 @@ continue_reading:
             int buf_size;
 
             /* the message receive buffer was too small. We lost one message, which
-			 * is unfortunate. Try to double the buffer size for the next time. */
+             * is unfortunate. Try to double the buffer size for the next time. */
             buf_size = nl_socket_get_msg_buf_size(sk);
             if (buf_size < 512 * 1024) {
                 buf_size *= 2;
@@ -8985,10 +8985,10 @@ continue_reading:
 
         if (hdr->nlmsg_flags & NLM_F_DUMP_INTR) {
             /*
-			 * We have to continue reading to clear
-			 * all messages until a NLMSG_DONE is
-			 * received and report the inconsistency.
-			 */
+             * We have to continue reading to clear
+             * all messages until a NLMSG_DONE is
+             * received and report the inconsistency.
+             */
             interrupted = TRUE;
         }
 
@@ -9001,20 +9001,20 @@ continue_reading:
 
         if (hdr->nlmsg_type == NLMSG_DONE) {
             /* messages terminates a multipart message, this is
-			 * usually the end of a message and therefore we slip
-			 * out of the loop by default. the user may overrule
-			 * this action by skipping this packet. */
+             * usually the end of a message and therefore we slip
+             * out of the loop by default. the user may overrule
+             * this action by skipping this packet. */
             multipart  = FALSE;
             seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
         } else if (hdr->nlmsg_type == NLMSG_NOOP) {
             /* Message to be ignored, the default action is to
-			 * skip this message if no callback is specified. The
-			 * user may overrule this action by returning
-			 * NL_PROCEED. */
+             * skip this message if no callback is specified. The
+             * user may overrule this action by returning
+             * NL_PROCEED. */
         } else if (hdr->nlmsg_type == NLMSG_OVERRUN) {
             /* Data got lost, report back to user. The default action is to
-			 * quit parsing. The user may overrule this action by returning
-			 * NL_SKIP or NL_PROCEED (dangerous) */
+             * quit parsing. The user may overrule this action by returning
+             * NL_SKIP or NL_PROCEED (dangerous) */
             err           = -NME_NL_MSG_OVERFLOW;
             abort_parsing = TRUE;
         } else if (hdr->nlmsg_type == NLMSG_ERROR) {
@@ -9023,9 +9023,9 @@ continue_reading:
 
             if (hdr->nlmsg_len < nlmsg_size(sizeof(*e))) {
                 /* Truncated error message, the default action
-				 * is to stop parsing. The user may overrule
-				 * this action by returning NL_SKIP or
-				 * NL_PROCEED (dangerous) */
+                 * is to stop parsing. The user may overrule
+                 * this action by returning NL_SKIP or
+                 * NL_PROCEED (dangerous) */
                 err           = -NME_NL_MSG_TRUNC;
                 abort_parsing = TRUE;
             } else if (e->error) {
@@ -9067,18 +9067,18 @@ continue_reading:
         seq_number = nlmsg_hdr(msg)->nlmsg_seq;
 
         /* check whether the seq number is different from before, and
-		 * whether the previous number (@nlh_seq_last_seen) is a pending
-		 * refresh-all request. In that case, the pending request is thereby
-		 * completed.
-		 *
-		 * We must do that before processing the message with event_valid_msg(),
-		 * because we must track the completion of the pending request before that. */
+         * whether the previous number (@nlh_seq_last_seen) is a pending
+         * refresh-all request. In that case, the pending request is thereby
+         * completed.
+         *
+         * We must do that before processing the message with event_valid_msg(),
+         * because we must track the completion of the pending request before that. */
         event_seq_check_refresh_all(platform, seq_number);
 
         if (process_valid_msg) {
             /* Valid message (not checking for MULTIPART bit to
-			 * get along with broken kernels. NL_SKIP has no
-			 * effect on this.  */
+             * get along with broken kernels. NL_SKIP has no
+             * effect on this.  */
 
             event_valid_msg(platform, msg, handle_events);
 
@@ -9101,8 +9101,8 @@ continue_reading:
 stop:
     if (!handle_events) {
         /* when we don't handle events, we want to drain all messages from the socket
-		 * without handling the messages (but still check for sequence numbers).
-		 * Repeat reading. */
+         * without handling the messages (but still check for sequence numbers).
+         * Repeat reading. */
         goto continue_reading;
     }
 
@@ -9443,7 +9443,7 @@ constructed(GObject *_object)
         _LOGD("could not enable extended acks on netlink socket");
 
     /* explicitly set the msg buffer size and disable MSG_PEEK.
-	 * If we later encounter NME_NL_MSG_TRUNC, we will adjust the buffer size. */
+     * If we later encounter NME_NL_MSG_TRUNC, we will adjust the buffer size. */
     nl_socket_disable_msg_peek(priv->nlh);
     nle = nl_socket_set_msg_buf_size(priv->nlh, 32 * 1024);
     g_assert(!nle);

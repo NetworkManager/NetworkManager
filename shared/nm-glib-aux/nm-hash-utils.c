@@ -25,7 +25,7 @@ static const guint8 *
 _get_hash_key_init(void)
 {
     /* the returned hash is aligned to guin64, hence, it is safe
-	 * to use it as guint* or guint64* pointer. */
+     * to use it as guint* or guint64* pointer. */
     static union {
         guint8  v8[HASH_KEY_SIZE];
         guint   _align_as_uint;
@@ -48,14 +48,14 @@ again:
         nm_utils_random_bytes(&t_arr, sizeof(t_arr));
 
         /* We only initialize one random hash key. So we can spend some effort
-		 * of getting this right. For one, we collect more random bytes than
-		 * necessary.
-		 *
-		 * Then, the first guint of the seed should have all the entropy that we could
-		 * obtain in sizeof(t_arr). For that, siphash(t_arr) and xor the first guint
-		 * with hash.
-		 * The first guint is especially interesting for nm_hash_static() below that
-		 * doesn't use siphash itself. */
+         * of getting this right. For one, we collect more random bytes than
+         * necessary.
+         *
+         * Then, the first guint of the seed should have all the entropy that we could
+         * obtain in sizeof(t_arr). For that, siphash(t_arr) and xor the first guint
+         * with hash.
+         * The first guint is especially interesting for nm_hash_static() below that
+         * doesn't use siphash itself. */
         h = c_siphash_hash(t_arr.v8, (const guint8 *) &t_arr, sizeof(t_arr));
         if (sizeof(h) > sizeof(guint))
             t_arr.vuint = t_arr.vuint ^ ((guint)(h & G_MAXUINT)) ^ ((guint)(h >> 32));
@@ -91,21 +91,21 @@ guint
 nm_hash_static(guint static_seed)
 {
     /* Note that we only xor the static_seed with the first guint of the key.
-	 *
-	 * We don't use siphash, which would mix the bits better with _get_hash_key().
-	 * Note that nm_hash_static() isn't used to hash the static_seed. Instead, it
-	 * is used to get a unique hash value in a static context. That means, every
-	 * caller is responsible to choose a static_seed that is sufficiently
-	 * distinct from all other callers. In other words, static_seed should be a
-	 * unique constant with good entropy.
-	 *
-	 * Note that _get_hash_key_init() already xored the first guint of the
-	 * key with the siphash of the entire static key. That means, even if
-	 * we got bad randomness for the first guint, the first guint is also
-	 * mixed with the randomness of the entire random key.
-	 *
-	 * Also, ensure that we don't return zero (like for nm_hash_complete()).
-	 */
+     *
+     * We don't use siphash, which would mix the bits better with _get_hash_key().
+     * Note that nm_hash_static() isn't used to hash the static_seed. Instead, it
+     * is used to get a unique hash value in a static context. That means, every
+     * caller is responsible to choose a static_seed that is sufficiently
+     * distinct from all other callers. In other words, static_seed should be a
+     * unique constant with good entropy.
+     *
+     * Note that _get_hash_key_init() already xored the first guint of the
+     * key with the siphash of the entire static key. That means, even if
+     * we got bad randomness for the first guint, the first guint is also
+     * mixed with the randomness of the entire random key.
+     *
+     * Also, ensure that we don't return zero (like for nm_hash_complete()).
+     */
     return ((*((const guint *) _get_hash_key())) ^ static_seed) ?: 3679500967u;
 }
 

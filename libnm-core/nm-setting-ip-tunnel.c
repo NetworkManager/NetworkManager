@@ -650,14 +650,14 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
     setting_class->verify = verify;
 
     /**
-	 * NMSettingIPTunnel:parent:
-	 *
-	 * If given, specifies the parent interface name or parent connection UUID
-	 * the new device will be bound to so that tunneled packets will only be
-	 * routed via that interface.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingIPTunnel:parent:
+     *
+     * If given, specifies the parent interface name or parent connection UUID
+     * the new device will be bound to so that tunneled packets will only be
+     * routed via that interface.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_PARENT] = g_param_spec_string(
         NM_SETTING_IP_TUNNEL_PARENT,
         "",
@@ -666,13 +666,13 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPTunnel:mode:
-	 *
-	 * The tunneling mode, for example %NM_IP_TUNNEL_MODE_IPIP or
-	 * %NM_IP_TUNNEL_MODE_GRE.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingIPTunnel:mode:
+     *
+     * The tunneling mode, for example %NM_IP_TUNNEL_MODE_IPIP or
+     * %NM_IP_TUNNEL_MODE_GRE.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_MODE] =
         g_param_spec_uint(NM_SETTING_IP_TUNNEL_MODE,
                           "",
@@ -683,13 +683,13 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPTunnel:local:
-	 *
-	 * The local endpoint of the tunnel; the value can be empty, otherwise it
-	 * must contain an IPv4 or IPv6 address.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingIPTunnel:local:
+     *
+     * The local endpoint of the tunnel; the value can be empty, otherwise it
+     * must contain an IPv4 or IPv6 address.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_LOCAL] = g_param_spec_string(NM_SETTING_IP_TUNNEL_LOCAL,
                                                      "",
                                                      "",
@@ -698,13 +698,13 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
                                                          | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPTunnel:remote:
-	 *
-	 * The remote endpoint of the tunnel; the value must contain an IPv4 or IPv6
-	 * address.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingIPTunnel:remote:
+     *
+     * The remote endpoint of the tunnel; the value must contain an IPv4 or IPv6
+     * address.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_REMOTE] = g_param_spec_string(
         NM_SETTING_IP_TUNNEL_REMOTE,
         "",
@@ -713,13 +713,13 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPTunnel:ttl
-	 *
-	 * The TTL to assign to tunneled packets. 0 is a special value meaning that
-	 * packets inherit the TTL value.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingIPTunnel:ttl
+     *
+     * The TTL to assign to tunneled packets. 0 is a special value meaning that
+     * packets inherit the TTL value.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_TTL] =
         g_param_spec_uint(NM_SETTING_IP_TUNNEL_TTL,
                           "",
@@ -730,13 +730,13 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPTunnel:tos
-	 *
-	 * The type of service (IPv4) or traffic class (IPv6) field to be set on
-	 * tunneled packets.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingIPTunnel:tos
+     *
+     * The type of service (IPv4) or traffic class (IPv6) field to be set on
+     * tunneled packets.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_TOS] =
         g_param_spec_uint(NM_SETTING_IP_TUNNEL_TOS,
                           "",
@@ -747,12 +747,12 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPTunnel:path-mtu-discovery
-	 *
-	 * Whether to enable Path MTU Discovery on this tunnel.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingIPTunnel:path-mtu-discovery
+     *
+     * Whether to enable Path MTU Discovery on this tunnel.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_PATH_MTU_DISCOVERY] = g_param_spec_boolean(
         NM_SETTING_IP_TUNNEL_PATH_MTU_DISCOVERY,
         "",
@@ -761,13 +761,13 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPTunnel:input-key:
-	 *
-	 * The key used for tunnel input packets; the property is valid only for
-	 * certain tunnel modes (GRE, IP6GRE). If empty, no key is used.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingIPTunnel:input-key:
+     *
+     * The key used for tunnel input packets; the property is valid only for
+     * certain tunnel modes (GRE, IP6GRE). If empty, no key is used.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_INPUT_KEY] = g_param_spec_string(
         NM_SETTING_IP_TUNNEL_INPUT_KEY,
         "",
@@ -776,13 +776,13 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPTunnel:output-key:
-	 *
-	 * The key used for tunnel output packets; the property is valid only for
-	 * certain tunnel modes (GRE, IP6GRE). If empty, no key is used.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingIPTunnel:output-key:
+     *
+     * The key used for tunnel output packets; the property is valid only for
+     * certain tunnel modes (GRE, IP6GRE). If empty, no key is used.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_OUTPUT_KEY] = g_param_spec_string(
         NM_SETTING_IP_TUNNEL_OUTPUT_KEY,
         "",
@@ -791,13 +791,13 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPTunnel:encapsulation-limit:
-	 *
-	 * How many additional levels of encapsulation are permitted to be prepended
-	 * to packets. This property applies only to IPv6 tunnels.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingIPTunnel:encapsulation-limit:
+     *
+     * How many additional levels of encapsulation are permitted to be prepended
+     * to packets. This property applies only to IPv6 tunnels.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_ENCAPSULATION_LIMIT] =
         g_param_spec_uint(NM_SETTING_IP_TUNNEL_ENCAPSULATION_LIMIT,
                           "",
@@ -808,13 +808,13 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPTunnel:flow-label:
-	 *
-	 * The flow label to assign to tunnel packets. This property applies only to
-	 * IPv6 tunnels.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingIPTunnel:flow-label:
+     *
+     * The flow label to assign to tunnel packets. This property applies only to
+     * IPv6 tunnels.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_FLOW_LABEL] =
         g_param_spec_uint(NM_SETTING_IP_TUNNEL_FLOW_LABEL,
                           "",
@@ -825,13 +825,13 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPTunnel:mtu:
-	 *
-	 * If non-zero, only transmit packets of the specified size or smaller,
-	 * breaking larger packets up into multiple fragments.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingIPTunnel:mtu:
+     *
+     * If non-zero, only transmit packets of the specified size or smaller,
+     * breaking larger packets up into multiple fragments.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_MTU] = g_param_spec_uint(NM_SETTING_IP_TUNNEL_MTU,
                                                  "",
                                                  "",
@@ -842,16 +842,16 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
                                                      | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingIPTunnel:flags:
-	 *
-	 * Tunnel flags. Currently, the following values are supported:
-	 * %NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT, %NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_TCLASS,
-	 * %NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FLOWLABEL, %NM_IP_TUNNEL_FLAG_IP6_MIP6_DEV,
-	 * %NM_IP_TUNNEL_FLAG_IP6_RCV_DSCP_COPY, %NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FWMARK.
-	 * They are valid only for IPv6 tunnels.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMSettingIPTunnel:flags:
+     *
+     * Tunnel flags. Currently, the following values are supported:
+     * %NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT, %NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_TCLASS,
+     * %NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FLOWLABEL, %NM_IP_TUNNEL_FLAG_IP6_MIP6_DEV,
+     * %NM_IP_TUNNEL_FLAG_IP6_RCV_DSCP_COPY, %NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FWMARK.
+     * They are valid only for IPv6 tunnels.
+     *
+     * Since: 1.12
+     **/
     obj_properties[PROP_FLAGS] = g_param_spec_uint(NM_SETTING_IP_TUNNEL_FLAGS,
                                                    "",
                                                    "",

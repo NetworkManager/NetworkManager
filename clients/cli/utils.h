@@ -292,8 +292,8 @@ nmc_meta_generic_get_str_i18n_null(const char *s, NMMetaAccessorGetType get_type
 {
     if (get_type == NM_META_ACCESSOR_GET_TYPE_PARSABLE) {
         /* in parsable mode, return NULL. That is useful if @s is a pretty string
-		 * to describe a missing value (like "(unknown)"). We don't want to print
-		 * that for parsable mode. */
+         * to describe a missing value (like "(unknown)"). We don't want to print
+         * that for parsable mode. */
         return NULL;
     }
     return nmc_meta_generic_get_str_i18n(s, get_type);
@@ -339,15 +339,15 @@ nmc_meta_generic_get_enum_with_detail(NmcMetaGenericGetEnumType get_enum_type,
     switch (get_enum_type) {
     case NMC_META_GENERIC_GET_ENUM_TYPE_PARENTHESES:
         /* note that this function will always print "$NUM ($NICK)", also in PARSABLE
-		 * mode. That might not be desired, but it's done for certain properties to preserve
-		 * previous behavior. */
+         * mode. That might not be desired, but it's done for certain properties to preserve
+         * previous behavior. */
         if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
             return g_strdup_printf(_("%lld (%s)"), (long long) enum_val, gettext(str_val));
         return g_strdup_printf("%lld (%s)", (long long) enum_val, str_val);
     case NMC_META_GENERIC_GET_ENUM_TYPE_DASH:
         /* note that this function will always print "$NUM ($NICK)", also in PARSABLE
-		 * mode. That might not be desired, but it's done for certain properties to preserve
-		 * previous behavior. */
+         * mode. That might not be desired, but it's done for certain properties to preserve
+         * previous behavior. */
         if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
             return g_strdup_printf(_("%lld - %s"), (long long) enum_val, gettext(str_val));
         return g_strdup_printf("%lld - %s", (long long) enum_val, str_val);

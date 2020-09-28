@@ -235,9 +235,9 @@ test_read_ibft(void)
     GError *           error = NULL;
 
     /* This test doesn't actually test too much (apart from the presence of
-	 * IPv6 that is not covered by other tests), but the test fixture is a good
-	 * example of about everything that can be included in iBFT table (as of
-	 * ACPI 3.0b). */
+     * IPv6 that is not covered by other tests), but the test fixture is a good
+     * example of about everything that can be included in iBFT table (as of
+     * ACPI 3.0b). */
 
     connection = read_connection(TEST_INITRD_DIR "/sysfs", "00:53:00:AB:00:01", &error);
     g_assert(connection);

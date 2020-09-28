@@ -398,12 +398,12 @@ nm_device_ip_tunnel_class_init(NMDeviceIPTunnelClass *klass)
     device_class->get_setting_type      = get_setting_type;
 
     /**
-	 * NMDeviceIPTunnel:mode:
-	 *
-	 * The tunneling mode of the device.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceIPTunnel:mode:
+     *
+     * The tunneling mode of the device.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_MODE] = g_param_spec_uint(NM_DEVICE_IP_TUNNEL_MODE,
                                                   "",
                                                   "",
@@ -413,12 +413,12 @@ nm_device_ip_tunnel_class_init(NMDeviceIPTunnelClass *klass)
                                                   G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceIPTunnel:parent:
-	 *
-	 * The devices's parent device.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceIPTunnel:parent:
+     *
+     * The devices's parent device.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_PARENT] = g_param_spec_object(NM_DEVICE_IP_TUNNEL_PARENT,
                                                       "",
                                                       "",
@@ -426,12 +426,12 @@ nm_device_ip_tunnel_class_init(NMDeviceIPTunnelClass *klass)
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceIPTunnel:local:
-	 *
-	 * The local endpoint of the tunnel.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceIPTunnel:local:
+     *
+     * The local endpoint of the tunnel.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_LOCAL] = g_param_spec_string(NM_DEVICE_IP_TUNNEL_LOCAL,
                                                      "",
                                                      "",
@@ -439,12 +439,12 @@ nm_device_ip_tunnel_class_init(NMDeviceIPTunnelClass *klass)
                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceIPTunnel:remote:
-	 *
-	 * The remote endpoint of the tunnel.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceIPTunnel:remote:
+     *
+     * The remote endpoint of the tunnel.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_REMOTE] = g_param_spec_string(NM_DEVICE_IP_TUNNEL_REMOTE,
                                                       "",
                                                       "",
@@ -452,13 +452,13 @@ nm_device_ip_tunnel_class_init(NMDeviceIPTunnelClass *klass)
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceIPTunnel:ttl:
-	 *
-	 * The TTL assigned to tunneled packets. 0 is a special value
-	 *  meaning that packets inherit the TTL value
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceIPTunnel:ttl:
+     *
+     * The TTL assigned to tunneled packets. 0 is a special value
+     *  meaning that packets inherit the TTL value
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_TTL] = g_param_spec_uchar(NM_DEVICE_IP_TUNNEL_TTL,
                                                   "",
                                                   "",
@@ -468,13 +468,13 @@ nm_device_ip_tunnel_class_init(NMDeviceIPTunnelClass *klass)
                                                   G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceIPTunnel:tos:
-	 *
-	 * The type of service (IPv4) or traffic class (IPv6) assigned to
-	 * tunneled packets.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceIPTunnel:tos:
+     *
+     * The type of service (IPv4) or traffic class (IPv6) assigned to
+     * tunneled packets.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_TOS] = g_param_spec_uchar(NM_DEVICE_IP_TUNNEL_TOS,
                                                   "",
                                                   "",
@@ -484,12 +484,12 @@ nm_device_ip_tunnel_class_init(NMDeviceIPTunnelClass *klass)
                                                   G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceIPTunnel:path-mtu-discovery:
-	 *
-	 * Whether path MTU discovery is enabled on this tunnel.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceIPTunnel:path-mtu-discovery:
+     *
+     * Whether path MTU discovery is enabled on this tunnel.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_PATH_MTU_DISCOVERY] =
         g_param_spec_boolean(NM_DEVICE_IP_TUNNEL_PATH_MTU_DISCOVERY,
                              "",
@@ -498,12 +498,12 @@ nm_device_ip_tunnel_class_init(NMDeviceIPTunnelClass *klass)
                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceIPTunnel:input-key:
-	 *
-	 * The key used for tunneled input packets, if applicable.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceIPTunnel:input-key:
+     *
+     * The key used for tunneled input packets, if applicable.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_INPUT_KEY] = g_param_spec_string(NM_DEVICE_IP_TUNNEL_INPUT_KEY,
                                                          "",
                                                          "",
@@ -511,12 +511,12 @@ nm_device_ip_tunnel_class_init(NMDeviceIPTunnelClass *klass)
                                                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceIPTunnel:output-key:
-	 *
-	 * The key used for tunneled output packets, if applicable.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceIPTunnel:output-key:
+     *
+     * The key used for tunneled output packets, if applicable.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_OUTPUT_KEY] =
         g_param_spec_string(NM_DEVICE_IP_TUNNEL_OUTPUT_KEY,
                             "",
@@ -525,14 +525,14 @@ nm_device_ip_tunnel_class_init(NMDeviceIPTunnelClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceIPTunnel:encapsulation-limit:
-	 *
-	 * How many additional levels of encapsulation are permitted to
-	 * be prepended to packets. This property applies only to IPv6
-	 * tunnels.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceIPTunnel:encapsulation-limit:
+     *
+     * How many additional levels of encapsulation are permitted to
+     * be prepended to packets. This property applies only to IPv6
+     * tunnels.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_ENCAPSULATION_LIMIT] =
         g_param_spec_uchar(NM_DEVICE_IP_TUNNEL_ENCAPSULATION_LIMIT,
                            "",
@@ -543,13 +543,13 @@ nm_device_ip_tunnel_class_init(NMDeviceIPTunnelClass *klass)
                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceIPTunnel:flow-label:
-	 *
-	 * The flow label to assign to tunnel packets. This property
-	 * applies only to IPv6 tunnels.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMDeviceIPTunnel:flow-label:
+     *
+     * The flow label to assign to tunnel packets. This property
+     * applies only to IPv6 tunnels.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_FLOW_LABEL] = g_param_spec_uint(NM_DEVICE_IP_TUNNEL_FLOW_LABEL,
                                                         "",
                                                         "",
@@ -559,12 +559,12 @@ nm_device_ip_tunnel_class_init(NMDeviceIPTunnelClass *klass)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceIPTunnel:flags:
-	 *
-	 * Tunnel flags.
-	 *
-	 * Since: 1.12
-	 **/
+     * NMDeviceIPTunnel:flags:
+     *
+     * Tunnel flags.
+     *
+     * Since: 1.12
+     **/
     obj_properties[PROP_FLAGS] = g_param_spec_uint(NM_DEVICE_IP_TUNNEL_FLAGS,
                                                    "",
                                                    "",

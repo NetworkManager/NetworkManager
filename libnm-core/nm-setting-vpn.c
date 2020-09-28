@@ -42,32 +42,32 @@ typedef struct {
     char *service_type;
 
     /* username of the user requesting this connection, thus
-	 * it's really only valid for user connections, and it also
-	 * should never be saved out to persistent config.
-	 */
+     * it's really only valid for user connections, and it also
+     * should never be saved out to persistent config.
+     */
     char *user_name;
 
     /* Whether the VPN stays up across link changes, until the user
-	 * explicitly disconnects it.
-	 */
+     * explicitly disconnects it.
+     */
     gboolean persistent;
 
     /* The hash table is created at setting object
-	 * init time and should not be replaced.  It is
-	 * a char * -> char * mapping, and both the key
-	 * and value are owned by the hash table, and should
-	 * be allocated with functions whose value can be
-	 * freed with g_free().  Should not contain secrets.
-	 */
+     * init time and should not be replaced.  It is
+     * a char * -> char * mapping, and both the key
+     * and value are owned by the hash table, and should
+     * be allocated with functions whose value can be
+     * freed with g_free().  Should not contain secrets.
+     */
     GHashTable *data;
 
     /* The hash table is created at setting object
-	 * init time and should not be replaced.  It is
-	 * a char * -> char * mapping, and both the key
-	 * and value are owned by the hash table, and should
-	 * be allocated with functions whose value can be
-	 * freed with g_free().  Should contain secrets only.
-	 */
+     * init time and should not be replaced.  It is
+     * a char * -> char * mapping, and both the key
+     * and value are owned by the hash table, and should
+     * be allocated with functions whose value can be
+     * freed with g_free().  Should contain secrets only.
+     */
     GHashTable *secrets;
 
     /* Timeout for the VPN service to establish the connection */
@@ -272,19 +272,19 @@ foreach_item_helper(NMSettingVpn *self, GHashTable **p_hash, NMVpnIterFunc func,
 
     for (i = 0; i < len; i++) {
         /* NOTE: note that we call the function with a clone of @key,
-		 * not with the actual key from the dictionary.
-		 *
-		 * The @value on the other hand, is not cloned but retrieved before
-		 * invoking @func(). That means, if @func() modifies the setting while
-		 * being called, the values are as they currently are, but the
-		 * keys (and their order) were pre-determined before starting to
-		 * invoke the callbacks.
-		 *
-		 * The idea is to give some sensible, stable behavior in case the user
-		 * modifies the settings. Whether this particular behavior is optimal
-		 * is unclear. It's probably a bad idea to modify the settings while
-		 * iterating the values. But at least, it's a safe thing to do and we
-		 * do something sensible. */
+         * not with the actual key from the dictionary.
+         *
+         * The @value on the other hand, is not cloned but retrieved before
+         * invoking @func(). That means, if @func() modifies the setting while
+         * being called, the values are as they currently are, but the
+         * keys (and their order) were pre-determined before starting to
+         * invoke the callbacks.
+         *
+         * The idea is to give some sensible, stable behavior in case the user
+         * modifies the settings. Whether this particular behavior is optimal
+         * is unclear. It's probably a bad idea to modify the settings while
+         * iterating the values. But at least, it's a safe thing to do and we
+         * do something sensible. */
         func(keys[i], nm_g_hash_table_lookup(*p_hash, keys[i]), user_data);
     }
 }
@@ -474,7 +474,7 @@ aggregate(NMSetting *setting, int type_i, gpointer arg)
         }
 
         /* OK, we have no secrets with system-secret flags.
-		 * But do we have any secret-flags (without secrets) that indicate system secrets? */
+         * But do we have any secret-flags (without secrets) that indicate system secrets? */
         if (priv->data) {
             g_hash_table_iter_init(&iter, priv->data);
             while (g_hash_table_iter_next(&iter, (gpointer *) &key_name, NULL)) {
@@ -625,10 +625,10 @@ update_one_secret(NMSetting *setting, const char *key, GVariant *value, GError *
 
     if (g_variant_is_of_type(value, G_VARIANT_TYPE_STRING)) {
         /* Passing the string properties individually isn't correct, and won't
-		 * produce the correct result, but for some reason that's how it used
-		 * to be done.  So even though it's not correct, keep the code around
-		 * for compatibility's sake.
-		 */
+         * produce the correct result, but for some reason that's how it used
+         * to be done.  So even though it's not correct, keep the code around
+         * for compatibility's sake.
+         */
         success = update_secret_string(setting, key, g_variant_get_string(value, NULL), error);
     } else if (g_variant_is_of_type(value, G_VARIANT_TYPE("a{ss}"))) {
         if (!nm_streq(key, NM_SETTING_VPN_SECRETS)) {
@@ -681,7 +681,7 @@ for_each_secret(NMSetting *                    setting,
 
     if (!g_variant_is_of_type(val, G_VARIANT_TYPE("a{ss}"))) {
         /* invalid type. Silently ignore the secrets as we cannot find out the
-		 * secret-flags. */
+         * secret-flags. */
         return;
     }
 
@@ -692,9 +692,9 @@ for_each_secret(NMSetting *                    setting,
         NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
         /* we ignore the return value of get_secret_flags. The function may determine
-		 * that this is not a secret, based on having not secret-flags and no secrets.
-		 * But we have the secret at hand. We know it would be a valid secret, if we
-		 * only add it to the VPN settings. */
+         * that this is not a secret, based on having not secret-flags and no secrets.
+         * But we have the secret at hand. We know it would be a valid secret, if we
+         * only add it to the VPN settings. */
         nm_setting_get_secret_flags(setting, vpn_secret_name, &secret_flags, NULL);
 
         if (callback(secret_flags, callback_data))
@@ -736,7 +736,7 @@ get_secret_flags(NMSetting *           setting,
         NM_SET_OUT(out_flags, NM_SETTING_SECRET_FLAG_NONE);
 
         /* having no secret flag for the secret is fine, as long as there
-		 * is the secret itself... */
+         * is the secret itself... */
         if (!nm_g_hash_table_lookup(priv->secrets, secret_name)) {
             g_set_error_literal(error,
                                 NM_CONNECTION_ERROR,
@@ -751,10 +751,10 @@ get_secret_flags(NMSetting *           setting,
     i64 = _nm_utils_ascii_str_to_int64(flags_val, 10, 0, NM_SETTING_SECRET_FLAG_ALL, -1);
     if (i64 == -1 || !_nm_setting_secret_flags_valid(i64)) {
         /* The flags keys is set to an unexpected value. That is a configuration
-		 * error. Note that keys named "*-flags" are reserved for secrets. The user
-		 * must not use this for anything but secret flags. Hence, we cannot fail
-		 * to read the secret, we pretend that the secret flag is set to the default
-		 * NM_SETTING_SECRET_FLAG_NONE. */
+         * error. Note that keys named "*-flags" are reserved for secrets. The user
+         * must not use this for anything but secret flags. Hence, we cannot fail
+         * to read the secret, we pretend that the secret flag is set to the default
+         * NM_SETTING_SECRET_FLAG_NONE. */
         NM_SET_OUT(out_flags, NM_SETTING_SECRET_FLAG_NONE);
         return TRUE;
     }
@@ -1032,9 +1032,9 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
             while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &val)) {
                 if (!key || !key[0] || !val) {
                     /* NULL keys/values and empty key are not allowed. Usually, we would reject them in verify(), but
-						 * then our nm_setting_vpn_remove_data_item() also doesn't allow empty keys. So, if we failed
-						 * it in verify(), it would be only fixable by setting PROP_DATA again. Instead,
-						 * silently ignore them. */
+                         * then our nm_setting_vpn_remove_data_item() also doesn't allow empty keys. So, if we failed
+                         * it in verify(), it would be only fixable by setting PROP_DATA again. Instead,
+                         * silently ignore them. */
                     continue;
                 }
                 g_hash_table_insert(_ensure_strdict(p_hash, is_secrets),
@@ -1110,12 +1110,12 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
     setting_class->aggregate         = aggregate;
 
     /**
-	 * NMSettingVpn:service-type:
-	 *
-	 * D-Bus service name of the VPN plugin that this setting uses to connect to
-	 * its network.  i.e. org.freedesktop.NetworkManager.vpnc for the vpnc
-	 * plugin.
-	 **/
+     * NMSettingVpn:service-type:
+     *
+     * D-Bus service name of the VPN plugin that this setting uses to connect to
+     * its network.  i.e. org.freedesktop.NetworkManager.vpnc for the vpnc
+     * plugin.
+     **/
     obj_properties[PROP_SERVICE_TYPE] =
         g_param_spec_string(NM_SETTING_VPN_SERVICE_TYPE,
                             "",
@@ -1124,15 +1124,15 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingVpn:user-name:
-	 *
-	 * If the VPN connection requires a user name for authentication, that name
-	 * should be provided here.  If the connection is available to more than one
-	 * user, and the VPN requires each user to supply a different name, then
-	 * leave this property empty.  If this property is empty, NetworkManager
-	 * will automatically supply the username of the user which requested the
-	 * VPN connection.
-	 **/
+     * NMSettingVpn:user-name:
+     *
+     * If the VPN connection requires a user name for authentication, that name
+     * should be provided here.  If the connection is available to more than one
+     * user, and the VPN requires each user to supply a different name, then
+     * leave this property empty.  If this property is empty, NetworkManager
+     * will automatically supply the username of the user which requested the
+     * VPN connection.
+     **/
     obj_properties[PROP_USER_NAME] =
         g_param_spec_string(NM_SETTING_VPN_USER_NAME,
                             "",
@@ -1141,12 +1141,12 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingVpn:persistent:
-	 *
-	 * If the VPN service supports persistence, and this property is %TRUE,
-	 * the VPN will attempt to stay connected across link changes and outages,
-	 * until explicitly disconnected.
-	 **/
+     * NMSettingVpn:persistent:
+     *
+     * If the VPN service supports persistence, and this property is %TRUE,
+     * the VPN will attempt to stay connected across link changes and outages,
+     * until explicitly disconnected.
+     **/
     obj_properties[PROP_PERSISTENT] =
         g_param_spec_boolean(NM_SETTING_VPN_PERSISTENT,
                              "",
@@ -1155,19 +1155,19 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingVpn:data: (type GHashTable(utf8,utf8)):
-	 *
-	 * Dictionary of key/value pairs of VPN plugin specific data.  Both keys and
-	 * values must be strings.
-	 **/
+     * NMSettingVpn:data: (type GHashTable(utf8,utf8)):
+     *
+     * Dictionary of key/value pairs of VPN plugin specific data.  Both keys and
+     * values must be strings.
+     **/
     /* ---keyfile---
-	 * property: data
-	 * variable: separate variables named after keys of the dictionary
-	 * description: The keys of the data dictionary are used as variable names directly
-	 *   under [vpn] section.
-	 * example: remote=ovpn.corp.com cipher=AES-256-CBC username=joe
-	 * ---end---
-	 */
+     * property: data
+     * variable: separate variables named after keys of the dictionary
+     * description: The keys of the data dictionary are used as variable names directly
+     *   under [vpn] section.
+     * example: remote=ovpn.corp.com cipher=AES-256-CBC username=joe
+     * ---end---
+     */
     obj_properties[PROP_DATA] = g_param_spec_boxed(NM_SETTING_VPN_DATA,
                                                    "",
                                                    "",
@@ -1178,19 +1178,19 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
                                  &nm_sett_info_propert_type_strdict);
 
     /**
-	 * NMSettingVpn:secrets: (type GHashTable(utf8,utf8)):
-	 *
-	 * Dictionary of key/value pairs of VPN plugin specific secrets like
-	 * passwords or private keys.  Both keys and values must be strings.
-	 **/
+     * NMSettingVpn:secrets: (type GHashTable(utf8,utf8)):
+     *
+     * Dictionary of key/value pairs of VPN plugin specific secrets like
+     * passwords or private keys.  Both keys and values must be strings.
+     **/
     /* ---keyfile---
-	 * property: secrets
-	 * variable: separate variables named after keys of the dictionary
-	 * description: The keys of the secrets dictionary are used as variable names directly
-	 *   under [vpn-secrets] section.
-	 * example: password=Popocatepetl
-	 * ---end---
-	 */
+     * property: secrets
+     * variable: separate variables named after keys of the dictionary
+     * description: The keys of the secrets dictionary are used as variable names directly
+     *   under [vpn-secrets] section.
+     * example: password=Popocatepetl
+     * ---end---
+     */
     obj_properties[PROP_SECRETS] =
         g_param_spec_boxed(NM_SETTING_VPN_SECRETS,
                            "",
@@ -1206,16 +1206,16 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
                                   .from_dbus_fcn = vpn_secrets_from_dbus, ));
 
     /**
-	 * NMSettingVpn:timeout:
-	 *
-	 * Timeout for the VPN service to establish the connection. Some services
-	 * may take quite a long time to connect.
-	 * Value of 0 means a default timeout, which is 60 seconds (unless overridden
-	 * by vpn.timeout in configuration file). Values greater than zero mean
-	 * timeout in seconds.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMSettingVpn:timeout:
+     *
+     * Timeout for the VPN service to establish the connection. Some services
+     * may take quite a long time to connect.
+     * Value of 0 means a default timeout, which is 60 seconds (unless overridden
+     * by vpn.timeout in configuration file). Values greater than zero mean
+     * timeout in seconds.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_TIMEOUT] = g_param_spec_uint(NM_SETTING_VPN_TIMEOUT,
                                                      "",
                                                      "",

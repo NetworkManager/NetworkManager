@@ -110,8 +110,8 @@ mac_validator(NmtNewtEntry *entry, const char *text, gpointer user_data)
         g_free(fixed);
 
         /* FIXME: NmtNewtEntry doesn't correctly deal with us calling set_text()
-		 * from inside the validator.
-		 */
+         * from inside the validator.
+         */
         nmt_newt_widget_needs_rebuild(NMT_NEWT_WIDGET(entry));
     }
 
@@ -193,11 +193,11 @@ nmt_mac_entry_class_init(NmtMacEntryClass *entry_class)
     object_class->get_property = nmt_mac_entry_get_property;
 
     /**
-	 * NmtMacEntry:mac-length:
-	 *
-	 * The length in bytes of the hardware address type the entry
-	 * accepts: either %ETH_ALEN or %INFINIBAND_ALEN.
-	 */
+     * NmtMacEntry:mac-length:
+     *
+     * The length in bytes of the hardware address type the entry
+     * accepts: either %ETH_ALEN or %INFINIBAND_ALEN.
+     */
     g_object_class_install_property(object_class,
                                     PROP_MAC_LENGTH,
                                     g_param_spec_int("mac-length",
@@ -208,11 +208,11 @@ nmt_mac_entry_class_init(NmtMacEntryClass *entry_class)
                                                      ETH_ALEN,
                                                      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtMacEntry:mac-address:
-	 *
-	 * The MAC address, as a string (as with the various #NMSetting
-	 * "mac-address" properties).
-	 */
+     * NmtMacEntry:mac-address:
+     *
+     * The MAC address, as a string (as with the various #NMSetting
+     * "mac-address" properties).
+     */
     g_object_class_install_property(
         object_class,
         PROP_MAC_ADDRESS,
@@ -222,11 +222,11 @@ nmt_mac_entry_class_init(NmtMacEntryClass *entry_class)
                             NULL,
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtMacEntry:entry-type:
-	 *
-	 * The type of the #NmtMacEntry. Can be either used for plain
-	 * MAC addresses or for the extended format for cloned MAC addresses.
-	 */
+     * NmtMacEntry:entry-type:
+     *
+     * The type of the #NmtMacEntry. Can be either used for plain
+     * MAC addresses or for the extended format for cloned MAC addresses.
+     */
     g_object_class_install_property(
         object_class,
         PROP_ENTRY_TYPE,

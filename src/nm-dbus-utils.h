@@ -16,8 +16,8 @@ struct _NMDBusPropertyInfoExtendedBase {
     const char *      property_name;
 
     /* Whether the properties needs to be notified on the legacy
-	 * PropertyChanged signal. This is only to preserve API, new
-	 * properties should not use this. */
+     * PropertyChanged signal. This is only to preserve API, new
+     * properties should not use this. */
     bool include_in_legacy_property_changed;
 };
 
@@ -25,7 +25,7 @@ struct _NMDBusPropertyInfoExtendedReadWritable {
     struct _NMDBusPropertyInfoExtendedBase _base;
 
     /* this is the polkit permission type for authenticating setting
-	 * the property. */
+     * the property. */
     const char *permission;
 
     /* this is the audit operation type for writing the property. */
@@ -39,14 +39,14 @@ typedef struct {
         struct _NMDBusPropertyInfoExtendedReadWritable writable;
 
         /* duplicate the base structure in the union, so that the common fields
-		 * are accessible directly in the parent struct. */
+         * are accessible directly in the parent struct. */
         struct {
             GDBusPropertyInfo parent;
             const char *      property_name;
 
             /* Whether the properties needs to be notified on the legacy
-			 * PropertyChanged signal. This is only to preserve API, new
-			 * properties should not use this. */
+             * PropertyChanged signal. This is only to preserve API, new
+             * properties should not use this. */
             bool include_in_legacy_property_changed;
         };
     };
@@ -150,7 +150,7 @@ typedef struct _NMDBusInterfaceInfoExtended {
     GDBusInterfaceInfo parent;
 
     /* Whether the interface has a legacy property changed signal (@nm_signal_info_property_changed_legacy).
-	 * New interfaces should not use this. */
+     * New interfaces should not use this. */
     bool legacy_property_changed : 1;
 } NMDBusInterfaceInfoExtended;
 

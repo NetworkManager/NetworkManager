@@ -42,18 +42,18 @@ typedef struct {
     NMConfig *config;
 
     /* there can/could be multiple read-only directories. For example, one
-	 * could set dirname_libs to
-	 *   - /usr/lib/NetworkManager/profiles/
-	 *   - /etc/NetworkManager/system-connections
-	 * and leave dirname_etc unset. In this case, there would be multiple
-	 * read-only directories.
-	 *
-	 * Directories that come later have higher priority and shadow profiles
-	 * from earlier directories.
-	 *
-	 * Currently, this is only an array with zero or one elements. It could be
-	 * easily extended to support multiple read-only directories.
-	 */
+     * could set dirname_libs to
+     *   - /usr/lib/NetworkManager/profiles/
+     *   - /etc/NetworkManager/system-connections
+     * and leave dirname_etc unset. In this case, there would be multiple
+     * read-only directories.
+     *
+     * Directories that come later have higher priority and shadow profiles
+     * from earlier directories.
+     *
+     * Currently, this is only an array with zero or one elements. It could be
+     * easily extended to support multiple read-only directories.
+     */
     char *dirname_libs[2];
     char *dirname_etc;
     char *dirname_run;
@@ -130,7 +130,7 @@ static gboolean
 _ignore_filename(NMSKeyfileStorageType storage_type, const char *filename)
 {
     /* for backward-compatibility, we don't require an extension for
-	 * files under "/etc/...". */
+     * files under "/etc/...". */
     return nm_keyfile_utils_ignore_filename(filename,
                                             (storage_type != NMS_KEYFILE_STORAGE_TYPE_ETC));
 }
@@ -139,9 +139,9 @@ static const char *
 _get_plugin_dir(NMSKeyfilePluginPrivate *priv)
 {
     /* the plugin dir is only needed to generate connection.uuid value via
-	 * nm_keyfile_read_ensure_uuid(). This is either the configured /etc
-	 * directory, of the compile-time default (in case the /etc directory
-	 * is disabled). */
+     * nm_keyfile_read_ensure_uuid(). This is either the configured /etc
+     * directory, of the compile-time default (in case the /etc directory
+     * is disabled). */
     return priv->dirname_etc ?: NM_KEYFILE_PATH_NAME_ETC_DEFAULT;
 }
 
@@ -543,15 +543,15 @@ _storages_consolidate(NMSKeyfilePlugin *                     self,
 
         if (!storage->is_dirty) {
             /* the entry is no longer is_dirty. In the meantime we already emitted
-			 * another signal for it. */
+             * another signal for it. */
             continue;
         }
         storage->is_dirty = FALSE;
 
         if (c_list_is_empty(&storage->parent._storage_lst)) {
             /* hm? The profile was deleted in the meantime? That is only possible
-			 * if the signal handler called again into the plugin. In any case, the event
-			 * was already emitted. Skip. */
+             * if the signal handler called again into the plugin. In any case, the event
+             * was already emitted. Skip. */
             continue;
         }
 
@@ -681,7 +681,7 @@ load_connections(NMSettingsPlugin *                     plugin,
                 NMSKeyfileStorage *storage2;
 
                 /* the file does not exist. We take that as indication to unload the file
-				 * that was previously loaded... */
+                 * that was previously loaded... */
                 storage2 = nm_sett_util_storages_lookup_by_filename(&priv->storages, full_filename);
                 if (storage2)
                     g_hash_table_add(storages_replaced, g_object_ref(storage2));
@@ -719,14 +719,14 @@ load_connections(NMSettingsPlugin *                     plugin,
             }
 
             /* @storage has a UUID that was just loaded from disk, but we have an entry in cache.
-			 * Reload that file too despite not being told to do so. The reason is to get
-			 * the latest file timestamp so that we get the priorities right. */
+             * Reload that file too despite not being told to do so. The reason is to get
+             * the latest file timestamp so that we get the priorities right. */
 
             storage_new = _load_file_from_path(self, full_filename, storage->storage_type, &local);
             if (storage_new && !nm_streq(loaded_uuid, nms_keyfile_storage_get_uuid(storage_new))) {
                 /* the file now references a different UUID. We are not told to reload
-				 * that file, so this means the existing storage (with the previous
-				 * filename and UUID tuple) is no longer valid. */
+                 * that file, so this means the existing storage (with the previous
+                 * filename and UUID tuple) is no longer valid. */
                 g_clear_object(&storage_new);
             }
 
@@ -777,7 +777,7 @@ nms_keyfile_plugin_add_connection(NMSKeyfilePlugin *  self,
     uuid = nm_connection_get_uuid(connection);
 
     /* Note that even if the caller requests persistent storage, we may switch to in-memory, if
-	 * no /etc directory is configured. */
+     * no /etc directory is configured. */
     storage_type = !in_memory && priv->dirname_etc ? NMS_KEYFILE_STORAGE_TYPE_ETC
                                                    : NMS_KEYFILE_STORAGE_TYPE_RUN;
 
@@ -1244,8 +1244,8 @@ nms_keyfile_plugin_init(NMSKeyfilePlugin *plugin)
                                                                      nms_keyfile_storage_destroy);
 
     /* dirname_libs are a set of read-only directories with lower priority than /etc or /run.
-	 * There is nothing complicated about having multiple of such directories, so dirname_libs
-	 * is a list (which currently only has at most one directory). */
+     * There is nothing complicated about having multiple of such directories, so dirname_libs
+     * is a list (which currently only has at most one directory). */
     priv->dirname_libs[0] = nm_sd_utils_path_simplify(g_strdup(NM_KEYFILE_PATH_NAME_LIB), FALSE);
     priv->dirname_libs[1] = NULL;
     priv->dirname_run     = nm_sd_utils_path_simplify(g_strdup(NM_KEYFILE_PATH_NAME_RUN), FALSE);
@@ -1255,8 +1255,8 @@ nms_keyfile_plugin_init(NMSKeyfilePlugin *plugin)
                                                  NM_CONFIG_GET_VALUE_STRIP);
     if (priv->dirname_etc && priv->dirname_etc[0] == '\0') {
         /* special case: configure an empty keyfile path so that NM has no writable keyfile
-		 * directory. In this case, NM will only honor dirname_libs and dirname_run, meaning
-		 * it cannot persist profile to non-volatile memory. */
+         * directory. In this case, NM will only honor dirname_libs and dirname_run, meaning
+         * it cannot persist profile to non-volatile memory. */
         nm_clear_g_free(&priv->dirname_etc);
     } else if (!priv->dirname_etc || priv->dirname_etc[0] != '/') {
         /* either invalid path or unspecified. Use the default. */

@@ -560,7 +560,7 @@ nm_sriov_vf_get_vlan_ids(const NMSriovVF *vf, guint *length)
         return NULL;
 
     /* vf is const, however, vlan_ids is a mutable field caching the
-	 * result ("mutable" in C++ terminology) */
+     * result ("mutable" in C++ terminology) */
     ((NMSriovVF *) vf)->vlan_ids = g_new0(guint, num);
 
     i = 0;
@@ -915,8 +915,8 @@ vfs_to_dbus(const NMSettInfoSetting *               sett_info,
             }
 
             /* VLANs are translated into an array of maps, where each map has
-			 * keys 'id', 'qos' and 'proto'. This guarantees enough flexibility
-			 * to accommodate any future new option. */
+             * keys 'id', 'qos' and 'proto'. This guarantees enough flexibility
+             * to accommodate any future new option. */
             vlan_ids = nm_sriov_vf_get_vlan_ids(vf, &num_vlans);
             if (num_vlans) {
                 GVariantBuilder vlans_builder;
@@ -1250,25 +1250,25 @@ nm_setting_sriov_class_init(NMSettingSriovClass *klass)
     setting_class->verify           = verify;
 
     /**
-	 * NMSettingSriov:total-vfs
-	 *
-	 * The total number of virtual functions to create.
-	 *
-	 * Note that when the sriov setting is present NetworkManager
-	 * enforces the number of virtual functions on the interface
-	 * (also when it is zero) during activation and resets it
-	 * upon deactivation. To prevent any changes to SR-IOV
-	 * parameters don't add a sriov setting to the connection.
-	 *
-	 * Since: 1.14
-	 **/
+     * NMSettingSriov:total-vfs
+     *
+     * The total number of virtual functions to create.
+     *
+     * Note that when the sriov setting is present NetworkManager
+     * enforces the number of virtual functions on the interface
+     * (also when it is zero) during activation and resets it
+     * upon deactivation. To prevent any changes to SR-IOV
+     * parameters don't add a sriov setting to the connection.
+     *
+     * Since: 1.14
+     **/
     /* ---ifcfg-rh---
-	 * property: total-vfs
-	 * variable: SRIOV_TOTAL_VFS(+)
-	 * description: The total number of virtual functions to create
-	 * example: SRIOV_TOTAL_VFS=16
-	 * ---end---
-	 */
+     * property: total-vfs
+     * variable: SRIOV_TOTAL_VFS(+)
+     * description: The total number of virtual functions to create
+     * example: SRIOV_TOTAL_VFS=16
+     * ---end---
+     */
     obj_properties[PROP_TOTAL_VFS] = g_param_spec_uint(
         NM_SETTING_SRIOV_TOTAL_VFS,
         "",
@@ -1279,44 +1279,44 @@ nm_setting_sriov_class_init(NMSettingSriovClass *klass)
         NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingSriov:vfs: (type GPtrArray(NMSriovVF))
-	 *
-	 * Array of virtual function descriptors.
-	 *
-	 * Each VF descriptor is a dictionary mapping attribute names
-	 * to GVariant values. The 'index' entry is mandatory for
-	 * each VF.
-	 *
-	 * When represented as string a VF is in the form:
-	 *
-	 *   "INDEX [ATTR=VALUE[ ATTR=VALUE]...]".
-	 *
-	 * for example:
-	 *
-	 *   "2 mac=00:11:22:33:44:55 spoof-check=true".
-	 *
-	 * Multiple VFs can be specified using a comma as separator.
-	 * Currently, the following attributes are supported: mac,
-	 * spoof-check, trust, min-tx-rate, max-tx-rate, vlans.
-	 *
-	 * The "vlans" attribute is represented as a semicolon-separated
-	 * list of VLAN descriptors, where each descriptor has the form
-	 *
-	 *   "ID[.PRIORITY[.PROTO]]".
-	 *
-	 * PROTO can be either 'q' for 802.1Q (the default) or 'ad' for
-	 * 802.1ad.
-	 *
+     * NMSettingSriov:vfs: (type GPtrArray(NMSriovVF))
+     *
+     * Array of virtual function descriptors.
+     *
+     * Each VF descriptor is a dictionary mapping attribute names
+     * to GVariant values. The 'index' entry is mandatory for
+     * each VF.
+     *
+     * When represented as string a VF is in the form:
+     *
+     *   "INDEX [ATTR=VALUE[ ATTR=VALUE]...]".
+     *
+     * for example:
+     *
+     *   "2 mac=00:11:22:33:44:55 spoof-check=true".
+     *
+     * Multiple VFs can be specified using a comma as separator.
+     * Currently, the following attributes are supported: mac,
+     * spoof-check, trust, min-tx-rate, max-tx-rate, vlans.
+     *
+     * The "vlans" attribute is represented as a semicolon-separated
+     * list of VLAN descriptors, where each descriptor has the form
+     *
+     *   "ID[.PRIORITY[.PROTO]]".
+     *
+     * PROTO can be either 'q' for 802.1Q (the default) or 'ad' for
+     * 802.1ad.
+     *
 
-	 * Since: 1.14
-	 **/
+     * Since: 1.14
+     **/
     /* ---ifcfg-rh---
-	 * property: vfs
-	 * variable: SRIOV_VF1(+), SRIOV_VF2(+), ...
-	 * description: SR-IOV virtual function descriptors
-	 * example: SRIOV_VF10="mac=00:11:22:33:44:55", ...
-	 * ---end---
-	 */
+     * property: vfs
+     * variable: SRIOV_VF1(+), SRIOV_VF2(+), ...
+     * description: SR-IOV virtual function descriptors
+     * example: SRIOV_VF10="mac=00:11:22:33:44:55", ...
+     * ---end---
+     */
     obj_properties[PROP_VFS] = g_param_spec_boxed(NM_SETTING_SRIOV_VFS,
                                                   "",
                                                   "",
@@ -1330,31 +1330,31 @@ nm_setting_sriov_class_init(NMSettingSriovClass *klass)
                                                            .from_dbus_fcn = vfs_from_dbus, ));
 
     /**
-	 * NMSettingSriov:autoprobe-drivers
-	 *
-	 * Whether to autoprobe virtual functions by a compatible driver.
-	 *
-	 * If set to %NM_TERNARY_TRUE, the kernel will try to bind VFs to
-	 * a compatible driver and if this succeeds a new network
-	 * interface will be instantiated for each VF.
-	 *
-	 * If set to %NM_TERNARY_FALSE, VFs will not be claimed and no
-	 * network interfaces will be created for them.
-	 *
-	 * When set to %NM_TERNARY_DEFAULT, the global default is used; in
-	 * case the global default is unspecified it is assumed to be
-	 * %NM_TERNARY_TRUE.
-	 *
-	 * Since: 1.14
-	 **/
+     * NMSettingSriov:autoprobe-drivers
+     *
+     * Whether to autoprobe virtual functions by a compatible driver.
+     *
+     * If set to %NM_TERNARY_TRUE, the kernel will try to bind VFs to
+     * a compatible driver and if this succeeds a new network
+     * interface will be instantiated for each VF.
+     *
+     * If set to %NM_TERNARY_FALSE, VFs will not be claimed and no
+     * network interfaces will be created for them.
+     *
+     * When set to %NM_TERNARY_DEFAULT, the global default is used; in
+     * case the global default is unspecified it is assumed to be
+     * %NM_TERNARY_TRUE.
+     *
+     * Since: 1.14
+     **/
     /* ---ifcfg-rh---
-	 * property: autoprobe-drivers
-	 * variable: SRIOV_AUTOPROBE_DRIVERS(+)
-	 * default: missing variable means global default
-	 * description: Whether to autoprobe virtual functions by a compatible driver
-	 * example: SRIOV_AUTOPROBE_DRIVERS=0,1
-	 * ---end---
-	 */
+     * property: autoprobe-drivers
+     * variable: SRIOV_AUTOPROBE_DRIVERS(+)
+     * default: missing variable means global default
+     * description: Whether to autoprobe virtual functions by a compatible driver
+     * example: SRIOV_AUTOPROBE_DRIVERS=0,1
+     * ---end---
+     */
     obj_properties[PROP_AUTOPROBE_DRIVERS] = g_param_spec_enum(
         NM_SETTING_SRIOV_AUTOPROBE_DRIVERS,
         "",

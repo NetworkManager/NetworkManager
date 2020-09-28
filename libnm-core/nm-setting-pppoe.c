@@ -286,15 +286,15 @@ nm_setting_pppoe_class_init(NMSettingPppoeClass *klass)
     setting_class->need_secrets = need_secrets;
 
     /**
-	 * NMSettingPppoe:parent:
-	 *
-	 * If given, specifies the parent interface name on which this PPPoE
-	 * connection should be created.  If this property is not specified,
-	 * the connection is activated on the interface specified in
-	 * #NMSettingConnection:interface-name of #NMSettingConnection.
-	 *
-	 * Since: 1.10
-	 **/
+     * NMSettingPppoe:parent:
+     *
+     * If given, specifies the parent interface name on which this PPPoE
+     * connection should be created.  If this property is not specified,
+     * the connection is activated on the interface specified in
+     * #NMSettingConnection:interface-name of #NMSettingConnection.
+     *
+     * Since: 1.10
+     **/
     obj_properties[PROP_PARENT] = g_param_spec_string(
         NM_SETTING_PPPOE_PARENT,
         "",
@@ -303,13 +303,13 @@ nm_setting_pppoe_class_init(NMSettingPppoeClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPppoe:service:
-	 *
-	 * If specified, instruct PPPoE to only initiate sessions with access
-	 * concentrators that provide the specified service.  For most providers,
-	 * this should be left blank.  It is only required if there are multiple
-	 * access concentrators or a specific service is known to be required.
-	 **/
+     * NMSettingPppoe:service:
+     *
+     * If specified, instruct PPPoE to only initiate sessions with access
+     * concentrators that provide the specified service.  For most providers,
+     * this should be left blank.  It is only required if there are multiple
+     * access concentrators or a specific service is known to be required.
+     **/
     obj_properties[PROP_SERVICE] = g_param_spec_string(NM_SETTING_PPPOE_SERVICE,
                                                        "",
                                                        "",
@@ -317,10 +317,10 @@ nm_setting_pppoe_class_init(NMSettingPppoeClass *klass)
                                                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPppoe:username:
-	 *
-	 * Username used to authenticate with the PPPoE service.
-	 **/
+     * NMSettingPppoe:username:
+     *
+     * Username used to authenticate with the PPPoE service.
+     **/
     obj_properties[PROP_USERNAME] = g_param_spec_string(NM_SETTING_PPPOE_USERNAME,
                                                         "",
                                                         "",
@@ -328,10 +328,10 @@ nm_setting_pppoe_class_init(NMSettingPppoeClass *klass)
                                                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPppoe:password:
-	 *
-	 * Password used to authenticate with the PPPoE service.
-	 **/
+     * NMSettingPppoe:password:
+     *
+     * Password used to authenticate with the PPPoE service.
+     **/
     obj_properties[PROP_PASSWORD] =
         g_param_spec_string(NM_SETTING_PPPOE_PASSWORD,
                             "",
@@ -340,10 +340,10 @@ nm_setting_pppoe_class_init(NMSettingPppoeClass *klass)
                             G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingPppoe:password-flags:
-	 *
-	 * Flags indicating how to handle the #NMSettingPppoe:password property.
-	 **/
+     * NMSettingPppoe:password-flags:
+     *
+     * Flags indicating how to handle the #NMSettingPppoe:password property.
+     **/
     obj_properties[PROP_PASSWORD_FLAGS] =
         g_param_spec_flags(NM_SETTING_PPPOE_PASSWORD_FLAGS,
                            "",

@@ -140,14 +140,14 @@ nmt_newt_popup_activated(NmtNewtWidget *widget)
                              &button_x,
                              &button_y);
     /* (window_x + button_x) is the screen X coordinate of the newtComponent. A
-	 * newtButton labelled "Foo" is rendered as " <Foo>" (with a preceding
-	 * space), so the "F" is at (window_x + button_x + 2). We've added 1 column
-	 * of padding to the left of the listbox, so we need to position the popup
-	 * at (window_x + button_x + 1) in order for its text to be aligned with the
-	 * button's text. (The x and y coordinates given to NmtNewtForm are the
-	 * coordinates of the top left of the window content, ignoring the border
-	 * graphics.)
-	 */
+     * newtButton labelled "Foo" is rendered as " <Foo>" (with a preceding
+     * space), so the "F" is at (window_x + button_x + 2). We've added 1 column
+     * of padding to the left of the listbox, so we need to position the popup
+     * at (window_x + button_x + 1) in order for its text to be aligned with the
+     * button's text. (The x and y coordinates given to NmtNewtForm are the
+     * coordinates of the top left of the window content, ignoring the border
+     * graphics.)
+     */
     window_x += button_x + 1;
     window_y += button_y - priv->active;
 
@@ -316,10 +316,10 @@ nmt_newt_popup_class_init(NmtNewtPopupClass *popup_class)
     component_class->build_component = nmt_newt_popup_build_component;
 
     /**
-	 * NmtNewtPopup:active:
-	 *
-	 * The index of the currently-active entry.
-	 */
+     * NmtNewtPopup:active:
+     *
+     * The index of the currently-active entry.
+     */
     g_object_class_install_property(object_class,
                                     PROP_ACTIVE,
                                     g_param_spec_uint("active",
@@ -330,10 +330,10 @@ nmt_newt_popup_class_init(NmtNewtPopupClass *popup_class)
                                                       0,
                                                       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtPopup:active-id:
-	 *
-	 * The textual ID of the currently-active entry.
-	 */
+     * NmtNewtPopup:active-id:
+     *
+     * The textual ID of the currently-active entry.
+     */
     g_object_class_install_property(
         object_class,
         PROP_ACTIVE_ID,

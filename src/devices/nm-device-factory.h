@@ -35,83 +35,83 @@ typedef struct {
     GObjectClass parent;
 
     /**
-	 * get_supported_types:
-	 * @factory: the #NMDeviceFactory
-	 * @out_link_types: on return, a %NM_LINK_TYPE_NONE terminated
-	 *  list of #NMLinkType that the plugin supports
-	 * @out_setting_types: on return, a %NULL terminated list of
-	 *  base-type #NMSetting names that the plugin can create devices for
-	 *
-	 * Returns the #NMLinkType and #NMSetting names that this plugin
-	 * supports.  This function MUST be implemented.
-	 */
+     * get_supported_types:
+     * @factory: the #NMDeviceFactory
+     * @out_link_types: on return, a %NM_LINK_TYPE_NONE terminated
+     *  list of #NMLinkType that the plugin supports
+     * @out_setting_types: on return, a %NULL terminated list of
+     *  base-type #NMSetting names that the plugin can create devices for
+     *
+     * Returns the #NMLinkType and #NMSetting names that this plugin
+     * supports.  This function MUST be implemented.
+     */
     void (*get_supported_types)(NMDeviceFactory *   factory,
                                 const NMLinkType ** out_link_types,
                                 const char *const **out_setting_types);
 
     /**
-	 * start:
-	 * @factory: the #NMDeviceFactory
-	 *
-	 * Start the factory and discover any existing devices that the factory
-	 * can manage.
-	 */
+     * start:
+     * @factory: the #NMDeviceFactory
+     *
+     * Start the factory and discover any existing devices that the factory
+     * can manage.
+     */
     void (*start)(NMDeviceFactory *factory);
 
     /**
-	 * match_connection:
-	 * @connection: the #NMConnection
-	 *
-	 * Check if the factory supports the given connection.
-	 */
+     * match_connection:
+     * @connection: the #NMConnection
+     *
+     * Check if the factory supports the given connection.
+     */
     gboolean (*match_connection)(NMDeviceFactory *factory, NMConnection *connection);
 
     /**
-	 * get_connection_parent:
-	 * @factory: the #NMDeviceFactory
-	 * @connection: the #NMConnection to return the parent name for, if supported
-	 *
-	 * Given a connection, returns the parent interface name, parent connection
-	 * UUID, or parent device permanent hardware address for @connection.
-	 *
-	 * Returns: the parent interface name, parent connection UUID, parent
-	 *   device permanent hardware address, or %NULL
-	 */
+     * get_connection_parent:
+     * @factory: the #NMDeviceFactory
+     * @connection: the #NMConnection to return the parent name for, if supported
+     *
+     * Given a connection, returns the parent interface name, parent connection
+     * UUID, or parent device permanent hardware address for @connection.
+     *
+     * Returns: the parent interface name, parent connection UUID, parent
+     *   device permanent hardware address, or %NULL
+     */
     const char *(*get_connection_parent)(NMDeviceFactory *factory, NMConnection *connection);
 
     /**
-	 * get_connection_iface:
-	 * @factory: the #NMDeviceFactory
-	 * @connection: the #NMConnection to return the interface name for
-	 * @parent_iface: optional parent interface name for virtual devices
-	 *
-	 * Given a connection, returns the interface name that a device activating
-	 * that connection would have.
-	 *
-	 * Returns: the interface name, or %NULL
-	 */
+     * get_connection_iface:
+     * @factory: the #NMDeviceFactory
+     * @connection: the #NMConnection to return the interface name for
+     * @parent_iface: optional parent interface name for virtual devices
+     *
+     * Given a connection, returns the interface name that a device activating
+     * that connection would have.
+     *
+     * Returns: the interface name, or %NULL
+     */
     char *(*get_connection_iface)(NMDeviceFactory *factory,
                                   NMConnection *   connection,
                                   const char *     parent_iface);
 
     /**
-	 * create_device:
-	 * @factory: the #NMDeviceFactory
-	 * @iface: the interface name of the device
-	 * @plink: the #NMPlatformLink if backed by a kernel device
-	 * @connection: the #NMConnection if not backed by a kernel device
-	 * @out_ignore: on return, %TRUE if the link should be ignored
-	 *
-	 * The plugin should create a new unrealized device using the details given
-	 * by @iface and @plink or @connection.  If both @iface and @plink are given,
-	 * they are guaranteed to match.  If both @iface and @connection are given,
-	 * @iface is guaranteed to be the interface name that @connection specifies.
-	 *
-	 * If the plugin cannot create a #NMDevice for the link and wants the
-	 * core to ignore it, set @out_ignore to %TRUE and return %NULL.
-	 *
-	 * Returns: the new unrealized #NMDevice, or %NULL
-	 */
+     * create_device:
+     * @factory: the #NMDeviceFactory
+     * @iface: the interface name of the device
+     * @plink: the #NMPlatformLink if backed by a kernel device
+     * @connection: the #NMConnection if not backed by a kernel device
+     * @out_ignore: on return, %TRUE if the link should be ignored
+     *
+     * The plugin should create a new unrealized device using the details given
+     * by @iface and @plink or @connection.  If both @iface and @plink are given,
+     * they are guaranteed to match.  If both @iface and @connection are given,
+     * @iface is guaranteed to be the interface name that @connection specifies.
+     *
+     * If the plugin cannot create a #NMDevice for the link and wants the
+     * core to ignore it, set @out_ignore to %TRUE and return %NULL.
+     *
+     * Returns: the new unrealized #NMDevice, or %NULL
+     */
     NMDevice *(*create_device)(NMDeviceFactory *     factory,
                                const char *          iface,
                                const NMPlatformLink *plink,

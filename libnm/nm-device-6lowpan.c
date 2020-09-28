@@ -119,12 +119,12 @@ nm_device_6lowpan_class_init(NMDevice6LowpanClass *klass)
     _NM_OBJECT_CLASS_INIT_PROPERTY_O_FIELDS_1(nm_object_class, NMDevice6LowpanPrivate, parent);
 
     /**
-	 * NMDevice6Lowpan:parent:
-	 *
-	 * The devices's parent device.
-	 *
-	 * Since: 1.14
-	 **/
+     * NMDevice6Lowpan:parent:
+     *
+     * The devices's parent device.
+     *
+     * Since: 1.14
+     **/
     obj_properties[PROP_PARENT] = g_param_spec_object(NM_DEVICE_6LOWPAN_PARENT,
                                                       "",
                                                       "",

@@ -91,10 +91,10 @@ add_connection(GDBusProxy *proxy, const char *con_name)
                           &setting_builder);
 
     /* Call AddConnection with the connection dictionary as argument.
-	 * (g_variant_new() will consume the floating GVariant returned from
-	 * &connection_builder, and g_dbus_proxy_call_sync() will consume the
-	 * floating variant returned from g_variant_new(), so no cleanup is needed.
-	 */
+     * (g_variant_new() will consume the floating GVariant returned from
+     * &connection_builder, and g_dbus_proxy_call_sync() will consume the
+     * floating variant returned from g_variant_new(), so no cleanup is needed.
+     */
     ret = g_dbus_proxy_call_sync(proxy,
                                  "AddConnection",
                                  g_variant_new("(a{sa{sv}})", &connection_builder),

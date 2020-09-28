@@ -127,16 +127,16 @@ nm_dbus_object_unexport(gpointer /* (NMDBusObject *) */ self)
     _LOGT("unexport: \"%s\"", self1->internal.path);
 
     /* note that we emit the signal *before* actually unexporting the object.
-	 * The reason is, that listeners want to use this signal to know that
-	 * the object goes away, and clear their D-Bus path to this object.
-	 *
-	 * But this must happen before we actually unregister the object, so
-	 * that we first emit a D-Bus signal that other objects no longer
-	 * reference this object, before finally unregistering the object itself.
-	 *
-	 * The inconvenient part is, that at this point nm_dbus_object_get_path()
-	 * still returns the path. So, the callee needs to handle that. Possibly
-	 * by using "nm_dbus_object_get_path_still_exported()". */
+     * The reason is, that listeners want to use this signal to know that
+     * the object goes away, and clear their D-Bus path to this object.
+     *
+     * But this must happen before we actually unregister the object, so
+     * that we first emit a D-Bus signal that other objects no longer
+     * reference this object, before finally unregistering the object itself.
+     *
+     * The inconvenient part is, that at this point nm_dbus_object_get_path()
+     * still returns the path. So, the callee needs to handle that. Possibly
+     * by using "nm_dbus_object_get_path_still_exported()". */
     self1->internal.is_unexporting = TRUE;
 
     _emit_exported_changed(self1);
@@ -171,9 +171,9 @@ nm_dbus_object_unexport_on_idle(gpointer /* (NMDBusObject *) */ self_take)
     g_return_if_fail(self->internal.path);
 
     /* There is no mechanism to cancel or abort the unexport. It will always
-	 * gonna happen.
-	 *
-	 * However, we register it to block shutdown, so that we ensure that it will happen. */
+     * gonna happen.
+     *
+     * However, we register it to block shutdown, so that we ensure that it will happen. */
 
     nm_shutdown_wait_obj_register_object(self, "unexport-dbus-obj-on-idle");
 
@@ -277,18 +277,18 @@ constructed(GObject *object)
         nm_dbus_object_export((NMDBusObject *) object);
 
     /* NMDBusObject types should be very careful when overwriting notify().
-	 * It is possible to do, but this is a reminder that it's probably not
-	 * a good idea.
-	 *
-	 * It's not a good idea, because NMDBusObject uses dispatch_properties_changed()
-	 * to emit signals about a bunch of property changes. So, we want to make
-	 * use of g_object_freeze_notify() / g_object_thaw_notify() to combine multiple
-	 * property changes in one signal on D-Bus. Note that notify() is not invoked
-	 * while the signal is frozen, that means, whatever you do inside notify()
-	 * will not make it into the same batch of PropertiesChanged signal. That is
-	 * confusing, and probably not what you want.
-	 *
-	 * Simple solution: don't overwrite notify(). */
+     * It is possible to do, but this is a reminder that it's probably not
+     * a good idea.
+     *
+     * It's not a good idea, because NMDBusObject uses dispatch_properties_changed()
+     * to emit signals about a bunch of property changes. So, we want to make
+     * use of g_object_freeze_notify() / g_object_thaw_notify() to combine multiple
+     * property changes in one signal on D-Bus. Note that notify() is not invoked
+     * while the signal is frozen, that means, whatever you do inside notify()
+     * will not make it into the same batch of PropertiesChanged signal. That is
+     * confusing, and probably not what you want.
+     *
+     * Simple solution: don't overwrite notify(). */
     nm_assert(!G_OBJECT_CLASS(klass)->notify);
 }
 
@@ -298,8 +298,8 @@ dispose(GObject *object)
     NMDBusObject *self = NM_DBUS_OBJECT(object);
 
     /* Objects should have already been unexported by their owner, unless
-	 * we are quitting, where many objects stick around until exit.
-	 */
+     * we are quitting, where many objects stick around until exit.
+     */
     if (self->internal.path) {
         if (!nm_dbus_manager_is_stopping(nm_dbus_object_get_manager(self)))
             g_warn_if_reached();

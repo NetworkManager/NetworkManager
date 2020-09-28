@@ -439,12 +439,12 @@ nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
     _NM_OBJECT_CLASS_INIT_PROPERTY_O_FIELDS_1(nm_object_class, NMDeviceMacsecPrivate, parent);
 
     /**
-	 * NMDeviceMacsec:parent:
-	 *
-	 * The devices's parent device.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMDeviceMacsec:parent:
+     *
+     * The devices's parent device.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_PARENT] = g_param_spec_object(NM_DEVICE_MACSEC_PARENT,
                                                       "",
                                                       "",
@@ -452,12 +452,12 @@ nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceMacsec:sci:
-	 *
-	 * The Secure Channel Identifier in use.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMDeviceMacsec:sci:
+     *
+     * The Secure Channel Identifier in use.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_SCI] = g_param_spec_uint64(NM_DEVICE_MACSEC_SCI,
                                                    "",
                                                    "",
@@ -467,12 +467,12 @@ nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
                                                    G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceMacsec:icv-length:
-	 *
-	 * The length of ICV (Integrity Check Value).
-	 *
-	 * Since: 1.6
-	 **/
+     * NMDeviceMacsec:icv-length:
+     *
+     * The length of ICV (Integrity Check Value).
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_ICV_LENGTH] = g_param_spec_uchar(NM_DEVICE_MACSEC_ICV_LENGTH,
                                                          "",
                                                          "",
@@ -482,12 +482,12 @@ nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
                                                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceMacsec:cipher-suite:
-	 *
-	 * The set of cryptographic algorithms in use.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMDeviceMacsec:cipher-suite:
+     *
+     * The set of cryptographic algorithms in use.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_CIPHER_SUITE] =
         g_param_spec_uint64(NM_DEVICE_MACSEC_CIPHER_SUITE,
                             "",
@@ -498,12 +498,12 @@ nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceMacsec:window:
-	 *
-	 * The size of the replay window.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMDeviceMacsec:window:
+     *
+     * The size of the replay window.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_WINDOW] = g_param_spec_uint(NM_DEVICE_MACSEC_WINDOW,
                                                     "",
                                                     "",
@@ -513,13 +513,13 @@ nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceMacsec:encoding-sa:
-	 *
-	 * The value of the Association Number (0..3) for the Security
-	 * Association in use.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMDeviceMacsec:encoding-sa:
+     *
+     * The value of the Association Number (0..3) for the Security
+     * Association in use.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_ENCODING_SA] =
         g_param_spec_uchar(NM_DEVICE_MACSEC_ENCODING_SA,
                            "",
@@ -530,13 +530,13 @@ nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceMacsec:validation:
-	 *
-	 * The validation mode for incoming packets (strict, check,
-	 * disabled).
-	 *
-	 * Since: 1.6
-	 **/
+     * NMDeviceMacsec:validation:
+     *
+     * The validation mode for incoming packets (strict, check,
+     * disabled).
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_VALIDATION] =
         g_param_spec_string(NM_DEVICE_MACSEC_VALIDATION,
                             "",
@@ -545,12 +545,12 @@ nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceMacsec:encrypt:
-	 *
-	 * Whether encryption of transmitted frames is enabled.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMDeviceMacsec:encrypt:
+     *
+     * Whether encryption of transmitted frames is enabled.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_ENCRYPT] = g_param_spec_boolean(NM_DEVICE_MACSEC_ENCRYPT,
                                                         "",
                                                         "",
@@ -558,12 +558,12 @@ nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceMacsec:protect:
-	 *
-	 * Whether protection of transmitted frames is enabled.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMDeviceMacsec:protect:
+     *
+     * Whether protection of transmitted frames is enabled.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_PROTECT] = g_param_spec_boolean(NM_DEVICE_MACSEC_PROTECT,
                                                         "",
                                                         "",
@@ -571,13 +571,13 @@ nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceMacsec:include-sci:
-	 *
-	 * Whether the SCI is always included in SecTAG for transmitted
-	 * frames.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMDeviceMacsec:include-sci:
+     *
+     * Whether the SCI is always included in SecTAG for transmitted
+     * frames.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_INCLUDE_SCI] =
         g_param_spec_boolean(NM_DEVICE_MACSEC_INCLUDE_SCI,
                              "",
@@ -586,13 +586,13 @@ nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceMacsec:es:
-	 *
-	 * Whether the ES (End station) bit is enabled in SecTAG for
-	 * transmitted frames.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMDeviceMacsec:es:
+     *
+     * Whether the ES (End station) bit is enabled in SecTAG for
+     * transmitted frames.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_ES] = g_param_spec_boolean(NM_DEVICE_MACSEC_ES,
                                                    "",
                                                    "",
@@ -600,13 +600,13 @@ nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
                                                    G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceMacsec:scb:
-	 *
-	 * Whether the SCB (Single Copy Broadcast) bit is enabled in
-	 * SecTAG for transmitted frames.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMDeviceMacsec:scb:
+     *
+     * Whether the SCB (Single Copy Broadcast) bit is enabled in
+     * SecTAG for transmitted frames.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_SCB] = g_param_spec_boolean(NM_DEVICE_MACSEC_SCB,
                                                     "",
                                                     "",
@@ -614,12 +614,12 @@ nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceMacsec:replay-protect:
-	 *
-	 * Whether replay protection is enabled.
-	 *
-	 * Since: 1.6
-	 **/
+     * NMDeviceMacsec:replay-protect:
+     *
+     * Whether replay protection is enabled.
+     *
+     * Since: 1.6
+     **/
     obj_properties[PROP_REPLAY_PROTECT] =
         g_param_spec_boolean(NM_DEVICE_MACSEC_REPLAY_PROTECT,
                              "",

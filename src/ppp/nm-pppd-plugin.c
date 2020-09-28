@@ -128,8 +128,8 @@ nm_phasechange(int arg)
         ifindex = if_nametoindex(ifname);
 
         /* Make a sync call to ensure that when the call
-		 * terminates the interface already has its final
-		 * name. */
+         * terminates the interface already has its final
+         * name. */
         ret = g_dbus_connection_call_sync(gl.dbus_connection,
                                           NM_DBUS_SERVICE,
                                           gl.ipparam,
@@ -181,8 +181,8 @@ nm_ip_up(void *data, int arg)
     g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
 
     /* Keep sending the interface name to be backwards compatible
-	 * with older versions of NM during a package upgrade, where
-	 * NM is not restarted and the pppd plugin was not loaded. */
+     * with older versions of NM during a package upgrade, where
+     * NM is not restarted and the pppd plugin was not loaded. */
     g_variant_builder_add(&builder,
                           "{sv}",
                           NM_PPP_IP4_CONFIG_INTERFACE,
@@ -194,9 +194,9 @@ nm_ip_up(void *data, int arg)
                           g_variant_new_uint32(opts.ouraddr));
 
     /* Prefer the peer options remote address first, _unless_ pppd made the
-	 * address up, at which point prefer the local options remote address,
-	 * and if that's not right, use the made-up address as a last resort.
-	 */
+     * address up, at which point prefer the local options remote address,
+     * and if that's not right, use the made-up address as a last resort.
+     */
     if (peer_opts.hisaddr && (peer_opts.hisaddr != pppd_made_up_address)) {
         g_variant_builder_add(&builder,
                               "{sv}",
@@ -289,8 +289,8 @@ nm_ip6_up(void *data, int arg)
 
     g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
     /* Keep sending the interface name to be backwards compatible
-	 * with older versions of NM during a package upgrade, where
-	 * NM is not restarted and the pppd plugin was not loaded. */
+     * with older versions of NM during a package upgrade, where
+     * NM is not restarted and the pppd plugin was not loaded. */
     g_variant_builder_add(&builder,
                           "{sv}",
                           NM_PPP_IP6_CONFIG_INTERFACE,
@@ -382,8 +382,8 @@ nm_exit_notify(void *data, int arg)
     g_return_if_fail(G_IS_DBUS_CONNECTION(gl.dbus_connection));
 
     /* We wait until this point to notify dead phase to make sure that
-	 * the serial port has recovered already its original settings.
-	 */
+     * the serial port has recovered already its original settings.
+     */
     nm_phasechange(PHASE_DEAD);
 
     g_message("nm-ppp-plugin: cleaning up");

@@ -811,15 +811,15 @@ nm_str_realloc(char *str)
     gs_free char *s = str;
 
     /* Returns a new clone of @str and frees @str. The point is that @str
-	 * possibly points to a larger chunck of memory. We want to freshly allocate
-	 * a buffer.
-	 *
-	 * We could use realloc(), but that might not do anything or leave
-	 * @str in its memory pool for chunks of a different size (bad for
-	 * fragmentation).
-	 *
-	 * This is only useful when we want to keep the buffer around for a long
-	 * time and want to re-allocate a more optimal buffer. */
+     * possibly points to a larger chunck of memory. We want to freshly allocate
+     * a buffer.
+     *
+     * We could use realloc(), but that might not do anything or leave
+     * @str in its memory pool for chunks of a different size (bad for
+     * fragmentation).
+     *
+     * This is only useful when we want to keep the buffer around for a long
+     * time and want to re-allocate a more optimal buffer. */
 
     return g_strdup(s);
 }
@@ -970,9 +970,9 @@ static inline void
 nm_g_object_unref(gpointer obj)
 {
     /* g_object_unref() doesn't accept NULL. Usually, we workaround that
-	 * by using g_clear_object(), but sometimes that is not convenient
-	 * (for example as destroy function for a hash table that can contain
-	 * NULL values). */
+     * by using g_clear_object(), but sometimes that is not convenient
+     * (for example as destroy function for a hash table that can contain
+     * NULL values). */
     if (obj)
         g_object_unref(obj);
 }
@@ -1697,7 +1697,7 @@ nm_decode_version(guint version, guint *major, guint *minor, guint *micro)
         int   _buf_len;                                                                     \
                                                                                             \
         /* some static assert trying to ensure that the buffer is statically allocated.
-		 * It disallows a buffer size of sizeof(gpointer) to catch that. */     \
+         * It disallows a buffer size of sizeof(gpointer) to catch that. */     \
         G_STATIC_ASSERT(G_N_ELEMENTS(buf) == sizeof(buf) && sizeof(buf) != sizeof(char *)); \
         _buf_len = g_snprintf(_buf, sizeof(buf), "" format "", ##__VA_ARGS__);              \
         nm_assert(_buf_len < sizeof(buf));                                                  \

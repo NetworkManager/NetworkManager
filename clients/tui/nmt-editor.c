@@ -166,8 +166,8 @@ save_connection_and_exit(NmtNewtButton *button, gpointer user_data)
         }
 
         /* Clear secrets so they don't lay around in memory; they'll get
-		 * requested again anyway next time the connection is edited.
-		 */
+         * requested again anyway next time the connection is edited.
+         */
         nm_connection_clear_secrets(priv->orig_connection);
     } else {
         nm_client_add_connection_async(nm_client,
@@ -334,8 +334,8 @@ nmt_editor_constructed(GObject *object)
         hardware_type = priv->type_data->device_type;
 
     /* For connections involving multiple network devices, clarify which one
-	 * NMSettingConnection:interface-name refers to.
-	 */
+     * NMSettingConnection:interface-name refers to.
+     */
     if (nm_connection_is_type(priv->edit_connection, NM_SETTING_PPPOE_SETTING_NAME))
         deventry_label = _("Ethernet device");
     else
@@ -507,10 +507,10 @@ nmt_editor_class_init(NmtEditorClass *entry_class)
     object_class->finalize     = nmt_editor_finalize;
 
     /**
-	 * NmtEditor:connection:
-	 *
-	 * The connection being edited.
-	 */
+     * NmtEditor:connection:
+     *
+     * The connection being edited.
+     */
     g_object_class_install_property(
         object_class,
         PROP_CONNECTION,
@@ -520,10 +520,10 @@ nmt_editor_class_init(NmtEditorClass *entry_class)
                             NM_TYPE_CONNECTION,
                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtEditor:type-data:
-	 *
-	 * The #NmEditorConnectionTypeData for #NmtEditor:connection.
-	 */
+     * NmtEditor:type-data:
+     *
+     * The #NmEditorConnectionTypeData for #NmtEditor:connection.
+     */
     g_object_class_install_property(
         object_class,
         PROP_TYPE_DATA,

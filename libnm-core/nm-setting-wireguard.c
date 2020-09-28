@@ -578,8 +578,8 @@ nm_wireguard_peer_get_allowed_ip(const NMWireGuardPeer *self, guint idx, gboolea
     const char *s;
 
     /* With LTO, the compiler might warn about the g_return_val_if_fail()
-	 * code path not initializing the output argument. Workaround that by
-	 * always setting the out argument. */
+     * code path not initializing the output argument. Workaround that by
+     * always setting the out argument. */
     NM_SET_OUT(out_is_valid, FALSE);
 
     g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE), NULL);
@@ -624,7 +624,7 @@ _peer_append_allowed_ip(NMWireGuardPeer *self, const char *allowed_ip, gboolean 
     nm_assert(allowed_ip);
 
     /* normalize the address (if it is valid. Otherwise, take it
-	 * as-is (it will render the instance invalid). */
+     * as-is (it will render the instance invalid). */
     if (!nm_utils_parse_inaddr_prefix_bin(AF_UNSPEC, allowed_ip, &addr_family, &addrbin, &prefix)) {
         if (!accept_invalid)
             return FALSE;
@@ -831,7 +831,7 @@ nm_wireguard_peer_cmp(const NMWireGuardPeer *a,
     NM_CMP_SELF(a, b);
 
     /* regardless of the @compare_flags, the public-key is the ID of the peer. It must
-	 * always be compared. */
+     * always be compared. */
     NM_CMP_FIELD_BOOL(a, b, public_key_valid);
     NM_CMP_FIELD_STR0(a, b, public_key);
 
@@ -1665,8 +1665,8 @@ _peers_dbus_only_set(NMSetting *         setting,
         }
 
         /* we could easily reject duplicate peers (by public-key) or duplicate GVariant attributes.
-		 * However, don't do that. In case of duplicate values, the latter peer overwrite the earlier
-		 * and GVariant attributes are ignored by g_variant_lookup() above. */
+         * However, don't do that. In case of duplicate values, the latter peer overwrite the earlier
+         * and GVariant attributes are ignored by g_variant_lookup() above. */
         if (_peers_append(NM_SETTING_WIREGUARD_GET_PRIVATE(setting), peer, TRUE))
             peers_changed = TRUE;
     }
@@ -1717,8 +1717,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         const char *       method;
 
         /* WireGuard is Layer 3 only. For the moment, we only support a restricted set of
-		 * IP methods. We may relax that later, once we fix the implementations so they
-		 * actually work. */
+         * IP methods. We may relax that later, once we fix the implementations so they
+         * actually work. */
 
         if ((s_ip4 = nm_connection_get_setting_ip4_config(connection))
             && (method = nm_setting_ip_config_get_method(s_ip4))
@@ -1957,8 +1957,8 @@ update_one_secret(NMSetting *setting, const char *key, GVariant *value, GError *
 
         if (!g_variant_lookup(peer_var, NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY, "&s", &cstr)) {
             /* no preshared-key. Ignore the rest.
-			 *
-			 * In particular, we don't reject all unknown fields. */
+             *
+             * In particular, we don't reject all unknown fields. */
             continue;
         }
 
@@ -2032,7 +2032,7 @@ duplicate_copy_properties(const NMSettInfoSetting *sett_info, NMSetting *src, NM
         ->duplicate_copy_properties(sett_info, src, dst);
 
     /* We don't bother comparing the existing peers with what we are about to set.
-	 * Always reset all. */
+     * Always reset all. */
     if (_peers_clear(priv_dst) > 0)
         peers_changed = TRUE;
     for (i = 0; i < priv_src->peers_arr->len; i++) {
@@ -2203,7 +2203,7 @@ for_each_secret(NMSetting *                    setting,
 
     if (!g_variant_is_of_type(data_val, G_VARIANT_TYPE("aa{sv}"))) {
         /* invalid type. Silently ignore content as we cannot find secret-keys
-		 * here. */
+         * here. */
         return;
     }
 
@@ -2242,7 +2242,7 @@ for_each_secret(NMSetting *                    setting,
 
         if (pd && preshared_key) {
             /* without specifying a public-key of an existing peer, the secret is
-			 * ignored. */
+             * ignored. */
             secret_flags = nm_wireguard_peer_get_preshared_key_flags(pd->peer);
             if (callback(secret_flags, callback_data))
                 g_variant_builder_add(&peer_builder,
@@ -2415,12 +2415,12 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
     setting_class->for_each_secret           = for_each_secret;
 
     /**
-	 * NMSettingWireGuard:private-key:
-	 *
-	 * The 256 bit private-key in base64 encoding.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMSettingWireGuard:private-key:
+     *
+     * The 256 bit private-key in base64 encoding.
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_PRIVATE_KEY] =
         g_param_spec_string(NM_SETTING_WIREGUARD_PRIVATE_KEY,
                             "",
@@ -2429,13 +2429,13 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                             G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWireGuard:private-key-flags:
-	 *
-	 * Flags indicating how to handle the #NMSettingWirelessSecurity:private-key
-	 * property.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMSettingWireGuard:private-key-flags:
+     *
+     * Flags indicating how to handle the #NMSettingWirelessSecurity:private-key
+     * property.
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_PRIVATE_KEY_FLAGS] =
         g_param_spec_flags(NM_SETTING_WIREGUARD_PRIVATE_KEY_FLAGS,
                            "",
@@ -2445,16 +2445,16 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWireGuard:fwmark:
-	 *
-	 * The use of fwmark is optional and is by default off. Setting it to 0
-	 * disables it. Otherwise, it is a 32-bit fwmark for outgoing packets.
-	 *
-	 * Note that "ip4-auto-default-route" or "ip6-auto-default-route" enabled,
-	 * implies to automatically choose a fwmark.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMSettingWireGuard:fwmark:
+     *
+     * The use of fwmark is optional and is by default off. Setting it to 0
+     * disables it. Otherwise, it is a 32-bit fwmark for outgoing packets.
+     *
+     * Note that "ip4-auto-default-route" or "ip6-auto-default-route" enabled,
+     * implies to automatically choose a fwmark.
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_FWMARK] =
         g_param_spec_uint(NM_SETTING_WIREGUARD_FWMARK,
                           "",
@@ -2465,13 +2465,13 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWireGuard:listen-port:
-	 *
-	 * The listen-port. If listen-port is not specified, the port will be chosen
-	 * randomly when the interface comes up.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMSettingWireGuard:listen-port:
+     *
+     * The listen-port. If listen-port is not specified, the port will be chosen
+     * randomly when the interface comes up.
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_LISTEN_PORT] =
         g_param_spec_uint(NM_SETTING_WIREGUARD_LISTEN_PORT,
                           "",
@@ -2482,22 +2482,22 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWireGuard:peer-routes:
-	 *
-	 * Whether to automatically add routes for the AllowedIPs ranges
-	 * of the peers. If %TRUE (the default), NetworkManager will automatically
-	 * add routes in the routing tables according to ipv4.route-table and
-	 * ipv6.route-table. Usually you want this automatism enabled.
-	 * If %FALSE, no such routes are added automatically. In this case, the
-	 * user may want to configure static routes in ipv4.routes and ipv6.routes,
-	 * respectively.
-	 *
-	 * Note that if the peer's AllowedIPs is "0.0.0.0/0" or "::/0" and the profile's
-	 * ipv4.never-default or ipv6.never-default setting is enabled, the peer route for
-	 * this peer won't be added automatically.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMSettingWireGuard:peer-routes:
+     *
+     * Whether to automatically add routes for the AllowedIPs ranges
+     * of the peers. If %TRUE (the default), NetworkManager will automatically
+     * add routes in the routing tables according to ipv4.route-table and
+     * ipv6.route-table. Usually you want this automatism enabled.
+     * If %FALSE, no such routes are added automatically. In this case, the
+     * user may want to configure static routes in ipv4.routes and ipv6.routes,
+     * respectively.
+     *
+     * Note that if the peer's AllowedIPs is "0.0.0.0/0" or "::/0" and the profile's
+     * ipv4.never-default or ipv6.never-default setting is enabled, the peer route for
+     * this peer won't be added automatically.
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_PEER_ROUTES] = g_param_spec_boolean(
         NM_SETTING_WIREGUARD_PEER_ROUTES,
         "",
@@ -2506,17 +2506,17 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWireGuard:mtu:
-	 *
-	 * If non-zero, only transmit packets of the specified size or smaller,
-	 * breaking larger packets up into multiple fragments.
-	 *
-	 * If zero a default MTU is used. Note that contrary to wg-quick's MTU
-	 * setting, this does not take into account the current routes at the
-	 * time of activation.
-	 *
-	 * Since: 1.16
-	 **/
+     * NMSettingWireGuard:mtu:
+     *
+     * If non-zero, only transmit packets of the specified size or smaller,
+     * breaking larger packets up into multiple fragments.
+     *
+     * If zero a default MTU is used. Note that contrary to wg-quick's MTU
+     * setting, this does not take into account the current routes at the
+     * time of activation.
+     *
+     * Since: 1.16
+     **/
     obj_properties[PROP_MTU] =
         g_param_spec_uint(NM_SETTING_WIREGUARD_MTU,
                           "",
@@ -2527,25 +2527,25 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWireGuard:ip4-auto-default-route:
-	 *
-	 * Whether to enable special handling of the IPv4 default route.
-	 * If enabled, the IPv4 default route from wireguard.peer-routes
-	 * will be placed to a dedicated routing-table and two policy routing rules
-	 * will be added. The fwmark number is also used as routing-table for the default-route,
-	 * and if fwmark is zero, an unused fwmark/table is chosen automatically.
-	 * This corresponds to what wg-quick does with Table=auto and what WireGuard
-	 * calls "Improved Rule-based Routing".
-	 *
-	 * Note that for this automatism to work, you usually don't want to set
-	 * ipv4.gateway, because that will result in a conflicting default route.
-	 *
-	 * Leaving this at the default will enable this option automatically
-	 * if ipv4.never-default is not set and there are any peers that use
-	 * a default-route as allowed-ips.
-	 *
-	 * Since: 1.20
-	 **/
+     * NMSettingWireGuard:ip4-auto-default-route:
+     *
+     * Whether to enable special handling of the IPv4 default route.
+     * If enabled, the IPv4 default route from wireguard.peer-routes
+     * will be placed to a dedicated routing-table and two policy routing rules
+     * will be added. The fwmark number is also used as routing-table for the default-route,
+     * and if fwmark is zero, an unused fwmark/table is chosen automatically.
+     * This corresponds to what wg-quick does with Table=auto and what WireGuard
+     * calls "Improved Rule-based Routing".
+     *
+     * Note that for this automatism to work, you usually don't want to set
+     * ipv4.gateway, because that will result in a conflicting default route.
+     *
+     * Leaving this at the default will enable this option automatically
+     * if ipv4.never-default is not set and there are any peers that use
+     * a default-route as allowed-ips.
+     *
+     * Since: 1.20
+     **/
     obj_properties[PROP_IP4_AUTO_DEFAULT_ROUTE] = g_param_spec_enum(
         NM_SETTING_WIREGUARD_IP4_AUTO_DEFAULT_ROUTE,
         "",
@@ -2555,12 +2555,12 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
         NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingWireGuard:ip6-auto-default-route:
-	 *
-	 * Like ip4-auto-default-route, but for the IPv6 default route.
-	 *
-	 * Since: 1.20
-	 **/
+     * NMSettingWireGuard:ip6-auto-default-route:
+     *
+     * Like ip4-auto-default-route, but for the IPv6 default route.
+     *
+     * Since: 1.20
+     **/
     obj_properties[PROP_IP6_AUTO_DEFAULT_ROUTE] = g_param_spec_enum(
         NM_SETTING_WIREGUARD_IP6_AUTO_DEFAULT_ROUTE,
         "",
@@ -2570,11 +2570,11 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
         NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /* ---dbus---
-	 * property: peers
-	 * format: array of 'a{sv}'
-	 * description: Array of dictionaries for the WireGuard peers.
-	 * ---end---
-	 */
+     * property: peers
+     * format: array of 'a{sv}'
+     * description: Array of dictionaries for the WireGuard peers.
+     * ---end---
+     */
     _nm_properties_override_dbus(
         properties_override,
         NM_SETTING_WIREGUARD_PEERS,

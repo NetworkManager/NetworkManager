@@ -221,10 +221,10 @@ nm_setting_olpc_mesh_class_init(NMSettingOlpcMeshClass *klass)
     setting_class->verify = verify;
 
     /**
-	 * NMSettingOlpcMesh:ssid:
-	 *
-	 * SSID of the mesh network to join.
-	 **/
+     * NMSettingOlpcMesh:ssid:
+     *
+     * SSID of the mesh network to join.
+     **/
     obj_properties[PROP_SSID] = g_param_spec_boxed(NM_SETTING_OLPC_MESH_SSID,
                                                    "",
                                                    "",
@@ -233,10 +233,10 @@ nm_setting_olpc_mesh_class_init(NMSettingOlpcMeshClass *klass)
                                                        | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingOlpcMesh:channel:
-	 *
-	 * Channel on which the mesh network to join is located.
-	 **/
+     * NMSettingOlpcMesh:channel:
+     *
+     * Channel on which the mesh network to join is located.
+     **/
     obj_properties[PROP_CHANNEL] =
         g_param_spec_uint(NM_SETTING_OLPC_MESH_CHANNEL,
                           "",
@@ -247,12 +247,12 @@ nm_setting_olpc_mesh_class_init(NMSettingOlpcMeshClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingOlpcMesh:dhcp-anycast-address:
-	 *
-	 * Anycast DHCP MAC address used when requesting an IP address via DHCP.
-	 * The specific anycast address used determines which DHCP server class
-	 * answers the request.
-	 **/
+     * NMSettingOlpcMesh:dhcp-anycast-address:
+     *
+     * Anycast DHCP MAC address used when requesting an IP address via DHCP.
+     * The specific anycast address used determines which DHCP server class
+     * answers the request.
+     **/
     obj_properties[PROP_DHCP_ANYCAST_ADDRESS] =
         g_param_spec_string(NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS,
                             "",

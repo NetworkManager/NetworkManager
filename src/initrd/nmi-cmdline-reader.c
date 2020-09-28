@@ -192,11 +192,11 @@ reader_get_connection(Reader *    reader,
         guint                i;
 
         /*
-		 * If ifname was not given, we'll match the connection by type.
-		 * If the type was not given either, then we're happy with any connection but slaves.
-		 * This is so that things like "bond=bond0:eth1,eth2 nameserver=1.3.3.7 end up
-		 * slapping the nameserver to the most reasonable connection (bond0).
-		 */
+         * If ifname was not given, we'll match the connection by type.
+         * If the type was not given either, then we're happy with any connection but slaves.
+         * This is so that things like "bond=bond0:eth1,eth2 nameserver=1.3.3.7 end up
+         * slapping the nameserver to the most reasonable connection (bond0).
+         */
         for (i = 0; i < reader->array->len; i++) {
             candidate = g_hash_table_lookup(reader->hash, reader->array->pdata[i]);
             s_con     = nm_connection_get_setting_connection(candidate);
@@ -1079,9 +1079,9 @@ nmi_cmdline_reader_parse(const char *sysfs_dir, const char *const *argv, char **
         if (!nm_utils_hwaddr_valid(bootif, ETH_ALEN) && g_str_has_prefix(bootif, "01-")
             && nm_utils_hwaddr_valid(&bootif[3], ETH_ALEN)) {
             /*
-			 * BOOTIF MAC address can be prefixed with a hardware type identifier.
-			 * "01" stays for "wired", no other are known.
-			 */
+             * BOOTIF MAC address can be prefixed with a hardware type identifier.
+             * "01" stays for "wired", no other are known.
+             */
             bootif += 3;
         }
 

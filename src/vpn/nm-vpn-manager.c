@@ -22,7 +22,7 @@ typedef struct {
     gulong        monitor_id_lib;
 
     /* This is only used for services that don't support multiple
-	 * connections, to guard access to them. */
+     * connections, to guard access to them. */
     GHashTable *active_services;
 } NMVpnManagerPrivate;
 
@@ -128,8 +128,8 @@ try_add_plugin(NMVpnManager *self, NMVpnPluginInfo *plugin_info)
         return;
 
     /* Make sure we don't add dupes.
-	 * We don't really allow reload of the same file. What we do allow is however to
-	 * delete a file and re-add it. */
+     * We don't really allow reload of the same file. What we do allow is however to
+     * delete a file and re-add it. */
     if (nm_vpn_plugin_info_list_find_by_filename(priv->plugins,
                                                  nm_vpn_plugin_info_get_filename(plugin_info)))
         return;
@@ -168,9 +168,9 @@ vpn_dir_changed(GFileMonitor *    monitor,
         plugin_info = nm_vpn_plugin_info_list_find_by_filename(priv->plugins, path);
         if (plugin_info) {
             /* we don't support reloading an existing plugin. You can only remove the file
-			 * and re-add it. By reloading we want to support the use case of installing
-			 * a VPN plugin after NM started. No need to burden ourself with a complete
-			 * reload. */
+             * and re-add it. By reloading we want to support the use case of installing
+             * a VPN plugin after NM started. No need to burden ourself with a complete
+             * reload. */
             break;
         }
 
@@ -230,9 +230,9 @@ nm_vpn_manager_init(NMVpnManager *self)
     }
 
     /* first read conf_dir_lib. The name files are not really user configuration, but
-	 * plugin configuration. Hence we expect ~newer~ plugins to install their files
-	 * in /usr/lib/NetworkManager. We want to prefer those files.
-	 * In case of no-conflict, the order doesn't matter. */
+     * plugin configuration. Hence we expect ~newer~ plugins to install their files
+     * in /usr/lib/NetworkManager. We want to prefer those files.
+     * In case of no-conflict, the order doesn't matter. */
     infos = _nm_vpn_plugin_info_list_load_dir(conf_dir_lib, TRUE, 0, NULL, NULL);
     for (info = infos; info; info = info->next)
         try_add_plugin(self, info->data);

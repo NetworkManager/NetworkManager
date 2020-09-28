@@ -208,10 +208,10 @@ nmt_slave_list_class_init(NmtSlaveListClass *list_class)
     connection_list_class->remove_connection = nmt_slave_list_remove_connection;
 
     /**
-	 * NmtSlaveList:master:
-	 *
-	 * The master #NMConnection whose slaves are being displayed.
-	 */
+     * NmtSlaveList:master:
+     *
+     * The master #NMConnection whose slaves are being displayed.
+     */
     g_object_class_install_property(
         object_class,
         PROP_MASTER,
@@ -221,16 +221,16 @@ nmt_slave_list_class_init(NmtSlaveListClass *list_class)
                             NM_TYPE_CONNECTION,
                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtSlaveList:type-filter:
-	 *
-	 * If non-%NULL, this will be used to limit the connection types
-	 * that are available when the user clicks on the "Add" button to
-	 * add a new slave. If the filter filters the list down to only a
-	 * single connection type, then the user will not be presented
-	 * with a connection-type dialog, and will instead be immediately
-	 * taken to an editor window for the new slave after clicking
-	 * "Add".
-	 */
+     * NmtSlaveList:type-filter:
+     *
+     * If non-%NULL, this will be used to limit the connection types
+     * that are available when the user clicks on the "Add" button to
+     * add a new slave. If the filter filters the list down to only a
+     * single connection type, then the user will not be presented
+     * with a connection-type dialog, and will instead be immediately
+     * taken to an editor window for the new slave after clicking
+     * "Add".
+     */
     g_object_class_install_property(
         object_class,
         PROP_TYPE_FILTER,
@@ -239,10 +239,10 @@ nmt_slave_list_class_init(NmtSlaveListClass *list_class)
                              "",
                              G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtSlaveList:type-filter-data:
-	 *
-	 * User data passed to #NmtSlaveList:type-filter
-	 */
+     * NmtSlaveList:type-filter-data:
+     *
+     * User data passed to #NmtSlaveList:type-filter
+     */
     g_object_class_install_property(
         object_class,
         PROP_TYPE_FILTER_DATA,

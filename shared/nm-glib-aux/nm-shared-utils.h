@@ -42,16 +42,16 @@ static inline gboolean
 _NM_INT_NOT_NEGATIVE(gssize val)
 {
     /* whether an enum (without negative values) is a signed int, depends on compiler options
-	 * and compiler implementation.
-	 *
-	 * When using such an enum for accessing an array, one naturally wants to check
-	 * that the enum is not negative. However, the compiler doesn't like a plain
-	 * comparison "enum_val >= 0", because (if the enum is unsigned), it will warn
-	 * that the expression is always true *duh*. Not even a cast to a signed
-	 * type helps to avoid the compiler warning in any case.
-	 *
-	 * The sole purpose of this function is to avoid a compiler warning, when checking
-	 * that an enum is not negative. */
+     * and compiler implementation.
+     *
+     * When using such an enum for accessing an array, one naturally wants to check
+     * that the enum is not negative. However, the compiler doesn't like a plain
+     * comparison "enum_val >= 0", because (if the enum is unsigned), it will warn
+     * that the expression is always true *duh*. Not even a cast to a signed
+     * type helps to avoid the compiler warning in any case.
+     *
+     * The sole purpose of this function is to avoid a compiler warning, when checking
+     * that an enum is not negative. */
     return val >= 0;
 }
 
@@ -104,8 +104,8 @@ typedef struct {
         struct in6_addr addr6;
 
         /* NMIPAddr is really a union for IP addresses.
-		 * However, as ethernet addresses fit in here nicely, use
-		 * it also for an ethernet MAC address. */
+         * However, as ethernet addresses fit in here nicely, use
+         * it also for an ethernet MAC address. */
         guint8 addr_eth[6 /*ETH_ALEN*/];
 
         guint8 array[sizeof(struct in6_addr)];
@@ -467,61 +467,61 @@ typedef enum {
     NM_UTILS_STRSPLIT_SET_FLAGS_NONE = 0,
 
     /* by default, strsplit will coalesce consecutive delimiters and remove
-	 * them from the result. If this flag is present, empty values are preserved
-	 * and returned.
-	 *
-	 * When combined with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP, if a value gets
-	 * empty after strstrip(), it also gets removed. */
+     * them from the result. If this flag is present, empty values are preserved
+     * and returned.
+     *
+     * When combined with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP, if a value gets
+     * empty after strstrip(), it also gets removed. */
     NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY = (1u << 0),
 
     /* %NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING means that delimiters prefixed
-	 * by a backslash are not treated as a separator. Such delimiters and their escape
-	 * character are copied to the current word without unescaping them. In general,
-	 * nm_utils_strsplit_set_full() does not remove any backslash escape characters
-	 * and does no unescaping. It only considers them for skipping to split at
-	 * an escaped delimiter.
-	 *
-	 * If this is combined with (or implied by %NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED), then
-	 * the backslash escapes are removed from the result.
-	 */
+     * by a backslash are not treated as a separator. Such delimiters and their escape
+     * character are copied to the current word without unescaping them. In general,
+     * nm_utils_strsplit_set_full() does not remove any backslash escape characters
+     * and does no unescaping. It only considers them for skipping to split at
+     * an escaped delimiter.
+     *
+     * If this is combined with (or implied by %NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED), then
+     * the backslash escapes are removed from the result.
+     */
     NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING = (1u << 1),
 
     /* If flag is set, does the same as g_strstrip() on the returned tokens.
-	 * This will remove leading and trailing ascii whitespaces (g_ascii_isspace()
-	 * and NM_ASCII_SPACES).
-	 *
-	 * - when combined with !%NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY,
-	 *   empty tokens will be removed (and %NULL will be returned if that
-	 *   results in an empty string array).
-	 * - when combined with %NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING,
-	 *   trailing whitespace escaped by backslash are not stripped. */
+     * This will remove leading and trailing ascii whitespaces (g_ascii_isspace()
+     * and NM_ASCII_SPACES).
+     *
+     * - when combined with !%NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY,
+     *   empty tokens will be removed (and %NULL will be returned if that
+     *   results in an empty string array).
+     * - when combined with %NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING,
+     *   trailing whitespace escaped by backslash are not stripped. */
     NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP = (1u << 2),
 
     /* This implies %NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING.
-	 *
-	 * This will do a final run over all tokens and remove all backslash
-	 * escape characters that
-	 *   - precede a delimiter.
-	 *   - precede a backslash.
-	 *   - preceed a whitespace (with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP).
-	 *
-	 *  Note that with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP, it is only
-	 *  necessary to escape the very last whitespace (if the delimiters
-	 *  are not whitespace themself). So, technically, it would be sufficient
-	 *  to only unescape a backslash before the last whitespace and the user
-	 *  still could express everything. However, such a rule would be complicated
-	 *  to understand, so when using backslash escaping with nm_utils_strsplit_set_full(),
-	 *  then all characters (including backslash) are treated verbatim, except:
-	 *
-	 *    - "\\$DELIMITER" (escaped delimiter)
-	 *    - "\\\\" (escaped backslash)
-	 *    - "\\$SPACE" (escaped space) (with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP).
-	 *
-	 * Note that all other escapes like "\\n" or "\\001" are left alone.
-	 * That makes the escaping/unescaping rules simple. Also, for the most part
-	 * a text is just taken as-is, with little additional rules. Only backslashes
-	 * need extra care, and then only if they proceed one of the relevant characters.
-	 */
+     *
+     * This will do a final run over all tokens and remove all backslash
+     * escape characters that
+     *   - precede a delimiter.
+     *   - precede a backslash.
+     *   - preceed a whitespace (with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP).
+     *
+     *  Note that with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP, it is only
+     *  necessary to escape the very last whitespace (if the delimiters
+     *  are not whitespace themself). So, technically, it would be sufficient
+     *  to only unescape a backslash before the last whitespace and the user
+     *  still could express everything. However, such a rule would be complicated
+     *  to understand, so when using backslash escaping with nm_utils_strsplit_set_full(),
+     *  then all characters (including backslash) are treated verbatim, except:
+     *
+     *    - "\\$DELIMITER" (escaped delimiter)
+     *    - "\\\\" (escaped backslash)
+     *    - "\\$SPACE" (escaped space) (with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP).
+     *
+     * Note that all other escapes like "\\n" or "\\001" are left alone.
+     * That makes the escaping/unescaping rules simple. Also, for the most part
+     * a text is just taken as-is, with little additional rules. Only backslashes
+     * need extra care, and then only if they proceed one of the relevant characters.
+     */
     NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED = (1u << 3),
 
 } NMUtilsStrsplitSetFlags;
@@ -533,9 +533,9 @@ static inline const char **
 nm_utils_strsplit_set_with_empty(const char *str, const char *delimiters)
 {
     /* this returns the same result as g_strsplit_set(str, delimiters, -1), except
-	 * it does not deep-clone the strv array.
-	 * Also, for @str == "", this returns %NULL while g_strsplit_set() would return
-	 * an empty strv array. */
+     * it does not deep-clone the strv array.
+     * Also, for @str == "", this returns %NULL while g_strsplit_set() would return
+     * an empty strv array. */
     return nm_utils_strsplit_set_full(str, delimiters, NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY);
 }
 
@@ -578,35 +578,35 @@ typedef enum {
     NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_TRAILING_SPACE = (1ull << 2),
 
     /* Backslash characters will be escaped as "\\\\" if they precede another
-	 * character that makes it necessary. Such characters are:
-	 *
-	 *  1) before another '\\' backslash.
-	 *  2) before any delimiter in @delimiters.
-	 *  3) before any delimiter in @delimiters_as_needed.
-	 *  4) before a white space, if ESCAPE_LEADING_SPACE or ESCAPE_TRAILING_SPACE is set.
-	 *  5) before the end of the word
-	 *
-	 * Rule 4) is an extension. It's not immediately clear why with ESCAPE_LEADING_SPACE
-	 * and ESCAPE_TRAILING_SPACE we want *all* backslashes before a white space escaped.
-	 * The reason is, that we obviously want to use ESCAPE_LEADING_SPACE and ESCAPE_TRAILING_SPACE
-	 * in cases, where we later parse the backslash escaped strings back, but allowing to strip
-	 * unescaped white spaces. That means, we want that " a " gets escaped as "\\ a\\ ".
-	 * On the other hand, we also want that " a\\ b " gets escaped as "\\ a\\\\ b\\ ",
-	 * and not "\\ a\\ b\\ ". Because otherwise, the parser would need to treat "\\ "
-	 * differently depending on whether the sequence is at the beginning, end or middle
-	 * of the word.
-	 *
-	 * Rule 5) is also not immediately obvious. When used with ESCAPE_TRAILING_SPACE,
-	 * we clearly want to allow that an escaped word can have arbitrary
-	 * whitespace suffixes. That's why this mode exists. So we must escape "a\\" as
-	 * "a\\\\", so that appending " " does not change the meaning.
-	 * Also without ESCAPE_TRAILING_SPACE, we want in general that we can concatenate
-	 * two escaped words without changing their meaning. If the words would be "a\\"
-	 * and "," (with ',' being a delimiter), then the result must be "a\\\\" and "\\,"
-	 * so that the concatenated word ("a\\\\\\,") is still the same. If we would escape
-	 * them instead as "a\\" + "\\,", then the concatenated word would be "a\\\\," and
-	 * different.
-	 * */
+     * character that makes it necessary. Such characters are:
+     *
+     *  1) before another '\\' backslash.
+     *  2) before any delimiter in @delimiters.
+     *  3) before any delimiter in @delimiters_as_needed.
+     *  4) before a white space, if ESCAPE_LEADING_SPACE or ESCAPE_TRAILING_SPACE is set.
+     *  5) before the end of the word
+     *
+     * Rule 4) is an extension. It's not immediately clear why with ESCAPE_LEADING_SPACE
+     * and ESCAPE_TRAILING_SPACE we want *all* backslashes before a white space escaped.
+     * The reason is, that we obviously want to use ESCAPE_LEADING_SPACE and ESCAPE_TRAILING_SPACE
+     * in cases, where we later parse the backslash escaped strings back, but allowing to strip
+     * unescaped white spaces. That means, we want that " a " gets escaped as "\\ a\\ ".
+     * On the other hand, we also want that " a\\ b " gets escaped as "\\ a\\\\ b\\ ",
+     * and not "\\ a\\ b\\ ". Because otherwise, the parser would need to treat "\\ "
+     * differently depending on whether the sequence is at the beginning, end or middle
+     * of the word.
+     *
+     * Rule 5) is also not immediately obvious. When used with ESCAPE_TRAILING_SPACE,
+     * we clearly want to allow that an escaped word can have arbitrary
+     * whitespace suffixes. That's why this mode exists. So we must escape "a\\" as
+     * "a\\\\", so that appending " " does not change the meaning.
+     * Also without ESCAPE_TRAILING_SPACE, we want in general that we can concatenate
+     * two escaped words without changing their meaning. If the words would be "a\\"
+     * and "," (with ',' being a delimiter), then the result must be "a\\\\" and "\\,"
+     * so that the concatenated word ("a\\\\\\,") is still the same. If we would escape
+     * them instead as "a\\" + "\\,", then the concatenated word would be "a\\\\," and
+     * different.
+     * */
     NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_AS_NEEDED = (1ull << 3),
 
     NM_UTILS_ESCAPED_TOKENS_ESCAPE_FLAGS_ESCAPE_BACKSLASH_ALWAYS = (1ull << 4),
@@ -919,8 +919,8 @@ _nm_g_slice_free_fcn_define(1) _nm_g_slice_free_fcn_define(2) _nm_g_slice_free_f
         void (*_fcn)(gpointer);                                                               \
                                                                                               \
         /* If mem_size is a compile time constant, the compiler
-		 * will be able to optimize this. Hence, you don't want
-		 * to call this with a non-constant size argument. */                               \
+         * will be able to optimize this. Hence, you don't want
+         * to call this with a non-constant size argument. */                               \
         G_STATIC_ASSERT_EXPR(((mem_size) == 1) || ((mem_size) == 2) || ((mem_size) == 4)      \
                              || ((mem_size) == 8) || ((mem_size) == 10) || ((mem_size) == 12) \
                              || ((mem_size) == 16) || ((mem_size) == 32));                    \
@@ -1041,16 +1041,16 @@ typedef enum {
     NM_UTILS_ERROR_INVALID_ARGUMENT,    /*< nick=InvalidArgument >*/
 
     /* the following codes have a special meaning and are exactly used for
-	 * nm_device_check_connection_compatible() and nm_device_check_connection_available().
-	 *
-	 * Actually, their meaning is not very important (so, don't think too
-	 * hard about the name of these error codes). What is important, is their
-	 * relative order (i.e. the integer value of the codes). When manager
-	 * searches for a suitable device, it will check all devices whether
-	 * a profile can be activated. If they all fail, it will pick the error
-	 * message from the device that returned the *highest* error code,
-	 * in the hope that this message makes the most sense for the caller.
-	 * */
+     * nm_device_check_connection_compatible() and nm_device_check_connection_available().
+     *
+     * Actually, their meaning is not very important (so, don't think too
+     * hard about the name of these error codes). What is important, is their
+     * relative order (i.e. the integer value of the codes). When manager
+     * searches for a suitable device, it will check all devices whether
+     * a profile can be activated. If they all fail, it will pick the error
+     * message from the device that returned the *highest* error code,
+     * in the hope that this message makes the most sense for the caller.
+     * */
     NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
     NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
     NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
@@ -1239,18 +1239,18 @@ typedef enum {
     NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII = 0x0002,
 
     /* This flag only has an effect during escaping to ensure we
-	 * don't leak secrets in memory. Note that during unescape we
-	 * know the maximum result size from the beginning, and no
-	 * reallocation happens. Thus, unescape always avoids leaking
-	 * secrets already. */
+     * don't leak secrets in memory. Note that during unescape we
+     * know the maximum result size from the beginning, and no
+     * reallocation happens. Thus, unescape always avoids leaking
+     * secrets already. */
     NM_UTILS_STR_UTF8_SAFE_FLAG_SECRET = 0x0004,
 
     /* This flag only has an effect during unescaping. It means
-	 * that non-escaped whitespaces (g_ascii_isspace()) will be
-	 * stripped from the front and end of the string. Note that
-	 * this flag is only useful for gracefully accepting user input
-	 * with spaces. With this flag, escape and unescape may no longer
-	 * yield the original input. */
+     * that non-escaped whitespaces (g_ascii_isspace()) will be
+     * stripped from the front and end of the string. Note that
+     * this flag is only useful for gracefully accepting user input
+     * with spaces. With this flag, escape and unescape may no longer
+     * yield the original input. */
     NM_UTILS_STR_UTF8_SAFE_UNESCAPE_STRIP_SPACES = 0x0008,
 } NMUtilsStrUtf8SafeFlags;
 
@@ -1283,15 +1283,15 @@ static inline void
 nm_g_variant_unref_floating(GVariant *var)
 {
     /* often a function wants to keep a reference to an input variant.
-	 * It uses g_variant_ref_sink() to either increase the ref-count,
-	 * or take ownership of a possibly floating reference.
-	 *
-	 * If the function doesn't actually want to do anything with the
-	 * input variant, it still must make sure that a passed in floating
-	 * reference is consumed. Hence, this helper which:
-	 *
-	 *   - does nothing if @var is not floating
-	 *   - unrefs (consumes) @var if it is floating. */
+     * It uses g_variant_ref_sink() to either increase the ref-count,
+     * or take ownership of a possibly floating reference.
+     *
+     * If the function doesn't actually want to do anything with the
+     * input variant, it still must make sure that a passed in floating
+     * reference is consumed. Hence, this helper which:
+     *
+     *   - does nothing if @var is not floating
+     *   - unrefs (consumes) @var if it is floating. */
     if (g_variant_is_floating(var))
         g_variant_unref(var);
 }
@@ -1831,8 +1831,8 @@ static inline gboolean
 nm_utils_process_state_is_dead(char pstate)
 {
     /* "/proc/[pid]/stat" returns a state as the 3rd fields (see `man 5 proc`).
-	 * Some of these states indicate the process is effectively dead (or a zombie).
-	 */
+     * Some of these states indicate the process is effectively dead (or a zombie).
+     */
     return NM_IN_SET(pstate, 'Z', 'x', 'X');
 }
 
@@ -1882,9 +1882,9 @@ static inline const char *const *
 nm_strv_ptrarray_get_unsafe(GPtrArray *arr, guint *out_len)
 {
     /* warning: the GPtrArray is not NULL terminated. So, it
-	 * isn't really a strv array (sorry the misnomer). That's why
-	 * the function is potentially "unsafe" and you must provide a
-	 * out_len parameter. */
+     * isn't really a strv array (sorry the misnomer). That's why
+     * the function is potentially "unsafe" and you must provide a
+     * out_len parameter. */
     if (!arr || arr->len == 0) {
         *out_len = 0;
         return NULL;
@@ -1951,9 +1951,9 @@ static inline int
 nm_strv_ptrarray_cmp(const GPtrArray *a, const GPtrArray *b)
 {
     /* _nm_utils_strv_cmp_n() will treat NULL and empty arrays the same.
-	 * That means, an empty strv array can both be represented by NULL
-	 * and an array of length zero.
-	 * If you need to distinguish between these case, do that yourself. */
+     * That means, an empty strv array can both be represented by NULL
+     * and an array of length zero.
+     * If you need to distinguish between these case, do that yourself. */
     return _nm_utils_strv_cmp_n((const char *const *) nm_g_ptr_array_pdata(a),
                                 nm_g_ptr_array_len(a),
                                 (const char *const *) nm_g_ptr_array_pdata(b),

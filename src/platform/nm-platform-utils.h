@@ -34,7 +34,7 @@ gboolean nmp_utils_ethtool_get_permanent_address(int ifindex, guint8 *buf, size_
 
 typedef struct {
     /* We don't want to include <linux/ethtool.h> in header files,
-	 * thus create a ABI compatible version of struct ethtool_drvinfo.*/
+     * thus create a ABI compatible version of struct ethtool_drvinfo.*/
     guint32 _private_cmd;
     char    driver[32];
     char    version[32];
@@ -57,8 +57,8 @@ typedef struct {
     guint8 n_kernel_names;
 
     /* one NMEthtoolID refers to one or more kernel_names. The reason for supporting this complexity
-	 * (where one NMSettingEthtool option refers to multiple kernel features)  is to follow what
-	 * ethtool does, where "tx" is an alias for multiple features. */
+     * (where one NMSettingEthtool option refers to multiple kernel features)  is to follow what
+     * ethtool does, where "tx" is an alias for multiple features. */
     const char *const *kernel_names;
 } NMEthtoolFeatureInfo;
 
@@ -68,7 +68,7 @@ typedef struct {
     guint idx_ss_features;
 
     /* one NMEthtoolFeatureInfo references one or more kernel_names. This is the index
-	 * of the matching info->kernel_names */
+     * of the matching info->kernel_names */
     guint8 idx_kernel_name;
 
     bool available : 1;

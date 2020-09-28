@@ -406,11 +406,11 @@ nm_ip_config_class_init(NMIPConfigClass *config_class)
     object_class->finalize     = finalize;
 
     /**
-	 * NMIPConfig:family:
-	 *
-	 * The IP address family of the configuration; either
-	 * <literal>AF_INET</literal> or <literal>AF_INET6</literal>.
-	 **/
+     * NMIPConfig:family:
+     *
+     * The IP address family of the configuration; either
+     * <literal>AF_INET</literal> or <literal>AF_INET6</literal>.
+     **/
     obj_properties[PROP_FAMILY] = g_param_spec_int(NM_IP_CONFIG_FAMILY,
                                                    "",
                                                    "",
@@ -420,10 +420,10 @@ nm_ip_config_class_init(NMIPConfigClass *config_class)
                                                    G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMIPConfig:gateway:
-	 *
-	 * The IP gateway address of the configuration as string.
-	 **/
+     * NMIPConfig:gateway:
+     *
+     * The IP gateway address of the configuration as string.
+     **/
     obj_properties[PROP_GATEWAY] = g_param_spec_string(NM_IP_CONFIG_GATEWAY,
                                                        "",
                                                        "",
@@ -431,10 +431,10 @@ nm_ip_config_class_init(NMIPConfigClass *config_class)
                                                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMIPConfig:addresses:
-	 *
-	 * A #GPtrArray containing the addresses (#NMIPAddress) of the configuration.
-	 **/
+     * NMIPConfig:addresses:
+     *
+     * A #GPtrArray containing the addresses (#NMIPAddress) of the configuration.
+     **/
     obj_properties[PROP_ADDRESSES] = g_param_spec_boxed(NM_IP_CONFIG_ADDRESSES,
                                                         "",
                                                         "",
@@ -442,10 +442,10 @@ nm_ip_config_class_init(NMIPConfigClass *config_class)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMIPConfig:routes: (type GPtrArray(NMIPRoute))
-	 *
-	 * A #GPtrArray containing the routes (#NMIPRoute) of the configuration.
-	 **/
+     * NMIPConfig:routes: (type GPtrArray(NMIPRoute))
+     *
+     * A #GPtrArray containing the routes (#NMIPRoute) of the configuration.
+     **/
     obj_properties[PROP_ROUTES] = g_param_spec_boxed(NM_IP_CONFIG_ROUTES,
                                                      "",
                                                      "",
@@ -453,10 +453,10 @@ nm_ip_config_class_init(NMIPConfigClass *config_class)
                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMIPConfig:nameservers:
-	 *
-	 * The array containing name server IP addresses of the configuration.
-	 **/
+     * NMIPConfig:nameservers:
+     *
+     * The array containing name server IP addresses of the configuration.
+     **/
     obj_properties[PROP_NAMESERVERS] =
         g_param_spec_boxed(NM_IP_CONFIG_NAMESERVERS,
                            "",
@@ -465,10 +465,10 @@ nm_ip_config_class_init(NMIPConfigClass *config_class)
                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMIPConfig:domains:
-	 *
-	 * The array containing domain strings of the configuration.
-	 **/
+     * NMIPConfig:domains:
+     *
+     * The array containing domain strings of the configuration.
+     **/
     obj_properties[PROP_DOMAINS] = g_param_spec_boxed(NM_IP_CONFIG_DOMAINS,
                                                       "",
                                                       "",
@@ -476,10 +476,10 @@ nm_ip_config_class_init(NMIPConfigClass *config_class)
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMIPConfig:searches:
-	 *
-	 * The array containing DNS search strings of the configuration.
-	 **/
+     * NMIPConfig:searches:
+     *
+     * The array containing DNS search strings of the configuration.
+     **/
     obj_properties[PROP_SEARCHES] = g_param_spec_boxed(NM_IP_CONFIG_SEARCHES,
                                                        "",
                                                        "",
@@ -487,11 +487,11 @@ nm_ip_config_class_init(NMIPConfigClass *config_class)
                                                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMIPConfig:wins-servers:
-	 *
-	 * The array containing WINS server IP addresses of the configuration.
-	 * (This will always be empty for IPv6 configurations.)
-	 **/
+     * NMIPConfig:wins-servers:
+     *
+     * The array containing WINS server IP addresses of the configuration.
+     * (This will always be empty for IPv6 configurations.)
+     **/
     obj_properties[PROP_WINS_SERVERS] =
         g_param_spec_boxed(NM_IP_CONFIG_WINS_SERVERS,
                            "",

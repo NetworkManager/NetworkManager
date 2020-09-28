@@ -450,10 +450,10 @@ nmt_newt_listbox_class_init(NmtNewtListboxClass *listbox_class)
     /* properties */
 
     /**
-	 * NmtNewtListbox:height:
-	 *
-	 * The listbox's height, or -1 if it has no fixed height.
-	 */
+     * NmtNewtListbox:height:
+     *
+     * The listbox's height, or -1 if it has no fixed height.
+     */
     g_object_class_install_property(object_class,
                                     PROP_HEIGHT,
                                     g_param_spec_int("height",
@@ -464,10 +464,10 @@ nmt_newt_listbox_class_init(NmtNewtListboxClass *listbox_class)
                                                      -1,
                                                      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtListbox:flags:
-	 *
-	 * The listbox's #NmtNewtListboxFlags.
-	 */
+     * NmtNewtListbox:flags:
+     *
+     * The listbox's #NmtNewtListboxFlags.
+     */
     g_object_class_install_property(
         object_class,
         PROP_FLAGS,
@@ -479,10 +479,10 @@ nmt_newt_listbox_class_init(NmtNewtListboxClass *listbox_class)
                           0,
                           G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtListbox:active:
-	 *
-	 * The currently-selected row.
-	 */
+     * NmtNewtListbox:active:
+     *
+     * The currently-selected row.
+     */
     g_object_class_install_property(object_class,
                                     PROP_ACTIVE,
                                     g_param_spec_int("active",
@@ -493,20 +493,20 @@ nmt_newt_listbox_class_init(NmtNewtListboxClass *listbox_class)
                                                      0,
                                                      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtListbox:active-key:
-	 *
-	 * The key of the currently-selected row.
-	 */
+     * NmtNewtListbox:active-key:
+     *
+     * The key of the currently-selected row.
+     */
     g_object_class_install_property(
         object_class,
         PROP_ACTIVE_KEY,
         g_param_spec_pointer("active-key", "", "", G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-	 * NmtNewtListbox:skip-null-keys:
-	 *
-	 * If %TRUE, rows with %NULL key values will be skipped over when
-	 * navigating the list with the arrow keys.
-	 */
+     * NmtNewtListbox:skip-null-keys:
+     *
+     * If %TRUE, rows with %NULL key values will be skipped over when
+     * navigating the list with the arrow keys.
+     */
     g_object_class_install_property(
         object_class,
         PROP_SKIP_NULL_KEYS,

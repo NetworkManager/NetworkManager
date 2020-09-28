@@ -132,11 +132,11 @@ nm_dhcp_config_class_init(NMDhcpConfigClass *config_class)
     object_class->finalize     = finalize;
 
     /**
-	 * NMDhcpConfig:family:
-	 *
-	 * The IP address family of the configuration; either
-	 * <literal>AF_INET</literal> or <literal>AF_INET6</literal>.
-	 **/
+     * NMDhcpConfig:family:
+     *
+     * The IP address family of the configuration; either
+     * <literal>AF_INET</literal> or <literal>AF_INET6</literal>.
+     **/
     obj_properties[PROP_FAMILY] = g_param_spec_int(NM_DHCP_CONFIG_FAMILY,
                                                    "",
                                                    "",
@@ -146,10 +146,10 @@ nm_dhcp_config_class_init(NMDhcpConfigClass *config_class)
                                                    G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDhcpConfig:options: (type GHashTable(utf8,utf8)):
-	 *
-	 * The #GHashTable containing options of the configuration.
-	 **/
+     * NMDhcpConfig:options: (type GHashTable(utf8,utf8)):
+     *
+     * The #GHashTable containing options of the configuration.
+     **/
     obj_properties[PROP_OPTIONS] = g_param_spec_boxed(NM_DHCP_CONFIG_OPTIONS,
                                                       "",
                                                       "",

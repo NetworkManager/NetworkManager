@@ -31,7 +31,7 @@ typedef struct {
     char *unrecognized_spec;
 
     /* The timestamp (stat's mtime) of the file. Newer files have
-	 * higher priority. */
+     * higher priority. */
     struct timespec stat_mtime;
 
     bool dirty : 1;

@@ -430,8 +430,8 @@ test_update_secrets_wifi_full_hash(void)
     const char *               tmp;
 
     /* Test update with a hashed connection containing only 802-11-wireless
-	 * setting and secrets.
-	 */
+     * setting and secrets.
+     */
 
     connection = wifi_connection_new();
 
@@ -470,8 +470,8 @@ test_update_secrets_wifi_bad_setting_name(void)
     const char *  wepkey = "11111111111111111111111111";
 
     /* Test that passing an invalid setting name to
-	 * nm_connection_update_secrets() fails with the correct error.
-	 */
+     * nm_connection_update_secrets() fails with the correct error.
+     */
 
     connection = wifi_connection_new();
 
@@ -497,8 +497,8 @@ test_update_secrets_whole_connection(void)
     const char *               wepkey = "11111111111111111111111111";
 
     /* Test calling nm_connection_update_secrets() with an entire hashed
-	 * connection including non-secrets.
-	 */
+     * connection including non-secrets.
+     */
 
     connection = wifi_connection_new();
 
@@ -556,8 +556,8 @@ test_update_secrets_whole_connection_bad_setting(void)
     const char *               wepkey = "11111111111111111111111111";
 
     /* Test that sending a hashed connection containing an invalid setting
-	 * name fails with the right error.
-	 */
+     * name fails with the right error.
+     */
 
     connection = wifi_connection_new();
     s_wsec     = nm_connection_get_setting_wireless_security(connection);
@@ -568,9 +568,9 @@ test_update_secrets_whole_connection_bad_setting(void)
     secrets = nm_connection_to_dbus(connection, NM_CONNECTION_SERIALIZE_ALL);
 
     /* Copy the dict, renaming the wireless-security setting in the process
-	 * (so we ensure libnm is returning the right error when it finds an entry
-	 * in the connection hash that doesn't match any setting in the connection).
-	 */
+     * (so we ensure libnm is returning the right error when it finds an entry
+     * in the connection hash that doesn't match any setting in the connection).
+     */
     g_variant_builder_init(&conn_builder, NM_VARIANT_TYPE_CONNECTION);
     g_variant_iter_init(&conn_iter, secrets);
     while (g_variant_iter_next(&conn_iter, "{&s@a{sv}}", &setting_name, &setting_hash)) {
@@ -601,8 +601,8 @@ test_update_secrets_whole_connection_empty_base_setting(void)
     gboolean      success;
 
     /* Test that a hashed connection which does not have any hashed secrets
-	 * for the requested setting returns success.
-	 */
+     * for the requested setting returns success.
+     */
 
     connection = wifi_connection_new();
     secrets    = nm_connection_to_dbus(connection, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);

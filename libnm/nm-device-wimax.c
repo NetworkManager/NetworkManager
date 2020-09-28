@@ -224,12 +224,12 @@ nm_device_wimax_class_init(NMDeviceWimaxClass *wimax_class)
     object_class->get_property = get_property;
 
     /**
-	 * NMDeviceWimax:hw-address:
-	 *
-	 * The hardware (MAC) address of the device.
-	 *
-	 * Deprecated: 1.2: WiMAX is no longer supported.
-	 **/
+     * NMDeviceWimax:hw-address:
+     *
+     * The hardware (MAC) address of the device.
+     *
+     * Deprecated: 1.2: WiMAX is no longer supported.
+     **/
     obj_properties[PROP_HW_ADDRESS] =
         g_param_spec_string(NM_DEVICE_WIMAX_HW_ADDRESS,
                             "",
@@ -238,12 +238,12 @@ nm_device_wimax_class_init(NMDeviceWimaxClass *wimax_class)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceWimax:active-nsp:
-	 *
-	 * The active #NMWimaxNsp of the device.
-	 *
-	 * Deprecated: 1.2: WiMAX is no longer supported.
-	 **/
+     * NMDeviceWimax:active-nsp:
+     *
+     * The active #NMWimaxNsp of the device.
+     *
+     * Deprecated: 1.2: WiMAX is no longer supported.
+     **/
     obj_properties[PROP_ACTIVE_NSP] =
         g_param_spec_object(NM_DEVICE_WIMAX_ACTIVE_NSP,
                             "",
@@ -252,14 +252,14 @@ nm_device_wimax_class_init(NMDeviceWimaxClass *wimax_class)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceWimax:center-frequency:
-	 *
-	 * The center frequency (in KHz) of the radio channel the device is using to
-	 * communicate with the network when connected.  Has no meaning when the
-	 * device is not connected.
-	 *
-	 * Deprecated: 1.2: WiMAX is no longer supported.
-	 **/
+     * NMDeviceWimax:center-frequency:
+     *
+     * The center frequency (in KHz) of the radio channel the device is using to
+     * communicate with the network when connected.  Has no meaning when the
+     * device is not connected.
+     *
+     * Deprecated: 1.2: WiMAX is no longer supported.
+     **/
     obj_properties[PROP_CENTER_FREQ] = g_param_spec_uint(NM_DEVICE_WIMAX_CENTER_FREQUENCY,
                                                          "",
                                                          "",
@@ -269,15 +269,15 @@ nm_device_wimax_class_init(NMDeviceWimaxClass *wimax_class)
                                                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceWimax:rssi:
-	 *
-	 * RSSI of the current radio link in dBm.  This value indicates how strong
-	 * the raw received RF signal from the base station is, but does not
-	 * indicate the overall quality of the radio link.  Has no meaning when the
-	 * device is not connected.
-	 *
-	 * Deprecated: 1.2: WiMAX is no longer supported.
-	 **/
+     * NMDeviceWimax:rssi:
+     *
+     * RSSI of the current radio link in dBm.  This value indicates how strong
+     * the raw received RF signal from the base station is, but does not
+     * indicate the overall quality of the radio link.  Has no meaning when the
+     * device is not connected.
+     *
+     * Deprecated: 1.2: WiMAX is no longer supported.
+     **/
     obj_properties[PROP_RSSI] = g_param_spec_int(NM_DEVICE_WIMAX_RSSI,
                                                  "",
                                                  "",
@@ -287,14 +287,14 @@ nm_device_wimax_class_init(NMDeviceWimaxClass *wimax_class)
                                                  G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceWimax:cinr:
-	 *
-	 * CINR (Carrier to Interference + Noise Ratio) of the current radio link
-	 * in dB.  CINR is a more accurate measure of radio link quality.  Has no
-	 * meaning when the device is not connected.
-	 *
-	 * Deprecated: 1.2: WiMAX is no longer supported.
-	 **/
+     * NMDeviceWimax:cinr:
+     *
+     * CINR (Carrier to Interference + Noise Ratio) of the current radio link
+     * in dB.  CINR is a more accurate measure of radio link quality.  Has no
+     * meaning when the device is not connected.
+     *
+     * Deprecated: 1.2: WiMAX is no longer supported.
+     **/
     obj_properties[PROP_CINR] = g_param_spec_int(NM_DEVICE_WIMAX_CINR,
                                                  "",
                                                  "",
@@ -304,14 +304,14 @@ nm_device_wimax_class_init(NMDeviceWimaxClass *wimax_class)
                                                  G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceWimax:tx-power:
-	 *
-	 * Average power of the last burst transmitted by the device, in units of
-	 * 0.5 dBm.  i.e. a TxPower of -11 represents an actual device TX power of
-	 * -5.5 dBm.  Has no meaning when the device is not connected.
-	 *
-	 * Deprecated: 1.2: WiMAX is no longer supported.
-	 **/
+     * NMDeviceWimax:tx-power:
+     *
+     * Average power of the last burst transmitted by the device, in units of
+     * 0.5 dBm.  i.e. a TxPower of -11 represents an actual device TX power of
+     * -5.5 dBm.  Has no meaning when the device is not connected.
+     *
+     * Deprecated: 1.2: WiMAX is no longer supported.
+     **/
     obj_properties[PROP_TX_POWER] = g_param_spec_int(NM_DEVICE_WIMAX_TX_POWER,
                                                      "",
                                                      "",
@@ -321,13 +321,13 @@ nm_device_wimax_class_init(NMDeviceWimaxClass *wimax_class)
                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceWimax:bsid:
-	 *
-	 * The ID of the serving base station as received from the network.  Has
-	 * no meaning when the device is not connected.
-	 *
-	 * Deprecated: 1.2: WiMAX is no longer supported.
-	 **/
+     * NMDeviceWimax:bsid:
+     *
+     * The ID of the serving base station as received from the network.  Has
+     * no meaning when the device is not connected.
+     *
+     * Deprecated: 1.2: WiMAX is no longer supported.
+     **/
     obj_properties[PROP_BSID] = g_param_spec_string(NM_DEVICE_WIMAX_BSID,
                                                     "",
                                                     "",
@@ -335,10 +335,10 @@ nm_device_wimax_class_init(NMDeviceWimaxClass *wimax_class)
                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMDeviceWimax:nsps: (type GPtrArray(NMWimaxNsp))
-	 *
-	 * List of all WiMAX Network Service Providers the device can see.
-	 **/
+     * NMDeviceWimax:nsps: (type GPtrArray(NMWimaxNsp))
+     *
+     * List of all WiMAX Network Service Providers the device can see.
+     **/
     obj_properties[PROP_NSPS] = g_param_spec_boxed(NM_DEVICE_WIMAX_NSPS,
                                                    "",
                                                    "",
@@ -348,14 +348,14 @@ nm_device_wimax_class_init(NMDeviceWimaxClass *wimax_class)
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
     /**
-	 * NMDeviceWimax::nsp-added:
-	 * @self: the wimax device that received the signal
-	 * @nsp: the new NSP
-	 *
-	 * Notifies that a #NMWimaxNsp is added to the wimax device.
-	 *
-	 * Deprecated: 1.2: WiMAX is no longer supported.
-	 **/
+     * NMDeviceWimax::nsp-added:
+     * @self: the wimax device that received the signal
+     * @nsp: the new NSP
+     *
+     * Notifies that a #NMWimaxNsp is added to the wimax device.
+     *
+     * Deprecated: 1.2: WiMAX is no longer supported.
+     **/
     signals[NSP_ADDED] = g_signal_new("nsp-added",
                                       G_OBJECT_CLASS_TYPE(object_class),
                                       G_SIGNAL_RUN_FIRST,
@@ -368,14 +368,14 @@ nm_device_wimax_class_init(NMDeviceWimaxClass *wimax_class)
                                       G_TYPE_OBJECT);
 
     /**
-	 * NMDeviceWimax::nsp-removed:
-	 * @self: the wimax device that received the signal
-	 * @nsp: the removed NSP
-	 *
-	 * Notifies that a #NMWimaxNsp is removed from the wimax device.
-	 *
-	 * Deprecated: 1.2: WiMAX is no longer supported.
-	 **/
+     * NMDeviceWimax::nsp-removed:
+     * @self: the wimax device that received the signal
+     * @nsp: the removed NSP
+     *
+     * Notifies that a #NMWimaxNsp is removed from the wimax device.
+     *
+     * Deprecated: 1.2: WiMAX is no longer supported.
+     **/
     signals[NSP_REMOVED] = g_signal_new("nsp-removed",
                                         G_OBJECT_CLASS_TYPE(object_class),
                                         G_SIGNAL_RUN_FIRST,

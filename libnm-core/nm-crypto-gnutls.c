@@ -150,8 +150,8 @@ _nmtst_crypto_decrypt(NMCryptoCipherType cipher,
     }
 
     /* Validate tail padding; last byte is the padding size, and all pad bytes
-	 * should contain the padding size.
-	 */
+     * should contain the padding size.
+     */
     for (pad_i = 1; pad_i <= pad_len; ++pad_i) {
         if (output.bin[data_len - pad_i] != pad_len) {
             g_set_error(error,
@@ -215,8 +215,8 @@ _nmtst_crypto_encrypt(NMCryptoCipherType cipher,
     }
 
     /* If data_len % ivlen == 0, then we add another complete block
-	 * onto the end so that the decrypter knows there's padding.
-	 */
+     * onto the end so that the decrypter knows there's padding.
+     */
     pad_len = iv_len - (data_len % iv_len);
 
     padded_buf.len = data_len + pad_len;
@@ -386,11 +386,11 @@ _nm_crypto_verify_pkcs8(const guint8 *data,
     if (err < 0) {
         if (err == GNUTLS_E_UNKNOWN_CIPHER_TYPE) {
             /* HACK: gnutls < 3.5.4 doesn't support all the cipher types that openssl
-			 * can use with PKCS#8, so if we encounter one, we have to assume
-			 * the given password works.  gnutls needs to unsuckify, apparently.
-			 * Specifically, by default openssl uses pbeWithMD5AndDES-CBC
-			 * which gnutls does not support.
-			 */
+             * can use with PKCS#8, so if we encounter one, we have to assume
+             * the given password works.  gnutls needs to unsuckify, apparently.
+             * Specifically, by default openssl uses pbeWithMD5AndDES-CBC
+             * which gnutls does not support.
+             */
         } else {
             g_set_error(error,
                         NM_CRYPTO_ERROR,

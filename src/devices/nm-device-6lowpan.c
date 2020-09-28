@@ -68,8 +68,8 @@ parent_changed_notify(NMDevice *device,
         ->parent_changed_notify(device, old_ifindex, old_parent, new_ifindex, new_parent);
 
     /*  note that @self doesn't have to clear @parent_state_id on dispose,
-	 *  because NMDevice's dispose() will unset the parent, which in turn calls
-	 *  parent_changed_notify(). */
+     *  because NMDevice's dispose() will unset the parent, which in turn calls
+     *  parent_changed_notify(). */
     nm_clear_g_signal_handler(old_parent, &priv->parent_state_id);
 
     if (new_parent) {
@@ -202,8 +202,8 @@ complete_connection(NMDevice *           device,
     }
 
     /* If there's no 6LoWPAN interface, no parent, and no hardware address in the
-	 * settings, then there's not enough information to complete the setting.
-	 */
+     * settings, then there's not enough information to complete the setting.
+     */
     if (!nm_setting_6lowpan_get_parent(s_6lowpan)
         && !nm_device_match_parent_hwaddr(device, connection, TRUE)) {
         g_set_error_literal(

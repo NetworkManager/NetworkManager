@@ -75,8 +75,8 @@ static void
 parent_mtu_maybe_changed(NMDevice *parent, GParamSpec *pspec, gpointer user_data)
 {
     /* the MTU of a VLAN device is limited by the parent's MTU.
-	 *
-	 * When the parent's MTU changes, try to re-set the MTU. */
+     *
+     * When the parent's MTU changes, try to re-set the MTU. */
     nm_device_commit_mtu(user_data);
 }
 
@@ -113,8 +113,8 @@ parent_hwaddr_maybe_changed(NMDevice *parent, GParamSpec *pspec, gpointer user_d
         nm_device_hw_addr_set(device, new_mac, "vlan-parent", TRUE);
         nm_device_arp_announce(device);
         /* When changing the hw address the interface is taken down,
-		 * removing the IPv6 configuration; reapply it.
-		 */
+         * removing the IPv6 configuration; reapply it.
+         */
         s_ip6 = nm_connection_get_setting_ip6_config(connection);
         if (s_ip6)
             nm_device_reactivate_ip6_config(device, s_ip6, s_ip6);
@@ -135,8 +135,8 @@ parent_changed_notify(NMDevice *device,
         ->parent_changed_notify(device, old_ifindex, old_parent, new_ifindex, new_parent);
 
     /*  note that @self doesn't have to clear @parent_state_id on dispose,
-	 *  because NMDevice's dispose() will unset the parent, which in turn calls
-	 *  parent_changed_notify(). */
+     *  because NMDevice's dispose() will unset the parent, which in turn calls
+     *  parent_changed_notify(). */
     nm_clear_g_signal_handler(old_parent, &priv->parent_state_id);
     nm_clear_g_signal_handler(old_parent, &priv->parent_hwaddr_id);
     nm_clear_g_signal_handler(old_parent, &priv->parent_mtu_id);
@@ -412,8 +412,8 @@ complete_connection(NMDevice *           device,
     }
 
     /* If there's no VLAN interface, no parent, and no hardware address in the
-	 * settings, then there's not enough information to complete the setting.
-	 */
+     * settings, then there's not enough information to complete the setting.
+     */
     if (!nm_setting_vlan_get_parent(s_vlan)
         && !nm_device_match_parent_hwaddr(device, connection, TRUE)) {
         g_set_error_literal(
@@ -671,9 +671,9 @@ get_connection_iface(NMDeviceFactory *factory, NMConnection *connection, const c
         return g_strdup(ifname);
 
     /* If the connection doesn't specify the interface name for the VLAN
-	 * device, we create one for it using the VLAN ID and the parent
-	 * interface's name.
-	 */
+     * device, we create one for it using the VLAN ID and the parent
+     * interface's name.
+     */
     return nm_utils_new_vlan_name(parent_iface, nm_setting_vlan_get_id(s_vlan));
 }
 

@@ -133,12 +133,12 @@ nm_setting_ovs_dpdk_class_init(NMSettingOvsDpdkClass *klass)
     object_class->finalize     = finalize;
 
     /**
-	 * NMSettingOvsDpdk:devargs:
-	 *
-	 * Open vSwitch DPDK device arguments.
-	 *
-	 * Since: 1.20
-	 **/
+     * NMSettingOvsDpdk:devargs:
+     *
+     * Open vSwitch DPDK device arguments.
+     *
+     * Since: 1.20
+     **/
     obj_properties[PROP_DEVARGS] = g_param_spec_string(
         NM_SETTING_OVS_DPDK_DEVARGS,
         "",

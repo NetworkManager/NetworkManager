@@ -360,12 +360,12 @@ constructed(GObject *object)
         return;
     case NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS:
         /* Ensure pid and uid to be representable as int32.
-		 * DBUS treats them as uint32, polkit library as int. */
+         * DBUS treats them as uint32, polkit library as int. */
         if (priv->unix_process.pid > MIN(G_MAXINT, G_MAXINT32))
             break;
         if (priv->unix_process.uid > MIN(G_MAXINT, G_MAXINT32)) {
             /* for uid==-1, libpolkit-gobject-1 detects the user based on the process id.
-			 * Don't bother and require the user id as parameter. */
+             * Don't bother and require the user id as parameter. */
             break;
         }
 
@@ -374,17 +374,17 @@ constructed(GObject *object)
 
         if (!priv->unix_process.start_time) {
             /* Is the process already gone? Then fail creation of the auth subject
-			 * by clearing the type. */
+             * by clearing the type. */
             if (kill(priv->unix_process.pid, 0) != 0)
                 _clear_private(self);
 
             /* Otherwise, although we didn't detect a start_time, the process is still around.
-			 * That could be due to procfs mounted with hidepid. So just accept the request.
-			 *
-			 * Polkit on the other side, will accept 0 and try to lookup /proc/$PID/stat
-			 * itself (and if it fails to do so, assume a start-time of 0 and proceed).
-			 * The only combination that would fail here, is when NM is able to read the
-			 * start-time, but polkit is not. */
+             * That could be due to procfs mounted with hidepid. So just accept the request.
+             *
+             * Polkit on the other side, will accept 0 and try to lookup /proc/$PID/stat
+             * itself (and if it fails to do so, assume a start-time of 0 and proceed).
+             * The only combination that would fail here, is when NM is able to read the
+             * start-time, but polkit is not. */
         }
         return;
     case NM_AUTH_SUBJECT_TYPE_UNIX_SESSION:

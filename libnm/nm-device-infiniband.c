@@ -163,10 +163,10 @@ nm_device_infiniband_class_init(NMDeviceInfinibandClass *ib_class)
     device_class->get_setting_type      = get_setting_type;
 
     /**
-	 * NMDeviceInfiniband:carrier:
-	 *
-	 * Whether the device has carrier.
-	 **/
+     * NMDeviceInfiniband:carrier:
+     *
+     * Whether the device has carrier.
+     **/
     obj_properties[PROP_CARRIER] = g_param_spec_boolean(NM_DEVICE_INFINIBAND_CARRIER,
                                                         "",
                                                         "",

@@ -426,10 +426,10 @@ nla_strlcpy(char *dst, const struct nlattr *nla, size_t dstsize)
     size_t      len;
 
     /* - Always writes @dstsize bytes to @dst
-	 * - Copies the first non-NUL characters to @dst.
-	 *   Any characters after the first NUL bytes in @nla are ignored.
-	 * - If the string @nla is longer than @dstsize, the string
-	 *   gets truncated. @dst will always be NUL terminated. */
+     * - Copies the first non-NUL characters to @dst.
+     *   Any characters after the first NUL bytes in @nla are ignored.
+     * - If the string @nla is longer than @dstsize, the string
+     *   gets truncated. @dst will always be NUL terminated. */
 
     if (G_UNLIKELY(dstsize <= 1)) {
         if (dstsize == 1)
@@ -478,8 +478,8 @@ nla_memcpy(void *dst, const struct nlattr *nla, size_t dstsize)
     len = NM_MIN((size_t) srclen, dstsize);
     if (len > 0) {
         /* there is a crucial difference between nla_strlcpy() and nla_memcpy().
-		 * The former always write @dstsize bytes (akin to strncpy()), here, we only
-		 * write the bytes that we actually have (leaving the remainder undefined). */
+         * The former always write @dstsize bytes (akin to strncpy()), here, we only
+         * write the bytes that we actually have (leaving the remainder undefined). */
         memcpy(dst, nla_data(nla), len);
     }
 
@@ -553,9 +553,9 @@ _nest_end(struct nl_msg *msg, struct nlattr *start, int keep_empty)
 
     if (len > USHRT_MAX || (!keep_empty && len == NLA_HDRLEN)) {
         /*
-		 * Max nlattr size exceeded or empty nested attribute, trim the
-		 * attribute header again
-		 */
+         * Max nlattr size exceeded or empty nested attribute, trim the
+         * attribute header again
+         */
         nla_nest_cancel(msg, start);
 
         /* Return error only if nlattr size was exceeded */
@@ -567,11 +567,11 @@ _nest_end(struct nl_msg *msg, struct nlattr *start, int keep_empty)
     pad = NLMSG_ALIGN(msg->nm_nlh->nlmsg_len) - msg->nm_nlh->nlmsg_len;
     if (pad > 0) {
         /*
-		 * Data inside attribute does not end at a alignment boundary.
-		 * Pad accordingly and account for the additional space in
-		 * the message. nlmsg_reserve() may never fail in this situation,
-		 * the allocate message buffer must be a multiple of NLMSG_ALIGNTO.
-		 */
+         * Data inside attribute does not end at a alignment boundary.
+         * Pad accordingly and account for the additional space in
+         * the message. nlmsg_reserve() may never fail in this situation,
+         * the allocate message buffer must be a multiple of NLMSG_ALIGNTO.
+         */
         if (!nlmsg_reserve(msg, pad, 0))
             g_return_val_if_reached(-NME_BUG);
     }
@@ -1140,7 +1140,7 @@ nl_wait_for_ack(struct nl_sock *sk, const struct nl_cb *cb)
                                                                  \
         if (_cb && _cb->type##_cb) {                             \
             /* the returned value here must be either a negative
-		 * netlink error number, or one of NL_SKIP, NL_STOP, NL_OK. */ \
+         * netlink error number, or one of NL_SKIP, NL_STOP, NL_OK. */ \
             nmerr = _cb->type##_cb((msg), _cb->type##_arg);      \
             switch (nmerr) {                                     \
             case NL_OK:                                          \
@@ -1198,7 +1198,7 @@ continue_reading:
         if (hdr->nlmsg_type == NLMSG_DONE || hdr->nlmsg_type == NLMSG_ERROR
             || hdr->nlmsg_type == NLMSG_NOOP || hdr->nlmsg_type == NLMSG_OVERRUN) {
             /* We can't check for !NLM_F_MULTI since some netlink
-			 * users in the kernel are broken. */
+             * users in the kernel are broken. */
             sk->s_seq_expect++;
         }
 
@@ -1207,32 +1207,32 @@ continue_reading:
 
         if (hdr->nlmsg_flags & NLM_F_DUMP_INTR) {
             /*
-			 * We have to continue reading to clear
-			 * all messages until a NLMSG_DONE is
-			 * received and report the inconsistency.
-			 */
+             * We have to continue reading to clear
+             * all messages until a NLMSG_DONE is
+             * received and report the inconsistency.
+             */
             interrupted = 1;
         }
 
         /* messages terminates a multipart message, this is
-		 * usually the end of a message and therefore we slip
-		 * out of the loop by default. the user may overrule
-		 * this action by skipping this packet. */
+         * usually the end of a message and therefore we slip
+         * out of the loop by default. the user may overrule
+         * this action by skipping this packet. */
         if (hdr->nlmsg_type == NLMSG_DONE) {
             multipart = 0;
             NL_CB_CALL(cb, finish, msg);
         }
 
         /* Message to be ignored, the default action is to
-		 * skip this message if no callback is specified. The
-		 * user may overrule this action by returning
-		 * NL_PROCEED. */
+         * skip this message if no callback is specified. The
+         * user may overrule this action by returning
+         * NL_PROCEED. */
         else if (hdr->nlmsg_type == NLMSG_NOOP)
             goto skip;
 
         /* Data got lost, report back to user. The default action is to
-		 * quit parsing. The user may overrule this action by returning
-		 * NL_SKIP or NL_PROCEED (dangerous) */
+         * quit parsing. The user may overrule this action by returning
+         * NL_SKIP or NL_PROCEED (dangerous) */
         else if (hdr->nlmsg_type == NLMSG_OVERRUN) {
             nmerr = -NME_NL_MSG_OVERFLOW;
             goto out;
@@ -1244,9 +1244,9 @@ continue_reading:
 
             if (hdr->nlmsg_len < nlmsg_size(sizeof(*e))) {
                 /* Truncated error message, the default action
-				 * is to stop parsing. The user may overrule
-				 * this action by returning NL_SKIP or
-				 * NL_PROCEED (dangerous) */
+                 * is to stop parsing. The user may overrule
+                 * this action by returning NL_SKIP or
+                 * NL_PROCEED (dangerous) */
                 nmerr = -NME_NL_MSG_TRUNC;
                 goto out;
             }
@@ -1254,7 +1254,7 @@ continue_reading:
                 /* Error message reported back from kernel. */
                 if (cb && cb->err_cb) {
                     /* the returned value here must be either a negative
-					 * netlink error number, or one of NL_SKIP, NL_STOP, NL_OK. */
+                     * netlink error number, or one of NL_SKIP, NL_STOP, NL_OK. */
                     nmerr = cb->err_cb(&nla, e, cb->err_arg);
                     if (nmerr < 0)
                         goto out;
@@ -1273,8 +1273,8 @@ continue_reading:
                 NL_CB_CALL(cb, ack, msg);
         } else {
             /* Valid message (not checking for MULTIPART bit to
-			 * get along with broken kernels. NL_SKIP has no
-			 * effect on this.  */
+             * get along with broken kernels. NL_SKIP has no
+             * effect on this.  */
             NL_CB_CALL(cb, valid, msg);
         }
 skip:
@@ -1332,8 +1332,8 @@ nl_send_iovec(struct nl_sock *sk, struct nl_msg *msg, struct iovec *iov, unsigne
     char buf[CMSG_SPACE(sizeof(struct ucred))];
 
     /* Overwrite destination if specified in the message itself, defaults
-	 * to the peer address of the socket.
-	 */
+     * to the peer address of the socket.
+     */
     dst = nlmsg_get_dst(msg);
     if (dst->nl_family == AF_NETLINK)
         hdr.msg_name = dst;
@@ -1467,8 +1467,8 @@ retry:
         }
 
         /* Provided buffer is not long enough, enlarge it
-		 * to size of n (which should be total length of the message)
-		 * and try again. */
+         * to size of n (which should be total length of the message)
+         * and try again. */
         iov.iov_base = g_realloc(iov.iov_base, n);
         iov.iov_len  = n;
         flags        = 0;

@@ -75,8 +75,8 @@ static void
 set_error_nettools(GError **error, int r, const char *message)
 {
     /* the error code returned from n_dhcp4_* API is either a negative
-	 * errno, or a positive internal error code. Generate different messages
-	 * for these. */
+     * errno, or a positive internal error code. Generate different messages
+     * for these. */
     if (r < 0)
         nm_utils_error_set_errno(error, r, "%s: %s", message);
     else
@@ -228,21 +228,21 @@ lease_option_print_domain_name(GString * str,
     uint8_t   c;
 
     /*
-	 * We are given two adjacent memory regions. The @cache contains alreday parsed
-	 * domain names, and the @datap contains the remaining data to parse.
-	 *
-	 * A domain name is formed from a sequence of labels. Each label start with
-	 * a length byte, where the two most significant bits are unset. A zero-length
-	 * label indicates the end of the domain name.
-	 *
-	 * Alternatively, a label can be followed by an offset (indicated by the two
-	 * most significant bits being set in the next byte that is read). The offset
-	 * is an offset into the cache, where the next label of the domain name can
-	 * be found.
-	 *
-	 * Note, that each time a jump to an offset is performed, the size of the
-	 * cache shrinks, so this is guaranteed to terminate.
-	 */
+     * We are given two adjacent memory regions. The @cache contains alreday parsed
+     * domain names, and the @datap contains the remaining data to parse.
+     *
+     * A domain name is formed from a sequence of labels. Each label start with
+     * a length byte, where the two most significant bits are unset. A zero-length
+     * label indicates the end of the domain name.
+     *
+     * Alternatively, a label can be followed by an offset (indicated by the two
+     * most significant bits being set in the next byte that is read). The offset
+     * is an offset into the cache, where the next label of the domain name can
+     * be found.
+     *
+     * Note, that each time a jump to an offset is performed, the size of the
+     * cache shrinks, so this is guaranteed to terminate.
+     */
     if (cache + n_cache != *datap)
         return FALSE;
 
@@ -257,9 +257,9 @@ lease_option_print_domain_name(GString * str,
 
             if (n_label == 0) {
                 /*
-				 * We reached the final label of the domain name. Adjust
-				 * the cache to include the consumed data, and return.
-				 */
+                 * We reached the final label of the domain name. Adjust
+                 * the cache to include the consumed data, and return.
+                 */
                 *n_cachep = *datap - cache;
                 return TRUE;
             }
@@ -279,9 +279,9 @@ lease_option_print_domain_name(GString * str,
             size_t offset = (c & 0x3F) << 16;
 
             /*
-			 * The offset is given as two bytes (in big endian), where the
-			 * two high bits are masked out.
-			 */
+             * The offset is given as two bytes (in big endian), where the
+             * two high bits are masked out.
+             */
 
             if (!lease_option_consume(&c, sizeof(c), domainp, n_domainp))
                 return FALSE;
@@ -387,7 +387,7 @@ lease_parse_address(NDhcp4ClientLease *lease,
         n_dhcp4_client_lease_get_basetime(lease, &nettools_basetime);
 
         /* usually we shouldn't assert against external libraries like n-dhcp4.
-		 * Here we still do it... it seems safe enough. */
+         * Here we still do it... it seems safe enough. */
         nm_assert(nettools_basetime > 0);
         nm_assert(nettools_lifetime >= nettools_basetime);
         nm_assert(((nettools_lifetime - nettools_basetime) % NM_UTILS_NSEC_PER_SEC) == 0);
@@ -400,15 +400,15 @@ lease_parse_address(NDhcp4ClientLease *lease,
             lifetime = nettools_lifetime - nettools_basetime;
 
             /* we "ceil" the value to the next second. In practice, we don't expect any sub-second values
-			 * from n-dhcp4 anyway, so this should have no effect. */
+             * from n-dhcp4 anyway, so this should have no effect. */
             lifetime += NM_UTILS_NSEC_PER_SEC - 1;
         }
 
         ts = nm_utils_monotonic_timestamp_from_boottime(nettools_basetime, 1);
 
         /* the timestamp must be positive, because we only started nettools DHCP client
-		 * after obtaining the first monotonic timestamp. Hence, the lease must have been
-		 * received afterwards. */
+         * after obtaining the first monotonic timestamp. Hence, the lease must have been
+         * received afterwards. */
         nm_assert(ts >= NM_UTILS_NSEC_PER_SEC);
 
         a_timestamp = ts / NM_UTILS_NSEC_PER_SEC;
@@ -499,7 +499,7 @@ lease_parse_address_list(NDhcp4ClientLease *      lease,
         case NM_DHCP_OPTION_DHCP4_DOMAIN_NAME_SERVER:
             if (addr.s_addr == 0 || nm_ip4_addr_is_localhost(addr.s_addr)) {
                 /* Skip localhost addresses, like also networkd does.
-				 * See https://github.com/systemd/systemd/issues/4524. */
+                 * See https://github.com/systemd/systemd/issues/4524. */
                 continue;
             }
             nm_ip4_config_add_nameserver(ip4_config, addr.s_addr);
@@ -559,7 +559,7 @@ lease_parse_routes(NDhcp4ClientLease *lease,
 
             if (plen == 0) {
                 /* if there are multiple default routes, we add them with differing
-				 * metrics. */
+                 * metrics. */
                 m = default_route_metric;
                 if (default_route_metric < G_MAXUINT32)
                     default_route_metric++;
@@ -603,16 +603,16 @@ lease_parse_routes(NDhcp4ClientLease *lease,
 
             if (has_classless) {
                 /* RFC 3443: if the DHCP server returns both a Classless Static Routes
-				 * option and a Static Routes option, the DHCP client MUST ignore the
-				 * Static Routes option. */
+                 * option and a Static Routes option, the DHCP client MUST ignore the
+                 * Static Routes option. */
                 continue;
             }
 
             if (plen == 0) {
                 /* for option 33 (static route), RFC 2132 says:
-				 *
-				 * The default route (0.0.0.0) is an illegal destination for a static
-				 * route. */
+                 *
+                 * The default route (0.0.0.0) is an illegal destination for a static
+                 * route. */
                 continue;
             }
 
@@ -649,16 +649,16 @@ lease_parse_routes(NDhcp4ClientLease *lease,
 
             if (has_router_from_classless) {
                 /* If the DHCP server returns both a Classless Static Routes option and a
-				 * Router option, the DHCP client MUST ignore the Router option [RFC 3442].
-				 *
-				 * Be more lenient and ignore the Router option only if Classless Static
-				 * Routes contain a default gateway (as other DHCP backends do).
-				 */
+                 * Router option, the DHCP client MUST ignore the Router option [RFC 3442].
+                 *
+                 * Be more lenient and ignore the Router option only if Classless Static
+                 * Routes contain a default gateway (as other DHCP backends do).
+                 */
                 continue;
             }
 
             /* if there are multiple default routes, we add them with differing
-			 * metrics. */
+             * metrics. */
             m = default_route_metric;
             if (default_route_metric < G_MAXUINT32)
                 default_route_metric++;
@@ -937,7 +937,7 @@ lease_parse_private_options(NDhcp4ClientLease *lease, GHashTable *options)
         int           r;
 
         /* We manage private options 249 (private classless static route) and 252 (wpad) in a special
-		 * way, so skip them as we here just manage all (the other) private options as raw data */
+         * way, so skip them as we here just manage all (the other) private options as raw data */
         if (NM_IN_SET(i,
                       NM_DHCP_OPTION_DHCP4_PRIVATE_CLASSLESS_STATIC_ROUTE,
                       NM_DHCP_OPTION_DHCP4_PRIVATE_PROXY_AUTODISCOVERY))
@@ -1137,12 +1137,12 @@ dhcp4_event_cb(int fd, GIOCondition condition, gpointer data)
     r = n_dhcp4_client_dispatch(priv->client);
     if (r < 0) {
         /* FIXME: if any operation (e.g. send()) fails during the
-		 * dispatch, n-dhcp4 returns an error without arming timers
-		 * or progressing state, so the only reasonable thing to do
-		 * is to move to failed state so that the client will be
-		 * restarted. Ideally n-dhcp4 should retry failed operations
-		 * a predefined number of times (possibly infinite).
-		 */
+         * dispatch, n-dhcp4 returns an error without arming timers
+         * or progressing state, so the only reasonable thing to do
+         * is to move to failed state so that the client will be
+         * restarted. Ideally n-dhcp4 should retry failed operations
+         * a predefined number of times (possibly infinite).
+         */
         _LOGE("error %d dispatching events", r);
         nm_clear_g_source_inst(&priv->event_source);
         nm_dhcp_client_set_state(NM_DHCP_CLIENT(self), NM_DHCP_STATE_FAIL, NULL, NULL);
@@ -1199,7 +1199,7 @@ nettools_create(NMDhcpNettools *self, const char *dhcp_anycast_addr, GError **er
     }
 
     /* Note that we always set a client-id. In particular for infiniband that is necessary,
-	 * see https://tools.ietf.org/html/rfc4390#section-2.1 . */
+     * see https://tools.ietf.org/html/rfc4390#section-2.1 . */
     client_id = nm_dhcp_client_get_client_id(NM_DHCP_CLIENT(self));
     if (!client_id) {
         client_id_new = nm_utils_dhcp_client_id_mac(arp_type, hwaddr_arr, hwaddr_len);
@@ -1341,9 +1341,9 @@ ip4_start(NMDhcpClient *client,
     }
 
     /*
-	 * FIXME:
-	 * Select, or configure, a reasonable start delay, to protect poor servers being flooded.
-	 */
+     * FIXME:
+     * Select, or configure, a reasonable start delay, to protect poor servers being flooded.
+     */
     n_dhcp4_client_probe_config_set_start_delay(config, 1);
 
     nm_dhcp_utils_get_leasefile_path(AF_INET,
@@ -1356,12 +1356,12 @@ ip4_start(NMDhcpClient *client,
         inet_pton(AF_INET, last_ip4_address, &last_addr);
     else {
         /*
-		 * TODO: we stick to the systemd-networkd lease file format. Quite easy for now to
-		 * just use the functions in systemd code. Anyway, as in the end we just use the
-		 * ip address from all the options found in the lease, write a function that parses
-		 * the lease file just for the assigned address and returns it in &last_address.
-		 * Then drop reference to systemd-networkd structures and functions.
-		 */
+         * TODO: we stick to the systemd-networkd lease file format. Quite easy for now to
+         * just use the functions in systemd code. Anyway, as in the end we just use the
+         * ip address from all the options found in the lease, write a function that parses
+         * the lease file just for the assigned address and returns it in &last_address.
+         * Then drop reference to systemd-networkd structures and functions.
+         */
         nm_auto(sd_dhcp_lease_unrefp) sd_dhcp_lease *lease = NULL;
 
         dhcp_lease_load(&lease, lease_file);

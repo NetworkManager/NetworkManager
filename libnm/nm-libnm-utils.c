@@ -48,8 +48,8 @@ _nml_dbus_log(NMLDBusLogLevel level, gboolean use_stdout, const char *fmt, ...)
     gint64          ts;
 
     /* we only call _nml_dbus_log() after nml_dbus_log_enabled(), which already does
-	 * an atomic access to the variable. Since the value is only initialized once and
-	 * never changes, we can just access it without additional locking. */
+     * an atomic access to the variable. Since the value is only initialized once and
+     * never changes, we can just access it without additional locking. */
     configured_log_level = _nml_dbus_log_level;
 
     nm_assert(level & configured_log_level);
@@ -172,16 +172,16 @@ _fixup_string(const char *       desc,
             const char *eow = &p[strlen(ignored_phrases[i])];
 
             /* require that the phrase is delimited by space, or
-			 * at the beginning or end of the description. */
+             * at the beginning or end of the description. */
             if ((p == desc_full || p[-1] == ' ') && NM_IN_SET(eow[0], '\0', ' '))
                 memmove(p, eow, strlen(eow) + 1); /* +1 for the \0 */
         }
     }
 
     /* Attempt to shorten ID by ignoring certain individual words.
-	 * - word-split the description at spaces
-	 * - coalesce multiple spaces
-	 * - skip over ignored_words */
+     * - word-split the description at spaces
+     * - coalesce multiple spaces
+     * - skip over ignored_words */
     p = desc_full;
     q = desc_full;
     for (;;) {
@@ -222,12 +222,12 @@ next:
     p = strchr(desc_full, '[');
     if (p == desc_full) {
         /* All we're left with is in square brackets.
-		 * Always prefer that to a blank string.*/
+         * Always prefer that to a blank string.*/
         square_brackets_sensible = TRUE;
     }
     if (square_brackets_sensible) {
         /* If there's a [<string>] that survived the substitution, then the string
-		 * is a short form that is generally preferable. */
+         * is a short form that is generally preferable. */
         q = strchr(desc_full, ']');
         if (p && q > p) {
             p++;
@@ -236,7 +236,7 @@ next:
         }
     } else {
         /* [<string>] sometimes contains the preferred human-readable name, but
-		 * mostly it's utterly useless. Sigh. Drop it. */
+         * mostly it's utterly useless. Sigh. Drop it. */
         if (p) {
             if (p > desc_full && p[-1] == ' ')
                 p--;
@@ -736,9 +736,9 @@ nml_dbus_meta_iface_get(const char *dbus_iface_name)
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(NMLDBusMetaIface, dbus_iface_name) == 0);
 
     /* we assume that NetworkManager only uses unique interface names. E.g. one
-	 * interface name always has one particular meaning (and offers one set of
-	 * properties, signals and methods). This is a convenient assumption, and
-	 * we sure would never violate it when extending NM's D-Bus API. */
+     * interface name always has one particular meaning (and offers one set of
+     * properties, signals and methods). This is a convenient assumption, and
+     * we sure would never violate it when extending NM's D-Bus API. */
 
     if (NM_STR_HAS_PREFIX(dbus_iface_name, COMMON_PREFIX)) {
         /* optimize, that in fact all our interfaces have the same prefix. */
@@ -866,6 +866,6 @@ nm_utils_g_param_spec_is_default(const GParamSpec *pspec)
     }
 
     /* This function is only used for asserting/testing. It thus
-	 * strictly asserts and only support argument types that we expect. */
+     * strictly asserts and only support argument types that we expect. */
     g_return_val_if_reached(FALSE);
 }

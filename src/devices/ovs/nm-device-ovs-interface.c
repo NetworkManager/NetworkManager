@@ -53,8 +53,8 @@ create_and_realize(NMDevice *             device,
                    GError **              error)
 {
     /* The actual backing resources will be created once an interface is
-	 * added to a port of ours, since there can be neither an empty port nor
-	 * an empty bridge. */
+     * added to a port of ours, since there can be neither an empty port nor
+     * an empty bridge. */
 
     return TRUE;
 }
@@ -151,14 +151,14 @@ static gboolean
 set_platform_mtu(NMDevice *device, guint32 mtu)
 {
     /*
-	 * If the MTU is not set in ovsdb, Open vSwitch will change
-	 * the MTU of an internal interface to match the minimum of
-	 * the other interfaces in the bridge.
-	 */
+     * If the MTU is not set in ovsdb, Open vSwitch will change
+     * the MTU of an internal interface to match the minimum of
+     * the other interfaces in the bridge.
+     */
     /* FIXME(shutdown): the function should become cancellable so
-	 * that it doesn't need to hold a reference to the device, and
-	 * it can be stopped during shutdown.
-	 */
+     * that it doesn't need to hold a reference to the device, and
+     * it can be stopped during shutdown.
+     */
     if (_is_internal_interface(device)) {
         nm_ovsdb_set_interface_mtu(nm_ovsdb_get(),
                                    nm_device_get_ip_iface(device),
@@ -302,11 +302,11 @@ deactivate_async(NMDevice *                 device,
     _LOGT(LOGD_CORE, "deactivate: start async");
 
     /* We want to ensure that the kernel link for this device is
-	 * removed upon disconnection so that it will not interfere with
-	 * later activations of the same device. Unfortunately there is
-	 * no synchronization mechanism with vswitchd, we only update
-	 * ovsdb and wait that changes are picked up.
-	 */
+     * removed upon disconnection so that it will not interfere with
+     * later activations of the same device. Unfortunately there is
+     * no synchronization mechanism with vswitchd, we only update
+     * ovsdb and wait that changes are picked up.
+     */
 
     data  = g_slice_new(DeactivateData);
     *data = (DeactivateData){
@@ -327,11 +327,11 @@ deactivate_async(NMDevice *                 device,
 
     if (priv->waiting_for_interface) {
         /* At this point we have issued an INSERT and a DELETE
-		 * command for the interface to ovsdb. We don't know if
-		 * vswitchd will see the two updates or only one. We
-		 * must add a timeout to avoid waiting forever in case
-		 * the link doesn't appear.
-		 */
+         * command for the interface to ovsdb. We don't know if
+         * vswitchd will see the two updates or only one. We
+         * must add a timeout to avoid waiting forever in case
+         * the link doesn't appear.
+         */
         data->link_timeout_id = g_timeout_add(6000, deactivate_link_timeout, data);
         _LOGT(LOGD_DEVICE, "deactivate: waiting for link to disappear in 6 seconds");
     } else
@@ -349,10 +349,10 @@ static gboolean
 can_update_from_platform_link(NMDevice *device, const NMPlatformLink *plink)
 {
     /* If the device is deactivating, we already sent the
-	 * deletion command to ovsdb and we don't want to deal
-	 * with any new link appearing from the previous
-	 * activation.
-	 */
+     * deletion command to ovsdb and we don't want to deal
+     * with any new link appearing from the previous
+     * activation.
+     */
     return !plink || nm_device_get_state(device) != NM_DEVICE_STATE_DEACTIVATING;
 }
 

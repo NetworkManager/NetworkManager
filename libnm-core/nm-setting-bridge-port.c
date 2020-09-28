@@ -482,18 +482,18 @@ nm_setting_bridge_port_class_init(NMSettingBridgePortClass *klass)
     setting_class->verify           = verify;
 
     /**
-	 * NMSettingBridgePort:priority:
-	 *
-	 * The Spanning Tree Protocol (STP) priority of this bridge port.
-	 **/
+     * NMSettingBridgePort:priority:
+     *
+     * The Spanning Tree Protocol (STP) priority of this bridge port.
+     **/
     /* ---ifcfg-rh---
-	 * property: priority
-	 * variable: BRIDGING_OPTS: priority=
-	 * values: 0 - 63
-	 * default: 32
-	 * description: STP priority.
-	 * ---end---
-	 */
+     * property: priority
+     * variable: BRIDGING_OPTS: priority=
+     * values: 0 - 63
+     * default: 32
+     * description: STP priority.
+     * ---end---
+     */
     obj_properties[PROP_PRIORITY] =
         g_param_spec_uint(NM_SETTING_BRIDGE_PORT_PRIORITY,
                           "",
@@ -504,19 +504,19 @@ nm_setting_bridge_port_class_init(NMSettingBridgePortClass *klass)
                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridgePort:path-cost:
-	 *
-	 * The Spanning Tree Protocol (STP) port cost for destinations via this
-	 * port.
-	 **/
+     * NMSettingBridgePort:path-cost:
+     *
+     * The Spanning Tree Protocol (STP) port cost for destinations via this
+     * port.
+     **/
     /* ---ifcfg-rh---
-	 * property: path-cost
-	 * variable: BRIDGING_OPTS: path_cost=
-	 * values: 1 - 65535
-	 * default: 100
-	 * description: STP cost.
-	 * ---end---
-	 */
+     * property: path-cost
+     * variable: BRIDGING_OPTS: path_cost=
+     * values: 1 - 65535
+     * default: 100
+     * description: STP cost.
+     * ---end---
+     */
     obj_properties[PROP_PATH_COST] = g_param_spec_uint(NM_SETTING_BRIDGE_PORT_PATH_COST,
                                                        "",
                                                        "",
@@ -526,18 +526,18 @@ nm_setting_bridge_port_class_init(NMSettingBridgePortClass *klass)
                                                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridgePort:hairpin-mode:
-	 *
-	 * Enables or disables "hairpin mode" for the port, which allows frames to
-	 * be sent back out through the port the frame was received on.
-	 **/
+     * NMSettingBridgePort:hairpin-mode:
+     *
+     * Enables or disables "hairpin mode" for the port, which allows frames to
+     * be sent back out through the port the frame was received on.
+     **/
     /* ---ifcfg-rh---
-	 * property: hairpin-mode
-	 * variable: BRIDGING_OPTS: hairpin_mode=
-	 * default: yes
-	 * description: Hairpin mode of the bridge port.
-	 * ---end---
-	 */
+     * property: hairpin-mode
+     * variable: BRIDGING_OPTS: hairpin_mode=
+     * default: yes
+     * description: Hairpin mode of the bridge port.
+     * ---end---
+     */
     obj_properties[PROP_HAIRPIN_MODE] = g_param_spec_boolean(
         NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,
         "",
@@ -546,30 +546,30 @@ nm_setting_bridge_port_class_init(NMSettingBridgePortClass *klass)
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMSettingBridgePort:vlans: (type GPtrArray(NMBridgeVlan))
-	 *
-	 * Array of bridge VLAN objects. In addition to the VLANs
-	 * specified here, the port will also have the default-pvid
-	 * VLAN configured on the bridge by the bridge.vlan-default-pvid
-	 * property.
-	 *
-	 * In nmcli the VLAN list can be specified with the following
-	 * syntax:
-	 *
-	 *  $vid [pvid] [untagged] [, $vid [pvid] [untagged]]...
-	 *
-	 * where $vid is either a single id between 1 and 4094 or a
-	 * range, represented as a couple of ids separated by a dash.
-	 *
-	 * Since: 1.18
-	 **/
+     * NMSettingBridgePort:vlans: (type GPtrArray(NMBridgeVlan))
+     *
+     * Array of bridge VLAN objects. In addition to the VLANs
+     * specified here, the port will also have the default-pvid
+     * VLAN configured on the bridge by the bridge.vlan-default-pvid
+     * property.
+     *
+     * In nmcli the VLAN list can be specified with the following
+     * syntax:
+     *
+     *  $vid [pvid] [untagged] [, $vid [pvid] [untagged]]...
+     *
+     * where $vid is either a single id between 1 and 4094 or a
+     * range, represented as a couple of ids separated by a dash.
+     *
+     * Since: 1.18
+     **/
     /* ---ifcfg-rh---
-	 * property: vlans
-	 * variable: BRIDGE_PORT_VLANS
-	 * description: List of VLANs on the bridge port
-	 * example: BRIDGE_PORT_VLANS="1 pvid untagged,20,300-400 untagged"
-	 * ---end---
-	 */
+     * property: vlans
+     * variable: BRIDGE_PORT_VLANS
+     * description: List of VLANs on the bridge port
+     * example: BRIDGE_PORT_VLANS="1 pvid untagged,20,300-400 untagged"
+     * ---end---
+     */
     obj_properties[PROP_VLANS] = g_param_spec_boxed(NM_SETTING_BRIDGE_PORT_VLANS,
                                                     "",
                                                     "",

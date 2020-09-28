@@ -162,8 +162,8 @@ adsl_remove(NMAtmManager *self, struct udev_device *udev_device)
         NMDevice *device = iter->data;
 
         /* Match 'iface' not 'ip_iface' to the ATM device instead of the
-		 * NAS bridge interface or PPPoE interface.
-		 */
+         * NAS bridge interface or PPPoE interface.
+         */
         if (g_strcmp0(nm_device_get_iface(device), iface) != 0)
             continue;
 

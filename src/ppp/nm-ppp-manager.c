@@ -328,11 +328,11 @@ ppp_secrets_cb(NMActRequest *                req,
     }
 
     /* This is sort of a hack but...
-	 * pppd plugin only ever needs username and password. Passing the full
-	 * connection there would mean some bloat: the plugin would need to link
-	 * against libnm just to parse this. So instead, let's just send what
-	 * it needs.
-	 */
+     * pppd plugin only ever needs username and password. Passing the full
+     * connection there would mean some bloat: the plugin would need to link
+     * against libnm just to parse this. So instead, let's just send what
+     * it needs.
+     */
     g_dbus_method_invocation_return_value(priv->pending_secrets_context,
                                           g_variant_new("(ss)", username ?: "", password ?: ""));
 
@@ -384,9 +384,9 @@ impl_ppp_manager_need_secrets(NMDBusObject *                     obj,
     }
 
     /* Only ask for completely new secrets after retrying them once; some devices
-	 * appear to ask a few times when they actually don't even care what you
-	 * pass back.
-	 */
+     * appear to ask a few times when they actually don't even care what you
+     * pass back.
+     */
     tries = GPOINTER_TO_UINT(
         g_object_get_qdata(G_OBJECT(applied_connection), ppp_manager_secret_tries_quark()));
     if (tries > 1)
@@ -599,9 +599,9 @@ iid_value_to_ll6_addr(GVariant *          dict,
     g_return_val_if_fail(iid != 0, FALSE);
 
     /* Construct an IPv6 LL address from the interface identifier.  See
-	 * http://tools.ietf.org/html/rfc4291#section-2.5.1 (IPv6) and
-	 * http://tools.ietf.org/html/rfc5072#section-4.1 (IPv6 over PPP).
-	 */
+     * http://tools.ietf.org/html/rfc4291#section-2.5.1 (IPv6) and
+     * http://tools.ietf.org/html/rfc5072#section-4.1 (IPv6 over PPP).
+     */
     memset(out_addr->s6_addr, 0, sizeof(out_addr->s6_addr));
     out_addr->s6_addr16[0] = htons(0xfe80);
     memcpy(out_addr->s6_addr + 8, &iid, sizeof(iid));
@@ -857,9 +857,9 @@ create_pppd_cmd_line(NMPPPManager *  self,
         nm_strv_ptrarray_add_int(cmd, baud_override);
 
     /* noauth by default, because we certainly don't have any information
-	 * with which to verify anything the peer gives us if we ask it to
-	 * authenticate itself, which is what 'auth' really means.
-	 */
+     * with which to verify anything the peer gives us if we ask it to
+     * authenticate itself, which is what 'auth' really means.
+     */
     nm_strv_ptrarray_add_string_dup(cmd, "noauth");
 
     if (nm_setting_ppp_get_refuse_eap(setting))
@@ -888,8 +888,8 @@ create_pppd_cmd_line(NMPPPManager *  self,
         nm_strv_ptrarray_add_string_dup(cmd, "crtscts");
 
     /* Always ask for DNS, we don't have to use them if the connection
-	 * overrides the returned servers.
-	 */
+     * overrides the returned servers.
+     */
     nm_strv_ptrarray_add_string_dup(cmd, "usepeerdns");
 
     if (nm_setting_ppp_get_mru(setting)) {
@@ -922,8 +922,8 @@ create_pppd_cmd_line(NMPPPManager *  self,
         static int unit;
 
         /* The PPP interface is going to be renamed, so pass a
-		 * different unit each time so that activations don't
-		 * race with each others. */
+         * different unit each time so that activations don't
+         * race with each others. */
         nm_strv_ptrarray_add_string_dup(cmd, "unit");
         nm_strv_ptrarray_add_int(cmd, unit);
         unit = unit < G_MAXINT ? unit + 1 : 0;
@@ -1006,8 +1006,8 @@ _ppp_manager_start(NMPPPManager *self,
     s_ppp = nm_connection_get_setting_ppp(connection);
     if (!s_ppp) {
         /* If the PPP settings are all default we may not have a PPP setting yet,
-		 * so just make a default one here.
-		 */
+         * so just make a default one here.
+         */
         s_ppp = s_ppp_free = NM_SETTING_PPP(nm_setting_ppp_new());
     }
 
@@ -1100,7 +1100,7 @@ struct _NMPPPManagerStopHandle {
     gpointer                 user_data;
 
     /* this object delays shutdown, because we still need to wait until
-	 * pppd process terminated. */
+     * pppd process terminated. */
     GObject *shutdown_waitobj;
 
     GCancellable *cancellable;
@@ -1185,9 +1185,9 @@ _ppp_manager_stop(NMPPPManager *           self,
 
     if (!priv->pid && !callback) {
         /* nothing to do further...
-		 *
-		 * In this case, we return a %NULL handle. The caller cannot cancel this
-		 * event, but clearly he is not waiting for a callback anyway. */
+         *
+         * In this case, we return a %NULL handle. The caller cannot cancel this
+         * event, but clearly he is not waiting for a callback anyway. */
         return NULL;
     }
 
@@ -1203,19 +1203,19 @@ _ppp_manager_stop(NMPPPManager *           self,
 
     if (!priv->pid) {
         /* No PID. There is nothing to kill, however, invoke the callback in
-		 * an idle handler.
-		 *
-		 * Note that we don't register nm_shutdown_wait_obj_register_object().
-		 * In order for shutdown to work properly, the caller must always
-		 * explicitly cancel the action to go down. With the idle-handler,
-		 * cancelling the handle completes the request. */
+         * an idle handler.
+         *
+         * Note that we don't register nm_shutdown_wait_obj_register_object().
+         * In order for shutdown to work properly, the caller must always
+         * explicitly cancel the action to go down. With the idle-handler,
+         * cancelling the handle completes the request. */
         handle->idle_id = g_idle_add(_stop_idle_cb, handle);
         return handle;
     }
 
     /* we really want to kill the process and delay shutdown of NetworkManager
-	 * until the process terminated. We do that, by registering an object
-	 * that delays shutdown. */
+     * until the process terminated. We do that, by registering an object
+     * that delays shutdown. */
     handle->shutdown_waitobj = g_object_new(G_TYPE_OBJECT, NULL);
     nm_shutdown_wait_obj_register_object(handle->shutdown_waitobj, "ppp-manager-wait-kill-pppd");
     nm_utils_kill_child_async(nm_steal_int(&priv->pid),
@@ -1244,8 +1244,8 @@ _ppp_manager_stop_cancel(NMPPPManagerStopHandle *handle)
     }
 
     /* a real handle. Only invoke the callback (synchronously). This marks
-	 * the handle as handled, but it keeps shutdown_waitobj around, until
-	 * nm_utils_kill_child_async() returns. */
+     * the handle as handled, but it keeps shutdown_waitobj around, until
+     * nm_utils_kill_child_async() returns. */
     _stop_handle_complete(handle, TRUE);
 }
 
@@ -1313,7 +1313,7 @@ dispose(GObject *object)
     NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE(self);
 
     /* we expect the user to first stop the manager. As fallback,
-	 * still stop. */
+     * still stop. */
     g_warn_if_fail(!priv->pid);
     g_warn_if_fail(!nm_dbus_object_is_exported(NM_DBUS_OBJECT(self)));
     _ppp_manager_stop(self, NULL, NULL, NULL);

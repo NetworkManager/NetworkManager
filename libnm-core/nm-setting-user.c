@@ -55,7 +55,7 @@ static gboolean
 _key_char_is_regular(char ch)
 {
     /* allow words of printable characters, plus some
-	 * special characters, for example to support base64 encoding. */
+     * special characters, for example to support base64 encoding. */
     return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9')
            || NM_IN_SET(ch, '-', '_', '+', '/', '=');
 }
@@ -112,9 +112,9 @@ nm_setting_user_check_key(const char *key, GError **error)
         ch = (key++)[0];
 
         /* Allow something that looks like a FQN, separating namespaces by a single '.'
-		 * We want to print the keys nicely in nmcli requiring escaping.
-		 *
-		 * If a user really has to encode special values in the name, he may base64 encode it. */
+         * We want to print the keys nicely in nmcli requiring escaping.
+         *
+         * If a user really has to encode special values in the name, he may base64 encode it. */
 
         if (!_key_char_is_regular(ch))
             break;
@@ -235,7 +235,7 @@ nm_setting_user_get_keys(NMSettingUser *setting, guint *out_len)
     priv->keys = nm_utils_strdict_get_keys(priv->data, TRUE, out_len);
 
     /* don't return %NULL, but hijack the @keys fields as a pseudo
-	 * empty strv array. */
+     * empty strv array. */
     return priv->keys ?: ((const char **) &priv->keys);
 }
 
@@ -334,7 +334,7 @@ nm_setting_user_set_data(NMSettingUser *setting, const char *key, const char *va
 out:
     if (priv->data_invalid) {
         /* setting a value purges all invalid values that were set
-		 * via GObject property. */
+         * via GObject property. */
         changed = TRUE;
         nm_clear_pointer(&priv->data_invalid, g_hash_table_unref);
     }
@@ -556,26 +556,26 @@ nm_setting_user_class_init(NMSettingUserClass *klass)
     setting_class->verify           = verify;
 
     /**
-	 * NMSettingUser:data: (type GHashTable(utf8,utf8))
-	 *
-	 * A dictionary of key/value pairs with user data. This data is ignored by NetworkManager
-	 * and can be used at the users discretion. The keys only support a strict ascii format,
-	 * but the values can be arbitrary UTF8 strings up to a certain length.
-	 *
-	 * Since: 1.8
-	 **/
+     * NMSettingUser:data: (type GHashTable(utf8,utf8))
+     *
+     * A dictionary of key/value pairs with user data. This data is ignored by NetworkManager
+     * and can be used at the users discretion. The keys only support a strict ascii format,
+     * but the values can be arbitrary UTF8 strings up to a certain length.
+     *
+     * Since: 1.8
+     **/
     /* ---ifcfg-rh---
-	 * property: data
-	 * variable: NM_USER_*
-	 * description: each key/value pair is stored as a separate variable with
-	 *   name composed by concatenating NM_USER_ with the encoded key. The key is
-	 *   encoded by substituting lowercase letters with uppercase and prepending
-	 *   uppercase letters with an underscore. A dot is encoded as a double
-	 *   underscore. Remaining characters are encoded as underscore followed by a
-	 *   3 digit octal representation of the character.
-	 * example: NM_USER_FOO__BAR=something
-	 * ---end---
-	 */
+     * property: data
+     * variable: NM_USER_*
+     * description: each key/value pair is stored as a separate variable with
+     *   name composed by concatenating NM_USER_ with the encoded key. The key is
+     *   encoded by substituting lowercase letters with uppercase and prepending
+     *   uppercase letters with an underscore. A dot is encoded as a double
+     *   underscore. Remaining characters are encoded as underscore followed by a
+     *   3 digit octal representation of the character.
+     * example: NM_USER_FOO__BAR=something
+     * ---end---
+     */
     obj_properties[PROP_DATA] = g_param_spec_boxed(NM_SETTING_USER_DATA,
                                                    "",
                                                    "",

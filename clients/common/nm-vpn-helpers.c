@@ -231,11 +231,11 @@ nm_vpn_openconnect_authenticate_helper(const char *host,
         return FALSE;
 
     /* Parse output and set cookie, gateway and gwcert
-	 * output example:
-	 * COOKIE='loremipsum'
-	 * HOST='1.2.3.4'
-	 * FINGERPRINT='sha1:32bac90cf09a722e10ecc1942c67fe2ac8c21e2e'
-	 */
+     * output example:
+     * COOKIE='loremipsum'
+     * HOST='1.2.3.4'
+     * FINGERPRINT='sha1:32bac90cf09a722e10ecc1942c67fe2ac8c21e2e'
+     */
     output_v = nm_utils_strsplit_set_with_empty(output, "\r\n");
     for (iter = output_v; iter && *iter; iter++) {
         char *s_mutable = (char *) *iter;
@@ -288,9 +288,9 @@ _line_match(char *line, const char *key, gsize key_len, const char **out_key, ch
     nm_assert(out_value && !*out_value);
 
     /* Note that `wg-quick` (linux.bash) does case-insensitive comparison (shopt -s nocasematch).
-	 * `wg setconf` does case-insensitive comparison too (with strncasecmp, which is locale dependent).
-	 *
-	 * We do a case-insensitive comparison of the key, however in a locale-independent manner. */
+     * `wg setconf` does case-insensitive comparison too (with strncasecmp, which is locale dependent).
+     *
+     * We do a case-insensitive comparison of the key, however in a locale-independent manner. */
 
     if (g_ascii_strncasecmp(line, key, key_len) != 0)
         return FALSE;
@@ -366,9 +366,9 @@ nm_vpn_wireguard_import(const char *filename, GError **error)
     g_return_val_if_fail(!error || !*error, NULL);
 
     /* contrary to "wg-quick", we never interpret the filename as "/etc/wireguard/$INTERFACE.conf".
-	 * If the filename has no '/', it is interpreted as relative to the current working directory.
-	 * However, we do require a suitable filename suffix and that the name corresponds to the interface
-	 * name. */
+     * If the filename has no '/', it is interpreted as relative to the current working directory.
+     * However, we do require a suitable filename suffix and that the name corresponds to the interface
+     * name. */
     cstr = strrchr(filename, '/');
     cstr = cstr ? &cstr[1] : filename;
     if (NM_STR_HAS_SUFFIX(cstr, ".conf")) {
@@ -401,14 +401,14 @@ nm_vpn_wireguard_import(const char *filename, GError **error)
         return NULL;
 
         /* We interpret the file like `wg-quick up` and `wg setconf` do.
-	 *
-	 * Of course the WireGuard scripts do something fundamentlly different. They
-	 * perform actions to configure the WireGuard link in kernel, add routes and
-	 * addresses, and call resolvconf. It all happens at the time when the script
-	 * run.
-	 *
-	 * This code here instead generates a NetworkManager connection profile so that
-	 * NetworkManager will apply a similar configuration when later activating the profile. */
+     *
+     * Of course the WireGuard scripts do something fundamentlly different. They
+     * perform actions to configure the WireGuard link in kernel, add routes and
+     * addresses, and call resolvconf. It all happens at the time when the script
+     * run.
+     *
+     * This code here instead generates a NetworkManager connection profile so that
+     * NetworkManager will apply a similar configuration when later activating the profile. */
 
 #define _TABLE_AUTO ((gint64) -1)
 #define _TABLE_OFF  ((gint64) -2)
@@ -433,14 +433,14 @@ nm_vpn_wireguard_import(const char *filename, GError **error)
             (line_remainder++)[0] = '\0';
 
         /* Drop all spaces and truncate at first '#'.
-		 * See wg's config_read_line().
-		 *
-		 * Note that wg-quick doesn't do that.
-		 *
-		 * Neither `wg setconf` nor `wg-quick` does a strict parsing.
-		 * We don't either. Just try to interpret the file (mostly) the same as
-		 * they would.
-		 */
+         * See wg's config_read_line().
+         *
+         * Note that wg-quick doesn't do that.
+         *
+         * Neither `wg setconf` nor `wg-quick` does a strict parsing.
+         * We don't either. Just try to interpret the file (mostly) the same as
+         * they would.
+         */
         {
             gsize l, n;
 
@@ -448,7 +448,7 @@ nm_vpn_wireguard_import(const char *filename, GError **error)
             for (l = 0; (ch = line[l]); l++) {
                 if (g_ascii_isspace(ch)) {
                     /* wg-setconf strips all whitespace before parsing the content. That means,
-					 * *[I nterface]" will be accepted. We do that too. */
+                     * *[I nterface]" will be accepted. We do that too. */
                     continue;
                 }
                 if (ch == '#')
@@ -524,8 +524,8 @@ nm_vpn_wireguard_import(const char *filename, GError **error)
                     goto fail_invalid_value;
 
                 /* wg-quick accepts the "MTU" value, but it also fetches routes to
-				 * autodetect it. NetworkManager won't do that, we can only configure
-				 * an explicit MTU or no autodetection will be performed. */
+                 * autodetect it. NetworkManager won't do that, we can only configure
+                 * an explicit MTU or no autodetection will be performed. */
                 data_mtu = i64;
                 continue;
             }
@@ -562,7 +562,7 @@ nm_vpn_wireguard_import(const char *filename, GError **error)
                     data_table = _TABLE_OFF;
                 else {
                     /* we don't support table names from /etc/iproute2/rt_tables
-					 * But we accept hex like `ip route add` would. */
+                     * But we accept hex like `ip route add` would. */
                     i64 = _nm_utils_ascii_str_to_int64(value, 0, 0, G_MAXINT32, -1);
                     if (i64 == -1)
                         goto fail_invalid_value;
@@ -581,7 +581,7 @@ nm_vpn_wireguard_import(const char *filename, GError **error)
 
             if (line_match(line, "SaveConfig", &matched_key, &value)) {
                 /* we ignore the setting, but enforce that it's either true or false (like
-				 * wg-quick. */
+                 * wg-quick. */
                 if (!NM_IN_STRSET(value, "true", "false"))
                     goto fail_invalid_value;
                 continue;
@@ -589,7 +589,7 @@ nm_vpn_wireguard_import(const char *filename, GError **error)
 
             if (line_match(line, "ListenPort", &matched_key, &value)) {
                 /* we don't use getaddrinfo(), unlike `wg setconf`. Just interpret
-				 * the port as plain decimal number. */
+                 * the port as plain decimal number. */
                 i64 = _nm_utils_ascii_str_to_int64(value, 10, 0, 0xFFFF, -1);
                 if (i64 == -1)
                     goto fail_invalid_value;
@@ -748,10 +748,10 @@ fail_invalid_secret:
 
         if (data_dns && !data_addr) {
             /* When specifying "DNS", we also require an "Address" for the same address
-			 * family. That is because a NMSettingIPConfig cannot have @method_disabled
-			 * and DNS settings at the same time.
-			 *
-			 * We don't have addresses. Silently ignore the DNS setting. */
+             * family. That is because a NMSettingIPConfig cannot have @method_disabled
+             * and DNS settings at the same time.
+             *
+             * We don't have addresses. Silently ignore the DNS setting. */
             data_dns         = NULL;
             data_dns_search2 = NULL;
         }
@@ -762,8 +762,8 @@ fail_invalid_secret:
                      NULL);
 
         /* For WireGuard profiles, always set dns-priority to a negative value,
-		 * so that DNS servers on other profiles get ignored. This is also what
-		 * wg-quick does, by calling `resolvconf -x`. */
+         * so that DNS servers on other profiles get ignored. This is also what
+         * wg-quick does, by calling `resolvconf -x`. */
         g_object_set(s_ip, NM_SETTING_IP_CONFIG_DNS_PRIORITY, (int) -50, NULL);
 
         if (data_addr) {
@@ -775,7 +775,7 @@ fail_invalid_secret:
                 nm_setting_ip_config_add_dns(s_ip, data_dns->pdata[i]);
 
             /* Of the wg-quick doesn't specify a search domain, assume the user
-			 * wants to use the domain server for all searches. */
+             * wants to use the domain server for all searches. */
             if (!data_dns_search2)
                 nm_setting_ip_config_add_dns_search(s_ip, "~");
         }
@@ -786,20 +786,20 @@ fail_invalid_secret:
 
         if (data_table == _TABLE_AUTO) {
             /* in the "auto" setting, wg-quick adds peer-routes automatically to the main
-			 * table. NetworkManager will do that too, but there are differences:
-			 *
-			 * - NetworkManager (contrary to wg-quick) does not check whether the peer-route is necessary.
-			 *   It will always add a route for each allowed-ips range, even if there is already another
-			 *   route that would ensure packets to the endpoint are routed via the WireGuard interface.
-			 *   If you don't want that, disable "wireguard.peer-routes", and add the necessary routes
-			 *   yourself to "ipv4.routes" and "ipv6.routes".
-			 *
-			 * - With "auto", wg-quick also configures policy routing to handle default-routes (/0) to
-			 *   avoid routing loops.
-			 *   The imported connection profile will have wireguard.ip4-auto-default-route and
-			 *   wireguard.ip6-auto-default-route set to "default". It will thus configure wg-quick's
-			 *   policy routing if the profile has any AllowedIPs ranges with /0.
-			 */
+             * table. NetworkManager will do that too, but there are differences:
+             *
+             * - NetworkManager (contrary to wg-quick) does not check whether the peer-route is necessary.
+             *   It will always add a route for each allowed-ips range, even if there is already another
+             *   route that would ensure packets to the endpoint are routed via the WireGuard interface.
+             *   If you don't want that, disable "wireguard.peer-routes", and add the necessary routes
+             *   yourself to "ipv4.routes" and "ipv6.routes".
+             *
+             * - With "auto", wg-quick also configures policy routing to handle default-routes (/0) to
+             *   avoid routing loops.
+             *   The imported connection profile will have wireguard.ip4-auto-default-route and
+             *   wireguard.ip6-auto-default-route set to "default". It will thus configure wg-quick's
+             *   policy routing if the profile has any AllowedIPs ranges with /0.
+             */
         } else if (data_table == _TABLE_OFF) {
             if (is_v4) {
                 g_object_set(s_wg, NM_SETTING_WIREGUARD_PEER_ROUTES, FALSE, NULL);

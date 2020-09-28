@@ -24,10 +24,10 @@ static void
 nm_vpn_editor_plugin_default_init(NMVpnEditorPluginInterface *iface)
 {
     /**
-	 * NMVpnEditorPlugin:name:
-	 *
-	 * Short display name of the VPN plugin.
-	 */
+     * NMVpnEditorPlugin:name:
+     *
+     * Short display name of the VPN plugin.
+     */
     g_object_interface_install_property(
         iface,
         g_param_spec_string(NM_VPN_EDITOR_PLUGIN_NAME,
@@ -37,10 +37,10 @@ nm_vpn_editor_plugin_default_init(NMVpnEditorPluginInterface *iface)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
     /**
-	 * NMVpnEditorPlugin:description:
-	 *
-	 * Longer description of the VPN plugin.
-	 */
+     * NMVpnEditorPlugin:description:
+     *
+     * Longer description of the VPN plugin.
+     */
     g_object_interface_install_property(
         iface,
         g_param_spec_string(NM_VPN_EDITOR_PLUGIN_DESCRIPTION,
@@ -50,10 +50,10 @@ nm_vpn_editor_plugin_default_init(NMVpnEditorPluginInterface *iface)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
     /**
-	 * NMVpnEditorPlugin:service:
-	 *
-	 * D-Bus service name of the plugin's VPN service.
-	 */
+     * NMVpnEditorPlugin:service:
+     *
+     * D-Bus service name of the plugin's VPN service.
+     */
     g_object_interface_install_property(
         iface,
         g_param_spec_string(NM_VPN_EDITOR_PLUGIN_SERVICE,
@@ -239,15 +239,15 @@ _nm_vpn_editor_plugin_load(const char *              plugin_name,
     g_return_val_if_fail(plugin_name && *plugin_name, NULL);
 
     /* if @do_file_checks is FALSE, we pass plugin_name directly to
-	 * g_module_open().
-	 *
-	 * Otherwise, we allow for library names without path component.
-	 * In which case, we prepend the plugin directory and form an
-	 * absolute path. In that case, we perform checks on the file.
-	 *
-	 * One exception is that we don't allow for the "la" suffix. The
-	 * reason is that g_module_open() interprets files with this extension
-	 * special and we don't want that. */
+     * g_module_open().
+     *
+     * Otherwise, we allow for library names without path component.
+     * In which case, we prepend the plugin directory and form an
+     * absolute path. In that case, we perform checks on the file.
+     *
+     * One exception is that we don't allow for the "la" suffix. The
+     * reason is that g_module_open() interprets files with this extension
+     * special and we don't want that. */
     plugin_filename = plugin_name;
     if (do_file_checks) {
         if (!strchr(plugin_name, '/') && !g_str_has_suffix(plugin_name, ".la")) {
@@ -259,9 +259,9 @@ _nm_vpn_editor_plugin_load(const char *              plugin_name,
     dl_module = dlopen(plugin_filename, RTLD_LAZY | RTLD_LOCAL | RTLD_NOLOAD);
     if (!dl_module && do_file_checks) {
         /* If the module is already loaded, we skip the file checks.
-		 *
-		 * _nm_utils_check_module_file() fails with ENOENT if the plugin file
-		 * does not exist. That is relevant, because nm-applet checks for that. */
+         *
+         * _nm_utils_check_module_file() fails with ENOENT if the plugin file
+         * does not exist. That is relevant, because nm-applet checks for that. */
         if (!_nm_utils_check_module_file(plugin_filename,
                                          check_owner,
                                          check_file,
@@ -303,10 +303,10 @@ _nm_vpn_editor_plugin_load(const char *              plugin_name,
 
     if (loaded_before) {
         /* we want to leak the library, because the factory will register glib
-		 * types, which cannot be unregistered.
-		 *
-		 * However, if the library was already loaded before, we want to return
-		 * our part of the reference count. */
+         * types, which cannot be unregistered.
+         *
+         * However, if the library was already loaded before, we want to return
+         * our part of the reference count. */
         dlclose(dl_module);
     }
 

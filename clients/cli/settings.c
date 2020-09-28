@@ -52,8 +52,8 @@ ipv4_addresses_changed_cb(GObject *object, GParamSpec *pspec, gpointer user_data
     g_signal_handlers_block_by_func(object, G_CALLBACK(ipv4_method_changed_cb), NULL);
 
     /* If we have some IP addresses set method to 'manual'.
-	 * Else if the method was 'manual', change it back to 'auto'.
-	 */
+     * Else if the method was 'manual', change it back to 'auto'.
+     */
     if (nm_setting_ip_config_get_num_addresses(NM_SETTING_IP_CONFIG(object))) {
         if (g_strcmp0(nm_setting_ip_config_get_method(NM_SETTING_IP_CONFIG(object)),
                       NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
@@ -124,8 +124,8 @@ ipv6_addresses_changed_cb(GObject *object, GParamSpec *pspec, gpointer user_data
     g_signal_handlers_block_by_func(object, G_CALLBACK(ipv6_method_changed_cb), NULL);
 
     /* If we have some IP addresses set method to 'manual'.
-	 * Else if the method was 'manual', change it back to 'auto'.
-	 */
+     * Else if the method was 'manual', change it back to 'auto'.
+     */
     if (nm_setting_ip_config_get_num_addresses(NM_SETTING_IP_CONFIG(object))) {
         if (g_strcmp0(nm_setting_ip_config_get_method(NM_SETTING_IP_CONFIG(object)),
                       NM_SETTING_IP6_CONFIG_METHOD_MANUAL)) {
@@ -142,24 +142,24 @@ ipv6_addresses_changed_cb(GObject *object, GParamSpec *pspec, gpointer user_data
     } else {
         answered = FALSE;
         /* FIXME: editor_init_existing_connection() and registering handlers is not the
-		 *  right approach.
-		 *
-		 * This only happens to work because in nmcli's edit mode
-		 * tends to append addresses -- instead of setting them.
-		 * If we would change that (to behavior I'd expect), we'd get:
-		 *
-		 *   nmcli> set ipv6.addresses fc01::1:5/68
-		 *   Do you also want to set 'ipv6.method' to 'manual'? [yes]: y
-		 *   nmcli> set ipv6.addresses fc01::1:6/68
-		 *   Do you also want to set 'ipv6.method' to 'manual'? [yes]:
-		 *
-		 * That's because nmc_setting_set_property() calls set_fcn(). With modifier '\0'
-		 * (set), it would first clear all addresses before adding the address. Thereby
-		 * emitting multiple property changed signals.
-		 *
-		 * That can be avoided by freezing/thawing the signals, but this solution
-		 * here is ugly in general.
-		 */
+         *  right approach.
+         *
+         * This only happens to work because in nmcli's edit mode
+         * tends to append addresses -- instead of setting them.
+         * If we would change that (to behavior I'd expect), we'd get:
+         *
+         *   nmcli> set ipv6.addresses fc01::1:5/68
+         *   Do you also want to set 'ipv6.method' to 'manual'? [yes]: y
+         *   nmcli> set ipv6.addresses fc01::1:6/68
+         *   Do you also want to set 'ipv6.method' to 'manual'? [yes]:
+         *
+         * That's because nmc_setting_set_property() calls set_fcn(). With modifier '\0'
+         * (set), it would first clear all addresses before adding the address. Thereby
+         * emitting multiple property changed signals.
+         *
+         * That can be avoided by freezing/thawing the signals, but this solution
+         * here is ugly in general.
+         */
         if (!g_strcmp0(nm_setting_ip_config_get_method(NM_SETTING_IP_CONFIG(object)),
                        NM_SETTING_IP6_CONFIG_METHOD_MANUAL))
             g_object_set(object,
@@ -451,7 +451,7 @@ _env_get_nm_devices(const NMMetaEnvironment *environment,
     nm_assert(nmc);
 
     /* the returned list is *not* NULL terminated. Need to
-	 * provide and honor the out_len argument. */
+     * provide and honor the out_len argument. */
     nm_assert(out_len);
 
     devices = nm_client_get_devices(nmc->client);
@@ -475,7 +475,7 @@ _env_get_nm_connections(const NMMetaEnvironment *environment,
     nm_assert(nmc);
 
     /* the returned list is *not* NULL terminated. Need to
-	 * provide and honor the out_len argument. */
+     * provide and honor the out_len argument. */
     nm_assert(out_len);
 
     values = nm_client_get_connections(nmc->client);
@@ -587,8 +587,8 @@ nmc_setting_set_property(NMClient *             client,
     if (modifier == NM_META_ACCESSOR_MODIFIER_DEL
         && !property_info->property_type->set_supports_remove) {
         /* The property is a plain property. It does not support '-'.
-		 *
-		 * Maybe we should fail, but just return silently. */
+         *
+         * Maybe we should fail, but just return silently. */
         return TRUE;
     }
 
@@ -743,8 +743,8 @@ setting_details(const NmcConfig *nmc_config, NMSetting *setting, const char *one
 
     if (one_prop) {
         /* hack around setting-details being called for one setting. Must prefix the
-		 * property name with the setting name. Later we should remove setting_details()
-		 * and merge it into the caller. */
+         * property name with the setting name. Later we should remove setting_details()
+         * and merge it into the caller. */
         fields_str = g_strdup_printf("%s.%s", nm_setting_get_name(setting), one_prop);
     }
 

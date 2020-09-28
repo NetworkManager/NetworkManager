@@ -86,18 +86,18 @@ typedef struct _NMSettingsConnectionPrivate {
     NMDevice *default_wired_device;
 
     /* Caches secrets from on-disk connections; were they not cached any
-	 * call to nm_connection_clear_secrets() wipes them out and we'd have
-	 * to re-read them from disk which defeats the purpose of having the
-	 * connection in-memory at all.
-	 */
+     * call to nm_connection_clear_secrets() wipes them out and we'd have
+     * to re-read them from disk which defeats the purpose of having the
+     * connection in-memory at all.
+     */
     GVariant *system_secrets;
 
     /* Caches secrets from agents during the activation process; if new system
-	 * secrets are returned from an agent, they get written out to disk,
-	 * triggering a re-read of the connection, which reads only system
-	 * secrets, and would wipe out any agent-owned or not-saved secrets the
-	 * agent also returned.
-	 */
+     * secrets are returned from an agent, they get written out to disk,
+     * triggering a re-read of the connection, which reads only system
+     * secrets, and would wipe out any agent-owned or not-saved secrets the
+     * agent also returned.
+     */
     GVariant *agent_secrets;
 
     GHashTable *seen_bssids; /* Up-to-date BSSIDs that's been seen for the connection */
@@ -288,13 +288,13 @@ _nm_settings_connection_set_connection(NMSettingsConnection *           self,
         nmtst_connection_assert_unchanging(priv->connection);
 
         /* note that we only return @connection_old if the new connection actually differs from
-		 * before.
-		 *
-		 * So, there are three cases:
-		 *
-		 *  - return %NULL when setting the connection the first time.
-		 *  - return %NULL if setting a profile with the same content that we already have.
-		 *  - return the previous pointer if the connection changed. */
+         * before.
+         *
+         * So, there are three cases:
+         *
+         *  - return %NULL when setting the connection the first time.
+         *  - return %NULL if setting a profile with the same content that we already have.
+         *  - return the previous pointer if the connection changed. */
         NM_SET_OUT(out_connection_old, g_steal_pointer(&connection_old));
     }
 
@@ -408,12 +408,12 @@ nm_settings_connection_check_permission(NMSettingsConnection *self, const char *
 
     for (i = 0; i < num; i++) {
         /* For each user get their secret agent and check if that agent has the
-		 * required permission.
-		 *
-		 * FIXME: what if the user isn't running an agent?  PolKit needs a bus
-		 * name or a PID but if the user isn't running an agent they won't have
-		 * either.
-		 */
+         * required permission.
+         *
+         * FIXME: what if the user isn't running an agent?  PolKit needs a bus
+         * name or a PID but if the user isn't running an agent they won't have
+         * either.
+         */
         if (nm_setting_connection_get_permission(s_con, i, NULL, &puser, NULL)) {
             if (nm_agent_manager_has_agent_with_permission(priv->agent_mgr, puser, permission))
                 return TRUE;
@@ -438,7 +438,7 @@ update_system_secrets_cache(NMSettingsConnection *self, NMConnection *new)
         goto out;
 
     /* FIXME: improve NMConnection API so we can avoid the overhead of cloning the connection,
-	 *   in particular if there are no secrets to begin with. */
+     *   in particular if there are no secrets to begin with. */
 
     connection_cloned = nm_simple_connection_new_clone(new);
 
@@ -470,7 +470,7 @@ update_agent_secrets_cache(NMSettingsConnection *self, NMConnection *new)
         goto out;
 
     /* FIXME: improve NMConnection API so we can avoid the overhead of cloning the connection,
-	 *   in particular if there are no secrets to begin with. */
+     *   in particular if there are no secrets to begin with. */
 
     connection_cloned = nm_simple_connection_new_clone(new);
 
@@ -556,15 +556,15 @@ _secrets_update(NMConnection * connection,
         secrets_setting = g_variant_lookup_value(secrets, setting_name, NM_VARIANT_TYPE_SETTING);
         if (!secrets_setting) {
             /* The connection dictionary didn't contain any secrets for
-			 * @setting_name; just return success.
-			 */
+             * @setting_name; just return success.
+             */
             return TRUE;
         }
         secrets = secrets_setting;
     }
 
     /* if @out_new_connection is provided, we don't modify @connection but clone
-	 * and return it. Otherwise, we update @connection inplace. */
+     * and return it. Otherwise, we update @connection inplace. */
     if (out_new_connection) {
         nm_assert(!*out_new_connection);
         connection          = nm_simple_connection_new_clone(connection);
@@ -733,18 +733,18 @@ get_cmp_flags(NMSettingsConnection *       self,    /* only needed for logging *
         }
 
         /* If the agent returned any system-owned secrets (initial connect and no
-		 * secrets given when the connection was created, or something like that)
-		 * make sure the agent's UID has the 'modify' permission before we use or
-		 * save those system-owned secrets.  If not, discard them and use the
-		 * existing secrets, or fail the connection.
-		 */
+         * secrets given when the connection was created, or something like that)
+         * make sure the agent's UID has the 'modify' permission before we use or
+         * save those system-owned secrets.  If not, discard them and use the
+         * existing secrets, or fail the connection.
+         */
         *agent_had_system =
             _nm_connection_find_secret(connection, secrets, secret_is_system_owned, NULL);
         if (*agent_had_system) {
             if (flags == NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE) {
                 /* No user interaction was allowed when requesting secrets; the
-				 * agent is being bad.  Remove system-owned secrets.
-				 */
+                 * agent is being bad.  Remove system-owned secrets.
+                 */
                 if (is_self) {
                     _LOGD("(%s:%p) interaction forbidden but agent %s returned system secrets",
                           setting_name,
@@ -755,8 +755,8 @@ get_cmp_flags(NMSettingsConnection *       self,    /* only needed for logging *
                 cmp_flags->required |= NM_SETTING_SECRET_FLAG_AGENT_OWNED;
             } else if (agent_has_modify == FALSE) {
                 /* Agent didn't successfully authenticate; clear system-owned secrets
-				 * from the secrets the agent returned.
-				 */
+                 * from the secrets the agent returned.
+                 */
                 if (is_self) {
                     _LOGD("(%s:%p) agent failed to authenticate but provided system secrets",
                           setting_name,
@@ -773,8 +773,8 @@ get_cmp_flags(NMSettingsConnection *       self,    /* only needed for logging *
     }
 
     /* If no user interaction was allowed, make sure that no "unsaved" secrets
-	 * came back.  Unsaved secrets by definition require user interaction.
-	 */
+     * came back.  Unsaved secrets by definition require user interaction.
+     */
     if (flags == NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE) {
         cmp_flags->forbidden |=
             (NM_SETTING_SECRET_FLAG_NOT_SAVED | NM_SETTING_SECRET_FLAG_NOT_REQUIRED);
@@ -923,10 +923,10 @@ get_secrets_done_cb(NMAgentManager *             manager,
     }
 
     /* Update the connection with the agent's secrets; by this point if any
-	 * system-owned secrets exist in 'secrets' the agent that provided them
-	 * will have been authenticated, so those secrets can replace the existing
-	 * system secrets.
-	 */
+     * system-owned secrets exist in 'secrets' the agent that provided them
+     * will have been authenticated, so those secrets can replace the existing
+     * system secrets.
+     */
     filtered_secrets = validate_secret_flags(new_connection, secrets, &cmp_flags);
 
     if (!_secrets_update(new_connection, setting_name, filtered_secrets, NULL, &local)) {
@@ -937,10 +937,10 @@ get_secrets_done_cb(NMAgentManager *             manager,
     }
 
     /* Only save secrets to backing storage if the agent returned any
-	 * new system secrets.  If it didn't, then the secrets are agent-
-	 * owned and there's no point to writing out the connection when
-	 * nothing has changed, since agent-owned secrets don't get saved here.
-	 */
+     * new system secrets.  If it didn't, then the secrets are agent-
+     * owned and there's no point to writing out the connection when
+     * nothing has changed, since agent-owned secrets don't get saved here.
+     */
     if (agent_had_system) {
         _LOGD("(%s:%p) saving new secrets to backing storage", setting_name, call_id);
     } else {
@@ -1097,15 +1097,15 @@ nm_settings_connection_get_secrets(NMSettingsConnection *          self,
     }
 
     /* we remember the current version-id of the secret-agents. The version-id is strictly increasing,
-	 * as new agents register the number. We know hence, that this request was made against a certain
-	 * set of secret-agents.
-	 * If after making this request a new secret-agent registers, the version-id increases.
-	 * Then we know that the this request probably did not yet include the latest secret-agent. */
+     * as new agents register the number. We know hence, that this request was made against a certain
+     * set of secret-agents.
+     * If after making this request a new secret-agent registers, the version-id increases.
+     * Then we know that the this request probably did not yet include the latest secret-agent. */
     priv->last_secret_agent_version_id = nm_agent_manager_get_agent_version_id(priv->agent_mgr);
 
     /* Use priv->system_secrets to work around the fact that nm_connection_clear_secrets()
-	 * will clear secrets on this object's settings.
-	 */
+     * will clear secrets on this object's settings.
+     */
     call_id_a = nm_agent_manager_get_secrets(priv->agent_mgr,
                                              nm_dbus_object_get_path(NM_DBUS_OBJECT(self)),
                                              nm_settings_connection_get_connection(self),
@@ -1327,25 +1327,25 @@ get_settings_auth_cb(NMSettingsConnection * self,
     }
 
     /* Timestamp is not updated in connection's 'timestamp' property,
-	 * because it would force updating the connection and in turn
-	 * writing to /etc periodically, which we want to avoid. Rather real
-	 * timestamps are kept track of in a private variable. So, substitute
-	 * timestamp property with the real one here before returning the settings.
-	 */
+     * because it would force updating the connection and in turn
+     * writing to /etc periodically, which we want to avoid. Rather real
+     * timestamps are kept track of in a private variable. So, substitute
+     * timestamp property with the real one here before returning the settings.
+     */
     options.timestamp.has = TRUE;
     nm_settings_connection_get_timestamp(self, &options.timestamp.val);
 
     /* Seen BSSIDs are not updated in 802-11-wireless 'seen-bssids' property
-	 * from the same reason as timestamp. Thus we put it here to GetSettings()
-	 * return settings too.
-	 */
+     * from the same reason as timestamp. Thus we put it here to GetSettings()
+     * return settings too.
+     */
     seen_bssids         = nm_settings_connection_get_seen_bssids(self);
     options.seen_bssids = seen_bssids;
 
     /* Secrets should *never* be returned by the GetSettings method, they
-	 * get returned by the GetSecrets method which can be better
-	 * protected against leakage of secrets to unprivileged callers.
-	 */
+     * get returned by the GetSecrets method which can be better
+     * protected against leakage of secrets to unprivileged callers.
+     */
     settings = nm_connection_to_dbus_full(nm_settings_connection_get_connection(self),
                                           NM_CONNECTION_SERIALIZE_NO_SECRETS,
                                           &options);
@@ -1449,9 +1449,9 @@ _autoconnect_retries_set(NMSettingsConnection *self, int retries, gboolean is_re
         priv->autoconnect_retries_blocked_until = 0;
     else {
         /* NOTE: the blocked time must be identical for all connections, otherwise
-		 * the tracking of resetting the retry count in NMPolicy needs adjustment
-		 * in _connection_autoconnect_retries_set() (as it would need to re-evaluate
-		 * the next-timeout every time a connection gets blocked). */
+         * the tracking of resetting the retry count in NMPolicy needs adjustment
+         * in _connection_autoconnect_retries_set() (as it would need to re-evaluate
+         * the next-timeout every time a connection gets blocked). */
         priv->autoconnect_retries_blocked_until =
             nm_utils_get_monotonic_timestamp_sec() + AUTOCONNECT_RESET_RETRIES_TIMER;
     }
@@ -1481,18 +1481,18 @@ update_auth_cb(NMSettingsConnection * self,
                                       NM_CONNECTION_AGGREGATE_ANY_SECRETS,
                                       NULL)) {
             /* If the new connection has no secrets, we do not want to remove all
-			 * secrets, rather we keep all the existing ones. Do that by merging
-			 * them in to the new connection.
-			 */
+             * secrets, rather we keep all the existing ones. Do that by merging
+             * them in to the new connection.
+             */
             if (priv->agent_secrets)
                 nm_connection_update_secrets(info->new_settings, NULL, priv->agent_secrets, NULL);
             if (priv->system_secrets)
                 nm_connection_update_secrets(info->new_settings, NULL, priv->system_secrets, NULL);
         } else {
             /* Cache the new secrets from the agent, as stuff like inotify-triggered
-			 * changes to connection's backing config files will blow them away if
-			 * they're in the main connection.
-			 */
+             * changes to connection's backing config files will blow them away if
+             * they're in the main connection.
+             */
             update_agent_secrets_cache(self, info->new_settings);
 
             /* New secrets, allow autoconnection again */
@@ -1560,9 +1560,9 @@ update_auth_cb(NMSettingsConnection * self,
         gs_unref_object NMConnection *for_agent = NULL;
 
         /* Dupe the connection so we can clear out non-agent-owned secrets,
-		 * as agent-owned secrets are the only ones we send back be saved.
-		 * Only send secrets to agents of the same UID that called update too.
-		 */
+         * as agent-owned secrets are the only ones we send back be saved.
+         * Only send secrets to agents of the same UID that called update too.
+         */
         for_agent = nm_simple_connection_new_clone(nm_settings_connection_get_connection(self));
         _nm_connection_clear_secrets_by_secret_flags(for_agent, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
         nm_agent_manager_save_secrets(info->agent_mgr,
@@ -1590,14 +1590,14 @@ get_update_modify_permission(NMConnection *old, NMConnection *new)
     new_num = nm_setting_connection_get_num_permissions(s_con);
 
     /* If the caller is the only user in either connection's permissions, then
-	 * we use the 'modify.own' permission instead of 'modify.system'.
-	 */
+     * we use the 'modify.own' permission instead of 'modify.system'.
+     */
     if (orig_num == 1 && new_num == 1)
         return NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;
 
     /* If the update request affects more than just the caller (ie if the old
-	 * settings were system-wide, or the new ones are), require 'modify.system'.
-	 */
+     * settings were system-wide, or the new ones are), require 'modify.system'.
+     */
     return NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM;
 }
 
@@ -1643,9 +1643,9 @@ settings_connection_update(NMSettingsConnection * self,
         goto error;
 
     /* And that the new connection settings will be visible to the user
-	 * that's sending the update request.  You can't make a connection
-	 * invisible to yourself.
-	 */
+     * that's sending the update request.  You can't make a connection
+     * invisible to yourself.
+     */
     if (!nm_auth_is_subject_in_acl_set_error(tmp ?: nm_settings_connection_get_connection(self),
                                              subject,
                                              NM_SETTINGS_ERROR,
@@ -1822,9 +1822,9 @@ get_modify_permission_basic(NMSettingsConnection *self)
     NMSettingConnection *s_con;
 
     /* If the caller is the only user in the connection's permissions, then
-	 * we use the 'modify.own' permission instead of 'modify.system'.  If the
-	 * request affects more than just the caller, require 'modify.system'.
-	 */
+     * we use the 'modify.own' permission instead of 'modify.system'.  If the
+     * request affects more than just the caller, require 'modify.system'.
+     */
     s_con = nm_connection_get_setting_connection(nm_settings_connection_get_connection(self));
     if (nm_setting_connection_get_num_permissions(s_con) == 1)
         return NM_AUTH_PERMISSION_SETTINGS_MODIFY_OWN;
@@ -1875,10 +1875,10 @@ dbus_get_agent_secrets_cb(NMSettingsConnection *      self,
         g_dbus_method_invocation_return_gerror(context, error);
     else {
         /* Return secrets from agent and backing storage to the D-Bus caller;
-		 * nm_settings_connection_get_secrets() will have updated itself with
-		 * secrets from backing storage and those returned from the agent
-		 * by the time we get here.
-		 */
+         * nm_settings_connection_get_secrets() will have updated itself with
+         * secrets from backing storage and those returned from the agent
+         * by the time we get here.
+         */
         dict = nm_connection_to_dbus(nm_settings_connection_get_connection(self),
                                      NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
         if (!dict)
@@ -2133,7 +2133,7 @@ _cmp_last_resort(NMSettingsConnection *a, NMSettingsConnection *b)
     NM_CMP_DIRECT_STRCMP0(nm_settings_connection_get_uuid(a), nm_settings_connection_get_uuid(b));
 
     /* hm, same UUID. Use their pointer value to give them a stable
-	 * order. */
+     * order. */
     return (a > b) ? -1 : 1;
 }
 
@@ -2309,10 +2309,10 @@ _nm_settings_connection_register_kf_dbs(NMSettingsConnection *self,
                   nm_key_file_db_get_filename(priv->kf_db_seen_bssids));
 
             /* If this connection didn't have an entry in the seen-bssids database,
-			 * maybe this is the first time we've read it in, so populate the
-			 * seen-bssids list from the deprecated seen-bssids property of the
-			 * wifi setting.
-			 */
+             * maybe this is the first time we've read it in, so populate the
+             * seen-bssids list from the deprecated seen-bssids property of the
+             * wifi setting.
+             */
             s_wifi =
                 nm_connection_get_setting_wireless(nm_settings_connection_get_connection(self));
             if (s_wifi) {
@@ -2778,7 +2778,7 @@ nm_settings_connection_class_init(NMSettingsConnectionClass *klass)
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
     /* internal signal, with an argument (NMSettingsConnectionUpdateReason update_reason) as
-	 * guint. */
+     * guint. */
     signals[UPDATED_INTERNAL] = g_signal_new(NM_SETTINGS_CONNECTION_UPDATED_INTERNAL,
                                              G_TYPE_FROM_CLASS(klass),
                                              G_SIGNAL_RUN_FIRST,

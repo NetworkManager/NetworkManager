@@ -95,7 +95,7 @@ _nm_ip_config_add_obj(NMDedupMultiIndex *          multi_idx,
     nm_assert(ifindex > 0);
 
     /* we go through extra lengths to accept a full obj_new object. That one,
-	 * can be reused by increasing the ref-count. */
+     * can be reused by increasing the ref-count. */
     if (!obj_new) {
         nm_assert(pl_new);
         obj_new = nmp_object_stackinit(&obj_new_stackinit, idx_type->obj_type, pl_new);
@@ -123,16 +123,16 @@ _nm_ip_config_add_obj(NMDedupMultiIndex *          multi_idx,
         }
 
         /* if @merge, we merge the new object with the existing one.
-		 * Otherwise, we replace it entirely. */
+         * Otherwise, we replace it entirely. */
         if (merge) {
             switch (idx_type->obj_type) {
             case NMP_OBJECT_TYPE_IP4_ADDRESS:
             case NMP_OBJECT_TYPE_IP6_ADDRESS:
                 /* for addresses that we read from the kernel, we keep the timestamps as defined
-				 * by the previous source (item_old). The reason is, that the other source configured the lifetimes
-				 * with "what should be" and the kernel values are "what turned out after configuring it".
-				 *
-				 * For other sources, the longer lifetime wins. */
+                 * by the previous source (item_old). The reason is, that the other source configured the lifetimes
+                 * with "what should be" and the kernel values are "what turned out after configuring it".
+                 *
+                 * For other sources, the longer lifetime wins. */
                 if ((obj_new->ip_address.addr_source == NM_IP_CONFIG_SOURCE_KERNEL
                      && obj_old->ip_address.addr_source != NM_IP_CONFIG_SOURCE_KERNEL)
                     || nm_platform_ip_address_cmp_expiry(NMP_OBJECT_CAST_IP_ADDRESS(obj_old),
@@ -403,7 +403,7 @@ _nm_ip_config_best_default_route_find_better(const NMPObject *obj_cur, const NMP
     nm_assert(!obj_cur || nmp_object_ip_route_is_best_defaut_route(obj_cur));
 
     /* assumes that @obj_cur is already the best default route (or NULL). It checks whether
-	 * @obj_cmp is also a default route and returns the best of both. */
+     * @obj_cmp is also a default route and returns the best of both. */
     if (obj_cmp && nmp_object_ip_route_is_best_defaut_route(obj_cmp)) {
         guint32 metric_cur, metric_cmp;
 
@@ -420,9 +420,9 @@ _nm_ip_config_best_default_route_find_better(const NMPObject *obj_cur, const NMP
             int c;
 
             /* Routes have the same metric. We still want to deterministically
-			 * prefer one or the other. It's important to consistently choose one
-			 * or the other, so that the order doesn't matter how routes are added
-			 * (and merged). */
+             * prefer one or the other. It's important to consistently choose one
+             * or the other, so that the order doesn't matter how routes are added
+             * (and merged). */
             c = nmp_object_cmp(obj_cur, obj_cmp);
             if (c != 0)
                 return c < 0 ? obj_cur : obj_cmp;
@@ -628,7 +628,7 @@ nm_ip4_config_add_dependent_routes(NMIP4Config *self,
     g_return_if_fail(ifindex > 0);
 
     /* For IPv6 slaac, we explicitly add the device-routes (onlink) to NMIP6Config.
-	 * As we don't do that for IPv4 (and manual IPv6 addresses), add them explicitly. */
+     * As we don't do that for IPv4 (and manual IPv6 addresses), add them explicitly. */
 
     nm_ip_config_iter_ip4_address_for_each (&iter, self, &my_addr) {
         nm_auto_nmpobj NMPObject *r = NULL;
@@ -663,13 +663,13 @@ nm_ip4_config_add_dependent_routes(NMIP4Config *self,
 
         if (nm_utils_ip4_address_is_zeronet(network)) {
             /* Kernel doesn't add device-routes for destinations that
-			 * start with 0.x.y.z. Skip them. */
+             * start with 0.x.y.z. Skip them. */
             continue;
         }
 
         if (my_addr->plen == 32 && my_addr->address == my_addr->peer_address) {
             /* Kernel doesn't add device-routes for /32 addresses unless
-			 * they have a peer. */
+             * they have a peer. */
             continue;
         }
 
@@ -1293,8 +1293,8 @@ nm_ip4_config_subtract(NMIP4Config *      dst,
             NMPlatformIP4Route *rr;
 
             /* the default route was penalized when merging it to the combined ip-config.
-			 * When subtracting the routes, we must re-do that process when comparing
-			 * the routes. */
+             * When subtracting the routes, we must re-do that process when comparing
+             * the routes. */
             o_lookup = nmp_object_stackinit_obj(&o_lookup_copy, o_src);
             rr       = NMP_OBJECT_CAST_IP4_ROUTE(&o_lookup_copy);
             rr->metric =
@@ -1443,8 +1443,8 @@ _nm_ip4_config_intersect_helper(NMIP4Config *      dst,
             NMPlatformIP4Route *rr;
 
             /* the default route was penalized when merging it to the combined ip-config.
-			 * When intersecting the routes, we must re-do that process when comparing
-			 * the routes. */
+             * When intersecting the routes, we must re-do that process when comparing
+             * the routes. */
             o_lookup = nmp_object_stackinit_obj(&o_lookup_copy, o_dst);
             rr       = NMP_OBJECT_CAST_IP4_ROUTE(&o_lookup_copy);
             rr->metric =
@@ -1858,7 +1858,7 @@ nm_ip4_config_replace(NMIP4Config *dst, const NMIP4Config *src, gboolean *releva
 
 #if NM_MORE_ASSERTS
     /* config_equal does not compare *all* the fields, therefore, we might have has_minor_changes
-	 * regardless of config_equal. But config_equal must correspond to has_relevant_changes. */
+     * regardless of config_equal. But config_equal must correspond to has_relevant_changes. */
     nm_assert(config_equal == !has_relevant_changes);
 #endif
 
@@ -2877,15 +2877,15 @@ nm_ip4_config_hash(const NMIP4Config *self, GChecksum *sum, gboolean dns_only)
         g_checksum_update(sum, (const guint8 *) &val, sizeof(val));
 
     /* FIXME(ip-config-checksum): the DNS priority should be considered relevant
-	 * and added into the checksum as well, but this can't be done right now
-	 * because in the DNS manager we rely on the fact that an empty
-	 * configuration (i.e. just created) has a zero checksum. This is needed to
-	 * avoid rewriting resolv.conf when there is no change.
-	 *
-	 * The DNS priority initial value depends on the connection type (VPN or
-	 * not), so it's a bit difficult to add it to checksum maintaining the
-	 * assumption of checksum(empty)=0
-	 */
+     * and added into the checksum as well, but this can't be done right now
+     * because in the DNS manager we rely on the fact that an empty
+     * configuration (i.e. just created) has a zero checksum. This is needed to
+     * avoid rewriting resolv.conf when there is no change.
+     *
+     * The DNS priority initial value depends on the connection type (VPN or
+     * not), so it's a bit difficult to add it to checksum maintaining the
+     * assumption of checksum(empty)=0
+     */
 }
 
 /**

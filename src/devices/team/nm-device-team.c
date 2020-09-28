@@ -340,8 +340,8 @@ teamd_timeout_cb(gpointer user_data)
                                 NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
     } else {
         /* Read again the configuration after the timeout since it might
-		 * have changed.
-		 */
+         * have changed.
+         */
         if (!teamd_read_config(self)) {
             _LOGW(LOGD_TEAM, "failed to read teamd configuration");
             nm_device_state_changed(device,
@@ -362,16 +362,16 @@ teamd_ready(NMDeviceTeam *self)
 
     if (priv->kill_in_progress) {
         /* If we are currently killing teamd, we are not
-		 * interested in knowing when it becomes ready. */
+         * interested in knowing when it becomes ready. */
         return;
     }
 
     nm_device_queue_recheck_assume(device);
 
     /* Grab a teamd control handle even if we aren't going to use it
-	 * immediately.  But if we are, and grabbing it failed, fail the
-	 * device activation.
-	 */
+     * immediately.  But if we are, and grabbing it failed, fail the
+     * device activation.
+     */
     success = ensure_teamd_connection(device);
 
     if (nm_device_get_state(device) != NM_DEVICE_STATE_PREPARE
@@ -426,8 +426,8 @@ teamd_dbus_appeared(GDBusConnection *connection,
     _LOGI(LOGD_TEAM, "teamd appeared on D-Bus");
 
     /* If another teamd grabbed the bus name while our teamd was starting,
-	 * just ignore the death of our teamd and run with the existing one.
-	 */
+     * just ignore the death of our teamd and run with the existing one.
+     */
     if (priv->teamd_process_watch) {
         gs_unref_variant GVariant *ret = NULL;
         guint32                    pid;
@@ -450,11 +450,11 @@ teamd_dbus_appeared(GDBusConnection *connection,
                 teamd_cleanup(self, FALSE);
         } else {
             /* The process that registered on the bus died. If it's
-			 * the teamd instance we just started, ignore the event
-			 * as we already detect the failure through the process
-			 * watch. If it's a previous instance that got killed,
-			 * also ignore that as our new instance will register
-			 * again. */
+             * the teamd instance we just started, ignore the event
+             * as we already detect the failure through the process
+             * watch. If it's a previous instance that got killed,
+             * also ignore that as our new instance will register
+             * again. */
             _LOGD(LOGD_TEAM, "failed to determine D-Bus name owner, ignoring");
             return;
         }
@@ -473,9 +473,9 @@ teamd_dbus_vanished(GDBusConnection *dbus_connection, const char *name, gpointer
 
     if (!priv->tdc) {
         /* g_bus_watch_name will always raise an initial signal, to indicate whether the
-		 * name exists/not exists initially. Do not take this as a failure if it hadn't
-		 * previously appeared.
-		 */
+         * name exists/not exists initially. Do not take this as a failure if it hadn't
+         * previously appeared.
+         */
         _LOGD(LOGD_TEAM, "teamd not on D-Bus (ignored)");
         return;
     }
@@ -522,8 +522,8 @@ teamd_process_watch_cb(GPid pid, int status, gpointer user_data)
     priv->teamd_process_watch = 0;
 
     /* If teamd quit within 5 seconds of starting, it's probably hosed
-	 * and will just die again, so fail the activation.
-	 */
+     * and will just die again, so fail the activation.
+     */
     if (priv->teamd_timeout && (state >= NM_DEVICE_STATE_PREPARE)
         && (state <= NM_DEVICE_STATE_ACTIVATED)) {
         _LOGW(LOGD_TEAM,
@@ -658,7 +658,7 @@ teamd_start(NMDeviceTeam *self)
         json_error_t jerror;
 
         /* Inject the hwaddr property into the JSON configuration.
-		 * While doing so, detect potential conflicts */
+         * While doing so, detect potential conflicts */
 
         json = json_loads(config ?: "{}", JSON_REJECT_DUPLICATES, &jerror);
         g_return_val_if_fail(json, FALSE);
@@ -749,10 +749,10 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
     if (priv->tdc) {
         /* If the existing teamd config is the same as we're about to use,
-		 * then we can proceed.  If it's not the same, and we have a PID,
-		 * kill it so we can respawn it with the right config.  If we don't
-		 * have a PID, then we must fail.
-		 */
+         * then we can proceed.  If it's not the same, and we have a PID,
+         * kill it so we can respawn it with the right config.  If we don't
+         * have a PID, then we must fail.
+         */
         cfg = teamdctl_config_get_raw(priv->tdc);
         if (cfg && nm_streq0(cfg, nm_setting_team_get_config(s_team))) {
             _LOGD(LOGD_TEAM, "using existing matching teamd config");
@@ -894,9 +894,9 @@ release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
             _LOGW(LOGD_TEAM, "failed to release team port %s", nm_device_get_ip_iface(slave));
 
         /* Kernel team code "closes" the port when releasing it, (which clears
-		 * IFF_UP), so we must bring it back up here to ensure carrier changes and
-		 * other state is noticed by the now-released port.
-		 */
+         * IFF_UP), so we must bring it back up here to ensure carrier changes and
+         * other state is noticed by the now-released port.
+         */
         if (!nm_device_bring_up(slave, TRUE, NULL)) {
             _LOGW(LOGD_TEAM,
                   "released team port %s could not be brought up",

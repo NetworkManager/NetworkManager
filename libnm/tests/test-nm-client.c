@@ -160,7 +160,7 @@ test_device_added_signal_after_init(void)
     nmtstc_service_add_device(sinfo, client, "AddWiredDevice", "eth0");
 
     /* Ensure the 'device-added' signal doesn't show up before
-	 * the 'Devices' property change notification */
+     * the 'Devices' property change notification */
     /* coverity[loop_condition] */
     while (!(result & SIGNAL_MASK) && !(result & NOTIFY_MASK))
         g_main_context_iteration(NULL, TRUE);
@@ -532,8 +532,8 @@ test_client_nm_running(void)
     client2 = nmtstc_client_new(FALSE);
 
     /* client2 should know that NM is running, but the previously-created
-	 * client1 hasn't gotten the news yet.
-	 */
+     * client1 hasn't gotten the news yet.
+     */
     g_assert(!nm_client_get_nm_running(client1));
     g_assert(nm_client_get_nm_running(client2));
 
@@ -602,7 +602,7 @@ assert_ac_and_device(NMClient *client)
     device_ac = nm_device_get_active_connection(device);
     if (!device_ac) {
         /* the stub NetworkManager service starts activating in an idle handler (delayed). That means, the
-		 * device may not yet refer to the active connection at this point. */
+         * device may not yet refer to the active connection at this point. */
     } else {
         g_assert_cmpstr(nm_object_get_path(NM_OBJECT(ac)),
                         ==,
@@ -705,8 +705,8 @@ test_active_connections(void)
     g_clear_object(&client);
 
     /* Ensure that we can correctly resolve the recursive property link between the
-	 * AC and the Device in a newly-created client.
-	 */
+     * AC and the Device in a newly-created client.
+     */
     client = nmtstc_client_new(TRUE);
     assert_ac_and_device(client);
     g_clear_object(&client);
@@ -830,10 +830,10 @@ test_activate_virtual(void)
                      &info);
 
     /* We're expecting a client::devices change, client::activate callback,
-	 * and a device::active-connection change.
-	 * The client::devices callback can hook a client::active-connections
-	 * change and bump this if the property is not yet loaded.
-	 */
+     * and a device::active-connection change.
+     * The client::devices callback can hook a client::active-connections
+     * change and bump this if the property is not yet loaded.
+     */
     info.remaining = 3;
 
     g_main_loop_run(gl.loop);
@@ -966,8 +966,8 @@ test_connection_invalid(void)
              == (g_main_context_get_thread_default() ?: g_main_context_default()));
 
     /**************************************************************************
-	 * Add three connections before starting libnm. One valid, two invalid.
-	 *************************************************************************/
+     * Add three connections before starting libnm. One valid, two invalid.
+     *************************************************************************/
 
     connection = nmtst_create_minimal_connection("test-connection-invalid-0",
                                                  NULL,
@@ -1029,8 +1029,8 @@ test_connection_invalid(void)
     nmtst_assert_connection_unnormalizable(connections->pdata[idx[2]], 0, 0);
 
     /**************************************************************************
-	 * After having the client up and running, add another invalid connection
-	 *************************************************************************/
+     * After having the client up and running, add another invalid connection
+     *************************************************************************/
 
     g_object_set(s_con,
                  NM_SETTING_CONNECTION_ID,
@@ -1066,8 +1066,8 @@ test_connection_invalid(void)
     nmtst_assert_connection_unnormalizable(connections->pdata[idx[3]], 0, 0);
 
     /**************************************************************************
-	 * Modify the invalid connection (still invalid)
-	 *************************************************************************/
+     * Modify the invalid connection (still invalid)
+     *************************************************************************/
 
     NMTST_VARIANT_EDITOR(variant,
                          NMTST_VARIANT_CHANGE_PROPERTY("invalid-type-2", "some-key2", "u", 4721));
@@ -1098,8 +1098,8 @@ test_connection_invalid(void)
     nmtst_assert_connection_unnormalizable(connections->pdata[idx[3]], 0, 0);
 
     /**************************************************************************
-	 * Modify the invalid connection (becomes valid)
-	 *************************************************************************/
+     * Modify the invalid connection (becomes valid)
+     *************************************************************************/
 
     NMTST_VARIANT_EDITOR(variant, NMTST_VARIANT_DROP_SETTING("invalid-type-2"));
     NMTST_VARIANT_EDITOR(variant,
@@ -1134,8 +1134,8 @@ test_connection_invalid(void)
     nmtst_assert_connection_unnormalizable(connections->pdata[idx[3]], 0, 0);
 
     /**************************************************************************
-	 * Modify the invalid connection (still invalid)
-	 *************************************************************************/
+     * Modify the invalid connection (still invalid)
+     *************************************************************************/
 
     g_object_set(s_con, NM_SETTING_CONNECTION_ID, "test-connection-invalid-2x", NULL);
     nmtstc_service_update_connection(my_sinfo, path3, connection, FALSE);
@@ -1167,8 +1167,8 @@ test_connection_invalid(void)
                     nm_connection_get_id(connections->pdata[idx[3]]));
 
     /**************************************************************************
-	 * Modify the invalid connection (now becomes valid)
-	 *************************************************************************/
+     * Modify the invalid connection (now becomes valid)
+     *************************************************************************/
 
     g_clear_object(&connection);
     connection = nmtst_create_minimal_connection("test-connection-invalid-2",
@@ -1214,8 +1214,8 @@ test_connection_invalid(void)
                     nm_connection_get_id(connections->pdata[idx[3]]));
 
     /**************************************************************************
-	 * Modify the invalid connection and make it valid
-	 *************************************************************************/
+     * Modify the invalid connection and make it valid
+     *************************************************************************/
 
     g_clear_object(&connection);
     connection = nmtst_create_minimal_connection("test-connection-invalid-1",

@@ -503,10 +503,10 @@ nm_access_point_class_init(NMAccessPointClass *ap_class)
     object_class->finalize     = finalize;
 
     /**
-	 * NMAccessPoint:flags:
-	 *
-	 * The flags of the access point.
-	 **/
+     * NMAccessPoint:flags:
+     *
+     * The flags of the access point.
+     **/
     obj_properties[PROP_FLAGS] = g_param_spec_flags(NM_ACCESS_POINT_FLAGS,
                                                     "",
                                                     "",
@@ -515,10 +515,10 @@ nm_access_point_class_init(NMAccessPointClass *ap_class)
                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMAccessPoint:wpa-flags:
-	 *
-	 * The WPA flags of the access point.
-	 **/
+     * NMAccessPoint:wpa-flags:
+     *
+     * The WPA flags of the access point.
+     **/
     obj_properties[PROP_WPA_FLAGS] = g_param_spec_flags(NM_ACCESS_POINT_WPA_FLAGS,
                                                         "",
                                                         "",
@@ -527,10 +527,10 @@ nm_access_point_class_init(NMAccessPointClass *ap_class)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMAccessPoint:rsn-flags:
-	 *
-	 * The RSN flags of the access point.
-	 **/
+     * NMAccessPoint:rsn-flags:
+     *
+     * The RSN flags of the access point.
+     **/
     obj_properties[PROP_RSN_FLAGS] = g_param_spec_flags(NM_ACCESS_POINT_RSN_FLAGS,
                                                         "",
                                                         "",
@@ -539,10 +539,10 @@ nm_access_point_class_init(NMAccessPointClass *ap_class)
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMAccessPoint:ssid:
-	 *
-	 * The SSID of the access point, or %NULL if it is not known.
-	 **/
+     * NMAccessPoint:ssid:
+     *
+     * The SSID of the access point, or %NULL if it is not known.
+     **/
     obj_properties[PROP_SSID] = g_param_spec_boxed(NM_ACCESS_POINT_SSID,
                                                    "",
                                                    "",
@@ -550,10 +550,10 @@ nm_access_point_class_init(NMAccessPointClass *ap_class)
                                                    G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMAccessPoint:frequency:
-	 *
-	 * The frequency of the access point.
-	 **/
+     * NMAccessPoint:frequency:
+     *
+     * The frequency of the access point.
+     **/
     obj_properties[PROP_FREQUENCY] = g_param_spec_uint(NM_ACCESS_POINT_FREQUENCY,
                                                        "",
                                                        "",
@@ -563,10 +563,10 @@ nm_access_point_class_init(NMAccessPointClass *ap_class)
                                                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMAccessPoint:bssid:
-	 *
-	 * The BSSID of the access point.
-	 **/
+     * NMAccessPoint:bssid:
+     *
+     * The BSSID of the access point.
+     **/
     obj_properties[PROP_BSSID] = g_param_spec_string(NM_ACCESS_POINT_BSSID,
                                                      "",
                                                      "",
@@ -574,12 +574,12 @@ nm_access_point_class_init(NMAccessPointClass *ap_class)
                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMAccessPoint:hw-address:
-	 *
-	 * Alias for #NMAccessPoint:bssid.
-	 *
-	 * Deprecated: 1.0: Use #NMAccessPoint:bssid.
-	 **/
+     * NMAccessPoint:hw-address:
+     *
+     * Alias for #NMAccessPoint:bssid.
+     *
+     * Deprecated: 1.0: Use #NMAccessPoint:bssid.
+     **/
     obj_properties[PROP_HW_ADDRESS] =
         g_param_spec_string(NM_ACCESS_POINT_HW_ADDRESS,
                             "",
@@ -588,12 +588,12 @@ nm_access_point_class_init(NMAccessPointClass *ap_class)
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMAccessPoint:mode:
-	 *
-	 * The mode of the access point; either "infrastructure" (a central
-	 * coordinator of the wireless network allowing clients to connect) or
-	 * "ad-hoc" (a network with no central controller).
-	 **/
+     * NMAccessPoint:mode:
+     *
+     * The mode of the access point; either "infrastructure" (a central
+     * coordinator of the wireless network allowing clients to connect) or
+     * "ad-hoc" (a network with no central controller).
+     **/
     obj_properties[PROP_MODE] = g_param_spec_enum(NM_ACCESS_POINT_MODE,
                                                   "",
                                                   "",
@@ -602,10 +602,10 @@ nm_access_point_class_init(NMAccessPointClass *ap_class)
                                                   G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMAccessPoint:max-bitrate:
-	 *
-	 * The maximum bit rate of the access point in kbit/s.
-	 **/
+     * NMAccessPoint:max-bitrate:
+     *
+     * The maximum bit rate of the access point in kbit/s.
+     **/
     obj_properties[PROP_MAX_BITRATE] = g_param_spec_uint(NM_ACCESS_POINT_MAX_BITRATE,
                                                          "",
                                                          "",
@@ -615,10 +615,10 @@ nm_access_point_class_init(NMAccessPointClass *ap_class)
                                                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMAccessPoint:strength:
-	 *
-	 * The current signal strength of the access point.
-	 **/
+     * NMAccessPoint:strength:
+     *
+     * The current signal strength of the access point.
+     **/
     obj_properties[PROP_STRENGTH] = g_param_spec_uchar(NM_ACCESS_POINT_STRENGTH,
                                                        "",
                                                        "",
@@ -628,14 +628,14 @@ nm_access_point_class_init(NMAccessPointClass *ap_class)
                                                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMAccessPoint:last-seen:
-	 *
-	 * The timestamp (in CLOCK_BOOTTIME seconds) for the last time the
-	 * access point was found in scan results.  A value of -1 means the
-	 * access point has not been found in a scan.
-	 *
-	 * Since: 1.2
-	 **/
+     * NMAccessPoint:last-seen:
+     *
+     * The timestamp (in CLOCK_BOOTTIME seconds) for the last time the
+     * access point was found in scan results.  A value of -1 means the
+     * access point has not been found in a scan.
+     *
+     * Since: 1.2
+     **/
     obj_properties[PROP_LAST_SEEN] = g_param_spec_int(NM_ACCESS_POINT_LAST_SEEN,
                                                       "",
                                                       "",

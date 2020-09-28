@@ -168,13 +168,13 @@ nm_setting_ovs_patch_class_init(NMSettingOvsPatchClass *klass)
     setting_class->verify = verify;
 
     /**
-	 * NMSettingOvsPatch:peer:
-	 *
-	 * Specifies the name of the interface for the other side of the patch.
-	 * The patch on the other side must also set this interface as peer.
-	 *
-	 * Since: 1.10
-	 **/
+     * NMSettingOvsPatch:peer:
+     *
+     * Specifies the name of the interface for the other side of the patch.
+     * The patch on the other side must also set this interface as peer.
+     *
+     * Since: 1.10
+     **/
     obj_properties[PROP_PEER] = g_param_spec_string(NM_SETTING_OVS_PATCH_PEER,
                                                     "",
                                                     "",

@@ -12,24 +12,24 @@ static inline int
 nm_utils_syslog_coerce_from_nm(int syslog_level)
 {
     /* NetworkManager uses internally NMLogLevel levels. When spawning
-	 * the VPN plugin, it maps those levels to syslog levels as follows:
-	 *
-	 *  LOGL_INFO = LOG_NOTICE,
-	 *  LOGL_DEBUG = LOG_INFO,
-	 *  LOGL_TRACE = LOG_DEBUG,
-	 *
-	 * However, when actually printing to syslog, we don't want to print messages
-	 * with LOGL_INFO level as LOG_NOTICE, because they are *not* to be highlighted.
-	 *
-	 * In other words: NetworkManager has 3 levels that should not require highlighting:
-	 * LOGL_INFO, LOGL_DEBUG, LOGL_TRACE. syslog on the other hand has only LOG_INFO and LOG_DEBUG.
-	 *
-	 * So, coerce those values before printing to syslog. When you receive the syslog_level
-	 * from NetworkManager, instead of calling
-	 *   syslog(syslog_level, ...)
-	 * you should call
-	 *   syslog(nm_utils_syslog_coerce_from_nm(syslog_level), ...)
-	 */
+     * the VPN plugin, it maps those levels to syslog levels as follows:
+     *
+     *  LOGL_INFO = LOG_NOTICE,
+     *  LOGL_DEBUG = LOG_INFO,
+     *  LOGL_TRACE = LOG_DEBUG,
+     *
+     * However, when actually printing to syslog, we don't want to print messages
+     * with LOGL_INFO level as LOG_NOTICE, because they are *not* to be highlighted.
+     *
+     * In other words: NetworkManager has 3 levels that should not require highlighting:
+     * LOGL_INFO, LOGL_DEBUG, LOGL_TRACE. syslog on the other hand has only LOG_INFO and LOG_DEBUG.
+     *
+     * So, coerce those values before printing to syslog. When you receive the syslog_level
+     * from NetworkManager, instead of calling
+     *   syslog(syslog_level, ...)
+     * you should call
+     *   syslog(nm_utils_syslog_coerce_from_nm(syslog_level), ...)
+     */
     switch (syslog_level) {
     case LOG_INFO:
         return LOG_DEBUG;

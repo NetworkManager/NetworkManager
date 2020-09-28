@@ -43,9 +43,9 @@ typedef struct _NMActiveConnectionPrivate {
     NMActivationType activation_type : 3;
 
     /* capture the original reason why the connection was activated.
-	 * For example with NM_ACTIVATION_REASON_ASSUME, the connection
-	 * will later change to become fully managed. But the original
-	 * reason never changes. */
+     * For example with NM_ACTIVATION_REASON_ASSUME, the connection
+     * will later change to become fully managed. But the original
+     * reason never changes. */
     NMActivationReason activation_reason : 4;
 
     NMAuthSubject *     subject;
@@ -175,18 +175,18 @@ _settings_connection_updated(NMSettingsConnection *sett_conn,
     NMActiveConnection *self = user_data;
 
     /* we don't know which properties actually changed. Just to be sure,
-	 * notify about all possible properties. After all, an update of a
-	 * connection is a rare event. */
+     * notify about all possible properties. After all, an update of a
+     * connection is a rare event. */
 
     _notify(self, PROP_ID);
 
     /* it's a bit odd to update the TYPE of an active connection. But the alternative
-	 * is unexpected too. */
+     * is unexpected too. */
     _notify(self, PROP_TYPE);
 
     /* currently, the UUID and the exported CONNECTION path cannot change. Later, we might
-	 * want to support a re-link operation, which associates an active-connection with a different
-	 * settings-connection. */
+     * want to support a re-link operation, which associates an active-connection with a different
+     * settings-connection. */
 }
 
 static void
@@ -257,15 +257,15 @@ nm_active_connection_set_state(NMActiveConnection *          self,
 
     if (new_state > NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
         /* once we are about to deactivate, we don't need the keep-alive instance
-		 * anymore. Freeze/disarm it. */
+         * anymore. Freeze/disarm it. */
         nm_keep_alive_disarm(priv->keep_alive);
     }
 
     if (new_state == NM_ACTIVE_CONNECTION_STATE_ACTIVATED
         && priv->activation_type == NM_ACTIVATION_TYPE_ASSUME) {
         /* assuming connections mean to gracefully take over an externally
-		 * configured device. Once activation is complete, an assumed
-		 * activation *is* the same as a full activation. */
+         * configured device. Once activation is complete, an assumed
+         * activation *is* the same as a full activation. */
         _set_activation_type_managed(self);
     }
 
@@ -305,9 +305,9 @@ nm_active_connection_set_state(NMActiveConnection *          self,
         auth_complete(self, FALSE, "Authorization request cancelled");
 
         /* Device is no longer relevant when deactivated. So remove it and
-		 * emit property change notification so clients re-read the value,
-		 * which will be NULL due to conditions in get_property().
-		 */
+         * emit property change notification so clients re-read the value,
+         * which will be NULL due to conditions in get_property().
+         */
         _device_cleanup(self);
         _notify(self, PROP_DEVICES);
     }
@@ -406,8 +406,8 @@ nm_active_connection_get_settings_connection(NMActiveConnection *self)
     sett_conn = _nm_active_connection_get_settings_connection(self);
 
     /* Only call this function on an active-connection that is already
-	 * fully set-up (i.e. that has a settings-connection). Other uses
-	 * indicate a bug. */
+     * fully set-up (i.e. that has a settings-connection). Other uses
+     * indicate a bug. */
     g_return_val_if_fail(sett_conn, NULL);
     return sett_conn;
 }
@@ -422,8 +422,8 @@ nm_active_connection_get_applied_connection(NMActiveConnection *self)
     connection = NM_ACTIVE_CONNECTION_GET_PRIVATE(self)->applied_connection;
 
     /* Only call this function on an active-connection that is already
-	 * fully set-up (i.e. that has a settings-connection). Other uses
-	 * indicate a bug. */
+     * fully set-up (i.e. that has a settings-connection). Other uses
+     * indicate a bug. */
     g_return_val_if_fail(connection, NULL);
     return connection;
 }
@@ -443,7 +443,7 @@ _set_applied_connection_take(NMActiveConnection *self, NMConnection *applied_con
     nm_connection_clear_secrets(priv->applied_connection);
 
     /* we determine whether the connection is a master/slave, based solely
-	 * on the connection properties itself. */
+     * on the connection properties itself. */
     s_con = nm_connection_get_setting_connection(priv->applied_connection);
     if (nm_setting_connection_get_master(s_con))
         flags_val |= NM_ACTIVATION_STATE_FLAG_IS_SLAVE;
@@ -472,12 +472,12 @@ nm_active_connection_set_settings_connection(NMActiveConnection *  self,
     g_return_if_fail(!priv->applied_connection);
 
     /* Can't change connection after the ActiveConnection is exported over D-Bus.
-	 *
-	 * Later, we want to change the settings-connection of an activated connection.
-	 * When doing that, this changes the assumption that the settings-connection
-	 * never changes (once it's set). That has effects for NMVpnConnection and
-	 * NMActivationRequest.
-	 * For example, we'd have to cancel all pending seret requests. */
+     *
+     * Later, we want to change the settings-connection of an activated connection.
+     * When doing that, this changes the assumption that the settings-connection
+     * never changes (once it's set). That has effects for NMVpnConnection and
+     * NMActivationRequest.
+     * For example, we'd have to cancel all pending seret requests. */
     g_return_if_fail(!nm_dbus_object_is_exported(NM_DBUS_OBJECT(self)));
 
     _set_settings_connection(self, sett_conn);
@@ -538,8 +538,8 @@ nm_active_connection_set_specific_object(NMActiveConnection *self, const char *s
     NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
 
     /* Nothing that calls this function should be using paths from D-Bus,
-	 * where NM uses "/" to mean NULL.
-	 */
+     * where NM uses "/" to mean NULL.
+     */
     nm_assert(!nm_streq0(specific_object, "/"));
 
     if (nm_streq0(priv->specific_object, specific_object))
@@ -728,8 +728,8 @@ nm_active_connection_set_device(NMActiveConnection *self, NMDevice *device)
         }
     } else {
         /* The ActiveConnection's device can only be cleared after the
-		 * connection is activated.
-		 */
+         * connection is activated.
+         */
         g_warn_if_fail(priv->state > NM_ACTIVE_CONNECTION_STATE_UNKNOWN);
         priv->device = NULL;
     }
@@ -772,10 +772,10 @@ check_master_ready(NMActiveConnection *self)
     gboolean                   signalling = FALSE;
 
     /* ActiveConnetions don't enter the ACTIVATING state until they have a
-	 * NMDevice in PREPARE or higher states, so the master active connection's
-	 * device will be ready to accept slaves when the master is in ACTIVATING
-	 * or higher states.
-	 */
+     * NMDevice in PREPARE or higher states, so the master active connection's
+     * device will be ready to accept slaves when the master is in ACTIVATING
+     * or higher states.
+     */
     if (!priv->master_ready && priv->master && priv->state == NM_ACTIVE_CONNECTION_STATE_ACTIVATING
         && NM_IN_SET(nm_active_connection_get_state(priv->master),
                      NM_ACTIVE_CONNECTION_STATE_ACTIVATING,
@@ -798,9 +798,9 @@ check_master_ready(NMActiveConnection *self)
         _notify(self, PROP_INT_MASTER_READY);
 
         /* Also notify clients to recheck the exported 'master' property to
-		 * ensure that if the master connection was created without a device
-		 * that we notify clients when the master device is known.
-		 */
+         * ensure that if the master connection was created without a device
+         * that we notify clients when the master device is known.
+         */
         _notify(self, PROP_MASTER);
     }
 }
@@ -1127,9 +1127,9 @@ auth_done(NMAuthManager *      auth_mgr,
         nm_assert(auth_call_id == priv->auth.call_id_wifi_shared_permission);
         if (result != NM_AUTH_CALL_RESULT_YES) {
             /* we don't fail right away. Instead, we mark that wifi-shared-permissions
-			 * are missing. We prefer to report the failure about network-control.
-			 * Below, we will wait longer for call_id_network_control (if it's still
-			 * pending). */
+             * are missing. We prefer to report the failure about network-control.
+             * Below, we will wait longer for call_id_network_control (if it's still
+             * pending). */
             priv->auth.call_id_wifi_shared_permission = AUTH_CALL_ID_SHARED_WIFI_PERMISSION_FAILED;
         } else
             priv->auth.call_id_wifi_shared_permission = NULL;
@@ -1275,13 +1275,13 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 
     switch (prop_id) {
     /* note that while priv->settings_connection.obj might not be set initially,
-	 * it will be set before the object is exported on D-Bus. Hence,
-	 * nobody is calling these property getters before the object is
-	 * exported, at which point we will have a valid settings-connection.
-	 *
-	 * Therefore, intentionally not check whether priv->settings_connection.obj
-	 * is set, to get an assertion failure if somebody tries to access the
-	 * getters at the wrong time. */
+     * it will be set before the object is exported on D-Bus. Hence,
+     * nobody is calling these property getters before the object is
+     * exported, at which point we will have a valid settings-connection.
+     *
+     * Therefore, intentionally not check whether priv->settings_connection.obj
+     * is set, to get an assertion failure if somebody tries to access the
+     * getters at the wrong time. */
     case PROP_CONNECTION:
         g_value_set_string(value, nm_dbus_track_obj_path_get(&priv->settings_connection));
         break;
@@ -1311,8 +1311,8 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
             g_value_set_uint(value, priv->state);
         else {
             /* When the AC has just been created, its externally-visible state should
-			 * be "ACTIVATING", even though internally it is "UNKNOWN".
-			 */
+             * be "ACTIVATING", even though internally it is "UNKNOWN".
+             */
             g_value_set_uint(value, NM_ACTIVE_CONNECTION_STATE_ACTIVATING);
         }
         break;
@@ -1380,11 +1380,11 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         acon = g_value_get_object(value);
         if (acon) {
             /* we don't call _set_applied_connection_take() yet, because the instance
-			 * is not yet fully initialized. We are currently in the process of setting
-			 * the constructor properties.
-			 *
-			 * For now, just piggyback the connection, but call _set_applied_connection_take()
-			 * in constructed(). */
+             * is not yet fully initialized. We are currently in the process of setting
+             * the constructor properties.
+             *
+             * For now, just piggyback the connection, but call _set_applied_connection_take()
+             * in constructed(). */
             priv->applied_connection = g_object_ref(acon);
         }
         break;
@@ -1491,10 +1491,10 @@ constructed(GObject *object)
 
     if (priv->applied_connection) {
         /* priv->applied_connection was set during the construction of the object.
-		 * It's not yet fully initialized, so do that now.
-		 *
-		 * We delayed that, because we may log in _set_applied_connection_take(), and the
-		 * first logging line should be "constructed" above). */
+         * It's not yet fully initialized, so do that now.
+         *
+         * We delayed that, because we may log in _set_applied_connection_take(), and the
+         * first logging line should be "constructed" above). */
         _set_applied_connection_take(self, g_steal_pointer(&priv->applied_connection));
     }
 

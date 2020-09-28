@@ -339,8 +339,8 @@ nm_vpn_service_plugin_set_config(NMVpnServicePlugin *plugin, GVariant *config)
     (void) g_variant_lookup(config, NM_VPN_PLUGIN_CONFIG_HAS_IP6, "b", &priv->has_ip6);
 
     /* Record the items that need to also be inserted into the
-	 * ip4config, for compatibility with older daemons.
-	 */
+     * ip4config, for compatibility with older daemons.
+     */
     if (priv->banner)
         g_variant_unref(priv->banner);
     priv->banner = g_variant_lookup_value(config, NM_VPN_PLUGIN_CONFIG_BANNER, G_VARIANT_TYPE("s"));
@@ -379,18 +379,18 @@ nm_vpn_service_plugin_set_ip4_config(NMVpnServicePlugin *plugin, GVariant *ip4_c
     priv->got_ip4 = TRUE;
 
     /* Old plugins won't send the "config" signal and thus can't send
-	 * NM_VPN_SERVICE_PLUGIN_CONFIG_HAS_IP4 either.  But since they don't support IPv6,
-	 * we can safely assume that, if we don't receive a "config" signal but do
-	 * receive an "ip4-config" signal, the old plugin supports IPv4.
-	 */
+     * NM_VPN_SERVICE_PLUGIN_CONFIG_HAS_IP4 either.  But since they don't support IPv6,
+     * we can safely assume that, if we don't receive a "config" signal but do
+     * receive an "ip4-config" signal, the old plugin supports IPv4.
+     */
     if (!priv->got_config)
         priv->has_ip4 = TRUE;
 
     /* Older NetworkManager daemons expect all config info to be in
-	 * the ip4 config, so they won't even notice the "config" signal
-	 * being emitted. So just copy all of that data into the ip4
-	 * config too.
-	 */
+     * the ip4 config, so they won't even notice the "config" signal
+     * being emitted. So just copy all of that data into the ip4
+     * config too.
+     */
     g_variant_builder_init(&builder, G_VARIANT_TYPE("a{sv}"));
     g_variant_iter_init(&iter, ip4_config);
     while (g_variant_iter_next(&iter, "{&sv}", &key, &value)) {
@@ -547,8 +547,8 @@ _connect_generic(NMVpnServicePlugin *   plugin,
         g_dbus_method_invocation_take_error(context, error);
 
         /* Stop the plugin from an idle handler so that the Connect
-		 * method return gets sent before the STOP StateChanged signal.
-		 */
+         * method return gets sent before the STOP StateChanged signal.
+         */
         schedule_fail_stop(plugin, fail_stop_timeout);
     }
 
@@ -615,8 +615,8 @@ impl_vpn_service_plugin_need_secrets(NMVpnServicePlugin *   plugin,
 
     if (needed) {
         /* Push back the quit timer so the VPN plugin doesn't quit in the
-		 * middle of asking the user for secrets.
-		 */
+         * middle of asking the user for secrets.
+         */
         schedule_quit_timer(plugin);
 
         g_assert(setting_name);
@@ -679,8 +679,8 @@ impl_vpn_service_plugin_new_secrets(NMVpnServicePlugin *   plugin,
         g_dbus_method_invocation_take_error(context, error);
 
         /* Stop the plugin from and idle handler so that the NewSecrets
-		 * method return gets sent before the STOP StateChanged signal.
-		 */
+         * method return gets sent before the STOP StateChanged signal.
+         */
         schedule_fail_stop(plugin, 0);
     }
 
@@ -712,13 +712,13 @@ nm_vpn_service_plugin_secrets_required(NMVpnServicePlugin *plugin,
     g_return_if_fail(NM_VPN_SERVICE_PLUGIN_GET_CLASS(plugin)->new_secrets);
 
     /* Plugin cannot call this method if NetworkManager didn't originally call
-	 * ConnectInteractive().
-	 */
+     * ConnectInteractive().
+     */
     g_return_if_fail(priv->interactive == TRUE);
 
     /* Cancel the connect timer since secrets might take a while.  It'll
-	 * get restarted when the secrets come back via NewSecrets().
-	 */
+     * get restarted when the secrets come back via NewSecrets().
+     */
     nm_clear_g_source(&priv->connect_timer);
 
     g_signal_emit(plugin, signals[SECRETS_REQUIRED], 0, message, hints);
@@ -1193,12 +1193,12 @@ nm_vpn_service_plugin_class_init(NMVpnServicePluginClass *plugin_class)
     plugin_class->state_changed = state_changed;
 
     /**
-	 * NMVpnServicePlugin:service-name:
-	 *
-	 * The D-Bus service name of this plugin.
-	 *
-	 * Since: 1.2
-	 */
+     * NMVpnServicePlugin:service-name:
+     *
+     * The D-Bus service name of this plugin.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_DBUS_SERVICE_NAME] =
         g_param_spec_string(NM_VPN_SERVICE_PLUGIN_DBUS_SERVICE_NAME,
                             "",
@@ -1207,12 +1207,12 @@ nm_vpn_service_plugin_class_init(NMVpnServicePluginClass *plugin_class)
                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMVpnServicePlugin:watch-peer:
-	 *
-	 * Whether to watch for D-Bus peer's changes.
-	 *
-	 * Since: 1.2
-	 */
+     * NMVpnServicePlugin:watch-peer:
+     *
+     * Whether to watch for D-Bus peer's changes.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_DBUS_WATCH_PEER] =
         g_param_spec_boolean(NM_VPN_SERVICE_PLUGIN_DBUS_WATCH_PEER,
                              "",
@@ -1221,12 +1221,12 @@ nm_vpn_service_plugin_class_init(NMVpnServicePluginClass *plugin_class)
                              G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
 
     /**
-	 * NMVpnServicePlugin:state:
-	 *
-	 * The state of the plugin.
-	 *
-	 * Since: 1.2
-	 */
+     * NMVpnServicePlugin:state:
+     *
+     * The state of the plugin.
+     *
+     * Since: 1.2
+     */
     obj_properties[PROP_STATE] = g_param_spec_enum(NM_VPN_SERVICE_PLUGIN_STATE,
                                                    "",
                                                    "",
