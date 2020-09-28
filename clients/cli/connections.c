@@ -866,8 +866,7 @@ const NmcMetaGenericInfo *const metagen_con_active_vpn[_NMC_GENERIC_INFO_TYPE_CO
                                          NM_SETTING_SRIOV_SETTING_NAME"," \
                                          NM_SETTING_ETHTOOL_SETTING_NAME"," \
                                          NM_SETTING_OVS_DPDK_SETTING_NAME \
-                                         // NM_SETTING_DUMMY_SETTING_NAME
-                                         // NM_SETTING_WIMAX_SETTING_NAME
+                                         /* NM_SETTING_DUMMY_SETTING_NAME NM_SETTING_WIMAX_SETTING_NAME */
 
 const NmcMetaGenericInfo *const nmc_fields_con_active_details_groups[] = {
 	NMC_META_GENERIC_WITH_NESTED ("GENERAL", metagen_con_active_general),                /* 0 */
