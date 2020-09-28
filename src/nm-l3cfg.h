@@ -18,10 +18,47 @@
 
 #define NM_L3CFG_SIGNAL_NOTIFY "l3cfg-notify"
 
+typedef enum _nm_packed {
+    NM_L3_ACD_DEFEND_TYPE_NONE,
+    NM_L3_ACD_DEFEND_TYPE_NEVER,
+    NM_L3_ACD_DEFEND_TYPE_ONCE,
+    NM_L3_ACD_DEFEND_TYPE_ALWAYS,
+} NML3AcdDefendType;
+
+typedef enum _nm_packed {
+    NM_L3_ACD_ADDR_STATE_INIT,
+    NM_L3_ACD_ADDR_STATE_PROBING,
+    NM_L3_ACD_ADDR_STATE_USED,
+    NM_L3_ACD_ADDR_STATE_READY,
+    NM_L3_ACD_ADDR_STATE_DEFENDING,
+    NM_L3_ACD_ADDR_STATE_CONFLICT,
+    NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED,
+} NML3AcdAddrState;
+
+typedef struct {
+    const NMPObject *     obj;
+    const NML3ConfigData *l3cd;
+    gconstpointer         tag;
+
+    char _padding[sizeof(struct {
+        guint32           a;
+        NML3AcdDefendType b;
+        guint8            c;
+    })];
+} NML3AcdAddrTrackInfo;
+
+typedef struct {
+    in_addr_t                   addr;
+    guint                       n_track_infos;
+    NML3AcdAddrState            state;
+    NML3Cfg *                   l3cfg;
+    const NML3AcdAddrTrackInfo *track_infos;
+} NML3AcdAddrInfo;
+
 typedef enum {
     NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED,
 
-    NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED,
+    NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT,
 
     /* emitted at the end of nm_l3cfg_platform_commit(). */
     NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT,
@@ -42,20 +79,11 @@ typedef enum {
 } NML3ConfigNotifyType;
 
 typedef struct {
-    const NMPObject *     obj;
-    const NML3ConfigData *l3cd;
-    gconstpointer         tag;
-} NML3ConfigNotifyPayloadAcdFailedSource;
-
-typedef struct {
     NML3ConfigNotifyType notify_type;
     union {
         struct {
-            in_addr_t                                     addr;
-            guint                                         sources_len;
-            bool                                          probe_result : 1;
-            const NML3ConfigNotifyPayloadAcdFailedSource *sources;
-        } acd_completed;
+            NML3AcdAddrInfo info;
+        } acd_event;
 
         struct {
             const NMPObject *          obj;
@@ -79,7 +107,6 @@ struct _NML3Cfg {
         const NMPObject *       plobj;
         const NMPObject *       plobj_next;
         int                     ifindex;
-        bool                    changed_configs : 1;
     } priv;
 };
 
@@ -205,6 +232,7 @@ gboolean nm_l3cfg_add_config(NML3Cfg *             self,
                              guint32               default_route_metric_6,
                              guint32               default_route_penalty_4,
                              guint32               default_route_penalty_6,
+                             NML3AcdDefendType     acd_defend_type,
                              guint32               acd_timeout_msec,
                              NML3ConfigMergeFlags  merge_flags);
 
@@ -247,6 +275,10 @@ typedef enum _nm_packed {
 void nm_l3cfg_commit(NML3Cfg *self, NML3CfgCommitType commit_type);
 
 void nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self);
+
+/*****************************************************************************/
+
+const NML3AcdAddrInfo *nm_l3cfg_get_acd_addr_info(NML3Cfg *self, in_addr_t addr);
 
 /*****************************************************************************/
 
