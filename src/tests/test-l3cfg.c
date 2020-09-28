@@ -116,26 +116,21 @@ _test_l3cfg_data_set_notify_type(TestL3cfgData *tdata, TestL3cfgNotifyType notif
 }
 
 static void
-_test_l3cfg_signal_notify(NML3Cfg *                      l3cfg,
-                          int                            notify_type_i,
-                          const NML3ConfigNotifyPayload *payload,
-                          TestL3cfgData *                tdata)
+_test_l3cfg_signal_notify(NML3Cfg *                   l3cfg,
+                          const NML3ConfigNotifyData *notify_data,
+                          TestL3cfgData *             tdata)
 {
-    NML3ConfigNotifyType l3_notify_type = notify_type_i;
-
     g_assert(NM_IS_L3CFG(l3cfg));
     g_assert(tdata);
-    g_assert((!!payload)
-             == NM_IN_SET(l3_notify_type,
-                          NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE,
-                          NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE,
-                          NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED));
+    g_assert(notify_data);
+    g_assert(_NM_INT_NOT_NEGATIVE(notify_data->notify_type));
+    g_assert(notify_data->notify_type < _NM_L3_CONFIG_NOTIFY_TYPE_NUM);
 
-    if (l3_notify_type == NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE)
-        g_assert(payload->platform_change_on_idle.obj_type_flags != 0u);
-    else if (l3_notify_type == NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE) {
-        g_assert(NMP_OBJECT_IS_VALID(payload->platform_change.obj));
-        g_assert(payload->platform_change.change_type != 0);
+    if (notify_data->notify_type == NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE)
+        g_assert(notify_data->platform_change_on_idle.obj_type_flags != 0u);
+    else if (notify_data->notify_type == NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE) {
+        g_assert(NMP_OBJECT_IS_VALID(notify_data->platform_change.obj));
+        g_assert(notify_data->platform_change.change_type != 0);
     }
 
     switch (tdata->notify_type) {
@@ -143,7 +138,7 @@ _test_l3cfg_signal_notify(NML3Cfg *                      l3cfg,
         g_assert_not_reached();
         break;
     case TEST_L3CFG_NOTIFY_TYPE_IDLE_ASSERT_NO_SIGNAL:
-        if (NM_IN_SET(l3_notify_type,
+        if (NM_IN_SET(notify_data->notify_type,
                       NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE,
                       NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE))
             return;
@@ -151,15 +146,15 @@ _test_l3cfg_signal_notify(NML3Cfg *                      l3cfg,
         return;
     case TEST_L3CFG_NOTIFY_TYPE_COMMIT_1:
         g_assert_cmpint(tdata->post_commit_event_count, ==, 0);
-        switch (l3_notify_type) {
+        switch (notify_data->notify_type) {
         case NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT:
             tdata->post_commit_event_count++;
             return;
         case NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED:
             switch (tdata->f->test_idx) {
             case 2:
-                nmtst_assert_ip4_address(payload->acd_completed.addr, "192.167.133.45");
-                g_assert(payload->acd_completed.probe_result);
+                nmtst_assert_ip4_address(notify_data->acd_completed.addr, "192.167.133.45");
+                g_assert(notify_data->acd_completed.probe_result);
                 g_assert(tdata->general_event_count == 0);
                 tdata->general_event_count++;
                 return;
@@ -174,16 +169,16 @@ _test_l3cfg_signal_notify(NML3Cfg *                      l3cfg,
             return;
         }
     case TEST_L3CFG_NOTIFY_TYPE_WAIT_FOR_ACD_READY_1:
-        if (NM_IN_SET(l3_notify_type,
+        if (NM_IN_SET(notify_data->notify_type,
                       NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE,
                       NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE))
             return;
-        if (l3_notify_type == NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED) {
+        if (notify_data->notify_type == NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED) {
             g_assert(tdata->notify_data.wait_for_acd_ready_1.cb_count == 0);
             tdata->notify_data.wait_for_acd_ready_1.cb_count++;
             return;
         }
-        if (l3_notify_type == NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT) {
+        if (notify_data->notify_type == NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT) {
             g_assert(tdata->notify_data.wait_for_acd_ready_1.cb_count == 1);
             tdata->notify_data.wait_for_acd_ready_1.cb_count++;
             nmtstp_platform_ip_addresses_assert(tdata->f->platform,

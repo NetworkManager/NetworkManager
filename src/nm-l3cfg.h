@@ -48,6 +48,7 @@ typedef struct {
 } NML3ConfigNotifyPayloadAcdFailedSource;
 
 typedef struct {
+    NML3ConfigNotifyType notify_type;
     union {
         struct {
             in_addr_t                                     addr;
@@ -65,7 +66,7 @@ typedef struct {
             guint32 obj_type_flags;
         } platform_change_on_idle;
     };
-} NML3ConfigNotifyPayload;
+} NML3ConfigNotifyData;
 
 struct _NML3CfgPrivate;
 
@@ -170,9 +171,7 @@ gboolean nm_l3cfg_get_acd_is_pending(NML3Cfg *self);
 
 /*****************************************************************************/
 
-void _nm_l3cfg_emit_signal_notify(NML3Cfg *                      self,
-                                  NML3ConfigNotifyType           notify_type,
-                                  const NML3ConfigNotifyPayload *pay_load);
+void _nm_l3cfg_emit_signal_notify(NML3Cfg *self, const NML3ConfigNotifyData *notify_data);
 
 /*****************************************************************************/
 

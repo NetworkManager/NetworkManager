@@ -293,10 +293,9 @@ static NM_UTILS_ENUM2STR_DEFINE(
 /*****************************************************************************/
 
 static const char *
-_l3_config_notify_type_and_payload_to_string(NML3ConfigNotifyType           notify_type,
-                                             const NML3ConfigNotifyPayload *payload,
-                                             char *                         sbuf,
-                                             gsize                          sbuf_size)
+_l3_config_notify_data_to_string(const NML3ConfigNotifyData *notify_data,
+                                 char *                      sbuf,
+                                 gsize                       sbuf_size)
 {
     char  sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
     char *s = sbuf;
@@ -305,31 +304,31 @@ _l3_config_notify_type_and_payload_to_string(NML3ConfigNotifyType           noti
     nm_assert(sbuf);
     nm_assert(sbuf_size > 0);
 
-    _l3_config_notify_type_to_string(notify_type, s, l);
+    _l3_config_notify_type_to_string(notify_data->notify_type, s, l);
     nm_utils_strbuf_seek_end(&s, &l);
 
-    switch (notify_type) {
+    switch (notify_data->notify_type) {
     case NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED:
         nm_utils_strbuf_append(&s,
                                &l,
                                ", addr=%s, probe-result=%d",
-                               _nm_utils_inet4_ntop(payload->acd_completed.addr, sbuf_addr),
-                               (int) payload->acd_completed.probe_result);
+                               _nm_utils_inet4_ntop(notify_data->acd_completed.addr, sbuf_addr),
+                               (int) notify_data->acd_completed.probe_result);
         break;
     case NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE:
         nm_utils_strbuf_append(
             &s,
             &l,
             ", obj-type=%s, change=%s, obj=",
-            NMP_OBJECT_GET_CLASS(payload->platform_change.obj)->obj_type_name,
-            nm_platform_signal_change_type_to_string(payload->platform_change.change_type));
-        nmp_object_to_string(payload->platform_change.obj, NMP_OBJECT_TO_STRING_PUBLIC, s, l);
+            NMP_OBJECT_GET_CLASS(notify_data->platform_change.obj)->obj_type_name,
+            nm_platform_signal_change_type_to_string(notify_data->platform_change.change_type));
+        nmp_object_to_string(notify_data->platform_change.obj, NMP_OBJECT_TO_STRING_PUBLIC, s, l);
         break;
     case NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE:
         nm_utils_strbuf_append(&s,
                                &l,
                                ", obj-type-flags=0x%x",
-                               payload->platform_change_on_idle.obj_type_flags);
+                               notify_data->platform_change_on_idle.obj_type_flags);
         break;
     default:
         break;
@@ -339,24 +338,26 @@ _l3_config_notify_type_and_payload_to_string(NML3ConfigNotifyType           noti
 }
 
 void
-_nm_l3cfg_emit_signal_notify(NML3Cfg *                      self,
-                             NML3ConfigNotifyType           notify_type,
-                             const NML3ConfigNotifyPayload *payload)
+_nm_l3cfg_emit_signal_notify(NML3Cfg *self, const NML3ConfigNotifyData *notify_data)
 {
     char sbuf[sizeof(_nm_utils_to_string_buffer)];
 
-    nm_assert(_NM_INT_NOT_NEGATIVE(notify_type));
-    nm_assert(notify_type < _NM_L3_CONFIG_NOTIFY_TYPE_NUM);
-    nm_assert((!!payload)
-              == NM_IN_SET(notify_type,
-                           NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED,
-                           NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE,
-                           NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE));
+    nm_assert(notify_data);
+    nm_assert(_NM_INT_NOT_NEGATIVE(notify_data->notify_type));
+    nm_assert(notify_data->notify_type < _NM_L3_CONFIG_NOTIFY_TYPE_NUM);
 
-    _LOGT("emit signal (%s)",
-          _l3_config_notify_type_and_payload_to_string(notify_type, payload, sbuf, sizeof(sbuf)));
+    _LOGT("emit signal (%s)", _l3_config_notify_data_to_string(notify_data, sbuf, sizeof(sbuf)));
 
-    g_signal_emit(self, signals[SIGNAL_NOTIFY], 0, (int) notify_type, payload);
+    g_signal_emit(self, signals[SIGNAL_NOTIFY], 0, notify_data);
+}
+
+static void
+_nm_l3cfg_emit_signal_notify_simple(NML3Cfg *self, NML3ConfigNotifyType notify_type)
+{
+    NML3ConfigNotifyData notify_data;
+
+    notify_data.notify_type = notify_type;
+    _nm_l3cfg_emit_signal_notify(self, &notify_data);
 }
 
 /*****************************************************************************/
@@ -675,18 +676,16 @@ _load_link(NML3Cfg *self, gboolean initial)
 void
 _nm_l3cfg_notify_platform_change_on_idle(NML3Cfg *self, guint32 obj_type_flags)
 {
-    NML3ConfigNotifyPayload payload;
+    NML3ConfigNotifyData notify_data;
 
     if (self->priv.plobj_next != self->priv.plobj)
         _load_link(self, FALSE);
 
-    payload = (NML3ConfigNotifyPayload){
-        .platform_change_on_idle =
-            {
-                .obj_type_flags = obj_type_flags,
-            },
+    notify_data.notify_type             = NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE;
+    notify_data.platform_change_on_idle = (typeof(notify_data.platform_change_on_idle)){
+        .obj_type_flags = obj_type_flags,
     };
-    _nm_l3cfg_emit_signal_notify(self, NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE, &payload);
+    _nm_l3cfg_emit_signal_notify(self, &notify_data);
 
     _l3_acd_data_notify_acd_completed_all(self);
 
@@ -701,8 +700,8 @@ _nm_l3cfg_notify_platform_change(NML3Cfg *                  self,
                                  NMPlatformSignalChangeType change_type,
                                  const NMPObject *          obj)
 {
-    NML3ConfigNotifyPayload payload;
-    NMPObjectType           obj_type;
+    NML3ConfigNotifyData notify_data;
+    NMPObjectType        obj_type;
 
     nm_assert(NMP_OBJECT_IS_VALID(obj));
 
@@ -731,14 +730,12 @@ _nm_l3cfg_notify_platform_change(NML3Cfg *                  self,
         break;
     }
 
-    payload = (NML3ConfigNotifyPayload){
-        .platform_change =
-            {
-                .obj         = obj,
-                .change_type = change_type,
-            },
+    notify_data.notify_type     = NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE;
+    notify_data.platform_change = (typeof(notify_data.platform_change)){
+        .obj         = obj,
+        .change_type = change_type,
     };
-    _nm_l3cfg_emit_signal_notify(self, NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE, &payload);
+    _nm_l3cfg_emit_signal_notify(self, &notify_data);
 
     nm_assert(NMP_OBJECT_IS_VALID(obj));
 }
@@ -1530,7 +1527,7 @@ _l3_acd_data_notify_acd_completed(NML3Cfg *self, AcdData *acd_data, gboolean for
 {
     gs_free NML3ConfigNotifyPayloadAcdFailedSource *sources_free = NULL;
     NML3ConfigNotifyPayloadAcdFailedSource *        sources      = NULL;
-    NML3ConfigNotifyPayload                         payload;
+    NML3ConfigNotifyData                            notify_data;
     AcdTrackData *                                  acd_track;
     guint                                           i, n;
     NMTernary                                       acd_failed_notified_selector;
@@ -1575,17 +1572,14 @@ _l3_acd_data_notify_acd_completed(NML3Cfg *self, AcdData *acd_data, gboolean for
     }
     nm_assert(i == n);
 
-    payload = (NML3ConfigNotifyPayload){
-        .acd_completed =
-            {
-                .addr         = acd_data->addr,
-                .probe_result = acd_data->probe_result,
-                .sources_len  = n,
-                .sources      = sources,
-            },
+    notify_data.notify_type   = NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED;
+    notify_data.acd_completed = (typeof(notify_data.acd_completed)){
+        .addr         = acd_data->addr,
+        .probe_result = acd_data->probe_result,
+        .sources_len  = n,
+        .sources      = sources,
     };
-
-    _nm_l3cfg_emit_signal_notify(self, NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED, &payload);
+    _nm_l3cfg_emit_signal_notify(self, &notify_data);
 
     for (i = 0; i < n; i++) {
         nmp_object_unref(sources[i].obj);
@@ -2756,10 +2750,9 @@ _routes_temporary_not_available_timeout(gpointer user_data)
     if (any_expired) {
         /* a route expired. We emit a signal, but we don't schedule it again. That will
          * only happen if the user calls nm_l3cfg_commit() again. */
-        _nm_l3cfg_emit_signal_notify(
+        _nm_l3cfg_emit_signal_notify_simple(
             self,
-            NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED,
-            NULL);
+            NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED);
         return G_SOURCE_REMOVE;
     }
 
@@ -3070,7 +3063,7 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
 
     _l3_acd_data_process_changes(self);
 
-    _nm_l3cfg_emit_signal_notify(self, NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT, NULL);
+    _nm_l3cfg_emit_signal_notify_simple(self, NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT);
 }
 
 void
@@ -3390,9 +3383,8 @@ nm_l3cfg_class_init(NML3CfgClass *klass)
                                           0,
                                           NULL,
                                           NULL,
-                                          NULL,
+                                          g_cclosure_marshal_VOID__POINTER,
                                           G_TYPE_NONE,
-                                          2,
-                                          G_TYPE_INT /* NML3ConfigNotifyType */,
-                                          G_TYPE_POINTER /* (const NML3ConfigNotifyPayload *) */);
+                                          1,
+                                          G_TYPE_POINTER /* (const NML3ConfigNotifyData *) */);
 }
