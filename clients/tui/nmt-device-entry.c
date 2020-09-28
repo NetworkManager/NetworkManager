@@ -30,35 +30,36 @@
 
 #include "nmtui.h"
 
-G_DEFINE_TYPE (NmtDeviceEntry, nmt_device_entry, NMT_TYPE_EDITOR_GRID)
+G_DEFINE_TYPE(NmtDeviceEntry, nmt_device_entry, NMT_TYPE_EDITOR_GRID)
 
-#define NMT_DEVICE_ENTRY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_DEVICE_ENTRY, NmtDeviceEntryPrivate))
+#define NMT_DEVICE_ENTRY_GET_PRIVATE(o) \
+    (G_TYPE_INSTANCE_GET_PRIVATE((o), NMT_TYPE_DEVICE_ENTRY, NmtDeviceEntryPrivate))
 
 typedef struct {
-	GType hardware_type;
-	NmtDeviceEntryDeviceFilter device_filter;
-	gpointer device_filter_data;
-	int arptype;
+    GType                      hardware_type;
+    NmtDeviceEntryDeviceFilter device_filter;
+    gpointer                   device_filter_data;
+    int                        arptype;
 
-	char *interface_name;
-	char *mac_address;
+    char *interface_name;
+    char *mac_address;
 
-	char *label;
-	NmtNewtEntry *entry;
-	NmtNewtWidget *button;
+    char *         label;
+    NmtNewtEntry * entry;
+    NmtNewtWidget *button;
 
-	gboolean updating;
+    gboolean updating;
 } NmtDeviceEntryPrivate;
 
 enum {
-	PROP_0,
-	PROP_LABEL,
-	PROP_WIDTH,
-	PROP_HARDWARE_TYPE,
-	PROP_INTERFACE_NAME,
-	PROP_MAC_ADDRESS,
+    PROP_0,
+    PROP_LABEL,
+    PROP_WIDTH,
+    PROP_HARDWARE_TYPE,
+    PROP_INTERFACE_NAME,
+    PROP_MAC_ADDRESS,
 
-	LAST_PROP
+    LAST_PROP
 };
 
 /**
@@ -76,280 +77,272 @@ enum {
  * Returns: a new #NmtDeviceEntry.
  */
 NmtNewtWidget *
-nmt_device_entry_new (const char *label,
-                      int         width,
-                      GType       hardware_type)
+nmt_device_entry_new(const char *label, int width, GType hardware_type)
 {
-	return g_object_new (NMT_TYPE_DEVICE_ENTRY,
-	                     "label", label,
-	                     "width", width,
-	                     "hardware-type", hardware_type,
-	                     NULL);
+    return g_object_new(NMT_TYPE_DEVICE_ENTRY,
+                        "label",
+                        label,
+                        "width",
+                        width,
+                        "hardware-type",
+                        hardware_type,
+                        NULL);
 }
 
 static gboolean
-device_entry_parse (NmtDeviceEntry  *deventry,
-                    const char      *text,
-                    char           **interface_name,
-                    char           **mac_address)
+device_entry_parse(NmtDeviceEntry *deventry,
+                   const char *    text,
+                   char **         interface_name,
+                   char **         mac_address)
 {
-	NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE (deventry);
-	guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
-	char **words;
-	int len;
+    NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE(deventry);
+    guint8                 buf[NM_UTILS_HWADDR_LEN_MAX];
+    char **                words;
+    int                    len;
 
-	*interface_name = *mac_address = NULL;
-	if (!*text)
-		return TRUE;
+    *interface_name = *mac_address = NULL;
+    if (!*text)
+        return TRUE;
 
-	if (priv->hardware_type == G_TYPE_NONE && !priv->device_filter) {
-		if (nm_utils_ifname_valid_kernel (text, NULL)) {
-			*interface_name = g_strdup (text);
-			return TRUE;
-		} else
-			return FALSE;
-	}
+    if (priv->hardware_type == G_TYPE_NONE && !priv->device_filter) {
+        if (nm_utils_ifname_valid_kernel(text, NULL)) {
+            *interface_name = g_strdup(text);
+            return TRUE;
+        } else
+            return FALSE;
+    }
 
-	words = g_strsplit (text, " ", -1);
-	if (g_strv_length (words) > 2) {
-		g_strfreev (words);
-		return FALSE;
-	}
+    words = g_strsplit(text, " ", -1);
+    if (g_strv_length(words) > 2) {
+        g_strfreev(words);
+        return FALSE;
+    }
 
-	if (words[1]) {
-		len = strlen (words[1]);
-		if (len < 3 || words[1][0] != '(' || words[1][len - 1] != ')')
-			goto fail;
+    if (words[1]) {
+        len = strlen(words[1]);
+        if (len < 3 || words[1][0] != '(' || words[1][len - 1] != ')')
+            goto fail;
 
-		memmove (words[1], words[1] + 1, len - 2);
-		words[1][len - 2] = '\0';
-	}
+        memmove(words[1], words[1] + 1, len - 2);
+        words[1][len - 2] = '\0';
+    }
 
-	len = nm_utils_hwaddr_len (priv->arptype);
-	if (   nm_utils_hwaddr_aton (words[0], buf, len)
-	    && (!words[1] || nm_utils_ifname_valid_kernel (words[1], NULL))) {
-		*mac_address = words[0];
-		*interface_name = NULL;
-		g_free (words);
-		return TRUE;
-	} else if (   nm_utils_ifname_valid_kernel (words[0], NULL)
-	           && (!words[1] || nm_utils_hwaddr_aton (words[1], buf, len))) {
-		*interface_name = words[0];
-		*mac_address = NULL;
-		g_free (words);
-		return TRUE;
-	}
+    len = nm_utils_hwaddr_len(priv->arptype);
+    if (nm_utils_hwaddr_aton(words[0], buf, len)
+        && (!words[1] || nm_utils_ifname_valid_kernel(words[1], NULL))) {
+        *mac_address    = words[0];
+        *interface_name = NULL;
+        g_free(words);
+        return TRUE;
+    } else if (nm_utils_ifname_valid_kernel(words[0], NULL)
+               && (!words[1] || nm_utils_hwaddr_aton(words[1], buf, len))) {
+        *interface_name = words[0];
+        *mac_address    = NULL;
+        g_free(words);
+        return TRUE;
+    }
 
- fail:
-	g_strfreev (words);
-	return FALSE;
+fail:
+    g_strfreev(words);
+    return FALSE;
 }
 
 static gboolean
-device_entry_validate (NmtNewtEntry *entry,
-                       const char   *text,
-                       gpointer      user_data)
+device_entry_validate(NmtNewtEntry *entry, const char *text, gpointer user_data)
 {
-	NmtDeviceEntry *deventry = user_data;
-	char *ifname, *mac;
+    NmtDeviceEntry *deventry = user_data;
+    char *          ifname, *mac;
 
-	if (!device_entry_parse (deventry, text, &ifname, &mac))
-		return FALSE;
+    if (!device_entry_parse(deventry, text, &ifname, &mac))
+        return FALSE;
 
-	g_free (ifname);
-	g_free (mac);
-	return TRUE;
+    g_free(ifname);
+    g_free(mac);
+    return TRUE;
 }
 
 static NMDevice *
-find_device_by_interface_name (NmtDeviceEntry *deventry,
-                               const char     *interface_name)
+find_device_by_interface_name(NmtDeviceEntry *deventry, const char *interface_name)
 {
-	NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE (deventry);
-	const GPtrArray *devices;
-	NMDevice *device = NULL;
-	int i;
+    NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE(deventry);
+    const GPtrArray *      devices;
+    NMDevice *             device = NULL;
+    int                    i;
 
-	devices = nm_client_get_devices (nm_client);
-	for (i = 0; i < devices->len && !device; i++) {
-		NMDevice *candidate = devices->pdata[i];
+    devices = nm_client_get_devices(nm_client);
+    for (i = 0; i < devices->len && !device; i++) {
+        NMDevice *candidate = devices->pdata[i];
 
-		if (   priv->hardware_type != G_TYPE_NONE
-		    && !G_TYPE_CHECK_INSTANCE_TYPE (candidate, priv->hardware_type))
-			continue;
+        if (priv->hardware_type != G_TYPE_NONE
+            && !G_TYPE_CHECK_INSTANCE_TYPE(candidate, priv->hardware_type))
+            continue;
 
-		if (   priv->device_filter
-		    && !priv->device_filter (deventry, candidate, priv->device_filter_data))
-			continue;
+        if (priv->device_filter
+            && !priv->device_filter(deventry, candidate, priv->device_filter_data))
+            continue;
 
-		if (!g_strcmp0 (interface_name, nm_device_get_iface (candidate)))
-			device = candidate;
-	}
+        if (!g_strcmp0(interface_name, nm_device_get_iface(candidate)))
+            device = candidate;
+    }
 
-	return device;
+    return device;
 }
 
 static NMDevice *
-find_device_by_mac_address (NmtDeviceEntry *deventry,
-                            const char     *mac_address)
+find_device_by_mac_address(NmtDeviceEntry *deventry, const char *mac_address)
 {
-	NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE (deventry);
-	const GPtrArray *devices;
-	NMDevice *device = NULL;
-	int i;
+    NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE(deventry);
+    const GPtrArray *      devices;
+    NMDevice *             device = NULL;
+    int                    i;
 
-	devices = nm_client_get_devices (nm_client);
-	for (i = 0; i < devices->len && !device; i++) {
-		NMDevice *candidate = devices->pdata[i];
-		char *hwaddr;
+    devices = nm_client_get_devices(nm_client);
+    for (i = 0; i < devices->len && !device; i++) {
+        NMDevice *candidate = devices->pdata[i];
+        char *    hwaddr;
 
-		if (   priv->hardware_type != G_TYPE_NONE
-		    && !G_TYPE_CHECK_INSTANCE_TYPE (candidate, priv->hardware_type))
-			continue;
+        if (priv->hardware_type != G_TYPE_NONE
+            && !G_TYPE_CHECK_INSTANCE_TYPE(candidate, priv->hardware_type))
+            continue;
 
-		if (   priv->device_filter
-		    && !priv->device_filter (deventry, candidate, priv->device_filter_data))
-			continue;
+        if (priv->device_filter
+            && !priv->device_filter(deventry, candidate, priv->device_filter_data))
+            continue;
 
-		g_object_get (G_OBJECT (candidate), "hw-address", &hwaddr, NULL);
-		if (hwaddr && !g_ascii_strcasecmp (mac_address, hwaddr))
-			device = candidate;
-		g_free (hwaddr);
-	}
+        g_object_get(G_OBJECT(candidate), "hw-address", &hwaddr, NULL);
+        if (hwaddr && !g_ascii_strcasecmp(mac_address, hwaddr))
+            device = candidate;
+        g_free(hwaddr);
+    }
 
-	return device;
+    return device;
 }
 
 static void
-update_entry (NmtDeviceEntry *deventry)
+update_entry(NmtDeviceEntry *deventry)
 {
-	NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE (deventry);
-	const char *ifname;
-	char *mac, *text;
-	NMDevice *ifname_device, *mac_device;
+    NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE(deventry);
+    const char *           ifname;
+    char *                 mac, *text;
+    NMDevice *             ifname_device, *mac_device;
 
-	if (priv->interface_name) {
-		ifname = priv->interface_name;
-		ifname_device = find_device_by_interface_name (deventry, priv->interface_name);
-	} else {
-		ifname = NULL;
-		ifname_device = NULL;
-	}
+    if (priv->interface_name) {
+        ifname        = priv->interface_name;
+        ifname_device = find_device_by_interface_name(deventry, priv->interface_name);
+    } else {
+        ifname        = NULL;
+        ifname_device = NULL;
+    }
 
-	if (priv->mac_address) {
-		mac = g_strdup (priv->mac_address);
-		mac_device = find_device_by_mac_address (deventry, priv->mac_address);
-	} else {
-		mac = NULL;
-		mac_device = NULL;
-	}
+    if (priv->mac_address) {
+        mac        = g_strdup(priv->mac_address);
+        mac_device = find_device_by_mac_address(deventry, priv->mac_address);
+    } else {
+        mac        = NULL;
+        mac_device = NULL;
+    }
 
-	if (!ifname && mac_device)
-		ifname = nm_device_get_iface (mac_device);
-	if (!mac && ifname_device && (priv->hardware_type != G_TYPE_NONE))
-		g_object_get (G_OBJECT (ifname_device), "hw-address", &mac, NULL);
+    if (!ifname && mac_device)
+        ifname = nm_device_get_iface(mac_device);
+    if (!mac && ifname_device && (priv->hardware_type != G_TYPE_NONE))
+        g_object_get(G_OBJECT(ifname_device), "hw-address", &mac, NULL);
 
-	if (ifname_device && mac_device && ifname_device != mac_device) {
-		/* Mismatch! */
-		text = g_strdup_printf ("%s != %s", priv->interface_name, mac);
-	} else if (ifname && mac) {
-		if (ifname_device)
-			text = g_strdup_printf ("%s (%s)", ifname, mac);
-		else
-			text = g_strdup_printf ("%s (%s)", mac, ifname);
-	} else if (ifname)
-		text = g_strdup (ifname);
-	else if (mac)
-		text = g_strdup (mac);
-	else
-		text = g_strdup ("");
+    if (ifname_device && mac_device && ifname_device != mac_device) {
+        /* Mismatch! */
+        text = g_strdup_printf("%s != %s", priv->interface_name, mac);
+    } else if (ifname && mac) {
+        if (ifname_device)
+            text = g_strdup_printf("%s (%s)", ifname, mac);
+        else
+            text = g_strdup_printf("%s (%s)", mac, ifname);
+    } else if (ifname)
+        text = g_strdup(ifname);
+    else if (mac)
+        text = g_strdup(mac);
+    else
+        text = g_strdup("");
 
-	priv->updating = TRUE;
-	g_object_set (G_OBJECT (priv->entry), "text", text, NULL);
-	priv->updating = FALSE;
-	g_free (text);
+    priv->updating = TRUE;
+    g_object_set(G_OBJECT(priv->entry), "text", text, NULL);
+    priv->updating = FALSE;
+    g_free(text);
 
-	g_free (mac);
+    g_free(mac);
 }
 
 static gboolean
-nmt_device_entry_set_interface_name (NmtDeviceEntry *deventry,
-                                     const char     *interface_name)
+nmt_device_entry_set_interface_name(NmtDeviceEntry *deventry, const char *interface_name)
 {
-	NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE (deventry);
+    NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE(deventry);
 
-	if (g_strcmp0 (interface_name, priv->interface_name) != 0) {
-		g_free (priv->interface_name);
-		priv->interface_name = g_strdup (interface_name);
+    if (g_strcmp0(interface_name, priv->interface_name) != 0) {
+        g_free(priv->interface_name);
+        priv->interface_name = g_strdup(interface_name);
 
-		g_object_notify (G_OBJECT (deventry), "interface-name");
-		return TRUE;
-	} else
-		return FALSE;
+        g_object_notify(G_OBJECT(deventry), "interface-name");
+        return TRUE;
+    } else
+        return FALSE;
 }
 
 static gboolean
-nmt_device_entry_set_mac_address (NmtDeviceEntry *deventry,
-                                  const char     *mac_address)
+nmt_device_entry_set_mac_address(NmtDeviceEntry *deventry, const char *mac_address)
 {
-	NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE (deventry);
-	gboolean changed;
+    NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE(deventry);
+    gboolean               changed;
 
-	if (mac_address && !priv->mac_address) {
-		priv->mac_address = g_strdup (mac_address);
-		changed = TRUE;
-	} else if (!mac_address && priv->mac_address) {
-		nm_clear_g_free (&priv->mac_address);
-		changed = TRUE;
-	} else if (   mac_address && priv->mac_address
-	           && !nm_utils_hwaddr_matches (mac_address, -1, priv->mac_address, -1)) {
-		g_free (priv->mac_address);
-		priv->mac_address = g_strdup (mac_address);
-		changed = TRUE;
-	} else
-		changed = FALSE;
+    if (mac_address && !priv->mac_address) {
+        priv->mac_address = g_strdup(mac_address);
+        changed           = TRUE;
+    } else if (!mac_address && priv->mac_address) {
+        nm_clear_g_free(&priv->mac_address);
+        changed = TRUE;
+    } else if (mac_address && priv->mac_address
+               && !nm_utils_hwaddr_matches(mac_address, -1, priv->mac_address, -1)) {
+        g_free(priv->mac_address);
+        priv->mac_address = g_strdup(mac_address);
+        changed           = TRUE;
+    } else
+        changed = FALSE;
 
-	if (changed)
-		g_object_notify (G_OBJECT (deventry), "mac-address");
-	return changed;
+    if (changed)
+        g_object_notify(G_OBJECT(deventry), "mac-address");
+    return changed;
 }
 
 static void
-entry_text_changed (GObject    *object,
-                    GParamSpec *pspec,
-                    gpointer    deventry)
+entry_text_changed(GObject *object, GParamSpec *pspec, gpointer deventry)
 {
-	NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE (deventry);
-	const char *text;
-	char *ifname, *mac;
+    NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE(deventry);
+    const char *           text;
+    char *                 ifname, *mac;
 
-	if (priv->updating)
-		return;
+    if (priv->updating)
+        return;
 
-	text = nmt_newt_entry_get_text (priv->entry);
-	if (!device_entry_parse (deventry, text, &ifname, &mac))
-		return;
+    text = nmt_newt_entry_get_text(priv->entry);
+    if (!device_entry_parse(deventry, text, &ifname, &mac))
+        return;
 
-	nmt_device_entry_set_interface_name (deventry, ifname);
-	g_free (ifname);
+    nmt_device_entry_set_interface_name(deventry, ifname);
+    g_free(ifname);
 
-	nmt_device_entry_set_mac_address (deventry, mac);
-	g_free (mac);
+    nmt_device_entry_set_mac_address(deventry, mac);
+    g_free(mac);
 }
 
 static void
-nmt_device_entry_init (NmtDeviceEntry *deventry)
+nmt_device_entry_init(NmtDeviceEntry *deventry)
 {
-	NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE (deventry);
-	NmtNewtWidget *entry;
+    NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE(deventry);
+    NmtNewtWidget *        entry;
 
-	priv->hardware_type = G_TYPE_NONE;
+    priv->hardware_type = G_TYPE_NONE;
 
-	entry = nmt_newt_entry_new (-1, 0);
-	priv->entry = NMT_NEWT_ENTRY (entry);
-	nmt_newt_entry_set_validator (priv->entry, device_entry_validate, deventry);
-	g_signal_connect (priv->entry, "notify::text",
-	                  G_CALLBACK (entry_text_changed), deventry);
+    entry       = nmt_newt_entry_new(-1, 0);
+    priv->entry = NMT_NEWT_ENTRY(entry);
+    nmt_newt_entry_set_validator(priv->entry, device_entry_validate, deventry);
+    g_signal_connect(priv->entry, "notify::text", G_CALLBACK(entry_text_changed), deventry);
 
 #if 0
 	priv->button = nmt_newt_button_new (_("Select..."));
@@ -359,24 +352,27 @@ nmt_device_entry_init (NmtDeviceEntry *deventry)
 }
 
 static void
-nmt_device_entry_constructed (GObject *object)
+nmt_device_entry_constructed(GObject *object)
 {
-	NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE (object);
+    NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE(object);
 
-	nmt_editor_grid_append (NMT_EDITOR_GRID (object), priv->label, NMT_NEWT_WIDGET (priv->entry), NULL);
+    nmt_editor_grid_append(NMT_EDITOR_GRID(object),
+                           priv->label,
+                           NMT_NEWT_WIDGET(priv->entry),
+                           NULL);
 
-	G_OBJECT_CLASS (nmt_device_entry_parent_class)->constructed (object);
+    G_OBJECT_CLASS(nmt_device_entry_parent_class)->constructed(object);
 }
 
 static void
-nmt_device_entry_finalize (GObject *object)
+nmt_device_entry_finalize(GObject *object)
 {
-	NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE (object);
+    NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE(object);
 
-	g_free (priv->interface_name);
-	g_free (priv->mac_address);
+    g_free(priv->interface_name);
+    g_free(priv->mac_address);
 
-	G_OBJECT_CLASS (nmt_device_entry_parent_class)->finalize (object);
+    G_OBJECT_CLASS(nmt_device_entry_parent_class)->finalize(object);
 }
 
 /**
@@ -405,153 +401,155 @@ nmt_device_entry_finalize (GObject *object)
  * accepted by the filter will be allowed.
  */
 void
-nmt_device_entry_set_device_filter (NmtDeviceEntry             *deventry,
-                                    NmtDeviceEntryDeviceFilter  filter,
-                                    gpointer                    user_data)
+nmt_device_entry_set_device_filter(NmtDeviceEntry *           deventry,
+                                   NmtDeviceEntryDeviceFilter filter,
+                                   gpointer                   user_data)
 {
-	NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE (deventry);
+    NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE(deventry);
 
-	priv->device_filter = filter;
-	priv->device_filter_data = user_data;
+    priv->device_filter      = filter;
+    priv->device_filter_data = user_data;
 }
 
 static void
-nmt_device_entry_set_property (GObject      *object,
-                               guint         prop_id,
-                               const GValue *value,
-                               GParamSpec   *pspec)
+nmt_device_entry_set_property(GObject *     object,
+                              guint         prop_id,
+                              const GValue *value,
+                              GParamSpec *  pspec)
 {
-	NmtDeviceEntry *deventry = NMT_DEVICE_ENTRY (object);
-	NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE (deventry);
-	const char *interface_name;
-	const char *mac_address;
+    NmtDeviceEntry *       deventry = NMT_DEVICE_ENTRY(object);
+    NmtDeviceEntryPrivate *priv     = NMT_DEVICE_ENTRY_GET_PRIVATE(deventry);
+    const char *           interface_name;
+    const char *           mac_address;
 
-	switch (prop_id) {
-	case PROP_LABEL:
-		priv->label = g_value_dup_string (value);
-		break;
-	case PROP_WIDTH:
-		nmt_newt_entry_set_width (priv->entry, g_value_get_int (value));
-		break;
-	case PROP_HARDWARE_TYPE:
-		priv->hardware_type = g_value_get_gtype (value);
-		priv->arptype = (priv->hardware_type == NM_TYPE_DEVICE_INFINIBAND) ? ARPHRD_INFINIBAND : ARPHRD_ETHER;
-		break;
-	case PROP_INTERFACE_NAME:
-		interface_name = g_value_get_string (value);
-		if (nmt_device_entry_set_interface_name (deventry, interface_name))
-			update_entry (deventry);
-		break;
-	case PROP_MAC_ADDRESS:
-		mac_address = g_value_get_string (value);
-		if (nmt_device_entry_set_mac_address (deventry, mac_address))
-			update_entry (deventry);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_LABEL:
+        priv->label = g_value_dup_string(value);
+        break;
+    case PROP_WIDTH:
+        nmt_newt_entry_set_width(priv->entry, g_value_get_int(value));
+        break;
+    case PROP_HARDWARE_TYPE:
+        priv->hardware_type = g_value_get_gtype(value);
+        priv->arptype =
+            (priv->hardware_type == NM_TYPE_DEVICE_INFINIBAND) ? ARPHRD_INFINIBAND : ARPHRD_ETHER;
+        break;
+    case PROP_INTERFACE_NAME:
+        interface_name = g_value_get_string(value);
+        if (nmt_device_entry_set_interface_name(deventry, interface_name))
+            update_entry(deventry);
+        break;
+    case PROP_MAC_ADDRESS:
+        mac_address = g_value_get_string(value);
+        if (nmt_device_entry_set_mac_address(deventry, mac_address))
+            update_entry(deventry);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
-nmt_device_entry_get_property (GObject    *object,
-                               guint       prop_id,
-                               GValue     *value,
-                               GParamSpec *pspec)
+nmt_device_entry_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-	NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE (object);
+    NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE(object);
 
-	switch (prop_id) {
-	case PROP_LABEL:
-		g_value_set_string (value, priv->label);
-		break;
-	case PROP_WIDTH:
-		g_value_set_int (value, nmt_newt_entry_get_width (priv->entry));
-		break;
-	case PROP_HARDWARE_TYPE:
-		g_value_set_gtype (value, priv->hardware_type);
-		break;
-	case PROP_INTERFACE_NAME:
-		g_value_set_string (value, priv->interface_name);
-		break;
-	case PROP_MAC_ADDRESS:
-		g_value_set_string (value, priv->mac_address);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_LABEL:
+        g_value_set_string(value, priv->label);
+        break;
+    case PROP_WIDTH:
+        g_value_set_int(value, nmt_newt_entry_get_width(priv->entry));
+        break;
+    case PROP_HARDWARE_TYPE:
+        g_value_set_gtype(value, priv->hardware_type);
+        break;
+    case PROP_INTERFACE_NAME:
+        g_value_set_string(value, priv->interface_name);
+        break;
+    case PROP_MAC_ADDRESS:
+        g_value_set_string(value, priv->mac_address);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
-nmt_device_entry_class_init (NmtDeviceEntryClass *deventry_class)
+nmt_device_entry_class_init(NmtDeviceEntryClass *deventry_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (deventry_class);
+    GObjectClass *object_class = G_OBJECT_CLASS(deventry_class);
 
-	g_type_class_add_private (deventry_class, sizeof (NmtDeviceEntryPrivate));
+    g_type_class_add_private(deventry_class, sizeof(NmtDeviceEntryPrivate));
 
-	/* virtual methods */
-	object_class->constructed  = nmt_device_entry_constructed;
-	object_class->set_property = nmt_device_entry_set_property;
-	object_class->get_property = nmt_device_entry_get_property;
-	object_class->finalize     = nmt_device_entry_finalize;
+    /* virtual methods */
+    object_class->constructed  = nmt_device_entry_constructed;
+    object_class->set_property = nmt_device_entry_set_property;
+    object_class->get_property = nmt_device_entry_get_property;
+    object_class->finalize     = nmt_device_entry_finalize;
 
-	/**
-	 * NmtDeviceEntry:label:
-	 *
-	 * The entry's label
-	 */
-	g_object_class_install_property
-		(object_class, PROP_LABEL,
-		 g_param_spec_string ("label", "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
-	/**
-	 * NmtDeviceEntry:width:
-	 *
-	 * The entry's width in characters
-	 */
-	g_object_class_install_property
-		(object_class, PROP_WIDTH,
-		 g_param_spec_int ("width", "", "",
-		                   -1, 80, -1,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_STATIC_STRINGS));
-	/**
-	 * NmtDeviceEntry:hardware-type:
-	 *
-	 * The type of #NMDevice to limit the entry to, or %G_TYPE_NONE
-	 * if the entry is for a virtual device and should not accept
-	 * hardware addresses.
-	 */
-	g_object_class_install_property
-		(object_class, PROP_HARDWARE_TYPE,
-		 g_param_spec_gtype ("hardware-type", "", "",
-		                     G_TYPE_NONE,
-		                     G_PARAM_READWRITE |
-		                     G_PARAM_STATIC_STRINGS));
-	/**
-	 * NmtDeviceEntry:interface-name:
-	 *
-	 * The interface name of the device identified by the entry.
-	 */
-	g_object_class_install_property
-		(object_class, PROP_INTERFACE_NAME,
-		 g_param_spec_string ("interface-name", "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
-	/**
-	 * NmtDeviceEntry:mac-address:
-	 *
-	 * The hardware address of the device identified by the entry.
-	 */
-	g_object_class_install_property
-		(object_class, PROP_MAC_ADDRESS,
-		 g_param_spec_string ("mac-address", "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+    /**
+     * NmtDeviceEntry:label:
+     *
+     * The entry's label
+     */
+    g_object_class_install_property(
+        object_class,
+        PROP_LABEL,
+        g_param_spec_string("label",
+                            "",
+                            "",
+                            NULL,
+                            G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+    /**
+     * NmtDeviceEntry:width:
+     *
+     * The entry's width in characters
+     */
+    g_object_class_install_property(
+        object_class,
+        PROP_WIDTH,
+        g_param_spec_int("width", "", "", -1, 80, -1, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+    /**
+     * NmtDeviceEntry:hardware-type:
+     *
+     * The type of #NMDevice to limit the entry to, or %G_TYPE_NONE
+     * if the entry is for a virtual device and should not accept
+     * hardware addresses.
+     */
+    g_object_class_install_property(object_class,
+                                    PROP_HARDWARE_TYPE,
+                                    g_param_spec_gtype("hardware-type",
+                                                       "",
+                                                       "",
+                                                       G_TYPE_NONE,
+                                                       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+    /**
+     * NmtDeviceEntry:interface-name:
+     *
+     * The interface name of the device identified by the entry.
+     */
+    g_object_class_install_property(
+        object_class,
+        PROP_INTERFACE_NAME,
+        g_param_spec_string("interface-name",
+                            "",
+                            "",
+                            NULL,
+                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+    /**
+     * NmtDeviceEntry:mac-address:
+     *
+     * The hardware address of the device identified by the entry.
+     */
+    g_object_class_install_property(
+        object_class,
+        PROP_MAC_ADDRESS,
+        g_param_spec_string("mac-address",
+                            "",
+                            "",
+                            NULL,
+                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }

@@ -87,6 +87,18 @@ checkpatch:
     paths:
       - checkpatch-out.txt
 
+code-style:
+  image: fedora:33
+  stage: test
+  script:
+    - date '+%Y%m%d-%H%M%S'; dnf install -y git which clang
+    - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh 2>&1 | tee nm-code-format-out.txt
+  allow_failure: true
+  artifacts:
+    when: on_failure
+    paths:
+      - nm-code-format-out.txt
+
 t_fedora:28:
   <<: *fedora_install
   image: fedora:28

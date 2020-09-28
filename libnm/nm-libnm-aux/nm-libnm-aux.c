@@ -7,62 +7,54 @@
 /*****************************************************************************/
 
 NMClient *
-nmc_client_new_async_valist (GCancellable *cancellable,
-                             GAsyncReadyCallback callback,
-                             gpointer user_data,
-                             const char *first_property_name,
-                             va_list ap)
+nmc_client_new_async_valist(GCancellable *      cancellable,
+                            GAsyncReadyCallback callback,
+                            gpointer            user_data,
+                            const char *        first_property_name,
+                            va_list             ap)
 {
-	NMClient *nmc;
+    NMClient *nmc;
 
-	nmc = NM_CLIENT (g_object_new_valist (NM_TYPE_CLIENT, first_property_name, ap));
-	g_async_initable_init_async (G_ASYNC_INITABLE (nmc),
-	                             G_PRIORITY_DEFAULT,
-	                             cancellable,
-	                             callback,
-	                             user_data);
-	return nmc;
+    nmc = NM_CLIENT(g_object_new_valist(NM_TYPE_CLIENT, first_property_name, ap));
+    g_async_initable_init_async(G_ASYNC_INITABLE(nmc),
+                                G_PRIORITY_DEFAULT,
+                                cancellable,
+                                callback,
+                                user_data);
+    return nmc;
 }
 
 NMClient *
-nmc_client_new_async (GCancellable *cancellable,
-                      GAsyncReadyCallback callback,
-                      gpointer user_data,
-                      const char *first_property_name,
-                      ...)
+nmc_client_new_async(GCancellable *      cancellable,
+                     GAsyncReadyCallback callback,
+                     gpointer            user_data,
+                     const char *        first_property_name,
+                     ...)
 {
-	NMClient *nmc;
-	va_list ap;
+    NMClient *nmc;
+    va_list   ap;
 
-	va_start (ap, first_property_name);
-	nmc = nmc_client_new_async_valist (cancellable,
-	                                   callback,
-	                                   user_data,
-	                                   first_property_name,
-	                                   ap);
-	va_end (ap);
-	return nmc;
+    va_start(ap, first_property_name);
+    nmc = nmc_client_new_async_valist(cancellable, callback, user_data, first_property_name, ap);
+    va_end(ap);
+    return nmc;
 }
 
 /*****************************************************************************/
 
 typedef struct {
-	GMainLoop *main_loop;
-	NMClient *nmc;
-	GError *error;
+    GMainLoop *main_loop;
+    NMClient * nmc;
+    GError *   error;
 } ClientCreateData;
 
 static void
-_nmc_client_new_waitsync_cb (GObject *source_object,
-                             GAsyncResult *result,
-                             gpointer user_data)
+_nmc_client_new_waitsync_cb(GObject *source_object, GAsyncResult *result, gpointer user_data)
 {
-	ClientCreateData *data = user_data;
+    ClientCreateData *data = user_data;
 
-	g_async_initable_init_finish (G_ASYNC_INITABLE (source_object),
-	                              result,
-	                              &data->error);
-	g_main_loop_quit (data->main_loop);
+    g_async_initable_init_finish(G_ASYNC_INITABLE(source_object), result, &data->error);
+    g_main_loop_quit(data->main_loop);
 }
 
 /**
@@ -89,58 +81,57 @@ _nmc_client_new_waitsync_cb (GObject *source_object,
  * is often unnecessary.
  */
 gboolean
-nmc_client_new_waitsync (GCancellable *cancellable,
-                         NMClient **out_nmc,
-                         GError **error,
-                         const char *first_property_name,
-                         ...)
+nmc_client_new_waitsync(GCancellable *cancellable,
+                        NMClient **   out_nmc,
+                        GError **     error,
+                        const char *  first_property_name,
+                        ...)
 {
-	gs_unref_object NMClient *nmc = NULL;
-	nm_auto_unref_gmainloop GMainLoop *main_loop = g_main_loop_new (g_main_context_get_thread_default (), FALSE);
-	ClientCreateData data = {
-		.main_loop = main_loop,
-	};
-	va_list ap;
+    gs_unref_object NMClient *nmc = NULL;
+    nm_auto_unref_gmainloop GMainLoop *main_loop =
+        g_main_loop_new(g_main_context_get_thread_default(), FALSE);
+    ClientCreateData data = {
+        .main_loop = main_loop,
+    };
+    va_list ap;
 
 #if NM_MORE_ASSERTS > 10
-	/* The sync initialization of NMClient is generally a bad idea, because it
-	 * brings the overhead of an additional GMainContext. Anyway, since our own
-	 * code no longer uses that, we hardly test those code paths. But they should
-	 * work just the same. Randomly use instead the sync initialization in a debug
-	 * build... */
-	if ((g_random_int () % 2) == 0) {
-		gboolean success;
+    /* The sync initialization of NMClient is generally a bad idea, because it
+     * brings the overhead of an additional GMainContext. Anyway, since our own
+     * code no longer uses that, we hardly test those code paths. But they should
+     * work just the same. Randomly use instead the sync initialization in a debug
+     * build... */
+    if ((g_random_int() % 2) == 0) {
+        gboolean success;
 
-		va_start (ap, first_property_name);
-		nmc = NM_CLIENT (g_object_new_valist (NM_TYPE_CLIENT, first_property_name, ap));
-		va_end (ap);
+        va_start(ap, first_property_name);
+        nmc = NM_CLIENT(g_object_new_valist(NM_TYPE_CLIENT, first_property_name, ap));
+        va_end(ap);
 
-		/* iterate the context at least once, just so that the behavior from POV of the
-		 * caller is roughly the same. */
-		g_main_context_iteration (nm_client_get_main_context (nmc), FALSE);
+        /* iterate the context at least once, just so that the behavior from POV of the
+         * caller is roughly the same. */
+        g_main_context_iteration(nm_client_get_main_context(nmc), FALSE);
 
-		success = g_initable_init (G_INITABLE (nmc),
-		                           cancellable,
-		                           error);
-		NM_SET_OUT (out_nmc, g_steal_pointer (&nmc));
-		return success;
-	}
+        success = g_initable_init(G_INITABLE(nmc), cancellable, error);
+        NM_SET_OUT(out_nmc, g_steal_pointer(&nmc));
+        return success;
+    }
 #endif
 
-	va_start (ap, first_property_name);
-	nmc = nmc_client_new_async_valist (cancellable,
-	                                   _nmc_client_new_waitsync_cb,
-	                                   &data,
-	                                   first_property_name,
-	                                   ap);
-	va_end (ap);
+    va_start(ap, first_property_name);
+    nmc = nmc_client_new_async_valist(cancellable,
+                                      _nmc_client_new_waitsync_cb,
+                                      &data,
+                                      first_property_name,
+                                      ap);
+    va_end(ap);
 
-	g_main_loop_run (main_loop);
+    g_main_loop_run(main_loop);
 
-	NM_SET_OUT (out_nmc, g_steal_pointer (&nmc));
-	if (data.error) {
-		g_propagate_error (error, data.error);
-		return FALSE;
-	}
-	return TRUE;
+    NM_SET_OUT(out_nmc, g_steal_pointer(&nmc));
+    if (data.error) {
+        g_propagate_error(error, data.error);
+        return FALSE;
+    }
+    return TRUE;
 }

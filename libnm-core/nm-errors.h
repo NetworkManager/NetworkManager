@@ -27,16 +27,16 @@
  * errors in the "org.freedesktop.NetworkManager.AgentManager" namespace.
  */
 typedef enum {
-	NM_AGENT_MANAGER_ERROR_FAILED = 0,         /*< nick=Failed >*/
-	NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,  /*< nick=PermissionDenied >*/
-	NM_AGENT_MANAGER_ERROR_INVALID_IDENTIFIER, /*< nick=InvalidIdentifier >*/
-	NM_AGENT_MANAGER_ERROR_NOT_REGISTERED,     /*< nick=NotRegistered >*/
-	NM_AGENT_MANAGER_ERROR_NO_SECRETS,         /*< nick=NoSecrets >*/
-	NM_AGENT_MANAGER_ERROR_USER_CANCELED,      /*< nick=UserCanceled >*/
+    NM_AGENT_MANAGER_ERROR_FAILED = 0,         /*< nick=Failed >*/
+    NM_AGENT_MANAGER_ERROR_PERMISSION_DENIED,  /*< nick=PermissionDenied >*/
+    NM_AGENT_MANAGER_ERROR_INVALID_IDENTIFIER, /*< nick=InvalidIdentifier >*/
+    NM_AGENT_MANAGER_ERROR_NOT_REGISTERED,     /*< nick=NotRegistered >*/
+    NM_AGENT_MANAGER_ERROR_NO_SECRETS,         /*< nick=NoSecrets >*/
+    NM_AGENT_MANAGER_ERROR_USER_CANCELED,      /*< nick=UserCanceled >*/
 } NMAgentManagerError;
 
-GQuark nm_agent_manager_error_quark (void);
-#define NM_AGENT_MANAGER_ERROR (nm_agent_manager_error_quark ())
+GQuark nm_agent_manager_error_quark(void);
+#define NM_AGENT_MANAGER_ERROR (nm_agent_manager_error_quark())
 
 /**
  * NMConnectionError:
@@ -75,18 +75,18 @@ GQuark nm_agent_manager_error_quark (void);
  * "org.freedesktop.NetworkManager.Settings.Connection" namespace.
  */
 typedef enum {
-	NM_CONNECTION_ERROR_FAILED = 0,                   /*< nick=Failed >*/
-	NM_CONNECTION_ERROR_SETTING_NOT_FOUND,            /*< nick=SettingNotFound >*/
-	NM_CONNECTION_ERROR_PROPERTY_NOT_FOUND,           /*< nick=PropertyNotFound >*/
-	NM_CONNECTION_ERROR_PROPERTY_NOT_SECRET,          /*< nick=PropertyNotSecret >*/
-	NM_CONNECTION_ERROR_MISSING_SETTING,              /*< nick=MissingSetting >*/
-	NM_CONNECTION_ERROR_INVALID_SETTING,              /*< nick=InvalidSetting >*/
-	NM_CONNECTION_ERROR_MISSING_PROPERTY,             /*< nick=MissingProperty >*/
-	NM_CONNECTION_ERROR_INVALID_PROPERTY,             /*< nick=InvalidProperty >*/
+    NM_CONNECTION_ERROR_FAILED = 0,          /*< nick=Failed >*/
+    NM_CONNECTION_ERROR_SETTING_NOT_FOUND,   /*< nick=SettingNotFound >*/
+    NM_CONNECTION_ERROR_PROPERTY_NOT_FOUND,  /*< nick=PropertyNotFound >*/
+    NM_CONNECTION_ERROR_PROPERTY_NOT_SECRET, /*< nick=PropertyNotSecret >*/
+    NM_CONNECTION_ERROR_MISSING_SETTING,     /*< nick=MissingSetting >*/
+    NM_CONNECTION_ERROR_INVALID_SETTING,     /*< nick=InvalidSetting >*/
+    NM_CONNECTION_ERROR_MISSING_PROPERTY,    /*< nick=MissingProperty >*/
+    NM_CONNECTION_ERROR_INVALID_PROPERTY,    /*< nick=InvalidProperty >*/
 } NMConnectionError;
 
-#define NM_CONNECTION_ERROR nm_connection_error_quark ()
-GQuark nm_connection_error_quark (void);
+#define NM_CONNECTION_ERROR nm_connection_error_quark()
+GQuark nm_connection_error_quark(void);
 
 /**
  * NMCryptoError:
@@ -102,16 +102,16 @@ GQuark nm_connection_error_quark (void);
  * and some #NMSetting8021x operations.
  */
 typedef enum {
-	NM_CRYPTO_ERROR_FAILED = 0,
-	NM_CRYPTO_ERROR_INVALID_DATA,
-	NM_CRYPTO_ERROR_INVALID_PASSWORD,
-	NM_CRYPTO_ERROR_UNKNOWN_CIPHER,
-	NM_CRYPTO_ERROR_DECRYPTION_FAILED,
-	NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
+    NM_CRYPTO_ERROR_FAILED = 0,
+    NM_CRYPTO_ERROR_INVALID_DATA,
+    NM_CRYPTO_ERROR_INVALID_PASSWORD,
+    NM_CRYPTO_ERROR_UNKNOWN_CIPHER,
+    NM_CRYPTO_ERROR_DECRYPTION_FAILED,
+    NM_CRYPTO_ERROR_ENCRYPTION_FAILED,
 } NMCryptoError;
 
-#define NM_CRYPTO_ERROR nm_crypto_error_quark ()
-GQuark nm_crypto_error_quark (void);
+#define NM_CRYPTO_ERROR nm_crypto_error_quark()
+GQuark nm_crypto_error_quark(void);
 
 /**
  * NMDeviceError:
@@ -140,21 +140,21 @@ GQuark nm_crypto_error_quark (void);
  * "org.freedesktop.NetworkManager.Device" namespace).
  */
 typedef enum {
-	NM_DEVICE_ERROR_FAILED = 0,                /*< nick=Failed >*/
-	NM_DEVICE_ERROR_CREATION_FAILED,           /*< nick=CreationFailed >*/
-	NM_DEVICE_ERROR_INVALID_CONNECTION,        /*< nick=InvalidConnection >*/
-	NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,   /*< nick=IncompatibleConnection >*/
-	NM_DEVICE_ERROR_NOT_ACTIVE,                /*< nick=NotActive >*/
-	NM_DEVICE_ERROR_NOT_SOFTWARE,              /*< nick=NotSoftware >*/
-	NM_DEVICE_ERROR_NOT_ALLOWED,               /*< nick=NotAllowed >*/
-	NM_DEVICE_ERROR_SPECIFIC_OBJECT_NOT_FOUND, /*< nick=SpecificObjectNotFound >*/
-	NM_DEVICE_ERROR_VERSION_ID_MISMATCH,       /*< nick=VersionIdMismatch >*/
-	NM_DEVICE_ERROR_MISSING_DEPENDENCIES,      /*< nick=MissingDependencies >*/
-	NM_DEVICE_ERROR_INVALID_ARGUMENT,          /*< nick=InvalidArgument >*/
+    NM_DEVICE_ERROR_FAILED = 0,                /*< nick=Failed >*/
+    NM_DEVICE_ERROR_CREATION_FAILED,           /*< nick=CreationFailed >*/
+    NM_DEVICE_ERROR_INVALID_CONNECTION,        /*< nick=InvalidConnection >*/
+    NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,   /*< nick=IncompatibleConnection >*/
+    NM_DEVICE_ERROR_NOT_ACTIVE,                /*< nick=NotActive >*/
+    NM_DEVICE_ERROR_NOT_SOFTWARE,              /*< nick=NotSoftware >*/
+    NM_DEVICE_ERROR_NOT_ALLOWED,               /*< nick=NotAllowed >*/
+    NM_DEVICE_ERROR_SPECIFIC_OBJECT_NOT_FOUND, /*< nick=SpecificObjectNotFound >*/
+    NM_DEVICE_ERROR_VERSION_ID_MISMATCH,       /*< nick=VersionIdMismatch >*/
+    NM_DEVICE_ERROR_MISSING_DEPENDENCIES,      /*< nick=MissingDependencies >*/
+    NM_DEVICE_ERROR_INVALID_ARGUMENT,          /*< nick=InvalidArgument >*/
 } NMDeviceError;
 
-#define NM_DEVICE_ERROR nm_device_error_quark ()
-GQuark nm_device_error_quark (void);
+#define NM_DEVICE_ERROR nm_device_error_quark()
+GQuark nm_device_error_quark(void);
 
 /**
  * NMManagerError:
@@ -186,24 +186,24 @@ GQuark nm_device_error_quark (void);
  * errors in that namespace.
  */
 typedef enum {
-	NM_MANAGER_ERROR_FAILED = 0,                  /*< nick=Failed >*/
-	NM_MANAGER_ERROR_PERMISSION_DENIED,           /*< nick=PermissionDenied >*/
-	NM_MANAGER_ERROR_UNKNOWN_CONNECTION,          /*< nick=UnknownConnection >*/
-	NM_MANAGER_ERROR_UNKNOWN_DEVICE,              /*< nick=UnknownDevice >*/
-	NM_MANAGER_ERROR_CONNECTION_NOT_AVAILABLE,    /*< nick=ConnectionNotAvailable >*/
-	NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,       /*< nick=ConnectionNotActive >*/
-	NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,   /*< nick=ConnectionAlreadyActive >*/
-	NM_MANAGER_ERROR_DEPENDENCY_FAILED,           /*< nick=DependencyFailed >*/
-	NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE,     /*< nick=AlreadyAsleepOrAwake >*/
-	NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED, /*< nick=AlreadyEnabledOrDisabled >*/
-	NM_MANAGER_ERROR_UNKNOWN_LOG_LEVEL,           /*< nick=UnknownLogLevel >*/
-	NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN,          /*< nick=UnknownLogDomain >*/
-	NM_MANAGER_ERROR_INVALID_ARGUMENTS,           /*< nick=InvalidArguments >*/
-	NM_MANAGER_ERROR_MISSING_PLUGIN,              /*< nick=MissingPlugin >*/
+    NM_MANAGER_ERROR_FAILED = 0,                  /*< nick=Failed >*/
+    NM_MANAGER_ERROR_PERMISSION_DENIED,           /*< nick=PermissionDenied >*/
+    NM_MANAGER_ERROR_UNKNOWN_CONNECTION,          /*< nick=UnknownConnection >*/
+    NM_MANAGER_ERROR_UNKNOWN_DEVICE,              /*< nick=UnknownDevice >*/
+    NM_MANAGER_ERROR_CONNECTION_NOT_AVAILABLE,    /*< nick=ConnectionNotAvailable >*/
+    NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,       /*< nick=ConnectionNotActive >*/
+    NM_MANAGER_ERROR_CONNECTION_ALREADY_ACTIVE,   /*< nick=ConnectionAlreadyActive >*/
+    NM_MANAGER_ERROR_DEPENDENCY_FAILED,           /*< nick=DependencyFailed >*/
+    NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE,     /*< nick=AlreadyAsleepOrAwake >*/
+    NM_MANAGER_ERROR_ALREADY_ENABLED_OR_DISABLED, /*< nick=AlreadyEnabledOrDisabled >*/
+    NM_MANAGER_ERROR_UNKNOWN_LOG_LEVEL,           /*< nick=UnknownLogLevel >*/
+    NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN,          /*< nick=UnknownLogDomain >*/
+    NM_MANAGER_ERROR_INVALID_ARGUMENTS,           /*< nick=InvalidArguments >*/
+    NM_MANAGER_ERROR_MISSING_PLUGIN,              /*< nick=MissingPlugin >*/
 } NMManagerError;
 
-GQuark nm_manager_error_quark (void);
-#define NM_MANAGER_ERROR (nm_manager_error_quark ())
+GQuark nm_manager_error_quark(void);
+#define NM_MANAGER_ERROR (nm_manager_error_quark())
 
 /**
  * NMSecretAgentError:
@@ -228,16 +228,16 @@ GQuark nm_manager_error_quark (void);
  * corresponding #NMAgentManagerError codes.
  */
 typedef enum {
-	NM_SECRET_AGENT_ERROR_FAILED = 0,         /*< nick=Failed >*/
-	NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,  /*< nick=PermissionDenied >*/
-	NM_SECRET_AGENT_ERROR_INVALID_CONNECTION, /*< nick=InvalidConnection >*/
-	NM_SECRET_AGENT_ERROR_USER_CANCELED,      /*< nick=UserCanceled >*/
-	NM_SECRET_AGENT_ERROR_AGENT_CANCELED,     /*< nick=AgentCanceled >*/
-	NM_SECRET_AGENT_ERROR_NO_SECRETS,         /*< nick=NoSecrets >*/
+    NM_SECRET_AGENT_ERROR_FAILED = 0,         /*< nick=Failed >*/
+    NM_SECRET_AGENT_ERROR_PERMISSION_DENIED,  /*< nick=PermissionDenied >*/
+    NM_SECRET_AGENT_ERROR_INVALID_CONNECTION, /*< nick=InvalidConnection >*/
+    NM_SECRET_AGENT_ERROR_USER_CANCELED,      /*< nick=UserCanceled >*/
+    NM_SECRET_AGENT_ERROR_AGENT_CANCELED,     /*< nick=AgentCanceled >*/
+    NM_SECRET_AGENT_ERROR_NO_SECRETS,         /*< nick=NoSecrets >*/
 } NMSecretAgentError;
 
-GQuark nm_secret_agent_error_quark (void);
-#define NM_SECRET_AGENT_ERROR         (nm_secret_agent_error_quark ())
+GQuark nm_secret_agent_error_quark(void);
+#define NM_SECRET_AGENT_ERROR (nm_secret_agent_error_quark())
 
 /**
  * NMSettingsError:
@@ -259,18 +259,18 @@ GQuark nm_secret_agent_error_quark (void);
  * D-Bus errors in that namespace.
  */
 typedef enum {
-	NM_SETTINGS_ERROR_FAILED = 0,           /*< nick=Failed >*/
-	NM_SETTINGS_ERROR_PERMISSION_DENIED,    /*< nick=PermissionDenied >*/
-	NM_SETTINGS_ERROR_NOT_SUPPORTED,        /*< nick=NotSupported >*/
-	NM_SETTINGS_ERROR_INVALID_CONNECTION,   /*< nick=InvalidConnection >*/
-	NM_SETTINGS_ERROR_READ_ONLY_CONNECTION, /*< nick=ReadOnlyConnection >*/
-	NM_SETTINGS_ERROR_UUID_EXISTS,          /*< nick=UuidExists >*/
-	NM_SETTINGS_ERROR_INVALID_HOSTNAME,     /*< nick=InvalidHostname >*/
-	NM_SETTINGS_ERROR_INVALID_ARGUMENTS,    /*< nick=InvalidArguments >*/
+    NM_SETTINGS_ERROR_FAILED = 0,           /*< nick=Failed >*/
+    NM_SETTINGS_ERROR_PERMISSION_DENIED,    /*< nick=PermissionDenied >*/
+    NM_SETTINGS_ERROR_NOT_SUPPORTED,        /*< nick=NotSupported >*/
+    NM_SETTINGS_ERROR_INVALID_CONNECTION,   /*< nick=InvalidConnection >*/
+    NM_SETTINGS_ERROR_READ_ONLY_CONNECTION, /*< nick=ReadOnlyConnection >*/
+    NM_SETTINGS_ERROR_UUID_EXISTS,          /*< nick=UuidExists >*/
+    NM_SETTINGS_ERROR_INVALID_HOSTNAME,     /*< nick=InvalidHostname >*/
+    NM_SETTINGS_ERROR_INVALID_ARGUMENTS,    /*< nick=InvalidArguments >*/
 } NMSettingsError;
 
-GQuark nm_settings_error_quark (void);
-#define NM_SETTINGS_ERROR (nm_settings_error_quark ())
+GQuark nm_settings_error_quark(void);
+#define NM_SETTINGS_ERROR (nm_settings_error_quark())
 
 /**
  * NMVpnPluginError:
@@ -301,19 +301,19 @@ GQuark nm_settings_error_quark (void);
  * to errors in the "org.freedesktop.NetworkManager.VPN.Error" namespace.
  **/
 typedef enum {
-	NM_VPN_PLUGIN_ERROR_FAILED,                    /*< nick=Failed >*/
-	NM_VPN_PLUGIN_ERROR_STARTING_IN_PROGRESS,      /*< nick=StartingInProgress >*/
-	NM_VPN_PLUGIN_ERROR_ALREADY_STARTED,           /*< nick=AlreadyStarted >*/
-	NM_VPN_PLUGIN_ERROR_STOPPING_IN_PROGRESS,      /*< nick=StoppingInProgress >*/
-	NM_VPN_PLUGIN_ERROR_ALREADY_STOPPED,           /*< nick=AlreadyStopped >*/
-	NM_VPN_PLUGIN_ERROR_WRONG_STATE,               /*< nick=WrongState >*/
-	NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,             /*< nick=BadArguments >*/
-	NM_VPN_PLUGIN_ERROR_LAUNCH_FAILED,             /*< nick=LaunchFailed >*/
-	NM_VPN_PLUGIN_ERROR_INVALID_CONNECTION,        /*< nick=InvalidConnection >*/
-	NM_VPN_PLUGIN_ERROR_INTERACTIVE_NOT_SUPPORTED, /*< nick=InteractiveNotSupported >*/
+    NM_VPN_PLUGIN_ERROR_FAILED,                    /*< nick=Failed >*/
+    NM_VPN_PLUGIN_ERROR_STARTING_IN_PROGRESS,      /*< nick=StartingInProgress >*/
+    NM_VPN_PLUGIN_ERROR_ALREADY_STARTED,           /*< nick=AlreadyStarted >*/
+    NM_VPN_PLUGIN_ERROR_STOPPING_IN_PROGRESS,      /*< nick=StoppingInProgress >*/
+    NM_VPN_PLUGIN_ERROR_ALREADY_STOPPED,           /*< nick=AlreadyStopped >*/
+    NM_VPN_PLUGIN_ERROR_WRONG_STATE,               /*< nick=WrongState >*/
+    NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,             /*< nick=BadArguments >*/
+    NM_VPN_PLUGIN_ERROR_LAUNCH_FAILED,             /*< nick=LaunchFailed >*/
+    NM_VPN_PLUGIN_ERROR_INVALID_CONNECTION,        /*< nick=InvalidConnection >*/
+    NM_VPN_PLUGIN_ERROR_INTERACTIVE_NOT_SUPPORTED, /*< nick=InteractiveNotSupported >*/
 } NMVpnPluginError;
 
-#define NM_VPN_PLUGIN_ERROR      (nm_vpn_plugin_error_quark ())
-GQuark nm_vpn_plugin_error_quark    (void);
+#define NM_VPN_PLUGIN_ERROR (nm_vpn_plugin_error_quark())
+GQuark nm_vpn_plugin_error_quark(void);
 
 #endif /* __NM_ERRORS_H__ */

@@ -8,15 +8,15 @@
 
 #include "nmcli.h"
 
-void nmc_complete_device (NMClient *client, const char *prefix, gboolean wifi_only);
+void nmc_complete_device(NMClient *client, const char *prefix, gboolean wifi_only);
 
-void nmc_complete_bssid (NMClient *client, const char *ifname, const char *bssid_prefix);
+void nmc_complete_bssid(NMClient *client, const char *ifname, const char *bssid_prefix);
 
-void monitor_devices (NmCli *nmc);
+void monitor_devices(NmCli *nmc);
 
-NMDevice ** nmc_get_devices_sorted (NMClient *client);
+NMDevice **nmc_get_devices_sorted(NMClient *client);
 
-NMMetaColor nmc_device_state_to_color (NMDevice *device);
+NMMetaColor nmc_device_state_to_color(NMDevice *device);
 
 extern const NmcMetaGenericInfo *const metagen_device_status[];
 extern const NmcMetaGenericInfo *const metagen_device_detail_general[];

@@ -15,38 +15,38 @@
 
 #include "nmt-editor-page.h"
 
-G_DEFINE_ABSTRACT_TYPE (NmtEditorPage, nmt_editor_page, G_TYPE_OBJECT)
+G_DEFINE_ABSTRACT_TYPE(NmtEditorPage, nmt_editor_page, G_TYPE_OBJECT)
 
-#define NMT_EDITOR_PAGE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_EDITOR_PAGE, NmtEditorPagePrivate))
+#define NMT_EDITOR_PAGE_GET_PRIVATE(o) \
+    (G_TYPE_INSTANCE_GET_PRIVATE((o), NMT_TYPE_EDITOR_PAGE, NmtEditorPagePrivate))
 
 typedef struct {
-	NMConnection *connection;
-	GSList *sections;
+    NMConnection *connection;
+    GSList *      sections;
 
 } NmtEditorPagePrivate;
 
 enum {
-	PROP_0,
+    PROP_0,
 
-	PROP_CONNECTION,
+    PROP_CONNECTION,
 
-	LAST_PROP
+    LAST_PROP
 };
 
 static void
-nmt_editor_page_init (NmtEditorPage *page)
-{
-}
+nmt_editor_page_init(NmtEditorPage *page)
+{}
 
 static void
-nmt_editor_page_finalize (GObject *object)
+nmt_editor_page_finalize(GObject *object)
 {
-	NmtEditorPagePrivate *priv = NMT_EDITOR_PAGE_GET_PRIVATE (object);
+    NmtEditorPagePrivate *priv = NMT_EDITOR_PAGE_GET_PRIVATE(object);
 
-	g_clear_object (&priv->connection);
-	g_slist_free_full (priv->sections, g_object_unref);
+    g_clear_object(&priv->connection);
+    g_slist_free_full(priv->sections, g_object_unref);
 
-	G_OBJECT_CLASS (nmt_editor_page_parent_class)->finalize (object);
+    G_OBJECT_CLASS(nmt_editor_page_parent_class)->finalize(object);
 }
 
 /**
@@ -58,11 +58,11 @@ nmt_editor_page_finalize (GObject *object)
  * Returns: (transfer none): the page's #NMConnection.
  */
 NMConnection *
-nmt_editor_page_get_connection (NmtEditorPage *page)
+nmt_editor_page_get_connection(NmtEditorPage *page)
 {
-	NmtEditorPagePrivate *priv = NMT_EDITOR_PAGE_GET_PRIVATE (page);
+    NmtEditorPagePrivate *priv = NMT_EDITOR_PAGE_GET_PRIVATE(page);
 
-	return priv->connection;
+    return priv->connection;
 }
 
 /**
@@ -75,11 +75,11 @@ nmt_editor_page_get_connection (NmtEditorPage *page)
  * used by the page and must not be modified or freed.
  */
 GSList *
-nmt_editor_page_get_sections (NmtEditorPage *page)
+nmt_editor_page_get_sections(NmtEditorPage *page)
 {
-	NmtEditorPagePrivate *priv = NMT_EDITOR_PAGE_GET_PRIVATE (page);
+    NmtEditorPagePrivate *priv = NMT_EDITOR_PAGE_GET_PRIVATE(page);
 
-	return priv->sections;
+    return priv->sections;
 }
 
 /**
@@ -91,12 +91,11 @@ nmt_editor_page_get_sections (NmtEditorPage *page)
  * subclasses.
  */
 void
-nmt_editor_page_add_section (NmtEditorPage *page,
-                             NmtEditorSection *section)
+nmt_editor_page_add_section(NmtEditorPage *page, NmtEditorSection *section)
 {
-	NmtEditorPagePrivate *priv = NMT_EDITOR_PAGE_GET_PRIVATE (page);
+    NmtEditorPagePrivate *priv = NMT_EDITOR_PAGE_GET_PRIVATE(page);
 
-	priv->sections = g_slist_append (priv->sections, g_object_ref_sink (section));
+    priv->sections = g_slist_append(priv->sections, g_object_ref_sink(section));
 }
 
 /**
@@ -108,74 +107,69 @@ nmt_editor_page_add_section (NmtEditorPage *page,
  * recommit the slave connections).
  */
 void
-nmt_editor_page_saved (NmtEditorPage *page)
+nmt_editor_page_saved(NmtEditorPage *page)
 {
-	NmtEditorPageClass *editor_page_class = NMT_EDITOR_PAGE_GET_CLASS (page);
+    NmtEditorPageClass *editor_page_class = NMT_EDITOR_PAGE_GET_CLASS(page);
 
-	if (editor_page_class->saved)
-		editor_page_class->saved (page);
+    if (editor_page_class->saved)
+        editor_page_class->saved(page);
 }
 
 static void
-nmt_editor_page_set_property (GObject      *object,
-                              guint         prop_id,
-                              const GValue *value,
-                              GParamSpec   *pspec)
+nmt_editor_page_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-	NmtEditorPagePrivate *priv = NMT_EDITOR_PAGE_GET_PRIVATE (object);
+    NmtEditorPagePrivate *priv = NMT_EDITOR_PAGE_GET_PRIVATE(object);
 
-	switch (prop_id) {
-	case PROP_CONNECTION:
-		priv->connection = g_value_dup_object (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_CONNECTION:
+        priv->connection = g_value_dup_object(value);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
-nmt_editor_page_get_property (GObject    *object,
-                              guint       prop_id,
-                              GValue     *value,
-                              GParamSpec *pspec)
+nmt_editor_page_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-	NmtEditorPagePrivate *priv = NMT_EDITOR_PAGE_GET_PRIVATE (object);
+    NmtEditorPagePrivate *priv = NMT_EDITOR_PAGE_GET_PRIVATE(object);
 
-	switch (prop_id) {
-	case PROP_CONNECTION:
-		g_value_set_object (value, priv->connection);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_CONNECTION:
+        g_value_set_object(value, priv->connection);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
-nmt_editor_page_class_init (NmtEditorPageClass *page_class)
+nmt_editor_page_class_init(NmtEditorPageClass *page_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (page_class);
+    GObjectClass *object_class = G_OBJECT_CLASS(page_class);
 
-	g_type_class_add_private (page_class, sizeof (NmtEditorPagePrivate));
+    g_type_class_add_private(page_class, sizeof(NmtEditorPagePrivate));
 
-	/* virtual methods */
-	object_class->set_property = nmt_editor_page_set_property;
-	object_class->get_property = nmt_editor_page_get_property;
-	object_class->finalize     = nmt_editor_page_finalize;
+    /* virtual methods */
+    object_class->set_property = nmt_editor_page_set_property;
+    object_class->get_property = nmt_editor_page_get_property;
+    object_class->finalize     = nmt_editor_page_finalize;
 
-	/* properties */
+    /* properties */
 
-	/**
-	 * NmtEditorPage:connection:
-	 *
-	 * The page's #NMConnection.
-	 */
-	g_object_class_install_property
-		(object_class, PROP_CONNECTION,
-		 g_param_spec_object ("connection", "", "",
-		                      NM_TYPE_CONNECTION,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+    /**
+     * NmtEditorPage:connection:
+     *
+     * The page's #NMConnection.
+     */
+    g_object_class_install_property(
+        object_class,
+        PROP_CONNECTION,
+        g_param_spec_object("connection",
+                            "",
+                            "",
+                            NM_TYPE_CONNECTION,
+                            G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 }

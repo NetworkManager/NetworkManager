@@ -6,20 +6,23 @@
 #ifndef __NM_SETTING_BOND_H__
 #define __NM_SETTING_BOND_H__
 
-#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
-#error "Only <NetworkManager.h> can be included directly."
+#if !defined(__NETWORKMANAGER_H_INSIDE__) && !defined(NETWORKMANAGER_COMPILATION)
+    #error "Only <NetworkManager.h> can be included directly."
 #endif
 
 #include "nm-setting.h"
 
 G_BEGIN_DECLS
 
-#define NM_TYPE_SETTING_BOND            (nm_setting_bond_get_type ())
-#define NM_SETTING_BOND(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_BOND, NMSettingBond))
-#define NM_SETTING_BOND_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SETTING_BOND, NMSettingBondClass))
-#define NM_IS_SETTING_BOND(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SETTING_BOND))
-#define NM_IS_SETTING_BOND_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_SETTING_BOND))
-#define NM_SETTING_BOND_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SETTING_BOND, NMSettingBondClass))
+#define NM_TYPE_SETTING_BOND (nm_setting_bond_get_type())
+#define NM_SETTING_BOND(obj) \
+    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SETTING_BOND, NMSettingBond))
+#define NM_SETTING_BOND_CLASS(klass) \
+    (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_SETTING_BOND, NMSettingBondClass))
+#define NM_IS_SETTING_BOND(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_SETTING_BOND))
+#define NM_IS_SETTING_BOND_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_SETTING_BOND))
+#define NM_SETTING_BOND_GET_CLASS(obj) \
+    (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_SETTING_BOND, NMSettingBondClass))
 
 #define NM_SETTING_BOND_SETTING_NAME "bond"
 
@@ -60,43 +63,36 @@ G_BEGIN_DECLS
  * Bonding Settings
  */
 struct _NMSettingBond {
-	NMSetting parent;
+    NMSetting parent;
 };
 
 typedef struct {
-	NMSettingClass parent;
+    NMSettingClass parent;
 
-	/*< private >*/
-	gpointer padding[4];
+    /*< private >*/
+    gpointer padding[4];
 } NMSettingBondClass;
 
-GType nm_setting_bond_get_type (void);
+GType nm_setting_bond_get_type(void);
 
-NMSetting *  nm_setting_bond_new                (void);
-guint32      nm_setting_bond_get_num_options    (NMSettingBond *setting);
-gboolean     nm_setting_bond_get_option         (NMSettingBond *setting,
-                                                 guint32 idx,
-                                                 const char **out_name,
-                                                 const char **out_value);
-const char * nm_setting_bond_get_option_by_name (NMSettingBond *setting,
-                                                 const char *name);
-gboolean     nm_setting_bond_add_option         (NMSettingBond *setting,
-                                                 const char *name,
-                                                 const char *value);
-gboolean     nm_setting_bond_remove_option      (NMSettingBond *setting,
-                                                 const char *name);
+NMSetting * nm_setting_bond_new(void);
+guint32     nm_setting_bond_get_num_options(NMSettingBond *setting);
+gboolean    nm_setting_bond_get_option(NMSettingBond *setting,
+                                       guint32        idx,
+                                       const char **  out_name,
+                                       const char **  out_value);
+const char *nm_setting_bond_get_option_by_name(NMSettingBond *setting, const char *name);
+gboolean    nm_setting_bond_add_option(NMSettingBond *setting, const char *name, const char *value);
+gboolean    nm_setting_bond_remove_option(NMSettingBond *setting, const char *name);
 
-gboolean     nm_setting_bond_validate_option    (const char *name,
-                                                 const char *value);
+gboolean nm_setting_bond_validate_option(const char *name, const char *value);
 
-const char **nm_setting_bond_get_valid_options  (NMSettingBond *setting);
+const char **nm_setting_bond_get_valid_options(NMSettingBond *setting);
 
-const char * nm_setting_bond_get_option_default (NMSettingBond *setting,
-                                                 const char *name);
+const char *nm_setting_bond_get_option_default(NMSettingBond *setting, const char *name);
 
 NM_AVAILABLE_IN_1_24
-const char * nm_setting_bond_get_option_normalized (NMSettingBond *setting,
-                                                    const char *name);
+const char *nm_setting_bond_get_option_normalized(NMSettingBond *setting, const char *name);
 
 G_END_DECLS
 

@@ -52,4 +52,4 @@ typedef struct _NMVpnConnection      NMVpnConnection;
 typedef struct _NMWifiP2PPeer        NMWifiP2PPeer;
 typedef struct _NMWimaxNsp           NMWimaxNsp;
 
-#endif  /* NM_TYPES_H */
+#endif /* NM_TYPES_H */

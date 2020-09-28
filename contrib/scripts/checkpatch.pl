@@ -190,19 +190,7 @@ complain ("XXX marker are reserved for development while work-in-progress. Use T
 complain ("This gtk-doc annotation looks wrong") if $line =~ /\*.*\( *(transfer-(none|container|full)|allow none) *\) *(:|\()/;
 complain ("Prefer nm_assert() or g_return*() to g_assert*()") if $line =~ /g_assert/ and not $filename =~ /\/tests\//;
 complain ("Use gs_free_error with GError variables") if $line =~ /\bgs_free\b +GError *\*/;
-
-new_hunk if $_ eq '';
-my ($this_indent) = /^(\s*)/;
-if (defined $indent) {
-	my $this_tabs_before_spaces = length $1 if $this_indent =~ /^(\t*) +/;
-	my $tabs_before_spaces = length $1 if $indent =~ /^(\t*) +/;
-
-	complain ("Bad indentation")
-		if $this_indent =~ /^$indent\t+ +/
-		or (defined $tabs_before_spaces and defined $this_tabs_before_spaces
-			and $this_tabs_before_spaces != $tabs_before_spaces);
-}
-$indent = $this_indent if $_ ne '';
+#complain ("Use spaces instead of tabs") if $line =~ /\t/;
 
 # Further on we process stuff without comments.
 $_ = $line;
@@ -228,7 +216,7 @@ if (/^typedef*/) {
 
 	# A function name
 	my $name = $1;
-	complain ('A single space should follow the function name') unless $2 eq ' ';
+	complain ('No space between function name and arguments') unless $2 eq '';
 
 	# Determine which function must not be preceding this one
 	foreach my $func (reverse @order) {

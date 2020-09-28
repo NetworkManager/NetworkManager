@@ -24,365 +24,359 @@
 /*****************************************************************************/
 
 static char **
-_ip_config_get_routes (NMIPConfig *cfg)
+_ip_config_get_routes(NMIPConfig *cfg)
 {
-	gs_unref_hashtable GHashTable *hash = NULL;
-	GPtrArray *ptr_array;
-	char **arr;
-	guint i;
+    gs_unref_hashtable GHashTable *hash = NULL;
+    GPtrArray *                    ptr_array;
+    char **                        arr;
+    guint                          i;
 
-	ptr_array = nm_ip_config_get_routes (cfg);
-	if (!ptr_array)
-		return NULL;
+    ptr_array = nm_ip_config_get_routes(cfg);
+    if (!ptr_array)
+        return NULL;
 
-	if (ptr_array->len == 0)
-		return NULL;
+    if (ptr_array->len == 0)
+        return NULL;
 
-	arr = g_new (char *, ptr_array->len + 1);
-	for (i = 0; i < ptr_array->len; i++) {
-		NMIPRoute *route = g_ptr_array_index (ptr_array, i);
-		gs_strfreev char **names = NULL;
-		gsize j;
-		GString *str;
-		guint64 metric;
-		gs_free char *attributes = NULL;
+    arr = g_new(char *, ptr_array->len + 1);
+    for (i = 0; i < ptr_array->len; i++) {
+        NMIPRoute *        route = g_ptr_array_index(ptr_array, i);
+        gs_strfreev char **names = NULL;
+        gsize              j;
+        GString *          str;
+        guint64            metric;
+        gs_free char *     attributes = NULL;
 
-		str = g_string_new (NULL);
-		g_string_append_printf (str,
-		                        "dst = %s/%u, nh = %s",
-		                        nm_ip_route_get_dest (route),
-		                        nm_ip_route_get_prefix (route),
-		                        nm_ip_route_get_next_hop (route)
-		                          ?: (nm_ip_route_get_family (route) == AF_INET ? "0.0.0.0" : "::"));
+        str = g_string_new(NULL);
+        g_string_append_printf(
+            str,
+            "dst = %s/%u, nh = %s",
+            nm_ip_route_get_dest(route),
+            nm_ip_route_get_prefix(route),
+            nm_ip_route_get_next_hop(route)
+                ?: (nm_ip_route_get_family(route) == AF_INET ? "0.0.0.0" : "::"));
 
-		metric = nm_ip_route_get_metric (route);
-		if (metric != -1) {
-			g_string_append_printf (str,
-			                        ", mt = %u",
-			                        (guint) metric);
-		}
+        metric = nm_ip_route_get_metric(route);
+        if (metric != -1) {
+            g_string_append_printf(str, ", mt = %u", (guint) metric);
+        }
 
-		names = nm_ip_route_get_attribute_names (route);
-		if (names[0]) {
-			if (!hash)
-				hash = g_hash_table_new (nm_str_hash, g_str_equal);
-			else
-				g_hash_table_remove_all (hash);
+        names = nm_ip_route_get_attribute_names(route);
+        if (names[0]) {
+            if (!hash)
+                hash = g_hash_table_new(nm_str_hash, g_str_equal);
+            else
+                g_hash_table_remove_all(hash);
 
-			for (j = 0; names[j]; j++)
-				g_hash_table_insert (hash, names[j], nm_ip_route_get_attribute (route, names[j]));
+            for (j = 0; names[j]; j++)
+                g_hash_table_insert(hash, names[j], nm_ip_route_get_attribute(route, names[j]));
 
-			attributes = nm_utils_format_variant_attributes (hash, ',', '=');
-			if (attributes) {
-				g_string_append (str, ", ");
-				g_string_append (str, attributes);
-			}
-		}
+            attributes = nm_utils_format_variant_attributes(hash, ',', '=');
+            if (attributes) {
+                g_string_append(str, ", ");
+                g_string_append(str, attributes);
+            }
+        }
 
-		arr[i] = g_string_free (str, FALSE);
-	}
+        arr[i] = g_string_free(str, FALSE);
+    }
 
-	nm_assert (i == ptr_array->len);
-	arr[i] = NULL;
+    nm_assert(i == ptr_array->len);
+    arr[i] = NULL;
 
-	return arr;
+    return arr;
 }
 
 /*****************************************************************************/
 
-static gconstpointer
-_metagen_ip4_config_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
+static gconstpointer _metagen_ip4_config_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 {
-	NMIPConfig *cfg4 = target;
-	GPtrArray *ptr_array;
-	char **arr;
-	const char *const*arrc;
-	guint i = 0;
-	const char *str;
+    NMIPConfig *       cfg4 = target;
+    GPtrArray *        ptr_array;
+    char **            arr;
+    const char *const *arrc;
+    guint              i = 0;
+    const char *       str;
 
-	nm_assert (info->info_type < _NMC_GENERIC_INFO_TYPE_IP4_CONFIG_NUM);
+    nm_assert(info->info_type < _NMC_GENERIC_INFO_TYPE_IP4_CONFIG_NUM);
 
-	NMC_HANDLE_COLOR (NM_META_COLOR_NONE);
-	NM_SET_OUT (out_is_default, TRUE);
+    NMC_HANDLE_COLOR(NM_META_COLOR_NONE);
+    NM_SET_OUT(out_is_default, TRUE);
 
-	switch (info->info_type) {
-	case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_ADDRESS:
-		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
-			return NULL;
-		ptr_array = nm_ip_config_get_addresses (cfg4);
-		if (ptr_array) {
-			arr = g_new (char *, ptr_array->len + 1);
-			for (i = 0; i < ptr_array->len; i++) {
-				NMIPAddress *addr = g_ptr_array_index (ptr_array, i);
+    switch (info->info_type) {
+    case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_ADDRESS:
+        if (!NM_FLAGS_HAS(get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+            return NULL;
+        ptr_array = nm_ip_config_get_addresses(cfg4);
+        if (ptr_array) {
+            arr = g_new(char *, ptr_array->len + 1);
+            for (i = 0; i < ptr_array->len; i++) {
+                NMIPAddress *addr = g_ptr_array_index(ptr_array, i);
 
-				arr[i] = g_strdup_printf ("%s/%u",
-				                          nm_ip_address_get_address (addr),
-				                          nm_ip_address_get_prefix (addr));
-			}
-			arr[i] = NULL;
-		} else
-			arr = NULL;
-		goto arr_out;
-	case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_GATEWAY:
-		str = nm_ip_config_get_gateway (cfg4);
-		NM_SET_OUT (out_is_default, !str);
-		return str;
-	case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_ROUTE:
-		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
-			return NULL;
-		arr = _ip_config_get_routes (cfg4);
-		goto arr_out;
-	case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_DNS:
-		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
-			return NULL;
-		arrc = nm_ip_config_get_nameservers (cfg4);
-		goto arrc_out;
-	case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_DOMAIN:
-		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
-			return NULL;
-		arrc = nm_ip_config_get_domains (cfg4);
-		goto arrc_out;
-	case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_WINS:
-		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
-			return NULL;
-		arrc = nm_ip_config_get_wins_servers (cfg4);
-		goto arrc_out;
-	default:
-		break;
-	}
+                arr[i] = g_strdup_printf("%s/%u",
+                                         nm_ip_address_get_address(addr),
+                                         nm_ip_address_get_prefix(addr));
+            }
+            arr[i] = NULL;
+        } else
+            arr = NULL;
+        goto arr_out;
+    case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_GATEWAY:
+        str = nm_ip_config_get_gateway(cfg4);
+        NM_SET_OUT(out_is_default, !str);
+        return str;
+    case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_ROUTE:
+        if (!NM_FLAGS_HAS(get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+            return NULL;
+        arr = _ip_config_get_routes(cfg4);
+        goto arr_out;
+    case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_DNS:
+        if (!NM_FLAGS_HAS(get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+            return NULL;
+        arrc = nm_ip_config_get_nameservers(cfg4);
+        goto arrc_out;
+    case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_DOMAIN:
+        if (!NM_FLAGS_HAS(get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+            return NULL;
+        arrc = nm_ip_config_get_domains(cfg4);
+        goto arrc_out;
+    case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_WINS:
+        if (!NM_FLAGS_HAS(get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+            return NULL;
+        arrc = nm_ip_config_get_wins_servers(cfg4);
+        goto arrc_out;
+    default:
+        break;
+    }
 
-	g_return_val_if_reached (NULL);
+    g_return_val_if_reached(NULL);
 
 arrc_out:
-	NM_SET_OUT (out_is_default, !arrc || !arrc[0]);
-	*out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_STRV;
-	return arrc;
+    NM_SET_OUT(out_is_default, !arrc || !arrc[0]);
+    *out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_STRV;
+    return arrc;
 
 arr_out:
-	NM_SET_OUT (out_is_default, !arr || !arr[0]);
-	*out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_STRV;
-	*out_to_free = arr;
-	return arr;
+    NM_SET_OUT(out_is_default, !arr || !arr[0]);
+    *out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_STRV;
+    *out_to_free = arr;
+    return arr;
 }
 
 const NmcMetaGenericInfo *const metagen_ip4_config[_NMC_GENERIC_INFO_TYPE_IP4_CONFIG_NUM + 1] = {
 #define _METAGEN_IP4_CONFIG(type, name) \
-	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_ip4_config_get_fcn)
-	_METAGEN_IP4_CONFIG (NMC_GENERIC_INFO_TYPE_IP4_CONFIG_ADDRESS, "ADDRESS"),
-	_METAGEN_IP4_CONFIG (NMC_GENERIC_INFO_TYPE_IP4_CONFIG_GATEWAY, "GATEWAY"),
-	_METAGEN_IP4_CONFIG (NMC_GENERIC_INFO_TYPE_IP4_CONFIG_ROUTE,   "ROUTE"),
-	_METAGEN_IP4_CONFIG (NMC_GENERIC_INFO_TYPE_IP4_CONFIG_DNS,     "DNS"),
-	_METAGEN_IP4_CONFIG (NMC_GENERIC_INFO_TYPE_IP4_CONFIG_DOMAIN,  "DOMAIN"),
-	_METAGEN_IP4_CONFIG (NMC_GENERIC_INFO_TYPE_IP4_CONFIG_WINS,    "WINS"),
+    [type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_ip4_config_get_fcn)
+    _METAGEN_IP4_CONFIG(NMC_GENERIC_INFO_TYPE_IP4_CONFIG_ADDRESS, "ADDRESS"),
+    _METAGEN_IP4_CONFIG(NMC_GENERIC_INFO_TYPE_IP4_CONFIG_GATEWAY, "GATEWAY"),
+    _METAGEN_IP4_CONFIG(NMC_GENERIC_INFO_TYPE_IP4_CONFIG_ROUTE, "ROUTE"),
+    _METAGEN_IP4_CONFIG(NMC_GENERIC_INFO_TYPE_IP4_CONFIG_DNS, "DNS"),
+    _METAGEN_IP4_CONFIG(NMC_GENERIC_INFO_TYPE_IP4_CONFIG_DOMAIN, "DOMAIN"),
+    _METAGEN_IP4_CONFIG(NMC_GENERIC_INFO_TYPE_IP4_CONFIG_WINS, "WINS"),
 };
 
 /*****************************************************************************/
 
-static gconstpointer
-_metagen_ip6_config_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
+static gconstpointer _metagen_ip6_config_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 {
-	NMIPConfig *cfg6 = target;
-	GPtrArray *ptr_array;
-	char **arr;
-	const char *const*arrc;
-	guint i = 0;
-	const char *str;
+    NMIPConfig *       cfg6 = target;
+    GPtrArray *        ptr_array;
+    char **            arr;
+    const char *const *arrc;
+    guint              i = 0;
+    const char *       str;
 
-	nm_assert (info->info_type < _NMC_GENERIC_INFO_TYPE_IP6_CONFIG_NUM);
+    nm_assert(info->info_type < _NMC_GENERIC_INFO_TYPE_IP6_CONFIG_NUM);
 
-	NMC_HANDLE_COLOR (NM_META_COLOR_NONE);
-	NM_SET_OUT (out_is_default, TRUE);
+    NMC_HANDLE_COLOR(NM_META_COLOR_NONE);
+    NM_SET_OUT(out_is_default, TRUE);
 
-	switch (info->info_type) {
-	case NMC_GENERIC_INFO_TYPE_IP6_CONFIG_ADDRESS:
-		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
-			return NULL;
-		ptr_array = nm_ip_config_get_addresses (cfg6);
-		if (ptr_array) {
-			arr = g_new (char *, ptr_array->len + 1);
-			for (i = 0; i < ptr_array->len; i++) {
-				NMIPAddress *addr = g_ptr_array_index (ptr_array, i);
+    switch (info->info_type) {
+    case NMC_GENERIC_INFO_TYPE_IP6_CONFIG_ADDRESS:
+        if (!NM_FLAGS_HAS(get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+            return NULL;
+        ptr_array = nm_ip_config_get_addresses(cfg6);
+        if (ptr_array) {
+            arr = g_new(char *, ptr_array->len + 1);
+            for (i = 0; i < ptr_array->len; i++) {
+                NMIPAddress *addr = g_ptr_array_index(ptr_array, i);
 
-				arr[i] = g_strdup_printf ("%s/%u",
-				                          nm_ip_address_get_address (addr),
-				                          nm_ip_address_get_prefix (addr));
-			}
-			arr[i] = NULL;
-		} else
-			arr = NULL;
-		goto arr_out;
-	case NMC_GENERIC_INFO_TYPE_IP6_CONFIG_GATEWAY:
-		str = nm_ip_config_get_gateway (cfg6);
-		NM_SET_OUT (out_is_default, !str);
-		return str;
-	case NMC_GENERIC_INFO_TYPE_IP6_CONFIG_ROUTE:
-		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
-			return NULL;
-		arr = _ip_config_get_routes (cfg6);
-		goto arr_out;
-	case NMC_GENERIC_INFO_TYPE_IP6_CONFIG_DNS:
-		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
-			return NULL;
-		arrc = nm_ip_config_get_nameservers (cfg6);
-		goto arrc_out;
-	case NMC_GENERIC_INFO_TYPE_IP6_CONFIG_DOMAIN:
-		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
-			return NULL;
-		arrc = nm_ip_config_get_domains (cfg6);
-		goto arrc_out;
-	default:
-		break;
-	}
+                arr[i] = g_strdup_printf("%s/%u",
+                                         nm_ip_address_get_address(addr),
+                                         nm_ip_address_get_prefix(addr));
+            }
+            arr[i] = NULL;
+        } else
+            arr = NULL;
+        goto arr_out;
+    case NMC_GENERIC_INFO_TYPE_IP6_CONFIG_GATEWAY:
+        str = nm_ip_config_get_gateway(cfg6);
+        NM_SET_OUT(out_is_default, !str);
+        return str;
+    case NMC_GENERIC_INFO_TYPE_IP6_CONFIG_ROUTE:
+        if (!NM_FLAGS_HAS(get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+            return NULL;
+        arr = _ip_config_get_routes(cfg6);
+        goto arr_out;
+    case NMC_GENERIC_INFO_TYPE_IP6_CONFIG_DNS:
+        if (!NM_FLAGS_HAS(get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+            return NULL;
+        arrc = nm_ip_config_get_nameservers(cfg6);
+        goto arrc_out;
+    case NMC_GENERIC_INFO_TYPE_IP6_CONFIG_DOMAIN:
+        if (!NM_FLAGS_HAS(get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+            return NULL;
+        arrc = nm_ip_config_get_domains(cfg6);
+        goto arrc_out;
+    default:
+        break;
+    }
 
-	g_return_val_if_reached (NULL);
+    g_return_val_if_reached(NULL);
 
 arrc_out:
-	NM_SET_OUT (out_is_default, !arrc || !arrc[0]);
-	*out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_STRV;
-	return arrc;
+    NM_SET_OUT(out_is_default, !arrc || !arrc[0]);
+    *out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_STRV;
+    return arrc;
 
 arr_out:
-	NM_SET_OUT (out_is_default, !arr || !arr[0]);
-	*out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_STRV;
-	*out_to_free = arr;
-	return arr;
+    NM_SET_OUT(out_is_default, !arr || !arr[0]);
+    *out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_STRV;
+    *out_to_free = arr;
+    return arr;
 }
 
 const NmcMetaGenericInfo *const metagen_ip6_config[_NMC_GENERIC_INFO_TYPE_IP6_CONFIG_NUM + 1] = {
 #define _METAGEN_IP6_CONFIG(type, name) \
-	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_ip6_config_get_fcn)
-	_METAGEN_IP6_CONFIG (NMC_GENERIC_INFO_TYPE_IP6_CONFIG_ADDRESS, "ADDRESS"),
-	_METAGEN_IP6_CONFIG (NMC_GENERIC_INFO_TYPE_IP6_CONFIG_GATEWAY, "GATEWAY"),
-	_METAGEN_IP6_CONFIG (NMC_GENERIC_INFO_TYPE_IP6_CONFIG_ROUTE,   "ROUTE"),
-	_METAGEN_IP6_CONFIG (NMC_GENERIC_INFO_TYPE_IP6_CONFIG_DNS,     "DNS"),
-	_METAGEN_IP6_CONFIG (NMC_GENERIC_INFO_TYPE_IP6_CONFIG_DOMAIN,  "DOMAIN"),
+    [type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_ip6_config_get_fcn)
+    _METAGEN_IP6_CONFIG(NMC_GENERIC_INFO_TYPE_IP6_CONFIG_ADDRESS, "ADDRESS"),
+    _METAGEN_IP6_CONFIG(NMC_GENERIC_INFO_TYPE_IP6_CONFIG_GATEWAY, "GATEWAY"),
+    _METAGEN_IP6_CONFIG(NMC_GENERIC_INFO_TYPE_IP6_CONFIG_ROUTE, "ROUTE"),
+    _METAGEN_IP6_CONFIG(NMC_GENERIC_INFO_TYPE_IP6_CONFIG_DNS, "DNS"),
+    _METAGEN_IP6_CONFIG(NMC_GENERIC_INFO_TYPE_IP6_CONFIG_DOMAIN, "DOMAIN"),
 };
 
 /*****************************************************************************/
 
-static gconstpointer
-_metagen_dhcp_config_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
+static gconstpointer _metagen_dhcp_config_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 {
-	NMDhcpConfig *dhcp = target;
-	guint i;
-	char **arr = NULL;
+    NMDhcpConfig *dhcp = target;
+    guint         i;
+    char **       arr = NULL;
 
-	NMC_HANDLE_COLOR (NM_META_COLOR_NONE);
+    NMC_HANDLE_COLOR(NM_META_COLOR_NONE);
 
-	switch (info->info_type) {
-	case NMC_GENERIC_INFO_TYPE_DHCP_CONFIG_OPTION:
-		{
-			GHashTable *table;
-			gs_free char **arr2 = NULL;
-			guint n;
+    switch (info->info_type) {
+    case NMC_GENERIC_INFO_TYPE_DHCP_CONFIG_OPTION:
+    {
+        GHashTable *   table;
+        gs_free char **arr2 = NULL;
+        guint          n;
 
-			if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
-				return NULL;
+        if (!NM_FLAGS_HAS(get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+            return NULL;
 
-			table = nm_dhcp_config_get_options (dhcp);
-			if (!table)
-				goto arr_out;
+        table = nm_dhcp_config_get_options(dhcp);
+        if (!table)
+            goto arr_out;
 
-			arr2 = (char **) nm_utils_strdict_get_keys (table, TRUE, &n);
-			if (!n)
-				goto arr_out;
+        arr2 = (char **) nm_utils_strdict_get_keys(table, TRUE, &n);
+        if (!n)
+            goto arr_out;
 
-			nm_assert (arr2 && !arr2[n] && n == NM_PTRARRAY_LEN (arr2));
-			for (i = 0; i < n; i++) {
-				const char *k = arr2[i];
-				const char *v;
+        nm_assert(arr2 && !arr2[n] && n == NM_PTRARRAY_LEN(arr2));
+        for (i = 0; i < n; i++) {
+            const char *k = arr2[i];
+            const char *v;
 
-				nm_assert (k);
-				v = g_hash_table_lookup (table, k);
-				arr2[i] = g_strdup_printf ("%s = %s", k, v);
-			}
+            nm_assert(k);
+            v       = g_hash_table_lookup(table, k);
+            arr2[i] = g_strdup_printf("%s = %s", k, v);
+        }
 
-			arr = g_steal_pointer (&arr2);
-			goto arr_out;
-		}
-	default:
-		break;
-	}
+        arr = g_steal_pointer(&arr2);
+        goto arr_out;
+    }
+    default:
+        break;
+    }
 
-	g_return_val_if_reached (NULL);
+    g_return_val_if_reached(NULL);
 
 arr_out:
-	NM_SET_OUT (out_is_default, !arr || !arr[0]);
-	*out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_STRV;
-	*out_to_free = arr;
-	return arr;
+    NM_SET_OUT(out_is_default, !arr || !arr[0]);
+    *out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_STRV;
+    *out_to_free = arr;
+    return arr;
 }
 
 const NmcMetaGenericInfo *const metagen_dhcp_config[_NMC_GENERIC_INFO_TYPE_DHCP_CONFIG_NUM + 1] = {
 #define _METAGEN_DHCP_CONFIG(type, name) \
-	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_dhcp_config_get_fcn)
-	_METAGEN_DHCP_CONFIG (NMC_GENERIC_INFO_TYPE_DHCP_CONFIG_OPTION, "OPTION"),
+    [type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_dhcp_config_get_fcn)
+    _METAGEN_DHCP_CONFIG(NMC_GENERIC_INFO_TYPE_DHCP_CONFIG_OPTION, "OPTION"),
 };
 
 /*****************************************************************************/
 
 gboolean
-print_ip_config (NMIPConfig *cfg,
-                 int addr_family,
-                 const NmcConfig *nmc_config,
-                 const char *one_field)
+print_ip_config(NMIPConfig *     cfg,
+                int              addr_family,
+                const NmcConfig *nmc_config,
+                const char *     one_field)
 {
-	gs_free_error GError *error = NULL;
-	gs_free char *field_str = NULL;
+    gs_free_error GError *error     = NULL;
+    gs_free char *        field_str = NULL;
 
-	if (!cfg)
-		return FALSE;
+    if (!cfg)
+        return FALSE;
 
-	if (one_field) {
-		field_str = g_strdup_printf ("IP%c.%s",
-		                             nm_utils_addr_family_to_char (addr_family),
-		                             one_field);
-	}
+    if (one_field) {
+        field_str =
+            g_strdup_printf("IP%c.%s", nm_utils_addr_family_to_char(addr_family), one_field);
+    }
 
-	if (!nmc_print (nmc_config,
-	                (gpointer[]) { cfg, NULL },
-	                NULL,
-	                NULL,
-	                addr_family == AF_INET
-	                  ? NMC_META_GENERIC_GROUP ("IP4", metagen_ip4_config, N_("GROUP"))
-	                  : NMC_META_GENERIC_GROUP ("IP6", metagen_ip6_config, N_("GROUP")),
-	                field_str,
-	                &error)) {
-		return FALSE;
-	}
-	return TRUE;
+    if (!nmc_print(nmc_config,
+                   (gpointer[]){cfg, NULL},
+                   NULL,
+                   NULL,
+                   addr_family == AF_INET
+                       ? NMC_META_GENERIC_GROUP("IP4", metagen_ip4_config, N_("GROUP"))
+                       : NMC_META_GENERIC_GROUP("IP6", metagen_ip6_config, N_("GROUP")),
+                   field_str,
+                   &error)) {
+        return FALSE;
+    }
+    return TRUE;
 }
 
 gboolean
-print_dhcp_config (NMDhcpConfig *dhcp,
-                   int addr_family,
-                   const NmcConfig *nmc_config,
-                   const char *one_field)
+print_dhcp_config(NMDhcpConfig *   dhcp,
+                  int              addr_family,
+                  const NmcConfig *nmc_config,
+                  const char *     one_field)
 {
-	gs_free_error GError *error = NULL;
-	gs_free char *field_str = NULL;
+    gs_free_error GError *error     = NULL;
+    gs_free char *        field_str = NULL;
 
-	if (!dhcp)
-		return FALSE;
+    if (!dhcp)
+        return FALSE;
 
-	if (one_field) {
-		field_str = g_strdup_printf ("DHCP%c.%s",
-		                             nm_utils_addr_family_to_char (addr_family),
-		                             one_field);
-	}
+    if (one_field) {
+        field_str =
+            g_strdup_printf("DHCP%c.%s", nm_utils_addr_family_to_char(addr_family), one_field);
+    }
 
-	if (!nmc_print (nmc_config,
-	                (gpointer[]) { dhcp, NULL },
-	                NULL,
-	                NULL,
-	                addr_family == AF_INET
-	                  ? NMC_META_GENERIC_GROUP ("DHCP4", metagen_dhcp_config, N_("GROUP"))
-	                  : NMC_META_GENERIC_GROUP ("DHCP6", metagen_dhcp_config, N_("GROUP")),
-	                field_str,
-	                &error)) {
-		return FALSE;
-	}
-	return TRUE;
+    if (!nmc_print(nmc_config,
+                   (gpointer[]){dhcp, NULL},
+                   NULL,
+                   NULL,
+                   addr_family == AF_INET
+                       ? NMC_META_GENERIC_GROUP("DHCP4", metagen_dhcp_config, N_("GROUP"))
+                       : NMC_META_GENERIC_GROUP("DHCP6", metagen_dhcp_config, N_("GROUP")),
+                   field_str,
+                   &error)) {
+        return FALSE;
+    }
+    return TRUE;
 }
 
 /*
@@ -406,337 +400,337 @@ print_dhcp_config (NMDhcpConfig *dhcp,
  * Returns: found connection, or %NULL
  */
 NMConnection *
-nmc_find_connection (const GPtrArray *connections,
-                     const char *filter_type,
-                     const char *filter_val,
-                     GPtrArray **out_result,
-                     gboolean complete)
+nmc_find_connection(const GPtrArray *connections,
+                    const char *     filter_type,
+                    const char *     filter_val,
+                    GPtrArray **     out_result,
+                    gboolean         complete)
 {
-	NMConnection *best_candidate_uuid = NULL;
-	NMConnection *best_candidate = NULL;
-	gs_unref_ptrarray GPtrArray *result_allocated = NULL;
-	GPtrArray *result = out_result ? *out_result : NULL;
-	const guint result_inital_len = result ? result->len : 0u;
-	guint i, j;
+    NMConnection *    best_candidate_uuid          = NULL;
+    NMConnection *    best_candidate               = NULL;
+    gs_unref_ptrarray GPtrArray *result_allocated  = NULL;
+    GPtrArray *                  result            = out_result ? *out_result : NULL;
+    const guint                  result_inital_len = result ? result->len : 0u;
+    guint                        i, j;
 
-	nm_assert (connections);
-	nm_assert (filter_val);
+    nm_assert(connections);
+    nm_assert(filter_val);
 
-	for (i = 0; i < connections->len; i++) {
-		gboolean match_by_uuid = FALSE;
-		NMConnection *connection;
-		const char *v;
-		const char *v_num;
+    for (i = 0; i < connections->len; i++) {
+        gboolean      match_by_uuid = FALSE;
+        NMConnection *connection;
+        const char *  v;
+        const char *  v_num;
 
-		connection = NM_CONNECTION (connections->pdata[i]);
+        connection = NM_CONNECTION(connections->pdata[i]);
 
-		if (NM_IN_STRSET (filter_type, NULL, "uuid")) {
-			v = nm_connection_get_uuid (connection);
-			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v);
-			if (nm_streq0 (filter_val, v)) {
-				match_by_uuid = TRUE;
-				goto found;
-			}
-		}
+        if (NM_IN_STRSET(filter_type, NULL, "uuid")) {
+            v = nm_connection_get_uuid(connection);
+            if (complete && (filter_type || *filter_val))
+                nmc_complete_strings(filter_val, v);
+            if (nm_streq0(filter_val, v)) {
+                match_by_uuid = TRUE;
+                goto found;
+            }
+        }
 
-		if (NM_IN_STRSET (filter_type, NULL, "id")) {
-			v = nm_connection_get_id (connection);
-			if (complete)
-				nmc_complete_strings (filter_val, v);
-			if (nm_streq0 (filter_val, v))
-				goto found;
-		}
+        if (NM_IN_STRSET(filter_type, NULL, "id")) {
+            v = nm_connection_get_id(connection);
+            if (complete)
+                nmc_complete_strings(filter_val, v);
+            if (nm_streq0(filter_val, v))
+                goto found;
+        }
 
-		if (NM_IN_STRSET (filter_type, NULL, "path")) {
-			v = nm_connection_get_path (connection);
-			v_num = nm_utils_dbus_path_get_last_component (v);
-			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, (*filter_val ? v_num : NULL));
-			if (   nm_streq0 (filter_val, v)
-			    || (filter_type && nm_streq0 (filter_val, v_num)))
-				goto found;
-		}
+        if (NM_IN_STRSET(filter_type, NULL, "path")) {
+            v     = nm_connection_get_path(connection);
+            v_num = nm_utils_dbus_path_get_last_component(v);
+            if (complete && (filter_type || *filter_val))
+                nmc_complete_strings(filter_val, v, (*filter_val ? v_num : NULL));
+            if (nm_streq0(filter_val, v) || (filter_type && nm_streq0(filter_val, v_num)))
+                goto found;
+        }
 
-		if (NM_IN_STRSET (filter_type, NULL, "filename")) {
-			v = nm_remote_connection_get_filename (NM_REMOTE_CONNECTION (connections->pdata[i]));
-			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v);
-			if (nm_streq0 (filter_val, v))
-				goto found;
-		}
+        if (NM_IN_STRSET(filter_type, NULL, "filename")) {
+            v = nm_remote_connection_get_filename(NM_REMOTE_CONNECTION(connections->pdata[i]));
+            if (complete && (filter_type || *filter_val))
+                nmc_complete_strings(filter_val, v);
+            if (nm_streq0(filter_val, v))
+                goto found;
+        }
 
-		continue;
+        continue;
 
 found:
-		if (match_by_uuid) {
-			if (   !complete
-			    && !out_result)
-				return connection;
-			best_candidate_uuid = connection;
-		} else {
-			if (!best_candidate)
-				best_candidate = connection;
-		}
-		if (out_result) {
-			gboolean already_tracked = FALSE;
+        if (match_by_uuid) {
+            if (!complete && !out_result)
+                return connection;
+            best_candidate_uuid = connection;
+        } else {
+            if (!best_candidate)
+                best_candidate = connection;
+        }
+        if (out_result) {
+            gboolean already_tracked = FALSE;
 
-			if (!result) {
-				result_allocated = g_ptr_array_new_with_free_func (g_object_unref);
-				result = result_allocated;
-			} else {
-				for (j = 0; j < result->len; j++) {
-					if (connection == result->pdata[j]) {
-						already_tracked = TRUE;
-						break;
-					}
-				}
-			}
-			if (!already_tracked) {
-				if (match_by_uuid) {
-					/* the profile is matched exactly (by UUID). We prepend it
-					 * to the list of all found profiles. */
-					g_ptr_array_insert (result, result_inital_len, g_object_ref (connection));
-				} else
-					g_ptr_array_add (result, g_object_ref (connection));
-			}
-		}
-	}
+            if (!result) {
+                result_allocated = g_ptr_array_new_with_free_func(g_object_unref);
+                result           = result_allocated;
+            } else {
+                for (j = 0; j < result->len; j++) {
+                    if (connection == result->pdata[j]) {
+                        already_tracked = TRUE;
+                        break;
+                    }
+                }
+            }
+            if (!already_tracked) {
+                if (match_by_uuid) {
+                    /* the profile is matched exactly (by UUID). We prepend it
+                     * to the list of all found profiles. */
+                    g_ptr_array_insert(result, result_inital_len, g_object_ref(connection));
+                } else
+                    g_ptr_array_add(result, g_object_ref(connection));
+            }
+        }
+    }
 
-	if (result_allocated)
-		*out_result = g_steal_pointer (&result_allocated);
-	return best_candidate_uuid ?: best_candidate;
+    if (result_allocated)
+        *out_result = g_steal_pointer(&result_allocated);
+    return best_candidate_uuid ?: best_candidate;
 }
 
 NMActiveConnection *
-nmc_find_active_connection (const GPtrArray *active_cons,
-                            const char *filter_type,
-                            const char *filter_val,
-                            GPtrArray **out_result,
-                            gboolean complete)
+nmc_find_active_connection(const GPtrArray *active_cons,
+                           const char *     filter_type,
+                           const char *     filter_val,
+                           GPtrArray **     out_result,
+                           gboolean         complete)
 {
-	guint i, j;
-	NMActiveConnection *best_candidate = NULL;
-	GPtrArray *result = out_result ? *out_result : NULL;
+    guint               i, j;
+    NMActiveConnection *best_candidate = NULL;
+    GPtrArray *         result         = out_result ? *out_result : NULL;
 
-	nm_assert (filter_val);
+    nm_assert(filter_val);
 
-	for (i = 0; i < active_cons->len; i++) {
-		NMRemoteConnection *con;
-		NMActiveConnection *candidate = g_ptr_array_index (active_cons, i);
-		const char *v, *v_num;
+    for (i = 0; i < active_cons->len; i++) {
+        NMRemoteConnection *con;
+        NMActiveConnection *candidate = g_ptr_array_index(active_cons, i);
+        const char *        v, *v_num;
 
-		con = nm_active_connection_get_connection (candidate);
+        con = nm_active_connection_get_connection(candidate);
 
-		/* When filter_type is NULL, compare connection ID (filter_val)
-		 * against all types. Otherwise, only compare against the specific
-		 * type. If 'path' or 'apath' filter types are specified, comparison
-		 * against numeric index (in addition to the whole path) is allowed.
-		 */
-		if (NM_IN_STRSET (filter_type, NULL, "id")) {
-			v = nm_active_connection_get_id (candidate);
-			if (complete)
-				nmc_complete_strings (filter_val, v);
-			if (nm_streq0 (filter_val, v))
-				goto found;
-		}
+        /* When filter_type is NULL, compare connection ID (filter_val)
+         * against all types. Otherwise, only compare against the specific
+         * type. If 'path' or 'apath' filter types are specified, comparison
+         * against numeric index (in addition to the whole path) is allowed.
+         */
+        if (NM_IN_STRSET(filter_type, NULL, "id")) {
+            v = nm_active_connection_get_id(candidate);
+            if (complete)
+                nmc_complete_strings(filter_val, v);
+            if (nm_streq0(filter_val, v))
+                goto found;
+        }
 
-		if (NM_IN_STRSET (filter_type, NULL, "uuid")) {
-			v = nm_active_connection_get_uuid (candidate);
-			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v);
-			if (nm_streq0 (filter_val, v))
-				goto found;
-		}
+        if (NM_IN_STRSET(filter_type, NULL, "uuid")) {
+            v = nm_active_connection_get_uuid(candidate);
+            if (complete && (filter_type || *filter_val))
+                nmc_complete_strings(filter_val, v);
+            if (nm_streq0(filter_val, v))
+                goto found;
+        }
 
-		if (NM_IN_STRSET (filter_type, NULL, "path")) {
-			v = con ? nm_connection_get_path (NM_CONNECTION (con)) : NULL;
-			v_num = nm_utils_dbus_path_get_last_component (v);
-			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL);
-			if (   nm_streq0 (filter_val, v)
-			    || (filter_type && nm_streq0 (filter_val, v_num)))
-				goto found;
-		}
+        if (NM_IN_STRSET(filter_type, NULL, "path")) {
+            v     = con ? nm_connection_get_path(NM_CONNECTION(con)) : NULL;
+            v_num = nm_utils_dbus_path_get_last_component(v);
+            if (complete && (filter_type || *filter_val))
+                nmc_complete_strings(filter_val, v, filter_type ? v_num : NULL);
+            if (nm_streq0(filter_val, v) || (filter_type && nm_streq0(filter_val, v_num)))
+                goto found;
+        }
 
-		if (NM_IN_STRSET (filter_type, NULL, "filename")) {
-			v = nm_remote_connection_get_filename (con);
-			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v);
-			if (nm_streq0 (filter_val, v))
-				goto found;
-		}
+        if (NM_IN_STRSET(filter_type, NULL, "filename")) {
+            v = nm_remote_connection_get_filename(con);
+            if (complete && (filter_type || *filter_val))
+                nmc_complete_strings(filter_val, v);
+            if (nm_streq0(filter_val, v))
+                goto found;
+        }
 
-		if (NM_IN_STRSET (filter_type, NULL, "apath")) {
-			v = nm_object_get_path (NM_OBJECT (candidate));
-			v_num = nm_utils_dbus_path_get_last_component (v);
-			if (complete && (filter_type || *filter_val))
-				nmc_complete_strings (filter_val, v, filter_type ? v_num : NULL);
-			if (   nm_streq0 (filter_val, v)
-			    || (filter_type && nm_streq0 (filter_val, v_num)))
-				goto found;
-		}
+        if (NM_IN_STRSET(filter_type, NULL, "apath")) {
+            v     = nm_object_get_path(NM_OBJECT(candidate));
+            v_num = nm_utils_dbus_path_get_last_component(v);
+            if (complete && (filter_type || *filter_val))
+                nmc_complete_strings(filter_val, v, filter_type ? v_num : NULL);
+            if (nm_streq0(filter_val, v) || (filter_type && nm_streq0(filter_val, v_num)))
+                goto found;
+        }
 
-		continue;
+        continue;
 
 found:
-		if (!out_result)
-			return candidate;
-		if (!best_candidate)
-			best_candidate = candidate;
-		if (!result)
-			result = g_ptr_array_new_with_free_func (g_object_unref);
-		for (j = 0; j < result->len; j++) {
-			if (candidate == result->pdata[j])
-				break;
-		}
-		if (j == result->len)
-			g_ptr_array_add (result, g_object_ref (candidate));
-	}
+        if (!out_result)
+            return candidate;
+        if (!best_candidate)
+            best_candidate = candidate;
+        if (!result)
+            result = g_ptr_array_new_with_free_func(g_object_unref);
+        for (j = 0; j < result->len; j++) {
+            if (candidate == result->pdata[j])
+                break;
+        }
+        if (j == result->len)
+            g_ptr_array_add(result, g_object_ref(candidate));
+    }
 
-	NM_SET_OUT (out_result, result);
-	return best_candidate;
+    NM_SET_OUT(out_result, result);
+    return best_candidate;
 }
 
 static gboolean
-vpn_openconnect_get_secrets (NMConnection *connection, GPtrArray *secrets)
+vpn_openconnect_get_secrets(NMConnection *connection, GPtrArray *secrets)
 {
-	GError *error = NULL;
-	NMSettingVpn *s_vpn;
-	const char *gw, *port;
-	gs_free char *cookie = NULL;
-	gs_free char *gateway = NULL;
-	gs_free char *gwcert = NULL;
-	int status = 0;
-	int i;
-	gboolean ret;
+    GError *      error = NULL;
+    NMSettingVpn *s_vpn;
+    const char *  gw, *port;
+    gs_free char *cookie  = NULL;
+    gs_free char *gateway = NULL;
+    gs_free char *gwcert  = NULL;
+    int           status  = 0;
+    int           i;
+    gboolean      ret;
 
-	if (!connection)
-		return FALSE;
+    if (!connection)
+        return FALSE;
 
-	if (!nm_connection_is_type (connection, NM_SETTING_VPN_SETTING_NAME))
-		return FALSE;
+    if (!nm_connection_is_type(connection, NM_SETTING_VPN_SETTING_NAME))
+        return FALSE;
 
-	s_vpn = nm_connection_get_setting_vpn (connection);
-	if (!nm_streq0 (nm_setting_vpn_get_service_type (s_vpn), NM_SECRET_AGENT_VPN_TYPE_OPENCONNECT))
-		return FALSE;
+    s_vpn = nm_connection_get_setting_vpn(connection);
+    if (!nm_streq0(nm_setting_vpn_get_service_type(s_vpn), NM_SECRET_AGENT_VPN_TYPE_OPENCONNECT))
+        return FALSE;
 
-	/* Get gateway and port */
-	gw = nm_setting_vpn_get_data_item (s_vpn, "gateway");
-	port = gw ? strrchr (gw, ':') : NULL;
+    /* Get gateway and port */
+    gw   = nm_setting_vpn_get_data_item(s_vpn, "gateway");
+    port = gw ? strrchr(gw, ':') : NULL;
 
-	/* Interactively authenticate to OpenConnect server and get secrets */
-	ret = nm_vpn_openconnect_authenticate_helper (gw, &cookie, &gateway, &gwcert, &status, &error);
-	if (!ret) {
-		g_printerr (_("Error: openconnect failed: %s\n"), error->message);
-		g_clear_error (&error);
-		return FALSE;
-	}
+    /* Interactively authenticate to OpenConnect server and get secrets */
+    ret = nm_vpn_openconnect_authenticate_helper(gw, &cookie, &gateway, &gwcert, &status, &error);
+    if (!ret) {
+        g_printerr(_("Error: openconnect failed: %s\n"), error->message);
+        g_clear_error(&error);
+        return FALSE;
+    }
 
-	if (WIFEXITED (status)) {
-		if (WEXITSTATUS (status) != 0)
-			g_printerr (_("Error: openconnect failed with status %d\n"), WEXITSTATUS (status));
-	} else if (WIFSIGNALED (status))
-		g_printerr (_("Error: openconnect failed with signal %d\n"), WTERMSIG (status));
+    if (WIFEXITED(status)) {
+        if (WEXITSTATUS(status) != 0)
+            g_printerr(_("Error: openconnect failed with status %d\n"), WEXITSTATUS(status));
+    } else if (WIFSIGNALED(status))
+        g_printerr(_("Error: openconnect failed with signal %d\n"), WTERMSIG(status));
 
-	/* Append port to the host value */
-	if (gateway && port) {
-		gs_free char *tmp = gateway;
+    /* Append port to the host value */
+    if (gateway && port) {
+        gs_free char *tmp = gateway;
 
-		gateway = g_strdup_printf ("%s%s", tmp, port);
-	}
+        gateway = g_strdup_printf("%s%s", tmp, port);
+    }
 
-	/* Fill secrets to the array */
-	for (i = 0; i < secrets->len; i++) {
-		NMSecretAgentSimpleSecret *secret = secrets->pdata[i];
+    /* Fill secrets to the array */
+    for (i = 0; i < secrets->len; i++) {
+        NMSecretAgentSimpleSecret *secret = secrets->pdata[i];
 
-		if (secret->secret_type != NM_SECRET_AGENT_SECRET_TYPE_VPN_SECRET)
-			continue;
-		if (!nm_streq0 (secret->vpn_type, NM_SECRET_AGENT_VPN_TYPE_OPENCONNECT))
-			continue;
+        if (secret->secret_type != NM_SECRET_AGENT_SECRET_TYPE_VPN_SECRET)
+            continue;
+        if (!nm_streq0(secret->vpn_type, NM_SECRET_AGENT_VPN_TYPE_OPENCONNECT))
+            continue;
 
-		if (nm_streq0 (secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "cookie")) {
-			g_free (secret->value);
-			secret->value = g_steal_pointer (&cookie);
-		} else if (nm_streq0 (secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "gateway")) {
-			g_free (secret->value);
-			secret->value = g_steal_pointer (&gateway);
-		} else if (nm_streq0 (secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "gwcert")) {
-			g_free (secret->value);
-			secret->value = g_steal_pointer (&gwcert);
-		}
-	}
+        if (nm_streq0(secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "cookie")) {
+            g_free(secret->value);
+            secret->value = g_steal_pointer(&cookie);
+        } else if (nm_streq0(secret->entry_id,
+                             NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "gateway")) {
+            g_free(secret->value);
+            secret->value = g_steal_pointer(&gateway);
+        } else if (nm_streq0(secret->entry_id,
+                             NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "gwcert")) {
+            g_free(secret->value);
+            secret->value = g_steal_pointer(&gwcert);
+        }
+    }
 
-	return TRUE;
+    return TRUE;
 }
 
 static gboolean
-get_secrets_from_user (const NmcConfig *nmc_config,
-                       const char *request_id,
-                       const char *title,
-                       const char *msg,
-                       NMConnection *connection,
-                       gboolean ask,
-                       GHashTable *pwds_hash,
-                       GPtrArray *secrets)
+get_secrets_from_user(const NmcConfig *nmc_config,
+                      const char *     request_id,
+                      const char *     title,
+                      const char *     msg,
+                      NMConnection *   connection,
+                      gboolean         ask,
+                      GHashTable *     pwds_hash,
+                      GPtrArray *      secrets)
 {
-	int i;
+    int i;
 
-	/* Check if there is a VPN OpenConnect secret to ask for */
-	if (ask)
-		vpn_openconnect_get_secrets (connection, secrets);
+    /* Check if there is a VPN OpenConnect secret to ask for */
+    if (ask)
+        vpn_openconnect_get_secrets(connection, secrets);
 
-	for (i = 0; i < secrets->len; i++) {
-		NMSecretAgentSimpleSecret *secret = secrets->pdata[i];
-		char *pwd = NULL;
+    for (i = 0; i < secrets->len; i++) {
+        NMSecretAgentSimpleSecret *secret = secrets->pdata[i];
+        char *                     pwd    = NULL;
 
-		/* First try to find the password in provided passwords file,
-		 * then ask user. */
-		if (pwds_hash && (pwd = g_hash_table_lookup (pwds_hash, secret->entry_id))) {
-			pwd = g_strdup (pwd);
-		} else {
-			if (ask) {
-				gboolean echo_on;
+        /* First try to find the password in provided passwords file,
+         * then ask user. */
+        if (pwds_hash && (pwd = g_hash_table_lookup(pwds_hash, secret->entry_id))) {
+            pwd = g_strdup(pwd);
+        } else {
+            if (ask) {
+                gboolean echo_on;
 
-				if (secret->value) {
-					if (!g_strcmp0 (secret->vpn_type, NM_DBUS_INTERFACE ".openconnect")) {
-						/* Do not present and ask user for openconnect secrets, we already have them */
-						continue;
-					} else {
-						/* Prefill the password if we have it. */
-						rl_startup_hook = nmc_rl_set_deftext;
-						nmc_rl_pre_input_deftext = g_strdup (secret->value);
-					}
-				}
-				if (msg)
-					g_print ("%s\n", msg);
+                if (secret->value) {
+                    if (!g_strcmp0(secret->vpn_type, NM_DBUS_INTERFACE ".openconnect")) {
+                        /* Do not present and ask user for openconnect secrets, we already have them */
+                        continue;
+                    } else {
+                        /* Prefill the password if we have it. */
+                        rl_startup_hook          = nmc_rl_set_deftext;
+                        nmc_rl_pre_input_deftext = g_strdup(secret->value);
+                    }
+                }
+                if (msg)
+                    g_print("%s\n", msg);
 
-				echo_on = secret->is_secret
-				          ? nmc_config->show_secrets
-				          : TRUE;
+                echo_on = secret->is_secret ? nmc_config->show_secrets : TRUE;
 
-				if (secret->no_prompt_entry_id)
-					pwd = nmc_readline_echo (nmc_config, echo_on, "%s: ", secret->pretty_name);
-				else
-					pwd = nmc_readline_echo (nmc_config, echo_on, "%s (%s): ", secret->pretty_name, secret->entry_id);
+                if (secret->no_prompt_entry_id)
+                    pwd = nmc_readline_echo(nmc_config, echo_on, "%s: ", secret->pretty_name);
+                else
+                    pwd = nmc_readline_echo(nmc_config,
+                                            echo_on,
+                                            "%s (%s): ",
+                                            secret->pretty_name,
+                                            secret->entry_id);
 
-				if (!pwd)
-					pwd = g_strdup ("");
-			} else {
-				if (msg)
-					g_print ("%s\n", msg);
-				g_printerr (_("Warning: password for '%s' not given in 'passwd-file' "
-				              "and nmcli cannot ask without '--ask' option.\n"),
-				            secret->entry_id);
-			}
-		}
-		/* No password provided, cancel the secrets. */
-		if (!pwd)
-			return FALSE;
-		nm_free_secret (secret->value);
-		secret->value = pwd;
-	}
-	return TRUE;
+                if (!pwd)
+                    pwd = g_strdup("");
+            } else {
+                if (msg)
+                    g_print("%s\n", msg);
+                g_printerr(_("Warning: password for '%s' not given in 'passwd-file' "
+                             "and nmcli cannot ask without '--ask' option.\n"),
+                           secret->entry_id);
+            }
+        }
+        /* No password provided, cancel the secrets. */
+        if (!pwd)
+            return FALSE;
+        nm_free_secret(secret->value);
+        secret->value = pwd;
+    }
+    return TRUE;
 }
 
 /**
@@ -754,81 +748,81 @@ get_secrets_from_user (const NmcConfig *nmc_config,
  * NMSecretAgentSimpleSecret.
 */
 void
-nmc_secrets_requested (NMSecretAgentSimple *agent,
-                       const char          *request_id,
-                       const char          *title,
-                       const char          *msg,
-                       GPtrArray           *secrets,
-                       gpointer             user_data)
+nmc_secrets_requested(NMSecretAgentSimple *agent,
+                      const char *         request_id,
+                      const char *         title,
+                      const char *         msg,
+                      GPtrArray *          secrets,
+                      gpointer             user_data)
 {
-	NmCli *nmc = (NmCli *) user_data;
-	NMConnection *connection = NULL;
-	char *path, *p;
-	gboolean success = FALSE;
-	const GPtrArray *connections;
+    NmCli *          nmc        = (NmCli *) user_data;
+    NMConnection *   connection = NULL;
+    char *           path, *p;
+    gboolean         success = FALSE;
+    const GPtrArray *connections;
 
-	if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
-		nmc_terminal_erase_line ();
+    if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
+        nmc_terminal_erase_line();
 
-	/* Find the connection for the request */
-	path = g_strdup (request_id);
-	if (path) {
-		p = strrchr (path, '/');
-		if (p)
-			*p = '\0';
-		connections = nm_client_get_connections (nmc->client);
-		connection = nmc_find_connection (connections, "path", path, NULL, FALSE);
-		g_free (path);
-	}
+    /* Find the connection for the request */
+    path = g_strdup(request_id);
+    if (path) {
+        p = strrchr(path, '/');
+        if (p)
+            *p = '\0';
+        connections = nm_client_get_connections(nmc->client);
+        connection  = nmc_find_connection(connections, "path", path, NULL, FALSE);
+        g_free(path);
+    }
 
-	success = get_secrets_from_user (&nmc->nmc_config,
-	                                 request_id,
-	                                 title,
-	                                 msg,
-	                                 connection,
-	                                 nmc->nmc_config.in_editor || nmc->ask,
-	                                 nmc->pwds_hash,
-	                                 secrets);
-	if (success)
-		nm_secret_agent_simple_response (agent, request_id, secrets);
-	else {
-		/* Unregister our secret agent on failure, so that another agent
-		 * may be tried */
-		if (nmc->secret_agent) {
-			nm_secret_agent_old_unregister (NM_SECRET_AGENT_OLD (nmc->secret_agent), NULL, NULL);
-			g_clear_object (&nmc->secret_agent);
-		}
-	}
+    success = get_secrets_from_user(&nmc->nmc_config,
+                                    request_id,
+                                    title,
+                                    msg,
+                                    connection,
+                                    nmc->nmc_config.in_editor || nmc->ask,
+                                    nmc->pwds_hash,
+                                    secrets);
+    if (success)
+        nm_secret_agent_simple_response(agent, request_id, secrets);
+    else {
+        /* Unregister our secret agent on failure, so that another agent
+         * may be tried */
+        if (nmc->secret_agent) {
+            nm_secret_agent_old_unregister(NM_SECRET_AGENT_OLD(nmc->secret_agent), NULL, NULL);
+            g_clear_object(&nmc->secret_agent);
+        }
+    }
 }
 
 char *
-nmc_unique_connection_name (const GPtrArray *connections, const char *try_name)
+nmc_unique_connection_name(const GPtrArray *connections, const char *try_name)
 {
-	NMConnection *connection;
-	const char *name;
-	char *new_name;
-	unsigned num = 1;
-	int i = 0;
+    NMConnection *connection;
+    const char *  name;
+    char *        new_name;
+    unsigned      num = 1;
+    int           i   = 0;
 
-	new_name = g_strdup (try_name);
-	while (i < connections->len) {
-		connection = NM_CONNECTION (connections->pdata[i]);
+    new_name = g_strdup(try_name);
+    while (i < connections->len) {
+        connection = NM_CONNECTION(connections->pdata[i]);
 
-		name = nm_connection_get_id (connection);
-		if (g_strcmp0 (new_name, name) == 0) {
-			g_free (new_name);
-			new_name = g_strdup_printf ("%s-%d", try_name, num++);
-			i = 0;
-		} else
-			i++;
-	}
-	return new_name;
+        name = nm_connection_get_id(connection);
+        if (g_strcmp0(new_name, name) == 0) {
+            g_free(new_name);
+            new_name = g_strdup_printf("%s-%d", try_name, num++);
+            i        = 0;
+        } else
+            i++;
+    }
+    return new_name;
 }
 
 /* readline state variables */
 static gboolean nmcli_in_readline = FALSE;
 static gboolean rl_got_line;
-static char *rl_string;
+static char *   rl_string;
 
 /**
  * nmc_cleanup_readline:
@@ -837,109 +831,103 @@ static char *rl_string;
  * It makes sure the terminal is not garbled.
  */
 void
-nmc_cleanup_readline (void)
+nmc_cleanup_readline(void)
 {
-	rl_free_line_state ();
-	rl_cleanup_after_signal ();
+    rl_free_line_state();
+    rl_cleanup_after_signal();
 }
 
 gboolean
-nmc_get_in_readline (void)
+nmc_get_in_readline(void)
 {
-	return nmcli_in_readline;
+    return nmcli_in_readline;
 }
 
 void
-nmc_set_in_readline (gboolean in_readline)
+nmc_set_in_readline(gboolean in_readline)
 {
-	nmcli_in_readline = in_readline;
+    nmcli_in_readline = in_readline;
 }
 
 static void
-readline_cb (char *line)
+readline_cb(char *line)
 {
-	rl_got_line = TRUE;
-	rl_string = line;
-	rl_callback_handler_remove ();
+    rl_got_line = TRUE;
+    rl_string   = line;
+    rl_callback_handler_remove();
 }
 
 static gboolean
-stdin_ready_cb (int fd,
-                GIOCondition condition,
-                gpointer data)
+stdin_ready_cb(int fd, GIOCondition condition, gpointer data)
 {
-	rl_callback_read_char ();
-	return TRUE;
+    rl_callback_read_char();
+    return TRUE;
 }
 
 static char *
-nmc_readline_helper (const NmcConfig *nmc_config,
-                     const char *prompt)
+nmc_readline_helper(const NmcConfig *nmc_config, const char *prompt)
 {
-	GSource *io_source;
+    GSource *io_source;
 
-	nmc_set_in_readline (TRUE);
+    nmc_set_in_readline(TRUE);
 
-	io_source = nm_g_unix_fd_source_new (STDIN_FILENO,
-	                                     G_IO_IN,
-	                                     G_PRIORITY_DEFAULT,
-	                                     stdin_ready_cb,
-	                                     NULL,
-	                                     NULL);
-	g_source_attach (io_source, NULL);
+    io_source = nm_g_unix_fd_source_new(STDIN_FILENO,
+                                        G_IO_IN,
+                                        G_PRIORITY_DEFAULT,
+                                        stdin_ready_cb,
+                                        NULL,
+                                        NULL);
+    g_source_attach(io_source, NULL);
 
 read_again:
-	rl_string = NULL;
-	rl_got_line = FALSE;
-	rl_callback_handler_install (prompt, readline_cb);
+    rl_string   = NULL;
+    rl_got_line = FALSE;
+    rl_callback_handler_install(prompt, readline_cb);
 
-	while (   !rl_got_line
-	       && g_main_loop_is_running (loop)
-	       && !nmc_seen_sigint ())
-		g_main_context_iteration (NULL, TRUE);
+    while (!rl_got_line && g_main_loop_is_running(loop) && !nmc_seen_sigint())
+        g_main_context_iteration(NULL, TRUE);
 
-	/* If Ctrl-C was detected, complete the line */
-	if (nmc_seen_sigint ()) {
-		rl_echo_signal_char (SIGINT);
-		if (!rl_got_line) {
-			rl_stuff_char ('\n');
-			rl_callback_read_char ();
-		}
-	}
+    /* If Ctrl-C was detected, complete the line */
+    if (nmc_seen_sigint()) {
+        rl_echo_signal_char(SIGINT);
+        if (!rl_got_line) {
+            rl_stuff_char('\n');
+            rl_callback_read_char();
+        }
+    }
 
-	/* Add string to the history */
-	if (rl_string && *rl_string)
-		add_history (rl_string);
+    /* Add string to the history */
+    if (rl_string && *rl_string)
+        add_history(rl_string);
 
-	if (nmc_seen_sigint ()) {
-		/* Ctrl-C */
-		nmc_clear_sigint ();
-		if (   nmc_config->in_editor
-		    || (rl_string  && *rl_string)) {
-			/* In editor, or the line is not empty */
-			/* Call readline again to get new prompt (repeat) */
-			g_free (rl_string);
-			goto read_again;
-		} else {
-			/* Not in editor and line is empty, exit */
-			nmc_exit ();
-		}
-	} else if (!rl_string) {
-		/* Ctrl-D, exit */
-		nmc_exit ();
-	}
+    if (nmc_seen_sigint()) {
+        /* Ctrl-C */
+        nmc_clear_sigint();
+        if (nmc_config->in_editor || (rl_string && *rl_string)) {
+            /* In editor, or the line is not empty */
+            /* Call readline again to get new prompt (repeat) */
+            g_free(rl_string);
+            goto read_again;
+        } else {
+            /* Not in editor and line is empty, exit */
+            nmc_exit();
+        }
+    } else if (!rl_string) {
+        /* Ctrl-D, exit */
+        nmc_exit();
+    }
 
-	/* Return NULL, not empty string */
-	if (rl_string && *rl_string == '\0') {
-		g_free (rl_string);
-		rl_string = NULL;
-	}
+    /* Return NULL, not empty string */
+    if (rl_string && *rl_string == '\0') {
+        g_free(rl_string);
+        rl_string = NULL;
+    }
 
-	nm_clear_g_source_inst (&io_source);
+    nm_clear_g_source_inst(&io_source);
 
-	nmc_set_in_readline (FALSE);
+    nmc_set_in_readline(FALSE);
 
-	return rl_string;
+    return rl_string;
 }
 
 /**
@@ -957,44 +945,42 @@ read_again:
  * this function returns NULL.
  */
 char *
-nmc_readline (const NmcConfig *nmc_config,
-              const char *prompt_fmt,
-              ...)
+nmc_readline(const NmcConfig *nmc_config, const char *prompt_fmt, ...)
 {
-	va_list args;
-	gs_free char *prompt = NULL;
+    va_list       args;
+    gs_free char *prompt = NULL;
 
-	rl_initialize ();
+    rl_initialize();
 
-	va_start (args, prompt_fmt);
-	prompt = g_strdup_vprintf (prompt_fmt, args);
-	va_end (args);
-	return nmc_readline_helper (nmc_config, prompt);
+    va_start(args, prompt_fmt);
+    prompt = g_strdup_vprintf(prompt_fmt, args);
+    va_end(args);
+    return nmc_readline_helper(nmc_config, prompt);
 }
 
 static void
-nmc_secret_redisplay (void)
+nmc_secret_redisplay(void)
 {
-	int save_point = rl_point;
-	int save_end = rl_end;
-	char *save_line_buffer = rl_line_buffer;
-	const char *subst = nmc_password_subst_char ();
-	int subst_len = strlen (subst);
-	int i;
+    int         save_point       = rl_point;
+    int         save_end         = rl_end;
+    char *      save_line_buffer = rl_line_buffer;
+    const char *subst            = nmc_password_subst_char();
+    int         subst_len        = strlen(subst);
+    int         i;
 
-	rl_point = g_utf8_strlen (save_line_buffer, save_point) * subst_len;
-	rl_end = g_utf8_strlen (rl_line_buffer, -1) * subst_len;
-	rl_line_buffer = g_slice_alloc (rl_end + 1);
+    rl_point       = g_utf8_strlen(save_line_buffer, save_point) * subst_len;
+    rl_end         = g_utf8_strlen(rl_line_buffer, -1) * subst_len;
+    rl_line_buffer = g_slice_alloc(rl_end + 1);
 
-	for (i = 0; i + subst_len <= rl_end; i += subst_len)
-		memcpy (&rl_line_buffer[i], subst, subst_len);
-	rl_line_buffer[i] = '\0';
+    for (i = 0; i + subst_len <= rl_end; i += subst_len)
+        memcpy(&rl_line_buffer[i], subst, subst_len);
+    rl_line_buffer[i] = '\0';
 
-	rl_redisplay ();
-	g_slice_free1 (rl_end + 1, rl_line_buffer);
-	rl_line_buffer = save_line_buffer;
-	rl_end = save_end;
-	rl_point = save_point;
+    rl_redisplay();
+    g_slice_free1(rl_end + 1, rl_line_buffer);
+    rl_line_buffer = save_line_buffer;
+    rl_end         = save_end;
+    rl_point       = save_point;
 }
 
 /**
@@ -1004,43 +990,42 @@ nmc_secret_redisplay (void)
  * nmc_readline(TRUE, ...) == nmc_readline(...)
  */
 char *
-nmc_readline_echo (const NmcConfig *nmc_config,
-                   gboolean echo_on,
-                   const char *prompt_fmt,
-                   ...)
+nmc_readline_echo(const NmcConfig *nmc_config, gboolean echo_on, const char *prompt_fmt, ...)
 {
-	va_list args;
-	gs_free char *prompt = NULL;
-	char *str;
-	nm_auto_free HISTORY_STATE *saved_history = NULL;
-	HISTORY_STATE passwd_history = { 0, };
+    va_list       args;
+    gs_free char *prompt = NULL;
+    char *        str;
+    nm_auto_free HISTORY_STATE *saved_history  = NULL;
+    HISTORY_STATE               passwd_history = {
+        0,
+    };
 
-	va_start (args, prompt_fmt);
-	prompt = g_strdup_vprintf (prompt_fmt, args);
-	va_end (args);
+    va_start(args, prompt_fmt);
+    prompt = g_strdup_vprintf(prompt_fmt, args);
+    va_end(args);
 
-	rl_initialize ();
+    rl_initialize();
 
-	/* Hide the actual password */
-	if (!echo_on) {
-		saved_history = history_get_history_state ();
-		history_set_history_state (&passwd_history);
-		/* stifling history is important as it tells readline to
-		 * not store anything, otherwise sensitive data could be
-		 * leaked */
-		stifle_history (0);
-		rl_redisplay_function = nmc_secret_redisplay;
-	}
+    /* Hide the actual password */
+    if (!echo_on) {
+        saved_history = history_get_history_state();
+        history_set_history_state(&passwd_history);
+        /* stifling history is important as it tells readline to
+         * not store anything, otherwise sensitive data could be
+         * leaked */
+        stifle_history(0);
+        rl_redisplay_function = nmc_secret_redisplay;
+    }
 
-	str = nmc_readline_helper (nmc_config, prompt);
+    str = nmc_readline_helper(nmc_config, prompt);
 
-	/* Restore the non-hiding behavior */
-	if (!echo_on) {
-		rl_redisplay_function = rl_redisplay;
-		history_set_history_state (saved_history);
-	}
+    /* Restore the non-hiding behavior */
+    if (!echo_on) {
+        rl_redisplay_function = rl_redisplay;
+        history_set_history_state(saved_history);
+    }
 
-	return str;
+    return str;
 }
 
 /**
@@ -1053,102 +1038,102 @@ nmc_readline_echo (const NmcConfig *nmc_config,
  * See e.g. http://cnswww.cns.cwru.edu/php/chet/readline/readline.html#SEC49
  */
 char *
-nmc_rl_gen_func_basic (const char *text, int state, const char *const*words)
+nmc_rl_gen_func_basic(const char *text, int state, const char *const *words)
 {
-	static int list_idx, len;
-	const char *name;
+    static int  list_idx, len;
+    const char *name;
 
-	if (!state) {
-		list_idx = 0;
-		len = strlen (text);
-	}
+    if (!state) {
+        list_idx = 0;
+        len      = strlen(text);
+    }
 
-	/* Return the next name which partially matches one from the 'words' list. */
-	while ((name = words[list_idx])) {
-		list_idx++;
+    /* Return the next name which partially matches one from the 'words' list. */
+    while ((name = words[list_idx])) {
+        list_idx++;
 
-		if (strncmp (name, text, len) == 0)
-			return g_strdup (name);
-	}
-	return NULL;
+        if (strncmp(name, text, len) == 0)
+            return g_strdup(name);
+    }
+    return NULL;
 }
 
 static struct {
-	bool initialized;
-	guint idx;
-	char **values;
-} _rl_compentry_func_wrap = { 0 };
+    bool   initialized;
+    guint  idx;
+    char **values;
+} _rl_compentry_func_wrap = {0};
 
 static char *
-_rl_compentry_func_wrap_fcn (const char *text, int state)
+_rl_compentry_func_wrap_fcn(const char *text, int state)
 {
-	g_return_val_if_fail (_rl_compentry_func_wrap.initialized, NULL);
+    g_return_val_if_fail(_rl_compentry_func_wrap.initialized, NULL);
 
-	while (   _rl_compentry_func_wrap.values
-	       && _rl_compentry_func_wrap.values[_rl_compentry_func_wrap.idx]
-	       && !g_str_has_prefix (_rl_compentry_func_wrap.values[_rl_compentry_func_wrap.idx], text))
-		_rl_compentry_func_wrap.idx++;
+    while (_rl_compentry_func_wrap.values
+           && _rl_compentry_func_wrap.values[_rl_compentry_func_wrap.idx]
+           && !g_str_has_prefix(_rl_compentry_func_wrap.values[_rl_compentry_func_wrap.idx], text))
+        _rl_compentry_func_wrap.idx++;
 
-	if (   !_rl_compentry_func_wrap.values
-	    || !_rl_compentry_func_wrap.values[_rl_compentry_func_wrap.idx]) {
-		g_strfreev (_rl_compentry_func_wrap.values);
-		_rl_compentry_func_wrap.values = NULL;
-		_rl_compentry_func_wrap.initialized = FALSE;
-		return NULL;
-	}
+    if (!_rl_compentry_func_wrap.values
+        || !_rl_compentry_func_wrap.values[_rl_compentry_func_wrap.idx]) {
+        g_strfreev(_rl_compentry_func_wrap.values);
+        _rl_compentry_func_wrap.values      = NULL;
+        _rl_compentry_func_wrap.initialized = FALSE;
+        return NULL;
+    }
 
-	return g_strdup (_rl_compentry_func_wrap.values[_rl_compentry_func_wrap.idx++]);
+    return g_strdup(_rl_compentry_func_wrap.values[_rl_compentry_func_wrap.idx++]);
 }
 
 NmcCompEntryFunc
-nmc_rl_compentry_func_wrap (const char *const*values)
+nmc_rl_compentry_func_wrap(const char *const *values)
 {
-	g_strfreev (_rl_compentry_func_wrap.values);
-	_rl_compentry_func_wrap.values = g_strdupv ((char **) values);
-	_rl_compentry_func_wrap.idx = 0;
-	_rl_compentry_func_wrap.initialized = TRUE;
-	return _rl_compentry_func_wrap_fcn;
+    g_strfreev(_rl_compentry_func_wrap.values);
+    _rl_compentry_func_wrap.values      = g_strdupv((char **) values);
+    _rl_compentry_func_wrap.idx         = 0;
+    _rl_compentry_func_wrap.initialized = TRUE;
+    return _rl_compentry_func_wrap_fcn;
 }
 
 char *
-nmc_rl_gen_func_ifnames (const char *text, int state)
+nmc_rl_gen_func_ifnames(const char *text, int state)
 {
-	int i;
-	const GPtrArray *devices;
-	const char **ifnames;
-	char *ret;
+    int              i;
+    const GPtrArray *devices;
+    const char **    ifnames;
+    char *           ret;
 
-	devices = nm_client_get_devices (nm_cli_global_readline->client);
-	if (devices->len == 0)
-		return NULL;
+    devices = nm_client_get_devices(nm_cli_global_readline->client);
+    if (devices->len == 0)
+        return NULL;
 
-	ifnames = g_new (const char *, devices->len + 1);
-	for (i = 0; i < devices->len; i++) {
-		NMDevice *dev = g_ptr_array_index (devices, i);
-		const char *ifname = nm_device_get_iface (dev);
-		ifnames[i] = ifname;
-	}
-	ifnames[i] = NULL;
+    ifnames = g_new(const char *, devices->len + 1);
+    for (i = 0; i < devices->len; i++) {
+        NMDevice *  dev    = g_ptr_array_index(devices, i);
+        const char *ifname = nm_device_get_iface(dev);
+        ifnames[i]         = ifname;
+    }
+    ifnames[i] = NULL;
 
-	ret = nmc_rl_gen_func_basic (text, state, ifnames);
+    ret = nmc_rl_gen_func_basic(text, state, ifnames);
 
-	g_free (ifnames);
-	return ret;
+    g_free(ifnames);
+    return ret;
 }
 
 /* for pre-filling a string to readline prompt */
 char *nmc_rl_pre_input_deftext;
 
 int
-nmc_rl_set_deftext (void)
+nmc_rl_set_deftext(void)
 {
-	if (nmc_rl_pre_input_deftext && rl_startup_hook) {
-		rl_insert_text (nmc_rl_pre_input_deftext);
-		g_free (nmc_rl_pre_input_deftext);
-		nmc_rl_pre_input_deftext = NULL;
-		rl_startup_hook = NULL;
-	}
-	return 0;
+    if (nmc_rl_pre_input_deftext && rl_startup_hook) {
+        rl_insert_text(nmc_rl_pre_input_deftext);
+        g_free(nmc_rl_pre_input_deftext);
+        nmc_rl_pre_input_deftext = NULL;
+        rl_startup_hook          = NULL;
+    }
+    return 0;
 }
 
 /**
@@ -1160,140 +1145,154 @@ nmc_rl_set_deftext (void)
  * Returns: a newly allocated string containing capabilities names separated by commas.
  */
 char *
-nmc_parse_lldp_capabilities (guint value)
+nmc_parse_lldp_capabilities(guint value)
 {
-	/* IEEE Std 802.1AB-2009 - Table 8.4 */
-	const char *names[] = { "other", "repeater", "mac-bridge", "wlan-access-point",
-	                        "router", "telephone", "docsis-cable-device", "station-only",
-	                        "c-vlan-component", "s-vlan-component", "tpmr" };
-	gboolean first = TRUE;
-	GString *str;
-	int i;
+    /* IEEE Std 802.1AB-2009 - Table 8.4 */
+    const char *names[] = {"other",
+                           "repeater",
+                           "mac-bridge",
+                           "wlan-access-point",
+                           "router",
+                           "telephone",
+                           "docsis-cable-device",
+                           "station-only",
+                           "c-vlan-component",
+                           "s-vlan-component",
+                           "tpmr"};
+    gboolean    first   = TRUE;
+    GString *   str;
+    int         i;
 
-	if (!value)
-		return g_strdup ("none");
+    if (!value)
+        return g_strdup("none");
 
-	str = g_string_new ("");
+    str = g_string_new("");
 
-	for (i = 0; i < G_N_ELEMENTS (names); i++) {
-		if (value & (1 << i)) {
-			if (!first)
-				g_string_append_c (str, ',');
+    for (i = 0; i < G_N_ELEMENTS(names); i++) {
+        if (value & (1 << i)) {
+            if (!first)
+                g_string_append_c(str, ',');
 
-			first = FALSE;
-			value &= ~(1 << i);
-			g_string_append (str, names[i]);
-		}
-	}
+            first = FALSE;
+            value &= ~(1 << i);
+            g_string_append(str, names[i]);
+        }
+    }
 
-	if (value) {
-		if (!first)
-			g_string_append_c (str, ',');
-		g_string_append (str, "reserved");
-	}
+    if (value) {
+        if (!first)
+            g_string_append_c(str, ',');
+        g_string_append(str, "reserved");
+    }
 
-	return g_string_free (str, FALSE);
+    return g_string_free(str, FALSE);
 }
 
 static void
-command_done (GObject *object, GAsyncResult *res, gpointer user_data)
+command_done(GObject *object, GAsyncResult *res, gpointer user_data)
 {
-	GTask *task = G_TASK (res);
-	NmCli *nmc = user_data;
-	gs_free_error GError *error = NULL;
+    GTask *       task          = G_TASK(res);
+    NmCli *       nmc           = user_data;
+    gs_free_error GError *error = NULL;
 
-	if (!g_task_propagate_boolean (task, &error)) {
-		nmc->return_value = error->code;
-		g_string_assign (nmc->return_text, error->message);
-	}
+    if (!g_task_propagate_boolean(task, &error)) {
+        nmc->return_value = error->code;
+        g_string_assign(nmc->return_text, error->message);
+    }
 
-	if (!nmc->should_wait)
-		g_main_loop_quit (loop);
+    if (!nmc->should_wait)
+        g_main_loop_quit(loop);
 }
 
 typedef struct {
-	const NMCCommand *cmd;
-	int argc;
-	char **argv;
-	GTask *task;
+    const NMCCommand *cmd;
+    int               argc;
+    char **           argv;
+    GTask *           task;
 } CmdCall;
 
 static void
-call_cmd (NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, const char *const*argv);
+call_cmd(NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, const char *const *argv);
 
 static void
-got_client (GObject *source_object, GAsyncResult *res, gpointer user_data)
+got_client(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-	gs_unref_object GTask *task = NULL;
-	gs_free_error GError *error = NULL;
-	CmdCall *call = user_data;
-	NmCli *nmc;
+    gs_unref_object GTask *task = NULL;
+    gs_free_error GError *error = NULL;
+    CmdCall *             call  = user_data;
+    NmCli *               nmc;
 
-	nm_assert (NM_IS_CLIENT (source_object));
+    nm_assert(NM_IS_CLIENT(source_object));
 
-	task = g_steal_pointer (&call->task);
-	nmc = g_task_get_task_data (task);
+    task = g_steal_pointer(&call->task);
+    nmc  = g_task_get_task_data(task);
 
-	nmc->should_wait--;
+    nmc->should_wait--;
 
-	if (!g_async_initable_init_finish (G_ASYNC_INITABLE (source_object),
-	                                   res,
-	                                   &error)) {
-		g_object_unref (source_object);
-		g_task_return_new_error (task, NMCLI_ERROR, NMC_RESULT_ERROR_UNKNOWN,
-		                         _("Error: Could not create NMClient object: %s."),
-		                         error->message);
-	} else {
-		nmc->client = NM_CLIENT (source_object);
-		call_cmd (nmc, g_steal_pointer (&task), call->cmd, call->argc, (const char *const*) call->argv);
-	}
+    if (!g_async_initable_init_finish(G_ASYNC_INITABLE(source_object), res, &error)) {
+        g_object_unref(source_object);
+        g_task_return_new_error(task,
+                                NMCLI_ERROR,
+                                NMC_RESULT_ERROR_UNKNOWN,
+                                _("Error: Could not create NMClient object: %s."),
+                                error->message);
+    } else {
+        nmc->client = NM_CLIENT(source_object);
+        call_cmd(nmc,
+                 g_steal_pointer(&task),
+                 call->cmd,
+                 call->argc,
+                 (const char *const *) call->argv);
+    }
 
-	g_strfreev (call->argv);
-	nm_g_slice_free (call);
+    g_strfreev(call->argv);
+    nm_g_slice_free(call);
 }
 
 static void
-call_cmd (NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, const char *const*argv)
+call_cmd(NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, const char *const *argv)
 {
-	CmdCall *call;
+    CmdCall *call;
 
-	if (nmc->client || !cmd->needs_client) {
+    if (nmc->client || !cmd->needs_client) {
+        /* Check whether NetworkManager is running */
+        if (cmd->needs_nm_running && !nm_client_get_nm_running(nmc->client)) {
+            g_task_return_new_error(task,
+                                    NMCLI_ERROR,
+                                    NMC_RESULT_ERROR_NM_NOT_RUNNING,
+                                    _("Error: NetworkManager is not running."));
+        } else {
+            cmd->func(cmd, nmc, argc, argv);
+            g_task_return_boolean(task, TRUE);
+        }
 
-		/* Check whether NetworkManager is running */
-		if (cmd->needs_nm_running && !nm_client_get_nm_running (nmc->client)) {
-			g_task_return_new_error (task, NMCLI_ERROR, NMC_RESULT_ERROR_NM_NOT_RUNNING,
-			                         _("Error: NetworkManager is not running."));
-		} else {
-			cmd->func (cmd, nmc, argc, argv);
-			g_task_return_boolean (task, TRUE);
-		}
+        g_object_unref(task);
+    } else {
+        nm_assert(nmc->client == NULL);
 
-		g_object_unref (task);
-	} else {
-		nm_assert (nmc->client == NULL);
-
-		nmc->should_wait++;
-		call = g_slice_new (CmdCall);
-		*call = (CmdCall) {
-			.cmd  = cmd,
-			.argc = argc,
-			.argv = nm_utils_strv_dup (argv, argc, TRUE),
-			.task = task,
-		};
-		nmc_client_new_async (NULL,
-		                      got_client,
-		                      call,
-		                      NM_CLIENT_INSTANCE_FLAGS, (guint) NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS,
-		                      NULL);
-	}
+        nmc->should_wait++;
+        call  = g_slice_new(CmdCall);
+        *call = (CmdCall){
+            .cmd  = cmd,
+            .argc = argc,
+            .argv = nm_utils_strv_dup(argv, argc, TRUE),
+            .task = task,
+        };
+        nmc_client_new_async(NULL,
+                             got_client,
+                             call,
+                             NM_CLIENT_INSTANCE_FLAGS,
+                             (guint) NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS,
+                             NULL);
+    }
 }
 
 static void
-nmc_complete_help (const char *prefix)
+nmc_complete_help(const char *prefix)
 {
-	nmc_complete_strings (prefix, "help");
-	if (*prefix == '-')
-		nmc_complete_strings (prefix, "-help", "--help");
+    nmc_complete_strings(prefix, "help");
+    if (*prefix == '-')
+        nmc_complete_strings(prefix, "-help", "--help");
 }
 
 /**
@@ -1316,61 +1315,67 @@ nmc_complete_help (const char *prefix)
  * no callback to free the memory in (for simplicity).
  */
 void
-nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, const char *const*argv)
+nmc_do_cmd(NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, const char *const *argv)
 {
-	const NMCCommand *c;
-	gs_unref_object GTask *task = NULL;
+    const NMCCommand *c;
+    gs_unref_object GTask *task = NULL;
 
-	task = nm_g_task_new (NULL, NULL, nmc_do_cmd, command_done, nmc);
-	g_task_set_task_data (task, nmc, NULL);
+    task = nm_g_task_new(NULL, NULL, nmc_do_cmd, command_done, nmc);
+    g_task_set_task_data(task, nmc, NULL);
 
-	if (argc == 0 && nmc->complete) {
-		g_task_return_boolean (task, TRUE);
-		return;
-	}
+    if (argc == 0 && nmc->complete) {
+        g_task_return_boolean(task, TRUE);
+        return;
+    }
 
-	if (argc == 1 && nmc->complete) {
-		for (c = cmds; c->cmd; ++c) {
-			if (!*cmd || matches (cmd, c->cmd))
-				g_print ("%s\n", c->cmd);
-		}
-		nmc_complete_help (cmd);
-		g_task_return_boolean (task, TRUE);
-		return;
-	}
+    if (argc == 1 && nmc->complete) {
+        for (c = cmds; c->cmd; ++c) {
+            if (!*cmd || matches(cmd, c->cmd))
+                g_print("%s\n", c->cmd);
+        }
+        nmc_complete_help(cmd);
+        g_task_return_boolean(task, TRUE);
+        return;
+    }
 
-	for (c = cmds; c->cmd; ++c) {
-		if (cmd && matches (cmd, c->cmd))
-			break;
-	}
+    for (c = cmds; c->cmd; ++c) {
+        if (cmd && matches(cmd, c->cmd))
+            break;
+    }
 
-	if (c->cmd) {
-		/* A valid command was specified. */
-		if (c->usage && argc == 2 && nmc->complete)
-			nmc_complete_help (*(argv+1));
-		if (!nmc->complete && c->usage && nmc_arg_is_help (*(argv+1))) {
-			c->usage ();
-			g_task_return_boolean (task, TRUE);
-		} else {
-			call_cmd (nmc, g_steal_pointer (&task), c, argc, (const char *const*) argv);
-		}
-	} else if (cmd) {
-		/* Not a known command. */
-		if (nmc_arg_is_help (cmd) && c->usage) {
-			c->usage ();
-			g_task_return_boolean (task, TRUE);
-		} else {
-			g_task_return_new_error (task, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-			                         _("Error: argument '%s' not understood. Try passing --help instead."), cmd);
-		}
-	} else if (c->func) {
-		/* No command, run the default handler. */
-		call_cmd (nmc, g_steal_pointer (&task), c, argc, (const char *const*) argv);
-	} else {
-		/* No command and no default handler. */
-		g_task_return_new_error (task, NMCLI_ERROR, NMC_RESULT_ERROR_USER_INPUT,
-		                         _("Error: missing argument. Try passing --help."));
-	}
+    if (c->cmd) {
+        /* A valid command was specified. */
+        if (c->usage && argc == 2 && nmc->complete)
+            nmc_complete_help(*(argv + 1));
+        if (!nmc->complete && c->usage && nmc_arg_is_help(*(argv + 1))) {
+            c->usage();
+            g_task_return_boolean(task, TRUE);
+        } else {
+            call_cmd(nmc, g_steal_pointer(&task), c, argc, (const char *const *) argv);
+        }
+    } else if (cmd) {
+        /* Not a known command. */
+        if (nmc_arg_is_help(cmd) && c->usage) {
+            c->usage();
+            g_task_return_boolean(task, TRUE);
+        } else {
+            g_task_return_new_error(
+                task,
+                NMCLI_ERROR,
+                NMC_RESULT_ERROR_USER_INPUT,
+                _("Error: argument '%s' not understood. Try passing --help instead."),
+                cmd);
+        }
+    } else if (c->func) {
+        /* No command, run the default handler. */
+        call_cmd(nmc, g_steal_pointer(&task), c, argc, (const char *const *) argv);
+    } else {
+        /* No command and no default handler. */
+        g_task_return_new_error(task,
+                                NMCLI_ERROR,
+                                NMC_RESULT_ERROR_USER_INPUT,
+                                _("Error: missing argument. Try passing --help."));
+    }
 }
 
 /**
@@ -1385,30 +1390,29 @@ nmc_do_cmd (NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, cons
  * no better way to suggest completion other than a hardcoded string list.
  */
 void
-nmc_complete_strv (const char *prefix, gssize nargs, const char *const*args)
+nmc_complete_strv(const char *prefix, gssize nargs, const char *const *args)
 {
-	gsize i, n;
+    gsize i, n;
 
-	if (prefix && !prefix[0])
-		prefix = NULL;
+    if (prefix && !prefix[0])
+        prefix = NULL;
 
-	if (nargs < 0) {
-		nm_assert (nargs == -1);
-		n = NM_PTRARRAY_LEN (args);
-	} else
-		n = (gsize) nargs;
+    if (nargs < 0) {
+        nm_assert(nargs == -1);
+        n = NM_PTRARRAY_LEN(args);
+    } else
+        n = (gsize) nargs;
 
-	for (i = 0; i < n; i++) {
-		const char *candidate = args[i];
+    for (i = 0; i < n; i++) {
+        const char *candidate = args[i];
 
-		if (!candidate)
-			continue;
-		if (   prefix
-		    && !matches (prefix, candidate))
-			continue;
+        if (!candidate)
+            continue;
+        if (prefix && !matches(prefix, candidate))
+            continue;
 
-		g_print ("%s\n", candidate);
-	}
+        g_print("%s\n", candidate);
+    }
 }
 
 /**
@@ -1419,10 +1423,9 @@ nmc_complete_strv (const char *prefix, gssize nargs, const char *const*args)
  * Prints all the matching possible boolean values for completion.
  */
 void
-nmc_complete_bool (const char *prefix)
+nmc_complete_bool(const char *prefix)
 {
-	nmc_complete_strings (prefix, "true", "yes", "on",
-	                              "false", "no", "off");
+    nmc_complete_strings(prefix, "true", "yes", "on", "false", "no", "off");
 }
 
 /**
@@ -1432,68 +1435,68 @@ nmc_complete_bool (const char *prefix)
  * Returns a simplified message for some errors hard to understand.
  */
 const char *
-nmc_error_get_simple_message (GError *error)
+nmc_error_get_simple_message(GError *error)
 {
-	/* Return a clear message instead of the obscure D-Bus policy error */
-	if (g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_ACCESS_DENIED))
-		return _("access denied");
-	if (g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN))
-		return _("NetworkManager is not running");
-	else
-		return error->message;
+    /* Return a clear message instead of the obscure D-Bus policy error */
+    if (g_error_matches(error, G_DBUS_ERROR, G_DBUS_ERROR_ACCESS_DENIED))
+        return _("access denied");
+    if (g_error_matches(error, G_DBUS_ERROR, G_DBUS_ERROR_SERVICE_UNKNOWN))
+        return _("NetworkManager is not running");
+    else
+        return error->message;
 }
 
 GVariant *
-nmc_dbus_call_sync (NmCli *nmc,
-                    const char *object_path,
-                    const char *interface_name,
-                    const char *method_name,
-                    GVariant *parameters,
-                    const GVariantType *reply_type,
-                    GError **error)
+nmc_dbus_call_sync(NmCli *             nmc,
+                   const char *        object_path,
+                   const char *        interface_name,
+                   const char *        method_name,
+                   GVariant *          parameters,
+                   const GVariantType *reply_type,
+                   GError **           error)
 {
-	gs_unref_object GDBusConnection *connection = NULL;
-	gs_free_error GError *local = NULL;
-	GVariant *result;
+    gs_unref_object GDBusConnection *connection = NULL;
+    gs_free_error GError *local                 = NULL;
+    GVariant *            result;
 
-	if (nmc->timeout == -1)
-		nmc->timeout = 90;
+    if (nmc->timeout == -1)
+        nmc->timeout = 90;
 
-	connection = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &local);
-	if (!connection) {
-		g_set_error (error,
-		             NMCLI_ERROR,
-		             NMC_RESULT_ERROR_UNKNOWN,
-		             _("Error: error connecting to system bus: %s"),
-		             local->message);
-		return NULL;
-	}
+    connection = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &local);
+    if (!connection) {
+        g_set_error(error,
+                    NMCLI_ERROR,
+                    NMC_RESULT_ERROR_UNKNOWN,
+                    _("Error: error connecting to system bus: %s"),
+                    local->message);
+        return NULL;
+    }
 
-	result = g_dbus_connection_call_sync (connection,
-	                                      "org.freedesktop.NetworkManager",
-	                                      object_path,
-	                                      interface_name,
-	                                      method_name,
-	                                      parameters,
-	                                      reply_type,
-	                                      G_DBUS_CALL_FLAGS_NONE,
-	                                      nmc->timeout * 1000,
-	                                      NULL,
-	                                      error);
+    result = g_dbus_connection_call_sync(connection,
+                                         "org.freedesktop.NetworkManager",
+                                         object_path,
+                                         interface_name,
+                                         method_name,
+                                         parameters,
+                                         reply_type,
+                                         G_DBUS_CALL_FLAGS_NONE,
+                                         nmc->timeout * 1000,
+                                         NULL,
+                                         error);
 
-	if (error && *error)
-		g_dbus_error_strip_remote_error (*error);
+    if (error && *error)
+        g_dbus_error_strip_remote_error(*error);
 
-	return result;
+    return result;
 }
 
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE (nm_connectivity_to_string, NMConnectivityState,
-	NM_UTILS_LOOKUP_DEFAULT (N_("unknown")),
-	NM_UTILS_LOOKUP_ITEM (NM_CONNECTIVITY_NONE,    N_("none")),
-	NM_UTILS_LOOKUP_ITEM (NM_CONNECTIVITY_PORTAL,  N_("portal")),
-	NM_UTILS_LOOKUP_ITEM (NM_CONNECTIVITY_LIMITED, N_("limited")),
-	NM_UTILS_LOOKUP_ITEM (NM_CONNECTIVITY_FULL,    N_("full")),
-	NM_UTILS_LOOKUP_ITEM_IGNORE (NM_CONNECTIVITY_UNKNOWN),
-);
+NM_UTILS_LOOKUP_STR_DEFINE(nm_connectivity_to_string,
+                           NMConnectivityState,
+                           NM_UTILS_LOOKUP_DEFAULT(N_("unknown")),
+                           NM_UTILS_LOOKUP_ITEM(NM_CONNECTIVITY_NONE, N_("none")),
+                           NM_UTILS_LOOKUP_ITEM(NM_CONNECTIVITY_PORTAL, N_("portal")),
+                           NM_UTILS_LOOKUP_ITEM(NM_CONNECTIVITY_LIMITED, N_("limited")),
+                           NM_UTILS_LOOKUP_ITEM(NM_CONNECTIVITY_FULL, N_("full")),
+                           NM_UTILS_LOOKUP_ITEM_IGNORE(NM_CONNECTIVITY_UNKNOWN), );

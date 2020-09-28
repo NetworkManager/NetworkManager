@@ -20,23 +20,24 @@
 
 #include "nmt-newt-stack.h"
 
-G_DEFINE_TYPE (NmtNewtStack, nmt_newt_stack, NMT_TYPE_NEWT_CONTAINER)
+G_DEFINE_TYPE(NmtNewtStack, nmt_newt_stack, NMT_TYPE_NEWT_CONTAINER)
 
-#define NMT_NEWT_STACK_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_NEWT_STACK, NmtNewtStackPrivate))
+#define NMT_NEWT_STACK_GET_PRIVATE(o) \
+    (G_TYPE_INSTANCE_GET_PRIVATE((o), NMT_TYPE_NEWT_STACK, NmtNewtStackPrivate))
 
 typedef struct {
-	GPtrArray *children;
-	GPtrArray *ids;
+    GPtrArray *children;
+    GPtrArray *ids;
 
-	guint active;
+    guint active;
 } NmtNewtStackPrivate;
 
 enum {
-	PROP_0,
-	PROP_ACTIVE,
-	PROP_ACTIVE_ID,
+    PROP_0,
+    PROP_ACTIVE,
+    PROP_ACTIVE_ID,
 
-	LAST_PROP
+    LAST_PROP
 };
 
 /**
@@ -47,82 +48,76 @@ enum {
  * Returns: a new #NmtNewtStack
  */
 NmtNewtWidget *
-nmt_newt_stack_new (void)
+nmt_newt_stack_new(void)
 {
-	return g_object_new (NMT_TYPE_NEWT_STACK, NULL);
+    return g_object_new(NMT_TYPE_NEWT_STACK, NULL);
 }
 
 static void
-nmt_newt_stack_init (NmtNewtStack *stack)
+nmt_newt_stack_init(NmtNewtStack *stack)
 {
-	NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE (stack);
+    NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE(stack);
 
-	priv->children = g_ptr_array_new ();
-	priv->ids = g_ptr_array_new_with_free_func (g_free);
+    priv->children = g_ptr_array_new();
+    priv->ids      = g_ptr_array_new_with_free_func(g_free);
 }
 
 static void
-nmt_newt_stack_finalize (GObject *object)
+nmt_newt_stack_finalize(GObject *object)
 {
-	NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE (object);
+    NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE(object);
 
-	g_ptr_array_unref (priv->children);
-	g_ptr_array_unref (priv->ids);
+    g_ptr_array_unref(priv->children);
+    g_ptr_array_unref(priv->ids);
 
-	G_OBJECT_CLASS (nmt_newt_stack_parent_class)->finalize (object);
+    G_OBJECT_CLASS(nmt_newt_stack_parent_class)->finalize(object);
 }
 
 static newtComponent *
-nmt_newt_stack_get_components (NmtNewtWidget *widget)
+nmt_newt_stack_get_components(NmtNewtWidget *widget)
 {
-	NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE (widget);
+    NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE(widget);
 
-	if (priv->active > priv->children->len)
-		return NULL;
+    if (priv->active > priv->children->len)
+        return NULL;
 
-	return nmt_newt_widget_get_components (priv->children->pdata[priv->active]);
+    return nmt_newt_widget_get_components(priv->children->pdata[priv->active]);
 }
 
 static void
-nmt_newt_stack_size_request (NmtNewtWidget *widget,
-                             int           *width,
-                             int           *height)
+nmt_newt_stack_size_request(NmtNewtWidget *widget, int *width, int *height)
 {
-	NmtNewtStack *stack = NMT_NEWT_STACK (widget);
-	NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE (stack);
-	int i, child_width, child_height;
+    NmtNewtStack *       stack = NMT_NEWT_STACK(widget);
+    NmtNewtStackPrivate *priv  = NMT_NEWT_STACK_GET_PRIVATE(stack);
+    int                  i, child_width, child_height;
 
-	if (priv->active > priv->children->len) {
-		*width = *height = 0;
-		return;
-	}
+    if (priv->active > priv->children->len) {
+        *width = *height = 0;
+        return;
+    }
 
-	/* We size-request all pages so that embedded NmtPageGrids will
-	 * participate in their size-grouping (so that switching pages
-	 * won't result in the column widths changing).
-	 */
-	for (i = 0; i < priv->children->len; i++) {
-		nmt_newt_widget_size_request (priv->children->pdata[i], &child_width, &child_height);
-		if (i == priv->active) {
-			*width = child_width;
-			*height = child_height;
-		}
-	}
+    /* We size-request all pages so that embedded NmtPageGrids will
+     * participate in their size-grouping (so that switching pages
+     * won't result in the column widths changing).
+     */
+    for (i = 0; i < priv->children->len; i++) {
+        nmt_newt_widget_size_request(priv->children->pdata[i], &child_width, &child_height);
+        if (i == priv->active) {
+            *width  = child_width;
+            *height = child_height;
+        }
+    }
 }
 
 static void
-nmt_newt_stack_size_allocate (NmtNewtWidget *widget,
-                              int            x,
-                              int            y,
-                              int            width,
-                              int            height)
+nmt_newt_stack_size_allocate(NmtNewtWidget *widget, int x, int y, int width, int height)
 {
-	NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE (widget);
+    NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE(widget);
 
-	if (priv->active > priv->children->len)
-		return;
+    if (priv->active > priv->children->len)
+        return;
 
-	nmt_newt_widget_size_allocate (priv->children->pdata[priv->active], x, y, width, height);
+    nmt_newt_widget_size_allocate(priv->children->pdata[priv->active], x, y, width, height);
 }
 
 /**
@@ -134,50 +129,46 @@ nmt_newt_stack_size_allocate (NmtNewtWidget *widget,
  * Adds @widget to @stack with the given @id.
  */
 void
-nmt_newt_stack_add (NmtNewtStack  *stack,
-                    const char    *id,
-                    NmtNewtWidget *widget)
+nmt_newt_stack_add(NmtNewtStack *stack, const char *id, NmtNewtWidget *widget)
 {
-	NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE (stack);
+    NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE(stack);
 
-	g_ptr_array_add (priv->children, widget);
-	g_ptr_array_add (priv->ids, g_strdup (id));
+    g_ptr_array_add(priv->children, widget);
+    g_ptr_array_add(priv->ids, g_strdup(id));
 
-	NMT_NEWT_CONTAINER_CLASS (nmt_newt_stack_parent_class)->add (NMT_NEWT_CONTAINER (stack), widget);
+    NMT_NEWT_CONTAINER_CLASS(nmt_newt_stack_parent_class)->add(NMT_NEWT_CONTAINER(stack), widget);
 }
 
 static void
-nmt_newt_stack_remove (NmtNewtContainer *container,
-                       NmtNewtWidget    *widget)
+nmt_newt_stack_remove(NmtNewtContainer *container, NmtNewtWidget *widget)
 {
-	NmtNewtStack *stack = NMT_NEWT_STACK (container);
-	NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE (stack);
-	int i;
+    NmtNewtStack *       stack = NMT_NEWT_STACK(container);
+    NmtNewtStackPrivate *priv  = NMT_NEWT_STACK_GET_PRIVATE(stack);
+    int                  i;
 
-	NMT_NEWT_CONTAINER_CLASS (nmt_newt_stack_parent_class)->remove (container, widget);
+    NMT_NEWT_CONTAINER_CLASS(nmt_newt_stack_parent_class)->remove(container, widget);
 
-	for (i = 0; i < priv->children->len; i++) {
-		if (priv->children->pdata[i] == widget) {
-			g_ptr_array_remove_index (priv->children, i);
-			g_ptr_array_remove_index (priv->ids, i);
-			return;
-		}
-	}
+    for (i = 0; i < priv->children->len; i++) {
+        if (priv->children->pdata[i] == widget) {
+            g_ptr_array_remove_index(priv->children, i);
+            g_ptr_array_remove_index(priv->ids, i);
+            return;
+        }
+    }
 }
 
 static void
-nmt_newt_stack_child_validity_changed (NmtNewtContainer *container,
-                                       NmtNewtWidget    *widget)
+nmt_newt_stack_child_validity_changed(NmtNewtContainer *container, NmtNewtWidget *widget)
 {
-	NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE (container);
+    NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE(container);
 
-	if (priv->active > priv->children->len)
-		return;
+    if (priv->active > priv->children->len)
+        return;
 
-	if (priv->children->pdata[priv->active] == (gpointer) widget) {
-		NMT_NEWT_CONTAINER_CLASS (nmt_newt_stack_parent_class)->
-			child_validity_changed (container, widget);
-	}
+    if (priv->children->pdata[priv->active] == (gpointer) widget) {
+        NMT_NEWT_CONTAINER_CLASS(nmt_newt_stack_parent_class)
+            ->child_validity_changed(container, widget);
+    }
 }
 
 /**
@@ -188,18 +179,17 @@ nmt_newt_stack_child_validity_changed (NmtNewtContainer *container,
  * Sets the active page on @stack to @active.
  */
 void
-nmt_newt_stack_set_active (NmtNewtStack *stack,
-                           guint         active)
+nmt_newt_stack_set_active(NmtNewtStack *stack, guint active)
 {
-	NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE (stack);
+    NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE(stack);
 
-	if (priv->active == active)
-		return;
+    if (priv->active == active)
+        return;
 
-	priv->active = active;
-	g_object_notify (G_OBJECT (stack), "active");
-	g_object_notify (G_OBJECT (stack), "active-id");
-	nmt_newt_widget_needs_rebuild (NMT_NEWT_WIDGET (stack));
+    priv->active = active;
+    g_object_notify(G_OBJECT(stack), "active");
+    g_object_notify(G_OBJECT(stack), "active-id");
+    nmt_newt_widget_needs_rebuild(NMT_NEWT_WIDGET(stack));
 }
 
 /**
@@ -211,11 +201,11 @@ nmt_newt_stack_set_active (NmtNewtStack *stack,
  * Returns: the index of the active page on @stack
  */
 guint
-nmt_newt_stack_get_active (NmtNewtStack *stack)
+nmt_newt_stack_get_active(NmtNewtStack *stack)
 {
-	NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE (stack);
+    NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE(stack);
 
-	return priv->active;
+    return priv->active;
 }
 
 /**
@@ -226,24 +216,23 @@ nmt_newt_stack_get_active (NmtNewtStack *stack)
  * Sets the active page on @stack to @active_id.
  */
 void
-nmt_newt_stack_set_active_id (NmtNewtStack *stack,
-                              const char   *id)
+nmt_newt_stack_set_active_id(NmtNewtStack *stack, const char *id)
 {
-	NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE (stack);
-	int i;
+    NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE(stack);
+    int                  i;
 
-	if (!g_strcmp0 (priv->ids->pdata[priv->active], id))
-		return;
+    if (!g_strcmp0(priv->ids->pdata[priv->active], id))
+        return;
 
-	for (i = 0; i < priv->ids->len; i++) {
-		if (!g_strcmp0 (priv->ids->pdata[i], id)) {
-			priv->active = i;
-			g_object_notify (G_OBJECT (stack), "active");
-			g_object_notify (G_OBJECT (stack), "active-id");
-			nmt_newt_widget_needs_rebuild (NMT_NEWT_WIDGET (stack));
-			return;
-		}
-	}
+    for (i = 0; i < priv->ids->len; i++) {
+        if (!g_strcmp0(priv->ids->pdata[i], id)) {
+            priv->active = i;
+            g_object_notify(G_OBJECT(stack), "active");
+            g_object_notify(G_OBJECT(stack), "active-id");
+            nmt_newt_widget_needs_rebuild(NMT_NEWT_WIDGET(stack));
+            return;
+        }
+    }
 }
 
 /**
@@ -255,99 +244,94 @@ nmt_newt_stack_set_active_id (NmtNewtStack *stack,
  * Returns: the ID of the active page on @stack
  */
 const char *
-nmt_newt_stack_get_active_id (NmtNewtStack *stack)
+nmt_newt_stack_get_active_id(NmtNewtStack *stack)
 {
-	NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE (stack);
+    NmtNewtStackPrivate *priv = NMT_NEWT_STACK_GET_PRIVATE(stack);
 
-	if (priv->active > priv->children->len)
-		return NULL;
+    if (priv->active > priv->children->len)
+        return NULL;
 
-	return priv->ids->pdata[priv->active];
+    return priv->ids->pdata[priv->active];
 }
 
 static void
-nmt_newt_stack_set_property (GObject      *object,
-                             guint         prop_id,
-                             const GValue *value,
-                             GParamSpec   *pspec)
+nmt_newt_stack_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-	NmtNewtStack *stack = NMT_NEWT_STACK (object);
+    NmtNewtStack *stack = NMT_NEWT_STACK(object);
 
-	switch (prop_id) {
-	case PROP_ACTIVE:
-		nmt_newt_stack_set_active (stack, g_value_get_uint (value));
-		break;
-	case PROP_ACTIVE_ID:
-		nmt_newt_stack_set_active_id (stack, g_value_get_string (value));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_ACTIVE:
+        nmt_newt_stack_set_active(stack, g_value_get_uint(value));
+        break;
+    case PROP_ACTIVE_ID:
+        nmt_newt_stack_set_active_id(stack, g_value_get_string(value));
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
-nmt_newt_stack_get_property (GObject    *object,
-                             guint       prop_id,
-                             GValue     *value,
-                             GParamSpec *pspec)
+nmt_newt_stack_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-	NmtNewtStack *stack = NMT_NEWT_STACK (object);
+    NmtNewtStack *stack = NMT_NEWT_STACK(object);
 
-	switch (prop_id) {
-	case PROP_ACTIVE:
-		g_value_set_uint (value, nmt_newt_stack_get_active (stack));
-		break;
-	case PROP_ACTIVE_ID:
-		g_value_set_string (value, nmt_newt_stack_get_active_id (stack));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_ACTIVE:
+        g_value_set_uint(value, nmt_newt_stack_get_active(stack));
+        break;
+    case PROP_ACTIVE_ID:
+        g_value_set_string(value, nmt_newt_stack_get_active_id(stack));
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
-nmt_newt_stack_class_init (NmtNewtStackClass *stack_class)
+nmt_newt_stack_class_init(NmtNewtStackClass *stack_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (stack_class);
-	NmtNewtWidgetClass *widget_class = NMT_NEWT_WIDGET_CLASS (stack_class);
-	NmtNewtContainerClass *container_class = NMT_NEWT_CONTAINER_CLASS (stack_class);
+    GObjectClass *         object_class    = G_OBJECT_CLASS(stack_class);
+    NmtNewtWidgetClass *   widget_class    = NMT_NEWT_WIDGET_CLASS(stack_class);
+    NmtNewtContainerClass *container_class = NMT_NEWT_CONTAINER_CLASS(stack_class);
 
-	g_type_class_add_private (stack_class, sizeof (NmtNewtStackPrivate));
+    g_type_class_add_private(stack_class, sizeof(NmtNewtStackPrivate));
 
-	/* virtual methods */
-	object_class->set_property = nmt_newt_stack_set_property;
-	object_class->get_property = nmt_newt_stack_get_property;
-	object_class->finalize = nmt_newt_stack_finalize;
+    /* virtual methods */
+    object_class->set_property = nmt_newt_stack_set_property;
+    object_class->get_property = nmt_newt_stack_get_property;
+    object_class->finalize     = nmt_newt_stack_finalize;
 
-	widget_class->get_components = nmt_newt_stack_get_components;
-	widget_class->size_request   = nmt_newt_stack_size_request;
-	widget_class->size_allocate  = nmt_newt_stack_size_allocate;
+    widget_class->get_components = nmt_newt_stack_get_components;
+    widget_class->size_request   = nmt_newt_stack_size_request;
+    widget_class->size_allocate  = nmt_newt_stack_size_allocate;
 
-	container_class->remove = nmt_newt_stack_remove;
-	container_class->child_validity_changed = nmt_newt_stack_child_validity_changed;
+    container_class->remove                 = nmt_newt_stack_remove;
+    container_class->child_validity_changed = nmt_newt_stack_child_validity_changed;
 
-	/**
-	 * NmtNewtStack:active:
-	 *
-	 * The index of the active page
-	 */
-	g_object_class_install_property
-		(object_class, PROP_ACTIVE,
-		 g_param_spec_uint ("active", "", "",
-		                    0, G_MAXUINT, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_STATIC_STRINGS));
-	/**
-	 * NmtNewtStack:active-id:
-	 *
-	 * The ID of the active page
-	 */
-	g_object_class_install_property
-		(object_class, PROP_ACTIVE_ID,
-		 g_param_spec_string ("active-id", "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
+    /**
+     * NmtNewtStack:active:
+     *
+     * The index of the active page
+     */
+    g_object_class_install_property(object_class,
+                                    PROP_ACTIVE,
+                                    g_param_spec_uint("active",
+                                                      "",
+                                                      "",
+                                                      0,
+                                                      G_MAXUINT,
+                                                      0,
+                                                      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+    /**
+     * NmtNewtStack:active-id:
+     *
+     * The ID of the active page
+     */
+    g_object_class_install_property(
+        object_class,
+        PROP_ACTIVE_ID,
+        g_param_spec_string("active-id", "", "", NULL, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }

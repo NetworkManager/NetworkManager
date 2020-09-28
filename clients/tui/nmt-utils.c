@@ -41,9 +41,9 @@
  */
 
 typedef struct {
-	gpointer result;
-	GError *error;
-	gpointer complete;
+    gpointer result;
+    GError * error;
+    gpointer complete;
 } NmtSyncOpReal;
 
 /**
@@ -53,9 +53,9 @@ typedef struct {
  * Initializes @op before use.
  */
 void
-nmt_sync_op_init (NmtSyncOp *op)
+nmt_sync_op_init(NmtSyncOp *op)
 {
-	memset (op, 0, sizeof (*op));
+    memset(op, 0, sizeof(*op));
 }
 
 /**
@@ -69,10 +69,9 @@ nmt_sync_op_init (NmtSyncOp *op)
  * Returns: the result of the operation.
  */
 gboolean
-nmt_sync_op_wait_boolean (NmtSyncOp  *op,
-                          GError    **error)
+nmt_sync_op_wait_boolean(NmtSyncOp *op, GError **error)
 {
-	return GPOINTER_TO_UINT (nmt_sync_op_wait_pointer (op, error));
+    return GPOINTER_TO_UINT(nmt_sync_op_wait_pointer(op, error));
 }
 
 /**
@@ -84,11 +83,9 @@ nmt_sync_op_wait_boolean (NmtSyncOp  *op,
  * Completes @op and returns @result and/or @error to the caller.
  */
 void
-nmt_sync_op_complete_boolean (NmtSyncOp  *op,
-                              gboolean    result,
-                              GError     *error)
+nmt_sync_op_complete_boolean(NmtSyncOp *op, gboolean result, GError *error)
 {
-	nmt_sync_op_complete_pointer (op, GUINT_TO_POINTER (result), error);
+    nmt_sync_op_complete_pointer(op, GUINT_TO_POINTER(result), error);
 }
 
 /**
@@ -102,17 +99,16 @@ nmt_sync_op_complete_boolean (NmtSyncOp  *op,
  * Returns: the result of the operation.
  */
 gpointer
-nmt_sync_op_wait_pointer (NmtSyncOp  *op,
-                          GError    **error)
+nmt_sync_op_wait_pointer(NmtSyncOp *op, GError **error)
 {
-	NmtSyncOpReal *real = (NmtSyncOpReal *)op;
+    NmtSyncOpReal *real = (NmtSyncOpReal *) op;
 
-	while (!real->complete)
-		g_main_context_iteration (NULL, TRUE);
+    while (!real->complete)
+        g_main_context_iteration(NULL, TRUE);
 
-	if (real->error)
-		g_propagate_error (error, real->error);
-	return real->result;
+    if (real->error)
+        g_propagate_error(error, real->error);
+    return real->result;
 }
 
 /**
@@ -124,13 +120,11 @@ nmt_sync_op_wait_pointer (NmtSyncOp  *op,
  * Completes @op and returns @result and/or @error to the caller.
  */
 void
-nmt_sync_op_complete_pointer (NmtSyncOp  *op,
-                              gpointer    result,
-                              GError     *error)
+nmt_sync_op_complete_pointer(NmtSyncOp *op, gpointer result, GError *error)
 {
-	NmtSyncOpReal *real = (NmtSyncOpReal *)op;
+    NmtSyncOpReal *real = (NmtSyncOpReal *) op;
 
-	real->result = result;
-	real->error = error ? g_error_copy (error) : NULL;
-	real->complete = GUINT_TO_POINTER (TRUE);
+    real->result   = result;
+    real->error    = error ? g_error_copy(error) : NULL;
+    real->complete = GUINT_TO_POINTER(TRUE);
 }

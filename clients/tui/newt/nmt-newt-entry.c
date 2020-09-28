@@ -20,32 +20,33 @@
 #include "nmt-newt-hacks.h"
 #include "nmt-newt-utils.h"
 
-G_DEFINE_TYPE (NmtNewtEntry, nmt_newt_entry, NMT_TYPE_NEWT_COMPONENT)
+G_DEFINE_TYPE(NmtNewtEntry, nmt_newt_entry, NMT_TYPE_NEWT_COMPONENT)
 
-#define NMT_NEWT_ENTRY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_NEWT_ENTRY, NmtNewtEntryPrivate))
+#define NMT_NEWT_ENTRY_GET_PRIVATE(o) \
+    (G_TYPE_INSTANCE_GET_PRIVATE((o), NMT_TYPE_NEWT_ENTRY, NmtNewtEntryPrivate))
 
 typedef struct {
-	int width;
-	NmtNewtEntryFlags flags;
-	char *text;
-	int last_cursor_pos;
-	guint idle_update;
+    int               width;
+    NmtNewtEntryFlags flags;
+    char *            text;
+    int               last_cursor_pos;
+    guint             idle_update;
 
-	NmtNewtEntryFilter filter;
-	gpointer filter_data;
+    NmtNewtEntryFilter filter;
+    gpointer           filter_data;
 
-	NmtNewtEntryValidator validator;
-	gpointer validator_data;
+    NmtNewtEntryValidator validator;
+    gpointer              validator_data;
 } NmtNewtEntryPrivate;
 
 enum {
-	PROP_0,
-	PROP_TEXT,
-	PROP_WIDTH,
-	PROP_FLAGS,
-	PROP_PASSWORD,
+    PROP_0,
+    PROP_TEXT,
+    PROP_WIDTH,
+    PROP_FLAGS,
+    PROP_PASSWORD,
 
-	LAST_PROP
+    LAST_PROP
 };
 
 /**
@@ -70,13 +71,9 @@ enum {
  * Returns: a new #NmtNewtEntry
  */
 NmtNewtWidget *
-nmt_newt_entry_new (int               width,
-                    NmtNewtEntryFlags flags)
+nmt_newt_entry_new(int width, NmtNewtEntryFlags flags)
 {
-	return g_object_new (NMT_TYPE_NEWT_ENTRY,
-	                     "width", width,
-	                     "flags", flags,
-	                     NULL);
+    return g_object_new(NMT_TYPE_NEWT_ENTRY, "width", width, "flags", flags, NULL);
 }
 
 /**
@@ -107,31 +104,28 @@ nmt_newt_entry_new (int               width,
  * nmt_newt_entry_set_text().
  */
 void
-nmt_newt_entry_set_filter (NmtNewtEntry       *entry,
-                           NmtNewtEntryFilter  filter,
-                           gpointer            user_data)
+nmt_newt_entry_set_filter(NmtNewtEntry *entry, NmtNewtEntryFilter filter, gpointer user_data)
 {
-	NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE (entry);
+    NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE(entry);
 
-	priv->filter = filter;
-	priv->filter_data = user_data;
+    priv->filter      = filter;
+    priv->filter_data = user_data;
 }
 
 static void
-nmt_newt_entry_check_valid (NmtNewtEntry *entry)
+nmt_newt_entry_check_valid(NmtNewtEntry *entry)
 {
-	NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE (entry);
-	gboolean valid;
+    NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE(entry);
+    gboolean             valid;
 
-	if (   (priv->flags & NMT_NEWT_ENTRY_NONEMPTY)
-	    && *priv->text == '\0')
-		valid = FALSE;
-	else if (priv->validator)
-		valid = !!priv->validator (entry, priv->text, priv->validator_data);
-	else
-		valid = TRUE;
+    if ((priv->flags & NMT_NEWT_ENTRY_NONEMPTY) && *priv->text == '\0')
+        valid = FALSE;
+    else if (priv->validator)
+        valid = !!priv->validator(entry, priv->text, priv->validator_data);
+    else
+        valid = TRUE;
 
-	nmt_newt_widget_set_valid (NMT_NEWT_WIDGET (entry), valid);
+    nmt_newt_widget_set_valid(NMT_NEWT_WIDGET(entry), valid);
 }
 
 /**
@@ -156,47 +150,45 @@ nmt_newt_entry_check_valid (NmtNewtEntry *entry)
  * will not be considered #NmtNewtWidget:valid.
  */
 void
-nmt_newt_entry_set_validator (NmtNewtEntry          *entry,
-                              NmtNewtEntryValidator  validator,
-                              gpointer               user_data)
+nmt_newt_entry_set_validator(NmtNewtEntry *        entry,
+                             NmtNewtEntryValidator validator,
+                             gpointer              user_data)
 {
-	NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE (entry);
+    NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE(entry);
 
-	priv->validator = validator;
-	priv->validator_data = user_data;
+    priv->validator      = validator;
+    priv->validator_data = user_data;
 
-	nmt_newt_entry_check_valid (entry);
+    nmt_newt_entry_check_valid(entry);
 }
 
 static void
-nmt_newt_entry_set_text_internal (NmtNewtEntry  *entry,
-                                  const char    *text,
-                                  newtComponent  co)
+nmt_newt_entry_set_text_internal(NmtNewtEntry *entry, const char *text, newtComponent co)
 {
-	NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE (entry);
+    NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE(entry);
 
-	if (!text)
-		text = "";
+    if (!text)
+        text = "";
 
-	if (!strcmp (priv->text, text))
-		return;
+    if (!strcmp(priv->text, text))
+        return;
 
-	g_free (priv->text);
-	priv->text = g_strdup (text);
+    g_free(priv->text);
+    priv->text = g_strdup(text);
 
-	if (co) {
-		char *text_lc;
+    if (co) {
+        char *text_lc;
 
-		text_lc = priv->text ? nmt_newt_locale_from_utf8 (priv->text) : NULL;
-		newtEntrySet (co, text_lc, TRUE);
-		g_free (text_lc);
-		priv->last_cursor_pos = -1;
-	}
+        text_lc = priv->text ? nmt_newt_locale_from_utf8(priv->text) : NULL;
+        newtEntrySet(co, text_lc, TRUE);
+        g_free(text_lc);
+        priv->last_cursor_pos = -1;
+    }
 
-	g_object_freeze_notify (G_OBJECT (entry));
-	nmt_newt_entry_check_valid (entry);
-	g_object_notify (G_OBJECT (entry), "text");
-	g_object_thaw_notify (G_OBJECT (entry));
+    g_object_freeze_notify(G_OBJECT(entry));
+    nmt_newt_entry_check_valid(entry);
+    g_object_notify(G_OBJECT(entry), "text");
+    g_object_thaw_notify(G_OBJECT(entry));
 }
 
 /**
@@ -209,13 +201,12 @@ nmt_newt_entry_set_text_internal (NmtNewtEntry  *entry,
  * be re-run.
  */
 void
-nmt_newt_entry_set_text (NmtNewtEntry *entry,
-                         const char   *text)
+nmt_newt_entry_set_text(NmtNewtEntry *entry, const char *text)
 {
-	newtComponent co;
+    newtComponent co;
 
-	co = nmt_newt_component_get_component (NMT_NEWT_COMPONENT (entry));
-	nmt_newt_entry_set_text_internal (entry, text, co);
+    co = nmt_newt_component_get_component(NMT_NEWT_COMPONENT(entry));
+    nmt_newt_entry_set_text_internal(entry, text, co);
 }
 
 /**
@@ -227,11 +218,11 @@ nmt_newt_entry_set_text (NmtNewtEntry *entry,
  * Returns: @entry's text
  */
 const char *
-nmt_newt_entry_get_text (NmtNewtEntry *entry)
+nmt_newt_entry_get_text(NmtNewtEntry *entry)
 {
-	NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE (entry);
+    NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE(entry);
 
-	return priv->text;
+    return priv->text;
 }
 
 /**
@@ -242,18 +233,17 @@ nmt_newt_entry_get_text (NmtNewtEntry *entry)
  * Updates @entry's width
  */
 void
-nmt_newt_entry_set_width (NmtNewtEntry *entry,
-                          int           width)
+nmt_newt_entry_set_width(NmtNewtEntry *entry, int width)
 {
-	NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE (entry);
+    NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE(entry);
 
-	if (priv->width == width)
-		return;
+    if (priv->width == width)
+        return;
 
-	priv->width = width;
-	nmt_newt_widget_needs_rebuild (NMT_NEWT_WIDGET (entry));
+    priv->width = width;
+    nmt_newt_widget_needs_rebuild(NMT_NEWT_WIDGET(entry));
 
-	g_object_notify (G_OBJECT (entry), "width");
+    g_object_notify(G_OBJECT(entry), "width");
 }
 
 /**
@@ -265,261 +255,252 @@ nmt_newt_entry_set_width (NmtNewtEntry *entry,
  * Returns: @entry's width
  */
 int
-nmt_newt_entry_get_width (NmtNewtEntry *entry)
+nmt_newt_entry_get_width(NmtNewtEntry *entry)
 {
-	NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE (entry);
+    NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE(entry);
 
-	return priv->width;
+    return priv->width;
 }
 
 static void
-nmt_newt_entry_init (NmtNewtEntry *entry)
+nmt_newt_entry_init(NmtNewtEntry *entry)
 {
-	NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE (entry);
+    NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE(entry);
 
-	priv->text = g_strdup ("");
-	priv->last_cursor_pos = -1;
+    priv->text            = g_strdup("");
+    priv->last_cursor_pos = -1;
 }
 
 static void
-nmt_newt_entry_constructed (GObject *object)
+nmt_newt_entry_constructed(GObject *object)
 {
-	nmt_newt_entry_check_valid (NMT_NEWT_ENTRY (object));
+    nmt_newt_entry_check_valid(NMT_NEWT_ENTRY(object));
 
-	G_OBJECT_CLASS (nmt_newt_entry_parent_class)->constructed (object);
+    G_OBJECT_CLASS(nmt_newt_entry_parent_class)->constructed(object);
 }
 
 static void
-nmt_newt_entry_finalize (GObject *object)
+nmt_newt_entry_finalize(GObject *object)
 {
-	NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE (object);
+    NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE(object);
 
-	g_free (priv->text);
-	if (priv->idle_update)
-		g_source_remove (priv->idle_update);
+    g_free(priv->text);
+    if (priv->idle_update)
+        g_source_remove(priv->idle_update);
 
-	G_OBJECT_CLASS (nmt_newt_entry_parent_class)->finalize (object);
+    G_OBJECT_CLASS(nmt_newt_entry_parent_class)->finalize(object);
 }
 
 static gboolean
-idle_update_entry (gpointer entry)
+idle_update_entry(gpointer entry)
 {
-	NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE (entry);
-	newtComponent co = nmt_newt_component_get_component (entry);
-	char *text;
+    NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE(entry);
+    newtComponent        co   = nmt_newt_component_get_component(entry);
+    char *               text;
 
-	priv->idle_update = 0;
-	if (!co)
-		return FALSE;
+    priv->idle_update = 0;
+    if (!co)
+        return FALSE;
 
-	priv->last_cursor_pos = newtEntryGetCursorPosition (co);
+    priv->last_cursor_pos = newtEntryGetCursorPosition(co);
 
-	text = nmt_newt_locale_to_utf8 (newtEntryGetValue (co));
-	nmt_newt_entry_set_text_internal (entry, text, NULL);
-	g_free (text);
+    text = nmt_newt_locale_to_utf8(newtEntryGetValue(co));
+    nmt_newt_entry_set_text_internal(entry, text, NULL);
+    g_free(text);
 
-	return FALSE;
+    return FALSE;
 }
 
 static int
-entry_filter (newtComponent  entry,
-              void          *self,
-              int            ch,
-              int            cursor)
+entry_filter(newtComponent entry, void *self, int ch, int cursor)
 {
-	NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE (self);
+    NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE(self);
 
-	if (g_ascii_isprint (ch)) {
-		if (priv->filter) {
-			char *text = nmt_newt_locale_to_utf8 (newtEntryGetValue (entry));
+    if (g_ascii_isprint(ch)) {
+        if (priv->filter) {
+            char *text = nmt_newt_locale_to_utf8(newtEntryGetValue(entry));
 
-			if (!priv->filter (self, text, ch, cursor, priv->filter_data)) {
-				g_free (text);
-				return 0;
-			}
-			g_free (text);
-		}
-	}
+            if (!priv->filter(self, text, ch, cursor, priv->filter_data)) {
+                g_free(text);
+                return 0;
+            }
+            g_free(text);
+        }
+    }
 
-	if (!priv->idle_update)
-		priv->idle_update = g_idle_add (idle_update_entry, self);
-	return ch;
+    if (!priv->idle_update)
+        priv->idle_update = g_idle_add(idle_update_entry, self);
+    return ch;
 }
 
 static guint
-convert_flags (NmtNewtEntryFlags flags)
+convert_flags(NmtNewtEntryFlags flags)
 {
-	guint newt_flags = NEWT_FLAG_RETURNEXIT;
+    guint newt_flags = NEWT_FLAG_RETURNEXIT;
 
-	if (!(flags & NMT_NEWT_ENTRY_NOSCROLL))
-		newt_flags |= NEWT_FLAG_SCROLL;
-	if (flags & NMT_NEWT_ENTRY_PASSWORD)
-		newt_flags |= NEWT_FLAG_PASSWORD;
+    if (!(flags & NMT_NEWT_ENTRY_NOSCROLL))
+        newt_flags |= NEWT_FLAG_SCROLL;
+    if (flags & NMT_NEWT_ENTRY_PASSWORD)
+        newt_flags |= NEWT_FLAG_PASSWORD;
 
-	return newt_flags;
+    return newt_flags;
 }
 
 static newtComponent
-nmt_newt_entry_build_component (NmtNewtComponent *component,
-                                gboolean          sensitive)
+nmt_newt_entry_build_component(NmtNewtComponent *component, gboolean sensitive)
 {
-	NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE (component);
-	newtComponent co;
-	char *text_lc;
-	int flags;
+    NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE(component);
+    newtComponent        co;
+    char *               text_lc;
+    int                  flags;
 
-	flags = convert_flags (priv->flags);
-	if (!sensitive)
-		flags |= NEWT_FLAG_DISABLED;
+    flags = convert_flags(priv->flags);
+    if (!sensitive)
+        flags |= NEWT_FLAG_DISABLED;
 
-	text_lc = priv->text ? nmt_newt_locale_from_utf8 (priv->text) : NULL;
-	co = newtEntry (-1, -1, text_lc, priv->width, NULL, flags);
-	g_free (text_lc);
+    text_lc = priv->text ? nmt_newt_locale_from_utf8(priv->text) : NULL;
+    co      = newtEntry(-1, -1, text_lc, priv->width, NULL, flags);
+    g_free(text_lc);
 
-	if (priv->last_cursor_pos != -1)
-		newtEntrySetCursorPosition (co, priv->last_cursor_pos);
+    if (priv->last_cursor_pos != -1)
+        newtEntrySetCursorPosition(co, priv->last_cursor_pos);
 
-	newtEntrySetFilter (co, entry_filter, component);
-	return co;
+    newtEntrySetFilter(co, entry_filter, component);
+    return co;
 }
 
 static void
-nmt_newt_entry_activated (NmtNewtWidget *widget)
+nmt_newt_entry_activated(NmtNewtWidget *widget)
 {
-	NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE (widget);
+    NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE(widget);
 
-	if (priv->idle_update) {
-		g_source_remove (priv->idle_update);
-		idle_update_entry (widget);
-	}
+    if (priv->idle_update) {
+        g_source_remove(priv->idle_update);
+        idle_update_entry(widget);
+    }
 
-	NMT_NEWT_WIDGET_CLASS (nmt_newt_entry_parent_class)->activated (widget);
+    NMT_NEWT_WIDGET_CLASS(nmt_newt_entry_parent_class)->activated(widget);
 }
 
 static void
-nmt_newt_entry_set_property (GObject      *object,
-                             guint         prop_id,
-                             const GValue *value,
-                             GParamSpec   *pspec)
+nmt_newt_entry_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-	NmtNewtEntry *entry = NMT_NEWT_ENTRY (object);
-	NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE (entry);
+    NmtNewtEntry *       entry = NMT_NEWT_ENTRY(object);
+    NmtNewtEntryPrivate *priv  = NMT_NEWT_ENTRY_GET_PRIVATE(entry);
 
-	switch (prop_id) {
-	case PROP_TEXT:
-		nmt_newt_entry_set_text (entry, g_value_get_string (value));
-		break;
-	case PROP_WIDTH:
-		nmt_newt_entry_set_width (entry, g_value_get_int (value));
-		break;
-	case PROP_FLAGS:
-		priv->flags = g_value_get_uint (value);
-		nmt_newt_widget_needs_rebuild (NMT_NEWT_WIDGET (entry));
-		break;
-	case PROP_PASSWORD:
-		if (g_value_get_boolean (value))
-			priv->flags |= NMT_NEWT_ENTRY_PASSWORD;
-		else
-			priv->flags &= ~NMT_NEWT_ENTRY_PASSWORD;
-		nmt_newt_widget_needs_rebuild (NMT_NEWT_WIDGET (entry));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_TEXT:
+        nmt_newt_entry_set_text(entry, g_value_get_string(value));
+        break;
+    case PROP_WIDTH:
+        nmt_newt_entry_set_width(entry, g_value_get_int(value));
+        break;
+    case PROP_FLAGS:
+        priv->flags = g_value_get_uint(value);
+        nmt_newt_widget_needs_rebuild(NMT_NEWT_WIDGET(entry));
+        break;
+    case PROP_PASSWORD:
+        if (g_value_get_boolean(value))
+            priv->flags |= NMT_NEWT_ENTRY_PASSWORD;
+        else
+            priv->flags &= ~NMT_NEWT_ENTRY_PASSWORD;
+        nmt_newt_widget_needs_rebuild(NMT_NEWT_WIDGET(entry));
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
-nmt_newt_entry_get_property (GObject    *object,
-                             guint       prop_id,
-                             GValue     *value,
-                             GParamSpec *pspec)
+nmt_newt_entry_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-	NmtNewtEntry *entry = NMT_NEWT_ENTRY (object);
-	NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE (entry);
+    NmtNewtEntry *       entry = NMT_NEWT_ENTRY(object);
+    NmtNewtEntryPrivate *priv  = NMT_NEWT_ENTRY_GET_PRIVATE(entry);
 
-	switch (prop_id) {
-	case PROP_TEXT:
-		g_value_set_string (value, nmt_newt_entry_get_text (entry));
-		break;
-	case PROP_WIDTH:
-		g_value_set_int (value, priv->width);
-		break;
-	case PROP_FLAGS:
-		g_value_set_uint (value, priv->flags);
-		break;
-	case PROP_PASSWORD:
-		g_value_set_boolean (value, (priv->flags & NMT_NEWT_ENTRY_PASSWORD) != 0);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_TEXT:
+        g_value_set_string(value, nmt_newt_entry_get_text(entry));
+        break;
+    case PROP_WIDTH:
+        g_value_set_int(value, priv->width);
+        break;
+    case PROP_FLAGS:
+        g_value_set_uint(value, priv->flags);
+        break;
+    case PROP_PASSWORD:
+        g_value_set_boolean(value, (priv->flags & NMT_NEWT_ENTRY_PASSWORD) != 0);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
-nmt_newt_entry_class_init (NmtNewtEntryClass *entry_class)
+nmt_newt_entry_class_init(NmtNewtEntryClass *entry_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (entry_class);
-	NmtNewtWidgetClass *widget_class = NMT_NEWT_WIDGET_CLASS (entry_class);
-	NmtNewtComponentClass *component_class = NMT_NEWT_COMPONENT_CLASS (entry_class);
+    GObjectClass *         object_class    = G_OBJECT_CLASS(entry_class);
+    NmtNewtWidgetClass *   widget_class    = NMT_NEWT_WIDGET_CLASS(entry_class);
+    NmtNewtComponentClass *component_class = NMT_NEWT_COMPONENT_CLASS(entry_class);
 
-	g_type_class_add_private (entry_class, sizeof (NmtNewtEntryPrivate));
+    g_type_class_add_private(entry_class, sizeof(NmtNewtEntryPrivate));
 
-	/* virtual methods */
-	object_class->constructed  = nmt_newt_entry_constructed;
-	object_class->set_property = nmt_newt_entry_set_property;
-	object_class->get_property = nmt_newt_entry_get_property;
-	object_class->finalize     = nmt_newt_entry_finalize;
+    /* virtual methods */
+    object_class->constructed  = nmt_newt_entry_constructed;
+    object_class->set_property = nmt_newt_entry_set_property;
+    object_class->get_property = nmt_newt_entry_get_property;
+    object_class->finalize     = nmt_newt_entry_finalize;
 
-	widget_class->activated = nmt_newt_entry_activated;
+    widget_class->activated = nmt_newt_entry_activated;
 
-	component_class->build_component    = nmt_newt_entry_build_component;
+    component_class->build_component = nmt_newt_entry_build_component;
 
-	/**
-	 * NmtNewtEntry:text
-	 *
-	 * The entry's text
-	 */
-	g_object_class_install_property
-		(object_class, PROP_TEXT,
-		 g_param_spec_string ("text", "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
-	/**
-	 * NmtNewtEntry:width
-	 *
-	 * The entry's width in characters
-	 */
-	g_object_class_install_property
-		(object_class, PROP_WIDTH,
-		 g_param_spec_int ("width", "", "",
-		                   -1, 80, -1,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_STATIC_STRINGS));
-	/**
-	 * NmtNewtEntry:flags
-	 *
-	 * The entry's #NmtNewtEntryFlags
-	 */
-	g_object_class_install_property
-		(object_class, PROP_FLAGS,
-		 g_param_spec_uint ("flags", "", "",
-		                    0, 0xFFFF, 0,
-		                    G_PARAM_READWRITE |
-		                    G_PARAM_CONSTRUCT_ONLY |
-		                    G_PARAM_STATIC_STRINGS));
-	/**
-	 * NmtNewtEntry:password
-	 *
-	 * %TRUE if #NmtNewtEntry:flags contains %NMT_NEWT_ENTRY_PASSWORD,
-	 * %FALSE if not.
-	 */
-	g_object_class_install_property
-		(object_class, PROP_PASSWORD,
-		 g_param_spec_boolean ("password", "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
+    /**
+     * NmtNewtEntry:text
+     *
+     * The entry's text
+     */
+    g_object_class_install_property(
+        object_class,
+        PROP_TEXT,
+        g_param_spec_string("text", "", "", NULL, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+    /**
+     * NmtNewtEntry:width
+     *
+     * The entry's width in characters
+     */
+    g_object_class_install_property(
+        object_class,
+        PROP_WIDTH,
+        g_param_spec_int("width", "", "", -1, 80, -1, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+    /**
+     * NmtNewtEntry:flags
+     *
+     * The entry's #NmtNewtEntryFlags
+     */
+    g_object_class_install_property(
+        object_class,
+        PROP_FLAGS,
+        g_param_spec_uint("flags",
+                          "",
+                          "",
+                          0,
+                          0xFFFF,
+                          0,
+                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+    /**
+     * NmtNewtEntry:password
+     *
+     * %TRUE if #NmtNewtEntry:flags contains %NMT_NEWT_ENTRY_PASSWORD,
+     * %FALSE if not.
+     */
+    g_object_class_install_property(
+        object_class,
+        PROP_PASSWORD,
+        g_param_spec_boolean("password",
+                             "",
+                             "",
+                             FALSE,
+                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }

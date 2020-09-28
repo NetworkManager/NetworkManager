@@ -10,12 +10,16 @@
 #include "nm-connection.h"
 #include "nm-dbus-object.h"
 
-#define NM_TYPE_ACTIVE_CONNECTION            (nm_active_connection_get_type ())
-#define NM_ACTIVE_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnection))
-#define NM_ACTIVE_CONNECTION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionClass))
-#define NM_IS_ACTIVE_CONNECTION(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_ACTIVE_CONNECTION))
-#define NM_IS_ACTIVE_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_ACTIVE_CONNECTION))
-#define NM_ACTIVE_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionClass))
+#define NM_TYPE_ACTIVE_CONNECTION (nm_active_connection_get_type())
+#define NM_ACTIVE_CONNECTION(obj) \
+    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnection))
+#define NM_ACTIVE_CONNECTION_CLASS(klass) \
+    (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionClass))
+#define NM_IS_ACTIVE_CONNECTION(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_ACTIVE_CONNECTION))
+#define NM_IS_ACTIVE_CONNECTION_CLASS(klass) \
+    (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_ACTIVE_CONNECTION))
+#define NM_ACTIVE_CONNECTION_GET_CLASS(obj) \
+    (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_ACTIVE_CONNECTION, NMActiveConnectionClass))
 
 /* D-Bus Exported Properties */
 #define NM_ACTIVE_CONNECTION_CONNECTION      "connection"
@@ -46,139 +50,135 @@
 #define NM_ACTIVE_CONNECTION_INT_ACTIVATION_REASON   "int-activation-reason"
 
 /* Signals */
-#define NM_ACTIVE_CONNECTION_STATE_CHANGED           "state-changed"
+#define NM_ACTIVE_CONNECTION_STATE_CHANGED "state-changed"
 
 /* Internal signals*/
-#define NM_ACTIVE_CONNECTION_DEVICE_CHANGED          "device-changed"
-#define NM_ACTIVE_CONNECTION_DEVICE_METERED_CHANGED  "device-metered-changed"
-#define NM_ACTIVE_CONNECTION_PARENT_ACTIVE           "parent-active"
+#define NM_ACTIVE_CONNECTION_DEVICE_CHANGED         "device-changed"
+#define NM_ACTIVE_CONNECTION_DEVICE_METERED_CHANGED "device-metered-changed"
+#define NM_ACTIVE_CONNECTION_PARENT_ACTIVE          "parent-active"
 
 struct _NMActiveConnectionPrivate;
 
 struct _NMActiveConnection {
-	NMDBusObject parent;
-	struct _NMActiveConnectionPrivate *_priv;
+    NMDBusObject                       parent;
+    struct _NMActiveConnectionPrivate *_priv;
 
-	/* active connection can be tracked in a list by NMManager. This is
-	 * the list node. */
-	CList active_connections_lst;
+    /* active connection can be tracked in a list by NMManager. This is
+     * the list node. */
+    CList active_connections_lst;
 };
 
 typedef struct {
-	NMDBusObjectClass parent;
+    NMDBusObjectClass parent;
 
-	/* re-emits device state changes as a convenience for subclasses for
-	 * device states >= DISCONNECTED.
-	 */
-	void (*device_state_changed) (NMActiveConnection *connection,
-	                              NMDevice *device,
-	                              NMDeviceState new_state,
-	                              NMDeviceState old_state);
-	void (*master_failed)  (NMActiveConnection *connection);
+    /* re-emits device state changes as a convenience for subclasses for
+     * device states >= DISCONNECTED.
+     */
+    void (*device_state_changed)(NMActiveConnection *connection,
+                                 NMDevice *          device,
+                                 NMDeviceState       new_state,
+                                 NMDeviceState       old_state);
+    void (*master_failed)(NMActiveConnection *connection);
 
-	void (*device_changed) (NMActiveConnection *connection,
-	                        NMDevice *new_device,
-	                        NMDevice *old_device);
+    void (*device_changed)(NMActiveConnection *connection,
+                           NMDevice *          new_device,
+                           NMDevice *          old_device);
 
-	void (*device_metered_changed) (NMActiveConnection *connection,
-	                                NMMetered new_value);
+    void (*device_metered_changed)(NMActiveConnection *connection, NMMetered new_value);
 
-	void (*parent_active) (NMActiveConnection *connection);
+    void (*parent_active)(NMActiveConnection *connection);
 } NMActiveConnectionClass;
 
-guint64 nm_active_connection_version_id_get (NMActiveConnection *self);
-guint64 nm_active_connection_version_id_bump (NMActiveConnection *self);
+guint64 nm_active_connection_version_id_get(NMActiveConnection *self);
+guint64 nm_active_connection_version_id_bump(NMActiveConnection *self);
 
-GType         nm_active_connection_get_type (void);
+GType nm_active_connection_get_type(void);
 
-typedef void (*NMActiveConnectionAuthResultFunc) (NMActiveConnection *self,
-                                                  gboolean success,
-                                                  const char *error_desc,
-                                                  gpointer user_data);
+typedef void (*NMActiveConnectionAuthResultFunc)(NMActiveConnection *self,
+                                                 gboolean            success,
+                                                 const char *        error_desc,
+                                                 gpointer            user_data);
 
-void          nm_active_connection_authorize (NMActiveConnection *self,
-                                              NMConnection *initial_connection,
-                                              NMActiveConnectionAuthResultFunc result_func,
-                                              gpointer user_data);
+void nm_active_connection_authorize(NMActiveConnection *             self,
+                                    NMConnection *                   initial_connection,
+                                    NMActiveConnectionAuthResultFunc result_func,
+                                    gpointer                         user_data);
 
-NMSettingsConnection *nm_active_connection_get_settings_connection (NMActiveConnection *self);
-NMConnection *nm_active_connection_get_applied_connection (NMActiveConnection *self);
+NMSettingsConnection *nm_active_connection_get_settings_connection(NMActiveConnection *self);
+NMConnection *        nm_active_connection_get_applied_connection(NMActiveConnection *self);
 
-NMSettingsConnection *_nm_active_connection_get_settings_connection (NMActiveConnection *self);
+NMSettingsConnection *_nm_active_connection_get_settings_connection(NMActiveConnection *self);
 
-void          nm_active_connection_set_settings_connection (NMActiveConnection *self,
-                                                            NMSettingsConnection *connection);
+void nm_active_connection_set_settings_connection(NMActiveConnection *  self,
+                                                  NMSettingsConnection *connection);
 
-gboolean      nm_active_connection_has_unmodified_applied_connection (NMActiveConnection *self,
-                                                                      NMSettingCompareFlags compare_flags);
+gboolean
+nm_active_connection_has_unmodified_applied_connection(NMActiveConnection *  self,
+                                                       NMSettingCompareFlags compare_flags);
 
-const char *  nm_active_connection_get_settings_connection_id         (NMActiveConnection *self);
+const char *nm_active_connection_get_settings_connection_id(NMActiveConnection *self);
 
-const char *  nm_active_connection_get_specific_object (NMActiveConnection *self);
+const char *nm_active_connection_get_specific_object(NMActiveConnection *self);
 
-void          nm_active_connection_set_specific_object (NMActiveConnection *self,
-                                                        const char *specific_object);
+void nm_active_connection_set_specific_object(NMActiveConnection *self,
+                                              const char *        specific_object);
 
-void          nm_active_connection_set_default (NMActiveConnection *self,
-                                                int addr_family,
-                                                gboolean is_default);
+void
+nm_active_connection_set_default(NMActiveConnection *self, int addr_family, gboolean is_default);
 
-gboolean      nm_active_connection_get_default (NMActiveConnection *self, int addr_family);
+gboolean nm_active_connection_get_default(NMActiveConnection *self, int addr_family);
 
-NMActiveConnectionState nm_active_connection_get_state (NMActiveConnection *self);
+NMActiveConnectionState nm_active_connection_get_state(NMActiveConnection *self);
 
-void          nm_active_connection_set_state (NMActiveConnection *self,
-                                              NMActiveConnectionState state,
-                                              NMActiveConnectionStateReason reason);
+void nm_active_connection_set_state(NMActiveConnection *          self,
+                                    NMActiveConnectionState       state,
+                                    NMActiveConnectionStateReason reason);
 
-void          nm_active_connection_set_state_fail (NMActiveConnection *active,
-                                                   NMActiveConnectionStateReason reason,
-                                                   const char *error_desc);
+void nm_active_connection_set_state_fail(NMActiveConnection *          active,
+                                         NMActiveConnectionStateReason reason,
+                                         const char *                  error_desc);
 
-NMActivationStateFlags  nm_active_connection_get_state_flags (NMActiveConnection *self);
+NMActivationStateFlags nm_active_connection_get_state_flags(NMActiveConnection *self);
 
-void          nm_active_connection_set_state_flags_full (NMActiveConnection *self,
-                                                         NMActivationStateFlags state_flags,
-                                                         NMActivationStateFlags mask);
+void nm_active_connection_set_state_flags_full(NMActiveConnection *   self,
+                                               NMActivationStateFlags state_flags,
+                                               NMActivationStateFlags mask);
 
 static inline void
-nm_active_connection_set_state_flags (NMActiveConnection *self,
-                                      NMActivationStateFlags state_flags)
+nm_active_connection_set_state_flags(NMActiveConnection *self, NMActivationStateFlags state_flags)
 {
-	nm_active_connection_set_state_flags_full (self, state_flags, state_flags);
+    nm_active_connection_set_state_flags_full(self, state_flags, state_flags);
 }
 
 static inline void
-nm_active_connection_set_state_flags_clear (NMActiveConnection *self,
-                                            NMActivationStateFlags state_flags)
+nm_active_connection_set_state_flags_clear(NMActiveConnection *   self,
+                                           NMActivationStateFlags state_flags)
 {
-	nm_active_connection_set_state_flags_full (self, NM_ACTIVATION_STATE_FLAG_NONE, state_flags);
+    nm_active_connection_set_state_flags_full(self, NM_ACTIVATION_STATE_FLAG_NONE, state_flags);
 }
 
-NMDevice *    nm_active_connection_get_device (NMActiveConnection *self);
+NMDevice *nm_active_connection_get_device(NMActiveConnection *self);
 
-gboolean      nm_active_connection_set_device (NMActiveConnection *self, NMDevice *device);
+gboolean nm_active_connection_set_device(NMActiveConnection *self, NMDevice *device);
 
-NMAuthSubject *nm_active_connection_get_subject (NMActiveConnection *self);
+NMAuthSubject *nm_active_connection_get_subject(NMActiveConnection *self);
 
-gboolean      nm_active_connection_get_user_requested (NMActiveConnection *self);
+gboolean nm_active_connection_get_user_requested(NMActiveConnection *self);
 
-NMActiveConnection *nm_active_connection_get_master (NMActiveConnection *self);
+NMActiveConnection *nm_active_connection_get_master(NMActiveConnection *self);
 
-gboolean      nm_active_connection_get_master_ready (NMActiveConnection *self);
+gboolean nm_active_connection_get_master_ready(NMActiveConnection *self);
 
-void          nm_active_connection_set_master (NMActiveConnection *self,
-                                               NMActiveConnection *master);
+void nm_active_connection_set_master(NMActiveConnection *self, NMActiveConnection *master);
 
-void          nm_active_connection_set_parent (NMActiveConnection *self,
-                                               NMActiveConnection *parent);
+void nm_active_connection_set_parent(NMActiveConnection *self, NMActiveConnection *parent);
 
-NMActivationType nm_active_connection_get_activation_type (NMActiveConnection *self);
+NMActivationType nm_active_connection_get_activation_type(NMActiveConnection *self);
 
-NMActivationReason nm_active_connection_get_activation_reason (NMActiveConnection *self);
+NMActivationReason nm_active_connection_get_activation_reason(NMActiveConnection *self);
 
-NMKeepAlive  *nm_active_connection_get_keep_alive (NMActiveConnection *self);
+NMKeepAlive *nm_active_connection_get_keep_alive(NMActiveConnection *self);
 
-void          nm_active_connection_clear_secrets (NMActiveConnection *self);
+void nm_active_connection_clear_secrets(NMActiveConnection *self);
 
 #endif /* __NETWORKMANAGER_ACTIVE_CONNECTION_H__ */

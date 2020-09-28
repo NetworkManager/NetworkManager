@@ -8,6 +8,6 @@
 
 extern NMClient *nm_client;
 
-void nmtui_quit (void);
+void nmtui_quit(void);
 
 #endif /* NMTUI_H */

@@ -7,8 +7,8 @@
 #ifndef __NM_VPN_EDITOR_PLUGIN_H__
 #define __NM_VPN_EDITOR_PLUGIN_H__
 
-#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
-#error "Only <NetworkManager.h> can be included directly."
+#if !defined(__NETWORKMANAGER_H_INSIDE__) && !defined(NETWORKMANAGER_COMPILATION)
+    #error "Only <NetworkManager.h> can be included directly."
 #endif
 
 #include <glib.h>
@@ -22,24 +22,26 @@ G_BEGIN_DECLS
 typedef struct _NMVpnPluginInfo NMVpnPluginInfo;
 
 typedef struct _NMVpnEditorPlugin NMVpnEditorPlugin;
-typedef struct _NMVpnEditor NMVpnEditor;
+typedef struct _NMVpnEditor       NMVpnEditor;
 
 /* Plugin's factory function that returns a GObject that implements
  * NMVpnEditorPlugin.
  */
 #ifndef __GI_SCANNER__
-typedef NMVpnEditorPlugin * (*NMVpnEditorPluginFactory) (GError **error);
-NMVpnEditorPlugin *nm_vpn_editor_plugin_factory (GError **error);
+typedef NMVpnEditorPlugin *(*NMVpnEditorPluginFactory)(GError **error);
+NMVpnEditorPlugin *nm_vpn_editor_plugin_factory(GError **error);
 #endif
 
 /*****************************************************************************/
 /* Editor plugin interface                        */
 /*****************************************************************************/
 
-#define NM_TYPE_VPN_EDITOR_PLUGIN               (nm_vpn_editor_plugin_get_type ())
-#define NM_VPN_EDITOR_PLUGIN(obj)               (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_EDITOR_PLUGIN, NMVpnEditorPlugin))
-#define NM_IS_VPN_EDITOR_PLUGIN(obj)            (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_VPN_EDITOR_PLUGIN))
-#define NM_VPN_EDITOR_PLUGIN_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), NM_TYPE_VPN_EDITOR_PLUGIN, NMVpnEditorPluginInterface))
+#define NM_TYPE_VPN_EDITOR_PLUGIN (nm_vpn_editor_plugin_get_type())
+#define NM_VPN_EDITOR_PLUGIN(obj) \
+    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_VPN_EDITOR_PLUGIN, NMVpnEditorPlugin))
+#define NM_IS_VPN_EDITOR_PLUGIN(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_VPN_EDITOR_PLUGIN))
+#define NM_VPN_EDITOR_PLUGIN_GET_INTERFACE(obj) \
+    (G_TYPE_INSTANCE_GET_INTERFACE((obj), NM_TYPE_VPN_EDITOR_PLUGIN, NMVpnEditorPluginInterface))
 
 /**
  * NMVpnEditorPluginCapability:
@@ -51,10 +53,10 @@ NMVpnEditorPlugin *nm_vpn_editor_plugin_factory (GError **error);
  * Flags that indicate certain capabilities of the plugin to editor programs.
  **/
 typedef enum /*< flags >*/ {
-	NM_VPN_EDITOR_PLUGIN_CAPABILITY_NONE   = 0x00,
-	NM_VPN_EDITOR_PLUGIN_CAPABILITY_IMPORT = 0x01,
-	NM_VPN_EDITOR_PLUGIN_CAPABILITY_EXPORT = 0x02,
-	NM_VPN_EDITOR_PLUGIN_CAPABILITY_IPV6   = 0x04
+    NM_VPN_EDITOR_PLUGIN_CAPABILITY_NONE   = 0x00,
+    NM_VPN_EDITOR_PLUGIN_CAPABILITY_IMPORT = 0x01,
+    NM_VPN_EDITOR_PLUGIN_CAPABILITY_EXPORT = 0x02,
+    NM_VPN_EDITOR_PLUGIN_CAPABILITY_IPV6   = 0x04
 } NMVpnEditorPluginCapability;
 
 /* Short display name of the VPN plugin */
@@ -92,72 +94,63 @@ typedef struct _NMVpnEditorPluginVT NMVpnEditorPluginVT;
  * Interface for VPN editor plugins.
  */
 typedef struct {
-	GTypeInterface g_iface;
+    GTypeInterface g_iface;
 
-	NMVpnEditor * (*get_editor) (NMVpnEditorPlugin *plugin,
-	                             NMConnection *connection,
-	                             GError **error);
+    NMVpnEditor *(*get_editor)(NMVpnEditorPlugin *plugin, NMConnection *connection, GError **error);
 
-	NMVpnEditorPluginCapability (*get_capabilities) (NMVpnEditorPlugin *plugin);
+    NMVpnEditorPluginCapability (*get_capabilities)(NMVpnEditorPlugin *plugin);
 
-	NMConnection * (*import_from_file) (NMVpnEditorPlugin *plugin,
-	                                    const char *path,
-	                                    GError **error);
+    NMConnection *(*import_from_file)(NMVpnEditorPlugin *plugin, const char *path, GError **error);
 
-	gboolean (*export_to_file) (NMVpnEditorPlugin *plugin,
-	                            const char *path,
-	                            NMConnection *connection,
-	                            GError **error);
+    gboolean (*export_to_file)(NMVpnEditorPlugin *plugin,
+                               const char *       path,
+                               NMConnection *     connection,
+                               GError **          error);
 
-	char * (*get_suggested_filename) (NMVpnEditorPlugin *plugin, NMConnection *connection);
+    char *(*get_suggested_filename)(NMVpnEditorPlugin *plugin, NMConnection *connection);
 
-	void (*notify_plugin_info_set) (NMVpnEditorPlugin *plugin,
-	                                NMVpnPluginInfo *plugin_info);
+    void (*notify_plugin_info_set)(NMVpnEditorPlugin *plugin, NMVpnPluginInfo *plugin_info);
 
-	const NMVpnEditorPluginVT *(*get_vt) (NMVpnEditorPlugin *plugin,
-	                                      gsize *out_vt_size);
+    const NMVpnEditorPluginVT *(*get_vt)(NMVpnEditorPlugin *plugin, gsize *out_vt_size);
 } NMVpnEditorPluginInterface;
 
-GType nm_vpn_editor_plugin_get_type (void);
+GType nm_vpn_editor_plugin_get_type(void);
 
-NMVpnEditor *nm_vpn_editor_plugin_get_editor (NMVpnEditorPlugin *plugin,
-                                              NMConnection *connection,
-                                              GError **error);
+NMVpnEditor *nm_vpn_editor_plugin_get_editor(NMVpnEditorPlugin *plugin,
+                                             NMConnection *     connection,
+                                             GError **          error);
 
-NMVpnEditorPluginCapability nm_vpn_editor_plugin_get_capabilities (NMVpnEditorPlugin *plugin);
+NMVpnEditorPluginCapability nm_vpn_editor_plugin_get_capabilities(NMVpnEditorPlugin *plugin);
 
 NM_AVAILABLE_IN_1_4
-gsize nm_vpn_editor_plugin_get_vt (NMVpnEditorPlugin *plugin,
-                                   NMVpnEditorPluginVT *vt,
-                                   gsize vt_size);
+gsize
+nm_vpn_editor_plugin_get_vt(NMVpnEditorPlugin *plugin, NMVpnEditorPluginVT *vt, gsize vt_size);
 
-NMConnection *nm_vpn_editor_plugin_import                 (NMVpnEditorPlugin *plugin,
-                                                           const char *path,
-                                                           GError **error);
-gboolean      nm_vpn_editor_plugin_export                 (NMVpnEditorPlugin *plugin,
-                                                           const char *path,
-                                                           NMConnection *connection,
-                                                           GError **error);
-char         *nm_vpn_editor_plugin_get_suggested_filename (NMVpnEditorPlugin *plugin,
-                                                           NMConnection *connection);
+NMConnection *
+         nm_vpn_editor_plugin_import(NMVpnEditorPlugin *plugin, const char *path, GError **error);
+gboolean nm_vpn_editor_plugin_export(NMVpnEditorPlugin *plugin,
+                                     const char *       path,
+                                     NMConnection *     connection,
+                                     GError **          error);
+char *   nm_vpn_editor_plugin_get_suggested_filename(NMVpnEditorPlugin *plugin,
+                                                     NMConnection *     connection);
 
 NM_AVAILABLE_IN_1_2
-NMVpnEditorPlugin *nm_vpn_editor_plugin_load_from_file  (const char *plugin_name,
-                                                         const char *check_service,
-                                                         int check_owner,
-                                                         NMUtilsCheckFilePredicate check_file,
-                                                         gpointer user_data,
-                                                         GError **error);
+NMVpnEditorPlugin *nm_vpn_editor_plugin_load_from_file(const char *              plugin_name,
+                                                       const char *              check_service,
+                                                       int                       check_owner,
+                                                       NMUtilsCheckFilePredicate check_file,
+                                                       gpointer                  user_data,
+                                                       GError **                 error);
 
 NM_AVAILABLE_IN_1_4
-NMVpnEditorPlugin *nm_vpn_editor_plugin_load (const char *plugin_name,
-                                              const char *check_service,
-                                              GError **error);
+NMVpnEditorPlugin *
+nm_vpn_editor_plugin_load(const char *plugin_name, const char *check_service, GError **error);
 
 NM_AVAILABLE_IN_1_4
-NMVpnPluginInfo *nm_vpn_editor_plugin_get_plugin_info (NMVpnEditorPlugin *plugin);
+NMVpnPluginInfo *nm_vpn_editor_plugin_get_plugin_info(NMVpnEditorPlugin *plugin);
 NM_AVAILABLE_IN_1_4
-void             nm_vpn_editor_plugin_set_plugin_info (NMVpnEditorPlugin *plugin, NMVpnPluginInfo *plugin_info);
+void nm_vpn_editor_plugin_set_plugin_info(NMVpnEditorPlugin *plugin, NMVpnPluginInfo *plugin_info);
 
 #include "nm-vpn-plugin-info.h"
 

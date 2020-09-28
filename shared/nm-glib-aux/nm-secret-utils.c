@@ -13,142 +13,142 @@
 /*****************************************************************************/
 
 void
-nm_explicit_bzero (void *s, gsize n)
+nm_explicit_bzero(void *s, gsize n)
 {
-	/* gracefully handle n == 0. This is important, callers rely on it. */
-	if (G_UNLIKELY (n == 0))
-		return;
+    /* gracefully handle n == 0. This is important, callers rely on it. */
+    if (G_UNLIKELY(n == 0))
+        return;
 
-	nm_assert (s);
+    nm_assert(s);
 
-#if defined (HAVE_DECL_EXPLICIT_BZERO) && HAVE_DECL_EXPLICIT_BZERO
-	explicit_bzero (s, n);
+#if defined(HAVE_DECL_EXPLICIT_BZERO) && HAVE_DECL_EXPLICIT_BZERO
+    explicit_bzero(s, n);
 #else
-	{
-		volatile guint8 *p = s;
+    {
+        volatile guint8 *p = s;
 
-		memset (s, '\0', n);
-		while (n-- > 0)
-			*(p++) = '\0';
-	}
+        memset(s, '\0', n);
+        while (n-- > 0)
+            *(p++) = '\0';
+    }
 #endif
 }
 
 void
-nm_free_secret (char *secret)
+nm_free_secret(char *secret)
 {
-	gsize len;
+    gsize len;
 
-	if (!secret)
-		return;
+    if (!secret)
+        return;
 
-#if GLIB_CHECK_VERSION(2,44,0)
-	/* Here we mix malloc() and g_malloc() API. Usually we avoid this,
-	 * however since glib 2.44.0 we are in fact guaranteed that g_malloc()/g_free()
-	 * just wraps malloc()/free(), so this is actually fine.
-	 *
-	 * See https://gitlab.gnome.org/GNOME/glib/commit/3be6ed60aa58095691bd697344765e715a327fc1
-	 */
-	len = malloc_usable_size (secret);
+#if GLIB_CHECK_VERSION(2, 44, 0)
+    /* Here we mix malloc() and g_malloc() API. Usually we avoid this,
+     * however since glib 2.44.0 we are in fact guaranteed that g_malloc()/g_free()
+     * just wraps malloc()/free(), so this is actually fine.
+     *
+     * See https://gitlab.gnome.org/GNOME/glib/commit/3be6ed60aa58095691bd697344765e715a327fc1
+     */
+    len = malloc_usable_size(secret);
 #else
-	len = strlen (secret);
+    len = strlen(secret);
 #endif
 
-	nm_explicit_bzero (secret, len);
-	g_free (secret);
+    nm_explicit_bzero(secret, len);
+    g_free(secret);
 }
 
 /*****************************************************************************/
 
 char *
-nm_secret_strchomp (char *secret)
+nm_secret_strchomp(char *secret)
 {
-	gsize len;
+    gsize len;
 
-	g_return_val_if_fail (secret, NULL);
+    g_return_val_if_fail(secret, NULL);
 
-	/* it's actually identical to g_strchomp(). However,
-	 * the glib function does not document, that it clears the
-	 * memory. For @secret, we don't only want to truncate trailing
-	 * spaces, we want to overwrite them with NUL. */
+    /* it's actually identical to g_strchomp(). However,
+     * the glib function does not document, that it clears the
+     * memory. For @secret, we don't only want to truncate trailing
+     * spaces, we want to overwrite them with NUL. */
 
-	len = strlen (secret);
-	while (len--) {
-		if (g_ascii_isspace ((guchar) secret[len]))
-			secret[len] = '\0';
-		else
-			break;
-	}
+    len = strlen(secret);
+    while (len--) {
+        if (g_ascii_isspace((guchar) secret[len]))
+            secret[len] = '\0';
+        else
+            break;
+    }
 
-	return secret;
+    return secret;
 }
 
 /*****************************************************************************/
 
 GBytes *
-nm_secret_copy_to_gbytes (gconstpointer mem, gsize mem_len)
+nm_secret_copy_to_gbytes(gconstpointer mem, gsize mem_len)
 {
-	NMSecretBuf *b;
+    NMSecretBuf *b;
 
-	if (mem_len == 0)
-		return g_bytes_new_static ("", 0);
+    if (mem_len == 0)
+        return g_bytes_new_static("", 0);
 
-	nm_assert (mem);
+    nm_assert(mem);
 
-	/* NUL terminate the buffer.
-	 *
-	 * The entire buffer is already malloc'ed and likely has some room for padding.
-	 * Thus, in many situations, this additional byte will cause no overhead in
-	 * practice.
-	 *
-	 * Even if it causes an overhead, do it just for safety. Yes, the returned
-	 * bytes is not a NUL terminated string and no user must rely on this. Do
-	 * not treat binary data as NUL terminated strings, unless you know what
-	 * you are doing. Anyway, defensive FTW.
-	 */
+    /* NUL terminate the buffer.
+     *
+     * The entire buffer is already malloc'ed and likely has some room for padding.
+     * Thus, in many situations, this additional byte will cause no overhead in
+     * practice.
+     *
+     * Even if it causes an overhead, do it just for safety. Yes, the returned
+     * bytes is not a NUL terminated string and no user must rely on this. Do
+     * not treat binary data as NUL terminated strings, unless you know what
+     * you are doing. Anyway, defensive FTW.
+     */
 
-	b = nm_secret_buf_new (mem_len + 1);
-	memcpy (b->bin, mem, mem_len);
-	b->bin[mem_len] = 0;
-	return nm_secret_buf_to_gbytes_take (b, mem_len);
+    b = nm_secret_buf_new(mem_len + 1);
+    memcpy(b->bin, mem, mem_len);
+    b->bin[mem_len] = 0;
+    return nm_secret_buf_to_gbytes_take(b, mem_len);
 }
 
 /*****************************************************************************/
 
 NMSecretBuf *
-nm_secret_buf_new (gsize len)
+nm_secret_buf_new(gsize len)
 {
-	NMSecretBuf *secret;
+    NMSecretBuf *secret;
 
-	nm_assert (len > 0);
+    nm_assert(len > 0);
 
-	secret = g_malloc (sizeof (NMSecretBuf) + len);
-	*((gsize *) &(secret->len)) = len;
-	return secret;
+    secret                      = g_malloc(sizeof(NMSecretBuf) + len);
+    *((gsize *) &(secret->len)) = len;
+    return secret;
 }
 
 static void
-_secret_buf_free (gpointer user_data)
+_secret_buf_free(gpointer user_data)
 {
-	NMSecretBuf *secret = user_data;
+    NMSecretBuf *secret = user_data;
 
-	nm_assert (secret);
-	nm_assert (secret->len > 0);
+    nm_assert(secret);
+    nm_assert(secret->len > 0);
 
-	nm_explicit_bzero (secret->bin, secret->len);
-	g_free (user_data);
+    nm_explicit_bzero(secret->bin, secret->len);
+    g_free(user_data);
 }
 
 GBytes *
-nm_secret_buf_to_gbytes_take (NMSecretBuf *secret, gssize actual_len)
+nm_secret_buf_to_gbytes_take(NMSecretBuf *secret, gssize actual_len)
 {
-	nm_assert (secret);
-	nm_assert (secret->len > 0);
-	nm_assert (actual_len == -1 || (actual_len >= 0 && actual_len <= secret->len));
-	return g_bytes_new_with_free_func (secret->bin,
-	                                   actual_len >= 0 ? (gsize) actual_len : secret->len,
-	                                   _secret_buf_free,
-	                                   secret);
+    nm_assert(secret);
+    nm_assert(secret->len > 0);
+    nm_assert(actual_len == -1 || (actual_len >= 0 && actual_len <= secret->len));
+    return g_bytes_new_with_free_func(secret->bin,
+                                      actual_len >= 0 ? (gsize) actual_len : secret->len,
+                                      _secret_buf_free,
+                                      secret);
 }
 
 /*****************************************************************************/
@@ -164,15 +164,15 @@ nm_secret_buf_to_gbytes_take (NMSecretBuf *secret, gssize actual_len)
  * Returns: whether all bytes are zero.
  */
 gboolean
-nm_utils_memeqzero_secret (gconstpointer data, gsize length)
+nm_utils_memeqzero_secret(gconstpointer data, gsize length)
 {
-	const guint8 *const key = data;
-	volatile guint8 acc = 0;
-	gsize i;
+    const guint8 *const key = data;
+    volatile guint8     acc = 0;
+    gsize               i;
 
-	for (i = 0; i < length; i++) {
-		acc |= key[i];
-		asm volatile("" : "=r"(acc) : "0"(acc));
-	}
-	return 1 & ((acc - 1) >> 8);
+    for (i = 0; i < length; i++) {
+        acc |= key[i];
+        asm volatile("" : "=r"(acc) : "0"(acc));
+    }
+    return 1 & ((acc - 1) >> 8);
 }

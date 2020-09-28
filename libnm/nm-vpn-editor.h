@@ -7,8 +7,8 @@
 #ifndef __NM_VPN_EDITOR_H__
 #define __NM_VPN_EDITOR_H__
 
-#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
-#error "Only <NetworkManager.h> can be included directly."
+#if !defined(__NETWORKMANAGER_H_INSIDE__) && !defined(NETWORKMANAGER_COMPILATION)
+    #error "Only <NetworkManager.h> can be included directly."
 #endif
 
 #include <glib.h>
@@ -23,10 +23,11 @@ G_BEGIN_DECLS
 /* Editor interface                               */
 /*****************************************************************************/
 
-#define NM_TYPE_VPN_EDITOR               (nm_vpn_editor_get_type ())
-#define NM_VPN_EDITOR(obj)               (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_EDITOR, NMVpnEditor))
-#define NM_IS_VPN_EDITOR(obj)            (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_VPN_EDITOR))
-#define NM_VPN_EDITOR_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), NM_TYPE_VPN_EDITOR, NMVpnEditorInterface))
+#define NM_TYPE_VPN_EDITOR    (nm_vpn_editor_get_type())
+#define NM_VPN_EDITOR(obj)    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_VPN_EDITOR, NMVpnEditor))
+#define NM_IS_VPN_EDITOR(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_VPN_EDITOR))
+#define NM_VPN_EDITOR_GET_INTERFACE(obj) \
+    (G_TYPE_INSTANCE_GET_INTERFACE((obj), NM_TYPE_VPN_EDITOR, NMVpnEditorInterface))
 
 /**
  * NMVpnEditorInterface:
@@ -45,26 +46,23 @@ G_BEGIN_DECLS
  * Interface for editing a specific #NMConnection
  */
 typedef struct {
-	GTypeInterface g_iface;
+    GTypeInterface g_iface;
 
-	GObject * (*get_widget) (NMVpnEditor *editor);
+    GObject *(*get_widget)(NMVpnEditor *editor);
 
-	void (*placeholder) (void);
+    void (*placeholder)(void);
 
-	gboolean (*update_connection) (NMVpnEditor *editor,
-	                               NMConnection *connection,
-	                               GError **error);
+    gboolean (*update_connection)(NMVpnEditor *editor, NMConnection *connection, GError **error);
 
-	void (*changed) (NMVpnEditor *editor);
+    void (*changed)(NMVpnEditor *editor);
 } NMVpnEditorInterface;
 
-GType nm_vpn_editor_get_type (void);
+GType nm_vpn_editor_get_type(void);
 
-GObject * nm_vpn_editor_get_widget (NMVpnEditor *editor);
+GObject *nm_vpn_editor_get_widget(NMVpnEditor *editor);
 
-gboolean nm_vpn_editor_update_connection (NMVpnEditor *editor,
-                                          NMConnection *connection,
-                                          GError **error);
+gboolean
+nm_vpn_editor_update_connection(NMVpnEditor *editor, NMConnection *connection, GError **error);
 
 G_END_DECLS
 

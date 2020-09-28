@@ -21,25 +21,24 @@
 
 /*****************************************************************************/
 
-G_DEFINE_TYPE (NMSettingDummy, nm_setting_dummy, NM_TYPE_SETTING)
+G_DEFINE_TYPE(NMSettingDummy, nm_setting_dummy, NM_TYPE_SETTING)
 
 /*****************************************************************************/
 
 static gboolean
-verify (NMSetting *setting, NMConnection *connection, GError **error)
+verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
-	if (!_nm_connection_verify_required_interface_name (connection, error))
-		return FALSE;
+    if (!_nm_connection_verify_required_interface_name(connection, error))
+        return FALSE;
 
-	return TRUE;
+    return TRUE;
 }
 
 /*****************************************************************************/
 
 static void
-nm_setting_dummy_init (NMSettingDummy *setting)
-{
-}
+nm_setting_dummy_init(NMSettingDummy *setting)
+{}
 
 /**
  * nm_setting_dummy_new:
@@ -51,17 +50,17 @@ nm_setting_dummy_init (NMSettingDummy *setting)
  * Since: 1.8
  **/
 NMSetting *
-nm_setting_dummy_new (void)
+nm_setting_dummy_new(void)
 {
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_DUMMY, NULL);
+    return (NMSetting *) g_object_new(NM_TYPE_SETTING_DUMMY, NULL);
 }
 
 static void
-nm_setting_dummy_class_init (NMSettingDummyClass *klass)
+nm_setting_dummy_class_init(NMSettingDummyClass *klass)
 {
-	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
 
-	setting_class->verify = verify;
+    setting_class->verify = verify;
 
-	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_DUMMY);
+    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_DUMMY);
 }

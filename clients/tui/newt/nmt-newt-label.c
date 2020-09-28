@@ -18,23 +18,24 @@
 
 #include "nmt-newt-utils.h"
 
-G_DEFINE_TYPE (NmtNewtLabel, nmt_newt_label, NMT_TYPE_NEWT_COMPONENT)
+G_DEFINE_TYPE(NmtNewtLabel, nmt_newt_label, NMT_TYPE_NEWT_COMPONENT)
 
-#define NMT_NEWT_LABEL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_NEWT_LABEL, NmtNewtLabelPrivate))
+#define NMT_NEWT_LABEL_GET_PRIVATE(o) \
+    (G_TYPE_INSTANCE_GET_PRIVATE((o), NMT_TYPE_NEWT_LABEL, NmtNewtLabelPrivate))
 
 typedef struct {
-	char *text;
-	NmtNewtLabelStyle style;
-	gboolean highlight;
+    char *            text;
+    NmtNewtLabelStyle style;
+    gboolean          highlight;
 } NmtNewtLabelPrivate;
 
 enum {
-	PROP_0,
-	PROP_TEXT,
-	PROP_STYLE,
-	PROP_HIGHLIGHT,
+    PROP_0,
+    PROP_TEXT,
+    PROP_STYLE,
+    PROP_HIGHLIGHT,
 
-	LAST_PROP
+    LAST_PROP
 };
 
 /**
@@ -46,11 +47,9 @@ enum {
  * Returns: a new #NmtNewtLabel
  */
 NmtNewtWidget *
-nmt_newt_label_new (const char *text)
+nmt_newt_label_new(const char *text)
 {
-	return g_object_new (NMT_TYPE_NEWT_LABEL,
-	                     "text", text,
-	                     NULL);
+    return g_object_new(NMT_TYPE_NEWT_LABEL, "text", text, NULL);
 }
 
 /**
@@ -61,19 +60,18 @@ nmt_newt_label_new (const char *text)
  * Updates @label's text.
  */
 void
-nmt_newt_label_set_text (NmtNewtLabel *label,
-                         const char   *text)
+nmt_newt_label_set_text(NmtNewtLabel *label, const char *text)
 {
-	NmtNewtLabelPrivate *priv = NMT_NEWT_LABEL_GET_PRIVATE (label);
+    NmtNewtLabelPrivate *priv = NMT_NEWT_LABEL_GET_PRIVATE(label);
 
-	if (!g_strcmp0 (priv->text, text))
-		return;
+    if (!g_strcmp0(priv->text, text))
+        return;
 
-	g_free (priv->text);
-	priv->text = g_strdup (text);
+    g_free(priv->text);
+    priv->text = g_strdup(text);
 
-	g_object_notify (G_OBJECT (label), "text");
-	nmt_newt_widget_needs_rebuild (NMT_NEWT_WIDGET (label));
+    g_object_notify(G_OBJECT(label), "text");
+    nmt_newt_widget_needs_rebuild(NMT_NEWT_WIDGET(label));
 }
 
 /**
@@ -85,11 +83,11 @@ nmt_newt_label_set_text (NmtNewtLabel *label,
  * Returns: @label's text
  */
 const char *
-nmt_newt_label_get_text (NmtNewtLabel *label)
+nmt_newt_label_get_text(NmtNewtLabel *label)
 {
-	NmtNewtLabelPrivate *priv = NMT_NEWT_LABEL_GET_PRIVATE (label);
+    NmtNewtLabelPrivate *priv = NMT_NEWT_LABEL_GET_PRIVATE(label);
 
-	return priv->text;
+    return priv->text;
 }
 
 /**
@@ -110,17 +108,16 @@ nmt_newt_label_get_text (NmtNewtLabel *label)
  * Sets the style of @label
  */
 void
-nmt_newt_label_set_style (NmtNewtLabel      *label,
-                          NmtNewtLabelStyle  style)
+nmt_newt_label_set_style(NmtNewtLabel *label, NmtNewtLabelStyle style)
 {
-	NmtNewtLabelPrivate *priv = NMT_NEWT_LABEL_GET_PRIVATE (label);
+    NmtNewtLabelPrivate *priv = NMT_NEWT_LABEL_GET_PRIVATE(label);
 
-	if (priv->style == style)
-		return;
+    if (priv->style == style)
+        return;
 
-	priv->style = style;
-	g_object_notify (G_OBJECT (label), "style");
-	nmt_newt_widget_needs_rebuild (NMT_NEWT_WIDGET (label));
+    priv->style = style;
+    g_object_notify(G_OBJECT(label), "style");
+    nmt_newt_widget_needs_rebuild(NMT_NEWT_WIDGET(label));
 }
 
 /**
@@ -132,11 +129,11 @@ nmt_newt_label_set_style (NmtNewtLabel      *label,
  * Returns: the style of @label
  */
 NmtNewtLabelStyle
-nmt_newt_label_get_style (NmtNewtLabel *label)
+nmt_newt_label_get_style(NmtNewtLabel *label)
 {
-	NmtNewtLabelPrivate *priv = NMT_NEWT_LABEL_GET_PRIVATE (label);
+    NmtNewtLabelPrivate *priv = NMT_NEWT_LABEL_GET_PRIVATE(label);
 
-	return priv->style;
+    return priv->style;
 }
 
 /**
@@ -148,18 +145,17 @@ nmt_newt_label_get_style (NmtNewtLabel *label)
  * this is generally used to highlight invalid widgets.
  */
 void
-nmt_newt_label_set_highlight (NmtNewtLabel *label,
-                              gboolean      highlight)
+nmt_newt_label_set_highlight(NmtNewtLabel *label, gboolean highlight)
 {
-	NmtNewtLabelPrivate *priv = NMT_NEWT_LABEL_GET_PRIVATE (label);
+    NmtNewtLabelPrivate *priv = NMT_NEWT_LABEL_GET_PRIVATE(label);
 
-	highlight = !!highlight;
-	if (priv->highlight == highlight)
-		return;
+    highlight = !!highlight;
+    if (priv->highlight == highlight)
+        return;
 
-	priv->highlight = highlight;
-	g_object_notify (G_OBJECT (label), "highlight");
-	nmt_newt_widget_needs_rebuild (NMT_NEWT_WIDGET (label));
+    priv->highlight = highlight;
+    g_object_notify(G_OBJECT(label), "highlight");
+    nmt_newt_widget_needs_rebuild(NMT_NEWT_WIDGET(label));
 }
 
 /**
@@ -171,142 +167,137 @@ nmt_newt_label_set_highlight (NmtNewtLabel *label,
  * Returns: whether @label is highlighted.
  */
 gboolean
-nmt_newt_label_get_highlight (NmtNewtLabel *label)
+nmt_newt_label_get_highlight(NmtNewtLabel *label)
 {
-	NmtNewtLabelPrivate *priv = NMT_NEWT_LABEL_GET_PRIVATE (label);
+    NmtNewtLabelPrivate *priv = NMT_NEWT_LABEL_GET_PRIVATE(label);
 
-	return priv->highlight;
+    return priv->highlight;
 }
 
 static void
-nmt_newt_label_init (NmtNewtLabel *label)
-{
-}
+nmt_newt_label_init(NmtNewtLabel *label)
+{}
 
 static void
-nmt_newt_label_finalize (GObject *object)
+nmt_newt_label_finalize(GObject *object)
 {
-	NmtNewtLabelPrivate *priv = NMT_NEWT_LABEL_GET_PRIVATE (object);
+    NmtNewtLabelPrivate *priv = NMT_NEWT_LABEL_GET_PRIVATE(object);
 
-	g_free (priv->text);
+    g_free(priv->text);
 
-	G_OBJECT_CLASS (nmt_newt_label_parent_class)->finalize (object);
+    G_OBJECT_CLASS(nmt_newt_label_parent_class)->finalize(object);
 }
 
 static newtComponent
-nmt_newt_label_build_component (NmtNewtComponent *component,
-                                gboolean          sensitive)
+nmt_newt_label_build_component(NmtNewtComponent *component, gboolean sensitive)
 {
-	NmtNewtLabelPrivate *priv = NMT_NEWT_LABEL_GET_PRIVATE (component);
-	newtComponent co;
-	char *text_lc;
+    NmtNewtLabelPrivate *priv = NMT_NEWT_LABEL_GET_PRIVATE(component);
+    newtComponent        co;
+    char *               text_lc;
 
-	text_lc = nmt_newt_locale_from_utf8 (priv->text);
-	co = newtLabel (-1, -1, text_lc);
-	g_free (text_lc);
+    text_lc = nmt_newt_locale_from_utf8(priv->text);
+    co      = newtLabel(-1, -1, text_lc);
+    g_free(text_lc);
 
-	if (priv->highlight)
-		newtLabelSetColors (co, NMT_NEWT_COLORSET_BAD_LABEL);
-	else if (priv->style == NMT_NEWT_LABEL_PLAIN)
-		newtLabelSetColors (co, NMT_NEWT_COLORSET_PLAIN_LABEL);
+    if (priv->highlight)
+        newtLabelSetColors(co, NMT_NEWT_COLORSET_BAD_LABEL);
+    else if (priv->style == NMT_NEWT_LABEL_PLAIN)
+        newtLabelSetColors(co, NMT_NEWT_COLORSET_PLAIN_LABEL);
 
-	return co;
+    return co;
 }
 
 static void
-nmt_newt_label_set_property (GObject      *object,
-                             guint         prop_id,
-                             const GValue *value,
-                             GParamSpec   *pspec)
+nmt_newt_label_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-	NmtNewtLabel *label = NMT_NEWT_LABEL (object);
+    NmtNewtLabel *label = NMT_NEWT_LABEL(object);
 
-	switch (prop_id) {
-	case PROP_TEXT:
-		nmt_newt_label_set_text (label, g_value_get_string (value));
-		break;
-	case PROP_STYLE:
-		nmt_newt_label_set_style (label, g_value_get_int (value));
-		break;
-	case PROP_HIGHLIGHT:
-		nmt_newt_label_set_highlight (label, g_value_get_boolean (value));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_TEXT:
+        nmt_newt_label_set_text(label, g_value_get_string(value));
+        break;
+    case PROP_STYLE:
+        nmt_newt_label_set_style(label, g_value_get_int(value));
+        break;
+    case PROP_HIGHLIGHT:
+        nmt_newt_label_set_highlight(label, g_value_get_boolean(value));
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
-nmt_newt_label_get_property (GObject    *object,
-                             guint       prop_id,
-                             GValue     *value,
-                             GParamSpec *pspec)
+nmt_newt_label_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-	NmtNewtLabelPrivate *priv = NMT_NEWT_LABEL_GET_PRIVATE (object);
+    NmtNewtLabelPrivate *priv = NMT_NEWT_LABEL_GET_PRIVATE(object);
 
-	switch (prop_id) {
-	case PROP_TEXT:
-		g_value_set_string (value, priv->text);
-		break;
-	case PROP_STYLE:
-		g_value_set_int (value, priv->style);
-		break;
-	case PROP_HIGHLIGHT:
-		g_value_set_boolean (value, priv->highlight);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_TEXT:
+        g_value_set_string(value, priv->text);
+        break;
+    case PROP_STYLE:
+        g_value_set_int(value, priv->style);
+        break;
+    case PROP_HIGHLIGHT:
+        g_value_set_boolean(value, priv->highlight);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
-nmt_newt_label_class_init (NmtNewtLabelClass *label_class)
+nmt_newt_label_class_init(NmtNewtLabelClass *label_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (label_class);
-	NmtNewtComponentClass *component_class = NMT_NEWT_COMPONENT_CLASS (label_class);
+    GObjectClass *         object_class    = G_OBJECT_CLASS(label_class);
+    NmtNewtComponentClass *component_class = NMT_NEWT_COMPONENT_CLASS(label_class);
 
-	g_type_class_add_private (label_class, sizeof (NmtNewtLabelPrivate));
+    g_type_class_add_private(label_class, sizeof(NmtNewtLabelPrivate));
 
-	/* virtual methods */
-	object_class->set_property = nmt_newt_label_set_property;
-	object_class->get_property = nmt_newt_label_get_property;
-	object_class->finalize     = nmt_newt_label_finalize;
+    /* virtual methods */
+    object_class->set_property = nmt_newt_label_set_property;
+    object_class->get_property = nmt_newt_label_get_property;
+    object_class->finalize     = nmt_newt_label_finalize;
 
-	component_class->build_component = nmt_newt_label_build_component;
+    component_class->build_component = nmt_newt_label_build_component;
 
-	/**
-	 * NmtNewtLabel:text:
-	 *
-	 * The label's text
-	 */
-	g_object_class_install_property
-		(object_class, PROP_TEXT,
-		 g_param_spec_string ("text", "", "",
-		                      NULL,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_STATIC_STRINGS));
-	/**
-	 * NmtNewtLabel:style:
-	 *
-	 * The label's #NmtNewtLabelStyle
-	 */
-	g_object_class_install_property
-		(object_class, PROP_STYLE,
-		 g_param_spec_int ("style", "", "",
-		                   0, G_MAXINT, 0,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_STATIC_STRINGS));
-	/**
-	 * NmtNewtLabel:highlight:
-	 *
-	 * Whether the label is highlighted.
-	 */
-	g_object_class_install_property
-		(object_class, PROP_HIGHLIGHT,
-		 g_param_spec_boolean ("highlight", "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
+    /**
+     * NmtNewtLabel:text:
+     *
+     * The label's text
+     */
+    g_object_class_install_property(
+        object_class,
+        PROP_TEXT,
+        g_param_spec_string("text", "", "", NULL, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+    /**
+     * NmtNewtLabel:style:
+     *
+     * The label's #NmtNewtLabelStyle
+     */
+    g_object_class_install_property(object_class,
+                                    PROP_STYLE,
+                                    g_param_spec_int("style",
+                                                     "",
+                                                     "",
+                                                     0,
+                                                     G_MAXINT,
+                                                     0,
+                                                     G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+    /**
+     * NmtNewtLabel:highlight:
+     *
+     * Whether the label is highlighted.
+     */
+    g_object_class_install_property(
+        object_class,
+        PROP_HIGHLIGHT,
+        g_param_spec_boolean("highlight",
+                             "",
+                             "",
+                             FALSE,
+                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }

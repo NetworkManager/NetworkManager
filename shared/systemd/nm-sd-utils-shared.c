@@ -123,17 +123,17 @@ gboolean
 nm_sd_http_url_is_valid_https (const char *url)
 {
 	/* We use this function to verify connection:mud-url property, it must thus
-	 * not change behavior.
-	 *
-	 * Note that sd_dhcp_client_set_mud_url() and sd_dhcp6_client_set_request_mud_url()
-	 * assert with http_url_is_valid() that the argument is valid. We thus must make
-	 * sure to only pass URLs that are valid according to http_url_is_valid().
-	 *
-	 * This is given, because our nm_sd_http_url_is_valid_https() is more strict
-	 * than http_url_is_valid().
-	 *
-	 * We only must make sure that this is also correct in the future, when we
-	 * re-import systemd code. */
+     * not change behavior.
+     *
+     * Note that sd_dhcp_client_set_mud_url() and sd_dhcp6_client_set_request_mud_url()
+     * assert with http_url_is_valid() that the argument is valid. We thus must make
+     * sure to only pass URLs that are valid according to http_url_is_valid().
+     *
+     * This is given, because our nm_sd_http_url_is_valid_https() is more strict
+     * than http_url_is_valid().
+     *
+     * We only must make sure that this is also correct in the future, when we
+     * re-import systemd code. */
 	nm_assert (_http_url_is_valid (url, FALSE) == http_url_is_valid (url));
 	return _http_url_is_valid (url, TRUE);
 }
@@ -146,11 +146,11 @@ nmtst_systemd_extract_first_word_all (const char *str, char ***out_strv)
 	gs_unref_ptrarray GPtrArray *arr = NULL;
 
 	/* we implement a str split function to parse `/proc/cmdline`. This
-	 * code should behave like systemd, which uses extract_first_word()
-	 * for that.
-	 *
-	 * As we want to unit-test our implementation to match systemd,
-	 * expose this function for testing. */
+     * code should behave like systemd, which uses extract_first_word()
+     * for that.
+     *
+     * As we want to unit-test our implementation to match systemd,
+     * expose this function for testing. */
 
 	g_assert (out_strv);
 	g_assert (!*out_strv);

@@ -10,23 +10,21 @@
 /*****************************************************************************/
 
 struct _NMDhcp4Config {
-	NMDhcpConfig parent;
+    NMDhcpConfig parent;
 };
 
-struct _NMDhcp4ConfigClass{
-	NMDhcpConfigClass parent;
+struct _NMDhcp4ConfigClass {
+    NMDhcpConfigClass parent;
 };
 
-G_DEFINE_TYPE (NMDhcp4Config, nm_dhcp4_config, NM_TYPE_DHCP_CONFIG)
+G_DEFINE_TYPE(NMDhcp4Config, nm_dhcp4_config, NM_TYPE_DHCP_CONFIG)
 
 /*****************************************************************************/
 
 static void
-nm_dhcp4_config_init (NMDhcp4Config *config)
-{
-}
+nm_dhcp4_config_init(NMDhcp4Config *config)
+{}
 
 static void
-nm_dhcp4_config_class_init (NMDhcp4ConfigClass *config_class)
-{
-}
+nm_dhcp4_config_class_init(NMDhcp4ConfigClass *config_class)
+{}
