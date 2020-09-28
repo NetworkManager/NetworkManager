@@ -10,24 +10,28 @@
 
 G_BEGIN_DECLS
 
-#define NM_TYPE_SECRET_AGENT_OLD            (nm_secret_agent_old_get_type ())
-#define NM_SECRET_AGENT_OLD(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SECRET_AGENT_OLD, NMSecretAgentOld))
-#define NM_SECRET_AGENT_OLD_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SECRET_AGENT_OLD, NMSecretAgentOldClass))
-#define NM_IS_SECRET_AGENT_OLD(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SECRET_AGENT_OLD))
-#define NM_IS_SECRET_AGENT_OLD_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_SECRET_AGENT_OLD))
-#define NM_SECRET_AGENT_OLD_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SECRET_AGENT_OLD, NMSecretAgentOldClass))
+#define NM_TYPE_SECRET_AGENT_OLD (nm_secret_agent_old_get_type())
+#define NM_SECRET_AGENT_OLD(obj) \
+    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SECRET_AGENT_OLD, NMSecretAgentOld))
+#define NM_SECRET_AGENT_OLD_CLASS(klass) \
+    (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_SECRET_AGENT_OLD, NMSecretAgentOldClass))
+#define NM_IS_SECRET_AGENT_OLD(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_SECRET_AGENT_OLD))
+#define NM_IS_SECRET_AGENT_OLD_CLASS(klass) \
+    (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_SECRET_AGENT_OLD))
+#define NM_SECRET_AGENT_OLD_GET_CLASS(obj) \
+    (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_SECRET_AGENT_OLD, NMSecretAgentOldClass))
 
-#define NM_SECRET_AGENT_OLD_IDENTIFIER          "identifier"
-#define NM_SECRET_AGENT_OLD_AUTO_REGISTER       "auto-register"
-#define NM_SECRET_AGENT_OLD_REGISTERED          "registered"
-#define NM_SECRET_AGENT_OLD_CAPABILITIES        "capabilities"
-#define NM_SECRET_AGENT_OLD_DBUS_CONNECTION     "dbus-connection"
+#define NM_SECRET_AGENT_OLD_IDENTIFIER      "identifier"
+#define NM_SECRET_AGENT_OLD_AUTO_REGISTER   "auto-register"
+#define NM_SECRET_AGENT_OLD_REGISTERED      "registered"
+#define NM_SECRET_AGENT_OLD_CAPABILITIES    "capabilities"
+#define NM_SECRET_AGENT_OLD_DBUS_CONNECTION "dbus-connection"
 
 /**
  * NMSecretAgentOld:
  */
 typedef struct {
-	GObject parent;
+    GObject parent;
 } NMSecretAgentOld;
 
 /**
@@ -75,11 +79,11 @@ typedef struct {
  *  </programlisting>
  * </example>
  */
-typedef void (*NMSecretAgentOldGetSecretsFunc) (NMSecretAgentOld *agent,
-                                                NMConnection *connection,
-                                                GVariant *secrets,
-                                                GError *error,
-                                                gpointer user_data);
+typedef void (*NMSecretAgentOldGetSecretsFunc)(NMSecretAgentOld *agent,
+                                               NMConnection *    connection,
+                                               GVariant *        secrets,
+                                               GError *          error,
+                                               gpointer          user_data);
 
 /**
  * NMSecretAgentOldSaveSecretsFunc:
@@ -95,10 +99,10 @@ typedef void (*NMSecretAgentOldGetSecretsFunc) (NMSecretAgentOld *agent,
  * #NMSecretAgentOld subclass has finished saving the secrets, this function
  * should be called.
  */
-typedef void (*NMSecretAgentOldSaveSecretsFunc) (NMSecretAgentOld *agent,
-                                                 NMConnection *connection,
-                                                 GError *error,
-                                                 gpointer user_data);
+typedef void (*NMSecretAgentOldSaveSecretsFunc)(NMSecretAgentOld *agent,
+                                                NMConnection *    connection,
+                                                GError *          error,
+                                                gpointer          user_data);
 
 /**
  * NMSecretAgentOldDeleteSecretsFunc:
@@ -114,17 +118,17 @@ typedef void (*NMSecretAgentOldSaveSecretsFunc) (NMSecretAgentOld *agent,
  * #NMSecretAgentOld subclass has finished deleting the secrets, this function
  * should be called.
  */
-typedef void (*NMSecretAgentOldDeleteSecretsFunc) (NMSecretAgentOld *agent,
-                                                   NMConnection *connection,
-                                                   GError *error,
-                                                   gpointer user_data);
+typedef void (*NMSecretAgentOldDeleteSecretsFunc)(NMSecretAgentOld *agent,
+                                                  NMConnection *    connection,
+                                                  GError *          error,
+                                                  gpointer          user_data);
 
 typedef struct {
-	GObjectClass parent;
+    GObjectClass parent;
 
-	/* Virtual methods for subclasses */
+    /* Virtual methods for subclasses */
 
-	/* Called when the subclass should retrieve and return secrets.  Subclass
+    /* Called when the subclass should retrieve and return secrets.  Subclass
 	 * must copy or reference any arguments it may require after returning from
 	 * this method, as the arguments will freed (except for 'self', 'callback',
 	 * and 'user_data' of course).
@@ -134,16 +138,16 @@ typedef struct {
 	 * error. Since 1.24, invoking the callback has no effect during cancellation
 	 * and may be omitted.
 	 */
-	void (*get_secrets) (NMSecretAgentOld *self,
-	                     NMConnection *connection,
-	                     const char *connection_path,
-	                     const char *setting_name,
-	                     const char **hints,
-	                     NMSecretAgentGetSecretsFlags flags,
-	                     NMSecretAgentOldGetSecretsFunc callback,
-	                     gpointer user_data);
+    void (*get_secrets)(NMSecretAgentOld *             self,
+                        NMConnection *                 connection,
+                        const char *                   connection_path,
+                        const char *                   setting_name,
+                        const char **                  hints,
+                        NMSecretAgentGetSecretsFlags   flags,
+                        NMSecretAgentOldGetSecretsFunc callback,
+                        gpointer                       user_data);
 
-	/* Called when the subclass should cancel an outstanding request to
+    /* Called when the subclass should cancel an outstanding request to
 	 * get secrets for a given connection.
 	 *
 	 * Before version 1.24, canceling the request MUST call the callback that was
@@ -151,113 +155,108 @@ typedef struct {
 	 * NM_SECRET_AGENT_ERROR_AGENT_CANCELED error to that callback. Since 1.24,
 	 * the get_secrets callback will be ignored during cancellation and may be omitted.
 	 */
-	void (*cancel_get_secrets) (NMSecretAgentOld *self,
-	                            const char *connection_path,
-	                            const char *setting_name);
+    void (*cancel_get_secrets)(NMSecretAgentOld *self,
+                               const char *      connection_path,
+                               const char *      setting_name);
 
-	/* Called when the subclass should save the secrets contained in the
+    /* Called when the subclass should save the secrets contained in the
 	 * connection to backing storage.  Subclass must copy or reference any
 	 * arguments it may require after returning from this method, as the
 	 * arguments will freed (except for 'self', 'callback', and 'user_data'
 	 * of course).
 	 */
-	void (*save_secrets) (NMSecretAgentOld *self,
-	                      NMConnection *connection,
-	                      const char *connection_path,
-	                      NMSecretAgentOldSaveSecretsFunc callback,
-	                      gpointer user_data);
+    void (*save_secrets)(NMSecretAgentOld *              self,
+                         NMConnection *                  connection,
+                         const char *                    connection_path,
+                         NMSecretAgentOldSaveSecretsFunc callback,
+                         gpointer                        user_data);
 
-	/* Called when the subclass should delete the secrets contained in the
+    /* Called when the subclass should delete the secrets contained in the
 	 * connection from backing storage.  Subclass must copy or reference any
 	 * arguments it may require after returning from this method, as the
 	 * arguments will freed (except for 'self', 'callback', and 'user_data'
 	 * of course).
 	 */
-	void (*delete_secrets) (NMSecretAgentOld *self,
-	                        NMConnection *connection,
-	                        const char *connection_path,
-	                        NMSecretAgentOldDeleteSecretsFunc callback,
-	                        gpointer user_data);
+    void (*delete_secrets)(NMSecretAgentOld *                self,
+                           NMConnection *                    connection,
+                           const char *                      connection_path,
+                           NMSecretAgentOldDeleteSecretsFunc callback,
+                           gpointer                          user_data);
 
-	/*< private >*/
-	gpointer padding[8];
+    /*< private >*/
+    gpointer padding[8];
 } NMSecretAgentOldClass;
 
-GType nm_secret_agent_old_get_type (void);
+GType nm_secret_agent_old_get_type(void);
 
 NM_AVAILABLE_IN_1_24
-GDBusConnection *nm_secret_agent_old_get_dbus_connection (NMSecretAgentOld *self);
+GDBusConnection *nm_secret_agent_old_get_dbus_connection(NMSecretAgentOld *self);
 
 NM_AVAILABLE_IN_1_24
-GMainContext *nm_secret_agent_old_get_main_context (NMSecretAgentOld *self);
+GMainContext *nm_secret_agent_old_get_main_context(NMSecretAgentOld *self);
 
 NM_AVAILABLE_IN_1_24
-GObject *nm_secret_agent_old_get_context_busy_watcher (NMSecretAgentOld *self);
+GObject *nm_secret_agent_old_get_context_busy_watcher(NMSecretAgentOld *self);
 
 NM_AVAILABLE_IN_1_24
-const char *nm_secret_agent_old_get_dbus_name_owner (NMSecretAgentOld *self);
+const char *nm_secret_agent_old_get_dbus_name_owner(NMSecretAgentOld *self);
 
-gboolean nm_secret_agent_old_get_registered (NMSecretAgentOld *self);
+gboolean nm_secret_agent_old_get_registered(NMSecretAgentOld *self);
 
 /*****************************************************************************/
 
 NM_AVAILABLE_IN_1_24
-void nm_secret_agent_old_enable (NMSecretAgentOld *self,
-                                 gboolean enable);
+void nm_secret_agent_old_enable(NMSecretAgentOld *self, gboolean enable);
 
-void     nm_secret_agent_old_register_async  (NMSecretAgentOld *self,
-                                              GCancellable *cancellable,
-                                              GAsyncReadyCallback callback,
-                                              gpointer user_data);
-gboolean nm_secret_agent_old_register_finish (NMSecretAgentOld *self,
-                                              GAsyncResult *result,
-                                              GError **error);
+void nm_secret_agent_old_register_async(NMSecretAgentOld *  self,
+                                        GCancellable *      cancellable,
+                                        GAsyncReadyCallback callback,
+                                        gpointer            user_data);
+gboolean
+nm_secret_agent_old_register_finish(NMSecretAgentOld *self, GAsyncResult *result, GError **error);
 
 NM_AVAILABLE_IN_1_24
-void nm_secret_agent_old_destroy (NMSecretAgentOld *self);
+void nm_secret_agent_old_destroy(NMSecretAgentOld *self);
 
 /*****************************************************************************/
 
-NM_DEPRECATED_IN_1_24_FOR (nm_secret_agent_old_enable)
-gboolean nm_secret_agent_old_register        (NMSecretAgentOld *self,
-                                              GCancellable *cancellable,
-                                              GError **error);
+NM_DEPRECATED_IN_1_24_FOR(nm_secret_agent_old_enable)
+gboolean
+nm_secret_agent_old_register(NMSecretAgentOld *self, GCancellable *cancellable, GError **error);
 
-NM_DEPRECATED_IN_1_24_FOR (nm_secret_agent_old_enable)
-gboolean nm_secret_agent_old_unregister        (NMSecretAgentOld *self,
-                                                GCancellable *cancellable,
-                                                GError **error);
+NM_DEPRECATED_IN_1_24_FOR(nm_secret_agent_old_enable)
+gboolean
+nm_secret_agent_old_unregister(NMSecretAgentOld *self, GCancellable *cancellable, GError **error);
 
-NM_DEPRECATED_IN_1_24_FOR (nm_secret_agent_old_enable)
-void     nm_secret_agent_old_unregister_async  (NMSecretAgentOld *self,
-                                                GCancellable *cancellable,
-                                                GAsyncReadyCallback callback,
-                                                gpointer user_data);
+NM_DEPRECATED_IN_1_24_FOR(nm_secret_agent_old_enable)
+void nm_secret_agent_old_unregister_async(NMSecretAgentOld *  self,
+                                          GCancellable *      cancellable,
+                                          GAsyncReadyCallback callback,
+                                          gpointer            user_data);
 
-NM_DEPRECATED_IN_1_24_FOR (nm_secret_agent_old_enable)
-gboolean nm_secret_agent_old_unregister_finish (NMSecretAgentOld *self,
-                                                GAsyncResult *result,
-                                                GError **error);
+NM_DEPRECATED_IN_1_24_FOR(nm_secret_agent_old_enable)
+gboolean
+nm_secret_agent_old_unregister_finish(NMSecretAgentOld *self, GAsyncResult *result, GError **error);
 
 /*****************************************************************************/
 
-void nm_secret_agent_old_get_secrets (NMSecretAgentOld *self,
-                                      NMConnection *connection,
-                                      const char *setting_name,
-                                      const char **hints,
-                                      NMSecretAgentGetSecretsFlags flags,
-                                      NMSecretAgentOldGetSecretsFunc callback,
-                                      gpointer user_data);
+void nm_secret_agent_old_get_secrets(NMSecretAgentOld *             self,
+                                     NMConnection *                 connection,
+                                     const char *                   setting_name,
+                                     const char **                  hints,
+                                     NMSecretAgentGetSecretsFlags   flags,
+                                     NMSecretAgentOldGetSecretsFunc callback,
+                                     gpointer                       user_data);
 
-void nm_secret_agent_old_save_secrets (NMSecretAgentOld *self,
-                                       NMConnection *connection,
-                                       NMSecretAgentOldSaveSecretsFunc callback,
-                                       gpointer user_data);
+void nm_secret_agent_old_save_secrets(NMSecretAgentOld *              self,
+                                      NMConnection *                  connection,
+                                      NMSecretAgentOldSaveSecretsFunc callback,
+                                      gpointer                        user_data);
 
-void nm_secret_agent_old_delete_secrets (NMSecretAgentOld *self,
-                                         NMConnection *connection,
-                                         NMSecretAgentOldDeleteSecretsFunc callback,
-                                         gpointer user_data);
+void nm_secret_agent_old_delete_secrets(NMSecretAgentOld *                self,
+                                        NMConnection *                    connection,
+                                        NMSecretAgentOldDeleteSecretsFunc callback,
+                                        gpointer                          user_data);
 
 G_END_DECLS
 

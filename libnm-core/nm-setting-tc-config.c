@@ -19,15 +19,15 @@
 
 /*****************************************************************************/
 
-G_DEFINE_BOXED_TYPE (NMTCQdisc, nm_tc_qdisc, nm_tc_qdisc_dup, nm_tc_qdisc_unref)
+G_DEFINE_BOXED_TYPE(NMTCQdisc, nm_tc_qdisc, nm_tc_qdisc_dup, nm_tc_qdisc_unref)
 
 struct NMTCQdisc {
-	guint refcount;
+    guint refcount;
 
-	char *kind;
-	guint32 handle;
-	guint32 parent;
-	GHashTable *attributes;
+    char *      kind;
+    guint32     handle;
+    guint32     parent;
+    GHashTable *attributes;
 };
 
 /**
@@ -43,43 +43,42 @@ struct NMTCQdisc {
  * Since: 1.12
  **/
 NMTCQdisc *
-nm_tc_qdisc_new (const char *kind,
-                 guint32 parent,
-                 GError **error)
+nm_tc_qdisc_new(const char *kind, guint32 parent, GError **error)
 {
-	NMTCQdisc *qdisc;
+    NMTCQdisc *qdisc;
 
-	if (!kind || !*kind) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("kind is missing"));
-		return NULL;
-	}
+    if (!kind || !*kind) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("kind is missing"));
+        return NULL;
+    }
 
-	if (strchr (kind, ' ') || strchr (kind, '\t')) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("'%s' is not a valid kind"), kind);
-		return NULL;
-	}
+    if (strchr(kind, ' ') || strchr(kind, '\t')) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("'%s' is not a valid kind"),
+                    kind);
+        return NULL;
+    }
 
-	if (!parent) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("parent handle missing"));
-		return NULL;
-	}
+    if (!parent) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("parent handle missing"));
+        return NULL;
+    }
 
-	qdisc = g_slice_new0 (NMTCQdisc);
-	qdisc->refcount = 1;
+    qdisc           = g_slice_new0(NMTCQdisc);
+    qdisc->refcount = 1;
 
-	qdisc->kind = g_strdup (kind);
-	qdisc->parent = parent;
+    qdisc->kind   = g_strdup(kind);
+    qdisc->parent = parent;
 
-	return qdisc;
+    return qdisc;
 }
 
 /**
@@ -91,12 +90,12 @@ nm_tc_qdisc_new (const char *kind,
  * Since: 1.12
  **/
 void
-nm_tc_qdisc_ref (NMTCQdisc *qdisc)
+nm_tc_qdisc_ref(NMTCQdisc *qdisc)
 {
-	g_return_if_fail (qdisc != NULL);
-	g_return_if_fail (qdisc->refcount > 0);
+    g_return_if_fail(qdisc != NULL);
+    g_return_if_fail(qdisc->refcount > 0);
 
-	qdisc->refcount++;
+    qdisc->refcount++;
 }
 
 /**
@@ -109,18 +108,18 @@ nm_tc_qdisc_ref (NMTCQdisc *qdisc)
  * Since: 1.12
  **/
 void
-nm_tc_qdisc_unref (NMTCQdisc *qdisc)
+nm_tc_qdisc_unref(NMTCQdisc *qdisc)
 {
-	g_return_if_fail (qdisc != NULL);
-	g_return_if_fail (qdisc->refcount > 0);
+    g_return_if_fail(qdisc != NULL);
+    g_return_if_fail(qdisc->refcount > 0);
 
-	qdisc->refcount--;
-	if (qdisc->refcount == 0) {
-		g_free (qdisc->kind);
-		if (qdisc->attributes)
-			g_hash_table_unref (qdisc->attributes);
-		g_slice_free (NMTCQdisc, qdisc);
-	}
+    qdisc->refcount--;
+    if (qdisc->refcount == 0) {
+        g_free(qdisc->kind);
+        if (qdisc->attributes)
+            g_hash_table_unref(qdisc->attributes);
+        g_slice_free(NMTCQdisc, qdisc);
+    }
 }
 
 /**
@@ -136,73 +135,70 @@ nm_tc_qdisc_unref (NMTCQdisc *qdisc)
  * Since: 1.12
  **/
 gboolean
-nm_tc_qdisc_equal (NMTCQdisc *qdisc, NMTCQdisc *other)
+nm_tc_qdisc_equal(NMTCQdisc *qdisc, NMTCQdisc *other)
 {
-	GHashTableIter iter;
-	const char *key;
-	GVariant *value, *value2;
-	guint n;
+    GHashTableIter iter;
+    const char *   key;
+    GVariant *     value, *value2;
+    guint          n;
 
-	g_return_val_if_fail (qdisc != NULL, FALSE);
-	g_return_val_if_fail (qdisc->refcount > 0, FALSE);
+    g_return_val_if_fail(qdisc != NULL, FALSE);
+    g_return_val_if_fail(qdisc->refcount > 0, FALSE);
 
-	g_return_val_if_fail (other != NULL, FALSE);
-	g_return_val_if_fail (other->refcount > 0, FALSE);
+    g_return_val_if_fail(other != NULL, FALSE);
+    g_return_val_if_fail(other->refcount > 0, FALSE);
 
-	if (   qdisc->handle != other->handle
-	    || qdisc->parent != other->parent
-	    || g_strcmp0 (qdisc->kind, other->kind) != 0)
-		return FALSE;
+    if (qdisc->handle != other->handle || qdisc->parent != other->parent
+        || g_strcmp0(qdisc->kind, other->kind) != 0)
+        return FALSE;
 
-	n = qdisc->attributes ? g_hash_table_size (qdisc->attributes) : 0;
-	if (n != (other->attributes ? g_hash_table_size (other->attributes) : 0))
-		return FALSE;
-	if (n) {
-		g_hash_table_iter_init (&iter, qdisc->attributes);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
-			value2 = g_hash_table_lookup (other->attributes, key);
-			if (!value2)
-				return FALSE;
-			if (!g_variant_equal (value, value2))
-				return FALSE;
-		}
-	}
+    n = qdisc->attributes ? g_hash_table_size(qdisc->attributes) : 0;
+    if (n != (other->attributes ? g_hash_table_size(other->attributes) : 0))
+        return FALSE;
+    if (n) {
+        g_hash_table_iter_init(&iter, qdisc->attributes);
+        while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &value)) {
+            value2 = g_hash_table_lookup(other->attributes, key);
+            if (!value2)
+                return FALSE;
+            if (!g_variant_equal(value, value2))
+                return FALSE;
+        }
+    }
 
-	return TRUE;
+    return TRUE;
 }
 
 static guint
-_nm_tc_qdisc_hash (NMTCQdisc *qdisc)
+_nm_tc_qdisc_hash(NMTCQdisc *qdisc)
 {
-	NMUtilsNamedValue attrs_static[30];
-	gs_free NMUtilsNamedValue *attrs_free = NULL;
-	const NMUtilsNamedValue *attrs;
-	NMHashState h;
-	guint length;
-	guint i;
+    NMUtilsNamedValue attrs_static[30];
+    gs_free NMUtilsNamedValue *attrs_free = NULL;
+    const NMUtilsNamedValue *  attrs;
+    NMHashState                h;
+    guint                      length;
+    guint                      i;
 
-	attrs = nm_utils_named_values_from_strdict (qdisc->attributes, &length, attrs_static, &attrs_free);
+    attrs =
+        nm_utils_named_values_from_strdict(qdisc->attributes, &length, attrs_static, &attrs_free);
 
-	nm_hash_init (&h, 43869703);
-	nm_hash_update_vals (&h,
-	                     qdisc->handle,
-	                     qdisc->parent,
-	                     length);
-	nm_hash_update_str0 (&h, qdisc->kind);
-	for (i = 0; i < length; i++) {
-		const char *key = attrs[i].name;
-		GVariant *variant = attrs[i].value_ptr;
-		const GVariantType *vtype;
+    nm_hash_init(&h, 43869703);
+    nm_hash_update_vals(&h, qdisc->handle, qdisc->parent, length);
+    nm_hash_update_str0(&h, qdisc->kind);
+    for (i = 0; i < length; i++) {
+        const char *        key     = attrs[i].name;
+        GVariant *          variant = attrs[i].value_ptr;
+        const GVariantType *vtype;
 
-		vtype = g_variant_get_type (variant);
+        vtype = g_variant_get_type(variant);
 
-		nm_hash_update_str (&h, key);
-		nm_hash_update_str (&h, (const char *) vtype);
-		if (g_variant_type_is_basic (vtype))
-			nm_hash_update_val (&h, g_variant_hash (variant));
-	}
+        nm_hash_update_str(&h, key);
+        nm_hash_update_str(&h, (const char *) vtype);
+        if (g_variant_type_is_basic(vtype))
+            nm_hash_update_val(&h, g_variant_hash(variant));
+    }
 
-	return nm_hash_complete (&h);
+    return nm_hash_complete(&h);
 }
 
 /**
@@ -216,27 +212,27 @@ _nm_tc_qdisc_hash (NMTCQdisc *qdisc)
  * Since: 1.12
  **/
 NMTCQdisc *
-nm_tc_qdisc_dup (NMTCQdisc *qdisc)
+nm_tc_qdisc_dup(NMTCQdisc *qdisc)
 {
-	NMTCQdisc *copy;
+    NMTCQdisc *copy;
 
-	g_return_val_if_fail (qdisc != NULL, NULL);
-	g_return_val_if_fail (qdisc->refcount > 0, NULL);
+    g_return_val_if_fail(qdisc != NULL, NULL);
+    g_return_val_if_fail(qdisc->refcount > 0, NULL);
 
-	copy = nm_tc_qdisc_new (qdisc->kind, qdisc->parent, NULL);
-	nm_tc_qdisc_set_handle (copy, qdisc->handle);
+    copy = nm_tc_qdisc_new(qdisc->kind, qdisc->parent, NULL);
+    nm_tc_qdisc_set_handle(copy, qdisc->handle);
 
-	if (qdisc->attributes) {
-		GHashTableIter iter;
-		const char *key;
-		GVariant *value;
+    if (qdisc->attributes) {
+        GHashTableIter iter;
+        const char *   key;
+        GVariant *     value;
 
-		g_hash_table_iter_init (&iter, qdisc->attributes);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value))
-			nm_tc_qdisc_set_attribute (copy, key, value);
-	}
+        g_hash_table_iter_init(&iter, qdisc->attributes);
+        while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &value))
+            nm_tc_qdisc_set_attribute(copy, key, value);
+    }
 
-	return copy;
+    return copy;
 }
 
 /**
@@ -248,12 +244,12 @@ nm_tc_qdisc_dup (NMTCQdisc *qdisc)
  * Since: 1.12
  **/
 const char *
-nm_tc_qdisc_get_kind (NMTCQdisc *qdisc)
+nm_tc_qdisc_get_kind(NMTCQdisc *qdisc)
 {
-	g_return_val_if_fail (qdisc != NULL, NULL);
-	g_return_val_if_fail (qdisc->refcount > 0, NULL);
+    g_return_val_if_fail(qdisc != NULL, NULL);
+    g_return_val_if_fail(qdisc->refcount > 0, NULL);
 
-	return qdisc->kind;
+    return qdisc->kind;
 }
 
 /**
@@ -265,12 +261,12 @@ nm_tc_qdisc_get_kind (NMTCQdisc *qdisc)
  * Since: 1.12
  **/
 guint32
-nm_tc_qdisc_get_handle (NMTCQdisc *qdisc)
+nm_tc_qdisc_get_handle(NMTCQdisc *qdisc)
 {
-	g_return_val_if_fail (qdisc != NULL, TC_H_UNSPEC);
-	g_return_val_if_fail (qdisc->refcount > 0, TC_H_UNSPEC);
+    g_return_val_if_fail(qdisc != NULL, TC_H_UNSPEC);
+    g_return_val_if_fail(qdisc->refcount > 0, TC_H_UNSPEC);
 
-	return qdisc->handle;
+    return qdisc->handle;
 }
 
 /**
@@ -283,12 +279,12 @@ nm_tc_qdisc_get_handle (NMTCQdisc *qdisc)
  * Since: 1.12
  **/
 void
-nm_tc_qdisc_set_handle (NMTCQdisc *qdisc, guint32 handle)
+nm_tc_qdisc_set_handle(NMTCQdisc *qdisc, guint32 handle)
 {
-	g_return_if_fail (qdisc != NULL);
-	g_return_if_fail (qdisc->refcount > 0);
+    g_return_if_fail(qdisc != NULL);
+    g_return_if_fail(qdisc->refcount > 0);
 
-	qdisc->handle = handle;
+    qdisc->handle = handle;
 }
 
 /**
@@ -300,12 +296,12 @@ nm_tc_qdisc_set_handle (NMTCQdisc *qdisc, guint32 handle)
  * Since: 1.12
  **/
 guint32
-nm_tc_qdisc_get_parent (NMTCQdisc *qdisc)
+nm_tc_qdisc_get_parent(NMTCQdisc *qdisc)
 {
-	g_return_val_if_fail (qdisc != NULL, TC_H_UNSPEC);
-	g_return_val_if_fail (qdisc->refcount > 0, TC_H_UNSPEC);
+    g_return_val_if_fail(qdisc != NULL, TC_H_UNSPEC);
+    g_return_val_if_fail(qdisc->refcount > 0, TC_H_UNSPEC);
 
-	return qdisc->parent;
+    return qdisc->parent;
 }
 
 /**
@@ -320,19 +316,19 @@ nm_tc_qdisc_get_parent (NMTCQdisc *qdisc)
  * Since: 1.18
  **/
 const char **
-nm_tc_qdisc_get_attribute_names (NMTCQdisc *qdisc)
+nm_tc_qdisc_get_attribute_names(NMTCQdisc *qdisc)
 {
-	g_return_val_if_fail (qdisc, NULL);
+    g_return_val_if_fail(qdisc, NULL);
 
-	return nm_utils_strdict_get_keys (qdisc->attributes, TRUE, NULL);
+    return nm_utils_strdict_get_keys(qdisc->attributes, TRUE, NULL);
 }
 
 GHashTable *
-_nm_tc_qdisc_get_attributes (NMTCQdisc *qdisc)
+_nm_tc_qdisc_get_attributes(NMTCQdisc *qdisc)
 {
-	nm_assert (qdisc);
+    nm_assert(qdisc);
 
-	return qdisc->attributes;
+    return qdisc->attributes;
 }
 
 /**
@@ -348,15 +344,15 @@ _nm_tc_qdisc_get_attributes (NMTCQdisc *qdisc)
  * Since: 1.18
  **/
 GVariant *
-nm_tc_qdisc_get_attribute (NMTCQdisc *qdisc, const char *name)
+nm_tc_qdisc_get_attribute(NMTCQdisc *qdisc, const char *name)
 {
-	g_return_val_if_fail (qdisc != NULL, NULL);
-	g_return_val_if_fail (name != NULL && *name != '\0', NULL);
+    g_return_val_if_fail(qdisc != NULL, NULL);
+    g_return_val_if_fail(name != NULL && *name != '\0', NULL);
 
-	if (qdisc->attributes)
-		return g_hash_table_lookup (qdisc->attributes, name);
-	else
-		return NULL;
+    if (qdisc->attributes)
+        return g_hash_table_lookup(qdisc->attributes, name);
+    else
+        return NULL;
 }
 
 /**
@@ -370,33 +366,35 @@ nm_tc_qdisc_get_attribute (NMTCQdisc *qdisc, const char *name)
  * Since: 1.18
  **/
 void
-nm_tc_qdisc_set_attribute (NMTCQdisc *qdisc, const char *name, GVariant *value)
+nm_tc_qdisc_set_attribute(NMTCQdisc *qdisc, const char *name, GVariant *value)
 {
-	g_return_if_fail (qdisc != NULL);
-	g_return_if_fail (name != NULL && *name != '\0');
-	g_return_if_fail (strcmp (name, "kind") != 0);
+    g_return_if_fail(qdisc != NULL);
+    g_return_if_fail(name != NULL && *name != '\0');
+    g_return_if_fail(strcmp(name, "kind") != 0);
 
-	if (!qdisc->attributes) {
-		qdisc->attributes = g_hash_table_new_full (nm_str_hash, g_str_equal,
-		                                           g_free, (GDestroyNotify) g_variant_unref);
-	}
+    if (!qdisc->attributes) {
+        qdisc->attributes = g_hash_table_new_full(nm_str_hash,
+                                                  g_str_equal,
+                                                  g_free,
+                                                  (GDestroyNotify) g_variant_unref);
+    }
 
-	if (value)
-		g_hash_table_insert (qdisc->attributes, g_strdup (name), g_variant_ref_sink (value));
-	else
-		g_hash_table_remove (qdisc->attributes, name);
+    if (value)
+        g_hash_table_insert(qdisc->attributes, g_strdup(name), g_variant_ref_sink(value));
+    else
+        g_hash_table_remove(qdisc->attributes, name);
 }
 
 /*****************************************************************************/
 
-G_DEFINE_BOXED_TYPE (NMTCAction, nm_tc_action, nm_tc_action_dup, nm_tc_action_unref)
+G_DEFINE_BOXED_TYPE(NMTCAction, nm_tc_action, nm_tc_action_dup, nm_tc_action_unref)
 
 struct NMTCAction {
-	guint refcount;
+    guint refcount;
 
-	char *kind;
+    char *kind;
 
-	GHashTable *attributes;
+    GHashTable *attributes;
 };
 
 /**
@@ -411,33 +409,33 @@ struct NMTCAction {
  * Since: 1.12
  **/
 NMTCAction *
-nm_tc_action_new (const char *kind,
-                  GError **error)
+nm_tc_action_new(const char *kind, GError **error)
 {
-	NMTCAction *action;
+    NMTCAction *action;
 
-	if (!kind || !*kind) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("kind is missing"));
-		return NULL;
-	}
+    if (!kind || !*kind) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("kind is missing"));
+        return NULL;
+    }
 
-	if (strchr (kind, ' ') || strchr (kind, '\t')) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("'%s' is not a valid kind"), kind);
-		return NULL;
-	}
+    if (strchr(kind, ' ') || strchr(kind, '\t')) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("'%s' is not a valid kind"),
+                    kind);
+        return NULL;
+    }
 
-	action = g_slice_new0 (NMTCAction);
-	action->refcount = 1;
+    action           = g_slice_new0(NMTCAction);
+    action->refcount = 1;
 
-	action->kind = g_strdup (kind);
+    action->kind = g_strdup(kind);
 
-	return action;
+    return action;
 }
 
 /**
@@ -449,12 +447,12 @@ nm_tc_action_new (const char *kind,
  * Since: 1.12
  **/
 void
-nm_tc_action_ref (NMTCAction *action)
+nm_tc_action_ref(NMTCAction *action)
 {
-	g_return_if_fail (action != NULL);
-	g_return_if_fail (action->refcount > 0);
+    g_return_if_fail(action != NULL);
+    g_return_if_fail(action->refcount > 0);
 
-	action->refcount++;
+    action->refcount++;
 }
 
 /**
@@ -467,18 +465,18 @@ nm_tc_action_ref (NMTCAction *action)
  * Since: 1.12
  **/
 void
-nm_tc_action_unref (NMTCAction *action)
+nm_tc_action_unref(NMTCAction *action)
 {
-	g_return_if_fail (action != NULL);
-	g_return_if_fail (action->refcount > 0);
+    g_return_if_fail(action != NULL);
+    g_return_if_fail(action->refcount > 0);
 
-	action->refcount--;
-	if (action->refcount == 0) {
-		g_free (action->kind);
-		if (action->attributes)
-			g_hash_table_unref (action->attributes);
-		g_slice_free (NMTCAction, action);
-	}
+    action->refcount--;
+    if (action->refcount == 0) {
+        g_free(action->kind);
+        if (action->attributes)
+            g_hash_table_unref(action->attributes);
+        g_slice_free(NMTCAction, action);
+    }
 }
 
 /**
@@ -494,39 +492,39 @@ nm_tc_action_unref (NMTCAction *action)
  * Since: 1.12
  **/
 gboolean
-nm_tc_action_equal (NMTCAction *action, NMTCAction *other)
+nm_tc_action_equal(NMTCAction *action, NMTCAction *other)
 {
-	GHashTableIter iter;
-	const char *key;
-	GVariant *value, *value2;
-	guint n;
+    GHashTableIter iter;
+    const char *   key;
+    GVariant *     value, *value2;
+    guint          n;
 
-	g_return_val_if_fail (!action || action->refcount > 0, FALSE);
-	g_return_val_if_fail (!other || other->refcount > 0, FALSE);
+    g_return_val_if_fail(!action || action->refcount > 0, FALSE);
+    g_return_val_if_fail(!other || other->refcount > 0, FALSE);
 
-	if (action == other)
-		return TRUE;
-	if (!action || !other)
-		return FALSE;
+    if (action == other)
+        return TRUE;
+    if (!action || !other)
+        return FALSE;
 
-	if (g_strcmp0 (action->kind, other->kind) != 0)
-		return FALSE;
+    if (g_strcmp0(action->kind, other->kind) != 0)
+        return FALSE;
 
-	n = action->attributes ? g_hash_table_size (action->attributes) : 0;
-	if (n != (other->attributes ? g_hash_table_size (other->attributes) : 0))
-		return FALSE;
-	if (n) {
-		g_hash_table_iter_init (&iter, action->attributes);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
-			value2 = g_hash_table_lookup (other->attributes, key);
-			if (!value2)
-				return FALSE;
-			if (!g_variant_equal (value, value2))
-				return FALSE;
-		}
-	}
+    n = action->attributes ? g_hash_table_size(action->attributes) : 0;
+    if (n != (other->attributes ? g_hash_table_size(other->attributes) : 0))
+        return FALSE;
+    if (n) {
+        g_hash_table_iter_init(&iter, action->attributes);
+        while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &value)) {
+            value2 = g_hash_table_lookup(other->attributes, key);
+            if (!value2)
+                return FALSE;
+            if (!g_variant_equal(value, value2))
+                return FALSE;
+        }
+    }
 
-	return TRUE;
+    return TRUE;
 }
 
 /**
@@ -540,26 +538,26 @@ nm_tc_action_equal (NMTCAction *action, NMTCAction *other)
  * Since: 1.12
  **/
 NMTCAction *
-nm_tc_action_dup (NMTCAction *action)
+nm_tc_action_dup(NMTCAction *action)
 {
-	NMTCAction *copy;
+    NMTCAction *copy;
 
-	g_return_val_if_fail (action != NULL, NULL);
-	g_return_val_if_fail (action->refcount > 0, NULL);
+    g_return_val_if_fail(action != NULL, NULL);
+    g_return_val_if_fail(action->refcount > 0, NULL);
 
-	copy = nm_tc_action_new (action->kind, NULL);
+    copy = nm_tc_action_new(action->kind, NULL);
 
-	if (action->attributes) {
-		GHashTableIter iter;
-		const char *key;
-		GVariant *value;
+    if (action->attributes) {
+        GHashTableIter iter;
+        const char *   key;
+        GVariant *     value;
 
-		g_hash_table_iter_init (&iter, action->attributes);
-		while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value))
-			nm_tc_action_set_attribute (copy, key, value);
-	}
+        g_hash_table_iter_init(&iter, action->attributes);
+        while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &value))
+            nm_tc_action_set_attribute(copy, key, value);
+    }
 
-	return copy;
+    return copy;
 }
 
 /**
@@ -571,12 +569,12 @@ nm_tc_action_dup (NMTCAction *action)
  * Since: 1.12
  **/
 const char *
-nm_tc_action_get_kind (NMTCAction *action)
+nm_tc_action_get_kind(NMTCAction *action)
 {
-	g_return_val_if_fail (action != NULL, NULL);
-	g_return_val_if_fail (action->refcount > 0, NULL);
+    g_return_val_if_fail(action != NULL, NULL);
+    g_return_val_if_fail(action->refcount > 0, NULL);
 
-	return action->kind;
+    return action->kind;
 }
 
 /**
@@ -590,22 +588,22 @@ nm_tc_action_get_kind (NMTCAction *action)
  * Since: 1.12
  **/
 char **
-nm_tc_action_get_attribute_names (NMTCAction *action)
+nm_tc_action_get_attribute_names(NMTCAction *action)
 {
-	const char **names;
+    const char **names;
 
-	g_return_val_if_fail (action, NULL);
+    g_return_val_if_fail(action, NULL);
 
-	names = nm_utils_strdict_get_keys (action->attributes, TRUE, NULL);
-	return nm_utils_strv_make_deep_copied_nonnull (names);
+    names = nm_utils_strdict_get_keys(action->attributes, TRUE, NULL);
+    return nm_utils_strv_make_deep_copied_nonnull(names);
 }
 
 GHashTable *
-_nm_tc_action_get_attributes (NMTCAction *action)
+_nm_tc_action_get_attributes(NMTCAction *action)
 {
-	nm_assert (action);
+    nm_assert(action);
 
-	return action->attributes;
+    return action->attributes;
 }
 
 /**
@@ -621,15 +619,15 @@ _nm_tc_action_get_attributes (NMTCAction *action)
  * Since: 1.12
  **/
 GVariant *
-nm_tc_action_get_attribute (NMTCAction *action, const char *name)
+nm_tc_action_get_attribute(NMTCAction *action, const char *name)
 {
-	g_return_val_if_fail (action != NULL, NULL);
-	g_return_val_if_fail (name != NULL && *name != '\0', NULL);
+    g_return_val_if_fail(action != NULL, NULL);
+    g_return_val_if_fail(name != NULL && *name != '\0', NULL);
 
-	if (action->attributes)
-		return g_hash_table_lookup (action->attributes, name);
-	else
-		return NULL;
+    if (action->attributes)
+        return g_hash_table_lookup(action->attributes, name);
+    else
+        return NULL;
 }
 
 /**
@@ -643,34 +641,36 @@ nm_tc_action_get_attribute (NMTCAction *action, const char *name)
  * Since: 1.12
  **/
 void
-nm_tc_action_set_attribute (NMTCAction *action, const char *name, GVariant *value)
+nm_tc_action_set_attribute(NMTCAction *action, const char *name, GVariant *value)
 {
-	g_return_if_fail (action != NULL);
-	g_return_if_fail (name != NULL && *name != '\0');
-	g_return_if_fail (strcmp (name, "kind") != 0);
+    g_return_if_fail(action != NULL);
+    g_return_if_fail(name != NULL && *name != '\0');
+    g_return_if_fail(strcmp(name, "kind") != 0);
 
-	if (!action->attributes) {
-		action->attributes = g_hash_table_new_full (nm_str_hash, g_str_equal,
-		                                             g_free, (GDestroyNotify) g_variant_unref);
-	}
+    if (!action->attributes) {
+        action->attributes = g_hash_table_new_full(nm_str_hash,
+                                                   g_str_equal,
+                                                   g_free,
+                                                   (GDestroyNotify) g_variant_unref);
+    }
 
-	if (value)
-		g_hash_table_insert (action->attributes, g_strdup (name), g_variant_ref_sink (value));
-	else
-		g_hash_table_remove (action->attributes, name);
+    if (value)
+        g_hash_table_insert(action->attributes, g_strdup(name), g_variant_ref_sink(value));
+    else
+        g_hash_table_remove(action->attributes, name);
 }
 
 /*****************************************************************************/
 
-G_DEFINE_BOXED_TYPE (NMTCTfilter, nm_tc_tfilter, nm_tc_tfilter_dup, nm_tc_tfilter_unref)
+G_DEFINE_BOXED_TYPE(NMTCTfilter, nm_tc_tfilter, nm_tc_tfilter_dup, nm_tc_tfilter_unref)
 
 struct NMTCTfilter {
-	guint refcount;
+    guint refcount;
 
-	char *kind;
-	guint32 handle;
-	guint32 parent;
-	NMTCAction *action;
+    char *      kind;
+    guint32     handle;
+    guint32     parent;
+    NMTCAction *action;
 };
 
 /**
@@ -686,43 +686,42 @@ struct NMTCTfilter {
  * Since: 1.12
  **/
 NMTCTfilter *
-nm_tc_tfilter_new (const char *kind,
-                   guint32 parent,
-                   GError **error)
+nm_tc_tfilter_new(const char *kind, guint32 parent, GError **error)
 {
-	NMTCTfilter *tfilter;
+    NMTCTfilter *tfilter;
 
-	if (!kind || !*kind) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("kind is missing"));
-		return NULL;
-	}
+    if (!kind || !*kind) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("kind is missing"));
+        return NULL;
+    }
 
-	if (strchr (kind, ' ') || strchr (kind, '\t')) {
-		g_set_error (error,
-		             NM_CONNECTION_ERROR,
-		             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		             _("'%s' is not a valid kind"), kind);
-		return NULL;
-	}
+    if (strchr(kind, ' ') || strchr(kind, '\t')) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("'%s' is not a valid kind"),
+                    kind);
+        return NULL;
+    }
 
-	if (!parent) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("parent handle missing"));
-		return NULL;
-	}
+    if (!parent) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("parent handle missing"));
+        return NULL;
+    }
 
-	tfilter = g_slice_new0 (NMTCTfilter);
-	tfilter->refcount = 1;
+    tfilter           = g_slice_new0(NMTCTfilter);
+    tfilter->refcount = 1;
 
-	tfilter->kind = g_strdup (kind);
-	tfilter->parent = parent;
+    tfilter->kind   = g_strdup(kind);
+    tfilter->parent = parent;
 
-	return tfilter;
+    return tfilter;
 }
 
 /**
@@ -734,12 +733,12 @@ nm_tc_tfilter_new (const char *kind,
  * Since: 1.12
  **/
 void
-nm_tc_tfilter_ref (NMTCTfilter *tfilter)
+nm_tc_tfilter_ref(NMTCTfilter *tfilter)
 {
-	g_return_if_fail (tfilter != NULL);
-	g_return_if_fail (tfilter->refcount > 0);
+    g_return_if_fail(tfilter != NULL);
+    g_return_if_fail(tfilter->refcount > 0);
 
-	tfilter->refcount++;
+    tfilter->refcount++;
 }
 
 /**
@@ -752,18 +751,18 @@ nm_tc_tfilter_ref (NMTCTfilter *tfilter)
  * Since: 1.12
  **/
 void
-nm_tc_tfilter_unref (NMTCTfilter *tfilter)
+nm_tc_tfilter_unref(NMTCTfilter *tfilter)
 {
-	g_return_if_fail (tfilter != NULL);
-	g_return_if_fail (tfilter->refcount > 0);
+    g_return_if_fail(tfilter != NULL);
+    g_return_if_fail(tfilter->refcount > 0);
 
-	tfilter->refcount--;
-	if (tfilter->refcount == 0) {
-		g_free (tfilter->kind);
-		if (tfilter->action)
-			nm_tc_action_unref (tfilter->action);
-		g_slice_free (NMTCTfilter, tfilter);
-	}
+    tfilter->refcount--;
+    if (tfilter->refcount == 0) {
+        g_free(tfilter->kind);
+        if (tfilter->action)
+            nm_tc_action_unref(tfilter->action);
+        g_slice_free(NMTCTfilter, tfilter);
+    }
 }
 
 /**
@@ -779,61 +778,61 @@ nm_tc_tfilter_unref (NMTCTfilter *tfilter)
  * Since: 1.12
  **/
 gboolean
-nm_tc_tfilter_equal (NMTCTfilter *tfilter, NMTCTfilter *other)
+nm_tc_tfilter_equal(NMTCTfilter *tfilter, NMTCTfilter *other)
 {
-	g_return_val_if_fail (tfilter != NULL, FALSE);
-	g_return_val_if_fail (tfilter->refcount > 0, FALSE);
+    g_return_val_if_fail(tfilter != NULL, FALSE);
+    g_return_val_if_fail(tfilter->refcount > 0, FALSE);
 
-	g_return_val_if_fail (other != NULL, FALSE);
-	g_return_val_if_fail (other->refcount > 0, FALSE);
+    g_return_val_if_fail(other != NULL, FALSE);
+    g_return_val_if_fail(other->refcount > 0, FALSE);
 
-	if (   tfilter->handle != other->handle
-	    || tfilter->parent != other->parent
-	    || g_strcmp0 (tfilter->kind, other->kind) != 0
-	    || !nm_tc_action_equal (tfilter->action, other->action))
-		return FALSE;
+    if (tfilter->handle != other->handle || tfilter->parent != other->parent
+        || g_strcmp0(tfilter->kind, other->kind) != 0
+        || !nm_tc_action_equal(tfilter->action, other->action))
+        return FALSE;
 
-	return TRUE;
+    return TRUE;
 }
 
 static guint
-_nm_tc_tfilter_hash (NMTCTfilter *tfilter)
+_nm_tc_tfilter_hash(NMTCTfilter *tfilter)
 {
-	NMHashState h;
+    NMHashState h;
 
-	nm_hash_init (&h, 63624437);
-	nm_hash_update_vals (&h,
-	                     tfilter->handle,
-	                     tfilter->parent);
-	nm_hash_update_str0 (&h, tfilter->kind);
+    nm_hash_init(&h, 63624437);
+    nm_hash_update_vals(&h, tfilter->handle, tfilter->parent);
+    nm_hash_update_str0(&h, tfilter->kind);
 
-	if (tfilter->action) {
-		gs_free NMUtilsNamedValue *attrs_free = NULL;
-		NMUtilsNamedValue attrs_static[30];
-		const NMUtilsNamedValue *attrs;
-		guint length;
-		guint i;
+    if (tfilter->action) {
+        gs_free NMUtilsNamedValue *attrs_free = NULL;
+        NMUtilsNamedValue          attrs_static[30];
+        const NMUtilsNamedValue *  attrs;
+        guint                      length;
+        guint                      i;
 
-		nm_hash_update_str0 (&h, tfilter->action->kind);
+        nm_hash_update_str0(&h, tfilter->action->kind);
 
-		attrs = nm_utils_named_values_from_strdict (tfilter->action->attributes, &length, attrs_static, &attrs_free);
-		for (i = 0; i < length; i++) {
-			GVariant *variant = attrs[i].value_ptr;
+        attrs = nm_utils_named_values_from_strdict(tfilter->action->attributes,
+                                                   &length,
+                                                   attrs_static,
+                                                   &attrs_free);
+        for (i = 0; i < length; i++) {
+            GVariant *variant = attrs[i].value_ptr;
 
-			nm_hash_update_str (&h, attrs[i].name);
-			if (g_variant_type_is_basic (g_variant_get_type (variant))) {
-				guint attr_hash;
+            nm_hash_update_str(&h, attrs[i].name);
+            if (g_variant_type_is_basic(g_variant_get_type(variant))) {
+                guint attr_hash;
 
-				/* g_variant_hash() works only for basic types, thus
+                /* g_variant_hash() works only for basic types, thus
 				 * we ignore any non-basic attribute. Actions differing
 				 * only for non-basic attributes will collide. */
-				attr_hash = g_variant_hash (variant);
-				nm_hash_update_val (&h, attr_hash);
-			}
-		}
-	}
+                attr_hash = g_variant_hash(variant);
+                nm_hash_update_val(&h, attr_hash);
+            }
+        }
+    }
 
-	return nm_hash_complete (&h);
+    return nm_hash_complete(&h);
 }
 
 /**
@@ -847,18 +846,18 @@ _nm_tc_tfilter_hash (NMTCTfilter *tfilter)
  * Since: 1.12
  **/
 NMTCTfilter *
-nm_tc_tfilter_dup (NMTCTfilter *tfilter)
+nm_tc_tfilter_dup(NMTCTfilter *tfilter)
 {
-	NMTCTfilter *copy;
+    NMTCTfilter *copy;
 
-	g_return_val_if_fail (tfilter != NULL, NULL);
-	g_return_val_if_fail (tfilter->refcount > 0, NULL);
+    g_return_val_if_fail(tfilter != NULL, NULL);
+    g_return_val_if_fail(tfilter->refcount > 0, NULL);
 
-	copy = nm_tc_tfilter_new (tfilter->kind, tfilter->parent, NULL);
-	nm_tc_tfilter_set_handle (copy, tfilter->handle);
-	nm_tc_tfilter_set_action (copy, tfilter->action);
+    copy = nm_tc_tfilter_new(tfilter->kind, tfilter->parent, NULL);
+    nm_tc_tfilter_set_handle(copy, tfilter->handle);
+    nm_tc_tfilter_set_action(copy, tfilter->action);
 
-	return copy;
+    return copy;
 }
 
 /**
@@ -870,12 +869,12 @@ nm_tc_tfilter_dup (NMTCTfilter *tfilter)
  * Since: 1.12
  **/
 const char *
-nm_tc_tfilter_get_kind (NMTCTfilter *tfilter)
+nm_tc_tfilter_get_kind(NMTCTfilter *tfilter)
 {
-	g_return_val_if_fail (tfilter != NULL, NULL);
-	g_return_val_if_fail (tfilter->refcount > 0, NULL);
+    g_return_val_if_fail(tfilter != NULL, NULL);
+    g_return_val_if_fail(tfilter->refcount > 0, NULL);
 
-	return tfilter->kind;
+    return tfilter->kind;
 }
 
 /**
@@ -887,12 +886,12 @@ nm_tc_tfilter_get_kind (NMTCTfilter *tfilter)
  * Since: 1.12
  **/
 guint32
-nm_tc_tfilter_get_handle (NMTCTfilter *tfilter)
+nm_tc_tfilter_get_handle(NMTCTfilter *tfilter)
 {
-	g_return_val_if_fail (tfilter != NULL, TC_H_UNSPEC);
-	g_return_val_if_fail (tfilter->refcount > 0, TC_H_UNSPEC);
+    g_return_val_if_fail(tfilter != NULL, TC_H_UNSPEC);
+    g_return_val_if_fail(tfilter->refcount > 0, TC_H_UNSPEC);
 
-	return tfilter->handle;
+    return tfilter->handle;
 }
 
 /**
@@ -905,12 +904,12 @@ nm_tc_tfilter_get_handle (NMTCTfilter *tfilter)
  * Since: 1.12
  **/
 void
-nm_tc_tfilter_set_handle (NMTCTfilter *tfilter, guint32 handle)
+nm_tc_tfilter_set_handle(NMTCTfilter *tfilter, guint32 handle)
 {
-	g_return_if_fail (tfilter != NULL);
-	g_return_if_fail (tfilter->refcount > 0);
+    g_return_if_fail(tfilter != NULL);
+    g_return_if_fail(tfilter->refcount > 0);
 
-	tfilter->handle = handle;
+    tfilter->handle = handle;
 }
 
 /**
@@ -922,12 +921,12 @@ nm_tc_tfilter_set_handle (NMTCTfilter *tfilter, guint32 handle)
  * Since: 1.12
  **/
 guint32
-nm_tc_tfilter_get_parent (NMTCTfilter *tfilter)
+nm_tc_tfilter_get_parent(NMTCTfilter *tfilter)
 {
-	g_return_val_if_fail (tfilter != NULL, TC_H_UNSPEC);
-	g_return_val_if_fail (tfilter->refcount > 0, TC_H_UNSPEC);
+    g_return_val_if_fail(tfilter != NULL, TC_H_UNSPEC);
+    g_return_val_if_fail(tfilter->refcount > 0, TC_H_UNSPEC);
 
-	return tfilter->parent;
+    return tfilter->parent;
 }
 
 /**
@@ -939,15 +938,15 @@ nm_tc_tfilter_get_parent (NMTCTfilter *tfilter)
  * Since: 1.12
  **/
 NMTCAction *
-nm_tc_tfilter_get_action (NMTCTfilter *tfilter)
+nm_tc_tfilter_get_action(NMTCTfilter *tfilter)
 {
-	g_return_val_if_fail (tfilter != NULL, TC_H_UNSPEC);
-	g_return_val_if_fail (tfilter->refcount > 0, TC_H_UNSPEC);
+    g_return_val_if_fail(tfilter != NULL, TC_H_UNSPEC);
+    g_return_val_if_fail(tfilter->refcount > 0, TC_H_UNSPEC);
 
-	if (tfilter->action == NULL)
-		return NULL;
+    if (tfilter->action == NULL)
+        return NULL;
 
-	return tfilter->action;
+    return tfilter->action;
 }
 
 /**
@@ -960,24 +959,21 @@ nm_tc_tfilter_get_action (NMTCTfilter *tfilter)
  * Since: 1.12
  **/
 void
-nm_tc_tfilter_set_action (NMTCTfilter *tfilter, NMTCAction *action)
+nm_tc_tfilter_set_action(NMTCTfilter *tfilter, NMTCAction *action)
 {
-	g_return_if_fail (tfilter != NULL);
-	g_return_if_fail (tfilter->refcount > 0);
+    g_return_if_fail(tfilter != NULL);
+    g_return_if_fail(tfilter->refcount > 0);
 
-	if (action)
-		nm_tc_action_ref (action);
-	if (tfilter->action)
-		nm_tc_action_unref (tfilter->action);
-	tfilter->action = action;
+    if (action)
+        nm_tc_action_ref(action);
+    if (tfilter->action)
+        nm_tc_action_unref(tfilter->action);
+    tfilter->action = action;
 }
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE (NMSettingTCConfig,
-	PROP_QDISCS,
-	PROP_TFILTERS,
-);
+NM_GOBJECT_PROPERTIES_DEFINE(NMSettingTCConfig, PROP_QDISCS, PROP_TFILTERS, );
 
 /**
  * NMSettingTCConfig:
@@ -987,16 +983,16 @@ NM_GOBJECT_PROPERTIES_DEFINE (NMSettingTCConfig,
  * Since: 1.12
  */
 struct _NMSettingTCConfig {
-	NMSetting parent;
-	GPtrArray *qdiscs;
-	GPtrArray *tfilters;
+    NMSetting  parent;
+    GPtrArray *qdiscs;
+    GPtrArray *tfilters;
 };
 
 struct _NMSettingTCConfigClass {
-	NMSettingClass parent;
+    NMSettingClass parent;
 };
 
-G_DEFINE_TYPE (NMSettingTCConfig, nm_setting_tc_config, NM_TYPE_SETTING)
+G_DEFINE_TYPE(NMSettingTCConfig, nm_setting_tc_config, NM_TYPE_SETTING)
 
 /*****************************************************************************/
 
@@ -1009,11 +1005,11 @@ G_DEFINE_TYPE (NMSettingTCConfig, nm_setting_tc_config, NM_TYPE_SETTING)
  * Since: 1.12
  **/
 guint
-nm_setting_tc_config_get_num_qdiscs (NMSettingTCConfig *self)
+nm_setting_tc_config_get_num_qdiscs(NMSettingTCConfig *self)
 {
-	g_return_val_if_fail (NM_IS_SETTING_TC_CONFIG (self), 0);
+    g_return_val_if_fail(NM_IS_SETTING_TC_CONFIG(self), 0);
 
-	return self->qdiscs->len;
+    return self->qdiscs->len;
 }
 
 /**
@@ -1026,12 +1022,12 @@ nm_setting_tc_config_get_num_qdiscs (NMSettingTCConfig *self)
  * Since: 1.12
  **/
 NMTCQdisc *
-nm_setting_tc_config_get_qdisc (NMSettingTCConfig *self, guint idx)
+nm_setting_tc_config_get_qdisc(NMSettingTCConfig *self, guint idx)
 {
-	g_return_val_if_fail (NM_IS_SETTING_TC_CONFIG (self), NULL);
-	g_return_val_if_fail (idx < self->qdiscs->len, NULL);
+    g_return_val_if_fail(NM_IS_SETTING_TC_CONFIG(self), NULL);
+    g_return_val_if_fail(idx < self->qdiscs->len, NULL);
 
-	return self->qdiscs->pdata[idx];
+    return self->qdiscs->pdata[idx];
 }
 
 /**
@@ -1049,22 +1045,21 @@ nm_setting_tc_config_get_qdisc (NMSettingTCConfig *self, guint idx)
  * Since: 1.12
  **/
 gboolean
-nm_setting_tc_config_add_qdisc (NMSettingTCConfig *self,
-                                NMTCQdisc *qdisc)
+nm_setting_tc_config_add_qdisc(NMSettingTCConfig *self, NMTCQdisc *qdisc)
 {
-	guint i;
+    guint i;
 
-	g_return_val_if_fail (NM_IS_SETTING_TC_CONFIG (self), FALSE);
-	g_return_val_if_fail (qdisc != NULL, FALSE);
+    g_return_val_if_fail(NM_IS_SETTING_TC_CONFIG(self), FALSE);
+    g_return_val_if_fail(qdisc != NULL, FALSE);
 
-	for (i = 0; i < self->qdiscs->len; i++) {
-		if (nm_tc_qdisc_equal (self->qdiscs->pdata[i], qdisc))
-			return FALSE;
-	}
+    for (i = 0; i < self->qdiscs->len; i++) {
+        if (nm_tc_qdisc_equal(self->qdiscs->pdata[i], qdisc))
+            return FALSE;
+    }
 
-	g_ptr_array_add (self->qdiscs, nm_tc_qdisc_dup (qdisc));
-	_notify (self, PROP_QDISCS);
-	return TRUE;
+    g_ptr_array_add(self->qdiscs, nm_tc_qdisc_dup(qdisc));
+    _notify(self, PROP_QDISCS);
+    return TRUE;
 }
 
 /**
@@ -1077,14 +1072,14 @@ nm_setting_tc_config_add_qdisc (NMSettingTCConfig *self,
  * Since: 1.12
  **/
 void
-nm_setting_tc_config_remove_qdisc (NMSettingTCConfig *self, guint idx)
+nm_setting_tc_config_remove_qdisc(NMSettingTCConfig *self, guint idx)
 {
-	g_return_if_fail (NM_IS_SETTING_TC_CONFIG (self));
+    g_return_if_fail(NM_IS_SETTING_TC_CONFIG(self));
 
-	g_return_if_fail (idx < self->qdiscs->len);
+    g_return_if_fail(idx < self->qdiscs->len);
 
-	g_ptr_array_remove_index (self->qdiscs, idx);
-	_notify (self, PROP_QDISCS);
+    g_ptr_array_remove_index(self->qdiscs, idx);
+    _notify(self, PROP_QDISCS);
 }
 
 /**
@@ -1099,22 +1094,21 @@ nm_setting_tc_config_remove_qdisc (NMSettingTCConfig *self, guint idx)
  * Since: 1.12
  **/
 gboolean
-nm_setting_tc_config_remove_qdisc_by_value (NMSettingTCConfig *self,
-                                            NMTCQdisc *qdisc)
+nm_setting_tc_config_remove_qdisc_by_value(NMSettingTCConfig *self, NMTCQdisc *qdisc)
 {
-	guint i;
+    guint i;
 
-	g_return_val_if_fail (NM_IS_SETTING_TC_CONFIG (self), FALSE);
-	g_return_val_if_fail (qdisc != NULL, FALSE);
+    g_return_val_if_fail(NM_IS_SETTING_TC_CONFIG(self), FALSE);
+    g_return_val_if_fail(qdisc != NULL, FALSE);
 
-	for (i = 0; i < self->qdiscs->len; i++) {
-		if (nm_tc_qdisc_equal (self->qdiscs->pdata[i], qdisc)) {
-			g_ptr_array_remove_index (self->qdiscs, i);
-			_notify (self, PROP_QDISCS);
-			return TRUE;
-		}
-	}
-	return FALSE;
+    for (i = 0; i < self->qdiscs->len; i++) {
+        if (nm_tc_qdisc_equal(self->qdiscs->pdata[i], qdisc)) {
+            g_ptr_array_remove_index(self->qdiscs, i);
+            _notify(self, PROP_QDISCS);
+            return TRUE;
+        }
+    }
+    return FALSE;
 }
 
 /**
@@ -1126,14 +1120,14 @@ nm_setting_tc_config_remove_qdisc_by_value (NMSettingTCConfig *self,
  * Since: 1.12
  **/
 void
-nm_setting_tc_config_clear_qdiscs (NMSettingTCConfig *self)
+nm_setting_tc_config_clear_qdiscs(NMSettingTCConfig *self)
 {
-	g_return_if_fail (NM_IS_SETTING_TC_CONFIG (self));
+    g_return_if_fail(NM_IS_SETTING_TC_CONFIG(self));
 
-	if (self->qdiscs->len != 0) {
-		g_ptr_array_set_size (self->qdiscs, 0);
-		_notify (self, PROP_QDISCS);
-	}
+    if (self->qdiscs->len != 0) {
+        g_ptr_array_set_size(self->qdiscs, 0);
+        _notify(self, PROP_QDISCS);
+    }
 }
 
 /*****************************************************************************/
@@ -1146,11 +1140,11 @@ nm_setting_tc_config_clear_qdiscs (NMSettingTCConfig *self)
  * Since: 1.12
  **/
 guint
-nm_setting_tc_config_get_num_tfilters (NMSettingTCConfig *self)
+nm_setting_tc_config_get_num_tfilters(NMSettingTCConfig *self)
 {
-	g_return_val_if_fail (NM_IS_SETTING_TC_CONFIG (self), 0);
+    g_return_val_if_fail(NM_IS_SETTING_TC_CONFIG(self), 0);
 
-	return self->tfilters->len;
+    return self->tfilters->len;
 }
 
 /**
@@ -1163,12 +1157,12 @@ nm_setting_tc_config_get_num_tfilters (NMSettingTCConfig *self)
  * Since: 1.12
  **/
 NMTCTfilter *
-nm_setting_tc_config_get_tfilter (NMSettingTCConfig *self, guint idx)
+nm_setting_tc_config_get_tfilter(NMSettingTCConfig *self, guint idx)
 {
-	g_return_val_if_fail (NM_IS_SETTING_TC_CONFIG (self), NULL);
-	g_return_val_if_fail (idx < self->tfilters->len, NULL);
+    g_return_val_if_fail(NM_IS_SETTING_TC_CONFIG(self), NULL);
+    g_return_val_if_fail(idx < self->tfilters->len, NULL);
 
-	return self->tfilters->pdata[idx];
+    return self->tfilters->pdata[idx];
 }
 
 /**
@@ -1186,22 +1180,21 @@ nm_setting_tc_config_get_tfilter (NMSettingTCConfig *self, guint idx)
  * Since: 1.12
  **/
 gboolean
-nm_setting_tc_config_add_tfilter (NMSettingTCConfig *self,
-                                  NMTCTfilter *tfilter)
+nm_setting_tc_config_add_tfilter(NMSettingTCConfig *self, NMTCTfilter *tfilter)
 {
-	guint i;
+    guint i;
 
-	g_return_val_if_fail (NM_IS_SETTING_TC_CONFIG (self), FALSE);
-	g_return_val_if_fail (tfilter != NULL, FALSE);
+    g_return_val_if_fail(NM_IS_SETTING_TC_CONFIG(self), FALSE);
+    g_return_val_if_fail(tfilter != NULL, FALSE);
 
-	for (i = 0; i < self->tfilters->len; i++) {
-		if (nm_tc_tfilter_equal (self->tfilters->pdata[i], tfilter))
-			return FALSE;
-	}
+    for (i = 0; i < self->tfilters->len; i++) {
+        if (nm_tc_tfilter_equal(self->tfilters->pdata[i], tfilter))
+            return FALSE;
+    }
 
-	g_ptr_array_add (self->tfilters, nm_tc_tfilter_dup (tfilter));
-	_notify (self, PROP_TFILTERS);
-	return TRUE;
+    g_ptr_array_add(self->tfilters, nm_tc_tfilter_dup(tfilter));
+    _notify(self, PROP_TFILTERS);
+    return TRUE;
 }
 
 /**
@@ -1214,13 +1207,13 @@ nm_setting_tc_config_add_tfilter (NMSettingTCConfig *self,
  * Since: 1.12
  **/
 void
-nm_setting_tc_config_remove_tfilter (NMSettingTCConfig *self, guint idx)
+nm_setting_tc_config_remove_tfilter(NMSettingTCConfig *self, guint idx)
 {
-	g_return_if_fail (NM_IS_SETTING_TC_CONFIG (self));
-	g_return_if_fail (idx < self->tfilters->len);
+    g_return_if_fail(NM_IS_SETTING_TC_CONFIG(self));
+    g_return_if_fail(idx < self->tfilters->len);
 
-	g_ptr_array_remove_index (self->tfilters, idx);
-	_notify (self, PROP_TFILTERS);
+    g_ptr_array_remove_index(self->tfilters, idx);
+    _notify(self, PROP_TFILTERS);
 }
 
 /**
@@ -1235,22 +1228,21 @@ nm_setting_tc_config_remove_tfilter (NMSettingTCConfig *self, guint idx)
  * Since: 1.12
  **/
 gboolean
-nm_setting_tc_config_remove_tfilter_by_value (NMSettingTCConfig *self,
-                                              NMTCTfilter *tfilter)
+nm_setting_tc_config_remove_tfilter_by_value(NMSettingTCConfig *self, NMTCTfilter *tfilter)
 {
-	guint i;
+    guint i;
 
-	g_return_val_if_fail (NM_IS_SETTING_TC_CONFIG (self), FALSE);
-	g_return_val_if_fail (tfilter != NULL, FALSE);
+    g_return_val_if_fail(NM_IS_SETTING_TC_CONFIG(self), FALSE);
+    g_return_val_if_fail(tfilter != NULL, FALSE);
 
-	for (i = 0; i < self->tfilters->len; i++) {
-		if (nm_tc_tfilter_equal (self->tfilters->pdata[i], tfilter)) {
-			g_ptr_array_remove_index (self->tfilters, i);
-			_notify (self, PROP_TFILTERS);
-			return TRUE;
-		}
-	}
-	return FALSE;
+    for (i = 0; i < self->tfilters->len; i++) {
+        if (nm_tc_tfilter_equal(self->tfilters->pdata[i], tfilter)) {
+            g_ptr_array_remove_index(self->tfilters, i);
+            _notify(self, PROP_TFILTERS);
+            return TRUE;
+        }
+    }
+    return FALSE;
 }
 
 /**
@@ -1262,111 +1254,106 @@ nm_setting_tc_config_remove_tfilter_by_value (NMSettingTCConfig *self,
  * Since: 1.12
  **/
 void
-nm_setting_tc_config_clear_tfilters (NMSettingTCConfig *self)
+nm_setting_tc_config_clear_tfilters(NMSettingTCConfig *self)
 {
-	g_return_if_fail (NM_IS_SETTING_TC_CONFIG (self));
+    g_return_if_fail(NM_IS_SETTING_TC_CONFIG(self));
 
-	if (self->tfilters->len != 0) {
-		g_ptr_array_set_size (self->tfilters, 0);
-		_notify (self, PROP_TFILTERS);
-	}
+    if (self->tfilters->len != 0) {
+        g_ptr_array_set_size(self->tfilters, 0);
+        _notify(self, PROP_TFILTERS);
+    }
 }
 
 /*****************************************************************************/
 
 static gboolean
-verify (NMSetting *setting, NMConnection *connection, GError **error)
+verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
-	NMSettingTCConfig *self = NM_SETTING_TC_CONFIG (setting);
-	guint i;
+    NMSettingTCConfig *self = NM_SETTING_TC_CONFIG(setting);
+    guint              i;
 
-	if (self->qdiscs->len != 0) {
-		gs_unref_hashtable GHashTable *ht = NULL;
+    if (self->qdiscs->len != 0) {
+        gs_unref_hashtable GHashTable *ht = NULL;
 
-		ht = g_hash_table_new ((GHashFunc) _nm_tc_qdisc_hash,
-		                       (GEqualFunc) nm_tc_qdisc_equal);
-		for (i = 0; i < self->qdiscs->len; i++) {
-			if (!g_hash_table_add (ht, self->qdiscs->pdata[i])) {
-				g_set_error_literal (error,
-				                     NM_CONNECTION_ERROR,
-				                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-				                     _("there are duplicate TC qdiscs"));
-				g_prefix_error (error,
-				                "%s.%s: ",
-				                NM_SETTING_TC_CONFIG_SETTING_NAME,
-				                NM_SETTING_TC_CONFIG_QDISCS);
-				return FALSE;
-			}
-		}
-	}
+        ht = g_hash_table_new((GHashFunc) _nm_tc_qdisc_hash, (GEqualFunc) nm_tc_qdisc_equal);
+        for (i = 0; i < self->qdiscs->len; i++) {
+            if (!g_hash_table_add(ht, self->qdiscs->pdata[i])) {
+                g_set_error_literal(error,
+                                    NM_CONNECTION_ERROR,
+                                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                    _("there are duplicate TC qdiscs"));
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               NM_SETTING_TC_CONFIG_SETTING_NAME,
+                               NM_SETTING_TC_CONFIG_QDISCS);
+                return FALSE;
+            }
+        }
+    }
 
-	if (self->tfilters->len != 0) {
-		gs_unref_hashtable GHashTable *ht = NULL;
+    if (self->tfilters->len != 0) {
+        gs_unref_hashtable GHashTable *ht = NULL;
 
-		ht = g_hash_table_new ((GHashFunc) _nm_tc_tfilter_hash,
-		                       (GEqualFunc) nm_tc_tfilter_equal);
-		for (i = 0; i < self->tfilters->len; i++) {
-			if (!g_hash_table_add (ht, self->tfilters->pdata[i])) {
-				g_set_error_literal (error,
-				                     NM_CONNECTION_ERROR,
-				                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-				                     _("there are duplicate TC filters"));
-				g_prefix_error (error,
-				                "%s.%s: ",
-				                NM_SETTING_TC_CONFIG_SETTING_NAME,
-				                NM_SETTING_TC_CONFIG_TFILTERS);
-				return FALSE;
-			}
-		}
-	}
+        ht = g_hash_table_new((GHashFunc) _nm_tc_tfilter_hash, (GEqualFunc) nm_tc_tfilter_equal);
+        for (i = 0; i < self->tfilters->len; i++) {
+            if (!g_hash_table_add(ht, self->tfilters->pdata[i])) {
+                g_set_error_literal(error,
+                                    NM_CONNECTION_ERROR,
+                                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                    _("there are duplicate TC filters"));
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               NM_SETTING_TC_CONFIG_SETTING_NAME,
+                               NM_SETTING_TC_CONFIG_TFILTERS);
+                return FALSE;
+            }
+        }
+    }
 
-	return TRUE;
+    return TRUE;
 }
 
 static NMTernary
-compare_property (const NMSettInfoSetting *sett_info,
-                  guint property_idx,
-                  NMConnection *con_a,
-                  NMSetting *set_a,
-                  NMConnection *con_b,
-                  NMSetting *set_b,
-                  NMSettingCompareFlags flags)
+compare_property(const NMSettInfoSetting *sett_info,
+                 guint                    property_idx,
+                 NMConnection *           con_a,
+                 NMSetting *              set_a,
+                 NMConnection *           con_b,
+                 NMSetting *              set_b,
+                 NMSettingCompareFlags    flags)
 {
-	NMSettingTCConfig *a_tc_config = NM_SETTING_TC_CONFIG (set_a);
-	NMSettingTCConfig *b_tc_config = NM_SETTING_TC_CONFIG (set_b);
-	guint i;
+    NMSettingTCConfig *a_tc_config = NM_SETTING_TC_CONFIG(set_a);
+    NMSettingTCConfig *b_tc_config = NM_SETTING_TC_CONFIG(set_b);
+    guint              i;
 
-	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_TC_CONFIG_QDISCS)) {
-		if (set_b) {
-			if (a_tc_config->qdiscs->len != b_tc_config->qdiscs->len)
-				return FALSE;
-			for (i = 0; i < a_tc_config->qdiscs->len; i++) {
-				if (!nm_tc_qdisc_equal (a_tc_config->qdiscs->pdata[i], b_tc_config->qdiscs->pdata[i]))
-					return FALSE;
-			}
-		}
-		return TRUE;
-	}
+    if (nm_streq(sett_info->property_infos[property_idx].name, NM_SETTING_TC_CONFIG_QDISCS)) {
+        if (set_b) {
+            if (a_tc_config->qdiscs->len != b_tc_config->qdiscs->len)
+                return FALSE;
+            for (i = 0; i < a_tc_config->qdiscs->len; i++) {
+                if (!nm_tc_qdisc_equal(a_tc_config->qdiscs->pdata[i],
+                                       b_tc_config->qdiscs->pdata[i]))
+                    return FALSE;
+            }
+        }
+        return TRUE;
+    }
 
-	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_TC_CONFIG_TFILTERS)) {
-		if (set_b) {
-			if (a_tc_config->tfilters->len != b_tc_config->tfilters->len)
-				return FALSE;
-			for (i = 0; i < a_tc_config->tfilters->len; i++) {
-				if (!nm_tc_tfilter_equal (a_tc_config->tfilters->pdata[i], b_tc_config->tfilters->pdata[i]))
-					return FALSE;
-			}
-		}
-		return TRUE;
-	}
+    if (nm_streq(sett_info->property_infos[property_idx].name, NM_SETTING_TC_CONFIG_TFILTERS)) {
+        if (set_b) {
+            if (a_tc_config->tfilters->len != b_tc_config->tfilters->len)
+                return FALSE;
+            for (i = 0; i < a_tc_config->tfilters->len; i++) {
+                if (!nm_tc_tfilter_equal(a_tc_config->tfilters->pdata[i],
+                                         b_tc_config->tfilters->pdata[i]))
+                    return FALSE;
+            }
+        }
+        return TRUE;
+    }
 
-	return NM_SETTING_CLASS (nm_setting_tc_config_parent_class)->compare_property (sett_info,
-	                                                                               property_idx,
-	                                                                               con_a,
-	                                                                               set_a,
-	                                                                               con_b,
-	                                                                               set_b,
-	                                                                               flags);
+    return NM_SETTING_CLASS(nm_setting_tc_config_parent_class)
+        ->compare_property(sett_info, property_idx, con_a, set_a, con_b, set_b, flags);
 }
 
 /**
@@ -1380,47 +1367,53 @@ compare_property (const NMSettInfoSetting *sett_info,
  * Returns: (transfer none): a new floating #GVariant representing @qdiscs.
  **/
 static GVariant *
-_qdiscs_to_variant (GPtrArray *qdiscs)
+_qdiscs_to_variant(GPtrArray *qdiscs)
 {
-	GVariantBuilder builder;
-	int i;
+    GVariantBuilder builder;
+    int             i;
 
-	g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
+    g_variant_builder_init(&builder, G_VARIANT_TYPE("aa{sv}"));
 
-	if (qdiscs) {
-		for (i = 0; i < qdiscs->len; i++) {
-			NMUtilsNamedValue attrs_static[30];
-			gs_free NMUtilsNamedValue *attrs_free = NULL;
-			const NMUtilsNamedValue *attrs;
-			NMTCQdisc *qdisc = qdiscs->pdata[i];
-			guint length;
-			GVariantBuilder qdisc_builder;
-			guint y;
+    if (qdiscs) {
+        for (i = 0; i < qdiscs->len; i++) {
+            NMUtilsNamedValue attrs_static[30];
+            gs_free NMUtilsNamedValue *attrs_free = NULL;
+            const NMUtilsNamedValue *  attrs;
+            NMTCQdisc *                qdisc = qdiscs->pdata[i];
+            guint                      length;
+            GVariantBuilder            qdisc_builder;
+            guint                      y;
 
-			g_variant_builder_init (&qdisc_builder, G_VARIANT_TYPE_VARDICT);
+            g_variant_builder_init(&qdisc_builder, G_VARIANT_TYPE_VARDICT);
 
-			g_variant_builder_add (&qdisc_builder, "{sv}", "kind",
-			                       g_variant_new_string (nm_tc_qdisc_get_kind (qdisc)));
+            g_variant_builder_add(&qdisc_builder,
+                                  "{sv}",
+                                  "kind",
+                                  g_variant_new_string(nm_tc_qdisc_get_kind(qdisc)));
 
-			g_variant_builder_add (&qdisc_builder, "{sv}", "handle",
-			                       g_variant_new_uint32 (nm_tc_qdisc_get_handle (qdisc)));
+            g_variant_builder_add(&qdisc_builder,
+                                  "{sv}",
+                                  "handle",
+                                  g_variant_new_uint32(nm_tc_qdisc_get_handle(qdisc)));
 
-			g_variant_builder_add (&qdisc_builder, "{sv}", "parent",
-			                       g_variant_new_uint32 (nm_tc_qdisc_get_parent (qdisc)));
+            g_variant_builder_add(&qdisc_builder,
+                                  "{sv}",
+                                  "parent",
+                                  g_variant_new_uint32(nm_tc_qdisc_get_parent(qdisc)));
 
-			attrs = nm_utils_named_values_from_strdict (qdisc->attributes, &length, attrs_static, &attrs_free);
-			for (y = 0; y < length; y++) {
-				g_variant_builder_add (&qdisc_builder,
-				                       "{sv}",
-				                       attrs[y].name,
-				                       attrs[y].value_ptr);
-			}
+            attrs = nm_utils_named_values_from_strdict(qdisc->attributes,
+                                                       &length,
+                                                       attrs_static,
+                                                       &attrs_free);
+            for (y = 0; y < length; y++) {
+                g_variant_builder_add(&qdisc_builder, "{sv}", attrs[y].name, attrs[y].value_ptr);
+            }
 
-			g_variant_builder_add (&builder, "a{sv}", &qdisc_builder);
-		}
-	}
+            g_variant_builder_add(&builder, "a{sv}", &qdisc_builder);
+        }
+    }
 
-	return g_variant_builder_end (&builder);
+    return g_variant_builder_end(&builder);
 }
 
 /**
@@ -1434,109 +1427,112 @@ _qdiscs_to_variant (GPtrArray *qdiscs)
  *   #GPtrArray of #NMTCQdisc objects
  **/
 static GPtrArray *
-_qdiscs_from_variant (GVariant *value)
+_qdiscs_from_variant(GVariant *value)
 {
-	GPtrArray *qdiscs;
-	GVariant *qdisc_var;
-	GVariantIter iter;
-	GError *error = NULL;
+    GPtrArray *  qdiscs;
+    GVariant *   qdisc_var;
+    GVariantIter iter;
+    GError *     error = NULL;
 
-	g_return_val_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE ("aa{sv}")), NULL);
+    g_return_val_if_fail(g_variant_is_of_type(value, G_VARIANT_TYPE("aa{sv}")), NULL);
 
-	g_variant_iter_init (&iter, value);
-	qdiscs = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_qdisc_unref);
+    g_variant_iter_init(&iter, value);
+    qdiscs = g_ptr_array_new_with_free_func((GDestroyNotify) nm_tc_qdisc_unref);
 
-	while (g_variant_iter_next (&iter, "@a{sv}", &qdisc_var)) {
-		const char *kind;
-		guint32 parent;
-		NMTCQdisc *qdisc;
-		GVariantIter qdisc_iter;
-		const char *key;
-		GVariant *attr_value;
+    while (g_variant_iter_next(&iter, "@a{sv}", &qdisc_var)) {
+        const char * kind;
+        guint32      parent;
+        NMTCQdisc *  qdisc;
+        GVariantIter qdisc_iter;
+        const char * key;
+        GVariant *   attr_value;
 
-		if (   !g_variant_lookup (qdisc_var, "kind", "&s", &kind)
-		    || !g_variant_lookup (qdisc_var, "parent", "u", &parent)) {
-			//g_warning ("Ignoring invalid qdisc");
-			goto next;
-		}
+        if (!g_variant_lookup(qdisc_var, "kind", "&s", &kind)
+            || !g_variant_lookup(qdisc_var, "parent", "u", &parent)) {
+            //g_warning ("Ignoring invalid qdisc");
+            goto next;
+        }
 
-		qdisc = nm_tc_qdisc_new (kind, parent, &error);
-		if (!qdisc) {
-			//g_warning ("Ignoring invalid qdisc: %s", error->message);
-			g_clear_error (&error);
-			goto next;
-		}
+        qdisc = nm_tc_qdisc_new(kind, parent, &error);
+        if (!qdisc) {
+            //g_warning ("Ignoring invalid qdisc: %s", error->message);
+            g_clear_error(&error);
+            goto next;
+        }
 
-		g_variant_iter_init (&qdisc_iter, qdisc_var);
-		while (g_variant_iter_next (&qdisc_iter, "{&sv}", &key, &attr_value)) {
-			if (   strcmp (key, "kind") == 0
-			    || strcmp (key, "parent") == 0) {
-				/* Already processed above */
-			} else if (strcmp (key, "handle") == 0) {
-				nm_tc_qdisc_set_handle (qdisc, g_variant_get_uint32 (attr_value));
-			} else {
-				nm_tc_qdisc_set_attribute (qdisc, key, attr_value);
-			}
-			g_variant_unref (attr_value);
-		}
+        g_variant_iter_init(&qdisc_iter, qdisc_var);
+        while (g_variant_iter_next(&qdisc_iter, "{&sv}", &key, &attr_value)) {
+            if (strcmp(key, "kind") == 0 || strcmp(key, "parent") == 0) {
+                /* Already processed above */
+            } else if (strcmp(key, "handle") == 0) {
+                nm_tc_qdisc_set_handle(qdisc, g_variant_get_uint32(attr_value));
+            } else {
+                nm_tc_qdisc_set_attribute(qdisc, key, attr_value);
+            }
+            g_variant_unref(attr_value);
+        }
 
-		g_ptr_array_add (qdiscs, qdisc);
+        g_ptr_array_add(qdiscs, qdisc);
 next:
-		g_variant_unref (qdisc_var);
-	}
+        g_variant_unref(qdisc_var);
+    }
 
-	return qdiscs;
+    return qdiscs;
 }
 
 static GVariant *
-tc_qdiscs_get (const NMSettInfoSetting *sett_info,
-               guint property_idx,
-               NMConnection *connection,
-               NMSetting *setting,
-               NMConnectionSerializationFlags flags,
-               const NMConnectionSerializationOptions *options)
+tc_qdiscs_get(const NMSettInfoSetting *               sett_info,
+              guint                                   property_idx,
+              NMConnection *                          connection,
+              NMSetting *                             setting,
+              NMConnectionSerializationFlags          flags,
+              const NMConnectionSerializationOptions *options)
 {
-	gs_unref_ptrarray GPtrArray *qdiscs = NULL;
+    gs_unref_ptrarray GPtrArray *qdiscs = NULL;
 
-	g_object_get (setting, NM_SETTING_TC_CONFIG_QDISCS, &qdiscs, NULL);
-	return _qdiscs_to_variant (qdiscs);
+    g_object_get(setting, NM_SETTING_TC_CONFIG_QDISCS, &qdiscs, NULL);
+    return _qdiscs_to_variant(qdiscs);
 }
 
 static gboolean
-tc_qdiscs_set (NMSetting *setting,
-               GVariant *connection_dict,
-               const char *property,
-               GVariant *value,
-               NMSettingParseFlags parse_flags,
-               GError **error)
+tc_qdiscs_set(NMSetting *         setting,
+              GVariant *          connection_dict,
+              const char *        property,
+              GVariant *          value,
+              NMSettingParseFlags parse_flags,
+              GError **           error)
 {
-	GPtrArray *qdiscs;
+    GPtrArray *qdiscs;
 
-	qdiscs = _qdiscs_from_variant (value);
-	g_object_set (setting, NM_SETTING_TC_CONFIG_QDISCS, qdiscs, NULL);
-	g_ptr_array_unref (qdiscs);
+    qdiscs = _qdiscs_from_variant(value);
+    g_object_set(setting, NM_SETTING_TC_CONFIG_QDISCS, qdiscs, NULL);
+    g_ptr_array_unref(qdiscs);
 
-	return TRUE;
+    return TRUE;
 }
 
 static GVariant *
-_action_to_variant (NMTCAction *action)
+_action_to_variant(NMTCAction *action)
 {
-	GVariantBuilder builder;
-	gs_strfreev char **attrs = nm_tc_action_get_attribute_names (action);
-	int i;
+    GVariantBuilder    builder;
+    gs_strfreev char **attrs = nm_tc_action_get_attribute_names(action);
+    int                i;
 
-	g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
+    g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
 
-	g_variant_builder_add (&builder, "{sv}", "kind",
-	                       g_variant_new_string (nm_tc_action_get_kind (action)));
+    g_variant_builder_add(&builder,
+                          "{sv}",
+                          "kind",
+                          g_variant_new_string(nm_tc_action_get_kind(action)));
 
-	for (i = 0; attrs[i]; i++) {
-		g_variant_builder_add (&builder, "{sv}", attrs[i],
-		                       nm_tc_action_get_attribute (action, attrs[i]));
-	}
+    for (i = 0; attrs[i]; i++) {
+        g_variant_builder_add(&builder,
+                              "{sv}",
+                              attrs[i],
+                              nm_tc_action_get_attribute(action, attrs[i]));
+    }
 
-	return g_variant_builder_end (&builder);
+    return g_variant_builder_end(&builder);
 }
 
 /**
@@ -1550,38 +1546,46 @@ _action_to_variant (NMTCAction *action)
  * Returns: (transfer none): a new floating #GVariant representing @tfilters.
  **/
 static GVariant *
-_tfilters_to_variant (GPtrArray *tfilters)
+_tfilters_to_variant(GPtrArray *tfilters)
 {
-	GVariantBuilder builder;
-	int i;
+    GVariantBuilder builder;
+    int             i;
 
-	g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
+    g_variant_builder_init(&builder, G_VARIANT_TYPE("aa{sv}"));
 
-	if (tfilters) {
-		for (i = 0; i < tfilters->len; i++) {
-			NMTCTfilter *tfilter = tfilters->pdata[i];
-			NMTCAction  *action = nm_tc_tfilter_get_action (tfilter);
-			GVariantBuilder tfilter_builder;
+    if (tfilters) {
+        for (i = 0; i < tfilters->len; i++) {
+            NMTCTfilter *   tfilter = tfilters->pdata[i];
+            NMTCAction *    action  = nm_tc_tfilter_get_action(tfilter);
+            GVariantBuilder tfilter_builder;
 
-			g_variant_builder_init (&tfilter_builder, G_VARIANT_TYPE ("a{sv}"));
+            g_variant_builder_init(&tfilter_builder, G_VARIANT_TYPE("a{sv}"));
 
-			g_variant_builder_add (&tfilter_builder, "{sv}", "kind",
-			                       g_variant_new_string (nm_tc_tfilter_get_kind (tfilter)));
-			g_variant_builder_add (&tfilter_builder, "{sv}", "handle",
-			                       g_variant_new_uint32 (nm_tc_tfilter_get_handle (tfilter)));
-			g_variant_builder_add (&tfilter_builder, "{sv}", "parent",
-			                       g_variant_new_uint32 (nm_tc_tfilter_get_parent (tfilter)));
+            g_variant_builder_add(&tfilter_builder,
+                                  "{sv}",
+                                  "kind",
+                                  g_variant_new_string(nm_tc_tfilter_get_kind(tfilter)));
+            g_variant_builder_add(&tfilter_builder,
+                                  "{sv}",
+                                  "handle",
+                                  g_variant_new_uint32(nm_tc_tfilter_get_handle(tfilter)));
+            g_variant_builder_add(&tfilter_builder,
+                                  "{sv}",
+                                  "parent",
+                                  g_variant_new_uint32(nm_tc_tfilter_get_parent(tfilter)));
 
-			if (action) {
-				g_variant_builder_add (&tfilter_builder, "{sv}", "action",
-				                       _action_to_variant (action));
-			}
+            if (action) {
+                g_variant_builder_add(&tfilter_builder,
+                                      "{sv}",
+                                      "action",
+                                      _action_to_variant(action));
+            }
 
-			g_variant_builder_add (&builder, "a{sv}", &tfilter_builder);
-		}
-	}
+            g_variant_builder_add(&builder, "a{sv}", &tfilter_builder);
+        }
+    }
 
-	return g_variant_builder_end (&builder);
+    return g_variant_builder_end(&builder);
 }
 
 /**
@@ -1595,171 +1599,171 @@ _tfilters_to_variant (GPtrArray *tfilters)
  *   #GPtrArray of #NMTCTfilter objects
  **/
 static GPtrArray *
-_tfilters_from_variant (GVariant *value)
+_tfilters_from_variant(GVariant *value)
 {
-	GPtrArray *tfilters;
-	GVariant *tfilter_var;
-	GVariantIter iter;
-	GError *error = NULL;
+    GPtrArray *  tfilters;
+    GVariant *   tfilter_var;
+    GVariantIter iter;
+    GError *     error = NULL;
 
-	g_return_val_if_fail (g_variant_is_of_type (value, G_VARIANT_TYPE ("aa{sv}")), NULL);
+    g_return_val_if_fail(g_variant_is_of_type(value, G_VARIANT_TYPE("aa{sv}")), NULL);
 
-	g_variant_iter_init (&iter, value);
-	tfilters = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_tfilter_unref);
+    g_variant_iter_init(&iter, value);
+    tfilters = g_ptr_array_new_with_free_func((GDestroyNotify) nm_tc_tfilter_unref);
 
-	while (g_variant_iter_next (&iter, "@a{sv}", &tfilter_var)) {
-		NMTCTfilter *tfilter = NULL;
-		const char *kind;
-		guint32 handle;
-		guint32 parent;
-		NMTCAction *action;
-		const char *action_kind = NULL;
-		char *action_key;
-		GVariantIter action_iter;
-		GVariant *action_var = NULL;
-		GVariant *action_val;
+    while (g_variant_iter_next(&iter, "@a{sv}", &tfilter_var)) {
+        NMTCTfilter *tfilter = NULL;
+        const char * kind;
+        guint32      handle;
+        guint32      parent;
+        NMTCAction * action;
+        const char * action_kind = NULL;
+        char *       action_key;
+        GVariantIter action_iter;
+        GVariant *   action_var = NULL;
+        GVariant *   action_val;
 
-		if (   !g_variant_lookup (tfilter_var, "kind", "&s", &kind)
-		    || !g_variant_lookup (tfilter_var, "parent", "u", &parent)) {
-			//g_warning ("Ignoring invalid tfilter");
-			goto next;
-		}
+        if (!g_variant_lookup(tfilter_var, "kind", "&s", &kind)
+            || !g_variant_lookup(tfilter_var, "parent", "u", &parent)) {
+            //g_warning ("Ignoring invalid tfilter");
+            goto next;
+        }
 
-		tfilter = nm_tc_tfilter_new (kind, parent, &error);
-		if (!tfilter) {
-			//g_warning ("Ignoring invalid tfilter: %s", error->message);
-			g_clear_error (&error);
-			goto next;
-		}
+        tfilter = nm_tc_tfilter_new(kind, parent, &error);
+        if (!tfilter) {
+            //g_warning ("Ignoring invalid tfilter: %s", error->message);
+            g_clear_error(&error);
+            goto next;
+        }
 
-		if (g_variant_lookup (tfilter_var, "handle", "u", &handle))
-			nm_tc_tfilter_set_handle (tfilter, handle);
+        if (g_variant_lookup(tfilter_var, "handle", "u", &handle))
+            nm_tc_tfilter_set_handle(tfilter, handle);
 
-		action_var = g_variant_lookup_value (tfilter_var, "action", G_VARIANT_TYPE_VARDICT);
+        action_var = g_variant_lookup_value(tfilter_var, "action", G_VARIANT_TYPE_VARDICT);
 
-		if (action_var) {
-			if (!g_variant_lookup (action_var, "kind", "&s", &action_kind)) {
-				//g_warning ("Ignoring tfilter with invalid action");
-				goto next;
-			}
+        if (action_var) {
+            if (!g_variant_lookup(action_var, "kind", "&s", &action_kind)) {
+                //g_warning ("Ignoring tfilter with invalid action");
+                goto next;
+            }
 
-			action = nm_tc_action_new (action_kind, &error);
-			if (!action) {
-				//g_warning ("Ignoring tfilter with invalid action: %s", error->message);
-				g_clear_error (&error);
-				goto next;
-			}
+            action = nm_tc_action_new(action_kind, &error);
+            if (!action) {
+                //g_warning ("Ignoring tfilter with invalid action: %s", error->message);
+                g_clear_error(&error);
+                goto next;
+            }
 
-			g_variant_iter_init (&action_iter, action_var);
-			while (g_variant_iter_next (&action_iter, "{&sv}", &action_key, &action_val)) {
-				if (strcmp (action_key, "kind") != 0)
-					nm_tc_action_set_attribute (action, action_key, action_val);
-				g_variant_unref (action_val);
-			}
+            g_variant_iter_init(&action_iter, action_var);
+            while (g_variant_iter_next(&action_iter, "{&sv}", &action_key, &action_val)) {
+                if (strcmp(action_key, "kind") != 0)
+                    nm_tc_action_set_attribute(action, action_key, action_val);
+                g_variant_unref(action_val);
+            }
 
-			nm_tc_tfilter_set_action (tfilter, action);
-			nm_tc_action_unref (action);
-		}
+            nm_tc_tfilter_set_action(tfilter, action);
+            nm_tc_action_unref(action);
+        }
 
-		nm_tc_tfilter_ref (tfilter);
-		g_ptr_array_add (tfilters, tfilter);
+        nm_tc_tfilter_ref(tfilter);
+        g_ptr_array_add(tfilters, tfilter);
 next:
-		if (tfilter)
-			nm_tc_tfilter_unref (tfilter);
-		if (action_var)
-			g_variant_unref (action_var);
-		g_variant_unref (tfilter_var);
-	}
+        if (tfilter)
+            nm_tc_tfilter_unref(tfilter);
+        if (action_var)
+            g_variant_unref(action_var);
+        g_variant_unref(tfilter_var);
+    }
 
-	return tfilters;
+    return tfilters;
 }
 
 static GVariant *
-tc_tfilters_get (const NMSettInfoSetting *sett_info,
-                guint property_idx,
-                NMConnection *connection,
-                NMSetting *setting,
-                NMConnectionSerializationFlags flags,
+tc_tfilters_get(const NMSettInfoSetting *               sett_info,
+                guint                                   property_idx,
+                NMConnection *                          connection,
+                NMSetting *                             setting,
+                NMConnectionSerializationFlags          flags,
                 const NMConnectionSerializationOptions *options)
 {
-	gs_unref_ptrarray GPtrArray *tfilters = NULL;
+    gs_unref_ptrarray GPtrArray *tfilters = NULL;
 
-	g_object_get (setting, NM_SETTING_TC_CONFIG_TFILTERS, &tfilters, NULL);
-	return _tfilters_to_variant (tfilters);
+    g_object_get(setting, NM_SETTING_TC_CONFIG_TFILTERS, &tfilters, NULL);
+    return _tfilters_to_variant(tfilters);
 }
 
 static gboolean
-tc_tfilters_set (NMSetting *setting,
-                 GVariant *connection_dict,
-                 const char *property,
-                 GVariant *value,
-                 NMSettingParseFlags parse_flags,
-                 GError **error)
+tc_tfilters_set(NMSetting *         setting,
+                GVariant *          connection_dict,
+                const char *        property,
+                GVariant *          value,
+                NMSettingParseFlags parse_flags,
+                GError **           error)
 {
-	gs_unref_ptrarray GPtrArray *tfilters = NULL;
+    gs_unref_ptrarray GPtrArray *tfilters = NULL;
 
-	tfilters = _tfilters_from_variant (value);
-	g_object_set (setting, NM_SETTING_TC_CONFIG_TFILTERS, tfilters, NULL);
-	return TRUE;
+    tfilters = _tfilters_from_variant(value);
+    g_object_set(setting, NM_SETTING_TC_CONFIG_TFILTERS, tfilters, NULL);
+    return TRUE;
 }
 
 /*****************************************************************************/
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
+get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-	NMSettingTCConfig *self = NM_SETTING_TC_CONFIG (object);
+    NMSettingTCConfig *self = NM_SETTING_TC_CONFIG(object);
 
-	switch (prop_id) {
-	case PROP_QDISCS:
-		g_value_take_boxed (value, _nm_utils_copy_array (self->qdiscs,
-		                                                 (NMUtilsCopyFunc) nm_tc_qdisc_dup,
-		                                                 (GDestroyNotify) nm_tc_qdisc_unref));
-		break;
-	case PROP_TFILTERS:
-		g_value_take_boxed (value, _nm_utils_copy_array (self->tfilters,
-		                                                 (NMUtilsCopyFunc) nm_tc_tfilter_dup,
-		                                                 (GDestroyNotify) nm_tc_tfilter_unref));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_QDISCS:
+        g_value_take_boxed(value,
+                           _nm_utils_copy_array(self->qdiscs,
+                                                (NMUtilsCopyFunc) nm_tc_qdisc_dup,
+                                                (GDestroyNotify) nm_tc_qdisc_unref));
+        break;
+    case PROP_TFILTERS:
+        g_value_take_boxed(value,
+                           _nm_utils_copy_array(self->tfilters,
+                                                (NMUtilsCopyFunc) nm_tc_tfilter_dup,
+                                                (GDestroyNotify) nm_tc_tfilter_unref));
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
+set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-	NMSettingTCConfig *self = NM_SETTING_TC_CONFIG (object);
+    NMSettingTCConfig *self = NM_SETTING_TC_CONFIG(object);
 
-	switch (prop_id) {
-	case PROP_QDISCS:
-		g_ptr_array_unref (self->qdiscs);
-		self->qdiscs = _nm_utils_copy_array (g_value_get_boxed (value),
-		                                     (NMUtilsCopyFunc) nm_tc_qdisc_dup,
-		                                     (GDestroyNotify) nm_tc_qdisc_unref);
-		break;
-	case PROP_TFILTERS:
-		g_ptr_array_unref (self->tfilters);
-		self->tfilters = _nm_utils_copy_array (g_value_get_boxed (value),
-		                                       (NMUtilsCopyFunc) nm_tc_tfilter_dup,
-		                                       (GDestroyNotify) nm_tc_tfilter_unref);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_QDISCS:
+        g_ptr_array_unref(self->qdiscs);
+        self->qdiscs = _nm_utils_copy_array(g_value_get_boxed(value),
+                                            (NMUtilsCopyFunc) nm_tc_qdisc_dup,
+                                            (GDestroyNotify) nm_tc_qdisc_unref);
+        break;
+    case PROP_TFILTERS:
+        g_ptr_array_unref(self->tfilters);
+        self->tfilters = _nm_utils_copy_array(g_value_get_boxed(value),
+                                              (NMUtilsCopyFunc) nm_tc_tfilter_dup,
+                                              (GDestroyNotify) nm_tc_tfilter_unref);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 /*****************************************************************************/
 
 static void
-nm_setting_tc_config_init (NMSettingTCConfig *self)
+nm_setting_tc_config_init(NMSettingTCConfig *self)
 {
-	self->qdiscs = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_qdisc_unref);
-	self->tfilters = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_tc_tfilter_unref);
+    self->qdiscs   = g_ptr_array_new_with_free_func((GDestroyNotify) nm_tc_qdisc_unref);
+    self->tfilters = g_ptr_array_new_with_free_func((GDestroyNotify) nm_tc_tfilter_unref);
 }
 
 /**
@@ -1772,90 +1776,88 @@ nm_setting_tc_config_init (NMSettingTCConfig *self)
  * Since: 1.12
  **/
 NMSetting *
-nm_setting_tc_config_new (void)
+nm_setting_tc_config_new(void)
 {
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_TC_CONFIG, NULL);
+    return (NMSetting *) g_object_new(NM_TYPE_SETTING_TC_CONFIG, NULL);
 }
 
 static void
-finalize (GObject *object)
+finalize(GObject *object)
 {
-	NMSettingTCConfig *self = NM_SETTING_TC_CONFIG (object);
+    NMSettingTCConfig *self = NM_SETTING_TC_CONFIG(object);
 
-	g_ptr_array_unref (self->qdiscs);
-	g_ptr_array_unref (self->tfilters);
+    g_ptr_array_unref(self->qdiscs);
+    g_ptr_array_unref(self->tfilters);
 
-	G_OBJECT_CLASS (nm_setting_tc_config_parent_class)->finalize (object);
+    G_OBJECT_CLASS(nm_setting_tc_config_parent_class)->finalize(object);
 }
 
 static void
-nm_setting_tc_config_class_init (NMSettingTCConfigClass *klass)
+nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
-	GArray *properties_override = _nm_sett_info_property_override_create_array ();
+    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray *        properties_override = _nm_sett_info_property_override_create_array();
 
-	object_class->get_property     = get_property;
-	object_class->set_property     = set_property;
-	object_class->finalize         = finalize;
+    object_class->get_property = get_property;
+    object_class->set_property = set_property;
+    object_class->finalize     = finalize;
 
-	setting_class->compare_property = compare_property;
-	setting_class->verify           = verify;
+    setting_class->compare_property = compare_property;
+    setting_class->verify           = verify;
 
-	/**
+    /**
 	 * NMSettingTCConfig:qdiscs: (type GPtrArray(NMTCQdisc))
 	 *
 	 * Array of TC queueing disciplines.
 	 **/
-	/* ---ifcfg-rh---
+    /* ---ifcfg-rh---
 	 * property: qdiscs
 	 * variable: QDISC1(+), QDISC2(+), ...
 	 * description: Queueing disciplines
 	 * example: QDISC1=ingress, QDISC2="root handle 1234: fq_codel"
 	 * ---end---
 	 */
-	obj_properties[PROP_QDISCS] =
-	    g_param_spec_boxed (NM_SETTING_TC_CONFIG_QDISCS, "", "",
-	                        G_TYPE_PTR_ARRAY,
-	                        G_PARAM_READWRITE |
-	                        NM_SETTING_PARAM_INFERRABLE |
-	                        G_PARAM_STATIC_STRINGS);
-	_nm_properties_override_gobj (properties_override,
-	                              obj_properties[PROP_QDISCS],
-	                              NM_SETT_INFO_PROPERT_TYPE (
-	                                  .dbus_type     = NM_G_VARIANT_TYPE ("aa{sv}"),
-	                                  .to_dbus_fcn   = tc_qdiscs_get,
-	                                  .from_dbus_fcn = tc_qdiscs_set,
-	                              ));
+    obj_properties[PROP_QDISCS] = g_param_spec_boxed(NM_SETTING_TC_CONFIG_QDISCS,
+                                                     "",
+                                                     "",
+                                                     G_TYPE_PTR_ARRAY,
+                                                     G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
+                                                         | G_PARAM_STATIC_STRINGS);
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_QDISCS],
+                                 NM_SETT_INFO_PROPERT_TYPE(.dbus_type = NM_G_VARIANT_TYPE("aa{sv}"),
+                                                           .to_dbus_fcn   = tc_qdiscs_get,
+                                                           .from_dbus_fcn = tc_qdiscs_set, ));
 
-	/**
+    /**
 	 * NMSettingTCConfig:tfilters: (type GPtrArray(NMTCTfilter))
 	 *
 	 * Array of TC traffic filters.
 	 **/
-	/* ---ifcfg-rh---
+    /* ---ifcfg-rh---
 	 * property: qdiscs
 	 * variable: FILTER1(+), FILTER2(+), ...
 	 * description: Traffic filters
 	 * example: FILTER1="parent ffff: matchall action simple sdata Input", ...
 	 * ---end---
 	 */
-	obj_properties[PROP_TFILTERS] =
-	    g_param_spec_boxed (NM_SETTING_TC_CONFIG_TFILTERS, "", "",
-	                        G_TYPE_PTR_ARRAY,
-	                        G_PARAM_READWRITE |
-	                        NM_SETTING_PARAM_INFERRABLE |
-	                        G_PARAM_STATIC_STRINGS);
-	_nm_properties_override_gobj (properties_override,
-	                              obj_properties[PROP_TFILTERS],
-	                              NM_SETT_INFO_PROPERT_TYPE (
-	                                  .dbus_type     = NM_G_VARIANT_TYPE ("aa{sv}"),
-	                                  .to_dbus_fcn   = tc_tfilters_get,
-	                                  .from_dbus_fcn = tc_tfilters_set,
-	                              ));
+    obj_properties[PROP_TFILTERS] = g_param_spec_boxed(
+        NM_SETTING_TC_CONFIG_TFILTERS,
+        "",
+        "",
+        G_TYPE_PTR_ARRAY,
+        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_TFILTERS],
+                                 NM_SETT_INFO_PROPERT_TYPE(.dbus_type = NM_G_VARIANT_TYPE("aa{sv}"),
+                                                           .to_dbus_fcn   = tc_tfilters_get,
+                                                           .from_dbus_fcn = tc_tfilters_set, ));
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+    g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_TC_CONFIG,
-	                               NULL, properties_override);
+    _nm_setting_class_commit_full(setting_class,
+                                  NM_META_SETTING_TYPE_TC_CONFIG,
+                                  NULL,
+                                  properties_override);
 }

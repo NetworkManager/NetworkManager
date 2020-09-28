@@ -9,25 +9,30 @@
 #include "nmt-editor-page.h"
 #include "nmt-device-entry.h"
 
-#define NMT_TYPE_EDITOR_PAGE_DEVICE            (nmt_editor_page_device_get_type ())
-#define NMT_EDITOR_PAGE_DEVICE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NMT_TYPE_EDITOR_PAGE_DEVICE, NmtEditorPageDevice))
-#define NMT_EDITOR_PAGE_DEVICE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NMT_TYPE_EDITOR_PAGE_DEVICE, NmtEditorPageDeviceClass))
-#define NMT_IS_EDITOR_PAGE_DEVICE(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NMT_TYPE_EDITOR_PAGE_DEVICE))
-#define NMT_IS_EDITOR_PAGE_DEVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NMT_TYPE_EDITOR_PAGE_DEVICE))
-#define NMT_EDITOR_PAGE_DEVICE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NMT_TYPE_EDITOR_PAGE_DEVICE, NmtEditorPageDeviceClass))
+#define NMT_TYPE_EDITOR_PAGE_DEVICE (nmt_editor_page_device_get_type())
+#define NMT_EDITOR_PAGE_DEVICE(obj) \
+    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_EDITOR_PAGE_DEVICE, NmtEditorPageDevice))
+#define NMT_EDITOR_PAGE_DEVICE_CLASS(klass) \
+    (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_EDITOR_PAGE_DEVICE, NmtEditorPageDeviceClass))
+#define NMT_IS_EDITOR_PAGE_DEVICE(obj) \
+    (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_EDITOR_PAGE_DEVICE))
+#define NMT_IS_EDITOR_PAGE_DEVICE_CLASS(klass) \
+    (G_TYPE_CHECK_CLASS_TYPE((klass), NMT_TYPE_EDITOR_PAGE_DEVICE))
+#define NMT_EDITOR_PAGE_DEVICE_GET_CLASS(obj) \
+    (G_TYPE_INSTANCE_GET_CLASS((obj), NMT_TYPE_EDITOR_PAGE_DEVICE, NmtEditorPageDeviceClass))
 
 typedef struct {
-	NmtEditorPage parent;
+    NmtEditorPage parent;
 
 } NmtEditorPageDevice;
 
 typedef struct {
-	NmtEditorPageClass parent;
+    NmtEditorPageClass parent;
 
 } NmtEditorPageDeviceClass;
 
-GType nmt_editor_page_device_get_type (void);
+GType nmt_editor_page_device_get_type(void);
 
-NmtDeviceEntry *nmt_editor_page_device_get_device_entry (NmtEditorPageDevice *page);
+NmtDeviceEntry *nmt_editor_page_device_get_device_entry(NmtEditorPageDevice *page);
 
 #endif /* NMT_EDITOR_PAGE_DEVICE_H */

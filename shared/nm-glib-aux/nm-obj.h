@@ -14,7 +14,7 @@ typedef struct _NMObjBaseInst  NMObjBaseInst;
 typedef struct _NMObjBaseClass NMObjBaseClass;
 
 struct _NMObjBaseInst {
-	/* The first field of NMObjBaseInst is compatible with GObject.
+    /* The first field of NMObjBaseInst is compatible with GObject.
 	 * Basically, NMObjBaseInst is an abstract base type of GTypeInstance.
 	 *
 	 * If you do it right, you may derive a type of NMObjBaseInst as a proper GTypeInstance.
@@ -29,14 +29,14 @@ struct _NMObjBaseInst {
 	 * Basically, the only thing NMObjBaseInst gives you is access to an
 	 * NMObjBaseClass instance.
 	 */
-	union {
-		const NMObjBaseClass *klass;
-		GTypeInstance g_type_instance;
-	};
+    union {
+        const NMObjBaseClass *klass;
+        GTypeInstance         g_type_instance;
+    };
 };
 
 struct _NMObjBaseClass {
-	/* NMObjBaseClass is the base class of all NMObjBaseInst implementations.
+    /* NMObjBaseClass is the base class of all NMObjBaseInst implementations.
 	 * Note that it is also an abstract super class of GTypeInstance, that means
 	 * you may implement a NMObjBaseClass as a subtype of GTypeClass.
 	 *
@@ -55,10 +55,10 @@ struct _NMObjBaseClass {
 	 * Also note that usually you have only one instance of a certain type, so this
 	 * wastes just a few bytes for the unneeded GType.
 	 */
-	union {
-		GType g_type;
-		GTypeClass g_type_class;
-	};
+    union {
+        GType      g_type;
+        GTypeClass g_type_class;
+    };
 };
 
 /*****************************************************************************/

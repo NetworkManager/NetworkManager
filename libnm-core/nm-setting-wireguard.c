@@ -24,9 +24,12 @@
 
 /*****************************************************************************/
 
-static NMWireGuardPeer *_wireguard_peer_dup (const NMWireGuardPeer *self);
+static NMWireGuardPeer *_wireguard_peer_dup(const NMWireGuardPeer *self);
 
-G_DEFINE_BOXED_TYPE (NMWireGuardPeer, nm_wireguard_peer, _wireguard_peer_dup, nm_wireguard_peer_unref)
+G_DEFINE_BOXED_TYPE(NMWireGuardPeer,
+                    nm_wireguard_peer,
+                    _wireguard_peer_dup,
+                    nm_wireguard_peer_unref)
 
 /* NMWireGuardPeer can also track invalid allowed-ip settings, and only reject
  * them later during is_valid(). Such values are marked by a leading 'X' character
@@ -43,25 +46,22 @@ G_DEFINE_BOXED_TYPE (NMWireGuardPeer, nm_wireguard_peer, _wireguard_peer_dup, nm
  * Since: 1.16
  */
 struct _NMWireGuardPeer {
-	NMSockAddrEndpoint *endpoint;
-	char *public_key;
-	char *preshared_key;
-	GPtrArray *allowed_ips;
-	guint refcount;
-	NMSettingSecretFlags preshared_key_flags;
-	guint16 persistent_keepalive;
-	bool public_key_valid:1;
-	bool preshared_key_valid:1;
-	bool sealed:1;
+    NMSockAddrEndpoint * endpoint;
+    char *               public_key;
+    char *               preshared_key;
+    GPtrArray *          allowed_ips;
+    guint                refcount;
+    NMSettingSecretFlags preshared_key_flags;
+    guint16              persistent_keepalive;
+    bool                 public_key_valid : 1;
+    bool                 preshared_key_valid : 1;
+    bool                 sealed : 1;
 };
 
 static gboolean
-NM_IS_WIREGUARD_PEER (const NMWireGuardPeer *self, gboolean also_sealed)
+NM_IS_WIREGUARD_PEER(const NMWireGuardPeer *self, gboolean also_sealed)
 {
-	return    self
-	       && self->refcount > 0
-	       && (   also_sealed
-	           || !self->sealed);
+    return self && self->refcount > 0 && (also_sealed || !self->sealed);
 }
 
 /**
@@ -72,16 +72,16 @@ NM_IS_WIREGUARD_PEER (const NMWireGuardPeer *self, gboolean also_sealed)
  * Since: 1.16
  */
 NMWireGuardPeer *
-nm_wireguard_peer_new (void)
+nm_wireguard_peer_new(void)
 {
-	NMWireGuardPeer *self;
+    NMWireGuardPeer *self;
 
-	self = g_slice_new (NMWireGuardPeer);
-	*self = (NMWireGuardPeer) {
-		.refcount            = 1,
-		.preshared_key_flags = NM_SETTING_SECRET_FLAG_NOT_REQUIRED,
-	};
-	return self;
+    self  = g_slice_new(NMWireGuardPeer);
+    *self = (NMWireGuardPeer){
+        .refcount            = 1,
+        .preshared_key_flags = NM_SETTING_SECRET_FLAG_NOT_REQUIRED,
+    };
+    return self;
 }
 
 /**
@@ -96,35 +96,31 @@ nm_wireguard_peer_new (void)
  * Since: 1.16
  */
 NMWireGuardPeer *
-nm_wireguard_peer_new_clone (const NMWireGuardPeer *self,
-                             gboolean with_secrets)
+nm_wireguard_peer_new_clone(const NMWireGuardPeer *self, gboolean with_secrets)
 {
-	NMWireGuardPeer *new;
-	guint i;
+    NMWireGuardPeer *new;
+    guint i;
 
-	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, TRUE), NULL);
+    g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE), NULL);
 
-	new = g_slice_new (NMWireGuardPeer);
-	*new = (NMWireGuardPeer) {
-		.refcount             = 1,
-		.public_key           = g_strdup (self->public_key),
-		.public_key_valid     = self->public_key_valid,
-		.preshared_key        = with_secrets ? g_strdup (self->preshared_key) : NULL,
-		.preshared_key_valid  = self->preshared_key_valid,
-		.preshared_key_flags  = self->preshared_key_flags,
-		.endpoint             = nm_sock_addr_endpoint_ref (self->endpoint),
-		.persistent_keepalive = self->persistent_keepalive,
-	};
-	if (   self->allowed_ips
-	    && self->allowed_ips->len > 0) {
-		new->allowed_ips = g_ptr_array_new_full (self->allowed_ips->len,
-		                                         g_free);
-		for (i = 0; i < self->allowed_ips->len; i++) {
-			g_ptr_array_add (new->allowed_ips,
-			                 g_strdup (self->allowed_ips->pdata[i]));
-		}
-	}
-	return new;
+    new  = g_slice_new(NMWireGuardPeer);
+    *new = (NMWireGuardPeer){
+        .refcount             = 1,
+        .public_key           = g_strdup(self->public_key),
+        .public_key_valid     = self->public_key_valid,
+        .preshared_key        = with_secrets ? g_strdup(self->preshared_key) : NULL,
+        .preshared_key_valid  = self->preshared_key_valid,
+        .preshared_key_flags  = self->preshared_key_flags,
+        .endpoint             = nm_sock_addr_endpoint_ref(self->endpoint),
+        .persistent_keepalive = self->persistent_keepalive,
+    };
+    if (self->allowed_ips && self->allowed_ips->len > 0) {
+        new->allowed_ips = g_ptr_array_new_full(self->allowed_ips->len, g_free);
+        for (i = 0; i < self->allowed_ips->len; i++) {
+            g_ptr_array_add(new->allowed_ips, g_strdup(self->allowed_ips->pdata[i]));
+        }
+    }
+    return new;
 }
 
 /**
@@ -139,17 +135,17 @@ nm_wireguard_peer_new_clone (const NMWireGuardPeer *self,
  * Since: 1.16
  */
 NMWireGuardPeer *
-nm_wireguard_peer_ref (NMWireGuardPeer *self)
+nm_wireguard_peer_ref(NMWireGuardPeer *self)
 {
-	if (!self)
-		return NULL;
+    if (!self)
+        return NULL;
 
-	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, TRUE), NULL);
+    g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE), NULL);
 
-	nm_assert (self->refcount < G_MAXUINT);
+    nm_assert(self->refcount < G_MAXUINT);
 
-	self->refcount++;
-	return self;
+    self->refcount++;
+    return self;
 }
 
 /**
@@ -164,22 +160,22 @@ nm_wireguard_peer_ref (NMWireGuardPeer *self)
  * Since: 1.16
  */
 void
-nm_wireguard_peer_unref (NMWireGuardPeer *self)
+nm_wireguard_peer_unref(NMWireGuardPeer *self)
 {
-	if (!self)
-		return;
+    if (!self)
+        return;
 
-	g_return_if_fail (NM_IS_WIREGUARD_PEER (self, TRUE));
+    g_return_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE));
 
-	if (--self->refcount > 0)
-		return;
+    if (--self->refcount > 0)
+        return;
 
-	nm_sock_addr_endpoint_unref (self->endpoint);
-	if (self->allowed_ips)
-		g_ptr_array_unref (self->allowed_ips);
-	g_free (self->public_key);
-	nm_free_secret (self->preshared_key);
-	g_slice_free (NMWireGuardPeer, self);
+    nm_sock_addr_endpoint_unref(self->endpoint);
+    if (self->allowed_ips)
+        g_ptr_array_unref(self->allowed_ips);
+    g_free(self->public_key);
+    nm_free_secret(self->preshared_key);
+    g_slice_free(NMWireGuardPeer, self);
 }
 
 /**
@@ -196,13 +192,13 @@ nm_wireguard_peer_unref (NMWireGuardPeer *self)
  *   sealed.
  */
 static NMWireGuardPeer *
-_wireguard_peer_dup (const NMWireGuardPeer *self)
+_wireguard_peer_dup(const NMWireGuardPeer *self)
 {
-	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, TRUE), NULL);
+    g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE), NULL);
 
-	if (self->sealed)
-		return nm_wireguard_peer_ref ((NMWireGuardPeer *) self);
-	return nm_wireguard_peer_new_clone (self, TRUE);
+    if (self->sealed)
+        return nm_wireguard_peer_ref((NMWireGuardPeer *) self);
+    return nm_wireguard_peer_new_clone(self, TRUE);
 }
 
 /**
@@ -217,16 +213,16 @@ _wireguard_peer_dup (const NMWireGuardPeer *self)
  * Since: 1.16
  */
 void
-nm_wireguard_peer_seal (NMWireGuardPeer *self)
+nm_wireguard_peer_seal(NMWireGuardPeer *self)
 {
-	g_return_if_fail (NM_IS_WIREGUARD_PEER (self, TRUE));
+    g_return_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE));
 
-	self->sealed = TRUE;
+    self->sealed = TRUE;
 
-	if (self->allowed_ips) {
-		if (self->allowed_ips->len == 0)
-			nm_clear_pointer (&self->allowed_ips, g_ptr_array_unref);
-	}
+    if (self->allowed_ips) {
+        if (self->allowed_ips->len == 0)
+            nm_clear_pointer(&self->allowed_ips, g_ptr_array_unref);
+    }
 }
 
 /**
@@ -238,11 +234,11 @@ nm_wireguard_peer_seal (NMWireGuardPeer *self)
  * Since: 1.16
  */
 gboolean
-nm_wireguard_peer_is_sealed (const NMWireGuardPeer *self)
+nm_wireguard_peer_is_sealed(const NMWireGuardPeer *self)
 {
-	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, TRUE), FALSE);
+    g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE), FALSE);
 
-	return self->sealed;
+    return self->sealed;
 }
 
 /**
@@ -254,11 +250,11 @@ nm_wireguard_peer_is_sealed (const NMWireGuardPeer *self)
  * Since: 1.16
  */
 const char *
-nm_wireguard_peer_get_public_key (const NMWireGuardPeer *self)
+nm_wireguard_peer_get_public_key(const NMWireGuardPeer *self)
 {
-	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, TRUE), NULL);
+    g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE), NULL);
 
-	return self->public_key;
+    return self->public_key;
 }
 
 /**
@@ -281,48 +277,47 @@ nm_wireguard_peer_get_public_key (const NMWireGuardPeer *self)
  * Since: 1.16
  */
 gboolean
-nm_wireguard_peer_set_public_key (NMWireGuardPeer *self,
-                                  const char *public_key,
-                                  gboolean accept_invalid)
+nm_wireguard_peer_set_public_key(NMWireGuardPeer *self,
+                                 const char *     public_key,
+                                 gboolean         accept_invalid)
 {
-	char *public_key_normalized = NULL;
-	gboolean is_valid;
+    char *   public_key_normalized = NULL;
+    gboolean is_valid;
 
-	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE), FALSE);
+    g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, FALSE), FALSE);
 
-	if (!public_key) {
-		nm_clear_g_free (&self->public_key);
-		return TRUE;
-	}
+    if (!public_key) {
+        nm_clear_g_free(&self->public_key);
+        return TRUE;
+    }
 
-	is_valid = nm_utils_base64secret_normalize (public_key,
-	                                            NM_WIREGUARD_PUBLIC_KEY_LEN,
-	                                            &public_key_normalized);
-	nm_assert (is_valid == (public_key_normalized != NULL));
+    is_valid = nm_utils_base64secret_normalize(public_key,
+                                               NM_WIREGUARD_PUBLIC_KEY_LEN,
+                                               &public_key_normalized);
+    nm_assert(is_valid == (public_key_normalized != NULL));
 
-	if (   !is_valid
-	    && !accept_invalid)
-		return FALSE;
+    if (!is_valid && !accept_invalid)
+        return FALSE;
 
-	self->public_key_valid = is_valid;
-	g_free (self->public_key);
-	self->public_key = public_key_normalized ?: g_strdup (public_key);
-	return is_valid;
+    self->public_key_valid = is_valid;
+    g_free(self->public_key);
+    self->public_key = public_key_normalized ?: g_strdup(public_key);
+    return is_valid;
 }
 
 void
-_nm_wireguard_peer_set_public_key_bin (NMWireGuardPeer *self,
-                                       const guint8 public_key[static NM_WIREGUARD_PUBLIC_KEY_LEN])
+_nm_wireguard_peer_set_public_key_bin(NMWireGuardPeer *self,
+                                      const guint8 public_key[static NM_WIREGUARD_PUBLIC_KEY_LEN])
 {
-	g_return_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE));
+    g_return_if_fail(NM_IS_WIREGUARD_PEER(self, FALSE));
 
-	nm_clear_g_free (&self->public_key);
+    nm_clear_g_free(&self->public_key);
 
-	if (!public_key)
-		return;
+    if (!public_key)
+        return;
 
-	self->public_key = g_base64_encode (public_key, NM_WIREGUARD_PUBLIC_KEY_LEN);
-	self->public_key_valid = TRUE;
+    self->public_key       = g_base64_encode(public_key, NM_WIREGUARD_PUBLIC_KEY_LEN);
+    self->public_key_valid = TRUE;
 }
 
 /**
@@ -334,11 +329,11 @@ _nm_wireguard_peer_set_public_key_bin (NMWireGuardPeer *self,
  * Since: 1.16
  */
 const char *
-nm_wireguard_peer_get_preshared_key (const NMWireGuardPeer *self)
+nm_wireguard_peer_get_preshared_key(const NMWireGuardPeer *self)
 {
-	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, TRUE), NULL);
+    g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE), NULL);
 
-	return self->preshared_key;
+    return self->preshared_key;
 }
 
 /**
@@ -369,33 +364,32 @@ nm_wireguard_peer_get_preshared_key (const NMWireGuardPeer *self)
  * Since: 1.16
  */
 gboolean
-nm_wireguard_peer_set_preshared_key (NMWireGuardPeer *self,
-                                     const char *preshared_key,
-                                     gboolean accept_invalid)
+nm_wireguard_peer_set_preshared_key(NMWireGuardPeer *self,
+                                    const char *     preshared_key,
+                                    gboolean         accept_invalid)
 {
-	char *preshared_key_normalized = NULL;
-	gboolean is_valid;
+    char *   preshared_key_normalized = NULL;
+    gboolean is_valid;
 
-	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE), FALSE);
+    g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, FALSE), FALSE);
 
-	if (!preshared_key) {
-		nm_clear_pointer (&self->preshared_key, nm_free_secret);
-		return TRUE;
-	}
+    if (!preshared_key) {
+        nm_clear_pointer(&self->preshared_key, nm_free_secret);
+        return TRUE;
+    }
 
-	is_valid = nm_utils_base64secret_normalize (preshared_key,
-	                                            NM_WIREGUARD_SYMMETRIC_KEY_LEN,
-	                                            &preshared_key_normalized);
-	nm_assert (is_valid == (preshared_key_normalized != NULL));
+    is_valid = nm_utils_base64secret_normalize(preshared_key,
+                                               NM_WIREGUARD_SYMMETRIC_KEY_LEN,
+                                               &preshared_key_normalized);
+    nm_assert(is_valid == (preshared_key_normalized != NULL));
 
-	if (   !is_valid
-	    && !accept_invalid)
-		return FALSE;
+    if (!is_valid && !accept_invalid)
+        return FALSE;
 
-	self->preshared_key_valid = is_valid;
-	nm_free_secret (self->preshared_key);
-	self->preshared_key = preshared_key_normalized ?: g_strdup (preshared_key);
-	return is_valid;
+    self->preshared_key_valid = is_valid;
+    nm_free_secret(self->preshared_key);
+    self->preshared_key = preshared_key_normalized ?: g_strdup(preshared_key);
+    return is_valid;
 }
 
 /**
@@ -407,11 +401,11 @@ nm_wireguard_peer_set_preshared_key (NMWireGuardPeer *self,
  * Since: 1.16
  */
 NMSettingSecretFlags
-nm_wireguard_peer_get_preshared_key_flags (const NMWireGuardPeer *self)
+nm_wireguard_peer_get_preshared_key_flags(const NMWireGuardPeer *self)
 {
-	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, TRUE), 0);
+    g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE), 0);
 
-	return self->preshared_key_flags;
+    return self->preshared_key_flags;
 }
 
 /**
@@ -424,12 +418,12 @@ nm_wireguard_peer_get_preshared_key_flags (const NMWireGuardPeer *self)
  * Since: 1.16
  */
 void
-nm_wireguard_peer_set_preshared_key_flags (NMWireGuardPeer *self,
-                                           NMSettingSecretFlags preshared_key_flags)
+nm_wireguard_peer_set_preshared_key_flags(NMWireGuardPeer *    self,
+                                          NMSettingSecretFlags preshared_key_flags)
 {
-	g_return_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE));
+    g_return_if_fail(NM_IS_WIREGUARD_PEER(self, FALSE));
 
-	self->preshared_key_flags = preshared_key_flags;
+    self->preshared_key_flags = preshared_key_flags;
 }
 
 /**
@@ -442,11 +436,11 @@ nm_wireguard_peer_set_preshared_key_flags (NMWireGuardPeer *self,
  * Since: 1.16
  */
 guint16
-nm_wireguard_peer_get_persistent_keepalive (const NMWireGuardPeer *self)
+nm_wireguard_peer_get_persistent_keepalive(const NMWireGuardPeer *self)
 {
-	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, TRUE), 0);
+    g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE), 0);
 
-	return self->persistent_keepalive;
+    return self->persistent_keepalive;
 }
 
 /**
@@ -459,20 +453,19 @@ nm_wireguard_peer_get_persistent_keepalive (const NMWireGuardPeer *self)
  * Since: 1.16
  */
 void
-nm_wireguard_peer_set_persistent_keepalive (NMWireGuardPeer *self,
-                                            guint16 persistent_keepalive)
+nm_wireguard_peer_set_persistent_keepalive(NMWireGuardPeer *self, guint16 persistent_keepalive)
 {
-	g_return_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE));
+    g_return_if_fail(NM_IS_WIREGUARD_PEER(self, FALSE));
 
-	self->persistent_keepalive = persistent_keepalive;
+    self->persistent_keepalive = persistent_keepalive;
 }
 
 NMSockAddrEndpoint *
-_nm_wireguard_peer_get_endpoint (const NMWireGuardPeer *self)
+_nm_wireguard_peer_get_endpoint(const NMWireGuardPeer *self)
 {
-	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, TRUE), NULL);
+    g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE), NULL);
 
-	return self->endpoint;
+    return self->endpoint;
 }
 
 /**
@@ -484,26 +477,23 @@ _nm_wireguard_peer_get_endpoint (const NMWireGuardPeer *self)
  * Since: 1.16
  */
 const char *
-nm_wireguard_peer_get_endpoint (const NMWireGuardPeer *self)
+nm_wireguard_peer_get_endpoint(const NMWireGuardPeer *self)
 {
-	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, TRUE), NULL);
+    g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE), NULL);
 
-	return   self->endpoint
-	       ? nm_sock_addr_endpoint_get_endpoint (self->endpoint)
-	       : NULL;
+    return self->endpoint ? nm_sock_addr_endpoint_get_endpoint(self->endpoint) : NULL;
 }
 
 void
-_nm_wireguard_peer_set_endpoint (NMWireGuardPeer *self,
-                                 NMSockAddrEndpoint *endpoint)
+_nm_wireguard_peer_set_endpoint(NMWireGuardPeer *self, NMSockAddrEndpoint *endpoint)
 {
-	NMSockAddrEndpoint *old;
+    NMSockAddrEndpoint *old;
 
-	nm_assert (NM_IS_WIREGUARD_PEER (self, FALSE));
+    nm_assert(NM_IS_WIREGUARD_PEER(self, FALSE));
 
-	old = self->endpoint;
-	self->endpoint = nm_sock_addr_endpoint_ref (endpoint);
-	nm_sock_addr_endpoint_unref (old);
+    old            = self->endpoint;
+    self->endpoint = nm_sock_addr_endpoint_ref(endpoint);
+    nm_sock_addr_endpoint_unref(old);
 }
 
 /**
@@ -525,35 +515,32 @@ _nm_wireguard_peer_set_endpoint (NMWireGuardPeer *self,
  * Since: 1.16
  */
 gboolean
-nm_wireguard_peer_set_endpoint (NMWireGuardPeer *self,
-                                const char *endpoint,
-                                gboolean allow_invalid)
+nm_wireguard_peer_set_endpoint(NMWireGuardPeer *self, const char *endpoint, gboolean allow_invalid)
 {
-	NMSockAddrEndpoint *old;
-	NMSockAddrEndpoint *new;
-	gboolean is_valid;
+    NMSockAddrEndpoint *old;
+    NMSockAddrEndpoint *new;
+    gboolean is_valid;
 
-	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE), FALSE);
+    g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, FALSE), FALSE);
 
-	if (!endpoint) {
-		nm_clear_pointer (&self->endpoint, nm_sock_addr_endpoint_unref);
-		return TRUE;
-	}
+    if (!endpoint) {
+        nm_clear_pointer(&self->endpoint, nm_sock_addr_endpoint_unref);
+        return TRUE;
+    }
 
-	new = nm_sock_addr_endpoint_new (endpoint);
+    new = nm_sock_addr_endpoint_new(endpoint);
 
-	is_valid = (nm_sock_addr_endpoint_get_host (new) != NULL);
+    is_valid = (nm_sock_addr_endpoint_get_host(new) != NULL);
 
-	if (   !allow_invalid
-	    && !is_valid) {
-		nm_sock_addr_endpoint_unref (new);
-		return FALSE;
-	}
+    if (!allow_invalid && !is_valid) {
+        nm_sock_addr_endpoint_unref(new);
+        return FALSE;
+    }
 
-	old = self->endpoint;
-	self->endpoint = new;
-	nm_sock_addr_endpoint_unref (old);
-	return is_valid;
+    old            = self->endpoint;
+    self->endpoint = new;
+    nm_sock_addr_endpoint_unref(old);
+    return is_valid;
 }
 
 /**
@@ -565,11 +552,11 @@ nm_wireguard_peer_set_endpoint (NMWireGuardPeer *self,
  * Since: 1.16
  */
 guint
-nm_wireguard_peer_get_allowed_ips_len (const NMWireGuardPeer *self)
+nm_wireguard_peer_get_allowed_ips_len(const NMWireGuardPeer *self)
 {
-	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, TRUE), 0);
+    g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE), 0);
 
-	return self->allowed_ips ? self->allowed_ips->len : 0u;
+    return self->allowed_ips ? self->allowed_ips->len : 0u;
 }
 
 /**
@@ -586,26 +573,23 @@ nm_wireguard_peer_get_allowed_ips_len (const NMWireGuardPeer *self)
  * Since: 1.16
  */
 const char *
-nm_wireguard_peer_get_allowed_ip (const NMWireGuardPeer *self,
-                                  guint idx,
-                                  gboolean *out_is_valid)
+nm_wireguard_peer_get_allowed_ip(const NMWireGuardPeer *self, guint idx, gboolean *out_is_valid)
 {
-	const char *s;
+    const char *s;
 
-	/* With LTO, the compiler might warn about the g_return_val_if_fail()
+    /* With LTO, the compiler might warn about the g_return_val_if_fail()
 	 * code path not initializing the output argument. Workaround that by
 	 * always setting the out argument. */
-	NM_SET_OUT (out_is_valid, FALSE);
+    NM_SET_OUT(out_is_valid, FALSE);
 
-	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, TRUE), NULL);
+    g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE), NULL);
 
-	if (   !self->allowed_ips
-	    || idx >= self->allowed_ips->len)
-		return NULL;
+    if (!self->allowed_ips || idx >= self->allowed_ips->len)
+        return NULL;
 
-	s = self->allowed_ips->pdata[idx];
-	NM_SET_OUT (out_is_valid, s[0] != ALLOWED_IP_INVALID_X);
-	return s[0] == ALLOWED_IP_INVALID_X ? &s[1] : s;
+    s = self->allowed_ips->pdata[idx];
+    NM_SET_OUT(out_is_valid, s[0] != ALLOWED_IP_INVALID_X);
+    return s[0] == ALLOWED_IP_INVALID_X ? &s[1] : s;
 }
 
 /**
@@ -619,58 +603,52 @@ nm_wireguard_peer_get_allowed_ip (const NMWireGuardPeer *self,
  * Since: 1.16
  */
 void
-nm_wireguard_peer_clear_allowed_ips (NMWireGuardPeer *self)
+nm_wireguard_peer_clear_allowed_ips(NMWireGuardPeer *self)
 {
-	g_return_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE));
+    g_return_if_fail(NM_IS_WIREGUARD_PEER(self, FALSE));
 
-	if (self->allowed_ips)
-		g_ptr_array_set_size (self->allowed_ips, 0);
+    if (self->allowed_ips)
+        g_ptr_array_set_size(self->allowed_ips, 0);
 }
 
 static gboolean
-_peer_append_allowed_ip (NMWireGuardPeer *self,
-                         const char *allowed_ip,
-                         gboolean accept_invalid)
+_peer_append_allowed_ip(NMWireGuardPeer *self, const char *allowed_ip, gboolean accept_invalid)
 {
-	int addr_family;
-	int prefix;
-	NMIPAddr addrbin;
-	char *str;
-	gboolean is_valid = TRUE;
+    int      addr_family;
+    int      prefix;
+    NMIPAddr addrbin;
+    char *   str;
+    gboolean is_valid = TRUE;
 
-	nm_assert (NM_IS_WIREGUARD_PEER (self, FALSE));
-	nm_assert (allowed_ip);
+    nm_assert(NM_IS_WIREGUARD_PEER(self, FALSE));
+    nm_assert(allowed_ip);
 
-	/* normalize the address (if it is valid. Otherwise, take it
+    /* normalize the address (if it is valid. Otherwise, take it
 	 * as-is (it will render the instance invalid). */
-	if (!nm_utils_parse_inaddr_prefix_bin (AF_UNSPEC,
-	                                       allowed_ip,
-	                                       &addr_family,
-	                                       &addrbin,
-	                                       &prefix)) {
-		if (!accept_invalid)
-			return FALSE;
-		/* mark the entry as invalid by having a "X" prefix. */
-		str = g_strconcat (ALLOWED_IP_INVALID_X_STR, allowed_ip, NULL);
-		is_valid = FALSE;
-	} else {
-		char addrstr[NM_UTILS_INET_ADDRSTRLEN];
+    if (!nm_utils_parse_inaddr_prefix_bin(AF_UNSPEC, allowed_ip, &addr_family, &addrbin, &prefix)) {
+        if (!accept_invalid)
+            return FALSE;
+        /* mark the entry as invalid by having a "X" prefix. */
+        str      = g_strconcat(ALLOWED_IP_INVALID_X_STR, allowed_ip, NULL);
+        is_valid = FALSE;
+    } else {
+        char addrstr[NM_UTILS_INET_ADDRSTRLEN];
 
-		nm_assert_addr_family (addr_family);
+        nm_assert_addr_family(addr_family);
 
-		nm_utils_inet_ntop (addr_family, &addrbin, addrstr);
-		if (prefix >= 0)
-			str = g_strdup_printf ("%s/%d", addrstr, prefix);
-		else
-			str = g_strdup (addrstr);
-		nm_assert (str[0] != ALLOWED_IP_INVALID_X);
-	}
+        nm_utils_inet_ntop(addr_family, &addrbin, addrstr);
+        if (prefix >= 0)
+            str = g_strdup_printf("%s/%d", addrstr, prefix);
+        else
+            str = g_strdup(addrstr);
+        nm_assert(str[0] != ALLOWED_IP_INVALID_X);
+    }
 
-	if (!self->allowed_ips)
-		self->allowed_ips = g_ptr_array_new_with_free_func (g_free);
+    if (!self->allowed_ips)
+        self->allowed_ips = g_ptr_array_new_with_free_func(g_free);
 
-	g_ptr_array_add (self->allowed_ips, str);
-	return is_valid;
+    g_ptr_array_add(self->allowed_ips, str);
+    return is_valid;
 }
 
 /**
@@ -695,14 +673,14 @@ _peer_append_allowed_ip (NMWireGuardPeer *self,
  * Since: 1.16
  */
 gboolean
-nm_wireguard_peer_append_allowed_ip (NMWireGuardPeer *self,
-                                     const char *allowed_ip,
-                                     gboolean accept_invalid)
+nm_wireguard_peer_append_allowed_ip(NMWireGuardPeer *self,
+                                    const char *     allowed_ip,
+                                    gboolean         accept_invalid)
 {
-	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE), FALSE);
-	g_return_val_if_fail (allowed_ip, FALSE);
+    g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, FALSE), FALSE);
+    g_return_val_if_fail(allowed_ip, FALSE);
 
-	return _peer_append_allowed_ip (self, allowed_ip, accept_invalid);
+    return _peer_append_allowed_ip(self, allowed_ip, accept_invalid);
 }
 
 /**
@@ -723,17 +701,15 @@ nm_wireguard_peer_append_allowed_ip (NMWireGuardPeer *self,
  * Since: 1.16
  */
 gboolean
-nm_wireguard_peer_remove_allowed_ip (NMWireGuardPeer *self,
-                                     guint idx)
+nm_wireguard_peer_remove_allowed_ip(NMWireGuardPeer *self, guint idx)
 {
-	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, FALSE), FALSE);
+    g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, FALSE), FALSE);
 
-	if (   !self->allowed_ips
-	    || idx >= self->allowed_ips->len)
-		return FALSE;
+    if (!self->allowed_ips || idx >= self->allowed_ips->len)
+        return FALSE;
 
-	g_ptr_array_remove_index (self->allowed_ips, idx);
-	return TRUE;
+    g_ptr_array_remove_index(self->allowed_ips, idx);
+    return TRUE;
 }
 
 /**
@@ -751,75 +727,85 @@ nm_wireguard_peer_remove_allowed_ip (NMWireGuardPeer *self,
  * Since: 1.16
  */
 gboolean
-nm_wireguard_peer_is_valid (const NMWireGuardPeer *self,
-                            gboolean check_non_secrets,
-                            gboolean check_secrets,
-                            GError **error)
+nm_wireguard_peer_is_valid(const NMWireGuardPeer *self,
+                           gboolean               check_non_secrets,
+                           gboolean               check_secrets,
+                           GError **              error)
 {
-	guint i;
+    guint i;
 
-	g_return_val_if_fail (NM_IS_WIREGUARD_PEER (self, TRUE), FALSE);
-	g_return_val_if_fail (!error || !*error, FALSE);
+    g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE), FALSE);
+    g_return_val_if_fail(!error || !*error, FALSE);
 
-	if (check_non_secrets) {
-		if (!self->public_key) {
-			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY,
-			                     _("missing public-key for peer"));
-			return FALSE;
-		} else if (!self->public_key_valid) {
-			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("invalid public-key for peer"));
-			return FALSE;
-		}
-	}
+    if (check_non_secrets) {
+        if (!self->public_key) {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_MISSING_PROPERTY,
+                                _("missing public-key for peer"));
+            return FALSE;
+        } else if (!self->public_key_valid) {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("invalid public-key for peer"));
+            return FALSE;
+        }
+    }
 
-	if (check_secrets) {
-		if (   self->preshared_key
-		    && !self->preshared_key_valid) {
-			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("invalid preshared-key for peer"));
-			return FALSE;
-		}
-	}
+    if (check_secrets) {
+        if (self->preshared_key && !self->preshared_key_valid) {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("invalid preshared-key for peer"));
+            return FALSE;
+        }
+    }
 
-	if (check_non_secrets) {
-		if (!_nm_utils_secret_flags_validate (self->preshared_key_flags,
-		                                      NULL,
-		                                      NULL,
-		                                      NM_SETTING_SECRET_FLAG_NONE,
-		                                      error))
-			return FALSE;
-	}
+    if (check_non_secrets) {
+        if (!_nm_utils_secret_flags_validate(self->preshared_key_flags,
+                                             NULL,
+                                             NULL,
+                                             NM_SETTING_SECRET_FLAG_NONE,
+                                             error))
+            return FALSE;
+    }
 
-	if (check_non_secrets) {
-		if (   self->endpoint
-		    && !nm_sock_addr_endpoint_get_host (self->endpoint)) {
-			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("invalid endpoint for peer"));
-			return FALSE;
-		}
+    if (check_non_secrets) {
+        if (self->endpoint && !nm_sock_addr_endpoint_get_host(self->endpoint)) {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("invalid endpoint for peer"));
+            return FALSE;
+        }
 
-		if (self->allowed_ips) {
-			for (i = 0; i < self->allowed_ips->len; i++) {
-				const char *s = self->allowed_ips->pdata[i];
+        if (self->allowed_ips) {
+            for (i = 0; i < self->allowed_ips->len; i++) {
+                const char *s = self->allowed_ips->pdata[i];
 
-				if (s[0] == ALLOWED_IP_INVALID_X) {
-					g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
-					             _("invalid IP address \"%s\" for allowed-ip of peer"),
-					             &s[1]);
-					return FALSE;
-				}
-			}
-		}
+                if (s[0] == ALLOWED_IP_INVALID_X) {
+                    g_set_error(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("invalid IP address \"%s\" for allowed-ip of peer"),
+                                &s[1]);
+                    return FALSE;
+                }
+            }
+        }
 
-		if (!_nm_setting_secret_flags_valid (self->preshared_key_flags)) {
-			g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("invalid preshared-key-flags for peer"));
-			return FALSE;
-		}
-	}
+        if (!_nm_setting_secret_flags_valid(self->preshared_key_flags)) {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("invalid preshared-key-flags for peer"));
+            return FALSE;
+        }
+    }
 
-	return TRUE;
+    return TRUE;
 }
 
 /**
@@ -836,87 +822,85 @@ nm_wireguard_peer_is_valid (const NMWireGuardPeer *self,
  * Since: 1.16
  */
 int
-nm_wireguard_peer_cmp (const NMWireGuardPeer *a,
-                       const NMWireGuardPeer *b,
-                       NMSettingCompareFlags compare_flags)
+nm_wireguard_peer_cmp(const NMWireGuardPeer *a,
+                      const NMWireGuardPeer *b,
+                      NMSettingCompareFlags  compare_flags)
 {
-	guint i, n;
+    guint i, n;
 
-	NM_CMP_SELF (a, b);
+    NM_CMP_SELF(a, b);
 
-	/* regardless of the @compare_flags, the public-key is the ID of the peer. It must
+    /* regardless of the @compare_flags, the public-key is the ID of the peer. It must
 	 * always be compared. */
-	NM_CMP_FIELD_BOOL (a, b, public_key_valid);
-	NM_CMP_FIELD_STR0 (a, b, public_key);
+    NM_CMP_FIELD_BOOL(a, b, public_key_valid);
+    NM_CMP_FIELD_STR0(a, b, public_key);
 
-	if (NM_FLAGS_ANY (compare_flags,   NM_SETTING_COMPARE_FLAG_INFERRABLE
-	                                 | NM_SETTING_COMPARE_FLAG_FUZZY))
-		return 0;
+    if (NM_FLAGS_ANY(compare_flags,
+                     NM_SETTING_COMPARE_FLAG_INFERRABLE | NM_SETTING_COMPARE_FLAG_FUZZY))
+        return 0;
 
-	NM_CMP_FIELD_BOOL (a, b, endpoint);
-	if (a->endpoint) {
-		NM_CMP_DIRECT_STRCMP0 (nm_sock_addr_endpoint_get_endpoint (a->endpoint),
-		                       nm_sock_addr_endpoint_get_endpoint (b->endpoint));
-	}
+    NM_CMP_FIELD_BOOL(a, b, endpoint);
+    if (a->endpoint) {
+        NM_CMP_DIRECT_STRCMP0(nm_sock_addr_endpoint_get_endpoint(a->endpoint),
+                              nm_sock_addr_endpoint_get_endpoint(b->endpoint));
+    }
 
-	NM_CMP_FIELD (a, b, persistent_keepalive);
+    NM_CMP_FIELD(a, b, persistent_keepalive);
 
-	NM_CMP_DIRECT ((n = (a->allowed_ips ? a->allowed_ips->len : 0u)),
-	               (     b->allowed_ips ? b->allowed_ips->len : 0u ));
-	for (i = 0; i < n; i++)
-		NM_CMP_DIRECT_STRCMP0 (a->allowed_ips->pdata[i], b->allowed_ips->pdata[i]);
+    NM_CMP_DIRECT((n = (a->allowed_ips ? a->allowed_ips->len : 0u)),
+                  (b->allowed_ips ? b->allowed_ips->len : 0u));
+    for (i = 0; i < n; i++)
+        NM_CMP_DIRECT_STRCMP0(a->allowed_ips->pdata[i], b->allowed_ips->pdata[i]);
 
-	NM_CMP_FIELD (a, b, preshared_key_flags);
+    NM_CMP_FIELD(a, b, preshared_key_flags);
 
-	if (!NM_FLAGS_HAS (compare_flags, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)) {
-		if (   NM_FLAGS_HAS (compare_flags, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS)
-		    && NM_FLAGS_HAS (a->preshared_key_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED)) {
-			/* pass */
-		} else if (   NM_FLAGS_HAS (compare_flags, NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)
-		           && NM_FLAGS_HAS (a->preshared_key_flags, NM_SETTING_SECRET_FLAG_NOT_SAVED)) {
-			/* pass */
-		} else {
-			NM_CMP_FIELD_BOOL (a, b, preshared_key_valid);
-			NM_CMP_FIELD_STR0 (a, b, preshared_key);
-		}
-	}
+    if (!NM_FLAGS_HAS(compare_flags, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)) {
+        if (NM_FLAGS_HAS(compare_flags, NM_SETTING_COMPARE_FLAG_IGNORE_AGENT_OWNED_SECRETS)
+            && NM_FLAGS_HAS(a->preshared_key_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED)) {
+            /* pass */
+        } else if (NM_FLAGS_HAS(compare_flags, NM_SETTING_COMPARE_FLAG_IGNORE_NOT_SAVED_SECRETS)
+                   && NM_FLAGS_HAS(a->preshared_key_flags, NM_SETTING_SECRET_FLAG_NOT_SAVED)) {
+            /* pass */
+        } else {
+            NM_CMP_FIELD_BOOL(a, b, preshared_key_valid);
+            NM_CMP_FIELD_STR0(a, b, preshared_key);
+        }
+    }
 
-	return 0;
+    return 0;
 }
 
 /*****************************************************************************/
 
 typedef struct {
-	const char *public_key;
-	NMWireGuardPeer *peer;
-	guint idx;
+    const char *     public_key;
+    NMWireGuardPeer *peer;
+    guint            idx;
 } PeerData;
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_FWMARK,
-	PROP_IP4_AUTO_DEFAULT_ROUTE,
-	PROP_IP6_AUTO_DEFAULT_ROUTE,
-	PROP_LISTEN_PORT,
-	PROP_MTU,
-	PROP_PEER_ROUTES,
-	PROP_PRIVATE_KEY,
-	PROP_PRIVATE_KEY_FLAGS,
-);
+NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_FWMARK,
+                                  PROP_IP4_AUTO_DEFAULT_ROUTE,
+                                  PROP_IP6_AUTO_DEFAULT_ROUTE,
+                                  PROP_LISTEN_PORT,
+                                  PROP_MTU,
+                                  PROP_PEER_ROUTES,
+                                  PROP_PRIVATE_KEY,
+                                  PROP_PRIVATE_KEY_FLAGS, );
 
 typedef struct {
-	char *private_key;
-	GPtrArray *peers_arr;
-	GHashTable *peers_hash;
-	NMSettingSecretFlags private_key_flags;
-	NMTernary ip4_auto_default_route;
-	NMTernary ip6_auto_default_route;
-	guint32 fwmark;
-	guint32 mtu;
-	guint16 listen_port;
-	bool private_key_valid:1;
-	bool peer_routes:1;
+    char *               private_key;
+    GPtrArray *          peers_arr;
+    GHashTable *         peers_hash;
+    NMSettingSecretFlags private_key_flags;
+    NMTernary            ip4_auto_default_route;
+    NMTernary            ip6_auto_default_route;
+    guint32              fwmark;
+    guint32              mtu;
+    guint16              listen_port;
+    bool                 private_key_valid : 1;
+    bool                 peer_routes : 1;
 } NMSettingWireGuardPrivate;
 
 /**
@@ -927,43 +911,52 @@ typedef struct {
  * Since: 1.16
  */
 struct _NMSettingWireGuard {
-	NMSetting parent;
-	NMSettingWireGuardPrivate _priv;
+    NMSetting                 parent;
+    NMSettingWireGuardPrivate _priv;
 };
 
 struct _NMSettingWireGuardClass {
-	NMSettingClass parent;
+    NMSettingClass parent;
 };
 
-G_DEFINE_TYPE (NMSettingWireGuard, nm_setting_wireguard, NM_TYPE_SETTING)
+G_DEFINE_TYPE(NMSettingWireGuard, nm_setting_wireguard, NM_TYPE_SETTING)
 
-#define NM_SETTING_WIREGUARD_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMSettingWireGuard, NM_IS_SETTING_WIREGUARD, NMSetting)
+#define NM_SETTING_WIREGUARD_GET_PRIVATE(self) \
+    _NM_GET_PRIVATE(self, NMSettingWireGuard, NM_IS_SETTING_WIREGUARD, NMSetting)
 
 /*****************************************************************************/
 
-#define peers_psk_get_secret_name_a(public_key, to_free) \
-	nm_construct_name_a (NM_SETTING_WIREGUARD_PEERS".%s."NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY, (public_key), (to_free))
+#define peers_psk_get_secret_name_a(public_key, to_free)                                        \
+    nm_construct_name_a(NM_SETTING_WIREGUARD_PEERS ".%s." NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY, \
+                        (public_key),                                                           \
+                        (to_free))
 
-#define peers_psk_get_secret_name_dup(public_key) \
-	g_strdup_printf (NM_SETTING_WIREGUARD_PEERS".%s."NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY, (public_key))
+#define peers_psk_get_secret_name_dup(public_key)                                           \
+    g_strdup_printf(NM_SETTING_WIREGUARD_PEERS ".%s." NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY, \
+                    (public_key))
 
-#define peers_psk_get_secret_parse_a(secret_public_key, public_key_free) \
-	({ \
-		const char *_secret_public_key = (secret_public_key); \
-		char **_public_key_free = (public_key_free); \
-		const char *_public_key = NULL; \
-		\
-		nm_assert (_public_key_free && !*_public_key_free); \
-		\
-		if (NM_STR_HAS_PREFIX (_secret_public_key, NM_SETTING_WIREGUARD_PEERS".")) { \
-			_secret_public_key += NM_STRLEN (NM_SETTING_WIREGUARD_PEERS"."); \
-			if (NM_STR_HAS_SUFFIX (_secret_public_key, "."NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY)) { \
-				_public_key = nm_strndup_a (300, _secret_public_key, strlen (_secret_public_key) - NM_STRLEN ("."NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY), _public_key_free); \
-			} \
-		} \
-		\
-		_public_key; \
-	})
+#define peers_psk_get_secret_parse_a(secret_public_key, public_key_free)                           \
+    ({                                                                                             \
+        const char *_secret_public_key = (secret_public_key);                                      \
+        char **     _public_key_free   = (public_key_free);                                        \
+        const char *_public_key        = NULL;                                                     \
+                                                                                                   \
+        nm_assert(_public_key_free && !*_public_key_free);                                         \
+                                                                                                   \
+        if (NM_STR_HAS_PREFIX(_secret_public_key, NM_SETTING_WIREGUARD_PEERS ".")) {               \
+            _secret_public_key += NM_STRLEN(NM_SETTING_WIREGUARD_PEERS ".");                       \
+            if (NM_STR_HAS_SUFFIX(_secret_public_key, "." NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY)) { \
+                _public_key =                                                                      \
+                    nm_strndup_a(300,                                                              \
+                                 _secret_public_key,                                               \
+                                 strlen(_secret_public_key)                                        \
+                                     - NM_STRLEN("." NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY),        \
+                                 _public_key_free);                                                \
+            }                                                                                      \
+        }                                                                                          \
+                                                                                                   \
+        _public_key;                                                                               \
+    })
 
 /*****************************************************************************/
 
@@ -976,11 +969,11 @@ G_DEFINE_TYPE (NMSettingWireGuard, nm_setting_wireguard, NM_TYPE_SETTING)
  * Since: 1.16
  */
 const char *
-nm_setting_wireguard_get_private_key (NMSettingWireGuard *self)
+nm_setting_wireguard_get_private_key(NMSettingWireGuard *self)
 {
-	g_return_val_if_fail (NM_IS_SETTING_WIREGUARD (self), NULL);
+    g_return_val_if_fail(NM_IS_SETTING_WIREGUARD(self), NULL);
 
-	return NM_SETTING_WIREGUARD_GET_PRIVATE (self)->private_key;
+    return NM_SETTING_WIREGUARD_GET_PRIVATE(self)->private_key;
 }
 
 /**
@@ -992,11 +985,11 @@ nm_setting_wireguard_get_private_key (NMSettingWireGuard *self)
  * Since: 1.16
  */
 NMSettingSecretFlags
-nm_setting_wireguard_get_private_key_flags (NMSettingWireGuard *self)
+nm_setting_wireguard_get_private_key_flags(NMSettingWireGuard *self)
 {
-	g_return_val_if_fail (NM_IS_SETTING_WIREGUARD (self), 0);
+    g_return_val_if_fail(NM_IS_SETTING_WIREGUARD(self), 0);
 
-	return NM_SETTING_WIREGUARD_GET_PRIVATE (self)->private_key_flags;
+    return NM_SETTING_WIREGUARD_GET_PRIVATE(self)->private_key_flags;
 }
 
 /**
@@ -1008,11 +1001,11 @@ nm_setting_wireguard_get_private_key_flags (NMSettingWireGuard *self)
  * Since: 1.16
  */
 guint32
-nm_setting_wireguard_get_fwmark (NMSettingWireGuard *self)
+nm_setting_wireguard_get_fwmark(NMSettingWireGuard *self)
 {
-	g_return_val_if_fail (NM_IS_SETTING_WIREGUARD (self), 0);
+    g_return_val_if_fail(NM_IS_SETTING_WIREGUARD(self), 0);
 
-	return NM_SETTING_WIREGUARD_GET_PRIVATE (self)->fwmark;
+    return NM_SETTING_WIREGUARD_GET_PRIVATE(self)->fwmark;
 }
 
 /**
@@ -1024,11 +1017,11 @@ nm_setting_wireguard_get_fwmark (NMSettingWireGuard *self)
  * Since: 1.16
  */
 guint16
-nm_setting_wireguard_get_listen_port (NMSettingWireGuard *self)
+nm_setting_wireguard_get_listen_port(NMSettingWireGuard *self)
 {
-	g_return_val_if_fail (NM_IS_SETTING_WIREGUARD (self), 0);
+    g_return_val_if_fail(NM_IS_SETTING_WIREGUARD(self), 0);
 
-	return NM_SETTING_WIREGUARD_GET_PRIVATE (self)->listen_port;
+    return NM_SETTING_WIREGUARD_GET_PRIVATE(self)->listen_port;
 }
 
 /**
@@ -1040,11 +1033,11 @@ nm_setting_wireguard_get_listen_port (NMSettingWireGuard *self)
  * Since: 1.16
  */
 gboolean
-nm_setting_wireguard_get_peer_routes (NMSettingWireGuard *self)
+nm_setting_wireguard_get_peer_routes(NMSettingWireGuard *self)
 {
-	g_return_val_if_fail (NM_IS_SETTING_WIREGUARD (self), TRUE);
+    g_return_val_if_fail(NM_IS_SETTING_WIREGUARD(self), TRUE);
 
-	return NM_SETTING_WIREGUARD_GET_PRIVATE (self)->peer_routes;
+    return NM_SETTING_WIREGUARD_GET_PRIVATE(self)->peer_routes;
 }
 
 /**
@@ -1056,11 +1049,11 @@ nm_setting_wireguard_get_peer_routes (NMSettingWireGuard *self)
  * Since: 1.16
  */
 guint32
-nm_setting_wireguard_get_mtu (NMSettingWireGuard *self)
+nm_setting_wireguard_get_mtu(NMSettingWireGuard *self)
 {
-	g_return_val_if_fail (NM_IS_SETTING_WIREGUARD (self), 0);
+    g_return_val_if_fail(NM_IS_SETTING_WIREGUARD(self), 0);
 
-	return NM_SETTING_WIREGUARD_GET_PRIVATE (self)->mtu;
+    return NM_SETTING_WIREGUARD_GET_PRIVATE(self)->mtu;
 }
 
 /**
@@ -1072,11 +1065,11 @@ nm_setting_wireguard_get_mtu (NMSettingWireGuard *self)
  * Since: 1.20
  */
 NMTernary
-nm_setting_wireguard_get_ip4_auto_default_route (NMSettingWireGuard *self)
+nm_setting_wireguard_get_ip4_auto_default_route(NMSettingWireGuard *self)
 {
-	g_return_val_if_fail (NM_IS_SETTING_WIREGUARD (self), NM_TERNARY_DEFAULT);
+    g_return_val_if_fail(NM_IS_SETTING_WIREGUARD(self), NM_TERNARY_DEFAULT);
 
-	return NM_SETTING_WIREGUARD_GET_PRIVATE (self)->ip4_auto_default_route;
+    return NM_SETTING_WIREGUARD_GET_PRIVATE(self)->ip4_auto_default_route;
 }
 
 /**
@@ -1088,99 +1081,96 @@ nm_setting_wireguard_get_ip4_auto_default_route (NMSettingWireGuard *self)
  * Since: 1.20
  */
 NMTernary
-nm_setting_wireguard_get_ip6_auto_default_route (NMSettingWireGuard *self)
+nm_setting_wireguard_get_ip6_auto_default_route(NMSettingWireGuard *self)
 {
-	g_return_val_if_fail (NM_IS_SETTING_WIREGUARD (self), NM_TERNARY_DEFAULT);
+    g_return_val_if_fail(NM_IS_SETTING_WIREGUARD(self), NM_TERNARY_DEFAULT);
 
-	return NM_SETTING_WIREGUARD_GET_PRIVATE (self)->ip6_auto_default_route;
+    return NM_SETTING_WIREGUARD_GET_PRIVATE(self)->ip6_auto_default_route;
 }
 
 /*****************************************************************************/
 
 static void
-_peer_free (PeerData *pd)
+_peer_free(PeerData *pd)
 {
-	nm_assert (pd);
+    nm_assert(pd);
 
-	nm_wireguard_peer_unref (pd->peer);
-	g_slice_free (PeerData, pd);
+    nm_wireguard_peer_unref(pd->peer);
+    g_slice_free(PeerData, pd);
 }
 
 /*****************************************************************************/
 
 static void
-_peers_notify (gpointer self)
+_peers_notify(gpointer self)
 {
-	_nm_setting_emit_property_changed (self);
+    _nm_setting_emit_property_changed(self);
 }
 
 static PeerData *
-_peers_get (NMSettingWireGuardPrivate *priv,
-            guint idx)
+_peers_get(NMSettingWireGuardPrivate *priv, guint idx)
 {
-	PeerData *pd;
+    PeerData *pd;
 
-	nm_assert (priv);
-	nm_assert (idx < priv->peers_arr->len);
+    nm_assert(priv);
+    nm_assert(idx < priv->peers_arr->len);
 
-	pd = priv->peers_arr->pdata[idx];
+    pd = priv->peers_arr->pdata[idx];
 
-	nm_assert (pd);
-	nm_assert (pd->idx == idx);
-	nm_assert (NM_IS_WIREGUARD_PEER (pd->peer, TRUE));
-	nm_assert (nm_wireguard_peer_is_sealed (pd->peer));
-	nm_assert (pd->public_key == nm_wireguard_peer_get_public_key (pd->peer));
-	nm_assert (g_hash_table_lookup (priv->peers_hash, pd) == pd);
+    nm_assert(pd);
+    nm_assert(pd->idx == idx);
+    nm_assert(NM_IS_WIREGUARD_PEER(pd->peer, TRUE));
+    nm_assert(nm_wireguard_peer_is_sealed(pd->peer));
+    nm_assert(pd->public_key == nm_wireguard_peer_get_public_key(pd->peer));
+    nm_assert(g_hash_table_lookup(priv->peers_hash, pd) == pd);
 
-	return pd;
+    return pd;
 }
 
 static PeerData *
-_peers_get_by_public_key (NMSettingWireGuardPrivate *priv,
-                          const char *public_key,
-                          gboolean try_with_normalized_key)
+_peers_get_by_public_key(NMSettingWireGuardPrivate *priv,
+                         const char *               public_key,
+                         gboolean                   try_with_normalized_key)
 {
-	gs_free char *public_key_normalized = NULL;
-	PeerData *pd;
+    gs_free char *public_key_normalized = NULL;
+    PeerData *    pd;
 
 again:
-	nm_assert (priv);
-	nm_assert (public_key);
+    nm_assert(priv);
+    nm_assert(public_key);
 
-	pd = g_hash_table_lookup (priv->peers_hash, &public_key);
-	if (pd) {
-		nm_assert (_peers_get (priv, pd->idx) == pd);
-		return pd;
-	}
-	if (   try_with_normalized_key
-	    && nm_utils_base64secret_normalize (public_key,
-	                                        NM_WIREGUARD_PUBLIC_KEY_LEN,
-	                                        &public_key_normalized)) {
-		public_key = public_key_normalized;
-		try_with_normalized_key = FALSE;
-		goto again;
-	}
-	return NULL;
+    pd = g_hash_table_lookup(priv->peers_hash, &public_key);
+    if (pd) {
+        nm_assert(_peers_get(priv, pd->idx) == pd);
+        return pd;
+    }
+    if (try_with_normalized_key
+        && nm_utils_base64secret_normalize(public_key,
+                                           NM_WIREGUARD_PUBLIC_KEY_LEN,
+                                           &public_key_normalized)) {
+        public_key              = public_key_normalized;
+        try_with_normalized_key = FALSE;
+        goto again;
+    }
+    return NULL;
 }
 
 static void
-_peers_remove (NMSettingWireGuardPrivate *priv,
-               PeerData *pd,
-               gboolean do_free)
+_peers_remove(NMSettingWireGuardPrivate *priv, PeerData *pd, gboolean do_free)
 {
-	guint i;
+    guint i;
 
-	nm_assert (pd);
-	nm_assert (_peers_get (priv, pd->idx) == pd);
+    nm_assert(pd);
+    nm_assert(_peers_get(priv, pd->idx) == pd);
 
-	for (i = pd->idx + 1; i < priv->peers_arr->len; i++)
-		_peers_get (priv, i)->idx--;
+    for (i = pd->idx + 1; i < priv->peers_arr->len; i++)
+        _peers_get(priv, i)->idx--;
 
-	g_ptr_array_remove_index (priv->peers_arr, pd->idx);
-	if (!g_hash_table_remove (priv->peers_hash, pd))
-		nm_assert_not_reached ();
-	if (do_free)
-		_peer_free (pd);
+    g_ptr_array_remove_index(priv->peers_arr, pd->idx);
+    if (!g_hash_table_remove(priv->peers_hash, pd))
+        nm_assert_not_reached();
+    if (do_free)
+        _peer_free(pd);
 }
 
 /**
@@ -1192,11 +1182,11 @@ _peers_remove (NMSettingWireGuardPrivate *priv,
  * Since: 1.16
  */
 guint
-nm_setting_wireguard_get_peers_len (NMSettingWireGuard *self)
+nm_setting_wireguard_get_peers_len(NMSettingWireGuard *self)
 {
-	g_return_val_if_fail (NM_IS_SETTING_WIREGUARD (self), 0);
+    g_return_val_if_fail(NM_IS_SETTING_WIREGUARD(self), 0);
 
-	return NM_SETTING_WIREGUARD_GET_PRIVATE (self)->peers_arr->len;
+    return NM_SETTING_WIREGUARD_GET_PRIVATE(self)->peers_arr->len;
 }
 
 /**
@@ -1210,19 +1200,18 @@ nm_setting_wireguard_get_peers_len (NMSettingWireGuard *self)
  * Since: 1.16
  */
 NMWireGuardPeer *
-nm_setting_wireguard_get_peer (NMSettingWireGuard *self,
-                               guint idx)
+nm_setting_wireguard_get_peer(NMSettingWireGuard *self, guint idx)
 {
-	NMSettingWireGuardPrivate *priv;
+    NMSettingWireGuardPrivate *priv;
 
-	g_return_val_if_fail (NM_IS_SETTING_WIREGUARD (self), NULL);
+    g_return_val_if_fail(NM_IS_SETTING_WIREGUARD(self), NULL);
 
-	priv = NM_SETTING_WIREGUARD_GET_PRIVATE (self);
+    priv = NM_SETTING_WIREGUARD_GET_PRIVATE(self);
 
-	if (idx >= priv->peers_arr->len)
-		return NULL;
+    if (idx >= priv->peers_arr->len)
+        return NULL;
 
-	return _peers_get (priv, idx)->peer;
+    return _peers_get(priv, idx)->peer;
 }
 
 /**
@@ -1240,109 +1229,104 @@ nm_setting_wireguard_get_peer (NMSettingWireGuard *self,
  * Since: 1.16
  */
 NMWireGuardPeer *
-nm_setting_wireguard_get_peer_by_public_key (NMSettingWireGuard *self,
-                                             const char *public_key,
-                                             guint *out_idx)
+nm_setting_wireguard_get_peer_by_public_key(NMSettingWireGuard *self,
+                                            const char *        public_key,
+                                            guint *             out_idx)
 {
-	NMSettingWireGuardPrivate *priv;
-	PeerData *pd;
+    NMSettingWireGuardPrivate *priv;
+    PeerData *                 pd;
 
-	g_return_val_if_fail (NM_IS_SETTING_WIREGUARD (self), NULL);
-	g_return_val_if_fail (public_key, NULL);
+    g_return_val_if_fail(NM_IS_SETTING_WIREGUARD(self), NULL);
+    g_return_val_if_fail(public_key, NULL);
 
-	priv = NM_SETTING_WIREGUARD_GET_PRIVATE (self);
+    priv = NM_SETTING_WIREGUARD_GET_PRIVATE(self);
 
-	pd = _peers_get_by_public_key (priv, public_key, TRUE);
-	if (!pd) {
-		NM_SET_OUT (out_idx, priv->peers_arr->len);
-		return NULL;
-	}
-	NM_SET_OUT (out_idx, pd->idx);
-	return pd->peer;
+    pd = _peers_get_by_public_key(priv, public_key, TRUE);
+    if (!pd) {
+        NM_SET_OUT(out_idx, priv->peers_arr->len);
+        return NULL;
+    }
+    NM_SET_OUT(out_idx, pd->idx);
+    return pd->peer;
 }
 
 static gboolean
-_peers_set (NMSettingWireGuardPrivate *priv,
-            NMWireGuardPeer *peer,
-            guint idx,
-            gboolean check_same_key)
+_peers_set(NMSettingWireGuardPrivate *priv,
+           NMWireGuardPeer *          peer,
+           guint                      idx,
+           gboolean                   check_same_key)
 {
-	PeerData *pd_same_key = NULL;
-	PeerData *pd_idx = NULL;
-	const char *public_key;
+    PeerData *  pd_same_key = NULL;
+    PeerData *  pd_idx      = NULL;
+    const char *public_key;
 
-	nm_assert (idx <= priv->peers_arr->len);
+    nm_assert(idx <= priv->peers_arr->len);
 
-	public_key = nm_wireguard_peer_get_public_key (peer);
+    public_key = nm_wireguard_peer_get_public_key(peer);
 
-	if (idx < priv->peers_arr->len) {
-		pd_idx = _peers_get (priv, idx);
+    if (idx < priv->peers_arr->len) {
+        pd_idx = _peers_get(priv, idx);
 
-		if (pd_idx->peer == peer)
-			return FALSE;
+        if (pd_idx->peer == peer)
+            return FALSE;
 
-		if (   check_same_key
-		    && nm_streq (public_key, nm_wireguard_peer_get_public_key (pd_idx->peer)))
-			check_same_key = FALSE;
-	}
+        if (check_same_key && nm_streq(public_key, nm_wireguard_peer_get_public_key(pd_idx->peer)))
+            check_same_key = FALSE;
+    }
 
-	nm_wireguard_peer_seal (peer);
-	nm_wireguard_peer_ref (peer);
+    nm_wireguard_peer_seal(peer);
+    nm_wireguard_peer_ref(peer);
 
-	if (check_same_key) {
-		pd_same_key = _peers_get_by_public_key (priv, public_key, FALSE);
-		if (pd_same_key) {
-			if (pd_idx) {
-				nm_assert (pd_same_key != pd_idx);
-				_peers_remove (priv, pd_same_key, TRUE);
-				pd_same_key = NULL;
-			} else {
-				if (   pd_same_key->peer == peer
-				    && pd_same_key->idx == priv->peers_arr->len - 1) {
-					nm_wireguard_peer_unref (peer);
-					return FALSE;
-				}
-				_peers_remove (priv, pd_same_key, FALSE);
-				nm_wireguard_peer_unref (pd_same_key->peer);
-			}
-		}
-	} else
-		nm_assert (_peers_get_by_public_key (priv, public_key, FALSE) == pd_idx);
+    if (check_same_key) {
+        pd_same_key = _peers_get_by_public_key(priv, public_key, FALSE);
+        if (pd_same_key) {
+            if (pd_idx) {
+                nm_assert(pd_same_key != pd_idx);
+                _peers_remove(priv, pd_same_key, TRUE);
+                pd_same_key = NULL;
+            } else {
+                if (pd_same_key->peer == peer && pd_same_key->idx == priv->peers_arr->len - 1) {
+                    nm_wireguard_peer_unref(peer);
+                    return FALSE;
+                }
+                _peers_remove(priv, pd_same_key, FALSE);
+                nm_wireguard_peer_unref(pd_same_key->peer);
+            }
+        }
+    } else
+        nm_assert(_peers_get_by_public_key(priv, public_key, FALSE) == pd_idx);
 
-	if (pd_idx) {
-		g_hash_table_remove (priv->peers_hash, pd_idx);
-		nm_wireguard_peer_unref (pd_idx->peer);
-		pd_idx->public_key = public_key;
-		pd_idx->peer = peer;
-		g_hash_table_add (priv->peers_hash, pd_idx);
-		return TRUE;
-	}
+    if (pd_idx) {
+        g_hash_table_remove(priv->peers_hash, pd_idx);
+        nm_wireguard_peer_unref(pd_idx->peer);
+        pd_idx->public_key = public_key;
+        pd_idx->peer       = peer;
+        g_hash_table_add(priv->peers_hash, pd_idx);
+        return TRUE;
+    }
 
+    if (!pd_same_key)
+        pd_same_key = g_slice_new(PeerData);
 
-	if (!pd_same_key)
-		pd_same_key = g_slice_new (PeerData);
+    *pd_same_key = (PeerData){
+        .peer       = peer,
+        .public_key = public_key,
+        .idx        = priv->peers_arr->len,
+    };
 
-	*pd_same_key = (PeerData) {
-		.peer = peer,
-		.public_key = public_key,
-		.idx = priv->peers_arr->len,
-	};
+    g_ptr_array_add(priv->peers_arr, pd_same_key);
+    if (!nm_g_hash_table_add(priv->peers_hash, pd_same_key))
+        nm_assert_not_reached();
 
-	g_ptr_array_add (priv->peers_arr, pd_same_key);
-	if (!nm_g_hash_table_add (priv->peers_hash, pd_same_key))
-		nm_assert_not_reached ();
+    nm_assert(_peers_get(priv, pd_same_key->idx) == pd_same_key);
 
-	nm_assert (_peers_get (priv, pd_same_key->idx) == pd_same_key);
-
-	return TRUE;
+    return TRUE;
 }
 
 static gboolean
-_peers_append (NMSettingWireGuardPrivate *priv,
-               NMWireGuardPeer *peer,
-               gboolean check_same_key)
+_peers_append(NMSettingWireGuardPrivate *priv, NMWireGuardPeer *peer, gboolean check_same_key)
 {
-	return _peers_set (priv, peer, priv->peers_arr->len, check_same_key);
+    return _peers_set(priv, peer, priv->peers_arr->len, check_same_key);
 }
 
 /**
@@ -1371,21 +1355,19 @@ _peers_append (NMSettingWireGuardPrivate *priv,
  * Since: 1.16
  */
 void
-nm_setting_wireguard_set_peer (NMSettingWireGuard *self,
-                               NMWireGuardPeer *peer,
-                               guint idx)
+nm_setting_wireguard_set_peer(NMSettingWireGuard *self, NMWireGuardPeer *peer, guint idx)
 {
-	NMSettingWireGuardPrivate *priv;
+    NMSettingWireGuardPrivate *priv;
 
-	g_return_if_fail (NM_IS_SETTING_WIREGUARD (self));
-	g_return_if_fail (NM_IS_WIREGUARD_PEER (peer, TRUE));
+    g_return_if_fail(NM_IS_SETTING_WIREGUARD(self));
+    g_return_if_fail(NM_IS_WIREGUARD_PEER(peer, TRUE));
 
-	priv = NM_SETTING_WIREGUARD_GET_PRIVATE (self);
+    priv = NM_SETTING_WIREGUARD_GET_PRIVATE(self);
 
-	g_return_if_fail (idx <= priv->peers_arr->len);
+    g_return_if_fail(idx <= priv->peers_arr->len);
 
-	if (_peers_set (priv, peer, idx, TRUE))
-		_peers_notify (self);
+    if (_peers_set(priv, peer, idx, TRUE))
+        _peers_notify(self);
 }
 
 /**
@@ -1403,16 +1385,13 @@ nm_setting_wireguard_set_peer (NMSettingWireGuard *self,
  * Since: 1.16
  */
 void
-nm_setting_wireguard_append_peer (NMSettingWireGuard *self,
-                                  NMWireGuardPeer *peer)
+nm_setting_wireguard_append_peer(NMSettingWireGuard *self, NMWireGuardPeer *peer)
 {
-	g_return_if_fail (NM_IS_SETTING_WIREGUARD (self));
-	g_return_if_fail (NM_IS_WIREGUARD_PEER (peer, TRUE));
+    g_return_if_fail(NM_IS_SETTING_WIREGUARD(self));
+    g_return_if_fail(NM_IS_WIREGUARD_PEER(peer, TRUE));
 
-	if (_peers_append (NM_SETTING_WIREGUARD_GET_PRIVATE (self),
-	                   peer,
-	                   TRUE))
-		_peers_notify (self);
+    if (_peers_append(NM_SETTING_WIREGUARD_GET_PRIVATE(self), peer, TRUE))
+        _peers_notify(self);
 }
 
 /**
@@ -1426,35 +1405,32 @@ nm_setting_wireguard_append_peer (NMSettingWireGuard *self,
  * Since: 1.16
  */
 gboolean
-nm_setting_wireguard_remove_peer (NMSettingWireGuard *self,
-                                  guint idx)
+nm_setting_wireguard_remove_peer(NMSettingWireGuard *self, guint idx)
 {
-	NMSettingWireGuardPrivate *priv;
+    NMSettingWireGuardPrivate *priv;
 
-	g_return_val_if_fail (NM_IS_SETTING_WIREGUARD (self), FALSE);
+    g_return_val_if_fail(NM_IS_SETTING_WIREGUARD(self), FALSE);
 
-	priv = NM_SETTING_WIREGUARD_GET_PRIVATE (self);
+    priv = NM_SETTING_WIREGUARD_GET_PRIVATE(self);
 
-	if (idx >= priv->peers_arr->len)
-		return FALSE;
+    if (idx >= priv->peers_arr->len)
+        return FALSE;
 
-	_peers_remove (priv, _peers_get (priv, idx), TRUE);
-	_peers_notify (self);
-	return TRUE;
+    _peers_remove(priv, _peers_get(priv, idx), TRUE);
+    _peers_notify(self);
+    return TRUE;
 }
 
 static guint
-_peers_clear (NMSettingWireGuardPrivate *priv)
+_peers_clear(NMSettingWireGuardPrivate *priv)
 {
-	guint l;
+    guint l;
 
-	l = priv->peers_arr->len;
-	while (priv->peers_arr->len > 0) {
-		_peers_remove (priv,
-		               _peers_get (priv, priv->peers_arr->len - 1),
-		               TRUE);
-	}
-	return l;
+    l = priv->peers_arr->len;
+    while (priv->peers_arr->len > 0) {
+        _peers_remove(priv, _peers_get(priv, priv->peers_arr->len - 1), TRUE);
+    }
+    return l;
 }
 
 /**
@@ -1466,913 +1442,923 @@ _peers_clear (NMSettingWireGuardPrivate *priv)
  * Since: 1.16
  */
 guint
-nm_setting_wireguard_clear_peers (NMSettingWireGuard *self)
+nm_setting_wireguard_clear_peers(NMSettingWireGuard *self)
 {
-	guint l;
+    guint l;
 
-	g_return_val_if_fail (NM_IS_SETTING_WIREGUARD (self), 0);
+    g_return_val_if_fail(NM_IS_SETTING_WIREGUARD(self), 0);
 
-	l = _peers_clear (NM_SETTING_WIREGUARD_GET_PRIVATE (self));
-	if (l > 0)
-		_peers_notify (self);
-	return l;
+    l = _peers_clear(NM_SETTING_WIREGUARD_GET_PRIVATE(self));
+    if (l > 0)
+        _peers_notify(self);
+    return l;
 }
 
 /*****************************************************************************/
 
 static GVariant *
-_peers_dbus_only_synth (const NMSettInfoSetting *sett_info,
-                        guint property_idx,
-                        NMConnection *connection,
-                        NMSetting *setting,
-                        NMConnectionSerializationFlags flags,
-                        const NMConnectionSerializationOptions *options)
+_peers_dbus_only_synth(const NMSettInfoSetting *               sett_info,
+                       guint                                   property_idx,
+                       NMConnection *                          connection,
+                       NMSetting *                             setting,
+                       NMConnectionSerializationFlags          flags,
+                       const NMConnectionSerializationOptions *options)
 {
-	NMSettingWireGuard *self = NM_SETTING_WIREGUARD (setting);
-	NMSettingWireGuardPrivate *priv;
-	gboolean any_peers = FALSE;
-	GVariantBuilder peers_builder;
-	guint i_peer, n_peers;
-	guint i;
+    NMSettingWireGuard *       self = NM_SETTING_WIREGUARD(setting);
+    NMSettingWireGuardPrivate *priv;
+    gboolean                   any_peers = FALSE;
+    GVariantBuilder            peers_builder;
+    guint                      i_peer, n_peers;
+    guint                      i;
 
-	n_peers = nm_setting_wireguard_get_peers_len (self);
-	if (n_peers == 0)
-		return NULL;
+    n_peers = nm_setting_wireguard_get_peers_len(self);
+    if (n_peers == 0)
+        return NULL;
 
-	priv = NM_SETTING_WIREGUARD_GET_PRIVATE (self);
+    priv = NM_SETTING_WIREGUARD_GET_PRIVATE(self);
 
-	for (i_peer = 0; i_peer < n_peers; i_peer++) {
-		const NMWireGuardPeer *peer = _peers_get (priv, i_peer)->peer;
-		GVariantBuilder builder;
+    for (i_peer = 0; i_peer < n_peers; i_peer++) {
+        const NMWireGuardPeer *peer = _peers_get(priv, i_peer)->peer;
+        GVariantBuilder        builder;
 
-		if (!peer->public_key)
-			continue;
+        if (!peer->public_key)
+            continue;
 
-		g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
+        g_variant_builder_init(&builder, G_VARIANT_TYPE("a{sv}"));
 
-		g_variant_builder_add (&builder, "{sv}", NM_WIREGUARD_PEER_ATTR_PUBLIC_KEY, g_variant_new_string (peer->public_key));
+        g_variant_builder_add(&builder,
+                              "{sv}",
+                              NM_WIREGUARD_PEER_ATTR_PUBLIC_KEY,
+                              g_variant_new_string(peer->public_key));
 
-		if (   !NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
-		    && peer->endpoint)
-			g_variant_builder_add (&builder, "{sv}", NM_WIREGUARD_PEER_ATTR_ENDPOINT, g_variant_new_string (nm_sock_addr_endpoint_get_endpoint (peer->endpoint)));
+        if (!NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_ONLY_SECRETS) && peer->endpoint)
+            g_variant_builder_add(
+                &builder,
+                "{sv}",
+                NM_WIREGUARD_PEER_ATTR_ENDPOINT,
+                g_variant_new_string(nm_sock_addr_endpoint_get_endpoint(peer->endpoint)));
 
-		if (   _nm_connection_serialize_secrets (flags, peer->preshared_key_flags)
-		    && peer->preshared_key)
-			g_variant_builder_add (&builder, "{sv}", NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY, g_variant_new_string (peer->preshared_key));
+        if (_nm_connection_serialize_secrets(flags, peer->preshared_key_flags)
+            && peer->preshared_key)
+            g_variant_builder_add(&builder,
+                                  "{sv}",
+                                  NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY,
+                                  g_variant_new_string(peer->preshared_key));
 
-		if (   !NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
-		    && peer->preshared_key_flags != NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
-			g_variant_builder_add (&builder, "{sv}", NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY_FLAGS, g_variant_new_uint32 (peer->preshared_key_flags));
+        if (!NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
+            && peer->preshared_key_flags != NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
+            g_variant_builder_add(&builder,
+                                  "{sv}",
+                                  NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY_FLAGS,
+                                  g_variant_new_uint32(peer->preshared_key_flags));
 
-		if (   !NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
-		    && peer->persistent_keepalive != 0)
-			g_variant_builder_add (&builder, "{sv}", NM_WIREGUARD_PEER_ATTR_PERSISTENT_KEEPALIVE, g_variant_new_uint32 (peer->persistent_keepalive));
+        if (!NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
+            && peer->persistent_keepalive != 0)
+            g_variant_builder_add(&builder,
+                                  "{sv}",
+                                  NM_WIREGUARD_PEER_ATTR_PERSISTENT_KEEPALIVE,
+                                  g_variant_new_uint32(peer->persistent_keepalive));
 
-		if (   !NM_FLAGS_HAS (flags, NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
-		    && peer->allowed_ips
-		    && peer->allowed_ips->len > 0) {
-			const char *const*strv = (const char *const*) peer->allowed_ips->pdata;
-			gs_free const char **strv_fixed = NULL;
+        if (!NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_ONLY_SECRETS) && peer->allowed_ips
+            && peer->allowed_ips->len > 0) {
+            const char *const *  strv       = (const char *const *) peer->allowed_ips->pdata;
+            gs_free const char **strv_fixed = NULL;
 
-			for (i = 0; i < peer->allowed_ips->len; i++) {
-				if (strv[i][0] != ALLOWED_IP_INVALID_X)
-					continue;
-				if (!strv_fixed) {
-					strv_fixed = nm_memdup (strv, sizeof (strv[0]) * peer->allowed_ips->len);
-					strv = strv_fixed;
-				}
-				((const char **) strv)[i]++;
-			}
-			g_variant_builder_add (&builder, "{sv}", NM_WIREGUARD_PEER_ATTR_ALLOWED_IPS,
-			                       g_variant_new_strv (strv, peer->allowed_ips->len));
-		}
+            for (i = 0; i < peer->allowed_ips->len; i++) {
+                if (strv[i][0] != ALLOWED_IP_INVALID_X)
+                    continue;
+                if (!strv_fixed) {
+                    strv_fixed = nm_memdup(strv, sizeof(strv[0]) * peer->allowed_ips->len);
+                    strv       = strv_fixed;
+                }
+                ((const char **) strv)[i]++;
+            }
+            g_variant_builder_add(&builder,
+                                  "{sv}",
+                                  NM_WIREGUARD_PEER_ATTR_ALLOWED_IPS,
+                                  g_variant_new_strv(strv, peer->allowed_ips->len));
+        }
 
-		if (!any_peers) {
-			g_variant_builder_init (&peers_builder, G_VARIANT_TYPE ("aa{sv}"));
-			any_peers = TRUE;
-		}
-		g_variant_builder_add (&peers_builder, "a{sv}", &builder);
-	}
+        if (!any_peers) {
+            g_variant_builder_init(&peers_builder, G_VARIANT_TYPE("aa{sv}"));
+            any_peers = TRUE;
+        }
+        g_variant_builder_add(&peers_builder, "a{sv}", &builder);
+    }
 
-	return   any_peers
-	       ? g_variant_builder_end (&peers_builder)
-	       : NULL;
+    return any_peers ? g_variant_builder_end(&peers_builder) : NULL;
 }
 
 static gboolean
-_peers_dbus_only_set (NMSetting     *setting,
-                      GVariant      *connection_dict,
-                      const char    *property,
-                      GVariant      *value,
-                      NMSettingParseFlags parse_flags,
-                      GError       **error)
+_peers_dbus_only_set(NMSetting *         setting,
+                     GVariant *          connection_dict,
+                     const char *        property,
+                     GVariant *          value,
+                     NMSettingParseFlags parse_flags,
+                     GError **           error)
 {
-	GVariantIter iter_peers;
-	GVariant *peer_var;
-	guint i_peer;
-	gboolean success = FALSE;
-	gboolean peers_changed = FALSE;
+    GVariantIter iter_peers;
+    GVariant *   peer_var;
+    guint        i_peer;
+    gboolean     success       = FALSE;
+    gboolean     peers_changed = FALSE;
 
-	nm_assert (g_variant_is_of_type (value, G_VARIANT_TYPE ("aa{sv}")));
+    nm_assert(g_variant_is_of_type(value, G_VARIANT_TYPE("aa{sv}")));
 
-	g_variant_iter_init (&iter_peers, value);
+    g_variant_iter_init(&iter_peers, value);
 
-	i_peer = 0;
-	while (g_variant_iter_next (&iter_peers, "@a{sv}", &peer_var)) {
-		_nm_unused gs_unref_variant GVariant *peer_var_unref = peer_var;
-		nm_auto_unref_wgpeer NMWireGuardPeer *peer = NULL;
-		const char *cstr;
-		guint32 u32;
-		GVariant *var;
+    i_peer = 0;
+    while (g_variant_iter_next(&iter_peers, "@a{sv}", &peer_var)) {
+        _nm_unused gs_unref_variant GVariant *peer_var_unref = peer_var;
+        nm_auto_unref_wgpeer NMWireGuardPeer *peer           = NULL;
+        const char *                          cstr;
+        guint32                               u32;
+        GVariant *                            var;
 
-		i_peer++;
+        i_peer++;
 
-		if (!g_variant_lookup (peer_var, NM_WIREGUARD_PEER_ATTR_PUBLIC_KEY, "&s", &cstr)) {
-			if (NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
-				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY,
-				             _("peer #%u has no public-key"),
-				             i_peer);
-				goto out;
-			}
-			continue;
-		}
+        if (!g_variant_lookup(peer_var, NM_WIREGUARD_PEER_ATTR_PUBLIC_KEY, "&s", &cstr)) {
+            if (NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_MISSING_PROPERTY,
+                            _("peer #%u has no public-key"),
+                            i_peer);
+                goto out;
+            }
+            continue;
+        }
 
-		peer = nm_wireguard_peer_new ();
-		if (!nm_wireguard_peer_set_public_key (peer, cstr, TRUE)) {
-			if (NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
-				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY,
-				             _("peer #%u has invalid public-key"),
-				             i_peer);
-				goto out;
-			}
-			continue;
-		}
+        peer = nm_wireguard_peer_new();
+        if (!nm_wireguard_peer_set_public_key(peer, cstr, TRUE)) {
+            if (NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_MISSING_PROPERTY,
+                            _("peer #%u has invalid public-key"),
+                            i_peer);
+                goto out;
+            }
+            continue;
+        }
 
-		if (g_variant_lookup (peer_var, NM_WIREGUARD_PEER_ATTR_ENDPOINT, "&s", &cstr)) {
-			nm_auto_unref_sockaddrendpoint NMSockAddrEndpoint *ep = NULL;
+        if (g_variant_lookup(peer_var, NM_WIREGUARD_PEER_ATTR_ENDPOINT, "&s", &cstr)) {
+            nm_auto_unref_sockaddrendpoint NMSockAddrEndpoint *ep = NULL;
 
-			ep = nm_sock_addr_endpoint_new (cstr);
-			if (!nm_sock_addr_endpoint_get_host (ep)) {
-				if (NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
-					g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY,
-					             _("peer #%u has invalid endpoint"),
-					             i_peer);
-					goto out;
-				}
-			} else
-				_nm_wireguard_peer_set_endpoint (peer, ep);
-		}
+            ep = nm_sock_addr_endpoint_new(cstr);
+            if (!nm_sock_addr_endpoint_get_host(ep)) {
+                if (NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
+                    g_set_error(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_MISSING_PROPERTY,
+                                _("peer #%u has invalid endpoint"),
+                                i_peer);
+                    goto out;
+                }
+            } else
+                _nm_wireguard_peer_set_endpoint(peer, ep);
+        }
 
-		if (g_variant_lookup (peer_var, NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY, "&s", &cstr))
-			nm_wireguard_peer_set_preshared_key (peer, cstr, TRUE);
+        if (g_variant_lookup(peer_var, NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY, "&s", &cstr))
+            nm_wireguard_peer_set_preshared_key(peer, cstr, TRUE);
 
-		if (g_variant_lookup (peer_var, NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY_FLAGS, "u", &u32))
-			nm_wireguard_peer_set_preshared_key_flags (peer, u32);
+        if (g_variant_lookup(peer_var, NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY_FLAGS, "u", &u32))
+            nm_wireguard_peer_set_preshared_key_flags(peer, u32);
 
-		if (g_variant_lookup (peer_var, NM_WIREGUARD_PEER_ATTR_PERSISTENT_KEEPALIVE, "u", &u32))
-			nm_wireguard_peer_set_persistent_keepalive (peer, u32);
+        if (g_variant_lookup(peer_var, NM_WIREGUARD_PEER_ATTR_PERSISTENT_KEEPALIVE, "u", &u32))
+            nm_wireguard_peer_set_persistent_keepalive(peer, u32);
 
-		if (g_variant_lookup (peer_var, NM_WIREGUARD_PEER_ATTR_ALLOWED_IPS, "@as", &var)) {
-			_nm_unused gs_unref_variant GVariant *var_free = var;
-			gs_free const char **allowed_ips = NULL;
-			gsize i, l;
+        if (g_variant_lookup(peer_var, NM_WIREGUARD_PEER_ATTR_ALLOWED_IPS, "@as", &var)) {
+            _nm_unused gs_unref_variant GVariant *var_free    = var;
+            gs_free const char **                 allowed_ips = NULL;
+            gsize                                 i, l;
 
-			allowed_ips = g_variant_get_strv (var, &l);
-			if (allowed_ips) {
-				for (i = 0; i < l; i++) {
-					if (_peer_append_allowed_ip (peer, allowed_ips[i], FALSE))
-						continue;
-					if (!NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT))
-						continue;
-					g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY,
-					             _("peer #%u has invalid allowed-ips setting"),
-					             i_peer);
-					goto out;
-				}
-			}
-		}
+            allowed_ips = g_variant_get_strv(var, &l);
+            if (allowed_ips) {
+                for (i = 0; i < l; i++) {
+                    if (_peer_append_allowed_ip(peer, allowed_ips[i], FALSE))
+                        continue;
+                    if (!NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT))
+                        continue;
+                    g_set_error(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_MISSING_PROPERTY,
+                                _("peer #%u has invalid allowed-ips setting"),
+                                i_peer);
+                    goto out;
+                }
+            }
+        }
 
-		if (NM_FLAGS_HAS (parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
-			gs_free_error GError *local = NULL;
+        if (NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
+            gs_free_error GError *local = NULL;
 
-			if (!nm_wireguard_peer_is_valid (peer, TRUE, FALSE, &local)) {
-				g_set_error (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_MISSING_PROPERTY,
-				             _("peer #%u is invalid: %s"),
-				             i_peer, local->message);
-				goto out;
-			}
-		}
+            if (!nm_wireguard_peer_is_valid(peer, TRUE, FALSE, &local)) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_MISSING_PROPERTY,
+                            _("peer #%u is invalid: %s"),
+                            i_peer,
+                            local->message);
+                goto out;
+            }
+        }
 
-		/* we could easily reject duplicate peers (by public-key) or duplicate GVariant attributes.
+        /* we could easily reject duplicate peers (by public-key) or duplicate GVariant attributes.
 		 * However, don't do that. In case of duplicate values, the latter peer overwrite the earlier
 		 * and GVariant attributes are ignored by g_variant_lookup() above. */
-		if (_peers_append (NM_SETTING_WIREGUARD_GET_PRIVATE (setting),
-		                   peer,
-		                   TRUE))
-			peers_changed = TRUE;
-	}
+        if (_peers_append(NM_SETTING_WIREGUARD_GET_PRIVATE(setting), peer, TRUE))
+            peers_changed = TRUE;
+    }
 
-	success = TRUE;
+    success = TRUE;
 
 out:
-	if (peers_changed)
-		_peers_notify (setting);
-	return success;
+    if (peers_changed)
+        _peers_notify(setting);
+    return success;
 }
 
 /*****************************************************************************/
 
 static gboolean
-verify (NMSetting *setting, NMConnection *connection, GError **error)
+verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
-	NMSettingWireGuard *s_wg = NM_SETTING_WIREGUARD (setting);
-	NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE (setting);
-	guint i;
+    NMSettingWireGuard *       s_wg = NM_SETTING_WIREGUARD(setting);
+    NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
+    guint                      i;
 
-	if (!_nm_connection_verify_required_interface_name (connection, error))
-		return FALSE;
+    if (!_nm_connection_verify_required_interface_name(connection, error))
+        return FALSE;
 
-	if (!_nm_utils_secret_flags_validate (nm_setting_wireguard_get_private_key_flags (s_wg),
-	                                      NM_SETTING_WIREGUARD_SETTING_NAME,
-	                                      NM_SETTING_WIREGUARD_PRIVATE_KEY_FLAGS,
-	                                      NM_SETTING_SECRET_FLAG_NOT_REQUIRED,
-	                                      error))
-		return FALSE;
+    if (!_nm_utils_secret_flags_validate(nm_setting_wireguard_get_private_key_flags(s_wg),
+                                         NM_SETTING_WIREGUARD_SETTING_NAME,
+                                         NM_SETTING_WIREGUARD_PRIVATE_KEY_FLAGS,
+                                         NM_SETTING_SECRET_FLAG_NOT_REQUIRED,
+                                         error))
+        return FALSE;
 
-	for (i = 0; i < priv->peers_arr->len; i++) {
-		NMWireGuardPeer *peer = _peers_get (priv, i)->peer;
+    for (i = 0; i < priv->peers_arr->len; i++) {
+        NMWireGuardPeer *peer = _peers_get(priv, i)->peer;
 
-		if (!nm_wireguard_peer_is_valid (peer, TRUE, FALSE, error)) {
-			g_prefix_error (error,
-			                "%s.%s[%u]: ",
-			                NM_SETTING_WIREGUARD_SETTING_NAME,
-			                NM_SETTING_WIREGUARD_PEERS,
-			                i);
-			return FALSE;
-		}
-	}
+        if (!nm_wireguard_peer_is_valid(peer, TRUE, FALSE, error)) {
+            g_prefix_error(error,
+                           "%s.%s[%u]: ",
+                           NM_SETTING_WIREGUARD_SETTING_NAME,
+                           NM_SETTING_WIREGUARD_PEERS,
+                           i);
+            return FALSE;
+        }
+    }
 
-	if (connection) {
-		NMSettingIPConfig *s_ip4;
-		NMSettingIPConfig *s_ip6;
-		const char *method;
+    if (connection) {
+        NMSettingIPConfig *s_ip4;
+        NMSettingIPConfig *s_ip6;
+        const char *       method;
 
-		/* WireGuard is Layer 3 only. For the moment, we only support a restricted set of
+        /* WireGuard is Layer 3 only. For the moment, we only support a restricted set of
 		 * IP methods. We may relax that later, once we fix the implementations so they
 		 * actually work. */
 
-		if (   (s_ip4 = nm_connection_get_setting_ip4_config (connection))
-		    && (method = nm_setting_ip_config_get_method (s_ip4))
-		    && !NM_IN_STRSET (method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
-		                              NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("method \"%s\" is not supported for WireGuard"),
-			             method);
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP4_CONFIG_SETTING_NAME, NM_SETTING_IP_CONFIG_METHOD);
-			return FALSE;
-		}
+        if ((s_ip4 = nm_connection_get_setting_ip4_config(connection))
+            && (method = nm_setting_ip_config_get_method(s_ip4))
+            && !NM_IN_STRSET(method,
+                             NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+                             NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("method \"%s\" is not supported for WireGuard"),
+                        method);
+            g_prefix_error(error,
+                           "%s.%s: ",
+                           NM_SETTING_IP4_CONFIG_SETTING_NAME,
+                           NM_SETTING_IP_CONFIG_METHOD);
+            return FALSE;
+        }
 
-		if (   (s_ip6 = nm_connection_get_setting_ip6_config (connection))
-		    && (method = nm_setting_ip_config_get_method (s_ip6))
-		    && !NM_IN_STRSET (method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-		                              NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
-		                              NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
-		                              NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
-			g_set_error (error,
-			             NM_CONNECTION_ERROR,
-			             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			             _("method \"%s\" is not supported for WireGuard"),
-			             method);
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP_CONFIG_METHOD);
-			return FALSE;
-		}
-	}
+        if ((s_ip6 = nm_connection_get_setting_ip6_config(connection))
+            && (method = nm_setting_ip_config_get_method(s_ip6))
+            && !NM_IN_STRSET(method,
+                             NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+                             NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+                             NM_SETTING_IP6_CONFIG_METHOD_MANUAL,
+                             NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("method \"%s\" is not supported for WireGuard"),
+                        method);
+            g_prefix_error(error,
+                           "%s.%s: ",
+                           NM_SETTING_IP6_CONFIG_SETTING_NAME,
+                           NM_SETTING_IP_CONFIG_METHOD);
+            return FALSE;
+        }
+    }
 
-	/* private-key is a secret, hence we cannot verify it like a regular property. */
-	return TRUE;
+    /* private-key is a secret, hence we cannot verify it like a regular property. */
+    return TRUE;
 }
 
 static gboolean
-verify_secrets (NMSetting *setting, NMConnection *connection, GError **error)
+verify_secrets(NMSetting *setting, NMConnection *connection, GError **error)
 {
-	NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE (setting);
-	guint i;
+    NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
+    guint                      i;
 
-	if (   priv->private_key
-	    && !priv->private_key_valid) {
-		g_set_error_literal (error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY,
-		                     _("key must be 32 bytes base64 encoded"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIREGUARD_SETTING_NAME, NM_SETTING_WIREGUARD_PRIVATE_KEY);
-		return FALSE;
-	}
+    if (priv->private_key && !priv->private_key_valid) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("key must be 32 bytes base64 encoded"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_WIREGUARD_SETTING_NAME,
+                       NM_SETTING_WIREGUARD_PRIVATE_KEY);
+        return FALSE;
+    }
 
-	for (i = 0; i < priv->peers_arr->len; i++) {
-		NMWireGuardPeer *peer = _peers_get (priv, i)->peer;
+    for (i = 0; i < priv->peers_arr->len; i++) {
+        NMWireGuardPeer *peer = _peers_get(priv, i)->peer;
 
-		if (!nm_wireguard_peer_is_valid (peer, FALSE, TRUE, error)) {
-			g_prefix_error (error,
-			                "%s.%s[%u]: ",
-			                NM_SETTING_WIREGUARD_SETTING_NAME,
-			                NM_SETTING_WIREGUARD_PEERS,
-			                i);
-			return FALSE;
-		}
-	}
+        if (!nm_wireguard_peer_is_valid(peer, FALSE, TRUE, error)) {
+            g_prefix_error(error,
+                           "%s.%s[%u]: ",
+                           NM_SETTING_WIREGUARD_SETTING_NAME,
+                           NM_SETTING_WIREGUARD_PEERS,
+                           i);
+            return FALSE;
+        }
+    }
 
-	return TRUE;
+    return TRUE;
 }
 
 static GPtrArray *
-need_secrets (NMSetting *setting)
+need_secrets(NMSetting *setting)
 {
-	NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE (setting);
-	GPtrArray *secrets = NULL;
-	guint i;
+    NMSettingWireGuardPrivate *priv    = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
+    GPtrArray *                secrets = NULL;
+    guint                      i;
 
-	if (   !priv->private_key
-	    || !priv->private_key_valid) {
-		secrets = g_ptr_array_new_full (1, g_free);
-		g_ptr_array_add (secrets, g_strdup (NM_SETTING_WIREGUARD_PRIVATE_KEY));
-	}
+    if (!priv->private_key || !priv->private_key_valid) {
+        secrets = g_ptr_array_new_full(1, g_free);
+        g_ptr_array_add(secrets, g_strdup(NM_SETTING_WIREGUARD_PRIVATE_KEY));
+    }
 
-	for (i = 0; i < priv->peers_arr->len; i++) {
-		NMWireGuardPeer *peer = _peers_get (priv, i)->peer;
+    for (i = 0; i < priv->peers_arr->len; i++) {
+        NMWireGuardPeer *peer = _peers_get(priv, i)->peer;
 
-		if (NM_FLAGS_HAS (peer->preshared_key_flags, NM_SETTING_SECRET_FLAG_NOT_REQUIRED))
-			continue;
+        if (NM_FLAGS_HAS(peer->preshared_key_flags, NM_SETTING_SECRET_FLAG_NOT_REQUIRED))
+            continue;
 
-		if (peer->preshared_key_valid)
-			continue;
+        if (peer->preshared_key_valid)
+            continue;
 
-		if (!peer->public_key_valid)
-			continue;
+        if (!peer->public_key_valid)
+            continue;
 
-		if (!secrets)
-			secrets = g_ptr_array_new_full (1, g_free);
-		g_ptr_array_add (secrets, peers_psk_get_secret_name_dup (peer->public_key));
-	}
+        if (!secrets)
+            secrets = g_ptr_array_new_full(1, g_free);
+        g_ptr_array_add(secrets, peers_psk_get_secret_name_dup(peer->public_key));
+    }
 
-	return secrets;
+    return secrets;
 }
 
 static gboolean
-clear_secrets (const NMSettInfoSetting *sett_info,
-               guint property_idx,
-               NMSetting *setting,
-               NMSettingClearSecretsWithFlagsFn func,
-               gpointer user_data)
+clear_secrets(const NMSettInfoSetting *        sett_info,
+              guint                            property_idx,
+              NMSetting *                      setting,
+              NMSettingClearSecretsWithFlagsFn func,
+              gpointer                         user_data)
 {
-	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_WIREGUARD_PEERS)) {
-		NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE (setting);
-		gboolean peers_changed = FALSE;
-		guint i, j;
+    if (nm_streq(sett_info->property_infos[property_idx].name, NM_SETTING_WIREGUARD_PEERS)) {
+        NMSettingWireGuardPrivate *priv          = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
+        gboolean                   peers_changed = FALSE;
+        guint                      i, j;
 
-		j = 0;
-		for (i = 0; i < priv->peers_arr->len; i++) {
-			NMWireGuardPeer *peer = _peers_get (priv, i)->peer;
+        j = 0;
+        for (i = 0; i < priv->peers_arr->len; i++) {
+            NMWireGuardPeer *peer = _peers_get(priv, i)->peer;
 
-			if (!peer->preshared_key)
-				continue;
+            if (!peer->preshared_key)
+                continue;
 
-			if (func) {
-				gs_free char *name_free = NULL;
-				const char *name;
+            if (func) {
+                gs_free char *name_free = NULL;
+                const char *  name;
 
-				/* only stack-allocate (alloca) a few times. */
-				if (j++ < 5)
-					name = peers_psk_get_secret_name_a (peer->public_key, &name_free);
-				else {
-					name_free = peers_psk_get_secret_name_dup (peer->public_key);
-					name = name_free;
-				}
+                /* only stack-allocate (alloca) a few times. */
+                if (j++ < 5)
+                    name = peers_psk_get_secret_name_a(peer->public_key, &name_free);
+                else {
+                    name_free = peers_psk_get_secret_name_dup(peer->public_key);
+                    name      = name_free;
+                }
 
-				if (!func (setting, name, peer->preshared_key_flags, user_data))
-					continue;
-			}
+                if (!func(setting, name, peer->preshared_key_flags, user_data))
+                    continue;
+            }
 
-			{
-				nm_auto_unref_wgpeer NMWireGuardPeer *peer2 = NULL;
+            {
+                nm_auto_unref_wgpeer NMWireGuardPeer *peer2 = NULL;
 
-				peer2 = nm_wireguard_peer_new_clone (peer, FALSE);
+                peer2 = nm_wireguard_peer_new_clone(peer, FALSE);
 
-				if (_peers_set (priv, peer2, i, FALSE))
-					peers_changed = TRUE;
-			}
-		}
+                if (_peers_set(priv, peer2, i, FALSE))
+                    peers_changed = TRUE;
+            }
+        }
 
-		if (peers_changed)
-			_peers_notify (setting);
-		return peers_changed;
-	}
+        if (peers_changed)
+            _peers_notify(setting);
+        return peers_changed;
+    }
 
-	return NM_SETTING_CLASS (nm_setting_wireguard_parent_class)->clear_secrets (sett_info,
-	                                                                            property_idx,
-	                                                                            setting,
-	                                                                            func,
-	                                                                            user_data);
+    return NM_SETTING_CLASS(nm_setting_wireguard_parent_class)
+        ->clear_secrets(sett_info, property_idx, setting, func, user_data);
 }
 
 static int
-update_one_secret (NMSetting *setting,
-                   const char *key,
-                   GVariant *value,
-                   GError **error)
+update_one_secret(NMSetting *setting, const char *key, GVariant *value, GError **error)
 {
-	NMSettingWireGuard *self = NM_SETTING_WIREGUARD (setting);
-	NMSettingWireGuardPrivate *priv;
-	gboolean has_changes = FALSE;
-	gboolean has_error = FALSE;
-	GVariantIter iter_peers;
-	GVariant *peer_var;
-	guint i_peer;
+    NMSettingWireGuard *       self = NM_SETTING_WIREGUARD(setting);
+    NMSettingWireGuardPrivate *priv;
+    gboolean                   has_changes = FALSE;
+    gboolean                   has_error   = FALSE;
+    GVariantIter               iter_peers;
+    GVariant *                 peer_var;
+    guint                      i_peer;
 
-	if (!nm_streq (key, NM_SETTING_WIREGUARD_PEERS)) {
-		return NM_SETTING_CLASS (nm_setting_wireguard_parent_class)->update_one_secret (setting,
-		                                                                                key,
-		                                                                                value,
-		                                                                                error);
-	}
+    if (!nm_streq(key, NM_SETTING_WIREGUARD_PEERS)) {
+        return NM_SETTING_CLASS(nm_setting_wireguard_parent_class)
+            ->update_one_secret(setting, key, value, error);
+    }
 
-	if (!g_variant_is_of_type (value, G_VARIANT_TYPE ("aa{sv}"))) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_PROPERTY_NOT_SECRET,
-		                     _("invalid peer secrets"));
-		g_prefix_error (error, "%s.%s: ", NM_SETTING_WIREGUARD_SETTING_NAME, NM_SETTING_WIREGUARD_PEERS);
-		return NM_SETTING_UPDATE_SECRET_ERROR;
-	}
+    if (!g_variant_is_of_type(value, G_VARIANT_TYPE("aa{sv}"))) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_PROPERTY_NOT_SECRET,
+                            _("invalid peer secrets"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_WIREGUARD_SETTING_NAME,
+                       NM_SETTING_WIREGUARD_PEERS);
+        return NM_SETTING_UPDATE_SECRET_ERROR;
+    }
 
-	priv = NM_SETTING_WIREGUARD_GET_PRIVATE (self);
+    priv = NM_SETTING_WIREGUARD_GET_PRIVATE(self);
 
-	g_variant_iter_init (&iter_peers, value);
+    g_variant_iter_init(&iter_peers, value);
 
-	i_peer = 0;
-	while (g_variant_iter_next (&iter_peers, "@a{sv}", &peer_var)) {
-		_nm_unused gs_unref_variant GVariant *peer_var_unref = peer_var;
-		nm_auto_unref_wgpeer NMWireGuardPeer *peer = NULL;
-		PeerData *pd;
-		const char *cstr;
+    i_peer = 0;
+    while (g_variant_iter_next(&iter_peers, "@a{sv}", &peer_var)) {
+        _nm_unused gs_unref_variant GVariant *peer_var_unref = peer_var;
+        nm_auto_unref_wgpeer NMWireGuardPeer *peer           = NULL;
+        PeerData *                            pd;
+        const char *                          cstr;
 
-		i_peer++;
+        i_peer++;
 
-		if (!g_variant_lookup (peer_var, NM_WIREGUARD_PEER_ATTR_PUBLIC_KEY, "&s", &cstr)) {
-			if (!has_error) {
-				g_set_error (error,
-				             NM_CONNECTION_ERROR,
-				             NM_CONNECTION_ERROR_PROPERTY_NOT_SECRET,
-				             _("peer #%u lacks public-key"),
-				             i_peer - 1);
-				g_prefix_error (error, "%s.%s: ", NM_SETTING_WIREGUARD_SETTING_NAME, NM_SETTING_WIREGUARD_PEERS);
-				has_error = TRUE;
-			}
-			continue;
-		}
+        if (!g_variant_lookup(peer_var, NM_WIREGUARD_PEER_ATTR_PUBLIC_KEY, "&s", &cstr)) {
+            if (!has_error) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_PROPERTY_NOT_SECRET,
+                            _("peer #%u lacks public-key"),
+                            i_peer - 1);
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               NM_SETTING_WIREGUARD_SETTING_NAME,
+                               NM_SETTING_WIREGUARD_PEERS);
+                has_error = TRUE;
+            }
+            continue;
+        }
 
-		pd = _peers_get_by_public_key (priv, cstr, TRUE);
-		if (!pd) {
-			if (!has_error) {
-				g_set_error (error,
-				             NM_CONNECTION_ERROR,
-				             NM_CONNECTION_ERROR_PROPERTY_NOT_SECRET,
-				             _("non-existing peer '%s'"),
-				             cstr);
-				g_prefix_error (error, "%s.%s: ", NM_SETTING_WIREGUARD_SETTING_NAME, NM_SETTING_WIREGUARD_PEERS);
-				has_error = TRUE;
-			}
-			continue;
-		}
+        pd = _peers_get_by_public_key(priv, cstr, TRUE);
+        if (!pd) {
+            if (!has_error) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_PROPERTY_NOT_SECRET,
+                            _("non-existing peer '%s'"),
+                            cstr);
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               NM_SETTING_WIREGUARD_SETTING_NAME,
+                               NM_SETTING_WIREGUARD_PEERS);
+                has_error = TRUE;
+            }
+            continue;
+        }
 
-		if (!g_variant_lookup (peer_var, NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY, "&s", &cstr)) {
-			/* no preshared-key. Ignore the rest.
+        if (!g_variant_lookup(peer_var, NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY, "&s", &cstr)) {
+            /* no preshared-key. Ignore the rest.
 			 *
 			 * In particular, we don't reject all unknown fields. */
-			continue;
-		}
+            continue;
+        }
 
-		if (nm_streq0  (cstr, nm_wireguard_peer_get_preshared_key (pd->peer)))
-			continue;
+        if (nm_streq0(cstr, nm_wireguard_peer_get_preshared_key(pd->peer)))
+            continue;
 
-		peer = nm_wireguard_peer_new_clone (pd->peer, FALSE);
-		nm_wireguard_peer_set_preshared_key (peer, cstr, TRUE);
+        peer = nm_wireguard_peer_new_clone(pd->peer, FALSE);
+        nm_wireguard_peer_set_preshared_key(peer, cstr, TRUE);
 
-		if (!_peers_set (priv, peer, pd->idx, FALSE))
-			nm_assert_not_reached ();
-		has_changes = TRUE;
-	}
+        if (!_peers_set(priv, peer, pd->idx, FALSE))
+            nm_assert_not_reached();
+        has_changes = TRUE;
+    }
 
-	if (has_error)
-		return NM_SETTING_UPDATE_SECRET_ERROR;
-	if (has_changes)
-		return NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED;
-	return NM_SETTING_UPDATE_SECRET_SUCCESS_UNCHANGED;
+    if (has_error)
+        return NM_SETTING_UPDATE_SECRET_ERROR;
+    if (has_changes)
+        return NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED;
+    return NM_SETTING_UPDATE_SECRET_SUCCESS_UNCHANGED;
 }
 
 static NMTernary
-compare_property (const NMSettInfoSetting *sett_info,
-                  guint property_idx,
-                  NMConnection *con_a,
-                  NMSetting *set_a,
-                  NMConnection *con_b,
-                  NMSetting *set_b,
-                  NMSettingCompareFlags flags)
+compare_property(const NMSettInfoSetting *sett_info,
+                 guint                    property_idx,
+                 NMConnection *           con_a,
+                 NMSetting *              set_a,
+                 NMConnection *           con_b,
+                 NMSetting *              set_b,
+                 NMSettingCompareFlags    flags)
 {
-	NMSettingWireGuardPrivate *a_priv;
-	NMSettingWireGuardPrivate *b_priv;
-	guint i;
+    NMSettingWireGuardPrivate *a_priv;
+    NMSettingWireGuardPrivate *b_priv;
+    guint                      i;
 
-	if (nm_streq (sett_info->property_infos[property_idx].name, NM_SETTING_WIREGUARD_PEERS)) {
+    if (nm_streq(sett_info->property_infos[property_idx].name, NM_SETTING_WIREGUARD_PEERS)) {
+        if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
+            return NM_TERNARY_DEFAULT;
 
-		if (NM_FLAGS_HAS (flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
-			return NM_TERNARY_DEFAULT;
+        if (!set_b)
+            return TRUE;
 
-		if (!set_b)
-			return TRUE;
+        a_priv = NM_SETTING_WIREGUARD_GET_PRIVATE(set_a);
+        b_priv = NM_SETTING_WIREGUARD_GET_PRIVATE(set_b);
 
-		a_priv = NM_SETTING_WIREGUARD_GET_PRIVATE (set_a);
-		b_priv = NM_SETTING_WIREGUARD_GET_PRIVATE (set_b);
+        if (a_priv->peers_arr->len != b_priv->peers_arr->len)
+            return FALSE;
+        for (i = 0; i < a_priv->peers_arr->len; i++) {
+            NMWireGuardPeer *a_peer = _peers_get(a_priv, i)->peer;
+            NMWireGuardPeer *b_peer = _peers_get(b_priv, i)->peer;
 
-		if (a_priv->peers_arr->len != b_priv->peers_arr->len)
-			return FALSE;
-		for (i = 0; i < a_priv->peers_arr->len; i++) {
-			NMWireGuardPeer *a_peer = _peers_get (a_priv, i)->peer;
-			NMWireGuardPeer *b_peer = _peers_get (b_priv, i)->peer;
+            if (nm_wireguard_peer_cmp(a_peer, b_peer, flags) != 0)
+                return FALSE;
+        }
 
-			if (nm_wireguard_peer_cmp (a_peer,
-			                           b_peer,
-			                           flags) != 0)
-				return FALSE;
-		}
+        return TRUE;
+    }
 
-		return TRUE;
-	}
-
-	return NM_SETTING_CLASS (nm_setting_wireguard_parent_class)->compare_property (sett_info,
-	                                                                               property_idx,
-	                                                                               con_a,
-	                                                                               set_a,
-	                                                                               con_b,
-	                                                                               set_b,
-	                                                                               flags);
+    return NM_SETTING_CLASS(nm_setting_wireguard_parent_class)
+        ->compare_property(sett_info, property_idx, con_a, set_a, con_b, set_b, flags);
 }
 
 static void
-duplicate_copy_properties (const NMSettInfoSetting *sett_info,
-                           NMSetting *src,
-                           NMSetting *dst)
+duplicate_copy_properties(const NMSettInfoSetting *sett_info, NMSetting *src, NMSetting *dst)
 {
-	NMSettingWireGuardPrivate *priv_src = NM_SETTING_WIREGUARD_GET_PRIVATE (src);
-	NMSettingWireGuardPrivate *priv_dst = NM_SETTING_WIREGUARD_GET_PRIVATE (dst);
-	guint i;
-	gboolean peers_changed = FALSE;
+    NMSettingWireGuardPrivate *priv_src = NM_SETTING_WIREGUARD_GET_PRIVATE(src);
+    NMSettingWireGuardPrivate *priv_dst = NM_SETTING_WIREGUARD_GET_PRIVATE(dst);
+    guint                      i;
+    gboolean                   peers_changed = FALSE;
 
-	NM_SETTING_CLASS (nm_setting_wireguard_parent_class)->duplicate_copy_properties (sett_info,
-	                                                                                 src,
-	                                                                                 dst);
+    NM_SETTING_CLASS(nm_setting_wireguard_parent_class)
+        ->duplicate_copy_properties(sett_info, src, dst);
 
-	/* We don't bother comparing the existing peers with what we are about to set.
+    /* We don't bother comparing the existing peers with what we are about to set.
 	 * Always reset all. */
-	if (_peers_clear (priv_dst) > 0)
-		peers_changed = TRUE;
-	for (i = 0; i < priv_src->peers_arr->len; i++) {
-		if (_peers_append (priv_dst,
-		                   _peers_get (priv_src, i)->peer,
-		                   FALSE))
-			peers_changed = TRUE;
-	}
-	if (peers_changed)
-		_peers_notify (dst);
+    if (_peers_clear(priv_dst) > 0)
+        peers_changed = TRUE;
+    for (i = 0; i < priv_src->peers_arr->len; i++) {
+        if (_peers_append(priv_dst, _peers_get(priv_src, i)->peer, FALSE))
+            peers_changed = TRUE;
+    }
+    if (peers_changed)
+        _peers_notify(dst);
 }
 
 static void
-enumerate_values (const NMSettInfoProperty *property_info,
-                  NMSetting *setting,
-                  NMSettingValueIterFn func,
-                  gpointer user_data)
+enumerate_values(const NMSettInfoProperty *property_info,
+                 NMSetting *               setting,
+                 NMSettingValueIterFn      func,
+                 gpointer                  user_data)
 {
-	if (nm_streq (property_info->name, NM_SETTING_WIREGUARD_PEERS)) {
-		NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE (setting);
-		nm_auto_unset_gvalue GValue value = G_VALUE_INIT;
-		GPtrArray *ptr = NULL;
-		guint i;
+    if (nm_streq(property_info->name, NM_SETTING_WIREGUARD_PEERS)) {
+        NMSettingWireGuardPrivate * priv  = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
+        nm_auto_unset_gvalue GValue value = G_VALUE_INIT;
+        GPtrArray *                 ptr   = NULL;
+        guint                       i;
 
-		if (priv->peers_arr && priv->peers_arr->len > 0) {
-			ptr = g_ptr_array_new_with_free_func ((GDestroyNotify) nm_wireguard_peer_unref);
-			for (i = 0; i < priv->peers_arr->len; i++)
-				g_ptr_array_add (ptr, nm_wireguard_peer_ref (_peers_get (priv, i)->peer));
-		}
-		g_value_init (&value, G_TYPE_PTR_ARRAY);
-		g_value_take_boxed (&value, ptr);
-		func (setting,
-		      property_info->name,
-		      &value,
-		      0,
-		      user_data);
-		return;
-	}
+        if (priv->peers_arr && priv->peers_arr->len > 0) {
+            ptr = g_ptr_array_new_with_free_func((GDestroyNotify) nm_wireguard_peer_unref);
+            for (i = 0; i < priv->peers_arr->len; i++)
+                g_ptr_array_add(ptr, nm_wireguard_peer_ref(_peers_get(priv, i)->peer));
+        }
+        g_value_init(&value, G_TYPE_PTR_ARRAY);
+        g_value_take_boxed(&value, ptr);
+        func(setting, property_info->name, &value, 0, user_data);
+        return;
+    }
 
-	NM_SETTING_CLASS (nm_setting_wireguard_parent_class)->enumerate_values (property_info,
-	                                                                        setting,
-	                                                                        func,
-	                                                                        user_data);
+    NM_SETTING_CLASS(nm_setting_wireguard_parent_class)
+        ->enumerate_values(property_info, setting, func, user_data);
 }
 
 static gboolean
-aggregate (NMSetting *setting,
-           int type_i,
-           gpointer arg)
+aggregate(NMSetting *setting, int type_i, gpointer arg)
 {
-	NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE (setting);
-	NMConnectionAggregateType type = type_i;
-	NMSettingSecretFlags secret_flags;
-	guint i;
+    NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
+    NMConnectionAggregateType  type = type_i;
+    NMSettingSecretFlags       secret_flags;
+    guint                      i;
 
-	nm_assert (NM_IN_SET (type, NM_CONNECTION_AGGREGATE_ANY_SECRETS,
-	                            NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS));
+    nm_assert(NM_IN_SET(type,
+                        NM_CONNECTION_AGGREGATE_ANY_SECRETS,
+                        NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS));
 
-	switch (type) {
+    switch (type) {
+    case NM_CONNECTION_AGGREGATE_ANY_SECRETS:
+        if (priv->private_key)
+            goto out_done;
+        for (i = 0; i < priv->peers_arr->len; i++) {
+            if (nm_wireguard_peer_get_preshared_key(_peers_get(priv, i)->peer))
+                goto out_done;
+        }
+        break;
 
-	case NM_CONNECTION_AGGREGATE_ANY_SECRETS:
-		if (priv->private_key)
-			goto out_done;
-		for (i = 0; i < priv->peers_arr->len; i++) {
-			if (nm_wireguard_peer_get_preshared_key (_peers_get (priv, i)->peer))
-				goto out_done;
-		}
-		break;
-
-	case NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS:
+    case NM_CONNECTION_AGGREGATE_ANY_SYSTEM_SECRET_FLAGS:
 #if NM_MORE_ASSERTS
-		if (!nm_setting_get_secret_flags (setting, NM_SETTING_WIREGUARD_PRIVATE_KEY, &secret_flags, NULL))
-			nm_assert_not_reached ();
-		nm_assert (secret_flags == priv->private_key_flags);
+        if (!nm_setting_get_secret_flags(setting,
+                                         NM_SETTING_WIREGUARD_PRIVATE_KEY,
+                                         &secret_flags,
+                                         NULL))
+            nm_assert_not_reached();
+        nm_assert(secret_flags == priv->private_key_flags);
 #endif
-		if (priv->private_key_flags == NM_SETTING_SECRET_FLAG_NONE)
-			goto out_done;
-		for (i = 0; i < priv->peers_arr->len; i++) {
-			secret_flags = nm_wireguard_peer_get_preshared_key_flags (_peers_get (priv, i)->peer);
-			if (secret_flags == NM_SETTING_SECRET_FLAG_NONE)
-				goto out_done;
-		}
-		break;
-	}
+        if (priv->private_key_flags == NM_SETTING_SECRET_FLAG_NONE)
+            goto out_done;
+        for (i = 0; i < priv->peers_arr->len; i++) {
+            secret_flags = nm_wireguard_peer_get_preshared_key_flags(_peers_get(priv, i)->peer);
+            if (secret_flags == NM_SETTING_SECRET_FLAG_NONE)
+                goto out_done;
+        }
+        break;
+    }
 
-	return FALSE;
+    return FALSE;
 
 out_done:
-	*((gboolean *) arg) = TRUE;
-	return TRUE;
+    *((gboolean *) arg) = TRUE;
+    return TRUE;
 }
 
 static gboolean
-get_secret_flags (NMSetting *setting,
-                  const char *secret_name,
-                  NMSettingSecretFlags *out_flags,
-                  GError **error)
+get_secret_flags(NMSetting *           setting,
+                 const char *          secret_name,
+                 NMSettingSecretFlags *out_flags,
+                 GError **             error)
 {
-	if (NM_STR_HAS_PREFIX (secret_name, NM_SETTING_WIREGUARD_PEERS".")) {
-		NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE (setting);
-		gs_free char *public_key_free = NULL;
-		const char *public_key;
-		PeerData *pd;
+    if (NM_STR_HAS_PREFIX(secret_name, NM_SETTING_WIREGUARD_PEERS ".")) {
+        NMSettingWireGuardPrivate *priv            = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
+        gs_free char *             public_key_free = NULL;
+        const char *               public_key;
+        PeerData *                 pd;
 
-		public_key = peers_psk_get_secret_parse_a (secret_name, &public_key_free);
-		if (   public_key
-		    && (pd = _peers_get_by_public_key (priv, public_key, FALSE))) {
-			NM_SET_OUT (out_flags, nm_wireguard_peer_get_preshared_key_flags (pd->peer));
-			return TRUE;
-		}
-	}
+        public_key = peers_psk_get_secret_parse_a(secret_name, &public_key_free);
+        if (public_key && (pd = _peers_get_by_public_key(priv, public_key, FALSE))) {
+            NM_SET_OUT(out_flags, nm_wireguard_peer_get_preshared_key_flags(pd->peer));
+            return TRUE;
+        }
+    }
 
-	return NM_SETTING_CLASS (nm_setting_wireguard_parent_class)->get_secret_flags (setting,
-	                                                                               secret_name,
-	                                                                               out_flags,
-	                                                                               error);
+    return NM_SETTING_CLASS(nm_setting_wireguard_parent_class)
+        ->get_secret_flags(setting, secret_name, out_flags, error);
 }
 
 static gboolean
-set_secret_flags (NMSetting *setting,
-                  const char *secret_name,
-                  NMSettingSecretFlags flags,
-                  GError **error)
+set_secret_flags(NMSetting *          setting,
+                 const char *         secret_name,
+                 NMSettingSecretFlags flags,
+                 GError **            error)
 {
-	if (NM_STR_HAS_PREFIX (secret_name, NM_SETTING_WIREGUARD_PEERS".")) {
-		NMSettingWireGuard *self = NM_SETTING_WIREGUARD (setting);
-		NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE (self);
-		gs_free char *public_key_free = NULL;
-		const char *public_key;
-		PeerData *pd;
+    if (NM_STR_HAS_PREFIX(secret_name, NM_SETTING_WIREGUARD_PEERS ".")) {
+        NMSettingWireGuard *       self            = NM_SETTING_WIREGUARD(setting);
+        NMSettingWireGuardPrivate *priv            = NM_SETTING_WIREGUARD_GET_PRIVATE(self);
+        gs_free char *             public_key_free = NULL;
+        const char *               public_key;
+        PeerData *                 pd;
 
-		public_key = peers_psk_get_secret_parse_a (secret_name, &public_key_free);
-		if (   public_key
-		    && (pd = _peers_get_by_public_key (priv, public_key, FALSE))) {
+        public_key = peers_psk_get_secret_parse_a(secret_name, &public_key_free);
+        if (public_key && (pd = _peers_get_by_public_key(priv, public_key, FALSE))) {
+            if (nm_wireguard_peer_get_preshared_key_flags(pd->peer) != flags) {
+                nm_auto_unref_wgpeer NMWireGuardPeer *peer = NULL;
 
-			if (nm_wireguard_peer_get_preshared_key_flags (pd->peer) != flags) {
-				nm_auto_unref_wgpeer NMWireGuardPeer *peer = NULL;
+                peer                      = nm_wireguard_peer_new_clone(pd->peer, TRUE);
+                peer->preshared_key_flags = flags;
+                if (_peers_set(priv, peer, pd->idx, FALSE))
+                    _peers_notify(self);
+            }
 
-				peer = nm_wireguard_peer_new_clone (pd->peer, TRUE);
-				peer->preshared_key_flags = flags;
-				if (_peers_set (priv, peer, pd->idx, FALSE))
-					_peers_notify (self);
-			}
+            return TRUE;
+        }
+    }
 
-			return TRUE;
-		}
-	}
-
-	return NM_SETTING_CLASS (nm_setting_wireguard_parent_class)->set_secret_flags (setting,
-	                                                                               secret_name,
-	                                                                               flags,
-	                                                                               error);
+    return NM_SETTING_CLASS(nm_setting_wireguard_parent_class)
+        ->set_secret_flags(setting, secret_name, flags, error);
 }
 
 static void
-for_each_secret (NMSetting *setting,
-                 const char *data_key,
-                 GVariant *data_val,
-                 gboolean remove_non_secrets,
-                 _NMConnectionForEachSecretFunc callback,
-                 gpointer callback_data,
-                 GVariantBuilder *setting_builder)
+for_each_secret(NMSetting *                    setting,
+                const char *                   data_key,
+                GVariant *                     data_val,
+                gboolean                       remove_non_secrets,
+                _NMConnectionForEachSecretFunc callback,
+                gpointer                       callback_data,
+                GVariantBuilder *              setting_builder)
 {
-	NMSettingWireGuard *s_wg;
-	NMSettingWireGuardPrivate *priv;
-	GVariantBuilder peers_builder;
-	GVariantIter *peer_iter;
-	GVariantIter data_iter;
-	const char *key;
+    NMSettingWireGuard *       s_wg;
+    NMSettingWireGuardPrivate *priv;
+    GVariantBuilder            peers_builder;
+    GVariantIter *             peer_iter;
+    GVariantIter               data_iter;
+    const char *               key;
 
-	if (!nm_streq (data_key, NM_SETTING_WIREGUARD_PEERS)) {
-		NM_SETTING_CLASS (nm_setting_wireguard_parent_class)->for_each_secret (setting,
-		                                                                       data_key,
-		                                                                       data_val,
-		                                                                       remove_non_secrets,
-		                                                                       callback,
-		                                                                       callback_data,
-		                                                                       setting_builder);
-		return;
-	}
+    if (!nm_streq(data_key, NM_SETTING_WIREGUARD_PEERS)) {
+        NM_SETTING_CLASS(nm_setting_wireguard_parent_class)
+            ->for_each_secret(setting,
+                              data_key,
+                              data_val,
+                              remove_non_secrets,
+                              callback,
+                              callback_data,
+                              setting_builder);
+        return;
+    }
 
-	if (!g_variant_is_of_type (data_val, G_VARIANT_TYPE ("aa{sv}"))) {
-		/* invalid type. Silently ignore content as we cannot find secret-keys
+    if (!g_variant_is_of_type(data_val, G_VARIANT_TYPE("aa{sv}"))) {
+        /* invalid type. Silently ignore content as we cannot find secret-keys
 		 * here. */
-		return;
-	}
+        return;
+    }
 
-	s_wg = NM_SETTING_WIREGUARD (setting);
-	priv = NM_SETTING_WIREGUARD_GET_PRIVATE (s_wg);
+    s_wg = NM_SETTING_WIREGUARD(setting);
+    priv = NM_SETTING_WIREGUARD_GET_PRIVATE(s_wg);
 
-	g_variant_builder_init (&peers_builder, G_VARIANT_TYPE ("aa{sv}"));
-	g_variant_iter_init (&data_iter, data_val);
-	while (g_variant_iter_next (&data_iter, "a{sv}", &peer_iter)) {
-		_nm_unused nm_auto_free_variant_iter GVariantIter *peer_iter_free = peer_iter;
-		gs_unref_variant GVariant *preshared_key = NULL;
-		PeerData *pd = NULL;
-		NMSettingSecretFlags secret_flags;
-		GVariant *val;
-		GVariantBuilder peer_builder;
+    g_variant_builder_init(&peers_builder, G_VARIANT_TYPE("aa{sv}"));
+    g_variant_iter_init(&data_iter, data_val);
+    while (g_variant_iter_next(&data_iter, "a{sv}", &peer_iter)) {
+        _nm_unused nm_auto_free_variant_iter GVariantIter *peer_iter_free = peer_iter;
+        gs_unref_variant GVariant *preshared_key                          = NULL;
+        PeerData *                 pd                                     = NULL;
+        NMSettingSecretFlags       secret_flags;
+        GVariant *                 val;
+        GVariantBuilder            peer_builder;
 
-		g_variant_builder_init (&peer_builder, G_VARIANT_TYPE ("a{sv}"));
+        g_variant_builder_init(&peer_builder, G_VARIANT_TYPE("a{sv}"));
 
-		while (g_variant_iter_next (peer_iter, "{&sv}", &key, &val)) {
-			_nm_unused gs_unref_variant GVariant *val_free = val;
+        while (g_variant_iter_next(peer_iter, "{&sv}", &key, &val)) {
+            _nm_unused gs_unref_variant GVariant *val_free = val;
 
-			if (nm_streq (key, NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY)) {
-				if (   !preshared_key
-				    && g_variant_is_of_type (val, G_VARIANT_TYPE_STRING))
-					preshared_key = g_variant_ref (val);
-				continue;
-			}
+            if (nm_streq(key, NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY)) {
+                if (!preshared_key && g_variant_is_of_type(val, G_VARIANT_TYPE_STRING))
+                    preshared_key = g_variant_ref(val);
+                continue;
+            }
 
-			if (nm_streq (key, NM_WIREGUARD_PEER_ATTR_PUBLIC_KEY)) {
-				if (   !pd
-				    && g_variant_is_of_type (val, G_VARIANT_TYPE_STRING))
-					pd = _peers_get_by_public_key (priv, g_variant_get_string (val, NULL), TRUE);
-			} else if (remove_non_secrets)
-				continue;
+            if (nm_streq(key, NM_WIREGUARD_PEER_ATTR_PUBLIC_KEY)) {
+                if (!pd && g_variant_is_of_type(val, G_VARIANT_TYPE_STRING))
+                    pd = _peers_get_by_public_key(priv, g_variant_get_string(val, NULL), TRUE);
+            } else if (remove_non_secrets)
+                continue;
 
-			g_variant_builder_add (&peer_builder, "{sv}", key, val);
-		}
+            g_variant_builder_add(&peer_builder, "{sv}", key, val);
+        }
 
-		if (pd && preshared_key) {
-			/* without specifying a public-key of an existing peer, the secret is
+        if (pd && preshared_key) {
+            /* without specifying a public-key of an existing peer, the secret is
 			 * ignored. */
-			secret_flags = nm_wireguard_peer_get_preshared_key_flags (pd->peer);
-			if (callback (secret_flags, callback_data))
-				g_variant_builder_add (&peer_builder, "{sv}", NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY, preshared_key);
-		}
+            secret_flags = nm_wireguard_peer_get_preshared_key_flags(pd->peer);
+            if (callback(secret_flags, callback_data))
+                g_variant_builder_add(&peer_builder,
+                                      "{sv}",
+                                      NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY,
+                                      preshared_key);
+        }
 
-		g_variant_builder_add (&peers_builder, "a{sv}", &peer_builder);
-	}
+        g_variant_builder_add(&peers_builder, "a{sv}", &peer_builder);
+    }
 
-	g_variant_builder_add (setting_builder,
-	                       "{sv}",
-	                       NM_SETTING_WIREGUARD_PEERS,
-	                       g_variant_builder_end (&peers_builder));
+    g_variant_builder_add(setting_builder,
+                          "{sv}",
+                          NM_SETTING_WIREGUARD_PEERS,
+                          g_variant_builder_end(&peers_builder));
 }
 
 /*****************************************************************************/
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
+get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-	NMSettingWireGuard *setting = NM_SETTING_WIREGUARD (object);
-	NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE (setting);
+    NMSettingWireGuard *       setting = NM_SETTING_WIREGUARD(object);
+    NMSettingWireGuardPrivate *priv    = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
 
-	switch (prop_id) {
-	case PROP_FWMARK:
-		g_value_set_uint (value, priv->fwmark);
-		break;
-	case PROP_IP4_AUTO_DEFAULT_ROUTE:
-		g_value_set_enum (value, priv->ip4_auto_default_route);
-		break;
-	case PROP_IP6_AUTO_DEFAULT_ROUTE:
-		g_value_set_enum (value, priv->ip6_auto_default_route);
-		break;
-	case PROP_LISTEN_PORT:
-		g_value_set_uint (value, priv->listen_port);
-		break;
-	case PROP_MTU:
-		g_value_set_uint (value, priv->mtu);
-		break;
-	case PROP_PEER_ROUTES:
-		g_value_set_boolean (value, priv->peer_routes);
-		break;
-	case PROP_PRIVATE_KEY:
-		g_value_set_string (value, priv->private_key);
-		break;
-	case PROP_PRIVATE_KEY_FLAGS:
-		g_value_set_flags (value, priv->private_key_flags);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_FWMARK:
+        g_value_set_uint(value, priv->fwmark);
+        break;
+    case PROP_IP4_AUTO_DEFAULT_ROUTE:
+        g_value_set_enum(value, priv->ip4_auto_default_route);
+        break;
+    case PROP_IP6_AUTO_DEFAULT_ROUTE:
+        g_value_set_enum(value, priv->ip6_auto_default_route);
+        break;
+    case PROP_LISTEN_PORT:
+        g_value_set_uint(value, priv->listen_port);
+        break;
+    case PROP_MTU:
+        g_value_set_uint(value, priv->mtu);
+        break;
+    case PROP_PEER_ROUTES:
+        g_value_set_boolean(value, priv->peer_routes);
+        break;
+    case PROP_PRIVATE_KEY:
+        g_value_set_string(value, priv->private_key);
+        break;
+    case PROP_PRIVATE_KEY_FLAGS:
+        g_value_set_flags(value, priv->private_key_flags);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
+set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-	NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE (object);
-	const char *str;
+    NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE(object);
+    const char *               str;
 
-	switch (prop_id) {
-	case PROP_FWMARK:
-		priv->fwmark = g_value_get_uint (value);
-		break;
-	case PROP_IP4_AUTO_DEFAULT_ROUTE:
-		priv->ip4_auto_default_route = g_value_get_enum (value);
-		break;
-	case PROP_IP6_AUTO_DEFAULT_ROUTE:
-		priv->ip6_auto_default_route = g_value_get_enum (value);
-		break;
-	case PROP_LISTEN_PORT:
-		priv->listen_port = g_value_get_uint (value);
-		break;
-	case PROP_MTU:
-		priv->mtu = g_value_get_uint (value);
-		break;
-	case PROP_PEER_ROUTES:
-		priv->peer_routes = g_value_get_boolean (value);
-		break;
-	case PROP_PRIVATE_KEY:
-		nm_clear_pointer (&priv->private_key, nm_free_secret);
-		str = g_value_get_string (value);
-		if (str) {
-			if (nm_utils_base64secret_normalize (str,
-			                                     NM_WIREGUARD_PUBLIC_KEY_LEN,
-			                                     &priv->private_key))
-				priv->private_key_valid = TRUE;
-			else {
-				priv->private_key = g_strdup (str);
-				priv->private_key_valid = FALSE;
-			}
-		}
-		break;
-	case PROP_PRIVATE_KEY_FLAGS:
-		priv->private_key_flags = g_value_get_flags (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_FWMARK:
+        priv->fwmark = g_value_get_uint(value);
+        break;
+    case PROP_IP4_AUTO_DEFAULT_ROUTE:
+        priv->ip4_auto_default_route = g_value_get_enum(value);
+        break;
+    case PROP_IP6_AUTO_DEFAULT_ROUTE:
+        priv->ip6_auto_default_route = g_value_get_enum(value);
+        break;
+    case PROP_LISTEN_PORT:
+        priv->listen_port = g_value_get_uint(value);
+        break;
+    case PROP_MTU:
+        priv->mtu = g_value_get_uint(value);
+        break;
+    case PROP_PEER_ROUTES:
+        priv->peer_routes = g_value_get_boolean(value);
+        break;
+    case PROP_PRIVATE_KEY:
+        nm_clear_pointer(&priv->private_key, nm_free_secret);
+        str = g_value_get_string(value);
+        if (str) {
+            if (nm_utils_base64secret_normalize(str,
+                                                NM_WIREGUARD_PUBLIC_KEY_LEN,
+                                                &priv->private_key))
+                priv->private_key_valid = TRUE;
+            else {
+                priv->private_key       = g_strdup(str);
+                priv->private_key_valid = FALSE;
+            }
+        }
+        break;
+    case PROP_PRIVATE_KEY_FLAGS:
+        priv->private_key_flags = g_value_get_flags(value);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 /*****************************************************************************/
 
 static void
-nm_setting_wireguard_init (NMSettingWireGuard *setting)
+nm_setting_wireguard_init(NMSettingWireGuard *setting)
 {
-	NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE (setting);
+    NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
 
-	priv->peers_arr = g_ptr_array_new ();
-	priv->peers_hash = g_hash_table_new (nm_pstr_hash, nm_pstr_equal);
-	priv->peer_routes = TRUE;
-	priv->ip4_auto_default_route = NM_TERNARY_DEFAULT;
-	priv->ip6_auto_default_route = NM_TERNARY_DEFAULT;
+    priv->peers_arr              = g_ptr_array_new();
+    priv->peers_hash             = g_hash_table_new(nm_pstr_hash, nm_pstr_equal);
+    priv->peer_routes            = TRUE;
+    priv->ip4_auto_default_route = NM_TERNARY_DEFAULT;
+    priv->ip6_auto_default_route = NM_TERNARY_DEFAULT;
 }
 
 /**
@@ -2385,64 +2371,64 @@ nm_setting_wireguard_init (NMSettingWireGuard *setting)
  * Since: 1.16
  **/
 NMSetting *
-nm_setting_wireguard_new (void)
+nm_setting_wireguard_new(void)
 {
-	return g_object_new (NM_TYPE_SETTING_WIREGUARD, NULL);
+    return g_object_new(NM_TYPE_SETTING_WIREGUARD, NULL);
 }
 
 static void
-finalize (GObject *object)
+finalize(GObject *object)
 {
-	NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE (object);
+    NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE(object);
 
-	nm_free_secret (priv->private_key);
+    nm_free_secret(priv->private_key);
 
-	_peers_clear (priv);
-	g_ptr_array_unref (priv->peers_arr);
-	g_hash_table_unref (priv->peers_hash);
+    _peers_clear(priv);
+    g_ptr_array_unref(priv->peers_arr);
+    g_hash_table_unref(priv->peers_hash);
 
-	G_OBJECT_CLASS (nm_setting_wireguard_parent_class)->finalize (object);
+    G_OBJECT_CLASS(nm_setting_wireguard_parent_class)->finalize(object);
 }
 
 static void
-nm_setting_wireguard_class_init (NMSettingWireGuardClass *klass)
+nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
-	GArray *properties_override = _nm_sett_info_property_override_create_array ();
+    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray *        properties_override = _nm_sett_info_property_override_create_array();
 
-	object_class->get_property = get_property;
-	object_class->set_property = set_property;
-	object_class->finalize     = finalize;
+    object_class->get_property = get_property;
+    object_class->set_property = set_property;
+    object_class->finalize     = finalize;
 
-	setting_class->verify                    = verify;
-	setting_class->verify_secrets            = verify_secrets;
-	setting_class->need_secrets              = need_secrets;
-	setting_class->clear_secrets             = clear_secrets;
-	setting_class->update_one_secret         = update_one_secret;
-	setting_class->compare_property          = compare_property;
-	setting_class->duplicate_copy_properties = duplicate_copy_properties;
-	setting_class->enumerate_values          = enumerate_values;
-	setting_class->aggregate                 = aggregate;
-	setting_class->get_secret_flags          = get_secret_flags;
-	setting_class->set_secret_flags          = set_secret_flags;
-	setting_class->for_each_secret           = for_each_secret;
+    setting_class->verify                    = verify;
+    setting_class->verify_secrets            = verify_secrets;
+    setting_class->need_secrets              = need_secrets;
+    setting_class->clear_secrets             = clear_secrets;
+    setting_class->update_one_secret         = update_one_secret;
+    setting_class->compare_property          = compare_property;
+    setting_class->duplicate_copy_properties = duplicate_copy_properties;
+    setting_class->enumerate_values          = enumerate_values;
+    setting_class->aggregate                 = aggregate;
+    setting_class->get_secret_flags          = get_secret_flags;
+    setting_class->set_secret_flags          = set_secret_flags;
+    setting_class->for_each_secret           = for_each_secret;
 
-	/**
+    /**
 	 * NMSettingWireGuard:private-key:
 	 *
 	 * The 256 bit private-key in base64 encoding.
 	 *
 	 * Since: 1.16
 	 **/
-	obj_properties[PROP_PRIVATE_KEY] =
-	    g_param_spec_string (NM_SETTING_WIREGUARD_PRIVATE_KEY, "", "",
-	                         NULL,
-	                           G_PARAM_READWRITE
-	                         | NM_SETTING_PARAM_SECRET
-	                         | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_PRIVATE_KEY] =
+        g_param_spec_string(NM_SETTING_WIREGUARD_PRIVATE_KEY,
+                            "",
+                            "",
+                            NULL,
+                            G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET | G_PARAM_STATIC_STRINGS);
 
-	/**
+    /**
 	 * NMSettingWireGuard:private-key-flags:
 	 *
 	 * Flags indicating how to handle the #NMSettingWirelessSecurity:private-key
@@ -2450,14 +2436,15 @@ nm_setting_wireguard_class_init (NMSettingWireGuardClass *klass)
 	 *
 	 * Since: 1.16
 	 **/
-	obj_properties[PROP_PRIVATE_KEY_FLAGS] =
-	    g_param_spec_flags (NM_SETTING_WIREGUARD_PRIVATE_KEY_FLAGS, "", "",
-	                        NM_TYPE_SETTING_SECRET_FLAGS,
-	                        NM_SETTING_SECRET_FLAG_NONE,
-	                          G_PARAM_READWRITE
-	                        | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_PRIVATE_KEY_FLAGS] =
+        g_param_spec_flags(NM_SETTING_WIREGUARD_PRIVATE_KEY_FLAGS,
+                           "",
+                           "",
+                           NM_TYPE_SETTING_SECRET_FLAGS,
+                           NM_SETTING_SECRET_FLAG_NONE,
+                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
-	/**
+    /**
 	 * NMSettingWireGuard:fwmark:
 	 *
 	 * The use of fwmark is optional and is by default off. Setting it to 0
@@ -2468,14 +2455,16 @@ nm_setting_wireguard_class_init (NMSettingWireGuardClass *klass)
 	 *
 	 * Since: 1.16
 	 **/
-	obj_properties[PROP_FWMARK] =
-	    g_param_spec_uint (NM_SETTING_WIREGUARD_FWMARK, "", "",
-	                       0, G_MAXUINT32, 0,
-	                         G_PARAM_READWRITE
-	                       | NM_SETTING_PARAM_INFERRABLE
-	                       | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_FWMARK] =
+        g_param_spec_uint(NM_SETTING_WIREGUARD_FWMARK,
+                          "",
+                          "",
+                          0,
+                          G_MAXUINT32,
+                          0,
+                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
-	/**
+    /**
 	 * NMSettingWireGuard:listen-port:
 	 *
 	 * The listen-port. If listen-port is not specified, the port will be chosen
@@ -2483,14 +2472,16 @@ nm_setting_wireguard_class_init (NMSettingWireGuardClass *klass)
 	 *
 	 * Since: 1.16
 	 **/
-	obj_properties[PROP_LISTEN_PORT] =
-	    g_param_spec_uint (NM_SETTING_WIREGUARD_LISTEN_PORT, "", "",
-	                       0, 65535, 0,
-	                         G_PARAM_READWRITE
-	                       | NM_SETTING_PARAM_INFERRABLE
-	                       | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_LISTEN_PORT] =
+        g_param_spec_uint(NM_SETTING_WIREGUARD_LISTEN_PORT,
+                          "",
+                          "",
+                          0,
+                          65535,
+                          0,
+                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
-	/**
+    /**
 	 * NMSettingWireGuard:peer-routes:
 	 *
 	 * Whether to automatically add routes for the AllowedIPs ranges
@@ -2507,14 +2498,14 @@ nm_setting_wireguard_class_init (NMSettingWireGuardClass *klass)
 	 *
 	 * Since: 1.16
 	 **/
-	obj_properties[PROP_PEER_ROUTES] =
-	    g_param_spec_boolean (NM_SETTING_WIREGUARD_PEER_ROUTES, "", "",
-	                          TRUE,
-	                            G_PARAM_READWRITE
-	                          | NM_SETTING_PARAM_INFERRABLE
-	                          | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_PEER_ROUTES] = g_param_spec_boolean(
+        NM_SETTING_WIREGUARD_PEER_ROUTES,
+        "",
+        "",
+        TRUE,
+        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
-	/**
+    /**
 	 * NMSettingWireGuard:mtu:
 	 *
 	 * If non-zero, only transmit packets of the specified size or smaller,
@@ -2526,14 +2517,16 @@ nm_setting_wireguard_class_init (NMSettingWireGuardClass *klass)
 	 *
 	 * Since: 1.16
 	 **/
-	obj_properties[PROP_MTU] =
-	    g_param_spec_uint (NM_SETTING_WIREGUARD_MTU, "", "",
-	                       0, G_MAXUINT32, 0,
-	                         G_PARAM_READWRITE
-	                       | NM_SETTING_PARAM_INFERRABLE
-	                       | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_MTU] =
+        g_param_spec_uint(NM_SETTING_WIREGUARD_MTU,
+                          "",
+                          "",
+                          0,
+                          G_MAXUINT32,
+                          0,
+                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
-	/**
+    /**
 	 * NMSettingWireGuard:ip4-auto-default-route:
 	 *
 	 * Whether to enable special handling of the IPv4 default route.
@@ -2553,44 +2546,46 @@ nm_setting_wireguard_class_init (NMSettingWireGuardClass *klass)
 	 *
 	 * Since: 1.20
 	 **/
-	obj_properties[PROP_IP4_AUTO_DEFAULT_ROUTE] =
-	    g_param_spec_enum (NM_SETTING_WIREGUARD_IP4_AUTO_DEFAULT_ROUTE, "", "",
-	                       NM_TYPE_TERNARY,
-	                       NM_TERNARY_DEFAULT,
-	                       NM_SETTING_PARAM_FUZZY_IGNORE |
-	                       G_PARAM_READWRITE |
-	                       G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_IP4_AUTO_DEFAULT_ROUTE] = g_param_spec_enum(
+        NM_SETTING_WIREGUARD_IP4_AUTO_DEFAULT_ROUTE,
+        "",
+        "",
+        NM_TYPE_TERNARY,
+        NM_TERNARY_DEFAULT,
+        NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
-	/**
+    /**
 	 * NMSettingWireGuard:ip6-auto-default-route:
 	 *
 	 * Like ip4-auto-default-route, but for the IPv6 default route.
 	 *
 	 * Since: 1.20
 	 **/
-	obj_properties[PROP_IP6_AUTO_DEFAULT_ROUTE] =
-	    g_param_spec_enum (NM_SETTING_WIREGUARD_IP6_AUTO_DEFAULT_ROUTE, "", "",
-	                       NM_TYPE_TERNARY,
-	                       NM_TERNARY_DEFAULT,
-	                       NM_SETTING_PARAM_FUZZY_IGNORE |
-	                       G_PARAM_READWRITE |
-	                       G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_IP6_AUTO_DEFAULT_ROUTE] = g_param_spec_enum(
+        NM_SETTING_WIREGUARD_IP6_AUTO_DEFAULT_ROUTE,
+        "",
+        "",
+        NM_TYPE_TERNARY,
+        NM_TERNARY_DEFAULT,
+        NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
-	/* ---dbus---
+    /* ---dbus---
 	 * property: peers
 	 * format: array of 'a{sv}'
 	 * description: Array of dictionaries for the WireGuard peers.
 	 * ---end---
 	 */
-	_nm_properties_override_dbus (properties_override,
-	                              NM_SETTING_WIREGUARD_PEERS,
-	                              NM_SETT_INFO_PROPERT_TYPE (
-	                                  .dbus_type     = NM_G_VARIANT_TYPE ("aa{sv}"),
-	                                  .to_dbus_fcn   = _peers_dbus_only_synth,
-	                                  .from_dbus_fcn = _peers_dbus_only_set,
-	                              ));
+    _nm_properties_override_dbus(
+        properties_override,
+        NM_SETTING_WIREGUARD_PEERS,
+        NM_SETT_INFO_PROPERT_TYPE(.dbus_type     = NM_G_VARIANT_TYPE("aa{sv}"),
+                                  .to_dbus_fcn   = _peers_dbus_only_synth,
+                                  .from_dbus_fcn = _peers_dbus_only_set, ));
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+    g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-	_nm_setting_class_commit_full (setting_class, NM_META_SETTING_TYPE_WIREGUARD, NULL, properties_override);
+    _nm_setting_class_commit_full(setting_class,
+                                  NM_META_SETTING_TYPE_WIREGUARD,
+                                  NULL,
+                                  properties_override);
 }

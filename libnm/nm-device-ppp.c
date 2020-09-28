@@ -12,29 +12,26 @@
 /*****************************************************************************/
 
 struct _NMDevicePpp {
-	NMDevice parent;
+    NMDevice parent;
 };
 
 struct _NMDevicePppClass {
-	NMDeviceClass parent;
+    NMDeviceClass parent;
 };
 
-G_DEFINE_TYPE (NMDevicePpp, nm_device_ppp, NM_TYPE_DEVICE)
+G_DEFINE_TYPE(NMDevicePpp, nm_device_ppp, NM_TYPE_DEVICE)
 
 /*****************************************************************************/
 
 static void
-nm_device_ppp_init (NMDevicePpp *device)
-{
-}
+nm_device_ppp_init(NMDevicePpp *device)
+{}
 
-const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_ppp = NML_DBUS_META_IFACE_INIT (
-	NM_DBUS_INTERFACE_DEVICE_PPP,
-	nm_device_ppp_get_type,
-	NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
-);
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_ppp =
+    NML_DBUS_META_IFACE_INIT(NM_DBUS_INTERFACE_DEVICE_PPP,
+                             nm_device_ppp_get_type,
+                             NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, );
 
 static void
-nm_device_ppp_class_init (NMDevicePppClass *klass)
-{
-}
+nm_device_ppp_class_init(NMDevicePppClass *klass)
+{}

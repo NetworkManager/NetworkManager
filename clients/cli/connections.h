@@ -8,19 +8,18 @@
 
 #include "nmcli.h"
 
-void monitor_connections (NmCli *nmc);
+void monitor_connections(NmCli *nmc);
 
-gboolean
-nmc_process_connection_properties (NmCli *nmc,
-                                   NMConnection *connection,
-                                   int *argc,
-                                   const char *const**argv,
-                                   gboolean allow_remove_setting,
-                                   GError **error);
+gboolean nmc_process_connection_properties(NmCli *             nmc,
+                                           NMConnection *      connection,
+                                           int *               argc,
+                                           const char *const **argv,
+                                           gboolean            allow_remove_setting,
+                                           GError **           error);
 
-NMMetaColor nmc_active_connection_state_to_color (NMActiveConnection *ac);
+NMMetaColor nmc_active_connection_state_to_color(NMActiveConnection *ac);
 
-int nmc_active_connection_cmp (NMActiveConnection *ac_a, NMActiveConnection *ac_b);
+int nmc_active_connection_cmp(NMActiveConnection *ac_a, NMActiveConnection *ac_b);
 
 extern const NmcMetaGenericInfo *const metagen_con_show[];
 extern const NmcMetaGenericInfo *const metagen_con_active_general[];

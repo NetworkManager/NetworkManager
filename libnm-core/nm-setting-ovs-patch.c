@@ -21,9 +21,7 @@
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_PEER,
-);
+NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PEER, );
 
 /**
  * NMSettingOvsPatch:
@@ -31,16 +29,16 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE (
  * OvsPatch Link Settings
  */
 struct _NMSettingOvsPatch {
-	NMSetting parent;
+    NMSetting parent;
 
-	char *peer;
+    char *peer;
 };
 
 struct _NMSettingOvsPatchClass {
-	NMSettingClass parent;
+    NMSettingClass parent;
 };
 
-G_DEFINE_TYPE (NMSettingOvsPatch, nm_setting_ovs_patch, NM_TYPE_SETTING)
+G_DEFINE_TYPE(NMSettingOvsPatch, nm_setting_ovs_patch, NM_TYPE_SETTING)
 
 /*****************************************************************************/
 
@@ -53,85 +51,84 @@ G_DEFINE_TYPE (NMSettingOvsPatch, nm_setting_ovs_patch, NM_TYPE_SETTING)
  * Since: 1.10
  **/
 const char *
-nm_setting_ovs_patch_get_peer (NMSettingOvsPatch *self)
+nm_setting_ovs_patch_get_peer(NMSettingOvsPatch *self)
 {
-	g_return_val_if_fail (NM_IS_SETTING_OVS_PATCH (self), NULL);
+    g_return_val_if_fail(NM_IS_SETTING_OVS_PATCH(self), NULL);
 
-	return self->peer;
+    return self->peer;
 }
 
 /*****************************************************************************/
 
 static int
-verify (NMSetting *setting, NMConnection *connection, GError **error)
+verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
-	NMSettingOvsPatch *self = NM_SETTING_OVS_PATCH (setting);
+    NMSettingOvsPatch *self = NM_SETTING_OVS_PATCH(setting);
 
-	if (!_nm_connection_verify_required_interface_name (connection, error))
-		return FALSE;
+    if (!_nm_connection_verify_required_interface_name(connection, error))
+        return FALSE;
 
-	if (!self->peer) {
-		g_set_error_literal (error,
-		                     NM_CONNECTION_ERROR,
-		                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
-		                     _("property is missing"));
-		g_prefix_error (error, "%s.%s: ",
-		                NM_SETTING_OVS_PATCH_SETTING_NAME,
-		                NM_SETTING_OVS_PATCH_PEER);
-		return FALSE;
-	}
+    if (!self->peer) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_MISSING_PROPERTY,
+                            _("property is missing"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_OVS_PATCH_SETTING_NAME,
+                       NM_SETTING_OVS_PATCH_PEER);
+        return FALSE;
+    }
 
-	if (!nm_utils_ifname_valid (self->peer, NMU_IFACE_OVS, error)) {
-		g_prefix_error (error, "%s.%s: ",
-		                NM_SETTING_OVS_PATCH_SETTING_NAME,
-		                NM_SETTING_OVS_PATCH_PEER);
-		return FALSE;
-	}
+    if (!nm_utils_ifname_valid(self->peer, NMU_IFACE_OVS, error)) {
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_OVS_PATCH_SETTING_NAME,
+                       NM_SETTING_OVS_PATCH_PEER);
+        return FALSE;
+    }
 
-	return TRUE;
+    return TRUE;
 }
 
 /*****************************************************************************/
 
 static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
+get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-	NMSettingOvsPatch *self = NM_SETTING_OVS_PATCH (object);
+    NMSettingOvsPatch *self = NM_SETTING_OVS_PATCH(object);
 
-	switch (prop_id) {
-	case PROP_PEER:
-		g_value_set_string (value, self->peer);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_PEER:
+        g_value_set_string(value, self->peer);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
+set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-	NMSettingOvsPatch *self = NM_SETTING_OVS_PATCH (object);
+    NMSettingOvsPatch *self = NM_SETTING_OVS_PATCH(object);
 
-	switch (prop_id) {
-	case PROP_PEER:
-		g_free (self->peer);
-		self->peer = g_value_dup_string (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_PEER:
+        g_free(self->peer);
+        self->peer = g_value_dup_string(value);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 /*****************************************************************************/
 
 static void
-nm_setting_ovs_patch_init (NMSettingOvsPatch *self)
-{
-}
+nm_setting_ovs_patch_init(NMSettingOvsPatch *self)
+{}
 
 /**
  * nm_setting_ovs_patch_new:
@@ -143,34 +140,34 @@ nm_setting_ovs_patch_init (NMSettingOvsPatch *self)
  * Since: 1.10
  **/
 NMSetting *
-nm_setting_ovs_patch_new (void)
+nm_setting_ovs_patch_new(void)
 {
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_OVS_PATCH, NULL);
+    return (NMSetting *) g_object_new(NM_TYPE_SETTING_OVS_PATCH, NULL);
 }
 
 static void
-finalize (GObject *object)
+finalize(GObject *object)
 {
-	NMSettingOvsPatch *self = NM_SETTING_OVS_PATCH (object);
+    NMSettingOvsPatch *self = NM_SETTING_OVS_PATCH(object);
 
-	g_free (self->peer);
+    g_free(self->peer);
 
-	G_OBJECT_CLASS (nm_setting_ovs_patch_parent_class)->finalize (object);
+    G_OBJECT_CLASS(nm_setting_ovs_patch_parent_class)->finalize(object);
 }
 
 static void
-nm_setting_ovs_patch_class_init (NMSettingOvsPatchClass *klass)
+nm_setting_ovs_patch_class_init(NMSettingOvsPatchClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+    GObjectClass *  object_class  = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
 
-	object_class->set_property = set_property;
-	object_class->get_property = get_property;
-	object_class->finalize     = finalize;
+    object_class->set_property = set_property;
+    object_class->get_property = get_property;
+    object_class->finalize     = finalize;
 
-	setting_class->verify = verify;
+    setting_class->verify = verify;
 
-	/**
+    /**
 	 * NMSettingOvsPatch:peer:
 	 *
 	 * Specifies the name of the interface for the other side of the patch.
@@ -178,14 +175,14 @@ nm_setting_ovs_patch_class_init (NMSettingOvsPatchClass *klass)
 	 *
 	 * Since: 1.10
 	 **/
-	obj_properties[PROP_PEER] =
-	    g_param_spec_string (NM_SETTING_OVS_PATCH_PEER, "", "",
-	                         NULL,
-	                         G_PARAM_READWRITE |
-	                         NM_SETTING_PARAM_INFERRABLE |
-	                         G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_PEER] = g_param_spec_string(NM_SETTING_OVS_PATCH_PEER,
+                                                    "",
+                                                    "",
+                                                    NULL,
+                                                    G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
+                                                        | G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+    g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-	_nm_setting_class_commit (setting_class, NM_META_SETTING_TYPE_OVS_PATCH);
+    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_OVS_PATCH);
 }

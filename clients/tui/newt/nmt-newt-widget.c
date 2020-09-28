@@ -26,56 +26,57 @@
 #include "nmt-newt-widget.h"
 #include "nmt-newt-form.h"
 
-G_DEFINE_ABSTRACT_TYPE (NmtNewtWidget, nmt_newt_widget, G_TYPE_INITIALLY_UNOWNED)
+G_DEFINE_ABSTRACT_TYPE(NmtNewtWidget, nmt_newt_widget, G_TYPE_INITIALLY_UNOWNED)
 
-#define NMT_NEWT_WIDGET_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_NEWT_WIDGET, NmtNewtWidgetPrivate))
+#define NMT_NEWT_WIDGET_GET_PRIVATE(o) \
+    (G_TYPE_INSTANCE_GET_PRIVATE((o), NMT_TYPE_NEWT_WIDGET, NmtNewtWidgetPrivate))
 
 typedef struct {
-	NmtNewtWidget *parent;
-	gboolean visible, realized, valid;
-	gboolean exit_on_activate;
+    NmtNewtWidget *parent;
+    gboolean       visible, realized, valid;
+    gboolean       exit_on_activate;
 
-	int pad_left, pad_top, pad_right, pad_bottom;
+    int pad_left, pad_top, pad_right, pad_bottom;
 } NmtNewtWidgetPrivate;
 
 enum {
-	PROP_0,
+    PROP_0,
 
-	PROP_PARENT,
-	PROP_VISIBLE,
-	PROP_VALID,
-	PROP_EXIT_ON_ACTIVATE,
+    PROP_PARENT,
+    PROP_VISIBLE,
+    PROP_VALID,
+    PROP_EXIT_ON_ACTIVATE,
 
-	LAST_PROP
+    LAST_PROP
 };
 
 enum {
-	NEEDS_REBUILD,
-	ACTIVATED,
+    NEEDS_REBUILD,
+    ACTIVATED,
 
-	LAST_SIGNAL
+    LAST_SIGNAL
 };
 
-static guint signals[LAST_SIGNAL] = { 0 };
+static guint signals[LAST_SIGNAL] = {0};
 
 static void
-nmt_newt_widget_init (NmtNewtWidget *widget)
+nmt_newt_widget_init(NmtNewtWidget *widget)
 {
-	NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE (widget);
+    NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE(widget);
 
-	priv->visible = TRUE;
-	priv->valid = TRUE;
+    priv->visible = TRUE;
+    priv->valid   = TRUE;
 }
 
 static void
-nmt_newt_widget_finalize (GObject *object)
+nmt_newt_widget_finalize(GObject *object)
 {
-	NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE (object);
+    NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE(object);
 
-	nmt_newt_widget_unrealize (NMT_NEWT_WIDGET (object));
-	g_clear_object (&priv->parent);
+    nmt_newt_widget_unrealize(NMT_NEWT_WIDGET(object));
+    g_clear_object(&priv->parent);
 
-	G_OBJECT_CLASS (nmt_newt_widget_parent_class)->finalize (object);
+    G_OBJECT_CLASS(nmt_newt_widget_parent_class)->finalize(object);
 }
 
 /**
@@ -89,14 +90,14 @@ nmt_newt_widget_finalize (GObject *object)
  * cause its children to be realized and unrealized as needed.
  */
 void
-nmt_newt_widget_realize (NmtNewtWidget *widget)
+nmt_newt_widget_realize(NmtNewtWidget *widget)
 {
-	NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE (widget);
+    NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE(widget);
 
-	if (!priv->realized) {
-		NMT_NEWT_WIDGET_GET_CLASS (widget)->realize (widget);
-		priv->realized = TRUE;
-	}
+    if (!priv->realized) {
+        NMT_NEWT_WIDGET_GET_CLASS(widget)->realize(widget);
+        priv->realized = TRUE;
+    }
 }
 
 /**
@@ -109,14 +110,14 @@ nmt_newt_widget_realize (NmtNewtWidget *widget)
  * cause its children to be realized and unrealized as needed.
  */
 void
-nmt_newt_widget_unrealize (NmtNewtWidget *widget)
+nmt_newt_widget_unrealize(NmtNewtWidget *widget)
 {
-	NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE (widget);
+    NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE(widget);
 
-	if (priv->realized) {
-		NMT_NEWT_WIDGET_GET_CLASS (widget)->unrealize (widget);
-		priv->realized = FALSE;
-	}
+    if (priv->realized) {
+        NMT_NEWT_WIDGET_GET_CLASS(widget)->unrealize(widget);
+        priv->realized = FALSE;
+    }
 }
 
 /**
@@ -128,11 +129,11 @@ nmt_newt_widget_unrealize (NmtNewtWidget *widget)
  * Returns: whether @widget is realized.
  */
 gboolean
-nmt_newt_widget_get_realized (NmtNewtWidget *widget)
+nmt_newt_widget_get_realized(NmtNewtWidget *widget)
 {
-	NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE (widget);
+    NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE(widget);
 
-	return priv->realized;
+    return priv->realized;
 }
 
 /**
@@ -154,13 +155,13 @@ nmt_newt_widget_get_realized (NmtNewtWidget *widget)
  *   with it.
  */
 newtComponent *
-nmt_newt_widget_get_components (NmtNewtWidget *widget)
+nmt_newt_widget_get_components(NmtNewtWidget *widget)
 {
-	if (nmt_newt_widget_get_visible (widget)) {
-		nmt_newt_widget_realize (widget);
-		return NMT_NEWT_WIDGET_GET_CLASS (widget)->get_components (widget);
-	} else
-		return NULL;
+    if (nmt_newt_widget_get_visible(widget)) {
+        nmt_newt_widget_realize(widget);
+        return NMT_NEWT_WIDGET_GET_CLASS(widget)->get_components(widget);
+    } else
+        return NULL;
 }
 
 /**
@@ -173,10 +174,9 @@ nmt_newt_widget_get_components (NmtNewtWidget *widget)
  * Return value: @co's owner, or %NULL if it was not found.
  */
 NmtNewtWidget *
-nmt_newt_widget_find_component (NmtNewtWidget *widget,
-                                newtComponent  co)
+nmt_newt_widget_find_component(NmtNewtWidget *widget, newtComponent co)
 {
-	return NMT_NEWT_WIDGET_GET_CLASS (widget)->find_component (widget, co);
+    return NMT_NEWT_WIDGET_GET_CLASS(widget)->find_component(widget, co);
 }
 
 /**
@@ -190,18 +190,18 @@ nmt_newt_widget_find_component (NmtNewtWidget *widget,
  * Sets the padding on @widget.
  */
 void
-nmt_newt_widget_set_padding (NmtNewtWidget *widget,
-                             int            pad_left,
-                             int            pad_top,
-                             int            pad_right,
-                             int            pad_bottom)
+nmt_newt_widget_set_padding(NmtNewtWidget *widget,
+                            int            pad_left,
+                            int            pad_top,
+                            int            pad_right,
+                            int            pad_bottom)
 {
-	NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE (widget);
+    NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE(widget);
 
-	priv->pad_left = pad_left;
-	priv->pad_top = pad_top;
-	priv->pad_right = pad_right;
-	priv->pad_bottom = pad_bottom;
+    priv->pad_left   = pad_left;
+    priv->pad_top    = pad_top;
+    priv->pad_right  = pad_right;
+    priv->pad_bottom = pad_bottom;
 }
 
 /**
@@ -215,20 +215,18 @@ nmt_newt_widget_set_padding (NmtNewtWidget *widget,
  * will be realized first.
  */
 void
-nmt_newt_widget_size_request (NmtNewtWidget *widget,
-                              int           *width,
-                              int           *height)
+nmt_newt_widget_size_request(NmtNewtWidget *widget, int *width, int *height)
 {
-	if (nmt_newt_widget_get_visible (widget)) {
-		NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE (widget);
+    if (nmt_newt_widget_get_visible(widget)) {
+        NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE(widget);
 
-		nmt_newt_widget_realize (widget);
-		NMT_NEWT_WIDGET_GET_CLASS (widget)->size_request (widget, width, height);
+        nmt_newt_widget_realize(widget);
+        NMT_NEWT_WIDGET_GET_CLASS(widget)->size_request(widget, width, height);
 
-		*width += priv->pad_left + priv->pad_right;
-		*height += priv->pad_top + priv->pad_bottom;
-	} else
-		*width = *height = 0;
+        *width += priv->pad_left + priv->pad_right;
+        *height += priv->pad_top + priv->pad_bottom;
+    } else
+        *width = *height = 0;
 }
 
 /**
@@ -253,23 +251,19 @@ nmt_newt_widget_size_request (NmtNewtWidget *widget,
  * fit.
  */
 void
-nmt_newt_widget_size_allocate (NmtNewtWidget *widget,
-                               int            x,
-                               int            y,
-                               int            width,
-                               int            height)
+nmt_newt_widget_size_allocate(NmtNewtWidget *widget, int x, int y, int width, int height)
 {
-	if (nmt_newt_widget_get_visible (widget)) {
-		NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE (widget);
+    if (nmt_newt_widget_get_visible(widget)) {
+        NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE(widget);
 
-		nmt_newt_widget_realize (widget);
-		x += priv->pad_left;
-		y += priv->pad_top;
-		width -= priv->pad_left + priv->pad_right;
-		height -= priv->pad_top + priv->pad_bottom;
+        nmt_newt_widget_realize(widget);
+        x += priv->pad_left;
+        y += priv->pad_top;
+        width -= priv->pad_left + priv->pad_right;
+        height -= priv->pad_top + priv->pad_bottom;
 
-		NMT_NEWT_WIDGET_GET_CLASS (widget)->size_allocate (widget, x, y, width, height);
-	}
+        NMT_NEWT_WIDGET_GET_CLASS(widget)->size_allocate(widget, x, y, width, height);
+    }
 }
 
 /**
@@ -283,21 +277,21 @@ nmt_newt_widget_size_allocate (NmtNewtWidget *widget,
  *   take the focus.
  */
 newtComponent
-nmt_newt_widget_get_focus_component (NmtNewtWidget *widget)
+nmt_newt_widget_get_focus_component(NmtNewtWidget *widget)
 {
-	if (!NMT_NEWT_WIDGET_GET_CLASS (widget)->get_focus_component)
-		return NULL;
+    if (!NMT_NEWT_WIDGET_GET_CLASS(widget)->get_focus_component)
+        return NULL;
 
-	return NMT_NEWT_WIDGET_GET_CLASS (widget)->get_focus_component (widget);
+    return NMT_NEWT_WIDGET_GET_CLASS(widget)->get_focus_component(widget);
 }
 
 static void
-nmt_newt_widget_real_activated (NmtNewtWidget *widget)
+nmt_newt_widget_real_activated(NmtNewtWidget *widget)
 {
-	NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE (widget);
+    NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE(widget);
 
-	if (priv->exit_on_activate)
-		nmt_newt_form_quit (nmt_newt_widget_get_form (widget));
+    if (priv->exit_on_activate)
+        nmt_newt_form_quit(nmt_newt_widget_get_form(widget));
 }
 
 /**
@@ -311,9 +305,9 @@ nmt_newt_widget_real_activated (NmtNewtWidget *widget)
  * will call nmt_newt_form_quit() on the widget's form.
  */
 void
-nmt_newt_widget_activated (NmtNewtWidget *widget)
+nmt_newt_widget_activated(NmtNewtWidget *widget)
 {
-	g_signal_emit (widget, signals[ACTIVATED], 0);
+    g_signal_emit(widget, signals[ACTIVATED], 0);
 }
 
 /**
@@ -325,11 +319,11 @@ nmt_newt_widget_activated (NmtNewtWidget *widget)
  * Returns: @widget's #NmtNewtWidget:exit-on-activate flag
  */
 gboolean
-nmt_newt_widget_get_exit_on_activate (NmtNewtWidget *widget)
+nmt_newt_widget_get_exit_on_activate(NmtNewtWidget *widget)
 {
-	NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE (widget);
+    NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE(widget);
 
-	return priv->exit_on_activate;
+    return priv->exit_on_activate;
 }
 
 /**
@@ -340,16 +334,15 @@ nmt_newt_widget_get_exit_on_activate (NmtNewtWidget *widget)
  * Sets @widget's #NmtNewtWidget:exit-on-activate flag, qv.
  */
 void
-nmt_newt_widget_set_exit_on_activate (NmtNewtWidget *widget,
-                                      gboolean       exit_on_activate)
+nmt_newt_widget_set_exit_on_activate(NmtNewtWidget *widget, gboolean exit_on_activate)
 {
-	NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE (widget);
+    NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE(widget);
 
-	exit_on_activate = !!exit_on_activate;
-	if (priv->exit_on_activate != exit_on_activate) {
-		priv->exit_on_activate = exit_on_activate;
-		g_object_notify (G_OBJECT (widget), "exit-on-activate");
-	}
+    exit_on_activate = !!exit_on_activate;
+    if (priv->exit_on_activate != exit_on_activate) {
+        priv->exit_on_activate = exit_on_activate;
+        g_object_notify(G_OBJECT(widget), "exit-on-activate");
+    }
 }
 
 /**
@@ -361,11 +354,11 @@ nmt_newt_widget_set_exit_on_activate (NmtNewtWidget *widget,
  * Returns: @widget's #NmtNewtWidget:visible flag
  */
 gboolean
-nmt_newt_widget_get_visible (NmtNewtWidget *widget)
+nmt_newt_widget_get_visible(NmtNewtWidget *widget)
 {
-	NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE (widget);
+    NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE(widget);
 
-	return priv->visible;
+    return priv->visible;
 }
 
 /**
@@ -376,17 +369,16 @@ nmt_newt_widget_get_visible (NmtNewtWidget *widget)
  * Sets @widget's #NmtNewtWidget:visible flag, qv.
  */
 void
-nmt_newt_widget_set_visible (NmtNewtWidget *widget,
-                             gboolean       visible)
+nmt_newt_widget_set_visible(NmtNewtWidget *widget, gboolean visible)
 {
-	NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE (widget);
+    NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE(widget);
 
-	visible = !!visible;
-	if (priv->visible != visible) {
-		priv->visible = visible;
-		g_object_notify (G_OBJECT (widget), "visible");
-		nmt_newt_widget_needs_rebuild (widget);
-	}
+    visible = !!visible;
+    if (priv->visible != visible) {
+        priv->visible = visible;
+        g_object_notify(G_OBJECT(widget), "visible");
+        nmt_newt_widget_needs_rebuild(widget);
+    }
 }
 
 /**
@@ -399,14 +391,13 @@ nmt_newt_widget_set_visible (NmtNewtWidget *widget,
  * container-specific method to actually add a widget to a container.
  */
 void
-nmt_newt_widget_set_parent (NmtNewtWidget *widget,
-                            NmtNewtWidget *parent)
+nmt_newt_widget_set_parent(NmtNewtWidget *widget, NmtNewtWidget *parent)
 {
-	NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE (widget);
+    NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE(widget);
 
-	g_clear_object (&priv->parent);
-	priv->parent = parent ? g_object_ref (parent) : NULL;
-	g_object_notify (G_OBJECT (widget), "parent");
+    g_clear_object(&priv->parent);
+    priv->parent = parent ? g_object_ref(parent) : NULL;
+    g_object_notify(G_OBJECT(widget), "parent");
 }
 
 /**
@@ -418,11 +409,11 @@ nmt_newt_widget_set_parent (NmtNewtWidget *widget,
  * Returns: @widget's parent
  */
 NmtNewtWidget *
-nmt_newt_widget_get_parent (NmtNewtWidget *widget)
+nmt_newt_widget_get_parent(NmtNewtWidget *widget)
 {
-	NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE (widget);
+    NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE(widget);
 
-	return priv->parent;
+    return priv->parent;
 }
 
 /**
@@ -434,15 +425,15 @@ nmt_newt_widget_get_parent (NmtNewtWidget *widget)
  * Returns: @widget's #NmtNewtForm
  */
 NmtNewtForm *
-nmt_newt_widget_get_form (NmtNewtWidget *widget)
+nmt_newt_widget_get_form(NmtNewtWidget *widget)
 {
-	while (widget) {
-		if (NMT_IS_NEWT_FORM (widget))
-			return NMT_NEWT_FORM (widget);
-		widget = nmt_newt_widget_get_parent (widget);
-	}
+    while (widget) {
+        if (NMT_IS_NEWT_FORM(widget))
+            return NMT_NEWT_FORM(widget);
+        widget = nmt_newt_widget_get_parent(widget);
+    }
 
-	return NULL;
+    return NULL;
 }
 
 /**
@@ -455,11 +446,11 @@ nmt_newt_widget_get_form (NmtNewtWidget *widget)
  * Returns: @widget's #NmtNewtWidget:valid flag
  */
 gboolean
-nmt_newt_widget_get_valid (NmtNewtWidget *widget)
+nmt_newt_widget_get_valid(NmtNewtWidget *widget)
 {
-	NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE (widget);
+    NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE(widget);
 
-	return priv->valid;
+    return priv->valid;
 }
 
 /**
@@ -475,17 +466,16 @@ nmt_newt_widget_get_valid (NmtNewtWidget *widget)
  * point.
  */
 void
-nmt_newt_widget_set_valid (NmtNewtWidget *widget,
-                           gboolean       valid)
+nmt_newt_widget_set_valid(NmtNewtWidget *widget, gboolean valid)
 {
-	NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE (widget);
+    NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE(widget);
 
-	valid = !!valid;
-	if (priv->valid == valid)
-		return;
+    valid = !!valid;
+    if (priv->valid == valid)
+        return;
 
-	priv->valid = valid;
-	g_object_notify (G_OBJECT (widget), "valid");
+    priv->valid = valid;
+    g_object_notify(G_OBJECT(widget), "valid");
 }
 
 /**
@@ -500,79 +490,73 @@ nmt_newt_widget_set_valid (NmtNewtWidget *widget,
  * creating a new one.
  */
 void
-nmt_newt_widget_needs_rebuild (NmtNewtWidget *widget)
+nmt_newt_widget_needs_rebuild(NmtNewtWidget *widget)
 {
-	g_signal_emit (widget, signals[NEEDS_REBUILD], 0);
+    g_signal_emit(widget, signals[NEEDS_REBUILD], 0);
 }
 
 static void
-nmt_newt_widget_set_property (GObject      *object,
-                              guint         prop_id,
-                              const GValue *value,
-                              GParamSpec   *pspec)
+nmt_newt_widget_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-	NmtNewtWidget *widget = NMT_NEWT_WIDGET (object);
+    NmtNewtWidget *widget = NMT_NEWT_WIDGET(object);
 
-	switch (prop_id) {
-	case PROP_PARENT:
-		nmt_newt_widget_set_parent (widget, g_value_get_object (value));
-		break;
-	case PROP_VISIBLE:
-		nmt_newt_widget_set_visible (widget, g_value_get_boolean (value));
-		break;
-	case PROP_EXIT_ON_ACTIVATE:
-		nmt_newt_widget_set_exit_on_activate (widget, g_value_get_boolean (value));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_PARENT:
+        nmt_newt_widget_set_parent(widget, g_value_get_object(value));
+        break;
+    case PROP_VISIBLE:
+        nmt_newt_widget_set_visible(widget, g_value_get_boolean(value));
+        break;
+    case PROP_EXIT_ON_ACTIVATE:
+        nmt_newt_widget_set_exit_on_activate(widget, g_value_get_boolean(value));
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
-nmt_newt_widget_get_property (GObject    *object,
-                              guint       prop_id,
-                              GValue     *value,
-                              GParamSpec *pspec)
+nmt_newt_widget_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-	NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE (object);
+    NmtNewtWidgetPrivate *priv = NMT_NEWT_WIDGET_GET_PRIVATE(object);
 
-	switch (prop_id) {
-	case PROP_PARENT:
-		g_value_set_object (value, priv->parent);
-		break;
-	case PROP_VISIBLE:
-		g_value_set_boolean (value, priv->visible);
-		break;
-	case PROP_VALID:
-		g_value_set_boolean (value, priv->valid);
-		break;
-	case PROP_EXIT_ON_ACTIVATE:
-		g_value_set_boolean (value, priv->exit_on_activate);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_PARENT:
+        g_value_set_object(value, priv->parent);
+        break;
+    case PROP_VISIBLE:
+        g_value_set_boolean(value, priv->visible);
+        break;
+    case PROP_VALID:
+        g_value_set_boolean(value, priv->valid);
+        break;
+    case PROP_EXIT_ON_ACTIVATE:
+        g_value_set_boolean(value, priv->exit_on_activate);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
-nmt_newt_widget_class_init (NmtNewtWidgetClass *widget_class)
+nmt_newt_widget_class_init(NmtNewtWidgetClass *widget_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (widget_class);
+    GObjectClass *object_class = G_OBJECT_CLASS(widget_class);
 
-	g_type_class_add_private (widget_class, sizeof (NmtNewtWidgetPrivate));
+    g_type_class_add_private(widget_class, sizeof(NmtNewtWidgetPrivate));
 
-	/* virtual methods */
-	object_class->set_property = nmt_newt_widget_set_property;
-	object_class->get_property = nmt_newt_widget_get_property;
-	object_class->finalize     = nmt_newt_widget_finalize;
+    /* virtual methods */
+    object_class->set_property = nmt_newt_widget_set_property;
+    object_class->get_property = nmt_newt_widget_get_property;
+    object_class->finalize     = nmt_newt_widget_finalize;
 
-	widget_class->activated = nmt_newt_widget_real_activated;
+    widget_class->activated = nmt_newt_widget_real_activated;
 
-	/* signals */
+    /* signals */
 
-	/**
+    /**
 	 * NmtNewtWidget::needs-rebuild:
 	 * @widget: the #NmtNewtWidget
 	 *
@@ -580,76 +564,79 @@ nmt_newt_widget_class_init (NmtNewtWidgetClass *widget_class)
 	 * or any of its children. This signal propagates up the container
 	 * hierarchy, eventually reaching the top-level #NmtNewtForm.
 	 */
-	signals[NEEDS_REBUILD] =
-		g_signal_new ("needs-rebuild",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NmtNewtWidgetClass, needs_rebuild),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 0);
+    signals[NEEDS_REBUILD] = g_signal_new("needs-rebuild",
+                                          G_OBJECT_CLASS_TYPE(object_class),
+                                          G_SIGNAL_RUN_FIRST,
+                                          G_STRUCT_OFFSET(NmtNewtWidgetClass, needs_rebuild),
+                                          NULL,
+                                          NULL,
+                                          NULL,
+                                          G_TYPE_NONE,
+                                          0);
 
-	/**
+    /**
 	 * NmtNewtWidget::activated:
 	 * @widget: the #NmtNewtWidget
 	 *
 	 * Emitted when the widget's #newtComponent is activated.
 	 */
-	signals[ACTIVATED] =
-		g_signal_new ("activated",
-		              G_OBJECT_CLASS_TYPE (object_class),
-		              G_SIGNAL_RUN_FIRST,
-		              G_STRUCT_OFFSET (NmtNewtWidgetClass, activated),
-		              NULL, NULL, NULL,
-		              G_TYPE_NONE, 0);
+    signals[ACTIVATED] = g_signal_new("activated",
+                                      G_OBJECT_CLASS_TYPE(object_class),
+                                      G_SIGNAL_RUN_FIRST,
+                                      G_STRUCT_OFFSET(NmtNewtWidgetClass, activated),
+                                      NULL,
+                                      NULL,
+                                      NULL,
+                                      G_TYPE_NONE,
+                                      0);
 
-	/* properties */
+    /* properties */
 
-	/**
+    /**
 	 * NmtNewtWidget:parent:
 	 *
 	 * The widget's parent widget, or %NULL if it has no parent.
 	 */
-	g_object_class_install_property
-		(object_class, PROP_PARENT,
-		 g_param_spec_object ("parent", "", "",
-		                      NMT_TYPE_NEWT_WIDGET,
-		                      G_PARAM_READABLE |
-		                      G_PARAM_STATIC_STRINGS));
-	/**
+    g_object_class_install_property(object_class,
+                                    PROP_PARENT,
+                                    g_param_spec_object("parent",
+                                                        "",
+                                                        "",
+                                                        NMT_TYPE_NEWT_WIDGET,
+                                                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+    /**
 	 * NmtNewtWidget:visible:
 	 *
 	 * Whether the widget is visible. Invisible widgets do not get
 	 * realized or sized.
 	 */
-	g_object_class_install_property
-		(object_class, PROP_VISIBLE,
-		 g_param_spec_boolean ("visible", "", "",
-		                       TRUE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
-	/**
+    g_object_class_install_property(
+        object_class,
+        PROP_VISIBLE,
+        g_param_spec_boolean("visible", "", "", TRUE, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+    /**
 	 * NmtNewtWidget:valid:
 	 *
 	 * Whether the widget's content is considered valid. Components
 	 * determine their own validity. A container, by default, is
 	 * considered valid if all of its children are valid.
 	 */
-	g_object_class_install_property
-		(object_class, PROP_VALID,
-		 g_param_spec_boolean ("valid", "", "",
-		                       TRUE,
-		                       G_PARAM_READABLE |
-		                       G_PARAM_STATIC_STRINGS));
-	/**
+    g_object_class_install_property(
+        object_class,
+        PROP_VALID,
+        g_param_spec_boolean("valid", "", "", TRUE, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+    /**
 	 * NmtNewtWidget:exit-on-activate:
 	 *
 	 * If %TRUE, the widget will call nmt_newt_form_quit() on its form
 	 * when it is activated.
 	 */
-	g_object_class_install_property
-		(object_class, PROP_EXIT_ON_ACTIVATE,
-		 g_param_spec_boolean ("exit-on-activate", "", "",
-		                       FALSE,
-		                       G_PARAM_READWRITE |
-		                       G_PARAM_STATIC_STRINGS));
+    g_object_class_install_property(
+        object_class,
+        PROP_EXIT_ON_ACTIVATE,
+        g_param_spec_boolean("exit-on-activate",
+                             "",
+                             "",
+                             FALSE,
+                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }

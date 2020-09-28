@@ -19,100 +19,101 @@
 
 #include "nmt-editor-page-device.h"
 
-G_DEFINE_TYPE (NmtEditorPageDevice, nmt_editor_page_device, NMT_TYPE_EDITOR_PAGE)
+G_DEFINE_TYPE(NmtEditorPageDevice, nmt_editor_page_device, NMT_TYPE_EDITOR_PAGE)
 
-#define NMT_EDITOR_PAGE_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_EDITOR_PAGE_DEVICE, NmtEditorPageDevicePrivate))
+#define NMT_EDITOR_PAGE_DEVICE_GET_PRIVATE(o) \
+    (G_TYPE_INSTANCE_GET_PRIVATE((o), NMT_TYPE_EDITOR_PAGE_DEVICE, NmtEditorPageDevicePrivate))
 
 typedef struct {
-	NmtDeviceEntry *device_entry;
-	gboolean show_by_default;
+    NmtDeviceEntry *device_entry;
+    gboolean        show_by_default;
 } NmtEditorPageDevicePrivate;
 
 enum {
-	PROP_0,
+    PROP_0,
 
-	PROP_DEVICE_ENTRY,
+    PROP_DEVICE_ENTRY,
 
-	LAST_PROP
+    LAST_PROP
 };
 
 static void
-nmt_editor_page_device_init (NmtEditorPageDevice *device)
-{
-}
+nmt_editor_page_device_init(NmtEditorPageDevice *device)
+{}
 
 static void
-nmt_editor_page_device_finalize (GObject *object)
+nmt_editor_page_device_finalize(GObject *object)
 {
-	NmtEditorPageDevicePrivate *priv = NMT_EDITOR_PAGE_DEVICE_GET_PRIVATE (object);
+    NmtEditorPageDevicePrivate *priv = NMT_EDITOR_PAGE_DEVICE_GET_PRIVATE(object);
 
-	g_clear_object (&priv->device_entry);
+    g_clear_object(&priv->device_entry);
 
-	G_OBJECT_CLASS (nmt_editor_page_device_parent_class)->finalize (object);
+    G_OBJECT_CLASS(nmt_editor_page_device_parent_class)->finalize(object);
 }
 
 NmtDeviceEntry *
-nmt_editor_page_device_get_device_entry (NmtEditorPageDevice *page)
+nmt_editor_page_device_get_device_entry(NmtEditorPageDevice *page)
 {
-	NmtEditorPageDevicePrivate *priv = NMT_EDITOR_PAGE_DEVICE_GET_PRIVATE (page);
+    NmtEditorPageDevicePrivate *priv = NMT_EDITOR_PAGE_DEVICE_GET_PRIVATE(page);
 
-	return priv->device_entry;
+    return priv->device_entry;
 }
 
 static void
-nmt_editor_page_device_set_property (GObject      *object,
-                              guint         prop_id,
-                              const GValue *value,
-                              GParamSpec   *pspec)
+nmt_editor_page_device_set_property(GObject *     object,
+                                    guint         prop_id,
+                                    const GValue *value,
+                                    GParamSpec *  pspec)
 {
-	NmtEditorPageDevicePrivate *priv = NMT_EDITOR_PAGE_DEVICE_GET_PRIVATE (object);
+    NmtEditorPageDevicePrivate *priv = NMT_EDITOR_PAGE_DEVICE_GET_PRIVATE(object);
 
-	switch (prop_id) {
-	case PROP_DEVICE_ENTRY:
-		priv->device_entry = g_value_dup_object (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_DEVICE_ENTRY:
+        priv->device_entry = g_value_dup_object(value);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
-nmt_editor_page_device_get_property (GObject    *object,
-                              guint       prop_id,
-                              GValue     *value,
-                              GParamSpec *pspec)
+nmt_editor_page_device_get_property(GObject *   object,
+                                    guint       prop_id,
+                                    GValue *    value,
+                                    GParamSpec *pspec)
 {
-	NmtEditorPageDevicePrivate *priv = NMT_EDITOR_PAGE_DEVICE_GET_PRIVATE (object);
+    NmtEditorPageDevicePrivate *priv = NMT_EDITOR_PAGE_DEVICE_GET_PRIVATE(object);
 
-	switch (prop_id) {
-	case PROP_DEVICE_ENTRY:
-		g_value_set_object (value, priv->device_entry);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_DEVICE_ENTRY:
+        g_value_set_object(value, priv->device_entry);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
-nmt_editor_page_device_class_init (NmtEditorPageDeviceClass *page_device_class)
+nmt_editor_page_device_class_init(NmtEditorPageDeviceClass *page_device_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (page_device_class);
+    GObjectClass *object_class = G_OBJECT_CLASS(page_device_class);
 
-	g_type_class_add_private (page_device_class, sizeof (NmtEditorPageDevicePrivate));
+    g_type_class_add_private(page_device_class, sizeof(NmtEditorPageDevicePrivate));
 
-	/* virtual methods */
-	object_class->set_property = nmt_editor_page_device_set_property;
-	object_class->get_property = nmt_editor_page_device_get_property;
-	object_class->finalize     = nmt_editor_page_device_finalize;
+    /* virtual methods */
+    object_class->set_property = nmt_editor_page_device_set_property;
+    object_class->get_property = nmt_editor_page_device_get_property;
+    object_class->finalize     = nmt_editor_page_device_finalize;
 
-	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_DEVICE_ENTRY,
-		 g_param_spec_object ("device-entry", "", "",
-		                      NMT_TYPE_DEVICE_ENTRY,
-		                      G_PARAM_READWRITE |
-		                      G_PARAM_CONSTRUCT_ONLY |
-		                      G_PARAM_STATIC_STRINGS));
+    /* properties */
+    g_object_class_install_property(
+        object_class,
+        PROP_DEVICE_ENTRY,
+        g_param_spec_object("device-entry",
+                            "",
+                            "",
+                            NMT_TYPE_DEVICE_ENTRY,
+                            G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 }

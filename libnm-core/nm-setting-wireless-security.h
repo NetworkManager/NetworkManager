@@ -7,20 +7,31 @@
 #ifndef __NM_SETTING_WIRELESS_SECURITY_H__
 #define __NM_SETTING_WIRELESS_SECURITY_H__
 
-#if !defined (__NETWORKMANAGER_H_INSIDE__) && !defined (NETWORKMANAGER_COMPILATION)
-#error "Only <NetworkManager.h> can be included directly."
+#if !defined(__NETWORKMANAGER_H_INSIDE__) && !defined(NETWORKMANAGER_COMPILATION)
+    #error "Only <NetworkManager.h> can be included directly."
 #endif
 
 #include "nm-setting.h"
 
 G_BEGIN_DECLS
 
-#define NM_TYPE_SETTING_WIRELESS_SECURITY            (nm_setting_wireless_security_get_type ())
-#define NM_SETTING_WIRELESS_SECURITY(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_WIRELESS_SECURITY, NMSettingWirelessSecurity))
-#define NM_SETTING_WIRELESS_SECURITY_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SETTING_WIRELESS_SECURITY, NMSettingWirelessSecurityClass))
-#define NM_IS_SETTING_WIRELESS_SECURITY(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SETTING_WIRELESS_SECURITY))
-#define NM_IS_SETTING_WIRELESS_SECURITY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_SETTING_WIRELESS_SECURITY))
-#define NM_SETTING_WIRELESS_SECURITY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SETTING_WIRELESS_SECURITY, NMSettingWirelessSecurityClass))
+#define NM_TYPE_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_get_type())
+#define NM_SETTING_WIRELESS_SECURITY(obj)                          \
+    (G_TYPE_CHECK_INSTANCE_CAST((obj),                             \
+                                NM_TYPE_SETTING_WIRELESS_SECURITY, \
+                                NMSettingWirelessSecurity))
+#define NM_SETTING_WIRELESS_SECURITY_CLASS(klass)               \
+    (G_TYPE_CHECK_CLASS_CAST((klass),                           \
+                             NM_TYPE_SETTING_WIRELESS_SECURITY, \
+                             NMSettingWirelessSecurityClass))
+#define NM_IS_SETTING_WIRELESS_SECURITY(obj) \
+    (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_SETTING_WIRELESS_SECURITY))
+#define NM_IS_SETTING_WIRELESS_SECURITY_CLASS(klass) \
+    (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_SETTING_WIRELESS_SECURITY))
+#define NM_SETTING_WIRELESS_SECURITY_GET_CLASS(obj)               \
+    (G_TYPE_INSTANCE_GET_CLASS((obj),                             \
+                               NM_TYPE_SETTING_WIRELESS_SECURITY, \
+                               NMSettingWirelessSecurityClass))
 
 #define NM_SETTING_WIRELESS_SECURITY_SETTING_NAME "802-11-wireless-security"
 
@@ -48,11 +59,11 @@ G_BEGIN_DECLS
  * specified.
  */
 typedef enum {
-	NM_WEP_KEY_TYPE_UNKNOWN = 0,
-	NM_WEP_KEY_TYPE_KEY = 1,          /* Hex or ASCII */
-	NM_WEP_KEY_TYPE_PASSPHRASE = 2,   /* 104/128-bit Passphrase */
+    NM_WEP_KEY_TYPE_UNKNOWN    = 0,
+    NM_WEP_KEY_TYPE_KEY        = 1, /* Hex or ASCII */
+    NM_WEP_KEY_TYPE_PASSPHRASE = 2, /* 104/128-bit Passphrase */
 
-	NM_WEP_KEY_TYPE_LAST = NM_WEP_KEY_TYPE_PASSPHRASE, /*< skip >*/
+    NM_WEP_KEY_TYPE_LAST = NM_WEP_KEY_TYPE_PASSPHRASE, /*< skip >*/
 } NMWepKeyType;
 
 /**
@@ -65,12 +76,12 @@ typedef enum {
  * These flags indicate whether PMF must be enabled.
  **/
 typedef enum {
-	NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT       = 0,
-	NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE       = 1,
-	NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL      = 2,
-	NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED      = 3,
-	_NM_SETTING_WIRELESS_SECURITY_PMF_NUM, /*< skip >*/
-	NM_SETTING_WIRELESS_SECURITY_PMF_LAST          =  _NM_SETTING_WIRELESS_SECURITY_PMF_NUM - 1, /*< skip >*/
+    NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT  = 0,
+    NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE  = 1,
+    NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL = 2,
+    NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED = 3,
+    _NM_SETTING_WIRELESS_SECURITY_PMF_NUM,                                             /*< skip >*/
+    NM_SETTING_WIRELESS_SECURITY_PMF_LAST = _NM_SETTING_WIRELESS_SECURITY_PMF_NUM - 1, /*< skip >*/
 } NMSettingWirelessSecurityPmf;
 
 /**
@@ -89,11 +100,11 @@ typedef enum {
  * Since: 1.10
  **/
 typedef enum { /*< flags >*/
-	NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DEFAULT     = 0x00000000,
-	NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DISABLED    = 0x00000001,
-	NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_AUTO        = 0x00000002,
-	NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PBC         = 0x00000004,
-	NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN         = 0x00000008,
+               NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DEFAULT  = 0x00000000,
+               NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DISABLED = 0x00000001,
+               NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_AUTO     = 0x00000002,
+               NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PBC      = 0x00000004,
+               NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_PIN      = 0x00000008,
 } NMSettingWirelessSecurityWpsMethod;
 
 /**
@@ -120,26 +131,26 @@ typedef enum {
 } NMSettingWirelessSecurityFils;
 // clang-format on
 
-#define NM_SETTING_WIRELESS_SECURITY_KEY_MGMT "key-mgmt"
-#define NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX "wep-tx-keyidx"
-#define NM_SETTING_WIRELESS_SECURITY_AUTH_ALG "auth-alg"
-#define NM_SETTING_WIRELESS_SECURITY_PROTO "proto"
-#define NM_SETTING_WIRELESS_SECURITY_PAIRWISE "pairwise"
-#define NM_SETTING_WIRELESS_SECURITY_GROUP "group"
-#define NM_SETTING_WIRELESS_SECURITY_PMF "pmf"
-#define NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME "leap-username"
-#define NM_SETTING_WIRELESS_SECURITY_WEP_KEY0 "wep-key0"
-#define NM_SETTING_WIRELESS_SECURITY_WEP_KEY1 "wep-key1"
-#define NM_SETTING_WIRELESS_SECURITY_WEP_KEY2 "wep-key2"
-#define NM_SETTING_WIRELESS_SECURITY_WEP_KEY3 "wep-key3"
-#define NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS "wep-key-flags"
-#define NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE "wep-key-type"
-#define NM_SETTING_WIRELESS_SECURITY_PSK "psk"
-#define NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS "psk-flags"
-#define NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD "leap-password"
+#define NM_SETTING_WIRELESS_SECURITY_KEY_MGMT            "key-mgmt"
+#define NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX       "wep-tx-keyidx"
+#define NM_SETTING_WIRELESS_SECURITY_AUTH_ALG            "auth-alg"
+#define NM_SETTING_WIRELESS_SECURITY_PROTO               "proto"
+#define NM_SETTING_WIRELESS_SECURITY_PAIRWISE            "pairwise"
+#define NM_SETTING_WIRELESS_SECURITY_GROUP               "group"
+#define NM_SETTING_WIRELESS_SECURITY_PMF                 "pmf"
+#define NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME       "leap-username"
+#define NM_SETTING_WIRELESS_SECURITY_WEP_KEY0            "wep-key0"
+#define NM_SETTING_WIRELESS_SECURITY_WEP_KEY1            "wep-key1"
+#define NM_SETTING_WIRELESS_SECURITY_WEP_KEY2            "wep-key2"
+#define NM_SETTING_WIRELESS_SECURITY_WEP_KEY3            "wep-key3"
+#define NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS       "wep-key-flags"
+#define NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE        "wep-key-type"
+#define NM_SETTING_WIRELESS_SECURITY_PSK                 "psk"
+#define NM_SETTING_WIRELESS_SECURITY_PSK_FLAGS           "psk-flags"
+#define NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD       "leap-password"
 #define NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD_FLAGS "leap-password-flags"
-#define NM_SETTING_WIRELESS_SECURITY_WPS_METHOD "wps-method"
-#define NM_SETTING_WIRELESS_SECURITY_FILS "fils"
+#define NM_SETTING_WIRELESS_SECURITY_WPS_METHOD          "wps-method"
+#define NM_SETTING_WIRELESS_SECURITY_FILS                "fils"
 
 /**
  * NMSettingWirelessSecurity:
@@ -147,66 +158,81 @@ typedef enum {
  * Wi-Fi Security Settings
  */
 struct _NMSettingWirelessSecurity {
-	NMSetting parent;
+    NMSetting parent;
 };
 
 typedef struct {
-	NMSettingClass parent;
+    NMSettingClass parent;
 
-	/*< private >*/
-	gpointer padding[4];
+    /*< private >*/
+    gpointer padding[4];
 } NMSettingWirelessSecurityClass;
 
-GType nm_setting_wireless_security_get_type (void);
+GType nm_setting_wireless_security_get_type(void);
 
-NMSetting * nm_setting_wireless_security_new               (void);
+NMSetting *nm_setting_wireless_security_new(void);
 
-const char *nm_setting_wireless_security_get_key_mgmt      (NMSettingWirelessSecurity *setting);
+const char *nm_setting_wireless_security_get_key_mgmt(NMSettingWirelessSecurity *setting);
 
-guint32     nm_setting_wireless_security_get_num_protos        (NMSettingWirelessSecurity *setting);
-const char *nm_setting_wireless_security_get_proto             (NMSettingWirelessSecurity *setting, guint32 i);
-gboolean    nm_setting_wireless_security_add_proto             (NMSettingWirelessSecurity *setting, const char *proto);
-void        nm_setting_wireless_security_remove_proto          (NMSettingWirelessSecurity *setting, guint32 i);
-gboolean    nm_setting_wireless_security_remove_proto_by_value (NMSettingWirelessSecurity *setting, const char *proto);
-void        nm_setting_wireless_security_clear_protos          (NMSettingWirelessSecurity *setting);
+guint32     nm_setting_wireless_security_get_num_protos(NMSettingWirelessSecurity *setting);
+const char *nm_setting_wireless_security_get_proto(NMSettingWirelessSecurity *setting, guint32 i);
+gboolean    nm_setting_wireless_security_add_proto(NMSettingWirelessSecurity *setting,
+                                                   const char *               proto);
+void     nm_setting_wireless_security_remove_proto(NMSettingWirelessSecurity *setting, guint32 i);
+gboolean nm_setting_wireless_security_remove_proto_by_value(NMSettingWirelessSecurity *setting,
+                                                            const char *               proto);
+void     nm_setting_wireless_security_clear_protos(NMSettingWirelessSecurity *setting);
 
-guint32     nm_setting_wireless_security_get_num_pairwise         (NMSettingWirelessSecurity *setting);
-const char *nm_setting_wireless_security_get_pairwise             (NMSettingWirelessSecurity *setting, guint32 i);
-gboolean    nm_setting_wireless_security_add_pairwise             (NMSettingWirelessSecurity *setting, const char *pairwise);
-void        nm_setting_wireless_security_remove_pairwise          (NMSettingWirelessSecurity *setting, guint32 i);
-gboolean    nm_setting_wireless_security_remove_pairwise_by_value (NMSettingWirelessSecurity *setting, const char *pairwise);
-void        nm_setting_wireless_security_clear_pairwise           (NMSettingWirelessSecurity *setting);
+guint32     nm_setting_wireless_security_get_num_pairwise(NMSettingWirelessSecurity *setting);
+const char *nm_setting_wireless_security_get_pairwise(NMSettingWirelessSecurity *setting,
+                                                      guint32                    i);
+gboolean    nm_setting_wireless_security_add_pairwise(NMSettingWirelessSecurity *setting,
+                                                      const char *               pairwise);
+void nm_setting_wireless_security_remove_pairwise(NMSettingWirelessSecurity *setting, guint32 i);
+gboolean nm_setting_wireless_security_remove_pairwise_by_value(NMSettingWirelessSecurity *setting,
+                                                               const char *               pairwise);
+void     nm_setting_wireless_security_clear_pairwise(NMSettingWirelessSecurity *setting);
 
-guint32     nm_setting_wireless_security_get_num_groups        (NMSettingWirelessSecurity *setting);
-const char *nm_setting_wireless_security_get_group             (NMSettingWirelessSecurity *setting, guint32 i);
-gboolean    nm_setting_wireless_security_add_group             (NMSettingWirelessSecurity *setting, const char *group);
-void        nm_setting_wireless_security_remove_group          (NMSettingWirelessSecurity *setting, guint32 i);
-gboolean    nm_setting_wireless_security_remove_group_by_value (NMSettingWirelessSecurity *setting, const char *group);
-void        nm_setting_wireless_security_clear_groups          (NMSettingWirelessSecurity *setting);
-
-NM_AVAILABLE_IN_1_10
-NMSettingWirelessSecurityPmf nm_setting_wireless_security_get_pmf (NMSettingWirelessSecurity *setting);
-
-const char *nm_setting_wireless_security_get_psk           (NMSettingWirelessSecurity *setting);
-NMSettingSecretFlags nm_setting_wireless_security_get_psk_flags (NMSettingWirelessSecurity *setting);
-
-const char *nm_setting_wireless_security_get_leap_username (NMSettingWirelessSecurity *setting);
-const char *nm_setting_wireless_security_get_leap_password (NMSettingWirelessSecurity *setting);
-NMSettingSecretFlags nm_setting_wireless_security_get_leap_password_flags (NMSettingWirelessSecurity *setting);
-
-const char *nm_setting_wireless_security_get_wep_key       (NMSettingWirelessSecurity *setting, guint32 idx);
-void        nm_setting_wireless_security_set_wep_key       (NMSettingWirelessSecurity *setting, guint32 idx, const char *key);
-guint32     nm_setting_wireless_security_get_wep_tx_keyidx (NMSettingWirelessSecurity *setting);
-const char *nm_setting_wireless_security_get_auth_alg      (NMSettingWirelessSecurity *setting);
-
-NMSettingSecretFlags nm_setting_wireless_security_get_wep_key_flags (NMSettingWirelessSecurity *setting);
-NMWepKeyType nm_setting_wireless_security_get_wep_key_type (NMSettingWirelessSecurity *setting);
+guint32     nm_setting_wireless_security_get_num_groups(NMSettingWirelessSecurity *setting);
+const char *nm_setting_wireless_security_get_group(NMSettingWirelessSecurity *setting, guint32 i);
+gboolean    nm_setting_wireless_security_add_group(NMSettingWirelessSecurity *setting,
+                                                   const char *               group);
+void     nm_setting_wireless_security_remove_group(NMSettingWirelessSecurity *setting, guint32 i);
+gboolean nm_setting_wireless_security_remove_group_by_value(NMSettingWirelessSecurity *setting,
+                                                            const char *               group);
+void     nm_setting_wireless_security_clear_groups(NMSettingWirelessSecurity *setting);
 
 NM_AVAILABLE_IN_1_10
-NMSettingWirelessSecurityWpsMethod nm_setting_wireless_security_get_wps_method (NMSettingWirelessSecurity *setting);
+NMSettingWirelessSecurityPmf
+nm_setting_wireless_security_get_pmf(NMSettingWirelessSecurity *setting);
+
+const char *         nm_setting_wireless_security_get_psk(NMSettingWirelessSecurity *setting);
+NMSettingSecretFlags nm_setting_wireless_security_get_psk_flags(NMSettingWirelessSecurity *setting);
+
+const char *nm_setting_wireless_security_get_leap_username(NMSettingWirelessSecurity *setting);
+const char *nm_setting_wireless_security_get_leap_password(NMSettingWirelessSecurity *setting);
+NMSettingSecretFlags
+nm_setting_wireless_security_get_leap_password_flags(NMSettingWirelessSecurity *setting);
+
+const char *nm_setting_wireless_security_get_wep_key(NMSettingWirelessSecurity *setting,
+                                                     guint32                    idx);
+void        nm_setting_wireless_security_set_wep_key(NMSettingWirelessSecurity *setting,
+                                                     guint32                    idx,
+                                                     const char *               key);
+guint32     nm_setting_wireless_security_get_wep_tx_keyidx(NMSettingWirelessSecurity *setting);
+const char *nm_setting_wireless_security_get_auth_alg(NMSettingWirelessSecurity *setting);
+
+NMSettingSecretFlags
+             nm_setting_wireless_security_get_wep_key_flags(NMSettingWirelessSecurity *setting);
+NMWepKeyType nm_setting_wireless_security_get_wep_key_type(NMSettingWirelessSecurity *setting);
+
+NM_AVAILABLE_IN_1_10
+NMSettingWirelessSecurityWpsMethod
+nm_setting_wireless_security_get_wps_method(NMSettingWirelessSecurity *setting);
 
 NM_AVAILABLE_IN_1_12
-NMSettingWirelessSecurityFils nm_setting_wireless_security_get_fils (NMSettingWirelessSecurity *setting);
+NMSettingWirelessSecurityFils
+nm_setting_wireless_security_get_fils(NMSettingWirelessSecurity *setting);
 
 G_END_DECLS
 

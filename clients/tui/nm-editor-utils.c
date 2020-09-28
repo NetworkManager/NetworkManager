@@ -16,7 +16,7 @@
 
 #include "nm-editor-utils.h"
 #if 0
-#include "nm-vpn-helpers.h"
+    #include "nm-vpn-helpers.h"
 
 static GSList *vpn_plugins;
 
@@ -41,68 +41,61 @@ sort_vpn_plugins (gconstpointer a, gconstpointer b)
 #endif
 
 static void
-wifi_connection_setup_func (NMConnection        *connection,
-                            NMSettingConnection *s_con,
-                            NMSetting           *s_hw)
+wifi_connection_setup_func(NMConnection *connection, NMSettingConnection *s_con, NMSetting *s_hw)
 {
-	g_object_set (G_OBJECT (s_hw),
-	              NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA,
-	              NULL);
+    g_object_set(G_OBJECT(s_hw), NM_SETTING_WIRELESS_MODE, NM_SETTING_WIRELESS_MODE_INFRA, NULL);
 }
 
 static void
-bond_connection_setup_func (NMConnection        *connection,
-                            NMSettingConnection *s_con,
-                            NMSetting           *s_hw)
+bond_connection_setup_func(NMConnection *connection, NMSettingConnection *s_con, NMSetting *s_hw)
 {
-	NMSettingBond *s_bond = NM_SETTING_BOND (s_hw);
-	guint i;
-	const char *value;
-	static const char *const options[] = {
-		NM_SETTING_BOND_OPTION_MODE,
-		NM_SETTING_BOND_OPTION_MIIMON,
-		NM_SETTING_BOND_OPTION_DOWNDELAY,
-		NM_SETTING_BOND_OPTION_UPDELAY,
-	};
+    NMSettingBond *          s_bond = NM_SETTING_BOND(s_hw);
+    guint                    i;
+    const char *             value;
+    static const char *const options[] = {
+        NM_SETTING_BOND_OPTION_MODE,
+        NM_SETTING_BOND_OPTION_MIIMON,
+        NM_SETTING_BOND_OPTION_DOWNDELAY,
+        NM_SETTING_BOND_OPTION_UPDELAY,
+    };
 
-	for (i = 0; i < G_N_ELEMENTS (options); i++) {
-		value = nm_setting_bond_get_option_default (s_bond, options[i]);
-		if (value)
-			nm_setting_bond_add_option (s_bond, options[i], value);
-	}
+    for (i = 0; i < G_N_ELEMENTS(options); i++) {
+        value = nm_setting_bond_get_option_default(s_bond, options[i]);
+        if (value)
+            nm_setting_bond_add_option(s_bond, options[i], value);
+    }
 }
 
-typedef void (*NMEditorNewConnectionSetupFunc) (NMConnection        *connection,
-                                                NMSettingConnection *s_con,
-                                                NMSetting           *s_hw);
+typedef void (*NMEditorNewConnectionSetupFunc)(NMConnection *       connection,
+                                               NMSettingConnection *s_con,
+                                               NMSetting *          s_hw);
 
 typedef struct {
-	NMEditorConnectionTypeData data;
+    NMEditorConnectionTypeData data;
 
-	const char *id_format;
-	NMEditorNewConnectionSetupFunc connection_setup_func;
-	gboolean no_autoconnect;
+    const char *                   id_format;
+    NMEditorNewConnectionSetupFunc connection_setup_func;
+    gboolean                       no_autoconnect;
 } NMEditorConnectionTypeDataReal;
 
 static int
-sort_types (gconstpointer a, gconstpointer b)
+sort_types(gconstpointer a, gconstpointer b)
 {
-	NMEditorConnectionTypeData *typea = *(NMEditorConnectionTypeData **)a;
-	NMEditorConnectionTypeData *typeb = *(NMEditorConnectionTypeData **)b;
+    NMEditorConnectionTypeData *typea = *(NMEditorConnectionTypeData **) a;
+    NMEditorConnectionTypeData *typeb = *(NMEditorConnectionTypeData **) b;
 
-	if (typea->virtual && !typeb->virtual)
-		return 1;
-	else if (typeb->virtual && !typea->virtual)
-		return -1;
+    if (typea->virtual && !typeb->virtual)
+        return 1;
+    else if (typeb->virtual && !typea->virtual)
+        return -1;
 
-	if (typea->setting_type == NM_TYPE_SETTING_VPN &&
-	    typeb->setting_type != NM_TYPE_SETTING_VPN)
-		return 1;
-	else if (typeb->setting_type == NM_TYPE_SETTING_VPN &&
-	         typea->setting_type != NM_TYPE_SETTING_VPN)
-		return -1;
+    if (typea->setting_type == NM_TYPE_SETTING_VPN && typeb->setting_type != NM_TYPE_SETTING_VPN)
+        return 1;
+    else if (typeb->setting_type == NM_TYPE_SETTING_VPN
+             && typea->setting_type != NM_TYPE_SETTING_VPN)
+        return -1;
 
-	return g_utf8_collate (typea->name, typeb->name);
+    return g_utf8_collate(typea->name, typeb->name);
 }
 
 /**
@@ -116,45 +109,45 @@ sort_types (gconstpointer a, gconstpointer b)
  * Returns: the array of connection type information
  */
 NMEditorConnectionTypeData **
-nm_editor_utils_get_connection_type_list (void)
+nm_editor_utils_get_connection_type_list(void)
 {
-	GPtrArray *array;
-	NMEditorConnectionTypeDataReal *item;
-	static NMEditorConnectionTypeData **list;
+    GPtrArray *                         array;
+    NMEditorConnectionTypeDataReal *    item;
+    static NMEditorConnectionTypeData **list;
 #if 0
 	GHashTable *vpn_plugins_hash;
 	gboolean have_vpn_plugins;
 #endif
 
-	if (list)
-		return list;
+    if (list)
+        return list;
 
-	array = g_ptr_array_new ();
+    array = g_ptr_array_new();
 
-	item = g_new0 (NMEditorConnectionTypeDataReal, 1);
-	item->data.name = _("Ethernet");
-	item->data.setting_type = NM_TYPE_SETTING_WIRED;
-	item->data.device_type = NM_TYPE_DEVICE_ETHERNET;
-	item->data.virtual = FALSE;
-	item->id_format = _("Ethernet connection %d");
-	g_ptr_array_add (array, item);
+    item                    = g_new0(NMEditorConnectionTypeDataReal, 1);
+    item->data.name         = _("Ethernet");
+    item->data.setting_type = NM_TYPE_SETTING_WIRED;
+    item->data.device_type  = NM_TYPE_DEVICE_ETHERNET;
+    item->data.virtual      = FALSE;
+    item->id_format         = _("Ethernet connection %d");
+    g_ptr_array_add(array, item);
 
-	item = g_new0 (NMEditorConnectionTypeDataReal, 1);
-	item->data.name = _("Wi-Fi");
-	item->data.setting_type = NM_TYPE_SETTING_WIRELESS;
-	item->data.device_type = NM_TYPE_DEVICE_WIFI;
-	item->data.virtual = FALSE;
-	item->id_format = _("Wi-Fi connection %d");
-	item->connection_setup_func = wifi_connection_setup_func;
-	g_ptr_array_add (array, item);
+    item                        = g_new0(NMEditorConnectionTypeDataReal, 1);
+    item->data.name             = _("Wi-Fi");
+    item->data.setting_type     = NM_TYPE_SETTING_WIRELESS;
+    item->data.device_type      = NM_TYPE_DEVICE_WIFI;
+    item->data.virtual          = FALSE;
+    item->id_format             = _("Wi-Fi connection %d");
+    item->connection_setup_func = wifi_connection_setup_func;
+    g_ptr_array_add(array, item);
 
-	item = g_new0 (NMEditorConnectionTypeDataReal, 1);
-	item->data.name = _("InfiniBand");
-	item->data.setting_type = NM_TYPE_SETTING_INFINIBAND;
-	item->data.device_type = NM_TYPE_DEVICE_INFINIBAND;
-	item->data.virtual = FALSE;
-	item->id_format = _("InfiniBand connection %d");
-	g_ptr_array_add (array, item);
+    item                    = g_new0(NMEditorConnectionTypeDataReal, 1);
+    item->data.name         = _("InfiniBand");
+    item->data.setting_type = NM_TYPE_SETTING_INFINIBAND;
+    item->data.device_type  = NM_TYPE_DEVICE_INFINIBAND;
+    item->data.virtual      = FALSE;
+    item->id_format         = _("InfiniBand connection %d");
+    g_ptr_array_add(array, item);
 
 #if 0
 	item = g_new0 (NMEditorConnectionTypeDataReal, 1);
@@ -166,57 +159,57 @@ nm_editor_utils_get_connection_type_list (void)
 	g_ptr_array_add (array, item);
 #endif
 
-	item = g_new0 (NMEditorConnectionTypeDataReal, 1);
-	item->data.name = _("DSL");
-	item->data.setting_type = NM_TYPE_SETTING_PPPOE;
-	item->data.device_type = NM_TYPE_DEVICE_ETHERNET;
-	item->data.virtual = FALSE;
-	item->id_format = _("DSL connection %d");
-	item->no_autoconnect = TRUE;
-	g_ptr_array_add (array, item);
+    item                    = g_new0(NMEditorConnectionTypeDataReal, 1);
+    item->data.name         = _("DSL");
+    item->data.setting_type = NM_TYPE_SETTING_PPPOE;
+    item->data.device_type  = NM_TYPE_DEVICE_ETHERNET;
+    item->data.virtual      = FALSE;
+    item->id_format         = _("DSL connection %d");
+    item->no_autoconnect    = TRUE;
+    g_ptr_array_add(array, item);
 
-	item = g_new0 (NMEditorConnectionTypeDataReal, 1);
-	item->data.name = _("Bond");
-	item->data.setting_type = NM_TYPE_SETTING_BOND;
-	item->data.device_type = NM_TYPE_DEVICE_BOND;
-	item->data.virtual = TRUE;
-	item->id_format = _("Bond connection %d");
-	item->connection_setup_func = bond_connection_setup_func;
-	g_ptr_array_add (array, item);
+    item                        = g_new0(NMEditorConnectionTypeDataReal, 1);
+    item->data.name             = _("Bond");
+    item->data.setting_type     = NM_TYPE_SETTING_BOND;
+    item->data.device_type      = NM_TYPE_DEVICE_BOND;
+    item->data.virtual          = TRUE;
+    item->id_format             = _("Bond connection %d");
+    item->connection_setup_func = bond_connection_setup_func;
+    g_ptr_array_add(array, item);
 
-	item = g_new0 (NMEditorConnectionTypeDataReal, 1);
-	item->data.name = _("Bridge");
-	item->data.setting_type = NM_TYPE_SETTING_BRIDGE;
-	item->data.slave_setting_type = NM_TYPE_SETTING_BRIDGE_PORT;
-	item->data.device_type = NM_TYPE_DEVICE_BRIDGE;
-	item->data.virtual = TRUE;
-	item->id_format = _("Bridge connection %d");
-	g_ptr_array_add (array, item);
+    item                          = g_new0(NMEditorConnectionTypeDataReal, 1);
+    item->data.name               = _("Bridge");
+    item->data.setting_type       = NM_TYPE_SETTING_BRIDGE;
+    item->data.slave_setting_type = NM_TYPE_SETTING_BRIDGE_PORT;
+    item->data.device_type        = NM_TYPE_DEVICE_BRIDGE;
+    item->data.virtual            = TRUE;
+    item->id_format               = _("Bridge connection %d");
+    g_ptr_array_add(array, item);
 
-	item = g_new0 (NMEditorConnectionTypeDataReal, 1);
-	item->data.name = _("Team");
-	item->data.setting_type = NM_TYPE_SETTING_TEAM;
-	item->data.slave_setting_type = NM_TYPE_SETTING_TEAM_PORT;
-	item->data.device_type = NM_TYPE_DEVICE_TEAM;
-	item->data.virtual = TRUE;
-	item->id_format = _("Team connection %d");
-	g_ptr_array_add (array, item);
+    item                          = g_new0(NMEditorConnectionTypeDataReal, 1);
+    item->data.name               = _("Team");
+    item->data.setting_type       = NM_TYPE_SETTING_TEAM;
+    item->data.slave_setting_type = NM_TYPE_SETTING_TEAM_PORT;
+    item->data.device_type        = NM_TYPE_DEVICE_TEAM;
+    item->data.virtual            = TRUE;
+    item->id_format               = _("Team connection %d");
+    g_ptr_array_add(array, item);
 
-	item = g_new0 (NMEditorConnectionTypeDataReal, 1);
-	item->data.name = _("VLAN");
-	item->data.setting_type = NM_TYPE_SETTING_VLAN;
-	item->data.device_type = NM_TYPE_DEVICE_VLAN;
-	item->data.virtual = TRUE;
-	item->id_format = _("VLAN connection %d");
-	g_ptr_array_add (array, item);
+    item                    = g_new0(NMEditorConnectionTypeDataReal, 1);
+    item->data.name         = _("VLAN");
+    item->data.setting_type = NM_TYPE_SETTING_VLAN;
+    item->data.device_type  = NM_TYPE_DEVICE_VLAN;
+    item->data.virtual      = TRUE;
+    item->id_format         = _("VLAN connection %d");
+    g_ptr_array_add(array, item);
 
-	item = g_new0 (NMEditorConnectionTypeDataReal, 1);
-	item->data.name = _("IP tunnel");
-	item->data.setting_type = NM_TYPE_SETTING_IP_TUNNEL;
-	item->data.device_type = NM_TYPE_DEVICE_IP_TUNNEL;
-	item->data.virtual = TRUE;
-	item->id_format = _("IP tunnel connection %d");
-	g_ptr_array_add (array, item);
+    item                    = g_new0(NMEditorConnectionTypeDataReal, 1);
+    item->data.name         = _("IP tunnel");
+    item->data.setting_type = NM_TYPE_SETTING_IP_TUNNEL;
+    item->data.device_type  = NM_TYPE_DEVICE_IP_TUNNEL;
+    item->data.virtual      = TRUE;
+    item->id_format         = _("IP tunnel connection %d");
+    g_ptr_array_add(array, item);
 
 #if 0
 	/* Add "VPN" only if there are plugins */
@@ -242,94 +235,92 @@ nm_editor_utils_get_connection_type_list (void)
 	}
 #endif
 
-	g_ptr_array_sort (array, sort_types);
-	g_ptr_array_add (array, NULL);
+    g_ptr_array_sort(array, sort_types);
+    g_ptr_array_add(array, NULL);
 
-	list = (NMEditorConnectionTypeData **)g_ptr_array_free (array, FALSE);
-	return list;
+    list = (NMEditorConnectionTypeData **) g_ptr_array_free(array, FALSE);
+    return list;
 }
 
 static gboolean
-_assert_format_int (const char *format)
+_assert_format_int(const char *format)
 {
-	g_assert (format);
-	format = strchr (format, '%');
-	g_assert (format);
-	format++;
-	g_assert (!strchr (format, '%'));
-	g_assert (format[0] == 'd');
-	return TRUE;
+    g_assert(format);
+    format = strchr(format, '%');
+    g_assert(format);
+    format++;
+    g_assert(!strchr(format, '%'));
+    g_assert(format[0] == 'd');
+    return TRUE;
 }
 
 static char *
-get_available_connection_name (const char *format,
-                               NMClient   *client)
+get_available_connection_name(const char *format, NMClient *client)
 {
-	const GPtrArray *conns;
-	GSList *names = NULL, *iter;
-	char *cname = NULL;
-	int i = 0;
+    const GPtrArray *conns;
+    GSList *         names = NULL, *iter;
+    char *           cname = NULL;
+    int              i     = 0;
 
-	nm_assert (_assert_format_int (format));
+    nm_assert(_assert_format_int(format));
 
-	conns = nm_client_get_connections (client);
-	for (i = 0; i < conns->len; i++) {
-		const char *id;
+    conns = nm_client_get_connections(client);
+    for (i = 0; i < conns->len; i++) {
+        const char *id;
 
-		id = nm_connection_get_id (NM_CONNECTION (conns->pdata[i]));
-		g_assert (id);
-		names = g_slist_append (names, (gpointer) id);
-	}
+        id = nm_connection_get_id(NM_CONNECTION(conns->pdata[i]));
+        g_assert(id);
+        names = g_slist_append(names, (gpointer) id);
+    }
 
-	/* Find the next available unique connection name */
-	for (i = 1; !cname && i < 10000; i++) {
-		char *temp;
-		gboolean found = FALSE;
+    /* Find the next available unique connection name */
+    for (i = 1; !cname && i < 10000; i++) {
+        char *   temp;
+        gboolean found = FALSE;
 
-		NM_PRAGMA_WARNING_DISABLE("-Wformat-nonliteral")
-		temp = g_strdup_printf (format, i);
-		NM_PRAGMA_WARNING_REENABLE
-		for (iter = names; iter; iter = g_slist_next (iter)) {
-			if (!strcmp (iter->data, temp)) {
-				found = TRUE;
-				break;
-			}
-		}
-		if (!found)
-			cname = temp;
-		else
-			g_free (temp);
-	}
+        NM_PRAGMA_WARNING_DISABLE("-Wformat-nonliteral")
+        temp = g_strdup_printf(format, i);
+        NM_PRAGMA_WARNING_REENABLE
+        for (iter = names; iter; iter = g_slist_next(iter)) {
+            if (!strcmp(iter->data, temp)) {
+                found = TRUE;
+                break;
+            }
+        }
+        if (!found)
+            cname = temp;
+        else
+            g_free(temp);
+    }
 
-	g_slist_free (names);
-	return cname;
+    g_slist_free(names);
+    return cname;
 }
 
 static char *
-get_available_iface_name (const char *try_name,
-                          NMClient   *client)
+get_available_iface_name(const char *try_name, NMClient *client)
 {
-	const GPtrArray *connections;
-	NMConnection *connection;
-	char *new_name;
-	unsigned num = 1;
-	int i = 0;
-	const char *ifname = NULL;
+    const GPtrArray *connections;
+    NMConnection *   connection;
+    char *           new_name;
+    unsigned         num    = 1;
+    int              i      = 0;
+    const char *     ifname = NULL;
 
-	connections = nm_client_get_connections (client);
+    connections = nm_client_get_connections(client);
 
-	new_name = g_strdup (try_name);
-	while (i < connections->len) {
-		connection = NM_CONNECTION (connections->pdata[i]);
-		ifname = nm_connection_get_interface_name (connection);
-		if (g_strcmp0 (new_name, ifname) == 0) {
-			g_free (new_name);
-			new_name = g_strdup_printf ("%s%d", try_name, num++);
-			i = 0;
-		} else
-			i++;
-	}
-	return new_name;
+    new_name = g_strdup(try_name);
+    while (i < connections->len) {
+        connection = NM_CONNECTION(connections->pdata[i]);
+        ifname     = nm_connection_get_interface_name(connection);
+        if (g_strcmp0(new_name, ifname) == 0) {
+            g_free(new_name);
+            new_name = g_strdup_printf("%s%d", try_name, num++);
+            i        = 0;
+        } else
+            i++;
+    }
+    return new_name;
 }
 
 /**
@@ -348,85 +339,89 @@ get_available_iface_name (const char *try_name,
  * Returns: a new #NMConnection
  */
 NMConnection *
-nm_editor_utils_create_connection (GType         type,
-                                   NMConnection *master,
-                                   NMClient     *client)
+nm_editor_utils_create_connection(GType type, NMConnection *master, NMClient *client)
 {
-	NMEditorConnectionTypeData **types;
-	NMEditorConnectionTypeDataReal *type_data = NULL;
-	const char *master_setting_type = NULL, *master_uuid = NULL;
-	GType master_type = G_TYPE_INVALID, slave_setting_type = G_TYPE_INVALID;
-	NMConnection *connection;
-	NMSettingConnection *s_con;
-	NMSetting *s_hw, *s_slave;
-	char *uuid, *id, *ifname;
-	int i;
+    NMEditorConnectionTypeData **   types;
+    NMEditorConnectionTypeDataReal *type_data           = NULL;
+    const char *                    master_setting_type = NULL, *master_uuid = NULL;
+    GType                master_type = G_TYPE_INVALID, slave_setting_type = G_TYPE_INVALID;
+    NMConnection *       connection;
+    NMSettingConnection *s_con;
+    NMSetting *          s_hw, *s_slave;
+    char *               uuid, *id, *ifname;
+    int                  i;
 
-	if (master) {
-		NMSettingConnection *master_s_con;
+    if (master) {
+        NMSettingConnection *master_s_con;
 
-		master_s_con = nm_connection_get_setting_connection (master);
-		master_setting_type = nm_setting_connection_get_connection_type (master_s_con);
-		master_uuid = nm_setting_connection_get_uuid (master_s_con);
-		master_type = nm_setting_lookup_type (master_setting_type);
-	}
+        master_s_con        = nm_connection_get_setting_connection(master);
+        master_setting_type = nm_setting_connection_get_connection_type(master_s_con);
+        master_uuid         = nm_setting_connection_get_uuid(master_s_con);
+        master_type         = nm_setting_lookup_type(master_setting_type);
+    }
 
-	types = nm_editor_utils_get_connection_type_list ();
-	for (i = 0; types[i]; i++) {
-		if (types[i]->setting_type == type)
-			type_data = (NMEditorConnectionTypeDataReal *)types[i];
-		if (types[i]->setting_type == master_type)
-			slave_setting_type = types[i]->slave_setting_type;
+    types = nm_editor_utils_get_connection_type_list();
+    for (i = 0; types[i]; i++) {
+        if (types[i]->setting_type == type)
+            type_data = (NMEditorConnectionTypeDataReal *) types[i];
+        if (types[i]->setting_type == master_type)
+            slave_setting_type = types[i]->slave_setting_type;
+    }
+    if (!type_data) {
+        g_return_val_if_reached(NULL);
+        return NULL;
+    }
 
-	}
-	if (!type_data) {
-		g_return_val_if_reached (NULL);
-		return NULL;
-	}
+    connection = nm_simple_connection_new();
 
-	connection = nm_simple_connection_new ();
+    s_con = NM_SETTING_CONNECTION(nm_setting_connection_new());
+    nm_connection_add_setting(connection, NM_SETTING(s_con));
 
-	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
-	nm_connection_add_setting (connection, NM_SETTING (s_con));
+    s_hw = g_object_new(type, NULL);
+    nm_connection_add_setting(connection, s_hw);
 
-	s_hw = g_object_new (type, NULL);
-	nm_connection_add_setting (connection, s_hw);
+    if (type == NM_TYPE_SETTING_BOND)
+        ifname = get_available_iface_name("nm-bond", client);
+    else if (type == NM_TYPE_SETTING_TEAM)
+        ifname = get_available_iface_name("nm-team", client);
+    else if (type == NM_TYPE_SETTING_BRIDGE)
+        ifname = get_available_iface_name("nm-bridge", client);
+    else
+        ifname = NULL;
 
-	if (type == NM_TYPE_SETTING_BOND)
-		ifname = get_available_iface_name ("nm-bond", client);
-	else if (type == NM_TYPE_SETTING_TEAM)
-		ifname = get_available_iface_name ("nm-team", client);
-	else if (type == NM_TYPE_SETTING_BRIDGE)
-		ifname = get_available_iface_name ("nm-bridge", client);
-	else
-		ifname = NULL;
+    if (slave_setting_type != G_TYPE_INVALID) {
+        s_slave = g_object_new(slave_setting_type, NULL);
+        nm_connection_add_setting(connection, s_slave);
+    }
 
-	if (slave_setting_type != G_TYPE_INVALID) {
-		s_slave = g_object_new (slave_setting_type, NULL);
-		nm_connection_add_setting (connection, s_slave);
-	}
+    uuid = nm_utils_uuid_generate();
+    id   = get_available_connection_name(type_data->id_format, client);
 
-	uuid = nm_utils_uuid_generate ();
-	id = get_available_connection_name (type_data->id_format, client);
+    g_object_set(s_con,
+                 NM_SETTING_CONNECTION_UUID,
+                 uuid,
+                 NM_SETTING_CONNECTION_ID,
+                 id,
+                 NM_SETTING_CONNECTION_TYPE,
+                 nm_setting_get_name(s_hw),
+                 NM_SETTING_CONNECTION_AUTOCONNECT,
+                 !type_data->no_autoconnect,
+                 NM_SETTING_CONNECTION_MASTER,
+                 master_uuid,
+                 NM_SETTING_CONNECTION_SLAVE_TYPE,
+                 master_setting_type,
+                 NM_SETTING_CONNECTION_INTERFACE_NAME,
+                 ifname,
+                 NULL);
 
-	g_object_set (s_con,
-	              NM_SETTING_CONNECTION_UUID, uuid,
-	              NM_SETTING_CONNECTION_ID, id,
-	              NM_SETTING_CONNECTION_TYPE, nm_setting_get_name (s_hw),
-	              NM_SETTING_CONNECTION_AUTOCONNECT, !type_data->no_autoconnect,
-	              NM_SETTING_CONNECTION_MASTER, master_uuid,
-	              NM_SETTING_CONNECTION_SLAVE_TYPE, master_setting_type,
-	              NM_SETTING_CONNECTION_INTERFACE_NAME, ifname,
-	              NULL);
+    g_free(uuid);
+    g_free(id);
+    g_free(ifname);
 
-	g_free (uuid);
-	g_free (id);
-	g_free (ifname);
+    if (type_data->connection_setup_func)
+        type_data->connection_setup_func(connection, s_con, s_hw);
 
-	if (type_data->connection_setup_func)
-		type_data->connection_setup_func (connection, s_con, s_hw);
-
-	return connection;
+    return connection;
 }
 
 /**
@@ -439,26 +434,26 @@ nm_editor_utils_create_connection (GType         type,
  * Returns: the #NMEditorConnectionTypeData
  */
 NMEditorConnectionTypeData *
-nm_editor_utils_get_connection_type_data (NMConnection *conn)
+nm_editor_utils_get_connection_type_data(NMConnection *conn)
 {
-	NMSettingConnection *s_con;
-	const char *conn_type;
-	GType conn_gtype;
-	NMEditorConnectionTypeData **types;
-	int i;
+    NMSettingConnection *        s_con;
+    const char *                 conn_type;
+    GType                        conn_gtype;
+    NMEditorConnectionTypeData **types;
+    int                          i;
 
-	s_con = nm_connection_get_setting_connection (conn);
-	g_return_val_if_fail (s_con != NULL, NULL);
+    s_con = nm_connection_get_setting_connection(conn);
+    g_return_val_if_fail(s_con != NULL, NULL);
 
-	conn_type = nm_setting_connection_get_connection_type (s_con);
-	conn_gtype = nm_setting_lookup_type (conn_type);
-	g_return_val_if_fail (conn_gtype != G_TYPE_INVALID, NULL);
+    conn_type  = nm_setting_connection_get_connection_type(s_con);
+    conn_gtype = nm_setting_lookup_type(conn_type);
+    g_return_val_if_fail(conn_gtype != G_TYPE_INVALID, NULL);
 
-	types = nm_editor_utils_get_connection_type_list ();
-	for (i = 0; types[i]; i++) {
-		if (types[i]->setting_type == conn_gtype)
-			return types[i];
-	}
+    types = nm_editor_utils_get_connection_type_list();
+    for (i = 0; types[i]; i++) {
+        if (types[i]->setting_type == conn_gtype)
+            return types[i];
+    }
 
-	return NULL;
+    return NULL;
 }

@@ -9,23 +9,23 @@
 /*****************************************************************************/
 
 typedef struct _NMUtilsEnumValueInfo {
-	/* currently, this is only used for _nm_utils_enum_from_str_full() to
+    /* currently, this is only used for _nm_utils_enum_from_str_full() to
 	 * declare additional aliases for values. */
-	const char *nick;
-	int value;
+    const char *nick;
+    int         value;
 } NMUtilsEnumValueInfo;
 
-char *_nm_utils_enum_to_str_full (GType type,
-                                  int value,
-                                  const char *sep,
-                                  const NMUtilsEnumValueInfo *value_infos);
-gboolean _nm_utils_enum_from_str_full (GType type,
-                                       const char *str,
-                                       int *out_value,
-                                       char **err_token,
-                                       const NMUtilsEnumValueInfo *value_infos);
+char *   _nm_utils_enum_to_str_full(GType                       type,
+                                    int                         value,
+                                    const char *                sep,
+                                    const NMUtilsEnumValueInfo *value_infos);
+gboolean _nm_utils_enum_from_str_full(GType                       type,
+                                      const char *                str,
+                                      int *                       out_value,
+                                      char **                     err_token,
+                                      const NMUtilsEnumValueInfo *value_infos);
 
-const char **_nm_utils_enum_get_values (GType type, int from, int to);
+const char **_nm_utils_enum_get_values(GType type, int from, int to);
 
 /*****************************************************************************/
 

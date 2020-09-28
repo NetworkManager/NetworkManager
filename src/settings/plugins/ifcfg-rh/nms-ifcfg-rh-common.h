@@ -6,17 +6,17 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#define IFCFG_TAG "ifcfg-"
-#define KEYS_TAG "keys-"
-#define ROUTE_TAG "route-"
-#define RULE_TAG "rule-"
+#define IFCFG_TAG  "ifcfg-"
+#define KEYS_TAG   "keys-"
+#define ROUTE_TAG  "route-"
+#define RULE_TAG   "rule-"
 #define ROUTE6_TAG "route6-"
-#define RULE6_TAG "rule6-"
+#define RULE6_TAG  "rule6-"
 
-#define BAK_TAG ".bak"
-#define TILDE_TAG "~"
-#define ORIG_TAG ".orig"
-#define REJ_TAG ".rej"
+#define BAK_TAG    ".bak"
+#define TILDE_TAG  "~"
+#define ORIG_TAG   ".orig"
+#define REJ_TAG    ".rej"
 #define RPMNEW_TAG ".rpmnew"
 #define AUGNEW_TAG ".augnew"
 #define AUGTMP_TAG ".augtmp"
@@ -32,8 +32,8 @@
 #define TYPE_TEAM       "Team"
 #define TYPE_TEAM_PORT  "TeamPort"
 
-#define SECRET_FLAG_AGENT "user"
-#define SECRET_FLAG_NOT_SAVED "ask"
+#define SECRET_FLAG_AGENT        "user"
+#define SECRET_FLAG_NOT_SAVED    "ask"
 #define SECRET_FLAG_NOT_REQUIRED "unused"
 
 /* DCB key names */
@@ -60,5 +60,4 @@
 #define KEY_DCB_PG_STRICT           "DCB_PG_STRICT"
 #define KEY_DCB_PG_UP2TC            "DCB_PG_UP2TC"
 
-#endif  /* __COMMON_H__ */
-
+#endif /* __COMMON_H__ */

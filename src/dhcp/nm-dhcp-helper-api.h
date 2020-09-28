@@ -10,10 +10,10 @@
 
 #define NM_DHCP_CLIENT_DBUS_IFACE "org.freedesktop.nm_dhcp_client"
 
-#define NM_DHCP_HELPER_SERVER_BUS_NAME          "org.freedesktop.nm_dhcp_server"
-#define NM_DHCP_HELPER_SERVER_OBJECT_PATH       "/org/freedesktop/nm_dhcp_server"
-#define NM_DHCP_HELPER_SERVER_INTERFACE_NAME    "org.freedesktop.nm_dhcp_server"
-#define NM_DHCP_HELPER_SERVER_METHOD_NOTIFY     "Notify"
+#define NM_DHCP_HELPER_SERVER_BUS_NAME       "org.freedesktop.nm_dhcp_server"
+#define NM_DHCP_HELPER_SERVER_OBJECT_PATH    "/org/freedesktop/nm_dhcp_server"
+#define NM_DHCP_HELPER_SERVER_INTERFACE_NAME "org.freedesktop.nm_dhcp_server"
+#define NM_DHCP_HELPER_SERVER_METHOD_NOTIFY  "Notify"
 
 /*****************************************************************************/
 

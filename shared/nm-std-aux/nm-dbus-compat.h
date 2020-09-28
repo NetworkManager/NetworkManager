@@ -3,9 +3,9 @@
 #ifndef __NM_DBUS_COMPAT_H__
 #define __NM_DBUS_COMPAT_H__
 
-#define DBUS_SERVICE_DBUS             "org.freedesktop.DBus"
+#define DBUS_SERVICE_DBUS "org.freedesktop.DBus"
 
-#define DBUS_PATH_DBUS                "/org/freedesktop/DBus"
+#define DBUS_PATH_DBUS "/org/freedesktop/DBus"
 
 #define DBUS_INTERFACE_DBUS           "org.freedesktop.DBus"
 #define DBUS_INTERFACE_INTROSPECTABLE "org.freedesktop.DBus.Introspectable"
@@ -17,9 +17,9 @@
 #define DBUS_NAME_FLAG_REPLACE_EXISTING  0x2
 #define DBUS_NAME_FLAG_DO_NOT_QUEUE      0x4
 
-#define DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER  1
-#define DBUS_REQUEST_NAME_REPLY_IN_QUEUE       2
-#define DBUS_REQUEST_NAME_REPLY_EXISTS         3
-#define DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER  4
+#define DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER 1
+#define DBUS_REQUEST_NAME_REPLY_IN_QUEUE      2
+#define DBUS_REQUEST_NAME_REPLY_EXISTS        3
+#define DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER 4
 
-#endif  /* __NM_DBUS_COMPAT_H__ */
+#endif /* __NM_DBUS_COMPAT_H__ */

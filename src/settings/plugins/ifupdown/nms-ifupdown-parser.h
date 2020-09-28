@@ -10,8 +10,7 @@
 #include "nm-connection.h"
 #include "nms-ifupdown-interface-parser.h"
 
-NMConnection *ifupdown_new_connection_from_if_block (if_block *block,
-                                                     gboolean autoconnect,
-                                                     GError **error);
+NMConnection *
+ifupdown_new_connection_from_if_block(if_block *block, gboolean autoconnect, GError **error);
 
 #endif /* __NMS_IFUPDOWN_PARSER_H__ */

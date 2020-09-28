@@ -10,23 +10,21 @@
 /*****************************************************************************/
 
 struct _NMIP4Config {
-	NMIPConfig parent;
+    NMIPConfig parent;
 };
 
-struct _NMIP4ConfigClass{
-	NMIPConfigClass parent;
+struct _NMIP4ConfigClass {
+    NMIPConfigClass parent;
 };
 
-G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_IP_CONFIG)
+G_DEFINE_TYPE(NMIP4Config, nm_ip4_config, NM_TYPE_IP_CONFIG)
 
 /*****************************************************************************/
 
 static void
-nm_ip4_config_init (NMIP4Config *config)
-{
-}
+nm_ip4_config_init(NMIP4Config *config)
+{}
 
 static void
-nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
-{
-}
+nm_ip4_config_class_init(NMIP4ConfigClass *config_class)
+{}
