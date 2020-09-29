@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LGPL-2.1+
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /*
  * Copyright (C) 2009 Novell, Inc.
  * Author: Tambet Ingo (tambet@gmail.com).

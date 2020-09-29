@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0+
+/* SPDX-License-Identifier: GPL-2.0+ */
 /*
  * Copyright (C) 2011 Red Hat, Inc.
  * Copyright (C) 2013 Thomas Bechtold <thomasbechtold@jpberlin.de>

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LGPL-2.1+
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /*
  * Author: Pantelis Koukousoulas <pktoss@gmail.com>
  * Copyright (C) 2009 - 2011 Red Hat, Inc.

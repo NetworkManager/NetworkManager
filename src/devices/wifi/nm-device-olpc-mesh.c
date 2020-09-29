@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0+
+/* SPDX-License-Identifier: GPL-2.0+ */
 /*
  * Dan Williams <dcbw@redhat.com>
  * Sjoerd Simons <sjoerd.simons@collabora.co.uk>
