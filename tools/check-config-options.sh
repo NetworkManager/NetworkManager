@@ -6,14 +6,14 @@ ret=0
 get_supported_options()
 {
     awk '/START OPTION LIST/{flag=1;next}/END OPTION LIST/{flag=0}flag' "$srcdir/src/nm-config.c" |
-	grep -o 'NM_CONFIG_KEYFILE_KEY_\w*'
+    grep -o 'NM_CONFIG_KEYFILE_KEY_\w*'
 }
 
 get_missing_options()
 {
     grep -v '/\* check-config-options skip \*/' "$srcdir/src/nm-config.h" |
-	grep -o 'NM_CONFIG_KEYFILE_KEY_\w*' |
-	grep -v -Fx -f <(get_supported_options)
+    grep -o 'NM_CONFIG_KEYFILE_KEY_\w*' |
+    grep -v -Fx -f <(get_supported_options)
 }
 
 get_src_con_defaults()
@@ -25,7 +25,7 @@ get_src_con_defaults()
 get_man_con_defaults()
 {
     awk '/start connection defaults/{flag=1;next}/end connection defaults/{flag=0}flag' "$srcdir/man/NetworkManager.conf.xml" |
-	sed -ne 's#.*<varname>\([^<]*\)</varname>.*#\1#p'
+    sed -ne 's#.*<varname>\([^<]*\)</varname>.*#\1#p'
 }
 
 get_missing_con_defaults()
