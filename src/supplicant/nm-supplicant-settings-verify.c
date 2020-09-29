@@ -182,8 +182,8 @@ validate_type_utf8(const struct Opt *opt, const char *value, const guint32 len)
 
     check_len = opt->int_high ?: 255;
     /* Note that we deliberately don't validate the UTF-8, because
-	   some "UTF-8" fields, such as 8021x.password, do not actually
-	   have to be valid UTF-8 */
+     * some "UTF-8" fields, such as 8021x.password, do not actually
+     * have to be valid UTF-8 */
     if (g_utf8_strlen(value, len) > check_len)
         return FALSE;
 

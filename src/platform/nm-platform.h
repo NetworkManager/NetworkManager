@@ -637,20 +637,24 @@ typedef struct {
     guint32 target;
     guint32 interval;
     guint32 quantum;
-    guint32 ce_threshold; /* TCA_FQ_CODEL_CE_THRESHOLD: kernel internally stores this value as
-	                       *   ((val64 * NSEC_PER_USEC) >> CODEL_SHIFT). The default value (in
-	                       *   the domain with this coercion) is CODEL_DISABLED_THRESHOLD (INT_MAX).
-	                       *   That means, "disabled" is expressed on RTM_NEWQDISC netlink API by absence of the
-	                       *   netlink attribute but also as the special value 0x83126E97u
-	                       *   (NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED).
-	                       *   Beware: zero is not the default you must always explicitly set this value. */
-    guint32
-        memory_limit; /* TCA_FQ_CODEL_MEMORY_LIMIT: note that only values <= 2^31 are accepted by kernel
-	                       *   and kernel defaults to 32MB.
-	                       *   Note that we use the special value NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET
-	                       *   to indicate that no explicit limit is set (when we send a RTM_NEWQDISC request).
-	                       *   This will cause kernel to choose the default (32MB).
-	                       *   Beware: zero is not the default you must always explicitly set this value. */
+
+    /* TCA_FQ_CODEL_CE_THRESHOLD: kernel internally stores this value as
+     * ((val64 * NSEC_PER_USEC) >> CODEL_SHIFT). The default value (in
+     * the domain with this coercion) is CODEL_DISABLED_THRESHOLD (INT_MAX).
+     * That means, "disabled" is expressed on RTM_NEWQDISC netlink API by absence of the
+     * netlink attribute but also as the special value 0x83126E97u
+     * (NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED).
+     * Beware: zero is not the default you must always explicitly set this value. */
+    guint32 ce_threshold;
+
+    /* TCA_FQ_CODEL_MEMORY_LIMIT: note that only values <= 2^31 are accepted by kernel
+     * and kernel defaults to 32MB.
+     * Note that we use the special value NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET
+     * to indicate that no explicit limit is set (when we send a RTM_NEWQDISC request).
+     * This will cause kernel to choose the default (32MB).
+     * Beware: zero is not the default you must always explicitly set this value. */
+    guint32 memory_limit;
+
     bool ecn : 1;
 } NMPlatformQdiscFqCodel;
 

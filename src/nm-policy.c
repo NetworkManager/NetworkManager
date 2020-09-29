@@ -160,7 +160,7 @@ typedef struct {
     NMPlatformIP6Address prefix;
     NMDevice *           device;      /* The requesting ("uplink") device */
     guint64              next_subnet; /* Cache of the next subnet number to be
-	                               * assigned from this prefix */
+                                       * assigned from this prefix */
     GHashTable *         subnets;     /* ifindex -> NMPlatformIP6Address */
 } IP6PrefixDelegation;
 

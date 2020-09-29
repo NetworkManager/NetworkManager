@@ -1167,13 +1167,13 @@ nm_setting_bond_class_init(NMSettingBondClass *klass)
                                  &nm_sett_info_propert_type_strdict);
 
     /* ---dbus---
-	  * property: interface-name
-	  * format: string
-	  * description: Deprecated in favor of connection.interface-name, but can
-	  *   be used for backward-compatibility with older daemons, to set the
-	  *   bond's interface name.
-	  * ---end---
-	  */
+     * property: interface-name
+     * format: string
+     * description: Deprecated in favor of connection.interface-name, but can
+     *   be used for backward-compatibility with older daemons, to set the
+     *   bond's interface name.
+     * ---end---
+     */
     _nm_properties_override_dbus(properties_override,
                                  "interface-name",
                                  &nm_sett_info_propert_type_deprecated_interface_name);

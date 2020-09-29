@@ -916,8 +916,8 @@ _normalize_ip_config(NMConnection *self, GHashTable *parameters)
                 default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
 
             /* But if no IP4 setting was specified, assume the caller was just
-			  * being lazy and use the default method.
-			  */
+             * being lazy and use the default method.
+             */
             setting = nm_setting_ip4_config_new();
 
             g_object_set(setting, NM_SETTING_IP_CONFIG_METHOD, default_ip4_method, NULL);

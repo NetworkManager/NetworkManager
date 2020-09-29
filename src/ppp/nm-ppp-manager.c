@@ -946,14 +946,14 @@ pppoe_fill_defaults(NMSettingPpp *setting)
 
     /* FIXME: These commented settings should be set as well, update NMSettingPpp first. */
 #if 0
-	setting->noipdefault = TRUE;
-	setting->default_asyncmap = TRUE;
-	setting->defaultroute = TRUE;
-	setting->hide_password = TRUE;
-	setting->noaccomp = TRUE;
-	setting->nopcomp = TRUE;
-	setting->novj = TRUE;
-	setting->novjccomp = TRUE;
+    setting->noipdefault = TRUE;
+    setting->default_asyncmap = TRUE;
+    setting->defaultroute = TRUE;
+    setting->hide_password = TRUE;
+    setting->noaccomp = TRUE;
+    setting->nopcomp = TRUE;
+    setting->novj = TRUE;
+    setting->novjccomp = TRUE;
 #endif
 }
 

@@ -101,8 +101,8 @@ nmc_string_to_bool(const char *str, gboolean *val_bool, GError **error)
                     1,
                     0,
                     /* TRANSLATORS: the first %s is the partial value entered by
-		              * the user, the second %s a list of compatible values.
-		              */
+                     * the user, the second %s a list of compatible values.
+                     */
                     _("'%s' is ambiguous (%s)"),
                     str,
                     "on x off");
@@ -140,8 +140,8 @@ nmc_string_to_ternary(const char *str, NMTernary *val, GError **error)
                     1,
                     0,
                     /* TRANSLATORS: the first %s is the partial value entered by
-		              * the user, the second %s a list of compatible values.
-		              */
+                     * the user, the second %s a list of compatible values.
+                     */
                     _("'%s' is ambiguous (%s)"),
                     str,
                     "on x off");

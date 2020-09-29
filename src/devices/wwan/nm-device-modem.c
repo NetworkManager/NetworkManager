@@ -368,8 +368,8 @@ modem_state_cb(NMModem *modem, int new_state_i, int old_state_i, gpointer user_d
 
         if (dev_state == NM_DEVICE_STATE_NEED_AUTH) {
             /* The modem was unlocked externally to NetworkManager,
-			   deactivate so the default connection can be
-			   automatically activated again */
+             * deactivate so the default connection can be
+             * automatically activated again */
             nm_device_state_changed(device,
                                     NM_DEVICE_STATE_DEACTIVATING,
                                     NM_DEVICE_STATE_REASON_MODEM_AVAILABLE);

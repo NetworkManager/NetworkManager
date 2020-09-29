@@ -2903,11 +2903,11 @@ _host_id_hash_v2(const guint8 *seed_arr,
     char                             slen[100];
 
     /*
-	    (stat -c '%s' /var/lib/NetworkManager/secret_key;
-	     echo -n ' ';
-	     cat /var/lib/NetworkManager/secret_key;
-	     cat /etc/machine-id | tr -d '\n' | sed -n 's/[a-f0-9-]/\0/pg') | sha256sum
-	*/
+        (stat -c '%s' /var/lib/NetworkManager/secret_key;
+         echo -n ' ';
+         cat /var/lib/NetworkManager/secret_key;
+         cat /etc/machine-id | tr -d '\n' | sed -n 's/[a-f0-9-]/\0/pg') | sha256sum
+    */
 
     nm_sprintf_buf(slen, "%" G_GSIZE_FORMAT " ", seed_len);
     g_checksum_update(sum, (const guchar *) slen, strlen(slen));
@@ -3380,7 +3380,7 @@ nm_utils_get_ipv6_interface_identifier(NMLinkType          link_type,
         return TRUE;
     case NM_LINK_TYPE_6LOWPAN:
         /* The hardware address is already 64-bit. This is the case for
-		* IEEE 802.15.4 networks. */
+         * IEEE 802.15.4 networks. */
         memcpy(out_iid->id_u8, hwaddr, sizeof(out_iid->id_u8));
         return TRUE;
     default:

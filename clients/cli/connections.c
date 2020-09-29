@@ -6212,7 +6212,7 @@ extract_setting_and_property(const char *prompt, const char *line, char **settin
 
     if (prompt) {
         /* prompt looks like this:
-		  "nmcli 802-1x>" or "nmcli 802-1x.pac-file>" */
+         * "nmcli 802-1x>" or "nmcli 802-1x.pac-file>" */
         const char *p1, *p2, *dot;
         size_t      num1, num2;
         p1 = strchr(prompt, ' ');
@@ -6233,7 +6233,7 @@ extract_setting_and_property(const char *prompt, const char *line, char **settin
 
     if (line) {
         /* line looks like this:
-		  " set 802-1x.pac-file ..." or " set pac-file ..." */
+         * " set 802-1x.pac-file ..." or " set pac-file ..." */
         const char *p1, *p2, *dot;
         size_t      n1, n2, n3, n4;
         size_t      num1, num2, len;

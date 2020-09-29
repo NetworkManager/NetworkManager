@@ -345,9 +345,9 @@ nmt_device_entry_init(NmtDeviceEntry *deventry)
     g_signal_connect(priv->entry, "notify::text", G_CALLBACK(entry_text_changed), deventry);
 
 #if 0
-	priv->button = nmt_newt_button_new (_("Select..."));
-	g_signal_connect (priv->button, "clicked",
-	                  G_CALLBACK (do_select_dialog), deventry);
+    priv->button = nmt_newt_button_new (_("Select..."));
+    g_signal_connect (priv->button, "clicked",
+                      G_CALLBACK (do_select_dialog), deventry);
 #endif
 }
 

@@ -167,8 +167,7 @@ enum nl802154_iftype {
  *
  * @__NL802154_CAP_ATTR_INVALID: attribute number 0 is reserved
  * @NL802154_CAP_ATTR_CHANNELS: a nested attribute for nl802154_channel_attr
- * @NL802154_CAP_ATTR_TX_POWERS: a nested attribute for
- *	nl802154_wpan_phy_tx_power
+ * @NL802154_CAP_ATTR_TX_POWERS: a nested attribute for nl802154_wpan_phy_tx_power
  * @NL802154_CAP_ATTR_MIN_CCA_ED_LEVEL: minimum value for cca_ed_level
  * @NL802154_CAP_ATTR_MAX_CCA_ED_LEVEL: maxmimum value for cca_ed_level
  * @NL802154_CAP_ATTR_CCA_MODES: nl802154_cca_modes flags
@@ -226,8 +225,7 @@ enum nl802154_wpan_phy_capability_attr {
  * @NL802154_CCA_ENERGY_CARRIER: Carrier sense with energy above threshold
  * @NL802154_CCA_ALOHA: CCA shall always report an idle medium
  * @NL802154_CCA_UWB_SHR: UWB preamble sense based on the SHR of a frame
- * @NL802154_CCA_UWB_MULTIPLEXED: UWB preamble sense based on the packet with
- *	the multiplexed preamble
+ * @NL802154_CCA_UWB_MULTIPLEXED: UWB preamble sense based on the packet with the multiplexed preamble
  * @__NL802154_CCA_ATTR_AFTER_LAST: Internal
  * @NL802154_CCA_ATTR_MAX: Maximum CCA attribute number
  */

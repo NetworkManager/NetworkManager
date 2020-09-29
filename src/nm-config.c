@@ -3141,7 +3141,7 @@ nm_config_class_init(NMConfigClass *config_class)
                      3,
                      NM_TYPE_CONFIG_DATA,
                      /* Use plain guint type for changes argument. This avoids
-	                   * glib/ffi bug https://bugzilla.redhat.com/show_bug.cgi?id=1260577 */
+                      * glib/ffi bug https://bugzilla.redhat.com/show_bug.cgi?id=1260577 */
                      /* NM_TYPE_CONFIG_CHANGE_FLAGS, */
                      G_TYPE_UINT,
                      NM_TYPE_CONFIG_DATA);

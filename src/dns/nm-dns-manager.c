@@ -1623,7 +1623,7 @@ plugin_skip:;
     }
 
     /* Unless we've already done it, update private resolv.conf in NMRUNDIR
-	   ignoring any errors */
+     * ignoring any errors */
     if (!resolv_conf_updated) {
         update_resolv_conf(self,
                            NM_CAST_STRV_CC(searches),

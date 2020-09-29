@@ -5970,12 +5970,12 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                            "",
                            "",
                            G_TYPE_PTR_ARRAY,
-                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
-                               /* "addresses" is a legacy D-Bus property, because the
-	                         * "addresses" GObject property normally gets set from
-	                         * the "address-data" D-Bus property...
-	                         */
-                               NM_SETTING_PARAM_LEGACY | G_PARAM_STATIC_STRINGS);
+                           /* "addresses" is a legacy D-Bus property, because the
+                            * "addresses" GObject property normally gets set from
+                            * the "address-data" D-Bus property...
+                            */
+                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | NM_SETTING_PARAM_LEGACY
+                               | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:gateway:

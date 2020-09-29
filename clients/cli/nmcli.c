@@ -821,7 +821,7 @@ process_command_line(NmCli *nmc, int argc, char **argv_orig)
             /* We want fixed tabular mode here, but just set the mode specified and rely on defaults:
              * in this way we allow use of "-m multiline" to swap the output mode also if placed
              * before the "-g <field>" option (-g may be still more practical and easy to remember than -t -f).
-			*/
+             */
             nmc->mode_specified = TRUE;
         } else if (matches_arg(nmc, &argc, &argv, "-nocheck", NULL)) {
             /* ignore for backward compatibility */

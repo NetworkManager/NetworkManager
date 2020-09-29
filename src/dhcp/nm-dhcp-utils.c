@@ -320,9 +320,9 @@ process_classful_routes(const char * iface,
         memset(&route, 0, sizeof(route));
         route.network = rt_addr;
         /* RFC 2132, updated by RFC 3442:
-		   The Static Routes option (option 33) does not provide a subnet mask
-		   for each route - it is assumed that the subnet mask is implicit in
-		   whatever network number is specified in each route entry */
+         * The Static Routes option (option 33) does not provide a subnet mask
+         * for each route - it is assumed that the subnet mask is implicit in
+         * whatever network number is specified in each route entry */
         route.plen = _nm_utils_ip4_get_default_prefix(rt_addr);
         if (rt_addr & ~_nm_utils_ip4_prefix_to_netmask(route.plen)) {
             /* RFC 943: target not "this network"; using host routing */

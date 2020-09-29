@@ -31,9 +31,9 @@ enum NMActStageReturn {
     NM_ACT_STAGE_RETURN_POSTPONE,    /* Long-running operation in progress */
     NM_ACT_STAGE_RETURN_IP_WAIT,     /* IP config stage is waiting (state IP_WAIT) */
     NM_ACT_STAGE_RETURN_IP_DONE,     /* IP config stage is done (state IP_DONE),
-	                                    For the ip-config stage, this is similar to
-	                                    NM_ACT_STAGE_RETURN_SUCCESS, except that no
-	                                    IP config should be committed. */
+                                      * For the ip-config stage, this is similar to
+                                      * NM_ACT_STAGE_RETURN_SUCCESS, except that no
+                                      * IP config should be committed. */
     NM_ACT_STAGE_RETURN_IP_FAIL, /* IP config stage failed (state IP_FAIL), activation may proceed */
 };
 

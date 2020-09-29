@@ -287,22 +287,22 @@ NM_IS_IP_CONFIG_ADDR_FAMILY(gconstpointer config, int addr_family)
         ({                                        \
             const void *const _config = (config); \
             _Generic ((typeexpr), \
-		          const void        *const: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
-		          const void        *     : (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
-		                void        *const: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
-		                void        *     : (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
-		          const NMIPConfig  *const: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
-		          const NMIPConfig  *     : (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
-		                NMIPConfig  *const: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
-		                NMIPConfig  *     : (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
-		          const NMIP4Config *const: (NM_IS_IP4_CONFIG (_config)), \
-		          const NMIP4Config *     : (NM_IS_IP4_CONFIG (_config)), \
-		                NMIP4Config *const: (NM_IS_IP4_CONFIG (_config)), \
-		                NMIP4Config *     : (NM_IS_IP4_CONFIG (_config)), \
-		          const NMIP6Config *const: (NM_IS_IP6_CONFIG (_config)), \
-		          const NMIP6Config *     : (NM_IS_IP6_CONFIG (_config)), \
-		                NMIP6Config *const: (NM_IS_IP6_CONFIG (_config)), \
-		                NMIP6Config *     : (NM_IS_IP6_CONFIG (_config)));               \
+                  const void        *const: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+                  const void        *     : (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+                        void        *const: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+                        void        *     : (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+                  const NMIPConfig  *const: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+                  const NMIPConfig  *     : (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+                        NMIPConfig  *const: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+                        NMIPConfig  *     : (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
+                  const NMIP4Config *const: (NM_IS_IP4_CONFIG (_config)), \
+                  const NMIP4Config *     : (NM_IS_IP4_CONFIG (_config)), \
+                        NMIP4Config *const: (NM_IS_IP4_CONFIG (_config)), \
+                        NMIP4Config *     : (NM_IS_IP4_CONFIG (_config)), \
+                  const NMIP6Config *const: (NM_IS_IP6_CONFIG (_config)), \
+                  const NMIP6Config *     : (NM_IS_IP6_CONFIG (_config)), \
+                        NMIP6Config *const: (NM_IS_IP6_CONFIG (_config)), \
+                        NMIP6Config *     : (NM_IS_IP6_CONFIG (_config)));               \
         })
 #else
     #define _NM_IS_IP_CONFIG(typeexpr, config) NM_IS_IP_CONFIG(config)

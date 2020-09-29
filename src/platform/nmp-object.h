@@ -524,7 +524,7 @@ _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX(NMPObjectType obj_type)
         typeof(obj) _obj = (obj);                                         \
                                                                           \
         nm_assert (   !_obj \
-		           || nmp_class_from_type (NMP_OBJECT_GET_TYPE (_obj)))); \
+                   || nmp_class_from_type (NMP_OBJECT_GET_TYPE (_obj)))); \
         _obj ? &NM_CONSTCAST(NMPObject, _obj)->object : NULL;             \
     })
 

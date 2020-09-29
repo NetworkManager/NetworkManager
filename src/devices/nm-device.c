@@ -174,7 +174,7 @@ typedef enum {
 typedef struct {
     NMIPConfig *orig;    /* the original configuration applied to the device */
     NMIPConfig *current; /* configuration after external changes.  NULL means
-	                          that the original configuration didn't change. */
+                          * that the original configuration didn't change. */
 } AppliedConfig;
 
 typedef struct {
@@ -4879,7 +4879,7 @@ carrier_changed(NMDevice *self, gboolean carrier)
     if (nm_device_is_master(self)) {
         if (carrier) {
             /* Force master to retry getting ip addresses when carrier
-			* is restored. */
+             * is restored. */
             if (priv->state == NM_DEVICE_STATE_ACTIVATED)
                 nm_device_update_dynamic_ip_setup(self);
             /* If needed, also resume IP configuration that is
@@ -7605,8 +7605,8 @@ nm_device_queue_recheck_available(NMDevice *          self,
     if (!priv->recheck_available.call_id) {
         priv->recheck_available.call_id = g_idle_add(recheck_available, self);
         nm_device_add_pending_action (self, NM_PENDING_ACTION_RECHECK_AVAILABLE,
-		                              FALSE /* cannot assert, because of how recheck_available() first clears
-		                                       the call-id and postpones removing the pending-action. */);
+                                      FALSE /* cannot assert, because of how recheck_available() first clears
+                                             * the call-id and postpones removing the pending-action. */);
     }
 }
 

@@ -362,9 +362,9 @@ nmt_add_connection_class_init(NmtAddConnectionClass *add_class)
                             "",
                             "",
 #if 0
-		                      _("If you are creating a VPN, and the VPN connection you "
-		                      "wish to create does not appear in the list, you may "
-		                      "not have the correct VPN plugin installed."),
+                              _("If you are creating a VPN, and the VPN connection you "
+                              "wish to create does not appear in the list, you may "
+                              "not have the correct VPN plugin installed."),
 #else
                             NULL,
 #endif

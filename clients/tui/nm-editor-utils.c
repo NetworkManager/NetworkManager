@@ -23,20 +23,20 @@ static GSList *vpn_plugins;
 static int
 sort_vpn_plugins (gconstpointer a, gconstpointer b)
 {
-	NMVpnEditorPlugin *aa = NM_VPN_EDITOR_PLUGIN (a);
-	NMVpnEditorPlugin *bb = NM_VPN_EDITOR_PLUGIN (b);
-	char *aa_desc = NULL, *bb_desc = NULL;
-	int ret;
+    NMVpnEditorPlugin *aa = NM_VPN_EDITOR_PLUGIN (a);
+    NMVpnEditorPlugin *bb = NM_VPN_EDITOR_PLUGIN (b);
+    char *aa_desc = NULL, *bb_desc = NULL;
+    int ret;
 
-	g_object_get (aa, NM_VPN_EDITOR_PLUGIN_NAME, &aa_desc, NULL);
-	g_object_get (bb, NM_VPN_EDITOR_PLUGIN_NAME, &bb_desc, NULL);
+    g_object_get (aa, NM_VPN_EDITOR_PLUGIN_NAME, &aa_desc, NULL);
+    g_object_get (bb, NM_VPN_EDITOR_PLUGIN_NAME, &bb_desc, NULL);
 
-	ret = g_strcmp0 (aa_desc, bb_desc);
+    ret = g_strcmp0 (aa_desc, bb_desc);
 
-	g_free (aa_desc);
-	g_free (bb_desc);
+    g_free (aa_desc);
+    g_free (bb_desc);
 
-	return ret;
+    return ret;
 }
 #endif
 
@@ -115,8 +115,8 @@ nm_editor_utils_get_connection_type_list(void)
     NMEditorConnectionTypeDataReal *    item;
     static NMEditorConnectionTypeData **list;
 #if 0
-	GHashTable *vpn_plugins_hash;
-	gboolean have_vpn_plugins;
+    GHashTable *vpn_plugins_hash;
+    gboolean have_vpn_plugins;
 #endif
 
     if (list)
@@ -150,13 +150,13 @@ nm_editor_utils_get_connection_type_list(void)
     g_ptr_array_add(array, item);
 
 #if 0
-	item = g_new0 (NMEditorConnectionTypeDataReal, 1);
-	item->data.name = _("Mobile Broadband");
-	item->data.setting_type = NM_TYPE_SETTING_GSM;
-	item->data.virtual = FALSE;
-	item->id_format = _("Mobile broadband connection %d");
-	item->no_autoconnect = TRUE;
-	g_ptr_array_add (array, item);
+    item = g_new0 (NMEditorConnectionTypeDataReal, 1);
+    item->data.name = _("Mobile Broadband");
+    item->data.setting_type = NM_TYPE_SETTING_GSM;
+    item->data.virtual = FALSE;
+    item->id_format = _("Mobile broadband connection %d");
+    item->no_autoconnect = TRUE;
+    g_ptr_array_add (array, item);
 #endif
 
     item                    = g_new0(NMEditorConnectionTypeDataReal, 1);
@@ -212,27 +212,27 @@ nm_editor_utils_get_connection_type_list(void)
     g_ptr_array_add(array, item);
 
 #if 0
-	/* Add "VPN" only if there are plugins */
-	vpn_plugins_hash = nm_vpn_get_plugin_infos ();
-	have_vpn_plugins  = vpn_plugins_hash && g_hash_table_size (vpn_plugins_hash);
-	if (have_vpn_plugins) {
-		GHashTableIter iter;
-		gpointer name, plugin;
+    /* Add "VPN" only if there are plugins */
+    vpn_plugins_hash = nm_vpn_get_plugin_infos ();
+    have_vpn_plugins  = vpn_plugins_hash && g_hash_table_size (vpn_plugins_hash);
+    if (have_vpn_plugins) {
+        GHashTableIter iter;
+        gpointer name, plugin;
 
-		item = g_new0 (NMEditorConnectionTypeDataReal, 1);
-		item->data.name = _("VPN");
-		item->data.setting_type = NM_TYPE_SETTING_VPN;
-		item->data.virtual = TRUE;
-		item->id_format = _("VPN connection %d");
-		item->no_autoconnect = TRUE;
-		g_ptr_array_add (array, item);
+        item = g_new0 (NMEditorConnectionTypeDataReal, 1);
+        item->data.name = _("VPN");
+        item->data.setting_type = NM_TYPE_SETTING_VPN;
+        item->data.virtual = TRUE;
+        item->id_format = _("VPN connection %d");
+        item->no_autoconnect = TRUE;
+        g_ptr_array_add (array, item);
 
-		vpn_plugins = NULL;
-		g_hash_table_iter_init (&iter, vpn_plugins_hash);
-		while (g_hash_table_iter_next (&iter, &name, &plugin))
-			vpn_plugins = g_slist_prepend (vpn_plugins, plugin);
-		vpn_plugins = g_slist_sort (vpn_plugins, sort_vpn_plugins);
-	}
+        vpn_plugins = NULL;
+        g_hash_table_iter_init (&iter, vpn_plugins_hash);
+        while (g_hash_table_iter_next (&iter, &name, &plugin))
+            vpn_plugins = g_slist_prepend (vpn_plugins, plugin);
+        vpn_plugins = g_slist_sort (vpn_plugins, sort_vpn_plugins);
+    }
 #endif
 
     g_ptr_array_sort(array, sort_types);

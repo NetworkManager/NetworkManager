@@ -5189,9 +5189,9 @@ _nm_utils_ifname_valid_ovs(const char *name, GError **error)
     const char *ch;
 
     /* OVS actually accepts a wider range of chars (all printable UTF-8 chars),
-	 NetworkManager restricts this to ASCII char as it's a safer option for
-	 now since OVS is not well documented on this matter.
-     */
+     * NetworkManager restricts this to ASCII char as it's a safer option for
+     * now since OVS is not well documented on this matter.
+     **/
     for (ch = name; *ch; ++ch) {
         if (*ch == '\\' || *ch == '/' || !g_ascii_isgraph(*ch)) {
             g_set_error_literal(error,

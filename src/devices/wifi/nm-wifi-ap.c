@@ -49,7 +49,7 @@ struct _NMWifiAPPrivate {
 
     gint64
         last_seen_msec; /* Timestamp when the AP was seen lastly (in nm_utils_get_monotonic_timestamp_*() scale).
-	                                    * Note that this value might be negative! */
+                         * Note that this value might be negative! */
 
     NM80211ApFlags         flags;     /* General flags */
     NM80211ApSecurityFlags wpa_flags; /* WPA-related flags */

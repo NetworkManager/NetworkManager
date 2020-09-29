@@ -29,51 +29,51 @@ static const char *pem_dsa_key_end = "-----END DSA PRIVATE KEY-----";
 static void
 dump_key_to_pem (const char *key, gsize key_len, int key_type)
 {
-	char *b64 = NULL;
-	GString *str = NULL;
-	const char *start_tag;
-	const char *end_tag;
-	char *p;
+    char *b64 = NULL;
+    GString *str = NULL;
+    const char *start_tag;
+    const char *end_tag;
+    char *p;
 
-	switch (key_type) {
-	case NM_CRYPTO_KEY_TYPE_RSA:
-		start_tag = pem_rsa_key_begin;
-		end_tag = pem_rsa_key_end;
-		break;
-	case NM_CRYPTO_KEY_TYPE_DSA:
-		start_tag = pem_dsa_key_begin;
-		end_tag = pem_dsa_key_end;
-		break;
-	default:
-		g_warning ("Unknown key type %d", key_type);
-		return;
-	}
+    switch (key_type) {
+    case NM_CRYPTO_KEY_TYPE_RSA:
+        start_tag = pem_rsa_key_begin;
+        end_tag = pem_rsa_key_end;
+        break;
+    case NM_CRYPTO_KEY_TYPE_DSA:
+        start_tag = pem_dsa_key_begin;
+        end_tag = pem_dsa_key_end;
+        break;
+    default:
+        g_warning ("Unknown key type %d", key_type);
+        return;
+    }
 
-	b64 = g_base64_encode ((const unsigned char *) key, key_len);
-	if (!b64) {
-		g_warning ("Couldn't base64 encode the key.");
-		goto out;
-	}
+    b64 = g_base64_encode ((const unsigned char *) key, key_len);
+    if (!b64) {
+        g_warning ("Couldn't base64 encode the key.");
+        goto out;
+    }
 
-	str = g_string_new (NULL);
+    str = g_string_new (NULL);
 
-	g_string_append (str, start_tag);
-	g_string_append_c (str, '\n');
+    g_string_append (str, start_tag);
+    g_string_append_c (str, '\n');
 
-	for (p = b64; p < (b64 + strlen (b64)); p += 64) {
-		g_string_append_len (str, p, strnlen (p, 64));
-		g_string_append_c (str, '\n');
-	}
+    for (p = b64; p < (b64 + strlen (b64)); p += 64) {
+        g_string_append_len (str, p, strnlen (p, 64));
+        g_string_append_c (str, '\n');
+    }
 
-	g_string_append (str, end_tag);
-	g_string_append_c (str, '\n');
+    g_string_append (str, end_tag);
+    g_string_append_c (str, '\n');
 
-	g_message ("Decrypted private key:\n\n%s", str->str);
+    g_message ("Decrypted private key:\n\n%s", str->str);
 
 out:
-	g_free (b64);
-	if (str)
-		g_string_free (str, TRUE);
+    g_free (b64);
+    if (str)
+        g_string_free (str, TRUE);
 }
 #endif
 
@@ -384,9 +384,9 @@ test_md5(void)
         memset(digest, 0, sizeof(digest));
         nm_crypto_md5_hash((const guint8 *) md5_tests[i].salt,
                            /* nm_crypto_md5_hash() used to clamp salt_len to 8.  It
-		                     * doesn't any more, so we need to do it here now to
-		                     * get output that matches md5_tests[i].result.
-		                     */
+                            * doesn't any more, so we need to do it here now to
+                            * get output that matches md5_tests[i].result.
+                            */
                            md5_tests[i].salt ? 8 : 0,
                            (const guint8 *) md5_tests[i].password,
                            strlen(md5_tests[i].password),
