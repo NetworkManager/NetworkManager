@@ -4,20 +4,14 @@ Guidelines for Contributing
 Coding Standard
 ---------------
 
-Coding standards are generally GNOME coding standards, with these exceptions:
-    a) 4 space tabs  (_not_ 8-space tabs)
-    b) REAL tabs (_not_ a mix of tabs and spaces in the initial indent)
-    c) spaces used to align continuation lines past the indent point of the
-       first statement line, like so:
+* The formatting uses clang-format with clang 11.0. Run
+  `./contrib/scripts/nm-code-format.sh -i` to reformat.
 
-		if (   some_really_really_long_variable_name
-		    && another_really_really_long_variable_name) {
-			...
-		}
+* Indent with 4 spaces. (_no_ tabs).
 
-* Keep a space between the function name and the opening '('.
-    GOOD: g_strdup (x)
-    BAD:  g_strdup(x)
+* Have no space between the function name and the opening '('.
+    GOOD:  g_strdup(x)
+    BAD:  g_strdup (x)
 
 * C-style comments
     GOOD: f(x);  /* comment */
