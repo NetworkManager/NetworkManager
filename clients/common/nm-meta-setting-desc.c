@@ -4286,9 +4286,9 @@ static const char *const *_complete_fcn_ethtool(ARGS_COMPLETE_FCN)
 
 /*****************************************************************************/
 
-static const NMMetaPropertyInfo property_info_BOND_OPTIONS;
+/* clang-format off */
 
-// clang-format off
+static const NMMetaPropertyInfo property_info_BOND_OPTIONS;
 
 #define NESTED_PROPERTY_INFO_BOND(...) \
     .parent_info =                  &property_info_BOND_OPTIONS, \
@@ -8271,7 +8271,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
     ),
 };
 
-// clang-format on
+/* clang-format on */
 
 /*****************************************************************************/
 

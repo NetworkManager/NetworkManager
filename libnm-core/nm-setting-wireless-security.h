@@ -120,7 +120,7 @@ typedef enum { /*< flags >*/
  *
  * Since: 1.12
  **/
-// clang-format off
+/* clang-format off */
 typedef enum {
     NM_SETTING_WIRELESS_SECURITY_FILS_DEFAULT  = 0,
     NM_SETTING_WIRELESS_SECURITY_FILS_DISABLE  = 1,
@@ -129,7 +129,7 @@ typedef enum {
     _NM_SETTING_WIRELESS_SECURITY_FILS_NUM, /*< skip >*/
     NM_SETTING_WIRELESS_SECURITY_FILS_LAST = _NM_SETTING_WIRELESS_SECURITY_FILS_NUM - 1, /*< skip >*/
 } NMSettingWirelessSecurityFils;
-// clang-format on
+/* clang-format on */
 
 #define NM_SETTING_WIRELESS_SECURITY_KEY_MGMT            "key-mgmt"
 #define NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX       "wep-tx-keyidx"

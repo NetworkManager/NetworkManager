@@ -52,7 +52,7 @@ G_BEGIN_DECLS
  *
  * Since: 1.12
  */
-// clang-format off
+/* clang-format off */
 typedef enum {                                                            /*< flags >*/
                NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE                 = 0, /*< skip >*/
                NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY                  = 0x2,
@@ -71,7 +71,7 @@ typedef enum {                                                            /*< fl
 
                NM_SETTING_WIRELESS_WAKE_ON_WLAN_EXCLUSIVE_FLAGS = NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT | NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE, /*< skip >*/
 } NMSettingWirelessWakeOnWLan;
-// clang-format on
+/* clang-format on */
 
 #define NM_SETTING_WIRELESS_SSID                      "ssid"
 #define NM_SETTING_WIRELESS_MODE                      "mode"
