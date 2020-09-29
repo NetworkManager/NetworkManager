@@ -74,30 +74,15 @@ stages:
     - date '+%Y%m%d-%H%M%S'; test "$NM_BUILD_TARBALL" != 1 || mv /tmp/NetworkManager-1*.tar.xz /tmp/NetworkManager-1*.src.rpm ./
 
 checkpatch:
-  image: fedora:32
-  stage: test
-  script:
-    - date '+%Y%m%d-%H%M%S'; dnf install -y git black gettext /usr/bin/xargs
-    - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh 2>&1 | tee checkpatch-out.txt
-    - date '+%Y%m%d-%H%M%S'; black --check . examples/python/gi/nm-wg-set
-    - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
-  allow_failure: true
-  artifacts:
-    when: on_failure
-    paths:
-      - checkpatch-out.txt
-
-code-style:
   image: fedora:33
   stage: test
   script:
-    - date '+%Y%m%d-%H%M%S'; dnf install -y git which clang
-    - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh 2>&1 | tee nm-code-format-out.txt
+    - date '+%Y%m%d-%H%M%S'; dnf install -y git black gettext /usr/bin/xargs which clang
+    - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
+    - date '+%Y%m%d-%H%M%S'; black --check . examples/python/gi/nm-wg-set
+    - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
+    - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh
   allow_failure: true
-  artifacts:
-    when: on_failure
-    paths:
-      - nm-code-format-out.txt
 
 t_fedora:28:
   <<: *fedora_install
