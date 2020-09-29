@@ -288,6 +288,9 @@ NMIPConfigSource nm_ip4_config_get_mtu_source (const NMIP4Config *self);
 void nm_ip4_config_set_metered (NMIP4Config *self, gboolean metered);
 gboolean nm_ip4_config_get_metered (const NMIP4Config *self);
 
+void     nm_ip4_config_set_never_default (NMIP4Config *self, gboolean never_default);
+gboolean nm_ip4_config_get_never_default (const NMIP4Config *self);
+
 const NMPObject *nm_ip4_config_nmpobj_lookup (const NMIP4Config *self,
                                               const NMPObject *needle);
 gboolean nm_ip4_config_nmpobj_remove (NMIP4Config *self,
@@ -536,6 +539,21 @@ static inline void
 nm_ip_config_set_config_flags (NMIPConfig *self, NMIPConfigFlags flags, NMIPConfigFlags mask)
 {
 	_NM_IP_CONFIG_DISPATCH_VOID (self, nm_ip4_config_set_config_flags, nm_ip6_config_set_config_flags, flags, mask);
+}
+
+static inline gboolean
+nm_ip_config_get_never_default (const NMIPConfig *self)
+{
+	_NM_IP_CONFIG_DISPATCH (self, nm_ip4_config_get_never_default, nm_ip6_config_get_never_default);
+}
+
+static inline void
+nm_ip_config_set_never_default (NMIPConfig *self, gboolean never_default)
+{
+	_NM_IP_CONFIG_DISPATCH_VOID(self,
+	                            nm_ip4_config_set_never_default,
+	                            nm_ip6_config_set_never_default,
+	                            never_default);
 }
 
 #define _NM_IP_CONFIG_DISPATCH_SET_OP(_return, dst, src, v4_func, v6_func, ...) \

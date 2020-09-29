@@ -191,6 +191,9 @@ const char * nm_ip6_config_get_dns_option (const NMIP6Config *self, guint i);
 void nm_ip6_config_set_dns_priority (NMIP6Config *self, int priority);
 int nm_ip6_config_get_dns_priority (const NMIP6Config *self);
 
+void     nm_ip6_config_set_never_default (NMIP6Config *self, gboolean never_default);
+gboolean nm_ip6_config_get_never_default (const NMIP6Config *self);
+
 const NMPObject *nm_ip6_config_nmpobj_lookup (const NMIP6Config *self,
                                               const NMPObject *needle);
 gboolean nm_ip6_config_nmpobj_remove (NMIP6Config *self,

@@ -64,7 +64,8 @@ typedef struct {
 		NMDedupMultiIdxType idx_ip6_routes;
 	};
 	NMIPConfigFlags config_flags;
-	bool ipv6_disabled;
+	bool ipv6_disabled:1;
+	bool never_default:1;
 } NMIP6ConfigPrivate;
 
 struct _NMIP6Config {
@@ -123,6 +124,24 @@ nm_ip6_config_set_privacy (NMIP6Config *self, NMSettingIP6ConfigPrivacy privacy)
 	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
 
 	priv->privacy = privacy;
+}
+
+/*****************************************************************************/
+
+void
+nm_ip6_config_set_never_default (NMIP6Config *self, gboolean never_default)
+{
+	NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
+
+	priv->never_default = never_default;
+}
+
+gboolean
+nm_ip6_config_get_never_default (const NMIP6Config *self)
+{
+	const NMIP6ConfigPrivate *priv = NM_IP6_CONFIG_GET_PRIVATE (self);
+
+	return priv->never_default;
 }
 
 /*****************************************************************************/
@@ -752,6 +771,8 @@ nm_ip6_config_merge_setting (NMIP6Config *self,
 	priority = nm_setting_ip_config_get_dns_priority (setting);
 	if (priority)
 		nm_ip6_config_set_dns_priority (self, priority);
+
+	nm_ip6_config_set_never_default (self, nm_setting_ip_config_get_never_default (setting));
 
 	g_object_thaw_notify (G_OBJECT (self));
 }
