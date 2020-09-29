@@ -13,6 +13,7 @@
 #include "nm-auth-manager.h"
 #include "nm-session-monitor.h"
 #include "nm-dbus-manager.h"
+#include "nm-core-utils.h"
 
 /*****************************************************************************/
 
@@ -666,4 +667,30 @@ nm_auth_is_subject_in_acl_set_error(NMConnection * connection,
     g_set_error_literal(error, err_domain, err_code, error_desc);
     g_free(error_desc);
     return FALSE;
+}
+
+gboolean
+nm_auth_is_invocation_in_acl_set_error(NMConnection *         connection,
+                                       GDBusMethodInvocation *invocation,
+                                       GQuark                 err_domain,
+                                       int                    err_code,
+                                       NMAuthSubject **       out_subject,
+                                       GError **              error)
+{
+    gs_unref_object NMAuthSubject *subject = NULL;
+    gboolean                       success;
+
+    nm_assert(!out_subject || !*out_subject);
+
+    subject = nm_dbus_manager_new_auth_subject_from_context(invocation);
+    if (!subject) {
+        g_set_error_literal(error, err_domain, err_code, NM_UTILS_ERROR_MSG_REQ_UID_UKNOWN);
+        return FALSE;
+    }
+
+    success = nm_auth_is_subject_in_acl_set_error(connection, subject, err_domain, err_code, error);
+
+    NM_SET_OUT(out_subject, g_steal_pointer(&subject));
+
+    return success;
 }

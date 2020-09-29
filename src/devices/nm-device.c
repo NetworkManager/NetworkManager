@@ -12877,62 +12877,6 @@ impl_device_reapply(NMDBusObject *                     obj,
 /*****************************************************************************/
 
 static void
-get_applied_connection_cb(NMDevice *             self,
-                          GDBusMethodInvocation *context,
-                          NMAuthSubject *        subject,
-                          GError *               error,
-                          gpointer               user_data /* possibly dangling pointer */)
-{
-    NMDevicePrivate *priv;
-    NMConnection *   applied_connection;
-    GVariant *       settings;
-
-    g_return_if_fail(NM_IS_DEVICE(self));
-
-    if (error) {
-        g_dbus_method_invocation_return_gerror(context, error);
-        return;
-    }
-
-    priv = NM_DEVICE_GET_PRIVATE(self);
-
-    applied_connection = nm_device_get_applied_connection(self);
-
-    if (!applied_connection) {
-        error = g_error_new_literal(NM_DEVICE_ERROR,
-                                    NM_DEVICE_ERROR_NOT_ACTIVE,
-                                    "Device is not activated");
-        g_dbus_method_invocation_take_error(context, error);
-        return;
-    }
-
-    if (applied_connection != user_data) {
-        /* The applied connection changed due to a race. Reauthenticate. */
-        nm_device_auth_request(
-            self,
-            context,
-            applied_connection,
-            NM_AUTH_PERMISSION_NETWORK_CONTROL,
-            TRUE,
-            NULL,
-            get_applied_connection_cb,
-            applied_connection /* no need take a ref. We will not dereference this pointer. */);
-        return;
-    }
-
-    settings = nm_connection_to_dbus(applied_connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
-    if (!settings)
-        settings = g_variant_new_array(G_VARIANT_TYPE("{sa{sv}}"), NULL, 0);
-
-    g_dbus_method_invocation_return_value(
-        context,
-        g_variant_new(
-            "(@a{sa{sv}}t)",
-            settings,
-            nm_active_connection_version_id_get((NMActiveConnection *) priv->act_request.obj)));
-}
-
-static void
 impl_device_get_applied_connection(NMDBusObject *                     obj,
                                    const NMDBusInterfaceInfoExtended *interface_info,
                                    const NMDBusMethodInfoExtended *   method_info,
@@ -12941,9 +12885,12 @@ impl_device_get_applied_connection(NMDBusObject *                     obj,
                                    GDBusMethodInvocation *            invocation,
                                    GVariant *                         parameters)
 {
-    NMDevice *    self = NM_DEVICE(obj);
-    NMConnection *applied_connection;
-    guint32       flags;
+    NMDevice *       self       = NM_DEVICE(obj);
+    NMDevicePrivate *priv       = NM_DEVICE_GET_PRIVATE(self);
+    gs_free_error GError *error = NULL;
+    NMConnection *        applied_connection;
+    guint32               flags;
+    GVariant *            var_settings;
 
     g_variant_get(parameters, "(u)", &flags);
 
@@ -12965,15 +12912,26 @@ impl_device_get_applied_connection(NMDBusObject *                     obj,
         return;
     }
 
-    nm_device_auth_request(
-        self,
+    if (!nm_auth_is_invocation_in_acl_set_error(applied_connection,
+                                                invocation,
+                                                NM_MANAGER_ERROR,
+                                                NM_MANAGER_ERROR_PERMISSION_DENIED,
+                                                NULL,
+                                                &error)) {
+        g_dbus_method_invocation_take_error(invocation, g_steal_pointer(&error));
+        return;
+    }
+
+    var_settings = nm_connection_to_dbus(applied_connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
+    if (!var_settings)
+        var_settings = g_variant_new_array(G_VARIANT_TYPE("{sa{sv}}"), NULL, 0);
+
+    g_dbus_method_invocation_return_value(
         invocation,
-        applied_connection,
-        NM_AUTH_PERMISSION_NETWORK_CONTROL,
-        TRUE,
-        NULL,
-        get_applied_connection_cb,
-        applied_connection /* no need take a ref. We will not dereference this pointer. */);
+        g_variant_new(
+            "(@a{sa{sv}}t)",
+            var_settings,
+            nm_active_connection_version_id_get((NMActiveConnection *) priv->act_request.obj)));
 }
 
 /*****************************************************************************/

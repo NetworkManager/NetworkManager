@@ -17,6 +17,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   was built with the respective options enabled.
 * The long deprecated D-Bus property "Ip4Address" on "org.freedesktop.NetworkManager.Device"
   interface is not defunct and always returns zero.
+* dbus: don't require policykit permission for GetAppliedConnection of
+  a device.
 
 =============================================
 NetworkManager-1.26

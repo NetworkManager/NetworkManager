@@ -85,4 +85,11 @@ gboolean nm_auth_is_subject_in_acl_set_error(NMConnection * connection,
                                              int            err_code,
                                              GError **      error);
 
+gboolean nm_auth_is_invocation_in_acl_set_error(NMConnection *         connection,
+                                                GDBusMethodInvocation *invocation,
+                                                GQuark                 err_domain,
+                                                int                    err_code,
+                                                NMAuthSubject **       out_subject,
+                                                GError **              error);
+
 #endif /* __NETWORKMANAGER_MANAGER_AUTH_H__ */
