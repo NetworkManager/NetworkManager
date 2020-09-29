@@ -1299,7 +1299,7 @@ rebuild_domain_lists (NMDnsManager *self)
 {
 	NMDnsIPConfigData *ip_data;
 	gs_unref_hashtable GHashTable *ht = NULL;
-	gboolean default_route_found = FALSE;
+	gs_unref_hashtable GHashTable *wildcard_entries = NULL;
 	CList *head;
 
 	head = _ip_config_lst_head (self);
@@ -1309,8 +1309,9 @@ rebuild_domain_lists (NMDnsManager *self)
 		if (!nm_ip_config_get_num_nameservers (ip_config))
 			continue;
 		if (nm_ip_config_best_default_route_get (ip_config)) {
-			default_route_found = TRUE;
-			break;
+			if (!wildcard_entries)
+				wildcard_entries = g_hash_table_new (nm_direct_hash, NULL);
+			g_hash_table_add (wildcard_entries, ip_data);
 		}
 	}
 
@@ -1345,13 +1346,13 @@ rebuild_domain_lists (NMDnsManager *self)
 		/* Add wildcard lookup domain to connections with the default route.
 		 * If there is no default route, add the wildcard domain to all non-VPN
 		 * connections */
-		if (default_route_found) {
+		if (wildcard_entries) {
 			/* FIXME: this heuristic of which device has a default route does
 			 * not work with policy routing (as used by default with WireGuard).
 			 * We should have a more stable mechanism where an NMIPConfig indicates
 			 * whether it is suitable for certain operations (like having an automatically
 			 * added "~" domain). */
-			if (nm_ip_config_best_default_route_get (ip_config))
+			if (g_hash_table_contains (wildcard_entries, ip_data))
 				domains[num_dom1++] = "~";
 		} else {
 			if (ip_data->ip_config_type != NM_DNS_IP_CONFIG_TYPE_VPN)
