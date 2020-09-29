@@ -1,4 +1,16 @@
 ===============================================
+NetworkManager-1.18.10
+Overview of changes since NetworkManager-1.18.8
+===============================================
+
+This is a new stable release of NetworkManager.  Notable changes include:
+
+* ovs: update implementation of OpenvSwitch handling to fix various
+  bugs. In particular fix setting the MAC address and the MTU on OVS
+  interfaces.
+* Backport many fixes.
+
+===============================================
 NetworkManager-1.18.8
 Overview of changes since NetworkManager-1.18.6
 ===============================================
