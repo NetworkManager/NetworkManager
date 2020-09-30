@@ -148,9 +148,16 @@ typedef enum {
 } NMPlatformRoutingRuleCmpType;
 
 typedef struct {
-    guint8 data[20 /* NM_UTILS_HWADDR_LEN_MAX */];
+    union {
+        guint8      data[20 /* NM_UTILS_HWADDR_LEN_MAX */];
+        NMEtherAddr ether_addr;
+    };
     guint8 len;
 } NMPLinkAddress;
+
+/* assert that NMEtherAddr does not affect the alignment of NMPLinkAddress struct. */
+G_STATIC_ASSERT(_nm_alignof(NMEtherAddr) == 1);
+G_STATIC_ASSERT(_nm_alignof(NMPLinkAddress) == 1);
 
 gconstpointer nmp_link_address_get(const NMPLinkAddress *addr, size_t *length);
 GBytes *      nmp_link_address_get_as_bytes(const NMPLinkAddress *addr);
@@ -390,22 +397,22 @@ typedef union {
  * Note that contrary to IPv6, you can add routes with metric 0 and it is even
  * the default.
  */
-#define NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4 0
+#define NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4 ((guint32) 0u)
 
 /* Default value for adding an IPv6 route. This is also what iproute2 does.
  * Adding an IPv6 route with metric 0, kernel translates to IP6_RT_PRIO_USER (1024).
  *
  * Note that kernel doesn't allow adding IPv6 routes with metric zero via netlink.
  * It however can itself add routes with metric zero. */
-#define NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6 1024
+#define NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6 ((guint32) 1024u)
 
 /* For IPv4, kernel adds a device route (subnet routes) with metric 0 when user
  * configures addresses. */
-#define NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE 0
+#define NM_PLATFORM_ROUTE_METRIC_IP4_DEVICE_ROUTE ((guint32) 0u)
 
-#define __NMPlatformIPRoute_COMMON                                                  \
-    __NMPlatformObjWithIfindex_COMMON;                                              \
-                                                                                    \
+#define __NMPlatformIPRoute_COMMON                                                       \
+    __NMPlatformObjWithIfindex_COMMON;                                                   \
+                                                                                         \
     /* The NMIPConfigSource. For routes that we receive from cache this corresponds
      * to the rtm_protocol field (and is one of the NM_IP_CONFIG_SOURCE_RTPROT_* values).
      * When adding a route, the source will be coerced to the protocol using
@@ -417,11 +424,11 @@ typedef union {
      *
      * When deleting an IPv4/IPv6 route, the rtm_protocol field must match (even
      * if it is not part of the primary key for IPv6) -- unless rtm_protocol is set
-     * to zero, in which case the first matching route (with proto ignored) is deleted. */ \
-    NMIPConfigSource rt_source;                                                     \
-                                                                                    \
-    guint8 plen;                                                                    \
-                                                                                    \
+     * to zero, in which case the first matching route (with proto ignored) is deleted. */      \
+    NMIPConfigSource rt_source;                                                          \
+                                                                                         \
+    guint8 plen;                                                                         \
+                                                                                         \
     /* RTA_METRICS:
      *
      * For IPv4 routes, these properties are part of their
@@ -432,15 +439,24 @@ typedef union {
      *
      * When deleting a route, kernel seems to ignore the RTA_METRICS properties.
      * That is a problem/bug for IPv4 because you cannot explicitly select which
-     * route to delete. Kernel just picks the first. See rh#1475642. */                                                                 \
-                                                                                    \
-    /* RTA_METRICS.RTAX_LOCK (iproute2: "lock" arguments) */                        \
-    bool lock_window : 1;                                                           \
-    bool lock_cwnd : 1;                                                             \
-    bool lock_initcwnd : 1;                                                         \
-    bool lock_initrwnd : 1;                                                         \
-    bool lock_mtu : 1;                                                              \
-                                                                                    \
+     * route to delete. Kernel just picks the first. See rh#1475642. */                                                                      \
+                                                                                         \
+    /* RTA_METRICS.RTAX_LOCK (iproute2: "lock" arguments) */                             \
+    bool lock_window : 1;                                                                \
+    bool lock_cwnd : 1;                                                                  \
+    bool lock_initcwnd : 1;                                                              \
+    bool lock_initrwnd : 1;                                                              \
+    bool lock_mtu : 1;                                                                   \
+                                                                                         \
+    /* if TRUE, the "metric" field gets ignored and can be overridden with settings from
+     * the device. This is to track routes that should be configured (e.g. from a DHCP
+     * lease), but where the actual metric is determined by NMDevice. */ \
+    bool metric_any : 1;                                                                 \
+                                                                                         \
+    /* like "metric_any", the table is determined by other layers of the code.
+     * This field overrides "table_coerced" field. */           \
+    bool table_any : 1;                                                                  \
+                                                                                         \
     /* rtnh_flags
      *
      * Routes with rtm_flags RTM_F_CLONED are hidden by platform and
@@ -450,44 +466,44 @@ typedef union {
      * NOTE: currently we ignore all flags except RTM_F_CLONED
      * and RTNH_F_ONLINK.
      * We also may not properly consider the flags as part of the ID
-     * in route-cmp. */                                                                   \
-    unsigned r_rtm_flags;                                                           \
-                                                                                    \
-    /* RTA_METRICS.RTAX_ADVMSS (iproute2: advmss) */                                \
-    guint32 mss;                                                                    \
-                                                                                    \
-    /* RTA_METRICS.RTAX_WINDOW (iproute2: window) */                                \
-    guint32 window;                                                                 \
-                                                                                    \
-    /* RTA_METRICS.RTAX_CWND (iproute2: cwnd) */                                    \
-    guint32 cwnd;                                                                   \
-                                                                                    \
-    /* RTA_METRICS.RTAX_INITCWND (iproute2: initcwnd) */                            \
-    guint32 initcwnd;                                                               \
-                                                                                    \
-    /* RTA_METRICS.RTAX_INITRWND (iproute2: initrwnd) */                            \
-    guint32 initrwnd;                                                               \
-                                                                                    \
-    /* RTA_METRICS.RTAX_MTU (iproute2: mtu) */                                      \
-    guint32 mtu;                                                                    \
-                                                                                    \
-    /* RTA_PRIORITY (iproute2: metric) */                                           \
-    guint32 metric;                                                                 \
-                                                                                    \
+     * in route-cmp. */                                                                        \
+    unsigned r_rtm_flags;                                                                \
+                                                                                         \
+    /* RTA_METRICS.RTAX_ADVMSS (iproute2: advmss) */                                     \
+    guint32 mss;                                                                         \
+                                                                                         \
+    /* RTA_METRICS.RTAX_WINDOW (iproute2: window) */                                     \
+    guint32 window;                                                                      \
+                                                                                         \
+    /* RTA_METRICS.RTAX_CWND (iproute2: cwnd) */                                         \
+    guint32 cwnd;                                                                        \
+                                                                                         \
+    /* RTA_METRICS.RTAX_INITCWND (iproute2: initcwnd) */                                 \
+    guint32 initcwnd;                                                                    \
+                                                                                         \
+    /* RTA_METRICS.RTAX_INITRWND (iproute2: initrwnd) */                                 \
+    guint32 initrwnd;                                                                    \
+                                                                                         \
+    /* RTA_METRICS.RTAX_MTU (iproute2: mtu) */                                           \
+    guint32 mtu;                                                                         \
+                                                                                         \
+    /* RTA_PRIORITY (iproute2: metric) */                                                \
+    guint32 metric;                                                                      \
+                                                                                         \
     /* rtm_table, RTA_TABLE.
      *
      * This is not the original table ID. Instead, 254 (RT_TABLE_MAIN) and
      * zero (RT_TABLE_UNSPEC) are swapped, so that the default is the main
-     * table. Use nm_platform_route_table_coerce()/nm_platform_route_table_uncoerce(). */                                                        \
-    guint32 table_coerced;                                                          \
-                                                                                    \
+     * table. Use nm_platform_route_table_coerce()/nm_platform_route_table_uncoerce(). */                                                             \
+    guint32 table_coerced;                                                               \
+                                                                                         \
     /* rtm_type.
      *
      * This is not the original type, if type_coerced is 0 then
      * it means RTN_UNSPEC otherwise the type value is preserved.
-     * */                                                                    \
-    guint8 type_coerced;                                                            \
-                                                                                    \
+     * */                                                                         \
+    guint8 type_coerced;                                                                 \
+                                                                                         \
     /*end*/
 
 typedef struct {
@@ -1311,7 +1327,7 @@ nm_platform_route_table_coerce(guint32 table)
 
 /**
  * nm_platform_route_table_uncoerce:
- * @table: the route table, in its coerced value
+ * @table_coerced: the route table, in its coerced value
  * @normalize: whether to normalize RT_TABLE_UNSPEC to
  *   RT_TABLE_MAIN. For kernel, routes with a table id
  *   RT_TABLE_UNSPEC do not exist and are treated like
@@ -2052,6 +2068,34 @@ nm_platform_ip_address_get_peer_address(int addr_family, const NMPlatformIPAddre
 }
 
 void nm_platform_ip_route_normalize(int addr_family, NMPlatformIPRoute *route);
+
+static inline guint32
+nm_platform_ip4_route_get_effective_metric(const NMPlatformIP4Route *r)
+{
+    nm_assert(r);
+    nm_assert(!r->metric_any || r->metric == 0);
+
+    return r->metric_any ? NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4 : r->metric;
+}
+
+static inline guint32
+nm_platform_ip6_route_get_effective_metric(const NMPlatformIP6Route *r)
+{
+    nm_assert(r);
+    nm_assert(!r->metric_any || r->metric == 0);
+
+    return r->metric_any ? NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6 : r->metric;
+}
+
+static inline guint32
+nm_platform_ip_route_get_effective_table(const NMPlatformIPRoute *r)
+{
+    nm_assert(r);
+    nm_assert(!r->table_any || r->table_coerced == 0);
+
+    return r->table_any ? 254u /* RT_TABLE_MAIN */
+                        : nm_platform_route_table_uncoerce(r->table_coerced, TRUE);
+}
 
 static inline gconstpointer
 nm_platform_ip_route_get_gateway(int addr_family, const NMPlatformIPRoute *route)

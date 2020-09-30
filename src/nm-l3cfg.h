@@ -27,6 +27,12 @@ typedef enum {
     NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT,
 
     /* NML3Cfg hooks to the NMPlatform signals for link, addresses and routes.
+     * It re-emits the platform signal.
+     * Contrary to NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE, this even
+     * is re-emitted synchronously. */
+    NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE,
+
+    /* NML3Cfg hooks to the NMPlatform signals for link, addresses and routes.
      * It re-emits the signal on an idle handler. The purpose is for something
      * like NMDevice which is already subscribed to these signals, it can get the
      * notifications without also subscribing directly to the platform. */
@@ -42,6 +48,7 @@ typedef struct {
 } NML3ConfigNotifyPayloadAcdFailedSource;
 
 typedef struct {
+    NML3ConfigNotifyType notify_type;
     union {
         struct {
             in_addr_t                                     addr;
@@ -51,10 +58,15 @@ typedef struct {
         } acd_completed;
 
         struct {
+            const NMPObject *          obj;
+            NMPlatformSignalChangeType change_type;
+        } platform_change;
+
+        struct {
             guint32 obj_type_flags;
         } platform_change_on_idle;
     };
-} NML3ConfigNotifyPayload;
+} NML3ConfigNotifyData;
 
 struct _NML3CfgPrivate;
 
@@ -64,7 +76,8 @@ struct _NML3Cfg {
         struct _NML3CfgPrivate *p;
         NMNetns *               netns;
         NMPlatform *            platform;
-        const NMPObject *       pllink;
+        const NMPObject *       plobj;
+        const NMPObject *       plobj_next;
         int                     ifindex;
         bool                    changed_configs : 1;
     } priv;
@@ -86,6 +99,18 @@ void _nm_l3cfg_notify_platform_change(NML3Cfg *                  self,
 
 /*****************************************************************************/
 
+struct _NMDedupMultiIndex;
+
+struct _NMDedupMultiIndex *nm_netns_get_multi_idx(NMNetns *self);
+
+static inline struct _NMDedupMultiIndex *
+nm_l3cfg_get_multi_idx(const NML3Cfg *self)
+{
+    return nm_netns_get_multi_idx(self->priv.netns);
+}
+
+/*****************************************************************************/
+
 static inline int
 nm_l3cfg_get_ifindex(const NML3Cfg *self)
 {
@@ -94,34 +119,36 @@ nm_l3cfg_get_ifindex(const NML3Cfg *self)
     return self->priv.ifindex;
 }
 
-static inline const char *
-nm_l3cfg_get_ifname(const NML3Cfg *self)
-{
-    nm_assert(NM_IS_L3CFG(self));
-
-    return nmp_object_link_get_ifname(self->priv.pllink);
-}
-
 static inline const NMPObject *
-nm_l3cfg_get_plobj(const NML3Cfg *self)
+nm_l3cfg_get_plobj(const NML3Cfg *self, gboolean get_next)
 {
     if (!self)
         return NULL;
 
     nm_assert(NM_IS_L3CFG(self));
 
-    return self->priv.pllink;
+    if (get_next) {
+        /* This is the instance that we just got reported in the last signal from
+         * the platform cache. It's probably exactly the same as if you would look
+         * into the platform cache.
+         *
+         * On the other hand, we pick up changes only on an idle handler. So the last
+         * decisions were not made based on this, but instead of "plobj". */
+        return self->priv.plobj_next;
+    }
+    return self->priv.plobj;
 }
 
 static inline const NMPlatformLink *
-nm_l3cfg_get_pllink(const NML3Cfg *self)
+nm_l3cfg_get_pllink(const NML3Cfg *self, gboolean get_next)
 {
-    if (!self)
-        return NULL;
+    return NMP_OBJECT_CAST_LINK(nm_l3cfg_get_plobj(self, get_next));
+}
 
-    nm_assert(NM_IS_L3CFG(self));
-
-    return NMP_OBJECT_CAST_LINK(self->priv.pllink);
+static inline const char *
+nm_l3cfg_get_ifname(const NML3Cfg *self, gboolean get_next)
+{
+    return nmp_object_link_get_ifname(nm_l3cfg_get_plobj(self, get_next));
 }
 
 static inline NMNetns *
@@ -144,9 +171,7 @@ gboolean nm_l3cfg_get_acd_is_pending(NML3Cfg *self);
 
 /*****************************************************************************/
 
-void _nm_l3cfg_emit_signal_notify(NML3Cfg *                      self,
-                                  NML3ConfigNotifyType           notify_type,
-                                  const NML3ConfigNotifyPayload *pay_load);
+void _nm_l3cfg_emit_signal_notify(NML3Cfg *self, const NML3ConfigNotifyData *notify_data);
 
 /*****************************************************************************/
 
@@ -174,6 +199,10 @@ gboolean nm_l3cfg_add_config(NML3Cfg *             self,
                              gboolean              replace_same_tag,
                              const NML3ConfigData *l3cd,
                              int                   priority,
+                             guint32               default_route_table_4,
+                             guint32               default_route_table_6,
+                             guint32               default_route_metric_4,
+                             guint32               default_route_metric_6,
                              guint32               default_route_penalty_4,
                              guint32               default_route_penalty_6,
                              guint32               acd_timeout_msec,
@@ -215,7 +244,9 @@ typedef enum _nm_packed {
 
 } NML3CfgCommitType;
 
-gboolean nm_l3cfg_platform_commit(NML3Cfg *self, NML3CfgCommitType commit_type);
+void nm_l3cfg_commit(NML3Cfg *self, NML3CfgCommitType commit_type);
+
+void nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self);
 
 /*****************************************************************************/
 

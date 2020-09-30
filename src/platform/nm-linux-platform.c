@@ -4704,7 +4704,10 @@ _nl_msg_new_route(int nlmsg_type, guint16 nlmsgflags, const NMPObject *obj)
             NLA_PUT(msg, RTA_SRC, addr_len, &obj->ip6_route.src);
     }
 
-    NLA_PUT_U32(msg, RTA_PRIORITY, obj->ip_route.metric);
+    NLA_PUT_U32(msg,
+                RTA_PRIORITY,
+                is_v4 ? nm_platform_ip4_route_get_effective_metric(&obj->ip4_route)
+                      : nm_platform_ip6_route_get_effective_metric(&obj->ip6_route));
 
     if (table > 0xFF)
         NLA_PUT_U32(msg, RTA_TABLE, table);

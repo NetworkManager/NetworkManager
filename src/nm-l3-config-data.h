@@ -46,6 +46,15 @@ typedef enum {
 /**
  * NML3ConfigMergeFlags:
  * @NM_L3_CONFIG_MERGE_FLAGS_NONE: no flags set
+ * @NM_L3_CONFIG_MERGE_FLAGS_ONLY_FOR_ACD: if this merge flag is set,
+ *   the the NML3ConfigData doesn't get merged and it's information won't be
+ *   synced. The only purpose is to run ACD on its IPv4 addresses, but
+ *   regardless whether ACD succeeds/fails, the IP addresses won't be configured.
+ *   The point is to run ACD first (without configuring it), and only
+ *   commit the settings if requested. That can either happen by
+ *   nm_l3cfg_add_config() the same NML3Cfg again (with a different
+ *   tag), or by calling nm_l3cfg_add_config() again with this flag
+ *   cleared (and the same tag).
  * @NM_L3_CONFIG_MERGE_FLAGS_NO_ROUTES: don't merge routes
  * @NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES: don't merge default routes.
  *   Note that if the respective NML3ConfigData has NM_L3_CONFIG_DAT_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES
@@ -54,9 +63,10 @@ typedef enum {
  */
 typedef enum _nm_packed {
     NM_L3_CONFIG_MERGE_FLAGS_NONE              = 0,
-    NM_L3_CONFIG_MERGE_FLAGS_NO_ROUTES         = (1LL << 0),
-    NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES = (1LL << 1),
-    NM_L3_CONFIG_MERGE_FLAGS_NO_DNS            = (1LL << 2),
+    NM_L3_CONFIG_MERGE_FLAGS_ONLY_FOR_ACD      = (1LL << 0),
+    NM_L3_CONFIG_MERGE_FLAGS_NO_ROUTES         = (1LL << 1),
+    NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES = (1LL << 2),
+    NM_L3_CONFIG_MERGE_FLAGS_NO_DNS            = (1LL << 3),
 } NML3ConfigMergeFlags;
 
 /*****************************************************************************/
@@ -136,6 +146,8 @@ typedef gboolean (*NML3ConfigMergeHookAddObj)(const NML3ConfigData *l3cd,
 void nm_l3_config_data_merge(NML3ConfigData *      self,
                              const NML3ConfigData *src,
                              NML3ConfigMergeFlags  merge_flags,
+                             const guint32 *default_route_table_x /* length 2, for IS_IPv4 */,
+                             const guint32 *default_route_metric_x /* length 2, for IS_IPv4 */,
                              const guint32 *default_route_penalty_x /* length 2, for IS_IPv4 */,
                              NML3ConfigMergeHookAddObj hook_add_addr,
                              gpointer                  hook_user_data);
