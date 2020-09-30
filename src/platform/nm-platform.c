@@ -3671,7 +3671,7 @@ nm_platform_ip4_address_get(NMPlatform *self,
                             int         ifindex,
                             in_addr_t   address,
                             guint8      plen,
-                            guint32     peer_address)
+                            in_addr_t   peer_address)
 {
     NMPObject        obj_id;
     const NMPObject *obj;
