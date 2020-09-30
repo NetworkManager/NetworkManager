@@ -955,8 +955,8 @@ nmtstp_ip_address_check_lifetime(const NMPlatformIPAddress *addr,
             if (adr != NM_PLATFORM_LIFETIME_PERMANENT)
                 return FALSE;
         } else {
-            if (adr - offset <= lft - CHECK_LIFETIME_MAX_DIFF
-                || adr - offset >= lft + CHECK_LIFETIME_MAX_DIFF)
+            if (((gint64) adr) - offset <= ((gint64) lft) - CHECK_LIFETIME_MAX_DIFF
+                || ((gint64) adr) - offset >= ((gint64) lft) + CHECK_LIFETIME_MAX_DIFF)
                 return FALSE;
         }
     }
