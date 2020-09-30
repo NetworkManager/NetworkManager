@@ -190,4 +190,6 @@ void nm_supplicant_interface_cancel_wps(NMSupplicantInterface *self);
 
 NMSupplicantAuthState nm_supplicant_interface_get_auth_state(NMSupplicantInterface *self);
 
+void nm_supplicant_interface_set_bridge(NMSupplicantInterface *self, const char *bridge);
+
 #endif /* __NM_SUPPLICANT_INTERFACE_H__ */

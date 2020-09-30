@@ -1322,6 +1322,54 @@ nm_supplicant_interface_get_capabilities(NMSupplicantInterface *self)
     return caps;
 }
 
+static void
+set_bridge_cb(GVariant *ret, GError *error, gpointer user_data)
+{
+    NMSupplicantInterface *self;
+    NMLogLevel             level;
+    gs_free const char *   bridge = NULL;
+
+    nm_utils_user_data_unpack(user_data, &self, &bridge);
+
+    if (nm_utils_error_is_cancelled(error))
+        return;
+
+    /* The supplicant supports writing the bridge property since
+     * version 2.10. Before that version, trying to set the property
+     * results in a InvalidArgs error.  Don't log a warning unless we
+     * are trying to set a non-NULL bridge. */
+    if (!error)
+        level = LOGL_DEBUG;
+    else if (bridge == NULL && g_error_matches(error, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS)) {
+        level = LOGL_DEBUG;
+    } else
+        level = LOGL_WARN;
+
+    _NMLOG(level,
+           "set bridge %s%s%s result: %s",
+           NM_PRINT_FMT_QUOTE_STRING(bridge),
+           error ? error->message : "success");
+}
+
+void
+nm_supplicant_interface_set_bridge(NMSupplicantInterface *self, const char *bridge)
+{
+    NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE(self);
+
+    _LOGT("set bridge %s%s%s", NM_PRINT_FMT_QUOTE_STRING(bridge));
+
+    nm_dbus_connection_call_set(priv->dbus_connection,
+                                priv->name_owner->str,
+                                priv->object_path->str,
+                                NM_WPAS_DBUS_IFACE_INTERFACE,
+                                "BridgeIfname",
+                                g_variant_new_string(bridge ?: ""),
+                                DBUS_TIMEOUT_MSEC,
+                                priv->main_cancellable,
+                                set_bridge_cb,
+                                nm_utils_user_data_pack(self, g_strdup(bridge)));
+}
+
 void
 nm_supplicant_interface_set_global_capabilities(NMSupplicantInterface *self, NMSupplCapMask value)
 {

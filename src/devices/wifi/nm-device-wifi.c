@@ -3136,6 +3136,9 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     NMSettingWireless *                 s_wireless;
     GError *                            error = NULL;
     guint                               timeout;
+    NMActRequest *                      request;
+    NMActiveConnection *                master_ac;
+    NMDevice *                          master;
 
     nm_clear_g_source(&priv->sup_timeout_id);
     nm_clear_g_source(&priv->link_timeout_id);
@@ -3208,6 +3211,15 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
         NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED);
         goto out_fail;
     }
+
+    /* Tell the supplicant in which bridge the interface is */
+    if ((request = nm_device_get_act_request(device))
+        && (master_ac = nm_active_connection_get_master(NM_ACTIVE_CONNECTION(request)))
+        && (master = nm_active_connection_get_device(master_ac))
+        && nm_device_get_device_type(master) == NM_DEVICE_TYPE_BRIDGE) {
+        nm_supplicant_interface_set_bridge(priv->sup_iface, nm_device_get_iface(master));
+    } else
+        nm_supplicant_interface_set_bridge(priv->sup_iface, NULL);
 
     nm_supplicant_interface_assoc(priv->sup_iface, config, supplicant_iface_assoc_cb, self);
 
