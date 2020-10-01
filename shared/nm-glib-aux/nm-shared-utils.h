@@ -1901,6 +1901,18 @@ char *nm_utils_bin2hexstr_full(gconstpointer addr,
         nm_utils_bin2hexstr_full(_addr, _length, _delimiter, (upper_case), _s);               \
     })
 
+static inline const char *
+nm_ether_addr_to_string(const NMEtherAddr *ether_addr, char sbuf[static(sizeof(NMEtherAddr) * 3)])
+{
+    nm_assert(ether_addr);
+    nm_assert(sbuf);
+
+    return nm_utils_bin2hexstr_full(ether_addr, sizeof(NMEtherAddr), ':', TRUE, sbuf);
+}
+
+#define nm_ether_addr_to_string_a(ether_addr) \
+    nm_ether_addr_to_string((ether_addr), g_alloca(sizeof(NMEtherAddr) * 3))
+
 guint8 *nm_utils_hexstr2bin_full(const char *hexstr,
                                  gboolean    allow_0x_prefix,
                                  gboolean    delimiter_required,
