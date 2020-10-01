@@ -16808,8 +16808,8 @@ nm_device_update_hw_address(NMDevice *self)
     if (priv->type == NM_DEVICE_TYPE_ETHERNET && hwaddr
         && nm_utils_hwaddr_matches(hwaddr,
                                    hwaddrlen,
-                                   nm_ip_addr_zero.addr_eth,
-                                   sizeof(nm_ip_addr_zero.addr_eth)))
+                                   &nm_ether_addr_zero,
+                                   sizeof(nm_ether_addr_zero)))
         hwaddrlen = 0;
 
     if (!hwaddrlen)

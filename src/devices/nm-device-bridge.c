@@ -760,7 +760,7 @@ bridge_set_vlan_options(NMDevice *device, NMSettingBridge *s_bridge)
 
     hwaddr = nm_platform_link_get_address(plat, ifindex, &length);
     g_return_val_if_fail(length == ETH_ALEN, FALSE);
-    if (nm_utils_hwaddr_matches(hwaddr, ETH_ALEN, nm_ip_addr_zero.addr_eth, ETH_ALEN)) {
+    if (nm_utils_hwaddr_matches(hwaddr, length, &nm_ether_addr_zero, ETH_ALEN)) {
         /* We need a non-zero MAC address to set the default pvid.
          * Retry later. */
         return TRUE;

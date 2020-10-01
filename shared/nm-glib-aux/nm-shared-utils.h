@@ -122,7 +122,8 @@ typedef struct {
         /* NMIPAddr is really a union for IP addresses.
          * However, as ethernet addresses fit in here nicely, use
          * it also for an ethernet MAC address. */
-        guint8 addr_eth[6 /*ETH_ALEN*/];
+        guint8      ether_addr_octet[6 /*ETH_ALEN*/];
+        NMEtherAddr ether_addr;
 
         guint8 array[sizeof(struct in6_addr)];
     };
@@ -134,6 +135,8 @@ typedef struct {
     }
 
 extern const NMIPAddr nm_ip_addr_zero;
+
+#define nm_ether_addr_zero (nm_ip_addr_zero.ether_addr)
 
 static inline int
 nm_ip_addr_cmp(int addr_family, gconstpointer a, gconstpointer b)

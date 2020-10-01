@@ -658,7 +658,7 @@ _bss_info_properties_changed(NMSupplicantInterface *self,
     v_v = nm_g_variant_lookup_value(properties, "BSSID", G_VARIANT_TYPE_BYTESTRING);
     if (v_v) {
         arr_data = g_variant_get_fixed_array(v_v, &arr_len, 1);
-        if (arr_len == ETH_ALEN && memcmp(arr_data, nm_ip_addr_zero.addr_eth, ETH_ALEN) != 0
+        if (arr_len == ETH_ALEN && memcmp(arr_data, &nm_ether_addr_zero, ETH_ALEN) != 0
             && memcmp(arr_data, (char[ETH_ALEN]){0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, ETH_ALEN)
                    != 0) {
             /* pass */
@@ -881,7 +881,7 @@ _peer_info_properties_changed(NMSupplicantInterface *self,
     v_v = nm_g_variant_lookup_value(properties, "DeviceAddress", G_VARIANT_TYPE_BYTESTRING);
     if (v_v) {
         arr_data = g_variant_get_fixed_array(v_v, &arr_len, 1);
-        if (arr_len == ETH_ALEN && memcmp(arr_data, nm_ip_addr_zero.addr_eth, ETH_ALEN) != 0
+        if (arr_len == ETH_ALEN && memcmp(arr_data, &nm_ether_addr_zero, ETH_ALEN) != 0
             && memcmp(arr_data, (char[ETH_ALEN]){0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, ETH_ALEN)
                    != 0) {
             /* pass */
