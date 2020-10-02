@@ -1491,23 +1491,24 @@ nm_memdup(gconstpointer data, gsize size)
     return p;
 }
 
-#define nm_malloc_maybe_a(alloca_maxlen, bytes, to_free) \
-    ({                                                   \
-        const gsize _bytes       = (bytes);              \
-        typeof(to_free) _to_free = (to_free);            \
-        typeof(*_to_free) _ptr;                          \
-                                                         \
-        G_STATIC_ASSERT_EXPR((alloca_maxlen) <= 500);    \
-        nm_assert(_to_free && !*_to_free);               \
-                                                         \
-        if (_bytes <= (alloca_maxlen)) {                 \
-            _ptr = g_alloca(_bytes);                     \
-        } else {                                         \
-            _ptr      = g_malloc(_bytes);                \
-            *_to_free = _ptr;                            \
-        };                                               \
-                                                         \
-        _ptr;                                            \
+#define nm_malloc_maybe_a(alloca_maxlen, bytes, to_free)  \
+    ({                                                    \
+        const gsize _bytes       = (bytes);               \
+        typeof(to_free) _to_free = (to_free);             \
+        typeof(*_to_free) _ptr;                           \
+                                                          \
+        G_STATIC_ASSERT_EXPR((alloca_maxlen) <= 500u);    \
+        G_STATIC_ASSERT_EXPR((alloca_maxlen) > 0u);       \
+        nm_assert(_to_free && !*_to_free);                \
+                                                          \
+        if (G_LIKELY(_bytes <= (alloca_maxlen))) {        \
+            _ptr = _bytes > 0u ? g_alloca(_bytes) : NULL; \
+        } else {                                          \
+            _ptr      = g_malloc(_bytes);                 \
+            *_to_free = _ptr;                             \
+        };                                                \
+                                                          \
+        _ptr;                                             \
     })
 
 #define nm_malloc0_maybe_a(alloca_maxlen, bytes, to_free) \
@@ -1516,12 +1517,16 @@ nm_memdup(gconstpointer data, gsize size)
         typeof(to_free) _to_free = (to_free);             \
         typeof(*_to_free) _ptr;                           \
                                                           \
-        G_STATIC_ASSERT_EXPR((alloca_maxlen) <= 500);     \
+        G_STATIC_ASSERT_EXPR((alloca_maxlen) <= 500u);    \
+        G_STATIC_ASSERT_EXPR((alloca_maxlen) > 0u);       \
         nm_assert(_to_free && !*_to_free);                \
                                                           \
-        if (_bytes <= (alloca_maxlen)) {                  \
-            _ptr = g_alloca(_bytes);                      \
-            memset(_ptr, 0, _bytes);                      \
+        if (G_LIKELY(_bytes <= (alloca_maxlen))) {        \
+            if (_bytes > 0u) {                            \
+                _ptr = g_alloca(_bytes);                  \
+                memset(_ptr, 0, _bytes);                  \
+            } else                                        \
+                _ptr = NULL;                              \
         } else {                                          \
             _ptr      = g_malloc0(_bytes);                \
             *_to_free = _ptr;                             \
