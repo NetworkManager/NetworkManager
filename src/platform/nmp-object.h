@@ -167,15 +167,14 @@ typedef enum { /*< skip >*/
 typedef struct {
     NMDedupMultiObjClass   parent;
     const char *           obj_type_name;
+    const char *           signal_type;
+    const guint8 *         supported_cache_ids;
     int                    sizeof_data;
     int                    sizeof_public;
-    NMPObjectType          obj_type;
     int                    addr_family;
     int                    rtm_gettype;
+    NMPObjectType          obj_type;
     NMPlatformSignalIdType signal_type_id;
-    const char *           signal_type;
-
-    const guint8 *supported_cache_ids;
 
     /* Only for NMPObjectLnk* types. */
     NMLinkType lnk_link_type;
