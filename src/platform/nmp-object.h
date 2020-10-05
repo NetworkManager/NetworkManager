@@ -812,7 +812,7 @@ const NMPObject *nmp_cache_link_connected_needs_toggle_by_ifindex(const NMPCache
 
 gboolean nmp_cache_use_udev_get(const NMPCache *cache);
 
-void ASSERT_nmp_cache_is_consistent(const NMPCache *cache);
+void nmtst_assert_nmp_cache_is_consistent(const NMPCache *cache);
 
 NMPCacheOpsType nmp_cache_remove(NMPCache *        cache,
                                  const NMPObject * obj_needle,

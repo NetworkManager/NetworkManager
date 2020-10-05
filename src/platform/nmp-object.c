@@ -3058,7 +3058,7 @@ nmp_cache_free(NMPCache *cache)
 /*****************************************************************************/
 
 void
-ASSERT_nmp_cache_is_consistent(const NMPCache *cache)
+nmtst_assert_nmp_cache_is_consistent(const NMPCache *cache)
 {}
 
 /*****************************************************************************/

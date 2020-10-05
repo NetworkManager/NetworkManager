@@ -272,7 +272,7 @@ test_cache_link(void)
     g_assert(NMP_OBJECT_UP_CAST(&objm1->object) == objm1);
     g_assert(!nmp_object_is_alive(objm1));
     _nmp_cache_update_netlink(cache, objm1, &obj_old, &obj_new, NMP_CACHE_OPS_UNCHANGED);
-    ASSERT_nmp_cache_is_consistent(cache);
+    nmtst_assert_nmp_cache_is_consistent(cache);
     g_assert(!obj_old);
     g_assert(!obj_new);
     g_assert(!nmp_cache_lookup_obj(cache, objm1));
@@ -284,7 +284,7 @@ test_cache_link(void)
     objm1->_link.netlink.is_in_netlink = TRUE;
     g_assert(nmp_object_is_alive(objm1));
     _nmp_cache_update_netlink(cache, objm1, &obj_old, &obj_new, NMP_CACHE_OPS_ADDED);
-    ASSERT_nmp_cache_is_consistent(cache);
+    nmtst_assert_nmp_cache_is_consistent(cache);
     g_assert(!obj_old);
     g_assert(obj_new);
     g_assert(objm1 == obj_new);
@@ -303,7 +303,7 @@ test_cache_link(void)
     objm1->_link.netlink.is_in_netlink = TRUE;
     g_assert(nmp_object_is_alive(objm1));
     _nmp_cache_update_netlink(cache, objm1, &obj_old, &obj_new, NMP_CACHE_OPS_UNCHANGED);
-    ASSERT_nmp_cache_is_consistent(cache);
+    nmtst_assert_nmp_cache_is_consistent(cache);
     g_assert(obj_old);
     g_assert(obj_new);
     g_assert(obj_new != objm1);
@@ -319,7 +319,7 @@ test_cache_link(void)
     objm1 = nmp_object_new(NMP_OBJECT_TYPE_LINK, (NMPlatformObject *) &pl_link_2);
     g_assert(!nmp_object_is_alive(objm1));
     _nmp_cache_update_netlink(cache, objm1, &obj_old, &obj_new, NMP_CACHE_OPS_REMOVED);
-    ASSERT_nmp_cache_is_consistent(cache);
+    nmtst_assert_nmp_cache_is_consistent(cache);
     g_assert(obj_old);
     g_assert(!obj_new);
     g_assert(!nmp_cache_lookup_obj(cache, objm1));
@@ -332,7 +332,7 @@ test_cache_link(void)
         /* now add the link only with aspect UDEV. */
         ops_type =
             nmp_cache_update_link_udev(cache, pl_link_2.ifindex, udev_device_2, &obj_old, &obj_new);
-        ASSERT_nmp_cache_is_consistent(cache);
+        nmtst_assert_nmp_cache_is_consistent(cache);
         g_assert_cmpint(ops_type, ==, NMP_CACHE_OPS_ADDED);
         g_assert(!obj_old);
         g_assert(obj_new);
@@ -354,7 +354,7 @@ test_cache_link(void)
                               &obj_old,
                               &obj_new,
                               udev_device_2 ? NMP_CACHE_OPS_UPDATED : NMP_CACHE_OPS_ADDED);
-    ASSERT_nmp_cache_is_consistent(cache);
+    nmtst_assert_nmp_cache_is_consistent(cache);
     if (udev_device_2) {
         g_assert(obj_old);
         g_assert(!nmp_object_is_visible(obj_old));
@@ -380,7 +380,7 @@ test_cache_link(void)
                               &obj_old,
                               &obj_new,
                               udev_device_2 ? NMP_CACHE_OPS_UPDATED : NMP_CACHE_OPS_REMOVED);
-    ASSERT_nmp_cache_is_consistent(cache);
+    nmtst_assert_nmp_cache_is_consistent(cache);
     if (udev_device_2)
         g_assert(obj_new == objm1);
     else
@@ -413,7 +413,7 @@ test_cache_link(void)
         ops_type =
             nmp_cache_update_link_udev(cache, pl_link_3.ifindex, udev_device_3, &obj_old, &obj_new);
         g_assert_cmpint(ops_type, ==, NMP_CACHE_OPS_ADDED);
-        ASSERT_nmp_cache_is_consistent(cache);
+        nmtst_assert_nmp_cache_is_consistent(cache);
         g_assert(NMP_OBJECT_IS_VALID(obj_new));
         g_assert(!obj_old);
         g_assert(!nmp_object_is_visible(obj_new));
@@ -431,7 +431,7 @@ test_cache_link(void)
         objm1->_link.netlink.is_in_netlink = TRUE;
         g_assert(nmp_object_is_alive(objm1));
         _nmp_cache_update_netlink(cache, objm1, &obj_old, &obj_new, NMP_CACHE_OPS_UPDATED);
-        ASSERT_nmp_cache_is_consistent(cache);
+        nmtst_assert_nmp_cache_is_consistent(cache);
         g_assert(obj_old);
         g_assert(obj_new == objm1);
         g_assert(nmp_object_equal(objm1, obj_new));
@@ -452,7 +452,7 @@ test_cache_link(void)
         /* remove UDEV. */
         ops_type = nmp_cache_update_link_udev(cache, pl_link_3.ifindex, NULL, &obj_old, &obj_new);
         g_assert_cmpint(ops_type, ==, NMP_CACHE_OPS_UPDATED);
-        ASSERT_nmp_cache_is_consistent(cache);
+        nmtst_assert_nmp_cache_is_consistent(cache);
         g_assert(obj_old && nmp_object_is_visible(obj_old));
         g_assert(
             nmp_cache_lookup_obj(cache, nmp_object_stackinit_id_link(&objs1, pl_link_3.ifindex))
