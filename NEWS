@@ -8,17 +8,37 @@ The API is subject to change and not guaranteed to be compatible
 with the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
-* Introduce new "rc-manager=auto" setting and make it the default,
-  unless a different default is chosen at compile time.
-  This mode tries to detect "systemd-resolved", "resolvconf", and "netconfig"
+* Introduce a new "rc-manager=auto" setting and make it the default,
+  unless a different default is chosen at compile time.  This mode
+  tries to detect "systemd-resolved", "resolvconf", and "netconfig"
   and chooses the mode that seems most suitable depending on build
-  setting and runtime detection.
-  "resolvconf" and "netconfig" are only considered iff NetworkManager
-  was built with the respective options enabled.
-* The long deprecated D-Bus property "Ip4Address" on "org.freedesktop.NetworkManager.Device"
-  interface is not defunct and always returns zero.
+  setting and runtime detection.  "resolvconf" and "netconfig" are
+  only considered iff NetworkManager was built with the respective
+  options enabled.
+* The long deprecated D-Bus property "Ip4Address" on
+  "org.freedesktop.NetworkManager.Device" interface is now defunct and
+  always returns zero.
+* Introduce a ipv4.dhcp-reject-servers connection property that
+  specifies a list of DHCP server-ids from which offers should be
+  rejected.
+* Add a ipv4.dhcp-vendor-class-identifier connection property to send
+  a custom value for the Vendor Class Identifier DHCP option.
+* Support obtaining the system hostname through the FQDN DHCPv6
+  option.
 * dbus: don't require policykit permission for GetAppliedConnection of
   a device.
+* When supported by kernel, use netlink to configure bridge settings
+  instead of writing to sysfs.
+* Deprecate the "active_slave" bond option which now has the same effect
+  as setting the "primary" option.
+* The initrd generator now also accepts MAC addresses to indicate
+  interfaces.
+* Add a new provider for nm-cloud-setup to support automatic network
+  configuration on Azure.
+* Fix running DHCPv6-PD over PPPoE.
+* Fix building NetworkManager with LTO (Link Time Optimization).
+* Reformat code using spaces instead of tabs. Also, the entire C
+  source code is now formatted with "clang-format" (version 11.0).
 
 =============================================
 NetworkManager-1.26
