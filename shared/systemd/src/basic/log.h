@@ -30,7 +30,7 @@ typedef enum LogTarget{
         LOG_TARGET_JOURNAL_OR_KMSG,
         LOG_TARGET_SYSLOG,
         LOG_TARGET_SYSLOG_OR_KMSG,
-        LOG_TARGET_AUTO, /* console if stderr is tty, JOURNAL_OR_KMSG otherwise */
+        LOG_TARGET_AUTO, /* console if stderr is not journal, JOURNAL_OR_KMSG otherwise */
         LOG_TARGET_NULL,
         _LOG_TARGET_MAX,
         _LOG_TARGET_INVALID = -1
@@ -61,10 +61,13 @@ void log_show_location(bool b);
 bool log_get_show_location(void) _pure_;
 void log_show_time(bool b);
 bool log_get_show_time(void) _pure_;
+void log_show_tid(bool b);
+bool log_get_show_tid(void) _pure_;
 
 int log_show_color_from_string(const char *e);
 int log_show_location_from_string(const char *e);
 int log_show_time_from_string(const char *e);
+int log_show_tid_from_string(const char *e);
 
 LogTarget log_get_target(void) _pure_;
 int log_get_max_level_realm(LogRealm realm) _pure_;
