@@ -2600,17 +2600,7 @@ dispose(GObject *object)
 
     nm_clear_g_cancellable(&priv->cancellable);
 
-    nm_clear_g_source(&priv->periodic_scan_id);
-
-    cleanup_association_attempt(self, TRUE);
-
-    g_clear_object(&priv->dbus_device_proxy);
-    g_clear_object(&priv->dbus_station_proxy);
-    g_clear_object(&priv->dbus_ap_proxy);
-    g_clear_object(&priv->dbus_adhoc_proxy);
-    g_clear_object(&priv->dbus_obj);
-
-    remove_all_aps(self);
+    nm_device_iwd_set_dbus_object(self, NULL);
 
     G_OBJECT_CLASS(nm_device_iwd_parent_class)->dispose(object);
 
