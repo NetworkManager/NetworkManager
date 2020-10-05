@@ -1217,6 +1217,7 @@ ssize_t recvmsg_safe(int sockfd, struct msghdr *msg, int flags) {
         return n;
 }
 
+#if 0 /* NM_IGNORED */
 int socket_get_family(int fd, int *ret) {
         int af;
         socklen_t sl = sizeof(af);
@@ -1393,3 +1394,4 @@ int socket_set_transparent(int fd, int af, bool b) {
                 return -EAFNOSUPPORT;
         }
 }
+#endif /* NM_IGNORED */

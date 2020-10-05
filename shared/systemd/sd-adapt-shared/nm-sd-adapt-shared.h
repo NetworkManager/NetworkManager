@@ -140,6 +140,10 @@ NM_PRAGMA_WARNING_DISABLE("-Wdeclaration-after-statement")
 
 /*****************************************************************************/
 
+struct statx;
+
+/*****************************************************************************/
+
 static inline pid_t
 raw_getpid(void)
 {
