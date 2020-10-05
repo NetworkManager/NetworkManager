@@ -1097,8 +1097,11 @@ _vt_cmd_obj_to_string_lnk_wireguard(const NMPObject *     obj,
                                                                                           \
         g_snprintf(buf, buf_len, __VA_ARGS__);                                            \
         return buf;                                                                       \
-    }
+    }                                                                                     \
+    struct _dummy_struct_for_tailing_semicolon
+
 _vt_cmd_plobj_to_string_id(link, NMPlatformLink, "%d", obj->ifindex);
+
 _vt_cmd_plobj_to_string_id(ip4_address,
                            NMPlatformIP4Address,
                            "%d: %s/%d%s%s",
@@ -1111,12 +1114,15 @@ _vt_cmd_plobj_to_string_id(ip4_address,
                                                                        obj->plen),
                                buf2)
                                                              : "");
+
 _vt_cmd_plobj_to_string_id(ip6_address,
                            NMPlatformIP6Address,
                            "%d: %s",
                            obj->ifindex,
                            _nm_utils_inet6_ntop(&obj->address, buf1));
+
 _vt_cmd_plobj_to_string_id(qdisc, NMPlatformQdisc, "%d: %d", obj->ifindex, obj->parent);
+
 _vt_cmd_plobj_to_string_id(tfilter, NMPlatformTfilter, "%d: %d", obj->ifindex, obj->parent);
 
 void
@@ -1383,26 +1389,33 @@ _vt_cmd_obj_copy_lnk_wireguard(NMPObject *dst, const NMPObject *src)
         {                                                                                          \
             cmd                                                                                    \
         }                                                                                          \
-    }
+    }                                                                                              \
+    struct _dummy_struct_for_tailing_semicolon
+
 _vt_cmd_plobj_id_copy(link, NMPlatformLink, { dst->ifindex = src->ifindex; });
+
 _vt_cmd_plobj_id_copy(ip4_address, NMPlatformIP4Address, {
     dst->ifindex      = src->ifindex;
     dst->plen         = src->plen;
     dst->address      = src->address;
     dst->peer_address = src->peer_address;
 });
+
 _vt_cmd_plobj_id_copy(ip6_address, NMPlatformIP6Address, {
     dst->ifindex = src->ifindex;
     dst->address = src->address;
 });
+
 _vt_cmd_plobj_id_copy(ip4_route, NMPlatformIP4Route, {
     *dst = *src;
     nm_assert(nm_platform_ip4_route_cmp(dst, src, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) == 0);
 });
+
 _vt_cmd_plobj_id_copy(ip6_route, NMPlatformIP6Route, {
     *dst = *src;
     nm_assert(nm_platform_ip6_route_cmp(dst, src, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) == 0);
 });
+
 _vt_cmd_plobj_id_copy(routing_rule, NMPlatformRoutingRule, {
     *dst = *src;
     nm_assert(nm_platform_routing_rule_cmp(dst, src, NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID) == 0);
@@ -1471,25 +1484,38 @@ nmp_object_id_cmp(const NMPObject *obj1, const NMPObject *obj2)
             cmd;                                                          \
         }                                                                 \
         return 0;                                                         \
-    }
-_vt_cmd_plobj_id_cmp(link, NMPlatformLink, NM_CMP_FIELD(obj1, obj2, ifindex);) _vt_cmd_plobj_id_cmp(
-    ip4_address, NMPlatformIP4Address, NM_CMP_FIELD(obj1, obj2, ifindex);
+    }                                                                     \
+    struct _dummy_struct_for_tailing_semicolon
+
+_vt_cmd_plobj_id_cmp(link, NMPlatformLink, { NM_CMP_FIELD(obj1, obj2, ifindex); });
+
+_vt_cmd_plobj_id_cmp(ip4_address, NMPlatformIP4Address, {
+    NM_CMP_FIELD(obj1, obj2, ifindex);
     NM_CMP_FIELD(obj1, obj2, plen);
     NM_CMP_FIELD(obj1, obj2, address);
     /* for IPv4 addresses, you can add the same local address with differing peer-address
-                       * (IFA_ADDRESS), provided that their net-part differs. */
-    NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX(obj1->peer_address, obj2->peer_address, obj1->plen);)
-    _vt_cmd_plobj_id_cmp(
-        ip6_address, NMPlatformIP6Address, NM_CMP_FIELD(obj1, obj2, ifindex);
-        /* for IPv6 addresses, the prefix length is not part of the primary identifier. */
-        NM_CMP_FIELD_IN6ADDR(obj1, obj2, address);)
-        _vt_cmd_plobj_id_cmp(qdisc, NMPlatformQdisc, NM_CMP_FIELD(obj1, obj2, ifindex);
-                             NM_CMP_FIELD(obj1, obj2, parent);)
-            _vt_cmd_plobj_id_cmp(tfilter, NMPlatformTfilter, NM_CMP_FIELD(obj1, obj2, ifindex);
-                                 NM_CMP_FIELD(obj1, obj2, handle);)
+     * (IFA_ADDRESS), provided that their net-part differs. */
+    NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX(obj1->peer_address, obj2->peer_address, obj1->plen);
+});
 
-                static int _vt_cmd_plobj_id_cmp_ip4_route(const NMPlatformObject *obj1,
-                                                          const NMPlatformObject *obj2)
+_vt_cmd_plobj_id_cmp(ip6_address, NMPlatformIP6Address, {
+    NM_CMP_FIELD(obj1, obj2, ifindex);
+    /* for IPv6 addresses, the prefix length is not part of the primary identifier. */
+    NM_CMP_FIELD_IN6ADDR(obj1, obj2, address);
+});
+
+_vt_cmd_plobj_id_cmp(qdisc, NMPlatformQdisc, {
+    NM_CMP_FIELD(obj1, obj2, ifindex);
+    NM_CMP_FIELD(obj1, obj2, parent);
+});
+
+_vt_cmd_plobj_id_cmp(tfilter, NMPlatformTfilter, {
+    NM_CMP_FIELD(obj1, obj2, ifindex);
+    NM_CMP_FIELD(obj1, obj2, handle);
+});
+
+static int
+_vt_cmd_plobj_id_cmp_ip4_route(const NMPlatformObject *obj1, const NMPlatformObject *obj2)
 {
     return nm_platform_ip4_route_cmp((NMPlatformIP4Route *) obj1,
                                      (NMPlatformIP4Route *) obj2,
@@ -1554,60 +1580,51 @@ nmp_object_id_hash(const NMPObject *obj)
         {                                                                                         \
             cmd;                                                                                  \
         }                                                                                         \
-    }
-_vt_cmd_plobj_id_hash_update(link, NMPlatformLink, { nm_hash_update_val(h, obj->ifindex); })
-    _vt_cmd_plobj_id_hash_update(
-        ip4_address,
-        NMPlatformIP4Address,
-        {
-            nm_hash_update_vals(
-                h,
-                obj->ifindex,
-                obj->plen,
-                obj->address,
-                /* for IPv4 we must also consider the net-part of the peer-address (IFA_ADDRESS) */
-                nm_utils_ip4_address_clear_host_address(obj->peer_address, obj->plen));
-        })
-        _vt_cmd_plobj_id_hash_update(
-            ip6_address,
-            NMPlatformIP6Address,
-            {
-                nm_hash_update_vals(
-                    h,
-                    obj->ifindex,
-                    /* for IPv6 addresses, the prefix length is not part of the primary identifier. */
-                    obj->address);
-            }) _vt_cmd_plobj_id_hash_update(ip4_route,
-                                            NMPlatformIP4Route,
-                                            {
-                                                nm_platform_ip4_route_hash_update(
-                                                    obj,
-                                                    NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID,
-                                                    h);
-                                            })
-            _vt_cmd_plobj_id_hash_update(
-                ip6_route,
-                NMPlatformIP6Route,
-                {
-                    nm_platform_ip6_route_hash_update(obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID, h);
-                }) _vt_cmd_plobj_id_hash_update(routing_rule,
-                                                NMPlatformRoutingRule,
-                                                {
-                                                    nm_platform_routing_rule_hash_update(
-                                                        obj,
-                                                        NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID,
-                                                        h);
-                                                })
-                _vt_cmd_plobj_id_hash_update(qdisc,
-                                             NMPlatformQdisc,
-                                             { nm_hash_update_vals(h, obj->ifindex, obj->parent); })
-                    _vt_cmd_plobj_id_hash_update(
-                        tfilter,
-                        NMPlatformTfilter,
-                        { nm_hash_update_vals(h, obj->ifindex, obj->handle); })
+    }                                                                                             \
+    struct _dummy_struct_for_tailing_semicolon
 
-                        static void _vt_cmd_plobj_hash_update_ip4_route(const NMPlatformObject *obj,
-                                                                        NMHashState *           h)
+_vt_cmd_plobj_id_hash_update(link, NMPlatformLink, { nm_hash_update_val(h, obj->ifindex); });
+
+_vt_cmd_plobj_id_hash_update(ip4_address, NMPlatformIP4Address, {
+    nm_hash_update_vals(
+        h,
+        obj->ifindex,
+        obj->plen,
+        obj->address,
+        /* for IPv4 we must also consider the net-part of the peer-address (IFA_ADDRESS) */
+        nm_utils_ip4_address_clear_host_address(obj->peer_address, obj->plen));
+});
+
+_vt_cmd_plobj_id_hash_update(ip6_address, NMPlatformIP6Address, {
+    nm_hash_update_vals(
+        h,
+        obj->ifindex,
+        /* for IPv6 addresses, the prefix length is not part of the primary identifier. */
+        obj->address);
+});
+
+_vt_cmd_plobj_id_hash_update(ip4_route, NMPlatformIP4Route, {
+    nm_platform_ip4_route_hash_update(obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID, h);
+});
+
+_vt_cmd_plobj_id_hash_update(ip6_route, NMPlatformIP6Route, {
+    nm_platform_ip6_route_hash_update(obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID, h);
+});
+
+_vt_cmd_plobj_id_hash_update(routing_rule, NMPlatformRoutingRule, {
+    nm_platform_routing_rule_hash_update(obj, NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID, h);
+});
+
+_vt_cmd_plobj_id_hash_update(qdisc, NMPlatformQdisc, {
+    nm_hash_update_vals(h, obj->ifindex, obj->parent);
+});
+
+_vt_cmd_plobj_id_hash_update(tfilter, NMPlatformTfilter, {
+    nm_hash_update_vals(h, obj->ifindex, obj->handle);
+});
+
+static void
+_vt_cmd_plobj_hash_update_ip4_route(const NMPlatformObject *obj, NMHashState *h)
 {
     return nm_platform_ip4_route_hash_update((const NMPlatformIP4Route *) obj,
                                              NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL,
