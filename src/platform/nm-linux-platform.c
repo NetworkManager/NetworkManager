@@ -26,6 +26,7 @@
 #include <poll.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/statvfs.h>
 #include <unistd.h>
 
 #include "nm-std-aux/unaligned.h"
@@ -9523,12 +9524,34 @@ constructed(GObject *_object)
     }
 }
 
+/* Similar to systemd's path_is_read_only_fs(), at
+ * https://github.com/systemd/systemd/blob/v246/src/basic/stat-util.c#L132 */
+static int
+path_is_read_only_fs(const char *path)
+{
+    struct statvfs st;
+
+    if (statvfs(path, &st) < 0)
+        return -errno;
+
+    if (st.f_flag & ST_RDONLY)
+        return TRUE;
+
+    /* On NFS, statvfs() might not reflect whether we can actually
+	 * write to the remote share. Let's try again with
+	 * access(W_OK) which is more reliable, at least sometimes. */
+    if (access(path, W_OK) < 0 && errno == EROFS)
+        return TRUE;
+
+    return FALSE;
+}
+
 NMPlatform *
 nm_linux_platform_new(gboolean log_with_ptr, gboolean netns_support)
 {
     gboolean use_udev = FALSE;
 
-    if (nmp_netns_is_initial() && access("/sys", W_OK) == 0)
+    if (nmp_netns_is_initial() && path_is_read_only_fs("/sys") == FALSE)
         use_udev = TRUE;
 
     return g_object_new(NM_TYPE_LINUX_PLATFORM,
