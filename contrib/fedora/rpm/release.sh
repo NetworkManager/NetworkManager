@@ -207,6 +207,7 @@ TMP="$(LANG=C git clean -ndx)" || die "git clean -ndx failed"
 test -z "$TMP" || die "git working directory is not clean? (git clean -ndx)"
 
 CUR_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+CUR_HEAD="$(git rev-parse HEAD)"
 TMP_BRANCH=release-branch
 
 if [ "$CUR_BRANCH" = master ]; then
@@ -476,7 +477,12 @@ for r in "${RELEASE_FILES[@]}"; do
     do_command ssh master.gnome.org ftpadmin install --unattended "$r" || die "ftpadmin install failed"
 done
 
+CLEANUP_CHECKOUT_BRANCH=
 if [ "$DRY_RUN" = 0 ]; then
     CLEANUP_REFS=()
-    CLEANUP_CHECKOUT_BRANCH=
+    git branch -D "$TMP_BRANCH"
+else
+    H="$(git rev-parse "$CUR_BRANCH")"
+    git checkout -B "$CUR_BRANCH" "$CUR_HEAD" || die "cannot reset $CUR_BRANCH to $CUR_HEAD"
+    echo "delete reference. Restore with $(echo_color 36 -n git checkout -B "\"$CUR_BRANCH\"" "$H")"
 fi
