@@ -1952,36 +1952,39 @@ schedule_periodic_scan(NMDeviceIwd *self, gboolean initial_scan)
 {
     NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE(self);
     GVariant *          value;
-    gboolean            disconnected;
+    gboolean            disconnected = TRUE;
     guint               interval;
 
-    if (!priv->can_scan || priv->scan_requested)
-        return;
-
-    value        = g_dbus_proxy_get_cached_property(priv->dbus_station_proxy, "State");
-    disconnected = nm_streq0(get_variant_state(value), "disconnected");
-    g_variant_unref(value);
+    if (priv->can_scan) {
+        value        = g_dbus_proxy_get_cached_property(priv->dbus_station_proxy, "State");
+        disconnected = nm_streq0(get_variant_state(value), "disconnected");
+        g_variant_unref(value);
+    }
 
     /* Start scan immediately after a disconnect, mode change or
-     * device UP, otherwise wait a period dependent on the current
-     * state.
+     * device UP, otherwise wait 10 seconds.  When connected, update
+     * AP list mainly on UI requests.
      *
      * (initial_scan && disconnected) override priv->scanning below
      * because of an IWD quirk where a device will often be in the
      * autoconnect state and scanning at the time of our initial_scan,
-     * but our logic will the send it a Disconnect() causing IWD to
+     * but our logic will then send it a Disconnect() causing IWD to
      * exit autoconnect and interrupt the ongoing scan, meaning that
      * we still want a new scan ASAP.
      */
-    if (initial_scan && disconnected)
+    if (!priv->can_scan || !disconnected || priv->scan_requested || priv->scanning)
+        interval = -1;
+    else if (initial_scan)
         interval = 0;
-    else if (!priv->periodic_scan_id && !priv->scanning)
-        interval = disconnected ? 10 : 20;
+    else if (!priv->periodic_scan_id)
+        interval = 10;
     else
         return;
 
     nm_clear_g_source(&priv->periodic_scan_id);
-    priv->periodic_scan_id = g_timeout_add_seconds(interval, periodic_scan_timeout_cb, self);
+
+    if (interval != (guint) -1)
+        priv->periodic_scan_id = g_timeout_add_seconds(interval, periodic_scan_timeout_cb, self);
 }
 
 static void
@@ -2384,7 +2387,6 @@ powered_changed(NMDeviceIwd *self, gboolean new_powered)
         update_aps(self);
     } else {
         set_can_scan(self, FALSE);
-        nm_clear_g_source(&priv->periodic_scan_id);
         priv->scanning       = FALSE;
         priv->scan_requested = FALSE;
         priv->can_connect    = FALSE;
