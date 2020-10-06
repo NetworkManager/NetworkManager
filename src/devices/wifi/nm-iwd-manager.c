@@ -632,6 +632,38 @@ interface_removed(GDBusObjectManager *object_manager,
 }
 
 static void
+object_added(GDBusObjectManager *object_manager, GDBusObject *object, gpointer user_data)
+{
+    GList *interfaces, *iter;
+
+    interfaces = g_dbus_object_get_interfaces(object);
+
+    for (iter = interfaces; iter; iter = iter->next) {
+        GDBusInterface *interface = G_DBUS_INTERFACE(iter->data);
+
+        interface_added(NULL, object, interface, user_data);
+    }
+
+    g_list_free_full(interfaces, g_object_unref);
+}
+
+static void
+object_removed(GDBusObjectManager *object_manager, GDBusObject *object, gpointer user_data)
+{
+    GList *interfaces, *iter;
+
+    interfaces = g_dbus_object_get_interfaces(object);
+
+    for (iter = interfaces; iter; iter = iter->next) {
+        GDBusInterface *interface = G_DBUS_INTERFACE(iter->data);
+
+        interface_removed(NULL, object, interface, user_data);
+    }
+
+    g_list_free_full(interfaces, g_object_unref);
+}
+
+static void
 connection_removed(NMSettings *settings, NMSettingsConnection *sett_conn, gpointer user_data)
 {
     NMIwdManager *       self = user_data;
@@ -694,22 +726,6 @@ _om_has_name_owner(GDBusObjectManager *object_manager)
     name_owner =
         g_dbus_object_manager_client_get_name_owner(G_DBUS_OBJECT_MANAGER_CLIENT(object_manager));
     return !!name_owner;
-}
-
-static void
-object_added(NMIwdManager *self, GDBusObject *object)
-{
-    GList *interfaces, *iter;
-
-    interfaces = g_dbus_object_get_interfaces(object);
-
-    for (iter = interfaces; iter; iter = iter->next) {
-        GDBusInterface *interface = G_DBUS_INTERFACE(iter->data);
-
-        interface_added(NULL, object, interface, self);
-    }
-
-    g_list_free_full(interfaces, g_object_unref);
 }
 
 static void
@@ -852,12 +868,14 @@ got_object_manager(GObject *object, GAsyncResult *result, gpointer user_data)
                          "interface-removed",
                          G_CALLBACK(interface_removed),
                          self);
+        g_signal_connect(priv->object_manager, "object-added", G_CALLBACK(object_added), self);
+        g_signal_connect(priv->object_manager, "object-removed", G_CALLBACK(object_removed), self);
 
         g_hash_table_remove_all(priv->known_networks);
 
         objects = g_dbus_object_manager_get_objects(object_manager);
         for (iter = objects; iter; iter = iter->next)
-            object_added(self, G_DBUS_OBJECT(iter->data));
+            object_added(NULL, G_DBUS_OBJECT(iter->data), self);
 
         g_list_free_full(objects, g_object_unref);
 
