@@ -1,32 +1,43 @@
 Guidelines for Contributing
 ===========================
 
+
 Coding Standard
 ---------------
 
-* The formatting uses clang-format with clang 11.0. Run
-  `./contrib/scripts/nm-code-format.sh -i` to reformat.
+The formatting uses clang-format with clang 11.0. Run
+`./contrib/scripts/nm-code-format.sh -i` to reformat the code
+or call `clang-format` yourself.
+You may also call `./contrib/scripts/nm-code-format-container.sh`
+which runs a Fedora 33 container using podman.
+You are welcome to not bother and open a merge request with
+wrong formatting, but note that we then will automatically adjust
+your contribution before merging.
+
+Since our coding style is entirely automated, the following are just
+some details of the style we use:
 
 * Indent with 4 spaces. (_no_ tabs).
 
 * Have no space between the function name and the opening '('.
-    GOOD:  g_strdup(x)
-    BAD:  g_strdup (x)
+  - GOOD:  `g_strdup(x)`
+  - BAD:  `g_strdup (x)`
 
 * C-style comments
-    GOOD: f(x);  /* comment */
-    BAD:  f(x);  // comment
+  - GOOD: `f(x);  /* comment */`
+  - BAD:  `f(x);  // comment`
 
 * Keep assignments in the variable declaration area pretty short.
-    GOOD: MyObject *object;
-    BAD: MyObject *object = complex_and_long_init_function(arg1, arg2, arg3);
+  -  GOOD: `MyObject *object;`
+  - BAD: `MyObject *object = complex_and_long_init_function(arg1, arg2, arg3);`
 
 * 80-cols is a guideline, don't make the code uncomfortable in order to fit in
   less than 80 cols.
 
 * Constants are CAPS_WITH_UNDERSCORES and use the preprocessor.
-    GOOD: #define MY_CONSTANT 42
-    BAD:  static const unsigned myConstant = 42;
+  - GOOD: `#define MY_CONSTANT 42`
+  - BAD:  `static const unsigned myConstant = 42;`
+
 
 Legal
 -----
@@ -40,6 +51,8 @@ Note that all new contributions to NetworkManager MUST be made under terms of
 LGPL-2.1+, that is also the case for parts that are currently licensed GPL-2.0+.
 The reason for that is that we might eventually relicense everything as LGPL and
 new contributions already must agree with that future change.
+For more details see [RELICENSE.md](RELICENSE.md).
+
 
 Assertions in NetworkManager code
 ---------------------------------
@@ -125,15 +138,21 @@ The notes it are called "refs/notes/bugs".
 
 So configure:
 
-  $ git config --add 'remote.origin.fetch' 'refs/notes/bugs:refs/notes/bugs'
-  $ git config --add 'notes.displayref' 'refs/notes/bugs'
+```
+$ git config --add 'remote.origin.fetch' 'refs/notes/bugs:refs/notes/bugs'
+$ git config --add 'notes.displayref' 'refs/notes/bugs'
+```
 
 For example, set notes with
 
-  $ git notes --ref refs/notes/bugs add -m "(cherry picked from $COMMIT_SHA)" HEAD
+```
+$ git notes --ref refs/notes/bugs add -m "(cherry picked from $COMMIT_SHA)" HEAD
+```
 
 You should see the notes in git-log output as well.
 
 To resync our local notes use:
 
-  $ git fetch origin refs/notes/bugs:refs/notes/bugs -f
+```
+$ git fetch origin refs/notes/bugs:refs/notes/bugs -f
+```
