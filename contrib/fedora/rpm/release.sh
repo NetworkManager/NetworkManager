@@ -52,7 +52,7 @@ echo_color() {
 
 print_usage() {
     echo "Usage:"
-    echo "  $BASH_SOURCE [devel|rc1|rc|major|major-post|minor] [--no-test] [--no-find-backports] [--no-cleanup] [--allow-local-branches]"
+    echo "  $BASH_SOURCE [devel|rc1|rc|major|major-post|minor] [--no-test] [--no-find-backports] [--no-cleanup] [--allow-local-branches] [--no-check-gitlab]"
 }
 
 die_help() {
@@ -109,6 +109,31 @@ git_same_ref() {
     [ "$a" = "$b" ]
 }
 
+check_gitlab_pipeline() {
+    local BRANCH="$1"
+    local SHA="$2"
+    local PIPELINE_ID
+
+    PIPELINE_ID="$(curl --no-progress-meter "https://gitlab.freedesktop.org/api/v4/projects/411/pipelines?ref=$BRANCH&sha=$SHA&order_by=id" 2>/dev/null | jq '.[0].id')"
+    if ! [[ $PIPELINE_ID =~ [0-9]+ ]] ; then
+        echo "Cannot find pipeline for branch $BRANCH. Check \"https://gitlab.freedesktop.org/NetworkManager/NetworkManager/pipelines?page=1&scope=branches&ref=$BRANCH\""
+        return 1
+    fi
+
+    PIPELINE_STATUSES="$(curl --no-progress-meter "https://gitlab.freedesktop.org/api/v4/projects/411/pipelines/$PIPELINE_ID/jobs" 2>/dev/null | jq '.[].status')"
+
+    if ! echo "$PIPELINE_STATUSES" | grep -q '^"success"$' ; then
+        echo "Cannot find successful jobs for branch $BRANCH. Check \"https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/pipelines/$PIPELINE_ID\""
+        return 1
+    fi
+    if echo "$PIPELINE_STATUSES" | grep -q -v '^"success"$' ; then
+        echo "Seems not all jobs for $BRANCH ran (or were successfull). Check \"https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/pipelines/$PIPELINE_ID\""
+        return 1
+    fi
+
+    return 0
+}
+
 set_version_number_autotools() {
     sed -i \
         -e '1,20 s/^m4_define(\[nm_major_version\], \[\([0-9]\+\)\])$/m4_define([nm_major_version], ['"$1"'])/' \
@@ -157,6 +182,7 @@ DRY_RUN=1
 FIND_BACKPORTS=1
 ALLOW_LOCAL_BRANCHES=0
 HELP_AND_EXIT=1
+CHECK_GITLAB=1
 while [ "$#" -ge 1 ]; do
     A="$1"
     shift
@@ -176,6 +202,9 @@ while [ "$#" -ge 1 ]; do
             # as the remote branch on origin. You should not do a release if you have local changes
             # that differ from upstream. Set this flag to override that check.
             ALLOW_LOCAL_BRANCHES=1
+            ;;
+        --no-check-gitlab)
+            CHECK_GITLAB=0
             ;;
         --help|-h)
             die_help
@@ -312,6 +341,13 @@ if [ $FIND_BACKPORTS = 1 ]; then
 
     TMP="$(./.git/nm-find-backports "$CUR_BRANCH" master "${NEWER_BRANCHES[@]}" 2>/dev/null)" || die "nm-find-backports failed"
     test -z "$TMP" || die "nm-find-backports returned patches that need to be backported (ignore with --no-find-backports): ./.git/nm-find-backports \"$CUR_BRANCH\" master ${NEWER_BRANCHES[@]}"
+fi
+
+if [ $CHECK_GITLAB = 1 ]; then
+    if ! check_gitlab_pipeline "$CUR_BRANCH" "$CUR_HEAD" ; then
+        echo "Check the pipelines for branch \"$CUR_BRANCH\" at https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/pipelines/"
+        die "It seems not all gitlab-ci jobs were running/succeeding. Skip this check with --no-check-gitlab"
+    fi
 fi
 
 BRANCHES=()
