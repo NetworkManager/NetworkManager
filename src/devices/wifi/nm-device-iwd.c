@@ -288,15 +288,13 @@ get_ordered_networks_cb(GObject *source, GAsyncResult *res, gpointer user_data)
     gs_free_error GError *error        = NULL;
     gs_unref_variant GVariant *variant = NULL;
     GVariantIter *             networks;
-    const char *               path, *name, *type;
+    const char *               path;
     int16_t                    signal;
     NMWifiAP *                 ap, *ap_safe, *new_ap;
     gboolean                   changed = FALSE;
     GHashTableIter             ap_iter;
     gs_unref_hashtable GHashTable *new_aps = NULL;
-    gboolean                       compat;
-    const char *                   return_sig;
-    static uint32_t                ap_id = 0;
+    static uint32_t                ap_id   = 0;
     gint64                         last_seen_msec;
 
     variant = g_dbus_proxy_call_finish(G_DBUS_PROXY(source), res, &error);
@@ -307,33 +305,19 @@ get_ordered_networks_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 
     priv = NM_DEVICE_IWD_GET_PRIVATE(self);
 
-    /* Depending on whether we're using the Station interface or the Device
-     * interface for compatibility with IWD <= 0.7, the return signature of
-     * GetOrderedNetworks will be different.
-     */
-    compat     = priv->dbus_station_proxy == priv->dbus_device_proxy;
-    return_sig = compat ? "(a(osns))" : "(a(on))";
-
-    if (!g_variant_is_of_type(variant, G_VARIANT_TYPE(return_sig))) {
+    if (!g_variant_is_of_type(variant, G_VARIANT_TYPE("(a(on))"))) {
         _LOGE(LOGD_WIFI,
-              "Station.GetOrderedNetworks returned type %s instead of %s",
-              g_variant_get_type_string(variant),
-              return_sig);
+              "Station.GetOrderedNetworks returned type %s instead of (a(on))",
+              g_variant_get_type_string(variant));
         return;
     }
 
     new_aps = g_hash_table_new_full(nm_direct_hash, NULL, NULL, g_object_unref);
-
-    g_variant_get(variant, return_sig, &networks);
+    g_variant_get(variant, "(a(on))", &networks);
 
     last_seen_msec = nm_utils_get_monotonic_timestamp_msec();
-    if (compat) {
-        while (g_variant_iter_next(networks, "(&o&sn&s)", &path, &name, &signal, &type))
-            insert_ap_from_network(self, new_aps, path, last_seen_msec, signal, ap_id++);
-    } else {
-        while (g_variant_iter_next(networks, "(&on)", &path, &signal))
-            insert_ap_from_network(self, new_aps, path, last_seen_msec, signal, ap_id++);
-    }
+    while (g_variant_iter_next(networks, "(&on)", &path, &signal))
+        insert_ap_from_network(self, new_aps, path, last_seen_msec, signal, ap_id++);
 
     g_variant_iter_free(networks);
 
@@ -2281,7 +2265,6 @@ powered_changed(NMDeviceIwd *self, gboolean new_powered)
 {
     NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE(self);
     GDBusInterface *    interface;
-    GVariant *          value;
 
     nm_device_queue_recheck_available(NM_DEVICE(self),
                                       NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
@@ -2340,24 +2323,11 @@ powered_changed(NMDeviceIwd *self, gboolean new_powered)
     if (new_powered && !priv->dbus_ap_proxy && !priv->dbus_adhoc_proxy) {
         interface = g_dbus_object_get_interface(priv->dbus_obj, NM_IWD_STATION_INTERFACE);
         if (!interface) {
-            /* No Station interface on the device object.  Check if the
-             * "State" property is present on the Device interface, that
-             * would mean we're dealing with an IWD version from before the
-             * Device/Station split (0.7 or earlier) and we can easily
-             * handle that by making priv->dbus_device_proxy and
-             * priv->dbus_station_proxy both point at the Device interface.
-             */
-            value = g_dbus_proxy_get_cached_property(priv->dbus_device_proxy, "State");
-            if (value) {
-                g_variant_unref(value);
-                interface = g_object_ref(G_DBUS_INTERFACE(priv->dbus_device_proxy));
-            } else {
-                _LOGE(LOGD_WIFI,
-                      "Interface %s not found on obj %s",
-                      NM_IWD_STATION_INTERFACE,
-                      g_dbus_object_get_object_path(priv->dbus_obj));
-                interface = NULL;
-            }
+            _LOGE(LOGD_WIFI,
+                  "Interface %s not found on obj %s",
+                  NM_IWD_STATION_INTERFACE,
+                  g_dbus_object_get_object_path(priv->dbus_obj));
+            interface = NULL;
         }
     } else
         interface = NULL;
@@ -2370,6 +2340,8 @@ powered_changed(NMDeviceIwd *self, gboolean new_powered)
     }
 
     if (interface) {
+        GVariant *value;
+
         priv->dbus_station_proxy = G_DBUS_PROXY(interface);
         g_signal_connect(priv->dbus_station_proxy,
                          "g-properties-changed",
