@@ -31,15 +31,17 @@
 #include "c-rbtree-private.h"
 
 /*
- * We use alignas(8) to enforce 64bit alignment of structure fields. This is
- * according to ISO-C11, so we rely on the compiler to implement this. However,
- * at the same time we don't want to exceed native malloc() alignment on target
- * platforms. Hence, we also verify against max_align_t.
+ * We use the lower 2 bits of CRBNode pointers to store flags. Make sure
+ * CRBNode is 4-byte aligned, so the lower 2 bits are actually unused. We also
+ * sometimes store a pointer to the root-node, so make sure this one is also 4
+ * byte aligned.
+ * Note that there are actually some architectures where `max_align_t` is 4, so
+ * we do not have much wiggle-room to extend this flag-set.
  */
 static_assert(alignof(CRBNode) <= alignof(max_align_t), "Invalid RBNode alignment");
-static_assert(alignof(CRBNode) >= 8, "Invalid CRBNode alignment");
+static_assert(alignof(CRBNode) >= 4, "Invalid CRBNode alignment");
 static_assert(alignof(CRBTree) <= alignof(max_align_t), "Invalid RBTree alignment");
-static_assert(alignof(CRBTree) >= 8, "Invalid CRBTree alignment");
+static_assert(alignof(CRBTree) >= 4, "Invalid CRBTree alignment");
 
 /**
  * c_rbnode_leftmost() - return leftmost child
