@@ -692,14 +692,16 @@ test_platform_ip_address_pretty_sort_cmp(gconstpointer test_data)
     }
 
     if (PRINT_RESULT) {
-        g_print("\n\n\t\t[%d] = (\n", TEST_DATA_I);
+        g_print("\n        [%d] = (", TEST_DATA_I);
         for (i = 0; i < ELM_SIZE * N_ADDRESSES;) {
-            g_print("\t\t\t\"");
+            if (i > 0)
+                g_print("\n               ");
+            g_print("\"");
             for (j = 0; j < 40 && i < ELM_SIZE * N_ADDRESSES; j++, i++)
                 g_print("%02x", addresses[i]);
-            g_print("\"\n");
+            g_print("\"");
         }
-        g_print("\t\t),\n\n");
+        g_print("),\n");
         return;
     }
 
