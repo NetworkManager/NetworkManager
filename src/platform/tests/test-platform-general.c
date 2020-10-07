@@ -555,6 +555,20 @@ test_platform_ip_address_pretty_sort_cmp(gconstpointer test_data)
     gs_free guint64 *rand_map    = NULL;
     gsize            i, j;
 
+#if !defined(__amd64__)
+    /* The test generates a random array of NMPlatformIPXAddress (by crudely randomizing the memory,
+     * not the structures themself) and then compares the sorted result with the expected output.
+     * The sole purpose is to ensure that the sorting order stays stable.
+     *
+     * This only works on an architecture for which the test was made, otherwise
+     * the expected data does not match (due to different layout of the structures
+     * in memory).
+     *
+     * That's fine. Skip the test. */
+    g_test_skip("skip test on non-amd64 architecture");
+    return;
+#endif
+
     /*
      * First we create a list of addresses filled with (stable) random bytes.
      * We tweak some fields explicitly (stable randomly), so that we cover all
