@@ -2107,6 +2107,7 @@ do_connections_show (const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 
 				if (NM_IN_SET (info->info_type, NMC_GENERIC_INFO_TYPE_CON_SHOW_DEVICE,
 				                                NMC_GENERIC_INFO_TYPE_CON_SHOW_STATE,
+				                                NMC_GENERIC_INFO_TYPE_CON_SHOW_ACTIVE,
 				                                NMC_GENERIC_INFO_TYPE_CON_SHOW_ACTIVE_PATH)) {
 					show_active_fields = TRUE;
 					break;
