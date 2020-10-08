@@ -344,11 +344,21 @@ check_colors_check_enabled_one_file(const char *base_dir, const char *name, cons
 static char *
 check_colors_check_palette_one_file(const char *base_dir, const char *name, const char *term)
 {
-    gs_free char *filename = check_colors_construct_filename(base_dir, name, term, "schem");
-    char *        contents;
+    static const char *const extensions[] = {
+        "scheme",
+        "schem",
+    };
+    guint i;
 
-    if (g_file_get_contents(filename, &contents, NULL, NULL))
-        return contents;
+    for (i = 0; i < G_N_ELEMENTS(extensions); i++) {
+        gs_free char *filename = NULL;
+        char *        contents;
+
+        filename = check_colors_construct_filename(base_dir, name, term, extensions[i]);
+        if (g_file_get_contents(filename, &contents, NULL, NULL))
+            return contents;
+    }
+
     return NULL;
 }
 
