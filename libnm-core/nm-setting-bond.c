@@ -224,9 +224,10 @@ static NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
     {NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE, ~(BIT(NM_BOND_MODE_ROUNDROBIN))},
     {NM_SETTING_BOND_OPTION_PRIMARY,
      ~(BIT(NM_BOND_MODE_ACTIVEBACKUP) | BIT(NM_BOND_MODE_TLB) | BIT(NM_BOND_MODE_ALB))},
-    {NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB, ~(BIT(NM_BOND_MODE_TLB))}, )
+    {NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB, ~(BIT(NM_BOND_MODE_TLB))}, );
 
-    gboolean _nm_setting_bond_option_supported(const char *option, NMBondMode mode)
+gboolean
+_nm_setting_bond_option_supported(const char *option, NMBondMode mode)
 {
     nm_assert(option);
     nm_assert(mode != NM_BOND_MODE_UNKNOWN);

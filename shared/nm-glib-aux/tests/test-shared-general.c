@@ -632,9 +632,10 @@ static NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
     {"0", 0},
     {"1", 1},
     {"2", 2},
-    {"3", 3}, )
+    {"3", 3}, );
 
-    static void test_string_table_lookup(void)
+static void
+test_string_table_lookup(void)
 {
     const char *const args[] = {
         NULL,
