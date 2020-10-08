@@ -2058,7 +2058,8 @@ _nm_utils_hwaddr_ntoa(gconstpointer addr,
         {                                                                                      \
             unknown_val_cmd;                                                                   \
         }                                                                                      \
-    }
+    }                                                                                          \
+    _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
 #define NM_UTILS_STRING_TABLE_LOOKUP_STRUCT_DEFINE(fcn_name,        \
                                                    result_type,     \
