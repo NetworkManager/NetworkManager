@@ -486,35 +486,34 @@ check_colors(NmcColorOption color_option, char **out_palette_str)
     return TRUE;
 }
 
-static const char *
-resolve_color_alias(const char *color)
-{
-    static const struct {
-        const char *name;
-        const char *alias;
-    } aliases[] = {
-        {"reset", "0"},       {"bold", "1"},       {"white", "1;37"},
-        {"halfbright", "2"},  {"underscore", "4"}, {"blink", "5"},
-        {"reverse", "7"},     {"black", "30"},     {"red", "31"},
-        {"green", "32"},      {"brown", "33"},     {"yellow", "33"}, /* well, yellow */
-        {"blue", "34"},       {"magenta", "35"},   {"cyan", "36"},
-        {"gray", "37"},       {"darkgray", "90"},  {"lightred", "91"},
-        {"lightgreen", "92"}, {"lightblue", "94"}, {"lightmagenta", "95"},
-        {"lightcyan", "96"},  {"lightgray", "97"},
-    };
-    int i;
-
-    /* Shortcut literal sequences. */
-    if (g_ascii_isdigit(*color))
-        return color;
-
-    for (i = 0; i < G_N_ELEMENTS(aliases); i++) {
-        if (strcmp(color, aliases[i].name) == 0)
-            return aliases[i].alias;
-    }
-
-    return color;
-}
+static NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
+    _resolve_color_alias,
+    const char *,
+    { nm_assert(name); },
+    { return NULL; },
+    {"black", "30"},
+    {"blink", "5"},
+    {"blue", "34"},
+    {"bold", "1"},
+    {"brown", "33"},
+    {"cyan", "36"},
+    {"darkgray", "90"},
+    {"gray", "37"},
+    {"green", "32"},
+    {"halfbright", "2"},
+    {"lightblue", "94"},
+    {"lightcyan", "96"},
+    {"lightgray", "97"},
+    {"lightgreen", "92"},
+    {"lightmagenta", "95"},
+    {"lightred", "91"},
+    {"magenta", "35"},
+    {"red", "31"},
+    {"reset", "0"},
+    {"reverse", "7"},
+    {"underscore", "4"},
+    {"white", "1;37"},
+    {"yellow", "33" /* well, yellow */}, );
 
 static NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
     _nm_meta_color_from_name,
@@ -648,7 +647,7 @@ parse_color_scheme(char *       palette_buffer,
             continue;
         }
 
-        tmp_palette[name_idx] = resolve_color_alias(color);
+        tmp_palette[name_idx] = _resolve_color_alias(color) ?: color;
     }
 
     memcpy(palette, tmp_palette, sizeof(tmp_palette));
