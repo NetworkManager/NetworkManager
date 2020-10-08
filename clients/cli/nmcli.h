@@ -73,6 +73,10 @@ typedef enum {
     NMC_OF_FLAG_MAIN_HEADER_ONLY = 0x00000008, /* Print main header only */
 } NmcOfFlags;
 
+typedef struct {
+    const char *ansi_seq[_NM_META_COLOR_NUM];
+} NmcColorPalette;
+
 extern const NMMetaType nmc_meta_type_generic_info;
 
 typedef struct _NmcOutputField     NmcOutputField;
@@ -96,8 +100,8 @@ typedef struct _NmcConfig {
     bool           in_editor;        /* Whether running the editor - nmcli con edit' */
     bool
         show_secrets; /* Whether to display secrets (both input and output): option '--show-secrets' */
-    bool        overview;                    /* Overview mode (hide default values) */
-    const char *palette[_NM_META_COLOR_NUM]; /* Color palette */
+    bool            overview; /* Overview mode (hide default values) */
+    NmcColorPalette palette;
 } NmcConfig;
 
 typedef struct {

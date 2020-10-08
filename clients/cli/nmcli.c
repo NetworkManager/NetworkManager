@@ -33,26 +33,48 @@
     #define NMCLI_VERSION VERSION
 #endif
 
-#define DEFAULT_PALETTE_INIT                                                                      \
-    [NM_META_COLOR_CONNECTION_ACTIVATED] = "32", [NM_META_COLOR_CONNECTION_ACTIVATING] = "33",    \
-    [NM_META_COLOR_CONNECTION_DISCONNECTING] = "31", [NM_META_COLOR_CONNECTION_INVISIBLE] = "2",  \
-    [NM_META_COLOR_CONNECTION_EXTERNAL] = "32;2", [NM_META_COLOR_CONNECTIVITY_FULL] = "32",       \
-    [NM_META_COLOR_CONNECTIVITY_LIMITED] = "33", [NM_META_COLOR_CONNECTIVITY_NONE] = "31",        \
-    [NM_META_COLOR_CONNECTIVITY_PORTAL] = "33", [NM_META_COLOR_DEVICE_ACTIVATED] = "32",          \
-    [NM_META_COLOR_DEVICE_ACTIVATING] = "33", [NM_META_COLOR_DEVICE_DISCONNECTED] = "31",         \
-    [NM_META_COLOR_DEVICE_FIRMWARE_MISSING] = "31", [NM_META_COLOR_DEVICE_PLUGIN_MISSING] = "31", \
-    [NM_META_COLOR_DEVICE_UNAVAILABLE] = "2", [NM_META_COLOR_DEVICE_DISABLED] = "31",             \
-    [NM_META_COLOR_DEVICE_EXTERNAL] = "32;2", [NM_META_COLOR_MANAGER_RUNNING] = "32",             \
-    [NM_META_COLOR_MANAGER_STARTING] = "33", [NM_META_COLOR_MANAGER_STOPPED] = "31",              \
-    [NM_META_COLOR_PERMISSION_AUTH] = "33", [NM_META_COLOR_PERMISSION_NO] = "31",                 \
-    [NM_META_COLOR_PERMISSION_YES] = "32", [NM_META_COLOR_STATE_ASLEEP] = "31",                   \
-    [NM_META_COLOR_STATE_CONNECTED_GLOBAL] = "32", [NM_META_COLOR_STATE_CONNECTED_LOCAL] = "32",  \
-    [NM_META_COLOR_STATE_CONNECTED_SITE] = "32", [NM_META_COLOR_STATE_CONNECTING] = "33",         \
-    [NM_META_COLOR_STATE_DISCONNECTED] = "31", [NM_META_COLOR_STATE_DISCONNECTING] = "33",        \
-    [NM_META_COLOR_WIFI_SIGNAL_EXCELLENT] = "32", [NM_META_COLOR_WIFI_SIGNAL_FAIR] = "35",        \
-    [NM_META_COLOR_WIFI_SIGNAL_GOOD] = "33", [NM_META_COLOR_WIFI_SIGNAL_POOR] = "36",             \
-    [NM_META_COLOR_WIFI_SIGNAL_UNKNOWN] = "2", [NM_META_COLOR_ENABLED] = "32",                    \
-    [NM_META_COLOR_DISABLED] = "31",
+#define _NMC_COLOR_PALETTE_INIT()                              \
+    {                                                          \
+        .ansi_seq = {                                          \
+            [NM_META_COLOR_CONNECTION_ACTIVATED]     = "32",   \
+            [NM_META_COLOR_CONNECTION_ACTIVATING]    = "33",   \
+            [NM_META_COLOR_CONNECTION_DISCONNECTING] = "31",   \
+            [NM_META_COLOR_CONNECTION_INVISIBLE]     = "2",    \
+            [NM_META_COLOR_CONNECTION_EXTERNAL]      = "32;2", \
+            [NM_META_COLOR_CONNECTIVITY_FULL]        = "32",   \
+            [NM_META_COLOR_CONNECTIVITY_LIMITED]     = "33",   \
+            [NM_META_COLOR_CONNECTIVITY_NONE]        = "31",   \
+            [NM_META_COLOR_CONNECTIVITY_PORTAL]      = "33",   \
+            [NM_META_COLOR_DEVICE_ACTIVATED]         = "32",   \
+            [NM_META_COLOR_DEVICE_ACTIVATING]        = "33",   \
+            [NM_META_COLOR_DEVICE_DISCONNECTED]      = "31",   \
+            [NM_META_COLOR_DEVICE_FIRMWARE_MISSING]  = "31",   \
+            [NM_META_COLOR_DEVICE_PLUGIN_MISSING]    = "31",   \
+            [NM_META_COLOR_DEVICE_UNAVAILABLE]       = "2",    \
+            [NM_META_COLOR_DEVICE_DISABLED]          = "31",   \
+            [NM_META_COLOR_DEVICE_EXTERNAL]          = "32;2", \
+            [NM_META_COLOR_MANAGER_RUNNING]          = "32",   \
+            [NM_META_COLOR_MANAGER_STARTING]         = "33",   \
+            [NM_META_COLOR_MANAGER_STOPPED]          = "31",   \
+            [NM_META_COLOR_PERMISSION_AUTH]          = "33",   \
+            [NM_META_COLOR_PERMISSION_NO]            = "31",   \
+            [NM_META_COLOR_PERMISSION_YES]           = "32",   \
+            [NM_META_COLOR_STATE_ASLEEP]             = "31",   \
+            [NM_META_COLOR_STATE_CONNECTED_GLOBAL]   = "32",   \
+            [NM_META_COLOR_STATE_CONNECTED_LOCAL]    = "32",   \
+            [NM_META_COLOR_STATE_CONNECTED_SITE]     = "32",   \
+            [NM_META_COLOR_STATE_CONNECTING]         = "33",   \
+            [NM_META_COLOR_STATE_DISCONNECTED]       = "31",   \
+            [NM_META_COLOR_STATE_DISCONNECTING]      = "33",   \
+            [NM_META_COLOR_WIFI_SIGNAL_EXCELLENT]    = "32",   \
+            [NM_META_COLOR_WIFI_SIGNAL_FAIR]         = "35",   \
+            [NM_META_COLOR_WIFI_SIGNAL_GOOD]         = "33",   \
+            [NM_META_COLOR_WIFI_SIGNAL_POOR]         = "36",   \
+            [NM_META_COLOR_WIFI_SIGNAL_UNKNOWN]      = "2",    \
+            [NM_META_COLOR_ENABLED]                  = "32",   \
+            [NM_META_COLOR_DISABLED]                 = "31",   \
+        },                                                     \
+    }
 
 static NmCli nm_cli = {
     .client = NULL,
@@ -76,7 +98,7 @@ static NmCli nm_cli = {
     .complete                    = FALSE,
     .nmc_config.show_secrets     = FALSE,
     .nmc_config.in_editor        = FALSE,
-    .nmc_config.palette          = {DEFAULT_PALETTE_INIT},
+    .nmc_config.palette          = _NMC_COLOR_PALETTE_INIT(),
     .editor_status_line          = FALSE,
     .editor_save_confirmation    = TRUE,
 };
@@ -565,12 +587,13 @@ static NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
     {"wifi-signal-unknown", NM_META_COLOR_WIFI_SIGNAL_UNKNOWN}, );
 
 static gboolean
-parse_color_scheme(char *       palette_buffer,
-                   const char **palette /* _NM_META_COLOR_NUM elements */,
-                   GError **    error)
+parse_color_scheme(char *palette_buffer, NmcColorPalette *out_palette, GError **error)
 {
-    char *      p                               = palette_buffer;
-    const char *tmp_palette[_NM_META_COLOR_NUM] = {DEFAULT_PALETTE_INIT};
+    char *p = palette_buffer;
+
+    nm_assert(out_palette);
+
+    *out_palette = (NmcColorPalette) _NMC_COLOR_PALETTE_INIT();
 
     /* This reads through the raw color scheme file contents, identifying the
      * color names and sequences, putting in terminating NULs in place, so that
@@ -647,34 +670,45 @@ parse_color_scheme(char *       palette_buffer,
             continue;
         }
 
-        tmp_palette[name_idx] = _resolve_color_alias(color) ?: color;
+        out_palette->ansi_seq[name_idx] = _resolve_color_alias(color) ?: color;
     }
 
-    memcpy(palette, tmp_palette, sizeof(tmp_palette));
     return TRUE;
 }
 
 static void
-set_colors(NmcColorOption color_option,
-           bool *         out_use_colors,
-           char **        out_palette_buffer,
-           const char **  palette /* _NM_META_COLOR_NUM elements */)
+set_colors(NmcColorOption   color_option,
+           bool *           out_use_colors,
+           char **          out_palette_buffer,
+           NmcColorPalette *out_palette)
 {
     gs_free char *palette_str = NULL;
     gboolean      use_colors;
+    gboolean      palette_set = FALSE;
+
+    nm_assert(out_use_colors);
+    nm_assert(out_palette);
+    nm_assert(out_palette_buffer && !*out_palette_buffer);
 
     use_colors = check_colors(color_option, &palette_str);
 
     *out_use_colors = use_colors;
-    if (use_colors && palette_str) {
-        GError *error = NULL;
 
-        if (!parse_color_scheme(palette_str, palette, &error)) {
+    if (use_colors && palette_str) {
+        gs_free_error GError *error = NULL;
+        NmcColorPalette       palette;
+
+        if (!parse_color_scheme(palette_str, &palette, &error))
             g_debug("Error parsing color scheme: %s", error->message);
-            g_error_free(error);
-        } else
+        else {
             *out_palette_buffer = g_steal_pointer(&palette_str);
+            *out_palette        = palette;
+            palette_set         = TRUE;
+        }
     }
+
+    if (!palette_set)
+        *out_palette = (NmcColorPalette) _NMC_COLOR_PALETTE_INIT();
 }
 
 /*************************************************************************************/
@@ -873,7 +907,7 @@ process_command_line(NmCli *nmc, int argc, char **argv_orig)
     set_colors(colors,
                &nmc->nmc_config_mutable.use_colors,
                &nmc->palette_buffer,
-               nmc->nmc_config_mutable.palette);
+               &nmc->nmc_config_mutable.palette);
 
     /* Now run the requested command */
     nmc_do_cmd(nmc, nmcli_cmds, *argv, argc, argv);
