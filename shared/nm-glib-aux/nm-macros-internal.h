@@ -764,7 +764,7 @@ NM_G_ERROR_MSG(GError *error)
     {                                    \
         return NM_CACHED_QUARK(string);  \
     }                                    \
-    struct _dummy_struct_for_trailing_semicolon
+    _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
 /*****************************************************************************/
 

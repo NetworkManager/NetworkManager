@@ -1098,7 +1098,7 @@ _vt_cmd_obj_to_string_lnk_wireguard(const NMPObject *     obj,
         g_snprintf(buf, buf_len, __VA_ARGS__);                                            \
         return buf;                                                                       \
     }                                                                                     \
-    struct _dummy_struct_for_tailing_semicolon
+    _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
 _vt_cmd_plobj_to_string_id(link, NMPlatformLink, "%d", obj->ifindex);
 
@@ -1390,7 +1390,7 @@ _vt_cmd_obj_copy_lnk_wireguard(NMPObject *dst, const NMPObject *src)
             cmd                                                                                    \
         }                                                                                          \
     }                                                                                              \
-    struct _dummy_struct_for_tailing_semicolon
+    _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
 _vt_cmd_plobj_id_copy(link, NMPlatformLink, { dst->ifindex = src->ifindex; });
 
@@ -1485,7 +1485,7 @@ nmp_object_id_cmp(const NMPObject *obj1, const NMPObject *obj2)
         }                                                                 \
         return 0;                                                         \
     }                                                                     \
-    struct _dummy_struct_for_tailing_semicolon
+    _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
 _vt_cmd_plobj_id_cmp(link, NMPlatformLink, { NM_CMP_FIELD(obj1, obj2, ifindex); });
 
@@ -1581,7 +1581,7 @@ nmp_object_id_hash(const NMPObject *obj)
             cmd;                                                                                  \
         }                                                                                         \
     }                                                                                             \
-    struct _dummy_struct_for_tailing_semicolon
+    _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
 _vt_cmd_plobj_id_hash_update(link, NMPlatformLink, { nm_hash_update_val(h, obj->ifindex); });
 
