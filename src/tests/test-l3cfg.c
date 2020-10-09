@@ -93,16 +93,22 @@ typedef enum {
 typedef struct {
     const TestFixture1 *f;
 
+    bool has_addr4_101 : 1;
+    bool add_addr4_101 : 1;
+
     guint32           acd_timeout_msec_a;
     NML3AcdDefendType acd_defend_type_a;
 
     TestL3cfgNotifyType notify_type;
     guint               post_commit_event_count;
     guint               general_event_count;
+    guint               general_event_flags;
     union {
         struct {
             int  cb_count;
             bool expected_probe_result : 1;
+            bool acd_event_ready_45 : 1;
+            bool acd_event_ready_101 : 1;
         } wait_for_acd_ready_1;
     } notify_result;
 } TestL3cfgData;
@@ -115,6 +121,7 @@ _test_l3cfg_data_set_notify_type(TestL3cfgData *tdata, TestL3cfgNotifyType notif
     tdata->notify_type             = notify_type;
     tdata->post_commit_event_count = 0;
     tdata->general_event_count     = 0;
+    tdata->general_event_flags     = 0;
     memset(&tdata->notify_result, 0, sizeof(tdata->notify_result));
 }
 
@@ -179,6 +186,21 @@ _test_l3cfg_signal_notify(NML3Cfg *                   l3cfg,
                 g_assert(tdata->general_event_count == 0);
                 tdata->general_event_count++;
                 return;
+            case 4:
+                if (notify_data->acd_event.info.addr == nmtst_inet4_from_string("192.168.133.45")) {
+                    g_assert(!NM_FLAGS_HAS(tdata->general_event_flags, 0x1u));
+                    tdata->general_event_flags |= 0x1u;
+                    g_assert(notify_data->acd_event.info.state == NM_L3_ACD_ADDR_STATE_PROBING);
+                    tdata->general_event_count++;
+                } else if (notify_data->acd_event.info.addr
+                           == nmtst_inet4_from_string("192.168.133.101")) {
+                    g_assert(!NM_FLAGS_HAS(tdata->general_event_flags, 0x4u));
+                    tdata->general_event_flags |= 0x4u;
+                    g_assert(notify_data->acd_event.info.state == NM_L3_ACD_ADDR_STATE_PROBING);
+                    tdata->general_event_count++;
+                } else
+                    g_assert_not_reached();
+                return;
             default:
                 g_assert_not_reached();
                 return;
@@ -191,7 +213,8 @@ _test_l3cfg_signal_notify(NML3Cfg *                   l3cfg,
         }
     case TEST_L3CFG_NOTIFY_TYPE_WAIT_FOR_ACD_READY_1:
     {
-        int num_acd_completed_events = 1;
+        int num_acd_completed_events =
+            1 + 2 + (tdata->add_addr4_101 ? (tdata->has_addr4_101 ? 1 : 3) : 0);
 
         if (NM_IN_SET(notify_data->notify_type,
                       NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE,
@@ -202,28 +225,44 @@ _test_l3cfg_signal_notify(NML3Cfg *                   l3cfg,
                 g_assert(NM_IN_SET(notify_data->acd_event.info.state,
                                    NM_L3_ACD_ADDR_STATE_READY,
                                    NM_L3_ACD_ADDR_STATE_DEFENDING));
+                tdata->notify_result.wait_for_acd_ready_1.acd_event_ready_45 = TRUE;
+            } else if (notify_data->acd_event.info.addr
+                       == nmtst_inet4_from_string("192.168.133.101")) {
+                if (tdata->has_addr4_101) {
+                    g_assert(
+                        NM_IN_SET(notify_data->acd_event.info.state, NM_L3_ACD_ADDR_STATE_USED));
+                } else {
+                    g_assert(NM_IN_SET(notify_data->acd_event.info.state,
+                                       NM_L3_ACD_ADDR_STATE_READY,
+                                       NM_L3_ACD_ADDR_STATE_DEFENDING));
+                    tdata->notify_result.wait_for_acd_ready_1.acd_event_ready_101 = TRUE;
+                }
             } else
                 g_assert_not_reached();
 
             g_assert_cmpint(tdata->notify_result.wait_for_acd_ready_1.cb_count,
                             <,
-                            2 * num_acd_completed_events);
+                            num_acd_completed_events);
             tdata->notify_result.wait_for_acd_ready_1.cb_count++;
             return;
         }
         if (notify_data->notify_type == NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT) {
             g_assert_cmpint(tdata->notify_result.wait_for_acd_ready_1.cb_count, >, 0);
             g_assert_cmpint(tdata->notify_result.wait_for_acd_ready_1.cb_count,
-                            ==,
-                            2 * num_acd_completed_events);
+                            <,
+                            num_acd_completed_events);
             tdata->notify_result.wait_for_acd_ready_1.cb_count++;
-            nmtstp_platform_ip_addresses_assert(tdata->f->platform,
-                                                tdata->f->ifindex0,
-                                                TRUE,
-                                                TRUE,
-                                                TRUE,
-                                                "192.168.133.45",
-                                                "1:2:3:4::45");
+            nmtstp_platform_ip_addresses_assert(
+                tdata->f->platform,
+                tdata->f->ifindex0,
+                TRUE,
+                TRUE,
+                TRUE,
+                tdata->notify_result.wait_for_acd_ready_1.acd_event_ready_45 ? "192.168.133.45"
+                                                                             : NULL,
+                tdata->notify_result.wait_for_acd_ready_1.acd_event_ready_101 ? "192.168.133.101"
+                                                                              : NULL,
+                "1:2:3:4::45");
             return;
         }
         g_assert_not_reached();
@@ -263,10 +302,29 @@ test_l3cfg(gconstpointer test_data)
 
     f = _test_fixture_1_setup(&test_fixture, TEST_IDX);
 
-    tdata->f = f;
+    tdata->f             = f;
+    tdata->has_addr4_101 = (f->test_idx == 4 && nmtst_get_rand_bool());
+    tdata->add_addr4_101 = (f->test_idx == 4 && nmtst_get_rand_bool());
 
-    tdata->acd_timeout_msec_a = NM_IN_SET(f->test_idx, 3) ? ACD_TIMEOUT_BASE_MSEC : 0u;
-    tdata->acd_defend_type_a  = NM_L3_ACD_DEFEND_TYPE_NEVER;
+    tdata->acd_timeout_msec_a = NM_IN_SET(f->test_idx, 3, 4) ? ACD_TIMEOUT_BASE_MSEC : 0u;
+    tdata->acd_defend_type_a  = NM_IN_SET(f->test_idx, 4)
+                                    ? nmtst_rand_select(NM_L3_ACD_DEFEND_TYPE_NEVER,
+                                                       NM_L3_ACD_DEFEND_TYPE_ONCE,
+                                                       NM_L3_ACD_DEFEND_TYPE_ALWAYS)
+                                    : NM_L3_ACD_DEFEND_TYPE_NEVER;
+
+    if (tdata->has_addr4_101) {
+        nmtstp_ip4_address_add(f->platform,
+                               -1,
+                               f->ifindex1,
+                               nmtst_inet4_from_string("192.168.133.101"),
+                               24,
+                               nmtst_inet4_from_string("192.168.133.101"),
+                               100000,
+                               0,
+                               0,
+                               NULL);
+    }
 
     l3cfg0 = nm_netns_access_l3cfg(f->netns, f->ifindex0);
     g_assert(NM_IS_L3CFG(l3cfg0));
@@ -290,6 +348,7 @@ test_l3cfg(gconstpointer test_data)
         break;
     case 2:
     case 3:
+    case 4:
     {
         nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
 
@@ -300,6 +359,15 @@ test_l3cfg(gconstpointer test_data)
             NM_PLATFORM_IP4_ADDRESS_INIT(.address      = nmtst_inet4_from_string("192.168.133.45"),
                                          .peer_address = nmtst_inet4_from_string("192.168.133.45"),
                                          .plen         = 24, ));
+
+        if (tdata->add_addr4_101) {
+            nm_l3_config_data_add_address_4(
+                l3cd,
+                NM_PLATFORM_IP4_ADDRESS_INIT(.address = nmtst_inet4_from_string("192.168.133.101"),
+                                             .peer_address =
+                                                 nmtst_inet4_from_string("192.168.133.101"),
+                                             .plen = 24, ));
+        }
 
         nm_l3_config_data_add_address_6(
             l3cd,
@@ -349,7 +417,7 @@ test_l3cfg(gconstpointer test_data)
                                         TRUE,
                                         TRUE,
                                         NM_IN_SET(f->test_idx, 2) ? "192.168.133.45" : NULL,
-                                        NM_IN_SET(f->test_idx, 2, 3) ? "1:2:3:4::45" : NULL);
+                                        NM_IN_SET(f->test_idx, 2, 3, 4) ? "1:2:3:4::45" : NULL);
 
     if (NM_IN_SET(f->test_idx, 1, 2)) {
         _test_l3cfg_data_set_notify_type(tdata, TEST_L3CFG_NOTIFY_TYPE_IDLE_ASSERT_NO_SIGNAL);
@@ -361,7 +429,7 @@ test_l3cfg(gconstpointer test_data)
         _test_l3cfg_data_set_notify_type(tdata, TEST_L3CFG_NOTIFY_TYPE_NONE);
     }
 
-    if (NM_IN_SET(f->test_idx, 3)) {
+    if (NM_IN_SET(f->test_idx, 3, 4)) {
         _test_l3cfg_data_set_notify_type(tdata, TEST_L3CFG_NOTIFY_TYPE_WAIT_FOR_ACD_READY_1);
         tdata->notify_result.wait_for_acd_ready_1.expected_probe_result = TRUE;
         _LOGT("poll 2 start");
@@ -371,7 +439,9 @@ test_l3cfg(gconstpointer test_data)
                 + (nmtst_get_rand_uint32() % (2u * ACD_TIMEOUT_BASE_MSEC)),
             FALSE);
         _LOGT("poll 2 end");
-        g_assert_cmpint(tdata->notify_result.wait_for_acd_ready_1.cb_count, ==, 3);
+        g_assert_cmpint(tdata->notify_result.wait_for_acd_ready_1.cb_count,
+                        ==,
+                        1 + 2 + (tdata->add_addr4_101 ? (tdata->has_addr4_101 ? 1 : 3) : 0));
         _test_l3cfg_data_set_notify_type(tdata, TEST_L3CFG_NOTIFY_TYPE_NONE);
     }
 
@@ -407,4 +477,5 @@ _nmtstp_setup_tests(void)
     g_test_add_data_func("/l3cfg/1", GINT_TO_POINTER(1), test_l3cfg);
     g_test_add_data_func("/l3cfg/2", GINT_TO_POINTER(2), test_l3cfg);
     g_test_add_data_func("/l3cfg/3", GINT_TO_POINTER(3), test_l3cfg);
+    g_test_add_data_func("/l3cfg/4", GINT_TO_POINTER(4), test_l3cfg);
 }
