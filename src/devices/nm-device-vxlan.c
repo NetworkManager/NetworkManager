@@ -229,7 +229,10 @@ address_matches(const char *candidate, in_addr_t addr4, struct in6_addr *addr6)
                           NM_IS_IPv4(addr_family) ? (gpointer) &addr4 : addr6))
         return FALSE;
 
-    return TRUE;
+    if (NM_IS_IPv4(addr_family))
+        return IN6_IS_ADDR_UNSPECIFIED(addr6);
+    else
+        return addr4 == 0u;
 }
 
 static gboolean
