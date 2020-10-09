@@ -162,11 +162,10 @@ create_and_realize(NMDevice *             device,
     NMPlatformLnkVxlan props = {};
     NMSettingVxlan *   s_vxlan;
     const char *       str;
-    int                ret;
     int                r;
 
     s_vxlan = nm_connection_get_setting_vxlan(connection);
-    g_assert(s_vxlan);
+    g_return_val_if_fail(s_vxlan, FALSE);
 
     if (parent)
         props.parent_ifindex = nm_device_get_ifindex(parent);
@@ -175,18 +174,14 @@ create_and_realize(NMDevice *             device,
 
     str = nm_setting_vxlan_get_local(s_vxlan);
     if (str) {
-        ret = inet_pton(AF_INET, str, &props.local);
-        if (ret != 1)
-            ret = inet_pton(AF_INET6, str, &props.local6);
-        if (ret != 1)
+        if (!nm_utils_parse_inaddr_bin(AF_INET, str, NULL, &props.local)
+            && !nm_utils_parse_inaddr_bin(AF_INET6, str, NULL, &props.local6))
             return FALSE;
     }
 
     str = nm_setting_vxlan_get_remote(s_vxlan);
-    ret = inet_pton(AF_INET, str, &props.group);
-    if (ret != 1)
-        ret = inet_pton(AF_INET6, str, &props.group6);
-    if (ret != 1)
+    if (!nm_utils_parse_inaddr_bin(AF_INET, str, NULL, &props.group)
+        && !nm_utils_parse_inaddr_bin(AF_INET6, str, NULL, &props.group6))
         return FALSE;
 
     props.tos          = nm_setting_vxlan_get_tos(s_vxlan);
@@ -218,21 +213,23 @@ create_and_realize(NMDevice *             device,
 }
 
 static gboolean
-address_matches(const char *str, in_addr_t addr4, struct in6_addr *addr6)
+address_matches(const char *candidate, in_addr_t addr4, struct in6_addr *addr6)
 {
-    in_addr_t       new_addr4 = 0;
-    struct in6_addr new_addr6 = {};
+    NMIPAddr candidate_addr;
+    int      addr_family;
 
-    if (!str) {
-        return addr4 == 0 && !memcmp(addr6, &in6addr_any, sizeof(in6addr_any));
-    }
+    if (!candidate)
+        return addr4 == 0u && IN6_IS_ADDR_UNSPECIFIED(addr6);
 
-    if (inet_pton(AF_INET, str, &new_addr4) == 1)
-        return new_addr4 == addr4;
-    else if (inet_pton(AF_INET6, str, &new_addr6) == 1)
-        return !memcmp(&new_addr6, addr6, sizeof(new_addr6));
-    else
+    if (!nm_utils_parse_inaddr_bin(AF_UNSPEC, candidate, &addr_family, &candidate_addr))
         return FALSE;
+
+    if (!nm_ip_addr_equal(addr_family,
+                          &candidate_addr,
+                          NM_IS_IPv4(addr_family) ? (gpointer) &addr4 : addr6))
+        return FALSE;
+
+    return TRUE;
 }
 
 static gboolean
