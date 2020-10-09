@@ -357,6 +357,8 @@ typedef struct _NMDevicePrivate {
     bool  assume_state_guess_assume : 1;
     char *assume_state_connection_uuid;
 
+    guint64 udi_id;
+
     GHashTable *available_connections;
     char *      hw_addr;
     char *      hw_addr_perm;
@@ -5881,7 +5883,6 @@ realize_start_setup(NMDevice *            self,
     NMDevicePrivate *    priv;
     NMDeviceClass *      klass;
     NMPlatform *         platform;
-    static guint32       id           = 0;
     NMDeviceCapabilities capabilities = 0;
     NMConfig *           config;
     guint                real_rate;
@@ -5967,7 +5968,12 @@ realize_start_setup(NMDevice *            self,
 
     if (!priv->udi) {
         /* Use a placeholder UDI until we get a real one */
-        priv->udi = g_strdup_printf("/virtual/device/placeholder/%d", id++);
+        if (priv->udi_id == 0) {
+            static guint64 udi_id_counter = 0;
+
+            priv->udi_id = ++udi_id_counter;
+        }
+        priv->udi = g_strdup_printf("/virtual/device/placeholder/%" G_GUINT64_FORMAT, priv->udi_id);
         _notify(self, PROP_UDI);
     }
 
