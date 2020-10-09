@@ -6269,8 +6269,12 @@ nm_platform_ip4_address_to_string(const NMPlatformIP4Address *address, char *buf
         "",
         s_address,
         address->plen,
-        broadcast_address ? " brd " : "",
-        broadcast_address ? _nm_utils_inet4_ntop(broadcast_address, str_broadcast) : "",
+        broadcast_address != 0u || address->use_ip4_broadcast_address
+            ? (address->use_ip4_broadcast_address ? " brd " : " brd* ")
+            : "",
+        broadcast_address != 0u || address->use_ip4_broadcast_address
+            ? _nm_utils_inet4_ntop(broadcast_address, str_broadcast)
+            : "",
         str_lft_p,
         str_pref_p,
         str_time_p,
@@ -7832,18 +7836,19 @@ nm_platform_ip6_address_pretty_sort_cmp(const NMPlatformIP6Address *a1,
 void
 nm_platform_ip4_address_hash_update(const NMPlatformIP4Address *obj, NMHashState *h)
 {
-    nm_hash_update_vals(h,
-                        obj->ifindex,
-                        obj->addr_source,
-                        nm_platform_ip4_broadcast_address_from_addr(obj),
-                        obj->timestamp,
-                        obj->lifetime,
-                        obj->preferred,
-                        obj->n_ifa_flags,
-                        obj->plen,
-                        obj->address,
-                        obj->peer_address,
-                        NM_HASH_COMBINE_BOOLS(guint8, obj->external));
+    nm_hash_update_vals(
+        h,
+        obj->ifindex,
+        obj->addr_source,
+        obj->use_ip4_broadcast_address ? obj->broadcast_address : ((in_addr_t) 0u),
+        obj->timestamp,
+        obj->lifetime,
+        obj->preferred,
+        obj->n_ifa_flags,
+        obj->plen,
+        obj->address,
+        obj->peer_address,
+        NM_HASH_COMBINE_BOOLS(guint8, obj->external, obj->use_ip4_broadcast_address));
     nm_hash_update_strarr(h, obj->label);
 }
 
@@ -7855,8 +7860,9 @@ nm_platform_ip4_address_cmp(const NMPlatformIP4Address *a, const NMPlatformIP4Ad
     NM_CMP_FIELD(a, b, address);
     NM_CMP_FIELD(a, b, plen);
     NM_CMP_FIELD(a, b, peer_address);
-    NM_CMP_DIRECT(nm_platform_ip4_broadcast_address_from_addr(a),
-                  nm_platform_ip4_broadcast_address_from_addr(b));
+    NM_CMP_FIELD_UNSAFE(a, b, use_ip4_broadcast_address);
+    if (a->use_ip4_broadcast_address)
+        NM_CMP_FIELD(a, b, broadcast_address);
     NM_CMP_FIELD(a, b, addr_source);
     NM_CMP_FIELD(a, b, timestamp);
     NM_CMP_FIELD(a, b, lifetime);
