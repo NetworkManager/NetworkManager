@@ -315,27 +315,23 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     NMSettingVxlanPrivate *priv   = NM_SETTING_VXLAN_GET_PRIVATE(setting);
     int                    family = AF_UNSPEC;
 
-    if (!priv->remote) {
-        g_set_error_literal(error,
-                            NM_CONNECTION_ERROR,
-                            NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                            _("property is missing"));
-        g_prefix_error(error, "%s.%s: ", NM_SETTING_VXLAN_SETTING_NAME, NM_SETTING_VXLAN_REMOTE);
-        return FALSE;
-    }
-
-    if (nm_utils_ipaddr_is_valid(AF_INET, priv->remote))
-        family = AF_INET;
-    else if (nm_utils_ipaddr_is_valid(AF_INET6, priv->remote))
-        family = AF_INET6;
-    else {
-        g_set_error(error,
-                    NM_CONNECTION_ERROR,
-                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                    _("'%s' is not a valid IP address"),
-                    priv->remote);
-        g_prefix_error(error, "%s.%s: ", NM_SETTING_VXLAN_SETTING_NAME, NM_SETTING_VXLAN_REMOTE);
-        return FALSE;
+    if (priv->remote) {
+        if (nm_utils_ipaddr_is_valid(AF_INET, priv->remote))
+            family = AF_INET;
+        else if (nm_utils_ipaddr_is_valid(AF_INET6, priv->remote))
+            family = AF_INET6;
+        else {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("'%s' is not a valid IP address"),
+                        priv->remote);
+            g_prefix_error(error,
+                           "%s.%s: ",
+                           NM_SETTING_VXLAN_SETTING_NAME,
+                           NM_SETTING_VXLAN_REMOTE);
+            return FALSE;
+        }
     }
 
     if (priv->local) {

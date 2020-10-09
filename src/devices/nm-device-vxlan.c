@@ -180,9 +180,11 @@ create_and_realize(NMDevice *             device,
     }
 
     str = nm_setting_vxlan_get_remote(s_vxlan);
-    if (!nm_utils_parse_inaddr_bin(AF_INET, str, NULL, &props.group)
-        && !nm_utils_parse_inaddr_bin(AF_INET6, str, NULL, &props.group6))
-        return FALSE;
+    if (str) {
+        if (!nm_utils_parse_inaddr_bin(AF_INET, str, NULL, &props.group)
+            && !nm_utils_parse_inaddr_bin(AF_INET6, str, NULL, &props.group6))
+            return FALSE;
+    }
 
     props.tos          = nm_setting_vxlan_get_tos(s_vxlan);
     props.ttl          = nm_setting_vxlan_get_ttl(s_vxlan);
