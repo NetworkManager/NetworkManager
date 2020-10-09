@@ -2546,13 +2546,25 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
                                              src,
                                              &obj,
                                              NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4)) {
-            if (hook_add_addr && !hook_add_addr(src, obj, hook_user_data))
+            NMPlatformIPXAddress       addr_stack;
+            const NMPlatformIPAddress *addr             = NULL;
+            NMTernary                  ip4acd_not_ready = NM_TERNARY_DEFAULT;
+
+            if (hook_add_addr && !hook_add_addr(src, obj, &ip4acd_not_ready, hook_user_data))
                 continue;
+
+            if (IS_IPv4 && ip4acd_not_ready != NM_TERNARY_DEFAULT
+                && (!!ip4acd_not_ready) != NMP_OBJECT_CAST_IP4_ADDRESS(obj)->ip4acd_not_ready) {
+                addr_stack.a4                  = *NMP_OBJECT_CAST_IP4_ADDRESS(obj);
+                addr_stack.a4.ip4acd_not_ready = (!!ip4acd_not_ready);
+                addr                           = &addr_stack.ax;
+            } else
+                nm_assert(IS_IPv4 || ip4acd_not_ready == NM_TERNARY_DEFAULT);
 
             nm_l3_config_data_add_address_full(self,
                                                addr_family,
-                                               obj,
-                                               NULL,
+                                               addr ? NULL : obj,
+                                               addr,
                                                NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE,
                                                NULL);
         }

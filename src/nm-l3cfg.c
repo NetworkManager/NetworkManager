@@ -588,7 +588,11 @@ _l3cfg_externally_removed_objs_filter(/* const NMDedupMultiObj * */ gconstpointe
     const NMPObject *obj                          = o;
     GHashTable *     externally_removed_objs_hash = user_data;
 
-    return !g_hash_table_contains(externally_removed_objs_hash, obj);
+    if (NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_IP4_ADDRESS
+        && NMP_OBJECT_CAST_IP4_ADDRESS(obj)->ip4acd_not_ready)
+        return FALSE;
+
+    return !nm_g_hash_table_contains(externally_removed_objs_hash, obj);
 }
 
 /*****************************************************************************/
@@ -2580,12 +2584,17 @@ typedef struct {
 } L3ConfigMergeHookAddObjData;
 
 static gboolean
-_l3_hook_add_addr_cb(const NML3ConfigData *l3cd, const NMPObject *obj, gpointer user_data)
+_l3_hook_add_addr_cb(const NML3ConfigData *l3cd,
+                     const NMPObject *     obj,
+                     NMTernary *           out_ip4acd_not_ready,
+                     gpointer              user_data)
 {
     const L3ConfigMergeHookAddObjData *hook_data = user_data;
     NML3Cfg *                          self      = hook_data->self;
     AcdData *                          acd_data;
     in_addr_t                          addr;
+
+    nm_assert(out_ip4acd_not_ready && *out_ip4acd_not_ready == NM_TERNARY_DEFAULT);
 
     if (NMP_OBJECT_GET_TYPE(obj) != NMP_OBJECT_TYPE_IP4_ADDRESS)
         return TRUE;
@@ -2914,29 +2923,40 @@ _l3_commit_one(NML3Cfg *self, int addr_family, NML3CfgCommitType commit_type)
     }
 
     if (self->priv.p->combined_l3cd_commited) {
+        GHashTable *                   externally_removed_objs_hash;
         NMDedupMultiFcnSelectPredicate predicate;
+        const NMDedupMultiHeadEntry *  head_entry;
 
         if (commit_type != NM_L3_CFG_COMMIT_TYPE_REAPPLY
-            && self->priv.p->externally_removed_objs_cnt_addresses_x[IS_IPv4] > 0)
-            predicate = _l3cfg_externally_removed_objs_filter;
-        else
-            predicate = NULL;
-        addresses = nm_dedup_multi_objs_to_ptr_array_head(
-            nm_l3_config_data_lookup_objs(self->priv.p->combined_l3cd_commited,
-                                          NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4)),
-            predicate,
-            self->priv.p->externally_removed_objs_hash);
+            && self->priv.p->externally_removed_objs_cnt_addresses_x[IS_IPv4] > 0) {
+            predicate                    = _l3cfg_externally_removed_objs_filter;
+            externally_removed_objs_hash = self->priv.p->externally_removed_objs_hash;
+        } else {
+            if (IS_IPv4)
+                predicate = _l3cfg_externally_removed_objs_filter;
+            else
+                predicate = NULL;
+            externally_removed_objs_hash = NULL;
+        }
+        head_entry = nm_l3_config_data_lookup_objs(self->priv.p->combined_l3cd_commited,
+                                                   NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4));
+        addresses  = nm_dedup_multi_objs_to_ptr_array_head(head_entry,
+                                                          predicate,
+                                                          externally_removed_objs_hash);
 
         if (commit_type != NM_L3_CFG_COMMIT_TYPE_REAPPLY
-            && self->priv.p->externally_removed_objs_cnt_routes_x[IS_IPv4] > 0)
-            predicate = _l3cfg_externally_removed_objs_filter;
-        else
-            predicate = NULL;
-        routes = nm_dedup_multi_objs_to_ptr_array_head(
-            nm_l3_config_data_lookup_objs(self->priv.p->combined_l3cd_commited,
-                                          NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4)),
-            predicate,
-            self->priv.p->externally_removed_objs_hash);
+            && self->priv.p->externally_removed_objs_cnt_routes_x[IS_IPv4] > 0) {
+            predicate                    = _l3cfg_externally_removed_objs_filter;
+            externally_removed_objs_hash = self->priv.p->externally_removed_objs_hash;
+        } else {
+            predicate                    = NULL;
+            externally_removed_objs_hash = NULL;
+        }
+        head_entry = nm_l3_config_data_lookup_objs(self->priv.p->combined_l3cd_commited,
+                                                   NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4));
+        routes     = nm_dedup_multi_objs_to_ptr_array_head(head_entry,
+                                                       predicate,
+                                                       externally_removed_objs_hash);
 
         route_table_sync =
             nm_l3_config_data_get_route_table_sync(self->priv.p->combined_l3cd_commited,
