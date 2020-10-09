@@ -137,7 +137,7 @@ if ($is_patch) {
 	$check_line = 1;
 	$line = $_;
 	/^---$/ and $is_commit_message = 0;
-	/^Fixes: *(.*)/ and check_commit ($1, 1);
+	/^(Reverts|Fixes): *(.*)/ and check_commit ($2, 1);
 	/This reverts commit/ and next;
 	/cherry picked from/ and next;
 	/\bcommit (.*)/ and check_commit ($1, 0);
