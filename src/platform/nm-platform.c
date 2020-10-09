@@ -6266,6 +6266,7 @@ nm_platform_ip4_address_to_string(const NMPlatformIP4Address *address, char *buf
         "%s" /* label */
         " src %s"
         "%s" /* external */
+        "%s" /* ip4acd_not_ready */
         "",
         s_address,
         address->plen,
@@ -6283,7 +6284,8 @@ nm_platform_ip4_address_to_string(const NMPlatformIP4Address *address, char *buf
         _to_string_ifa_flags(address->n_ifa_flags, s_flags, sizeof(s_flags)),
         str_label,
         nmp_utils_ip_config_source_to_string(address->addr_source, s_source, sizeof(s_source)),
-        address->external ? " ext" : "");
+        address->external ? " ext" : "",
+        address->ip4acd_not_ready ? " ip4acd-not-ready" : "");
     g_free(str_peer);
     return buf;
 }
@@ -7836,19 +7838,21 @@ nm_platform_ip6_address_pretty_sort_cmp(const NMPlatformIP6Address *a1,
 void
 nm_platform_ip4_address_hash_update(const NMPlatformIP4Address *obj, NMHashState *h)
 {
-    nm_hash_update_vals(
-        h,
-        obj->ifindex,
-        obj->addr_source,
-        obj->use_ip4_broadcast_address ? obj->broadcast_address : ((in_addr_t) 0u),
-        obj->timestamp,
-        obj->lifetime,
-        obj->preferred,
-        obj->n_ifa_flags,
-        obj->plen,
-        obj->address,
-        obj->peer_address,
-        NM_HASH_COMBINE_BOOLS(guint8, obj->external, obj->use_ip4_broadcast_address));
+    nm_hash_update_vals(h,
+                        obj->ifindex,
+                        obj->addr_source,
+                        obj->use_ip4_broadcast_address ? obj->broadcast_address : ((in_addr_t) 0u),
+                        obj->timestamp,
+                        obj->lifetime,
+                        obj->preferred,
+                        obj->n_ifa_flags,
+                        obj->plen,
+                        obj->address,
+                        obj->peer_address,
+                        NM_HASH_COMBINE_BOOLS(guint8,
+                                              obj->external,
+                                              obj->use_ip4_broadcast_address,
+                                              obj->ip4acd_not_ready));
     nm_hash_update_strarr(h, obj->label);
 }
 
@@ -7870,6 +7874,7 @@ nm_platform_ip4_address_cmp(const NMPlatformIP4Address *a, const NMPlatformIP4Ad
     NM_CMP_FIELD(a, b, n_ifa_flags);
     NM_CMP_FIELD_STR(a, b, label);
     NM_CMP_FIELD_UNSAFE(a, b, external);
+    NM_CMP_FIELD_UNSAFE(a, b, ip4acd_not_ready);
     return 0;
 }
 

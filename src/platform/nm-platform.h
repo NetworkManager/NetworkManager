@@ -322,10 +322,15 @@ typedef enum {
     guint8 plen;                                                                             \
                                                                                              \
     /* FIXME(l3cfg): the external marker won't be necessary anymore, because we only
-     *   merge addresses we care about, and ignore (don't remove) external addresses. */         \
+     * merge addresses we care about, and ignore (don't remove) external addresses. */         \
     bool external : 1;                                                                       \
                                                                                              \
     bool use_ip4_broadcast_address : 1;                                                      \
+                                                                                             \
+    /* Whether the address is ready to be configured. By default, an address is, but this
+     * flag may indicate that the address is just for tracking purpose only, but the ACD
+     * state is not yet ready for the address to be configured. */    \
+    bool ip4acd_not_ready : 1;                                                               \
     ;
 
 /**
