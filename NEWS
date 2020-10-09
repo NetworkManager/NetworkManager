@@ -39,6 +39,11 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Fix building NetworkManager with LTO (Link Time Optimization).
 * Reformat code using spaces instead of tabs. Also, the entire C
   source code is now formatted with "clang-format" (version 11.0).
+* Change the default DNS priority for VPNs from 50 to -50. This is a
+  change in behavior and means that when connecting to a VPN with the
+  default route, DNS queries will never leak to local resolvers. To
+  restore the old behavior, set the DNS priority of the connection to
+  50.
 
 =============================================
 NetworkManager-1.26
