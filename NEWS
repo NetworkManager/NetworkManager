@@ -49,6 +49,10 @@ Overview of changes since NetworkManager-1.26
   default route, DNS queries will never leak to local resolvers. To
   restore the old behavior, set the DNS priority of the connection to
   50.
+* Change the behavior of nm-initrd-generator so that the 'ip=off|none' kernel
+  cmdline argument actually generates a connection which disables both
+  ipv4 and ipv6. Previously the generated connection would disable ipv4
+  but ipv6 would be set to the 'auto' method.
 
 =============================================
 NetworkManager-1.26
