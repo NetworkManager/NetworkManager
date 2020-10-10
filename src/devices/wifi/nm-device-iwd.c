@@ -2501,7 +2501,8 @@ error:
 gboolean
 nm_device_iwd_agent_query(NMDeviceIwd *self, GDBusMethodInvocation *invocation)
 {
-    NMDeviceIwdPrivate *         priv = NM_DEVICE_IWD_GET_PRIVATE(self);
+    NMDevice *                   device = NM_DEVICE(self);
+    NMDeviceIwdPrivate *         priv   = NM_DEVICE_IWD_GET_PRIVATE(self);
     NMActRequest *               req;
     const char *                 setting_name;
     const char *                 setting_key;
@@ -2509,9 +2510,12 @@ nm_device_iwd_agent_query(NMDeviceIwd *self, GDBusMethodInvocation *invocation)
     NMSecretAgentGetSecretsFlags get_secret_flags =
         NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
-    req = nm_device_get_act_request(NM_DEVICE(self));
-    if (!req)
+    req = nm_device_get_act_request(device);
+    if (!req || nm_device_get_state(device) != NM_DEVICE_STATE_CONFIG) {
+        _LOGI(LOGD_WIFI, "IWD asked for secrets without explicit connect request");
+        send_disconnect(self);
         return FALSE;
+    }
 
     if (!try_reply_agent_request(self,
                                  nm_act_request_get_applied_connection(req),
@@ -2537,9 +2541,7 @@ nm_device_iwd_agent_query(NMDeviceIwd *self, GDBusMethodInvocation *invocation)
     if (nm_settings_connection_get_timestamp(nm_act_request_get_settings_connection(req), NULL))
         get_secret_flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
 
-    nm_device_state_changed(NM_DEVICE(self),
-                            NM_DEVICE_STATE_NEED_AUTH,
-                            NM_DEVICE_STATE_REASON_NO_SECRETS);
+    nm_device_state_changed(device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NO_SECRETS);
     wifi_secrets_get_one(self, setting_name, get_secret_flags, setting_key, invocation);
 
     return TRUE;
