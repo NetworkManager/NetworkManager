@@ -676,9 +676,10 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
             return FALSE;
         }
     } else {
-        nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
-                                   "%s type profiles not supported by IWD backend");
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                           "'%s' type profiles not supported by IWD backend",
+                           mode);
         return FALSE;
     }
 
