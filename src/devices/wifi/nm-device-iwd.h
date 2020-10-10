@@ -44,4 +44,6 @@ void _nm_device_iwd_request_scan(NMDeviceIwd *          self,
                                  GVariant *             options,
                                  GDBusMethodInvocation *invocation);
 
+void nm_device_iwd_network_add_remove(NMDeviceIwd *device, GDBusProxy *network, bool add);
+
 #endif /* __NETWORKMANAGER_DEVICE_IWD_H__ */

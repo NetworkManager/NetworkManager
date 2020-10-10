@@ -61,7 +61,10 @@ typedef struct {
     bool                          scan_requested : 1;
     bool                          act_mode_switch : 1;
     bool                          secrets_failed : 1;
+    bool                          networks_requested : 1;
+    bool                          networks_changed : 1;
     gint64                        last_scan;
+    uint32_t                      ap_id;
 } NMDeviceIwdPrivate;
 
 struct _NMDeviceIwd {
@@ -200,49 +203,36 @@ ap_security_flags_from_network_type(const char *type)
     return flags;
 }
 
-static void
-insert_ap_from_network(NMDeviceIwd *self,
-                       GHashTable * aps,
-                       const char * path,
-                       gint64       last_seen_msec,
-                       int16_t      signal,
-                       uint32_t     ap_id)
+static NMWifiAP *
+ap_from_network(NMDeviceIwd *self,
+                GDBusProxy * network,
+                NMRefString *bss_path,
+                gint64       last_seen_msec,
+                int16_t      signal)
 {
-    gs_unref_object GDBusProxy *network_proxy = NULL;
-    gs_unref_variant GVariant *name_value     = NULL;
-    gs_unref_variant GVariant *type_value     = NULL;
-    nm_auto_ref_string NMRefString *bss_path  = NULL;
-    const char *                    name;
-    const char *                    type;
-    NMSupplicantBssInfo             bss_info;
-    uint8_t                         bssid[6];
-    NMWifiAP *                      ap;
+    NMDeviceIwdPrivate *priv              = NM_DEVICE_IWD_GET_PRIVATE(self);
+    gs_unref_variant GVariant *name_value = NULL;
+    gs_unref_variant GVariant *type_value = NULL;
+    const char *               name;
+    const char *               type;
+    uint32_t                   ap_id;
+    uint8_t                    bssid[6];
     gs_unref_bytes GBytes *ssid = NULL;
+    NMWifiAP *             ap;
+    NMSupplicantBssInfo    bss_info;
 
-    bss_path = nm_ref_string_new(path);
-
-    if (g_hash_table_lookup(aps, path)) {
-        _LOGD(LOGD_WIFI, "Duplicate network at %s", path);
-        return;
-    }
-
-    network_proxy =
-        nm_iwd_manager_get_dbus_interface(nm_iwd_manager_get(), path, NM_IWD_NETWORK_INTERFACE);
-    if (!network_proxy)
-        return;
-
-    name_value = g_dbus_proxy_get_cached_property(network_proxy, "Name");
-    type_value = g_dbus_proxy_get_cached_property(network_proxy, "Type");
+    name_value = g_dbus_proxy_get_cached_property(network, "Name");
+    type_value = g_dbus_proxy_get_cached_property(network, "Type");
     if (!name_value || !g_variant_is_of_type(name_value, G_VARIANT_TYPE_STRING) || !type_value
         || !g_variant_is_of_type(type_value, G_VARIANT_TYPE_STRING))
-        return;
+        return NULL;
 
     name = g_variant_get_string(name_value, NULL);
     type = g_variant_get_string(type_value, NULL);
 
     if (nm_streq(type, "wep")) {
         /* WEP not supported */
-        return;
+        return NULL;
     }
 
     /* What we get from IWD are networks, or ESSs, that may contain
@@ -253,6 +243,7 @@ insert_ap_from_network(NMDeviceIwd *self,
      * already does that.  We fake the BSSIDs as they don't play any
      * role either.
      */
+    ap_id    = priv->ap_id++;
     bssid[0] = 0x00;
     bssid[1] = 0x01;
     bssid[2] = 0x02;
@@ -279,6 +270,34 @@ insert_ap_from_network(NMDeviceIwd *self,
 
     nm_assert(bss_path == nm_wifi_ap_get_supplicant_path(ap));
 
+    return ap;
+}
+
+static void
+insert_ap_from_network(NMDeviceIwd *self,
+                       GHashTable * aps,
+                       const char * path,
+                       gint64       last_seen_msec,
+                       int16_t      signal)
+{
+    gs_unref_object GDBusProxy *network_proxy = NULL;
+    nm_auto_ref_string NMRefString *bss_path  = nm_ref_string_new(path);
+    NMWifiAP *                      ap;
+
+    if (g_hash_table_lookup(aps, bss_path)) {
+        _LOGD(LOGD_WIFI, "Duplicate network at %s", path);
+        return;
+    }
+
+    network_proxy =
+        nm_iwd_manager_get_dbus_interface(nm_iwd_manager_get(), path, NM_IWD_NETWORK_INTERFACE);
+    if (!network_proxy)
+        return;
+
+    ap = ap_from_network(self, network_proxy, bss_path, last_seen_msec, signal);
+    if (!ap)
+        return;
+
     g_hash_table_insert(aps, bss_path, ap);
 }
 
@@ -293,19 +312,22 @@ get_ordered_networks_cb(GObject *source, GAsyncResult *res, gpointer user_data)
     const char *               path;
     int16_t                    signal;
     NMWifiAP *                 ap, *ap_safe, *new_ap;
-    gboolean                   changed = FALSE;
+    gboolean                   changed;
     GHashTableIter             ap_iter;
     gs_unref_hashtable GHashTable *new_aps = NULL;
-    static uint32_t                ap_id   = 0;
     gint64                         last_seen_msec;
 
     variant = g_dbus_proxy_call_finish(G_DBUS_PROXY(source), res, &error);
+    if (!variant && nm_utils_error_is_cancelled(error))
+        return;
+
+    priv                     = NM_DEVICE_IWD_GET_PRIVATE(self);
+    priv->networks_requested = FALSE;
+
     if (!variant) {
         _LOGE(LOGD_WIFI, "Station.GetOrderedNetworks failed: %s", error->message);
         return;
     }
-
-    priv = NM_DEVICE_IWD_GET_PRIVATE(self);
 
     if (!g_variant_is_of_type(variant, G_VARIANT_TYPE("(a(on))"))) {
         _LOGE(LOGD_WIFI,
@@ -319,9 +341,12 @@ get_ordered_networks_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 
     last_seen_msec = nm_utils_get_monotonic_timestamp_msec();
     while (g_variant_iter_next(networks, "(&on)", &path, &signal))
-        insert_ap_from_network(self, new_aps, path, last_seen_msec, signal, ap_id++);
+        insert_ap_from_network(self, new_aps, path, last_seen_msec, signal);
 
     g_variant_iter_free(networks);
+
+    changed                = priv->networks_changed;
+    priv->networks_changed = FALSE;
 
     c_list_for_each_entry_safe (ap, ap_safe, &priv->aps_lst_head, aps_lst) {
         new_ap = g_hash_table_lookup(new_aps, nm_wifi_ap_get_supplicant_path(ap));
@@ -375,6 +400,7 @@ update_aps(NMDeviceIwd *self)
                       priv->cancellable,
                       get_ordered_networks_cb,
                       self);
+    priv->networks_requested = TRUE;
 }
 
 static void
@@ -2545,6 +2571,58 @@ nm_device_iwd_agent_query(NMDeviceIwd *self, GDBusMethodInvocation *invocation)
     wifi_secrets_get_one(self, setting_name, get_secret_flags, setting_key, invocation);
 
     return TRUE;
+}
+
+void
+nm_device_iwd_network_add_remove(NMDeviceIwd *self, GDBusProxy *network, bool add)
+{
+    NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE(self);
+    NMWifiAP *          ap   = NULL;
+    NMWifiAP *          tmp;
+    bool                recheck;
+    nm_auto_ref_string NMRefString *bss_path = NULL;
+
+    bss_path = nm_ref_string_new(g_dbus_proxy_get_object_path(network));
+    c_list_for_each_entry (tmp, &priv->aps_lst_head, aps_lst)
+        if (nm_wifi_ap_get_supplicant_path(tmp) == bss_path) {
+            ap = tmp;
+            break;
+        }
+
+    /* We could schedule an update_aps(self) idle call here but up to IWD 1.9
+     * when a hidden network connection is attempted, that network is initially
+     * only added as a Network object but not shown in GetOrderedNetworks()
+     * return values, and for some corner case scenarios it's beneficial to
+     * have that Network reflected in our ap list so that we don't attempt
+     * calling ConnectHiddenNetwork() on it, as that will fail in 1.9.  But we
+     * can skip recheck-available if we're currently scanning or in the middle
+     * of a GetOrderedNetworks() call as that will trigger the recheck too.
+     */
+    recheck = !priv->scanning && !priv->networks_requested;
+
+    if (!add) {
+        if (ap) {
+            ap_add_remove(self, FALSE, ap, recheck);
+            priv->networks_changed |= !recheck;
+        }
+
+        return;
+    }
+
+    if (!ap) {
+        ap = ap_from_network(self,
+                             network,
+                             bss_path,
+                             nm_utils_get_monotonic_timestamp_msec(),
+                             -10000);
+        if (!ap)
+            return;
+
+        ap_add_remove(self, TRUE, ap, recheck);
+        g_object_unref(ap);
+        priv->networks_changed |= !recheck;
+        return;
+    }
 }
 
 /*****************************************************************************/
