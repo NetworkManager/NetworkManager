@@ -60,6 +60,7 @@ typedef struct {
     bool                          scanning : 1;
     bool                          scan_requested : 1;
     bool                          act_mode_switch : 1;
+    bool                          secrets_failed : 1;
     gint64                        last_scan;
 } NMDeviceIwdPrivate;
 
@@ -1257,6 +1258,7 @@ wifi_secrets_cb(NMActRequest *                req,
     priv->wifi_secrets_id = NULL;
 
     if (nm_utils_error_is_cancelled(error)) {
+        priv->secrets_failed = TRUE;
         g_dbus_method_invocation_return_error_literal(invocation,
                                                       NM_DEVICE_ERROR,
                                                       NM_DEVICE_ERROR_INVALID_CONNECTION,
@@ -1297,6 +1299,7 @@ wifi_secrets_cb(NMActRequest *                req,
     return;
 
 secrets_error:
+    priv->secrets_failed = TRUE;
     g_dbus_method_invocation_return_error_literal(invocation,
                                                   NM_DEVICE_ERROR,
                                                   NM_DEVICE_ERROR_INVALID_CONNECTION,
@@ -1375,7 +1378,7 @@ network_connect_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 
             /* If secrets were wrong, we'd be getting a net.connman.iwd.Failed */
             reason = NM_DEVICE_STATE_REASON_NO_SECRETS;
-        } else if (nm_streq0(dbus_error, "net.connman.iwd.Aborted")) {
+        } else if (nm_streq0(dbus_error, "net.connman.iwd.Aborted") && priv->secrets_failed) {
             /* If agent call was cancelled we'd be getting a net.connman.iwd.Aborted */
             reason = NM_DEVICE_STATE_REASON_NO_SECRETS;
         }
@@ -1811,6 +1814,8 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
             NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_NO_SECRETS);
             goto out_fail;
         }
+
+        priv->secrets_failed = FALSE;
 
         if (!is_connection_known_network(connection)
             && nm_setting_wireless_get_hidden(s_wireless)) {
@@ -2485,6 +2490,7 @@ error:
 gboolean
 nm_device_iwd_agent_query(NMDeviceIwd *self, GDBusMethodInvocation *invocation)
 {
+    NMDeviceIwdPrivate *         priv = NM_DEVICE_IWD_GET_PRIVATE(self);
     NMActRequest *               req;
     const char *                 setting_name;
     const char *                 setting_key;
@@ -2501,8 +2507,10 @@ nm_device_iwd_agent_query(NMDeviceIwd *self, GDBusMethodInvocation *invocation)
                                  invocation,
                                  &setting_name,
                                  &setting_key,
-                                 &replied))
+                                 &replied)) {
+        priv->secrets_failed = TRUE;
         return FALSE;
+    }
 
     if (replied)
         return TRUE;
