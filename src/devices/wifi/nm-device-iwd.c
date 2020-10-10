@@ -162,6 +162,7 @@ set_current_ap(NMDeviceIwd *self, NMWifiAP *new_ap, gboolean recheck_available_c
 
     _notify(self, PROP_ACTIVE_ACCESS_POINT);
     _notify(self, PROP_MODE);
+    schedule_periodic_scan(self, TRUE);
 }
 
 static void
@@ -1958,15 +1959,7 @@ static void
 schedule_periodic_scan(NMDeviceIwd *self, gboolean initial_scan)
 {
     NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE(self);
-    GVariant *          value;
-    gboolean            disconnected = TRUE;
     guint               interval;
-
-    if (priv->can_scan) {
-        value        = g_dbus_proxy_get_cached_property(priv->dbus_station_proxy, "State");
-        disconnected = nm_streq0(get_variant_state(value), "disconnected");
-        g_variant_unref(value);
-    }
 
     /* Start scan immediately after a disconnect, mode change or
      * device UP, otherwise wait 10 seconds.  When connected, update
@@ -1979,7 +1972,7 @@ schedule_periodic_scan(NMDeviceIwd *self, gboolean initial_scan)
      * exit autoconnect and interrupt the ongoing scan, meaning that
      * we still want a new scan ASAP.
      */
-    if (!priv->can_scan || !disconnected || priv->scan_requested || priv->scanning)
+    if (!priv->can_scan || priv->scan_requested || priv->scanning || priv->current_ap)
         interval = -1;
     else if (initial_scan)
         interval = 0;
