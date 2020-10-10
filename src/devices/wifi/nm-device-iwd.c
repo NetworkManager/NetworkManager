@@ -1862,9 +1862,16 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
         priv->secrets_failed = FALSE;
 
-        if (!is_connection_known_network(connection)
-            && nm_setting_wireless_get_hidden(s_wireless)) {
+        if (nm_wifi_ap_get_fake(ap)) {
             gs_free char *ssid_str = NULL;
+
+            if (!nm_setting_wireless_get_hidden(s_wireless)) {
+                _LOGW(LOGD_DEVICE | LOGD_WIFI,
+                      "Activation: (wifi) target network not known to IWD but is not "
+                      "marked hidden");
+                NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+                goto out_fail;
+            }
 
             /* Use Station.ConnectHiddenNetwork method instead of Network proxy. */
             ssid_str = _nm_utils_ssid_to_utf8(nm_setting_wireless_get_ssid(s_wireless));
@@ -1877,14 +1884,6 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
                               network_connect_cb,
                               self);
             return NM_ACT_STAGE_RETURN_POSTPONE;
-        }
-
-        if (!nm_wifi_ap_get_supplicant_path(ap)) {
-            _LOGW(LOGD_DEVICE | LOGD_WIFI,
-                  "Activation: (wifi) network is provisioned but dbus supplicant path for AP "
-                  "unknown");
-            NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-            goto out_fail;
         }
 
         network_proxy = nm_iwd_manager_get_dbus_interface(
