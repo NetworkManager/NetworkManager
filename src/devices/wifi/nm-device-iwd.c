@@ -726,7 +726,16 @@ check_connection_available(NMDevice *                     device,
     if (NM_IN_STRSET(mode, NM_SETTING_WIRELESS_MODE_AP, NM_SETTING_WIRELESS_MODE_ADHOC))
         return TRUE;
 
-    if (NM_FLAGS_HAS(flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP))
+    /* Hidden SSIDs obviously don't always appear in the scan list either.
+     *
+     * For an explicit user-activation-request, a connection is considered
+     * available because for hidden Wi-Fi, clients didn't consistently
+     * set the 'hidden' property to indicate hidden SSID networks.  If
+     * activating but the network isn't available let the device recheck
+     * availability.
+     */
+    if (nm_setting_wireless_get_hidden(s_wifi)
+        || NM_FLAGS_HAS(flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP))
         return TRUE;
 
     if (!ap)
@@ -810,6 +819,12 @@ complete_connection(NMDevice *           device,
             if (!nm_setting_verify(NM_SETTING(s_wifi), connection, error))
                 return FALSE;
 
+            /* We could either require the profile to be marked as hidden by the
+             * client or at least check that a hidden AP with a matching security
+             * type is in range using Station.GetHiddenAccessPoints().  For now
+             * assume it is hidden even though that will reveal the SSID on the
+             * air.
+             */
             hidden = TRUE;
         }
     } else {
@@ -1728,9 +1743,9 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     s_wireless = nm_connection_get_setting_wireless(connection);
     g_return_val_if_fail(s_wireless, NM_ACT_STAGE_RETURN_FAILURE);
 
-    /* AP mode never uses a specific object or existing scanned AP */
+    /* AP, Ad-Hoc modes never use a specific object or existing scanned AP */
     mode = nm_setting_wireless_get_mode(s_wireless);
-    if (nm_streq0(mode, NM_SETTING_WIRELESS_MODE_AP))
+    if (NM_IN_STRSET(mode, NM_SETTING_WIRELESS_MODE_AP, NM_SETTING_WIRELESS_MODE_ADHOC))
         goto add_new;
 
     ap_path = nm_active_connection_get_specific_object(NM_ACTIVE_CONNECTION(req));
@@ -1748,14 +1763,16 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
         return NM_ACT_STAGE_RETURN_SUCCESS;
     }
 
-    if (nm_streq0(mode, NM_SETTING_WIRELESS_MODE_INFRA)) {
-        /* Hidden networks not supported at this time */
+    /* In infrastructure mode the specific object should be set by now except
+     * for a first-time connection to a hidden network.  If a hidden network is
+     * a Known Network it should still have been in the AP list.
+     */
+    if (!nm_setting_wireless_get_hidden(s_wireless) || is_connection_known_network(connection))
         return NM_ACT_STAGE_RETURN_FAILURE;
-    }
 
 add_new:
     /* If the user is trying to connect to an AP that NM doesn't yet know about
-     * (hidden network or something) or starting a Hotspot, create an fake AP
+     * (hidden network or something) or starting a Hotspot, create a fake AP
      * from the security settings in the connection.  This "fake" AP gets used
      * until the real one is found in the scan list (Ad-Hoc or Hidden), or until
      * the device is deactivated (Ad-Hoc or Hotspot).
