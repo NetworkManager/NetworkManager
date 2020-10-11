@@ -2,19 +2,22 @@
 # Copyright © 2007 NetworkManager
 # This file is distributed under the same license as the NetworkManager package.
 # Duarte Loreto <happyguy_pt@hotmail.com>, 2007.
+# Juliano de Souza Camargo <julianosc@protonmail.com>, 2020.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: 2.18\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-09-04 09:54+0200\n"
-"PO-Revision-Date: 2007-02-08 18:15+0000\n"
-"Last-Translator: Duarte Loreto <happyguy_pt@hotmail.com>\n"
-"Language-Team: Portuguese <gome_pt@yahoogroups.com>\n"
+"PO-Revision-Date: 2020-10-11 21:09+0100\n"
+"Last-Translator: Juliano de Souza Camargo <julianosc@protonmail.com>\n"
+"Language-Team: Portuguese < >\n"
 "Language: pt\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"X-Generator: Gtranslator 3.38.0\n"
 
 #: ../clients/cli/agent.c:22
 #, c-format
@@ -163,11 +166,11 @@ msgstr "E_xportar"
 
 #: ../clients/cli/common.c:1496
 msgid "limited"
-msgstr ""
+msgstr "limitado"
 
 #: ../clients/cli/common.c:1497
 msgid "full"
-msgstr ""
+msgstr "total"
 
 #. define some prompts for connection editor
 #: ../clients/cli/connections.c:50
@@ -205,19 +208,19 @@ msgstr "Ligações VPN"
 
 #: ../clients/cli/connections.c:68
 msgid "activating"
-msgstr ""
+msgstr "a ativar"
 
 #: ../clients/cli/connections.c:69
 msgid "activated"
-msgstr ""
+msgstr "ativado"
 
 #: ../clients/cli/connections.c:70 ../clients/common/nm-client-utils.c:263
 msgid "deactivating"
-msgstr ""
+msgstr "a desativar"
 
 #: ../clients/cli/connections.c:71
 msgid "deactivated"
-msgstr ""
+msgstr "desativado"
 
 #: ../clients/cli/connections.c:78
 #, fuzzy
@@ -254,7 +257,7 @@ msgstr "Ligações VPN"
 
 #: ../clients/cli/connections.c:546
 msgid "never"
-msgstr ""
+msgstr "nunca"
 
 #: ../clients/cli/connections.c:907
 #, c-format
@@ -680,7 +683,7 @@ msgstr ""
 #: ../clients/cli/devices.c:1544 ../clients/cli/devices.c:1601
 #: ../clients/cli/devices.c:1703
 msgid "NAME"
-msgstr ""
+msgstr "NOME"
 
 #: ../clients/cli/connections.c:1665
 #, c-format
@@ -1016,9 +1019,8 @@ msgstr ""
 #: ../clients/common/nm-client-utils.c:303
 #: ../clients/common/nm-meta-setting-desc.c:871
 #: ../clients/common/nm-meta-setting-desc.c:2703
-#, fuzzy
 msgid "no"
-msgstr "nenhum"
+msgstr "não"
 
 #: ../clients/cli/connections.c:5005 ../clients/cli/connections.c:6930
 #: ../clients/cli/connections.c:6931 ../clients/cli/devices.c:524
@@ -1028,7 +1030,7 @@ msgstr "nenhum"
 #: ../clients/common/nm-meta-setting-desc.c:871
 #: ../clients/common/nm-meta-setting-desc.c:2700
 msgid "yes"
-msgstr ""
+msgstr "sim"
 
 #: ../clients/cli/connections.c:5091
 #, c-format
@@ -3259,13 +3261,12 @@ msgid "(unknown)"
 msgstr ""
 
 #: ../clients/cli/utils.h:318 ../clients/common/nm-meta-setting-desc.c:4182
-#, fuzzy
 msgid "on"
-msgstr "nenhum"
+msgstr "ligado"
 
 #: ../clients/cli/utils.h:318 ../clients/common/nm-meta-setting-desc.c:4183
 msgid "off"
-msgstr ""
+msgstr "desligado"
 
 #: ../clients/cli/utils.h:344
 #, c-format
@@ -3374,11 +3375,11 @@ msgstr ""
 #: ../clients/common/nm-client-utils.c:311
 #: ../clients/common/nm-client-utils.c:384 ../libnm/nm-device.c:1628
 msgid "Unknown"
-msgstr ""
+msgstr "Desconhecido"
 
 #: ../clients/common/nm-client-utils.c:312
 msgid "No reason given"
-msgstr ""
+msgstr "Nenhum motivo especificado"
 
 #: ../clients/common/nm-client-utils.c:314
 msgid "Device is now managed"
@@ -4793,11 +4794,11 @@ msgstr "Incapaz de adicionar uma ligação VPN"
 
 #: ../clients/common/nm-meta-setting-desc.c:7925
 msgid "IPv4 protocol"
-msgstr ""
+msgstr "Protocolo IPv4"
 
 #: ../clients/common/nm-meta-setting-desc.c:7926
 msgid "IPv6 protocol"
-msgstr ""
+msgstr "Protocolo IPv6"
 
 #: ../clients/common/nm-meta-setting-desc.c:7927
 #, fuzzy
@@ -4852,7 +4853,7 @@ msgstr "Ligações VPN"
 
 #: ../clients/common/nm-meta-setting-desc.c:7938
 msgid "PPPoE"
-msgstr ""
+msgstr "PPPoE"
 
 #: ../clients/common/nm-meta-setting-desc.c:7939
 msgid "Proxy"
@@ -4951,7 +4952,7 @@ msgstr "Ligações VPN"
 
 #: ../clients/common/nm-meta-setting-desc.c:8334
 msgid "name"
-msgstr ""
+msgstr "nome"
 
 #: ../clients/common/nm-polkit-listener.c:368
 #, c-format
@@ -4970,25 +4971,25 @@ msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:282
 msgid "Identity"
-msgstr ""
+msgstr "Identidade"
 
 #: ../clients/common/nm-secret-agent-simple.c:287
 msgid "Private key password"
-msgstr ""
+msgstr "Palavra-passe da chave privada"
 
 #: ../clients/common/nm-secret-agent-simple.c:323
 #: ../clients/tui/nmt-page-wifi.c:279
 msgid "Key"
-msgstr ""
+msgstr "Chave"
 
 #: ../clients/common/nm-secret-agent-simple.c:361
 #: ../clients/tui/nmt-page-dsl.c:65
 msgid "Service"
-msgstr ""
+msgstr "Serviço"
 
 #: ../clients/common/nm-secret-agent-simple.c:473
 msgid "WireGuard private-key"
-msgstr ""
+msgstr "Chave privada WireGuard"
 
 #: ../clients/common/nm-secret-agent-simple.c:514
 #, fuzzy, c-format
@@ -5002,11 +5003,11 @@ msgstr "Erro ao obter a ligação VPN '%s'"
 #: ../clients/common/nm-secret-agent-simple.c:976
 #, c-format
 msgid "A password is required to connect to '%s'."
-msgstr ""
+msgstr "É necessária uma palavra-passe para se ligar a “%s”."
 
 #: ../clients/common/nm-secret-agent-simple.c:866
 msgid "Authentication required by wireless network"
-msgstr ""
+msgstr "Autenticação pedida pela rede sem fios"
 
 #: ../clients/common/nm-secret-agent-simple.c:867
 #, c-format
@@ -5035,21 +5036,21 @@ msgstr "Erro ao obter a ligação VPN '%s'"
 
 #: ../clients/common/nm-secret-agent-simple.c:889
 msgid "PIN code required"
-msgstr ""
+msgstr "Necessário código PIN"
 
 #: ../clients/common/nm-secret-agent-simple.c:890
 msgid "PIN code is needed for the mobile broadband device"
-msgstr ""
+msgstr "O código PIN é necessário para dispositivo de banda larga móvel"
 
 #: ../clients/common/nm-secret-agent-simple.c:893
 msgid "PIN"
-msgstr ""
+msgstr "PIN"
 
 #: ../clients/common/nm-secret-agent-simple.c:898
 #: ../clients/common/nm-secret-agent-simple.c:933
 #: ../clients/common/nm-secret-agent-simple.c:956
 msgid "Mobile broadband network password"
-msgstr ""
+msgstr "Palavra-passe da rede de banda larga móvel"
 
 #: ../clients/common/nm-secret-agent-simple.c:911
 #, fuzzy, c-format
@@ -11717,43 +11718,43 @@ msgstr "Incapaz de adicionar uma ligação VPN"
 
 #: ../libnm/nm-device.c:1571
 msgid "Bluetooth"
-msgstr ""
+msgstr "Bluetooth"
 
 #: ../libnm/nm-device.c:1573
 msgid "OLPC Mesh"
-msgstr ""
+msgstr "Malha OLPC"
 
 #: ../libnm/nm-device.c:1575
 msgid "Open vSwitch Interface"
-msgstr ""
+msgstr "Interface vSwitch livre"
 
 #: ../libnm/nm-device.c:1577
 msgid "Open vSwitch Port"
-msgstr ""
+msgstr "Porto vSwitch livre"
 
 #: ../libnm/nm-device.c:1579
 msgid "Open vSwitch Bridge"
-msgstr ""
+msgstr "Ponte vSwitch livre"
 
 #: ../libnm/nm-device.c:1581
 msgid "WiMAX"
-msgstr ""
+msgstr "WiMAX"
 
 #: ../libnm/nm-device.c:1595
 msgid "ADSL"
-msgstr ""
+msgstr "ADSL"
 
 #: ../libnm/nm-device.c:1597
 msgid "MACVLAN"
-msgstr ""
+msgstr "MACVLAN"
 
 #: ../libnm/nm-device.c:1599
 msgid "VXLAN"
-msgstr ""
+msgstr "VXLAN"
 
 #: ../libnm/nm-device.c:1601
 msgid "IPTunnel"
-msgstr ""
+msgstr "IPTunnel"
 
 #: ../libnm/nm-device.c:1603
 msgid "Tun"
@@ -11797,15 +11798,15 @@ msgstr ""
 
 #: ../libnm/nm-device.c:1653
 msgid "Wired"
-msgstr ""
+msgstr "Com fios"
 
 #: ../libnm/nm-device.c:1685
 msgid "PCI"
-msgstr ""
+msgstr "PCI"
 
 #: ../libnm/nm-device.c:1687
 msgid "USB"
-msgstr ""
+msgstr "USB"
 
 #. TRANSLATORS: the first %s is a bus name (eg, "USB") or
 #. * product name, the second is a device type (eg,
