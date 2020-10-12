@@ -1627,14 +1627,12 @@ void _nm_utils_strv_sort(const char **strv, gssize len);
 #define nm_utils_strv_sort(strv, len) _nm_utils_strv_sort(NM_CAST_STRV_MC(strv), len)
 
 int
-nm_utils_strv_cmp_n(const char *const *strv1, gssize len1, const char *const *strv2, gssize len2);
+_nm_utils_strv_cmp_n(const char *const *strv1, gssize len1, const char *const *strv2, gssize len2);
 
-static inline gboolean
-nm_utils_strv_equal(char **strv1, char **strv2)
-{
-    return nm_utils_strv_cmp_n((const char *const *) strv1, -1, (const char *const *) strv2, -1)
-           == 0;
-}
+#define nm_utils_strv_cmp_n(strv1, len1, strv2, len2) \
+    _nm_utils_strv_cmp_n(NM_CAST_STRV_CC(strv1), (len1), NM_CAST_STRV_CC(strv2), (len2))
+
+#define nm_utils_strv_equal(strv1, strv2) (nm_utils_strv_cmp_n((strv1), -1, (strv2), -1) == 0)
 
 /*****************************************************************************/
 
