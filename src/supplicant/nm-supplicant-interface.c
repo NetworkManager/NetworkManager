@@ -842,6 +842,7 @@ _peer_info_destroy (NMSupplicantPeerInfo *peer_info)
 	g_free (peer_info->model);
 	g_free (peer_info->model_number);
 	g_free (peer_info->serial);
+	g_free (peer_info->groups);
 	g_bytes_unref (peer_info->ies);
 
 	nm_ref_string_unref (peer_info->peer_path);
@@ -869,6 +870,7 @@ _peer_info_properties_changed (NMSupplicantInterface *self,
 {
 	GVariant *v_v;
 	const char *v_s;
+	const char **v_strv;
 	gint32 v_i32;
 	const guint8 *arr_data;
 	gsize arr_len;
@@ -892,6 +894,13 @@ _peer_info_properties_changed (NMSupplicantInterface *self,
 
 	if (nm_g_variant_lookup (properties, "Serial", "&s", &v_s))
 		nm_utils_strdup_reset (&peer_info->serial, v_s);
+
+	if (nm_g_variant_lookup (properties, "Groups", "^a&o", &v_strv)) {
+		g_free (peer_info->groups);
+		peer_info->groups = nm_utils_strv_dup_packed (v_strv, -1);
+
+		g_free (v_strv);
+	}
 
 	v_v = nm_g_variant_lookup_value (properties, "DeviceAddress", G_VARIANT_TYPE_BYTESTRING);
 	if (v_v) {
