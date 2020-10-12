@@ -47,7 +47,8 @@ struct _NMWifiP2PPeerPrivate {
     char *address;
 
     GBytes *wfd_ies;
-    char ** groups;
+
+    const char **groups;
 
     guint8 strength;
 
@@ -281,7 +282,7 @@ nm_wifi_p2p_peer_get_groups(const NMWifiP2PPeer *peer)
 {
     g_return_val_if_fail(NM_IS_WIFI_P2P_PEER(peer), NULL);
 
-    return (const char *const *) NM_WIFI_P2P_PEER_GET_PRIVATE(peer)->groups;
+    return NM_WIFI_P2P_PEER_GET_PRIVATE(peer)->groups;
 }
 
 const char *
@@ -403,6 +404,14 @@ nm_wifi_p2p_peer_update_from_properties(NMWifiP2PPeer *peer, const NMSupplicantP
 
     changed |= nm_wifi_p2p_peer_set_wfd_ies(peer, peer_info->ies);
     changed |= nm_wifi_p2p_peer_set_last_seen(peer, peer_info->last_seen_msec / 1000u);
+
+    /* We currently only use the groups information internally to check if
+     * the peer is still joined. */
+    if (!_nm_utils_strv_equal((char **) priv->groups, (char **) peer_info->groups)) {
+        g_free(priv->groups);
+        priv->groups = nm_utils_strv_dup_packed(peer_info->groups, -1);
+        changed |= TRUE;
+    }
 
     g_object_thaw_notify(G_OBJECT(peer));
 
@@ -566,7 +575,7 @@ finalize(GObject *object)
     g_free(priv->serial);
     g_free(priv->address);
     g_bytes_unref(priv->wfd_ies);
-    g_strfreev(priv->groups);
+    g_free(priv->groups);
 
     G_OBJECT_CLASS(nm_wifi_p2p_peer_parent_class)->finalize(object);
 }

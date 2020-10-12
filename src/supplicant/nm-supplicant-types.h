@@ -185,6 +185,8 @@ typedef struct _NMSupplicantPeerInfo {
     char *model_number;
     char *serial;
 
+    const char **groups;
+
     GBytes *ies;
 
     gint64 last_seen_msec;
