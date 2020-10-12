@@ -3997,7 +3997,7 @@ _nm_utils_strv_sort(const char **strv, gssize len)
 }
 
 /**
- * _nm_utils_strv_cmp_n:
+ * nm_utils_strv_cmp_n:
  * @strv1: a string array
  * @len1: the length of @strv1, or -1 for NULL terminated array.
  * @strv2: a string array
@@ -4020,7 +4020,7 @@ _nm_utils_strv_sort(const char **strv, gssize len)
  * Returns: 0 if the arrays are equal (using strcmp).
  **/
 int
-_nm_utils_strv_cmp_n(const char *const *strv1, gssize len1, const char *const *strv2, gssize len2)
+nm_utils_strv_cmp_n(const char *const *strv1, gssize len1, const char *const *strv2, gssize len2)
 {
     gsize n, n2;
 

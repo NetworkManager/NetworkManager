@@ -1627,12 +1627,12 @@ void _nm_utils_strv_sort(const char **strv, gssize len);
 #define nm_utils_strv_sort(strv, len) _nm_utils_strv_sort(NM_CAST_STRV_MC(strv), len)
 
 int
-_nm_utils_strv_cmp_n(const char *const *strv1, gssize len1, const char *const *strv2, gssize len2);
+nm_utils_strv_cmp_n(const char *const *strv1, gssize len1, const char *const *strv2, gssize len2);
 
 static inline gboolean
-_nm_utils_strv_equal(char **strv1, char **strv2)
+nm_utils_strv_equal(char **strv1, char **strv2)
 {
-    return _nm_utils_strv_cmp_n((const char *const *) strv1, -1, (const char *const *) strv2, -1)
+    return nm_utils_strv_cmp_n((const char *const *) strv1, -1, (const char *const *) strv2, -1)
            == 0;
 }
 
@@ -1849,14 +1849,14 @@ nm_strv_ptrarray_contains(const GPtrArray *strv, const char *str)
 static inline int
 nm_strv_ptrarray_cmp(const GPtrArray *a, const GPtrArray *b)
 {
-    /* _nm_utils_strv_cmp_n() will treat NULL and empty arrays the same.
+    /* nm_utils_strv_cmp_n() will treat NULL and empty arrays the same.
      * That means, an empty strv array can both be represented by NULL
      * and an array of length zero.
      * If you need to distinguish between these case, do that yourself. */
-    return _nm_utils_strv_cmp_n((const char *const *) nm_g_ptr_array_pdata(a),
-                                nm_g_ptr_array_len(a),
-                                (const char *const *) nm_g_ptr_array_pdata(b),
-                                nm_g_ptr_array_len(b));
+    return nm_utils_strv_cmp_n((const char *const *) nm_g_ptr_array_pdata(a),
+                               nm_g_ptr_array_len(a),
+                               (const char *const *) nm_g_ptr_array_pdata(b),
+                               nm_g_ptr_array_len(b));
 }
 
 /*****************************************************************************/

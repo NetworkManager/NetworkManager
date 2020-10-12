@@ -1345,8 +1345,8 @@ global_dns_equal(NMGlobalDnsConfig *old, NMGlobalDnsConfig *new)
     if (!old || !new)
         return FALSE;
 
-    if (!_nm_utils_strv_equal(old->options, new->options)
-        || !_nm_utils_strv_equal(old->searches, new->searches))
+    if (!nm_utils_strv_equal(old->options, new->options)
+        || !nm_utils_strv_equal(old->searches, new->searches))
         return FALSE;
 
     if ((!old->domains || !new->domains) && old->domains != new->domains)
@@ -1364,8 +1364,8 @@ global_dns_equal(NMGlobalDnsConfig *old, NMGlobalDnsConfig *new)
         domain_old = value_old;
         domain_new = value_new;
 
-        if (!_nm_utils_strv_equal(domain_old->options, domain_new->options)
-            || !_nm_utils_strv_equal(domain_old->servers, domain_new->servers))
+        if (!nm_utils_strv_equal(domain_old->options, domain_new->options)
+            || !nm_utils_strv_equal(domain_old->servers, domain_new->servers))
             return FALSE;
     }
 
