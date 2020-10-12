@@ -835,6 +835,8 @@ _peer_info_destroy(NMSupplicantPeerInfo *peer_info)
     g_free(peer_info->serial);
     g_bytes_unref(peer_info->ies);
 
+    nm_ref_string_unref(peer_info->peer_path);
+
     nm_g_slice_free(peer_info);
 }
 
