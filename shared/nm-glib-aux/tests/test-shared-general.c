@@ -1051,7 +1051,7 @@ test_strv_dup_packed(void)
             g_assert(strv_cpy);
         g_assert(NM_PTRARRAY_LEN(strv_cpy) == strv_len);
         if (strv_cpy)
-            g_assert(nm_utils_strv_equal((char **) strv_cpy, (char **) strv_src));
+            g_assert(nm_utils_strv_equal(strv_cpy, strv_src));
     }
 }
 

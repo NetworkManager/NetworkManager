@@ -330,7 +330,7 @@ _do_test_nm_utils_strsplit_set_f_one(NMUtilsStrsplitSetFlags flags,
             }
             g_assert(words_g[words_len] == NULL);
             g_assert_cmpint(NM_PTRARRAY_LEN(words_g), ==, words_len);
-            g_assert(nm_utils_strv_cmp_n(exp_words, words_len, NM_CAST_STRV_CC(words_g), -1) == 0);
+            g_assert(nm_utils_strv_cmp_n(exp_words, words_len, words_g, -1) == 0);
         }
     }
 
@@ -10058,7 +10058,7 @@ _strsplit_quoted_assert_strv(const char *       topic,
     g_assert(strv1);
     g_assert(strv2);
 
-    if (nm_utils_strv_equal((char **) strv1, (char **) strv2))
+    if (nm_utils_strv_equal(strv1, strv2))
         return;
 
     for (i = 0; strv1[i]; i++) {

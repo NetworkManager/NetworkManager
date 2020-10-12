@@ -264,7 +264,7 @@ set_arp_targets(NMDevice *device, const char *cur_arp_ip_target, const char *new
     if (cur_len == 0 && new_len == 0)
         return;
 
-    if (nm_utils_strv_equal((char **) cur_strv, (char **) new_strv))
+    if (nm_utils_strv_equal(cur_strv, new_strv))
         return;
 
     for (i = 0; i < cur_len; i++)
