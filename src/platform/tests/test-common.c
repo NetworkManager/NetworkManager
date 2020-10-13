@@ -99,8 +99,7 @@ nmtstp_platform_ip_address_find(NMPlatform *self, int ifindex, int addr_family, 
     nm_assert(addr);
 
     nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex);
-    nm_platform_iter_obj_for_each(&iter, self, &lookup, &obj)
-    {
+    nm_platform_iter_obj_for_each (&iter, self, &lookup, &obj) {
         const NMPlatformIPAddress *a = NMP_OBJECT_CAST_IP_ADDRESS(obj);
 
         g_assert(NMP_OBJECT_GET_ADDR_FAMILY(obj) == addr_family);

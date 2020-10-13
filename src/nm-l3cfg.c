@@ -565,19 +565,17 @@ _l3cfg_externally_removed_objs_pickup(NML3Cfg *self, int addr_family)
     if (!self->priv.p->combined_l3cd_commited)
         return;
 
-    nm_l3_config_data_iter_obj_for_each(&iter,
-                                        self->priv.p->combined_l3cd_commited,
-                                        &obj,
-                                        NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4))
-    {
+    nm_l3_config_data_iter_obj_for_each (&iter,
+                                         self->priv.p->combined_l3cd_commited,
+                                         &obj,
+                                         NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4)) {
         if (!nm_platform_lookup_entry(self->priv.platform, NMP_CACHE_ID_TYPE_OBJECT_TYPE, obj))
             _l3cfg_externally_removed_objs_track(self, obj, TRUE);
     }
-    nm_l3_config_data_iter_obj_for_each(&iter,
-                                        self->priv.p->combined_l3cd_commited,
-                                        &obj,
-                                        NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4))
-    {
+    nm_l3_config_data_iter_obj_for_each (&iter,
+                                         self->priv.p->combined_l3cd_commited,
+                                         &obj,
+                                         NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4)) {
         if (!nm_platform_lookup_entry(self->priv.platform, NMP_CACHE_ID_TYPE_OBJECT_TYPE, obj))
             _l3cfg_externally_removed_objs_track(self, obj, TRUE);
     }
@@ -1410,7 +1408,7 @@ _l3_acd_data_add_all(NML3Cfg *self, const L3ConfigData *const *infos, guint info
         NMDedupMultiIter    iter;
         const NMPObject *   obj;
 
-        nm_l3_config_data_iter_obj_for_each(&iter, info->l3cd, &obj, NMP_OBJECT_TYPE_IP4_ADDRESS)
+        nm_l3_config_data_iter_obj_for_each (&iter, info->l3cd, &obj, NMP_OBJECT_TYPE_IP4_ADDRESS)
             _l3_acd_data_add(self, info->l3cd, obj, info->tag, info->acd_timeout_msec);
     }
 
@@ -3220,8 +3218,7 @@ nm_l3cfg_has_commited_ip6_addresses_pending_dad(NML3Cfg *self)
 
     nmp_lookup_init_object(&plat_lookup, NMP_OBJECT_TYPE_IP6_ADDRESS, self->priv.ifindex);
 
-    nm_platform_iter_obj_for_each(&iter, self->priv.platform, &plat_lookup, &plat_obj)
-    {
+    nm_platform_iter_obj_for_each (&iter, self->priv.platform, &plat_lookup, &plat_obj) {
         const NMPlatformIP6Address *plat_addr = NMP_OBJECT_CAST_IP6_ADDRESS(plat_obj);
         const NMDedupMultiEntry *   l3cd_entry;
 
