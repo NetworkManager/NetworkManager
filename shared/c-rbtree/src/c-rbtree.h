@@ -27,6 +27,7 @@ extern "C" {
 #endif
 
 #include <assert.h>
+#include <stdalign.h>
 #include <stddef.h>
 
 typedef struct CRBNode CRBNode;
@@ -58,7 +59,10 @@ typedef struct CRBTree CRBTree;
  * C_RBNODE_INIT.
  */
 struct CRBNode {
-        unsigned long __parent_and_flags;
+        union {
+                unsigned long __parent_and_flags;
+                alignas(4) char __dmmy_for_struct_alignment;
+        };
         CRBNode *left;
         CRBNode *right;
 };
