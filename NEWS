@@ -1,3 +1,17 @@
+===============================================
+NetworkManager-1.26.4
+Overview of changes since NetworkManager-1.26.2
+===============================================
+
+* Add support for the DHCPv4 vendor class identifier option
+* The initrd generator now supports specifying interfaces by MAC
+  address
+* Automatically add the wildcard DNS domain to VPNs with
+  never-default=no and no domains
+* Allow setting bond "primary" option with modes "tlb" and "alb"
+* Fix peer group tracking of Wi-Fi P2P connections
+* Fix autoactivating virtual devices after a failure
+
 =============================================
 NetworkManager-1.26.2
 Overview of changes since NetworkManager-1.26
