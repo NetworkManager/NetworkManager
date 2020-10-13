@@ -141,6 +141,7 @@ NML3ConfigData *nm_l3_config_data_new_from_platform(NMDedupMultiIndex *       mu
 
 typedef gboolean (*NML3ConfigMergeHookAddObj)(const NML3ConfigData *l3cd,
                                               const NMPObject *     obj,
+                                              NMTernary *           out_ip4acd_not_ready,
                                               gpointer              user_data);
 
 void nm_l3_config_data_merge(NML3ConfigData *      self,

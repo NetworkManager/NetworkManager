@@ -1524,6 +1524,55 @@ nm_g_array_len(const GArray *arr)
 
 /*****************************************************************************/
 
+static inline GPtrArray *
+nm_g_ptr_array_ref(GPtrArray *arr)
+{
+    return arr ? g_ptr_array_ref(arr) : NULL;
+}
+
+static inline void
+nm_g_ptr_array_unref(GPtrArray *arr)
+{
+    if (arr)
+        g_ptr_array_unref(arr);
+}
+
+#define nm_g_ptr_array_set(pdst, val)                              \
+    ({                                                             \
+        GPtrArray **_pdst    = (pdst);                             \
+        GPtrArray * _val     = (val);                              \
+        gboolean    _changed = FALSE;                              \
+                                                                   \
+        nm_assert(_pdst);                                          \
+                                                                   \
+        if (*_pdst != _val) {                                      \
+            _nm_unused gs_unref_ptrarray GPtrArray *_old = *_pdst; \
+                                                                   \
+            *_pdst   = nm_g_ptr_array_ref(_val);                   \
+            _changed = TRUE;                                       \
+        }                                                          \
+        _changed;                                                  \
+    })
+
+#define nm_g_ptr_array_set_take(pdst, val)                         \
+    ({                                                             \
+        GPtrArray **_pdst    = (pdst);                             \
+        GPtrArray * _val     = (val);                              \
+        gboolean    _changed = FALSE;                              \
+                                                                   \
+        nm_assert(_pdst);                                          \
+                                                                   \
+        if (*_pdst != _val) {                                      \
+            _nm_unused gs_unref_ptrarray GPtrArray *_old = *_pdst; \
+                                                                   \
+            *_pdst   = _val;                                       \
+            _changed = TRUE;                                       \
+        } else {                                                   \
+            nm_g_ptr_array_unref(_val);                            \
+        }                                                          \
+        _changed;                                                  \
+    })
+
 static inline guint
 nm_g_ptr_array_len(const GPtrArray *arr)
 {
