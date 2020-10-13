@@ -1477,7 +1477,7 @@ nmtstp_link_bridge_add(NMPlatform *               platform,
             lnk->group_fwd_mask != 0
                 ? nm_sprintf_buf(sbuf_gfw, "group_fwd_mask %#x ", lnk->group_fwd_mask)
                 : "",
-            NM_ETHER_ADDR_FORMAT_VAL(lnk->group_addr),
+            NM_ETHER_ADDR_FORMAT_VAL(&lnk->group_addr),
             (int) lnk->mcast_snooping,
             lnk->mcast_router,
             (int) lnk->mcast_query_use_ifaddr,

@@ -5641,7 +5641,7 @@ nm_platform_lnk_bridge_to_string(const NMPlatformLnkBridge *lnk, char *buf, gsiz
                lnk->vlan_protocol,
                (int) lnk->vlan_stats_enabled,
                lnk->group_fwd_mask,
-               NM_ETHER_ADDR_FORMAT_VAL(lnk->group_addr),
+               NM_ETHER_ADDR_FORMAT_VAL(&lnk->group_addr),
                (int) lnk->mcast_snooping,
                lnk->mcast_router,
                (int) lnk->mcast_query_use_ifaddr,
