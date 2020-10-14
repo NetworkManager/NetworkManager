@@ -41,6 +41,16 @@
     }                                                                                  \
     G_STMT_END
 
+struct nl80211_station_info {
+    gboolean valid;
+    guint8   bssid[ETH_ALEN];
+    guint32  txrate;
+    gboolean txrate_valid;
+    guint8   signal;
+    gboolean signal_valid;
+    gint64   timestamp;
+};
+
 typedef struct {
     NMWifiUtils     parent;
     struct nl_sock *nl_sock;
@@ -49,6 +59,8 @@ typedef struct {
     int             num_freqs;
     int             phy;
     bool            can_wowlan : 1;
+
+    struct nl80211_station_info sta_info;
 } NMWifiUtilsNl80211;
 
 typedef struct {
@@ -410,15 +422,6 @@ nl80211_xbm_to_percent(gint32 xbm, guint32 divisor)
                     / ((float) SIGNAL_MAX_DBM - (float) NOISE_FLOOR_DBM));
 }
 
-struct nl80211_station_info {
-    gboolean valid;
-    guint8   bssid[ETH_ALEN];
-    guint32  txrate;
-    gboolean txrate_valid;
-    guint8   signal;
-    gboolean signal_valid;
-};
-
 static int
 nl80211_station_dump_handler(struct nl_msg *msg, void *arg)
 {
@@ -493,50 +496,52 @@ nl80211_station_dump_handler(struct nl_msg *msg, void *arg)
 }
 
 static void
-nl80211_get_sta_info(NMWifiUtilsNl80211 *self, struct nl80211_station_info *sta_info)
+nl80211_get_sta_info(NMWifiUtilsNl80211 *self)
 {
     nm_auto_nlmsg struct nl_msg *msg = NULL;
+    gint64                       now = nm_utils_get_monotonic_timestamp_msec();
 
-    memset(sta_info, 0, sizeof(*sta_info));
+    if (self->sta_info.valid && now - self->sta_info.timestamp < 500)
+        return;
+
+    memset(&self->sta_info, 0, sizeof(self->sta_info));
 
     msg = nl80211_alloc_msg(self, NL80211_CMD_GET_STATION, NLM_F_DUMP);
 
-    nl80211_send_and_recv(self, msg, nl80211_station_dump_handler, sta_info);
+    nl80211_send_and_recv(self, msg, nl80211_station_dump_handler, &self->sta_info);
+    self->sta_info.timestamp = now;
 }
 
 static gboolean
 wifi_nl80211_get_bssid(NMWifiUtils *data, guint8 *out_bssid)
 {
-    NMWifiUtilsNl80211 *        self = (NMWifiUtilsNl80211 *) data;
-    struct nl80211_station_info sta_info;
+    NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
 
-    nl80211_get_sta_info(self, &sta_info);
+    nl80211_get_sta_info(self);
 
-    if (sta_info.valid)
-        memcpy(out_bssid, sta_info.bssid, ETH_ALEN);
+    if (self->sta_info.valid)
+        memcpy(out_bssid, self->sta_info.bssid, ETH_ALEN);
 
-    return sta_info.valid;
+    return self->sta_info.valid;
 }
 
 static guint32
 wifi_nl80211_get_rate(NMWifiUtils *data)
 {
-    NMWifiUtilsNl80211 *        self = (NMWifiUtilsNl80211 *) data;
-    struct nl80211_station_info sta_info;
+    NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
 
-    nl80211_get_sta_info(self, &sta_info);
+    nl80211_get_sta_info(self);
 
-    return sta_info.txrate;
+    return self->sta_info.txrate;
 }
 
 static int
 wifi_nl80211_get_qual(NMWifiUtils *data)
 {
-    NMWifiUtilsNl80211 *        self = (NMWifiUtilsNl80211 *) data;
-    struct nl80211_station_info sta_info;
+    NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
 
-    nl80211_get_sta_info(self, &sta_info);
-    return sta_info.signal;
+    nl80211_get_sta_info(self);
+    return self->sta_info.signal;
 }
 
 static gboolean
