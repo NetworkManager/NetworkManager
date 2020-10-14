@@ -163,6 +163,7 @@ dispose(GObject *object)
 
 struct nl80211_iface_info {
     NM80211Mode mode;
+    uint32_t    freq;
 };
 
 static int
@@ -192,6 +193,9 @@ nl80211_iface_info_handler(struct nl_msg *msg, void *arg)
         info->mode = NM_802_11_MODE_MESH;
         break;
     }
+
+    if (tb[NL80211_ATTR_WIPHY_FREQ] != NULL)
+        info->freq = nla_get_u32(tb[NL80211_ATTR_WIPHY_FREQ]);
 
     return NL_SKIP;
 }
@@ -489,12 +493,16 @@ nl80211_get_bss_info(NMWifiUtilsNl80211 *self, struct nl80211_bss_info *bss_info
 static guint32
 wifi_nl80211_get_freq(NMWifiUtils *data)
 {
-    NMWifiUtilsNl80211 *    self = (NMWifiUtilsNl80211 *) data;
-    struct nl80211_bss_info bss_info;
+    NMWifiUtilsNl80211 *         self       = (NMWifiUtilsNl80211 *) data;
+    struct nl80211_iface_info    iface_info = {};
+    nm_auto_nlmsg struct nl_msg *msg        = NULL;
 
-    nl80211_get_bss_info(self, &bss_info);
+    msg = nl80211_alloc_msg(self, NL80211_CMD_GET_INTERFACE, 0);
 
-    return bss_info.freq;
+    if (nl80211_send_and_recv(self, msg, nl80211_iface_info_handler, &iface_info) < 0)
+        return 0;
+
+    return iface_info.freq;
 }
 
 static guint32
