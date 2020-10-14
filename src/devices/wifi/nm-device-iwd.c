@@ -181,8 +181,6 @@ remove_all_aps(NMDeviceIwd *self)
     if (c_list_is_empty(&priv->aps_lst_head))
         return;
 
-    set_current_ap(self, NULL, FALSE);
-
     c_list_for_each_entry_safe (ap, ap_safe, &priv->aps_lst_head, aps_lst)
         ap_add_remove(self, FALSE, ap, FALSE);
 
