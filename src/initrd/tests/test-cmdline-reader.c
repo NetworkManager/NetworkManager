@@ -1600,6 +1600,58 @@ test_dhcp_vendor_class_id (void)
 	g_assert (nm_setting_ip4_config_get_dhcp_vendor_class_identifier (s_ip4) == NULL);
 }
 
+static void
+test_infiniband_iface (void)
+{
+	gs_unref_hashtable GHashTable *connections = NULL;
+	const char *const *ARGV = NM_MAKE_STRV ("ip=ib1:dhcp");
+	NMConnection *connection;
+	NMSettingInfiniband *s_ib;
+	gs_free char *hostname = NULL;
+
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV, &hostname);
+	g_assert (connections);
+	g_assert_cmpint (g_hash_table_size (connections), ==, 1);
+	g_assert_cmpstr (hostname, ==, NULL);
+
+	connection = g_hash_table_lookup (connections, "ib1");
+	g_assert (connection);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+	g_assert_cmpstr (nm_connection_get_connection_type (connection),
+	                 ==,
+	                 NM_SETTING_INFINIBAND_SETTING_NAME);
+	s_ib = nm_connection_get_setting_infiniband (connection);
+	g_assert (s_ib);
+}
+
+static void
+test_infiniband_mac (void)
+{
+	gs_unref_hashtable GHashTable *connections = NULL;
+	const char *const *ARGV = NM_MAKE_STRV("ip=00-11-22-33-44-55-66-77-88-99-aa-bb-cc-dd-ee-ff-00-11-22-33:dhcp");
+	NMConnection *connection;
+	NMSettingInfiniband *s_ib;
+	gs_free char *hostname = NULL;
+
+	connections = nmi_cmdline_reader_parse (TEST_INITRD_DIR "/sysfs", ARGV, &hostname);
+	g_assert (connections);
+	g_assert_cmpint (g_hash_table_size (connections), ==, 1);
+	g_assert_cmpstr (hostname, ==, NULL);
+
+	connection = g_hash_table_lookup (connections, "00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33");
+	g_assert (connection);
+	nmtst_assert_connection_verifies_without_normalization (connection);
+	g_assert_cmpstr (nm_connection_get_connection_type (connection),
+	                 ==,
+	                 NM_SETTING_INFINIBAND_SETTING_NAME);
+	g_assert_cmpstr (nm_connection_get_interface_name (connection), ==, NULL);
+	s_ib = nm_connection_get_setting_infiniband (connection);
+	g_assert (s_ib);
+	g_assert_cmpstr (nm_setting_infiniband_get_mac_address (s_ib),
+	                 ==,
+	                 "00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33");
+}
+
 NMTST_DEFINE ();
 
 int main (int argc, char **argv)
@@ -1639,6 +1691,8 @@ int main (int argc, char **argv)
 	g_test_add_func ("/initrd/cmdline/bootif/off", test_bootif_off);
 	g_test_add_func ("/initrd/cmdline/neednet", test_neednet);
 	g_test_add_func ("/initrd/cmdline/dhcp/vendor_class_id", test_dhcp_vendor_class_id);
+	g_test_add_func("/initrd/cmdline/infiniband/iface", test_infiniband_iface);
+	g_test_add_func("/initrd/cmdline/infiniband/mac", test_infiniband_mac);
 
 	return g_test_run ();
 }
