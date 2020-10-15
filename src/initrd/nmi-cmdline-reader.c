@@ -137,10 +137,21 @@ reader_create_connection(Reader *                 reader,
                  multi_connect,
                  NULL);
 
-    if (mac) {
-        setting = nm_setting_wired_new();
+    if (nm_streq0(type_name, NM_SETTING_INFINIBAND_SETTING_NAME)) {
+        setting = nm_setting_infiniband_new();
         nm_connection_add_setting(connection, setting);
-        g_object_set(setting, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
+        g_object_set(setting, NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram", NULL);
+    }
+
+    if (mac) {
+        if (nm_streq0(type_name, NM_SETTING_INFINIBAND_SETTING_NAME)) {
+            setting = (NMSetting *) nm_connection_get_setting_infiniband(connection);
+            g_object_set(setting, NM_SETTING_INFINIBAND_MAC_ADDRESS, mac, NULL);
+        } else {
+            setting = nm_setting_wired_new();
+            nm_connection_add_setting(connection, setting);
+            g_object_set(setting, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
+        }
     }
 
     return connection;
@@ -180,7 +191,7 @@ reader_get_connection(Reader *    reader,
         if (nm_utils_is_valid_iface_name(iface_spec, NULL))
             ifname = iface_spec;
         else {
-            mac = nm_utils_hwaddr_canonical(iface_spec, ETH_ALEN);
+            mac = nm_utils_hwaddr_canonical(iface_spec, -1);
             if (!mac)
                 _LOGW(LOGD_CORE, "invalid interface '%s'", iface_spec);
         }
@@ -219,8 +230,13 @@ reader_get_connection(Reader *    reader,
         if (!create_if_missing)
             return NULL;
 
-        if (!type_name)
-            type_name = NM_SETTING_WIRED_SETTING_NAME;
+        if (!type_name) {
+            if (NM_STR_HAS_PREFIX(ifname, "ib")
+                || (mac && nm_utils_hwaddr_valid(mac, INFINIBAND_ALEN)))
+                type_name = NM_SETTING_INFINIBAND_SETTING_NAME;
+            else
+                type_name = NM_SETTING_WIRED_SETTING_NAME;
+        }
 
         connection = reader_create_connection(reader,
                                               ifname ?: mac,
