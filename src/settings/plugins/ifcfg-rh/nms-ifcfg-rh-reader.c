@@ -5339,24 +5339,31 @@ infiniband_connection_from_ifcfg(const char *file, shvarFile *ifcfg, GError **er
 static void
 handle_bond_option(NMSettingBond *s_bond, const char *key, const char *value)
 {
-    char *      sanitized = NULL, *j;
-    const char *p         = value;
+    gs_free char *sanitized = NULL;
+    const char *  p         = value;
 
     /* Remove any quotes or +/- from arp_ip_target */
-    if (!g_strcmp0(key, NM_SETTING_BOND_OPTION_ARP_IP_TARGET) && value && value[0]) {
+    if (nm_streq0(key, NM_SETTING_BOND_OPTION_ARP_IP_TARGET) && value && value[0]) {
+        char *j;
+
         if (*p == '\'' || *p == '"')
             p++;
-        j = sanitized = g_malloc0(strlen(p) + 1);
+        j = sanitized = g_malloc(strlen(p) + 1);
         while (*p) {
             if (*p != '+' && *p != '-' && *p != '\'' && *p != '"')
                 *j++ = *p;
             p++;
         }
+        *j++  = '\0';
+        value = sanitized;
     }
 
-    if (!nm_setting_bond_add_option(s_bond, key, sanitized ?: value))
-        PARSE_WARNING("invalid bonding option '%s' = %s", key, sanitized ?: value);
-    g_free(sanitized);
+    if (!_nm_setting_bond_validate_option(key, value, NULL)) {
+        PARSE_WARNING("invalid bonding option '%s' = %s", key, value);
+        return;
+    }
+
+    nm_setting_bond_add_option(s_bond, key, value);
 }
 
 static NMSetting *

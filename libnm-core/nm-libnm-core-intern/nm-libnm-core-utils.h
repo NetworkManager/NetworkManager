@@ -73,6 +73,8 @@ NMBondMode _nm_setting_bond_mode_from_string(const char *str);
 
 const char *_nm_setting_bond_mode_to_string(int mode);
 
+gboolean _nm_setting_bond_validate_option(const char *name, const char *value, GError **error);
+
 /*****************************************************************************/
 
 static inline guint32

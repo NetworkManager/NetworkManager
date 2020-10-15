@@ -1141,7 +1141,10 @@ mac_address_parser_INFINIBAND(KeyfileReaderInfo *info, NMSetting *setting, const
 }
 
 static void
-read_hash_of_string(GKeyFile *file, NMSetting *setting, const char *key)
+read_hash_of_string(KeyfileReaderInfo *info,
+                    GKeyFile *         file,
+                    NMSetting *        setting,
+                    const char *       kf_group)
 {
     gs_strfreev char **keys = NULL;
     const char *const *iter;
@@ -1149,10 +1152,10 @@ read_hash_of_string(GKeyFile *file, NMSetting *setting, const char *key)
     gboolean           is_vpn;
     gsize              n_keys;
 
-    nm_assert((NM_IS_SETTING_VPN(setting) && nm_streq(key, NM_SETTING_VPN_DATA))
-              || (NM_IS_SETTING_VPN(setting) && nm_streq(key, NM_SETTING_VPN_SECRETS))
-              || (NM_IS_SETTING_BOND(setting) && nm_streq(key, NM_SETTING_BOND_OPTIONS))
-              || (NM_IS_SETTING_USER(setting) && nm_streq(key, NM_SETTING_USER_DATA)));
+    nm_assert((NM_IS_SETTING_VPN(setting) && nm_streq(kf_group, NM_SETTING_VPN_DATA))
+              || (NM_IS_SETTING_VPN(setting) && nm_streq(kf_group, NM_SETTING_VPN_SECRETS))
+              || (NM_IS_SETTING_BOND(setting) && nm_streq(kf_group, NM_SETTING_BOND_OPTIONS))
+              || (NM_IS_SETTING_USER(setting) && nm_streq(kf_group, NM_SETTING_USER_DATA)));
 
     keys = nm_keyfile_plugin_kf_get_keys(file, setting_name, &n_keys, NULL);
     if (n_keys == 0)
@@ -1160,23 +1163,38 @@ read_hash_of_string(GKeyFile *file, NMSetting *setting, const char *key)
 
     if ((is_vpn = NM_IS_SETTING_VPN(setting)) || NM_IS_SETTING_BOND(setting)) {
         for (iter = (const char *const *) keys; *iter; iter++) {
+            const char *  kf_key  = *iter;
             gs_free char *to_free = NULL;
             gs_free char *value   = NULL;
             const char *  name;
 
-            value = nm_keyfile_plugin_kf_get_string(file, setting_name, *iter, NULL);
+            value = nm_keyfile_plugin_kf_get_string(file, setting_name, kf_key, NULL);
             if (!value)
                 continue;
 
-            name = nm_keyfile_key_decode(*iter, &to_free);
+            name = nm_keyfile_key_decode(kf_key, &to_free);
 
             if (is_vpn) {
                 /* Add any item that's not a class property to the data hash */
                 if (!g_object_class_find_property(G_OBJECT_GET_CLASS(setting), name))
                     nm_setting_vpn_add_data_item(NM_SETTING_VPN(setting), name, value);
             } else {
-                if (!nm_streq(name, "interface-name"))
-                    nm_setting_bond_add_option(NM_SETTING_BOND(setting), name, value);
+                if (!nm_streq(name, "interface-name")) {
+                    gs_free_error GError *error = NULL;
+
+                    if (!_nm_setting_bond_validate_option(name, value, &error)) {
+                        if (!handle_warn(info,
+                                         kf_key,
+                                         name,
+                                         NM_KEYFILE_WARN_SEVERITY_WARN,
+                                         _("ignoring invalid bond option %s%s%s = %s%s%s: %s"),
+                                         NM_PRINT_FMT_QUOTE_STRING(name),
+                                         NM_PRINT_FMT_QUOTE_STRING(value),
+                                         error->message))
+                            return;
+                    } else
+                        nm_setting_bond_add_option(NM_SETTING_BOND(setting), name, value);
+                }
             }
         }
         openconnect_fix_secret_flags(setting);
@@ -3170,7 +3188,7 @@ read_one_setting_value(KeyfileReaderInfo *       info,
                                                   NULL);
         g_object_set(setting, key, sa, NULL);
     } else if (type == G_TYPE_HASH_TABLE) {
-        read_hash_of_string(keyfile, setting, key);
+        read_hash_of_string(info, keyfile, setting, key);
     } else if (type == G_TYPE_ARRAY) {
         read_array_of_uint(keyfile, setting, key);
     } else if (G_TYPE_IS_FLAGS(type)) {

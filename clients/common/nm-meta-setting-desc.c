@@ -2400,13 +2400,9 @@ _nm_meta_setting_bond_add_option(NMSetting * setting,
     char *         p;
 
     if (!value || !value[0]) {
-        if (!nm_setting_bond_remove_option(s_bond, name)) {
-            nm_utils_error_set(error,
-                               NM_UTILS_ERROR_INVALID_ARGUMENT,
-                               _("failed to unset bond option \"%s\""),
-                               name);
-            return FALSE;
-        }
+        /* This call only fails if name is currently not tracked. It's not an
+         * error to remove an option that is not set. */
+        nm_setting_bond_remove_option(s_bond, name);
         return TRUE;
     }
 
@@ -2421,13 +2417,15 @@ _nm_meta_setting_bond_add_option(NMSetting * setting,
                 *p = ',';
     }
 
-    if (!nm_setting_bond_add_option(s_bond, name, value)) {
+    if (!nm_setting_bond_validate_option(name, value)) {
         nm_utils_error_set(error,
                            NM_UTILS_ERROR_INVALID_ARGUMENT,
                            _("failed to set bond option \"%s\""),
                            name);
         return FALSE;
     }
+
+    nm_setting_bond_add_option(s_bond, name, value);
 
     if (nm_streq(name, NM_SETTING_BOND_OPTION_ARP_INTERVAL)) {
         if (_nm_utils_ascii_str_to_int64(value, 10, 0, G_MAXINT, 0) > 0)
