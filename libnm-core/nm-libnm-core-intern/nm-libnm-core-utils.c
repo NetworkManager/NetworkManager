@@ -36,18 +36,19 @@ _nm_setting_bond_remove_options_arp_interval(NMSettingBond *s_bond)
     nm_setting_bond_remove_option(s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
 }
 
+/*****************************************************************************/
+
 NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
     _nm_setting_bond_mode_from_string,
     NMBondMode,
-    { g_return_val_if_fail(name, NM_BOND_MODE_UNKNOWN); },
+    {
+        G_STATIC_ASSERT_EXPR(_NM_BOND_MODE_NUM <= 9);
+
+        if (name && name[0] < '0' + _NM_BOND_MODE_NUM && name[0] >= '0' && name[1] == '\0') {
+            return name[0] - '0';
+        }
+    },
     { return NM_BOND_MODE_UNKNOWN; },
-    {"0", NM_BOND_MODE_ROUNDROBIN},
-    {"1", NM_BOND_MODE_ACTIVEBACKUP},
-    {"2", NM_BOND_MODE_XOR},
-    {"3", NM_BOND_MODE_BROADCAST},
-    {"4", NM_BOND_MODE_8023AD},
-    {"5", NM_BOND_MODE_TLB},
-    {"6", NM_BOND_MODE_ALB},
     {"802.3ad", NM_BOND_MODE_8023AD},
     {"active-backup", NM_BOND_MODE_ACTIVEBACKUP},
     {"balance-alb", NM_BOND_MODE_ALB},
@@ -55,6 +56,47 @@ NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
     {"balance-tlb", NM_BOND_MODE_TLB},
     {"balance-xor", NM_BOND_MODE_XOR},
     {"broadcast", NM_BOND_MODE_BROADCAST}, );
+
+const char *
+_nm_setting_bond_mode_to_string(int mode)
+{
+    static const char *const modes[] = {
+        [NM_BOND_MODE_8023AD]       = "802.3ad",
+        [NM_BOND_MODE_ACTIVEBACKUP] = "active-backup",
+        [NM_BOND_MODE_ALB]          = "balance-alb",
+        [NM_BOND_MODE_BROADCAST]    = "broadcast",
+        [NM_BOND_MODE_ROUNDROBIN]   = "balance-rr",
+        [NM_BOND_MODE_TLB]          = "balance-tlb",
+        [NM_BOND_MODE_XOR]          = "balance-xor",
+    };
+
+    G_STATIC_ASSERT(G_N_ELEMENTS(modes) == _NM_BOND_MODE_NUM);
+
+    if (NM_MORE_ASSERT_ONCE(5)) {
+        char       sbuf[100];
+        int        i;
+        NMBondMode m;
+
+        for (i = 0; i < (int) G_N_ELEMENTS(modes); i++) {
+            nm_assert(modes[i]);
+            nm_assert(i == _nm_setting_bond_mode_from_string(modes[i]));
+            nm_assert(i == _nm_setting_bond_mode_from_string(nm_sprintf_buf(sbuf, "%d", i)));
+        }
+        nm_assert(NM_BOND_MODE_UNKNOWN == _nm_setting_bond_mode_from_string(NULL));
+        nm_assert(NM_BOND_MODE_UNKNOWN == _nm_setting_bond_mode_from_string(""));
+        for (i = -2; i < ((int) G_N_ELEMENTS(modes)) + 20; i++) {
+            if (i < 0 || i >= G_N_ELEMENTS(modes))
+                m = NM_BOND_MODE_UNKNOWN;
+            else
+                m = i;
+            nm_assert(m == _nm_setting_bond_mode_from_string(nm_sprintf_buf(sbuf, "%d", i)));
+        }
+    }
+
+    if (mode >= 0 && mode < (int) G_N_ELEMENTS(modes))
+        return modes[mode];
+    return NULL;
+}
 
 /*****************************************************************************/
 
