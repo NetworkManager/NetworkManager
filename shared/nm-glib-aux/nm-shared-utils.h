@@ -760,8 +760,10 @@ typedef struct {
     {                                                                           \
         static const NMUtilsFlags2StrDesc descs[] = {__VA_ARGS__};              \
         G_STATIC_ASSERT(sizeof(flags_type) <= sizeof(unsigned));                \
+                                                                                \
         return nm_utils_flags2str(descs, G_N_ELEMENTS(descs), flags, buf, len); \
-    };
+    }                                                                           \
+    _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
 const char *nm_utils_flags2str(const NMUtilsFlags2StrDesc *descs,
                                gsize                       n_descs,
@@ -798,7 +800,8 @@ case v:                             \
                 g_snprintf(buf, len, "(%" int_fmt ")", val);               \
         }                                                                  \
         return buf;                                                        \
-    }
+    }                                                                      \
+    _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
 #define NM_UTILS_ENUM2STR_DEFINE(fcn_name, lookup_type, ...) \
     NM_UTILS_ENUM2STR_DEFINE_FULL(fcn_name, lookup_type, "d", __VA_ARGS__)
