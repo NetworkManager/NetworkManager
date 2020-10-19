@@ -5739,7 +5739,7 @@ NM_UTILS_FLAGS2STR_DEFINE(nm_bluetooth_capability_to_string,
                           NMBluetoothCapabilities,
                           NM_UTILS_FLAGS2STR(NM_BT_CAPABILITY_NONE, "NONE"),
                           NM_UTILS_FLAGS2STR(NM_BT_CAPABILITY_DUN, "DUN"),
-                          NM_UTILS_FLAGS2STR(NM_BT_CAPABILITY_NAP, "NAP"), )
+                          NM_UTILS_FLAGS2STR(NM_BT_CAPABILITY_NAP, "NAP"), );
 
 /*****************************************************************************/
 
