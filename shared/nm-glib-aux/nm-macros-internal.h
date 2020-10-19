@@ -709,7 +709,13 @@ NM_G_ERROR_MSG(GError *error)
                      char *const*: (const char *const*) (value), \
                      char *     *: (const char *const*) (value), \
                      const void *: (const char *const*) (value), \
-                           void *: (const char *const*) (value)))
+                           void *: (const char *const*) (value), \
+               const char *const*const: (const char *const*) (value), \
+               const char *     *const: (const char *const*) (value), \
+                     char *const*const: (const char *const*) (value), \
+                     char *     *const: (const char *const*) (value), \
+                     const void *const: (const char *const*) (value), \
+                           void *const: (const char *const*) (value)))
 #else
     #define NM_CAST_STRV_MC(value) ((const char **) (value))
     #define NM_CAST_STRV_CC(value) ((const char *const *) (value))
