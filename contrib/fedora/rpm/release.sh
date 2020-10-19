@@ -6,17 +6,20 @@
 #
 # There are 6 modes:
 #
-#  - "devel" : on master branch to tag "1.25.2-dev"
+#  - "devel" : on master branch to tag a devel release (e.g. "1.25.2-dev").
 #  - "rc1"   : the first release candidate on "master" branch which branches off
-#              "nm-1-26" branch. The tag is "1.26-rc1" with version number 1.25.90.
-#  - "rc"    : further release candidates on RC branch "nm-1-26". For example
-#              "1.26-rc2" with version number 1.25.91.
-#  - "major" : on stable branch nm-1-26 to release 1.26.0 followed by 1.26.1-dev.
-#              You should do a "major-post" release right after.
+#              a new "nm-1-X" branch (e.g. tag "1.26-rc1" (1.25.90) and branch
+#              off "nm-1-26"). On master this also bumps the version number
+#              and creates a new devel release (e.g. "1.27.0-dev").
+#  - "rc"    : further release candidates on RC branch (e.g. from "nm-1-26" branch
+#              tag "1.26-rc2" with version number 1.25.91).
+#  - "major" : on stable branch do a major release (e.g. on "nm-1-26" branch
+#              release "1.26.0", followed by "1.26.1-dev").
+#              You should do a "major-post" release right a "major" release.
 #  - "major-post": after a "major" release, merge the release branch with master and
-#              do another devel snapshot on master.
-#  - "minor" : on a stable branch nm-1-26 to do minor release 1.26.4 and bump
-#              to "1.26.5-dev".
+#              do another devel snapshot on master (e.g. do "1.27.1-dev" release).
+#  - "minor" : on a stable branch do a minor release (e.g. "1.26.4" on "nm-1-26"
+#              branch and bump to "1.26.5-dev").
 #
 # Requisites:
 #
@@ -25,7 +28,7 @@
 #   * Run in a "clean" environment, i.e. no unusual environment variables set, on a recent
 #     Fedora, with suitable dependencies installed.
 #
-#   * First, ensure that you have ssh keys for master.gnome.org installed (and ssh-agent running)
+#   * First, ensure that you have ssh keys for "master.gnome.org" installed (and ssh-agent running).
 #     Also, ensure you have a GPG key that you want to use for signing. Also, have gpg-agent running
 #     and possibly configure `git config --get user.signingkey` for the proper key.
 #
@@ -299,7 +302,7 @@ git fetch "$ORIGIN" || die "git fetch failed"
 
 if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
     git_same_ref "$CUR_BRANCH" "refs/heads/$CUR_BRANCH" || die "Current branch $CUR_BRANCH is not a branch??"
-    git_same_ref "$CUR_BRANCH" "refs/remotes/$ORIGIN/$CUR_BRANCH" || die "Current branch $CUR_BRANCH seems not up to date with refs/remotes/$ORIGIN/$CUR_BRANCH. Git pull?"
+    git_same_ref "$CUR_BRANCH" "refs/remotes/$ORIGIN/$CUR_BRANCH" || die "Current branch $CUR_BRANCH seems not up to date with refs/remotes/$ORIGIN/$CUR_BRANCH. Git pull or --allow-local-branches?"
 fi
 
 NEWER_BRANCHES=()
@@ -314,14 +317,14 @@ if [ "$CUR_BRANCH" != master ]; then
         fi
         if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
             git_same_ref "$b" "refs/heads/$b" || die "branch $b is not a branch??"
-            git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date with refs/remotes/$ORIGIN/$b. Git pull?"
+            git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date with refs/remotes/$ORIGIN/$b. Git pull or --allow-local-branches?"
         fi
         NEWER_BRANCHES+=("refs/heads/$b")
     done
     b=master
     if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
         git_same_ref "$b" "refs/heads/$b" || die "branch $b is not a branch??"
-        git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date with refs/remotes/$ORIGIN/$b. Git pull?"
+        git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date with refs/remotes/$ORIGIN/$b. Git pull or --allow-local-branches?"
     fi
 fi
 
