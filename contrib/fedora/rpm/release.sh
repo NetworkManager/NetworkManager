@@ -91,7 +91,7 @@ parse_version() {
     local MIN="$(sed -n '1,20 s/^m4_define(\[nm_minor_version\], \[\([0-9]\+\)\])$/\1/p' ./configure.ac)"
     local MIC="$(sed -n '1,20 s/^m4_define(\[nm_micro_version\], \[\([0-9]\+\)\])$/\1/p' ./configure.ac)"
 
-    re='^[0-9][1-9]* [0-9][1-9]* [0-9][1-9]*$'
+    re='^(0|[1-9][0-9]*) (0|[1-9][0-9]*) (0|[1-9][0-9]*)$'
     [[ "$MAJ $MIN $MIC" =~ $re ]] || return 1
     echo "$MAJ $MIN $MIC"
 }
