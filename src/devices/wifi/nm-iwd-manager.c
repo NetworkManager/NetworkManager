@@ -117,6 +117,44 @@ get_property_string_or_null(GDBusProxy *proxy, const char *property)
     return get_variant_string_or_null(value);
 }
 
+static NMDeviceIwd *
+get_device_from_network(NMIwdManager *self, GDBusProxy *network)
+{
+    NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE(self);
+    const char *         ifname;
+    const char *         device_path;
+    NMDevice *           device;
+    gs_unref_object GDBusInterface *device_obj = NULL;
+
+    /* Try not to rely on the path of the Device being a prefix of the
+     * Network's object path.
+     */
+
+    device_path = get_property_string_or_null(network, "Device");
+    if (!device_path) {
+        _LOGD("Device not cached for network at %s", g_dbus_proxy_get_object_path(network));
+        return NULL;
+    }
+
+    device_obj = g_dbus_object_manager_get_interface(priv->object_manager,
+                                                     device_path,
+                                                     NM_IWD_DEVICE_INTERFACE);
+
+    ifname = get_property_string_or_null(G_DBUS_PROXY(device_obj), "Name");
+    if (!ifname) {
+        _LOGD("Name not cached for device at %s", device_path);
+        return NULL;
+    }
+
+    device = nm_manager_get_device(priv->manager, ifname, NM_DEVICE_TYPE_WIFI);
+    if (!device || !NM_IS_DEVICE_IWD(device)) {
+        _LOGD("NM device %s is not an IWD-managed device", ifname);
+        return NULL;
+    }
+
+    return NM_DEVICE_IWD(device);
+}
+
 static void
 agent_dbus_method_cb(GDBusConnection *      connection,
                      const char *           sender,
@@ -129,12 +167,10 @@ agent_dbus_method_cb(GDBusConnection *      connection,
 {
     NMIwdManager *       self = user_data;
     NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE(self);
-    const char *         network_path, *device_path, *ifname;
-    gs_unref_object GDBusInterface *network = NULL, *device_obj = NULL;
-    int                             ifindex;
-    NMDevice *                      device;
-    gs_free char *                  name_owner = NULL;
-    int                             errsv;
+    const char *         network_path;
+    NMDeviceIwd *        device;
+    gs_free char *       name_owner         = NULL;
+    gs_unref_object GDBusInterface *network = NULL;
 
     /* Be paranoid and check the sender address */
     name_owner = g_dbus_object_manager_client_get_name_owner(
@@ -151,47 +187,21 @@ agent_dbus_method_cb(GDBusConnection *      connection,
                                                   network_path,
                                                   NM_IWD_NETWORK_INTERFACE);
     if (!network) {
-        _LOGE("unable to find the network object");
-        return;
-    }
-
-    device_path = get_property_string_or_null(G_DBUS_PROXY(network), "Device");
-    if (!device_path) {
-        _LOGD("agent-request: device not cached for network %s in IWD Agent request", network_path);
+        _LOGE("agent-request: unable to find the network object");
         goto return_error;
     }
 
-    device_obj = g_dbus_object_manager_get_interface(priv->object_manager,
-                                                     device_path,
-                                                     NM_IWD_DEVICE_INTERFACE);
-
-    ifname = get_property_string_or_null(G_DBUS_PROXY(device_obj), "Name");
-    if (!ifname) {
-        _LOGD("agent-request: name not cached for device %s in IWD Agent request", device_path);
+    device = get_device_from_network(self, G_DBUS_PROXY(network));
+    if (!device) {
+        _LOGD("agent-request: device not found in IWD Agent request");
         goto return_error;
     }
 
-    ifindex = if_nametoindex(ifname);
-    if (!ifindex) {
-        errsv = errno;
-        _LOGD("agent-request: if_nametoindex failed for Name %s for Device at %s: %i",
-              ifname,
-              device_path,
-              errsv);
-        goto return_error;
-    }
-
-    device = nm_manager_get_device_by_ifindex(priv->manager, ifindex);
-    if (!NM_IS_DEVICE_IWD(device)) {
-        _LOGD("agent-request: IWD device named %s is not a Wifi device in IWD Agent request",
-              ifname);
-        goto return_error;
-    }
-
-    if (nm_device_iwd_agent_query(NM_DEVICE_IWD(device), invocation))
+    if (nm_device_iwd_agent_query(device, invocation))
         return;
 
-    _LOGD("agent-request: device %s did not handle the IWD Agent request", ifname);
+    _LOGD("agent-request: device %s did not handle the IWD Agent request",
+          nm_device_get_iface(NM_DEVICE(device)));
 
 return_error:
     /* IWD doesn't look at the specific error */
@@ -259,17 +269,8 @@ register_agent(NMIwdManager *self)
     GDBusInterface *     agent_manager;
 
     agent_manager = g_dbus_object_manager_get_interface(priv->object_manager,
-                                                        "/net/connman/iwd",
+                                                        "/net/connman/iwd", /* IWD 1.0+ */
                                                         NM_IWD_AGENT_MANAGER_INTERFACE);
-
-    if (!agent_manager) {
-        /* IWD prior to 1.0 dated 30 October, 2019 has the agent manager on a
-         * different path. */
-        agent_manager = g_dbus_object_manager_get_interface(priv->object_manager,
-                                                            "/",
-                                                            NM_IWD_AGENT_MANAGER_INTERFACE);
-    }
-
     if (!agent_manager) {
         _LOGE("unable to register the IWD Agent: PSK/8021x Wi-Fi networks may not work");
         return;
@@ -585,6 +586,15 @@ interface_added(GDBusObjectManager *object_manager,
 
         return;
     }
+
+    if (nm_streq(iface_name, NM_IWD_NETWORK_INTERFACE)) {
+        NMDeviceIwd *device = get_device_from_network(self, proxy);
+
+        if (device)
+            nm_device_iwd_network_add_remove(device, proxy, TRUE);
+
+        return;
+    }
 }
 
 static void
@@ -627,6 +637,15 @@ interface_removed(GDBusObjectManager *object_manager,
             return;
 
         g_hash_table_remove(priv->known_networks, &id);
+        return;
+    }
+
+    if (nm_streq(iface_name, NM_IWD_NETWORK_INTERFACE)) {
+        NMDeviceIwd *device = get_device_from_network(self, proxy);
+
+        if (device)
+            nm_device_iwd_network_add_remove(device, proxy, FALSE);
+
         return;
     }
 }

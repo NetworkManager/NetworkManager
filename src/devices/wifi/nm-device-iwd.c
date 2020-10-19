@@ -60,7 +60,11 @@ typedef struct {
     bool                          scanning : 1;
     bool                          scan_requested : 1;
     bool                          act_mode_switch : 1;
+    bool                          secrets_failed : 1;
+    bool                          networks_requested : 1;
+    bool                          networks_changed : 1;
     gint64                        last_scan;
+    uint32_t                      ap_id;
 } NMDeviceIwdPrivate;
 
 struct _NMDeviceIwd {
@@ -161,6 +165,7 @@ set_current_ap(NMDeviceIwd *self, NMWifiAP *new_ap, gboolean recheck_available_c
 
     _notify(self, PROP_ACTIVE_ACCESS_POINT);
     _notify(self, PROP_MODE);
+    schedule_periodic_scan(self, TRUE);
 }
 
 static void
@@ -198,49 +203,36 @@ ap_security_flags_from_network_type(const char *type)
     return flags;
 }
 
-static void
-insert_ap_from_network(NMDeviceIwd *self,
-                       GHashTable * aps,
-                       const char * path,
-                       gint64       last_seen_msec,
-                       int16_t      signal,
-                       uint32_t     ap_id)
+static NMWifiAP *
+ap_from_network(NMDeviceIwd *self,
+                GDBusProxy * network,
+                NMRefString *bss_path,
+                gint64       last_seen_msec,
+                int16_t      signal)
 {
-    gs_unref_object GDBusProxy *network_proxy = NULL;
-    gs_unref_variant GVariant *name_value     = NULL;
-    gs_unref_variant GVariant *type_value     = NULL;
-    nm_auto_ref_string NMRefString *bss_path  = NULL;
-    const char *                    name;
-    const char *                    type;
-    NMSupplicantBssInfo             bss_info;
-    uint8_t                         bssid[6];
-    NMWifiAP *                      ap;
+    NMDeviceIwdPrivate *priv              = NM_DEVICE_IWD_GET_PRIVATE(self);
+    gs_unref_variant GVariant *name_value = NULL;
+    gs_unref_variant GVariant *type_value = NULL;
+    const char *               name;
+    const char *               type;
+    uint32_t                   ap_id;
+    uint8_t                    bssid[6];
     gs_unref_bytes GBytes *ssid = NULL;
+    NMWifiAP *             ap;
+    NMSupplicantBssInfo    bss_info;
 
-    bss_path = nm_ref_string_new(path);
-
-    if (g_hash_table_lookup(aps, path)) {
-        _LOGD(LOGD_WIFI, "Duplicate network at %s", path);
-        return;
-    }
-
-    network_proxy =
-        nm_iwd_manager_get_dbus_interface(nm_iwd_manager_get(), path, NM_IWD_NETWORK_INTERFACE);
-    if (!network_proxy)
-        return;
-
-    name_value = g_dbus_proxy_get_cached_property(network_proxy, "Name");
-    type_value = g_dbus_proxy_get_cached_property(network_proxy, "Type");
+    name_value = g_dbus_proxy_get_cached_property(network, "Name");
+    type_value = g_dbus_proxy_get_cached_property(network, "Type");
     if (!name_value || !g_variant_is_of_type(name_value, G_VARIANT_TYPE_STRING) || !type_value
         || !g_variant_is_of_type(type_value, G_VARIANT_TYPE_STRING))
-        return;
+        return NULL;
 
     name = g_variant_get_string(name_value, NULL);
     type = g_variant_get_string(type_value, NULL);
 
     if (nm_streq(type, "wep")) {
         /* WEP not supported */
-        return;
+        return NULL;
     }
 
     /* What we get from IWD are networks, or ESSs, that may contain
@@ -251,6 +243,7 @@ insert_ap_from_network(NMDeviceIwd *self,
      * already does that.  We fake the BSSIDs as they don't play any
      * role either.
      */
+    ap_id    = priv->ap_id++;
     bssid[0] = 0x00;
     bssid[1] = 0x01;
     bssid[2] = 0x02;
@@ -277,6 +270,34 @@ insert_ap_from_network(NMDeviceIwd *self,
 
     nm_assert(bss_path == nm_wifi_ap_get_supplicant_path(ap));
 
+    return ap;
+}
+
+static void
+insert_ap_from_network(NMDeviceIwd *self,
+                       GHashTable * aps,
+                       const char * path,
+                       gint64       last_seen_msec,
+                       int16_t      signal)
+{
+    gs_unref_object GDBusProxy *network_proxy = NULL;
+    nm_auto_ref_string NMRefString *bss_path  = nm_ref_string_new(path);
+    NMWifiAP *                      ap;
+
+    if (g_hash_table_lookup(aps, bss_path)) {
+        _LOGD(LOGD_WIFI, "Duplicate network at %s", path);
+        return;
+    }
+
+    network_proxy =
+        nm_iwd_manager_get_dbus_interface(nm_iwd_manager_get(), path, NM_IWD_NETWORK_INTERFACE);
+    if (!network_proxy)
+        return;
+
+    ap = ap_from_network(self, network_proxy, bss_path, last_seen_msec, signal);
+    if (!ap)
+        return;
+
     g_hash_table_insert(aps, bss_path, ap);
 }
 
@@ -288,54 +309,44 @@ get_ordered_networks_cb(GObject *source, GAsyncResult *res, gpointer user_data)
     gs_free_error GError *error        = NULL;
     gs_unref_variant GVariant *variant = NULL;
     GVariantIter *             networks;
-    const char *               path, *name, *type;
+    const char *               path;
     int16_t                    signal;
     NMWifiAP *                 ap, *ap_safe, *new_ap;
-    gboolean                   changed = FALSE;
+    gboolean                   changed;
     GHashTableIter             ap_iter;
     gs_unref_hashtable GHashTable *new_aps = NULL;
-    gboolean                       compat;
-    const char *                   return_sig;
-    static uint32_t                ap_id = 0;
     gint64                         last_seen_msec;
 
     variant = g_dbus_proxy_call_finish(G_DBUS_PROXY(source), res, &error);
+    if (!variant && nm_utils_error_is_cancelled(error))
+        return;
+
+    priv                     = NM_DEVICE_IWD_GET_PRIVATE(self);
+    priv->networks_requested = FALSE;
+
     if (!variant) {
         _LOGE(LOGD_WIFI, "Station.GetOrderedNetworks failed: %s", error->message);
         return;
     }
 
-    priv = NM_DEVICE_IWD_GET_PRIVATE(self);
-
-    /* Depending on whether we're using the Station interface or the Device
-     * interface for compatibility with IWD <= 0.7, the return signature of
-     * GetOrderedNetworks will be different.
-     */
-    compat     = priv->dbus_station_proxy == priv->dbus_device_proxy;
-    return_sig = compat ? "(a(osns))" : "(a(on))";
-
-    if (!g_variant_is_of_type(variant, G_VARIANT_TYPE(return_sig))) {
+    if (!g_variant_is_of_type(variant, G_VARIANT_TYPE("(a(on))"))) {
         _LOGE(LOGD_WIFI,
-              "Station.GetOrderedNetworks returned type %s instead of %s",
-              g_variant_get_type_string(variant),
-              return_sig);
+              "Station.GetOrderedNetworks returned type %s instead of (a(on))",
+              g_variant_get_type_string(variant));
         return;
     }
 
     new_aps = g_hash_table_new_full(nm_direct_hash, NULL, NULL, g_object_unref);
-
-    g_variant_get(variant, return_sig, &networks);
+    g_variant_get(variant, "(a(on))", &networks);
 
     last_seen_msec = nm_utils_get_monotonic_timestamp_msec();
-    if (compat) {
-        while (g_variant_iter_next(networks, "(&o&sn&s)", &path, &name, &signal, &type))
-            insert_ap_from_network(self, new_aps, path, last_seen_msec, signal, ap_id++);
-    } else {
-        while (g_variant_iter_next(networks, "(&on)", &path, &signal))
-            insert_ap_from_network(self, new_aps, path, last_seen_msec, signal, ap_id++);
-    }
+    while (g_variant_iter_next(networks, "(&on)", &path, &signal))
+        insert_ap_from_network(self, new_aps, path, last_seen_msec, signal);
 
     g_variant_iter_free(networks);
+
+    changed                = priv->networks_changed;
+    priv->networks_changed = FALSE;
 
     c_list_for_each_entry_safe (ap, ap_safe, &priv->aps_lst_head, aps_lst) {
         new_ap = g_hash_table_lookup(new_aps, nm_wifi_ap_get_supplicant_path(ap));
@@ -389,6 +400,7 @@ update_aps(NMDeviceIwd *self)
                       priv->cancellable,
                       get_ordered_networks_cb,
                       self);
+    priv->networks_requested = TRUE;
 }
 
 static void
@@ -597,7 +609,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
     if (perm_hw_addr) {
         if (mac && !nm_utils_hwaddr_matches(mac, -1, perm_hw_addr, -1)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                                        "device MAC address does not match the profile");
             return FALSE;
         }
@@ -624,7 +636,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
     security = nm_wifi_connection_get_iwd_security(connection, &mapped);
     if (!mapped) {
         nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                                    "connection authentication type not supported by IWD backend");
         return FALSE;
     }
@@ -636,7 +648,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
         && !NM_IN_STRSET(mode, NULL, NM_SETTING_WIRELESS_MODE_INFRA)) {
         nm_utils_error_set_literal(
             error,
-            NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+            NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
             "non-infrastructure hidden networks not supported by the IWD backend");
         return FALSE;
     }
@@ -648,7 +660,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
         if (security == NM_IWD_NETWORK_SECURITY_8021X) {
             if (!is_connection_known_network(connection)) {
                 nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                                            "802.1x connections must have IWD provisioning files");
                 return FALSE;
             }
@@ -656,7 +668,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
                               NM_IWD_NETWORK_SECURITY_NONE,
                               NM_IWD_NETWORK_SECURITY_PSK)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                                        "IWD backend only supports Open, PSK and 802.1x network "
                                        "authentication in Infrastructure mode");
             return FALSE;
@@ -664,21 +676,21 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
     } else if (nm_streq(mode, NM_SETTING_WIRELESS_MODE_AP)) {
         if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_AP)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                                        "device does not support Access Point mode");
             return FALSE;
         }
 
         if (!NM_IN_SET(security, NM_IWD_NETWORK_SECURITY_PSK)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                                        "IWD backend only supports PSK authentication in AP mode");
             return FALSE;
         }
     } else if (nm_streq(mode, NM_SETTING_WIRELESS_MODE_ADHOC)) {
         if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_ADHOC)) {
             nm_utils_error_set_literal(error,
-                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                                        "device does not support Ad-Hoc mode");
             return FALSE;
         }
@@ -686,14 +698,15 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
         if (!NM_IN_SET(security, NM_IWD_NETWORK_SECURITY_NONE, NM_IWD_NETWORK_SECURITY_PSK)) {
             nm_utils_error_set_literal(
                 error,
-                NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                 "IWD backend only supports Open and PSK authentication in Ad-Hoc mode");
             return FALSE;
         }
     } else {
-        nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-                                   "%s type profiles not supported by IWD backend");
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                           "'%s' type profiles not supported by IWD backend",
+                           mode);
         return FALSE;
     }
 
@@ -740,7 +753,16 @@ check_connection_available(NMDevice *                     device,
     if (NM_IN_STRSET(mode, NM_SETTING_WIRELESS_MODE_AP, NM_SETTING_WIRELESS_MODE_ADHOC))
         return TRUE;
 
-    if (NM_FLAGS_HAS(flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP))
+    /* Hidden SSIDs obviously don't always appear in the scan list either.
+     *
+     * For an explicit user-activation-request, a connection is considered
+     * available because for hidden Wi-Fi, clients didn't consistently
+     * set the 'hidden' property to indicate hidden SSID networks.  If
+     * activating but the network isn't available let the device recheck
+     * availability.
+     */
+    if (nm_setting_wireless_get_hidden(s_wifi)
+        || NM_FLAGS_HAS(flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP))
         return TRUE;
 
     if (!ap)
@@ -824,6 +846,12 @@ complete_connection(NMDevice *           device,
             if (!nm_setting_verify(NM_SETTING(s_wifi), connection, error))
                 return FALSE;
 
+            /* We could either require the profile to be marked as hidden by the
+             * client or at least check that a hidden AP with a matching security
+             * type is in range using Station.GetHiddenAccessPoints().  For now
+             * assume it is hidden even though that will reveal the SSID on the
+             * air.
+             */
             hidden = TRUE;
         }
     } else {
@@ -1273,6 +1301,7 @@ wifi_secrets_cb(NMActRequest *                req,
     priv->wifi_secrets_id = NULL;
 
     if (nm_utils_error_is_cancelled(error)) {
+        priv->secrets_failed = TRUE;
         g_dbus_method_invocation_return_error_literal(invocation,
                                                       NM_DEVICE_ERROR,
                                                       NM_DEVICE_ERROR_INVALID_CONNECTION,
@@ -1313,6 +1342,7 @@ wifi_secrets_cb(NMActRequest *                req,
     return;
 
 secrets_error:
+    priv->secrets_failed = TRUE;
     g_dbus_method_invocation_return_error_literal(invocation,
                                                   NM_DEVICE_ERROR,
                                                   NM_DEVICE_ERROR_INVALID_CONNECTION,
@@ -1391,7 +1421,7 @@ network_connect_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 
             /* If secrets were wrong, we'd be getting a net.connman.iwd.Failed */
             reason = NM_DEVICE_STATE_REASON_NO_SECRETS;
-        } else if (nm_streq0(dbus_error, "net.connman.iwd.Aborted")) {
+        } else if (nm_streq0(dbus_error, "net.connman.iwd.Aborted") && priv->secrets_failed) {
             /* If agent call was cancelled we'd be getting a net.connman.iwd.Aborted */
             reason = NM_DEVICE_STATE_REASON_NO_SECRETS;
         }
@@ -1740,9 +1770,9 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     s_wireless = nm_connection_get_setting_wireless(connection);
     g_return_val_if_fail(s_wireless, NM_ACT_STAGE_RETURN_FAILURE);
 
-    /* AP mode never uses a specific object or existing scanned AP */
+    /* AP, Ad-Hoc modes never use a specific object or existing scanned AP */
     mode = nm_setting_wireless_get_mode(s_wireless);
-    if (nm_streq0(mode, NM_SETTING_WIRELESS_MODE_AP))
+    if (NM_IN_STRSET(mode, NM_SETTING_WIRELESS_MODE_AP, NM_SETTING_WIRELESS_MODE_ADHOC))
         goto add_new;
 
     ap_path = nm_active_connection_get_specific_object(NM_ACTIVE_CONNECTION(req));
@@ -1760,14 +1790,16 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
         return NM_ACT_STAGE_RETURN_SUCCESS;
     }
 
-    if (nm_streq0(mode, NM_SETTING_WIRELESS_MODE_INFRA)) {
-        /* Hidden networks not supported at this time */
+    /* In infrastructure mode the specific object should be set by now except
+     * for a first-time connection to a hidden network.  If a hidden network is
+     * a Known Network it should still have been in the AP list.
+     */
+    if (!nm_setting_wireless_get_hidden(s_wireless) || is_connection_known_network(connection))
         return NM_ACT_STAGE_RETURN_FAILURE;
-    }
 
 add_new:
     /* If the user is trying to connect to an AP that NM doesn't yet know about
-     * (hidden network or something) or starting a Hotspot, create an fake AP
+     * (hidden network or something) or starting a Hotspot, create a fake AP
      * from the security settings in the connection.  This "fake" AP gets used
      * until the real one is found in the scan list (Ad-Hoc or Hidden), or until
      * the device is deactivated (Ad-Hoc or Hotspot).
@@ -1828,9 +1860,18 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
             goto out_fail;
         }
 
-        if (!is_connection_known_network(connection)
-            && nm_setting_wireless_get_hidden(s_wireless)) {
+        priv->secrets_failed = FALSE;
+
+        if (nm_wifi_ap_get_fake(ap)) {
             gs_free char *ssid_str = NULL;
+
+            if (!nm_setting_wireless_get_hidden(s_wireless)) {
+                _LOGW(LOGD_DEVICE | LOGD_WIFI,
+                      "Activation: (wifi) target network not known to IWD but is not "
+                      "marked hidden");
+                NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+                goto out_fail;
+            }
 
             /* Use Station.ConnectHiddenNetwork method instead of Network proxy. */
             ssid_str = _nm_utils_ssid_to_utf8(nm_setting_wireless_get_ssid(s_wireless));
@@ -1843,14 +1884,6 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
                               network_connect_cb,
                               self);
             return NM_ACT_STAGE_RETURN_POSTPONE;
-        }
-
-        if (!nm_wifi_ap_get_supplicant_path(ap)) {
-            _LOGW(LOGD_DEVICE | LOGD_WIFI,
-                  "Activation: (wifi) network is provisioned but dbus supplicant path for AP "
-                  "unknown");
-            NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
-            goto out_fail;
         }
 
         network_proxy = nm_iwd_manager_get_dbus_interface(
@@ -1951,15 +1984,7 @@ static void
 schedule_periodic_scan(NMDeviceIwd *self, gboolean initial_scan)
 {
     NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE(self);
-    GVariant *          value;
-    gboolean            disconnected = TRUE;
     guint               interval;
-
-    if (priv->can_scan) {
-        value        = g_dbus_proxy_get_cached_property(priv->dbus_station_proxy, "State");
-        disconnected = nm_streq0(get_variant_state(value), "disconnected");
-        g_variant_unref(value);
-    }
 
     /* Start scan immediately after a disconnect, mode change or
      * device UP, otherwise wait 10 seconds.  When connected, update
@@ -1972,7 +1997,7 @@ schedule_periodic_scan(NMDeviceIwd *self, gboolean initial_scan)
      * exit autoconnect and interrupt the ongoing scan, meaning that
      * we still want a new scan ASAP.
      */
-    if (!priv->can_scan || !disconnected || priv->scan_requested || priv->scanning)
+    if (!priv->can_scan || priv->scan_requested || priv->scanning || priv->current_ap)
         interval = -1;
     else if (initial_scan)
         interval = 0;
@@ -2281,7 +2306,6 @@ powered_changed(NMDeviceIwd *self, gboolean new_powered)
 {
     NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE(self);
     GDBusInterface *    interface;
-    GVariant *          value;
 
     nm_device_queue_recheck_available(NM_DEVICE(self),
                                       NM_DEVICE_STATE_REASON_SUPPLICANT_AVAILABLE,
@@ -2340,24 +2364,11 @@ powered_changed(NMDeviceIwd *self, gboolean new_powered)
     if (new_powered && !priv->dbus_ap_proxy && !priv->dbus_adhoc_proxy) {
         interface = g_dbus_object_get_interface(priv->dbus_obj, NM_IWD_STATION_INTERFACE);
         if (!interface) {
-            /* No Station interface on the device object.  Check if the
-             * "State" property is present on the Device interface, that
-             * would mean we're dealing with an IWD version from before the
-             * Device/Station split (0.7 or earlier) and we can easily
-             * handle that by making priv->dbus_device_proxy and
-             * priv->dbus_station_proxy both point at the Device interface.
-             */
-            value = g_dbus_proxy_get_cached_property(priv->dbus_device_proxy, "State");
-            if (value) {
-                g_variant_unref(value);
-                interface = g_object_ref(G_DBUS_INTERFACE(priv->dbus_device_proxy));
-            } else {
-                _LOGE(LOGD_WIFI,
-                      "Interface %s not found on obj %s",
-                      NM_IWD_STATION_INTERFACE,
-                      g_dbus_object_get_object_path(priv->dbus_obj));
-                interface = NULL;
-            }
+            _LOGE(LOGD_WIFI,
+                  "Interface %s not found on obj %s",
+                  NM_IWD_STATION_INTERFACE,
+                  g_dbus_object_get_object_path(priv->dbus_obj));
+            interface = NULL;
         }
     } else
         interface = NULL;
@@ -2370,6 +2381,8 @@ powered_changed(NMDeviceIwd *self, gboolean new_powered)
     }
 
     if (interface) {
+        GVariant *value;
+
         priv->dbus_station_proxy = G_DBUS_PROXY(interface);
         g_signal_connect(priv->dbus_station_proxy,
                          "g-properties-changed",
@@ -2513,6 +2526,8 @@ error:
 gboolean
 nm_device_iwd_agent_query(NMDeviceIwd *self, GDBusMethodInvocation *invocation)
 {
+    NMDevice *                   device = NM_DEVICE(self);
+    NMDeviceIwdPrivate *         priv   = NM_DEVICE_IWD_GET_PRIVATE(self);
     NMActRequest *               req;
     const char *                 setting_name;
     const char *                 setting_key;
@@ -2520,17 +2535,22 @@ nm_device_iwd_agent_query(NMDeviceIwd *self, GDBusMethodInvocation *invocation)
     NMSecretAgentGetSecretsFlags get_secret_flags =
         NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
-    req = nm_device_get_act_request(NM_DEVICE(self));
-    if (!req)
+    req = nm_device_get_act_request(device);
+    if (!req || nm_device_get_state(device) != NM_DEVICE_STATE_CONFIG) {
+        _LOGI(LOGD_WIFI, "IWD asked for secrets without explicit connect request");
+        send_disconnect(self);
         return FALSE;
+    }
 
     if (!try_reply_agent_request(self,
                                  nm_act_request_get_applied_connection(req),
                                  invocation,
                                  &setting_name,
                                  &setting_key,
-                                 &replied))
+                                 &replied)) {
+        priv->secrets_failed = TRUE;
         return FALSE;
+    }
 
     if (replied)
         return TRUE;
@@ -2546,12 +2566,62 @@ nm_device_iwd_agent_query(NMDeviceIwd *self, GDBusMethodInvocation *invocation)
     if (nm_settings_connection_get_timestamp(nm_act_request_get_settings_connection(req), NULL))
         get_secret_flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
 
-    nm_device_state_changed(NM_DEVICE(self),
-                            NM_DEVICE_STATE_NEED_AUTH,
-                            NM_DEVICE_STATE_REASON_NO_SECRETS);
+    nm_device_state_changed(device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NO_SECRETS);
     wifi_secrets_get_one(self, setting_name, get_secret_flags, setting_key, invocation);
 
     return TRUE;
+}
+
+void
+nm_device_iwd_network_add_remove(NMDeviceIwd *self, GDBusProxy *network, bool add)
+{
+    NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE(self);
+    NMWifiAP *          ap   = NULL;
+    NMWifiAP *          tmp;
+    bool                recheck;
+    nm_auto_ref_string NMRefString *bss_path = NULL;
+
+    bss_path = nm_ref_string_new(g_dbus_proxy_get_object_path(network));
+    c_list_for_each_entry (tmp, &priv->aps_lst_head, aps_lst)
+        if (nm_wifi_ap_get_supplicant_path(tmp) == bss_path) {
+            ap = tmp;
+            break;
+        }
+
+    /* We could schedule an update_aps(self) idle call here but up to IWD 1.9
+     * when a hidden network connection is attempted, that network is initially
+     * only added as a Network object but not shown in GetOrderedNetworks()
+     * return values, and for some corner case scenarios it's beneficial to
+     * have that Network reflected in our ap list so that we don't attempt
+     * calling ConnectHiddenNetwork() on it, as that will fail in 1.9.  But we
+     * can skip recheck-available if we're currently scanning or in the middle
+     * of a GetOrderedNetworks() call as that will trigger the recheck too.
+     */
+    recheck = !priv->scanning && !priv->networks_requested;
+
+    if (!add) {
+        if (ap) {
+            ap_add_remove(self, FALSE, ap, recheck);
+            priv->networks_changed |= !recheck;
+        }
+
+        return;
+    }
+
+    if (!ap) {
+        ap = ap_from_network(self,
+                             network,
+                             bss_path,
+                             nm_utils_get_monotonic_timestamp_msec(),
+                             -10000);
+        if (!ap)
+            return;
+
+        ap_add_remove(self, TRUE, ap, recheck);
+        g_object_unref(ap);
+        priv->networks_changed |= !recheck;
+        return;
+    }
 }
 
 /*****************************************************************************/
