@@ -335,9 +335,9 @@ if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
 fi
 
 if [ $FIND_BACKPORTS = 1 ]; then
-    git show "$ORIGIN/automation:contrib/rh-utils/find-backports" > ./.git/nm-find-backports \
+    git show "$ORIGIN/master:contrib/scripts/find-backports" > ./.git/nm-find-backports \
     && chmod +x ./.git/nm-find-backports \
-    || die "cannot get contrib/rh-utils/find-backports"
+    || die "cannot get contrib/scripts/find-backports"
 
     TMP="$(./.git/nm-find-backports "$CUR_BRANCH" master "${NEWER_BRANCHES[@]}" 2>/dev/null)" || die "nm-find-backports failed"
     test -z "$TMP" || die "nm-find-backports returned patches that need to be backported (ignore with --no-find-backports): ./.git/nm-find-backports \"$CUR_BRANCH\" master ${NEWER_BRANCHES[@]}"
