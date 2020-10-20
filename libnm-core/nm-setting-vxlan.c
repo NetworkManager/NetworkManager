@@ -379,6 +379,19 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static void
+_addrstr_set(char **dst, const char *src)
+{
+    gs_free char *old = NULL;
+
+    old = *dst;
+    if (!src)
+        *dst = NULL;
+    else if (!nm_utils_parse_inaddr(AF_UNSPEC, src, dst))
+        *dst = g_strdup(src);
+}
+/*****************************************************************************/
+
+static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
     NMSettingVxlan *       setting = NM_SETTING_VXLAN(object);
@@ -454,12 +467,10 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         priv->id = g_value_get_uint(value);
         break;
     case PROP_LOCAL:
-        g_free(priv->local);
-        priv->local = g_value_dup_string(value);
+        _addrstr_set(&priv->local, g_value_get_string(value));
         break;
     case PROP_REMOTE:
-        g_free(priv->remote);
-        priv->remote = g_value_dup_string(value);
+        _addrstr_set(&priv->remote, g_value_get_string(value));
         break;
     case PROP_SOURCE_PORT_MIN:
         priv->source_port_min = g_value_get_uint(value);
