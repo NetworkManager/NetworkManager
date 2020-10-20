@@ -312,39 +312,36 @@ nm_setting_vxlan_get_l3_miss(NMSettingVxlan *setting)
 static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
-    NMSettingVxlanPrivate *priv   = NM_SETTING_VXLAN_GET_PRIVATE(setting);
-    int                    family = AF_UNSPEC;
+    NMSettingVxlanPrivate *priv            = NM_SETTING_VXLAN_GET_PRIVATE(setting);
+    int                    addr_family     = AF_UNSPEC;
+    gboolean               remote_is_valid = TRUE;
+    gboolean               local_is_valid  = TRUE;
 
-    if (priv->remote) {
-        if (nm_utils_ipaddr_is_valid(AF_INET, priv->remote))
-            family = AF_INET;
-        else if (nm_utils_ipaddr_is_valid(AF_INET6, priv->remote))
-            family = AF_INET6;
-        else {
-            g_set_error(error,
-                        NM_CONNECTION_ERROR,
-                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("'%s' is not a valid IP address"),
-                        priv->remote);
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_VXLAN_SETTING_NAME,
-                           NM_SETTING_VXLAN_REMOTE);
-            return FALSE;
-        }
+    if (priv->remote && !nm_utils_parse_inaddr_bin(addr_family, priv->remote, &addr_family, NULL))
+        remote_is_valid = FALSE;
+    if (priv->local && !nm_utils_parse_inaddr_bin(addr_family, priv->local, &addr_family, NULL))
+        local_is_valid = FALSE;
+
+    if (!remote_is_valid) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("'%s' is not a valid IP%s address"),
+                    priv->remote,
+                    addr_family == AF_UNSPEC ? "" : (addr_family == AF_INET ? "4" : "6"));
+        g_prefix_error(error, "%s.%s: ", NM_SETTING_VXLAN_SETTING_NAME, NM_SETTING_VXLAN_REMOTE);
+        return FALSE;
     }
 
-    if (priv->local) {
-        if (!nm_utils_ipaddr_is_valid(family, priv->local)) {
-            g_set_error(error,
-                        NM_CONNECTION_ERROR,
-                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("'%s' is not a valid IP%c address"),
-                        priv->local,
-                        family == AF_INET ? '4' : '6');
-            g_prefix_error(error, "%s.%s: ", NM_SETTING_VXLAN_SETTING_NAME, NM_SETTING_VXLAN_LOCAL);
-            return FALSE;
-        }
+    if (!local_is_valid) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("'%s' is not a valid IP%s address"),
+                    priv->local,
+                    addr_family == AF_UNSPEC ? "" : (addr_family == AF_INET ? "4" : "6"));
+        g_prefix_error(error, "%s.%s: ", NM_SETTING_VXLAN_SETTING_NAME, NM_SETTING_VXLAN_LOCAL);
+        return FALSE;
     }
 
     if (priv->parent && !nm_utils_ifname_valid_kernel(priv->parent, NULL)
