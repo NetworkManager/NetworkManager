@@ -4942,20 +4942,7 @@ nm_utils_check_virtual_device_compatibility(GType virtual_type, GType other_type
     }
 }
 
-typedef struct {
-    const char *str;
-    const char *num;
-} BondMode;
-
-static const BondMode bond_mode_table[] = {
-    [0] = {"balance-rr", "0"},
-    [1] = {"active-backup", "1"},
-    [2] = {"balance-xor", "2"},
-    [3] = {"broadcast", "3"},
-    [4] = {"802.3ad", "4"},
-    [5] = {"balance-tlb", "5"},
-    [6] = {"balance-alb", "6"},
-};
+/*****************************************************************************/
 
 /**
  * nm_utils_bond_mode_int_to_string:
@@ -4972,9 +4959,7 @@ static const BondMode bond_mode_table[] = {
 const char *
 nm_utils_bond_mode_int_to_string(int mode)
 {
-    if (mode >= 0 && mode < G_N_ELEMENTS(bond_mode_table))
-        return bond_mode_table[mode].str;
-    return NULL;
+    return _nm_setting_bond_mode_to_string(mode);
 }
 
 /**
@@ -4993,16 +4978,7 @@ nm_utils_bond_mode_int_to_string(int mode)
 int
 nm_utils_bond_mode_string_to_int(const char *mode)
 {
-    int i;
-
-    if (!mode || !*mode)
-        return -1;
-
-    for (i = 0; i < G_N_ELEMENTS(bond_mode_table); i++) {
-        if (NM_IN_STRSET(mode, bond_mode_table[i].str, bond_mode_table[i].num))
-            return i;
-    }
-    return -1;
+    return _nm_setting_bond_mode_from_string(mode);
 }
 
 /*****************************************************************************/

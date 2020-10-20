@@ -149,6 +149,7 @@ ignore_option(NMSettingBond *s_bond, const char *option, const char *value)
 static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
+    NMDeviceBond * self    = NM_DEVICE_BOND(device);
     NMSettingBond *s_bond  = nm_connection_get_setting_bond(connection);
     int            ifindex = nm_device_get_ifindex(device);
     NMBondMode     mode    = NM_BOND_MODE_UNKNOWN;
@@ -197,7 +198,10 @@ update_connection(NMDevice *device, NMConnection *connection)
                 }
             }
 
-            nm_setting_bond_add_option(s_bond, option, value);
+            if (!_nm_setting_bond_validate_option(option, value, NULL))
+                _LOGT(LOGD_BOND, "cannot set invalid bond option '%s' = '%s'", option, value);
+            else
+                nm_setting_bond_add_option(s_bond, option, value);
         }
     }
 }
