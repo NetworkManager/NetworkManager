@@ -55,6 +55,33 @@ typedef struct {
     const NML3AcdAddrTrackInfo *track_infos;
 } NML3AcdAddrInfo;
 
+static inline const NML3AcdAddrTrackInfo *
+nm_l3_acd_addr_info_find_track_info(const NML3AcdAddrInfo *addr_info,
+                                    gconstpointer          tag,
+                                    const NML3ConfigData * l3cd,
+                                    const NMPObject *      obj)
+{
+    guint                       i;
+    const NML3AcdAddrTrackInfo *ti;
+
+    nm_assert(addr_info);
+
+    /* we always expect that the number n_track_infos is reasonably small. Hence,
+     * a naive linear search is simplest and fastest (e.g. we don't have a hash table). */
+
+    for (i = 0, ti = addr_info->track_infos; i < addr_info->n_track_infos; i++, ti++) {
+        if (l3cd && ti->l3cd != l3cd)
+            continue;
+        if (tag && ti->tag != tag)
+            continue;
+        if (obj && ti->obj != obj)
+            continue;
+        return ti;
+    }
+
+    return NULL;
+}
+
 typedef enum {
     NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED,
 
