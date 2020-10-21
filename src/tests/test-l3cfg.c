@@ -10,6 +10,23 @@
 
 /*****************************************************************************/
 
+static NML3Cfg *
+_netns_access_l3cfg(NMNetns *netns, int ifindex)
+{
+    NML3Cfg *l3cfg;
+
+    g_assert(NM_IS_NETNS(netns));
+    g_assert(ifindex > 0);
+
+    g_assert(!nm_netns_get_l3cfg(netns, ifindex));
+
+    l3cfg = nm_netns_access_l3cfg(netns, ifindex);
+    g_assert(NM_IS_L3CFG(l3cfg));
+    return l3cfg;
+}
+
+/*****************************************************************************/
+
 typedef struct {
     int                test_idx;
     NMPlatform *       platform;
@@ -28,6 +45,8 @@ _test_fixture_1_setup(TestFixture1 *f, int test_idx)
 {
     const NMPlatformLink *l0;
     const NMPlatformLink *l1;
+    const NMEtherAddr     addr0 = NM_ETHER_ADDR_INIT(0xAA, 0xAA, test_idx, 0x00, 0x00, 0x00);
+    const NMEtherAddr     addr1 = NM_ETHER_ADDR_INIT(0xAA, 0xAA, test_idx, 0x00, 0x00, 0x11);
 
     g_assert_cmpint(test_idx, >, 0);
     g_assert_cmpint(f->test_idx, ==, 0);
@@ -41,14 +60,26 @@ _test_fixture_1_setup(TestFixture1 *f, int test_idx)
     f->multiidx = nm_dedup_multi_index_ref(nm_platform_get_multi_idx(f->platform));
     f->netns    = nm_netns_new(f->platform);
 
-    l0 = nmtstp_link_veth_add(f->platform, -1, f->ifname0, f->ifname1);
+    nmtstp_link_veth_add(f->platform, -1, f->ifname0, f->ifname1);
+
+    l0 = nmtstp_link_get_typed(f->platform, -1, f->ifname0, NM_LINK_TYPE_VETH);
     l1 = nmtstp_link_get_typed(f->platform, -1, f->ifname1, NM_LINK_TYPE_VETH);
 
     f->ifindex0 = l0->ifindex;
-    f->hwaddr0  = l0->l_address;
-
     f->ifindex1 = l1->ifindex;
-    f->hwaddr1  = l1->l_address;
+
+    g_assert_cmpint(nm_platform_link_set_address(f->platform, f->ifindex0, &addr0, sizeof(addr0)),
+                    ==,
+                    0);
+    g_assert_cmpint(nm_platform_link_set_address(f->platform, f->ifindex1, &addr1, sizeof(addr1)),
+                    ==,
+                    0);
+
+    l0 = nmtstp_link_get_typed(f->platform, f->ifindex0, f->ifname0, NM_LINK_TYPE_VETH);
+    l1 = nmtstp_link_get_typed(f->platform, f->ifindex1, f->ifname1, NM_LINK_TYPE_VETH);
+
+    f->hwaddr0 = l0->l_address;
+    f->hwaddr1 = l1->l_address;
 
     g_assert(nm_platform_link_set_up(f->platform, f->ifindex0, NULL));
     g_assert(nm_platform_link_set_up(f->platform, f->ifindex1, NULL));
@@ -326,14 +357,13 @@ test_l3cfg(gconstpointer test_data)
                                NULL);
     }
 
-    l3cfg0 = nm_netns_access_l3cfg(f->netns, f->ifindex0);
-    g_assert(NM_IS_L3CFG(l3cfg0));
+    l3cfg0 = _netns_access_l3cfg(f->netns, f->ifindex0);
 
     g_signal_connect(l3cfg0, NM_L3CFG_SIGNAL_NOTIFY, G_CALLBACK(_test_l3cfg_signal_notify), tdata);
 
     commit_type_1 = nm_l3cfg_commit_type_register(l3cfg0, NM_L3_CFG_COMMIT_TYPE_UPDATE, NULL);
 
-    if ((nmtst_get_rand_uint32() % 4u) != 0) {
+    if (!nmtst_get_rand_one_case_in(4)) {
         commit_type_2 =
             nm_l3cfg_commit_type_register(l3cfg0,
                                           nmtst_rand_select(NM_L3_CFG_COMMIT_TYPE_NONE,
@@ -450,12 +480,12 @@ test_l3cfg(gconstpointer test_data)
     nm_l3cfg_commit_type_unregister(l3cfg0, commit_type_1);
     nm_l3cfg_commit_type_unregister(l3cfg0, commit_type_2);
 
-    if ((nmtst_get_rand_uint32() % 3) == 0)
+    if (nmtst_get_rand_one_case_in(3))
         _test_fixture_1_teardown(&test_fixture);
 
     nm_l3cfg_remove_config_all(l3cfg0, GINT_TO_POINTER('a'), FALSE);
 
-    if ((nmtst_get_rand_uint32() % 3) == 0)
+    if (nmtst_get_rand_one_case_in(3))
         _test_fixture_1_teardown(&test_fixture);
 
     _LOGD("test end (/l3cfg/%d)", TEST_IDX);
