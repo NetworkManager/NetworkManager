@@ -1103,6 +1103,12 @@ create_and_realize(NMDevice *             device,
 
     to_sysfs_group_address_sys(nm_setting_bridge_get_group_address(s_bridge), &props.group_addr);
 
+    /* If mtu != 0, we set the MTU of the new bridge at creation time. However, kernel will still
+     * automatically adjust the MTU of the bridge based on the minimum of the slave's MTU.
+     * We don't want this automatism as the user asked for a fixed MTU.
+     *
+     * To workaround this behavior of kernel, we will later toggle the MTU twice. See
+     * NMDeviceClass.mtu_force_set. */
     r = nm_platform_link_bridge_add(nm_device_get_platform(device),
                                     iface,
                                     hwaddr ? mac_address : NULL,
@@ -1159,6 +1165,7 @@ nm_device_bridge_class_init(NMDeviceBridgeClass *klass)
     device_class->link_types                = NM_DEVICE_DEFINE_LINK_TYPES(NM_LINK_TYPE_BRIDGE);
 
     device_class->is_master                   = TRUE;
+    device_class->mtu_force_set               = TRUE;
     device_class->get_generic_capabilities    = get_generic_capabilities;
     device_class->check_connection_compatible = check_connection_compatible;
     device_class->check_connection_available  = check_connection_available;

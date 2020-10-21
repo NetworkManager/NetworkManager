@@ -232,6 +232,17 @@ typedef struct _NMDeviceClass {
      * type (NMDeviceClass), not the actual device instance. */
     bool is_master : 1;
 
+    /* Force setting the MTU actually means first setting the MTU
+     * to (desired_MTU-1) and then setting the desired_MTU
+     * so that kernel actually applies the MTU, otherwise
+     * kernel will ignore the request if the link's MTU is the
+     * same as the desired one.
+     *
+     * This is just a workaround made for bridges (ATM) that employ
+     * a auto-MTU adjust mechanism if no MTU is manually set.
+     */
+    bool mtu_force_set : 1;
+
     void (*state_changed)(NMDevice *          device,
                           NMDeviceState       new_state,
                           NMDeviceState       old_state,
