@@ -1049,8 +1049,12 @@ _nmtst_main_loop_quit_on_notify (GObject *object, GParamSpec *pspec, gpointer us
 		nm_auto_destroy_and_unref_gsource GSource *_source = NULL; \
 		GMainContext *_context = (context); \
 		gboolean _had_timeout = FALSE; \
+		typeof(timeout_msec) _timeout_msec0 = (timeout_msec); \
+		gint64 _timeout_msec = _timeout_msec0; \
 		\
-		_source = g_timeout_source_new (timeout_msec); \
+		g_assert_cmpint(_timeout_msec0, ==, _timeout_msec); \
+		\
+		_source = g_timeout_source_new (NM_CLAMP (_timeout_msec, 0, (gint64) G_MAXUINT)); \
 		g_source_set_callback (_source, nmtst_g_source_set_boolean_true, &_had_timeout, NULL); \
 		g_source_attach (_source, _context); \
 		\
