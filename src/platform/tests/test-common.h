@@ -606,5 +606,14 @@ void nmtstp_setup_platform(void);
 
 /*****************************************************************************/
 
+typedef struct _NMTstpAcdDefender NMTstpAcdDefender;
+
+NMTstpAcdDefender *
+nmtstp_acd_defender_new(int ifindex, in_addr_t ip_addr, const NMEtherAddr *mac_addr);
+
+void nmtstp_acd_defender_destroy(NMTstpAcdDefender *defender);
+
+/*****************************************************************************/
+
 void _nmtstp_init_tests(int *argc, char ***argv);
 void _nmtstp_setup_tests(void);
