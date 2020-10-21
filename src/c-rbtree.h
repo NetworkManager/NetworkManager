@@ -27,6 +27,7 @@ extern "C" {
 #endif
 
 #include <assert.h>
+#include <stdalign.h>
 #include <stddef.h>
 
 typedef struct CRBNode CRBNode;
@@ -58,7 +59,11 @@ typedef struct CRBTree CRBTree;
  * C_RBNODE_INIT.
  */
 struct CRBNode {
-        unsigned long __parent_and_flags;
+        union {
+                unsigned long __parent_and_flags;
+                /* enforce >=4-byte alignment for @__parent_and_flags */
+                alignas(4) unsigned char __align_dummy;
+        };
         CRBNode *left;
         CRBNode *right;
 };
@@ -88,7 +93,11 @@ void c_rbnode_unlink_stale(CRBNode *n);
  * To initialize an RB-Tree, set it to NULL / all zero.
  */
 struct CRBTree {
-        CRBNode *root;
+        union {
+                CRBNode *root;
+                /* enforce >=4-byte alignment for @root */
+                alignas(4) unsigned char __align_dummy;
+        };
 };
 
 #define C_RBTREE_INIT {}
