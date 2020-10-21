@@ -2600,7 +2600,7 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
                 if (r_src->metric_any) {
                     _ensure_r();
                     r.rx.metric_any = FALSE;
-                    r.rx.metric_any = default_route_metric_x[IS_IPv4];
+                    r.rx.metric     = default_route_metric_x[IS_IPv4];
                 }
 
                 if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT(r_src)) {

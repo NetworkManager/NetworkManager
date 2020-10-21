@@ -576,15 +576,15 @@ _l3cfg_externally_removed_objs_drop_unused(NML3Cfg *self)
 
     g_hash_table_iter_init(&h_iter, self->priv.p->externally_removed_objs_hash);
     while (g_hash_table_iter_next(&h_iter, (gpointer *) &obj, NULL)) {
-        if (!nm_l3_config_data_lookup_route_obj(self->priv.p->combined_l3cd_commited, obj)) {
+        if (!nm_l3_config_data_lookup_obj(self->priv.p->combined_l3cd_commited, obj)) {
             /* The object is no longer tracked in the configuration.
              * The externally_removed_objs_hash is to prevent adding entires that were
              * removed externally, so if we don't plan to add the entry, we no longer need to track
              * it. */
-            (*(_l3cfg_externally_removed_objs_counter(self, NMP_OBJECT_GET_TYPE(obj))))--;
-            g_hash_table_iter_remove(&h_iter);
             _LOGD("externally-removed: untrack %s",
                   nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+            (*(_l3cfg_externally_removed_objs_counter(self, NMP_OBJECT_GET_TYPE(obj))))--;
+            g_hash_table_iter_remove(&h_iter);
         }
     }
 }
@@ -602,10 +602,17 @@ _l3cfg_externally_removed_objs_track(NML3Cfg *self, const NMPObject *obj, gboole
     if (!is_removed) {
         /* the object is still (or again) present. It no longer gets hidden. */
         if (self->priv.p->externally_removed_objs_hash) {
-            if (g_hash_table_remove(self->priv.p->externally_removed_objs_hash, obj)) {
-                (*(_l3cfg_externally_removed_objs_counter(self, NMP_OBJECT_GET_TYPE(obj))))--;
+            const NMPObject *obj2;
+            gpointer         x_val;
+
+            if (g_hash_table_steal_extended(self->priv.p->externally_removed_objs_hash,
+                                            obj,
+                                            (gpointer *) &obj2,
+                                            &x_val)) {
+                (*(_l3cfg_externally_removed_objs_counter(self, NMP_OBJECT_GET_TYPE(obj2))))--;
                 _LOGD("externally-removed: untrack %s",
-                      nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+                      nmp_object_to_string(obj2, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+                nmp_object_unref(obj2);
             }
         }
         return;
@@ -2703,12 +2710,11 @@ nm_l3cfg_add_config(NML3Cfg *             self,
             if (l3_config_data->l3cd == l3cd) {
                 nm_assert(idx == -1);
                 idx = idx2;
-                continue;
+                idx2++;
+            } else {
+                changed = TRUE;
+                _l3_config_datas_remove_index_fast(self->priv.p->l3_config_datas, idx2);
             }
-
-            changed = TRUE;
-            _l3_config_datas_remove_index_fast(self->priv.p->l3_config_datas, idx2);
-
             idx2 = _l3_config_datas_find_next(self->priv.p->l3_config_datas, idx2, tag, NULL);
             if (idx2 < 0)
                 break;
@@ -3503,7 +3509,7 @@ nm_l3cfg_commit_type_register(NML3Cfg *                self,
     linked = FALSE;
     c_list_for_each_entry (h, &self->priv.p->commit_type_lst_head, commit_type_lst) {
         if (handle->commit_type >= h->commit_type) {
-            c_list_link_before(&self->priv.p->commit_type_lst_head, &handle->commit_type_lst);
+            c_list_link_before(&h->commit_type_lst, &handle->commit_type_lst);
             linked = TRUE;
             break;
         }
