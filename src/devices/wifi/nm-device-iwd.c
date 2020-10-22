@@ -169,7 +169,6 @@ set_current_ap(NMDeviceIwd *self, NMWifiAP *new_ap, gboolean recheck_available_c
     memset(priv->current_ap_bssid, 0, ETH_ALEN);
     _notify(self, PROP_ACTIVE_ACCESS_POINT);
     _notify(self, PROP_MODE);
-    schedule_periodic_scan(self, TRUE);
 }
 
 static void
@@ -1524,9 +1523,13 @@ failed:
     nm_device_queue_state(device, NM_DEVICE_STATE_FAILED, reason);
 
     value = g_dbus_proxy_get_cached_property(priv->dbus_station_proxy, "State");
-    if (!priv->nm_autoconnect && nm_streq(get_variant_state(value), "disconnected")) {
-        priv->nm_autoconnect = true;
-        nm_device_emit_recheck_auto_activate(device);
+    if (nm_streq(get_variant_state(value), "disconnected")) {
+        schedule_periodic_scan(self, TRUE);
+
+        if (!priv->nm_autoconnect) {
+            priv->nm_autoconnect = true;
+            nm_device_emit_recheck_auto_activate(device);
+        }
     }
     g_variant_unref(value);
 }
