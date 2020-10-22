@@ -1102,7 +1102,7 @@ usage_connection_add(void)
                  "                  mode vepa|bridge|private|passthru|source\n"
                  "                  [tap yes|no]\n\n"
                  "    vxlan:        id <VXLAN ID>\n"
-                 "                  remote <IP of multicast group or remote address>\n"
+                 "                  [remote <IP of multicast group or remote address>]\n"
                  "                  [local <source IP>]\n"
                  "                  [dev <parent device (ifname or connection UUID)>]\n"
                  "                  [source-port-min <0-65535>]\n"

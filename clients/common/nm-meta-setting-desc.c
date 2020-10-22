@@ -7200,7 +7200,6 @@ static const NMMetaPropertyInfo *const property_infos_VXLAN[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_VXLAN_REMOTE,
         .is_cli_option =                TRUE,
         .property_alias =               "remote",
-        .inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
         .prompt =                       N_("Remote"),
         .property_type =                &_pt_gobject_string,
     ),
