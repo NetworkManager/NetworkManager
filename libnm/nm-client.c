@@ -482,17 +482,17 @@ _nm_client_new_error_nm_not_cached(void)
 }
 
 static void
-_nm_client_dbus_call_simple_cb(GObject *source, GAsyncResult *result, gpointer data)
+_nm_client_dbus_call_simple_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
     GAsyncReadyCallback callback;
-    gpointer            user_data;
+    gpointer            callback_user_data;
     gs_unref_object GObject *context_busy_watcher = NULL;
     gpointer                 obfuscated_self_ptr;
     gpointer                 log_call_counter_ptr;
 
-    nm_utils_user_data_unpack(data,
+    nm_utils_user_data_unpack(user_data,
                               &callback,
-                              &user_data,
+                              &callback_user_data,
                               &context_busy_watcher,
                               &obfuscated_self_ptr,
                               &log_call_counter_ptr);
@@ -502,7 +502,7 @@ _nm_client_dbus_call_simple_cb(GObject *source, GAsyncResult *result, gpointer d
                  (guint64) GPOINTER_TO_SIZE(obfuscated_self_ptr),
                  GPOINTER_TO_SIZE(log_call_counter_ptr));
 
-    callback(source, result, user_data);
+    callback(source, result, callback_user_data);
 }
 
 void

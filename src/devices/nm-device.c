@@ -7927,13 +7927,13 @@ sriov_vf_config_to_platform(NMDevice *self, NMSriovVF *vf, GError **error)
 }
 
 static void
-sriov_params_cb(GError *error, gpointer data)
+sriov_params_cb(GError *error, gpointer user_data)
 {
     NMDevice *       self;
     NMDevicePrivate *priv;
     nm_auto_freev NMPlatformVF **plat_vfs = NULL;
 
-    nm_utils_user_data_unpack(data, &self, &plat_vfs);
+    nm_utils_user_data_unpack(user_data, &self, &plat_vfs);
 
     if (nm_utils_error_is_cancelled_or_disposing(error))
         return;
