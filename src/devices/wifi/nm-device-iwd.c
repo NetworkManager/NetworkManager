@@ -57,7 +57,7 @@ typedef struct {
     guint                         periodic_update_id;
     bool                          enabled : 1;
     bool                          can_scan : 1;
-    bool                          can_connect : 1;
+    bool                          nm_autoconnect : 1;
     bool                          scanning : 1;
     bool                          scan_requested : 1;
     bool                          act_mode_switch : 1;
@@ -1022,7 +1022,7 @@ get_autoconnect_allowed(NMDevice *device)
 {
     NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE(NM_DEVICE_IWD(device));
 
-    return priv->can_connect;
+    return priv->nm_autoconnect;
 }
 
 static gboolean
@@ -1524,8 +1524,8 @@ failed:
     nm_device_queue_state(device, NM_DEVICE_STATE_FAILED, reason);
 
     value = g_dbus_proxy_get_cached_property(priv->dbus_station_proxy, "State");
-    if (!priv->can_connect && nm_streq0(get_variant_state(value), "disconnected")) {
-        priv->can_connect = true;
+    if (!priv->nm_autoconnect && nm_streq(get_variant_state(value), "disconnected")) {
+        priv->nm_autoconnect = true;
         nm_device_emit_recheck_auto_activate(device);
     }
     g_variant_unref(value);
@@ -2258,21 +2258,21 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 state_changed(NMDeviceIwd *self, const char *new_state)
 {
-    NMDeviceIwdPrivate *priv           = NM_DEVICE_IWD_GET_PRIVATE(self);
-    NMDevice *          device         = NM_DEVICE(self);
-    NMDeviceState       dev_state      = nm_device_get_state(device);
-    gboolean            iwd_connection = FALSE;
-    gboolean            can_connect    = priv->can_connect;
+    NMDeviceIwdPrivate *priv          = NM_DEVICE_IWD_GET_PRIVATE(self);
+    NMDevice *          device        = NM_DEVICE(self);
+    NMDeviceState       dev_state     = nm_device_get_state(device);
+    gboolean            nm_connection = FALSE;
+    gboolean            can_connect   = priv->nm_autoconnect;
 
     _LOGI(LOGD_DEVICE | LOGD_WIFI, "new IWD device state is %s", new_state);
 
     if (dev_state >= NM_DEVICE_STATE_CONFIG && dev_state <= NM_DEVICE_STATE_ACTIVATED)
-        iwd_connection = TRUE;
+        nm_connection = TRUE;
 
     /* Don't allow scanning while connecting, disconnecting or roaming */
     set_can_scan(self, NM_IN_STRSET(new_state, "connected", "disconnected"));
 
-    priv->can_connect = FALSE;
+    priv->nm_autoconnect = FALSE;
 
     if (NM_IN_STRSET(new_state, "connecting", "connected", "roaming")) {
         /* If we were connecting, do nothing, the confirmation of
@@ -2281,7 +2281,7 @@ state_changed(NMDeviceIwd *self, const char *new_state)
          * without Network Manager's will so for simplicity force a
          * disconnect.
          */
-        if (iwd_connection)
+        if (nm_connection)
             return;
 
         _LOGW(LOGD_DEVICE | LOGD_WIFI, "Unsolicited connection success, asking IWD to disconnect");
@@ -2302,7 +2302,7 @@ state_changed(NMDeviceIwd *self, const char *new_state)
         if (NM_IN_SET(dev_state, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_NEED_AUTH))
             return;
 
-        if (iwd_connection)
+        if (nm_connection)
             nm_device_state_changed(device,
                                     NM_DEVICE_STATE_FAILED,
                                     NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
@@ -2315,7 +2315,7 @@ state_changed(NMDeviceIwd *self, const char *new_state)
      * Connect callback is pending.
      */
     if (NM_IN_STRSET(new_state, "disconnected")) {
-        priv->can_connect = TRUE;
+        priv->nm_autoconnect = TRUE;
         if (!can_connect)
             nm_device_emit_recheck_auto_activate(device);
     }
@@ -2474,7 +2474,7 @@ powered_changed(NMDeviceIwd *self, gboolean new_powered)
         set_can_scan(self, FALSE);
         priv->scanning       = FALSE;
         priv->scan_requested = FALSE;
-        priv->can_connect    = FALSE;
+        priv->nm_autoconnect = FALSE;
         cleanup_association_attempt(self, FALSE);
         remove_all_aps(self);
     }
