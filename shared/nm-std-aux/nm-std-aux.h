@@ -780,6 +780,21 @@ nm_steal_fd(int *p_fd)
 
 /*****************************************************************************/
 
+static inline uintptr_t
+nm_ptr_to_uintptr(const void *p)
+{
+    /* in C, pointers can only be compared (with less-than or greater-than) under certain
+     * circumstances. Since uintptr_t is supposed to be able to represent the pointer
+     * as a plain integer and also support to convert the integer back to the pointer,
+     * it should be safer to compare the pointers directly.
+     *
+     * Of course, this function isn't very useful beyond that its use makes it clear
+     * that we want to compare pointers by value, which otherwise may not be valid. */
+    return (uintptr_t) p;
+}
+
+/*****************************************************************************/
+
 #define NM_CMP_RETURN(c)             \
     do {                             \
         const int _cc = (c);         \
@@ -826,7 +841,7 @@ nm_steal_fd(int *p_fd)
  * Avoid that by casting pointers to void* and then to uintptr_t. This comparison
  * is not really meaningful, except that it provides some kind of stable sort order
  * between pointers (that can otherwise not be compared). */
-#define NM_CMP_DIRECT_PTR(a, b) NM_CMP_DIRECT((uintptr_t)((void *) (a)), (uintptr_t)((void *) (b)))
+#define NM_CMP_DIRECT_PTR(a, b) NM_CMP_DIRECT(nm_ptr_to_uintptr(a), nm_ptr_to_uintptr(b))
 
 #define NM_CMP_DIRECT_MEMCMP(a, b, size) NM_CMP_RETURN(memcmp((a), (b), (size)))
 
