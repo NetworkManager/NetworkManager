@@ -41,6 +41,16 @@
     }                                                                                  \
     G_STMT_END
 
+struct nl80211_station_info {
+    gboolean valid;
+    guint8   bssid[ETH_ALEN];
+    guint32  txrate;
+    gboolean txrate_valid;
+    guint8   signal;
+    gboolean signal_valid;
+    gint64   timestamp;
+};
+
 typedef struct {
     NMWifiUtils     parent;
     struct nl_sock *nl_sock;
@@ -49,6 +59,8 @@ typedef struct {
     int             num_freqs;
     int             phy;
     bool            can_wowlan : 1;
+
+    struct nl80211_station_info sta_info;
 } NMWifiUtilsNl80211;
 
 typedef struct {
@@ -163,6 +175,7 @@ dispose(GObject *object)
 
 struct nl80211_iface_info {
     NM80211Mode mode;
+    uint32_t    freq;
 };
 
 static int
@@ -192,6 +205,9 @@ nl80211_iface_info_handler(struct nl_msg *msg, void *arg)
         info->mode = NM_802_11_MODE_MESH;
         break;
     }
+
+    if (tb[NL80211_ATTR_WIPHY_FREQ] != NULL)
+        info->freq = nla_get_u32(tb[NL80211_ATTR_WIPHY_FREQ]);
 
     return NL_SKIP;
 }
@@ -359,142 +375,19 @@ nla_put_failure:
     g_return_val_if_reached(FALSE);
 }
 
-/* @divisor: pass what value @xbm should be divided by to get dBm */
-static guint32
-nl80211_xbm_to_percent(gint32 xbm, guint32 divisor)
-{
-#define NOISE_FLOOR_DBM -90
-#define SIGNAL_MAX_DBM  -20
-
-    xbm /= divisor;
-    xbm = CLAMP(xbm, NOISE_FLOOR_DBM, SIGNAL_MAX_DBM);
-
-    return 100
-           - 70
-                 * (((float) SIGNAL_MAX_DBM - (float) xbm)
-                    / ((float) SIGNAL_MAX_DBM - (float) NOISE_FLOOR_DBM));
-}
-
-struct nl80211_bss_info {
-    guint32  freq;
-    guint8   bssid[ETH_ALEN];
-    guint8   ssid[32];
-    guint32  ssid_len;
-    guint32  beacon_signal;
-    gboolean valid;
-};
-
-#define WLAN_EID_SSID 0
-
-static void
-find_ssid(guint8 *ies, guint32 ies_len, guint8 **ssid, guint32 *ssid_len)
-{
-    *ssid     = NULL;
-    *ssid_len = 0;
-
-    while (ies_len > 2 && ies[0] != WLAN_EID_SSID) {
-        ies_len -= ies[1] + 2;
-        ies += ies[1] + 2;
-    }
-    if (ies_len < 2)
-        return;
-    if (ies_len < 2 + ies[1])
-        return;
-
-    *ssid_len = ies[1];
-    *ssid     = ies + 2;
-}
-
-static int
-nl80211_bss_dump_handler(struct nl_msg *msg, void *arg)
-{
-    static const struct nla_policy bss_policy[] = {
-        [NL80211_BSS_TSF]                  = {.type = NLA_U64},
-        [NL80211_BSS_FREQUENCY]            = {.type = NLA_U32},
-        [NL80211_BSS_BSSID]                = {.minlen = ETH_ALEN},
-        [NL80211_BSS_BEACON_INTERVAL]      = {.type = NLA_U16},
-        [NL80211_BSS_CAPABILITY]           = {.type = NLA_U16},
-        [NL80211_BSS_INFORMATION_ELEMENTS] = {},
-        [NL80211_BSS_SIGNAL_MBM]           = {.type = NLA_U32},
-        [NL80211_BSS_SIGNAL_UNSPEC]        = {.type = NLA_U8},
-        [NL80211_BSS_STATUS]               = {.type = NLA_U32},
-    };
-    struct nl80211_bss_info *info = arg;
-    struct genlmsghdr *      gnlh = nlmsg_data(nlmsg_hdr(msg));
-    struct nlattr *          tb[NL80211_ATTR_MAX + 1];
-    struct nlattr *          bss[G_N_ELEMENTS(bss_policy)];
-    guint32                  status;
-
-    if (nla_parse_arr(tb, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL) < 0)
-        return NL_SKIP;
-
-    if (tb[NL80211_ATTR_BSS] == NULL)
-        return NL_SKIP;
-
-    if (nla_parse_nested_arr(bss, tb[NL80211_ATTR_BSS], bss_policy))
-        return NL_SKIP;
-
-    if (bss[NL80211_BSS_STATUS] == NULL)
-        return NL_SKIP;
-
-    status = nla_get_u32(bss[NL80211_BSS_STATUS]);
-
-    if (status != NL80211_BSS_STATUS_ASSOCIATED && status != NL80211_BSS_STATUS_IBSS_JOINED)
-        return NL_SKIP;
-
-    if (bss[NL80211_BSS_BSSID] == NULL)
-        return NL_SKIP;
-    memcpy(info->bssid, nla_data(bss[NL80211_BSS_BSSID]), ETH_ALEN);
-
-    if (bss[NL80211_BSS_FREQUENCY])
-        info->freq = nla_get_u32(bss[NL80211_BSS_FREQUENCY]);
-
-    if (bss[NL80211_BSS_SIGNAL_UNSPEC])
-        info->beacon_signal = nla_get_u8(bss[NL80211_BSS_SIGNAL_UNSPEC]);
-
-    if (bss[NL80211_BSS_SIGNAL_MBM])
-        info->beacon_signal = nl80211_xbm_to_percent(nla_get_u32(bss[NL80211_BSS_SIGNAL_MBM]), 100);
-
-    if (bss[NL80211_BSS_INFORMATION_ELEMENTS]) {
-        guint8 *ssid;
-        guint32 ssid_len;
-
-        find_ssid(nla_data(bss[NL80211_BSS_INFORMATION_ELEMENTS]),
-                  nla_len(bss[NL80211_BSS_INFORMATION_ELEMENTS]),
-                  &ssid,
-                  &ssid_len);
-        if (ssid && ssid_len && ssid_len <= sizeof(info->ssid)) {
-            memcpy(info->ssid, ssid, ssid_len);
-            info->ssid_len = ssid_len;
-        }
-    }
-
-    info->valid = TRUE;
-
-    return NL_SKIP;
-}
-
-static void
-nl80211_get_bss_info(NMWifiUtilsNl80211 *self, struct nl80211_bss_info *bss_info)
-{
-    nm_auto_nlmsg struct nl_msg *msg = NULL;
-
-    memset(bss_info, 0, sizeof(*bss_info));
-
-    msg = nl80211_alloc_msg(self, NL80211_CMD_GET_SCAN, NLM_F_DUMP);
-
-    nl80211_send_and_recv(self, msg, nl80211_bss_dump_handler, bss_info);
-}
-
 static guint32
 wifi_nl80211_get_freq(NMWifiUtils *data)
 {
-    NMWifiUtilsNl80211 *    self = (NMWifiUtilsNl80211 *) data;
-    struct nl80211_bss_info bss_info;
+    NMWifiUtilsNl80211 *         self       = (NMWifiUtilsNl80211 *) data;
+    struct nl80211_iface_info    iface_info = {};
+    nm_auto_nlmsg struct nl_msg *msg        = NULL;
 
-    nl80211_get_bss_info(self, &bss_info);
+    msg = nl80211_alloc_msg(self, NL80211_CMD_GET_INTERFACE, 0);
 
-    return bss_info.freq;
+    if (nl80211_send_and_recv(self, msg, nl80211_iface_info_handler, &iface_info) < 0)
+        return 0;
+
+    return iface_info.freq;
 }
 
 static guint32
@@ -513,41 +406,38 @@ wifi_nl80211_find_freq(NMWifiUtils *data, const guint32 *freqs)
     return 0;
 }
 
-static gboolean
-wifi_nl80211_get_bssid(NMWifiUtils *data, guint8 *out_bssid)
+/* @divisor: pass what value @xbm should be divided by to get dBm */
+static guint32
+nl80211_xbm_to_percent(gint32 xbm, guint32 divisor)
 {
-    NMWifiUtilsNl80211 *    self = (NMWifiUtilsNl80211 *) data;
-    struct nl80211_bss_info bss_info;
+#define NOISE_FLOOR_DBM -90
+#define SIGNAL_MAX_DBM  -20
 
-    nl80211_get_bss_info(self, &bss_info);
+    xbm /= divisor;
+    xbm = CLAMP(xbm, NOISE_FLOOR_DBM, SIGNAL_MAX_DBM);
 
-    if (bss_info.valid)
-        memcpy(out_bssid, bss_info.bssid, ETH_ALEN);
-
-    return bss_info.valid;
+    return 100
+           - 70
+                 * (((float) SIGNAL_MAX_DBM - (float) xbm)
+                    / ((float) SIGNAL_MAX_DBM - (float) NOISE_FLOOR_DBM));
 }
 
-struct nl80211_station_info {
-    guint32  txrate;
-    gboolean txrate_valid;
-    guint8   signal;
-    gboolean signal_valid;
-};
-
 static int
-nl80211_station_handler(struct nl_msg *msg, void *arg)
+nl80211_station_dump_handler(struct nl_msg *msg, void *arg)
 {
     static const struct nla_policy stats_policy[] = {
-        [NL80211_STA_INFO_INACTIVE_TIME] = {.type = NLA_U32},
-        [NL80211_STA_INFO_RX_BYTES]      = {.type = NLA_U32},
-        [NL80211_STA_INFO_TX_BYTES]      = {.type = NLA_U32},
-        [NL80211_STA_INFO_RX_PACKETS]    = {.type = NLA_U32},
-        [NL80211_STA_INFO_TX_PACKETS]    = {.type = NLA_U32},
-        [NL80211_STA_INFO_SIGNAL]        = {.type = NLA_U8},
-        [NL80211_STA_INFO_TX_BITRATE]    = {.type = NLA_NESTED},
-        [NL80211_STA_INFO_LLID]          = {.type = NLA_U16},
-        [NL80211_STA_INFO_PLID]          = {.type = NLA_U16},
-        [NL80211_STA_INFO_PLINK_STATE]   = {.type = NLA_U8},
+        [NL80211_STA_INFO_INACTIVE_TIME]     = {.type = NLA_U32},
+        [NL80211_STA_INFO_RX_BYTES]          = {.type = NLA_U32},
+        [NL80211_STA_INFO_TX_BYTES]          = {.type = NLA_U32},
+        [NL80211_STA_INFO_RX_PACKETS]        = {.type = NLA_U32},
+        [NL80211_STA_INFO_TX_PACKETS]        = {.type = NLA_U32},
+        [NL80211_STA_INFO_SIGNAL]            = {.type = NLA_U8},
+        [NL80211_STA_INFO_TX_BITRATE]        = {.type = NLA_NESTED},
+        [NL80211_STA_INFO_LLID]              = {.type = NLA_U16},
+        [NL80211_STA_INFO_PLID]              = {.type = NLA_U16},
+        [NL80211_STA_INFO_PLINK_STATE]       = {.type = NLA_U8},
+        [NL80211_STA_INFO_STA_FLAGS]         = {.minlen = sizeof(struct nl80211_sta_flag_update)},
+        [NL80211_STA_INFO_BEACON_SIGNAL_AVG] = {.type = NLA_U8},
     };
     static const struct nla_policy rate_policy[] = {
         [NL80211_RATE_INFO_BITRATE]      = {.type = NLA_U16},
@@ -564,28 +454,41 @@ nl80211_station_handler(struct nl_msg *msg, void *arg)
     if (nla_parse_arr(tb, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL) < 0)
         return NL_SKIP;
 
+    if (tb[NL80211_ATTR_MAC] == NULL)
+        return NL_SKIP;
+
     if (tb[NL80211_ATTR_STA_INFO] == NULL)
         return NL_SKIP;
 
     if (nla_parse_nested_arr(sinfo, tb[NL80211_ATTR_STA_INFO], stats_policy))
         return NL_SKIP;
 
-    if (sinfo[NL80211_STA_INFO_TX_BITRATE] == NULL)
-        return NL_SKIP;
+    if (sinfo[NL80211_STA_INFO_STA_FLAGS] != NULL) {
+        const struct nl80211_sta_flag_update *flags = nla_data(sinfo[NL80211_STA_INFO_STA_FLAGS]);
 
-    if (nla_parse_nested_arr(rinfo, sinfo[NL80211_STA_INFO_TX_BITRATE], rate_policy))
-        return NL_SKIP;
+        if (flags->mask & ~flags->set & (1 << NL80211_STA_FLAG_ASSOCIATED))
+            return NL_SKIP;
+    }
 
-    if (rinfo[NL80211_RATE_INFO_BITRATE] == NULL)
-        return NL_SKIP;
+    memcpy(info->bssid, nla_data(tb[NL80211_ATTR_MAC]), ETH_ALEN);
+    info->valid = TRUE;
 
-    /* convert from nl80211's units of 100kbps to NM's kbps */
-    info->txrate       = nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE]) * 100;
-    info->txrate_valid = TRUE;
+    if (sinfo[NL80211_STA_INFO_TX_BITRATE] != NULL
+        && !nla_parse_nested_arr(rinfo, sinfo[NL80211_STA_INFO_TX_BITRATE], rate_policy)
+	&& rinfo[NL80211_RATE_INFO_BITRATE] != NULL) {
+        /* convert from nl80211's units of 100kbps to NM's kbps */
+        info->txrate       = nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE]) * 100;
+        info->txrate_valid = TRUE;
+    }
 
     if (sinfo[NL80211_STA_INFO_SIGNAL] != NULL) {
         info->signal =
             nl80211_xbm_to_percent((gint8) nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]), 1);
+        info->signal_valid = TRUE;
+    } else if (sinfo[NL80211_STA_INFO_BEACON_SIGNAL_AVG] != NULL) {
+        /* Fall back to beacon signal strength */
+        info->signal =
+            nl80211_xbm_to_percent((gint8) nla_get_u8(sinfo[NL80211_STA_INFO_BEACON_SIGNAL_AVG]), 1);
         info->signal_valid = TRUE;
     }
 
@@ -593,51 +496,52 @@ nl80211_station_handler(struct nl_msg *msg, void *arg)
 }
 
 static void
-nl80211_get_ap_info(NMWifiUtilsNl80211 *self, struct nl80211_station_info *sta_info)
+nl80211_get_sta_info(NMWifiUtilsNl80211 *self)
 {
     nm_auto_nlmsg struct nl_msg *msg = NULL;
-    struct nl80211_bss_info      bss_info;
+    gint64                       now = nm_utils_get_monotonic_timestamp_msec();
 
-    memset(sta_info, 0, sizeof(*sta_info));
-
-    nl80211_get_bss_info(self, &bss_info);
-    if (!bss_info.valid)
+    if (self->sta_info.valid && now - self->sta_info.timestamp < 500)
         return;
 
-    msg = nl80211_alloc_msg(self, NL80211_CMD_GET_STATION, 0);
-    NLA_PUT(msg, NL80211_ATTR_MAC, ETH_ALEN, bss_info.bssid);
+    memset(&self->sta_info, 0, sizeof(self->sta_info));
 
-    nl80211_send_and_recv(self, msg, nl80211_station_handler, sta_info);
-    if (!sta_info->signal_valid) {
-        /* Fall back to bss_info signal quality (both are in percent) */
-        sta_info->signal = bss_info.beacon_signal;
-    }
+    msg = nl80211_alloc_msg(self, NL80211_CMD_GET_STATION, NLM_F_DUMP);
 
-    return;
+    nl80211_send_and_recv(self, msg, nl80211_station_dump_handler, &self->sta_info);
+    self->sta_info.timestamp = now;
+}
 
-nla_put_failure:
-    g_return_if_reached();
+static gboolean
+wifi_nl80211_get_bssid(NMWifiUtils *data, guint8 *out_bssid)
+{
+    NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
+
+    nl80211_get_sta_info(self);
+
+    if (self->sta_info.valid)
+        memcpy(out_bssid, self->sta_info.bssid, ETH_ALEN);
+
+    return self->sta_info.valid;
 }
 
 static guint32
 wifi_nl80211_get_rate(NMWifiUtils *data)
 {
-    NMWifiUtilsNl80211 *        self = (NMWifiUtilsNl80211 *) data;
-    struct nl80211_station_info sta_info;
+    NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
 
-    nl80211_get_ap_info(self, &sta_info);
+    nl80211_get_sta_info(self);
 
-    return sta_info.txrate;
+    return self->sta_info.txrate;
 }
 
 static int
 wifi_nl80211_get_qual(NMWifiUtils *data)
 {
-    NMWifiUtilsNl80211 *        self = (NMWifiUtilsNl80211 *) data;
-    struct nl80211_station_info sta_info;
+    NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
 
-    nl80211_get_ap_info(self, &sta_info);
-    return sta_info.signal;
+    nl80211_get_sta_info(self);
+    return self->sta_info.signal;
 }
 
 static gboolean

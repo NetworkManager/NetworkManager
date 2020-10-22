@@ -54,6 +54,7 @@ typedef struct {
     NMDeviceWifiCapabilities      capabilities;
     NMActRequestGetSecretsCallId *wifi_secrets_id;
     guint                         periodic_scan_id;
+    guint                         periodic_update_id;
     bool                          enabled : 1;
     bool                          can_scan : 1;
     bool                          can_connect : 1;
@@ -65,6 +66,8 @@ typedef struct {
     bool                          networks_changed : 1;
     gint64                        last_scan;
     uint32_t                      ap_id;
+    guint32                       rate;
+    uint8_t                       current_ap_bssid[ETH_ALEN];
 } NMDeviceIwdPrivate;
 
 struct _NMDeviceIwd {
@@ -163,6 +166,7 @@ set_current_ap(NMDeviceIwd *self, NMWifiAP *new_ap, gboolean recheck_available_c
         g_object_unref(old_ap);
     }
 
+    memset(priv->current_ap_bssid, 0, ETH_ALEN);
     _notify(self, PROP_ACTIVE_ACCESS_POINT);
     _notify(self, PROP_MODE);
     schedule_periodic_scan(self, TRUE);
@@ -176,8 +180,6 @@ remove_all_aps(NMDeviceIwd *self)
 
     if (c_list_is_empty(&priv->aps_lst_head))
         return;
-
-    set_current_ap(self, NULL, FALSE);
 
     c_list_for_each_entry_safe (ap, ap_safe, &priv->aps_lst_head, aps_lst)
         ap_add_remove(self, FALSE, ap, FALSE);
@@ -404,6 +406,63 @@ update_aps(NMDeviceIwd *self)
 }
 
 static void
+periodic_update(NMDeviceIwd *self)
+{
+    NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE(self);
+    int                 ifindex;
+    guint32             new_rate;
+    int                 percent;
+    guint8              bssid[ETH_ALEN];
+    gboolean            ap_changed = FALSE;
+    NMPlatform *        platform;
+
+    ifindex = nm_device_get_ifindex(NM_DEVICE(self));
+    if (ifindex <= 0)
+        g_return_if_reached();
+
+    platform = nm_device_get_platform(NM_DEVICE(self));
+
+    /* TODO: obtain this through the net.connman.iwd.SignalLevelAgent API.
+     * For now we're waking up for the rate updates anyway.
+     */
+    percent = nm_platform_wifi_get_quality(platform, ifindex);
+    if (percent >= 0 && percent <= 100) {
+        if (nm_wifi_ap_set_strength(priv->current_ap, (gint8) percent)) {
+#if NM_MORE_LOGGING
+            ap_changed = TRUE;
+#endif
+        }
+    }
+
+    new_rate = nm_platform_wifi_get_rate(platform, ifindex);
+    if (new_rate != priv->rate) {
+        priv->rate = new_rate;
+        _notify(self, PROP_BITRATE);
+    }
+
+    if (nm_platform_wifi_get_bssid(platform, ifindex, bssid)
+        && nm_ethernet_address_is_valid(bssid, ETH_ALEN)
+        && memcmp(bssid, priv->current_ap_bssid, ETH_ALEN)) {
+        gs_free char *bssid_str = NULL;
+        memcpy(priv->current_ap_bssid, bssid, ETH_ALEN);
+        bssid_str = nm_utils_hwaddr_ntoa(bssid, ETH_ALEN);
+        ap_changed |= nm_wifi_ap_set_address(priv->current_ap, bssid_str);
+        ap_changed |= nm_wifi_ap_set_freq(priv->current_ap,
+                                          nm_platform_wifi_get_frequency(platform, ifindex));
+    }
+
+    if (ap_changed)
+        _ap_dump(self, LOGL_DEBUG, priv->current_ap, "updated");
+}
+
+static gboolean
+periodic_update_cb(gpointer user_data)
+{
+    periodic_update(user_data);
+    return TRUE;
+}
+
+static void
 send_disconnect(NMDeviceIwd *self)
 {
     NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE(self);
@@ -436,6 +495,7 @@ cleanup_association_attempt(NMDeviceIwd *self, gboolean disconnect)
     wifi_secrets_cancel(self);
 
     set_current_ap(self, NULL, TRUE);
+    nm_clear_g_source(&priv->periodic_update_id);
 
     if (disconnect && priv->dbus_station_proxy)
         send_disconnect(self);
@@ -1450,6 +1510,11 @@ network_connect_cb(GObject *source, GAsyncResult *res, gpointer user_data)
           ssid_utf8);
     nm_device_activate_schedule_stage3_ip_config_start(device);
 
+    if (!priv->periodic_update_id) {
+        priv->periodic_update_id = g_timeout_add_seconds(6, periodic_update_cb, self);
+        periodic_update(self);
+    }
+
     return;
 
 failed:
@@ -1499,11 +1564,12 @@ act_start_cb(GObject *source, GAsyncResult *res, gpointer user_data)
     NMSettingWireless *   s_wireless;
     GBytes *              ssid;
     gs_free char *        ssid_utf8 = NULL;
+    const char *          mode;
 
     variant = g_dbus_proxy_call_finish(G_DBUS_PROXY(source), res, &error);
     if (!variant) {
         _LOGE(LOGD_DEVICE | LOGD_WIFI,
-              "Activation: (wifi) Network.Connect failed: %s",
+              "Activation: (wifi) {AccessPoint,AdHoc}.Start() failed: %s",
               error->message);
 
         if (nm_utils_error_is_cancelled(error))
@@ -1530,8 +1596,14 @@ act_start_cb(GObject *source, GAsyncResult *res, gpointer user_data)
     _LOGI(LOGD_DEVICE | LOGD_WIFI,
           "Activation: (wifi) Stage 2 of 5 (Device Configure) successful.  Started '%s'.",
           ssid_utf8);
-
     nm_device_activate_schedule_stage3_ip_config_start(device);
+
+    mode = nm_setting_wireless_get_mode(s_wireless);
+    if (!priv->periodic_update_id && nm_streq0(mode, NM_SETTING_WIRELESS_MODE_ADHOC)) {
+        priv->periodic_update_id = g_timeout_add_seconds(6, periodic_update_cb, self);
+        periodic_update(self);
+    }
+
     return;
 
 error:
@@ -2153,7 +2225,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 
         break;
     case PROP_BITRATE:
-        g_value_set_uint(value, 65000);
+        g_value_set_uint(value, priv->rate);
         break;
     case PROP_CAPABILITIES:
         g_value_set_uint(value, priv->capabilities);
