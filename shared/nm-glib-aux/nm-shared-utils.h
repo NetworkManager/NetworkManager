@@ -1737,12 +1737,14 @@ nm_utils_process_state_is_dead(char pstate)
 
 /*****************************************************************************/
 
-gpointer _nm_utils_user_data_pack(int nargs, gconstpointer *args);
+typedef struct _NMUtilsUserData NMUtilsUserData;
+
+NMUtilsUserData *_nm_utils_user_data_pack(int nargs, gconstpointer *args);
 
 #define nm_utils_user_data_pack(...) \
     _nm_utils_user_data_pack(NM_NARG(__VA_ARGS__), (gconstpointer[]){__VA_ARGS__})
 
-void _nm_utils_user_data_unpack(gpointer user_data, int nargs, ...);
+void _nm_utils_user_data_unpack(NMUtilsUserData *user_data, int nargs, ...);
 
 #define nm_utils_user_data_unpack(user_data, ...) \
     _nm_utils_user_data_unpack(user_data, NM_NARG(__VA_ARGS__), __VA_ARGS__)
