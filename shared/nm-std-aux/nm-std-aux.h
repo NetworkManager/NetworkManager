@@ -189,6 +189,19 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 
 /*****************************************************************************/
 
+static inline uint32_t
+nm_add_u32_clamped(uint32_t a, uint32_t b)
+{
+    uint32_t c;
+
+    /* returns the sum of a+b, or UINT32_MAX if the result would overflow. */
+
+    c = a + b;
+    if (c < a)
+        return UINT32_MAX;
+    return c;
+}
+
 /* glib's MIN()/MAX() macros don't have function-like behavior, in that they evaluate
  * the argument possibly twice.
  *
