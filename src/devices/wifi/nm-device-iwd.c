@@ -1202,7 +1202,6 @@ check_scanning_prohibited(NMDeviceIwd *self, gboolean periodic)
     case NM_DEVICE_STATE_UNAVAILABLE:
     case NM_DEVICE_STATE_PREPARE:
     case NM_DEVICE_STATE_CONFIG:
-    case NM_DEVICE_STATE_NEED_AUTH:
     case NM_DEVICE_STATE_IP_CONFIG:
     case NM_DEVICE_STATE_IP_CHECK:
     case NM_DEVICE_STATE_SECONDARIES:
@@ -1212,6 +1211,7 @@ check_scanning_prohibited(NMDeviceIwd *self, gboolean periodic)
     case NM_DEVICE_STATE_DISCONNECTED:
     case NM_DEVICE_STATE_FAILED:
     case NM_DEVICE_STATE_ACTIVATED:
+    case NM_DEVICE_STATE_NEED_AUTH:
         break;
     }
 
