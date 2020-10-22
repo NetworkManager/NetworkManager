@@ -475,7 +475,7 @@ nl80211_station_dump_handler(struct nl_msg *msg, void *arg)
 
     if (sinfo[NL80211_STA_INFO_TX_BITRATE] != NULL
         && !nla_parse_nested_arr(rinfo, sinfo[NL80211_STA_INFO_TX_BITRATE], rate_policy)
-	&& rinfo[NL80211_RATE_INFO_BITRATE] != NULL) {
+        && rinfo[NL80211_RATE_INFO_BITRATE] != NULL) {
         /* convert from nl80211's units of 100kbps to NM's kbps */
         info->txrate       = nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE]) * 100;
         info->txrate_valid = TRUE;
@@ -488,7 +488,8 @@ nl80211_station_dump_handler(struct nl_msg *msg, void *arg)
     } else if (sinfo[NL80211_STA_INFO_BEACON_SIGNAL_AVG] != NULL) {
         /* Fall back to beacon signal strength */
         info->signal =
-            nl80211_xbm_to_percent((gint8) nla_get_u8(sinfo[NL80211_STA_INFO_BEACON_SIGNAL_AVG]), 1);
+            nl80211_xbm_to_percent((gint8) nla_get_u8(sinfo[NL80211_STA_INFO_BEACON_SIGNAL_AVG]),
+                                   1);
         info->signal_valid = TRUE;
     }
 
