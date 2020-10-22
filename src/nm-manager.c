@@ -2445,7 +2445,8 @@ _device_auth_done_fail_on_idle(gpointer user_data, GCancellable *cancellable)
     NMManagerDeviceAuthRequestFunc callback;
     gpointer                       callback_user_data;
 
-    nm_utils_user_data_unpack(&self,
+    nm_utils_user_data_unpack(user_data,
+                              &self,
                               &device,
                               &context,
                               &subject,
