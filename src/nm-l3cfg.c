@@ -57,32 +57,6 @@ typedef enum {
     ACD_STATE_CHANGE_MODE_TIMEOUT,
 } AcdStateChangeMode;
 
-typedef struct {
-    union {
-        NML3AcdAddrTrackInfo track_info;
-        struct {
-            const NMPObject *     obj;
-            const NML3ConfigData *l3cd;
-            gconstpointer         tag;
-
-            guint32           acd_timeout_msec_track;
-            NML3AcdDefendType acd_defend_type_track;
-            bool              acd_dirty_track : 1;
-            bool              acd_failed_notified_track : 1;
-        };
-    };
-} AcdTrackData;
-
-G_STATIC_ASSERT(G_STRUCT_OFFSET(AcdTrackData, track_info) == 0);
-G_STATIC_ASSERT(G_STRUCT_OFFSET(AcdTrackData, obj) == G_STRUCT_OFFSET(NML3AcdAddrTrackInfo, obj));
-G_STATIC_ASSERT(G_STRUCT_OFFSET(AcdTrackData, l3cd) == G_STRUCT_OFFSET(NML3AcdAddrTrackInfo, l3cd));
-G_STATIC_ASSERT(G_STRUCT_OFFSET(AcdTrackData, tag) == G_STRUCT_OFFSET(NML3AcdAddrTrackInfo, tag));
-G_STATIC_ASSERT(G_STRUCT_OFFSET(AcdTrackData, acd_timeout_msec_track)
-                >= G_STRUCT_OFFSET(NML3AcdAddrTrackInfo, _padding));
-G_STATIC_ASSERT(sizeof(AcdTrackData) == sizeof(NML3AcdAddrTrackInfo));
-
-#define ACD_TRACK_DATA(arg) NM_CONSTCAST(AcdTrackData, arg, NML3AcdAddrTrackInfo)
-
 G_STATIC_ASSERT(G_STRUCT_OFFSET(NML3AcdAddrInfo, addr) == 0);
 
 typedef struct {
@@ -984,13 +958,13 @@ nm_l3cfg_get_acd_is_pending(NML3Cfg *self)
 }
 
 static gboolean
-_acd_track_data_is_not_dirty(const AcdTrackData *acd_track)
+_acd_track_data_is_not_dirty(const NML3AcdAddrTrackInfo *acd_track)
 {
-    return acd_track && !acd_track->acd_dirty_track;
+    return acd_track && !acd_track->_priv.acd_dirty_track;
 }
 
 static void
-_acd_track_data_clear(AcdTrackData *acd_track)
+_acd_track_data_clear(NML3AcdAddrTrackInfo *acd_track)
 {
     nm_l3_config_data_unref(acd_track->l3cd);
     nmp_object_unref(acd_track->obj);
@@ -1005,7 +979,7 @@ _acd_data_free(AcdData *acd_data)
     nm_clear_g_source_inst(&acd_data->acd_data_timeout_source);
     c_list_unlink_stale(&acd_data->acd_lst);
     c_list_unlink_stale(&acd_data->acd_event_notify_lst);
-    g_free((AcdTrackData *) acd_data->info.track_infos);
+    g_free((NML3AcdAddrTrackInfo *) acd_data->info.track_infos);
     nm_g_slice_free(acd_data);
 }
 
@@ -1021,17 +995,17 @@ _acd_data_collect_tracks_data(const AcdData *    acd_data,
     guint             i;
 
     for (i = 0; i < acd_data->info.n_track_infos; i++) {
-        const AcdTrackData *acd_track = ACD_TRACK_DATA(&acd_data->info.track_infos[i]);
+        const NML3AcdAddrTrackInfo *acd_track = &acd_data->info.track_infos[i];
 
         if (dirty_selector != NM_TERNARY_DEFAULT) {
-            if ((!!dirty_selector) != (!!acd_track->acd_dirty_track))
+            if ((!!dirty_selector) != (!!acd_track->_priv.acd_dirty_track))
                 continue;
         }
         n++;
-        if (best_acd_timeout_msec > acd_track->acd_timeout_msec_track)
-            best_acd_timeout_msec = acd_track->acd_timeout_msec_track;
-        if (best_acd_defend_type < acd_track->acd_defend_type_track)
-            best_acd_defend_type = acd_track->acd_defend_type_track;
+        if (best_acd_timeout_msec > acd_track->_priv.acd_timeout_msec_track)
+            best_acd_timeout_msec = acd_track->_priv.acd_timeout_msec_track;
+        if (best_acd_defend_type < acd_track->_priv.acd_defend_type_track)
+            best_acd_defend_type = acd_track->_priv.acd_defend_type_track;
     }
 
     nm_assert(n == 0 || best_acd_defend_type > NM_L3_ACD_DEFEND_TYPE_NONE);
@@ -1042,7 +1016,7 @@ _acd_data_collect_tracks_data(const AcdData *    acd_data,
     return n;
 }
 
-static AcdTrackData *
+static NML3AcdAddrTrackInfo *
 _acd_data_find_track(const AcdData *       acd_data,
                      const NML3ConfigData *l3cd,
                      const NMPObject *     obj,
@@ -1051,10 +1025,10 @@ _acd_data_find_track(const AcdData *       acd_data,
     guint i;
 
     for (i = 0; i < acd_data->info.n_track_infos; i++) {
-        const AcdTrackData *acd_track = ACD_TRACK_DATA(&acd_data->info.track_infos[i]);
+        const NML3AcdAddrTrackInfo *acd_track = &acd_data->info.track_infos[i];
 
         if (acd_track->obj == obj && acd_track->l3cd == l3cd && acd_track->tag == tag)
-            return (AcdTrackData *) acd_track;
+            return (NML3AcdAddrTrackInfo *) acd_track;
     }
 
     return NULL;
@@ -1390,19 +1364,19 @@ _l3_acd_nacd_instance_create_probe(NML3Cfg *    self,
 static void
 _l3_acd_data_prune_one(NML3Cfg *self, AcdData *acd_data, gboolean all /* or only dirty */)
 {
-    AcdTrackData *acd_tracks;
-    guint         i;
-    guint         j;
+    NML3AcdAddrTrackInfo *acd_tracks;
+    guint                 i;
+    guint                 j;
 
-    acd_tracks = (AcdTrackData *) acd_data->info.track_infos;
+    acd_tracks = (NML3AcdAddrTrackInfo *) acd_data->info.track_infos;
     j          = 0;
     for (i = 0; i < acd_data->info.n_track_infos; i++) {
-        AcdTrackData *acd_track = &acd_tracks[i];
+        NML3AcdAddrTrackInfo *acd_track = &acd_tracks[i];
 
         /* If not "all" is requested, we only delete the dirty ones
          * (and mark the survivors as dirty right away). */
-        if (!all && !acd_track->acd_dirty_track) {
-            acd_track->acd_dirty_track = TRUE;
+        if (!all && !acd_track->_priv.acd_dirty_track) {
+            acd_track->_priv.acd_dirty_track = TRUE;
             if (j != i)
                 acd_tracks[j] = *acd_track;
             j++;
@@ -1462,11 +1436,11 @@ _l3_acd_data_add(NML3Cfg *             self,
                  NML3AcdDefendType     acd_defend_type,
                  guint32               acd_timeout_msec)
 {
-    in_addr_t     addr = NMP_OBJECT_CAST_IP4_ADDRESS(obj)->address;
-    AcdTrackData *acd_track;
-    AcdData *     acd_data;
-    const char *  track_mode;
-    char          sbuf100[100];
+    in_addr_t             addr = NMP_OBJECT_CAST_IP4_ADDRESS(obj)->address;
+    NML3AcdAddrTrackInfo *acd_track;
+    AcdData *             acd_data;
+    const char *          track_mode;
+    char                  sbuf100[100];
 
     if (ACD_ADDR_SKIP(addr))
         return;
@@ -1516,36 +1490,38 @@ _l3_acd_data_add(NML3Cfg *             self,
                 g_realloc((gpointer) acd_data->info.track_infos,
                           acd_data->n_track_infos_alloc * sizeof(acd_data->info.track_infos[0]));
         }
-        acd_track  = (AcdTrackData *) &acd_data->info.track_infos[acd_data->info.n_track_infos++];
-        *acd_track = (AcdTrackData){
-            .l3cd                   = nm_l3_config_data_ref(l3cd),
-            .obj                    = nmp_object_ref(obj),
-            .tag                    = tag,
-            .acd_dirty_track        = FALSE,
-            .acd_defend_type_track  = acd_defend_type,
-            .acd_timeout_msec_track = acd_timeout_msec,
+        acd_track =
+            (NML3AcdAddrTrackInfo *) &acd_data->info.track_infos[acd_data->info.n_track_infos++];
+        *acd_track = (NML3AcdAddrTrackInfo){
+            .l3cd                         = nm_l3_config_data_ref(l3cd),
+            .obj                          = nmp_object_ref(obj),
+            .tag                          = tag,
+            ._priv.acd_dirty_track        = FALSE,
+            ._priv.acd_defend_type_track  = acd_defend_type,
+            ._priv.acd_timeout_msec_track = acd_timeout_msec,
         };
         track_mode = "new";
     } else {
-        nm_assert(acd_track->acd_dirty_track);
-        acd_track->acd_dirty_track = FALSE;
-        if (acd_track->acd_timeout_msec_track != acd_timeout_msec
-            || acd_track->acd_defend_type_track != acd_defend_type) {
-            acd_track->acd_defend_type_track  = acd_defend_type;
-            acd_track->acd_timeout_msec_track = acd_timeout_msec;
-            track_mode                        = "update";
+        nm_assert(acd_track->_priv.acd_dirty_track);
+        acd_track->_priv.acd_dirty_track = FALSE;
+        if (acd_track->_priv.acd_timeout_msec_track != acd_timeout_msec
+            || acd_track->_priv.acd_defend_type_track != acd_defend_type) {
+            acd_track->_priv.acd_defend_type_track  = acd_defend_type;
+            acd_track->_priv.acd_timeout_msec_track = acd_timeout_msec;
+            track_mode                              = "update";
         } else
             return;
     }
 
     acd_data->track_infos_changed = TRUE;
-    _LOGT_acd(
-        acd_data,
-        "track " ACD_TRACK_FMT " with timeout %u msec, defend=%s (%s)",
-        ACD_TRACK_PTR(acd_track),
-        acd_timeout_msec,
-        _l3_acd_defend_type_to_string(acd_track->acd_defend_type_track, sbuf100, sizeof(sbuf100)),
-        track_mode);
+    _LOGT_acd(acd_data,
+              "track " ACD_TRACK_FMT " with timeout %u msec, defend=%s (%s)",
+              ACD_TRACK_PTR(acd_track),
+              acd_timeout_msec,
+              _l3_acd_defend_type_to_string(acd_track->_priv.acd_defend_type_track,
+                                            sbuf100,
+                                            sizeof(sbuf100)),
+              track_mode);
 }
 
 static void
@@ -1563,7 +1539,7 @@ _l3_acd_data_add_all(NML3Cfg *                  self,
     c_list_for_each_entry (acd_data, &self->priv.p->acd_lst_head, acd_lst) {
         nm_assert(acd_data->info.n_track_infos > 0u);
         for (i = 0; i < acd_data->info.n_track_infos; i++)
-            nm_assert(((const AcdTrackData *) &acd_data->info.track_infos[i])->acd_dirty_track);
+            nm_assert(acd_data->info.track_infos[i]._priv.acd_dirty_track);
     }
 #endif
 
@@ -1801,7 +1777,7 @@ _l3_acd_data_state_change(NML3Cfg *          self,
      *
      * Here, all the state for one address that we probe/announce is tracked in AcdData/acd_data.
      *
-     * The acd_data has a list of AcdTrackData/acd_track_lst_head, which are configuration items
+     * The acd_data has a list of NML3AcdAddrTrackInfo/acd_track_lst_head, which are configuration items
      * that are interested in configuring this address. The "owners" of the ACD check for a certain
      * address.
      *

@@ -40,11 +40,13 @@ typedef struct {
     const NML3ConfigData *l3cd;
     gconstpointer         tag;
 
-    char _padding[sizeof(struct {
-        guint32           a;
-        NML3AcdDefendType b;
-        guint8            c;
-    })];
+    struct {
+        guint32           acd_timeout_msec_track;
+        NML3AcdDefendType acd_defend_type_track;
+        bool              acd_dirty_track : 1;
+        bool              acd_failed_notified_track : 1;
+    } _priv;
+
 } NML3AcdAddrTrackInfo;
 
 typedef struct {
