@@ -3885,7 +3885,7 @@ nm_utils_g_slist_strlist_join (const GSList *a, const char *separator)
 
 /*****************************************************************************/
 
-gpointer
+NMUtilsUserData *
 _nm_utils_user_data_pack (int nargs, gconstpointer *args)
 {
 	int i;
@@ -3897,13 +3897,13 @@ _nm_utils_user_data_pack (int nargs, gconstpointer *args)
 	data = g_slice_alloc (((gsize) nargs) * sizeof (gconstpointer));
 	for (i = 0; i < nargs; i++)
 		data[i] = (gpointer) args[i];
-	return data;
+	return (NMUtilsUserData *) data;
 }
 
 void
-_nm_utils_user_data_unpack (gpointer user_data, int nargs, ...)
+_nm_utils_user_data_unpack (NMUtilsUserData *user_data, int nargs, ...)
 {
-	gpointer *data = user_data;
+	gpointer *data = (gpointer *) user_data;
 	va_list ap;
 	int i;
 
