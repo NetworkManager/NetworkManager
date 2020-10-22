@@ -39,6 +39,7 @@ typedef struct {
     guint               agent_id;
     char *              agent_path;
     GHashTable *        known_networks;
+    NMDeviceIwd *       last_agent_call_device;
 } NMIwdManagerPrivate;
 
 struct _NMIwdManager {
@@ -178,6 +179,25 @@ agent_dbus_method_cb(GDBusConnection *      connection,
     if (!nm_streq0(name_owner, sender))
         goto return_error;
 
+    if (!strcmp(method_name, "Cancel")) {
+        const char *reason = NULL;
+
+        g_variant_get(parameters, "(&s)", &reason);
+        _LOGD("agent-request: Cancel reason: %s", reason);
+
+        if (!priv->last_agent_call_device)
+            goto return_error;
+
+        if (nm_device_iwd_agent_query(priv->last_agent_call_device, NULL)) {
+            priv->last_agent_call_device = NULL;
+            g_dbus_method_invocation_return_value(invocation, NULL);
+            return;
+        }
+
+        priv->last_agent_call_device = NULL;
+        goto return_error;
+    }
+
     if (!strcmp(method_name, "RequestUserPassword"))
         g_variant_get(parameters, "(&os)", &network_path, NULL);
     else
@@ -197,8 +217,10 @@ agent_dbus_method_cb(GDBusConnection *      connection,
         goto return_error;
     }
 
-    if (nm_device_iwd_agent_query(device, invocation))
+    if (nm_device_iwd_agent_query(device, invocation)) {
+        priv->last_agent_call_device = device;
         return;
+    }
 
     _LOGD("agent-request: device %s did not handle the IWD Agent request",
           nm_device_get_iface(NM_DEVICE(device)));
@@ -229,10 +251,12 @@ static const GDBusInterfaceInfo iwd_agent_iface_info = NM_DEFINE_GDBUS_INTERFACE
                                                   NM_DEFINE_GDBUS_ARG_INFO("password", "s"), ), ),
         NM_DEFINE_GDBUS_METHOD_INFO(
             "RequestUserPassword",
-            .in_args = NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("network", "o"),
+            .in_args  = NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("network", "o"),
                                                  NM_DEFINE_GDBUS_ARG_INFO("user", "s"), ),
-            .out_args =
-                NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("password", "s"), ), ), ), );
+            .out_args = NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("password", "s"), ), ),
+        NM_DEFINE_GDBUS_METHOD_INFO("Cancel",
+                                    .in_args = NM_DEFINE_GDBUS_ARG_INFOS(
+                                        NM_DEFINE_GDBUS_ARG_INFO("reason", "s"), ), ), ), );
 
 static guint
 iwd_agent_export(GDBusConnection *connection, gpointer user_data, char **agent_path, GError **error)
@@ -840,6 +864,19 @@ device_added(NMManager *manager, NMDevice *device, gpointer user_data)
 }
 
 static void
+device_removed(NMManager *manager, NMDevice *device, gpointer user_data)
+{
+    NMIwdManager *       self = user_data;
+    NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE(self);
+
+    if (!NM_IS_DEVICE_IWD(device))
+        return;
+
+    if (priv->last_agent_call_device == NM_DEVICE_IWD(device))
+        priv->last_agent_call_device = NULL;
+}
+
+static void
 got_object_manager(GObject *object, GAsyncResult *result, gpointer user_data)
 {
     NMIwdManager *       self  = user_data;
@@ -955,6 +992,7 @@ nm_iwd_manager_init(NMIwdManager *self)
 
     priv->manager = g_object_ref(NM_MANAGER_GET);
     g_signal_connect(priv->manager, NM_MANAGER_DEVICE_ADDED, G_CALLBACK(device_added), self);
+    g_signal_connect(priv->manager, NM_MANAGER_DEVICE_REMOVED, G_CALLBACK(device_removed), self);
 
     priv->settings = g_object_ref(NM_SETTINGS_GET);
     g_signal_connect(priv->settings,
@@ -996,6 +1034,8 @@ dispose(GObject *object)
         g_signal_handlers_disconnect_by_data(priv->manager, self);
         g_clear_object(&priv->manager);
     }
+
+    priv->last_agent_call_device = NULL;
 
     G_OBJECT_CLASS(nm_iwd_manager_parent_class)->dispose(object);
 }

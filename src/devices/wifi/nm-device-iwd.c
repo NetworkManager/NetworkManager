@@ -2607,6 +2607,23 @@ nm_device_iwd_agent_query(NMDeviceIwd *self, GDBusMethodInvocation *invocation)
     NMSecretAgentGetSecretsFlags get_secret_flags =
         NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
+    if (!invocation) {
+        NMActRequest *act_req = nm_device_get_act_request(device);
+
+        if (!act_req)
+            return FALSE;
+
+        wifi_secrets_cancel(self);
+
+        if (nm_device_get_state(device) == NM_DEVICE_STATE_NEED_AUTH)
+            nm_device_state_changed(device, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
+
+        /* The secrets request is being cancelled.  Let the Network.Connect
+         * method call's callback handle the failure.
+         */
+        return TRUE;
+    }
+
     req = nm_device_get_act_request(device);
     if (!req || nm_device_get_state(device) != NM_DEVICE_STATE_CONFIG) {
         _LOGI(LOGD_WIFI, "IWD asked for secrets without explicit connect request");
