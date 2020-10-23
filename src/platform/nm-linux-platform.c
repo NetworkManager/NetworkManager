@@ -7341,6 +7341,7 @@ link_add(NMPlatform *           platform,
          int                    parent,
          const void *           address,
          size_t                 address_len,
+         guint32                mtu,
          gconstpointer          extra_data,
          const NMPlatformLink **out_link)
 {
@@ -7367,6 +7368,9 @@ link_add(NMPlatform *           platform,
 
     if (address && address_len)
         NLA_PUT(nlmsg, IFLA_ADDRESS, address_len, address);
+
+    if (mtu)
+        NLA_PUT_U32(nlmsg, IFLA_MTU, mtu);
 
     if (!_nl_msg_new_link_set_linkinfo(nlmsg, type, extra_data))
         return -NME_UNSPEC;
