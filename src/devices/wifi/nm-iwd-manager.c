@@ -692,15 +692,16 @@ connection_removed(NMSettings *settings, NMSettingsConnection *sett_conn, gpoint
     gboolean             mapped;
     KnownNetworkData *   data;
     KnownNetworkId       id;
+    gs_free char *       ssid_str = NULL;
 
     id.security = nm_wifi_connection_get_iwd_security(conn, &mapped);
     if (!mapped)
         return;
 
     s_wireless = nm_connection_get_setting_wireless(conn);
-    id.name    = _nm_utils_ssid_to_utf8(nm_setting_wireless_get_ssid(s_wireless));
+    ssid_str   = _nm_utils_ssid_to_utf8(nm_setting_wireless_get_ssid(s_wireless));
+    id.name    = ssid_str;
     data       = g_hash_table_lookup(priv->known_networks, &id);
-    g_free((char *) id.name);
     if (!data)
         return;
 
