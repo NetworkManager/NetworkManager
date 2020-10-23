@@ -603,27 +603,13 @@ deactivate_async(NMDevice *                 device,
 static gboolean
 is_connection_known_network(NMConnection *connection)
 {
-    NMSettingWireless *  s_wireless;
     NMIwdNetworkSecurity security;
-    gboolean             security_ok;
-    GBytes *             ssid;
-    gs_free char *       ssid_utf8 = NULL;
+    gs_free char *       ssid = NULL;
 
-    s_wireless = nm_connection_get_setting_wireless(connection);
-    if (!s_wireless)
+    if (!nm_wifi_connection_get_iwd_ssid_and_security(connection, &ssid, &security))
         return FALSE;
 
-    ssid = nm_setting_wireless_get_ssid(s_wireless);
-    if (!ssid)
-        return FALSE;
-
-    ssid_utf8 = _nm_utils_ssid_to_utf8(ssid);
-
-    security = nm_wifi_connection_get_iwd_security(connection, &security_ok);
-    if (!security_ok)
-        return FALSE;
-
-    return nm_iwd_manager_is_known_network(nm_iwd_manager_get(), ssid_utf8, security);
+    return nm_iwd_manager_is_known_network(nm_iwd_manager_get(), ssid, security);
 }
 
 static gboolean
@@ -655,7 +641,6 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
     const char *         perm_hw_addr;
     const char *         mode;
     NMIwdNetworkSecurity security;
-    gboolean             mapped;
     GBytes *             ssid;
     const guint8 *       ssid_bytes;
     gsize                ssid_len;
@@ -712,8 +697,8 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
         return FALSE;
     }
 
-    security = nm_wifi_connection_get_iwd_security(connection, &mapped);
-    if (!mapped) {
+    if (!nm_wifi_connection_get_iwd_ssid_and_security(connection, NULL, &security)
+        || security == NM_IWD_NETWORK_SECURITY_WEP) {
         nm_utils_error_set_literal(error,
                                    NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                                    "connection authentication type not supported by IWD backend");
@@ -799,11 +784,12 @@ check_connection_available(NMDevice *                     device,
                            const char *                   specific_object,
                            GError **                      error)
 {
-    NMDeviceIwd *       self = NM_DEVICE_IWD(device);
-    NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE(self);
-    NMSettingWireless * s_wifi;
-    const char *        mode;
-    NMWifiAP *          ap = NULL;
+    NMDeviceIwd *        self = NM_DEVICE_IWD(device);
+    NMDeviceIwdPrivate * priv = NM_DEVICE_IWD_GET_PRIVATE(self);
+    NMSettingWireless *  s_wifi;
+    const char *         mode;
+    NMWifiAP *           ap = NULL;
+    NMIwdNetworkSecurity security;
 
     s_wifi = nm_connection_get_setting_wireless(connection);
     g_return_val_if_fail(s_wifi, FALSE);
@@ -857,7 +843,8 @@ check_connection_available(NMDevice *                     device,
     /* 8021x networks can only be used if they've been provisioned on the IWD side and
      * thus are Known Networks.
      */
-    if (nm_wifi_connection_get_iwd_security(connection, NULL) == NM_IWD_NETWORK_SECURITY_8021X) {
+    if (nm_wifi_connection_get_iwd_ssid_and_security(connection, NULL, &security)
+        && security == NM_IWD_NETWORK_SECURITY_8021X) {
         if (!is_ap_known_network(ap)) {
             nm_utils_error_set_literal(
                 error,
@@ -868,6 +855,18 @@ check_connection_available(NMDevice *                     device,
     }
 
     return TRUE;
+}
+
+/* To be used where the SSID has been validated before */
+static char *
+iwd_ssid_to_str(const GBytes *ssid)
+{
+    const guint8 *ssid_bytes;
+    gsize         ssid_len;
+
+    ssid_bytes = g_bytes_get_data((GBytes *) ssid, &ssid_len);
+    nm_assert(ssid && g_utf8_validate((const char *) ssid_bytes, ssid_len, NULL));
+    return g_strndup((const char *) ssid_bytes, ssid_len);
 }
 
 static gboolean
@@ -964,7 +963,7 @@ complete_connection(NMDevice *           device,
             return FALSE;
     }
 
-    ssid_utf8 = _nm_utils_ssid_to_utf8(ssid);
+    ssid_utf8 = iwd_ssid_to_str(ssid);
     nm_utils_complete_generic(
         nm_device_get_platform(device),
         connection,
@@ -1455,10 +1454,8 @@ network_connect_cb(GObject *source, GAsyncResult *res, gpointer user_data)
     gs_unref_variant GVariant *variant = NULL;
     gs_free_error GError *error        = NULL;
     NMConnection *        connection;
-    NMSettingWireless *   s_wifi;
-    GBytes *              ssid;
-    gs_free char *        ssid_utf8 = NULL;
-    NMDeviceStateReason   reason    = NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED;
+    gs_free char *        ssid   = NULL;
+    NMDeviceStateReason   reason = NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED;
     GVariant *            value;
 
     variant = g_dbus_proxy_call_finish(G_DBUS_PROXY(source), res, &error);
@@ -1507,19 +1504,12 @@ network_connect_cb(GObject *source, GAsyncResult *res, gpointer user_data)
     if (!connection)
         goto failed;
 
-    s_wifi = nm_connection_get_setting_wireless(connection);
-    if (!s_wifi)
+    if (!nm_wifi_connection_get_iwd_ssid_and_security(connection, &ssid, NULL))
         goto failed;
-
-    ssid = nm_setting_wireless_get_ssid(s_wifi);
-    if (!ssid)
-        goto failed;
-
-    ssid_utf8 = _nm_utils_ssid_to_utf8(ssid);
 
     _LOGI(LOGD_DEVICE | LOGD_WIFI,
           "Activation: (wifi) Stage 2 of 5 (Device Configure) successful.  Connected to '%s'.",
-          ssid_utf8);
+          ssid);
     nm_device_activate_schedule_stage3_ip_config_start(device);
 
     if (!priv->periodic_update_id) {
@@ -1577,10 +1567,9 @@ act_start_cb(GObject *source, GAsyncResult *res, gpointer user_data)
     NMDevice *          device         = NM_DEVICE(self);
     gs_unref_variant GVariant *variant = NULL;
     gs_free_error GError *error        = NULL;
-    NMSettingWireless *   s_wireless;
-    GBytes *              ssid;
-    gs_free char *        ssid_utf8 = NULL;
+    gs_free char *        ssid         = NULL;
     const char *          mode;
+    NMSettingWireless *   s_wireless;
 
     variant = g_dbus_proxy_call_finish(G_DBUS_PROXY(source), res, &error);
     if (!variant) {
@@ -1599,21 +1588,18 @@ act_start_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 
     nm_assert(nm_device_get_state(device) == NM_DEVICE_STATE_CONFIG);
 
-    s_wireless = nm_device_get_applied_setting(device, NM_TYPE_SETTING_WIRELESS);
-    if (!s_wireless)
+    if (!nm_wifi_connection_get_iwd_ssid_and_security(nm_device_get_applied_connection(device),
+                                                      &ssid,
+                                                      NULL))
         goto error;
-
-    ssid = nm_setting_wireless_get_ssid(s_wireless);
-    if (!ssid)
-        goto error;
-
-    ssid_utf8 = _nm_utils_ssid_to_utf8(ssid);
 
     _LOGI(LOGD_DEVICE | LOGD_WIFI,
           "Activation: (wifi) Stage 2 of 5 (Device Configure) successful.  Started '%s'.",
-          ssid_utf8);
+          ssid);
     nm_device_activate_schedule_stage3_ip_config_start(device);
 
+    s_wireless =
+        (NMSettingWireless *) nm_device_get_applied_setting(device, NM_TYPE_SETTING_WIRELESS);
     mode = nm_setting_wireless_get_mode(s_wireless);
     if (!priv->periodic_update_id && nm_streq0(mode, NM_SETTING_WIRELESS_MODE_ADHOC)) {
         priv->periodic_update_id = g_timeout_add_seconds(6, periodic_update_cb, self);
@@ -1633,14 +1619,13 @@ error:
 static void
 act_check_interface(NMDeviceIwd *self)
 {
-    NMDeviceIwdPrivate *       priv   = NM_DEVICE_IWD_GET_PRIVATE(self);
-    NMDevice *                 device = NM_DEVICE(self);
-    NMSettingWireless *        s_wireless;
-    NMSettingWirelessSecurity *s_wireless_sec;
-    GDBusProxy *               proxy = NULL;
-    GBytes *                   ssid;
-    gs_free char *             ssid_utf8 = NULL;
-    const char *               mode;
+    NMDeviceIwdPrivate * priv   = NM_DEVICE_IWD_GET_PRIVATE(self);
+    NMDevice *           device = NM_DEVICE(self);
+    NMSettingWireless *  s_wireless;
+    GDBusProxy *         proxy = NULL;
+    gs_free char *       ssid  = NULL;
+    const char *         mode;
+    NMIwdNetworkSecurity security;
 
     if (!priv->act_mode_switch)
         return;
@@ -1662,44 +1647,46 @@ act_check_interface(NMDeviceIwd *self)
     if (!NM_IN_SET(nm_device_get_state(device), NM_DEVICE_STATE_CONFIG))
         return;
 
-    ssid = nm_setting_wireless_get_ssid(s_wireless);
-    if (!ssid)
+    if (!nm_wifi_connection_get_iwd_ssid_and_security(nm_device_get_applied_connection(device),
+                                                      &ssid,
+                                                      &security))
         goto failed;
 
-    ssid_utf8 = _nm_utils_ssid_to_utf8(ssid);
-
-    s_wireless_sec = (NMSettingWirelessSecurity *) nm_device_get_applied_setting(
-        device,
-        NM_TYPE_SETTING_WIRELESS_SECURITY);
-
-    if (!s_wireless_sec) {
+    if (security == NM_IWD_NETWORK_SECURITY_NONE) {
         g_dbus_proxy_call(proxy,
                           "StartOpen",
-                          g_variant_new("(s)", ssid_utf8),
+                          g_variant_new("(s)", ssid),
                           G_DBUS_CALL_FLAGS_NONE,
                           G_MAXINT,
                           priv->cancellable,
                           act_start_cb,
                           self);
-    } else {
-        const char *psk = nm_setting_wireless_security_get_psk(s_wireless_sec);
+    } else if (security == NM_IWD_NETWORK_SECURITY_PSK) {
+        NMSettingWirelessSecurity *s_wireless_sec;
+        const char *               psk;
+
+        s_wireless_sec = (NMSettingWirelessSecurity *) nm_device_get_applied_setting(
+            device,
+            NM_TYPE_SETTING_WIRELESS_SECURITY);
+        psk = nm_setting_wireless_security_get_psk(s_wireless_sec);
 
         if (!psk) {
-            _LOGE(LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi) No PSK for '%s'.", ssid_utf8);
+            _LOGE(LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi) No PSK for '%s'.", ssid);
             goto failed;
         }
 
         g_dbus_proxy_call(proxy,
                           "Start",
-                          g_variant_new("(ss)", ssid_utf8, psk),
+                          g_variant_new("(ss)", ssid, psk),
                           G_DBUS_CALL_FLAGS_NONE,
                           G_MAXINT,
                           priv->cancellable,
                           act_start_cb,
                           self);
-    }
+    } else
+        goto failed;
 
-    _LOGD(LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi) Called Start('%s').", ssid_utf8);
+    _LOGD(LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi) Called Start('%s').", ssid);
     return;
 
 failed:
@@ -1951,7 +1938,7 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
         priv->secrets_failed = FALSE;
 
         if (nm_wifi_ap_get_fake(ap)) {
-            gs_free char *ssid_str = NULL;
+            gs_free char *ssid = NULL;
 
             if (!nm_setting_wireless_get_hidden(s_wireless)) {
                 _LOGW(LOGD_DEVICE | LOGD_WIFI,
@@ -1961,11 +1948,15 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
                 goto out_fail;
             }
 
+            if (!nm_wifi_connection_get_iwd_ssid_and_security(connection, &ssid, NULL)) {
+                NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+                goto out_fail;
+            }
+
             /* Use Station.ConnectHiddenNetwork method instead of Network proxy. */
-            ssid_str = _nm_utils_ssid_to_utf8(nm_setting_wireless_get_ssid(s_wireless));
             g_dbus_proxy_call(priv->dbus_station_proxy,
                               "ConnectHiddenNetwork",
-                              g_variant_new("(s)", ssid_str),
+                              g_variant_new("(s)", ssid),
                               G_DBUS_CALL_FLAGS_NONE,
                               G_MAXINT,
                               priv->cancellable,

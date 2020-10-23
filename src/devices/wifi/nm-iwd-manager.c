@@ -411,18 +411,22 @@ mirror_8021x_connection(NMIwdManager *self, const char *name, gboolean create_ne
     NMSetting *                   setting;
     GError *                      error = NULL;
     gs_unref_bytes GBytes *new_ssid     = NULL;
+    gsize                  ssid_len     = strlen(name);
 
     for (iter = nm_settings_get_connections(priv->settings, NULL); *iter; iter++) {
         NMSettingsConnection *sett_conn = *iter;
         NMConnection *        conn      = nm_settings_connection_get_connection(sett_conn);
         NMIwdNetworkSecurity  security;
-        gs_free char *        ssid_name = NULL;
         NMSettingWireless *   s_wifi;
         NMSetting8021x *      s_8021x;
         gboolean              external = FALSE;
         guint                 i;
+        const guint8 *        ssid_bytes;
+        gsize                 ssid_len2;
 
-        security = nm_wifi_connection_get_iwd_security(conn, NULL);
+        if (!nm_wifi_connection_get_iwd_ssid_and_security(conn, NULL, &security))
+            continue;
+
         if (security != NM_IWD_NETWORK_SECURITY_8021X)
             continue;
 
@@ -430,9 +434,11 @@ mirror_8021x_connection(NMIwdManager *self, const char *name, gboolean create_ne
         if (!s_wifi)
             continue;
 
-        ssid_name = _nm_utils_ssid_to_utf8(nm_setting_wireless_get_ssid(s_wifi));
-
-        if (!nm_streq(ssid_name, name))
+        /* The SSID must be UTF-8 if it matches since name is known to be
+         * valid UTF-8, so just memcmp them.
+         */
+        ssid_bytes = g_bytes_get_data(nm_setting_wireless_get_ssid(s_wifi), &ssid_len2);
+        if (!ssid_bytes || ssid_len2 != ssid_len || memcmp(ssid_bytes, name, ssid_len))
             continue;
 
         s_8021x = nm_connection_get_setting_802_1x(conn);
@@ -468,7 +474,7 @@ mirror_8021x_connection(NMIwdManager *self, const char *name, gboolean create_ne
                                       NULL));
     nm_connection_add_setting(connection, setting);
 
-    new_ssid = g_bytes_new(name, strlen(name));
+    new_ssid = g_bytes_new(name, ssid_len);
     setting  = NM_SETTING(g_object_new(NM_TYPE_SETTING_WIRELESS,
                                       NM_SETTING_WIRELESS_SSID,
                                       new_ssid,
@@ -713,19 +719,27 @@ connection_removed(NMSettings *settings, NMSettingsConnection *sett_conn, gpoint
     NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE(self);
     NMConnection *       conn = nm_settings_connection_get_connection(sett_conn);
     NMSettingWireless *  s_wireless;
-    gboolean             mapped;
     KnownNetworkData *   data;
     KnownNetworkId       id;
-    gs_free char *       ssid_str = NULL;
+    char                 ssid_buf[33];
+    const guint8 *       ssid_bytes;
+    gsize                ssid_len;
 
-    id.security = nm_wifi_connection_get_iwd_security(conn, &mapped);
-    if (!mapped)
+    if (!nm_wifi_connection_get_iwd_ssid_and_security(conn, NULL, &id.security))
         return;
 
     s_wireless = nm_connection_get_setting_wireless(conn);
-    ssid_str   = _nm_utils_ssid_to_utf8(nm_setting_wireless_get_ssid(s_wireless));
-    id.name    = ssid_str;
-    data       = g_hash_table_lookup(priv->known_networks, &id);
+    if (!s_wireless)
+        return;
+
+    ssid_bytes = g_bytes_get_data(nm_setting_wireless_get_ssid(s_wireless), &ssid_len);
+    if (!ssid_bytes || ssid_len > 32 || memchr(ssid_bytes, 0, ssid_len))
+        return;
+
+    memcpy(ssid_buf, ssid_bytes, ssid_len);
+    ssid_buf[ssid_len] = '\0';
+    id.name            = ssid_buf;
+    data               = g_hash_table_lookup(priv->known_networks, &id);
     if (!data)
         return;
 
