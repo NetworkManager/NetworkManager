@@ -2521,17 +2521,9 @@ nm_settings_add_connection_dbus(NMSettings *                    self,
     else
         perm = NM_AUTH_PERMISSION_SETTINGS_MODIFY_SYSTEM;
 
-    /* Validate the user request */
     chain = nm_auth_chain_new_subject(subject, context, pk_add_cb, self);
-    if (!chain) {
-        error = g_error_new_literal(NM_SETTINGS_ERROR,
-                                    NM_SETTINGS_ERROR_PERMISSION_DENIED,
-                                    NM_UTILS_ERROR_MSG_REQ_AUTH_FAILED);
-        goto done;
-    }
 
     c_list_link_tail(&priv->auth_lst_head, nm_auth_chain_parent_lst_list(chain));
-
     nm_auth_chain_set_data(chain, "perm", (gpointer) perm, NULL);
     nm_auth_chain_set_data(chain, "connection", g_object_ref(connection), g_object_unref);
     nm_auth_chain_set_data(chain, "callback", callback, NULL);

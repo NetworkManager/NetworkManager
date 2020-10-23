@@ -2495,16 +2495,7 @@ nm_manager_device_auth_request(NMManager *                    self,
                                                 &error))
         goto fail_on_idle;
 
-    /* Validate the request */
     chain = nm_auth_chain_new_subject(subject, context, device_auth_done_cb, self);
-    if (!chain) {
-        g_set_error(&error,
-                    NM_MANAGER_ERROR,
-                    NM_MANAGER_ERROR_PERMISSION_DENIED,
-                    NM_UTILS_ERROR_MSG_REQ_AUTH_FAILED);
-        goto fail_on_idle;
-    }
-
     if (cancellable)
         nm_auth_chain_set_cancellable(chain, cancellable);
 
@@ -6033,15 +6024,7 @@ impl_manager_deactivate_connection(NMDBusObject *                     obj,
                                              &error))
         goto done;
 
-    /* Validate the user request */
     chain = nm_auth_chain_new_subject(subject, invocation, deactivate_net_auth_done_cb, self);
-    if (!chain) {
-        error = g_error_new_literal(NM_MANAGER_ERROR,
-                                    NM_MANAGER_ERROR_PERMISSION_DENIED,
-                                    NM_UTILS_ERROR_MSG_REQ_AUTH_FAILED);
-        goto done;
-    }
-
     c_list_link_tail(&priv->auth_lst_head, nm_auth_chain_parent_lst_list(chain));
     nm_auth_chain_set_data(chain, "path", g_strdup(active_path), g_free);
     nm_auth_chain_add_call(chain, NM_AUTH_PERMISSION_NETWORK_CONTROL, TRUE);
