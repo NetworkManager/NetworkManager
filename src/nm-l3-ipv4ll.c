@@ -11,7 +11,15 @@
 
 #define ADDR_IPV4LL_PREFIX_LEN 16
 
+#define TIMED_OUT_TIME_FACTOR 5u
+
 /*****************************************************************************/
+
+typedef enum {
+    TIMED_OUT_STATE_IS_NOT_TIMED_OUT,
+    TIMED_OUT_STATE_IS_TIMED_OUT,
+    TIMED_OUT_STATE_HAVE_TIMER_RUNNING,
+} TimedOutState;
 
 struct _NML3IPv4LLRegistration {
     NML3IPv4LL *self;
@@ -29,24 +37,26 @@ struct _NML3IPv4LL {
     CList                    reg_lst_head;
     NML3CfgCommitTypeHandle *l3cfg_commit_handle;
     GSource *                state_change_on_idle_source;
+    GSource *                timed_out_source;
     const NML3ConfigData *   l3cd;
     const NMPObject *        plobj;
     struct {
         nm_le64_t value;
         nm_le64_t generation;
     } seed;
+    gint64          timed_out_expiry_msec;
     gulong          l3cfg_signal_notify_id;
-    gint64          last_good_at_msec : 1;
     NML3IPv4LLState state;
     NMEtherAddr     seed_mac;
     NMEtherAddr     mac;
     bool            seed_set : 1;
-    bool            seed_reset_generation : 1;
     bool            mac_set : 1;
-    bool            link_seen_not_ready : 1;
     bool            notify_on_idle : 1;
     bool            reg_changed : 1;
     bool            l3cd_timeout_msec_changed : 1;
+
+    /* not yet used. */
+    bool seed_reset_generation : 1;
 };
 
 G_STATIC_ASSERT(G_STRUCT_OFFSET(NML3IPv4LL, ref_count) == sizeof(gpointer));
@@ -76,6 +86,8 @@ G_STATIC_ASSERT(G_STRUCT_OFFSET(NML3IPv4LL, ref_count) == sizeof(gpointer));
 static void _ipv4ll_state_change_on_idle(NML3IPv4LL *self);
 
 static void _ipv4ll_state_change(NML3IPv4LL *self, gboolean is_on_idle_handler);
+
+static void _ipv4ll_set_timed_out_update(NML3IPv4LL *self, TimedOutState new_state);
 
 /*****************************************************************************/
 
@@ -140,6 +152,22 @@ nm_l3_ipv4ll_get_state(NML3IPv4LL *self)
     return self->state;
 }
 
+static gboolean
+_ipv4ll_is_timed_out(NML3IPv4LL *self)
+{
+    _ASSERT(self);
+
+    return self->timed_out_expiry_msec != 0 && !self->timed_out_source;
+}
+
+gboolean
+nm_l3_ipv4ll_is_timed_out(NML3IPv4LL *self)
+{
+    nm_assert(NM_IS_L3_IPV4LL(self));
+
+    return _ipv4ll_is_timed_out(self);
+}
+
 in_addr_t
 nm_l3_ipv4ll_get_addr(NML3IPv4LL *self)
 {
@@ -154,6 +182,20 @@ nm_l3_ipv4ll_get_l3cd(NML3IPv4LL *self)
     nm_assert(NM_IS_L3_IPV4LL(self));
 
     return self->l3cd;
+}
+
+static void
+_ipv4ll_emit_signal_notify(NML3IPv4LL *self)
+{
+    NML3ConfigNotifyData notify_data;
+
+    self->notify_on_idle = FALSE;
+
+    notify_data.notify_type  = NM_L3_CONFIG_NOTIFY_TYPE_IPV4LL_EVENT;
+    notify_data.ipv4ll_event = (typeof(notify_data.ipv4ll_event)){
+        .ipv4ll = self,
+    };
+    _nm_l3cfg_emit_signal_notify(self->l3cfg, &notify_data);
 }
 
 /*****************************************************************************/
@@ -270,23 +312,6 @@ _acd_info_is_good(const NML3AcdAddrInfo *acd_info)
     }
     nm_assert_not_reached();
     return FALSE;
-}
-
-static gboolean
-_plobj_link_is_ready(const NMPObject *plobj)
-{
-    const NMPlatformLink *pllink;
-
-    if (!plobj)
-        return FALSE;
-
-    pllink = NMP_OBJECT_CAST_LINK(plobj);
-    if (!NM_FLAGS_HAS(pllink->n_ifi_flags, IFF_UP))
-        return FALSE;
-    if (pllink->l_address.len != ETH_ALEN)
-        return FALSE;
-
-    return TRUE;
 }
 
 /*****************************************************************************/
@@ -694,6 +719,67 @@ _ipv4ll_platform_find_addr(NML3IPv4LL *self, const NML3AcdAddrInfo **out_acd_inf
 /*****************************************************************************/
 
 static gboolean
+_ipv4ll_set_timed_out_timeout_cb(gpointer user_data)
+{
+    NML3IPv4LL *self = user_data;
+
+    _ipv4ll_set_timed_out_update(self, TIMED_OUT_STATE_IS_TIMED_OUT);
+    if (self->notify_on_idle)
+        _ipv4ll_emit_signal_notify(self);
+    return G_SOURCE_REMOVE;
+}
+
+static void
+_ipv4ll_set_timed_out_update(NML3IPv4LL *self, TimedOutState new_state)
+{
+    gboolean before;
+
+    before = _ipv4ll_is_timed_out(self);
+
+    switch (new_state) {
+    case TIMED_OUT_STATE_IS_TIMED_OUT:
+        if (self->timed_out_expiry_msec == 0) {
+            nm_assert(!self->timed_out_source);
+            self->timed_out_expiry_msec = 1;
+        }
+        nm_clear_g_source_inst(&self->timed_out_source);
+        break;
+    case TIMED_OUT_STATE_IS_NOT_TIMED_OUT:
+        self->timed_out_expiry_msec = 0;
+        nm_clear_g_source_inst(&self->timed_out_source);
+        break;
+    case TIMED_OUT_STATE_HAVE_TIMER_RUNNING:
+    {
+        gint64 now_msec = nm_utils_get_monotonic_timestamp_msec();
+        guint  timeout_msec;
+        gint64 expiry_msec;
+
+        nm_assert(self->reg_timeout_msec > 0u);
+
+        timeout_msec = nm_mult_clamped_u(TIMED_OUT_TIME_FACTOR, self->reg_timeout_msec);
+        expiry_msec  = now_msec + timeout_msec;
+
+        if (self->timed_out_expiry_msec == 0 || self->timed_out_expiry_msec < expiry_msec) {
+            self->timed_out_expiry_msec = expiry_msec;
+            nm_clear_g_source_inst(&self->timed_out_source);
+            self->timed_out_source = nm_g_timeout_source_new(timeout_msec,
+                                                             G_PRIORITY_DEFAULT,
+                                                             _ipv4ll_set_timed_out_timeout_cb,
+                                                             self,
+                                                             NULL);
+            g_source_attach(self->timed_out_source, NULL);
+        }
+        break;
+    }
+    }
+
+    if (before != _ipv4ll_is_timed_out(self)) {
+        self->notify_on_idle = TRUE;
+        _LOGT("state: set timed-out-is-bad=%d", (!before));
+    }
+}
+
+static gboolean
 _ipv4ll_set_state(NML3IPv4LL *self, NML3IPv4LLState state)
 {
     char sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
@@ -731,6 +817,8 @@ _ipv4ll_state_change(NML3IPv4LL *self, gboolean is_on_idle_handler)
     if (self->reg_changed) {
         guint timeout_msec = self->reg_timeout_msec;
 
+        self->reg_changed = FALSE;
+
         if (c_list_is_empty(&self->reg_lst_head))
             timeout_msec = 0;
         else {
@@ -749,12 +837,14 @@ _ipv4ll_state_change(NML3IPv4LL *self, gboolean is_on_idle_handler)
     }
 
     if (self->reg_timeout_msec == 0) {
+        _ipv4ll_set_timed_out_update(self, TIMED_OUT_STATE_IS_NOT_TIMED_OUT);
         if (_ipv4ll_set_state(self, NM_L3_IPV4LL_STATE_DISABLED))
             _l3cd_config_remove(self);
         goto out_notify;
     }
 
     if (!self->mac_set) {
+        _ipv4ll_set_timed_out_update(self, TIMED_OUT_STATE_HAVE_TIMER_RUNNING);
         if (_ipv4ll_set_state(self, NM_L3_IPV4LL_STATE_WAIT_FOR_LINK))
             _l3cd_config_remove(self);
         else
@@ -773,7 +863,12 @@ _ipv4ll_state_change(NML3IPv4LL *self, gboolean is_on_idle_handler)
 
         if (pladdr) {
             /* we have an externally configured address. Check whether we can use it. */
-            goto out_set_external_pladdr;
+            self->addr           = pladdr->address;
+            self->notify_on_idle = TRUE;
+            _ipv4ll_set_state(self, NM_L3_IPV4LL_STATE_EXTERNAL);
+            _l3cd_config_add(self);
+            _ipv4ll_set_timed_out_update(self, TIMED_OUT_STATE_IS_NOT_TIMED_OUT);
+            goto out_notify;
         }
     }
 
@@ -782,29 +877,24 @@ _ipv4ll_state_change(NML3IPv4LL *self, gboolean is_on_idle_handler)
         _ipv4ll_addrgen(self, generate_new_addr);
         acd_info = _ipv4ll_l3cfg_get_acd_addr_info(self, self->addr);
         if (_acd_info_is_good(acd_info))
-            goto out_is_good;
+            break;
         generate_new_addr = TRUE;
     }
 
-out_set_external_pladdr:
-    self->addr = pladdr->address;
-    _ipv4ll_set_state(self, NM_L3_IPV4LL_STATE_EXTERNAL);
-    _l3cd_config_add(self);
-    self->notify_on_idle = TRUE;
-    goto out_notify;
-
-out_is_good:
     nm_assert(_acd_info_is_good(acd_info));
     switch (acd_info ? acd_info->state : NM_L3_ACD_ADDR_STATE_INIT) {
     case NM_L3_ACD_ADDR_STATE_INIT:
     case NM_L3_ACD_ADDR_STATE_PROBING:
         new_state = NM_L3_IPV4LL_STATE_PROBING;
+        _ipv4ll_set_timed_out_update(self, TIMED_OUT_STATE_HAVE_TIMER_RUNNING);
         goto out_is_good_1;
     case NM_L3_ACD_ADDR_STATE_READY:
         new_state = NM_L3_IPV4LL_STATE_READY;
+        _ipv4ll_set_timed_out_update(self, TIMED_OUT_STATE_HAVE_TIMER_RUNNING);
         goto out_is_good_1;
     case NM_L3_ACD_ADDR_STATE_DEFENDING:
         new_state = NM_L3_IPV4LL_STATE_DEFENDING;
+        _ipv4ll_set_timed_out_update(self, TIMED_OUT_STATE_IS_NOT_TIMED_OUT);
         goto out_is_good_1;
     case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
     case NM_L3_ACD_ADDR_STATE_USED:
@@ -823,17 +913,9 @@ out_is_good_1:
 
 out_notify:
     if (self->notify_on_idle) {
-        if (is_on_idle_handler) {
-            NML3ConfigNotifyData notify_data;
-
-            self->notify_on_idle = FALSE;
-
-            notify_data.notify_type  = NM_L3_CONFIG_NOTIFY_TYPE_IPV4LL_EVENT;
-            notify_data.ipv4ll_event = (typeof(notify_data.ipv4ll_event)){
-                .ipv4ll = self,
-            };
-            _nm_l3cfg_emit_signal_notify(self->l3cfg, &notify_data);
-        } else
+        if (is_on_idle_handler)
+            _ipv4ll_emit_signal_notify(self);
+        else
             _ipv4ll_state_change_on_idle(self);
     }
 }
@@ -861,36 +943,9 @@ _ipv4ll_state_change_on_idle(NML3IPv4LL *self)
 
 /*****************************************************************************/
 
-void
-nm_l3_ipv4ll_restart(NML3IPv4LL *self)
-{
-    nm_assert(NM_IS_L3_IPV4LL(self));
-
-    self->seed_reset_generation = TRUE;
-    _ipv4ll_state_change(self, FALSE);
-}
-
-/*****************************************************************************/
-
 static void
 _l3cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NML3IPv4LL *self)
 {
-    if (notify_data->notify_type == NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE) {
-        const NMPObject *obj = notify_data->platform_change.obj;
-
-        /* we only process the link changes on the idle handler. That means, we may miss
-         * events. If we saw the link down for a moment, remember it. Note that netlink
-         * anyway can loose signals, so we might still miss to see the link down. This
-         * is as good as we get it. */
-        if (NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_LINK) {
-            if (notify_data->platform_change.change_type == NM_PLATFORM_SIGNAL_REMOVED)
-                self->link_seen_not_ready = TRUE;
-            else if (!_plobj_link_is_ready(obj))
-                self->link_seen_not_ready = TRUE;
-        }
-        return;
-    }
-
     if (notify_data->notify_type == NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE) {
         /* NMl3Cfg only reloads the platform link during the idle handler. Pick it up now. */
         _ipv4ll_update_link(self, nm_l3cfg_get_plobj(l3cfg, FALSE));
@@ -938,8 +993,6 @@ nm_l3_ipv4ll_new(NML3Cfg *l3cfg)
         .notify_on_idle              = TRUE,
         .l3cfg_signal_notify_id =
             g_signal_connect(l3cfg, NM_L3CFG_SIGNAL_NOTIFY, G_CALLBACK(_l3cfg_notify_cb), self),
-        .last_good_at_msec     = 0,
-        .link_seen_not_ready   = FALSE,
         .seed_set              = FALSE,
         .seed_reset_generation = FALSE,
     };
@@ -992,6 +1045,7 @@ nm_l3_ipv4ll_unref(NML3IPv4LL *self)
         nm_assert(!self->l3cfg_commit_handle);
 
     nm_clear_g_source_inst(&self->state_change_on_idle_source);
+    nm_clear_g_source_inst(&self->timed_out_source);
 
     nm_clear_g_signal_handler(self->l3cfg, &self->l3cfg_signal_notify_id);
 
