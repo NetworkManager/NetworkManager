@@ -656,12 +656,32 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
     const char *         mode;
     NMIwdNetworkSecurity security;
     gboolean             mapped;
+    GBytes *             ssid;
+    const guint8 *       ssid_bytes;
+    gsize                ssid_len;
 
     if (!NM_DEVICE_CLASS(nm_device_iwd_parent_class)
              ->check_connection_compatible(device, connection, error))
         return FALSE;
 
     s_wireless = nm_connection_get_setting_wireless(connection);
+
+    /* complete_connection would be called (if at all) before this function
+     * so an SSID should always be set.  IWD doesn't support non-UTF8 SSIDs
+     * (ignores BSSes with such SSIDs and has no way to represent them on
+     * DBus) so we can cut it short for connections with a non-UTF8 SSID.
+     */
+    ssid = nm_setting_wireless_get_ssid(s_wireless);
+    if (!ssid)
+        return FALSE;
+
+    ssid_bytes = g_bytes_get_data(ssid, &ssid_len);
+    if (!g_utf8_validate((const char *) ssid_bytes, ssid_len, NULL)) {
+        nm_utils_error_set_literal(error,
+                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                                   "non-UTF-8 connection SSID not supported by IWD backend");
+        return FALSE;
+    }
 
     perm_hw_addr = nm_device_get_permanent_hw_address(device);
     mac          = nm_setting_wireless_get_mac_address(s_wireless);
@@ -862,20 +882,18 @@ complete_connection(NMDevice *           device,
     NMSettingWireless * s_wifi;
     gs_free char *      ssid_utf8 = NULL;
     NMWifiAP *          ap;
-    GBytes *            ssid;
-    GBytes *            setting_ssid = NULL;
-    gboolean            hidden       = FALSE;
+    GBytes *            ssid   = NULL;
+    gboolean            hidden = FALSE;
     const char *        mode;
 
     s_wifi = nm_connection_get_setting_wireless(connection);
 
     mode = s_wifi ? nm_setting_wireless_get_mode(s_wifi) : NULL;
 
-    if (nm_streq0(mode, NM_SETTING_WIRELESS_MODE_AP)) {
-        if (!nm_setting_verify(NM_SETTING(s_wifi), connection, error))
-            return FALSE;
-        ap = NULL;
-    } else if (!specific_object) {
+    if (nm_streq0(mode, NM_SETTING_WIRELESS_MODE_AP) || !specific_object) {
+        const guint8 *ssid_bytes;
+        gsize         ssid_len;
+
         /* If not given a specific object, we need at minimum an SSID */
         if (!s_wifi) {
             g_set_error_literal(error,
@@ -885,16 +903,24 @@ complete_connection(NMDevice *           device,
             return FALSE;
         }
 
-        setting_ssid = nm_setting_wireless_get_ssid(s_wifi);
-        if (!setting_ssid || g_bytes_get_size(setting_ssid) == 0) {
-            g_set_error_literal(
-                error,
-                NM_DEVICE_ERROR,
-                NM_DEVICE_ERROR_INVALID_CONNECTION,
-                "A 'wireless' setting with a valid SSID is required if no AP path was given.");
+        ssid       = nm_setting_wireless_get_ssid(s_wifi);
+        ssid_bytes = g_bytes_get_data(ssid, &ssid_len);
+
+        if (!ssid || ssid_len == 0 || !g_utf8_validate((const char *) ssid_bytes, ssid_len, NULL)) {
+            g_set_error_literal(error,
+                                NM_DEVICE_ERROR,
+                                NM_DEVICE_ERROR_INVALID_CONNECTION,
+                                "A 'wireless' setting with a valid UTF-8 SSID is required if no AP "
+                                "path was given.");
             return FALSE;
         }
+    }
 
+    if (nm_streq0(mode, NM_SETTING_WIRELESS_MODE_AP)) {
+        if (!nm_setting_verify(NM_SETTING(s_wifi), connection, error))
+            return FALSE;
+        ap = NULL;
+    } else if (!specific_object) {
         /* Find a compatible AP in the scan list */
         ap = nm_wifi_aps_find_first_compatible(&priv->aps_lst_head, connection);
         if (!ap) {
@@ -923,24 +949,14 @@ complete_connection(NMDevice *           device,
                         specific_object);
             return FALSE;
         }
-    }
 
-    /* Add a wifi setting if one doesn't exist yet */
-    if (!s_wifi) {
-        s_wifi = (NMSettingWireless *) nm_setting_wireless_new();
-        nm_connection_add_setting(connection, NM_SETTING(s_wifi));
-    }
-
-    ssid = nm_setting_wireless_get_ssid(s_wifi);
-    if (!ssid && ap)
         ssid = nm_wifi_ap_get_ssid(ap);
 
-    if (!ssid) {
-        g_set_error_literal(error,
-                            NM_DEVICE_ERROR,
-                            NM_DEVICE_ERROR_INVALID_CONNECTION,
-                            "A 'wireless' setting with a valid SSID is required.");
-        return FALSE;
+        /* Add a wifi setting if one doesn't exist yet */
+        if (!s_wifi) {
+            s_wifi = (NMSettingWireless *) nm_setting_wireless_new();
+            nm_connection_add_setting(connection, NM_SETTING(s_wifi));
+        }
     }
 
     if (ap) {
