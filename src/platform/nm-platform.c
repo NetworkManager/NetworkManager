@@ -6515,7 +6515,9 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
         route->plen,
         s_gateway,
         str_dev,
-        route->metric_any ? "??" : nm_sprintf_buf(str_metric, "%u", route->metric),
+        route->metric_any
+            ? (route->metric ? nm_sprintf_buf(str_metric, "??+%u", route->metric) : "??")
+            : nm_sprintf_buf(str_metric, "%u", route->metric),
         route->mss,
         nmp_utils_ip_config_source_to_string(route->rt_source, s_source, sizeof(s_source)),
         _rtm_flags_to_string_full(str_rtm_flags, sizeof(str_rtm_flags), route->r_rtm_flags),
@@ -6639,7 +6641,9 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
         route->plen,
         s_gateway,
         str_dev,
-        route->metric_any ? "??" : nm_sprintf_buf(str_metric, "%u", route->metric),
+        route->metric_any
+            ? (route->metric ? nm_sprintf_buf(str_metric, "??+%u", route->metric) : "??")
+            : nm_sprintf_buf(str_metric, "%u", route->metric),
         route->mss,
         nmp_utils_ip_config_source_to_string(route->rt_source, s_source, sizeof(s_source)),
         route->src_plen || !IN6_IS_ADDR_UNSPECIFIED(&route->src)
@@ -7927,7 +7931,7 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
             nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(obj)),
             nm_utils_ip4_address_clear_host_address(obj->network, obj->plen),
             obj->plen,
-            nm_platform_ip4_route_get_effective_metric(obj),
+            obj->metric,
             obj->tos,
             NM_HASH_COMBINE_BOOLS(guint8, obj->metric_any, obj->table_any));
         break;
@@ -7938,7 +7942,7 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
             nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(obj)),
             nm_utils_ip4_address_clear_host_address(obj->network, obj->plen),
             obj->plen,
-            nm_platform_ip4_route_get_effective_metric(obj),
+            obj->metric,
             obj->tos,
             /* on top of WEAK_ID: */
             obj->ifindex,
@@ -7970,7 +7974,7 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
             obj->ifindex,
             nm_utils_ip4_address_clear_host_address(obj->network, obj->plen),
             obj->plen,
-            nm_platform_ip4_route_get_effective_metric(obj),
+            obj->metric,
             obj->gateway,
             nmp_utils_ip_config_source_round_trip_rtprot(obj->rt_source),
             _ip_route_scope_inv_get_normalized(obj),
@@ -7999,7 +8003,7 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                             obj->ifindex,
                             obj->network,
                             obj->plen,
-                            nm_platform_ip4_route_get_effective_metric(obj),
+                            obj->metric,
                             obj->gateway,
                             obj->rt_source,
                             obj->scope_inv,
@@ -8039,8 +8043,7 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
         NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX(a->network, b->network, MIN(a->plen, b->plen));
         NM_CMP_FIELD(a, b, plen);
         NM_CMP_FIELD_UNSAFE(a, b, metric_any);
-        if (!a->metric_any)
-            NM_CMP_FIELD(a, b, metric);
+        NM_CMP_FIELD(a, b, metric);
         NM_CMP_FIELD(a, b, tos);
         if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
             NM_CMP_FIELD(a, b, ifindex);
@@ -8081,8 +8084,7 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
             NM_CMP_FIELD(a, b, network);
         NM_CMP_FIELD(a, b, plen);
         NM_CMP_FIELD_UNSAFE(a, b, metric_any);
-        if (!a->metric_any)
-            NM_CMP_FIELD(a, b, metric);
+        NM_CMP_FIELD(a, b, metric);
         NM_CMP_FIELD(a, b, gateway);
         if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
             NM_CMP_DIRECT(nmp_utils_ip_config_source_round_trip_rtprot(a->rt_source),
@@ -8130,7 +8132,7 @@ nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
             nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(obj)),
             *nm_utils_ip6_address_clear_host_address(&a1, &obj->network, obj->plen),
             obj->plen,
-            nm_platform_ip6_route_get_effective_metric(obj),
+            obj->metric,
             *nm_utils_ip6_address_clear_host_address(&a2, &obj->src, obj->src_plen),
             obj->src_plen,
             NM_HASH_COMBINE_BOOLS(guint8, obj->metric_any, obj->table_any));
@@ -8142,7 +8144,7 @@ nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
             nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(obj)),
             *nm_utils_ip6_address_clear_host_address(&a1, &obj->network, obj->plen),
             obj->plen,
-            nm_platform_ip6_route_get_effective_metric(obj),
+            obj->metric,
             *nm_utils_ip6_address_clear_host_address(&a2, &obj->src, obj->src_plen),
             obj->src_plen,
             NM_HASH_COMBINE_BOOLS(guint8, obj->metric_any, obj->table_any),
@@ -8158,7 +8160,7 @@ nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
             obj->ifindex,
             *nm_utils_ip6_address_clear_host_address(&a1, &obj->network, obj->plen),
             obj->plen,
-            nm_platform_ip6_route_get_effective_metric(obj),
+            obj->metric,
             obj->gateway,
             obj->pref_src,
             *nm_utils_ip6_address_clear_host_address(&a2, &obj->src, obj->src_plen),
@@ -8187,7 +8189,7 @@ nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
                             obj->table_coerced,
                             obj->ifindex,
                             obj->network,
-                            nm_platform_ip6_route_get_effective_metric(obj),
+                            obj->metric,
                             obj->gateway,
                             obj->pref_src,
                             obj->src,
@@ -8228,8 +8230,7 @@ nm_platform_ip6_route_cmp(const NMPlatformIP6Route *a,
         NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX(&a->network, &b->network, MIN(a->plen, b->plen));
         NM_CMP_FIELD(a, b, plen);
         NM_CMP_FIELD_UNSAFE(a, b, metric_any);
-        if (!a->metric_any)
-            NM_CMP_FIELD(a, b, metric);
+        NM_CMP_FIELD(a, b, metric);
         NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX(&a->src, &b->src, MIN(a->src_plen, b->src_plen));
         NM_CMP_FIELD(a, b, src_plen);
         if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
@@ -8254,8 +8255,7 @@ nm_platform_ip6_route_cmp(const NMPlatformIP6Route *a,
             NM_CMP_FIELD_IN6ADDR(a, b, network);
         NM_CMP_FIELD(a, b, plen);
         NM_CMP_FIELD_UNSAFE(a, b, metric_any);
-        if (!a->metric_any)
-            NM_CMP_FIELD(a, b, metric);
+        NM_CMP_FIELD(a, b, metric);
         NM_CMP_FIELD_IN6ADDR(a, b, gateway);
         NM_CMP_FIELD_IN6ADDR(a, b, pref_src);
         if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {

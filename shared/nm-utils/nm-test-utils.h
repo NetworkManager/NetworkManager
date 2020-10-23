@@ -900,14 +900,16 @@ nmtst_get_rand_uint64(void)
 static inline guint
 nmtst_get_rand_uint(void)
 {
-    G_STATIC_ASSERT_EXPR(sizeof(guint32) == sizeof(guint));
-    return nmtst_get_rand_uint32();
+    G_STATIC_ASSERT_EXPR((sizeof(guint) == sizeof(guint32) || (sizeof(guint) == sizeof(guint64))));
+    if (sizeof(guint32) == sizeof(guint))
+        return nmtst_get_rand_uint32();
+    return nmtst_get_rand_uint64();
 }
 
 static inline gsize
 nmtst_get_rand_size(void)
 {
-    G_STATIC_ASSERT_EXPR(sizeof(gsize) == sizeof(guint32) || sizeof(gsize) == sizeof(guint64));
+    G_STATIC_ASSERT_EXPR((sizeof(gsize) == sizeof(guint32) || (sizeof(gsize) == sizeof(guint64))));
     if (sizeof(gsize) == sizeof(guint32))
         return nmtst_get_rand_uint32();
     return nmtst_get_rand_uint64();
@@ -917,6 +919,17 @@ static inline gboolean
 nmtst_get_rand_bool(void)
 {
     return nmtst_get_rand_uint32() % 2;
+}
+
+static inline gboolean
+nmtst_get_rand_one_case_in(guint32 num)
+{
+    /* num=1 doesn't make much sense, because it will always return %TRUE.
+     * Still accept it, it might be that @num is calculated, so 1 might be
+     * a valid edge case. */
+    g_assert(num > 0);
+
+    return (nmtst_get_rand_uint32() % num) == 0;
 }
 
 static inline gpointer
@@ -1191,8 +1204,12 @@ _nmtst_main_loop_quit_on_notify(GObject *object, GParamSpec *pspec, gpointer use
         nm_auto_destroy_and_unref_gsource GSource *_source      = NULL;                       \
         GMainContext *                             _context     = (context);                  \
         gboolean                                   _had_timeout = FALSE;                      \
+        typeof(timeout_msec) _timeout_msec0                     = (timeout_msec);             \
+        gint64 _timeout_msec                                    = _timeout_msec0;             \
                                                                                               \
-        _source = g_timeout_source_new(timeout_msec);                                         \
+        g_assert_cmpint(_timeout_msec0, ==, _timeout_msec);                                   \
+                                                                                              \
+        _source = g_timeout_source_new(NM_CLAMP(_timeout_msec, 0, (gint64) G_MAXUINT));       \
         g_source_set_callback(_source, nmtst_g_source_set_boolean_true, &_had_timeout, NULL); \
         g_source_attach(_source, _context);                                                   \
                                                                                               \

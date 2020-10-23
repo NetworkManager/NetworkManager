@@ -126,6 +126,19 @@ _l3cfg_weak_notify(gpointer data, GObject *where_the_object_was)
 }
 
 NML3Cfg *
+nm_netns_get_l3cfg(NMNetns *self, int ifindex)
+{
+    NMNetnsPrivate *priv;
+
+    g_return_val_if_fail(NM_IS_NETNS(self), NULL);
+    g_return_val_if_fail(ifindex > 0, NULL);
+
+    priv = NM_NETNS_GET_PRIVATE(self);
+
+    return g_hash_table_lookup(priv->l3cfgs, &ifindex);
+}
+
+NML3Cfg *
 nm_netns_access_l3cfg(NMNetns *self, int ifindex)
 {
     NMNetnsPrivate *priv;

@@ -6,6 +6,8 @@
 #include "platform/nmp-object.h"
 #include "nm-l3-config-data.h"
 
+#define NM_L3CFG_CONFIG_PRIORITY_IPV4LL 0
+
 #define NM_TYPE_L3CFG            (nm_l3cfg_get_type())
 #define NM_L3CFG(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_L3CFG, NML3Cfg))
 #define NM_L3CFG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_L3CFG, NML3CfgClass))
@@ -40,11 +42,13 @@ typedef struct {
     const NML3ConfigData *l3cd;
     gconstpointer         tag;
 
-    char _padding[sizeof(struct {
-        guint32           a;
-        NML3AcdDefendType b;
-        guint8            c;
-    })];
+    struct {
+        guint32           acd_timeout_msec_track;
+        NML3AcdDefendType acd_defend_type_track;
+        bool              acd_dirty_track : 1;
+        bool              acd_failed_notified_track : 1;
+    } _priv;
+
 } NML3AcdAddrTrackInfo;
 
 typedef struct {
@@ -54,6 +58,33 @@ typedef struct {
     NML3Cfg *                   l3cfg;
     const NML3AcdAddrTrackInfo *track_infos;
 } NML3AcdAddrInfo;
+
+static inline const NML3AcdAddrTrackInfo *
+nm_l3_acd_addr_info_find_track_info(const NML3AcdAddrInfo *addr_info,
+                                    gconstpointer          tag,
+                                    const NML3ConfigData * l3cd,
+                                    const NMPObject *      obj)
+{
+    guint                       i;
+    const NML3AcdAddrTrackInfo *ti;
+
+    nm_assert(addr_info);
+
+    /* we always expect that the number n_track_infos is reasonably small. Hence,
+     * a naive linear search is simplest and fastest (e.g. we don't have a hash table). */
+
+    for (i = 0, ti = addr_info->track_infos; i < addr_info->n_track_infos; i++, ti++) {
+        if (l3cd && ti->l3cd != l3cd)
+            continue;
+        if (tag && ti->tag != tag)
+            continue;
+        if (obj && ti->obj != obj)
+            continue;
+        return ti;
+    }
+
+    return NULL;
+}
 
 typedef enum {
     NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED,
@@ -75,8 +106,12 @@ typedef enum {
      * notifications without also subscribing directly to the platform. */
     NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE,
 
+    NM_L3_CONFIG_NOTIFY_TYPE_IPV4LL_EVENT,
+
     _NM_L3_CONFIG_NOTIFY_TYPE_NUM,
 } NML3ConfigNotifyType;
+
+struct _NML3IPv4LL;
 
 typedef struct {
     NML3ConfigNotifyType notify_type;
@@ -93,6 +128,10 @@ typedef struct {
         struct {
             guint32 obj_type_flags;
         } platform_change_on_idle;
+
+        struct {
+            struct _NML3IPv4LL *ipv4ll;
+        } ipv4ll_event;
     };
 } NML3ConfigNotifyData;
 
