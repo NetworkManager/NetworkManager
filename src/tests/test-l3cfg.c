@@ -765,8 +765,8 @@ test_l3_ipv4ll(gconstpointer test_data)
                                    FALSE);
     }
 
-    nmtstp_acd_defender_destory(g_steal_pointer(&acd_defender_1));
-    nmtstp_acd_defender_destory(g_steal_pointer(&acd_defender_2));
+    nmtstp_acd_defender_destroy(g_steal_pointer(&acd_defender_1));
+    nmtstp_acd_defender_destroy(g_steal_pointer(&acd_defender_2));
 
     nm_l3cfg_commit_type_unregister(l3cfg0, g_steal_pointer(&tdata->l3cfg_commit_type_1));
 
