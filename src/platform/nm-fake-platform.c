@@ -225,7 +225,8 @@ link_add_pre(NMPlatform *platform,
              const char *name,
              NMLinkType  type,
              const void *address,
-             size_t      address_len)
+             size_t      address_len,
+             guint32     mtu)
 {
     NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE(platform);
     NMFakePlatformLink *   device;
@@ -251,6 +252,7 @@ link_add_pre(NMPlatform *platform,
     link->ifindex     = name ? ifindex : 0;
     link->type        = type;
     link->kind        = g_intern_string(nm_link_type_to_string(type));
+    link->mtu         = mtu;
     link->initialized = TRUE;
     if (name)
         strcpy(link->name, name);
@@ -285,6 +287,7 @@ link_add(NMPlatform *           platform,
          int                    parent,
          const void *           address,
          size_t                 address_len,
+         guint32                mtu,
          gconstpointer          extra_data,
          const NMPlatformLink **out_link)
 {
@@ -300,7 +303,7 @@ link_add(NMPlatform *           platform,
     NMPObject *                     dev_obj;
     NMPObject *                     dev_lnk = NULL;
 
-    device = link_add_pre(platform, name, type, address, address_len);
+    device = link_add_pre(platform, name, type, address, address_len, mtu);
 
     g_assert(device);
 
@@ -326,7 +329,7 @@ link_add(NMPlatform *           platform,
     case NM_LINK_TYPE_VETH:
         veth_peer = extra_data;
         g_assert(veth_peer);
-        device_veth = link_add_pre(platform, veth_peer, type, NULL, 0);
+        device_veth = link_add_pre(platform, veth_peer, type, NULL, 0, 0);
         break;
     case NM_LINK_TYPE_VLAN:
     {
@@ -401,7 +404,7 @@ link_add_one(NMPlatform *platform,
     NMPCacheOpsType                 cache_op;
     int                             ifindex;
 
-    device = link_add_pre(platform, name, NM_LINK_TYPE_VLAN, NULL, 0);
+    device = link_add_pre(platform, name, NM_LINK_TYPE_VLAN, NULL, 0, 0);
 
     ifindex = NMP_OBJECT_CAST_LINK(device->obj)->ifindex;
 
@@ -1313,10 +1316,10 @@ nm_fake_platform_setup(void)
 
     nm_platform_setup(platform);
 
-    link_add(platform, NM_LINK_TYPE_LOOPBACK, "lo", 0, NULL, 0, NULL, NULL);
-    link_add(platform, NM_LINK_TYPE_ETHERNET, "eth0", 0, NULL, 0, NULL, NULL);
-    link_add(platform, NM_LINK_TYPE_ETHERNET, "eth1", 0, NULL, 0, NULL, NULL);
-    link_add(platform, NM_LINK_TYPE_ETHERNET, "eth2", 0, NULL, 0, NULL, NULL);
+    link_add(platform, NM_LINK_TYPE_LOOPBACK, "lo", 0, NULL, 0, 0, NULL, NULL);
+    link_add(platform, NM_LINK_TYPE_ETHERNET, "eth0", 0, NULL, 0, 0, NULL, NULL);
+    link_add(platform, NM_LINK_TYPE_ETHERNET, "eth1", 0, NULL, 0, 0, NULL, NULL);
+    link_add(platform, NM_LINK_TYPE_ETHERNET, "eth2", 0, NULL, 0, 0, NULL, NULL);
 }
 
 static void
