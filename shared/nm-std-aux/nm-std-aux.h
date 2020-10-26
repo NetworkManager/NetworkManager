@@ -202,6 +202,24 @@ nm_add_clamped_u32(uint32_t a, uint32_t b)
     return c;
 }
 
+static inline unsigned
+nm_mult_clamped_u(unsigned a, unsigned b)
+{
+    unsigned c;
+
+    /* returns a*b, or UINT_MAX if the result would overflow. */
+
+    if (b == 0)
+        return 0;
+
+    c = a * b;
+
+    if (c / b != a)
+        return (unsigned) -1;
+
+    return c;
+}
+
 /* glib's MIN()/MAX() macros don't have function-like behavior, in that they evaluate
  * the argument possibly twice.
  *
