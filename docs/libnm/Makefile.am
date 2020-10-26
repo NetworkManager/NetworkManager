@@ -95,6 +95,8 @@ CLEANFILES += \
 	tmpl/* \
 	xml/*
 
+DISTCLEANFILES = libnm.actions
+
 if GTK_DOC_BUILD_HTML
 check-local-gtk-doc-patch:
 	@if grep -q -F '<a href="libnm-nm-setting-user.html">nm-setting-user</a>' "$(top_builddir)/docs/libnm/html/index.html"; then \
