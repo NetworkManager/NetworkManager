@@ -16,6 +16,8 @@
 
 /*****************************************************************************/
 
+G_STATIC_ASSERT(NM_ACD_TIMEOUT_RFC5227_MSEC == N_ACD_TIMEOUT_RFC5227);
+
 #define ACD_SUPPORTED_ETH_ALEN                  ETH_ALEN
 #define ACD_ENSURE_RATELIMIT_MSEC               ((guint32) 4000u)
 #define ACD_WAIT_PROBING_EXTRA_TIME_MSEC        ((guint32)(1000u + ACD_ENSURE_RATELIMIT_MSEC))
