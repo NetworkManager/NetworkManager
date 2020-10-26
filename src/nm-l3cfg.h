@@ -345,4 +345,12 @@ gboolean nm_l3cfg_has_commited_ip6_addresses_pending_dad(NML3Cfg *self);
 
 /*****************************************************************************/
 
+struct _NML3IPv4LL *nm_l3cfg_get_ipv4ll(NML3Cfg *self);
+
+struct _NML3IPv4LL *nm_l3cfg_access_ipv4ll(NML3Cfg *self);
+
+void _nm_l3cfg_unregister_ipv4ll(NML3Cfg *self);
+
+/*****************************************************************************/
+
 #endif /* __NM_L3CFG_H__ */

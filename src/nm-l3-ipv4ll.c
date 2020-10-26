@@ -1028,6 +1028,9 @@ nm_l3_ipv4ll_unref(NML3IPv4LL *self)
     if (--self->ref_count > 0)
         return;
 
+    if (nm_l3cfg_get_ipv4ll(self->l3cfg) == self)
+        _nm_l3cfg_unregister_ipv4ll(self->l3cfg);
+
     _LOGT("finalize");
 
     nm_assert(c_list_is_empty(&self->reg_lst_head));
