@@ -2086,7 +2086,7 @@ nm_platform_ip4_route_get_effective_metric(const NMPlatformIP4Route *r)
 {
     nm_assert(r);
 
-    return r->metric_any ? nm_add_u32_clamped(NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4, r->metric)
+    return r->metric_any ? nm_add_clamped_u32(NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4, r->metric)
                          : r->metric;
 }
 
@@ -2095,7 +2095,7 @@ nm_platform_ip6_route_get_effective_metric(const NMPlatformIP6Route *r)
 {
     nm_assert(r);
 
-    return r->metric_any ? nm_add_u32_clamped(NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6, r->metric)
+    return r->metric_any ? nm_add_clamped_u32(NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6, r->metric)
                          : r->metric;
 }
 
