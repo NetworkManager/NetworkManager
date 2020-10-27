@@ -1760,3 +1760,79 @@ next:
         }
     }
 }
+
+void
+nm_utils_share_rules_add_all_rules(NMUtilsShareRules *self,
+                                   const char *       ip_iface,
+                                   in_addr_t          addr,
+                                   guint              plen)
+{
+    in_addr_t netmask;
+    in_addr_t network;
+    char      str_mask[NM_UTILS_INET_ADDRSTRLEN];
+    char      str_addr[NM_UTILS_INET_ADDRSTRLEN];
+
+    nm_assert(self);
+
+    netmask = _nm_utils_ip4_prefix_to_netmask(plen);
+    _nm_utils_inet4_ntop(netmask, str_mask);
+
+    network = addr & netmask;
+    _nm_utils_inet4_ntop(network, str_addr);
+
+    nm_utils_share_rules_add_rule_v(
+        self,
+        "nat",
+        "POSTROUTING --source %s/%s ! --destination %s/%s --jump MASQUERADE",
+        str_addr,
+        str_mask,
+        str_addr,
+        str_mask);
+    nm_utils_share_rules_add_rule_v(
+        self,
+        "filter",
+        "FORWARD --destination %s/%s --out-interface %s --match state --state "
+        "ESTABLISHED,RELATED --jump ACCEPT",
+        str_addr,
+        str_mask,
+        ip_iface);
+    nm_utils_share_rules_add_rule_v(self,
+                                    "filter",
+                                    "FORWARD --source %s/%s --in-interface %s --jump ACCEPT",
+                                    str_addr,
+                                    str_mask,
+                                    ip_iface);
+    nm_utils_share_rules_add_rule_v(self,
+                                    "filter",
+                                    "FORWARD --in-interface %s --out-interface %s --jump ACCEPT",
+                                    ip_iface,
+                                    ip_iface);
+    nm_utils_share_rules_add_rule_v(self,
+                                    "filter",
+                                    "FORWARD --out-interface %s --jump REJECT",
+                                    ip_iface);
+    nm_utils_share_rules_add_rule_v(self,
+                                    "filter",
+                                    "FORWARD --in-interface %s --jump REJECT",
+                                    ip_iface);
+    nm_utils_share_rules_add_rule_v(
+        self,
+        "filter",
+        "INPUT --in-interface %s --protocol udp --destination-port 67 --jump ACCEPT",
+        ip_iface);
+    nm_utils_share_rules_add_rule_v(
+        self,
+        "filter",
+        "INPUT --in-interface %s --protocol tcp --destination-port 67 --jump ACCEPT",
+        ip_iface);
+    nm_utils_share_rules_add_rule_v(
+        self,
+        "filter",
+        "INPUT --in-interface %s --protocol udp --destination-port 53 --jump ACCEPT",
+        ip_iface);
+    nm_utils_share_rules_add_rule_v(
+        self,
+        "filter",
+        "INPUT --in-interface %s --protocol tcp --destination-port 53 --jump ACCEPT",
+        ip_iface);
+}
