@@ -1423,6 +1423,7 @@ class ActiveConnection(ExportedObj):
         self.is_vpn = con_inst.is_vpn()
 
         self._activation_id = None
+        self._deactivation_id = None
 
         s_con = con_inst.con_hash[NM.SETTING_CONNECTION_SETTING_NAME]
 
@@ -1502,9 +1503,40 @@ class ActiveConnection(ExportedObj):
         )
         return False
 
+    def _deactivation_step1(self):
+        assert self._deactivation_id is not None
+        self._deactivation_id = None
+        self.device.set_state(
+            NM.DeviceState.DISCONNECTED, NM.DeviceStateReason.USER_REQUESTED
+        )
+        self._set_state(
+            NM.ActiveConnectionState.DEACTIVATED,
+            NM.ActiveConnectionStateReason.USER_DISCONNECTED,
+        )
+
+        return False
+
+    def set_state(self, state, reason):
+        self._set_state(state, reason)
+
     def start_activation(self):
         assert self._activation_id is None
         self._activation_id = GLib.timeout_add(50, self._activation_step1)
+
+    def start_deactivation(self):
+        assert self._deactivation_id is None
+        self._set_state(
+            NM.ActiveConnectionState.DEACTIVATING,
+            NM.ActiveConnectionStateReason.USER_DISCONNECTED,
+        )
+        self.device.set_state(
+            NM.DeviceState.DEACTIVATING, NM.DeviceStateReason.USER_REQUESTED
+        )
+        self._set_state(
+            NM.ActiveConnectionState.DEACTIVATING,
+            NM.ActiveConnectionStateReason.USER_DISCONNECTED,
+        )
+        self._deactivation_id = GLib.timeout_add(50, self._deactivation_step1)
 
     @dbus.service.signal(IFACE_VPN_CONNECTION, signature="a{sv}")
     def PropertiesChanged(self, changed):
@@ -1693,7 +1725,16 @@ class NetworkManager(ExportedObj):
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature="o", out_signature="")
     def DeactivateConnection(self, active_connection):
-        pass
+        # Look for an active connection with the same object path
+        for ac in self.active_connections:
+            if ac.path == str(active_connection):
+                ac.activation_cancel()
+                ac.start_deactivation()
+                return
+
+        raise BusErr.UnknownConnectionException(
+            "Connection not found: %s" % str(active_connection)
+        )
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature="b", out_signature="")
     def Sleep(self, do_sleep):
@@ -2165,6 +2206,12 @@ class Settings(ExportedObj):
     )
     def AddConnection(self, con_hash):
         return self.add_connection(con_hash)
+
+    @dbus.service.method(
+        dbus_interface=IFACE_SETTINGS, in_signature="", out_signature="b"
+    )
+    def ReloadConnections(self):
+        return True
 
     def add_connection(self, con_hash, do_verify_strict=True):
         self.c_counter += 1
