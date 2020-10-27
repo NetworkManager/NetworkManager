@@ -2666,8 +2666,7 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
     if (self->llmnr == NM_SETTING_CONNECTION_LLMNR_DEFAULT)
         self->llmnr = src->llmnr;
 
-    if (self->metered == NM_TERNARY_DEFAULT)
-        self->metered = src->metered;
+    self->metered = NM_MAX((NMTernary) self->metered, (NMTernary) src->metered);
 
     if (self->ip6_privacy == NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
         self->ip6_privacy = src->ip6_privacy;
