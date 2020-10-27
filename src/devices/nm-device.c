@@ -11594,9 +11594,6 @@ start_sharing(NMDevice *self, NMIP4Config *config, GError **error)
 {
     NMDevicePrivate *           priv = NM_DEVICE_GET_PRIVATE(self);
     NMActRequest *              req;
-    char                        str_addr[INET_ADDRSTRLEN];
-    char                        str_mask[INET_ADDRSTRLEN];
-    guint32                     netmask, network;
     const NMPlatformIP4Address *ip4_addr = NULL;
     const char *                ip_iface;
     GError *                    local = NULL;
@@ -11628,69 +11625,9 @@ start_sharing(NMDevice *self, NMIP4Config *config, GError **error)
     req = nm_device_get_act_request(self);
     g_return_val_if_fail(req, FALSE);
 
-    netmask = _nm_utils_ip4_prefix_to_netmask(ip4_addr->plen);
-    _nm_utils_inet4_ntop(netmask, str_mask);
-
-    network = ip4_addr->address & netmask;
-    _nm_utils_inet4_ntop(network, str_addr);
-
     share_rules = nm_utils_share_rules_new();
 
-    nm_utils_share_rules_add_rule_v(
-        share_rules,
-        "nat",
-        "POSTROUTING --source %s/%s ! --destination %s/%s --jump MASQUERADE",
-        str_addr,
-        str_mask,
-        str_addr,
-        str_mask);
-    nm_utils_share_rules_add_rule_v(
-        share_rules,
-        "filter",
-        "FORWARD --destination %s/%s --out-interface %s --match state --state "
-        "ESTABLISHED,RELATED --jump ACCEPT",
-        str_addr,
-        str_mask,
-        ip_iface);
-    nm_utils_share_rules_add_rule_v(share_rules,
-                                    "filter",
-                                    "FORWARD --source %s/%s --in-interface %s --jump ACCEPT",
-                                    str_addr,
-                                    str_mask,
-                                    ip_iface);
-    nm_utils_share_rules_add_rule_v(share_rules,
-                                    "filter",
-                                    "FORWARD --in-interface %s --out-interface %s --jump ACCEPT",
-                                    ip_iface,
-                                    ip_iface);
-    nm_utils_share_rules_add_rule_v(share_rules,
-                                    "filter",
-                                    "FORWARD --out-interface %s --jump REJECT",
-                                    ip_iface);
-    nm_utils_share_rules_add_rule_v(share_rules,
-                                    "filter",
-                                    "FORWARD --in-interface %s --jump REJECT",
-                                    ip_iface);
-    nm_utils_share_rules_add_rule_v(
-        share_rules,
-        "filter",
-        "INPUT --in-interface %s --protocol udp --destination-port 67 --jump ACCEPT",
-        ip_iface);
-    nm_utils_share_rules_add_rule_v(
-        share_rules,
-        "filter",
-        "INPUT --in-interface %s --protocol tcp --destination-port 67 --jump ACCEPT",
-        ip_iface);
-    nm_utils_share_rules_add_rule_v(
-        share_rules,
-        "filter",
-        "INPUT --in-interface %s --protocol udp --destination-port 53 --jump ACCEPT",
-        ip_iface);
-    nm_utils_share_rules_add_rule_v(
-        share_rules,
-        "filter",
-        "INPUT --in-interface %s --protocol tcp --destination-port 53 --jump ACCEPT",
-        ip_iface);
+    nm_utils_share_rules_add_all_rules(share_rules, ip_iface, ip4_addr->address, ip4_addr->plen);
 
     nm_utils_share_rules_apply(share_rules, TRUE);
 
