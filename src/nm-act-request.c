@@ -22,14 +22,8 @@
 #include "nm-libnm-core-intern/nm-auth-subject.h"
 
 typedef struct {
-    char *table;
-    char *rule;
-} ShareRule;
-
-typedef struct {
-    CList    call_ids_lst_head;
-    gboolean shared;
-    GSList * share_rules;
+    CList              call_ids_lst_head;
+    NMUtilsShareRules *share_rules;
 } NMActRequestPrivate;
 
 struct _NMActRequest {
@@ -254,109 +248,32 @@ nm_act_request_clear_secrets(NMActRequest *self)
 
 /*****************************************************************************/
 
-static void
-clear_share_rules(NMActRequest *req)
-{
-    NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE(req);
-    GSList *             iter;
-
-    for (iter = priv->share_rules; iter; iter = g_slist_next(iter)) {
-        ShareRule *rule = (ShareRule *) iter->data;
-
-        g_free(rule->table);
-        g_free(rule->rule);
-        g_free(rule);
-    }
-
-    g_slist_free(priv->share_rules);
-    priv->share_rules = NULL;
-}
-
-void
-nm_act_request_set_shared(NMActRequest *req, gboolean shared)
-{
-    NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE(req);
-    GSList *             list, *iter;
-
-    g_return_if_fail(NM_IS_ACT_REQUEST(req));
-
-    NM_ACT_REQUEST_GET_PRIVATE(req)->shared = shared;
-
-    /* Tear the rules down in reverse order when sharing is stopped */
-    list = g_slist_copy(priv->share_rules);
-    if (!shared)
-        list = g_slist_reverse(list);
-
-    /* Send the rules to iptables */
-    for (iter = list; iter; iter = g_slist_next(iter)) {
-        ShareRule *        rule    = (ShareRule *) iter->data;
-        char *             envp[1] = {NULL};
-        gs_strfreev char **argv    = NULL;
-        gs_free char *     cmd     = NULL;
-
-        cmd = g_strdup_printf("%s --table %s %s %s",
-                              IPTABLES_PATH,
-                              rule->table,
-                              shared ? "--insert" : "--delete",
-                              rule->rule);
-        if (!cmd)
-            continue;
-
-        argv = g_strsplit(cmd, " ", 0);
-        if (argv && argv[0]) {
-            int     status;
-            GError *error = NULL;
-
-            nm_log_info(LOGD_SHARING, "Executing: %s", cmd);
-            if (!g_spawn_sync("/",
-                              argv,
-                              envp,
-                              G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
-                              NULL,
-                              NULL,
-                              NULL,
-                              NULL,
-                              &status,
-                              &error)) {
-                nm_log_warn(LOGD_SHARING, "Error executing command: %s", error->message);
-                g_clear_error(&error);
-            } else if (WEXITSTATUS(status)) {
-                nm_log_warn(LOGD_SHARING,
-                            "** Command returned exit status %d.",
-                            WEXITSTATUS(status));
-            }
-        }
-    }
-
-    g_slist_free(list);
-
-    /* Clear the share rule list when sharing is stopped */
-    if (!shared)
-        clear_share_rules(req);
-}
-
-gboolean
+NMUtilsShareRules *
 nm_act_request_get_shared(NMActRequest *req)
 {
     g_return_val_if_fail(NM_IS_ACT_REQUEST(req), FALSE);
 
-    return NM_ACT_REQUEST_GET_PRIVATE(req)->shared;
+    return NM_ACT_REQUEST_GET_PRIVATE(req)->share_rules;
 }
 
 void
-nm_act_request_add_share_rule(NMActRequest *req, const char *table, const char *table_rule)
+nm_act_request_set_shared(NMActRequest *req, NMUtilsShareRules *rules)
 {
     NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE(req);
-    ShareRule *          rule;
 
     g_return_if_fail(NM_IS_ACT_REQUEST(req));
-    g_return_if_fail(table != NULL);
-    g_return_if_fail(table_rule != NULL);
 
-    rule              = g_malloc0(sizeof(ShareRule));
-    rule->table       = g_strdup(table);
-    rule->rule        = g_strdup(table_rule);
-    priv->share_rules = g_slist_prepend(priv->share_rules, rule);
+    if (priv->share_rules == rules)
+        return;
+
+    if (priv->share_rules) {
+        nm_utils_share_rules_apply(priv->share_rules, FALSE);
+        priv->share_rules = NULL;
+    }
+    if (rules) {
+        priv->share_rules = rules;
+        nm_utils_share_rules_apply(priv->share_rules, TRUE);
+    }
 }
 
 /*****************************************************************************/
@@ -589,10 +506,9 @@ dispose(GObject *object)
     c_list_for_each_entry_safe (call_id, call_id_safe, &priv->call_ids_lst_head, call_ids_lst)
         _do_cancel_secrets(self, call_id, TRUE);
 
-    /* Clear any share rules */
     if (priv->share_rules) {
-        nm_act_request_set_shared(NM_ACT_REQUEST(object), FALSE);
-        clear_share_rules(NM_ACT_REQUEST(object));
+        nm_utils_share_rules_apply(priv->share_rules, FALSE);
+        nm_clear_pointer(&priv->share_rules, nm_utils_share_rules_free);
     }
 
     G_OBJECT_CLASS(nm_act_request_parent_class)->dispose(object);
