@@ -406,46 +406,74 @@ IFACE_DHCP6_CONFIG = "org.freedesktop.NetworkManager.DHCP6Config"
 
 class BusErr:
     class UnknownInterfaceException(dbus.DBusException):
-        _dbus_error_name = IFACE_DBUS + ".UnknownInterface"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.UnknownInterface".format(IFACE_DBUS)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class UnknownPropertyException(dbus.DBusException):
-        _dbus_error_name = IFACE_DBUS + ".UnknownProperty"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.UnknownProperty".format(IFACE_DBUS)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class InvalidPropertyException(dbus.DBusException):
-        _dbus_error_name = IFACE_CONNECTION + ".InvalidProperty"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.InvalidProperty".format(IFACE_CONNECTION)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class MissingPropertyException(dbus.DBusException):
-        _dbus_error_name = IFACE_CONNECTION + ".MissingProperty"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.MissingProperty".format(IFACE_CONNECTION)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class InvalidSettingException(dbus.DBusException):
-        _dbus_error_name = IFACE_CONNECTION + ".InvalidSetting"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.InvalidSetting".format(IFACE_CONNECTION)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class MissingSettingException(dbus.DBusException):
-        _dbus_error_name = IFACE_CONNECTION + ".MissingSetting"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.MissingSetting".format(IFACE_CONNECTION)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class NotSoftwareException(dbus.DBusException):
-        _dbus_error_name = IFACE_DEVICE + ".NotSoftware"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.NotSoftware".format(IFACE_DEVICE)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class ApNotFoundException(dbus.DBusException):
-        _dbus_error_name = IFACE_WIFI + ".AccessPointNotFound"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.AccessPointNotFound".format(IFACE_WIFI)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class PermissionDeniedException(dbus.DBusException):
-        _dbus_error_name = IFACE_NM + ".PermissionDenied"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.PermissionDenied".format(IFACE_NM)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class UnknownDeviceException(dbus.DBusException):
-        _dbus_error_name = IFACE_NM + ".UnknownDevice"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.UnknownDevice".format(IFACE_NM)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class UnknownConnectionException(dbus.DBusException):
-        _dbus_error_name = IFACE_NM + ".UnknownConnection"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.UnknownConnection".format(IFACE_NM)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class InvalidHostnameException(dbus.DBusException):
-        _dbus_error_name = IFACE_SETTINGS + ".InvalidHostname"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.InvalidHostname".format(IFACE_SETTINGS)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class NoSecretsException(dbus.DBusException):
-        _dbus_error_name = IFACE_AGENT_MANAGER + ".NoSecrets"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.NoSecrets".format(IFACE_AGENT_MANAGER)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class UserCanceledException(dbus.DBusException):
-        _dbus_error_name = IFACE_AGENT_MANAGER + ".UserCanceled"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.UserCanceled".format(IFACE_AGENT_MANAGER)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     @staticmethod
     def from_nmerror(e):
