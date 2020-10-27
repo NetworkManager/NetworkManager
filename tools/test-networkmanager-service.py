@@ -299,6 +299,8 @@ class Util:
             return GLib.Variant("u", int(val))
         if isinstance(val, dbus.UInt64):
             return GLib.Variant("t", int(val))
+        if isinstance(val, dbus.Int32):
+            return GLib.Variant("i", int(val))
         if isinstance(val, dbus.Boolean):
             return GLib.Variant("b", bool(val))
         if isinstance(val, dbus.Byte):
