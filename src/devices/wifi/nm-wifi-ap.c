@@ -115,24 +115,26 @@ nm_wifi_ap_set_ssid (NMWifiAP *ap, GBytes *ssid)
 
 	g_return_val_if_fail (NM_IS_WIFI_AP (ap), FALSE);
 
-	if (ssid) {
-		l = g_bytes_get_size (ssid);
-		if (l == 0 || l > 32)
-			g_return_val_if_reached (FALSE);
+	if (!ssid) {
+		/* we don't clear the SSID, once we have it. We can only update
+		 * it by a better value. */
+		return FALSE;
 	}
+
+	l = g_bytes_get_size (ssid);
+	if (l == 0 || l > 32)
+		g_return_val_if_reached (FALSE);
 
 	priv = NM_WIFI_AP_GET_PRIVATE (ap);
 
 	if (ssid == priv->ssid)
 		return FALSE;
-	if (   ssid
-	    && priv->ssid
-	    && g_bytes_equal (ssid, priv->ssid))
+	if (priv->ssid && g_bytes_equal (ssid, priv->ssid))
 		return FALSE;
 
+	g_bytes_ref (ssid);
 	nm_clear_pointer (&priv->ssid, g_bytes_unref);
-	if (ssid)
-		priv->ssid = g_bytes_ref (ssid);
+	priv->ssid = ssid;
 
 	_notify (ap, PROP_SSID);
 	return TRUE;
