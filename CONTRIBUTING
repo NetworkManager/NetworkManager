@@ -14,13 +14,21 @@ You are welcome to not bother and open a merge request with
 wrong formatting, but note that we then will automatically adjust
 your contribution before merging.
 
+The automatic reformatting was done by commit 328fb90f3e0d4e35975aff63944ac0412d7893a5.
+Use `--ignore-rev` option or `--ignore-revs-file .git-blame-ignore-revs` to ignore
+the reformatting commit with git-blame:
+
+```
+$ git config --add 'blame.ignoreRevsFile' '.git-blame-ignore-revs'
+```
+
 Since our coding style is entirely automated, the following are just
 some details of the style we use:
 
 * Indent with 4 spaces. (_no_ tabs).
 
 * Have no space between the function name and the opening '('.
-  - GOOD:  `g_strdup(x)`
+  - GOOD: `g_strdup(x)`
   - BAD:  `g_strdup (x)`
 
 * C-style comments
@@ -28,8 +36,8 @@ some details of the style we use:
   - BAD:  `f(x);  // comment`
 
 * Keep assignments in the variable declaration area pretty short.
-  -  GOOD: `MyObject *object;`
-  - BAD: `MyObject *object = complex_and_long_init_function(arg1, arg2, arg3);`
+  - GOOD: `MyObject *object;`
+  - BAD:  `MyObject *object = complex_and_long_init_function(arg1, arg2, arg3);`
 
 * 80-cols is a guideline, don't make the code uncomfortable in order to fit in
   less than 80 cols.
