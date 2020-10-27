@@ -11536,17 +11536,16 @@ activate_stage4_ip_config_timeout_6(NMDevice *self)
 static gboolean
 share_init(NMDevice *self, GError **error)
 {
-    char * modules[] = {"ip_tables",
-                       "iptable_nat",
-                       "nf_nat_ftp",
-                       "nf_nat_irc",
-                       "nf_nat_sip",
-                       "nf_nat_tftp",
-                       "nf_nat_pptp",
-                       "nf_nat_h323",
-                       NULL};
-    char **iter;
-    int    errsv;
+    const char *const modules[] = {"ip_tables",
+                                   "iptable_nat",
+                                   "nf_nat_ftp",
+                                   "nf_nat_irc",
+                                   "nf_nat_sip",
+                                   "nf_nat_tftp",
+                                   "nf_nat_pptp",
+                                   "nf_nat_h323"};
+    guint             i;
+    int               errsv;
 
     if (nm_platform_sysctl_get_int32(nm_device_get_platform(self),
                                      NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/ip_forward"),
@@ -11584,8 +11583,8 @@ share_init(NMDevice *self, GError **error)
               nm_strerror_native(errsv));
     }
 
-    for (iter = modules; *iter; iter++)
-        nm_utils_modprobe(NULL, FALSE, *iter, NULL);
+    for (i = 0; i < G_N_ELEMENTS(modules); i++)
+        nm_utils_modprobe(NULL, FALSE, modules[i], NULL);
 
     return TRUE;
 }
