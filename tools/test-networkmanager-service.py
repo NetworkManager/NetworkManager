@@ -391,6 +391,7 @@ IFACE_SETTINGS = "org.freedesktop.NetworkManager.Settings"
 IFACE_AGENT_MANAGER = "org.freedesktop.NetworkManager.AgentManager"
 IFACE_AGENT = "org.freedesktop.NetworkManager.SecretAgent"
 IFACE_WIRED = "org.freedesktop.NetworkManager.Device.Wired"
+IFACE_MODEM = "org.freedesktop.NetworkManager.Device.Modem"
 IFACE_VLAN = "org.freedesktop.NetworkManager.Device.Vlan"
 IFACE_WIFI_AP = "org.freedesktop.NetworkManager.AccessPoint"
 IFACE_ACTIVE_CONNECTION = "org.freedesktop.NetworkManager.Connection.Active"
@@ -843,8 +844,13 @@ class Device(ExportedObj):
 
         self.prp_state = NM.DeviceState.UNAVAILABLE
 
+        if devtype == NM.DeviceType.MODEM:
+            udi = "/org/freedesktop/ModemManager1/Modem/0"
+        else:
+            udi = "/sys/devices/virtual/%s" % iface
+
         props = {
-            PRP_DEVICE_UDI: "/sys/devices/virtual/%s" % (iface),
+            PRP_DEVICE_UDI: udi,
             PRP_DEVICE_IFACE: iface,
             PRP_DEVICE_DRIVER: "virtual",
             PRP_DEVICE_STATE: dbus.UInt32(self.prp_state),
@@ -1108,6 +1114,30 @@ class WiredDevice(Device):
         self.dbus_interface_add(IFACE_WIRED, props, WiredDevice.PropertiesChanged)
 
     @dbus.service.signal(IFACE_WIRED, signature="a{sv}")
+    def PropertiesChanged(self, changed):
+        pass
+
+
+###############################################################################
+PM_CURRENT_CAPABILITIES = "CurrentCapabilities"
+PM_MODEM_CAPABILITIES = "ModemCapabilities"
+
+# capability to make device seen compatible with GSM connection
+NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS = 0x00000004
+
+
+class ModemDevice(Device):
+    def __init__(self, iface):
+        Device.__init__(self, iface, NM.DeviceType.MODEM)
+
+        props = {
+            PM_CURRENT_CAPABILITIES: dbus.UInt32(NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS),
+            PM_MODEM_CAPABILITIES: dbus.UInt32(0),
+        }
+
+        self.dbus_interface_add(IFACE_MODEM, props, ModemDevice.PropertiesChanged)
+
+    @dbus.service.signal(IFACE_MODEM, signature="a{sv}")
     def PropertiesChanged(self, changed):
         pass
 
@@ -1805,6 +1835,11 @@ class NetworkManager(ExportedObj):
     @dbus.service.method(IFACE_TEST, in_signature="ssas", out_signature="o")
     def AddWiredDevice(self, ifname, mac, subchannels):
         dev = WiredDevice(ifname, mac, subchannels)
+        return ExportedObj.to_path(self.add_device(dev))
+
+    @dbus.service.method(IFACE_TEST, in_signature="s", out_signature="o")
+    def AddModemDevice(self, ifname):
+        dev = ModemDevice(ifname)
         return ExportedObj.to_path(self.add_device(dev))
 
     @dbus.service.method(IFACE_TEST, in_signature="s", out_signature="o")
