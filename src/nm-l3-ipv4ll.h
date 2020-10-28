@@ -19,6 +19,23 @@ typedef enum _nm_packed {
 
 const char *nm_l3_ipv4ll_state_to_string(NML3IPv4LLState val, char *buf, gsize len);
 
+static inline gboolean
+nm_l3_ipv4ll_state_is_good(NML3IPv4LLState state)
+{
+    switch (state) {
+    case NM_L3_IPV4LL_STATE_UNKNOWN:
+    case NM_L3_IPV4LL_STATE_DISABLED:
+    case NM_L3_IPV4LL_STATE_WAIT_FOR_LINK:
+    case NM_L3_IPV4LL_STATE_PROBING:
+        return FALSE;
+    case NM_L3_IPV4LL_STATE_EXTERNAL:
+    case NM_L3_IPV4LL_STATE_READY:
+    case NM_L3_IPV4LL_STATE_DEFENDING:
+        return TRUE;
+    }
+    return nm_assert_unreachable_val(FALSE);
+}
+
 /*****************************************************************************/
 
 typedef struct _NML3IPv4LL NML3IPv4LL;
@@ -92,12 +109,10 @@ nm_l3_ipv4ll_register_get_instance(NML3IPv4LLRegistration *reg)
 
 NML3IPv4LLState nm_l3_ipv4ll_get_state(NML3IPv4LL *self);
 
+gboolean nm_l3_ipv4ll_is_timed_out(NML3IPv4LL *self);
+
 in_addr_t nm_l3_ipv4ll_get_addr(NML3IPv4LL *self);
 
 const NML3ConfigData *nm_l3_ipv4ll_get_l3cd(NML3IPv4LL *self);
-
-/*****************************************************************************/
-
-void nm_l3_ipv4ll_restart(NML3IPv4LL *self);
 
 #endif /* __NM_L3_IPV4LL_H__ */

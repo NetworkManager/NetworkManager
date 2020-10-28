@@ -224,4 +224,31 @@ NM_AUTO_DEFINE_FCN(NMDhcpLease *, _nm_auto_unref_dhcplease, nm_dhcp_lease_unref)
 
 /*****************************************************************************/
 
+typedef struct _NMUtilsShareRules NMUtilsShareRules;
+
+NMUtilsShareRules *nm_utils_share_rules_new(void);
+
+void nm_utils_share_rules_free(NMUtilsShareRules *self);
+
+void
+nm_utils_share_rules_add_rule_take(NMUtilsShareRules *self, const char *table, char *rule_take);
+
+static inline void
+nm_utils_share_rules_add_rule(NMUtilsShareRules *self, const char *table, const char *rule)
+{
+    nm_utils_share_rules_add_rule_take(self, table, g_strdup(rule));
+}
+
+#define nm_utils_share_rules_add_rule_v(self, table, ...) \
+    nm_utils_share_rules_add_rule_take((self), (table), g_strdup_printf(__VA_ARGS__))
+
+void nm_utils_share_rules_add_all_rules(NMUtilsShareRules *self,
+                                        const char *       ip_iface,
+                                        in_addr_t          addr,
+                                        guint              plen);
+
+void nm_utils_share_rules_apply(NMUtilsShareRules *self, gboolean shared);
+
+/*****************************************************************************/
+
 #endif /* __NETWORKMANAGER_UTILS_H__ */

@@ -190,15 +190,33 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 /*****************************************************************************/
 
 static inline uint32_t
-nm_add_u32_clamped(uint32_t a, uint32_t b)
+nm_add_clamped_u32(uint32_t a, uint32_t b)
 {
     uint32_t c;
 
-    /* returns the sum of a+b, or UINT32_MAX if the result would overflow. */
+    /* returns a+b, or UINT32_MAX if the result would overflow. */
 
     c = a + b;
     if (c < a)
         return UINT32_MAX;
+    return c;
+}
+
+static inline unsigned
+nm_mult_clamped_u(unsigned a, unsigned b)
+{
+    unsigned c;
+
+    /* returns a*b, or UINT_MAX if the result would overflow. */
+
+    if (b == 0)
+        return 0;
+
+    c = a * b;
+
+    if (c / b != a)
+        return (unsigned) -1;
+
     return c;
 }
 

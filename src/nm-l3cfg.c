@@ -16,6 +16,8 @@
 
 /*****************************************************************************/
 
+G_STATIC_ASSERT(NM_ACD_TIMEOUT_RFC5227_MSEC == N_ACD_TIMEOUT_RFC5227);
+
 #define ACD_SUPPORTED_ETH_ALEN                  ETH_ALEN
 #define ACD_ENSURE_RATELIMIT_MSEC               ((guint32) 4000u)
 #define ACD_WAIT_PROBING_EXTRA_TIME_MSEC        ((guint32)(1000u + ACD_ENSURE_RATELIMIT_MSEC))
@@ -144,6 +146,8 @@ static guint signals[LAST_SIGNAL] = {0};
 typedef struct _NML3CfgPrivate {
     GArray *property_emit_list;
     GArray *l3_config_datas;
+
+    NML3IPv4LL *ipv4ll;
 
     const NML3ConfigData *combined_l3cd_merged;
 
@@ -3606,6 +3610,47 @@ nm_l3cfg_has_commited_ip6_addresses_pending_dad(NML3Cfg *self)
 
 /*****************************************************************************/
 
+NML3IPv4LL *
+nm_l3cfg_get_ipv4ll(NML3Cfg *self)
+{
+    g_return_val_if_fail(NM_IS_L3CFG(self), NULL);
+
+    return self->priv.p->ipv4ll;
+}
+
+NML3IPv4LL *
+nm_l3cfg_access_ipv4ll(NML3Cfg *self)
+{
+    g_return_val_if_fail(NM_IS_L3CFG(self), NULL);
+
+    if (self->priv.p->ipv4ll)
+        return nm_l3_ipv4ll_ref(self->priv.p->ipv4ll);
+
+    /* We return the reference. But the NML3IPv4LL instance
+     * will call _nm_l3cfg_unregister_ipv4ll() when it gets
+     * destroyed.
+     *
+     * We don't have weak references, but NML3Cfg and NML3IPv4LL
+     * cooperate to handle this reference. */
+    self->priv.p->ipv4ll = nm_l3_ipv4ll_new(self);
+    return self->priv.p->ipv4ll;
+}
+
+void
+_nm_l3cfg_unregister_ipv4ll(NML3Cfg *self)
+{
+    nm_assert(NM_IS_L3CFG(self));
+
+    /* we don't own the refernce to "self->priv.p->ipv4ll", but
+     * when that instance gets destroyed, we get called back to
+     * forget about it. Basically, it's like a weak pointer. */
+
+    nm_assert(self->priv.p->ipv4ll);
+    self->priv.p->ipv4ll = NULL;
+}
+
+/*****************************************************************************/
+
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
@@ -3673,6 +3718,7 @@ finalize(GObject *object)
     NML3Cfg *self = NM_L3CFG(object);
 
     nm_assert(!self->priv.p->l3_config_datas);
+    nm_assert(!self->priv.p->ipv4ll);
 
     nm_assert(c_list_is_empty(&self->priv.p->commit_type_lst_head));
 

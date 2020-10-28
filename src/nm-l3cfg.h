@@ -7,6 +7,7 @@
 #include "nm-l3-config-data.h"
 
 #define NM_L3CFG_CONFIG_PRIORITY_IPV4LL 0
+#define NM_ACD_TIMEOUT_RFC5227_MSEC     9000u
 
 #define NM_TYPE_L3CFG            (nm_l3cfg_get_type())
 #define NM_L3CFG(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_L3CFG, NML3Cfg))
@@ -341,6 +342,14 @@ nm_l3cfg_get_best_default_route(NML3Cfg *self, int addr_family, gboolean get_com
 /*****************************************************************************/
 
 gboolean nm_l3cfg_has_commited_ip6_addresses_pending_dad(NML3Cfg *self);
+
+/*****************************************************************************/
+
+struct _NML3IPv4LL *nm_l3cfg_get_ipv4ll(NML3Cfg *self);
+
+struct _NML3IPv4LL *nm_l3cfg_access_ipv4ll(NML3Cfg *self);
+
+void _nm_l3cfg_unregister_ipv4ll(NML3Cfg *self);
 
 /*****************************************************************************/
 

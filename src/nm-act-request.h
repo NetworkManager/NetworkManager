@@ -36,11 +36,15 @@ NMSettingsConnection *nm_act_request_get_settings_connection(NMActRequest *req);
 
 NMConnection *nm_act_request_get_applied_connection(NMActRequest *req);
 
-gboolean nm_act_request_get_shared(NMActRequest *req);
+/*****************************************************************************/
 
-void nm_act_request_set_shared(NMActRequest *req, gboolean shared);
+struct _NMUtilsShareRules;
 
-void nm_act_request_add_share_rule(NMActRequest *req, const char *table, const char *rule);
+struct _NMUtilsShareRules *nm_act_request_get_shared(NMActRequest *req);
+
+void nm_act_request_set_shared(NMActRequest *req, struct _NMUtilsShareRules *rules);
+
+/*****************************************************************************/
 
 /* Secrets handling */
 
