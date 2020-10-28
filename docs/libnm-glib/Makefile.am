@@ -73,6 +73,7 @@ EXTRA_DIST += version.xml.in meson.build
 CLEANFILES += \
 	libnm-glib-sections.txt \
 	libnm-glib-overrides.txt \
+	libnm-glib.actions \
 	html/* \
 	tmpl/* \
 	xml/*

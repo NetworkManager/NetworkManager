@@ -92,11 +92,10 @@ EXTRA_DIST += version.xml.in meson.build
 CLEANFILES += \
 	libnm-sections.txt \
 	libnm-overrides.txt \
+	libnm.actions \
 	html/* \
 	tmpl/* \
 	xml/*
-
-DISTCLEANFILES = libnm.actions
 
 if GTK_DOC_BUILD_HTML
 check-local-gtk-doc-patch:
