@@ -466,7 +466,7 @@ dispose(GObject *object)
         g_signal_handlers_disconnect_by_data(priv->platform, &priv->_self_signal_user_data);
 
     g_clear_object(&priv->platform);
-    g_clear_pointer(&priv->l3cfgs, g_hash_table_unref);
+    nm_clear_pointer(&priv->l3cfgs, g_hash_table_unref);
 
     nm_clear_pointer(&priv->rules_manager, nmp_rules_manager_unref);
 
