@@ -51,6 +51,7 @@ typedef struct {
 
 typedef struct {
 	GDBusConnection *dbus_connection;
+	GHashTable *dirty_interfaces;
 	GCancellable *cancellable;
 	CList request_queue_lst_head;
 	guint name_owner_changed_id;
@@ -135,7 +136,7 @@ call_done (GObject *source, GAsyncResult *r, gpointer user_data)
 		priv->send_updates_warn_ratelimited = FALSE;
 }
 
-static void
+static gboolean
 update_add_ip_config (NMDnsSystemdResolved *self,
                       GVariantBuilder *dns,
                       GVariantBuilder *domains,
@@ -147,12 +148,13 @@ update_add_ip_config (NMDnsSystemdResolved *self,
 	gboolean is_routing;
 	const char **iter;
 	const char *domain;
+	gboolean has_config = FALSE;
 
 	addr_family = nm_ip_config_get_addr_family (data->ip_config);
 	addr_size = nm_utils_addr_family_to_size (addr_family);
 
 	if (!data->domains.search  || !data->domains.search[0])
-		return;
+		return FALSE;
 
 	n = nm_ip_config_get_num_nameservers (data->ip_config);
 	for (i = 0 ; i < n; i++) {
@@ -164,12 +166,16 @@ update_add_ip_config (NMDnsSystemdResolved *self,
 		                                                        addr_size,
 		                                                        1));
 		g_variant_builder_close (dns);
+		has_config = TRUE;
 	}
 
 	for (iter = data->domains.search; *iter; iter++) {
 		domain = nm_utils_parse_dns_domain (*iter, &is_routing);
 		g_variant_builder_add (domains, "(sb)", domain[0] ? domain : ".", is_routing);
+		has_config = TRUE;
 	}
+
+	return has_config;
 }
 
 static void
@@ -184,7 +190,7 @@ free_pending_updates (NMDnsSystemdResolved *self)
 		_request_item_free (request_item);
 }
 
-static void
+static gboolean
 prepare_one_interface (NMDnsSystemdResolved *self, InterfaceConfig *ic)
 {
 	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
@@ -193,6 +199,7 @@ prepare_one_interface (NMDnsSystemdResolved *self, InterfaceConfig *ic)
 	NMSettingConnectionMdns mdns = NM_SETTING_CONNECTION_MDNS_DEFAULT;
 	NMSettingConnectionLlmnr llmnr = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
 	const char *mdns_arg = NULL, *llmnr_arg = NULL;
+	gboolean has_config = FALSE;
 
 	g_variant_builder_init (&dns, G_VARIANT_TYPE ("(ia(iay))"));
 	g_variant_builder_add (&dns, "i", ic->ifindex);
@@ -206,7 +213,7 @@ prepare_one_interface (NMDnsSystemdResolved *self, InterfaceConfig *ic)
 		NMDnsIPConfigData *data = elem->data;
 		NMIPConfig *ip_config = data->ip_config;
 
-		update_add_ip_config (self, &dns, &domains, data);
+		has_config |= update_add_ip_config (self, &dns, &domains, data);
 
 		if (NM_IS_IP4_CONFIG (ip_config)) {
 			mdns = NM_MAX (mdns, nm_ip4_config_mdns_get (NM_IP4_CONFIG (ip_config)));
@@ -249,6 +256,9 @@ prepare_one_interface (NMDnsSystemdResolved *self, InterfaceConfig *ic)
 	}
 	nm_assert (llmnr_arg);
 
+	if (!nm_str_is_empty (mdns_arg) || !nm_str_is_empty (llmnr_arg))
+		has_config = TRUE;
+
 	_request_item_append (&priv->request_queue_lst_head,
 	                      "SetLinkDNS",
 	                      g_variant_builder_end (&dns));
@@ -261,6 +271,8 @@ prepare_one_interface (NMDnsSystemdResolved *self, InterfaceConfig *ic)
 	_request_item_append (&priv->request_queue_lst_head,
 	                      "SetLinkLLMNR",
 	                      g_variant_new ("(is)", ic->ifindex, llmnr_arg ?: ""));
+
+	return has_config;
 }
 
 static void
@@ -341,18 +353,20 @@ update (NMDnsPlugin *plugin,
         GError **error)
 {
 	NMDnsSystemdResolved *self = NM_DNS_SYSTEMD_RESOLVED (plugin);
+	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
 	gs_unref_hashtable GHashTable *interfaces = NULL;
 	gs_free gpointer *interfaces_keys = NULL;
 	guint interfaces_len;
-	guint i;
+	int ifindex;
 	NMDnsIPConfigData *ip_data;
+	GHashTableIter     iter;
+	guint i;
 
 	interfaces = g_hash_table_new_full (nm_direct_hash, NULL,
 	                                    NULL, (GDestroyNotify) _interface_config_free);
 
 	c_list_for_each_entry (ip_data, ip_config_lst_head, ip_config_lst) {
 		InterfaceConfig *ic = NULL;
-		int ifindex;
 
 		ifindex = ip_data->data->ifindex;
 		nm_assert (ifindex == nm_ip_config_get_ifindex (ip_data->ip_config));
@@ -378,7 +392,28 @@ update (NMDnsPlugin *plugin,
 	for (i = 0; i < interfaces_len; i++) {
 		InterfaceConfig *ic = g_hash_table_lookup (interfaces, GINT_TO_POINTER (interfaces_keys[i]));
 
-		prepare_one_interface (self, ic);
+		if (prepare_one_interface (self, ic))
+			g_hash_table_add (priv->dirty_interfaces, GINT_TO_POINTER (ic->ifindex));
+		else
+			g_hash_table_remove (priv->dirty_interfaces, GINT_TO_POINTER (ic->ifindex));
+	}
+
+	/* If we previously configured an ifindex with non-empty values in
+	 * resolved, and the current update doesn't contain that interface,
+	 * reset the resolved configuration for that ifindex. */
+	g_hash_table_iter_init (&iter, priv->dirty_interfaces);
+	while (g_hash_table_iter_next (&iter, (gpointer *) &ifindex, NULL)) {
+		if (!g_hash_table_contains (interfaces, GINT_TO_POINTER (ifindex))) {
+			InterfaceConfig ic;
+
+			_LOGT ("clear previously configured ifindex %d", ifindex);
+			ic = (InterfaceConfig) {
+				.ifindex = ifindex,
+				.configs_lst_head = C_LIST_INIT (ic.configs_lst_head),
+			};
+			prepare_one_interface (self, &ic);
+			g_hash_table_iter_remove (&iter);
+		}
 	}
 
 	send_updates (self);
@@ -505,6 +540,8 @@ nm_dns_systemd_resolved_init (NMDnsSystemdResolved *self)
 	                                        priv->cancellable,
 	                                        get_name_owner_cb,
 	                                        self);
+
+	priv->dirty_interfaces = g_hash_table_new (nm_direct_hash, NULL);
 }
 
 NMDnsPlugin *
