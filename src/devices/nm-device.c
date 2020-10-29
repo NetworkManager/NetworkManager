@@ -726,14 +726,6 @@ static void concheck_update_state(NMDevice *          self,
                                   NMConnectivityState state,
                                   gboolean            is_periodic);
 
-static void activate_stage4_ip_config_timeout_4(NMDevice *self);
-static void activate_stage4_ip_config_timeout_6(NMDevice *self);
-
-static void (*const activate_stage4_ip_config_timeout_x[2])(NMDevice *self) = {
-    activate_stage4_ip_config_timeout_6,
-    activate_stage4_ip_config_timeout_4,
-};
-
 static void sriov_op_cb(GError *error, gpointer user_data);
 
 static void activate_stage5_ip_config_result_4(NMDevice *self);
@@ -11430,30 +11422,38 @@ act_stage4_ip_config_timeout(NMDevice *           self,
     return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
-/*
- * nm_device_activate_stage4_ip4_config_timeout
- *
- * Time out on retrieving the IPv4 config.
- *
- */
 static void
-activate_stage4_ip_config_timeout_4(NMDevice *self)
+activate_stage4_ip_config_timeout_x(NMDevice *self, int addr_family)
 {
-    NMActStageReturn    ret            = NM_ACT_STAGE_RETURN_FAILURE;
     NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
+    NMActStageReturn    ret;
 
-    ret = NM_DEVICE_GET_CLASS(self)->act_stage4_ip_config_timeout(self, AF_INET, &failure_reason);
+    ret =
+        NM_DEVICE_GET_CLASS(self)->act_stage4_ip_config_timeout(self, addr_family, &failure_reason);
+
     if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
         return;
-    else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
+
+    if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
         nm_device_state_changed(self, NM_DEVICE_STATE_FAILED, failure_reason);
         return;
     }
     g_assert(ret == NM_ACT_STAGE_RETURN_SUCCESS);
 
-    _set_ip_state(self, AF_INET, NM_DEVICE_IP_STATE_FAIL);
-
+    _set_ip_state(self, addr_family, NM_DEVICE_IP_STATE_FAIL);
     check_ip_state(self, FALSE, TRUE);
+}
+
+static void
+activate_stage4_ip_config_timeout_4(NMDevice *self)
+{
+    activate_stage4_ip_config_timeout_x(self, AF_INET);
+}
+
+static void
+activate_stage4_ip_config_timeout_6(NMDevice *self)
+{
+    activate_stage4_ip_config_timeout_x(self, AF_INET6);
 }
 
 void
@@ -11469,27 +11469,10 @@ nm_device_activate_schedule_ip_config_timeout(NMDevice *self, int addr_family)
 
     g_return_if_fail(priv->act_request.obj);
 
-    activation_source_schedule(self, activate_stage4_ip_config_timeout_x[IS_IPv4], addr_family);
-}
-
-static void
-activate_stage4_ip_config_timeout_6(NMDevice *self)
-{
-    NMActStageReturn    ret            = NM_ACT_STAGE_RETURN_FAILURE;
-    NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_NONE;
-
-    ret = NM_DEVICE_GET_CLASS(self)->act_stage4_ip_config_timeout(self, AF_INET6, &failure_reason);
-    if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
-        return;
-    if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
-        nm_device_state_changed(self, NM_DEVICE_STATE_FAILED, failure_reason);
-        return;
-    }
-    g_assert(ret == NM_ACT_STAGE_RETURN_SUCCESS);
-
-    _set_ip_state(self, AF_INET6, NM_DEVICE_IP_STATE_FAIL);
-
-    check_ip_state(self, FALSE, TRUE);
+    activation_source_schedule(self,
+                               IS_IPv4 ? activate_stage4_ip_config_timeout_4
+                                       : activate_stage4_ip_config_timeout_6,
+                               addr_family);
 }
 
 static gboolean
