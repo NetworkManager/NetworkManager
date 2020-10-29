@@ -1,0 +1,228 @@
+# vim: set expandtab shiftwidth=2 tabstop=8 textwidth=0 filetype=yaml:
+
+{# You're looking at the template here, so you can ignore the below
+   warning. This is the right file to edit #}
+########################################
+#                                      #
+# THIS FILE IS GENERATED, DO NOT EDIT  #
+#                                      #
+########################################
+
+
+.templates_sha: &template_sha d303fafa66bbca44cc5bdb337d5773b5f019b70d # see https://docs.gitlab.com/ee/ci/yaml/#includefile
+
+include:
+{% for distro in distributions|sort(attribute="name") %}
+  # {{ distro.name.capitalize() }} container builder template
+  - project: 'freedesktop/ci-templates'
+    ref: *template_sha
+    file: '/templates/{{distro.name}}.yml'
+{% endfor %}
+
+stages:
+  - prep
+  - test
+  - deploy
+  - triage
+  - container_clean
+
+variables:
+  FDO_UPSTREAM_REPO: NetworkManager/NetworkManager
+  GIT_DEPTH: 1
+  # these tags should be updated each time the list of packages is updated
+  # changing these will force rebuilding the associated image
+  # Note: these tags have no meaning and are not tied to a particular
+  # libinput version
+{% for distro in distributions %}
+  {{"%-13s"| format(distro.name.upper() + '_TAG:')}}'{{distro.tag}}'
+{% endfor %}
+
+{% for distro in distributions %}
+  {{"%-13s"| format(distro.name.upper() + '_EXEC:')}}'bash .gitlab-ci/{{distro.name}}-install.sh'
+{% endfor %}
+
+.nm_artifacts:
+  artifacts:
+    expire_in: 2 days
+    paths:
+      - docs-html
+      - NetworkManager-1*.tar.xz
+      - NetworkManager-1*.src.rpm
+
+#################################################################
+#                                                               #
+#                          prep stage                           #
+#                                                               #
+#################################################################
+
+# Re-generate the .gitlab-ci.yml file and make sure it's the one currently checked in
+# If this job fails, re-generate the gitlab-ci.yml script and git commit it.
+#
+check-ci-script:
+  image: golang:alpine
+  stage: prep
+  before_script:
+    - apk add python3 py-pip git
+    - pip3 install git+http://gitlab.freedesktop.org/freedesktop/ci-templates
+  script:
+    - ci-fairy generate-template
+    - git diff --exit-code && exit 0 || true
+    - echo "Committed gitlab-ci.yml differs from generated gitlab-ci.yml. Please verify"
+    - exit 1
+
+#################################################################
+#                                                               #
+#                     containers stage                          #
+#                                                               #
+#################################################################
+
+# Build a container for each distribution + version. The ci-templates
+# will re-use the containers if the tag doesn't change.
+{% for distro in distributions %}
+{% for version in distro.versions %}
+
+{{distro.name}}:{{version}}@container-prep:
+  extends:
+    - .fdo.container-build@{{distro.name}}
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: '{{version}}'
+    FDO_DISTRIBUTION_TAG: ${{distro.name.upper()}}_TAG
+    FDO_DISTRIBUTION_EXEC: ${{distro.name.upper()}}_EXEC
+{% if not version in distro.always %}
+  when: manual
+{% endif %}
+{% endfor %}
+{% endfor %}
+
+#################################################################
+#                                                               #
+#                   container clean stage                       #
+#                 run during the clean stage                    #
+#                                                               #
+#################################################################
+
+#
+# This stage will look for the container images we currently have in
+# the registry and will remove any that are not tagged with the provided
+# $container_image:$tag
+#
+# This job only runs for a scheduled pipeline.
+#
+# Go to your Profile, Settings, Access Tokens
+# Create a personal token with 'api' scope, copy the value.
+# Go to CI/CD, Schedules, schedule a monthly job.
+# Define a variable of type File named AUTHFILE. Content is that token
+# value.
+.container-clean:
+  stage: container_clean
+  image: golang:alpine
+  before_script:
+    - apk add python3 py-pip git
+    - pip3 install git+http://gitlab.freedesktop.org/freedesktop/ci-templates
+  script:
+    - ci-fairy -v --authfile $AUTHFILE delete-image
+            --repository $FDO_DISTRIBUTION_NAME/$FDO_DISTRIBUTION_VERSION
+            --exclude-tag $FDO_DISTRIBUTION_TAG
+  dependencies: []
+  allow_failure: true
+  only:
+    - schedules
+
+{% for distro in distributions %}
+{% for version in distro.versions %}
+{{distro.name}}:{{version}}@container-clean:
+  extends:
+    - .container-clean
+  variables:
+    GIT_STRATEGY: none
+    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/{{distro.name}}/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
+    FDO_DISTRIBUTION_VERSION: '{{version}}'
+    FDO_DISTRIBUTION_TAG: ${{distro.name.upper()}}_TAG
+
+{% endfor %}
+{% endfor %}
+
+#################################################################
+#                                                               #
+#                       build stage                             #
+#                                                               #
+#################################################################
+
+.build@template:
+  stage: test
+  script:
+    - .gitlab-ci/build.sh
+  dependencies: []
+
+#################################################################
+#                                                               #
+#                          test stage                           #
+#                                                               #
+#################################################################
+
+{% for distro in distributions %}
+{% for version in distro.versions %}
+
+t_{{distro.name}}:{{version}}:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@{{distro.name}}
+{% if distro.name == pages_build.name and
+      version == pages_build.version %}
+    - .nm_artifacts
+{% endif %}
+  variables:
+    FDO_DISTRIBUTION_VERSION: '{{version}}'
+    FDO_DISTRIBUTION_TAG: ${{distro.name.upper()}}_TAG
+    {# Where we have extra_variables defined, add them to the list #}
+    {% if distro.build is defined and distro.build.extra_variables is defined %}
+    {% for var in distro.build.extra_variables %}
+    {{var}}
+    {% endfor %}
+    {% endif %}
+  needs:
+    - "{{distro.name}}:{{version}}@container-prep"
+{% endfor %}
+{% endfor %}
+
+#################################################################
+#                                                               #
+#                      specific jobs                            #
+#                                                               #
+#################################################################
+checkpatch:
+  extends:
+  {# run checkpatch on the same image that generates pages because why not #}
+   - t_{{pages_build.name}}:{{pages_build.version}}
+  stage: test
+  script:
+    - date '+%Y%m%d-%H%M%S'; dnf install -y git black gettext /usr/bin/xargs which clang
+    - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
+    - date '+%Y%m%d-%H%M%S'; black --check . examples/python/gi/nm-wg-set
+    - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
+    - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh
+  allow_failure: true
+
+pages:
+  stage: deploy
+  script:
+    - mv docs-html public
+  artifacts:
+    expire_in: 20 days
+    paths:
+      - public
+  only:
+    - master
+  dependencies:
+    - t_{{pages_build.name}}:{{pages_build.version}}
+
+triage:issues:
+  stage: triage
+  image: ruby:2.7
+  script:
+    - gem install gitlab-triage
+    - gitlab-triage -d --token $API_TOKEN --source-id $SOURCE_ID
+  only:
+    - schedules
