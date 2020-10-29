@@ -11931,6 +11931,7 @@ activate_stage5_ip_config_result_6(NMDevice *self)
                 nm_device_ip_method_failed(self,
                                            AF_INET6,
                                            NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
+                return;
             }
         }
 
