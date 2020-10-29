@@ -1425,16 +1425,23 @@ nm_utils_ip4_addresses_to_variant(GPtrArray *addresses, const char *gateway)
         for (i = 0; i < addresses->len; i++) {
             NMIPAddress *addr = addresses->pdata[i];
             guint32      array[3];
+            in_addr_t    gw;
 
             if (nm_ip_address_get_family(addr) != AF_INET)
                 continue;
 
+            gw = 0u;
+            if (gateway) {
+                in_addr_t a;
+
+                if (inet_pton(AF_INET, gateway, &a) == 1)
+                    gw = a;
+                gateway = NULL;
+            }
+
             nm_ip_address_get_address_binary(addr, &array[0]);
             array[1] = nm_ip_address_get_prefix(addr);
-            if (i == 0 && gateway)
-                inet_pton(AF_INET, gateway, &array[2]);
-            else
-                array[2] = 0;
+            array[2] = gw;
 
             g_variant_builder_add(
                 &builder,
@@ -1656,6 +1663,8 @@ nm_utils_ip4_get_default_prefix(guint32 ip)
  * Utility function to convert an array of IP address strings int a #GVariant of
  * type 'aay' representing an array of IPv6 addresses.
  *
+ * If a string cannot be parsed, it will be silently ignored.
+ *
  * Returns: (transfer none): a new floating #GVariant representing @dns.
  **/
 GVariant *
@@ -1665,19 +1674,15 @@ nm_utils_ip6_dns_to_variant(char **dns)
     gsize           i;
 
     g_variant_builder_init(&builder, G_VARIANT_TYPE("aay"));
-
     if (dns) {
         for (i = 0; dns[i]; i++) {
             struct in6_addr ip;
 
-            inet_pton(AF_INET6, dns[i], &ip);
-            g_variant_builder_add(
-                &builder,
-                "@ay",
-                g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE, &ip, sizeof(ip), 1));
+            if (inet_pton(AF_INET6, dns[i], &ip) != 1)
+                continue;
+            g_variant_builder_add(&builder, "@ay", nm_g_variant_new_ay_in6addr(&ip));
         }
     }
-
     return g_variant_builder_end(&builder);
 }
 
@@ -1744,26 +1749,28 @@ nm_utils_ip6_addresses_to_variant(GPtrArray *addresses, const char *gateway)
 
     if (addresses) {
         for (i = 0; i < addresses->len; i++) {
-            NMIPAddress *   addr = addresses->pdata[i];
-            struct in6_addr ip_bytes, gateway_bytes;
-            GVariant *      ip_var, *gateway_var;
-            guint32         prefix;
+            NMIPAddress *          addr = addresses->pdata[i];
+            struct in6_addr        address_bin;
+            struct in6_addr        gateway_bin_data;
+            const struct in6_addr *gateway_bin;
 
             if (nm_ip_address_get_family(addr) != AF_INET6)
                 continue;
 
-            nm_ip_address_get_address_binary(addr, &ip_bytes);
-            ip_var = g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE, &ip_bytes, 16, 1);
+            nm_ip_address_get_address_binary(addr, &address_bin);
 
-            prefix = nm_ip_address_get_prefix(addr);
+            gateway_bin = &in6addr_any;
+            if (gateway) {
+                if (inet_pton(AF_INET6, gateway, &gateway_bin_data) == 1)
+                    gateway_bin = &gateway_bin_data;
+                gateway = NULL;
+            }
 
-            if (i == 0 && gateway)
-                inet_pton(AF_INET6, gateway, &gateway_bytes);
-            else
-                memset(&gateway_bytes, 0, sizeof(gateway_bytes));
-            gateway_var = g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE, &gateway_bytes, 16, 1);
-
-            g_variant_builder_add(&builder, "(@ayu@ay)", ip_var, prefix, gateway_var);
+            g_variant_builder_add(&builder,
+                                  "(@ayu@ay)",
+                                  nm_g_variant_new_ay_in6addr(&address_bin),
+                                  (guint32) nm_ip_address_get_prefix(addr),
+                                  nm_g_variant_new_ay_in6addr(gateway_bin));
         }
     }
 
@@ -1868,22 +1875,25 @@ nm_utils_ip6_routes_to_variant(GPtrArray *routes)
     if (routes) {
         for (i = 0; i < routes->len; i++) {
             NMIPRoute *     route = routes->pdata[i];
-            struct in6_addr dest_bytes, next_hop_bytes;
-            GVariant *      dest, *next_hop;
-            guint32         prefix, metric;
+            struct in6_addr dest_bytes;
+            struct in6_addr next_hop_bytes;
+            guint32         metric;
 
             if (nm_ip_route_get_family(route) != AF_INET6)
                 continue;
 
             nm_ip_route_get_dest_binary(route, &dest_bytes);
-            dest   = g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE, &dest_bytes, 16, 1);
-            prefix = nm_ip_route_get_prefix(route);
             nm_ip_route_get_next_hop_binary(route, &next_hop_bytes);
-            next_hop = g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE, &next_hop_bytes, 16, 1);
-            /* The old routes format uses "0" for default, not "-1" */
-            metric = MAX(0, nm_ip_route_get_metric(route));
 
-            g_variant_builder_add(&builder, "(@ayu@ayu)", dest, prefix, next_hop, metric);
+            /* The old routes format uses "0" for default, not "-1" */
+            metric = NM_MAX(0, nm_ip_route_get_metric(route));
+
+            g_variant_builder_add(&builder,
+                                  "(@ayu@ayu)",
+                                  nm_g_variant_new_ay_in6addr(&dest_bytes),
+                                  (guint32) nm_ip_route_get_prefix(route),
+                                  nm_g_variant_new_ay_in6addr(&next_hop_bytes),
+                                  metric);
         }
     }
 
