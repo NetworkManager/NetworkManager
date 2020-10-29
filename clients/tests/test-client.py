@@ -562,9 +562,7 @@ class NMStubServer:
     def setProperty(self, path, propname, value, iface_name=None):
         if iface_name is None:
             iface_name = ""
-        self.op_SetProperties(
-            [(path, [(iface_name, [(propname, value),]),]),]
-        )
+        self.op_SetProperties([(path, [(iface_name, [(propname, value)])])])
 
 
 ###############################################################################
@@ -1161,7 +1159,7 @@ class TestNmcli(NmTestBase):
         self.srv.op_AddObj("WifiAp", device="wlan1")
 
         self.srv.addConnection(
-            {"connection": {"type": "802-3-ethernet", "id": "con-1",},}
+            {"connection": {"type": "802-3-ethernet", "id": "con-1"}}
         )
 
     @nm_test

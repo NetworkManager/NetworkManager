@@ -299,6 +299,8 @@ class Util:
             return GLib.Variant("u", int(val))
         if isinstance(val, dbus.UInt64):
             return GLib.Variant("t", int(val))
+        if isinstance(val, dbus.Int32):
+            return GLib.Variant("i", int(val))
         if isinstance(val, dbus.Boolean):
             return GLib.Variant("b", bool(val))
         if isinstance(val, dbus.Byte):
@@ -389,6 +391,7 @@ IFACE_SETTINGS = "org.freedesktop.NetworkManager.Settings"
 IFACE_AGENT_MANAGER = "org.freedesktop.NetworkManager.AgentManager"
 IFACE_AGENT = "org.freedesktop.NetworkManager.SecretAgent"
 IFACE_WIRED = "org.freedesktop.NetworkManager.Device.Wired"
+IFACE_MODEM = "org.freedesktop.NetworkManager.Device.Modem"
 IFACE_VLAN = "org.freedesktop.NetworkManager.Device.Vlan"
 IFACE_WIFI_AP = "org.freedesktop.NetworkManager.AccessPoint"
 IFACE_ACTIVE_CONNECTION = "org.freedesktop.NetworkManager.Connection.Active"
@@ -404,46 +407,74 @@ IFACE_DHCP6_CONFIG = "org.freedesktop.NetworkManager.DHCP6Config"
 
 class BusErr:
     class UnknownInterfaceException(dbus.DBusException):
-        _dbus_error_name = IFACE_DBUS + ".UnknownInterface"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.UnknownInterface".format(IFACE_DBUS)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class UnknownPropertyException(dbus.DBusException):
-        _dbus_error_name = IFACE_DBUS + ".UnknownProperty"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.UnknownProperty".format(IFACE_DBUS)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class InvalidPropertyException(dbus.DBusException):
-        _dbus_error_name = IFACE_CONNECTION + ".InvalidProperty"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.InvalidProperty".format(IFACE_CONNECTION)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class MissingPropertyException(dbus.DBusException):
-        _dbus_error_name = IFACE_CONNECTION + ".MissingProperty"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.MissingProperty".format(IFACE_CONNECTION)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class InvalidSettingException(dbus.DBusException):
-        _dbus_error_name = IFACE_CONNECTION + ".InvalidSetting"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.InvalidSetting".format(IFACE_CONNECTION)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class MissingSettingException(dbus.DBusException):
-        _dbus_error_name = IFACE_CONNECTION + ".MissingSetting"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.MissingSetting".format(IFACE_CONNECTION)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class NotSoftwareException(dbus.DBusException):
-        _dbus_error_name = IFACE_DEVICE + ".NotSoftware"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.NotSoftware".format(IFACE_DEVICE)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class ApNotFoundException(dbus.DBusException):
-        _dbus_error_name = IFACE_WIFI + ".AccessPointNotFound"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.AccessPointNotFound".format(IFACE_WIFI)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class PermissionDeniedException(dbus.DBusException):
-        _dbus_error_name = IFACE_NM + ".PermissionDenied"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.PermissionDenied".format(IFACE_NM)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class UnknownDeviceException(dbus.DBusException):
-        _dbus_error_name = IFACE_NM + ".UnknownDevice"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.UnknownDevice".format(IFACE_NM)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class UnknownConnectionException(dbus.DBusException):
-        _dbus_error_name = IFACE_NM + ".UnknownConnection"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.UnknownConnection".format(IFACE_NM)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class InvalidHostnameException(dbus.DBusException):
-        _dbus_error_name = IFACE_SETTINGS + ".InvalidHostname"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.InvalidHostname".format(IFACE_SETTINGS)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class NoSecretsException(dbus.DBusException):
-        _dbus_error_name = IFACE_AGENT_MANAGER + ".NoSecrets"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.NoSecrets".format(IFACE_AGENT_MANAGER)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     class UserCanceledException(dbus.DBusException):
-        _dbus_error_name = IFACE_AGENT_MANAGER + ".UserCanceled"
+        def __init__(self, *args, **kwargs):
+            self._dbus_error_name = "{}.UserCanceled".format(IFACE_AGENT_MANAGER)
+            dbus.DBusException.__init__(self, *args, **kwargs)
 
     @staticmethod
     def from_nmerror(e):
@@ -778,6 +809,7 @@ class ExportedObj(dbus.service.Object):
 
 PRP_DEVICE_UDI = "Udi"
 PRP_DEVICE_IFACE = "Interface"
+PRP_DEVICE_IPIFACE = "IpInterface"
 PRP_DEVICE_DRIVER = "Driver"
 PRP_DEVICE_STATE = "State"
 PRP_DEVICE_STATE_REASON = "StateReason"
@@ -813,9 +845,15 @@ class Device(ExportedObj):
 
         self.prp_state = NM.DeviceState.UNAVAILABLE
 
+        if devtype == NM.DeviceType.MODEM:
+            udi = "/org/freedesktop/ModemManager1/Modem/0"
+        else:
+            udi = "/sys/devices/virtual/%s" % iface
+
         props = {
-            PRP_DEVICE_UDI: "/sys/devices/virtual/%s" % (iface),
+            PRP_DEVICE_UDI: udi,
             PRP_DEVICE_IFACE: iface,
+            PRP_DEVICE_IPIFACE: iface,
             PRP_DEVICE_DRIVER: "virtual",
             PRP_DEVICE_STATE: dbus.UInt32(self.prp_state),
             PRP_DEVICE_STATE_REASON: dbus.Struct(
@@ -1018,9 +1056,31 @@ class Device(ExportedObj):
         raise BusErr.NotSoftwareException()
         pass
 
+    @dbus.service.signal(IFACE_DEVICE, signature="uuu")
+    def StateChanged(self, new_state, old_state, reason):
+        pass
+
     @dbus.service.signal(IFACE_DEVICE, signature="a{sv}")
     def PropertiesChanged(self, changed):
         pass
+
+    def set_state(self, state, reason):
+        # libnm is plugged on notify::state-reason and not on state-changed dbus signal
+        # so we must simulate the change of property to emit a state-changed signal on libnm
+        self._dbus_property_set(IFACE_DEVICE, PRP_NM_STATE, dbus.UInt32(state))
+        self._dbus_property_set(
+            IFACE_DEVICE,
+            PRP_DEVICE_STATE_REASON,
+            (dbus.UInt32(state), dbus.UInt32(reason)),
+        )
+        old_state = self.prp_state
+        self.prp_state = state
+        self.StateChanged(
+            dbus.UInt32(self.prp_state), dbus.UInt32(old_state), dbus.UInt32(reason)
+        )
+
+    def set_carrier_status(self, carrier_status):
+        self._dbus_property_set(IFACE_WIRED, PRP_WIRED_CARRIER, carrier_status)
 
     def set_active_connection(self, ac):
         self._dbus_property_set(IFACE_DEVICE, PRP_DEVICE_ACTIVE_CONNECTION, ac)
@@ -1048,6 +1108,14 @@ class Device(ExportedObj):
             ExportedObj.to_path_array(self.available_connections_get()),
         )
 
+    @dbus.service.method(IFACE_TEST, in_signature="", out_signature="")
+    def Start(self):
+        self.start()
+
+    @dbus.service.method(IFACE_TEST, in_signature="", out_signature="")
+    def Stop(self):
+        self.stop()
+
 
 ###############################################################################
 
@@ -1071,13 +1139,37 @@ class WiredDevice(Device):
             PRP_WIRED_HW_ADDRESS: mac,
             PRP_WIRED_PERM_HW_ADDRESS: mac,
             PRP_WIRED_SPEED: dbus.UInt32(100),
-            PRP_WIRED_CARRIER: False,
+            PRP_WIRED_CARRIER: True,
             PRP_WIRED_S390_SUBCHANNELS: subchannels,
         }
 
         self.dbus_interface_add(IFACE_WIRED, props, WiredDevice.PropertiesChanged)
 
     @dbus.service.signal(IFACE_WIRED, signature="a{sv}")
+    def PropertiesChanged(self, changed):
+        pass
+
+
+###############################################################################
+PM_CURRENT_CAPABILITIES = "CurrentCapabilities"
+PM_MODEM_CAPABILITIES = "ModemCapabilities"
+
+# capability to make device seen compatible with GSM connection
+NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS = 0x00000004
+
+
+class ModemDevice(Device):
+    def __init__(self, iface):
+        Device.__init__(self, iface, NM.DeviceType.MODEM)
+
+        props = {
+            PM_CURRENT_CAPABILITIES: dbus.UInt32(NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS),
+            PM_MODEM_CAPABILITIES: dbus.UInt32(0),
+        }
+
+        self.dbus_interface_add(IFACE_MODEM, props, ModemDevice.PropertiesChanged)
+
+    @dbus.service.signal(IFACE_MODEM, signature="a{sv}")
     def PropertiesChanged(self, changed):
         pass
 
@@ -1331,6 +1423,7 @@ class ActiveConnection(ExportedObj):
         self.is_vpn = con_inst.is_vpn()
 
         self._activation_id = None
+        self._deactivation_id = None
 
         s_con = con_inst.con_hash[NM.SETTING_CONNECTION_SETTING_NAME]
 
@@ -1382,23 +1475,68 @@ class ActiveConnection(ExportedObj):
     def _activation_step2(self):
         assert self._activation_id is not None
         self._activation_id = None
-        self._set_state(
-            NM.ActiveConnectionState.ACTIVATED, NM.ActiveConnectionStateReason.UNKNOWN
-        )
+
+        s_con = self.con_inst.con_hash[NM.SETTING_CONNECTION_SETTING_NAME]
+        conn_id = s_con[NM.SETTING_CONNECTION_ID]
+
+        if gl.force_activation_failure.get(conn_id, False):
+            self._set_state(
+                NM.ActiveConnectionState.DEACTIVATED,
+                NM.ActiveConnectionStateReason.UNKNOWN,
+            )
+            self.device.set_state(NM.DeviceState.FAILED, NM.DeviceStateReason.UNKNOWN)
+        else:
+            self._set_state(
+                NM.ActiveConnectionState.ACTIVATED,
+                NM.ActiveConnectionStateReason.UNKNOWN,
+            )
+            self.device.set_state(NM.DeviceState.ACTIVATED, NM.DeviceStateReason.NONE)
         return False
 
     def _activation_step1(self):
         assert self._activation_id is not None
         self._activation_id = GLib.timeout_add(50, self._activation_step2)
         self.device.set_active_connection(self)
+        self.device.set_state(NM.DeviceState.PREPARE, NM.DeviceStateReason.NONE)
         self._set_state(
             NM.ActiveConnectionState.ACTIVATING, NM.ActiveConnectionStateReason.UNKNOWN
         )
         return False
 
+    def _deactivation_step1(self):
+        assert self._deactivation_id is not None
+        self._deactivation_id = None
+        self.device.set_state(
+            NM.DeviceState.DISCONNECTED, NM.DeviceStateReason.USER_REQUESTED
+        )
+        self._set_state(
+            NM.ActiveConnectionState.DEACTIVATED,
+            NM.ActiveConnectionStateReason.USER_DISCONNECTED,
+        )
+
+        return False
+
+    def set_state(self, state, reason):
+        self._set_state(state, reason)
+
     def start_activation(self):
         assert self._activation_id is None
         self._activation_id = GLib.timeout_add(50, self._activation_step1)
+
+    def start_deactivation(self):
+        assert self._deactivation_id is None
+        self._set_state(
+            NM.ActiveConnectionState.DEACTIVATING,
+            NM.ActiveConnectionStateReason.USER_DISCONNECTED,
+        )
+        self.device.set_state(
+            NM.DeviceState.DEACTIVATING, NM.DeviceStateReason.USER_REQUESTED
+        )
+        self._set_state(
+            NM.ActiveConnectionState.DEACTIVATING,
+            NM.ActiveConnectionStateReason.USER_DISCONNECTED,
+        )
+        self._deactivation_id = GLib.timeout_add(50, self._deactivation_step1)
 
     @dbus.service.signal(IFACE_VPN_CONNECTION, signature="a{sv}")
     def PropertiesChanged(self, changed):
@@ -1587,7 +1725,16 @@ class NetworkManager(ExportedObj):
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature="o", out_signature="")
     def DeactivateConnection(self, active_connection):
-        pass
+        # Look for an active connection with the same object path
+        for ac in self.active_connections:
+            if ac.path == str(active_connection):
+                ac.activation_cancel()
+                ac.start_deactivation()
+                return
+
+        raise BusErr.UnknownConnectionException(
+            "Connection not found: %s" % str(active_connection)
+        )
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature="b", out_signature="")
     def Sleep(self, do_sleep):
@@ -1778,6 +1925,11 @@ class NetworkManager(ExportedObj):
         return ExportedObj.to_path(self.add_device(dev))
 
     @dbus.service.method(IFACE_TEST, in_signature="s", out_signature="o")
+    def AddModemDevice(self, ifname):
+        dev = ModemDevice(ifname)
+        return ExportedObj.to_path(self.add_device(dev))
+
+    @dbus.service.method(IFACE_TEST, in_signature="s", out_signature="o")
     def AddWifiDevice(self, ifname):
         dev = WifiDevice(ifname)
         return ExportedObj.to_path(self.add_device(dev))
@@ -1807,6 +1959,54 @@ class NetworkManager(ExportedObj):
     )
     def AddConnection(self, con_hash, do_verify_strict):
         return gl.settings.add_connection(con_hash, do_verify_strict)
+
+    @dbus.service.method(dbus_interface=IFACE_TEST, in_signature="sb", out_signature="")
+    def SetActiveConnectionFailure(self, connection_id, failure):
+        gl.force_activation_failure[connection_id] = failure
+
+    @dbus.service.method(
+        dbus_interface=IFACE_TEST, in_signature="ouu", out_signature=""
+    )
+    def SetActiveConnectionState(self, devpath, state, reason):
+        for ac in reversed(self.active_connections):
+            if ac.device.path == devpath:
+                ac.set_state(state, reason)
+                return
+        raise BusErr.UnknownDeviceException(
+            "Device with iface '%s' not found" % devpath
+        )
+
+    @dbus.service.method(
+        dbus_interface=IFACE_TEST, in_signature="ouu", out_signature=""
+    )
+    def SetDeviceState(self, devpath, state, reason):
+        try:
+            nmstate = NM.DeviceState(state)
+        except ValueError as e:
+            raise BusErr.InvalidPropertyException("Invalid device state: " % e)
+
+        try:
+            nmreason = NM.DeviceStateReason(reason)
+        except ValueError as e:
+            raise BusErr.InvalidPropertyException("Invalid device state reason: " % e)
+
+        for d in self.devices:
+            if d.path == devpath:
+                d.set_state(nmstate, nmreason)
+                return
+        raise BusErr.UnknownDeviceException(
+            "Device with iface '%s' not found" % devpath
+        )
+
+    @dbus.service.method(dbus_interface=IFACE_TEST, in_signature="ob", out_signature="")
+    def SetCarrierStatus(self, devpath, status):
+        for d in self.devices:
+            if d.path == devpath:
+                d.set_carrier_status(status)
+                return
+        raise BusErr.UnknownDeviceException(
+            "Device with iface '%s' not found" % devpath
+        )
 
     @dbus.service.method(
         dbus_interface=IFACE_TEST, in_signature="sa{sa{sv}}b", out_signature=""
@@ -2006,6 +2206,12 @@ class Settings(ExportedObj):
     )
     def AddConnection(self, con_hash):
         return self.add_connection(con_hash)
+
+    @dbus.service.method(
+        dbus_interface=IFACE_SETTINGS, in_signature="", out_signature="b"
+    )
+    def ReloadConnections(self):
+        return True
 
     def add_connection(self, con_hash, do_verify_strict=True):
         self.c_counter += 1
@@ -2279,6 +2485,10 @@ class IP4Config(ExportedObj):
         props = self.generate_props(generate_seed)
         for k, v in props.items():
             self._dbus_property_set(IFACE_IP4_CONFIG, k, v)
+
+    @dbus.service.method(IFACE_TEST, in_signature="s", out_signature="")
+    def SetGateway(self, gateway):
+        self._dbus_property_set(IFACE_IP4_CONFIG, PRP_IP4_CONFIG_GATEWAY, gateway)
 
     @dbus.service.signal(IFACE_IP4_CONFIG, signature="a{sv}")
     def PropertiesChanged(self, path):
@@ -2721,6 +2931,7 @@ def main():
 
     gl.mainloop = GLib.MainLoop()
     gl.bus = dbus.SessionBus()
+    gl.force_activation_failure = {}
 
     gl.object_manager = ObjectManager("/org/freedesktop")
     gl.manager = NetworkManager()
