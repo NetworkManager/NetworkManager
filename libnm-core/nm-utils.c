@@ -858,7 +858,7 @@ GPtrArray *
 _nm_utils_copy_array(const GPtrArray *array, NMUtilsCopyFunc copy_func, GDestroyNotify free_func)
 {
     GPtrArray *copy;
-    int        i;
+    guint      i;
 
     if (!array)
         return g_ptr_array_new_with_free_func(free_func);
@@ -1276,7 +1276,8 @@ nm_utils_security_valid(NMUtilsSecurityType      type,
 gboolean
 nm_utils_wep_key_valid(const char *key, NMWepKeyType wep_type)
 {
-    int keylen, i;
+    gsize keylen;
+    gsize i;
 
     if (!key)
         return FALSE;
@@ -1321,7 +1322,8 @@ nm_utils_wep_key_valid(const char *key, NMWepKeyType wep_type)
 gboolean
 nm_utils_wpa_psk_valid(const char *psk)
 {
-    int psklen, i;
+    gsize psklen;
+    gsize i;
 
     if (!psk)
         return FALSE;
@@ -1354,7 +1356,7 @@ GVariant *
 nm_utils_ip4_dns_to_variant(char **dns)
 {
     GVariantBuilder builder;
-    int             i;
+    gsize           i;
 
     g_variant_builder_init(&builder, G_VARIANT_TYPE("au"));
 
@@ -1385,13 +1387,12 @@ nm_utils_ip4_dns_from_variant(GVariant *value)
     const guint32 *array;
     gsize          length;
     char **        dns;
-    int            i;
+    gsize          i;
 
     g_return_val_if_fail(g_variant_is_of_type(value, G_VARIANT_TYPE("au")), NULL);
 
     array = g_variant_get_fixed_array(value, &length, sizeof(guint32));
-    dns   = g_new(char *, length + 1);
-
+    dns   = g_new(char *, length + 1u);
     for (i = 0; i < length; i++)
         dns[i] = nm_utils_inet4_ntop_dup(array[i]);
     dns[i] = NULL;
@@ -1416,7 +1417,7 @@ GVariant *
 nm_utils_ip4_addresses_to_variant(GPtrArray *addresses, const char *gateway)
 {
     GVariantBuilder builder;
-    int             i;
+    guint           i;
 
     g_variant_builder_init(&builder, G_VARIANT_TYPE("aau"));
 
@@ -1519,7 +1520,7 @@ GVariant *
 nm_utils_ip4_routes_to_variant(GPtrArray *routes)
 {
     GVariantBuilder builder;
-    int             i;
+    guint           i;
 
     g_variant_builder_init(&builder, G_VARIANT_TYPE("aau"));
 
@@ -1661,7 +1662,7 @@ GVariant *
 nm_utils_ip6_dns_to_variant(char **dns)
 {
     GVariantBuilder builder;
-    int             i;
+    gsize           i;
 
     g_variant_builder_init(&builder, G_VARIANT_TYPE("aay"));
 
@@ -1697,7 +1698,7 @@ nm_utils_ip6_dns_from_variant(GVariant *value)
     GVariantIter iter;
     GVariant *   ip_var;
     char **      dns;
-    int          i;
+    gsize        i;
 
     g_return_val_if_fail(g_variant_is_of_type(value, G_VARIANT_TYPE("aay")), NULL);
 
@@ -1737,7 +1738,7 @@ GVariant *
 nm_utils_ip6_addresses_to_variant(GPtrArray *addresses, const char *gateway)
 {
     GVariantBuilder builder;
-    int             i;
+    guint           i;
 
     g_variant_builder_init(&builder, G_VARIANT_TYPE("a(ayuay)"));
 
@@ -1860,7 +1861,7 @@ GVariant *
 nm_utils_ip6_routes_to_variant(GPtrArray *routes)
 {
     GVariantBuilder builder;
-    int             i;
+    guint           i;
 
     g_variant_builder_init(&builder, G_VARIANT_TYPE("a(ayuayu)"));
 
@@ -2088,7 +2089,7 @@ GVariant *
 nm_utils_ip_routes_to_variant(GPtrArray *routes)
 {
     GVariantBuilder builder;
-    int             i;
+    guint           i;
 
     g_variant_builder_init(&builder, G_VARIANT_TYPE("aa{sv}"));
 
@@ -3147,7 +3148,7 @@ nm_utils_uuid_is_null(const NMUuid *uuid)
     if (!uuid)
         return TRUE;
 
-    for (i = 0; i < G_N_ELEMENTS(uuid->uuid); i++) {
+    for (i = 0; i < (int) G_N_ELEMENTS(uuid->uuid); i++) {
         if (uuid->uuid[i])
             return FALSE;
     }
@@ -3334,7 +3335,7 @@ static gboolean
 file_has_extension(const char *filename, const char *extensions[])
 {
     const char *ext;
-    int         i;
+    gsize       i;
 
     ext = strrchr(filename, '.');
     if (!ext)
@@ -3833,7 +3834,7 @@ nm_utils_wifi_is_channel_valid(guint32 channel, const char *band)
             G_STATIC_ASSERT(G_N_ELEMENTS(table) > 0);                              \
             G_STATIC_ASSERT(G_N_ELEMENTS(table) == G_N_ELEMENTS(table_freqs));     \
                                                                                    \
-            for (i = 0; i < G_N_ELEMENTS(table); i++) {                            \
+            for (i = 0; i < (int) G_N_ELEMENTS(table); i++) {                      \
                 nm_assert((i == G_N_ELEMENTS(table) - 1) == (table[i].chan == 0)); \
                 nm_assert((i == G_N_ELEMENTS(table) - 1) == (table[i].freq == 0)); \
                 nm_assert(table[i].freq == table_freqs[i]);                        \
