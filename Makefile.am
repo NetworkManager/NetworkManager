@@ -925,6 +925,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-core-types.h \
 	libnm-core/nm-dbus-interface.h \
 	libnm-core/nm-errors.h \
+	libnm-core/nm-keyfile.h \
 	libnm-core/nm-setting-6lowpan.h \
 	libnm-core/nm-setting-8021x.h \
 	libnm-core/nm-setting-adsl.h \
@@ -1480,6 +1481,7 @@ nodist_libnm_liblibnm_la_SOURCES = \
 
 libnm_liblibnm_la_LIBADD = \
 	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	libnm-core/nm-keyfile/libnm-keyfile.la \
 	libnm-core/libnm-core.la \
 	$(libnm_crypto_lib) \
 	libnm-core/nm-libnm-core-intern/libnm-libnm-core-intern.la \
@@ -1573,6 +1575,7 @@ libnm_NM_1_0_gir_FILES = \
 	$(libnm_core_lib_c_real) \
 	$(libnm_lib_h_pub_mkenums) \
 	$(libnm_lib_h_pub_real) \
+	libnm-core/nm-keyfile/nm-keyfile.c \
 	$(libnm_lib_c_mkenums) \
 	$(libnm_lib_c_real)
 libnm_NM_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=NM --symbol-prefix=nm

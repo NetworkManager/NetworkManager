@@ -13,6 +13,8 @@
 
 #include <sys/types.h>
 
+#include "nm-keyfile.h"
+
 #include "nm-connection.h"
 #include "nm-setting-8021x.h"
 
@@ -31,47 +33,6 @@ char *nm_keyfile_detect_unqualified_path_scheme(const char *  base_dir,
                                                 gboolean      consider_exists,
                                                 gboolean *    out_exists);
 
-typedef enum { /*< flags >*/
-               NM_KEYFILE_HANDLER_FLAGS_NONE = 0,
-} NMKeyfileHandlerFlags;
-
-typedef enum {
-    NM_KEYFILE_HANDLER_TYPE_WARN       = 1,
-    NM_KEYFILE_HANDLER_TYPE_WRITE_CERT = 2,
-} NMKeyfileHandlerType;
-
-typedef struct _NMKeyfileHandlerData NMKeyfileHandlerData;
-
-/**
- * NMKeyfileReadHandler:
- *
- * Hook to nm_keyfile_read(). The user might fail the reading by setting
- * @error.
- *
- * Returns: should return TRUE, if the reading was handled. Otherwise,
- * a default action will be performed that depends on the @handler_type.
- * For %NM_KEYFILE_HANDLER_TYPE_WARN handler_type, the default action is doing nothing.
- */
-typedef gboolean (*NMKeyfileReadHandler)(GKeyFile *            keyfile,
-                                         NMConnection *        connection,
-                                         NMKeyfileHandlerType  handler_type,
-                                         NMKeyfileHandlerData *handler_data,
-                                         void *                user_data);
-
-typedef enum {
-    NM_KEYFILE_WARN_SEVERITY_DEBUG             = 1000,
-    NM_KEYFILE_WARN_SEVERITY_INFO              = 2000,
-    NM_KEYFILE_WARN_SEVERITY_INFO_MISSING_FILE = 2901,
-    NM_KEYFILE_WARN_SEVERITY_WARN              = 3000,
-} NMKeyfileWarnSeverity;
-
-NMConnection *nm_keyfile_read(GKeyFile *            keyfile,
-                              const char *          base_dir,
-                              NMKeyfileHandlerFlags handler_flags,
-                              NMKeyfileReadHandler  handler,
-                              void *                user_data,
-                              GError **             error);
-
 gboolean nm_keyfile_read_ensure_id(NMConnection *connection, const char *fallback_id);
 
 gboolean nm_keyfile_read_ensure_uuid(NMConnection *connection, const char *fallback_uuid_seed);
@@ -79,47 +40,10 @@ gboolean nm_keyfile_read_ensure_uuid(NMConnection *connection, const char *fallb
 /*****************************************************************************/
 
 /**
- * NMKeyfileWriteHandler:
- *
- * This is a hook to tweak the serialization.
- *
- * Handler for certain properties or events that are not entirely contained
- * within the keyfile or that might be serialized differently. The @handler_type and
- * @handler_data arguments tell which kind of argument we have at hand.
- *
- * Currently only the handler_type %NM_KEYFILE_HANDLER_TYPE_WRITE_CERT is supported, which provides
- * @handler_data as %NMKeyfileHandlerDataWriteCert. However, this handler should be generic enough
- * to support other types as well.
- *
- * This don't have to be only "properties". For example, nm_keyfile_read() uses
- * a similar handler to push warnings to the caller.
- *
- * If the handler raises an error, it should set the @error value. This causes
- * the an overall failure.
- *
- * Returns: whether the issue was handled. If the type was unhandled,
- * a default action will be performed. This might be raise an error,
- * do some fallback parsing, or do nothing.
- */
-typedef gboolean (*NMKeyfileWriteHandler)(NMConnection *        connection,
-                                          GKeyFile *            keyfile,
-                                          NMKeyfileHandlerType  handler_type,
-                                          NMKeyfileHandlerData *handler_data,
-                                          void *                user_data);
-
-GKeyFile *nm_keyfile_write(NMConnection *        connection,
-                           NMKeyfileHandlerFlags handler_flags,
-                           NMKeyfileWriteHandler handler,
-                           void *                user_data,
-                           GError **             error);
-
-/*****************************************************************************/
-
-/**
  * NMKeyfileHandlerDataWarn:
  *
  * this struct is passed as @handler_data for the @NMKeyfileReadHandler of
- * handler_type %NM_KEYFILE_HANDLER_TYPE_WARN.
+ * type %NM_KEYFILE_HANDLER_TYPE_WARN.
  */
 typedef struct {
     NMKeyfileWarnSeverity severity;
@@ -132,7 +56,7 @@ typedef struct {
  * NMKeyfileHandlerDataWriteCert:
  *
  * this struct is passed as @handler_data for the @NMKeyfileWriteHandler of
- * handler_type %NM_KEYFILE_HANDLER_TYPE_WRITE_CERT.
+ * type %NM_KEYFILE_HANDLER_TYPE_WRITE_CERT.
  */
 typedef struct {
     const NMSetting8021xSchemeVtable *vtable;
@@ -156,18 +80,6 @@ struct _NMKeyfileHandlerData {
 };
 
 /*****************************************************************************/
-
-void nm_keyfile_handler_data_fail_with_error(NMKeyfileHandlerData *handler_data, GError *src);
-
-void nm_keyfile_handler_data_get_context(const NMKeyfileHandlerData *handler_data,
-                                         const char **               out_kf_group_name,
-                                         const char **               out_kf_key_name,
-                                         NMSetting **                out_cur_setting,
-                                         const char **               out_cur_property_name);
-
-void nm_keyfile_handler_data_warn_get(const NMKeyfileHandlerData *handler_data,
-                                      const char **               out_message,
-                                      NMKeyfileWarnSeverity *     out_severity);
 
 const char *_nm_keyfile_handler_data_warn_get_message(const NMKeyfileHandlerData *handler_data);
 

@@ -45,6 +45,7 @@
 #include "nm-dhcp-config.h"
 #include "nm-enum-types.h"
 #include "nm-ip-config.h"
+#include "nm-keyfile.h"
 #include "nm-object.h"
 #include "nm-remote-connection.h"
 #include "nm-setting-6lowpan.h"
