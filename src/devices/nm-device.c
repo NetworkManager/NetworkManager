@@ -695,6 +695,8 @@ static guint32 default_route_metric_penalty_get(NMDevice *self, int addr_family)
 
 static guint _prop_get_ipv4_dad_timeout(NMDevice *self);
 
+static NMIP6Config *dad6_get_pending_addresses(NMDevice *self);
+
 static void   _carrier_wait_check_queued_act_request(NMDevice *self);
 static gint64 _get_carrier_wait_ms(NMDevice *self);
 
@@ -727,14 +729,6 @@ static void concheck_update_state(NMDevice *          self,
                                   gboolean            is_periodic);
 
 static void sriov_op_cb(GError *error, gpointer user_data);
-
-static void activate_stage5_ip_config_result_4(NMDevice *self);
-static void activate_stage5_ip_config_result_6(NMDevice *self);
-
-static void (*const activate_stage5_ip_config_result_x[2])(NMDevice *self) = {
-    activate_stage5_ip_config_result_6,
-    activate_stage5_ip_config_result_4,
-};
 
 /*****************************************************************************/
 
@@ -11676,12 +11670,14 @@ nm_device_arp_announce(NMDevice *self)
 }
 
 static void
-activate_stage5_ip_config_result_4(NMDevice *self)
+activate_stage5_ip_config_result_x(NMDevice *self, int addr_family)
 {
-    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+    const int        IS_IPv4 = NM_IS_IPv4(addr_family);
+    NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
     NMActRequest *   req;
     const char *     method;
     int              ip_ifindex;
+    int              errsv;
     gboolean         do_announce = FALSE;
 
     req = nm_device_get_act_request(self);
@@ -11689,6 +11685,8 @@ activate_stage5_ip_config_result_4(NMDevice *self)
 
     /* Interface must be IFF_UP before IP config can be applied */
     ip_ifindex = nm_device_get_ip_ifindex(self);
+    g_return_if_fail(ip_ifindex);
+
     if (!nm_platform_link_is_up(nm_device_get_platform(self), ip_ifindex)
         && !nm_device_sys_iface_state_is_external_or_assume(self)) {
         nm_platform_link_set_up(nm_device_get_platform(self), ip_ifindex, NULL);
@@ -11698,75 +11696,163 @@ activate_stage5_ip_config_result_4(NMDevice *self)
                   nm_device_get_ip_iface(self));
     }
 
-    if (!ip_config_merge_and_apply(self, AF_INET, TRUE)) {
-        _LOGD(LOGD_DEVICE | LOGD_IP4, "Activation: Stage 5 of 5 (IPv4 Commit) failed");
-        nm_device_ip_method_failed(self, AF_INET, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+    if (!ip_config_merge_and_apply(self, addr_family, TRUE)) {
+        _LOGD(LOGD_DEVICE | LOGD_IPX(IS_IPv4),
+              "Activation: Stage 5 of 5 (IPv%c Commit) failed",
+              nm_utils_addr_family_to_char(addr_family));
+        nm_device_ip_method_failed(self, addr_family, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
         return;
     }
 
-    /* Start IPv4 sharing if we need it */
-    method = nm_device_get_effective_ip_config_method(self, AF_INET);
-    if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
-        gs_free_error GError *error = NULL;
-
-        if (!start_sharing(self, priv->ip_config_4, &error)) {
-            _LOGW(LOGD_SHARING,
-                  "Activation: Stage 5 of 5 (IPv4 Commit) start sharing failed: %s",
-                  error->message);
-            nm_device_ip_method_failed(self, AF_INET, NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
-            return;
-        }
-    }
-
-    if (priv->dhcp_data_4.client) {
-        gs_free_error GError *error = NULL;
-
-        if (!nm_dhcp_client_accept(priv->dhcp_data_4.client, &error)) {
-            _LOGW(LOGD_DHCP4,
-                  "Activation: Stage 5 of 5 (IPv4 Commit) error accepting lease: %s",
-                  error->message);
-            nm_device_ip_method_failed(self, AF_INET, NM_DEVICE_STATE_REASON_DHCP_ERROR);
-            return;
-        }
-    }
-
-    /* If IPv4 wasn't the first to complete, and DHCP was used, then ensure
-     * dispatcher scripts get the DHCP lease information.
-     */
-    if (priv->dhcp_data_4.client && nm_device_activate_ip4_state_in_conf(self)
-        && (nm_device_get_state(self) > NM_DEVICE_STATE_IP_CONFIG)) {
-        nm_dispatcher_call_device(NM_DISPATCHER_ACTION_DHCP4_CHANGE, self, NULL, NULL, NULL, NULL);
-    }
-
-    /* Send ARP announcements */
-
-    if (nm_device_is_master(self)) {
-        CList *    iter;
-        SlaveInfo *info;
-
-        /* Skip announcement if there are no device enslaved, for two reasons:
-         * 1) the master has a temporary MAC address until the first slave comes
-         * 2) announcements are going to be dropped anyway without slaves
-         */
-        do_announce = FALSE;
-
-        c_list_for_each (iter, &priv->slaves) {
-            info = c_list_entry(iter, SlaveInfo, lst_slave);
-            if (info->slave_is_enslaved) {
-                do_announce = TRUE;
-                break;
+    if (!IS_IPv4) {
+        if (priv->dhcp6.mode != NM_NDISC_DHCP_LEVEL_NONE
+            && priv->ip_state_6 == NM_DEVICE_IP_STATE_CONF) {
+            if (applied_config_get_current(&priv->dhcp6.ip6_config)) {
+                /* If IPv6 wasn't the first IP to complete, and DHCP was used,
+                 * then ensure dispatcher scripts get the DHCP lease information.
+                 */
+                nm_dispatcher_call_device(NM_DISPATCHER_ACTION_DHCP6_CHANGE,
+                                          self,
+                                          NULL,
+                                          NULL,
+                                          NULL,
+                                          NULL);
+            } else {
+                /* still waiting for first dhcp6 lease. */
+                return;
             }
         }
-    } else
-        do_announce = TRUE;
+    }
 
-    if (do_announce)
-        nm_device_arp_announce(self);
+    /* Start IPv4 sharing/IPv6 forwarding if we need it */
+    method = nm_device_get_effective_ip_config_method(self, addr_family);
+    if (IS_IPv4) {
+        if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
+            gs_free_error GError *error = NULL;
 
-    /* Enter the IP_CHECK state if this is the first method to complete */
-    _set_ip_state(self, AF_INET, NM_DEVICE_IP_STATE_DONE);
-    check_ip_state(self, FALSE, TRUE);
+            if (!start_sharing(self, priv->ip_config_4, &error)) {
+                _LOGW(LOGD_SHARING,
+                      "Activation: Stage 5 of 5 (IPv4 Commit) start sharing failed: %s",
+                      error->message);
+                nm_device_ip_method_failed(self,
+                                           AF_INET,
+                                           NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
+                return;
+            }
+        }
+    } else {
+        if (nm_streq(method, NM_SETTING_IP6_CONFIG_METHOD_SHARED)) {
+            if (!nm_platform_sysctl_set(
+                    nm_device_get_platform(self),
+                    NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv6/conf/all/forwarding"),
+                    "1")) {
+                errsv = errno;
+                _LOGE(LOGD_SHARING,
+                      "share: error enabling IPv6 forwarding: (%d) %s",
+                      errsv,
+                      nm_strerror_native(errsv));
+                nm_device_ip_method_failed(self,
+                                           AF_INET6,
+                                           NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
+                return;
+            }
+        }
+    }
+
+    if (IS_IPv4) {
+        if (priv->dhcp_data_4.client) {
+            gs_free_error GError *error = NULL;
+
+            if (!nm_dhcp_client_accept(priv->dhcp_data_4.client, &error)) {
+                _LOGW(LOGD_DHCP4,
+                      "Activation: Stage 5 of 5 (IPv4 Commit) error accepting lease: %s",
+                      error->message);
+                nm_device_ip_method_failed(self, AF_INET, NM_DEVICE_STATE_REASON_DHCP_ERROR);
+                return;
+            }
+        }
+
+        /* If IPv4 wasn't the first to complete, and DHCP was used, then ensure
+         * dispatcher scripts get the DHCP lease information.
+         */
+        if (priv->dhcp_data_4.client && nm_device_activate_ip4_state_in_conf(self)
+            && (nm_device_get_state(self) > NM_DEVICE_STATE_IP_CONFIG)) {
+            nm_dispatcher_call_device(NM_DISPATCHER_ACTION_DHCP4_CHANGE,
+                                      self,
+                                      NULL,
+                                      NULL,
+                                      NULL,
+                                      NULL);
+        }
+    }
+
+    if (!IS_IPv4) {
+        /* Check if we have to wait for DAD */
+        if (priv->ip_state_6 == NM_DEVICE_IP_STATE_CONF && !priv->dad6_ip6_config) {
+            if (!priv->carrier && priv->ignore_carrier && get_ip_config_may_fail(self, AF_INET6))
+                _LOGI(LOGD_DEVICE | LOGD_IP6,
+                      "IPv6 DAD: carrier missing and ignored, not delaying activation");
+            else
+                priv->dad6_ip6_config = dad6_get_pending_addresses(self);
+
+            if (priv->dad6_ip6_config) {
+                _LOGD(LOGD_DEVICE | LOGD_IP6, "IPv6 DAD: awaiting termination");
+            } else {
+                _set_ip_state(self, AF_INET6, NM_DEVICE_IP_STATE_DONE);
+                check_ip_state(self, FALSE, TRUE);
+            }
+        }
+    }
+
+    if (IS_IPv4) {
+        /* Send ARP announcements */
+
+        if (nm_device_is_master(self)) {
+            CList *    iter;
+            SlaveInfo *info;
+
+            /* Skip announcement if there are no device enslaved, for two reasons:
+             * 1) the master has a temporary MAC address until the first slave comes
+             * 2) announcements are going to be dropped anyway without slaves
+             */
+            do_announce = FALSE;
+
+            c_list_for_each (iter, &priv->slaves) {
+                info = c_list_entry(iter, SlaveInfo, lst_slave);
+                if (info->slave_is_enslaved) {
+                    do_announce = TRUE;
+                    break;
+                }
+            }
+        } else
+            do_announce = TRUE;
+
+        if (do_announce)
+            nm_device_arp_announce(self);
+    }
+
+    if (IS_IPv4) {
+        /* Enter the IP_CHECK state if this is the first method to complete */
+        _set_ip_state(self, AF_INET, NM_DEVICE_IP_STATE_DONE);
+        check_ip_state(self, FALSE, TRUE);
+    }
 }
+
+static void
+activate_stage5_ip_config_result_4(NMDevice *self)
+{
+    activate_stage5_ip_config_result_x(self, AF_INET);
+}
+
+static void
+activate_stage5_ip_config_result_6(NMDevice *self)
+{
+    activate_stage5_ip_config_result_x(self, AF_INET6);
+}
+
+#define activate_stage5_ip_config_result_x_fcn(addr_family)       \
+    (NM_IS_IPv4(addr_family) ? activate_stage5_ip_config_result_4 \
+                             : activate_stage5_ip_config_result_6)
 
 void
 nm_device_activate_schedule_ip_config_result(NMDevice *self, int addr_family, NMIPConfig *config)
@@ -11791,7 +11877,9 @@ nm_device_activate_schedule_ip_config_result(NMDevice *self, int addr_family, NM
             _set_ip_state(self, AF_INET6, NM_DEVICE_IP_STATE_CONF);
     }
 
-    activation_source_schedule(self, activate_stage5_ip_config_result_x[IS_IPv4], addr_family);
+    activation_source_schedule(self,
+                               activate_stage5_ip_config_result_x_fcn(addr_family),
+                               addr_family);
 }
 
 NMDeviceIPState
@@ -11870,90 +11958,6 @@ dad6_get_pending_addresses(NMDevice *self)
     }
 
     return dad6_config;
-}
-
-static void
-activate_stage5_ip_config_result_6(NMDevice *self)
-{
-    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    NMActRequest *   req;
-    const char *     method;
-    int              ip_ifindex;
-    int              errsv;
-
-    req = nm_device_get_act_request(self);
-    g_assert(req);
-
-    /* Interface must be IFF_UP before IP config can be applied */
-    ip_ifindex = nm_device_get_ip_ifindex(self);
-    g_return_if_fail(ip_ifindex);
-
-    if (!nm_platform_link_is_up(nm_device_get_platform(self), ip_ifindex)
-        && !nm_device_sys_iface_state_is_external_or_assume(self)) {
-        nm_platform_link_set_up(nm_device_get_platform(self), ip_ifindex, NULL);
-        if (!nm_platform_link_is_up(nm_device_get_platform(self), ip_ifindex))
-            _LOGW(LOGD_DEVICE,
-                  "interface %s not up for IP configuration",
-                  nm_device_get_ip_iface(self));
-    }
-
-    if (ip_config_merge_and_apply(self, AF_INET6, TRUE)) {
-        if (priv->dhcp6.mode != NM_NDISC_DHCP_LEVEL_NONE
-            && priv->ip_state_6 == NM_DEVICE_IP_STATE_CONF) {
-            if (applied_config_get_current(&priv->dhcp6.ip6_config)) {
-                /* If IPv6 wasn't the first IP to complete, and DHCP was used,
-                 * then ensure dispatcher scripts get the DHCP lease information.
-                 */
-                nm_dispatcher_call_device(NM_DISPATCHER_ACTION_DHCP6_CHANGE,
-                                          self,
-                                          NULL,
-                                          NULL,
-                                          NULL,
-                                          NULL);
-            } else {
-                /* still waiting for first dhcp6 lease. */
-                return;
-            }
-        }
-
-        /* Start IPv6 forwarding if we need it */
-        method = nm_device_get_effective_ip_config_method(self, AF_INET6);
-        if (nm_streq(method, NM_SETTING_IP6_CONFIG_METHOD_SHARED)) {
-            if (!nm_platform_sysctl_set(
-                    nm_device_get_platform(self),
-                    NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv6/conf/all/forwarding"),
-                    "1")) {
-                errsv = errno;
-                _LOGE(LOGD_SHARING,
-                      "share: error enabling IPv6 forwarding: (%d) %s",
-                      errsv,
-                      nm_strerror_native(errsv));
-                nm_device_ip_method_failed(self,
-                                           AF_INET6,
-                                           NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
-                return;
-            }
-        }
-
-        /* Check if we have to wait for DAD */
-        if (priv->ip_state_6 == NM_DEVICE_IP_STATE_CONF && !priv->dad6_ip6_config) {
-            if (!priv->carrier && priv->ignore_carrier && get_ip_config_may_fail(self, AF_INET6))
-                _LOGI(LOGD_DEVICE | LOGD_IP6,
-                      "IPv6 DAD: carrier missing and ignored, not delaying activation");
-            else
-                priv->dad6_ip6_config = dad6_get_pending_addresses(self);
-
-            if (priv->dad6_ip6_config) {
-                _LOGD(LOGD_DEVICE | LOGD_IP6, "IPv6 DAD: awaiting termination");
-            } else {
-                _set_ip_state(self, AF_INET6, NM_DEVICE_IP_STATE_DONE);
-                check_ip_state(self, FALSE, TRUE);
-            }
-        }
-    } else {
-        _LOGW(LOGD_DEVICE | LOGD_IP6, "Activation: Stage 5 of 5 (IPv6 Commit) failed");
-        nm_device_ip_method_failed(self, AF_INET6, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
-    }
 }
 
 /*****************************************************************************/
@@ -14251,7 +14255,8 @@ queued_ip_config_change(NMDevice *self, int addr_family)
      * update in such case.
      */
     if (priv->activation_source_id_x[IS_IPv4] != 0
-        && priv->activation_source_func_x[IS_IPv4] == activate_stage5_ip_config_result_x[IS_IPv4])
+        && priv->activation_source_func_x[IS_IPv4]
+               == activate_stage5_ip_config_result_x_fcn(addr_family))
         return G_SOURCE_CONTINUE;
 
     priv->queued_ip_config_id_x[IS_IPv4] = 0;
