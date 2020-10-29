@@ -1495,15 +1495,12 @@ nm_utils_ip_addresses_to_dbus(int                          addr_family,
                 g_variant_builder_add(
                     &builder_legacy,
                     "(@ayu@ay)",
-                    g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE, &address->a6.address, 16, 1),
+                    nm_g_variant_new_ay_in6addr(&address->a6.address),
                     address->a6.plen,
-                    g_variant_new_fixed_array(
-                        G_VARIANT_TYPE_BYTE,
+                    nm_g_variant_new_ay_in6addr(
                         (i == 0 && best_default_route)
                             ? &NMP_OBJECT_CAST_IP6_ROUTE(best_default_route)->gateway
-                            : &in6addr_any,
-                        16,
-                        1));
+                            : &in6addr_any));
             }
         }
     }
@@ -1622,13 +1619,12 @@ nm_utils_ip_routes_to_dbus(int                          addr_family,
                                                                 4,
                                                                 sizeof(guint32)));
             } else {
-                g_variant_builder_add(
-                    &builder_legacy,
-                    "(@ayu@ayu)",
-                    g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE, &r->r6.network, 16, 1),
-                    (guint32) r->r6.plen,
-                    g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE, &r->r6.gateway, 16, 1),
-                    (guint32) r->r6.metric);
+                g_variant_builder_add(&builder_legacy,
+                                      "(@ayu@ayu)",
+                                      nm_g_variant_new_ay_in6addr(&r->r6.network),
+                                      (guint32) r->r6.plen,
+                                      nm_g_variant_new_ay_in6addr(&r->r6.gateway),
+                                      (guint32) r->r6.metric);
             }
         }
     }
