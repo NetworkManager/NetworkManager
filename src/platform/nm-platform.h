@@ -1569,6 +1569,7 @@ nm_platform_link_bridge_add(NMPlatform *               self,
                             const char *               name,
                             const void *               address,
                             size_t                     address_len,
+                            guint32                    mtu,
                             const NMPlatformLnkBridge *props,
                             const NMPlatformLink **    out_link)
 {
@@ -1578,7 +1579,7 @@ nm_platform_link_bridge_add(NMPlatform *               self,
                                 0,
                                 address,
                                 address_len,
-                                0,
+                                mtu,
                                 props,
                                 out_link);
 }

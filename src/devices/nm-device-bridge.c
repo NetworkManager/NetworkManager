@@ -1027,6 +1027,7 @@ create_and_realize(NMDevice *             device,
                    const NMPlatformLink **out_plink,
                    GError **              error)
 {
+    NMSettingWired *    s_wired;
     NMSettingBridge *   s_bridge;
     const char *        iface = nm_device_get_iface(device);
     const char *        hwaddr;
@@ -1034,11 +1035,16 @@ create_and_realize(NMDevice *             device,
     guint8              mac_address[NM_UTILS_HWADDR_LEN_MAX];
     NMPlatformLnkBridge props;
     int                 r;
+    guint32             mtu = 0;
 
     nm_assert(iface);
 
     s_bridge = nm_connection_get_setting_bridge(connection);
     nm_assert(s_bridge);
+
+    s_wired = nm_connection_get_setting_wired(connection);
+    if (s_wired)
+        mtu = nm_setting_wired_get_mtu(s_wired);
 
     hwaddr = nm_setting_bridge_get_mac_address(s_bridge);
     if (!hwaddr
@@ -1101,6 +1107,7 @@ create_and_realize(NMDevice *             device,
                                     iface,
                                     hwaddr ? mac_address : NULL,
                                     hwaddr ? ETH_ALEN : 0,
+                                    mtu,
                                     &props,
                                     out_plink);
     if (r < 0) {
