@@ -167,140 +167,131 @@ dump_proxy_to_props(NMProxyConfig *proxy, GVariantBuilder *builder)
 }
 
 static void
-dump_ip4_to_props(NMIP4Config *ip4, GVariantBuilder *builder)
+dump_ip_to_props(NMIPConfig *ip, GVariantBuilder *builder)
 {
-    GVariantBuilder             int_builder;
-    NMDedupMultiIter            ipconf_iter;
-    gboolean                    first;
-    guint                       n, i;
-    const NMPlatformIP4Address *addr;
-    const NMPlatformIP4Route *  route;
-    guint32                     array[4];
+    const int        addr_family = nm_ip_config_get_addr_family(ip);
+    const int        IS_IPv4     = NM_IS_IPv4(addr_family);
+    const NMPObject *obj;
+    GVariantBuilder  int_builder;
+    NMDedupMultiIter ipconf_iter;
+    GVariant *       var1;
+    GVariant *       var2;
+    guint            n;
+    guint            i;
+    const NMPObject *default_route;
 
-    /* Addresses */
-    g_variant_builder_init(&int_builder, G_VARIANT_TYPE("aau"));
-    first = TRUE;
-    nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, ip4, &addr) {
-        const NMPObject *default_route;
+    if (IS_IPv4)
+        g_variant_builder_init(&int_builder, G_VARIANT_TYPE("aau"));
+    else
+        g_variant_builder_init(&int_builder, G_VARIANT_TYPE("a(ayuay)"));
+    default_route = nm_ip_config_best_default_route_get(ip);
+    if (IS_IPv4)
+        nm_ip_config_iter_ip4_address_init(&ipconf_iter, NM_IP4_CONFIG(ip));
+    else
+        nm_ip_config_iter_ip6_address_init(&ipconf_iter, NM_IP6_CONFIG(ip));
+    while (nm_platform_dedup_multi_iter_next_obj(&ipconf_iter,
+                                                 &obj,
+                                                 NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4))) {
+        const NMPlatformIPXAddress *addr = NMP_OBJECT_CAST_IPX_ADDRESS(obj);
 
-        array[0] = addr->address;
-        array[1] = addr->plen;
-        array[2] = (first && (default_route = nm_ip4_config_best_default_route_get(ip4)))
-                       ? NMP_OBJECT_CAST_IP4_ROUTE(default_route)->gateway
-                       : (guint32) 0;
-        g_variant_builder_add(
-            &int_builder,
-            "@au",
-            g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32, array, 3, sizeof(guint32)));
-        first = FALSE;
+        if (IS_IPv4) {
+            guint32   array[3];
+            in_addr_t gw;
+
+            gw = 0u;
+            if (default_route) {
+                gw            = NMP_OBJECT_CAST_IP4_ROUTE(default_route)->gateway;
+                default_route = NULL;
+            }
+            array[0] = addr->a4.address;
+            array[1] = addr->a4.plen;
+            array[2] = gw;
+            g_variant_builder_add(
+                &int_builder,
+                "@au",
+                g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32, array, 3, sizeof(guint32)));
+        } else {
+            const struct in6_addr *gw = &in6addr_any;
+
+            if (default_route) {
+                gw            = &NMP_OBJECT_CAST_IP6_ROUTE(default_route)->gateway;
+                default_route = NULL;
+            }
+            var1 = nm_g_variant_new_ay_in6addr(&addr->a6.address);
+            var2 = nm_g_variant_new_ay_in6addr(gw);
+            g_variant_builder_add(&int_builder, "(@ayu@ay)", var1, addr->a6.plen, var2);
+        }
     }
     g_variant_builder_add(builder, "{sv}", "addresses", g_variant_builder_end(&int_builder));
 
-    /* DNS servers */
-    g_variant_builder_init(&int_builder, G_VARIANT_TYPE("au"));
-    n = nm_ip4_config_get_num_nameservers(ip4);
-    for (i = 0; i < n; i++)
-        g_variant_builder_add(&int_builder, "u", nm_ip4_config_get_nameserver(ip4, i));
-    g_variant_builder_add(builder, "{sv}", "nameservers", g_variant_builder_end(&int_builder));
-
-    /* Search domains */
-    g_variant_builder_init(&int_builder, G_VARIANT_TYPE("as"));
-    n = nm_ip4_config_get_num_domains(ip4);
-    for (i = 0; i < n; i++)
-        g_variant_builder_add(&int_builder, "s", nm_ip4_config_get_domain(ip4, i));
-    g_variant_builder_add(builder, "{sv}", "domains", g_variant_builder_end(&int_builder));
-
-    /* WINS servers */
-    g_variant_builder_init(&int_builder, G_VARIANT_TYPE("au"));
-    n = nm_ip4_config_get_num_wins(ip4);
-    for (i = 0; i < n; i++)
-        g_variant_builder_add(&int_builder, "u", nm_ip4_config_get_wins(ip4, i));
-    g_variant_builder_add(builder, "{sv}", "wins-servers", g_variant_builder_end(&int_builder));
-
-    /* Static routes */
-    g_variant_builder_init(&int_builder, G_VARIANT_TYPE("aau"));
-    nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, ip4, &route) {
-        if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT(route))
-            continue;
-        array[0] = route->network;
-        array[1] = route->plen;
-        array[2] = route->gateway;
-        array[3] = route->metric;
-        g_variant_builder_add(
-            &int_builder,
-            "@au",
-            g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32, array, 4, sizeof(guint32)));
-    }
-    g_variant_builder_add(builder, "{sv}", "routes", g_variant_builder_end(&int_builder));
-}
-
-static void
-dump_ip6_to_props(NMIP6Config *ip6, GVariantBuilder *builder)
-{
-    GVariantBuilder             int_builder;
-    NMDedupMultiIter            ipconf_iter;
-    guint                       n, i;
-    gboolean                    first;
-    const NMPlatformIP6Address *addr;
-    const NMPlatformIP6Route *  route;
-    GVariant *                  ip, *gw;
-
-    /* Addresses */
-    g_variant_builder_init(&int_builder, G_VARIANT_TYPE("a(ayuay)"));
-
-    first = TRUE;
-    nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, ip6, &addr) {
-        const NMPObject *default_route;
-
-        ip = g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE,
-                                       &addr->address,
-                                       sizeof(struct in6_addr),
-                                       1);
-        gw = g_variant_new_fixed_array(
-            G_VARIANT_TYPE_BYTE,
-            (first && (default_route = nm_ip6_config_best_default_route_get(ip6)))
-                ? &NMP_OBJECT_CAST_IP6_ROUTE(default_route)->gateway
-                : &in6addr_any,
-            sizeof(struct in6_addr),
-            1);
-        g_variant_builder_add(&int_builder, "(@ayu@ay)", ip, addr->plen, gw);
-        first = FALSE;
-    }
-    g_variant_builder_add(builder, "{sv}", "addresses", g_variant_builder_end(&int_builder));
-
-    /* DNS servers */
-    g_variant_builder_init(&int_builder, G_VARIANT_TYPE("aay"));
-    n = nm_ip6_config_get_num_nameservers(ip6);
+    if (IS_IPv4)
+        g_variant_builder_init(&int_builder, G_VARIANT_TYPE("au"));
+    else
+        g_variant_builder_init(&int_builder, G_VARIANT_TYPE("aay"));
+    n = nm_ip_config_get_num_nameservers(ip);
     for (i = 0; i < n; i++) {
-        ip = g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE,
-                                       nm_ip6_config_get_nameserver(ip6, i),
-                                       sizeof(struct in6_addr),
-                                       1);
-        g_variant_builder_add(&int_builder, "@ay", ip);
+        if (IS_IPv4) {
+            g_variant_builder_add(&int_builder,
+                                  "u",
+                                  nm_ip4_config_get_nameserver(NM_IP4_CONFIG(ip), i));
+        } else {
+            var1 = nm_g_variant_new_ay_in6addr(nm_ip6_config_get_nameserver(NM_IP6_CONFIG(ip), i));
+            g_variant_builder_add(&int_builder, "@ay", var1);
+        }
     }
     g_variant_builder_add(builder, "{sv}", "nameservers", g_variant_builder_end(&int_builder));
 
-    /* Search domains */
     g_variant_builder_init(&int_builder, G_VARIANT_TYPE("as"));
-    n = nm_ip6_config_get_num_domains(ip6);
+    n = nm_ip_config_get_num_domains(ip);
     for (i = 0; i < n; i++)
-        g_variant_builder_add(&int_builder, "s", nm_ip6_config_get_domain(ip6, i));
+        g_variant_builder_add(&int_builder, "s", nm_ip_config_get_domain(ip, i));
     g_variant_builder_add(builder, "{sv}", "domains", g_variant_builder_end(&int_builder));
 
-    /* Static routes */
-    g_variant_builder_init(&int_builder, G_VARIANT_TYPE("a(ayuayu)"));
-    nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, ip6, &route) {
+    if (IS_IPv4) {
+        g_variant_builder_init(&int_builder, G_VARIANT_TYPE("au"));
+        n = nm_ip4_config_get_num_wins(NM_IP4_CONFIG(ip));
+        for (i = 0; i < n; i++)
+            g_variant_builder_add(&int_builder, "u", nm_ip4_config_get_wins(NM_IP4_CONFIG(ip), i));
+        g_variant_builder_add(builder, "{sv}", "wins-servers", g_variant_builder_end(&int_builder));
+    }
+
+    if (IS_IPv4)
+        g_variant_builder_init(&int_builder, G_VARIANT_TYPE("aau"));
+    else
+        g_variant_builder_init(&int_builder, G_VARIANT_TYPE("a(ayuayu)"));
+    if (IS_IPv4)
+        nm_ip_config_iter_ip4_route_init(&ipconf_iter, NM_IP4_CONFIG(ip));
+    else
+        nm_ip_config_iter_ip6_route_init(&ipconf_iter, NM_IP6_CONFIG(ip));
+    while (nm_platform_dedup_multi_iter_next_obj(&ipconf_iter,
+                                                 &obj,
+                                                 NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4))) {
+        const NMPlatformIPXRoute *route = NMP_OBJECT_CAST_IPX_ROUTE(obj);
+
         if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT(route))
             continue;
-        ip = g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE,
-                                       &route->network,
-                                       sizeof(struct in6_addr),
-                                       1);
-        gw = g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE,
-                                       &route->gateway,
-                                       sizeof(struct in6_addr),
-                                       1);
-        g_variant_builder_add(&int_builder, "(@ayu@ayu)", ip, route->plen, gw, route->metric);
+
+        if (IS_IPv4) {
+            guint32 array[4];
+
+            array[0] = route->r4.network;
+            array[1] = route->r4.plen;
+            array[2] = route->r4.gateway;
+            array[3] = route->r4.metric;
+            g_variant_builder_add(
+                &int_builder,
+                "@au",
+                g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32, array, 4, sizeof(guint32)));
+        } else {
+            var1 = nm_g_variant_new_ay_in6addr(&route->r6.network);
+            var2 = nm_g_variant_new_ay_in6addr(&route->r6.gateway);
+            g_variant_builder_add(&int_builder,
+                                  "(@ayu@ayu)",
+                                  var1,
+                                  route->r6.plen,
+                                  var2,
+                                  route->r6.metric);
+        }
     }
     g_variant_builder_add(builder, "{sv}", "routes", g_variant_builder_end(&int_builder));
 }
@@ -350,11 +341,11 @@ fill_device_props(NMDevice *       device,
 
     ip4_config = nm_device_get_ip4_config(device);
     if (ip4_config)
-        dump_ip4_to_props(ip4_config, ip4_builder);
+        dump_ip_to_props(NM_IP_CONFIG(ip4_config), ip4_builder);
 
     ip6_config = nm_device_get_ip6_config(device);
     if (ip6_config)
-        dump_ip6_to_props(ip6_config, ip6_builder);
+        dump_ip_to_props(NM_IP_CONFIG(ip6_config), ip6_builder);
 
     dhcp_config = nm_device_get_dhcp_config(device, AF_INET);
     if (dhcp_config)
@@ -376,9 +367,9 @@ fill_vpn_props(NMProxyConfig *  proxy_config,
     if (proxy_config)
         dump_proxy_to_props(proxy_config, proxy_builder);
     if (ip4_config)
-        dump_ip4_to_props(ip4_config, ip4_builder);
+        dump_ip_to_props(NM_IP_CONFIG(ip4_config), ip4_builder);
     if (ip6_config)
-        dump_ip6_to_props(ip6_config, ip6_builder);
+        dump_ip_to_props(NM_IP_CONFIG(ip6_config), ip6_builder);
 }
 
 static const char *

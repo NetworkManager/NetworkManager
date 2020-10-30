@@ -1219,6 +1219,27 @@ nm_g_variant_is_of_type(GVariant *value, const GVariantType *type)
     return value && g_variant_is_of_type(value, type);
 }
 
+static inline GVariant *
+nm_g_variant_new_ay_inaddr(int addr_family, gconstpointer addr)
+{
+    return g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE,
+                                     addr ?: &nm_ip_addr_zero,
+                                     nm_utils_addr_family_to_size(addr_family),
+                                     1);
+}
+
+static inline GVariant *
+nm_g_variant_new_ay_in4addr(in_addr_t addr)
+{
+    return nm_g_variant_new_ay_inaddr(AF_INET, &addr);
+}
+
+static inline GVariant *
+nm_g_variant_new_ay_in6addr(const struct in6_addr *addr)
+{
+    return nm_g_variant_new_ay_inaddr(AF_INET6, addr);
+}
+
 static inline void
 nm_g_variant_builder_add_sv(GVariantBuilder *builder, const char *key, GVariant *val)
 {

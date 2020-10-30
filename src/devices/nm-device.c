@@ -12262,55 +12262,86 @@ _nm_device_hash_check_invalid_keys(GHashTable *       hash,
 }
 
 void
-nm_device_reactivate_ip4_config(NMDevice *         self,
-                                NMSettingIPConfig *s_ip4_old,
-                                NMSettingIPConfig *s_ip4_new)
+nm_device_reactivate_ip_config(NMDevice *         self,
+                               int                addr_family,
+                               NMSettingIPConfig *s_ip_old,
+                               NMSettingIPConfig *s_ip_new)
 {
+    const int        IS_IPv4 = NM_IS_IPv4(addr_family);
     NMDevicePrivate *priv;
-    const char *     method_old, *method_new;
+    const char *     method_old;
+    const char *     method_new;
 
     g_return_if_fail(NM_IS_DEVICE(self));
+
     priv = NM_DEVICE_GET_PRIVATE(self);
 
-    if (priv->ip_state_4 != NM_DEVICE_IP_STATE_NONE) {
-        g_clear_object(&priv->con_ip_config_4);
-        g_clear_object(&priv->ext_ip_config_4);
+    if (priv->ip_state_x[IS_IPv4] == NM_DEVICE_IP_STATE_NONE)
+        return;
+
+    g_clear_object(&priv->con_ip_config_x[IS_IPv4]);
+    g_clear_object(&priv->ext_ip_config_x[IS_IPv4]);
+    if (IS_IPv4) {
         g_clear_object(&priv->dev_ip_config_4.current);
-        g_clear_object(&priv->dev2_ip_config_4.current);
-        priv->con_ip_config_4 = nm_device_ip4_config_new(self);
+    } else {
+        g_clear_object(&priv->ac_ip6_config.current);
+        g_clear_object(&priv->dhcp6.ip6_config.current);
+    }
+    g_clear_object(&priv->dev2_ip_config_x[IS_IPv4].current);
+
+    if (!IS_IPv4) {
+        if (priv->ipv6ll_handle && !IN6_IS_ADDR_UNSPECIFIED(&priv->ipv6ll_addr))
+            priv->ipv6ll_has = TRUE;
+    }
+
+    priv->con_ip_config_x[IS_IPv4] = nm_device_ip_config_new(self, addr_family);
+
+    if (IS_IPv4) {
         nm_ip4_config_merge_setting(priv->con_ip_config_4,
-                                    s_ip4_new,
+                                    s_ip_new,
                                     _prop_get_connection_mdns(self),
                                     _prop_get_connection_llmnr(self),
                                     nm_device_get_route_table(self, AF_INET),
                                     nm_device_get_route_metric(self, AF_INET));
+    } else {
+        nm_ip6_config_merge_setting(priv->con_ip_config_6,
+                                    s_ip_new,
+                                    nm_device_get_route_table(self, AF_INET6),
+                                    nm_device_get_route_metric(self, AF_INET6));
+    }
 
-        method_old = s_ip4_old ? nm_setting_ip_config_get_method(s_ip4_old)
-                               : NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
-        method_new = s_ip4_new ? nm_setting_ip_config_get_method(s_ip4_new)
-                               : NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+    method_old = nm_setting_ip_config_get_method(s_ip_old)
+                     ?: (IS_IPv4 ? NM_SETTING_IP4_CONFIG_METHOD_DISABLED
+                                 : NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
+    method_new = nm_setting_ip_config_get_method(s_ip_new)
+                     ?: (IS_IPv4 ? NM_SETTING_IP4_CONFIG_METHOD_DISABLED
+                                 : NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
 
-        if (!nm_streq0(method_old, method_new)) {
-            _cleanup_ip_pre(self, AF_INET, CLEANUP_TYPE_DECONFIGURE);
-            _set_ip_state(self, AF_INET, NM_DEVICE_IP_STATE_WAIT);
-            if (!nm_device_activate_stage3_ip4_start(self))
-                _LOGW(LOGD_IP4, "Failed to apply IPv4 configuration");
-            return;
+    if (!nm_streq0(method_old, method_new)) {
+        _cleanup_ip_pre(self, addr_family, CLEANUP_TYPE_DECONFIGURE);
+        _set_ip_state(self, addr_family, NM_DEVICE_IP_STATE_WAIT);
+        if (!nm_device_activate_stage3_ip_start(self, addr_family)) {
+            _LOGW(LOGD_IP4,
+                  "Failed to apply IPv%c configuration",
+                  nm_utils_addr_family_to_char(addr_family));
         }
+        return;
+    }
 
-        if (s_ip4_old && s_ip4_new) {
-            gint64 metric_old, metric_new;
+    if (s_ip_old && s_ip_new) {
+        gint64 metric_old, metric_new;
 
-            /* For dynamic IP methods (DHCP, IPv4LL, WWAN) the route metric is
-             * set at activation/renewal time using the value from static
-             * configuration. To support runtime change we need to update the
-             * dynamic configuration in place and tell the DHCP client the new
-             * value to use for future renewals.
-             */
-            metric_old = nm_setting_ip_config_get_route_metric(s_ip4_old);
-            metric_new = nm_setting_ip_config_get_route_metric(s_ip4_new);
+        /* For dynamic IP methods (DHCP, IPv4LL, WWAN) the route metric is
+         * set at activation/renewal time using the value from static
+         * configuration. To support runtime change we need to update the
+         * dynamic configuration in place and tell the DHCP client the new
+         * value to use for future renewals.
+         */
+        metric_old = nm_setting_ip_config_get_route_metric(s_ip_old);
+        metric_new = nm_setting_ip_config_get_route_metric(s_ip_new);
 
-            if (metric_old != metric_new) {
+        if (metric_old != metric_new) {
+            if (IS_IPv4) {
                 if (priv->dev_ip_config_4.orig) {
                     nm_ip4_config_update_routes_metric((NMIP4Config *) priv->dev_ip_config_4.orig,
                                                        nm_device_get_route_metric(self, AF_INET));
@@ -12323,60 +12354,7 @@ nm_device_reactivate_ip4_config(NMDevice *         self,
                     nm_dhcp_client_set_route_metric(priv->dhcp_data_4.client,
                                                     nm_device_get_route_metric(self, AF_INET));
                 }
-            }
-        }
-
-        if (nm_device_get_ip_ifindex(self) > 0 && !ip_config_merge_and_apply(self, AF_INET, TRUE))
-            _LOGW(LOGD_IP4, "Failed to reapply IPv4 configuration");
-    }
-}
-
-void
-nm_device_reactivate_ip6_config(NMDevice *         self,
-                                NMSettingIPConfig *s_ip6_old,
-                                NMSettingIPConfig *s_ip6_new)
-{
-    NMDevicePrivate *priv;
-    const char *     method_old, *method_new;
-
-    g_return_if_fail(NM_IS_DEVICE(self));
-    priv = NM_DEVICE_GET_PRIVATE(self);
-
-    if (priv->ip_state_6 != NM_DEVICE_IP_STATE_NONE) {
-        g_clear_object(&priv->con_ip_config_6);
-        g_clear_object(&priv->ext_ip_config_6);
-        g_clear_object(&priv->ac_ip6_config.current);
-        g_clear_object(&priv->dhcp6.ip6_config.current);
-        g_clear_object(&priv->dev2_ip_config_6.current);
-        if (priv->ipv6ll_handle && !IN6_IS_ADDR_UNSPECIFIED(&priv->ipv6ll_addr))
-            priv->ipv6ll_has = TRUE;
-        priv->con_ip_config_6 = nm_device_ip6_config_new(self);
-        nm_ip6_config_merge_setting(priv->con_ip_config_6,
-                                    s_ip6_new,
-                                    nm_device_get_route_table(self, AF_INET6),
-                                    nm_device_get_route_metric(self, AF_INET6));
-
-        method_old = s_ip6_old ? nm_setting_ip_config_get_method(s_ip6_old)
-                               : NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
-        method_new = s_ip6_new ? nm_setting_ip_config_get_method(s_ip6_new)
-                               : NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
-
-        if (!nm_streq0(method_old, method_new)) {
-            _cleanup_ip_pre(self, AF_INET6, CLEANUP_TYPE_DECONFIGURE);
-            _set_ip_state(self, AF_INET6, NM_DEVICE_IP_STATE_WAIT);
-            if (!nm_device_activate_stage3_ip6_start(self))
-                _LOGW(LOGD_IP6, "Failed to apply IPv6 configuration");
-            return;
-        }
-
-        if (s_ip6_old && s_ip6_new) {
-            gint64 metric_old, metric_new;
-
-            /* See comment in nm_device_reactivate_ip4_config() */
-            metric_old = nm_setting_ip_config_get_route_metric(s_ip6_old);
-            metric_new = nm_setting_ip_config_get_route_metric(s_ip6_new);
-
-            if (metric_old != metric_new) {
+            } else {
                 if (priv->ac_ip6_config.orig) {
                     nm_ip6_config_update_routes_metric((NMIP6Config *) priv->ac_ip6_config.orig,
                                                        nm_device_get_route_metric(self, AF_INET6));
@@ -12395,9 +12373,12 @@ nm_device_reactivate_ip6_config(NMDevice *         self,
                 }
             }
         }
+    }
 
-        if (nm_device_get_ip_ifindex(self) > 0 && !ip_config_merge_and_apply(self, AF_INET6, TRUE))
-            _LOGW(LOGD_IP4, "Failed to reapply IPv6 configuration");
+    if (nm_device_get_ip_ifindex(self) > 0 && !ip_config_merge_and_apply(self, addr_family, TRUE)) {
+        _LOGW(LOGD_IP_from_af(addr_family),
+              "Failed to reapply IPv%c configuration",
+              nm_utils_addr_family_to_char(addr_family));
     }
 }
 
@@ -12652,8 +12633,8 @@ check_and_reapply_connection(NMDevice *    self,
         /* Allow reapply of MTU */
         priv->mtu_source = NM_DEVICE_MTU_SOURCE_NONE;
 
-        nm_device_reactivate_ip4_config(self, s_ip4_old, s_ip4_new);
-        nm_device_reactivate_ip6_config(self, s_ip6_old, s_ip6_new);
+        nm_device_reactivate_ip_config(self, AF_INET, s_ip4_old, s_ip4_new);
+        nm_device_reactivate_ip_config(self, AF_INET6, s_ip6_old, s_ip6_new);
 
         _routing_rules_sync(self, NM_TERNARY_TRUE);
 
