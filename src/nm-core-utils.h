@@ -209,7 +209,7 @@ nm_utils_ip6_route_metric_normalize(guint32 metric)
 static inline guint32
 nm_utils_ip_route_metric_normalize(int addr_family, guint32 metric)
 {
-    return addr_family == AF_INET6 ? nm_utils_ip6_route_metric_normalize(metric) : metric;
+    return NM_IS_IPv4(addr_family) ? metric : nm_utils_ip6_route_metric_normalize(metric);
 }
 
 static inline guint32

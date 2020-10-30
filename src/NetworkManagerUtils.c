@@ -152,7 +152,7 @@ nm_utils_get_ip_config_method(NMConnection *connection, int addr_family)
 
     s_con = nm_connection_get_setting_connection(connection);
 
-    if (addr_family == AF_INET) {
+    if (NM_IS_IPv4(addr_family)) {
         g_return_val_if_fail(s_con != NULL, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
         s_ip = nm_connection_get_setting_ip4_config(connection);
@@ -164,19 +164,15 @@ nm_utils_get_ip_config_method(NMConnection *connection, int addr_family)
         return method;
     }
 
-    if (addr_family == AF_INET6) {
-        g_return_val_if_fail(s_con != NULL, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+    g_return_val_if_fail(s_con != NULL, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
 
-        s_ip = nm_connection_get_setting_ip6_config(connection);
-        if (!s_ip)
-            return NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+    s_ip = nm_connection_get_setting_ip6_config(connection);
+    if (!s_ip)
+        return NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
 
-        method = nm_setting_ip_config_get_method(s_ip);
-        g_return_val_if_fail(method != NULL, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
-        return method;
-    }
-
-    g_return_val_if_reached("" /* bogus */);
+    method = nm_setting_ip_config_get_method(s_ip);
+    g_return_val_if_fail(method != NULL, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+    return method;
 }
 
 gboolean
@@ -204,7 +200,7 @@ nm_utils_connection_has_default_route(NMConnection *connection,
     }
 
     method = nm_utils_get_ip_config_method(connection, addr_family);
-    if (addr_family == AF_INET) {
+    if (NM_IS_IPv4(addr_family)) {
         if (NM_IN_STRSET(method,
                          NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
                          NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
@@ -1312,7 +1308,7 @@ nm_utils_ip_route_attribute_to_platform(int                addr_family,
     else
         r->table_coerced = nm_platform_route_table_coerce(table ?: (route_table ?: RT_TABLE_MAIN));
 
-    if (addr_family == AF_INET) {
+    if (NM_IS_IPv4(addr_family)) {
         guint8 scope;
 
         GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_TOS, r4->tos, BYTE, byte, 0);
@@ -1338,14 +1334,14 @@ nm_utils_ip_route_attribute_to_platform(int                addr_family,
     if ((variant = nm_ip_route_get_attribute(s_route, NM_IP_ROUTE_ATTRIBUTE_SRC))
         && g_variant_is_of_type(variant, G_VARIANT_TYPE_STRING)) {
         if (inet_pton(addr_family, g_variant_get_string(variant, NULL), &addr) == 1) {
-            if (addr_family == AF_INET)
+            if (NM_IS_IPv4(addr_family))
                 r4->pref_src = addr.addr4;
             else
                 r6->pref_src = addr.addr6;
         }
     }
 
-    if (addr_family == AF_INET6
+    if (!NM_IS_IPv4(addr_family)
         && (variant = nm_ip_route_get_attribute(s_route, NM_IP_ROUTE_ATTRIBUTE_FROM))
         && g_variant_is_of_type(variant, G_VARIANT_TYPE_STRING)) {
         int prefix;
@@ -1392,7 +1388,7 @@ nm_utils_ip_addresses_to_dbus(int                          addr_family,
                               GVariant **                  out_address_data,
                               GVariant **                  out_addresses)
 {
-    const gboolean  IS_IPv4 = NM_IS_IPv4(addr_family);
+    const int       IS_IPv4 = NM_IS_IPv4(addr_family);
     GVariantBuilder builder_data;
     GVariantBuilder builder_legacy;
     char            addr_str[NM_UTILS_INET_ADDRSTRLEN];
@@ -1516,7 +1512,7 @@ nm_utils_ip_routes_to_dbus(int                          addr_family,
                            GVariant **                  out_route_data,
                            GVariant **                  out_routes)
 {
-    const gboolean   IS_IPv4 = NM_IS_IPv4(addr_family);
+    const int        IS_IPv4 = NM_IS_IPv4(addr_family);
     NMDedupMultiIter iter;
     const NMPObject *obj;
     GVariantBuilder  builder_data;

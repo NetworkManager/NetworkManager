@@ -587,9 +587,7 @@ _route_valid_6(const NMPlatformIP6Route *r)
 static gboolean
 _route_valid(int addr_family, gconstpointer r)
 {
-    nm_assert_addr_family(addr_family);
-
-    return addr_family == AF_INET ? _route_valid_4(r) : _route_valid_6(r);
+    return NM_IS_IPv4(addr_family) ? _route_valid_4(r) : _route_valid_6(r);
 }
 
 static gboolean
@@ -1204,8 +1202,7 @@ nm_l3_config_data_add_address_full(NML3ConfigData *           self,
     nm_assert(!obj_new || NMP_OBJECT_GET_ADDR_FAMILY(obj_new) == addr_family);
 
     changed = _l3_config_data_add_obj(self->multi_idx,
-                                      addr_family == AF_INET ? &self->idx_addresses_4
-                                                             : &self->idx_addresses_6,
+                                      &self->idx_addresses_x[NM_IS_IPv4(addr_family)],
                                       self->ifindex,
                                       obj_new,
                                       (const NMPlatformObject *) pl_new,
@@ -1252,7 +1249,7 @@ nm_l3_config_data_add_route_full(NML3ConfigData *         self,
     else
         self->has_routes_with_type_local_6_set = FALSE;
     if (_l3_config_data_add_obj(self->multi_idx,
-                                addr_family == AF_INET ? &self->idx_routes_4 : &self->idx_routes_6,
+                                &self->idx_routes_x[NM_IS_IPv4(addr_family)],
                                 self->ifindex,
                                 obj_new,
                                 (const NMPlatformObject *) pl_new,
