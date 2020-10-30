@@ -4546,17 +4546,15 @@ NMConnectivityState
 nm_device_get_connectivity_state(NMDevice *self, int addr_family)
 {
     NMDevicePrivate *priv;
-    const gboolean   IS_IPv4 = (addr_family == AF_INET);
 
     g_return_val_if_fail(NM_IS_DEVICE(self), NM_CONNECTIVITY_UNKNOWN);
-    nm_assert_addr_family(addr_family);
 
     priv = NM_DEVICE_GET_PRIVATE(self);
 
     switch (addr_family) {
     case AF_INET:
     case AF_INET6:
-        return priv->concheck_x[IS_IPv4].state;
+        return priv->concheck_x[NM_IS_IPv4(addr_family)].state;
     default:
         nm_assert(addr_family == AF_UNSPEC);
         return NM_MAX_WITH_CMP(nm_connectivity_state_cmp,
