@@ -9088,7 +9088,7 @@ dhcp_grace_period_expired(NMDevice *self, int addr_family)
     priv->dhcp_data_x[IS_IPv4].grace_id      = 0;
     priv->dhcp_data_x[IS_IPv4].grace_pending = FALSE;
 
-    _LOGI(LOGD_DHCP_from_addr_family(addr_family),
+    _LOGI(LOGD_DHCPX(IS_IPv4),
           "DHCPv%c: grace period expired",
           nm_utils_addr_family_to_char(addr_family));
 
@@ -9129,12 +9129,12 @@ dhcp_grace_period_start(NMDevice *self, int addr_family)
      * by a constant factor. */
     timeout = _prop_get_ipvx_dhcp_timeout(self, addr_family);
     if (timeout == NM_DHCP_TIMEOUT_INFINITY)
-        _LOGI(LOGD_DHCP_from_addr_family(addr_family),
+        _LOGI(LOGD_DHCPX(IS_IPv4),
               "DHCPv%c: trying to acquire a new lease",
               nm_utils_addr_family_to_char(addr_family));
     else {
         timeout = dhcp_grace_period_from_timeout(timeout);
-        _LOGI(LOGD_DHCP_from_addr_family(addr_family),
+        _LOGI(LOGD_DHCPX(IS_IPv4),
               "DHCPv%c: trying to acquire a new lease within %u seconds",
               nm_utils_addr_family_to_char(addr_family),
               timeout);
@@ -12376,7 +12376,7 @@ nm_device_reactivate_ip_config(NMDevice *         self,
     }
 
     if (nm_device_get_ip_ifindex(self) > 0 && !ip_config_merge_and_apply(self, addr_family, TRUE)) {
-        _LOGW(LOGD_IP_from_af(addr_family),
+        _LOGW(LOGD_IPX(IS_IPv4),
               "Failed to reapply IPv%c configuration",
               nm_utils_addr_family_to_char(addr_family));
     }
@@ -13415,7 +13415,7 @@ nm_device_set_ip_config(NMDevice *  self,
                   })));
     nm_assert(IS_IPv4 || !ip4_dev_route_blacklist);
 
-    _LOGD(LOGD_IP_from_af(addr_family),
+    _LOGD(LOGD_IPX(IS_IPv4),
           "ip%c-config: update (commit=%d, new-config=%p)",
           nm_utils_addr_family_to_char(addr_family),
           commit,
@@ -13452,7 +13452,7 @@ nm_device_set_ip_config(NMDevice *  self,
          * this causes a re-read and reset. This should only happen for relevant changes */
         nm_ip_config_replace(old_config, new_config, &has_changes);
         if (has_changes) {
-            _LOGD(LOGD_IP_from_af(addr_family),
+            _LOGD(LOGD_IPX(IS_IPv4),
                   "ip%c-config: update IP Config instance (%s)",
                   nm_utils_addr_family_to_char(addr_family),
                   nm_dbus_object_get_path(NM_DBUS_OBJECT(old_config)));
@@ -13463,14 +13463,14 @@ nm_device_set_ip_config(NMDevice *  self,
         if (!nm_dbus_object_is_exported(NM_DBUS_OBJECT(new_config)))
             nm_dbus_object_export(NM_DBUS_OBJECT(new_config));
 
-        _LOGD(LOGD_IP_from_af(addr_family),
+        _LOGD(LOGD_IPX(IS_IPv4),
               "ip%c-config: set IP Config instance (%s)",
               nm_utils_addr_family_to_char(addr_family),
               nm_dbus_object_get_path(NM_DBUS_OBJECT(new_config)));
     } else if (old_config /*&& !new_config*/) {
         has_changes                = TRUE;
         priv->ip_config_x[IS_IPv4] = NULL;
-        _LOGD(LOGD_IP_from_af(addr_family),
+        _LOGD(LOGD_IPX(IS_IPv4),
               "ip%c-config: clear IP Config instance (%s)",
               nm_utils_addr_family_to_char(addr_family),
               nm_dbus_object_get_path(NM_DBUS_OBJECT(old_config)));
