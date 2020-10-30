@@ -88,7 +88,7 @@ G_DEFINE_TYPE(NMIwdManager, nm_iwd_manager, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
-static void mirror_8021x_connection_take_and_delete(NMSettingsConnection *sett_conn);
+static void mirror_connection_take_and_delete(NMSettingsConnection *sett_conn);
 
 /*****************************************************************************/
 
@@ -116,6 +116,21 @@ get_property_string_or_null(GDBusProxy *proxy, const char *property)
     value = g_dbus_proxy_get_cached_property(proxy, property);
 
     return get_variant_string_or_null(value);
+}
+
+static gboolean
+get_property_bool(GDBusProxy *proxy, const char *property, gboolean default_val)
+{
+    gs_unref_variant GVariant *value = NULL;
+
+    if (!proxy || !property)
+        return default_val;
+
+    value = g_dbus_proxy_get_cached_property(proxy, property);
+    if (!value || !g_variant_is_of_type(value, G_VARIANT_TYPE_BOOLEAN))
+        return default_val;
+
+    return g_variant_get_boolean(value);
 }
 
 static NMDeviceIwd *
@@ -353,7 +368,7 @@ known_network_data_free(KnownNetworkData *network)
         return;
 
     g_object_unref(network->known_network);
-    mirror_8021x_connection_take_and_delete(network->mirror_connection);
+    mirror_connection_take_and_delete(network->mirror_connection);
     g_slice_free(KnownNetworkData, network);
 }
 
@@ -394,14 +409,20 @@ set_device_dbus_object(NMIwdManager *self, GDBusProxy *proxy, GDBusObject *objec
     nm_device_iwd_set_dbus_object(NM_DEVICE_IWD(device), object);
 }
 
-/* Look up an existing NMSettingsConnection for a WPA2-Enterprise network
- * that has been preprovisioned with an IWD config file, or create a new
- * in-memory connection object so that NM autoconnect mechanism and the
- * clients know this networks needs no additional EAP configuration from
- * the user.
+/* Look up an existing NMSettingsConnection for a network that has been
+ * preprovisioned with an IWD config file or has been connected to before,
+ * or create a new in-memory NMSettingsConnection object.  This will let
+ * users control the few supported properties (mainly make it
+ * IWD-autoconnectable or not), remove/forget the network, or, for a
+ * WPA2-Enterprise type network it will inform the NM autoconnect mechanism
+ * and the clients that this networks needs no additional EAP configuration
+ * from the user.
  */
 static NMSettingsConnection *
-mirror_8021x_connection(NMIwdManager *self, const char *name, gboolean create_new)
+mirror_connection(NMIwdManager *        self,
+                  const KnownNetworkId *id,
+                  gboolean              create_new,
+                  GDBusProxy *          known_network)
 {
     NMIwdManagerPrivate *        priv = NM_IWD_MANAGER_GET_PRIVATE(self);
     NMSettingsConnection *const *iter;
@@ -409,49 +430,123 @@ mirror_8021x_connection(NMIwdManager *self, const char *name, gboolean create_ne
     NMSettingsConnection *        settings_connection = NULL;
     char                          uuid[37];
     NMSetting *                   setting;
-    GError *                      error = NULL;
-    gs_unref_bytes GBytes *new_ssid     = NULL;
-    gsize                  ssid_len     = strlen(name);
+    gs_free_error GError *error            = NULL;
+    gs_unref_bytes GBytes *new_ssid        = NULL;
+    gsize                  ssid_len        = strlen(id->name);
+    gboolean               autoconnectable = TRUE;
+    gboolean               hidden          = FALSE;
+    gboolean               exact_match     = TRUE;
+    const char *           key_mgmt        = NULL;
+
+    if (known_network) {
+        autoconnectable = get_property_bool(known_network, "AutoConnect", TRUE);
+        hidden          = get_property_bool(known_network, "Hidden", FALSE);
+    }
 
     for (iter = nm_settings_get_connections(priv->settings, NULL); *iter; iter++) {
         NMSettingsConnection *sett_conn = *iter;
         NMConnection *        conn      = nm_settings_connection_get_connection(sett_conn);
         NMIwdNetworkSecurity  security;
         NMSettingWireless *   s_wifi;
-        NMSetting8021x *      s_8021x;
-        gboolean              external = FALSE;
-        guint                 i;
         const guint8 *        ssid_bytes;
         gsize                 ssid_len2;
 
         if (!nm_wifi_connection_get_iwd_ssid_and_security(conn, NULL, &security))
             continue;
 
-        if (security != NM_IWD_NETWORK_SECURITY_8021X)
+        if (security != id->security)
             continue;
 
         s_wifi = nm_connection_get_setting_wireless(conn);
         if (!s_wifi)
             continue;
 
-        /* The SSID must be UTF-8 if it matches since name is known to be
+        /* The SSID must be UTF-8 if it matches since id->name is known to be
          * valid UTF-8, so just memcmp them.
          */
         ssid_bytes = g_bytes_get_data(nm_setting_wireless_get_ssid(s_wifi), &ssid_len2);
-        if (!ssid_bytes || ssid_len2 != ssid_len || memcmp(ssid_bytes, name, ssid_len))
+        if (!ssid_bytes || ssid_len2 != ssid_len || memcmp(ssid_bytes, id->name, ssid_len))
             continue;
 
-        s_8021x = nm_connection_get_setting_802_1x(conn);
-        for (i = 0; i < nm_setting_802_1x_get_num_eap_methods(s_8021x); i++) {
-            if (nm_streq(nm_setting_802_1x_get_eap_method(s_8021x, i), "external")) {
-                external = TRUE;
-                break;
-            }
+        exact_match = TRUE;
+
+        if (known_network) {
+            NMSettingConnection *s_conn = nm_connection_get_setting_connection(conn);
+
+            if (nm_setting_connection_get_autoconnect(s_conn) != autoconnectable
+                || nm_setting_wireless_get_hidden(s_wifi) != hidden)
+                exact_match = FALSE;
         }
 
-        /* Prefer returning connections for EAP method "external" */
-        if (!settings_connection || external)
+        switch (id->security) {
+        case NM_IWD_NETWORK_SECURITY_WEP:
+        case NM_IWD_NETWORK_SECURITY_NONE:
+        case NM_IWD_NETWORK_SECURITY_PSK:
+            break;
+        case NM_IWD_NETWORK_SECURITY_8021X:
+        {
+            NMSetting8021x *s_8021x  = nm_connection_get_setting_802_1x(conn);
+            gboolean        external = FALSE;
+            guint           i;
+
+            for (i = 0; i < nm_setting_802_1x_get_num_eap_methods(s_8021x); i++) {
+                if (nm_streq(nm_setting_802_1x_get_eap_method(s_8021x, i), "external")) {
+                    external = TRUE;
+                    break;
+                }
+            }
+
+            /* Prefer returning connections with EAP method "external" */
+            if (!external)
+                exact_match = FALSE;
+        }
+        }
+
+        if (!settings_connection || exact_match)
             settings_connection = sett_conn;
+
+        if (exact_match)
+            break;
+    }
+
+    if (settings_connection && known_network && !exact_match) {
+        NMSettingsConnectionIntFlags flags = nm_settings_connection_get_flags(settings_connection);
+
+        /* If we found a connection and it's generated (likely by ourselves)
+         * it may have been created on a request by
+         * nm_iwd_manager_get_ap_mirror_connection() when no Known Network
+         * was available so we didn't have access to its properties other
+         * than Name and Security.  Copy their values to the generated
+         * NMConnection.
+         * TODO: avoid notify signals triggering our own watch.
+         *
+         * If on the other hand this is a user-created NMConnection we
+         * should try to copy the properties from it to IWD's Known Network
+         * using the Properties DBus interface in case the user created an
+         * NM connection before IWD appeared on the bus, or before IWD
+         * created its Known Network object. (TODO)
+         */
+        if (NM_FLAGS_HAS(flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED)) {
+            NMConnection *tmp_conn = nm_settings_connection_get_connection(settings_connection);
+            NMSettingConnection *s_conn = nm_connection_get_setting_connection(tmp_conn);
+            NMSettingWireless *  s_wifi = nm_connection_get_setting_wireless(tmp_conn);
+
+            g_object_set(G_OBJECT(s_conn),
+                         NM_SETTING_CONNECTION_AUTOCONNECT,
+                         autoconnectable,
+                         NULL);
+            g_object_set(G_OBJECT(s_wifi), NM_SETTING_WIRELESS_HIDDEN, hidden, NULL);
+        }
+    }
+
+    if (settings_connection && known_network) {
+        /* Reset NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL now that the
+         * connection is going to be referenced by a known network, we don't
+         * want it to be deleted when activation fails anymore.
+         */
+        nm_settings_connection_set_flags_full(settings_connection,
+                                              NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL,
+                                              0);
     }
 
     /* If we already have an NMSettingsConnection matching this
@@ -468,58 +563,82 @@ mirror_8021x_connection(NMIwdManager *self, const char *name, gboolean create_ne
                                       NM_SETTING_CONNECTION_TYPE,
                                       NM_SETTING_WIRELESS_SETTING_NAME,
                                       NM_SETTING_CONNECTION_ID,
-                                      name,
+                                      id->name,
                                       NM_SETTING_CONNECTION_UUID,
                                       nm_utils_uuid_generate_buf(uuid),
+                                      NM_SETTING_CONNECTION_AUTOCONNECT,
+                                      autoconnectable,
                                       NULL));
     nm_connection_add_setting(connection, setting);
 
-    new_ssid = g_bytes_new(name, ssid_len);
+    new_ssid = g_bytes_new(id->name, ssid_len);
     setting  = NM_SETTING(g_object_new(NM_TYPE_SETTING_WIRELESS,
                                       NM_SETTING_WIRELESS_SSID,
                                       new_ssid,
                                       NM_SETTING_WIRELESS_MODE,
                                       NM_SETTING_WIRELESS_MODE_INFRA,
+                                      NM_SETTING_WIRELESS_HIDDEN,
+                                      hidden,
                                       NULL));
     nm_connection_add_setting(connection, setting);
 
-    setting = NM_SETTING(g_object_new(NM_TYPE_SETTING_WIRELESS_SECURITY,
-                                      NM_SETTING_WIRELESS_SECURITY_AUTH_ALG,
-                                      "open",
-                                      NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
-                                      "wpa-eap",
-                                      NULL));
-    nm_connection_add_setting(connection, setting);
+    switch (id->security) {
+    case NM_IWD_NETWORK_SECURITY_WEP:
+        key_mgmt = "none";
+        break;
+    case NM_IWD_NETWORK_SECURITY_NONE:
+        key_mgmt = NULL;
+        break;
+    case NM_IWD_NETWORK_SECURITY_PSK:
+        key_mgmt = "wpa-psk";
+        break;
+    case NM_IWD_NETWORK_SECURITY_8021X:
+        key_mgmt = "wpa-eap";
+        break;
+    }
 
-    /* "password" and "private-key-password" may be requested by the IWD agent
-     * from NM and IWD will implement a specific secret cache policy so by
-     * default respect that policy and don't save copies of those secrets in
-     * NM settings.  The saved values can not be used anyway because of our
-     * use of NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW.
-     */
-    setting = NM_SETTING(g_object_new(NM_TYPE_SETTING_802_1X,
-                                      NM_SETTING_802_1X_PASSWORD_FLAGS,
-                                      NM_SETTING_SECRET_FLAG_NOT_SAVED,
-                                      NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS,
-                                      NM_SETTING_SECRET_FLAG_NOT_SAVED,
-                                      NULL));
-    nm_setting_802_1x_add_eap_method(NM_SETTING_802_1X(setting), "external");
-    nm_connection_add_setting(connection, setting);
+    if (key_mgmt) {
+        setting = NM_SETTING(g_object_new(NM_TYPE_SETTING_WIRELESS_SECURITY,
+                                          NM_SETTING_WIRELESS_SECURITY_AUTH_ALG,
+                                          "open",
+                                          NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
+                                          key_mgmt,
+                                          NULL));
+        nm_connection_add_setting(connection, setting);
+    }
+
+    if (id->security == NM_IWD_NETWORK_SECURITY_8021X) {
+        /* "password" and "private-key-password" may be requested by the IWD agent
+         * from NM and IWD will implement a specific secret cache policy so by
+         * default respect that policy and don't save copies of those secrets in
+         * NM settings.  The saved values can not be used anyway because of our
+         * use of NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW.
+         */
+        setting = NM_SETTING(g_object_new(NM_TYPE_SETTING_802_1X,
+                                          NM_SETTING_802_1X_PASSWORD_FLAGS,
+                                          NM_SETTING_SECRET_FLAG_NOT_SAVED,
+                                          NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS,
+                                          NM_SETTING_SECRET_FLAG_NOT_SAVED,
+                                          NULL));
+        nm_setting_802_1x_add_eap_method(NM_SETTING_802_1X(setting), "external");
+        nm_connection_add_setting(connection, setting);
+    }
 
     if (!nm_connection_normalize(connection, NULL, NULL, NULL))
         return NULL;
 
-    if (!nm_settings_add_connection(priv->settings,
-                                    connection,
-                                    NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY,
-                                    NM_SETTINGS_CONNECTION_ADD_REASON_NONE,
-                                    NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED,
-                                    &settings_connection,
-                                    &error)) {
+    if (!nm_settings_add_connection(
+            priv->settings,
+            connection,
+            NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY,
+            NM_SETTINGS_CONNECTION_ADD_REASON_NONE,
+            NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED
+                | (known_network ? 0 : NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL),
+            &settings_connection,
+            &error)) {
         _LOGW("failed to add a mirror NMConnection for IWD's Known Network '%s': %s",
-              name,
+              id->name,
               error->message);
-        g_error_free(error);
         return NULL;
     }
 
@@ -527,7 +646,7 @@ mirror_8021x_connection(NMIwdManager *self, const char *name, gboolean create_ne
 }
 
 static void
-mirror_8021x_connection_take_and_delete(NMSettingsConnection *sett_conn)
+mirror_connection_take_and_delete(NMSettingsConnection *sett_conn)
 {
     NMSettingsConnectionIntFlags flags;
 
@@ -570,6 +689,7 @@ interface_added(GDBusObjectManager *object_manager,
 
     if (nm_streq(iface_name, NM_IWD_KNOWN_NETWORK_INTERFACE)) {
         KnownNetworkId *      id;
+        KnownNetworkId *      orig_id;
         KnownNetworkData *    data;
         NMIwdNetworkSecurity  security;
         const char *          type_str, *name;
@@ -591,28 +711,28 @@ interface_added(GDBusObjectManager *object_manager,
 
         id = known_network_id_new(name, security);
 
-        data = g_hash_table_lookup(priv->known_networks, id);
-        if (data) {
+        if (g_hash_table_lookup_extended(priv->known_networks,
+                                         id,
+                                         (void **) &orig_id,
+                                         (void **) &data)) {
             _LOGW("DBus error: KnownNetwork already exists ('%s', %s)", name, type_str);
-            g_free(id);
             nm_g_object_ref_set(&data->known_network, proxy);
+            g_free(id);
+            id = orig_id;
         } else {
             data                = g_slice_new0(KnownNetworkData);
             data->known_network = g_object_ref(proxy);
             g_hash_table_insert(priv->known_networks, id, data);
         }
 
-        if (security == NM_IWD_NETWORK_SECURITY_8021X) {
-            sett_conn = mirror_8021x_connection(self, name, TRUE);
+        sett_conn = mirror_connection(self, id, TRUE, proxy);
 
-            if (sett_conn && sett_conn != data->mirror_connection) {
-                NMSettingsConnection *sett_conn_old = data->mirror_connection;
+        if (sett_conn && sett_conn != data->mirror_connection) {
+            NMSettingsConnection *sett_conn_old = data->mirror_connection;
 
-                data->mirror_connection = nm_g_object_ref(sett_conn);
-                mirror_8021x_connection_take_and_delete(sett_conn_old);
-            }
-        } else
-            mirror_8021x_connection_take_and_delete(g_steal_pointer(&data->mirror_connection));
+            data->mirror_connection = nm_g_object_ref(sett_conn);
+            mirror_connection_take_and_delete(sett_conn_old);
+        }
 
         return;
     }
@@ -715,15 +835,16 @@ object_removed(GDBusObjectManager *object_manager, GDBusObject *object, gpointer
 static void
 connection_removed(NMSettings *settings, NMSettingsConnection *sett_conn, gpointer user_data)
 {
-    NMIwdManager *       self = user_data;
-    NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE(self);
-    NMConnection *       conn = nm_settings_connection_get_connection(sett_conn);
-    NMSettingWireless *  s_wireless;
-    KnownNetworkData *   data;
-    KnownNetworkId       id;
-    char                 ssid_buf[33];
-    const guint8 *       ssid_bytes;
-    gsize                ssid_len;
+    NMIwdManager *        self = user_data;
+    NMIwdManagerPrivate * priv = NM_IWD_MANAGER_GET_PRIVATE(self);
+    NMConnection *        conn = nm_settings_connection_get_connection(sett_conn);
+    NMSettingWireless *   s_wireless;
+    KnownNetworkData *    data;
+    KnownNetworkId        id;
+    char                  ssid_buf[33];
+    const guint8 *        ssid_bytes;
+    gsize                 ssid_len;
+    NMSettingsConnection *new_mirror_conn;
 
     if (!nm_wifi_connection_get_iwd_ssid_and_security(conn, NULL, &id.security))
         return;
@@ -743,22 +864,18 @@ connection_removed(NMSettings *settings, NMSettingsConnection *sett_conn, gpoint
     if (!data)
         return;
 
-    if (id.security == NM_IWD_NETWORK_SECURITY_8021X) {
-        NMSettingsConnection *new_mirror_conn;
+    if (data->mirror_connection != sett_conn)
+        return;
 
-        if (data->mirror_connection != sett_conn)
-            return;
+    g_clear_object(&data->mirror_connection);
 
-        g_clear_object(&data->mirror_connection);
-
-        /* Don't call Forget for an 8021x network until there's no
-         * longer *any* matching NMSettingsConnection (debatable)
-         */
-        new_mirror_conn = mirror_8021x_connection(self, id.name, FALSE);
-        if (new_mirror_conn) {
-            data->mirror_connection = g_object_ref(new_mirror_conn);
-            return;
-        }
+    /* Don't call Forget on the Known Network until there's no longer *any*
+     * matching NMSettingsConnection (debatable)
+     */
+    new_mirror_conn = mirror_connection(self, &id, FALSE, NULL);
+    if (new_mirror_conn) {
+        data->mirror_connection = g_object_ref(new_mirror_conn);
+        return;
     }
 
     if (!priv->running)
@@ -979,6 +1096,47 @@ nm_iwd_manager_is_known_network(NMIwdManager *self, const char *name, NMIwdNetwo
     KnownNetworkId       kn_id = {name, security};
 
     return g_hash_table_contains(priv->known_networks, &kn_id);
+}
+
+NMSettingsConnection *
+nm_iwd_manager_get_ap_mirror_connection(NMIwdManager *self, NMWifiAP *ap)
+{
+    NMIwdManagerPrivate *  priv = NM_IWD_MANAGER_GET_PRIVATE(self);
+    KnownNetworkData *     data;
+    char                   name_buf[33];
+    KnownNetworkId         kn_id = {name_buf, NM_IWD_NETWORK_SECURITY_NONE};
+    const guint8 *         ssid_bytes;
+    gsize                  ssid_len;
+    NM80211ApFlags         flags     = nm_wifi_ap_get_flags(ap);
+    NM80211ApSecurityFlags sec_flags = nm_wifi_ap_get_wpa_flags(ap) | nm_wifi_ap_get_rsn_flags(ap);
+
+    ssid_bytes = g_bytes_get_data(nm_wifi_ap_get_ssid(ap), &ssid_len);
+    ssid_len   = MIN(ssid_len, 32);
+    memcpy(name_buf, ssid_bytes, ssid_len);
+    name_buf[ssid_len] = '\0';
+
+    if (flags & NM_802_11_AP_FLAGS_PRIVACY)
+        kn_id.security = NM_IWD_NETWORK_SECURITY_WEP;
+
+    if (sec_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
+        kn_id.security = NM_IWD_NETWORK_SECURITY_PSK;
+    else if (sec_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
+        kn_id.security = NM_IWD_NETWORK_SECURITY_8021X;
+
+    /* Right now it's easier for us to do a name+security lookup than to use
+     * the Network.KnownNetwork property to look up by path.
+     */
+    data = g_hash_table_lookup(priv->known_networks, &kn_id);
+    if (data)
+        return data->mirror_connection;
+
+    /* We have no KnownNetwork for this AP, we're probably connecting to it for
+     * the first time.  This is not a usual/supported scenario so we don't need
+     * to bother too much about creating a great mirror connection, we don't
+     * even have any more information than the Name & Type properties on the
+     * Network interface.  This *should* never happen for an 8021x type network.
+     */
+    return mirror_connection(self, &kn_id, TRUE, NULL);
 }
 
 GDBusProxy *

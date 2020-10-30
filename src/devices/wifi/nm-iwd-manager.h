@@ -8,6 +8,7 @@
 
 #include "devices/nm-device.h"
 #include "nm-wifi-utils.h"
+#include "nm-wifi-ap.h"
 
 #define NM_IWD_BUS_TYPE G_BUS_TYPE_SYSTEM
 #define NM_IWD_SERVICE  "net.connman.iwd"
@@ -43,6 +44,8 @@ NMIwdManager *nm_iwd_manager_get(void);
 gboolean nm_iwd_manager_is_known_network(NMIwdManager *       self,
                                          const char *         name,
                                          NMIwdNetworkSecurity security);
+
+NMSettingsConnection *nm_iwd_manager_get_ap_mirror_connection(NMIwdManager *self, NMWifiAP *ap);
 
 GDBusProxy *
 nm_iwd_manager_get_dbus_interface(NMIwdManager *self, const char *path, const char *name);

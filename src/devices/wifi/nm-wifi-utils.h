@@ -32,8 +32,8 @@ gboolean nm_wifi_utils_complete_connection(GBytes *      ssid,
 
 gboolean nm_wifi_utils_is_manf_default_ssid(GBytes *ssid);
 
-gboolean nm_wifi_connection_get_iwd_ssid_and_security(NMConnection *connection,
-                                                      char **ssid,
+gboolean nm_wifi_connection_get_iwd_ssid_and_security(NMConnection *        connection,
+                                                      char **               ssid,
                                                       NMIwdNetworkSecurity *security);
 
 #endif /* __NM_WIFI_UTILS_H__ */
