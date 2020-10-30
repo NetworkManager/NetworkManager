@@ -1534,7 +1534,7 @@ nmtstp_link_bridge_add(NMPlatform *               platform,
     }
 
     if (!pllink) {
-        r = nm_platform_link_bridge_add(platform, name, NULL, 0, lnk, &pllink);
+        r = nm_platform_link_bridge_add(platform, name, NULL, 0, 0, lnk, &pllink);
     }
 
     _assert_pllink(platform, r == 0, pllink, name, NM_LINK_TYPE_BRIDGE);
