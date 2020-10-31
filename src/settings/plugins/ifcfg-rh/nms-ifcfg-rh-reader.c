@@ -2952,6 +2952,7 @@ make_dcb_setting(shvarFile *ifcfg, NMSetting **out_setting, GError **error)
     NMSettingDcbFlags             flags = NM_SETTING_DCB_FLAG_NONE;
 
     g_return_val_if_fail(out_setting != NULL, FALSE);
+    *out_setting = NULL;
 
     dcb_on = !!svGetValueBoolean(ifcfg, "DCB", FALSE);
     if (!dcb_on)
@@ -6243,8 +6244,9 @@ connection_from_file_full(const char *filename,
     gs_unref_object NMConnection *connection          = NULL;
     gs_free char *                type                = NULL;
     char *                        devtype, *bootproto;
-    NMSetting *                   s_ip4, *s_ip6, *s_tc, *s_proxy, *s_port, *s_dcb = NULL, *s_user;
-    NMSetting *                   s_sriov, *s_match;
+    NMSetting *                   setting;
+    NMSetting *                   s_ip4;
+    NMSetting *                   s_ip6;
     const char *                  ifcfg_name       = NULL;
     gboolean                      has_ip4_defroute = FALSE;
     gboolean                      has_complex_routes_v4;
@@ -6532,13 +6534,13 @@ connection_from_file_full(const char *filename,
                        NM_SETTING_IP_CONFIG(s_ip4),
                        NM_SETTING_IP_CONFIG(s_ip6));
 
-    s_sriov = make_sriov_setting(main_ifcfg);
-    if (s_sriov)
-        nm_connection_add_setting(connection, s_sriov);
+    setting = make_sriov_setting(main_ifcfg);
+    if (setting)
+        nm_connection_add_setting(connection, setting);
 
-    s_tc = make_tc_setting(main_ifcfg);
-    if (s_tc)
-        nm_connection_add_setting(connection, s_tc);
+    setting = make_tc_setting(main_ifcfg);
+    if (setting)
+        nm_connection_add_setting(connection, setting);
 
     /* For backwards compatibility, if IPv4 is disabled or the
      * config fails for some reason, we read DOMAIN and put the
@@ -6546,30 +6548,30 @@ connection_from_file_full(const char *filename,
      */
     check_dns_search_domains(main_ifcfg, s_ip4, s_ip6);
 
-    s_proxy = make_proxy_setting(main_ifcfg);
-    if (s_proxy)
-        nm_connection_add_setting(connection, s_proxy);
+    setting = make_proxy_setting(main_ifcfg);
+    if (setting)
+        nm_connection_add_setting(connection, setting);
 
-    s_user = make_user_setting(main_ifcfg);
-    if (s_user)
-        nm_connection_add_setting(connection, s_user);
+    setting = make_user_setting(main_ifcfg);
+    if (setting)
+        nm_connection_add_setting(connection, setting);
 
-    s_match = make_match_setting(main_ifcfg);
-    if (s_match)
-        nm_connection_add_setting(connection, s_match);
+    setting = make_match_setting(main_ifcfg);
+    if (setting)
+        nm_connection_add_setting(connection, setting);
 
-    s_port = make_bridge_port_setting(main_ifcfg);
-    if (s_port)
-        nm_connection_add_setting(connection, s_port);
+    setting = make_bridge_port_setting(main_ifcfg);
+    if (setting)
+        nm_connection_add_setting(connection, setting);
 
-    s_port = make_team_port_setting(main_ifcfg);
-    if (s_port)
-        nm_connection_add_setting(connection, s_port);
+    setting = make_team_port_setting(main_ifcfg);
+    if (setting)
+        nm_connection_add_setting(connection, setting);
 
-    if (!make_dcb_setting(main_ifcfg, &s_dcb, error))
+    if (!make_dcb_setting(main_ifcfg, &setting, error))
         return NULL;
-    if (s_dcb)
-        nm_connection_add_setting(connection, s_dcb);
+    if (setting)
+        nm_connection_add_setting(connection, setting);
 
     if (!nm_connection_normalize(connection, NULL, NULL, error))
         return NULL;
