@@ -564,6 +564,16 @@
         <property name="mtu"
                   description="If non-zero, only transmit packets of the specified size or smaller, breaking larger packets up into multiple frames." />
     </setting>
+    <setting name="hostname" >
+        <property name="priority"
+                  description="The relative priority of this connection to determine the system hostname. A lower numerical value is better (higher priority).  A connection with higher priority is considered before connections with lower priority. If the value is zero, it can be overridden by a global value from NetworkManager configuration. If the property doesn&apos;t have a value in the global configuration, the value is assumed to be 100. Negative values have the special effect of excluding other connections with a greater numerical priority value; so in presence of at least one negative priority, only connections with the lowest priority value will be used to determine the hostname." />
+        <property name="from-dhcp"
+                  description="Whether the system hostname can be determined from DHCP on this connection. When set to NM_TERNARY_DEFAULT (-1), the value from global configuration is used. If the property doesn&apos;t have a value in the global configuration, NetworkManager assumes the value to be NM_TERNARY_TRUE (1)." />
+        <property name="from-dns-lookup"
+                  description="Whether the system hostname can be determined from reverse DNS lookup of addresses on this device. When set to NM_TERNARY_DEFAULT (-1), the value from global configuration is used. If the property doesn&apos;t have a value in the global configuration, NetworkManager assumes the value to be NM_TERNARY_TRUE (1)." />
+        <property name="only-from-default"
+                  description="If set to NM_TERNARY_TRUE (1), NetworkManager attempts to get the hostname via DHCPv4/DHCPv6 or reverse DNS lookup on this device only when the device has the default route for the given address family (IPv4/IPv6). If set to NM_TERNARY_FALSE (0), the hostname can be set from this device even if it doesn&apos;t have the default route. When set to NM_TERNARY_DEFAULT (-1), the value from global configuration is used. If the property doesn&apos;t have a value in the global configuration, NetworkManager assumes the value to be NM_TERNARY_TRUE (1)." />
+    </setting>
     <setting name="infiniband" >
         <property name="mac-address"
                   alias="mac"

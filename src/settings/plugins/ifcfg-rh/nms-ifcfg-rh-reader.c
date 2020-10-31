@@ -2547,6 +2547,42 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
 }
 
 static NMSetting *
+make_hostname_setting(shvarFile *ifcfg)
+{
+    NMSetting *setting;
+    NMTernary  from_dhcp;
+    NMTernary  from_dns_lookup;
+    NMTernary  only_from_default;
+    int        priority;
+
+    priority = svGetValueInt64(ifcfg, "HOSTNAME_PRIORITY", 10, G_MININT32, G_MAXINT32, 0);
+
+    from_dhcp         = svGetValueTernary(ifcfg, "HOSTNAME_FROM_DHCP");
+    from_dns_lookup   = svGetValueTernary(ifcfg, "HOSTNAME_FROM_DNS_LOOKUP");
+    only_from_default = svGetValueTernary(ifcfg, "HOSTNAME_ONLY_FROM_DEFAULT");
+
+    /* Create the setting when at least one key is not default*/
+    if (priority == 0 && from_dhcp == NM_TERNARY_DEFAULT && from_dns_lookup == NM_TERNARY_DEFAULT
+        && only_from_default == NM_TERNARY_DEFAULT)
+        return NULL;
+
+    setting = nm_setting_hostname_new();
+
+    g_object_set(setting,
+                 NM_SETTING_HOSTNAME_PRIORITY,
+                 priority,
+                 NM_SETTING_HOSTNAME_FROM_DHCP,
+                 from_dhcp,
+                 NM_SETTING_HOSTNAME_FROM_DNS_LOOKUP,
+                 from_dns_lookup,
+                 NM_SETTING_HOSTNAME_ONLY_FROM_DEFAULT,
+                 only_from_default,
+                 NULL);
+
+    return setting;
+}
+
+static NMSetting *
 make_sriov_setting(shvarFile *ifcfg)
 {
     gs_unref_hashtable GHashTable *keys = NULL;
@@ -2951,7 +2987,7 @@ make_dcb_setting(shvarFile *ifcfg, NMSetting **out_setting, GError **error)
     gboolean                      dcb_on;
     NMSettingDcbFlags             flags = NM_SETTING_DCB_FLAG_NONE;
 
-    g_return_val_if_fail(out_setting != NULL, FALSE);
+    g_return_val_if_fail(out_setting, FALSE);
     *out_setting = NULL;
 
     dcb_on = !!svGetValueBoolean(ifcfg, "DCB", FALSE);
@@ -6549,6 +6585,10 @@ connection_from_file_full(const char *filename,
     check_dns_search_domains(main_ifcfg, s_ip4, s_ip6);
 
     setting = make_proxy_setting(main_ifcfg);
+    if (setting)
+        nm_connection_add_setting(connection, setting);
+
+    setting = make_hostname_setting(main_ifcfg);
     if (setting)
         nm_connection_add_setting(connection, setting);
 

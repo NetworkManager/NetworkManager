@@ -5634,6 +5634,24 @@ static const NMMetaPropertyInfo *const property_infos_GSM[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_HOSTNAME
+static const NMMetaPropertyInfo *const property_infos_HOSTNAME[] = {
+    PROPERTY_INFO (NM_SETTING_HOSTNAME_PRIORITY, DESCRIBE_DOC_NM_SETTING_HOSTNAME_PRIORITY,
+        .property_type =                &_pt_gobject_int,
+    ),
+    PROPERTY_INFO (NM_SETTING_HOSTNAME_FROM_DHCP, DESCRIBE_DOC_NM_SETTING_HOSTNAME_FROM_DHCP,
+        .property_type =                &_pt_gobject_enum,
+    ),
+    PROPERTY_INFO (NM_SETTING_HOSTNAME_FROM_DNS_LOOKUP, DESCRIBE_DOC_NM_SETTING_HOSTNAME_FROM_DNS_LOOKUP,
+        .property_type =                &_pt_gobject_enum,
+    ),
+    PROPERTY_INFO (NM_SETTING_HOSTNAME_ONLY_FROM_DEFAULT, DESCRIBE_DOC_NM_SETTING_HOSTNAME_ONLY_FROM_DEFAULT,
+        .property_type =                &_pt_gobject_enum,
+    ),
+    NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_INFINIBAND
 static const NMMetaPropertyInfo *const property_infos_INFINIBAND[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_INFINIBAND_MAC_ADDRESS,
@@ -7936,6 +7954,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_ETHTOOL             N_("Ethtool settings")
 #define SETTING_PRETTY_NAME_GENERIC             N_("Generic settings")
 #define SETTING_PRETTY_NAME_GSM                 N_("GSM mobile broadband connection")
+#define SETTING_PRETTY_NAME_HOSTNAME            N_("Hostname settings")
 #define SETTING_PRETTY_NAME_INFINIBAND          N_("InfiniBand connection")
 #define SETTING_PRETTY_NAME_IP4_CONFIG          N_("IPv4 protocol")
 #define SETTING_PRETTY_NAME_IP6_CONFIG          N_("IPv6 protocol")
@@ -8073,6 +8092,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
         ),
         .setting_init_fcn =             _setting_init_fcn_gsm,
     ),
+    SETTING_INFO (HOSTNAME),
     SETTING_INFO (INFINIBAND,
         .valid_parts = NM_META_SETTING_VALID_PARTS (
             NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
@@ -8284,6 +8304,7 @@ static const NMMetaSettingValidPartItem *const valid_settings_noslave[] = {
     NM_META_SETTING_VALID_PART_ITEM(MATCH, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(IP4_CONFIG, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(IP6_CONFIG, FALSE),
+    NM_META_SETTING_VALID_PART_ITEM(HOSTNAME, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(TC_CONFIG, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(PROXY, FALSE),
     NULL,

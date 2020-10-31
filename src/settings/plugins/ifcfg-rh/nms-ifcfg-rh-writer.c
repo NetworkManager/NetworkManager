@@ -1051,6 +1051,28 @@ write_infiniband_setting(NMConnection *connection, shvarFile *ifcfg, GError **er
     return TRUE;
 }
 
+static void
+write_hostname_setting(NMConnection *connection, shvarFile *ifcfg)
+{
+    NMSettingHostname *s_hostname;
+    NMTernary          t;
+
+    s_hostname = _nm_connection_get_setting(connection, NM_TYPE_SETTING_HOSTNAME);
+    if (!s_hostname)
+        return;
+
+    svSetValueInt64(ifcfg, "HOSTNAME_PRIORITY", nm_setting_hostname_get_priority(s_hostname));
+
+    t = nm_setting_hostname_get_from_dhcp(s_hostname);
+    svSetValueInt64_cond(ifcfg, "HOSTNAME_FROM_DHCP", t != NM_TERNARY_DEFAULT, t);
+
+    t = nm_setting_hostname_get_from_dns_lookup(s_hostname);
+    svSetValueInt64_cond(ifcfg, "HOSTNAME_FROM_DNS_LOOKUP", t != NM_TERNARY_DEFAULT, t);
+
+    t = nm_setting_hostname_get_only_from_default(s_hostname);
+    svSetValueInt64_cond(ifcfg, "HOSTNAME_ONLY_FROM_DEFAULT", t != NM_TERNARY_DEFAULT, t);
+}
+
 static gboolean
 write_wired_setting(NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
@@ -3347,7 +3369,7 @@ do_write_construct(NMConnection *                  connection,
         return FALSE;
 
     write_match_setting(connection, ifcfg);
-
+    write_hostname_setting(connection, ifcfg);
     write_sriov_setting(connection, ifcfg);
 
     if (!write_tc_setting(connection, ifcfg, error))

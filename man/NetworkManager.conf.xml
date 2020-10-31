@@ -278,18 +278,24 @@ no-auto-default=*
             this option. An hostname empty or equal to 'localhost', 'localhost6',
             'localhost.localdomain' or 'localhost6.localdomain' is considered invalid.
           </para>
-          <para><literal>default</literal>: NetworkManager will update the hostname
-          with the one provided via DHCP on the main connection (the one with a default
-          route). If not present, the hostname will be updated to the last one set
-          outside NetworkManager. If it is not valid, NetworkManager will try to recover
-          the hostname from the reverse lookup of the IP address of the main connection.
-          If this fails too, the hostname will be set to 'localhost.localdomain'.
+          <para><literal>default</literal>: NetworkManager will update the
+          hostname with the one provided via DHCP or reverse DNS lookup of the
+          IP address on the connection with the default route or on any
+          connection with the property hostname.only-from-default set to
+          '<literal>false</literal>'. Connections are considered in order of
+          increasing value of the <literal>hostname.priority</literal>
+          property. In case multiple connections have the same priority,
+          connections activated earlier are considered first. If no hostname can
+          be determined in such way, the hostname will be updated to the last
+          one set outside NetworkManager or to 'localhost.localdomain'.
           </para>
-          <para><literal>dhcp</literal>: NetworkManager will update the transient hostname
-          only with information coming from DHCP. No fallback nor reverse lookup will be
-          performed, but when the dhcp connection providing the hostname is deactivated,
-          the hostname is reset to the last hostname set outside NetworkManager or
-          'localhost' if none valid is there.
+          <para><literal>dhcp</literal>: this is similar to
+          '<literal>default</literal>', with the difference that after trying to
+          get the DHCP hostname, reverse DNS lookup is not done. Note that
+          selecting this option is equivalent to setting the property
+          '<literal>hostname.from-dns-lookup</literal>' to
+          '<literal>false</literal>' globally for all connections in
+          NetworkManager.conf.
           </para>
           <para><literal>none</literal>: NetworkManager will not manage the transient
           hostname and will never set it.
@@ -733,6 +739,18 @@ ipv6.ip6-privacy=0
         </varlistentry>
         <varlistentry>
           <term><varname>gsm.mtu</varname></term>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>hostname.from-dhcp</varname></term>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>hostname.from-dns-lookup</varname></term>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>hostname.only-from-default</varname></term>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>hostname.priority</varname></term>
         </varlistentry>
         <varlistentry>
           <term><varname>infiniband.mtu</varname></term>

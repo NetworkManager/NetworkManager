@@ -881,7 +881,8 @@ const NmcMetaGenericInfo
     "," NM_SETTING_6LOWPAN_SETTING_NAME "," NM_SETTING_WIREGUARD_SETTING_NAME            \
     "," NM_SETTING_PROXY_SETTING_NAME "," NM_SETTING_TC_CONFIG_SETTING_NAME              \
     "," NM_SETTING_SRIOV_SETTING_NAME "," NM_SETTING_ETHTOOL_SETTING_NAME                \
-    "," NM_SETTING_OVS_DPDK_SETTING_NAME /* NM_SETTING_DUMMY_SETTING_NAME NM_SETTING_WIMAX_SETTING_NAME */
+    "," NM_SETTING_OVS_DPDK_SETTING_NAME                                                 \
+    "," NM_SETTING_HOSTNAME_SETTING_NAME /* NM_SETTING_DUMMY_SETTING_NAME NM_SETTING_WIMAX_SETTING_NAME */
 
 const NmcMetaGenericInfo *const nmc_fields_con_active_details_groups[] = {
     NMC_META_GENERIC_WITH_NESTED("GENERAL", metagen_con_active_general), /* 0 */
