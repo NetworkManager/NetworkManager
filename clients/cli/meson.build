@@ -50,9 +50,23 @@ generate_docs_nm_settings_nmcli = executable(
   link_depends: linker_script_binary,
 )
 
-generate_docs_nm_settings_nmcli_xml = custom_target(
-  'generate-docs-nm-settings-nmcli.xml',
-  output: 'generate-docs-nm-settings-nmcli.xml',
-  command: [ generate_docs_nm_settings_nmcli ],
-  capture: true,
-)
+if enable_docs
+  generate_docs_nm_settings_nmcli_xml = custom_target(
+    'generate-docs-nm-settings-nmcli.xml',
+    output: 'generate-docs-nm-settings-nmcli.xml',
+    command: [ generate_docs_nm_settings_nmcli ],
+    capture: true,
+  )
+
+  test(
+    'check-local-generate-docs-nm-settings-nmcli',
+    find_program(join_paths(source_root, 'tools', 'check-settings-docs.sh')),
+    args: [source_root, build_root, 'clients/cli/generate-docs-nm-settings-nmcli.xml'],
+  )
+else
+  settings_docs_source = configure_file(
+    input: 'generate-docs-nm-settings-nmcli.xml.in',
+    output: '@BASENAME@',
+    configuration: configuration_data(),
+  )
+endif

@@ -1602,8 +1602,20 @@ libnm_noinst_data = \
 
 noinst_DATA += $(libnm_noinst_data)
 
+EXTRA_DIST += clients/cli/generate-docs-nm-settings-nmcli.xml.in
+
+if BUILD_DOCS
 clients/cli/generate-docs-nm-settings-nmcli.xml: clients/cli/generate-docs-nm-settings-nmcli
-	$(AM_V_GEN) clients/cli/generate-docs-nm-settings-nmcli > $@
+	$(AM_V_GEN) clients/cli/generate-docs-nm-settings-nmcli > "$@"
+check-local-generate-docs-nm-settings-nmcli: clients/cli/generate-docs-nm-settings-nmcli.xml
+	$(srcdir)/tools/check-settings-docs.sh "$(srcdir)" "$(builddir)" "$<"
+check_local += check-local-generate-docs-nm-settings-nmcli
+DISTCLEANFILES += clients/cli/generate-docs-nm-settings-nmcli.xml
+else
+clients/cli/generate-docs-nm-settings-nmcli.xml: clients/cli/generate-docs-nm-settings-nmcli.xml.in
+	$(AM_V_GEN) cp $^ $@
+check-local-generate-docs-nm-settings-nmcli:
+endif
 
 libnm_docs_sources = $(libnm_core_lib_c_settings_real)
 
