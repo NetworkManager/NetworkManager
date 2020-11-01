@@ -18,8 +18,8 @@ get_missing_options()
 
 get_src_con_defaults()
 {
-    sed -ne 's/.*\<NM_CON_DEFAULT\s*("\([^"]*\)").*/\1/p' $(find "$srcdir/src/" -name \*.c ! -name test\*.c)
-    sed -ne 's/.*\<NM_CON_DEFAULT_NOP\s*("\([^"]*\)").*/\1/p' $(find "$srcdir/src/" -name \*.c ! -name test\*.c)
+    sed -n 's/\<NM_CON_DEFAULT/\n\0/gp' $(find "$srcdir/src/" -name \*.c ! -name test\*.c) |
+    sed -n 's/.*\<NM_CON_DEFAULT\(_NOP\)\?\s*("\([^"]*\)").*/\2/p'
 }
 
 get_man_con_defaults()

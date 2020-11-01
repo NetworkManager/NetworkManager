@@ -3740,7 +3740,7 @@ _addr_array_clean_expired(int          addr_family,
         }
 #endif
 
-        if (addr_family == AF_INET6 && NM_FLAGS_HAS(a->n_ifa_flags, IFA_F_TEMPORARY)) {
+        if (!NM_IS_IPv4(addr_family) && NM_FLAGS_HAS(a->n_ifa_flags, IFA_F_TEMPORARY)) {
             /* temporary addresses are never added explicitly by NetworkManager but
              * kernel adds them via mngtempaddr flag.
              *
@@ -3981,7 +3981,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
                             GPtrArray * addresses_prune)
 {
     const gint32       now                             = nm_utils_get_monotonic_timestamp_sec();
-    const gboolean     IS_IPv4                         = NM_IS_IPv4(addr_family);
+    const int          IS_IPv4                         = NM_IS_IPv4(addr_family);
     gs_unref_hashtable GHashTable *known_addresses_idx = NULL;
     GPtrArray *                    plat_addresses;
     GHashTable *                   known_subnets = NULL;
@@ -4330,7 +4330,7 @@ nm_platform_ip_address_get_prune_list(NMPlatform *self,
                                       int         ifindex,
                                       gboolean    exclude_ipv6_temporary_addrs)
 {
-    const gboolean               IS_IPv4 = NM_IS_IPv4(addr_family);
+    const int                    IS_IPv4 = NM_IS_IPv4(addr_family);
     const NMDedupMultiHeadEntry *head_entry;
     NMPLookup                    lookup;
     GPtrArray *                  result;
@@ -4382,10 +4382,7 @@ nm_platform_ip_route_get_prune_list(NMPlatform *           self,
                         NM_IP_ROUTE_TABLE_SYNC_MODE_FULL,
                         NM_IP_ROUTE_TABLE_SYNC_MODE_ALL));
 
-    nmp_lookup_init_object(&lookup,
-                           addr_family == AF_INET ? NMP_OBJECT_TYPE_IP4_ROUTE
-                                                  : NMP_OBJECT_TYPE_IP6_ROUTE,
-                           ifindex);
+    nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ROUTE(NM_IS_IPv4(addr_family)), ifindex);
     head_entry = nm_platform_lookup(self, &lookup);
     if (!head_entry)
         return NULL;
@@ -4441,6 +4438,7 @@ nm_platform_ip_route_sync(NMPlatform *self,
                           GPtrArray * routes_prune,
                           GPtrArray **out_temporary_not_available)
 {
+    const int                    IS_IPv4 = NM_IS_IPv4(addr_family);
     const NMPlatformVTableRoute *vt;
     gs_unref_hashtable GHashTable *routes_idx = NULL;
     const NMPObject *              conf_o;
@@ -4450,10 +4448,8 @@ nm_platform_ip_route_sync(NMPlatform *self,
     gboolean                       success = TRUE;
     char                           sbuf1[sizeof(_nm_utils_to_string_buffer)];
     char                           sbuf2[sizeof(_nm_utils_to_string_buffer)];
-    const gboolean                 IS_IPv4 = (addr_family == AF_INET);
 
     nm_assert(NM_IS_PLATFORM(self));
-    nm_assert(NM_IN_SET(addr_family, AF_INET, AF_INET6));
     nm_assert(ifindex > 0);
 
     vt = &nm_platform_vtable_route.vx[IS_IPv4];
@@ -4665,9 +4661,9 @@ sync_route_add:
 
             prune_o = routes_prune->pdata[i];
 
-            nm_assert((addr_family == AF_INET
+            nm_assert((NM_IS_IPv4(addr_family)
                        && NMP_OBJECT_GET_TYPE(prune_o) == NMP_OBJECT_TYPE_IP4_ROUTE)
-                      || (addr_family == AF_INET6
+                      || (!NM_IS_IPv4(addr_family)
                           && NMP_OBJECT_GET_TYPE(prune_o) == NMP_OBJECT_TYPE_IP6_ROUTE));
 
             if (routes_idx && g_hash_table_lookup(routes_idx, prune_o))
@@ -4810,8 +4806,8 @@ _ip_route_add(NMPlatform *self, NMPNlmFlags flags, int addr_family, gconstpointe
     _LOG3D("route: %-10s IPv%c route: %s",
            _nmp_nlm_flag_to_string(flags & NMP_NLM_FLAG_FMASK),
            nm_utils_addr_family_to_char(addr_family),
-           addr_family == AF_INET ? nm_platform_ip4_route_to_string(route, sbuf, sizeof(sbuf))
-                                  : nm_platform_ip6_route_to_string(route, sbuf, sizeof(sbuf)));
+           NM_IS_IPv4(addr_family) ? nm_platform_ip4_route_to_string(route, sbuf, sizeof(sbuf))
+                                   : nm_platform_ip6_route_to_string(route, sbuf, sizeof(sbuf)));
 
     return klass->ip_route_add(self, flags, addr_family, route);
 }

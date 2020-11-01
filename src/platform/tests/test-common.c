@@ -89,7 +89,7 @@ nmtstp_platform_ip6_address_get_all(NMPlatform *self, int ifindex)
 const NMPlatformIPAddress *
 nmtstp_platform_ip_address_find(NMPlatform *self, int ifindex, int addr_family, gconstpointer addr)
 {
-    const gboolean             IS_IPv4 = NM_IS_IPv4(addr_family);
+    const int                  IS_IPv4 = NM_IS_IPv4(addr_family);
     const NMPlatformIPAddress *found   = NULL;
     NMDedupMultiIter           iter;
     const NMPObject *          obj;

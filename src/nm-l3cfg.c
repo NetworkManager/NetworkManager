@@ -637,7 +637,7 @@ _l3cfg_externally_removed_objs_track(NML3Cfg *self, const NMPObject *obj, gboole
 static void
 _l3cfg_externally_removed_objs_pickup(NML3Cfg *self, int addr_family)
 {
-    const gboolean   IS_IPv4 = NM_IS_IPv4(addr_family);
+    const int        IS_IPv4 = NM_IS_IPv4(addr_family);
     NMDedupMultiIter iter;
     const NMPObject *obj;
 
@@ -3233,7 +3233,7 @@ _l3_commit_one(NML3Cfg *             self,
                gboolean              changed_combined_l3cd,
                const NML3ConfigData *l3cd_old)
 {
-    const gboolean    IS_IPv4                                       = NM_IS_IPv4(addr_family);
+    const int         IS_IPv4                                       = NM_IS_IPv4(addr_family);
     gs_unref_ptrarray GPtrArray *addresses                          = NULL;
     gs_unref_ptrarray GPtrArray *routes                             = NULL;
     gs_unref_ptrarray GPtrArray *addresses_prune                    = NULL;

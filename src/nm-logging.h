@@ -17,18 +17,6 @@
 #define NM_LOG_CONFIG_BACKEND_SYSLOG  "syslog"
 #define NM_LOG_CONFIG_BACKEND_JOURNAL "journal"
 
-static inline NMLogDomain
-LOGD_IP_from_af(int addr_family)
-{
-    switch (addr_family) {
-    case AF_INET:
-        return LOGD_IP4;
-    case AF_INET6:
-        return LOGD_IP6;
-    }
-    g_return_val_if_reached(LOGD_NONE);
-}
-
 #define nm_log_err(domain, ...)   nm_log(LOGL_ERR, (domain), NULL, NULL, __VA_ARGS__)
 #define nm_log_warn(domain, ...)  nm_log(LOGL_WARN, (domain), NULL, NULL, __VA_ARGS__)
 #define nm_log_info(domain, ...)  nm_log(LOGL_INFO, (domain), NULL, NULL, __VA_ARGS__)
