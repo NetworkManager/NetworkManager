@@ -60,7 +60,7 @@ if enable_docs
 
   test(
     'check-local-generate-docs-nm-settings-nmcli',
-    find_program(join_paths(source_root, 'tools', 'check-settings-docs.sh')),
+    find_program(join_paths(source_root, 'tools', 'check-compare-generated.sh')),
     args: [source_root, build_root, 'clients/cli/generate-docs-nm-settings-nmcli.xml'],
   )
 else

@@ -41,7 +41,7 @@ if enable_docs
 
   test(
     'check-settings-docs',
-    find_program(join_paths(source_root, 'tools', 'check-settings-docs.sh')),
+    find_program(join_paths(source_root, 'tools', 'check-compare-generated.sh')),
     args: [source_root, build_root, 'clients/common/' + settings_docs],
   )
 else
