@@ -4453,7 +4453,7 @@ $(clients_common_libnmc_base_la_OBJECTS): $(libnm_lib_h_pub_mkenums)
 $(clients_common_libnmc_base_la_OBJECTS): clients/common/.dirstamp
 
 clients_common_settings_doc_h = clients/common/settings-docs.h
-if HAVE_INTROSPECTION
+if BUILD_DOCS
 $(clients_common_settings_doc_h): clients/common/settings-docs.xsl libnm/nm-settings-docs-gir.xml clients/common/.dirstamp
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $< $(word 2,$^)
 DISTCLEANFILES += $(clients_common_settings_doc_h)

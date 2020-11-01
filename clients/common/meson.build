@@ -31,7 +31,7 @@ libnmc_base_dep = declare_dependency(
 
 settings_docs = 'settings-docs.h'
 
-if enable_introspection
+if enable_docs
   settings_docs_source = custom_target(
     settings_docs,
     input: nm_settings_docs_xml_gir,
