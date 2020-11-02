@@ -4650,6 +4650,7 @@ GLIB_GENERATED += \
 	$(libnm_util_lib_h_pub_mkenums) \
 	$(libnm_util_lib_c_mkenums)
 nm_utils_enum_types_sources = $(filter-out libnm-util/NetworkManager%,$(libnm_util_lib_h_pub_real))
+nm_utils_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
 
 $(libnm_util_libnm_util_la_OBJECTS): $(libnm_util_lib_h_pub_mkenums)
 
@@ -4988,6 +4989,7 @@ GLIB_GENERATED += \
 	$(libnm_glib_lib_h_pub_mkenums) \
 	$(libnm_glib_lib_c_mkenums)
 nm_glib_enum_types_sources = $(libnm_glib_lib_h_pub_real)
+nm_glib_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
 
 $(libnm_glib_libnm_glib_la_OBJECTS): $(libnm_glib_lib_h_pub_mkenums)
 
@@ -5028,6 +5030,7 @@ GLIB_GENERATED += \
 	$(libnm_glib_vpn_h_mkenums) \
 	$(libnm_glib_vpn_c_mkenums)
 nm_vpn_enum_types_sources = $(libnm_glib_vpn_h_real)
+nm_vpn_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
 
 $(libnm_glib_libnm_glib_vpn_la_OBJECTS): $(libnm_glib_vpn_h_mkenums)
 
