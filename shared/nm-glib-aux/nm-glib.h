@@ -602,6 +602,25 @@ _g_atomic_pointer_get (void **atomic)
 		(typeof (*_atomic)) _g_atomic_pointer_get ((void **) _atomic); \
 	})
 
+/* Reimplement g_atomic_pointer_set() macro too. Our variant does more type
+ * checks. */
+static inline void
+_g_atomic_pointer_set (void **atomic, void *newval)
+{
+	return g_atomic_pointer_set (atomic, newval);
+}
+#undef g_atomic_pointer_set
+#define g_atomic_pointer_set(atomic, newval) \
+	({ \
+		typeof (*atomic) *const _atomic                 = (atomic); \
+		typeof (*_atomic) const _newval                 = (newval); \
+		_nm_unused gconstpointer const _val_type_check = _newval; \
+		\
+		(void) (0 ? (gpointer) * (_atomic) : NULL); \
+		\
+		_g_atomic_pointer_set ((void **) _atomic, (void *) _newval); \
+	})
+
 /* Glib implements g_atomic_pointer_compare_and_exchange() as a macro.
  * For one, to inline the atomic operation and also to perform some type checks
  * on the arguments.
