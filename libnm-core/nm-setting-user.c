@@ -288,7 +288,7 @@ nm_setting_user_set_data(NMSettingUser *setting, const char *key, const char *va
     NMSettingUserPrivate *priv;
     gboolean              changed = FALSE;
 
-    g_return_val_if_fail(NM_IS_SETTING(self), FALSE);
+    g_return_val_if_fail(NM_IS_SETTING_USER(self), FALSE);
     g_return_val_if_fail(!error || !*error, FALSE);
 
     if (!nm_setting_user_check_key(key, error))
