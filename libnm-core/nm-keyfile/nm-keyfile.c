@@ -24,8 +24,13 @@
 #include "nm-core-internal.h"
 #include "nm-keyfile.h"
 #include "nm-setting-user.h"
+#include "nm-setting-ovs-external-ids.h"
 
 #include "nm-keyfile-utils.h"
+
+#define ETHERNET_S390_OPTIONS_GROUP_NAME "ethernet-s390-options"
+
+#define OVS_EXTERNAL_IDS_DATA_PREFIX "data."
 
 /*****************************************************************************/
 
@@ -986,6 +991,44 @@ ip_routing_rule_parser_full(KeyfileReaderInfo *       info,
         }
 
         nm_setting_ip_config_add_routing_rule(NM_SETTING_IP_CONFIG(setting), rule);
+    }
+}
+
+static void
+_parser_full_ovs_external_ids_data(KeyfileReaderInfo *       info,
+                                   const NMMetaSettingInfo * setting_info,
+                                   const NMSettInfoProperty *property_info,
+                                   const ParseInfoProperty * pip,
+                                   NMSetting *               setting)
+{
+    const char *       setting_name = NM_SETTING_OVS_EXTERNAL_IDS_SETTING_NAME;
+    gs_strfreev char **keys         = NULL;
+    gsize              n_keys;
+    gsize              i;
+
+    nm_assert(NM_IS_SETTING_OVS_EXTERNAL_IDS(setting));
+    nm_assert(nm_streq(property_info->name, NM_SETTING_OVS_EXTERNAL_IDS_DATA));
+    nm_assert(nm_streq(setting_name, setting_info->setting_name));
+    nm_assert(nm_streq(setting_name, nm_setting_get_name(setting)));
+
+    keys = nm_keyfile_plugin_kf_get_keys(info->keyfile, setting_name, &n_keys, NULL);
+
+    for (i = 0; i < n_keys; i++) {
+        const char *  key          = keys[i];
+        gs_free char *name_to_free = NULL;
+        gs_free char *value        = NULL;
+        const char *  name;
+
+        if (!NM_STR_HAS_PREFIX(key, OVS_EXTERNAL_IDS_DATA_PREFIX))
+            continue;
+
+        value = nm_keyfile_plugin_kf_get_string(info->keyfile, setting_name, key, NULL);
+        if (!value)
+            continue;
+
+        name = &key[NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX)];
+        name = nm_keyfile_key_decode(name, &name_to_free);
+        nm_setting_ovs_external_ids_set_data(NM_SETTING_OVS_EXTERNAL_IDS(setting), name, value);
     }
 }
 
@@ -2214,8 +2257,6 @@ bridge_vlan_writer(KeyfileWriterInfo *info,
     }
 }
 
-#define ETHERNET_S390_OPTIONS_GROUP_NAME "ethernet-s390-options"
-
 static void
 wired_s390_options_parser_full(KeyfileReaderInfo *       info,
                                const NMMetaSettingInfo * setting_info,
@@ -2357,6 +2398,60 @@ tfilter_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, con
                                         NM_SETTING_TC_CONFIG_SETTING_NAME,
                                         key_name->str,
                                         value_str->str);
+    }
+}
+
+static void
+_writer_full_ovs_external_ids_data(KeyfileWriterInfo *       info,
+                                   const NMMetaSettingInfo * setting_info,
+                                   const NMSettInfoProperty *property_info,
+                                   const ParseInfoProperty * pip,
+                                   NMSetting *               setting)
+{
+    GHashTable *      hash;
+    NMUtilsNamedValue data_static[300u / sizeof(NMUtilsNamedValue)];
+    gs_free NMUtilsNamedValue *data_free = NULL;
+    const NMUtilsNamedValue *  data;
+    guint                      data_len;
+    char                       full_key_static[NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX) + 300u];
+    guint                      i;
+
+    nm_assert(NM_IS_SETTING_OVS_EXTERNAL_IDS(setting));
+    nm_assert(nm_streq(property_info->name, NM_SETTING_OVS_EXTERNAL_IDS_DATA));
+
+    hash = _nm_setting_ovs_external_ids_get_data(NM_SETTING_OVS_EXTERNAL_IDS(setting));
+    if (!hash)
+        return;
+
+    data = nm_utils_named_values_from_strdict(hash, &data_len, data_static, &data_free);
+    if (data_len == 0)
+        return;
+
+    memcpy(full_key_static, OVS_EXTERNAL_IDS_DATA_PREFIX, NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX));
+
+    for (i = 0; i < data_len; i++) {
+        const char *  key                 = data[i].name;
+        const char *  val                 = data[i].value_str;
+        gs_free char *escaped_key_to_free = NULL;
+        const char *  escaped_key;
+        gsize         len;
+        gs_free char *full_key_free = NULL;
+        char *        full_key      = full_key_static;
+
+        escaped_key = nm_keyfile_key_encode(key, &escaped_key_to_free);
+
+        len = strlen(escaped_key) + 1u;
+        if (len >= G_N_ELEMENTS(full_key_static) - NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX)) {
+            full_key_free = g_new(char, NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX) + len);
+            full_key      = full_key_free;
+            memcpy(full_key, OVS_EXTERNAL_IDS_DATA_PREFIX, NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX));
+        }
+        memcpy(&full_key[NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX)], escaped_key, len);
+
+        nm_keyfile_plugin_kf_set_string(info->keyfile,
+                                        NM_SETTING_OVS_EXTERNAL_IDS_SETTING_NAME,
+                                        full_key,
+                                        val);
     }
 }
 
@@ -2799,6 +2894,14 @@ static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
                                                .writer_full         = ip_routing_rule_writer_full,
                                                .has_parser_full     = TRUE,
                                                .has_writer_full     = TRUE, ), ), ),
+    PARSE_INFO_SETTING(
+        NM_META_SETTING_TYPE_OVS_EXTERNAL_IDS,
+        PARSE_INFO_PROPERTIES(PARSE_INFO_PROPERTY(NM_SETTING_OVS_EXTERNAL_IDS_DATA,
+                                                  .parser_no_check_key = TRUE,
+                                                  .parser_full = _parser_full_ovs_external_ids_data,
+                                                  .writer_full = _writer_full_ovs_external_ids_data,
+                                                  .has_parser_full = TRUE,
+                                                  .has_writer_full = TRUE, ), ), ),
     PARSE_INFO_SETTING(NM_META_SETTING_TYPE_SERIAL,
                        PARSE_INFO_PROPERTIES(PARSE_INFO_PROPERTY(NM_SETTING_SERIAL_PARITY,
                                                                  .parser = parity_parser, ), ), ),

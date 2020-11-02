@@ -1766,5 +1766,12 @@ global:
 	nm_keyfile_read;
 	nm_keyfile_warn_severity_get_type;
 	nm_keyfile_write;
+	nm_setting_ovs_external_ids_check_key;
+	nm_setting_ovs_external_ids_check_val;
+	nm_setting_ovs_external_ids_get_data;
+	nm_setting_ovs_external_ids_get_data_keys;
+	nm_setting_ovs_external_ids_get_type;
+	nm_setting_ovs_external_ids_new;
+	nm_setting_ovs_external_ids_set_data;
 	nm_utils_print;
 } libnm_1_28_0;

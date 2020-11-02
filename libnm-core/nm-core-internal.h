@@ -476,6 +476,10 @@ GSList *_nm_vpn_plugin_info_list_load_dir(const char *              dirname,
 
 /*****************************************************************************/
 
+GHashTable *_nm_setting_ovs_external_ids_get_data(NMSettingOvsExternalIDs *self);
+
+/*****************************************************************************/
+
 typedef struct {
     const char *name;
     gboolean    numeric;
