@@ -509,10 +509,17 @@ if [ "$RELEASE_MODE" = rc1 ]; then
     git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
 fi
 
-do_command git push "$ORIGIN" "${BRANCHES[@]}" || die "failed to to push branches ${BRANCHES[@]} to $ORIGIN"
+if ! [ "$DRY_RUN" = 0 ]; then
+    ssh master.gnome.org true || die "failed to \`ssh master.gnome.org\`"
+fi
 
 for r in "${RELEASE_FILES[@]}"; do
     do_command rsync -va --append-verify -P "/tmp/$r" master.gnome.org: || die "failed to rsync \"/tmp/$r\""
+done
+
+do_command git push "$ORIGIN" "${BRANCHES[@]}" || die "failed to to push branches ${BRANCHES[@]} to $ORIGIN"
+
+for r in "${RELEASE_FILES[@]}"; do
     do_command ssh master.gnome.org ftpadmin install --unattended "$r" || die "ftpadmin install failed"
 done
 
