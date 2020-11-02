@@ -101,6 +101,7 @@ libnmdbus = static_library(
   sources: sources,
   include_directories: top_inc,
   dependencies: glib_dep,
+  c_args: introspection_extra_cflags,
 )
 
 libnmdbus_dep = declare_dependency(
