@@ -1700,12 +1700,10 @@ gssize nm_utils_array_find_binary_search(gconstpointer    list,
 
 /*****************************************************************************/
 
-typedef gboolean (*NMUtilsHashTableEqualFunc)(gconstpointer a, gconstpointer b);
-
-gboolean nm_utils_hash_table_equal(const GHashTable *        a,
-                                   const GHashTable *        b,
-                                   gboolean                  treat_null_as_empty,
-                                   NMUtilsHashTableEqualFunc equal_func);
+gboolean nm_utils_hash_table_equal(const GHashTable *a,
+                                   const GHashTable *b,
+                                   gboolean          treat_null_as_empty,
+                                   GEqualFunc        equal_func);
 
 /*****************************************************************************/
 
