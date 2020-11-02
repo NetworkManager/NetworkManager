@@ -15,6 +15,7 @@ enum_sources = gnome.mkenums_simple(
   enum_types,
   sources: 'test-general-enums.h',
   identifier_prefix: nm_id_prefix,
+  body_prefix: '#include "nm-default.h"',
 )
 
 deps = [

@@ -82,6 +82,7 @@ libnm_core_enum_sources = gnome.mkenums_simple(
   enum_types,
   sources: libnm_core_headers + [nm_version_macro_header],
   identifier_prefix: nm_id_prefix,
+  body_prefix: '#include "nm-default.h"',
   install_header: true,
   install_dir: libnm_pkgincludedir,
 )
