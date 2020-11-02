@@ -85,6 +85,8 @@ completiondir = $(datadir)/bash-completion/completions
 
 nmlocaledir = $(datadir)/locale
 
+INTROSPECTION_EXTRA_CFLAGS = -Wno-incompatible-pointer-types-discards-qualifiers
+
 GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 
@@ -677,7 +679,10 @@ endif
 
 noinst_LTLIBRARIES += introspection/libnmdbus.la
 
-introspection_libnmdbus_la_CPPFLAGS = $(GLIB_CFLAGS)
+introspection_libnmdbus_la_CPPFLAGS = \
+	$(GLIB_CFLAGS) \
+	$(INTROSPECTION_EXTRA_CFLAGS) \
+	$(NULL)
 
 introspection_sources = \
 	introspection/org.freedesktop.NetworkManager.AccessPoint.c \
@@ -3018,7 +3023,10 @@ nodist_src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_SOURCES = \
 	src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.c \
 	src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h
 
-src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_CPPFLAGS = $(filter-out -DGLIB_VERSION_MAX_ALLOWED%,$(src_cppflags_base))
+src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_CPPFLAGS = \
+	$(filter-out -DGLIB_VERSION_MAX_ALLOWED%,$(src_cppflags_base)) \
+	$(INTROSPECTION_EXTRA_CFLAGS) \
+	$(NULL)
 
 CLEANFILES += $(nodist_src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_SOURCES)
 
@@ -4313,6 +4321,7 @@ dispatcher_tests_test_dispatcher_envp_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_EXEC_CFLAGS) \
+	$(INTROSPECTION_EXTRA_CFLAGS) \
 	$(NULL)
 
 dispatcher_tests_test_dispatcher_envp_SOURCES = \
