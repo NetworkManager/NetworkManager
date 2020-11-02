@@ -586,6 +586,30 @@ _nm_g_value_unset(GValue *value)
 
 /*****************************************************************************/
 
+/* g_atomic_pointer_get() is implemented as a macro, and it is also used for
+ * (gsize *) arguments. However, that leads to compiler warnings in certain
+ * configurations. Work around it, by redefining the macro. */
+static inline gpointer
+_g_atomic_pointer_get(void **atomic)
+{
+    return g_atomic_pointer_get(atomic);
+}
+#undef g_atomic_pointer_get
+#define g_atomic_pointer_get(atomic)                                           \
+    ({                                                                         \
+        typeof(*atomic) *const _atomic = (atomic);                             \
+                                                                               \
+        /* g_atomic_pointer_get() is used by glib also for (gsize *) pointers,
+         * not only pointers to pointers. We thus don't enforce that (*atomic)
+         * is a pointer, but of suitable size/alignment. */ \
+                                                                               \
+        G_STATIC_ASSERT(sizeof(*_atomic) == sizeof(gpointer));                 \
+        G_STATIC_ASSERT(_nm_alignof(*_atomic) == _nm_alignof(gpointer));       \
+        (void) (0 ? (gpointer) * (_atomic) : NULL);                            \
+                                                                               \
+        (typeof(*_atomic)) _g_atomic_pointer_get((void **) _atomic);           \
+    })
+
 /* Glib implements g_atomic_pointer_compare_and_exchange() as a macro.
  * For one, to inline the atomic operation and also to perform some type checks
  * on the arguments.
@@ -594,22 +618,23 @@ _nm_g_value_unset(GValue *value)
  * pointers there. Reimplement the macro to get that right, but with stronger
  * type checks (as we use typeof()). Had one job. */
 static inline gboolean
-_g_atomic_pointer_compare_and_exchange(volatile void *atomic,
-                                       gconstpointer  oldval,
-                                       gconstpointer  newval)
+_g_atomic_pointer_compare_and_exchange(void **atomic, void *oldval, void *newval)
 {
-    return g_atomic_pointer_compare_and_exchange((void **) atomic,
-                                                 (void *) oldval,
-                                                 (void *) newval);
+    return g_atomic_pointer_compare_and_exchange(atomic, oldval, newval);
 }
 #undef g_atomic_pointer_compare_and_exchange
-#define g_atomic_pointer_compare_and_exchange(atomic, oldval, newval)      \
-    ({                                                                     \
-        typeof(atomic) const _atomic   = (atomic);                         \
-        typeof(*_atomic) const _oldval = (oldval);                         \
-        typeof(*_atomic) const _newval = (newval);                         \
-                                                                           \
-        _g_atomic_pointer_compare_and_exchange(_atomic, _oldval, _newval); \
+#define g_atomic_pointer_compare_and_exchange(atomic, oldval, newval) \
+    ({                                                                \
+        typeof(*atomic) *const _atomic                 = (atomic);    \
+        typeof(*_atomic) const _oldval                 = (oldval);    \
+        typeof(*_atomic) const _newval                 = (newval);    \
+        _nm_unused gconstpointer const _val_type_check = _oldval;     \
+                                                                      \
+        (void) (0 ? (gpointer) * (_atomic) : NULL);                   \
+                                                                      \
+        _g_atomic_pointer_compare_and_exchange((void **) _atomic,     \
+                                               (void *) _oldval,      \
+                                               (void *) _newval);     \
     })
 
 /*****************************************************************************/
