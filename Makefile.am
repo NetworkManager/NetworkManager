@@ -738,8 +738,6 @@ dbusinterfaces_DATA = \
 CLEANFILES += $(introspection_sources)
 CLEANFILES += $(DBUS_INTERFACE_DOCS)
 
-$(dispatcher_libnm_dispatcher_core_la_OBJECTS): $(introspection_sources)
-$(dispatcher_nm_dispatcher_OBJECTS):            $(introspection_sources)
 $(libnm_libnm_la_OBJECTS):                      $(introspection_sources)
 
 EXTRA_DIST += \
