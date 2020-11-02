@@ -1085,6 +1085,7 @@ typedef struct {
                     int                    parent,
                     const void *           address,
                     size_t                 address_len,
+                    guint32                mtu,
                     gconstpointer          extra_data,
                     const NMPlatformLink **out_link);
     gboolean (*link_delete)(NMPlatform *self, int ifindex);
@@ -1532,6 +1533,7 @@ int nm_platform_link_add(NMPlatform *           self,
                          int                    parent,
                          const void *           address,
                          size_t                 address_len,
+                         guint32                mtu,
                          gconstpointer          extra_data,
                          const NMPlatformLink **out_link);
 
@@ -1541,13 +1543,13 @@ nm_platform_link_veth_add(NMPlatform *           self,
                           const char *           peer,
                           const NMPlatformLink **out_link)
 {
-    return nm_platform_link_add(self, NM_LINK_TYPE_VETH, name, 0, NULL, 0, peer, out_link);
+    return nm_platform_link_add(self, NM_LINK_TYPE_VETH, name, 0, NULL, 0, 0, peer, out_link);
 }
 
 static inline int
 nm_platform_link_dummy_add(NMPlatform *self, const char *name, const NMPlatformLink **out_link)
 {
-    return nm_platform_link_add(self, NM_LINK_TYPE_DUMMY, name, 0, NULL, 0, NULL, out_link);
+    return nm_platform_link_add(self, NM_LINK_TYPE_DUMMY, name, 0, NULL, 0, 0, NULL, out_link);
 }
 
 static inline int
@@ -1555,6 +1557,7 @@ nm_platform_link_bridge_add(NMPlatform *               self,
                             const char *               name,
                             const void *               address,
                             size_t                     address_len,
+                            guint32                    mtu,
                             const NMPlatformLnkBridge *props,
                             const NMPlatformLink **    out_link)
 {
@@ -1564,6 +1567,7 @@ nm_platform_link_bridge_add(NMPlatform *               self,
                                 0,
                                 address,
                                 address_len,
+                                mtu,
                                 props,
                                 out_link);
 }
@@ -1571,19 +1575,19 @@ nm_platform_link_bridge_add(NMPlatform *               self,
 static inline int
 nm_platform_link_bond_add(NMPlatform *self, const char *name, const NMPlatformLink **out_link)
 {
-    return nm_platform_link_add(self, NM_LINK_TYPE_BOND, name, 0, NULL, 0, NULL, out_link);
+    return nm_platform_link_add(self, NM_LINK_TYPE_BOND, name, 0, NULL, 0, 0, NULL, out_link);
 }
 
 static inline int
 nm_platform_link_team_add(NMPlatform *self, const char *name, const NMPlatformLink **out_link)
 {
-    return nm_platform_link_add(self, NM_LINK_TYPE_TEAM, name, 0, NULL, 0, NULL, out_link);
+    return nm_platform_link_add(self, NM_LINK_TYPE_TEAM, name, 0, NULL, 0, 0, NULL, out_link);
 }
 
 static inline int
 nm_platform_link_wireguard_add(NMPlatform *self, const char *name, const NMPlatformLink **out_link)
 {
-    return nm_platform_link_add(self, NM_LINK_TYPE_WIREGUARD, name, 0, NULL, 0, NULL, out_link);
+    return nm_platform_link_add(self, NM_LINK_TYPE_WIREGUARD, name, 0, NULL, 0, 0, NULL, out_link);
 }
 
 static inline int
@@ -1602,6 +1606,7 @@ nm_platform_link_gre_add(NMPlatform *            self,
                                 0,
                                 address,
                                 address_len,
+                                0,
                                 props,
                                 out_link);
 }
@@ -1612,7 +1617,7 @@ nm_platform_link_sit_add(NMPlatform *            self,
                          const NMPlatformLnkSit *props,
                          const NMPlatformLink ** out_link)
 {
-    return nm_platform_link_add(self, NM_LINK_TYPE_SIT, name, 0, NULL, 0, props, out_link);
+    return nm_platform_link_add(self, NM_LINK_TYPE_SIT, name, 0, NULL, 0, 0, props, out_link);
 }
 
 static inline int
@@ -1632,6 +1637,7 @@ nm_platform_link_vlan_add(NMPlatform *           self,
                                 parent,
                                 NULL,
                                 0,
+                                0,
                                 &((NMPlatformLnkVlan){
                                     .id    = vlanid,
                                     .flags = vlanflags,
@@ -1645,7 +1651,7 @@ nm_platform_link_vrf_add(NMPlatform *            self,
                          const NMPlatformLnkVrf *props,
                          const NMPlatformLink ** out_link)
 {
-    return nm_platform_link_add(self, NM_LINK_TYPE_VRF, name, 0, NULL, 0, props, out_link);
+    return nm_platform_link_add(self, NM_LINK_TYPE_VRF, name, 0, NULL, 0, 0, props, out_link);
 }
 
 static inline int
@@ -1654,7 +1660,7 @@ nm_platform_link_vxlan_add(NMPlatform *              self,
                            const NMPlatformLnkVxlan *props,
                            const NMPlatformLink **   out_link)
 {
-    return nm_platform_link_add(self, NM_LINK_TYPE_VXLAN, name, 0, NULL, 0, props, out_link);
+    return nm_platform_link_add(self, NM_LINK_TYPE_VXLAN, name, 0, NULL, 0, 0, props, out_link);
 }
 
 static inline int
@@ -1663,7 +1669,15 @@ nm_platform_link_6lowpan_add(NMPlatform *           self,
                              int                    parent,
                              const NMPlatformLink **out_link)
 {
-    return nm_platform_link_add(self, NM_LINK_TYPE_6LOWPAN, name, parent, NULL, 0, NULL, out_link);
+    return nm_platform_link_add(self,
+                                NM_LINK_TYPE_6LOWPAN,
+                                name,
+                                parent,
+                                NULL,
+                                0,
+                                0,
+                                NULL,
+                                out_link);
 }
 
 static inline int
@@ -1675,7 +1689,7 @@ nm_platform_link_ip6tnl_add(NMPlatform *               self,
     g_return_val_if_fail(props, -NME_BUG);
     g_return_val_if_fail(!props->is_gre, -NME_BUG);
 
-    return nm_platform_link_add(self, NM_LINK_TYPE_IP6TNL, name, 0, NULL, 0, props, out_link);
+    return nm_platform_link_add(self, NM_LINK_TYPE_IP6TNL, name, 0, NULL, 0, 0, props, out_link);
 }
 
 static inline int
@@ -1695,6 +1709,7 @@ nm_platform_link_ip6gre_add(NMPlatform *               self,
                                 0,
                                 address,
                                 address_len,
+                                0,
                                 props,
                                 out_link);
 }
@@ -1707,7 +1722,7 @@ nm_platform_link_ipip_add(NMPlatform *             self,
 {
     g_return_val_if_fail(props, -NME_BUG);
 
-    return nm_platform_link_add(self, NM_LINK_TYPE_IPIP, name, 0, NULL, 0, props, out_link);
+    return nm_platform_link_add(self, NM_LINK_TYPE_IPIP, name, 0, NULL, 0, 0, props, out_link);
 }
 
 static inline int
@@ -1720,7 +1735,15 @@ nm_platform_link_macsec_add(NMPlatform *               self,
     g_return_val_if_fail(props, -NME_BUG);
     g_return_val_if_fail(parent > 0, -NME_BUG);
 
-    return nm_platform_link_add(self, NM_LINK_TYPE_MACSEC, name, parent, NULL, 0, props, out_link);
+    return nm_platform_link_add(self,
+                                NM_LINK_TYPE_MACSEC,
+                                name,
+                                parent,
+                                NULL,
+                                0,
+                                0,
+                                props,
+                                out_link);
 }
 
 static inline int
@@ -1738,6 +1761,7 @@ nm_platform_link_macvlan_add(NMPlatform *                self,
                                 name,
                                 parent,
                                 NULL,
+                                0,
                                 0,
                                 props,
                                 out_link);

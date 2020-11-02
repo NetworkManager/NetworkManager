@@ -1230,11 +1230,13 @@ nm_platform_link_add(NMPlatform *           self,
                      int                    parent,
                      const void *           address,
                      size_t                 address_len,
+                     guint32                mtu,
                      gconstpointer          extra_data,
                      const NMPlatformLink **out_link)
 {
     int  r;
     char addr_buf[NM_UTILS_HWADDR_LEN_MAX * 3];
+    char mtu_buf[16];
     char parent_buf[64];
     char buf[512];
 
@@ -1254,6 +1256,7 @@ nm_platform_link_add(NMPlatform *           self,
            "\"%s\"" /* name */
            "%s%s"   /* parent */
            "%s%s"   /* address */
+           "%s%s"   /* mtu */
            "%s"     /* extra_data */
            "",
            nm_link_type_to_string(type),
@@ -1263,6 +1266,8 @@ nm_platform_link_add(NMPlatform *           self,
            address ? ", address: " : "",
            address ? _nm_utils_hwaddr_ntoa(address, address_len, FALSE, addr_buf, sizeof(addr_buf))
                    : "",
+           mtu ? ", mtu: " : "",
+           mtu ? nm_sprintf_buf(mtu_buf, "%u", mtu) : "",
            ({
                char *buf_p   = buf;
                gsize buf_len = sizeof(buf);
@@ -1345,7 +1350,8 @@ nm_platform_link_add(NMPlatform *           self,
                buf;
            }));
 
-    return klass->link_add(self, type, name, parent, address, address_len, extra_data, out_link);
+    return klass
+        ->link_add(self, type, name, parent, address, address_len, mtu, extra_data, out_link);
 }
 
 /**
