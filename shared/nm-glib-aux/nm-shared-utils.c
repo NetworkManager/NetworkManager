@@ -3292,6 +3292,62 @@ nm_utils_hash_values_to_array(GHashTable *     hash,
     return arr;
 }
 
+/*****************************************************************************/
+
+/**
+ * nm_utils_hashtable_equal:
+ * @a: one #GHashTable
+ * @b: other #GHashTable
+ * @treat_null_as_empty: if %TRUE, when either @a or @b is %NULL, it is
+ *   treated like an empty hash. It means, a %NULL hash will compare equal
+ *   to an empty hash.
+ * @equal_func: the equality function, for comparing the values.
+ *   If %NULL, the values are not compared. In that case, the function
+ *   only checks, if both dictionaries have the same keys -- according
+ *   to @b's key equality function.
+ *   Note that the values of @a will be passed as first argument
+ *   to @equal_func.
+ *
+ * Compares two hash tables, whether they have equal content.
+ * This only makes sense, if @a and @b have the same key types and
+ * the same key compare-function.
+ *
+ * Returns: %TRUE, if both dictionaries have the same content.
+ */
+gboolean
+nm_utils_hashtable_equal(const GHashTable *a,
+                         const GHashTable *b,
+                         gboolean          treat_null_as_empty,
+                         GEqualFunc        equal_func)
+{
+    guint          n;
+    GHashTableIter iter;
+    gconstpointer  key, v_a, v_b;
+
+    if (a == b)
+        return TRUE;
+    if (!treat_null_as_empty) {
+        if (!a || !b)
+            return FALSE;
+    }
+
+    n = a ? g_hash_table_size((GHashTable *) a) : 0;
+    if (n != (b ? g_hash_table_size((GHashTable *) b) : 0))
+        return FALSE;
+
+    if (n > 0) {
+        g_hash_table_iter_init(&iter, (GHashTable *) a);
+        while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &v_a)) {
+            if (!g_hash_table_lookup_extended((GHashTable *) b, key, NULL, (gpointer *) &v_b))
+                return FALSE;
+            if (equal_func && !equal_func(v_a, v_b))
+                return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+
 static gboolean
 _utils_hashtable_equal(GHashTable *     hash_a,
                        GHashTable *     hash_b,
@@ -3331,7 +3387,7 @@ _utils_hashtable_equal(GHashTable *     hash_a,
 }
 
 /**
- * nm_utils_hashtable_equal:
+ * nm_utils_hashtable_cmp_equal:
  * @a: (allow-none): the hash table or %NULL
  * @b: (allow-none): the other hash table or %NULL
  * @cmp_values: (allow-none): if %NULL, only the keys
@@ -3346,10 +3402,10 @@ _utils_hashtable_equal(GHashTable *     hash_a,
  *   @cmp_values is given) all values are the same.
  */
 gboolean
-nm_utils_hashtable_equal(const GHashTable *a,
-                         const GHashTable *b,
-                         GCompareDataFunc  cmp_values,
-                         gpointer          user_data)
+nm_utils_hashtable_cmp_equal(const GHashTable *a,
+                             const GHashTable *b,
+                             GCompareDataFunc  cmp_values,
+                             gpointer          user_data)
 {
     GHashTable *hash_a = (GHashTable *) a;
     GHashTable *hash_b = (GHashTable *) b;
@@ -3404,7 +3460,7 @@ _hashtable_cmp_func(gconstpointer a, gconstpointer b, gpointer user_data)
  * @a: (allow-none): the hash to compare. May be %NULL.
  * @b: (allow-none): the other hash to compare. May be %NULL.
  * @do_fast_precheck: if %TRUE, assume that the hashes are equal
- *   and that it is worth calling nm_utils_hashtable_equal() first.
+ *   and that it is worth calling nm_utils_hashtable_cmp_equal() first.
  *   That requires, that both hashes have the same equals function
  *   which is compatible with the @cmp_keys function.
  * @cmp_keys: the compare function for keys. Usually, the hash/equal function
@@ -3852,62 +3908,6 @@ nm_utils_array_find_binary_search(gconstpointer    list,
     /* return the inverse of @imin. This is a negative number, but
      * also is ~imin the position where the value should be inserted. */
     return ~imin;
-}
-
-/*****************************************************************************/
-
-/**
- * nm_utils_hash_table_equal:
- * @a: one #GHashTable
- * @b: other #GHashTable
- * @treat_null_as_empty: if %TRUE, when either @a or @b is %NULL, it is
- *   treated like an empty hash. It means, a %NULL hash will compare equal
- *   to an empty hash.
- * @equal_func: the equality function, for comparing the values.
- *   If %NULL, the values are not compared. In that case, the function
- *   only checks, if both dictionaries have the same keys -- according
- *   to @b's key equality function.
- *   Note that the values of @a will be passed as first argument
- *   to @equal_func.
- *
- * Compares two hash tables, whether they have equal content.
- * This only makes sense, if @a and @b have the same key types and
- * the same key compare-function.
- *
- * Returns: %TRUE, if both dictionaries have the same content.
- */
-gboolean
-nm_utils_hash_table_equal(const GHashTable *a,
-                          const GHashTable *b,
-                          gboolean          treat_null_as_empty,
-                          GEqualFunc        equal_func)
-{
-    guint          n;
-    GHashTableIter iter;
-    gconstpointer  key, v_a, v_b;
-
-    if (a == b)
-        return TRUE;
-    if (!treat_null_as_empty) {
-        if (!a || !b)
-            return FALSE;
-    }
-
-    n = a ? g_hash_table_size((GHashTable *) a) : 0;
-    if (n != (b ? g_hash_table_size((GHashTable *) b) : 0))
-        return FALSE;
-
-    if (n > 0) {
-        g_hash_table_iter_init(&iter, (GHashTable *) a);
-        while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &v_a)) {
-            if (!g_hash_table_lookup_extended((GHashTable *) b, key, NULL, (gpointer *) &v_b))
-                return FALSE;
-            if (equal_func && !equal_func(v_a, v_b))
-                return FALSE;
-        }
-    }
-
-    return TRUE;
 }
 
 /*****************************************************************************/

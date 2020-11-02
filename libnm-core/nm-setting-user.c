@@ -416,11 +416,11 @@ compare_property(const NMSettInfoSetting *sett_info,
 
         priv = NM_SETTING_USER_GET_PRIVATE(NM_SETTING_USER(set_a));
         pri2 = NM_SETTING_USER_GET_PRIVATE(NM_SETTING_USER(set_b));
-        return nm_utils_hash_table_equal(priv->data, pri2->data, TRUE, g_str_equal)
-               && nm_utils_hash_table_equal(priv->data_invalid,
-                                            pri2->data_invalid,
-                                            TRUE,
-                                            g_str_equal);
+        return nm_utils_hashtable_equal(priv->data, pri2->data, TRUE, g_str_equal)
+               && nm_utils_hashtable_equal(priv->data_invalid,
+                                           pri2->data_invalid,
+                                           TRUE,
+                                           g_str_equal);
     }
 
     return NM_SETTING_CLASS(nm_setting_user_parent_class)

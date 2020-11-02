@@ -1487,13 +1487,18 @@ nm_utils_strdict_get_keys(const GHashTable *hash, gboolean sorted, guint *out_le
 
 gboolean nm_utils_hashtable_equal(const GHashTable *a,
                                   const GHashTable *b,
-                                  GCompareDataFunc  cmp_values,
-                                  gpointer          user_data);
+                                  gboolean          treat_null_as_empty,
+                                  GEqualFunc        equal_func);
+
+gboolean nm_utils_hashtable_cmp_equal(const GHashTable *a,
+                                      const GHashTable *b,
+                                      GCompareDataFunc  cmp_values,
+                                      gpointer          user_data);
 
 static inline gboolean
 nm_utils_hashtable_same_keys(const GHashTable *a, const GHashTable *b)
 {
-    return nm_utils_hashtable_equal(a, b, NULL, NULL);
+    return nm_utils_hashtable_cmp_equal(a, b, NULL, NULL);
 }
 
 int nm_utils_hashtable_cmp(const GHashTable *a,
@@ -1697,13 +1702,6 @@ gssize nm_utils_array_find_binary_search(gconstpointer    list,
                                          gconstpointer    needle,
                                          GCompareDataFunc cmpfcn,
                                          gpointer         user_data);
-
-/*****************************************************************************/
-
-gboolean nm_utils_hash_table_equal(const GHashTable *a,
-                                   const GHashTable *b,
-                                   gboolean          treat_null_as_empty,
-                                   GEqualFunc        equal_func);
 
 /*****************************************************************************/
 
