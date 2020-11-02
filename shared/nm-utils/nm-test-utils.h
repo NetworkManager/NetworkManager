@@ -985,6 +985,13 @@ nmtst_g_source_set_boolean_true (gpointer user_data)
 	return G_SOURCE_CONTINUE;
 }
 
+static inline gboolean
+nmtst_g_source_nop (gpointer user_data)
+{
+	g_assert (!user_data);
+	return G_SOURCE_CONTINUE;
+}
+
 /*****************************************************************************/
 
 static inline gboolean
