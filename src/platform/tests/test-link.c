@@ -101,6 +101,7 @@ software_add(NMLinkType link_type, const char *name)
                                                                 name,
                                                                 NULL,
                                                                 0,
+                                                                0,
                                                                 &nm_platform_lnk_bridge_default,
                                                                 NULL));
     case NM_LINK_TYPE_BOND:
@@ -130,6 +131,7 @@ software_add(NMLinkType link_type, const char *name)
         if (NMTST_NM_ERR_SUCCESS(nm_platform_link_bridge_add(NM_PLATFORM_GET,
                                                              PARENT_NAME,
                                                              NULL,
+                                                             0,
                                                              0,
                                                              &nm_platform_lnk_bridge_default,
                                                              NULL)))
@@ -581,6 +583,7 @@ test_bridge_addr(void)
                                                               DEVICE_NAME,
                                                               addr,
                                                               sizeof(addr),
+                                                              0,
                                                               &nm_platform_lnk_bridge_default,
                                                               &plink)));
     g_assert(plink);
