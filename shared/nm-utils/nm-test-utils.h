@@ -1144,6 +1144,13 @@ nmtst_g_source_assert_not_called(gpointer user_data)
 }
 
 static inline gboolean
+nmtst_g_source_nop(gpointer user_data)
+{
+    g_assert(!user_data);
+    return G_SOURCE_CONTINUE;
+}
+
+static inline gboolean
 nmtst_g_source_set_boolean_true(gpointer user_data)
 {
     gboolean *ptr = user_data;
@@ -1199,38 +1206,60 @@ _nmtst_main_loop_quit_on_notify(GObject *object, GParamSpec *pspec, gpointer use
 }
 #define nmtst_main_loop_quit_on_notify ((GCallback) _nmtst_main_loop_quit_on_notify)
 
-#define nmtst_main_context_iterate_until(context, timeout_msec, condition)                    \
-    ({                                                                                        \
-        nm_auto_destroy_and_unref_gsource GSource *_source      = NULL;                       \
-        GMainContext *                             _context     = (context);                  \
-        gboolean                                   _had_timeout = FALSE;                      \
-        typeof(timeout_msec) _timeout_msec0                     = (timeout_msec);             \
-        gint64 _timeout_msec                                    = _timeout_msec0;             \
-                                                                                              \
-        g_assert_cmpint(_timeout_msec0, ==, _timeout_msec);                                   \
-                                                                                              \
-        _source = g_timeout_source_new(NM_CLAMP(_timeout_msec, 0, (gint64) G_MAXUINT));       \
-        g_source_set_callback(_source, nmtst_g_source_set_boolean_true, &_had_timeout, NULL); \
-        g_source_attach(_source, _context);                                                   \
-                                                                                              \
-        while (TRUE) {                                                                        \
-            if (condition)                                                                    \
-                break;                                                                        \
-            g_main_context_iteration(_context, TRUE);                                         \
-            if (_had_timeout)                                                                 \
-                break;                                                                        \
-        }                                                                                     \
-                                                                                              \
-        !_had_timeout;                                                                        \
+#define nmtst_main_context_iterate_until_full(context, timeout_msec, poll_msec, condition)      \
+    ({                                                                                          \
+        nm_auto_destroy_and_unref_gsource GSource *_source_timeout = NULL;                      \
+        nm_auto_destroy_and_unref_gsource GSource *_source_poll    = NULL;                      \
+        GMainContext *                             _context        = (context);                 \
+        gboolean                                   _had_timeout    = FALSE;                     \
+        typeof(timeout_msec) _timeout_msec0                        = (timeout_msec);            \
+        typeof(poll_msec) _poll_msec0                              = (poll_msec);               \
+        gint64 _timeout_msec                                       = _timeout_msec0;            \
+        guint  _poll_msec                                          = _poll_msec0;               \
+                                                                                                \
+        g_assert_cmpint(_timeout_msec0, ==, _timeout_msec);                                     \
+        g_assert_cmpint(_poll_msec0, ==, _poll_msec);                                           \
+                                                                                                \
+        _source_timeout = g_timeout_source_new(NM_CLAMP(_timeout_msec, 0, (gint64) G_MAXUINT)); \
+        g_source_set_callback(_source_timeout,                                                  \
+                              nmtst_g_source_set_boolean_true,                                  \
+                              &_had_timeout,                                                    \
+                              NULL);                                                            \
+        g_source_attach(_source_timeout, _context);                                             \
+                                                                                                \
+        if (_poll_msec > 0) {                                                                   \
+            _source_poll = g_timeout_source_new(_poll_msec);                                    \
+            g_source_set_callback(_source_poll, nmtst_g_source_nop, NULL, NULL);                \
+            g_source_attach(_source_poll, _context);                                            \
+        }                                                                                       \
+                                                                                                \
+        while (TRUE) {                                                                          \
+            if (condition)                                                                      \
+                break;                                                                          \
+            g_main_context_iteration(_context, TRUE);                                           \
+            if (_had_timeout)                                                                   \
+                break;                                                                          \
+        }                                                                                       \
+                                                                                                \
+        !_had_timeout;                                                                          \
     })
 
-#define nmtst_main_context_iterate_until_assert(context, timeout_msec, condition) \
-    G_STMT_START                                                                  \
-    {                                                                             \
-        if (!nmtst_main_context_iterate_until(context, timeout_msec, condition))  \
-            g_assert(FALSE &&#condition);                                         \
-    }                                                                             \
+#define nmtst_main_context_iterate_until(context, timeout_msec, condition) \
+    nmtst_main_context_iterate_until_full((context), (timeout_msec), 0, condition)
+
+#define nmtst_main_context_iterate_until_assert_full(context, timeout_msec, poll_msec, condition) \
+    G_STMT_START                                                                                  \
+    {                                                                                             \
+        if (!nmtst_main_context_iterate_until_full((context),                                     \
+                                                   (timeout_msec),                                \
+                                                   (poll_msec),                                   \
+                                                   condition))                                    \
+            g_assert(FALSE &&#condition);                                                         \
+    }                                                                                             \
     G_STMT_END
+
+#define nmtst_main_context_iterate_until_assert(context, timeout_msec, condition) \
+    nmtst_main_context_iterate_until_assert_full((context), (timeout_msec), 0, condition)
 
 /*****************************************************************************/
 

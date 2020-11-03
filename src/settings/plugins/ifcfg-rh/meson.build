@@ -18,6 +18,7 @@ libnmdbus_ifcfg_rh = static_library(
   name,
   sources: dbus_sources,
   dependencies: glib_dep,
+  c_args: introspection_extra_cflags,
 )
 
 core_sources = files(
