@@ -12263,10 +12263,10 @@ nm_device_reactivate_ip_config(NMDevice *         self,
                                     nm_device_get_route_metric(self, AF_INET6));
     }
 
-    method_old = nm_setting_ip_config_get_method(s_ip_old)
+    method_old = (s_ip_old ? nm_setting_ip_config_get_method(s_ip_old) : NULL)
                      ?: (IS_IPv4 ? NM_SETTING_IP4_CONFIG_METHOD_DISABLED
                                  : NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
-    method_new = nm_setting_ip_config_get_method(s_ip_new)
+    method_new = (s_ip_new ? nm_setting_ip_config_get_method(s_ip_new) : NULL)
                      ?: (IS_IPv4 ? NM_SETTING_IP4_CONFIG_METHOD_DISABLED
                                  : NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
 
