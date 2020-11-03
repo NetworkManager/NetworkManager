@@ -1,5 +1,5 @@
 /*** BEGIN file-header ***/
-#include "config.h"
+#include "nm-default.h"
 
 #include "nm-core-tests-enum-types.h"
 

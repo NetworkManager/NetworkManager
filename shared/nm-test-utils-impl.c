@@ -219,7 +219,10 @@ again_wait:
 		g_assert (ret == info->pid);
 	}
 
-	g_assert (!name_exists (info->bus, "org.freedesktop.NetworkManager"));
+	nmtst_main_context_iterate_until_assert_full (NULL,
+	                                              1000,
+	                                              80,
+	                                              (!name_exists (info->bus, "org.freedesktop.NetworkManager")));
 
 	g_clear_object (&info->bus);
 
