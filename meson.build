@@ -56,6 +56,8 @@ nm_pkgstatedir = join_paths(nm_localstatedir, 'lib', nm_name)
 nm_vpndir = join_paths(nm_libdir, nm_name)
 nm_plugindir = join_paths(nm_libdir, nm_name, dist_version)
 
+introspection_extra_cflags = ['-Wno-incompatible-pointer-types-discards-qualifiers']
+
 libnm_name = 'libnm'
 
 current = 1
