@@ -75,8 +75,6 @@
 #else
 #error Need to define G_LOG_DOMAIN
 #endif
-#elif defined (NETWORKMANAGER_COMPILATION_TEST) || (NETWORKMANAGER_COMPILATION & NM_NETWORKMANAGER_COMPILATION_WITH_DAEMON)
-#error Do not define G_LOG_DOMAIN with NM_NETWORKMANAGER_COMPILATION_WITH_DAEMON
 #endif
 
 /*****************************************************************************/
