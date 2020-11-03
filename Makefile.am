@@ -1602,8 +1602,20 @@ libnm_noinst_data = \
 
 noinst_DATA += $(libnm_noinst_data)
 
+EXTRA_DIST += clients/cli/generate-docs-nm-settings-nmcli.xml.in
+
+if BUILD_DOCS
 clients/cli/generate-docs-nm-settings-nmcli.xml: clients/cli/generate-docs-nm-settings-nmcli
-	$(AM_V_GEN) clients/cli/generate-docs-nm-settings-nmcli > $@
+	$(AM_V_GEN) clients/cli/generate-docs-nm-settings-nmcli > "$@"
+check-local-generate-docs-nm-settings-nmcli: clients/cli/generate-docs-nm-settings-nmcli.xml
+	$(srcdir)/tools/check-compare-generated.sh "$(srcdir)" "$(builddir)" "$<"
+check_local += check-local-generate-docs-nm-settings-nmcli
+DISTCLEANFILES += clients/cli/generate-docs-nm-settings-nmcli.xml
+else
+clients/cli/generate-docs-nm-settings-nmcli.xml: clients/cli/generate-docs-nm-settings-nmcli.xml.in
+	$(AM_V_GEN) cp $^ $@
+check-local-generate-docs-nm-settings-nmcli:
+endif
 
 libnm_docs_sources = $(libnm_core_lib_c_settings_real)
 
@@ -4453,12 +4465,12 @@ $(clients_common_libnmc_base_la_OBJECTS): $(libnm_lib_h_pub_mkenums)
 $(clients_common_libnmc_base_la_OBJECTS): clients/common/.dirstamp
 
 clients_common_settings_doc_h = clients/common/settings-docs.h
-if HAVE_INTROSPECTION
+if BUILD_DOCS
 $(clients_common_settings_doc_h): clients/common/settings-docs.xsl libnm/nm-settings-docs-gir.xml clients/common/.dirstamp
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $< $(word 2,$^)
 DISTCLEANFILES += $(clients_common_settings_doc_h)
 check-local-settings-docs: $(clients_common_settings_doc_h)
-	$(srcdir)/tools/check-settings-docs.sh "$(srcdir)" "$(builddir)" "$(clients_common_settings_doc_h)"
+	$(srcdir)/tools/check-compare-generated.sh "$(srcdir)" "$(builddir)" "$(clients_common_settings_doc_h)"
 check_local += check-local-settings-docs
 else
 $(clients_common_settings_doc_h): $(clients_common_settings_doc_h).in clients/common/.dirstamp
@@ -5285,7 +5297,7 @@ EXTRA_DIST += \
 	tools/check-config-options.sh \
 	tools/check-docs.sh \
 	tools/check-exports.sh \
-	tools/check-settings-docs.sh \
+	tools/check-compare-generated.sh \
 	tools/create-exports-NetworkManager.sh \
 	tools/debug-helper.py \
 	tools/meson-post-install.sh \

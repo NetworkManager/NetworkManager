@@ -31,7 +31,7 @@ libnmc_base_dep = declare_dependency(
 
 settings_docs = 'settings-docs.h'
 
-if enable_introspection
+if enable_docs
   settings_docs_source = custom_target(
     settings_docs,
     input: nm_settings_docs_xml_gir,
@@ -41,7 +41,7 @@ if enable_introspection
 
   test(
     'check-settings-docs',
-    find_program(join_paths(source_root, 'tools', 'check-settings-docs.sh')),
+    find_program(join_paths(source_root, 'tools', 'check-compare-generated.sh')),
     args: [source_root, build_root, 'clients/common/' + settings_docs],
   )
 else
