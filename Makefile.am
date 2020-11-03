@@ -84,6 +84,8 @@ completiondir = $(datadir)/bash-completion/completions
 
 nmlocaledir = $(datadir)/locale
 
+INTROSPECTION_EXTRA_CFLAGS = -Wno-incompatible-pointer-types-discards-qualifiers
+
 GLIB_MKENUMS_H_FLAGS = --identifier-prefix NM
 GLIB_MKENUMS_C_FLAGS = --identifier-prefix NM
 
@@ -493,7 +495,10 @@ shared_nm_utils_tests_test_shared_general_LDADD = \
 noinst_LTLIBRARIES += \
 	introspection/libnmdbus.la
 
-introspection_libnmdbus_la_CPPFLAGS = $(GLIB_CFLAGS)
+introspection_libnmdbus_la_CPPFLAGS = \
+	$(GLIB_CFLAGS) \
+	$(INTROSPECTION_EXTRA_CFLAGS) \
+	$(NULL)
 
 introspection_sources = \
 	introspection/org.freedesktop.NetworkManager.AccessPoint.c \
@@ -715,8 +720,6 @@ dbusinterfaces_DATA = \
 CLEANFILES += $(introspection_sources)
 CLEANFILES += $(DBUS_INTERFACE_DOCS)
 
-$(dispatcher_libnm_dispatcher_core_la_OBJECTS): $(introspection_sources)
-$(dispatcher_nm_dispatcher_OBJECTS):            $(introspection_sources)
 $(libnm_libnm_la_OBJECTS):                      $(introspection_sources)
 
 EXTRA_DIST += \
@@ -1030,6 +1033,7 @@ GLIB_GENERATED += \
 	libnm-core/tests/nm-core-tests-enum-types.h \
 	libnm-core/tests/nm-core-tests-enum-types.c
 nm_core_tests_enum_types_sources = libnm-core/tests/test-general-enums.h
+nm_core_tests_enum_types_MKENUMS_C_FLAGS = --fhead '\#include "nm-default.h"\n'
 
 libnm-core/tests/nm-core-tests-enum-types.h.stamp: libnm-core/tests/.dirstamp
 libnm-core/tests/nm-core-tests-enum-types.c.stamp: libnm-core/tests/.dirstamp
@@ -2794,7 +2798,10 @@ nodist_src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_SOURCES = \
 	src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.c \
 	src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h
 
-src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_CPPFLAGS = $(filter-out -DGLIB_VERSION_MAX_ALLOWED%,$(src_cppflags_base))
+src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_CPPFLAGS = \
+	$(filter-out -DGLIB_VERSION_MAX_ALLOWED%,$(src_cppflags_base)) \
+	$(INTROSPECTION_EXTRA_CFLAGS) \
+	$(NULL)
 
 CLEANFILES += $(nodist_src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_SOURCES)
 
@@ -3966,6 +3973,7 @@ dispatcher_tests_test_dispatcher_envp_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_EXEC_CFLAGS) \
+	$(INTROSPECTION_EXTRA_CFLAGS) \
 	$(NULL)
 
 dispatcher_tests_test_dispatcher_envp_LDFLAGS = \
@@ -4642,6 +4650,7 @@ GLIB_GENERATED += \
 	$(libnm_util_lib_h_pub_mkenums) \
 	$(libnm_util_lib_c_mkenums)
 nm_utils_enum_types_sources = $(filter-out libnm-util/NetworkManager%,$(libnm_util_lib_h_pub_real))
+nm_utils_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
 
 $(libnm_util_libnm_util_la_OBJECTS): $(libnm_util_lib_h_pub_mkenums)
 
@@ -4980,6 +4989,7 @@ GLIB_GENERATED += \
 	$(libnm_glib_lib_h_pub_mkenums) \
 	$(libnm_glib_lib_c_mkenums)
 nm_glib_enum_types_sources = $(libnm_glib_lib_h_pub_real)
+nm_glib_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
 
 $(libnm_glib_libnm_glib_la_OBJECTS): $(libnm_glib_lib_h_pub_mkenums)
 
@@ -5020,6 +5030,7 @@ GLIB_GENERATED += \
 	$(libnm_glib_vpn_h_mkenums) \
 	$(libnm_glib_vpn_c_mkenums)
 nm_vpn_enum_types_sources = $(libnm_glib_vpn_h_real)
+nm_vpn_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
 
 $(libnm_glib_libnm_glib_vpn_la_OBJECTS): $(libnm_glib_vpn_h_mkenums)
 
