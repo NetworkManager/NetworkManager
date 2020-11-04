@@ -136,7 +136,9 @@ ap_add_remove(NMDeviceIwd *self,
         nm_dbus_object_clear_and_unexport(&ap);
     }
 
-    nm_device_emit_recheck_auto_activate(NM_DEVICE(self));
+    if (priv->enabled)
+        nm_device_emit_recheck_auto_activate(NM_DEVICE(self));
+
     if (recheck_available_connections)
         nm_device_recheck_available_connections(NM_DEVICE(self));
 }
@@ -2693,7 +2695,7 @@ nm_device_iwd_network_add_remove(NMDeviceIwd *self, GDBusProxy *network, bool ad
      * can skip recheck-available if we're currently scanning or in the middle
      * of a GetOrderedNetworks() call as that will trigger the recheck too.
      */
-    recheck = !priv->scanning && !priv->networks_requested;
+    recheck = priv->enabled && !priv->scanning && !priv->networks_requested;
 
     if (!add) {
         if (ap) {

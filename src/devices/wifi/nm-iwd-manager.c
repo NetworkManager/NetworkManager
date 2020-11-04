@@ -975,7 +975,28 @@ device_added(NMManager *manager, NMDevice *device, gpointer user_data)
     if (!priv->running)
         return;
 
+    /* Here we handle a potential scenario where IWD's DBus objects for the
+     * new device popped up before the NMDevice.  The
+     * interface_added/object_added signals have been received already and
+     * the handlers couldn't do much because the NMDevice wasn't there yet
+     * so now we go over the Network and Device interfaces again.  In this
+     * exact order for "object path" property consistency -- see reasoning
+     * in object_compare_interfaces.
+     */
     objects = g_dbus_object_manager_get_objects(priv->object_manager);
+
+    for (iter = objects; iter; iter = iter->next) {
+        GDBusObject *   object                    = G_DBUS_OBJECT(iter->data);
+        gs_unref_object GDBusInterface *interface = NULL;
+
+        interface = g_dbus_object_get_interface(object, NM_IWD_NETWORK_INTERFACE);
+        if (!interface)
+            continue;
+
+        if (NM_DEVICE_IWD(device) == get_device_from_network(self, (GDBusProxy *) interface))
+            nm_device_iwd_network_add_remove(NM_DEVICE_IWD(device), (GDBusProxy *) interface, TRUE);
+    }
+
     for (iter = objects; iter; iter = iter->next) {
         GDBusObject *   object                    = G_DBUS_OBJECT(iter->data);
         gs_unref_object GDBusInterface *interface = NULL;
@@ -1005,6 +1026,60 @@ device_removed(NMManager *manager, NMDevice *device, gpointer user_data)
 
     if (priv->last_agent_call_device == NM_DEVICE_IWD(device))
         priv->last_agent_call_device = NULL;
+}
+
+/* This is used to sort the list of objects returned by GetManagedObjects()
+ * based on the DBus interfaces available on these objects in such a way that
+ * the interface_added calls happen in the right order.  The order is defined
+ * by how some DBus interfaces point to interfaces on other objects using
+ * DBus properties of the type "object path" ("o" signature).  This creates
+ * "dependencies" between objects.
+ *
+ * When NM and IWD are running, the InterfacesAdded signals should come in
+ * an order that ensures consistency of those object paths.  For example
+ * when a Network interface is added with a KnownNetwork property, or that
+ * property is assigned a new value, the KnownNetwork object pointed to by
+ * it will have been added in an earlier InterfacesAdded signal.  Similarly
+ * Station.ConnectedNetwork and Station.GetOrdereNetworks() only point to
+ * existing Network objects.  (There may be circular dependencies but during
+ * initialization we only need a subset of those properties that doesn't
+ * have this problem.)
+ *
+ * But GetManagedObjects doesn't guarantee this kind of consistency so we
+ * order the returned object list ourselves to simplify the job of
+ * interface_added().  Objects that don't have any interfaces listed in
+ * interface_order are moved to the end of the list.
+ */
+static int
+object_compare_interfaces(gconstpointer a, gconstpointer b)
+{
+    static const char *interface_order[] = {
+        NM_IWD_KNOWN_NETWORK_INTERFACE,
+        NM_IWD_NETWORK_INTERFACE,
+        NM_IWD_DEVICE_INTERFACE,
+    };
+    int   rank_a = G_N_ELEMENTS(interface_order);
+    int   rank_b = G_N_ELEMENTS(interface_order);
+    guint pos;
+
+    for (pos = 0; interface_order[pos]; pos++) {
+        GDBusInterface *iface_a;
+        GDBusInterface *iface_b;
+
+        if (rank_a == G_N_ELEMENTS(interface_order)
+            && (iface_a = g_dbus_object_get_interface(G_DBUS_OBJECT(a), interface_order[pos]))) {
+            rank_a = pos;
+            g_object_unref(iface_a);
+        }
+
+        if (rank_b == G_N_ELEMENTS(interface_order)
+            && (iface_b = g_dbus_object_get_interface(G_DBUS_OBJECT(b), interface_order[pos]))) {
+            rank_b = pos;
+            g_object_unref(iface_b);
+        }
+    }
+
+    return rank_a - rank_b;
 }
 
 static void
@@ -1062,6 +1137,7 @@ got_object_manager(GObject *object, GAsyncResult *result, gpointer user_data)
         g_hash_table_remove_all(priv->known_networks);
 
         objects = g_dbus_object_manager_get_objects(object_manager);
+        objects = g_list_sort(objects, object_compare_interfaces);
         for (iter = objects; iter; iter = iter->next)
             object_added(NULL, G_DBUS_OBJECT(iter->data), self);
 
