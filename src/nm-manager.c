@@ -1013,8 +1013,37 @@ active_connection_find(
         g_ptr_array_add(all, g_object_ref(ac));
     }
 
-    if (!best_ac)
-        return NULL;
+    if (!best_ac) {
+        AsyncOpData *       async_op_data;
+
+        c_list_for_each_entry (async_op_data, &priv->async_op_lst_head, async_op_lst) {
+            NMSettingsConnection *ac_conn;
+
+            ac = async_op_data->ac_auth.active;
+            ac_conn = nm_active_connection_get_settings_connection(ac);
+            if (sett_conn && sett_conn != ac_conn)
+                continue;
+            if (uuid && !nm_streq0(uuid, nm_settings_connection_get_uuid(ac_conn)))
+                continue;
+
+            if (!out_all_matching)
+                return ac;
+
+            if (!best_ac) {
+                best_ac = ac;
+                continue;
+            }
+
+            if (!all) {
+                all = g_ptr_array_new_with_free_func(g_object_unref);
+                g_ptr_array_add(all, g_object_ref(best_ac));
+            }
+            g_ptr_array_add(all, g_object_ref(ac));
+        }
+
+        if (!best_ac)
+            return NULL;
+    }
 
     /* as an optimization, we only allocate out_all_matching, if there are more
      * than one result. If there is only one result, we only return the single
@@ -5170,6 +5199,7 @@ _internal_activation_auth_done(NMManager *         self,
         return;
 
 fail:
+    _delete_volatile_connection_do(self, nm_active_connection_get_settings_connection(active));
     nm_assert(error_desc || error);
     nm_active_connection_set_state_fail(active,
                                         NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN,
@@ -5438,6 +5468,8 @@ _activation_auth_done(NMManager *            self,
     return;
 
 fail:
+    _delete_volatile_connection_do(self, connection);
+
     nm_audit_log_connection_op(NM_AUDIT_OP_CONN_ACTIVATE,
                                connection,
                                FALSE,
