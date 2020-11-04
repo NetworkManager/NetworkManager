@@ -1766,4 +1766,5 @@ global:
 	nm_keyfile_read;
 	nm_keyfile_warn_severity_get_type;
 	nm_keyfile_write;
+	nm_utils_print;
 } libnm_1_28_0;
