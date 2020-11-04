@@ -142,7 +142,7 @@ typedef struct {
 
     GArray *capabilities;
 
-    CList               active_connections_lst_head;
+    CList               active_connections_lst_head; /* Oldest ACs at the beginning */
     CList               async_op_lst_head;
     guint               ac_cleanup_id;
     NMActiveConnection *primary_connection;
@@ -941,7 +941,7 @@ active_connection_add(NMManager *self, NMActiveConnection *active)
     nm_assert(NM_IS_ACTIVE_CONNECTION(active));
     nm_assert(!c_list_is_linked(&active->active_connections_lst));
 
-    c_list_link_front(&priv->active_connections_lst_head, &active->active_connections_lst);
+    c_list_link_tail(&priv->active_connections_lst_head, &active->active_connections_lst);
     g_object_ref(active);
 
     g_signal_connect(active,
@@ -7867,7 +7867,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         break;
     case PROP_ACTIVE_CONNECTIONS:
         ptrarr = g_ptr_array_new();
-        c_list_for_each_entry (ac, &priv->active_connections_lst_head, active_connections_lst) {
+        c_list_for_each_entry_prev (ac,
+                                    &priv->active_connections_lst_head,
+                                    active_connections_lst) {
             path = nm_dbus_object_get_path(NM_DBUS_OBJECT(ac));
             if (path)
                 g_ptr_array_add(ptrarr, g_strdup(path));

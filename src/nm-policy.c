@@ -354,11 +354,11 @@ device_ip6_prefix_delegated(NMDevice *device, NMPlatformIP6Address *prefix, gpoi
     delegation->device = device;
     delegation->prefix = *prefix;
 
-    /* The newly activated connections are added to the list beginning,
-     * so traversing it from the beginning makes it likely for newly
+    /* The newly activated connections are added to the end of the list,
+     * so traversing it from the end makes it likely for newly
      * activated connections that have no subnet assigned to be served
      * first. That is a simple yet fair policy, which is good. */
-    nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
+    nm_manager_for_each_active_connection_prev (priv->manager, ac, tmp_list) {
         NMDevice *to_device;
 
         to_device = nm_active_connection_get_device(ac);

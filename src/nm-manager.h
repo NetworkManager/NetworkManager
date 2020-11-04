@@ -72,6 +72,7 @@ NMState  nm_manager_get_state(NMManager *manager);
 
 const CList *nm_manager_get_active_connections(NMManager *manager);
 
+/* From least recently activated */
 #define nm_manager_for_each_active_connection(manager, iter, tmp_list)                        \
     for (tmp_list = nm_manager_get_active_connections(manager),                               \
         iter      = c_list_entry(tmp_list->next, NMActiveConnection, active_connections_lst); \
@@ -86,6 +87,22 @@ const CList *nm_manager_get_active_connections(NMManager *manager);
                              NMActiveConnection,                                              \
                              active_connections_lst))
 
+/* From most recently activated */
+#define nm_manager_for_each_active_connection_prev(manager, iter, tmp_list)                   \
+    for (tmp_list = nm_manager_get_active_connections(manager),                               \
+        iter      = c_list_entry(tmp_list->prev, NMActiveConnection, active_connections_lst); \
+         ({                                                                                   \
+             const gboolean _has_prev = (&iter->active_connections_lst != tmp_list);          \
+                                                                                              \
+             if (!_has_prev)                                                                  \
+                 iter = NULL;                                                                 \
+             _has_prev;                                                                       \
+         });                                                                                  \
+         iter = c_list_entry(iter->active_connections_lst.prev,                               \
+                             NMActiveConnection,                                              \
+                             active_connections_lst))
+
+/* From least recently activated */
 #define nm_manager_for_each_active_connection_safe(manager, iter, tmp_list, iter_safe)            \
     for (tmp_list = nm_manager_get_active_connections(manager), iter_safe = tmp_list->next; ({    \
              if (iter_safe != tmp_list) {                                                         \
