@@ -553,6 +553,32 @@ reset_mode(NMDeviceIwd *       self,
         user_data);
 }
 
+static gboolean
+get_variant_boolean(GVariant *v, const char *property)
+{
+    if (!v || !g_variant_is_of_type(v, G_VARIANT_TYPE_BOOLEAN)) {
+        nm_log_warn(LOGD_DEVICE | LOGD_WIFI,
+                    "Property %s not cached or not boolean type",
+                    property);
+
+        return FALSE;
+    }
+
+    return g_variant_get_boolean(v);
+}
+
+static const char *
+get_variant_state(GVariant *v)
+{
+    if (!v || !g_variant_is_of_type(v, G_VARIANT_TYPE_STRING)) {
+        nm_log_warn(LOGD_DEVICE | LOGD_WIFI, "State property not cached or not a string");
+
+        return "unknown";
+    }
+
+    return g_variant_get_string(v, NULL);
+}
+
 static void
 deactivate(NMDevice *device)
 {
@@ -561,6 +587,14 @@ deactivate(NMDevice *device)
 
     if (!priv->dbus_obj)
         return;
+
+    if (priv->dbus_station_proxy) {
+        gs_unref_variant GVariant *value =
+            g_dbus_proxy_get_cached_property(priv->dbus_station_proxy, "State");
+
+        if (NM_IN_STRSET(get_variant_state(value), "disconnecting", "disconnected"))
+            return;
+    }
 
     cleanup_association_attempt(self, TRUE);
     priv->act_mode_switch = FALSE;
@@ -1013,32 +1047,6 @@ complete_connection(NMDevice *           device,
         g_object_set(s_wifi, NM_SETTING_WIRELESS_HIDDEN, TRUE, NULL);
 
     return TRUE;
-}
-
-static gboolean
-get_variant_boolean(GVariant *v, const char *property)
-{
-    if (!v || !g_variant_is_of_type(v, G_VARIANT_TYPE_BOOLEAN)) {
-        nm_log_warn(LOGD_DEVICE | LOGD_WIFI,
-                    "Property %s not cached or not boolean type",
-                    property);
-
-        return FALSE;
-    }
-
-    return g_variant_get_boolean(v);
-}
-
-static const char *
-get_variant_state(GVariant *v)
-{
-    if (!v || !g_variant_is_of_type(v, G_VARIANT_TYPE_STRING)) {
-        nm_log_warn(LOGD_DEVICE | LOGD_WIFI, "State property not cached or not a string");
-
-        return "unknown";
-    }
-
-    return g_variant_get_string(v, NULL);
 }
 
 static gboolean
@@ -1554,7 +1562,10 @@ network_connect_cb(GObject *source, GAsyncResult *res, gpointer user_data)
     gs_free char *        ssid   = NULL;
     NMDeviceStateReason   reason = NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED;
     GVariant *            value;
-    gboolean              disconnect = !priv->iwd_autoconnect;
+    gboolean              disconnect;
+
+    disconnect = !priv->iwd_autoconnect
+                 || nm_device_autoconnect_blocked_get(device, NM_DEVICE_AUTOCONNECT_BLOCKED_ALL);
 
     variant = g_dbus_proxy_call_finish(G_DBUS_PROXY(source), res, &error);
     if (!variant) {
@@ -2749,7 +2760,9 @@ state_changed(NMDeviceIwd *self, const char *new_state)
         /* If necessary, call Disconnect on the IWD device object to make sure
          * it disables its autoconnect.
          */
-        if (!priv->iwd_autoconnect)
+        if ((!priv->iwd_autoconnect
+             || nm_device_autoconnect_blocked_get(device, NM_DEVICE_AUTOCONNECT_BLOCKED_ALL))
+            && !priv->wifi_secrets_id && !priv->pending_agent_request)
             send_disconnect(self);
 
         /*
@@ -2938,6 +2951,16 @@ powered_changed(NMDeviceIwd *self, gboolean new_powered)
         g_variant_unref(value);
 
         update_aps(self);
+
+        /* When a device is brought UP in station mode, including after a mode
+         * switch, IWD re-enables autoconnect.  This is unlike NM's autoconnect
+         * where a mode change doesn't interfere with the
+         * BLOCKED_MANUAL_DISCONNECT flag.
+         */
+        if (priv->iwd_autoconnect) {
+            nm_device_autoconnect_blocked_unset(NM_DEVICE(self),
+                                                NM_DEVICE_AUTOCONNECT_BLOCKED_INTERNAL);
+        }
     } else {
         set_can_scan(self, FALSE);
         priv->scanning       = FALSE;
@@ -2981,7 +3004,9 @@ config_changed(NMConfig *          config,
     if (old_iwd_ac != priv->iwd_autoconnect && priv->dbus_station_proxy && !priv->current_ap) {
         gs_unref_variant GVariant *value = NULL;
 
-        if (!priv->iwd_autoconnect)
+        if (!priv->iwd_autoconnect
+            && !nm_device_autoconnect_blocked_get(NM_DEVICE(self),
+                                                  NM_DEVICE_AUTOCONNECT_BLOCKED_ALL))
             send_disconnect(self);
 
         value = g_dbus_proxy_get_cached_property(priv->dbus_station_proxy, "State");
@@ -3117,6 +3142,7 @@ nm_device_iwd_agent_query(NMDeviceIwd *self, GDBusMethodInvocation *invocation)
     if (!invocation) {
         gs_unref_variant GVariant *value =
             g_dbus_proxy_get_cached_property(priv->dbus_station_proxy, "State");
+        gboolean disconnect;
 
         if (!priv->wifi_secrets_id && !priv->pending_agent_request)
             return FALSE;
@@ -3139,7 +3165,8 @@ nm_device_iwd_agent_query(NMDeviceIwd *self, GDBusMethodInvocation *invocation)
         if (!nm_streq(get_variant_state(value), "disconnected"))
             return TRUE;
 
-        cleanup_association_attempt(self, FALSE);
+        disconnect = nm_device_autoconnect_blocked_get(device, NM_DEVICE_AUTOCONNECT_BLOCKED_ALL);
+        cleanup_association_attempt(self, disconnect);
         nm_device_state_changed(device,
                                 NM_DEVICE_STATE_FAILED,
                                 NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
@@ -3290,6 +3317,27 @@ nm_device_iwd_network_add_remove(NMDeviceIwd *self, GDBusProxy *network, bool ad
     }
 }
 
+static void
+autoconnect_changed(NMDevice *device, GParamSpec *pspec, NMDeviceIwd *self)
+{
+    NMDeviceIwdPrivate *priv         = NM_DEVICE_IWD_GET_PRIVATE(self);
+    gs_unref_variant GVariant *value = NULL;
+
+    /* Note IWD normally remains in "disconnected" during a secret request
+     * and we don't want to interrupt it by calling Station.Disconnect().
+     */
+    if (!priv->dbus_station_proxy || !priv->iwd_autoconnect
+        || !nm_device_autoconnect_blocked_get(device, NM_DEVICE_AUTOCONNECT_BLOCKED_ALL)
+        || priv->wifi_secrets_id || priv->pending_agent_request)
+        return;
+
+    value = g_dbus_proxy_get_cached_property(priv->dbus_station_proxy, "State");
+    if (!nm_streq(get_variant_state(value), "disconnected"))
+        return;
+
+    send_disconnect(self);
+}
+
 /*****************************************************************************/
 
 static const char *
@@ -3308,6 +3356,8 @@ nm_device_iwd_init(NMDeviceIwd *self)
     NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE(self);
 
     c_list_init(&priv->aps_lst_head);
+
+    g_signal_connect(self, "notify::" NM_DEVICE_AUTOCONNECT, G_CALLBACK(autoconnect_changed), self);
 
     /* Make sure the manager is running */
     (void) nm_iwd_manager_get();
@@ -3338,6 +3388,7 @@ dispose(GObject *object)
 
     nm_clear_g_cancellable(&priv->cancellable);
 
+    g_signal_handlers_disconnect_by_func(self, autoconnect_changed, self);
     nm_device_iwd_set_dbus_object(self, NULL);
 
     G_OBJECT_CLASS(nm_device_iwd_parent_class)->dispose(object);
