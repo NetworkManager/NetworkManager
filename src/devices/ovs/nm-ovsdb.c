@@ -36,6 +36,7 @@ typedef struct {
 } OpenvswitchBridge;
 
 typedef struct {
+    char *interface_uuid;
     char *name;
     char *type;
     char *connection_uuid;
@@ -790,7 +791,7 @@ _add_interface(NMOvsdb *     self,
 
             for (ii = 0; ii < ovs_port->interfaces->len; ii++) {
                 interface_uuid = g_ptr_array_index(ovs_port->interfaces, ii);
-                ovs_interface  = g_hash_table_lookup(priv->interfaces, interface_uuid);
+                ovs_interface  = g_hash_table_lookup(priv->interfaces, &interface_uuid);
 
                 json_array_append_new(interfaces, json_pack("[s, s]", "uuid", interface_uuid));
 
@@ -906,7 +907,7 @@ _delete_interface(NMOvsdb *self, json_t *params, const char *ifname)
 
             for (ii = 0; ii < ovs_port->interfaces->len; ii++) {
                 interface_uuid = g_ptr_array_index(ovs_port->interfaces, ii);
-                ovs_interface  = g_hash_table_lookup(priv->interfaces, interface_uuid);
+                ovs_interface  = g_hash_table_lookup(priv->interfaces, &interface_uuid);
 
                 json_array_append_new(interfaces, json_pack("[s,s]", "uuid", interface_uuid));
 
@@ -1227,7 +1228,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             new = TRUE;
 
         if (old) {
-            ovs_interface = g_hash_table_lookup(priv->interfaces, key);
+            ovs_interface = g_hash_table_lookup(priv->interfaces, &key);
             if (!ovs_interface) {
                 _LOGW("Interface '%s' was not seen", key);
             } else if (!new || !nm_streq(ovs_interface->name, name)) {
@@ -1247,17 +1248,18 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                                   NM_DEVICE_TYPE_OVS_INTERFACE);
                 }
             }
-            g_hash_table_remove(priv->interfaces, key);
+            g_hash_table_remove(priv->interfaces, &key);
         }
 
         if (new) {
             ovs_interface  = g_slice_new(OpenvswitchInterface);
             *ovs_interface = (OpenvswitchInterface){
+                .interface_uuid  = g_strdup(key),
                 .name            = g_strdup(name),
                 .type            = g_strdup(type),
                 .connection_uuid = _connection_uuid_from_external_ids(external_ids),
             };
-            g_hash_table_insert(priv->interfaces, g_strdup(key), ovs_interface);
+            g_hash_table_add(priv->interfaces, ovs_interface);
             if (old) {
                 _LOGT("changed an '%s' interface: %s%s%s",
                       type,
@@ -2015,6 +2017,7 @@ _free_interface(gpointer data)
 {
     OpenvswitchInterface *ovs_interface = data;
 
+    g_free(ovs_interface->interface_uuid);
     g_free(ovs_interface->name);
     g_free(ovs_interface->connection_uuid);
     g_free(ovs_interface->type);
@@ -2032,7 +2035,7 @@ nm_ovsdb_init(NMOvsdb *self)
     priv->output     = g_string_new(NULL);
     priv->bridges    = g_hash_table_new_full(nm_pstr_hash, nm_pstr_equal, _free_bridge, NULL);
     priv->ports      = g_hash_table_new_full(nm_pstr_hash, nm_pstr_equal, _free_port, NULL);
-    priv->interfaces = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, _free_interface);
+    priv->interfaces = g_hash_table_new_full(nm_pstr_hash, nm_pstr_equal, _free_interface, NULL);
 
     ovsdb_try_connect(self);
 }
