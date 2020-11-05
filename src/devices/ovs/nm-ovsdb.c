@@ -22,6 +22,7 @@
 #endif
 
 typedef struct {
+    char *     port_uuid;
     char *     name;
     char *     connection_uuid;
     GPtrArray *interfaces; /* interface uuids */
@@ -773,7 +774,7 @@ _add_interface(NMOvsdb *     self,
 
         for (pi = 0; pi < ovs_bridge->ports->len; pi++) {
             port_uuid = g_ptr_array_index(ovs_bridge->ports, pi);
-            ovs_port  = g_hash_table_lookup(priv->ports, port_uuid);
+            ovs_port  = g_hash_table_lookup(priv->ports, &port_uuid);
 
             json_array_append_new(ports, json_pack("[s, s]", "uuid", port_uuid));
 
@@ -891,7 +892,7 @@ _delete_interface(NMOvsdb *self, json_t *params, const char *ifname)
             interfaces     = json_array();
             new_interfaces = json_array();
             port_uuid      = g_ptr_array_index(ovs_bridge->ports, pi);
-            ovs_port       = g_hash_table_lookup(priv->ports, port_uuid);
+            ovs_port       = g_hash_table_lookup(priv->ports, &port_uuid);
 
             json_array_append_new(ports, json_pack("[s,s]", "uuid", port_uuid));
 
@@ -1313,7 +1314,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             new = TRUE;
 
         if (old) {
-            ovs_port = g_hash_table_lookup(priv->ports, key);
+            ovs_port = g_hash_table_lookup(priv->ports, &key);
             if (!new || (ovs_port && !nm_streq0(ovs_port->name, name))) {
                 old = FALSE;
                 _LOGT("removed a port: %s%s%s",
@@ -1326,18 +1327,19 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                               ovs_port->name,
                               NM_DEVICE_TYPE_OVS_PORT);
             }
-            g_hash_table_remove(priv->ports, key);
+            g_hash_table_remove(priv->ports, &key);
         }
 
         if (new) {
             ovs_port  = g_slice_new(OpenvswitchPort);
             *ovs_port = (OpenvswitchPort){
+                .port_uuid       = g_strdup(key),
                 .name            = g_strdup(name),
                 .connection_uuid = _connection_uuid_from_external_ids(external_ids),
                 .interfaces      = g_ptr_array_new_with_free_func(g_free),
             };
             _uuids_to_array(ovs_port->interfaces, items);
-            g_hash_table_insert(priv->ports, g_strdup(key), ovs_port);
+            g_hash_table_add(priv->ports, ovs_port);
             if (old) {
                 _LOGT("changed a port: %s%s%s",
                       ovs_port->name,
@@ -2001,6 +2003,7 @@ _free_port(gpointer data)
 {
     OpenvswitchPort *ovs_port = data;
 
+    g_free(ovs_port->port_uuid);
     g_free(ovs_port->name);
     g_free(ovs_port->connection_uuid);
     g_ptr_array_free(ovs_port->interfaces, TRUE);
@@ -2028,7 +2031,7 @@ nm_ovsdb_init(NMOvsdb *self)
     priv->input      = g_string_new(NULL);
     priv->output     = g_string_new(NULL);
     priv->bridges    = g_hash_table_new_full(nm_pstr_hash, nm_pstr_equal, _free_bridge, NULL);
-    priv->ports      = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, _free_port);
+    priv->ports      = g_hash_table_new_full(nm_pstr_hash, nm_pstr_equal, _free_port, NULL);
     priv->interfaces = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, _free_interface);
 
     ovsdb_try_connect(self);
