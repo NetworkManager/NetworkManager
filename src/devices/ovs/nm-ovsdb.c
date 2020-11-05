@@ -767,8 +767,8 @@ _add_interface(NMOvsdb *     self,
     while (g_hash_table_iter_next(&iter, (gpointer) &bridge_uuid, (gpointer) &ovs_bridge)) {
         json_array_append_new(bridges, json_pack("[s, s]", "uuid", bridge_uuid));
 
-        if (g_strcmp0(ovs_bridge->name, bridge_name) != 0
-            || g_strcmp0(ovs_bridge->connection_uuid, nm_connection_get_uuid(bridge)) != 0)
+        if (!nm_streq0(ovs_bridge->name, bridge_name)
+            || !nm_streq0(ovs_bridge->connection_uuid, nm_connection_get_uuid(bridge)))
             continue;
 
         for (pi = 0; pi < ovs_bridge->ports->len; pi++) {
@@ -781,8 +781,8 @@ _add_interface(NMOvsdb *     self,
                 /* This would be a violation of ovsdb's reference integrity (a bug). */
                 _LOGW("Unknown port '%s' in bridge '%s'", port_uuid, bridge_uuid);
                 continue;
-            } else if (strcmp(ovs_port->name, port_name) != 0
-                       || g_strcmp0(ovs_port->connection_uuid, nm_connection_get_uuid(port)) != 0) {
+            } else if (!nm_streq(ovs_port->name, port_name)
+                       || !nm_streq0(ovs_port->connection_uuid, nm_connection_get_uuid(port))) {
                 continue;
             }
 
@@ -795,12 +795,10 @@ _add_interface(NMOvsdb *     self,
                 if (!ovs_interface) {
                     /* This would be a violation of ovsdb's reference integrity (a bug). */
                     _LOGW("Unknown interface '%s' in port '%s'", interface_uuid, port_uuid);
-                } else if (strcmp(ovs_interface->name, interface_name) == 0
-                           && g_strcmp0(ovs_interface->connection_uuid,
-                                        nm_connection_get_uuid(interface))
-                                  == 0) {
+                } else if (nm_streq(ovs_interface->name, interface_name)
+                           && nm_streq0(ovs_interface->connection_uuid,
+                                        nm_connection_get_uuid(interface)))
                     has_interface = TRUE;
-                }
             }
 
             break;
@@ -911,7 +909,7 @@ _delete_interface(NMOvsdb *self, json_t *params, const char *ifname)
                 json_array_append_new(interfaces, json_pack("[s,s]", "uuid", interface_uuid));
 
                 if (ovs_interface) {
-                    if (strcmp(ovs_interface->name, ifname) == 0) {
+                    if (nm_streq(ovs_interface->name, ifname)) {
                         /* skip the interface */
                         interfaces_changed = TRUE;
                         continue;
@@ -1120,9 +1118,9 @@ _uuids_to_array(GPtrArray *array, const json_t *items)
         if (!value)
             return;
 
-        if (g_strcmp0(key, "uuid") == 0 && json_is_string(value)) {
+        if (nm_streq0(key, "uuid") && json_is_string(value)) {
             g_ptr_array_add(array, g_strdup(json_string_value(value)));
-        } else if (g_strcmp0(key, "set") == 0 && json_is_array(value)) {
+        } else if (nm_streq0(key, "set") && json_is_array(value)) {
             json_array_foreach (value, set_index, set_value) {
                 _uuids_to_array(array, set_value);
             }
@@ -1136,11 +1134,11 @@ _connection_uuid_from_external_ids(json_t *external_ids)
     json_t *value;
     size_t  index;
 
-    if (g_strcmp0("map", json_string_value(json_array_get(external_ids, 0))) != 0)
+    if (!nm_streq0("map", json_string_value(json_array_get(external_ids, 0))))
         return NULL;
 
     json_array_foreach (json_array_get(external_ids, 1), index, value) {
-        if (g_strcmp0("NM.connection.uuid", json_string_value(json_array_get(value, 0))) == 0)
+        if (nm_streq0("NM.connection.uuid", json_string_value(json_array_get(value, 0))))
             return g_strdup(json_string_value(json_array_get(value, 1)));
     }
 
@@ -1230,14 +1228,14 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             ovs_interface = g_hash_table_lookup(priv->interfaces, key);
             if (!ovs_interface) {
                 _LOGW("Interface '%s' was not seen", key);
-            } else if (!new || strcmp(ovs_interface->name, name) != 0) {
+            } else if (!new || !nm_streq(ovs_interface->name, name)) {
                 old = FALSE;
                 _LOGT("removed an '%s' interface: %s%s%s",
                       ovs_interface->type,
                       ovs_interface->name,
                       ovs_interface->connection_uuid ? ", " : "",
                       ovs_interface->connection_uuid ?: "");
-                if (g_strcmp0(ovs_interface->type, "internal") == 0) {
+                if (nm_streq0(ovs_interface->type, "internal")) {
                     /* Currently, the factory only creates NMDevices for
                      * internal interfaces. Ignore the rest. */
                     g_signal_emit(self,
@@ -1270,7 +1268,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                       ovs_interface->name,
                       ovs_interface->connection_uuid ? ", " : "",
                       ovs_interface->connection_uuid ?: "");
-                if (g_strcmp0(ovs_interface->type, "internal") == 0) {
+                if (nm_streq0(ovs_interface->type, "internal")) {
                     /* Currently, the factory only creates NMDevices for
                      * internal interfaces. Ignore the rest. */
                     g_signal_emit(self,
@@ -1315,7 +1313,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
 
         if (old) {
             ovs_port = g_hash_table_lookup(priv->ports, key);
-            if (!new || g_strcmp0(ovs_port->name, name) != 0) {
+            if (!new || !nm_streq0(ovs_port->name, name)) {
                 old = FALSE;
                 _LOGT("removed a port: %s%s%s",
                       ovs_port->name,
@@ -1380,7 +1378,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
 
         if (old) {
             ovs_bridge = g_hash_table_lookup(priv->bridges, key);
-            if (!new || g_strcmp0(ovs_bridge->name, name) != 0) {
+            if (!new || !nm_streq0(ovs_bridge->name, name)) {
                 old = FALSE;
                 _LOGT("removed a bridge: %s%s%s",
                       ovs_bridge->name,
@@ -1504,10 +1502,10 @@ ovsdb_got_msg(NMOvsdb *self, json_t *msg)
             return;
         }
 
-        if (g_strcmp0(method, "update") == 0) {
+        if (nm_streq0(method, "update")) {
             /* This is a update method call. */
             ovsdb_got_update(self, json_array_get(params, 1));
-        } else if (g_strcmp0(method, "echo") == 0) {
+        } else if (nm_streq0(method, "echo")) {
             /* This is an echo request. */
             ovsdb_got_echo(self, id, params);
         } else {
