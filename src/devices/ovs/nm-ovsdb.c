@@ -28,6 +28,7 @@ typedef struct {
 } OpenvswitchPort;
 
 typedef struct {
+    char *     bridge_uuid;
     char *     name;
     char *     connection_uuid;
     GPtrArray *ports; /* port uuids */
@@ -694,7 +695,6 @@ _add_interface(NMOvsdb *     self,
 {
     NMOvsdbPrivate *      priv = NM_OVSDB_GET_PRIVATE(self);
     GHashTableIter        iter;
-    const char *          bridge_uuid;
     const char *          port_uuid;
     const char *          interface_uuid;
     const char *          bridge_name;
@@ -764,8 +764,8 @@ _add_interface(NMOvsdb *     self,
     }
 
     g_hash_table_iter_init(&iter, priv->bridges);
-    while (g_hash_table_iter_next(&iter, (gpointer) &bridge_uuid, (gpointer) &ovs_bridge)) {
-        json_array_append_new(bridges, json_pack("[s, s]", "uuid", bridge_uuid));
+    while (g_hash_table_iter_next(&iter, (gpointer) &ovs_bridge, NULL)) {
+        json_array_append_new(bridges, json_pack("[s, s]", "uuid", ovs_bridge->bridge_uuid));
 
         if (!nm_streq0(ovs_bridge->name, bridge_name)
             || !nm_streq0(ovs_bridge->connection_uuid, nm_connection_get_uuid(bridge)))
@@ -779,7 +779,7 @@ _add_interface(NMOvsdb *     self,
 
             if (!ovs_port) {
                 /* This would be a violation of ovsdb's reference integrity (a bug). */
-                _LOGW("Unknown port '%s' in bridge '%s'", port_uuid, bridge_uuid);
+                _LOGW("Unknown port '%s' in bridge '%s'", port_uuid, ovs_bridge->bridge_uuid);
                 continue;
             }
 
@@ -856,7 +856,6 @@ _delete_interface(NMOvsdb *self, json_t *params, const char *ifname)
 {
     NMOvsdbPrivate *      priv = NM_OVSDB_GET_PRIVATE(self);
     GHashTableIter        iter;
-    char *                bridge_uuid;
     char *                port_uuid;
     char *                interface_uuid;
     OpenvswitchBridge *   ovs_bridge;
@@ -875,7 +874,7 @@ _delete_interface(NMOvsdb *self, json_t *params, const char *ifname)
     bridges_changed = FALSE;
 
     g_hash_table_iter_init(&iter, priv->bridges);
-    while (g_hash_table_iter_next(&iter, (gpointer) &bridge_uuid, (gpointer) &ovs_bridge)) {
+    while (g_hash_table_iter_next(&iter, (gpointer) &ovs_bridge, NULL)) {
         nm_auto_decref_json json_t *ports     = NULL;
         nm_auto_decref_json json_t *new_ports = NULL;
 
@@ -883,7 +882,7 @@ _delete_interface(NMOvsdb *self, json_t *params, const char *ifname)
         new_ports     = json_array();
         ports_changed = FALSE;
 
-        json_array_append_new(bridges, json_pack("[s,s]", "uuid", bridge_uuid));
+        json_array_append_new(bridges, json_pack("[s,s]", "uuid", ovs_bridge->bridge_uuid));
 
         for (pi = 0; pi < ovs_bridge->ports->len; pi++) {
             nm_auto_decref_json json_t *interfaces     = NULL;
@@ -900,7 +899,7 @@ _delete_interface(NMOvsdb *self, json_t *params, const char *ifname)
 
             if (!ovs_port) {
                 /* This would be a violation of ovsdb's reference integrity (a bug). */
-                _LOGW("Unknown port '%s' in bridge '%s'", port_uuid, bridge_uuid);
+                _LOGW("Unknown port '%s' in bridge '%s'", port_uuid, ovs_bridge->bridge_uuid);
                 continue;
             }
 
@@ -942,7 +941,7 @@ _delete_interface(NMOvsdb *self, json_t *params, const char *ifname)
                 _expect_bridge_ports(params, ovs_bridge->name, ports);
                 _set_bridge_ports(params, ovs_bridge->name, new_ports);
             }
-            json_array_append_new(new_bridges, json_pack("[s,s]", "uuid", bridge_uuid));
+            json_array_append_new(new_bridges, json_pack("[s,s]", "uuid", ovs_bridge->bridge_uuid));
         }
     }
 
@@ -1379,7 +1378,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             new = TRUE;
 
         if (old) {
-            ovs_bridge = g_hash_table_lookup(priv->bridges, key);
+            ovs_bridge = g_hash_table_lookup(priv->bridges, &key);
             if (!new || (ovs_bridge && !nm_streq0(ovs_bridge->name, name))) {
                 old = FALSE;
                 _LOGT("removed a bridge: %s%s%s",
@@ -1392,18 +1391,19 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                               ovs_bridge->name,
                               NM_DEVICE_TYPE_OVS_BRIDGE);
             }
-            g_hash_table_remove(priv->bridges, key);
+            g_hash_table_remove(priv->bridges, &key);
         }
 
         if (new) {
             ovs_bridge  = g_slice_new(OpenvswitchBridge);
             *ovs_bridge = (OpenvswitchBridge){
+                .bridge_uuid     = g_strdup(key),
                 .name            = g_strdup(name),
                 .connection_uuid = _connection_uuid_from_external_ids(external_ids),
                 .ports           = g_ptr_array_new_with_free_func(g_free),
             };
             _uuids_to_array(ovs_bridge->ports, items);
-            g_hash_table_insert(priv->bridges, g_strdup(key), ovs_bridge);
+            g_hash_table_add(priv->bridges, ovs_bridge);
             if (old) {
                 _LOGT("changed a bridge: %s%s%s",
                       ovs_bridge->name,
@@ -1989,6 +1989,7 @@ _free_bridge(gpointer data)
 {
     OpenvswitchBridge *ovs_bridge = data;
 
+    g_free(ovs_bridge->bridge_uuid);
     g_free(ovs_bridge->name);
     g_free(ovs_bridge->connection_uuid);
     g_ptr_array_free(ovs_bridge->ports, TRUE);
@@ -2026,7 +2027,7 @@ nm_ovsdb_init(NMOvsdb *self)
     g_array_set_clear_func(priv->calls, _clear_call);
     priv->input      = g_string_new(NULL);
     priv->output     = g_string_new(NULL);
-    priv->bridges    = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, _free_bridge);
+    priv->bridges    = g_hash_table_new_full(nm_pstr_hash, nm_pstr_equal, _free_bridge, NULL);
     priv->ports      = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, _free_port);
     priv->interfaces = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, _free_interface);
 
