@@ -1101,8 +1101,7 @@ _uuids_to_array(GPtrArray *array, const json_t *items)
         if (g_strcmp0(key, "uuid") == 0 && json_is_string(value)) {
             g_ptr_array_add(array, g_strdup(json_string_value(value)));
         } else if (g_strcmp0(key, "set") == 0 && json_is_array(value)) {
-            json_array_foreach(value, set_index, set_value)
-            {
+            json_array_foreach (value, set_index, set_value) {
                 _uuids_to_array(array, set_value);
             }
         }
@@ -1118,8 +1117,7 @@ _connection_uuid_from_external_ids(json_t *external_ids)
     if (g_strcmp0("map", json_string_value(json_array_get(external_ids, 0))) != 0)
         return NULL;
 
-    json_array_foreach(json_array_get(external_ids, 1), index, value)
-    {
+    json_array_foreach (json_array_get(external_ids, 1), index, value) {
         if (g_strcmp0("NM.connection.uuid", json_string_value(json_array_get(value, 0))) == 0)
             return g_strdup(json_string_value(json_array_get(value, 1)));
     }
@@ -1180,8 +1178,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
     }
 
     /* Interfaces */
-    json_object_foreach(interface, key, value)
-    {
+    json_object_foreach (interface, key, value) {
         json_t * error = NULL;
         gboolean old   = FALSE;
         gboolean new   = FALSE;
@@ -1269,8 +1266,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
     }
 
     /* Ports */
-    json_object_foreach(port, key, value)
-    {
+    json_object_foreach (port, key, value) {
         gboolean old = FALSE;
         gboolean new = FALSE;
 
@@ -1333,8 +1329,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
     }
 
     /* Bridges */
-    json_object_foreach(bridge, key, value)
-    {
+    json_object_foreach (bridge, key, value) {
         gboolean old = FALSE;
         gboolean new = FALSE;
 
@@ -1838,8 +1833,7 @@ _transact_cb(NMOvsdb *self, json_t *result, GError *error, gpointer user_data)
     if (error)
         goto out;
 
-    json_array_foreach(result, index, value)
-    {
+    json_array_foreach (result, index, value) {
         if (json_unpack(value, "{s:s, s:s}", "error", &err, "details", &err_details) == 0) {
             g_set_error(&error,
                         G_IO_ERROR,
