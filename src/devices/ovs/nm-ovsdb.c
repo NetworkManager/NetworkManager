@@ -216,6 +216,8 @@ ovsdb_call_method(NMOvsdb *           self,
     case OVSDB_MONITOR:
         break;
     case OVSDB_ADD_INTERFACE:
+        /* FIXME(applied-connection-immutable): we should not modify the applied
+         *   connection, consequently there is no need to clone the connections. */
         call->bridge           = nm_simple_connection_new_clone(bridge);
         call->port             = nm_simple_connection_new_clone(port);
         call->interface        = nm_simple_connection_new_clone(interface);

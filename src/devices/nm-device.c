@@ -12557,6 +12557,8 @@ check_and_reapply_connection(NMDevice *    self,
 
         con_old = applied_clone = nm_simple_connection_new_clone(applied);
         con_new                 = applied;
+        /* FIXME(applied-connection-immutable): we should not modify the applied
+         *   connection but replace it with a new (immutable) instance. */
         nm_connection_replace_settings_from_connection(applied, connection_clean);
         nm_connection_clear_secrets(applied);
     } else
