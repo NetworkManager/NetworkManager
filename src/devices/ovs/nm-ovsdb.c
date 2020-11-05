@@ -1251,10 +1251,12 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
         }
 
         if (new) {
-            ovs_interface                  = g_slice_new(OpenvswitchInterface);
-            ovs_interface->name            = g_strdup(name);
-            ovs_interface->type            = g_strdup(type);
-            ovs_interface->connection_uuid = _connection_uuid_from_external_ids(external_ids);
+            ovs_interface  = g_slice_new(OpenvswitchInterface);
+            *ovs_interface = (OpenvswitchInterface){
+                .name            = g_strdup(name),
+                .type            = g_strdup(type),
+                .connection_uuid = _connection_uuid_from_external_ids(external_ids),
+            };
             g_hash_table_insert(priv->interfaces, g_strdup(key), ovs_interface);
             if (old) {
                 _LOGT("changed an '%s' interface: %s%s%s",
@@ -1329,10 +1331,12 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
         }
 
         if (new) {
-            ovs_port                  = g_slice_new(OpenvswitchPort);
-            ovs_port->name            = g_strdup(name);
-            ovs_port->connection_uuid = _connection_uuid_from_external_ids(external_ids);
-            ovs_port->interfaces      = g_ptr_array_new_with_free_func(g_free);
+            ovs_port  = g_slice_new(OpenvswitchPort);
+            *ovs_port = (OpenvswitchPort){
+                .name            = g_strdup(name),
+                .connection_uuid = _connection_uuid_from_external_ids(external_ids),
+                .interfaces      = g_ptr_array_new_with_free_func(g_free),
+            };
             _uuids_to_array(ovs_port->interfaces, items);
             g_hash_table_insert(priv->ports, g_strdup(key), ovs_port);
             if (old) {
@@ -1392,10 +1396,12 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
         }
 
         if (new) {
-            ovs_bridge                  = g_slice_new(OpenvswitchBridge);
-            ovs_bridge->name            = g_strdup(name);
-            ovs_bridge->connection_uuid = _connection_uuid_from_external_ids(external_ids);
-            ovs_bridge->ports           = g_ptr_array_new_with_free_func(g_free);
+            ovs_bridge  = g_slice_new(OpenvswitchBridge);
+            *ovs_bridge = (OpenvswitchBridge){
+                .name            = g_strdup(name),
+                .connection_uuid = _connection_uuid_from_external_ids(external_ids),
+                .ports           = g_ptr_array_new_with_free_func(g_free),
+            };
             _uuids_to_array(ovs_bridge->ports, items);
             g_hash_table_insert(priv->bridges, g_strdup(key), ovs_bridge);
             if (old) {
@@ -1873,7 +1879,7 @@ _transact_cb(NMOvsdb *self, json_t *result, GError *error, gpointer user_data)
 
 out:
     call->callback(error, call->user_data);
-    g_slice_free(OvsdbCall, call);
+    nm_g_slice_free(call);
 }
 
 static OvsdbCall *
@@ -1881,10 +1887,11 @@ ovsdb_call_new(NMOvsdbCallback callback, gpointer user_data)
 {
     OvsdbCall *call;
 
-    call            = g_slice_new(OvsdbCall);
-    call->callback  = callback;
-    call->user_data = user_data;
-
+    call  = g_slice_new(OvsdbCall);
+    *call = (OvsdbCall){
+        .callback  = callback,
+        .user_data = user_data,
+    };
     return call;
 }
 
@@ -1985,7 +1992,7 @@ _free_bridge(gpointer data)
     g_free(ovs_bridge->name);
     g_free(ovs_bridge->connection_uuid);
     g_ptr_array_free(ovs_bridge->ports, TRUE);
-    g_slice_free(OpenvswitchBridge, ovs_bridge);
+    nm_g_slice_free(ovs_bridge);
 }
 
 static void
@@ -1996,7 +2003,7 @@ _free_port(gpointer data)
     g_free(ovs_port->name);
     g_free(ovs_port->connection_uuid);
     g_ptr_array_free(ovs_port->interfaces, TRUE);
-    g_slice_free(OpenvswitchPort, ovs_port);
+    nm_g_slice_free(ovs_port);
 }
 
 static void
@@ -2007,7 +2014,7 @@ _free_interface(gpointer data)
     g_free(ovs_interface->name);
     g_free(ovs_interface->connection_uuid);
     g_free(ovs_interface->type);
-    g_slice_free(OpenvswitchInterface, ovs_interface);
+    nm_g_slice_free(ovs_interface);
 }
 
 static void
