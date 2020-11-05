@@ -53,7 +53,7 @@ typedef struct {
     size_t             bufp;      /* Last decoded byte in the input buffer. */
     GString *          input;     /* JSON stream waiting for decoding. */
     GString *          output;    /* JSON stream to be sent. */
-    gint64             seq;
+    guint64            call_id_counter;
     GArray *           calls;      /* Method calls waiting for a response. */
     GHashTable *       interfaces; /* interface uuid => OpenvswitchInterface */
     GHashTable *       ports;      /* port uuid => OpenvswitchPort */
@@ -104,9 +104,10 @@ typedef enum {
     OVSDB_SET_INTERFACE_MTU,
 } OvsdbCommand;
 
+#define CALL_ID_UNSPEC G_MAXUINT64
+
 typedef struct {
-    gint64 id;
-#define COMMAND_PENDING -1 /* id not yet assigned */
+    guint64             call_id;
     OvsdbCommand        command;
     OvsdbMethodCallback callback;
     gpointer            user_data;
@@ -207,7 +208,7 @@ ovsdb_call_method(NMOvsdb *           self,
         g_array_set_size(priv->calls, priv->calls->len + 1);
         call = &g_array_index(priv->calls, OvsdbMethodCall, priv->calls->len - 1);
     }
-    call->id        = COMMAND_PENDING;
+    call->call_id   = CALL_ID_UNSPEC;
     call->command   = command;
     call->callback  = callback;
     call->user_data = user_data;
@@ -975,20 +976,21 @@ ovsdb_next_command(NMOvsdb *self)
     if (!priv->calls->len)
         return;
     call = &g_array_index(priv->calls, OvsdbMethodCall, 0);
-    if (call->id != COMMAND_PENDING)
+    if (call->call_id != CALL_ID_UNSPEC)
         return;
-    call->id = priv->seq++;
+
+    call->call_id = ++priv->call_id_counter;
 
     switch (call->command) {
     case OVSDB_MONITOR:
-        msg = json_pack("{s:i, s:s, s:[s, n, {"
+        msg = json_pack("{s:I, s:s, s:[s, n, {"
                         "  s:[{s:[s, s, s]}],"
                         "  s:[{s:[s, s, s]}],"
                         "  s:[{s:[s, s, s, s]}],"
                         "  s:[{s:[]}]"
                         "}]}",
                         "id",
-                        call->id,
+                        (json_int_t) call->call_id,
                         "method",
                         "monitor",
                         "params",
@@ -1025,7 +1027,13 @@ ovsdb_next_command(NMOvsdb *self)
                        call->bridge_device,
                        call->interface_device);
 
-        msg = json_pack("{s:i, s:s, s:o}", "id", call->id, "method", "transact", "params", params);
+        msg = json_pack("{s:I, s:s, s:o}",
+                        "id",
+                        (json_int_t) call->call_id,
+                        "method",
+                        "transact",
+                        "params",
+                        params);
         break;
     case OVSDB_DEL_INTERFACE:
         params = json_array();
@@ -1034,7 +1042,13 @@ ovsdb_next_command(NMOvsdb *self)
 
         _delete_interface(self, params, call->ifname);
 
-        msg = json_pack("{s:i, s:s, s:o}", "id", call->id, "method", "transact", "params", params);
+        msg = json_pack("{s:I, s:s, s:o}",
+                        "id",
+                        (json_int_t) call->call_id,
+                        "method",
+                        "transact",
+                        "params",
+                        params);
         break;
     case OVSDB_SET_INTERFACE_MTU:
         params = json_array();
@@ -1055,7 +1069,13 @@ ovsdb_next_command(NMOvsdb *self)
                                         "==",
                                         call->ifname));
 
-        msg = json_pack("{s:i, s:s, s:o}", "id", call->id, "method", "transact", "params", params);
+        msg = json_pack("{s:I, s:s, s:o}",
+                        "id",
+                        (json_int_t) call->call_id,
+                        "method",
+                        "transact",
+                        "params",
+                        params);
         break;
     }
 
@@ -1437,7 +1457,7 @@ ovsdb_got_msg(NMOvsdb *self, json_t *msg)
         0,
     };
     json_t *            json_id = NULL;
-    gint64              id      = -1;
+    json_int_t          id      = (json_int_t) -1;
     const char *        method  = NULL;
     json_t *            params  = NULL;
     json_t *            result  = NULL;
@@ -1490,18 +1510,18 @@ ovsdb_got_msg(NMOvsdb *self, json_t *msg)
         return;
     }
 
-    if (id > -1) {
+    if (id >= 0) {
         /* This is a response to a method call. */
         if (!priv->calls->len) {
-            _LOGE("there are no queued calls expecting response %" G_GUINT64_FORMAT, id);
+            _LOGE("there are no queued calls expecting response %" G_GUINT64_FORMAT, (guint64) id);
             ovsdb_disconnect(self, FALSE, FALSE);
             return;
         }
         call = &g_array_index(priv->calls, OvsdbMethodCall, 0);
-        if (call->id != id) {
+        if (call->call_id != id) {
             _LOGE("expected a response to call %" G_GUINT64_FORMAT ", not %" G_GUINT64_FORMAT,
-                  call->id,
-                  id);
+                  call->call_id,
+                  (guint64) id);
             ovsdb_disconnect(self, FALSE, FALSE);
             return;
         }
@@ -1705,7 +1725,7 @@ ovsdb_disconnect(NMOvsdb *self, gboolean retry, gboolean is_disposing)
 
     if (retry) {
         if (priv->calls->len != 0)
-            g_array_index(priv->calls, OvsdbMethodCall, 0).id = COMMAND_PENDING;
+            g_array_index(priv->calls, OvsdbMethodCall, 0).call_id = CALL_ID_UNSPEC;
     } else {
         nm_utils_error_set_cancelled(&error, is_disposing, "NMOvsdb");
 
