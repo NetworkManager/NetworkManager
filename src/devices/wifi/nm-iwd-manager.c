@@ -16,6 +16,7 @@
 #include "nm-wifi-utils.h"
 #include "nm-glib-aux/nm-random-utils.h"
 #include "settings/nm-settings.h"
+#include "nm-std-aux/nm-dbus-compat.h"
 
 /*****************************************************************************/
 
@@ -88,7 +89,8 @@ G_DEFINE_TYPE(NMIwdManager, nm_iwd_manager, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
-static void mirror_connection_take_and_delete(NMSettingsConnection *sett_conn);
+static void mirror_connection_take_and_delete(NMSettingsConnection *sett_conn,
+                                              KnownNetworkData *    data);
 
 /*****************************************************************************/
 
@@ -368,7 +370,7 @@ known_network_data_free(KnownNetworkData *network)
         return;
 
     g_object_unref(network->known_network);
-    mirror_connection_take_and_delete(network->mirror_connection);
+    mirror_connection_take_and_delete(network->mirror_connection, network);
     g_slice_free(KnownNetworkData, network);
 }
 
@@ -407,6 +409,58 @@ set_device_dbus_object(NMIwdManager *self, GDBusProxy *proxy, GDBusObject *objec
     }
 
     nm_device_iwd_set_dbus_object(NM_DEVICE_IWD(device), object);
+}
+
+static void
+known_network_update_cb(GObject *source, GAsyncResult *res, gpointer user_data)
+{
+    gs_unref_variant GVariant *variant = NULL;
+    gs_free_error GError *error        = NULL;
+
+    variant = g_dbus_proxy_call_finish(G_DBUS_PROXY(source), res, &error);
+    if (!variant) {
+        nm_log_warn(LOGD_WIFI,
+                    "Updating %s on IWD known network %s failed: %s",
+                    (const char *) user_data,
+                    g_dbus_proxy_get_object_path(G_DBUS_PROXY(source)),
+                    error->message);
+    }
+}
+
+static void
+sett_conn_changed(NMSettingsConnection *sett_conn, guint update_reason, KnownNetworkData *data)
+{
+    NMSettingsConnectionIntFlags flags;
+    NMConnection *               conn   = nm_settings_connection_get_connection(sett_conn);
+    NMSettingConnection *        s_conn = nm_connection_get_setting_connection(conn);
+    gboolean                     nm_autoconnectable = nm_setting_connection_get_autoconnect(s_conn);
+    gboolean iwd_autoconnectable = get_property_bool(data->known_network, "AutoConnect", TRUE);
+
+    nm_assert(sett_conn == data->mirror_connection);
+
+    if (iwd_autoconnectable == nm_autoconnectable)
+        return;
+
+    /* If this is a generated connection it may be ourselves updating it */
+    flags = nm_settings_connection_get_flags(data->mirror_connection);
+    if (NM_FLAGS_HAS(flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED))
+        return;
+
+    nm_log_dbg(LOGD_WIFI,
+               "Updating AutoConnect on known network at %s based on connection %s",
+               g_dbus_proxy_get_object_path(data->known_network),
+               nm_settings_connection_get_id(data->mirror_connection));
+    g_dbus_proxy_call(data->known_network,
+                      DBUS_INTERFACE_PROPERTIES ".Set",
+                      g_variant_new("(ssv)",
+                                    NM_IWD_KNOWN_NETWORK_INTERFACE,
+                                    "AutoConnect",
+                                    g_variant_new_boolean(nm_autoconnectable)),
+                      G_DBUS_CALL_FLAGS_NONE,
+                      -1,
+                      NULL,
+                      known_network_update_cb,
+                      "AutoConnect");
 }
 
 /* Look up an existing NMSettingsConnection for a network that has been
@@ -524,7 +578,7 @@ mirror_connection(NMIwdManager *        self,
          * should try to copy the properties from it to IWD's Known Network
          * using the Properties DBus interface in case the user created an
          * NM connection before IWD appeared on the bus, or before IWD
-         * created its Known Network object. (TODO)
+         * created its Known Network object.
          */
         if (NM_FLAGS_HAS(flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED)) {
             NMConnection *tmp_conn = nm_settings_connection_get_connection(settings_connection);
@@ -536,6 +590,9 @@ mirror_connection(NMIwdManager *        self,
                          autoconnectable,
                          NULL);
             g_object_set(G_OBJECT(s_wifi), NM_SETTING_WIRELESS_HIDDEN, hidden, NULL);
+        } else {
+            KnownNetworkData data = {known_network, settings_connection};
+            sett_conn_changed(settings_connection, 0, &data);
         }
     }
 
@@ -646,7 +703,7 @@ mirror_connection(NMIwdManager *        self,
 }
 
 static void
-mirror_connection_take_and_delete(NMSettingsConnection *sett_conn)
+mirror_connection_take_and_delete(NMSettingsConnection *sett_conn, KnownNetworkData *data)
 {
     NMSettingsConnectionIntFlags flags;
 
@@ -660,6 +717,7 @@ mirror_connection_take_and_delete(NMSettingsConnection *sett_conn)
     if (NM_FLAGS_HAS(flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED))
         nm_settings_connection_delete(sett_conn, FALSE);
 
+    g_signal_handlers_disconnect_by_data(sett_conn, data);
     g_object_unref(sett_conn);
 }
 
@@ -731,7 +789,12 @@ interface_added(GDBusObjectManager *object_manager,
             NMSettingsConnection *sett_conn_old = data->mirror_connection;
 
             data->mirror_connection = nm_g_object_ref(sett_conn);
-            mirror_connection_take_and_delete(sett_conn_old);
+            mirror_connection_take_and_delete(sett_conn_old, data);
+
+            g_signal_connect(sett_conn,
+                             NM_SETTINGS_CONNECTION_UPDATED_INTERNAL,
+                             G_CALLBACK(sett_conn_changed),
+                             data);
         }
 
         return;
