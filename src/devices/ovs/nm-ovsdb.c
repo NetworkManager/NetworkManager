@@ -781,10 +781,11 @@ _add_interface(NMOvsdb *     self,
                 /* This would be a violation of ovsdb's reference integrity (a bug). */
                 _LOGW("Unknown port '%s' in bridge '%s'", port_uuid, bridge_uuid);
                 continue;
-            } else if (!nm_streq(ovs_port->name, port_name)
-                       || !nm_streq0(ovs_port->connection_uuid, nm_connection_get_uuid(port))) {
-                continue;
             }
+
+            if (!nm_streq(ovs_port->name, port_name)
+                || !nm_streq0(ovs_port->connection_uuid, nm_connection_get_uuid(port)))
+                continue;
 
             for (ii = 0; ii < ovs_port->interfaces->len; ii++) {
                 interface_uuid = g_ptr_array_index(ovs_port->interfaces, ii);
@@ -795,9 +796,10 @@ _add_interface(NMOvsdb *     self,
                 if (!ovs_interface) {
                     /* This would be a violation of ovsdb's reference integrity (a bug). */
                     _LOGW("Unknown interface '%s' in port '%s'", interface_uuid, port_uuid);
-                } else if (nm_streq(ovs_interface->name, interface_name)
-                           && nm_streq0(ovs_interface->connection_uuid,
-                                        nm_connection_get_uuid(interface)))
+                    continue;
+                }
+                if (nm_streq(ovs_interface->name, interface_name)
+                    && nm_streq0(ovs_interface->connection_uuid, nm_connection_get_uuid(interface)))
                     has_interface = TRUE;
             }
 
