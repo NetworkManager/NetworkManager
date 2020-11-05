@@ -457,6 +457,8 @@ typedef struct _NMDeviceClass {
 
     bool act_stage1_prepare_set_hwaddr_ethernet : 1;
 
+    bool can_reapply_change_ovs_external_ids : 1;
+
 } NMDeviceClass;
 
 GType nm_device_get_type(void);

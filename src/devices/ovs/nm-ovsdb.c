@@ -15,6 +15,7 @@
 #include "nm-core-utils.h"
 #include "nm-core-internal.h"
 #include "devices/nm-device.h"
+#include "nm-setting-ovs-external-ids.h"
 
 /*****************************************************************************/
 
@@ -62,6 +63,7 @@ typedef enum {
     OVSDB_ADD_INTERFACE,
     OVSDB_DEL_INTERFACE,
     OVSDB_SET_INTERFACE_MTU,
+    OVSDB_SET_EXTERNAL_IDS,
 } OvsdbCommand;
 
 #define CALL_ID_UNSPEC G_MAXUINT64
@@ -83,6 +85,13 @@ typedef union {
         char *  ifname;
         guint32 mtu;
     } set_interface_mtu;
+    struct {
+        NMDeviceType device_type;
+        char *       ifname;
+        char *       connection_uuid;
+        GHashTable * exid_old;
+        GHashTable * exid_new;
+    } set_external_ids;
 } OvsdbMethodPayload;
 
 typedef struct {
@@ -198,6 +207,33 @@ static void ovsdb_next_command(NMOvsdb *self);
             },                                                    \
     }))
 
+#define OVSDB_METHOD_PAYLOAD_SET_EXTERNAL_IDS(xdevice_type,                         \
+                                              xifname,                              \
+                                              xconnection_uuid,                     \
+                                              xexid_old,                            \
+                                              xexid_new)                            \
+    (&((const OvsdbMethodPayload){                                                  \
+        .set_external_ids =                                                         \
+            {                                                                       \
+                .device_type     = xdevice_type,                                    \
+                .ifname          = (char *) NM_CONSTCAST(char, (xifname)),          \
+                .connection_uuid = (char *) NM_CONSTCAST(char, (xconnection_uuid)), \
+                .exid_old        = (xexid_old),                                     \
+                .exid_new        = (xexid_new),                                     \
+            },                                                                      \
+    }))
+
+/*****************************************************************************/
+
+static NM_UTILS_LOOKUP_STR_DEFINE(_device_type_to_table,
+                                  NMDeviceType,
+                                  NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT(NULL),
+                                  NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_TYPE_OVS_BRIDGE, "Bridge"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_TYPE_OVS_PORT, "Port"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_TYPE_OVS_INTERFACE,
+                                                           "Interface"),
+                                  NM_UTILS_LOOKUP_ITEM_IGNORE_OTHER(), );
+
 /*****************************************************************************/
 
 static void
@@ -239,6 +275,12 @@ _call_complete(OvsdbMethodCall *call, json_t *response, GError *error)
         break;
     case OVSDB_SET_INTERFACE_MTU:
         nm_clear_g_free(&call->payload.set_interface_mtu.ifname);
+        break;
+    case OVSDB_SET_EXTERNAL_IDS:
+        nm_clear_g_free(&call->payload.set_external_ids.ifname);
+        nm_clear_g_free(&call->payload.set_external_ids.connection_uuid);
+        nm_clear_pointer(&call->payload.set_external_ids.exid_old, g_hash_table_destroy);
+        nm_clear_pointer(&call->payload.set_external_ids.exid_new, g_hash_table_destroy);
         break;
     }
 
@@ -431,6 +473,20 @@ ovsdb_call_method(NMOvsdb *                 self,
                    "new: set-interface-mtu interface=%s mtu=%u",
                    call->payload.set_interface_mtu.ifname,
                    call->payload.set_interface_mtu.mtu);
+        break;
+    case OVSDB_SET_EXTERNAL_IDS:
+        call->payload.set_external_ids.device_type = payload->set_external_ids.device_type;
+        call->payload.set_external_ids.ifname      = g_strdup(payload->set_external_ids.ifname);
+        call->payload.set_external_ids.connection_uuid =
+            g_strdup(payload->set_external_ids.connection_uuid);
+        call->payload.set_external_ids.exid_old =
+            nm_g_hash_table_ref(payload->set_external_ids.exid_old);
+        call->payload.set_external_ids.exid_new =
+            nm_g_hash_table_ref(payload->set_external_ids.exid_new);
+        _LOGT_call(call,
+                   "new: set-external-ids con-uuid=%s, interface=%s",
+                   call->payload.set_external_ids.connection_uuid,
+                   call->payload.set_external_ids.ifname);
         break;
     }
 
@@ -651,6 +707,94 @@ _set_port_interfaces(json_t *params, const char *ifname, json_t *new_interfaces)
                                     ifname));
 }
 
+static json_t *
+_j_create_external_ids_array_new(NMConnection *connection)
+{
+    json_t *                 array;
+    const char *const *      external_ids   = NULL;
+    guint                    n_external_ids = 0;
+    guint                    i;
+    const char *             uuid;
+    NMSettingOvsExternalIDs *s_exid;
+
+    nm_assert(NM_IS_CONNECTION(connection));
+
+    array = json_array();
+
+    uuid = nm_connection_get_uuid(connection);
+    nm_assert(uuid);
+    json_array_append_new(array, json_pack("[s, s]", NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID, uuid));
+
+    s_exid = _nm_connection_get_setting(connection, NM_TYPE_SETTING_OVS_EXTERNAL_IDS);
+    if (s_exid)
+        external_ids = nm_setting_ovs_external_ids_get_data_keys(s_exid, &n_external_ids);
+    for (i = 0; i < n_external_ids; i++) {
+        const char *k = external_ids[i];
+
+        json_array_append_new(
+            array,
+            json_pack("[s, s]", k, nm_setting_ovs_external_ids_get_data(s_exid, k)));
+    }
+
+    return json_pack("[s, o]", "map", array);
+}
+
+static json_t *
+_j_create_external_ids_array_update(const char *connection_uuid,
+                                    GHashTable *exid_old,
+                                    GHashTable *exid_new)
+{
+    GHashTableIter iter;
+    json_t *       mutations;
+    json_t *       array;
+    const char *   key;
+    const char *   val;
+
+    nm_assert(connection_uuid);
+
+    mutations = json_array();
+
+    if (exid_old) {
+        array = NULL;
+        g_hash_table_iter_init(&iter, exid_old);
+        while (g_hash_table_iter_next(&iter, (gpointer *) &key, NULL)) {
+            if (nm_g_hash_table_contains(exid_new, key))
+                continue;
+            if (NM_STR_HAS_PREFIX(key, NM_OVS_EXTERNAL_ID_NM_PREFIX))
+                continue;
+
+            if (!array)
+                array = json_array();
+
+            json_array_append_new(array, json_string(key));
+        }
+        if (array) {
+            json_array_append_new(
+                mutations,
+                json_pack("[s, s, [s, o]]", "external_ids", "delete", "set", array));
+        }
+    }
+
+    array = json_array();
+
+    json_array_append_new(
+        array,
+        json_pack("[s, s]", NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID, connection_uuid));
+
+    if (exid_new) {
+        g_hash_table_iter_init(&iter, exid_new);
+        while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &val)) {
+            if (NM_STR_HAS_PREFIX(key, NM_OVS_EXTERNAL_ID_NM_PREFIX))
+                continue;
+            json_array_append_new(array, json_pack("[s, s]", key, val));
+        }
+    }
+
+    json_array_append_new(mutations,
+                          json_pack("[s, s, [s, o]]", "external_ids", "insert", "map", array));
+    return mutations;
+}
+
 /**
  * _insert_interface:
  *
@@ -701,7 +845,7 @@ _insert_interface(json_t *      params,
         json_array_append_new(options, json_array());
     }
 
-    row = json_pack("{s:s, s:s, s:o, s:[s, [[s, s]]]}",
+    row = json_pack("{s:s, s:s, s:o, s:o}",
                     "name",
                     nm_connection_get_interface_name(interface),
                     "type",
@@ -709,9 +853,7 @@ _insert_interface(json_t *      params,
                     "options",
                     options,
                     "external_ids",
-                    "map",
-                    NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID,
-                    nm_connection_get_uuid(interface));
+                    _j_create_external_ids_array_new(interface));
 
     if (cloned_mac)
         json_object_set_new(row, "mac", json_string(cloned_mac));
@@ -776,12 +918,7 @@ _insert_port(json_t *params, NMConnection *port, json_t *new_interfaces)
 
     json_object_set_new(row, "name", json_string(nm_connection_get_interface_name(port)));
     json_object_set_new(row, "interfaces", json_pack("[s, O]", "set", new_interfaces));
-    json_object_set_new(row,
-                        "external_ids",
-                        json_pack("[s, [[s, s]]]",
-                                  "map",
-                                  NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID,
-                                  nm_connection_get_uuid(port)));
+    json_object_set_new(row, "external_ids", _j_create_external_ids_array_new(port));
 
     /* Create a new one. */
     json_array_append_new(params,
@@ -841,12 +978,7 @@ _insert_bridge(json_t *      params,
 
     json_object_set_new(row, "name", json_string(nm_connection_get_interface_name(bridge)));
     json_object_set_new(row, "ports", json_pack("[s, O]", "set", new_ports));
-    json_object_set_new(row,
-                        "external_ids",
-                        json_pack("[s, [[s, s]]]",
-                                  "map",
-                                  NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID,
-                                  nm_connection_get_uuid(bridge)));
+    json_object_set_new(row, "external_ids", _j_create_external_ids_array_new(bridge));
 
     if (cloned_mac) {
         json_object_set_new(row,
@@ -1264,6 +1396,25 @@ ovsdb_next_command(NMOvsdb *self)
                                             "==",
                                             call->payload.set_interface_mtu.ifname));
             break;
+        case OVSDB_SET_EXTERNAL_IDS:
+            json_array_append_new(
+                params,
+                json_pack("{s:s, s:s, s:o, s:[[s, s, s]]}",
+                          "op",
+                          "mutate",
+                          "table",
+                          _device_type_to_table(call->payload.set_external_ids.device_type),
+                          "mutations",
+                          _j_create_external_ids_array_update(
+                              call->payload.set_external_ids.connection_uuid,
+                              call->payload.set_external_ids.exid_old,
+                              call->payload.set_external_ids.exid_new),
+                          "where",
+                          "name",
+                          "==",
+                          call->payload.set_external_ids.ifname));
+            break;
+
         default:
             nm_assert_not_reached();
             break;
@@ -2333,6 +2484,37 @@ nm_ovsdb_set_interface_mtu(NMOvsdb *       self,
                       FALSE,
                       OVSDB_SET_INTERFACE_MTU,
                       OVSDB_METHOD_PAYLOAD_SET_INTERFACE_MTU(ifname, mtu));
+}
+
+void
+nm_ovsdb_set_external_ids(NMOvsdb *                self,
+                          NMDeviceType             device_type,
+                          const char *             ifname,
+                          const char *             connection_uuid,
+                          NMSettingOvsExternalIDs *s_exid_old,
+                          NMSettingOvsExternalIDs *s_exid_new)
+{
+    gs_unref_hashtable GHashTable *exid_old = NULL;
+    gs_unref_hashtable GHashTable *exid_new = NULL;
+
+    exid_old = s_exid_old
+                   ? nm_utils_strdict_clone(_nm_setting_ovs_external_ids_get_data(s_exid_old))
+                   : NULL;
+    exid_new = s_exid_new
+                   ? nm_utils_strdict_clone(_nm_setting_ovs_external_ids_get_data(s_exid_new))
+                   : NULL;
+
+    ovsdb_call_method(self,
+                      NULL,
+                      NULL,
+                      NULL,
+                      FALSE,
+                      OVSDB_SET_EXTERNAL_IDS,
+                      OVSDB_METHOD_PAYLOAD_SET_EXTERNAL_IDS(device_type,
+                                                            ifname,
+                                                            connection_uuid,
+                                                            exid_old,
+                                                            exid_new));
 }
 
 /*****************************************************************************/

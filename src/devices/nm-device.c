@@ -52,6 +52,7 @@
 #include "settings/nm-settings-connection.h"
 #include "settings/nm-settings.h"
 #include "nm-setting-ethtool.h"
+#include "nm-setting-ovs-external-ids.h"
 #include "nm-setting-user.h"
 #include "nm-auth-utils.h"
 #include "nm-keep-alive.h"
@@ -12449,6 +12450,10 @@ can_reapply_change(NMDevice *  self,
         }
         goto out_fail;
     }
+
+    if (nm_streq(setting_name, NM_SETTING_OVS_EXTERNAL_IDS_SETTING_NAME)
+        && NM_DEVICE_GET_CLASS(self)->can_reapply_change_ovs_external_ids)
+        return TRUE;
 
 out_fail:
     g_set_error(error,
