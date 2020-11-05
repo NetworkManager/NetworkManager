@@ -1313,7 +1313,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
 
         if (old) {
             ovs_port = g_hash_table_lookup(priv->ports, key);
-            if (!new || !nm_streq0(ovs_port->name, name)) {
+            if (!new || (ovs_port && !nm_streq0(ovs_port->name, name))) {
                 old = FALSE;
                 _LOGT("removed a port: %s%s%s",
                       ovs_port->name,
@@ -1378,7 +1378,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
 
         if (old) {
             ovs_bridge = g_hash_table_lookup(priv->bridges, key);
-            if (!new || !nm_streq0(ovs_bridge->name, name)) {
+            if (!new || (ovs_bridge && !nm_streq0(ovs_bridge->name, name))) {
                 old = FALSE;
                 _LOGT("removed a bridge: %s%s%s",
                       ovs_bridge->name,
