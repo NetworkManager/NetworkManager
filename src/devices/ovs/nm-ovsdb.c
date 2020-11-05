@@ -1056,14 +1056,14 @@ ovsdb_next_command(NMOvsdb *self)
         json_array_append_new(params, _inc_next_cfg(priv->db_uuid));
 
         json_array_append_new(params,
-                              json_pack("{s:s, s:s, s:{s: i}, s:[[s, s, s]]}",
+                              json_pack("{s:s, s:s, s:{s: I}, s:[[s, s, s]]}",
                                         "op",
                                         "update",
                                         "table",
                                         "Interface",
                                         "row",
                                         "mtu_request",
-                                        call->mtu,
+                                        (json_int_t) call->mtu,
                                         "where",
                                         "name",
                                         "==",
