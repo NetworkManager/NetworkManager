@@ -141,14 +141,14 @@ typedef struct {
 static void
 _LOGT_call_do(const char *comment, OvsdbMethodCall *call, json_t *msg)
 {
-    gs_free char *str = NULL;
+    gs_free char *msg_as_str = NULL;
 
-    if (msg)
-        str = json_dumps(msg, 0);
+#define _QUOTE_MSG(msg, msg_as_str) \
+    (msg) ? ": " : "", (msg) ? (msg_as_str = json_dumps((msg), 0)) : ""
 
     switch (call->command) {
     case OVSDB_MONITOR:
-        _LOGT("%s: monitor%s%s", comment, msg ? ": " : "", msg ? str : "");
+        _LOGT("%s: monitor%s%s", comment, _QUOTE_MSG(msg, msg_as_str));
         break;
     case OVSDB_ADD_INTERFACE:
         _LOGT("%s: add-iface bridge=%s port=%s interface=%s%s%s",
@@ -156,23 +156,17 @@ _LOGT_call_do(const char *comment, OvsdbMethodCall *call, json_t *msg)
               nm_connection_get_interface_name(call->bridge),
               nm_connection_get_interface_name(call->port),
               nm_connection_get_interface_name(call->interface),
-              msg ? ": " : "",
-              msg ? str : "");
+              _QUOTE_MSG(msg, msg_as_str));
         break;
     case OVSDB_DEL_INTERFACE:
-        _LOGT("%s: del-iface interface=%s%s%s",
-              comment,
-              call->ifname,
-              msg ? ": " : "",
-              msg ? str : "");
+        _LOGT("%s: del-iface interface=%s%s%s", comment, call->ifname, _QUOTE_MSG(msg, msg_as_str));
         break;
     case OVSDB_SET_INTERFACE_MTU:
-        _LOGT("%s: set-iface-mtu interface=%s%s%s mtu=%u",
+        _LOGT("%s: set-iface-mtu interface=%s mtu=%u%s%s",
               comment,
               call->ifname,
-              msg ? ": " : "",
-              msg ? str : "",
-              call->mtu);
+              call->mtu,
+              _QUOTE_MSG(msg, msg_as_str));
         break;
     }
 }
