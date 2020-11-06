@@ -1175,8 +1175,12 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
     }
 
     if (ovs) {
-        iter          = json_object_iter(ovs);
-        priv->db_uuid = iter ? g_strdup(json_object_iter_key(iter)) : NULL;
+        const char *s;
+
+        iter = json_object_iter(ovs);
+        s    = json_object_iter_key(iter);
+        if (s)
+            nm_utils_strdup_reset(&priv->db_uuid, s);
     }
 
     /* Interfaces */
