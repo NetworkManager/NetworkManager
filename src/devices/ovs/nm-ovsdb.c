@@ -207,10 +207,8 @@ _clear_call(gpointer data)
 }
 
 static void
-_free_bridge(gpointer data)
+_free_bridge(OpenvswitchBridge *ovs_bridge)
 {
-    OpenvswitchBridge *ovs_bridge = data;
-
     g_free(ovs_bridge->bridge_uuid);
     g_free(ovs_bridge->name);
     g_free(ovs_bridge->connection_uuid);
@@ -219,10 +217,8 @@ _free_bridge(gpointer data)
 }
 
 static void
-_free_port(gpointer data)
+_free_port(OpenvswitchPort *ovs_port)
 {
-    OpenvswitchPort *ovs_port = data;
-
     g_free(ovs_port->port_uuid);
     g_free(ovs_port->name);
     g_free(ovs_port->connection_uuid);
@@ -231,10 +227,8 @@ _free_port(gpointer data)
 }
 
 static void
-_free_interface(gpointer data)
+_free_interface(OpenvswitchInterface *ovs_interface)
 {
-    OpenvswitchInterface *ovs_interface = data;
-
     g_free(ovs_interface->interface_uuid);
     g_free(ovs_interface->name);
     g_free(ovs_interface->connection_uuid);
@@ -2040,11 +2034,14 @@ nm_ovsdb_init(NMOvsdb *self)
 
     priv->calls = g_array_new(FALSE, TRUE, sizeof(OvsdbMethodCall));
     g_array_set_clear_func(priv->calls, _clear_call);
-    priv->input      = g_string_new(NULL);
-    priv->output     = g_string_new(NULL);
-    priv->bridges    = g_hash_table_new_full(nm_pstr_hash, nm_pstr_equal, _free_bridge, NULL);
-    priv->ports      = g_hash_table_new_full(nm_pstr_hash, nm_pstr_equal, _free_port, NULL);
-    priv->interfaces = g_hash_table_new_full(nm_pstr_hash, nm_pstr_equal, _free_interface, NULL);
+    priv->input  = g_string_new(NULL);
+    priv->output = g_string_new(NULL);
+    priv->bridges =
+        g_hash_table_new_full(nm_pstr_hash, nm_pstr_equal, (GDestroyNotify) _free_bridge, NULL);
+    priv->ports =
+        g_hash_table_new_full(nm_pstr_hash, nm_pstr_equal, (GDestroyNotify) _free_port, NULL);
+    priv->interfaces =
+        g_hash_table_new_full(nm_pstr_hash, nm_pstr_equal, (GDestroyNotify) _free_interface, NULL);
 
     ovsdb_try_connect(self);
 }
