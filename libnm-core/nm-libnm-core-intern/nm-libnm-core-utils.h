@@ -98,7 +98,8 @@ gboolean nm_utils_vlan_priority_map_parse_str(NMVlanPriorityMap map_type,
 
 /*****************************************************************************/
 
-#define NM_OVS_EXTERNAL_ID_NM_PREFIX "NM."
+#define NM_OVS_EXTERNAL_ID_NM_PREFIX          "NM."
+#define NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID "NM.connection.uuid"
 
 /*****************************************************************************/
 

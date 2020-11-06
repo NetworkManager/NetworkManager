@@ -30,6 +30,7 @@ typedef struct {
     char *     name;
     char *     connection_uuid;
     GPtrArray *interfaces; /* interface uuids */
+    GArray *   external_ids;
 } OpenvswitchPort;
 
 typedef struct {
@@ -37,13 +38,15 @@ typedef struct {
     char *     name;
     char *     connection_uuid;
     GPtrArray *ports; /* port uuids */
+    GArray *   external_ids;
 } OpenvswitchBridge;
 
 typedef struct {
-    char *interface_uuid;
-    char *name;
-    char *type;
-    char *connection_uuid;
+    char *  interface_uuid;
+    char *  name;
+    char *  type;
+    char *  connection_uuid;
+    GArray *external_ids;
 } OpenvswitchInterface;
 
 /*****************************************************************************/
@@ -213,6 +216,7 @@ _free_bridge(OpenvswitchBridge *ovs_bridge)
     g_free(ovs_bridge->name);
     g_free(ovs_bridge->connection_uuid);
     g_ptr_array_free(ovs_bridge->ports, TRUE);
+    nm_g_array_unref(ovs_bridge->external_ids);
     nm_g_slice_free(ovs_bridge);
 }
 
@@ -223,6 +227,7 @@ _free_port(OpenvswitchPort *ovs_port)
     g_free(ovs_port->name);
     g_free(ovs_port->connection_uuid);
     g_ptr_array_free(ovs_port->interfaces, TRUE);
+    nm_g_array_unref(ovs_port->external_ids);
     nm_g_slice_free(ovs_port);
 }
 
@@ -233,6 +238,7 @@ _free_interface(OpenvswitchInterface *ovs_interface)
     g_free(ovs_interface->name);
     g_free(ovs_interface->connection_uuid);
     g_free(ovs_interface->type);
+    nm_g_array_unref(ovs_interface->external_ids);
     nm_g_slice_free(ovs_interface);
 }
 
@@ -593,7 +599,7 @@ _insert_interface(json_t *      params,
                     options,
                     "external_ids",
                     "map",
-                    "NM.connection.uuid",
+                    NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID,
                     nm_connection_get_uuid(interface));
 
     if (cloned_mac)
@@ -659,10 +665,12 @@ _insert_port(json_t *params, NMConnection *port, json_t *new_interfaces)
 
     json_object_set_new(row, "name", json_string(nm_connection_get_interface_name(port)));
     json_object_set_new(row, "interfaces", json_pack("[s, O]", "set", new_interfaces));
-    json_object_set_new(
-        row,
-        "external_ids",
-        json_pack("[s, [[s, s]]]", "map", "NM.connection.uuid", nm_connection_get_uuid(port)));
+    json_object_set_new(row,
+                        "external_ids",
+                        json_pack("[s, [[s, s]]]",
+                                  "map",
+                                  NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID,
+                                  nm_connection_get_uuid(port)));
 
     /* Create a new one. */
     json_array_append_new(params,
@@ -722,10 +730,12 @@ _insert_bridge(json_t *      params,
 
     json_object_set_new(row, "name", json_string(nm_connection_get_interface_name(bridge)));
     json_object_set_new(row, "ports", json_pack("[s, O]", "set", new_ports));
-    json_object_set_new(
-        row,
-        "external_ids",
-        json_pack("[s, [[s, s]]]", "map", "NM.connection.uuid", nm_connection_get_uuid(bridge)));
+    json_object_set_new(row,
+                        "external_ids",
+                        json_pack("[s, [[s, s]]]",
+                                  "map",
+                                  NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID,
+                                  nm_connection_get_uuid(bridge)));
 
     if (cloned_mac) {
         json_object_set_new(row,
@@ -1237,24 +1247,71 @@ _uuids_to_array(const json_t *items)
     return array;
 }
 
-/*****************************************************************************/
-
-static char *
-_connection_uuid_from_external_ids(json_t *external_ids)
+static void
+_external_ids_extract(json_t *external_ids, GArray **out_array, const char **out_connection_uuid)
 {
+    json_t *array;
     json_t *value;
-    size_t  index;
+    gsize   index;
+
+    nm_assert(out_array && !*out_array);
+    nm_assert(!out_connection_uuid || !*out_connection_uuid);
 
     if (!nm_streq0("map", json_string_value(json_array_get(external_ids, 0))))
-        return NULL;
+        return;
 
-    json_array_foreach (json_array_get(external_ids, 1), index, value) {
-        if (nm_streq0("NM.connection.uuid", json_string_value(json_array_get(value, 0))))
-            return g_strdup(json_string_value(json_array_get(value, 1)));
+    array = json_array_get(external_ids, 1);
+
+    json_array_foreach (array, index, value) {
+        const char *       key = json_string_value(json_array_get(value, 0));
+        const char *       val = json_string_value(json_array_get(value, 1));
+        NMUtilsNamedValue *v;
+
+        if (!key || !val)
+            continue;
+
+        if (!*out_array) {
+            *out_array = g_array_new(FALSE, FALSE, sizeof(NMUtilsNamedValue));
+            g_array_set_clear_func(*out_array,
+                                   (GDestroyNotify) nm_utils_named_value_clear_with_g_free);
+        }
+
+        v  = nm_g_array_append_new(*out_array, NMUtilsNamedValue);
+        *v = (NMUtilsNamedValue){
+            .name      = g_strdup(key),
+            .value_str = g_strdup(val),
+        };
+
+        if (out_connection_uuid && nm_streq(v->name, NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID)) {
+            *out_connection_uuid = v->value_str;
+            out_connection_uuid  = NULL;
+        }
     }
-
-    return NULL;
 }
+
+static gboolean
+_external_ids_equal(const GArray *arr1, const GArray *arr2)
+{
+    guint n;
+    guint i;
+
+    n = nm_g_array_len(arr1);
+
+    if (n != nm_g_array_len(arr2))
+        return FALSE;
+    for (i = 0; i < n; i++) {
+        const NMUtilsNamedValue *n1 = &g_array_index(arr1, NMUtilsNamedValue, i);
+        const NMUtilsNamedValue *n2 = &g_array_index(arr2, NMUtilsNamedValue, i);
+
+        if (!nm_streq0(n1->name, n2->name))
+            return FALSE;
+        if (!nm_streq0(n1->value_str, n2->value_str))
+            return FALSE;
+    }
+    return TRUE;
+}
+
+/*****************************************************************************/
 
 /**
  * ovsdb_got_update:
@@ -1311,9 +1368,10 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
 
     json_object_foreach (interface, key, value) {
         OpenvswitchInterface *ovs_interface;
-        gs_free char *        connection_uuid = NULL;
-        json_t *              error           = NULL;
-        int                   r;
+        gs_unref_array GArray *external_ids_arr = NULL;
+        const char *           connection_uuid  = NULL;
+        json_t *               error            = NULL;
+        int                    r;
 
         r = json_unpack(value,
                         "{s:{s:s, s:s, s?:o, s:o}}",
@@ -1370,7 +1428,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             nm_clear_pointer(&ovs_interface, _free_interface);
         }
 
-        connection_uuid = _connection_uuid_from_external_ids(external_ids);
+        _external_ids_extract(external_ids, &external_ids_arr, &connection_uuid);
 
         if (ovs_interface) {
             gboolean changed = FALSE;
@@ -1378,8 +1436,11 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             nm_assert(nm_streq0(ovs_interface->name, name));
 
             changed |= nm_utils_strdup_reset(&ovs_interface->type, type);
-            changed |= nm_utils_strdup_reset_take(&ovs_interface->connection_uuid,
-                                                  g_steal_pointer(&connection_uuid));
+            changed |= nm_utils_strdup_reset(&ovs_interface->connection_uuid, connection_uuid);
+            if (!_external_ids_equal(ovs_interface->external_ids, external_ids_arr)) {
+                NM_SWAP(&ovs_interface->external_ids, &external_ids_arr);
+                changed = TRUE;
+            }
             if (changed) {
                 _LOGT("obj[iface:%s]: changed an '%s' interface: %s%s%s",
                       key,
@@ -1396,7 +1457,8 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                 .interface_uuid  = g_strdup(key),
                 .name            = g_strdup(name),
                 .type            = g_strdup(type),
-                .connection_uuid = g_steal_pointer(&connection_uuid),
+                .connection_uuid = g_strdup(connection_uuid),
+                .external_ids    = g_steal_pointer(&external_ids_arr),
             };
             g_hash_table_add(priv->interfaces, ovs_interface);
             _LOGT("obj[iface:%s]: added an '%s' interface: %s%s%s",
@@ -1424,8 +1486,9 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
     json_object_foreach (port, key, value) {
         gs_unref_ptrarray GPtrArray *interfaces = NULL;
         OpenvswitchPort *            ovs_port;
-        gs_free char *               connection_uuid = NULL;
-        int                          r;
+        gs_unref_array GArray *external_ids_arr = NULL;
+        const char *           connection_uuid  = NULL;
+        int                    r;
 
         r = json_unpack(value,
                         "{s:{s:s, s:o, s:o}}",
@@ -1467,8 +1530,8 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             nm_clear_pointer(&ovs_port, _free_port);
         }
 
-        connection_uuid = _connection_uuid_from_external_ids(external_ids);
-        interfaces      = _uuids_to_array(items);
+        _external_ids_extract(external_ids, &external_ids_arr, &connection_uuid);
+        interfaces = _uuids_to_array(items);
 
         if (ovs_port) {
             gboolean changed = FALSE;
@@ -1476,10 +1539,13 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             nm_assert(nm_streq0(ovs_port->name, name));
 
             changed |= nm_utils_strdup_reset(&ovs_port->name, name);
-            changed |= nm_utils_strdup_reset_take(&ovs_port->connection_uuid,
-                                                  g_steal_pointer(&connection_uuid));
+            changed |= nm_utils_strdup_reset(&ovs_port->connection_uuid, g_strdup(connection_uuid));
             if (nm_strv_ptrarray_cmp(ovs_port->interfaces, interfaces) != 0) {
                 NM_SWAP(&ovs_port->interfaces, &interfaces);
+                changed = TRUE;
+            }
+            if (!_external_ids_equal(ovs_port->external_ids, external_ids_arr)) {
+                NM_SWAP(&ovs_port->external_ids, &external_ids_arr);
                 changed = TRUE;
             }
             if (changed) {
@@ -1496,8 +1562,9 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             *ovs_port = (OpenvswitchPort){
                 .port_uuid       = g_strdup(key),
                 .name            = g_strdup(name),
-                .connection_uuid = g_steal_pointer(&connection_uuid),
+                .connection_uuid = g_strdup(connection_uuid),
                 .interfaces      = g_steal_pointer(&interfaces),
+                .external_ids    = g_steal_pointer(&external_ids_arr),
             };
             g_hash_table_add(priv->ports, ovs_port);
             _LOGT("obj[port:%s]: added a port: %s%s%s",
@@ -1514,8 +1581,9 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
     json_object_foreach (bridge, key, value) {
         gs_unref_ptrarray GPtrArray *ports = NULL;
         OpenvswitchBridge *          ovs_bridge;
-        gs_free char *               connection_uuid = NULL;
-        int                          r;
+        gs_unref_array GArray *external_ids_arr = NULL;
+        const char *           connection_uuid  = NULL;
+        int                    r;
 
         r = json_unpack(value,
                         "{s:{s:s, s:o, s:o}}",
@@ -1561,8 +1629,8 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             nm_clear_pointer(&ovs_bridge, _free_bridge);
         }
 
-        connection_uuid = _connection_uuid_from_external_ids(external_ids);
-        ports           = _uuids_to_array(items);
+        _external_ids_extract(external_ids, &external_ids_arr, &connection_uuid);
+        ports = _uuids_to_array(items);
 
         if (ovs_bridge) {
             gboolean changed = FALSE;
@@ -1570,10 +1638,14 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             nm_assert(nm_streq0(ovs_bridge->name, name));
 
             changed = nm_utils_strdup_reset(&ovs_bridge->name, name);
-            changed = nm_utils_strdup_reset_take(&ovs_bridge->connection_uuid,
-                                                 g_steal_pointer(&connection_uuid));
+            changed =
+                nm_utils_strdup_reset(&ovs_bridge->connection_uuid, g_strdup(connection_uuid));
             if (nm_strv_ptrarray_cmp(ovs_bridge->ports, ports) != 0) {
                 NM_SWAP(&ovs_bridge->ports, &ports);
+                changed = TRUE;
+            }
+            if (!_external_ids_equal(ovs_bridge->external_ids, external_ids_arr)) {
+                NM_SWAP(&ovs_bridge->external_ids, &external_ids_arr);
                 changed = TRUE;
             }
             if (changed) {
@@ -1590,8 +1662,9 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             *ovs_bridge = (OpenvswitchBridge){
                 .bridge_uuid     = g_strdup(key),
                 .name            = g_strdup(name),
-                .connection_uuid = g_steal_pointer(&connection_uuid),
+                .connection_uuid = g_strdup(connection_uuid),
                 .ports           = g_steal_pointer(&ports),
+                .external_ids    = g_steal_pointer(&external_ids_arr),
             };
             g_hash_table_add(priv->bridges, ovs_bridge);
             _LOGT("obj[bridge:%s]: added a bridge: %s%s%s",
