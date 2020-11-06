@@ -1538,6 +1538,13 @@ nm_g_array_len(const GArray *arr)
     return arr ? arr->len : 0u;
 }
 
+static inline void
+nm_g_array_unref(GArray *arr)
+{
+    if (arr)
+        g_array_unref(arr);
+}
+
 #define nm_g_array_append_new(arr, type)   \
     ({                                     \
         GArray *const _arr = (arr);        \
