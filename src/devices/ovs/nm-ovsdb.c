@@ -154,7 +154,7 @@ _LOGT_call_do(const char *comment, OvsdbMethodCall *call, json_t *msg)
         _LOGT("%s: monitor%s%s", comment, _QUOTE_MSG(msg, msg_as_str));
         break;
     case OVSDB_ADD_INTERFACE:
-        _LOGT("%s: add-iface bridge=%s port=%s interface=%s%s%s",
+        _LOGT("%s: add-interface bridge=%s port=%s interface=%s%s%s",
               comment,
               nm_connection_get_interface_name(call->add_interface.bridge),
               nm_connection_get_interface_name(call->add_interface.port),
@@ -162,13 +162,13 @@ _LOGT_call_do(const char *comment, OvsdbMethodCall *call, json_t *msg)
               _QUOTE_MSG(msg, msg_as_str));
         break;
     case OVSDB_DEL_INTERFACE:
-        _LOGT("%s: del-iface interface=%s%s%s",
+        _LOGT("%s: del-interface interface=%s%s%s",
               comment,
               call->del_interface.ifname,
               _QUOTE_MSG(msg, msg_as_str));
         break;
     case OVSDB_SET_INTERFACE_MTU:
-        _LOGT("%s: set-iface-mtu interface=%s mtu=%u%s%s",
+        _LOGT("%s: set-interface-mtu interface=%s mtu=%u%s%s",
               comment,
               call->set_interface_mtu.ifname,
               call->set_interface_mtu.mtu,
