@@ -521,6 +521,7 @@ nm_dns_systemd_resolved_init (NMDnsSystemdResolved *self)
 	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
 
 	c_list_init (&priv->request_queue_lst_head);
+	priv->dirty_interfaces = g_hash_table_new (nm_direct_hash, NULL);
 
 	priv->dbus_connection = nm_g_object_ref (NM_MAIN_DBUS_CONNECTION_GET);
 	if (!priv->dbus_connection) {
@@ -540,8 +541,6 @@ nm_dns_systemd_resolved_init (NMDnsSystemdResolved *self)
 	                                        priv->cancellable,
 	                                        get_name_owner_cb,
 	                                        self);
-
-	priv->dirty_interfaces = g_hash_table_new (nm_direct_hash, NULL);
 }
 
 NMDnsPlugin *
