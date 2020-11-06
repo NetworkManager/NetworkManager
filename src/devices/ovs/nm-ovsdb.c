@@ -116,27 +116,69 @@ typedef enum {
 
 #define CALL_ID_UNSPEC G_MAXUINT64
 
+typedef union {
+    struct {
+    } monitor;
+    struct {
+        NMConnection *bridge;
+        NMConnection *port;
+        NMConnection *interface;
+        NMDevice *    bridge_device;
+        NMDevice *    interface_device;
+    } add_interface;
+    struct {
+        char *ifname;
+    } del_interface;
+    struct {
+        char *  ifname;
+        guint32 mtu;
+    } set_interface_mtu;
+} OvsdbMethodPayload;
+
+#define OVSDB_METHOD_PAYLOAD_MONITOR() \
+    (&((const OvsdbMethodPayload){     \
+        .monitor = {},                 \
+    }))
+
+#define OVSDB_METHOD_PAYLOAD_ADD_INTERFACE(xbridge,           \
+                                           xport,             \
+                                           xinterface,        \
+                                           xbridge_device,    \
+                                           xinterface_device) \
+    (&((const OvsdbMethodPayload){                            \
+        .add_interface =                                      \
+            {                                                 \
+                .bridge           = (xbridge),                \
+                .port             = (xport),                  \
+                .interface        = (xinterface),             \
+                .bridge_device    = (xbridge_device),         \
+                .interface_device = (xinterface_device),      \
+            },                                                \
+    }))
+
+#define OVSDB_METHOD_PAYLOAD_DEL_INTERFACE(xifname)               \
+    (&((const OvsdbMethodPayload){                                \
+        .del_interface =                                          \
+            {                                                     \
+                .ifname = (char *) NM_CONSTCAST(char, (xifname)), \
+            },                                                    \
+    }))
+
+#define OVSDB_METHOD_PAYLOAD_SET_INTERFACE_MTU(xifname, xmtu)     \
+    (&((const OvsdbMethodPayload){                                \
+        .set_interface_mtu =                                      \
+            {                                                     \
+                .ifname = (char *) NM_CONSTCAST(char, (xifname)), \
+                .mtu    = (xmtu),                                 \
+            },                                                    \
+    }))
+
 typedef struct {
     guint64             call_id;
     OvsdbCommand        command;
     OvsdbMethodCallback callback;
     gpointer            user_data;
-    union {
-        struct {
-            NMConnection *bridge;
-            NMConnection *port;
-            NMConnection *interface;
-            NMDevice *    bridge_device;
-            NMDevice *    interface_device;
-        } add_interface;
-        struct {
-            char *ifname;
-        } del_interface;
-        struct {
-            char *  ifname;
-            guint32 mtu;
-        } set_interface_mtu;
-    };
+    OvsdbMethodPayload  payload;
 } OvsdbMethodCall;
 
 /*****************************************************************************/
@@ -156,22 +198,22 @@ _LOGT_call_do(const char *comment, OvsdbMethodCall *call, json_t *msg)
     case OVSDB_ADD_INTERFACE:
         _LOGT("%s: add-interface bridge=%s port=%s interface=%s%s%s",
               comment,
-              nm_connection_get_interface_name(call->add_interface.bridge),
-              nm_connection_get_interface_name(call->add_interface.port),
-              nm_connection_get_interface_name(call->add_interface.interface),
+              nm_connection_get_interface_name(call->payload.add_interface.bridge),
+              nm_connection_get_interface_name(call->payload.add_interface.port),
+              nm_connection_get_interface_name(call->payload.add_interface.interface),
               _QUOTE_MSG(msg, msg_as_str));
         break;
     case OVSDB_DEL_INTERFACE:
         _LOGT("%s: del-interface interface=%s%s%s",
               comment,
-              call->del_interface.ifname,
+              call->payload.del_interface.ifname,
               _QUOTE_MSG(msg, msg_as_str));
         break;
     case OVSDB_SET_INTERFACE_MTU:
         _LOGT("%s: set-interface-mtu interface=%s mtu=%u%s%s",
               comment,
-              call->set_interface_mtu.ifname,
-              call->set_interface_mtu.mtu,
+              call->payload.set_interface_mtu.ifname,
+              call->payload.set_interface_mtu.mtu,
               _QUOTE_MSG(msg, msg_as_str));
         break;
     }
@@ -196,20 +238,22 @@ _clear_call(gpointer data)
     case OVSDB_MONITOR:
         break;
     case OVSDB_ADD_INTERFACE:
-        g_clear_object(&call->add_interface.bridge);
-        g_clear_object(&call->add_interface.port);
-        g_clear_object(&call->add_interface.interface);
-        g_clear_object(&call->add_interface.bridge_device);
-        g_clear_object(&call->add_interface.interface_device);
+        g_clear_object(&call->payload.add_interface.bridge);
+        g_clear_object(&call->payload.add_interface.port);
+        g_clear_object(&call->payload.add_interface.interface);
+        g_clear_object(&call->payload.add_interface.bridge_device);
+        g_clear_object(&call->payload.add_interface.interface_device);
         break;
     case OVSDB_DEL_INTERFACE:
-        nm_clear_g_free(&call->del_interface.ifname);
+        nm_clear_g_free(&call->payload.del_interface.ifname);
         break;
     case OVSDB_SET_INTERFACE_MTU:
-        nm_clear_g_free(&call->set_interface_mtu.ifname);
+        nm_clear_g_free(&call->payload.set_interface_mtu.ifname);
         break;
     }
 }
+
+/*****************************************************************************/
 
 static void
 _free_bridge(OpenvswitchBridge *ovs_bridge)
@@ -284,18 +328,12 @@ _signal_emit_interface_failed(NMOvsdb *   self,
  * there's no command pending completion.
  */
 static void
-ovsdb_call_method(NMOvsdb *           self,
-                  OvsdbCommand        command,
-                  const char *        ifname,
-                  NMConnection *      bridge,
-                  NMConnection *      port,
-                  NMConnection *      interface,
-                  NMDevice *          bridge_device,
-                  NMDevice *          interface_device,
-                  guint32             mtu,
-                  OvsdbMethodCallback callback,
-                  gpointer            user_data,
-                  gboolean            add_first)
+ovsdb_call_method(NMOvsdb *                 self,
+                  OvsdbMethodCallback       callback,
+                  gpointer                  user_data,
+                  gboolean                  add_first,
+                  OvsdbCommand              command,
+                  const OvsdbMethodPayload *payload)
 {
     NMOvsdbPrivate * priv = NM_OVSDB_GET_PRIVATE(self);
     OvsdbMethodCall *call;
@@ -306,33 +344,42 @@ ovsdb_call_method(NMOvsdb *           self,
     if (add_first) {
         g_array_prepend_val(priv->calls, (OvsdbMethodCall){});
         call = &g_array_index(priv->calls, OvsdbMethodCall, 0);
-    } else {
-        g_array_set_size(priv->calls, priv->calls->len + 1);
-        call = &g_array_index(priv->calls, OvsdbMethodCall, priv->calls->len - 1);
-    }
+    } else
+        call = nm_g_array_append_new(priv->calls, OvsdbMethodCall);
+
     call->call_id   = CALL_ID_UNSPEC;
     call->command   = command;
     call->callback  = callback;
     call->user_data = user_data;
 
-    switch (call->command) {
+    /* Mmigrate the arguments from @payload to @call->payload. Technically,
+     * this is not a plain copy, because
+     * - call->payload is not initialized (thus no need to free the previous data).
+     * - payload does not own the data. It is merely initialized using the
+     *   OVSDB_METHOD_PAYLOAD_*() macros. */
+    switch (command) {
     case OVSDB_MONITOR:
         break;
     case OVSDB_ADD_INTERFACE:
         /* FIXME(applied-connection-immutable): we should not modify the applied
          *   connection, consequently there is no need to clone the connections. */
-        call->add_interface.bridge           = nm_simple_connection_new_clone(bridge);
-        call->add_interface.port             = nm_simple_connection_new_clone(port);
-        call->add_interface.interface        = nm_simple_connection_new_clone(interface);
-        call->add_interface.bridge_device    = g_object_ref(bridge_device);
-        call->add_interface.interface_device = g_object_ref(interface_device);
+        call->payload.add_interface.bridge =
+            nm_simple_connection_new_clone(payload->add_interface.bridge);
+        call->payload.add_interface.port =
+            nm_simple_connection_new_clone(payload->add_interface.port);
+        call->payload.add_interface.interface =
+            nm_simple_connection_new_clone(payload->add_interface.interface);
+        call->payload.add_interface.bridge_device =
+            g_object_ref(payload->add_interface.bridge_device);
+        call->payload.add_interface.interface_device =
+            g_object_ref(payload->add_interface.interface_device);
         break;
     case OVSDB_DEL_INTERFACE:
-        call->del_interface.ifname = g_strdup(ifname);
+        call->payload.del_interface.ifname = g_strdup(payload->del_interface.ifname);
         break;
     case OVSDB_SET_INTERFACE_MTU:
-        call->set_interface_mtu.ifname = g_strdup(ifname);
-        call->set_interface_mtu.mtu    = mtu;
+        call->payload.set_interface_mtu.ifname = g_strdup(payload->set_interface_mtu.ifname);
+        call->payload.set_interface_mtu.mtu    = payload->set_interface_mtu.mtu;
         break;
     }
 
@@ -1125,11 +1172,11 @@ ovsdb_next_command(NMOvsdb *self)
 
         _add_interface(self,
                        params,
-                       call->add_interface.bridge,
-                       call->add_interface.port,
-                       call->add_interface.interface,
-                       call->add_interface.bridge_device,
-                       call->add_interface.interface_device);
+                       call->payload.add_interface.bridge,
+                       call->payload.add_interface.port,
+                       call->payload.add_interface.interface,
+                       call->payload.add_interface.bridge_device,
+                       call->payload.add_interface.interface_device);
 
         msg = json_pack("{s:I, s:s, s:o}",
                         "id",
@@ -1144,7 +1191,7 @@ ovsdb_next_command(NMOvsdb *self)
         json_array_append_new(params, json_string("Open_vSwitch"));
         json_array_append_new(params, _inc_next_cfg(priv->db_uuid));
 
-        _delete_interface(self, params, call->del_interface.ifname);
+        _delete_interface(self, params, call->payload.del_interface.ifname);
 
         msg = json_pack("{s:I, s:s, s:o}",
                         "id",
@@ -1167,11 +1214,11 @@ ovsdb_next_command(NMOvsdb *self)
                                         "Interface",
                                         "row",
                                         "mtu_request",
-                                        (json_int_t) call->set_interface_mtu.mtu,
+                                        (json_int_t) call->payload.set_interface_mtu.mtu,
                                         "where",
                                         "name",
                                         "==",
-                                        call->set_interface_mtu.ifname));
+                                        call->payload.set_interface_mtu.ifname));
 
         msg = json_pack("{s:I, s:s, s:o}",
                         "id",
@@ -2087,17 +2134,11 @@ ovsdb_try_connect(NMOvsdb *self)
     /* Queue a monitor call before any other command, ensuring that we have an up
      * to date view of existing bridged that we need for add and remove ops. */
     ovsdb_call_method(self,
-                      OVSDB_MONITOR,
-                      NULL,
-                      NULL,
-                      NULL,
-                      NULL,
-                      NULL,
-                      NULL,
-                      0,
                       _monitor_bridges_cb,
                       NULL,
-                      TRUE);
+                      TRUE,
+                      OVSDB_MONITOR,
+                      OVSDB_METHOD_PAYLOAD_MONITOR());
 }
 
 /*****************************************************************************/
@@ -2163,17 +2204,15 @@ nm_ovsdb_add_interface(NMOvsdb *       self,
                        gpointer        user_data)
 {
     ovsdb_call_method(self,
-                      OVSDB_ADD_INTERFACE,
-                      NULL,
-                      bridge,
-                      port,
-                      interface,
-                      bridge_device,
-                      interface_device,
-                      0,
                       _transact_cb,
                       ovsdb_call_new(callback, user_data),
-                      FALSE);
+                      FALSE,
+                      OVSDB_ADD_INTERFACE,
+                      OVSDB_METHOD_PAYLOAD_ADD_INTERFACE(bridge,
+                                                         port,
+                                                         interface,
+                                                         bridge_device,
+                                                         interface_device));
 }
 
 void
@@ -2183,17 +2222,11 @@ nm_ovsdb_del_interface(NMOvsdb *       self,
                        gpointer        user_data)
 {
     ovsdb_call_method(self,
-                      OVSDB_DEL_INTERFACE,
-                      ifname,
-                      NULL,
-                      NULL,
-                      NULL,
-                      NULL,
-                      NULL,
-                      0,
                       _transact_cb,
                       ovsdb_call_new(callback, user_data),
-                      FALSE);
+                      FALSE,
+                      OVSDB_DEL_INTERFACE,
+                      OVSDB_METHOD_PAYLOAD_DEL_INTERFACE(ifname));
 }
 
 void
@@ -2204,17 +2237,11 @@ nm_ovsdb_set_interface_mtu(NMOvsdb *       self,
                            gpointer        user_data)
 {
     ovsdb_call_method(self,
-                      OVSDB_SET_INTERFACE_MTU,
-                      ifname,
-                      NULL,
-                      NULL,
-                      NULL,
-                      NULL,
-                      NULL,
-                      mtu,
                       _transact_cb,
                       ovsdb_call_new(callback, user_data),
-                      FALSE);
+                      FALSE,
+                      OVSDB_SET_INTERFACE_MTU,
+                      OVSDB_METHOD_PAYLOAD_SET_INTERFACE_MTU(ifname, mtu));
 }
 
 /*****************************************************************************/
