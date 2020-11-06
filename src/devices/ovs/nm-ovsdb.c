@@ -17,6 +17,10 @@
 
 /*****************************************************************************/
 
+#define OVSDB_MAX_FAILURES 3
+
+/*****************************************************************************/
+
 #if JANSSON_VERSION_HEX < 0x020400
     #warning "requires at least libjansson 2.4"
 #endif
@@ -129,7 +133,7 @@ typedef struct {
     };
 } OvsdbMethodCall;
 
-#define OVSDB_MAX_FAILURES 3
+/*****************************************************************************/
 
 static void
 _LOGT_call_do(const char *comment, OvsdbMethodCall *call, json_t *msg)
@@ -177,6 +181,68 @@ _LOGT_call_do(const char *comment, OvsdbMethodCall *call, json_t *msg)
             _LOGT_call_do((comment), (call), (message)); \
     }                                                    \
     G_STMT_END
+
+/*****************************************************************************/
+
+static void
+_clear_call(gpointer data)
+{
+    OvsdbMethodCall *call = data;
+
+    switch (call->command) {
+    case OVSDB_MONITOR:
+        break;
+    case OVSDB_ADD_INTERFACE:
+        g_clear_object(&call->bridge);
+        g_clear_object(&call->port);
+        g_clear_object(&call->interface);
+        g_clear_object(&call->bridge_device);
+        g_clear_object(&call->interface_device);
+        break;
+    case OVSDB_DEL_INTERFACE:
+    case OVSDB_SET_INTERFACE_MTU:
+        nm_clear_g_free(&call->ifname);
+        break;
+    }
+}
+
+static void
+_free_bridge(gpointer data)
+{
+    OpenvswitchBridge *ovs_bridge = data;
+
+    g_free(ovs_bridge->bridge_uuid);
+    g_free(ovs_bridge->name);
+    g_free(ovs_bridge->connection_uuid);
+    g_ptr_array_free(ovs_bridge->ports, TRUE);
+    nm_g_slice_free(ovs_bridge);
+}
+
+static void
+_free_port(gpointer data)
+{
+    OpenvswitchPort *ovs_port = data;
+
+    g_free(ovs_port->port_uuid);
+    g_free(ovs_port->name);
+    g_free(ovs_port->connection_uuid);
+    g_ptr_array_free(ovs_port->interfaces, TRUE);
+    nm_g_slice_free(ovs_port);
+}
+
+static void
+_free_interface(gpointer data)
+{
+    OpenvswitchInterface *ovs_interface = data;
+
+    g_free(ovs_interface->interface_uuid);
+    g_free(ovs_interface->name);
+    g_free(ovs_interface->connection_uuid);
+    g_free(ovs_interface->type);
+    nm_g_slice_free(ovs_interface);
+}
+
+/*****************************************************************************/
 
 /**
  * ovsdb_call_method:
@@ -1965,64 +2031,6 @@ nm_ovsdb_set_interface_mtu(NMOvsdb *       self,
 }
 
 /*****************************************************************************/
-
-static void
-_clear_call(gpointer data)
-{
-    OvsdbMethodCall *call = data;
-
-    switch (call->command) {
-    case OVSDB_MONITOR:
-        break;
-    case OVSDB_ADD_INTERFACE:
-        g_clear_object(&call->bridge);
-        g_clear_object(&call->port);
-        g_clear_object(&call->interface);
-        g_clear_object(&call->bridge_device);
-        g_clear_object(&call->interface_device);
-        break;
-    case OVSDB_DEL_INTERFACE:
-    case OVSDB_SET_INTERFACE_MTU:
-        nm_clear_g_free(&call->ifname);
-        break;
-    }
-}
-
-static void
-_free_bridge(gpointer data)
-{
-    OpenvswitchBridge *ovs_bridge = data;
-
-    g_free(ovs_bridge->bridge_uuid);
-    g_free(ovs_bridge->name);
-    g_free(ovs_bridge->connection_uuid);
-    g_ptr_array_free(ovs_bridge->ports, TRUE);
-    nm_g_slice_free(ovs_bridge);
-}
-
-static void
-_free_port(gpointer data)
-{
-    OpenvswitchPort *ovs_port = data;
-
-    g_free(ovs_port->port_uuid);
-    g_free(ovs_port->name);
-    g_free(ovs_port->connection_uuid);
-    g_ptr_array_free(ovs_port->interfaces, TRUE);
-    nm_g_slice_free(ovs_port);
-}
-
-static void
-_free_interface(gpointer data)
-{
-    OpenvswitchInterface *ovs_interface = data;
-
-    g_free(ovs_interface->interface_uuid);
-    g_free(ovs_interface->name);
-    g_free(ovs_interface->connection_uuid);
-    g_free(ovs_interface->type);
-    nm_g_slice_free(ovs_interface);
-}
 
 static void
 nm_ovsdb_init(NMOvsdb *self)
