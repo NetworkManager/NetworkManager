@@ -30,8 +30,8 @@
 #include "nm-manager.h"
 #include "platform/nm-platform.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceOlpcMesh
 #include "devices/nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceOlpcMesh);
 
 /*****************************************************************************/
 

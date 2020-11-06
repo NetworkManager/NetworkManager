@@ -19,8 +19,8 @@
 #include "nm-ip4-config.h"
 #include "nm-core-internal.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceVxlan
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceVxlan);
 
 /*****************************************************************************/
 

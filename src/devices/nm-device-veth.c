@@ -13,8 +13,8 @@
 #include "platform/nm-platform.h"
 #include "nm-device-factory.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceVeth
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceVeth);
 
 /*****************************************************************************/
 

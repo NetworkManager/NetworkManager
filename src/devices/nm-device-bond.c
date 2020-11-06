@@ -17,8 +17,8 @@
 #include "nm-core-internal.h"
 #include "nm-ip4-config.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceBond
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceBond);
 
 /*****************************************************************************/
 

@@ -74,7 +74,6 @@
 #include "nm-device-wireguard.h"
 
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDevice);
 
 /*****************************************************************************/
 

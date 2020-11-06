@@ -22,8 +22,8 @@
 #include "nm-core-internal.h"
 #include "platform/nmp-object.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceVlan
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceVlan);
 
 /*****************************************************************************/
 

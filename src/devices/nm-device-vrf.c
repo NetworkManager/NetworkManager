@@ -12,8 +12,8 @@
 #include "platform/nm-platform.h"
 #include "settings/nm-settings.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceVrf
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceVrf);
 
 /*****************************************************************************/
 

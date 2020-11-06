@@ -15,8 +15,8 @@
 #include "nm-setting-ovs-port.h"
 #include "nm-setting-ovs-port.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceOvsPort
 #include "devices/nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceOvsPort);
 
 /*****************************************************************************/
 

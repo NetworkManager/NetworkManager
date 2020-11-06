@@ -23,8 +23,8 @@
 #include "nm-setting-adsl.h"
 #include "nm-utils.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceAdsl
 #include "devices/nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceAdsl);
 
 /*****************************************************************************/
 

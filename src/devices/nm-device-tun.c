@@ -19,8 +19,8 @@
 #include "nm-setting-tun.h"
 #include "nm-core-internal.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceTun
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceTun);
 
 /*****************************************************************************/
 

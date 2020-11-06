@@ -41,8 +41,8 @@
 #include "nm-core-internal.h"
 #include "nm-config.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceWifi
 #include "devices/nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceWifi);
 
 #define SCAN_INTERVAL_SEC_MIN  3
 #define SCAN_INTERVAL_SEC_STEP 20

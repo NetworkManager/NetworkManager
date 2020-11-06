@@ -14,8 +14,8 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-ovs-bridge.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceOvsBridge
 #include "devices/nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceOvsBridge);
 
 /*****************************************************************************/
 

@@ -14,8 +14,8 @@
 #include "nm-setting-6lowpan.h"
 #include "nm-utils.h"
 
+#define _NMLOG_DEVICE_TYPE NMDevice6Lowpan
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDevice6Lowpan);
 
 /*****************************************************************************/
 

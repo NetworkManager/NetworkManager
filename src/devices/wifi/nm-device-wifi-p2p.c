@@ -27,8 +27,8 @@
 #include "platform/nmp-object.h"
 #include "settings/nm-settings.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceWifiP2P
 #include "devices/nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceWifiP2P);
 
 /*****************************************************************************/
 

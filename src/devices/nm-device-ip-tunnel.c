@@ -22,8 +22,8 @@
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceIPTunnel
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceIPTunnel);
 
 /*****************************************************************************/
 

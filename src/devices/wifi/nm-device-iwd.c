@@ -28,8 +28,8 @@
 #include "settings/nm-settings.h"
 #include "supplicant/nm-supplicant-types.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceIwd
 #include "devices/nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceIwd);
 
 /*****************************************************************************/
 
