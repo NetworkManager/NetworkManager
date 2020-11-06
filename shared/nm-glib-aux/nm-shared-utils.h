@@ -2204,6 +2204,25 @@ nm_utils_strdup_reset(char **dst, const char *src)
     return TRUE;
 }
 
+static inline gboolean
+nm_utils_strdup_reset_take(char **dst, char *src)
+{
+    char *old;
+
+    nm_assert(dst);
+    nm_assert(src != *dst);
+
+    if (nm_streq0(*dst, src)) {
+        if (src)
+            g_free(src);
+        return FALSE;
+    }
+    old  = *dst;
+    *dst = src;
+    g_free(old);
+    return TRUE;
+}
+
 void nm_indirect_g_free(gpointer arg);
 
 /*****************************************************************************/
