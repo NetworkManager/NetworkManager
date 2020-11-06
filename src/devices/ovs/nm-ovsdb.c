@@ -244,6 +244,29 @@ _free_interface(gpointer data)
 
 /*****************************************************************************/
 
+static void
+_signal_emit_device_added(NMOvsdb *self, const char *name, NMDeviceType device_type)
+{
+    g_signal_emit(self, signals[DEVICE_ADDED], 0, name, (guint) device_type);
+}
+
+static void
+_signal_emit_device_removed(NMOvsdb *self, const char *name, NMDeviceType device_type)
+{
+    g_signal_emit(self, signals[DEVICE_REMOVED], 0, name, (guint) device_type);
+}
+
+static void
+_signal_emit_interface_failed(NMOvsdb *   self,
+                              const char *name,
+                              const char *connection_uuid,
+                              const char *error)
+{
+    g_signal_emit(self, signals[INTERFACE_FAILED], 0, name, connection_uuid, error);
+}
+
+/*****************************************************************************/
+
 /**
  * ovsdb_call_method:
  *
@@ -1307,11 +1330,9 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                 if (nm_streq0(ovs_interface->type, "internal")) {
                     /* Currently, the factory only creates NMDevices for
                      * internal interfaces. Ignore the rest. */
-                    g_signal_emit(self,
-                                  signals[DEVICE_REMOVED],
-                                  0,
-                                  ovs_interface->name,
-                                  NM_DEVICE_TYPE_OVS_INTERFACE);
+                    _signal_emit_device_removed(self,
+                                                ovs_interface->name,
+                                                NM_DEVICE_TYPE_OVS_INTERFACE);
                 }
             }
             g_hash_table_remove(priv->interfaces, &key);
@@ -1341,22 +1362,18 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                 if (nm_streq0(ovs_interface->type, "internal")) {
                     /* Currently, the factory only creates NMDevices for
                      * internal interfaces. Ignore the rest. */
-                    g_signal_emit(self,
-                                  signals[DEVICE_ADDED],
-                                  0,
-                                  ovs_interface->name,
-                                  NM_DEVICE_TYPE_OVS_INTERFACE);
+                    _signal_emit_device_added(self,
+                                              ovs_interface->name,
+                                              NM_DEVICE_TYPE_OVS_INTERFACE);
                 }
             }
             /* The error is a string. No error is indicated by an empty set,
              * because why the fuck not: [ "set": [] ] */
             if (error && json_is_string(error)) {
-                g_signal_emit(self,
-                              signals[INTERFACE_FAILED],
-                              0,
-                              ovs_interface->name,
-                              ovs_interface->connection_uuid,
-                              json_string_value(error));
+                _signal_emit_interface_failed(self,
+                                              ovs_interface->name,
+                                              ovs_interface->connection_uuid,
+                                              json_string_value(error));
             }
         }
     }
@@ -1389,11 +1406,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                       ovs_port->name,
                       ovs_port->connection_uuid ? ", " : "",
                       ovs_port->connection_uuid ?: "");
-                g_signal_emit(self,
-                              signals[DEVICE_REMOVED],
-                              0,
-                              ovs_port->name,
-                              NM_DEVICE_TYPE_OVS_PORT);
+                _signal_emit_device_removed(self, ovs_port->name, NM_DEVICE_TYPE_OVS_PORT);
             }
             g_hash_table_remove(priv->ports, &key);
         }
@@ -1418,11 +1431,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                       ovs_port->name,
                       ovs_port->connection_uuid ? ", " : "",
                       ovs_port->connection_uuid ?: "");
-                g_signal_emit(self,
-                              signals[DEVICE_ADDED],
-                              0,
-                              ovs_port->name,
-                              NM_DEVICE_TYPE_OVS_PORT);
+                _signal_emit_device_added(self, ovs_port->name, NM_DEVICE_TYPE_OVS_PORT);
             }
         }
     }
@@ -1455,11 +1464,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                       ovs_bridge->name,
                       ovs_bridge->connection_uuid ? ", " : "",
                       ovs_bridge->connection_uuid ?: "");
-                g_signal_emit(self,
-                              signals[DEVICE_REMOVED],
-                              0,
-                              ovs_bridge->name,
-                              NM_DEVICE_TYPE_OVS_BRIDGE);
+                _signal_emit_device_removed(self, ovs_bridge->name, NM_DEVICE_TYPE_OVS_BRIDGE);
             }
             g_hash_table_remove(priv->bridges, &key);
         }
@@ -1484,11 +1489,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                       ovs_bridge->name,
                       ovs_bridge->connection_uuid ? ", " : "",
                       ovs_bridge->connection_uuid ?: "");
-                g_signal_emit(self,
-                              signals[DEVICE_ADDED],
-                              0,
-                              ovs_bridge->name,
-                              NM_DEVICE_TYPE_OVS_BRIDGE);
+                _signal_emit_device_added(self, ovs_bridge->name, NM_DEVICE_TYPE_OVS_BRIDGE);
             }
         }
     }
