@@ -123,16 +123,19 @@ typedef struct {
     gpointer            user_data;
     union {
         struct {
-            char *  ifname;
-            guint32 mtu;
-        };
-        struct {
             NMConnection *bridge;
             NMConnection *port;
             NMConnection *interface;
             NMDevice *    bridge_device;
             NMDevice *    interface_device;
-        };
+        } add_interface;
+        struct {
+            char *ifname;
+        } del_interface;
+        struct {
+            char *  ifname;
+            guint32 mtu;
+        } set_interface_mtu;
     };
 } OvsdbMethodCall;
 
@@ -153,19 +156,22 @@ _LOGT_call_do(const char *comment, OvsdbMethodCall *call, json_t *msg)
     case OVSDB_ADD_INTERFACE:
         _LOGT("%s: add-iface bridge=%s port=%s interface=%s%s%s",
               comment,
-              nm_connection_get_interface_name(call->bridge),
-              nm_connection_get_interface_name(call->port),
-              nm_connection_get_interface_name(call->interface),
+              nm_connection_get_interface_name(call->add_interface.bridge),
+              nm_connection_get_interface_name(call->add_interface.port),
+              nm_connection_get_interface_name(call->add_interface.interface),
               _QUOTE_MSG(msg, msg_as_str));
         break;
     case OVSDB_DEL_INTERFACE:
-        _LOGT("%s: del-iface interface=%s%s%s", comment, call->ifname, _QUOTE_MSG(msg, msg_as_str));
+        _LOGT("%s: del-iface interface=%s%s%s",
+              comment,
+              call->del_interface.ifname,
+              _QUOTE_MSG(msg, msg_as_str));
         break;
     case OVSDB_SET_INTERFACE_MTU:
         _LOGT("%s: set-iface-mtu interface=%s mtu=%u%s%s",
               comment,
-              call->ifname,
-              call->mtu,
+              call->set_interface_mtu.ifname,
+              call->set_interface_mtu.mtu,
               _QUOTE_MSG(msg, msg_as_str));
         break;
     }
@@ -190,15 +196,17 @@ _clear_call(gpointer data)
     case OVSDB_MONITOR:
         break;
     case OVSDB_ADD_INTERFACE:
-        g_clear_object(&call->bridge);
-        g_clear_object(&call->port);
-        g_clear_object(&call->interface);
-        g_clear_object(&call->bridge_device);
-        g_clear_object(&call->interface_device);
+        g_clear_object(&call->add_interface.bridge);
+        g_clear_object(&call->add_interface.port);
+        g_clear_object(&call->add_interface.interface);
+        g_clear_object(&call->add_interface.bridge_device);
+        g_clear_object(&call->add_interface.interface_device);
         break;
     case OVSDB_DEL_INTERFACE:
+        nm_clear_g_free(&call->del_interface.ifname);
+        break;
     case OVSDB_SET_INTERFACE_MTU:
-        nm_clear_g_free(&call->ifname);
+        nm_clear_g_free(&call->set_interface_mtu.ifname);
         break;
     }
 }
@@ -313,18 +321,18 @@ ovsdb_call_method(NMOvsdb *           self,
     case OVSDB_ADD_INTERFACE:
         /* FIXME(applied-connection-immutable): we should not modify the applied
          *   connection, consequently there is no need to clone the connections. */
-        call->bridge           = nm_simple_connection_new_clone(bridge);
-        call->port             = nm_simple_connection_new_clone(port);
-        call->interface        = nm_simple_connection_new_clone(interface);
-        call->bridge_device    = g_object_ref(bridge_device);
-        call->interface_device = g_object_ref(interface_device);
+        call->add_interface.bridge           = nm_simple_connection_new_clone(bridge);
+        call->add_interface.port             = nm_simple_connection_new_clone(port);
+        call->add_interface.interface        = nm_simple_connection_new_clone(interface);
+        call->add_interface.bridge_device    = g_object_ref(bridge_device);
+        call->add_interface.interface_device = g_object_ref(interface_device);
         break;
     case OVSDB_DEL_INTERFACE:
-        call->ifname = g_strdup(ifname);
+        call->del_interface.ifname = g_strdup(ifname);
         break;
     case OVSDB_SET_INTERFACE_MTU:
-        call->ifname = g_strdup(ifname);
-        call->mtu    = mtu;
+        call->set_interface_mtu.ifname = g_strdup(ifname);
+        call->set_interface_mtu.mtu    = mtu;
         break;
     }
 
@@ -1117,11 +1125,11 @@ ovsdb_next_command(NMOvsdb *self)
 
         _add_interface(self,
                        params,
-                       call->bridge,
-                       call->port,
-                       call->interface,
-                       call->bridge_device,
-                       call->interface_device);
+                       call->add_interface.bridge,
+                       call->add_interface.port,
+                       call->add_interface.interface,
+                       call->add_interface.bridge_device,
+                       call->add_interface.interface_device);
 
         msg = json_pack("{s:I, s:s, s:o}",
                         "id",
@@ -1136,7 +1144,7 @@ ovsdb_next_command(NMOvsdb *self)
         json_array_append_new(params, json_string("Open_vSwitch"));
         json_array_append_new(params, _inc_next_cfg(priv->db_uuid));
 
-        _delete_interface(self, params, call->ifname);
+        _delete_interface(self, params, call->del_interface.ifname);
 
         msg = json_pack("{s:I, s:s, s:o}",
                         "id",
@@ -1159,11 +1167,11 @@ ovsdb_next_command(NMOvsdb *self)
                                         "Interface",
                                         "row",
                                         "mtu_request",
-                                        (json_int_t) call->mtu,
+                                        (json_int_t) call->set_interface_mtu.mtu,
                                         "where",
                                         "name",
                                         "==",
-                                        call->ifname));
+                                        call->set_interface_mtu.ifname));
 
         msg = json_pack("{s:I, s:s, s:o}",
                         "id",
