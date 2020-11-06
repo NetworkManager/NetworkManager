@@ -3066,6 +3066,18 @@ nm_utils_fd_read_loop_exact(int fd, void *buf, size_t nbytes, bool do_poll)
 
 /*****************************************************************************/
 
+void
+nm_utils_named_value_clear_with_g_free(NMUtilsNamedValue *val)
+{
+    if (val) {
+        gs_free gpointer x_name  = NULL;
+        gs_free gpointer x_value = NULL;
+
+        x_name  = (gpointer) g_steal_pointer(&val->name);
+        x_value = g_steal_pointer(&val->value_ptr);
+    }
+}
+
 G_STATIC_ASSERT(G_STRUCT_OFFSET(NMUtilsNamedValue, name) == 0);
 
 NMUtilsNamedValue *

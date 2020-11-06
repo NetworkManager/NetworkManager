@@ -1460,6 +1460,8 @@ void nm_utils_named_value_list_sort(NMUtilsNamedValue *arr,
                                     GCompareDataFunc   compare_func,
                                     gpointer           user_data);
 
+void nm_utils_named_value_clear_with_g_free(NMUtilsNamedValue *val);
+
 /*****************************************************************************/
 
 gpointer *nm_utils_hash_keys_to_array(GHashTable *     hash,
