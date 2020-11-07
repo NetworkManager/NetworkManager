@@ -434,6 +434,24 @@ nm_g_variant_singleton_u_0(void)
 
 /*****************************************************************************/
 
+GHashTable *
+nm_utils_strdict_clone(GHashTable *src)
+{
+    GHashTable *   dst;
+    GHashTableIter iter;
+    const char *   key;
+    const char *   val;
+
+    if (!src)
+        return NULL;
+
+    dst = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free);
+    g_hash_table_iter_init(&iter, src);
+    while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &val))
+        g_hash_table_insert(dst, g_strdup(key), g_strdup(val));
+    return dst;
+}
+
 /* Convert a hash table with "char *" keys and values to an "a{ss}" GVariant.
  * The keys will be sorted asciibetically.
  * Returns a floating reference.
