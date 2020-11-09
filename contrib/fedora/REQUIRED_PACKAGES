@@ -44,7 +44,6 @@ install \
     ModemManager-devel \
     ModemManager-glib-devel \
     audit-libs-devel \
-    black \
     bluez-libs-devel \
     clang \
     dbus-devel \
@@ -88,6 +87,7 @@ install \
 
 # some packages don't exist in certain distributions. Install them one-by-one, and ignore errors.
 install_ignore_missing \
+    black \
     dbus-python \
     iproute-tc \
     libasan \
