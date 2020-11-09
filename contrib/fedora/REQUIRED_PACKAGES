@@ -40,10 +40,13 @@ else
 fi
 
 install \
+    /usr/bin/xargs \
     ModemManager-devel \
     ModemManager-glib-devel \
     audit-libs-devel \
+    black \
     bluez-libs-devel \
+    clang \
     dbus-devel \
     dbus-x11 \
     dhclient \
