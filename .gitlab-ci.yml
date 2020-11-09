@@ -98,6 +98,7 @@ fedora:32@container-prep:
     FDO_DISTRIBUTION_VERSION: '32'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
     FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
+  when: manual
 
 fedora:33@container-prep:
   extends:
@@ -108,7 +109,6 @@ fedora:33@container-prep:
     FDO_DISTRIBUTION_VERSION: '33'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
     FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
-  when: manual
 
 fedora:31@container-prep:
   extends:

@@ -25,7 +25,7 @@ distributions:
       - '28'
       - 'rawhide'
     always:
-      - '32'
+      - '33'
   - name: ubuntu
     tag: *default_tag
     versions:
