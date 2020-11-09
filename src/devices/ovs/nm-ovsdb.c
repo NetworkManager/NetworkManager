@@ -1117,15 +1117,15 @@ static void
 ovsdb_next_command(NMOvsdb *self)
 {
     NMOvsdbPrivate *    priv = NM_OVSDB_GET_PRIVATE(self);
-    OvsdbMethodCall *   call = NULL;
+    OvsdbMethodCall *   call;
     char *              cmd;
     nm_auto_decref_json json_t *msg = NULL;
-    json_t *                    params;
 
     if (!priv->conn)
         return;
     if (!priv->calls->len)
         return;
+
     call = &g_array_index(priv->calls, OvsdbMethodCall, 0);
     if (call->call_id != CALL_ID_UNSPEC)
         return;
@@ -1165,60 +1165,46 @@ ovsdb_next_command(NMOvsdb *self)
                         "Open_vSwitch",
                         "columns");
         break;
-    case OVSDB_ADD_INTERFACE:
+    default:
+    {
+        json_t *params = NULL;
+
         params = json_array();
         json_array_append_new(params, json_string("Open_vSwitch"));
         json_array_append_new(params, _inc_next_cfg(priv->db_uuid));
 
-        _add_interface(self,
-                       params,
-                       call->payload.add_interface.bridge,
-                       call->payload.add_interface.port,
-                       call->payload.add_interface.interface,
-                       call->payload.add_interface.bridge_device,
-                       call->payload.add_interface.interface_device);
-
-        msg = json_pack("{s:I, s:s, s:o}",
-                        "id",
-                        (json_int_t) call->call_id,
-                        "method",
-                        "transact",
-                        "params",
-                        params);
-        break;
-    case OVSDB_DEL_INTERFACE:
-        params = json_array();
-        json_array_append_new(params, json_string("Open_vSwitch"));
-        json_array_append_new(params, _inc_next_cfg(priv->db_uuid));
-
-        _delete_interface(self, params, call->payload.del_interface.ifname);
-
-        msg = json_pack("{s:I, s:s, s:o}",
-                        "id",
-                        (json_int_t) call->call_id,
-                        "method",
-                        "transact",
-                        "params",
-                        params);
-        break;
-    case OVSDB_SET_INTERFACE_MTU:
-        params = json_array();
-        json_array_append_new(params, json_string("Open_vSwitch"));
-        json_array_append_new(params, _inc_next_cfg(priv->db_uuid));
-
-        json_array_append_new(params,
-                              json_pack("{s:s, s:s, s:{s: I}, s:[[s, s, s]]}",
-                                        "op",
-                                        "update",
-                                        "table",
-                                        "Interface",
-                                        "row",
-                                        "mtu_request",
-                                        (json_int_t) call->payload.set_interface_mtu.mtu,
-                                        "where",
-                                        "name",
-                                        "==",
-                                        call->payload.set_interface_mtu.ifname));
+        switch (call->command) {
+        case OVSDB_ADD_INTERFACE:
+            _add_interface(self,
+                           params,
+                           call->payload.add_interface.bridge,
+                           call->payload.add_interface.port,
+                           call->payload.add_interface.interface,
+                           call->payload.add_interface.bridge_device,
+                           call->payload.add_interface.interface_device);
+            break;
+        case OVSDB_DEL_INTERFACE:
+            _delete_interface(self, params, call->payload.del_interface.ifname);
+            break;
+        case OVSDB_SET_INTERFACE_MTU:
+            json_array_append_new(params,
+                                  json_pack("{s:s, s:s, s:{s: I}, s:[[s, s, s]]}",
+                                            "op",
+                                            "update",
+                                            "table",
+                                            "Interface",
+                                            "row",
+                                            "mtu_request",
+                                            (json_int_t) call->payload.set_interface_mtu.mtu,
+                                            "where",
+                                            "name",
+                                            "==",
+                                            call->payload.set_interface_mtu.ifname));
+            break;
+        default:
+            nm_assert_not_reached();
+            break;
+        }
 
         msg = json_pack("{s:I, s:s, s:o}",
                         "id",
@@ -1229,11 +1215,12 @@ ovsdb_next_command(NMOvsdb *self)
                         params);
         break;
     }
+    }
 
     g_return_if_fail(msg);
     _LOGT_call("send", call, msg);
-    cmd = json_dumps(msg, 0);
 
+    cmd = json_dumps(msg, 0);
     g_string_append(priv->output, cmd);
     free(cmd);
 
