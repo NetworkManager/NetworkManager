@@ -198,7 +198,6 @@ checkpatch:
    - t_{{pages_build.name}}:{{pages_build.version}}
   stage: test
   script:
-    - date '+%Y%m%d-%H%M%S'; dnf install -y git black gettext /usr/bin/xargs which clang
     - date '+%Y%m%d-%H%M%S'; black --check . examples/python/gi/nm-wg-set
     - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh
