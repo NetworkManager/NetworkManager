@@ -65,10 +65,12 @@ install \
     ppp-dev \
     python-dbus \
     python-gi \
+    python-setuptools \
     python-software-properties \
     python3-dbus \
     python3-gi \
     python3-pip \
+    python3-setuptools \
     uuid-dev \
     valgrind \
     \
