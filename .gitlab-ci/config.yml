@@ -52,4 +52,4 @@ distributions:
 # specifies which of the above distros is used as source for pages
 pages_build:
   name: fedora
-  version: '32'
+  version: '33'

@@ -546,7 +546,6 @@ t_fedora:32:
   extends:
     - .build@template
     - .fdo.distribution-image@fedora
-    - .nm_artifacts
   variables:
     FDO_DISTRIBUTION_VERSION: '32'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
@@ -557,6 +556,7 @@ t_fedora:33:
   extends:
     - .build@template
     - .fdo.distribution-image@fedora
+    - .nm_artifacts
   variables:
     FDO_DISTRIBUTION_VERSION: '33'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
@@ -750,7 +750,7 @@ t_centos:8.1.1911:
 #################################################################
 checkpatch:
   extends:
-   - t_fedora:32
+   - t_fedora:33
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; dnf install -y git black gettext /usr/bin/xargs which clang
@@ -771,7 +771,7 @@ pages:
   only:
     - master
   dependencies:
-    - t_fedora:32
+    - t_fedora:33
 
 triage:issues:
   stage: triage
