@@ -754,10 +754,10 @@ checkpatch:
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; dnf install -y git black gettext /usr/bin/xargs which clang
-    - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
     - date '+%Y%m%d-%H%M%S'; black --check . examples/python/gi/nm-wg-set
     - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh
+    - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
   allow_failure: true
 
 pages:
