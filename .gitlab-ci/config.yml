@@ -17,22 +17,23 @@ distributions:
   - name: fedora
     tag: *default_tag
     versions:
+      - '28'
+      - '29'
+      - '30'
+      - '31'
       - '32'
       - '33'
-      - '31'
-      - '30'
-      - '29'
-      - '28'
       - 'rawhide'
     always:
       - '33'
   - name: ubuntu
     tag: *default_tag
     versions:
+      - '16.04'
+      - '18.04'
+      - '20.04'
       - 'devel'
       - 'rolling'
-      - '18.04'
-      - '16.04'
   - name: debian
     tag: *default_tag
     versions:
