@@ -19,6 +19,12 @@ meson --version
 ! which dpkg || dpkg -l
 ! which yum  || yum list installed
 
+# The formatting depends on the version of python black.
+# We have a dedicated test that checks our formatting, which
+# uses the right version. We should disable the check during
+# `make check`.
+export NMTST_SKIP_PYTHON_BLACK=1
+
 do_clean; BUILD_TYPE=autotools CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
 rm -rf /tmp/nm-docs-html;
 mv build/INST/share/gtk-doc/html /tmp/nm-docs-html
