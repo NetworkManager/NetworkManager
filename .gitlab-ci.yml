@@ -52,6 +52,8 @@ variables:
   CENTOS_EXEC: 'bash .gitlab-ci/centos-install.sh'
 
 .nm_artifacts:
+  variables:
+    NM_BUILD_TARBALL: 1
   artifacts:
     expire_in: 2 days
     paths:
@@ -60,6 +62,8 @@ variables:
       - NetworkManager-1*.src.rpm
 
 .nm_artifacts_undo:
+  variables:
+    NM_BUILD_TARBALL: 0
   artifacts:
     paths: []
 
