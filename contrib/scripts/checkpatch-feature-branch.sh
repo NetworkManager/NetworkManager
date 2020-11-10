@@ -20,7 +20,9 @@ else
         NM_UPSTREAM_REMOTE="nm-upstream-$(date '+%Y%m%d-%H%M%S')-$RANDOM"
         git remote add "$NM_UPSTREAM_REMOTE" https://gitlab.freedesktop.org/NetworkManager/NetworkManager.git
         BASE_REF="refs/remotes/$NM_UPSTREAM_REMOTE"
+        git fetch origin "$(git rev-parse "$HEAD")" --no-tags --unshallow
         git fetch "$NM_UPSTREAM_REMOTE" \
+            --no-tags \
             "refs/heads/master:$BASE_REF/master" \
             "refs/heads/nm-*:$BASE_REF/nm-*" \
             || die "failure to fetch from https://gitlab.freedesktop.org/NetworkManager/NetworkManager.git"
