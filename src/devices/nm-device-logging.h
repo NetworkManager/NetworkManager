@@ -13,10 +13,12 @@
 #elif !defined(_NMLOG_DEVICE_TYPE)
     #define _NM_DEVICE_CAST(self) _NM_ENSURE_TYPE(NMDevice *, self)
 #else
-    #define _NM_DEVICE_CAST(self)                    \
-        _Generic((self), _NMLOG_DEVICE_TYPE *        \
-                 : ((NMDevice *) (self)), NMDevice * \
-                 : ((NMDevice *) (self)))
+    #define _NM_DEVICE_CAST(self) \
+        _Generic((self), \
+                 _NMLOG_DEVICE_TYPE *      : ((NMDevice *) (self)), \
+                 _NMLOG_DEVICE_TYPE * const: ((NMDevice *) (self)), \
+                 NMDevice *                : ((NMDevice *) (self)), \
+                 NMDevice *           const: ((NMDevice *) (self)))
 #endif
 
 #undef _NMLOG_ENABLED
