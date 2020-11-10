@@ -49,26 +49,9 @@ variables:
       - NetworkManager-1*.tar.xz
       - NetworkManager-1*.src.rpm
 
-#################################################################
-#                                                               #
-#                          prep stage                           #
-#                                                               #
-#################################################################
-
-# Re-generate the .gitlab-ci.yml file and make sure it's the one currently checked in
-# If this job fails, re-generate the gitlab-ci.yml script and git commit it.
-#
-check-ci-script:
-  image: golang:alpine
-  stage: prep
-  before_script:
-    - apk add python3 py-pip git
-    - pip3 install git+http://gitlab.freedesktop.org/freedesktop/ci-templates
-  script:
-    - ci-fairy generate-template
-    - git diff --exit-code && exit 0 || true
-    - echo "Committed gitlab-ci.yml differs from generated gitlab-ci.yml. Please verify"
-    - exit 1
+.nm_artifacts_undo:
+  artifacts:
+    paths: []
 
 #################################################################
 #                                                               #
@@ -192,17 +175,26 @@ t_{{distro.name}}:{{version}}:
 #                      specific jobs                            #
 #                                                               #
 #################################################################
-checkpatch:
+
+check-patch:
   extends:
-  {# run checkpatch on the same image that generates pages because why not #}
    - t_{{pages_build.name}}:{{pages_build.version}}
+   - .nm_artifacts_undo
+  stage: test
+  script:
+    - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
+  allow_failure: true
+
+check-tree:
+  extends:
+   - t_{{pages_build.name}}:{{pages_build.version}}
+   - .nm_artifacts_undo
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; black --check . examples/python/gi/nm-wg-set
     - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh
-    - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
-  allow_failure: true
+    - date '+%Y%m%d-%H%M%S'; ci-fairy generate-template && git diff --exit-code
 
 pages:
   stage: deploy

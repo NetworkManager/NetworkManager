@@ -46,3 +46,8 @@ contrib/scripts/nm-ci-patch-gtkdoc.sh || true
 if [ -x /usr/bin/ninja ] && ! [ -x /usr/bin/ninja-build ]; then
     ln -s /usr/bin/ninja-build /usr/bin/ninja
 fi
+
+if [ $IS_FEDORA = 1 ]; then
+    dnf install -y python3-pip
+    pip3 install git+http://gitlab.freedesktop.org/freedesktop/ci-templates
+fi
