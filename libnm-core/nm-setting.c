@@ -1481,10 +1481,10 @@ _nm_setting_compare(NMConnection *        con_a,
         GenData *a_gendata = _gendata_hash(a, FALSE);
         GenData *b_gendata = _gendata_hash(b, FALSE);
 
-        return nm_utils_hash_table_equal(a_gendata ? a_gendata->hash : NULL,
-                                         b_gendata ? b_gendata->hash : NULL,
-                                         TRUE,
-                                         g_variant_equal);
+        return nm_utils_hashtable_equal(a_gendata ? a_gendata->hash : NULL,
+                                        b_gendata ? b_gendata->hash : NULL,
+                                        TRUE,
+                                        g_variant_equal);
     }
 
     for (i = 0; i < sett_info->property_infos_len; i++) {

@@ -35,8 +35,8 @@
 #include "NetworkManagerUtils.h"
 #include "nm-udev-aux/nm-udev-utils.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceEthernet
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceEthernet);
 
 /*****************************************************************************/
 

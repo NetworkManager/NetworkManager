@@ -784,6 +784,8 @@
         <property name="devargs"
                   description="Open vSwitch DPDK device arguments." />
     </setting>
+    <setting name="ovs-external-ids" >
+    </setting>
     <setting name="ovs-interface" >
         <property name="type"
                   description="The interface type. Either &quot;internal&quot;, &quot;system&quot;, &quot;patch&quot;, &quot;dpdk&quot;, or empty." />

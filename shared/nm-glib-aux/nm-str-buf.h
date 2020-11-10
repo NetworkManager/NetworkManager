@@ -31,7 +31,7 @@ typedef struct _NMStrBuf {
 /*****************************************************************************/
 
 static inline void
-_nm_str_buf_assert(NMStrBuf *strbuf)
+_nm_str_buf_assert(const NMStrBuf *strbuf)
 {
     nm_assert(strbuf);
     nm_assert((!!strbuf->_priv_str) == (strbuf->_priv_allocated > 0));
@@ -359,6 +359,31 @@ nm_str_buf_get_str_unsafe(NMStrBuf *strbuf)
 {
     _nm_str_buf_assert(strbuf);
     return strbuf->_priv_str;
+}
+
+static inline char *
+nm_str_buf_get_str_at_unsafe(NMStrBuf *strbuf, gsize index)
+{
+    _nm_str_buf_assert(strbuf);
+
+    /* it is acceptable to ask for a pointer at the end of the buffer -- even
+     * if there is no data there. The caller is anyway required to take care
+     * of the length (that's the "unsafe" part), and in that case, the length
+     * is merely zero. */
+    nm_assert(index <= strbuf->allocated);
+
+    if (!strbuf->_priv_str)
+        return NULL;
+
+    return &strbuf->_priv_str[index];
+}
+
+static inline char
+nm_str_buf_get_char(const NMStrBuf *strbuf, gsize index)
+{
+    _nm_str_buf_assert(strbuf);
+    nm_assert(index < strbuf->allocated);
+    return strbuf->_priv_str[index];
 }
 
 /**

@@ -30,8 +30,8 @@
 #include "devices/wwan/nm-modem-manager.h"
 #include "devices/wwan/nm-modem.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceBt
 #include "devices/nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceBt);
 
 /*****************************************************************************/
 

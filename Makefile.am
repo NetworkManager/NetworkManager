@@ -954,6 +954,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-olpc-mesh.h \
 	libnm-core/nm-setting-ovs-bridge.h \
 	libnm-core/nm-setting-ovs-dpdk.h \
+	libnm-core/nm-setting-ovs-external-ids.h \
 	libnm-core/nm-setting-ovs-interface.h \
 	libnm-core/nm-setting-ovs-patch.h \
 	libnm-core/nm-setting-ovs-port.h \
@@ -1027,6 +1028,7 @@ libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-olpc-mesh.c \
 	libnm-core/nm-setting-ovs-bridge.c \
 	libnm-core/nm-setting-ovs-dpdk.c \
+	libnm-core/nm-setting-ovs-external-ids.c \
 	libnm-core/nm-setting-ovs-interface.c \
 	libnm-core/nm-setting-ovs-patch.c \
 	libnm-core/nm-setting-ovs-port.c \

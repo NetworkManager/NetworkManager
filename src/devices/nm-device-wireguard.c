@@ -22,8 +22,8 @@
 #include "nm-act-request.h"
 #include "dns/nm-dns-manager.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceWireGuard
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceWireGuard);
 
 /*****************************************************************************/
 

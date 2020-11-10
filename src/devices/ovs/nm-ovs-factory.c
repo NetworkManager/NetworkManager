@@ -106,12 +106,10 @@ new_device_from_type(const char *name, NMDeviceType device_type)
 }
 
 static void
-ovsdb_device_added(NMOvsdb *        ovsdb,
-                   const char *     name,
-                   NMDeviceType     device_type,
-                   NMDeviceFactory *self)
+ovsdb_device_added(NMOvsdb *ovsdb, const char *name, guint device_type_i, NMDeviceFactory *self)
 {
-    NMDevice *device = NULL;
+    const NMDeviceType device_type = device_type_i;
+    NMDevice *         device;
 
     device = new_device_from_type(name, device_type);
     if (!device)
@@ -122,13 +120,11 @@ ovsdb_device_added(NMOvsdb *        ovsdb,
 }
 
 static void
-ovsdb_device_removed(NMOvsdb *        ovsdb,
-                     const char *     name,
-                     NMDeviceType     device_type,
-                     NMDeviceFactory *self)
+ovsdb_device_removed(NMOvsdb *ovsdb, const char *name, guint device_type_i, NMDeviceFactory *self)
 {
-    NMDevice *    device;
-    NMDeviceState device_state;
+    const NMDeviceType device_type = device_type_i;
+    NMDevice *         device;
+    NMDeviceState      device_state;
 
     device = nm_manager_get_device(NM_MANAGER_GET, name, device_type);
     if (!device)

@@ -20,8 +20,8 @@
 #include "nm-setting-wpan.h"
 #include "nm-core-internal.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceWpan
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceWpan);
 
 /*****************************************************************************/
 

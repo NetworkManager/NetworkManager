@@ -25,8 +25,8 @@
 #include "nm-ip4-config.h"
 #include "nm-std-aux/nm-dbus-compat.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceTeam
 #include "devices/nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceTeam);
 
 /*****************************************************************************/
 

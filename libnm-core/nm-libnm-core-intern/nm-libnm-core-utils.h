@@ -98,6 +98,11 @@ gboolean nm_utils_vlan_priority_map_parse_str(NMVlanPriorityMap map_type,
 
 /*****************************************************************************/
 
+#define NM_OVS_EXTERNAL_ID_NM_PREFIX          "NM."
+#define NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID "NM.connection.uuid"
+
+/*****************************************************************************/
+
 static inline int
 nm_setting_ip_config_get_addr_family(NMSettingIPConfig *s_ip)
 {

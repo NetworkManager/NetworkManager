@@ -18,8 +18,8 @@
 #include "nm-setting-dummy.h"
 #include "nm-core-internal.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceDummy
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceDummy);
 
 /*****************************************************************************/
 

@@ -18,8 +18,8 @@
 #include "ppp/nm-ppp-manager-call.h"
 #include "ppp/nm-ppp-status.h"
 
+#define _NMLOG_DEVICE_TYPE NMDevicePpp
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDevicePpp);
 
 /*****************************************************************************/
 

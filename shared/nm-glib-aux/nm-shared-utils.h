@@ -320,6 +320,8 @@ gboolean nm_utils_gbytes_equal_mem(GBytes *bytes, gconstpointer mem_data, gsize 
 
 GVariant *nm_utils_gbytes_to_variant_ay(GBytes *bytes);
 
+GHashTable *nm_utils_strdict_clone(GHashTable *src);
+
 GVariant *nm_utils_strdict_to_variant_ass(GHashTable *strdict);
 GVariant *nm_utils_strdict_to_variant_asv(GHashTable *strdict);
 
@@ -1460,6 +1462,8 @@ void nm_utils_named_value_list_sort(NMUtilsNamedValue *arr,
                                     GCompareDataFunc   compare_func,
                                     gpointer           user_data);
 
+void nm_utils_named_value_clear_with_g_free(NMUtilsNamedValue *val);
+
 /*****************************************************************************/
 
 gpointer *nm_utils_hash_keys_to_array(GHashTable *     hash,
@@ -1483,13 +1487,18 @@ nm_utils_strdict_get_keys(const GHashTable *hash, gboolean sorted, guint *out_le
 
 gboolean nm_utils_hashtable_equal(const GHashTable *a,
                                   const GHashTable *b,
-                                  GCompareDataFunc  cmp_values,
-                                  gpointer          user_data);
+                                  gboolean          treat_null_as_empty,
+                                  GEqualFunc        equal_func);
+
+gboolean nm_utils_hashtable_cmp_equal(const GHashTable *a,
+                                      const GHashTable *b,
+                                      GCompareDataFunc  cmp_values,
+                                      gpointer          user_data);
 
 static inline gboolean
 nm_utils_hashtable_same_keys(const GHashTable *a, const GHashTable *b)
 {
-    return nm_utils_hashtable_equal(a, b, NULL, NULL);
+    return nm_utils_hashtable_cmp_equal(a, b, NULL, NULL);
 }
 
 int nm_utils_hashtable_cmp(const GHashTable *a,
@@ -1532,6 +1541,13 @@ static inline guint
 nm_g_array_len(const GArray *arr)
 {
     return arr ? arr->len : 0u;
+}
+
+static inline void
+nm_g_array_unref(GArray *arr)
+{
+    if (arr)
+        g_array_unref(arr);
 }
 
 #define nm_g_array_append_new(arr, type)   \
@@ -1686,15 +1702,6 @@ gssize nm_utils_array_find_binary_search(gconstpointer    list,
                                          gconstpointer    needle,
                                          GCompareDataFunc cmpfcn,
                                          gpointer         user_data);
-
-/*****************************************************************************/
-
-typedef gboolean (*NMUtilsHashTableEqualFunc)(gconstpointer a, gconstpointer b);
-
-gboolean nm_utils_hash_table_equal(const GHashTable *        a,
-                                   const GHashTable *        b,
-                                   gboolean                  treat_null_as_empty,
-                                   NMUtilsHashTableEqualFunc equal_func);
 
 /*****************************************************************************/
 
@@ -2200,6 +2207,25 @@ nm_utils_strdup_reset(char **dst, const char *src)
         return FALSE;
     old  = *dst;
     *dst = g_strdup(src);
+    g_free(old);
+    return TRUE;
+}
+
+static inline gboolean
+nm_utils_strdup_reset_take(char **dst, char *src)
+{
+    char *old;
+
+    nm_assert(dst);
+    nm_assert(src != *dst);
+
+    if (nm_streq0(*dst, src)) {
+        if (src)
+            g_free(src);
+        return FALSE;
+    }
+    old  = *dst;
+    *dst = src;
     g_free(old);
     return TRUE;
 }

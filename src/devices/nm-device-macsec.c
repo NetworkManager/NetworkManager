@@ -18,8 +18,8 @@
 #include "supplicant/nm-supplicant-interface.h"
 #include "supplicant/nm-supplicant-config.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceMacsec
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceMacsec);
 
 /*****************************************************************************/
 

@@ -33,6 +33,7 @@
 #include "nm-setting-ovs-bridge.h"
 #include "nm-setting-ovs-interface.h"
 #include "nm-setting-ovs-dpdk.h"
+#include "nm-setting-ovs-external-ids.h"
 #include "nm-setting-ovs-patch.h"
 #include "nm-setting-ovs-port.h"
 #include "nm-setting-ppp.h"
@@ -311,6 +312,13 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
             .setting_priority  = NM_SETTING_PRIORITY_HW_BASE,
             .setting_name      = NM_SETTING_OVS_DPDK_SETTING_NAME,
             .get_setting_gtype = nm_setting_ovs_dpdk_get_type,
+        },
+    [NM_META_SETTING_TYPE_OVS_EXTERNAL_IDS] =
+        {
+            .meta_type         = NM_META_SETTING_TYPE_OVS_EXTERNAL_IDS,
+            .setting_priority  = NM_SETTING_PRIORITY_AUX,
+            .setting_name      = NM_SETTING_OVS_EXTERNAL_IDS_SETTING_NAME,
+            .get_setting_gtype = nm_setting_ovs_external_ids_get_type,
         },
     [NM_META_SETTING_TYPE_OVS_INTERFACE] =
         {

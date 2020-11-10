@@ -288,7 +288,7 @@ nm_setting_user_set_data(NMSettingUser *setting, const char *key, const char *va
     NMSettingUserPrivate *priv;
     gboolean              changed = FALSE;
 
-    g_return_val_if_fail(NM_IS_SETTING(self), FALSE);
+    g_return_val_if_fail(NM_IS_SETTING_USER(self), FALSE);
     g_return_val_if_fail(!error || !*error, FALSE);
 
     if (!nm_setting_user_check_key(key, error))
@@ -416,11 +416,11 @@ compare_property(const NMSettInfoSetting *sett_info,
 
         priv = NM_SETTING_USER_GET_PRIVATE(NM_SETTING_USER(set_a));
         pri2 = NM_SETTING_USER_GET_PRIVATE(NM_SETTING_USER(set_b));
-        return nm_utils_hash_table_equal(priv->data, pri2->data, TRUE, g_str_equal)
-               && nm_utils_hash_table_equal(priv->data_invalid,
-                                            pri2->data_invalid,
-                                            TRUE,
-                                            g_str_equal);
+        return nm_utils_hashtable_equal(priv->data, pri2->data, TRUE, g_str_equal)
+               && nm_utils_hashtable_equal(priv->data_invalid,
+                                           pri2->data_invalid,
+                                           TRUE,
+                                           g_str_equal);
     }
 
     return NM_SETTING_CLASS(nm_setting_user_parent_class)
