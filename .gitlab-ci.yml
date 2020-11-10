@@ -41,10 +41,10 @@ variables:
   # changing these will force rebuilding the associated image
   # Note: these tags have no meaning and are not tied to a particular
   # libinput version
-  FEDORA_TAG:  '2020-10-30.0'
-  UBUNTU_TAG:  '2020-10-30.0'
-  DEBIAN_TAG:  '2020-10-30.0'
-  CENTOS_TAG:  '2020-10-30.0'
+  FEDORA_TAG:  '2020-11-10.0'
+  UBUNTU_TAG:  '2020-11-10.0'
+  DEBIAN_TAG:  '2020-11-10.0'
+  CENTOS_TAG:  '2020-11-10.0'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/ubuntu-install.sh'
