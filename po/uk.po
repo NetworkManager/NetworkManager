@@ -10,8 +10,8 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/NetworkMan"
 "ager/issues\n"
-"POT-Creation-Date: 2020-11-09 03:28+0000\n"
-"PO-Revision-Date: 2020-11-09 09:55+0200\n"
+"POT-Creation-Date: 2020-11-11 03:28+0000\n"
+"PO-Revision-Date: 2020-11-11 09:26+0200\n"
 "Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
 "Language-Team: Ukrainian <kde-i18n-uk@kde.org>\n"
 "Language: uk\n"
@@ -4780,7 +4780,7 @@ msgid "invalid option '%s', use a combination of [%s]"
 msgstr "некоректний параметр «%s», скористайтеся комбінацією [%s]"
 
 #: ../clients/common/nm-meta-setting-desc.c:1621
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1058
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:1101
 #, c-format
 msgid "invalid option '%s', use one of [%s]"
 msgstr ""
@@ -5901,105 +5901,109 @@ msgid "Open vSwitch DPDK interface settings"
 msgstr "Параметри інтерфейсу Open vSwitch DPDK"
 
 #: ../clients/common/nm-meta-setting-desc.c:7949
+msgid "OVS External IDs"
+msgstr "Зовнішні ідентифікатори OVS"
+
+#: ../clients/common/nm-meta-setting-desc.c:7950
 msgid "Open vSwitch interface settings"
 msgstr "Параметри інтерфейсу Open vSwitch"
 
-#: ../clients/common/nm-meta-setting-desc.c:7950
+#: ../clients/common/nm-meta-setting-desc.c:7951
 msgid "Open vSwitch patch interface settings"
 msgstr "Параметри інтерфейсу латок Open vSwitch"
 
-#: ../clients/common/nm-meta-setting-desc.c:7951
+#: ../clients/common/nm-meta-setting-desc.c:7952
 msgid "Open vSwitch port settings"
 msgstr "Параметри портів Open vSwitch"
 
-#: ../clients/common/nm-meta-setting-desc.c:7952
+#: ../clients/common/nm-meta-setting-desc.c:7953
 msgid "PPP settings"
 msgstr "Параметри PPP"
 
-#: ../clients/common/nm-meta-setting-desc.c:7953
+#: ../clients/common/nm-meta-setting-desc.c:7954
 msgid "PPPoE"
 msgstr "PPPoE"
 
-#: ../clients/common/nm-meta-setting-desc.c:7954
+#: ../clients/common/nm-meta-setting-desc.c:7955
 msgid "Proxy"
 msgstr "Проксі"
 
-#: ../clients/common/nm-meta-setting-desc.c:7955
+#: ../clients/common/nm-meta-setting-desc.c:7956
 msgid "Serial settings"
 msgstr "Параметри послідовного з'єднання"
 
-#: ../clients/common/nm-meta-setting-desc.c:7956
+#: ../clients/common/nm-meta-setting-desc.c:7957
 msgid "SR-IOV settings"
 msgstr "Параметри SR-IOV"
 
-#: ../clients/common/nm-meta-setting-desc.c:7957
+#: ../clients/common/nm-meta-setting-desc.c:7958
 msgid "Traffic controls"
 msgstr "Засоби керування обміном даними"
 
-#: ../clients/common/nm-meta-setting-desc.c:7958
+#: ../clients/common/nm-meta-setting-desc.c:7959
 msgid "Team device"
 msgstr "Пристрій Team"
 
-#: ../clients/common/nm-meta-setting-desc.c:7959
+#: ../clients/common/nm-meta-setting-desc.c:7960
 msgid "Team port"
 msgstr "Порт Team"
 
-#: ../clients/common/nm-meta-setting-desc.c:7960
+#: ../clients/common/nm-meta-setting-desc.c:7961
 msgid "Tun device"
 msgstr "Пристрій TUN"
 
-#: ../clients/common/nm-meta-setting-desc.c:7961
+#: ../clients/common/nm-meta-setting-desc.c:7962
 msgid "User settings"
 msgstr "Параметри користувача"
 
-#: ../clients/common/nm-meta-setting-desc.c:7962
+#: ../clients/common/nm-meta-setting-desc.c:7963
 #: ../src/devices/nm-device-vlan.c:400
 msgid "VLAN connection"
 msgstr "З'єднання VLAN"
 
-#: ../clients/common/nm-meta-setting-desc.c:7963 ../src/nm-manager.c:5829
+#: ../clients/common/nm-meta-setting-desc.c:7964 ../src/nm-manager.c:5829
 msgid "VPN connection"
 msgstr "З'єднання VPN"
 
-#: ../clients/common/nm-meta-setting-desc.c:7964
+#: ../clients/common/nm-meta-setting-desc.c:7965
 #: ../src/devices/nm-device-vrf.c:181
 msgid "VRF connection"
 msgstr "З'єднання VRF"
 
-#: ../clients/common/nm-meta-setting-desc.c:7965
+#: ../clients/common/nm-meta-setting-desc.c:7966
 #: ../src/devices/nm-device-vxlan.c:382
 msgid "VXLAN connection"
 msgstr "З'єднання VXLAN"
 
-#: ../clients/common/nm-meta-setting-desc.c:7966
+#: ../clients/common/nm-meta-setting-desc.c:7967
 msgid "Wi-Fi P2P connection"
 msgstr "З'єднання P2P Wi-Fi"
 
-#: ../clients/common/nm-meta-setting-desc.c:7967
+#: ../clients/common/nm-meta-setting-desc.c:7968
 msgid "WiMAX connection"
 msgstr "З'єднання WiMAX"
 
-#: ../clients/common/nm-meta-setting-desc.c:7968
+#: ../clients/common/nm-meta-setting-desc.c:7969
 msgid "Wired Ethernet"
 msgstr "Дротовий Ethernet"
 
-#: ../clients/common/nm-meta-setting-desc.c:7969
+#: ../clients/common/nm-meta-setting-desc.c:7970
 msgid "WireGuard VPN settings"
 msgstr "Параметри VPN WireGuard"
 
-#: ../clients/common/nm-meta-setting-desc.c:7970
+#: ../clients/common/nm-meta-setting-desc.c:7971
 msgid "Wi-Fi connection"
 msgstr "З'єднання Wi-Fi"
 
-#: ../clients/common/nm-meta-setting-desc.c:7971
+#: ../clients/common/nm-meta-setting-desc.c:7972
 msgid "Wi-Fi security settings"
 msgstr "Параметри захисту Wi-Fi"
 
-#: ../clients/common/nm-meta-setting-desc.c:7972
+#: ../clients/common/nm-meta-setting-desc.c:7973
 msgid "WPAN settings"
 msgstr "Параметри WPAN"
 
-#: ../clients/common/nm-meta-setting-desc.c:8351
+#: ../clients/common/nm-meta-setting-desc.c:8353
 msgid "name"
 msgstr "назва"
 
@@ -6999,7 +7003,7 @@ msgstr ""
 #: ../clients/common/settings-docs.h.in:108
 #: ../clients/common/settings-docs.h.in:150
 #: ../clients/common/settings-docs.h.in:200
-#: ../clients/common/settings-docs.h.in:325
+#: ../clients/common/settings-docs.h.in:326
 msgid "Flags indicating how to handle the \"password\" property."
 msgstr "Прапорці, які позначають, як обробляти властивість «password»."
 
@@ -9713,6 +9717,10 @@ msgid "Open vSwitch DPDK device arguments."
 msgstr "Параметри пристрою Open vSwitch DPDK."
 
 #: ../clients/common/settings-docs.h.in:297
+msgid "A dictionary of key/value pairs with exernal-ids for OVS."
+msgstr "Словник з пар ключ/значення із зовнішніми ідентифікаторами для OVS."
+
+#: ../clients/common/settings-docs.h.in:298
 msgid ""
 "The interface type. Either \"internal\", \"system\", \"patch\", \"dpdk\", or "
 "empty."
@@ -9720,7 +9728,7 @@ msgstr ""
 "Тип інтерфейсу. Рядок «internal», «system», «patch», «dpdk» або порожній "
 "рядок."
 
-#: ../clients/common/settings-docs.h.in:298
+#: ../clients/common/settings-docs.h.in:299
 msgid ""
 "Specifies the name of the interface for the other side of the patch. The "
 "patch on the other side must also set this interface as peer."
@@ -9729,30 +9737,30 @@ msgstr ""
 "з'єднання на іншому боці також має встановлювати цей інтерфейс як "
 "однорівневий вузол."
 
-#: ../clients/common/settings-docs.h.in:299
+#: ../clients/common/settings-docs.h.in:300
 msgid "The time port must be inactive in order to be considered down."
 msgstr "Щоб вважатися вимкненим, порт часу має бути неактивним."
 
-#: ../clients/common/settings-docs.h.in:300
+#: ../clients/common/settings-docs.h.in:301
 msgid ""
 "Bonding mode. One of \"active-backup\", \"balance-slb\", or \"balance-tcp\"."
 msgstr ""
 "Режим прив'язування. Одне з таких значень: «active-backup», «balance-slb» "
 "або «balance-tcp»."
 
-#: ../clients/common/settings-docs.h.in:301
+#: ../clients/common/settings-docs.h.in:302
 msgid "The time port must be active before it starts forwarding traffic."
 msgstr "Щоб почати переспрямовувати дані, слід активувати порт часу."
 
-#: ../clients/common/settings-docs.h.in:302
+#: ../clients/common/settings-docs.h.in:303
 msgid "LACP mode. One of \"active\", \"off\", or \"passive\"."
 msgstr "Режим LACP. Одне з таких значень: «active», «off» або «passive»."
 
-#: ../clients/common/settings-docs.h.in:303
+#: ../clients/common/settings-docs.h.in:304
 msgid "The VLAN tag in the range 0-4095."
 msgstr "Теґ VLAN у діапазоні від 0 до 4095."
 
-#: ../clients/common/settings-docs.h.in:304
+#: ../clients/common/settings-docs.h.in:305
 msgid ""
 "The VLAN mode. One of \"access\", \"native-tagged\", \"native-untagged\", "
 "\"trunk\" or unset."
@@ -9760,7 +9768,7 @@ msgstr ""
 "Режим VLAN. Одне з таких значень: «access», «native-tagged», «native-"
 "untagged», «trunk» або порожнє значення."
 
-#: ../clients/common/settings-docs.h.in:305
+#: ../clients/common/settings-docs.h.in:306
 msgid ""
 "If non-zero, instruct pppd to set the serial port to the specified "
 "baudrate.  This value should normally be left as 0 to automatically choose "
@@ -9770,7 +9778,7 @@ msgstr ""
 "вказану швидкість передавання даних у бодах. Зазвичай, для цієї властивості "
 "слід залишити нульове значення, щоб швидкість було вибрано автоматично."
 
-#: ../clients/common/settings-docs.h.in:306
+#: ../clients/common/settings-docs.h.in:307
 msgid ""
 "If TRUE, specify that pppd should set the serial port to use hardware flow "
 "control with RTS and CTS signals.  This value should normally be set to "
@@ -9780,7 +9788,7 @@ msgstr ""
 "керування потоком апаратних даних за допомогою сигналів RTS і CTS. За "
 "звичних умов, для цієї властивості має бути встановлено значення FALSE."
 
-#: ../clients/common/settings-docs.h.in:307
+#: ../clients/common/settings-docs.h.in:308
 msgid ""
 "If non-zero, instruct pppd to presume the connection to the peer has failed "
 "if the specified number of LCP echo-requests go unanswered by the peer.  The "
@@ -9792,7 +9800,7 @@ msgstr ""
 "кількість луна-запитів LCP. Якщо використовується ця властивість, для "
 "властивості «lcp-echo-interval» слід встановити ненульове значення."
 
-#: ../clients/common/settings-docs.h.in:308
+#: ../clients/common/settings-docs.h.in:309
 msgid ""
 "If non-zero, instruct pppd to send an LCP echo-request frame to the peer "
 "every n seconds (where n is the specified value).  Note that some PPP peers "
@@ -9804,7 +9812,7 @@ msgstr ""
 "відповідатимуть на луна-запити, а деякі — ні. Визначити, чи відповідатиме "
 "певний вузол, у автоматичному режимі неможливо."
 
-#: ../clients/common/settings-docs.h.in:309
+#: ../clients/common/settings-docs.h.in:310
 msgid ""
 "If TRUE, stateful MPPE is used.  See pppd documentation for more information "
 "on stateful MPPE."
@@ -9812,7 +9820,7 @@ msgstr ""
 "Якщо TRUE, використовуватиметься режим MPPE зі станами (stateful). "
 "Докладніший опис режиму MPPE зі станами наведено у документації із pppd."
 
-#: ../clients/common/settings-docs.h.in:310
+#: ../clients/common/settings-docs.h.in:311
 msgid ""
 "If non-zero, instruct pppd to request that the peer send packets no larger "
 "than the specified size.  If non-zero, the MRU should be between 128 and "
@@ -9822,20 +9830,20 @@ msgstr ""
 "щодо того, щоб він надсилав пакети, не більші за вказаний розмір. Якщо має "
 "ненульове значення, MRU має бути від 128 до 16384."
 
-#: ../clients/common/settings-docs.h.in:311
+#: ../clients/common/settings-docs.h.in:312
 msgid ""
 "If non-zero, instruct pppd to send packets no larger than the specified size."
 msgstr ""
 "Якщо має ненульове значення, наказує pppd надсилати пакети, не більші за "
 "вказаний розмір."
 
-#: ../clients/common/settings-docs.h.in:312
+#: ../clients/common/settings-docs.h.in:313
 msgid "If TRUE, Van Jacobsen TCP header compression will not be requested."
 msgstr ""
 "Якщо має значення TRUE, запит щодо стискання заголовків TCP ван Якобсена не "
 "надсилатиметься."
 
-#: ../clients/common/settings-docs.h.in:313
+#: ../clients/common/settings-docs.h.in:314
 msgid ""
 "If TRUE, do not require the other side (usually the PPP server) to "
 "authenticate itself to the client.  If FALSE, require authentication from "
@@ -9846,35 +9854,35 @@ msgstr ""
 "FALSE, вимагати проходження розпізнавання з боку віддаленого вузла. У "
 "більшості випадків слід використовувати значення TRUE."
 
-#: ../clients/common/settings-docs.h.in:314
+#: ../clients/common/settings-docs.h.in:315
 msgid "If TRUE, BSD compression will not be requested."
 msgstr "Якщо TRUE, стискання BSD не вимагатиметься."
 
-#: ../clients/common/settings-docs.h.in:315
+#: ../clients/common/settings-docs.h.in:316
 msgid "If TRUE, \"deflate\" compression will not be requested."
 msgstr "Якщо TRUE, стискання «deflate» не вимагатиметься."
 
-#: ../clients/common/settings-docs.h.in:316
+#: ../clients/common/settings-docs.h.in:317
 msgid "If TRUE, the CHAP authentication method will not be used."
 msgstr "Якщо TRUE, спосіб розпізнавання CHAP не використовуватиметься."
 
-#: ../clients/common/settings-docs.h.in:317
+#: ../clients/common/settings-docs.h.in:318
 msgid "If TRUE, the EAP authentication method will not be used."
 msgstr "Якщо TRUE, спосіб розпізнавання EAP не використовуватиметься."
 
-#: ../clients/common/settings-docs.h.in:318
+#: ../clients/common/settings-docs.h.in:319
 msgid "If TRUE, the MSCHAP authentication method will not be used."
 msgstr "Якщо TRUE, спосіб розпізнавання MSCHAP не використовуватиметься."
 
-#: ../clients/common/settings-docs.h.in:319
+#: ../clients/common/settings-docs.h.in:320
 msgid "If TRUE, the MSCHAPv2 authentication method will not be used."
 msgstr "Якщо TRUE, спосіб розпізнавання MSCHAPv2 не використовуватиметься."
 
-#: ../clients/common/settings-docs.h.in:320
+#: ../clients/common/settings-docs.h.in:321
 msgid "If TRUE, the PAP authentication method will not be used."
 msgstr "Якщо TRUE, спосіб розпізнавання PAP не використовуватиметься."
 
-#: ../clients/common/settings-docs.h.in:321
+#: ../clients/common/settings-docs.h.in:322
 msgid ""
 "If TRUE, MPPE (Microsoft Point-to-Point Encryption) will be required for the "
 "PPP session.  If either 64-bit or 128-bit MPPE is not available the session "
@@ -9885,7 +9893,7 @@ msgstr ""
 "128-бітове MPPE виявиться недоступним, сеанс не буде створено. Зауважте, що "
 "MPPE не використовується для мобільних широкосмугових з'єднань."
 
-#: ../clients/common/settings-docs.h.in:322
+#: ../clients/common/settings-docs.h.in:323
 msgid ""
 "If TRUE, 128-bit MPPE (Microsoft Point-to-Point Encryption) will be required "
 "for the PPP session, and the \"require-mppe\" property must also be set to "
@@ -9896,7 +9904,7 @@ msgstr ""
 "для властивості «require-mppe» також має бути встановлено TRUE. Якщо 128-"
 "бітове MPPE виявиться недоступним, сеанс не буде створено."
 
-#: ../clients/common/settings-docs.h.in:323
+#: ../clients/common/settings-docs.h.in:324
 msgid ""
 "If given, specifies the parent interface name on which this PPPoE connection "
 "should be created.  If this property is not specified, the connection is "
@@ -9908,11 +9916,11 @@ msgstr ""
 "з'єднання буде активовано на інтерфейсі, який вказано за допомогою параметра "
 "«interface-name» NMSettingConnection."
 
-#: ../clients/common/settings-docs.h.in:324
+#: ../clients/common/settings-docs.h.in:325
 msgid "Password used to authenticate with the PPPoE service."
 msgstr "Пароль, який використовуватиметься для розпізнавання на службі PPPoE."
 
-#: ../clients/common/settings-docs.h.in:326
+#: ../clients/common/settings-docs.h.in:327
 msgid ""
 "If specified, instruct PPPoE to only initiate sessions with access "
 "concentrators that provide the specified service.  For most providers, this "
@@ -9925,33 +9933,33 @@ msgstr ""
 "якщо ви маєте справу із концентраторами із декількома способами доступу або "
 "відомо, що вказана служба є необхідною."
 
-#: ../clients/common/settings-docs.h.in:327
+#: ../clients/common/settings-docs.h.in:328
 msgid "Username used to authenticate with the PPPoE service."
 msgstr ""
 "Ім'я користувача, яке використовуватиметься для розпізнавання на службі "
 "PPPoE."
 
-#: ../clients/common/settings-docs.h.in:328
+#: ../clients/common/settings-docs.h.in:329
 msgid "Whether the proxy configuration is for browser only."
 msgstr ""
 "Визначає, чи використовуються налаштування проксі лише для програм для "
 "перегляду інтернету."
 
-#: ../clients/common/settings-docs.h.in:329
+#: ../clients/common/settings-docs.h.in:330
 msgid ""
 "Method for proxy configuration, Default is NM_SETTING_PROXY_METHOD_NONE (0)"
 msgstr ""
 "Спосіб налаштовування проксі. Типовим є NM_SETTING_PROXY_METHOD_NONE (0)"
 
-#: ../clients/common/settings-docs.h.in:330
+#: ../clients/common/settings-docs.h.in:331
 msgid "PAC script for the connection."
 msgstr "Скрипт PAC для з'єднання."
 
-#: ../clients/common/settings-docs.h.in:331
+#: ../clients/common/settings-docs.h.in:332
 msgid "PAC URL for obtaining PAC file."
 msgstr "Адреса PAC для отримання файла PAC."
 
-#: ../clients/common/settings-docs.h.in:332
+#: ../clients/common/settings-docs.h.in:333
 msgid ""
 "Speed to use for communication over the serial port.  Note that this value "
 "usually has no effect for mobile broadband modems as they generally ignore "
@@ -9962,20 +9970,20 @@ msgstr ""
 "загалом, для них параметри швидкості ігноруються — просто використовується "
 "найвища доступна швидкість."
 
-#: ../clients/common/settings-docs.h.in:333
+#: ../clients/common/settings-docs.h.in:334
 msgid "Byte-width of the serial communication. The 8 in \"8n1\" for example."
 msgstr "Байтова ширина послідовного обміну даними. Наприклад, 8 у «8n1»."
 
-#: ../clients/common/settings-docs.h.in:334
+#: ../clients/common/settings-docs.h.in:335
 msgid "Parity setting of the serial port."
 msgstr "Параметр парності послідовного порту."
 
-#: ../clients/common/settings-docs.h.in:335
+#: ../clients/common/settings-docs.h.in:336
 msgid "Time to delay between each byte sent to the modem, in microseconds."
 msgstr ""
 "Затримка у часі між надсиланнями одного байта на модем, у мікросекундах."
 
-#: ../clients/common/settings-docs.h.in:336
+#: ../clients/common/settings-docs.h.in:337
 msgid ""
 "Number of stop bits for communication on the serial port.  Either 1 or 2. "
 "The 1 in \"8n1\" for example."
@@ -9983,7 +9991,7 @@ msgstr ""
 "Кількість бітів зупинки для обміну даними на послідовному порту. Може мати "
 "значення 1 або 2. Наприклад, 1 у «8n1»."
 
-#: ../clients/common/settings-docs.h.in:337
+#: ../clients/common/settings-docs.h.in:338
 msgid ""
 "Whether to autoprobe virtual functions by a compatible driver. If set to "
 "NM_TERNARY_TRUE (1), the kernel will try to bind VFs to a compatible driver "
@@ -10003,7 +10011,7 @@ msgstr ""
 "використовуватимуться загальні типові параметри. Якщо загальні типові "
 "параметри не вказано, припускатиметься варіант NM_TERNARY_TRUE (1)."
 
-#: ../clients/common/settings-docs.h.in:338
+#: ../clients/common/settings-docs.h.in:339
 msgid ""
 "The total number of virtual functions to create. Note that when the sriov "
 "setting is present NetworkManager enforces the number of virtual functions "
@@ -10018,7 +10026,7 @@ msgstr ""
 "внесенню будь-яких змін до параметрів SR-IOV, не додавайте параметр sriov до "
 "параметрів з'єднання."
 
-#: ../clients/common/settings-docs.h.in:339
+#: ../clients/common/settings-docs.h.in:340
 msgid ""
 "Array of virtual function descriptors. Each VF descriptor is a dictionary "
 "mapping attribute names to GVariant values. The 'index' entry is mandatory "
@@ -10044,15 +10052,15 @@ msgstr ""
 "форму: «ІДЕНТИФІКАТОР[.ПРІОРИТЕТНІСТЬ[.ПРОТОКОЛ]]». Значенням ПРОТОКОЛ може "
 "бути або «q» для 802.1Q (типовий варіант) або «ad» для 802.1ad."
 
-#: ../clients/common/settings-docs.h.in:340
+#: ../clients/common/settings-docs.h.in:341
 msgid "Array of TC queueing disciplines."
 msgstr "Масив дисциплін TC у черзі."
 
-#: ../clients/common/settings-docs.h.in:341
+#: ../clients/common/settings-docs.h.in:342
 msgid "Array of TC traffic filters."
 msgstr "Список TC фільтрів обміну даними."
 
-#: ../clients/common/settings-docs.h.in:342
+#: ../clients/common/settings-docs.h.in:343
 msgid ""
 "The JSON configuration for the team network interface.  The property should "
 "contain raw JSON configuration data suitable for teamd, because the value is "
@@ -10065,8 +10073,8 @@ msgstr ""
 "використовуватимуться типові налаштування. Щоб дізнатися більше про "
 "форматування даних, ознайомитеся із підручником (man) з teamd.conf."
 
-#: ../clients/common/settings-docs.h.in:343
-#: ../clients/common/settings-docs.h.in:361
+#: ../clients/common/settings-docs.h.in:344
+#: ../clients/common/settings-docs.h.in:362
 msgid ""
 "Link watchers configuration for the connection: each link watcher is defined "
 "by a dictionary, whose keys depend upon the selected link watcher. Available "
@@ -10087,23 +10095,23 @@ msgstr ""
 "«validate-inactive», «send-always». Докладніше про це на сторінці підручника "
 "(man) щодо teamd.conf."
 
-#: ../clients/common/settings-docs.h.in:344
+#: ../clients/common/settings-docs.h.in:345
 msgid "Corresponds to the teamd mcast_rejoin.count."
 msgstr "Відповідає mcast_rejoin.count у teamd."
 
-#: ../clients/common/settings-docs.h.in:345
+#: ../clients/common/settings-docs.h.in:346
 msgid "Corresponds to the teamd mcast_rejoin.interval."
 msgstr "Відповідає mcast_rejoin.interval у teamd."
 
-#: ../clients/common/settings-docs.h.in:346
+#: ../clients/common/settings-docs.h.in:347
 msgid "Corresponds to the teamd notify_peers.count."
 msgstr "Відповідає notify_peers.count у teamd."
 
-#: ../clients/common/settings-docs.h.in:347
+#: ../clients/common/settings-docs.h.in:348
 msgid "Corresponds to the teamd notify_peers.interval."
 msgstr "Відповідає notify_peers.interval у teamd."
 
-#: ../clients/common/settings-docs.h.in:348
+#: ../clients/common/settings-docs.h.in:349
 msgid ""
 "Corresponds to the teamd runner.name. Permitted values are: \"roundrobin\", "
 "\"broadcast\", \"activebackup\", \"loadbalance\", \"lacp\", \"random\"."
@@ -10111,43 +10119,43 @@ msgstr ""
 "Відповідає runner.name у teamd. Можливі такі значення: «roundrobin», "
 "«broadcast», «activebackup», «loadbalance», «lacp», «random»."
 
-#: ../clients/common/settings-docs.h.in:349
+#: ../clients/common/settings-docs.h.in:350
 msgid "Corresponds to the teamd runner.active."
 msgstr "Відповідає runner.active у teamd."
 
-#: ../clients/common/settings-docs.h.in:350
+#: ../clients/common/settings-docs.h.in:351
 msgid "Corresponds to the teamd runner.agg_select_policy."
 msgstr "Відповідає runner.agg_select_policy у teamd."
 
-#: ../clients/common/settings-docs.h.in:351
+#: ../clients/common/settings-docs.h.in:352
 msgid "Corresponds to the teamd runner.fast_rate."
 msgstr "Відповідає runner.fast_rate у teamd."
 
-#: ../clients/common/settings-docs.h.in:352
+#: ../clients/common/settings-docs.h.in:353
 msgid "Corresponds to the teamd runner.hwaddr_policy."
 msgstr "Відповідає runner.hwaddr_policy у teamd."
 
-#: ../clients/common/settings-docs.h.in:353
+#: ../clients/common/settings-docs.h.in:354
 msgid "Corresponds to the teamd runner.min_ports."
 msgstr "Відповідає runner.min_ports у teamd."
 
-#: ../clients/common/settings-docs.h.in:354
+#: ../clients/common/settings-docs.h.in:355
 msgid "Corresponds to the teamd runner.sys_prio."
 msgstr "Відповідає runner.sys_prio у teamd."
 
-#: ../clients/common/settings-docs.h.in:355
+#: ../clients/common/settings-docs.h.in:356
 msgid "Corresponds to the teamd runner.tx_balancer.name."
 msgstr "Відповідає runner.tx_balancer.name у teamd."
 
-#: ../clients/common/settings-docs.h.in:356
+#: ../clients/common/settings-docs.h.in:357
 msgid "Corresponds to the teamd runner.tx_balancer.interval."
 msgstr "Відповідає runner.tx_balancer.interval у teamd."
 
-#: ../clients/common/settings-docs.h.in:357
+#: ../clients/common/settings-docs.h.in:358
 msgid "Corresponds to the teamd runner.tx_hash."
 msgstr "Відповідає runner.tx_hash у teamd."
 
-#: ../clients/common/settings-docs.h.in:358
+#: ../clients/common/settings-docs.h.in:359
 msgid ""
 "The JSON configuration for the team port. The property should contain raw "
 "JSON configuration data suitable for teamd, because the value is passed "
@@ -10160,19 +10168,19 @@ msgstr ""
 "використовуватимуться типові налаштування. Щоб дізнатися більше про "
 "форматування даних, ознайомитеся із підручником (man) з teamd.conf."
 
-#: ../clients/common/settings-docs.h.in:359
+#: ../clients/common/settings-docs.h.in:360
 msgid "Corresponds to the teamd ports.PORTIFNAME.lacp_key."
 msgstr "Відповідає ports.PORTIFNAME.lacp_key у teamd."
 
-#: ../clients/common/settings-docs.h.in:360
+#: ../clients/common/settings-docs.h.in:361
 msgid "Corresponds to the teamd ports.PORTIFNAME.lacp_prio."
 msgstr "Відповідає ports.PORTIFNAME.lacp_prio у teamd."
 
-#: ../clients/common/settings-docs.h.in:362
+#: ../clients/common/settings-docs.h.in:363
 msgid "Corresponds to the teamd ports.PORTIFNAME.prio."
 msgstr "Відповідає ports.PORTIFNAME.prio у teamd."
 
-#: ../clients/common/settings-docs.h.in:363
+#: ../clients/common/settings-docs.h.in:364
 msgid ""
 "Corresponds to the teamd ports.PORTIFNAME.queue_id. When set to -1 means the "
 "parameter is skipped from the json config."
@@ -10180,11 +10188,11 @@ msgstr ""
 "Відповідає ports.PORTIFNAME.queue_id у teamd. Значення -1 означає, що "
 "параметр пропускається у налаштуваннях json."
 
-#: ../clients/common/settings-docs.h.in:364
+#: ../clients/common/settings-docs.h.in:365
 msgid "Corresponds to the teamd ports.PORTIFNAME.sticky."
 msgstr "Відповідає ports.PORTIFNAME.sticky у teamd."
 
-#: ../clients/common/settings-docs.h.in:365
+#: ../clients/common/settings-docs.h.in:366
 msgid ""
 "The group ID which will own the device. If set to NULL everyone will be able "
 "to use the device."
@@ -10192,7 +10200,7 @@ msgstr ""
 "Ідентифікатор групи-власника пристрою. Якщо встановлено значення NULL, "
 "пристроєм зможе користуватися будь-хто."
 
-#: ../clients/common/settings-docs.h.in:366
+#: ../clients/common/settings-docs.h.in:367
 msgid ""
 "The operating mode of the virtual device. Allowed values are "
 "NM_SETTING_TUN_MODE_TUN (1) to create a layer 3 device and "
@@ -10202,7 +10210,7 @@ msgstr ""
 "NM_SETTING_TUN_MODE_TUN (1) для створення пристрою шару 3 і "
 "NM_SETTING_TUN_MODE_TAP (2) для створення пристрою Ethernet-подібного шару 2."
 
-#: ../clients/common/settings-docs.h.in:367
+#: ../clients/common/settings-docs.h.in:368
 msgid ""
 "If the property is set to TRUE, the interface will support multiple file "
 "descriptors (queues) to parallelize packet sending or receiving. Otherwise, "
@@ -10213,7 +10221,7 @@ msgstr ""
 "надсилання або отримування пакетів. Якщо ж встановлено значення FALSE, "
 "інтерфейсом підтримуватиметься лише одна черга."
 
-#: ../clients/common/settings-docs.h.in:368
+#: ../clients/common/settings-docs.h.in:369
 msgid ""
 "The user ID which will own the device. If set to NULL everyone will be able "
 "to use the device."
@@ -10221,7 +10229,7 @@ msgstr ""
 "Ідентифікатор користувача-власника пристрою. Якщо встановлено значення NULL, "
 "пристроєм зможе користуватися будь-хто."
 
-#: ../clients/common/settings-docs.h.in:369
+#: ../clients/common/settings-docs.h.in:370
 msgid ""
 "If TRUE the interface will prepend a 4 byte header describing the physical "
 "interface to the packets."
@@ -10229,7 +10237,7 @@ msgstr ""
 "Якщо TRUE, інтерфейс дописуватиме на початку пакетів заголовок у 4 байти із "
 "описом фізичного інтерфейсу."
 
-#: ../clients/common/settings-docs.h.in:370
+#: ../clients/common/settings-docs.h.in:371
 msgid ""
 "If TRUE the IFF_VNET_HDR the tunnel packets will include a virtio network "
 "header."
@@ -10237,7 +10245,7 @@ msgstr ""
 "Якщо IFF_VNET_HDR має значення TRUE, тунельовані пакети включатимуть "
 "заголовок мережі virtio."
 
-#: ../clients/common/settings-docs.h.in:371
+#: ../clients/common/settings-docs.h.in:372
 msgid ""
 "A dictionary of key/value pairs with user data. This data is ignored by "
 "NetworkManager and can be used at the users discretion. The keys only "
@@ -10250,7 +10258,7 @@ msgstr ""
 "формату ASCII, але значення можуть бути довільними рядками UTF8, довжина "
 "яких не перевищує певного значення."
 
-#: ../clients/common/settings-docs.h.in:372
+#: ../clients/common/settings-docs.h.in:373
 msgid ""
 "For outgoing packets, a list of mappings from Linux SKB priorities to 802.1p "
 "priorities.  The mapping is given in the format \"from:to\" where both \"from"
@@ -10260,7 +10268,7 @@ msgstr ""
 "802.1p. Прив'язка визначається у форматі «з:до», де обидва значення, «з» і "
 "«до» є цілими додатними числами, наприклад «7:3»."
 
-#: ../clients/common/settings-docs.h.in:373
+#: ../clients/common/settings-docs.h.in:374
 msgid ""
 "One or more flags which control the behavior and features of the VLAN "
 "interface.  Flags include NM_VLAN_FLAG_REORDER_HEADERS (0x1) (reordering of "
@@ -10282,7 +10290,7 @@ msgstr ""
 "зберегти зворотну сумісність, типовим значенням у програмному інтерфейсі D-"
 "Bus лишається 0, а нестача властивості у D-Bus також розглядається як 0."
 
-#: ../clients/common/settings-docs.h.in:374
+#: ../clients/common/settings-docs.h.in:375
 msgid ""
 "The VLAN identifier that the interface created by this connection should be "
 "assigned. The valid range is from 0 to 4094, without the reserved id 4095."
@@ -10291,7 +10299,7 @@ msgstr ""
 "з'єднанням. Коректним діапазоном є діапазон від 0 до 4094, без "
 "зарезервованого ідентифікатора 4095."
 
-#: ../clients/common/settings-docs.h.in:375
+#: ../clients/common/settings-docs.h.in:376
 msgid ""
 "For incoming packets, a list of mappings from 802.1p priorities to Linux SKB "
 "priorities.  The mapping is given in the format \"from:to\" where both \"from"
@@ -10301,7 +10309,7 @@ msgstr ""
 "Linux. Прив'язка визначається у форматі «з:до», де обидва значення, «з» і "
 "«до» є цілими додатними числами, наприклад «7:3»."
 
-#: ../clients/common/settings-docs.h.in:376
+#: ../clients/common/settings-docs.h.in:377
 msgid ""
 "If given, specifies the parent interface name or parent connection UUID from "
 "which this VLAN interface should be created.  If this property is not "
@@ -10313,7 +10321,7 @@ msgstr ""
 "значення для цієї властивості не вказано, запис з'єднання має містити "
 "параметр «802-3-ethernet» із властивістю «mac-address»."
 
-#: ../clients/common/settings-docs.h.in:377
+#: ../clients/common/settings-docs.h.in:378
 msgid ""
 "Dictionary of key/value pairs of VPN plugin specific data.  Both keys and "
 "values must be strings."
@@ -10321,7 +10329,7 @@ msgstr ""
 "Словник із пар ключ-значення для специфічних даних додатка VPN. Величинами "
 "ключа і значення можуть бути лише текстові рядки."
 
-#: ../clients/common/settings-docs.h.in:378
+#: ../clients/common/settings-docs.h.in:379
 msgid ""
 "If the VPN service supports persistence, and this property is TRUE, the VPN "
 "will attempt to stay connected across link changes and outages, until "
@@ -10332,7 +10340,7 @@ msgstr ""
 "час зміни параметрів зв'язку або неможливості обміну даними, аж доки "
 "з'єднання не буде розірвано явним чином."
 
-#: ../clients/common/settings-docs.h.in:379
+#: ../clients/common/settings-docs.h.in:380
 msgid ""
 "Dictionary of key/value pairs of VPN plugin specific secrets like passwords "
 "or private keys.  Both keys and values must be strings."
@@ -10341,7 +10349,7 @@ msgstr ""
 "VPN, зокрема паролів або закритих ключів. Величинами ключа і значення можуть "
 "бути лише текстові рядки."
 
-#: ../clients/common/settings-docs.h.in:380
+#: ../clients/common/settings-docs.h.in:381
 msgid ""
 "D-Bus service name of the VPN plugin that this setting uses to connect to "
 "its network.  i.e. org.freedesktop.NetworkManager.vpnc for the vpnc plugin."
@@ -10350,7 +10358,7 @@ msgstr ""
 "додатка з його мережею. Приклад: org.freedesktop.NetworkManager.vpnc для "
 "додатка vpnc."
 
-#: ../clients/common/settings-docs.h.in:381
+#: ../clients/common/settings-docs.h.in:382
 msgid ""
 "Timeout for the VPN service to establish the connection. Some services may "
 "take quite a long time to connect. Value of 0 means a default timeout, which "
@@ -10363,7 +10371,7 @@ msgstr ""
 "допомогою параметра vpn.timeout у файлі налаштувань). Значення, які "
 "перевищують нуль, визначають час очікування у секундах."
 
-#: ../clients/common/settings-docs.h.in:382
+#: ../clients/common/settings-docs.h.in:383
 msgid ""
 "If the VPN connection requires a user name for authentication, that name "
 "should be provided here.  If the connection is available to more than one "
@@ -10379,15 +10387,15 @@ msgstr ""
 "порожнє, NetworkManager автоматично використає ім'я користувача, який "
 "надіслав запит щодо встановлення з'єднання VPN."
 
-#: ../clients/common/settings-docs.h.in:383
+#: ../clients/common/settings-docs.h.in:384
 msgid "The routing table for this VRF."
 msgstr "Таблиця маршрутизації для цього VRF."
 
-#: ../clients/common/settings-docs.h.in:384
+#: ../clients/common/settings-docs.h.in:385
 msgid "Specifies the lifetime in seconds of FDB entries learnt by the kernel."
 msgstr "Визначає час життя у секундах записів FDB, вивчених ядром."
 
-#: ../clients/common/settings-docs.h.in:385
+#: ../clients/common/settings-docs.h.in:386
 msgid ""
 "Specifies the UDP destination port to communicate to the remote VXLAN tunnel "
 "endpoint."
@@ -10395,22 +10403,22 @@ msgstr ""
 "Визначає порт призначення UDP для обміну даними із віддаленою кінцевою "
 "точкою тунелю VXLAN."
 
-#: ../clients/common/settings-docs.h.in:386
+#: ../clients/common/settings-docs.h.in:387
 msgid ""
 "Specifies the VXLAN Network Identifier (or VXLAN Segment Identifier) to use."
 msgstr ""
 "Визначає ідентифікатор мережі VXLAN (або ідентифікатор сегмента VXLAN), яким "
 "слід скористатися."
 
-#: ../clients/common/settings-docs.h.in:387
+#: ../clients/common/settings-docs.h.in:388
 msgid "Specifies whether netlink LL ADDR miss notifications are generated."
 msgstr "Визначає, чи будуть створюватися сповіщення netlink LL ADDR miss."
 
-#: ../clients/common/settings-docs.h.in:388
+#: ../clients/common/settings-docs.h.in:389
 msgid "Specifies whether netlink IP ADDR miss notifications are generated."
 msgstr "Визначає, чи будуть створюватися сповіщення netlink IP ADDR miss."
 
-#: ../clients/common/settings-docs.h.in:389
+#: ../clients/common/settings-docs.h.in:390
 msgid ""
 "Specifies whether unknown source link layer addresses and IP addresses are "
 "entered into the VXLAN device forwarding database."
@@ -10418,7 +10426,7 @@ msgstr ""
 "Вказує, чи вводяться невідомі адреси шару посилань та IP-адреси до бази "
 "даних переспрямовування пристроїв VXLAN."
 
-#: ../clients/common/settings-docs.h.in:390
+#: ../clients/common/settings-docs.h.in:391
 msgid ""
 "Specifies the maximum number of FDB entries. A value of zero means that the "
 "kernel will store unlimited entries."
@@ -10426,24 +10434,24 @@ msgstr ""
 "Вказує максимальну кількість записів FDB. Нульове значення означає, що ядро "
 "зберігатиме необмежену кількість записів."
 
-#: ../clients/common/settings-docs.h.in:391
+#: ../clients/common/settings-docs.h.in:392
 msgid "If given, specifies the source IP address to use in outgoing packets."
 msgstr ""
 "Якщо задано, визначає початкову IP-адресу, якою слід скористатися для "
 "вихідних пакетів."
 
-#: ../clients/common/settings-docs.h.in:392
+#: ../clients/common/settings-docs.h.in:393
 msgid ""
 "If given, specifies the parent interface name or parent connection UUID."
 msgstr ""
 "Якщо задано, визначає назву батьківського інтерфейсу або UUID батьківського "
 "з'єднання."
 
-#: ../clients/common/settings-docs.h.in:393
+#: ../clients/common/settings-docs.h.in:394
 msgid "Specifies whether ARP proxy is turned on."
 msgstr "Визначає, чи увімкнено ARP-проксі."
 
-#: ../clients/common/settings-docs.h.in:394
+#: ../clients/common/settings-docs.h.in:395
 msgid ""
 "Specifies the unicast destination IP address to use in outgoing packets when "
 "the destination link layer address is not known in the VXLAN device "
@@ -10454,11 +10462,11 @@ msgstr ""
 "переспрямовування пристроїв VXLAN, або IP-адреса універсальної трансляції, з "
 "якою слід встановити зв'язок."
 
-#: ../clients/common/settings-docs.h.in:395
+#: ../clients/common/settings-docs.h.in:396
 msgid "Specifies whether route short circuit is turned on."
 msgstr "Визначає, чи увімкнено коротке замикання маршруту."
 
-#: ../clients/common/settings-docs.h.in:396
+#: ../clients/common/settings-docs.h.in:397
 msgid ""
 "Specifies the maximum UDP source port to communicate to the remote VXLAN "
 "tunnel endpoint."
@@ -10466,7 +10474,7 @@ msgstr ""
 "Визначає максимальний початковий порт UDP для обміну даними із віддаленою "
 "кінцевою точкою тунелю VXLAN."
 
-#: ../clients/common/settings-docs.h.in:397
+#: ../clients/common/settings-docs.h.in:398
 msgid ""
 "Specifies the minimum UDP source port to communicate to the remote VXLAN "
 "tunnel endpoint."
@@ -10474,16 +10482,16 @@ msgstr ""
 "Визначає мінімальний початковий порт UDP для обміну даними із віддаленою "
 "кінцевою точкою тунелю VXLAN."
 
-#: ../clients/common/settings-docs.h.in:398
+#: ../clients/common/settings-docs.h.in:399
 msgid "Specifies the TOS value to use in outgoing packets."
 msgstr "Визначає значення TOS, яке слід використовувати для вихідних пакетів."
 
-#: ../clients/common/settings-docs.h.in:399
+#: ../clients/common/settings-docs.h.in:400
 msgid "Specifies the time-to-live value to use in outgoing packets."
 msgstr ""
 "Визначає значення часу життя, яке слід використовувати для вихідних пакетів."
 
-#: ../clients/common/settings-docs.h.in:400
+#: ../clients/common/settings-docs.h.in:401
 msgid ""
 "The P2P device that should be connected to. Currently, this is the only way "
 "to create or join a group."
@@ -10491,7 +10499,7 @@ msgstr ""
 "Пристрій P2P, з яким слід встановити з'єднання. У поточній версії це єдиний "
 "спосіб створення групи або долучення до неї."
 
-#: ../clients/common/settings-docs.h.in:401
+#: ../clients/common/settings-docs.h.in:402
 msgid ""
 "The Wi-Fi Display (WFD) Information Elements (IEs) to set. Wi-Fi Display "
 "requires a protocol specific information element to be set in certain Wi-Fi "
@@ -10505,7 +10513,7 @@ msgstr ""
 "Вказати ці елементи з метою встановлення з'єднання можна тут. Цей параметр є "
 "корисним лише для реалізації клієнта дисплея Wi-Fi."
 
-#: ../clients/common/settings-docs.h.in:402
+#: ../clients/common/settings-docs.h.in:403
 msgid ""
 "Flags indicating which mode of WPS is to be used. There's little point in "
 "changing the default setting as NetworkManager will automatically determine "
@@ -10515,7 +10523,7 @@ msgstr ""
 "типове значення не варто, оскільки NetworkManager автоматично визначає "
 "найкращий режим."
 
-#: ../clients/common/settings-docs.h.in:403
+#: ../clients/common/settings-docs.h.in:404
 msgid ""
 "If specified, this connection will only apply to the WiMAX device whose MAC "
 "address matches. This property does not change the MAC address of the device "
@@ -10525,7 +10533,7 @@ msgstr ""
 "відповідною адресою MAC. Ця властивість не змінює MAC-адреси пристрою (таку "
 "зміну називають підміною MAC). Застаріле: 1"
 
-#: ../clients/common/settings-docs.h.in:404
+#: ../clients/common/settings-docs.h.in:405
 msgid ""
 "Network Service Provider (NSP) name of the WiMAX network this connection "
 "should use. Deprecated: 1"
@@ -10533,7 +10541,7 @@ msgstr ""
 "Назва надавача мережевих послуг (NSP) для мережі WiMAX, яку має "
 "використовувати це з'єднання. Застаріле: 1"
 
-#: ../clients/common/settings-docs.h.in:405
+#: ../clients/common/settings-docs.h.in:406
 msgid ""
 "The use of fwmark is optional and is by default off. Setting it to 0 "
 "disables it. Otherwise, it is a 32-bit fwmark for outgoing packets. Note "
@@ -10545,7 +10553,7 @@ msgstr ""
 "fwmark для вихідних пакетів. Зауважте, що вмикання «ip4-auto-default-route» "
 "або «ip6-auto-default-route» неявним чином призводить до вибору fwmark."
 
-#: ../clients/common/settings-docs.h.in:406
+#: ../clients/common/settings-docs.h.in:407
 msgid ""
 "Whether to enable special handling of the IPv4 default route. If enabled, "
 "the IPv4 default route from wireguard.peer-routes will be placed to a "
@@ -10573,11 +10581,11 @@ msgstr ""
 "і не буде жодного вузла, який використовує типовий маршрут (default-route) у "
 "дозволених IP-адресах (allowed-ips)."
 
-#: ../clients/common/settings-docs.h.in:407
+#: ../clients/common/settings-docs.h.in:408
 msgid "Like ip4-auto-default-route, but for the IPv6 default route."
 msgstr "Те саме, що ip4-auto-default-route, але для типового маршруту IPv6."
 
-#: ../clients/common/settings-docs.h.in:408
+#: ../clients/common/settings-docs.h.in:409
 msgid ""
 "The listen-port. If listen-port is not specified, the port will be chosen "
 "randomly when the interface comes up."
@@ -10585,7 +10593,7 @@ msgstr ""
 "Порт для очікування на дані. Якщо порт для очікування на дані не вказано, "
 "номер буде вибрано випадковим чином під час підняття інтерфейсу."
 
-#: ../clients/common/settings-docs.h.in:409
+#: ../clients/common/settings-docs.h.in:410
 msgid ""
 "If non-zero, only transmit packets of the specified size or smaller, "
 "breaking larger packets up into multiple fragments. If zero a default MTU is "
@@ -10598,7 +10606,7 @@ msgstr ""
 "відміну від параметра MTU wg-quick, тут не беруться до уваги поточні "
 "маршрути на момент активації."
 
-#: ../clients/common/settings-docs.h.in:410
+#: ../clients/common/settings-docs.h.in:411
 msgid ""
 "Whether to automatically add routes for the AllowedIPs ranges of the peers. "
 "If TRUE (the default), NetworkManager will automatically add routes in the "
@@ -10620,15 +10628,15 @@ msgstr ""
 "«0.0.0.0/0» або «::/0», а для профілю увімкнено ipv4.never-default або ipv6."
 "never-default, маршрут вузла для цього вузла не буде додано автоматично."
 
-#: ../clients/common/settings-docs.h.in:411
+#: ../clients/common/settings-docs.h.in:412
 msgid "The 256 bit private-key in base64 encoding."
 msgstr "256-бітовий закритий ключ у кодуванні base64."
 
-#: ../clients/common/settings-docs.h.in:412
+#: ../clients/common/settings-docs.h.in:413
 msgid "Flags indicating how to handle the \"private-key\" property."
 msgstr "Прапорці, які позначають, як обробляти властивість «private-key»."
 
-#: ../clients/common/settings-docs.h.in:413
+#: ../clients/common/settings-docs.h.in:414
 msgid ""
 "IEEE 802.15.4 channel. A positive integer or -1, meaning \"do not set, use "
 "whatever the device is already set to\"."
@@ -10636,7 +10644,7 @@ msgstr ""
 "Канал IEEE 802.15.4. Додане ціле значення або -1, що означає «не "
 "встановлювати, використовувати той, який вже встановлено пристроєм»."
 
-#: ../clients/common/settings-docs.h.in:414
+#: ../clients/common/settings-docs.h.in:415
 msgid ""
 "If specified, this connection will only apply to the IEEE 802.15.4 (WPAN) "
 "MAC layer device whose permanent MAC address matches."
@@ -10644,7 +10652,7 @@ msgstr ""
 "Якщо вказано, це з'єднання застосовуватиметься лише до пристрою шару MAC "
 "IEEE 802.15.4 (WPAN) із відповідною сталою адресою MAC."
 
-#: ../clients/common/settings-docs.h.in:415
+#: ../clients/common/settings-docs.h.in:416
 msgid ""
 "IEEE 802.15.4 channel page. A positive integer or -1, meaning \"do not set, "
 "use whatever the device is already set to\"."
@@ -10652,11 +10660,11 @@ msgstr ""
 "Сторінка каналу IEEE 80215.4. Додане ціле значення або -1, що означає «не "
 "встановлювати, використовувати ту, яку вже встановлено пристроєм»."
 
-#: ../clients/common/settings-docs.h.in:416
+#: ../clients/common/settings-docs.h.in:417
 msgid "IEEE 802.15.4 Personal Area Network (PAN) identifier."
 msgstr "Ідентифікатор Personal Area Network (PAN) IEEE 802.15.4."
 
-#: ../clients/common/settings-docs.h.in:417
+#: ../clients/common/settings-docs.h.in:418
 msgid "Short IEEE 802.15.4 address to be used within a restricted environment."
 msgstr ""
 "Коротка адреса IEEE 802.15.4, яку слід використовувати у обмеженому "
@@ -12027,226 +12035,227 @@ msgstr "Значення не може бути оброблено як спис
 msgid "value is not an integer in range [%lld, %lld]"
 msgstr "значення не є цілим числом у діапазоні [%lld, %lld]"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:262
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:267
 msgid "ignoring missing number"
 msgstr "ігноруємо пропущене число"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:274
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:279
 #, c-format
 msgid "ignoring invalid number '%s'"
 msgstr "ігноруємо некоректне число «%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:303
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:308
 #, c-format
 msgid "ignoring invalid %s address: %s"
 msgstr "ігноруємо некоректну адресу %s: %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:349
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:354
 #, c-format
 msgid "ignoring invalid gateway '%s' for %s route"
 msgstr "ігноруємо некоректний шлюз «%s» для маршруту %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:371
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:376
 #, c-format
 msgid "ignoring invalid %s route: %s"
 msgstr "ігноруємо некоректний маршрут %s: %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:549
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:554
 #, c-format
 msgid "unexpected character '%c' for address %s: '%s' (position %td)"
 msgstr "неочікуваний символ «%c» для адреси %s: «%s» (позиція %td)"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:565
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:570
 #, c-format
 msgid "unexpected character '%c' for %s: '%s' (position %td)"
 msgstr "неочікуваний символ «%c» для %s: «%s» (позиція %td)"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:580
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:585
 #, c-format
 msgid "unexpected character '%c' in prefix length for %s: '%s' (position %td)"
 msgstr "неочікуваний символ «%c» у префіксі довжини для %s: «%s» (позиція %td)"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:597
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:602
 #, c-format
 msgid "garbage at the end of value %s: '%s'"
 msgstr "зайві дані наприкінці значення %s: «%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:607
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:612
 #, c-format
 msgid "deprecated semicolon at the end of value %s: '%s'"
 msgstr "застаріла крапка з комою наприкінці значення %s: «%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:626
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:631
 #, c-format
 msgid "invalid prefix length for %s '%s', defaulting to %d"
 msgstr "некоректний префікс довжини для %s «%s», повертаємося до типового, %d"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:638
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:643
 #, c-format
 msgid "missing prefix length for %s '%s', defaulting to %d"
 msgstr "пропущено префікс довжини для %s «%s», повертаємося до типового, %d"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:981
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:986
+#: ../libnm-core/nm-setting-ovs-external-ids.c:320
 #: ../libnm-core/nm-setting-user.c:372
 #, c-format
 msgid "invalid value for \"%s\": %s"
 msgstr "некоректне значення для «%s»: %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1021
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:1064
 #, c-format
 msgid "ignoring invalid DNS server IPv%c address '%s'"
 msgstr "ігноруємо некоректну адресу IPv%c сервера DNS «%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1116
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:1159
 msgid "ignoring invalid MAC address"
 msgstr "ігноруємо некоректну MAC-адресу"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1192
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:1235
 #, c-format
 msgid "ignoring invalid bond option %s%s%s = %s%s%s: %s"
 msgstr "ігноруємо некоректний параметр bond %s%s%s = %s%s%s: %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1382
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:1425
 msgid "ignoring invalid SSID"
 msgstr "ігноруємо некоректний SSID"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1400
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:1443
 msgid "ignoring invalid raw password"
 msgstr "ігноруємо некоректний необроблений пароль"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1541
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:1584
 msgid "invalid key/cert value"
 msgstr "некоректне значення ключа/сертифіката"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1556
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:1599
 #, c-format
 msgid "invalid key/cert value path \"%s\""
 msgstr "некоректний шлях до ключа/сертифіката, «%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1581
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1678
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:1624
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:1721
 #, c-format
 msgid "certificate or key file '%s' does not exist"
 msgstr "файла сертифіката або ключа «%s» не існує"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1594
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:1637
 #, c-format
 msgid "invalid PKCS#11 URI \"%s\""
 msgstr "некоректна адреса PKCS#11 «%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1640
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:1683
 msgid "invalid key/cert value data:;base64, is not base64"
 msgstr "некоректні дані значення ключа/сертифіката data:;base64, не є base64"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1653
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:1696
 msgid "invalid key/cert value data:;base64,file://"
 msgstr "некоректне значення ключа/сертифіката data:;base64,file://"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1694
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:1737
 msgid "invalid key/cert value is not a valid blob"
 msgstr ""
 "некоректне значення ключа/сертифіката, не є коректним значення «%s» не є "
 "коректним великим бінарним об'єктом"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1796
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:1839
 #, c-format
 msgid "invalid parity value '%s'"
 msgstr "некоректне значення парності, «%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1818
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3231
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:1861
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3334
 #, c-format
 msgid "invalid setting: %s"
 msgstr "некоректний параметр: %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1838
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:1881
 #, c-format
 msgid "ignoring invalid team configuration: %s"
 msgstr "ігноруємо некоректне налаштування команди: %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1921
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:1964
 #, c-format
 msgid "invalid qdisc: %s"
 msgstr "некоректний qdisc: %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1971
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:2014
 #, c-format
 msgid "invalid tfilter: %s"
 msgstr "некоректний tfilter: %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3056
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3159
 #, c-format
 msgid "error loading setting value: %s"
 msgstr "помилка під час завантаження значення параметра: %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3087
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3099
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3118
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3130
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3142
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3204
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3216
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3190
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3202
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3221
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3233
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3245
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3307
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3319
 msgid "value cannot be interpreted as integer"
 msgstr "значення не може бути оброблено як ціле число"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3172
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3275
 #, c-format
 msgid "ignoring invalid byte element '%u' (not between 0 and 255 inclusive)"
 msgstr ""
 "ігноруємо некоректний байтовий елемент «%u» (не у діапазоні від 0 до 255, "
 "включно)"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3256
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3359
 #, c-format
 msgid "invalid setting name '%s'"
 msgstr "некоректна назва параметра, «%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3303
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3406
 #, c-format
 msgid "invalid key '%s.%s'"
 msgstr "некоректний ключ «%s.%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3319
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3422
 #, c-format
 msgid "key '%s.%s' is not boolean"
 msgstr "ключ «%s.%s» не є булевим значенням"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3336
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3439
 #, c-format
 msgid "key '%s.%s' is not a uint32"
 msgstr "ключ «%s.%s» не є значенням uint32"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3393
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3496
 #, c-format
 msgid "invalid peer public key in section '%s'"
 msgstr "некоректний відкритий ключ вузла у розділі «%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3408
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3511
 #, c-format
 msgid "key '%s.%s' is not a valid 256 bit key in base64 encoding"
 msgstr "ключ «%s.%s» не є коректним 256-бітовим ключем у кодуванні base64"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3431
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3534
 #, c-format
 msgid "key '%s.%s' is not a valid secret flag"
 msgstr "ключ «%s.%s» не є коректним прапорцем реєстраційних даних"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3454
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3557
 #, c-format
 msgid "key '%s.%s' is not a integer in range 0 to 2^32"
 msgstr "ключ «%s.%s» не є цілими числом у діапазоні від 0 до 2^32"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3470
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3573
 #, c-format
 msgid "key '%s.%s' is not a valid endpoint"
 msgstr "ключ «%s.%s» не є коректною кінцевою точкою"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3496
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3599
 #, c-format
 msgid "key '%s.%s' has invalid allowed-ips"
 msgstr "для ключа «%s.%s» вказано некоректне значення allowed-ips"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3511
+#: ../libnm-core/nm-keyfile/nm-keyfile.c:3614
 #, c-format
 msgid "peer '%s' is invalid: %s"
 msgstr "вузол «%s» є некоректним: %s"
@@ -13249,6 +13258,67 @@ msgstr "З'єднання з параметром «%s» не повинне м�
 msgid "'%s' is not allowed in fail_mode"
 msgstr "«%s» не можна використовувати у режимі fail_mode"
 
+#: ../libnm-core/nm-setting-ovs-external-ids.c:90
+#: ../libnm-core/nm-setting-user.c:91
+msgid "missing key"
+msgstr "не вказано ключ"
+
+#: ../libnm-core/nm-setting-ovs-external-ids.c:98
+#: ../libnm-core/nm-setting-user.c:99
+msgid "key is too long"
+msgstr "ключ є надто довгим"
+
+#: ../libnm-core/nm-setting-ovs-external-ids.c:105
+#: ../libnm-core/nm-setting-user.c:106
+msgid "key must be UTF8"
+msgstr "ключ має зберігатися у кодуванні UTF8"
+
+#: ../libnm-core/nm-setting-ovs-external-ids.c:114
+#: ../libnm-core/nm-setting-user.c:153
+msgid "key contains invalid characters"
+msgstr "ключ містить некоректний символ"
+
+#: ../libnm-core/nm-setting-ovs-external-ids.c:123
+#| msgid "key cannot contain \"..\""
+msgid "key cannot start with \"NM.\""
+msgstr "запис ключа не починається з «NM.»"
+
+#: ../libnm-core/nm-setting-ovs-external-ids.c:153
+#: ../libnm-core/nm-setting-user.c:180
+msgid "value is missing"
+msgstr "не вказано значення"
+
+#: ../libnm-core/nm-setting-ovs-external-ids.c:162
+#: ../libnm-core/nm-setting-user.c:189
+msgid "value is too large"
+msgstr "значення є надто великим"
+
+#: ../libnm-core/nm-setting-ovs-external-ids.c:170
+#: ../libnm-core/nm-setting-user.c:197
+msgid "value is not valid UTF8"
+msgstr "значення не записано у коректному кодуванні UTF8"
+
+#: ../libnm-core/nm-setting-ovs-external-ids.c:313
+#: ../libnm-core/nm-setting-user.c:365
+#, c-format
+msgid "invalid key \"%s\": %s"
+msgstr "некоректний ключ «%s»: %s"
+
+#: ../libnm-core/nm-setting-ovs-external-ids.c:337
+#: ../libnm-core/nm-setting-user.c:389
+#, c-format
+msgid "maximum number of user data entries reached (%u instead of %u)"
+msgstr ""
+"досягнуто максимальної кількості записів даних користувача (%u замість %u)"
+
+#: ../libnm-core/nm-setting-ovs-external-ids.c:365
+msgid ""
+"OVS external IDs can only be added to a profile of type OVS bridge/port/"
+"interface"
+msgstr ""
+"Зовнішні ідентифікатори OVS можна додавати лише до профілів типу місток, порт"
+" або інтерфейс OVS"
+
 #: ../libnm-core/nm-setting-ovs-interface.c:93
 #, c-format
 msgid "'%s' is not a valid interface type"
@@ -13468,18 +13538,6 @@ msgstr "«%s»: некоректний ідентифікатор користу
 msgid "'%s': invalid group ID"
 msgstr "«%s»: некоректний ідентифікатор групи"
 
-#: ../libnm-core/nm-setting-user.c:91
-msgid "missing key"
-msgstr "не вказано ключ"
-
-#: ../libnm-core/nm-setting-user.c:99
-msgid "key is too long"
-msgstr "ключ є надто довгим"
-
-#: ../libnm-core/nm-setting-user.c:106
-msgid "key must be UTF8"
-msgstr "ключ має зберігатися у кодуванні UTF8"
-
 #: ../libnm-core/nm-setting-user.c:131
 msgid "key requires a '.' for a namespace"
 msgstr "для визначення простору назв у ключі має бути «.»"
@@ -13488,36 +13546,9 @@ msgstr "для визначення простору назв у ключі ма
 msgid "key cannot contain \"..\""
 msgstr "у записі ключа не може міститися «..»"
 
-#: ../libnm-core/nm-setting-user.c:153
-msgid "key contains invalid characters"
-msgstr "ключ містить некоректний символ"
-
-#: ../libnm-core/nm-setting-user.c:180
-msgid "value is missing"
-msgstr "не вказано значення"
-
-#: ../libnm-core/nm-setting-user.c:189
-msgid "value is too large"
-msgstr "значення є надто великим"
-
-#: ../libnm-core/nm-setting-user.c:197
-msgid "value is not valid UTF8"
-msgstr "значення не записано у коректному кодуванні UTF8"
-
 #: ../libnm-core/nm-setting-user.c:322
 msgid "maximum number of user data entries reached"
 msgstr "досягнуто максимальної кількості записів даних користувача"
-
-#: ../libnm-core/nm-setting-user.c:365
-#, c-format
-msgid "invalid key \"%s\": %s"
-msgstr "некоректний ключ «%s»: %s"
-
-#: ../libnm-core/nm-setting-user.c:389
-#, c-format
-msgid "maximum number of user data entries reached (%u instead of %u)"
-msgstr ""
-"досягнуто максимальної кількості записів даних користувача (%u замість %u)"
 
 #: ../libnm-core/nm-setting-vlan.c:633
 #, c-format
@@ -14672,36 +14703,36 @@ msgstr ""
 "Правила системи забороняють вмикання або вимикання перевірки придатності до "
 "з'єднання"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:2314
+#: ../shared/nm-glib-aux/nm-shared-utils.c:2332
 #, c-format
 msgid "object class '%s' has no property named '%s'"
 msgstr "у класі об'єктів «%s» немає властивості із назвою «%s»"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:2323
+#: ../shared/nm-glib-aux/nm-shared-utils.c:2341
 #, c-format
 msgid "property '%s' of object class '%s' is not writable"
 msgstr "властивість «%s» класу об'єктів «%s» є непридатною до запису"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:2332
+#: ../shared/nm-glib-aux/nm-shared-utils.c:2350
 #, c-format
 msgid ""
 "construct property \"%s\" for object '%s' can't be set after construction"
 msgstr ""
 "властивість construct «%s» об'єкта «%s» не можна встановлювати після побудови"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:2343
+#: ../shared/nm-glib-aux/nm-shared-utils.c:2361
 #, c-format
 msgid "'%s::%s' is not a valid property name; '%s' is not a GObject subtype"
 msgstr "«%s::%s» не є коректною назвою властивості; «%s» не є підтипом GObject"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:2356
+#: ../shared/nm-glib-aux/nm-shared-utils.c:2374
 #, c-format
 msgid "unable to set property '%s' of type '%s' from value of type '%s'"
 msgstr ""
 "не вдалося встановити значення властивості «%s» типу «%s» на основі значення "
 "типу «%s»"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:2368
+#: ../shared/nm-glib-aux/nm-shared-utils.c:2386
 #, c-format
 msgid ""
 "value \"%s\" of type '%s' is invalid or out of range for property '%s' of "
@@ -14710,48 +14741,48 @@ msgstr ""
 "значення «%s» типу «%s» є некоректним для властивості «%s» типу «%s» або не "
 "належить до припустимого діапазону значень"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5104
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5134
 msgid "interface name is missing"
 msgstr "пропущено назву інтерфейсу"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5112
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5142
 msgid "interface name is too short"
 msgstr "назва інтерфейсу є надто короткою"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5120
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5150
 msgid "interface name is reserved"
 msgstr "таку назву інтерфейсу зарезервовано"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5133
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5163
 msgid "interface name contains an invalid character"
 msgstr "назва інтерфейсу містить некоректний символ"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5141
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5171
 msgid "interface name is longer than 15 characters"
 msgstr "назва інтерфейсу є довшою за 15 символів"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5166
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5196
 #, c-format
 msgid "'%%' is not allowed in interface names"
 msgstr "«%%» не можна використовувати у назвах інтерфейсів"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5178
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5208
 #, c-format
 msgid "'%s' is not allowed as interface name"
 msgstr "«%s» не можна використовувати як назву інтерфейсу"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5200
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5230
 msgid ""
 "interface name must be alphanumerical with no forward or backward slashes"
 msgstr ""
 "назва інтерфейсу має складатися з літер і цифр без початкового і "
 "завершального символів похилої риски"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5217
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5247
 msgid "interface name must not be empty"
 msgstr "назва інтерфейсу не може бути порожньою"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5225
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5255
 msgid "interface name must be UTF-8 encoded"
 msgstr "назва інтерфейсу має бути набором символів у кодуванні UTF-8"
 
@@ -15325,9 +15356,3 @@ msgstr "Невідомий рівень ведення журналу, «%s»"
 #, c-format
 msgid "Unknown log domain '%s'"
 msgstr "Невідомий домен ведення журналу, «%s»"
-
-#~ msgid "failed to unset bond option \"%s\""
-#~ msgstr "не вдалося скасувати встановлення параметра bond «%s»"
-
-#~ msgid "'%s' is not a valid IP address"
-#~ msgstr "«%s» є некоректною IP-адресою"
