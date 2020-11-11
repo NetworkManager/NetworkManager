@@ -798,6 +798,8 @@ pages:
     - master
   dependencies:
     - t_fedora:33
+  needs:
+    - t_fedora:33
 
 triage:issues:
   stage: triage

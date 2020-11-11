@@ -212,6 +212,8 @@ pages:
     - master
   dependencies:
     - t_{{pages_build.name}}:{{pages_build.version}}
+  needs:
+    - t_{{pages_build.name}}:{{pages_build.version}}
 
 triage:issues:
   stage: triage
