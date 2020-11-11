@@ -1662,6 +1662,19 @@ GPtrArray *_nm_g_ptr_array_copy(GPtrArray *    array,
 
 /*****************************************************************************/
 
+static inline GHashTable *
+nm_g_hash_table_ref(GHashTable *hash)
+{
+    return hash ? g_hash_table_ref(hash) : NULL;
+}
+
+static inline void
+nm_g_hash_table_unref(GHashTable *hash)
+{
+    if (hash)
+        g_hash_table_unref(hash);
+}
+
 static inline guint
 nm_g_hash_table_size(GHashTable *hash)
 {
