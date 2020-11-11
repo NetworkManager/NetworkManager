@@ -77,9 +77,6 @@ variables:
     FDO_DISTRIBUTION_VERSION: '{{version}}'
     FDO_DISTRIBUTION_TAG: ${{distro.name.upper()}}_TAG
     FDO_DISTRIBUTION_EXEC: ${{distro.name.upper()}}_EXEC
-{% if not version in distro.always %}
-  when: manual
-{% endif %}
 {% endfor %}
 {% endfor %}
 
@@ -171,6 +168,9 @@ t_{{distro.name}}:{{version}}:
     {% endif %}
   needs:
     - "{{distro.name}}:{{version}}@container-prep"
+{% if not version in distro.always %}
+  when: manual
+{% endif %}
 {% endfor %}
 {% endfor %}
 
