@@ -12,8 +12,10 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-pppoe.h"
+#include "nm-setting-veth.h"
 #include "nm-utils.h"
 #include "nm-object-private.h"
+#include "nm-device-veth.h"
 
 /*****************************************************************************/
 
@@ -173,9 +175,12 @@ connection_compatible(NMDevice *device, NMConnection *connection, GError **error
              ->connection_compatible(device, connection, error))
         return FALSE;
 
-    if (nm_connection_is_type(connection, NM_SETTING_PPPOE_SETTING_NAME)) {
+    if (nm_connection_is_type(connection, NM_SETTING_PPPOE_SETTING_NAME)
+        || nm_connection_is_type(connection, NM_SETTING_WIRED_SETTING_NAME)
+        || (nm_connection_is_type(connection, NM_SETTING_VETH_SETTING_NAME)
+            && NM_IS_DEVICE_VETH(device))) {
         /* NOP */
-    } else if (!nm_connection_is_type(connection, NM_SETTING_WIRED_SETTING_NAME)) {
+    } else {
         g_set_error_literal(error,
                             NM_DEVICE_ERROR,
                             NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
@@ -306,13 +311,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         break;
     }
 }
-
-/* TODO: implemented Veth. */
-const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_veth = NML_DBUS_META_IFACE_INIT(
-    NM_DBUS_INTERFACE_DEVICE_VETH,
-    NULL,
-    NML_DBUS_META_INTERFACE_PRIO_NONE,
-    NML_DBUS_META_IFACE_DBUS_PROPERTIES(NML_DBUS_META_PROPERTY_INIT_TODO("Peer", "o"), ), );
 
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_wired = NML_DBUS_META_IFACE_INIT_PROP(
     NM_DBUS_INTERFACE_DEVICE_WIRED,

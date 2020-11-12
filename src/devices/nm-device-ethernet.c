@@ -34,6 +34,7 @@
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "nm-udev-aux/nm-udev-utils.h"
+#include "nm-device-veth.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceEthernet
 #include "nm-device-logging.h"
@@ -347,7 +348,9 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
              ->check_connection_compatible(device, connection, error))
         return FALSE;
 
-    if (nm_connection_is_type(connection, NM_SETTING_PPPOE_SETTING_NAME)) {
+    if (nm_connection_is_type(connection, NM_SETTING_PPPOE_SETTING_NAME)
+        || (nm_connection_is_type(connection, NM_SETTING_VETH_SETTING_NAME)
+            && NM_IS_DEVICE_VETH(device))) {
         s_wired = nm_connection_get_setting_wired(connection);
     } else {
         s_wired =
@@ -1360,6 +1363,9 @@ wake_on_lan_enable(NMDevice *device)
 
     s_wired = nm_device_get_applied_setting(device, NM_TYPE_SETTING_WIRED);
 
+    if (NM_IS_DEVICE_VETH(device))
+        return FALSE;
+
     if (s_wired) {
         wol      = nm_setting_wired_get_wake_on_lan(s_wired);
         password = nm_setting_wired_get_wake_on_lan_password(s_wired);
@@ -1493,6 +1499,12 @@ act_stage3_ip_config_start(NMDevice *           device,
 {
     NMSettingConnection *s_con;
     const char *         connection_type;
+    int                  ifindex;
+
+    ifindex = nm_device_get_ifindex(device);
+
+    if (ifindex <= 0)
+        return NM_ACT_STAGE_RETURN_FAILURE;
 
     if (addr_family == AF_INET) {
         s_con = nm_device_get_applied_setting(device, NM_TYPE_SETTING_CONNECTION);
@@ -1803,7 +1815,7 @@ static void
 link_changed(NMDevice *device, const NMPlatformLink *pllink)
 {
     NM_DEVICE_CLASS(nm_device_ethernet_parent_class)->link_changed(device, pllink);
-    if (pllink->initialized)
+    if (!NM_IS_DEVICE_VETH(device) && pllink->initialized)
         _update_s390_subchannels((NMDeviceEthernet *) device);
 }
 

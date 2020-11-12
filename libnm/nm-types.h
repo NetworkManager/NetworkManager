@@ -36,6 +36,7 @@ typedef struct _NMDeviceOvsPort      NMDeviceOvsPort;
 typedef struct _NMDevicePpp          NMDevicePpp;
 typedef struct _NMDeviceTeam         NMDeviceTeam;
 typedef struct _NMDeviceTun          NMDeviceTun;
+typedef struct _NMDeviceVeth         NMDeviceVeth;
 typedef struct _NMDeviceVlan         NMDeviceVlan;
 typedef struct _NMDeviceVrf          NMDeviceVrf;
 typedef struct _NMDeviceVxlan        NMDeviceVxlan;

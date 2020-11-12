@@ -46,6 +46,7 @@
 #include "nm-setting-team.h"
 #include "nm-setting-tun.h"
 #include "nm-setting-user.h"
+#include "nm-setting-veth.h"
 #include "nm-setting-vlan.h"
 #include "nm-setting-vpn.h"
 #include "nm-setting-vrf.h"
@@ -418,6 +419,13 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
             .setting_priority  = NM_SETTING_PRIORITY_USER,
             .setting_name      = NM_SETTING_USER_SETTING_NAME,
             .get_setting_gtype = nm_setting_user_get_type,
+        },
+    [NM_META_SETTING_TYPE_VETH] =
+        {
+            .meta_type         = NM_META_SETTING_TYPE_VETH,
+            .setting_priority  = NM_SETTING_PRIORITY_HW_BASE,
+            .setting_name      = NM_SETTING_VETH_SETTING_NAME,
+            .get_setting_gtype = nm_setting_veth_get_type,
         },
     [NM_META_SETTING_TYPE_VLAN] =
         {

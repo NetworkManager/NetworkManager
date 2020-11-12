@@ -1002,6 +1002,7 @@
             <listitem><para><literal>team</literal></para></listitem>
             <listitem><para><literal>team-slave</literal> (deprecated for ethernet with master)</para></listitem>
             <listitem><para><literal>tun</literal></para></listitem>
+            <listitem><para><literal>veth</literal></para></listitem>
             <listitem><para><literal>vlan</literal></para></listitem>
             <listitem><para><literal>vpn</literal></para></listitem>
             <listitem><para><literal>vrf</literal></para></listitem>
