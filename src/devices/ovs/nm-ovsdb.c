@@ -85,6 +85,8 @@ typedef union {
 } OvsdbMethodPayload;
 
 typedef struct {
+    NMOvsdb *           self;
+    CList               calls_lst;
     guint64             call_id;
     OvsdbCommand        command;
     OvsdbMethodCallback callback;
@@ -107,12 +109,14 @@ typedef struct {
     GString *          input;     /* JSON stream waiting for decoding. */
     GString *          output;    /* JSON stream to be sent. */
     guint64            call_id_counter;
-    GArray *           calls;      /* Method calls waiting for a response. */
-    GHashTable *       interfaces; /* interface uuid => OpenvswitchInterface */
-    GHashTable *       ports;      /* port uuid => OpenvswitchPort */
-    GHashTable *       bridges;    /* bridge uuid => OpenvswitchBridge */
-    char *             db_uuid;
-    guint              num_failures;
+
+    CList calls_lst_head;
+
+    GHashTable *interfaces; /* interface uuid => OpenvswitchInterface */
+    GHashTable *ports;      /* port uuid => OpenvswitchPort */
+    GHashTable *bridges;    /* bridge uuid => OpenvswitchBridge */
+    char *      db_uuid;
+    guint       num_failures;
 } NMOvsdbPrivate;
 
 struct _NMOvsdb {
@@ -230,9 +234,12 @@ _LOGT_call_do(const char *comment, OvsdbMethodCall *call, json_t *msg)
 /*****************************************************************************/
 
 static void
-_clear_call(gpointer data)
+_call_complete(OvsdbMethodCall *call, json_t *response, GError *error)
 {
-    OvsdbMethodCall *call = data;
+    c_list_unlink_stale(&call->calls_lst);
+
+    if (call->callback)
+        call->callback(call->self, response, error, call->user_data);
 
     switch (call->command) {
     case OVSDB_MONITOR:
@@ -251,6 +258,8 @@ _clear_call(gpointer data)
         nm_clear_g_free(&call->payload.set_interface_mtu.ifname);
         break;
     }
+
+    nm_g_slice_free(call);
 }
 
 /*****************************************************************************/
@@ -341,16 +350,19 @@ ovsdb_call_method(NMOvsdb *                 self,
     /* Ensure we're not unsynchronized before we queue the method call. */
     ovsdb_try_connect(self);
 
-    if (add_first) {
-        g_array_prepend_val(priv->calls, (OvsdbMethodCall){});
-        call = &g_array_index(priv->calls, OvsdbMethodCall, 0);
-    } else
-        call = nm_g_array_append_new(priv->calls, OvsdbMethodCall);
+    call  = g_slice_new(OvsdbMethodCall);
+    *call = (OvsdbMethodCall){
+        .self      = self,
+        .call_id   = CALL_ID_UNSPEC,
+        .command   = command,
+        .callback  = callback,
+        .user_data = user_data,
+    };
 
-    call->call_id   = CALL_ID_UNSPEC;
-    call->command   = command;
-    call->callback  = callback;
-    call->user_data = user_data;
+    if (add_first)
+        c_list_link_front(&priv->calls_lst_head, &call->calls_lst);
+    else
+        c_list_link_tail(&priv->calls_lst_head, &call->calls_lst);
 
     /* Mmigrate the arguments from @payload to @call->payload. Technically,
      * this is not a plain copy, because
@@ -1123,10 +1135,11 @@ ovsdb_next_command(NMOvsdb *self)
 
     if (!priv->conn)
         return;
-    if (!priv->calls->len)
+
+    if (c_list_is_empty(&priv->calls_lst_head))
         return;
 
-    call = &g_array_index(priv->calls, OvsdbMethodCall, 0);
+    call = c_list_first_entry(&priv->calls_lst_head, OvsdbMethodCall, calls_lst);
     if (call->call_id != CALL_ID_UNSPEC)
         return;
 
@@ -1753,16 +1766,12 @@ ovsdb_got_msg(NMOvsdb *self, json_t *msg)
     json_error_t    json_error = {
         0,
     };
-    json_t *            json_id = NULL;
-    json_int_t          id      = (json_int_t) -1;
-    const char *        method  = NULL;
-    json_t *            params  = NULL;
-    json_t *            result  = NULL;
-    json_t *            error   = NULL;
-    OvsdbMethodCall *   call    = NULL;
-    OvsdbMethodCallback callback;
-    gpointer            user_data;
-    gs_free_error GError *local = NULL;
+    json_t *    json_id = NULL;
+    json_int_t  id      = (json_int_t) -1;
+    const char *method  = NULL;
+    json_t *    params  = NULL;
+    json_t *    result  = NULL;
+    json_t *    error   = NULL;
 
     if (json_unpack_ex(msg,
                        &json_error,
@@ -1808,13 +1817,16 @@ ovsdb_got_msg(NMOvsdb *self, json_t *msg)
     }
 
     if (id >= 0) {
+        OvsdbMethodCall *call;
+        gs_free_error GError *local = NULL;
+
         /* This is a response to a method call. */
-        if (!priv->calls->len) {
+        if (c_list_is_empty(&priv->calls_lst_head)) {
             _LOGE("there are no queued calls expecting response %" G_GUINT64_FORMAT, (guint64) id);
             ovsdb_disconnect(self, FALSE, FALSE);
             return;
         }
-        call = &g_array_index(priv->calls, OvsdbMethodCall, 0);
+        call = c_list_first_entry(&priv->calls_lst_head, OvsdbMethodCall, calls_lst);
         if (call->call_id != id) {
             _LOGE("expected a response to call %" G_GUINT64_FORMAT ", not %" G_GUINT64_FORMAT,
                   call->call_id,
@@ -1835,10 +1847,8 @@ ovsdb_got_msg(NMOvsdb *self, json_t *msg)
                         json_string_value(error));
         }
 
-        callback  = call->callback;
-        user_data = call->user_data;
-        g_array_remove_index(priv->calls, 0);
-        callback(self, result, local, user_data);
+        _call_complete(call, result, local);
+
         priv->num_failures = 0;
 
         /* Don't progress further commands in case the callback hit an error
@@ -2007,11 +2017,8 @@ ovsdb_write(NMOvsdb *self)
 static void
 ovsdb_disconnect(NMOvsdb *self, gboolean retry, gboolean is_disposing)
 {
-    NMOvsdbPrivate *    priv = NM_OVSDB_GET_PRIVATE(self);
-    OvsdbMethodCall *   call;
-    OvsdbMethodCallback callback;
-    gpointer            user_data;
-    gs_free_error GError *error = NULL;
+    NMOvsdbPrivate * priv = NM_OVSDB_GET_PRIVATE(self);
+    OvsdbMethodCall *call;
 
     nm_assert(!retry || !is_disposing);
 
@@ -2021,18 +2028,16 @@ ovsdb_disconnect(NMOvsdb *self, gboolean retry, gboolean is_disposing)
     _LOGD("disconnecting from ovsdb, retry %d", retry);
 
     if (retry) {
-        if (priv->calls->len != 0)
-            g_array_index(priv->calls, OvsdbMethodCall, 0).call_id = CALL_ID_UNSPEC;
-    } else {
-        nm_utils_error_set_cancelled(&error, is_disposing, "NMOvsdb");
-
-        while (priv->calls->len) {
-            call      = &g_array_index(priv->calls, OvsdbMethodCall, priv->calls->len - 1);
-            callback  = call->callback;
-            user_data = call->user_data;
-            g_array_remove_index(priv->calls, priv->calls->len - 1);
-            callback(self, NULL, error, user_data);
+        if (!c_list_is_empty(&priv->calls_lst_head)) {
+            call          = c_list_first_entry(&priv->calls_lst_head, OvsdbMethodCall, calls_lst);
+            call->call_id = CALL_ID_UNSPEC;
         }
+    } else {
+        gs_free_error GError *error = NULL;
+
+        nm_utils_error_set_cancelled(&error, is_disposing, "NMOvsdb");
+        while ((call = c_list_last_entry(&priv->calls_lst_head, OvsdbMethodCall, calls_lst)))
+            _call_complete(call, NULL, error);
     }
 
     priv->bufp = 0;
@@ -2238,8 +2243,8 @@ nm_ovsdb_init(NMOvsdb *self)
 {
     NMOvsdbPrivate *priv = NM_OVSDB_GET_PRIVATE(self);
 
-    priv->calls = g_array_new(FALSE, TRUE, sizeof(OvsdbMethodCall));
-    g_array_set_clear_func(priv->calls, _clear_call);
+    c_list_init(&priv->calls_lst_head);
+
     priv->input  = g_string_new(NULL);
     priv->output = g_string_new(NULL);
     priv->bridges =
@@ -2260,6 +2265,8 @@ dispose(GObject *object)
 
     ovsdb_disconnect(self, FALSE, TRUE);
 
+    nm_assert(c_list_is_empty(&priv->calls_lst_head));
+
     if (priv->input) {
         g_string_free(priv->input, TRUE);
         priv->input = NULL;
@@ -2267,10 +2274,6 @@ dispose(GObject *object)
     if (priv->output) {
         g_string_free(priv->output, TRUE);
         priv->output = NULL;
-    }
-    if (priv->calls) {
-        g_array_free(priv->calls, TRUE);
-        priv->calls = NULL;
     }
 
     nm_clear_pointer(&priv->bridges, g_hash_table_destroy);
