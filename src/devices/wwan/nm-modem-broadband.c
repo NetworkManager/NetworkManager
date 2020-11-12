@@ -39,8 +39,11 @@ MODEM_CAPS_3GPP(MMModemCapability caps)
 
 #define MODEM_CAPS_3GPP2(caps) (caps & (MM_MODEM_CAPABILITY_CDMA_EVDO))
 
-/* Maximum time to keep the DBus call waiting for a connection result */
-#define MODEM_CONNECT_TIMEOUT_SECS 120
+/* Maximum time to keep the DBus call waiting for a connection result.
+ * This value is greater than the default timeout in ModemManager (180s since
+ * 1.16), so that whenever possible the timeout happens first there instead of
+ * in NetworkManager. */
+#define MODEM_CONNECT_TIMEOUT_SECS 200
 
 /*****************************************************************************/
 
