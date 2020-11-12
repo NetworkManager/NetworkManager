@@ -683,7 +683,7 @@ nm_setting_match_init(NMSettingMatch *setting)
 NMSetting *
 nm_setting_match_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_MATCH, NULL);
+    return g_object_new(NM_TYPE_SETTING_MATCH, NULL);
 }
 
 static gboolean

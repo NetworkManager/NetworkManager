@@ -535,7 +535,7 @@ nm_setting_vxlan_init(NMSettingVxlan *self)
 NMSetting *
 nm_setting_vxlan_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_VXLAN, NULL);
+    return g_object_new(NM_TYPE_SETTING_VXLAN, NULL);
 }
 
 static void

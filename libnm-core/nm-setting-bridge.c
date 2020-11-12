@@ -1578,7 +1578,7 @@ nm_setting_bridge_init(NMSettingBridge *setting)
 NMSetting *
 nm_setting_bridge_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_BRIDGE, NULL);
+    return g_object_new(NM_TYPE_SETTING_BRIDGE, NULL);
 }
 
 static void

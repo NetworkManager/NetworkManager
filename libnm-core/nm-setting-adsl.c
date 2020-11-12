@@ -316,7 +316,7 @@ nm_setting_adsl_init(NMSettingAdsl *setting)
 NMSetting *
 nm_setting_adsl_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_ADSL, NULL);
+    return g_object_new(NM_TYPE_SETTING_ADSL, NULL);
 }
 
 static void

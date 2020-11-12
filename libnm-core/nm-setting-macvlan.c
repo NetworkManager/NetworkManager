@@ -236,7 +236,7 @@ nm_setting_macvlan_init(NMSettingMacvlan *self)
 NMSetting *
 nm_setting_macvlan_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_MACVLAN, NULL);
+    return g_object_new(NM_TYPE_SETTING_MACVLAN, NULL);
 }
 
 static void

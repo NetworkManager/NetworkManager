@@ -1109,7 +1109,7 @@ nm_setting_bond_init(NMSettingBond *setting)
 NMSetting *
 nm_setting_bond_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_BOND, NULL);
+    return g_object_new(NM_TYPE_SETTING_BOND, NULL);
 }
 
 static void

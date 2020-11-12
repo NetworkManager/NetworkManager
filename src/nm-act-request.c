@@ -475,24 +475,24 @@ nm_act_request_new(NMSettingsConnection * settings_connection,
     g_return_val_if_fail(NM_IS_DEVICE(device), NULL);
     g_return_val_if_fail(NM_IS_AUTH_SUBJECT(subject), NULL);
 
-    return (NMActRequest *) g_object_new(NM_TYPE_ACT_REQUEST,
-                                         NM_ACTIVE_CONNECTION_INT_APPLIED_CONNECTION,
-                                         applied_connection,
-                                         NM_ACTIVE_CONNECTION_INT_SETTINGS_CONNECTION,
-                                         settings_connection,
-                                         NM_ACTIVE_CONNECTION_INT_DEVICE,
-                                         device,
-                                         NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,
-                                         specific_object,
-                                         NM_ACTIVE_CONNECTION_INT_SUBJECT,
-                                         subject,
-                                         NM_ACTIVE_CONNECTION_INT_ACTIVATION_TYPE,
-                                         (int) activation_type,
-                                         NM_ACTIVE_CONNECTION_INT_ACTIVATION_REASON,
-                                         (int) activation_reason,
-                                         NM_ACTIVE_CONNECTION_STATE_FLAGS,
-                                         (guint) initial_state_flags,
-                                         NULL);
+    return g_object_new(NM_TYPE_ACT_REQUEST,
+                        NM_ACTIVE_CONNECTION_INT_APPLIED_CONNECTION,
+                        applied_connection,
+                        NM_ACTIVE_CONNECTION_INT_SETTINGS_CONNECTION,
+                        settings_connection,
+                        NM_ACTIVE_CONNECTION_INT_DEVICE,
+                        device,
+                        NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,
+                        specific_object,
+                        NM_ACTIVE_CONNECTION_INT_SUBJECT,
+                        subject,
+                        NM_ACTIVE_CONNECTION_INT_ACTIVATION_TYPE,
+                        (int) activation_type,
+                        NM_ACTIVE_CONNECTION_INT_ACTIVATION_REASON,
+                        (int) activation_reason,
+                        NM_ACTIVE_CONNECTION_STATE_FLAGS,
+                        (guint) initial_state_flags,
+                        NULL);
 }
 
 static void

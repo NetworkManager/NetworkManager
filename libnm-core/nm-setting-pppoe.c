@@ -254,7 +254,7 @@ nm_setting_pppoe_init(NMSettingPppoe *setting)
 NMSetting *
 nm_setting_pppoe_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_PPPOE, NULL);
+    return g_object_new(NM_TYPE_SETTING_PPPOE, NULL);
 }
 
 static void

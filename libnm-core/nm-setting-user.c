@@ -523,7 +523,7 @@ nm_setting_user_init(NMSettingUser *self)
 NMSetting *
 nm_setting_user_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_USER, NULL);
+    return g_object_new(NM_TYPE_SETTING_USER, NULL);
 }
 
 static void

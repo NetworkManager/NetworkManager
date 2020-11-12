@@ -893,7 +893,7 @@ nm_setting_dcb_init(NMSettingDcb *self)
 NMSetting *
 nm_setting_dcb_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_DCB, NULL);
+    return g_object_new(NM_TYPE_SETTING_DCB, NULL);
 }
 
 static void

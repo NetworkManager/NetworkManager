@@ -1233,18 +1233,18 @@ create_device(NMDeviceFactory *     factory,
     if (mode == NM_IP_TUNNEL_MODE_UNKNOWN || link_type == NM_LINK_TYPE_UNKNOWN)
         return NULL;
 
-    return (NMDevice *) g_object_new(NM_TYPE_DEVICE_IP_TUNNEL,
-                                     NM_DEVICE_IFACE,
-                                     iface,
-                                     NM_DEVICE_TYPE_DESC,
-                                     "IPTunnel",
-                                     NM_DEVICE_DEVICE_TYPE,
-                                     NM_DEVICE_TYPE_IP_TUNNEL,
-                                     NM_DEVICE_LINK_TYPE,
-                                     link_type,
-                                     NM_DEVICE_IP_TUNNEL_MODE,
-                                     mode,
-                                     NULL);
+    return g_object_new(NM_TYPE_DEVICE_IP_TUNNEL,
+                        NM_DEVICE_IFACE,
+                        iface,
+                        NM_DEVICE_TYPE_DESC,
+                        "IPTunnel",
+                        NM_DEVICE_DEVICE_TYPE,
+                        NM_DEVICE_TYPE_IP_TUNNEL,
+                        NM_DEVICE_LINK_TYPE,
+                        link_type,
+                        NM_DEVICE_IP_TUNNEL_MODE,
+                        mode,
+                        NULL);
 }
 
 static const char *

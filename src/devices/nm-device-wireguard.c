@@ -2005,16 +2005,16 @@ create_device(NMDeviceFactory *     factory,
               NMConnection *        connection,
               gboolean *            out_ignore)
 {
-    return (NMDevice *) g_object_new(NM_TYPE_DEVICE_WIREGUARD,
-                                     NM_DEVICE_IFACE,
-                                     iface,
-                                     NM_DEVICE_TYPE_DESC,
-                                     "WireGuard",
-                                     NM_DEVICE_DEVICE_TYPE,
-                                     NM_DEVICE_TYPE_WIREGUARD,
-                                     NM_DEVICE_LINK_TYPE,
-                                     NM_LINK_TYPE_WIREGUARD,
-                                     NULL);
+    return g_object_new(NM_TYPE_DEVICE_WIREGUARD,
+                        NM_DEVICE_IFACE,
+                        iface,
+                        NM_DEVICE_TYPE_DESC,
+                        "WireGuard",
+                        NM_DEVICE_DEVICE_TYPE,
+                        NM_DEVICE_TYPE_WIREGUARD,
+                        NM_DEVICE_LINK_TYPE,
+                        NM_LINK_TYPE_WIREGUARD,
+                        NULL);
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL(

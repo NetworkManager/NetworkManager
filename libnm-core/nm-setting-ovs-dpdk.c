@@ -109,7 +109,7 @@ nm_setting_ovs_dpdk_init(NMSettingOvsDpdk *self)
 NMSetting *
 nm_setting_ovs_dpdk_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_OVS_DPDK, NULL);
+    return g_object_new(NM_TYPE_SETTING_OVS_DPDK, NULL);
 }
 
 static void

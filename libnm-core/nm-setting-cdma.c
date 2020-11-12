@@ -251,7 +251,7 @@ nm_setting_cdma_init(NMSettingCdma *setting)
 NMSetting *
 nm_setting_cdma_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_CDMA, NULL);
+    return g_object_new(NM_TYPE_SETTING_CDMA, NULL);
 }
 
 static void

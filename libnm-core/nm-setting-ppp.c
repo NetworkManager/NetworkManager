@@ -512,7 +512,7 @@ nm_setting_ppp_init(NMSettingPpp *self)
 NMSetting *
 nm_setting_ppp_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_PPP, NULL);
+    return g_object_new(NM_TYPE_SETTING_PPP, NULL);
 }
 
 static void

@@ -194,7 +194,7 @@ NM_DEVICE_FACTORY_DECLARE_TYPES(NM_DEVICE_FACTORY_DECLARE_LINK_TYPES(
 G_MODULE_EXPORT NMDeviceFactory *
                 nm_device_factory_create(GError **error)
 {
-    return (NMDeviceFactory *) g_object_new(NM_TYPE_BLUEZ_MANAGER, NULL);
+    return g_object_new(NM_TYPE_BLUEZ_MANAGER, NULL);
 }
 
 /*****************************************************************************/

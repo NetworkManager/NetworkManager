@@ -2021,16 +2021,16 @@ create_device(NMDeviceFactory *     factory,
               NMConnection *        connection,
               gboolean *            out_ignore)
 {
-    return (NMDevice *) g_object_new(NM_TYPE_DEVICE_ETHERNET,
-                                     NM_DEVICE_IFACE,
-                                     iface,
-                                     NM_DEVICE_TYPE_DESC,
-                                     "Ethernet",
-                                     NM_DEVICE_DEVICE_TYPE,
-                                     NM_DEVICE_TYPE_ETHERNET,
-                                     NM_DEVICE_LINK_TYPE,
-                                     NM_LINK_TYPE_ETHERNET,
-                                     NULL);
+    return g_object_new(NM_TYPE_DEVICE_ETHERNET,
+                        NM_DEVICE_IFACE,
+                        iface,
+                        NM_DEVICE_TYPE_DESC,
+                        "Ethernet",
+                        NM_DEVICE_DEVICE_TYPE,
+                        NM_DEVICE_TYPE_ETHERNET,
+                        NM_DEVICE_LINK_TYPE,
+                        NM_LINK_TYPE_ETHERNET,
+                        NULL);
 }
 
 static gboolean

@@ -695,7 +695,7 @@ nm_secret_agent_new(GDBusMethodInvocation *   context,
 
     dbus_owner = nm_auth_subject_get_unix_process_dbus_sender(subject);
 
-    self = (NMSecretAgent *) g_object_new(NM_TYPE_SECRET_AGENT, NULL);
+    self = g_object_new(NM_TYPE_SECRET_AGENT, NULL);
 
     priv = NM_SECRET_AGENT_GET_PRIVATE(self);
 

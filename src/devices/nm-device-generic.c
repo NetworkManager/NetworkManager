@@ -165,16 +165,16 @@ nm_device_generic_new(const NMPlatformLink *plink, gboolean nm_plugin_missing)
 {
     g_return_val_if_fail(plink != NULL, NULL);
 
-    return (NMDevice *) g_object_new(NM_TYPE_DEVICE_GENERIC,
-                                     NM_DEVICE_IFACE,
-                                     plink->name,
-                                     NM_DEVICE_TYPE_DESC,
-                                     "Generic",
-                                     NM_DEVICE_DEVICE_TYPE,
-                                     NM_DEVICE_TYPE_GENERIC,
-                                     NM_DEVICE_NM_PLUGIN_MISSING,
-                                     nm_plugin_missing,
-                                     NULL);
+    return g_object_new(NM_TYPE_DEVICE_GENERIC,
+                        NM_DEVICE_IFACE,
+                        plink->name,
+                        NM_DEVICE_TYPE_DESC,
+                        "Generic",
+                        NM_DEVICE_DEVICE_TYPE,
+                        NM_DEVICE_TYPE_GENERIC,
+                        NM_DEVICE_NM_PLUGIN_MISSING,
+                        nm_plugin_missing,
+                        NULL);
 }
 
 static void

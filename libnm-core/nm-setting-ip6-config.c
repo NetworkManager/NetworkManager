@@ -592,7 +592,7 @@ nm_setting_ip6_config_init(NMSettingIP6Config *setting)
 NMSetting *
 nm_setting_ip6_config_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_IP6_CONFIG, NULL);
+    return g_object_new(NM_TYPE_SETTING_IP6_CONFIG, NULL);
 }
 
 static void

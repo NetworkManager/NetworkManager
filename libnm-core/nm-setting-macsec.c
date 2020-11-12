@@ -495,7 +495,7 @@ nm_setting_macsec_init(NMSettingMacsec *self)
 NMSetting *
 nm_setting_macsec_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_MACSEC, NULL);
+    return g_object_new(NM_TYPE_SETTING_MACSEC, NULL);
 }
 
 static void

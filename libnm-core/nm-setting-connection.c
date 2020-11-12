@@ -1750,7 +1750,7 @@ nm_setting_connection_init(NMSettingConnection *setting)
 NMSetting *
 nm_setting_connection_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_CONNECTION, NULL);
+    return g_object_new(NM_TYPE_SETTING_CONNECTION, NULL);
 }
 
 static void

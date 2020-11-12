@@ -614,18 +614,18 @@ create_device(NMDeviceFactory *     factory,
               NMConnection *        connection,
               gboolean *            out_ignore)
 {
-    return (NMDevice *) g_object_new(NM_TYPE_DEVICE_VLAN,
-                                     NM_DEVICE_IFACE,
-                                     iface,
-                                     NM_DEVICE_DRIVER,
-                                     "8021q",
-                                     NM_DEVICE_TYPE_DESC,
-                                     "VLAN",
-                                     NM_DEVICE_DEVICE_TYPE,
-                                     NM_DEVICE_TYPE_VLAN,
-                                     NM_DEVICE_LINK_TYPE,
-                                     NM_LINK_TYPE_VLAN,
-                                     NULL);
+    return g_object_new(NM_TYPE_DEVICE_VLAN,
+                        NM_DEVICE_IFACE,
+                        iface,
+                        NM_DEVICE_DRIVER,
+                        "8021q",
+                        NM_DEVICE_TYPE_DESC,
+                        "VLAN",
+                        NM_DEVICE_DEVICE_TYPE,
+                        NM_DEVICE_TYPE_VLAN,
+                        NM_DEVICE_LINK_TYPE,
+                        NM_LINK_TYPE_VLAN,
+                        NULL);
 }
 
 static const char *

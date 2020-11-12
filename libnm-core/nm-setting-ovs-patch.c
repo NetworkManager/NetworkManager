@@ -142,7 +142,7 @@ nm_setting_ovs_patch_init(NMSettingOvsPatch *self)
 NMSetting *
 nm_setting_ovs_patch_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_OVS_PATCH, NULL);
+    return g_object_new(NM_TYPE_SETTING_OVS_PATCH, NULL);
 }
 
 static void

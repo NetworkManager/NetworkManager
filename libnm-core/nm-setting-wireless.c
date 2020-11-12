@@ -1326,7 +1326,7 @@ nm_setting_wireless_init(NMSettingWireless *setting)
 NMSetting *
 nm_setting_wireless_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_WIRELESS, NULL);
+    return g_object_new(NM_TYPE_SETTING_WIRELESS, NULL);
 }
 
 static void

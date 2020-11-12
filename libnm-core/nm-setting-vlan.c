@@ -803,7 +803,7 @@ nm_setting_vlan_init(NMSettingVlan *self)
 NMSetting *
 nm_setting_vlan_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_VLAN, NULL);
+    return g_object_new(NM_TYPE_SETTING_VLAN, NULL);
 }
 
 static void

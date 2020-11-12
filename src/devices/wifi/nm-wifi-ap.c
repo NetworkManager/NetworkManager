@@ -728,7 +728,7 @@ nm_wifi_ap_new_fake_from_connection(NMConnection *connection)
     s_wireless = nm_connection_get_setting_wireless(connection);
     g_return_val_if_fail(s_wireless != NULL, NULL);
 
-    ap         = (NMWifiAP *) g_object_new(NM_TYPE_WIFI_AP, NULL);
+    ap         = g_object_new(NM_TYPE_WIFI_AP, NULL);
     priv       = NM_WIFI_AP_GET_PRIVATE(ap);
     priv->fake = TRUE;
 

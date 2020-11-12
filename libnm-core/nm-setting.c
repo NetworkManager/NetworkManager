@@ -797,7 +797,7 @@ _nm_setting_new_from_dbus(GType               setting_type,
      * either be ignored or else has a backward-compatibility equivalent
      * that we do know about.
      */
-    setting = (NMSetting *) g_object_new(setting_type, NULL);
+    setting = g_object_new(setting_type, NULL);
 
     if (NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
         GVariantIter iter;

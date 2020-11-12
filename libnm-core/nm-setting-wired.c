@@ -1174,7 +1174,7 @@ nm_setting_wired_init(NMSettingWired *setting)
 NMSetting *
 nm_setting_wired_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_WIRED, NULL);
+    return g_object_new(NM_TYPE_SETTING_WIRED, NULL);
 }
 
 static void

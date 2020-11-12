@@ -604,7 +604,7 @@ nm_setting_gsm_init(NMSettingGsm *setting)
 NMSetting *
 nm_setting_gsm_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_GSM, NULL);
+    return g_object_new(NM_TYPE_SETTING_GSM, NULL);
 }
 
 static void

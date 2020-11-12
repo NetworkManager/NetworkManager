@@ -1075,7 +1075,7 @@ nm_lldp_listener_init(NMLldpListener *self)
 NMLldpListener *
 nm_lldp_listener_new(void)
 {
-    return (NMLldpListener *) g_object_new(NM_TYPE_LLDP_LISTENER, NULL);
+    return g_object_new(NM_TYPE_LLDP_LISTENER, NULL);
 }
 
 static void

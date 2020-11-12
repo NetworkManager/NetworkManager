@@ -1778,7 +1778,7 @@ nm_setting_tc_config_init(NMSettingTCConfig *self)
 NMSetting *
 nm_setting_tc_config_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_TC_CONFIG, NULL);
+    return g_object_new(NM_TYPE_SETTING_TC_CONFIG, NULL);
 }
 
 static void

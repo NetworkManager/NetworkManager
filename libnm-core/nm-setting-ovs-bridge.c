@@ -272,7 +272,7 @@ nm_setting_ovs_bridge_init(NMSettingOvsBridge *self)
 NMSetting *
 nm_setting_ovs_bridge_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_OVS_BRIDGE, NULL);
+    return g_object_new(NM_TYPE_SETTING_OVS_BRIDGE, NULL);
 }
 
 static void
