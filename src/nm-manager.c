@@ -1014,12 +1014,12 @@ active_connection_find(
     }
 
     if (!best_ac) {
-        AsyncOpData *       async_op_data;
+        AsyncOpData *async_op_data;
 
         c_list_for_each_entry (async_op_data, &priv->async_op_lst_head, async_op_lst) {
             NMSettingsConnection *ac_conn;
 
-            ac = async_op_data->ac_auth.active;
+            ac      = async_op_data->ac_auth.active;
             ac_conn = nm_active_connection_get_settings_connection(ac);
             if (sett_conn && sett_conn != ac_conn)
                 continue;
