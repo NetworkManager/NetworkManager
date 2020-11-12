@@ -51,6 +51,49 @@ typedef struct {
 
 /*****************************************************************************/
 
+typedef void (*OvsdbMethodCallback)(NMOvsdb *self,
+                                    json_t * response,
+                                    GError * error,
+                                    gpointer user_data);
+
+typedef enum {
+    OVSDB_MONITOR,
+    OVSDB_ADD_INTERFACE,
+    OVSDB_DEL_INTERFACE,
+    OVSDB_SET_INTERFACE_MTU,
+} OvsdbCommand;
+
+#define CALL_ID_UNSPEC G_MAXUINT64
+
+typedef union {
+    struct {
+    } monitor;
+    struct {
+        NMConnection *bridge;
+        NMConnection *port;
+        NMConnection *interface;
+        NMDevice *    bridge_device;
+        NMDevice *    interface_device;
+    } add_interface;
+    struct {
+        char *ifname;
+    } del_interface;
+    struct {
+        char *  ifname;
+        guint32 mtu;
+    } set_interface_mtu;
+} OvsdbMethodPayload;
+
+typedef struct {
+    guint64             call_id;
+    OvsdbCommand        command;
+    OvsdbMethodCallback callback;
+    gpointer            user_data;
+    OvsdbMethodPayload  payload;
+} OvsdbMethodCall;
+
+/*****************************************************************************/
+
 enum { DEVICE_ADDED, DEVICE_REMOVED, INTERFACE_FAILED, LAST_SIGNAL };
 
 static guint signals[LAST_SIGNAL] = {0};
@@ -100,41 +143,6 @@ static void ovsdb_next_command(NMOvsdb *self);
 
 /*****************************************************************************/
 
-/* ovsdb command abstraction. */
-
-typedef void (*OvsdbMethodCallback)(NMOvsdb *self,
-                                    json_t * response,
-                                    GError * error,
-                                    gpointer user_data);
-
-typedef enum {
-    OVSDB_MONITOR,
-    OVSDB_ADD_INTERFACE,
-    OVSDB_DEL_INTERFACE,
-    OVSDB_SET_INTERFACE_MTU,
-} OvsdbCommand;
-
-#define CALL_ID_UNSPEC G_MAXUINT64
-
-typedef union {
-    struct {
-    } monitor;
-    struct {
-        NMConnection *bridge;
-        NMConnection *port;
-        NMConnection *interface;
-        NMDevice *    bridge_device;
-        NMDevice *    interface_device;
-    } add_interface;
-    struct {
-        char *ifname;
-    } del_interface;
-    struct {
-        char *  ifname;
-        guint32 mtu;
-    } set_interface_mtu;
-} OvsdbMethodPayload;
-
 #define OVSDB_METHOD_PAYLOAD_MONITOR() \
     (&((const OvsdbMethodPayload){     \
         .monitor = {},                 \
@@ -172,14 +180,6 @@ typedef union {
                 .mtu    = (xmtu),                                 \
             },                                                    \
     }))
-
-typedef struct {
-    guint64             call_id;
-    OvsdbCommand        command;
-    OvsdbMethodCallback callback;
-    gpointer            user_data;
-    OvsdbMethodPayload  payload;
-} OvsdbMethodCall;
 
 /*****************************************************************************/
 
