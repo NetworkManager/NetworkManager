@@ -2035,7 +2035,10 @@ ovsdb_disconnect(NMOvsdb *self, gboolean retry, gboolean is_disposing)
     } else {
         gs_free_error GError *error = NULL;
 
-        nm_utils_error_set_cancelled(&error, is_disposing, "NMOvsdb");
+        if (is_disposing)
+            nm_utils_error_set_cancelled(&error, is_disposing, "NMOvsdb");
+        else
+            nm_utils_error_set(&error, NM_UTILS_ERROR_NOT_READY, "disconnected from ovsdb");
         while ((call = c_list_last_entry(&priv->calls_lst_head, OvsdbMethodCall, calls_lst)))
             _call_complete(call, NULL, error);
     }
