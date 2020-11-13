@@ -90,8 +90,11 @@ typedef struct {
     guint64             call_id;
     OvsdbCommand        command;
     OvsdbMethodCallback callback;
+    GCancellable *      cancellable;
     gpointer            user_data;
     OvsdbMethodPayload  payload;
+    gulong              cancellable_id;
+    guint               timeout_id;
 } OvsdbMethodCall;
 
 /*****************************************************************************/
@@ -238,6 +241,9 @@ _call_complete(OvsdbMethodCall *call, json_t *response, GError *error)
 {
     c_list_unlink_stale(&call->calls_lst);
 
+    nm_clear_g_signal_handler(call->cancellable, &call->cancellable_id);
+    g_clear_object(&call->cancellable);
+
     if (call->callback)
         call->callback(call->self, response, error, call->user_data);
 
@@ -330,6 +336,49 @@ _signal_emit_interface_failed(NMOvsdb *   self,
 
 /*****************************************************************************/
 
+static gboolean
+_method_call_cancelled_on_idle_cb(gpointer user_data)
+{
+    OvsdbMethodCall *call         = user_data;
+    gs_unref_object NMOvsdb *self = call->self;
+    gs_free_error GError *error   = NULL;
+
+    call->timeout_id = 0;
+    _LOGT_call("cancelled (run on idle)", call, NULL);
+    nm_utils_error_set_cancelled(&error, FALSE, "NMOvsdb");
+    _call_complete(call, NULL, error);
+    return G_SOURCE_REMOVE;
+}
+
+static void
+_method_call_cancelled_cb(gpointer user_data)
+{
+    OvsdbMethodCall *call       = user_data;
+    NMOvsdb *        self       = call->self;
+    gs_free_error GError *error = NULL;
+
+    nm_assert(NM_IS_OVSDB(self));
+
+    if (call->cancellable_id == 0) {
+        /* We are invoked synchronously by g_cancellable_connection().
+         * Let's consistently emit the completion callback asynchronously,
+         * hence schedule it on an idle handler. */
+        c_list_unlink(&call->calls_lst);
+        g_object_ref(self);
+        nm_clear_g_source(&call->timeout_id);
+        _LOGT_call("cancelled (schedule on idle)", call, NULL);
+        call->timeout_id = g_idle_add(_method_call_cancelled_on_idle_cb, call);
+        return;
+    }
+
+    nm_utils_error_set_cancelled(&error, FALSE, "NMOvsdb");
+    _call_complete(call, NULL, error);
+
+    _LOGT_call("cancelled", call, NULL);
+
+    ovsdb_next_command(self);
+}
+
 /**
  * ovsdb_call_method:
  *
@@ -340,6 +389,7 @@ static void
 ovsdb_call_method(NMOvsdb *                 self,
                   OvsdbMethodCallback       callback,
                   gpointer                  user_data,
+                  GCancellable *            cancellable,
                   gboolean                  add_first,
                   OvsdbCommand              command,
                   const OvsdbMethodPayload *payload)
@@ -352,11 +402,12 @@ ovsdb_call_method(NMOvsdb *                 self,
 
     call  = g_slice_new(OvsdbMethodCall);
     *call = (OvsdbMethodCall){
-        .self      = self,
-        .call_id   = CALL_ID_UNSPEC,
-        .command   = command,
-        .callback  = callback,
-        .user_data = user_data,
+        .self        = self,
+        .call_id     = CALL_ID_UNSPEC,
+        .command     = command,
+        .callback    = callback,
+        .user_data   = user_data,
+        .cancellable = nm_g_object_ref(cancellable),
     };
 
     if (add_first)
@@ -364,7 +415,7 @@ ovsdb_call_method(NMOvsdb *                 self,
     else
         c_list_link_tail(&priv->calls_lst_head, &call->calls_lst);
 
-    /* Mmigrate the arguments from @payload to @call->payload. Technically,
+    /* Migrate the arguments from @payload to @call->payload. Technically,
      * this is not a plain copy, because
      * - call->payload is not initialized (thus no need to free the previous data).
      * - payload does not own the data. It is merely initialized using the
@@ -396,6 +447,19 @@ ovsdb_call_method(NMOvsdb *                 self,
     }
 
     _LOGT_call("enqueue", call, NULL);
+
+    if (call->cancellable) {
+        gulong id;
+
+        id = g_cancellable_connect(call->cancellable,
+                                   G_CALLBACK(_method_call_cancelled_cb),
+                                   call,
+                                   NULL);
+        if (id == 0)
+            return;
+
+        call->cancellable_id = id;
+    }
 
     ovsdb_next_command(self);
 }
@@ -2131,6 +2195,7 @@ ovsdb_try_connect(NMOvsdb *self)
     ovsdb_call_method(self,
                       _monitor_bridges_cb,
                       NULL,
+                      NULL,
                       TRUE,
                       OVSDB_MONITOR,
                       OVSDB_METHOD_PAYLOAD_MONITOR());
@@ -2201,6 +2266,7 @@ nm_ovsdb_add_interface(NMOvsdb *       self,
     ovsdb_call_method(self,
                       _transact_cb,
                       ovsdb_call_new(callback, user_data),
+                      NULL,
                       FALSE,
                       OVSDB_ADD_INTERFACE,
                       OVSDB_METHOD_PAYLOAD_ADD_INTERFACE(bridge,
@@ -2219,6 +2285,7 @@ nm_ovsdb_del_interface(NMOvsdb *       self,
     ovsdb_call_method(self,
                       _transact_cb,
                       ovsdb_call_new(callback, user_data),
+                      NULL,
                       FALSE,
                       OVSDB_DEL_INTERFACE,
                       OVSDB_METHOD_PAYLOAD_DEL_INTERFACE(ifname));
@@ -2234,6 +2301,7 @@ nm_ovsdb_set_interface_mtu(NMOvsdb *       self,
     ovsdb_call_method(self,
                       _transact_cb,
                       ovsdb_call_new(callback, user_data),
+                      NULL,
                       FALSE,
                       OVSDB_SET_INTERFACE_MTU,
                       OVSDB_METHOD_PAYLOAD_SET_INTERFACE_MTU(ifname, mtu));
