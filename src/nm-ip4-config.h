@@ -369,6 +369,12 @@ nm_ip_config_hash(const NMIPConfig *self, GChecksum *sum, gboolean dns_only)
     _NM_IP_CONFIG_DISPATCH_VOID(self, nm_ip4_config_hash, nm_ip6_config_hash, sum, dns_only);
 }
 
+static inline gconstpointer
+nm_ip_config_get_first_address(NMIPConfig *self)
+{
+    _NM_IP_CONFIG_DISPATCH(self, nm_ip4_config_get_first_address, nm_ip6_config_get_first_address);
+}
+
 static inline void
 nm_ip_config_add_address(NMIPConfig *self, const NMPlatformIPAddress *address)
 {
