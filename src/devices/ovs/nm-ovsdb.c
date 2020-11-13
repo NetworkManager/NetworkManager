@@ -135,9 +135,6 @@ G_DEFINE_TYPE(NMOvsdb, nm_ovsdb, G_TYPE_OBJECT)
 
 #define NM_OVSDB_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMOvsdb, NM_IS_OVSDB)
 
-#define _NMLOG_DOMAIN      LOGD_DEVICE
-#define _NMLOG(level, ...) __NMLOG_DEFAULT(level, _NMLOG_DOMAIN, "ovsdb", __VA_ARGS__)
-
 NM_DEFINE_SINGLETON_GETTER(NMOvsdb, nm_ovsdb_get, NM_TYPE_OVSDB);
 
 /*****************************************************************************/
@@ -147,6 +144,18 @@ static void ovsdb_disconnect(NMOvsdb *self, gboolean retry, gboolean is_disposin
 static void ovsdb_read(NMOvsdb *self);
 static void ovsdb_write(NMOvsdb *self);
 static void ovsdb_next_command(NMOvsdb *self);
+
+/*****************************************************************************/
+
+#define _NMLOG_DOMAIN      LOGD_DEVICE
+#define _NMLOG(level, ...) __NMLOG_DEFAULT(level, _NMLOG_DOMAIN, "ovsdb", __VA_ARGS__)
+
+#define _NMLOG_call(level, call, ...)                                                  \
+    _NMLOG((level),                                                                    \
+           "call[" NM_HASH_OBFUSCATE_PTR_FMT "]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+           NM_HASH_OBFUSCATE_PTR((call)) _NM_UTILS_MACRO_REST(__VA_ARGS__))
+
+#define _LOGT_call(call, ...) _NMLOG_call(LOGL_TRACE, (call), __VA_ARGS__)
 
 /*****************************************************************************/
 
@@ -191,54 +200,21 @@ static void ovsdb_next_command(NMOvsdb *self);
 /*****************************************************************************/
 
 static void
-_LOGT_call_do(const char *comment, OvsdbMethodCall *call, json_t *msg)
-{
-    gs_free char *msg_as_str = NULL;
-
-#define _QUOTE_MSG(msg, msg_as_str) \
-    (msg) ? ": " : "", (msg) ? (msg_as_str = json_dumps((msg), 0)) : ""
-
-    switch (call->command) {
-    case OVSDB_MONITOR:
-        _LOGT("%s: monitor%s%s", comment, _QUOTE_MSG(msg, msg_as_str));
-        break;
-    case OVSDB_ADD_INTERFACE:
-        _LOGT("%s: add-interface bridge=%s port=%s interface=%s%s%s",
-              comment,
-              nm_connection_get_interface_name(call->payload.add_interface.bridge),
-              nm_connection_get_interface_name(call->payload.add_interface.port),
-              nm_connection_get_interface_name(call->payload.add_interface.interface),
-              _QUOTE_MSG(msg, msg_as_str));
-        break;
-    case OVSDB_DEL_INTERFACE:
-        _LOGT("%s: del-interface interface=%s%s%s",
-              comment,
-              call->payload.del_interface.ifname,
-              _QUOTE_MSG(msg, msg_as_str));
-        break;
-    case OVSDB_SET_INTERFACE_MTU:
-        _LOGT("%s: set-interface-mtu interface=%s mtu=%u%s%s",
-              comment,
-              call->payload.set_interface_mtu.ifname,
-              call->payload.set_interface_mtu.mtu,
-              _QUOTE_MSG(msg, msg_as_str));
-        break;
-    }
-}
-
-#define _LOGT_call(comment, call, message)               \
-    G_STMT_START                                         \
-    {                                                    \
-        if (_LOGT_ENABLED())                             \
-            _LOGT_call_do((comment), (call), (message)); \
-    }                                                    \
-    G_STMT_END
-
-/*****************************************************************************/
-
-static void
 _call_complete(OvsdbMethodCall *call, json_t *response, GError *error)
 {
+    if (response) {
+        gs_free char *str = NULL;
+
+        str = json_dumps(response, 0);
+        if (error)
+            _LOGT_call(call, "completed: %s ; error: %s", str, error->message);
+        else
+            _LOGT_call(call, "completed: %s", str);
+    } else {
+        nm_assert(error);
+        _LOGT_call(call, "completed: error: %s", error->message);
+    }
+
     c_list_unlink_stale(&call->calls_lst);
 
     nm_clear_g_signal_handler(call->cancellable, &call->cancellable_id);
@@ -344,7 +320,7 @@ _method_call_cancelled_on_idle_cb(gpointer user_data)
     gs_free_error GError *error   = NULL;
 
     call->timeout_id = 0;
-    _LOGT_call("cancelled (run on idle)", call, NULL);
+    _LOGT_call(call, "cancelled (run on idle)");
     nm_utils_error_set_cancelled(&error, FALSE, "NMOvsdb");
     _call_complete(call, NULL, error);
     return G_SOURCE_REMOVE;
@@ -366,15 +342,15 @@ _method_call_cancelled_cb(gpointer user_data)
         c_list_unlink(&call->calls_lst);
         g_object_ref(self);
         nm_clear_g_source(&call->timeout_id);
-        _LOGT_call("cancelled (schedule on idle)", call, NULL);
+        _LOGT_call(call, "cancelled (schedule on idle)");
         call->timeout_id = g_idle_add(_method_call_cancelled_on_idle_cb, call);
         return;
     }
 
+    _LOGT_call(call, "cancelled");
+
     nm_utils_error_set_cancelled(&error, FALSE, "NMOvsdb");
     _call_complete(call, NULL, error);
-
-    _LOGT_call("cancelled", call, NULL);
 
     ovsdb_next_command(self);
 }
@@ -422,6 +398,7 @@ ovsdb_call_method(NMOvsdb *                 self,
      *   OVSDB_METHOD_PAYLOAD_*() macros. */
     switch (command) {
     case OVSDB_MONITOR:
+        _LOGT_call(call, "new: monitor");
         break;
     case OVSDB_ADD_INTERFACE:
         /* FIXME(applied-connection-immutable): we should not modify the applied
@@ -436,17 +413,25 @@ ovsdb_call_method(NMOvsdb *                 self,
             g_object_ref(payload->add_interface.bridge_device);
         call->payload.add_interface.interface_device =
             g_object_ref(payload->add_interface.interface_device);
+        _LOGT_call(call,
+                   "new: add-interface bridge=%s port=%s interface=%s",
+                   nm_connection_get_interface_name(call->payload.add_interface.bridge),
+                   nm_connection_get_interface_name(call->payload.add_interface.port),
+                   nm_connection_get_interface_name(call->payload.add_interface.interface));
         break;
     case OVSDB_DEL_INTERFACE:
         call->payload.del_interface.ifname = g_strdup(payload->del_interface.ifname);
+        _LOGT_call(call, "new: del-interface interface=%s", call->payload.del_interface.ifname);
         break;
     case OVSDB_SET_INTERFACE_MTU:
         call->payload.set_interface_mtu.ifname = g_strdup(payload->set_interface_mtu.ifname);
         call->payload.set_interface_mtu.mtu    = payload->set_interface_mtu.mtu;
+        _LOGT_call(call,
+                   "new: set-interface-mtu interface=%s mtu=%u",
+                   call->payload.set_interface_mtu.ifname,
+                   call->payload.set_interface_mtu.mtu);
         break;
     }
-
-    _LOGT_call("enqueue", call, NULL);
 
     if (call->cancellable) {
         gulong id;
@@ -1295,9 +1280,9 @@ ovsdb_next_command(NMOvsdb *self)
     }
 
     g_return_if_fail(msg);
-    _LOGT_call("send", call, msg);
 
     cmd = json_dumps(msg, 0);
+    _LOGT_call(call, "send: call-id=%" G_GUINT64_FORMAT ", %s", call->call_id, cmd);
     g_string_append(priv->output, cmd);
     free(cmd);
 
@@ -1882,7 +1867,8 @@ ovsdb_got_msg(NMOvsdb *self, json_t *msg)
 
     if (id >= 0) {
         OvsdbMethodCall *call;
-        gs_free_error GError *local = NULL;
+        gs_free_error GError *local      = NULL;
+        gs_free char *        msg_as_str = NULL;
 
         /* This is a response to a method call. */
         if (c_list_is_empty(&priv->calls_lst_head)) {
@@ -1900,7 +1886,7 @@ ovsdb_got_msg(NMOvsdb *self, json_t *msg)
         }
         /* Cool, we found a corresponding call. Finish it. */
 
-        _LOGT_call("response", call, msg);
+        _LOGT_call(call, "response: %s", (msg_as_str = json_dumps(msg, 0)));
 
         if (!json_is_null(error)) {
             /* The response contains an error. */
