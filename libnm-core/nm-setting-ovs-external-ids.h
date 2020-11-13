@@ -40,7 +40,7 @@ NM_AVAILABLE_IN_1_30
 GType nm_setting_ovs_external_ids_get_type(void);
 
 NM_AVAILABLE_IN_1_30
-void *nm_setting_ovs_external_ids_new(void);
+NMSetting *nm_setting_ovs_external_ids_new(void);
 
 /*****************************************************************************/
 

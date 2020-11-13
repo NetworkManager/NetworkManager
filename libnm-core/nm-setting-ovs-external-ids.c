@@ -478,7 +478,7 @@ nm_setting_ovs_external_ids_init(NMSettingOvsExternalIDs *self)
  *
  * Since: 1.30
  */
-gpointer
+NMSetting *
 nm_setting_ovs_external_ids_new(void)
 {
     return g_object_new(NM_TYPE_SETTING_OVS_EXTERNAL_IDS, NULL);
