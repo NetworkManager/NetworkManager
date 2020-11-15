@@ -947,29 +947,29 @@
           to one of known NetworkManager connection types:</para>
 
           <itemizedlist spacing='compact'>
-            <listitem><para><literal>ethernet</literal></para></listitem>
-            <listitem><para><literal>wifi</literal></para></listitem>
-            <listitem><para><literal>wimax</literal></para></listitem>
-            <listitem><para><literal>pppoe</literal></para></listitem>
-            <listitem><para><literal>gsm</literal></para></listitem>
-            <listitem><para><literal>cdma</literal></para></listitem>
-            <listitem><para><literal>infiniband</literal></para></listitem>
-            <listitem><para><literal>bluetooth</literal></para></listitem>
-            <listitem><para><literal>vlan</literal></para></listitem>
-            <listitem><para><literal>bond</literal></para></listitem>
-            <listitem><para><literal>bond-slave</literal></para></listitem>
-            <listitem><para><literal>team</literal></para></listitem>
-            <listitem><para><literal>team-slave</literal></para></listitem>
-            <listitem><para><literal>bridge</literal></para></listitem>
-            <listitem><para><literal>bridge-slave</literal></para></listitem>
-            <listitem><para><literal>vpn</literal></para></listitem>
-            <listitem><para><literal>olpc-mesh</literal></para></listitem>
             <listitem><para><literal>adsl</literal></para></listitem>
-            <listitem><para><literal>tun</literal></para></listitem>
+            <listitem><para><literal>bluetooth</literal></para></listitem>
+            <listitem><para><literal>bond-slave</literal></para></listitem>
+            <listitem><para><literal>bond</literal></para></listitem>
+            <listitem><para><literal>bridge-slave</literal></para></listitem>
+            <listitem><para><literal>bridge</literal></para></listitem>
+            <listitem><para><literal>cdma</literal></para></listitem>
+            <listitem><para><literal>dummy</literal></para></listitem>
+            <listitem><para><literal>ethernet</literal></para></listitem>
+            <listitem><para><literal>gsm</literal></para></listitem>
+            <listitem><para><literal>infiniband</literal></para></listitem>
             <listitem><para><literal>ip-tunnel</literal></para></listitem>
             <listitem><para><literal>macvlan</literal></para></listitem>
+            <listitem><para><literal>olpc-mesh</literal></para></listitem>
+            <listitem><para><literal>pppoe</literal></para></listitem>
+            <listitem><para><literal>team-slave</literal></para></listitem>
+            <listitem><para><literal>team</literal></para></listitem>
+            <listitem><para><literal>tun</literal></para></listitem>
+            <listitem><para><literal>vlan</literal></para></listitem>
+            <listitem><para><literal>vpn</literal></para></listitem>
             <listitem><para><literal>vxlan</literal></para></listitem>
-            <listitem><para><literal>dummy</literal></para></listitem>
+            <listitem><para><literal>wifi</literal></para></listitem>
+            <listitem><para><literal>wimax</literal></para></listitem>
           </itemizedlist>
 
           <para>The most typical uses are described in the <link linkend='examples' endterm='examples.title' /> section.</para>
