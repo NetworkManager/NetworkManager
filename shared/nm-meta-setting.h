@@ -208,4 +208,8 @@ const NMMetaSettingInfo *nm_meta_setting_infos_by_gtype(GType gtype);
 
 /*****************************************************************************/
 
+NMSettingPriority nm_meta_setting_info_get_base_type_priority(const NMMetaSettingInfo *setting_info,
+                                                              GType                    gtype);
+NMSettingPriority _nm_setting_type_get_base_type_priority(GType type);
+
 #endif /* __NM_META_SETTING_H__ */
