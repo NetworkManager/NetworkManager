@@ -53,6 +53,9 @@ test_client_meta_check(void)
 
     for (m = 0; m < _NM_META_SETTING_TYPE_NUM; m++) {
         const NMMetaSettingInfoEditor *info = &nm_meta_setting_infos_editor[m];
+        GType                          gtype;
+        NMSettingPriority              base_priority;
+        gboolean                       is_base_type;
 
         g_assert(info);
         g_assert(info->meta_type == &nm_meta_type_setting_info_editor);
@@ -96,6 +99,11 @@ test_client_meta_check(void)
             g_assert(!info->properties[info->properties_num]);
         } else
             g_assert(!info->properties);
+
+        gtype         = info->general->get_setting_gtype();
+        base_priority = _nm_setting_type_get_base_type_priority(gtype);
+        is_base_type  = (base_priority != NM_SETTING_PRIORITY_INVALID);
+        g_assert((!!info->valid_parts) == is_base_type);
 
         if (info->valid_parts) {
             gsize              i, l;
