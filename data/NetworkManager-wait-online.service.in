@@ -26,7 +26,7 @@ RemainAfterExit=yes
 # gets delayed too long, then the solution is usually not to decrease
 # the timeout, but to fix your setup so that the connected state
 # gets reached earlier.
-Environment=NM_ONLINE_TIMEOUT=30
+Environment=NM_ONLINE_TIMEOUT=60
 
 [Install]
 WantedBy=network-online.target
