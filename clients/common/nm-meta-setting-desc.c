@@ -2561,9 +2561,10 @@ static const char *const *_complete_fcn_connection_type(ARGS_COMPLETE_FCN)
 
     for (i = 0, j = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
         const NMMetaSettingInfoEditor *setting_info = &nm_meta_setting_infos_editor[i];
+        GType                          gtype        = setting_info->general->get_setting_gtype();
         const char *                   v;
 
-        if (!setting_info->valid_parts)
+        if (_nm_setting_type_get_base_type_priority(gtype) == NM_SETTING_PRIORITY_INVALID)
             continue;
 
         v = setting_info->alias;
