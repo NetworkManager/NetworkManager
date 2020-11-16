@@ -1166,7 +1166,7 @@ nml_dbus_object_iface_data_get(NMLDBusObject *dbobj,
             count++;
         }
     } else {
-        nm_c_list_for_each_entry_prev (db_iface_data, &dbobj->iface_lst_head, iface_lst) {
+        c_list_for_each_entry_prev (db_iface_data, &dbobj->iface_lst_head, iface_lst) {
             if (db_iface_data->dbus_iface_is_wellknown)
                 break;
             if (db_iface_data->iface_removed)

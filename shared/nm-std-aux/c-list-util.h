@@ -42,4 +42,15 @@ c_list_length_is(const CList *list, unsigned long check_len)
     return n == check_len;
 }
 
+#define c_list_for_each_prev(_iter, _list) \
+    for (_iter = (_list)->prev; (_iter) != (_list); _iter = (_iter)->prev)
+
+#define c_list_for_each_prev_safe(_iter, _safe, _list)                     \
+    for (_iter = (_list)->prev, _safe = (_iter)->prev; (_iter) != (_list); \
+         _iter = (_safe), _safe = (_safe)->prev)
+
+#define c_list_for_each_entry_prev(_iter, _list, _m)                                           \
+    for (_iter = c_list_entry((_list)->prev, __typeof__(*_iter), _m); &(_iter)->_m != (_list); \
+         _iter = c_list_entry((_iter)->_m.prev, __typeof__(*_iter), _m))
+
 #endif /* __C_LIST_UTIL_H__ */

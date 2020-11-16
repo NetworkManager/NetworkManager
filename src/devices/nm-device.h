@@ -116,6 +116,7 @@ nm_device_state_reason_check(NMDeviceStateReason reason)
 #define NM_DEVICE_HAS_PENDING_ACTION "has-pending-action" /* Internal only */
 
 /* Internal signals */
+#define NM_DEVICE_DNS_LOOKUP_DONE       "dns-lookup-done"
 #define NM_DEVICE_IP4_CONFIG_CHANGED    "ip4-config-changed"
 #define NM_DEVICE_IP6_CONFIG_CHANGED    "ip6-config-changed"
 #define NM_DEVICE_IP6_PREFIX_DELEGATED  "ip6-prefix-delegated"
@@ -862,5 +863,8 @@ const char *nm_device_state_to_str(NMDeviceState state);
 const char *nm_device_state_reason_to_str(NMDeviceStateReason reason);
 
 gboolean nm_device_is_vpn(NMDevice *self);
+
+const char *
+nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean *out_pending);
 
 #endif /* __NETWORKMANAGER_DEVICE_H__ */

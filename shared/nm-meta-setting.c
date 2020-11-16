@@ -21,6 +21,7 @@
 #include "nm-setting-ethtool.h"
 #include "nm-setting-generic.h"
 #include "nm-setting-gsm.h"
+#include "nm-setting-hostname.h"
 #include "nm-setting-infiniband.h"
 #include "nm-setting-ip-config.h"
 #include "nm-setting-ip-tunnel.h"
@@ -242,6 +243,13 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
             .setting_priority  = NM_SETTING_PRIORITY_HW_BASE,
             .setting_name      = NM_SETTING_GSM_SETTING_NAME,
             .get_setting_gtype = nm_setting_gsm_get_type,
+        },
+    [NM_META_SETTING_TYPE_HOSTNAME] =
+        {
+            .meta_type         = NM_META_SETTING_TYPE_HOSTNAME,
+            .setting_priority  = NM_SETTING_PRIORITY_IP,
+            .setting_name      = NM_SETTING_HOSTNAME_SETTING_NAME,
+            .get_setting_gtype = nm_setting_hostname_get_type,
         },
     [NM_META_SETTING_TYPE_INFINIBAND] =
         {

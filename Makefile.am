@@ -943,6 +943,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-ethtool.h \
 	libnm-core/nm-setting-generic.h \
 	libnm-core/nm-setting-gsm.h \
+	libnm-core/nm-setting-hostname.h \
 	libnm-core/nm-setting-infiniband.h \
 	libnm-core/nm-setting-ip-config.h \
 	libnm-core/nm-setting-ip-tunnel.h \
@@ -1017,6 +1018,7 @@ libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-ethtool.c \
 	libnm-core/nm-setting-generic.c \
 	libnm-core/nm-setting-gsm.c \
+	libnm-core/nm-setting-hostname.c \
 	libnm-core/nm-setting-infiniband.c \
 	libnm-core/nm-setting-ip-config.c \
 	libnm-core/nm-setting-ip-tunnel.c \
