@@ -26,8 +26,6 @@ RemainAfterExit=yes
 # gets delayed too long, then the solution is usually not to decrease
 # the timeout, but to fix your setup so that the connected state
 # gets reached earlier.
-# If there is no network to connect to (if network interface is down),
-# NetworkManager will make "nm-online -s" stop without waiting.
 Environment=NM_ONLINE_TIMEOUT=60
 
 [Install]
