@@ -1220,6 +1220,54 @@ test_team(void)
 }
 
 static void
+test_vlan(void)
+{
+    const char *const *ARGV0  = NM_MAKE_STRV("ip=eth0.100:dhcp", "vlan=eth0.100:eth0");
+    const char *const *ARGV1  = NM_MAKE_STRV("vlan=eth0.100:eth0", "ip=eth0.100:dhcp");
+    const char *const *ARGV[] = {ARGV0, ARGV1};
+    guint              i;
+
+    for (i = 0; i < G_N_ELEMENTS(ARGV); i++) {
+        gs_unref_hashtable GHashTable *connections = NULL;
+        NMConnection *                 connection;
+        NMSettingIPConfig *            s_ip4;
+        NMSettingIPConfig *            s_ip6;
+        NMSettingVlan *                s_vlan;
+        gs_free char *                 hostname = NULL;
+
+        connections = nmi_cmdline_reader_parse(TEST_INITRD_DIR "/sysfs", ARGV[i], &hostname);
+        g_assert(connections);
+        g_assert_cmpint(g_hash_table_size(connections), ==, 1);
+        g_assert_cmpstr(hostname, ==, NULL);
+
+        connection = g_hash_table_lookup(connections, "eth0.100");
+        g_assert(connection);
+        nmtst_assert_connection_verifies_without_normalization(connection);
+        g_assert_cmpstr(nm_connection_get_connection_type(connection),
+                        ==,
+                        NM_SETTING_VLAN_SETTING_NAME);
+        g_assert_cmpstr(nm_connection_get_id(connection), ==, "eth0.100");
+
+        s_vlan = nm_connection_get_setting_vlan(connection);
+        g_assert(s_vlan);
+        g_assert_cmpstr(nm_setting_vlan_get_parent(s_vlan), ==, "eth0");
+        g_assert_cmpint(nm_setting_vlan_get_id(s_vlan), ==, 100);
+
+        s_ip4 = nm_connection_get_setting_ip4_config(connection);
+        g_assert(s_ip4);
+        g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip4),
+                        ==,
+                        NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+
+        s_ip6 = nm_connection_get_setting_ip6_config(connection);
+        g_assert(s_ip6);
+        g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip6),
+                        ==,
+                        NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+    }
+}
+
+static void
 test_ibft_ip_dev(void)
 {
     const char *const *ARGV                    = NM_MAKE_STRV("ip=eth0:ibft");
@@ -1852,6 +1900,7 @@ main(int argc, char **argv)
     g_test_add_func("/initrd/cmdline/bond/ip", test_bond_ip);
     g_test_add_func("/initrd/cmdline/bond/default", test_bond_default);
     g_test_add_func("/initrd/cmdline/team", test_team);
+    g_test_add_func("/initrd/cmdline/vlan", test_vlan);
     g_test_add_func("/initrd/cmdline/bridge", test_bridge);
     g_test_add_func("/initrd/cmdline/bridge/default", test_bridge_default);
     g_test_add_func("/initrd/cmdline/bridge/ip", test_bridge_ip);

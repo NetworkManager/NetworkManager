@@ -411,7 +411,7 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
         /* ip={dhcp|on|any|dhcp6|auto6|ibft} */
         kind = tmp;
     } else {
-        client_ip_family = guess_ip_address_family(tmp);
+        client_ip_family = get_ip_address_family(tmp, TRUE);
         if (client_ip_family != AF_UNSPEC) {
             /* <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>: */
             client_ip       = tmp;
@@ -437,11 +437,11 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
         kind = get_word(&argument, ':');
 
         tmp                = get_word(&argument, ':');
-        dns_addr_family[0] = guess_ip_address_family(tmp);
+        dns_addr_family[0] = get_ip_address_family(tmp, FALSE);
         if (dns_addr_family[0] != AF_UNSPEC) {
             dns[0]             = tmp;
             dns[1]             = get_word(&argument, ':');
-            dns_addr_family[1] = guess_ip_address_family(dns[1]);
+            dns_addr_family[1] = get_ip_address_family(dns[1], FALSE);
             if (*argument)
                 _LOGW(LOGD_CORE, "Ignoring extra: '%s'.", argument);
         } else {
@@ -506,9 +506,8 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
                 _LOGW(LOGD_CORE, "Invalid address '%s': %s", client_ip, error->message);
                 g_clear_error(&error);
             }
-        } else {
-            _LOGW(LOGD_CORE, "Unrecognized address: %s", client_ip);
-        }
+        } else
+            nm_assert_not_reached();
 
         if (address) {
             switch (client_ip_family) {
@@ -531,7 +530,7 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
                 nm_setting_ip_config_add_address(s_ip6, address);
                 break;
             default:
-                _LOGW(LOGD_CORE, "Unknown address family: %s", client_ip);
+                nm_assert_not_reached();
                 break;
             }
             nm_ip_address_unref(address);
@@ -618,22 +617,16 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
         _LOGW(LOGD_CORE, "Ignoring peer: %s (not implemented)\n", peer);
 
     if (gateway_ip && *gateway_ip) {
-        int addr_family = guess_ip_address_family(gateway_ip);
-
-        if (nm_utils_ipaddr_is_valid(addr_family, gateway_ip)) {
-            switch (addr_family) {
-            case AF_INET:
-                g_object_set(s_ip4, NM_SETTING_IP_CONFIG_GATEWAY, gateway_ip, NULL);
-                break;
-            case AF_INET6:
-                g_object_set(s_ip6, NM_SETTING_IP_CONFIG_GATEWAY, gateway_ip, NULL);
-                break;
-            default:
-                _LOGW(LOGD_CORE, "Unknown address family: %s", gateway_ip);
-                break;
-            }
-        } else {
+        switch (get_ip_address_family(gateway_ip, FALSE)) {
+        case AF_INET:
+            g_object_set(s_ip4, NM_SETTING_IP_CONFIG_GATEWAY, gateway_ip, NULL);
+            break;
+        case AF_INET6:
+            g_object_set(s_ip6, NM_SETTING_IP_CONFIG_GATEWAY, gateway_ip, NULL);
+            break;
+        default:
             _LOGW(LOGD_CORE, "Invalid gateway: %s", gateway_ip);
+            break;
         }
     }
 
@@ -952,7 +945,7 @@ reader_add_nameservers(Reader *reader, GPtrArray *nameservers)
 
     for (i = 0; i < nameservers->len; i++) {
         ns          = nameservers->pdata[i];
-        addr_family = guess_ip_address_family(ns);
+        addr_family = get_ip_address_family(ns, FALSE);
         if (addr_family == AF_UNSPEC) {
             _LOGW(LOGD_CORE, "Unknown address family: %s", ns);
             continue;
