@@ -48,6 +48,8 @@ if [ -x /usr/bin/ninja ] && ! [ -x /usr/bin/ninja-build ]; then
 fi
 
 if [ $IS_FEDORA = 1 ]; then
+    TEMPLATE_SHA="$(sed -n 's/^.templates_sha: *\&template_sha *\([0-9a-f]\+\) .*/\1/p' ./.gitlab-ci/ci.template)"
+    test -n "$TEMPLATE_SHA"
     dnf install -y python3-pip
-    pip3 install git+http://gitlab.freedesktop.org/freedesktop/ci-templates
+    pip3 install "git+http://gitlab.freedesktop.org/freedesktop/ci-templates@$TEMPLATE_SHA"
 fi
