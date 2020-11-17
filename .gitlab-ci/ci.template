@@ -9,7 +9,7 @@
 ########################################
 
 
-.templates_sha: &template_sha d303fafa66bbca44cc5bdb337d5773b5f019b70d # see https://docs.gitlab.com/ee/ci/yaml/#includefile
+.templates_sha: &template_sha 766e3d77c647e404b349e398427e8965a1769b64 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
 
 include:
 {% for distro in distributions|sort(attribute="name") %}
@@ -34,7 +34,12 @@ variables:
   # Note: these tags have no meaning and are not tied to a particular
   # libinput version
 {% for distro in distributions %}
-  {{"%-13s"| format(distro.name.upper() + '_TAG:')}}'{{distro.tag}}'
+  {{"%-13s"| format(distro.name.upper() + '_TAG:')}}'{{distro.tag}}-{{
+    (ci_fairy.hashfiles('./.gitlab-ci/config.yml',
+                        './.gitlab-ci/ci.template',
+                        './.gitlab-ci/' + distro.name + '-install.sh',
+                        './contrib/' + distro.base_type + '/REQUIRED_PACKAGES'))[0:12]
+  }}'
 {% endfor %}
 
 {% for distro in distributions %}

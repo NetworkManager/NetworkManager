@@ -8,7 +8,7 @@
 #
 
 # We're happy to rebuild all containers when one changes.
-.default_tag: &default_tag '2020-11-10.0'
+.default_tag: &default_tag '2020-11-17.0'
 
 
 # The list of all distributions we want to create job for.
@@ -16,6 +16,7 @@
 distributions:
   - name: fedora
     tag: *default_tag
+    base_type: fedora
     versions:
       - '28'
       - '29'
@@ -28,6 +29,7 @@ distributions:
       - '33'
   - name: ubuntu
     tag: *default_tag
+    base_type: debian
     versions:
       - '16.04'
       - '18.04'
@@ -36,6 +38,7 @@ distributions:
       - 'rolling'
   - name: debian
     tag: *default_tag
+    base_type: debian
     versions:
       - '9'
       - '10'
@@ -43,6 +46,7 @@ distributions:
       - 'sid'
   - name: centos
     tag: *default_tag
+    base_type: fedora
     versions:
       - '7.5.1804'
       - '7.6.1810'
