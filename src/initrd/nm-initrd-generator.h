@@ -11,17 +11,23 @@
 
 #define NMI_WAIT_DEVICE_TIMEOUT_MS 60000
 
-static inline gboolean
-guess_ip_address_family(const char *str)
+static inline int
+get_ip_address_family(const char *str, gboolean with_prefix)
 {
-    if (str == NULL)
+    int addr_family;
+
+    if (!str)
         return AF_UNSPEC;
-    else if (strchr(str, '.'))
-        return AF_INET;
-    else if (strchr(str, ':'))
-        return AF_INET6;
-    else
-        return AF_UNSPEC;
+
+    if (with_prefix) {
+        if (nm_utils_parse_inaddr_prefix_bin(AF_UNSPEC, str, &addr_family, NULL, NULL))
+            return addr_family;
+    } else {
+        if (nm_utils_parse_inaddr_bin(AF_UNSPEC, str, &addr_family, NULL))
+            return addr_family;
+    }
+
+    return AF_UNSPEC;
 }
 
 GHashTable *nmi_ibft_read(const char *sysfs_dir);
