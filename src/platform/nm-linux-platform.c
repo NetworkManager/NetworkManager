@@ -8309,6 +8309,17 @@ wifi_get_rate(NMPlatform *platform, int ifindex)
     return nm_wifi_utils_get_rate(wifi_data);
 }
 
+static gboolean
+wifi_get_station(NMPlatform *platform,
+                 int         ifindex,
+                 guint8 *    out_bssid,
+                 int *       out_quality,
+                 guint32 *   out_rate)
+{
+    WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, FALSE);
+    return nm_wifi_utils_get_station(wifi_data, out_bssid, out_quality, out_rate);
+}
+
 static NM80211Mode
 wifi_get_mode(NMPlatform *platform, int ifindex)
 {
@@ -9673,6 +9684,7 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
     platform_class->wifi_get_frequency               = wifi_get_frequency;
     platform_class->wifi_get_quality                 = wifi_get_quality;
     platform_class->wifi_get_rate                    = wifi_get_rate;
+    platform_class->wifi_get_station                 = wifi_get_station;
     platform_class->wifi_get_mode                    = wifi_get_mode;
     platform_class->wifi_set_mode                    = wifi_set_mode;
     platform_class->wifi_set_powersave               = wifi_set_powersave;

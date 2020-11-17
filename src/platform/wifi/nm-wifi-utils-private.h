@@ -41,6 +41,18 @@ typedef struct {
      */
     int (*get_qual)(NMWifiUtils *data);
 
+    /*
+     * @out_bssid: must be NULL or an ETH_ALEN-byte buffer
+     * @out_quality: receives signal strength percentage 0 - 100% for the current BSSID, if not NULL
+     * @out_rate: receives current bitrate in Kbps if not NULL
+     *
+     * Returns %TRUE on succcess, %FALSE on errors or if not associated.
+     */
+    gboolean (*get_station)(NMWifiUtils *data,
+                            guint8 *     out_bssid,
+                            int *        out_quality,
+                            guint32 *    out_rate);
+
     /* OLPC Mesh-only functions */
 
     guint32 (*get_mesh_channel)(NMWifiUtils *data);

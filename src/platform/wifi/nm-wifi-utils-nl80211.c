@@ -546,6 +546,33 @@ wifi_nl80211_get_qual(NMWifiUtils *data)
 }
 
 static gboolean
+wifi_nl80211_get_station(NMWifiUtils *data, guint8 *out_bssid, int *out_quality, guint32 *out_rate)
+{
+    NMWifiUtilsNl80211 *         self     = (NMWifiUtilsNl80211 *) data;
+    nm_auto_nlmsg struct nl_msg *msg      = NULL;
+    struct nl80211_station_info  sta_info = {};
+
+    msg = nl80211_alloc_msg(self, NL80211_CMD_GET_STATION, NLM_F_DUMP);
+
+    nl80211_send_and_recv(self, msg, nl80211_station_dump_handler, &sta_info);
+
+    if (!sta_info.valid || (out_quality && !sta_info.signal_valid)
+        || (out_rate && !sta_info.txrate_valid))
+        return FALSE;
+
+    if (out_bssid)
+        memcpy(out_bssid, sta_info.bssid, ETH_ALEN);
+
+    if (out_quality)
+        *out_quality = sta_info.signal;
+
+    if (out_rate)
+        *out_rate = sta_info.txrate;
+
+    return TRUE;
+}
+
+static gboolean
 wifi_nl80211_indicate_addressing_running(NMWifiUtils *data, gboolean running)
 {
     NMWifiUtilsNl80211 *         self = (NMWifiUtilsNl80211 *) data;
@@ -860,6 +887,7 @@ nm_wifi_utils_nl80211_class_init(NMWifiUtilsNl80211Class *klass)
     wifi_utils_class->get_bssid                   = wifi_nl80211_get_bssid;
     wifi_utils_class->get_rate                    = wifi_nl80211_get_rate;
     wifi_utils_class->get_qual                    = wifi_nl80211_get_qual;
+    wifi_utils_class->get_station                 = wifi_nl80211_get_station;
     wifi_utils_class->indicate_addressing_running = wifi_nl80211_indicate_addressing_running;
     wifi_utils_class->get_mesh_channel            = wifi_nl80211_get_mesh_channel;
     wifi_utils_class->set_mesh_channel            = wifi_nl80211_set_mesh_channel;

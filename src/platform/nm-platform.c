@@ -3091,6 +3091,20 @@ nm_platform_wifi_get_rate(NMPlatform *self, int ifindex)
     return klass->wifi_get_rate(self, ifindex);
 }
 
+gboolean
+nm_platform_wifi_get_station(NMPlatform *self,
+                             int         ifindex,
+                             guint8 *    out_bssid,
+                             int *       out_quality,
+                             guint32 *   out_rate)
+{
+    _CHECK_SELF(self, klass, FALSE);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+
+    return klass->wifi_get_station(self, ifindex, out_bssid, out_quality, out_rate);
+}
+
 NM80211Mode
 nm_platform_wifi_get_mode(NMPlatform *self, int ifindex)
 {
