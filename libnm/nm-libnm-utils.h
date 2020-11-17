@@ -7,6 +7,7 @@
 #define __NM_LIBNM_UTILS_H__
 
 #include "c-list/src/c-list.h"
+#include "nm-device.h"
 #include "nm-glib-aux/nm-ref-string.h"
 #include "nm-glib-aux/nm-logging-fwd.h"
 #include "nm-types.h"
@@ -813,6 +814,19 @@ struct _NMDeviceClass {
     const char *(*get_type_description)(NMDevice *device);
 
     GType (*get_setting_type)(NMDevice *device);
+};
+
+/*****************************************************************************/
+
+struct _NMDeviceEthernetPrivate;
+
+struct _NMDeviceEthernet {
+    NMDevice                         parent;
+    struct _NMDeviceEthernetPrivate *_priv;
+};
+
+struct _NMDeviceEthernetClass {
+    NMDeviceClass parent;
 };
 
 /*****************************************************************************/
