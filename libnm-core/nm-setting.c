@@ -57,26 +57,6 @@ static GenData *_gendata_hash(NMSetting *setting, gboolean create_if_necessary);
 
 /*****************************************************************************/
 
-static NMSettingPriority
-_get_base_type_priority(const NMMetaSettingInfo *setting_info, GType gtype)
-{
-    /* Historical oddity: PPPoE is a base-type even though it's not
-     * priority 1.  It needs to be sorted *after* lower-level stuff like
-     * Wi-Fi security or 802.1x for secrets, but it's still allowed as a
-     * base type.
-     */
-
-    if (setting_info) {
-        if (NM_IN_SET(setting_info->setting_priority,
-                      NM_SETTING_PRIORITY_HW_BASE,
-                      NM_SETTING_PRIORITY_HW_NON_BASE)
-            || gtype == NM_TYPE_SETTING_PPPOE)
-            return setting_info->setting_priority;
-    }
-
-    return NM_SETTING_PRIORITY_INVALID;
-}
-
 NMSettingPriority
 _nm_setting_get_setting_priority(NMSetting *setting)
 {
@@ -89,18 +69,12 @@ _nm_setting_get_setting_priority(NMSetting *setting)
 }
 
 NMSettingPriority
-_nm_setting_type_get_base_type_priority(GType type)
-{
-    return _get_base_type_priority(nm_meta_setting_infos_by_gtype(type), type);
-}
-
-NMSettingPriority
 _nm_setting_get_base_type_priority(NMSetting *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING(setting), NM_SETTING_PRIORITY_INVALID);
 
-    return _get_base_type_priority(NM_SETTING_GET_CLASS(setting)->setting_info,
-                                   G_OBJECT_TYPE(setting));
+    return nm_meta_setting_info_get_base_type_priority(NM_SETTING_GET_CLASS(setting)->setting_info,
+                                                       G_OBJECT_TYPE(setting));
 }
 
 /**
