@@ -5013,6 +5013,11 @@ EXTRA_DIST += \
 	clients/tests/test-client.check-on-disk/test_004.expected \
 	$(NULL)
 
+check-local-gitlab-ci:
+	"$(srcdir)/tools/check-gitlab-ci.sh" "$(srcdir)"
+
+check_local += check-local-gitlab-ci
+
 ###############################################################################
 # data
 ###############################################################################
@@ -5302,6 +5307,7 @@ EXTRA_DIST += \
 	tools/check-docs.sh \
 	tools/check-exports.sh \
 	tools/check-compare-generated.sh \
+	tools/check-gitlab-ci.sh \
 	tools/create-exports-NetworkManager.sh \
 	tools/debug-helper.py \
 	tools/meson-post-install.sh \

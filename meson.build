@@ -803,6 +803,12 @@ else
   endif
 endif
 
+test(
+  'check-local-gitlab-ci',
+  find_program(join_paths(source_root, 'tools', 'check-gitlab-ci.sh')),
+  args: [source_root],
+)
+
 # Tests, utilities and documentation
 tests = get_option('tests')
 enable_tests = (tests != 'no')
