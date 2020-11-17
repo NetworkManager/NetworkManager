@@ -37,13 +37,13 @@ variables:
   {{"%-13s"| format(distro.name.upper() + '_TAG:')}}'{{distro.tag}}-{{
     (ci_fairy.hashfiles('./.gitlab-ci/config.yml',
                         './.gitlab-ci/ci.template',
-                        './.gitlab-ci/' + distro.name + '-install.sh',
+                        './.gitlab-ci/' + distro.base_type + '-install.sh',
                         './contrib/' + distro.base_type + '/REQUIRED_PACKAGES'))[0:12]
   }}'
 {% endfor %}
 
 {% for distro in distributions %}
-  {{"%-13s"| format(distro.name.upper() + '_EXEC:')}}'bash .gitlab-ci/{{distro.name}}-install.sh'
+  {{"%-13s"| format(distro.name.upper() + '_EXEC:')}}'bash .gitlab-ci/{{distro.base_type}}-install.sh'
 {% endfor %}
 
 .nm_artifacts:
