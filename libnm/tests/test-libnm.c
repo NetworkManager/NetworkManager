@@ -2825,6 +2825,7 @@ test_nml_dbus_meta(void)
                            NML_DBUS_META_INTERFACE_PRIO_NMCLIENT,
                            NML_DBUS_META_INTERFACE_PRIO_PARENT_TYPE,
                            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_10,
+                           NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_20,
                            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30));
 
         g_assert(mif->get_type_fcn);
