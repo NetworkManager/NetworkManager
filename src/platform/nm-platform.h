@@ -1967,10 +1967,7 @@ gboolean nm_platform_link_tun_get_properties(NMPlatform *      self,
 
 gboolean
 nm_platform_wifi_get_capabilities(NMPlatform *self, int ifindex, NMDeviceWifiCapabilities *caps);
-gboolean    nm_platform_wifi_get_bssid(NMPlatform *self, int ifindex, guint8 *bssid);
 guint32     nm_platform_wifi_get_frequency(NMPlatform *self, int ifindex);
-int         nm_platform_wifi_get_quality(NMPlatform *self, int ifindex);
-guint32     nm_platform_wifi_get_rate(NMPlatform *self, int ifindex);
 gboolean    nm_platform_wifi_get_station(NMPlatform *self,
                                          int         ifindex,
                                          guint8 *    out_bssid,

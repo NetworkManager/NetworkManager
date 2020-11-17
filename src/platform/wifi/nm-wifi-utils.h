@@ -43,15 +43,6 @@ guint32 nm_wifi_utils_get_freq(NMWifiUtils *data);
  * Frequencies are specified in MHz. */
 guint32 nm_wifi_utils_find_freq(NMWifiUtils *data, const guint32 *freqs);
 
-/* out_bssid must be ETH_ALEN bytes */
-gboolean nm_wifi_utils_get_bssid(NMWifiUtils *data, guint8 *out_bssid);
-
-/* Returns current bitrate in Kbps */
-guint32 nm_wifi_utils_get_rate(NMWifiUtils *data);
-
-/* Returns quality 0 - 100% on success, or -1 on error */
-int nm_wifi_utils_get_qual(NMWifiUtils *data);
-
 /*
  * @out_bssid: must be NULL or an ETH_ALEN-byte buffer
  * @out_quality: receives signal quality in 0 - 100% range if not NULL
