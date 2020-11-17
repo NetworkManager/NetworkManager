@@ -39,12 +39,11 @@ variables:
   GIT_DEPTH: 1
   # these tags should be updated each time the list of packages is updated
   # changing these will force rebuilding the associated image
-  # Note: these tags have no meaning and are not tied to a particular
-  # libinput version
-  FEDORA_TAG:  '2020-11-17.0-b6f225d87807'
-  UBUNTU_TAG:  '2020-11-17.0-e2797fbbfc3a'
-  DEBIAN_TAG:  '2020-11-17.0-e2797fbbfc3a'
-  CENTOS_TAG:  '2020-11-17.0-b6f225d87807'
+  # Note: these tags have no meaning and are not tied to a particular NM version
+  FEDORA_TAG:  '2020-11-17.0-3bc1d72be050'
+  UBUNTU_TAG:  '2020-11-17.0-dc51098af332'
+  DEBIAN_TAG:  '2020-11-17.0-dc51098af332'
+  CENTOS_TAG:  '2020-11-17.0-3bc1d72be050'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'

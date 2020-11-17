@@ -31,8 +31,7 @@ variables:
   GIT_DEPTH: 1
   # these tags should be updated each time the list of packages is updated
   # changing these will force rebuilding the associated image
-  # Note: these tags have no meaning and are not tied to a particular
-  # libinput version
+  # Note: these tags have no meaning and are not tied to a particular NM version
 {% for distro in distributions %}
   {{"%-13s"| format(distro.name.upper() + '_TAG:')}}'{{distro.tag}}-{{
     (ci_fairy.hashfiles('./.gitlab-ci/config.yml',
