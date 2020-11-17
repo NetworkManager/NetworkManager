@@ -925,6 +925,8 @@ _nm_g_slice_free_fcn_define(1) _nm_g_slice_free_fcn_define(2) _nm_g_slice_free_f
  *   error reason. Depending on the usage, this might indicate a bug because
  *   usually the target object should stay alive as long as there are pending
  *   operations.
+ * @NM_UTILS_ERROR_NOT_READY: the failure is related to being currently
+ *   not ready to perform the operation.
  *
  * @NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE: used for a very particular
  *   purpose during nm_device_check_connection_compatible() to indicate that
@@ -945,6 +947,7 @@ typedef enum {
     NM_UTILS_ERROR_UNKNOWN = 0,         /*< nick=Unknown >*/
     NM_UTILS_ERROR_CANCELLED_DISPOSING, /*< nick=CancelledDisposing >*/
     NM_UTILS_ERROR_INVALID_ARGUMENT,    /*< nick=InvalidArgument >*/
+    NM_UTILS_ERROR_NOT_READY,           /*< nick=NotReady >*/
 
     /* the following codes have a special meaning and are exactly used for
      * nm_device_check_connection_compatible() and nm_device_check_connection_available().
@@ -1661,6 +1664,19 @@ GPtrArray *_nm_g_ptr_array_copy(GPtrArray *    array,
 #endif
 
 /*****************************************************************************/
+
+static inline GHashTable *
+nm_g_hash_table_ref(GHashTable *hash)
+{
+    return hash ? g_hash_table_ref(hash) : NULL;
+}
+
+static inline void
+nm_g_hash_table_unref(GHashTable *hash)
+{
+    if (hash)
+        g_hash_table_unref(hash);
+}
 
 static inline guint
 nm_g_hash_table_size(GHashTable *hash)
