@@ -5021,23 +5021,15 @@ nmc_process_connection_properties(NmCli *             nmc,
 
             ss = is_setting_valid(connection, type_settings, slv_settings, setting_name);
             if (!ss) {
-                if (check_valid_name(setting_name, type_settings, slv_settings, NULL)) {
-                    g_set_error(error,
-                                NMCLI_ERROR,
-                                NMC_RESULT_ERROR_USER_INPUT,
-                                _("Setting '%s' is not present in the connection."),
-                                setting_name);
-                } else {
+                if (!check_valid_name(setting_name, type_settings, slv_settings, NULL)) {
                     g_set_error(error,
                                 NMCLI_ERROR,
                                 NMC_RESULT_ERROR_USER_INPUT,
                                 _("Error: invalid setting argument '%s'."),
                                 setting_name);
+                    return FALSE;
                 }
-                return FALSE;
-            }
-
-            if (!connection_remove_setting(connection, ss, error))
+            } else if (!connection_remove_setting(connection, ss, error))
                 return FALSE;
         } else if ((tmp = strchr(option, '.'))) {
             gs_free char *option_sett = g_strndup(option, tmp - option);
