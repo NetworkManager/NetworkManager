@@ -2848,22 +2848,85 @@ test_nml_dbus_meta(void)
 
         if (klass) {
             if (NM_IS_OBJECT_CLASS(klass)) {
-                NMObjectClass *                nm_object_class = NM_OBJECT_CLASS(klass);
-                const _NMObjectClassFieldInfo *p_prev;
-                const _NMObjectClassFieldInfo *p;
+                NMObjectClass *nm_object_class = NM_OBJECT_CLASS(klass);
 
-                p_prev = NULL;
-                for (p = nm_object_class->property_o_info; p; p_prev = p, p = p->parent) {
-                    g_assert(p->num > 0);
-                    g_assert(NM_IS_OBJECT_CLASS(p->klass));
-                    g_assert(g_type_is_a(gtype, G_TYPE_FROM_CLASS(p->klass)));
-                    g_assert(p->klass->property_o_info == p);
-                    if (p_prev) {
-                        g_assert(g_type_is_a(G_TYPE_FROM_CLASS(p_prev->klass),
-                                             G_TYPE_FROM_CLASS(p->klass)));
-                        g_assert(p_prev->klass != p->klass);
+                if (nm_object_class->property_o_info || nm_object_class->property_ao_info) {
+                    int ii;
+
+                    for (ii = 0; ii < 2; ii++) {
+                        const _NMObjectClassFieldInfo *p_prev = NULL;
+                        const _NMObjectClassFieldInfo *p0     = ii == 0
+                                                                    ? nm_object_class->property_o_info
+                                                                    : nm_object_class->property_ao_info;
+                        const _NMObjectClassFieldInfo *p;
+
+                        for (p = p0; p; p = p->parent) {
+                            GType          parent_gtype;
+                            NMObjectClass *parent_klass;
+
+                            g_assert(p->num > 0);
+                            g_assert(NM_IS_OBJECT_CLASS(p->klass));
+                            g_assert(g_type_is_a(gtype, G_TYPE_FROM_CLASS(p->klass)));
+                            if (ii == 0)
+                                g_assert(p->klass->property_o_info == p);
+                            else
+                                g_assert(p->klass->property_ao_info == p);
+                            g_assert_cmpint(p->klass->priv_ptr_offset, >, 0);
+                            if (p_prev) {
+                                g_assert(g_type_is_a(G_TYPE_FROM_CLASS(p_prev->klass),
+                                                     G_TYPE_FROM_CLASS(p->klass)));
+                                g_assert(p_prev->klass != p->klass);
+                                g_assert_cmpint(p_prev->klass->priv_ptr_offset,
+                                                >,
+                                                p->klass->priv_ptr_offset);
+                                g_assert_cmpint(p->klass->priv_ptr_indirect, ==, TRUE);
+                            }
+
+                            parent_gtype = g_type_parent(G_TYPE_FROM_CLASS(p->klass));
+                            g_assert(g_type_is_a(parent_gtype, NM_TYPE_OBJECT));
+                            parent_klass = g_type_class_peek(parent_gtype);
+                            g_assert(NM_IS_OBJECT_CLASS(parent_klass));
+                            if (parent_gtype == NM_TYPE_OBJECT) {
+                                g_assert_cmpint(parent_klass->priv_ptr_offset, ==, 0);
+                                g_assert_cmpint(parent_klass->priv_ptr_indirect, ==, FALSE);
+                                g_assert(!p->parent);
+                            } else {
+                                if (parent_klass->priv_ptr_offset == 0) {
+                                    g_assert(!parent_klass->property_o_info);
+                                    g_assert(!parent_klass->property_ao_info);
+                                    g_assert_cmpint(parent_klass->priv_ptr_indirect, ==, FALSE);
+                                    g_assert(!p->parent);
+                                } else if (p->klass->priv_ptr_offset
+                                           == parent_klass->priv_ptr_offset) {
+                                    g_assert(p->klass->property_o_info
+                                             == parent_klass->property_o_info);
+                                    g_assert(p->klass->property_ao_info
+                                             == parent_klass->property_ao_info);
+                                    g_assert(p->klass->priv_ptr_indirect
+                                             == parent_klass->priv_ptr_indirect);
+                                } else {
+                                    g_assert_cmpint(parent_klass->priv_ptr_offset, >, 0);
+                                    g_assert_cmpint(parent_klass->priv_ptr_offset,
+                                                    <,
+                                                    p->klass->priv_ptr_offset);
+                                    g_assert_cmpint(parent_klass->priv_ptr_indirect, ==, TRUE);
+                                    g_assert(p->klass->property_o_info
+                                                 != parent_klass->property_o_info
+                                             || p->klass->property_ao_info
+                                                    != parent_klass->property_ao_info);
+                                }
+                            }
+
+                            p_prev = p;
+                        }
                     }
+
+                    g_assert_cmpint(nm_object_class->priv_ptr_offset, >, 0);
+                } else {
+                    g_assert_cmpint(nm_object_class->priv_ptr_offset, ==, 0);
+                    g_assert_cmpint(nm_object_class->priv_ptr_indirect, ==, FALSE);
                 }
+
             } else
                 g_assert(NM_IS_CLIENT_CLASS(klass));
         }
