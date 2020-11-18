@@ -4958,6 +4958,10 @@ nmc_process_connection_properties(NmCli *             nmc,
         const char *                             option;
         const char *                             value = NULL;
         const char *                             tmp;
+        const NMMetaAbstractInfo *               chosen              = NULL;
+        const char *                             chosen_setting_name = NULL;
+        const char *                             chosen_option       = NULL;
+        NMMetaSettingType                        s;
 
         if (!con_settings(connection, &type_settings, &slv_settings, error))
             return FALSE;
@@ -5029,9 +5033,16 @@ nmc_process_connection_properties(NmCli *             nmc,
                                 setting_name);
                     return FALSE;
                 }
-            } else if (!connection_remove_setting(connection, ss, error))
+                continue;
+            }
+
+            if (!connection_remove_setting(connection, ss, error))
                 return FALSE;
-        } else if ((tmp = strchr(option, '.'))) {
+
+            continue;
+        }
+
+        if ((tmp = strchr(option, '.'))) {
             gs_free char *option_sett = g_strndup(option, tmp - option);
             const char *  option_prop = &tmp[1];
             const char *  option_sett_expanded;
@@ -5074,58 +5085,35 @@ nmc_process_connection_properties(NmCli *             nmc,
                               modifier,
                               error))
                 return FALSE;
-        } else {
-            const NMMetaAbstractInfo *chosen              = NULL;
-            const char *              chosen_setting_name = NULL;
-            const char *              chosen_option       = NULL;
-            NMMetaSettingType         s;
 
-            /* Let's see if this is an property alias (such as "id", "mode", "type" or "con-name")*/
-            for (s = 0; s < _NM_META_SETTING_TYPE_NUM; s++) {
-                const NMMetaPropertyInfo *const *property_infos;
-                guint                            p;
+            continue;
+        }
 
-                if (!check_valid_name(nm_meta_setting_infos[s].setting_name,
-                                      type_settings,
-                                      slv_settings,
-                                      NULL))
-                    continue;
+        /* Let's see if this is an property alias (such as "id", "mode", "type" or "con-name")*/
+        for (s = 0; s < _NM_META_SETTING_TYPE_NUM; s++) {
+            const NMMetaPropertyInfo *const *property_infos;
+            guint                            p;
 
-                property_infos = nm_meta_setting_infos_editor[s].properties;
-                if (!property_infos)
-                    continue;
-                for (p = 0; property_infos[p]; p++) {
-                    const NMMetaPropertyInfo *property_info = property_infos[p];
+            if (!check_valid_name(nm_meta_setting_infos[s].setting_name,
+                                  type_settings,
+                                  slv_settings,
+                                  NULL))
+                continue;
 
-                    if (_meta_property_needs_bond_hack(property_info)) {
-                        guint i;
+            property_infos = nm_meta_setting_infos_editor[s].properties;
+            if (!property_infos)
+                continue;
+            for (p = 0; property_infos[p]; p++) {
+                const NMMetaPropertyInfo *property_info = property_infos[p];
 
-                        for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
-                            const NMMetaNestedPropertyInfo *bi =
-                                &nm_meta_property_typ_data_bond.nested[i];
+                if (_meta_property_needs_bond_hack(property_info)) {
+                    guint i;
 
-                            if (!nm_streq0(bi->base.property_alias, option))
-                                continue;
-                            if (chosen) {
-                                g_set_error(error,
-                                            NMCLI_ERROR,
-                                            NMC_RESULT_ERROR_USER_INPUT,
-                                            _("Error: '%s' is ambiguous (%s.%s or %s.%s)."),
-                                            option,
-                                            chosen_setting_name,
-                                            chosen_option,
-                                            nm_meta_setting_infos[s].setting_name,
-                                            option);
-                                return FALSE;
-                            }
-                            chosen_setting_name = nm_meta_setting_infos[s].setting_name;
-                            chosen_option       = option;
-                            chosen              = (const NMMetaAbstractInfo *) bi;
-                        }
-                    } else {
-                        if (!property_info->is_cli_option)
-                            continue;
-                        if (!nm_streq0(property_info->property_alias, option))
+                    for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
+                        const NMMetaNestedPropertyInfo *bi =
+                            &nm_meta_property_typ_data_bond.nested[i];
+
+                        if (!nm_streq0(bi->base.property_alias, option))
                             continue;
                         if (chosen) {
                             g_set_error(error,
@@ -5141,39 +5129,60 @@ nmc_process_connection_properties(NmCli *             nmc,
                         }
                         chosen_setting_name = nm_meta_setting_infos[s].setting_name;
                         chosen_option       = option;
-                        chosen              = (const NMMetaAbstractInfo *) property_info;
+                        chosen              = (const NMMetaAbstractInfo *) bi;
                     }
+                } else {
+                    if (!property_info->is_cli_option)
+                        continue;
+                    if (!nm_streq0(property_info->property_alias, option))
+                        continue;
+                    if (chosen) {
+                        g_set_error(error,
+                                    NMCLI_ERROR,
+                                    NMC_RESULT_ERROR_USER_INPUT,
+                                    _("Error: '%s' is ambiguous (%s.%s or %s.%s)."),
+                                    option,
+                                    chosen_setting_name,
+                                    chosen_option,
+                                    nm_meta_setting_infos[s].setting_name,
+                                    option);
+                        return FALSE;
+                    }
+                    chosen_setting_name = nm_meta_setting_infos[s].setting_name;
+                    chosen_option       = option;
+                    chosen              = (const NMMetaAbstractInfo *) property_info;
                 }
             }
-
-            if (!chosen) {
-                if (*argc == 1 && nmc->complete) {
-                    if (allow_setting_removal && g_str_has_prefix("remove", option))
-                        g_print("remove\n");
-                    complete_property_name(nmc, connection, modifier, option, NULL);
-                }
-                g_set_error(error,
-                            NMCLI_ERROR,
-                            NMC_RESULT_ERROR_USER_INPUT,
-                            _("Error: invalid <setting>.<property> '%s'."),
-                            option);
-                return FALSE;
-            }
-
-            if (*argc == 1 && nmc->complete)
-                complete_property_name(nmc, connection, modifier, option, NULL);
-
-            (*argc)--;
-            (*argv)++;
-            if (!get_value(&value, argc, argv, option_orig, error))
-                return FALSE;
-
-            if (!*argc && nmc->complete)
-                complete_option(nmc, chosen, value ?: "", connection);
-
-            if (!set_option(nmc, connection, chosen, value, error))
-                return FALSE;
         }
+
+        if (!chosen) {
+            if (*argc == 1 && nmc->complete) {
+                if (allow_setting_removal && g_str_has_prefix("remove", option))
+                    g_print("remove\n");
+                complete_property_name(nmc, connection, modifier, option, NULL);
+            }
+            g_set_error(error,
+                        NMCLI_ERROR,
+                        NMC_RESULT_ERROR_USER_INPUT,
+                        _("Error: invalid <setting>.<property> '%s'."),
+                        option);
+            return FALSE;
+        }
+
+        if (*argc == 1 && nmc->complete)
+            complete_property_name(nmc, connection, modifier, option, NULL);
+
+        (*argc)--;
+        (*argv)++;
+        if (!get_value(&value, argc, argv, option_orig, error))
+            return FALSE;
+
+        if (!*argc && nmc->complete)
+            complete_option(nmc, chosen, value ?: "", connection);
+
+        if (!set_option(nmc, connection, chosen, value, error))
+            return FALSE;
+
     } while (*argc);
 
     return TRUE;
