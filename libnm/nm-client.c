@@ -2694,7 +2694,7 @@ _obj_handle_dbus_changes(NMClient *self, NMLDBusObject *dbobj)
             nml_dbus_object_set_obj_state(dbobj, NML_DBUS_OBJ_STATE_WITH_NMOBJ_READY, self);
         } else {
             GType                   gtype     = G_TYPE_NONE;
-            NMLDBusMetaInteracePrio curr_prio = NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_LOW - 1;
+            NMLDBusMetaInteracePrio curr_prio = NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_10 - 1;
 
             c_list_for_each_entry (db_iface_data, &dbobj->iface_lst_head, iface_lst) {
                 nm_assert(!db_iface_data->iface_removed);

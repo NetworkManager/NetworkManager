@@ -102,7 +102,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_dhcp4config = NML_DBUS_META_IFACE_INIT_PROP(
     NM_DBUS_INTERFACE_DHCP4_CONFIG,
     nm_dhcp4_config_get_type,
-    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
     NML_DBUS_META_IFACE_DBUS_PROPERTIES(
         NML_DBUS_META_PROPERTY_INIT_FCN("Options",
                                         PROP_OPTIONS,
@@ -113,7 +113,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_dhcp4config = NML_DBUS_META_IFACE
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_dhcp6config = NML_DBUS_META_IFACE_INIT_PROP(
     NM_DBUS_INTERFACE_DHCP6_CONFIG,
     nm_dhcp6_config_get_type,
-    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
     NML_DBUS_META_IFACE_DBUS_PROPERTIES(
         NML_DBUS_META_PROPERTY_INIT_FCN("Options",
                                         PROP_OPTIONS,

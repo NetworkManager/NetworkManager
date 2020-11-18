@@ -262,7 +262,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_modem = NML_DBUS_META_IFACE_INIT_PROP(
     NM_DBUS_INTERFACE_DEVICE_MODEM,
     nm_device_modem_get_type,
-    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
     NML_DBUS_META_IFACE_DBUS_PROPERTIES(
         NML_DBUS_META_PROPERTY_INIT_S("Apn", PROP_APN, NMDeviceModem, _priv.apn),
         NML_DBUS_META_PROPERTY_INIT_U("CurrentCapabilities",

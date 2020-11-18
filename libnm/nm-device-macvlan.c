@@ -210,7 +210,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_macvlan = NML_DBUS_META_IFACE_INIT_PROP(
     NM_DBUS_INTERFACE_DEVICE_MACVLAN,
     nm_device_macvlan_get_type,
-    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
     NML_DBUS_META_IFACE_DBUS_PROPERTIES(
         NML_DBUS_META_PROPERTY_INIT_S("Mode", PROP_MODE, NMDeviceMacvlan, _priv.mode),
         NML_DBUS_META_PROPERTY_INIT_B("NoPromisc",
