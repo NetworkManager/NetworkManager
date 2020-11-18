@@ -64,22 +64,24 @@ nm_wifi_ap_get_supplicant_path(NMWifiAP *ap)
     return ap->_supplicant_path;
 }
 
-GBytes *       nm_wifi_ap_get_ssid(const NMWifiAP *ap);
-gboolean       nm_wifi_ap_set_ssid(NMWifiAP *ap, GBytes *ssid);
-const char *   nm_wifi_ap_get_address(const NMWifiAP *ap);
-gboolean       nm_wifi_ap_set_address(NMWifiAP *ap, const char *addr);
-NM80211Mode    nm_wifi_ap_get_mode(NMWifiAP *ap);
-gboolean       nm_wifi_ap_is_hotspot(NMWifiAP *ap);
-gint8          nm_wifi_ap_get_strength(NMWifiAP *ap);
-gboolean       nm_wifi_ap_set_strength(NMWifiAP *ap, gint8 strength);
-guint32        nm_wifi_ap_get_freq(NMWifiAP *ap);
-gboolean       nm_wifi_ap_set_freq(NMWifiAP *ap, guint32 freq);
-guint32        nm_wifi_ap_get_max_bitrate(NMWifiAP *ap);
-gboolean       nm_wifi_ap_set_max_bitrate(NMWifiAP *ap, guint32 bitrate);
-gboolean       nm_wifi_ap_get_fake(const NMWifiAP *ap);
-gboolean       nm_wifi_ap_set_fake(NMWifiAP *ap, gboolean fake);
-NM80211ApFlags nm_wifi_ap_get_flags(const NMWifiAP *self);
-gboolean       nm_wifi_ap_get_metered(const NMWifiAP *self);
+GBytes *               nm_wifi_ap_get_ssid(const NMWifiAP *ap);
+gboolean               nm_wifi_ap_set_ssid(NMWifiAP *ap, GBytes *ssid);
+const char *           nm_wifi_ap_get_address(const NMWifiAP *ap);
+gboolean               nm_wifi_ap_set_address(NMWifiAP *ap, const char *addr);
+NM80211Mode            nm_wifi_ap_get_mode(NMWifiAP *ap);
+gboolean               nm_wifi_ap_is_hotspot(NMWifiAP *ap);
+gint8                  nm_wifi_ap_get_strength(NMWifiAP *ap);
+gboolean               nm_wifi_ap_set_strength(NMWifiAP *ap, gint8 strength);
+guint32                nm_wifi_ap_get_freq(NMWifiAP *ap);
+gboolean               nm_wifi_ap_set_freq(NMWifiAP *ap, guint32 freq);
+guint32                nm_wifi_ap_get_max_bitrate(NMWifiAP *ap);
+gboolean               nm_wifi_ap_set_max_bitrate(NMWifiAP *ap, guint32 bitrate);
+gboolean               nm_wifi_ap_get_fake(const NMWifiAP *ap);
+gboolean               nm_wifi_ap_set_fake(NMWifiAP *ap, gboolean fake);
+NM80211ApFlags         nm_wifi_ap_get_flags(const NMWifiAP *self);
+gboolean               nm_wifi_ap_get_metered(const NMWifiAP *self);
+NM80211ApSecurityFlags nm_wifi_ap_get_wpa_flags(const NMWifiAP *self);
+NM80211ApSecurityFlags nm_wifi_ap_get_rsn_flags(const NMWifiAP *self);
 
 const char *
 nm_wifi_ap_to_string(const NMWifiAP *self, char *str_buf, gulong buf_len, gint64 now_msec);
