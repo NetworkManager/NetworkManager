@@ -383,7 +383,7 @@ static void
 test_multiple_merge (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
-	const char *const*ARGV = NM_MAKE_STRV ("ip=192.0.2.2:::::eth0",
+	const char *const*ARGV = NM_MAKE_STRV ("ip=192.0.2.2/16:::::eth0",
 	                                       "ip=[2001:db8::2]:::56::eth0");
 	NMConnection *connection;
 	NMSettingConnection *s_con;
@@ -418,6 +418,7 @@ test_multiple_merge (void)
 	ip_addr = nm_setting_ip_config_get_address (s_ip4, 0);
 	g_assert (ip_addr);
 	g_assert_cmpstr (nm_ip_address_get_address (ip_addr), ==, "192.0.2.2");
+	g_assert_cmpint (nm_ip_address_get_prefix (ip_addr), ==, 16);
 
 	s_ip6 = nm_connection_get_setting_ip6_config (connection);
 	g_assert (s_ip6);
