@@ -233,10 +233,12 @@ _ip_config_data_new(NMDnsConfigData *data, NMIPConfig *ip_config, NMDnsIPConfigT
     nm_assert(NM_IS_IP_CONFIG(ip_config));
     nm_assert(ip_config_type != NM_DNS_IP_CONFIG_TYPE_REMOVED);
 
-    ip_data                 = g_slice_new0(NMDnsIPConfigData);
-    ip_data->data           = data;
-    ip_data->ip_config      = g_object_ref(ip_config);
-    ip_data->ip_config_type = ip_config_type;
+    ip_data  = g_slice_new(NMDnsIPConfigData);
+    *ip_data = (NMDnsIPConfigData){
+        .data           = data,
+        .ip_config      = g_object_ref(ip_config),
+        .ip_config_type = ip_config_type,
+    };
     c_list_link_tail(&data->data_lst_head, &ip_data->data_lst);
     c_list_link_tail(&NM_DNS_MANAGER_GET_PRIVATE(data->self)->ip_config_lst_head,
                      &ip_data->ip_config_lst);
@@ -267,7 +269,7 @@ _ip_config_data_free(NMDnsIPConfigData *ip_data)
                                          ip_data);
 
     g_object_unref(ip_data->ip_config);
-    g_slice_free(NMDnsIPConfigData, ip_data);
+    nm_g_slice_free(ip_data);
 }
 
 static NMDnsIPConfigData *
@@ -292,7 +294,7 @@ _config_data_free(NMDnsConfigData *data)
     _ASSERT_config_data(data);
 
     nm_assert(c_list_is_empty(&data->data_lst_head));
-    g_slice_free(NMDnsConfigData, data);
+    nm_g_slice_free(data);
 }
 
 static int
@@ -1740,10 +1742,12 @@ nm_dns_manager_set_ip_config(NMDnsManager *    self,
     }
 
     if (!data) {
-        data          = g_slice_new0(NMDnsConfigData);
-        data->ifindex = ifindex;
-        data->self    = self;
-        c_list_init(&data->data_lst_head);
+        data  = g_slice_new(NMDnsConfigData);
+        *data = (NMDnsConfigData){
+            .ifindex       = ifindex,
+            .self          = self,
+            .data_lst_head = C_LIST_INIT(data->data_lst_head),
+        };
         _ASSERT_config_data(data);
         g_hash_table_insert(priv->configs, GINT_TO_POINTER(ifindex), data);
     }
