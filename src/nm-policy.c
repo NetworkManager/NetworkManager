@@ -143,7 +143,7 @@ _dns_manager_set_ip_config(NMDnsManager *    dns_manager,
                            NMDnsIPConfigType ip_config_type,
                            NMDevice *        device)
 {
-    if (nm_device_sys_iface_state_is_external(device)) {
+    if (device && nm_device_sys_iface_state_is_external(device)) {
         nm_dns_manager_set_ip_config(dns_manager, ip_config, NM_DNS_IP_CONFIG_TYPE_REMOVED);
         return;
     }
