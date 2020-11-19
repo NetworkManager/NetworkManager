@@ -41,9 +41,9 @@ typedef struct {
 } NMDnsIPConfigData;
 
 typedef struct _NMDnsConfigData {
+	int ifindex;
 	struct _NMDnsManager *self;
 	CList data_lst_head;
-	int ifindex;
 } NMDnsConfigData;
 
 #define NM_TYPE_DNS_MANAGER (nm_dns_manager_get_type ())
