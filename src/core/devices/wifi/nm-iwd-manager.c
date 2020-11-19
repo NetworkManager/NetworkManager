@@ -533,7 +533,7 @@ mirror_connection(NMIwdManager *        self,
 
         switch (id->security) {
         case NM_IWD_NETWORK_SECURITY_WEP:
-        case NM_IWD_NETWORK_SECURITY_NONE:
+        case NM_IWD_NETWORK_SECURITY_OPEN:
         case NM_IWD_NETWORK_SECURITY_PSK:
             break;
         case NM_IWD_NETWORK_SECURITY_8021X:
@@ -642,7 +642,7 @@ mirror_connection(NMIwdManager *        self,
     case NM_IWD_NETWORK_SECURITY_WEP:
         key_mgmt = "none";
         break;
-    case NM_IWD_NETWORK_SECURITY_NONE:
+    case NM_IWD_NETWORK_SECURITY_OPEN:
         key_mgmt = NULL;
         break;
     case NM_IWD_NETWORK_SECURITY_PSK:
@@ -758,7 +758,7 @@ interface_added(GDBusObjectManager *object_manager,
             return;
 
         if (nm_streq(type_str, "open"))
-            security = NM_IWD_NETWORK_SECURITY_NONE;
+            security = NM_IWD_NETWORK_SECURITY_OPEN;
         else if (nm_streq(type_str, "psk"))
             security = NM_IWD_NETWORK_SECURITY_PSK;
         else if (nm_streq(type_str, "8021x"))
@@ -840,7 +840,7 @@ interface_removed(GDBusObjectManager *object_manager,
             return;
 
         if (nm_streq(type_str, "open"))
-            id.security = NM_IWD_NETWORK_SECURITY_NONE;
+            id.security = NM_IWD_NETWORK_SECURITY_OPEN;
         else if (nm_streq(type_str, "psk"))
             id.security = NM_IWD_NETWORK_SECURITY_PSK;
         else if (nm_streq(type_str, "8021x"))
@@ -1242,7 +1242,7 @@ nm_iwd_manager_get_ap_mirror_connection(NMIwdManager *self, NMWifiAP *ap)
     NMIwdManagerPrivate *  priv = NM_IWD_MANAGER_GET_PRIVATE(self);
     KnownNetworkData *     data;
     char                   name_buf[33];
-    KnownNetworkId         kn_id = {name_buf, NM_IWD_NETWORK_SECURITY_NONE};
+    KnownNetworkId         kn_id = {name_buf, NM_IWD_NETWORK_SECURITY_OPEN};
     const guint8 *         ssid_bytes;
     gsize                  ssid_len;
     NM80211ApFlags         flags     = nm_wifi_ap_get_flags(ap);

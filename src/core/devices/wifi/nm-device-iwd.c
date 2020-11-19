@@ -789,7 +789,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
                 return FALSE;
             }
         } else if (!NM_IN_SET(security,
-                              NM_IWD_NETWORK_SECURITY_NONE,
+                              NM_IWD_NETWORK_SECURITY_OPEN,
                               NM_IWD_NETWORK_SECURITY_PSK)) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
@@ -819,7 +819,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
             return FALSE;
         }
 
-        if (!NM_IN_SET(security, NM_IWD_NETWORK_SECURITY_NONE, NM_IWD_NETWORK_SECURITY_PSK)) {
+        if (!NM_IN_SET(security, NM_IWD_NETWORK_SECURITY_OPEN, NM_IWD_NETWORK_SECURITY_PSK)) {
             nm_utils_error_set_literal(
                 error,
                 NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
@@ -1740,7 +1740,7 @@ act_check_interface(NMDeviceIwd *self)
                                                       &security))
         goto failed;
 
-    if (security == NM_IWD_NETWORK_SECURITY_NONE) {
+    if (security == NM_IWD_NETWORK_SECURITY_OPEN) {
         g_dbus_proxy_call(proxy,
                           "StartOpen",
                           g_variant_new("(s)", ssid),

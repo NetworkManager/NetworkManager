@@ -923,7 +923,7 @@ nm_wifi_connection_get_iwd_ssid_and_security(NMConnection *        connection,
 
     s_wireless_sec = nm_connection_get_setting_wireless_security(connection);
     if (!s_wireless_sec) {
-        NM_SET_OUT(security, NM_IWD_NETWORK_SECURITY_NONE);
+        NM_SET_OUT(security, NM_IWD_NETWORK_SECURITY_OPEN);
         return TRUE;
     }
 
