@@ -222,6 +222,26 @@ _ASSERT_ip_config_data(const NMDnsIPConfigData *ip_data)
     nm_assert(NM_IS_IP_CONFIG(ip_data->ip_config));
     nm_assert(c_list_contains(&ip_data->data->data_lst_head, &ip_data->data_lst));
     nm_assert(ip_data->data->ifindex == nm_ip_config_get_ifindex(ip_data->ip_config));
+#if NM_MORE_ASSERTS > 5
+    {
+        gboolean has_default = FALSE;
+        gsize    i;
+
+        for (i = 0; ip_data->domains.search && ip_data->domains.search; i++) {
+            const char *d = ip_data->domains.search[i];
+
+            d = nm_utils_parse_dns_domain(d, NULL);
+            nm_assert(d);
+            if (d[0] == '\0')
+                has_default = TRUE;
+        }
+        nm_assert(has_default == ip_data->domains.has_default_route_explicit);
+        if (ip_data->domains.has_default_route_explicit)
+            nm_assert(ip_data->domains.has_default_route_exclusive);
+        if (ip_data->domains.has_default_route_exclusive)
+            nm_assert(ip_data->domains.has_default_route);
+    }
+#endif
 }
 
 static NMDnsIPConfigData *
@@ -1358,6 +1378,9 @@ rebuild_domain_lists(NMDnsManager *self)
     c_list_for_each_entry (ip_data, head, ip_config_lst) {
         nm_assert(!ip_data->domains.search);
         nm_assert(!ip_data->domains.reverse);
+        nm_assert(!ip_data->domains.has_default_route_explicit);
+        nm_assert(!ip_data->domains.has_default_route_exclusive);
+        nm_assert(!ip_data->domains.has_default_route);
     }
 #endif
 
@@ -1398,8 +1421,11 @@ rebuild_domain_lists(NMDnsManager *self)
         guint        n_domains;
         guint        num_dom1;
         guint        num_dom2;
-        guint        cap_dom;
+        guint        n_domains_allocated;
         guint        i;
+        gboolean     has_default_route_maybe    = FALSE;
+        gboolean     has_default_route_explicit = FALSE;
+        gboolean     has_default_route_auto     = FALSE;
 
         if (!nm_ip_config_get_num_nameservers(ip_config))
             continue;
@@ -1413,12 +1439,6 @@ rebuild_domain_lists(NMDnsManager *self)
         nm_assert(prev_priority <= priority);
         prev_priority = priority;
 
-        cap_dom = 2u + NM_MAX(n_domains, n_searches);
-
-        domains = g_new(const char *, cap_dom);
-
-        num_dom1 = 0;
-
         /* Add wildcard lookup domain to connections with the default route.
          * If there is no default route, add the wildcard domain to all non-VPN
          * connections */
@@ -1429,11 +1449,16 @@ rebuild_domain_lists(NMDnsManager *self)
              * whether it is suitable for certain operations (like having an automatically
              * added "~" domain). */
             if (g_hash_table_contains(wildcard_entries, ip_data))
-                domains[num_dom1++] = "~";
+                has_default_route_maybe = TRUE;
         } else {
             if (ip_data->ip_config_type != NM_DNS_IP_CONFIG_TYPE_VPN)
-                domains[num_dom1++] = "~";
+                has_default_route_maybe = TRUE;
         }
+
+        n_domains_allocated = (n_searches > 0 ? n_searches : n_domains) + 1u;
+        domains             = g_new(const char *, n_domains_allocated);
+
+        num_dom1 = 0;
 
         /* searches are preferred over domains */
         if (n_searches > 0) {
@@ -1444,32 +1469,55 @@ rebuild_domain_lists(NMDnsManager *self)
                 domains[num_dom1++] = nm_ip_config_get_domain(ip_config, i);
         }
 
-        nm_assert(num_dom1 < cap_dom);
+        nm_assert(num_dom1 < n_domains_allocated);
 
         num_dom2 = 0;
-        for (i = 0; i < num_dom1; i++) {
+        for (i = 0; TRUE; i++) {
+            const char *domain_full;
             const char *domain_clean;
             const char *parent;
             int         old_priority;
             int         parent_priority;
+            gboolean    check_default_route;
 
-            domain_clean = nm_utils_parse_dns_domain(domains[i], NULL);
+            if (i < num_dom1) {
+                check_default_route = FALSE;
+                domain_full         = domains[i];
+                domain_clean        = nm_utils_parse_dns_domain(domains[i], NULL);
+            } else if (i == num_dom1) {
+                if (!has_default_route_maybe)
+                    continue;
+                if (has_default_route_explicit)
+                    continue;
+                check_default_route = TRUE;
+                domain_full         = "~";
+                domain_clean        = "";
+            } else
+                break;
 
             /* Remove domains with lower priority */
             if (domain_ht_get_priority(ht, domain_clean, &old_priority)) {
                 nm_assert(old_priority <= priority);
                 if (old_priority < priority) {
-                    _LOGT(
-                        "plugin: drop domain '%s' (i=%d, p=%d) because it already exists with p=%d",
-                        domains[i],
-                        ip_data->data->ifindex,
-                        priority,
-                        old_priority);
+                    _LOGT("plugin: drop domain %s%s%s (i=%d, p=%d) because it already exists "
+                          "with p=%d",
+                          NM_PRINT_FMT_QUOTED(!check_default_route,
+                                              "'",
+                                              domain_full,
+                                              "'",
+                                              "<auto-default>"),
+                          ip_data->data->ifindex,
+                          priority,
+                          old_priority);
                     continue;
                 }
             } else if (domain_is_shadowed(ht, domain_clean, priority, &parent, &parent_priority)) {
-                _LOGT("plugin: drop domain '%s' (i=%d, p=%d) shadowed by '%s' (p=%d)",
-                      domains[i],
+                _LOGT("plugin: drop domain %s%s%s (i=%d, p=%d) shadowed by '%s' (p=%d)",
+                      NM_PRINT_FMT_QUOTED(!check_default_route,
+                                          "'",
+                                          domain_full,
+                                          "'",
+                                          "<auto-default>"),
                       ip_data->data->ifindex,
                       priority,
                       parent,
@@ -1477,22 +1525,38 @@ rebuild_domain_lists(NMDnsManager *self)
                 continue;
             }
 
-            _LOGT("plugin: add domain '%s' (i=%d, p=%d)",
-                  domains[i],
-                  ip_data->data->ifindex,
-                  priority);
+            _LOGT(
+                "plugin: add domain %s%s%s (i=%d, p=%d)",
+                NM_PRINT_FMT_QUOTED(!check_default_route, "'", domain_full, "'", "<auto-default>"),
+                ip_data->data->ifindex,
+                priority);
+
             if (!ht)
                 ht = g_hash_table_new(nm_str_hash, g_str_equal);
             g_hash_table_insert(ht, (gpointer) domain_clean, GINT_TO_POINTER(priority));
-            domains[num_dom2++] = domains[i];
+
+            if (check_default_route)
+                has_default_route_auto = TRUE;
+            else {
+                nm_assert(num_dom2 <= num_dom1);
+                nm_assert(num_dom2 < n_domains_allocated);
+                domains[num_dom2++] = domain_full;
+                if (domain_clean[0] == '\0')
+                    has_default_route_explicit = TRUE;
+            }
         }
-        nm_assert(num_dom2 < cap_dom);
+        nm_assert(num_dom2 < n_domains_allocated);
         domains[num_dom2] = NULL;
 
         nm_assert(!ip_data->domains.search);
         nm_assert(!ip_data->domains.reverse);
-        ip_data->domains.search  = domains;
-        ip_data->domains.reverse = get_ip_rdns_domains(ip_config);
+        ip_data->domains.search                     = domains;
+        ip_data->domains.reverse                    = get_ip_rdns_domains(ip_config);
+        ip_data->domains.has_default_route_explicit = has_default_route_explicit;
+        ip_data->domains.has_default_route_exclusive =
+            has_default_route_explicit || (priority < 0 && has_default_route_auto);
+        ip_data->domains.has_default_route =
+            ip_data->domains.has_default_route_exclusive || has_default_route_auto;
     }
 }
 
@@ -1506,6 +1570,9 @@ clear_domain_lists(NMDnsManager *self)
     c_list_for_each_entry (ip_data, head, ip_config_lst) {
         nm_clear_g_free(&ip_data->domains.search);
         nm_clear_pointer(&ip_data->domains.reverse, g_strfreev);
+        ip_data->domains.has_default_route_explicit  = FALSE;
+        ip_data->domains.has_default_route_exclusive = FALSE;
+        ip_data->domains.has_default_route           = FALSE;
     }
 }
 
