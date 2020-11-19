@@ -8289,11 +8289,11 @@ wifi_get_frequency(NMPlatform *platform, int ifindex)
 }
 
 static gboolean
-wifi_get_station(NMPlatform *platform,
-                 int         ifindex,
-                 guint8 *    out_bssid,
-                 int *       out_quality,
-                 guint32 *   out_rate)
+wifi_get_station(NMPlatform * platform,
+                 int          ifindex,
+                 NMEtherAddr *out_bssid,
+                 int *        out_quality,
+                 guint32 *    out_rate)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, FALSE);
     return nm_wifi_utils_get_station(wifi_data, out_bssid, out_quality, out_rate);

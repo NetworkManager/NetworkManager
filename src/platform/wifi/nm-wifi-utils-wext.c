@@ -266,7 +266,7 @@ wifi_wext_find_freq(NMWifiUtils *data, const guint32 *freqs)
 }
 
 static gboolean
-wifi_wext_get_bssid(NMWifiUtils *data, guint8 *out_bssid)
+wifi_wext_get_bssid(NMWifiUtils *data, NMEtherAddr *out_bssid)
 {
     NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
     struct iwreq     wrq;
@@ -454,7 +454,10 @@ wifi_wext_get_qual(NMWifiUtils *data)
 }
 
 static gboolean
-wifi_wext_get_station(NMWifiUtils *data, guint8 *out_bssid, int *out_quality, guint32 *out_rate)
+wifi_wext_get_station(NMWifiUtils *data,
+                      NMEtherAddr *out_bssid,
+                      int *        out_quality,
+                      guint32 *    out_rate)
 {
     NMEtherAddr local_addr;
 
@@ -462,7 +465,7 @@ wifi_wext_get_station(NMWifiUtils *data, guint8 *out_bssid, int *out_quality, gu
         /* hm, the caller requested no parameter at all?
          * Don't simply return TRUE, but at least check that
          * we can successfully fetch the bssid. */
-        out_bssid = local_addr.ether_addr_octet;
+        out_bssid = &local_addr;
     }
 
     if (out_bssid) {

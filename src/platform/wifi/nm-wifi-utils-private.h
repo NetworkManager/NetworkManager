@@ -39,7 +39,7 @@ typedef struct {
      * Returns %TRUE on succcess, %FALSE on errors or if not associated.
      */
     gboolean (*get_station)(NMWifiUtils *data,
-                            guint8 *     out_bssid,
+                            NMEtherAddr *out_bssid,
                             int *        out_quality,
                             guint32 *    out_rate);
 

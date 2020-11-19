@@ -3062,11 +3062,11 @@ nm_platform_wifi_get_frequency(NMPlatform *self, int ifindex)
 }
 
 gboolean
-nm_platform_wifi_get_station(NMPlatform *self,
-                             int         ifindex,
-                             guint8 *    out_bssid,
-                             int *       out_quality,
-                             guint32 *   out_rate)
+nm_platform_wifi_get_station(NMPlatform * self,
+                             int          ifindex,
+                             NMEtherAddr *out_bssid,
+                             int *        out_quality,
+                             guint32 *    out_rate)
 {
     _CHECK_SELF(self, klass, FALSE);
 

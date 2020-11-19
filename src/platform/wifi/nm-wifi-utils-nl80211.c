@@ -494,7 +494,10 @@ nl80211_station_dump_handler(struct nl_msg *msg, void *arg)
 }
 
 static gboolean
-wifi_nl80211_get_station(NMWifiUtils *data, guint8 *out_bssid, int *out_quality, guint32 *out_rate)
+wifi_nl80211_get_station(NMWifiUtils *data,
+                         NMEtherAddr *out_bssid,
+                         int *        out_quality,
+                         guint32 *    out_rate)
 {
     NMWifiUtilsNl80211 *         self     = (NMWifiUtilsNl80211 *) data;
     nm_auto_nlmsg struct nl_msg *msg      = NULL;

@@ -51,7 +51,7 @@ guint32 nm_wifi_utils_find_freq(NMWifiUtils *data, const guint32 *freqs);
  * Returns %TRUE on succcess.
  */
 gboolean nm_wifi_utils_get_station(NMWifiUtils *data,
-                                   guint8 *     out_bssid,
+                                   NMEtherAddr *out_bssid,
                                    int *        out_quality,
                                    guint32 *    out_rate);
 
