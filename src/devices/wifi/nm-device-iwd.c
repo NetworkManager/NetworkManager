@@ -454,10 +454,8 @@ periodic_update(NMDeviceIwd *self)
 
     if (nm_ethernet_address_is_valid(bssid, ETH_ALEN)
         && memcmp(bssid, priv->current_ap_bssid, ETH_ALEN)) {
-        gs_free char *bssid_str = NULL;
         memcpy(priv->current_ap_bssid, bssid, ETH_ALEN);
-        bssid_str = nm_utils_hwaddr_ntoa(bssid, ETH_ALEN);
-        ap_changed |= nm_wifi_ap_set_address(priv->current_ap, bssid_str);
+        ap_changed |= nm_wifi_ap_set_address_bin(priv->current_ap, bssid);
         ap_changed |= nm_wifi_ap_set_freq(priv->current_ap,
                                           nm_platform_wifi_get_frequency(platform, ifindex));
     }

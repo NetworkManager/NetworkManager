@@ -3391,11 +3391,8 @@ activation_success_handler(NMDevice *device)
                                                 update_bssid ? bssid : NULL,
                                                 NULL,
                                                 update_rate ? &rate : NULL)) {
-                if (update_bssid && nm_ethernet_address_is_valid(bssid, ETH_ALEN)) {
-                    gs_free char *bssid_str = NULL;
-                    bssid_str               = nm_utils_hwaddr_ntoa(bssid, ETH_ALEN);
-                    ap_changed |= nm_wifi_ap_set_address(priv->current_ap, bssid_str);
-                }
+                if (update_bssid && nm_ethernet_address_is_valid(bssid, ETH_ALEN))
+                    ap_changed |= nm_wifi_ap_set_address_bin(priv->current_ap, bssid);
                 if (update_rate)
                     ap_changed |= nm_wifi_ap_set_max_bitrate(priv->current_ap, rate);
             }
