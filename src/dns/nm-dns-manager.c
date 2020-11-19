@@ -1286,6 +1286,19 @@ get_ip_rdns_domains(NMIPConfig *ip_config)
     return _nm_utils_strv_cleanup(strv, FALSE, FALSE, TRUE);
 }
 
+static gboolean
+domain_ht_get_priority(GHashTable *ht, const char *domain, int *out_priority)
+{
+    gpointer ptr;
+
+    if (!ht || !g_hash_table_lookup_extended(ht, domain, NULL, &ptr)) {
+        *out_priority = 0;
+        return FALSE;
+    }
+    *out_priority = GPOINTER_TO_INT(ptr);
+    return TRUE;
+}
+
 /* Check if the domain is shadowed by a parent domain with more negative priority */
 static gboolean
 domain_is_shadowed(GHashTable * ht,
@@ -1302,21 +1315,25 @@ domain_is_shadowed(GHashTable * ht,
 
     nm_assert(!g_hash_table_contains(ht, domain));
 
-    parent_priority = GPOINTER_TO_INT(g_hash_table_lookup(ht, ""));
-    if (parent_priority < 0 && parent_priority < priority) {
-        *out_parent          = "";
-        *out_parent_priority = parent_priority;
-        return TRUE;
+    if (domain_ht_get_priority(ht, "", &parent_priority)) {
+        nm_assert(parent_priority <= priority);
+        if (parent_priority < 0 && parent_priority < priority) {
+            *out_parent          = "";
+            *out_parent_priority = parent_priority;
+            return TRUE;
+        }
     }
 
     parent = strchr(domain, '.');
     while (parent && parent[1]) {
         parent++;
-        parent_priority = GPOINTER_TO_INT(g_hash_table_lookup(ht, parent));
-        if (parent_priority < 0 && parent_priority < priority) {
-            *out_parent          = parent;
-            *out_parent_priority = parent_priority;
-            return TRUE;
+        if (domain_ht_get_priority(ht, parent, &parent_priority)) {
+            nm_assert(parent_priority <= priority);
+            if (parent_priority < 0 && parent_priority < priority) {
+                *out_parent          = parent;
+                *out_parent_priority = parent_priority;
+                return TRUE;
+            }
         }
         parent = strchr(parent, '.');
     }
@@ -1427,8 +1444,8 @@ rebuild_domain_lists(NMDnsManager *self)
             domain_clean = nm_utils_parse_dns_domain(domains[i], NULL);
 
             /* Remove domains with lower priority */
-            old_priority = GPOINTER_TO_INT(nm_g_hash_table_lookup(ht, domain_clean));
-            if (old_priority != 0) {
+            if (domain_ht_get_priority(ht, domain_clean, &old_priority)) {
+                nm_assert(old_priority <= priority);
                 if (old_priority < priority) {
                     _LOGT(
                         "plugin: drop domain '%s' (i=%d, p=%d) because it already exists with p=%d",
