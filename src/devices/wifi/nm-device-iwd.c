@@ -433,26 +433,26 @@ periodic_update(NMDeviceIwd *self)
 
     platform = nm_device_get_platform(NM_DEVICE(self));
 
-    /* TODO: obtain this through the net.connman.iwd.SignalLevelAgent API.
-     * For now we're waking up for the rate updates anyway.
+    /* TODO: obtain quality through the net.connman.iwd.SignalLevelAgent API.
+     * For now we're waking up for the rate/BSSID updates anyway.
      */
-    percent = nm_platform_wifi_get_quality(platform, ifindex);
-    if (percent >= 0 && percent <= 100) {
-        if (nm_wifi_ap_set_strength(priv->current_ap, (gint8) percent)) {
-#if NM_MORE_LOGGING
-            ap_changed = TRUE;
-#endif
-        }
+    if (!nm_platform_wifi_get_station(platform, ifindex, bssid, &percent, &new_rate)) {
+        _LOGD(LOGD_WIFI, "BSSID / quality / rate platform query failed");
+        return;
     }
 
-    new_rate = nm_platform_wifi_get_rate(platform, ifindex);
+    if (nm_wifi_ap_set_strength(priv->current_ap, (gint8) percent)) {
+#if NM_MORE_LOGGING
+        ap_changed = TRUE;
+#endif
+    }
+
     if (new_rate != priv->rate) {
         priv->rate = new_rate;
         _notify(self, PROP_BITRATE);
     }
 
-    if (nm_platform_wifi_get_bssid(platform, ifindex, bssid)
-        && nm_ethernet_address_is_valid(bssid, ETH_ALEN)
+    if (nm_ethernet_address_is_valid(bssid, ETH_ALEN)
         && memcmp(bssid, priv->current_ap_bssid, ETH_ALEN)) {
         gs_free char *bssid_str = NULL;
         memcpy(priv->current_ap_bssid, bssid, ETH_ALEN);

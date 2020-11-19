@@ -43,14 +43,17 @@ guint32 nm_wifi_utils_get_freq(NMWifiUtils *data);
  * Frequencies are specified in MHz. */
 guint32 nm_wifi_utils_find_freq(NMWifiUtils *data, const guint32 *freqs);
 
-/* out_bssid must be ETH_ALEN bytes */
-gboolean nm_wifi_utils_get_bssid(NMWifiUtils *data, guint8 *out_bssid);
-
-/* Returns current bitrate in Kbps */
-guint32 nm_wifi_utils_get_rate(NMWifiUtils *data);
-
-/* Returns quality 0 - 100% on success, or -1 on error */
-int nm_wifi_utils_get_qual(NMWifiUtils *data);
+/*
+ * @out_bssid: must be NULL or an ETH_ALEN-byte buffer
+ * @out_quality: receives signal quality in 0 - 100% range if not NULL
+ * @out_rate: receives current bitrate in Kbps if not NULL
+ *
+ * Returns %TRUE on succcess.
+ */
+gboolean nm_wifi_utils_get_station(NMWifiUtils *data,
+                                   guint8 *     out_bssid,
+                                   int *        out_quality,
+                                   guint32 *    out_rate);
 
 /* Tells the driver DHCP or SLAAC is running */
 gboolean nm_wifi_utils_indicate_addressing_running(NMWifiUtils *data, gboolean running);

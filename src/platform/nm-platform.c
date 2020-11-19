@@ -3051,16 +3051,6 @@ nm_platform_wifi_get_capabilities(NMPlatform *self, int ifindex, NMDeviceWifiCap
     return klass->wifi_get_capabilities(self, ifindex, caps);
 }
 
-gboolean
-nm_platform_wifi_get_bssid(NMPlatform *self, int ifindex, guint8 *bssid)
-{
-    _CHECK_SELF(self, klass, FALSE);
-
-    g_return_val_if_fail(ifindex > 0, FALSE);
-
-    return klass->wifi_get_bssid(self, ifindex, bssid);
-}
-
 guint32
 nm_platform_wifi_get_frequency(NMPlatform *self, int ifindex)
 {
@@ -3071,24 +3061,18 @@ nm_platform_wifi_get_frequency(NMPlatform *self, int ifindex)
     return klass->wifi_get_frequency(self, ifindex);
 }
 
-int
-nm_platform_wifi_get_quality(NMPlatform *self, int ifindex)
+gboolean
+nm_platform_wifi_get_station(NMPlatform *self,
+                             int         ifindex,
+                             guint8 *    out_bssid,
+                             int *       out_quality,
+                             guint32 *   out_rate)
 {
-    _CHECK_SELF(self, klass, 0);
+    _CHECK_SELF(self, klass, FALSE);
 
-    g_return_val_if_fail(ifindex > 0, 0);
+    g_return_val_if_fail(ifindex > 0, FALSE);
 
-    return klass->wifi_get_quality(self, ifindex);
-}
-
-guint32
-nm_platform_wifi_get_rate(NMPlatform *self, int ifindex)
-{
-    _CHECK_SELF(self, klass, 0);
-
-    g_return_val_if_fail(ifindex > 0, 0);
-
-    return klass->wifi_get_rate(self, ifindex);
+    return klass->wifi_get_station(self, ifindex, out_bssid, out_quality, out_rate);
 }
 
 NM80211Mode
