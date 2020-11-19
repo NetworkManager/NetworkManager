@@ -1351,6 +1351,16 @@ rebuild_domain_lists(NMDnsManager *self)
     int                            prev_priority = G_MININT;
 
     head = _ip_config_lst_head(self);
+
+#if NM_MORE_ASSERTS
+    /* we call clear_domain_lists() at the end of update. We
+     * don't expect any domain settings here. */
+    c_list_for_each_entry (ip_data, head, ip_config_lst) {
+        nm_assert(!ip_data->domains.search);
+        nm_assert(!ip_data->domains.reverse);
+    }
+#endif
+
     c_list_for_each_entry (ip_data, head, ip_config_lst) {
         NMIPConfig *ip_config    = ip_data->ip_config;
         gboolean    add_wildcard = FALSE;
@@ -1405,9 +1415,7 @@ rebuild_domain_lists(NMDnsManager *self)
 
         cap_dom = 2u + NM_MAX(n_domains, n_searches);
 
-        g_free(ip_data->domains.search);
-        domains                 = g_new(const char *, cap_dom);
-        ip_data->domains.search = domains;
+        domains = g_new(const char *, cap_dom);
 
         num_dom1 = 0;
 
@@ -1481,7 +1489,9 @@ rebuild_domain_lists(NMDnsManager *self)
         nm_assert(num_dom2 < cap_dom);
         domains[num_dom2] = NULL;
 
-        g_strfreev(ip_data->domains.reverse);
+        nm_assert(!ip_data->domains.search);
+        nm_assert(!ip_data->domains.reverse);
+        ip_data->domains.search  = domains;
         ip_data->domains.reverse = get_ip_rdns_domains(ip_config);
     }
 }
