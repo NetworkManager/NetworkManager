@@ -445,8 +445,7 @@ periodic_update(NMDeviceIwd *self)
         _notify(self, PROP_BITRATE);
     }
 
-    if (nm_ethernet_address_is_valid(&bssid, ETH_ALEN)
-        && !nm_ether_addr_equal(&bssid, &priv->current_ap_bssid)) {
+    if (nm_ether_addr_is_valid(&bssid) && !nm_ether_addr_equal(&bssid, &priv->current_ap_bssid)) {
         priv->current_ap_bssid = bssid;
         ap_changed |= nm_wifi_ap_set_address_bin(priv->current_ap, &bssid);
         ap_changed |= nm_wifi_ap_set_freq(priv->current_ap,
