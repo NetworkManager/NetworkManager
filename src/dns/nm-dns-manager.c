@@ -1348,6 +1348,7 @@ rebuild_domain_lists(NMDnsManager *self)
     gs_unref_hashtable GHashTable *ht               = NULL;
     gs_unref_hashtable GHashTable *wildcard_entries = NULL;
     CList *                        head;
+    int                            prev_priority = G_MININT;
 
     head = _ip_config_lst_head(self);
     c_list_for_each_entry (ip_data, head, ip_config_lst) {
@@ -1397,7 +1398,10 @@ rebuild_domain_lists(NMDnsManager *self)
         n_domains  = nm_ip_config_get_num_domains(ip_config);
 
         priority = nm_ip_config_get_dns_priority(ip_config);
+
         nm_assert(priority != 0);
+        nm_assert(prev_priority <= priority);
+        prev_priority = priority;
 
         cap_dom = 2u + NM_MAX(n_domains, n_searches);
 
