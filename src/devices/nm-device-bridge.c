@@ -169,7 +169,7 @@ static void
 to_sysfs_group_address_sys(const char *group_address, NMEtherAddr *out_addr)
 {
     if (group_address == NULL) {
-        *out_addr = (NMEtherAddr) NM_ETHER_ADDR_INIT(NM_BRIDGE_GROUP_ADDRESS_DEF_BIN);
+        *out_addr = NM_ETHER_ADDR_INIT(NM_BRIDGE_GROUP_ADDRESS_DEF_BIN);
         return;
     }
     if (!nm_utils_hwaddr_aton(group_address, out_addr, ETH_ALEN))

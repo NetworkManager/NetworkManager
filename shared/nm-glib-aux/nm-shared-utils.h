@@ -93,10 +93,19 @@ typedef struct {
     (x)->ether_addr_octet[0], (x)->ether_addr_octet[1], (x)->ether_addr_octet[2], \
         (x)->ether_addr_octet[3], (x)->ether_addr_octet[4], (x)->ether_addr_octet[5]
 
-#define NM_ETHER_ADDR_INIT(...)            \
-    {                                      \
-        .ether_addr_octet = {__VA_ARGS__}, \
+#define _NM_ETHER_ADDR_INIT(a0, a1, a2, a3, a4, a5) \
+    {                                               \
+        .ether_addr_octet = {                       \
+            (a0),                                   \
+            (a1),                                   \
+            (a2),                                   \
+            (a3),                                   \
+            (a4),                                   \
+            (a5),                                   \
+        },                                          \
     }
+
+#define NM_ETHER_ADDR_INIT(...) ((NMEtherAddr) _NM_ETHER_ADDR_INIT(__VA_ARGS__))
 
 static inline int
 nm_ether_addr_cmp(const NMEtherAddr *a, const NMEtherAddr *b)
