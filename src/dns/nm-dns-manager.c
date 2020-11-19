@@ -1716,7 +1716,7 @@ nm_dns_manager_set_ip_config(NMDnsManager *    self,
 
     priv = NM_DNS_MANAGER_GET_PRIVATE(self);
 
-    data = g_hash_table_lookup(priv->configs, GINT_TO_POINTER(ifindex));
+    data = g_hash_table_lookup(priv->configs, &ifindex);
     if (!data)
         ip_data = NULL;
     else
@@ -1732,7 +1732,7 @@ nm_dns_manager_set_ip_config(NMDnsManager *    self,
         /* deleting a config doesn't invalidate the configs' sort order. */
         _ip_config_data_free(ip_data);
         if (c_list_is_empty(&data->data_lst_head))
-            g_hash_table_remove(priv->configs, GINT_TO_POINTER(ifindex));
+            g_hash_table_remove(priv->configs, &ifindex);
         goto changed;
     }
 
@@ -1749,7 +1749,7 @@ nm_dns_manager_set_ip_config(NMDnsManager *    self,
             .data_lst_head = C_LIST_INIT(data->data_lst_head),
         };
         _ASSERT_config_data(data);
-        g_hash_table_insert(priv->configs, GINT_TO_POINTER(ifindex), data);
+        g_hash_table_add(priv->configs, data);
     }
 
     if (!ip_data)
@@ -2402,8 +2402,11 @@ nm_dns_manager_init(NMDnsManager *self)
 
     priv->config = g_object_ref(nm_config_get());
 
-    priv->configs =
-        g_hash_table_new_full(nm_direct_hash, NULL, NULL, (GDestroyNotify) _config_data_free);
+    G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(NMDnsConfigData, ifindex) == 0);
+    priv->configs = g_hash_table_new_full(nm_pint_hash,
+                                          nm_pint_equals,
+                                          (GDestroyNotify) _config_data_free,
+                                          NULL);
 
     /* Set the initial hash */
     compute_hash(self, NULL, NM_DNS_MANAGER_GET_PRIVATE(self)->hash);
