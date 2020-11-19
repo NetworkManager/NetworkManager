@@ -20,7 +20,7 @@
  * pointer to @lst.
  *
  * The use of this function is to do a bulk update, that lets the
- * list degredate by not updating the prev pointers. At the end,
+ * list degenerate by not updating the prev pointers. At the end,
  * the list can be fixed by c_list_relink().
  */
 void
@@ -111,7 +111,8 @@ _c_list_sort(CList *ls, CListSortCmp cmp, const void *user_data)
     /* A simple top-down, non-recursive, stable merge-sort.
      *
      * Maybe natural merge-sort would be better, to do better for
-     * partially sorted lists. */
+     * partially sorted lists. Doing that would be much more complicated,
+     * so it's not done. */
 _split:
     stack_head[0].ls2 = _c_list_srt_split(stack_head[0].ls1);
     if (stack_head[0].ls2) {
