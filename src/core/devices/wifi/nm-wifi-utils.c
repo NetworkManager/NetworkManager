@@ -932,7 +932,9 @@ nm_wifi_connection_get_iwd_ssid_and_security(NMConnection *        connection,
 
     if (NM_IN_STRSET(key_mgmt, "none", "ieee8021x"))
         NM_SET_OUT(security, NM_IWD_NETWORK_SECURITY_WEP);
-    else if (nm_streq(key_mgmt, "wpa-psk"))
+    else if (nm_streq(key_mgmt, "owe"))
+        NM_SET_OUT(security, NM_IWD_NETWORK_SECURITY_OPEN);
+    else if (NM_IN_STRSET(key_mgmt, "wpa-psk", "sae"))
         NM_SET_OUT(security, NM_IWD_NETWORK_SECURITY_PSK);
     else if (nm_streq(key_mgmt, "wpa-eap"))
         NM_SET_OUT(security, NM_IWD_NETWORK_SECURITY_8021X);

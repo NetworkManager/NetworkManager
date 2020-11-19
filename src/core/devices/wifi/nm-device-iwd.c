@@ -798,6 +798,9 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
             return FALSE;
         }
     } else if (nm_streq(mode, NM_SETTING_WIRELESS_MODE_AP)) {
+        NMSettingWirelessSecurity *s_wireless_sec =
+            nm_connection_get_setting_wireless_security(connection);
+
         if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_AP)) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
@@ -805,13 +808,17 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
             return FALSE;
         }
 
-        if (!NM_IN_SET(security, NM_IWD_NETWORK_SECURITY_PSK)) {
+        if (!NM_IN_SET(security, NM_IWD_NETWORK_SECURITY_PSK) || !s_wireless_sec
+            || !nm_streq0(nm_setting_wireless_security_get_key_mgmt(s_wireless_sec), "wpa-psk")) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                                        "IWD backend only supports PSK authentication in AP mode");
             return FALSE;
         }
     } else if (nm_streq(mode, NM_SETTING_WIRELESS_MODE_ADHOC)) {
+        NMSettingWirelessSecurity *s_wireless_sec =
+            nm_connection_get_setting_wireless_security(connection);
+
         if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_ADHOC)) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
@@ -819,7 +826,10 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
             return FALSE;
         }
 
-        if (!NM_IN_SET(security, NM_IWD_NETWORK_SECURITY_OPEN, NM_IWD_NETWORK_SECURITY_PSK)) {
+        if (!NM_IN_SET(security, NM_IWD_NETWORK_SECURITY_OPEN, NM_IWD_NETWORK_SECURITY_PSK)
+            || (s_wireless_sec
+                && !nm_streq0(nm_setting_wireless_security_get_key_mgmt(s_wireless_sec),
+                              "wpa-psk"))) {
             nm_utils_error_set_literal(
                 error,
                 NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
@@ -2234,6 +2244,7 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     if (NM_IN_STRSET(mode, NULL, NM_SETTING_WIRELESS_MODE_INFRA)) {
         gs_unref_object GDBusProxy *network_proxy = NULL;
         NMWifiAP *                  ap            = priv->current_ap;
+        NMSettingWirelessSecurity * s_wireless_sec;
 
         if (!ap) {
             NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
@@ -2334,6 +2345,15 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
         if (!priv->cancellable)
             priv->cancellable = g_cancellable_new();
+
+        s_wireless_sec = nm_connection_get_setting_wireless_security(connection);
+        if (s_wireless_sec
+            && nm_streq0(nm_setting_wireless_security_get_key_mgmt(s_wireless_sec), "owe")) {
+            _LOGI(LOGD_WIFI,
+                  "An OWE connection is requested but IWD may connect to either an OWE "
+                  "or unsecured network and there won't be any indication of whether "
+                  "encryption is in use -- proceed at your own risk!");
+        }
 
         /* Call Network.Connect.  No timeout because IWD already handles
          * timeouts.
