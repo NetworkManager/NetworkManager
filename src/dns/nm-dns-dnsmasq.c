@@ -788,14 +788,18 @@ add_ip_config (NMDnsDnsmasq *self, GVariantBuilder *servers, const NMDnsIPConfig
 	for (i = 0; i < num; i++) {
 		addr = nm_ip_config_get_nameserver (ip_config, i);
 		ip_addr_to_string (addr_family, addr, iface, ip_addr_to_string_buf);
-		for (j = 0; ip_data->domains.search[j]; j++) {
-			domain = nm_utils_parse_dns_domain (ip_data->domains.search[j], NULL);
-			add_dnsmasq_nameserver (self,
-			                        servers,
-			                        ip_addr_to_string_buf,
-			                        domain[0] ? domain : NULL);
-		}
 
+		if (!ip_data->domains.has_default_route_explicit && ip_data->domains.has_default_route)
+			add_dnsmasq_nameserver (self, servers, ip_addr_to_string_buf, NULL);
+		if (ip_data->domains.search) {
+			for (j = 0; ip_data->domains.search[j]; j++) {
+				domain = nm_utils_parse_dns_domain (ip_data->domains.search[j], NULL);
+				add_dnsmasq_nameserver (self,
+				                        servers,
+				                        ip_addr_to_string_buf,
+				                        domain[0] ? domain : NULL);
+			}
+		}
 		if (ip_data->domains.reverse) {
 			for (j = 0; ip_data->domains.reverse[j]; j++) {
 				add_dnsmasq_nameserver (self, servers,
