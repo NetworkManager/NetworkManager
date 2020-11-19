@@ -342,6 +342,18 @@ nm_wifi_ap_get_metered(const NMWifiAP *self)
     return NM_WIFI_AP_GET_PRIVATE(self)->metered;
 }
 
+NM80211ApSecurityFlags
+nm_wifi_ap_get_wpa_flags(const NMWifiAP *self)
+{
+    return NM_WIFI_AP_GET_PRIVATE(self)->wpa_flags;
+}
+
+NM80211ApSecurityFlags
+nm_wifi_ap_get_rsn_flags(const NMWifiAP *self)
+{
+    return NM_WIFI_AP_GET_PRIVATE(self)->rsn_flags;
+}
+
 /*****************************************************************************/
 
 gboolean

@@ -1090,8 +1090,25 @@ managed=1
             </para>
           </listitem>
         </varlistentry>
+        <varlistentry>
+          <term><varname>wifi.iwd.autoconnect</varname></term>
+          <listitem>
+            <para>
+              If <literal>wifi.backend</literal> is <literal>iwd</literal>, setting this to
+              <literal>false</literal> forces IWD's autoconnect mechanism to be disabled for
+              this device and connections will only be initiated by NetworkManager whether
+              commaned by a client or automatically.  Leaving it <literal>true</literal> (default)
+              stops NetworkManager from automatically initiating connections and allows
+              IWD to use its network ranking and scanning logic to decide the best networks
+              to autoconnect to next.  Connections' <literal>autoconnect-priority</literal>,
+              <literal>autoconnect-retries</literal> settings will be ignored.  Other settings
+              like <literal>permissions</literal> or <literal>multi-connect</literal> may interfere
+              with IWD connection attempts.
+            </para>
+          </listitem>
+        </varlistentry>
         <varlistentry id="sriov-num-vfs">
-         , <term><varname>sriov-num-vfs</varname></term>
+         <term><varname>sriov-num-vfs</varname></term>
           <listitem>
             <para>
               Specify the number of virtual functions (VF) to enable
