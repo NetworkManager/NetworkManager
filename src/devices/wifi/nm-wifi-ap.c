@@ -162,7 +162,7 @@ nm_wifi_ap_get_address(const NMWifiAP *ap)
     return NM_WIFI_AP_GET_PRIVATE(ap)->address;
 }
 
-static gboolean
+gboolean
 nm_wifi_ap_set_address_bin(NMWifiAP *ap, const guint8 addr[static 6 /* ETH_ALEN */])
 {
     NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE(ap);
