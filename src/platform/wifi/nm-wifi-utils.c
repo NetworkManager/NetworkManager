@@ -134,34 +134,9 @@ nm_wifi_utils_find_freq(NMWifiUtils *data, const guint32 *freqs)
 gboolean
 nm_wifi_utils_get_station(NMWifiUtils *data, guint8 *out_bssid, int *out_quality, guint32 *out_rate)
 {
-    NMWifiUtilsClass *klass;
-
     g_return_val_if_fail(data != NULL, FALSE);
 
-    klass = NM_WIFI_UTILS_GET_CLASS(data);
-
-    if (klass->get_station != NULL)
-        return klass->get_station(data, out_bssid, out_quality, out_rate);
-
-    if (out_bssid) {
-        memset(out_bssid, 0, ETH_ALEN);
-        if (!klass->get_bssid(data, out_bssid))
-            return FALSE;
-    }
-
-    if (out_quality) {
-        *out_quality = klass->get_qual(data);
-        if (*out_quality < 0)
-            return FALSE;
-    }
-
-    if (out_rate) {
-        *out_rate = klass->get_rate(data);
-        if (*out_rate == 0)
-            return FALSE;
-    }
-
-    return TRUE;
+    return NM_WIFI_UTILS_GET_CLASS(data)->get_station(data, out_bssid, out_quality, out_rate);
 }
 
 gboolean

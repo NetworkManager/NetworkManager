@@ -453,6 +453,35 @@ wifi_wext_get_qual(NMWifiUtils *data)
     return wext_qual_to_percent(&stats.qual, &wext->max_qual);
 }
 
+static gboolean
+wifi_wext_get_station(NMWifiUtils *data, guint8 *out_bssid, int *out_quality, guint32 *out_rate)
+{
+    NMEtherAddr local_addr;
+
+    if (!out_bssid && !out_quality && !out_rate) {
+        /* hm, the caller requested no parameter at all?
+         * Don't simply return TRUE, but at least check that
+         * we can successfully fetch the bssid. */
+        out_bssid = local_addr.ether_addr_octet;
+    }
+
+    if (out_bssid) {
+        if (!wifi_wext_get_bssid(data, out_bssid))
+            return FALSE;
+    }
+    if (out_quality) {
+        *out_quality = wifi_wext_get_qual(data);
+        if (*out_quality < 0)
+            return FALSE;
+    }
+    if (out_rate) {
+        *out_rate = wifi_wext_get_rate(data);
+        if (*out_rate == 0)
+            return FALSE;
+    }
+    return TRUE;
+}
+
 /*****************************************************************************/
 /* OLPC Mesh-only functions */
 
@@ -677,9 +706,7 @@ nm_wifi_utils_wext_class_init(NMWifiUtilsWextClass *klass)
     wifi_utils_class->set_powersave    = wifi_wext_set_powersave;
     wifi_utils_class->get_freq         = wifi_wext_get_freq;
     wifi_utils_class->find_freq        = wifi_wext_find_freq;
-    wifi_utils_class->get_bssid        = wifi_wext_get_bssid;
-    wifi_utils_class->get_rate         = wifi_wext_get_rate;
-    wifi_utils_class->get_qual         = wifi_wext_get_qual;
+    wifi_utils_class->get_station      = wifi_wext_get_station;
     wifi_utils_class->get_mesh_channel = wifi_wext_get_mesh_channel;
     wifi_utils_class->set_mesh_channel = wifi_wext_set_mesh_channel;
     wifi_utils_class->set_mesh_ssid    = wifi_wext_set_mesh_ssid;
