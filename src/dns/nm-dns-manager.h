@@ -22,7 +22,7 @@ typedef enum {
 
 enum {
     NM_DNS_PRIORITY_DEFAULT_NORMAL = 100,
-    NM_DNS_PRIORITY_DEFAULT_VPN    = -50,
+    NM_DNS_PRIORITY_DEFAULT_VPN    = 50,
 };
 
 struct _NMDnsConfigData;
