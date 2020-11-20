@@ -165,9 +165,9 @@ ip_setting_add_from_block(GHashTable *nic, NMConnection *connection, GError **er
                      NULL);
     }
 
-    family = guess_ip_address_family(s_ipaddr);
+    family = get_ip_address_family(s_ipaddr, FALSE);
     if (family == AF_UNSPEC)
-        family = guess_ip_address_family(s_gateway);
+        family = get_ip_address_family(s_gateway, FALSE);
 
     switch (family) {
     case AF_INET:
