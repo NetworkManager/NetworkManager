@@ -270,9 +270,6 @@ prepare_one_interface (NMDnsSystemdResolved *self, InterfaceConfig *ic)
 		has_config = TRUE;
 
 	_request_item_append (&priv->request_queue_lst_head,
-	                      "SetLinkDNS",
-	                      g_variant_builder_end (&dns));
-	_request_item_append (&priv->request_queue_lst_head,
 	                      "SetLinkDomains",
 	                      g_variant_builder_end (&domains));
 	_request_item_append (&priv->request_queue_lst_head,
@@ -284,6 +281,9 @@ prepare_one_interface (NMDnsSystemdResolved *self, InterfaceConfig *ic)
 	_request_item_append (&priv->request_queue_lst_head,
 	                      "SetLinkLLMNR",
 	                      g_variant_new ("(is)", ic->ifindex, llmnr_arg ?: ""));
+	_request_item_append (&priv->request_queue_lst_head,
+	                      "SetLinkDNS",
+	                      g_variant_builder_end (&dns));
 
 	return has_config;
 }
