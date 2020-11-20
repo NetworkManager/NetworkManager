@@ -1277,11 +1277,11 @@ get_ip_rdns_domains(NMIPConfig *ip_config)
         const NMPlatformIP4Route *  route;
 
         nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, ip4, &address)
-            nm_utils_get_reverse_dns_domains_ip4(address->address, address->plen, domains);
+            nm_utils_get_reverse_dns_domains_ip_4(address->address, address->plen, domains);
 
         nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, ip4, &route) {
             if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT(route))
-                nm_utils_get_reverse_dns_domains_ip4(route->network, route->plen, domains);
+                nm_utils_get_reverse_dns_domains_ip_4(route->network, route->plen, domains);
         }
     } else {
         NMIP6Config *               ip6 = (gpointer) ip_config;
@@ -1289,11 +1289,11 @@ get_ip_rdns_domains(NMIPConfig *ip_config)
         const NMPlatformIP6Route *  route;
 
         nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, ip6, &address)
-            nm_utils_get_reverse_dns_domains_ip6(&address->address, address->plen, domains);
+            nm_utils_get_reverse_dns_domains_ip_6(&address->address, address->plen, domains);
 
         nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, ip6, &route) {
             if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT(route))
-                nm_utils_get_reverse_dns_domains_ip6(&route->network, route->plen, domains);
+                nm_utils_get_reverse_dns_domains_ip_6(&route->network, route->plen, domains);
         }
     }
 

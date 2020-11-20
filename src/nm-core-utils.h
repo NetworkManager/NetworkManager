@@ -532,9 +532,9 @@ nm_utils_ip4_address_is_zeronet(in_addr_t network)
 
 const char *nm_utils_dnsmasq_status_to_string(int status, char *dest, gsize size);
 
-void nm_utils_get_reverse_dns_domains_ip4(guint32 ip, guint8 plen, GPtrArray *domains);
+void nm_utils_get_reverse_dns_domains_ip_4(guint32 ip, guint8 plen, GPtrArray *domains);
 void
-nm_utils_get_reverse_dns_domains_ip6(const struct in6_addr *ip, guint8 plen, GPtrArray *domains);
+nm_utils_get_reverse_dns_domains_ip_6(const struct in6_addr *ip, guint8 plen, GPtrArray *domains);
 
 struct stat;
 

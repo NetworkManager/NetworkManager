@@ -1929,7 +1929,7 @@ test_reverse_dns_ip4(void)
     GPtrArray *domains = g_ptr_array_new_full(8, g_free);
 
     inet_pton(AF_INET, "7.2.3.0", &addr);
-    nm_utils_get_reverse_dns_domains_ip4(addr, 27, domains);
+    nm_utils_get_reverse_dns_domains_ip_4(addr, 27, domains);
     g_assert_cmpuint(domains->len, ==, 32);
     g_assert_cmpstr(domains->pdata[0], ==, "0.3.2.7.in-addr.arpa");
     g_assert_cmpstr(domains->pdata[31], ==, "31.3.2.7.in-addr.arpa");
@@ -1937,7 +1937,7 @@ test_reverse_dns_ip4(void)
     g_ptr_array_set_size(domains, 0);
 
     inet_pton(AF_INET, "10.155.16.0", &addr);
-    nm_utils_get_reverse_dns_domains_ip4(addr, 22, domains);
+    nm_utils_get_reverse_dns_domains_ip_4(addr, 22, domains);
     g_assert_cmpuint(domains->len, ==, 4);
     g_assert_cmpstr(domains->pdata[0], ==, "16.155.10.in-addr.arpa");
     g_assert_cmpstr(domains->pdata[1], ==, "17.155.10.in-addr.arpa");
@@ -1947,21 +1947,21 @@ test_reverse_dns_ip4(void)
     g_ptr_array_set_size(domains, 0);
 
     inet_pton(AF_INET, "4.5.6.7", &addr);
-    nm_utils_get_reverse_dns_domains_ip4(addr, 32, domains);
+    nm_utils_get_reverse_dns_domains_ip_4(addr, 32, domains);
     g_assert_cmpuint(domains->len, ==, 1);
     g_assert_cmpstr(domains->pdata[0], ==, "7.6.5.4.in-addr.arpa");
 
     g_ptr_array_set_size(domains, 0);
 
     inet_pton(AF_INET, "4.5.6.7", &addr);
-    nm_utils_get_reverse_dns_domains_ip4(addr, 8, domains);
+    nm_utils_get_reverse_dns_domains_ip_4(addr, 8, domains);
     g_assert_cmpuint(domains->len, ==, 1);
     g_assert_cmpstr(domains->pdata[0], ==, "4.in-addr.arpa");
 
     g_ptr_array_set_size(domains, 0);
 
     inet_pton(AF_INET, "4.180.6.7", &addr);
-    nm_utils_get_reverse_dns_domains_ip4(addr, 9, domains);
+    nm_utils_get_reverse_dns_domains_ip_4(addr, 9, domains);
     g_assert_cmpuint(domains->len, ==, 128);
     g_assert_cmpstr(domains->pdata[0], ==, "128.4.in-addr.arpa");
     g_assert_cmpstr(domains->pdata[1], ==, "129.4.in-addr.arpa");
@@ -1970,7 +1970,7 @@ test_reverse_dns_ip4(void)
     g_ptr_array_set_size(domains, 0);
 
     inet_pton(AF_INET, "172.16.0.0", &addr);
-    nm_utils_get_reverse_dns_domains_ip4(addr, 12, domains);
+    nm_utils_get_reverse_dns_domains_ip_4(addr, 12, domains);
     g_assert_cmpuint(domains->len, ==, 16);
     g_assert_cmpstr(domains->pdata[0], ==, "16.172.in-addr.arpa");
     g_assert_cmpstr(domains->pdata[1], ==, "17.172.in-addr.arpa");
@@ -1980,7 +1980,7 @@ test_reverse_dns_ip4(void)
     g_ptr_array_set_size(domains, 0);
 
     inet_pton(AF_INET, "1.2.3.4", &addr);
-    nm_utils_get_reverse_dns_domains_ip4(addr, 0, domains);
+    nm_utils_get_reverse_dns_domains_ip_4(addr, 0, domains);
     g_assert_cmpuint(domains->len, ==, 0);
 
     g_ptr_array_unref(domains);
@@ -1993,14 +1993,14 @@ test_reverse_dns_ip6(void)
     GPtrArray *     domains = g_ptr_array_new_full(8, g_free);
 
     inet_pton(AF_INET6, "1234::56", &addr);
-    nm_utils_get_reverse_dns_domains_ip6(&addr, 16, domains);
+    nm_utils_get_reverse_dns_domains_ip_6(&addr, 16, domains);
     g_assert_cmpuint(domains->len, ==, 1);
     g_assert_cmpstr(domains->pdata[0], ==, "4.3.2.1.ip6.arpa");
 
     g_ptr_array_set_size(domains, 0);
 
     inet_pton(AF_INET6, "1234::56", &addr);
-    nm_utils_get_reverse_dns_domains_ip6(&addr, 17, domains);
+    nm_utils_get_reverse_dns_domains_ip_6(&addr, 17, domains);
     g_assert_cmpuint(domains->len, ==, 8);
     g_assert_cmpstr(domains->pdata[0], ==, "0.4.3.2.1.ip6.arpa");
     g_assert_cmpstr(domains->pdata[1], ==, "1.4.3.2.1.ip6.arpa");
@@ -2009,7 +2009,7 @@ test_reverse_dns_ip6(void)
     g_ptr_array_set_size(domains, 0);
 
     inet_pton(AF_INET6, "2001:db8::", &addr);
-    nm_utils_get_reverse_dns_domains_ip6(&addr, 29, domains);
+    nm_utils_get_reverse_dns_domains_ip_6(&addr, 29, domains);
     g_assert_cmpuint(domains->len, ==, 8);
     g_assert_cmpstr(domains->pdata[0], ==, "8.b.d.0.1.0.0.2.ip6.arpa");
     g_assert_cmpstr(domains->pdata[1], ==, "9.b.d.0.1.0.0.2.ip6.arpa");
@@ -2018,7 +2018,7 @@ test_reverse_dns_ip6(void)
     g_ptr_array_set_size(domains, 0);
 
     inet_pton(AF_INET6, "0123:4567:89ab:cdef::", &addr);
-    nm_utils_get_reverse_dns_domains_ip6(&addr, 63, domains);
+    nm_utils_get_reverse_dns_domains_ip_6(&addr, 63, domains);
     g_assert_cmpuint(domains->len, ==, 2);
     g_assert_cmpstr(domains->pdata[0], ==, "e.e.d.c.b.a.9.8.7.6.5.4.3.2.1.0.ip6.arpa");
     g_assert_cmpstr(domains->pdata[1], ==, "f.e.d.c.b.a.9.8.7.6.5.4.3.2.1.0.ip6.arpa");
@@ -2026,7 +2026,7 @@ test_reverse_dns_ip6(void)
     g_ptr_array_set_size(domains, 0);
 
     inet_pton(AF_INET6, "fec0:1234:5678:9ab0::", &addr);
-    nm_utils_get_reverse_dns_domains_ip6(&addr, 61, domains);
+    nm_utils_get_reverse_dns_domains_ip_6(&addr, 61, domains);
     g_assert_cmpuint(domains->len, ==, 8);
     g_assert_cmpstr(domains->pdata[0], ==, "0.b.a.9.8.7.6.5.4.3.2.1.0.c.e.f.ip6.arpa");
     g_assert_cmpstr(domains->pdata[7], ==, "7.b.a.9.8.7.6.5.4.3.2.1.0.c.e.f.ip6.arpa");
@@ -2034,7 +2034,7 @@ test_reverse_dns_ip6(void)
     g_ptr_array_set_size(domains, 0);
 
     inet_pton(AF_INET6, "0123:4567:89ab:cdee::", &addr);
-    nm_utils_get_reverse_dns_domains_ip6(&addr, 0, domains);
+    nm_utils_get_reverse_dns_domains_ip_6(&addr, 0, domains);
     g_assert_cmpuint(domains->len, ==, 0);
 
     g_ptr_array_unref(domains);
