@@ -49,11 +49,6 @@ Overview of changes since NetworkManager-1.26
   interfaces.
 * Add a new provider for nm-cloud-setup to support automatic network
   configuration on Azure.
-* Change the default DNS priority for VPNs from 50 to -50. This is a
-  change in behavior and means that when connecting to a VPN with the
-  default route, DNS queries will never leak to local resolvers. To
-  restore the old behavior, set the DNS priority of the connection to
-  50.
 * The initrd generator now supports creating Infiniband connections.
 * Fix running DHCPv6-PD over PPPoE.
 * Fix building NetworkManager with LTO (Link Time Optimization).
