@@ -536,6 +536,18 @@ void nm_utils_get_reverse_dns_domains_ip_4(guint32 ip, guint8 plen, GPtrArray *d
 void
 nm_utils_get_reverse_dns_domains_ip_6(const struct in6_addr *ip, guint8 plen, GPtrArray *domains);
 
+static inline void
+nm_utils_get_reverse_dns_domains_ip(int           addr_family,
+                                    gconstpointer addr,
+                                    guint8        plen,
+                                    GPtrArray *   domains)
+{
+    if (NM_IS_IPv4(addr_family))
+        nm_utils_get_reverse_dns_domains_ip_4(*((const in_addr_t *) addr), plen, domains);
+    else
+        nm_utils_get_reverse_dns_domains_ip_6(addr, plen, domains);
+}
+
 struct stat;
 
 gboolean nm_utils_validate_plugin(const char *path, struct stat *stat, GError **error);
