@@ -24,6 +24,8 @@
 typedef struct {
     GHashTable *  hash;
     GPtrArray *   array;
+    GPtrArray *   vlan_parents;
+    GHashTable *  explicit_ip_connections;
     NMConnection *bootdev_connection; /* connection for bootdev=$ifname */
     NMConnection *default_connection; /* connection not bound to any ifname */
     char *        hostname;
@@ -41,8 +43,11 @@ reader_new(void)
 
     reader  = g_slice_new(Reader);
     *reader = (Reader){
-        .hash  = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_object_unref),
-        .array = g_ptr_array_new(),
+        .hash = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_object_unref),
+        .explicit_ip_connections =
+            g_hash_table_new_full(nm_direct_hash, NULL, g_object_unref, NULL),
+        .vlan_parents = g_ptr_array_new_with_free_func(g_free),
+        .array        = g_ptr_array_new(),
     };
 
     return reader;
@@ -54,6 +59,8 @@ reader_destroy(Reader *reader, gboolean free_hash)
     gs_unref_hashtable GHashTable *hash = NULL;
 
     g_ptr_array_unref(reader->array);
+    g_ptr_array_unref(reader->vlan_parents);
+    g_hash_table_unref(reader->explicit_ip_connections);
     hash = g_steal_pointer(&reader->hash);
     nm_clear_g_free(&reader->hostname);
     nm_clear_g_free(&reader->dhcp4_vci);
@@ -411,7 +418,7 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
         /* ip={dhcp|on|any|dhcp6|auto6|ibft} */
         kind = tmp;
     } else {
-        client_ip_family = guess_ip_address_family(tmp);
+        client_ip_family = get_ip_address_family(tmp, TRUE);
         if (client_ip_family != AF_UNSPEC) {
             /* <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>: */
             client_ip       = tmp;
@@ -437,11 +444,11 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
         kind = get_word(&argument, ':');
 
         tmp                = get_word(&argument, ':');
-        dns_addr_family[0] = guess_ip_address_family(tmp);
+        dns_addr_family[0] = get_ip_address_family(tmp, FALSE);
         if (dns_addr_family[0] != AF_UNSPEC) {
             dns[0]             = tmp;
             dns[1]             = get_word(&argument, ':');
-            dns_addr_family[1] = guess_ip_address_family(dns[1]);
+            dns_addr_family[1] = get_ip_address_family(dns[1], FALSE);
             if (*argument)
                 _LOGW(LOGD_CORE, "Ignoring extra: '%s'.", argument);
         } else {
@@ -460,6 +467,8 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
         connection = reader_get_connection(reader, iface_spec, NULL, TRUE);
     else
         connection = reader_get_default_connection(reader);
+
+    g_hash_table_add(reader->explicit_ip_connections, g_object_ref(connection));
 
     s_ip4 = nm_connection_get_setting_ip4_config(connection);
     s_ip6 = nm_connection_get_setting_ip6_config(connection);
@@ -506,9 +515,8 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
                 _LOGW(LOGD_CORE, "Invalid address '%s': %s", client_ip, error->message);
                 g_clear_error(&error);
             }
-        } else {
-            _LOGW(LOGD_CORE, "Unrecognized address: %s", client_ip);
-        }
+        } else
+            nm_assert_not_reached();
 
         if (address) {
             switch (client_ip_family) {
@@ -531,7 +539,7 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
                 nm_setting_ip_config_add_address(s_ip6, address);
                 break;
             default:
-                _LOGW(LOGD_CORE, "Unknown address family: %s", client_ip);
+                nm_assert_not_reached();
                 break;
             }
             nm_ip_address_unref(address);
@@ -618,22 +626,16 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
         _LOGW(LOGD_CORE, "Ignoring peer: %s (not implemented)\n", peer);
 
     if (gateway_ip && *gateway_ip) {
-        int addr_family = guess_ip_address_family(gateway_ip);
-
-        if (nm_utils_ipaddr_is_valid(addr_family, gateway_ip)) {
-            switch (addr_family) {
-            case AF_INET:
-                g_object_set(s_ip4, NM_SETTING_IP_CONFIG_GATEWAY, gateway_ip, NULL);
-                break;
-            case AF_INET6:
-                g_object_set(s_ip6, NM_SETTING_IP_CONFIG_GATEWAY, gateway_ip, NULL);
-                break;
-            default:
-                _LOGW(LOGD_CORE, "Unknown address family: %s", gateway_ip);
-                break;
-            }
-        } else {
+        switch (get_ip_address_family(gateway_ip, FALSE)) {
+        case AF_INET:
+            g_object_set(s_ip4, NM_SETTING_IP_CONFIG_GATEWAY, gateway_ip, NULL);
+            break;
+        case AF_INET6:
+            g_object_set(s_ip6, NM_SETTING_IP_CONFIG_GATEWAY, gateway_ip, NULL);
+            break;
+        default:
             _LOGW(LOGD_CORE, "Invalid gateway: %s", gateway_ip);
+            break;
         }
     }
 
@@ -853,6 +855,9 @@ reader_parse_vlan(Reader *reader, char *argument)
 
     if (argument && *argument)
         _LOGW(LOGD_CORE, "Ignoring extra: '%s'.", argument);
+
+    if (!nm_strv_ptrarray_contains(reader->vlan_parents, phy))
+        g_ptr_array_add(reader->vlan_parents, g_strdup(phy));
 }
 
 static void
@@ -952,7 +957,7 @@ reader_add_nameservers(Reader *reader, GPtrArray *nameservers)
 
     for (i = 0; i < nameservers->len; i++) {
         ns          = nameservers->pdata[i];
-        addr_family = guess_ip_address_family(ns);
+        addr_family = get_ip_address_family(ns, FALSE);
         if (addr_family == AF_UNSPEC) {
             _LOGW(LOGD_CORE, "Unknown address family: %s", ns);
             continue;
@@ -1093,6 +1098,33 @@ nmi_cmdline_reader_parse(const char *sysfs_dir, const char *const *argv, char **
         } else if (g_ascii_strcasecmp(tag, "BOOTIF") == 0) {
             nm_clear_g_free(&bootif_val);
             bootif_val = g_strdup(argument);
+        }
+    }
+
+    for (i = 0; i < reader->vlan_parents->len; i++) {
+        NMConnection *     connection;
+        NMSettingIPConfig *s_ip;
+
+        /* Disable IP configuration for parent connections of VLANs,
+         * unless those interfaces were explicitly configured otherwise. */
+
+        connection = reader_get_connection(reader, reader->vlan_parents->pdata[i], NULL, TRUE);
+        if (!g_hash_table_contains(reader->explicit_ip_connections, connection)) {
+            s_ip = nm_connection_get_setting_ip4_config(connection);
+            if (s_ip) {
+                g_object_set(s_ip,
+                             NM_SETTING_IP_CONFIG_METHOD,
+                             NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+                             NULL);
+            }
+
+            s_ip = nm_connection_get_setting_ip6_config(connection);
+            if (s_ip) {
+                g_object_set(s_ip,
+                             NM_SETTING_IP_CONFIG_METHOD,
+                             NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
+                             NULL);
+            }
         }
     }
 
