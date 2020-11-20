@@ -4062,6 +4062,9 @@ _write_setting_wireguard(NMSetting *setting, KeyfileWriterInfo *info)
  * @user_data: argument for @handler.
  * @error: the #GError in case writing fails.
  *
+ * @connection must verify as a valid profile according to
+ * nm_connection_verify().
+ *
  * Returns: (transfer full): a new #GKeyFile or %NULL on error.
  *
  * Since: 1.30
@@ -4074,16 +4077,38 @@ nm_keyfile_write(NMConnection *        connection,
                  GError **             error)
 {
     nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
+    GError *                        local   = NULL;
     KeyfileWriterInfo               info;
     gs_free NMSetting **settings = NULL;
-    guint               i, j, n_settings = 0;
+    guint               n_settings = 0;
+    guint               i;
+    guint               j;
 
     g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
     g_return_val_if_fail(!error || !*error, NULL);
     g_return_val_if_fail(handler_flags == NM_KEYFILE_HANDLER_FLAGS_NONE, NULL);
 
-    if (!nm_connection_verify(connection, error))
+    /* Technically, we might not require that a profile is valid in
+     * order to serialize it. Like also nm_keyfile_read() does not
+     * ensure that the read profile validates.
+     *
+     * However, if the profile does not validate, then there might be
+     * unexpected edge cases when we try to serialize it. Edge cases
+     * that might result in dangerous crash.
+     *
+     * So, for now we require valid profiles. */
+    if (!nm_connection_verify(connection, error ? &local : NULL)) {
+        if (error) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_FAILED,
+                        _("the profile is not valid: %s"),
+                        local->message);
+            g_error_free(local);
+        } else
+            nm_assert(!local);
         return NULL;
+    }
 
     keyfile = g_key_file_new();
 
