@@ -376,6 +376,36 @@ nm_ip_config_get_first_address(NMIPConfig *self)
 }
 
 static inline void
+nm_ip_config_iter_ip_address_init(NMDedupMultiIter *iter, const NMIPConfig *self)
+{
+    if (NM_IS_IP4_CONFIG(self))
+        nm_ip_config_iter_ip4_address_init(iter, (const NMIP4Config *) self);
+    else {
+        nm_assert(NM_IS_IP6_CONFIG(self));
+        nm_ip_config_iter_ip6_address_init(iter, (const NMIP6Config *) self);
+    }
+}
+
+#define nm_ip_config_iter_ip_address_for_each(iter, self, address) \
+    for (nm_ip_config_iter_ip_address_init((iter), (self));        \
+         nm_platform_dedup_multi_iter_next_ip_address((iter), (address));)
+
+static inline void
+nm_ip_config_iter_ip_route_init(NMDedupMultiIter *iter, const NMIPConfig *self)
+{
+    if (NM_IS_IP4_CONFIG(self))
+        nm_ip_config_iter_ip4_route_init(iter, (const NMIP4Config *) self);
+    else {
+        nm_assert(NM_IS_IP6_CONFIG(self));
+        nm_ip_config_iter_ip6_route_init(iter, (const NMIP6Config *) self);
+    }
+}
+
+#define nm_ip_config_iter_ip_route_for_each(iter, self, route) \
+    for (nm_ip_config_iter_ip_route_init((iter), (self));      \
+         nm_platform_dedup_multi_iter_next_ip_route((iter), (route));)
+
+static inline void
 nm_ip_config_add_address(NMIPConfig *self, const NMPlatformIPAddress *address)
 {
     _NM_IP_CONFIG_DISPATCH_VOID(self,
