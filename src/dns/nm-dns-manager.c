@@ -81,13 +81,17 @@ static guint signals[LAST_SIGNAL] = {0};
 
 typedef struct {
     GHashTable *configs;
-    CList       ip_config_lst_head;
-    GVariant *  config_variant;
+    CList       configs_lst_head;
+
+    CList     ip_config_lst_head;
+    GVariant *config_variant;
 
     NMDnsIPConfigData *best_ip_config_4;
     NMDnsIPConfigData *best_ip_config_6;
 
     bool ip_config_lst_need_sort : 1;
+
+    bool configs_lst_need_sort : 1;
 
     bool dns_touched : 1;
     bool is_stopped : 1;
@@ -314,6 +318,7 @@ _config_data_free(NMDnsConfigData *data)
     _ASSERT_config_data(data);
 
     nm_assert(c_list_is_empty(&data->data_lst_head));
+    c_list_unlink_stale(&data->configs_lst);
     nm_g_slice_free(data);
 }
 
@@ -338,12 +343,35 @@ _ip_config_lst_head(NMDnsManager *self)
 {
     NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE(self);
 
-    if (priv->ip_config_lst_need_sort) {
+    if (G_UNLIKELY(priv->ip_config_lst_need_sort)) {
         priv->ip_config_lst_need_sort = FALSE;
         c_list_sort(&priv->ip_config_lst_head, _ip_config_lst_cmp, NULL);
     }
 
     return &priv->ip_config_lst_head;
+}
+
+static int
+_configs_lst_cmp(const CList *a_lst, const CList *b_lst, const void *user_data)
+{
+    const NMDnsConfigData *a = c_list_entry(a_lst, NMDnsConfigData, configs_lst);
+    const NMDnsConfigData *b = c_list_entry(b_lst, NMDnsConfigData, configs_lst);
+
+    NM_CMP_FIELD(b, a, ifindex);
+    return nm_assert_unreachable_val(0);
+}
+
+_nm_unused static CList *
+_config_data_lst_head(NMDnsManager *self)
+{
+    NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE(self);
+
+    if (G_UNLIKELY(priv->configs_lst_need_sort)) {
+        priv->configs_lst_need_sort = FALSE;
+        c_list_sort(&priv->configs_lst_head, _configs_lst_cmp, NULL);
+    }
+
+    return &priv->configs_lst_head;
 }
 
 /*****************************************************************************/
@@ -1857,6 +1885,8 @@ nm_dns_manager_set_ip_config(NMDnsManager *    self,
         };
         _ASSERT_config_data(data);
         g_hash_table_add(priv->configs, data);
+        c_list_link_tail(&priv->configs_lst_head, &data->configs_lst);
+        priv->configs_lst_need_sort = TRUE;
     }
 
     if (!ip_data)
@@ -2505,6 +2535,7 @@ nm_dns_manager_init(NMDnsManager *self)
 
     _LOGT("creating...");
 
+    c_list_init(&priv->configs_lst_head);
     c_list_init(&priv->ip_config_lst_head);
 
     priv->config = g_object_ref(nm_config_get());
@@ -2550,6 +2581,7 @@ dispose(GObject *object)
         _ip_config_data_free(ip_data);
 
     nm_clear_pointer(&priv->configs, g_hash_table_destroy);
+    nm_assert(c_list_is_empty(&priv->configs_lst_head));
 
     nm_clear_g_source(&priv->plugin_ratelimit.timer);
 
