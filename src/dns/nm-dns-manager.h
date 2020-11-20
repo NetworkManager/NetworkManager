@@ -62,7 +62,7 @@ typedef struct {
          * With systemd-resolved, this is the value for SetLinkDefaultRoute(). */
         bool has_default_route : 1;
     } domains;
-} NMDnsIPConfigData;
+} NMDnsConfigIPData;
 
 typedef struct _NMDnsConfigData {
     int                   ifindex;

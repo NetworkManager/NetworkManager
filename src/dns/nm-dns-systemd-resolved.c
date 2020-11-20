@@ -139,7 +139,7 @@ static gboolean
 update_add_ip_config(NMDnsSystemdResolved *self,
                      GVariantBuilder *     dns,
                      GVariantBuilder *     domains,
-                     NMDnsIPConfigData *   data)
+                     NMDnsConfigIPData *   data)
 {
     int         addr_family;
     gsize       addr_size;
@@ -216,7 +216,7 @@ prepare_one_interface(NMDnsSystemdResolved *self, InterfaceConfig *ic)
     g_variant_builder_open(&domains, G_VARIANT_TYPE("a(sb)"));
 
     c_list_for_each_entry (elem, &ic->configs_lst_head, lst) {
-        NMDnsIPConfigData *data      = elem->data;
+        NMDnsConfigIPData *data      = elem->data;
         NMIPConfig *       ip_config = data->ip_config;
 
         has_config |= update_add_ip_config(self, &dns, &domains, data);
@@ -367,7 +367,7 @@ update(NMDnsPlugin *            plugin,
     gs_free gpointer * interfaces_keys        = NULL;
     guint              interfaces_len;
     int                ifindex;
-    NMDnsIPConfigData *ip_data;
+    NMDnsConfigIPData *ip_data;
     GHashTableIter     iter;
     guint              i;
 
