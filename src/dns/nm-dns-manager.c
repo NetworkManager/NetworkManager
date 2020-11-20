@@ -1528,6 +1528,22 @@ rebuild_domain_lists (NMDnsManager *self)
 		                                               || (priority < 0 && has_default_route_auto);
 		ip_data->domains.has_default_route =    ip_data->domains.has_default_route_exclusive
 		                                     || has_default_route_auto;
+
+		{
+			gs_free char *str1 = NULL;
+			gs_free char *str2 = NULL;
+
+			_LOGT ("plugin: settings: ifindex=%d, priority=%d, default-route=%d%s, search=%s, "
+			       "reverse=%s",
+			       ip_data->data->ifindex,
+			       priority,
+			       ip_data->domains.has_default_route,
+			       ip_data->domains.has_default_route_explicit
+			           ? " (explicit)"
+			           : (ip_data->domains.has_default_route_exclusive ? " (exclusive)" : ""),
+			       (str1 = g_strjoinv (",", (char **) ip_data->domains.search)),
+			       (str2 = g_strjoinv (",", ip_data->domains.reverse)));
+		}
 	}
 }
 
