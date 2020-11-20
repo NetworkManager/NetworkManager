@@ -162,10 +162,12 @@ nm_wifi_ap_get_address(const NMWifiAP *ap)
     return NM_WIFI_AP_GET_PRIVATE(ap)->address;
 }
 
-static gboolean
-nm_wifi_ap_set_address_bin(NMWifiAP *ap, const guint8 addr[static 6 /* ETH_ALEN */])
+gboolean
+nm_wifi_ap_set_address_bin(NMWifiAP *ap, const NMEtherAddr *addr)
 {
     NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE(ap);
+
+    nm_assert(addr);
 
     if (!priv->address || !nm_utils_hwaddr_matches(addr, ETH_ALEN, priv->address, -1)) {
         g_free(priv->address);
@@ -179,13 +181,13 @@ nm_wifi_ap_set_address_bin(NMWifiAP *ap, const guint8 addr[static 6 /* ETH_ALEN 
 gboolean
 nm_wifi_ap_set_address(NMWifiAP *ap, const char *addr)
 {
-    guint8 addr_buf[ETH_ALEN];
+    NMEtherAddr addr_buf;
 
     g_return_val_if_fail(NM_IS_WIFI_AP(ap), FALSE);
-    if (!addr || !nm_utils_hwaddr_aton(addr, addr_buf, sizeof(addr_buf)))
+    if (!addr || !nm_utils_hwaddr_aton(addr, &addr_buf, sizeof(addr_buf)))
         g_return_val_if_reached(FALSE);
 
-    return nm_wifi_ap_set_address_bin(ap, addr_buf);
+    return nm_wifi_ap_set_address_bin(ap, &addr_buf);
 }
 
 NM80211Mode
@@ -384,7 +386,7 @@ nm_wifi_ap_update_from_properties(NMWifiAP *ap, const NMSupplicantBssInfo *bss_i
     changed |= nm_wifi_ap_set_ssid(ap, bss_info->ssid);
 
     if (bss_info->bssid_valid)
-        changed |= nm_wifi_ap_set_address_bin(ap, bss_info->bssid);
+        changed |= nm_wifi_ap_set_address_bin(ap, &bss_info->bssid);
     else {
         /* we don't actually clear the value. */
     }

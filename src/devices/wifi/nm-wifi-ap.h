@@ -68,6 +68,7 @@ GBytes *               nm_wifi_ap_get_ssid(const NMWifiAP *ap);
 gboolean               nm_wifi_ap_set_ssid(NMWifiAP *ap, GBytes *ssid);
 const char *           nm_wifi_ap_get_address(const NMWifiAP *ap);
 gboolean               nm_wifi_ap_set_address(NMWifiAP *ap, const char *addr);
+gboolean               nm_wifi_ap_set_address_bin(NMWifiAP *ap, const NMEtherAddr *addr);
 NM80211Mode            nm_wifi_ap_get_mode(NMWifiAP *ap);
 gboolean               nm_wifi_ap_is_hotspot(NMWifiAP *ap);
 gint8                  nm_wifi_ap_get_strength(NMWifiAP *ap);

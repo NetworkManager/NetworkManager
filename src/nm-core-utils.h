@@ -95,7 +95,8 @@ void _nm_singleton_instance_register_destruction(GObject *instance);
 
 /*****************************************************************************/
 
-gboolean nm_ethernet_address_is_valid(gconstpointer addr, gssize len);
+gboolean nm_ether_addr_is_valid(const NMEtherAddr *addr);
+gboolean nm_ether_addr_is_valid_str(const char *str);
 
 gconstpointer
 nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer src, guint8 plen);

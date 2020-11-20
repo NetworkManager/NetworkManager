@@ -19,6 +19,9 @@
 #include "nm-errno.h"
 #include "nm-str-buf.h"
 
+G_STATIC_ASSERT(sizeof(NMEtherAddr) == 6);
+G_STATIC_ASSERT(_nm_alignof(NMEtherAddr) == 1);
+
 G_STATIC_ASSERT(sizeof(NMUtilsNamedEntry) == sizeof(const char *));
 G_STATIC_ASSERT(G_STRUCT_OFFSET(NMUtilsNamedValue, value_ptr) == sizeof(const char *));
 

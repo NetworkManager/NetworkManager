@@ -158,7 +158,7 @@ typedef struct _NMSupplicantBssInfo {
 
     guint8 signal_percent;
 
-    guint8 bssid[6 /* ETH_ALEN */];
+    NMEtherAddr bssid;
 
     NM80211ApFlags ap_flags : 5;
 

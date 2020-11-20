@@ -668,19 +668,17 @@ _bss_info_properties_changed(NMSupplicantInterface *self,
         if (arr_len != 0) {
             nm_assert(arr_len == sizeof(bss_info->bssid));
             bss_info->bssid_valid = TRUE;
-            memcpy(bss_info->bssid, arr_data, sizeof(bss_info->bssid));
+            memcpy(&bss_info->bssid, arr_data, sizeof(bss_info->bssid));
         } else if (bss_info->bssid_valid) {
             bss_info->bssid_valid = FALSE;
-            memset(bss_info->bssid, 0, sizeof(bss_info->bssid));
+            memset(&bss_info->bssid, 0, sizeof(bss_info->bssid));
         }
         g_variant_unref(v_v);
     } else {
         nm_assert(!initial || !bss_info->bssid_valid);
     }
-    nm_assert(
-        (bss_info->bssid_valid && !nm_utils_memeqzero(bss_info->bssid, sizeof(bss_info->bssid)))
-        || (!bss_info->bssid_valid
-            && nm_utils_memeqzero(bss_info->bssid, sizeof(bss_info->bssid))));
+    nm_assert((!!bss_info->bssid_valid)
+              == (!nm_utils_memeqzero(&bss_info->bssid, sizeof(bss_info->bssid))));
 
     p_max_rate_has = FALSE;
     p_max_rate     = 0;

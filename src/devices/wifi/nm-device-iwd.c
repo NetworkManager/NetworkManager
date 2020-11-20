@@ -70,7 +70,7 @@ typedef struct {
     gint64                        last_scan;
     uint32_t                      ap_id;
     guint32                       rate;
-    uint8_t                       current_ap_bssid[ETH_ALEN];
+    NMEtherAddr                   current_ap_bssid;
     GDBusMethodInvocation *       pending_agent_request;
     NMActiveConnection *          assumed_ac;
     guint                         assumed_ac_timeout;
@@ -174,7 +174,7 @@ set_current_ap(NMDeviceIwd *self, NMWifiAP *new_ap, gboolean recheck_available_c
         g_object_unref(old_ap);
     }
 
-    memset(priv->current_ap_bssid, 0, ETH_ALEN);
+    memset(&priv->current_ap_bssid, 0, ETH_ALEN);
     _notify(self, PROP_ACTIVE_ACCESS_POINT);
     _notify(self, PROP_MODE);
 }
@@ -227,7 +227,6 @@ ap_from_network(NMDeviceIwd *self,
     const char *               name;
     const char *               type;
     uint32_t                   ap_id;
-    uint8_t                    bssid[6];
     gs_unref_bytes GBytes *ssid = NULL;
     NMWifiAP *             ap;
     NMSupplicantBssInfo    bss_info;
@@ -256,13 +255,7 @@ ap_from_network(NMDeviceIwd *self,
      * already does that.  We fake the BSSIDs as they don't play any
      * role either.
      */
-    ap_id    = priv->ap_id++;
-    bssid[0] = 0x00;
-    bssid[1] = 0x01;
-    bssid[2] = 0x02;
-    bssid[3] = ap_id >> 16;
-    bssid[4] = ap_id >> 8;
-    bssid[5] = ap_id;
+    ap_id = priv->ap_id++;
 
     ssid = g_bytes_new(name, NM_MIN(32u, strlen(name)));
 
@@ -276,8 +269,8 @@ ap_from_network(NMDeviceIwd *self,
         .signal_percent = nm_wifi_utils_level_to_quality(signal / 100),
         .frequency      = 2417,
         .max_rate       = 65000,
+        .bssid          = NM_ETHER_ADDR_INIT(0x00, 0x01, 0x02, ap_id >> 16, ap_id >> 8, ap_id),
     };
-    memcpy(bss_info.bssid, bssid, sizeof(bssid));
 
     ap = nm_wifi_ap_new_from_properties(&bss_info);
 
@@ -423,7 +416,7 @@ periodic_update(NMDeviceIwd *self)
     int                 ifindex;
     guint32             new_rate;
     int                 percent;
-    guint8              bssid[ETH_ALEN];
+    NMEtherAddr         bssid;
     gboolean            ap_changed = FALSE;
     NMPlatform *        platform;
 
@@ -436,7 +429,7 @@ periodic_update(NMDeviceIwd *self)
     /* TODO: obtain quality through the net.connman.iwd.SignalLevelAgent API.
      * For now we're waking up for the rate/BSSID updates anyway.
      */
-    if (!nm_platform_wifi_get_station(platform, ifindex, bssid, &percent, &new_rate)) {
+    if (!nm_platform_wifi_get_station(platform, ifindex, &bssid, &percent, &new_rate)) {
         _LOGD(LOGD_WIFI, "BSSID / quality / rate platform query failed");
         return;
     }
@@ -452,12 +445,9 @@ periodic_update(NMDeviceIwd *self)
         _notify(self, PROP_BITRATE);
     }
 
-    if (nm_ethernet_address_is_valid(bssid, ETH_ALEN)
-        && memcmp(bssid, priv->current_ap_bssid, ETH_ALEN)) {
-        gs_free char *bssid_str = NULL;
-        memcpy(priv->current_ap_bssid, bssid, ETH_ALEN);
-        bssid_str = nm_utils_hwaddr_ntoa(bssid, ETH_ALEN);
-        ap_changed |= nm_wifi_ap_set_address(priv->current_ap, bssid_str);
+    if (nm_ether_addr_is_valid(&bssid) && !nm_ether_addr_equal(&bssid, &priv->current_ap_bssid)) {
+        priv->current_ap_bssid = bssid;
+        ap_changed |= nm_wifi_ap_set_address_bin(priv->current_ap, &bssid);
         ap_changed |= nm_wifi_ap_set_freq(priv->current_ap,
                                           nm_platform_wifi_get_frequency(platform, ifindex));
     }

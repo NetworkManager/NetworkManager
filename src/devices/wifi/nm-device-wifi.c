@@ -3369,11 +3369,11 @@ activation_success_handler(NMDevice *device)
     g_warn_if_fail(priv->current_ap);
     if (priv->current_ap) {
         if (nm_wifi_ap_get_fake(priv->current_ap)) {
-            gboolean ap_changed   = FALSE;
-            gboolean update_bssid = !nm_wifi_ap_get_address(priv->current_ap);
-            gboolean update_rate  = !nm_wifi_ap_get_max_bitrate(priv->current_ap);
-            guint8   bssid[ETH_ALEN];
-            guint32  rate;
+            gboolean    ap_changed   = FALSE;
+            gboolean    update_bssid = !nm_wifi_ap_get_address(priv->current_ap);
+            gboolean    update_rate  = !nm_wifi_ap_get_max_bitrate(priv->current_ap);
+            NMEtherAddr bssid;
+            guint32     rate;
 
             /* If the activation AP hasn't been seen by the supplicant in a scan
              * yet, it will be "fake".  This usually happens for Ad-Hoc and
@@ -3388,14 +3388,11 @@ activation_success_handler(NMDevice *device)
             if ((update_bssid || update_rate)
                 && nm_platform_wifi_get_station(nm_device_get_platform(device),
                                                 ifindex,
-                                                update_bssid ? bssid : NULL,
+                                                update_bssid ? &bssid : NULL,
                                                 NULL,
                                                 update_rate ? &rate : NULL)) {
-                if (update_bssid && nm_ethernet_address_is_valid(bssid, ETH_ALEN)) {
-                    gs_free char *bssid_str = NULL;
-                    bssid_str               = nm_utils_hwaddr_ntoa(bssid, ETH_ALEN);
-                    ap_changed |= nm_wifi_ap_set_address(priv->current_ap, bssid_str);
-                }
+                if (update_bssid && nm_ether_addr_is_valid(&bssid))
+                    ap_changed |= nm_wifi_ap_set_address_bin(priv->current_ap, &bssid);
                 if (update_rate)
                     ap_changed |= nm_wifi_ap_set_max_bitrate(priv->current_ap, rate);
             }
