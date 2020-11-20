@@ -1562,7 +1562,8 @@ rebuild_domain_lists(NMDnsManager *self)
             gs_free char *str1 = NULL;
             gs_free char *str2 = NULL;
 
-            _LOGT("plugin: settings: ifindex=%d, priority=%d, default-route=%d%s, search=%s, reverse=%s",
+            _LOGT("plugin: settings: ifindex=%d, priority=%d, default-route=%d%s, search=%s, "
+                  "reverse=%s",
                   ip_data->data->ifindex,
                   priority,
                   ip_data->domains.has_default_route,

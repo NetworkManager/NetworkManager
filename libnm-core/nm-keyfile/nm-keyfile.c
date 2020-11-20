@@ -4079,7 +4079,7 @@ nm_keyfile_write(NMConnection *        connection,
     nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
     GError *                        local   = NULL;
     KeyfileWriterInfo               info;
-    gs_free NMSetting **settings = NULL;
+    gs_free NMSetting **settings   = NULL;
     guint               n_settings = 0;
     guint               i;
     guint               j;
