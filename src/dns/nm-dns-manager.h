@@ -37,13 +37,35 @@ typedef struct {
 	struct {
 		const char **search;
 		char **reverse;
+
+		/* Whether "search" explicitly contains a default route "~"
+		 * or "". It is redundant information, but for faster lookup. */
+		bool has_default_route_explicit : 1;
+
+		/* Whether an explicit "~" search domain should be added.
+		 * For systemd-resolved, this configured an explicit wildcard
+		 * search domain, and should be used for profiles with negative
+		 * DNS priority.
+		 *
+		 * If "has_default_route_explicit", this is always TRUE and implied.
+		 *
+		 * With systemd-resolved, if TRUE we will set a "." search domain.
+		 */
+		bool has_default_route_exclusive : 1;
+
+		/* Whether the device should be used for any domains "~".
+		 *
+		 * If "has_default_route_exclusive", this is always TRUE and implied.
+		 *
+		 * With systemd-resolved, this is the value for SetLinkDefaultRoute(). */
+		bool has_default_route : 1;
 	} domains;
 } NMDnsIPConfigData;
 
 typedef struct _NMDnsConfigData {
+	int ifindex;
 	struct _NMDnsManager *self;
 	CList data_lst_head;
-	int ifindex;
 } NMDnsConfigData;
 
 #define NM_TYPE_DNS_MANAGER (nm_dns_manager_get_type ())
