@@ -141,18 +141,18 @@ update_add_ip_config(NMDnsSystemdResolved *self,
                      GVariantBuilder *     domains,
                      NMDnsIPConfigData *   data)
 {
-    int          addr_family;
-    gsize        addr_size;
-    guint        i, n;
-    gboolean     is_routing;
-    const char **iter;
-    const char * domain;
-    gboolean     has_config = FALSE;
+    int         addr_family;
+    gsize       addr_size;
+    guint       i, n;
+    gboolean    is_routing;
+    const char *domain;
+    gboolean    has_config = FALSE;
 
     addr_family = nm_ip_config_get_addr_family(data->ip_config);
     addr_size   = nm_utils_addr_family_to_size(addr_family);
 
-    if (!data->domains.search || !data->domains.search[0])
+    if ((!data->domains.search || !data->domains.search[0])
+        && !data->domains.has_default_route_exclusive)
         return FALSE;
 
     n = nm_ip_config_get_num_nameservers(data->ip_config);
@@ -169,10 +169,16 @@ update_add_ip_config(NMDnsSystemdResolved *self,
         has_config = TRUE;
     }
 
-    for (iter = data->domains.search; *iter; iter++) {
-        domain = nm_utils_parse_dns_domain(*iter, &is_routing);
-        g_variant_builder_add(domains, "(sb)", domain[0] ? domain : ".", is_routing);
+    if (!data->domains.has_default_route_explicit && data->domains.has_default_route_exclusive) {
+        g_variant_builder_add(domains, "(sb)", ".", TRUE);
         has_config = TRUE;
+    }
+    if (data->domains.search) {
+        for (i = 0; data->domains.search[i]; i++) {
+            domain = nm_utils_parse_dns_domain(data->domains.search[i], &is_routing);
+            g_variant_builder_add(domains, "(sb)", domain[0] ? domain : ".", is_routing);
+            has_config = TRUE;
+        }
     }
 
     return has_config;
@@ -198,7 +204,8 @@ prepare_one_interface(NMDnsSystemdResolved *self, InterfaceConfig *ic)
     NMSettingConnectionMdns      mdns     = NM_SETTING_CONNECTION_MDNS_DEFAULT;
     NMSettingConnectionLlmnr     llmnr    = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
     const char *                 mdns_arg = NULL, *llmnr_arg = NULL;
-    gboolean                     has_config = FALSE;
+    gboolean                     has_config        = FALSE;
+    gboolean                     has_default_route = FALSE;
 
     g_variant_builder_init(&dns, G_VARIANT_TYPE("(ia(iay))"));
     g_variant_builder_add(&dns, "i", ic->ifindex);
@@ -213,6 +220,9 @@ prepare_one_interface(NMDnsSystemdResolved *self, InterfaceConfig *ic)
         NMIPConfig *       ip_config = data->ip_config;
 
         has_config |= update_add_ip_config(self, &dns, &domains, data);
+
+        if (data->domains.has_default_route)
+            has_default_route = TRUE;
 
         if (NM_IS_IP4_CONFIG(ip_config)) {
             mdns  = NM_MAX(mdns, nm_ip4_config_mdns_get(NM_IP4_CONFIG(ip_config)));
@@ -258,16 +268,19 @@ prepare_one_interface(NMDnsSystemdResolved *self, InterfaceConfig *ic)
     if (!nm_str_is_empty(mdns_arg) || !nm_str_is_empty(llmnr_arg))
         has_config = TRUE;
 
-    _request_item_append(&priv->request_queue_lst_head, "SetLinkDNS", g_variant_builder_end(&dns));
     _request_item_append(&priv->request_queue_lst_head,
                          "SetLinkDomains",
                          g_variant_builder_end(&domains));
+    _request_item_append(&priv->request_queue_lst_head,
+                         "SetLinkDefaultRoute",
+                         g_variant_new("(ib)", ic->ifindex, has_default_route));
     _request_item_append(&priv->request_queue_lst_head,
                          "SetLinkMulticastDNS",
                          g_variant_new("(is)", ic->ifindex, mdns_arg ?: ""));
     _request_item_append(&priv->request_queue_lst_head,
                          "SetLinkLLMNR",
                          g_variant_new("(is)", ic->ifindex, llmnr_arg ?: ""));
+    _request_item_append(&priv->request_queue_lst_head, "SetLinkDNS", g_variant_builder_end(&dns));
 
     return has_config;
 }
