@@ -1262,38 +1262,30 @@ _collect_resolv_conf_data(NMDnsManager *     self,
 static char **
 get_ip_rdns_domains(NMIPConfig *ip_config)
 {
-    int              addr_family = nm_ip_config_get_addr_family(ip_config);
-    char **          strv;
-    GPtrArray *      domains = NULL;
-    NMDedupMultiIter ipconf_iter;
+    int                        addr_family = nm_ip_config_get_addr_family(ip_config);
+    char **                    strv;
+    GPtrArray *                domains;
+    NMDedupMultiIter           ipconf_iter;
+    const NMPlatformIPAddress *address;
+    const NMPlatformIPRoute *  route;
 
     nm_assert_addr_family(addr_family);
 
     domains = g_ptr_array_sized_new(5);
 
-    if (addr_family == AF_INET) {
-        NMIP4Config *               ip4 = (gpointer) ip_config;
-        const NMPlatformIP4Address *address;
-        const NMPlatformIP4Route *  route;
+    nm_ip_config_iter_ip_address_for_each (&ipconf_iter, ip_config, &address) {
+        nm_utils_get_reverse_dns_domains_ip(addr_family,
+                                            address->address_ptr,
+                                            address->plen,
+                                            domains);
+    }
 
-        nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, ip4, &address)
-            nm_utils_get_reverse_dns_domains_ip_4(address->address, address->plen, domains);
-
-        nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, ip4, &route) {
-            if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT(route))
-                nm_utils_get_reverse_dns_domains_ip_4(route->network, route->plen, domains);
-        }
-    } else {
-        NMIP6Config *               ip6 = (gpointer) ip_config;
-        const NMPlatformIP6Address *address;
-        const NMPlatformIP6Route *  route;
-
-        nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, ip6, &address)
-            nm_utils_get_reverse_dns_domains_ip_6(&address->address, address->plen, domains);
-
-        nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, ip6, &route) {
-            if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT(route))
-                nm_utils_get_reverse_dns_domains_ip_6(&route->network, route->plen, domains);
+    nm_ip_config_iter_ip_route_for_each (&ipconf_iter, ip_config, &route) {
+        if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT(route)) {
+            nm_utils_get_reverse_dns_domains_ip(addr_family,
+                                                route->network_ptr,
+                                                route->plen,
+                                                domains);
         }
     }
 
