@@ -1571,7 +1571,8 @@ rebuild_domain_lists(NMDnsManager *self)
                       ? " (explicit)"
                       : (ip_data->domains.has_default_route_exclusive ? " (exclusive)" : ""),
                   (str1 = g_strjoinv(",", (char **) ip_data->domains.search)),
-                  (str2 = g_strjoinv(",", ip_data->domains.reverse)));
+                  (ip_data->domains.reverse ? (str2 = g_strjoinv(",", ip_data->domains.reverse))
+                                            : ""));
         }
     }
 }
