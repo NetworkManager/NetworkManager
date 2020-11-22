@@ -319,14 +319,21 @@ NM_IS_IP_CONFIG_ADDR_FAMILY(gconstpointer config, int addr_family)
         NM_CONSTCAST_FULL(NMIPConfig, (config), _configx, NMIP4Config, NMIP6Config); \
     })
 
+static inline gboolean
+nm_ip_config_is_ipv4(const NMIPConfig *config)
+{
+    if (NM_IP_CONFIG_GET_CLASS(config)->is_ipv4) {
+        nm_assert(NM_IS_IP4_CONFIG(config));
+        return TRUE;
+    }
+    nm_assert(NM_IS_IP6_CONFIG(config));
+    return FALSE;
+}
+
 static inline int
 nm_ip_config_get_addr_family(const NMIPConfig *config)
 {
-    if (NM_IS_IP4_CONFIG(config))
-        return AF_INET;
-    if (NM_IS_IP6_CONFIG(config))
-        return AF_INET6;
-    g_return_val_if_reached(AF_UNSPEC);
+    return nm_ip_config_is_ipv4(config) ? AF_INET : AF_INET6;
 }
 
 #define _NM_IP_CONFIG_DISPATCH(config, v4_func, v6_func, ...)       \
@@ -334,10 +341,9 @@ nm_ip_config_get_addr_family(const NMIPConfig *config)
     {                                                               \
         gconstpointer _config = (config);                           \
                                                                     \
-        if (NM_IS_IP4_CONFIG(_config)) {                            \
+        if (nm_ip_config_is_ipv4(_config)) {                        \
             return v4_func((NMIP4Config *) _config, ##__VA_ARGS__); \
         } else {                                                    \
-            nm_assert(NM_IS_IP6_CONFIG(_config));                   \
             return v6_func((NMIP6Config *) _config, ##__VA_ARGS__); \
         }                                                           \
     }                                                               \
@@ -348,10 +354,9 @@ nm_ip_config_get_addr_family(const NMIPConfig *config)
     {                                                              \
         gconstpointer _config = (config);                          \
                                                                    \
-        if (NM_IS_IP4_CONFIG(_config)) {                           \
+        if (nm_ip_config_is_ipv4(_config)) {                       \
             v4_func((NMIP4Config *) _config, ##__VA_ARGS__);       \
         } else {                                                   \
-            nm_assert(NM_IS_IP6_CONFIG(_config));                  \
             v6_func((NMIP6Config *) _config, ##__VA_ARGS__);       \
         }                                                          \
     }                                                              \
@@ -378,12 +383,10 @@ nm_ip_config_get_first_address(NMIPConfig *self)
 static inline void
 nm_ip_config_iter_ip_address_init(NMDedupMultiIter *iter, const NMIPConfig *self)
 {
-    if (NM_IS_IP4_CONFIG(self))
+    if (nm_ip_config_is_ipv4(self))
         nm_ip_config_iter_ip4_address_init(iter, (const NMIP4Config *) self);
-    else {
-        nm_assert(NM_IS_IP6_CONFIG(self));
+    else
         nm_ip_config_iter_ip6_address_init(iter, (const NMIP6Config *) self);
-    }
 }
 
 #define nm_ip_config_iter_ip_address_for_each(iter, self, address) \
@@ -393,12 +396,10 @@ nm_ip_config_iter_ip_address_init(NMDedupMultiIter *iter, const NMIPConfig *self
 static inline void
 nm_ip_config_iter_ip_route_init(NMDedupMultiIter *iter, const NMIPConfig *self)
 {
-    if (NM_IS_IP4_CONFIG(self))
+    if (nm_ip_config_is_ipv4(self))
         nm_ip_config_iter_ip4_route_init(iter, (const NMIP4Config *) self);
-    else {
-        nm_assert(NM_IS_IP6_CONFIG(self));
+    else
         nm_ip_config_iter_ip6_route_init(iter, (const NMIP6Config *) self);
-    }
 }
 
 #define nm_ip_config_iter_ip_route_for_each(iter, self, route) \
@@ -579,11 +580,9 @@ nm_ip_config_set_never_default(NMIPConfig *self, gboolean never_default)
         gpointer      _dst = (dst);                                                           \
         gconstpointer _src = (src);                                                           \
                                                                                               \
-        if (NM_IS_IP4_CONFIG(_dst)) {                                                         \
-            nm_assert(NM_IS_IP4_CONFIG(_src));                                                \
+        if (nm_ip_config_is_ipv4(_dst)) {                                                     \
             _return v4_func((NMIP4Config *) _dst, (const NMIP4Config *) _src, ##__VA_ARGS__); \
         } else {                                                                              \
-            nm_assert(NM_IS_IP6_CONFIG(_src));                                                \
             _return v6_func((NMIP6Config *) _dst, (const NMIP6Config *) _src, ##__VA_ARGS__); \
         }                                                                                     \
     }                                                                                         \
@@ -646,7 +645,8 @@ nm_ip_config_intersect_alloc(const NMIPConfig *a,
                              gboolean          intersect_routes,
                              guint32           default_route_metric_penalty)
 {
-    if (NM_IS_IP4_CONFIG(a)) {
+    if (nm_ip_config_is_ipv4(a)) {
+        nm_assert(NM_IS_IP4_CONFIG(a));
         nm_assert(NM_IS_IP4_CONFIG(b));
         return (NMIPConfig *) nm_ip4_config_intersect_alloc((const NMIP4Config *) a,
                                                             (const NMIP4Config *) b,
