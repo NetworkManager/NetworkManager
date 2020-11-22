@@ -3670,7 +3670,8 @@ nm_device_get_route_table(NMDevice *self, int addr_family)
 static NMIPRouteTableSyncMode
 _get_route_table_sync_mode_stateful(NMDevice *self, int addr_family)
 {
-    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+    const int        IS_IPv4 = NM_IS_IPv4(addr_family);
+    NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
     NMDedupMultiIter ipconf_iter;
     gboolean         all_sync_now;
     gboolean         all_sync_eff;
@@ -3678,25 +3679,14 @@ _get_route_table_sync_mode_stateful(NMDevice *self, int addr_family)
     all_sync_now = _prop_get_ipvx_route_table(self, addr_family) != 0u;
 
     if (!all_sync_now) {
+        const NMPlatformIPRoute *route;
+
         /* If there's a local route switch to all-sync in order
          * to properly manage the local table */
-        if (NM_IS_IPv4(addr_family)) {
-            const NMPlatformIP4Route *route;
-
-            nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, priv->con_ip_config_4, &route) {
-                if (nm_platform_route_type_uncoerce(route->type_coerced) == RTN_LOCAL) {
-                    all_sync_now = TRUE;
-                    break;
-                }
-            }
-        } else {
-            const NMPlatformIP6Route *route;
-
-            nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, priv->con_ip_config_6, &route) {
-                if (nm_platform_route_type_uncoerce(route->type_coerced) == RTN_LOCAL) {
-                    all_sync_now = TRUE;
-                    break;
-                }
+        nm_ip_config_iter_ip_route_for_each (&ipconf_iter, priv->con_ip_config_x[IS_IPv4], &route) {
+            if (nm_platform_route_type_uncoerce(route->type_coerced) == RTN_LOCAL) {
+                all_sync_now = TRUE;
+                break;
             }
         }
     }
