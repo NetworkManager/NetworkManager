@@ -109,6 +109,7 @@ test-*.trs
 /docs/libnm/tmpl/
 /docs/libnm/xml/
 /docs/libnm/libnm-*.txt
+/docs/libnm/libnm.actions
 /docs/libnm/libnm.args
 /docs/libnm/libnm.hierarchy
 /docs/libnm/libnm.interfaces
