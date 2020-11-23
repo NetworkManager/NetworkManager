@@ -2848,14 +2848,18 @@ recheck_assume_connection (NMManager *self,
 			activation_type_assume = TRUE;
 
 			if (generated) {
+				gs_unref_object NMConnection *con2 = NULL;
+
+				con2 = nm_simple_connection_new_clone (nm_settings_connection_get_connection (sett_conn));
+
 				/* Reset the IPv4 setting to empty method=auto, regardless of what assumption guessed. */
-				nm_connection_add_setting (nm_settings_connection_get_connection (sett_conn),
+				nm_connection_add_setting (con2,
 				                           g_object_new (NM_TYPE_SETTING_IP4_CONFIG,
 				                                         NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
 				                                         NULL));
 
 				nm_settings_connection_update (sett_conn,
-				                               NULL,
+				                               con2,
 				                               NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
 				                               NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
 				                                 NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
