@@ -753,11 +753,27 @@ _add_interface(NMOvsdb *     self,
         g_clear_error(&error);
     }
 
-    if (interface_is_local && !bridge_cloned_mac && interface_cloned_mac) {
-        _LOGT("'%s' is a local ovs-interface, the MAC will be set on ovs-bridge '%s'",
-              interface_name,
-              bridge_name);
-        bridge_cloned_mac = g_steal_pointer(&interface_cloned_mac);
+    /* For local interfaces, ovs complains if it finds a
+     * MAC address in the Interface table because it only takes
+     * the MAC from the Bridge table.
+     * Set any cloned MAC present in a local interface connection
+     * into the Bridge table, unless conflicting with the bridge MAC. */
+    if (interface_is_local && interface_cloned_mac) {
+        if (bridge_cloned_mac && !nm_streq(interface_cloned_mac, bridge_cloned_mac)) {
+            _LOGW("Cloned MAC '%s' of local ovs-interface '%s' conflicts with MAC '%s' of bridge "
+                  "'%s'",
+                  interface_cloned_mac,
+                  interface_name,
+                  bridge_cloned_mac,
+                  bridge_name);
+            nm_clear_g_free(&interface_cloned_mac);
+        } else {
+            nm_clear_g_free(&bridge_cloned_mac);
+            bridge_cloned_mac = g_steal_pointer(&interface_cloned_mac);
+            _LOGT("'%s' is a local ovs-interface, the MAC will be set on ovs-bridge '%s'",
+                  interface_name,
+                  bridge_name);
+        }
     }
 
     g_hash_table_iter_init(&iter, priv->bridges);
