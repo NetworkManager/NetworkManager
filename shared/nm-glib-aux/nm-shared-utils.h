@@ -1776,6 +1776,17 @@ GSource *nm_utils_g_main_context_create_integrate_source (GMainContext *internal
 
 /*****************************************************************************/
 
+static inline GPtrArray *
+nm_strv_ptrarray_ensure (GPtrArray **p_arr)
+{
+	nm_assert (p_arr);
+
+	if (G_UNLIKELY (!*p_arr))
+		*p_arr = g_ptr_array_new_with_free_func (g_free);
+
+	return *p_arr;
+}
+
 static inline void
 nm_strv_ptrarray_add_string_take (GPtrArray *cmd,
                                   char *str)
@@ -1812,6 +1823,22 @@ nm_strv_ptrarray_take_gstring (GPtrArray *cmd,
 	nm_strv_ptrarray_add_string_take (cmd,
 	                                  g_string_free (g_steal_pointer (gstr),
 	                                                 FALSE));
+}
+
+static inline gssize
+nm_strv_ptrarray_find_first (const GPtrArray *strv,
+                             const char *str)
+{
+	if (!strv)
+		return -1;
+	return nm_utils_strv_find_first ((char **) strv->pdata, strv->len, str);
+}
+
+static inline gboolean
+nm_strv_ptrarray_contains (const GPtrArray *strv,
+                           const char *str)
+{
+	return nm_strv_ptrarray_find_first (strv, str) >= 0;
 }
 
 /*****************************************************************************/
