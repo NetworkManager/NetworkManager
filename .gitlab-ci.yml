@@ -40,10 +40,10 @@ variables:
   # these tags should be updated each time the list of packages is updated
   # changing these will force rebuilding the associated image
   # Note: these tags have no meaning and are not tied to a particular NM version
-  FEDORA_TAG:  '2020-11-17.0-3bc1d72be050'
-  UBUNTU_TAG:  '2020-11-17.0-dc51098af332'
-  DEBIAN_TAG:  '2020-11-17.0-dc51098af332'
-  CENTOS_TAG:  '2020-11-17.0-3bc1d72be050'
+  FEDORA_TAG:  '2020-11-17.0-5276eb5b0e3c'
+  UBUNTU_TAG:  '2020-11-17.0-89dd88de8047'
+  DEBIAN_TAG:  '2020-11-17.0-89dd88de8047'
+  CENTOS_TAG:  '2020-11-17.0-5276eb5b0e3c'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
@@ -275,6 +275,16 @@ centos:7.8.2003@container-prep:
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
     FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
 
+centos:7.9.2009@container-prep:
+  extends:
+    - .fdo.container-build@centos
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: '7.9.2009'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
+    FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
+
 centos:8.1.1911@container-prep:
   extends:
     - .fdo.container-build@centos
@@ -282,6 +292,16 @@ centos:8.1.1911@container-prep:
   variables:
     GIT_STRATEGY: none
     FDO_DISTRIBUTION_VERSION: '8.1.1911'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
+    FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
+
+centos:8.2.2004@container-prep:
+  extends:
+    - .fdo.container-build@centos
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: '8.2.2004'
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
     FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
 
@@ -499,6 +519,15 @@ centos:7.8.2003@container-clean:
     FDO_DISTRIBUTION_VERSION: '7.8.2003'
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
 
+centos:7.9.2009@container-clean:
+  extends:
+    - .container-clean
+  variables:
+    GIT_STRATEGY: none
+    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/centos/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
+    FDO_DISTRIBUTION_VERSION: '7.9.2009'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
+
 centos:8.1.1911@container-clean:
   extends:
     - .container-clean
@@ -506,6 +535,15 @@ centos:8.1.1911@container-clean:
     GIT_STRATEGY: none
     CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/centos/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
     FDO_DISTRIBUTION_VERSION: '8.1.1911'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
+
+centos:8.2.2004@container-clean:
+  extends:
+    - .container-clean
+  variables:
+    GIT_STRATEGY: none
+    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/centos/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
+    FDO_DISTRIBUTION_VERSION: '8.2.2004'
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
 
 
@@ -748,6 +786,17 @@ t_centos:7.8.2003:
     - "centos:7.8.2003@container-prep"
   when: manual
 
+t_centos:7.9.2009:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@centos
+  variables:
+    FDO_DISTRIBUTION_VERSION: '7.9.2009'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
+  needs:
+    - "centos:7.9.2009@container-prep"
+  when: manual
+
 t_centos:8.1.1911:
   extends:
     - .build@template
@@ -757,6 +806,17 @@ t_centos:8.1.1911:
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
   needs:
     - "centos:8.1.1911@container-prep"
+  when: manual
+
+t_centos:8.2.2004:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@centos
+  variables:
+    FDO_DISTRIBUTION_VERSION: '8.2.2004'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
+  needs:
+    - "centos:8.2.2004@container-prep"
   when: manual
 
 #################################################################
