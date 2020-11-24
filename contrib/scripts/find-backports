@@ -151,7 +151,7 @@ def git_ref_commit_body(ref):
 def git_ref_commit_body_get_fixes(ref):
     body = git_ref_commit_body(ref)
     result = []
-    for mo in re.finditer(re_bin("[fF]ixes: *([0-9a-z]+).*"), body):
+    for mo in re.finditer(re_bin("\\b[fF]ixes: *([0-9a-z]+)\\b"), body):
         c = mo.group(1).decode("ascii")
         h = git_ref_exists(c)
         if h:
@@ -166,16 +166,18 @@ def git_ref_commit_body_get_cherry_picked_one(ref):
         return None
     body = git_ref_commit_body(ref)
     result = None
-    for mo in re.finditer(
-        re_bin(".*\(cherry picked from commit ([0-9a-z]+)\).*"), body
-    ):
-        c = mo.group(1).decode("ascii")
-        h = git_ref_exists(c)
-        if h:
-            if not result:
-                result = [h]
-            else:
-                result.append(h)
+    for r in [
+        re_bin("\(cherry picked from commit ([0-9a-z]+)\)"),
+        re_bin("\\bIgnore-Backport: *([0-9a-z]+)\\b"),
+    ]:
+        for mo in re.finditer(r, body):
+            c = mo.group(1).decode("ascii")
+            h = git_ref_exists(c)
+            if h:
+                if not result:
+                    result = [h]
+                else:
+                    result.append(h)
     return result
 
 
