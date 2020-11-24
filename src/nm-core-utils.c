@@ -4381,7 +4381,7 @@ nm_utils_dnsmasq_status_to_string(int status, char *dest, gsize size)
 }
 
 /**
- * nm_utils_get_reverse_dns_domains_ip4:
+ * nm_utils_get_reverse_dns_domains_ip_4:
  * @addr: IP address in network order
  * @plen: prefix length
  * @domains: array for results
@@ -4390,7 +4390,7 @@ nm_utils_dnsmasq_status_to_string(int status, char *dest, gsize size)
  * append them to @domains.
  */
 void
-nm_utils_get_reverse_dns_domains_ip4(guint32 addr, guint8 plen, GPtrArray *domains)
+nm_utils_get_reverse_dns_domains_ip_4(guint32 addr, guint8 plen, GPtrArray *domains)
 {
     guint32 ip, ip2, mask;
     guchar *p;
@@ -4429,7 +4429,7 @@ nm_utils_get_reverse_dns_domains_ip4(guint32 addr, guint8 plen, GPtrArray *domai
 }
 
 /**
- * nm_utils_get_reverse_dns_domains_ip6:
+ * nm_utils_get_reverse_dns_domains_ip_6:
  * @addr: IPv6 address
  * @plen: prefix length
  * @domains: array for results
@@ -4438,7 +4438,7 @@ nm_utils_get_reverse_dns_domains_ip4(guint32 addr, guint8 plen, GPtrArray *domai
  * append them to @domains.
  */
 void
-nm_utils_get_reverse_dns_domains_ip6(const struct in6_addr *ip, guint8 plen, GPtrArray *domains)
+nm_utils_get_reverse_dns_domains_ip_6(const struct in6_addr *ip, guint8 plen, GPtrArray *domains)
 {
     struct in6_addr addr;
     guint           nibbles, bits, entries;

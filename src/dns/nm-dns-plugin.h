@@ -26,7 +26,7 @@ typedef struct {
     GObjectClass parent;
 
     /* Called when DNS information is changed.  'configs' is an array
-     * of pointers to NMDnsIPConfigData sorted by priority.
+     * of pointers to NMDnsConfigIPData sorted by priority.
      * 'global_config' is the optional global DNS
      * configuration.
      */

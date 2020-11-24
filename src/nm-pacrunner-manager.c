@@ -126,11 +126,13 @@ NM_AUTO_DEFINE_FCN0(NMPacrunnerConfId *, _nm_auto_unref_conf_id, conf_id_unref);
 static void
 get_ip_domains(GPtrArray *domains, NMIPConfig *ip_config)
 {
-    NMDedupMultiIter ipconf_iter;
-    char *           cidr;
-    guint            i, num;
-    char             sbuf[NM_UTILS_INET_ADDRSTRLEN];
-    int              addr_family;
+    NMDedupMultiIter           ipconf_iter;
+    char *                     cidr;
+    guint                      i, num;
+    char                       sbuf[NM_UTILS_INET_ADDRSTRLEN];
+    int                        addr_family;
+    const NMPlatformIPAddress *address;
+    const NMPlatformIPRoute *  routes;
 
     if (!ip_config)
         return;
@@ -145,47 +147,20 @@ get_ip_domains(GPtrArray *domains, NMIPConfig *ip_config)
     for (i = 0; i < num; i++)
         g_ptr_array_add(domains, g_strdup(nm_ip_config_get_domain(ip_config, i)));
 
-    if (addr_family == AF_INET) {
-        const NMPlatformIP4Address *address;
-
-        nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, (NMIP4Config *) ip_config, &address) {
-            cidr = g_strdup_printf("%s/%u",
-                                   _nm_utils_inet4_ntop(address->address, sbuf),
-                                   address->plen);
-            g_ptr_array_add(domains, cidr);
-        }
-    } else {
-        const NMPlatformIP6Address *address;
-
-        nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, (NMIP6Config *) ip_config, &address) {
-            cidr = g_strdup_printf("%s/%u",
-                                   _nm_utils_inet6_ntop(&address->address, sbuf),
-                                   address->plen);
-            g_ptr_array_add(domains, cidr);
-        }
+    nm_ip_config_iter_ip_address_for_each (&ipconf_iter, ip_config, &address) {
+        cidr = g_strdup_printf("%s/%u",
+                               nm_utils_inet_ntop(addr_family, address->address_ptr, sbuf),
+                               address->plen);
+        g_ptr_array_add(domains, cidr);
     }
 
-    if (addr_family == AF_INET) {
-        const NMPlatformIP4Route *routes;
-
-        nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, (NMIP4Config *) ip_config, &routes) {
-            if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT(routes))
-                continue;
-            cidr =
-                g_strdup_printf("%s/%u", _nm_utils_inet4_ntop(routes->network, sbuf), routes->plen);
-            g_ptr_array_add(domains, cidr);
-        }
-    } else {
-        const NMPlatformIP6Route *routes;
-
-        nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, (NMIP6Config *) ip_config, &routes) {
-            if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT(routes))
-                continue;
-            cidr = g_strdup_printf("%s/%u",
-                                   _nm_utils_inet6_ntop(&routes->network, sbuf),
-                                   routes->plen);
-            g_ptr_array_add(domains, cidr);
-        }
+    nm_ip_config_iter_ip_route_for_each (&ipconf_iter, ip_config, &routes) {
+        if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT(routes))
+            continue;
+        cidr = g_strdup_printf("%s/%u",
+                               nm_utils_inet_ntop(addr_family, routes->network_ptr, sbuf),
+                               routes->plen);
+        g_ptr_array_add(domains, cidr);
     }
 }
 

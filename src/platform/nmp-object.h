@@ -1077,52 +1077,64 @@ nm_platform_dedup_multi_iter_next_obj(NMDedupMultiIter *ipconf_iter,
     return has_next;
 }
 
-static inline gboolean
-nm_platform_dedup_multi_iter_next_ip4_address(NMDedupMultiIter *           ipconf_iter,
-                                              const NMPlatformIP4Address **out_address)
-{
-    gboolean has_next;
+#define _nm_platform_dedup_multi_iter_next(ipconf_iter, out_obj, field, ...)                  \
+    ({                                                                                        \
+        NMDedupMultiIter *const                           _ipconf_iter = (ipconf_iter);       \
+        const typeof(((NMPObject *) NULL)->field) **const _out_obj     = (out_obj);           \
+        gboolean                                          _has_next;                          \
+                                                                                              \
+        if (G_LIKELY(nm_dedup_multi_iter_next(_ipconf_iter))) {                               \
+            if (_out_obj) {                                                                   \
+                *_out_obj = _NMP_OBJECT_CAST(_ipconf_iter->current->obj, field, __VA_ARGS__); \
+            } else {                                                                          \
+                nm_assert(                                                                    \
+                    NM_IN_SET(NMP_OBJECT_GET_TYPE(_ipconf_iter->current->obj), __VA_ARGS__)); \
+            }                                                                                 \
+            _has_next = TRUE;                                                                 \
+        } else {                                                                              \
+            if (_out_obj)                                                                     \
+                *_out_obj = NULL;                                                             \
+            _has_next = FALSE;                                                                \
+        }                                                                                     \
+        _has_next;                                                                            \
+    })
 
-    has_next = nm_dedup_multi_iter_next(ipconf_iter);
-    if (out_address)
-        *out_address = has_next ? NMP_OBJECT_CAST_IP4_ADDRESS(ipconf_iter->current->obj) : NULL;
-    return has_next;
-}
+#define nm_platform_dedup_multi_iter_next_ip_address(ipconf_iter, out_obj) \
+    _nm_platform_dedup_multi_iter_next((ipconf_iter),                      \
+                                       (out_obj),                          \
+                                       ip_address,                         \
+                                       NMP_OBJECT_TYPE_IP4_ADDRESS,        \
+                                       NMP_OBJECT_TYPE_IP6_ADDRESS)
 
-static inline gboolean
-nm_platform_dedup_multi_iter_next_ip4_route(NMDedupMultiIter *         ipconf_iter,
-                                            const NMPlatformIP4Route **out_route)
-{
-    gboolean has_next;
+#define nm_platform_dedup_multi_iter_next_ip4_address(ipconf_iter, out_obj) \
+    _nm_platform_dedup_multi_iter_next((ipconf_iter),                       \
+                                       (out_obj),                           \
+                                       ip4_address,                         \
+                                       NMP_OBJECT_TYPE_IP4_ADDRESS)
 
-    has_next = nm_dedup_multi_iter_next(ipconf_iter);
-    if (out_route)
-        *out_route = has_next ? NMP_OBJECT_CAST_IP4_ROUTE(ipconf_iter->current->obj) : NULL;
-    return has_next;
-}
+#define nm_platform_dedup_multi_iter_next_ip6_address(ipconf_iter, out_obj) \
+    _nm_platform_dedup_multi_iter_next((ipconf_iter),                       \
+                                       (out_obj),                           \
+                                       ip6_address,                         \
+                                       NMP_OBJECT_TYPE_IP6_ADDRESS)
 
-static inline gboolean
-nm_platform_dedup_multi_iter_next_ip6_address(NMDedupMultiIter *           ipconf_iter,
-                                              const NMPlatformIP6Address **out_address)
-{
-    gboolean has_next;
+#define nm_platform_dedup_multi_iter_next_ip_route(ipconf_iter, out_obj) \
+    _nm_platform_dedup_multi_iter_next((ipconf_iter),                    \
+                                       (out_obj),                        \
+                                       ip_route,                         \
+                                       NMP_OBJECT_TYPE_IP4_ROUTE,        \
+                                       NMP_OBJECT_TYPE_IP6_ROUTE)
 
-    has_next = nm_dedup_multi_iter_next(ipconf_iter);
-    if (out_address)
-        *out_address = has_next ? NMP_OBJECT_CAST_IP6_ADDRESS(ipconf_iter->current->obj) : NULL;
-    return has_next;
-}
+#define nm_platform_dedup_multi_iter_next_ip4_route(ipconf_iter, out_obj) \
+    _nm_platform_dedup_multi_iter_next((ipconf_iter),                     \
+                                       (out_obj),                         \
+                                       ip4_route,                         \
+                                       NMP_OBJECT_TYPE_IP4_ROUTE)
 
-static inline gboolean
-nm_platform_dedup_multi_iter_next_ip6_route(NMDedupMultiIter *         ipconf_iter,
-                                            const NMPlatformIP6Route **out_route)
-{
-    gboolean has_next;
-
-    has_next = nm_dedup_multi_iter_next(ipconf_iter);
-    if (out_route)
-        *out_route = has_next ? NMP_OBJECT_CAST_IP6_ROUTE(ipconf_iter->current->obj) : NULL;
-    return has_next;
-}
+#define nm_platform_dedup_multi_iter_next_ip6_route(ipconf_iter, out_obj) \
+    _nm_platform_dedup_multi_iter_next((ipconf_iter),                     \
+                                       (out_obj),                         \
+                                       ip6_route,                         \
+                                       NMP_OBJECT_TYPE_IP6_ROUTE)
 
 #endif /* __NMP_OBJECT_H__ */
