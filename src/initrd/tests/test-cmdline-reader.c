@@ -235,7 +235,9 @@ test_if_ip4_manual(void)
 
     s_ip6 = nm_connection_get_setting_ip6_config(connection);
     g_assert(s_ip6);
-    g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+    g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip6),
+                    ==,
+                    NM_SETTING_IP6_CONFIG_METHOD_DISABLED);
     g_assert(nm_setting_ip_config_get_may_fail(s_ip6));
 
     connection = g_hash_table_lookup(connections, "eth4");
@@ -302,6 +304,52 @@ test_if_ip6_manual(void)
     g_assert_cmpint(nm_ip_address_get_prefix(ip_addr), ==, 64);
     g_assert_cmpstr(nm_setting_ip_config_get_gateway(s_ip6), ==, "2001:db8::1");
     g_assert_cmpstr(nm_setting_ip_config_get_dhcp_hostname(s_ip6), ==, "hostname0.example.com");
+}
+
+static void
+test_if_off(void)
+{
+    gs_unref_hashtable GHashTable *connections = NULL;
+    const char *const *            ARGV        = NM_MAKE_STRV("ip=off",
+                                           "ip=ens3:off",
+                                           "ip=10.0.0.8:::::ens4:off",
+                                           "ip=[2001:DB8::8]:::::ens5:off");
+    NMConnection *                 connection;
+    NMSettingIPConfig *            s_ip4;
+    NMSettingIPConfig *            s_ip6;
+    gs_free char *                 hostname = NULL;
+    struct {
+        const char name[32];
+        const char ipv4_method[32];
+        const char ipv6_method[32];
+
+    } conn_expected[] = {
+        {"default_connection",
+         NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
+         NM_SETTING_IP6_CONFIG_METHOD_DISABLED},
+        {"ens3", NM_SETTING_IP4_CONFIG_METHOD_DISABLED, NM_SETTING_IP6_CONFIG_METHOD_DISABLED},
+        {"ens4", NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NM_SETTING_IP6_CONFIG_METHOD_DISABLED},
+        {"ens5", NM_SETTING_IP4_CONFIG_METHOD_DISABLED, NM_SETTING_IP6_CONFIG_METHOD_MANUAL},
+    };
+
+    connections = nmi_cmdline_reader_parse(TEST_INITRD_DIR "/sysfs", ARGV, &hostname);
+    g_assert(connections);
+    g_assert_cmpint(g_hash_table_size(connections), ==, G_N_ELEMENTS(conn_expected));
+    g_assert_cmpstr(hostname, ==, NULL);
+
+    for (int i = 0; i < G_N_ELEMENTS(conn_expected); ++i) {
+        connection = g_hash_table_lookup(connections, conn_expected[i].name);
+        g_assert(connection);
+        nmtst_assert_connection_verifies_without_normalization(connection);
+
+        s_ip4 = nm_connection_get_setting_ip4_config(connection);
+        g_assert(s_ip4);
+        g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip4), ==, conn_expected[i].ipv4_method);
+
+        s_ip6 = nm_connection_get_setting_ip6_config(connection);
+        g_assert(s_ip6);
+        g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip6), ==, conn_expected[i].ipv6_method);
+    }
 }
 
 static void
@@ -729,7 +777,9 @@ test_bond_ip(void)
 
     s_ip6 = nm_connection_get_setting_ip6_config(connection);
     g_assert(s_ip6);
-    g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+    g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip6),
+                    ==,
+                    NM_SETTING_IP6_CONFIG_METHOD_DISABLED);
     g_assert(!nm_setting_ip_config_get_ignore_auto_dns(s_ip6));
     g_assert_cmpint(nm_setting_ip_config_get_num_dns(s_ip6), ==, 0);
     g_assert(!nm_setting_ip_config_get_gateway(s_ip6));
@@ -1790,6 +1840,7 @@ main(int argc, char **argv)
     g_test_add_func("/initrd/cmdline/if_ip4_manual", test_if_ip4_manual);
     g_test_add_func("/initrd/cmdline/if_ip6_manual", test_if_ip6_manual);
     g_test_add_func("/initrd/cmdline/if_mac_ifname", test_if_mac_ifname);
+    g_test_add_func("/initrd/cmdline/if_off", test_if_off);
     g_test_add_func("/initrd/cmdline/multiple/merge", test_multiple_merge);
     g_test_add_func("/initrd/cmdline/multiple/bootdev", test_multiple_bootdev);
     g_test_add_func("/initrd/cmdline/nameserver", test_nameserver);

@@ -41,6 +41,10 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Fix failure activating Wi-Fi P2P connections.
 * Reformat code using spaces instead of tabs. Also, the entire C
   source code is now formatted with "clang-format" (version 11.0).
+* Change the behavior of nm-initrd-generator so that the 'ip=off|none' kernel
+  cmdline argument actually generates a connection which disables both
+  ipv4 and ipv6. Previously the generated connection would disable ipv4
+  but ipv6 would be set to the 'auto' method.
 
 =============================================
 NetworkManager-1.26
