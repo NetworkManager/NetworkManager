@@ -152,7 +152,8 @@ update_add_ip_config(NMDnsSystemdResolved *self,
     addr_size   = nm_utils_addr_family_to_size(addr_family);
 
     if ((!data->domains.search || !data->domains.search[0])
-        && !data->domains.has_default_route_exclusive)
+        && !data->domains.has_default_route_exclusive
+        && !data->domains.has_default_route)
         return FALSE;
 
     n = nm_ip_config_get_num_nameservers(data->ip_config);
