@@ -367,6 +367,7 @@ reader_parse_ip (Reader *reader, const char *sysfs_dir, char *argument)
 	NMSettingIPConfig *s_ip4 = NULL, *s_ip6 = NULL;
 	gs_unref_hashtable GHashTable *ibft = NULL;
 	const char *tmp;
+	const char *tmp2;
 	const char *kind = NULL;
 	const char *client_ip = NULL;
 	const char *peer = NULL;
@@ -391,17 +392,37 @@ reader_parse_ip (Reader *reader, const char *sysfs_dir, char *argument)
 		/* ip={dhcp|on|any|dhcp6|auto6|ibft} */
 		kind = tmp;
 	} else {
-		client_ip_family = get_ip_address_family (tmp, TRUE);
-		if (client_ip_family != AF_UNSPEC) {
-			/* <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>: */
+		tmp2 = get_word (&argument, ':');
+		if (NM_IN_STRSET (tmp2,
+		    "none",
+		    "off",
+		    "dhcp",
+		    "on"
+		    "any",
+		    "dhcp6",
+		    "auto",
+		    "auto6",
+		    "ibft")) {
+			/* <ifname>:{none|off|dhcp|on|any|dhcp6|auto|auto6|ibft} */
+			iface_spec = tmp;
+			kind = tmp2;
+		} else {
+			/* <client-IP>:[<peer>]:<gateway-IP>:<netmask>:<client_hostname>:<kind> */
 			client_ip = tmp;
-			peer = get_word (&argument, ':');
+			if (client_ip) {
+				client_ip_family = get_ip_address_family (client_ip, TRUE);
+				if (client_ip_family == AF_UNSPEC) {
+					_LOGW (LOGD_CORE, "Invalid IP address '%s'.", client_ip);
+					return;
+				}
+			}
+
+			peer = tmp2;
 			gateway_ip = get_word (&argument, ':');
 			netmask = get_word (&argument, ':');
 			client_hostname = get_word (&argument, ':');
 			iface_spec = get_word (&argument, ':');
-		} else {
-			iface_spec = tmp;
+			kind = get_word (&argument, ':');
 		}
 
 		if (client_hostname && !nm_sd_hostname_is_valid (client_hostname, FALSE))
@@ -411,10 +432,6 @@ reader_parse_ip (Reader *reader, const char *sysfs_dir, char *argument)
 			g_free (reader->hostname);
 			reader->hostname = g_strdup (client_hostname);
 		}
-
-		/* <ifname>:{none|off|dhcp|on|any|dhcp6|auto6|ibft} */
-
-		kind = get_word (&argument, ':');
 
 		tmp = get_word (&argument, ':');
 		dns_addr_family[0] = get_ip_address_family (tmp, FALSE);
