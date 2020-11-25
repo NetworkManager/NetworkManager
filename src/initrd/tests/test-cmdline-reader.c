@@ -80,6 +80,116 @@ test_auto(void)
 }
 
 static void
+test_dhcp_with_hostname(void)
+{
+    gs_unref_hashtable GHashTable *connections = NULL;
+    const char *const *            ARGV        = NM_MAKE_STRV("ip=::::host1::dhcp");
+    NMConnection *                 connection;
+    NMSettingConnection *          s_con;
+    NMSettingWired *               s_wired;
+    NMSettingIPConfig *            s_ip4;
+    NMSettingIPConfig *            s_ip6;
+    gs_free char *                 hostname = NULL;
+
+    connections = nmi_cmdline_reader_parse(TEST_INITRD_DIR "/sysfs", ARGV, &hostname);
+    g_assert(connections);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 1);
+    g_assert_cmpstr(hostname, ==, "host1");
+
+    connection = g_hash_table_lookup(connections, "default_connection");
+    g_assert(connection);
+    nmtst_assert_connection_verifies_without_normalization(connection);
+
+    g_assert(!nm_connection_get_setting_vlan(connection));
+
+    s_con = nm_connection_get_setting_connection(connection);
+    g_assert(s_con);
+    g_assert_cmpstr(nm_setting_connection_get_connection_type(s_con),
+                    ==,
+                    NM_SETTING_WIRED_SETTING_NAME);
+    g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "Wired Connection");
+    g_assert_cmpint(nm_setting_connection_get_timestamp(s_con), ==, 0);
+    g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
+                    ==,
+                    NM_CONNECTION_MULTI_CONNECT_MULTIPLE);
+    g_assert_cmpint(nm_setting_connection_get_wait_device_timeout(s_con), ==, -1);
+
+    g_assert(nm_setting_connection_get_autoconnect(s_con));
+
+    s_wired = nm_connection_get_setting_wired(connection);
+    g_assert(s_wired);
+    g_assert(!nm_setting_wired_get_mac_address(s_wired));
+    g_assert_cmpint(nm_setting_wired_get_mtu(s_wired), ==, 0);
+
+    s_ip4 = nm_connection_get_setting_ip4_config(connection);
+    g_assert(s_ip4);
+    g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+
+    s_ip6 = nm_connection_get_setting_ip6_config(connection);
+    g_assert(s_ip6);
+    g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+}
+
+static void
+test_dhcp_with_mtu(void)
+{
+    const char *const *ARGV0  = NM_MAKE_STRV("ip=:dhcp:1499");
+    const char *const *ARGV1  = NM_MAKE_STRV("ip=::::::dhcp:1499");
+    const char *const *ARGV[] = {ARGV0, ARGV1};
+    guint              i;
+
+    for (i = 0; i < G_N_ELEMENTS(ARGV); i++) {
+        gs_unref_hashtable GHashTable *connections = NULL;
+        NMConnection *                 connection;
+        NMSettingConnection *          s_con;
+        NMSettingWired *               s_wired;
+        NMSettingIPConfig *            s_ip4;
+        NMSettingIPConfig *            s_ip6;
+        gs_free char *                 hostname = NULL;
+
+        connections = nmi_cmdline_reader_parse(TEST_INITRD_DIR "/sysfs", ARGV[i], &hostname);
+        g_assert(connections);
+        g_assert_cmpint(g_hash_table_size(connections), ==, 1);
+        g_assert_cmpstr(hostname, ==, NULL);
+
+        connection = g_hash_table_lookup(connections, "default_connection");
+        g_assert(connection);
+        nmtst_assert_connection_verifies_without_normalization(connection);
+
+        s_con = nm_connection_get_setting_connection(connection);
+        g_assert(s_con);
+        g_assert_cmpstr(nm_setting_connection_get_connection_type(s_con),
+                        ==,
+                        NM_SETTING_WIRED_SETTING_NAME);
+        g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "Wired Connection");
+        g_assert_cmpint(nm_setting_connection_get_timestamp(s_con), ==, 0);
+        g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
+                        ==,
+                        NM_CONNECTION_MULTI_CONNECT_MULTIPLE);
+        g_assert_cmpint(nm_setting_connection_get_wait_device_timeout(s_con), ==, -1);
+
+        g_assert(nm_setting_connection_get_autoconnect(s_con));
+
+        s_wired = nm_connection_get_setting_wired(connection);
+        g_assert(s_wired);
+        g_assert(!nm_setting_wired_get_mac_address(s_wired));
+        g_assert_cmpint(nm_setting_wired_get_mtu(s_wired), ==, 1499);
+
+        s_ip4 = nm_connection_get_setting_ip4_config(connection);
+        g_assert(s_ip4);
+        g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip4),
+                        ==,
+                        NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+
+        s_ip6 = nm_connection_get_setting_ip6_config(connection);
+        g_assert(s_ip6);
+        g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip6),
+                        ==,
+                        NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+    }
+}
+
+static void
 test_if_auto_with_mtu(void)
 {
     gs_unref_hashtable GHashTable *connections = NULL;
@@ -2071,6 +2181,8 @@ main(int argc, char **argv)
     nmtst_init_assert_logging(&argc, &argv, "INFO", "DEFAULT");
 
     g_test_add_func("/initrd/cmdline/auto", test_auto);
+    g_test_add_func("/initrd/cmdline/dhcp_with_hostname", test_dhcp_with_hostname);
+    g_test_add_func("/initrd/cmdline/dhcp_with_mtu", test_dhcp_with_mtu);
     g_test_add_func("/initrd/cmdline/if_auto_with_mtu", test_if_auto_with_mtu);
     g_test_add_func("/initrd/cmdline/if_dhcp6", test_if_dhcp6);
     g_test_add_func("/initrd/cmdline/if_auto_with_mtu_and_mac", test_if_auto_with_mtu_and_mac);
