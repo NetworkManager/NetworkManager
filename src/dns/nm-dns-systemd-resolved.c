@@ -65,6 +65,7 @@ typedef struct {
 	bool dbus_has_owner:1;
 	bool dbus_initied:1;
 	bool request_queue_to_send:1;
+	NMTernary has_link_default_route:3;
 } NMDnsSystemdResolvedPrivate;
 
 struct _NMDnsSystemdResolved {
@@ -142,17 +143,29 @@ call_done (GObject *source, GAsyncResult *r, gpointer user_data)
 	priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
 
 	if (v) {
+		if (   request_item->operation == DBUS_OP_SET_LINK_DEFAULT_ROUTE
+		    && priv->has_link_default_route == NM_TERNARY_DEFAULT) {
+			priv->has_link_default_route = NM_TERNARY_TRUE;
+			_LOGD ("systemd-resolved support for SetLinkDefaultRoute(): API supported");
+		}
 		priv->send_updates_warn_ratelimited = FALSE;
 		return;
 	}
 
-	log_level = LOGL_DEBUG;
+	if (   request_item->operation == DBUS_OP_SET_LINK_DEFAULT_ROUTE
+	    && nm_g_error_matches (error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD)) {
+		if (priv->has_link_default_route == NM_TERNARY_DEFAULT) {
+			priv->has_link_default_route = NM_TERNARY_FALSE;
+			_LOGD ("systemd-resolved support for SetLinkDefaultRoute(): API not supported");
+		}
+		return;
+	}
 
+	log_level = LOGL_DEBUG;
 	if (!priv->send_updates_warn_ratelimited) {
 		priv->send_updates_warn_ratelimited = TRUE;
 		log_level = LOGL_WARN;
 	}
-
 	_NMLOG (log_level,
 	        "send-updates %s@%d failed: %s",
 	        request_item->operation,
@@ -369,6 +382,15 @@ send_updates (NMDnsSystemdResolved *self)
 	priv->request_queue_to_send = FALSE;
 
 	c_list_for_each_entry (request_item, &priv->request_queue_lst_head, request_queue_lst) {
+		if (   request_item->operation == DBUS_OP_SET_LINK_DEFAULT_ROUTE
+		    && priv->has_link_default_route == NM_TERNARY_FALSE) {
+			/* The "SetLinkDefaultRoute" API is only supported since v240.
+			 * We detected that it is not supported, and skip the call. There
+			 * is no special workaround, because in this case we rely on systemd-resolved
+			 * to do the right thing automatically. */
+			continue;
+		}
+
 		/* Above we explicitly call "StartServiceByName" trying to avoid D-Bus activating systmd-resolved
 		 * multiple times. There is still a race, were we might hit this line although actually
 		 * the service just quit this very moment. In that case, we would try to D-Bus activate the
@@ -487,7 +509,8 @@ name_owner_changed (NMDnsSystemdResolved *self,
 	if (owner) {
 		priv->try_start_blocked = FALSE;
 		priv->request_queue_to_send = TRUE;
-	}
+	} else
+		priv->has_link_default_route = NM_TERNARY_DEFAULT;
 
 	send_updates (self);
 }
@@ -568,6 +591,8 @@ static void
 nm_dns_systemd_resolved_init (NMDnsSystemdResolved *self)
 {
 	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
+
+	priv->has_link_default_route = NM_TERNARY_DEFAULT;
 
 	c_list_init (&priv->request_queue_lst_head);
 	priv->dirty_interfaces = g_hash_table_new (nm_direct_hash, NULL);
