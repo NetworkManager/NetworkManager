@@ -58,7 +58,11 @@
 %bcond_without nm_cloud_setup
 %bcond_without regen_docs
 %bcond_with    debug
+%if 0%{?rhel} >= 9
+%bcond_without test
+%else
 %bcond_with    test
+%endif
 %if 0%{?fedora} >= 33 || 0%{?rhel} >= 9
 %bcond_without lto
 %else
