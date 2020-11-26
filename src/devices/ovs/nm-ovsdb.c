@@ -992,7 +992,7 @@ _add_interface(NMOvsdb *     self,
     nm_auto_decref_json json_t *interfaces     = NULL;
     nm_auto_decref_json json_t *new_interfaces = NULL;
     gboolean                    has_interface  = FALSE;
-    gboolean                    interface_is_internal;
+    gboolean                    interface_is_local;
     gs_free char *              bridge_cloned_mac    = NULL;
     gs_free char *              interface_cloned_mac = NULL;
     GError *                    error                = NULL;
@@ -1006,10 +1006,10 @@ _add_interface(NMOvsdb *     self,
     new_ports      = json_array();
     new_interfaces = json_array();
 
-    bridge_name           = nm_connection_get_interface_name(bridge);
-    port_name             = nm_connection_get_interface_name(port);
-    interface_name        = nm_connection_get_interface_name(interface);
-    interface_is_internal = nm_streq0(bridge_name, interface_name);
+    bridge_name        = nm_connection_get_interface_name(bridge);
+    port_name          = nm_connection_get_interface_name(port);
+    interface_name     = nm_connection_get_interface_name(interface);
+    interface_is_local = nm_streq0(bridge_name, interface_name);
 
     /* Determine cloned MAC addresses */
     if (!nm_device_hw_addr_get_cloned(bridge_device,
@@ -1018,7 +1018,7 @@ _add_interface(NMOvsdb *     self,
                                       &bridge_cloned_mac,
                                       NULL,
                                       &error)) {
-        _LOGW("Cannot determine cloned mac for OVS %s '%s': %s",
+        _LOGW("Cannot determine cloned MAC for OVS %s '%s': %s",
               "bridge",
               bridge_name,
               error->message);
@@ -1031,18 +1031,34 @@ _add_interface(NMOvsdb *     self,
                                       &interface_cloned_mac,
                                       NULL,
                                       &error)) {
-        _LOGW("Cannot determine cloned mac for OVS %s '%s': %s",
+        _LOGW("Cannot determine cloned MAC for OVS %s '%s': %s",
               "interface",
               interface_name,
               error->message);
         g_clear_error(&error);
     }
 
-    if (interface_is_internal && !bridge_cloned_mac && interface_cloned_mac) {
-        _LOGT("'%s' is a local ovs-interface, the MAC will be set on ovs-bridge '%s'",
-              interface_name,
-              bridge_name);
-        bridge_cloned_mac = g_steal_pointer(&interface_cloned_mac);
+    /* For local interfaces, ovs complains if it finds a
+     * MAC address in the Interface table because it only takes
+     * the MAC from the Bridge table.
+     * Set any cloned MAC present in a local interface connection
+     * into the Bridge table, unless conflicting with the bridge MAC. */
+    if (interface_is_local && interface_cloned_mac) {
+        if (bridge_cloned_mac && !nm_streq(interface_cloned_mac, bridge_cloned_mac)) {
+            _LOGW("Cloned MAC '%s' of local ovs-interface '%s' conflicts with MAC '%s' of bridge "
+                  "'%s'",
+                  interface_cloned_mac,
+                  interface_name,
+                  bridge_cloned_mac,
+                  bridge_name);
+            nm_clear_g_free(&interface_cloned_mac);
+        } else {
+            nm_clear_g_free(&bridge_cloned_mac);
+            bridge_cloned_mac = g_steal_pointer(&interface_cloned_mac);
+            _LOGT("'%s' is a local ovs-interface, the MAC will be set on ovs-bridge '%s'",
+                  interface_name,
+                  bridge_name);
+        }
     }
 
     g_hash_table_iter_init(&iter, priv->bridges);
@@ -1108,7 +1124,7 @@ _add_interface(NMOvsdb *     self,
             g_return_if_fail(ovs_bridge);
             _expect_bridge_ports(params, ovs_bridge->name, ports);
             _set_bridge_ports(params, bridge_name, new_ports);
-            if (bridge_cloned_mac && interface_is_internal)
+            if (bridge_cloned_mac && interface_is_local)
                 _set_bridge_mac(params, bridge_name, bridge_cloned_mac);
         }
 
