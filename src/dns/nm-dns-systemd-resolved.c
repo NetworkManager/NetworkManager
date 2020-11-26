@@ -131,22 +131,37 @@ call_done(GObject *source, GAsyncResult *r, gpointer user_data)
     gs_free_error GError *       error = NULL;
     NMDnsSystemdResolved *       self;
     NMDnsSystemdResolvedPrivate *priv;
+    RequestItem *                request_item;
+    NMLogLevel                   log_level;
 
     v = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), r, &error);
     if (nm_utils_error_is_cancelled(error))
-        return;
+        goto out;
 
-    self = user_data;
-    priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    request_item = user_data;
+    self         = request_item->self;
+    priv         = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
 
-    if (!v) {
-        if (!priv->send_updates_warn_ratelimited) {
-            priv->send_updates_warn_ratelimited = TRUE;
-            _LOGW("send-updates failed to update systemd-resolved: %s", error->message);
-        } else
-            _LOGD("send-updates failed: %s", error->message);
-    } else
+    if (v) {
         priv->send_updates_warn_ratelimited = FALSE;
+        goto out;
+    }
+
+    log_level = LOGL_DEBUG;
+
+    if (!priv->send_updates_warn_ratelimited) {
+        priv->send_updates_warn_ratelimited = TRUE;
+        log_level                           = LOGL_WARN;
+    }
+
+    _NMLOG(log_level,
+           "send-updates %s@%d failed: %s",
+           request_item->operation,
+           request_item->ifindex,
+           error->message);
+
+out:
+    _request_item_free(request_item);
 }
 
 static gboolean
@@ -364,8 +379,8 @@ send_updates(NMDnsSystemdResolved *self)
                                -1,
                                priv->cancellable,
                                call_done,
-                               self);
-        _request_item_free(request_item);
+                               request_item);
+        c_list_unlink(&request_item->request_queue_lst);
     }
 }
 
