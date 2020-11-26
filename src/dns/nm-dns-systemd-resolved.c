@@ -64,6 +64,7 @@ typedef struct {
     bool             try_start_blocked : 1;
     bool             dbus_has_owner : 1;
     bool             dbus_initied : 1;
+    bool             request_queue_to_send : 1;
 } NMDnsSystemdResolvedPrivate;
 
 struct _NMDnsSystemdResolved {
@@ -136,7 +137,7 @@ call_done(GObject *source, GAsyncResult *r, gpointer user_data)
 
     v = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), r, &error);
     if (nm_utils_error_is_cancelled(error))
-        goto out;
+        return;
 
     request_item = user_data;
     self         = request_item->self;
@@ -144,7 +145,7 @@ call_done(GObject *source, GAsyncResult *r, gpointer user_data)
 
     if (v) {
         priv->send_updates_warn_ratelimited = FALSE;
-        goto out;
+        return;
     }
 
     log_level = LOGL_DEBUG;
@@ -159,9 +160,6 @@ call_done(GObject *source, GAsyncResult *r, gpointer user_data)
            request_item->operation,
            request_item->ifindex,
            error->message);
-
-out:
-    _request_item_free(request_item);
 }
 
 static gboolean
@@ -321,7 +319,7 @@ send_updates(NMDnsSystemdResolved *self)
     NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
     RequestItem *                request_item;
 
-    if (c_list_is_empty(&priv->request_queue_lst_head)) {
+    if (!priv->request_queue_to_send) {
         /* nothing to do. */
         return;
     }
@@ -351,15 +349,21 @@ send_updates(NMDnsSystemdResolved *self)
         return;
     }
 
-    _LOGT("send-updates: start %lu requests", c_list_length(&priv->request_queue_lst_head));
-
     nm_clear_g_cancellable(&priv->cancellable);
+
+    if (c_list_is_empty(&priv->request_queue_lst_head)) {
+        _LOGT("send-updates: no requests to send");
+        priv->request_queue_to_send = FALSE;
+        return;
+    }
+
+    _LOGT("send-updates: start %lu requests", c_list_length(&priv->request_queue_lst_head));
 
     priv->cancellable = g_cancellable_new();
 
-    while (
-        (request_item =
-             c_list_first_entry(&priv->request_queue_lst_head, RequestItem, request_queue_lst))) {
+    priv->request_queue_to_send = FALSE;
+
+    c_list_for_each_entry (request_item, &priv->request_queue_lst_head, request_queue_lst) {
         /* Above we explicitly call "StartServiceByName" trying to avoid D-Bus activating systmd-resolved
          * multiple times. There is still a race, were we might hit this line although actually
          * the service just quit this very moment. In that case, we would try to D-Bus activate the
@@ -380,7 +384,6 @@ send_updates(NMDnsSystemdResolved *self)
                                priv->cancellable,
                                call_done,
                                request_item);
-        c_list_unlink(&request_item->request_queue_lst);
     }
 }
 
@@ -452,8 +455,8 @@ update(NMDnsPlugin *            plugin,
         }
     }
 
+    priv->request_queue_to_send = TRUE;
     send_updates(self);
-
     return TRUE;
 }
 
@@ -472,8 +475,10 @@ name_owner_changed(NMDnsSystemdResolved *self, const char *owner)
         _LOGT("D-Bus name for systemd-resolved has owner %s", owner);
 
     priv->dbus_has_owner = !!owner;
-    if (owner)
-        priv->try_start_blocked = FALSE;
+    if (owner) {
+        priv->try_start_blocked     = FALSE;
+        priv->request_queue_to_send = TRUE;
+    }
 
     send_updates(self);
 }
