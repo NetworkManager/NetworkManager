@@ -34,6 +34,9 @@
 #define SYSTEMD_RESOLVED_MANAGER_IFACE  "org.freedesktop.resolve1.Manager"
 #define SYSTEMD_RESOLVED_DBUS_PATH      "/org/freedesktop/resolve1"
 
+/* define a variable, so that we can compare the operation with pointer equality. */
+static const char *const DBUS_OP_SET_LINK_DEFAULT_ROUTE = "SetLinkDefaultRoute";
+
 /*****************************************************************************/
 
 typedef struct {
@@ -45,6 +48,8 @@ typedef struct {
 	CList request_queue_lst;
 	const char *operation;
 	GVariant *argument;
+	NMDnsSystemdResolved *self;
+	int ifindex;
 } RequestItem;
 
 /*****************************************************************************/
@@ -86,20 +91,26 @@ _request_item_free (RequestItem *request_item)
 {
 	c_list_unlink_stale (&request_item->request_queue_lst);
 	g_variant_unref (request_item->argument);
-	g_slice_free (RequestItem, request_item);
+	nm_g_slice_free (request_item);
 }
 
 static void
-_request_item_append (CList *request_queue_lst_head,
+_request_item_append (NMDnsSystemdResolved *self,
                       const char *operation,
+                      int ifindex,
                       GVariant *argument)
 {
+	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
 	RequestItem *request_item;
 
-	request_item = g_slice_new (RequestItem);
-	request_item->operation = operation;
-	request_item->argument = g_variant_ref_sink (argument);
-	c_list_link_tail (request_queue_lst_head, &request_item->request_queue_lst);
+	request_item  = g_slice_new (RequestItem);
+	*request_item = (RequestItem) {
+		.operation = operation,
+		.argument  = g_variant_ref_sink (argument),
+		.self      = self,
+		.ifindex   = ifindex,
+	};
+	c_list_link_tail (&priv->request_queue_lst_head, &request_item->request_queue_lst);
 }
 
 /*****************************************************************************/
@@ -116,14 +127,14 @@ call_done (GObject *source, GAsyncResult *r, gpointer user_data)
 {
 	gs_unref_variant GVariant *v = NULL;
 	gs_free_error GError *error = NULL;
-	NMDnsSystemdResolved *self = (NMDnsSystemdResolved *) user_data;
+	NMDnsSystemdResolved *self;
 	NMDnsSystemdResolvedPrivate *priv;
 
 	v = g_dbus_connection_call_finish (G_DBUS_CONNECTION (source), r, &error);
-	if (   !v
-	    && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+	if (nm_utils_error_is_cancelled (error))
 		return;
 
+	self = user_data;
 	priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
 
 	if (!v) {
@@ -200,8 +211,8 @@ free_pending_updates (NMDnsSystemdResolved *self)
 static gboolean
 prepare_one_interface (NMDnsSystemdResolved *self, InterfaceConfig *ic)
 {
-	NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE (self);
-	GVariantBuilder dns, domains;
+	GVariantBuilder dns;
+	GVariantBuilder domains;
 	NMCListElem *elem;
 	NMSettingConnectionMdns mdns = NM_SETTING_CONNECTION_MDNS_DEFAULT;
 	NMSettingConnectionLlmnr llmnr = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
@@ -270,20 +281,25 @@ prepare_one_interface (NMDnsSystemdResolved *self, InterfaceConfig *ic)
 	if (!nm_str_is_empty (mdns_arg) || !nm_str_is_empty (llmnr_arg))
 		has_config = TRUE;
 
-	_request_item_append (&priv->request_queue_lst_head,
+	_request_item_append (self,
 	                      "SetLinkDomains",
+	                      ic->ifindex,
 	                      g_variant_builder_end (&domains));
-	_request_item_append (&priv->request_queue_lst_head,
-	                      "SetLinkDefaultRoute",
+	_request_item_append (self,
+	                      DBUS_OP_SET_LINK_DEFAULT_ROUTE,
+	                      ic->ifindex,
 	                      g_variant_new ("(ib)", ic->ifindex, has_default_route));
-	_request_item_append (&priv->request_queue_lst_head,
+	_request_item_append (self,
 	                      "SetLinkMulticastDNS",
+	                      ic->ifindex,
 	                      g_variant_new ("(is)", ic->ifindex, mdns_arg ?: ""));
-	_request_item_append (&priv->request_queue_lst_head,
+	_request_item_append (self,
 	                      "SetLinkLLMNR",
+	                      ic->ifindex,
 	                      g_variant_new ("(is)", ic->ifindex, llmnr_arg ?: ""));
-	_request_item_append (&priv->request_queue_lst_head,
+	_request_item_append (self,
 	                      "SetLinkDNS",
+	                      ic->ifindex,
 	                      g_variant_builder_end (&dns));
 
 	return has_config;
