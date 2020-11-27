@@ -843,7 +843,8 @@ static const ConfigGroup config_groups[] = {
                              NM_CONFIG_KEYFILE_KEY_MAIN_PLUGINS,
                              NM_CONFIG_KEYFILE_KEY_MAIN_RC_MANAGER,
                              NM_CONFIG_KEYFILE_KEY_MAIN_SLAVES_ORDER,
-                             NM_CONFIG_KEYFILE_KEY_MAIN_SYSTEMD_RESOLVED, ),
+                             NM_CONFIG_KEYFILE_KEY_MAIN_SYSTEMD_RESOLVED,
+                             NM_CONFIG_KEYFILE_KEY_MAIN_IWD_CONFIG_PATH, ),
     },
     {
         .group = NM_CONFIG_KEYFILE_GROUP_LOGGING,

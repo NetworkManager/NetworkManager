@@ -190,6 +190,8 @@ int      nm_config_data_get_sriov_num_vfs(const NMConfigData *self, NMDevice *de
 
 NMGlobalDnsConfig *nm_config_data_get_global_dns_config(const NMConfigData *self);
 
+const char *nm_config_data_get_iwd_config_path(const NMConfigData *self);
+
 extern const char *__start_connection_defaults[];
 extern const char *__stop_connection_defaults[];
 

@@ -97,6 +97,8 @@ typedef struct {
     NMGlobalDnsConfig *global_dns;
 
     bool systemd_resolved : 1;
+
+    char *iwd_config_path;
 } NMConfigDataPrivate;
 
 struct _NMConfigData {
@@ -339,6 +341,12 @@ nm_config_data_get_systemd_resolved(const NMConfigData *self)
     g_return_val_if_fail(self, FALSE);
 
     return NM_CONFIG_DATA_GET_PRIVATE(self)->systemd_resolved;
+}
+
+const char *
+nm_config_data_get_iwd_config_path(const NMConfigData *self)
+{
+    return NM_CONFIG_DATA_GET_PRIVATE(self)->iwd_config_path;
 }
 
 gboolean
@@ -684,6 +692,7 @@ static const struct {
      NM_CONFIG_KEYFILE_KEY_MAIN_AUTH_POLKIT,
      NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT},
     {NM_CONFIG_KEYFILE_GROUP_MAIN, NM_CONFIG_KEYFILE_KEY_MAIN_DHCP, NM_CONFIG_DEFAULT_MAIN_DHCP},
+    {NM_CONFIG_KEYFILE_GROUP_MAIN, NM_CONFIG_KEYFILE_KEY_MAIN_IWD_CONFIG_PATH, ""},
     {NM_CONFIG_KEYFILE_GROUP_LOGGING, "backend", NM_CONFIG_DEFAULT_LOGGING_BACKEND},
     {NM_CONFIG_KEYFILE_GROUP_LOGGING, "audit", NM_CONFIG_DEFAULT_LOGGING_AUDIT},
 };
@@ -1910,6 +1919,12 @@ constructed(GObject *object)
     if (!priv->global_dns)
         priv->global_dns = load_global_dns(priv->keyfile_intern, TRUE);
 
+    priv->iwd_config_path =
+        nm_strstrip(g_key_file_get_string(priv->keyfile,
+                                          NM_CONFIG_KEYFILE_GROUP_MAIN,
+                                          NM_CONFIG_KEYFILE_KEY_MAIN_IWD_CONFIG_PATH,
+                                          NULL));
+
     G_OBJECT_CLASS(nm_config_data_parent_class)->constructed(object);
 }
 
@@ -1995,6 +2010,8 @@ finalize(GObject *gobject)
     g_slist_free_full(priv->assume_ipv6ll_only, g_free);
 
     nm_global_dns_config_free(priv->global_dns);
+
+    g_free(priv->iwd_config_path);
 
     _match_section_infos_free(priv->connection_infos);
     _match_section_infos_free(priv->device_infos);
