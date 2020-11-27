@@ -987,7 +987,7 @@ active_connection_find(
     nm_assert(!sett_conn || NM_IS_SETTINGS_CONNECTION(sett_conn));
     nm_assert(!out_all_matching || !*out_all_matching);
 
-    c_list_for_each_entry (ac, &priv->active_connections_lst_head, active_connections_lst) {
+    c_list_for_each_entry_prev (ac, &priv->active_connections_lst_head, active_connections_lst) {
         NMSettingsConnection *ac_conn;
 
         ac_conn = nm_active_connection_get_settings_connection(ac);
