@@ -7,11 +7,13 @@
 
 #include <stdlib.h>
 
+#include "nm-core-internal.h"
 #include "nm-device-veth.h"
 #include "nm-device-private.h"
 #include "nm-manager.h"
 #include "platform/nm-platform.h"
 #include "nm-device-factory.h"
+#include "nm-setting-veth.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceVeth
 #include "nm-device-logging.h"
@@ -42,9 +44,10 @@ update_properties(NMDevice *device)
 
     ifindex = nm_device_get_ifindex(device);
 
-    if (!nm_platform_link_veth_get_properties(nm_device_get_platform(device),
-                                              ifindex,
-                                              &peer_ifindex))
+    if (ifindex <= 0
+        || !nm_platform_link_veth_get_properties(nm_device_get_platform(device),
+                                                 ifindex,
+                                                 &peer_ifindex))
         peer_ifindex = 0;
 
     nm_device_parent_set_ifindex(device, peer_ifindex);
@@ -69,6 +72,81 @@ link_changed(NMDevice *device, const NMPlatformLink *pllink)
 {
     NM_DEVICE_CLASS(nm_device_veth_parent_class)->link_changed(device, pllink);
     update_properties(device);
+}
+
+static gboolean
+create_and_realize(NMDevice *             device,
+                   NMConnection *         connection,
+                   NMDevice *             parent,
+                   const NMPlatformLink **out_plink,
+                   GError **              error)
+{
+    const char *   iface = nm_device_get_iface(device);
+    NMSettingVeth *s_veth;
+    int            r;
+
+    s_veth = _nm_connection_get_setting(connection, NM_TYPE_SETTING_VETH);
+    if (!s_veth) {
+        g_set_error(error,
+                    NM_DEVICE_ERROR,
+                    NM_DEVICE_ERROR_CREATION_FAILED,
+                    "Profile %s (%s) is not a suitable veth profile",
+                    nm_connection_get_id(connection),
+                    nm_connection_get_uuid(connection));
+        return FALSE;
+    }
+
+    r = nm_platform_link_veth_add(nm_device_get_platform(device),
+                                  iface,
+                                  nm_setting_veth_get_peer(s_veth),
+                                  out_plink);
+    if (r < 0) {
+        g_set_error(error,
+                    NM_DEVICE_ERROR,
+                    NM_DEVICE_ERROR_CREATION_FAILED,
+                    "Failed to create veth interface '%s' for '%s': %s",
+                    iface,
+                    nm_connection_get_id(connection),
+                    nm_strerror(r));
+        return FALSE;
+    }
+    return TRUE;
+}
+
+/*****************************************************************************/
+
+static NMDeviceCapabilities
+get_generic_capabilities(NMDevice *device)
+{
+    return NM_DEVICE_CAP_CARRIER_DETECT | NM_DEVICE_CAP_IS_SOFTWARE;
+}
+
+static gboolean
+complete_connection(NMDevice *           device,
+                    NMConnection *       connection,
+                    const char *         specific_object,
+                    NMConnection *const *existing_connections,
+                    GError **            error)
+{
+    NMSettingVeth *s_veth;
+
+    nm_utils_complete_generic(nm_device_get_platform(device),
+                              connection,
+                              NM_SETTING_VETH_SETTING_NAME,
+                              existing_connections,
+                              NULL,
+                              _("Veth connection"),
+                              "veth",
+                              NULL,
+                              TRUE);
+
+    s_veth = _nm_connection_get_setting(connection, NM_TYPE_SETTING_VETH);
+    if (!s_veth) {
+        s_veth = (NMSettingVeth *) nm_setting_veth_new();
+        nm_connection_add_setting(connection, NM_SETTING(s_veth));
+    }
+
+    return TRUE;
 }
 
 /*****************************************************************************/
@@ -136,6 +214,9 @@ nm_device_veth_class_init(NMDeviceVethClass *klass)
     device_class->can_unmanaged_external_down = can_unmanaged_external_down;
     device_class->link_changed                = link_changed;
     device_class->parent_changed_notify       = parent_changed_notify;
+    device_class->create_and_realize          = create_and_realize;
+    device_class->complete_connection         = complete_connection;
+    device_class->get_generic_capabilities    = get_generic_capabilities;
 
     obj_properties[PROP_PEER] = g_param_spec_string(NM_DEVICE_VETH_PEER,
                                                     "",
@@ -171,8 +252,10 @@ create_device(NMDeviceFactory *     factory,
                         NULL);
 }
 
-NM_DEVICE_FACTORY_DEFINE_INTERNAL(VETH,
-                                  Veth,
-                                  veth,
-                                  NM_DEVICE_FACTORY_DECLARE_LINK_TYPES(NM_LINK_TYPE_VETH),
-                                  factory_class->create_device = create_device;);
+NM_DEVICE_FACTORY_DEFINE_INTERNAL(
+    VETH,
+    Veth,
+    veth,
+    NM_DEVICE_FACTORY_DECLARE_LINK_TYPES(NM_LINK_TYPE_VETH)
+        NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES(NM_SETTING_VETH_SETTING_NAME),
+    factory_class->create_device = create_device;);

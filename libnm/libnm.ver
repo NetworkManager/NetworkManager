@@ -1758,6 +1758,7 @@ global:
 
 libnm_1_30_0 {
 global:
+	nm_device_veth_get_type;
 	nm_keyfile_handler_data_fail_with_error;
 	nm_keyfile_handler_data_get_context;
 	nm_keyfile_handler_data_warn_get;
@@ -1778,5 +1779,8 @@ global:
 	nm_setting_ovs_external_ids_get_type;
 	nm_setting_ovs_external_ids_new;
 	nm_setting_ovs_external_ids_set_data;
+	nm_setting_veth_get_peer;
+	nm_setting_veth_get_type;
+	nm_setting_veth_new;
 	nm_utils_print;
 } libnm_1_28_0;

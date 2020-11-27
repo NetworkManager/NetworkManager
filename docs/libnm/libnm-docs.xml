@@ -350,6 +350,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-team.xml"/>
     <xi:include href="xml/nm-setting-tun.xml"/>
     <xi:include href="xml/nm-setting-user.xml"/>
+    <xi:include href="xml/nm-setting-veth.xml"/>
     <xi:include href="xml/nm-setting-vlan.xml"/>
     <xi:include href="xml/nm-setting-vpn.xml"/>
     <xi:include href="xml/nm-setting-vrf.xml"/>
@@ -388,6 +389,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-device-ppp.xml"/>
     <xi:include href="xml/nm-device-team.xml"/>
     <xi:include href="xml/nm-device-tun.xml"/>
+    <xi:include href="xml/nm-device-veth.xml"/>
     <xi:include href="xml/nm-device-vlan.xml"/>
     <xi:include href="xml/nm-device-vrf.xml"/>
     <xi:include href="xml/nm-device-vxlan.xml"/>

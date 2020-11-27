@@ -2642,6 +2642,7 @@ nm_connection_is_virtual(NMConnection *connection)
                      NM_SETTING_OVS_PORT_SETTING_NAME,
                      NM_SETTING_TEAM_SETTING_NAME,
                      NM_SETTING_TUN_SETTING_NAME,
+                     NM_SETTING_VETH_SETTING_NAME,
                      NM_SETTING_VLAN_SETTING_NAME,
                      NM_SETTING_VRF_SETTING_NAME,
                      NM_SETTING_VXLAN_SETTING_NAME,

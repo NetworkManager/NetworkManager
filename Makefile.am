@@ -969,6 +969,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-team.h \
 	libnm-core/nm-setting-tun.h \
 	libnm-core/nm-setting-user.h \
+	libnm-core/nm-setting-veth.h \
 	libnm-core/nm-setting-vlan.h \
 	libnm-core/nm-setting-vpn.h \
 	libnm-core/nm-setting-vrf.h \
@@ -1044,6 +1045,7 @@ libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-team.c \
 	libnm-core/nm-setting-tun.c \
 	libnm-core/nm-setting-user.c \
+	libnm-core/nm-setting-veth.c \
 	libnm-core/nm-setting-vlan.c \
 	libnm-core/nm-setting-vpn.c \
 	libnm-core/nm-setting-vrf.c \
@@ -1363,6 +1365,7 @@ libnm_lib_h_pub_real = \
 	libnm/nm-device-ppp.h \
 	libnm/nm-device-team.h \
 	libnm/nm-device-tun.h \
+	libnm/nm-device-veth.h \
 	libnm/nm-device-vlan.h \
 	libnm/nm-device-vrf.h \
 	libnm/nm-device-vxlan.h \
@@ -1427,6 +1430,7 @@ libnm_lib_c_real = \
 	libnm/nm-device-ppp.c \
 	libnm/nm-device-team.c \
 	libnm/nm-device-tun.c \
+	libnm/nm-device-veth.c \
 	libnm/nm-device-vlan.c \
 	libnm/nm-device-vrf.c \
 	libnm/nm-device-vxlan.c \

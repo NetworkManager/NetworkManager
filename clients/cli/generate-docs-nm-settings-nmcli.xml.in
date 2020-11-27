@@ -986,6 +986,11 @@
     </setting>
     <setting name="user" >
     </setting>
+    <setting name="veth" >
+        <property name="peer"
+                  alias="peer"
+                  description="This property specifies the peer interface name of the veth. This property is mandatory." />
+    </setting>
     <setting name="vlan" >
         <property name="parent"
                   alias="dev"

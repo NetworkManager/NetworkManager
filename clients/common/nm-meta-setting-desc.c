@@ -7085,6 +7085,19 @@ static const NMMetaPropertyInfo *const property_infos_TUN[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_VETH
+static const NMMetaPropertyInfo *const property_infos_VETH[] = {
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_VETH_PEER,
+        .is_cli_option =                TRUE,
+        .property_alias =               "peer",
+        .inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
+        .prompt =                       N_("veth peer"),
+        .property_type =                &_pt_gobject_string,
+    ),
+    NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_VLAN
 static const NMMetaPropertyInfo *const property_infos_VLAN[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_VLAN_PARENT,
@@ -7984,6 +7997,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_TEAM_PORT           N_("Team port")
 #define SETTING_PRETTY_NAME_TUN                 N_("Tun device")
 #define SETTING_PRETTY_NAME_USER                N_("User settings")
+#define SETTING_PRETTY_NAME_VETH                N_("Veth connection")
 #define SETTING_PRETTY_NAME_VLAN                N_("VLAN connection")
 #define SETTING_PRETTY_NAME_VPN                 N_("VPN connection")
 #define SETTING_PRETTY_NAME_VRF                 N_("VRF connection")
@@ -8224,6 +8238,14 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
         .setting_init_fcn =             _setting_init_fcn_tun,
     ),
     SETTING_INFO_EMPTY (USER),
+    SETTING_INFO (VETH,
+        .valid_parts = NM_META_SETTING_VALID_PARTS (
+            NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+            NM_META_SETTING_VALID_PART_ITEM (VETH,                  TRUE),
+            NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+            NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
+        ),
+    ),
     SETTING_INFO (VLAN,
         .valid_parts = NM_META_SETTING_VALID_PARTS (
             NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
