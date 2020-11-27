@@ -1390,11 +1390,11 @@ _hw_addr_set_scanning(NMDeviceWifi *self, gboolean do_reset)
          * a new one.*/
         priv->hw_addr_scan_expire = now + SCAN_RAND_MAC_ADDRESS_EXPIRE_SEC;
 
-        generate_mac_address_mask =
-            nm_config_data_get_device_config(NM_CONFIG_GET_DATA,
-                                             "wifi.scan-generate-mac-address-mask",
-                                             device,
-                                             NULL);
+        generate_mac_address_mask = nm_config_data_get_device_config(
+            NM_CONFIG_GET_DATA,
+            NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_SCAN_GENERATE_MAC_ADDRESS_MASK,
+            device,
+            NULL);
 
         priv->scan_last_request_started_at_msec = G_MININT64;
         priv->scan_periodic_next_msec           = 0;
