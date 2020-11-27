@@ -8,6 +8,8 @@
 #include "nm-iwd-manager.h"
 
 #include <net/if.h>
+#include <glib/gstdio.h>
+#include <errno.h>
 
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-manager.h"
@@ -16,6 +18,7 @@
 #include "libnm-glib-aux/nm-random-utils.h"
 #include "settings/nm-settings.h"
 #include "libnm-std-aux/nm-dbus-compat.h"
+#include "nm-config.h"
 
 /*****************************************************************************/
 
@@ -28,6 +31,7 @@ typedef struct {
 typedef struct {
     GDBusProxy *          known_network;
     NMSettingsConnection *mirror_connection;
+    const KnownNetworkId *id;
 } KnownNetworkData;
 
 typedef struct {
@@ -419,7 +423,7 @@ known_network_update_cb(GObject *source, GAsyncResult *res, gpointer user_data)
     variant = g_dbus_proxy_call_finish(G_DBUS_PROXY(source), res, &error);
     if (!variant) {
         nm_log_warn(LOGD_WIFI,
-                    "Updating %s on IWD known network %s failed: %s",
+                    "iwd: updating %s on IWD known network %s failed: %s",
                     (const char *) user_data,
                     g_dbus_proxy_get_object_path(G_DBUS_PROXY(source)),
                     error->message);
@@ -427,17 +431,31 @@ known_network_update_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 }
 
 static void
-sett_conn_changed(NMSettingsConnection *sett_conn, guint update_reason, KnownNetworkData *data)
+sett_conn_changed(NMSettingsConnection *  sett_conn,
+                  guint                   update_reason,
+                  const KnownNetworkData *data)
 {
     NMSettingsConnectionIntFlags flags;
-    NMConnection *               conn   = nm_settings_connection_get_connection(sett_conn);
-    NMSettingConnection *        s_conn = nm_connection_get_setting_connection(conn);
-    gboolean                     nm_autoconnectable = nm_setting_connection_get_autoconnect(s_conn);
-    gboolean iwd_autoconnectable = get_property_bool(data->known_network, "AutoConnect", TRUE);
+    NMConnection *               conn          = nm_settings_connection_get_connection(sett_conn);
+    NMSettingConnection *        s_conn        = nm_connection_get_setting_connection(conn);
+    NMSettingWireless *          s_wifi        = nm_connection_get_setting_wireless(conn);
+    nm_auto_unref_keyfile GKeyFile *iwd_config = NULL;
+    const char *                    iwd_dir;
+    gs_free char *                  filename  = NULL;
+    gs_free char *                  full_path = NULL;
+    gs_free_error GError *error               = NULL;
+    NMIwdNetworkSecurity  security;
+    GBytes *              ssid;
+    const guint8 *        ssid_data;
+    gsize                 ssid_len;
+    gboolean              removed;
 
     nm_assert(sett_conn == data->mirror_connection);
 
-    if (iwd_autoconnectable == nm_autoconnectable)
+    if (update_reason
+        & (NM_SETTINGS_CONNECTION_UPDATE_REASON_CLEAR_SYSTEM_SECRETS
+           | NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_SYSTEM_SECRETS
+           | NM_SETTINGS_CONNECTION_UPDATE_REASON_BLOCK_AUTOCONNECT))
         return;
 
     /* If this is a generated connection it may be ourselves updating it */
@@ -445,21 +463,113 @@ sett_conn_changed(NMSettingsConnection *sett_conn, guint update_reason, KnownNet
     if (NM_FLAGS_HAS(flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED))
         return;
 
+    iwd_dir = nm_config_data_get_iwd_config_path(NM_CONFIG_GET_DATA);
+    if (!iwd_dir || iwd_dir[0] == '\0' || !g_file_test(iwd_dir, G_FILE_TEST_IS_DIR)) {
+        gboolean nm_autoconnectable  = nm_setting_connection_get_autoconnect(s_conn);
+        gboolean iwd_autoconnectable = get_property_bool(data->known_network, "AutoConnect", TRUE);
+
+        if (iwd_autoconnectable == nm_autoconnectable) {
+            nm_log_dbg(LOGD_WIFI,
+                       "iwd: updating AutoConnect on known network at %s based on connection %s",
+                       g_dbus_proxy_get_object_path(data->known_network),
+                       nm_settings_connection_get_id(data->mirror_connection));
+            g_dbus_proxy_call(data->known_network,
+                              DBUS_INTERFACE_PROPERTIES ".Set",
+                              g_variant_new("(ssv)",
+                                            NM_IWD_KNOWN_NETWORK_INTERFACE,
+                                            "AutoConnect",
+                                            g_variant_new_boolean(nm_autoconnectable)),
+                              G_DBUS_CALL_FLAGS_NONE,
+                              -1,
+                              NULL,
+                              known_network_update_cb,
+                              "AutoConnect");
+        }
+
+        return;
+    }
+
+    /* If the SSID and the security type in the NMSettingsConnection haven't
+     * changed, we just need to overwrite the original IWD config file.
+     * Otherwise we need to call Forget on the original KnownNetwork or
+     * remove its file.  IWD will have to delete one D-Bus object and
+     * create another anyway because the SSID and security type are in the
+     * D-Bus object path, so no point renaming the file.
+     */
+    ssid      = nm_setting_wireless_get_ssid(s_wifi);
+    ssid_data = ssid ? g_bytes_get_data(ssid, &ssid_len) : NULL;
+    removed   = FALSE;
+
+    if (!nm_wifi_connection_get_iwd_ssid_and_security(conn, NULL, &security)
+        || security != data->id->security || !ssid_data || ssid_len != strlen(data->id->name)
+        || memcmp(ssid_data, data->id->name, ssid_len)) {
+        gs_free char *orig_filename =
+            nm_wifi_utils_get_iwd_config_filename(data->id->name, -1, data->id->security);
+        gs_free char *orig_full_path = g_strdup_printf("%s/%s", iwd_dir, orig_filename);
+
+        if (g_remove(orig_full_path) == 0)
+            nm_log_dbg(LOGD_WIFI, "iwd: profile at %s removed", orig_full_path);
+        else if (errno != ENOENT)
+            nm_log_dbg(LOGD_WIFI,
+                       "iwd: profile at %s not removed: %s (%i)",
+                       orig_full_path,
+                       strerror(errno),
+                       errno);
+
+        removed = TRUE;
+    }
+
+    if (!nm_streq(nm_settings_connection_get_connection_type(sett_conn), "802-11-wireless")
+        || !s_wifi)
+        return;
+
+    /* If the connection has any permissions other than the default we don't
+     * want to save it as an IWD profile.  IWD will make it available for
+     * everybody to attempt a connection, remove, or toggle "autoconnectable".
+     */
+    if (s_conn && nm_setting_connection_get_num_permissions(s_conn)) {
+        nm_log_dbg(
+            LOGD_WIFI,
+            "iwd: changed Wi-Fi connection %s not mirrored as IWD profile because of non-default "
+            "permissions",
+            nm_settings_connection_get_id(sett_conn));
+        return;
+    }
+
+    iwd_config = nm_wifi_utils_connection_to_iwd_config(conn, &filename, &error);
+    if (!iwd_config) {
+        /* The error message here is not translated and it only goes in
+         * the logs.
+         */
+        nm_log_dbg(LOGD_WIFI,
+                   "iwd: changed Wi-Fi connection %s not mirrored as IWD profile: %s",
+                   nm_settings_connection_get_id(sett_conn),
+                   error->message);
+        return;
+    }
+
+    full_path = g_strdup_printf("%s/%s", iwd_dir, filename);
+    if (removed && g_file_test(full_path, G_FILE_TEST_EXISTS)) {
+        nm_log_dbg(LOGD_WIFI,
+                   "iwd: changed Wi-Fi connection %s not mirrored as IWD profile because %s "
+                   "already exists",
+                   nm_settings_connection_get_id(sett_conn),
+                   full_path);
+        return;
+    }
+
+    if (!g_key_file_save_to_file(iwd_config, full_path, &error)) {
+        nm_log_dbg(LOGD_WIFI,
+                   "iwd: changed Wi-Fi connection %s not mirrored as IWD profile: save error: %s",
+                   nm_settings_connection_get_id(sett_conn),
+                   error->message);
+        return;
+    }
+
     nm_log_dbg(LOGD_WIFI,
-               "Updating AutoConnect on known network at %s based on connection %s",
-               g_dbus_proxy_get_object_path(data->known_network),
-               nm_settings_connection_get_id(data->mirror_connection));
-    g_dbus_proxy_call(data->known_network,
-                      DBUS_INTERFACE_PROPERTIES ".Set",
-                      g_variant_new("(ssv)",
-                                    NM_IWD_KNOWN_NETWORK_INTERFACE,
-                                    "AutoConnect",
-                                    g_variant_new_boolean(nm_autoconnectable)),
-                      G_DBUS_CALL_FLAGS_NONE,
-                      -1,
-                      NULL,
-                      known_network_update_cb,
-                      "AutoConnect");
+               "iwd: changed Wi-Fi connection %s mirrored as IWD profile %s",
+               nm_settings_connection_get_id(sett_conn),
+               full_path);
 }
 
 /* Look up an existing NMSettingsConnection for a network that has been
@@ -590,7 +700,7 @@ mirror_connection(NMIwdManager *        self,
                          NULL);
             g_object_set(G_OBJECT(s_wifi), NM_SETTING_WIRELESS_HIDDEN, hidden, NULL);
         } else {
-            KnownNetworkData data = {known_network, settings_connection};
+            KnownNetworkData data = {known_network, settings_connection, id};
             sett_conn_changed(settings_connection, 0, &data);
         }
     }
@@ -779,6 +889,7 @@ interface_added(GDBusObjectManager *object_manager,
         } else {
             data                = g_slice_new0(KnownNetworkData);
             data->known_network = g_object_ref(proxy);
+            data->id            = id;
             g_hash_table_insert(priv->known_networks, id, data);
         }
 
@@ -907,6 +1018,9 @@ connection_removed(NMSettings *settings, NMSettingsConnection *sett_conn, gpoint
     const guint8 *        ssid_bytes;
     gsize                 ssid_len;
     NMSettingsConnection *new_mirror_conn;
+    const char *          iwd_dir;
+    gs_free char *        filename  = NULL;
+    gs_free char *        full_path = NULL;
 
     if (!nm_wifi_connection_get_iwd_ssid_and_security(conn, NULL, &id.security))
         return;
@@ -923,8 +1037,12 @@ connection_removed(NMSettings *settings, NMSettingsConnection *sett_conn, gpoint
     ssid_buf[ssid_len] = '\0';
     id.name            = ssid_buf;
     data               = g_hash_table_lookup(priv->known_networks, &id);
-    if (!data)
-        return;
+    if (!data) {
+        if (!g_utf8_validate((const char *) ssid_bytes, ssid_len, NULL))
+            return;
+
+        goto try_delete_file;
+    }
 
     if (data->mirror_connection != sett_conn)
         return;
@@ -941,7 +1059,7 @@ connection_removed(NMSettings *settings, NMSettingsConnection *sett_conn, gpoint
     }
 
     if (!priv->running)
-        return;
+        goto try_delete_file;
 
     g_dbus_proxy_call(data->known_network,
                       "Forget",
@@ -951,6 +1069,91 @@ connection_removed(NMSettings *settings, NMSettingsConnection *sett_conn, gpoint
                       NULL,
                       NULL,
                       NULL);
+    return;
+
+try_delete_file:
+    if (mirror_connection(self, &id, FALSE, NULL))
+        return;
+
+    iwd_dir = nm_config_data_get_iwd_config_path(NM_CONFIG_GET_DATA);
+    if (!iwd_dir || iwd_dir[0] == '\0' || !g_file_test(iwd_dir, G_FILE_TEST_IS_DIR))
+        return;
+
+    filename  = nm_wifi_utils_get_iwd_config_filename(id.name, ssid_len, id.security);
+    full_path = g_strdup_printf("%s/%s", iwd_dir, filename);
+    if (g_remove(full_path) == 0)
+        _LOGD("IWD profile at %s removed", full_path);
+    else if (errno != ENOENT)
+        _LOGD("IWD profile at %s not removed: %s (%i)", full_path, strerror(errno), errno);
+}
+
+static void
+connection_added(NMSettings *settings, NMSettingsConnection *sett_conn, gpointer user_data)
+{
+    NMIwdManager *       self   = user_data;
+    NMConnection *       conn   = nm_settings_connection_get_connection(sett_conn);
+    NMSettingConnection *s_conn = nm_connection_get_setting_connection(conn);
+    const char *         iwd_dir;
+    gs_free char *       filename              = NULL;
+    gs_free char *       full_path             = NULL;
+    gs_free_error GError *error                = NULL;
+    nm_auto_unref_keyfile GKeyFile *iwd_config = NULL;
+    NMSettingsConnectionIntFlags    flags;
+
+    if (!nm_streq(nm_settings_connection_get_connection_type(sett_conn), "802-11-wireless"))
+        return;
+
+    iwd_dir = nm_config_data_get_iwd_config_path(NM_CONFIG_GET_DATA);
+    if (!iwd_dir || iwd_dir[0] == '\0' || !g_file_test(iwd_dir, G_FILE_TEST_IS_DIR))
+        return;
+
+    /* If this is a generated connection it may be ourselves creating it and
+     * directly assigning it to a KnownNetwork's .mirror_connection.
+     */
+    flags = nm_settings_connection_get_flags(sett_conn);
+    if (NM_FLAGS_HAS(flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED))
+        return;
+
+    /* If the connection has any permissions other than the default we don't
+     * want to save it as an IWD profile.  IWD will make it available for
+     * everybody to attempt a connection, remove, or toggle "autoconnectable".
+     */
+    if (s_conn && nm_setting_connection_get_num_permissions(s_conn)) {
+        _LOGD("New Wi-Fi connection %s not mirrored as IWD profile because of non-default "
+              "permissions",
+              nm_settings_connection_get_id(sett_conn));
+        return;
+    }
+
+    iwd_config = nm_wifi_utils_connection_to_iwd_config(conn, &filename, &error);
+    if (!iwd_config) {
+        /* The error message here is not translated and it only goes in
+         * the logs.
+         */
+        _LOGD("New Wi-Fi connection %s not mirrored as IWD profile: %s",
+              nm_settings_connection_get_id(sett_conn),
+              error->message);
+        return;
+    }
+
+    full_path = g_strdup_printf("%s/%s", iwd_dir, filename);
+    if (g_file_test(full_path, G_FILE_TEST_EXISTS)) {
+        _LOGD("New Wi-Fi connection %s not mirrored as IWD profile because %s already exists",
+              nm_settings_connection_get_id(sett_conn),
+              full_path);
+        return;
+    }
+
+    if (!g_key_file_save_to_file(iwd_config, full_path, &error)) {
+        _LOGD("New Wi-Fi connection %s not mirrored as IWD profile: save error: %s",
+              nm_settings_connection_get_id(sett_conn),
+              error->message);
+        return;
+    }
+
+    _LOGD("New Wi-Fi connection %s mirrored as IWD profile %s",
+          nm_settings_connection_get_id(sett_conn),
+          full_path);
 }
 
 static gboolean
@@ -1305,10 +1508,30 @@ nm_iwd_manager_init(NMIwdManager *self)
     g_signal_connect(priv->manager, NM_MANAGER_DEVICE_ADDED, G_CALLBACK(device_added), self);
     g_signal_connect(priv->manager, NM_MANAGER_DEVICE_REMOVED, G_CALLBACK(device_removed), self);
 
+    /* The current logic is that we track all creations and removals but
+     * for modifications we only listen to those connections that are
+     * currently a KnownNetwork's mirror_connection.  There may be multiple
+     * NMSettingsConnections referring to the same SSID+Security type tuple
+     * so to the same KnownNetwork.  So to make connection profile editing
+     * work at least for the simple cases, we track one NMSettingsConnection
+     * out of those, and we map its changes to the IWD KnownNetwork.
+     *
+     * When an NMSettingsConnection is created by a user for a completely
+     * new network and the settings are compatible with IWD, we create an
+     * IWD KnownNetwork config file for it.  IWD will notice that and a
+     * KnownNetwork objects pops up on D-Bus.  We look up a suitable
+     * mirror_connection for it and only then subscribe to modification
+     * signals.  There are various different ways that this could be done,
+     * it's not clear which one's the best.
+     */
     priv->settings = g_object_ref(NM_SETTINGS_GET);
     g_signal_connect(priv->settings,
                      NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,
                      G_CALLBACK(connection_removed),
+                     self);
+    g_signal_connect(priv->settings,
+                     NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
+                     G_CALLBACK(connection_added),
                      self);
 
     priv->cancellable = g_cancellable_new();

@@ -474,6 +474,26 @@ no-auto-default=*
           </para>
         </listitem>
       </varlistentry>
+
+      <varlistentry>
+        <term><varname>iwd-config-path</varname></term>
+        <listitem>
+          <para>
+            If the value points to an existing directory, Network
+            Manager will attempt to write copies of new or modified
+            Wi-Fi connection profiles, converted into the IWD
+            format, into this directory thus making IWD connection
+            properties editable.  This will only happen if the IWD
+            backend is active meaning that at least one Wi-Fi device
+            must exist.
+          </para>
+          <para>
+            This allows editing connection profile settings such as
+            the 802.1x configuration using Network Manager clients.
+            Without it such changes have no effect in IWD.
+          </para>
+        </listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
 
