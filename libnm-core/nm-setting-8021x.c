@@ -3998,19 +3998,24 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
     /**
      * NMSetting8021x:phase2-auth:
      *
-     * Specifies the allowed "phase 2" inner non-EAP authentication method when
-     * an EAP method that uses an inner TLS tunnel is specified in the
-     * #NMSetting8021x:eap property.  Recognized non-EAP "phase 2" methods are
-     * "pap", "chap", "mschap", "mschapv2", "gtc", "otp", "md5", and "tls".
+     * Specifies the allowed "phase 2" inner authentication method when an EAP
+     * method that uses an inner TLS tunnel is specified in the #NMSetting8021x:eap
+     * property.  For TTLS this property selects one of the supported non-EAP
+     * inner methods: "pap", "chap", "mschap", "mschapv2" while
+     * #NMSetting8021x:phase2-autheap selects an EAP inner method.  For PEAP
+     * this selects an inner EAP method, one of: "gtc", "otp", "md5" and "tls".
      * Each "phase 2" inner method requires specific parameters for successful
      * authentication; see the wpa_supplicant documentation for more details.
+     * Both #NMSetting8021x:phase2-auth and #NMSetting8021x:phase2-autheap cannot
+     * be specified.
      **/
     /* ---ifcfg-rh---
      * property: phase2-auth
      * variable: IEEE_8021X_INNER_AUTH_METHODS(+)
      * values: "PAP", "CHAP", "MSCHAP", "MSCHAPV2", "GTC", "OTP", "MD5" and "TLS"
-     * description: Inner non-EAP authentication methods. IEEE_8021X_INNER_AUTH_METHODS
-     *   can contain values both for 'phase2-auth' and 'phase2-autheap' properties.
+     * description: Inner non-EAP authentication methods for TTLS or the inner EAP
+     *   authentication method for PEAP. IEEE_8021X_INNER_AUTH_METHODS can contain
+     *   values both for 'phase2-auth' and 'phase2-autheap' properties.
      * example: IEEE_8021X_INNER_AUTH_METHODS=PAP
      * ---end---
      */
@@ -4025,11 +4030,11 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
      * NMSetting8021x:phase2-autheap:
      *
      * Specifies the allowed "phase 2" inner EAP-based authentication method
-     * when an EAP method that uses an inner TLS tunnel is specified in the
-     * #NMSetting8021x:eap property.  Recognized EAP-based "phase 2" methods are
-     * "md5", "mschapv2", "otp", "gtc", and "tls". Each "phase 2" inner method
-     * requires specific parameters for successful authentication; see the
-     * wpa_supplicant documentation for more details.
+     * when TTLS is specified in the #NMSetting8021x:eap property.  Recognized
+     * EAP-based "phase 2" methods are "md5", "mschapv2", "otp", "gtc", and
+     * "tls". Each "phase 2" inner method requires specific parameters for
+     * successful authentication; see the wpa_supplicant documentation for
+     * more details.
      **/
     /* ---ifcfg-rh---
      * property: phase2-autheap
