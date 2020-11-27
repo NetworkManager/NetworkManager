@@ -577,6 +577,7 @@ dispose (GObject *object)
 	nm_clear_g_cancellable (&priv->cancellable);
 
 	g_clear_object (&priv->dbus_connection);
+	nm_clear_pointer(&priv->dirty_interfaces, g_hash_table_unref);
 
 	G_OBJECT_CLASS (nm_dns_systemd_resolved_parent_class)->dispose (object);
 }
