@@ -358,6 +358,7 @@ update (NMDnsPlugin *plugin,
 	gs_free gpointer *interfaces_keys = NULL;
 	guint interfaces_len;
 	int ifindex;
+	gpointer pointer;
 	NMDnsIPConfigData *ip_data;
 	GHashTableIter     iter;
 	guint i;
@@ -402,7 +403,8 @@ update (NMDnsPlugin *plugin,
 	 * resolved, and the current update doesn't contain that interface,
 	 * reset the resolved configuration for that ifindex. */
 	g_hash_table_iter_init (&iter, priv->dirty_interfaces);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &ifindex, NULL)) {
+	while (g_hash_table_iter_next (&iter, (gpointer *) &pointer, NULL)) {
+		ifindex = GPOINTER_TO_INT (pointer);
 		if (!g_hash_table_contains (interfaces, GINT_TO_POINTER (ifindex))) {
 			InterfaceConfig ic;
 
