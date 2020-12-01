@@ -527,6 +527,12 @@ struct _NMLDBusMetaIface {
      * %NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_10, and depending on whether there is
      * a "org.freedesktop.NetworkManager.VPN.Connection" (with high priority), we create
      * one or the other type.
+     *
+     * Another exception is "org.freedesktop.NetworkManager.Device.Veth". It is a NMDeviceVeth
+     * and the parent is NMDeviceEthernet. Therefore it contains "org.freedesktop.NetworkManager.Device.Wired"
+     * as it should be registered as NMDeviceVeth, the profile has priority
+     * %NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_20.
+     *
      */
     NMLDBusMetaInteracePrio interface_prio : 3;
 };

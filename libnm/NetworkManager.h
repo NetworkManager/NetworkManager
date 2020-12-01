@@ -34,6 +34,7 @@
 #include "nm-device-ppp.h"
 #include "nm-device-team.h"
 #include "nm-device-tun.h"
+#include "nm-device-veth.h"
 #include "nm-device-vlan.h"
 #include "nm-device-vxlan.h"
 #include "nm-device-wifi-p2p.h"

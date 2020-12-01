@@ -3232,6 +3232,11 @@ test_dbus_meta_types(void)
         {
             NM_DBUS_INTERFACE_DEVICE_WIRED,
             NM_TYPE_DEVICE_ETHERNET,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_20,
+        },
+        {
+            NM_DBUS_INTERFACE_DEVICE_VETH,
+            NM_TYPE_DEVICE_VETH,
             NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {

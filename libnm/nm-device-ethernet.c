@@ -315,7 +315,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_wired = NML_DBUS_META_IFACE_INIT_PROP(
     NM_DBUS_INTERFACE_DEVICE_WIRED,
     nm_device_ethernet_get_type,
-    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
+    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_20,
     NML_DBUS_META_IFACE_DBUS_PROPERTIES(
         NML_DBUS_META_PROPERTY_INIT_B("Carrier", PROP_CARRIER, NMDeviceEthernetPrivate, carrier),
         NML_DBUS_META_PROPERTY_INIT_FCN("HwAddress",
