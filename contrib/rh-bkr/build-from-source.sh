@@ -85,7 +85,7 @@ fi
 
 if [[ "$DO_TEST_BUILD" == yes ]]; then
     # for the tests, let's pre-load some modules:
-    $SUDO modprobe ip_gre
+    $SUDO modprobe ip_gre || true
 fi
 
 if grep -q Maipo /etc/redhat-release; then
