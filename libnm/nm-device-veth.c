@@ -19,7 +19,7 @@
 NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PEER, );
 
 typedef struct {
-    char *peer;
+    NMLDBusPropertyO peer;
 } NMDeviceVethPrivate;
 
 struct _NMDeviceVeth {
@@ -42,16 +42,16 @@ G_DEFINE_TYPE(NMDeviceVeth, nm_device_veth, NM_TYPE_DEVICE_ETHERNET)
  * nm_device_veth_get_peer:
  * @device: a #NMDeviceVeth
  *
- * Returns: the device's peer name
+ * Returns: (transfer none): the device's peer device
  *
  * Since: 1.30
  **/
-const char *
+NMDevice *
 nm_device_veth_get_peer(NMDeviceVeth *device)
 {
-    g_return_val_if_fail(NM_IS_DEVICE_VETH(device), NULL);
+    g_return_val_if_fail(NM_IS_DEVICE_VETH(device), FALSE);
 
-    return _nml_coerce_property_str_not_empty(NM_DEVICE_VETH_GET_PRIVATE(device)->peer);
+    return nml_dbus_property_o_get_obj(&NM_DEVICE_VETH_GET_PRIVATE(device)->peer);
 }
 
 static GType
@@ -69,7 +69,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 
     switch (prop_id) {
     case PROP_PEER:
-        g_value_set_string(value, nm_device_veth_get_peer(device));
+        g_value_set_object(value, nm_device_veth_get_peer(device));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -81,22 +81,16 @@ static void
 nm_device_veth_init(NMDeviceVeth *device)
 {}
 
-static void
-finalize(GObject *object)
-{
-    NMDeviceVethPrivate *priv = NM_DEVICE_VETH_GET_PRIVATE(object);
-
-    g_free(priv->peer);
-
-    G_OBJECT_CLASS(nm_device_veth_parent_class)->finalize(object);
-}
-
-const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_veth = NML_DBUS_META_IFACE_INIT_PROP(
-    NM_DBUS_INTERFACE_DEVICE_VETH,
-    nm_device_veth_get_type,
-    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_20,
-    NML_DBUS_META_IFACE_DBUS_PROPERTIES(
-        NML_DBUS_META_PROPERTY_INIT_S("peer", PROP_PEER, NMDeviceVeth, _priv.peer), ), );
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_veth =
+    NML_DBUS_META_IFACE_INIT_PROP(NM_DBUS_INTERFACE_DEVICE_VETH,
+                                  nm_device_veth_get_type,
+                                  NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_20,
+                                  NML_DBUS_META_IFACE_DBUS_PROPERTIES(
+                                      NML_DBUS_META_PROPERTY_INIT_O_PROP("Peer",
+                                                                         PROP_PEER,
+                                                                         NMDeviceVeth,
+                                                                         _priv.peer,
+                                                                         nm_device_get_type), ), );
 
 static void
 nm_device_veth_class_init(NMDeviceVethClass *klass)
@@ -106,23 +100,24 @@ nm_device_veth_class_init(NMDeviceVethClass *klass)
     NMDeviceClass *device_class    = NM_DEVICE_CLASS(klass);
 
     object_class->get_property = get_property;
-    object_class->finalize     = finalize;
 
     _NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT(nm_object_class, NMDeviceVeth);
+
+    _NM_OBJECT_CLASS_INIT_PROPERTY_O_FIELDS_1(nm_object_class, NMDeviceVethPrivate, peer);
 
     device_class->get_setting_type = get_setting_type;
 
     /**
      * NMDeviceVeth:peer:
      *
-     * The device's peer name.
+     * The device's peer device.
      *
      * Since: 1.30
      **/
-    obj_properties[PROP_PEER] = g_param_spec_string(NM_DEVICE_VETH_PEER,
+    obj_properties[PROP_PEER] = g_param_spec_object(NM_DEVICE_VETH_PEER,
                                                     "",
                                                     "",
-                                                    NULL,
+                                                    NM_TYPE_DEVICE,
                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     _nml_dbus_meta_class_init_with_properties(object_class, &_nml_dbus_meta_iface_nm_device_veth);

@@ -34,7 +34,7 @@ NM_AVAILABLE_IN_1_30
 GType nm_device_veth_get_type(void);
 
 NM_AVAILABLE_IN_1_30
-const char *nm_device_veth_get_peer(NMDeviceVeth *device);
+NMDevice *nm_device_veth_get_peer(NMDeviceVeth *device);
 
 G_END_DECLS
 
