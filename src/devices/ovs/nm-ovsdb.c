@@ -60,6 +60,7 @@ typedef struct {
     GHashTable *       bridges;    /* bridge uuid => OpenvswitchBridge */
     char *             db_uuid;
     guint              num_failures;
+    bool               cleanup_done : 1;
 } NMOvsdbPrivate;
 
 struct _NMOvsdb {
@@ -1722,6 +1723,9 @@ ovsdb_disconnect(NMOvsdb *self, gboolean retry, gboolean is_disposing)
 
     _LOGD("disconnecting from ovsdb, retry %d", retry);
 
+    /* FIXME(shutdown): NMOvsdb should process the pending calls before
+     * shutting down, and cancel the remaining calls after the timeout. */
+
     if (retry) {
         if (priv->calls->len != 0)
             g_array_index(priv->calls, OvsdbMethodCall, 0).id = COMMAND_PENDING;
@@ -1750,6 +1754,46 @@ ovsdb_disconnect(NMOvsdb *self, gboolean retry, gboolean is_disposing)
 }
 
 static void
+_del_initial_iface_cb(GError *error, gpointer user_data)
+{
+    NMOvsdb *     self;
+    gs_free char *ifname = NULL;
+
+    nm_utils_user_data_unpack(user_data, &self, &ifname);
+
+    if (nm_utils_error_is_cancelled_or_disposing(error))
+        return;
+
+    if (error)
+        _LOGD("failed to delete initial interface '%s': %s", ifname, error->message);
+}
+
+static void
+ovsdb_cleanup_initial_interfaces(NMOvsdb *self)
+{
+    NMOvsdbPrivate *            priv = NM_OVSDB_GET_PRIVATE(self);
+    const OpenvswitchInterface *interface;
+    NMUtilsUserData *           data;
+    GHashTableIter              iter;
+
+    if (priv->cleanup_done)
+        return;
+    priv->cleanup_done = TRUE;
+
+    /* Delete OVS interfaces added by NM. Bridges and ports and
+     * not considered because they are deleted automatically
+     * when no interface is present. */
+    g_hash_table_iter_init(&iter, self->_priv.interfaces);
+    while (g_hash_table_iter_next(&iter, NULL, (gpointer *) &interface)) {
+        if (interface->connection_uuid) {
+            _LOGT("deleting initial interface '%s'", interface->name);
+            data = nm_utils_user_data_pack(self, g_strdup(interface->name));
+            nm_ovsdb_del_interface(self, interface->name, _del_initial_iface_cb, data);
+        }
+    }
+}
+
+static void
 _monitor_bridges_cb(NMOvsdb *self, json_t *result, GError *error, gpointer user_data)
 {
     if (error) {
@@ -1763,6 +1807,8 @@ _monitor_bridges_cb(NMOvsdb *self, json_t *result, GError *error, gpointer user_
     /* Treat the first response the same as the subsequent "update"
      * messages we eventually get. */
     ovsdb_got_update(self, result);
+
+    ovsdb_cleanup_initial_interfaces(self);
 }
 
 static void
