@@ -940,7 +940,7 @@ update_system_hostname(NMPolicy *self, const char *msg)
 
         if (priv->hostname_mode != NM_POLICY_HOSTNAME_MODE_DHCP) {
             for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
-                const int addr_family = IS_IPv4 ? AF_INET6 : AF_INET;
+                const int addr_family = IS_IPv4 ? AF_INET : AF_INET6;
 
                 if (info->from_dns && info->ip_x[IS_IPv4]) {
                     const char *result;
