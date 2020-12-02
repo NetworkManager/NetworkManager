@@ -106,7 +106,13 @@ typedef struct {
 
 /*****************************************************************************/
 
-enum { DEVICE_ADDED, DEVICE_REMOVED, INTERFACE_FAILED, LAST_SIGNAL };
+enum {
+    DEVICE_ADDED,
+    DEVICE_REMOVED,
+    INTERFACE_FAILED,
+    READY,
+    LAST_SIGNAL,
+};
 
 static guint signals[LAST_SIGNAL] = {0};
 
@@ -127,6 +133,8 @@ typedef struct {
     GHashTable *bridges;    /* bridge uuid => OpenvswitchBridge */
     char *      db_uuid;
     guint       num_failures;
+    guint       num_pending_deletions;
+    bool        ready : 1;
 } NMOvsdbPrivate;
 
 struct _NMOvsdb {
@@ -2219,6 +2227,9 @@ ovsdb_disconnect(NMOvsdb *self, gboolean retry, gboolean is_disposing)
 
     _LOGD("disconnecting from ovsdb, retry %d", retry);
 
+    /* FIXME(shutdown): NMOvsdb should process the pending calls before
+     * shutting down, and cancel the remaining calls after the timeout. */
+
     if (retry) {
         if (!c_list_is_empty(&priv->calls_lst_head)) {
             call          = c_list_first_entry(&priv->calls_lst_head, OvsdbMethodCall, calls_lst);
@@ -2248,6 +2259,75 @@ ovsdb_disconnect(NMOvsdb *self, gboolean retry, gboolean is_disposing)
 }
 
 static void
+_check_ready(NMOvsdb *self)
+{
+    NMOvsdbPrivate *priv = NM_OVSDB_GET_PRIVATE(self);
+
+    nm_assert(!priv->ready);
+
+    if (priv->num_pending_deletions == 0) {
+        priv->ready = TRUE;
+        g_signal_emit(self, signals[READY], 0);
+    }
+}
+
+static void
+_del_initial_iface_cb(GError *error, gpointer user_data)
+{
+    NMOvsdb *       self;
+    gs_free char *  ifname = NULL;
+    NMOvsdbPrivate *priv;
+
+    nm_utils_user_data_unpack(user_data, &self, &ifname);
+
+    if (nm_utils_error_is_cancelled_or_disposing(error))
+        return;
+
+    priv = NM_OVSDB_GET_PRIVATE(self);
+    nm_assert(priv->num_pending_deletions > 0);
+    priv->num_pending_deletions--;
+
+    _LOGD("delete initial interface '%s': %s %s%s%s, pending %u",
+          ifname,
+          error ? "error" : "success",
+          error ? "(" : "",
+          error ? error->message : "",
+          error ? ")" : "",
+          priv->num_pending_deletions);
+
+    _check_ready(self);
+}
+
+static void
+ovsdb_cleanup_initial_interfaces(NMOvsdb *self)
+{
+    NMOvsdbPrivate *            priv = NM_OVSDB_GET_PRIVATE(self);
+    const OpenvswitchInterface *interface;
+    NMUtilsUserData *           data;
+    GHashTableIter              iter;
+
+    if (priv->ready || priv->num_pending_deletions != 0)
+        return;
+
+    /* Delete OVS interfaces added by NM. Bridges and ports and
+     * not considered because they are deleted automatically
+     * when no interface is present. */
+    g_hash_table_iter_init(&iter, self->_priv.interfaces);
+    while (g_hash_table_iter_next(&iter, NULL, (gpointer *) &interface)) {
+        if (interface->connection_uuid) {
+            priv->num_pending_deletions++;
+            _LOGD("deleting initial interface '%s' (pending: %u)",
+                  interface->name,
+                  priv->num_pending_deletions);
+            data = nm_utils_user_data_pack(self, g_strdup(interface->name));
+            nm_ovsdb_del_interface(self, interface->name, _del_initial_iface_cb, data);
+        }
+    }
+
+    _check_ready(self);
+}
+
+static void
 _monitor_bridges_cb(NMOvsdb *self, json_t *result, GError *error, gpointer user_data)
 {
     if (error) {
@@ -2261,6 +2341,8 @@ _monitor_bridges_cb(NMOvsdb *self, json_t *result, GError *error, gpointer user_
     /* Treat the first response the same as the subsequent "update"
      * messages we eventually get. */
     ovsdb_got_update(self, result);
+
+    ovsdb_cleanup_initial_interfaces(self);
 }
 
 static void
@@ -2378,6 +2460,14 @@ ovsdb_call_new(NMOvsdbCallback callback, gpointer user_data)
         .user_data = user_data,
     };
     return call;
+}
+
+gboolean
+nm_ovsdb_is_ready(NMOvsdb *self)
+{
+    NMOvsdbPrivate *priv = NM_OVSDB_GET_PRIVATE(self);
+
+    return priv->ready;
 }
 
 void
@@ -2553,4 +2643,14 @@ nm_ovsdb_class_init(NMOvsdbClass *klass)
                                              G_TYPE_STRING,
                                              G_TYPE_STRING,
                                              G_TYPE_STRING);
+
+    signals[READY] = g_signal_new(NM_OVSDB_READY,
+                                  G_OBJECT_CLASS_TYPE(object_class),
+                                  G_SIGNAL_RUN_LAST,
+                                  0,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  G_TYPE_NONE,
+                                  0);
 }

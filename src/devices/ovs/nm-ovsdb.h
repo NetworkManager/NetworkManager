@@ -16,6 +16,7 @@
 #define NM_OVSDB_DEVICE_ADDED     "device-added"
 #define NM_OVSDB_DEVICE_REMOVED   "device-removed"
 #define NM_OVSDB_INTERFACE_FAILED "interface-failed"
+#define NM_OVSDB_READY            "ready"
 
 typedef struct _NMOvsdb      NMOvsdb;
 typedef struct _NMOvsdbClass NMOvsdbClass;
@@ -54,5 +55,7 @@ void nm_ovsdb_set_external_ids(NMOvsdb *                        self,
                                const char *                     connection_uuid,
                                struct _NMSettingOvsExternalIDs *s_exid_old,
                                struct _NMSettingOvsExternalIDs *s_exid_new);
+
+gboolean nm_ovsdb_is_ready(NMOvsdb *self);
 
 #endif /* __NETWORKMANAGER_OVSDB_H__ */
