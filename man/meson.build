@@ -38,6 +38,10 @@ if enable_ovs
   mans += [['nm-openvswitch', '7']]
 endif
 
+if enable_nm_cloud_setup
+  mans += [['nm-cloud-setup', '8']]
+endif
+
 foreach man: mans
   input = man[0] + '.xml'
   content_files += join_paths(meson.current_source_dir(), input)

@@ -5165,6 +5165,13 @@ EXTRA_DIST += man/nm-openvswitch.7
 dist_dependencies += man/nm-openvswitch.7
 endif
 
+if BUILD_NM_CLOUD_SETUP
+man_pages += man/nm-cloud-setup.8
+else
+EXTRA_DIST += man/nm-cloud-setup.8
+dist_dependencies += man/nm-cloud-setup.8
+endif
+
 CLEANFILES += \
 	man/common.ent
 
