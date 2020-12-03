@@ -23,6 +23,8 @@
 #   SOURCE_SYSCTL_RP_FILTER_REDHAT=
 #   SIGN_SOURCE=
 #   DO_RELEASE=
+#   BCOND_DEFAULT_DEBUG=
+#   BCOND_DEFAULT_TEST=
 
 die() {
     echo "$*" >&2
@@ -46,6 +48,15 @@ coerce_bool() {
             printf '%s' "$2"
             ;;
     esac
+}
+
+in_set() {
+    local v="$1"
+    shift
+    for v2; do
+        test "$v" == "$v2" && return 0
+    done
+    return 1
 }
 
 abs_path() {
@@ -157,9 +168,14 @@ LOG "SOURCE_CONFIG_CONNECTIVITY_REDHAT=$SOURCE_CONFIG_CONNECTIVITY_REDHAT"
 LOG "SOURCE_SYSCTL_RP_FILTER_REDHAT=$SOURCE_SYSCTL_RP_FILTER_REDHAT"
 LOG "BUILDTYPE=$BUILDTYPE"
 LOG "NM_RPMBUILD_ARGS=$NM_RPMBUILD_ARGS"
+LOG "BCOND_DEFAULT_DEBUG=$BCOND_DEFAULT_DEBUG"
+LOG "BCOND_DEFAULT_TEST=$BCOND_DEFAULT_TEST"
 LOG ""
 LOG "UUID=$UUID"
 LOG "BASEDIR=$TEMP"
+
+in_set "$BCOND_DEFAULT_DEBUG" "" 0 1 || die "Invalid value for \$BCOND_DEFAULT_DEBUG: \"$BCOND_DEFAULT_DEBUG\""
+in_set "$BCOND_DEFAULT_TEST" "" 0 1 || die "Invalid value for \$BCOND_DEFAULT_TEST: \"$BCOND_DEFAULT_TEST\""
 
 ln -snf "$TEMPBASE" ./latest0
 ln "$BUILDLOG" "$TEMPBASE/build.log"
@@ -186,6 +202,8 @@ sed -e "s/__VERSION__/$VERSION/g" \
     -e "s/__COMMIT_FULL__/$COMMIT_FULL/g" \
     -e "s/__SNAPSHOT__/$SNAPSHOT/g" \
     -e "s/__SOURCE1__/$(basename "$SOURCE")/g" \
+    -e "s/__BCOND_DEFAULT_DEBUG__/$BCOND_DEFAULT_DEBUG/g" \
+    -e "s/__BCOND_DEFAULT_TEST__/$BCOND_DEFAULT_TEST/g" \
    "$SPECFILE" |
 sed -e "/^__CHANGELOG__$/ \
         {
