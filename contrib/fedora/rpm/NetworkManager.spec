@@ -792,8 +792,7 @@ intltoolize --automake --copy --force
 	--with-resolvconf=no \
 	--with-netconfig=no \
 	--with-config-dns-rc-manager-default=%{dns_rc_manager_default} \
-	--with-config-logging-backend-default=%{logging_backend_default} \
-	--enable-json-validation
+	--with-config-logging-backend-default=%{logging_backend_default}
 
 make %{?_smp_mflags}
 
