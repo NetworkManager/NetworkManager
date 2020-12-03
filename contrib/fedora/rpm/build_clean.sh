@@ -107,6 +107,14 @@ while [[ $# -gt 0 ]]; do
             fi
             shift
             ;;
+        --no-auto-with-test)
+            # by default, the script adds "-w test" (unless the command line contains
+            # "-w test" or "-W test"). This flags allows to suppress that automatism.
+            # It's really only useful to test the spec file's internal default for the
+            # "test" option. Otherwise, you can always just explicitly select "-w test"
+            # or "-W test".
+            ADD_WITH_TEST=0
+            ;;
         *)
             usage
             die "Unexpected argument \"$A\""
