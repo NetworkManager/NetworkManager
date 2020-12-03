@@ -1556,13 +1556,13 @@ _l3_acd_data_add_all(NML3Cfg *                  self,
     gint64   now_msec = 0;
     guint    i;
 
-#if NM_MORE_ASSERTS > 5
-    c_list_for_each_entry (acd_data, &self->priv.p->acd_lst_head, acd_lst) {
-        nm_assert(acd_data->info.n_track_infos > 0u);
-        for (i = 0; i < acd_data->info.n_track_infos; i++)
-            nm_assert(acd_data->info.track_infos[i]._priv.acd_dirty_track);
+    if (NM_MORE_ASSERTS > 5) {
+        c_list_for_each_entry (acd_data, &self->priv.p->acd_lst_head, acd_lst) {
+            nm_assert(acd_data->info.n_track_infos > 0u);
+            for (i = 0; i < acd_data->info.n_track_infos; i++)
+                nm_assert(acd_data->info.track_infos[i]._priv.acd_dirty_track);
+        }
     }
-#endif
 
     /* First we add/track all the relevant addresses for ACD. */
     for (i_info = 0; i_info < infos_len; i_info++) {
