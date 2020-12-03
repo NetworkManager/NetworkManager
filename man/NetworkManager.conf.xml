@@ -674,6 +674,18 @@ unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth
     <para>Specify default values for connections.
     </para>
     <para>
+      Such default values are only consulted if the corresponding per-connection property
+      explicitly allows for that. That means, all these properties correspond to
+      a property of the connection profile (for example <literal>connection.mud-url</literal>).
+      Only if the per-profile property is set to a special value that indicates to use the
+      default, the default value from NetworkManager.conf is consulted. It depends on the
+      property, which is the special value that indicates fallback to the default, but it
+      usually is something like empty, unset values or special numeric values like 0 or -1.
+      That means the effectively used value can first always be configured for each profile,
+      and these default values only matter if the per-profile values explicitly indicates
+      to use the default from <literal>NetworkManager.conf</literal>.
+    </para>
+    <para>
       Example:
 <programlisting>
 [connection]
@@ -686,8 +698,8 @@ ipv6.ip6-privacy=0
       Not all properties can be overwritten, only the following
       properties are supported to have their default values configured
       (see <link linkend='nm-settings'><citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry></link> for details).
-      A default value is only consulted if the corresponding per-connection value
-      explicitly allows for that.
+    </para>
+    <para>
       <!-- The following comment is used by check-config-options.sh, don't remove it. -->
       <!-- start connection defaults -->
       <variablelist>
