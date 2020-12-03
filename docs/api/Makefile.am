@@ -126,9 +126,19 @@ setup-build.stamp:
 
 ####################################
 
-EXTRA_DIST += version.xml.in settings-spec.xsl meson.build $(GENERATED_FILES)
-CLEANFILES += html/* tmpl/* xml/* \
-	NetworkManager-sections.txt \
-	NetworkManager-overrides.txt
+EXTRA_DIST += \
+	version.xml.in \
+	settings-spec.xsl \
+	meson.build \
+	$(GENERATED_FILES) \
+	$(NULL)
 
-CLEANFILES += settings-spec.xml
+CLEANFILES += \
+	html/* \
+	tmpl/* \
+	xml/* \
+	NetworkManager-overrides.txt \
+	NetworkManager-sections.txt \
+	NetworkManager.actions \
+	settings-spec.xml \
+	$(NULL)

@@ -100,16 +100,19 @@ GTKDOC_LIBS = \
 # include common portion ...
 include $(top_srcdir)/gtk-doc.make
 
-EXTRA_DIST += version.xml.in meson.build
+EXTRA_DIST += \
+	version.xml.in \
+	meson.build \
+	$(NULL)
 
 CLEANFILES += \
-	libnm-sections.txt \
-	libnm-overrides.txt \
 	html/* \
 	tmpl/* \
-	xml/*
-
-DISTCLEANFILES = libnm.actions
+	xml/* \
+	libnm-overrides.txt \
+	libnm-sections.txt \
+	libnm.actions \
+	$(NULL)
 
 if GTK_DOC_BUILD_HTML
 check-local-gtk-doc-patch:
