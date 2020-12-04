@@ -151,6 +151,8 @@ _get_config_task_maybe_return(GetConfigIfaceData *iface_data, GError *error_take
             iface_data->error = error_take;
         } else
             g_error_free(error_take);
+
+        nm_clear_g_cancellable(&iface_data->cancellable);
     }
 
     if (iface_data->n_pending > 0)
