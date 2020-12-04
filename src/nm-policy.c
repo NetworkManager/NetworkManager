@@ -64,14 +64,7 @@ typedef struct {
     NMActiveConnection *default_ac4, *activating_ac4;
     NMActiveConnection *default_ac6, *activating_ac6;
 
-    struct {
-        GInetAddress *addr;
-        GResolver *   resolver;
-        GCancellable *cancellable;
-    } lookup;
-
     NMDnsManager *dns_manager;
-    gulong        config_changed_id;
 
     guint reset_retries_id; /* idle handler for resetting the retries count */
 
@@ -591,12 +584,6 @@ _set_hostname(NMPolicy *self, const char *new_hostname, const char *msg)
      * there was no valid hostname to start with.
      */
 
-    /* Clear lookup addresses if we have a hostname, so that we don't
-     * restart the reverse lookup thread later.
-     */
-    if (new_hostname)
-        g_clear_object(&priv->lookup.addr);
-
     /* Update the DNS only if the hostname is actually
      * going to change.
      */
@@ -640,43 +627,6 @@ _set_hostname(NMPolicy *self, const char *new_hostname, const char *msg)
                                                name,
                                                settings_set_hostname_cb,
                                                g_object_ref(self));
-}
-
-static void
-lookup_callback(GObject *source, GAsyncResult *result, gpointer user_data)
-{
-    NMPolicy *       self;
-    NMPolicyPrivate *priv;
-    gs_free char *   hostname   = NULL;
-    gs_free_error GError *error = NULL;
-
-    hostname = g_resolver_lookup_by_address_finish(G_RESOLVER(source), result, &error);
-    if (g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-        return;
-
-    self = user_data;
-    priv = NM_POLICY_GET_PRIVATE(self);
-
-    g_clear_object(&priv->lookup.cancellable);
-
-    if (hostname)
-        _set_hostname(self, hostname, "from address lookup");
-    else
-        _set_hostname(self, NULL, error->message);
-}
-
-static void
-lookup_by_address(NMPolicy *self)
-{
-    NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
-
-    nm_clear_g_cancellable(&priv->lookup.cancellable);
-    priv->lookup.cancellable = g_cancellable_new();
-    g_resolver_lookup_by_address_async(priv->lookup.resolver,
-                                       priv->lookup.addr,
-                                       priv->lookup.cancellable,
-                                       lookup_callback,
-                                       self);
 }
 
 typedef struct {
@@ -850,8 +800,6 @@ update_system_hostname(NMPolicy *self, const char *msg)
     }
 
     _LOGT(LOGD_DNS, "set-hostname: updating hostname (%s)", msg);
-
-    nm_clear_g_cancellable(&priv->lookup.cancellable);
 
     /* Check if the hostname was set externally to NM, so that in that case
      * we can avoid to fallback to the one we got when we started.
@@ -2568,40 +2516,6 @@ firewall_state_changed(NMFirewallManager *manager, gboolean initialized_now, gpo
 }
 
 static void
-dns_config_changed(NMDnsManager *dns_manager, gpointer user_data)
-{
-    NMPolicy *       self = (NMPolicy *) user_data;
-    NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
-
-    /* Restart a thread for reverse-DNS lookup after we are signalled that
-     * DNS changed. Because the result from a previous run may not be right
-     * (race in updating DNS and doing the reverse lookup).
-     */
-
-    nm_clear_g_cancellable(&priv->lookup.cancellable);
-
-    /* Re-start the hostname lookup thread if we don't have hostname yet. */
-    if (priv->lookup.addr) {
-        char *        str      = NULL;
-        gs_free char *hostname = NULL;
-
-        /* Check if the hostname was externally set */
-        if ((hostname = _get_hostname(self)) && nm_utils_is_specific_hostname(hostname)
-            && !nm_streq0(hostname, priv->last_hostname)) {
-            g_clear_object(&priv->lookup.addr);
-            return;
-        }
-
-        _LOGD(LOGD_DNS,
-              "restarting reverse-lookup thread for address %s",
-              (str = g_inet_address_to_string(priv->lookup.addr)));
-        g_free(str);
-
-        lookup_by_address(self);
-    }
-}
-
-static void
 connection_updated(NMSettings *          settings,
                    NMSettingsConnection *connection,
                    guint                 update_reason_u,
@@ -2833,12 +2747,6 @@ constructed(GObject *object)
 
     priv->dns_manager = g_object_ref(nm_dns_manager_get());
     nm_dns_manager_set_initial_hostname(priv->dns_manager, priv->orig_hostname);
-    priv->config_changed_id = g_signal_connect(priv->dns_manager,
-                                               NM_DNS_MANAGER_CONFIG_CHANGED,
-                                               G_CALLBACK(dns_config_changed),
-                                               self);
-
-    priv->lookup.resolver = g_resolver_get_default();
 
     g_signal_connect(priv->hostname_manager,
                      "notify::" NM_HOSTNAME_MANAGER_HOSTNAME,
@@ -2920,10 +2828,6 @@ dispose(GObject *object)
     NMDevice *       device;
     ActivateData *   data, *data_safe;
 
-    nm_clear_g_cancellable(&priv->lookup.cancellable);
-    g_clear_object(&priv->lookup.addr);
-    g_clear_object(&priv->lookup.resolver);
-
     nm_clear_g_object(&priv->default_ac4);
     nm_clear_g_object(&priv->default_ac6);
     nm_clear_g_object(&priv->activating_ac4);
@@ -2946,10 +2850,7 @@ dispose(GObject *object)
         g_clear_object(&priv->agent_mgr);
     }
 
-    if (priv->dns_manager) {
-        nm_clear_g_signal_handler(priv->dns_manager, &priv->config_changed_id);
-        g_clear_object(&priv->dns_manager);
-    }
+    g_clear_object(&priv->dns_manager);
 
     g_hash_table_iter_init(&h_iter, priv->devices);
     if (g_hash_table_iter_next(&h_iter, (gpointer *) &device, NULL)) {
