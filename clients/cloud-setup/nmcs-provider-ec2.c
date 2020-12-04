@@ -268,9 +268,6 @@ _get_config_fetch_cancelled_cb(GObject *object, gpointer user_data)
 {
     GetConfigIfaceData *iface_data = user_data;
 
-    if (iface_data->cancelled_id == 0)
-        return;
-
     nm_clear_g_signal_handler(g_task_get_cancellable(iface_data->get_config_data->task),
                               &iface_data->cancelled_id);
     _get_config_task_maybe_return(iface_data, nm_utils_error_new_cancelled(FALSE, NULL));
@@ -334,7 +331,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
                                              iface_data,
                                              NULL);
         if (cancelled_id == 0) {
-            _get_config_task_maybe_return(iface_data, nm_utils_error_new_cancelled(FALSE, NULL));
+            /* the callback was already invoked synchronously and the task already returned. */
             return;
         }
 
