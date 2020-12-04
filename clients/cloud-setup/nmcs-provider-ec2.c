@@ -235,8 +235,16 @@ _get_config_fetch_done_cb(NMHttpClient *http_client,
         }
     }
 
+    /* If nm_utils_error_is_cancelled(error), then our internal iface_data->cancellable
+     * was cancelled, because the overall request failed. From point of view of the
+     * caller, this does not mean that a cancellation happened. It also means, our
+     * request overall is already about to fail. */
+    nm_assert(!nm_utils_error_is_cancelled(error) || iface_data->error);
+
     iface_data->n_pending--;
-    _get_config_task_maybe_return(iface_data, g_steal_pointer(&error));
+    _get_config_task_maybe_return(iface_data,
+                                  nm_utils_error_is_cancelled(error) ? NULL
+                                                                     : g_steal_pointer(&error));
 }
 
 static void
