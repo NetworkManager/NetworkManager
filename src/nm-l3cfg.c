@@ -605,8 +605,8 @@ _load_link(NML3Cfg *self, gboolean initial)
     gboolean                        nacd_changed;
     gboolean                        nacd_new_valid;
     gboolean                        nacd_old_valid;
-    const guint8 *                  nacd_old_addr;
-    const guint8 *                  nacd_new_addr;
+    const guint8 *                  nacd_old_addr = NULL;
+    const guint8 *                  nacd_new_addr = NULL;
     gboolean                        nacd_link_now_up;
     AcdData *                       acd_data;
 
