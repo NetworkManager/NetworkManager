@@ -55,7 +55,7 @@ echo_color() {
 
 print_usage() {
     echo "Usage:"
-    echo "  $BASH_SOURCE [devel|rc1|rc|major|major-post|minor] [--no-test] [--no-find-backports] [--no-cleanup] [--allow-local-branches] [--no-check-gitlab]"
+    echo "  $BASH_SOURCE [devel|rc1|rc|major|major-post|minor] [--no-test] [--no-find-backports] [--no-cleanup] [--allow-local-branches] [--no-check-gitlab] [--no-check-news]"
 }
 
 die_help() {
@@ -156,6 +156,23 @@ set_version_number() {
     set_version_number_meson "$@"
 }
 
+check_news() {
+    local mode="$1"
+    shift
+    local ver_arr=("$@")
+
+    case "$mode" in
+        major|minor)
+            if git grep -q 'NOT RECOMMENDED FOR PRODUCTION USE' -- ./NEWS ; then
+                return 1
+            fi
+            ;;
+        *)
+            ;;
+    esac
+    return 0
+}
+
 DO_CLEANUP=1
 CLEANUP_CHECKOUT_BRANCH=
 CLEANUP_REFS=()
@@ -186,6 +203,7 @@ FIND_BACKPORTS=1
 ALLOW_LOCAL_BRANCHES=0
 HELP_AND_EXIT=1
 CHECK_GITLAB=1
+CHECK_NEWS=1
 while [ "$#" -ge 1 ]; do
     A="$1"
     shift
@@ -208,6 +226,9 @@ while [ "$#" -ge 1 ]; do
             ;;
         --no-check-gitlab)
             CHECK_GITLAB=0
+            ;;
+        --no-check-news)
+            CHECK_NEWS=0
             ;;
         --help|-h)
             die_help
@@ -335,6 +356,13 @@ fi
 
 if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
     cmp <(git show origin/master:contrib/fedora/rpm/release.sh) "$BASH_SOURCE" || die "$BASH_SOURCE is not identical to \`git show origin/master:contrib/fedora/rpm/release.sh\`"
+fi
+
+if ! check_news "$RELEASE_MODE" "@{VERSION_ARR[@]}" ; then
+    if [ "$CHECK_NEWS" == 1 ]; then
+        die "NEWS file needs update to mention stable release (skip check with --no-check-news)"
+    fi
+    echo "WARNING: NEWS file needs update to mention stable release (test skipped with --no-check-news)"
 fi
 
 if [ $FIND_BACKPORTS = 1 ]; then
