@@ -25,8 +25,8 @@
 #include "nm-ip4-config.h"
 #include "nm-std-aux/nm-dbus-compat.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceTeam
 #include "devices/nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceTeam);
 
 /*****************************************************************************/
 
@@ -1003,18 +1003,18 @@ constructed(GObject *object)
 NMDevice *
 nm_device_team_new(const char *iface)
 {
-    return (NMDevice *) g_object_new(NM_TYPE_DEVICE_TEAM,
-                                     NM_DEVICE_IFACE,
-                                     iface,
-                                     NM_DEVICE_DRIVER,
-                                     "team",
-                                     NM_DEVICE_TYPE_DESC,
-                                     "Team",
-                                     NM_DEVICE_DEVICE_TYPE,
-                                     NM_DEVICE_TYPE_TEAM,
-                                     NM_DEVICE_LINK_TYPE,
-                                     NM_LINK_TYPE_TEAM,
-                                     NULL);
+    return g_object_new(NM_TYPE_DEVICE_TEAM,
+                        NM_DEVICE_IFACE,
+                        iface,
+                        NM_DEVICE_DRIVER,
+                        "team",
+                        NM_DEVICE_TYPE_DESC,
+                        "Team",
+                        NM_DEVICE_DEVICE_TYPE,
+                        NM_DEVICE_TYPE_TEAM,
+                        NM_DEVICE_LINK_TYPE,
+                        NM_LINK_TYPE_TEAM,
+                        NULL);
 }
 
 static void

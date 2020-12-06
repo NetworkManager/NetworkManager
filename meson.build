@@ -6,7 +6,7 @@ project(
 #  - add corresponding NM_VERSION_x_y_z macros in
 #    "shared/nm-version-macros.h.in"
 #  - update number in configure.ac
-  version: '1.28.0',
+  version: '1.29.5',
   license: 'GPL2+',
   default_options: [
     'buildtype=debugoptimized',
@@ -746,6 +746,8 @@ if enable_nm_cloud_setup
   assert(libcurl_dep.found(), 'nm-cloud-setup requires libcurl library. Use -Dnm_cloud_setup=false to disable it')
 endif
 
+enable_docs = get_option('docs')
+
 more_asserts = get_option('more_asserts')
 if more_asserts == 'auto'
   if nm_minor_version % 2 == 0
@@ -795,6 +797,12 @@ else
     enable_vapi = false
   endif
 endif
+
+test(
+  'check-local-gitlab-ci',
+  find_program(join_paths(source_root, 'tools', 'check-gitlab-ci.sh')),
+  args: [source_root],
+)
 
 # Tests, utilities and documentation
 tests = get_option('tests')
@@ -914,8 +922,6 @@ if enable_qt
 
   subdir('examples/C/qt')
 endif
-
-enable_docs = get_option('docs')
 
 if enable_docs
   assert(enable_introspection, '-Ddocs=true requires -Dintrospection=true')

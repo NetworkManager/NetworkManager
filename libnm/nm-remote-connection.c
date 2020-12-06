@@ -746,7 +746,7 @@ dispose(GObject *object)
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_settings_connection = NML_DBUS_META_IFACE_INIT_PROP(
     NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
     nm_remote_connection_get_type,
-    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
     NML_DBUS_META_IFACE_DBUS_PROPERTIES(
         NML_DBUS_META_PROPERTY_INIT_S("Filename",
                                       PROP_FILENAME,

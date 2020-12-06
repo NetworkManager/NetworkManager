@@ -385,8 +385,10 @@ nm_l3_config_data_log(const NML3ConfigData *self,
         const NMPObject *obj;
 
         i = 0;
-        nm_l3_config_data_iter_obj_for_each(&iter, self, &obj, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4))
-        {
+        nm_l3_config_data_iter_obj_for_each (&iter,
+                                             self,
+                                             &obj,
+                                             NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4)) {
             _L("address%c[%u]: %s",
                nm_utils_addr_family_to_char(addr_family),
                i,
@@ -407,8 +409,7 @@ nm_l3_config_data_log(const NML3ConfigData *self,
         }
 
         i = 0;
-        nm_l3_config_data_iter_obj_for_each(&iter, self, &obj, NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4))
-        {
+        nm_l3_config_data_iter_obj_for_each (&iter, self, &obj, NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4)) {
             _L("route%c[%u]: %s%s",
                nm_utils_addr_family_to_char(addr_family),
                i,
@@ -586,9 +587,7 @@ _route_valid_6(const NMPlatformIP6Route *r)
 static gboolean
 _route_valid(int addr_family, gconstpointer r)
 {
-    nm_assert_addr_family(addr_family);
-
-    return addr_family == AF_INET ? _route_valid_4(r) : _route_valid_6(r);
+    return NM_IS_IPv4(addr_family) ? _route_valid_4(r) : _route_valid_6(r);
 }
 
 static gboolean
@@ -914,8 +913,7 @@ nm_l3_config_data_has_routes_with_type_local(const NML3ConfigData *self, int add
     }
 
     val = FALSE;
-    nm_l3_config_data_iter_obj_for_each(&iter, self, &obj, NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4))
-    {
+    nm_l3_config_data_iter_obj_for_each (&iter, self, &obj, NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4)) {
         if (NMP_OBJECT_CAST_IP_ROUTE(obj)->type_coerced
             == nm_platform_route_type_coerce(RTN_LOCAL)) {
             val = TRUE;
@@ -989,8 +987,7 @@ nm_l3_config_data_get_first_obj(const NML3ConfigData *self,
 
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
 
-    nm_l3_config_data_iter_obj_for_each(&iter, self, &obj, obj_type)
-    {
+    nm_l3_config_data_iter_obj_for_each (&iter, self, &obj, obj_type) {
         if (!predicate || predicate(obj))
             return obj;
     }
@@ -1205,8 +1202,7 @@ nm_l3_config_data_add_address_full(NML3ConfigData *           self,
     nm_assert(!obj_new || NMP_OBJECT_GET_ADDR_FAMILY(obj_new) == addr_family);
 
     changed = _l3_config_data_add_obj(self->multi_idx,
-                                      addr_family == AF_INET ? &self->idx_addresses_4
-                                                             : &self->idx_addresses_6,
+                                      &self->idx_addresses_x[NM_IS_IPv4(addr_family)],
                                       self->ifindex,
                                       obj_new,
                                       (const NMPlatformObject *) pl_new,
@@ -1253,7 +1249,7 @@ nm_l3_config_data_add_route_full(NML3ConfigData *         self,
     else
         self->has_routes_with_type_local_6_set = FALSE;
     if (_l3_config_data_add_obj(self->multi_idx,
-                                addr_family == AF_INET ? &self->idx_routes_4 : &self->idx_routes_6,
+                                &self->idx_routes_x[NM_IS_IPv4(addr_family)],
                                 self->ifindex,
                                 obj_new,
                                 (const NMPlatformObject *) pl_new,
@@ -1880,11 +1876,10 @@ _data_get_direct_route_for_host(const NML3ConfigData *self,
     if (nm_ip_addr_is_null(addr_family, host))
         return NULL;
 
-    nm_l3_config_data_iter_obj_for_each(&ipconf_iter,
-                                        self,
-                                        &item_obj,
-                                        NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4))
-    {
+    nm_l3_config_data_iter_obj_for_each (&ipconf_iter,
+                                         self,
+                                         &item_obj,
+                                         NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4)) {
         const NMPlatformIPXRoute *item = NMP_OBJECT_CAST_IPX_ROUTE(item_obj);
 
         if (nm_ip_addr_is_null(addr_family,
@@ -1941,8 +1936,7 @@ nm_l3_config_data_get_blacklisted_ip4_routes(const NML3ConfigData *self, gboolea
      * As we don't do that for IPv4 and manual IPv6 addresses. Add them here
      * as dependent routes. */
 
-    nm_l3_config_data_iter_obj_for_each(&iter, self, &my_addr_obj, NMP_OBJECT_TYPE_IP4_ADDRESS)
-    {
+    nm_l3_config_data_iter_obj_for_each (&iter, self, &my_addr_obj, NMP_OBJECT_TYPE_IP4_ADDRESS) {
         const NMPlatformIP4Address *const my_addr = NMP_OBJECT_CAST_IP4_ADDRESS(my_addr_obj);
         in_addr_t                         network_4;
         NMPlatformIPXRoute                rx;
@@ -2033,11 +2027,10 @@ nm_l3_config_data_add_dependent_routes(NML3ConfigData *self,
         nm_l3_config_data_add_route(self, addr_family, NULL, &rx.rx);
     }
 
-    nm_l3_config_data_iter_obj_for_each(&iter,
-                                        self,
-                                        &my_addr_obj,
-                                        NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4))
-    {
+    nm_l3_config_data_iter_obj_for_each (&iter,
+                                         self,
+                                         &my_addr_obj,
+                                         NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4)) {
         const NMPlatformIPXAddress *const my_addr = NMP_OBJECT_CAST_IPX_ADDRESS(my_addr_obj);
 
         if (my_addr->ax.external)
@@ -2152,11 +2145,10 @@ nm_l3_config_data_add_dependent_routes(NML3ConfigData *self,
         }
     }
 
-    nm_l3_config_data_iter_obj_for_each(&iter,
-                                        self,
-                                        &my_route_obj,
-                                        NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4))
-    {
+    nm_l3_config_data_iter_obj_for_each (&iter,
+                                         self,
+                                         &my_route_obj,
+                                         NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4)) {
         const NMPlatformIPXRoute *my_route = NMP_OBJECT_CAST_IPX_ROUTE(my_route_obj);
         NMPObject *               new_route;
         NMPlatformIPXRoute *      new_r;
@@ -2547,22 +2539,38 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
         const NML3ConfigDatFlags has_dns_priority_flag =
             NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY(IS_IPv4);
 
-        nm_l3_config_data_iter_obj_for_each(&iter, src, &obj, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4))
-        {
-            if (hook_add_addr && !hook_add_addr(src, obj, hook_user_data))
+        nm_l3_config_data_iter_obj_for_each (&iter,
+                                             src,
+                                             &obj,
+                                             NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4)) {
+            NMPlatformIPXAddress       addr_stack;
+            const NMPlatformIPAddress *addr             = NULL;
+            NMTernary                  ip4acd_not_ready = NM_TERNARY_DEFAULT;
+
+            if (hook_add_addr && !hook_add_addr(src, obj, &ip4acd_not_ready, hook_user_data))
                 continue;
+
+            if (IS_IPv4 && ip4acd_not_ready != NM_TERNARY_DEFAULT
+                && (!!ip4acd_not_ready) != NMP_OBJECT_CAST_IP4_ADDRESS(obj)->ip4acd_not_ready) {
+                addr_stack.a4                  = *NMP_OBJECT_CAST_IP4_ADDRESS(obj);
+                addr_stack.a4.ip4acd_not_ready = (!!ip4acd_not_ready);
+                addr                           = &addr_stack.ax;
+            } else
+                nm_assert(IS_IPv4 || ip4acd_not_ready == NM_TERNARY_DEFAULT);
 
             nm_l3_config_data_add_address_full(self,
                                                addr_family,
-                                               obj,
-                                               NULL,
+                                               addr ? NULL : obj,
+                                               addr,
                                                NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE,
                                                NULL);
         }
 
         if (!NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_NO_ROUTES)) {
-            nm_l3_config_data_iter_obj_for_each(&iter, src, &obj, NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4))
-            {
+            nm_l3_config_data_iter_obj_for_each (&iter,
+                                                 src,
+                                                 &obj,
+                                                 NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4)) {
                 const NMPlatformIPRoute *r_src = NMP_OBJECT_CAST_IP_ROUTE(obj);
                 NMPlatformIPXRoute       r;
 
@@ -2589,7 +2597,7 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
                 if (r_src->metric_any) {
                     _ensure_r();
                     r.rx.metric_any = FALSE;
-                    r.rx.metric_any = default_route_metric_x[IS_IPv4];
+                    r.rx.metric = nm_add_clamped_u32(r.rx.metric, default_route_metric_x[IS_IPv4]);
                 }
 
                 if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT(r_src)) {
@@ -2655,8 +2663,7 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
     if (self->llmnr == NM_SETTING_CONNECTION_LLMNR_DEFAULT)
         self->llmnr = src->llmnr;
 
-    if (self->metered == NM_TERNARY_DEFAULT)
-        self->metered = src->metered;
+    self->metered = NM_MAX((NMTernary) self->metered, (NMTernary) src->metered);
 
     if (self->ip6_privacy == NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
         self->ip6_privacy = src->ip6_privacy;

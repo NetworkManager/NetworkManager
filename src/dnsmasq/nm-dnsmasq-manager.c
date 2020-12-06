@@ -313,7 +313,7 @@ nm_dnsmasq_manager_new(const char *iface)
     NMDnsMasqManager *       manager;
     NMDnsMasqManagerPrivate *priv;
 
-    manager = (NMDnsMasqManager *) g_object_new(NM_TYPE_DNSMASQ_MANAGER, NULL);
+    manager = g_object_new(NM_TYPE_DNSMASQ_MANAGER, NULL);
 
     priv          = NM_DNSMASQ_MANAGER_GET_PRIVATE(manager);
     priv->iface   = g_strdup(iface);

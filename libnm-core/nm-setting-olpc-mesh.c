@@ -190,7 +190,7 @@ nm_setting_olpc_mesh_init(NMSettingOlpcMesh *setting)
 NMSetting *
 nm_setting_olpc_mesh_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_OLPC_MESH, NULL);
+    return g_object_new(NM_TYPE_SETTING_OLPC_MESH, NULL);
 }
 
 static void

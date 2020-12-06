@@ -364,8 +364,8 @@ test_strv_cmp(void)
         _strv_cmp_fuzz_input((a1), _l1, &_a1_free_shallow, &_a1_free_deep, &_a1, &_a1x);            \
         _strv_cmp_fuzz_input((a2), _l2, &_a2_free_shallow, &_a2_free_deep, &_a2, &_a2x);            \
                                                                                                     \
-        _c1 = _nm_utils_strv_cmp_n(_a1, _l1, _a2, _l2);                                             \
-        _c2 = _nm_utils_strv_cmp_n(_a2, _l2, _a1, _l1);                                             \
+        _c1 = nm_utils_strv_cmp_n(_a1, _l1, _a2, _l2);                                              \
+        _c2 = nm_utils_strv_cmp_n(_a2, _l2, _a1, _l1);                                              \
         if (equal) {                                                                                \
             g_assert_cmpint(_c1, ==, 0);                                                            \
             g_assert_cmpint(_c2, ==, 0);                                                            \
@@ -376,8 +376,8 @@ test_strv_cmp(void)
                                                                                                     \
         /* Compare with self. _strv_cmp_fuzz_input() randomly swapped the arguments (_a1 and _a1x).
          * Either way, the arrays must compare equal to their semantically equal alternative. */ \
-        g_assert_cmpint(_nm_utils_strv_cmp_n(_a1, _l1, _a1x, _l1), ==, 0);                          \
-        g_assert_cmpint(_nm_utils_strv_cmp_n(_a2, _l2, _a2x, _l2), ==, 0);                          \
+        g_assert_cmpint(nm_utils_strv_cmp_n(_a1, _l1, _a1x, _l1), ==, 0);                           \
+        g_assert_cmpint(nm_utils_strv_cmp_n(_a2, _l2, _a2x, _l2), ==, 0);                           \
                                                                                                     \
         _strv_cmp_free_deep(_a1_free_deep, _l1);                                                    \
         _strv_cmp_free_deep(_a2_free_deep, _l2);                                                    \
@@ -632,9 +632,10 @@ static NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
     {"0", 0},
     {"1", 1},
     {"2", 2},
-    {"3", 3}, )
+    {"3", 3}, );
 
-    static void test_string_table_lookup(void)
+static void
+test_string_table_lookup(void)
 {
     const char *const args[] = {
         NULL,
@@ -951,10 +952,10 @@ again:
         else
             g_assert(!data);
 
-        g_assert(_nm_utils_strv_cmp_n((const char *const *) strv->pdata,
-                                      strv->len,
-                                      (const char *const *) strv2->pdata,
-                                      strv2->len)
+        g_assert(nm_utils_strv_cmp_n((const char *const *) strv->pdata,
+                                     strv->len,
+                                     (const char *const *) strv2->pdata,
+                                     strv2->len)
                  == 0);
     }
 }
@@ -1050,7 +1051,7 @@ test_strv_dup_packed(void)
             g_assert(strv_cpy);
         g_assert(NM_PTRARRAY_LEN(strv_cpy) == strv_len);
         if (strv_cpy)
-            g_assert(_nm_utils_strv_equal((char **) strv_cpy, (char **) strv_src));
+            g_assert(nm_utils_strv_equal(strv_cpy, strv_src));
     }
 }
 
@@ -1189,8 +1190,8 @@ test_utils_hashtable_cmp(void)
             }
 
             g_assert(nm_utils_hashtable_same_keys(h1, h2));
-            g_assert(nm_utils_hashtable_equal(h1, h2, NULL, NULL));
-            g_assert(nm_utils_hashtable_equal(h1, h2, func_val_cmp, NULL));
+            g_assert(nm_utils_hashtable_cmp_equal(h1, h2, NULL, NULL));
+            g_assert(nm_utils_hashtable_cmp_equal(h1, h2, func_val_cmp, NULL));
             g_assert(nm_utils_hashtable_cmp(h1, h2, FALSE, func_key_cmp, NULL, NULL) == 0);
             g_assert(nm_utils_hashtable_cmp(h1, h2, TRUE, func_key_cmp, NULL, NULL) == 0);
             g_assert(nm_utils_hashtable_cmp(h1, h2, FALSE, func_key_cmp, func_val_cmp, NULL) == 0);
@@ -1220,16 +1221,16 @@ again:
 
             if (has_same_keys) {
                 g_assert(nm_utils_hashtable_same_keys(h1, h2));
-                g_assert(nm_utils_hashtable_equal(h1, h2, NULL, NULL));
+                g_assert(nm_utils_hashtable_cmp_equal(h1, h2, NULL, NULL));
                 g_assert(nm_utils_hashtable_cmp(h1, h2, FALSE, func_key_cmp, NULL, NULL) == 0);
                 g_assert(nm_utils_hashtable_cmp(h1, h2, TRUE, func_key_cmp, NULL, NULL) == 0);
             } else {
                 g_assert(!nm_utils_hashtable_same_keys(h1, h2));
-                g_assert(!nm_utils_hashtable_equal(h1, h2, NULL, NULL));
+                g_assert(!nm_utils_hashtable_cmp_equal(h1, h2, NULL, NULL));
                 g_assert(nm_utils_hashtable_cmp(h1, h2, FALSE, func_key_cmp, NULL, NULL) != 0);
                 g_assert(nm_utils_hashtable_cmp(h1, h2, TRUE, func_key_cmp, NULL, NULL) != 0);
             }
-            g_assert(!nm_utils_hashtable_equal(h1, h2, func_val_cmp, NULL));
+            g_assert(!nm_utils_hashtable_cmp_equal(h1, h2, func_val_cmp, NULL));
             g_assert(nm_utils_hashtable_cmp(h1, h2, FALSE, func_key_cmp, func_val_cmp, NULL) != 0);
             g_assert(nm_utils_hashtable_cmp(h1, h2, TRUE, func_key_cmp, func_val_cmp, NULL) != 0);
         }

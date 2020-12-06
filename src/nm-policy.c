@@ -64,14 +64,7 @@ typedef struct {
     NMActiveConnection *default_ac4, *activating_ac4;
     NMActiveConnection *default_ac6, *activating_ac6;
 
-    struct {
-        GInetAddress *addr;
-        GResolver *   resolver;
-        GCancellable *cancellable;
-    } lookup;
-
     NMDnsManager *dns_manager;
-    gulong        config_changed_id;
 
     guint reset_retries_id; /* idle handler for resetting the retries count */
 
@@ -117,6 +110,8 @@ _PRIV_TO_SELF(NMPolicyPrivate *priv)
 /*****************************************************************************/
 
 #define _NMLOG_PREFIX_NAME "policy"
+#undef _NMLOG_ENABLED
+#define _NMLOG_ENABLED(level, domain) (nm_logging_enabled((level), (domain)))
 #define _NMLOG(level, domain, ...)                                         \
     G_STMT_START                                                           \
     {                                                                      \
@@ -131,6 +126,7 @@ _PRIV_TO_SELF(NMPolicyPrivate *priv)
 
 /*****************************************************************************/
 
+static void      update_system_hostname(NMPolicy *self, const char *msg);
 static void      schedule_activate_all(NMPolicy *self);
 static void      schedule_activate_check(NMPolicy *self, NMDevice *device);
 static NMDevice *get_default_device(NMPolicy *self, int addr_family);
@@ -359,11 +355,11 @@ device_ip6_prefix_delegated(NMDevice *device, NMPlatformIP6Address *prefix, gpoi
     delegation->device = device;
     delegation->prefix = *prefix;
 
-    /* The newly activated connections are added to the list beginning,
-     * so traversing it from the beginning makes it likely for newly
+    /* The newly activated connections are added to the end of the list,
+     * so traversing it from the end makes it likely for newly
      * activated connections that have no subnet assigned to be served
      * first. That is a simple yet fair policy, which is good. */
-    nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
+    nm_manager_for_each_active_connection_prev (priv->manager, ac, tmp_list) {
         NMDevice *to_device;
 
         to_device = nm_active_connection_get_device(ac);
@@ -588,12 +584,6 @@ _set_hostname(NMPolicy *self, const char *new_hostname, const char *msg)
      * there was no valid hostname to start with.
      */
 
-    /* Clear lookup addresses if we have a hostname, so that we don't
-     * restart the reverse lookup thread later.
-     */
-    if (new_hostname)
-        g_clear_object(&priv->lookup.addr);
-
     /* Update the DNS only if the hostname is actually
      * going to change.
      */
@@ -639,57 +629,168 @@ _set_hostname(NMPolicy *self, const char *new_hostname, const char *msg)
                                                g_object_ref(self));
 }
 
-static void
-lookup_callback(GObject *source, GAsyncResult *result, gpointer user_data)
+typedef struct {
+    NMDevice *device;
+    int       priority;
+    bool      from_dhcp : 1;
+    bool      from_dns : 1;
+
+    union {
+        struct {
+            bool ip_6;
+            bool ip_4;
+        };
+        bool ip_x[2];
+    };
+} DeviceHostnameInfo;
+
+static int
+device_hostname_info_compare(gconstpointer a, gconstpointer b)
 {
-    NMPolicy *       self;
-    NMPolicyPrivate *priv;
-    gs_free char *   hostname   = NULL;
-    gs_free_error GError *error = NULL;
+    const DeviceHostnameInfo *info1 = a;
+    const DeviceHostnameInfo *info2 = b;
 
-    hostname = g_resolver_lookup_by_address_finish(G_RESOLVER(source), result, &error);
-    if (g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-        return;
+    NM_CMP_FIELD(info1, info2, priority);
 
-    self = user_data;
-    priv = NM_POLICY_GET_PRIVATE(self);
+    return 0;
+}
 
-    g_clear_object(&priv->lookup.cancellable);
+NM_CON_DEFAULT_NOP("hostname.from-dhcp");
+NM_CON_DEFAULT_NOP("hostname.from-dns-lookup");
+NM_CON_DEFAULT_NOP("hostname.only-from-default");
 
-    if (hostname)
-        _set_hostname(self, hostname, "from address lookup");
-    else
-        _set_hostname(self, NULL, error->message);
+static gboolean
+device_get_hostname_property_boolean(NMDevice *device, const char *name)
+{
+    NMSettingHostname *s_hostname;
+    char               buf[128];
+    int                value;
+
+    nm_assert(NM_IN_STRSET(name,
+                           NM_SETTING_HOSTNAME_FROM_DHCP,
+                           NM_SETTING_HOSTNAME_FROM_DNS_LOOKUP,
+                           NM_SETTING_HOSTNAME_ONLY_FROM_DEFAULT));
+
+    s_hostname = nm_device_get_applied_setting(device, NM_TYPE_SETTING_HOSTNAME);
+
+    if (s_hostname) {
+        g_object_get(s_hostname, name, &value, NULL);
+        if (NM_IN_SET(value, NM_TERNARY_FALSE, NM_TERNARY_TRUE))
+            return value;
+    }
+
+    return nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                       nm_sprintf_buf(buf, "hostname.%s", name),
+                                                       device,
+                                                       NM_TERNARY_FALSE,
+                                                       NM_TERNARY_TRUE,
+                                                       NM_TERNARY_TRUE);
+}
+
+static int
+device_get_hostname_priority(NMDevice *device)
+{
+    NMSettingHostname *s_hostname;
+    int                priority;
+
+    s_hostname = nm_device_get_applied_setting(device, NM_TYPE_SETTING_HOSTNAME);
+    if (s_hostname) {
+        priority = nm_setting_hostname_get_priority(s_hostname);
+        if (priority != 0)
+            return priority;
+    }
+
+    return nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                       NM_CON_DEFAULT("hostname.priority"),
+                                                       device,
+                                                       G_MININT,
+                                                       G_MAXINT,
+                                                       100);
+}
+
+static GArray *
+build_device_hostname_infos(NMPolicy *self)
+{
+    NMPolicyPrivate *   priv = NM_POLICY_GET_PRIVATE(self);
+    const CList *       tmp_clist;
+    NMActiveConnection *ac;
+    GArray *            array = NULL;
+
+    nm_manager_for_each_active_connection (priv->manager, ac, tmp_clist) {
+        DeviceHostnameInfo *info;
+        NMDevice *          device;
+        gboolean            only_from_default;
+
+        device = nm_active_connection_get_device(ac);
+        if (!device)
+            continue;
+
+        only_from_default =
+            device_get_hostname_property_boolean(device, NM_SETTING_HOSTNAME_ONLY_FROM_DEFAULT);
+        if (only_from_default && ac != priv->default_ac4 && ac != priv->default_ac6)
+            continue;
+
+        if (!array)
+            array = g_array_sized_new(FALSE, FALSE, sizeof(DeviceHostnameInfo), 4);
+
+        info  = nm_g_array_append_new(array, DeviceHostnameInfo);
+        *info = (DeviceHostnameInfo){
+            .device   = device,
+            .priority = device_get_hostname_priority(device),
+            .from_dhcp =
+                device_get_hostname_property_boolean(device, NM_SETTING_HOSTNAME_FROM_DHCP),
+            .from_dns =
+                device_get_hostname_property_boolean(device, NM_SETTING_HOSTNAME_FROM_DNS_LOOKUP),
+            .ip_4 = priv->default_ac4 || !only_from_default,
+            .ip_6 = priv->default_ac6 || !only_from_default,
+        };
+    }
+
+    if (array && array->len > 1) {
+        const DeviceHostnameInfo *info0;
+        guint                     i;
+
+        g_array_sort(array, device_hostname_info_compare);
+
+        info0 = &g_array_index(array, DeviceHostnameInfo, 0);
+        if (info0->priority < 0) {
+            for (i = 1; i < array->len; i++) {
+                const DeviceHostnameInfo *info = &g_array_index(array, DeviceHostnameInfo, i);
+
+                if (info->priority > info0->priority) {
+                    g_array_set_size(array, i);
+                    break;
+                }
+            }
+        }
+    }
+
+    return array;
 }
 
 static void
-lookup_by_address(NMPolicy *self)
+device_dns_lookup_done(NMDevice *device, gpointer user_data)
 {
-    NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
+    NMPolicy *self = user_data;
 
-    nm_clear_g_cancellable(&priv->lookup.cancellable);
-    priv->lookup.cancellable = g_cancellable_new();
-    g_resolver_lookup_by_address_async(priv->lookup.resolver,
-                                       priv->lookup.addr,
-                                       priv->lookup.cancellable,
-                                       lookup_callback,
-                                       self);
+    g_signal_handlers_disconnect_by_func(device, device_dns_lookup_done, self);
+
+    update_system_hostname(self, "lookup finished");
 }
 
 static void
 update_system_hostname(NMPolicy *self, const char *msg)
 {
-    NMPolicyPrivate *           priv = NM_POLICY_GET_PRIVATE(self);
-    const char *                configured_hostname;
-    gs_free char *              temp_hostname = NULL;
-    const char *                dhcp_hostname, *p;
-    NMIP4Config *               ip4_config;
-    NMIP6Config *               ip6_config;
-    gboolean                    external_hostname = FALSE;
-    const NMPlatformIP4Address *addr4;
-    const NMPlatformIP6Address *addr6;
-    NMDevice *                  device;
-    NMDhcpConfig *              dhcp_config;
+    NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
+    const char *     configured_hostname;
+    gs_free char *   temp_hostname = NULL;
+    const char *     dhcp_hostname, *p;
+    gboolean         external_hostname = FALSE;
+    NMDhcpConfig *   dhcp_config;
+    gs_unref_array GArray *infos = NULL;
+    DeviceHostnameInfo *   info;
+    guint                  i;
+    int                    IS_IPv4;
 
     g_return_if_fail(self != NULL);
 
@@ -699,8 +800,6 @@ update_system_hostname(NMPolicy *self, const char *msg)
     }
 
     _LOGT(LOGD_DNS, "set-hostname: updating hostname (%s)", msg);
-
-    nm_clear_g_cancellable(&priv->lookup.cancellable);
 
     /* Check if the hostname was set externally to NM, so that in that case
      * we can avoid to fallback to the one we got when we started.
@@ -729,10 +828,9 @@ update_system_hostname(NMPolicy *self, const char *msg)
     /* Hostname precedence order:
      *
      * 1) a configured hostname (from settings)
-     * 2) automatic hostname from the default device's config (DHCP, VPN, etc)
-     * 3) the last hostname set outside NM
-     * 4) reverse-DNS of the best device's IPv4 address
-     *
+     * 2) automatic hostname from DHCP of eligible interfaces
+     * 3) reverse-DNS lookup of the first address on eligible interfaces
+     * 4) the last hostname set outside NM
      */
 
     /* Try a persistent hostname first */
@@ -743,40 +841,73 @@ update_system_hostname(NMPolicy *self, const char *msg)
         return;
     }
 
-    if (priv->default_ac4) {
-        /* Grab a hostname out of the device's DHCP4 config */
-        dhcp_config = nm_device_get_dhcp_config(get_default_device(self, AF_INET), AF_INET);
-        if (dhcp_config) {
-            dhcp_hostname = nm_dhcp_config_get_option(dhcp_config, "host_name");
-            if (dhcp_hostname && dhcp_hostname[0]) {
-                p = nm_str_skip_leading_spaces(dhcp_hostname);
-                if (p[0]) {
-                    _set_hostname(self, p, "from DHCPv4");
-                    priv->dhcp_hostname = TRUE;
-                    return;
-                }
-                _LOGW(LOGD_DNS,
-                      "set-hostname: DHCPv4-provided hostname '%s' looks invalid; ignoring it",
-                      dhcp_hostname);
-            }
+    infos = build_device_hostname_infos(self);
+
+    if (infos && _LOGT_ENABLED(LOGD_DNS)) {
+        _LOGT(LOGD_DNS, "device hostname info:");
+        for (i = 0; i < infos->len; i++) {
+            info = &g_array_index(infos, DeviceHostnameInfo, i);
+            _LOGT(LOGD_DNS,
+                  "  - prio:%4d ipv:%c%c dhcp:%d dns:%d dev:%s",
+                  info->priority,
+                  info->ip_4 ? '4' : '-',
+                  info->ip_6 ? '6' : '-',
+                  info->from_dhcp,
+                  info->from_dns,
+                  nm_device_get_iface(info->device));
         }
     }
 
-    if (priv->default_ac6) {
-        /* Grab a hostname out of the device's DHCP6 config */
-        dhcp_config = nm_device_get_dhcp_config(get_default_device(self, AF_INET6), AF_INET6);
-        if (dhcp_config) {
-            dhcp_hostname = nm_dhcp_config_get_option(dhcp_config, "fqdn_fqdn");
-            if (dhcp_hostname && dhcp_hostname[0]) {
-                p = nm_str_skip_leading_spaces(dhcp_hostname);
-                if (p[0]) {
-                    _set_hostname(self, p, "from DHCPv6");
-                    priv->dhcp_hostname = TRUE;
-                    return;
+    for (i = 0; infos && i < infos->len; i++) {
+        info = &g_array_index(infos, DeviceHostnameInfo, i);
+        g_signal_handlers_disconnect_by_func(info->device, device_dns_lookup_done, self);
+        for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+            const int addr_family = IS_IPv4 ? AF_INET : AF_INET6;
+
+            if (info->from_dhcp && info->ip_x[IS_IPv4]) {
+                dhcp_config = nm_device_get_dhcp_config(info->device, addr_family);
+                if (dhcp_config) {
+                    dhcp_hostname =
+                        nm_dhcp_config_get_option(dhcp_config, IS_IPv4 ? "host_name" : "fqdn_fqdn");
+                    if (dhcp_hostname && dhcp_hostname[0]) {
+                        p = nm_str_skip_leading_spaces(dhcp_hostname);
+                        if (p[0]) {
+                            _set_hostname(self, p, IS_IPv4 ? "from DHCPv4" : "from DHCPv6");
+                            priv->dhcp_hostname = TRUE;
+                            return;
+                        }
+                        _LOGW(LOGD_DNS,
+                              "set-hostname: DHCPv%c-provided hostname '%s' looks invalid; "
+                              "ignoring it",
+                              nm_utils_addr_family_to_char(addr_family),
+                              dhcp_hostname);
+                    }
                 }
-                _LOGW(LOGD_DNS,
-                      "set-hostname: DHCPv6-provided hostname '%s' looks invalid; ignoring it",
-                      dhcp_hostname);
+            }
+        }
+
+        if (priv->hostname_mode != NM_POLICY_HOSTNAME_MODE_DHCP) {
+            for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+                const int addr_family = IS_IPv4 ? AF_INET : AF_INET6;
+
+                if (info->from_dns && info->ip_x[IS_IPv4]) {
+                    const char *result;
+                    gboolean    wait;
+
+                    result =
+                        nm_device_get_hostname_from_dns_lookup(info->device, addr_family, &wait);
+                    if (result) {
+                        _set_hostname(self, result, "from address lookup");
+                        return;
+                    }
+                    if (wait) {
+                        g_signal_connect(info->device,
+                                         NM_DEVICE_DNS_LOOKUP_DONE,
+                                         (GCallback) device_dns_lookup_done,
+                                         self);
+                        return;
+                    }
+                }
             }
         }
     }
@@ -800,14 +931,6 @@ update_system_hostname(NMPolicy *self, const char *msg)
 
     priv->dhcp_hostname = FALSE;
 
-    if (!priv->default_ac4 && !priv->default_ac6) {
-        /* No best device; fall back to the last hostname set externally
-         * to NM or if there wasn't one, 'localhost.localdomain'
-         */
-        _set_hostname(self, priv->orig_hostname, "no default device");
-        return;
-    }
-
     /* If no automatically-configured hostname, try using the last hostname
      * set externally to NM
      */
@@ -816,30 +939,7 @@ update_system_hostname(NMPolicy *self, const char *msg)
         return;
     }
 
-    /* No configured hostname, no automatically determined hostname, and no
-     * bootup hostname. Start reverse DNS of the current IPv4 or IPv6 address.
-     */
-    device     = get_default_device(self, AF_INET);
-    ip4_config = device ? nm_device_get_ip4_config(device) : NULL;
-
-    device     = get_default_device(self, AF_INET6);
-    ip6_config = device ? nm_device_get_ip6_config(device) : NULL;
-
-    if (ip4_config && (addr4 = nm_ip4_config_get_first_address(ip4_config))) {
-        g_clear_object(&priv->lookup.addr);
-        priv->lookup.addr =
-            g_inet_address_new_from_bytes((guint8 *) &addr4->address, G_SOCKET_FAMILY_IPV4);
-    } else if (ip6_config && (addr6 = nm_ip6_config_get_first_address(ip6_config))) {
-        g_clear_object(&priv->lookup.addr);
-        priv->lookup.addr =
-            g_inet_address_new_from_bytes((guint8 *) &addr6->address, G_SOCKET_FAMILY_IPV6);
-    } else {
-        /* No valid IP config; fall back to localhost.localdomain */
-        _set_hostname(self, NULL, "no IP config");
-        return;
-    }
-
-    lookup_by_address(self);
+    _set_hostname(self, NULL, "no hostname found");
 }
 
 static void
@@ -1801,6 +1901,8 @@ device_state_changed(NMDevice *          device,
 
     switch (new_state) {
     case NM_DEVICE_STATE_FAILED:
+        g_signal_handlers_disconnect_by_func(device, device_dns_lookup_done, self);
+
         /* Mark the connection invalid if it failed during activation so that
          * it doesn't get automatically chosen over and over and over again.
          */
@@ -1939,6 +2041,8 @@ device_state_changed(NMDevice *          device,
         ip6_remove_device_prefix_delegations(self, device);
         break;
     case NM_DEVICE_STATE_DISCONNECTED:
+        g_signal_handlers_disconnect_by_func(device, device_dns_lookup_done, self);
+
         /* Reset retry counts for a device's connections when carrier on; if cable
          * was unplugged and plugged in again, we should try to reconnect.
          */
@@ -2412,40 +2516,6 @@ firewall_state_changed(NMFirewallManager *manager, gboolean initialized_now, gpo
 }
 
 static void
-dns_config_changed(NMDnsManager *dns_manager, gpointer user_data)
-{
-    NMPolicy *       self = (NMPolicy *) user_data;
-    NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
-
-    /* Restart a thread for reverse-DNS lookup after we are signalled that
-     * DNS changed. Because the result from a previous run may not be right
-     * (race in updating DNS and doing the reverse lookup).
-     */
-
-    nm_clear_g_cancellable(&priv->lookup.cancellable);
-
-    /* Re-start the hostname lookup thread if we don't have hostname yet. */
-    if (priv->lookup.addr) {
-        char *        str      = NULL;
-        gs_free char *hostname = NULL;
-
-        /* Check if the hostname was externally set */
-        if ((hostname = _get_hostname(self)) && nm_utils_is_specific_hostname(hostname)
-            && !nm_streq0(hostname, priv->last_hostname)) {
-            g_clear_object(&priv->lookup.addr);
-            return;
-        }
-
-        _LOGD(LOGD_DNS,
-              "restarting reverse-lookup thread for address %s",
-              (str = g_inet_address_to_string(priv->lookup.addr)));
-        g_free(str);
-
-        lookup_by_address(self);
-    }
-}
-
-static void
 connection_updated(NMSettings *          settings,
                    NMSettingsConnection *connection,
                    guint                 update_reason_u,
@@ -2677,12 +2747,6 @@ constructed(GObject *object)
 
     priv->dns_manager = g_object_ref(nm_dns_manager_get());
     nm_dns_manager_set_initial_hostname(priv->dns_manager, priv->orig_hostname);
-    priv->config_changed_id = g_signal_connect(priv->dns_manager,
-                                               NM_DNS_MANAGER_CONFIG_CHANGED,
-                                               G_CALLBACK(dns_config_changed),
-                                               self);
-
-    priv->lookup.resolver = g_resolver_get_default();
 
     g_signal_connect(priv->hostname_manager,
                      "notify::" NM_HOSTNAME_MANAGER_HOSTNAME,
@@ -2764,10 +2828,6 @@ dispose(GObject *object)
     NMDevice *       device;
     ActivateData *   data, *data_safe;
 
-    nm_clear_g_cancellable(&priv->lookup.cancellable);
-    g_clear_object(&priv->lookup.addr);
-    g_clear_object(&priv->lookup.resolver);
-
     nm_clear_g_object(&priv->default_ac4);
     nm_clear_g_object(&priv->default_ac6);
     nm_clear_g_object(&priv->activating_ac4);
@@ -2790,10 +2850,7 @@ dispose(GObject *object)
         g_clear_object(&priv->agent_mgr);
     }
 
-    if (priv->dns_manager) {
-        nm_clear_g_signal_handler(priv->dns_manager, &priv->config_changed_id);
-        g_clear_object(&priv->dns_manager);
-    }
+    g_clear_object(&priv->dns_manager);
 
     g_hash_table_iter_init(&h_iter, priv->devices);
     if (g_hash_table_iter_next(&h_iter, (gpointer *) &device, NULL)) {

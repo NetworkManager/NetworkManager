@@ -452,7 +452,7 @@ nm_setting_bridge_port_init(NMSettingBridgePort *setting)
 NMSetting *
 nm_setting_bridge_port_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_BRIDGE_PORT, NULL);
+    return g_object_new(NM_TYPE_SETTING_BRIDGE_PORT, NULL);
 }
 
 static void

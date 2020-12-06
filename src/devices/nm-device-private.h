@@ -54,9 +54,7 @@ gboolean nm_device_set_ip_iface(NMDevice *self, const char *iface);
 
 void nm_device_activate_schedule_stage3_ip_config_start(NMDevice *device);
 
-gboolean nm_device_activate_stage3_ip4_start(NMDevice *self);
-
-gboolean nm_device_activate_stage3_ip6_start(NMDevice *self);
+gboolean nm_device_activate_stage3_ip_start(NMDevice *self, int addr_family);
 
 gboolean nm_device_bring_up(NMDevice *self, gboolean wait, gboolean *no_firmware);
 

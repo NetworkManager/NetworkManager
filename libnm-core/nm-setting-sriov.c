@@ -1222,7 +1222,7 @@ nm_setting_sriov_init(NMSettingSriov *setting)
 NMSetting *
 nm_setting_sriov_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_SRIOV, NULL);
+    return g_object_new(NM_TYPE_SETTING_SRIOV, NULL);
 }
 
 static void

@@ -64,7 +64,7 @@ G_MODULE_EXPORT NMDeviceFactory *
                 nm_device_factory_create(GError **error)
 {
     nm_manager_set_capability(NM_MANAGER_GET, NM_CAPABILITY_OVS);
-    return (NMDeviceFactory *) g_object_new(NM_TYPE_OVS_FACTORY, NULL);
+    return g_object_new(NM_TYPE_OVS_FACTORY, NULL);
 }
 
 static NMDevice *
@@ -106,12 +106,10 @@ new_device_from_type(const char *name, NMDeviceType device_type)
 }
 
 static void
-ovsdb_device_added(NMOvsdb *        ovsdb,
-                   const char *     name,
-                   NMDeviceType     device_type,
-                   NMDeviceFactory *self)
+ovsdb_device_added(NMOvsdb *ovsdb, const char *name, guint device_type_i, NMDeviceFactory *self)
 {
-    NMDevice *device = NULL;
+    const NMDeviceType device_type = device_type_i;
+    NMDevice *         device;
 
     device = new_device_from_type(name, device_type);
     if (!device)
@@ -122,13 +120,11 @@ ovsdb_device_added(NMOvsdb *        ovsdb,
 }
 
 static void
-ovsdb_device_removed(NMOvsdb *        ovsdb,
-                     const char *     name,
-                     NMDeviceType     device_type,
-                     NMDeviceFactory *self)
+ovsdb_device_removed(NMOvsdb *ovsdb, const char *name, guint device_type_i, NMDeviceFactory *self)
 {
-    NMDevice *    device;
-    NMDeviceState device_state;
+    const NMDeviceType device_type = device_type_i;
+    NMDevice *         device;
+    NMDeviceState      device_state;
 
     device = nm_manager_get_device(NM_MANAGER_GET, name, device_type);
     if (!device)

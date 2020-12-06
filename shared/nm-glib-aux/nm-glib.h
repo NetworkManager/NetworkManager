@@ -683,7 +683,7 @@ g_hash_table_steal_extended(GHashTable *  hash_table,
             gpointer *_stolen_value = (stolen_value);                                        \
                                                                                              \
             /* we cannot allow NULL arguments, because then we would leak the values in
-         * the compat implementation. */      \
+             * the compat implementation. */      \
             g_assert(_stolen_key);                                                           \
             g_assert(_stolen_value);                                                         \
                                                                                              \

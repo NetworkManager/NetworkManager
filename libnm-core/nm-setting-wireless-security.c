@@ -1445,7 +1445,7 @@ nm_setting_wireless_security_init(NMSettingWirelessSecurity *self)
 NMSetting *
 nm_setting_wireless_security_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_WIRELESS_SECURITY, NULL);
+    return g_object_new(NM_TYPE_SETTING_WIRELESS_SECURITY, NULL);
 }
 
 static void

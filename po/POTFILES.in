@@ -82,6 +82,7 @@ libnm-core/nm-setting-macvlan.c
 libnm-core/nm-setting-match.c
 libnm-core/nm-setting-olpc-mesh.c
 libnm-core/nm-setting-ovs-bridge.c
+libnm-core/nm-setting-ovs-external-ids.c
 libnm-core/nm-setting-ovs-interface.c
 libnm-core/nm-setting-ovs-patch.c
 libnm-core/nm-setting-ovs-port.c
@@ -94,6 +95,7 @@ libnm-core/nm-setting-team-port.c
 libnm-core/nm-setting-team.c
 libnm-core/nm-setting-tun.c
 libnm-core/nm-setting-user.c
+libnm-core/nm-setting-veth.c
 libnm-core/nm-setting-vlan.c
 libnm-core/nm-setting-vrf.c
 libnm-core/nm-setting-vpn.c
@@ -129,6 +131,7 @@ libnm/nm-device-ovs-interface.c
 libnm/nm-device-ovs-port.c
 libnm/nm-device-team.c
 libnm/nm-device-tun.c
+libnm/nm-device-veth.c
 libnm/nm-device-vlan.c
 libnm/nm-device-vrf.c
 libnm/nm-device-vxlan.c
@@ -164,6 +167,7 @@ src/devices/nm-device-infiniband.c
 src/devices/nm-device-ip-tunnel.c
 src/devices/nm-device-macvlan.c
 src/devices/nm-device-tun.c
+src/devices/nm-device-veth.c
 src/devices/nm-device-vlan.c
 src/devices/nm-device-vrf.c
 src/devices/nm-device-vxlan.c

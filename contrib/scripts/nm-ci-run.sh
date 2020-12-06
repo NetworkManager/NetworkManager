@@ -67,12 +67,6 @@ case "$CI" in
     ""|"true"|"default"|"gitlab")
         CI=default
         ;;
-    "travis")
-        _WITH_WERROR=0
-        _WITH_LIBTEAM="$_FALSE"
-        _WITH_DOCS="$_FALSE"
-        _WITH_SYSTEMD_LOGIND="$_FALSE"
-        ;;
     *)
         die "invalid \$CI \"$CI\""
         ;;
@@ -171,12 +165,6 @@ run_autotools() {
         make install
 
         export NM_TEST_CLIENT_CHECK_L10N=1
-
-        if [ "$CI" == travis ]; then
-            # travis is known to generate the settings doc differently.
-            # Don't compare.
-            export NMTST_NO_CHECK_SETTINGS_DOCS=yes
-        fi
 
         if ! make check -j 6 -k ; then
 

@@ -46,7 +46,7 @@ G_MODULE_EXPORT NMDeviceFactory *
                 nm_device_factory_create(GError **error)
 {
     nm_manager_set_capability(NM_MANAGER_GET, NM_CAPABILITY_TEAM);
-    return (NMDeviceFactory *) g_object_new(NM_TYPE_TEAM_FACTORY, NULL);
+    return g_object_new(NM_TYPE_TEAM_FACTORY, NULL);
 }
 
 /*****************************************************************************/

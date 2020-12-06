@@ -524,10 +524,10 @@ _team_attr_data_cmp(const TeamAttrData *attr_data,
         v_ptrarray_a = *((const GPtrArray *const *) val_a);
         v_ptrarray_b = *((const GPtrArray *const *) val_b);
         NM_CMP_RETURN(
-            _nm_utils_strv_cmp_n(v_ptrarray_a ? (const char *const *) v_ptrarray_a->pdata : NULL,
-                                 v_ptrarray_a ? v_ptrarray_a->len : 0u,
-                                 v_ptrarray_b ? (const char *const *) v_ptrarray_b->pdata : NULL,
-                                 v_ptrarray_b ? v_ptrarray_b->len : 0u));
+            nm_utils_strv_cmp_n(v_ptrarray_a ? (const char *const *) v_ptrarray_a->pdata : NULL,
+                                v_ptrarray_a ? v_ptrarray_a->len : 0u,
+                                v_ptrarray_b ? (const char *const *) v_ptrarray_b->pdata : NULL,
+                                v_ptrarray_b ? v_ptrarray_b->len : 0u));
     } else
         nm_assert_not_reached();
     return 0;
@@ -1136,13 +1136,12 @@ _team_setting_value_master_runner_tx_hash_set_list(NMTeamSetting *    self,
     gboolean                                changed;
     guint                                   i;
 
-    if (_nm_utils_strv_cmp_n(self->d.master.runner_tx_hash
-                                 ? (const char *const *) self->d.master.runner_tx_hash->pdata
-                                 : NULL,
-                             self->d.master.runner_tx_hash ? self->d.master.runner_tx_hash->len
-                                                           : 0u,
-                             arr,
-                             len)
+    if (nm_utils_strv_cmp_n(self->d.master.runner_tx_hash
+                                ? (const char *const *) self->d.master.runner_tx_hash->pdata
+                                : NULL,
+                            self->d.master.runner_tx_hash ? self->d.master.runner_tx_hash->len : 0u,
+                            arr,
+                            len)
         == 0) {
         changed = FALSE;
         goto out;

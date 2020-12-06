@@ -18,6 +18,7 @@ libnm_core_headers = files(
   'nm-core-types.h',
   'nm-dbus-interface.h',
   'nm-errors.h',
+  'nm-keyfile.h',
   'nm-setting-6lowpan.h',
   'nm-setting-8021x.h',
   'nm-setting-adsl.h',
@@ -32,6 +33,7 @@ libnm_core_headers = files(
   'nm-setting-ethtool.h',
   'nm-setting-generic.h',
   'nm-setting-gsm.h',
+  'nm-setting-hostname.h',
   'nm-setting-infiniband.h',
   'nm-setting-ip-config.h',
   'nm-setting-ip-tunnel.h',
@@ -42,8 +44,9 @@ libnm_core_headers = files(
   'nm-setting-match.h',
   'nm-setting-olpc-mesh.h',
   'nm-setting-ovs-bridge.h',
-  'nm-setting-ovs-interface.h',
   'nm-setting-ovs-dpdk.h',
+  'nm-setting-ovs-external-ids.h',
+  'nm-setting-ovs-interface.h',
   'nm-setting-ovs-patch.h',
   'nm-setting-ovs-port.h',
   'nm-setting-ppp.h',
@@ -56,6 +59,7 @@ libnm_core_headers = files(
   'nm-setting-team.h',
   'nm-setting-tun.h',
   'nm-setting-user.h',
+  'nm-setting-veth.h',
   'nm-setting-vlan.h',
   'nm-setting-vpn.h',
   'nm-setting-vrf.h',
@@ -132,6 +136,7 @@ libnm_core_settings_sources = files(
   'nm-setting-ethtool.c',
   'nm-setting-generic.c',
   'nm-setting-gsm.c',
+  'nm-setting-hostname.c',
   'nm-setting-infiniband.c',
   'nm-setting-ip-config.c',
   'nm-setting-ip-tunnel.c',
@@ -142,8 +147,9 @@ libnm_core_settings_sources = files(
   'nm-setting-match.c',
   'nm-setting-olpc-mesh.c',
   'nm-setting-ovs-bridge.c',
-  'nm-setting-ovs-interface.c',
   'nm-setting-ovs-dpdk.c',
+  'nm-setting-ovs-external-ids.c',
+  'nm-setting-ovs-interface.c',
   'nm-setting-ovs-patch.c',
   'nm-setting-ovs-port.c',
   'nm-setting-ppp.c',
@@ -156,6 +162,7 @@ libnm_core_settings_sources = files(
   'nm-setting-team.c',
   'nm-setting-tun.c',
   'nm-setting-user.c',
+  'nm-setting-veth.c',
   'nm-setting-vlan.c',
   'nm-setting-vpn.c',
   'nm-setting-vrf.c',
@@ -235,12 +242,14 @@ libnm_libnm_core_aux_dep = declare_dependency(
   link_with: libnm_libnm_core_aux,
 )
 
+nm_keyfile_source = files(
+  'nm-keyfile/nm-keyfile-utils.c',
+  'nm-keyfile/nm-keyfile.c',
+)
+
 libnm_keyfile = static_library(
   'nm-keyfile',
-  sources: files(
-    'nm-keyfile/nm-keyfile-utils.c',
-    'nm-keyfile/nm-keyfile.c',
-  ) + [libnm_core_enum_sources[1]],
+  sources: nm_keyfile_source + [libnm_core_enum_sources[1]],
   dependencies: libnm_utils_base_dep,
   c_args: [
     '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),

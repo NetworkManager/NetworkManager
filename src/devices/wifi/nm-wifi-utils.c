@@ -886,34 +886,49 @@ nm_wifi_utils_is_manf_default_ssid(GBytes *ssid)
     return FALSE;
 }
 
-NMIwdNetworkSecurity
-nm_wifi_connection_get_iwd_security(NMConnection *connection, gboolean *mapped)
+/* To be used for connections where the SSID has been validated before */
+gboolean
+nm_wifi_connection_get_iwd_ssid_and_security(NMConnection *        connection,
+                                             char **               ssid,
+                                             NMIwdNetworkSecurity *security)
 {
+    NMSettingWireless *        s_wireless;
     NMSettingWirelessSecurity *s_wireless_sec;
     const char *               key_mgmt = NULL;
 
-    if (!nm_connection_get_setting_wireless(connection))
-        goto error;
+    s_wireless = nm_connection_get_setting_wireless(connection);
+    if (!s_wireless)
+        return FALSE;
 
-    NM_SET_OUT(mapped, TRUE);
+    if (ssid) {
+        GBytes *    bytes = nm_setting_wireless_get_ssid(s_wireless);
+        gsize       ssid_len;
+        const char *ssid_str = (const char *) g_bytes_get_data(bytes, &ssid_len);
+
+        nm_assert(bytes && g_utf8_validate(ssid_str, ssid_len, NULL));
+        NM_SET_OUT(ssid, g_strndup(ssid_str, ssid_len));
+    }
+
+    if (!security)
+        return TRUE;
 
     s_wireless_sec = nm_connection_get_setting_wireless_security(connection);
-    if (!s_wireless_sec)
-        return NM_IWD_NETWORK_SECURITY_NONE;
+    if (!s_wireless_sec) {
+        NM_SET_OUT(security, NM_IWD_NETWORK_SECURITY_NONE);
+        return TRUE;
+    }
 
     key_mgmt = nm_setting_wireless_security_get_key_mgmt(s_wireless_sec);
     nm_assert(key_mgmt);
 
     if (NM_IN_STRSET(key_mgmt, "none", "ieee8021x"))
-        return NM_IWD_NETWORK_SECURITY_WEP;
+        NM_SET_OUT(security, NM_IWD_NETWORK_SECURITY_WEP);
+    else if (nm_streq(key_mgmt, "wpa-psk"))
+        NM_SET_OUT(security, NM_IWD_NETWORK_SECURITY_PSK);
+    else if (nm_streq(key_mgmt, "wpa-eap"))
+        NM_SET_OUT(security, NM_IWD_NETWORK_SECURITY_8021X);
+    else
+        return FALSE;
 
-    if (nm_streq(key_mgmt, "wpa-psk"))
-        return NM_IWD_NETWORK_SECURITY_PSK;
-
-    if (nm_streq(key_mgmt, "wpa-eap"))
-        return NM_IWD_NETWORK_SECURITY_8021X;
-
-error:
-    NM_SET_OUT(mapped, FALSE);
-    return NM_IWD_NETWORK_SECURITY_NONE;
+    return TRUE;
 }

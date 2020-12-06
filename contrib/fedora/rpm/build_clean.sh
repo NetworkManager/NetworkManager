@@ -25,8 +25,18 @@ usage() {
     echo "  -W|--without \$OPTION: pass --without \$OPTION to rpmbuild. For example --without debug"
     echo "  -s|--snapshot TEXT: use TEXT as the snapshot version for the new package (overwrites \$NM_BUILD_SNAPSHOT environment)"
     echo "  -r|--release: built a release tarball (this option must be alone)"
+    echo "  --default-for-debug \$OPTION: set the default for "debug" option in the generated spec file"
+    echo "  --default-for-test \$OPTION: set the default for "test" option in the generated spec file"
 }
 
+in_set() {
+    local v="$1"
+    shift
+    for v2; do
+        test "$v" == "$v2" && return 0
+    done
+    return 1
+}
 
 ORIGDIR="$(readlink -f "$PWD")"
 SCRIPTDIR="$(dirname "$(readlink -f "$0")")"
@@ -45,6 +55,8 @@ WITH_LIST=()
 SOURCE_FROM_GIT=0
 SNAPSHOT="$NM_BUILD_SNAPSHOT"
 DO_RELEASE=0
+unset BCOND_DEFAULT_DEBUG
+unset BCOND_DEFAULT_TEST
 
 ADD_WITH_TEST=1
 
@@ -94,17 +106,49 @@ while [[ $# -gt 0 ]]; do
         -w|--with)
             [[ $# -gt 0 ]] || die "Missing argument to $A"
             WITH_LIST=("${WITH_LIST[@]}" "--with" "$1")
-            if [[ "$1" == test ]]; then
-                ADD_WITH_TEST=0
-            fi
+            case "$1" in
+                debug)
+                    [[ -z ${BCOND_DEFAULT_DEBUG+.} ]] && BCOND_DEFAULT_DEBUG=1
+                    ;;
+                test)
+                    ADD_WITH_TEST=0
+                    [[ -z ${BCOND_DEFAULT_TEST+.} ]] && BCOND_DEFAULT_TEST=1
+                    ;;
+            esac
             shift
             ;;
         -W|--without)
             [[ $# -gt 0 ]] || die "Missing argument to $A"
             WITH_LIST=("${WITH_LIST[@]}" "--without" "$1")
-            if [[ "$1" == test ]]; then
-                ADD_WITH_TEST=0
-            fi
+            case "$1" in
+                debug)
+                    [[ -z ${BCOND_DEFAULT_DEBUG+.} ]] && BCOND_DEFAULT_DEBUG=0
+                    ;;
+                test)
+                    ADD_WITH_TEST=0
+                    [[ -z ${BCOND_DEFAULT_TEST+.} ]] && BCOND_DEFAULT_TEST=0
+                    ;;
+            esac
+            shift
+            ;;
+        --no-auto-with-test)
+            # by default, the script adds "-w test" (unless the command line contains
+            # "-w test" or "-W test"). This flags allows to suppress that automatism.
+            # It's really only useful to test the spec file's internal default for the
+            # "test" option. Otherwise, you can always just explicitly select "-w test"
+            # or "-W test".
+            ADD_WITH_TEST=0
+            ;;
+        --default-for-debug)
+            [[ $# -gt 0 ]] || die "Missing argument to $A"
+            in_set "$1" "" 0 1 || die "invalid argument $A \"$1\""
+            BCOND_DEFAULT_DEBUG="$1"
+            shift
+            ;;
+        --default-for-test)
+            [[ $# -gt 0 ]] || die "Missing argument to $A"
+            in_set "$1" "" 0 1 || die "invalid argument $A \"$1\""
+            BCOND_DEFAULT_TEST="$1"
             shift
             ;;
         *)
@@ -176,6 +220,8 @@ export BUILDTYPE
 export NM_RPMBUILD_ARGS="${WITH_LIST[@]}"
 export SNAPSHOT
 export DO_RELEASE
+export BCOND_DEFAULT_DEBUG="$BCOND_DEFAULT_DEBUG"
+export BCOND_DEFAULT_TEST="$BCOND_DEFAULT_TEST"
 
 "$SCRIPTDIR"/build.sh
 

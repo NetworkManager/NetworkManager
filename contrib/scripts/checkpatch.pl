@@ -137,7 +137,7 @@ if ($is_patch) {
 	$check_line = 1;
 	$line = $_;
 	/^---$/ and $is_commit_message = 0;
-	/^Fixes: *(.*)/ and check_commit ($1, 1);
+	/^(Reverts|Fixes): *(.*)/ and check_commit ($2, 1);
 	/This reverts commit/ and next;
 	/cherry picked from/ and next;
 	/\bcommit (.*)/ and check_commit ($1, 0);
@@ -188,7 +188,7 @@ complain ("Don't use space inside elvis operator ?:") if $line =~ /\?[\t ]+:/;
 complain ("Don't add Emacs editor formatting hints to source files") if $line_no == 1 and $line =~ /-\*-.+-\*-/;
 complain ("XXX marker are reserved for development while work-in-progress. Use TODO or FIXME comment instead?") if $line =~ /\bXXX\b/;
 complain ("This gtk-doc annotation looks wrong") if $line =~ /\*.*\( *(transfer-(none|container|full)|allow none) *\) *(:|\()/;
-complain ("Prefer nm_assert() or g_return*() to g_assert*()") if $line =~ /g_assert/ and not $filename =~ /\/tests\//;
+complain ("Prefer nm_assert() or g_return*() to g_assert*()") if $line =~ /g_assert/ and (not $filename =~ /\/tests\//) and (not $filename =~ /\/nm-test-/);
 complain ("Use gs_free_error with GError variables") if $line =~ /\bgs_free\b +GError *\*/;
 #complain ("Use spaces instead of tabs") if $line =~ /\t/;
 

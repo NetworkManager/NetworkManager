@@ -11,11 +11,11 @@ s_con = dbus.Dictionary(
 )
 
 s_wifi = dbus.Dictionary(
-    {"ssid": dbus.ByteArray("best-wifi".encode("utf-8")), "mode": "infrastructure",}
+    {"ssid": dbus.ByteArray("best-wifi".encode("utf-8")), "mode": "infrastructure"}
 )
 
 s_wsec = dbus.Dictionary(
-    {"key-mgmt": "wpa-psk", "auth-alg": "open", "psk": "super-secret-password",}
+    {"key-mgmt": "wpa-psk", "auth-alg": "open", "psk": "super-secret-password"}
 )
 
 s_ip4 = dbus.Dictionary({"method": "auto"})

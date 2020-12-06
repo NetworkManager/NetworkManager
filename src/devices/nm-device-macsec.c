@@ -18,8 +18,8 @@
 #include "supplicant/nm-supplicant-interface.h"
 #include "supplicant/nm-supplicant-config.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceMacsec
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceMacsec);
 
 /*****************************************************************************/
 
@@ -1023,16 +1023,16 @@ create_device(NMDeviceFactory *     factory,
               NMConnection *        connection,
               gboolean *            out_ignore)
 {
-    return (NMDevice *) g_object_new(NM_TYPE_DEVICE_MACSEC,
-                                     NM_DEVICE_IFACE,
-                                     iface,
-                                     NM_DEVICE_TYPE_DESC,
-                                     "Macsec",
-                                     NM_DEVICE_DEVICE_TYPE,
-                                     NM_DEVICE_TYPE_MACSEC,
-                                     NM_DEVICE_LINK_TYPE,
-                                     NM_LINK_TYPE_MACSEC,
-                                     NULL);
+    return g_object_new(NM_TYPE_DEVICE_MACSEC,
+                        NM_DEVICE_IFACE,
+                        iface,
+                        NM_DEVICE_TYPE_DESC,
+                        "Macsec",
+                        NM_DEVICE_DEVICE_TYPE,
+                        NM_DEVICE_TYPE_MACSEC,
+                        NM_DEVICE_LINK_TYPE,
+                        NM_LINK_TYPE_MACSEC,
+                        NULL);
 }
 
 static const char *

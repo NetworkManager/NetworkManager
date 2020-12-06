@@ -16,8 +16,8 @@
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceModem
 #include "devices/nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceModem);
 
 /*****************************************************************************/
 

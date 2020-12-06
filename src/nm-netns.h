@@ -31,6 +31,8 @@ struct _NMDedupMultiIndex *nm_netns_get_multi_idx(NMNetns *self);
 
 #define NM_NETNS_GET (nm_netns_get())
 
+NML3Cfg *nm_netns_get_l3cfg(NMNetns *self, int ifindex);
+
 NML3Cfg *nm_netns_access_l3cfg(NMNetns *netns, int ifindex);
 
 /*****************************************************************************/

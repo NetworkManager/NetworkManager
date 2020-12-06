@@ -31,15 +31,17 @@ typedef struct {
     /* Return first supported frequency in the zero-terminated list */
     guint32 (*find_freq)(NMWifiUtils *data, const guint32 *freqs);
 
-    /* Return current bitrate in Kbps */
-    guint32 (*get_rate)(NMWifiUtils *data);
-
-    gboolean (*get_bssid)(NMWifiUtils *data, guint8 *out_bssid);
-
-    /* Return a signal strength percentage 0 - 100% for the current BSSID;
-     * return -1 on errors or if not associated.
+    /*
+     * @out_bssid: must be NULL or an ETH_ALEN-byte buffer
+     * @out_quality: receives signal strength percentage 0 - 100% for the current BSSID, if not NULL
+     * @out_rate: receives current bitrate in Kbps if not NULL
+     *
+     * Returns %TRUE on succcess, %FALSE on errors or if not associated.
      */
-    int (*get_qual)(NMWifiUtils *data);
+    gboolean (*get_station)(NMWifiUtils *data,
+                            NMEtherAddr *out_bssid,
+                            int *        out_quality,
+                            guint32 *    out_rate);
 
     /* OLPC Mesh-only functions */
 

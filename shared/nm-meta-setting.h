@@ -119,6 +119,7 @@ typedef enum {
     NM_META_SETTING_TYPE_ETHTOOL,
     NM_META_SETTING_TYPE_GENERIC,
     NM_META_SETTING_TYPE_GSM,
+    NM_META_SETTING_TYPE_HOSTNAME,
     NM_META_SETTING_TYPE_INFINIBAND,
     NM_META_SETTING_TYPE_IP_TUNNEL,
     NM_META_SETTING_TYPE_IP4_CONFIG,
@@ -128,6 +129,7 @@ typedef enum {
     NM_META_SETTING_TYPE_MATCH,
     NM_META_SETTING_TYPE_OVS_BRIDGE,
     NM_META_SETTING_TYPE_OVS_DPDK,
+    NM_META_SETTING_TYPE_OVS_EXTERNAL_IDS,
     NM_META_SETTING_TYPE_OVS_INTERFACE,
     NM_META_SETTING_TYPE_OVS_PATCH,
     NM_META_SETTING_TYPE_OVS_PORT,
@@ -141,6 +143,7 @@ typedef enum {
     NM_META_SETTING_TYPE_TEAM_PORT,
     NM_META_SETTING_TYPE_TUN,
     NM_META_SETTING_TYPE_USER,
+    NM_META_SETTING_TYPE_VETH,
     NM_META_SETTING_TYPE_VLAN,
     NM_META_SETTING_TYPE_VPN,
     NM_META_SETTING_TYPE_VRF,
@@ -205,5 +208,9 @@ const NMMetaSettingInfo *nm_meta_setting_infos_by_name(const char *name);
 const NMMetaSettingInfo *nm_meta_setting_infos_by_gtype(GType gtype);
 
 /*****************************************************************************/
+
+NMSettingPriority nm_meta_setting_info_get_base_type_priority(const NMMetaSettingInfo *setting_info,
+                                                              GType                    gtype);
+NMSettingPriority _nm_setting_type_get_base_type_priority(GType type);
 
 #endif /* __NM_META_SETTING_H__ */

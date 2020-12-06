@@ -2400,13 +2400,9 @@ _nm_meta_setting_bond_add_option(NMSetting * setting,
     char *         p;
 
     if (!value || !value[0]) {
-        if (!nm_setting_bond_remove_option(s_bond, name)) {
-            nm_utils_error_set(error,
-                               NM_UTILS_ERROR_INVALID_ARGUMENT,
-                               _("failed to unset bond option \"%s\""),
-                               name);
-            return FALSE;
-        }
+        /* This call only fails if name is currently not tracked. It's not an
+         * error to remove an option that is not set. */
+        nm_setting_bond_remove_option(s_bond, name);
         return TRUE;
     }
 
@@ -2421,13 +2417,15 @@ _nm_meta_setting_bond_add_option(NMSetting * setting,
                 *p = ',';
     }
 
-    if (!nm_setting_bond_add_option(s_bond, name, value)) {
+    if (!nm_setting_bond_validate_option(name, value)) {
         nm_utils_error_set(error,
                            NM_UTILS_ERROR_INVALID_ARGUMENT,
                            _("failed to set bond option \"%s\""),
                            name);
         return FALSE;
     }
+
+    nm_setting_bond_add_option(s_bond, name, value);
 
     if (nm_streq(name, NM_SETTING_BOND_OPTION_ARP_INTERVAL)) {
         if (_nm_utils_ascii_str_to_int64(value, 10, 0, G_MAXINT, 0) > 0)
@@ -2563,10 +2561,15 @@ static const char *const *_complete_fcn_connection_type(ARGS_COMPLETE_FCN)
 
     for (i = 0, j = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
         const NMMetaSettingInfoEditor *setting_info = &nm_meta_setting_infos_editor[i];
+        GType                          gtype        = setting_info->general->get_setting_gtype();
         const char *                   v;
 
-        if (!setting_info->valid_parts)
+        if (_nm_setting_type_get_base_type_priority(gtype) == NM_SETTING_PRIORITY_INVALID) {
+            nm_assert(!setting_info->valid_parts);
             continue;
+        }
+
+        nm_assert(setting_info->valid_parts);
 
         v = setting_info->alias;
         if (v) {
@@ -5636,6 +5639,24 @@ static const NMMetaPropertyInfo *const property_infos_GSM[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_HOSTNAME
+static const NMMetaPropertyInfo *const property_infos_HOSTNAME[] = {
+    PROPERTY_INFO (NM_SETTING_HOSTNAME_PRIORITY, DESCRIBE_DOC_NM_SETTING_HOSTNAME_PRIORITY,
+        .property_type =                &_pt_gobject_int,
+    ),
+    PROPERTY_INFO (NM_SETTING_HOSTNAME_FROM_DHCP, DESCRIBE_DOC_NM_SETTING_HOSTNAME_FROM_DHCP,
+        .property_type =                &_pt_gobject_enum,
+    ),
+    PROPERTY_INFO (NM_SETTING_HOSTNAME_FROM_DNS_LOOKUP, DESCRIBE_DOC_NM_SETTING_HOSTNAME_FROM_DNS_LOOKUP,
+        .property_type =                &_pt_gobject_enum,
+    ),
+    PROPERTY_INFO (NM_SETTING_HOSTNAME_ONLY_FROM_DEFAULT, DESCRIBE_DOC_NM_SETTING_HOSTNAME_ONLY_FROM_DEFAULT,
+        .property_type =                &_pt_gobject_enum,
+    ),
+    NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_INFINIBAND
 static const NMMetaPropertyInfo *const property_infos_INFINIBAND[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_INFINIBAND_MAC_ADDRESS,
@@ -7064,6 +7085,19 @@ static const NMMetaPropertyInfo *const property_infos_TUN[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_VETH
+static const NMMetaPropertyInfo *const property_infos_VETH[] = {
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_VETH_PEER,
+        .is_cli_option =                TRUE,
+        .property_alias =               "peer",
+        .inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
+        .prompt =                       N_("veth peer"),
+        .property_type =                &_pt_gobject_string,
+    ),
+    NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_VLAN
 static const NMMetaPropertyInfo *const property_infos_VLAN[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_VLAN_PARENT,
@@ -7202,7 +7236,6 @@ static const NMMetaPropertyInfo *const property_infos_VXLAN[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_VXLAN_REMOTE,
         .is_cli_option =                TRUE,
         .property_alias =               "remote",
-        .inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
         .prompt =                       N_("Remote"),
         .property_type =                &_pt_gobject_string,
     ),
@@ -7939,6 +7972,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_ETHTOOL             N_("Ethtool settings")
 #define SETTING_PRETTY_NAME_GENERIC             N_("Generic settings")
 #define SETTING_PRETTY_NAME_GSM                 N_("GSM mobile broadband connection")
+#define SETTING_PRETTY_NAME_HOSTNAME            N_("Hostname settings")
 #define SETTING_PRETTY_NAME_INFINIBAND          N_("InfiniBand connection")
 #define SETTING_PRETTY_NAME_IP4_CONFIG          N_("IPv4 protocol")
 #define SETTING_PRETTY_NAME_IP6_CONFIG          N_("IPv6 protocol")
@@ -7949,6 +7983,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_OLPC_MESH           N_("OLPC Mesh connection")
 #define SETTING_PRETTY_NAME_OVS_BRIDGE          N_("Open vSwitch bridge settings")
 #define SETTING_PRETTY_NAME_OVS_DPDK            N_("Open vSwitch DPDK interface settings")
+#define SETTING_PRETTY_NAME_OVS_EXTERNAL_IDS    N_("OVS External IDs")
 #define SETTING_PRETTY_NAME_OVS_INTERFACE       N_("Open vSwitch interface settings")
 #define SETTING_PRETTY_NAME_OVS_PATCH           N_("Open vSwitch patch interface settings")
 #define SETTING_PRETTY_NAME_OVS_PORT            N_("Open vSwitch port settings")
@@ -7962,6 +7997,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_TEAM_PORT           N_("Team port")
 #define SETTING_PRETTY_NAME_TUN                 N_("Tun device")
 #define SETTING_PRETTY_NAME_USER                N_("User settings")
+#define SETTING_PRETTY_NAME_VETH                N_("Veth connection")
 #define SETTING_PRETTY_NAME_VLAN                N_("VLAN connection")
 #define SETTING_PRETTY_NAME_VPN                 N_("VPN connection")
 #define SETTING_PRETTY_NAME_VRF                 N_("VRF connection")
@@ -8075,6 +8111,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
         ),
         .setting_init_fcn =             _setting_init_fcn_gsm,
     ),
+    SETTING_INFO (HOSTNAME),
     SETTING_INFO (INFINIBAND,
         .valid_parts = NM_META_SETTING_VALID_PARTS (
             NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
@@ -8131,7 +8168,13 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
             NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
         ),
     ),
-    SETTING_INFO (OVS_DPDK),
+    SETTING_INFO (OVS_DPDK,
+        .valid_parts = NM_META_SETTING_VALID_PARTS (
+            NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+            NM_META_SETTING_VALID_PART_ITEM (OVS_DPDK,              TRUE),
+        ),
+    ),
+    SETTING_INFO_EMPTY (OVS_EXTERNAL_IDS),
     SETTING_INFO (OVS_INTERFACE,
         .valid_parts = NM_META_SETTING_VALID_PARTS (
             NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
@@ -8144,7 +8187,12 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
             NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
         ),
     ),
-    SETTING_INFO (OVS_PATCH),
+    SETTING_INFO (OVS_PATCH,
+        .valid_parts = NM_META_SETTING_VALID_PARTS (
+            NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+            NM_META_SETTING_VALID_PART_ITEM (OVS_PATCH,             TRUE),
+        ),
+    ),
     SETTING_INFO (OVS_PORT,
         .valid_parts = NM_META_SETTING_VALID_PARTS (
             NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
@@ -8190,6 +8238,14 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
         .setting_init_fcn =             _setting_init_fcn_tun,
     ),
     SETTING_INFO_EMPTY (USER),
+    SETTING_INFO (VETH,
+        .valid_parts = NM_META_SETTING_VALID_PARTS (
+            NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+            NM_META_SETTING_VALID_PART_ITEM (VETH,                  TRUE),
+            NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
+            NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
+        ),
+    ),
     SETTING_INFO (VLAN,
         .valid_parts = NM_META_SETTING_VALID_PARTS (
             NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
@@ -8285,6 +8341,7 @@ static const NMMetaSettingValidPartItem *const valid_settings_noslave[] = {
     NM_META_SETTING_VALID_PART_ITEM(MATCH, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(IP4_CONFIG, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(IP6_CONFIG, FALSE),
+    NM_META_SETTING_VALID_PART_ITEM(HOSTNAME, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(TC_CONFIG, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(PROXY, FALSE),
     NULL,

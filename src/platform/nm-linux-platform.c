@@ -8281,13 +8281,6 @@ wifi_get_capabilities(NMPlatform *platform, int ifindex, NMDeviceWifiCapabilitie
     return TRUE;
 }
 
-static gboolean
-wifi_get_bssid(NMPlatform *platform, int ifindex, guint8 *bssid)
-{
-    WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, FALSE);
-    return nm_wifi_utils_get_bssid(wifi_data, bssid);
-}
-
 static guint32
 wifi_get_frequency(NMPlatform *platform, int ifindex)
 {
@@ -8296,17 +8289,14 @@ wifi_get_frequency(NMPlatform *platform, int ifindex)
 }
 
 static gboolean
-wifi_get_quality(NMPlatform *platform, int ifindex)
+wifi_get_station(NMPlatform * platform,
+                 int          ifindex,
+                 NMEtherAddr *out_bssid,
+                 int *        out_quality,
+                 guint32 *    out_rate)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, FALSE);
-    return nm_wifi_utils_get_qual(wifi_data);
-}
-
-static guint32
-wifi_get_rate(NMPlatform *platform, int ifindex)
-{
-    WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, FALSE);
-    return nm_wifi_utils_get_rate(wifi_data);
+    return nm_wifi_utils_get_station(wifi_data, out_bssid, out_quality, out_rate);
 }
 
 static NM80211Mode
@@ -9669,10 +9659,8 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
     platform_class->infiniband_partition_delete = infiniband_partition_delete;
 
     platform_class->wifi_get_capabilities            = wifi_get_capabilities;
-    platform_class->wifi_get_bssid                   = wifi_get_bssid;
     platform_class->wifi_get_frequency               = wifi_get_frequency;
-    platform_class->wifi_get_quality                 = wifi_get_quality;
-    platform_class->wifi_get_rate                    = wifi_get_rate;
+    platform_class->wifi_get_station                 = wifi_get_station;
     platform_class->wifi_get_mode                    = wifi_get_mode;
     platform_class->wifi_set_mode                    = wifi_set_mode;
     platform_class->wifi_set_powersave               = wifi_set_powersave;

@@ -21,6 +21,7 @@
 #include "nm-setting-ethtool.h"
 #include "nm-setting-generic.h"
 #include "nm-setting-gsm.h"
+#include "nm-setting-hostname.h"
 #include "nm-setting-infiniband.h"
 #include "nm-setting-ip-config.h"
 #include "nm-setting-ip-tunnel.h"
@@ -33,6 +34,7 @@
 #include "nm-setting-ovs-bridge.h"
 #include "nm-setting-ovs-interface.h"
 #include "nm-setting-ovs-dpdk.h"
+#include "nm-setting-ovs-external-ids.h"
 #include "nm-setting-ovs-patch.h"
 #include "nm-setting-ovs-port.h"
 #include "nm-setting-ppp.h"
@@ -44,6 +46,7 @@
 #include "nm-setting-team.h"
 #include "nm-setting-tun.h"
 #include "nm-setting-user.h"
+#include "nm-setting-veth.h"
 #include "nm-setting-vlan.h"
 #include "nm-setting-vpn.h"
 #include "nm-setting-vrf.h"
@@ -242,6 +245,13 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
             .setting_name      = NM_SETTING_GSM_SETTING_NAME,
             .get_setting_gtype = nm_setting_gsm_get_type,
         },
+    [NM_META_SETTING_TYPE_HOSTNAME] =
+        {
+            .meta_type         = NM_META_SETTING_TYPE_HOSTNAME,
+            .setting_priority  = NM_SETTING_PRIORITY_IP,
+            .setting_name      = NM_SETTING_HOSTNAME_SETTING_NAME,
+            .get_setting_gtype = nm_setting_hostname_get_type,
+        },
     [NM_META_SETTING_TYPE_INFINIBAND] =
         {
             .meta_type         = NM_META_SETTING_TYPE_INFINIBAND,
@@ -311,6 +321,13 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
             .setting_priority  = NM_SETTING_PRIORITY_HW_BASE,
             .setting_name      = NM_SETTING_OVS_DPDK_SETTING_NAME,
             .get_setting_gtype = nm_setting_ovs_dpdk_get_type,
+        },
+    [NM_META_SETTING_TYPE_OVS_EXTERNAL_IDS] =
+        {
+            .meta_type         = NM_META_SETTING_TYPE_OVS_EXTERNAL_IDS,
+            .setting_priority  = NM_SETTING_PRIORITY_AUX,
+            .setting_name      = NM_SETTING_OVS_EXTERNAL_IDS_SETTING_NAME,
+            .get_setting_gtype = nm_setting_ovs_external_ids_get_type,
         },
     [NM_META_SETTING_TYPE_OVS_INTERFACE] =
         {
@@ -402,6 +419,13 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
             .setting_priority  = NM_SETTING_PRIORITY_USER,
             .setting_name      = NM_SETTING_USER_SETTING_NAME,
             .get_setting_gtype = nm_setting_user_get_type,
+        },
+    [NM_META_SETTING_TYPE_VETH] =
+        {
+            .meta_type         = NM_META_SETTING_TYPE_VETH,
+            .setting_priority  = NM_SETTING_PRIORITY_HW_BASE,
+            .setting_name      = NM_SETTING_VETH_SETTING_NAME,
+            .get_setting_gtype = nm_setting_veth_get_type,
         },
     [NM_META_SETTING_TYPE_VLAN] =
         {
@@ -587,6 +611,34 @@ out_none:
     }
     return NULL;
 #endif
+}
+
+/*****************************************************************************/
+
+NMSettingPriority
+nm_meta_setting_info_get_base_type_priority(const NMMetaSettingInfo *setting_info, GType gtype)
+{
+    /* Historical oddity: PPPoE is a base-type even though it's not
+     * priority 1.  It needs to be sorted *after* lower-level stuff like
+     * Wi-Fi security or 802.1x for secrets, but it's still allowed as a
+     * base type.
+     */
+
+    if (setting_info) {
+        if (NM_IN_SET(setting_info->setting_priority,
+                      NM_SETTING_PRIORITY_HW_BASE,
+                      NM_SETTING_PRIORITY_HW_NON_BASE)
+            || gtype == NM_TYPE_SETTING_PPPOE)
+            return setting_info->setting_priority;
+    }
+
+    return NM_SETTING_PRIORITY_INVALID;
+}
+
+NMSettingPriority
+_nm_setting_type_get_base_type_priority(GType type)
+{
+    return nm_meta_setting_info_get_base_type_priority(nm_meta_setting_infos_by_gtype(type), type);
 }
 
 /*****************************************************************************/

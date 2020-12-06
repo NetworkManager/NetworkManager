@@ -116,6 +116,7 @@ nm_device_state_reason_check(NMDeviceStateReason reason)
 #define NM_DEVICE_HAS_PENDING_ACTION "has-pending-action" /* Internal only */
 
 /* Internal signals */
+#define NM_DEVICE_DNS_LOOKUP_DONE       "dns-lookup-done"
 #define NM_DEVICE_IP4_CONFIG_CHANGED    "ip4-config-changed"
 #define NM_DEVICE_IP6_CONFIG_CHANGED    "ip6-config-changed"
 #define NM_DEVICE_IP6_PREFIX_DELEGATED  "ip6-prefix-delegated"
@@ -455,6 +456,8 @@ typedef struct _NMDeviceClass {
     bool act_stage2_config_also_for_external_or_assume : 1;
 
     bool act_stage1_prepare_set_hwaddr_ethernet : 1;
+
+    bool can_reapply_change_ovs_external_ids : 1;
 
 } NMDeviceClass;
 
@@ -800,12 +803,10 @@ void     nm_device_reapply_settings_immediately(NMDevice *self);
 
 void nm_device_update_firewall_zone(NMDevice *self);
 void nm_device_update_metered(NMDevice *self);
-void nm_device_reactivate_ip4_config(NMDevice *         device,
-                                     NMSettingIPConfig *s_ip4_old,
-                                     NMSettingIPConfig *s_ip4_new);
-void nm_device_reactivate_ip6_config(NMDevice *         device,
-                                     NMSettingIPConfig *s_ip6_old,
-                                     NMSettingIPConfig *s_ip6_new);
+void nm_device_reactivate_ip_config(NMDevice *         device,
+                                    int                addr_family,
+                                    NMSettingIPConfig *s_ip_old,
+                                    NMSettingIPConfig *s_ip_new);
 
 gboolean nm_device_update_hw_address(NMDevice *self);
 void     nm_device_update_initial_hw_address(NMDevice *self);
@@ -864,5 +865,8 @@ const char *nm_device_state_to_str(NMDeviceState state);
 const char *nm_device_state_reason_to_str(NMDeviceStateReason reason);
 
 gboolean nm_device_is_vpn(NMDevice *self);
+
+const char *
+nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean *out_pending);
 
 #endif /* __NETWORKMANAGER_DEVICE_H__ */

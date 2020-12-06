@@ -1065,7 +1065,8 @@ _normalize_bond_mode(NMConnection *self)
 
         if (mode_int != -1) {
             const char *mode_new = nm_utils_bond_mode_int_to_string(mode_int);
-            if (g_strcmp0(mode_new, mode) != 0) {
+
+            if (!nm_streq0(mode_new, mode)) {
                 nm_setting_bond_add_option(s_bond, NM_SETTING_BOND_OPTION_MODE, mode_new);
                 return TRUE;
             }
@@ -2641,6 +2642,7 @@ nm_connection_is_virtual(NMConnection *connection)
                      NM_SETTING_OVS_PORT_SETTING_NAME,
                      NM_SETTING_TEAM_SETTING_NAME,
                      NM_SETTING_TUN_SETTING_NAME,
+                     NM_SETTING_VETH_SETTING_NAME,
                      NM_SETTING_VLAN_SETTING_NAME,
                      NM_SETTING_VRF_SETTING_NAME,
                      NM_SETTING_VXLAN_SETTING_NAME,

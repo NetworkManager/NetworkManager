@@ -48,7 +48,7 @@ nm_setting_generic_init(NMSettingGeneric *setting)
 NMSetting *
 nm_setting_generic_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_GENERIC, NULL);
+    return g_object_new(NM_TYPE_SETTING_GENERIC, NULL);
 }
 
 static void

@@ -143,7 +143,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_infiniband = NML_DBUS_META_IFACE_INIT_PROP(
     NM_DBUS_INTERFACE_DEVICE_INFINIBAND,
     nm_device_infiniband_get_type,
-    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
     NML_DBUS_META_IFACE_DBUS_PROPERTIES(
         NML_DBUS_META_PROPERTY_INIT_B("Carrier", PROP_CARRIER, NMDeviceInfiniband, _priv.carrier),
         NML_DBUS_META_PROPERTY_INIT_FCN("HwAddress",

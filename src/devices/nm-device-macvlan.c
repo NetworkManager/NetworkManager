@@ -21,8 +21,8 @@
 #include "nm-ip4-config.h"
 #include "nm-utils.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceMacvlan
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceMacvlan);
 
 /*****************************************************************************/
 
@@ -598,18 +598,18 @@ create_device(NMDeviceFactory *     factory,
 
     link_type = tap ? NM_LINK_TYPE_MACVTAP : NM_LINK_TYPE_MACVLAN;
 
-    return (NMDevice *) g_object_new(NM_TYPE_DEVICE_MACVLAN,
-                                     NM_DEVICE_IFACE,
-                                     iface,
-                                     NM_DEVICE_TYPE_DESC,
-                                     "Macvlan",
-                                     NM_DEVICE_DEVICE_TYPE,
-                                     NM_DEVICE_TYPE_MACVLAN,
-                                     NM_DEVICE_LINK_TYPE,
-                                     link_type,
-                                     NM_DEVICE_MACVLAN_TAP,
-                                     tap,
-                                     NULL);
+    return g_object_new(NM_TYPE_DEVICE_MACVLAN,
+                        NM_DEVICE_IFACE,
+                        iface,
+                        NM_DEVICE_TYPE_DESC,
+                        "Macvlan",
+                        NM_DEVICE_DEVICE_TYPE,
+                        NM_DEVICE_TYPE_MACVLAN,
+                        NM_DEVICE_LINK_TYPE,
+                        link_type,
+                        NM_DEVICE_MACVLAN_TAP,
+                        tap,
+                        NULL);
 }
 
 static const char *

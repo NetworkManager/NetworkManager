@@ -2824,8 +2824,9 @@ test_nml_dbus_meta(void)
         g_assert(NM_IN_SET((NMLDBusMetaInteracePrio) mif->interface_prio,
                            NML_DBUS_META_INTERFACE_PRIO_NMCLIENT,
                            NML_DBUS_META_INTERFACE_PRIO_PARENT_TYPE,
-                           NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_LOW,
-                           NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH));
+                           NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_10,
+                           NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_20,
+                           NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30));
 
         g_assert(mif->get_type_fcn);
         gtype = mif->get_type_fcn();
@@ -2847,22 +2848,85 @@ test_nml_dbus_meta(void)
 
         if (klass) {
             if (NM_IS_OBJECT_CLASS(klass)) {
-                NMObjectClass *                nm_object_class = NM_OBJECT_CLASS(klass);
-                const _NMObjectClassFieldInfo *p_prev;
-                const _NMObjectClassFieldInfo *p;
+                NMObjectClass *nm_object_class = NM_OBJECT_CLASS(klass);
 
-                p_prev = NULL;
-                for (p = nm_object_class->property_o_info; p; p_prev = p, p = p->parent) {
-                    g_assert(p->num > 0);
-                    g_assert(NM_IS_OBJECT_CLASS(p->klass));
-                    g_assert(g_type_is_a(gtype, G_TYPE_FROM_CLASS(p->klass)));
-                    g_assert(p->klass->property_o_info == p);
-                    if (p_prev) {
-                        g_assert(g_type_is_a(G_TYPE_FROM_CLASS(p_prev->klass),
-                                             G_TYPE_FROM_CLASS(p->klass)));
-                        g_assert(p_prev->klass != p->klass);
+                if (nm_object_class->property_o_info || nm_object_class->property_ao_info) {
+                    int ii;
+
+                    for (ii = 0; ii < 2; ii++) {
+                        const _NMObjectClassFieldInfo *p_prev = NULL;
+                        const _NMObjectClassFieldInfo *p0     = ii == 0
+                                                                    ? nm_object_class->property_o_info
+                                                                    : nm_object_class->property_ao_info;
+                        const _NMObjectClassFieldInfo *p;
+
+                        for (p = p0; p; p = p->parent) {
+                            GType          parent_gtype;
+                            NMObjectClass *parent_klass;
+
+                            g_assert(p->num > 0);
+                            g_assert(NM_IS_OBJECT_CLASS(p->klass));
+                            g_assert(g_type_is_a(gtype, G_TYPE_FROM_CLASS(p->klass)));
+                            if (ii == 0)
+                                g_assert(p->klass->property_o_info == p);
+                            else
+                                g_assert(p->klass->property_ao_info == p);
+                            g_assert_cmpint(p->klass->priv_ptr_offset, >, 0);
+                            if (p_prev) {
+                                g_assert(g_type_is_a(G_TYPE_FROM_CLASS(p_prev->klass),
+                                                     G_TYPE_FROM_CLASS(p->klass)));
+                                g_assert(p_prev->klass != p->klass);
+                                g_assert_cmpint(p_prev->klass->priv_ptr_offset,
+                                                >,
+                                                p->klass->priv_ptr_offset);
+                                g_assert_cmpint(p->klass->priv_ptr_indirect, ==, TRUE);
+                            }
+
+                            parent_gtype = g_type_parent(G_TYPE_FROM_CLASS(p->klass));
+                            g_assert(g_type_is_a(parent_gtype, NM_TYPE_OBJECT));
+                            parent_klass = g_type_class_peek(parent_gtype);
+                            g_assert(NM_IS_OBJECT_CLASS(parent_klass));
+                            if (parent_gtype == NM_TYPE_OBJECT) {
+                                g_assert_cmpint(parent_klass->priv_ptr_offset, ==, 0);
+                                g_assert_cmpint(parent_klass->priv_ptr_indirect, ==, FALSE);
+                                g_assert(!p->parent);
+                            } else {
+                                if (parent_klass->priv_ptr_offset == 0) {
+                                    g_assert(!parent_klass->property_o_info);
+                                    g_assert(!parent_klass->property_ao_info);
+                                    g_assert_cmpint(parent_klass->priv_ptr_indirect, ==, FALSE);
+                                    g_assert(!p->parent);
+                                } else if (p->klass->priv_ptr_offset
+                                           == parent_klass->priv_ptr_offset) {
+                                    g_assert(p->klass->property_o_info
+                                             == parent_klass->property_o_info);
+                                    g_assert(p->klass->property_ao_info
+                                             == parent_klass->property_ao_info);
+                                    g_assert(p->klass->priv_ptr_indirect
+                                             == parent_klass->priv_ptr_indirect);
+                                } else {
+                                    g_assert_cmpint(parent_klass->priv_ptr_offset, >, 0);
+                                    g_assert_cmpint(parent_klass->priv_ptr_offset,
+                                                    <,
+                                                    p->klass->priv_ptr_offset);
+                                    g_assert_cmpint(parent_klass->priv_ptr_indirect, ==, TRUE);
+                                    g_assert(p->klass->property_o_info
+                                                 != parent_klass->property_o_info
+                                             || p->klass->property_ao_info
+                                                    != parent_klass->property_ao_info);
+                                }
+                            }
+
+                            p_prev = p;
+                        }
                     }
+
+                    g_assert_cmpint(nm_object_class->priv_ptr_offset, >, 0);
+                } else {
+                    g_assert_cmpint(nm_object_class->priv_ptr_offset, ==, 0);
+                    g_assert_cmpint(nm_object_class->priv_ptr_indirect, ==, FALSE);
                 }
+
             } else
                 g_assert(NM_IS_CLIENT_CLASS(klass));
         }
@@ -3128,172 +3192,172 @@ test_dbus_meta_types(void)
         {
             NM_DBUS_INTERFACE_ACCESS_POINT,
             NM_TYPE_ACCESS_POINT,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
             NM_TYPE_ACTIVE_CONNECTION,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_LOW,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_10,
         }, /* otherwise, NM_TYPE_VPN_CONNECTION. */
         {
             NM_DBUS_INTERFACE_DEVICE_6LOWPAN,
             NM_TYPE_DEVICE_6LOWPAN,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_ADSL,
             NM_TYPE_DEVICE_ADSL,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_BOND,
             NM_TYPE_DEVICE_BOND,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_BRIDGE,
             NM_TYPE_DEVICE_BRIDGE,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_BLUETOOTH,
             NM_TYPE_DEVICE_BT,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_DUMMY,
             NM_TYPE_DEVICE_DUMMY,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_WIRED,
             NM_TYPE_DEVICE_ETHERNET,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_GENERIC,
             NM_TYPE_DEVICE_GENERIC,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_INFINIBAND,
             NM_TYPE_DEVICE_INFINIBAND,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_IP_TUNNEL,
             NM_TYPE_DEVICE_IP_TUNNEL,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_MACSEC,
             NM_TYPE_DEVICE_MACSEC,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_MACVLAN,
             NM_TYPE_DEVICE_MACVLAN,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_MODEM,
             NM_TYPE_DEVICE_MODEM,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_OLPC_MESH,
             NM_TYPE_DEVICE_OLPC_MESH,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_OVS_INTERFACE,
             NM_TYPE_DEVICE_OVS_INTERFACE,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_OVS_PORT,
             NM_TYPE_DEVICE_OVS_PORT,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_OVS_BRIDGE,
             NM_TYPE_DEVICE_OVS_BRIDGE,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_WIFI_P2P,
             NM_TYPE_DEVICE_WIFI_P2P,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_PPP,
             NM_TYPE_DEVICE_PPP,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_TEAM,
             NM_TYPE_DEVICE_TEAM,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_TUN,
             NM_TYPE_DEVICE_TUN,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_VLAN,
             NM_TYPE_DEVICE_VLAN,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_WPAN,
             NM_TYPE_DEVICE_WPAN,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_VXLAN,
             NM_TYPE_DEVICE_VXLAN,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_WIRELESS,
             NM_TYPE_DEVICE_WIFI,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DEVICE_WIREGUARD,
             NM_TYPE_DEVICE_WIREGUARD,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DHCP4_CONFIG,
             NM_TYPE_DHCP4_CONFIG,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_DHCP6_CONFIG,
             NM_TYPE_DHCP6_CONFIG,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_IP4_CONFIG,
             NM_TYPE_IP4_CONFIG,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_IP6_CONFIG,
             NM_TYPE_IP6_CONFIG,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_WIFI_P2P_PEER,
             NM_TYPE_WIFI_P2P_PEER,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_SETTINGS_CONNECTION,
             NM_TYPE_REMOTE_CONNECTION,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_SETTINGS,
@@ -3308,12 +3372,12 @@ test_dbus_meta_types(void)
         {
             NM_DBUS_INTERFACE_VPN_CONNECTION,
             NM_TYPE_VPN_CONNECTION,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
         {
             NM_DBUS_INTERFACE_CHECKPOINT,
             NM_TYPE_CHECKPOINT,
-            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+            NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
         },
     };
     guint i;

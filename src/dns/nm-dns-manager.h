@@ -25,6 +25,8 @@ enum {
     NM_DNS_PRIORITY_DEFAULT_VPN    = 50,
 };
 
+/*****************************************************************************/
+
 struct _NMDnsConfigData;
 struct _NMDnsManager;
 
@@ -60,13 +62,16 @@ typedef struct {
          * With systemd-resolved, this is the value for SetLinkDefaultRoute(). */
         bool has_default_route : 1;
     } domains;
-} NMDnsIPConfigData;
+} NMDnsConfigIPData;
 
 typedef struct _NMDnsConfigData {
     int                   ifindex;
     struct _NMDnsManager *self;
     CList                 data_lst_head;
+    CList                 configs_lst;
 } NMDnsConfigData;
+
+/*****************************************************************************/
 
 #define NM_TYPE_DNS_MANAGER (nm_dns_manager_get_type())
 #define NM_DNS_MANAGER(o)   (G_TYPE_CHECK_INSTANCE_CAST((o), NM_TYPE_DNS_MANAGER, NMDnsManager))

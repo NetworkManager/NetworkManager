@@ -5,13 +5,15 @@
 
 #include "nm-default.h"
 
+#include "test-common.h"
+
 #include <sys/mount.h>
 #include <sched.h>
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <linux/if_tun.h>
 
-#include "test-common.h"
+#include "n-acd/src/n-acd.h"
 
 #define SIGNAL_DATA_FMT "'%s-%s' ifindex %d%s%s%s (%d times received)"
 #define SIGNAL_DATA_ARG(data)                                                                     \
@@ -87,7 +89,7 @@ nmtstp_platform_ip6_address_get_all(NMPlatform *self, int ifindex)
 const NMPlatformIPAddress *
 nmtstp_platform_ip_address_find(NMPlatform *self, int ifindex, int addr_family, gconstpointer addr)
 {
-    const gboolean             IS_IPv4 = NM_IS_IPv4(addr_family);
+    const int                  IS_IPv4 = NM_IS_IPv4(addr_family);
     const NMPlatformIPAddress *found   = NULL;
     NMDedupMultiIter           iter;
     const NMPObject *          obj;
@@ -99,8 +101,7 @@ nmtstp_platform_ip_address_find(NMPlatform *self, int ifindex, int addr_family, 
     nm_assert(addr);
 
     nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex);
-    nm_platform_iter_obj_for_each(&iter, self, &lookup, &obj)
-    {
+    nm_platform_iter_obj_for_each (&iter, self, &lookup, &obj) {
         const NMPlatformIPAddress *a = NMP_OBJECT_CAST_IP_ADDRESS(obj);
 
         g_assert(NMP_OBJECT_GET_ADDR_FAMILY(obj) == addr_family);
@@ -1478,7 +1479,7 @@ nmtstp_link_bridge_add(NMPlatform *               platform,
             lnk->group_fwd_mask != 0
                 ? nm_sprintf_buf(sbuf_gfw, "group_fwd_mask %#x ", lnk->group_fwd_mask)
                 : "",
-            NM_ETHER_ADDR_FORMAT_VAL(lnk->group_addr),
+            NM_ETHER_ADDR_FORMAT_VAL(&lnk->group_addr),
             (int) lnk->mcast_snooping,
             lnk->mcast_router,
             (int) lnk->mcast_query_use_ifaddr,
@@ -2566,4 +2567,146 @@ main(int argc, char **argv)
 
     g_object_unref(NM_PLATFORM_GET);
     return result;
+}
+
+/*****************************************************************************/
+
+struct _NMTstpAcdDefender {
+    int        ifindex;
+    in_addr_t  ip_addr;
+    NAcd *     nacd;
+    NAcdProbe *probe;
+    GSource *  source;
+    gint8      announce_started;
+};
+
+static gboolean
+_l3_acd_nacd_event(int fd, GIOCondition condition, gpointer user_data)
+{
+    NMTstpAcdDefender *defender = user_data;
+    int                r;
+
+    r = n_acd_dispatch(defender->nacd);
+    if (r == N_ACD_E_PREEMPTED)
+        r = 0;
+    g_assert_cmpint(r, ==, 0);
+
+    while (TRUE) {
+        NAcdEvent *event;
+
+        r = n_acd_pop_event(defender->nacd, &event);
+        g_assert_cmpint(r, ==, 0);
+        if (!event)
+            return G_SOURCE_CONTINUE;
+
+        switch (event->event) {
+        case N_ACD_EVENT_READY:
+            g_assert_cmpint(defender->announce_started, ==, 0);
+            g_assert(defender->probe == event->ready.probe);
+            defender->announce_started++;
+            _LOGT("acd-defender[" NM_HASH_OBFUSCATE_PTR_FMT "]: start announcing",
+                  NM_HASH_OBFUSCATE_PTR(defender));
+            r = n_acd_probe_announce(defender->probe, N_ACD_DEFEND_ALWAYS);
+            g_assert_cmpint(r, ==, 0);
+            break;
+        case N_ACD_EVENT_DEFENDED:
+            g_assert(defender->probe == event->defended.probe);
+            g_assert_cmpint(event->defended.n_sender, ==, ETH_ALEN);
+            _LOGT("acd-defender[" NM_HASH_OBFUSCATE_PTR_FMT
+                  "]: defended from " NM_ETHER_ADDR_FORMAT_STR,
+                  NM_HASH_OBFUSCATE_PTR(defender),
+                  NM_ETHER_ADDR_FORMAT_VAL((const NMEtherAddr *) event->defended.sender));
+            break;
+        case N_ACD_EVENT_USED:
+        case N_ACD_EVENT_CONFLICT:
+        case N_ACD_EVENT_DOWN:
+        default:
+            g_assert_not_reached();
+            break;
+        }
+    }
+}
+
+NMTstpAcdDefender *
+nmtstp_acd_defender_new(int ifindex, in_addr_t ip_addr, const NMEtherAddr *mac_addr)
+{
+    NMTstpAcdDefender *                                defender;
+    nm_auto(n_acd_config_freep) NAcdConfig *           config       = NULL;
+    nm_auto(n_acd_unrefp) NAcd *                       nacd         = NULL;
+    nm_auto(n_acd_probe_config_freep) NAcdProbeConfig *probe_config = NULL;
+    NAcdProbe *                                        probe;
+    int                                                fd;
+    int                                                r;
+    char                                               sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+
+    g_assert_cmpint(ifindex, >, 0);
+    g_assert(mac_addr);
+
+    r = n_acd_config_new(&config);
+    g_assert_cmpint(r, ==, 0);
+    g_assert(config);
+
+    n_acd_config_set_ifindex(config, ifindex);
+    n_acd_config_set_transport(config, N_ACD_TRANSPORT_ETHERNET);
+    n_acd_config_set_mac(config, (const guint8 *) mac_addr, sizeof(*mac_addr));
+
+    r = n_acd_new(&nacd, config);
+    g_assert_cmpint(r, ==, 0);
+    g_assert(nacd);
+
+    r = n_acd_probe_config_new(&probe_config);
+    g_assert_cmpint(r, ==, 0);
+    g_assert(probe_config);
+
+    n_acd_probe_config_set_ip(probe_config, (struct in_addr){ip_addr});
+    n_acd_probe_config_set_timeout(probe_config, 0);
+
+    r = n_acd_probe(nacd, &probe, probe_config);
+    g_assert_cmpint(r, ==, 0);
+    g_assert(probe);
+
+    defender  = g_slice_new(NMTstpAcdDefender);
+    *defender = (NMTstpAcdDefender){
+        .ifindex = ifindex,
+        .ip_addr = ip_addr,
+        .nacd    = g_steal_pointer(&nacd),
+        .probe   = g_steal_pointer(&probe),
+    };
+
+    _LOGT("acd-defender[" NM_HASH_OBFUSCATE_PTR_FMT
+          "]: new for ifindex=%d, hwaddr=" NM_ETHER_ADDR_FORMAT_STR ", ipaddr=%s",
+          NM_HASH_OBFUSCATE_PTR(defender),
+          ifindex,
+          NM_ETHER_ADDR_FORMAT_VAL(mac_addr),
+          _nm_utils_inet4_ntop(ip_addr, sbuf_addr));
+
+    n_acd_probe_set_userdata(defender->probe, defender);
+
+    n_acd_get_fd(defender->nacd, &fd);
+    g_assert_cmpint(fd, >=, 0);
+
+    defender->source = nm_g_source_attach(nm_g_unix_fd_source_new(fd,
+                                                                  G_IO_IN,
+                                                                  G_PRIORITY_DEFAULT,
+                                                                  _l3_acd_nacd_event,
+                                                                  defender,
+                                                                  NULL),
+                                          NULL);
+
+    return defender;
+}
+
+void
+nmtstp_acd_defender_destroy(NMTstpAcdDefender *defender)
+{
+    if (!defender)
+        return;
+
+    _LOGT("acd-defender[" NM_HASH_OBFUSCATE_PTR_FMT "]: destroy", NM_HASH_OBFUSCATE_PTR(defender));
+
+    nm_clear_g_source_inst(&defender->source);
+    nm_clear_pointer(&defender->nacd, n_acd_unref);
+    nm_clear_pointer(&defender->probe, n_acd_probe_free);
+
+    nm_g_slice_free(defender);
 }

@@ -236,7 +236,7 @@ do_test_nm_utils_kill_child(void)
     char *argv1[] = {
         "bash",
         "-c",
-        "trap \"sleep 0.3; exit 10\" EXIT; "
+        "trap \"sleep 0.5; exit 10\" EXIT; "
         "sleep 100000; exit $? #" TEST_TOKEN,
         NULL,
     };
@@ -562,30 +562,26 @@ test_nm_utils_array_remove_at_indexes(void)
 static void
 test_nm_ethernet_address_is_valid(void)
 {
-    g_assert(!nm_ethernet_address_is_valid(NULL, -1));
-    g_assert(!nm_ethernet_address_is_valid(NULL, ETH_ALEN));
+    g_assert(!nm_ether_addr_is_valid_str(NULL));
+    g_assert(!nm_ether_addr_is_valid(NULL));
 
-    g_assert(!nm_ethernet_address_is_valid("FF:FF:FF:FF:FF:FF", -1));
-    g_assert(!nm_ethernet_address_is_valid("00:00:00:00:00:00", -1));
-    g_assert(!nm_ethernet_address_is_valid("44:44:44:44:44:44", -1));
-    g_assert(!nm_ethernet_address_is_valid("00:30:b4:00:00:00", -1));
+    g_assert(!nm_ether_addr_is_valid_str("FF:FF:FF:FF:FF:FF"));
+    g_assert(!nm_ether_addr_is_valid_str("00:00:00:00:00:00"));
+    g_assert(!nm_ether_addr_is_valid_str("44:44:44:44:44:44"));
+    g_assert(!nm_ether_addr_is_valid_str("00:30:b4:00:00:00"));
 
-    g_assert(!nm_ethernet_address_is_valid("", -1));
-    g_assert(!nm_ethernet_address_is_valid("1", -1));
-    g_assert(!nm_ethernet_address_is_valid("2", -1));
+    g_assert(!nm_ether_addr_is_valid_str(""));
+    g_assert(!nm_ether_addr_is_valid_str("1"));
+    g_assert(!nm_ether_addr_is_valid_str("2"));
 
-    g_assert(
-        !nm_ethernet_address_is_valid(((guint8[8]){0x00, 0x30, 0xb4, 0x00, 0x00, 0x00}), ETH_ALEN));
-    g_assert(
-        nm_ethernet_address_is_valid(((guint8[8]){0x00, 0x30, 0xb4, 0x00, 0x00, 0x01}), ETH_ALEN));
+    g_assert(!nm_ether_addr_is_valid(&NM_ETHER_ADDR_INIT(0x00, 0x30, 0xb4, 0x00, 0x00, 0x00)));
+    g_assert(nm_ether_addr_is_valid(&NM_ETHER_ADDR_INIT(0x00, 0x30, 0xb4, 0x00, 0x00, 0x01)));
 
     /* some Broad cast addresses (with MSB of first octet set). */
-    g_assert(!nm_ethernet_address_is_valid("57:44:44:44:44:44", -1));
-    g_assert(nm_ethernet_address_is_valid("56:44:44:44:44:44", -1));
-    g_assert(
-        !nm_ethernet_address_is_valid(((guint8[8]){0x03, 0x30, 0xb4, 0x00, 0x00, 0x00}), ETH_ALEN));
-    g_assert(
-        nm_ethernet_address_is_valid(((guint8[8]){0x02, 0x30, 0xb4, 0x00, 0x00, 0x01}), ETH_ALEN));
+    g_assert(!nm_ether_addr_is_valid_str("57:44:44:44:44:44"));
+    g_assert(nm_ether_addr_is_valid_str("56:44:44:44:44:44"));
+    g_assert(!nm_ether_addr_is_valid(&NM_ETHER_ADDR_INIT(0x03, 0x30, 0xb4, 0x00, 0x00, 0x00)));
+    g_assert(nm_ether_addr_is_valid(&NM_ETHER_ADDR_INIT(0x02, 0x30, 0xb4, 0x00, 0x00, 0x01)));
 }
 
 /*****************************************************************************/

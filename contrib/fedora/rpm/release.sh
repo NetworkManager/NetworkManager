@@ -6,17 +6,20 @@
 #
 # There are 6 modes:
 #
-#  - "devel" : on master branch to tag "1.25.2-dev"
+#  - "devel" : on master branch to tag a devel release (e.g. "1.25.2-dev").
 #  - "rc1"   : the first release candidate on "master" branch which branches off
-#              "nm-1-26" branch. The tag is "1.26-rc1" with version number 1.25.90.
-#  - "rc"    : further release candidates on RC branch "nm-1-26". For example
-#              "1.26-rc2" with version number 1.25.91.
-#  - "major" : on stable branch nm-1-26 to release 1.26.0 followed by 1.26.1-dev.
-#              You should do a "major-post" release right after.
+#              a new "nm-1-X" branch (e.g. tag "1.26-rc1" (1.25.90) and branch
+#              off "nm-1-26"). On master this also bumps the version number
+#              and creates a new devel release (e.g. "1.27.0-dev").
+#  - "rc"    : further release candidates on RC branch (e.g. from "nm-1-26" branch
+#              tag "1.26-rc2" with version number 1.25.91).
+#  - "major" : on stable branch do a major release (e.g. on "nm-1-26" branch
+#              release "1.26.0", followed by "1.26.1-dev").
+#              You should do a "major-post" release right a "major" release.
 #  - "major-post": after a "major" release, merge the release branch with master and
-#              do another devel snapshot on master.
-#  - "minor" : on a stable branch nm-1-26 to do minor release 1.26.4 and bump
-#              to "1.26.5-dev".
+#              do another devel snapshot on master (e.g. do "1.27.1-dev" release).
+#  - "minor" : on a stable branch do a minor release (e.g. "1.26.4" on "nm-1-26"
+#              branch and bump to "1.26.5-dev").
 #
 # Requisites:
 #
@@ -25,7 +28,7 @@
 #   * Run in a "clean" environment, i.e. no unusual environment variables set, on a recent
 #     Fedora, with suitable dependencies installed.
 #
-#   * First, ensure that you have ssh keys for master.gnome.org installed (and ssh-agent running)
+#   * First, ensure that you have ssh keys for "master.gnome.org" installed (and ssh-agent running).
 #     Also, ensure you have a GPG key that you want to use for signing. Also, have gpg-agent running
 #     and possibly configure `git config --get user.signingkey` for the proper key.
 #
@@ -52,7 +55,7 @@ echo_color() {
 
 print_usage() {
     echo "Usage:"
-    echo "  $BASH_SOURCE [devel|rc1|rc|major|major-post|minor] [--no-test] [--no-find-backports] [--no-cleanup] [--allow-local-branches]"
+    echo "  $BASH_SOURCE [devel|rc1|rc|major|major-post|minor] [--no-test] [--no-find-backports] [--no-cleanup] [--allow-local-branches] [--no-check-gitlab] [--no-check-news]"
 }
 
 die_help() {
@@ -88,7 +91,7 @@ parse_version() {
     local MIN="$(sed -n '1,20 s/^m4_define(\[nm_minor_version\], \[\([0-9]\+\)\])$/\1/p' ./configure.ac)"
     local MIC="$(sed -n '1,20 s/^m4_define(\[nm_micro_version\], \[\([0-9]\+\)\])$/\1/p' ./configure.ac)"
 
-    re='^[0-9][1-9]* [0-9][1-9]* [0-9][1-9]*$'
+    re='^(0|[1-9][0-9]*) (0|[1-9][0-9]*) (0|[1-9][0-9]*)$'
     [[ "$MAJ $MIN $MIC" =~ $re ]] || return 1
     echo "$MAJ $MIN $MIC"
 }
@@ -109,6 +112,31 @@ git_same_ref() {
     [ "$a" = "$b" ]
 }
 
+check_gitlab_pipeline() {
+    local BRANCH="$1"
+    local SHA="$2"
+    local PIPELINE_ID
+
+    PIPELINE_ID="$(curl --no-progress-meter "https://gitlab.freedesktop.org/api/v4/projects/411/pipelines?ref=$BRANCH&sha=$SHA&order_by=id" 2>/dev/null | jq '.[0].id')"
+    if ! [[ $PIPELINE_ID =~ [0-9]+ ]] ; then
+        echo "Cannot find pipeline for branch $BRANCH. Check \"https://gitlab.freedesktop.org/NetworkManager/NetworkManager/pipelines?page=1&scope=branches&ref=$BRANCH\""
+        return 1
+    fi
+
+    PIPELINE_STATUSES="$(curl --no-progress-meter "https://gitlab.freedesktop.org/api/v4/projects/411/pipelines/$PIPELINE_ID/jobs" 2>/dev/null | jq '.[].status')"
+
+    if ! echo "$PIPELINE_STATUSES" | grep -q '^"success"$' ; then
+        echo "Cannot find successful jobs for branch $BRANCH. Check \"https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/pipelines/$PIPELINE_ID\""
+        return 1
+    fi
+    if echo "$PIPELINE_STATUSES" | grep -q -v '^"success"$' ; then
+        echo "Seems not all jobs for $BRANCH ran (or were successfull). Check \"https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/pipelines/$PIPELINE_ID\""
+        return 1
+    fi
+
+    return 0
+}
+
 set_version_number_autotools() {
     sed -i \
         -e '1,20 s/^m4_define(\[nm_major_version\], \[\([0-9]\+\)\])$/m4_define([nm_major_version], ['"$1"'])/' \
@@ -126,6 +154,23 @@ set_version_number_meson() {
 set_version_number() {
     set_version_number_autotools "$@" &&
     set_version_number_meson "$@"
+}
+
+check_news() {
+    local mode="$1"
+    shift
+    local ver_arr=("$@")
+
+    case "$mode" in
+        major|minor)
+            if git grep -q 'NOT RECOMMENDED FOR PRODUCTION USE' -- ./NEWS ; then
+                return 1
+            fi
+            ;;
+        *)
+            ;;
+    esac
+    return 0
 }
 
 DO_CLEANUP=1
@@ -157,6 +202,8 @@ DRY_RUN=1
 FIND_BACKPORTS=1
 ALLOW_LOCAL_BRANCHES=0
 HELP_AND_EXIT=1
+CHECK_GITLAB=1
+CHECK_NEWS=1
 while [ "$#" -ge 1 ]; do
     A="$1"
     shift
@@ -176,6 +223,12 @@ while [ "$#" -ge 1 ]; do
             # as the remote branch on origin. You should not do a release if you have local changes
             # that differ from upstream. Set this flag to override that check.
             ALLOW_LOCAL_BRANCHES=1
+            ;;
+        --no-check-gitlab)
+            CHECK_GITLAB=0
+            ;;
+        --no-check-news)
+            CHECK_NEWS=0
             ;;
         --help|-h)
             die_help
@@ -207,6 +260,7 @@ TMP="$(LANG=C git clean -ndx)" || die "git clean -ndx failed"
 test -z "$TMP" || die "git working directory is not clean? (git clean -ndx)"
 
 CUR_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+CUR_HEAD="$(git rev-parse HEAD)"
 TMP_BRANCH=release-branch
 
 if [ "$CUR_BRANCH" = master ]; then
@@ -269,7 +323,7 @@ git fetch "$ORIGIN" || die "git fetch failed"
 
 if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
     git_same_ref "$CUR_BRANCH" "refs/heads/$CUR_BRANCH" || die "Current branch $CUR_BRANCH is not a branch??"
-    git_same_ref "$CUR_BRANCH" "refs/remotes/$ORIGIN/$CUR_BRANCH" || die "Current branch $CUR_BRANCH seems not up to date with refs/remotes/$ORIGIN/$CUR_BRANCH. Git pull?"
+    git_same_ref "$CUR_BRANCH" "refs/remotes/$ORIGIN/$CUR_BRANCH" || die "Current branch $CUR_BRANCH seems not up to date with refs/remotes/$ORIGIN/$CUR_BRANCH. Git pull or --allow-local-branches?"
 fi
 
 NEWER_BRANCHES=()
@@ -284,14 +338,14 @@ if [ "$CUR_BRANCH" != master ]; then
         fi
         if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
             git_same_ref "$b" "refs/heads/$b" || die "branch $b is not a branch??"
-            git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date with refs/remotes/$ORIGIN/$b. Git pull?"
+            git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date with refs/remotes/$ORIGIN/$b. Git pull or --allow-local-branches?"
         fi
         NEWER_BRANCHES+=("refs/heads/$b")
     done
     b=master
     if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
         git_same_ref "$b" "refs/heads/$b" || die "branch $b is not a branch??"
-        git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date with refs/remotes/$ORIGIN/$b. Git pull?"
+        git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date with refs/remotes/$ORIGIN/$b. Git pull or --allow-local-branches?"
     fi
 fi
 
@@ -304,13 +358,27 @@ if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
     cmp <(git show origin/master:contrib/fedora/rpm/release.sh) "$BASH_SOURCE" || die "$BASH_SOURCE is not identical to \`git show origin/master:contrib/fedora/rpm/release.sh\`"
 fi
 
+if ! check_news "$RELEASE_MODE" "@{VERSION_ARR[@]}" ; then
+    if [ "$CHECK_NEWS" == 1 ]; then
+        die "NEWS file needs update to mention stable release (skip check with --no-check-news)"
+    fi
+    echo "WARNING: NEWS file needs update to mention stable release (test skipped with --no-check-news)"
+fi
+
 if [ $FIND_BACKPORTS = 1 ]; then
-    git show "$ORIGIN/automation:contrib/rh-utils/find-backports" > ./.git/nm-find-backports \
+    git show "$ORIGIN/master:contrib/scripts/find-backports" > ./.git/nm-find-backports \
     && chmod +x ./.git/nm-find-backports \
-    || die "cannot get contrib/rh-utils/find-backports"
+    || die "cannot get contrib/scripts/find-backports"
 
     TMP="$(./.git/nm-find-backports "$CUR_BRANCH" master "${NEWER_BRANCHES[@]}" 2>/dev/null)" || die "nm-find-backports failed"
     test -z "$TMP" || die "nm-find-backports returned patches that need to be backported (ignore with --no-find-backports): ./.git/nm-find-backports \"$CUR_BRANCH\" master ${NEWER_BRANCHES[@]}"
+fi
+
+if [ $CHECK_GITLAB = 1 ]; then
+    if ! check_gitlab_pipeline "$CUR_BRANCH" "$CUR_HEAD" ; then
+        echo "Check the pipelines for branch \"$CUR_BRANCH\" at https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/pipelines/"
+        die "It seems not all gitlab-ci jobs were running/succeeding. Skip this check with --no-check-gitlab"
+    fi
 fi
 
 BRANCHES=()
@@ -469,14 +537,26 @@ if [ "$RELEASE_MODE" = rc1 ]; then
     git checkout -B "$CUR_BRANCH" "$TMP_BRANCH" || die "cannot checkout $CUR_BRANCH"
 fi
 
-do_command git push "$ORIGIN" "${BRANCHES[@]}" || die "failed to to push branches ${BRANCHES[@]} to $ORIGIN"
+if ! [ "$DRY_RUN" = 0 ]; then
+    ssh master.gnome.org true || die "failed to \`ssh master.gnome.org\`"
+fi
 
 for r in "${RELEASE_FILES[@]}"; do
     do_command rsync -va --append-verify -P "/tmp/$r" master.gnome.org: || die "failed to rsync \"/tmp/$r\""
+done
+
+do_command git push "$ORIGIN" "${BRANCHES[@]}" || die "failed to to push branches ${BRANCHES[@]} to $ORIGIN"
+
+for r in "${RELEASE_FILES[@]}"; do
     do_command ssh master.gnome.org ftpadmin install --unattended "$r" || die "ftpadmin install failed"
 done
 
+CLEANUP_CHECKOUT_BRANCH=
 if [ "$DRY_RUN" = 0 ]; then
     CLEANUP_REFS=()
-    CLEANUP_CHECKOUT_BRANCH=
+    git branch -D "$TMP_BRANCH"
+else
+    H="$(git rev-parse "$CUR_BRANCH")"
+    git checkout -B "$CUR_BRANCH" "$CUR_HEAD" || die "cannot reset $CUR_BRANCH to $CUR_HEAD"
+    echo "delete reference. Restore with $(echo_color 36 -n git checkout -B "\"$CUR_BRANCH\"" "$H")"
 fi

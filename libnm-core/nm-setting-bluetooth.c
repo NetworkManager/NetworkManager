@@ -266,7 +266,7 @@ nm_setting_bluetooth_init(NMSettingBluetooth *setting)
 NMSetting *
 nm_setting_bluetooth_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_BLUETOOTH, NULL);
+    return g_object_new(NM_TYPE_SETTING_BLUETOOTH, NULL);
 }
 
 static void

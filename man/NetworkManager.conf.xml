@@ -278,18 +278,24 @@ no-auto-default=*
             this option. An hostname empty or equal to 'localhost', 'localhost6',
             'localhost.localdomain' or 'localhost6.localdomain' is considered invalid.
           </para>
-          <para><literal>default</literal>: NetworkManager will update the hostname
-          with the one provided via DHCP on the main connection (the one with a default
-          route). If not present, the hostname will be updated to the last one set
-          outside NetworkManager. If it is not valid, NetworkManager will try to recover
-          the hostname from the reverse lookup of the IP address of the main connection.
-          If this fails too, the hostname will be set to 'localhost.localdomain'.
+          <para><literal>default</literal>: NetworkManager will update the
+          hostname with the one provided via DHCP or reverse DNS lookup of the
+          IP address on the connection with the default route or on any
+          connection with the property hostname.only-from-default set to
+          '<literal>false</literal>'. Connections are considered in order of
+          increasing value of the <literal>hostname.priority</literal>
+          property. In case multiple connections have the same priority,
+          connections activated earlier are considered first. If no hostname can
+          be determined in such way, the hostname will be updated to the last
+          one set outside NetworkManager or to 'localhost.localdomain'.
           </para>
-          <para><literal>dhcp</literal>: NetworkManager will update the transient hostname
-          only with information coming from DHCP. No fallback nor reverse lookup will be
-          performed, but when the dhcp connection providing the hostname is deactivated,
-          the hostname is reset to the last hostname set outside NetworkManager or
-          'localhost' if none valid is there.
+          <para><literal>dhcp</literal>: this is similar to
+          '<literal>default</literal>', with the difference that after trying to
+          get the DHCP hostname, reverse DNS lookup is not done. Note that
+          selecting this option is equivalent to setting the property
+          '<literal>hostname.from-dns-lookup</literal>' to
+          '<literal>false</literal>' globally for all connections in
+          NetworkManager.conf.
           </para>
           <para><literal>none</literal>: NetworkManager will not manage the transient
           hostname and will never set it.
@@ -668,6 +674,18 @@ unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth
     <para>Specify default values for connections.
     </para>
     <para>
+      Such default values are only consulted if the corresponding per-connection property
+      explicitly allows for that. That means, all these properties correspond to
+      a property of the connection profile (for example <literal>connection.mud-url</literal>).
+      Only if the per-profile property is set to a special value that indicates to use the
+      default, the default value from NetworkManager.conf is consulted. It depends on the
+      property, which is the special value that indicates fallback to the default, but it
+      usually is something like empty, unset values or special numeric values like 0 or -1.
+      That means the effectively used value can first always be configured for each profile,
+      and these default values only matter if the per-profile values explicitly indicates
+      to use the default from <literal>NetworkManager.conf</literal>.
+    </para>
+    <para>
       Example:
 <programlisting>
 [connection]
@@ -680,8 +698,8 @@ ipv6.ip6-privacy=0
       Not all properties can be overwritten, only the following
       properties are supported to have their default values configured
       (see <link linkend='nm-settings'><citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry></link> for details).
-      A default value is only consulted if the corresponding per-connection value
-      explicitly allows for that.
+    </para>
+    <para>
       <!-- The following comment is used by check-config-options.sh, don't remove it. -->
       <!-- start connection defaults -->
       <variablelist>
@@ -733,6 +751,18 @@ ipv6.ip6-privacy=0
         </varlistentry>
         <varlistentry>
           <term><varname>gsm.mtu</varname></term>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>hostname.from-dhcp</varname></term>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>hostname.from-dns-lookup</varname></term>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>hostname.only-from-default</varname></term>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>hostname.priority</varname></term>
         </varlistentry>
         <varlistentry>
           <term><varname>infiniband.mtu</varname></term>
@@ -1072,8 +1102,25 @@ managed=1
             </para>
           </listitem>
         </varlistentry>
+        <varlistentry>
+          <term><varname>wifi.iwd.autoconnect</varname></term>
+          <listitem>
+            <para>
+              If <literal>wifi.backend</literal> is <literal>iwd</literal>, setting this to
+              <literal>false</literal> forces IWD's autoconnect mechanism to be disabled for
+              this device and connections will only be initiated by NetworkManager whether
+              commaned by a client or automatically.  Leaving it <literal>true</literal> (default)
+              stops NetworkManager from automatically initiating connections and allows
+              IWD to use its network ranking and scanning logic to decide the best networks
+              to autoconnect to next.  Connections' <literal>autoconnect-priority</literal>,
+              <literal>autoconnect-retries</literal> settings will be ignored.  Other settings
+              like <literal>permissions</literal> or <literal>multi-connect</literal> may interfere
+              with IWD connection attempts.
+            </para>
+          </listitem>
+        </varlistentry>
         <varlistentry id="sriov-num-vfs">
-         , <term><varname>sriov-num-vfs</varname></term>
+         <term><varname>sriov-num-vfs</varname></term>
           <listitem>
             <para>
               Specify the number of virtual functions (VF) to enable

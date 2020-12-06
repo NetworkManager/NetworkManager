@@ -15,8 +15,8 @@
 #include "nm-device-factory.h"
 #include "nm-core-internal.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceBridge
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceBridge);
 
 /*****************************************************************************/
 
@@ -169,7 +169,7 @@ static void
 to_sysfs_group_address_sys(const char *group_address, NMEtherAddr *out_addr)
 {
     if (group_address == NULL) {
-        *out_addr = (NMEtherAddr) NM_ETHER_ADDR_INIT(NM_BRIDGE_GROUP_ADDRESS_DEF_BIN);
+        *out_addr = NM_ETHER_ADDR_INIT(NM_BRIDGE_GROUP_ADDRESS_DEF_BIN);
         return;
     }
     if (!nm_utils_hwaddr_aton(group_address, out_addr, ETH_ALEN))
@@ -1197,18 +1197,18 @@ create_device(NMDeviceFactory *     factory,
               NMConnection *        connection,
               gboolean *            out_ignore)
 {
-    return (NMDevice *) g_object_new(NM_TYPE_DEVICE_BRIDGE,
-                                     NM_DEVICE_IFACE,
-                                     iface,
-                                     NM_DEVICE_DRIVER,
-                                     "bridge",
-                                     NM_DEVICE_TYPE_DESC,
-                                     "Bridge",
-                                     NM_DEVICE_DEVICE_TYPE,
-                                     NM_DEVICE_TYPE_BRIDGE,
-                                     NM_DEVICE_LINK_TYPE,
-                                     NM_LINK_TYPE_BRIDGE,
-                                     NULL);
+    return g_object_new(NM_TYPE_DEVICE_BRIDGE,
+                        NM_DEVICE_IFACE,
+                        iface,
+                        NM_DEVICE_DRIVER,
+                        "bridge",
+                        NM_DEVICE_TYPE_DESC,
+                        "Bridge",
+                        NM_DEVICE_DEVICE_TYPE,
+                        NM_DEVICE_TYPE_BRIDGE,
+                        NM_DEVICE_LINK_TYPE,
+                        NM_LINK_TYPE_BRIDGE,
+                        NULL);
 }
 
 static gboolean

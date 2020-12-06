@@ -65,10 +65,15 @@ typedef enum {
     NM_BOND_MODE_8023AD       = 4,
     NM_BOND_MODE_TLB          = 5,
     NM_BOND_MODE_ALB          = 6,
+
     _NM_BOND_MODE_NUM,
 } NMBondMode;
 
 NMBondMode _nm_setting_bond_mode_from_string(const char *str);
+
+const char *_nm_setting_bond_mode_to_string(int mode);
+
+gboolean _nm_setting_bond_validate_option(const char *name, const char *value, GError **error);
 
 /*****************************************************************************/
 
@@ -90,6 +95,11 @@ gboolean nm_utils_vlan_priority_map_parse_str(NMVlanPriorityMap map_type,
                                               guint32 *         out_from,
                                               guint32 *         out_to,
                                               gboolean *        out_has_wildcard_to);
+
+/*****************************************************************************/
+
+#define NM_OVS_EXTERNAL_ID_NM_PREFIX          "NM."
+#define NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID "NM.connection.uuid"
 
 /*****************************************************************************/
 

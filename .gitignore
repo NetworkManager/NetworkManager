@@ -95,6 +95,7 @@ test-*.trs
 /docs/api/NetworkManager-*.txt
 /docs/api/NetworkManager-decl-list.txt.bak
 /docs/api/NetworkManager-decl.txt.bak
+/docs/api/NetworkManager.actions
 /docs/api/NetworkManager.args
 /docs/api/NetworkManager.hierarchy
 /docs/api/NetworkManager.interfaces

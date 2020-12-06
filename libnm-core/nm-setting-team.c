@@ -1459,7 +1459,7 @@ nm_setting_team_init(NMSettingTeam *setting)
 NMSetting *
 nm_setting_team_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_TEAM, NULL);
+    return g_object_new(NM_TYPE_SETTING_TEAM, NULL);
 }
 
 static void

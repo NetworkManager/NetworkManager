@@ -30,7 +30,7 @@ nm_device_ppp_init(NMDevicePpp *device)
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_ppp =
     NML_DBUS_META_IFACE_INIT(NM_DBUS_INTERFACE_DEVICE_PPP,
                              nm_device_ppp_get_type,
-                             NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH, );
+                             NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30, );
 
 static void
 nm_device_ppp_class_init(NMDevicePppClass *klass)

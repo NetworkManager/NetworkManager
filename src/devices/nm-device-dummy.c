@@ -18,8 +18,8 @@
 #include "nm-setting-dummy.h"
 #include "nm-core-internal.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceDummy
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceDummy);
 
 /*****************************************************************************/
 
@@ -162,16 +162,16 @@ create_device(NMDeviceFactory *     factory,
               NMConnection *        connection,
               gboolean *            out_ignore)
 {
-    return (NMDevice *) g_object_new(NM_TYPE_DEVICE_DUMMY,
-                                     NM_DEVICE_IFACE,
-                                     iface,
-                                     NM_DEVICE_TYPE_DESC,
-                                     "Dummy",
-                                     NM_DEVICE_DEVICE_TYPE,
-                                     NM_DEVICE_TYPE_DUMMY,
-                                     NM_DEVICE_LINK_TYPE,
-                                     NM_LINK_TYPE_DUMMY,
-                                     NULL);
+    return g_object_new(NM_TYPE_DEVICE_DUMMY,
+                        NM_DEVICE_IFACE,
+                        iface,
+                        NM_DEVICE_TYPE_DESC,
+                        "Dummy",
+                        NM_DEVICE_DEVICE_TYPE,
+                        NM_DEVICE_TYPE_DUMMY,
+                        NM_DEVICE_LINK_TYPE,
+                        NM_LINK_TYPE_DUMMY,
+                        NULL);
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL(

@@ -83,29 +83,6 @@ nm_wifi_ap_get_ssid(const NMWifiAP *ap)
 }
 
 gboolean
-nm_wifi_ap_set_ssid_arr(NMWifiAP *ap, const guint8 *ssid, gsize ssid_len)
-{
-    NMWifiAPPrivate *priv;
-
-    g_return_val_if_fail(NM_IS_WIFI_AP(ap), FALSE);
-
-    if (ssid_len > 32)
-        g_return_val_if_reached(FALSE);
-
-    priv = NM_WIFI_AP_GET_PRIVATE(ap);
-
-    if (nm_utils_gbytes_equal_mem(priv->ssid, ssid, ssid_len))
-        return FALSE;
-
-    nm_clear_pointer(&priv->ssid, g_bytes_unref);
-    if (ssid_len > 0)
-        priv->ssid = g_bytes_new(ssid, ssid_len);
-
-    _notify(ap, PROP_SSID);
-    return TRUE;
-}
-
-gboolean
 nm_wifi_ap_set_ssid(NMWifiAP *ap, GBytes *ssid)
 {
     NMWifiAPPrivate *priv;
@@ -185,10 +162,12 @@ nm_wifi_ap_get_address(const NMWifiAP *ap)
     return NM_WIFI_AP_GET_PRIVATE(ap)->address;
 }
 
-static gboolean
-nm_wifi_ap_set_address_bin(NMWifiAP *ap, const guint8 addr[static 6 /* ETH_ALEN */])
+gboolean
+nm_wifi_ap_set_address_bin(NMWifiAP *ap, const NMEtherAddr *addr)
 {
     NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE(ap);
+
+    nm_assert(addr);
 
     if (!priv->address || !nm_utils_hwaddr_matches(addr, ETH_ALEN, priv->address, -1)) {
         g_free(priv->address);
@@ -202,13 +181,13 @@ nm_wifi_ap_set_address_bin(NMWifiAP *ap, const guint8 addr[static 6 /* ETH_ALEN 
 gboolean
 nm_wifi_ap_set_address(NMWifiAP *ap, const char *addr)
 {
-    guint8 addr_buf[ETH_ALEN];
+    NMEtherAddr addr_buf;
 
     g_return_val_if_fail(NM_IS_WIFI_AP(ap), FALSE);
-    if (!addr || !nm_utils_hwaddr_aton(addr, addr_buf, sizeof(addr_buf)))
+    if (!addr || !nm_utils_hwaddr_aton(addr, &addr_buf, sizeof(addr_buf)))
         g_return_val_if_reached(FALSE);
 
-    return nm_wifi_ap_set_address_bin(ap, addr_buf);
+    return nm_wifi_ap_set_address_bin(ap, &addr_buf);
 }
 
 NM80211Mode
@@ -365,6 +344,18 @@ nm_wifi_ap_get_metered(const NMWifiAP *self)
     return NM_WIFI_AP_GET_PRIVATE(self)->metered;
 }
 
+NM80211ApSecurityFlags
+nm_wifi_ap_get_wpa_flags(const NMWifiAP *self)
+{
+    return NM_WIFI_AP_GET_PRIVATE(self)->wpa_flags;
+}
+
+NM80211ApSecurityFlags
+nm_wifi_ap_get_rsn_flags(const NMWifiAP *self)
+{
+    return NM_WIFI_AP_GET_PRIVATE(self)->rsn_flags;
+}
+
 /*****************************************************************************/
 
 gboolean
@@ -395,7 +386,7 @@ nm_wifi_ap_update_from_properties(NMWifiAP *ap, const NMSupplicantBssInfo *bss_i
     changed |= nm_wifi_ap_set_ssid(ap, bss_info->ssid);
 
     if (bss_info->bssid_valid)
-        changed |= nm_wifi_ap_set_address_bin(ap, bss_info->bssid);
+        changed |= nm_wifi_ap_set_address_bin(ap, &bss_info->bssid);
     else {
         /* we don't actually clear the value. */
     }
@@ -751,7 +742,7 @@ nm_wifi_ap_new_fake_from_connection(NMConnection *connection)
     s_wireless = nm_connection_get_setting_wireless(connection);
     g_return_val_if_fail(s_wireless != NULL, NULL);
 
-    ap         = (NMWifiAP *) g_object_new(NM_TYPE_WIFI_AP, NULL);
+    ap         = g_object_new(NM_TYPE_WIFI_AP, NULL);
     priv       = NM_WIFI_AP_GET_PRIVATE(ap);
     priv->fake = TRUE;
 

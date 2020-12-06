@@ -44,7 +44,7 @@ nm_simple_connection_init(NMSimpleConnection *self)
 NMConnection *
 nm_simple_connection_new(void)
 {
-    return (NMConnection *) g_object_new(NM_TYPE_SIMPLE_CONNECTION, NULL);
+    return g_object_new(NM_TYPE_SIMPLE_CONNECTION, NULL);
 }
 
 /**

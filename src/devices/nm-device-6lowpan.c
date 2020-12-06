@@ -14,8 +14,8 @@
 #include "nm-setting-6lowpan.h"
 #include "nm-utils.h"
 
+#define _NMLOG_DEVICE_TYPE NMDevice6Lowpan
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDevice6Lowpan);
 
 /*****************************************************************************/
 
@@ -285,16 +285,16 @@ create_device(NMDeviceFactory *     factory,
               NMConnection *        connection,
               gboolean *            out_ignore)
 {
-    return (NMDevice *) g_object_new(NM_TYPE_DEVICE_6LOWPAN,
-                                     NM_DEVICE_IFACE,
-                                     iface,
-                                     NM_DEVICE_TYPE_DESC,
-                                     "6LoWPAN",
-                                     NM_DEVICE_DEVICE_TYPE,
-                                     NM_DEVICE_TYPE_6LOWPAN,
-                                     NM_DEVICE_LINK_TYPE,
-                                     NM_LINK_TYPE_6LOWPAN,
-                                     NULL);
+    return g_object_new(NM_TYPE_DEVICE_6LOWPAN,
+                        NM_DEVICE_IFACE,
+                        iface,
+                        NM_DEVICE_TYPE_DESC,
+                        "6LoWPAN",
+                        NM_DEVICE_DEVICE_TYPE,
+                        NM_DEVICE_TYPE_6LOWPAN,
+                        NM_DEVICE_LINK_TYPE,
+                        NM_LINK_TYPE_6LOWPAN,
+                        NULL);
 }
 
 static const char *

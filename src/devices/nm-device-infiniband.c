@@ -443,19 +443,19 @@ create_device(NMDeviceFactory *     factory,
                            && nm_setting_infiniband_get_mac_address(s_infiniband));
     }
 
-    return (NMDevice *) g_object_new(NM_TYPE_DEVICE_INFINIBAND,
-                                     NM_DEVICE_IFACE,
-                                     iface,
-                                     NM_DEVICE_TYPE_DESC,
-                                     "InfiniBand",
-                                     NM_DEVICE_DEVICE_TYPE,
-                                     NM_DEVICE_TYPE_INFINIBAND,
-                                     NM_DEVICE_LINK_TYPE,
-                                     NM_LINK_TYPE_INFINIBAND,
-                                     /* NOTE: Partition should probably be a different link type! */
-                                     NM_DEVICE_INFINIBAND_IS_PARTITION,
-                                     is_partition,
-                                     NULL);
+    return g_object_new(NM_TYPE_DEVICE_INFINIBAND,
+                        NM_DEVICE_IFACE,
+                        iface,
+                        NM_DEVICE_TYPE_DESC,
+                        "InfiniBand",
+                        NM_DEVICE_DEVICE_TYPE,
+                        NM_DEVICE_TYPE_INFINIBAND,
+                        NM_DEVICE_LINK_TYPE,
+                        NM_LINK_TYPE_INFINIBAND,
+                        /* NOTE: Partition should probably be a different link type! */
+                        NM_DEVICE_INFINIBAND_IS_PARTITION,
+                        is_partition,
+                        NULL);
 }
 
 static const char *

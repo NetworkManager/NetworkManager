@@ -23,8 +23,8 @@
 #include "nm-setting-adsl.h"
 #include "nm-utils.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceAdsl
 #include "devices/nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceAdsl);
 
 /*****************************************************************************/
 
@@ -645,20 +645,20 @@ nm_device_adsl_new(const char *udi, const char *iface, const char *driver, int a
     g_return_val_if_fail(udi != NULL, NULL);
     g_return_val_if_fail(atm_index >= 0, NULL);
 
-    return (NMDevice *) g_object_new(NM_TYPE_DEVICE_ADSL,
-                                     NM_DEVICE_UDI,
-                                     udi,
-                                     NM_DEVICE_IFACE,
-                                     iface,
-                                     NM_DEVICE_DRIVER,
-                                     driver,
-                                     NM_DEVICE_ADSL_ATM_INDEX,
-                                     atm_index,
-                                     NM_DEVICE_TYPE_DESC,
-                                     "ADSL",
-                                     NM_DEVICE_DEVICE_TYPE,
-                                     NM_DEVICE_TYPE_ADSL,
-                                     NULL);
+    return g_object_new(NM_TYPE_DEVICE_ADSL,
+                        NM_DEVICE_UDI,
+                        udi,
+                        NM_DEVICE_IFACE,
+                        iface,
+                        NM_DEVICE_DRIVER,
+                        driver,
+                        NM_DEVICE_ADSL_ATM_INDEX,
+                        atm_index,
+                        NM_DEVICE_TYPE_DESC,
+                        "ADSL",
+                        NM_DEVICE_DEVICE_TYPE,
+                        NM_DEVICE_TYPE_ADSL,
+                        NULL);
 }
 
 static void

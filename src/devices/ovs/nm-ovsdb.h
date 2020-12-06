@@ -46,4 +46,13 @@ void nm_ovsdb_set_interface_mtu(NMOvsdb *       self,
                                 NMOvsdbCallback callback,
                                 gpointer        user_data);
 
+struct _NMSettingOvsExternalIDs;
+
+void nm_ovsdb_set_external_ids(NMOvsdb *                        self,
+                               NMDeviceType                     device_type,
+                               const char *                     ifname,
+                               const char *                     connection_uuid,
+                               struct _NMSettingOvsExternalIDs *s_exid_old,
+                               struct _NMSettingOvsExternalIDs *s_exid_new);
+
 #endif /* __NETWORKMANAGER_OVSDB_H__ */

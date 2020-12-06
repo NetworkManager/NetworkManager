@@ -2554,12 +2554,12 @@ NMIP6Config *
 nm_ip6_config_new(NMDedupMultiIndex *multi_idx, int ifindex)
 {
     g_return_val_if_fail(ifindex >= -1, NULL);
-    return (NMIP6Config *) g_object_new(NM_TYPE_IP6_CONFIG,
-                                        NM_IP6_CONFIG_MULTI_IDX,
-                                        multi_idx,
-                                        NM_IP6_CONFIG_IFINDEX,
-                                        ifindex,
-                                        NULL);
+    return g_object_new(NM_TYPE_IP6_CONFIG,
+                        NM_IP6_CONFIG_MULTI_IDX,
+                        multi_idx,
+                        NM_IP6_CONFIG_IFINDEX,
+                        ifindex,
+                        NULL);
 }
 
 NMIP6Config *

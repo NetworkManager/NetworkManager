@@ -374,23 +374,21 @@ nmc_terminal_show_progress(const char *str)
 char *
 nmc_colorize(const NmcConfig *nmc_config, NMMetaColor color, const char *fmt, ...)
 {
-    va_list     args;
-    char *      str, *colored;
-    const char *ansi_seq = NULL;
+    va_list       args;
+    gs_free char *str      = NULL;
+    const char *  ansi_seq = NULL;
 
     va_start(args, fmt);
     str = g_strdup_vprintf(fmt, args);
     va_end(args);
 
     if (nmc_config->use_colors)
-        ansi_seq = nmc_config->palette[color];
+        ansi_seq = nmc_config->palette.ansi_seq[color];
 
-    if (ansi_seq == NULL)
-        return str;
+    if (!ansi_seq)
+        return g_steal_pointer(&str);
 
-    colored = g_strdup_printf("\33[%sm%s\33[0m", ansi_seq, str);
-    g_free(str);
-    return colored;
+    return g_strdup_printf("\33[%sm%s\33[0m", ansi_seq, str);
 }
 
 /*

@@ -30,8 +30,8 @@
 #include "nm-manager.h"
 #include "platform/nm-platform.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceOlpcMesh
 #include "devices/nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceOlpcMesh);
 
 /*****************************************************************************/
 
@@ -460,16 +460,16 @@ constructed(GObject *object)
 NMDevice *
 nm_device_olpc_mesh_new(const char *iface)
 {
-    return (NMDevice *) g_object_new(NM_TYPE_DEVICE_OLPC_MESH,
-                                     NM_DEVICE_IFACE,
-                                     iface,
-                                     NM_DEVICE_TYPE_DESC,
-                                     "802.11 OLPC Mesh",
-                                     NM_DEVICE_DEVICE_TYPE,
-                                     NM_DEVICE_TYPE_OLPC_MESH,
-                                     NM_DEVICE_LINK_TYPE,
-                                     NM_LINK_TYPE_OLPC_MESH,
-                                     NULL);
+    return g_object_new(NM_TYPE_DEVICE_OLPC_MESH,
+                        NM_DEVICE_IFACE,
+                        iface,
+                        NM_DEVICE_TYPE_DESC,
+                        "802.11 OLPC Mesh",
+                        NM_DEVICE_DEVICE_TYPE,
+                        NM_DEVICE_TYPE_OLPC_MESH,
+                        NM_DEVICE_LINK_TYPE,
+                        NM_LINK_TYPE_OLPC_MESH,
+                        NULL);
 }
 
 static void

@@ -6,6 +6,8 @@
 #include "nm-default.h"
 
 #include "nm-device-ovs-interface.h"
+
+#include "nm-device-ovs-bridge.h"
 #include "nm-ovsdb.h"
 
 #include "devices/nm-device-private.h"
@@ -14,8 +16,8 @@
 #include "nm-setting-ovs-interface.h"
 #include "nm-setting-ovs-port.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceOvsInterface
 #include "devices/nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceOvsInterface);
 
 /*****************************************************************************/
 
@@ -382,17 +384,19 @@ nm_device_ovs_interface_class_init(NMDeviceOvsInterfaceClass *klass)
     device_class->connection_type_check_compatible = NM_SETTING_OVS_INTERFACE_SETTING_NAME;
     device_class->link_types = NM_DEVICE_DEFINE_LINK_TYPES(NM_LINK_TYPE_OPENVSWITCH);
 
-    device_class->can_update_from_platform_link = can_update_from_platform_link;
-    device_class->deactivate                    = deactivate;
-    device_class->deactivate_async              = deactivate_async;
-    device_class->get_type_description          = get_type_description;
-    device_class->create_and_realize            = create_and_realize;
-    device_class->get_generic_capabilities      = get_generic_capabilities;
-    device_class->is_available                  = is_available;
-    device_class->check_connection_compatible   = check_connection_compatible;
-    device_class->link_changed                  = link_changed;
-    device_class->act_stage3_ip_config_start    = act_stage3_ip_config_start;
-    device_class->can_unmanaged_external_down   = can_unmanaged_external_down;
-    device_class->set_platform_mtu              = set_platform_mtu;
-    device_class->get_configured_mtu            = nm_device_get_configured_mtu_for_wired;
+    device_class->can_update_from_platform_link       = can_update_from_platform_link;
+    device_class->deactivate                          = deactivate;
+    device_class->deactivate_async                    = deactivate_async;
+    device_class->get_type_description                = get_type_description;
+    device_class->create_and_realize                  = create_and_realize;
+    device_class->get_generic_capabilities            = get_generic_capabilities;
+    device_class->is_available                        = is_available;
+    device_class->check_connection_compatible         = check_connection_compatible;
+    device_class->link_changed                        = link_changed;
+    device_class->act_stage3_ip_config_start          = act_stage3_ip_config_start;
+    device_class->can_unmanaged_external_down         = can_unmanaged_external_down;
+    device_class->set_platform_mtu                    = set_platform_mtu;
+    device_class->get_configured_mtu                  = nm_device_get_configured_mtu_for_wired;
+    device_class->can_reapply_change_ovs_external_ids = TRUE;
+    device_class->reapply_connection                  = nm_device_ovs_reapply_connection;
 }

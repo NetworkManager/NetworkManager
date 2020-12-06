@@ -701,8 +701,6 @@ reader_parse_master(Reader *reader, char *argument, const char *type_name, const
     char *               slaves;
     const char *         slave;
     char *               opts;
-    char *               opt;
-    const char *         opt_name;
     const char *         mtu = NULL;
 
     master = get_word(&argument, ':');
@@ -724,8 +722,21 @@ reader_parse_master(Reader *reader, char *argument, const char *type_name, const
 
         opts = get_word(&argument, ':');
         while (opts && *opts) {
+            gs_free_error GError *error = NULL;
+            char *                opt;
+            const char *          opt_name;
+
             opt      = get_word(&opts, ',');
             opt_name = get_word(&opt, '=');
+
+            if (!_nm_setting_bond_validate_option(opt_name, opt, &error)) {
+                _LOGW(LOGD_CORE,
+                      "Ignoring invalid bond option: %s%s%s = %s%s%s: %s",
+                      NM_PRINT_FMT_QUOTE_STRING(opt_name),
+                      NM_PRINT_FMT_QUOTE_STRING(opt),
+                      error->message);
+                continue;
+            }
             nm_setting_bond_add_option(s_bond, opt_name, opt);
         }
 

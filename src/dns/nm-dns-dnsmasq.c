@@ -804,7 +804,7 @@ add_global_config(NMDnsDnsmasq *           self,
 }
 
 static void
-add_ip_config(NMDnsDnsmasq *self, GVariantBuilder *servers, const NMDnsIPConfigData *ip_data)
+add_ip_config(NMDnsDnsmasq *self, GVariantBuilder *servers, const NMDnsConfigIPData *ip_data)
 {
     NMIPConfig *  ip_config = ip_data->ip_config;
     gconstpointer addr;
@@ -850,7 +850,7 @@ create_update_args(NMDnsDnsmasq *           self,
                    const char *             hostname)
 {
     GVariantBuilder          servers;
-    const NMDnsIPConfigData *ip_data;
+    const NMDnsConfigIPData *ip_data;
 
     g_variant_builder_init(&servers, G_VARIANT_TYPE("aas"));
 

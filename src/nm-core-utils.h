@@ -95,7 +95,8 @@ void _nm_singleton_instance_register_destruction(GObject *instance);
 
 /*****************************************************************************/
 
-gboolean nm_ethernet_address_is_valid(gconstpointer addr, gssize len);
+gboolean nm_ether_addr_is_valid(const NMEtherAddr *addr);
+gboolean nm_ether_addr_is_valid_str(const char *str);
 
 gconstpointer
 nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer src, guint8 plen);
@@ -209,7 +210,7 @@ nm_utils_ip6_route_metric_normalize(guint32 metric)
 static inline guint32
 nm_utils_ip_route_metric_normalize(int addr_family, guint32 metric)
 {
-    return addr_family == AF_INET6 ? nm_utils_ip6_route_metric_normalize(metric) : metric;
+    return NM_IS_IPv4(addr_family) ? metric : nm_utils_ip6_route_metric_normalize(metric);
 }
 
 static inline guint32
@@ -531,9 +532,21 @@ nm_utils_ip4_address_is_zeronet(in_addr_t network)
 
 const char *nm_utils_dnsmasq_status_to_string(int status, char *dest, gsize size);
 
-void nm_utils_get_reverse_dns_domains_ip4(guint32 ip, guint8 plen, GPtrArray *domains);
+void nm_utils_get_reverse_dns_domains_ip_4(guint32 ip, guint8 plen, GPtrArray *domains);
 void
-nm_utils_get_reverse_dns_domains_ip6(const struct in6_addr *ip, guint8 plen, GPtrArray *domains);
+nm_utils_get_reverse_dns_domains_ip_6(const struct in6_addr *ip, guint8 plen, GPtrArray *domains);
+
+static inline void
+nm_utils_get_reverse_dns_domains_ip(int           addr_family,
+                                    gconstpointer addr,
+                                    guint8        plen,
+                                    GPtrArray *   domains)
+{
+    if (NM_IS_IPv4(addr_family))
+        nm_utils_get_reverse_dns_domains_ip_4(*((const in_addr_t *) addr), plen, domains);
+    else
+        nm_utils_get_reverse_dns_domains_ip_6(addr, plen, domains);
+}
 
 struct stat;
 

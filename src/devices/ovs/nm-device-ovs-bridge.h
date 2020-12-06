@@ -22,4 +22,9 @@ typedef struct _NMDeviceOvsBridgeClass NMDeviceOvsBridgeClass;
 
 GType nm_device_ovs_bridge_get_type(void);
 
+/*****************************************************************************/
+
+void
+nm_device_ovs_reapply_connection(NMDevice *device, NMConnection *con_old, NMConnection *con_new);
+
 #endif /* __NETWORKMANAGER_DEVICE_OVS_BRIDGE_H__ */

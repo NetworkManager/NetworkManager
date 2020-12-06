@@ -6,7 +6,9 @@
 #include "nm-default.h"
 
 #include "nm-device-ovs-port.h"
+
 #include "nm-device-ovs-interface.h"
+#include "nm-device-ovs-bridge.h"
 #include "nm-ovsdb.h"
 
 #include "devices/nm-device-private.h"
@@ -15,8 +17,8 @@
 #include "nm-setting-ovs-port.h"
 #include "nm-setting-ovs-port.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceOvsPort
 #include "devices/nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceOvsPort);
 
 /*****************************************************************************/
 
@@ -182,11 +184,13 @@ nm_device_ovs_port_class_init(NMDeviceOvsPortClass *klass)
     device_class->connection_type_check_compatible = NM_SETTING_OVS_PORT_SETTING_NAME;
     device_class->link_types                       = NM_DEVICE_DEFINE_LINK_TYPES();
 
-    device_class->is_master                  = TRUE;
-    device_class->get_type_description       = get_type_description;
-    device_class->create_and_realize         = create_and_realize;
-    device_class->get_generic_capabilities   = get_generic_capabilities;
-    device_class->act_stage3_ip_config_start = act_stage3_ip_config_start;
-    device_class->enslave_slave              = enslave_slave;
-    device_class->release_slave              = release_slave;
+    device_class->is_master                           = TRUE;
+    device_class->get_type_description                = get_type_description;
+    device_class->create_and_realize                  = create_and_realize;
+    device_class->get_generic_capabilities            = get_generic_capabilities;
+    device_class->act_stage3_ip_config_start          = act_stage3_ip_config_start;
+    device_class->enslave_slave                       = enslave_slave;
+    device_class->release_slave                       = release_slave;
+    device_class->can_reapply_change_ovs_external_ids = TRUE;
+    device_class->reapply_connection                  = nm_device_ovs_reapply_connection;
 }

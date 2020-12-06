@@ -1302,8 +1302,7 @@ _ppp_manager_new(const char *iface)
 {
     g_return_val_if_fail(iface != NULL, NULL);
 
-    return (
-        NMPPPManager *) g_object_new(NM_TYPE_PPP_MANAGER, NM_PPP_MANAGER_PARENT_IFACE, iface, NULL);
+    return g_object_new(NM_TYPE_PPP_MANAGER, NM_PPP_MANAGER_PARENT_IFACE, iface, NULL);
 }
 
 static void

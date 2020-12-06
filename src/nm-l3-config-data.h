@@ -141,6 +141,7 @@ NML3ConfigData *nm_l3_config_data_new_from_platform(NMDedupMultiIndex *       mu
 
 typedef gboolean (*NML3ConfigMergeHookAddObj)(const NML3ConfigData *l3cd,
                                               const NMPObject *     obj,
+                                              NMTernary *           out_ip4acd_not_ready,
                                               gpointer              user_data);
 
 void nm_l3_config_data_merge(NML3ConfigData *      self,
@@ -222,21 +223,13 @@ const NMDedupMultiHeadEntry *nm_l3_config_data_lookup_objs(const NML3ConfigData 
 static inline const NMDedupMultiHeadEntry *
 nm_l3_config_data_lookup_addresses(const NML3ConfigData *self, int addr_family)
 {
-    nm_assert_addr_family(addr_family);
-
-    return nm_l3_config_data_lookup_objs(self,
-                                         addr_family == AF_INET ? NMP_OBJECT_TYPE_IP4_ADDRESS
-                                                                : NMP_OBJECT_TYPE_IP6_ADDRESS);
+    return nm_l3_config_data_lookup_objs(self, NMP_OBJECT_TYPE_IP_ADDRESS(NM_IS_IPv4(addr_family)));
 }
 
 static inline const NMDedupMultiHeadEntry *
 nm_l3_config_data_lookup_routes(const NML3ConfigData *self, int addr_family)
 {
-    nm_assert_addr_family(addr_family);
-
-    return nm_l3_config_data_lookup_objs(self,
-                                         addr_family == AF_INET ? NMP_OBJECT_TYPE_IP4_ROUTE
-                                                                : NMP_OBJECT_TYPE_IP6_ROUTE);
+    return nm_l3_config_data_lookup_objs(self, NMP_OBJECT_TYPE_IP_ROUTE(NM_IS_IPv4(addr_family)));
 }
 
 #define nm_l3_config_data_iter_obj_for_each(iter, self, obj, type)                        \

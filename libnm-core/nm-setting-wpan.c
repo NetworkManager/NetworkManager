@@ -281,7 +281,7 @@ nm_setting_wpan_init(NMSettingWpan *setting)
 NMSetting *
 nm_setting_wpan_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_WPAN, NULL);
+    return g_object_new(NM_TYPE_SETTING_WPAN, NULL);
 }
 
 static void

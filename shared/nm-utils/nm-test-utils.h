@@ -900,14 +900,16 @@ nmtst_get_rand_uint64(void)
 static inline guint
 nmtst_get_rand_uint(void)
 {
-    G_STATIC_ASSERT_EXPR(sizeof(guint32) == sizeof(guint));
-    return nmtst_get_rand_uint32();
+    G_STATIC_ASSERT_EXPR((sizeof(guint) == sizeof(guint32) || (sizeof(guint) == sizeof(guint64))));
+    if (sizeof(guint32) == sizeof(guint))
+        return nmtst_get_rand_uint32();
+    return nmtst_get_rand_uint64();
 }
 
 static inline gsize
 nmtst_get_rand_size(void)
 {
-    G_STATIC_ASSERT_EXPR(sizeof(gsize) == sizeof(guint32) || sizeof(gsize) == sizeof(guint64));
+    G_STATIC_ASSERT_EXPR((sizeof(gsize) == sizeof(guint32) || (sizeof(gsize) == sizeof(guint64))));
     if (sizeof(gsize) == sizeof(guint32))
         return nmtst_get_rand_uint32();
     return nmtst_get_rand_uint64();
@@ -917,6 +919,17 @@ static inline gboolean
 nmtst_get_rand_bool(void)
 {
     return nmtst_get_rand_uint32() % 2;
+}
+
+static inline gboolean
+nmtst_get_rand_one_case_in(guint32 num)
+{
+    /* num=1 doesn't make much sense, because it will always return %TRUE.
+     * Still accept it, it might be that @num is calculated, so 1 might be
+     * a valid edge case. */
+    g_assert(num > 0);
+
+    return (nmtst_get_rand_uint32() % num) == 0;
 }
 
 static inline gpointer

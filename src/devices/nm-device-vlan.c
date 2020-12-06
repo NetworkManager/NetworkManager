@@ -22,8 +22,8 @@
 #include "nm-core-internal.h"
 #include "platform/nmp-object.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceVlan
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceVlan);
 
 /*****************************************************************************/
 
@@ -117,7 +117,7 @@ parent_hwaddr_maybe_changed(NMDevice *parent, GParamSpec *pspec, gpointer user_d
          */
         s_ip6 = nm_connection_get_setting_ip6_config(connection);
         if (s_ip6)
-            nm_device_reactivate_ip6_config(device, s_ip6, s_ip6);
+            nm_device_reactivate_ip_config(device, AF_INET6, s_ip6, s_ip6);
     }
 }
 
@@ -614,18 +614,18 @@ create_device(NMDeviceFactory *     factory,
               NMConnection *        connection,
               gboolean *            out_ignore)
 {
-    return (NMDevice *) g_object_new(NM_TYPE_DEVICE_VLAN,
-                                     NM_DEVICE_IFACE,
-                                     iface,
-                                     NM_DEVICE_DRIVER,
-                                     "8021q",
-                                     NM_DEVICE_TYPE_DESC,
-                                     "VLAN",
-                                     NM_DEVICE_DEVICE_TYPE,
-                                     NM_DEVICE_TYPE_VLAN,
-                                     NM_DEVICE_LINK_TYPE,
-                                     NM_LINK_TYPE_VLAN,
-                                     NULL);
+    return g_object_new(NM_TYPE_DEVICE_VLAN,
+                        NM_DEVICE_IFACE,
+                        iface,
+                        NM_DEVICE_DRIVER,
+                        "8021q",
+                        NM_DEVICE_TYPE_DESC,
+                        "VLAN",
+                        NM_DEVICE_DEVICE_TYPE,
+                        NM_DEVICE_TYPE_VLAN,
+                        NM_DEVICE_LINK_TYPE,
+                        NM_LINK_TYPE_VLAN,
+                        NULL);
 }
 
 static const char *

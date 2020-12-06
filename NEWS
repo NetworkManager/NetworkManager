@@ -1,12 +1,22 @@
 =============================================
-NetworkManager-1.28
-Overview of changes since NetworkManager-1.26
+NetworkManager-1.30
+Overview of changes since NetworkManager-1.28
 =============================================
 
-This is a snapshot of NetworkManager 1.28 development series.
+This is a snapshot of NetworkManager 1.30 development series.
 The API is subject to change and not guaranteed to be compatible
 with the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
+
+* libnm: nm_setting_bond_add_option() no longer validates the
+  option that is set. Instead, use nm_connection_verify() to validate
+  the profile.
+* Increase timeout of NetworkManager-wait-online.service to 60 seconds.
+
+=============================================
+NetworkManager-1.28
+Overview of changes since NetworkManager-1.26
+=============================================
 
 * Introduce a new "rc-manager=auto" setting and make it the default,
   unless a different default is chosen at compile time.  This mode

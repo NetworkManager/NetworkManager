@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0+ */
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /*
  * Copyright (C) 2014 - 2018 Red Hat, Inc.
  */
@@ -28,6 +28,7 @@ typedef struct _NMSettingDummy            NMSettingDummy;
 typedef struct _NMSettingEthtool          NMSettingEthtool;
 typedef struct _NMSettingGeneric          NMSettingGeneric;
 typedef struct _NMSettingGsm              NMSettingGsm;
+typedef struct _NMSettingHostname         NMSettingHostname;
 typedef struct _NMSettingIP4Config        NMSettingIP4Config;
 typedef struct _NMSettingIP6Config        NMSettingIP6Config;
 typedef struct _NMSettingIPConfig         NMSettingIPConfig;
@@ -39,6 +40,7 @@ typedef struct _NMSettingMatch            NMSettingMatch;
 typedef struct _NMSettingOlpcMesh         NMSettingOlpcMesh;
 typedef struct _NMSettingOvsBridge        NMSettingOvsBridge;
 typedef struct _NMSettingOvsDpdk          NMSettingOvsDpdk;
+typedef struct _NMSettingOvsExternalIDs   NMSettingOvsExternalIDs;
 typedef struct _NMSettingOvsInterface     NMSettingOvsInterface;
 typedef struct _NMSettingOvsPatch         NMSettingOvsPatch;
 typedef struct _NMSettingOvsPort          NMSettingOvsPort;
@@ -52,6 +54,7 @@ typedef struct _NMSettingTeam             NMSettingTeam;
 typedef struct _NMSettingTeamPort         NMSettingTeamPort;
 typedef struct _NMSettingTun              NMSettingTun;
 typedef struct _NMSettingUser             NMSettingUser;
+typedef struct _NMSettingVeth             NMSettingVeth;
 typedef struct _NMSettingVlan             NMSettingVlan;
 typedef struct _NMSettingVpn              NMSettingVpn;
 typedef struct _NMSettingVrf              NMSettingVrf;

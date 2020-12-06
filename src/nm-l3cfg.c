@@ -12,17 +12,21 @@
 #include "platform/nmp-object.h"
 #include "nm-netns.h"
 #include "n-acd/src/n-acd.h"
+#include "nm-l3-ipv4ll.h"
 
 /*****************************************************************************/
+
+G_STATIC_ASSERT(NM_ACD_TIMEOUT_RFC5227_MSEC == N_ACD_TIMEOUT_RFC5227);
 
 #define ACD_SUPPORTED_ETH_ALEN                  ETH_ALEN
 #define ACD_ENSURE_RATELIMIT_MSEC               ((guint32) 4000u)
 #define ACD_WAIT_PROBING_EXTRA_TIME_MSEC        ((guint32)(1000u + ACD_ENSURE_RATELIMIT_MSEC))
 #define ACD_WAIT_PROBING_EXTRA_TIME2_MSEC       ((guint32) 1000u)
-#define ACD_WAIT_PROBING_RESTART_TIME_MSEC      ((guint32) 8000u)
 #define ACD_MAX_TIMEOUT_MSEC                    ((guint32) 30000u)
 #define ACD_WAIT_TIME_PROBING_FULL_RESTART_MSEC ((guint32) 30000u)
-#define ACD_WAIT_TIME_ANNOUNCE_RESTART_MSEC     ((guint32) 20000u)
+#define ACD_WAIT_TIME_CONFLICT_RESTART_MSEC     ((guint32) 120000u)
+#define ACD_WAIT_TIME_ANNOUNCE_RESTART_MSEC     ((guint32) 30000u)
+#define ACD_DEFENDCONFLICT_INFO_RATELIMIT_MSEC  ((guint32) 30000u)
 
 static gboolean
 ACD_ADDR_SKIP(in_addr_t addr)
@@ -39,12 +43,15 @@ ACD_ADDR_SKIP(in_addr_t addr)
     ACD_TRACK_PTR2((acd_track)->l3cd, (acd_track)->obj, (acd_track)->tag)
 
 typedef enum {
-    ACD_STATE_CHANGE_MODE_INIT,
-    ACD_STATE_CHANGE_MODE_POST_COMMIT,
+    ACD_STATE_CHANGE_MODE_NACD_CONFLICT = N_ACD_EVENT_CONFLICT,
+    ACD_STATE_CHANGE_MODE_NACD_DEFENDED = N_ACD_EVENT_DEFENDED,
+    ACD_STATE_CHANGE_MODE_NACD_DOWN     = N_ACD_EVENT_DOWN,
+    ACD_STATE_CHANGE_MODE_NACD_READY    = N_ACD_EVENT_READY,
+    ACD_STATE_CHANGE_MODE_NACD_USED     = N_ACD_EVENT_USED,
 
-    ACD_STATE_CHANGE_MODE_NACD_READY,
-    ACD_STATE_CHANGE_MODE_NACD_USED,
-    ACD_STATE_CHANGE_MODE_NACD_DOWN,
+    ACD_STATE_CHANGE_MODE_INIT = _N_ACD_EVENT_N,
+    ACD_STATE_CHANGE_MODE_INIT_REAPPLY,
+    ACD_STATE_CHANGE_MODE_POST_COMMIT,
 
     ACD_STATE_CHANGE_MODE_EXTERNAL_ADDED,
     ACD_STATE_CHANGE_MODE_EXTERNAL_REMOVED,
@@ -53,56 +60,40 @@ typedef enum {
     ACD_STATE_CHANGE_MODE_TIMEOUT,
 } AcdStateChangeMode;
 
-typedef struct {
-    CList                 acd_track_lst;
-    const NMPObject *     obj;
-    const NML3ConfigData *l3cd;
-    gconstpointer         tag;
-    guint32               acd_timeout_msec;
-    bool                  acd_dirty : 1;
-    bool                  acd_failed_notified : 1;
-} AcdTrackData;
-
-typedef enum _nm_packed {
-    ACD_STATE_INIT,
-    ACD_STATE_PROBING,
-    ACD_STATE_PROBE_DONE,
-    ACD_STATE_ANNOUNCING,
-} AcdState;
+G_STATIC_ASSERT(G_STRUCT_OFFSET(NML3AcdAddrInfo, addr) == 0);
 
 typedef struct {
-    in_addr_t addr;
-
-    /* This is only relevant while in state ACD_STATE_PROBING. It's the
-     * duration for how long we probe, and @probing_timestamp_msec is the
-     * timestamp when we start probing. */
-    guint32 probing_timeout_msec;
+    NML3AcdAddrInfo info;
 
     CList acd_lst;
-    CList acd_notify_complete_lst;
-    CList acd_track_lst_head;
-
-    NML3Cfg *self;
+    CList acd_event_notify_lst;
 
     NAcdProbe *nacd_probe;
 
-    GSource *acd_timeout_source;
-    gint64   acd_timeout_expiry_msec;
+    GSource *acd_data_timeout_source;
 
     /* see probing_timeout_msec. */
     gint64 probing_timestamp_msec;
 
-    /* the ACD state for this address. */
-    AcdState acd_state;
+    gint64 last_defendconflict_timestamp_msec;
 
-    /* The probe result. This is only relevant if @acd_state is ACD_STATE_PROBE_DONE.
-     * In state ACD_STATE_ANNOUNCING the @probe_result must be TRUE. */
-    bool probe_result : 1;
+    guint n_track_infos_alloc;
 
-    bool announcing_failed_is_retrying : 1;
+    /* This is only relevant while in state NM_L3_ACD_ADDR_STATE_PROBING. It's the
+     * duration for how long we probe, and @probing_timestamp_msec is the
+     * timestamp when we start probing. */
+    guint32 probing_timeout_msec;
 
-    bool initializing : 1;
+    NMEtherAddr last_conflict_addr;
+
+    NML3AcdDefendType acd_defend_type_desired : 3;
+    NML3AcdDefendType acd_defend_type_current : 3;
+    bool              acd_defend_type_is_active : 1;
+
+    bool track_infos_changed : 1;
 } AcdData;
+
+G_STATIC_ASSERT(G_STRUCT_OFFSET(AcdData, info.addr) == 0);
 
 struct _NML3CfgCommitTypeHandle {
     CList             commit_type_lst;
@@ -133,11 +124,12 @@ typedef struct {
         };
         guint32 default_route_penalty_x[2];
     };
-    gconstpointer tag;
-    guint64       pseudo_timestamp;
-    int           priority;
-    guint32       acd_timeout_msec;
-    bool          dirty : 1;
+    gconstpointer     tag_confdata;
+    guint64           pseudo_timestamp_confdata;
+    int               priority_confdata;
+    guint32           acd_timeout_msec_confdata;
+    NML3AcdDefendType acd_defend_type_confdata : 3;
+    bool              dirty_confdata : 1;
 } L3ConfigData;
 
 /*****************************************************************************/
@@ -155,6 +147,8 @@ typedef struct _NML3CfgPrivate {
     GArray *property_emit_list;
     GArray *l3_config_datas;
 
+    NML3IPv4LL *ipv4ll;
+
     const NML3ConfigData *combined_l3cd_merged;
 
     const NML3ConfigData *combined_l3cd_commited;
@@ -170,10 +164,13 @@ typedef struct _NML3CfgPrivate {
     GHashTable *acd_lst_hash;
     CList       acd_lst_head;
 
-    CList acd_notify_complete_lst_head;
+    CList acd_event_notify_lst_head;
 
     NAcd *   nacd;
     GSource *nacd_source;
+
+    GSource *nacd_event_down_source;
+    gint64   nacd_event_down_ratelimited_until_msec;
 
     /* This is for rate-limiting the creation of nacd instance. */
     GSource *nacd_instance_ensure_retry;
@@ -198,16 +195,35 @@ typedef struct _NML3CfgPrivate {
         guint externally_removed_objs_cnt_routes_x[2];
     };
 
+    union {
+        struct {
+            GPtrArray *last_addresses_6;
+            GPtrArray *last_addresses_4;
+        };
+        GPtrArray *last_addresses_x[2];
+    };
+
+    union {
+        struct {
+            GPtrArray *last_routes_6;
+            GPtrArray *last_routes_4;
+        };
+        GPtrArray *last_routes_x[2];
+    };
+
     guint routes_temporary_not_available_id;
+
+    gint8 commit_reentrant_count;
 
     bool commit_type_update_sticky : 1;
 
     bool acd_is_pending : 1;
-    bool acd_is_announcing : 1;
 
     bool nacd_acd_not_supported : 1;
     bool acd_ipv4_addresses_on_link_has : 1;
 
+    bool changed_configs_configs : 1;
+    bool changed_configs_acd_state : 1;
 } NML3CfgPrivate;
 
 struct _NML3CfgClass {
@@ -234,15 +250,16 @@ G_DEFINE_TYPE(NML3Cfg, nm_l3cfg, G_TYPE_OBJECT)
     }                                                                         \
     G_STMT_END
 
-#define _LOGT_acd(acd_data, ...)                                \
-    G_STMT_START                                                \
-    {                                                           \
-        char _sbuf_acd[NM_UTILS_INET_ADDRSTRLEN];               \
-                                                                \
-        _LOGT("acd[%s]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),   \
-              _nm_utils_inet4_ntop((acd_data)->addr, _sbuf_acd) \
-                  _NM_UTILS_MACRO_REST(__VA_ARGS__));           \
-    }                                                           \
+#define _LOGT_acd(acd_data, ...)                                      \
+    G_STMT_START                                                      \
+    {                                                                 \
+        char _sbuf_acd[NM_UTILS_INET_ADDRSTRLEN];                     \
+                                                                      \
+        _LOGT("acd[%s, %s]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),     \
+              _nm_utils_inet4_ntop((acd_data)->info.addr, _sbuf_acd), \
+              _l3_acd_addr_state_to_string((acd_data)->info.state)    \
+                  _NM_UTILS_MACRO_REST(__VA_ARGS__));                 \
+    }                                                                 \
     G_STMT_END
 
 /*****************************************************************************/
@@ -251,7 +268,7 @@ static void _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is
 
 static void _property_emit_notify(NML3Cfg *self, NML3CfgPropertyEmitType emit_type);
 
-static void _l3_acd_data_notify_acd_completed_all(NML3Cfg *self);
+static void _nm_l3cfg_emit_signal_notify_acd_event_all(NML3Cfg *self);
 
 static gboolean _acd_has_valid_link(const NMPObject *obj,
                                     const guint8 **  out_addr_bin,
@@ -260,12 +277,11 @@ static gboolean _acd_has_valid_link(const NMPObject *obj,
 static void
 _l3_acd_nacd_instance_reset(NML3Cfg *self, NMTernary start_timer, gboolean acd_data_notify);
 
-static void _l3_acd_data_prune(NML3Cfg *self, gboolean all);
-
 static void _l3_acd_data_state_change(NML3Cfg *          self,
                                       AcdData *          acd_data,
                                       AcdStateChangeMode mode,
-                                      NAcdEvent *        event);
+                                      const NMEtherAddr *sender,
+                                      gint64 *           p_now_msec);
 
 static AcdData *_l3_acd_data_find(NML3Cfg *self, in_addr_t addr);
 
@@ -282,13 +298,44 @@ static NM_UTILS_ENUM2STR_DEFINE(_l3_cfg_commit_type_to_string,
 static NM_UTILS_ENUM2STR_DEFINE(
     _l3_config_notify_type_to_string,
     NML3ConfigNotifyType,
-    NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED, "acd-complete"),
+    NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT, "acd-event"),
+    NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_IPV4LL_EVENT, "ipv4ll-event"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE, "platform-change"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE, "platform-change-on-idle"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT, "post-commit"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED,
                       "routes-temporary-not-available-expired"),
     NM_UTILS_ENUM2STR_IGNORE(_NM_L3_CONFIG_NOTIFY_TYPE_NUM), );
+
+static NM_UTILS_ENUM2STR_DEFINE(_l3_acd_defend_type_to_string,
+                                NML3AcdDefendType,
+                                NM_UTILS_ENUM2STR(NM_L3_ACD_DEFEND_TYPE_ALWAYS, "always"),
+                                NM_UTILS_ENUM2STR(NM_L3_ACD_DEFEND_TYPE_NEVER, "never"),
+                                NM_UTILS_ENUM2STR(NM_L3_ACD_DEFEND_TYPE_NONE, "none"),
+                                NM_UTILS_ENUM2STR(NM_L3_ACD_DEFEND_TYPE_ONCE, "once"), );
+
+static NM_UTILS_LOOKUP_DEFINE(_l3_acd_defend_type_to_nacd,
+                              NML3AcdDefendType,
+                              int,
+                              NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT(0),
+                              NM_UTILS_LOOKUP_ITEM(NM_L3_ACD_DEFEND_TYPE_ALWAYS,
+                                                   N_ACD_DEFEND_ALWAYS),
+                              NM_UTILS_LOOKUP_ITEM(NM_L3_ACD_DEFEND_TYPE_ONCE, N_ACD_DEFEND_ONCE),
+                              NM_UTILS_LOOKUP_ITEM(NM_L3_ACD_DEFEND_TYPE_NEVER, N_ACD_DEFEND_NEVER),
+                              NM_UTILS_LOOKUP_ITEM_IGNORE_OTHER(), );
+
+static NM_UTILS_LOOKUP_DEFINE(_l3_acd_addr_state_to_string,
+                              NML3AcdAddrState,
+                              const char *,
+                              NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT(NULL),
+                              NM_UTILS_LOOKUP_ITEM(NM_L3_ACD_ADDR_STATE_CONFLICT, "conflict"),
+                              NM_UTILS_LOOKUP_ITEM(NM_L3_ACD_ADDR_STATE_READY, "ready"),
+                              NM_UTILS_LOOKUP_ITEM(NM_L3_ACD_ADDR_STATE_DEFENDING, "defending"),
+                              NM_UTILS_LOOKUP_ITEM(NM_L3_ACD_ADDR_STATE_INIT, "init"),
+                              NM_UTILS_LOOKUP_ITEM(NM_L3_ACD_ADDR_STATE_PROBING, "probing"),
+                              NM_UTILS_LOOKUP_ITEM(NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED,
+                                                   "external-removed"),
+                              NM_UTILS_LOOKUP_ITEM(NM_L3_ACD_ADDR_STATE_USED, "used"), );
 
 /*****************************************************************************/
 
@@ -297,9 +344,11 @@ _l3_config_notify_data_to_string(const NML3ConfigNotifyData *notify_data,
                                  char *                      sbuf,
                                  gsize                       sbuf_size)
 {
-    char  sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
-    char *s = sbuf;
-    gsize l = sbuf_size;
+    char      sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+    char      sbuf100[100];
+    char *    s = sbuf;
+    gsize     l = sbuf_size;
+    in_addr_t addr4;
 
     nm_assert(sbuf);
     nm_assert(sbuf_size > 0);
@@ -308,12 +357,12 @@ _l3_config_notify_data_to_string(const NML3ConfigNotifyData *notify_data,
     nm_utils_strbuf_seek_end(&s, &l);
 
     switch (notify_data->notify_type) {
-    case NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED:
+    case NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT:
         nm_utils_strbuf_append(&s,
                                &l,
-                               ", addr=%s, probe-result=%d",
-                               _nm_utils_inet4_ntop(notify_data->acd_completed.addr, sbuf_addr),
-                               (int) notify_data->acd_completed.probe_result);
+                               ", addr=%s, state=%s",
+                               _nm_utils_inet4_ntop(notify_data->acd_event.info.addr, sbuf_addr),
+                               _l3_acd_addr_state_to_string(notify_data->acd_event.info.state));
         break;
     case NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE:
         nm_utils_strbuf_append(
@@ -329,6 +378,19 @@ _l3_config_notify_data_to_string(const NML3ConfigNotifyData *notify_data,
                                &l,
                                ", obj-type-flags=0x%x",
                                notify_data->platform_change_on_idle.obj_type_flags);
+        break;
+    case NM_L3_CONFIG_NOTIFY_TYPE_IPV4LL_EVENT:
+        nm_assert(NM_IS_L3_IPV4LL(notify_data->ipv4ll_event.ipv4ll));
+        addr4 = nm_l3_ipv4ll_get_addr(notify_data->ipv4ll_event.ipv4ll);
+        nm_utils_strbuf_append(
+            &s,
+            &l,
+            ", ipv4ll=" NM_HASH_OBFUSCATE_PTR_FMT "%s%s, state=%s",
+            NM_HASH_OBFUSCATE_PTR(notify_data->ipv4ll_event.ipv4ll),
+            NM_PRINT_FMT_QUOTED2(addr4 != 0, ", addr=", _nm_utils_inet4_ntop(addr4, sbuf_addr), ""),
+            nm_l3_ipv4ll_state_to_string(nm_l3_ipv4ll_get_state(notify_data->ipv4ll_event.ipv4ll),
+                                         sbuf100,
+                                         sizeof(sbuf100)));
         break;
     default:
         break;
@@ -365,8 +427,9 @@ _nm_l3cfg_emit_signal_notify_simple(NML3Cfg *self, NML3ConfigNotifyType notify_t
 static void
 _l3_changed_configs_set_dirty(NML3Cfg *self)
 {
-    _LOGT("configuration changed");
-    self->priv.changed_configs = TRUE;
+    _LOGT("IP configuration changed (mark dirty)");
+    self->priv.p->changed_configs_configs   = TRUE;
+    self->priv.p->changed_configs_acd_state = TRUE;
 }
 
 /*****************************************************************************/
@@ -386,7 +449,11 @@ _l3_acd_ipv4_addresses_on_link_update(NML3Cfg * self,
         else
             self->priv.p->acd_ipv4_addresses_on_link_has = FALSE;
         if (acd_data)
-            _l3_acd_data_state_change(self, acd_data, ACD_STATE_CHANGE_MODE_EXTERNAL_ADDED, NULL);
+            _l3_acd_data_state_change(self,
+                                      acd_data,
+                                      ACD_STATE_CHANGE_MODE_EXTERNAL_ADDED,
+                                      NULL,
+                                      NULL);
         return;
     }
 
@@ -396,8 +463,13 @@ _l3_acd_ipv4_addresses_on_link_update(NML3Cfg * self,
      * cached addresses, and fetch them new the next time we need the information. */
     nm_clear_pointer(&self->priv.p->acd_ipv4_addresses_on_link, g_hash_table_unref);
     self->priv.p->acd_ipv4_addresses_on_link_has = FALSE;
-    if (acd_data)
-        _l3_acd_data_state_change(self, acd_data, ACD_STATE_CHANGE_MODE_EXTERNAL_REMOVED, NULL);
+    if (acd_data) {
+        _l3_acd_data_state_change(self,
+                                  acd_data,
+                                  ACD_STATE_CHANGE_MODE_EXTERNAL_REMOVED,
+                                  NULL,
+                                  NULL);
+    }
 }
 
 static gboolean
@@ -499,15 +571,15 @@ _l3cfg_externally_removed_objs_drop_unused(NML3Cfg *self)
 
     g_hash_table_iter_init(&h_iter, self->priv.p->externally_removed_objs_hash);
     while (g_hash_table_iter_next(&h_iter, (gpointer *) &obj, NULL)) {
-        if (!nm_l3_config_data_lookup_route_obj(self->priv.p->combined_l3cd_commited, obj)) {
+        if (!nm_l3_config_data_lookup_obj(self->priv.p->combined_l3cd_commited, obj)) {
             /* The object is no longer tracked in the configuration.
              * The externally_removed_objs_hash is to prevent adding entires that were
              * removed externally, so if we don't plan to add the entry, we no longer need to track
              * it. */
-            (*(_l3cfg_externally_removed_objs_counter(self, NMP_OBJECT_GET_TYPE(obj))))--;
-            g_hash_table_iter_remove(&h_iter);
             _LOGD("externally-removed: untrack %s",
                   nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+            (*(_l3cfg_externally_removed_objs_counter(self, NMP_OBJECT_GET_TYPE(obj))))--;
+            g_hash_table_iter_remove(&h_iter);
         }
     }
 }
@@ -525,10 +597,17 @@ _l3cfg_externally_removed_objs_track(NML3Cfg *self, const NMPObject *obj, gboole
     if (!is_removed) {
         /* the object is still (or again) present. It no longer gets hidden. */
         if (self->priv.p->externally_removed_objs_hash) {
-            if (g_hash_table_remove(self->priv.p->externally_removed_objs_hash, obj)) {
-                (*(_l3cfg_externally_removed_objs_counter(self, NMP_OBJECT_GET_TYPE(obj))))--;
+            const NMPObject *obj2;
+            gpointer         x_val;
+
+            if (g_hash_table_steal_extended(self->priv.p->externally_removed_objs_hash,
+                                            obj,
+                                            (gpointer *) &obj2,
+                                            &x_val)) {
+                (*(_l3cfg_externally_removed_objs_counter(self, NMP_OBJECT_GET_TYPE(obj2))))--;
                 _LOGD("externally-removed: untrack %s",
-                      nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+                      nmp_object_to_string(obj2, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+                nmp_object_unref(obj2);
             }
         }
         return;
@@ -558,26 +637,24 @@ _l3cfg_externally_removed_objs_track(NML3Cfg *self, const NMPObject *obj, gboole
 static void
 _l3cfg_externally_removed_objs_pickup(NML3Cfg *self, int addr_family)
 {
-    const gboolean   IS_IPv4 = NM_IS_IPv4(addr_family);
+    const int        IS_IPv4 = NM_IS_IPv4(addr_family);
     NMDedupMultiIter iter;
     const NMPObject *obj;
 
     if (!self->priv.p->combined_l3cd_commited)
         return;
 
-    nm_l3_config_data_iter_obj_for_each(&iter,
-                                        self->priv.p->combined_l3cd_commited,
-                                        &obj,
-                                        NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4))
-    {
+    nm_l3_config_data_iter_obj_for_each (&iter,
+                                         self->priv.p->combined_l3cd_commited,
+                                         &obj,
+                                         NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4)) {
         if (!nm_platform_lookup_entry(self->priv.platform, NMP_CACHE_ID_TYPE_OBJECT_TYPE, obj))
             _l3cfg_externally_removed_objs_track(self, obj, TRUE);
     }
-    nm_l3_config_data_iter_obj_for_each(&iter,
-                                        self->priv.p->combined_l3cd_commited,
-                                        &obj,
-                                        NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4))
-    {
+    nm_l3_config_data_iter_obj_for_each (&iter,
+                                         self->priv.p->combined_l3cd_commited,
+                                         &obj,
+                                         NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4)) {
         if (!nm_platform_lookup_entry(self->priv.platform, NMP_CACHE_ID_TYPE_OBJECT_TYPE, obj))
             _l3cfg_externally_removed_objs_track(self, obj, TRUE);
     }
@@ -590,7 +667,11 @@ _l3cfg_externally_removed_objs_filter(/* const NMDedupMultiObj * */ gconstpointe
     const NMPObject *obj                          = o;
     GHashTable *     externally_removed_objs_hash = user_data;
 
-    return !g_hash_table_contains(externally_removed_objs_hash, obj);
+    if (NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_IP4_ADDRESS
+        && NMP_OBJECT_CAST_IP4_ADDRESS(obj)->ip4acd_not_ready)
+        return FALSE;
+
+    return !nm_g_hash_table_contains(externally_removed_objs_hash, obj);
 }
 
 /*****************************************************************************/
@@ -664,9 +745,16 @@ _load_link(NML3Cfg *self, gboolean initial)
         _l3_acd_nacd_instance_reset(self, NM_TERNARY_FALSE, TRUE);
     } else if (nacd_link_now_up) {
         if (!c_list_is_empty(&self->priv.p->acd_lst_head)) {
+            gint64 now_msec = 0;
+
             _LOGT("acd: link up requires are re-initialize of ACD probes");
-            c_list_for_each_entry (acd_data, &self->priv.p->acd_lst_head, acd_lst)
-                _l3_acd_data_state_change(self, acd_data, ACD_STATE_CHANGE_MODE_LINK_NOW_UP, NULL);
+            c_list_for_each_entry (acd_data, &self->priv.p->acd_lst_head, acd_lst) {
+                _l3_acd_data_state_change(self,
+                                          acd_data,
+                                          ACD_STATE_CHANGE_MODE_LINK_NOW_UP,
+                                          NULL,
+                                          &now_msec);
+            }
         }
     }
 }
@@ -687,7 +775,7 @@ _nm_l3cfg_notify_platform_change_on_idle(NML3Cfg *self, guint32 obj_type_flags)
     };
     _nm_l3cfg_emit_signal_notify(self, &notify_data);
 
-    _l3_acd_data_notify_acd_completed_all(self);
+    _nm_l3cfg_emit_signal_notify_acd_event_all(self);
 
     if (NM_FLAGS_ANY(obj_type_flags, nmp_object_type_to_flags(NMP_OBJECT_TYPE_IP4_ROUTE)))
         _property_emit_notify(self, NM_L3CFG_PROPERTY_EMIT_TYPE_IP4_ROUTE);
@@ -891,84 +979,77 @@ nm_l3cfg_get_acd_is_pending(NML3Cfg *self)
 }
 
 static gboolean
-_acd_track_data_is_not_dirty(const AcdTrackData *acd_track)
+_acd_track_data_is_not_dirty(const NML3AcdAddrTrackInfo *acd_track)
 {
-    return acd_track && !acd_track->acd_dirty;
+    return acd_track && !acd_track->_priv.acd_dirty_track;
 }
 
 static void
-_acd_track_data_free(AcdTrackData *acd_track)
+_acd_track_data_clear(NML3AcdAddrTrackInfo *acd_track)
 {
-    c_list_unlink_stale(&acd_track->acd_track_lst);
     nm_l3_config_data_unref(acd_track->l3cd);
     nmp_object_unref(acd_track->obj);
-    nm_g_slice_free(acd_track);
 }
 
 static void
 _acd_data_free(AcdData *acd_data)
 {
-    nm_assert(c_list_is_empty(&acd_data->acd_track_lst_head));
+    nm_assert(acd_data->info.n_track_infos == 0u);
 
     n_acd_probe_free(acd_data->nacd_probe);
-    nm_clear_g_source_inst(&acd_data->acd_timeout_source);
+    nm_clear_g_source_inst(&acd_data->acd_data_timeout_source);
     c_list_unlink_stale(&acd_data->acd_lst);
+    c_list_unlink_stale(&acd_data->acd_event_notify_lst);
+    g_free((NML3AcdAddrTrackInfo *) acd_data->info.track_infos);
     nm_g_slice_free(acd_data);
 }
 
-static gboolean
-_acd_data_probe_result_is_good(const AcdData *acd_data)
-{
-    nm_assert(acd_data);
-
-    if (acd_data->acd_state < ACD_STATE_PROBE_DONE) {
-        /* we are currently probing. Wait. */
-        return FALSE;
-    }
-
-    /* Probing is already completed. Use the probe result. */
-    return acd_data->probe_result;
-}
-
 static guint
-_acd_data_collect_tracks_data(const AcdData *acd_data,
-                              NMTernary      dirty_selector,
-                              NMTernary      acd_failed_notified_selector,
-                              guint32 *      out_best_acd_timeout_msec)
+_acd_data_collect_tracks_data(const AcdData *    acd_data,
+                              NMTernary          dirty_selector,
+                              guint32 *          out_best_acd_timeout_msec,
+                              NML3AcdDefendType *out_best_acd_defend_type)
 {
-    guint32       best_acd_timeout_msec = G_MAXUINT32;
-    AcdTrackData *acd_track;
-    guint         n = 0;
+    NML3AcdDefendType best_acd_defend_type  = NM_L3_ACD_DEFEND_TYPE_NONE;
+    guint32           best_acd_timeout_msec = G_MAXUINT32;
+    guint             n                     = 0;
+    guint             i;
 
-    c_list_for_each_entry (acd_track, &acd_data->acd_track_lst_head, acd_track_lst) {
+    for (i = 0; i < acd_data->info.n_track_infos; i++) {
+        const NML3AcdAddrTrackInfo *acd_track = &acd_data->info.track_infos[i];
+
         if (dirty_selector != NM_TERNARY_DEFAULT) {
-            if ((!!dirty_selector) != (!!acd_track->acd_dirty))
-                continue;
-        }
-        if (acd_failed_notified_selector != NM_TERNARY_DEFAULT) {
-            if ((!!acd_failed_notified_selector) != (!!acd_track->acd_failed_notified))
+            if ((!!dirty_selector) != (!!acd_track->_priv.acd_dirty_track))
                 continue;
         }
         n++;
-        if (best_acd_timeout_msec > acd_track->acd_timeout_msec)
-            best_acd_timeout_msec = acd_track->acd_timeout_msec;
+        if (best_acd_timeout_msec > acd_track->_priv.acd_timeout_msec_track)
+            best_acd_timeout_msec = acd_track->_priv.acd_timeout_msec_track;
+        if (best_acd_defend_type < acd_track->_priv.acd_defend_type_track)
+            best_acd_defend_type = acd_track->_priv.acd_defend_type_track;
     }
 
+    nm_assert(n == 0 || best_acd_defend_type > NM_L3_ACD_DEFEND_TYPE_NONE);
+    nm_assert(best_acd_defend_type <= NM_L3_ACD_DEFEND_TYPE_ALWAYS);
+
     NM_SET_OUT(out_best_acd_timeout_msec, n > 0 ? best_acd_timeout_msec : 0u);
+    NM_SET_OUT(out_best_acd_defend_type, best_acd_defend_type);
     return n;
 }
 
-static AcdTrackData *
+static NML3AcdAddrTrackInfo *
 _acd_data_find_track(const AcdData *       acd_data,
                      const NML3ConfigData *l3cd,
                      const NMPObject *     obj,
                      gconstpointer         tag)
 {
-    AcdTrackData *acd_track;
+    guint i;
 
-    c_list_for_each_entry (acd_track, &acd_data->acd_track_lst_head, acd_track_lst) {
+    for (i = 0; i < acd_data->info.n_track_infos; i++) {
+        const NML3AcdAddrTrackInfo *acd_track = &acd_data->info.track_infos[i];
+
         if (acd_track->obj == obj && acd_track->l3cd == l3cd && acd_track->tag == tag)
-            return acd_track;
+            return (NML3AcdAddrTrackInfo *) acd_track;
     }
 
     return NULL;
@@ -993,7 +1074,7 @@ _acd_has_valid_link(const NMPObject *obj,
     link = NMP_OBJECT_CAST_LINK(obj);
 
     addr_bin = nmp_link_address_get(&link->l_address, &addr_len);
-    if (!addr_bin || addr_len != ACD_SUPPORTED_ETH_ALEN) {
+    if (addr_len != ACD_SUPPORTED_ETH_ALEN) {
         NM_SET_OUT(out_acd_not_supported, TRUE);
         return FALSE;
     }
@@ -1001,6 +1082,21 @@ _acd_has_valid_link(const NMPObject *obj,
     NM_SET_OUT(out_acd_not_supported, FALSE);
     NM_SET_OUT(out_addr_bin, addr_bin);
     return TRUE;
+}
+
+static gboolean
+_l3_acd_nacd_event_down_timeout_cb(gpointer user_data)
+{
+    NML3Cfg *self = user_data;
+    AcdData *acd_data;
+    gint64   now_msec = 0;
+
+    _LOGT("acd: message possibly dropped due to device down (handle events)");
+    nm_clear_g_source_inst(&self->priv.p->nacd_event_down_source);
+    c_list_for_each_entry (acd_data, &self->priv.p->acd_lst_head, acd_lst)
+        _l3_acd_data_state_change(self, acd_data, ACD_STATE_CHANGE_MODE_NACD_DOWN, NULL, &now_msec);
+    _nm_l3cfg_emit_signal_notify_acd_event_all(self);
+    return G_SOURCE_REMOVE;
 }
 
 static gboolean
@@ -1020,8 +1116,10 @@ _l3_acd_nacd_event(int fd, GIOCondition condition, gpointer user_data)
     }
 
     while (TRUE) {
-        AcdData *  acd_data;
-        NAcdEvent *event;
+        NMEtherAddr        sender_addr_data;
+        const NMEtherAddr *sender_addr;
+        AcdData *          acd_data;
+        NAcdEvent *        event;
 
         r = n_acd_pop_event(self->priv.p->nacd, &event);
         if (r) {
@@ -1033,77 +1131,83 @@ _l3_acd_nacd_event(int fd, GIOCondition condition, gpointer user_data)
             goto out;
         }
 
-#define _acd_event_payload used
-        G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(NAcdEvent, _acd_event_payload)
-                             == G_STRUCT_OFFSET(NAcdEvent, defended));
-        G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(NAcdEvent, _acd_event_payload)
-                             == G_STRUCT_OFFSET(NAcdEvent, conflict));
-        G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(NAcdEvent, _acd_event_payload)
-                             == G_STRUCT_OFFSET(NAcdEvent, used));
-        nm_assert(&event->_acd_event_payload == &event->defended);
-        nm_assert(&event->_acd_event_payload == &event->conflict);
-        nm_assert(&event->_acd_event_payload == &event->used);
-
         switch (event->event) {
         case N_ACD_EVENT_READY:
-            n_acd_probe_get_userdata(event->_acd_event_payload.probe, (void **) &acd_data);
-            _l3_acd_data_state_change(self, acd_data, ACD_STATE_CHANGE_MODE_NACD_READY, event);
+            n_acd_probe_get_userdata(event->ready.probe, (void **) &acd_data);
+            _l3_acd_data_state_change(self, acd_data, ACD_STATE_CHANGE_MODE_NACD_READY, NULL, NULL);
             break;
         case N_ACD_EVENT_USED:
-            n_acd_probe_get_userdata(event->_acd_event_payload.probe, (void **) &acd_data);
-            _l3_acd_data_state_change(self, acd_data, ACD_STATE_CHANGE_MODE_NACD_USED, event);
-            break;
         case N_ACD_EVENT_DEFENDED:
         case N_ACD_EVENT_CONFLICT:
         {
-            gs_free char *sender_str = NULL;
-            const char *  addr_str   = NULL;
-            char          sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+#define _acd_event_payload_with_sender(event)          \
+    ({                                                 \
+        NAcdEvent *_event = (event);                   \
+                                                       \
+        nm_assert(event);                              \
+        nm_assert(NM_IN_SET(event->event,              \
+                            N_ACD_EVENT_USED,          \
+                            N_ACD_EVENT_DEFENDED,      \
+                            N_ACD_EVENT_CONFLICT));    \
+        nm_assert(&_event->used == &_event->defended); \
+        nm_assert(&_event->used == &_event->conflict); \
+        &_event->used;                                 \
+    })
 
-            /* since we announce with N_ACD_DEFEND_ALWAYS, we don't actually expect any
-             * conflict reported and don't handle it. It would be complicated to de-configure
-             * the address. */
-            nm_assert(event->event == N_ACD_EVENT_DEFENDED);
+            n_acd_probe_get_userdata(_acd_event_payload_with_sender(event)->probe,
+                                     (void **) &acd_data);
 
-            n_acd_probe_get_userdata(event->_acd_event_payload.probe, (void **) &acd_data);
-            _LOGT_acd(acd_data,
-                      "address %s %s from %s",
-                      (addr_str = _nm_utils_inet4_ntop(acd_data->addr, sbuf_addr)),
-                      event->event == N_ACD_EVENT_DEFENDED ? "defended" : "conflict detected",
-                      (sender_str = nm_utils_bin2hexstr_full(event->_acd_event_payload.sender,
-                                                             event->_acd_event_payload.n_sender,
-                                                             ':',
-                                                             FALSE,
-                                                             NULL)));
-            if (event->event == N_ACD_EVENT_CONFLICT) {
-                _LOGW("IPv4 address collision detection sees conflict on interface %i%s%s%s for "
-                      "address %s from host %s",
-                      self->priv.ifindex,
-                      NM_PRINT_FMT_QUOTED(self->priv.plobj,
-                                          " (",
-                                          NMP_OBJECT_CAST_LINK(self->priv.plobj)->name,
-                                          ")",
-                                          ""),
-                      addr_str ?: _nm_utils_inet4_ntop(acd_data->addr, sbuf_addr),
-                      sender_str
-                          ?: (sender_str =
-                                  nm_utils_bin2hexstr_full(event->_acd_event_payload.sender,
-                                                           event->_acd_event_payload.n_sender,
-                                                           ':',
-                                                           FALSE,
-                                                           NULL)));
+            if (_acd_event_payload_with_sender(event)->n_sender == ETH_ALEN) {
+                G_STATIC_ASSERT_EXPR(_nm_alignof(NMEtherAddr) == 1);
+                nm_assert(_acd_event_payload_with_sender(event)->sender);
+                memcpy(&sender_addr_data, _acd_event_payload_with_sender(event)->sender, ETH_ALEN);
+                sender_addr = &sender_addr_data;
+            } else {
+                nm_assert_not_reached();
+                sender_addr = &nm_ether_addr_zero;
             }
+
+            _l3_acd_data_state_change(self,
+                                      acd_data,
+                                      (AcdStateChangeMode) event->event,
+                                      sender_addr,
+                                      NULL);
             break;
         }
         case N_ACD_EVENT_DOWN:
-            _LOGT("acd: message possibly dropped due to device down.");
-            c_list_for_each_entry (acd_data, &self->priv.p->acd_lst_head, acd_lst)
-                _l3_acd_data_state_change(self, acd_data, ACD_STATE_CHANGE_MODE_NACD_DOWN, NULL);
+            if (!self->priv.p->nacd_event_down_source) {
+                gint64  now_msec;
+                guint32 timeout_msec;
+
+                now_msec = nm_utils_get_monotonic_timestamp_msec();
+                if (self->priv.p->nacd_event_down_ratelimited_until_msec > 0
+                    && now_msec < self->priv.p->nacd_event_down_ratelimited_until_msec)
+                    timeout_msec = self->priv.p->nacd_event_down_ratelimited_until_msec - now_msec;
+                else {
+                    timeout_msec                                         = 0;
+                    self->priv.p->nacd_event_down_ratelimited_until_msec = now_msec + 2000;
+                }
+                _LOGT("acd: message possibly dropped due to device down (schedule handling event "
+                      "in %u msec)",
+                      timeout_msec);
+                self->priv.p->nacd_event_down_source =
+                    nm_g_timeout_source_new(timeout_msec,
+                                            G_PRIORITY_DEFAULT,
+                                            _l3_acd_nacd_event_down_timeout_cb,
+                                            self,
+                                            NULL);
+                g_source_attach(self->priv.p->nacd_event_down_source, NULL);
+            }
             break;
         default:
-            _LOGT("acd: unexpected event %u. Ignore", event->event);
+            _LOGE("acd: unexpected event %u. Ignore", event->event);
+            nm_assert_not_reached();
             break;
         }
+
+        /* We are on an idle handler, and the n-acd events are expected to be independent. So, after
+         * each event emit all queued AcdEvent signals. */
+        _nm_l3cfg_emit_signal_notify_acd_event_all(self);
     }
 
     nm_assert_not_reached();
@@ -1114,8 +1218,6 @@ out:
          * ACD instance. */
         _l3_acd_nacd_instance_reset(self, NM_TERNARY_TRUE, TRUE);
     }
-
-    _l3_acd_data_notify_acd_completed_all(self);
 
     return G_SOURCE_CONTINUE;
 }
@@ -1167,9 +1269,15 @@ _l3_acd_nacd_instance_reset(NML3Cfg *self, NMTernary start_timer, gboolean acd_d
 
     if (acd_data_notify) {
         AcdData *acd_data;
+        gint64   now_msec = 0;
 
-        c_list_for_each_entry (acd_data, &self->priv.p->acd_lst_head, acd_lst)
-            _l3_acd_data_state_change(self, acd_data, ACD_STATE_CHANGE_MODE_INSTANCE_RESET, NULL);
+        c_list_for_each_entry (acd_data, &self->priv.p->acd_lst_head, acd_lst) {
+            _l3_acd_data_state_change(self,
+                                      acd_data,
+                                      ACD_STATE_CHANGE_MODE_INSTANCE_RESET,
+                                      NULL,
+                                      &now_msec);
+        }
     }
 }
 
@@ -1275,30 +1383,37 @@ _l3_acd_nacd_instance_create_probe(NML3Cfg *    self,
 }
 
 static void
-_l3_acd_data_free_trackers(NML3Cfg *self, AcdData *acd_data, gboolean all /* or only dirty */)
+_l3_acd_data_prune_one(NML3Cfg *self, AcdData *acd_data, gboolean all /* or only dirty */)
 {
-    AcdTrackData *acd_track;
-    AcdTrackData *acd_track_safe;
+    NML3AcdAddrTrackInfo *acd_tracks;
+    guint                 i;
+    guint                 j;
 
-    c_list_for_each_entry_safe (acd_track,
-                                acd_track_safe,
-                                &acd_data->acd_track_lst_head,
-                                acd_track_lst) {
+    acd_tracks = (NML3AcdAddrTrackInfo *) acd_data->info.track_infos;
+    j          = 0;
+    for (i = 0; i < acd_data->info.n_track_infos; i++) {
+        NML3AcdAddrTrackInfo *acd_track = &acd_tracks[i];
+
         /* If not "all" is requested, we only delete the dirty ones
          * (and mark the survivors as dirty right away). */
-        if (!all && !acd_track->acd_dirty) {
-            acd_track->acd_dirty = TRUE;
+        if (!all && !acd_track->_priv.acd_dirty_track) {
+            acd_track->_priv.acd_dirty_track = TRUE;
+            if (j != i)
+                acd_tracks[j] = *acd_track;
+            j++;
             continue;
         }
 
         _LOGT_acd(acd_data, "untrack " ACD_TRACK_FMT "", ACD_TRACK_PTR(acd_track));
 
-        _acd_track_data_free(acd_track);
+        _acd_track_data_clear(acd_track);
     }
 
-    if (!c_list_is_empty(&acd_data->acd_track_lst_head))
+    acd_data->info.n_track_infos = j;
+    if (j > 0)
         return;
 
+    _LOGT_acd(acd_data, "removed");
     if (!g_hash_table_remove(self->priv.p->acd_lst_hash, acd_data))
         nm_assert_not_reached();
     _acd_data_free(acd_data);
@@ -1311,7 +1426,7 @@ _l3_acd_data_prune(NML3Cfg *self, gboolean all /* or only dirty */)
     AcdData *acd_data;
 
     c_list_for_each_entry_safe (acd_data, acd_data_safe, &self->priv.p->acd_lst_head, acd_lst)
-        _l3_acd_data_free_trackers(self, acd_data, all);
+        _l3_acd_data_prune_one(self, acd_data, all);
 }
 
 static AcdData *
@@ -1320,17 +1435,33 @@ _l3_acd_data_find(NML3Cfg *self, in_addr_t addr)
     return nm_g_hash_table_lookup(self->priv.p->acd_lst_hash, &addr);
 }
 
+static gboolean
+_l3_acd_data_defendconflict_warning_ratelimited(AcdData *acd_data, gint64 *p_now_msec)
+{
+    nm_utils_get_monotonic_timestamp_msec_cached(p_now_msec);
+
+    if (acd_data->last_defendconflict_timestamp_msec == 0
+        || acd_data->last_defendconflict_timestamp_msec
+               > *p_now_msec - ACD_DEFENDCONFLICT_INFO_RATELIMIT_MSEC) {
+        acd_data->last_defendconflict_timestamp_msec = *p_now_msec;
+        return FALSE;
+    }
+    return TRUE;
+}
+
 static void
 _l3_acd_data_add(NML3Cfg *             self,
                  const NML3ConfigData *l3cd,
                  const NMPObject *     obj,
                  gconstpointer         tag,
+                 NML3AcdDefendType     acd_defend_type,
                  guint32               acd_timeout_msec)
 {
-    in_addr_t     addr = NMP_OBJECT_CAST_IP4_ADDRESS(obj)->address;
-    AcdTrackData *acd_track;
-    AcdData *     acd_data;
-    const char *  track_mode;
+    in_addr_t             addr = NMP_OBJECT_CAST_IP4_ADDRESS(obj)->address;
+    NML3AcdAddrTrackInfo *acd_track;
+    AcdData *             acd_data;
+    const char *          track_mode;
+    char                  sbuf100[100];
 
     if (ACD_ADDR_SKIP(addr))
         return;
@@ -1345,64 +1476,93 @@ _l3_acd_data_add(NML3Cfg *             self,
 
     if (!acd_data) {
         if (G_UNLIKELY(!self->priv.p->acd_lst_hash)) {
-            G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(AcdData, addr) == 0);
+            G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(AcdData, info.addr) == 0);
             self->priv.p->acd_lst_hash = g_hash_table_new(nm_puint32_hash, nm_puint32_equals);
         }
 
         acd_data  = g_slice_new(AcdData);
         *acd_data = (AcdData){
-            .self                    = self,
-            .addr                    = addr,
-            .acd_track_lst_head      = C_LIST_INIT(acd_data->acd_track_lst_head),
-            .acd_notify_complete_lst = C_LIST_INIT(acd_data->acd_notify_complete_lst),
-            .acd_state               = ACD_STATE_INIT,
-            .probing_timestamp_msec  = 0,
-            .probe_result            = FALSE,
-            .initializing            = TRUE,
+            .info =
+                {
+                    .l3cfg         = self,
+                    .addr          = addr,
+                    .state         = NM_L3_ACD_ADDR_STATE_INIT,
+                    .n_track_infos = 0,
+                    .track_infos   = NULL,
+                },
+            .n_track_infos_alloc       = 0,
+            .acd_event_notify_lst      = C_LIST_INIT(acd_data->acd_event_notify_lst),
+            .probing_timestamp_msec    = 0,
+            .acd_defend_type_desired   = NM_L3_ACD_DEFEND_TYPE_NONE,
+            .acd_defend_type_current   = NM_L3_ACD_DEFEND_TYPE_NONE,
+            .acd_defend_type_is_active = FALSE,
         };
         c_list_link_tail(&self->priv.p->acd_lst_head, &acd_data->acd_lst);
         if (!g_hash_table_add(self->priv.p->acd_lst_hash, acd_data))
             nm_assert_not_reached();
         acd_track = NULL;
-    } else {
+    } else
         acd_track = _acd_data_find_track(acd_data, l3cd, obj, tag);
-    }
 
     if (!acd_track) {
-        acd_track  = g_slice_new(AcdTrackData);
-        *acd_track = (AcdTrackData){
-            .l3cd             = nm_l3_config_data_ref(l3cd),
-            .obj              = nmp_object_ref(obj),
-            .tag              = tag,
-            .acd_dirty        = FALSE,
-            .acd_timeout_msec = acd_timeout_msec,
+        if (acd_data->info.n_track_infos >= acd_data->n_track_infos_alloc) {
+            acd_data->n_track_infos_alloc = NM_MAX(2u, acd_data->n_track_infos_alloc * 2u);
+            acd_data->info.track_infos =
+                g_realloc((gpointer) acd_data->info.track_infos,
+                          acd_data->n_track_infos_alloc * sizeof(acd_data->info.track_infos[0]));
+        }
+        acd_track =
+            (NML3AcdAddrTrackInfo *) &acd_data->info.track_infos[acd_data->info.n_track_infos++];
+        *acd_track = (NML3AcdAddrTrackInfo){
+            .l3cd                         = nm_l3_config_data_ref(l3cd),
+            .obj                          = nmp_object_ref(obj),
+            .tag                          = tag,
+            ._priv.acd_dirty_track        = FALSE,
+            ._priv.acd_defend_type_track  = acd_defend_type,
+            ._priv.acd_timeout_msec_track = acd_timeout_msec,
         };
-        c_list_link_tail(&acd_data->acd_track_lst_head, &acd_track->acd_track_lst);
         track_mode = "new";
     } else {
-        nm_assert(acd_track->acd_dirty);
-        acd_track->acd_dirty = FALSE;
-        if (acd_track->acd_timeout_msec != acd_timeout_msec) {
-            acd_track->acd_timeout_msec = acd_timeout_msec;
-            track_mode                  = "update";
+        nm_assert(acd_track->_priv.acd_dirty_track);
+        acd_track->_priv.acd_dirty_track = FALSE;
+        if (acd_track->_priv.acd_timeout_msec_track != acd_timeout_msec
+            || acd_track->_priv.acd_defend_type_track != acd_defend_type) {
+            acd_track->_priv.acd_defend_type_track  = acd_defend_type;
+            acd_track->_priv.acd_timeout_msec_track = acd_timeout_msec;
+            track_mode                              = "update";
         } else
-            track_mode = NULL;
+            return;
     }
 
-    if (track_mode) {
-        _LOGT_acd(acd_data,
-                  "track " ACD_TRACK_FMT " with timeout %u msec (%s)",
-                  ACD_TRACK_PTR(acd_track),
-                  acd_timeout_msec,
-                  track_mode);
-    }
+    acd_data->track_infos_changed = TRUE;
+    _LOGT_acd(acd_data,
+              "track " ACD_TRACK_FMT " with timeout %u msec, defend=%s (%s)",
+              ACD_TRACK_PTR(acd_track),
+              acd_timeout_msec,
+              _l3_acd_defend_type_to_string(acd_track->_priv.acd_defend_type_track,
+                                            sbuf100,
+                                            sizeof(sbuf100)),
+              track_mode);
 }
 
 static void
-_l3_acd_data_add_all(NML3Cfg *self, const L3ConfigData *const *infos, guint infos_len)
+_l3_acd_data_add_all(NML3Cfg *                  self,
+                     const L3ConfigData *const *infos,
+                     guint                      infos_len,
+                     gboolean                   reapply)
 {
     AcdData *acd_data;
     guint    i_info;
+    gint64   now_msec = 0;
+    guint    i;
+
+    if (NM_MORE_ASSERTS > 5) {
+        c_list_for_each_entry (acd_data, &self->priv.p->acd_lst_head, acd_lst) {
+            nm_assert(acd_data->info.n_track_infos > 0u);
+            for (i = 0; i < acd_data->info.n_track_infos; i++)
+                nm_assert(acd_data->info.track_infos[i]._priv.acd_dirty_track);
+        }
+    }
 
     /* First we add/track all the relevant addresses for ACD. */
     for (i_info = 0; i_info < infos_len; i_info++) {
@@ -1410,63 +1570,54 @@ _l3_acd_data_add_all(NML3Cfg *self, const L3ConfigData *const *infos, guint info
         NMDedupMultiIter    iter;
         const NMPObject *   obj;
 
-        nm_l3_config_data_iter_obj_for_each(&iter, info->l3cd, &obj, NMP_OBJECT_TYPE_IP4_ADDRESS)
-            _l3_acd_data_add(self, info->l3cd, obj, info->tag, info->acd_timeout_msec);
+        nm_l3_config_data_iter_obj_for_each (&iter, info->l3cd, &obj, NMP_OBJECT_TYPE_IP4_ADDRESS) {
+            _l3_acd_data_add(self,
+                             info->l3cd,
+                             obj,
+                             info->tag_confdata,
+                             info->acd_defend_type_confdata,
+                             info->acd_timeout_msec_confdata);
+        }
     }
 
     /* Then we do a pre-flight check, whether some of the acd_data entries can already
      * move forward to automatically pass ACD. That is the case if acd_timeout_msec
      * is zero (to disable ACD) or if the address is already configured on the
      * interface. */
-    c_list_for_each_entry (acd_data, &self->priv.p->acd_lst_head, acd_lst)
-        _l3_acd_data_state_change(self, acd_data, ACD_STATE_CHANGE_MODE_INIT, NULL);
+    c_list_for_each_entry (acd_data, &self->priv.p->acd_lst_head, acd_lst) {
+        _l3_acd_data_state_change(self,
+                                  acd_data,
+                                  reapply ? ACD_STATE_CHANGE_MODE_INIT_REAPPLY
+                                          : ACD_STATE_CHANGE_MODE_INIT,
+                                  NULL,
+                                  &now_msec);
+    }
 }
 
 static gboolean
 _l3_acd_data_timeout_cb(gpointer user_data)
 {
     AcdData *acd_data = user_data;
-    NML3Cfg *self     = acd_data->self;
+    NML3Cfg *self     = acd_data->info.l3cfg;
 
     nm_assert(NM_IS_L3CFG(self));
 
-    nm_clear_g_source_inst(&acd_data->acd_timeout_source);
-    _l3_acd_data_state_change(self, acd_data, ACD_STATE_CHANGE_MODE_TIMEOUT, NULL);
+    nm_clear_g_source_inst(&acd_data->acd_data_timeout_source);
+    _l3_acd_data_state_change(self, acd_data, ACD_STATE_CHANGE_MODE_TIMEOUT, NULL, NULL);
     return G_SOURCE_REMOVE;
 }
 
 static void
-_l3_acd_data_timeout_schedule(AcdData *acd_data,
-                              gint64   now_msec,
-                              gint64   expiry_msec,
-                              gboolean msec_granularity)
+_l3_acd_data_timeout_schedule(AcdData *acd_data, gint64 timeout_msec)
 {
-    nm_assert(expiry_msec > 0);
-    nm_assert(now_msec > 0);
-
-    if (acd_data->acd_timeout_source && acd_data->acd_timeout_expiry_msec == expiry_msec)
-        return;
-
-    nm_clear_g_source_inst(&acd_data->acd_timeout_source);
-
-    acd_data->acd_timeout_expiry_msec = expiry_msec;
-
-    if (msec_granularity) {
-        acd_data->acd_timeout_source = nm_g_timeout_source_new(NM_MAX(0, expiry_msec - now_msec),
-                                                               G_PRIORITY_DEFAULT,
-                                                               _l3_acd_data_timeout_cb,
-                                                               acd_data,
-                                                               NULL);
-    } else {
-        acd_data->acd_timeout_source =
-            nm_g_timeout_source_new_seconds((NM_MAX(0, expiry_msec - now_msec) + 999) / 1000,
-                                            G_PRIORITY_DEFAULT,
-                                            _l3_acd_data_timeout_cb,
-                                            acd_data,
-                                            NULL);
-    }
-
-    g_source_attach(acd_data->acd_timeout_source, NULL);
+    nm_clear_g_source_inst(&acd_data->acd_data_timeout_source);
+    acd_data->acd_data_timeout_source =
+        nm_g_timeout_source_new(NM_CLAMP((gint64) 0, timeout_msec, (gint64) G_MAXUINT),
+                                G_PRIORITY_DEFAULT,
+                                _l3_acd_data_timeout_cb,
+                                acd_data,
+                                NULL);
+    g_source_attach(acd_data->acd_data_timeout_source, NULL);
 }
 
 static void
@@ -1477,7 +1628,7 @@ _l3_acd_data_timeout_schedule_probing_restart(AcdData *acd_data, gint64 now_msec
 
     nm_assert(acd_data);
     nm_assert(now_msec > 0);
-    nm_assert(acd_data->acd_state == ACD_STATE_PROBING);
+    nm_assert(acd_data->info.state == NM_L3_ACD_ADDR_STATE_PROBING);
     nm_assert(!acd_data->nacd_probe);
     nm_assert(acd_data->probing_timeout_msec > 0);
     nm_assert(acd_data->probing_timestamp_msec > 0);
@@ -1486,152 +1637,168 @@ _l3_acd_data_timeout_schedule_probing_restart(AcdData *acd_data, gint64 now_msec
 
     timeout_msec = NM_MAX(0, expiry_msec - now_msec);
 
-    if (timeout_msec > 1000) {
-        /* we poll at least once per second to re-check the state. */
-        timeout_msec = 1000;
+    if (timeout_msec > 1500) {
+        /* we poll at least every 1.5 seconds to re-check the state. */
+        timeout_msec = 1500;
     }
 
-    _l3_acd_data_timeout_schedule(acd_data, now_msec, now_msec + timeout_msec, TRUE);
+    _l3_acd_data_timeout_schedule(acd_data, timeout_msec);
 }
 
 static void
-_l3_acd_data_timeout_schedule_probing_full_restart(AcdData *acd_data, gint64 now_msec)
+_nm_l3cfg_emit_signal_notify_acd_event(NML3Cfg *self, AcdData *acd_data)
 {
+    gs_free NML3AcdAddrTrackInfo *track_infos_clone = NULL;
+    NML3ConfigNotifyData          notify_data;
+    NML3AcdAddrInfo *             info;
+    guint                         i;
+
     nm_assert(acd_data);
-    nm_assert(now_msec > 0);
-    nm_assert(acd_data->acd_state == ACD_STATE_PROBE_DONE);
-    nm_assert(!acd_data->probe_result);
+    nm_assert(acd_data->info.state > NM_L3_ACD_ADDR_STATE_INIT);
+    nm_assert(acd_data->info.n_track_infos > 0);
 
-    _l3_acd_data_timeout_schedule(acd_data,
-                                  now_msec,
-                                  now_msec + ACD_WAIT_TIME_PROBING_FULL_RESTART_MSEC,
-                                  FALSE);
-}
-
-static void
-_l3_acd_data_timeout_schedule_announce_restart(AcdData *acd_data, gint64 now_msec)
-{
-    nm_assert(acd_data);
-    nm_assert(now_msec > 0);
-    nm_assert(acd_data->acd_state == ACD_STATE_PROBE_DONE);
-    nm_assert(acd_data->probe_result);
-
-    _l3_acd_data_timeout_schedule(acd_data,
-                                  now_msec,
-                                  now_msec + ACD_WAIT_TIME_ANNOUNCE_RESTART_MSEC,
-                                  FALSE);
-}
-
-static void
-_l3_acd_data_notify_acd_completed(NML3Cfg *self, AcdData *acd_data, gboolean force_all)
-{
-    gs_free NML3ConfigNotifyPayloadAcdFailedSource *sources_free = NULL;
-    NML3ConfigNotifyPayloadAcdFailedSource *        sources      = NULL;
-    NML3ConfigNotifyData                            notify_data;
-    AcdTrackData *                                  acd_track;
-    guint                                           i, n;
-    NMTernary                                       acd_failed_notified_selector;
-
-    nm_assert(NM_IS_L3CFG(self));
-    nm_assert(acd_data);
-    nm_assert(_acd_data_collect_tracks_data(acd_data, FALSE, NM_TERNARY_DEFAULT, NULL) == 0);
-
-    acd_failed_notified_selector = force_all ? NM_TERNARY_DEFAULT : FALSE;
-
-    n = _acd_data_collect_tracks_data(acd_data,
-                                      NM_TERNARY_DEFAULT,
-                                      acd_failed_notified_selector,
-                                      NULL);
-
-    if (n == 0)
-        return;
-
-    if (!force_all) {
-        _LOGT_acd(acd_data, "state: acd probe failed earlier. Emit notification for new trackers");
-    }
-
-    if (n * sizeof(sources[0]) > 300) {
-        sources_free = g_new(NML3ConfigNotifyPayloadAcdFailedSource, n);
-        sources      = sources_free;
-    } else
-        sources = g_newa(NML3ConfigNotifyPayloadAcdFailedSource, n);
-
-    i = 0;
-    c_list_for_each_entry (acd_track, &acd_data->acd_track_lst_head, acd_track_lst) {
-        if (!force_all && acd_track->acd_failed_notified) {
-            /* already notified before. Skip. */
-            continue;
-        }
-        nm_assert(i < n);
-        acd_track->acd_failed_notified = TRUE;
-        sources[i++]                   = (NML3ConfigNotifyPayloadAcdFailedSource){
-            .obj  = nmp_object_ref(acd_track->obj),
-            .l3cd = nm_l3_config_data_ref(acd_track->l3cd),
-            .tag  = acd_track->tag,
-        };
-    }
-    nm_assert(i == n);
-
-    notify_data.notify_type   = NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED;
-    notify_data.acd_completed = (typeof(notify_data.acd_completed)){
-        .addr         = acd_data->addr,
-        .probe_result = acd_data->probe_result,
-        .sources_len  = n,
-        .sources      = sources,
+    notify_data.notify_type = NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT;
+    notify_data.acd_event   = (typeof(notify_data.acd_event)){
+        .info = acd_data->info,
     };
+
+    /* we need to clone the track-data, because the callee is allowed to add/remove
+     * configs. This means, the event data is stale. If you need the current
+     * value, look it up with nm_l3cfg_get_acd_addr_info().  */
+    info              = &notify_data.acd_event.info;
+    info->track_infos = nm_memdup_maybe_a(300,
+                                          info->track_infos,
+                                          info->n_track_infos * sizeof(info->track_infos[0]),
+                                          &track_infos_clone);
+
+    for (i = 0; i < info->n_track_infos; i++) {
+        NML3AcdAddrTrackInfo *ti = (NML3AcdAddrTrackInfo *) &info->track_infos[i];
+
+        nmp_object_ref(ti->obj);
+        nm_l3_config_data_ref(ti->l3cd);
+    }
+
     _nm_l3cfg_emit_signal_notify(self, &notify_data);
 
-    for (i = 0; i < n; i++) {
-        nmp_object_unref(sources[i].obj);
-        nm_l3_config_data_unref(sources[i].l3cd);
+    for (i = 0; i < info->n_track_infos; i++) {
+        NML3AcdAddrTrackInfo *ti = (NML3AcdAddrTrackInfo *) &info->track_infos[i];
+
+        nmp_object_unref(ti->obj);
+        nm_l3_config_data_unref(ti->l3cd);
     }
 }
 
 static void
-_l3_acd_data_notify_acd_completed_queue(NML3Cfg *self, AcdData *acd_data)
+_nm_l3cfg_emit_signal_notify_acd_event_queue(NML3Cfg *self, AcdData *acd_data)
 {
-    if (!c_list_is_empty(&acd_data->acd_notify_complete_lst)) {
-        nm_assert(c_list_contains(&self->priv.p->acd_notify_complete_lst_head,
-                                  &acd_data->acd_notify_complete_lst));
+    if (!c_list_is_empty(&acd_data->acd_event_notify_lst)) {
+        nm_assert(c_list_contains(&self->priv.p->acd_event_notify_lst_head,
+                                  &acd_data->acd_event_notify_lst));
         return;
     }
-    c_list_link_tail(&self->priv.p->acd_notify_complete_lst_head,
-                     &acd_data->acd_notify_complete_lst);
+    c_list_link_tail(&self->priv.p->acd_event_notify_lst_head, &acd_data->acd_event_notify_lst);
 }
 
 static void
-_l3_acd_data_notify_acd_completed_all(NML3Cfg *self)
+_nm_l3cfg_emit_signal_notify_acd_event_all(NML3Cfg *self)
 {
     gs_unref_object NML3Cfg *self_keep_alive = NULL;
     AcdData *                acd_data;
 
-    while ((acd_data = c_list_first_entry(&self->priv.p->acd_notify_complete_lst_head,
+    while ((acd_data = c_list_first_entry(&self->priv.p->acd_event_notify_lst_head,
                                           AcdData,
-                                          acd_notify_complete_lst))) {
+                                          acd_event_notify_lst))) {
         if (!self_keep_alive)
             self_keep_alive = g_object_ref(self);
-        c_list_unlink(&acd_data->acd_notify_complete_lst);
-        _l3_acd_data_notify_acd_completed(self, acd_data, TRUE);
+        c_list_unlink(&acd_data->acd_event_notify_lst);
+        _nm_l3cfg_emit_signal_notify_acd_event(self, acd_data);
     }
+}
+
+_nm_printf(5, 6) static void _l3_acd_data_state_set_full(NML3Cfg *        self,
+                                                         AcdData *        acd_data,
+                                                         NML3AcdAddrState state,
+                                                         gboolean         allow_commit,
+                                                         const char *     format,
+                                                         ...)
+{
+    NML3AcdAddrState old_state;
+    gboolean         changed;
+
+    if (acd_data->info.state == state)
+        return;
+
+    /* in every state we only have one timer possibly running. Resetting
+     * the states makes the previous timeout obsolete. */
+    nm_clear_g_source_inst(&acd_data->acd_data_timeout_source);
+
+    old_state            = acd_data->info.state;
+    acd_data->info.state = state;
+    _nm_l3cfg_emit_signal_notify_acd_event_queue(self, acd_data);
+
+    if (state == NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED)
+        changed = FALSE;
+    else if (NM_IN_SET(old_state, NM_L3_ACD_ADDR_STATE_READY, NM_L3_ACD_ADDR_STATE_DEFENDING)
+             != NM_IN_SET(state, NM_L3_ACD_ADDR_STATE_READY, NM_L3_ACD_ADDR_STATE_DEFENDING))
+        changed = TRUE;
+    else
+        changed = FALSE;
+
+    if (format) {
+        gs_free char *msg = NULL;
+        va_list       args;
+
+        va_start(args, format);
+        msg = g_strdup_vprintf(format, args);
+        va_end(args);
+
+        _LOGT_acd(acd_data, "set state to %s (%s)", _l3_acd_addr_state_to_string(state), msg);
+    } else
+        _LOGT_acd(acd_data, "set state to %s", _l3_acd_addr_state_to_string(state));
+
+    if (changed && allow_commit) {
+        /* The availability of an address just changed (and we are instructed to
+         * trigger a new commit). Do it. */
+        _l3_changed_configs_set_dirty(self);
+        nm_l3cfg_commit_on_idle_schedule(self);
+    }
+}
+
+static void
+_l3_acd_data_state_set(NML3Cfg *        self,
+                       AcdData *        acd_data,
+                       NML3AcdAddrState state,
+                       gboolean         allow_commit)
+{
+    _l3_acd_data_state_set_full(self, acd_data, state, allow_commit, NULL);
 }
 
 static void
 _l3_acd_data_state_change(NML3Cfg *          self,
                           AcdData *          acd_data,
                           AcdStateChangeMode state_change_mode,
-                          NAcdEvent *        event)
+                          const NMEtherAddr *sender_addr,
+                          gint64 *           p_now_msec)
+
 {
-    guint32     acd_timeout_msec;
-    gint64      now_msec = 0;
-    const char *log_reason;
-    gboolean    was_probing;
+    guint32           acd_timeout_msec;
+    NML3AcdDefendType acd_defend_type;
+    gint64            now_msec;
+    const char *      log_reason;
+    char              sbuf256[256];
+    char              sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+
+    if (!p_now_msec) {
+        now_msec   = 0;
+        p_now_msec = &now_msec;
+    }
 
     /* Keeping track of ACD inevitably requires keeping (and mutating) state. Then a multitude of
      * things can happen, and depending on the state, we need to do something.
      *
      * Here, all the state for one address that we probe/announce is tracked in AcdData/acd_data.
      *
-     * The acd_data has a list of AcdTrackData/acd_track_lst_head, which are configuration items
+     * The acd_data has a list of NML3AcdAddrTrackInfo/acd_track_lst_head, which are configuration items
      * that are interested in configuring this address. The "owners" of the ACD check for a certain
      * address.
      *
@@ -1644,415 +1811,533 @@ _l3_acd_data_state_change(NML3Cfg *          self,
 
     nm_assert(NM_IS_L3CFG(self));
     nm_assert(acd_data);
-    nm_assert(!c_list_is_empty(&acd_data->acd_track_lst_head));
+    nm_assert(acd_data->info.n_track_infos);
+    nm_assert(NM_IN_SET(acd_data->info.state,
+                        NM_L3_ACD_ADDR_STATE_CONFLICT,
+                        NM_L3_ACD_ADDR_STATE_READY,
+                        NM_L3_ACD_ADDR_STATE_DEFENDING,
+                        NM_L3_ACD_ADDR_STATE_INIT,
+                        NM_L3_ACD_ADDR_STATE_PROBING,
+                        NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED,
+                        NM_L3_ACD_ADDR_STATE_USED));
+    nm_assert(!acd_data->track_infos_changed
+              || NM_IN_SET(state_change_mode,
+                           ACD_STATE_CHANGE_MODE_INIT,
+                           ACD_STATE_CHANGE_MODE_INIT_REAPPLY,
+                           ACD_STATE_CHANGE_MODE_POST_COMMIT,
+                           ACD_STATE_CHANGE_MODE_EXTERNAL_ADDED,
+                           ACD_STATE_CHANGE_MODE_EXTERNAL_REMOVED));
+    nm_assert((!!sender_addr)
+              == NM_IN_SET(state_change_mode,
+                           ACD_STATE_CHANGE_MODE_NACD_USED,
+                           ACD_STATE_CHANGE_MODE_NACD_CONFLICT,
+                           ACD_STATE_CHANGE_MODE_NACD_DEFENDED));
 
-    was_probing = acd_data->acd_state < ACD_STATE_PROBE_DONE;
+    if (acd_data->info.state == NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED) {
+        /* once remove, the state can only change by external added or during
+         * the POST-COMMIT check. */
+        if (!NM_IN_SET(state_change_mode,
+                       ACD_STATE_CHANGE_MODE_POST_COMMIT,
+                       ACD_STATE_CHANGE_MODE_EXTERNAL_ADDED))
+            return;
+    }
 
     switch (state_change_mode) {
     case ACD_STATE_CHANGE_MODE_INIT:
-    {
-        AcdTrackData *acd_track;
-        gboolean      any_no_timeout;
+    case ACD_STATE_CHANGE_MODE_INIT_REAPPLY:
 
-        /* we are called from _l3_acd_data_add_all(), and we do a fast check whether
-         * newly tracked entries already passed ACD so that we can use the address
-         * right away. */
+        /* We are called right before commit. We check whether we have a acd_data
+         * in INIT or PROBING state. In that case, maybe the new configuration
+         * disables ACD, or we have the address already configured (which also let's
+         * us skip/cancel the probing). The point is that if the address would be ready
+         * already, we want to commit it right away. */
 
-        if (_l3_acd_ipv4_addresses_on_link_contains(self, acd_data->addr)) {
-            /* the address is already configured on the link. It is an automatic pass. */
-            if (_acd_data_collect_tracks_data(acd_data, FALSE, NM_TERNARY_DEFAULT, NULL) <= 0) {
-                /* The entry has no non-dirty trackers, that means, it's no longer referenced
-                 * and will be removed during the next _l3_acd_data_prune(). We can ignore
-                 * this entry. */
+        switch (acd_data->info.state) {
+        case NM_L3_ACD_ADDR_STATE_PROBING:
+        case NM_L3_ACD_ADDR_STATE_INIT:
+        case NM_L3_ACD_ADDR_STATE_USED:
+            goto handle_init;
+        case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
+        case NM_L3_ACD_ADDR_STATE_CONFLICT:
+        case NM_L3_ACD_ADDR_STATE_READY:
+        case NM_L3_ACD_ADDR_STATE_DEFENDING:
+            if (state_change_mode != ACD_STATE_CHANGE_MODE_INIT_REAPPLY)
                 return;
-            }
-            log_reason = "address initially already configured";
-            goto handle_probing_acd_good;
+            goto handle_init;
         }
+        nm_assert_not_reached();
+        return;
 
-        /* we are called at the end of _l3_acd_data_add_all(). We updated the list of a
-         * all tracked IP addresses before we actually collect the addresses that are
-         * ready. We don't do regular handling of ACD states at this point, however,
-         * we check whether ACD for new elements is disabled entirely, so we can signal
-         * the address are ready right away (without going through another hop). */
-
-        if (acd_data->acd_state != ACD_STATE_INIT) {
-            /* this element is not new and we don't perform the quick-check. */
+handle_init:
+        if (_acd_data_collect_tracks_data(acd_data,
+                                          NM_TERNARY_FALSE,
+                                          &acd_timeout_msec,
+                                          &acd_defend_type)
+            <= 0u) {
+            /* the acd_data has no active trackers. It will soon be pruned. */
             return;
         }
 
-        any_no_timeout = FALSE;
-        c_list_for_each_entry (acd_track, &acd_data->acd_track_lst_head, acd_track_lst) {
-            /* There should be no dirty trackers, because the element is in init-state. */
-            nm_assert(!acd_track->acd_dirty);
-            if (acd_track->acd_timeout_msec <= 0) {
-                /* ACD for this element is disabled. We can process is right away. */
-                any_no_timeout = TRUE;
-                break;
+        if (acd_timeout_msec == 0u)
+            log_reason = "acd disabled by configuration";
+        else if (_l3_acd_ipv4_addresses_on_link_contains(self, acd_data->info.addr))
+            log_reason = "address already configured";
+        else {
+            if (state_change_mode == ACD_STATE_CHANGE_MODE_INIT_REAPPLY) {
+                /* during a reapply, we forget all the state and start from scratch. */
+                _LOGT_acd(acd_data, "reset state for reapply");
+                acd_data->nacd_probe = n_acd_probe_free(acd_data->nacd_probe);
+                _l3_acd_data_state_set(self, acd_data, NM_L3_ACD_ADDR_STATE_INIT, FALSE);
             }
-        }
-        if (!any_no_timeout) {
-            /* there are elements that request the address, but they all specify
-             * an ACD timeout. We cannot progress the state. */
             return;
         }
 
-        /* ACD is disabled, we can artificially moving the state further to
-         * ACD_STATE_PROBE_DONE and configure the address right away. This avoids
-         * that we go through another hop.
-         */
-        log_reason = "ACD disabled by configuration from the start";
-        goto handle_probing_acd_good;
-    }
+        _LOGT_acd(acd_data,
+                  "%s probing (%s, during pre-check)",
+                  acd_data->info.state == NM_L3_ACD_ADDR_STATE_INIT ? "skip" : "cancel",
+                  log_reason);
+        acd_data->nacd_probe              = n_acd_probe_free(acd_data->nacd_probe);
+        acd_data->acd_defend_type_desired = acd_defend_type;
+        _l3_acd_data_state_set(self, acd_data, NM_L3_ACD_ADDR_STATE_READY, FALSE);
+        return;
 
     case ACD_STATE_CHANGE_MODE_POST_COMMIT:
-        acd_data->initializing = FALSE;
-        goto handle_post_commit;
+
+        if (acd_data->track_infos_changed) {
+            acd_data->track_infos_changed = FALSE;
+            _nm_l3cfg_emit_signal_notify_acd_event_queue(self, acd_data);
+        }
+
+        if (_l3_acd_ipv4_addresses_on_link_contains(self, acd_data->info.addr)) {
+            log_reason = "address already configured";
+            goto handle_probing_done;
+        }
+
+        if (acd_data->info.state == NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED)
+            return;
+
+        /* we just did a commit of the IP configuration and now visit all ACD states
+         * and kick off the necessary actions... */
+        if (_acd_data_collect_tracks_data(acd_data,
+                                          NM_TERNARY_TRUE,
+                                          &acd_timeout_msec,
+                                          &acd_defend_type)
+            <= 0)
+            nm_assert_not_reached();
+
+        acd_data->acd_defend_type_desired = acd_defend_type;
+
+        if (acd_timeout_msec <= 0) {
+            log_reason = "acd disabled by configuration";
+            goto handle_probing_done;
+        }
+
+        switch (acd_data->info.state) {
+        case NM_L3_ACD_ADDR_STATE_INIT:
+            nm_assert(!acd_data->nacd_probe);
+            nm_utils_get_monotonic_timestamp_msec_cached(p_now_msec);
+            acd_data->probing_timestamp_msec = (*p_now_msec);
+            acd_data->probing_timeout_msec   = acd_timeout_msec;
+            _nm_l3cfg_emit_signal_notify_acd_event_queue(self, acd_data);
+            log_reason = "initial post-commit";
+            goto handle_start_probing;
+
+        case NM_L3_ACD_ADDR_STATE_PROBING:
+        {
+            gint64 old_expiry_msec;
+            gint64 new_expiry_msec;
+
+            nm_utils_get_monotonic_timestamp_msec_cached(p_now_msec);
+
+            new_expiry_msec = (*p_now_msec) + acd_timeout_msec;
+            old_expiry_msec = acd_data->probing_timestamp_msec + acd_data->probing_timeout_msec;
+
+            if (!acd_data->nacd_probe) {
+                /* we are currently waiting for restarting a probe. At this point, at most we have
+                 * to adjust the timeout/timestamp and let the regular timeouts handle this. */
+
+                if (new_expiry_msec >= old_expiry_msec) {
+                    /* the running timeout expires before the new timeout. We don't update the timestamp/timeout,
+                     * because we don't want to prolong the overall probing time. */
+                    return;
+                }
+                /* update the timers after out timeout got reduced. Also, reschedule the timeout
+                 * so that it expires immediately. */
+                acd_data->probing_timestamp_msec = (*p_now_msec);
+                acd_data->probing_timeout_msec   = acd_timeout_msec;
+                _l3_acd_data_timeout_schedule(acd_data, 0);
+                return;
+            }
+
+            if (new_expiry_msec >= old_expiry_msec) {
+                /* we already have ACD running with a timeout that expires before the requested one. There
+                 * is nothing to do at this time. */
+                return;
+            }
+
+            /* the timeout got reduced. We try to restart the probe. */
+            acd_data->probing_timestamp_msec = (*p_now_msec);
+            acd_data->probing_timeout_msec   = acd_timeout_msec;
+            log_reason                       = "post-commit timeout update";
+            goto handle_start_probing;
+        }
+
+        case NM_L3_ACD_ADDR_STATE_USED:
+        case NM_L3_ACD_ADDR_STATE_CONFLICT:
+            /* we are done for now. We however scheduled a timeout to restart. This
+             * will be handled with the ACD_STATE_CHANGE_MODE_TIMEOUT event. */
+            return;
+
+        case NM_L3_ACD_ADDR_STATE_READY:
+        case NM_L3_ACD_ADDR_STATE_DEFENDING:
+            goto handle_start_defending;
+
+        case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
+            nm_assert_not_reached();
+            return;
+        }
+        nm_assert_not_reached();
+        return;
 
     case ACD_STATE_CHANGE_MODE_TIMEOUT:
-    {
-        if (acd_data->acd_state == ACD_STATE_PROBING && !acd_data->nacd_probe) {
-            const char *failure_reason;
-            gboolean    acd_not_supported;
 
-            nm_utils_get_monotonic_timestamp_msec_cached(&now_msec);
+        switch (acd_data->info.state) {
+        case NM_L3_ACD_ADDR_STATE_INIT:
+            nm_assert_not_reached();
+            return;
+
+        case NM_L3_ACD_ADDR_STATE_PROBING:
+            if (acd_data->nacd_probe) {
+                /* we are already probing. There is nothing to do for this timeout. */
+                return;
+            }
+
+            nm_utils_get_monotonic_timestamp_msec_cached(p_now_msec);
 
             if (acd_data->probing_timestamp_msec + ACD_WAIT_PROBING_EXTRA_TIME_MSEC
                     + ACD_WAIT_PROBING_EXTRA_TIME2_MSEC
-                >= now_msec) {
+                >= (*p_now_msec)) {
+                /* hm. We failed to create a new probe too long. Something is really wrong
+                 * internally, but let's ignore the issue and assume the address is good. What
+                 * else would we do? Assume the address is USED? */
                 _LOGT_acd(acd_data,
-                          "state: probe-good (waiting for creating probe timed out. Assume good)");
-                acd_data->acd_state    = ACD_STATE_PROBE_DONE;
-                acd_data->probe_result = TRUE;
-                goto handle_probe_done;
+                          "probe-good (waiting for creating probe timed out. Assume good)");
+                goto handle_start_defending;
             }
 
-            /* try create a new probe. The timeout is always as originally requested. */
-            acd_data->nacd_probe =
-                _l3_acd_nacd_instance_create_probe(self,
-                                                   acd_data->addr,
-                                                   acd_data->probing_timeout_msec,
-                                                   acd_data,
-                                                   &acd_not_supported,
-                                                   &failure_reason);
-            if (acd_not_supported) {
-                nm_assert(!acd_data->nacd_probe);
-                _LOGT_acd(
-                    acd_data,
-                    "state: probe-good (interface does not support ACD anymore after timeout)");
-                acd_data->acd_state    = ACD_STATE_PROBE_DONE;
-                acd_data->probe_result = TRUE;
-                goto handle_probe_done;
-            }
+            log_reason = "retry probing on timeout";
+            goto handle_start_probing;
 
-            if (!acd_data->nacd_probe) {
-                _LOGT_acd(acd_data,
-                          "state: probing not possible at this time (%s). Wait longer",
-                          failure_reason);
-                _l3_acd_data_timeout_schedule_probing_restart(acd_data, now_msec);
-                return;
-            }
+        case NM_L3_ACD_ADDR_STATE_USED:
+        case NM_L3_ACD_ADDR_STATE_CONFLICT:
 
-            /* probing started (with the original timeout. Note that acd_data->probing_time*_msec
-             * no longer corresponds to the actual timeout of the nacd_probe. This is not a problem
-             * because at this point we only trust the internal timer from nacd_probe to get
-             * it right. Instead, we keep acd_data->probing_time*_msec unchanged, to remember when
-             * we originally wanted to start. */
-            _LOGT_acd(acd_data,
-                      "state: probing started (after retry, timeout %u msec)",
-                      acd_data->probing_timeout_msec);
-            return;
-        }
-
-        if (acd_data->acd_state == ACD_STATE_PROBE_DONE && !acd_data->probe_result) {
-            /* Probing is done, but previously we detected a conflict. After a restart, we retry to
-             * probe. */
             nm_assert(!acd_data->nacd_probe);
-            nm_assert(!acd_data->announcing_failed_is_retrying);
 
-            _LOGT_acd(acd_data, "state: restart a new probe after previous conflict");
-            acd_data->acd_state = ACD_STATE_INIT;
-            goto handle_post_commit;
-        }
-
-        if (acd_data->acd_state == ACD_STATE_PROBE_DONE && acd_data->probe_result
-            && !acd_data->nacd_probe && acd_data->announcing_failed_is_retrying) {
-            /* Probing is done, but previously we failed to start announcing. Retry now. */
-            nm_assert(!was_probing);
-            _LOGT_acd(acd_data, "state: retry announcing address");
-            acd_data->announcing_failed_is_retrying = FALSE;
-            goto handle_probe_done;
-        }
-
-        return;
-    }
-
-    case ACD_STATE_CHANGE_MODE_NACD_READY:
-        if (acd_data->acd_state == ACD_STATE_PROBING) {
-            log_reason = "acd indicates ready";
-            goto handle_probing_acd_good;
-        }
-        if (acd_data->acd_state == ACD_STATE_ANNOUNCING) {
-            _LOGT_acd(acd_data, "state: ready to start announcing");
-            if (n_acd_probe_announce(acd_data->nacd_probe, N_ACD_DEFEND_ALWAYS) != 0)
+            /* after a timeout, re-probe the address. This only happens if the caller
+             * does not deconfigure the address after USED/CONFLICT. But in that case,
+             * we eventually want to retry. */
+            if (_acd_data_collect_tracks_data(acd_data,
+                                              NM_TERNARY_TRUE,
+                                              &acd_timeout_msec,
+                                              &acd_defend_type)
+                <= 0)
                 nm_assert_not_reached();
+
+            acd_data->acd_defend_type_desired = acd_defend_type;
+
+            if (acd_timeout_msec <= 0) {
+                log_reason = "acd disabled by configuration (restart after previous conflict)";
+                goto handle_probing_done;
+            }
+
+            if (_l3_acd_ipv4_addresses_on_link_contains(self, acd_data->info.addr)) {
+                log_reason = "address already configured (restart after previous conflict)";
+                goto handle_probing_done;
+            }
+
+            nm_utils_get_monotonic_timestamp_msec_cached(p_now_msec);
+            acd_data->probing_timestamp_msec = (*p_now_msec);
+            acd_data->probing_timeout_msec   = acd_timeout_msec;
+            if (acd_data->info.state == NM_L3_ACD_ADDR_STATE_USED)
+                log_reason = "restart probing after previously used address";
+            else
+                log_reason = "restart probing after previous conflict";
+            goto handle_start_probing;
+
+        case NM_L3_ACD_ADDR_STATE_READY:
+            nm_assert_not_reached();
+            return;
+
+        case NM_L3_ACD_ADDR_STATE_DEFENDING:
+
+            nm_assert(!acd_data->nacd_probe);
+            _LOGT_acd(acd_data, "retry announcing address");
+            goto handle_start_defending;
+
+        case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
+            nm_assert_not_reached();
             return;
         }
 
-        /* nacd really shouldn't call us in this state. There is a bug somewhere. */
         nm_assert_not_reached();
         return;
 
     case ACD_STATE_CHANGE_MODE_NACD_USED:
-    {
-        gs_free char *str_to_free = NULL;
+        nm_assert(acd_data->info.state == NM_L3_ACD_ADDR_STATE_PROBING);
+        nm_assert(acd_data->nacd_probe);
 
-        nm_assert(acd_data->acd_state == ACD_STATE_PROBING);
+        acd_data->nacd_probe         = n_acd_probe_free(acd_data->nacd_probe);
+        acd_data->last_conflict_addr = *sender_addr;
+        _l3_acd_data_state_set_full(self,
+                                    acd_data,
+                                    NM_L3_ACD_ADDR_STATE_USED,
+                                    TRUE,
+                                    "acd completed with address already in use by %s",
+                                    nm_ether_addr_to_string_a(sender_addr));
+
+        if (!acd_data->acd_data_timeout_source)
+            _l3_acd_data_timeout_schedule(acd_data, ACD_WAIT_TIME_PROBING_FULL_RESTART_MSEC);
+
+        if (!_l3_acd_data_defendconflict_warning_ratelimited(acd_data, p_now_msec)) {
+            _LOGI("IPv4 address %s is used on network connected to interface %d%s%s%s from "
+                  "host %s",
+                  _nm_utils_inet4_ntop(acd_data->info.addr, sbuf_addr),
+                  self->priv.ifindex,
+                  NM_PRINT_FMT_QUOTED(self->priv.plobj_next,
+                                      " (",
+                                      NMP_OBJECT_CAST_LINK(self->priv.plobj_next)->name,
+                                      ")",
+                                      ""),
+                  nm_ether_addr_to_string_a(sender_addr));
+        }
+        return;
+
+    case ACD_STATE_CHANGE_MODE_NACD_DEFENDED:
+        nm_assert(acd_data->info.state == NM_L3_ACD_ADDR_STATE_DEFENDING);
         _LOGT_acd(acd_data,
-                  "state: probe-done bad (address already in use by %s)",
-                  nm_utils_bin2hexstr_a(event->_acd_event_payload.sender,
-                                        event->_acd_event_payload.n_sender,
-                                        ':',
-                                        FALSE,
-                                        &str_to_free));
-        acd_data->nacd_probe   = n_acd_probe_free(acd_data->nacd_probe);
-        acd_data->acd_state    = ACD_STATE_PROBE_DONE;
-        acd_data->probe_result = FALSE;
-        goto handle_probe_done;
-    }
+                  "address %s defended from %s",
+                  _nm_utils_inet4_ntop(acd_data->info.addr, sbuf_addr),
+                  nm_ether_addr_to_string_a(sender_addr));
+        /* we just log an info message. Nothing else to do. */
+        return;
+
+    case ACD_STATE_CHANGE_MODE_NACD_CONFLICT:
+        nm_assert(acd_data->info.state == NM_L3_ACD_ADDR_STATE_DEFENDING);
+
+        _LOGT_acd(acd_data,
+                  "address conflict for %s detected with %s",
+                  _nm_utils_inet4_ntop(acd_data->info.addr, sbuf_addr),
+                  nm_ether_addr_to_string_a(sender_addr));
+
+        if (!_l3_acd_data_defendconflict_warning_ratelimited(acd_data, p_now_msec)) {
+            _LOGW("IPv4 address collision detection sees conflict on interface %d%s%s%s for "
+                  "address %s from host %s",
+                  self->priv.ifindex,
+                  NM_PRINT_FMT_QUOTED(self->priv.plobj_next,
+                                      " (",
+                                      NMP_OBJECT_CAST_LINK(self->priv.plobj_next)->name,
+                                      ")",
+                                      ""),
+                  _nm_utils_inet4_ntop(acd_data->info.addr, sbuf_addr),
+                  nm_ether_addr_to_string_a(sender_addr));
+        }
+
+        acd_data->nacd_probe         = n_acd_probe_free(acd_data->nacd_probe);
+        acd_data->last_conflict_addr = *sender_addr;
+        _l3_acd_data_state_set(self, acd_data, NM_L3_ACD_ADDR_STATE_CONFLICT, TRUE);
+        if (!acd_data->acd_data_timeout_source)
+            _l3_acd_data_timeout_schedule(acd_data, ACD_WAIT_TIME_CONFLICT_RESTART_MSEC);
+        return;
+
+    case ACD_STATE_CHANGE_MODE_NACD_READY:
+
+        switch (acd_data->info.state) {
+        case NM_L3_ACD_ADDR_STATE_PROBING:
+            nm_assert(acd_data->nacd_probe);
+            /* we theoretically could re-use this probe for defending. But as we
+             * may not start defending right away, it makes it more complicated. */
+            acd_data->nacd_probe = n_acd_probe_free(acd_data->nacd_probe);
+            log_reason           = "acd indicates ready";
+            goto handle_probing_done;
+        case NM_L3_ACD_ADDR_STATE_DEFENDING:
+            nm_assert(!acd_data->acd_defend_type_is_active);
+            acd_data->acd_defend_type_is_active = TRUE;
+            _LOGT_acd(acd_data,
+                      "start announcing (defend=%s) (after new probe ready)",
+                      _l3_acd_defend_type_to_string(acd_data->acd_defend_type_current,
+                                                    sbuf256,
+                                                    sizeof(sbuf256)));
+            if (n_acd_probe_announce(acd_data->nacd_probe,
+                                     _l3_acd_defend_type_to_nacd(acd_data->acd_defend_type_current))
+                != 0)
+                nm_assert_not_reached();
+            return;
+        case NM_L3_ACD_ADDR_STATE_INIT:
+        case NM_L3_ACD_ADDR_STATE_USED:
+        case NM_L3_ACD_ADDR_STATE_READY:
+        case NM_L3_ACD_ADDR_STATE_CONFLICT:
+        case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
+            nm_assert_not_reached();
+            return;
+        }
+
+        nm_assert_not_reached();
+        return;
 
     case ACD_STATE_CHANGE_MODE_EXTERNAL_ADDED:
-        /* the address is configured on the link. This means, ACD passed */
-        log_reason = "address configured on link";
-        goto handle_probing_acd_good;
+
+        if (self->priv.p->commit_reentrant_count > 0)
+            return;
+
+        _LOGT_acd(acd_data, "address was externally added");
+
+        switch (acd_data->info.state) {
+        case NM_L3_ACD_ADDR_STATE_INIT:
+            nm_assert_not_reached();
+            return;
+        case NM_L3_ACD_ADDR_STATE_READY:
+        case NM_L3_ACD_ADDR_STATE_DEFENDING:
+            goto handle_start_defending;
+        case NM_L3_ACD_ADDR_STATE_PROBING:
+        case NM_L3_ACD_ADDR_STATE_USED:
+        case NM_L3_ACD_ADDR_STATE_CONFLICT:
+        case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
+            log_reason = "address configured on link";
+            goto handle_probing_done;
+        }
+
+        nm_assert_not_reached();
+        return;
 
     case ACD_STATE_CHANGE_MODE_EXTERNAL_REMOVED:
-        /* The address got removed. Either we ourself removed it or it was removed externally.
-         * In either case, it's not clear what we should do about that, regardless in which
-         * ACD state we are, so ignore it. */
-        _LOGT_acd(acd_data, "state: address was externally removed. Ignore");
+
+        if (self->priv.p->commit_reentrant_count > 0)
+            return;
+
+        if (_l3_acd_ipv4_addresses_on_link_contains(self, acd_data->info.addr)) {
+            /* this can happen, because there might still be the same address with different
+             * plen or peer_address. */
+            return;
+        }
+
+        _LOGT_acd(acd_data, "address was externally removed");
+
+        acd_data->nacd_probe = n_acd_probe_free(acd_data->nacd_probe);
+        _l3_acd_data_state_set(self, acd_data, NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED, FALSE);
         return;
 
     case ACD_STATE_CHANGE_MODE_NACD_DOWN:
-        if (acd_data->acd_state < ACD_STATE_PROBE_DONE) {
-            /* we are probing, but the probe has a problem that the link went down. Maybe
-             * we need to restart. */
-
-            nm_assert(acd_data->acd_state == ACD_STATE_PROBING);
-
-            if (!acd_data->nacd_probe) {
-                /* we are in probing state, but currently not really probing. A timer is
-                 * running, and we will handle this situation that way. */
-                return;
-            }
-
-            /* We abort the probing, but we also schedule a timer to restart it. Let
-             * the regular re-start handling handle this. */
-            _LOGT_acd(acd_data,
-                      "state: interface-down. Probing aborted but we keep waiting to retry");
-            acd_data->nacd_probe = n_acd_probe_free(acd_data->nacd_probe);
-            _l3_acd_data_timeout_schedule_probing_restart(acd_data, now_msec);
-            return;
-        }
-
-        /* We already completed a probe and acted accordingly (by either configuring the address
-         * already or by rejecting it). We cannot (easily) re-evaluate what to do now. Should
-         * we later restart probing? But what about the decisions we already made??
-         * Ignore the situation. */
-        return;
-
     case ACD_STATE_CHANGE_MODE_LINK_NOW_UP:
 
-        /* The interface just came up. */
-
-        if (acd_data->acd_state <= ACD_STATE_PROBING) {
-            nm_auto(n_acd_probe_freep) NAcdProbe *probe = NULL;
-            const char *                          failure_reason;
-            gboolean                              acd_not_supported;
-
-            /* the interface was probing. We will restart the probe. */
-            nm_assert(acd_data->acd_state == ACD_STATE_PROBING);
-
-            nm_utils_get_monotonic_timestamp_msec_cached(&now_msec);
+        switch (acd_data->info.state) {
+        case NM_L3_ACD_ADDR_STATE_INIT:
+            nm_assert_not_reached();
+            return;
+        case NM_L3_ACD_ADDR_STATE_PROBING:
 
             if (!acd_data->nacd_probe) {
-                /* We currently are waiting to restart probing. We don't handle the link-up
-                 * event here, we only trigger a timeout right away. */
+                /* we failed starting to probe before and have a timer running to
+                 * restart. We don't do anything now, but let the timer handle it.
+                 * This also implements some rate limiting for us. */
                 _LOGT_acd(acd_data,
-                          "state: ignore link up event while we are waiting to start probing");
-                _l3_acd_data_timeout_schedule(acd_data, now_msec, now_msec, TRUE);
+                          "ignore link %s event while we are waiting to start probing",
+                          state_change_mode == ACD_STATE_CHANGE_MODE_NACD_DOWN ? "down" : "up");
                 return;
             }
 
-            if (acd_data->probing_timestamp_msec + ACD_WAIT_PROBING_RESTART_TIME_MSEC >= now_msec) {
-                /* This probe was already started quite a while ago. We ignore the link-up event
-                 * and let it complete regularly. This is to avoid restarting to probing indefinitely. */
-                _LOGT_acd(acd_data, "state: ignore link up event for a probe started long ago");
+            nm_utils_get_monotonic_timestamp_msec_cached(p_now_msec);
+
+            if (acd_data->probing_timestamp_msec + acd_data->probing_timeout_msec
+                    + ACD_WAIT_PROBING_EXTRA_TIME_MSEC + ACD_WAIT_PROBING_EXTRA_TIME2_MSEC
+                >= (*p_now_msec)) {
+                /* The probing already started quite a while ago. We ignore the link event
+                 * and let the probe come to it's natural end. */
+                _LOGT_acd(acd_data, "ignore link up event for a probe started long ago");
                 return;
             }
 
-            probe = _l3_acd_nacd_instance_create_probe(self,
-                                                       acd_data->addr,
-                                                       acd_data->probing_timeout_msec,
-                                                       acd_data,
-                                                       &acd_not_supported,
-                                                       &failure_reason);
-            if (!probe) {
-                _LOGT_acd(acd_data,
-                          "state: link up event would cause to retry probing, but creating a probe "
-                          "failed (%s). Ignore and keep previous probe",
-                          failure_reason);
-                return;
-            }
+            acd_data->nacd_probe = n_acd_probe_free(acd_data->nacd_probe);
+            if (state_change_mode == ACD_STATE_CHANGE_MODE_NACD_DOWN)
+                log_reason = "restart probing after down event";
+            else
+                log_reason = "restart probing after link up";
+            goto handle_start_probing;
 
-            NM_SWAP(&probe, &acd_data->nacd_probe);
-
-            /* We just restarted probing. Note that we don't touch the original acd_data->probing_time*_msec
-             * times, otherwise a repeated link up/down cycle could extend the probing indefinitely.
-             *
-             * This is despite the new probe just started counting now. So, at this point, the
-             * timestamp/timeout of acd_data no longer corresponds to the internal timestamp of
-             * acd_data->nacd_probe. But since we don't run our own timer against the internal timer of
-             * acd_data->nacd_probe, that is not a problem.
-             */
-            _LOGT_acd(acd_data,
-                      "state: probing restarted (after link up, new timeout %u msec)",
-                      acd_data->probing_timeout_msec);
+        case NM_L3_ACD_ADDR_STATE_READY:
+        case NM_L3_ACD_ADDR_STATE_DEFENDING:
+        case NM_L3_ACD_ADDR_STATE_USED:
+        case NM_L3_ACD_ADDR_STATE_CONFLICT:
+        case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
+            /* if the link was down/came up, it's no clear what we should do about these
+             * cases. Ignore the event. */
             return;
         }
-
-        /* we are already done with the ACD state. Bringing up an interface has
-         * no further consequence w.r.t. the ACD state. */
+        nm_assert_not_reached();
         return;
 
     case ACD_STATE_CHANGE_MODE_INSTANCE_RESET:
-        nm_utils_get_monotonic_timestamp_msec_cached(&now_msec);
-        if (acd_data->acd_state <= ACD_STATE_PROBING) {
-            nm_assert(acd_data->acd_state == ACD_STATE_PROBING);
 
-            _LOGT_acd(
-                acd_data,
-                "state: n-acd instance reset. Trigger a restart of the probing (was %sprobing)",
-                acd_data->nacd_probe ? "" : "not");
-            /* Just destroy the current probe (if any) and retrigger a restart right away. */
+        switch (acd_data->info.state) {
+        case NM_L3_ACD_ADDR_STATE_INIT:
+            nm_assert_not_reached();
+            return;
+        case NM_L3_ACD_ADDR_STATE_PROBING:
+        case NM_L3_ACD_ADDR_STATE_DEFENDING:
+
+            if (!acd_data->nacd_probe) {
+                /* we failed starting to probe before and have a timer running to
+                 * restart. We don't do anything now, but let the timer handle it.
+                 * This also implements some rate limiting for us. */
+                _LOGT_acd(acd_data,
+                          "n-acd instance reset. Ignore event while restarting %s",
+                          (acd_data->info.state == NM_L3_ACD_ADDR_STATE_PROBING) ? "probing"
+                                                                                 : "defending");
+                return;
+            }
+
+            _LOGT_acd(acd_data,
+                      "n-acd instance reset. Trigger a restart of the %s",
+                      (acd_data->info.state == NM_L3_ACD_ADDR_STATE_PROBING) ? "probing"
+                                                                             : "defending");
             acd_data->nacd_probe = n_acd_probe_free(acd_data->nacd_probe);
-            _l3_acd_data_timeout_schedule(acd_data, now_msec, now_msec, TRUE);
+            _l3_acd_data_timeout_schedule(acd_data, 0);
+            return;
+        case NM_L3_ACD_ADDR_STATE_READY:
+        case NM_L3_ACD_ADDR_STATE_USED:
+        case NM_L3_ACD_ADDR_STATE_CONFLICT:
+        case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
+            nm_assert(!acd_data->nacd_probe);
             return;
         }
-
-        if (acd_data->probe_result) {
-            _LOGT_acd(acd_data, "state: n-acd instance reset. Restart announcing");
-        } else {
-            _LOGT_acd(acd_data,
-                      "state: n-acd instance reset. Reprobe the address that conflicted before");
-        }
-        acd_data->nacd_probe = n_acd_probe_free(acd_data->nacd_probe);
-        acd_data->acd_state  = ACD_STATE_PROBE_DONE;
-        _l3_acd_data_timeout_schedule(acd_data, now_msec, now_msec, TRUE);
+        nm_assert_not_reached();
         return;
     }
 
     nm_assert_not_reached();
     return;
 
-handle_post_commit:
-    /* we just did a commit of the IP configuration and now visit all ACD states
-     * and kick off the necessary actions... */
-    if (_l3_acd_ipv4_addresses_on_link_contains(self, acd_data->addr)) {
-        log_reason = "address already configured";
-        goto handle_probing_acd_good;
-    }
-    if (_acd_data_collect_tracks_data(acd_data, TRUE, NM_TERNARY_DEFAULT, &acd_timeout_msec) <= 0)
-        nm_assert_not_reached();
-    if (acd_timeout_msec <= 0) {
-        log_reason = "ACD disabled by configuration";
-        goto handle_probing_acd_good;
-    }
-
-    switch (acd_data->acd_state) {
-    case ACD_STATE_INIT:
-    {
-        const char *failure_reason;
-        gboolean    acd_not_supported;
-        NAcdProbe * probe;
-
-        nm_assert(!acd_data->nacd_probe);
-
-        probe = _l3_acd_nacd_instance_create_probe(self,
-                                                   acd_data->addr,
-                                                   acd_timeout_msec,
-                                                   acd_data,
-                                                   &acd_not_supported,
-                                                   &failure_reason);
-        if (acd_not_supported) {
-            nm_assert(!probe);
-            _LOGT_acd(acd_data, "state: probe-good (interface does not support ACD)");
-            acd_data->acd_state    = ACD_STATE_PROBE_DONE;
-            acd_data->probe_result = TRUE;
-            goto handle_probe_done;
-        }
-
-        if (!probe) {
-            _LOGT_acd(acd_data,
-                      "state: probing currently not possible (timeout %u msec; %s)",
-                      acd_timeout_msec,
-                      failure_reason);
-            acd_data->acd_state            = ACD_STATE_PROBING;
-            acd_data->probing_timeout_msec = acd_timeout_msec;
-            acd_data->probing_timestamp_msec =
-                nm_utils_get_monotonic_timestamp_msec_cached(&now_msec);
-            _l3_acd_data_timeout_schedule_probing_restart(acd_data, now_msec);
-            return;
-        }
-
-        _LOGT_acd(acd_data, "state: start probing (timeout %u msec)", acd_timeout_msec);
-        acd_data->acd_state              = ACD_STATE_PROBING;
-        acd_data->nacd_probe             = probe;
-        acd_data->probing_timeout_msec   = acd_timeout_msec;
-        acd_data->probing_timestamp_msec = nm_utils_get_monotonic_timestamp_msec_cached(&now_msec);
-        return;
-    }
-
-    case ACD_STATE_PROBING:
-    {
-        nm_auto(n_acd_probe_freep) NAcdProbe *probe = NULL;
+handle_start_probing:
+    if (TRUE) {
+        const NML3AcdAddrState                orig_state = acd_data->info.state;
+        nm_auto(n_acd_probe_freep) NAcdProbe *probe      = NULL;
         const char *                          failure_reason;
         gboolean                              acd_not_supported;
-        gint64                                old_expiry_msec;
-        gint64                                new_expiry_msec;
 
-        nm_utils_get_monotonic_timestamp_msec_cached(&now_msec);
+        nm_assert(NM_IN_SET(acd_data->info.state,
+                            NM_L3_ACD_ADDR_STATE_INIT,
+                            NM_L3_ACD_ADDR_STATE_PROBING,
+                            NM_L3_ACD_ADDR_STATE_USED,
+                            NM_L3_ACD_ADDR_STATE_CONFLICT));
 
-        new_expiry_msec = now_msec + acd_timeout_msec;
-        old_expiry_msec = acd_data->probing_timestamp_msec + acd_data->probing_timeout_msec;
+        /* note that we reach this line also during a ACD_STATE_CHANGE_MODE_TIMEOUT, when
+         * or when we restart the probing (with a new timeout). In all cases, we still
+         * give the original timeout (acd_data->probing_timeout_msec), and not the remaining
+         * time. That means, the probing step might take longer then originally planned
+         * (e.g. if we initially cannot start probing right away). */
 
-        if (!acd_data->nacd_probe) {
-            /* we are currently waiting for restarting a probe. At this point, at most we have
-             * to adjust the timeout/timestamp and let the regular timeouts handle this. */
-
-            if (new_expiry_msec >= old_expiry_msec) {
-                /* the running timeout expires before the new timeout. We don't update the timestamp/timerout,
-                 * because we don't want to prolong the overall probing time. */
-                return;
-            }
-            /* update the timers after out timeout got reduced. Also, reschedule the timeout
-             * so that it expires immediately. */
-            acd_data->probing_timestamp_msec = now_msec;
-            acd_data->probing_timeout_msec   = acd_timeout_msec;
-            _l3_acd_data_timeout_schedule(acd_data, now_msec, now_msec, TRUE);
-            return;
-        }
-
-        if (new_expiry_msec >= old_expiry_msec) {
-            /* we already have ACD running with a timeout that expires before the requested one. There
-             * is nothing to do at this time. */
-            return;
-        }
-
-        /* the timeout got reduced. We try to restart the probe. */
         probe = _l3_acd_nacd_instance_create_probe(self,
-                                                   acd_data->addr,
-                                                   acd_timeout_msec,
+                                                   acd_data->info.addr,
+                                                   acd_data->probing_timeout_msec,
                                                    acd_data,
                                                    &acd_not_supported,
                                                    &failure_reason);
@@ -2060,143 +2345,144 @@ handle_post_commit:
 
         if (acd_not_supported) {
             nm_assert(!acd_data->nacd_probe);
-            _LOGT_acd(acd_data, "state: probe-good (interface does not support ACD anymore)");
-            acd_data->acd_state    = ACD_STATE_PROBE_DONE;
-            acd_data->probe_result = TRUE;
-            goto handle_probe_done;
+            _LOGT_acd(acd_data,
+                      "probe-good (interface does not support acd%s, %s)",
+                      orig_state == NM_L3_ACD_ADDR_STATE_INIT ? ""
+                      : (state_change_mode != ACD_STATE_CHANGE_MODE_TIMEOUT)
+                          ? " anymore"
+                          : " anymore after timeout",
+                      log_reason);
+            goto handle_start_defending;
         }
+
+        _l3_acd_data_state_set(self,
+                               acd_data,
+                               NM_L3_ACD_ADDR_STATE_PROBING,
+                               !NM_IN_SET(state_change_mode,
+                                          ACD_STATE_CHANGE_MODE_INIT,
+                                          ACD_STATE_CHANGE_MODE_INIT_REAPPLY,
+                                          ACD_STATE_CHANGE_MODE_POST_COMMIT));
 
         if (!acd_data->nacd_probe) {
             _LOGT_acd(acd_data,
-                      "state: probing currently still not possible (timeout %u msec; %s)",
-                      acd_timeout_msec,
-                      failure_reason);
-            acd_data->acd_state              = ACD_STATE_PROBING;
-            acd_data->probing_timeout_msec   = acd_timeout_msec;
-            acd_data->probing_timestamp_msec = now_msec;
-            _l3_acd_data_timeout_schedule_probing_restart(acd_data, now_msec);
+                      "probing currently %snot possible (timeout %u msec; %s, %s)",
+                      orig_state == NM_L3_ACD_ADDR_STATE_INIT ? "" : " still",
+                      acd_data->probing_timeout_msec,
+                      failure_reason,
+                      log_reason);
+            _l3_acd_data_timeout_schedule_probing_restart(acd_data, (*p_now_msec));
             return;
         }
 
-        /* We update the timestamps (after also restarting the probe).
-         *
-         * Note that we only reduced the overall expiry. */
-        acd_data->probing_timestamp_msec = now_msec;
-        acd_data->probing_timeout_msec   = acd_timeout_msec;
-        _LOGT_acd(acd_data, "state: restart probing (timeout %u msec)", acd_timeout_msec);
+        _LOGT_acd(acd_data,
+                  "%sstart probing (timeout %u msec, %s)",
+                  orig_state == NM_L3_ACD_ADDR_STATE_INIT ? "" : "re",
+                  acd_data->probing_timeout_msec,
+                  log_reason);
         return;
     }
 
-    case ACD_STATE_PROBE_DONE:
-    case ACD_STATE_ANNOUNCING:
-        goto handle_probe_done;
-    }
-    nm_assert_not_reached();
-    return;
-
-handle_probing_acd_good:
-    switch (acd_data->acd_state) {
-    case ACD_STATE_INIT:
-        _LOGT_acd(acd_data, "state: probe-done good (%s, initializing)", log_reason);
-        acd_data->acd_state    = ACD_STATE_PROBE_DONE;
-        acd_data->probe_result = TRUE;
-        goto handle_probe_done;
-    case ACD_STATE_PROBING:
-        _LOGT_acd(acd_data, "state: probe-done good (%s, probing done)", log_reason);
+handle_probing_done:
+    switch (acd_data->info.state) {
+    case NM_L3_ACD_ADDR_STATE_INIT:
+        _LOGT_acd(acd_data, "probe-done good (%s, initializing)", log_reason);
+        goto handle_start_defending;
+    case NM_L3_ACD_ADDR_STATE_PROBING:
+        _LOGT_acd(acd_data, "probe-done good (%s, probing done)", log_reason);
         if (state_change_mode != ACD_STATE_CHANGE_MODE_NACD_READY)
             acd_data->nacd_probe = n_acd_probe_free(acd_data->nacd_probe);
-        acd_data->acd_state    = ACD_STATE_PROBE_DONE;
-        acd_data->probe_result = TRUE;
-        goto handle_probe_done;
-    case ACD_STATE_PROBE_DONE:
-        if (!acd_data->probe_result) {
-            nm_assert(!acd_data->nacd_probe);
-            _LOGT_acd(acd_data, "state: probe-done good (%s, after probe failed)", log_reason);
-            acd_data->probe_result = TRUE;
-        }
-        goto handle_probe_done;
-    case ACD_STATE_ANNOUNCING:
-        nm_assert(acd_data->probe_result);
-        goto handle_probe_done;
+        goto handle_start_defending;
+    case NM_L3_ACD_ADDR_STATE_USED:
+        _LOGT_acd(acd_data, "probe-done good (%s, after probe failed)", log_reason);
+        goto handle_start_defending;
+    case NM_L3_ACD_ADDR_STATE_READY:
+    case NM_L3_ACD_ADDR_STATE_DEFENDING:
+        goto handle_start_defending;
+    case NM_L3_ACD_ADDR_STATE_CONFLICT:
+        return;
+    case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
+        nm_assert_not_reached();
+        return;
     }
     nm_assert_not_reached();
     return;
 
-handle_probe_done:
-    nm_assert(NM_IN_SET(acd_data->acd_state, ACD_STATE_PROBE_DONE, ACD_STATE_ANNOUNCING));
-
-    if (acd_data->initializing)
-        return;
-
-    if (acd_data->acd_state >= ACD_STATE_ANNOUNCING) {
-        nm_assert(acd_data->nacd_probe);
-        nm_assert(acd_data->probe_result);
-        return;
-    }
-
-    if (!acd_data->probe_result) {
-        nm_assert(acd_data->acd_state == ACD_STATE_PROBE_DONE);
-        nm_assert(!acd_data->nacd_probe);
-        /* we just completed probing with negative result.
-         * Emit a signal, but also reschedule a timer to restart. */
-        if (was_probing) {
-            _LOGT_acd(acd_data, "state: acd probe failed; signal failure");
-            acd_data->probing_timestamp_msec =
-                nm_utils_get_monotonic_timestamp_msec_cached(&now_msec);
-            _l3_acd_data_timeout_schedule_probing_full_restart(acd_data, now_msec);
+handle_start_defending:
+    if (!_l3_acd_ipv4_addresses_on_link_contains(self, acd_data->info.addr)) {
+        if (acd_data->info.state != NM_L3_ACD_ADDR_STATE_READY) {
+            _l3_acd_data_state_set_full(self,
+                                        acd_data,
+                                        NM_L3_ACD_ADDR_STATE_READY,
+                                        !NM_IN_SET(state_change_mode,
+                                                   ACD_STATE_CHANGE_MODE_INIT,
+                                                   ACD_STATE_CHANGE_MODE_INIT_REAPPLY,
+                                                   ACD_STATE_CHANGE_MODE_POST_COMMIT),
+                                        "probe is ready, waiting for address to be configured");
         }
-        _l3_acd_data_notify_acd_completed_queue(self, acd_data);
         return;
     }
 
-    if (was_probing && acd_data->probe_result) {
-        /* probing just completed. Schedule handling the change. */
-        _LOGT_acd(acd_data, "state: acd probe succeed");
-        _l3_acd_data_notify_acd_completed_queue(self, acd_data);
-        if (state_change_mode != ACD_STATE_CHANGE_MODE_POST_COMMIT)
-            _l3_changed_configs_set_dirty(self);
-        nm_l3cfg_commit_on_idle_schedule(self);
+    _l3_acd_data_state_set(self,
+                           acd_data,
+                           NM_L3_ACD_ADDR_STATE_DEFENDING,
+                           !NM_IN_SET(state_change_mode,
+                                      ACD_STATE_CHANGE_MODE_INIT,
+                                      ACD_STATE_CHANGE_MODE_INIT_REAPPLY,
+                                      ACD_STATE_CHANGE_MODE_POST_COMMIT));
+
+    nm_assert(acd_data->acd_defend_type_desired > NM_L3_ACD_DEFEND_TYPE_NONE);
+    nm_assert(acd_data->acd_defend_type_desired <= NM_L3_ACD_DEFEND_TYPE_ALWAYS);
+
+    if (acd_data->acd_defend_type_desired != acd_data->acd_defend_type_current) {
+        acd_data->acd_defend_type_current = acd_data->acd_defend_type_desired;
+        acd_data->nacd_probe              = n_acd_probe_free(acd_data->nacd_probe);
     }
 
     if (!acd_data->nacd_probe) {
         const char *failure_reason;
         NAcdProbe * probe;
 
-        if (acd_data->announcing_failed_is_retrying) {
+        if (acd_data->acd_data_timeout_source) {
             /* we already failed to create a probe. We are ratelimited to retry, but
              * we have a timer pending... */
             return;
         }
 
         probe = _l3_acd_nacd_instance_create_probe(self,
-                                                   acd_data->addr,
+                                                   acd_data->info.addr,
                                                    0,
                                                    acd_data,
                                                    NULL,
                                                    &failure_reason);
         if (!probe) {
-            /* we failed to create a probe for announcing the address. We log a (rate limited)
-             * warning and start a timer to retry. */
-            _LOGT_acd(acd_data,
-                      "state: start announcing failed to create probe (%s)",
-                      failure_reason);
-            acd_data->announcing_failed_is_retrying = TRUE;
-            acd_data->probing_timestamp_msec =
-                nm_utils_get_monotonic_timestamp_msec_cached(&now_msec);
-            _l3_acd_data_timeout_schedule_announce_restart(acd_data, now_msec);
+            /* we failed to create a probe for announcing the address. We log a
+             * warning and start a timer to retry. This way (of having a timer pending)
+             * we also back off and are rate limited from retrying too frequently. */
+            _LOGT_acd(acd_data, "start announcing failed to create probe (%s)", failure_reason);
+            _l3_acd_data_timeout_schedule(acd_data, ACD_WAIT_TIME_ANNOUNCE_RESTART_MSEC);
             return;
         }
 
-        _LOGT_acd(acd_data, "state: start announcing (with new probe)");
-        acd_data->nacd_probe = probe;
-        acd_data->acd_state  = ACD_STATE_ANNOUNCING;
+        _LOGT_acd(acd_data,
+                  "start announcing (defend=%s) (probe created)",
+                  _l3_acd_defend_type_to_string(acd_data->acd_defend_type_current,
+                                                sbuf256,
+                                                sizeof(sbuf256)));
+        acd_data->acd_defend_type_is_active = FALSE;
+        acd_data->nacd_probe                = probe;
         return;
     }
 
-    if (acd_data->acd_state == ACD_STATE_PROBE_DONE) {
-        _LOGT_acd(acd_data, "state: start announcing (with existing probe)");
-        acd_data->acd_state = ACD_STATE_ANNOUNCING;
-        if (n_acd_probe_announce(acd_data->nacd_probe, N_ACD_DEFEND_ALWAYS) != 0)
+    if (!acd_data->acd_defend_type_is_active) {
+        acd_data->acd_defend_type_is_active = TRUE;
+        _LOGT_acd(acd_data,
+                  "start announcing (defend=%s) (with existing probe)",
+                  _l3_acd_defend_type_to_string(acd_data->acd_defend_type_current,
+                                                sbuf256,
+                                                sizeof(sbuf256)));
+        if (n_acd_probe_announce(acd_data->nacd_probe,
+                                 _l3_acd_defend_type_to_nacd(acd_data->acd_defend_type_current))
+            != 0)
             nm_assert_not_reached();
         return;
     }
@@ -2205,28 +2491,47 @@ handle_probe_done:
 static void
 _l3_acd_data_process_changes(NML3Cfg *self)
 {
-    gboolean acd_is_announcing = FALSE;
-    gboolean acd_is_pending    = FALSE;
+    gboolean acd_is_pending = FALSE;
+    gboolean acd_busy       = FALSE;
     AcdData *acd_data;
+    gint64   now_msec = 0;
 
     _l3_acd_data_prune(self, FALSE);
 
     c_list_for_each_entry (acd_data, &self->priv.p->acd_lst_head, acd_lst) {
-        _l3_acd_data_state_change(self, acd_data, ACD_STATE_CHANGE_MODE_POST_COMMIT, NULL);
-        if (acd_data->acd_state < ACD_STATE_PROBE_DONE)
+        _l3_acd_data_state_change(self,
+                                  acd_data,
+                                  ACD_STATE_CHANGE_MODE_POST_COMMIT,
+                                  NULL,
+                                  &now_msec);
+        if (acd_data->info.state <= NM_L3_ACD_ADDR_STATE_PROBING)
             acd_is_pending = TRUE;
-        else if (acd_data->acd_state >= ACD_STATE_ANNOUNCING
-                 || (acd_data->acd_state >= ACD_STATE_PROBE_DONE && acd_data->probe_result))
-            acd_is_announcing = TRUE;
+        if (acd_data->nacd_probe)
+            acd_busy = TRUE;
     }
 
-    self->priv.p->acd_is_pending    = acd_is_pending;
-    self->priv.p->acd_is_announcing = acd_is_announcing;
+    self->priv.p->acd_is_pending = acd_is_pending;
 
-    if (!acd_is_pending && !acd_is_announcing)
+    if (!acd_busy)
         _l3_acd_nacd_instance_reset(self, NM_TERNARY_DEFAULT, FALSE);
 
-    _l3_acd_data_notify_acd_completed_all(self);
+    _nm_l3cfg_emit_signal_notify_acd_event_all(self);
+}
+
+/*****************************************************************************/
+
+const NML3AcdAddrInfo *
+nm_l3cfg_get_acd_addr_info(NML3Cfg *self, in_addr_t addr)
+{
+    AcdData *acd_data;
+
+    nm_assert(NM_IS_L3CFG(self));
+
+    acd_data = _l3_acd_data_find(self, addr);
+    if (!acd_data)
+        return NULL;
+
+    return &acd_data->info;
 }
 
 /*****************************************************************************/
@@ -2238,7 +2543,7 @@ _l3_commit_on_idle_cb(gpointer user_data)
 
     nm_clear_g_source_inst(&self->priv.p->commit_on_idle_source);
 
-    _LOGT("platform commit on idle");
+    _LOGT("commit on idle");
     _l3_commit(self, NM_L3_CFG_COMMIT_TYPE_AUTO, TRUE);
     return G_SOURCE_REMOVE;
 }
@@ -2251,6 +2556,7 @@ nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self)
     if (self->priv.p->commit_on_idle_source)
         return;
 
+    _LOGT("commit on idle (scheduled)");
     self->priv.p->commit_on_idle_source =
         nm_g_idle_source_new(G_PRIORITY_DEFAULT, _l3_commit_on_idle_cb, self, NULL);
     g_source_attach(self->priv.p->commit_on_idle_source, NULL);
@@ -2275,7 +2581,7 @@ _l3_config_datas_find_next(GArray *              l3_config_datas,
     for (i = start_idx; i < l3_config_datas->len; i++) {
         const L3ConfigData *l3_config_data = _l3_config_datas_at(l3_config_datas, i);
 
-        if (NM_IN_SET(needle_tag, NULL, l3_config_data->tag)
+        if (NM_IN_SET(needle_tag, NULL, l3_config_data->tag_confdata)
             && NM_IN_SET(needle_l3cd, NULL, l3_config_data->l3cd))
             return i;
     }
@@ -2294,53 +2600,14 @@ _l3_config_datas_get_sorted_cmp(gconstpointer p_a, gconstpointer p_b, gpointer u
 
     /* we sort the entries with higher priority (more important, lower numerical value)
      * first. */
-    NM_CMP_FIELD(a, b, priority);
+    NM_CMP_FIELD(a, b, priority_confdata);
 
     /* if the priority is not unique, we sort them in the order they were added,
      * with the oldest first (lower numerical value). */
-    NM_CMP_FIELD(a, b, pseudo_timestamp);
+    NM_CMP_FIELD(a, b, pseudo_timestamp_confdata);
 
     return nm_assert_unreachable_val(0);
 }
-
-#define _l3_config_datas_get_sorted_a(l3_config_datas, out_infos, out_infos_len, out_infos_free) \
-    G_STMT_START                                                                                 \
-    {                                                                                            \
-        GArray *const                     _l3_config_datas = (l3_config_datas);                  \
-        const L3ConfigData *const **const _out_infos       = (out_infos);                        \
-        guint *const                      _out_infos_len   = (out_infos_len);                    \
-        const L3ConfigData ***const       _out_infos_free  = (out_infos_free);                   \
-        gs_free const L3ConfigData **_infos_free           = NULL;                               \
-        const L3ConfigData **        _infos;                                                     \
-        guint                        _l3_config_datas_len;                                       \
-        guint                        _i;                                                         \
-                                                                                                 \
-        _l3_config_datas_len = nm_g_array_len(_l3_config_datas);                                 \
-                                                                                                 \
-        if (_l3_config_datas_len == 0)                                                           \
-            _infos = NULL;                                                                       \
-        else if (_l3_config_datas_len < 300 / sizeof(_infos[0]))                                 \
-            _infos = g_alloca(_l3_config_datas_len * sizeof(_infos[0]));                         \
-        else {                                                                                   \
-            _infos_free = g_new(const L3ConfigData *, _l3_config_datas_len);                     \
-            _infos      = _infos_free;                                                           \
-        }                                                                                        \
-        for (_i = 0; _i < _l3_config_datas_len; _i++)                                            \
-            _infos[_i] = _l3_config_datas_at(_l3_config_datas, _i);                              \
-                                                                                                 \
-        if (_l3_config_datas_len > 1) {                                                          \
-            g_qsort_with_data(_infos,                                                            \
-                              _l3_config_datas_len,                                              \
-                              sizeof(_infos[0]),                                                 \
-                              _l3_config_datas_get_sorted_cmp,                                   \
-                              NULL);                                                             \
-        }                                                                                        \
-                                                                                                 \
-        *_out_infos      = _infos;                                                               \
-        *_out_infos_len  = _l3_config_datas_len;                                                 \
-        *_out_infos_free = g_steal_pointer(&_infos_free);                                        \
-    }                                                                                            \
-    G_STMT_END
 
 static void
 _l3_config_datas_remove_index_fast(GArray *arr, guint idx)
@@ -2376,7 +2643,7 @@ nm_l3cfg_mark_config_dirty(NML3Cfg *self, gconstpointer tag, gboolean dirty)
         if (idx < 0)
             return;
 
-        _l3_config_datas_at(self->priv.p->l3_config_datas, idx)->dirty = dirty;
+        _l3_config_datas_at(self->priv.p->l3_config_datas, idx)->dirty_confdata = dirty;
         idx++;
     }
 }
@@ -2393,6 +2660,7 @@ nm_l3cfg_add_config(NML3Cfg *             self,
                     guint32               default_route_metric_6,
                     guint32               default_route_penalty_4,
                     guint32               default_route_penalty_6,
+                    NML3AcdDefendType     acd_defend_type,
                     guint32               acd_timeout_msec,
                     NML3ConfigMergeFlags  merge_flags)
 {
@@ -2404,6 +2672,14 @@ nm_l3cfg_add_config(NML3Cfg *             self,
     nm_assert(tag);
     nm_assert(l3cd);
     nm_assert(nm_l3_config_data_get_ifindex(l3cd) == self->priv.ifindex);
+
+    if (acd_timeout_msec > ACD_MAX_TIMEOUT_MSEC)
+        acd_timeout_msec = ACD_MAX_TIMEOUT_MSEC;
+
+    nm_assert(NM_IN_SET(acd_defend_type,
+                        NM_L3_ACD_DEFEND_TYPE_NEVER,
+                        NM_L3_ACD_DEFEND_TYPE_ONCE,
+                        NM_L3_ACD_DEFEND_TYPE_ALWAYS));
 
     nm_assert(default_route_metric_6 != 0u); /* IPv6 default route metric cannot be zero. */
 
@@ -2434,12 +2710,11 @@ nm_l3cfg_add_config(NML3Cfg *             self,
             if (l3_config_data->l3cd == l3cd) {
                 nm_assert(idx == -1);
                 idx = idx2;
-                continue;
+                idx2++;
+            } else {
+                changed = TRUE;
+                _l3_config_datas_remove_index_fast(self->priv.p->l3_config_datas, idx2);
             }
-
-            changed = TRUE;
-            _l3_config_datas_remove_index_fast(self->priv.p->l3_config_datas, idx2);
-
             idx2 = _l3_config_datas_find_next(self->priv.p->l3_config_datas, idx2, tag, NULL);
             if (idx2 < 0)
                 break;
@@ -2449,29 +2724,30 @@ nm_l3cfg_add_config(NML3Cfg *             self,
     if (idx < 0) {
         l3_config_data  = nm_g_array_append_new(self->priv.p->l3_config_datas, L3ConfigData);
         *l3_config_data = (L3ConfigData){
-            .tag                     = tag,
-            .l3cd                    = nm_l3_config_data_ref_and_seal(l3cd),
-            .merge_flags             = merge_flags,
-            .default_route_table_4   = default_route_table_4,
-            .default_route_table_6   = default_route_table_6,
-            .default_route_metric_4  = default_route_metric_4,
-            .default_route_metric_6  = default_route_metric_6,
-            .default_route_penalty_4 = default_route_penalty_4,
-            .default_route_penalty_6 = default_route_penalty_6,
-            .acd_timeout_msec        = acd_timeout_msec,
-            .priority                = priority,
-            .pseudo_timestamp        = ++self->priv.p->pseudo_timestamp_counter,
-            .dirty                   = FALSE,
+            .tag_confdata              = tag,
+            .l3cd                      = nm_l3_config_data_ref_and_seal(l3cd),
+            .merge_flags               = merge_flags,
+            .default_route_table_4     = default_route_table_4,
+            .default_route_table_6     = default_route_table_6,
+            .default_route_metric_4    = default_route_metric_4,
+            .default_route_metric_6    = default_route_metric_6,
+            .default_route_penalty_4   = default_route_penalty_4,
+            .default_route_penalty_6   = default_route_penalty_6,
+            .acd_defend_type_confdata  = acd_defend_type,
+            .acd_timeout_msec_confdata = acd_timeout_msec,
+            .priority_confdata         = priority,
+            .pseudo_timestamp_confdata = ++self->priv.p->pseudo_timestamp_counter,
+            .dirty_confdata            = FALSE,
         };
         changed = TRUE;
     } else {
-        l3_config_data        = _l3_config_datas_at(self->priv.p->l3_config_datas, idx);
-        l3_config_data->dirty = FALSE;
-        nm_assert(l3_config_data->tag == tag);
+        l3_config_data                 = _l3_config_datas_at(self->priv.p->l3_config_datas, idx);
+        l3_config_data->dirty_confdata = FALSE;
+        nm_assert(l3_config_data->tag_confdata == tag);
         nm_assert(l3_config_data->l3cd == l3cd);
-        if (l3_config_data->priority != priority) {
-            l3_config_data->priority = priority;
-            changed                  = TRUE;
+        if (l3_config_data->priority_confdata != priority) {
+            l3_config_data->priority_confdata = priority;
+            changed                           = TRUE;
         }
         if (l3_config_data->merge_flags != merge_flags) {
             l3_config_data->merge_flags = merge_flags;
@@ -2501,11 +2777,17 @@ nm_l3cfg_add_config(NML3Cfg *             self,
             l3_config_data->default_route_penalty_6 = default_route_penalty_6;
             changed                                 = TRUE;
         }
-        if (l3_config_data->acd_timeout_msec != acd_timeout_msec) {
-            l3_config_data->acd_timeout_msec = acd_timeout_msec;
-            changed                          = TRUE;
+        if (l3_config_data->acd_defend_type_confdata != acd_defend_type) {
+            l3_config_data->acd_defend_type_confdata = acd_defend_type;
+            changed                                  = TRUE;
+        }
+        if (l3_config_data->acd_timeout_msec_confdata != acd_timeout_msec) {
+            l3_config_data->acd_timeout_msec_confdata = acd_timeout_msec;
+            changed                                   = TRUE;
         }
     }
+
+    nm_assert(l3_config_data->acd_defend_type_confdata == acd_defend_type);
 
     if (changed)
         _l3_changed_configs_set_dirty(self);
@@ -2537,7 +2819,8 @@ _l3cfg_remove_config(NML3Cfg *             self,
         if (idx < 0)
             break;
 
-        if (only_dirty && !_l3_config_datas_at(self->priv.p->l3_config_datas, idx)->dirty) {
+        if (only_dirty
+            && !_l3_config_datas_at(self->priv.p->l3_config_datas, idx)->dirty_confdata) {
             idx++;
             continue;
         }
@@ -2582,12 +2865,18 @@ typedef struct {
 } L3ConfigMergeHookAddObjData;
 
 static gboolean
-_l3_hook_add_addr_cb(const NML3ConfigData *l3cd, const NMPObject *obj, gpointer user_data)
+_l3_hook_add_addr_cb(const NML3ConfigData *l3cd,
+                     const NMPObject *     obj,
+                     NMTernary *           out_ip4acd_not_ready,
+                     gpointer              user_data)
 {
     const L3ConfigMergeHookAddObjData *hook_data = user_data;
     NML3Cfg *                          self      = hook_data->self;
     AcdData *                          acd_data;
     in_addr_t                          addr;
+    gboolean                           acd_bad = FALSE;
+
+    nm_assert(out_ip4acd_not_ready && *out_ip4acd_not_ready == NM_TERNARY_DEFAULT);
 
     if (NMP_OBJECT_GET_TYPE(obj) != NMP_OBJECT_TYPE_IP4_ADDRESS)
         return TRUE;
@@ -2595,46 +2884,91 @@ _l3_hook_add_addr_cb(const NML3ConfigData *l3cd, const NMPObject *obj, gpointer 
     addr = NMP_OBJECT_CAST_IP4_ADDRESS(obj)->address;
 
     if (ACD_ADDR_SKIP(addr))
-        return TRUE;
+        goto out;
 
     acd_data = _l3_acd_data_find(self, addr);
-    nm_assert(acd_data);
+
+    if (!acd_data) {
+        /* we don't yet track an ACD state for this address. That can only
+         * happend during _l3cfg_update_combined_config() with !to_commit,
+         * where we didn't update the ACD state.
+         *
+         * This means, unless you actually commit, nm_l3cfg_get_combined_l3cd(self, get_commited = FALSE)
+         * won't consider IPv4 addresses ready, that have no known ACD state yet. */
+        nm_assert(self->priv.p->changed_configs_acd_state);
+        acd_bad = TRUE;
+        goto out;
+    }
+
     nm_assert(
         _acd_track_data_is_not_dirty(_acd_data_find_track(acd_data, l3cd, obj, hook_data->tag)));
-    return _acd_data_probe_result_is_good(acd_data);
+    if (!NM_IN_SET(acd_data->info.state,
+                   NM_L3_ACD_ADDR_STATE_READY,
+                   NM_L3_ACD_ADDR_STATE_DEFENDING))
+        acd_bad = TRUE;
+
+out:
+    *out_ip4acd_not_ready = acd_bad ? NM_TERNARY_TRUE : NM_TERNARY_FALSE;
+    return TRUE;
 }
 
 static void
 _l3cfg_update_combined_config(NML3Cfg *              self,
                               gboolean               to_commit,
+                              gboolean               reapply,
                               const NML3ConfigData **out_old /* transfer reference */,
-                              gboolean *             out_changed_configs,
                               gboolean *             out_changed_combined_l3cd)
 {
-    nm_auto_unref_l3cd const NML3ConfigData *l3cd_old = NULL;
-    nm_auto_unref_l3cd_init NML3ConfigData *l3cd      = NULL;
-    gs_free const L3ConfigData **l3_config_datas_free = NULL;
-    const L3ConfigData *const *  l3_config_datas_sorted;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd_commited_old = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd_old          = NULL;
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd               = NULL;
+    gs_free const L3ConfigData **l3_config_datas_free          = NULL;
+    const L3ConfigData **        l3_config_datas_arr;
     guint                        l3_config_datas_len;
     guint                        i;
+    gboolean                     merged_changed   = FALSE;
+    gboolean                     commited_changed = FALSE;
 
     nm_assert(NM_IS_L3CFG(self));
-
     nm_assert(!out_old || !*out_old);
-    NM_SET_OUT(out_changed_configs, self->priv.changed_configs);
+
     NM_SET_OUT(out_changed_combined_l3cd, FALSE);
 
-    if (!self->priv.changed_configs)
-        goto out;
+    if (!self->priv.p->changed_configs_configs) {
+        if (!self->priv.p->changed_configs_acd_state)
+            goto out;
+        if (!to_commit) {
+            /* since we are not going to commit, we don't care about the
+             * ACD state. */
+            goto out;
+        }
+    }
 
-    self->priv.changed_configs = FALSE;
+    self->priv.p->changed_configs_configs = FALSE;
 
-    _l3_config_datas_get_sorted_a(self->priv.p->l3_config_datas,
-                                  &l3_config_datas_sorted,
-                                  &l3_config_datas_len,
-                                  &l3_config_datas_free);
+    l3_config_datas_len = nm_g_array_len(self->priv.p->l3_config_datas);
+    l3_config_datas_arr = nm_malloc_maybe_a(300,
+                                            l3_config_datas_len * sizeof(l3_config_datas_arr[0]),
+                                            &l3_config_datas_free);
+    for (i = 0; i < l3_config_datas_len; i++)
+        l3_config_datas_arr[i] = _l3_config_datas_at(self->priv.p->l3_config_datas, i);
 
-    _l3_acd_data_add_all(self, l3_config_datas_sorted, l3_config_datas_len);
+    if (l3_config_datas_len > 1) {
+        g_qsort_with_data(l3_config_datas_arr,
+                          l3_config_datas_len,
+                          sizeof(l3_config_datas_arr[0]),
+                          _l3_config_datas_get_sorted_cmp,
+                          NULL);
+    }
+
+    if (!to_commit) {
+        /* we are not going to commit these changes. Hence, we don't update the
+         * ACD states, but we need to remember that we have to on the next commit. */
+        self->priv.p->changed_configs_acd_state = TRUE;
+    } else {
+        _l3_acd_data_add_all(self, l3_config_datas_arr, l3_config_datas_len, reapply);
+        self->priv.p->changed_configs_acd_state = FALSE;
+    }
 
     if (l3_config_datas_len > 0) {
         L3ConfigMergeHookAddObjData hook_data = {
@@ -2645,12 +2979,12 @@ _l3cfg_update_combined_config(NML3Cfg *              self,
                                      self->priv.ifindex);
 
         for (i = 0; i < l3_config_datas_len; i++) {
-            const L3ConfigData *l3cd_data = l3_config_datas_sorted[i];
+            const L3ConfigData *l3cd_data = l3_config_datas_arr[i];
 
             if (NM_FLAGS_HAS(l3cd_data->merge_flags, NM_L3_CONFIG_MERGE_FLAGS_ONLY_FOR_ACD))
                 continue;
 
-            hook_data.tag = l3cd_data->tag;
+            hook_data.tag = l3cd_data->tag_confdata;
             nm_l3_config_data_merge(l3cd,
                                     l3cd_data->l3cd,
                                     l3cd_data->merge_flags,
@@ -2672,24 +3006,43 @@ _l3cfg_update_combined_config(NML3Cfg *              self,
 
     l3cd_old                           = g_steal_pointer(&self->priv.p->combined_l3cd_merged);
     self->priv.p->combined_l3cd_merged = nm_l3_config_data_seal(g_steal_pointer(&l3cd));
-
+    merged_changed                     = TRUE;
     if (!to_commit) {
         NM_SET_OUT(out_old, g_steal_pointer(&l3cd_old));
         NM_SET_OUT(out_changed_combined_l3cd, TRUE);
-        _LOGT("desired IP configuration changed");
     }
 
 out:
     if (to_commit && self->priv.p->combined_l3cd_commited != self->priv.p->combined_l3cd_merged) {
-        nm_auto_unref_l3cd const NML3ConfigData *l3cd_commited_old = NULL;
-
         l3cd_commited_old = g_steal_pointer(&self->priv.p->combined_l3cd_commited);
         self->priv.p->combined_l3cd_commited =
             nm_l3_config_data_ref(self->priv.p->combined_l3cd_merged);
-
+        commited_changed = TRUE;
         NM_SET_OUT(out_old, g_steal_pointer(&l3cd_commited_old));
         NM_SET_OUT(out_changed_combined_l3cd, TRUE);
-        _LOGT("desired IP configuration changed for commit");
+    }
+
+    if ((merged_changed || commited_changed) && _LOGT_ENABLED()) {
+        char sbuf256[256];
+        char sbuf30[30];
+
+        _LOGT("IP configuration changed (merged=%c%s, commited=%c%s)",
+              merged_changed ? '>' : '=',
+              NM_HASH_OBFUSCATE_PTR_STR(self->priv.p->combined_l3cd_merged, sbuf256),
+              commited_changed ? '>' : '=',
+              NM_HASH_OBFUSCATE_PTR_STR(self->priv.p->combined_l3cd_commited, sbuf30));
+
+        if (merged_changed) {
+            nm_l3_config_data_log(self->priv.p->combined_l3cd_merged,
+                                  NULL,
+                                  nm_sprintf_buf(sbuf256,
+                                                 "l3cfg[" NM_HASH_OBFUSCATE_PTR_FMT
+                                                 ",ifindex=%d]:    ",
+                                                 NM_HASH_OBFUSCATE_PTR(self),
+                                                 nm_l3cfg_get_ifindex(self)),
+                                  LOGL_TRACE,
+                                  _NMLOG_DOMAIN);
+        }
     }
 }
 
@@ -2874,10 +3227,13 @@ out_prune:
 /*****************************************************************************/
 
 static gboolean
-_l3_commit_one(NML3Cfg *self, int addr_family, NML3CfgCommitType commit_type)
+_l3_commit_one(NML3Cfg *             self,
+               int                   addr_family,
+               NML3CfgCommitType     commit_type,
+               gboolean              changed_combined_l3cd,
+               const NML3ConfigData *l3cd_old)
 {
-    const gboolean           IS_IPv4                                = NM_IS_IPv4(addr_family);
-    nm_auto_unref_l3cd const NML3ConfigData *l3cd_old               = NULL;
+    const int         IS_IPv4                                       = NM_IS_IPv4(addr_family);
     gs_unref_ptrarray GPtrArray *addresses                          = NULL;
     gs_unref_ptrarray GPtrArray *routes                             = NULL;
     gs_unref_ptrarray GPtrArray *addresses_prune                    = NULL;
@@ -2885,8 +3241,6 @@ _l3_commit_one(NML3Cfg *self, int addr_family, NML3CfgCommitType commit_type)
     gs_unref_ptrarray GPtrArray *routes_temporary_not_available_arr = NULL;
     NMIPRouteTableSyncMode       route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE;
     gboolean                     final_failure_for_temporary_not_available = FALSE;
-    gboolean                     changed_combined_l3cd;
-    gboolean                     changed_configs;
     char                         sbuf_commit_type[50];
     gboolean                     success = TRUE;
 
@@ -2902,8 +3256,6 @@ _l3_commit_one(NML3Cfg *self, int addr_family, NML3CfgCommitType commit_type)
           nm_utils_addr_family_to_char(addr_family),
           _l3_cfg_commit_type_to_string(commit_type, sbuf_commit_type, sizeof(sbuf_commit_type)));
 
-    _l3cfg_update_combined_config(self, TRUE, &l3cd_old, &changed_configs, &changed_combined_l3cd);
-
     if (changed_combined_l3cd) {
         /* our combined configuration changed. We may track entries in externally_removed_objs_hash,
          * which are not longer to be considered by our configuration. We need to forget about them. */
@@ -2916,29 +3268,40 @@ _l3_commit_one(NML3Cfg *self, int addr_family, NML3CfgCommitType commit_type)
     }
 
     if (self->priv.p->combined_l3cd_commited) {
+        GHashTable *                   externally_removed_objs_hash;
         NMDedupMultiFcnSelectPredicate predicate;
+        const NMDedupMultiHeadEntry *  head_entry;
 
         if (commit_type != NM_L3_CFG_COMMIT_TYPE_REAPPLY
-            && self->priv.p->externally_removed_objs_cnt_addresses_x[IS_IPv4] > 0)
-            predicate = _l3cfg_externally_removed_objs_filter;
-        else
-            predicate = NULL;
-        addresses = nm_dedup_multi_objs_to_ptr_array_head(
-            nm_l3_config_data_lookup_objs(self->priv.p->combined_l3cd_commited,
-                                          NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4)),
-            predicate,
-            self->priv.p->externally_removed_objs_hash);
+            && self->priv.p->externally_removed_objs_cnt_addresses_x[IS_IPv4] > 0) {
+            predicate                    = _l3cfg_externally_removed_objs_filter;
+            externally_removed_objs_hash = self->priv.p->externally_removed_objs_hash;
+        } else {
+            if (IS_IPv4)
+                predicate = _l3cfg_externally_removed_objs_filter;
+            else
+                predicate = NULL;
+            externally_removed_objs_hash = NULL;
+        }
+        head_entry = nm_l3_config_data_lookup_objs(self->priv.p->combined_l3cd_commited,
+                                                   NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4));
+        addresses  = nm_dedup_multi_objs_to_ptr_array_head(head_entry,
+                                                          predicate,
+                                                          externally_removed_objs_hash);
 
         if (commit_type != NM_L3_CFG_COMMIT_TYPE_REAPPLY
-            && self->priv.p->externally_removed_objs_cnt_routes_x[IS_IPv4] > 0)
-            predicate = _l3cfg_externally_removed_objs_filter;
-        else
-            predicate = NULL;
-        routes = nm_dedup_multi_objs_to_ptr_array_head(
-            nm_l3_config_data_lookup_objs(self->priv.p->combined_l3cd_commited,
-                                          NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4)),
-            predicate,
-            self->priv.p->externally_removed_objs_hash);
+            && self->priv.p->externally_removed_objs_cnt_routes_x[IS_IPv4] > 0) {
+            predicate                    = _l3cfg_externally_removed_objs_filter;
+            externally_removed_objs_hash = self->priv.p->externally_removed_objs_hash;
+        } else {
+            predicate                    = NULL;
+            externally_removed_objs_hash = NULL;
+        }
+        head_entry = nm_l3_config_data_lookup_objs(self->priv.p->combined_l3cd_commited,
+                                                   NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4));
+        routes     = nm_dedup_multi_objs_to_ptr_array_head(head_entry,
+                                                       predicate,
+                                                       externally_removed_objs_hash);
 
         route_table_sync =
             nm_l3_config_data_get_route_table_sync(self->priv.p->combined_l3cd_commited,
@@ -2958,21 +3321,12 @@ _l3_commit_one(NML3Cfg *self, int addr_family, NML3CfgCommitType commit_type)
                                                            self->priv.ifindex,
                                                            route_table_sync);
     } else if (commit_type == NM_L3_CFG_COMMIT_TYPE_UPDATE) {
-        /* during update, we do a cross with the previous configuration.
-         *
-         * Of course, if an entry is both to be pruned and to be added, then
-         * the latter wins. So, this works just nicely. */
-        if (l3cd_old) {
-            const NMDedupMultiHeadEntry *head_entry;
-
-            head_entry =
-                nm_l3_config_data_lookup_objs(l3cd_old, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4));
-            addresses_prune = nm_dedup_multi_objs_to_ptr_array_head(head_entry, NULL, NULL);
-
-            head_entry = nm_l3_config_data_lookup_objs(l3cd_old, NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4));
-            addresses_prune = nm_dedup_multi_objs_to_ptr_array_head(head_entry, NULL, NULL);
-        }
+        addresses_prune = nm_g_ptr_array_ref(self->priv.p->last_addresses_x[IS_IPv4]);
+        routes_prune    = nm_g_ptr_array_ref(self->priv.p->last_routes_x[IS_IPv4]);
     }
+
+    nm_g_ptr_array_set(&self->priv.p->last_addresses_x[IS_IPv4], addresses);
+    nm_g_ptr_array_set(&self->priv.p->last_routes_x[IS_IPv4], routes);
 
     /* FIXME(l3cfg): need to honor and set nm_l3_config_data_get_ip6_privacy(). */
     /* FIXME(l3cfg): need to honor and set nm_l3_config_data_get_ndisc_*(). */
@@ -3008,8 +3362,10 @@ _l3_commit_one(NML3Cfg *self, int addr_family, NML3CfgCommitType commit_type)
 static void
 _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
 {
-    gboolean commit_type_detected = FALSE;
-    char     sbuf_ct[30];
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd_old             = NULL;
+    gboolean                                 commit_type_detected = FALSE;
+    char                                     sbuf_ct[30];
+    gboolean                                 changed_combined_l3cd;
 
     g_return_if_fail(NM_IS_L3CFG(self));
     nm_assert(NM_IN_SET(commit_type,
@@ -3018,6 +3374,7 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
                         NM_L3_CFG_COMMIT_TYPE_ASSUME,
                         NM_L3_CFG_COMMIT_TYPE_UPDATE,
                         NM_L3_CFG_COMMIT_TYPE_REAPPLY));
+    nm_assert(self->priv.p->commit_reentrant_count == 0);
 
     switch (commit_type) {
     case NM_L3_CFG_COMMIT_TYPE_AUTO:
@@ -3043,7 +3400,7 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
         break;
     }
 
-    _LOGT("platform-commit %s%s%s",
+    _LOGT("commit %s%s%s",
           _l3_cfg_commit_type_to_string(commit_type, sbuf_ct, sizeof(sbuf_ct)),
           commit_type_detected ? " (auto)" : "",
           is_idle ? " (idle handler)" : "");
@@ -3051,17 +3408,28 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
     if (commit_type == NM_L3_CFG_COMMIT_TYPE_NONE)
         return;
 
+    self->priv.p->commit_reentrant_count++;
+
     nm_clear_g_source_inst(&self->priv.p->commit_on_idle_source);
 
     if (commit_type == NM_L3_CFG_COMMIT_TYPE_REAPPLY)
         _l3cfg_externally_removed_objs_drop(self);
 
+    _l3cfg_update_combined_config(self,
+                                  TRUE,
+                                  commit_type == NM_L3_CFG_COMMIT_TYPE_REAPPLY,
+                                  &l3cd_old,
+                                  &changed_combined_l3cd);
+
     /* FIXME(l3cfg): handle items currently not configurable in kernel. */
 
-    _l3_commit_one(self, AF_INET, commit_type);
-    _l3_commit_one(self, AF_INET6, commit_type);
+    _l3_commit_one(self, AF_INET, commit_type, changed_combined_l3cd, l3cd_old);
+    _l3_commit_one(self, AF_INET6, commit_type, changed_combined_l3cd, l3cd_old);
 
     _l3_acd_data_process_changes(self);
+
+    nm_assert(self->priv.p->commit_reentrant_count == 1);
+    self->priv.p->commit_reentrant_count--;
 
     _nm_l3cfg_emit_signal_notify_simple(self, NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT);
 }
@@ -3141,7 +3509,7 @@ nm_l3cfg_commit_type_register(NML3Cfg *                self,
     linked = FALSE;
     c_list_for_each_entry (h, &self->priv.p->commit_type_lst_head, commit_type_lst) {
         if (handle->commit_type >= h->commit_type) {
-            c_list_link_before(&self->priv.p->commit_type_lst_head, &handle->commit_type_lst);
+            c_list_link_before(&h->commit_type_lst, &handle->commit_type_lst);
             linked = TRUE;
             break;
         }
@@ -3178,7 +3546,7 @@ nm_l3cfg_get_combined_l3cd(NML3Cfg *self, gboolean get_commited)
     if (get_commited)
         return self->priv.p->combined_l3cd_commited;
 
-    _l3cfg_update_combined_config(self, FALSE, NULL, NULL, NULL);
+    _l3cfg_update_combined_config(self, FALSE, FALSE, NULL, NULL);
     return self->priv.p->combined_l3cd_merged;
 }
 
@@ -3220,8 +3588,7 @@ nm_l3cfg_has_commited_ip6_addresses_pending_dad(NML3Cfg *self)
 
     nmp_lookup_init_object(&plat_lookup, NMP_OBJECT_TYPE_IP6_ADDRESS, self->priv.ifindex);
 
-    nm_platform_iter_obj_for_each(&iter, self->priv.platform, &plat_lookup, &plat_obj)
-    {
+    nm_platform_iter_obj_for_each (&iter, self->priv.platform, &plat_lookup, &plat_obj) {
         const NMPlatformIP6Address *plat_addr = NMP_OBJECT_CAST_IP6_ADDRESS(plat_obj);
         const NMDedupMultiEntry *   l3cd_entry;
 
@@ -3239,6 +3606,47 @@ nm_l3cfg_has_commited_ip6_addresses_pending_dad(NML3Cfg *self)
     }
 
     return FALSE;
+}
+
+/*****************************************************************************/
+
+NML3IPv4LL *
+nm_l3cfg_get_ipv4ll(NML3Cfg *self)
+{
+    g_return_val_if_fail(NM_IS_L3CFG(self), NULL);
+
+    return self->priv.p->ipv4ll;
+}
+
+NML3IPv4LL *
+nm_l3cfg_access_ipv4ll(NML3Cfg *self)
+{
+    g_return_val_if_fail(NM_IS_L3CFG(self), NULL);
+
+    if (self->priv.p->ipv4ll)
+        return nm_l3_ipv4ll_ref(self->priv.p->ipv4ll);
+
+    /* We return the reference. But the NML3IPv4LL instance
+     * will call _nm_l3cfg_unregister_ipv4ll() when it gets
+     * destroyed.
+     *
+     * We don't have weak references, but NML3Cfg and NML3IPv4LL
+     * cooperate to handle this reference. */
+    self->priv.p->ipv4ll = nm_l3_ipv4ll_new(self);
+    return self->priv.p->ipv4ll;
+}
+
+void
+_nm_l3cfg_unregister_ipv4ll(NML3Cfg *self)
+{
+    nm_assert(NM_IS_L3CFG(self));
+
+    /* we don't own the refernce to "self->priv.p->ipv4ll", but
+     * when that instance gets destroyed, we get called back to
+     * forget about it. Basically, it's like a weak pointer. */
+
+    nm_assert(self->priv.p->ipv4ll);
+    self->priv.p->ipv4ll = NULL;
 }
 
 /*****************************************************************************/
@@ -3273,7 +3681,7 @@ nm_l3cfg_init(NML3Cfg *self)
     self->priv.p = G_TYPE_INSTANCE_GET_PRIVATE(self, NM_TYPE_L3CFG, NML3CfgPrivate);
 
     c_list_init(&self->priv.p->acd_lst_head);
-    c_list_init(&self->priv.p->acd_notify_complete_lst_head);
+    c_list_init(&self->priv.p->acd_event_notify_lst_head);
     c_list_init(&self->priv.p->commit_type_lst_head);
 }
 
@@ -3310,6 +3718,7 @@ finalize(GObject *object)
     NML3Cfg *self = NM_L3CFG(object);
 
     nm_assert(!self->priv.p->l3_config_datas);
+    nm_assert(!self->priv.p->ipv4ll);
 
     nm_assert(c_list_is_empty(&self->priv.p->commit_type_lst_head));
 
@@ -3320,13 +3729,18 @@ finalize(GObject *object)
     _l3_acd_data_prune(self, TRUE);
 
     nm_assert(c_list_is_empty(&self->priv.p->acd_lst_head));
-    nm_assert(c_list_is_empty(&self->priv.p->acd_notify_complete_lst_head));
+    nm_assert(c_list_is_empty(&self->priv.p->acd_event_notify_lst_head));
     nm_assert(nm_g_hash_table_size(self->priv.p->acd_lst_hash) == 0);
 
     nm_clear_pointer(&self->priv.p->acd_lst_hash, g_hash_table_unref);
     nm_clear_pointer(&self->priv.p->nacd, n_acd_unref);
     nm_clear_g_source_inst(&self->priv.p->nacd_source);
     nm_clear_g_source_inst(&self->priv.p->nacd_instance_ensure_retry);
+
+    nm_clear_pointer(&self->priv.p->last_addresses_4, g_ptr_array_unref);
+    nm_clear_pointer(&self->priv.p->last_addresses_6, g_ptr_array_unref);
+    nm_clear_pointer(&self->priv.p->last_routes_4, g_ptr_array_unref);
+    nm_clear_pointer(&self->priv.p->last_routes_6, g_ptr_array_unref);
 
     nm_clear_g_source(&self->priv.p->routes_temporary_not_available_id);
     nm_clear_pointer(&self->priv.p->routes_temporary_not_available_hash, g_hash_table_unref);

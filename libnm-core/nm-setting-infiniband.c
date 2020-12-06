@@ -353,7 +353,7 @@ nm_setting_infiniband_init(NMSettingInfiniband *self)
 NMSetting *
 nm_setting_infiniband_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_INFINIBAND, NULL);
+    return g_object_new(NM_TYPE_SETTING_INFINIBAND, NULL);
 }
 
 static void

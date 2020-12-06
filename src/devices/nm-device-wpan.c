@@ -20,8 +20,8 @@
 #include "nm-setting-wpan.h"
 #include "nm-core-internal.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceWpan
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceWpan);
 
 /*****************************************************************************/
 
@@ -236,16 +236,16 @@ create_device(NMDeviceFactory *     factory,
               NMConnection *        connection,
               gboolean *            out_ignore)
 {
-    return (NMDevice *) g_object_new(NM_TYPE_DEVICE_WPAN,
-                                     NM_DEVICE_IFACE,
-                                     iface,
-                                     NM_DEVICE_TYPE_DESC,
-                                     "WPAN",
-                                     NM_DEVICE_DEVICE_TYPE,
-                                     NM_DEVICE_TYPE_WPAN,
-                                     NM_DEVICE_LINK_TYPE,
-                                     NM_LINK_TYPE_WPAN,
-                                     NULL);
+    return g_object_new(NM_TYPE_DEVICE_WPAN,
+                        NM_DEVICE_IFACE,
+                        iface,
+                        NM_DEVICE_TYPE_DESC,
+                        "WPAN",
+                        NM_DEVICE_DEVICE_TYPE,
+                        NM_DEVICE_TYPE_WPAN,
+                        NM_DEVICE_LINK_TYPE,
+                        NM_LINK_TYPE_WPAN,
+                        NULL);
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL(

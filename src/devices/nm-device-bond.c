@@ -17,8 +17,8 @@
 #include "nm-core-internal.h"
 #include "nm-ip4-config.h"
 
+#define _NMLOG_DEVICE_TYPE NMDeviceBond
 #include "nm-device-logging.h"
-_LOG_DECLARE_SELF(NMDeviceBond);
 
 /*****************************************************************************/
 
@@ -149,6 +149,7 @@ ignore_option(NMSettingBond *s_bond, const char *option, const char *value)
 static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
+    NMDeviceBond * self    = NM_DEVICE_BOND(device);
     NMSettingBond *s_bond  = nm_connection_get_setting_bond(connection);
     int            ifindex = nm_device_get_ifindex(device);
     NMBondMode     mode    = NM_BOND_MODE_UNKNOWN;
@@ -197,7 +198,10 @@ update_connection(NMDevice *device, NMConnection *connection)
                 }
             }
 
-            nm_setting_bond_add_option(s_bond, option, value);
+            if (!_nm_setting_bond_validate_option(option, value, NULL))
+                _LOGT(LOGD_BOND, "cannot set invalid bond option '%s' = '%s'", option, value);
+            else
+                nm_setting_bond_add_option(s_bond, option, value);
         }
     }
 }
@@ -264,7 +268,7 @@ set_arp_targets(NMDevice *device, const char *cur_arp_ip_target, const char *new
     if (cur_len == 0 && new_len == 0)
         return;
 
-    if (_nm_utils_strv_equal((char **) cur_strv, (char **) new_strv))
+    if (nm_utils_strv_equal(cur_strv, new_strv))
         return;
 
     for (i = 0; i < cur_len; i++)
@@ -616,18 +620,18 @@ create_device(NMDeviceFactory *     factory,
               NMConnection *        connection,
               gboolean *            out_ignore)
 {
-    return (NMDevice *) g_object_new(NM_TYPE_DEVICE_BOND,
-                                     NM_DEVICE_IFACE,
-                                     iface,
-                                     NM_DEVICE_DRIVER,
-                                     "bonding",
-                                     NM_DEVICE_TYPE_DESC,
-                                     "Bond",
-                                     NM_DEVICE_DEVICE_TYPE,
-                                     NM_DEVICE_TYPE_BOND,
-                                     NM_DEVICE_LINK_TYPE,
-                                     NM_LINK_TYPE_BOND,
-                                     NULL);
+    return g_object_new(NM_TYPE_DEVICE_BOND,
+                        NM_DEVICE_IFACE,
+                        iface,
+                        NM_DEVICE_DRIVER,
+                        "bonding",
+                        NM_DEVICE_TYPE_DESC,
+                        "Bond",
+                        NM_DEVICE_DEVICE_TYPE,
+                        NM_DEVICE_TYPE_BOND,
+                        NM_DEVICE_LINK_TYPE,
+                        NM_LINK_TYPE_BOND,
+                        NULL);
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL(

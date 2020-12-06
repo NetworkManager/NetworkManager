@@ -33,26 +33,48 @@
     #define NMCLI_VERSION VERSION
 #endif
 
-#define DEFAULT_PALETTE_INIT                                                                      \
-    [NM_META_COLOR_CONNECTION_ACTIVATED] = "32", [NM_META_COLOR_CONNECTION_ACTIVATING] = "33",    \
-    [NM_META_COLOR_CONNECTION_DISCONNECTING] = "31", [NM_META_COLOR_CONNECTION_INVISIBLE] = "2",  \
-    [NM_META_COLOR_CONNECTION_EXTERNAL] = "32;2", [NM_META_COLOR_CONNECTIVITY_FULL] = "32",       \
-    [NM_META_COLOR_CONNECTIVITY_LIMITED] = "33", [NM_META_COLOR_CONNECTIVITY_NONE] = "31",        \
-    [NM_META_COLOR_CONNECTIVITY_PORTAL] = "33", [NM_META_COLOR_DEVICE_ACTIVATED] = "32",          \
-    [NM_META_COLOR_DEVICE_ACTIVATING] = "33", [NM_META_COLOR_DEVICE_DISCONNECTED] = "31",         \
-    [NM_META_COLOR_DEVICE_FIRMWARE_MISSING] = "31", [NM_META_COLOR_DEVICE_PLUGIN_MISSING] = "31", \
-    [NM_META_COLOR_DEVICE_UNAVAILABLE] = "2", [NM_META_COLOR_DEVICE_DISABLED] = "31",             \
-    [NM_META_COLOR_DEVICE_EXTERNAL] = "32;2", [NM_META_COLOR_MANAGER_RUNNING] = "32",             \
-    [NM_META_COLOR_MANAGER_STARTING] = "33", [NM_META_COLOR_MANAGER_STOPPED] = "31",              \
-    [NM_META_COLOR_PERMISSION_AUTH] = "33", [NM_META_COLOR_PERMISSION_NO] = "31",                 \
-    [NM_META_COLOR_PERMISSION_YES] = "32", [NM_META_COLOR_STATE_ASLEEP] = "31",                   \
-    [NM_META_COLOR_STATE_CONNECTED_GLOBAL] = "32", [NM_META_COLOR_STATE_CONNECTED_LOCAL] = "32",  \
-    [NM_META_COLOR_STATE_CONNECTED_SITE] = "32", [NM_META_COLOR_STATE_CONNECTING] = "33",         \
-    [NM_META_COLOR_STATE_DISCONNECTED] = "31", [NM_META_COLOR_STATE_DISCONNECTING] = "33",        \
-    [NM_META_COLOR_WIFI_SIGNAL_EXCELLENT] = "32", [NM_META_COLOR_WIFI_SIGNAL_FAIR] = "35",        \
-    [NM_META_COLOR_WIFI_SIGNAL_GOOD] = "33", [NM_META_COLOR_WIFI_SIGNAL_POOR] = "36",             \
-    [NM_META_COLOR_WIFI_SIGNAL_UNKNOWN] = "2", [NM_META_COLOR_ENABLED] = "32",                    \
-    [NM_META_COLOR_DISABLED] = "31",
+#define _NMC_COLOR_PALETTE_INIT()                              \
+    {                                                          \
+        .ansi_seq = {                                          \
+            [NM_META_COLOR_CONNECTION_ACTIVATED]     = "32",   \
+            [NM_META_COLOR_CONNECTION_ACTIVATING]    = "33",   \
+            [NM_META_COLOR_CONNECTION_DISCONNECTING] = "31",   \
+            [NM_META_COLOR_CONNECTION_INVISIBLE]     = "2",    \
+            [NM_META_COLOR_CONNECTION_EXTERNAL]      = "32;2", \
+            [NM_META_COLOR_CONNECTIVITY_FULL]        = "32",   \
+            [NM_META_COLOR_CONNECTIVITY_LIMITED]     = "33",   \
+            [NM_META_COLOR_CONNECTIVITY_NONE]        = "31",   \
+            [NM_META_COLOR_CONNECTIVITY_PORTAL]      = "33",   \
+            [NM_META_COLOR_DEVICE_ACTIVATED]         = "32",   \
+            [NM_META_COLOR_DEVICE_ACTIVATING]        = "33",   \
+            [NM_META_COLOR_DEVICE_DISCONNECTED]      = "31",   \
+            [NM_META_COLOR_DEVICE_FIRMWARE_MISSING]  = "31",   \
+            [NM_META_COLOR_DEVICE_PLUGIN_MISSING]    = "31",   \
+            [NM_META_COLOR_DEVICE_UNAVAILABLE]       = "2",    \
+            [NM_META_COLOR_DEVICE_DISABLED]          = "31",   \
+            [NM_META_COLOR_DEVICE_EXTERNAL]          = "32;2", \
+            [NM_META_COLOR_MANAGER_RUNNING]          = "32",   \
+            [NM_META_COLOR_MANAGER_STARTING]         = "33",   \
+            [NM_META_COLOR_MANAGER_STOPPED]          = "31",   \
+            [NM_META_COLOR_PERMISSION_AUTH]          = "33",   \
+            [NM_META_COLOR_PERMISSION_NO]            = "31",   \
+            [NM_META_COLOR_PERMISSION_YES]           = "32",   \
+            [NM_META_COLOR_STATE_ASLEEP]             = "31",   \
+            [NM_META_COLOR_STATE_CONNECTED_GLOBAL]   = "32",   \
+            [NM_META_COLOR_STATE_CONNECTED_LOCAL]    = "32",   \
+            [NM_META_COLOR_STATE_CONNECTED_SITE]     = "32",   \
+            [NM_META_COLOR_STATE_CONNECTING]         = "33",   \
+            [NM_META_COLOR_STATE_DISCONNECTED]       = "31",   \
+            [NM_META_COLOR_STATE_DISCONNECTING]      = "33",   \
+            [NM_META_COLOR_WIFI_SIGNAL_EXCELLENT]    = "32",   \
+            [NM_META_COLOR_WIFI_SIGNAL_FAIR]         = "35",   \
+            [NM_META_COLOR_WIFI_SIGNAL_GOOD]         = "33",   \
+            [NM_META_COLOR_WIFI_SIGNAL_POOR]         = "36",   \
+            [NM_META_COLOR_WIFI_SIGNAL_UNKNOWN]      = "2",    \
+            [NM_META_COLOR_ENABLED]                  = "32",   \
+            [NM_META_COLOR_DISABLED]                 = "31",   \
+        },                                                     \
+    }
 
 static NmCli nm_cli = {
     .client = NULL,
@@ -76,7 +98,7 @@ static NmCli nm_cli = {
     .complete                    = FALSE,
     .nmc_config.show_secrets     = FALSE,
     .nmc_config.in_editor        = FALSE,
-    .nmc_config.palette          = {DEFAULT_PALETTE_INIT},
+    .nmc_config.palette          = _NMC_COLOR_PALETTE_INIT(),
     .editor_status_line          = FALSE,
     .editor_save_confirmation    = TRUE,
 };
@@ -486,97 +508,101 @@ check_colors(NmcColorOption color_option, char **out_palette_str)
     return TRUE;
 }
 
-static const char *
-resolve_color_alias(const char *color)
-{
-    static const struct {
-        const char *name;
-        const char *alias;
-    } aliases[] = {
-        {"reset", "0"},       {"bold", "1"},       {"white", "1;37"},
-        {"halfbright", "2"},  {"underscore", "4"}, {"blink", "5"},
-        {"reverse", "7"},     {"black", "30"},     {"red", "31"},
-        {"green", "32"},      {"brown", "33"},     {"yellow", "33"}, /* well, yellow */
-        {"blue", "34"},       {"magenta", "35"},   {"cyan", "36"},
-        {"gray", "37"},       {"darkgray", "90"},  {"lightred", "91"},
-        {"lightgreen", "92"}, {"lightblue", "94"}, {"lightmagenta", "95"},
-        {"lightcyan", "96"},  {"lightgray", "97"},
-    };
-    int i;
+static NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
+    _resolve_color_alias,
+    const char *,
+    { nm_assert(name); },
+    { return NULL; },
+    {"black", "30"},
+    {"blink", "5"},
+    {"blue", "34"},
+    {"bold", "1"},
+    {"brown", "33"},
+    {"cyan", "36"},
+    {"darkgray", "90"},
+    {"gray", "37"},
+    {"green", "32"},
+    {"halfbright", "2"},
+    {"lightblue", "94"},
+    {"lightcyan", "96"},
+    {"lightgray", "97"},
+    {"lightgreen", "92"},
+    {"lightmagenta", "95"},
+    {"lightred", "91"},
+    {"magenta", "35"},
+    {"red", "31"},
+    {"reset", "0"},
+    {"reverse", "7"},
+    {"underscore", "4"},
+    {"white", "1;37"},
+    {"yellow", "33" /* well, yellow */}, );
 
-    /* Shortcut literal sequences. */
-    if (g_ascii_isdigit(*color))
-        return color;
-
-    for (i = 0; i < G_N_ELEMENTS(aliases); i++) {
-        if (strcmp(color, aliases[i].name) == 0)
-            return aliases[i].alias;
-    }
-
-    return color;
-}
+static NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
+    _nm_meta_color_from_name,
+    NMMetaColor,
+    { nm_assert(name); },
+    { return NM_META_COLOR_NONE; },
+    {"connection-activated", NM_META_COLOR_CONNECTION_ACTIVATED},
+    {"connection-activating", NM_META_COLOR_CONNECTION_ACTIVATING},
+    {"connection-disconnecting", NM_META_COLOR_CONNECTION_DISCONNECTING},
+    {"connection-external", NM_META_COLOR_CONNECTION_EXTERNAL},
+    {"connection-invisible", NM_META_COLOR_CONNECTION_INVISIBLE},
+    {"connection-unknown", NM_META_COLOR_CONNECTION_UNKNOWN},
+    {"connectivity-full", NM_META_COLOR_CONNECTIVITY_FULL},
+    {"connectivity-limited", NM_META_COLOR_CONNECTIVITY_LIMITED},
+    {"connectivity-none", NM_META_COLOR_CONNECTIVITY_NONE},
+    {"connectivity-portal", NM_META_COLOR_CONNECTIVITY_PORTAL},
+    {"connectivity-unknown", NM_META_COLOR_CONNECTIVITY_UNKNOWN},
+    {"device-activated", NM_META_COLOR_DEVICE_ACTIVATED},
+    {"device-activating", NM_META_COLOR_DEVICE_ACTIVATING},
+    {"device-disabled", NM_META_COLOR_DEVICE_DISABLED},
+    {"device-disconnected", NM_META_COLOR_DEVICE_DISCONNECTED},
+    {"device-external", NM_META_COLOR_DEVICE_EXTERNAL},
+    {"device-firmware-missing", NM_META_COLOR_DEVICE_FIRMWARE_MISSING},
+    {"device-plugin-missing", NM_META_COLOR_DEVICE_PLUGIN_MISSING},
+    {"device-unavailable", NM_META_COLOR_DEVICE_UNAVAILABLE},
+    {"device-unknown", NM_META_COLOR_DEVICE_UNKNOWN},
+    {"disabled", NM_META_COLOR_DISABLED},
+    {"enabled", NM_META_COLOR_ENABLED},
+    {"manager-running", NM_META_COLOR_MANAGER_RUNNING},
+    {"manager-starting", NM_META_COLOR_MANAGER_STARTING},
+    {"manager-stopped", NM_META_COLOR_MANAGER_STOPPED},
+    {"permission-auth", NM_META_COLOR_PERMISSION_AUTH},
+    {"permission-no", NM_META_COLOR_PERMISSION_NO},
+    {"permission-unknown", NM_META_COLOR_PERMISSION_UNKNOWN},
+    {"permission-yes", NM_META_COLOR_PERMISSION_YES},
+    {"prompt", NM_META_COLOR_PROMPT},
+    {"state-asleep", NM_META_COLOR_STATE_ASLEEP},
+    {"state-connected-global", NM_META_COLOR_STATE_CONNECTED_GLOBAL},
+    {"state-connected-local", NM_META_COLOR_STATE_CONNECTED_LOCAL},
+    {"state-connected-site", NM_META_COLOR_STATE_CONNECTED_SITE},
+    {"state-connecting", NM_META_COLOR_STATE_CONNECTING},
+    {"state-disconnected", NM_META_COLOR_STATE_DISCONNECTED},
+    {"state-disconnecting", NM_META_COLOR_STATE_DISCONNECTING},
+    {"state-unknown", NM_META_COLOR_STATE_UNKNOWN},
+    {"wifi-signal-excellent", NM_META_COLOR_WIFI_SIGNAL_EXCELLENT},
+    {"wifi-signal-fair", NM_META_COLOR_WIFI_SIGNAL_FAIR},
+    {"wifi-signal-good", NM_META_COLOR_WIFI_SIGNAL_GOOD},
+    {"wifi-signal-poor", NM_META_COLOR_WIFI_SIGNAL_POOR},
+    {"wifi-signal-unknown", NM_META_COLOR_WIFI_SIGNAL_UNKNOWN}, );
 
 static gboolean
-parse_color_scheme(char *       palette_buffer,
-                   const char **palette /* _NM_META_COLOR_NUM elements */,
-                   GError **    error)
+parse_color_scheme(char *palette_buffer, NmcColorPalette *out_palette, GError **error)
 {
-    char *                   p = palette_buffer;
-    const char *             name;
-    const char *             color;
-    const char *             tmp_palette[_NM_META_COLOR_NUM] = {DEFAULT_PALETTE_INIT};
-    static const char *const map[_NM_META_COLOR_NUM]         = {
-        [NM_META_COLOR_NONE]                     = NULL,
-        [NM_META_COLOR_CONNECTION_ACTIVATED]     = "connection-activated",
-        [NM_META_COLOR_CONNECTION_ACTIVATING]    = "connection-activating",
-        [NM_META_COLOR_CONNECTION_DISCONNECTING] = "connection-disconnecting",
-        [NM_META_COLOR_CONNECTION_INVISIBLE]     = "connection-invisible",
-        [NM_META_COLOR_CONNECTION_EXTERNAL]      = "connection-external",
-        [NM_META_COLOR_CONNECTION_UNKNOWN]       = "connection-unknown",
-        [NM_META_COLOR_CONNECTIVITY_FULL]        = "connectivity-full",
-        [NM_META_COLOR_CONNECTIVITY_LIMITED]     = "connectivity-limited",
-        [NM_META_COLOR_CONNECTIVITY_NONE]        = "connectivity-none",
-        [NM_META_COLOR_CONNECTIVITY_PORTAL]      = "connectivity-portal",
-        [NM_META_COLOR_CONNECTIVITY_UNKNOWN]     = "connectivity-unknown",
-        [NM_META_COLOR_DEVICE_ACTIVATED]         = "device-activated",
-        [NM_META_COLOR_DEVICE_ACTIVATING]        = "device-activating",
-        [NM_META_COLOR_DEVICE_DISCONNECTED]      = "device-disconnected",
-        [NM_META_COLOR_DEVICE_FIRMWARE_MISSING]  = "device-firmware-missing",
-        [NM_META_COLOR_DEVICE_PLUGIN_MISSING]    = "device-plugin-missing",
-        [NM_META_COLOR_DEVICE_UNAVAILABLE]       = "device-unavailable",
-        [NM_META_COLOR_DEVICE_DISABLED]          = "device-disabled",
-        [NM_META_COLOR_DEVICE_EXTERNAL]          = "device-external",
-        [NM_META_COLOR_DEVICE_UNKNOWN]           = "device-unknown",
-        [NM_META_COLOR_MANAGER_RUNNING]          = "manager-running",
-        [NM_META_COLOR_MANAGER_STARTING]         = "manager-starting",
-        [NM_META_COLOR_MANAGER_STOPPED]          = "manager-stopped",
-        [NM_META_COLOR_PERMISSION_AUTH]          = "permission-auth",
-        [NM_META_COLOR_PERMISSION_NO]            = "permission-no",
-        [NM_META_COLOR_PERMISSION_UNKNOWN]       = "permission-unknown",
-        [NM_META_COLOR_PERMISSION_YES]           = "permission-yes",
-        [NM_META_COLOR_PROMPT]                   = "prompt",
-        [NM_META_COLOR_STATE_ASLEEP]             = "state-asleep",
-        [NM_META_COLOR_STATE_CONNECTED_GLOBAL]   = "state-connected-global",
-        [NM_META_COLOR_STATE_CONNECTED_LOCAL]    = "state-connected-local",
-        [NM_META_COLOR_STATE_CONNECTED_SITE]     = "state-connected-site",
-        [NM_META_COLOR_STATE_CONNECTING]         = "state-connecting",
-        [NM_META_COLOR_STATE_DISCONNECTED]       = "state-disconnected",
-        [NM_META_COLOR_STATE_DISCONNECTING]      = "state-disconnecting",
-        [NM_META_COLOR_STATE_UNKNOWN]            = "state-unknown",
-        [NM_META_COLOR_WIFI_SIGNAL_EXCELLENT]    = "wifi-signal-excellent",
-        [NM_META_COLOR_WIFI_SIGNAL_FAIR]         = "wifi-signal-fair",
-        [NM_META_COLOR_WIFI_SIGNAL_GOOD]         = "wifi-signal-good",
-        [NM_META_COLOR_WIFI_SIGNAL_POOR]         = "wifi-signal-poor",
-        [NM_META_COLOR_WIFI_SIGNAL_UNKNOWN]      = "wifi-signal-unknown",
-        [NM_META_COLOR_DISABLED]                 = "disabled",
-        [NM_META_COLOR_ENABLED]                  = "enabled",
-    };
-    int i;
+    char *p = palette_buffer;
+
+    nm_assert(out_palette);
+
+    *out_palette = (NmcColorPalette) _NMC_COLOR_PALETTE_INIT();
 
     /* This reads through the raw color scheme file contents, identifying the
      * color names and sequences, putting in terminating NULs in place, so that
      * pointers into the buffer can readily be used as strings in the palette. */
     while (1) {
+        NMMetaColor name_idx;
+        const char *name;
+        const char *color;
+
         /* Leading whitespace. */
         while (nm_utils_is_separator(*p) || *p == '\n')
             p++;
@@ -638,42 +664,51 @@ parse_color_scheme(char *       palette_buffer,
             p++;
         }
 
-        /* All good, set the palette entry. */
-        for (i = NM_META_COLOR_NONE + 1; i < _NM_META_COLOR_NUM; i++) {
-            if (strcmp(map[i], name) == 0) {
-                tmp_palette[i] = resolve_color_alias(color);
-                break;
-            }
-        }
-        if (i == _NM_META_COLOR_NUM)
+        name_idx = _nm_meta_color_from_name(name);
+        if (name_idx == NM_META_COLOR_NONE) {
             g_debug("Ignoring an unrecognized color: '%s'\n", name);
+            continue;
+        }
+
+        out_palette->ansi_seq[name_idx] = _resolve_color_alias(color) ?: color;
     }
 
-    memcpy(palette, tmp_palette, sizeof(tmp_palette));
     return TRUE;
 }
 
 static void
-set_colors(NmcColorOption color_option,
-           bool *         out_use_colors,
-           char **        out_palette_buffer,
-           const char **  palette /* _NM_META_COLOR_NUM elements */)
+set_colors(NmcColorOption   color_option,
+           bool *           out_use_colors,
+           char **          out_palette_buffer,
+           NmcColorPalette *out_palette)
 {
     gs_free char *palette_str = NULL;
     gboolean      use_colors;
+    gboolean      palette_set = FALSE;
+
+    nm_assert(out_use_colors);
+    nm_assert(out_palette);
+    nm_assert(out_palette_buffer && !*out_palette_buffer);
 
     use_colors = check_colors(color_option, &palette_str);
 
     *out_use_colors = use_colors;
-    if (use_colors && palette_str) {
-        GError *error = NULL;
 
-        if (!parse_color_scheme(palette_str, palette, &error)) {
+    if (use_colors && palette_str) {
+        gs_free_error GError *error = NULL;
+        NmcColorPalette       palette;
+
+        if (!parse_color_scheme(palette_str, &palette, &error))
             g_debug("Error parsing color scheme: %s", error->message);
-            g_error_free(error);
-        } else
+        else {
             *out_palette_buffer = g_steal_pointer(&palette_str);
+            *out_palette        = palette;
+            palette_set         = TRUE;
+        }
     }
+
+    if (!palette_set)
+        *out_palette = (NmcColorPalette) _NMC_COLOR_PALETTE_INIT();
 }
 
 /*************************************************************************************/
@@ -872,7 +907,7 @@ process_command_line(NmCli *nmc, int argc, char **argv_orig)
     set_colors(colors,
                &nmc->nmc_config_mutable.use_colors,
                &nmc->palette_buffer,
-               nmc->nmc_config_mutable.palette);
+               &nmc->nmc_config_mutable.palette);
 
     /* Now run the requested command */
     nmc_do_cmd(nmc, nmcli_cmds, *argv, argc, argv);

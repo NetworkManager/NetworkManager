@@ -2547,6 +2547,42 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
 }
 
 static NMSetting *
+make_hostname_setting(shvarFile *ifcfg)
+{
+    NMSetting *setting;
+    NMTernary  from_dhcp;
+    NMTernary  from_dns_lookup;
+    NMTernary  only_from_default;
+    int        priority;
+
+    priority = svGetValueInt64(ifcfg, "HOSTNAME_PRIORITY", 10, G_MININT32, G_MAXINT32, 0);
+
+    from_dhcp         = svGetValueTernary(ifcfg, "HOSTNAME_FROM_DHCP");
+    from_dns_lookup   = svGetValueTernary(ifcfg, "HOSTNAME_FROM_DNS_LOOKUP");
+    only_from_default = svGetValueTernary(ifcfg, "HOSTNAME_ONLY_FROM_DEFAULT");
+
+    /* Create the setting when at least one key is not default*/
+    if (priority == 0 && from_dhcp == NM_TERNARY_DEFAULT && from_dns_lookup == NM_TERNARY_DEFAULT
+        && only_from_default == NM_TERNARY_DEFAULT)
+        return NULL;
+
+    setting = nm_setting_hostname_new();
+
+    g_object_set(setting,
+                 NM_SETTING_HOSTNAME_PRIORITY,
+                 priority,
+                 NM_SETTING_HOSTNAME_FROM_DHCP,
+                 from_dhcp,
+                 NM_SETTING_HOSTNAME_FROM_DNS_LOOKUP,
+                 from_dns_lookup,
+                 NM_SETTING_HOSTNAME_ONLY_FROM_DEFAULT,
+                 only_from_default,
+                 NULL);
+
+    return setting;
+}
+
+static NMSetting *
 make_sriov_setting(shvarFile *ifcfg)
 {
     gs_unref_hashtable GHashTable *keys = NULL;
@@ -2951,7 +2987,8 @@ make_dcb_setting(shvarFile *ifcfg, NMSetting **out_setting, GError **error)
     gboolean                      dcb_on;
     NMSettingDcbFlags             flags = NM_SETTING_DCB_FLAG_NONE;
 
-    g_return_val_if_fail(out_setting != NULL, FALSE);
+    g_return_val_if_fail(out_setting, FALSE);
+    *out_setting = NULL;
 
     dcb_on = !!svGetValueBoolean(ifcfg, "DCB", FALSE);
     if (!dcb_on)
@@ -5339,24 +5376,31 @@ infiniband_connection_from_ifcfg(const char *file, shvarFile *ifcfg, GError **er
 static void
 handle_bond_option(NMSettingBond *s_bond, const char *key, const char *value)
 {
-    char *      sanitized = NULL, *j;
-    const char *p         = value;
+    gs_free char *sanitized = NULL;
+    const char *  p         = value;
 
     /* Remove any quotes or +/- from arp_ip_target */
-    if (!g_strcmp0(key, NM_SETTING_BOND_OPTION_ARP_IP_TARGET) && value && value[0]) {
+    if (nm_streq0(key, NM_SETTING_BOND_OPTION_ARP_IP_TARGET) && value && value[0]) {
+        char *j;
+
         if (*p == '\'' || *p == '"')
             p++;
-        j = sanitized = g_malloc0(strlen(p) + 1);
+        j = sanitized = g_malloc(strlen(p) + 1);
         while (*p) {
             if (*p != '+' && *p != '-' && *p != '\'' && *p != '"')
                 *j++ = *p;
             p++;
         }
+        *j++  = '\0';
+        value = sanitized;
     }
 
-    if (!nm_setting_bond_add_option(s_bond, key, sanitized ?: value))
-        PARSE_WARNING("invalid bonding option '%s' = %s", key, sanitized ?: value);
-    g_free(sanitized);
+    if (!_nm_setting_bond_validate_option(key, value, NULL)) {
+        PARSE_WARNING("invalid bonding option '%s' = %s", key, value);
+        return;
+    }
+
+    nm_setting_bond_add_option(s_bond, key, value);
 }
 
 static NMSetting *
@@ -6236,8 +6280,9 @@ connection_from_file_full(const char *filename,
     gs_unref_object NMConnection *connection          = NULL;
     gs_free char *                type                = NULL;
     char *                        devtype, *bootproto;
-    NMSetting *                   s_ip4, *s_ip6, *s_tc, *s_proxy, *s_port, *s_dcb = NULL, *s_user;
-    NMSetting *                   s_sriov, *s_match;
+    NMSetting *                   setting;
+    NMSetting *                   s_ip4;
+    NMSetting *                   s_ip6;
     const char *                  ifcfg_name       = NULL;
     gboolean                      has_ip4_defroute = FALSE;
     gboolean                      has_complex_routes_v4;
@@ -6525,13 +6570,13 @@ connection_from_file_full(const char *filename,
                        NM_SETTING_IP_CONFIG(s_ip4),
                        NM_SETTING_IP_CONFIG(s_ip6));
 
-    s_sriov = make_sriov_setting(main_ifcfg);
-    if (s_sriov)
-        nm_connection_add_setting(connection, s_sriov);
+    setting = make_sriov_setting(main_ifcfg);
+    if (setting)
+        nm_connection_add_setting(connection, setting);
 
-    s_tc = make_tc_setting(main_ifcfg);
-    if (s_tc)
-        nm_connection_add_setting(connection, s_tc);
+    setting = make_tc_setting(main_ifcfg);
+    if (setting)
+        nm_connection_add_setting(connection, setting);
 
     /* For backwards compatibility, if IPv4 is disabled or the
      * config fails for some reason, we read DOMAIN and put the
@@ -6539,30 +6584,34 @@ connection_from_file_full(const char *filename,
      */
     check_dns_search_domains(main_ifcfg, s_ip4, s_ip6);
 
-    s_proxy = make_proxy_setting(main_ifcfg);
-    if (s_proxy)
-        nm_connection_add_setting(connection, s_proxy);
+    setting = make_proxy_setting(main_ifcfg);
+    if (setting)
+        nm_connection_add_setting(connection, setting);
 
-    s_user = make_user_setting(main_ifcfg);
-    if (s_user)
-        nm_connection_add_setting(connection, s_user);
+    setting = make_hostname_setting(main_ifcfg);
+    if (setting)
+        nm_connection_add_setting(connection, setting);
 
-    s_match = make_match_setting(main_ifcfg);
-    if (s_match)
-        nm_connection_add_setting(connection, s_match);
+    setting = make_user_setting(main_ifcfg);
+    if (setting)
+        nm_connection_add_setting(connection, setting);
 
-    s_port = make_bridge_port_setting(main_ifcfg);
-    if (s_port)
-        nm_connection_add_setting(connection, s_port);
+    setting = make_match_setting(main_ifcfg);
+    if (setting)
+        nm_connection_add_setting(connection, setting);
 
-    s_port = make_team_port_setting(main_ifcfg);
-    if (s_port)
-        nm_connection_add_setting(connection, s_port);
+    setting = make_bridge_port_setting(main_ifcfg);
+    if (setting)
+        nm_connection_add_setting(connection, setting);
 
-    if (!make_dcb_setting(main_ifcfg, &s_dcb, error))
+    setting = make_team_port_setting(main_ifcfg);
+    if (setting)
+        nm_connection_add_setting(connection, setting);
+
+    if (!make_dcb_setting(main_ifcfg, &setting, error))
         return NULL;
-    if (s_dcb)
-        nm_connection_add_setting(connection, s_dcb);
+    if (setting)
+        nm_connection_add_setting(connection, setting);
 
     if (!nm_connection_normalize(connection, NULL, NULL, error))
         return NULL;

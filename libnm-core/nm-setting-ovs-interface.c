@@ -382,7 +382,7 @@ nm_setting_ovs_interface_init(NMSettingOvsInterface *self)
 NMSetting *
 nm_setting_ovs_interface_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_OVS_INTERFACE, NULL);
+    return g_object_new(NM_TYPE_SETTING_OVS_INTERFACE, NULL);
 }
 
 static void

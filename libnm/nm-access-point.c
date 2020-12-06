@@ -472,7 +472,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_accesspoint = NML_DBUS_META_IFACE_INIT_PROP(
     NM_DBUS_INTERFACE_ACCESS_POINT,
     nm_access_point_get_type,
-    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
     NML_DBUS_META_IFACE_DBUS_PROPERTIES(
         NML_DBUS_META_PROPERTY_INIT_U("Flags", PROP_FLAGS, NMAccessPoint, _priv.flags),
         NML_DBUS_META_PROPERTY_INIT_U("Frequency", PROP_FREQUENCY, NMAccessPoint, _priv.frequency),

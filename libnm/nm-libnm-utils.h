@@ -7,6 +7,7 @@
 #define __NM_LIBNM_UTILS_H__
 
 #include "c-list/src/c-list.h"
+#include "nm-device.h"
 #include "nm-glib-aux/nm-ref-string.h"
 #include "nm-glib-aux/nm-logging-fwd.h"
 #include "nm-types.h"
@@ -220,11 +221,12 @@ typedef enum {
     /* See comments below for NMLDBusMetaIface.interface_prio.
      *
      * Higher numbers means more important to detect the GObject type. */
-    NML_DBUS_META_INTERFACE_PRIO_NONE             = 0,
-    NML_DBUS_META_INTERFACE_PRIO_NMCLIENT         = 1,
-    NML_DBUS_META_INTERFACE_PRIO_PARENT_TYPE      = 2,
-    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_LOW  = 3,
-    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH = 4,
+    NML_DBUS_META_INTERFACE_PRIO_NONE           = 0,
+    NML_DBUS_META_INTERFACE_PRIO_NMCLIENT       = 1,
+    NML_DBUS_META_INTERFACE_PRIO_PARENT_TYPE    = 2,
+    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_10 = 3,
+    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_20 = 4,
+    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30 = 5,
 } NMLDBusMetaInteracePrio;
 
 /*****************************************************************************/
@@ -514,7 +516,7 @@ struct _NMLDBusMetaIface {
      * NetworkManager's API does not add/remove interfaces after exporting the object the
      * first time, so in practice each D-Bus object is expected to have a suitable D-Bus
      * interface (and only determining interface, which doesn't change). Those interfaces have
-     * priority %NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH.
+     * priority %NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30.
      *
      * (*) note that nothing bad would happen if a faulty NetworkManager would violate that.
      * Of course, something would not work correctly, but the D-Bus interface we find is unexpected
@@ -522,7 +524,7 @@ struct _NMLDBusMetaIface {
      *
      * One exception is "org.freedesktop.NetworkManager.Connection.Active". This can either
      * be a NMActiveConnection or a NMVpnConnection. Hence, this profile has priority
-     * %NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_LOW, and depending on whether there is
+     * %NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_10, and depending on whether there is
      * a "org.freedesktop.NetworkManager.VPN.Connection" (with high priority), we create
      * one or the other type.
      */
@@ -812,6 +814,19 @@ struct _NMDeviceClass {
     const char *(*get_type_description)(NMDevice *device);
 
     GType (*get_setting_type)(NMDevice *device);
+};
+
+/*****************************************************************************/
+
+struct _NMDeviceEthernetPrivate;
+
+struct _NMDeviceEthernet {
+    NMDevice                         parent;
+    struct _NMDeviceEthernetPrivate *_priv;
+};
+
+struct _NMDeviceEthernetClass {
+    NMDeviceClass parent;
 };
 
 /*****************************************************************************/

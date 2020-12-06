@@ -343,7 +343,7 @@ nm_setting_ovs_port_init(NMSettingOvsPort *self)
 NMSetting *
 nm_setting_ovs_port_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_OVS_PORT, NULL);
+    return g_object_new(NM_TYPE_SETTING_OVS_PORT, NULL);
 }
 
 static void

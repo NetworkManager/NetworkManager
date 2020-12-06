@@ -3498,7 +3498,7 @@ nm_setting_802_1x_init(NMSetting8021x *setting)
 NMSetting *
 nm_setting_802_1x_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_802_1X, NULL);
+    return g_object_new(NM_TYPE_SETTING_802_1X, NULL);
 }
 
 static void

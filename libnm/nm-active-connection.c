@@ -542,7 +542,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_connection_active = NML_DBUS_META_IFACE_INIT_PROP(
     NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
     nm_active_connection_get_type,
-    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_LOW,
+    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_10,
     NML_DBUS_META_IFACE_DBUS_PROPERTIES(
         NML_DBUS_META_PROPERTY_INIT_O_PROP("Connection",
                                            PROP_CONNECTION,

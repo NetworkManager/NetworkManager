@@ -6,6 +6,9 @@
 #include "platform/nmp-object.h"
 #include "nm-l3-config-data.h"
 
+#define NM_L3CFG_CONFIG_PRIORITY_IPV4LL 0
+#define NM_ACD_TIMEOUT_RFC5227_MSEC     9000u
+
 #define NM_TYPE_L3CFG            (nm_l3cfg_get_type())
 #define NM_L3CFG(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_L3CFG, NML3Cfg))
 #define NM_L3CFG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_L3CFG, NML3CfgClass))
@@ -18,10 +21,76 @@
 
 #define NM_L3CFG_SIGNAL_NOTIFY "l3cfg-notify"
 
+typedef enum _nm_packed {
+    NM_L3_ACD_DEFEND_TYPE_NONE,
+    NM_L3_ACD_DEFEND_TYPE_NEVER,
+    NM_L3_ACD_DEFEND_TYPE_ONCE,
+    NM_L3_ACD_DEFEND_TYPE_ALWAYS,
+} NML3AcdDefendType;
+
+typedef enum _nm_packed {
+    NM_L3_ACD_ADDR_STATE_INIT,
+    NM_L3_ACD_ADDR_STATE_PROBING,
+    NM_L3_ACD_ADDR_STATE_USED,
+    NM_L3_ACD_ADDR_STATE_READY,
+    NM_L3_ACD_ADDR_STATE_DEFENDING,
+    NM_L3_ACD_ADDR_STATE_CONFLICT,
+    NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED,
+} NML3AcdAddrState;
+
+typedef struct {
+    const NMPObject *     obj;
+    const NML3ConfigData *l3cd;
+    gconstpointer         tag;
+
+    struct {
+        guint32           acd_timeout_msec_track;
+        NML3AcdDefendType acd_defend_type_track;
+        bool              acd_dirty_track : 1;
+        bool              acd_failed_notified_track : 1;
+    } _priv;
+
+} NML3AcdAddrTrackInfo;
+
+typedef struct {
+    in_addr_t                   addr;
+    guint                       n_track_infos;
+    NML3AcdAddrState            state;
+    NML3Cfg *                   l3cfg;
+    const NML3AcdAddrTrackInfo *track_infos;
+} NML3AcdAddrInfo;
+
+static inline const NML3AcdAddrTrackInfo *
+nm_l3_acd_addr_info_find_track_info(const NML3AcdAddrInfo *addr_info,
+                                    gconstpointer          tag,
+                                    const NML3ConfigData * l3cd,
+                                    const NMPObject *      obj)
+{
+    guint                       i;
+    const NML3AcdAddrTrackInfo *ti;
+
+    nm_assert(addr_info);
+
+    /* we always expect that the number n_track_infos is reasonably small. Hence,
+     * a naive linear search is simplest and fastest (e.g. we don't have a hash table). */
+
+    for (i = 0, ti = addr_info->track_infos; i < addr_info->n_track_infos; i++, ti++) {
+        if (l3cd && ti->l3cd != l3cd)
+            continue;
+        if (tag && ti->tag != tag)
+            continue;
+        if (obj && ti->obj != obj)
+            continue;
+        return ti;
+    }
+
+    return NULL;
+}
+
 typedef enum {
     NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED,
 
-    NM_L3_CONFIG_NOTIFY_TYPE_ACD_COMPLETED,
+    NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT,
 
     /* emitted at the end of nm_l3cfg_platform_commit(). */
     NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT,
@@ -38,24 +107,19 @@ typedef enum {
      * notifications without also subscribing directly to the platform. */
     NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE,
 
+    NM_L3_CONFIG_NOTIFY_TYPE_IPV4LL_EVENT,
+
     _NM_L3_CONFIG_NOTIFY_TYPE_NUM,
 } NML3ConfigNotifyType;
 
-typedef struct {
-    const NMPObject *     obj;
-    const NML3ConfigData *l3cd;
-    gconstpointer         tag;
-} NML3ConfigNotifyPayloadAcdFailedSource;
+struct _NML3IPv4LL;
 
 typedef struct {
     NML3ConfigNotifyType notify_type;
     union {
         struct {
-            in_addr_t                                     addr;
-            guint                                         sources_len;
-            bool                                          probe_result : 1;
-            const NML3ConfigNotifyPayloadAcdFailedSource *sources;
-        } acd_completed;
+            NML3AcdAddrInfo info;
+        } acd_event;
 
         struct {
             const NMPObject *          obj;
@@ -65,6 +129,10 @@ typedef struct {
         struct {
             guint32 obj_type_flags;
         } platform_change_on_idle;
+
+        struct {
+            struct _NML3IPv4LL *ipv4ll;
+        } ipv4ll_event;
     };
 } NML3ConfigNotifyData;
 
@@ -79,7 +147,6 @@ struct _NML3Cfg {
         const NMPObject *       plobj;
         const NMPObject *       plobj_next;
         int                     ifindex;
-        bool                    changed_configs : 1;
     } priv;
 };
 
@@ -205,6 +272,7 @@ gboolean nm_l3cfg_add_config(NML3Cfg *             self,
                              guint32               default_route_metric_6,
                              guint32               default_route_penalty_4,
                              guint32               default_route_penalty_6,
+                             NML3AcdDefendType     acd_defend_type,
                              guint32               acd_timeout_msec,
                              NML3ConfigMergeFlags  merge_flags);
 
@@ -250,6 +318,10 @@ void nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self);
 
 /*****************************************************************************/
 
+const NML3AcdAddrInfo *nm_l3cfg_get_acd_addr_info(NML3Cfg *self, in_addr_t addr);
+
+/*****************************************************************************/
+
 NML3CfgCommitType nm_l3cfg_commit_type_get(NML3Cfg *self);
 
 typedef struct _NML3CfgCommitTypeHandle NML3CfgCommitTypeHandle;
@@ -270,6 +342,14 @@ nm_l3cfg_get_best_default_route(NML3Cfg *self, int addr_family, gboolean get_com
 /*****************************************************************************/
 
 gboolean nm_l3cfg_has_commited_ip6_addresses_pending_dad(NML3Cfg *self);
+
+/*****************************************************************************/
+
+struct _NML3IPv4LL *nm_l3cfg_get_ipv4ll(NML3Cfg *self);
+
+struct _NML3IPv4LL *nm_l3cfg_access_ipv4ll(NML3Cfg *self);
+
+void _nm_l3cfg_unregister_ipv4ll(NML3Cfg *self);
 
 /*****************************************************************************/
 

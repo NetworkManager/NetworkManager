@@ -6,13 +6,13 @@
 # Lasse Bang Mikkelsen <lbm@fatalerror.dk>, 2005, 06, 07.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016-2017. #zanata
 # Thomas Haller <thaller@redhat.com>, 2017. #zanata
-# scootergrisen, 2019.
+# scootergrisen, 2019-2020.
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-09-04 09:54+0200\n"
-"PO-Revision-Date: 2019-10-18 03:56+0200\n"
+"PO-Revision-Date: 2020-10-18 21:00+0200\n"
 "Last-Translator: scootergrisen\n"
 "Language-Team: Danish\n"
 "Language: da\n"
@@ -158,14 +158,13 @@ msgid "access denied"
 msgstr "adgang nægtet"
 
 #: ../clients/cli/common.c:1441
-#, fuzzy
 msgid "NetworkManager is not running"
-msgstr "Status for NetworkManager"
+msgstr "NetworkManager kører ikke"
 
 #: ../clients/cli/common.c:1467
-#, fuzzy, c-format
+#, c-format
 msgid "Error: error connecting to system bus: %s"
-msgstr "Fejl: dårlig forbindelsestype: %s"
+msgstr "Fejl: fejl ved oprettelse af forbindelse til systembus: %s"
 
 #: ../clients/cli/common.c:1493 ../clients/cli/connections.c:67
 #: ../clients/cli/connections.c:77 ../clients/cli/devices.c:434
@@ -794,7 +793,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/connections.c:1107
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection modify { ARGUMENTS | help }\n"
 "\n"
@@ -837,6 +836,10 @@ msgstr ""
 "'-'-tegnet gør det muligt at fjerne valgte elementer i stedet for hele "
 "værdien.\n"
 "\n"
+"ARGUMENTER := remove <indstilling>\n"
+"\n"
+"Fjern en indstilling fra forbindelsesprofilen.\n"
+"\n"
 "Eksempler:\n"
 "nmcli con mod home-wifi wifi.ssid rakosnicek\n"
 "nmcli con mod em1-1 ipv4.method manual ipv4.addr \"192.168.1.2/24, "
@@ -846,7 +849,7 @@ msgstr ""
 "nmcli con mod em1-1 -ipv6.addr \"abbe::cafe/56\"\n"
 "nmcli con mod bond0 +bond.options mii=500\n"
 "nmcli con mod bond0 -bond.options downdelay\n"
-"\n"
+"nmcli con mod em1-1 remove sriov\n"
 
 #: ../clients/cli/connections.c:1135
 #, c-format
@@ -1187,14 +1190,14 @@ msgid "neither a valid connection nor device given"
 msgstr "hverken en gyldig forbindelse eller enhed angivet"
 
 #: ../clients/cli/connections.c:2761
-#, fuzzy, c-format
+#, c-format
 msgid "invalid passwd-file '%s' at line %zd: %s"
-msgstr "kunne ikke læse passwd-file '%s': %s"
+msgstr "ugyldig passwd-file '%s' på linje %zd: %s"
 
 #: ../clients/cli/connections.c:2767
-#, fuzzy, c-format
+#, c-format
 msgid "invalid passwd-file '%s': %s"
-msgstr "kunne ikke læse passwd-file '%s': %s"
+msgstr "ugyldig passwd-file '%s': %s"
 
 #: ../clients/cli/connections.c:2894 ../clients/cli/connections.c:9015
 #: ../clients/cli/devices.c:1759 ../clients/cli/devices.c:1807
@@ -1202,9 +1205,9 @@ msgstr "kunne ikke læse passwd-file '%s': %s"
 #: ../clients/cli/devices.c:3556 ../clients/cli/devices.c:4133
 #: ../clients/cli/devices.c:4286 ../clients/cli/devices.c:4506
 #: ../clients/cli/devices.c:4680
-#, fuzzy, c-format
+#, c-format
 msgid "Error: invalid extra argument '%s'."
-msgstr "Fejl: Ugyldig 'wwan'-parameter: '%s'."
+msgstr "Fejl: ugyldig ekstra argument '%s'."
 
 #: ../clients/cli/connections.c:2922
 msgid "preparing"
@@ -1310,9 +1313,9 @@ msgid "Error: 'bt-type': '%s' not valid; use [%s, %s, %s (%s), %s]."
 msgstr "Fejl: 'bt-type': '%s' ikke gyldig; brug [%s, %s, %s (%s), %s]."
 
 #: ../clients/cli/connections.c:4660
-#, fuzzy, c-format
+#, c-format
 msgid "Error: setting '%s' is mandatory and cannot be removed."
-msgstr "Fejl: indstillingen '%s' er obligatorisk og kan ikke fjernes.\n"
+msgstr "Fejl: indstillingen '%s' er obligatorisk og kan ikke fjernes."
 
 #: ../clients/cli/connections.c:4670
 #, c-format
@@ -1324,19 +1327,18 @@ msgid "Error: <setting>.<property> argument is missing."
 msgstr "Fejl: mangler <indstilling>.<egenskab>-argument."
 
 #: ../clients/cli/connections.c:4746
-#, fuzzy
 msgid "Error: missing setting."
-msgstr "Fejl: manglende indstilling til '%s'-egenskab\n"
+msgstr "Fejl: manglende indstilling."
 
 #: ../clients/cli/connections.c:4764
-#, fuzzy, c-format
+#, c-format
 msgid "Setting '%s' is not present in the connection."
-msgstr "Indstillingen '%s' findes ikke i forbindelsen.\n"
+msgstr "Indstillingen '%s' findes ikke i forbindelsen."
 
 #: ../clients/cli/connections.c:4768
-#, fuzzy, c-format
+#, c-format
 msgid "Error: invalid setting argument '%s'."
-msgstr "Fejl: Ugyldig 'wwan'-parameter: '%s'."
+msgstr "Fejll: ugyldig indstillingsargument '%s'."
 
 #: ../clients/cli/connections.c:4792
 #, c-format
@@ -1768,7 +1770,7 @@ msgstr ""
 "Viser nuværende værdi og gør det muligt at redigere den.\n"
 
 #: ../clients/cli/connections.c:6709
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "remove [<value>|<index>|<option name>]  :: delete the value\n"
 "\n"
@@ -1995,7 +1997,7 @@ msgstr "Indstillingen '%s' findes ikke i forbindelsen.\n"
 #: ../clients/cli/connections.c:7701
 #, c-format
 msgid "Error: %s properties, nor it is a setting name.\n"
-msgstr ""
+msgstr "Fejl: %s properties, nor it is a setting name.\n"
 
 #: ../clients/cli/connections.c:7726 ../clients/cli/connections.c:7758
 #, c-format
@@ -2006,31 +2008,31 @@ msgstr ""
 #: ../clients/cli/connections.c:7781
 #, c-format
 msgid "Error: invalid property: %s, neither a valid setting name.\n"
-msgstr ""
+msgstr "Fejl: ugyldig egenskab: %s, hverken et gyldigt indstillingsnavn.\n"
 
 #: ../clients/cli/connections.c:7811
-#, fuzzy, c-format
+#, c-format
 msgid "Error: unknown setting: '%s'\n"
-msgstr "Fejl: Ukendt forbindelse: %s."
+msgstr "Fejl: ukendt indstilling: '%s'\n"
 
 #: ../clients/cli/connections.c:7816
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' setting not present in the connection\n"
-msgstr "Fejl: %s - ingen sådan forbindelse."
+msgstr "Fejl: '%s'-indstilling findes ikke i forbindelsen\n"
 
 #: ../clients/cli/connections.c:7847
-#, fuzzy, c-format
+#, c-format
 msgid "Error: invalid property: %s%s\n"
-msgstr "Fejl: Ugyldig 'wifi'-parameter: '%s'."
+msgstr "Fejl: ugyldig egenskab: %s%s\n"
 
 #: ../clients/cli/connections.c:7849
 msgid ", neither a valid setting name"
-msgstr ""
+msgstr ", hverken et gyldigt indstillingsnavn"
 
 #: ../clients/cli/connections.c:7865
 #, c-format
 msgid "Invalid verify option: %s\n"
-msgstr ""
+msgstr "Ugyldigt verify-tilvalg: %s\n"
 
 #: ../clients/cli/connections.c:7874
 #, c-format
@@ -2045,37 +2047,37 @@ msgstr "Verificer forbindelse: %s\n"
 #: ../clients/cli/connections.c:7893
 #, c-format
 msgid "The error cannot be fixed automatically.\n"
-msgstr ""
+msgstr "Fejlen kan ikke rettes automatisk.\n"
 
 #: ../clients/cli/connections.c:7913
-#, fuzzy, c-format
+#, c-format
 msgid "Error: invalid argument '%s'\n"
-msgstr "Fejl: Ugyldig 'wifi'-parameter: '%s'."
+msgstr "Fejl: ugyldigt argument '%s'\n"
 
 #: ../clients/cli/connections.c:7963
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to save '%s' (%s) connection: %s\n"
-msgstr "Fejl: Frakobling af enhed \"%s\" (%s) mislykkedes: %s"
+msgstr "Fejl: Kunne ikke gemme '%s' (%s) forbindelse: %s\n"
 
 #: ../clients/cli/connections.c:7969
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Timeout saving '%s' (%s) connection\n"
-msgstr "Fejl: Frakobling af enhed \"%s\" (%s) mislykkedes: %s"
+msgstr "Fejl: Timeout ved gemning af '%s' (%s) forbindelse\n"
 
 #: ../clients/cli/connections.c:7974
 #, c-format
 msgid "Connection '%s' (%s) successfully saved.\n"
-msgstr ""
+msgstr "Forbindelsen '%s' (%s) blev gemt.\n"
 
 #: ../clients/cli/connections.c:7975
 #, c-format
 msgid "Connection '%s' (%s) successfully updated.\n"
-msgstr ""
+msgstr "Forbindelsen '%s' (%s) blev opdateret.\n"
 
 #: ../clients/cli/connections.c:8008
-#, fuzzy, c-format
+#, c-format
 msgid "Error: connection verification failed: %s\n"
-msgstr "Fejl: Forbindelsesaktivering fejlede: %s"
+msgstr "Fejl: forbindelsesverfikation mislykkedes: %s\n"
 
 #: ../clients/cli/connections.c:8009
 msgid "(unknown error)"
@@ -2084,78 +2086,79 @@ msgstr "(ukendt fejl)"
 #: ../clients/cli/connections.c:8010
 #, c-format
 msgid "You may try running 'verify fix' to fix errors.\n"
-msgstr ""
+msgstr "Du kan prøve at køre 'verify fix' for at rette fejl.\n"
 
 #. TRANSLATORS: do not translate 'save', leave it as it is
 #: ../clients/cli/connections.c:8033
 #, c-format
 msgid "Error: connection is not saved. Type 'save' first.\n"
-msgstr ""
+msgstr "Fejl: forbindelsen er ikke gemt. Skriv først 'save'.\n"
 
 #: ../clients/cli/connections.c:8037
-#, fuzzy, c-format
+#, c-format
 msgid "Error: connection is not valid: %s\n"
-msgstr "Fejl: Forbindelsesaktivering fejlede: %s"
+msgstr "Fejl: forbindelsen er ikke gyldig: %s\n"
 
 #: ../clients/cli/connections.c:8047
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Cannot activate connection: %s.\n"
-msgstr "Fejl: Ukendt forbindelse: %s."
+msgstr "Fejl: Kan ikke aktivere forbindelse: %s.\n"
 
 #: ../clients/cli/connections.c:8056
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to activate '%s' (%s) connection: %s\n"
-msgstr "Fejl: Frakobling af enhed \"%s\" (%s) mislykkedes: %s"
+msgstr "Fejl: Kunne ikke aktivere '%s' (%s) forbindelse: %s\n"
 
 #: ../clients/cli/connections.c:8063
 msgid "Monitoring connection activation (press any key to continue)\n"
-msgstr ""
+msgstr "Overvåger forbindelsesaktivering (tryk på en tast for at fortsætte)\n"
 
 #: ../clients/cli/connections.c:8099
-#, fuzzy, c-format
+#, c-format
 msgid "Error: status-line: %s\n"
-msgstr "Fejl: 'nm status': %s"
+msgstr "Fejl: status-line: %s\n"
 
 #: ../clients/cli/connections.c:8107
-#, fuzzy, c-format
+#, c-format
 msgid "Error: save-confirmation: %s\n"
-msgstr "Fejl: 'con list': %s"
+msgstr "Fejl: save-confirmation: %s\n"
 
 #: ../clients/cli/connections.c:8115
-#, fuzzy, c-format
+#, c-format
 msgid "Error: show-secrets: %s\n"
-msgstr "Fejl: 'con status': %s"
+msgstr "Fejl: show-secrets: %s\n"
 
 #: ../clients/cli/connections.c:8122
 #, c-format
 msgid "Current nmcli configuration:\n"
-msgstr ""
+msgstr "Nuværende nmcli-konfiguration:\n"
 
 #: ../clients/cli/connections.c:8130
 #, c-format
 msgid "Invalid configuration option '%s'; allowed [%s]\n"
-msgstr ""
+msgstr "Ugyldigt konfigurationstilvalg '%s'; tilladt [%s]\n"
 
 #: ../clients/cli/connections.c:8352
 #, c-format
 msgid "Error: only one of 'id', 'filename', uuid, or 'path' can be provided."
-msgstr ""
+msgstr "Fejl: der kan kun angives én af 'id', 'filename', uuid eller 'path'."
 
 #: ../clients/cli/connections.c:8367 ../clients/cli/connections.c:8531
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Unknown connection '%s'."
-msgstr "Fejl: Ukendt forbindelse: %s."
+msgstr "Fejl: Ukendt forbindelse '%s'."
 
 #: ../clients/cli/connections.c:8384
 #, c-format
 msgid "Warning: editing existing connection '%s'; 'type' argument is ignored\n"
-msgstr ""
+msgstr "Advarsel: redigerer eksisterende forbindelse '%s'; 'type'-argument ignoreres\n"
 
 #: ../clients/cli/connections.c:8387
 #, c-format
 msgid ""
 "Warning: editing existing connection '%s'; 'con-name' argument is ignored\n"
-msgstr ""
+msgstr "Advarsel: redigerer eksisterende forbindelse '%s'; 'con-name'-argument "
+"ignoreres\n"
 
 #: ../clients/cli/connections.c:8414
 #, c-format
@@ -2186,59 +2189,60 @@ msgstr "Tilføjer en ny '%s'-forbindelse"
 #: ../clients/cli/connections.c:8460
 #, c-format
 msgid "Type 'help' or '?' for available commands."
-msgstr ""
+msgstr "Skriv 'help' eller '?' for tilgængelige kommandoer."
 
 #. TRANSLATORS: do not translate 'print', leave it as it is
 #: ../clients/cli/connections.c:8463
 #, c-format
 msgid "Type 'print' to show all the connection properties."
-msgstr ""
+msgstr "Skriv 'print' for at vise alle forbindelsesegenskaberne."
 
 #. TRANSLATORS: do not translate 'describe', leave it as it is
 #: ../clients/cli/connections.c:8466
 #, c-format
 msgid "Type 'describe [<setting>.<prop>]' for detailed property description."
 msgstr ""
+"Skriv 'describe [<indstilling>.<egenskab>]' for detaljeret beskrivelse af "
+"egenskab."
 
 #: ../clients/cli/connections.c:8494
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to modify connection '%s': %s"
-msgstr "Fejl: Ukendt forbindelse: %s."
+msgstr "Fejl: Kunne ikke redigere forbindelsen '%s': %s"
 
 #: ../clients/cli/connections.c:8500
 #, c-format
 msgid "Connection '%s' (%s) successfully modified.\n"
-msgstr ""
+msgstr "Forbindelsen '%s' (%s) blev ændret.\n"
 
 #: ../clients/cli/connections.c:8567
 #, c-format
 msgid "%s (%s) cloned as %s (%s).\n"
-msgstr ""
+msgstr "%s (%s) klonet som %s (%s).\n"
 
 #: ../clients/cli/connections.c:8627
-#, fuzzy
 msgid "New connection name: "
 msgstr "Nyt forbindelsesnavn: "
 
 #: ../clients/cli/connections.c:8629
-#, fuzzy, c-format
+#, c-format
 msgid "Error: <new name> argument is missing."
-msgstr "Fejl: %s parameter mangler."
+msgstr "Fejl: <new name>-argument mangler."
 
 #: ../clients/cli/connections.c:8635 ../clients/cli/connections.c:9120
-#, fuzzy, c-format
+#, c-format
 msgid "Error: unknown extra argument: '%s'."
-msgstr "Fejl: Ukendt forbindelse: %s."
+msgstr "Fejl: ukendt ekstra argument: '%s'."
 
 #: ../clients/cli/connections.c:8667
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all connections deleted."
-msgstr "Fejl: Ukendt forbindelse: %s."
+msgstr "Fejl: ikke alle forbindelser blev slettet."
 
 #: ../clients/cli/connections.c:8668
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Connection deletion failed: %s\n"
-msgstr "Fejl: Forbindelsesaktivering fejlede: %s"
+msgstr "Fejl: Sletning af forbindelse mislykkedes: %s\n"
 
 #: ../clients/cli/connections.c:8724 ../clients/cli/connections.c:8844
 #, c-format
@@ -2246,9 +2250,9 @@ msgid "Error: %s.\n"
 msgstr "Fejl: %s.\n"
 
 #: ../clients/cli/connections.c:8725 ../clients/cli/connections.c:8845
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all connections found."
-msgstr "Fejl: Ukendt forbindelse: %s."
+msgstr "Fejl: fandt ikke alle forbindelser."
 
 #. truncate trailing ", "
 #: ../clients/cli/connections.c:8776
@@ -2299,12 +2303,12 @@ msgstr "Fejl: %s parameter mangler."
 #: ../clients/cli/connections.c:8998
 #, c-format
 msgid "Warning: 'type' already specified, ignoring extra one.\n"
-msgstr ""
+msgstr "Advarsel: 'type' allerede angivet, ignorerer den ekstra.\n"
 
 #: ../clients/cli/connections.c:9013
 #, c-format
 msgid "Warning: 'file' already specified, ignoring extra one.\n"
-msgstr ""
+msgstr "Advarsel: 'file' allerede angivet, ignorerer den ekstra.\n"
 
 #: ../clients/cli/connections.c:9027
 #, fuzzy, c-format
@@ -2324,7 +2328,7 @@ msgstr "Fejl: 'dev list': %s"
 #: ../clients/cli/connections.c:9050 ../clients/cli/connections.c:9141
 #, c-format
 msgid "Error: failed to load VPN plugin: %s."
-msgstr ""
+msgstr "Fejl: kunne ikke indlæse VPN-plugin: %s."
 
 #: ../clients/cli/connections.c:9060
 #, fuzzy, c-format
@@ -2333,7 +2337,7 @@ msgstr "Fejl: 'dev status': %s"
 
 #: ../clients/cli/connections.c:9127
 msgid "Output file name: "
-msgstr ""
+msgstr "Outputfilnavn: "
 
 #: ../clients/cli/connections.c:9132
 #, fuzzy, c-format
@@ -2343,7 +2347,7 @@ msgstr "Fejl: Ukendt forbindelse: %s."
 #: ../clients/cli/connections.c:9154
 #, c-format
 msgid "Error: failed to create temporary file %s."
-msgstr ""
+msgstr "Fejl: kunne ikke oprette den midlertidige fil %s."
 
 #: ../clients/cli/connections.c:9162
 #, fuzzy, c-format
@@ -2353,7 +2357,7 @@ msgstr "Fejl: 'dev status': %s"
 #: ../clients/cli/connections.c:9174
 #, c-format
 msgid "Error: failed to read temporary file '%s': %s."
-msgstr ""
+msgstr "Fejl: kunne ikke læse den midlertidige fil '%s': %s."
 
 #. define some prompts
 #: ../clients/cli/devices.c:23
@@ -2383,7 +2387,7 @@ msgid "%u Mb/s"
 msgstr "%u Mb/s"
 
 #: ../clients/cli/devices.c:732
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device { COMMAND | help }\n"
 "\n"
@@ -2459,6 +2463,8 @@ msgstr ""
 "[channel <kanal>] [password <adgangskode>]\n"
 "\n"
 "  wifi rescan [ifname <gfnavn>] [[ssid <SSID som skal skannes>] ...]\n"
+"\n"
+"  wifi show-password [gfnavn <gfnavn>]\n"
 "\n"
 "  lldp [list [ifname <gfnavn>]]\n"
 "\n"
@@ -2556,7 +2562,7 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/devices.c:805
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli device modify { ARGUMENTS | --help }\n"
 "\n"
@@ -2583,16 +2589,14 @@ msgstr ""
 "Rediger en eller flere egenskaber som er aktive på enheden uden at ændre\n"
 "forbindelsesprofilen. Ændringerne træder i kraft med det samme. Ved "
 "egenskaber\n"
-"med flere værdier kan du valgfrit bruge '+' eller '-' foran "
-"egenskabsnavnet.\n"
+"med flere værdier kan du valgfrit bruge '+' eller '-' foran egenskabsnavnet.\n"
 "'+'-tegnet gør det muligt at tilføje punkter i stedet for at overskrive hele "
 "værdien.\n"
 "'-'-tegnet gør det muligt at fjerne valgte punkter i stedet for hele "
 "værdien.\n"
 "\n"
 "Eksempler:\n"
-"nmcli dev mod em1 ipv4.method manual ipv4.addr \"192.168.1.2/24, "
-"10.10.1.5/8\"\n"
+"nmcli dev mod em1 ipv4.method manual ipv4.addr \"192.168.1.2/24, 10.10.1.5/8\"\n"
 "nmcli dev mod em1 +ipv4.dns 8.8.4.4\n"
 "nmcli dev mod em1 -ipv4.dns 1\n"
 "nmcli dev mod em1 -ipv6.addr \"abbe::cafe/56\"\n"
@@ -2817,31 +2821,31 @@ msgstr ""
 "\n"
 
 #: ../clients/cli/devices.c:1021
-#, fuzzy, c-format
+#, c-format
 msgid "Error: No interface specified."
-msgstr "Fejl: iface skal være angivet."
+msgstr "Fejl: Ingen grænseflade angivet."
 
 #: ../clients/cli/devices.c:1044
 #, c-format
 msgid "Warning: argument '%s' is duplicated.\n"
-msgstr ""
+msgstr "Advarsel: argumentet '%s' er duplikeret.\n"
 
 #: ../clients/cli/devices.c:1047
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Device '%s' not found.\n"
-msgstr "Fejl: Enhed \"%s\" ikke fundet."
+msgstr "Fejl: Enheden '%s' blev ikke fundet.\n"
 
 #: ../clients/cli/devices.c:1048
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all devices found."
-msgstr "Fejl: Ingen passende enhed fundet."
+msgstr "Fejl: fandt ikke alle enheder."
 
 #: ../clients/cli/devices.c:1079
 msgid "No interface specified"
 msgstr "Ingen grænseflade angivet"
 
 #: ../clients/cli/devices.c:1098
-#, fuzzy, c-format
+#, c-format
 msgid "Device '%s' not found"
 msgstr "Enheden '%s' blev ikke fundet"
 
@@ -2861,11 +2865,11 @@ msgstr "Ad-Hoc"
 
 #: ../clients/cli/devices.c:1238
 msgid "Infra"
-msgstr ""
+msgstr "Infra"
 
 #: ../clients/cli/devices.c:1239 ../src/devices/wifi/nm-device-olpc-mesh.c:118
 msgid "Mesh"
-msgstr ""
+msgstr "Mesh"
 
 #: ../clients/cli/devices.c:1240
 msgid "N/A"
@@ -2876,18 +2880,18 @@ msgid "Device details"
 msgstr "Enhedsdetaljer"
 
 #: ../clients/cli/devices.c:1447
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'device show': %s"
-msgstr "Fejl: 'dev list': %s"
+msgstr "Fejl: 'device show': %s"
 
 #: ../clients/cli/devices.c:1776
 msgid "Status of devices"
 msgstr "Status på enheder"
 
 #: ../clients/cli/devices.c:1780
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'device status': %s"
-msgstr "Fejl: 'dev status': %s"
+msgstr "Fejl: 'device status': %s"
 
 #: ../clients/cli/devices.c:1842 ../clients/cli/general.c:511
 #, c-format
@@ -2895,7 +2899,7 @@ msgid "Error: Timeout %d sec expired."
 msgstr "Fejl: Ventetid på %d sek udløb."
 
 #: ../clients/cli/devices.c:1914
-#, fuzzy, c-format
+#, c-format
 msgid "Device '%s' successfully activated with '%s'.\n"
 msgstr "Enheden '%s' blev aktiveret med '%s'.\n"
 
@@ -2903,17 +2907,17 @@ msgstr "Enheden '%s' blev aktiveret med '%s'.\n"
 #, c-format
 msgid ""
 "Hint: \"nmcli dev wifi show-password\" shows the Wi-Fi name and password.\n"
-msgstr ""
+msgstr "Tip: \"nmcli dev wifi show-password\" viser Wi-Fi-navnet og adgangskoden.\n"
 
 #: ../clients/cli/devices.c:1923
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Connection activation failed: (%d) %s.\n"
-msgstr "Fejl: Forbindelsesaktivering fejlede: %s."
+msgstr "Fejl: Forbindelsesaktivering mislykkedes: (%d) %s.\n"
 
 #: ../clients/cli/devices.c:1953
 #, c-format
 msgid "Error: Failed to setup a Wi-Fi hotspot: %s"
-msgstr ""
+msgstr "Fejl: Kunne ikke opsætte et Wi-Fi-hotspot: %s"
 
 #: ../clients/cli/devices.c:1956
 #, fuzzy, c-format
@@ -2982,9 +2986,9 @@ msgid "Error: Device '%s' (%s) deletion failed: %s\n"
 msgstr "Fejl: Frakobling af enhed \"%s\" (%s) mislykkedes: %s"
 
 #: ../clients/cli/devices.c:2563
-#, fuzzy, c-format
+#, c-format
 msgid "Error: No property specified."
-msgstr "Fejl: ingen korrekte parameter angivet."
+msgstr "Fejl: Ingen egenskab angivet."
 
 #: ../clients/cli/devices.c:2579 ../clients/cli/devices.c:2598
 #: ../clients/cli/general.c:773 ../clients/cli/general.c:786
@@ -2993,14 +2997,14 @@ msgid "Error: '%s' argument is missing."
 msgstr "Fejl: '%s'-parameter mangler."
 
 #: ../clients/cli/devices.c:2586
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'managed': %s."
-msgstr "Fejl: 'nm status': %s"
+msgstr "Fejl: 'managed': %s."
 
 #: ../clients/cli/devices.c:2605
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'autoconnect': %s."
-msgstr "Fejl: 'con list': %s"
+msgstr "Fejl: 'autoconnect': %s."
 
 #: ../clients/cli/devices.c:2614 ../clients/cli/general.c:801
 #, fuzzy, c-format
@@ -3015,12 +3019,12 @@ msgstr "ingen enhed fundet til forbindelsen '%s'"
 #: ../clients/cli/devices.c:2686
 #, c-format
 msgid "%s: device created\n"
-msgstr ""
+msgstr "%s: enhed oprettet\n"
 
 #: ../clients/cli/devices.c:2693
 #, c-format
 msgid "%s: device removed\n"
-msgstr ""
+msgstr "%s: enhed fjernet\n"
 
 #: ../clients/cli/devices.c:2872
 msgid "Wi-Fi scan list"
@@ -3052,6 +3056,8 @@ msgid ""
 "Error: Device '%s' was not recognized as a Wi-Fi device, check "
 "NetworkManager Wi-Fi plugin."
 msgstr ""
+"Fejl: Enheden '%s' blev ikke genkendt som en Wi-Fi-enhed, tjek "
+"NetworkManagers Wi-Fi-plugin."
 
 #: ../clients/cli/devices.c:3257 ../clients/cli/devices.c:3586
 #: ../clients/cli/devices.c:4175 ../clients/cli/devices.c:4302
@@ -3062,7 +3068,7 @@ msgstr "Fejl: Enhed '%s' er ikke en Wi-Fi-enhed."
 
 #: ../clients/cli/devices.c:3433
 msgid "SSID or BSSID: "
-msgstr ""
+msgstr "SSID eller BSSID: "
 
 #: ../clients/cli/devices.c:3438
 #, fuzzy, c-format
@@ -3079,21 +3085,25 @@ msgstr "Fejl: Værdi for tidsudløb \"%s\" er ikke korrekt."
 msgid ""
 "Error: wep-key-type argument value '%s' is invalid, use 'key' or 'phrase'."
 msgstr ""
+"Fejl: wep-key-type-argumentets værdi '%s' er ugyldigt. Brug 'key' eller "
+"'phrase'."
 
 #: ../clients/cli/devices.c:3532 ../clients/cli/devices.c:3550
-#, fuzzy, c-format
+#, c-format
 msgid "Error: %s: %s."
-msgstr "Fejl: %s."
+msgstr "Fejl: %s: %s."
 
 #: ../clients/cli/devices.c:3569
 #, c-format
 msgid "Error: BSSID to connect to (%s) differs from bssid argument (%s)."
 msgstr ""
+"Fejl: BSSID til at oprette forbindelse til (%s) er ikke magen til bssid-"
+"argumentet (%s)."
 
 #: ../clients/cli/devices.c:3575
 #, c-format
 msgid "Error: Parameter '%s' is neither SSID nor BSSID."
-msgstr ""
+msgstr "Fejl: Parameteren '%s' er hverken SSID eller BSSID."
 
 #: ../clients/cli/devices.c:3588 ../clients/cli/devices.c:4177
 #: ../clients/cli/devices.c:4304 ../clients/cli/devices.c:4540
@@ -3104,7 +3114,7 @@ msgstr "Fejl: Ingen passende enhed fundet."
 #: ../clients/cli/devices.c:3608
 #, c-format
 msgid "Error: Failed to scan hidden SSID: %s."
-msgstr ""
+msgstr "Fejl: Kunne ikke skanne skjult SSID: %s."
 
 #: ../clients/cli/devices.c:3635
 #, fuzzy, c-format
@@ -3134,7 +3144,7 @@ msgstr "Adgangskode: "
 #: ../clients/cli/devices.c:3887
 #, c-format
 msgid "'%s' is not valid WPA PSK"
-msgstr ""
+msgstr "'%s' er ikke gyldig WPA PSK"
 
 #: ../clients/cli/devices.c:3904
 #, c-format
@@ -3177,9 +3187,9 @@ msgid "Error: Invalid 'password': %s."
 msgstr "Fejl: Ugyldig 'wifi'-parameter: '%s'."
 
 #: ../clients/cli/devices.c:4262 ../clients/cli/devices.c:4487
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' cannot repeat."
-msgstr "Fejl: Enhed \"%s\" ikke fundet."
+msgstr "Fejl: '%s' kan ikke gentage."
 
 #: ../clients/cli/devices.c:4393 ../clients/cli/devices.c:4397
 #: ../clients/cli/devices.c:4402 ../clients/cli/devices.c:4405
@@ -3188,7 +3198,6 @@ msgid "Security"
 msgstr "Sikkerhed"
 
 #: ../clients/cli/devices.c:4393
-#, fuzzy
 msgid "None"
 msgstr "Ingen"
 
@@ -3206,12 +3215,12 @@ msgstr "Ingen"
 #: ../clients/tui/nmt-page-wifi.c:266 ../clients/tui/nmt-page-wifi.c:298
 #: ../clients/tui/nmt-page-wifi.c:331
 msgid "Password"
-msgstr ""
+msgstr "Adgangskode"
 
 #: ../clients/cli/devices.c:4527
 #, c-format
 msgid "%s"
-msgstr ""
+msgstr "%s"
 
 #. Main header name
 #: ../clients/cli/devices.c:4581
@@ -3579,9 +3588,9 @@ msgstr "Fejl: kun følgende felter er tilladte: %s"
 
 #. NetworkManager quit while we were waiting.
 #: ../clients/cli/general.c:541 ../clients/tui/nmtui.c:246
-#, fuzzy, c-format
+#, c-format
 msgid "NetworkManager is not running."
-msgstr "Status for NetworkManager"
+msgstr "NetworkManager kører ikke."
 
 #: ../clients/cli/general.c:563
 msgid "NetworkManager permissions"
@@ -3590,7 +3599,7 @@ msgstr "Tilladelser for NetworkManager"
 #: ../clients/cli/general.c:567
 #, c-format
 msgid "Error: 'general permissions': %s"
-msgstr ""
+msgstr "Fejl: 'general permissions': %s"
 
 #: ../clients/cli/general.c:644
 #, fuzzy, c-format
@@ -3614,7 +3623,7 @@ msgstr "Logning for NetworkManager"
 #: ../clients/cli/general.c:712
 #, c-format
 msgid "Error: 'general logging': %s"
-msgstr ""
+msgstr "Fejl: 'general logging': %s"
 
 #: ../clients/cli/general.c:744
 #, fuzzy, c-format
@@ -3729,14 +3738,12 @@ msgid "plugin missing"
 msgstr "plugin mangler"
 
 #: ../clients/cli/general.c:1273 ../clients/cli/general.c:1287
-#, fuzzy
 msgid "sw disabled"
-msgstr "deaktiveret"
+msgstr "sw deaktiveret"
 
 #: ../clients/cli/general.c:1278 ../clients/cli/general.c:1292
-#, fuzzy
 msgid "hw disabled"
-msgstr "deaktiveret"
+msgstr "hw deaktiveret"
 
 #: ../clients/cli/general.c:1303
 msgid "sw"
@@ -3786,15 +3793,15 @@ msgstr "%s VPN-forbindelse"
 #, c-format
 msgctxt "nmcli-overview"
 msgid "%s: %s to %s"
-msgstr ""
+msgstr "%s: %s til %s"
 
 #. TRANSLATORS: prints header line for not active device in plain `nmcli` overview output as
 #. * "<interface-name>: <device-state>"
 #: ../clients/cli/general.c:1443
-#, fuzzy, c-format
+#, c-format
 msgctxt "nmcli-overview"
 msgid "%s: %s"
-msgstr "Fejl: %s."
+msgstr "%s: %s"
 
 #: ../clients/cli/general.c:1493
 #, c-format
@@ -3892,22 +3899,22 @@ msgstr "Fejl: Mangler argument for tilvalget '%s'."
 #: ../clients/cli/nmcli.c:621
 #, c-format
 msgid "Unexpected end of file following '%s'\n"
-msgstr ""
+msgstr "Uventet slutning på fil efter '%s'\n"
 
 #: ../clients/cli/nmcli.c:629
 #, c-format
 msgid "Expected whitespace following '%s'\n"
-msgstr ""
+msgstr "Forventede blanktegn efter '%s'\n"
 
 #: ../clients/cli/nmcli.c:641
 #, c-format
 msgid "Expected a value for '%s'\n"
-msgstr ""
+msgstr "Forventede en værdi til '%s'\n"
 
 #: ../clients/cli/nmcli.c:655
 #, c-format
 msgid "Expected a line break following '%s'\n"
-msgstr ""
+msgstr "Forventede et linjeskift efter '%s'\n"
 
 #: ../clients/cli/nmcli.c:761
 #, c-format
@@ -3932,7 +3939,7 @@ msgstr "Fejl: Tilvalg '--pretty' kan ikke bruges sammen med '--terse'."
 #: ../clients/cli/nmcli.c:794
 #, c-format
 msgid "Error: '%s' is not a valid argument for '%s' option."
-msgstr ""
+msgstr "Fejl: '%s' er ikke et gyldigt argument til tilvalget '%s'."
 
 #: ../clients/cli/nmcli.c:808 ../clients/cli/nmcli.c:820
 #, c-format
@@ -3942,7 +3949,7 @@ msgstr "Fejl: '%s' er ikke et gyldigt argument for tilvalget '%s'."
 #: ../clients/cli/nmcli.c:844
 #, c-format
 msgid "Error: '%s' is not a valid timeout."
-msgstr ""
+msgstr "Fejl: '%s' er ikke en gyldig timeout."
 
 #: ../clients/cli/nmcli.c:851
 #, c-format
@@ -3976,12 +3983,12 @@ msgstr ""
 #: ../clients/cli/settings.c:32
 #, c-format
 msgid "Do you also want to set '%s' to '%s'? [yes]: "
-msgstr ""
+msgstr "Vil du også indstille '%s' til '%s'? [ja]: "
 
 #: ../clients/cli/settings.c:34
 #, c-format
 msgid "Do you also want to clear '%s'? [yes]: "
-msgstr ""
+msgstr "Vil du også rydde '%s'? [ja]: "
 
 #: ../clients/cli/settings.c:229
 #, c-format
@@ -3996,22 +4003,22 @@ msgstr ""
 
 #: ../clients/cli/settings.c:250
 msgid "Do you want to remove them? [yes] "
-msgstr ""
+msgstr "Vil du fjerne dem? [ja] "
 
 #: ../clients/cli/settings.c:338
 #, c-format
 msgid "Warning: %s is not an UUID of any existing connection profile\n"
-msgstr ""
+msgstr "Advarsel: %s er ikke et UUID på en eksisterende forbindelsesprofil\n"
 
 #: ../clients/cli/settings.c:343 ../clients/cli/settings.c:356
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a VPN connection profile"
-msgstr "VPN-forbindelse fejlede"
+msgstr "'%s' er ikke en VPN-forbindelsesprofil"
 
 #: ../clients/cli/settings.c:350
 #, c-format
 msgid "'%s' is not a name of any exiting profile"
-msgstr ""
+msgstr "'%s' er ikke et navn på en eksisterende profil"
 
 #: ../clients/cli/settings.c:394
 #, c-format
@@ -4029,7 +4036,7 @@ msgstr ""
 
 #: ../clients/cli/settings.c:578
 msgid "the property can't be changed"
-msgstr ""
+msgstr "egenskaben kan ikke ændres"
 
 #: ../clients/cli/settings.c:656
 msgid "[NM property description]"
@@ -4067,12 +4074,12 @@ msgstr "Kunne ikke dekryptere den private nøgle."
 #: ../clients/cli/utils.c:1427
 #, c-format
 msgid "Error reading nmcli output: %s\n"
-msgstr ""
+msgstr "Fejl ved læsning af nmcli-output: %s\n"
 
 #: ../clients/cli/utils.c:1432
 #, c-format
 msgid "Error writing nmcli output: %s\n"
-msgstr ""
+msgstr "Fejl ved skrivning af nmcli-output: %s\n"
 
 #: ../clients/cli/utils.c:1458
 #, c-format
@@ -4128,17 +4135,17 @@ msgstr "Fejl: '%s' er ikke et gyldigt argument for tilvalget '%s'."
 #: ../clients/common/nm-client-utils.c:152
 #, c-format
 msgid "'%s' is not valid; use [%s], [%s] or [%s]"
-msgstr ""
+msgstr "'%s' er ikke gyldigt; brug [%s], [%s] eller [%s]"
 
 #: ../clients/common/nm-client-utils.c:201
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is ambiguous: %s"
-msgstr "Fejl: '%s' er ikke et gyldigt argument for tilvalget '%s'."
+msgstr "'%s' er flertydig: %s"
 
 #: ../clients/common/nm-client-utils.c:211
 #, c-format
 msgid "missing name, try one of [%s]"
-msgstr ""
+msgstr "manglende navn, prøv en af [%s]"
 
 #: ../clients/common/nm-client-utils.c:253
 msgid "unmanaged"
@@ -4165,14 +4172,12 @@ msgid "connecting (getting IP configuration)"
 msgstr "forbinder (henter IP-konfiguration)"
 
 #: ../clients/common/nm-client-utils.c:260
-#, fuzzy
 msgid "connecting (checking IP connectivity)"
-msgstr "forbinder (henter IP-konfiguration)"
+msgstr "opretter forbindelse (tjekker IP-forbindelse)"
 
 #: ../clients/common/nm-client-utils.c:261
-#, fuzzy
 msgid "connecting (starting secondary connections)"
-msgstr "forbinder (henter IP-konfiguration)"
+msgstr "opretter forbindelse (starter sekundære forbindelser)"
 
 #: ../clients/common/nm-client-utils.c:264
 msgid "connection failed"
@@ -4184,28 +4189,25 @@ msgstr "forbindelse fejlet"
 #: ../clients/common/nm-client-utils.c:274
 #: ../clients/common/nm-client-utils.c:275
 #: ../clients/common/nm-client-utils.c:276
-#, fuzzy
 msgid "connecting (externally)"
-msgstr "forbinder (forbereder)"
+msgstr "opretter forbindelse (eksternt)"
 
 #: ../clients/common/nm-client-utils.c:277
-#, fuzzy
 msgid "connected (externally)"
-msgstr "tilsluttet (kun sted)"
+msgstr "forbundet (eksternt)"
 
 #: ../clients/common/nm-client-utils.c:278
 #: ../clients/common/nm-client-utils.c:279
-#, fuzzy
 msgid "deactivating (externally)"
-msgstr "deaktiverer"
+msgstr "deaktiverer (eksternt)"
 
 #: ../clients/common/nm-client-utils.c:304
 msgid "yes (guessed)"
-msgstr ""
+msgstr "ja (gættet)"
 
 #: ../clients/common/nm-client-utils.c:305
 msgid "no (guessed)"
-msgstr ""
+msgstr "nej (gættet)"
 
 #. TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason)
 #. TRANSLATORS: Unknown reason for a connection state change (NMActiveConnectionStateReason)
@@ -4216,7 +4218,7 @@ msgstr "Ukendt"
 
 #: ../clients/common/nm-client-utils.c:312
 msgid "No reason given"
-msgstr ""
+msgstr "Der er ikke angivet nogen årsag"
 
 #: ../clients/common/nm-client-utils.c:314
 msgid "Device is now managed"
@@ -4261,64 +4263,56 @@ msgid "802.1X supplicant took too long to authenticate"
 msgstr ""
 
 #: ../clients/common/nm-client-utils.c:324
-#, fuzzy
 msgid "PPP service failed to start"
-msgstr "VPN-tjenesten kunne ikke starte"
+msgstr "PPP-tjeneste kunne ikke starte"
 
 #: ../clients/common/nm-client-utils.c:325
-#, fuzzy
 msgid "PPP service disconnected"
-msgstr "VPN afbrudt"
+msgstr "PPP-tjeneste afbrudt"
 
 #: ../clients/common/nm-client-utils.c:326
 msgid "PPP failed"
-msgstr ""
+msgstr "PPP mislykkedes"
 
 #: ../clients/common/nm-client-utils.c:327
-#, fuzzy
 msgid "DHCP client failed to start"
-msgstr "VPN-tjenesten kunne ikke starte"
+msgstr "DHCP-klient kunne ikke starte"
 
 #: ../clients/common/nm-client-utils.c:328
 msgid "DHCP client error"
-msgstr ""
+msgstr "Fejl ved DHCP-klient"
 
 #: ../clients/common/nm-client-utils.c:329
-#, fuzzy
 msgid "DHCP client failed"
-msgstr "VPN-forbindelse fejlede"
+msgstr "DHCP-klient mislykkedes"
 
 #: ../clients/common/nm-client-utils.c:330
-#, fuzzy
 msgid "Shared connection service failed to start"
-msgstr "VPN-tjenesten kunne ikke starte"
+msgstr "Delt forbindelsetjeneste kunne ikke starte"
 
 #: ../clients/common/nm-client-utils.c:331
-#, fuzzy
 msgid "Shared connection service failed"
-msgstr "forbindelse fejlet"
+msgstr "Delt forbindelsetjeneste mislykkedes"
 
 #: ../clients/common/nm-client-utils.c:332
-#, fuzzy
 msgid "AutoIP service failed to start"
-msgstr "VPN-tjenesten kunne ikke starte"
+msgstr "AutoIP-tjeneste kunne ikke starte"
 
 #: ../clients/common/nm-client-utils.c:333
 msgid "AutoIP service error"
-msgstr ""
+msgstr "Fejl ved AutoIP-tjeneste"
 
 #: ../clients/common/nm-client-utils.c:334
-#, fuzzy
 msgid "AutoIP service failed"
-msgstr "VPN-tjenesten kunne ikke starte"
+msgstr "AutoIP-tjeneste mislykkedes"
 
 #: ../clients/common/nm-client-utils.c:335
 msgid "The line is busy"
-msgstr ""
+msgstr "Linjen er optaget"
 
 #: ../clients/common/nm-client-utils.c:336
 msgid "No dial tone"
-msgstr ""
+msgstr "Ingen ringetone"
 
 #: ../clients/common/nm-client-utils.c:337
 msgid "No carrier could be established"
@@ -4401,14 +4395,12 @@ msgid "The supplicant is now available"
 msgstr ""
 
 #: ../clients/common/nm-client-utils.c:355
-#, fuzzy
 msgid "The modem could not be found"
-msgstr "'dhcpcd' blev fundet."
+msgstr "Kunne ikke finde modemmet."
 
 #: ../clients/common/nm-client-utils.c:356
-#, fuzzy
 msgid "The Bluetooth connection failed or timed out"
-msgstr "forbindelsesforsøget udløb"
+msgstr "Bluetooth-forbindelse mislykkedes eller fik timeout"
 
 #: ../clients/common/nm-client-utils.c:357
 msgid "GSM Modem's SIM card not inserted"
@@ -4431,9 +4423,8 @@ msgid "InfiniBand device does not support connected mode"
 msgstr ""
 
 #: ../clients/common/nm-client-utils.c:362
-#, fuzzy
 msgid "A dependency of the connection failed"
-msgstr "forbindelse fejlet"
+msgstr "En afhængighed af forbindelsen mislykkedes"
 
 #: ../clients/common/nm-client-utils.c:363
 msgid "A problem with the RFC 2684 Ethernet over ADSL bridge"
@@ -4444,9 +4435,8 @@ msgid "ModemManager is unavailable"
 msgstr ""
 
 #: ../clients/common/nm-client-utils.c:365
-#, fuzzy
 msgid "The Wi-Fi network could not be found"
-msgstr "'dhclient' blev fundet."
+msgstr "Kunne ikke finde Wi-Fi-netværket"
 
 #: ../clients/common/nm-client-utils.c:366
 msgid "A secondary connection of the base connection failed"
@@ -4720,14 +4710,14 @@ msgid "invalid option '%s', use one of [%s]"
 msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:1714
-#, fuzzy, c-format
+#, c-format
 msgid "%d (key)"
-msgstr "%d (hex-ascii-nøgle)"
+msgstr "%d (nøgle)"
 
 #: ../clients/common/nm-meta-setting-desc.c:1716
-#, fuzzy, c-format
+#, c-format
 msgid "%d (passphrase)"
-msgstr "%d (104/128-bit adgangsfrase)"
+msgstr "%d (adgangsfrase)"
 
 #: ../clients/common/nm-meta-setting-desc.c:1719
 #, c-format
@@ -4755,9 +4745,8 @@ msgid "MVRP, "
 msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:1765
-#, fuzzy
 msgid "0 (none)"
-msgstr "(ingen)"
+msgstr "0 (ingen)"
 
 #: ../clients/common/nm-meta-setting-desc.c:1771
 msgid "agent-owned, "
@@ -4883,14 +4872,12 @@ msgid "the value '%s' is not a valid UUID"
 msgstr "Fejl: Værdi for tidsudløb \"%s\" er ikke korrekt."
 
 #: ../clients/common/nm-meta-setting-desc.c:2753
-#, fuzzy
 msgid "0 (disabled)"
-msgstr "deaktiveret"
+msgstr "0 (deaktiveret)"
 
 #: ../clients/common/nm-meta-setting-desc.c:2759
-#, fuzzy
 msgid "enabled, "
-msgstr "aktiveret"
+msgstr "aktiveret, "
 
 #: ../clients/common/nm-meta-setting-desc.c:2761
 msgid "advertise, "
@@ -4944,14 +4931,14 @@ msgid "default"
 msgstr "standard"
 
 #: ../clients/common/nm-meta-setting-desc.c:3235
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IPv%c address '%s'"
-msgstr "ugyldigt felt '%s'"
+msgstr "ugyldig IPv%c adresse '%s'"
 
 #: ../clients/common/nm-meta-setting-desc.c:3362
-#, fuzzy, c-format
+#, c-format
 msgid "invalid gateway address '%s'"
-msgstr "ugyldigt felt '%s'"
+msgstr "ugyldig gatewayadresse '%s'"
 
 #: ../clients/common/nm-meta-setting-desc.c:3514
 #, c-format
@@ -5597,14 +5584,12 @@ msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:7912
 #: ../src/devices/adsl/nm-device-adsl.c:117
-#, fuzzy
 msgid "ADSL connection"
-msgstr "System forbindelser"
+msgstr "ADSL-forbindelse"
 
 #: ../clients/common/nm-meta-setting-desc.c:7913
-#, fuzzy
 msgid "bluetooth connection"
-msgstr "forbinder"
+msgstr "bluetooth-forbindelse"
 
 #: ../clients/common/nm-meta-setting-desc.c:7914
 msgid "Bond device"
@@ -5673,9 +5658,8 @@ msgid "MACsec connection"
 msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:7929
-#, fuzzy
 msgid "macvlan connection"
-msgstr "forbinder"
+msgstr "macvlan-forbindelse"
 
 #: ../clients/common/nm-meta-setting-desc.c:7930
 msgid "Match"
@@ -5749,50 +5733,42 @@ msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:7947
 #: ../src/devices/nm-device-vlan.c:385
-#, fuzzy
 msgid "VLAN connection"
-msgstr "VPN-forbinder"
+msgstr "VLAN-forbindelse"
 
 #: ../clients/common/nm-meta-setting-desc.c:7948 ../src/nm-manager.c:5714
-#, fuzzy
 msgid "VPN connection"
-msgstr "VPN-forbinder"
+msgstr "VPN-forbindelse"
 
 #: ../clients/common/nm-meta-setting-desc.c:7949
 #: ../src/devices/nm-device-vrf.c:175
-#, fuzzy
 msgid "VRF connection"
-msgstr "VPN-forbinder"
+msgstr "VRF-forbindelse"
 
 #: ../clients/common/nm-meta-setting-desc.c:7950
 #: ../src/devices/nm-device-vxlan.c:354
-#, fuzzy
 msgid "VXLAN connection"
-msgstr "VPN-forbinder"
+msgstr "VXLAN-forbindelse"
 
 #: ../clients/common/nm-meta-setting-desc.c:7951
-#, fuzzy
 msgid "Wi-Fi P2P connection"
-msgstr "forbindelse fejlet"
+msgstr "Wi-Fi P2P-forbindelse"
 
 #: ../clients/common/nm-meta-setting-desc.c:7952
-#, fuzzy
 msgid "WiMAX connection"
-msgstr "Aktive forbindelser"
+msgstr "WiMAX-forbindelse"
 
 #: ../clients/common/nm-meta-setting-desc.c:7953
-#, fuzzy
 msgid "Wired Ethernet"
-msgstr "Aktive forbindelser"
+msgstr "Kablet ethernet"
 
 #: ../clients/common/nm-meta-setting-desc.c:7954
 msgid "WireGuard VPN settings"
 msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:7955
-#, fuzzy
 msgid "Wi-Fi connection"
-msgstr "forbindelse fejlet"
+msgstr "Wi-Fi-forbindelse"
 
 #: ../clients/common/nm-meta-setting-desc.c:7956
 msgid "Wi-Fi security settings"
@@ -5840,9 +5816,8 @@ msgid "Service"
 msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:473
-#, fuzzy
 msgid "WireGuard private-key"
-msgstr "WireGuard"
+msgstr "WireGuard private-key"
 
 #: ../clients/common/nm-secret-agent-simple.c:514
 #, fuzzy, c-format
@@ -5897,9 +5872,8 @@ msgid "PIN code is needed for the mobile broadband device"
 msgstr "Aktiver eller deaktiver mobile bredbåndsenheder"
 
 #: ../clients/common/nm-secret-agent-simple.c:893
-#, fuzzy
 msgid "PIN"
-msgstr "VPN"
+msgstr "PIN"
 
 #: ../clients/common/nm-secret-agent-simple.c:898
 #: ../clients/common/nm-secret-agent-simple.c:933
@@ -5921,18 +5895,17 @@ msgid "MACsec EAP authentication"
 msgstr ""
 
 #: ../clients/common/nm-secret-agent-simple.c:927
-#, fuzzy
 msgid "WireGuard VPN secret"
-msgstr "WireGuard"
+msgstr "WireGuard VPN-hemmelighed"
 
 #: ../clients/common/nm-secret-agent-simple.c:966
 msgid "VPN password required"
 msgstr ""
 
 #: ../clients/common/nm-vpn-helpers.c:39
-#, fuzzy, c-format
+#, c-format
 msgid "unknown VPN plugin \"%s\""
-msgstr "Ukendt logningsdomæne '%s'"
+msgstr "ukendt VPN-plugin \"%s\""
 
 #: ../clients/common/nm-vpn-helpers.c:50
 #, c-format
@@ -8890,9 +8863,8 @@ msgid "Short IEEE 802.15.4 address to be used within a restricted environment."
 msgstr ""
 
 #: ../clients/nm-online.c:77
-#, fuzzy
 msgid "Connecting"
-msgstr "forbinder"
+msgstr "Opretter forbindelse"
 
 #: ../clients/nm-online.c:193
 #, fuzzy, c-format
@@ -8930,8 +8902,7 @@ msgstr ""
 #: ../clients/nm-online.c:272 ../clients/nm-online.c:278
 #, fuzzy
 msgid "Invalid option.  Please use --help to see a list of valid options."
-msgstr ""
-"Ugyldigt tilvalg. Brug venligst --help for at se en liste af gyldige "
+msgstr "Ugyldigt tilvalg. Brug venligst --help for at se en liste af gyldige "
 "tilvalg.\n"
 
 #: ../clients/tui/newt/nmt-newt-utils.c:163 ../clients/tui/nmt-editor.c:420
@@ -8962,18 +8933,18 @@ msgid "Ethernet"
 msgstr ""
 
 #: ../clients/tui/nm-editor-utils.c:139
-#, fuzzy, c-format
+#, c-format
 msgid "Ethernet connection %d"
-msgstr "Bruger forbindelser"
+msgstr "Ethernet-forbindelse %d"
 
 #: ../clients/tui/nm-editor-utils.c:143 ../libnm/nm-device.c:1569
 msgid "Wi-Fi"
 msgstr ""
 
 #: ../clients/tui/nm-editor-utils.c:147
-#, fuzzy, c-format
+#, c-format
 msgid "Wi-Fi connection %d"
-msgstr "forbindelse fejlet"
+msgstr "Wi-Fi-forbindelse %d"
 
 #: ../clients/tui/nm-editor-utils.c:152 ../libnm-core/nm-connection.c:2713
 #: ../libnm/nm-device.c:1585
@@ -8995,14 +8966,13 @@ msgid "Mobile broadband connection %d"
 msgstr "ingen enhed fundet til forbindelsen '%s'"
 
 #: ../clients/tui/nm-editor-utils.c:170 ../clients/tui/nmt-page-dsl.c:49
-#, fuzzy
 msgid "DSL"
-msgstr "DNS"
+msgstr "DSL"
 
 #: ../clients/tui/nm-editor-utils.c:174
-#, fuzzy, c-format
+#, c-format
 msgid "DSL connection %d"
-msgstr "forbindelse fejlet"
+msgstr "DSL-forbindelse %d"
 
 #: ../clients/tui/nm-editor-utils.c:179 ../libnm-core/nm-connection.c:2705
 #: ../libnm/nm-device.c:1587
@@ -9043,9 +9013,9 @@ msgid "VLAN"
 msgstr "VLAN"
 
 #: ../clients/tui/nm-editor-utils.c:210
-#, fuzzy, c-format
+#, c-format
 msgid "VLAN connection %d"
-msgstr "VPN-forbindelse fejlede"
+msgstr "VLAN-forbindelse %d"
 
 #: ../clients/tui/nm-editor-utils.c:214 ../clients/tui/nmt-page-ip-tunnel.c:123
 #, fuzzy
@@ -9565,9 +9535,8 @@ msgid "WPA & WPA2 Personal"
 msgstr "WPA & WPA2 Personal"
 
 #: ../clients/tui/nmt-page-wifi.c:69
-#, fuzzy
 msgid "WPA3 Personal"
-msgstr "WPA & WPA2 Personal"
+msgstr "WPA3 Personal"
 
 #: ../clients/tui/nmt-page-wifi.c:70
 msgid "WPA & WPA2 Enterprise"
@@ -9725,9 +9694,8 @@ msgid "Could not deactivate connection: %s"
 msgstr "ingen aktiv forbindelse på enhed '%s'"
 
 #: ../clients/tui/nmtui-connect.c:252
-#, fuzzy
 msgid "Connecting..."
-msgstr "forbinder"
+msgstr "Opretter forbindelse ..."
 
 #: ../clients/tui/nmtui-connect.c:290 ../clients/tui/nmtui-connect.c:327
 #, fuzzy, c-format
@@ -9735,14 +9703,12 @@ msgid "Could not activate connection: %s"
 msgstr "ingen aktiv forbindelse på enhed '%s'"
 
 #: ../clients/tui/nmtui-connect.c:389 ../clients/tui/nmtui-connect.c:438
-#, fuzzy
 msgid "Activate"
-msgstr "aktiveret"
+msgstr "Aktivér"
 
 #: ../clients/tui/nmtui-connect.c:391
-#, fuzzy
 msgid "Deactivate"
-msgstr "aktiveret"
+msgstr "Deaktivér"
 
 #: ../clients/tui/nmtui-connect.c:443 ../clients/tui/nmtui-edit.c:105
 #: ../clients/tui/nmtui.c:117
@@ -9778,9 +9744,8 @@ msgid ""
 msgstr ""
 
 #: ../clients/tui/nmtui-edit.c:401 ../clients/tui/nmtui-edit.c:417
-#, fuzzy
 msgid "New Connection"
-msgstr "Bruger forbindelser"
+msgstr "Ny forbindelse"
 
 #: ../clients/tui/nmtui-edit.c:456
 #, fuzzy, c-format
@@ -11023,9 +10988,8 @@ msgstr "ugyldigt felt '%s'"
 
 #: ../libnm-core/nm-setting-ip-config.c:1273
 #: ../libnm-core/nm-setting-sriov.c:413
-#, fuzzy
 msgid "unknown attribute"
-msgstr "ukendt årsag"
+msgstr "ukendt attribut"
 
 #: ../libnm-core/nm-setting-ip-config.c:1283
 #: ../libnm-core/nm-setting-sriov.c:423
@@ -12748,8 +12712,7 @@ msgstr "Status for NetworkManager"
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:4
 #, fuzzy
 msgid "System policy prevents reloading NetworkManager"
-msgstr ""
-"Systempolitik forhindrer aktivering eller deaktivering af systemnetværk"
+msgstr "Systempolitik forhindrer aktivering eller deaktivering af systemnetværk"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:5
 msgid ""
@@ -12812,8 +12775,7 @@ msgstr "Tillad kontrol af netværksforbindelser"
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:16
 #, fuzzy
 msgid "System policy prevents Wi-Fi scans"
-msgstr ""
-"Systempolitik forhindrer aktivering eller deaktivering af Wi-Fi-enheder"
+msgstr "Systempolitik forhindrer aktivering eller deaktivering af Wi-Fi-enheder"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:17
 msgid "Connection sharing via a protected Wi-Fi network"
@@ -12891,8 +12853,7 @@ msgstr "Aktiver eller deaktiver Wi-Fi-enheder"
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:32
 #, fuzzy
 msgid "System policy prevents enabling or disabling device statistics"
-msgstr ""
-"Systempolitik forhindrer aktivering eller deaktivering af Wi-Fi-enheder"
+msgstr "Systempolitik forhindrer aktivering eller deaktivering af Wi-Fi-enheder"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:33
 #, fuzzy
@@ -12902,8 +12863,7 @@ msgstr "Aktiver eller deaktiver systemnetværk"
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:34
 #, fuzzy
 msgid "System policy prevents enabling or disabling connectivity checking"
-msgstr ""
-"Systempolitik forhindrer aktivering eller deaktivering af systemnetværk"
+msgstr "Systempolitik forhindrer aktivering eller deaktivering af systemnetværk"
 
 #: ../shared/nm-glib-aux/nm-shared-utils.c:2346
 #, c-format
@@ -13139,9 +13099,8 @@ msgid "connection does not match device"
 msgstr "ingen aktiv forbindelse eller enhed"
 
 #: ../src/devices/nm-device-6lowpan.c:177
-#, fuzzy
 msgid "6LOWPAN connection"
-msgstr "VPN-forbinder"
+msgstr "6LOWPAN-forbindelse"
 
 #: ../src/devices/nm-device-bond.c:57
 #, fuzzy
@@ -13159,19 +13118,17 @@ msgid "Dummy connection"
 msgstr "System forbindelser"
 
 #: ../src/devices/nm-device-ethernet.c:1618
-#, fuzzy
 msgid "PPPoE connection"
-msgstr "VPN-forbinder"
+msgstr "PPPoE-forbindelse"
 
 #: ../src/devices/nm-device-ethernet.c:1618
-#, fuzzy
 msgid "Wired connection"
-msgstr "Aktive forbindelser"
+msgstr "Kablet forbindelse"
 
 #: ../src/devices/nm-device-ethernet-utils.c:20
-#, fuzzy, c-format
+#, c-format
 msgid "Wired connection %d"
-msgstr "Aktive forbindelser"
+msgstr "Kablet forbindelse %d"
 
 #: ../src/devices/nm-device-ip-tunnel.c:408
 #, fuzzy
@@ -13179,19 +13136,16 @@ msgid "IP tunnel connection"
 msgstr "System forbindelser"
 
 #: ../src/devices/nm-device-macvlan.c:365
-#, fuzzy
 msgid "MACVLAN connection"
-msgstr "VPN-forbinder"
+msgstr "MACVLAN-forbindelse"
 
 #: ../src/devices/nm-device-tun.c:142
-#, fuzzy
 msgid "TUN connection"
-msgstr "Bruger forbindelser"
+msgstr "TUN-forbindelse"
 
 #: ../src/devices/nm-device-wpan.c:54
-#, fuzzy
 msgid "WPAN connection"
-msgstr "VPN-forbinder"
+msgstr "WPAN-forbindelse"
 
 #: ../src/devices/team/nm-device-team.c:89
 #, fuzzy
@@ -13534,55 +13488,3 @@ msgstr "Ukendt logningsniveau '%s'"
 #, c-format
 msgid "Unknown log domain '%s'"
 msgstr "Ukendt logningsdomæne '%s'"
-
-#, c-format
-#~ msgid "missing colon in 'password' entry '%s'"
-#~ msgstr "manglende kolon i 'password'-indslaget '%s'"
-
-#, c-format
-#~ msgid "missing dot in 'password' entry '%s'"
-#~ msgstr "manglende punktum i 'password'-indslaget '%s'"
-
-#, c-format
-#~ msgid "invalid setting name in 'password' entry '%s'"
-#~ msgstr "ugyldig indstillingsnavn i 'password'-indslaget '%s'"
-
-#, c-format
-#~ msgid "Unknown parameter: %s\n"
-#~ msgstr "Ukendt parameter: %s\n"
-
-#, c-format
-#~ msgid "Error: '%s': %s"
-#~ msgstr "Fejl: '%s': %s"
-
-#, c-format
-#~ msgid "Error: error adding bond option '%s=%s'."
-#~ msgstr "Fejl: fejl ved tilføjelse af bindingstilvalget '%s=%s'."
-
-#, c-format
-#~ msgid "Unknown parameter: %s"
-#~ msgstr "Ukendt parameter: %s"
-
-#, fuzzy, c-format
-#~ msgid "Error: Device activation failed: device was disconnected"
-#~ msgstr "Fejl: Forbindelsesaktivering fejlede: %s"
-
-#, fuzzy, c-format
-#~ msgid "Error: Unknown parameter %s."
-#~ msgstr "Ukendt parameter: %s\n"
-
-#, fuzzy, c-format
-#~ msgid "Authentication message: %s\n"
-#~ msgstr "Aktiv forbindelsestilstand: %s\n"
-
-#, fuzzy, c-format
-#~ msgid "Authentication error: %s\n"
-#~ msgstr "Aktiv forbindelsestilstand: %s\n"
-
-#, fuzzy, c-format
-#~ msgid "'%s' is not valid master; use ifname or connection UUID"
-#~ msgstr "Fejl: '%s' er ikke et gyldigt argument for tilvalget '%s'."
-
-#, fuzzy, c-format
-#~ msgid "unknown link watcher \"%s\""
-#~ msgstr "Ukendt logningsdomæne '%s'"

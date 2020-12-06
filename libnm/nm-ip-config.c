@@ -316,7 +316,7 @@ finalize(GObject *object)
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_ip4config = NML_DBUS_META_IFACE_INIT_PROP(
     NM_DBUS_INTERFACE_IP4_CONFIG,
     nm_ip4_config_get_type,
-    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
     NML_DBUS_META_IFACE_DBUS_PROPERTIES(
         NML_DBUS_META_PROPERTY_INIT_FCN("AddressData",
                                         PROP_ADDRESSES,
@@ -364,7 +364,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_ip4config = NML_DBUS_META_IFACE_I
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_ip6config = NML_DBUS_META_IFACE_INIT_PROP(
     NM_DBUS_INTERFACE_IP6_CONFIG,
     nm_ip6_config_get_type,
-    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
     NML_DBUS_META_IFACE_DBUS_PROPERTIES(
         NML_DBUS_META_PROPERTY_INIT_FCN("AddressData",
                                         PROP_ADDRESSES,

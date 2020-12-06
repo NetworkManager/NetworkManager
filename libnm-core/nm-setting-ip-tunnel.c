@@ -617,7 +617,7 @@ nm_setting_ip_tunnel_init(NMSettingIPTunnel *self)
 NMSetting *
 nm_setting_ip_tunnel_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_IP_TUNNEL, NULL);
+    return g_object_new(NM_TYPE_SETTING_IP_TUNNEL, NULL);
 }
 
 static void

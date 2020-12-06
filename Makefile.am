@@ -928,6 +928,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-core-types.h \
 	libnm-core/nm-dbus-interface.h \
 	libnm-core/nm-errors.h \
+	libnm-core/nm-keyfile.h \
 	libnm-core/nm-setting-6lowpan.h \
 	libnm-core/nm-setting-8021x.h \
 	libnm-core/nm-setting-adsl.h \
@@ -942,6 +943,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-ethtool.h \
 	libnm-core/nm-setting-generic.h \
 	libnm-core/nm-setting-gsm.h \
+	libnm-core/nm-setting-hostname.h \
 	libnm-core/nm-setting-infiniband.h \
 	libnm-core/nm-setting-ip-config.h \
 	libnm-core/nm-setting-ip-tunnel.h \
@@ -953,6 +955,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-olpc-mesh.h \
 	libnm-core/nm-setting-ovs-bridge.h \
 	libnm-core/nm-setting-ovs-dpdk.h \
+	libnm-core/nm-setting-ovs-external-ids.h \
 	libnm-core/nm-setting-ovs-interface.h \
 	libnm-core/nm-setting-ovs-patch.h \
 	libnm-core/nm-setting-ovs-port.h \
@@ -966,6 +969,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting-team.h \
 	libnm-core/nm-setting-tun.h \
 	libnm-core/nm-setting-user.h \
+	libnm-core/nm-setting-veth.h \
 	libnm-core/nm-setting-vlan.h \
 	libnm-core/nm-setting-vpn.h \
 	libnm-core/nm-setting-vrf.h \
@@ -1015,6 +1019,7 @@ libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-ethtool.c \
 	libnm-core/nm-setting-generic.c \
 	libnm-core/nm-setting-gsm.c \
+	libnm-core/nm-setting-hostname.c \
 	libnm-core/nm-setting-infiniband.c \
 	libnm-core/nm-setting-ip-config.c \
 	libnm-core/nm-setting-ip-tunnel.c \
@@ -1026,6 +1031,7 @@ libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-olpc-mesh.c \
 	libnm-core/nm-setting-ovs-bridge.c \
 	libnm-core/nm-setting-ovs-dpdk.c \
+	libnm-core/nm-setting-ovs-external-ids.c \
 	libnm-core/nm-setting-ovs-interface.c \
 	libnm-core/nm-setting-ovs-patch.c \
 	libnm-core/nm-setting-ovs-port.c \
@@ -1039,6 +1045,7 @@ libnm_core_lib_c_settings_real = \
 	libnm-core/nm-setting-team.c \
 	libnm-core/nm-setting-tun.c \
 	libnm-core/nm-setting-user.c \
+	libnm-core/nm-setting-veth.c \
 	libnm-core/nm-setting-vlan.c \
 	libnm-core/nm-setting-vpn.c \
 	libnm-core/nm-setting-vrf.c \
@@ -1358,6 +1365,7 @@ libnm_lib_h_pub_real = \
 	libnm/nm-device-ppp.h \
 	libnm/nm-device-team.h \
 	libnm/nm-device-tun.h \
+	libnm/nm-device-veth.h \
 	libnm/nm-device-vlan.h \
 	libnm/nm-device-vrf.h \
 	libnm/nm-device-vxlan.h \
@@ -1422,6 +1430,7 @@ libnm_lib_c_real = \
 	libnm/nm-device-ppp.c \
 	libnm/nm-device-team.c \
 	libnm/nm-device-tun.c \
+	libnm/nm-device-veth.c \
 	libnm/nm-device-vlan.c \
 	libnm/nm-device-vrf.c \
 	libnm/nm-device-vxlan.c \
@@ -1484,6 +1493,7 @@ nodist_libnm_liblibnm_la_SOURCES = \
 
 libnm_liblibnm_la_LIBADD = \
 	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
+	libnm-core/nm-keyfile/libnm-keyfile.la \
 	libnm-core/libnm-core.la \
 	$(libnm_crypto_lib) \
 	libnm-core/nm-libnm-core-intern/libnm-libnm-core-intern.la \
@@ -1577,6 +1587,7 @@ libnm_NM_1_0_gir_FILES = \
 	$(libnm_core_lib_c_real) \
 	$(libnm_lib_h_pub_mkenums) \
 	$(libnm_lib_h_pub_real) \
+	libnm-core/nm-keyfile/nm-keyfile.c \
 	$(libnm_lib_c_mkenums) \
 	$(libnm_lib_c_real)
 libnm_NM_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=NM --symbol-prefix=nm
@@ -1599,8 +1610,20 @@ libnm_noinst_data = \
 
 noinst_DATA += $(libnm_noinst_data)
 
+EXTRA_DIST += clients/cli/generate-docs-nm-settings-nmcli.xml.in
+
+if BUILD_DOCS
 clients/cli/generate-docs-nm-settings-nmcli.xml: clients/cli/generate-docs-nm-settings-nmcli
-	$(AM_V_GEN) clients/cli/generate-docs-nm-settings-nmcli > $@
+	$(AM_V_GEN) clients/cli/generate-docs-nm-settings-nmcli > "$@"
+check-local-generate-docs-nm-settings-nmcli: clients/cli/generate-docs-nm-settings-nmcli.xml
+	$(srcdir)/tools/check-compare-generated.sh "$(srcdir)" "$(builddir)" "$<"
+check_local += check-local-generate-docs-nm-settings-nmcli
+DISTCLEANFILES += clients/cli/generate-docs-nm-settings-nmcli.xml
+else
+clients/cli/generate-docs-nm-settings-nmcli.xml: clients/cli/generate-docs-nm-settings-nmcli.xml.in
+	$(AM_V_GEN) cp $^ $@
+check-local-generate-docs-nm-settings-nmcli:
+endif
 
 libnm_docs_sources = $(libnm_core_lib_c_settings_real)
 
@@ -2128,6 +2151,8 @@ src_libNetworkManagerBase_la_SOURCES = \
 	src/nm-netns.h \
 	src/nm-l3-config-data.c \
 	src/nm-l3-config-data.h \
+	src/nm-l3-ipv4ll.c \
+	src/nm-l3-ipv4ll.h \
 	src/nm-l3cfg.c \
 	src/nm-l3cfg.h \
 	src/nm-ip-config.c \
@@ -4448,12 +4473,12 @@ $(clients_common_libnmc_base_la_OBJECTS): $(libnm_lib_h_pub_mkenums)
 $(clients_common_libnmc_base_la_OBJECTS): clients/common/.dirstamp
 
 clients_common_settings_doc_h = clients/common/settings-docs.h
-if HAVE_INTROSPECTION
+if BUILD_DOCS
 $(clients_common_settings_doc_h): clients/common/settings-docs.xsl libnm/nm-settings-docs-gir.xml clients/common/.dirstamp
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $< $(word 2,$^)
 DISTCLEANFILES += $(clients_common_settings_doc_h)
 check-local-settings-docs: $(clients_common_settings_doc_h)
-	$(srcdir)/tools/check-settings-docs.sh "$(srcdir)" "$(builddir)" "$(clients_common_settings_doc_h)"
+	$(srcdir)/tools/check-compare-generated.sh "$(srcdir)" "$(builddir)" "$(clients_common_settings_doc_h)"
 check_local += check-local-settings-docs
 else
 $(clients_common_settings_doc_h): $(clients_common_settings_doc_h).in clients/common/.dirstamp
@@ -4992,6 +5017,11 @@ EXTRA_DIST += \
 	clients/tests/test-client.check-on-disk/test_004.expected \
 	$(NULL)
 
+check-local-gitlab-ci:
+	"$(srcdir)/tools/check-gitlab-ci.sh" "$(srcdir)"
+
+check_local += check-local-gitlab-ci
+
 ###############################################################################
 # data
 ###############################################################################
@@ -5280,7 +5310,8 @@ EXTRA_DIST += \
 	tools/check-config-options.sh \
 	tools/check-docs.sh \
 	tools/check-exports.sh \
-	tools/check-settings-docs.sh \
+	tools/check-compare-generated.sh \
+	tools/check-gitlab-ci.sh \
 	tools/create-exports-NetworkManager.sh \
 	tools/debug-helper.py \
 	tools/meson-post-install.sh \

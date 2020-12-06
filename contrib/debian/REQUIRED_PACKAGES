@@ -35,6 +35,7 @@ install \
     intltool \
     iproute2 \
     iptables \
+    libaudit-dev \
     libcurl4-gnutls-dev \
     libdbus-1-dev \
     libgcrypt11-dev \
@@ -65,10 +66,13 @@ install \
     ppp-dev \
     python-dbus \
     python-gi \
+    python-setuptools \
     python-software-properties \
     python3-dbus \
     python3-gi \
     python3-pip \
+    python3-setuptools \
+    udev \
     uuid-dev \
     valgrind \
     \

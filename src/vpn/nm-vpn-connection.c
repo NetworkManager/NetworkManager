@@ -862,22 +862,22 @@ nm_vpn_connection_new(NMSettingsConnection * settings_connection,
     g_return_val_if_fail(NM_IS_DEVICE(parent_device), NULL);
     g_return_val_if_fail(specific_object, NULL);
 
-    return (NMVpnConnection *) g_object_new(NM_TYPE_VPN_CONNECTION,
-                                            NM_ACTIVE_CONNECTION_INT_SETTINGS_CONNECTION,
-                                            settings_connection,
-                                            NM_ACTIVE_CONNECTION_INT_DEVICE,
-                                            parent_device,
-                                            NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,
-                                            specific_object,
-                                            NM_ACTIVE_CONNECTION_INT_SUBJECT,
-                                            subject,
-                                            NM_ACTIVE_CONNECTION_INT_ACTIVATION_REASON,
-                                            activation_reason,
-                                            NM_ACTIVE_CONNECTION_VPN,
-                                            TRUE,
-                                            NM_ACTIVE_CONNECTION_STATE_FLAGS,
-                                            (guint) initial_state_flags,
-                                            NULL);
+    return g_object_new(NM_TYPE_VPN_CONNECTION,
+                        NM_ACTIVE_CONNECTION_INT_SETTINGS_CONNECTION,
+                        settings_connection,
+                        NM_ACTIVE_CONNECTION_INT_DEVICE,
+                        parent_device,
+                        NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,
+                        specific_object,
+                        NM_ACTIVE_CONNECTION_INT_SUBJECT,
+                        subject,
+                        NM_ACTIVE_CONNECTION_INT_ACTIVATION_REASON,
+                        activation_reason,
+                        NM_ACTIVE_CONNECTION_VPN,
+                        TRUE,
+                        NM_ACTIVE_CONNECTION_STATE_FLAGS,
+                        (guint) initial_state_flags,
+                        NULL);
 }
 
 const char *

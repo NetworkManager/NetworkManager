@@ -482,17 +482,17 @@ _nm_client_new_error_nm_not_cached(void)
 }
 
 static void
-_nm_client_dbus_call_simple_cb(GObject *source, GAsyncResult *result, gpointer data)
+_nm_client_dbus_call_simple_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
     GAsyncReadyCallback callback;
-    gpointer            user_data;
+    gpointer            callback_user_data;
     gs_unref_object GObject *context_busy_watcher = NULL;
     gpointer                 obfuscated_self_ptr;
     gpointer                 log_call_counter_ptr;
 
-    nm_utils_user_data_unpack(data,
+    nm_utils_user_data_unpack(user_data,
                               &callback,
-                              &user_data,
+                              &callback_user_data,
                               &context_busy_watcher,
                               &obfuscated_self_ptr,
                               &log_call_counter_ptr);
@@ -502,7 +502,7 @@ _nm_client_dbus_call_simple_cb(GObject *source, GAsyncResult *result, gpointer d
                  (guint64) GPOINTER_TO_SIZE(obfuscated_self_ptr),
                  GPOINTER_TO_SIZE(log_call_counter_ptr));
 
-    callback(source, result, user_data);
+    callback(source, result, callback_user_data);
 }
 
 void
@@ -1166,7 +1166,7 @@ nml_dbus_object_iface_data_get(NMLDBusObject *dbobj,
             count++;
         }
     } else {
-        nm_c_list_for_each_entry_prev (db_iface_data, &dbobj->iface_lst_head, iface_lst) {
+        c_list_for_each_entry_prev (db_iface_data, &dbobj->iface_lst_head, iface_lst) {
             if (db_iface_data->dbus_iface_is_wellknown)
                 break;
             if (db_iface_data->iface_removed)
@@ -2694,7 +2694,7 @@ _obj_handle_dbus_changes(NMClient *self, NMLDBusObject *dbobj)
             nml_dbus_object_set_obj_state(dbobj, NML_DBUS_OBJ_STATE_WITH_NMOBJ_READY, self);
         } else {
             GType                   gtype     = G_TYPE_NONE;
-            NMLDBusMetaInteracePrio curr_prio = NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_LOW - 1;
+            NMLDBusMetaInteracePrio curr_prio = NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_10 - 1;
 
             c_list_for_each_entry (db_iface_data, &dbobj->iface_lst_head, iface_lst) {
                 nm_assert(!db_iface_data->iface_removed);

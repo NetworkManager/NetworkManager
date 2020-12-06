@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0+ */
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /*
  * Copyright (C) 2008 - 2009 Novell, Inc.
  * Copyright (C) 2008 - 2017 Red Hat, Inc.
@@ -20,10 +20,17 @@
 #include "nm-glib-aux/nm-secret-utils.h"
 #include "systemd/nm-sd-utils-shared.h"
 #include "nm-libnm-core-intern/nm-common-macros.h"
+
 #include "nm-core-internal.h"
+#include "nm-keyfile.h"
+#include "nm-setting-user.h"
+#include "nm-setting-ovs-external-ids.h"
+
 #include "nm-keyfile-utils.h"
 
-#include "nm-setting-user.h"
+#define ETHERNET_S390_OPTIONS_GROUP_NAME "ethernet-s390-options"
+
+#define OVS_EXTERNAL_IDS_DATA_PREFIX "data."
 
 /*****************************************************************************/
 
@@ -988,6 +995,44 @@ ip_routing_rule_parser_full(KeyfileReaderInfo *       info,
 }
 
 static void
+_parser_full_ovs_external_ids_data(KeyfileReaderInfo *       info,
+                                   const NMMetaSettingInfo * setting_info,
+                                   const NMSettInfoProperty *property_info,
+                                   const ParseInfoProperty * pip,
+                                   NMSetting *               setting)
+{
+    const char *       setting_name = NM_SETTING_OVS_EXTERNAL_IDS_SETTING_NAME;
+    gs_strfreev char **keys         = NULL;
+    gsize              n_keys;
+    gsize              i;
+
+    nm_assert(NM_IS_SETTING_OVS_EXTERNAL_IDS(setting));
+    nm_assert(nm_streq(property_info->name, NM_SETTING_OVS_EXTERNAL_IDS_DATA));
+    nm_assert(nm_streq(setting_name, setting_info->setting_name));
+    nm_assert(nm_streq(setting_name, nm_setting_get_name(setting)));
+
+    keys = nm_keyfile_plugin_kf_get_keys(info->keyfile, setting_name, &n_keys, NULL);
+
+    for (i = 0; i < n_keys; i++) {
+        const char *  key          = keys[i];
+        gs_free char *name_to_free = NULL;
+        gs_free char *value        = NULL;
+        const char *  name;
+
+        if (!NM_STR_HAS_PREFIX(key, OVS_EXTERNAL_IDS_DATA_PREFIX))
+            continue;
+
+        value = nm_keyfile_plugin_kf_get_string(info->keyfile, setting_name, key, NULL);
+        if (!value)
+            continue;
+
+        name = &key[NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX)];
+        name = nm_keyfile_key_decode(name, &name_to_free);
+        nm_setting_ovs_external_ids_set_data(NM_SETTING_OVS_EXTERNAL_IDS(setting), name, value);
+    }
+}
+
+static void
 ip_dns_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
     int                addr_family;
@@ -1141,7 +1186,10 @@ mac_address_parser_INFINIBAND(KeyfileReaderInfo *info, NMSetting *setting, const
 }
 
 static void
-read_hash_of_string(GKeyFile *file, NMSetting *setting, const char *key)
+read_hash_of_string(KeyfileReaderInfo *info,
+                    GKeyFile *         file,
+                    NMSetting *        setting,
+                    const char *       kf_group)
 {
     gs_strfreev char **keys = NULL;
     const char *const *iter;
@@ -1149,10 +1197,10 @@ read_hash_of_string(GKeyFile *file, NMSetting *setting, const char *key)
     gboolean           is_vpn;
     gsize              n_keys;
 
-    nm_assert((NM_IS_SETTING_VPN(setting) && nm_streq(key, NM_SETTING_VPN_DATA))
-              || (NM_IS_SETTING_VPN(setting) && nm_streq(key, NM_SETTING_VPN_SECRETS))
-              || (NM_IS_SETTING_BOND(setting) && nm_streq(key, NM_SETTING_BOND_OPTIONS))
-              || (NM_IS_SETTING_USER(setting) && nm_streq(key, NM_SETTING_USER_DATA)));
+    nm_assert((NM_IS_SETTING_VPN(setting) && nm_streq(kf_group, NM_SETTING_VPN_DATA))
+              || (NM_IS_SETTING_VPN(setting) && nm_streq(kf_group, NM_SETTING_VPN_SECRETS))
+              || (NM_IS_SETTING_BOND(setting) && nm_streq(kf_group, NM_SETTING_BOND_OPTIONS))
+              || (NM_IS_SETTING_USER(setting) && nm_streq(kf_group, NM_SETTING_USER_DATA)));
 
     keys = nm_keyfile_plugin_kf_get_keys(file, setting_name, &n_keys, NULL);
     if (n_keys == 0)
@@ -1160,23 +1208,38 @@ read_hash_of_string(GKeyFile *file, NMSetting *setting, const char *key)
 
     if ((is_vpn = NM_IS_SETTING_VPN(setting)) || NM_IS_SETTING_BOND(setting)) {
         for (iter = (const char *const *) keys; *iter; iter++) {
+            const char *  kf_key  = *iter;
             gs_free char *to_free = NULL;
             gs_free char *value   = NULL;
             const char *  name;
 
-            value = nm_keyfile_plugin_kf_get_string(file, setting_name, *iter, NULL);
+            value = nm_keyfile_plugin_kf_get_string(file, setting_name, kf_key, NULL);
             if (!value)
                 continue;
 
-            name = nm_keyfile_key_decode(*iter, &to_free);
+            name = nm_keyfile_key_decode(kf_key, &to_free);
 
             if (is_vpn) {
                 /* Add any item that's not a class property to the data hash */
                 if (!g_object_class_find_property(G_OBJECT_GET_CLASS(setting), name))
                     nm_setting_vpn_add_data_item(NM_SETTING_VPN(setting), name, value);
             } else {
-                if (!nm_streq(name, "interface-name"))
-                    nm_setting_bond_add_option(NM_SETTING_BOND(setting), name, value);
+                if (!nm_streq(name, "interface-name")) {
+                    gs_free_error GError *error = NULL;
+
+                    if (!_nm_setting_bond_validate_option(name, value, &error)) {
+                        if (!handle_warn(info,
+                                         kf_key,
+                                         name,
+                                         NM_KEYFILE_WARN_SEVERITY_WARN,
+                                         _("ignoring invalid bond option %s%s%s = %s%s%s: %s"),
+                                         NM_PRINT_FMT_QUOTE_STRING(name),
+                                         NM_PRINT_FMT_QUOTE_STRING(value),
+                                         error->message))
+                            return;
+                    } else
+                        nm_setting_bond_add_option(NM_SETTING_BOND(setting), name, value);
+                }
             }
         }
         openconnect_fix_secret_flags(setting);
@@ -2194,8 +2257,6 @@ bridge_vlan_writer(KeyfileWriterInfo *info,
     }
 }
 
-#define ETHERNET_S390_OPTIONS_GROUP_NAME "ethernet-s390-options"
-
 static void
 wired_s390_options_parser_full(KeyfileReaderInfo *       info,
                                const NMMetaSettingInfo * setting_info,
@@ -2337,6 +2398,60 @@ tfilter_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, con
                                         NM_SETTING_TC_CONFIG_SETTING_NAME,
                                         key_name->str,
                                         value_str->str);
+    }
+}
+
+static void
+_writer_full_ovs_external_ids_data(KeyfileWriterInfo *       info,
+                                   const NMMetaSettingInfo * setting_info,
+                                   const NMSettInfoProperty *property_info,
+                                   const ParseInfoProperty * pip,
+                                   NMSetting *               setting)
+{
+    GHashTable *      hash;
+    NMUtilsNamedValue data_static[300u / sizeof(NMUtilsNamedValue)];
+    gs_free NMUtilsNamedValue *data_free = NULL;
+    const NMUtilsNamedValue *  data;
+    guint                      data_len;
+    char                       full_key_static[NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX) + 300u];
+    guint                      i;
+
+    nm_assert(NM_IS_SETTING_OVS_EXTERNAL_IDS(setting));
+    nm_assert(nm_streq(property_info->name, NM_SETTING_OVS_EXTERNAL_IDS_DATA));
+
+    hash = _nm_setting_ovs_external_ids_get_data(NM_SETTING_OVS_EXTERNAL_IDS(setting));
+    if (!hash)
+        return;
+
+    data = nm_utils_named_values_from_strdict(hash, &data_len, data_static, &data_free);
+    if (data_len == 0)
+        return;
+
+    memcpy(full_key_static, OVS_EXTERNAL_IDS_DATA_PREFIX, NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX));
+
+    for (i = 0; i < data_len; i++) {
+        const char *  key                 = data[i].name;
+        const char *  val                 = data[i].value_str;
+        gs_free char *escaped_key_to_free = NULL;
+        const char *  escaped_key;
+        gsize         len;
+        gs_free char *full_key_free = NULL;
+        char *        full_key      = full_key_static;
+
+        escaped_key = nm_keyfile_key_encode(key, &escaped_key_to_free);
+
+        len = strlen(escaped_key) + 1u;
+        if (len >= G_N_ELEMENTS(full_key_static) - NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX)) {
+            full_key_free = g_new(char, NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX) + len);
+            full_key      = full_key_free;
+            memcpy(full_key, OVS_EXTERNAL_IDS_DATA_PREFIX, NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX));
+        }
+        memcpy(&full_key[NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX)], escaped_key, len);
+
+        nm_keyfile_plugin_kf_set_string(info->keyfile,
+                                        NM_SETTING_OVS_EXTERNAL_IDS_SETTING_NAME,
+                                        full_key,
+                                        val);
     }
 }
 
@@ -2779,6 +2894,14 @@ static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
                                                .writer_full         = ip_routing_rule_writer_full,
                                                .has_parser_full     = TRUE,
                                                .has_writer_full     = TRUE, ), ), ),
+    PARSE_INFO_SETTING(
+        NM_META_SETTING_TYPE_OVS_EXTERNAL_IDS,
+        PARSE_INFO_PROPERTIES(PARSE_INFO_PROPERTY(NM_SETTING_OVS_EXTERNAL_IDS_DATA,
+                                                  .parser_no_check_key = TRUE,
+                                                  .parser_full = _parser_full_ovs_external_ids_data,
+                                                  .writer_full = _writer_full_ovs_external_ids_data,
+                                                  .has_parser_full = TRUE,
+                                                  .has_writer_full = TRUE, ), ), ),
     PARSE_INFO_SETTING(NM_META_SETTING_TYPE_SERIAL,
                        PARSE_INFO_PROPERTIES(PARSE_INFO_PROPERTY(NM_SETTING_SERIAL_PARITY,
                                                                  .parser = parity_parser, ), ), ),
@@ -3170,7 +3293,7 @@ read_one_setting_value(KeyfileReaderInfo *       info,
                                                   NULL);
         g_object_set(setting, key, sa, NULL);
     } else if (type == G_TYPE_HASH_TABLE) {
-        read_hash_of_string(keyfile, setting, key);
+        read_hash_of_string(info, keyfile, setting, key);
     } else if (type == G_TYPE_ARRAY) {
         read_array_of_uint(keyfile, setting, key);
     } else if (G_TYPE_IS_FLAGS(type)) {
@@ -3582,14 +3705,16 @@ nm_keyfile_read_ensure_uuid(NMConnection *connection, const char *fallback_uuid_
  *   the relative path is made absolute using @base_dir. This must
  *   be an absolute path.
  * @handler_flags: the #NMKeyfileHandlerFlags.
- * @handler: read handler
+ * @handler: (allow-none) (scope call): read handler
  * @user_data: user data for read handler
- * @error: error
+ * @error: (allow-none) (out): error
  *
  * Tries to create a NMConnection from a keyfile. The resulting keyfile is
  * not normalized and might not even verify.
  *
  * Returns: (transfer full): on success, returns the created connection.
+ *
+ * Since: 1.30
  */
 NMConnection *
 nm_keyfile_read(GKeyFile *            keyfile,
@@ -3928,6 +4053,22 @@ _write_setting_wireguard(NMSetting *setting, KeyfileWriterInfo *info)
     }
 }
 
+/**
+ * nm_keyfile_write:
+ * @connection: the #NMConnection to persist to keyfile.
+ * @handler_flags: the #NMKeyfileHandlerFlags.
+ * @handler: (allow-none) (scope call): optional handler for events and
+ *   to override the default behavior.
+ * @user_data: argument for @handler.
+ * @error: the #GError in case writing fails.
+ *
+ * @connection must verify as a valid profile according to
+ * nm_connection_verify().
+ *
+ * Returns: (transfer full): a new #GKeyFile or %NULL on error.
+ *
+ * Since: 1.30
+ */
 GKeyFile *
 nm_keyfile_write(NMConnection *        connection,
                  NMKeyfileHandlerFlags handler_flags,
@@ -3936,16 +4077,38 @@ nm_keyfile_write(NMConnection *        connection,
                  GError **             error)
 {
     nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
+    GError *                        local   = NULL;
     KeyfileWriterInfo               info;
-    gs_free NMSetting **settings = NULL;
-    guint               i, j, n_settings = 0;
+    gs_free NMSetting **settings   = NULL;
+    guint               n_settings = 0;
+    guint               i;
+    guint               j;
 
     g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
     g_return_val_if_fail(!error || !*error, NULL);
     g_return_val_if_fail(handler_flags == NM_KEYFILE_HANDLER_FLAGS_NONE, NULL);
 
-    if (!nm_connection_verify(connection, error))
+    /* Technically, we might not require that a profile is valid in
+     * order to serialize it. Like also nm_keyfile_read() does not
+     * ensure that the read profile validates.
+     *
+     * However, if the profile does not validate, then there might be
+     * unexpected edge cases when we try to serialize it. Edge cases
+     * that might result in dangerous crash.
+     *
+     * So, for now we require valid profiles. */
+    if (!nm_connection_verify(connection, error ? &local : NULL)) {
+        if (error) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_FAILED,
+                        _("the profile is not valid: %s"),
+                        local->message);
+            g_error_free(local);
+        } else
+            nm_assert(!local);
         return NULL;
+    }
 
     keyfile = g_key_file_new();
 
@@ -4193,6 +4356,8 @@ nm_keyfile_utils_create_filename(const char *name, gboolean with_extension)
  * Note that @src is no longer valid after this call. If you want
  * to keep using the same GError*, you need to set it to %NULL
  * after calling this function on it.
+ *
+ * Since: 1.30
  */
 void
 nm_keyfile_handler_data_fail_with_error(NMKeyfileHandlerData *handler_data, GError *src)
@@ -4217,6 +4382,8 @@ nm_keyfile_handler_data_fail_with_error(NMKeyfileHandlerData *handler_data, GErr
  *
  * Get context information of the current event. This function can be called
  * on all events, but the context information may be unset.
+ *
+ * Since: 1.30
  */
 void
 nm_keyfile_handler_data_get_context(const NMKeyfileHandlerData *handler_data,
@@ -4258,6 +4425,8 @@ _nm_keyfile_handler_data_warn_get_message(const NMKeyfileHandlerData *handler_da
  *  event.
  * @out_message: (out) (allow-none) (transfer none): the warning message.
  * @out_severity: (out) (allow-none): the #NMKeyfileWarnSeverity warning severity.
+ *
+ * Since: 1.30
  */
 void
 nm_keyfile_handler_data_warn_get(const NMKeyfileHandlerData *handler_data,

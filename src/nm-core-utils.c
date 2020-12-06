@@ -187,49 +187,44 @@ nm_utils_exp10(gint16 ex)
 
 /*****************************************************************************/
 
-/*
- * nm_ethernet_address_is_valid:
- * @addr: pointer to a binary or ASCII Ethernet address
- * @len: length of @addr, or -1 if @addr is ASCII
- *
- * Compares an Ethernet address against known invalid addresses.
-
- * Returns: %TRUE if @addr is a valid Ethernet address, %FALSE if it is not.
- */
 gboolean
-nm_ethernet_address_is_valid(gconstpointer addr, gssize len)
+nm_ether_addr_is_valid(const NMEtherAddr *addr)
 {
-    guint8 invalid_addr[4][ETH_ALEN] = {
+    static const guint8 invalid_addr[][ETH_ALEN] = {
         {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
         {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
         {0x44, 0x44, 0x44, 0x44, 0x44, 0x44},
         {0x00, 0x30, 0xb4, 0x00, 0x00, 0x00}, /* prism54 dummy MAC */
     };
-    guint8 addr_bin[ETH_ALEN];
-    guint  i;
+    int i;
 
-    if (!addr) {
-        g_return_val_if_fail(len == -1 || len == ETH_ALEN, FALSE);
+    if (!addr)
         return FALSE;
-    }
-
-    if (len == -1) {
-        if (!nm_utils_hwaddr_aton(addr, addr_bin, ETH_ALEN))
-            return FALSE;
-        addr = addr_bin;
-    } else if (len != ETH_ALEN)
-        g_return_val_if_reached(FALSE);
 
     /* Check for multicast address */
-    if ((((guint8 *) addr)[0]) & 0x01)
+    if (addr->ether_addr_octet[0] & 0x01u)
         return FALSE;
 
-    for (i = 0; i < G_N_ELEMENTS(invalid_addr); i++) {
-        if (nm_utils_hwaddr_matches(addr, ETH_ALEN, invalid_addr[i], ETH_ALEN))
+    for (i = 0; i < (int) G_N_ELEMENTS(invalid_addr); i++) {
+        if (memcmp(addr, invalid_addr[i], ETH_ALEN) == 0)
             return FALSE;
     }
 
     return TRUE;
+}
+
+gboolean
+nm_ether_addr_is_valid_str(const char *str)
+{
+    NMEtherAddr addr_bin;
+
+    if (!str)
+        return FALSE;
+
+    if (!nm_utils_hwaddr_aton(str, &addr_bin, ETH_ALEN))
+        return FALSE;
+
+    return nm_ether_addr_is_valid(&addr_bin);
 }
 
 /*****************************************************************************/
@@ -4386,7 +4381,7 @@ nm_utils_dnsmasq_status_to_string(int status, char *dest, gsize size)
 }
 
 /**
- * nm_utils_get_reverse_dns_domains_ip4:
+ * nm_utils_get_reverse_dns_domains_ip_4:
  * @addr: IP address in network order
  * @plen: prefix length
  * @domains: array for results
@@ -4395,7 +4390,7 @@ nm_utils_dnsmasq_status_to_string(int status, char *dest, gsize size)
  * append them to @domains.
  */
 void
-nm_utils_get_reverse_dns_domains_ip4(guint32 addr, guint8 plen, GPtrArray *domains)
+nm_utils_get_reverse_dns_domains_ip_4(guint32 addr, guint8 plen, GPtrArray *domains)
 {
     guint32 ip, ip2, mask;
     guchar *p;
@@ -4434,7 +4429,7 @@ nm_utils_get_reverse_dns_domains_ip4(guint32 addr, guint8 plen, GPtrArray *domai
 }
 
 /**
- * nm_utils_get_reverse_dns_domains_ip6:
+ * nm_utils_get_reverse_dns_domains_ip_6:
  * @addr: IPv6 address
  * @plen: prefix length
  * @domains: array for results
@@ -4443,7 +4438,7 @@ nm_utils_get_reverse_dns_domains_ip4(guint32 addr, guint8 plen, GPtrArray *domai
  * append them to @domains.
  */
 void
-nm_utils_get_reverse_dns_domains_ip6(const struct in6_addr *ip, guint8 plen, GPtrArray *domains)
+nm_utils_get_reverse_dns_domains_ip_6(const struct in6_addr *ip, guint8 plen, GPtrArray *domains)
 {
     struct in6_addr addr;
     guint           nibbles, bits, entries;

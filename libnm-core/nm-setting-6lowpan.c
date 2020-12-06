@@ -179,7 +179,7 @@ nm_setting_6lowpan_init(NMSetting6Lowpan *setting)
 NMSetting *
 nm_setting_6lowpan_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_6LOWPAN, NULL);
+    return g_object_new(NM_TYPE_SETTING_6LOWPAN, NULL);
 }
 
 static void

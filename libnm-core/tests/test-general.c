@@ -330,7 +330,7 @@ _do_test_nm_utils_strsplit_set_f_one(NMUtilsStrsplitSetFlags flags,
             }
             g_assert(words_g[words_len] == NULL);
             g_assert_cmpint(NM_PTRARRAY_LEN(words_g), ==, words_len);
-            g_assert(_nm_utils_strv_cmp_n(exp_words, words_len, NM_CAST_STRV_CC(words_g), -1) == 0);
+            g_assert(nm_utils_strv_cmp_n(exp_words, words_len, words_g, -1) == 0);
         }
     }
 
@@ -354,7 +354,7 @@ _do_test_nm_utils_strsplit_set_f_one(NMUtilsStrsplitSetFlags flags,
         g_assert_cmpstr(exp_words[i], ==, words[i]);
     g_assert(words[words_len] == NULL);
 
-    g_assert(_nm_utils_strv_cmp_n(exp_words, words_len, words, -1) == 0);
+    g_assert(nm_utils_strv_cmp_n(exp_words, words_len, words, -1) == 0);
 
     s1 = words[0];
     g_assert(s1 >= (char *) &words[words_len + 1]);
@@ -515,7 +515,7 @@ _do_test_nm_utils_strsplit_set_simple(NMUtilsStrsplitSetFlags flags,
     g_assert_cmpint(words_len, >, 0);
     n_tokens = NM_PTRARRAY_LEN(tokens);
 
-    if (_nm_utils_strv_cmp_n(exp_words, words_len, tokens, -1) != 0) {
+    if (nm_utils_strv_cmp_n(exp_words, words_len, tokens, -1) != 0) {
         gsize i;
 
         g_print(">>> split \"%s\" (flags %x) got %zu tokens (%zu expected)\n",
@@ -10058,7 +10058,7 @@ _strsplit_quoted_assert_strv(const char *       topic,
     g_assert(strv1);
     g_assert(strv2);
 
-    if (_nm_utils_strv_equal((char **) strv1, (char **) strv2))
+    if (nm_utils_strv_equal(strv1, strv2))
         return;
 
     for (i = 0; strv1[i]; i++) {

@@ -126,7 +126,7 @@ nm_device_ovs_bridge_init(NMDeviceOvsBridge *device)
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_ovsbridge =
     NML_DBUS_META_IFACE_INIT_PROP(NM_DBUS_INTERFACE_DEVICE_OVS_BRIDGE,
                                   nm_device_ovs_bridge_get_type,
-                                  NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_HIGH,
+                                  NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
                                   NML_DBUS_META_IFACE_DBUS_PROPERTIES(
                                       NML_DBUS_META_PROPERTY_INIT_AO_PROP("Slaves",
                                                                           PROP_SLAVES,

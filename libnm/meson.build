@@ -40,6 +40,7 @@ libnm_headers = files(
   'nm-device-ppp.h',
   'nm-device-team.h',
   'nm-device-tun.h',
+  'nm-device-veth.h',
   'nm-device-vlan.h',
   'nm-device-vrf.h',
   'nm-device-vxlan.h',
@@ -106,6 +107,7 @@ libnm_sources = files(
   'nm-device-ppp.c',
   'nm-device-team.c',
   'nm-device-tun.c',
+  'nm-device-veth.c',
   'nm-device-vlan.c',
   'nm-device-vrf.c',
   'nm-device-vxlan.c',
@@ -138,6 +140,7 @@ deps = [
   libnmdbus_dep,
   libnm_libnm_core_intern_dep,
   libnm_nm_default_dep,
+  libnm_keyfile_dep,
   libnm_udev_aux_dep,
   libudev_dep,
 ]
@@ -153,6 +156,7 @@ liblibnm = static_library(
 links = [
   liblibnm,
   libnm_core,
+  libnm_keyfile,
   libnmdbus,
   libnm_systemd_logging_stub,
   libnm_utils_base,
@@ -200,7 +204,7 @@ if enable_introspection
 
   libnm_gir = gnome.generate_gir(
     libnm,
-    sources: libnm_core_sources + libnm_core_headers + libnm_core_enum_sources + libnm_sources + libnm_headers + libnm_enum_sources + [nm_version_macro_header],
+    sources: libnm_core_sources + nm_keyfile_source + libnm_core_headers + libnm_core_enum_sources + libnm_sources + libnm_headers + libnm_enum_sources + [nm_version_macro_header],
     includes: 'Gio-2.0',
     nsversion: nm_gir_version,
     namespace: 'NM',

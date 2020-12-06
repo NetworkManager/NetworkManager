@@ -503,7 +503,7 @@ nm_setting_team_port_init(NMSettingTeamPort *setting)
 NMSetting *
 nm_setting_team_port_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_TEAM_PORT, NULL);
+    return g_object_new(NM_TYPE_SETTING_TEAM_PORT, NULL);
 }
 
 static void

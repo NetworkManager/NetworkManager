@@ -480,6 +480,11 @@ void nm_client_dbus_set_property(NMClient *          client,
 NM_AVAILABLE_IN_1_24
 gboolean nm_client_dbus_set_property_finish(NMClient *client, GAsyncResult *result, GError **error);
 
+/*****************************************************************************/
+
+NM_AVAILABLE_IN_1_30
+void nm_utils_print(int output_mode, const char *msg);
+
 G_END_DECLS
 
 #endif /* __NM_CLIENT_H__ */

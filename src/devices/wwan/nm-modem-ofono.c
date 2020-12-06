@@ -1160,20 +1160,20 @@ nm_modem_ofono_new(const char *path)
      */
     basename = g_path_get_basename(path);
 
-    return (NMModem *) g_object_new(NM_TYPE_MODEM_OFONO,
-                                    NM_MODEM_PATH,
-                                    path,
-                                    NM_MODEM_UID,
-                                    basename,
-                                    NM_MODEM_DEVICE_ID,
-                                    basename,
-                                    NM_MODEM_CONTROL_PORT,
-                                    "ofono", /* mandatory */
-                                    NM_MODEM_DRIVER,
-                                    "ofono",
-                                    NM_MODEM_STATE,
-                                    (int) NM_MODEM_STATE_INITIALIZING,
-                                    NULL);
+    return g_object_new(NM_TYPE_MODEM_OFONO,
+                        NM_MODEM_PATH,
+                        path,
+                        NM_MODEM_UID,
+                        basename,
+                        NM_MODEM_DEVICE_ID,
+                        basename,
+                        NM_MODEM_CONTROL_PORT,
+                        "ofono", /* mandatory */
+                        NM_MODEM_DRIVER,
+                        "ofono",
+                        NM_MODEM_STATE,
+                        (int) NM_MODEM_STATE_INITIALIZING,
+                        NULL);
 }
 
 static void

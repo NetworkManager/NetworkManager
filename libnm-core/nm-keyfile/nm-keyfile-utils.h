@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0+ */
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /*
  * Copyright (C) 2010 - 2015 Red Hat, Inc.
  */

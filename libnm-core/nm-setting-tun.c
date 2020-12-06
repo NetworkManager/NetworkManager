@@ -266,7 +266,7 @@ nm_setting_tun_init(NMSettingTun *self)
 NMSetting *
 nm_setting_tun_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_TUN, NULL);
+    return g_object_new(NM_TYPE_SETTING_TUN, NULL);
 }
 
 static void

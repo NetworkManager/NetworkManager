@@ -223,7 +223,7 @@ nm_setting_serial_init(NMSettingSerial *self)
 NMSetting *
 nm_setting_serial_new(void)
 {
-    return (NMSetting *) g_object_new(NM_TYPE_SETTING_SERIAL, NULL);
+    return g_object_new(NM_TYPE_SETTING_SERIAL, NULL);
 }
 
 static void
