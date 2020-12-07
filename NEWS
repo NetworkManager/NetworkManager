@@ -2,10 +2,14 @@
 NetworkManager-1.26.6
 Overview of changes since NetworkManager-1.26.4
 ===============================================
+
 * Change the behavior of nm-initrd-generator so that the 'ip=off|none' kernel
   cmdline argument actually generates a connection which disables both
   ipv4 and ipv6. Previously the generated connection would disable ipv4
   but ipv6 would be set to the 'auto' method.
+* Fix systemd-resolved DNS plugin to configure DefaultRoute option and to
+  only configure wildcard DNS search domain with exclusive DNS priority.
+* Various minor fixes.
 
 ===============================================
 NetworkManager-1.26.4
