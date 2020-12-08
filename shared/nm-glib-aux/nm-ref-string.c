@@ -169,24 +169,25 @@ void
 _nm_ref_string_unref_non_null (NMRefString *rstr)
 {
 	RefString *const rstr0 = (RefString *) rstr;
+	int r;
 
 	_ASSERT (rstr0);
 
-	if (G_LIKELY (!g_atomic_int_dec_and_test (&rstr0->ref_count)))
+	/* fast-path: first try to decrement the ref-count without bringing it
+	 * to zero. */
+	r = rstr0->ref_count;
+	if (G_LIKELY (r > 1 && g_atomic_int_compare_and_exchange (&rstr0->ref_count, r, r - 1)))
 		return;
+
+	/* We apparently are about to return the last reference. Take a lock. */
 
 	G_LOCK (gl_lock);
 
-	/* in the fast-path above, we already decremented the ref-count to zero.
-	 * We need recheck that the ref-count is still zero. */
+	nm_assert (g_hash_table_lookup (gl_hash, rstr0) == rstr0);
 
-	if (g_atomic_int_get (&rstr0->ref_count) == 0) {
+	if (G_LIKELY(g_atomic_int_dec_and_test (&rstr0->ref_count))) {
 		if (!g_hash_table_remove (gl_hash, rstr0))
 			nm_assert_not_reached ();
-	} else {
-#if NM_MORE_ASSERTS > 5
-		nm_assert (g_hash_table_lookup (gl_hash, rstr0) == rstr0);
-#endif
 	}
 
 	G_UNLOCK (gl_lock);
