@@ -6981,7 +6981,7 @@ _init_release_all(NMClient *self)
     nm_assert(c_list_is_empty(&priv->dbus_objects_lst_head_on_dbus));
     nm_assert(c_list_is_empty(&priv->dbus_objects_lst_head_with_nmobj_not_ready));
     nm_assert(c_list_is_empty(&priv->dbus_objects_lst_head_with_nmobj_ready));
-    nm_assert(g_hash_table_size(priv->dbus_objects) == 0);
+    nm_assert(nm_g_hash_table_size(priv->dbus_objects) == 0);
 }
 
 /*****************************************************************************/
@@ -7822,7 +7822,7 @@ dispose(GObject *object)
     nm_assert(c_list_is_empty(&priv->queue_notify_lst_head));
     nm_assert(c_list_is_empty(&priv->notify_event_lst_head));
     nm_assert(c_list_is_empty(&self->obj_base.queue_notify_lst));
-    nm_assert(!priv->dbus_objects || g_hash_table_size(priv->dbus_objects) == 0);
+    nm_assert(nm_g_hash_table_size(priv->dbus_objects) == 0);
 
     nml_dbus_property_o_clear_many(priv->nm.property_o, G_N_ELEMENTS(priv->nm.property_o), NULL);
     nml_dbus_property_ao_clear_many(priv->nm.property_ao, G_N_ELEMENTS(priv->nm.property_ao), NULL);
