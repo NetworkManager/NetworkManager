@@ -323,12 +323,20 @@ _internal_write_connection(NMConnection *                  connection,
     }
 
     if (!path) {
+        gs_free char *ss = NULL;
+
         /* this really should not happen, we tried hard to find an unused name... bail out. */
         g_set_error(error,
                     NM_SETTINGS_ERROR,
                     NM_SETTINGS_ERROR_FAILED,
                     "could not find suitable keyfile file name (%s already used)",
-                    path);
+                    ss = ({
+                        gs_free char *filename_escaped = NULL;
+
+                        filename_escaped = nm_keyfile_utils_create_filename(id, with_extension);
+                        g_build_filename(keyfile_dir, filename_escaped, NULL);
+                    }));
+
         return FALSE;
     }
 
