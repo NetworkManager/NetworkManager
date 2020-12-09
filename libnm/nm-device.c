@@ -2814,6 +2814,10 @@ nm_device_connection_compatible(NMDevice *device, NMConnection *connection, GErr
  * Returns: (transfer full) (element-type NMConnection): an array of
  * #NMConnections that could be activated with the given @device.  The array
  * should be freed with g_ptr_array_unref() when it is no longer required.
+ *
+ * WARNING: the transfer annotation for this function may not work correctly
+ *   with bindings. See https://gitlab.gnome.org/GNOME/gobject-introspection/-/issues/305.
+ *   You can filter the list yourself with nm_device_connection_valid().
  **/
 GPtrArray *
 nm_device_filter_connections(NMDevice *device, const GPtrArray *connections)

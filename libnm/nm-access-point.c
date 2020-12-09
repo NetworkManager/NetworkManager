@@ -363,6 +363,10 @@ nm_access_point_connection_valid(NMAccessPoint *ap, NMConnection *connection)
  * Returns: (transfer full) (element-type NMConnection): an array of
  * #NMConnections that could be activated with the given @ap.  The array should
  * be freed with g_ptr_array_unref() when it is no longer required.
+ *
+ * WARNING: the transfer annotation for this function may not work correctly
+ *   with bindings. See https://gitlab.gnome.org/GNOME/gobject-introspection/-/issues/305.
+ *   You can filter the list yourself with nm_access_point_connection_valid().
  **/
 GPtrArray *
 nm_access_point_filter_connections(NMAccessPoint *ap, const GPtrArray *connections)
