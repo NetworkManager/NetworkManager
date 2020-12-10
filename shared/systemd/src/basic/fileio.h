@@ -6,7 +6,11 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#if 0 /* NM_IGNORED */
 #include <sys/fcntl.h>
+#else /* NM_IGNORED */
+#include <fcntl.h>
+#endif /* NM_IGNORED */
 #include <sys/types.h>
 
 #include "macro.h"
