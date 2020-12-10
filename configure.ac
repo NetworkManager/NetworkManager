@@ -83,6 +83,7 @@ AC_CHECK_DECLS([
 	reallocarray],
 	[], [], [[
 #include <malloc.h>
+#include <stdlib.h>
 ]])
 
 AC_CHECK_DECLS([
