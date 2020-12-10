@@ -7,7 +7,7 @@
 #  - CFLAGS
 #  - WITH_DOCS
 
-set -exv
+set -ex
 
 die() {
     printf "%s\n" "$@"
@@ -41,6 +41,13 @@ if command -v ccache &>/dev/null; then
     export PATH="/usr/lib64/ccache:/usr/lib/ccache${PATH:+:${PATH}}"
 fi
 
+IS_FEDORA=0
+IS_CENTOS=0
+IS_ALPINE=0
+grep -q '^NAME=.*\(CentOS\)' /etc/os-release && IS_CENTOS=1
+grep -q '^NAME=.*\(Fedora\)' /etc/os-release && IS_FEDORA=1
+grep -q '^NAME=.*\(Alpine\)' /etc/os-release && IS_ALPINE=1
+
 ###############################################################################
 
 if [ "$BUILD_TYPE" == meson ]; then
@@ -58,6 +65,9 @@ _WITH_WERROR=1
 _WITH_LIBTEAM="$_TRUE"
 _WITH_DOCS="$_TRUE"
 _WITH_SYSTEMD_LOGIND="$_TRUE"
+if [ $IS_ALPINE = 1 ]; then
+    _WITH_SYSTEMD_LOGIND="$_FALSE"
+fi
 
 if [ "$NMTST_SEED_RAND" != "" ]; then
     export NMTST_SEED_RAND=
@@ -133,9 +143,15 @@ run_autotools() {
     else
         _WITH_WERROR_VAL="yes"
     fi
+    DISABLE_DEPENDENCY_TRACKING=
+    if [ $IS_ALPINE = 1 ]; then
+        DISABLE_DEPENDENCY_TRACKING='--disable-dependency-tracking'
+    fi
     pushd ./build
         ../configure \
             --prefix="$PWD/INST" \
+            $DISABLE_DEPENDENCY_TRACKING \
+            \
             --enable-introspection=$_WITH_DOCS \
             --enable-gtk-doc=$_WITH_DOCS \
             --with-systemd-logind=$_WITH_SYSTEMD_LOGIND \
