@@ -447,8 +447,7 @@ _notify_maybe_scanning (NMSupplicantInterface *self)
 	gboolean scanning;
 
 	scanning =   nm_supplicant_interface_state_is_operational (priv->state)
-	          && (   priv->scanning_property
-	              || priv->supp_state == NM_SUPPLICANT_INTERFACE_STATE_SCANNING);
+	          && priv->scanning_property;
 
 	if (priv->scanning_cached == scanning)
 		return;
