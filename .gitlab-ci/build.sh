@@ -25,6 +25,12 @@ meson --version
 # `make check`.
 export NMTST_SKIP_PYTHON_BLACK=1
 
+# We have a unit test that check that `ci-fairy generate-template`
+# is equal to our .gitlab-ci.yml file. However, on gitlab-ci we
+# also have a dedicate test for the same thing. We don't need
+# to run that test as part of the build. Disable it.
+export NMTST_SKIP_CHECK_GITLAB_CI=1
+
 do_clean; BUILD_TYPE=autotools CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
 rm -rf /tmp/nm-docs-html;
 mv build/INST/share/gtk-doc/html /tmp/nm-docs-html
