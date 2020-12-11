@@ -969,12 +969,95 @@ _set_error_missing_base_setting(GError **error, const char *type)
     g_prefix_error(error, "%s: ", type);
 }
 
+gboolean
+_nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
+                                      NMConnection *       connection,
+                                      const char **        out_slave_type,
+                                      const char **        out_normerr_slave_setting_type,
+                                      const char **        out_normerr_missing_slave_type,
+                                      const char **        out_normerr_missing_slave_type_port,
+                                      GError **            error)
+{
+    NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE(s_con);
+    gboolean                    is_slave;
+    const char *                slave_setting_type;
+    const char *                slave_type;
+    const char *                normerr_slave_setting_type      = NULL;
+    const char *                normerr_missing_slave_type      = NULL;
+    const char *                normerr_missing_slave_type_port = NULL;
+
+    is_slave           = FALSE;
+    slave_setting_type = NULL;
+    slave_type         = priv->slave_type;
+    if (slave_type) {
+        is_slave = _nm_setting_slave_type_is_valid(slave_type, &slave_setting_type);
+        if (!is_slave) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("Unknown slave type '%s'"),
+                        slave_type);
+            g_prefix_error(error,
+                           "%s.%s: ",
+                           NM_SETTING_CONNECTION_SETTING_NAME,
+                           NM_SETTING_CONNECTION_SLAVE_TYPE);
+            return FALSE;
+        }
+    }
+
+    if (is_slave) {
+        if (!priv->master) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_MISSING_PROPERTY,
+                        _("Slave connections need a valid '%s' property"),
+                        NM_SETTING_CONNECTION_MASTER);
+            g_prefix_error(error,
+                           "%s.%s: ",
+                           NM_SETTING_CONNECTION_SETTING_NAME,
+                           NM_SETTING_CONNECTION_MASTER);
+            return FALSE;
+        }
+        if (slave_setting_type && connection
+            && !nm_connection_get_setting_by_name(connection, slave_setting_type))
+            normerr_slave_setting_type = slave_setting_type;
+    } else {
+        nm_assert(!slave_type);
+        if (priv->master) {
+            NMSetting *s_port;
+
+            if (connection
+                && (slave_type = _nm_connection_detect_slave_type(connection, &s_port))) {
+                normerr_missing_slave_type      = slave_type;
+                normerr_missing_slave_type_port = nm_setting_get_name(s_port);
+            } else {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_MISSING_PROPERTY,
+                            _("Cannot set '%s' without '%s'"),
+                            NM_SETTING_CONNECTION_MASTER,
+                            NM_SETTING_CONNECTION_SLAVE_TYPE);
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               NM_SETTING_CONNECTION_SETTING_NAME,
+                               NM_SETTING_CONNECTION_SLAVE_TYPE);
+                return FALSE;
+            }
+        }
+    }
+
+    NM_SET_OUT(out_slave_type, slave_type);
+    NM_SET_OUT(out_normerr_slave_setting_type, normerr_slave_setting_type);
+    NM_SET_OUT(out_normerr_missing_slave_type, normerr_missing_slave_type);
+    NM_SET_OUT(out_normerr_missing_slave_type_port, normerr_missing_slave_type_port);
+    return TRUE;
+}
+
 static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
-    NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
-    gboolean                    is_slave;
-    const char *                slave_setting_type;
+    NMSettingConnection *       self              = NM_SETTING_CONNECTION(setting);
+    NMSettingConnectionPrivate *priv              = NM_SETTING_CONNECTION_GET_PRIVATE(self);
     NMSetting *                 normerr_base_type = NULL;
     const char *                type;
     const char *                slave_type;
@@ -1146,68 +1229,17 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 after_interface_name:
 
-    is_slave           = FALSE;
-    slave_setting_type = NULL;
-    slave_type         = priv->slave_type;
-    if (slave_type) {
-        is_slave = _nm_setting_slave_type_is_valid(slave_type, &slave_setting_type);
-        if (!is_slave) {
-            g_set_error(error,
-                        NM_CONNECTION_ERROR,
-                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("Unknown slave type '%s'"),
-                        slave_type);
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_CONNECTION_SETTING_NAME,
-                           NM_SETTING_CONNECTION_SLAVE_TYPE);
-            return FALSE;
-        }
-    }
+    if (!_nm_connection_detect_slave_type_full(self,
+                                               connection,
+                                               &slave_type,
+                                               &normerr_slave_setting_type,
+                                               &normerr_missing_slave_type,
+                                               &normerr_missing_slave_type_port,
+                                               error))
+        return FALSE;
 
-    if (is_slave) {
-        if (!priv->master) {
-            g_set_error(error,
-                        NM_CONNECTION_ERROR,
-                        NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                        _("Slave connections need a valid '%s' property"),
-                        NM_SETTING_CONNECTION_MASTER);
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_CONNECTION_SETTING_NAME,
-                           NM_SETTING_CONNECTION_MASTER);
-            return FALSE;
-        }
-        if (slave_setting_type && connection
-            && !nm_connection_get_setting_by_name(connection, slave_setting_type))
-            normerr_slave_setting_type = slave_setting_type;
-    } else {
-        nm_assert(!slave_type);
-        if (priv->master) {
-            NMSetting *s_port;
-
-            if (connection
-                && (slave_type = _nm_connection_detect_slave_type(connection, &s_port))) {
-                normerr_missing_slave_type      = slave_type;
-                normerr_missing_slave_type_port = nm_setting_get_name(s_port);
-            } else {
-                g_set_error(error,
-                            NM_CONNECTION_ERROR,
-                            NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                            _("Cannot set '%s' without '%s'"),
-                            NM_SETTING_CONNECTION_MASTER,
-                            NM_SETTING_CONNECTION_SLAVE_TYPE);
-                g_prefix_error(error,
-                               "%s.%s: ",
-                               NM_SETTING_CONNECTION_SETTING_NAME,
-                               NM_SETTING_CONNECTION_SLAVE_TYPE);
-                return FALSE;
-            }
-        }
-    }
-
-    if (strcmp(type, NM_SETTING_OVS_PORT_SETTING_NAME) == 0 && slave_type
-        && strcmp(slave_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME) != 0) {
+    if (nm_streq(type, NM_SETTING_OVS_PORT_SETTING_NAME) && slave_type
+        && !nm_streq(slave_type, NM_SETTING_OVS_BRIDGE_SETTING_NAME)) {
         g_set_error(error,
                     NM_CONNECTION_ERROR,
                     NM_CONNECTION_ERROR_MISSING_PROPERTY,

@@ -12442,8 +12442,11 @@ can_reapply_change(NMDevice *  self,
     }
 
     if (nm_streq(setting_name, NM_SETTING_OVS_EXTERNAL_IDS_SETTING_NAME)
-        && NM_DEVICE_GET_CLASS(self)->can_reapply_change_ovs_external_ids)
+        && NM_DEVICE_GET_CLASS(self)->can_reapply_change_ovs_external_ids) {
+        /* TODO: this means, you cannot reapply changes to the external-ids for
+         * OVS system interfaces. */
         return TRUE;
+    }
 
 out_fail:
     g_set_error(error,

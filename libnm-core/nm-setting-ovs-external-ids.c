@@ -345,7 +345,9 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     if (connection) {
-        const char *type;
+        NMSettingConnection *s_con;
+        const char *         type;
+        const char *         slave_type;
 
         type = nm_connection_get_connection_type(connection);
         if (!type) {
@@ -355,18 +357,31 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             if (s_base)
                 type = nm_setting_get_name(s_base);
         }
-        if (!NM_IN_STRSET(type,
-                          NM_SETTING_OVS_BRIDGE_SETTING_NAME,
-                          NM_SETTING_OVS_PORT_SETTING_NAME,
-                          NM_SETTING_OVS_INTERFACE_SETTING_NAME)) {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                                _("OVS external IDs can only be added to a profile of type OVS "
-                                  "bridge/port/interface"));
-            return FALSE;
-        }
+        if (NM_IN_STRSET(type,
+                         NM_SETTING_OVS_BRIDGE_SETTING_NAME,
+                         NM_SETTING_OVS_PORT_SETTING_NAME,
+                         NM_SETTING_OVS_INTERFACE_SETTING_NAME))
+            goto connection_type_is_good;
+
+        if ((s_con = nm_connection_get_setting_connection(connection))
+            && _nm_connection_detect_slave_type_full(s_con,
+                                                     connection,
+                                                     &slave_type,
+                                                     NULL,
+                                                     NULL,
+                                                     NULL,
+                                                     NULL)
+            && nm_streq0(slave_type, NM_SETTING_OVS_PORT_SETTING_NAME))
+            goto connection_type_is_good;
+
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("OVS external IDs can only be added to a profile of type OVS "
+                              "bridge/port/interface or to OVS system interface"));
+        return FALSE;
     }
+connection_type_is_good:
 
     return TRUE;
 }
