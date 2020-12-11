@@ -426,8 +426,9 @@ main(int argc, char *argv[])
     }
 
     nm_log_info(LOGD_CORE,
-                "NetworkManager (version " NM_DIST_VERSION ") is starting... (%s)",
-                nm_config_get_first_start(config) ? "for the first time" : "after a restart");
+                "NetworkManager (version " NM_DIST_VERSION ") is starting... (%s%s)",
+                nm_config_get_first_start(config) ? "for the first time" : "after a restart",
+                NM_MORE_ASSERTS != 0 ? ", asserts:" G_STRINGIFY(NM_MORE_ASSERTS) : "");
 
     nm_log_info(LOGD_CORE,
                 "Read config: %s",
