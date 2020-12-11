@@ -38,7 +38,7 @@ if ! podman container exists "$PODNAME" ; then
         -v "$DIR:/tmp/NetworkManager:Z" \
         -w /tmp/NetworkManager \
         fedora:33 \
-        /bin/bash -c 'dnf upgrade -y && dnf install -y git which /usr/bin/clang-format && ./contrib/scripts/nm-code-format.sh -i'
+        /bin/bash -c 'dnf upgrade -y && dnf install -y git /usr/bin/clang-format && ./contrib/scripts/nm-code-format.sh -i'
     exit 0
 fi
 

@@ -255,10 +255,10 @@ ls -dla \
     2>/dev/null | sed 's/^/    /'
 LOG
 if [[ "$BUILDTYPE" == "SRPM" ]]; then
-    LOG sudo $(which dnf &>/dev/null && echo dnf builddep || echo yum-builddep) $TEMP_LATEST/SRPMS/*.src.rpm
+    LOG sudo $(command -v dnf &>/dev/null && echo dnf builddep || echo yum-builddep) $TEMP_LATEST/SRPMS/*.src.rpm
     LOG
 else
-    LOG "sudo $(which dnf &>/dev/null && echo dnf || echo yum) install '$TEMP_LATEST/RPMS'/*/*.rpm"
+    LOG "sudo $(command -v dnf &>/dev/null && echo dnf || echo yum) install '$TEMP_LATEST/RPMS'/*/*.rpm"
     LOG
 fi
 

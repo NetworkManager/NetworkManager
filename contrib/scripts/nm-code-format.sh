@@ -37,7 +37,7 @@ EXCLUDE=":(exclude)shared/systemd/src
          :(exclude)shared/c-stdaux
          :(exclude)shared/n-acd"
 
-if ! which clang-format &> /dev/null; then
+if ! command -v clang-format &> /dev/null; then
     echo -n "Error: clang-format is not installed, "
     echo "on RHEL/Fedora/CentOS run 'dnf install clang-tools-extra'"
     exit 1

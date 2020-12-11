@@ -16,8 +16,8 @@ locale -a
 env
 meson --version
 
-! which dpkg || dpkg -l
-! which yum  || yum list installed
+! command -v dpkg &>/dev/null || dpkg -l
+! command -v yum  &>/dev/null || yum list installed
 
 # The formatting depends on the version of python black.
 # We have a dedicated test that checks our formatting, which

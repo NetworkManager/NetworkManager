@@ -36,7 +36,7 @@ _is_true() {
 }
 
 USE_CCACHE=0
-if which ccache &>/dev/null; then
+if command -v ccache &>/dev/null; then
     USE_CCACHE=1
     export PATH="/usr/lib64/ccache:/usr/lib/ccache${PATH:+:${PATH}}"
 fi

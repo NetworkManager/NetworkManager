@@ -12,7 +12,7 @@
 
 set -xe
 
-DNF="$( ( which dnf || dnf --version ) &>/dev/null && echo dnf || echo yum)"
+DNF="$(command -v dnf &>/dev/null && echo dnf || echo yum)"
 
 install() {
     if [ "$NM_INSTALL" != "" ]; then

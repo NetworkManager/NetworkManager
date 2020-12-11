@@ -207,7 +207,7 @@ fi
 
 NMTST_DBUS_RUN_SESSION=()
 if _is_true "$NMTST_LAUNCH_DBUS"; then
-    if ! which dbus-run-session &>/dev/null ; then
+    if ! command -v dbus-run-session &>/dev/null ; then
         eval `dbus-launch --sh-syntax`
         trap "kill $DBUS_SESSION_BUS_PID" EXIT
     else
@@ -249,7 +249,7 @@ if ! _is_true "$NMTST_USE_VALGRIND" 0; then
 fi
 
 if [[ -z "${NMTST_VALGRIND}" ]]; then
-    NMTST_VALGRIND=`which valgrind` || die "cannot find valgrind binary. Set \$NMTST_VALGRIND"
+    NMTST_VALGRIND="$(command -v valgrind)" || die "cannot find valgrind binary. Set \$NMTST_VALGRIND"
 else
     test -e "${NMTST_VALGRIND}" || die "cannot find valgrind binary from NMTST_VALGRIND=\"${NMTST_VALGRIND}\""
 fi
