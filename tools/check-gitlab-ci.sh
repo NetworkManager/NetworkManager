@@ -23,7 +23,7 @@ if ! [ -f ./.gitlab-ci.yml ] ; then
     exit 0
 fi
 
-if ! ci-fairy --help 2>&1 >/dev/null ; then
+if ! command -v ci-fairy &> /dev/null ; then
     # ci-fairy not available. Cannot check.
     exit 0
 fi
