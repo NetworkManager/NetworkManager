@@ -7,9 +7,13 @@
 ########################################
 
 
-.templates_sha: &template_sha 766e3d77c647e404b349e398427e8965a1769b64 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
+.templates_sha: &template_sha b18e53bf67b9ed493a006d83dbadd1ecc0daa61a # see https://docs.gitlab.com/ee/ci/yaml/#includefile
 
 include:
+  # Alpine container builder template
+  - project: 'freedesktop/ci-templates'
+    ref: *template_sha
+    file: '/templates/alpine.yml'
   # Centos container builder template
   - project: 'freedesktop/ci-templates'
     ref: *template_sha
@@ -40,15 +44,17 @@ variables:
   # these tags should be updated each time the list of packages is updated
   # changing these will force rebuilding the associated image
   # Note: these tags have no meaning and are not tied to a particular NM version
-  FEDORA_TAG:  '2020-11-17.0-6646b220c743'
-  UBUNTU_TAG:  '2020-11-17.0-89dd88de8047'
-  DEBIAN_TAG:  '2020-11-17.0-89dd88de8047'
-  CENTOS_TAG:  '2020-11-17.0-6646b220c743'
+  FEDORA_TAG:  '2020-11-17.0-cbb87607d569'
+  UBUNTU_TAG:  '2020-11-17.0-45915bd6e380'
+  DEBIAN_TAG:  '2020-11-17.0-45915bd6e380'
+  CENTOS_TAG:  '2020-11-17.0-cbb87607d569'
+  ALPINE_TAG:  '2020-11-17.0-8309a34970a3'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
   DEBIAN_EXEC: 'bash .gitlab-ci/debian-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
+  ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
 
 .nm_artifacts:
   variables:
@@ -305,6 +311,16 @@ centos:8.2.2004@container-prep:
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
     FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
 
+alpine:latest@container-prep:
+  extends:
+    - .fdo.container-build@alpine
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: 'latest'
+    FDO_DISTRIBUTION_TAG: $ALPINE_TAG
+    FDO_DISTRIBUTION_EXEC: $ALPINE_EXEC
+
 #################################################################
 #                                                               #
 #                   container clean stage                       #
@@ -545,6 +561,15 @@ centos:8.2.2004@container-clean:
     CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/centos/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
     FDO_DISTRIBUTION_VERSION: '8.2.2004'
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
+
+alpine:latest@container-clean:
+  extends:
+    - .container-clean
+  variables:
+    GIT_STRATEGY: none
+    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/alpine/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
+    FDO_DISTRIBUTION_VERSION: 'latest'
+    FDO_DISTRIBUTION_TAG: $ALPINE_TAG
 
 
 #################################################################
@@ -817,6 +842,17 @@ t_centos:8.2.2004:
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
   needs:
     - "centos:8.2.2004@container-prep"
+  when: manual
+
+t_alpine:latest:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@alpine
+  variables:
+    FDO_DISTRIBUTION_VERSION: 'latest'
+    FDO_DISTRIBUTION_TAG: $ALPINE_TAG
+  needs:
+    - "alpine:latest@container-prep"
   when: manual
 
 #################################################################

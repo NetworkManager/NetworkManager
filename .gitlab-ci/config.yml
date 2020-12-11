@@ -55,6 +55,11 @@ distributions:
       - '7.9.2009'
       - '8.1.1911'
       - '8.2.2004'
+  - name: alpine
+    tag: *default_tag
+    base_type: alpine
+    versions:
+      - 'latest'
 
 # specifies which of the above distros is used as source for pages
 pages_build:
