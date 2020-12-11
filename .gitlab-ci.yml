@@ -7,7 +7,7 @@
 ########################################
 
 
-.templates_sha: &template_sha 766e3d77c647e404b349e398427e8965a1769b64 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
+.templates_sha: &template_sha b18e53bf67b9ed493a006d83dbadd1ecc0daa61a # see https://docs.gitlab.com/ee/ci/yaml/#includefile
 
 include:
   # Centos container builder template
@@ -40,10 +40,10 @@ variables:
   # these tags should be updated each time the list of packages is updated
   # changing these will force rebuilding the associated image
   # Note: these tags have no meaning and are not tied to a particular NM version
-  FEDORA_TAG:  '2020-11-17.0-6646b220c743'
-  UBUNTU_TAG:  '2020-11-17.0-89dd88de8047'
-  DEBIAN_TAG:  '2020-11-17.0-89dd88de8047'
-  CENTOS_TAG:  '2020-11-17.0-6646b220c743'
+  FEDORA_TAG:  '2020-11-17.0-4422fd99fcf1'
+  UBUNTU_TAG:  '2020-11-17.0-7ba6b1ddf582'
+  DEBIAN_TAG:  '2020-11-17.0-7ba6b1ddf582'
+  CENTOS_TAG:  '2020-11-17.0-4422fd99fcf1'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
