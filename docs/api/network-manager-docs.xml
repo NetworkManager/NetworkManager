@@ -79,6 +79,7 @@
     <xi:include href="../../man/nm-settings-ifcfg-rh.xml"><xi:fallback /></xi:include>
     <xi:include href="../../man/nm-online.xml"/>
     <xi:include href="../../man/nm-initrd-generator.xml"/>
+    <xi:include href="../../man/nm-cloud-setup.xml"><xi:fallback /></xi:include>
     <xi:include href="../../man/nm-openvswitch.xml"><xi:fallback /></xi:include>
   </part>
 

@@ -151,6 +151,8 @@ _get_config_task_maybe_return(GetConfigIfaceData *iface_data, GError *error_take
             iface_data->error = error_take;
         } else
             g_error_free(error_take);
+
+        nm_clear_g_cancellable(&iface_data->cancellable);
     }
 
     if (iface_data->n_pending > 0)
@@ -235,8 +237,16 @@ _get_config_fetch_done_cb(NMHttpClient *http_client,
         }
     }
 
+    /* If nm_utils_error_is_cancelled(error), then our internal iface_data->cancellable
+     * was cancelled, because the overall request failed. From point of view of the
+     * caller, this does not mean that a cancellation happened. It also means, our
+     * request overall is already about to fail. */
+    nm_assert(!nm_utils_error_is_cancelled(error) || iface_data->error);
+
     iface_data->n_pending--;
-    _get_config_task_maybe_return(iface_data, g_steal_pointer(&error));
+    _get_config_task_maybe_return(iface_data,
+                                  nm_utils_error_is_cancelled(error) ? NULL
+                                                                     : g_steal_pointer(&error));
 }
 
 static void
@@ -257,9 +267,6 @@ static void
 _get_config_fetch_cancelled_cb(GObject *object, gpointer user_data)
 {
     GetConfigIfaceData *iface_data = user_data;
-
-    if (iface_data->cancelled_id == 0)
-        return;
 
     nm_clear_g_signal_handler(g_task_get_cancellable(iface_data->get_config_data->task),
                               &iface_data->cancelled_id);
@@ -324,7 +331,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
                                              iface_data,
                                              NULL);
         if (cancelled_id == 0) {
-            _get_config_task_maybe_return(iface_data, nm_utils_error_new_cancelled(FALSE, NULL));
+            /* the callback was already invoked synchronously and the task already returned. */
             return;
         }
 
