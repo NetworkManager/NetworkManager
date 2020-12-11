@@ -21,7 +21,8 @@ if [ $IS_CENTOS = 1 ]; then
     else
         dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
         dnf install -y 'dnf-command(config-manager)'
-        dnf config-manager --set-enabled PowerTools
+        dnf config-manager --set-enabled powertools || \
+          dnf config-manager --set-enabled PowerTools
         curl https://copr.fedorainfracloud.org/coprs/nmstate/nm-build-deps/repo/epel-8/nmstate-nm-build-deps-epel-8.repo > /etc/yum.repos.d/nmstate-nm-build-deps-epel-8.repo
     fi
 fi
