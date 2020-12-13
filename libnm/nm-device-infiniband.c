@@ -7,6 +7,8 @@
 
 #include "nm-device-infiniband.h"
 
+#include <linux/if_infiniband.h>
+
 #include "nm-setting-connection.h"
 #include "nm-setting-infiniband.h"
 #include "nm-utils.h"

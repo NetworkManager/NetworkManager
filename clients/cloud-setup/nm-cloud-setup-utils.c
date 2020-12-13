@@ -4,6 +4,9 @@
 
 #include "nm-cloud-setup-utils.h"
 
+#include <linux/if_ether.h>
+#include <linux/if_infiniband.h>
+
 #include "nm-glib-aux/nm-time-utils.h"
 #include "nm-glib-aux/nm-logging-base.h"
 #include "nm-glib-aux/nm-str-buf.h"

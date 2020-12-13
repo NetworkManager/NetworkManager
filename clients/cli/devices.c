@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <readline/readline.h>
+#include <linux/if_ether.h>
 
 #include "nm-glib-aux/nm-secret-utils.h"
 #include "common.h"

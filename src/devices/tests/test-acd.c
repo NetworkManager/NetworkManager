@@ -7,6 +7,8 @@
 
 #include "n-acd/src/n-acd.h"
 
+#include <linux/if_ether.h>
+
 #include "devices/nm-acd-manager.h"
 #include "platform/tests/test-common.h"
 

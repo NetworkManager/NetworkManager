@@ -10,6 +10,7 @@
 
 #include <linux/fib_rules.h>
 #include <linux/pkt_sched.h>
+#include <linux/if_ether.h>
 
 #include "nm-glib-aux/nm-c-list.h"
 

@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <libudev.h>
+#include <linux/if_ether.h>
 
 #include "nm-device-private.h"
 #include "nm-act-request.h"

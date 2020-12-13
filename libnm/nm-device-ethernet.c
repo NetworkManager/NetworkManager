@@ -8,6 +8,8 @@
 
 #include "nm-device-ethernet.h"
 
+#include <linux/if_ether.h>
+
 #include "nm-libnm-utils.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"

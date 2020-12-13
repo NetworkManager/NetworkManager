@@ -8,6 +8,8 @@
 
 #include "nm-device-bt.h"
 
+#include <linux/if_ether.h>
+
 #include "nm-setting-connection.h"
 #include "nm-setting-bluetooth.h"
 #include "nm-utils.h"

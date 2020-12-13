@@ -7,6 +7,8 @@
 
 #include "nm-device-macsec.h"
 
+#include <linux/if_ether.h>
+
 #include "nm-act-request.h"
 #include "nm-device-private.h"
 #include "platform/nm-platform.h"

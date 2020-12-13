@@ -9,6 +9,7 @@
 
 #include <ctype.h>
 #include <stdlib.h>
+#include <linux/if_ether.h>
 
 #include "nm-glib-aux/nm-str-buf.h"
 #include "nm-connection-private.h"

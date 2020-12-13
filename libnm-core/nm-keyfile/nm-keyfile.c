@@ -15,6 +15,8 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <linux/pkt_sched.h>
+#include <linux/if_ether.h>
+#include <linux/if_infiniband.h>
 
 #include "nm-glib-aux/nm-str-buf.h"
 #include "nm-glib-aux/nm-secret-utils.h"

@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <arpa/inet.h>
 #include <net/if.h>
+#include <linux/if_ether.h>
 
 #include "nm-glib-aux/nm-dedup-multi.h"
 

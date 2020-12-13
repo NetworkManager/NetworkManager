@@ -5,6 +5,7 @@
 #include "nm-l3-ipv4ll.h"
 
 #include <net/if.h>
+#include <linux/if_ether.h>
 
 #include "n-acd/src/n-acd.h"
 #include "nm-core-utils.h"

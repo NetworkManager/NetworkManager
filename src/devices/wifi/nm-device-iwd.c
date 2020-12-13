@@ -7,6 +7,8 @@
 
 #include "nm-device-iwd.h"
 
+#include <linux/if_ether.h>
+
 #include "devices/nm-device-private.h"
 #include "devices/nm-device.h"
 #include "nm-act-request.h"

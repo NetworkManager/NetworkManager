@@ -9,6 +9,7 @@
 #include "nm-wifi-ap.h"
 
 #include <stdlib.h>
+#include <linux/if_ether.h>
 
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device.h"

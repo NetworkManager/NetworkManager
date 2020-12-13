@@ -8,6 +8,8 @@
 
 #include "nm-device-wifi.h"
 
+#include <linux/if_ether.h>
+
 #include "nm-glib-aux/nm-dbus-aux.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"
