@@ -12,12 +12,6 @@
 
 #include <glib.h>
 
-#include <netinet/in.h>
-
-/* For ETH_ALEN and INFINIBAND_ALEN */
-#include <linux/if_ether.h>
-#include <linux/if_infiniband.h>
-
 #include "nm-core-enum-types.h"
 #include "nm-setting-sriov.h"
 #include "nm-setting-tc-config.h"

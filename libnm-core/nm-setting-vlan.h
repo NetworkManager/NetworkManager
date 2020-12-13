@@ -11,7 +11,6 @@
 #endif
 
 #include "nm-setting.h"
-#include <linux/if_vlan.h>
 
 G_BEGIN_DECLS
 
