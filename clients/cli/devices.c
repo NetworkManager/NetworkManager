@@ -899,7 +899,7 @@ static void
 usage_device_modify(void)
 {
     g_printerr(_(
-        "Usage: nmcli device modify { ARGUMENTS | --help }\n"
+        "Usage: nmcli device modify { ARGUMENTS | help }\n"
         "\n"
         "ARGUMENTS := <ifname> ([+|-]<setting>.<property> <value>)+\n"
         "\n"
