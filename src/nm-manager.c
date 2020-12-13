@@ -7450,10 +7450,11 @@ auth_mgr_changed(NMAuthManager *auth_manager, gpointer user_data)
 #define KERN_RFKILL_TYPE_WLAN     1
 #define KERN_RFKILL_TYPE_WWAN     5
 struct rfkill_event {
-    __u32 idx;
-    __u8  type;
-    __u8  op;
-    __u8  soft, hard;
+    uint32_t idx;
+    uint8_t  type;
+    uint8_t  op;
+    uint8_t  soft;
+    uint8_t  hard;
 } _nm_packed;
 
 static void
