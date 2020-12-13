@@ -106,7 +106,7 @@ nm_strerror_native_r(int errsv, char *buf, gsize buf_size)
     nm_assert(buf);
     nm_assert(buf_size > 0);
 
-#if (_POSIX_C_SOURCE >= 200112L) && !_GNU_SOURCE
+#if (!defined(__GLIBC__) && !defined(__UCLIBC__)) || ((_POSIX_C_SOURCE >= 200112L) && !_GNU_SOURCE)
     /* XSI-compliant */
     {
         int errno_saved = errno;

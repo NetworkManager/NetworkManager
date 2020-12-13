@@ -195,6 +195,13 @@ _nm_gettid(void)
         #define HAVE_RT_SIGQUEUEINFO 0
     #endif
 
+    #ifndef __COMPAR_FN_T
+        #define __COMPAR_FN_T
+typedef int (*__compar_fn_t)(const void *, const void *);
+typedef __compar_fn_t comparison_fn_t;
+typedef int (*__compar_d_fn_t)(const void *, const void *, void *);
+    #endif
+
 #endif /* (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_SYSTEMD */
 
 /*****************************************************************************/

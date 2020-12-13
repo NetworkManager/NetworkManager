@@ -11,6 +11,16 @@
 
 /*****************************************************************************/
 
+/* If RTLD_DEEPBIND isn't available just ignore it. This can cause problems
+ * with jansson, json-glib, and cjson symbols clashing (and as such crashing the
+ * program). But that needs to be fixed by the json libraries, and it is by adding
+ * symbol versioning in recent versions. */
+#ifndef RTLD_DEEPBIND
+    #define RTLD_DEEPBIND 0
+#endif
+
+/*****************************************************************************/
+
 static void
 _gstr_append_string_len(GString *gstr, const char *str, gsize len)
 {

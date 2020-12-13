@@ -6,7 +6,6 @@
 #include "nm-default.h"
 
 #include <time.h>
-#include <netinet/ether.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>

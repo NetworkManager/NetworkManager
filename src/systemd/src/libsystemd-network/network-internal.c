@@ -4,7 +4,6 @@
 
 #include <arpa/inet.h>
 #include <linux/if.h>
-#include <netinet/ether.h>
 
 #include "sd-id128.h"
 #include "sd-ndisc.h"
