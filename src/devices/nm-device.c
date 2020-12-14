@@ -3778,8 +3778,11 @@ get_type_description(NMDevice *self)
         gs_free char *s = NULL;
 
         typename = G_OBJECT_TYPE_NAME(self);
-        if (g_str_has_prefix(typename, "NMDevice"))
+        if (g_str_has_prefix(typename, "NMDevice")) {
             typename += 8;
+            if (nm_streq(typename, "Veth"))
+                typename = "Ethernet";
+        }
         s                                     = g_ascii_strdown(typename, -1);
         klass->default_type_description       = g_intern_string(s);
         klass->default_type_description_klass = klass;

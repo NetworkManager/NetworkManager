@@ -1223,8 +1223,11 @@ nm_device_get_type_description(NMDevice *device)
     }
 
     typename = G_OBJECT_TYPE_NAME(device);
-    if (g_str_has_prefix(typename, "NMDevice"))
+    if (g_str_has_prefix(typename, "NMDevice")) {
         typename += 8;
+        if (nm_streq(typename, "Veth"))
+            typename = "Ethernet";
+    }
     priv->type_description = g_ascii_strdown(typename, -1);
 
     return _nml_coerce_property_str_not_empty(priv->type_description);
