@@ -84,7 +84,7 @@ nm_device_veth_init(NMDeviceVeth *device)
 const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_veth =
     NML_DBUS_META_IFACE_INIT_PROP(NM_DBUS_INTERFACE_DEVICE_VETH,
                                   nm_device_veth_get_type,
-                                  NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_20,
+                                  NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
                                   NML_DBUS_META_IFACE_DBUS_PROPERTIES(
                                       NML_DBUS_META_PROPERTY_INIT_O_PROP("Peer",
                                                                          PROP_PEER,
