@@ -321,7 +321,7 @@ _openvswitch_interface_should_emit_signal(const OpenvswitchInterface *ovs_interf
 {
     /* Currently, the factory only creates NMDevices for
      * internal interfaces. We ignore the rest. */
-    return nm_streq0(ovs_interface->type, "internal");
+    return NM_IN_STRSET(ovs_interface->type, "internal", "patch");
 }
 
 /*****************************************************************************/
