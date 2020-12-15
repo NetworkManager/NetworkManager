@@ -106,10 +106,23 @@ new_device_from_type(const char *name, NMDeviceType device_type)
 }
 
 static void
-ovsdb_device_added(NMOvsdb *ovsdb, const char *name, guint device_type_i, NMDeviceFactory *self)
+ovsdb_device_added(NMOvsdb *        ovsdb,
+                   const char *     name,
+                   guint            device_type_i,
+                   const char *     subtype,
+                   NMDeviceFactory *self)
 {
     const NMDeviceType device_type = device_type_i;
     NMDevice *         device;
+
+    if (device_type == NM_DEVICE_TYPE_OVS_INTERFACE
+        && !NM_IN_STRSET(subtype, "internal", "patch")) {
+        /* system interfaces refer to kernel devices and
+         * don't need to be created by this factory. Ignore
+         * anything that is not an internal or patch
+         * interface. */
+        return;
+    }
 
     device = new_device_from_type(name, device_type);
     if (!device)
@@ -120,11 +133,19 @@ ovsdb_device_added(NMOvsdb *ovsdb, const char *name, guint device_type_i, NMDevi
 }
 
 static void
-ovsdb_device_removed(NMOvsdb *ovsdb, const char *name, guint device_type_i, NMDeviceFactory *self)
+ovsdb_device_removed(NMOvsdb *        ovsdb,
+                     const char *     name,
+                     guint            device_type_i,
+                     const char *     subtype,
+                     NMDeviceFactory *self)
 {
     const NMDeviceType device_type = device_type_i;
     NMDevice *         device;
     NMDeviceState      device_state;
+
+    if (device_type == NM_DEVICE_TYPE_OVS_INTERFACE
+        && !NM_IN_STRSET(subtype, "internal", "patch"))
+        return;
 
     device = nm_manager_get_device(NM_MANAGER_GET, name, device_type);
     if (!device)

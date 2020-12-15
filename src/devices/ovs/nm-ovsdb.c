@@ -316,26 +316,24 @@ _free_interface(OpenvswitchInterface *ovs_interface)
     nm_g_slice_free(ovs_interface);
 }
 
-static gboolean
-_openvswitch_interface_should_emit_signal(const OpenvswitchInterface *ovs_interface)
-{
-    /* Currently, the factory only creates NMDevices for
-     * internal interfaces. We ignore the rest. */
-    return NM_IN_STRSET(ovs_interface->type, "internal", "patch");
-}
-
 /*****************************************************************************/
 
 static void
-_signal_emit_device_added(NMOvsdb *self, const char *name, NMDeviceType device_type)
+_signal_emit_device_added(NMOvsdb *    self,
+                          const char * name,
+                          NMDeviceType device_type,
+                          const char * device_subtype)
 {
-    g_signal_emit(self, signals[DEVICE_ADDED], 0, name, (guint) device_type);
+    g_signal_emit(self, signals[DEVICE_ADDED], 0, name, (guint) device_type, device_subtype);
 }
 
 static void
-_signal_emit_device_removed(NMOvsdb *self, const char *name, NMDeviceType device_type)
+_signal_emit_device_removed(NMOvsdb *    self,
+                            const char * name,
+                            NMDeviceType device_type,
+                            const char * device_subtype)
 {
-    g_signal_emit(self, signals[DEVICE_REMOVED], 0, name, (guint) device_type);
+    g_signal_emit(self, signals[DEVICE_REMOVED], 0, name, (guint) device_type, device_subtype);
 }
 
 static void
@@ -1630,11 +1628,10 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                                        ", ",
                                        ovs_interface->connection_uuid,
                                        ""));
-            if (_openvswitch_interface_should_emit_signal(ovs_interface)) {
-                _signal_emit_device_removed(self,
-                                            ovs_interface->name,
-                                            NM_DEVICE_TYPE_OVS_INTERFACE);
-            }
+            _signal_emit_device_removed(self,
+                                        ovs_interface->name,
+                                        NM_DEVICE_TYPE_OVS_INTERFACE,
+                                        ovs_interface->type);
             _free_interface(ovs_interface);
             continue;
         }
@@ -1645,11 +1642,10 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             && (!nm_streq0(ovs_interface->name, name) || !nm_streq0(ovs_interface->type, type))) {
             if (!g_hash_table_steal(priv->interfaces, ovs_interface))
                 nm_assert_not_reached();
-            if (_openvswitch_interface_should_emit_signal(ovs_interface)) {
-                _signal_emit_device_removed(self,
-                                            ovs_interface->name,
-                                            NM_DEVICE_TYPE_OVS_INTERFACE);
-            }
+            _signal_emit_device_removed(self,
+                                        ovs_interface->name,
+                                        NM_DEVICE_TYPE_OVS_INTERFACE,
+                                        ovs_interface->type);
             nm_clear_pointer(&ovs_interface, _free_interface);
         }
 
@@ -1700,8 +1696,10 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                                        ovs_interface->connection_uuid,
                                        ""),
                   (strtmp = _external_ids_to_string(ovs_interface->external_ids)));
-            if (_openvswitch_interface_should_emit_signal(ovs_interface))
-                _signal_emit_device_added(self, ovs_interface->name, NM_DEVICE_TYPE_OVS_INTERFACE);
+            _signal_emit_device_added(self,
+                                      ovs_interface->name,
+                                      NM_DEVICE_TYPE_OVS_INTERFACE,
+                                      ovs_interface->type);
         }
 
         /* The error is a string. No error is indicated by an empty set,
@@ -1747,7 +1745,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                                        ", ",
                                        ovs_port->connection_uuid,
                                        ""));
-            _signal_emit_device_removed(self, ovs_port->name, NM_DEVICE_TYPE_OVS_PORT);
+            _signal_emit_device_removed(self, ovs_port->name, NM_DEVICE_TYPE_OVS_PORT, NULL);
             _free_port(ovs_port);
             continue;
         }
@@ -1757,7 +1755,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
         if (ovs_port && !nm_streq0(ovs_port->name, name)) {
             if (!g_hash_table_steal(priv->ports, ovs_port))
                 nm_assert_not_reached();
-            _signal_emit_device_removed(self, ovs_port->name, NM_DEVICE_TYPE_OVS_PORT);
+            _signal_emit_device_removed(self, ovs_port->name, NM_DEVICE_TYPE_OVS_PORT, NULL);
             nm_clear_pointer(&ovs_port, _free_port);
         }
 
@@ -1811,7 +1809,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                                        ovs_port->connection_uuid,
                                        ""),
                   (strtmp = _external_ids_to_string(ovs_port->external_ids)));
-            _signal_emit_device_added(self, ovs_port->name, NM_DEVICE_TYPE_OVS_PORT);
+            _signal_emit_device_added(self, ovs_port->name, NM_DEVICE_TYPE_OVS_PORT, NULL);
         }
     }
 
@@ -1852,7 +1850,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                                        ", ",
                                        ovs_bridge->connection_uuid,
                                        ""));
-            _signal_emit_device_removed(self, ovs_bridge->name, NM_DEVICE_TYPE_OVS_BRIDGE);
+            _signal_emit_device_removed(self, ovs_bridge->name, NM_DEVICE_TYPE_OVS_BRIDGE, NULL);
             _free_bridge(ovs_bridge);
             continue;
         }
@@ -1862,7 +1860,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
         if (ovs_bridge && !nm_streq0(ovs_bridge->name, name)) {
             if (!g_hash_table_steal(priv->bridges, ovs_bridge))
                 nm_assert_not_reached();
-            _signal_emit_device_removed(self, ovs_bridge->name, NM_DEVICE_TYPE_OVS_BRIDGE);
+            _signal_emit_device_removed(self, ovs_bridge->name, NM_DEVICE_TYPE_OVS_BRIDGE, NULL);
             nm_clear_pointer(&ovs_bridge, _free_bridge);
         }
 
@@ -1916,7 +1914,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                                        ovs_bridge->connection_uuid,
                                        ""),
                   (strtmp = _external_ids_to_string(ovs_bridge->external_ids)));
-            _signal_emit_device_added(self, ovs_bridge->name, NM_DEVICE_TYPE_OVS_BRIDGE);
+            _signal_emit_device_added(self, ovs_bridge->name, NM_DEVICE_TYPE_OVS_BRIDGE, NULL);
         }
     }
 }
@@ -2525,9 +2523,10 @@ nm_ovsdb_class_init(NMOvsdbClass *klass)
                                          NULL,
                                          NULL,
                                          G_TYPE_NONE,
-                                         2,
+                                         3,
                                          G_TYPE_STRING,
-                                         G_TYPE_UINT);
+                                         G_TYPE_UINT,
+                                         G_TYPE_STRING);
 
     signals[DEVICE_REMOVED] = g_signal_new(NM_OVSDB_DEVICE_REMOVED,
                                            G_OBJECT_CLASS_TYPE(object_class),
@@ -2537,9 +2536,10 @@ nm_ovsdb_class_init(NMOvsdbClass *klass)
                                            NULL,
                                            NULL,
                                            G_TYPE_NONE,
-                                           2,
+                                           3,
                                            G_TYPE_STRING,
-                                           G_TYPE_UINT);
+                                           G_TYPE_UINT,
+                                           G_TYPE_STRING);
 
     signals[INTERFACE_FAILED] = g_signal_new(NM_OVSDB_INTERFACE_FAILED,
                                              G_OBJECT_CLASS_TYPE(object_class),
