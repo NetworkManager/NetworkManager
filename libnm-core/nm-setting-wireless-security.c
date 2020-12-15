@@ -861,8 +861,7 @@ need_secrets(NMSetting *setting)
         goto no_secrets;
     }
 
-    if ((strcmp(priv->key_mgmt, "ieee8021x") == 0) || (strcmp(priv->key_mgmt, "wpa-eap") == 0)
-        || (strcmp(priv->key_mgmt, "owe") == 0)) {
+    if (NM_IN_STRSET(priv->key_mgmt, "ieee8021x", "wpa-eap", "owe", "wpa-eap-suite-b-192")) {
         /* Let caller check the 802.1x setting for secrets */
         goto no_secrets;
     }
@@ -881,11 +880,12 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
     NMSettingWirelessSecurity *       self = NM_SETTING_WIRELESS_SECURITY(setting);
     NMSettingWirelessSecurityPrivate *priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE(self);
-    const char *valid_key_mgmt[]  = {"none", "ieee8021x", "wpa-psk", "wpa-eap", "sae", "owe", NULL};
-    const char *valid_auth_algs[] = {"open", "shared", "leap", NULL};
-    const char *valid_protos[]    = {"wpa", "rsn", NULL};
-    const char *valid_pairwise[]  = {"tkip", "ccmp", NULL};
-    const char *valid_groups[]    = {"wep40", "wep104", "tkip", "ccmp", NULL};
+    const char *                      valid_key_mgmt[] =
+        {"none", "ieee8021x", "wpa-psk", "wpa-eap", "wpa-eap-suite-b-192", "sae", "owe", NULL};
+    const char *       valid_auth_algs[] = {"open", "shared", "leap", NULL};
+    const char *       valid_protos[]    = {"wpa", "rsn", NULL};
+    const char *       valid_pairwise[]  = {"tkip", "ccmp", NULL};
+    const char *       valid_groups[]    = {"wep40", "wep104", "tkip", "ccmp", NULL};
     NMSettingWireless *s_wifi;
     const char *       wifi_mode;
 
@@ -961,8 +961,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             return FALSE;
         }
     } else {
-        if ((strcmp(priv->key_mgmt, "ieee8021x") == 0)
-            || (strcmp(priv->key_mgmt, "wpa-eap") == 0)) {
+        if (nm_streq(priv->key_mgmt, "ieee8021x") || nm_streq(priv->key_mgmt, "wpa-eap")
+            || nm_streq(priv->key_mgmt, "wpa-eap-suite-b-192")) {
             /* Need an 802.1x setting too */
             if (connection && !nm_connection_get_setting_802_1x(connection)) {
                 g_set_error(error,
@@ -1098,13 +1098,19 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     if (NM_IN_SET(priv->pmf,
                   NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL,
                   NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED)
-        && !NM_IN_STRSET(priv->key_mgmt, "wpa-eap", "wpa-psk", "sae", "owe")) {
-        g_set_error(error,
-                    NM_CONNECTION_ERROR,
-                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                    _("'%s' can only be used with 'wpa-eap', 'wpa-psk' or 'sae' key management "),
-                    priv->pmf == NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL ? "optional"
-                                                                           : "required");
+        && !NM_IN_STRSET(priv->key_mgmt,
+                         "wpa-eap",
+                         "wpa-eap-suite-b-192",
+                         "wpa-psk",
+                         "sae",
+                         "owe")) {
+        g_set_error(
+            error,
+            NM_CONNECTION_ERROR,
+            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+            _("'%s' can only be used with 'wpa-eap', 'wpa-eap-suite-b-192', 'wpa-psk' or 'sae' key "
+              "management "),
+            priv->pmf == NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL ? "optional" : "required");
         g_prefix_error(error,
                        "%s.%s: ",
                        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
@@ -1495,14 +1501,14 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
      *
      * Key management used for the connection.  One of "none" (WEP),
      * "ieee8021x" (Dynamic WEP), "wpa-psk" (infrastructure WPA-PSK), "sae"
-     * (SAE), "owe" (Opportunistic Wireless Encryption) or "wpa-eap"
-     * (WPA-Enterprise).  This property must be set for
-     * any Wi-Fi connection that uses security.
+     * (SAE), "owe" (Opportunistic Wireless Encryption), "wpa-eap"
+     * (WPA-Enterprise) or "wpa-eap-suite-b-192" (WPA3-Enterprise Suite B).
+     * This property must be set for any Wi-Fi connection that uses security.
      **/
     /* ---ifcfg-rh---
      * property: key-mgmt
      * variable: KEY_MGMT(+)
-     * values: IEEE8021X, WPA-PSK, WPA-EAP
+     * values: IEEE8021X, WPA-PSK, WPA-EAP, WPA-EAP-SUITE-B-192
      * description: Key management menthod.
      * ---end---
      */

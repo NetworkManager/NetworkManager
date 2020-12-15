@@ -280,6 +280,8 @@ security_from_vardict(GVariant *security)
             flags |= NM_802_11_AP_SEC_KEY_MGMT_SAE;
         if (g_strv_contains(array, "owe"))
             flags |= NM_802_11_AP_SEC_KEY_MGMT_OWE;
+        if (g_strv_contains(array, "wpa-eap-suite-b-192"))
+            flags |= NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192;
         g_free(array);
     }
 

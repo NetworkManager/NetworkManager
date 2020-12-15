@@ -341,7 +341,7 @@ add_wireless_secrets(RequestData *request, GPtrArray *secrets)
             return add_8021x_secrets(request, secrets);
     }
 
-    if (nm_streq(key_mgmt, "wpa-eap"))
+    if (nm_streq(key_mgmt, "wpa-eap") || nm_streq(key_mgmt, "wpa-eap-suite-b-192"))
         return add_8021x_secrets(request, secrets);
 
     return FALSE;

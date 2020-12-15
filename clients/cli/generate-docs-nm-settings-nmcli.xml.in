@@ -63,7 +63,7 @@
     <setting name="802-11-wireless-security"
              alias="wifi-sec" >
         <property name="key-mgmt"
-                  description="Key management used for the connection.  One of &quot;none&quot; (WEP), &quot;ieee8021x&quot; (Dynamic WEP), &quot;wpa-psk&quot; (infrastructure WPA-PSK), &quot;sae&quot; (SAE), &quot;owe&quot; (Opportunistic Wireless Encryption) or &quot;wpa-eap&quot; (WPA-Enterprise).  This property must be set for any Wi-Fi connection that uses security." />
+                  description="Key management used for the connection.  One of &quot;none&quot; (WEP), &quot;ieee8021x&quot; (Dynamic WEP), &quot;wpa-psk&quot; (infrastructure WPA-PSK), &quot;sae&quot; (SAE), &quot;owe&quot; (Opportunistic Wireless Encryption), &quot;wpa-eap&quot; (WPA-Enterprise) or &quot;wpa-eap-suite-b-192&quot; (WPA3-Enterprise Suite B). This property must be set for any Wi-Fi connection that uses security." />
         <property name="wep-tx-keyidx"
                   description="When static WEP is used (ie, key-mgmt = &quot;none&quot;) and a non-default WEP key index is used by the AP, put that WEP key index here.  Valid values are 0 (default key) through 3.  Note that some consumer access points (like the Linksys WRT54G) number the keys 1 - 4." />
         <property name="auth-alg"

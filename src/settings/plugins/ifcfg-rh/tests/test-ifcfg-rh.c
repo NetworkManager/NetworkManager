@@ -3685,6 +3685,34 @@ test_read_wifi_wpa_eap_ttls_tls(void)
 }
 
 static void
+test_read_wifi_wpa_eap_suite_b_192_tls(void)
+{
+    NMConnection *             connection;
+    NMSettingWireless *        s_wireless;
+    NMSettingWirelessSecurity *s_wireless_sec;
+
+    connection = _connection_from_file(TEST_IFCFG_DIR "/ifcfg-test-wifi-wpa-eap-suite-b-192-tls",
+                                       NULL,
+                                       TYPE_WIRELESS,
+                                       NULL);
+
+    /* ===== WIRELESS SETTING ===== */
+
+    s_wireless = nm_connection_get_setting_wireless(connection);
+    g_assert(s_wireless);
+
+    /* ===== WIRELESS SECURITY SETTING ===== */
+
+    s_wireless_sec = nm_connection_get_setting_wireless_security(connection);
+    g_assert(s_wireless_sec);
+    g_assert_cmpstr(nm_setting_wireless_security_get_key_mgmt(s_wireless_sec),
+                    ==,
+                    "wpa-eap-suite-b-192");
+
+    g_object_unref(connection);
+}
+
+static void
 test_read_wifi_dynamic_wep_leap(void)
 {
     NMConnection *             connection;
@@ -11535,6 +11563,8 @@ main(int argc, char **argv)
     g_test_add_func(TPATH "wifi/read/dynamic-wep/leap", test_read_wifi_dynamic_wep_leap);
     g_test_add_func(TPATH "wifi/read/wpa/eap/tls", test_read_wifi_wpa_eap_tls);
     g_test_add_func(TPATH "wifi/read/wpa/eap/ttls/tls", test_read_wifi_wpa_eap_ttls_tls);
+    g_test_add_func(TPATH "wifi/read/wpa/eap-suite-b-192/tls",
+                    test_read_wifi_wpa_eap_suite_b_192_tls);
     g_test_add_func(TPATH "wifi/read/dynamic-wep/eap/ttls/chap", test_read_wifi_wep_eap_ttls_chap);
     g_test_add_func(TPATH "wifi/read-band-a", test_read_wifi_band_a);
     g_test_add_func(TPATH "wifi/read-band-a-channel-mismatch",

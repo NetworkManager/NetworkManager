@@ -614,6 +614,9 @@ write_wireless_security_setting(NMConnection *connection,
     } else if (!strcmp(key_mgmt, "wpa-eap")) {
         svSetValueStr(ifcfg, "KEY_MGMT", "WPA-EAP");
         wpa = TRUE;
+    } else if (!strcmp(key_mgmt, "wpa-eap-suite-b-192")) {
+        svSetValueStr(ifcfg, "KEY_MGMT", "WPA-EAP-SUITE-B-192");
+        wpa = TRUE;
     }
 
     if (auth_alg) {

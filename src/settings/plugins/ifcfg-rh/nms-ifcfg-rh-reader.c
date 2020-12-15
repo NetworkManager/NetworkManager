@@ -4008,9 +4008,10 @@ make_wpa_setting(shvarFile *      ifcfg,
     gs_unref_object NMSettingWirelessSecurity *wsec  = NULL;
     gs_free char *                             value = NULL;
     const char *                               v;
-    gboolean wpa_psk = FALSE, wpa_sae = FALSE, wpa_owe = FALSE, wpa_eap = FALSE, ieee8021x = FALSE;
-    int      i_val;
-    GError * local = NULL;
+    gboolean wpa_psk = FALSE, wpa_sae = FALSE, wpa_owe = FALSE, wpa_eap = FALSE, ieee8021x = FALSE,
+             wpa3_eap = FALSE;
+    int     i_val;
+    GError *local = NULL;
 
     wsec = NM_SETTING_WIRELESS_SECURITY(nm_setting_wireless_security_new());
 
@@ -4019,8 +4020,9 @@ make_wpa_setting(shvarFile *      ifcfg,
     wpa_sae   = nm_streq0(v, "SAE");
     wpa_owe   = nm_streq0(v, "OWE");
     wpa_eap   = nm_streq0(v, "WPA-EAP");
+    wpa3_eap  = nm_streq0(v, "WPA-EAP-SUITE-B-192");
     ieee8021x = nm_streq0(v, "IEEE8021X");
-    if (!wpa_psk && !wpa_sae && !wpa_owe && !wpa_eap && !ieee8021x)
+    if (!wpa_psk && !wpa_sae && !wpa_owe && !wpa_eap && !wpa3_eap && !ieee8021x)
         return NULL; /* Not WPA or Dynamic WEP */
 
     /* WPS */
@@ -4083,7 +4085,7 @@ make_wpa_setting(shvarFile *      ifcfg,
             g_object_set(wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "sae", NULL);
         }
     } else {
-        nm_assert(wpa_eap || ieee8021x || wpa_owe);
+        nm_assert(wpa_eap || wpa3_eap || ieee8021x || wpa_owe);
 
         /* Adhoc mode is mutually exclusive with any 802.1x-based authentication */
         if (adhoc) {
