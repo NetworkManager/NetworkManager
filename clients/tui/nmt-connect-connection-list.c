@@ -92,6 +92,7 @@ nmt_connect_device_free(NmtConnectDevice *nmtdev)
 }
 
 static const char *device_sort_order[]   = {"NMDeviceEthernet",
+                                          "NMDeviceVeth",
                                           "NMDeviceInfiniband",
                                           "NMDeviceWifi",
                                           NM_SETTING_VLAN_SETTING_NAME,
