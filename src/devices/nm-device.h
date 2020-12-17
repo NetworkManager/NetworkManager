@@ -869,4 +869,6 @@ gboolean nm_device_is_vpn(NMDevice *self);
 const char *
 nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean *out_pending);
 
+void nm_device_clear_dns_lookup_data(NMDevice *self);
+
 #endif /* __NETWORKMANAGER_DEVICE_H__ */

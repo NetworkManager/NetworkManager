@@ -17580,6 +17580,16 @@ _resolver_state_to_string(ResolverState state)
     }
 }
 
+void
+nm_device_clear_dns_lookup_data(NMDevice *self)
+{
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+    guint            i;
+
+    for (i = 0; i < 2; i++)
+        nm_clear_pointer(&priv->hostname_resolver_x[i], _hostname_resolver_free);
+}
+
 /* return value is valid only immediately */
 const char *
 nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean *out_wait)
