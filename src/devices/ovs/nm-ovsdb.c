@@ -1875,8 +1875,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             nm_assert(nm_streq0(ovs_bridge->name, name));
 
             changed = nm_utils_strdup_reset(&ovs_bridge->name, name);
-            changed =
-                nm_utils_strdup_reset(&ovs_bridge->connection_uuid, connection_uuid);
+            changed = nm_utils_strdup_reset(&ovs_bridge->connection_uuid, connection_uuid);
             if (nm_strv_ptrarray_cmp(ovs_bridge->ports, ports) != 0) {
                 NM_SWAP(&ovs_bridge->ports, &ports);
                 changed = TRUE;
