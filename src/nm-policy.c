@@ -65,6 +65,7 @@ typedef struct {
     NMActiveConnection *default_ac6, *activating_ac6;
 
     NMDnsManager *dns_manager;
+    gulong        config_changed_id;
 
     guint reset_retries_id; /* idle handler for resetting the retries count */
 
@@ -75,8 +76,10 @@ typedef struct {
     char *               cur_hostname;  /* hostname we want to assign */
     char *
         last_hostname; /* last hostname NM set (to detect if someone else changed it in the meanwhile) */
-    gboolean changing_hostname; /* hostname set operation still in progress */
-    gboolean dhcp_hostname;     /* current hostname was set from dhcp */
+
+    bool changing_hostname : 1; /* hostname set operation in progress */
+    bool dhcp_hostname : 1;     /* current hostname was set from dhcp */
+    bool updating_dns : 1;
 
     GArray *ip6_prefix_delegations; /* pool of ip6 prefixes delegated to all devices */
 } NMPolicyPrivate;
@@ -592,11 +595,14 @@ _set_hostname(NMPolicy *self, const char *new_hostname, const char *msg)
         priv->cur_hostname = g_strdup(new_hostname);
 
         /* Notify the DNS manager of the hostname change so that the domain part, if
-         * present, can be added to the search list.
+         * present, can be added to the search list. Set the @updating_dns flag
+         * so that dns_config_changed() doesn't try again to restart DNS lookup.
          */
+        priv->updating_dns = TRUE;
         nm_dns_manager_set_hostname(priv->dns_manager,
                                     priv->cur_hostname,
                                     all_devices_not_active(self));
+        priv->updating_dns = FALSE;
     }
 
     /* Finally, set kernel hostname */
@@ -2516,6 +2522,26 @@ firewall_state_changed(NMFirewallManager *manager, gboolean initialized_now, gpo
 }
 
 static void
+dns_config_changed(NMDnsManager *dns_manager, gpointer user_data)
+{
+    NMPolicy *       self = (NMPolicy *) user_data;
+    NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
+    NMDevice *       device;
+    const CList *    tmp_lst;
+
+    /* We are currently updating the hostname in the DNS manager.
+     * This doesn't warrant a new DNS lookup.*/
+    if (priv->updating_dns)
+        return;
+
+    nm_manager_for_each_device (priv->manager, device, tmp_lst) {
+        nm_device_clear_dns_lookup_data(device);
+    }
+
+    update_system_hostname(self, "DNS configuration changed");
+}
+
+static void
 connection_updated(NMSettings *          settings,
                    NMSettingsConnection *connection,
                    guint                 update_reason_u,
@@ -2747,6 +2773,10 @@ constructed(GObject *object)
 
     priv->dns_manager = g_object_ref(nm_dns_manager_get());
     nm_dns_manager_set_initial_hostname(priv->dns_manager, priv->orig_hostname);
+    priv->config_changed_id = g_signal_connect(priv->dns_manager,
+                                               NM_DNS_MANAGER_CONFIG_CHANGED,
+                                               G_CALLBACK(dns_config_changed),
+                                               self);
 
     g_signal_connect(priv->hostname_manager,
                      "notify::" NM_HOSTNAME_MANAGER_HOSTNAME,
@@ -2850,7 +2880,10 @@ dispose(GObject *object)
         g_clear_object(&priv->agent_mgr);
     }
 
-    g_clear_object(&priv->dns_manager);
+    if (priv->dns_manager) {
+        nm_clear_g_signal_handler(priv->dns_manager, &priv->config_changed_id);
+        g_clear_object(&priv->dns_manager);
+    }
 
     g_hash_table_iter_init(&h_iter, priv->devices);
     if (g_hash_table_iter_next(&h_iter, (gpointer *) &device, NULL)) {
