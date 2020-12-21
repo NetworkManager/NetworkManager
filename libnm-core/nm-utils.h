@@ -185,7 +185,10 @@ gboolean nm_utils_is_uuid(const char *str);
  * for both nm_utils_inet4_ntop() and nm_utils_inet6_ntop().
  **/
 #define NM_UTILS_INET_ADDRSTRLEN INET6_ADDRSTRLEN
-const char *nm_utils_inet4_ntop(in_addr_t inaddr, char *dst);
+
+const char *nm_utils_inet4_ntop(guint32 inaddr, char *dst);
+
+struct in6_addr;
 const char *nm_utils_inet6_ntop(const struct in6_addr *in6addr, char *dst);
 
 gboolean nm_utils_ipaddr_valid(int family, const char *ip);
