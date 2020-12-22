@@ -16,6 +16,7 @@
 #include <gmodule.h>
 #include <sys/stat.h>
 #include <linux/pkt_sched.h>
+#include <linux/if_infiniband.h>
 
 #include "nm-glib-aux/nm-json-aux.h"
 #include "nm-glib-aux/nm-str-buf.h"

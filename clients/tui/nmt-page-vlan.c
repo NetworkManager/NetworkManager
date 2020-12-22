@@ -12,6 +12,8 @@
 
 #include "nm-editor-bindings.h"
 
+#include <linux/if_ether.h>
+
 #include "nmt-page-vlan.h"
 #include "nmt-device-entry.h"
 #include "nmt-mac-entry.h"

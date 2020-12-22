@@ -8,6 +8,7 @@
 #include "nm-setting-infiniband.h"
 
 #include <stdlib.h>
+#include <linux/if_infiniband.h>
 
 #include "nm-utils.h"
 #include "nm-utils-private.h"

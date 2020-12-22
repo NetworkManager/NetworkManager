@@ -8,6 +8,7 @@
 #include "nm-wifi-p2p-peer.h"
 
 #include <stdlib.h>
+#include <linux/if_ether.h>
 
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device.h"

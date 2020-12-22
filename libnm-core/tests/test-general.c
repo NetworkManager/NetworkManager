@@ -10,6 +10,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <linux/if_ether.h>
+#include <linux/if_infiniband.h>
 
 #include "nm-std-aux/c-list-util.h"
 #include "nm-glib-aux/nm-enum-utils.h"

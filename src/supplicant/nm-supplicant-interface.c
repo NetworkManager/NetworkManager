@@ -9,6 +9,7 @@
 #include "nm-supplicant-interface.h"
 
 #include <stdio.h>
+#include <linux/if_ether.h>
 
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"

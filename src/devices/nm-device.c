@@ -19,6 +19,8 @@
 #include <linux/if_addr.h>
 #include <linux/if_arp.h>
 #include <linux/rtnetlink.h>
+#include <linux/if_ether.h>
+#include <linux/if_infiniband.h>
 
 #include "nm-std-aux/unaligned.h"
 #include "nm-glib-aux/nm-dedup-multi.h"

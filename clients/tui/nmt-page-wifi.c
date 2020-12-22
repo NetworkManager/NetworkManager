@@ -15,6 +15,7 @@
 #include "nm-default.h"
 
 #include <stdlib.h>
+#include <linux/if_ether.h>
 
 #include "nmt-page-wifi.h"
 #include "nmt-mac-entry.h"

@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <linux/if_ether.h>
 
 #include "nm-libnm-core-intern/nm-libnm-core-utils.h"
 #include "nm-utils.h"

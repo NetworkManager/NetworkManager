@@ -8,6 +8,8 @@
 
 #include "nm-access-point.h"
 
+#include <linux/if_ether.h>
+
 #include "nm-connection.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"

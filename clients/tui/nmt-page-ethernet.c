@@ -11,6 +11,10 @@
 #include "nm-default.h"
 
 #include "nmt-page-ethernet.h"
+
+#include <linux/if_ether.h>
+#include <linux/if_infiniband.h>
+
 #include "nmt-mac-entry.h"
 #include "nmt-mtu-entry.h"
 

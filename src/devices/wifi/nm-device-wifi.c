@@ -10,6 +10,7 @@
 
 #include <netinet/in.h>
 #include <unistd.h>
+#include <linux/if_ether.h>
 
 #include "nm-glib-aux/nm-ref-string.h"
 #include "nm-glib-aux/nm-c-list.h"

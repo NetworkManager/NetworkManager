@@ -6,6 +6,7 @@
 #include "nm-default.h"
 
 #include <arpa/inet.h>
+#include <linux/if_ether.h>
 
 #include "nm-test-utils-core.h"
 

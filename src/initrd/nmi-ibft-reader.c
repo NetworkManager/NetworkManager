@@ -15,6 +15,7 @@
 #include <sys/inotify.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <linux/if_ether.h>
 
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"

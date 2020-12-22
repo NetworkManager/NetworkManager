@@ -9,6 +9,8 @@
 
 #include <stdlib.h>
 #include <arpa/inet.h>
+#include <linux/if_ether.h>
+#include <linux/if_infiniband.h>
 
 #include "nm-libnm-core-intern/nm-common-macros.h"
 #include "nm-glib-aux/nm-enum-utils.h"

@@ -8,6 +8,7 @@
 #include "nm-initrd-generator.h"
 
 #include <arpa/inet.h>
+#include <linux/if_ether.h>
 
 #include "nm-core-internal.h"
 

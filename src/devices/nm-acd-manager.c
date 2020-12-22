@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <linux/if_ether.h>
 
 #include "platform/nm-platform.h"
 #include "nm-utils.h"

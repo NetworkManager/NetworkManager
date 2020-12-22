@@ -12,6 +12,8 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/pkt_sched.h>
+#include <linux/if_ether.h>
+#include <linux/if_infiniband.h>
 
 #include "nm-core-internal.h"
 

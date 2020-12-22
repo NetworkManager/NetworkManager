@@ -12,12 +12,6 @@
 
 #include <glib.h>
 
-#include <netinet/in.h>
-
-/* For ETH_ALEN and INFINIBAND_ALEN */
-#include <linux/if_ether.h>
-#include <linux/if_infiniband.h>
-
 #include "nm-core-enum-types.h"
 #include "nm-setting-sriov.h"
 #include "nm-setting-tc-config.h"
@@ -185,7 +179,10 @@ gboolean nm_utils_is_uuid(const char *str);
  * for both nm_utils_inet4_ntop() and nm_utils_inet6_ntop().
  **/
 #define NM_UTILS_INET_ADDRSTRLEN INET6_ADDRSTRLEN
-const char *nm_utils_inet4_ntop(in_addr_t inaddr, char *dst);
+
+const char *nm_utils_inet4_ntop(guint32 inaddr, char *dst);
+
+struct in6_addr;
 const char *nm_utils_inet6_ntop(const struct in6_addr *in6addr, char *dst);
 
 gboolean nm_utils_ipaddr_valid(int family, const char *ip);

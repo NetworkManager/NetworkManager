@@ -19,6 +19,7 @@
 #include <linux/if_link.h>
 #include <linux/if_tun.h>
 #include <linux/if_tunnel.h>
+#include <linux/if_vlan.h>
 #include <linux/ip6_tunnel.h>
 #include <linux/tc_act/tc_mirred.h>
 #include <netinet/icmp6.h>

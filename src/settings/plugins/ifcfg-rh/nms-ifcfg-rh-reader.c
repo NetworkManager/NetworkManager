@@ -16,6 +16,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <linux/rtnetlink.h>
+#include <linux/if_ether.h>
 
 #include "nm-glib-aux/nm-secret-utils.h"
 #include "nm-connection.h"

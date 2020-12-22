@@ -8,6 +8,7 @@
 #include "nm-device-bt.h"
 
 #include <stdio.h>
+#include <linux/if_ether.h>
 
 #include "nm-core-internal.h"
 #include "nm-bluez-common.h"
