@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -23,10 +23,7 @@
 #include "format-util.h"
 #include "io-util.h"
 #include "log.h"
-#include "macro.h"
 #include "memory-util.h"
-#include "missing_socket.h"
-#include "missing_network.h"
 #include "parse-util.h"
 #include "path-util.h"
 #include "process-util.h"
@@ -320,7 +317,7 @@ bool socket_address_matches_fd(const SocketAddress *a, int fd) {
 }
 
 int sockaddr_port(const struct sockaddr *_sa, unsigned *ret_port) {
-        union sockaddr_union *sa = (union sockaddr_union*) _sa;
+        const union sockaddr_union *sa = (const union sockaddr_union*) _sa;
 
         /* Note, this returns the port as 'unsigned' rather than 'uint16_t', as AF_VSOCK knows larger ports */
 
@@ -342,6 +339,25 @@ int sockaddr_port(const struct sockaddr *_sa, unsigned *ret_port) {
 
         default:
                 return -EAFNOSUPPORT;
+        }
+}
+
+const union in_addr_union *sockaddr_in_addr(const struct sockaddr *_sa) {
+        const union sockaddr_union *sa = (const union sockaddr_union*) _sa;
+
+        if (!sa)
+                return NULL;
+
+        switch (sa->sa.sa_family) {
+
+        case AF_INET:
+                return (const union in_addr_union*) &sa->in.sin_addr;
+
+        case AF_INET6:
+                return (const union in_addr_union*) &sa->in6.sin6_addr;
+
+        default:
+                return NULL;
         }
 }
 
@@ -1240,71 +1256,8 @@ int socket_set_recvpktinfo(int fd, int af, bool b) {
         case AF_NETLINK:
                 return setsockopt_int(fd, SOL_NETLINK, NETLINK_PKTINFO, b);
 
-        default:
-                return -EAFNOSUPPORT;
-        }
-}
-
-int socket_set_recverr(int fd, int af, bool b) {
-        int r;
-
-        if (af == AF_UNSPEC) {
-                r = socket_get_family(fd, &af);
-                if (r < 0)
-                        return r;
-        }
-
-        switch (af) {
-
-        case AF_INET:
-                return setsockopt_int(fd, IPPROTO_IP, IP_RECVERR, b);
-
-        case AF_INET6:
-                return setsockopt_int(fd, IPPROTO_IPV6, IPV6_RECVERR, b);
-
-        default:
-                return -EAFNOSUPPORT;
-        }
-}
-
-int socket_set_recvttl(int fd, int af, bool b) {
-        int r;
-
-        if (af == AF_UNSPEC) {
-                r = socket_get_family(fd, &af);
-                if (r < 0)
-                        return r;
-        }
-
-        switch (af) {
-
-        case AF_INET:
-                return setsockopt_int(fd, IPPROTO_IP, IP_RECVTTL, b);
-
-        case AF_INET6:
-                return setsockopt_int(fd, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, b);
-
-        default:
-                return -EAFNOSUPPORT;
-        }
-}
-
-int socket_set_ttl(int fd, int af, int ttl) {
-        int r;
-
-        if (af == AF_UNSPEC) {
-                r = socket_get_family(fd, &af);
-                if (r < 0)
-                        return r;
-        }
-
-        switch (af) {
-
-        case AF_INET:
-                return setsockopt_int(fd, IPPROTO_IP, IP_TTL, ttl);
-
-        case AF_INET6:
-                return setsockopt_int(fd, IPPROTO_IPV6, IPV6_UNICAST_HOPS, ttl);
+        case AF_PACKET:
+                return setsockopt_int(fd, SOL_PACKET, PACKET_AUXDATA, b);
 
         default:
                 return -EAFNOSUPPORT;
@@ -1340,7 +1293,7 @@ int socket_set_unicast_if(int fd, int af, int ifi) {
         }
 }
 
-int socket_set_freebind(int fd, int af, bool b) {
+int socket_set_option(int fd, int af, int opt_ipv4, int opt_ipv6, int val) {
         int r;
 
         if (af == AF_UNSPEC) {
@@ -1352,18 +1305,18 @@ int socket_set_freebind(int fd, int af, bool b) {
         switch (af) {
 
         case AF_INET:
-                return setsockopt_int(fd, IPPROTO_IP, IP_FREEBIND, b);
+                return setsockopt_int(fd, IPPROTO_IP, opt_ipv4, val);
 
         case AF_INET6:
-                return setsockopt_int(fd, IPPROTO_IPV6, IPV6_FREEBIND, b);
+                return setsockopt_int(fd, IPPROTO_IPV6, opt_ipv6, val);
 
         default:
                 return -EAFNOSUPPORT;
         }
 }
 
-int socket_set_transparent(int fd, int af, bool b) {
-        int r;
+int socket_get_mtu(int fd, int af, size_t *ret) {
+        int mtu, r;
 
         if (af == AF_UNSPEC) {
                 r = socket_get_family(fd, &af);
@@ -1374,12 +1327,22 @@ int socket_set_transparent(int fd, int af, bool b) {
         switch (af) {
 
         case AF_INET:
-                return setsockopt_int(fd, IPPROTO_IP, IP_TRANSPARENT, b);
+                r = getsockopt_int(fd, IPPROTO_IP, IP_MTU, &mtu);
+                break;
 
         case AF_INET6:
-                return setsockopt_int(fd, IPPROTO_IPV6, IPV6_TRANSPARENT, b);
+                r = getsockopt_int(fd, IPPROTO_IPV6, IPV6_MTU, &mtu);
+                break;
 
         default:
                 return -EAFNOSUPPORT;
         }
+
+        if (r < 0)
+                return r;
+        if (mtu <= 0)
+                return -EINVAL;
+
+        *ret = (size_t) mtu;
+        return 0;
 }

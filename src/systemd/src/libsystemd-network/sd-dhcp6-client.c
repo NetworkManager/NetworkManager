@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 /***
   Copyright © 2014-2015 Intel Corporation. All rights reserved.
 ***/
@@ -21,10 +21,10 @@
 #include "hexdecoct.h"
 #include "hostname-util.h"
 #include "in-addr-util.h"
-#include "network-internal.h"
 #include "random-util.h"
 #include "socket-util.h"
 #include "string-table.h"
+#include "strv.h"
 #include "util.h"
 #include "web-util.h"
 
@@ -188,8 +188,7 @@ int sd_dhcp6_client_set_mac(
 
         assert_return(client, -EINVAL);
         assert_return(addr, -EINVAL);
-        assert_return(addr_len > 0 && addr_len <= MAX_MAC_ADDR_LEN, -EINVAL);
-        assert_return(arp_type > 0, -EINVAL);
+        assert_return(addr_len <= MAX_MAC_ADDR_LEN, -EINVAL);
 
         assert_return(IN_SET(client->state, DHCP6_STATE_STOPPED), -EBUSY);
 
@@ -197,8 +196,11 @@ int sd_dhcp6_client_set_mac(
                 assert_return(addr_len == ETH_ALEN, -EINVAL);
         else if (arp_type == ARPHRD_INFINIBAND)
                 assert_return(addr_len == INFINIBAND_ALEN, -EINVAL);
-        else
-                return -EINVAL;
+        else {
+                client->arp_type = ARPHRD_NONE;
+                client->mac_addr_len = 0;
+                return 0;
+        }
 
         if (client->mac_addr_len == addr_len &&
             memcmp(&client->mac_addr, addr, addr_len) == 0)
@@ -405,7 +407,7 @@ int sd_dhcp6_client_set_fqdn(
 
         /* Make sure FQDN qualifies as DNS and as Linux hostname */
         if (fqdn &&
-            !(hostname_is_valid(fqdn, false) && dns_name_is_valid(fqdn) > 0))
+            !(hostname_is_valid(fqdn, 0) && dns_name_is_valid(fqdn) > 0))
                 return -EINVAL;
 
         return free_and_strdup(&client->fqdn, fqdn);
@@ -1420,12 +1422,11 @@ static int client_receive_message(
         assert(client->event);
 
         buflen = next_datagram_size_fd(fd);
-        if (buflen == -ENETDOWN) {
+        if (buflen == -ENETDOWN)
                 /* the link is down. Don't return an error or the I/O event
                    source will be disconnected and we won't be able to receive
                    packets again when the link comes back. */
                 return 0;
-        }
         if (buflen < 0)
                 return buflen;
 
@@ -1677,7 +1678,8 @@ static int client_start(sd_dhcp6_client *client, enum DHCP6State state) {
 }
 
 int sd_dhcp6_client_stop(sd_dhcp6_client *client) {
-        assert_return(client, -EINVAL);
+        if (!client)
+                return 0;
 
         client_stop(client, SD_DHCP6_CLIENT_EVENT_STOP);
 
@@ -1743,8 +1745,7 @@ int sd_dhcp6_client_start(sd_dhcp6_client *client) {
         }
 
         log_dhcp6_client(client, "Started in %s mode",
-                         client->information_request? "Information request":
-                         "Managed");
+                         client->information_request ? "Information request" : "Managed");
 
         return client_start(client, state);
 }

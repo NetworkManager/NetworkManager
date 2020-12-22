@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 #pragma once
 
 #include <dirent.h>
@@ -132,3 +132,5 @@ int syncfs_path(int atfd, const char *path);
 int open_parent(const char *path, int flags, mode_t mode);
 
 int path_is_encrypted(const char *path);
+
+int conservative_rename(int olddirfd, const char *oldpath, int newdirfd, const char *newpath);

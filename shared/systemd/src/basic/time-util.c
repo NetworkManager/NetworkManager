@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 
 #include <ctype.h>
 #include <errno.h>
@@ -1606,7 +1606,7 @@ TimestampStyle timestamp_style_from_string(const char *s) {
                 return t;
         if (streq_ptr(s, "µs"))
                 return TIMESTAMP_US;
-        if (streq_ptr(s, "µs+uts"))
+        if (streq_ptr(s, "µs+utc"))
                 return TIMESTAMP_US_UTC;
         return t;
 }

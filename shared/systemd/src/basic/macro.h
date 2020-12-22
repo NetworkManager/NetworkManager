@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 #pragma once
 
 #include <assert.h>
@@ -93,6 +93,10 @@
 #endif
 
 /* Temporarily disable some warnings */
+#define DISABLE_WARNING_DEPRECATED_DECLARATIONS                         \
+        _Pragma("GCC diagnostic push");                                 \
+        _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+
 #define DISABLE_WARNING_FORMAT_NONLITERAL                               \
         _Pragma("GCC diagnostic push");                                 \
         _Pragma("GCC diagnostic ignored \"-Wformat-nonliteral\"")
@@ -277,6 +281,12 @@ static inline size_t GREEDY_ALLOC_ROUND_UP(size_t l) {
                 MAX(_c, z);                             \
         })
 
+#define MAX4(x, y, z, a)                                \
+        ({                                              \
+                const typeof(x) _d = MAX3(x, y, z);     \
+                MAX(_d, a);                             \
+        })
+
 #undef MIN
 #define MIN(a, b) __MIN(UNIQ, (a), UNIQ, (b))
 #define __MIN(aq, a, bq, b)                             \
@@ -440,6 +450,9 @@ static inline int __coverity_check_and_return__(int condition) {
 #define PTR_TO_ULONG(p) ((unsigned long) ((uintptr_t) (p)))
 #define ULONG_TO_PTR(u) ((void *) ((uintptr_t) (u)))
 
+#define PTR_TO_UINT8(p) ((uint8_t) ((uintptr_t) (p)))
+#define UINT8_TO_PTR(u) ((void *) ((uintptr_t) (u)))
+
 #define PTR_TO_INT32(p) ((int32_t) ((intptr_t) (p)))
 #define INT32_TO_PTR(u) ((void *) ((intptr_t) (u)))
 #define PTR_TO_UINT32(p) ((uint32_t) ((uintptr_t) (p)))
@@ -541,10 +554,13 @@ static inline int __coverity_check_and_return__(int condition) {
 #define STRV_MAKE(...) ((char**) ((const char*[]) { __VA_ARGS__, NULL }))
 #define STRV_MAKE_EMPTY ((char*[1]) { NULL })
 
-/* Iterates through a specified list of pointers. Accepts NULL pointers, but uses (void*) -1 as internal marker for EOL. */
-#define FOREACH_POINTER(p, x, ...)                                                      \
-        for (typeof(p) *_l = (typeof(p)[]) { ({ p = x; }), ##__VA_ARGS__, (void*) -1 }; \
-             p != (typeof(p)) (void*) -1;                                               \
+/* Pointers range from NULL to POINTER_MAX */
+#define POINTER_MAX ((void*) UINTPTR_MAX)
+
+/* Iterates through a specified list of pointers. Accepts NULL pointers, but uses POINTER_MAX as internal marker for EOL. */
+#define FOREACH_POINTER(p, x, ...)                                                       \
+        for (typeof(p) *_l = (typeof(p)[]) { ({ p = x; }), ##__VA_ARGS__, POINTER_MAX }; \
+             p != (typeof(p)) POINTER_MAX;                                               \
              p = *(++_l))
 
 /* Define C11 thread_local attribute even on older gcc compiler
@@ -633,5 +649,9 @@ static inline int __coverity_check_and_return__(int condition) {
                 asm volatile ("" : : : "memory");                       \
                 _copy;                                                  \
         })
+
+static inline size_t size_add(size_t x, size_t y) {
+        return y >= SIZE_MAX - x ? SIZE_MAX : x + y;
+}
 
 #include "log.h"

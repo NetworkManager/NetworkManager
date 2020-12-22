@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 
 #include <errno.h>
 #include <limits.h>
@@ -16,7 +16,8 @@
 #include "strv.h"
 #include "utf8.h"
 
-#define VALID_CHARS_ENV_NAME                    \
+/* We follow bash for the character set. Different shells have different rules. */
+#define VALID_BASH_ENV_NAME_CHARS               \
         DIGITS LETTERS                          \
         "_"
 
@@ -41,17 +42,14 @@ static bool env_name_is_valid_n(const char *e, size_t n) {
                 return false;
 
         for (p = e; p < e + n; p++)
-                if (!strchr(VALID_CHARS_ENV_NAME, *p))
+                if (!strchr(VALID_BASH_ENV_NAME_CHARS, *p))
                         return false;
 
         return true;
 }
 
 bool env_name_is_valid(const char *e) {
-        if (!e)
-                return false;
-
-        return env_name_is_valid_n(e, strlen(e));
+        return env_name_is_valid_n(e, strlen_ptr(e));
 }
 
 bool env_value_is_valid(const char *e) {
@@ -546,7 +544,7 @@ char *replace_env_n(const char *format, size_t n, char **env, unsigned flags) {
                                 word = e+1;
                                 state = WORD;
 
-                        } else if (flags & REPLACE_ENV_ALLOW_BRACELESS && strchr(VALID_CHARS_ENV_NAME, *e)) {
+                        } else if (flags & REPLACE_ENV_ALLOW_BRACELESS && strchr(VALID_BASH_ENV_NAME_CHARS, *e)) {
                                 k = strnappend(r, word, e-word-1);
                                 if (!k)
                                         return NULL;
@@ -636,7 +634,7 @@ char *replace_env_n(const char *format, size_t n, char **env, unsigned flags) {
                 case VARIABLE_RAW:
                         assert(flags & REPLACE_ENV_ALLOW_BRACELESS);
 
-                        if (!strchr(VALID_CHARS_ENV_NAME, *e)) {
+                        if (!strchr(VALID_BASH_ENV_NAME_CHARS, *e)) {
                                 const char *t;
 
                                 t = strv_env_get_n(env, word+1, e-word-1, flags);
@@ -748,4 +746,16 @@ int getenv_bool_secure(const char *p) {
                 return -ENXIO;
 
         return parse_boolean(e);
+}
+
+int set_unset_env(const char *name, const char *value, bool overwrite) {
+        int r;
+
+        if (value)
+                r = setenv(name, value, overwrite);
+        else
+                r = unsetenv(name);
+        if (r < 0)
+                return -errno;
+        return 0;
 }

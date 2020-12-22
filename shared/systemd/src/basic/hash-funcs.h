@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 #pragma once
 
 #include "alloc-util.h"
@@ -88,6 +88,8 @@ extern const struct hash_ops path_hash_ops_free;
 void trivial_hash_func(const void *p, struct siphash *state);
 int trivial_compare_func(const void *a, const void *b) _const_;
 extern const struct hash_ops trivial_hash_ops;
+extern const struct hash_ops trivial_hash_ops_free;
+extern const struct hash_ops trivial_hash_ops_free_free;
 
 /* 32bit values we can always just embed in the pointer itself, but in order to support 32bit archs we need store 64bit
  * values indirectly, since they don't fit in a pointer. */

@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 #pragma once
 
 #include <stdarg.h>
@@ -44,9 +44,16 @@ typedef enum LogTarget{
 #define ERRNO_VALUE(val)                    (abs(val) & 255)
 
 void log_set_target(LogTarget target);
+
 void log_set_max_level_realm(LogRealm realm, int level);
+
 #define log_set_max_level(level)                \
         log_set_max_level_realm(LOG_REALM, (level))
+
+static inline void log_set_max_level_all_realms(int level) {
+        for (LogRealm realm = 0; realm < _LOG_REALM_MAX; realm++)
+                log_set_max_level_realm(realm, level);
+}
 
 void log_set_facility(int facility);
 
@@ -161,7 +168,7 @@ int log_struct_internal(
                 const char *format, ...) _printf_(6,0) _sentinel_;
 
 int log_oom_internal(
-                LogRealm realm,
+                int level,
                 const char *file,
                 int line,
                 const char *func);
@@ -279,7 +286,8 @@ int log_emergency_level(void);
         log_dump_internal(LOG_REALM_PLUS_LEVEL(LOG_REALM, level), \
                           0, PROJECT_FILE, __LINE__, __func__, buffer)
 
-#define log_oom() log_oom_internal(LOG_REALM, PROJECT_FILE, __LINE__, __func__)
+#define log_oom() log_oom_internal(LOG_REALM_PLUS_LEVEL(LOG_REALM, LOG_ERR), PROJECT_FILE, __LINE__, __func__)
+#define log_oom_debug() log_oom_internal(LOG_REALM_PLUS_LEVEL(LOG_REALM, LOG_DEBUG), PROJECT_FILE, __LINE__, __func__)
 
 bool log_on_console(void) _pure_;
 

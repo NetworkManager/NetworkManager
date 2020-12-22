@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 
 #include <errno.h>
 #include <pthread.h>
@@ -1794,10 +1794,10 @@ int set_consume(Set *s, void *value) {
         return r;
 }
 
-int _hashmap_put_strdup(Hashmap **h, const char *k, const char *v  HASHMAP_DEBUG_PARAMS) {
+int _hashmap_put_strdup_full(Hashmap **h, const struct hash_ops *hash_ops, const char *k, const char *v  HASHMAP_DEBUG_PARAMS) {
         int r;
 
-        r = _hashmap_ensure_allocated(h, &string_hash_ops_free_free  HASHMAP_DEBUG_PASS_ARGS);
+        r = _hashmap_ensure_allocated(h, hash_ops  HASHMAP_DEBUG_PASS_ARGS);
         if (r < 0)
                 return r;
 
@@ -1828,14 +1828,14 @@ int _hashmap_put_strdup(Hashmap **h, const char *k, const char *v  HASHMAP_DEBUG
         return r;
 }
 
-int _set_put_strdup(Set **s, const char *p  HASHMAP_DEBUG_PARAMS) {
+int _set_put_strdup_full(Set **s, const struct hash_ops *hash_ops, const char *p  HASHMAP_DEBUG_PARAMS) {
         char *c;
         int r;
 
         assert(s);
         assert(p);
 
-        r = _set_ensure_allocated(s, &string_hash_ops_free  HASHMAP_DEBUG_PASS_ARGS);
+        r = _set_ensure_allocated(s, hash_ops  HASHMAP_DEBUG_PASS_ARGS);
         if (r < 0)
                 return r;
 
@@ -1849,14 +1849,14 @@ int _set_put_strdup(Set **s, const char *p  HASHMAP_DEBUG_PARAMS) {
         return set_consume(*s, c);
 }
 
-int _set_put_strdupv(Set **s, char **l  HASHMAP_DEBUG_PARAMS) {
+int _set_put_strdupv_full(Set **s, const struct hash_ops *hash_ops, char **l  HASHMAP_DEBUG_PARAMS) {
         int n = 0, r;
         char **i;
 
         assert(s);
 
         STRV_FOREACH(i, l) {
-                r = _set_put_strdup(s, *i  HASHMAP_DEBUG_PASS_ARGS);
+                r = _set_put_strdup_full(s, hash_ops, *i  HASHMAP_DEBUG_PASS_ARGS);
                 if (r < 0)
                         return r;
 
@@ -1975,4 +1975,54 @@ IteratedCache* iterated_cache_free(IteratedCache *cache) {
         }
 
         return mfree(cache);
+}
+
+int set_strjoin(Set *s, const char *separator, bool wrap_with_separator, char **ret) {
+        size_t separator_len, allocated = 0, len = 0;
+        _cleanup_free_ char *str = NULL;
+        const char *value;
+        bool first;
+
+        assert(ret);
+
+        if (set_isempty(s)) {
+                *ret = NULL;
+                return 0;
+        }
+
+        separator_len = strlen_ptr(separator);
+
+        if (separator_len == 0)
+                wrap_with_separator = false;
+
+        first = !wrap_with_separator;
+
+        SET_FOREACH(value, s) {
+                size_t l = strlen_ptr(value);
+
+                if (l == 0)
+                        continue;
+
+                if (!GREEDY_REALLOC(str, allocated, len + l + (first ? 0 : separator_len) + (wrap_with_separator ? separator_len : 0) + 1))
+                        return -ENOMEM;
+
+                if (separator_len > 0 && !first) {
+                        memcpy(str + len, separator, separator_len);
+                        len += separator_len;
+                }
+
+                memcpy(str + len, value, l);
+                len += l;
+                first = false;
+        }
+
+        if (wrap_with_separator) {
+                memcpy(str + len, separator, separator_len);
+                len += separator_len;
+        }
+
+        str[len] = '\0';
+
+        *ret = TAKE_PTR(str);
+        return 0;
 }

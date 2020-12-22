@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 
 #include <arpa/inet.h>
 #include <linux/sockios.h>
@@ -276,7 +276,8 @@ fail:
 }
 
 _public_ int sd_lldp_stop(sd_lldp *lldp) {
-        assert_return(lldp, -EINVAL);
+        if (!lldp)
+                return 0;
 
         if (lldp->fd < 0)
                 return 0;

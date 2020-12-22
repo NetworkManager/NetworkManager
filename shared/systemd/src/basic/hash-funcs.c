@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 
 #include <string.h>
 
@@ -69,6 +69,19 @@ int trivial_compare_func(const void *a, const void *b) {
 const struct hash_ops trivial_hash_ops = {
         .hash = trivial_hash_func,
         .compare = trivial_compare_func,
+};
+
+const struct hash_ops trivial_hash_ops_free = {
+        .hash = trivial_hash_func,
+        .compare = trivial_compare_func,
+        .free_key = free,
+};
+
+const struct hash_ops trivial_hash_ops_free_free = {
+        .hash = trivial_hash_func,
+        .compare = trivial_compare_func,
+        .free_key = free,
+        .free_value = free,
 };
 
 void uint64_hash_func(const uint64_t *p, struct siphash *state) {
