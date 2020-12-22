@@ -101,6 +101,12 @@ _with_valgrind() {
     test "$_WITH_VALGRIND_CHECKED" == "1" && return 0
     _WITH_VALGRIND_CHECKED=1
 
+    if [ "$IS_ALPINE" = 1 ]; then
+        # on Alpine we have no debug symbols and the suppressions
+        # don't work. Skip valgrind tests.
+        WITH_VALGRIND=0
+    fi
+
     # Certain glib2 versions are known to report *lots* of leaks. Disable
     # valgrind tests in this case.
     # https://bugzilla.redhat.com/show_bug.cgi?id=1710417
