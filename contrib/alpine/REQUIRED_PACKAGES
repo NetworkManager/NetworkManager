@@ -21,6 +21,7 @@ apk add \
     'gobject-introspection-dev' \
     'gtk-doc' \
     'intltool' \
+    'iproute2' \
     'iptables' \
     'jansson-dev' \
     'libgudev-dev' \
@@ -41,9 +42,11 @@ apk add \
     'polkit-dev' \
     'ppp' \
     'ppp-dev' \
+    'py3-dbus' \
     'py3-gobject3' \
     'python3' \
     'readline-dev' \
     'util-linux-dev' \
     'vala' \
+    'valgrind' \
     'vim'
