@@ -407,7 +407,7 @@ verify_wpa_eap(NMSettingWirelessSecurity *s_wsec,
     auth_alg = nm_setting_wireless_security_get_auth_alg(s_wsec);
 
     if (key_mgmt) {
-        if (!strcmp(key_mgmt, "wpa-eap")) {
+        if (NM_IN_STRSET(key_mgmt, "wpa-eap", "wpa-eap-suite-b-192")) {
             if (!s_8021x) {
                 g_set_error_literal(error,
                                     NM_CONNECTION_ERROR,
@@ -444,7 +444,8 @@ verify_wpa_eap(NMSettingWirelessSecurity *s_wsec,
     if (is_wpa_eap || s_8021x) {
         /* Make sure the AP's capabilities support WPA-EAP */
         if (!(wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
-            && !(rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
+            && !(rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
+            && !(rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192)) {
             g_set_error_literal(error,
                                 NM_CONNECTION_ERROR,
                                 NM_CONNECTION_ERROR_INVALID_SETTING,
@@ -838,6 +839,14 @@ nm_wifi_utils_complete_connection(GBytes *      ap_ssid,
         /* Leave proto/pairwise/group as client set them; if they are unset the
          * supplicant will figure out the best combination at connect time.
          */
+    } else if ((key_mgmt && !strcmp(key_mgmt, "wpa-eap-suite-b-192"))
+               || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192)) {
+        g_object_set(s_wsec,
+                     NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
+                     "wpa-eap-suite-b-192",
+                     NM_SETTING_WIRELESS_SECURITY_AUTH_ALG,
+                     "open",
+                     NULL);
     } else {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,

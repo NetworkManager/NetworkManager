@@ -600,6 +600,50 @@ generate_wifi_eap_connection(const char *                  id,
     return connection;
 }
 
+static NMConnection *
+generate_wifi_eap_suite_b_192_connection(const char *id, GBytes *ssid, const char *bssid_str)
+{
+    NMConnection *             connection = NULL;
+    NMSettingWirelessSecurity *s_wsec;
+    NMSetting8021x *           s_8021x;
+    gboolean                   success;
+    GError *                   error = NULL;
+
+    connection = new_basic_connection(id, ssid, bssid_str);
+
+    /* Wifi Security setting */
+    s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new();
+    nm_connection_add_setting(connection, NM_SETTING(s_wsec));
+    g_object_set(s_wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-eap-suite-b-192", NULL);
+
+    /* 802-1X setting */
+    s_8021x = (NMSetting8021x *) nm_setting_802_1x_new();
+    nm_connection_add_setting(connection, NM_SETTING(s_8021x));
+    nm_setting_802_1x_add_eap_method(s_8021x, "tls");
+    nm_setting_802_1x_set_client_cert(s_8021x,
+                                      TEST_CERT_DIR "/test-cert.p12",
+                                      NM_SETTING_802_1X_CK_SCHEME_PATH,
+                                      NULL,
+                                      NULL);
+    g_assert(nm_setting_802_1x_set_ca_cert(s_8021x,
+                                           TEST_CERT_DIR "/test-ca-cert.pem",
+                                           NM_SETTING_802_1X_CK_SCHEME_PATH,
+                                           NULL,
+                                           NULL));
+    nm_setting_802_1x_set_private_key(s_8021x,
+                                      TEST_CERT_DIR "/test-cert.p12",
+                                      NULL,
+                                      NM_SETTING_802_1X_CK_SCHEME_PATH,
+                                      NULL,
+                                      NULL);
+
+    success = nm_connection_verify(connection, &error);
+    g_assert_no_error(error);
+    g_assert(success);
+
+    return connection;
+}
+
 static void
 test_wifi_eap_locked_bssid(void)
 {
@@ -755,6 +799,47 @@ test_wifi_eap_fils_disabled(void)
     validate_opt("wifi-eap", config_dict, "bgscan", NM_SUPPL_OPT_TYPE_BYTES, bgscan);
 }
 
+static void
+test_wifi_eap_suite_b_generation(void)
+{
+    gs_unref_object NMConnection *connection = NULL;
+    gs_unref_variant GVariant *config_dict   = NULL;
+    const unsigned char        ssid_data[] = {0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44};
+    gs_unref_bytes GBytes *ssid            = g_bytes_new(ssid_data, sizeof(ssid_data));
+    const char *           bssid_str       = "11:22:33:44:55:66";
+    guint32                mtu             = 1100;
+
+    connection = generate_wifi_eap_suite_b_192_connection("EAP-TLS Suite B 192", ssid, bssid_str);
+
+    NMTST_EXPECT_NM_INFO("Config: added 'ssid' value 'Test SSID'*");
+    NMTST_EXPECT_NM_INFO("Config: added 'scan_ssid' value '1'*");
+    NMTST_EXPECT_NM_INFO("Config: added 'bssid' value '11:22:33:44:55:66'*");
+    NMTST_EXPECT_NM_INFO("Config: added 'freq_list' value *");
+    NMTST_EXPECT_NM_INFO("Config: added 'pairwise' value 'GCMP-256'");
+    NMTST_EXPECT_NM_INFO("Config: added 'group' value 'GCMP-256'");
+    NMTST_EXPECT_NM_INFO("Config: added 'key_mgmt' value 'WPA-EAP-SUITE-B-192'");
+    NMTST_EXPECT_NM_INFO("Config: added 'eap' value 'TLS'");
+    NMTST_EXPECT_NM_INFO("Config: added 'fragment_size' value '1086'");
+    NMTST_EXPECT_NM_INFO("Config: added 'ca_cert' value '*/test-ca-cert.pem'");
+    NMTST_EXPECT_NM_INFO("Config: added 'private_key' value '*/test-cert.p12'");
+    NMTST_EXPECT_NM_INFO("Config: added 'proactive_key_caching' value '1'");
+    config_dict = build_supplicant_config(connection, mtu, 0, NM_SUPPL_CAP_MASK_T_PMF_YES);
+    g_test_assert_expected_messages();
+    g_assert(config_dict);
+
+    validate_opt("wifi-eap", config_dict, "scan_ssid", NM_SUPPL_OPT_TYPE_INT, GINT_TO_POINTER(1));
+    validate_opt("wifi-eap", config_dict, "ssid", NM_SUPPL_OPT_TYPE_BYTES, ssid);
+    validate_opt("wifi-eap", config_dict, "bssid", NM_SUPPL_OPT_TYPE_KEYWORD, bssid_str);
+    validate_opt("wifi-eap",
+                 config_dict,
+                 "key_mgmt",
+                 NM_SUPPL_OPT_TYPE_KEYWORD,
+                 "WPA-EAP-SUITE-B-192");
+    validate_opt("wifi-eap", config_dict, "eap", NM_SUPPL_OPT_TYPE_KEYWORD, "TLS");
+    validate_opt("wifi-eap", config_dict, "pairwise", NM_SUPPL_OPT_TYPE_KEYWORD, "GCMP-256");
+    validate_opt("wifi-eap", config_dict, "group", NM_SUPPL_OPT_TYPE_KEYWORD, "GCMP-256");
+}
+
 /*****************************************************************************/
 
 static void
@@ -818,6 +903,7 @@ main(int argc, char **argv)
     g_test_add_func("/supplicant-config/wifi-eap/fils-disabled", test_wifi_eap_fils_disabled);
     g_test_add_func("/supplicant-config/wifi-sae", test_wifi_sae);
     g_test_add_func("/supplicant-config/test_suppl_cap_mask", test_suppl_cap_mask);
+    g_test_add_func("/supplicant-config/wifi-eap-suite-b-192", test_wifi_eap_suite_b_generation);
 
     return g_test_run();
 }

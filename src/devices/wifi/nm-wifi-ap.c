@@ -795,8 +795,8 @@ nm_wifi_ap_new_fake_from_connection(NMConnection *connection)
     if (!strcmp(key_mgmt, "none") || !strcmp(key_mgmt, "ieee8021x"))
         goto done;
 
-    psk = !strcmp(key_mgmt, "wpa-psk");
-    eap = !strcmp(key_mgmt, "wpa-eap");
+    psk = nm_streq(key_mgmt, "wpa-psk");
+    eap = nm_streq(key_mgmt, "wpa-eap") || nm_streq(key_mgmt, "wpa-eap-suite-b-192");
     if (!adhoc && (psk || eap)) {
         if (has_proto(s_wireless_sec, PROTO_WPA)) {
             flags = priv->wpa_flags
@@ -889,7 +889,7 @@ nm_wifi_ap_class_init(NMWifiAPClass *ap_class)
      | NM_802_11_AP_SEC_GROUP_WEP104 | NM_802_11_AP_SEC_GROUP_TKIP | NM_802_11_AP_SEC_GROUP_CCMP \
      | NM_802_11_AP_SEC_KEY_MGMT_PSK | NM_802_11_AP_SEC_KEY_MGMT_802_1X                          \
      | NM_802_11_AP_SEC_KEY_MGMT_SAE | NM_802_11_AP_SEC_KEY_MGMT_OWE                             \
-     | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM)
+     | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM | NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192)
 
     GObjectClass *     object_class      = G_OBJECT_CLASS(ap_class);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(ap_class);

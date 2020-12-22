@@ -1086,6 +1086,7 @@ nm_utils_ap_mode_security_valid(NMUtilsSecurityType type, NMDeviceWifiCapabiliti
     case NMU_SEC_DYNAMIC_WEP:
     case NMU_SEC_WPA_ENTERPRISE:
     case NMU_SEC_WPA2_ENTERPRISE:
+    case NMU_SEC_WPA3_SUITE_B_192:
         return FALSE;
     case NMU_SEC_INVALID:
         break;
@@ -1259,6 +1260,16 @@ nm_utils_security_valid(NMUtilsSecurityType      type,
         if (!NM_FLAGS_ANY(ap_rsn, NM_802_11_AP_SEC_KEY_MGMT_OWE | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM))
             return FALSE;
         return TRUE;
+    case NMU_SEC_WPA3_SUITE_B_192:
+        if (adhoc)
+            return FALSE;
+        if (!(wifi_caps & NM_WIFI_DEVICE_CAP_RSN))
+            return FALSE;
+        if (!have_ap)
+            return TRUE;
+        if (ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192)
+            return TRUE;
+        return FALSE;
     case NMU_SEC_INVALID:
         break;
     }

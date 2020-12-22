@@ -354,26 +354,29 @@ typedef enum { /*< underscore_name=nm_802_11_ap_flags, flags >*/
  * supported
  * @NM_802_11_AP_SEC_KEY_MGMT_OWE_TM: WPA/RSN Opportunistic Wireless Encryption
  * transition mode is supported. Since: 1.26.
+ * @NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192: WPA3 Enterprise Suite-B 192 bit mode
+ * is supported. Since: 1.30.
  *
  * 802.11 access point security and authentication flags.  These flags describe
  * the current security requirements of an access point as determined from the
  * access point's beacon.
  **/
 typedef enum { /*< underscore_name=nm_802_11_ap_security_flags, flags >*/
-               NM_802_11_AP_SEC_NONE            = 0x00000000,
-               NM_802_11_AP_SEC_PAIR_WEP40      = 0x00000001,
-               NM_802_11_AP_SEC_PAIR_WEP104     = 0x00000002,
-               NM_802_11_AP_SEC_PAIR_TKIP       = 0x00000004,
-               NM_802_11_AP_SEC_PAIR_CCMP       = 0x00000008,
-               NM_802_11_AP_SEC_GROUP_WEP40     = 0x00000010,
-               NM_802_11_AP_SEC_GROUP_WEP104    = 0x00000020,
-               NM_802_11_AP_SEC_GROUP_TKIP      = 0x00000040,
-               NM_802_11_AP_SEC_GROUP_CCMP      = 0x00000080,
-               NM_802_11_AP_SEC_KEY_MGMT_PSK    = 0x00000100,
-               NM_802_11_AP_SEC_KEY_MGMT_802_1X = 0x00000200,
-               NM_802_11_AP_SEC_KEY_MGMT_SAE    = 0x00000400,
-               NM_802_11_AP_SEC_KEY_MGMT_OWE    = 0x00000800,
-               NM_802_11_AP_SEC_KEY_MGMT_OWE_TM = 0x00001000,
+               NM_802_11_AP_SEC_NONE                     = 0x00000000,
+               NM_802_11_AP_SEC_PAIR_WEP40               = 0x00000001,
+               NM_802_11_AP_SEC_PAIR_WEP104              = 0x00000002,
+               NM_802_11_AP_SEC_PAIR_TKIP                = 0x00000004,
+               NM_802_11_AP_SEC_PAIR_CCMP                = 0x00000008,
+               NM_802_11_AP_SEC_GROUP_WEP40              = 0x00000010,
+               NM_802_11_AP_SEC_GROUP_WEP104             = 0x00000020,
+               NM_802_11_AP_SEC_GROUP_TKIP               = 0x00000040,
+               NM_802_11_AP_SEC_GROUP_CCMP               = 0x00000080,
+               NM_802_11_AP_SEC_KEY_MGMT_PSK             = 0x00000100,
+               NM_802_11_AP_SEC_KEY_MGMT_802_1X          = 0x00000200,
+               NM_802_11_AP_SEC_KEY_MGMT_SAE             = 0x00000400,
+               NM_802_11_AP_SEC_KEY_MGMT_OWE             = 0x00000800,
+               NM_802_11_AP_SEC_KEY_MGMT_OWE_TM          = 0x00001000,
+               NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192 = 0x00002000,
 } NM80211ApSecurityFlags;
 
 /**

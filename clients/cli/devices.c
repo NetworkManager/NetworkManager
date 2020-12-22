@@ -54,6 +54,8 @@ ap_wpa_rsn_flags_to_string(NM80211ApSecurityFlags flags, NMMetaAccessorGetType g
         flags_str[i++] = "802.1X";
     if (flags & NM_802_11_AP_SEC_KEY_MGMT_SAE)
         flags_str[i++] = "sae";
+    if (flags & NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192)
+        flags_str[i++] = "wpa-eap-suite-b-192";
     if (NM_FLAGS_ANY(flags, NM_802_11_AP_SEC_KEY_MGMT_OWE | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM))
         flags_str[i++] = "owe";
 

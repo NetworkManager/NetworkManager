@@ -933,6 +933,7 @@ _dbus_get_capabilities_cb(GVariant *res, GError *error, gpointer user_data)
                     _caps_set(priv, NM_SUPPL_CAP_TYPE_AP, NM_TERNARY_FALSE);
                     _caps_set(priv, NM_SUPPL_CAP_TYPE_PMF, NM_TERNARY_FALSE);
                     _caps_set(priv, NM_SUPPL_CAP_TYPE_FILS, NM_TERNARY_FALSE);
+                    _caps_set(priv, NM_SUPPL_CAP_TYPE_SUITEB192, NM_TERNARY_FALSE);
                     if (array) {
                         for (a = array; *a; a++) {
                             if (nm_streq(*a, "ap")) {
@@ -961,6 +962,10 @@ _dbus_get_capabilities_cb(GVariant *res, GError *error, gpointer user_data)
                             }
                             if (nm_streq(*a, "mesh")) {
                                 _caps_set(priv, NM_SUPPL_CAP_TYPE_MESH, NM_TERNARY_TRUE);
+                                continue;
+                            }
+                            if (nm_streq(*a, "suiteb192")) {
+                                _caps_set(priv, NM_SUPPL_CAP_TYPE_SUITEB192, NM_TERNARY_TRUE);
                                 continue;
                             }
                         }

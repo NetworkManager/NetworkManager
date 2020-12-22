@@ -48,6 +48,7 @@ char *      nm_utils_ssid_to_utf8(const guint8 *ssid, gsize len);
  * @NMU_SEC_WPA2_ENTERPRISE: WPA2 is used with 802.1x authentication
  * @NMU_SEC_SAE: is used with WPA3 Enterprise
  * @NMU_SEC_OWE: is used with Enhanced Open
+ * @NMU_SEC_WPA3_SUITE_B_192: is used with WPA3 Enterprise Suite-B 192 bit mode. Since: 1.30.
  *
  * Describes generic security mechanisms that 802.11 access points may offer.
  * Used with nm_utils_security_valid() for checking whether a given access
@@ -65,6 +66,7 @@ typedef enum {
     NMU_SEC_WPA2_ENTERPRISE,
     NMU_SEC_SAE,
     NMU_SEC_OWE,
+    NMU_SEC_WPA3_SUITE_B_192,
 } NMUtilsSecurityType;
 
 gboolean nm_utils_security_valid(NMUtilsSecurityType      type,
