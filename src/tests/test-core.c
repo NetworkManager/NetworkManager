@@ -980,10 +980,11 @@ test_connection_match_ip6_routes(void)
     g_assert(matched == copy);
 }
 
-#define do_test_wildcard_match(str, result, ...)                                               \
-    g_assert(                                                                                  \
-        nm_wildcard_match_check(str, (const char *const[]){__VA_ARGS__}, NM_NARG(__VA_ARGS__)) \
-        == result);
+#define do_test_wildcard_match_eval(str, ...) \
+    nm_wildcard_match_check(str, (const char *const[]){__VA_ARGS__}, NM_NARG(__VA_ARGS__))
+
+#define do_test_wildcard_match(str, result, ...) \
+    g_assert(do_test_wildcard_match_eval(str, __VA_ARGS__) == result)
 
 static void
 test_wildcard_match(void)
@@ -1056,7 +1057,14 @@ test_wildcard_match(void)
     do_test_wildcard_match("name3", TRUE, "name[123]");
     do_test_wildcard_match("name4", FALSE, "name[123]");
 
-    do_test_wildcard_match("[a]", TRUE, "\\[a\\]");
+    if (do_test_wildcard_match_eval("[a]", "\\[a\\]") != TRUE) {
+#if defined(__GLIBC__)
+        do_test_wildcard_match("[a]", TRUE, "\\[a\\]");
+        g_assert_not_reached();
+#endif
+        /* It seems musl's fnmatch() does not like such ranges. */
+        g_test_skip("libc does not support ranges with fnmatch()!!");
+    }
 
     do_test_wildcard_match("aa", FALSE, "!a*");
     do_test_wildcard_match("aa", FALSE, "&!a*");
