@@ -132,6 +132,14 @@ nm_editor_utils_get_connection_type_list(void)
     item->id_format         = _("Ethernet connection %d");
     g_ptr_array_add(array, item);
 
+    item                    = g_new0(NMEditorConnectionTypeDataReal, 1);
+    item->data.name         = _("Veth");
+    item->data.setting_type = NM_TYPE_SETTING_VETH;
+    item->data.device_type  = NM_TYPE_DEVICE_VETH;
+    item->data.virtual      = TRUE;
+    item->id_format         = _("Veth connection %d");
+    g_ptr_array_add(array, item);
+
     item                        = g_new0(NMEditorConnectionTypeDataReal, 1);
     item->data.name             = _("Wi-Fi");
     item->data.setting_type     = NM_TYPE_SETTING_WIRELESS;
