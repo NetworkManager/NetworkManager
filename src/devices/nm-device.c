@@ -8,7 +8,6 @@
 
 #include "nm-device.h"
 
-#include <netinet/in.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <signal.h>
@@ -16,8 +15,10 @@
 #include <sys/wait.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <netinet/in.h>
+#include <netinet/if_ether.h>
+#include <linux/if.h>
 #include <linux/if_addr.h>
-#include <linux/if_arp.h>
 #include <linux/rtnetlink.h>
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
