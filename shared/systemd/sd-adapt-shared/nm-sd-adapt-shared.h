@@ -127,6 +127,7 @@ _nm_log_get_max_level_realm(void)
 
     #include <sys/syscall.h>
     #include <sys/ioctl.h>
+    #include <pthread.h>
 
     #define ENABLE_GSHADOW FALSE
 
@@ -200,6 +201,17 @@ _nm_gettid(void)
 typedef int (*__compar_fn_t)(const void *, const void *);
 typedef __compar_fn_t comparison_fn_t;
 typedef int (*__compar_d_fn_t)(const void *, const void *, void *);
+    #endif
+
+    #ifndef __GLIBC__
+static inline int
+__register_atfork(void (*prepare)(void),
+                  void (*parent)(void),
+                  void (*child)(void),
+                  void *dso_handle)
+{
+    return pthread_atfork(prepare, parent, child);
+}
     #endif
 
 #endif /* (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_SYSTEMD */

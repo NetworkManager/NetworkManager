@@ -12,9 +12,10 @@
 #include <endian.h>
 #include <fcntl.h>
 #include <libudev.h>
+#include <net/ethernet.h>
 #include <linux/fib_rules.h>
 #include <linux/ip.h>
-#include <linux/if_arp.h>
+#include <linux/if.h>
 #include <linux/if_bridge.h>
 #include <linux/if_link.h>
 #include <linux/if_tun.h>
@@ -24,6 +25,7 @@
 #include <linux/tc_act/tc_mirred.h>
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
+#include <net/if_arp.h>
 #include <poll.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>

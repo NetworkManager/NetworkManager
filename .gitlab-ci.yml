@@ -48,7 +48,7 @@ variables:
   UBUNTU_TAG:  '2020-11-17.0-45915bd6e380'
   DEBIAN_TAG:  '2020-11-17.0-45915bd6e380'
   CENTOS_TAG:  '2020-11-17.0-cbb87607d569'
-  ALPINE_TAG:  '2020-11-17.0-8309a34970a3'
+  ALPINE_TAG:  '2020-11-17.0-eafb903b544b'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
