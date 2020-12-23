@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: LGPL-2.1+
+# SPDX-License-Identifier: LGPL-2.1-or-later
 
 nm_service_providers_source = files('nm-service-providers.c')
 

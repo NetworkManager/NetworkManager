@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 
 #ifndef __NMP_RULES_MANAGER_H__
 #define __NMP_RULES_MANAGER_H__

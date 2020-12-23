@@ -1,5 +1,5 @@
 #!/usr/bin/env lua
--- SPDX-License-Identifier: GPL-2.0+
+-- SPDX-License-Identifier: GPL-2.0-or-later
 --
 -- Copyright (C) 2015 Red Hat, Inc.
 --
