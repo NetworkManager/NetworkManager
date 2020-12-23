@@ -1140,14 +1140,21 @@ nmi_cmdline_reader_parse(const char *sysfs_dir, const char *const *argv, char **
         NMConnection *  connection;
         NMSettingWired *s_wired;
         const char *    bootif = bootif_val;
+        char            prefix[4];
 
-        if (!nm_utils_hwaddr_valid(bootif, ETH_ALEN) && g_str_has_prefix(bootif, "01-")
-            && nm_utils_hwaddr_valid(&bootif[3], ETH_ALEN)) {
-            /*
-             * BOOTIF MAC address can be prefixed with a hardware type identifier.
-             * "01" stays for "wired", no other are known.
-             */
-            bootif += 3;
+        if (!nm_utils_hwaddr_valid(bootif, ETH_ALEN)) {
+            strncpy(prefix, bootif, 3);
+            prefix[3] = '\0';
+
+            if (NM_IN_STRSET(prefix, "01-", "01:", "00-", "00:")
+                && nm_utils_hwaddr_valid(&bootif[3], ETH_ALEN)) {
+                /*
+                 * BOOTIF MAC address can be prefixed with a hardware type identifier.
+                 * "01" stays for "wired", "00" is also accepted as it means "undefined".
+                 * No others are known.
+                 */
+                bootif += 3;
+            }
         }
 
         connection = reader_get_connection(reader, NULL, NM_SETTING_WIRED_SETTING_NAME, FALSE);
