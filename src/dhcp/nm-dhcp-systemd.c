@@ -568,6 +568,8 @@ dhcp_event_cb(sd_dhcp_client *client, int event, gpointer user_data)
             return -ENOMSG;
         }
         break;
+    case SD_DHCP_CLIENT_EVENT_TRANSIENT_FAILURE:
+        break;
     default:
         _LOGW("unhandled DHCP event %d", event);
         break;
@@ -599,6 +601,9 @@ ip4_start(NMDhcpClient *client,
     const char *           hostname;
     const char *           mud_url;
     int                    r, i;
+    GBytes *               bcast_hwaddr;
+    const uint8_t *        bcast_hwaddr_arr;
+    gsize                  bcast_hwaddr_len;
 
     g_return_val_if_fail(!priv->client4, FALSE);
     g_return_val_if_fail(!priv->client6, FALSE);
@@ -623,7 +628,19 @@ ip4_start(NMDhcpClient *client,
         nm_utils_error_set_literal(error, NM_UTILS_ERROR_UNKNOWN, "invalid MAC address");
         return FALSE;
     }
-    r = sd_dhcp_client_set_mac(sd_client, hwaddr_arr, hwaddr_len, (guint16) arp_type);
+
+    bcast_hwaddr_arr = NULL;
+    if ((bcast_hwaddr = nm_dhcp_client_get_broadcast_hw_addr(NM_DHCP_CLIENT(self)))) {
+        bcast_hwaddr_arr = g_bytes_get_data(bcast_hwaddr, &bcast_hwaddr_len);
+        if (bcast_hwaddr_len != hwaddr_len)
+            bcast_hwaddr_arr = NULL;
+    }
+
+    r = sd_dhcp_client_set_mac(sd_client,
+                               hwaddr_arr,
+                               bcast_hwaddr_arr,
+                               hwaddr_len,
+                               (guint16) arp_type);
     if (r < 0) {
         nm_utils_error_set_errno(error, r, "failed to set MAC address: %s");
         return FALSE;

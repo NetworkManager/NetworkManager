@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 #pragma once
 
 #include <fnmatch.h>
@@ -34,6 +34,7 @@ size_t strv_length(char * const *l) _pure_;
 
 int strv_extend_strv(char ***a, char * const *b, bool filter_duplicates);
 int strv_extend_strv_concat(char ***a, char * const *b, const char *suffix);
+int strv_prepend(char ***l, const char *value);
 int strv_extend(char ***l, const char *value);
 int strv_extendf(char ***l, const char *format, ...) _printf_(2,0);
 int strv_extend_front(char ***l, const char *value);
@@ -62,7 +63,7 @@ char **strv_new_internal(const char *x, ...) _sentinel_;
 char **strv_new_ap(const char *x, va_list ap);
 #define strv_new(...) strv_new_internal(__VA_ARGS__, NULL)
 
-#define STRV_IGNORE ((const char *) -1)
+#define STRV_IGNORE ((const char *) POINTER_MAX)
 
 static inline const char* STRV_IFNOTNULL(const char *x) {
         return x ? x : STRV_IGNORE;

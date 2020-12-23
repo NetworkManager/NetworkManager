@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 #ifndef foosddhcpclienthfoo
 #define foosddhcpclienthfoo
 
@@ -40,6 +40,8 @@ enum {
         SD_DHCP_CLIENT_EVENT_EXPIRED            = 3,
         SD_DHCP_CLIENT_EVENT_RENEW              = 4,
         SD_DHCP_CLIENT_EVENT_SELECTING          = 5,
+        SD_DHCP_CLIENT_EVENT_TRANSIENT_FAILURE  = 6, /* Sent when we have not received a reply after the first few attempts.
+                                                      * The client may want to start acquiring link-local addresses. */
 };
 
 enum {
@@ -126,6 +128,7 @@ int sd_dhcp_client_set_ifindex(
 int sd_dhcp_client_set_mac(
                 sd_dhcp_client *client,
                 const uint8_t *addr,
+                const uint8_t *bcast_addr,
                 size_t addr_len,
                 uint16_t arp_type);
 int sd_dhcp_client_set_client_id(

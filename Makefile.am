@@ -1884,6 +1884,7 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/sd-adapt-shared/errno-list.h \
 	shared/systemd/sd-adapt-shared/glob-util.h \
 	shared/systemd/sd-adapt-shared/gunicode.h \
+	shared/systemd/sd-adapt-shared/idn-util.h \
 	shared/systemd/sd-adapt-shared/ioprio.h \
 	shared/systemd/sd-adapt-shared/locale-util.h \
 	shared/systemd/sd-adapt-shared/memfd-util.h \
@@ -1962,6 +1963,8 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/src/basic/process-util.h \
 	shared/systemd/src/basic/random-util.c \
 	shared/systemd/src/basic/random-util.h \
+	shared/systemd/src/basic/ratelimit.c \
+	shared/systemd/src/basic/ratelimit.h \
 	shared/systemd/src/basic/set.h \
 	shared/systemd/src/basic/signal-util.c \
 	shared/systemd/src/basic/signal-util.h \
@@ -1992,6 +1995,7 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/src/basic/util.h \
 	shared/systemd/src/shared/dns-domain.c \
 	shared/systemd/src/shared/dns-domain.h \
+	shared/systemd/src/shared/log-link.h \
 	shared/systemd/src/shared/web-util.c \
 	shared/systemd/src/shared/web-util.h \
 	$(NULL)
@@ -2031,6 +2035,7 @@ src_libnm_systemd_core_la_SOURCES = \
 	src/systemd/sd-adapt-core/conf-parser.h \
 	src/systemd/sd-adapt-core/device-util.h \
 	src/systemd/sd-adapt-core/khash.h \
+	src/systemd/sd-adapt-core/network-util.h \
 	src/systemd/sd-adapt-core/nm-sd-adapt-core.c \
 	src/systemd/sd-adapt-core/nm-sd-adapt-core.h \
 	src/systemd/sd-adapt-core/sd-daemon.h \

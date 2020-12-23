@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 #pragma once
 
 #include <inttypes.h>
@@ -16,7 +16,7 @@
 
 /* Those that can be escaped or double-quoted.
  *
- * Stricly speaking, ! does not need to be escaped, except in interactive
+ * Strictly speaking, ! does not need to be escaped, except in interactive
  * mode, but let's be extra nice to the user and quote ! in case this
  * output is ever used in interactive mode. */
 #define SHELL_NEED_QUOTES SHELL_NEED_ESCAPE GLOB_CHARS "'()<>|&;!"

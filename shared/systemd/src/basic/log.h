@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 #pragma once
 
 #include <stdarg.h>
@@ -44,9 +44,16 @@ typedef enum LogTarget{
 #define ERRNO_VALUE(val)                    (abs(val) & 255)
 
 void log_set_target(LogTarget target);
+
 void log_set_max_level_realm(LogRealm realm, int level);
+
 #define log_set_max_level(level)                \
         log_set_max_level_realm(LOG_REALM, (level))
+
+static inline void log_set_max_level_all_realms(int level) {
+        for (LogRealm realm = 0; realm < _LOG_REALM_MAX; realm++)
+                log_set_max_level_realm(realm, level);
+}
 
 void log_set_facility(int facility);
 
@@ -122,6 +129,31 @@ int log_internal_realm(
 #define log_internal(level, ...) \
         log_internal_realm(LOG_REALM_PLUS_LEVEL(LOG_REALM, (level)), __VA_ARGS__)
 
+#define log_object_internal(level,              \
+                            error,              \
+                            file,               \
+                            line,               \
+                            func,               \
+                            object_field,       \
+                            object,             \
+                            extra_field,        \
+                            extra,              \
+                            format,             \
+                            ...)                \
+    ({                                          \
+        const char *const _object = (object);   \
+                                                \
+        log_internal_realm((level),             \
+                           (error),             \
+                           file,                \
+                           (line),              \
+                           (func),              \
+                           "%s%s" format,       \
+                           _object ?: "",       \
+                           _object ? ": " : "", \
+                           ##__VA_ARGS__);        \
+    })
+
 #if 0 /* NM_IGNORED */
 int log_internalv_realm(
                 int level,
@@ -169,7 +201,7 @@ int log_struct_internal(
                 const char *format, ...) _printf_(6,0) _sentinel_;
 
 int log_oom_internal(
-                LogRealm realm,
+                int level,
                 const char *file,
                 int line,
                 const char *func);
@@ -293,7 +325,8 @@ int log_emergency_level(void);
         log_dump_internal(LOG_REALM_PLUS_LEVEL(LOG_REALM, level), \
                           0, PROJECT_FILE, __LINE__, __func__, buffer)
 
-#define log_oom() log_oom_internal(LOG_REALM, PROJECT_FILE, __LINE__, __func__)
+#define log_oom() log_oom_internal(LOG_REALM_PLUS_LEVEL(LOG_REALM, LOG_ERR), PROJECT_FILE, __LINE__, __func__)
+#define log_oom_debug() log_oom_internal(LOG_REALM_PLUS_LEVEL(LOG_REALM, LOG_DEBUG), PROJECT_FILE, __LINE__, __func__)
 
 bool log_on_console(void) _pure_;
 

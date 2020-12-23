@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 #pragma once
 
 #include <dirent.h>
@@ -20,14 +20,15 @@
 
 typedef enum {
         WRITE_STRING_FILE_CREATE            = 1 << 0,
-        WRITE_STRING_FILE_ATOMIC            = 1 << 1,
-        WRITE_STRING_FILE_AVOID_NEWLINE     = 1 << 2,
-        WRITE_STRING_FILE_VERIFY_ON_FAILURE = 1 << 3,
-        WRITE_STRING_FILE_SYNC              = 1 << 4,
-        WRITE_STRING_FILE_DISABLE_BUFFER    = 1 << 5,
-        WRITE_STRING_FILE_NOFOLLOW          = 1 << 6,
-        WRITE_STRING_FILE_MKDIR_0755        = 1 << 7,
-        WRITE_STRING_FILE_MODE_0600         = 1 << 8,
+        WRITE_STRING_FILE_TRUNCATE          = 1 << 1,
+        WRITE_STRING_FILE_ATOMIC            = 1 << 2,
+        WRITE_STRING_FILE_AVOID_NEWLINE     = 1 << 3,
+        WRITE_STRING_FILE_VERIFY_ON_FAILURE = 1 << 4,
+        WRITE_STRING_FILE_SYNC              = 1 << 5,
+        WRITE_STRING_FILE_DISABLE_BUFFER    = 1 << 6,
+        WRITE_STRING_FILE_NOFOLLOW          = 1 << 7,
+        WRITE_STRING_FILE_MKDIR_0755        = 1 << 8,
+        WRITE_STRING_FILE_MODE_0600         = 1 << 9,
 
         /* And before you wonder, why write_string_file_atomic_label_ts() is a separate function instead of just one
            more flag here: it's about linking: we don't want to pull -lselinux into all users of write_string_file()
@@ -51,11 +52,11 @@ DIR* take_fdopendir(int *dfd);
 FILE* open_memstream_unlocked(char **ptr, size_t *sizeloc);
 FILE* fmemopen_unlocked(void *buf, size_t size, const char *mode);
 
-int write_string_stream_ts(FILE *f, const char *line, WriteStringFileFlags flags, struct timespec *ts);
+int write_string_stream_ts(FILE *f, const char *line, WriteStringFileFlags flags, const struct timespec *ts);
 static inline int write_string_stream(FILE *f, const char *line, WriteStringFileFlags flags) {
         return write_string_stream_ts(f, line, flags, NULL);
 }
-int write_string_file_ts(const char *fn, const char *line, WriteStringFileFlags flags, struct timespec *ts);
+int write_string_file_ts(const char *fn, const char *line, WriteStringFileFlags flags, const struct timespec *ts);
 static inline int write_string_file(const char *fn, const char *line, WriteStringFileFlags flags) {
         return write_string_file_ts(fn, line, flags, NULL);
 }
@@ -63,14 +64,14 @@ static inline int write_string_file(const char *fn, const char *line, WriteStrin
 int write_string_filef(const char *fn, WriteStringFileFlags flags, const char *format, ...) _printf_(3, 4);
 
 int read_one_line_file(const char *filename, char **line);
-int read_full_file_full(int dir_fd, const char *filename, ReadFullFileFlags flags, char **contents, size_t *size);
-static inline int read_full_file(const char *filename, char **contents, size_t *size) {
-        return read_full_file_full(AT_FDCWD, filename, 0, contents, size);
+int read_full_file_full(int dir_fd, const char *filename, uint64_t offset, size_t size, ReadFullFileFlags flags, const char *bind_name, char **ret_contents, size_t *ret_size);
+static inline int read_full_file(const char *filename, char **ret_contents, size_t *ret_size) {
+        return read_full_file_full(AT_FDCWD, filename, UINT64_MAX, SIZE_MAX, 0, NULL, ret_contents, ret_size);
 }
 int read_full_virtual_file(const char *filename, char **ret_contents, size_t *ret_size);
-int read_full_stream_full(FILE *f, const char *filename, ReadFullFileFlags flags, char **contents, size_t *size);
-static inline int read_full_stream(FILE *f, char **contents, size_t *size) {
-        return read_full_stream_full(f, NULL, 0, contents, size);
+int read_full_stream_full(FILE *f, const char *filename, uint64_t offset, size_t size, ReadFullFileFlags flags, char **ret_contents, size_t *ret_size);
+static inline int read_full_stream(FILE *f, char **ret_contents, size_t *ret_size) {
+        return read_full_stream_full(f, NULL, UINT64_MAX, SIZE_MAX, 0, ret_contents, ret_size);
 }
 
 int verify_file(const char *fn, const char *blob, bool accept_extra_nl);

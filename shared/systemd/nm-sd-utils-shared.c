@@ -88,7 +88,9 @@ nm_sd_dns_name_is_valid(const char *s)
 gboolean
 nm_sd_hostname_is_valid(const char *s, bool allow_trailing_dot)
 {
-    return hostname_is_valid(s, allow_trailing_dot);
+    return hostname_is_valid(s,
+                             allow_trailing_dot ? VALID_HOSTNAME_TRAILING_DOT
+                                                : (ValidHostnameFlags) 0);
 }
 
 /*****************************************************************************/

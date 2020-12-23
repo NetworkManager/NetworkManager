@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 #pragma once
 
 #include "extract-word.h"
@@ -128,10 +128,12 @@ int _set_ensure_consume(Set **s, const struct hash_ops *hash_ops, void *key  HAS
 
 int set_consume(Set *s, void *value);
 
-int _set_put_strdup(Set **s, const char *p  HASHMAP_DEBUG_PARAMS);
-#define set_put_strdup(s, p) _set_put_strdup(s, p  HASHMAP_DEBUG_SRC_ARGS)
-int _set_put_strdupv(Set **s, char **l  HASHMAP_DEBUG_PARAMS);
-#define set_put_strdupv(s, l) _set_put_strdupv(s, l  HASHMAP_DEBUG_SRC_ARGS)
+int _set_put_strdup_full(Set **s, const struct hash_ops *hash_ops, const char *p  HASHMAP_DEBUG_PARAMS);
+#define set_put_strdup_full(s, hash_ops, p) _set_put_strdup_full(s, hash_ops, p  HASHMAP_DEBUG_SRC_ARGS)
+#define set_put_strdup(s, p) set_put_strdup_full(s, &string_hash_ops_free, p)
+int _set_put_strdupv_full(Set **s, const struct hash_ops *hash_ops, char **l  HASHMAP_DEBUG_PARAMS);
+#define set_put_strdupv_full(s, hash_ops, l) _set_put_strdupv_full(s, hash_ops, l  HASHMAP_DEBUG_SRC_ARGS)
+#define set_put_strdupv(s, l) set_put_strdupv_full(s, &string_hash_ops_free, l)
 
 int set_put_strsplit(Set *s, const char *v, const char *separators, ExtractFlags flags);
 
@@ -148,3 +150,5 @@ DEFINE_TRIVIAL_CLEANUP_FUNC(Set*, set_free_free);
 
 #define _cleanup_set_free_ _cleanup_(set_freep)
 #define _cleanup_set_free_free_ _cleanup_(set_free_freep)
+
+int set_strjoin(Set *s, const char *separator, bool wrap_with_separator, char **ret);

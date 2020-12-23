@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 
 #include "nm-sd-adapt-shared.h"
 
@@ -168,7 +168,7 @@ int container_get_leader(const char *machine, pid_t *pid) {
                 return 0;
         }
 
-        if (!machine_name_is_valid(machine))
+        if (!hostname_is_valid(machine, 0))
                 return -EINVAL;
 
         p = strjoina("/run/systemd/machines/", machine);
@@ -196,8 +196,8 @@ int container_get_leader(const char *machine, pid_t *pid) {
 }
 
 int version(void) {
-        puts("systemd " STRINGIFY(PROJECT_VERSION) " (" GIT_VERSION ")\n"
-             SYSTEMD_FEATURES);
+        printf("systemd " STRINGIFY(PROJECT_VERSION) " (" GIT_VERSION ")\n%s\n",
+               systemd_features);
         return 0;
 }
 

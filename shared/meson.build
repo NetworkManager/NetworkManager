@@ -207,6 +207,7 @@ sources = files(
   'systemd/src/basic/prioq.c',
   'systemd/src/basic/process-util.c',
   'systemd/src/basic/random-util.c',
+  'systemd/src/basic/ratelimit.c',
   'systemd/src/basic/signal-util.c',
   'systemd/src/basic/socket-util.c',
   'systemd/src/basic/stat-util.c',

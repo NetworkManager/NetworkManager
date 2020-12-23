@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 
 #include "nm-sd-adapt-shared.h"
 
@@ -298,7 +298,7 @@ int iovw_put(struct iovec_wrapper *iovw, void *data, size_t len) {
                 return -E2BIG;
 
         if (!GREEDY_REALLOC(iovw->iovec, iovw->size_bytes, iovw->count + 1))
-                return log_oom();
+                return -ENOMEM;
 
         iovw->iovec[iovw->count++] = IOVEC_MAKE(data, len);
         return 0;
@@ -310,7 +310,7 @@ int iovw_put_string_field(struct iovec_wrapper *iovw, const char *field, const c
 
         x = strjoin(field, value);
         if (!x)
-                return log_oom();
+                return -ENOMEM;
 
         r = iovw_put(iovw, x, strlen(x));
         if (r >= 0)

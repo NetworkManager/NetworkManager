@@ -1,8 +1,9 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 
 #include "nm-sd-adapt-shared.h"
 
 #include <errno.h>
+#include <inttypes.h>
 #include <net/ethernet.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -10,6 +11,20 @@
 #include "ether-addr-util.h"
 #include "macro.h"
 #include "string-util.h"
+
+char* hw_addr_to_string(const hw_addr_data *addr, char buffer[HW_ADDR_TO_STRING_MAX]) {
+        assert(addr);
+        assert(buffer);
+        assert(addr->length <= HW_ADDR_MAX_SIZE);
+
+        for (size_t i = 0; i < addr->length; i++) {
+                sprintf(&buffer[3*i], "%02"PRIx8, addr->addr.bytes[i]);
+                if (i < addr->length - 1)
+                        buffer[3*i + 2] = ':';
+        }
+
+        return buffer;
+}
 
 char* ether_addr_to_string(const struct ether_addr *addr, char buffer[ETHER_ADDR_TO_STRING_MAX]) {
         assert(addr);

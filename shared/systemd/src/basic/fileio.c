@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 
 #include "nm-sd-adapt-shared.h"
 
@@ -120,7 +120,7 @@ int write_string_stream_ts(
                 FILE *f,
                 const char *line,
                 WriteStringFileFlags flags,
-                struct timespec *ts) {
+                const struct timespec *ts) {
 
         bool needs_nl;
         int r, fd;
@@ -164,7 +164,7 @@ int write_string_stream_ts(
                 return r;
 
         if (ts) {
-                struct timespec twice[2] = {*ts, *ts};
+                const struct timespec twice[2] = {*ts, *ts};
 
                 if (futimens(fd, twice) < 0)
                         return -errno;
@@ -177,7 +177,7 @@ static int write_string_file_atomic(
                 const char *fn,
                 const char *line,
                 WriteStringFileFlags flags,
-                struct timespec *ts) {
+                const struct timespec *ts) {
 
         _cleanup_fclose_ FILE *f = NULL;
         _cleanup_free_ char *p = NULL;
@@ -224,7 +224,7 @@ int write_string_file_ts(
                 const char *fn,
                 const char *line,
                 WriteStringFileFlags flags,
-                struct timespec *ts) {
+                const struct timespec *ts) {
 
         _cleanup_fclose_ FILE *f = NULL;
         int q, r, fd;
@@ -255,7 +255,8 @@ int write_string_file_ts(
         /* We manually build our own version of fopen(..., "we") that works without O_CREAT and with O_NOFOLLOW if needed. */
         fd = open(fn, O_WRONLY|O_CLOEXEC|O_NOCTTY |
                   (FLAGS_SET(flags, WRITE_STRING_FILE_NOFOLLOW) ? O_NOFOLLOW : 0) |
-                  (FLAGS_SET(flags, WRITE_STRING_FILE_CREATE) ? O_CREAT : 0),
+                  (FLAGS_SET(flags, WRITE_STRING_FILE_CREATE) ? O_CREAT : 0) |
+                  (FLAGS_SET(flags, WRITE_STRING_FILE_TRUNCATE) ? O_TRUNC : 0),
                   (FLAGS_SET(flags, WRITE_STRING_FILE_MODE_0600) ? 0600 : 0666));
         if (fd < 0) {
                 r = -errno;
@@ -475,12 +476,13 @@ int read_full_virtual_file(const char *filename, char **ret_contents, size_t *re
 int read_full_stream_full(
                 FILE *f,
                 const char *filename,
+                uint64_t offset,
+                size_t size,
                 ReadFullFileFlags flags,
                 char **ret_contents,
                 size_t *ret_size) {
 
         _cleanup_free_ char *buf = NULL;
-        struct stat st;
         size_t n, n_next, l;
         int fd, r;
 
@@ -488,31 +490,44 @@ int read_full_stream_full(
         assert(ret_contents);
         assert(!FLAGS_SET(flags, READ_FULL_FILE_UNBASE64 | READ_FULL_FILE_UNHEX));
 
-        n_next = LINE_MAX; /* Start size */
+        if (offset != UINT64_MAX && offset > LONG_MAX)
+                return -ERANGE;
+
+        n_next = size != SIZE_MAX ? size : LINE_MAX; /* Start size */
 
         fd = fileno(f);
-        if (fd >= 0) { /* If the FILE* object is backed by an fd (as opposed to memory or such, see fmemopen()), let's
-                        * optimize our buffering */
+        if (fd >= 0) { /* If the FILE* object is backed by an fd (as opposed to memory or such, see
+                        * fmemopen()), let's optimize our buffering */
+                struct stat st;
 
                 if (fstat(fd, &st) < 0)
                         return -errno;
 
                 if (S_ISREG(st.st_mode)) {
+                        if (size == SIZE_MAX) {
+                                uint64_t rsize =
+                                        LESS_BY((uint64_t) st.st_size, offset == UINT64_MAX ? 0 : offset);
 
-                        /* Safety check */
-                        if (st.st_size > READ_FULL_BYTES_MAX)
-                                return -E2BIG;
+                                /* Safety check */
+                                if (rsize > READ_FULL_BYTES_MAX)
+                                        return -E2BIG;
 
-                        /* Start with the right file size. Note that we increase the size
-                         * to read here by one, so that the first read attempt already
-                         * makes us notice the EOF. */
-                        if (st.st_size > 0)
-                                n_next = st.st_size + 1;
+                                /* Start with the right file size. Note that we increase the size to read
+                                 * here by one, so that the first read attempt already makes us notice the
+                                 * EOF. If the reported size of the file is zero, we avoid this logic
+                                 * however, since quite likely it might be a virtual file in procfs that all
+                                 * report a zero file size. */
+                                if (st.st_size > 0)
+                                        n_next = rsize + 1;
+                        }
 
                         if (flags & READ_FULL_FILE_WARN_WORLD_READABLE)
                                 (void) warn_file_is_world_accessible(filename, &st, NULL, 0);
                 }
         }
+
+        if (offset != UINT64_MAX && fseek(f, offset, SEEK_SET) < 0)
+                return -errno;
 
         n = l = 0;
         for (;;) {
@@ -549,6 +564,11 @@ int read_full_stream_full(
                 }
                 if (feof(f))
                         break;
+
+                if (size != SIZE_MAX) { /* If we got asked to read some specific size, we already sized the buffer right, hence leave */
+                        assert(l == size);
+                        break;
+                }
 
                 assert(k > 0); /* we can't have read zero bytes because that would have been EOF */
 
@@ -605,12 +625,21 @@ finalize:
         return r;
 }
 
-int read_full_file_full(int dir_fd, const char *filename, ReadFullFileFlags flags, char **contents, size_t *size) {
+int read_full_file_full(
+                int dir_fd,
+                const char *filename,
+                uint64_t offset,
+                size_t size,
+                ReadFullFileFlags flags,
+                const char *bind_name,
+                char **ret_contents,
+                size_t *ret_size) {
+
         _cleanup_fclose_ FILE *f = NULL;
         int r;
 
         assert(filename);
-        assert(contents);
+        assert(ret_contents);
 
         r = xfopenat(dir_fd, filename, "re", 0, &f);
         if (r < 0) {
@@ -624,6 +653,10 @@ int read_full_file_full(int dir_fd, const char *filename, ReadFullFileFlags flag
                 /* If this is enabled, let's try to connect to it */
                 if (!FLAGS_SET(flags, READ_FULL_FILE_CONNECT_SOCKET))
                         return -ENXIO;
+
+                /* Seeking is not supported on AF_UNIX sockets */
+                if (offset != UINT64_MAX)
+                        return -ESPIPE;
 
                 if (dir_fd == AT_FDCWD)
                         r = sockaddr_un_set_path(&sa.un, filename);
@@ -648,6 +681,20 @@ int read_full_file_full(int dir_fd, const char *filename, ReadFullFileFlags flag
                 if (sk < 0)
                         return -errno;
 
+                if (bind_name) {
+                        /* If the caller specified a socket name to bind to, do so before connecting. This is
+                         * useful to communicate some minor, short meta-information token from the client to
+                         * the server. */
+                        union sockaddr_union bsa;
+
+                        r = sockaddr_un_set_path(&bsa.un, bind_name);
+                        if (r < 0)
+                                return r;
+
+                        if (bind(sk, &bsa.sa, r) < 0)
+                                return r;
+                }
+
                 if (connect(sk, &sa.sa, SOCKADDR_UN_LEN(sa.un)) < 0)
                         return errno == ENOTSOCK ? -ENXIO : -errno; /* propagate original error if this is
                                                                      * not a socket after all */
@@ -664,7 +711,7 @@ int read_full_file_full(int dir_fd, const char *filename, ReadFullFileFlags flag
 
         (void) __fsetlocking(f, FSETLOCKING_BYCALLER);
 
-        return read_full_stream_full(f, filename, flags, contents, size);
+        return read_full_stream_full(f, filename, offset, size, flags, ret_contents, ret_size);
 }
 
 #if 0 /* NM_IGNORED */
