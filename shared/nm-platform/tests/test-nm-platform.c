@@ -4,9 +4,19 @@
 
 #include "nm-default.h"
 
+#include "nm-log-core/nm-logging.h"
 #include "nm-platform/nm-netlink.h"
+#include "nm-platform/nmp-netns.h"
 
 #include "nm-utils/nm-test-utils.h"
+
+/*****************************************************************************/
+
+void
+_nm_logging_clear_platform_logging_cache(void)
+{
+    /* this symbols is required by nm-log-core library. */
+}
 
 /*****************************************************************************/
 
@@ -72,6 +82,19 @@ test_use_symbols(void)
         (void (*)(void)) nl_send,
         (void (*)(void)) nl_send_auto,
         (void (*)(void)) nl_recv,
+
+        (void (*)(void)) nmp_netns_bind_to_path,
+        (void (*)(void)) nmp_netns_bind_to_path_destroy,
+        (void (*)(void)) nmp_netns_get_current,
+        (void (*)(void)) nmp_netns_get_fd_mnt,
+        (void (*)(void)) nmp_netns_get_fd_net,
+        (void (*)(void)) nmp_netns_get_initial,
+        (void (*)(void)) nmp_netns_is_initial,
+        (void (*)(void)) nmp_netns_new,
+        (void (*)(void)) nmp_netns_pop,
+        (void (*)(void)) nmp_netns_push,
+        (void (*)(void)) nmp_netns_push_type,
+
         NULL,
     };
 

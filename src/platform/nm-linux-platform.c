@@ -43,7 +43,7 @@
 #include "nm-platform/nm-netlink.h"
 #include "nm-core-utils.h"
 #include "nmp-object.h"
-#include "nmp-netns.h"
+#include "nm-platform/nmp-netns.h"
 #include "nm-platform-utils.h"
 #include "nm-platform-private.h"
 #include "wifi/nm-wifi-utils.h"

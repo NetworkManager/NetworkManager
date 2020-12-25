@@ -13,6 +13,8 @@
 #include <sys/types.h>
 #include <pthread.h>
 
+#include "nm-log-core/nm-logging.h"
+
 /*****************************************************************************/
 
 /* NOTE: NMPNetns and all code used here must be thread-safe! */

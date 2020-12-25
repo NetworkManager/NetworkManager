@@ -6,6 +6,8 @@
 #ifndef __NM_NETNS_H__
 #define __NM_NETNS_H__
 
+#include "nm-platform/nmp-base.h"
+
 #define NM_TYPE_NETNS            (nm_netns_get_type())
 #define NM_NETNS(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_NETNS, NMNetns))
 #define NM_NETNS_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_NETNS, NMNetnsClass))

@@ -15,7 +15,7 @@
 #include "nm-ndisc-private.h"
 #include "nm-utils.h"
 #include "platform/nm-platform.h"
-#include "platform/nmp-netns.h"
+#include "nm-platform/nmp-netns.h"
 #include "nm-l3-config-data.h"
 
 #define _NMLOG_PREFIX_NAME "ndisc"

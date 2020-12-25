@@ -9,6 +9,8 @@
 #include "nm-dbus-interface.h"
 #include "nm-core-types-internal.h"
 
+#include "nm-platform/nmp-base.h"
+
 #include "nm-core-utils.h"
 #include "nm-setting-vlan.h"
 #include "nm-setting-wired.h"

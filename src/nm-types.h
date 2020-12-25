@@ -121,7 +121,6 @@ typedef struct _NMPlatformIP4Route       NMPlatformIP4Route;
 typedef struct _NMPlatformIP6Address     NMPlatformIP6Address;
 typedef struct _NMPlatformIP6Route       NMPlatformIP6Route;
 typedef struct _NMPlatformLink           NMPlatformLink;
-typedef struct _NMPNetns                 NMPNetns;
 typedef struct _NMPObject                NMPObject;
 
 typedef enum {

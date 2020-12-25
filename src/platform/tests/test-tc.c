@@ -6,7 +6,7 @@
 
 #include "nm-test-utils-core.h"
 #include "platform/nmp-object.h"
-#include "platform/nmp-netns.h"
+#include "nm-platform/nmp-netns.h"
 #include "platform/nm-platform-utils.h"
 #include "test-common.h"
 

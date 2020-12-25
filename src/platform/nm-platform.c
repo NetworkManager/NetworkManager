@@ -32,7 +32,7 @@
 #include "nm-platform-utils.h"
 #include "nm-platform-private.h"
 #include "nmp-object.h"
-#include "nmp-netns.h"
+#include "nm-platform/nmp-netns.h"
 
 /*****************************************************************************/
 

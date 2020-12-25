@@ -38,7 +38,6 @@ sources = files(
   'platform/nm-linux-platform.c',
   'platform/nm-platform.c',
   'platform/nm-platform-utils.c',
-  'platform/nmp-netns.c',
   'platform/nmp-object.c',
   'platform/nmp-rules-manager.c',
   'main-utils.c',
