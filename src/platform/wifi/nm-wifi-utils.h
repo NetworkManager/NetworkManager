@@ -11,7 +11,7 @@
 
 #include "nm-dbus-interface.h"
 #include "nm-setting-wireless.h"
-#include "platform/nm-netlink.h"
+#include "nm-platform/nm-netlink.h"
 
 typedef struct NMWifiUtils NMWifiUtils;
 

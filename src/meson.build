@@ -5,7 +5,10 @@ src_inc = include_directories('.')
 daemon_nm_default_dep = declare_dependency(
   sources: libnm_core_enum_sources[1],
   include_directories: src_inc,
-  dependencies: libnm_core_nm_default_dep,
+  dependencies: [
+    libnm_core_nm_default_dep,
+    libnm_platform_dep,
+  ],
 )
 
 install_data(
@@ -28,7 +31,6 @@ sources = files(
   'dhcp/nm-dhcp-options.c',
   'ndisc/nm-lndp-ndisc.c',
   'ndisc/nm-ndisc.c',
-  'platform/nm-netlink.c',
   'platform/wifi/nm-wifi-utils-nl80211.c',
   'platform/wifi/nm-wifi-utils.c',
   'platform/wpan/nm-wpan-utils.c',

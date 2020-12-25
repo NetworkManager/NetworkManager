@@ -40,7 +40,7 @@
 
 #include "nm-glib-aux/nm-secret-utils.h"
 #include "nm-glib-aux/nm-c-list.h"
-#include "nm-netlink.h"
+#include "nm-platform/nm-netlink.h"
 #include "nm-core-utils.h"
 #include "nmp-object.h"
 #include "nmp-netns.h"
