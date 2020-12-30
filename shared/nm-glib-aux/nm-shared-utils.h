@@ -982,6 +982,12 @@ typedef enum {
 #define NM_UTILS_ERROR (nm_utils_error_quark())
 GQuark nm_utils_error_quark(void);
 
+GQuark nm_manager_error_quark(void);
+#define _NM_MANAGER_ERROR (nm_manager_error_quark())
+
+#define _NM_MANAGER_ERROR_UNKNOWN_LOG_LEVEL  10
+#define _NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN 11
+
 void nm_utils_error_set_cancelled(GError **error, gboolean is_disposing, const char *instance_name);
 
 static inline GError *

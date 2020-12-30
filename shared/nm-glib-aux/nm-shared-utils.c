@@ -2267,6 +2267,8 @@ _nm_utils_ascii_str_to_bool(const char *str, int default_value)
 
 /*****************************************************************************/
 
+NM_CACHED_QUARK_FCN("nm-manager-error-quark", nm_manager_error_quark);
+
 NM_CACHED_QUARK_FCN("nm-utils-error-quark", nm_utils_error_quark);
 
 void
