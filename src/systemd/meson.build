@@ -36,9 +36,13 @@ libnm_systemd_core = static_library(
     'nm-sd-utils-dhcp.c',
     'sd-adapt-core/nm-sd-adapt-core.c',
   ),
-  include_directories: incs,
+  include_directories: [
+    incs,
+    src_inc,
+  ],
   dependencies: [
-    daemon_nm_default_dep,
+    glib_nm_default_dep,
+    libnm_core_dep,
     libnm_systemd_shared_dep,
   ],
   c_args: '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD',
@@ -49,7 +53,7 @@ libnm_systemd_core_dep = declare_dependency(
   include_directories: incs,
   dependencies: [
     glib_dep,
-    daemon_nm_default_dep,
+    libnm_core_dep,
     libnm_systemd_shared_dep,
   ],
   link_with: libnm_systemd_core,

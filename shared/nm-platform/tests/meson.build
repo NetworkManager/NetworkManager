@@ -7,7 +7,10 @@ exe = executable(
     '-DNETWORKMANAGER_COMPILATION_TEST',
     '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_PROG)',
   ],
-  dependencies: libnm_platform_dep,
+  dependencies: [
+    libnm_log_core_dep,
+    libnm_platform_dep,
+  ],
   link_with: libnm_systemd_logging_stub,
 )
 

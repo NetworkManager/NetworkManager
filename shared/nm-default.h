@@ -281,7 +281,7 @@ _nm_g_return_if_fail_warning(const char *log_domain, const char *file, int line)
     #if (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_DAEMON
         #include "nm-core-types.h"
         #include "nm-types.h"
-        #include "nm-logging.h"
+        #include "nm-log-core/nm-logging.h"
     #endif
 
     #if (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_PRIVATE

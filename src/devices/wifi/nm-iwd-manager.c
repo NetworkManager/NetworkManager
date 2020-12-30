@@ -9,7 +9,6 @@
 
 #include <net/if.h>
 
-#include "nm-logging.h"
 #include "nm-core-internal.h"
 #include "nm-manager.h"
 #include "nm-device-iwd.h"

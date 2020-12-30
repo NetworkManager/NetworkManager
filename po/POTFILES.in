@@ -147,6 +147,7 @@ libnm/nm-vpn-plugin-old.c
 libnm/nm-vpn-service-plugin.c
 data/org.freedesktop.NetworkManager.policy.in.in
 shared/nm-glib-aux/nm-shared-utils.c
+shared/nm-log-core/nm-logging.c
 src/NetworkManagerUtils.c
 src/main.c
 src/main-utils.c
@@ -179,7 +180,6 @@ src/devices/wifi/nm-wifi-utils.c
 src/devices/wwan/nm-modem-broadband.c
 src/nm-config.c
 src/nm-iface-helper.c
-src/nm-logging.c
 src/nm-manager.c
 src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c
 src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c

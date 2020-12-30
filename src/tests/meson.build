@@ -32,14 +32,17 @@ endforeach
 exe = executable(
   'test-systemd',
   'test-systemd.c',
-  dependencies: daemon_nm_default_dep,
+  include_directories: [
+    top_inc,
+    src_inc,
+  ],
+  dependencies: [
+    libnm_systemd_core_dep,
+    libnm_systemd_shared_dep,
+  ],
   c_args: [
     '-DNETWORKMANAGER_COMPILATION_TEST',
     '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD',
-  ],
-  link_with: [
-    libnm_systemd_core,
-    libnm_systemd_shared,
   ],
 )
 

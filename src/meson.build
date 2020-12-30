@@ -7,6 +7,7 @@ daemon_nm_default_dep = declare_dependency(
   include_directories: src_inc,
   dependencies: [
     libnm_core_nm_default_dep,
+    libnm_log_core_dep,
     libnm_platform_dep,
   ],
 )
@@ -52,7 +53,6 @@ sources = files(
   'nm-ip-config.c',
   'nm-ip4-config.c',
   'nm-ip6-config.c',
-  'nm-logging.c',
 )
 
 deps = [
