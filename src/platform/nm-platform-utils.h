@@ -8,7 +8,7 @@
 
 #include "nm-platform.h"
 #include "nm-setting-wired.h"
-#include "nm-libnm-core-intern/nm-ethtool-utils.h"
+#include "nm-base/nm-base.h"
 
 /*****************************************************************************/
 

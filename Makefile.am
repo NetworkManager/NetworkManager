@@ -553,6 +553,10 @@ EXTRA_DIST += \
 
 ###############################################################################
 
+EXTRA_DIST += shared/nm-base/nm-base.h
+
+###############################################################################
+
 noinst_LTLIBRARIES += libnm-core/nm-libnm-core-intern/libnm-libnm-core-intern.la
 
 libnm_core_nm_libnm_core_intern_libnm_libnm_core_intern_la_CPPFLAGS = \
