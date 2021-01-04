@@ -114,16 +114,58 @@ _iface_data_free(gpointer data)
 }
 
 static void
-_get_config_data_free(gpointer data)
+_get_config_task_maybe_return(NMCSProviderGetConfigTaskData *get_config_data, GError *error_take)
 {
-    NMCSProviderGetConfigTaskData *get_config_data = data;
+    gs_free_error GError *error = error_take;
 
-    if (get_config_data->extra_destroy)
-        get_config_data->extra_destroy(get_config_data->extra_data);
+    nm_assert(get_config_data);
+    nm_assert(G_IS_TASK(get_config_data->task));
+
+    if (!error) {
+        if (get_config_data->n_pending > 0)
+            return;
+    }
+
+    g_cancellable_cancel(get_config_data->intern_cancellable);
+
+    if (error) {
+        if (nm_utils_error_is_cancelled(error))
+            _LOGD("get-config: cancelled");
+        else
+            _LOGD("get-config: failed: %s", error->message);
+        g_task_return_error(get_config_data->task, g_steal_pointer(&error));
+    } else {
+        _LOGD("get-config: success");
+        g_task_return_pointer(get_config_data->task,
+                              g_hash_table_ref(get_config_data->result_dict),
+                              (GDestroyNotify) g_hash_table_unref);
+    }
+
+    nm_clear_g_signal_handler(g_task_get_cancellable(get_config_data->task),
+                              &get_config_data->extern_cancelled_id);
+
+    if (get_config_data->extra_data_destroy)
+        get_config_data->extra_data_destroy(get_config_data->extra_data);
 
     nm_clear_pointer(&get_config_data->result_dict, g_hash_table_unref);
 
+    nm_g_object_unref(get_config_data->intern_cancellable);
+    g_object_unref(get_config_data->task);
     nm_g_slice_free(get_config_data);
+}
+
+void
+_nmcs_provider_get_config_task_maybe_return(NMCSProviderGetConfigTaskData *get_config_data,
+                                            GError *                       error_take)
+{
+    nm_assert(!error_take || !nm_utils_error_is_cancelled(error_take));
+    _get_config_task_maybe_return(get_config_data, error_take);
+}
+
+static void
+_get_config_cancelled_cb(GObject *object, gpointer user_data)
+{
+    _get_config_task_maybe_return(user_data, nm_utils_error_new_cancelled(FALSE, NULL));
 }
 
 void
@@ -139,14 +181,14 @@ nmcs_provider_get_config(NMCSProvider *      self,
     g_return_if_fail(NMCS_IS_PROVIDER(self));
     g_return_if_fail(!cancellable || G_IS_CANCELLABLE(cancellable));
 
+    _LOGD("get-config: starting");
+
     get_config_data  = g_slice_new(NMCSProviderGetConfigTaskData);
     *get_config_data = (NMCSProviderGetConfigTaskData){
         .task = nm_g_task_new(self, cancellable, nmcs_provider_get_config, callback, user_data),
         .any  = any,
         .result_dict = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, _iface_data_free),
     };
-
-    g_task_set_task_data(get_config_data->task, get_config_data, _get_config_data_free);
 
     nmcs_wait_for_objects_register(get_config_data->task);
 
@@ -156,7 +198,21 @@ nmcs_provider_get_config(NMCSProvider *      self,
                             nmcs_provider_get_config_iface_data_new(TRUE));
     }
 
-    _LOGD("get-config: starting");
+    if (cancellable) {
+        gulong cancelled_id;
+
+        cancelled_id = g_cancellable_connect(cancellable,
+                                             G_CALLBACK(_get_config_cancelled_cb),
+                                             get_config_data,
+                                             NULL);
+        if (cancelled_id == 0) {
+            /* the callback was already invoked synchronously and the task already returned. */
+            return;
+        }
+
+        get_config_data->extern_cancelled_id = cancelled_id;
+        get_config_data->intern_cancellable  = g_cancellable_new();
+    }
 
     NMCS_PROVIDER_GET_CLASS(self)->get_config(self, get_config_data);
 }
