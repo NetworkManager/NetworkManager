@@ -89,7 +89,7 @@ detect(NMCSProvider *provider, GTask *task)
 /*****************************************************************************/
 
 typedef struct {
-    NMCSProviderGetConfigTaskData *config_data;
+    NMCSProviderGetConfigTaskData *get_config_data;
     guint                          n_ifaces_pending;
     GError *                       error;
 } GCPData;
@@ -104,7 +104,7 @@ typedef struct {
 static void
 _get_config_maybe_task_return(GCPData *gcp_data, GError *error_take)
 {
-    NMCSProviderGetConfigTaskData *config_data = gcp_data->config_data;
+    NMCSProviderGetConfigTaskData *get_config_data = gcp_data->get_config_data;
 
     if (error_take) {
         if (!gcp_data->error)
@@ -125,16 +125,16 @@ _get_config_maybe_task_return(GCPData *gcp_data, GError *error_take)
             _LOGD("get-config: cancelled");
         else
             _LOGD("get-config: failed: %s", gcp_data->error->message);
-        g_task_return_error(config_data->task, g_steal_pointer(&gcp_data->error));
+        g_task_return_error(get_config_data->task, g_steal_pointer(&gcp_data->error));
     } else {
         _LOGD("get-config: success");
-        g_task_return_pointer(config_data->task,
-                              g_hash_table_ref(config_data->result_dict),
+        g_task_return_pointer(get_config_data->task,
+                              g_hash_table_ref(get_config_data->result_dict),
                               (GDestroyNotify) g_hash_table_unref);
     }
 
     nm_g_slice_free(gcp_data);
-    g_object_unref(config_data->task);
+    g_object_unref(get_config_data->task);
 }
 
 static void
@@ -256,7 +256,7 @@ _get_config_ips_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
                                 HTTP_POLL_TIMEOUT_MS,
                                 HTTP_RATE_LIMIT_MS,
                                 NM_MAKE_STRV(NM_GCP_METADATA_HEADER),
-                                g_task_get_cancellable(gcp_data->config_data->task),
+                                g_task_get_cancellable(gcp_data->get_config_data->task),
                                 NULL,
                                 NULL,
                                 _get_config_fip_cb,
@@ -289,7 +289,8 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         goto iface_error;
 
     hwaddr = nmcs_utils_hwaddr_normalize(g_bytes_get_data(response, NULL), -1);
-    iface_data->iface_get_config = g_hash_table_lookup(gcp_data->config_data->result_dict, hwaddr);
+    iface_data->iface_get_config =
+        g_hash_table_lookup(gcp_data->get_config_data->result_dict, hwaddr);
     if (!iface_data->iface_get_config) {
         _LOGI("GCP interface[%" G_GSSIZE_FORMAT "]: did not find a matching device",
               iface_data->iface_idx);
@@ -311,7 +312,7 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
                             HTTP_POLL_TIMEOUT_MS,
                             HTTP_RATE_LIMIT_MS,
                             NM_MAKE_STRV(NM_GCP_METADATA_HEADER),
-                            g_task_get_cancellable(gcp_data->config_data->task),
+                            g_task_get_cancellable(gcp_data->get_config_data->task),
                             NULL,
                             NULL,
                             _get_config_ips_list_cb,
@@ -396,7 +397,7 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
                                 HTTP_POLL_TIMEOUT_MS,
                                 HTTP_RATE_LIMIT_MS,
                                 NM_MAKE_STRV(NM_GCP_METADATA_HEADER),
-                                g_task_get_cancellable(gcp_data->config_data->task),
+                                g_task_get_cancellable(gcp_data->get_config_data->task),
                                 NULL,
                                 NULL,
                                 _get_config_iface_cb,
@@ -417,7 +418,7 @@ get_config(NMCSProvider *provider, NMCSProviderGetConfigTaskData *get_config_dat
 
     gcp_data  = g_slice_new(GCPData);
     *gcp_data = (GCPData){
-        .config_data      = get_config_data,
+        .get_config_data  = get_config_data,
         .n_ifaces_pending = 0,
         .error            = NULL,
     };
@@ -429,7 +430,7 @@ get_config(NMCSProvider *provider, NMCSProviderGetConfigTaskData *get_config_dat
                             HTTP_POLL_TIMEOUT_MS,
                             HTTP_RATE_LIMIT_MS,
                             NM_MAKE_STRV(NM_GCP_METADATA_HEADER),
-                            g_task_get_cancellable(gcp_data->config_data->task),
+                            g_task_get_cancellable(gcp_data->get_config_data->task),
                             NULL,
                             NULL,
                             _get_net_ifaces_list_cb,

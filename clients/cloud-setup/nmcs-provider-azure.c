@@ -94,7 +94,7 @@ detect(NMCSProvider *provider, GTask *task)
 /*****************************************************************************/
 
 typedef struct {
-    NMCSProviderGetConfigTaskData *config_data;
+    NMCSProviderGetConfigTaskData *get_config_data;
     guint                          n_ifaces_pending;
     GError *                       error;
 } AzureData;
@@ -117,7 +117,7 @@ _azure_iface_data_free(AzureIfaceData *iface_data)
 static void
 _get_config_maybe_task_return(AzureData *azure_data, GError *error_take)
 {
-    NMCSProviderGetConfigTaskData *config_data = azure_data->config_data;
+    NMCSProviderGetConfigTaskData *get_config_data = azure_data->get_config_data;
 
     if (error_take) {
         if (!azure_data->error)
@@ -138,16 +138,16 @@ _get_config_maybe_task_return(AzureData *azure_data, GError *error_take)
             _LOGD("get-config: cancelled");
         else
             _LOGD("get-config: failed: %s", azure_data->error->message);
-        g_task_return_error(config_data->task, g_steal_pointer(&azure_data->error));
+        g_task_return_error(get_config_data->task, g_steal_pointer(&azure_data->error));
     } else {
         _LOGD("get-config: success");
-        g_task_return_pointer(config_data->task,
-                              g_hash_table_ref(config_data->result_dict),
+        g_task_return_pointer(get_config_data->task,
+                              g_hash_table_ref(get_config_data->result_dict),
                               (GDestroyNotify) g_hash_table_unref);
     }
 
     nm_g_slice_free(azure_data);
-    g_object_unref(config_data->task);
+    g_object_unref(get_config_data->task);
 }
 
 static void
@@ -176,7 +176,7 @@ _get_config_fetch_done_cb(NMHttpClient *http_client,
 
         fip_str = g_bytes_get_data(response, NULL);
         iface_data->iface_get_config =
-            g_hash_table_lookup(azure_data->config_data->result_dict, iface_data->hwaddr);
+            g_hash_table_lookup(azure_data->get_config_data->result_dict, iface_data->hwaddr);
         iface_get_config            = iface_data->iface_get_config;
         iface_get_config->iface_idx = iface_data->iface_idx;
 
@@ -293,7 +293,7 @@ _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer u
                 10000,
                 1000,
                 NM_MAKE_STRV(NM_AZURE_METADATA_HEADER),
-                g_task_get_cancellable(azure_data->config_data->task),
+                g_task_get_cancellable(azure_data->get_config_data->task),
                 NULL,
                 NULL,
                 _get_config_fetch_done_cb_private_ipv4s,
@@ -319,7 +319,7 @@ _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer u
             10000,
             1000,
             NM_MAKE_STRV(NM_AZURE_METADATA_HEADER),
-            g_task_get_cancellable(azure_data->config_data->task),
+            g_task_get_cancellable(azure_data->get_config_data->task),
             NULL,
             NULL,
             _get_config_fetch_done_cb_subnet_cidr_prefix,
@@ -357,17 +357,17 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     }
 
     iface_data->iface_get_config =
-        g_hash_table_lookup(azure_data->config_data->result_dict, iface_data->hwaddr);
+        g_hash_table_lookup(azure_data->get_config_data->result_dict, iface_data->hwaddr);
 
     if (!iface_data->iface_get_config) {
-        if (!iface_data->azure_data->config_data->any) {
+        if (!iface_data->azure_data->get_config_data->any) {
             _LOGD("interface[%" G_GSSIZE_FORMAT "]: ignore hwaddr %s",
                   iface_data->iface_idx,
                   iface_data->hwaddr);
             goto done;
         }
         iface_data->iface_get_config = nmcs_provider_get_config_iface_data_new(FALSE);
-        g_hash_table_insert(azure_data->config_data->result_dict,
+        g_hash_table_insert(azure_data->get_config_data->result_dict,
                             g_strdup(iface_data->hwaddr),
                             iface_data->iface_get_config);
     }
@@ -385,7 +385,7 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
                             10000,
                             1000,
                             NM_MAKE_STRV(NM_AZURE_METADATA_HEADER),
-                            g_task_get_cancellable(azure_data->config_data->task),
+                            g_task_get_cancellable(azure_data->get_config_data->task),
                             NULL,
                             NULL,
                             _get_config_ips_prefix_list_cb,
@@ -478,7 +478,7 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
                                 10000,
                                 1000,
                                 NM_MAKE_STRV(NM_AZURE_METADATA_HEADER),
-                                g_task_get_cancellable(azure_data->config_data->task),
+                                g_task_get_cancellable(azure_data->get_config_data->task),
                                 NULL,
                                 NULL,
                                 _get_config_iface_cb,
@@ -494,7 +494,7 @@ get_config(NMCSProvider *provider, NMCSProviderGetConfigTaskData *get_config_dat
 
     azure_data  = g_slice_new(AzureData);
     *azure_data = (AzureData){
-        .config_data      = get_config_data,
+        .get_config_data  = get_config_data,
         .n_ifaces_pending = 0,
     };
 
