@@ -1501,6 +1501,7 @@ out:
  * @self: the #NMDevice
  * @addr_family: the address family
  * @connection: the connection
+ * @log_silent: whether to log the result.
  * @out_is_explicit: on return, %TRUE if the user set a valid IAID in
  *   the connection or in global configuration; %FALSE if the connection
  *   property was empty and no valid global configuration was provided.
@@ -1511,6 +1512,7 @@ static guint32
 _prop_get_ipvx_dhcp_iaid(NMDevice *    self,
                          int           addr_family,
                          NMConnection *connection,
+                         gboolean      log_silent,
                          gboolean *    out_is_explicit)
 {
     const int          IS_IPv4 = NM_IS_IPv4(addr_family);
@@ -1534,10 +1536,12 @@ _prop_get_ipvx_dhcp_iaid(NMDevice *    self,
             iaid_str    = NM_IAID_IFNAME;
             is_explicit = FALSE;
         } else if (!_nm_utils_iaid_verify(iaid_str, NULL)) {
-            _LOGW(LOGD_DEVICE,
-                  "invalid global default '%s' for ipv%c.dhcp-iaid",
-                  iaid_str,
-                  nm_utils_addr_family_to_char(addr_family));
+            if (!log_silent) {
+                _LOGW(LOGD_DEVICE,
+                      "invalid global default '%s' for ipv%c.dhcp-iaid",
+                      iaid_str,
+                      nm_utils_addr_family_to_char(addr_family));
+            }
             iaid_str    = NM_IAID_IFNAME;
             is_explicit = FALSE;
         }
@@ -1611,21 +1615,25 @@ _prop_get_ipvx_dhcp_iaid(NMDevice *    self,
 
 out_fail:
     nm_assert(fail_reason);
-    _LOGW(LOGD_DEVICE | LOGD_DHCPX(IS_IPv4) | LOGD_IPX(IS_IPv4),
-          "ipv%c.dhcp-iaid: failure to generate IAID: %s. Using interface-name based IAID",
-          nm_utils_addr_family_to_char(addr_family),
-          fail_reason);
+    if (!log_silent) {
+        _LOGW(LOGD_DEVICE | LOGD_DHCPX(IS_IPv4) | LOGD_IPX(IS_IPv4),
+              "ipv%c.dhcp-iaid: failure to generate IAID: %s. Using interface-name based IAID",
+              nm_utils_addr_family_to_char(addr_family),
+              fail_reason);
+    }
     is_explicit = FALSE;
     iface       = nm_device_get_ip_iface(self);
     iaid        = nm_utils_create_dhcp_iaid(TRUE, (const guint8 *) iface, strlen(iface));
 out_good:
-    _LOGD(LOGD_DEVICE | LOGD_DHCPX(IS_IPv4) | LOGD_IPX(IS_IPv4),
-          "ipv%c.dhcp-iaid: using %u (0x%08x) IAID (str: '%s', explicit %d)",
-          nm_utils_addr_family_to_char(addr_family),
-          iaid,
-          iaid,
-          iaid_str,
-          is_explicit);
+    if (!log_silent) {
+        _LOGD(LOGD_DEVICE | LOGD_DHCPX(IS_IPv4) | LOGD_IPX(IS_IPv4),
+              "ipv%c.dhcp-iaid: using %u (0x%08x) IAID (str: '%s', explicit %d)",
+              nm_utils_addr_family_to_char(addr_family),
+              iaid,
+              iaid,
+              iaid_str,
+              is_explicit);
+    }
     NM_SET_OUT(out_is_explicit, is_explicit);
     return iaid;
 }
@@ -1783,9 +1791,34 @@ _prop_get_ipv4_dhcp_client_id(NMDevice *self, NMConnection *connection, GBytes *
     }
 
     if (nm_streq(client_id, "duid")) {
-        guint32 iaid = _prop_get_ipvx_dhcp_iaid(self, AF_INET, connection, NULL);
+        guint32 iaid = _prop_get_ipvx_dhcp_iaid(self, AF_INET, connection, FALSE, NULL);
 
         result = nm_utils_dhcp_client_id_systemd_node_specific(iaid);
+        goto out_good;
+    }
+
+    if (nm_streq(client_id, "ipv6-duid")) {
+        gs_unref_bytes GBytes *duid = NULL;
+        gboolean               iaid_is_explicit;
+        guint32                iaid;
+        const guint8 *         duid_arr;
+        gsize                  duid_len;
+
+        iaid = _prop_get_ipvx_dhcp_iaid(self, AF_INET, connection, FALSE, &iaid_is_explicit);
+        if (!iaid_is_explicit)
+            iaid = _prop_get_ipvx_dhcp_iaid(self, AF_INET6, connection, FALSE, &iaid_is_explicit);
+
+        duid = _prop_get_ipv6_dhcp_duid(self, connection, hwaddr, NULL);
+
+        nm_assert(duid);
+
+        duid_arr = g_bytes_get_data(duid, &duid_len);
+
+        nm_assert(duid_arr);
+        nm_assert(duid_len >= 2u + 1u);
+        nm_assert(duid_len <= 2u + 128u);
+
+        result = nm_utils_dhcp_client_id_duid(iaid, duid_arr, duid_len);
         goto out_good;
     }
 
@@ -9802,7 +9835,7 @@ dhcp6_start_with_link_ready(NMDevice *self, NMConnection *connection)
     if (pllink)
         hwaddr = nmp_link_address_get_as_bytes(&pllink->l_address);
 
-    iaid = _prop_get_ipvx_dhcp_iaid(self, AF_INET6, connection, &iaid_explicit);
+    iaid = _prop_get_ipvx_dhcp_iaid(self, AF_INET6, connection, TRUE, &iaid_explicit);
     duid = _prop_get_ipv6_dhcp_duid(self, connection, hwaddr, &enforce_duid);
 
     priv->dhcp_data_6.client = nm_dhcp_manager_start_ip6(
