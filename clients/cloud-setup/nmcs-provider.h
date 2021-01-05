@@ -12,11 +12,16 @@
 typedef struct {
     in_addr_t *ipv4s_arr;
     gsize      ipv4s_len;
-    gssize     iface_idx;
-    in_addr_t  cidr_addr;
-    guint8     cidr_prefix;
-    bool       has_ipv4s : 1;
-    bool       has_cidr : 1;
+
+    /* If the interface was seen, get_config() should set this to a
+     * unique, increasing, positive index. If the interface is requested,
+     * it is initialized to -1. */
+    gssize iface_idx;
+
+    in_addr_t cidr_addr;
+    guint8    cidr_prefix;
+    bool      has_ipv4s : 1;
+    bool      has_cidr : 1;
 
     NMIPRoute **iproutes_arr;
     gsize       iproutes_len;

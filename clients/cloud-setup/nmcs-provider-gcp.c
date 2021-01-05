@@ -134,9 +134,8 @@ _get_config_fip_cb(GObject *source, GAsyncResult *result, gpointer user_data)
           iface_data->iface_idx,
           fip_str);
 
-    iface_get_config            = iface_data->iface_get_config;
-    iface_get_config->iface_idx = iface_data->iface_idx;
-    routes_arr                  = iface_get_config->iproutes_arr;
+    iface_get_config = iface_data->iface_get_config;
+    routes_arr       = iface_get_config->iproutes_arr;
 
     route_new = nm_ip_route_new(AF_INET, fip_str, 32, NULL, 100, &error);
     if (error)
@@ -243,13 +242,15 @@ out_error:
 static void
 _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    gs_unref_bytes GBytes *response       = NULL;
-    GCPIfaceData *         iface_data     = user_data;
-    gs_free_error GError *         error  = NULL;
-    gs_free const char *           hwaddr = NULL;
-    gs_free const char *           uri    = NULL;
+    gs_unref_bytes GBytes *response         = NULL;
+    GCPIfaceData *         iface_data       = user_data;
+    gs_free_error GError *         error    = NULL;
+    gs_free char *                 v_hwaddr = NULL;
+    const char *                   hwaddr   = NULL;
+    gs_free const char *           uri      = NULL;
     char                           sbuf[100];
     NMCSProviderGetConfigTaskData *get_config_data;
+    gboolean                       is_requested;
 
     nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
 
@@ -259,20 +260,51 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     get_config_data = iface_data->get_config_data;
 
     if (error)
-        goto out_error;
+        goto out_done;
 
-    hwaddr                       = nmcs_utils_hwaddr_normalize_gbytes(response);
-    iface_data->iface_get_config = g_hash_table_lookup(get_config_data->result_dict, hwaddr);
-    if (!iface_data->iface_get_config) {
-        _LOGI("GCP interface[%" G_GSSIZE_FORMAT "]: did not find a matching device",
+    v_hwaddr = nmcs_utils_hwaddr_normalize_gbytes(response);
+    if (!v_hwaddr) {
+        _LOGI("GCP interface[%" G_GSSIZE_FORMAT "]: invalid MAC address returned",
               iface_data->iface_idx);
         error = nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN,
-                                   "no matching hwaddr found for GCP interface");
-        goto out_error;
+                                   "invalid MAC address for index %" G_GSSIZE_FORMAT,
+                                   iface_data->iface_idx);
+        goto out_done;
     }
 
-    _LOGI("GCP interface[%" G_GSSIZE_FORMAT "]: found a matching device with hwaddr %s",
+    if (!g_hash_table_lookup_extended(get_config_data->result_dict,
+                                      v_hwaddr,
+                                      (gpointer *) &hwaddr,
+                                      (gpointer *) &iface_data->iface_get_config)) {
+        if (!get_config_data->any) {
+            _LOGD("get-config: skip fetching meta data for %s (%" G_GSSIZE_FORMAT ")",
+                  v_hwaddr,
+                  iface_data->iface_idx);
+            goto out_done;
+        }
+        iface_data->iface_get_config = nmcs_provider_get_config_iface_data_new(FALSE);
+        g_hash_table_insert(get_config_data->result_dict,
+                            (char *) (hwaddr = g_steal_pointer(&v_hwaddr)),
+                            iface_data->iface_get_config);
+        is_requested = FALSE;
+    } else {
+        if (iface_data->iface_get_config->iface_idx >= 0) {
+            _LOGI("GCP interface[%" G_GSSIZE_FORMAT "]: duplicate MAC address %s returned",
+                  iface_data->iface_idx,
+                  hwaddr);
+            error = nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN,
+                                       "duplicate MAC address for index %" G_GSSIZE_FORMAT,
+                                       iface_data->iface_idx);
+            goto out_done;
+        }
+        is_requested = TRUE;
+    }
+
+    iface_data->iface_get_config->iface_idx = iface_data->iface_idx;
+
+    _LOGI("GCP interface[%" G_GSSIZE_FORMAT "]: found a %sdevice with hwaddr %s",
           iface_data->iface_idx,
+          is_requested ? "requested " : "",
           hwaddr);
 
     nm_sprintf_buf(sbuf, "%" G_GSSIZE_FORMAT "/forwarded-ips/", iface_data->iface_idx);
@@ -291,7 +323,7 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
                             iface_data);
     return;
 
-out_error:
+out_done:
     --get_config_data->n_pending;
     _nmcs_provider_get_config_task_maybe_return(get_config_data, g_steal_pointer(&error));
 }

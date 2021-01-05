@@ -98,13 +98,12 @@ typedef struct {
     NMCSProviderGetConfigIfaceData *iface_get_config;
     gssize                          iface_idx;
     guint                           n_ips_prefix_pending;
-    char *                          hwaddr;
+    const char *                    hwaddr;
 } AzureIfaceData;
 
 static void
 _azure_iface_data_destroy(AzureIfaceData *iface_data)
 {
-    g_free(iface_data->hwaddr);
     nm_g_slice_free(iface_data);
 }
 
@@ -135,8 +134,7 @@ _get_config_fetch_done_cb(NMHttpClient *  http_client,
     fip_str = g_bytes_get_data(response, NULL);
     iface_data->iface_get_config =
         g_hash_table_lookup(get_config_data->result_dict, iface_data->hwaddr);
-    iface_get_config            = iface_data->iface_get_config;
-    iface_get_config->iface_idx = iface_data->iface_idx;
+    iface_get_config = iface_data->iface_get_config;
 
     if (is_ipv4) {
         if (!nm_utils_parse_inaddr_bin(AF_INET, fip_str, NULL, &tmp_addr)) {
@@ -301,6 +299,7 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     NMCSProviderGetConfigTaskData *get_config_data;
     gs_unref_bytes GBytes *response   = NULL;
     AzureIfaceData *       iface_data = user_data;
+    gs_free char *         v_hwaddr   = NULL;
     gs_free_error GError *error       = NULL;
     gs_free const char *  uri         = NULL;
     char                  buf[100];
@@ -315,26 +314,43 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     if (error)
         goto out_done;
 
-    iface_data->hwaddr = nmcs_utils_hwaddr_normalize_gbytes(response);
-
-    if (!iface_data->hwaddr)
+    v_hwaddr = nmcs_utils_hwaddr_normalize_gbytes(response);
+    if (!v_hwaddr) {
+        _LOGI("interface[%" G_GSSIZE_FORMAT "]: invalid MAC address returned",
+              iface_data->iface_idx);
+        error = nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN,
+                                   "invalid MAC address for index %" G_GSSIZE_FORMAT,
+                                   iface_data->iface_idx);
         goto out_done;
+    }
 
-    iface_data->iface_get_config =
-        g_hash_table_lookup(get_config_data->result_dict, iface_data->hwaddr);
-
-    if (!iface_data->iface_get_config) {
+    if (!g_hash_table_lookup_extended(get_config_data->result_dict,
+                                      v_hwaddr,
+                                      (gpointer *) &iface_data->hwaddr,
+                                      (gpointer *) &iface_data->iface_get_config)) {
         if (!get_config_data->any) {
-            _LOGD("interface[%" G_GSSIZE_FORMAT "]: ignore hwaddr %s",
-                  iface_data->iface_idx,
-                  iface_data->hwaddr);
+            _LOGD("get-config: skip fetching meta data for %s (%" G_GSSIZE_FORMAT ")",
+                  v_hwaddr,
+                  iface_data->iface_idx);
             goto out_done;
         }
         iface_data->iface_get_config = nmcs_provider_get_config_iface_data_new(FALSE);
         g_hash_table_insert(get_config_data->result_dict,
-                            g_strdup(iface_data->hwaddr),
+                            (char *) (iface_data->hwaddr = g_steal_pointer(&v_hwaddr)),
                             iface_data->iface_get_config);
+    } else {
+        if (iface_data->iface_get_config->iface_idx >= 0) {
+            _LOGI("interface[%" G_GSSIZE_FORMAT "]: duplicate MAC address %s returned",
+                  iface_data->iface_idx,
+                  iface_data->hwaddr);
+            error = nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN,
+                                       "duplicate MAC address for index %" G_GSSIZE_FORMAT,
+                                       iface_data->iface_idx);
+            goto out_done;
+        }
     }
+
+    iface_data->iface_get_config->iface_idx = iface_data->iface_idx;
 
     _LOGD("interface[%" G_GSSIZE_FORMAT "]: found a matching device with hwaddr %s",
           iface_data->iface_idx,

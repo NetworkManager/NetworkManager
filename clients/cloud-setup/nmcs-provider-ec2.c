@@ -269,6 +269,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
         }
 
         nm_assert(config_iface_data->iface_idx == -1);
+
         config_iface_data->iface_idx = v_mac_data->iface_idx;
 
         _LOGD("get-config: start fetching meta data for #%" G_GSSIZE_FORMAT ", %s (%s)",
@@ -364,6 +365,7 @@ _get_config_metadata_ready_check(long     response_code,
         mac_data->iface_idx = iface_idx_counter++;
         memcpy(mac_data->path, cur_line, cur_line_len + 1u);
 
+        /* here we will ignore duplicate responses. */
         g_hash_table_insert(response_parsed, hwaddr, mac_data);
     }
 
