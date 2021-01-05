@@ -1,10 +1,4 @@
-data_conf = configuration_data()
-data_conf.set('bindir', nm_bindir)
-data_conf.set('libexecdir', nm_libexecdir)
-data_conf.set('sbindir', nm_sbindir)
-data_conf.set('sysconfdir', nm_sysconfdir)
-data_conf.set('DISTRO_NETWORK_SERVICE', (enable_ifcfg_rh ? 'network.service' : ''))
-data_conf.set('NM_MODIFY_SYSTEM_POLICY', (enable_modify_system ? 'yes' : 'auth_admin_keep'))
+# SPDX-License-Identifier: LGPL-2.1+
 
 configure_file(
   input: 'server.conf.in',
@@ -71,5 +65,12 @@ if enable_polkit
     command: intltool_xml_cmd,
     install: true,
     install_dir: polkit_gobject_policydir,
+  )
+endif
+
+if enable_firewalld_zone
+  install_data(
+    'nm-shared.xml',
+    install_dir: join_paths(nm_prefix, 'lib', 'firewalld', 'zones')
   )
 endif

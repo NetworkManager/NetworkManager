@@ -1,51 +1,42 @@
 So you're interested in hacking on NetworkManager?  Here's some cool
 stuff you could do...
 
-* Internet Connectivity Detection Enhancements
+* Use netlink API instead of ioctl based ethtool.
 
-Current connectivity checking is global, while what we really want is to check
-connectivity per-interface and update the global state based on the composite
-of each device's state.  Unfortunately that requires two things:
-
-1) latest libsoup and glib for using libsoup connection state signals, which
-   allow us to set socket options before the actual connection is made; here
-   we'd bind the socket to the specific IP address of the interface we're
-   using, and possibly set SO_BINDTODEVICE as well
-2) setting /proc/sys/net/ipv4/conf/<iface>/rp_filter to "2" which tells the
-   kernel to route the incoming and outgoing packet properly even though the
-   interface may not have the necessary routes
-
-The first is the largest obstacle, but ideally we implement this and enable it
-when we have the required glib and libsoup versions available.  One other
-complication is that this checking should be done during the
-NM_DEVICE_STATE_IP_CHECK phase (along with other operations like Wi-Fi hotspot
-auto-login) while the current checks are done globally in nm-manager.c, so
-keeping both code paths might be complex.
-
-But ideally, once the device has successfully gotten an IPv4 or IPv6 address, it
-should enter the state NM_DEVICE_STATE_IP_CHECK, where a connectivity check is
-started.  After the check returns, the device would set a property in
-NMDevicePrivate to indicate whether Internet access was successful or not, and
-advance to the NM_DEVICE_STATE_ACTIVATED state.
-
-The NMManager object, when determining the overall NM_STATE_* state in the
-nm_manager_update_state() function, would query this property and set
-NM_STATE_CONNECTED_LOCAL, NM_STATE_CONNECTED_SITE, or NM_STATE_CONNECTED_GLOBAL
-based on it and the device's state.
+NetworkManager uses ethtool API to set/obtain certain settings of network
+devices. This is an ioctl based API and implmented in "src/platform/nm-platform-utils.c".
+Recently, kernel got a netlink API for the same functionality
+(https://www.kernel.org/doc/html/latest/networking/ethtool-netlink.html).
+NetworkManager should use this API if present, and fallback to the old API
+when running on older kernels. The benefit if this is that netlink provides
+notifications when settings change. The ethtool command line tool
+also implements this API, however it is under an incompatible license,
+so better don't look and make sure not to use the code.
 
 
-* Implement NM_DEVICE_STATE_DISCONNECTING
+* Add 802-1x capability to nmtui.
 
-To allow for "pre-down" scenarios, this state should be implemented before a
-device is taken down while it still has connectivity.  If the device is
-taken down because its ethernet carrier was dropped, or because the WiFi
-connection was terminated by the supplicant, this state is pointless and should
-be skipped.  But if the user requested a manual "disconnect", or NM is dropping
-connections on exit, etc, then this state should be entered.  In the future
-this state should hook into a new dispatcher action in src/NetworkManagerUtils.c
-to exectue dispatcher scripts during the disconnection, and to wait a limited
-amount of time for each script to complete before allowing the device to
-proceed to the NM_DEVICE_STATE_DISCONNECTED state, fully implementing pre-down.
+Add dialogs to nmtui for 802-1x. This will be useful for ethernet (with 802-1x
+port authentication), enterprise Wi-Fi and MACSec. From the GUI and dialog design,
+possibly get inspired by nm-connection-editor.
+
+
+* Add Azure support to nm-cloud-setup.
+
+Currently, nm-cloud-setup only works for EC2 (and only for IPv4). Add support for Azure
+cloud. See for example SUSE's cloud-netconfig which supports Azure
+(https://github.com/SUSE-Enceladus/cloud-netconfig,
+https://www.suse.com/c/multi-nic-cloud-netconfig-ec2-azure/). Note that cloud-netconfig
+is under an incompatible license, so be careful not to reuse any code. But that would
+anyway be almost impossible, because one is written in bash and the other in C.
+
+
+* Improve our gitlab-ci integration.
+
+Currently, our .gitlab-ci starts various base containers and first installs
+the necessary dependencies. That takes time and consumes bandwidth, we should
+instead use more suitable containers. We should instead use ci-templates from
+https://gitlab.freedesktop.org/freedesktop/ci-templates.
 
 
 * Ethernet Network Auto-detection
@@ -119,7 +110,7 @@ connected before the drop.
 * VPN IP Methods
 
 Some VPNs (openvpn with TAP for example) require that DHCP is run on a
-pseudo-ethernet device to obtain addressing information.  This is not currently
+pseudo-ethernet device to obtain addressing information.  Currenty, this is not
 possible, but NM already has all the code for DHCP.  Thus, a new "method"
 key should be defined in include/NetworkManagerVPN.h to allow for DHCP to
 be performed if the VPN service daemon requests it in the IP4Config or IP6Config

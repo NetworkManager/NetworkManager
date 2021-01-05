@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0+
+/* SPDX-License-Identifier: GPL-2.0+ */
 /*
  * Copyright (C) 2007 - 2008 Novell, Inc.
  * Copyright (C) 2007 - 2010 Red Hat, Inc.
@@ -11,45 +11,46 @@
 #include "c-list/src/c-list.h"
 #include "nm-dbus-manager.h"
 
-#define NM_TYPE_MANAGER            (nm_manager_get_type ())
-#define NM_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MANAGER, NMManager))
-#define NM_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_MANAGER, NMManagerClass))
-#define NM_IS_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_MANAGER))
-#define NM_IS_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_MANAGER))
-#define NM_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_MANAGER, NMManagerClass))
+#define NM_TYPE_MANAGER            (nm_manager_get_type())
+#define NM_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_MANAGER, NMManager))
+#define NM_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_MANAGER, NMManagerClass))
+#define NM_IS_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_MANAGER))
+#define NM_IS_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_MANAGER))
+#define NM_MANAGER_GET_CLASS(obj) \
+    (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_MANAGER, NMManagerClass))
 
-#define NM_MANAGER_VERSION "version"
-#define NM_MANAGER_CAPABILITIES "capabilities"
-#define NM_MANAGER_STATE "state"
-#define NM_MANAGER_STARTUP "startup"
-#define NM_MANAGER_NETWORKING_ENABLED "networking-enabled"
-#define NM_MANAGER_WIRELESS_ENABLED "wireless-enabled"
-#define NM_MANAGER_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"
-#define NM_MANAGER_WWAN_ENABLED "wwan-enabled"
-#define NM_MANAGER_WWAN_HARDWARE_ENABLED "wwan-hardware-enabled"
-#define NM_MANAGER_WIMAX_ENABLED "wimax-enabled"
-#define NM_MANAGER_WIMAX_HARDWARE_ENABLED "wimax-hardware-enabled"
-#define NM_MANAGER_ACTIVE_CONNECTIONS "active-connections"
-#define NM_MANAGER_CONNECTIVITY "connectivity"
+#define NM_MANAGER_VERSION                      "version"
+#define NM_MANAGER_CAPABILITIES                 "capabilities"
+#define NM_MANAGER_STATE                        "state"
+#define NM_MANAGER_STARTUP                      "startup"
+#define NM_MANAGER_NETWORKING_ENABLED           "networking-enabled"
+#define NM_MANAGER_WIRELESS_ENABLED             "wireless-enabled"
+#define NM_MANAGER_WIRELESS_HARDWARE_ENABLED    "wireless-hardware-enabled"
+#define NM_MANAGER_WWAN_ENABLED                 "wwan-enabled"
+#define NM_MANAGER_WWAN_HARDWARE_ENABLED        "wwan-hardware-enabled"
+#define NM_MANAGER_WIMAX_ENABLED                "wimax-enabled"
+#define NM_MANAGER_WIMAX_HARDWARE_ENABLED       "wimax-hardware-enabled"
+#define NM_MANAGER_ACTIVE_CONNECTIONS           "active-connections"
+#define NM_MANAGER_CONNECTIVITY                 "connectivity"
 #define NM_MANAGER_CONNECTIVITY_CHECK_AVAILABLE "connectivity-check-available"
-#define NM_MANAGER_CONNECTIVITY_CHECK_ENABLED "connectivity-check-enabled"
-#define NM_MANAGER_CONNECTIVITY_CHECK_URI "connectivity-check-uri"
-#define NM_MANAGER_PRIMARY_CONNECTION "primary-connection"
-#define NM_MANAGER_PRIMARY_CONNECTION_TYPE "primary-connection-type"
-#define NM_MANAGER_ACTIVATING_CONNECTION "activating-connection"
-#define NM_MANAGER_DEVICES "devices"
-#define NM_MANAGER_METERED "metered"
-#define NM_MANAGER_GLOBAL_DNS_CONFIGURATION "global-dns-configuration"
-#define NM_MANAGER_ALL_DEVICES "all-devices"
-#define NM_MANAGER_CHECKPOINTS "checkpoints"
+#define NM_MANAGER_CONNECTIVITY_CHECK_ENABLED   "connectivity-check-enabled"
+#define NM_MANAGER_CONNECTIVITY_CHECK_URI       "connectivity-check-uri"
+#define NM_MANAGER_PRIMARY_CONNECTION           "primary-connection"
+#define NM_MANAGER_PRIMARY_CONNECTION_TYPE      "primary-connection-type"
+#define NM_MANAGER_ACTIVATING_CONNECTION        "activating-connection"
+#define NM_MANAGER_DEVICES                      "devices"
+#define NM_MANAGER_METERED                      "metered"
+#define NM_MANAGER_GLOBAL_DNS_CONFIGURATION     "global-dns-configuration"
+#define NM_MANAGER_ALL_DEVICES                  "all-devices"
+#define NM_MANAGER_CHECKPOINTS                  "checkpoints"
 
 /* Not exported */
 #define NM_MANAGER_SLEEPING "sleeping"
 
 /* Signals */
-#define NM_MANAGER_DEVICE_ADDED              "device-added"
-#define NM_MANAGER_DEVICE_REMOVED            "device-removed"
-#define NM_MANAGER_USER_PERMISSIONS_CHANGED  "user-permissions-changed"
+#define NM_MANAGER_DEVICE_ADDED             "device-added"
+#define NM_MANAGER_DEVICE_REMOVED           "device-removed"
+#define NM_MANAGER_USER_PERMISSIONS_CHANGED "user-permissions-changed"
 
 #define NM_MANAGER_ACTIVE_CONNECTION_ADDED   "active-connection-added"
 #define NM_MANAGER_ACTIVE_CONNECTION_REMOVED "active-connection-removed"
@@ -57,139 +58,155 @@
 #define NM_MANAGER_INTERNAL_DEVICE_ADDED     "internal-device-added"
 #define NM_MANAGER_INTERNAL_DEVICE_REMOVED   "internal-device-removed"
 
-GType nm_manager_get_type (void);
+GType nm_manager_get_type(void);
 
 /* nm_manager_setup() should only be used by main.c */
-NMManager *   nm_manager_setup                         (void);
+NMManager *nm_manager_setup(void);
 
-NMManager *   nm_manager_get                           (void);
-#define NM_MANAGER_GET (nm_manager_get ())
+NMManager *nm_manager_get(void);
+#define NM_MANAGER_GET (nm_manager_get())
 
-gboolean      nm_manager_start                         (NMManager *manager,
-                                                        GError **error);
-void          nm_manager_stop                          (NMManager *manager);
-NMState       nm_manager_get_state                     (NMManager *manager);
+gboolean nm_manager_start(NMManager *manager, GError **error);
+void     nm_manager_stop(NMManager *manager);
+NMState  nm_manager_get_state(NMManager *manager);
 
-const CList * nm_manager_get_active_connections        (NMManager *manager);
+const CList *nm_manager_get_active_connections(NMManager *manager);
 
-#define nm_manager_for_each_active_connection(manager, iter, tmp_list) \
-	for (tmp_list = nm_manager_get_active_connections (manager), \
-	     iter = c_list_entry (tmp_list->next, NMActiveConnection, active_connections_lst); \
-	     ({ \
-	         const gboolean _has_next = (&iter->active_connections_lst != tmp_list); \
-	         \
-	         if (!_has_next) \
-	             iter = NULL; \
-	         _has_next; \
-	    }); \
-	    iter = c_list_entry (iter->active_connections_lst.next, NMActiveConnection, active_connections_lst))
+/* From least recently activated */
+#define nm_manager_for_each_active_connection(manager, iter, tmp_list)                        \
+    for (tmp_list = nm_manager_get_active_connections(manager),                               \
+        iter      = c_list_entry(tmp_list->next, NMActiveConnection, active_connections_lst); \
+         ({                                                                                   \
+             const gboolean _has_next = (&iter->active_connections_lst != tmp_list);          \
+                                                                                              \
+             if (!_has_next)                                                                  \
+                 iter = NULL;                                                                 \
+             _has_next;                                                                       \
+         });                                                                                  \
+         iter = c_list_entry(iter->active_connections_lst.next,                               \
+                             NMActiveConnection,                                              \
+                             active_connections_lst))
 
-#define nm_manager_for_each_active_connection_safe(manager, iter, tmp_list, iter_safe) \
-	for (tmp_list = nm_manager_get_active_connections (manager), \
-	     iter_safe = tmp_list->next; \
-	     ({ \
-	        if (iter_safe != tmp_list) { \
-	            iter = c_list_entry (iter_safe, NMActiveConnection, active_connections_lst); \
-	            iter_safe = iter_safe->next; \
-	        } else \
-	            iter = NULL; \
-	        (iter != NULL); \
-	     }); \
-	    )
+/* From most recently activated */
+#define nm_manager_for_each_active_connection_prev(manager, iter, tmp_list)                   \
+    for (tmp_list = nm_manager_get_active_connections(manager),                               \
+        iter      = c_list_entry(tmp_list->prev, NMActiveConnection, active_connections_lst); \
+         ({                                                                                   \
+             const gboolean _has_prev = (&iter->active_connections_lst != tmp_list);          \
+                                                                                              \
+             if (!_has_prev)                                                                  \
+                 iter = NULL;                                                                 \
+             _has_prev;                                                                       \
+         });                                                                                  \
+         iter = c_list_entry(iter->active_connections_lst.prev,                               \
+                             NMActiveConnection,                                              \
+                             active_connections_lst))
 
-NMSettingsConnection **nm_manager_get_activatable_connections (NMManager *manager,
-                                                               gboolean for_auto_activation,
-                                                               gboolean sort,
-                                                               guint *out_len);
+/* From least recently activated */
+#define nm_manager_for_each_active_connection_safe(manager, iter, tmp_list, iter_safe)            \
+    for (tmp_list = nm_manager_get_active_connections(manager), iter_safe = tmp_list->next; ({    \
+             if (iter_safe != tmp_list) {                                                         \
+                 iter      = c_list_entry(iter_safe, NMActiveConnection, active_connections_lst); \
+                 iter_safe = iter_safe->next;                                                     \
+             } else                                                                               \
+                 iter = NULL;                                                                     \
+             (iter != NULL);                                                                      \
+         });)
 
-void          nm_manager_write_device_state_all (NMManager *manager);
-gboolean      nm_manager_write_device_state (NMManager *manager, NMDevice *device);
+NMSettingsConnection **nm_manager_get_activatable_connections(NMManager *manager,
+                                                              gboolean   for_auto_activation,
+                                                              gboolean   sort,
+                                                              guint *    out_len);
+
+void     nm_manager_write_device_state_all(NMManager *manager);
+gboolean nm_manager_write_device_state(NMManager *manager, NMDevice *device, int *out_ifindex);
 
 /* Device handling */
 
-const CList *       nm_manager_get_devices             (NMManager *manager);
+const CList *nm_manager_get_devices(NMManager *manager);
 
-#define nm_manager_for_each_device(manager, iter, tmp_list) \
-	for (tmp_list = nm_manager_get_devices (manager), \
-	     iter = c_list_entry (tmp_list->next, NMDevice, devices_lst); \
-	     ({ \
-	         const gboolean _has_next = (&iter->devices_lst != tmp_list); \
-	         \
-	         if (!_has_next) \
-	             iter = NULL; \
-	         _has_next; \
-	    }); \
-	    iter = c_list_entry (iter->devices_lst.next, NMDevice, devices_lst))
+#define nm_manager_for_each_device(manager, iter, tmp_list)               \
+    for (tmp_list = nm_manager_get_devices(manager),                      \
+        iter      = c_list_entry(tmp_list->next, NMDevice, devices_lst);  \
+         ({                                                               \
+             const gboolean _has_next = (&iter->devices_lst != tmp_list); \
+                                                                          \
+             if (!_has_next)                                              \
+                 iter = NULL;                                             \
+             _has_next;                                                   \
+         });                                                              \
+         iter = c_list_entry(iter->devices_lst.next, NMDevice, devices_lst))
 
-#define nm_manager_for_each_device_safe(manager, iter, tmp_list, iter_safe) \
-	for (tmp_list = nm_manager_get_devices (manager), \
-	     iter_safe = tmp_list->next; \
-	     ({ \
-	        if (iter_safe != tmp_list) { \
-	            iter = c_list_entry (iter_safe, NMDevice, devices_lst); \
-	            iter_safe = iter_safe->next; \
-	        } else \
-	            iter = NULL; \
-	        (iter != NULL); \
-	     }); \
-	    )
+#define nm_manager_for_each_device_safe(manager, iter, tmp_list, iter_safe)         \
+    for (tmp_list = nm_manager_get_devices(manager), iter_safe = tmp_list->next; ({ \
+             if (iter_safe != tmp_list) {                                           \
+                 iter      = c_list_entry(iter_safe, NMDevice, devices_lst);        \
+                 iter_safe = iter_safe->next;                                       \
+             } else                                                                 \
+                 iter = NULL;                                                       \
+             (iter != NULL);                                                        \
+         });)
 
-NMDevice *          nm_manager_get_device_by_ifindex   (NMManager *manager,
-                                                        int ifindex);
-NMDevice *          nm_manager_get_device_by_path      (NMManager *manager,
-                                                        const char *path);
+NMDevice *nm_manager_get_device_by_ifindex(NMManager *manager, int ifindex);
+NMDevice *nm_manager_get_device_by_path(NMManager *manager, const char *path);
 
-guint32             nm_manager_device_route_metric_reserve (NMManager *self,
-                                                            int ifindex,
-                                                            NMDeviceType device_type);
+guint32
+nm_manager_device_route_metric_reserve(NMManager *self, int ifindex, NMDeviceType device_type);
 
-void                nm_manager_device_route_metric_clear (NMManager *self,
-                                                          int ifindex);
+void nm_manager_device_route_metric_clear(NMManager *self, int ifindex);
 
-char *              nm_manager_get_connection_iface (NMManager *self,
-                                                     NMConnection *connection,
-                                                     NMDevice **out_parent,
-                                                     GError **error);
+char *nm_manager_get_connection_iface(NMManager *   self,
+                                      NMConnection *connection,
+                                      NMDevice **   out_parent,
+                                      const char ** out_parent_spec,
+                                      GError **     error);
 
-const char *        nm_manager_iface_for_uuid          (NMManager *self,
-                                                        const char *uuid);
+const char *nm_manager_iface_for_uuid(NMManager *self, const char *uuid);
 
-NMActiveConnection *nm_manager_activate_connection     (NMManager *manager,
-                                                        NMSettingsConnection *connection,
-                                                        NMConnection *applied_connection,
-                                                        const char *specific_object,
-                                                        NMDevice *device,
-                                                        NMAuthSubject *subject,
-                                                        NMActivationType activation_type,
-                                                        NMActivationReason activation_reason,
-                                                        NMActivationStateFlags initial_state_flags,
-                                                        GError **error);
+NMActiveConnection *nm_manager_activate_connection(NMManager *            manager,
+                                                   NMSettingsConnection * connection,
+                                                   NMConnection *         applied_connection,
+                                                   const char *           specific_object,
+                                                   NMDevice *             device,
+                                                   NMAuthSubject *        subject,
+                                                   NMActivationType       activation_type,
+                                                   NMActivationReason     activation_reason,
+                                                   NMActivationStateFlags initial_state_flags,
+                                                   GError **              error);
 
-gboolean            nm_manager_deactivate_connection   (NMManager *manager,
-                                                        NMActiveConnection *active,
-                                                        NMDeviceStateReason reason,
-                                                        GError **error);
+gboolean nm_manager_deactivate_connection(NMManager *         manager,
+                                          NMActiveConnection *active,
+                                          NMDeviceStateReason reason,
+                                          GError **           error);
 
-void                nm_manager_set_capability   (NMManager *self, NMCapability cap);
+void nm_manager_set_capability(NMManager *self, NMCapability cap);
 
-NMDevice *          nm_manager_get_device    (NMManager *self,
-                                              const char *ifname,
-                                              NMDeviceType device_type);
-gboolean            nm_manager_remove_device (NMManager *self,
-                                              const char *ifname,
-                                              NMDeviceType device_type);
+NMDevice *nm_manager_get_device(NMManager *self, const char *ifname, NMDeviceType device_type);
+gboolean  nm_manager_remove_device(NMManager *self, const char *ifname, NMDeviceType device_type);
 
-void nm_manager_dbus_set_property_handle (NMDBusObject *obj,
-                                          const NMDBusInterfaceInfoExtended *interface_info,
-                                          const NMDBusPropertyInfoExtended *property_info,
-                                          GDBusConnection *connection,
-                                          const char *sender,
-                                          GDBusMethodInvocation *invocation,
-                                          GVariant *value,
-                                          gpointer user_data);
+void nm_manager_dbus_set_property_handle(NMDBusObject *                     obj,
+                                         const NMDBusInterfaceInfoExtended *interface_info,
+                                         const NMDBusPropertyInfoExtended * property_info,
+                                         GDBusConnection *                  connection,
+                                         const char *                       sender,
+                                         GDBusMethodInvocation *            invocation,
+                                         GVariant *                         value,
+                                         gpointer                           user_data);
 
-NMMetered nm_manager_get_metered (NMManager *self);
+NMMetered nm_manager_get_metered(NMManager *self);
 
-void nm_manager_notify_device_availibility_maybe_changed (NMManager *self);
+void nm_manager_notify_device_availability_maybe_changed(NMManager *self);
+
+/*****************************************************************************/
+
+void nm_manager_device_auth_request(NMManager *                    self,
+                                    NMDevice *                     device,
+                                    GDBusMethodInvocation *        context,
+                                    NMConnection *                 connection,
+                                    const char *                   permission,
+                                    gboolean                       allow_interaction,
+                                    GCancellable *                 cancellable,
+                                    NMManagerDeviceAuthRequestFunc callback,
+                                    gpointer                       user_data);
 
 #endif /* __NETWORKMANAGER_MANAGER_H__ */

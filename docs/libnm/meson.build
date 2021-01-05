@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 src_dirs = [
   libnm_core_inc,
   libnm_inc,
@@ -5,11 +7,12 @@ src_dirs = [
 
 private_headers = [
   'common.h',
-  'nm-crypto.h',
-  'nm-crypto-impl.h',
-  'nm-dbus-helpers.h',
   'nm-core-internal.h',
+  'nm-core-tests-enum-types.h',
   'nm-core-types-internal.h',
+  'nm-crypto-impl.h',
+  'nm-crypto.h',
+  'nm-dbus-helpers.h',
   'nm-device-private.h',
   'nm-dhcp4-config.h',
   'nm-dhcp6-config.h',
@@ -20,13 +23,21 @@ private_headers = [
   'nm-object-private.h',
   'nm-property-compare.h',
   'nm-remote-connection-private.h',
-  'nm-remote-settings.h',
   'nm-setting-private.h',
   'nm-utils-private.h',
-  'nm-core-tests-enum-types.h',
+
+  'test-general-enums.h',
+
   'nm-keyfile-internal.h',
   'nm-keyfile-utils.h',
-  'test-general-enums.h',
+
+  'nm-auth-subject.h',
+  'nm-common-macros.h',
+  'nm-ethtool-utils.h',
+  'nm-libnm-core-utils.h',
+
+  'nm-dispatcher-api.h',
+  'nm-libnm-core-aux.h',
 ]
 
 scan_args = [
@@ -39,7 +50,7 @@ scan_args = [
 version_xml = configure_file(
   input: 'version.xml.in',
   output: '@BASENAME@',
-  configuration: version_conf,
+  configuration: data_conf,
 )
 
 gnome.gtkdoc(

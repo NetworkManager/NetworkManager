@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LGPL-2.1+
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /*
  * Copyright (C) 2018 Red Hat, Inc.
  */
@@ -11,56 +11,54 @@
 /*****************************************************************************/
 
 enum _NMErrno {
-	_NM_ERRNO_MININT         = G_MININT,
-	_NM_ERRNO_MAXINT         = G_MAXINT,
-	_NM_ERRNO_RESERVED_FIRST = 100000,
+    _NM_ERRNO_MININT         = G_MININT,
+    _NM_ERRNO_MAXINT         = G_MAXINT,
+    _NM_ERRNO_RESERVED_FIRST = 100000,
 
+    /* when we cannot represent a number as positive number, we resort to this
+     * number. Basically, the values G_MININT, -NME_ERRNO_SUCCESS, NME_ERRNO_SUCCESS
+     * and G_MAXINT all map to the same value. */
+    NME_ERRNO_OUT_OF_RANGE = G_MAXINT,
 
-	/* when we cannot represent a number as positive number, we resort to this
-	 * number. Basically, the values G_MININT, -NME_ERRNO_SUCCESS, NME_ERRNO_SUCCESS
-	 * and G_MAXINT all map to the same value. */
-	NME_ERRNO_OUT_OF_RANGE   = G_MAXINT,
+    /* Indicate that the original errno was zero. Zero denotes *no error*, but we know something
+     * went wrong and we want to report some error. This is a placeholder to mean, something
+     * was wrong, but errno was zero. */
+    NME_ERRNO_SUCCESS = G_MAXINT - 1,
 
-	/* Indicate that the original errno was zero. Zero denotes *no error*, but we know something
-	 * went wrong and we want to report some error. This is a placeholder to mean, something
-	 * was wrong, but errno was zero. */
-	NME_ERRNO_SUCCESS        = G_MAXINT - 1,
+    /* an unspecified error. */
+    NME_UNSPEC = _NM_ERRNO_RESERVED_FIRST,
 
+    /* A bug, for example when an assertion failed.
+     * Should never happen. */
+    NME_BUG,
 
-	/* an unspecified error. */
-	NME_UNSPEC = _NM_ERRNO_RESERVED_FIRST,
+    /* a native error number (from <errno.h>) cannot be mapped as
+     * an nm-error, because it is in the range [_NM_ERRNO_RESERVED_FIRST,
+     * _NM_ERRNO_RESERVED_LAST]. */
+    NME_NATIVE_ERRNO,
 
-	/* A bug, for example when an assertion failed.
-	 * Should never happen. */
-	NME_BUG,
+    /* netlink errors. */
+    NME_NL_SEQ_MISMATCH,
+    NME_NL_MSG_TRUNC,
+    NME_NL_MSG_TOOSHORT,
+    NME_NL_DUMP_INTR,
+    NME_NL_ATTRSIZE,
+    NME_NL_BAD_SOCK,
+    NME_NL_NOADDR,
+    NME_NL_MSG_OVERFLOW,
 
-	/* a native error number (from <errno.h>) cannot be mapped as
-	 * an nm-error, because it is in the range [_NM_ERRNO_RESERVED_FIRST,
-	 * _NM_ERRNO_RESERVED_LAST]. */
-	NME_NATIVE_ERRNO,
+    /* platform errors. */
+    NME_PL_NOT_FOUND,
+    NME_PL_EXISTS,
+    NME_PL_WRONG_TYPE,
+    NME_PL_NOT_SLAVE,
+    NME_PL_NO_FIRMWARE,
+    NME_PL_OPNOTSUPP,
+    NME_PL_NETLINK,
+    NME_PL_CANT_SET_MTU,
 
-	/* netlink errors. */
-	NME_NL_SEQ_MISMATCH,
-	NME_NL_MSG_TRUNC,
-	NME_NL_MSG_TOOSHORT,
-	NME_NL_DUMP_INTR,
-	NME_NL_ATTRSIZE,
-	NME_NL_BAD_SOCK,
-	NME_NL_NOADDR,
-	NME_NL_MSG_OVERFLOW,
-
-	/* platform errors. */
-	NME_PL_NOT_FOUND,
-	NME_PL_EXISTS,
-	NME_PL_WRONG_TYPE,
-	NME_PL_NOT_SLAVE,
-	NME_PL_NO_FIRMWARE,
-	NME_PL_OPNOTSUPP,
-	NME_PL_NETLINK,
-	NME_PL_CANT_SET_MTU,
-
-	_NM_ERRNO_RESERVED_LAST_PLUS_1,
-	_NM_ERRNO_RESERVED_LAST = _NM_ERRNO_RESERVED_LAST_PLUS_1 - 1,
+    _NM_ERRNO_RESERVED_LAST_PLUS_1,
+    _NM_ERRNO_RESERVED_LAST = _NM_ERRNO_RESERVED_LAST_PLUS_1 - 1,
 };
 
 /*****************************************************************************/
@@ -77,13 +75,13 @@ enum _NMErrno {
  * In a sense, the macro is related to nm_errno_native() function, but the difference
  * is that this macro asserts that @errsv is positive, while nm_errno_native() coerces
  * negative values to be non-negative. */
-#define NM_ERRNO_NATIVE(errsv) \
-	({ \
-		const int _errsv_x = (errsv); \
-		\
-		nm_assert (_errsv_x > 0); \
-		_errsv_x; \
-	})
+#define NM_ERRNO_NATIVE(errsv)        \
+    ({                                \
+        const int _errsv_x = (errsv); \
+                                      \
+        nm_assert(_errsv_x > 0);      \
+        _errsv_x;                     \
+    })
 
 /* Normalize native errno.
  *
@@ -98,14 +96,16 @@ enum _NMErrno {
  * Basically, this normalizes errsv to be positive (taking care of two pathological cases).
  */
 static inline int
-nm_errno_native (int errsv)
+nm_errno_native(int errsv)
 {
-	switch (errsv) {
-	case 0:                  return NME_ERRNO_SUCCESS;
-	case G_MININT:           return NME_ERRNO_OUT_OF_RANGE;
-	default:
-		return errsv >= 0 ? errsv : -errsv;
-	}
+    switch (errsv) {
+    case 0:
+        return NME_ERRNO_SUCCESS;
+    case G_MININT:
+        return NME_ERRNO_OUT_OF_RANGE;
+    default:
+        return errsv >= 0 ? errsv : -errsv;
+    }
 }
 
 /* Normalizes an nm-error to be positive.
@@ -118,9 +118,9 @@ nm_errno_native (int errsv)
  * as far as normalizing goes, nm_errno() does exactly the same remapping as
  * nm_errno_native(). */
 static inline int
-nm_errno (int nmerr)
+nm_errno(int nmerr)
 {
-	return nm_errno_native (nmerr);
+    return nm_errno_native(nmerr);
 }
 
 /* this maps a native errno to a (always non-negative) nm-error number.
@@ -141,29 +141,30 @@ nm_errno (int nmerr)
  *  - all other values are their (positive) absolute value.
  */
 static inline int
-nm_errno_from_native (int errsv)
+nm_errno_from_native(int errsv)
 {
-	switch (errsv) {
-	case 0:                  return NME_ERRNO_SUCCESS;
-	case G_MININT:           return NME_ERRNO_OUT_OF_RANGE;
-	default:
-		if (errsv < 0)
-			errsv = -errsv;
-		return   G_UNLIKELY (   errsv >= _NM_ERRNO_RESERVED_FIRST
-		                     && errsv <= _NM_ERRNO_RESERVED_LAST)
-		       ? NME_NATIVE_ERRNO
-		       : errsv;
-	}
+    switch (errsv) {
+    case 0:
+        return NME_ERRNO_SUCCESS;
+    case G_MININT:
+        return NME_ERRNO_OUT_OF_RANGE;
+    default:
+        if (errsv < 0)
+            errsv = -errsv;
+        return G_UNLIKELY(errsv >= _NM_ERRNO_RESERVED_FIRST && errsv <= _NM_ERRNO_RESERVED_LAST)
+                   ? NME_NATIVE_ERRNO
+                   : errsv;
+    }
 }
 
-const char *nm_strerror (int nmerr);
+const char *nm_strerror(int nmerr);
 
 /*****************************************************************************/
 
 #define NM_STRERROR_BUFSIZE 1024
 
-const char *nm_strerror_native_r (int errsv, char *buf, gsize buf_size);
-const char *nm_strerror_native (int errsv);
+const char *nm_strerror_native_r(int errsv, char *buf, gsize buf_size);
+const char *nm_strerror_native(int errsv);
 
 /*****************************************************************************/
 

@@ -322,6 +322,7 @@ static void test_connection(void) {
                 NDhcp4CConnection connection_client = N_DHCP4_C_CONNECTION_NULL(connection_client);
                 _c_cleanup_(n_dhcp4_incoming_freep) NDhcp4Incoming *offer = NULL;
                 _c_cleanup_(n_dhcp4_incoming_freep) NDhcp4Incoming *ack = NULL;
+                NDhcp4LogQueue log_queue = N_DHCP4_LOG_QUEUE_NULL_DEFUNCT();
 
                 test_s_connection_init(ns_server, &connection_server, link_server.ifindex);
                 n_dhcp4_s_connection_ip_init(&connection_server_ip, addr_server);
@@ -351,6 +352,7 @@ static void test_connection(void) {
                 r = n_dhcp4_c_connection_init(&connection_client,
                                               client_config,
                                               probe_config,
+                                              &log_queue,
                                               efd_client);
                 c_assert(!r);
                 test_c_connection_listen(ns_client, &connection_client);
@@ -358,13 +360,13 @@ static void test_connection(void) {
                 test_discover(&connection_server, &connection_client, &addr_server, &addr_client, &offer);
                 test_select(&connection_server, &connection_client, offer, &addr_server, &addr_client);
                 test_reboot(&connection_server, &connection_client, &addr_server, &addr_client, &ack);
+                test_rebind(&connection_server, &connection_client, &addr_server, &addr_client);
                 test_decline(&connection_server, &connection_client, ack);
 
                 link_add_ip4(&link_client, &addr_client, 8);
                 test_c_connection_connect(ns_client, &connection_client, &addr_client, &addr_server);
 
                 test_renew(&connection_server, &connection_client, &addr_server, &addr_client);
-                test_rebind(&connection_server, &connection_client, &addr_server, &addr_client);
                 test_release(&connection_server, &connection_client, &addr_server, &addr_client);
 
                 n_dhcp4_c_connection_deinit(&connection_client);

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 libnm_inc = include_directories('.')
 
 libnm_nm_default_dep = declare_dependency(
@@ -38,7 +40,9 @@ libnm_headers = files(
   'nm-device-ppp.h',
   'nm-device-team.h',
   'nm-device-tun.h',
+  'nm-device-veth.h',
   'nm-device-vlan.h',
+  'nm-device-vrf.h',
   'nm-device-vxlan.h',
   'nm-device-wifi-p2p.h',
   'nm-device-wifi.h',
@@ -103,7 +107,9 @@ libnm_sources = files(
   'nm-device-ppp.c',
   'nm-device-team.c',
   'nm-device-tun.c',
+  'nm-device-veth.c',
   'nm-device-vlan.c',
+  'nm-device-vrf.c',
   'nm-device-vxlan.c',
   'nm-device-wifi-p2p.c',
   'nm-device-wifi.c',
@@ -119,10 +125,8 @@ libnm_sources = files(
   'nm-ip4-config.c',
   'nm-ip6-config.c',
   'nm-libnm-utils.c',
-  'nm-manager.c',
   'nm-object.c',
   'nm-remote-connection.c',
-  'nm-remote-settings.c',
   'nm-secret-agent-old.c',
   'nm-vpn-connection.c',
   'nm-vpn-editor.c',
@@ -136,6 +140,7 @@ deps = [
   libnmdbus_dep,
   libnm_libnm_core_intern_dep,
   libnm_nm_default_dep,
+  libnm_keyfile_dep,
   libnm_udev_aux_dep,
   libudev_dep,
 ]
@@ -151,6 +156,7 @@ liblibnm = static_library(
 links = [
   liblibnm,
   libnm_core,
+  libnm_keyfile,
   libnmdbus,
   libnm_systemd_logging_stub,
   libnm_utils_base,
@@ -198,7 +204,7 @@ if enable_introspection
 
   libnm_gir = gnome.generate_gir(
     libnm,
-    sources: libnm_core_sources + libnm_core_headers + libnm_core_enum_sources + libnm_sources + libnm_headers + libnm_enum_sources + [nm_version_macro_header],
+    sources: libnm_core_sources + nm_keyfile_source + libnm_core_headers + libnm_core_enum_sources + libnm_sources + libnm_headers + libnm_enum_sources + [nm_version_macro_header],
     includes: 'Gio-2.0',
     nsversion: nm_gir_version,
     namespace: 'NM',
@@ -210,35 +216,52 @@ if enable_introspection
     install: true,
   )
 
-  generate_plugin_docs = join_paths(meson.current_source_dir(), 'generate-plugin-docs.pl')
-
-  name = 'nm-settings-keyfile-docs.xml'
-  nm_settings_keyfile_docs = custom_target(
-    name,
-    input: libnm_core_settings_sources,
-    output: name,
-    command: [perl, generate_plugin_docs, 'keyfile', '@OUTPUT@', '@INPUT@'],
-  )
-
-  name = 'nm-settings-docs-overrides.xml'
-  nm_settings_docs_overrides = custom_target(
-    name,
-    input: libnm_core_settings_sources,
-    output: name,
-    command: [perl, generate_plugin_docs, 'dbus', '@OUTPUT@', '@INPUT@'],
-  )
-
+  infos = [ 'dbus', 'nmcli', 'keyfile' ]
   if enable_ifcfg_rh
-    name = 'nm-settings-ifcfg-rh-docs.xml'
-    nm_settings_ifcfg_rh_docs = custom_target(
-      name,
-      input: libnm_core_settings_sources,
-      output: name,
-      command: [perl, generate_plugin_docs, 'ifcfg-rh', '@OUTPUT@', '@INPUT@'],
-    )
+    infos += [ 'ifcfg-rh' ]
   endif
+  foreach info: infos
+    t = custom_target(
+      'nm-propery-infos-' + info + '.xml',
+      input: libnm_core_settings_sources,
+      output: 'nm-propery-infos-' + info + '.xml',
+      command: [
+        perl,
+        join_paths(meson.source_root(), 'tools', 'generate-docs-nm-property-infos.pl'),
+        info,
+        '@OUTPUT@',
+        '@INPUT@'
+      ],
+    )
 
-  generate_setting_docs = join_paths(meson.current_source_dir(), 'generate-setting-docs.py')
+    # meson 0.47 doesn't support non-static keys for dicts
+    # nor extending dicts incrementally. Workaround.
+    if info == 'dbus'
+      nm_property_infos_xml_dbus = t
+    elif info == 'keyfile'
+      nm_property_infos_xml_keyfile = t
+    elif info == 'ifcfg-rh'
+      nm_property_infos_xml_ifcfg_rh = t
+    elif info == 'nmcli'
+      nm_property_infos_xml_nmcli = t
+    else
+      assert(false)
+    endif
+  endforeach
+  if enable_ifcfg_rh
+    nm_property_infos_xml = {
+      'dbus':     nm_property_infos_xml_dbus,
+      'keyfile':  nm_property_infos_xml_keyfile,
+      'nmcli':    nm_property_infos_xml_nmcli,
+      'ifcfg-rh': nm_property_infos_xml_ifcfg_rh,
+    }
+  else
+    nm_property_infos_xml = {
+      'dbus':    nm_property_infos_xml_dbus,
+      'keyfile': nm_property_infos_xml_keyfile,
+      'nmcli':   nm_property_infos_xml_nmcli,
+    }
+  endif
 
   gi_typelib_path = run_command('printenv', 'GI_TYPELIB_PATH').stdout()
   if gi_typelib_path != ''
@@ -253,30 +276,49 @@ if enable_introspection
   ld_library_path = meson.current_build_dir() + ld_library_path
 
   generate_setting_docs_env = [
-    'env', '-i',
+    'env',
     'GI_TYPELIB_PATH=' + gi_typelib_path,
     'LD_LIBRARY_PATH=' + ld_library_path,
   ]
 
-  name = 'nm-property-docs.xml'
-  nm_property_docs = custom_target(
-    name,
+  nm_settings_docs_xml_gir = custom_target(
+    'nm-settings-docs-gir.xml',
     input: libnm_gir[0],
-    output: name,
-    command: [generate_setting_docs_env, python.path(), generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT@', '--output', '@OUTPUT@'],
+    output: 'nm-settings-docs-gir.xml',
+    command: [
+      generate_setting_docs_env,
+      python.path(),
+      join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-gir.py'),
+      '--lib-path', meson.current_build_dir(),
+      '--gir', '@INPUT@',
+      '--output', '@OUTPUT@'
+    ],
     depends: libnm_gir,
   )
 
-  name = 'nm-settings-docs.xml'
-  nm_settings_docs = custom_target(
-    name,
-    input: [libnm_gir[0], nm_settings_docs_overrides],
-    output: name,
-    command: [generate_setting_docs_env, python.path(), generate_setting_docs, '--lib-path', meson.current_build_dir(), '--gir', '@INPUT0@', '--overrides', '@INPUT1@', '--output', '@OUTPUT@'],
-    depends: libnm_gir,
-  )
 endif
 
 if enable_tests
   subdir('tests')
 endif
+
+libnm_libnm_aux = static_library(
+  'nm-libnm-aux',
+  sources: files(
+    'nm-libnm-aux/nm-libnm-aux.c',
+  ),
+  c_args: [
+    '-DG_LOG_DOMAIN="@0@"'.format('libnmc'),
+    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
+  ],
+  dependencies: [
+    libnm_core_nm_default_dep,
+    libnm_libnm_core_intern_dep,
+    libnm_dep,
+  ],
+)
+
+libnm_libnm_aux_dep = declare_dependency(
+  include_directories: [shared_inc],
+  link_with: [libnm_libnm_aux],
+)

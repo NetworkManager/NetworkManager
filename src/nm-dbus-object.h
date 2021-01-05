@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0+
+/* SPDX-License-Identifier: GPL-2.0+ */
 /*
  * Copyright (C) 2018 Red Hat, Inc.
  */
@@ -14,34 +14,34 @@
 /*****************************************************************************/
 
 typedef struct {
-	const char *path;
+    const char *path;
 
-	/* if path is of type NM_DBUS_EXPORT_PATH_NUMBERED(), we need a
-	 * per-class counter when generating a new numbered path.
-	 *
-	 * Each NMDBusObjectClass instance has a shallow clone of the NMDBusObjectClass parent
-	 * instance in every derived type. Hence we cannot embed the counter there directly,
-	 * because it must be shared, e.g. between NMDeviceBond and NMDeviceEthernet.
-	 * Make int_counter a pointer to the actual counter that is used by ever sibling
-	 * class. */
-	long long unsigned *int_counter;
+    /* if path is of type NM_DBUS_EXPORT_PATH_NUMBERED(), we need a
+     * per-class counter when generating a new numbered path.
+     *
+     * Each NMDBusObjectClass instance has a shallow clone of the NMDBusObjectClass parent
+     * instance in every derived type. Hence we cannot embed the counter there directly,
+     * because it must be shared, e.g. between NMDeviceBond and NMDeviceEthernet.
+     * Make int_counter a pointer to the actual counter that is used by ever sibling
+     * class. */
+    long long unsigned *int_counter;
 } NMDBusExportPath;
 
 #define NM_DBUS_EXPORT_PATH_STATIC(basepath) \
-	({ \
-		((NMDBusExportPath) { \
-			.path = ""basepath"", \
-		}); \
-	})
+    ({                                       \
+        ((NMDBusExportPath){                 \
+            .path = "" basepath "",          \
+        });                                  \
+    })
 
-#define NM_DBUS_EXPORT_PATH_NUMBERED(basepath) \
-	({ \
-		static long long unsigned _int_counter = 0; \
-		((NMDBusExportPath) { \
-			.path = ""basepath"/%llu", \
-			.int_counter = &_int_counter, \
-		}); \
-	})
+#define NM_DBUS_EXPORT_PATH_NUMBERED(basepath)      \
+    ({                                              \
+        static long long unsigned _int_counter = 0; \
+        ((NMDBusExportPath){                        \
+            .path        = "" basepath "/%llu",     \
+            .int_counter = &_int_counter,           \
+        });                                         \
+    })
 
 /*****************************************************************************/
 
@@ -56,69 +56,69 @@ extern const NMDBusInterfaceInfoExtended nm_interface_info_device_statistics;
 
 /*****************************************************************************/
 
-#define NM_TYPE_DBUS_OBJECT            (nm_dbus_object_get_type ())
-#define NM_DBUS_OBJECT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DBUS_OBJECT, NMDBusObject))
-#define NM_DBUS_OBJECT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_DBUS_OBJECT, NMDBusObjectClass))
-#define NM_IS_DBUS_OBJECT(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DBUS_OBJECT))
-#define NM_IS_DBUS_OBJECT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DBUS_OBJECT))
-#define NM_DBUS_OBJECT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DBUS_OBJECT, NMDBusObjectClass))
+#define NM_TYPE_DBUS_OBJECT (nm_dbus_object_get_type())
+#define NM_DBUS_OBJECT(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DBUS_OBJECT, NMDBusObject))
+#define NM_DBUS_OBJECT_CLASS(klass) \
+    (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DBUS_OBJECT, NMDBusObjectClass))
+#define NM_IS_DBUS_OBJECT(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DBUS_OBJECT))
+#define NM_IS_DBUS_OBJECT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_DBUS_OBJECT))
+#define NM_DBUS_OBJECT_GET_CLASS(obj) \
+    (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_DBUS_OBJECT, NMDBusObjectClass))
 
 #define NM_DBUS_OBJECT_EXPORTED_CHANGED "exported-changed"
 
 /* NMDBusObject and NMDBusManager cooperate strongly. Hence, there is an
  * internal data structure attached to the NMDBusObject accessible to both of them. */
 struct _NMDBusObjectInternal {
-	char *path;
-	NMDBusManager *bus_manager;
-	CList objects_lst;
-	CList registration_lst_head;
+    char *         path;
+    NMDBusManager *bus_manager;
+    CList          objects_lst;
+    CList          registration_lst_head;
 
-	/* we perform asynchronous operation on exported objects. For example, we receive
-	 * a Set property call, and asynchronously validate the operation. We must make
-	 * sure that when the authentication is complete, that we are still looking at
-	 * the same (exported) object. In the meantime, the object could have been
-	 * unexported, or even re-exported afterwards. If that happens, we want
-	 * to fail the request. For that, we keep track of a version id.  */
-	guint64 export_version_id;
-	bool is_unexporting:1;
+    /* we perform asynchronous operation on exported objects. For example, we receive
+     * a Set property call, and asynchronously validate the operation. We must make
+     * sure that when the authentication is complete, that we are still looking at
+     * the same (exported) object. In the meantime, the object could have been
+     * unexported, or even re-exported afterwards. If that happens, we want
+     * to fail the request. For that, we keep track of a version id.  */
+    guint64 export_version_id;
+    bool    is_unexporting : 1;
 };
 
 struct _NMDBusObject {
-	GObject parent;
-	struct _NMDBusObjectInternal internal;
+    GObject                      parent;
+    struct _NMDBusObjectInternal internal;
 };
 
 #define NM_DEFINE_DBUS_INTERFACE_INFO(...) \
-	((NMDBusInterfaceInfo *) (&((const NMDBusInterfaceInfo) { \
-		__VA_ARGS__ \
-	})))
+    ((NMDBusInterfaceInfo *) (&((const NMDBusInterfaceInfo){__VA_ARGS__})))
 
 typedef struct {
-	GObjectClass parent;
+    GObjectClass parent;
 
-	NMDBusExportPath export_path;
+    NMDBusExportPath export_path;
 
-	const NMDBusInterfaceInfoExtended *const*interface_infos;
+    const NMDBusInterfaceInfoExtended *const *interface_infos;
 
-	bool export_on_construction;
+    bool export_on_construction;
 } NMDBusObjectClass;
 
-GType nm_dbus_object_get_type (void);
+GType nm_dbus_object_get_type(void);
 
 static inline NMDBusManager *
-nm_dbus_object_get_manager (NMDBusObject *obj)
+nm_dbus_object_get_manager(NMDBusObject *obj)
 {
-	nm_assert (NM_IS_DBUS_OBJECT (obj));
+    nm_assert(NM_IS_DBUS_OBJECT(obj));
 
-	return obj->internal.bus_manager;
+    return obj->internal.bus_manager;
 }
 
 static inline guint64
-nm_dbus_object_get_export_version_id (NMDBusObject *obj)
+nm_dbus_object_get_export_version_id(NMDBusObject *obj)
 {
-	nm_assert (NM_IS_DBUS_OBJECT (obj));
+    nm_assert(NM_IS_DBUS_OBJECT(obj));
 
-	return obj->internal.export_version_id;
+    return obj->internal.export_version_id;
 }
 
 /**
@@ -130,11 +130,11 @@ nm_dbus_object_get_export_version_id (NMDBusObject *obj)
  * Returns: @self's D-Bus path, or %NULL if @self is not exported.
  */
 static inline const char *
-nm_dbus_object_get_path (NMDBusObject *self)
+nm_dbus_object_get_path(NMDBusObject *self)
 {
-	g_return_val_if_fail (NM_IS_DBUS_OBJECT (self), NULL);
+    g_return_val_if_fail(NM_IS_DBUS_OBJECT(self), NULL);
 
-	return self->internal.path;
+    return self->internal.path;
 }
 
 /**
@@ -146,38 +146,39 @@ nm_dbus_object_get_path (NMDBusObject *self)
  * Returns: %TRUE if @self is exported
  */
 static inline gboolean
-nm_dbus_object_is_exported (NMDBusObject *self)
+nm_dbus_object_is_exported(NMDBusObject *self)
 {
-	return !!nm_dbus_object_get_path (self);
+    return !!nm_dbus_object_get_path(self);
 }
 
 static inline const char *
-nm_dbus_object_get_path_still_exported (NMDBusObject *self)
+nm_dbus_object_get_path_still_exported(NMDBusObject *self)
 {
-	g_return_val_if_fail (NM_IS_DBUS_OBJECT (self), NULL);
+    g_return_val_if_fail(NM_IS_DBUS_OBJECT(self), NULL);
 
-	/* like nm_dbus_object_get_path(), however, while unexporting
-	 * (exported-changed signal), returns %NULL instead of the path. */
-	return self->internal.is_unexporting
-	       ? NULL
-	       : self->internal.path;
+    /* like nm_dbus_object_get_path(), however, while unexporting
+     * (exported-changed signal), returns %NULL instead of the path. */
+    return self->internal.is_unexporting ? NULL : self->internal.path;
 }
 
-const char *nm_dbus_object_export      (NMDBusObject *self);
-void        nm_dbus_object_unexport    (NMDBusObject *self);
+const char *nm_dbus_object_export(gpointer /* (NMDBusObject *) */ self);
+void        nm_dbus_object_unexport(gpointer /* (NMDBusObject *) */ self);
 
-void        _nm_dbus_object_clear_and_unexport (NMDBusObject **location);
-#define nm_dbus_object_clear_and_unexport(location) _nm_dbus_object_clear_and_unexport ((NMDBusObject **) (location))
+void nm_dbus_object_unexport_on_idle(gpointer /* (NMDBusObject *) */ self_take);
 
-void        nm_dbus_object_emit_signal_variant (NMDBusObject *self,
-                                                const NMDBusInterfaceInfoExtended *interface_info,
-                                                const GDBusSignalInfo *signal_info,
-                                                GVariant *args);
+void _nm_dbus_object_clear_and_unexport(NMDBusObject **location);
+#define nm_dbus_object_clear_and_unexport(location) \
+    _nm_dbus_object_clear_and_unexport((NMDBusObject **) (location))
 
-void        nm_dbus_object_emit_signal (NMDBusObject *self,
+void nm_dbus_object_emit_signal_variant(NMDBusObject *                     self,
                                         const NMDBusInterfaceInfoExtended *interface_info,
-                                        const GDBusSignalInfo *signal_info,
-                                        const char *format,
-                                        ...);
+                                        const GDBusSignalInfo *            signal_info,
+                                        GVariant *                         args);
+
+void nm_dbus_object_emit_signal(NMDBusObject *                     self,
+                                const NMDBusInterfaceInfoExtended *interface_info,
+                                const GDBusSignalInfo *            signal_info,
+                                const char *                       format,
+                                ...);
 
 #endif /* __NM_DBUS_OBJECT_H__ */

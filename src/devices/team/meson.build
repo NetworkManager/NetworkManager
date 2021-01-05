@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 sources = files(
   'nm-device-team.c',
   'nm-team-factory.c',

@@ -80,8 +80,8 @@
       device an operation just happened on, and second the action. For device actions,
       the interface is the name of the kernel interface suitable for IP configuration.
       Thus it is either VPN_IP_IFACE, DEVICE_IP_IFACE, or DEVICE_IFACE, as applicable.
-      For the <varname>hostname</varname> and <varname>connectivity-change</varname>
-      actions it is always "none".
+      For the <varname>hostname</varname> action the device name is always <literal>"none"</literal>
+      and for <varname>connectivity-change</varname> it is empty.
     </para>
     <para>The actions are:</para>
     <variablelist class="dispatcher-options">
@@ -503,18 +503,69 @@
   <refsect1>
     <title>Debugging</title>
     <para>
-      The following environment variables are supported to help
-      debugging.  When used in conjunction with the
-      <option>--no-daemon</option> option (thus echoing PPP and DHCP
-      helper output to stdout) these can quickly help pinpoint the
-      source of connection issues.  Also see the
-      <option>--log-level</option> and <option>--log-domains</option>
-      to enable debug logging inside NetworkManager itself.
+      NetworkManager only configures your system. So when your networking setup doesn't
+      work as expected, the first step is to look at your system to understand what is actually
+      configured, and whether that is correct. The second step is to find out how to tell
+      NetworkManager to do the right thing.
     </para>
     <para>
-      <option>NM_PPP_DEBUG</option>: When set to anything, causes
-      NetworkManager to turn on PPP debugging in pppd, which logs
-      all PPP and PPTP frames and client/server exchanges.
+      You can for example try to <command>ping</command> hosts (by
+      IP address or DNS name), look at <command>ip link show</command>, <command>ip address show</command> and <command>ip route show</command>,
+      and look at <filename>/etc/resolv.conf</filename> for name resolution issues.
+      Also look at the connection profiles that you have configured in NetworkManager (<command>nmcli connection</command>
+      and <command>nmcli connection show "$PROFILE"</command>)
+      and the configured interfaces (<command>nmcli device</command>).
+    </para>
+    <para>
+      If that does not suffice, look at the logfiles of NetworkManager. NetworkManager
+      logs to syslog, so depending on your system configuration you can call <command>journalctl</command>
+      to get the logs.
+      By default, NetworkManager logs are not verbose and thus not very helpful for investigating
+      a problem in detail. You can change the logging level at runtime with <command>nmcli general logging level TRACE domains ALL</command>.
+      But usually a better way is to collect full logs from the start, by configuring
+      <literal>level=TRACE</literal> in NetworkManager.conf. See
+      <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>
+      manual. Note that trace logs of NetworkManager are verbose and systemd-journald might rate limit
+      some lines. Possibly disable rate limiting first with the <literal>RateLimitIntervalSec</literal> and
+      <literal>RateLimitBurst</literal> options of journald (see
+      <link linkend='journald.conf'><citerefentry><refentrytitle>journald.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link> manual).
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title>/var/lib/NetworkManager/secret_key and /etc/machine-id</title>
+
+    <para>
+      The identity of a machine is important as various settings depend on it. For example,
+      <literal>ipv6.addr-gen-mode=stable</literal> and <literal>ethernet.cloned-mac-address=stable</literal>
+      generate identifiers by hashing the machine's identity. See also the
+      <literal>connection.stable-id</literal> connection property which is a per-profile seed
+      that gets hashed with the machine identity for generating such addresses and identifiers.
+    </para>
+    <para>
+      If you backup and restore a machine, the identity of the machine probably should be preserved.
+      In that case, preserve the files <filename>/var/lib/NetworkManager/secret_key</filename> and
+      <literal>/etc/machine-id</literal>. On the other hand, if you clone a virtual machine, you
+      probably want that the clone has a different identity. There is already existing tooling on Linux for
+      handling <literal>/etc/machine-id</literal> (see
+      <link linkend='machine-id'><citerefentry><refentrytitle>machine-id</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>).
+    </para>
+    <para>
+      The identity of the machine is determined by the <filename>/var/lib/NetworkManager/secret_key</filename>.
+      If such a file does not exist, NetworkManager will create a file with random content. To generate
+      a new identity just delete the file and after restart a new file will be created.
+      The file should be read-only to root and contain at least 16 bytes that will be used to seed the various places
+      where a stable identifier is used.
+    </para>
+    <para>
+      Since 1.16.0, NetworkManager supports a version 2 of secret-keys. For such keys
+      <filename>/var/lib/NetworkManager/secret_key</filename> starts with ASCII <literal>"nm-v2:"</literal>
+      followed by at least 32 bytes of random data.
+      Also, recent versions of NetworkManager always create such kinds of secret-keys, when
+      the file does not yet exist.
+      With version 2 of the secret-key, <literal>/etc/machine-id</literal> is also hashed as part
+      of the generation for addresses and identifiers. The advantage is that you can keep <filename>/var/lib/NetworkManager/secret_key</filename>
+      stable, and only regenerate <literal>/etc/machine-id</literal> when cloning a VM.
     </para>
   </refsect1>
 
@@ -522,7 +573,7 @@
     <title>Bugs</title>
     <para>
       Please report any bugs you find in NetworkManager at the
-      <ulink url="https://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager">NetworkManager bug tracker</ulink>.
+      <ulink url="https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/issues">NetworkManager issue tracker</ulink>.
     </para>
   </refsect1>
 

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 src_inc = include_directories('.')
 
 daemon_nm_default_dep = declare_dependency(
@@ -41,6 +43,11 @@ sources = files(
   'nm-core-utils.c',
   'nm-dbus-object.c',
   'nm-dbus-utils.c',
+  'nm-netns.c',
+  'nm-l3-config-data.c',
+  'nm-l3-ipv4ll.c',
+  'nm-l3cfg.c',
+  'nm-ip-config.c',
   'nm-ip4-config.c',
   'nm-ip6-config.c',
   'nm-logging.c',
@@ -49,6 +56,7 @@ sources = files(
 deps = [
   daemon_nm_default_dep,
   libn_dhcp4_dep,
+  libnm_keyfile_dep,
   libnm_core_dep,
   libnm_systemd_shared_dep,
   libnm_udev_aux_dep,
@@ -86,6 +94,7 @@ sources = files(
   'devices/nm-device-tun.c',
   'devices/nm-device-veth.c',
   'devices/nm-device-vlan.c',
+  'devices/nm-device-vrf.c',
   'devices/nm-device-vxlan.c',
   'devices/nm-device-wireguard.c',
   'devices/nm-device-wpan.c',
@@ -125,7 +134,6 @@ sources = files(
   'nm-act-request.c',
   'nm-audit-manager.c',
   'nm-auth-manager.c',
-  'nm-auth-subject.c',
   'nm-auth-utils.c',
   'nm-dbus-manager.c',
   'nm-checkpoint.c',
@@ -134,14 +142,12 @@ sources = files(
   'nm-config-data.c',
   'nm-connectivity.c',
   'nm-dcb.c',
-  'nm-dhcp4-config.c',
-  'nm-dhcp6-config.c',
+  'nm-dhcp-config.c',
   'nm-dispatcher.c',
   'nm-firewall-manager.c',
   'nm-hostname-manager.c',
   'nm-keep-alive.c',
   'nm-manager.c',
-  'nm-netns.c',
   'nm-pacrunner-manager.c',
   'nm-policy.c',
   'nm-proxy-config.c',
@@ -189,19 +195,16 @@ libnetwork_manager = static_library(
   link_with: nm_links,
 )
 
-deps = [
-  daemon_nm_default_dep,
-  dl_dep,
-  libndp_dep,
-  libudev_dep,
-]
-
-name = 'nm-iface-helper'
-
 executable(
-  name,
-  name + '.c',
-  dependencies: deps,
+  'nm-iface-helper',
+  'nm-iface-helper.c',
+  dependencies: [
+    daemon_nm_default_dep,
+    dl_dep,
+    libndp_dep,
+    libudev_dep,
+    libn_acd_dep,
+  ],
   c_args: daemon_c_flags,
   link_with: nm_links,
   link_args: ldflags_linker_script_binary,
@@ -262,8 +265,8 @@ symbol_map_name = 'NetworkManager.ver'
 # add dependencies with link_whole, only supported in meson >= 0.46.
 # Create an executable with full symbols that we use in place of the
 # library to enumerate the symbols.
-network_manager_sym = executable(
-  'nm-full-symbols',
+network_manager_all_sym = executable(
+  'NetworkManager-all-sym',
   'main.c',
   dependencies: nm_deps,
   c_args: daemon_c_flags,
@@ -275,7 +278,7 @@ network_manager_sym = executable(
 ver_script = custom_target(
   symbol_map_name,
   output: symbol_map_name,
-  depends: [network_manager_sym, core_plugins],
+  depends: [network_manager_all_sym, core_plugins],
   command: [create_exports_networkmanager, '--called-from-build', source_root],
 )
 

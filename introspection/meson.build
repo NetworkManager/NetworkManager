@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 ifaces_secret_agent_xml = files('org.freedesktop.NetworkManager.SecretAgent.xml')
 
 ifaces_vpn_plugin_xml = files('org.freedesktop.NetworkManager.VPN.Plugin.xml')
@@ -33,6 +35,7 @@ ifaces = [
   'org.freedesktop.NetworkManager.Device.Tun',
   'org.freedesktop.NetworkManager.Device.Veth',
   'org.freedesktop.NetworkManager.Device.Vlan',
+  'org.freedesktop.NetworkManager.Device.Vrf',
   'org.freedesktop.NetworkManager.Device.Vxlan',
   'org.freedesktop.NetworkManager.Device.WiMax',
   'org.freedesktop.NetworkManager.Device.WifiP2P',
@@ -56,6 +59,7 @@ ifaces = [
 ifaces_xmls = []
 sources = []
 introspection_files = []
+headers = []
 
 # FIXME?: DBUS_INTERFACE_DOCS/docbook files are generated in
 # "meson.current_build_dir()" instead of "meson.source_root()/docs/api"
@@ -85,6 +89,7 @@ foreach iface: ifaces
   # older versions
   if meson.version().version_compare('>= 0.46.0')
     introspection_files += [ [res[2], dbus_iface_xml_path] ]
+    headers += res[1]
   endif
 
 endforeach
@@ -99,12 +104,11 @@ libnmdbus = static_library(
   sources: sources,
   include_directories: top_inc,
   dependencies: glib_dep,
+  c_args: introspection_extra_cflags,
 )
 
 libnmdbus_dep = declare_dependency(
-  # FIXME: only headers should be added here to resolve dependencies on
-  #        libNetworkManagerBase and libNetworkManager
-  #sources: sources,
+  sources: headers,
   include_directories: include_directories('.'),
   link_with: libnmdbus,
 )

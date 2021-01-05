@@ -28,6 +28,16 @@
     <property name="Udi" type="s" access="read"/>
 
     <!--
+        Path:
+
+        The path of the device as exposed by the udev property ID_PATH.
+
+        Note that non-UTF-8 characters are backslash escaped. Use g_strcompress()
+        to obtain the true (non-UTF-8) string.
+    -->
+    <property name="Path" type="s" access="read"/>
+
+    <!--
         Interface:
 
         The name of the device's control (and often data) interface.
@@ -90,7 +100,7 @@
         Ip4Address:
 
         DEPRECATED; use the 'Addresses' property of the 'Ip4Config' object
-        instead.
+        instead. This property always returns 0.0.0.0 (numeric 0) as address.
     -->
     <property name="Ip4Address" type="u" access="read"/>
 
@@ -279,8 +289,30 @@
     <property name="Ip6Connectivity" type="u" access="read"/>
 
     <!--
+        InterfaceFlags:
+
+        The flags of the network interface. See
+        <link linkend="NMDeviceInterfaceFlags">NMDeviceInterfaceFlags</link> for
+        the currently defined flags.
+
+        Since: 1.22
+    -->
+    <property name="InterfaceFlags" type="u" access="read"/>
+
+    <!--
+        HwAddress:
+
+        The hardware address of the device.
+
+        This replaces the other 'HwAddress' properties on the device-specific D-Bus interfaces.
+
+        Since: 1.24
+    -->
+    <property name="HwAddress" type="s" access="read"/>
+
+    <!--
         Reapply:
-        @connection: The optional connection settings that will be reapplied on the device. If empty, the currently active settings-connection will be used. The connection cannot arbitrarly differ from the current applied-connection otherwise the call will fail. Only certain changes are supported, like adding or removing IP addresses.
+        @connection: The optional connection settings that will be reapplied on the device. If empty, the currently active settings-connection will be used. The connection cannot arbitrarily differ from the current applied-connection otherwise the call will fail. Only certain changes are supported, like adding or removing IP addresses.
         @version_id: If non-zero, the current version id of the applied-connection must match. The current version id can be retrieved via GetAppliedConnection. This optional argument allows to catch concurrent modifications between the GetAppliedConnection call and Reapply.
         @flags: Flags which would modify the behavior of the Reapply call. There are no flags defined currently and the users should use the value of 0.
 

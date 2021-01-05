@@ -6,7 +6,8 @@
 
 import sys
 import gi
-gi.require_version('NM', '1.0')
+
+gi.require_version("NM", "1.0")
 from gi.repository import GLib, NM
 
 #
@@ -18,6 +19,7 @@ from gi.repository import GLib, NM
 
 main_loop = None
 
+
 def do_notify(self, property):
     print("notify: %s" % property)
     ip4cfg = self.get_ip4_config()
@@ -25,26 +27,26 @@ def do_notify(self, property):
         print("ip4-config: %s" % ip4cfg.get_path())
         main_loop.quit()
 
+
 def state_changed(obj, arg1, arg2, arg3):
     print("State changed: New: %d, Old: %d, Reason: %d" % (arg1, arg2, arg3))
     # Device is connected
     if arg1 == 100:
-        obj.connect('notify::ip4-config', do_notify)
+        obj.connect("notify::ip4-config", do_notify)
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        sys.exit('Usage: %s <interface>' % sys.argv[0])
+        sys.exit("Usage: %s <interface>" % sys.argv[0])
     dev_iface = sys.argv[1]
 
     c = NM.Client.new(None)
     dev = c.get_device_by_iface(dev_iface)
     if dev is None:
-        sys.exit('Device \'%s\' not found' % dev_iface)
+        sys.exit("Device '%s' not found" % dev_iface)
     print("Device: %s - %s" % (dev_iface, dev.get_device_type().value_name))
     print("---------------------------------------")
 
-    dev.connect('state-changed', state_changed)
+    dev.connect("state-changed", state_changed)
     main_loop = GLib.MainLoop()
     main_loop.run()
-

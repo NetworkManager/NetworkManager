@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LGPL-2.1+
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /*
  * Copyright (C) 2018 Red Hat, Inc.
  */
@@ -11,42 +11,42 @@
 
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_geterror,
+static NM_UTILS_LOOKUP_STR_DEFINE(
+    _geterror,
 #if 0
-	enum _NMErrno,
+    enum _NMErrno,
 #else
-	int,
+    int,
 #endif
-	NM_UTILS_LOOKUP_DEFAULT (NULL),
+    NM_UTILS_LOOKUP_DEFAULT(NULL),
 
-	NM_UTILS_LOOKUP_STR_ITEM (NME_ERRNO_SUCCESS,      "NME_ERRNO_SUCCESS"),
-	NM_UTILS_LOOKUP_STR_ITEM (NME_ERRNO_OUT_OF_RANGE, "NME_ERRNO_OUT_OF_RANGE"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_ERRNO_SUCCESS, "NME_ERRNO_SUCCESS"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_ERRNO_OUT_OF_RANGE, "NME_ERRNO_OUT_OF_RANGE"),
 
-	NM_UTILS_LOOKUP_STR_ITEM (NME_UNSPEC,             "NME_UNSPEC"),
-	NM_UTILS_LOOKUP_STR_ITEM (NME_BUG,                "NME_BUG"),
-	NM_UTILS_LOOKUP_STR_ITEM (NME_NATIVE_ERRNO,       "NME_NATIVE_ERRNO"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_UNSPEC, "NME_UNSPEC"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_BUG, "NME_BUG"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_NATIVE_ERRNO, "NME_NATIVE_ERRNO"),
 
-	NM_UTILS_LOOKUP_STR_ITEM (NME_NL_ATTRSIZE,        "NME_NL_ATTRSIZE"),
-	NM_UTILS_LOOKUP_STR_ITEM (NME_NL_BAD_SOCK,        "NME_NL_BAD_SOCK"),
-	NM_UTILS_LOOKUP_STR_ITEM (NME_NL_DUMP_INTR,       "NME_NL_DUMP_INTR"),
-	NM_UTILS_LOOKUP_STR_ITEM (NME_NL_MSG_OVERFLOW,    "NME_NL_MSG_OVERFLOW"),
-	NM_UTILS_LOOKUP_STR_ITEM (NME_NL_MSG_TOOSHORT,    "NME_NL_MSG_TOOSHORT"),
-	NM_UTILS_LOOKUP_STR_ITEM (NME_NL_MSG_TRUNC,       "NME_NL_MSG_TRUNC"),
-	NM_UTILS_LOOKUP_STR_ITEM (NME_NL_SEQ_MISMATCH,    "NME_NL_SEQ_MISMATCH"),
-	NM_UTILS_LOOKUP_STR_ITEM (NME_NL_NOADDR,          "NME_NL_NOADDR"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_NL_ATTRSIZE, "NME_NL_ATTRSIZE"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_NL_BAD_SOCK, "NME_NL_BAD_SOCK"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_NL_DUMP_INTR, "NME_NL_DUMP_INTR"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_NL_MSG_OVERFLOW, "NME_NL_MSG_OVERFLOW"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_NL_MSG_TOOSHORT, "NME_NL_MSG_TOOSHORT"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_NL_MSG_TRUNC, "NME_NL_MSG_TRUNC"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_NL_SEQ_MISMATCH, "NME_NL_SEQ_MISMATCH"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_NL_NOADDR, "NME_NL_NOADDR"),
 
-	NM_UTILS_LOOKUP_STR_ITEM (NME_PL_NOT_FOUND,       "not-found"),
-	NM_UTILS_LOOKUP_STR_ITEM (NME_PL_EXISTS,          "exists"),
-	NM_UTILS_LOOKUP_STR_ITEM (NME_PL_WRONG_TYPE,      "wrong-type"),
-	NM_UTILS_LOOKUP_STR_ITEM (NME_PL_NOT_SLAVE,       "not-slave"),
-	NM_UTILS_LOOKUP_STR_ITEM (NME_PL_NO_FIRMWARE,     "no-firmware"),
-	NM_UTILS_LOOKUP_STR_ITEM (NME_PL_OPNOTSUPP,       "not-supported"),
-	NM_UTILS_LOOKUP_STR_ITEM (NME_PL_NETLINK,         "netlink"),
-	NM_UTILS_LOOKUP_STR_ITEM (NME_PL_CANT_SET_MTU,    "cant-set-mtu"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_PL_NOT_FOUND, "not-found"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_PL_EXISTS, "exists"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_PL_WRONG_TYPE, "wrong-type"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_PL_NOT_SLAVE, "not-slave"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_PL_NO_FIRMWARE, "no-firmware"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_PL_OPNOTSUPP, "not-supported"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_PL_NETLINK, "netlink"),
+    NM_UTILS_LOOKUP_STR_ITEM(NME_PL_CANT_SET_MTU, "cant-set-mtu"),
 
-	NM_UTILS_LOOKUP_ITEM_IGNORE (_NM_ERRNO_MININT),
-	NM_UTILS_LOOKUP_ITEM_IGNORE (_NM_ERRNO_RESERVED_LAST_PLUS_1),
-);
+    NM_UTILS_LOOKUP_ITEM_IGNORE(_NM_ERRNO_MININT),
+    NM_UTILS_LOOKUP_ITEM_IGNORE(_NM_ERRNO_RESERVED_LAST_PLUS_1), );
 
 /**
  * nm_strerror():
@@ -57,24 +57,24 @@ NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_geterror,
  * our own defines. For numbers that don't fall into this range, the numbers
  * are identical to the common error numbers.
  *
- * Idential to strerror(), g_strerror(), nm_strerror_native() for error numbers
+ * Identical to strerror(), g_strerror(), nm_strerror_native() for error numbers
  * that are not in the reserved range of NetworkManager specific errors.
  *
  * Returns: (transfer none): the string representation of the error number.
  */
 const char *
-nm_strerror (int nmerr)
+nm_strerror(int nmerr)
 {
-	const char *s;
+    const char *s;
 
-	nmerr = nm_errno (nmerr);
+    nmerr = nm_errno(nmerr);
 
-	if (nmerr >= _NM_ERRNO_RESERVED_FIRST) {
-		s = _geterror (nmerr);
-		if (s)
-			return s;
-	}
-	return nm_strerror_native (nmerr);
+    if (nmerr >= _NM_ERRNO_RESERVED_FIRST) {
+        s = _geterror(nmerr);
+        if (s)
+            return s;
+    }
+    return nm_strerror_native(nmerr);
 }
 
 /*****************************************************************************/
@@ -96,45 +96,44 @@ nm_strerror (int nmerr)
  * string may be longer than @buf_size.
  *
  * Returns: (transfer none): a NUL terminated error message. This is either a static
- *   string (that is never freed), or the provided @buf argumnt.
+ *   string (that is never freed), or the provided @buf argument.
  */
 const char *
-nm_strerror_native_r (int errsv, char *buf, gsize buf_size)
+nm_strerror_native_r(int errsv, char *buf, gsize buf_size)
 {
-	char *buf2;
+    char *buf2;
 
-	nm_assert (buf);
-	nm_assert (buf_size > 0);
+    nm_assert(buf);
+    nm_assert(buf_size > 0);
 
-#if (_POSIX_C_SOURCE >= 200112L) && !  _GNU_SOURCE
-	/* XSI-compliant */
-	{
-		int errno_saved = errno;
+#if (!defined(__GLIBC__) && !defined(__UCLIBC__)) || ((_POSIX_C_SOURCE >= 200112L) && !_GNU_SOURCE)
+    /* XSI-compliant */
+    {
+        int errno_saved = errno;
 
-		if (strerror_r (errsv, buf, buf_size) != 0) {
-			g_snprintf (buf, buf_size, "Unspecified errno %d", errsv);
-			errno = errno_saved;
-		}
-		buf2 = buf;
-	}
+        if (strerror_r(errsv, buf, buf_size) != 0) {
+            g_snprintf(buf, buf_size, "Unspecified errno %d", errsv);
+            errno = errno_saved;
+        }
+        buf2 = buf;
+    }
 #else
-	/* GNU-specific */
-	buf2 = strerror_r (errsv, buf, buf_size);
+    /* GNU-specific */
+    buf2 = strerror_r(errsv, buf, buf_size);
 #endif
 
-	/* like g_strerror(), ensure that the error message is UTF-8. */
-	if (   !g_get_charset (NULL)
-	    && !g_utf8_validate (buf2, -1, NULL)) {
-		gs_free char *msg = NULL;
+    /* like g_strerror(), ensure that the error message is UTF-8. */
+    if (!g_get_charset(NULL) && !g_utf8_validate(buf2, -1, NULL)) {
+        gs_free char *msg = NULL;
 
-		msg = g_locale_to_utf8 (buf2, -1, NULL, NULL, NULL);
-		if (msg) {
-			g_strlcpy (buf, msg, buf_size);
-			buf2 = buf;
-		}
-	}
+        msg = g_locale_to_utf8(buf2, -1, NULL, NULL, NULL);
+        if (msg) {
+            g_strlcpy(buf, msg, buf_size);
+            buf2 = buf;
+        }
+    }
 
-	return buf2;
+    return buf2;
 }
 
 /**
@@ -156,28 +155,27 @@ nm_strerror_native_r (int errsv, char *buf, gsize buf_size)
  * Returns: (transfer none): the text representation of the error number.
  */
 const char *
-nm_strerror_native (int errsv)
+nm_strerror_native(int errsv)
 {
-	static _nm_thread_local char *buf_static = NULL;
-	char *buf;
+    static _nm_thread_local char *buf_static = NULL;
+    char *                        buf;
 
-	buf = buf_static;
-	if (G_UNLIKELY (!buf)) {
-		int errno_saved = errno;
-		pthread_key_t key;
+    buf = buf_static;
+    if (G_UNLIKELY(!buf)) {
+        int           errno_saved = errno;
+        pthread_key_t key;
 
-		buf = g_malloc (NM_STRERROR_BUFSIZE);
-		buf_static = buf;
+        buf        = g_malloc(NM_STRERROR_BUFSIZE);
+        buf_static = buf;
 
-		if (   pthread_key_create (&key, g_free) != 0
-		    || pthread_setspecific (key, buf) != 0) {
-			/* Failure. We will leak the buffer when the thread exits.
-			 *
-			 * Nothing we can do about it really. For Debug builds we fail with an assertion. */
-			nm_assert_not_reached ();
-		}
-		errno = errno_saved;
-	}
+        if (pthread_key_create(&key, g_free) != 0 || pthread_setspecific(key, buf) != 0) {
+            /* Failure. We will leak the buffer when the thread exits.
+             *
+             * Nothing we can do about it really. For Debug builds we fail with an assertion. */
+            nm_assert_not_reached();
+        }
+        errno = errno_saved;
+    }
 
-	return nm_strerror_native_r (errsv, buf, NM_STRERROR_BUFSIZE);
+    return nm_strerror_native_r(errsv, buf, NM_STRERROR_BUFSIZE);
 }

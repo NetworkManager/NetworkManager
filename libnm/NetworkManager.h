@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LGPL-2.1+
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /*
  * Copyright (C) 2014 - 2018 Red Hat, Inc.
  */
@@ -34,6 +34,7 @@
 #include "nm-device-ppp.h"
 #include "nm-device-team.h"
 #include "nm-device-tun.h"
+#include "nm-device-veth.h"
 #include "nm-device-vlan.h"
 #include "nm-device-vxlan.h"
 #include "nm-device-wifi-p2p.h"
@@ -45,6 +46,7 @@
 #include "nm-dhcp-config.h"
 #include "nm-enum-types.h"
 #include "nm-ip-config.h"
+#include "nm-keyfile.h"
 #include "nm-object.h"
 #include "nm-remote-connection.h"
 #include "nm-setting-6lowpan.h"
@@ -61,6 +63,7 @@
 #include "nm-setting-ethtool.h"
 #include "nm-setting-generic.h"
 #include "nm-setting-gsm.h"
+#include "nm-setting-hostname.h"
 #include "nm-setting-infiniband.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
@@ -86,8 +89,10 @@
 #include "nm-setting-team-port.h"
 #include "nm-setting-tun.h"
 #include "nm-setting-user.h"
+#include "nm-setting-veth.h"
 #include "nm-setting-vlan.h"
 #include "nm-setting-vpn.h"
+#include "nm-setting-vrf.h"
 #include "nm-setting-vxlan.h"
 #include "nm-setting-wimax.h"
 #include "nm-setting-wired.h"
@@ -109,6 +114,17 @@
 #include "nm-wimax-nsp.h"
 
 #include "nm-autoptr.h"
+
+#if !defined(NETWORKMANAGER_COMPILATION) \
+    && (!defined(NM_NO_INCLUDE_EXTRA_HEADERS) || !NM_NO_INCLUDE_EXTRA_HEADERS)
+    /* historically, NetworkManager.h drags in the following system headers.
+     * These are not strictly necessary and the user may wish to opt out from
+     * including them. */
+    #include <linux/if_ether.h>
+    #include <linux/if_infiniband.h>
+    #include <linux/if_vlan.h>
+    #include <netinet/in.h>
+#endif
 
 #undef __NETWORKMANAGER_H_INSIDE__
 

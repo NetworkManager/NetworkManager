@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.Vrf:
+      @short_description: VRF Device
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.Vrf">
+
+    <!--
+        Table:
+
+        The routing table of the VRF.
+    -->
+    <property name="Table" type="u" access="read"/>
+  </interface>
+</node>

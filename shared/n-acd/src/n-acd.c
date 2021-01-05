@@ -328,6 +328,7 @@ int n_acd_ensure_bpf_map_space(NAcd *acd) {
 _c_public_ int n_acd_new(NAcd **acdp, NAcdConfig *config) {
         _c_cleanup_(n_acd_unrefp) NAcd *acd = NULL;
         _c_cleanup_(c_closep) int fd_bpf_prog = -1;
+        struct epoll_event eevent;
         int r;
 
         if (config->ifindex <= 0 ||
@@ -370,19 +371,19 @@ _c_public_ int n_acd_new(NAcd **acdp, NAcdConfig *config) {
         if (r)
                 return r;
 
-        r = epoll_ctl(acd->fd_epoll, EPOLL_CTL_ADD, acd->timer.fd,
-                      &(struct epoll_event){
-                              .events = EPOLLIN,
-                              .data.u32 = N_ACD_EPOLL_TIMER,
-                      });
+        eevent = (struct epoll_event){
+                .events = EPOLLIN,
+                .data.u32 = N_ACD_EPOLL_TIMER,
+        };
+        r = epoll_ctl(acd->fd_epoll, EPOLL_CTL_ADD, acd->timer.fd, &eevent);
         if (r < 0)
                 return -c_errno();
 
-        r = epoll_ctl(acd->fd_epoll, EPOLL_CTL_ADD, acd->fd_socket,
-                      &(struct epoll_event){
-                              .events = EPOLLIN,
-                              .data.u32 = N_ACD_EPOLL_SOCKET,
-                      });
+        eevent = (struct epoll_event){
+                .events = EPOLLIN,
+                .data.u32 = N_ACD_EPOLL_SOCKET,
+        };
+        r = epoll_ctl(acd->fd_epoll, EPOLL_CTL_ADD, acd->fd_socket, &eevent);
         if (r < 0)
                 return -c_errno();
 
@@ -577,11 +578,11 @@ static int n_acd_handle_timeout(NAcd *acd) {
         int r;
 
         /*
-         * Read the current time once, and handle all timouts that triggered
+         * Read the current time once, and handle all timeouts that triggered
          * before the current time. Rereading the current time in each loop
          * might risk creating a live-lock, and the fact that we read the
          * time after reading the timer guarantees that the timeout which
-         * woke us up is hanlded.
+         * woke us up is handled.
          *
          * When there are no more timeouts to handle at the given time, we
          * rearm the timer to potentially wake us up again in the future.

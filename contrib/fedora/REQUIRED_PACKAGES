@@ -12,7 +12,7 @@
 
 set -xe
 
-DNF="$(which dnf &>/dev/null && echo dnf || echo yum)"
+DNF="$(command -v dnf &>/dev/null && echo dnf || echo yum)"
 
 install() {
     if [ "$NM_INSTALL" != "" ]; then
@@ -40,14 +40,16 @@ else
 fi
 
 install \
+    /usr/bin/xargs \
     ModemManager-devel \
     ModemManager-glib-devel \
     audit-libs-devel \
     bluez-libs-devel \
+    clang \
     dbus-devel \
-    dbus-python \
     dbus-x11 \
     dhclient \
+    firewalld-filesystem \
     gcc-c++ \
     gettext-devel \
     git \
@@ -60,7 +62,6 @@ install \
     jansson-devel \
     libcurl-devel \
     libndp-devel \
-    libpsl-devel \
     libselinux-devel \
     libtool \
     libuuid-devel \
@@ -72,10 +73,8 @@ install \
     polkit-devel \
     ppp \
     ppp-devel \
-    pygobject3-base \
     python3-dbus \
     python3-gobject \
-    qt-devel \
     readline-devel \
     rpm-build \
     systemd-devel \
@@ -83,9 +82,18 @@ install \
     vala-devel \
     vala-tools \
     valgrind \
+    which \
     "${EXTRA_PACKAGES[@]}"
 
 # some packages don't exist in certain distributions. Install them one-by-one, and ignore errors.
 install_ignore_missing \
+    black \
+    dbus-python \
+    iproute-tc \
+    libasan \
+    libpsl-devel \
+    libubsan \
+    pygobject3-base \
     python-gobject-base \
+    qt-devel \
     #end

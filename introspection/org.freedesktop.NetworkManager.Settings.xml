@@ -66,12 +66,12 @@
     <!--
         AddConnection2:
         @settings: New connection settings, properties, and (optionally) secrets.
-        @flags: optional flags argument. Currently the following flags are supported:
+        @flags: optional flags argument. Currently, the following flags are supported:
           "0x1" (to-disk),
           "0x2" (in-memory),
           "0x20" (block-autoconnect).
           Unknown flags cause the call to fail.
-        @args: optional arguments dictionary, for extensibility. Currently no
+        @args: optional arguments dictionary, for extentibility. Currently, no
           arguments are accepted. Specifying unknown keys causes the call
           to fail.
         @path: Object path of the new connection that was just added.
@@ -82,7 +82,7 @@
         Either the flags 0x1 (to-disk) or 0x2 (in-memory) must be specified.
         The effect is whether to behave like AddConnection or AddConnectionUnsaved.
         If 0x20 (block-autoconnect) is specified, autoconnect for the new profile
-        is blocked from the beginnin. Otherwise, the profile might automatically
+        is blocked from the beginning. Otherwise, the profile might automatically
         connect if a suitable device is around.
 
         AddConnection2 is a extensible alternative to AddConnection, and AddConnectionUnsaved.
@@ -107,9 +107,8 @@
 
         Loads or reloads the indicated connections from disk. You should call this
         after making changes directly to an on-disk connection file to make sure
-        that NetworkManager sees the changes. (If "monitor-connection-files" in
-        NetworkManager.conf is "true", then this will have no real effect, but is
-        harmless.) As with AddConnection(), this operation does not necessarily
+        that NetworkManager sees the changes.
+        As with AddConnection(), this operation does not necessarily
         start the network connection.
     -->
     <method name="LoadConnections">
@@ -123,10 +122,7 @@
         @status: This always returns %TRUE.
 
         Tells NetworkManager to reload all connection files from disk, including
-        noticing any added or deleted connection files. By default, connections
-        are re-read automatically any time they change, so you only need to use
-        this command if you have set "monitor-connection-files=false" in
-        NetworkManager.conf.
+        noticing any added or deleted connection files.
     -->
     <method name="ReloadConnections">
       <arg name="status" type="b" direction="out"/>

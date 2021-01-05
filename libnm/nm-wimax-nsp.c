@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LGPL-2.1+
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /*
  * Copyright (C) 2011 Red Hat, Inc.
  */
@@ -9,21 +9,17 @@
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE (
-	PROP_NAME,
-	PROP_SIGNAL_QUALITY,
-	PROP_NETWORK_TYPE,
-);
+NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_NAME, PROP_SIGNAL_QUALITY, PROP_NETWORK_TYPE, );
 
 struct _NMWimaxNsp {
-	NMObject parent;
+    NMObject parent;
 };
 
 struct _NMWimaxNspClass {
-	NMObjectClass parent;
+    NMObjectClass parent;
 };
 
-G_DEFINE_TYPE (NMWimaxNsp, nm_wimax_nsp, NM_TYPE_OBJECT)
+G_DEFINE_TYPE(NMWimaxNsp, nm_wimax_nsp, NM_TYPE_OBJECT)
 
 #define NM_WIMAX_NSP_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMWimaxNsp, NM_IS_WIMAX_NSP, NMObject)
 
@@ -37,12 +33,12 @@ G_DEFINE_TYPE (NMWimaxNsp, nm_wimax_nsp, NM_TYPE_OBJECT)
  *
  * Returns: the name
  *
- * Deprecated: 1.22. WiMAX is no longer supported by NetworkManager since 1.2.0
+ * Deprecated: 1.22: WiMAX is no longer supported by NetworkManager since 1.2.0.
  **/
 const char *
-nm_wimax_nsp_get_name (NMWimaxNsp *nsp)
+nm_wimax_nsp_get_name(NMWimaxNsp *nsp)
 {
-	g_return_val_if_reached (NULL);
+    g_return_val_if_reached(NULL);
 }
 
 /**
@@ -53,12 +49,12 @@ nm_wimax_nsp_get_name (NMWimaxNsp *nsp)
  *
  * Returns: the signal quality
  *
- * Deprecated: 1.22. WiMAX is no longer supported by NetworkManager since 1.2.0
+ * Deprecated: 1.22: WiMAX is no longer supported by NetworkManager since 1.2.0.
  **/
 guint32
-nm_wimax_nsp_get_signal_quality (NMWimaxNsp *nsp)
+nm_wimax_nsp_get_signal_quality(NMWimaxNsp *nsp)
 {
-	g_return_val_if_reached (0);
+    g_return_val_if_reached(0);
 }
 
 /**
@@ -69,12 +65,12 @@ nm_wimax_nsp_get_signal_quality (NMWimaxNsp *nsp)
  *
  * Returns: the network type
  *
- * Deprecated: 1.22. WiMAX is no longer supported by NetworkManager since 1.2.0
+ * Deprecated: 1.22: WiMAX is no longer supported by NetworkManager since 1.2.0.
  **/
 NMWimaxNspNetworkType
-nm_wimax_nsp_get_network_type (NMWimaxNsp *nsp)
+nm_wimax_nsp_get_network_type(NMWimaxNsp *nsp)
 {
-	g_return_val_if_reached (NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN);
+    g_return_val_if_reached(NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN);
 }
 
 /**
@@ -89,12 +85,12 @@ nm_wimax_nsp_get_network_type (NMWimaxNsp *nsp)
  * Returns: %TRUE if the connection may be activated with this WiMAX NSP,
  * %FALSE if it cannot be.
  *
- * Deprecated: 1.22. WiMAX is no longer supported by NetworkManager since 1.2.0
+ * Deprecated: 1.22: WiMAX is no longer supported by NetworkManager since 1.2.0.
  **/
 gboolean
-nm_wimax_nsp_connection_valid (NMWimaxNsp *nsp, NMConnection *connection)
+nm_wimax_nsp_connection_valid(NMWimaxNsp *nsp, NMConnection *connection)
 {
-	g_return_val_if_reached (FALSE);
+    g_return_val_if_reached(FALSE);
 }
 
 /**
@@ -111,77 +107,78 @@ nm_wimax_nsp_connection_valid (NMWimaxNsp *nsp, NMConnection *connection)
  * #NMConnections that could be activated with the given @nsp.  The array should
  * be freed with g_ptr_array_unref() when it is no longer required.
  *
- * Deprecated: 1.22. WiMAX is no longer supported by NetworkManager since 1.2.0
+ * Deprecated: 1.22: WiMAX is no longer supported by NetworkManager since 1.2.0.
  **/
 GPtrArray *
-nm_wimax_nsp_filter_connections (NMWimaxNsp *nsp, const GPtrArray *connections)
+nm_wimax_nsp_filter_connections(NMWimaxNsp *nsp, const GPtrArray *connections)
 {
-	g_return_val_if_reached (NULL);
+    g_return_val_if_reached(NULL);
 }
 
 /*****************************************************************************/
 
 static void
-get_property (GObject *object,
-              guint prop_id,
-              GValue *value,
-              GParamSpec *pspec)
+get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-	g_return_if_reached ();
+    g_return_if_reached();
 }
 
 static void
-nm_wimax_nsp_init (NMWimaxNsp *nsp)
+nm_wimax_nsp_init(NMWimaxNsp *nsp)
 {
-	g_return_if_reached ();
+    g_return_if_reached();
 }
 
 static void
-nm_wimax_nsp_class_init (NMWimaxNspClass *nsp_class)
+nm_wimax_nsp_class_init(NMWimaxNspClass *nsp_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (nsp_class);
+    GObjectClass *object_class = G_OBJECT_CLASS(nsp_class);
 
-	object_class->get_property = get_property;
+    object_class->get_property = get_property;
 
-	/**
-	 * NMWimaxNsp:name:
-	 *
-	 * The name of the WiMAX NSP.
-	 *
-	 * Deprecated: 1.22. WiMAX is no longer supported by NetworkManager since 1.2.0
-	 **/
-	obj_properties[PROP_NAME] =
-	    g_param_spec_string (NM_WIMAX_NSP_NAME, "", "",
-	                         NULL,
-	                         G_PARAM_READABLE |
-	                         G_PARAM_STATIC_STRINGS);
+    /**
+     * NMWimaxNsp:name:
+     *
+     * The name of the WiMAX NSP.
+     *
+     * Deprecated: 1.22: WiMAX is no longer supported by NetworkManager since 1.2.0.
+     **/
+    obj_properties[PROP_NAME] = g_param_spec_string(NM_WIMAX_NSP_NAME,
+                                                    "",
+                                                    "",
+                                                    NULL,
+                                                    G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
-	/**
-	 * NMWimaxNsp:signal-quality:
-	 *
-	 * The signal quality of the WiMAX NSP.
-	 *
-	 * Deprecated: 1.22. WiMAX is no longer supported by NetworkManager since 1.2.0
-	 **/
-	obj_properties[PROP_SIGNAL_QUALITY] =
-	    g_param_spec_uint (NM_WIMAX_NSP_SIGNAL_QUALITY, "", "",
-	                       0, 100, 0,
-	                       G_PARAM_READABLE |
-	                       G_PARAM_STATIC_STRINGS);
+    /**
+     * NMWimaxNsp:signal-quality:
+     *
+     * The signal quality of the WiMAX NSP.
+     *
+     * Deprecated: 1.22: WiMAX is no longer supported by NetworkManager since 1.2.0.
+     **/
+    obj_properties[PROP_SIGNAL_QUALITY] =
+        g_param_spec_uint(NM_WIMAX_NSP_SIGNAL_QUALITY,
+                          "",
+                          "",
+                          0,
+                          100,
+                          0,
+                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
-	/**
-	 * NMWimaxNsp:network-type:
-	 *
-	 * The network type of the WiMAX NSP.
-	 *
-	 * Deprecated: 1.22. WiMAX is no longer supported by NetworkManager since 1.2.0
-	 **/
-	obj_properties[PROP_NETWORK_TYPE] =
-	    g_param_spec_enum (NM_WIMAX_NSP_NETWORK_TYPE, "", "",
-	                       NM_TYPE_WIMAX_NSP_NETWORK_TYPE,
-	                       NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN,
-	                       G_PARAM_READABLE |
-	                       G_PARAM_STATIC_STRINGS);
+    /**
+     * NMWimaxNsp:network-type:
+     *
+     * The network type of the WiMAX NSP.
+     *
+     * Deprecated: 1.22: WiMAX is no longer supported by NetworkManager since 1.2.0.
+     **/
+    obj_properties[PROP_NETWORK_TYPE] =
+        g_param_spec_enum(NM_WIMAX_NSP_NETWORK_TYPE,
+                          "",
+                          "",
+                          NM_TYPE_WIMAX_NSP_NETWORK_TYPE,
+                          NM_WIMAX_NSP_NETWORK_TYPE_UNKNOWN,
+                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
-	g_object_class_install_properties (object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+    g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

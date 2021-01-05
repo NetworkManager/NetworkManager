@@ -60,17 +60,25 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 
 	CFLAGS_MORE_WARNINGS="-Wall"
 
+	if test "x$enable_lto" = xyes; then
+		dnl With LTO and optimizations enabled, gcc 10.2.1-1.fc32 is really
+		dnl adamant to warn about correct uses of strncpy. Disable that warning.
+		_CFLAGS_MORE_WARNINGS_DISABLE_LTO="-Wno-stringop-overflow"
+	else
+		_CFLAGS_MORE_WARNINGS_DISABLE_LTO=
+	fi
+
 	if test "x$set_more_warnings" = xerror; then
 		CFLAGS_MORE_WARNINGS="$CFLAGS_MORE_WARNINGS -Werror"
 	fi
 
 	for option in \
+		      $_CFLAGS_MORE_WARNINGS_DISABLE_LTO \
 		      -Wextra \
 		      -Wdeclaration-after-statement \
 		      -Wfloat-equal \
 		      -Wformat-nonliteral \
 		      -Wformat-security \
-		      -Wimplicit-fallthrough \
 		      -Wimplicit-function-declaration \
 		      -Winit-self \
 		      -Wlogical-op \
@@ -89,6 +97,7 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		      -Wno-missing-field-initializers \
 		      -Wno-pragmas \
 		      -Wno-sign-compare \
+		      -Wno-tautological-constant-out-of-range-compare \
 		      -Wno-unknown-pragmas \
 		      -Wno-unused-parameter \
 		      ; do
@@ -134,6 +143,26 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		[static void nm_object_init (NMObject *object) { } ]
 		[static void nm_object_class_init (NMObjectClass *object) { }]
 		[G_DEFINE_TYPE (NMObject, nm_object, G_TYPE_OBJECT)]
+	)
+
+	dnl clang started supporting -Wimplicit-fallthrough, but it does not
+	dnl honor the code comments to suppress the warning. Disable the
+	dnl warning with clang.
+	dnl
+	NM_COMPILER_WARNING([$1], [implicit-fallthrough],
+		[int foo(int a);
+	     int foo(int a) {
+		    int r = 0;
+		    switch (a) {
+		    case 1:
+		       r++;
+		       /* fall-through */
+		    case 2:
+		       r++;
+		       break;
+		    }
+		    return r;
+		 }]
 	)
 
 	eval "AS_TR_SH([$1])='$CFLAGS_MORE_WARNINGS $$1'"

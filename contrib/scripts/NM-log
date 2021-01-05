@@ -44,10 +44,10 @@ NM-colorize() {
         if [[ "$NM_LOG_GREP" != "" ]]; then
             GREP_COLOR='01;36' grep -a --color=always "^\\|$NM_LOG_GREP"
         else
-            /usr/bin/cat -
+            /bin/cat -
         fi
     else
-        /usr/bin/cat -
+        /bin/cat -
     fi
 }
 

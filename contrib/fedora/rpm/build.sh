@@ -21,6 +21,10 @@
 #   SOURCE_CONFIG_CONNECTIVITY_FEDORA=
 #   SOURCE_CONFIG_CONNECTIVITY_REDHAT=
 #   SOURCE_SYSCTL_RP_FILTER_REDHAT=
+#   SIGN_SOURCE=
+#   DO_RELEASE=
+#   BCOND_DEFAULT_DEBUG=
+#   BCOND_DEFAULT_TEST=
 
 die() {
     echo "$*" >&2
@@ -44,6 +48,15 @@ coerce_bool() {
             printf '%s' "$2"
             ;;
     esac
+}
+
+in_set() {
+    local v="$1"
+    shift
+    for v2; do
+        test "$v" == "$v2" && return 0
+    done
+    return 1
 }
 
 abs_path() {
@@ -107,6 +120,8 @@ USERNAME="${USERNAME:-"$(git config user.name) <$(git config user.email)>"}"
 SPECFILE="$(abs_path "$SPECFILE" "$SCRIPTDIR/NetworkManager.spec")" || die "invalid \$SPECFILE argument"
 SOURCE_FROM_GIT="$(coerce_bool "$SOURCE_FROM_GIT" "")"
 SOURCE="$(abs_path "$SOURCE")" || die "invalid \$SOURCE argument"
+DO_RELEASE="$(coerce_bool "$DO_RELEASE" "0")"
+SIGN_SOURCE="$(coerce_bool "$SIGN_SOURCE" "$DO_RELEASE")"
 if [ -n "$SOURCE" ]; then
     [[ "$SOURCE_FROM_GIT" == 1 ]] && die "Cannot set both \$SOURCE and \$SOURCE_FROM_GIT=1"
     SOURCE_FROM_GIT=0
@@ -143,6 +158,8 @@ LOG "COMMIT=$COMMIT"
 LOG "USERNAME=$USERNAME"
 LOG "SPECFILE=$SPECFILE"
 LOG "SOURCE=$SOURCE"
+LOG "SIGN_SOURCE=$SIGN_SOURCE"
+LOG "DO_RELEASE=$DO_RELEASE"
 LOG "SOURCE_FROM_GIT=$SOURCE_FROM_GIT"
 LOG "SOURCE_NETWORKMANAGER_CONF=$SOURCE_NETWORKMANAGER_CONF"
 LOG "SOURCE_CONFIG_SERVER=$SOURCE_CONFIG_SERVER"
@@ -151,9 +168,14 @@ LOG "SOURCE_CONFIG_CONNECTIVITY_REDHAT=$SOURCE_CONFIG_CONNECTIVITY_REDHAT"
 LOG "SOURCE_SYSCTL_RP_FILTER_REDHAT=$SOURCE_SYSCTL_RP_FILTER_REDHAT"
 LOG "BUILDTYPE=$BUILDTYPE"
 LOG "NM_RPMBUILD_ARGS=$NM_RPMBUILD_ARGS"
+LOG "BCOND_DEFAULT_DEBUG=$BCOND_DEFAULT_DEBUG"
+LOG "BCOND_DEFAULT_TEST=$BCOND_DEFAULT_TEST"
 LOG ""
 LOG "UUID=$UUID"
 LOG "BASEDIR=$TEMP"
+
+in_set "$BCOND_DEFAULT_DEBUG" "" 0 1 || die "Invalid value for \$BCOND_DEFAULT_DEBUG: \"$BCOND_DEFAULT_DEBUG\""
+in_set "$BCOND_DEFAULT_TEST" "" 0 1 || die "Invalid value for \$BCOND_DEFAULT_TEST: \"$BCOND_DEFAULT_TEST\""
 
 ln -snf "$TEMPBASE" ./latest0
 ln "$BUILDLOG" "$TEMPBASE/build.log"
@@ -180,6 +202,8 @@ sed -e "s/__VERSION__/$VERSION/g" \
     -e "s/__COMMIT_FULL__/$COMMIT_FULL/g" \
     -e "s/__SNAPSHOT__/$SNAPSHOT/g" \
     -e "s/__SOURCE1__/$(basename "$SOURCE")/g" \
+    -e "s/__BCOND_DEFAULT_DEBUG__/$BCOND_DEFAULT_DEBUG/g" \
+    -e "s/__BCOND_DEFAULT_TEST__/$BCOND_DEFAULT_TEST/g" \
    "$SPECFILE" |
 sed -e "/^__CHANGELOG__$/ \
         {
@@ -198,6 +222,17 @@ esac
 
 rpmbuild --define "_topdir $TEMP" $RPM_BUILD_OPTION "$TEMPSPEC" $NM_RPMBUILD_ARGS || die "ERROR: rpmbuild FAILED"
 
+LS_EXTRA=()
+
+if [ "$SIGN_SOURCE" = 1 ]; then
+    SIGNKEY="$(git config --get user.signingkey)"
+    if [ "$SIGNKEY" != "" ]; then
+        SIGNKEY="--local-user $(printf '%q' "$SIGNKEY")"
+    fi
+    gpg $SIGNKEY --output "$SOURCE.sig" --armor --detach-sig "$SOURCE" || die "ERROR: failure to sign $SOURCE"
+    LS_EXTRA+=("$SOURCE.sig")
+fi
+
 ln -snf "$TEMPBASE" ./latest
 TEMP_LATEST="$(readlink -f .)"/latest
 
@@ -211,6 +246,7 @@ LOG "Result:"
 ls -dla \
     "$TEMP_LATEST" \
     "$SOURCE" \
+    "${LS_EXTRA[@]}" \
     "$(dirname "$TEMP_LATEST")/$TEMPBASE/" \
     "$TEMP_LATEST"/RPMS/*/ \
     "$TEMP_LATEST"/RPMS/*/*.rpm \
@@ -219,10 +255,17 @@ ls -dla \
     2>/dev/null | sed 's/^/    /'
 LOG
 if [[ "$BUILDTYPE" == "SRPM" ]]; then
-    LOG sudo $(which dnf &>/dev/null && echo dnf builddep || echo yum-builddep) $TEMP_LATEST/SRPMS/*.src.rpm
+    LOG sudo $(command -v dnf &>/dev/null && echo dnf builddep || echo yum-builddep) $TEMP_LATEST/SRPMS/*.src.rpm
     LOG
 else
-    LOG "sudo $(which dnf &>/dev/null && echo dnf || echo yum) install '$TEMP_LATEST/RPMS'/*/*.rpm"
+    LOG "sudo $(command -v dnf &>/dev/null && echo dnf || echo yum) install '$TEMP_LATEST/RPMS'/*/*.rpm"
     LOG
 fi
 
+if [[ "$DO_RELEASE" == 1 ]]; then
+    LOG "RELEASE \"$SOURCE\" :"
+    for c in md5 sha1 sha256 sha512; do
+        LOG "$(printf '%8s: %s' "$c" $("${c}sum" "$SOURCE" | sed 's/ .*//'))"
+    done
+    LOG
+fi

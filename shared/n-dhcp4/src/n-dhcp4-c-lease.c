@@ -2,7 +2,7 @@
  * DHCP4 Client Leases
  *
  * This implements the public API wrapping DHCP4 client leases. A lease object
- * conists of the information given to us from the server, together with the
+ * consists of the information given to us from the server, together with the
  * timestamp recording the start of the validity of the lease.
  *
  * A probe may yield many OFFERS, each of which contains a lease object. One of
@@ -98,7 +98,7 @@ static int n_dhcp4_incoming_get_timeouts(NDhcp4Incoming *message, uint64_t *t1p,
 
 /**
  * n_dhcp4_client_lease_new() - allocate new client lease object
- * @leasep:                     output argumnet for new client lease object
+ * @leasep:                     output argument for new client lease object
  * @message:                    incoming message representing the lease
  *
  * This creates a new client lease object. Client lease objects are simple
@@ -194,7 +194,7 @@ void n_dhcp4_client_lease_unlink(NDhcp4ClientLease *lease) {
  * @lease:                      the lease to operate on
  * @yiaddr:                     return argument for the IP address
  *
- * Gets the IP address cotained in the lease. Or INADDR_ANY if the lease
+ * Gets the IP address contained in the lease. Or INADDR_ANY if the lease
  * does not contain an IP address.
  */
 _c_public_ void n_dhcp4_client_lease_get_yiaddr(NDhcp4ClientLease *lease, struct in_addr *yiaddr) {
@@ -208,13 +208,25 @@ _c_public_ void n_dhcp4_client_lease_get_yiaddr(NDhcp4ClientLease *lease, struct
  * @lease:                      the lease to operate on
  * @siaddr:                     return argument for the IP address
  *
- * Gets the server IP address cotained in the lease. Or INADDR_ANY if the
+ * Gets the server IP address contained in the lease. Or INADDR_ANY if the
  * lease does not contain an IP address.
  */
 _c_public_ void n_dhcp4_client_lease_get_siaddr(NDhcp4ClientLease *lease, struct in_addr *siaddr) {
         NDhcp4Header *header = n_dhcp4_incoming_get_header(lease->message);
 
         siaddr->s_addr = header->siaddr;
+}
+
+/**
+ * n_dhcp4_client_lease_get_basetime() - get the timestamp when the lease was received.
+ * @lease:                      the lease to operate on
+ * @ns_basetimep:               return argument for the base time in nano seconds
+ *
+ * Gets the timestamp when the lease was received in CLOCK_BOOTTIME. This
+ * is also the base timestamp for the expiration of the lifetime and t1/t2.
+ */
+_c_public_ void n_dhcp4_client_lease_get_basetime(NDhcp4ClientLease *lease, uint64_t *ns_basetimep) {
+        *ns_basetimep = lease->message->userdata.base_time;
 }
 
 /**
@@ -227,6 +239,32 @@ _c_public_ void n_dhcp4_client_lease_get_siaddr(NDhcp4ClientLease *lease, struct
  */
 _c_public_ void n_dhcp4_client_lease_get_lifetime(NDhcp4ClientLease *lease, uint64_t *ns_lifetimep) {
         *ns_lifetimep = lease->lifetime;
+}
+
+/**
+ * n_dhcp4_client_lease_get_server_identifier() - get the server identifier
+ * @lease:                      the lease to operate on
+ * @addr:                       return argument for the server identifier
+ *
+ * Gets the address contained in the server-identifier DHCP option, in network
+ * byte order.
+ *
+ * Return: 0 on success, negative error code on failure.
+ */
+_c_public_ int n_dhcp4_client_lease_get_server_identifier (NDhcp4ClientLease *lease, struct in_addr *addr) {
+        uint8_t *data;
+        size_t n_data;
+        int r;
+
+        r = n_dhcp4_incoming_query(lease->message, N_DHCP4_OPTION_SERVER_IDENTIFIER, &data, &n_data);
+        if (r)
+                return r;
+        if (n_data < sizeof(struct in_addr))
+                return N_DHCP4_E_MALFORMED;
+
+        memcpy(addr, data, sizeof(struct in_addr));
+
+        return 0;
 }
 
 /**

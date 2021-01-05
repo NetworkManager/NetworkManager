@@ -22,7 +22,7 @@
 
 /**
  * n_dhcp4_c_socket_packet_new() - create a new DHCP4 client packet socket
- * @sockfdp:            return argumnet for the new socket
+ * @sockfdp:            return argument for the new socket
  * @ifindex:            interface index to bind to
  *
  * Create a new AF_PACKET/SOCK_DGRAM socket usable to listen to and send DHCP client
@@ -50,8 +50,8 @@ int n_dhcp4_c_socket_packet_new(int *sockfdp, int ifindex) {
                 BPF_JUMP(BPF_JMP + BPF_JEQ + BPF_K, IPPROTO_UDP, 1, 0),                                         /* IP protocol == UDP ? */
                 BPF_STMT(BPF_RET + BPF_K, 0),                                                                   /* ignore */
 
-                BPF_STMT(BPF_LD + BPF_B + BPF_ABS, offsetof(struct iphdr, frag_off)),                           /* A <- Flags */
-                BPF_STMT(BPF_ALU + BPF_AND + BPF_K, ntohs(IP_MF | IP_OFFMASK)),                                 /* A <- A & (IP_MF | IP_OFFMASK) */
+                BPF_STMT(BPF_LD + BPF_H + BPF_ABS, offsetof(struct iphdr, frag_off)),                           /* A <- Flags + Fragment offset */
+                BPF_STMT(BPF_ALU + BPF_AND + BPF_K, IP_MF | IP_OFFMASK),                                        /* A <- A & (IP_MF | IP_OFFMASK) */
                 BPF_JUMP(BPF_JMP + BPF_JEQ + BPF_K, 0, 1, 0),                                                   /* fragmented packet ? */
                 BPF_STMT(BPF_RET + BPF_K, 0),                                                                   /* ignore */
 
@@ -129,7 +129,7 @@ int n_dhcp4_c_socket_packet_new(int *sockfdp, int ifindex) {
 
 /**
  * n_dhcp4_c_socket_udp_new() - create a new DHCP4 client UDP socket
- * @sockfdp:            return argumnet for the new socket
+ * @sockfdp:            return argument for the new socket
  * @ifindex:            interface index to bind to
  * @client_addr:        client address to bind to
  * @server_addr:        server address to connect to
@@ -195,6 +195,10 @@ int n_dhcp4_c_socket_udp_new(int *sockfdp,
         if (sockfd < 0)
                 return -errno;
 
+        r = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+        if (r < 0)
+                return -errno;
+
         r = setsockopt(sockfd, SOL_SOCKET, SO_ATTACH_FILTER, &fprog, sizeof(fprog));
         if (r < 0)
                 return -errno;
@@ -226,7 +230,7 @@ int n_dhcp4_c_socket_udp_new(int *sockfdp,
 
 /**
  * n_dhcp4_s_socket_packet_new() - create a new DHCP4 server packet socket
- * @sockfdp:            return argumnet for the new socket
+ * @sockfdp:            return argument for the new socket
  *
  * Create a new AF_PACKET/SOCK_DGRAM socket usable to send DHCP packets to clients
  * before they have an IP address configured, on the given interface.
@@ -247,7 +251,7 @@ int n_dhcp4_s_socket_packet_new(int *sockfdp) {
 
 /**
  * n_dhcp4_s_socket_udp_new() - create a new DHCP4 server UDP socket
- * @sockfdp:            return argumnet for the new socket
+ * @sockfdp:            return argument for the new socket
  * @ifindex:            intercafe index to bind to
  *
  * Create a new AF_INET/SOCK_DGRAM socket usable to listen to DHCP server packets,

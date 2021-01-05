@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 name = 'nmtui'
 
 common_c_flags = clients_c_flags + ['-DG_LOG_DOMAIN="@0@"'.format(name)]
@@ -51,6 +53,7 @@ deps = [
   libnmc_base_dep,
   libnmc_dep,
   libnmt_newt_dep,
+  libnm_libnm_aux_dep,
 ]
 
 executable(

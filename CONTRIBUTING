@@ -1,38 +1,51 @@
 Guidelines for Contributing
 ===========================
 
+
 Coding Standard
 ---------------
 
-Coding standards are generally GNOME coding standards, with these exceptions:
-    a) 4 space tabs  (_not_ 8-space tabs)
-    b) REAL tabs (_not_ a mix of tabs and spaces in the initial indent)
-    c) spaces used to align continuation lines past the indent point of the
-       first statement line, like so:
+The formatting uses clang-format with clang 11.0. Run
+`./contrib/scripts/nm-code-format.sh -i` to reformat the code
+or call `clang-format` yourself.
+You may also call `./contrib/scripts/nm-code-format-container.sh`
+which runs a Fedora 33 container using podman.
+You are welcome to not bother and open a merge request with
+wrong formatting, but note that we then will automatically adjust
+your contribution before merging.
 
-		if (   some_really_really_long_variable_name
-		    && another_really_really_long_variable_name) {
-			...
-		}
+The automatic reformatting was done by commit 328fb90f3e0d4e35975aff63944ac0412d7893a5.
+Use `--ignore-rev` option or `--ignore-revs-file .git-blame-ignore-revs` to ignore
+the reformatting commit with git-blame:
 
-* Keep a space between the function name and the opening '('.
-    GOOD: g_strdup (x)
-    BAD:  g_strdup(x)
+```
+$ git config --add 'blame.ignoreRevsFile' '.git-blame-ignore-revs'
+```
+
+Since our coding style is entirely automated, the following are just
+some details of the style we use:
+
+* Indent with 4 spaces. (_no_ tabs).
+
+* Have no space between the function name and the opening '('.
+  - GOOD: `g_strdup(x)`
+  - BAD:  `g_strdup (x)`
 
 * C-style comments
-    GOOD: f(x);  /* comment */
-    BAD:  f(x);  // comment
+  - GOOD: `f(x);  /* comment */`
+  - BAD:  `f(x);  // comment`
 
 * Keep assignments in the variable declaration area pretty short.
-    GOOD: MyObject *object;
-    BAD: MyObject *object = complex_and_long_init_function(arg1, arg2, arg3);
+  - GOOD: `MyObject *object;`
+  - BAD:  `MyObject *object = complex_and_long_init_function(arg1, arg2, arg3);`
 
 * 80-cols is a guideline, don't make the code uncomfortable in order to fit in
   less than 80 cols.
 
 * Constants are CAPS_WITH_UNDERSCORES and use the preprocessor.
-    GOOD: #define MY_CONSTANT 42
-    BAD:  static const unsigned myConstant = 42;
+  - GOOD: `#define MY_CONSTANT 42`
+  - BAD:  `static const unsigned myConstant = 42;`
+
 
 Legal
 -----
@@ -46,6 +59,8 @@ Note that all new contributions to NetworkManager MUST be made under terms of
 LGPL-2.1+, that is also the case for parts that are currently licensed GPL-2.0+.
 The reason for that is that we might eventually relicense everything as LGPL and
 new contributions already must agree with that future change.
+For more details see [RELICENSE.md](RELICENSE.md).
+
 
 Assertions in NetworkManager code
 ---------------------------------
@@ -118,3 +133,34 @@ For testing, you also want to run NetworkManager with environment variable
 G_DEBUG=fatal-warnings to crash upon G_LOG_LEVEL_CRITICAL and G_LOG_LEVEL_WARNING
 g_log() message. NetworkManager won't use these levels for regular logging
 but for assertions.
+
+
+Git Notes (refs/notes/bugs)
+---------------------------
+
+There are special notes to annotate git commit messages with information
+about "Fixes" and "cherry picked from". Annotating the history is useful
+if it was not done initially because our scripts can make use of it.
+
+The notes it are called "refs/notes/bugs".
+
+So configure:
+
+```
+$ git config --add 'remote.origin.fetch' 'refs/notes/bugs:refs/notes/bugs'
+$ git config --add 'notes.displayref' 'refs/notes/bugs'
+```
+
+For example, set notes with
+
+```
+$ git notes --ref refs/notes/bugs add -m "(cherry picked from $COMMIT_SHA)" HEAD
+```
+
+You should see the notes in git-log output as well.
+
+To resync our local notes use:
+
+```
+$ git fetch origin refs/notes/bugs:refs/notes/bugs -f
+```

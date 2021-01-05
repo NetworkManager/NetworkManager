@@ -119,7 +119,7 @@
         @options: Further options for the method call.
         @path: Object path of the new connection that was just added.
         @active_connection: The path of the active connection object representing this active connection.
-        @result: a dictionary of additional output arguments for future extension. Currently not additional
+        @result: a dictionary of additional output arguments for future extension. Currently, not additional
           output arguments are supported.
 
         Adds a new connection using the given details (if any) as a template
@@ -523,7 +523,7 @@
         ConnectivityCheckEnabled:
 
         Indicates whether connectivity checking is enabled.  This
-        property can also be written to to disable connectivity
+        property can also be written to disable connectivity
         checking (as a privacy control panel might want to do).
     -->
     <property name="ConnectivityCheckEnabled" type="b" access="readwrite"/>

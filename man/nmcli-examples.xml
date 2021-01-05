@@ -87,6 +87,11 @@
       </para>
     </example>
 
+    <example><title>Connect to a password-protected wifi network</title>
+<screen><prompt>$ </prompt><userinput>nmcli device wifi connect "$SSID" password "$PASSWORD"</userinput></screen>
+<screen><prompt>$ </prompt><userinput>nmcli --ask device wifi connect "$SSID"</userinput></screen>
+    </example>
+
     <example><title>Showing general information and properties for a Wi-Fi interface</title>
 <screen><prompt>$ </prompt><userinput>nmcli -p -f general,wifi-properties device show wlan0</userinput>
 ===========================================================================
@@ -217,7 +222,7 @@ B,DISPATCH</screen>
         change the configuration with <emphasis>modify</emphasis> command
         (<emphasis role="bold">nmcli con modify Team1 team.config team1-master-another-json.conf</emphasis>).
         The last two commands add slaves profiles, both enslaved to <emphasis>Team1</emphasis>.
-        The first slave will be bound to <emphasis>em1</emphasis> interface, the second to
+        The first slave will be bound to the <emphasis>em1</emphasis> interface, the second to
         <emphasis>em2</emphasis>. The slaves don't specify <emphasis>config</emphasis> and thus
         <emphasis>teamd</emphasis> will use its default configuration. You will activate the whole setup
         by activating both slaves:
@@ -297,7 +302,7 @@ IP4:192.168.1.12/24:192.168.1.1::192.168.1.1::</screen>
         VF is configured with MAC address 00:11:22:33:44:55 and VLAN
         10, the second one has the <emphasis>trust</emphasis> and
         <emphasis>spoof-check</emphasis> features respectively enabled
-        and disabled. VF number 2 has a maximux transmission rate of
+        and disabled. VF number 2 has a maximum transmission rate of
         20Mbps. The kernel is instructed to not automatically
         instantiate a network interface for the VFs.
       </para>

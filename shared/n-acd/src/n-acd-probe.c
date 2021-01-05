@@ -682,7 +682,7 @@ _c_public_ void n_acd_probe_get_userdata(NAcdProbe *probe, void **userdatap) {
 /**
  * n_acd_probe_announce() - announce the configured IP address
  * @probe:                      probe to operate on
- * @defend:                     defence policy
+ * @defend:                     defense policy
  *
  * Announce the IP address on the local link, and start defending it according
  * to the given policy, which mut be one of N_ACD_DEFEND_ONCE,
@@ -691,7 +691,7 @@ _c_public_ void n_acd_probe_get_userdata(NAcdProbe *probe, void **userdatap) {
  * This must be called in response to an N_ACD_EVENT_READY event, and only
  * after the given address has been configured on the given network interface.
  *
- * Return: 0 on success, N_ACD_E_INVALID_ARGUMENT in case the defence policy
+ * Return: 0 on success, N_ACD_E_INVALID_ARGUMENT in case the defense policy
  *         is invalid, negative error code on failure.
  */
 _c_public_ int n_acd_probe_announce(NAcdProbe *probe, unsigned int defend) {

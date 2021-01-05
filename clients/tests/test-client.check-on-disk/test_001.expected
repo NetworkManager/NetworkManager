@@ -100,23 +100,23 @@ returncode: 0
 stdout: 1350 bytes
 >>>
 PERMISSION                                                        VALUE   
-org.freedesktop.NetworkManager.enable-disable-network             yes     
-org.freedesktop.NetworkManager.enable-disable-wifi                yes     
-org.freedesktop.NetworkManager.enable-disable-wwan                yes     
-org.freedesktop.NetworkManager.enable-disable-wimax               yes     
-org.freedesktop.NetworkManager.sleep-wake                         no      
-org.freedesktop.NetworkManager.network-control                    yes     
-org.freedesktop.NetworkManager.wifi.share.protected               yes     
-org.freedesktop.NetworkManager.wifi.share.open                    yes     
-org.freedesktop.NetworkManager.settings.modify.system             yes     
-org.freedesktop.NetworkManager.settings.modify.own                yes     
-org.freedesktop.NetworkManager.settings.modify.hostname           yes     
-org.freedesktop.NetworkManager.settings.modify.global-dns         no      
-org.freedesktop.NetworkManager.reload                             no      
 org.freedesktop.NetworkManager.checkpoint-rollback                unknown 
-org.freedesktop.NetworkManager.enable-disable-statistics          unknown 
 org.freedesktop.NetworkManager.enable-disable-connectivity-check  unknown 
+org.freedesktop.NetworkManager.enable-disable-network             yes     
+org.freedesktop.NetworkManager.enable-disable-statistics          unknown 
+org.freedesktop.NetworkManager.enable-disable-wifi                yes     
+org.freedesktop.NetworkManager.enable-disable-wimax               yes     
+org.freedesktop.NetworkManager.enable-disable-wwan                yes     
+org.freedesktop.NetworkManager.network-control                    yes     
+org.freedesktop.NetworkManager.reload                             no      
+org.freedesktop.NetworkManager.settings.modify.global-dns         no      
+org.freedesktop.NetworkManager.settings.modify.hostname           yes     
+org.freedesktop.NetworkManager.settings.modify.own                yes     
+org.freedesktop.NetworkManager.settings.modify.system             yes     
+org.freedesktop.NetworkManager.sleep-wake                         no      
 org.freedesktop.NetworkManager.wifi.scan                          unknown 
+org.freedesktop.NetworkManager.wifi.share.open                    yes     
+org.freedesktop.NetworkManager.wifi.share.protected               yes     
 
 <<<
 size: 1513
@@ -127,23 +127,23 @@ returncode: 0
 stdout: 1368 bytes
 >>>
 PERMISSION                                                        VALUE    
-org.freedesktop.NetworkManager.enable-disable-network             tak      
-org.freedesktop.NetworkManager.enable-disable-wifi                tak      
-org.freedesktop.NetworkManager.enable-disable-wwan                tak      
-org.freedesktop.NetworkManager.enable-disable-wimax               tak      
-org.freedesktop.NetworkManager.sleep-wake                         nie      
-org.freedesktop.NetworkManager.network-control                    tak      
-org.freedesktop.NetworkManager.wifi.share.protected               tak      
-org.freedesktop.NetworkManager.wifi.share.open                    tak      
-org.freedesktop.NetworkManager.settings.modify.system             tak      
-org.freedesktop.NetworkManager.settings.modify.own                tak      
-org.freedesktop.NetworkManager.settings.modify.hostname           tak      
-org.freedesktop.NetworkManager.settings.modify.global-dns         nie      
-org.freedesktop.NetworkManager.reload                             nie      
 org.freedesktop.NetworkManager.checkpoint-rollback                nieznane 
-org.freedesktop.NetworkManager.enable-disable-statistics          nieznane 
 org.freedesktop.NetworkManager.enable-disable-connectivity-check  nieznane 
+org.freedesktop.NetworkManager.enable-disable-network             tak      
+org.freedesktop.NetworkManager.enable-disable-statistics          nieznane 
+org.freedesktop.NetworkManager.enable-disable-wifi                tak      
+org.freedesktop.NetworkManager.enable-disable-wimax               tak      
+org.freedesktop.NetworkManager.enable-disable-wwan                tak      
+org.freedesktop.NetworkManager.network-control                    tak      
+org.freedesktop.NetworkManager.reload                             nie      
+org.freedesktop.NetworkManager.settings.modify.global-dns         nie      
+org.freedesktop.NetworkManager.settings.modify.hostname           tak      
+org.freedesktop.NetworkManager.settings.modify.own                tak      
+org.freedesktop.NetworkManager.settings.modify.system             tak      
+org.freedesktop.NetworkManager.sleep-wake                         nie      
 org.freedesktop.NetworkManager.wifi.scan                          nieznane 
+org.freedesktop.NetworkManager.wifi.share.open                    tak      
+org.freedesktop.NetworkManager.wifi.share.protected               tak      
 
 <<<
 size: 1614
@@ -154,23 +154,23 @@ returncode: 0
 stdout: 1467 bytes
 >>>
 PERMISSION                                                        VALUE   
-org.freedesktop.NetworkManager.enable-disable-network             [32myes[0m     
-org.freedesktop.NetworkManager.enable-disable-wifi                [32myes[0m     
-org.freedesktop.NetworkManager.enable-disable-wwan                [32myes[0m     
-org.freedesktop.NetworkManager.enable-disable-wimax               [32myes[0m     
-org.freedesktop.NetworkManager.sleep-wake                         [31mno[0m      
-org.freedesktop.NetworkManager.network-control                    [32myes[0m     
-org.freedesktop.NetworkManager.wifi.share.protected               [32myes[0m     
-org.freedesktop.NetworkManager.wifi.share.open                    [32myes[0m     
-org.freedesktop.NetworkManager.settings.modify.system             [32myes[0m     
-org.freedesktop.NetworkManager.settings.modify.own                [32myes[0m     
-org.freedesktop.NetworkManager.settings.modify.hostname           [32myes[0m     
-org.freedesktop.NetworkManager.settings.modify.global-dns         [31mno[0m      
-org.freedesktop.NetworkManager.reload                             [31mno[0m      
 org.freedesktop.NetworkManager.checkpoint-rollback                unknown 
-org.freedesktop.NetworkManager.enable-disable-statistics          unknown 
 org.freedesktop.NetworkManager.enable-disable-connectivity-check  unknown 
+org.freedesktop.NetworkManager.enable-disable-network             [32myes[0m     
+org.freedesktop.NetworkManager.enable-disable-statistics          unknown 
+org.freedesktop.NetworkManager.enable-disable-wifi                [32myes[0m     
+org.freedesktop.NetworkManager.enable-disable-wimax               [32myes[0m     
+org.freedesktop.NetworkManager.enable-disable-wwan                [32myes[0m     
+org.freedesktop.NetworkManager.network-control                    [32myes[0m     
+org.freedesktop.NetworkManager.reload                             [31mno[0m      
+org.freedesktop.NetworkManager.settings.modify.global-dns         [31mno[0m      
+org.freedesktop.NetworkManager.settings.modify.hostname           [32myes[0m     
+org.freedesktop.NetworkManager.settings.modify.own                [32myes[0m     
+org.freedesktop.NetworkManager.settings.modify.system             [32myes[0m     
+org.freedesktop.NetworkManager.sleep-wake                         [31mno[0m      
 org.freedesktop.NetworkManager.wifi.scan                          unknown 
+org.freedesktop.NetworkManager.wifi.share.open                    [32myes[0m     
+org.freedesktop.NetworkManager.wifi.share.protected               [32myes[0m     
 
 <<<
 size: 1642
@@ -181,23 +181,23 @@ returncode: 0
 stdout: 1485 bytes
 >>>
 PERMISSION                                                        VALUE    
-org.freedesktop.NetworkManager.enable-disable-network             [32mtak[0m      
-org.freedesktop.NetworkManager.enable-disable-wifi                [32mtak[0m      
-org.freedesktop.NetworkManager.enable-disable-wwan                [32mtak[0m      
-org.freedesktop.NetworkManager.enable-disable-wimax               [32mtak[0m      
-org.freedesktop.NetworkManager.sleep-wake                         [31mnie[0m      
-org.freedesktop.NetworkManager.network-control                    [32mtak[0m      
-org.freedesktop.NetworkManager.wifi.share.protected               [32mtak[0m      
-org.freedesktop.NetworkManager.wifi.share.open                    [32mtak[0m      
-org.freedesktop.NetworkManager.settings.modify.system             [32mtak[0m      
-org.freedesktop.NetworkManager.settings.modify.own                [32mtak[0m      
-org.freedesktop.NetworkManager.settings.modify.hostname           [32mtak[0m      
-org.freedesktop.NetworkManager.settings.modify.global-dns         [31mnie[0m      
-org.freedesktop.NetworkManager.reload                             [31mnie[0m      
 org.freedesktop.NetworkManager.checkpoint-rollback                nieznane 
-org.freedesktop.NetworkManager.enable-disable-statistics          nieznane 
 org.freedesktop.NetworkManager.enable-disable-connectivity-check  nieznane 
+org.freedesktop.NetworkManager.enable-disable-network             [32mtak[0m      
+org.freedesktop.NetworkManager.enable-disable-statistics          nieznane 
+org.freedesktop.NetworkManager.enable-disable-wifi                [32mtak[0m      
+org.freedesktop.NetworkManager.enable-disable-wimax               [32mtak[0m      
+org.freedesktop.NetworkManager.enable-disable-wwan                [32mtak[0m      
+org.freedesktop.NetworkManager.network-control                    [32mtak[0m      
+org.freedesktop.NetworkManager.reload                             [31mnie[0m      
+org.freedesktop.NetworkManager.settings.modify.global-dns         [31mnie[0m      
+org.freedesktop.NetworkManager.settings.modify.hostname           [32mtak[0m      
+org.freedesktop.NetworkManager.settings.modify.own                [32mtak[0m      
+org.freedesktop.NetworkManager.settings.modify.system             [32mtak[0m      
+org.freedesktop.NetworkManager.sleep-wake                         [31mnie[0m      
 org.freedesktop.NetworkManager.wifi.scan                          nieznane 
+org.freedesktop.NetworkManager.wifi.share.open                    [32mtak[0m      
+org.freedesktop.NetworkManager.wifi.share.protected               [32mtak[0m      
 
 <<<
 size: 1691
@@ -212,23 +212,23 @@ stdout: 1547 bytes
 ==============================
 PERMISSION                                                        VALUE   
 ---------------------------------------------------------------------------------------------------------
-org.freedesktop.NetworkManager.enable-disable-network             yes     
-org.freedesktop.NetworkManager.enable-disable-wifi                yes     
-org.freedesktop.NetworkManager.enable-disable-wwan                yes     
-org.freedesktop.NetworkManager.enable-disable-wimax               yes     
-org.freedesktop.NetworkManager.sleep-wake                         no      
-org.freedesktop.NetworkManager.network-control                    yes     
-org.freedesktop.NetworkManager.wifi.share.protected               yes     
-org.freedesktop.NetworkManager.wifi.share.open                    yes     
-org.freedesktop.NetworkManager.settings.modify.system             yes     
-org.freedesktop.NetworkManager.settings.modify.own                yes     
-org.freedesktop.NetworkManager.settings.modify.hostname           yes     
-org.freedesktop.NetworkManager.settings.modify.global-dns         no      
-org.freedesktop.NetworkManager.reload                             no      
 org.freedesktop.NetworkManager.checkpoint-rollback                unknown 
-org.freedesktop.NetworkManager.enable-disable-statistics          unknown 
 org.freedesktop.NetworkManager.enable-disable-connectivity-check  unknown 
+org.freedesktop.NetworkManager.enable-disable-network             yes     
+org.freedesktop.NetworkManager.enable-disable-statistics          unknown 
+org.freedesktop.NetworkManager.enable-disable-wifi                yes     
+org.freedesktop.NetworkManager.enable-disable-wimax               yes     
+org.freedesktop.NetworkManager.enable-disable-wwan                yes     
+org.freedesktop.NetworkManager.network-control                    yes     
+org.freedesktop.NetworkManager.reload                             no      
+org.freedesktop.NetworkManager.settings.modify.global-dns         no      
+org.freedesktop.NetworkManager.settings.modify.hostname           yes     
+org.freedesktop.NetworkManager.settings.modify.own                yes     
+org.freedesktop.NetworkManager.settings.modify.system             yes     
+org.freedesktop.NetworkManager.sleep-wake                         no      
 org.freedesktop.NetworkManager.wifi.scan                          unknown 
+org.freedesktop.NetworkManager.wifi.share.open                    yes     
+org.freedesktop.NetworkManager.wifi.share.protected               yes     
 
 <<<
 size: 1749
@@ -243,23 +243,23 @@ stdout: 1595 bytes
 =====================================
 PERMISSION                                                        VALUE    
 -----------------------------------------------------------------------------------------------------------------
-org.freedesktop.NetworkManager.enable-disable-network             tak      
-org.freedesktop.NetworkManager.enable-disable-wifi                tak      
-org.freedesktop.NetworkManager.enable-disable-wwan                tak      
-org.freedesktop.NetworkManager.enable-disable-wimax               tak      
-org.freedesktop.NetworkManager.sleep-wake                         nie      
-org.freedesktop.NetworkManager.network-control                    tak      
-org.freedesktop.NetworkManager.wifi.share.protected               tak      
-org.freedesktop.NetworkManager.wifi.share.open                    tak      
-org.freedesktop.NetworkManager.settings.modify.system             tak      
-org.freedesktop.NetworkManager.settings.modify.own                tak      
-org.freedesktop.NetworkManager.settings.modify.hostname           tak      
-org.freedesktop.NetworkManager.settings.modify.global-dns         nie      
-org.freedesktop.NetworkManager.reload                             nie      
 org.freedesktop.NetworkManager.checkpoint-rollback                nieznane 
-org.freedesktop.NetworkManager.enable-disable-statistics          nieznane 
 org.freedesktop.NetworkManager.enable-disable-connectivity-check  nieznane 
+org.freedesktop.NetworkManager.enable-disable-network             tak      
+org.freedesktop.NetworkManager.enable-disable-statistics          nieznane 
+org.freedesktop.NetworkManager.enable-disable-wifi                tak      
+org.freedesktop.NetworkManager.enable-disable-wimax               tak      
+org.freedesktop.NetworkManager.enable-disable-wwan                tak      
+org.freedesktop.NetworkManager.network-control                    tak      
+org.freedesktop.NetworkManager.reload                             nie      
+org.freedesktop.NetworkManager.settings.modify.global-dns         nie      
+org.freedesktop.NetworkManager.settings.modify.hostname           tak      
+org.freedesktop.NetworkManager.settings.modify.own                tak      
+org.freedesktop.NetworkManager.settings.modify.system             tak      
+org.freedesktop.NetworkManager.sleep-wake                         nie      
 org.freedesktop.NetworkManager.wifi.scan                          nieznane 
+org.freedesktop.NetworkManager.wifi.share.open                    tak      
+org.freedesktop.NetworkManager.wifi.share.protected               tak      
 
 <<<
 size: 1820
@@ -274,23 +274,23 @@ stdout: 1664 bytes
 ==============================
 PERMISSION                                                        VALUE   
 ---------------------------------------------------------------------------------------------------------
-org.freedesktop.NetworkManager.enable-disable-network             [32myes[0m     
-org.freedesktop.NetworkManager.enable-disable-wifi                [32myes[0m     
-org.freedesktop.NetworkManager.enable-disable-wwan                [32myes[0m     
-org.freedesktop.NetworkManager.enable-disable-wimax               [32myes[0m     
-org.freedesktop.NetworkManager.sleep-wake                         [31mno[0m      
-org.freedesktop.NetworkManager.network-control                    [32myes[0m     
-org.freedesktop.NetworkManager.wifi.share.protected               [32myes[0m     
-org.freedesktop.NetworkManager.wifi.share.open                    [32myes[0m     
-org.freedesktop.NetworkManager.settings.modify.system             [32myes[0m     
-org.freedesktop.NetworkManager.settings.modify.own                [32myes[0m     
-org.freedesktop.NetworkManager.settings.modify.hostname           [32myes[0m     
-org.freedesktop.NetworkManager.settings.modify.global-dns         [31mno[0m      
-org.freedesktop.NetworkManager.reload                             [31mno[0m      
 org.freedesktop.NetworkManager.checkpoint-rollback                unknown 
-org.freedesktop.NetworkManager.enable-disable-statistics          unknown 
 org.freedesktop.NetworkManager.enable-disable-connectivity-check  unknown 
+org.freedesktop.NetworkManager.enable-disable-network             [32myes[0m     
+org.freedesktop.NetworkManager.enable-disable-statistics          unknown 
+org.freedesktop.NetworkManager.enable-disable-wifi                [32myes[0m     
+org.freedesktop.NetworkManager.enable-disable-wimax               [32myes[0m     
+org.freedesktop.NetworkManager.enable-disable-wwan                [32myes[0m     
+org.freedesktop.NetworkManager.network-control                    [32myes[0m     
+org.freedesktop.NetworkManager.reload                             [31mno[0m      
+org.freedesktop.NetworkManager.settings.modify.global-dns         [31mno[0m      
+org.freedesktop.NetworkManager.settings.modify.hostname           [32myes[0m     
+org.freedesktop.NetworkManager.settings.modify.own                [32myes[0m     
+org.freedesktop.NetworkManager.settings.modify.system             [32myes[0m     
+org.freedesktop.NetworkManager.sleep-wake                         [31mno[0m      
 org.freedesktop.NetworkManager.wifi.scan                          unknown 
+org.freedesktop.NetworkManager.wifi.share.open                    [32myes[0m     
+org.freedesktop.NetworkManager.wifi.share.protected               [32myes[0m     
 
 <<<
 size: 1878
@@ -305,23 +305,23 @@ stdout: 1712 bytes
 =====================================
 PERMISSION                                                        VALUE    
 -----------------------------------------------------------------------------------------------------------------
-org.freedesktop.NetworkManager.enable-disable-network             [32mtak[0m      
-org.freedesktop.NetworkManager.enable-disable-wifi                [32mtak[0m      
-org.freedesktop.NetworkManager.enable-disable-wwan                [32mtak[0m      
-org.freedesktop.NetworkManager.enable-disable-wimax               [32mtak[0m      
-org.freedesktop.NetworkManager.sleep-wake                         [31mnie[0m      
-org.freedesktop.NetworkManager.network-control                    [32mtak[0m      
-org.freedesktop.NetworkManager.wifi.share.protected               [32mtak[0m      
-org.freedesktop.NetworkManager.wifi.share.open                    [32mtak[0m      
-org.freedesktop.NetworkManager.settings.modify.system             [32mtak[0m      
-org.freedesktop.NetworkManager.settings.modify.own                [32mtak[0m      
-org.freedesktop.NetworkManager.settings.modify.hostname           [32mtak[0m      
-org.freedesktop.NetworkManager.settings.modify.global-dns         [31mnie[0m      
-org.freedesktop.NetworkManager.reload                             [31mnie[0m      
 org.freedesktop.NetworkManager.checkpoint-rollback                nieznane 
-org.freedesktop.NetworkManager.enable-disable-statistics          nieznane 
 org.freedesktop.NetworkManager.enable-disable-connectivity-check  nieznane 
+org.freedesktop.NetworkManager.enable-disable-network             [32mtak[0m      
+org.freedesktop.NetworkManager.enable-disable-statistics          nieznane 
+org.freedesktop.NetworkManager.enable-disable-wifi                [32mtak[0m      
+org.freedesktop.NetworkManager.enable-disable-wimax               [32mtak[0m      
+org.freedesktop.NetworkManager.enable-disable-wwan                [32mtak[0m      
+org.freedesktop.NetworkManager.network-control                    [32mtak[0m      
+org.freedesktop.NetworkManager.reload                             [31mnie[0m      
+org.freedesktop.NetworkManager.settings.modify.global-dns         [31mnie[0m      
+org.freedesktop.NetworkManager.settings.modify.hostname           [32mtak[0m      
+org.freedesktop.NetworkManager.settings.modify.own                [32mtak[0m      
+org.freedesktop.NetworkManager.settings.modify.system             [32mtak[0m      
+org.freedesktop.NetworkManager.sleep-wake                         [31mnie[0m      
 org.freedesktop.NetworkManager.wifi.scan                          nieznane 
+org.freedesktop.NetworkManager.wifi.share.open                    [32mtak[0m      
+org.freedesktop.NetworkManager.wifi.share.protected               [32mtak[0m      
 
 <<<
 size: 1090
@@ -331,23 +331,23 @@ lang: C
 returncode: 0
 stdout: 948 bytes
 >>>
-org.freedesktop.NetworkManager.enable-disable-network:yes
-org.freedesktop.NetworkManager.enable-disable-wifi:yes
-org.freedesktop.NetworkManager.enable-disable-wwan:yes
-org.freedesktop.NetworkManager.enable-disable-wimax:yes
-org.freedesktop.NetworkManager.sleep-wake:no
-org.freedesktop.NetworkManager.network-control:yes
-org.freedesktop.NetworkManager.wifi.share.protected:yes
-org.freedesktop.NetworkManager.wifi.share.open:yes
-org.freedesktop.NetworkManager.settings.modify.system:yes
-org.freedesktop.NetworkManager.settings.modify.own:yes
-org.freedesktop.NetworkManager.settings.modify.hostname:yes
-org.freedesktop.NetworkManager.settings.modify.global-dns:no
-org.freedesktop.NetworkManager.reload:no
 org.freedesktop.NetworkManager.checkpoint-rollback:unknown
-org.freedesktop.NetworkManager.enable-disable-statistics:unknown
 org.freedesktop.NetworkManager.enable-disable-connectivity-check:unknown
+org.freedesktop.NetworkManager.enable-disable-network:yes
+org.freedesktop.NetworkManager.enable-disable-statistics:unknown
+org.freedesktop.NetworkManager.enable-disable-wifi:yes
+org.freedesktop.NetworkManager.enable-disable-wimax:yes
+org.freedesktop.NetworkManager.enable-disable-wwan:yes
+org.freedesktop.NetworkManager.network-control:yes
+org.freedesktop.NetworkManager.reload:no
+org.freedesktop.NetworkManager.settings.modify.global-dns:no
+org.freedesktop.NetworkManager.settings.modify.hostname:yes
+org.freedesktop.NetworkManager.settings.modify.own:yes
+org.freedesktop.NetworkManager.settings.modify.system:yes
+org.freedesktop.NetworkManager.sleep-wake:no
 org.freedesktop.NetworkManager.wifi.scan:unknown
+org.freedesktop.NetworkManager.wifi.share.open:yes
+org.freedesktop.NetworkManager.wifi.share.protected:yes
 
 <<<
 size: 1100
@@ -357,23 +357,23 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 948 bytes
 >>>
-org.freedesktop.NetworkManager.enable-disable-network:yes
-org.freedesktop.NetworkManager.enable-disable-wifi:yes
-org.freedesktop.NetworkManager.enable-disable-wwan:yes
-org.freedesktop.NetworkManager.enable-disable-wimax:yes
-org.freedesktop.NetworkManager.sleep-wake:no
-org.freedesktop.NetworkManager.network-control:yes
-org.freedesktop.NetworkManager.wifi.share.protected:yes
-org.freedesktop.NetworkManager.wifi.share.open:yes
-org.freedesktop.NetworkManager.settings.modify.system:yes
-org.freedesktop.NetworkManager.settings.modify.own:yes
-org.freedesktop.NetworkManager.settings.modify.hostname:yes
-org.freedesktop.NetworkManager.settings.modify.global-dns:no
-org.freedesktop.NetworkManager.reload:no
 org.freedesktop.NetworkManager.checkpoint-rollback:unknown
-org.freedesktop.NetworkManager.enable-disable-statistics:unknown
 org.freedesktop.NetworkManager.enable-disable-connectivity-check:unknown
+org.freedesktop.NetworkManager.enable-disable-network:yes
+org.freedesktop.NetworkManager.enable-disable-statistics:unknown
+org.freedesktop.NetworkManager.enable-disable-wifi:yes
+org.freedesktop.NetworkManager.enable-disable-wimax:yes
+org.freedesktop.NetworkManager.enable-disable-wwan:yes
+org.freedesktop.NetworkManager.network-control:yes
+org.freedesktop.NetworkManager.reload:no
+org.freedesktop.NetworkManager.settings.modify.global-dns:no
+org.freedesktop.NetworkManager.settings.modify.hostname:yes
+org.freedesktop.NetworkManager.settings.modify.own:yes
+org.freedesktop.NetworkManager.settings.modify.system:yes
+org.freedesktop.NetworkManager.sleep-wake:no
 org.freedesktop.NetworkManager.wifi.scan:unknown
+org.freedesktop.NetworkManager.wifi.share.open:yes
+org.freedesktop.NetworkManager.wifi.share.protected:yes
 
 <<<
 size: 1220
@@ -383,23 +383,23 @@ lang: C
 returncode: 0
 stdout: 1065 bytes
 >>>
-org.freedesktop.NetworkManager.enable-disable-network:[32myes[0m
-org.freedesktop.NetworkManager.enable-disable-wifi:[32myes[0m
-org.freedesktop.NetworkManager.enable-disable-wwan:[32myes[0m
-org.freedesktop.NetworkManager.enable-disable-wimax:[32myes[0m
-org.freedesktop.NetworkManager.sleep-wake:[31mno[0m
-org.freedesktop.NetworkManager.network-control:[32myes[0m
-org.freedesktop.NetworkManager.wifi.share.protected:[32myes[0m
-org.freedesktop.NetworkManager.wifi.share.open:[32myes[0m
-org.freedesktop.NetworkManager.settings.modify.system:[32myes[0m
-org.freedesktop.NetworkManager.settings.modify.own:[32myes[0m
-org.freedesktop.NetworkManager.settings.modify.hostname:[32myes[0m
-org.freedesktop.NetworkManager.settings.modify.global-dns:[31mno[0m
-org.freedesktop.NetworkManager.reload:[31mno[0m
 org.freedesktop.NetworkManager.checkpoint-rollback:unknown
-org.freedesktop.NetworkManager.enable-disable-statistics:unknown
 org.freedesktop.NetworkManager.enable-disable-connectivity-check:unknown
+org.freedesktop.NetworkManager.enable-disable-network:[32myes[0m
+org.freedesktop.NetworkManager.enable-disable-statistics:unknown
+org.freedesktop.NetworkManager.enable-disable-wifi:[32myes[0m
+org.freedesktop.NetworkManager.enable-disable-wimax:[32myes[0m
+org.freedesktop.NetworkManager.enable-disable-wwan:[32myes[0m
+org.freedesktop.NetworkManager.network-control:[32myes[0m
+org.freedesktop.NetworkManager.reload:[31mno[0m
+org.freedesktop.NetworkManager.settings.modify.global-dns:[31mno[0m
+org.freedesktop.NetworkManager.settings.modify.hostname:[32myes[0m
+org.freedesktop.NetworkManager.settings.modify.own:[32myes[0m
+org.freedesktop.NetworkManager.settings.modify.system:[32myes[0m
+org.freedesktop.NetworkManager.sleep-wake:[31mno[0m
 org.freedesktop.NetworkManager.wifi.scan:unknown
+org.freedesktop.NetworkManager.wifi.share.open:[32myes[0m
+org.freedesktop.NetworkManager.wifi.share.protected:[32myes[0m
 
 <<<
 size: 1230
@@ -409,23 +409,23 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 1065 bytes
 >>>
-org.freedesktop.NetworkManager.enable-disable-network:[32myes[0m
-org.freedesktop.NetworkManager.enable-disable-wifi:[32myes[0m
-org.freedesktop.NetworkManager.enable-disable-wwan:[32myes[0m
-org.freedesktop.NetworkManager.enable-disable-wimax:[32myes[0m
-org.freedesktop.NetworkManager.sleep-wake:[31mno[0m
-org.freedesktop.NetworkManager.network-control:[32myes[0m
-org.freedesktop.NetworkManager.wifi.share.protected:[32myes[0m
-org.freedesktop.NetworkManager.wifi.share.open:[32myes[0m
-org.freedesktop.NetworkManager.settings.modify.system:[32myes[0m
-org.freedesktop.NetworkManager.settings.modify.own:[32myes[0m
-org.freedesktop.NetworkManager.settings.modify.hostname:[32myes[0m
-org.freedesktop.NetworkManager.settings.modify.global-dns:[31mno[0m
-org.freedesktop.NetworkManager.reload:[31mno[0m
 org.freedesktop.NetworkManager.checkpoint-rollback:unknown
-org.freedesktop.NetworkManager.enable-disable-statistics:unknown
 org.freedesktop.NetworkManager.enable-disable-connectivity-check:unknown
+org.freedesktop.NetworkManager.enable-disable-network:[32myes[0m
+org.freedesktop.NetworkManager.enable-disable-statistics:unknown
+org.freedesktop.NetworkManager.enable-disable-wifi:[32myes[0m
+org.freedesktop.NetworkManager.enable-disable-wimax:[32myes[0m
+org.freedesktop.NetworkManager.enable-disable-wwan:[32myes[0m
+org.freedesktop.NetworkManager.network-control:[32myes[0m
+org.freedesktop.NetworkManager.reload:[31mno[0m
+org.freedesktop.NetworkManager.settings.modify.global-dns:[31mno[0m
+org.freedesktop.NetworkManager.settings.modify.hostname:[32myes[0m
+org.freedesktop.NetworkManager.settings.modify.own:[32myes[0m
+org.freedesktop.NetworkManager.settings.modify.system:[32myes[0m
+org.freedesktop.NetworkManager.sleep-wake:[31mno[0m
 org.freedesktop.NetworkManager.wifi.scan:unknown
+org.freedesktop.NetworkManager.wifi.share.open:[32myes[0m
+org.freedesktop.NetworkManager.wifi.share.protected:[32myes[0m
 
 <<<
 size: 1500
@@ -436,23 +436,23 @@ returncode: 0
 stdout: 1350 bytes
 >>>
 PERMISSION                                                        VALUE   
-org.freedesktop.NetworkManager.enable-disable-network             yes     
-org.freedesktop.NetworkManager.enable-disable-wifi                yes     
-org.freedesktop.NetworkManager.enable-disable-wwan                yes     
-org.freedesktop.NetworkManager.enable-disable-wimax               yes     
-org.freedesktop.NetworkManager.sleep-wake                         no      
-org.freedesktop.NetworkManager.network-control                    yes     
-org.freedesktop.NetworkManager.wifi.share.protected               yes     
-org.freedesktop.NetworkManager.wifi.share.open                    yes     
-org.freedesktop.NetworkManager.settings.modify.system             yes     
-org.freedesktop.NetworkManager.settings.modify.own                yes     
-org.freedesktop.NetworkManager.settings.modify.hostname           yes     
-org.freedesktop.NetworkManager.settings.modify.global-dns         no      
-org.freedesktop.NetworkManager.reload                             no      
 org.freedesktop.NetworkManager.checkpoint-rollback                unknown 
-org.freedesktop.NetworkManager.enable-disable-statistics          unknown 
 org.freedesktop.NetworkManager.enable-disable-connectivity-check  unknown 
+org.freedesktop.NetworkManager.enable-disable-network             yes     
+org.freedesktop.NetworkManager.enable-disable-statistics          unknown 
+org.freedesktop.NetworkManager.enable-disable-wifi                yes     
+org.freedesktop.NetworkManager.enable-disable-wimax               yes     
+org.freedesktop.NetworkManager.enable-disable-wwan                yes     
+org.freedesktop.NetworkManager.network-control                    yes     
+org.freedesktop.NetworkManager.reload                             no      
+org.freedesktop.NetworkManager.settings.modify.global-dns         no      
+org.freedesktop.NetworkManager.settings.modify.hostname           yes     
+org.freedesktop.NetworkManager.settings.modify.own                yes     
+org.freedesktop.NetworkManager.settings.modify.system             yes     
+org.freedesktop.NetworkManager.sleep-wake                         no      
 org.freedesktop.NetworkManager.wifi.scan                          unknown 
+org.freedesktop.NetworkManager.wifi.share.open                    yes     
+org.freedesktop.NetworkManager.wifi.share.protected               yes     
 
 <<<
 size: 1528
@@ -463,23 +463,23 @@ returncode: 0
 stdout: 1368 bytes
 >>>
 PERMISSION                                                        VALUE    
-org.freedesktop.NetworkManager.enable-disable-network             tak      
-org.freedesktop.NetworkManager.enable-disable-wifi                tak      
-org.freedesktop.NetworkManager.enable-disable-wwan                tak      
-org.freedesktop.NetworkManager.enable-disable-wimax               tak      
-org.freedesktop.NetworkManager.sleep-wake                         nie      
-org.freedesktop.NetworkManager.network-control                    tak      
-org.freedesktop.NetworkManager.wifi.share.protected               tak      
-org.freedesktop.NetworkManager.wifi.share.open                    tak      
-org.freedesktop.NetworkManager.settings.modify.system             tak      
-org.freedesktop.NetworkManager.settings.modify.own                tak      
-org.freedesktop.NetworkManager.settings.modify.hostname           tak      
-org.freedesktop.NetworkManager.settings.modify.global-dns         nie      
-org.freedesktop.NetworkManager.reload                             nie      
 org.freedesktop.NetworkManager.checkpoint-rollback                nieznane 
-org.freedesktop.NetworkManager.enable-disable-statistics          nieznane 
 org.freedesktop.NetworkManager.enable-disable-connectivity-check  nieznane 
+org.freedesktop.NetworkManager.enable-disable-network             tak      
+org.freedesktop.NetworkManager.enable-disable-statistics          nieznane 
+org.freedesktop.NetworkManager.enable-disable-wifi                tak      
+org.freedesktop.NetworkManager.enable-disable-wimax               tak      
+org.freedesktop.NetworkManager.enable-disable-wwan                tak      
+org.freedesktop.NetworkManager.network-control                    tak      
+org.freedesktop.NetworkManager.reload                             nie      
+org.freedesktop.NetworkManager.settings.modify.global-dns         nie      
+org.freedesktop.NetworkManager.settings.modify.hostname           tak      
+org.freedesktop.NetworkManager.settings.modify.own                tak      
+org.freedesktop.NetworkManager.settings.modify.system             tak      
+org.freedesktop.NetworkManager.sleep-wake                         nie      
 org.freedesktop.NetworkManager.wifi.scan                          nieznane 
+org.freedesktop.NetworkManager.wifi.share.open                    tak      
+org.freedesktop.NetworkManager.wifi.share.protected               tak      
 
 <<<
 size: 1629
@@ -490,23 +490,23 @@ returncode: 0
 stdout: 1467 bytes
 >>>
 PERMISSION                                                        VALUE   
-org.freedesktop.NetworkManager.enable-disable-network             [32myes[0m     
-org.freedesktop.NetworkManager.enable-disable-wifi                [32myes[0m     
-org.freedesktop.NetworkManager.enable-disable-wwan                [32myes[0m     
-org.freedesktop.NetworkManager.enable-disable-wimax               [32myes[0m     
-org.freedesktop.NetworkManager.sleep-wake                         [31mno[0m      
-org.freedesktop.NetworkManager.network-control                    [32myes[0m     
-org.freedesktop.NetworkManager.wifi.share.protected               [32myes[0m     
-org.freedesktop.NetworkManager.wifi.share.open                    [32myes[0m     
-org.freedesktop.NetworkManager.settings.modify.system             [32myes[0m     
-org.freedesktop.NetworkManager.settings.modify.own                [32myes[0m     
-org.freedesktop.NetworkManager.settings.modify.hostname           [32myes[0m     
-org.freedesktop.NetworkManager.settings.modify.global-dns         [31mno[0m      
-org.freedesktop.NetworkManager.reload                             [31mno[0m      
 org.freedesktop.NetworkManager.checkpoint-rollback                unknown 
-org.freedesktop.NetworkManager.enable-disable-statistics          unknown 
 org.freedesktop.NetworkManager.enable-disable-connectivity-check  unknown 
+org.freedesktop.NetworkManager.enable-disable-network             [32myes[0m     
+org.freedesktop.NetworkManager.enable-disable-statistics          unknown 
+org.freedesktop.NetworkManager.enable-disable-wifi                [32myes[0m     
+org.freedesktop.NetworkManager.enable-disable-wimax               [32myes[0m     
+org.freedesktop.NetworkManager.enable-disable-wwan                [32myes[0m     
+org.freedesktop.NetworkManager.network-control                    [32myes[0m     
+org.freedesktop.NetworkManager.reload                             [31mno[0m      
+org.freedesktop.NetworkManager.settings.modify.global-dns         [31mno[0m      
+org.freedesktop.NetworkManager.settings.modify.hostname           [32myes[0m     
+org.freedesktop.NetworkManager.settings.modify.own                [32myes[0m     
+org.freedesktop.NetworkManager.settings.modify.system             [32myes[0m     
+org.freedesktop.NetworkManager.sleep-wake                         [31mno[0m      
 org.freedesktop.NetworkManager.wifi.scan                          unknown 
+org.freedesktop.NetworkManager.wifi.share.open                    [32myes[0m     
+org.freedesktop.NetworkManager.wifi.share.protected               [32myes[0m     
 
 <<<
 size: 1657
@@ -517,23 +517,23 @@ returncode: 0
 stdout: 1485 bytes
 >>>
 PERMISSION                                                        VALUE    
-org.freedesktop.NetworkManager.enable-disable-network             [32mtak[0m      
-org.freedesktop.NetworkManager.enable-disable-wifi                [32mtak[0m      
-org.freedesktop.NetworkManager.enable-disable-wwan                [32mtak[0m      
-org.freedesktop.NetworkManager.enable-disable-wimax               [32mtak[0m      
-org.freedesktop.NetworkManager.sleep-wake                         [31mnie[0m      
-org.freedesktop.NetworkManager.network-control                    [32mtak[0m      
-org.freedesktop.NetworkManager.wifi.share.protected               [32mtak[0m      
-org.freedesktop.NetworkManager.wifi.share.open                    [32mtak[0m      
-org.freedesktop.NetworkManager.settings.modify.system             [32mtak[0m      
-org.freedesktop.NetworkManager.settings.modify.own                [32mtak[0m      
-org.freedesktop.NetworkManager.settings.modify.hostname           [32mtak[0m      
-org.freedesktop.NetworkManager.settings.modify.global-dns         [31mnie[0m      
-org.freedesktop.NetworkManager.reload                             [31mnie[0m      
 org.freedesktop.NetworkManager.checkpoint-rollback                nieznane 
-org.freedesktop.NetworkManager.enable-disable-statistics          nieznane 
 org.freedesktop.NetworkManager.enable-disable-connectivity-check  nieznane 
+org.freedesktop.NetworkManager.enable-disable-network             [32mtak[0m      
+org.freedesktop.NetworkManager.enable-disable-statistics          nieznane 
+org.freedesktop.NetworkManager.enable-disable-wifi                [32mtak[0m      
+org.freedesktop.NetworkManager.enable-disable-wimax               [32mtak[0m      
+org.freedesktop.NetworkManager.enable-disable-wwan                [32mtak[0m      
+org.freedesktop.NetworkManager.network-control                    [32mtak[0m      
+org.freedesktop.NetworkManager.reload                             [31mnie[0m      
+org.freedesktop.NetworkManager.settings.modify.global-dns         [31mnie[0m      
+org.freedesktop.NetworkManager.settings.modify.hostname           [32mtak[0m      
+org.freedesktop.NetworkManager.settings.modify.own                [32mtak[0m      
+org.freedesktop.NetworkManager.settings.modify.system             [32mtak[0m      
+org.freedesktop.NetworkManager.sleep-wake                         [31mnie[0m      
 org.freedesktop.NetworkManager.wifi.scan                          nieznane 
+org.freedesktop.NetworkManager.wifi.share.open                    [32mtak[0m      
+org.freedesktop.NetworkManager.wifi.share.protected               [32mtak[0m      
 
 <<<
 size: 1706
@@ -548,23 +548,23 @@ stdout: 1547 bytes
 ==============================
 PERMISSION                                                        VALUE   
 ---------------------------------------------------------------------------------------------------------
-org.freedesktop.NetworkManager.enable-disable-network             yes     
-org.freedesktop.NetworkManager.enable-disable-wifi                yes     
-org.freedesktop.NetworkManager.enable-disable-wwan                yes     
-org.freedesktop.NetworkManager.enable-disable-wimax               yes     
-org.freedesktop.NetworkManager.sleep-wake                         no      
-org.freedesktop.NetworkManager.network-control                    yes     
-org.freedesktop.NetworkManager.wifi.share.protected               yes     
-org.freedesktop.NetworkManager.wifi.share.open                    yes     
-org.freedesktop.NetworkManager.settings.modify.system             yes     
-org.freedesktop.NetworkManager.settings.modify.own                yes     
-org.freedesktop.NetworkManager.settings.modify.hostname           yes     
-org.freedesktop.NetworkManager.settings.modify.global-dns         no      
-org.freedesktop.NetworkManager.reload                             no      
 org.freedesktop.NetworkManager.checkpoint-rollback                unknown 
-org.freedesktop.NetworkManager.enable-disable-statistics          unknown 
 org.freedesktop.NetworkManager.enable-disable-connectivity-check  unknown 
+org.freedesktop.NetworkManager.enable-disable-network             yes     
+org.freedesktop.NetworkManager.enable-disable-statistics          unknown 
+org.freedesktop.NetworkManager.enable-disable-wifi                yes     
+org.freedesktop.NetworkManager.enable-disable-wimax               yes     
+org.freedesktop.NetworkManager.enable-disable-wwan                yes     
+org.freedesktop.NetworkManager.network-control                    yes     
+org.freedesktop.NetworkManager.reload                             no      
+org.freedesktop.NetworkManager.settings.modify.global-dns         no      
+org.freedesktop.NetworkManager.settings.modify.hostname           yes     
+org.freedesktop.NetworkManager.settings.modify.own                yes     
+org.freedesktop.NetworkManager.settings.modify.system             yes     
+org.freedesktop.NetworkManager.sleep-wake                         no      
 org.freedesktop.NetworkManager.wifi.scan                          unknown 
+org.freedesktop.NetworkManager.wifi.share.open                    yes     
+org.freedesktop.NetworkManager.wifi.share.protected               yes     
 
 <<<
 size: 1764
@@ -579,23 +579,23 @@ stdout: 1595 bytes
 =====================================
 PERMISSION                                                        VALUE    
 -----------------------------------------------------------------------------------------------------------------
-org.freedesktop.NetworkManager.enable-disable-network             tak      
-org.freedesktop.NetworkManager.enable-disable-wifi                tak      
-org.freedesktop.NetworkManager.enable-disable-wwan                tak      
-org.freedesktop.NetworkManager.enable-disable-wimax               tak      
-org.freedesktop.NetworkManager.sleep-wake                         nie      
-org.freedesktop.NetworkManager.network-control                    tak      
-org.freedesktop.NetworkManager.wifi.share.protected               tak      
-org.freedesktop.NetworkManager.wifi.share.open                    tak      
-org.freedesktop.NetworkManager.settings.modify.system             tak      
-org.freedesktop.NetworkManager.settings.modify.own                tak      
-org.freedesktop.NetworkManager.settings.modify.hostname           tak      
-org.freedesktop.NetworkManager.settings.modify.global-dns         nie      
-org.freedesktop.NetworkManager.reload                             nie      
 org.freedesktop.NetworkManager.checkpoint-rollback                nieznane 
-org.freedesktop.NetworkManager.enable-disable-statistics          nieznane 
 org.freedesktop.NetworkManager.enable-disable-connectivity-check  nieznane 
+org.freedesktop.NetworkManager.enable-disable-network             tak      
+org.freedesktop.NetworkManager.enable-disable-statistics          nieznane 
+org.freedesktop.NetworkManager.enable-disable-wifi                tak      
+org.freedesktop.NetworkManager.enable-disable-wimax               tak      
+org.freedesktop.NetworkManager.enable-disable-wwan                tak      
+org.freedesktop.NetworkManager.network-control                    tak      
+org.freedesktop.NetworkManager.reload                             nie      
+org.freedesktop.NetworkManager.settings.modify.global-dns         nie      
+org.freedesktop.NetworkManager.settings.modify.hostname           tak      
+org.freedesktop.NetworkManager.settings.modify.own                tak      
+org.freedesktop.NetworkManager.settings.modify.system             tak      
+org.freedesktop.NetworkManager.sleep-wake                         nie      
 org.freedesktop.NetworkManager.wifi.scan                          nieznane 
+org.freedesktop.NetworkManager.wifi.share.open                    tak      
+org.freedesktop.NetworkManager.wifi.share.protected               tak      
 
 <<<
 size: 1835
@@ -610,23 +610,23 @@ stdout: 1664 bytes
 ==============================
 PERMISSION                                                        VALUE   
 ---------------------------------------------------------------------------------------------------------
-org.freedesktop.NetworkManager.enable-disable-network             [32myes[0m     
-org.freedesktop.NetworkManager.enable-disable-wifi                [32myes[0m     
-org.freedesktop.NetworkManager.enable-disable-wwan                [32myes[0m     
-org.freedesktop.NetworkManager.enable-disable-wimax               [32myes[0m     
-org.freedesktop.NetworkManager.sleep-wake                         [31mno[0m      
-org.freedesktop.NetworkManager.network-control                    [32myes[0m     
-org.freedesktop.NetworkManager.wifi.share.protected               [32myes[0m     
-org.freedesktop.NetworkManager.wifi.share.open                    [32myes[0m     
-org.freedesktop.NetworkManager.settings.modify.system             [32myes[0m     
-org.freedesktop.NetworkManager.settings.modify.own                [32myes[0m     
-org.freedesktop.NetworkManager.settings.modify.hostname           [32myes[0m     
-org.freedesktop.NetworkManager.settings.modify.global-dns         [31mno[0m      
-org.freedesktop.NetworkManager.reload                             [31mno[0m      
 org.freedesktop.NetworkManager.checkpoint-rollback                unknown 
-org.freedesktop.NetworkManager.enable-disable-statistics          unknown 
 org.freedesktop.NetworkManager.enable-disable-connectivity-check  unknown 
+org.freedesktop.NetworkManager.enable-disable-network             [32myes[0m     
+org.freedesktop.NetworkManager.enable-disable-statistics          unknown 
+org.freedesktop.NetworkManager.enable-disable-wifi                [32myes[0m     
+org.freedesktop.NetworkManager.enable-disable-wimax               [32myes[0m     
+org.freedesktop.NetworkManager.enable-disable-wwan                [32myes[0m     
+org.freedesktop.NetworkManager.network-control                    [32myes[0m     
+org.freedesktop.NetworkManager.reload                             [31mno[0m      
+org.freedesktop.NetworkManager.settings.modify.global-dns         [31mno[0m      
+org.freedesktop.NetworkManager.settings.modify.hostname           [32myes[0m     
+org.freedesktop.NetworkManager.settings.modify.own                [32myes[0m     
+org.freedesktop.NetworkManager.settings.modify.system             [32myes[0m     
+org.freedesktop.NetworkManager.sleep-wake                         [31mno[0m      
 org.freedesktop.NetworkManager.wifi.scan                          unknown 
+org.freedesktop.NetworkManager.wifi.share.open                    [32myes[0m     
+org.freedesktop.NetworkManager.wifi.share.protected               [32myes[0m     
 
 <<<
 size: 1893
@@ -641,23 +641,23 @@ stdout: 1712 bytes
 =====================================
 PERMISSION                                                        VALUE    
 -----------------------------------------------------------------------------------------------------------------
-org.freedesktop.NetworkManager.enable-disable-network             [32mtak[0m      
-org.freedesktop.NetworkManager.enable-disable-wifi                [32mtak[0m      
-org.freedesktop.NetworkManager.enable-disable-wwan                [32mtak[0m      
-org.freedesktop.NetworkManager.enable-disable-wimax               [32mtak[0m      
-org.freedesktop.NetworkManager.sleep-wake                         [31mnie[0m      
-org.freedesktop.NetworkManager.network-control                    [32mtak[0m      
-org.freedesktop.NetworkManager.wifi.share.protected               [32mtak[0m      
-org.freedesktop.NetworkManager.wifi.share.open                    [32mtak[0m      
-org.freedesktop.NetworkManager.settings.modify.system             [32mtak[0m      
-org.freedesktop.NetworkManager.settings.modify.own                [32mtak[0m      
-org.freedesktop.NetworkManager.settings.modify.hostname           [32mtak[0m      
-org.freedesktop.NetworkManager.settings.modify.global-dns         [31mnie[0m      
-org.freedesktop.NetworkManager.reload                             [31mnie[0m      
 org.freedesktop.NetworkManager.checkpoint-rollback                nieznane 
-org.freedesktop.NetworkManager.enable-disable-statistics          nieznane 
 org.freedesktop.NetworkManager.enable-disable-connectivity-check  nieznane 
+org.freedesktop.NetworkManager.enable-disable-network             [32mtak[0m      
+org.freedesktop.NetworkManager.enable-disable-statistics          nieznane 
+org.freedesktop.NetworkManager.enable-disable-wifi                [32mtak[0m      
+org.freedesktop.NetworkManager.enable-disable-wimax               [32mtak[0m      
+org.freedesktop.NetworkManager.enable-disable-wwan                [32mtak[0m      
+org.freedesktop.NetworkManager.network-control                    [32mtak[0m      
+org.freedesktop.NetworkManager.reload                             [31mnie[0m      
+org.freedesktop.NetworkManager.settings.modify.global-dns         [31mnie[0m      
+org.freedesktop.NetworkManager.settings.modify.hostname           [32mtak[0m      
+org.freedesktop.NetworkManager.settings.modify.own                [32mtak[0m      
+org.freedesktop.NetworkManager.settings.modify.system             [32mtak[0m      
+org.freedesktop.NetworkManager.sleep-wake                         [31mnie[0m      
 org.freedesktop.NetworkManager.wifi.scan                          nieznane 
+org.freedesktop.NetworkManager.wifi.share.open                    [32mtak[0m      
+org.freedesktop.NetworkManager.wifi.share.protected               [32mtak[0m      
 
 <<<
 size: 1105
@@ -667,23 +667,23 @@ lang: C
 returncode: 0
 stdout: 948 bytes
 >>>
-org.freedesktop.NetworkManager.enable-disable-network:yes
-org.freedesktop.NetworkManager.enable-disable-wifi:yes
-org.freedesktop.NetworkManager.enable-disable-wwan:yes
-org.freedesktop.NetworkManager.enable-disable-wimax:yes
-org.freedesktop.NetworkManager.sleep-wake:no
-org.freedesktop.NetworkManager.network-control:yes
-org.freedesktop.NetworkManager.wifi.share.protected:yes
-org.freedesktop.NetworkManager.wifi.share.open:yes
-org.freedesktop.NetworkManager.settings.modify.system:yes
-org.freedesktop.NetworkManager.settings.modify.own:yes
-org.freedesktop.NetworkManager.settings.modify.hostname:yes
-org.freedesktop.NetworkManager.settings.modify.global-dns:no
-org.freedesktop.NetworkManager.reload:no
 org.freedesktop.NetworkManager.checkpoint-rollback:unknown
-org.freedesktop.NetworkManager.enable-disable-statistics:unknown
 org.freedesktop.NetworkManager.enable-disable-connectivity-check:unknown
+org.freedesktop.NetworkManager.enable-disable-network:yes
+org.freedesktop.NetworkManager.enable-disable-statistics:unknown
+org.freedesktop.NetworkManager.enable-disable-wifi:yes
+org.freedesktop.NetworkManager.enable-disable-wimax:yes
+org.freedesktop.NetworkManager.enable-disable-wwan:yes
+org.freedesktop.NetworkManager.network-control:yes
+org.freedesktop.NetworkManager.reload:no
+org.freedesktop.NetworkManager.settings.modify.global-dns:no
+org.freedesktop.NetworkManager.settings.modify.hostname:yes
+org.freedesktop.NetworkManager.settings.modify.own:yes
+org.freedesktop.NetworkManager.settings.modify.system:yes
+org.freedesktop.NetworkManager.sleep-wake:no
 org.freedesktop.NetworkManager.wifi.scan:unknown
+org.freedesktop.NetworkManager.wifi.share.open:yes
+org.freedesktop.NetworkManager.wifi.share.protected:yes
 
 <<<
 size: 1115
@@ -693,23 +693,23 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 948 bytes
 >>>
-org.freedesktop.NetworkManager.enable-disable-network:yes
-org.freedesktop.NetworkManager.enable-disable-wifi:yes
-org.freedesktop.NetworkManager.enable-disable-wwan:yes
-org.freedesktop.NetworkManager.enable-disable-wimax:yes
-org.freedesktop.NetworkManager.sleep-wake:no
-org.freedesktop.NetworkManager.network-control:yes
-org.freedesktop.NetworkManager.wifi.share.protected:yes
-org.freedesktop.NetworkManager.wifi.share.open:yes
-org.freedesktop.NetworkManager.settings.modify.system:yes
-org.freedesktop.NetworkManager.settings.modify.own:yes
-org.freedesktop.NetworkManager.settings.modify.hostname:yes
-org.freedesktop.NetworkManager.settings.modify.global-dns:no
-org.freedesktop.NetworkManager.reload:no
 org.freedesktop.NetworkManager.checkpoint-rollback:unknown
-org.freedesktop.NetworkManager.enable-disable-statistics:unknown
 org.freedesktop.NetworkManager.enable-disable-connectivity-check:unknown
+org.freedesktop.NetworkManager.enable-disable-network:yes
+org.freedesktop.NetworkManager.enable-disable-statistics:unknown
+org.freedesktop.NetworkManager.enable-disable-wifi:yes
+org.freedesktop.NetworkManager.enable-disable-wimax:yes
+org.freedesktop.NetworkManager.enable-disable-wwan:yes
+org.freedesktop.NetworkManager.network-control:yes
+org.freedesktop.NetworkManager.reload:no
+org.freedesktop.NetworkManager.settings.modify.global-dns:no
+org.freedesktop.NetworkManager.settings.modify.hostname:yes
+org.freedesktop.NetworkManager.settings.modify.own:yes
+org.freedesktop.NetworkManager.settings.modify.system:yes
+org.freedesktop.NetworkManager.sleep-wake:no
 org.freedesktop.NetworkManager.wifi.scan:unknown
+org.freedesktop.NetworkManager.wifi.share.open:yes
+org.freedesktop.NetworkManager.wifi.share.protected:yes
 
 <<<
 size: 1235
@@ -719,23 +719,23 @@ lang: C
 returncode: 0
 stdout: 1065 bytes
 >>>
-org.freedesktop.NetworkManager.enable-disable-network:[32myes[0m
-org.freedesktop.NetworkManager.enable-disable-wifi:[32myes[0m
-org.freedesktop.NetworkManager.enable-disable-wwan:[32myes[0m
-org.freedesktop.NetworkManager.enable-disable-wimax:[32myes[0m
-org.freedesktop.NetworkManager.sleep-wake:[31mno[0m
-org.freedesktop.NetworkManager.network-control:[32myes[0m
-org.freedesktop.NetworkManager.wifi.share.protected:[32myes[0m
-org.freedesktop.NetworkManager.wifi.share.open:[32myes[0m
-org.freedesktop.NetworkManager.settings.modify.system:[32myes[0m
-org.freedesktop.NetworkManager.settings.modify.own:[32myes[0m
-org.freedesktop.NetworkManager.settings.modify.hostname:[32myes[0m
-org.freedesktop.NetworkManager.settings.modify.global-dns:[31mno[0m
-org.freedesktop.NetworkManager.reload:[31mno[0m
 org.freedesktop.NetworkManager.checkpoint-rollback:unknown
-org.freedesktop.NetworkManager.enable-disable-statistics:unknown
 org.freedesktop.NetworkManager.enable-disable-connectivity-check:unknown
+org.freedesktop.NetworkManager.enable-disable-network:[32myes[0m
+org.freedesktop.NetworkManager.enable-disable-statistics:unknown
+org.freedesktop.NetworkManager.enable-disable-wifi:[32myes[0m
+org.freedesktop.NetworkManager.enable-disable-wimax:[32myes[0m
+org.freedesktop.NetworkManager.enable-disable-wwan:[32myes[0m
+org.freedesktop.NetworkManager.network-control:[32myes[0m
+org.freedesktop.NetworkManager.reload:[31mno[0m
+org.freedesktop.NetworkManager.settings.modify.global-dns:[31mno[0m
+org.freedesktop.NetworkManager.settings.modify.hostname:[32myes[0m
+org.freedesktop.NetworkManager.settings.modify.own:[32myes[0m
+org.freedesktop.NetworkManager.settings.modify.system:[32myes[0m
+org.freedesktop.NetworkManager.sleep-wake:[31mno[0m
 org.freedesktop.NetworkManager.wifi.scan:unknown
+org.freedesktop.NetworkManager.wifi.share.open:[32myes[0m
+org.freedesktop.NetworkManager.wifi.share.protected:[32myes[0m
 
 <<<
 size: 1245
@@ -745,23 +745,23 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 1065 bytes
 >>>
-org.freedesktop.NetworkManager.enable-disable-network:[32myes[0m
-org.freedesktop.NetworkManager.enable-disable-wifi:[32myes[0m
-org.freedesktop.NetworkManager.enable-disable-wwan:[32myes[0m
-org.freedesktop.NetworkManager.enable-disable-wimax:[32myes[0m
-org.freedesktop.NetworkManager.sleep-wake:[31mno[0m
-org.freedesktop.NetworkManager.network-control:[32myes[0m
-org.freedesktop.NetworkManager.wifi.share.protected:[32myes[0m
-org.freedesktop.NetworkManager.wifi.share.open:[32myes[0m
-org.freedesktop.NetworkManager.settings.modify.system:[32myes[0m
-org.freedesktop.NetworkManager.settings.modify.own:[32myes[0m
-org.freedesktop.NetworkManager.settings.modify.hostname:[32myes[0m
-org.freedesktop.NetworkManager.settings.modify.global-dns:[31mno[0m
-org.freedesktop.NetworkManager.reload:[31mno[0m
 org.freedesktop.NetworkManager.checkpoint-rollback:unknown
-org.freedesktop.NetworkManager.enable-disable-statistics:unknown
 org.freedesktop.NetworkManager.enable-disable-connectivity-check:unknown
+org.freedesktop.NetworkManager.enable-disable-network:[32myes[0m
+org.freedesktop.NetworkManager.enable-disable-statistics:unknown
+org.freedesktop.NetworkManager.enable-disable-wifi:[32myes[0m
+org.freedesktop.NetworkManager.enable-disable-wimax:[32myes[0m
+org.freedesktop.NetworkManager.enable-disable-wwan:[32myes[0m
+org.freedesktop.NetworkManager.network-control:[32myes[0m
+org.freedesktop.NetworkManager.reload:[31mno[0m
+org.freedesktop.NetworkManager.settings.modify.global-dns:[31mno[0m
+org.freedesktop.NetworkManager.settings.modify.hostname:[32myes[0m
+org.freedesktop.NetworkManager.settings.modify.own:[32myes[0m
+org.freedesktop.NetworkManager.settings.modify.system:[32myes[0m
+org.freedesktop.NetworkManager.sleep-wake:[31mno[0m
 org.freedesktop.NetworkManager.wifi.scan:unknown
+org.freedesktop.NetworkManager.wifi.share.open:[32myes[0m
+org.freedesktop.NetworkManager.wifi.share.protected:[32myes[0m
 
 <<<
 size: 2460
@@ -771,40 +771,40 @@ lang: C
 returncode: 0
 stdout: 2308 bytes
 >>>
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-network
-VALUE:                                  yes
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wifi
-VALUE:                                  yes
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wwan
-VALUE:                                  yes
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wimax
-VALUE:                                  yes
-PERMISSION:                             org.freedesktop.NetworkManager.sleep-wake
-VALUE:                                  no
-PERMISSION:                             org.freedesktop.NetworkManager.network-control
-VALUE:                                  yes
-PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.protected
-VALUE:                                  yes
-PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.open
-VALUE:                                  yes
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.system
-VALUE:                                  yes
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.own
-VALUE:                                  yes
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.hostname
-VALUE:                                  yes
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.global-dns
-VALUE:                                  no
-PERMISSION:                             org.freedesktop.NetworkManager.reload
-VALUE:                                  no
 PERMISSION:                             org.freedesktop.NetworkManager.checkpoint-rollback
-VALUE:                                  unknown
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-statistics
 VALUE:                                  unknown
 PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-connectivity-check
 VALUE:                                  unknown
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-network
+VALUE:                                  yes
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-statistics
+VALUE:                                  unknown
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wifi
+VALUE:                                  yes
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wimax
+VALUE:                                  yes
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wwan
+VALUE:                                  yes
+PERMISSION:                             org.freedesktop.NetworkManager.network-control
+VALUE:                                  yes
+PERMISSION:                             org.freedesktop.NetworkManager.reload
+VALUE:                                  no
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.global-dns
+VALUE:                                  no
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.hostname
+VALUE:                                  yes
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.own
+VALUE:                                  yes
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.system
+VALUE:                                  yes
+PERMISSION:                             org.freedesktop.NetworkManager.sleep-wake
+VALUE:                                  no
 PERMISSION:                             org.freedesktop.NetworkManager.wifi.scan
 VALUE:                                  unknown
+PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.open
+VALUE:                                  yes
+PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.protected
+VALUE:                                  yes
 
 <<<
 size: 2477
@@ -814,40 +814,40 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 2315 bytes
 >>>
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-network
-VALUE:                                  tak
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wifi
-VALUE:                                  tak
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wwan
-VALUE:                                  tak
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wimax
-VALUE:                                  tak
-PERMISSION:                             org.freedesktop.NetworkManager.sleep-wake
-VALUE:                                  nie
-PERMISSION:                             org.freedesktop.NetworkManager.network-control
-VALUE:                                  tak
-PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.protected
-VALUE:                                  tak
-PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.open
-VALUE:                                  tak
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.system
-VALUE:                                  tak
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.own
-VALUE:                                  tak
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.hostname
-VALUE:                                  tak
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.global-dns
-VALUE:                                  nie
-PERMISSION:                             org.freedesktop.NetworkManager.reload
-VALUE:                                  nie
 PERMISSION:                             org.freedesktop.NetworkManager.checkpoint-rollback
-VALUE:                                  nieznane
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-statistics
 VALUE:                                  nieznane
 PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-connectivity-check
 VALUE:                                  nieznane
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-network
+VALUE:                                  tak
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-statistics
+VALUE:                                  nieznane
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wifi
+VALUE:                                  tak
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wimax
+VALUE:                                  tak
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wwan
+VALUE:                                  tak
+PERMISSION:                             org.freedesktop.NetworkManager.network-control
+VALUE:                                  tak
+PERMISSION:                             org.freedesktop.NetworkManager.reload
+VALUE:                                  nie
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.global-dns
+VALUE:                                  nie
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.hostname
+VALUE:                                  tak
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.own
+VALUE:                                  tak
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.system
+VALUE:                                  tak
+PERMISSION:                             org.freedesktop.NetworkManager.sleep-wake
+VALUE:                                  nie
 PERMISSION:                             org.freedesktop.NetworkManager.wifi.scan
 VALUE:                                  nieznane
+PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.open
+VALUE:                                  tak
+PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.protected
+VALUE:                                  tak
 
 <<<
 size: 2589
@@ -857,40 +857,40 @@ lang: C
 returncode: 0
 stdout: 2425 bytes
 >>>
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-network
-VALUE:                                  [32myes[0m
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wifi
-VALUE:                                  [32myes[0m
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wwan
-VALUE:                                  [32myes[0m
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wimax
-VALUE:                                  [32myes[0m
-PERMISSION:                             org.freedesktop.NetworkManager.sleep-wake
-VALUE:                                  [31mno[0m
-PERMISSION:                             org.freedesktop.NetworkManager.network-control
-VALUE:                                  [32myes[0m
-PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.protected
-VALUE:                                  [32myes[0m
-PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.open
-VALUE:                                  [32myes[0m
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.system
-VALUE:                                  [32myes[0m
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.own
-VALUE:                                  [32myes[0m
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.hostname
-VALUE:                                  [32myes[0m
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.global-dns
-VALUE:                                  [31mno[0m
-PERMISSION:                             org.freedesktop.NetworkManager.reload
-VALUE:                                  [31mno[0m
 PERMISSION:                             org.freedesktop.NetworkManager.checkpoint-rollback
-VALUE:                                  unknown
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-statistics
 VALUE:                                  unknown
 PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-connectivity-check
 VALUE:                                  unknown
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-network
+VALUE:                                  [32myes[0m
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-statistics
+VALUE:                                  unknown
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wifi
+VALUE:                                  [32myes[0m
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wimax
+VALUE:                                  [32myes[0m
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wwan
+VALUE:                                  [32myes[0m
+PERMISSION:                             org.freedesktop.NetworkManager.network-control
+VALUE:                                  [32myes[0m
+PERMISSION:                             org.freedesktop.NetworkManager.reload
+VALUE:                                  [31mno[0m
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.global-dns
+VALUE:                                  [31mno[0m
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.hostname
+VALUE:                                  [32myes[0m
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.own
+VALUE:                                  [32myes[0m
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.system
+VALUE:                                  [32myes[0m
+PERMISSION:                             org.freedesktop.NetworkManager.sleep-wake
+VALUE:                                  [31mno[0m
 PERMISSION:                             org.freedesktop.NetworkManager.wifi.scan
 VALUE:                                  unknown
+PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.open
+VALUE:                                  [32myes[0m
+PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.protected
+VALUE:                                  [32myes[0m
 
 <<<
 size: 2606
@@ -900,40 +900,40 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 2432 bytes
 >>>
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-network
-VALUE:                                  [32mtak[0m
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wifi
-VALUE:                                  [32mtak[0m
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wwan
-VALUE:                                  [32mtak[0m
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wimax
-VALUE:                                  [32mtak[0m
-PERMISSION:                             org.freedesktop.NetworkManager.sleep-wake
-VALUE:                                  [31mnie[0m
-PERMISSION:                             org.freedesktop.NetworkManager.network-control
-VALUE:                                  [32mtak[0m
-PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.protected
-VALUE:                                  [32mtak[0m
-PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.open
-VALUE:                                  [32mtak[0m
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.system
-VALUE:                                  [32mtak[0m
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.own
-VALUE:                                  [32mtak[0m
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.hostname
-VALUE:                                  [32mtak[0m
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.global-dns
-VALUE:                                  [31mnie[0m
-PERMISSION:                             org.freedesktop.NetworkManager.reload
-VALUE:                                  [31mnie[0m
 PERMISSION:                             org.freedesktop.NetworkManager.checkpoint-rollback
-VALUE:                                  nieznane
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-statistics
 VALUE:                                  nieznane
 PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-connectivity-check
 VALUE:                                  nieznane
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-network
+VALUE:                                  [32mtak[0m
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-statistics
+VALUE:                                  nieznane
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wifi
+VALUE:                                  [32mtak[0m
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wimax
+VALUE:                                  [32mtak[0m
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wwan
+VALUE:                                  [32mtak[0m
+PERMISSION:                             org.freedesktop.NetworkManager.network-control
+VALUE:                                  [32mtak[0m
+PERMISSION:                             org.freedesktop.NetworkManager.reload
+VALUE:                                  [31mnie[0m
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.global-dns
+VALUE:                                  [31mnie[0m
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.hostname
+VALUE:                                  [32mtak[0m
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.own
+VALUE:                                  [32mtak[0m
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.system
+VALUE:                                  [32mtak[0m
+PERMISSION:                             org.freedesktop.NetworkManager.sleep-wake
+VALUE:                                  [31mnie[0m
 PERMISSION:                             org.freedesktop.NetworkManager.wifi.scan
 VALUE:                                  nieznane
+PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.open
+VALUE:                                  [32mtak[0m
+PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.protected
+VALUE:                                  [32mtak[0m
 
 <<<
 size: 4042
@@ -946,56 +946,56 @@ stdout: 3881 bytes
 ===============================================================================
                           NetworkManager permissions
 ===============================================================================
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-network
-VALUE:                                  yes
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wifi
-VALUE:                                  yes
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wwan
-VALUE:                                  yes
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wimax
-VALUE:                                  yes
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.sleep-wake
-VALUE:                                  no
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.network-control
-VALUE:                                  yes
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.protected
-VALUE:                                  yes
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.open
-VALUE:                                  yes
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.system
-VALUE:                                  yes
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.own
-VALUE:                                  yes
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.hostname
-VALUE:                                  yes
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.global-dns
-VALUE:                                  no
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.reload
-VALUE:                                  no
--------------------------------------------------------------------------------
 PERMISSION:                             org.freedesktop.NetworkManager.checkpoint-rollback
-VALUE:                                  unknown
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-statistics
 VALUE:                                  unknown
 -------------------------------------------------------------------------------
 PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-connectivity-check
 VALUE:                                  unknown
 -------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-network
+VALUE:                                  yes
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-statistics
+VALUE:                                  unknown
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wifi
+VALUE:                                  yes
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wimax
+VALUE:                                  yes
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wwan
+VALUE:                                  yes
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.network-control
+VALUE:                                  yes
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.reload
+VALUE:                                  no
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.global-dns
+VALUE:                                  no
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.hostname
+VALUE:                                  yes
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.own
+VALUE:                                  yes
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.system
+VALUE:                                  yes
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.sleep-wake
+VALUE:                                  no
+-------------------------------------------------------------------------------
 PERMISSION:                             org.freedesktop.NetworkManager.wifi.scan
 VALUE:                                  unknown
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.open
+VALUE:                                  yes
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.protected
+VALUE:                                  yes
 -------------------------------------------------------------------------------
 
 <<<
@@ -1009,56 +1009,56 @@ stdout: 3893 bytes
 ===============================================================================
                        Uprawnienia usługi NetworkManager
 ===============================================================================
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-network
-VALUE:                                  tak
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wifi
-VALUE:                                  tak
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wwan
-VALUE:                                  tak
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wimax
-VALUE:                                  tak
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.sleep-wake
-VALUE:                                  nie
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.network-control
-VALUE:                                  tak
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.protected
-VALUE:                                  tak
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.open
-VALUE:                                  tak
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.system
-VALUE:                                  tak
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.own
-VALUE:                                  tak
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.hostname
-VALUE:                                  tak
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.global-dns
-VALUE:                                  nie
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.reload
-VALUE:                                  nie
--------------------------------------------------------------------------------
 PERMISSION:                             org.freedesktop.NetworkManager.checkpoint-rollback
-VALUE:                                  nieznane
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-statistics
 VALUE:                                  nieznane
 -------------------------------------------------------------------------------
 PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-connectivity-check
 VALUE:                                  nieznane
 -------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-network
+VALUE:                                  tak
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-statistics
+VALUE:                                  nieznane
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wifi
+VALUE:                                  tak
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wimax
+VALUE:                                  tak
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wwan
+VALUE:                                  tak
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.network-control
+VALUE:                                  tak
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.reload
+VALUE:                                  nie
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.global-dns
+VALUE:                                  nie
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.hostname
+VALUE:                                  tak
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.own
+VALUE:                                  tak
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.system
+VALUE:                                  tak
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.sleep-wake
+VALUE:                                  nie
+-------------------------------------------------------------------------------
 PERMISSION:                             org.freedesktop.NetworkManager.wifi.scan
 VALUE:                                  nieznane
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.open
+VALUE:                                  tak
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.protected
+VALUE:                                  tak
 -------------------------------------------------------------------------------
 
 <<<
@@ -1072,56 +1072,56 @@ stdout: 3998 bytes
 ===============================================================================
                           NetworkManager permissions
 ===============================================================================
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-network
-VALUE:                                  [32myes[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wifi
-VALUE:                                  [32myes[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wwan
-VALUE:                                  [32myes[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wimax
-VALUE:                                  [32myes[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.sleep-wake
-VALUE:                                  [31mno[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.network-control
-VALUE:                                  [32myes[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.protected
-VALUE:                                  [32myes[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.open
-VALUE:                                  [32myes[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.system
-VALUE:                                  [32myes[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.own
-VALUE:                                  [32myes[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.hostname
-VALUE:                                  [32myes[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.global-dns
-VALUE:                                  [31mno[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.reload
-VALUE:                                  [31mno[0m
--------------------------------------------------------------------------------
 PERMISSION:                             org.freedesktop.NetworkManager.checkpoint-rollback
-VALUE:                                  unknown
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-statistics
 VALUE:                                  unknown
 -------------------------------------------------------------------------------
 PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-connectivity-check
 VALUE:                                  unknown
 -------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-network
+VALUE:                                  [32myes[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-statistics
+VALUE:                                  unknown
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wifi
+VALUE:                                  [32myes[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wimax
+VALUE:                                  [32myes[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wwan
+VALUE:                                  [32myes[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.network-control
+VALUE:                                  [32myes[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.reload
+VALUE:                                  [31mno[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.global-dns
+VALUE:                                  [31mno[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.hostname
+VALUE:                                  [32myes[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.own
+VALUE:                                  [32myes[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.system
+VALUE:                                  [32myes[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.sleep-wake
+VALUE:                                  [31mno[0m
+-------------------------------------------------------------------------------
 PERMISSION:                             org.freedesktop.NetworkManager.wifi.scan
 VALUE:                                  unknown
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.open
+VALUE:                                  [32myes[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.protected
+VALUE:                                  [32myes[0m
 -------------------------------------------------------------------------------
 
 <<<
@@ -1135,56 +1135,56 @@ stdout: 4010 bytes
 ===============================================================================
                        Uprawnienia usługi NetworkManager
 ===============================================================================
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-network
-VALUE:                                  [32mtak[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wifi
-VALUE:                                  [32mtak[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wwan
-VALUE:                                  [32mtak[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wimax
-VALUE:                                  [32mtak[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.sleep-wake
-VALUE:                                  [31mnie[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.network-control
-VALUE:                                  [32mtak[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.protected
-VALUE:                                  [32mtak[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.open
-VALUE:                                  [32mtak[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.system
-VALUE:                                  [32mtak[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.own
-VALUE:                                  [32mtak[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.hostname
-VALUE:                                  [32mtak[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.global-dns
-VALUE:                                  [31mnie[0m
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.reload
-VALUE:                                  [31mnie[0m
--------------------------------------------------------------------------------
 PERMISSION:                             org.freedesktop.NetworkManager.checkpoint-rollback
-VALUE:                                  nieznane
--------------------------------------------------------------------------------
-PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-statistics
 VALUE:                                  nieznane
 -------------------------------------------------------------------------------
 PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-connectivity-check
 VALUE:                                  nieznane
 -------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-network
+VALUE:                                  [32mtak[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-statistics
+VALUE:                                  nieznane
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wifi
+VALUE:                                  [32mtak[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wimax
+VALUE:                                  [32mtak[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.enable-disable-wwan
+VALUE:                                  [32mtak[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.network-control
+VALUE:                                  [32mtak[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.reload
+VALUE:                                  [31mnie[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.global-dns
+VALUE:                                  [31mnie[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.hostname
+VALUE:                                  [32mtak[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.own
+VALUE:                                  [32mtak[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.settings.modify.system
+VALUE:                                  [32mtak[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.sleep-wake
+VALUE:                                  [31mnie[0m
+-------------------------------------------------------------------------------
 PERMISSION:                             org.freedesktop.NetworkManager.wifi.scan
 VALUE:                                  nieznane
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.open
+VALUE:                                  [32mtak[0m
+-------------------------------------------------------------------------------
+PERMISSION:                             org.freedesktop.NetworkManager.wifi.share.protected
+VALUE:                                  [32mtak[0m
 -------------------------------------------------------------------------------
 
 <<<
@@ -1195,40 +1195,40 @@ lang: C
 returncode: 0
 stdout: 1237 bytes
 >>>
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-network
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-wifi
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-wwan
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-wimax
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.sleep-wake
-VALUE:no
-PERMISSION:org.freedesktop.NetworkManager.network-control
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.wifi.share.protected
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.wifi.share.open
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.settings.modify.system
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.settings.modify.own
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.settings.modify.hostname
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.settings.modify.global-dns
-VALUE:no
-PERMISSION:org.freedesktop.NetworkManager.reload
-VALUE:no
 PERMISSION:org.freedesktop.NetworkManager.checkpoint-rollback
-VALUE:unknown
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-statistics
 VALUE:unknown
 PERMISSION:org.freedesktop.NetworkManager.enable-disable-connectivity-check
 VALUE:unknown
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-network
+VALUE:yes
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-statistics
+VALUE:unknown
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-wifi
+VALUE:yes
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-wimax
+VALUE:yes
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-wwan
+VALUE:yes
+PERMISSION:org.freedesktop.NetworkManager.network-control
+VALUE:yes
+PERMISSION:org.freedesktop.NetworkManager.reload
+VALUE:no
+PERMISSION:org.freedesktop.NetworkManager.settings.modify.global-dns
+VALUE:no
+PERMISSION:org.freedesktop.NetworkManager.settings.modify.hostname
+VALUE:yes
+PERMISSION:org.freedesktop.NetworkManager.settings.modify.own
+VALUE:yes
+PERMISSION:org.freedesktop.NetworkManager.settings.modify.system
+VALUE:yes
+PERMISSION:org.freedesktop.NetworkManager.sleep-wake
+VALUE:no
 PERMISSION:org.freedesktop.NetworkManager.wifi.scan
 VALUE:unknown
+PERMISSION:org.freedesktop.NetworkManager.wifi.share.open
+VALUE:yes
+PERMISSION:org.freedesktop.NetworkManager.wifi.share.protected
+VALUE:yes
 
 <<<
 size: 1407
@@ -1238,40 +1238,40 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 1237 bytes
 >>>
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-network
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-wifi
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-wwan
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-wimax
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.sleep-wake
-VALUE:no
-PERMISSION:org.freedesktop.NetworkManager.network-control
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.wifi.share.protected
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.wifi.share.open
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.settings.modify.system
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.settings.modify.own
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.settings.modify.hostname
-VALUE:yes
-PERMISSION:org.freedesktop.NetworkManager.settings.modify.global-dns
-VALUE:no
-PERMISSION:org.freedesktop.NetworkManager.reload
-VALUE:no
 PERMISSION:org.freedesktop.NetworkManager.checkpoint-rollback
-VALUE:unknown
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-statistics
 VALUE:unknown
 PERMISSION:org.freedesktop.NetworkManager.enable-disable-connectivity-check
 VALUE:unknown
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-network
+VALUE:yes
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-statistics
+VALUE:unknown
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-wifi
+VALUE:yes
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-wimax
+VALUE:yes
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-wwan
+VALUE:yes
+PERMISSION:org.freedesktop.NetworkManager.network-control
+VALUE:yes
+PERMISSION:org.freedesktop.NetworkManager.reload
+VALUE:no
+PERMISSION:org.freedesktop.NetworkManager.settings.modify.global-dns
+VALUE:no
+PERMISSION:org.freedesktop.NetworkManager.settings.modify.hostname
+VALUE:yes
+PERMISSION:org.freedesktop.NetworkManager.settings.modify.own
+VALUE:yes
+PERMISSION:org.freedesktop.NetworkManager.settings.modify.system
+VALUE:yes
+PERMISSION:org.freedesktop.NetworkManager.sleep-wake
+VALUE:no
 PERMISSION:org.freedesktop.NetworkManager.wifi.scan
 VALUE:unknown
+PERMISSION:org.freedesktop.NetworkManager.wifi.share.open
+VALUE:yes
+PERMISSION:org.freedesktop.NetworkManager.wifi.share.protected
+VALUE:yes
 
 <<<
 size: 1526
@@ -1281,40 +1281,40 @@ lang: C
 returncode: 0
 stdout: 1354 bytes
 >>>
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-network
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-wifi
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-wwan
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-wimax
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.sleep-wake
-VALUE:[31mno[0m
-PERMISSION:org.freedesktop.NetworkManager.network-control
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.wifi.share.protected
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.wifi.share.open
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.settings.modify.system
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.settings.modify.own
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.settings.modify.hostname
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.settings.modify.global-dns
-VALUE:[31mno[0m
-PERMISSION:org.freedesktop.NetworkManager.reload
-VALUE:[31mno[0m
 PERMISSION:org.freedesktop.NetworkManager.checkpoint-rollback
-VALUE:unknown
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-statistics
 VALUE:unknown
 PERMISSION:org.freedesktop.NetworkManager.enable-disable-connectivity-check
 VALUE:unknown
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-network
+VALUE:[32myes[0m
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-statistics
+VALUE:unknown
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-wifi
+VALUE:[32myes[0m
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-wimax
+VALUE:[32myes[0m
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-wwan
+VALUE:[32myes[0m
+PERMISSION:org.freedesktop.NetworkManager.network-control
+VALUE:[32myes[0m
+PERMISSION:org.freedesktop.NetworkManager.reload
+VALUE:[31mno[0m
+PERMISSION:org.freedesktop.NetworkManager.settings.modify.global-dns
+VALUE:[31mno[0m
+PERMISSION:org.freedesktop.NetworkManager.settings.modify.hostname
+VALUE:[32myes[0m
+PERMISSION:org.freedesktop.NetworkManager.settings.modify.own
+VALUE:[32myes[0m
+PERMISSION:org.freedesktop.NetworkManager.settings.modify.system
+VALUE:[32myes[0m
+PERMISSION:org.freedesktop.NetworkManager.sleep-wake
+VALUE:[31mno[0m
 PERMISSION:org.freedesktop.NetworkManager.wifi.scan
 VALUE:unknown
+PERMISSION:org.freedesktop.NetworkManager.wifi.share.open
+VALUE:[32myes[0m
+PERMISSION:org.freedesktop.NetworkManager.wifi.share.protected
+VALUE:[32myes[0m
 
 <<<
 size: 1536
@@ -1324,39 +1324,39 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 1354 bytes
 >>>
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-network
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-wifi
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-wwan
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-wimax
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.sleep-wake
-VALUE:[31mno[0m
-PERMISSION:org.freedesktop.NetworkManager.network-control
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.wifi.share.protected
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.wifi.share.open
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.settings.modify.system
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.settings.modify.own
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.settings.modify.hostname
-VALUE:[32myes[0m
-PERMISSION:org.freedesktop.NetworkManager.settings.modify.global-dns
-VALUE:[31mno[0m
-PERMISSION:org.freedesktop.NetworkManager.reload
-VALUE:[31mno[0m
 PERMISSION:org.freedesktop.NetworkManager.checkpoint-rollback
-VALUE:unknown
-PERMISSION:org.freedesktop.NetworkManager.enable-disable-statistics
 VALUE:unknown
 PERMISSION:org.freedesktop.NetworkManager.enable-disable-connectivity-check
 VALUE:unknown
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-network
+VALUE:[32myes[0m
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-statistics
+VALUE:unknown
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-wifi
+VALUE:[32myes[0m
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-wimax
+VALUE:[32myes[0m
+PERMISSION:org.freedesktop.NetworkManager.enable-disable-wwan
+VALUE:[32myes[0m
+PERMISSION:org.freedesktop.NetworkManager.network-control
+VALUE:[32myes[0m
+PERMISSION:org.freedesktop.NetworkManager.reload
+VALUE:[31mno[0m
+PERMISSION:org.freedesktop.NetworkManager.settings.modify.global-dns
+VALUE:[31mno[0m
+PERMISSION:org.freedesktop.NetworkManager.settings.modify.hostname
+VALUE:[32myes[0m
+PERMISSION:org.freedesktop.NetworkManager.settings.modify.own
+VALUE:[32myes[0m
+PERMISSION:org.freedesktop.NetworkManager.settings.modify.system
+VALUE:[32myes[0m
+PERMISSION:org.freedesktop.NetworkManager.sleep-wake
+VALUE:[31mno[0m
 PERMISSION:org.freedesktop.NetworkManager.wifi.scan
 VALUE:unknown
+PERMISSION:org.freedesktop.NetworkManager.wifi.share.open
+VALUE:[32myes[0m
+PERMISSION:org.freedesktop.NetworkManager.wifi.share.protected
+VALUE:[32myes[0m
 
 <<<

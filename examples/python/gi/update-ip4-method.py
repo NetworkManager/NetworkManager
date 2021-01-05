@@ -13,7 +13,8 @@
 #
 
 import gi
-gi.require_version('NM', '1.0')
+
+gi.require_version("NM", "1.0")
 from gi.repository import GLib, NM
 import sys, socket
 
@@ -25,7 +26,9 @@ if __name__ == "__main__":
 
     method = sys.argv[2]
     if (method == "static" or method == "manual") and len(sys.argv) < 5:
-        print("Usage: %s %s static address prefix [gateway]" % (sys.argv[0], sys.argv[1]))
+        print(
+            "Usage: %s %s static address prefix [gateway]" % (sys.argv[0], sys.argv[1])
+        )
         sys.exit(1)
 
     uuid = sys.argv[1]
@@ -69,4 +72,3 @@ if __name__ == "__main__":
         except Exception as e:
             sys.stderr.write("Error: %s\n" % e)
         break
-

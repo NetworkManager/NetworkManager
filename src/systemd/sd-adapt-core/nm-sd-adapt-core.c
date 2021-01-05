@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0+
+/* SPDX-License-Identifier: GPL-2.0+ */
 /*
  * Copyright (C) 2014 - 2016 Red Hat, Inc.
  */
@@ -12,10 +12,10 @@
 /*****************************************************************************/
 
 int
-asynchronous_close (int fd) {
-	safe_close (fd);
-	return -1;
+asynchronous_close(int fd)
+{
+    safe_close(fd);
+    return -1;
 }
 
 /*****************************************************************************/
-

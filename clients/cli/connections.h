@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0+
+/* SPDX-License-Identifier: GPL-2.0+ */
 /*
  * Copyright (C) 2010 - 2018 Red Hat, Inc.
  */
@@ -8,20 +8,18 @@
 
 #include "nmcli.h"
 
-NMCResultCode do_connections (NmCli *nmc, int argc, char **argv);
+void monitor_connections(NmCli *nmc);
 
-void monitor_connections (NmCli *nmc);
+gboolean nmc_process_connection_properties(NmCli *             nmc,
+                                           NMConnection *      connection,
+                                           int *               argc,
+                                           const char *const **argv,
+                                           gboolean            allow_remove_setting,
+                                           GError **           error);
 
-gboolean
-nmc_read_connection_properties (NmCli *nmc,
-                                NMConnection *connection,
-                                int *argc,
-                                char ***argv,
-                                GError **error);
+NMMetaColor nmc_active_connection_state_to_color(NMActiveConnection *ac);
 
-NMMetaColor nmc_active_connection_state_to_color (NMActiveConnectionState state);
-
-int nmc_active_connection_cmp (NMActiveConnection *ac_a, NMActiveConnection *ac_b);
+int nmc_active_connection_cmp(NMActiveConnection *ac_a, NMActiveConnection *ac_b);
 
 extern const NmcMetaGenericInfo *const metagen_con_show[];
 extern const NmcMetaGenericInfo *const metagen_con_active_general[];

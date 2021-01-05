@@ -7,7 +7,7 @@
 #  - CFLAGS
 #  - WITH_DOCS
 
-set -exv
+set -ex
 
 die() {
     printf "%s\n" "$@"
@@ -36,10 +36,17 @@ _is_true() {
 }
 
 USE_CCACHE=0
-if which ccache &>/dev/null; then
+if command -v ccache &>/dev/null; then
     USE_CCACHE=1
     export PATH="/usr/lib64/ccache:/usr/lib/ccache${PATH:+:${PATH}}"
 fi
+
+IS_FEDORA=0
+IS_CENTOS=0
+IS_ALPINE=0
+grep -q '^NAME=.*\(CentOS\)' /etc/os-release && IS_CENTOS=1
+grep -q '^NAME=.*\(Fedora\)' /etc/os-release && IS_FEDORA=1
+grep -q '^NAME=.*\(Alpine\)' /etc/os-release && IS_ALPINE=1
 
 ###############################################################################
 
@@ -58,6 +65,9 @@ _WITH_WERROR=1
 _WITH_LIBTEAM="$_TRUE"
 _WITH_DOCS="$_TRUE"
 _WITH_SYSTEMD_LOGIND="$_TRUE"
+if [ $IS_ALPINE = 1 ]; then
+    _WITH_SYSTEMD_LOGIND="$_FALSE"
+fi
 
 if [ "$NMTST_SEED_RAND" != "" ]; then
     export NMTST_SEED_RAND=
@@ -66,12 +76,6 @@ fi
 case "$CI" in
     ""|"true"|"default"|"gitlab")
         CI=default
-        ;;
-    "travis")
-        _WITH_WERROR=0
-        _WITH_LIBTEAM="$_FALSE"
-        _WITH_DOCS="$_FALSE"
-        _WITH_SYSTEMD_LOGIND="$_FALSE"
         ;;
     *)
         die "invalid \$CI \"$CI\""
@@ -96,6 +100,12 @@ _with_valgrind() {
 
     test "$_WITH_VALGRIND_CHECKED" == "1" && return 0
     _WITH_VALGRIND_CHECKED=1
+
+    if [ "$IS_ALPINE" = 1 ]; then
+        # on Alpine we have no debug symbols and the suppressions
+        # don't work. Skip valgrind tests.
+        WITH_VALGRIND=0
+    fi
 
     # Certain glib2 versions are known to report *lots* of leaks. Disable
     # valgrind tests in this case.
@@ -139,9 +149,15 @@ run_autotools() {
     else
         _WITH_WERROR_VAL="yes"
     fi
+    DISABLE_DEPENDENCY_TRACKING=
+    if [ $IS_ALPINE = 1 ]; then
+        DISABLE_DEPENDENCY_TRACKING='--disable-dependency-tracking'
+    fi
     pushd ./build
         ../configure \
             --prefix="$PWD/INST" \
+            $DISABLE_DEPENDENCY_TRACKING \
+            \
             --enable-introspection=$_WITH_DOCS \
             --enable-gtk-doc=$_WITH_DOCS \
             --with-systemd-logind=$_WITH_SYSTEMD_LOGIND \
@@ -171,12 +187,6 @@ run_autotools() {
         make install
 
         export NM_TEST_CLIENT_CHECK_L10N=1
-
-        if [ "$CI" == travis ]; then
-            # travis is known to generate the settings doc differently.
-            # Don't compare.
-            export NMTST_NO_CHECK_SETTINGS_DOCS=yes
-        fi
 
         if ! make check -j 6 -k ; then
 

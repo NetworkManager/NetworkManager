@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 if enable_ifcfg_rh
   subdir('ifcfg-rh')
 endif

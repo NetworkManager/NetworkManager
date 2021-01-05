@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LGPL-2.1+
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /*
  * Copyright (C) 2018 Red Hat, Inc.
  */
@@ -22,6 +22,20 @@
 
 /*****************************************************************************/
 
+static const GVariantType *
+get_variant_type_from_ethtool_id(NMEthtoolID ethtool_id)
+{
+    if (nm_ethtool_id_is_feature(ethtool_id))
+        return G_VARIANT_TYPE_BOOLEAN;
+
+    if (nm_ethtool_id_is_coalesce(ethtool_id) || nm_ethtool_id_is_ring(ethtool_id))
+        return G_VARIANT_TYPE_UINT32;
+
+    return NULL;
+}
+
+/*****************************************************************************/
+
 /**
  * nm_ethtool_optname_is_feature:
  * @optname: (allow-none): the option name to check
@@ -37,9 +51,41 @@
  * the stable versions 1.18.2, 1.16.4 and 1.14.8 (with linker version "libnm_1_14_8").
  */
 gboolean
-nm_ethtool_optname_is_feature (const char *optname)
+nm_ethtool_optname_is_feature(const char *optname)
 {
-	return optname && nm_ethtool_id_is_feature (nm_ethtool_id_get_by_name (optname));
+    return optname && nm_ethtool_id_is_feature(nm_ethtool_id_get_by_name(optname));
+}
+
+/**
+ * nm_ethtool_optname_is_coalesce:
+ * @optname: (allow-none): the option name to check
+ *
+ * Checks whether @optname is a valid option name for a coalesce setting.
+ *
+ * %Returns: %TRUE, if @optname is valid
+ *
+ * Since: 1.26
+ */
+gboolean
+nm_ethtool_optname_is_coalesce(const char *optname)
+{
+    return optname && nm_ethtool_id_is_coalesce(nm_ethtool_id_get_by_name(optname));
+}
+
+/**
+ * nm_ethtool_optname_is_ring:
+ * @optname: (allow-none): the option name to check
+ *
+ * Checks whether @optname is a valid option name for a ring setting.
+ *
+ * %Returns: %TRUE, if @optname is valid
+ *
+ * Since: 1.26
+ */
+gboolean
+nm_ethtool_optname_is_ring(const char *optname)
+{
+    return optname && nm_ethtool_id_is_ring(nm_ethtool_id_get_by_name(optname));
 }
 
 /*****************************************************************************/
@@ -52,24 +98,17 @@ nm_ethtool_optname_is_feature (const char *optname)
  * Since: 1.14
  */
 struct _NMSettingEthtool {
-	NMSetting parent;
+    NMSetting parent;
 };
 
 struct _NMSettingEthtoolClass {
-	NMSettingClass parent;
+    NMSettingClass parent;
 };
 
-G_DEFINE_TYPE (NMSettingEthtool, nm_setting_ethtool, NM_TYPE_SETTING)
+G_DEFINE_TYPE(NMSettingEthtool, nm_setting_ethtool, NM_TYPE_SETTING)
 
-#define NM_SETTING_ETHTOOL_GET_PRIVATE(self) _NM_GET_PRIVATE (self, NMSettingEthtool, NM_IS_SETTING_ETHTOOL, NMSetting)
-
-/*****************************************************************************/
-
-static void
-_notify_attributes (NMSettingEthtool *self)
-{
-	_nm_setting_gendata_notify (NM_SETTING (self), TRUE);
-}
+#define NM_SETTING_ETHTOOL_GET_PRIVATE(self) \
+    _NM_GET_PRIVATE(self, NMSettingEthtool, NM_IS_SETTING_ETHTOOL, NMSetting)
 
 /*****************************************************************************/
 
@@ -88,24 +127,20 @@ _notify_attributes (NMSettingEthtool *self)
  *   is enabled, disabled, or left untouched.
  *
  * Since: 1.14
+ *
+ * Deprecated: 1.26: use nm_setting_option_get_boolean() instead.
  */
 NMTernary
-nm_setting_ethtool_get_feature (NMSettingEthtool *setting,
-                                const char *optname)
+nm_setting_ethtool_get_feature(NMSettingEthtool *setting, const char *optname)
 {
-	GVariant *v;
+    gboolean v;
 
-	g_return_val_if_fail (NM_IS_SETTING_ETHTOOL (setting), NM_TERNARY_DEFAULT);
-	g_return_val_if_fail (optname && nm_ethtool_optname_is_feature (optname), NM_TERNARY_DEFAULT);
+    g_return_val_if_fail(NM_IS_SETTING_ETHTOOL(setting), NM_TERNARY_DEFAULT);
+    g_return_val_if_fail(optname && nm_ethtool_optname_is_feature(optname), NM_TERNARY_DEFAULT);
 
-	v = nm_setting_gendata_get (NM_SETTING (setting), optname);
-	if (   v
-	    && g_variant_is_of_type (v, G_VARIANT_TYPE_BOOLEAN)) {
-		return g_variant_get_boolean (v)
-		       ? NM_TERNARY_TRUE
-		       : NM_TERNARY_FALSE;
-	}
-	return NM_TERNARY_DEFAULT;
+    if (!nm_setting_option_get_boolean(NM_SETTING(setting), optname, &v))
+        return NM_TERNARY_DEFAULT;
+    return v ? NM_TERNARY_TRUE : NM_TERNARY_FALSE;
 }
 
 /**
@@ -121,49 +156,20 @@ nm_setting_ethtool_get_feature (NMSettingEthtool *setting,
  * nm_ethtool_optname_is_feature().
  *
  * Since: 1.14
+ *
+ * Deprecated: 1.26: use nm_setting_option_set() or nm_setting_option_set_boolean() instead.
  */
 void
-nm_setting_ethtool_set_feature (NMSettingEthtool *setting,
-                                const char *optname,
-                                NMTernary value)
+nm_setting_ethtool_set_feature(NMSettingEthtool *setting, const char *optname, NMTernary value)
 {
-	GHashTable *hash;
-	GVariant *v;
+    g_return_if_fail(NM_IS_SETTING_ETHTOOL(setting));
+    g_return_if_fail(optname && nm_ethtool_optname_is_feature(optname));
+    g_return_if_fail(NM_IN_SET(value, NM_TERNARY_DEFAULT, NM_TERNARY_FALSE, NM_TERNARY_TRUE));
 
-	g_return_if_fail (NM_IS_SETTING_ETHTOOL (setting));
-	g_return_if_fail (optname && nm_ethtool_optname_is_feature (optname));
-	g_return_if_fail (NM_IN_SET (value, NM_TERNARY_DEFAULT,
-	                                    NM_TERNARY_FALSE,
-	                                    NM_TERNARY_TRUE));
-
-	hash = _nm_setting_gendata_hash (NM_SETTING (setting),
-	                                 value != NM_TERNARY_DEFAULT);
-
-	if (value == NM_TERNARY_DEFAULT) {
-		if (hash) {
-			if (g_hash_table_remove (hash, optname))
-				_notify_attributes (setting);
-		}
-		return;
-	}
-
-	v = g_hash_table_lookup (hash, optname);
-	if (   v
-	    && g_variant_is_of_type (v, G_VARIANT_TYPE_BOOLEAN)) {
-		if (g_variant_get_boolean (v)) {
-			if (value == NM_TERNARY_TRUE)
-				return;
-		} else {
-			if (value == NM_TERNARY_FALSE)
-				return;
-		}
-	}
-
-	v = g_variant_ref_sink (g_variant_new_boolean (value != NM_TERNARY_FALSE));
-	g_hash_table_insert (hash,
-	                     g_strdup (optname),
-	                     v);
-	_notify_attributes (setting);
+    if (value == NM_TERNARY_DEFAULT)
+        nm_setting_option_set(NM_SETTING(setting), optname, NULL);
+    else
+        nm_setting_option_set_boolean(NM_SETTING(setting), optname, (value != NM_TERNARY_FALSE));
 }
 
 /**
@@ -173,70 +179,56 @@ nm_setting_ethtool_set_feature (NMSettingEthtool *setting,
  * Clears all offload features settings
  *
  * Since: 1.14
+ *
+ * Deprecated: 1.26: use nm_setting_option_clear_by_name() with nm_ethtool_optname_is_feature() predicate instead.
  */
 void
-nm_setting_ethtool_clear_features (NMSettingEthtool *setting)
+nm_setting_ethtool_clear_features(NMSettingEthtool *setting)
 {
-	GHashTable *hash;
-	GHashTableIter iter;
-	const char *name;
-	gboolean changed = FALSE;
+    g_return_if_fail(NM_IS_SETTING_ETHTOOL(setting));
 
-	g_return_if_fail (NM_IS_SETTING_ETHTOOL (setting));
-
-	hash = _nm_setting_gendata_hash (NM_SETTING (setting), FALSE);
-	if (!hash)
-		return;
-
-	g_hash_table_iter_init (&iter, hash);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &name, NULL)) {
-		if (nm_ethtool_optname_is_feature (name)) {
-			g_hash_table_iter_remove (&iter);
-			changed = TRUE;
-		}
-	}
-
-	if (changed)
-		_notify_attributes (setting);
+    nm_setting_option_clear_by_name(NM_SETTING(setting), nm_ethtool_optname_is_feature);
 }
 
+/*****************************************************************************/
+
 guint
-nm_setting_ethtool_init_features (NMSettingEthtool *setting,
-                                  NMTernary *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */)
+nm_setting_ethtool_init_features(
+    NMSettingEthtool *setting,
+    NMTernary *       requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */)
 {
-	GHashTable *hash;
-	GHashTableIter iter;
-	guint i;
-	guint n_req = 0;
-	const char *name;
-	GVariant *variant;
+    GHashTable *   hash;
+    GHashTableIter iter;
+    guint          i;
+    guint          n_req = 0;
+    const char *   name;
+    GVariant *     variant;
 
-	nm_assert (NM_IS_SETTING_ETHTOOL (setting));
-	nm_assert (requested);
+    nm_assert(NM_IS_SETTING_ETHTOOL(setting));
+    nm_assert(requested);
 
-	for (i = 0; i < _NM_ETHTOOL_ID_FEATURE_NUM; i++)
-		requested[i] = NM_TERNARY_DEFAULT;
+    for (i = 0; i < _NM_ETHTOOL_ID_FEATURE_NUM; i++)
+        requested[i] = NM_TERNARY_DEFAULT;
 
-	hash = _nm_setting_gendata_hash (NM_SETTING (setting), FALSE);
-	if (!hash)
-		return 0;
+    hash = _nm_setting_option_hash(NM_SETTING(setting), FALSE);
+    if (!hash)
+        return 0;
 
-	g_hash_table_iter_init (&iter, hash);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &name, (gpointer *) &variant)) {
-		NMEthtoolID ethtool_id = nm_ethtool_id_get_by_name (name);
+    g_hash_table_iter_init(&iter, hash);
+    while (g_hash_table_iter_next(&iter, (gpointer *) &name, (gpointer *) &variant)) {
+        NMEthtoolID ethtool_id = nm_ethtool_id_get_by_name(name);
 
-		if (!nm_ethtool_id_is_feature (ethtool_id))
-			continue;
-		if (!g_variant_is_of_type (variant, G_VARIANT_TYPE_BOOLEAN))
-			continue;
+        if (!nm_ethtool_id_is_feature(ethtool_id))
+            continue;
+        if (!g_variant_is_of_type(variant, G_VARIANT_TYPE_BOOLEAN))
+            continue;
 
-		requested[ethtool_id - _NM_ETHTOOL_ID_FEATURE_FIRST] = g_variant_get_boolean (variant)
-		                                                       ? NM_TERNARY_TRUE
-		                                                       : NM_TERNARY_FALSE;
-		n_req++;
-	}
+        requested[_NM_ETHTOOL_ID_FEATURE_AS_IDX(ethtool_id)] =
+            g_variant_get_boolean(variant) ? NM_TERNARY_TRUE : NM_TERNARY_FALSE;
+        n_req++;
+    }
 
-	return n_req;
+    return n_req;
 }
 
 /*****************************************************************************/
@@ -255,81 +247,104 @@ nm_setting_ethtool_init_features (NMSettingEthtool *setting,
  *   @setting and may get invalidated when @setting gets modified.
  *
  * Since: 1.20
+ *
+ * Deprecated: 1.26: use nm_setting_option_get_all_names() instead.
  */
 const char **
-nm_setting_ethtool_get_optnames (NMSettingEthtool *setting,
-                                 guint *out_length)
+nm_setting_ethtool_get_optnames(NMSettingEthtool *setting, guint *out_length)
 {
-	g_return_val_if_fail (NM_IS_SETTING_ETHTOOL (setting), NULL);
+    const char *const *names;
+    guint              len;
 
-	return nm_utils_strdict_get_keys (_nm_setting_gendata_hash (NM_SETTING (setting), FALSE),
-	                                  TRUE,
-	                                  out_length);
+    g_return_val_if_fail(NM_IS_SETTING_ETHTOOL(setting), NULL);
+
+    names = nm_setting_option_get_all_names(NM_SETTING(setting), &len);
+    NM_SET_OUT(out_length, len);
+    return len > 0 ? nm_memdup(names, sizeof(names[0]) * (((gsize) len) + 1u)) : NULL;
 }
 
 /*****************************************************************************/
 
 static gboolean
-verify (NMSetting *setting, NMConnection *connection, GError **error)
+verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
-	GHashTable *hash;
-	GHashTableIter iter;
-	const char *optname;
-	GVariant *variant;
+    const char *const *optnames;
+    GVariant *const *  variants;
+    guint              len;
+    guint              i;
 
-	hash = _nm_setting_gendata_hash (setting, FALSE);
+    len = _nm_setting_option_get_all(setting, &optnames, &variants);
 
-	if (!hash)
-		goto out;
+    for (i = 0; i < len; i++) {
+        const char *        optname = optnames[i];
+        GVariant *          variant = variants[i];
+        const GVariantType *variant_type;
+        NMEthtoolID         ethtool_id;
 
-	g_hash_table_iter_init (&iter, hash);
-	while (g_hash_table_iter_next (&iter, (gpointer *) &optname, (gpointer *) &variant)) {
-		if (!nm_ethtool_optname_is_feature (optname)) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("unsupported offload feature"));
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_ETHTOOL_SETTING_NAME, optname);
-			return FALSE;
-		}
-		if (!g_variant_is_of_type (variant, G_VARIANT_TYPE_BOOLEAN)) {
-			g_set_error_literal (error,
-			                     NM_CONNECTION_ERROR,
-			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-			                     _("offload feature has invalid variant type"));
-			g_prefix_error (error, "%s.%s: ", NM_SETTING_ETHTOOL_SETTING_NAME, optname);
-			return FALSE;
-		}
-	}
+        ethtool_id   = nm_ethtool_id_get_by_name(optname);
+        variant_type = get_variant_type_from_ethtool_id(ethtool_id);
 
-out:
-	return TRUE;
+        if (!variant_type) {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("unsupported ethtool setting"));
+            g_prefix_error(error, "%s.%s: ", NM_SETTING_ETHTOOL_SETTING_NAME, optname);
+            return FALSE;
+        }
+
+        if (!g_variant_is_of_type(variant, variant_type)) {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("setting has invalid variant type"));
+            g_prefix_error(error, "%s.%s: ", NM_SETTING_ETHTOOL_SETTING_NAME, optname);
+            return FALSE;
+        }
+
+        if (NM_IN_SET(ethtool_id,
+                      NM_ETHTOOL_ID_COALESCE_ADAPTIVE_RX,
+                      NM_ETHTOOL_ID_COALESCE_ADAPTIVE_TX)) {
+            if (!NM_IN_SET(g_variant_get_uint32(variant), 0, 1)) {
+                g_set_error_literal(error,
+                                    NM_CONNECTION_ERROR,
+                                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                    _("coalesce option must be either 0 or 1"));
+                g_prefix_error(error, "%s.%s: ", NM_SETTING_ETHTOOL_SETTING_NAME, optname);
+                return FALSE;
+            }
+        }
+    }
+
+    return TRUE;
 }
 
 /*****************************************************************************/
 
 static const GVariantType *
-get_variant_type (const NMSettInfoSetting *sett_info,
-                  const char *name,
-                  GError **error)
+get_variant_type(const NMSettInfoSetting *sett_info, const char *name, GError **error)
 {
-	if (nm_ethtool_optname_is_feature (name))
-		return G_VARIANT_TYPE_BOOLEAN;
+    const GVariantType *variant_type;
 
-	g_set_error (error,
-	             NM_CONNECTION_ERROR,
-	             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-	             _("unknown ethtool option '%s'"),
-	             name);
-	return NULL;
+    variant_type = get_variant_type_from_ethtool_id(nm_ethtool_id_get_by_name(name));
+
+    if (!variant_type) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("unknown ethtool option '%s'"),
+                    name);
+        return NULL;
+    }
+
+    return variant_type;
 }
 
 /*****************************************************************************/
 
 static void
-nm_setting_ethtool_init (NMSettingEthtool *setting)
-{
-}
+nm_setting_ethtool_init(NMSettingEthtool *setting)
+{}
 
 /**
  * nm_setting_ethtool_new:
@@ -341,24 +356,23 @@ nm_setting_ethtool_init (NMSettingEthtool *setting)
  * Since: 1.14
  **/
 NMSetting *
-nm_setting_ethtool_new (void)
+nm_setting_ethtool_new(void)
 {
-	return g_object_new (NM_TYPE_SETTING_ETHTOOL, NULL);
+    return g_object_new(NM_TYPE_SETTING_ETHTOOL, NULL);
 }
 
 static void
-nm_setting_ethtool_class_init (NMSettingEthtoolClass *klass)
+nm_setting_ethtool_class_init(NMSettingEthtoolClass *klass)
 {
-	NMSettingClass *setting_class = NM_SETTING_CLASS (klass);
+    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
 
-	setting_class->verify = verify;
+    setting_class->verify = verify;
 
-	_nm_setting_class_commit_full (setting_class,
-	                               NM_META_SETTING_TYPE_ETHTOOL,
-	                               NM_SETT_INFO_SETT_DETAIL (
-	                                 .gendata_info = NM_SETT_INFO_SETT_GENDATA (
-	                                     .get_variant_type = get_variant_type,
-	                                 ),
-	                               ),
-	                               NULL);
+    _nm_setting_class_commit_full(
+        setting_class,
+        NM_META_SETTING_TYPE_ETHTOOL,
+        NM_SETT_INFO_SETT_DETAIL(.gendata_info =
+                                     NM_SETT_INFO_SETT_GENDATA(.get_variant_type =
+                                                                   get_variant_type, ), ),
+        NULL);
 }

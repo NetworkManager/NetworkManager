@@ -1,6 +1,6 @@
-common_inc = include_directories('.')
+# SPDX-License-Identifier: LGPL-2.1+
 
-nm_polkit_listener = files('nm-polkit-listener.c')
+common_inc = include_directories('.')
 
 common_deps = [
   libnm_dep,
@@ -13,6 +13,7 @@ sources = files(
   'nm-client-utils.c',
   'nm-secret-agent-simple.c',
   'nm-vpn-helpers.c',
+  'nm-polkit-listener.c',
 )
 
 libnmc_base = static_library(
@@ -30,17 +31,17 @@ libnmc_base_dep = declare_dependency(
 
 settings_docs = 'settings-docs.h'
 
-if enable_introspection
+if enable_docs
   settings_docs_source = custom_target(
     settings_docs,
-    input: nm_property_docs,
+    input: nm_settings_docs_xml_gir,
     output: settings_docs,
     command: [xsltproc, '--output', '@OUTPUT@', join_paths(meson.current_source_dir(), 'settings-docs.xsl'), '@INPUT@'],
   )
 
   test(
     'check-settings-docs',
-    find_program(join_paths(source_root, 'tools', 'check-settings-docs.sh')),
+    find_program(join_paths(source_root, 'tools', 'check-compare-generated.sh')),
     args: [source_root, build_root, 'clients/common/' + settings_docs],
   )
 else

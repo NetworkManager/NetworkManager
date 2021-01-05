@@ -8,7 +8,7 @@
 
   <!-- We need to strip whitespaces so that position() function counts correctly.
        http://www.oxygenxml.com/archives/xsl-list/200305/msg00430.html -->
-  <xsl:strip-space elements="nm-ifcfg-rh-docs setting" />
+  <xsl:strip-space elements="nm-setting-docs setting" />
 
   <xsl:output
       method="xml"
@@ -16,7 +16,7 @@
       doctype-system="http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd"
       />
 
-  <xsl:template match="nm-ifcfg-rh-docs">
+  <xsl:template match="nm-setting-docs">
     <refentry id="nm-settings-ifcfg-rh">
       <refentryinfo>
         <title>nm-settings-ifcfg-rh</title>
@@ -72,9 +72,7 @@
           Users can create or modify the <emphasis>ifcfg-rh</emphasis> connection files
           manually, even if that is not the recommended way of managing the profiles.
           However, if they choose to do that, they must inform NetworkManager about
-          their changes (see <emphasis>monitor-connection-file</emphasis> in
-          <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum>
-          </citerefentry>, and <emphasis>nmcli con (re)load</emphasis>).
+          their changes (for example via <emphasis>nmcli con (re)load</emphasis>).
         </para>
         <formalpara>
           <title>Some <emphasis>ifcfg-rh</emphasis> configuration examples:</title>
@@ -243,7 +241,7 @@ DEVICETYPE=TeamPort
                   <listitem>
                     <para><literal>ONBOOT</literal> -
                     initscripts use ONBOOT=yes to mark the devices that are to be activated
-                    during boot. NetworkManager extents this to also mean that this profile
+                    during boot. NetworkManager extends this to also mean that this profile
                     can be used for auto-connecting at any time.</para>
                   </listitem>
                   <listitem>

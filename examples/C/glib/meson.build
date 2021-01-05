@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 examples = [
   ['add-connection-gdbus', [libnm_enum_sources[1]], [uuid_dep]],
   ['add-connection-libnm', [], [libnm_dep]],

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0+
+/* SPDX-License-Identifier: GPL-2.0+ */
 /*
  * Copyright (C) 2013 Red Hat, Inc.
  */
@@ -13,7 +13,7 @@
  * contains a valid MTU.
  *
  * The entry also has an attached #NmtNewtLabel. When the entry value
- * is "0", the label will read "(default)". Otherwise it reads "bytes",
+ * is "0", the label will read "(default)". Otherwise, it reads "bytes",
  * indicating the units used by the entry.
  */
 
@@ -23,23 +23,24 @@
 
 #include "nmt-mtu-entry.h"
 
-G_DEFINE_TYPE (NmtMtuEntry, nmt_mtu_entry, NMT_TYPE_NEWT_GRID)
+G_DEFINE_TYPE(NmtMtuEntry, nmt_mtu_entry, NMT_TYPE_NEWT_GRID)
 
-#define NMT_MTU_ENTRY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NMT_TYPE_MTU_ENTRY, NmtMtuEntryPrivate))
+#define NMT_MTU_ENTRY_GET_PRIVATE(o) \
+    (G_TYPE_INSTANCE_GET_PRIVATE((o), NMT_TYPE_MTU_ENTRY, NmtMtuEntryPrivate))
 
 typedef struct {
-	int mtu;
+    int mtu;
 
-	NmtNewtEntry *entry;
-	NmtNewtLabel *label;
+    NmtNewtEntry *entry;
+    NmtNewtLabel *label;
 
 } NmtMtuEntryPrivate;
 
 enum {
-	PROP_0,
-	PROP_MTU,
+    PROP_0,
+    PROP_MTU,
 
-	LAST_PROP
+    LAST_PROP
 };
 
 /**
@@ -50,128 +51,126 @@ enum {
  * Returns: a new #NmtMtuEntry
  */
 NmtNewtWidget *
-nmt_mtu_entry_new (void)
+nmt_mtu_entry_new(void)
 {
-	return g_object_new (NMT_TYPE_MTU_ENTRY, NULL);
+    return g_object_new(NMT_TYPE_MTU_ENTRY, NULL);
 }
 
 static gboolean
-mtu_validator (NmtNewtEntry *entry,
-               const char   *text,
-               gpointer      user_data)
+mtu_validator(NmtNewtEntry *entry, const char *text, gpointer user_data)
 {
-	NmtMtuEntryPrivate *priv = NMT_MTU_ENTRY_GET_PRIVATE (user_data);
+    NmtMtuEntryPrivate *priv = NMT_MTU_ENTRY_GET_PRIVATE(user_data);
 
-	if (*text && !atoi (text)) {
-		nmt_newt_entry_set_text (entry, "");
-		text = "";
-	}
+    if (*text && !atoi(text)) {
+        nmt_newt_entry_set_text(entry, "");
+        text = "";
+    }
 
-	if (!*text)
-		nmt_newt_label_set_text (priv->label, _("(default)"));
-	else
-		nmt_newt_label_set_text (priv->label, _("bytes"));
+    if (!*text)
+        nmt_newt_label_set_text(priv->label, _("(default)"));
+    else
+        nmt_newt_label_set_text(priv->label, _("bytes"));
 
-	return TRUE;
+    return TRUE;
 }
 
 static gboolean
-mtu_transform_to_text (GBinding     *binding,
-                       const GValue *source_value,
-                       GValue       *target_value,
-                       gpointer      user_data)
+mtu_transform_to_text(GBinding *    binding,
+                      const GValue *source_value,
+                      GValue *      target_value,
+                      gpointer      user_data)
 {
-	int mtu = g_value_get_int (source_value);
+    int mtu = g_value_get_int(source_value);
 
-	if (mtu)
-		g_value_transform (source_value, target_value);
-	else
-		g_value_set_string (target_value, "");
-	return TRUE;
+    if (mtu)
+        g_value_transform(source_value, target_value);
+    else
+        g_value_set_string(target_value, "");
+    return TRUE;
 }
 
 static void
-nmt_mtu_entry_init (NmtMtuEntry *entry)
+nmt_mtu_entry_init(NmtMtuEntry *entry)
 {
+    NmtMtuEntryPrivate *priv = NMT_MTU_ENTRY_GET_PRIVATE(entry);
+    NmtNewtGrid *       grid = NMT_NEWT_GRID(entry);
+    NmtNewtWidget *     real_entry, *label;
 
-	NmtMtuEntryPrivate *priv = NMT_MTU_ENTRY_GET_PRIVATE (entry);
-	NmtNewtGrid *grid = NMT_NEWT_GRID (entry);
-	NmtNewtWidget *real_entry, *label;
+    real_entry  = nmt_newt_entry_numeric_new(10, 0, 65535);
+    priv->entry = NMT_NEWT_ENTRY(real_entry);
 
-	real_entry = nmt_newt_entry_numeric_new (10, 0, 65535);
-	priv->entry = NMT_NEWT_ENTRY (real_entry);
+    label       = nmt_newt_label_new(_("bytes"));
+    priv->label = NMT_NEWT_LABEL(label);
 
-	label = nmt_newt_label_new (_("bytes"));
-	priv->label = NMT_NEWT_LABEL (label);
+    nmt_newt_grid_add(grid, real_entry, 0, 0);
+    nmt_newt_grid_add(grid, label, 1, 0);
+    nmt_newt_widget_set_padding(label, 1, 0, 0, 0);
 
-	nmt_newt_grid_add (grid, real_entry, 0, 0);
-	nmt_newt_grid_add (grid, label, 1, 0);
-	nmt_newt_widget_set_padding (label, 1, 0, 0, 0);
-
-	nmt_newt_entry_set_validator (priv->entry, mtu_validator, entry);
-	g_object_bind_property_full (entry, "mtu", real_entry, "text",
-	                             G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE,
-	                             mtu_transform_to_text,
-	                             NULL,
-	                             NULL, NULL);
+    nmt_newt_entry_set_validator(priv->entry, mtu_validator, entry);
+    g_object_bind_property_full(entry,
+                                "mtu",
+                                real_entry,
+                                "text",
+                                G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE,
+                                mtu_transform_to_text,
+                                NULL,
+                                NULL,
+                                NULL);
 }
 
 static void
-nmt_mtu_entry_set_property (GObject      *object,
-                            guint         prop_id,
-                            const GValue *value,
-                            GParamSpec   *pspec)
+nmt_mtu_entry_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-	NmtMtuEntryPrivate *priv = NMT_MTU_ENTRY_GET_PRIVATE (object);
+    NmtMtuEntryPrivate *priv = NMT_MTU_ENTRY_GET_PRIVATE(object);
 
-	switch (prop_id) {
-	case PROP_MTU:
-		priv->mtu = g_value_get_int (value);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_MTU:
+        priv->mtu = g_value_get_int(value);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
-nmt_mtu_entry_get_property (GObject    *object,
-                            guint       prop_id,
-                            GValue     *value,
-                            GParamSpec *pspec)
+nmt_mtu_entry_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-	NmtMtuEntryPrivate *priv = NMT_MTU_ENTRY_GET_PRIVATE (object);
+    NmtMtuEntryPrivate *priv = NMT_MTU_ENTRY_GET_PRIVATE(object);
 
-	switch (prop_id) {
-	case PROP_MTU:
-		g_value_set_int (value, priv->mtu);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+    switch (prop_id) {
+    case PROP_MTU:
+        g_value_set_int(value, priv->mtu);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
 }
 
 static void
-nmt_mtu_entry_class_init (NmtMtuEntryClass *entry_class)
+nmt_mtu_entry_class_init(NmtMtuEntryClass *entry_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (entry_class);
+    GObjectClass *object_class = G_OBJECT_CLASS(entry_class);
 
-	g_type_class_add_private (entry_class, sizeof (NmtMtuEntryPrivate));
+    g_type_class_add_private(entry_class, sizeof(NmtMtuEntryPrivate));
 
-	/* virtual methods */
-	object_class->set_property = nmt_mtu_entry_set_property;
-	object_class->get_property = nmt_mtu_entry_get_property;
+    /* virtual methods */
+    object_class->set_property = nmt_mtu_entry_set_property;
+    object_class->get_property = nmt_mtu_entry_get_property;
 
-	/**
-	 * NmtMtuEntry:mtu:
-	 *
-	 * The contents of the entry, as a number.
-	 */
-	g_object_class_install_property
-		(object_class, PROP_MTU,
-		 g_param_spec_int ("mtu", "", "",
-		                   0, G_MAXINT, 0,
-		                   G_PARAM_READWRITE |
-		                   G_PARAM_STATIC_STRINGS));
+    /**
+     * NmtMtuEntry:mtu:
+     *
+     * The contents of the entry, as a number.
+     */
+    g_object_class_install_property(object_class,
+                                    PROP_MTU,
+                                    g_param_spec_int("mtu",
+                                                     "",
+                                                     "",
+                                                     0,
+                                                     G_MAXINT,
+                                                     0,
+                                                     G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }

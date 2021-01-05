@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 # test-cert.p12 created with:
 #
 # openssl pkcs12 -export \
@@ -13,9 +15,11 @@ enum_sources = gnome.mkenums_simple(
   enum_types,
   sources: 'test-general-enums.h',
   identifier_prefix: nm_id_prefix,
+  body_prefix: '#include "nm-default.h"',
 )
 
 deps = [
+  libnm_keyfile_dep,
   libnm_core_dep,
   libnm_core_nm_default_dep,
 ]

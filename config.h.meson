@@ -212,17 +212,14 @@
 /* Define if JANSSON is enabled */
 #mesondefine WITH_JANSSON
 
-/* Define if JSON validation in libnm is enabled */
-#mesondefine WITH_JSON_VALIDATION
-
 /* Define if you have libpsl */
 #mesondefine WITH_LIBPSL
 
 /* Define if you have oFono support (experimental) */
 #mesondefine WITH_OFONO
 
-/* Define if you have polkit agent */
-#mesondefine WITH_POLKIT_AGENT
+/* Define the polkit agent package prefix */
+#mesondefine POLKIT_PACKAGE_PREFIX
 
 /* Define if you have PPP support */
 #mesondefine WITH_PPP
@@ -232,6 +229,9 @@
 
 /* Define if you have iwd support */
 #mesondefine WITH_IWD
+
+/* Define if NetworkManager uses a custom zone for shared mode */
+#mesondefine WITH_FIREWALLD_ZONE
 
 /* Define to 1 if on MINIX. */
 #mesondefine _MINIX
@@ -249,5 +249,6 @@
 /* Define to 1 if you need to in order for `stat' and other things to work. */
 #mesondefine _POSIX_SOURCE
 
-/* Define to `int' if <sys/types.h> does not define. */
-#mesondefine pid_t
+#mesondefine HAVE_PIDFD_OPEN
+#mesondefine HAVE_PIDFD_SEND_SIGNAL
+#mesondefine HAVE_RT_SIGQUEUEINFO

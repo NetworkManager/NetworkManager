@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 test_config_dir = meson.current_source_dir()
 
 test_unit = 'test-config'

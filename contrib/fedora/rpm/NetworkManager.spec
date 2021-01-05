@@ -29,10 +29,10 @@
 
 %global _hardened_build 1
 
-%if "x%{?snapshot}" != x
+%if "x%{?snapshot}" != "x"
 %global snapshot_dot .%{snapshot}
 %endif
-%if "x%{?git_sha}" != x
+%if "x%{?git_sha}" != "x"
 %global git_sha_dot .%{git_sha}
 %endif
 
@@ -42,7 +42,25 @@
 
 %global systemd_units NetworkManager.service NetworkManager-wait-online.service NetworkManager-dispatcher.service
 
+%global systemd_units_cloud_setup nm-cloud-setup.service nm-cloud-setup.timer
+
 ###############################################################################
+
+%if "x__BCOND_DEFAULT_DEBUG__" == "x1" || "x__BCOND_DEFAULT_DEBUG__" == "x0"
+%global bcond_default_debug __BCOND_DEFAULT_DEBUG__
+%else
+%global bcond_default_debug 0
+%endif
+
+%if "x__BCOND_DEFAULT_TEST__" == "x1" || "x__BCOND_DEFAULT_TEST__" == "x0"
+%global bcond_default_test __BCOND_DEFAULT_TEST__
+%else
+%if 0%{?rhel} >= 9
+%global bcond_default_test 1
+%else
+%global bcond_default_test 0
+%endif
+%endif
 
 %bcond_with meson
 %bcond_without adsl
@@ -53,10 +71,23 @@
 %bcond_without ovs
 %bcond_without ppp
 %bcond_without nmtui
+%bcond_without nm_cloud_setup
 %bcond_without regen_docs
+%if %{bcond_default_debug}
+%bcond_without debug
+%else
 %bcond_with    debug
+%endif
+%if %{bcond_default_test}
+%bcond_without test
+%else
 %bcond_with    test
+%endif
+%if 0%{?fedora} >= 33 || 0%{?rhel} >= 9
+%bcond_without lto
+%else
 %bcond_with    lto
+%endif
 %bcond_with    sanitizer
 %if 0%{?fedora}
 %bcond_without connectivity_fedora
@@ -77,6 +108,11 @@
 %bcond_with iwd
 %else
 %bcond_without iwd
+%endif
+%if 0%{?fedora} > 31 || 0%{?rhel} > 7
+%bcond_without firewalld_zone
+%else
+%bcond_with firewalld_zone
 %endif
 
 ###############################################################################
@@ -103,13 +139,21 @@
 
 %if 0%{?fedora} || 0%{?rhel} > 7
 %global logging_backend_default journal
+%if 0%{?fedora} || 0%{?rhel} > 8
+%global dns_rc_manager_default auto
+%else
 %global dns_rc_manager_default symlink
+%endif
 %else
 %global logging_backend_default syslog
 %global dns_rc_manager_default file
 %endif
 
+%if 0%{?rhel} > 8 || 0%{?fedora} > 32
+%global config_plugins_default keyfile,ifcfg-rh
+%else
 %global config_plugins_default ifcfg-rh
+%endif
 
 %if 0%{?fedora}
 # Although eBPF would be available on Fedora's kernel, it seems
@@ -117,10 +161,15 @@
 # bpf(BPF_MAP_CREATE, ...) randomly fails with EPERM. That might
 # be related to `ulimit -l`. Anyway, this is not usable at the
 # moment.
-%global ebpf_enabled no
+%global ebpf_enabled "no"
 %else
-%global ebpf_enabled no
+%global ebpf_enabled "no"
 %endif
+
+# Fedora 33 enables LTO by default by setting CFLAGS="-flto -ffat-lto-objects".
+# However, we also require "-flto -flto-partition=none", so disable Fedora's
+# default and use our configure option --with-lto instead.
+%define _lto_cflags %{nil}
 
 ###############################################################################
 
@@ -235,9 +284,16 @@ BuildRequires: polkit-devel
 BuildRequires: jansson-devel
 %if %{with sanitizer}
 BuildRequires: libasan
-%if 0%{?fedora}
+%if 0%{?fedora} || 0%{?rhel} >= 8
 BuildRequires: libubsan
 %endif
+%endif
+%if %{with firewalld_zone}
+BuildRequires: firewalld-filesystem
+%endif
+BuildRequires: iproute
+%if 0%{?fedora} || 0%{?rhel} > 7
+BuildRequires: iproute-tc
 %endif
 
 Provides: %{name}-dispatcher%{?_isa} = %{epoch}:%{version}-%{release}
@@ -386,19 +442,18 @@ This package contains NetworkManager support for PPP.
 
 
 %package libnm
-Summary: Libraries for adding NetworkManager support to applications (new API).
+Summary: Libraries for adding NetworkManager support to applications.
 Group: Development/Libraries
 Conflicts: NetworkManager-glib < %{epoch}:%{version}-%{release}
 License: LGPLv2+
 
 %description libnm
 This package contains the libraries that make it easier to use some
-NetworkManager functionality from applications.  This is the new
-NetworkManager API.  See also NetworkManager-glib.
+NetworkManager functionality from applications.
 
 
 %package libnm-devel
-Summary: Header files for adding NetworkManager support to applications (new API).
+Summary: Header files for adding NetworkManager support to applications.
 Group: Development/Libraries
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: glib2-devel
@@ -407,8 +462,7 @@ License: LGPLv2+
 
 %description libnm-devel
 This package contains the header and pkg-config files for development
-applications using NetworkManager functionality from applications.  This
-is the new NetworkManager API. See also NetworkManager-glib-devel.
+applications using NetworkManager functionality from applications.
 
 
 %if %{with connectivity_fedora}
@@ -466,7 +520,7 @@ configurations using "/etc/sysconfig/network-scripts/rule-NAME" files
 (eg, to do policy-based routing).
 
 
-%if 0%{with_nmtui}
+%if %{with nmtui}
 %package tui
 Summary: NetworkManager curses-based UI
 Group: System Environment/Base
@@ -477,6 +531,20 @@ Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 This adds a curses-based "TUI" (Text User Interface) to
 NetworkManager, to allow performing some of the operations supported
 by nm-connection-editor and nm-applet in a non-graphical environment.
+%endif
+
+
+%if %{with nm_cloud_setup}
+%package cloud-setup
+Summary: Automatically configure NetworkManager in cloud
+Group: System Environment/Base
+Requires: %{name} = %{epoch}:%{version}-%{release}
+Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
+
+%description cloud-setup
+Installs a nm-cloud-setup tool that can automatically configure
+NetworkManager in cloud setups. Currently only EC2 is supported.
+This tool is still experimental.
 %endif
 
 
@@ -534,6 +602,21 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %else
 	-Diwd=false \
 %endif
+%if %{with bluetooth}
+	-Dbluez5_dun=true \
+%else
+	-Dbluez5_dun=false \
+%endif
+%if %{with nmtui}
+	-Dnmtui=true \
+%else
+	-Dnmtui=false \
+%endif
+%if %{with nm_cloud_setup}
+	-Dnm_cloud_setup=true \
+%else
+	-Dnm_cloud_setup=false \
+%endif
 	-Dvapi=true \
 	-Dintrospection=true \
 %if %{with regen_docs}
@@ -553,7 +636,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %endif
 	-Dselinux=true \
 	-Dpolkit=true  \
-	-Dpolkit_agent=true \
+	-Dconfig_auth_polkit_default=true \
 	-Dmodify_system=true \
 	-Dconcheck=true \
 %if 0%{?fedora}
@@ -561,7 +644,7 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 %else
 	-Dlibpsl=false \
 %endif
-%if %{ebpf_enabled} != yes
+%if %{ebpf_enabled} != "yes"
 	-Debpf=false \
 %else
 	-Debpf=true \
@@ -579,8 +662,15 @@ by nm-connection-editor and nm-applet in a non-graphical environment.
 	-Dpppd_plugin_dir=%{_libdir}/pppd/%{ppp_version} \
 	-Dppp=true \
 %endif
+%if %{with firewalld_zone}
+	-Dfirewalld_zone=true \
+%else
+	-Dfirewalld_zone=false \
+%endif
 	-Ddist_version=%{version}-%{release} \
 	-Dconfig_plugins_default=%{config_plugins_default} \
+	-Dresolvconf=no \
+	-Dnetconfig=no \
 	-Dconfig_dns_rc_manager_default=%{dns_rc_manager_default} \
 	-Dconfig_logging_backend_default=%{logging_backend_default} \
 	-Djson_validation=true
@@ -609,8 +699,10 @@ intltoolize --automake --copy --force
 %endif
 %if %{with sanitizer}
 	--with-address-sanitizer=exec \
-%if 0%{?fedora}
+%if 0%{?fedora} || 0%{?rhel} >= 8
 	--enable-undefined-sanitizer \
+%else
+	--disable-undefined-sanitizer \
 %endif
 %else
 	--with-address-sanitizer=no \
@@ -650,6 +742,21 @@ intltoolize --automake --copy --force
 %else
 	--with-iwd=no \
 %endif
+%if %{with bluetooth}
+	--enable-bluez5-dun=yes \
+%else
+	--enable-bluez5-dun=no \
+%endif
+%if %{with nmtui}
+	--with-nmtui=yes \
+%else
+	--with-nmtui=no \
+%endif
+%if %{with nm_cloud_setup}
+	--with-nm-cloud-setup=yes \
+%else
+	--with-nm-cloud-setup=no \
+%endif
 	--enable-vala=yes \
 	--enable-introspection \
 %if %{with regen_docs}
@@ -669,7 +776,6 @@ intltoolize --automake --copy --force
 %endif
 	--with-selinux=yes \
 	--enable-polkit=yes \
-	--enable-polkit-agent \
 	--enable-modify-system=yes \
 	--enable-concheck \
 %if 0%{?fedora}
@@ -696,15 +802,21 @@ intltoolize --automake --copy --force
 	--with-pppd-plugin-dir=%{_libdir}/pppd/%{ppp_version} \
 	--enable-ppp=yes \
 %endif
+%if %{with firewalld_zone}
+	--enable-firewalld-zone \
+%else
+	--disable-firewalld-zone \
+%endif
 	--with-dist-version=%{version}-%{release} \
 	--with-config-plugins-default=%{config_plugins_default} \
+	--with-resolvconf=no \
+	--with-netconfig=no \
 	--with-config-dns-rc-manager-default=%{dns_rc_manager_default} \
-	--with-config-logging-backend-default=%{logging_backend_default} \
-	--enable-json-validation
+	--with-config-logging-backend-default=%{logging_backend_default}
 
 make %{?_smp_mflags}
 
-%endif # end autotools
+%endif
 
 %install
 %if %{with meson}
@@ -762,7 +874,7 @@ make -k %{?_smp_mflags} check
 %else
 make -k %{?_smp_mflags} check || :
 %endif
-%endif # end autotools
+%endif
 
 
 %pre
@@ -778,6 +890,9 @@ fi
 %post
 /usr/bin/udevadm control --reload-rules || :
 /usr/bin/udevadm trigger --subsystem-match=net || :
+%if %{with firewalld_zone}
+%firewalld_reload
+%endif
 
 %systemd_post %{systemd_units}
 
@@ -789,6 +904,12 @@ else
     /usr/sbin/update-alternatives --install %{_sbindir}/ifup ifup %{_libexecdir}/nm-ifup 50 \
         --slave %{_sbindir}/ifdown ifdown %{_libexecdir}/nm-ifdown
 fi
+
+
+%if %{with nm_cloud_setup}
+%post cloud-setup
+%systemd_post %{systemd_units_cloud_setup}
+%endif
 
 
 %preun
@@ -804,9 +925,18 @@ fi
 %systemd_preun NetworkManager-wait-online.service NetworkManager-dispatcher.service
 
 
+%if %{with nm_cloud_setup}
+%preun cloud-setup
+%systemd_preun %{systemd_units_cloud_setup}
+%endif
+
+
 %postun
 /usr/bin/udevadm control --reload-rules || :
 /usr/bin/udevadm trigger --subsystem-match=net || :
+%if %{with firewalld_zone}
+%firewalld_reload
+%endif
 
 %systemd_postun %{systemd_units}
 
@@ -814,6 +944,12 @@ fi
 %if (0%{?fedora} && 0%{?fedora} < 28) || 0%{?rhel}
 %post   libnm -p /sbin/ldconfig
 %postun libnm -p /sbin/ldconfig
+%endif
+
+
+%if %{with nm_cloud_setup}
+%postun cloud-setup
+%systemd_postun %{systemd_units_cloud_setup}
 %endif
 
 
@@ -866,6 +1002,9 @@ fi
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_dispatcher.service
 %{_datadir}/polkit-1/actions/*.policy
 %{_prefix}/lib/udev/rules.d/*.rules
+%if %{with firewalld_zone}
+%{_prefix}/lib/firewalld/zones/nm-shared.xml
+%endif
 # systemd stuff
 %{systemd_dir}/NetworkManager.service
 %{systemd_dir}/NetworkManager-wait-online.service
@@ -982,6 +1121,17 @@ fi
 %{_bindir}/nmtui-connect
 %{_bindir}/nmtui-hostname
 %{_mandir}/man1/nmtui*
+%endif
+
+
+%if %{with nm_cloud_setup}
+%files cloud-setup
+%{_libexecdir}/nm-cloud-setup
+%{systemd_dir}/nm-cloud-setup.service
+%{systemd_dir}/nm-cloud-setup.timer
+%{nmlibdir}/dispatcher.d/90-nm-cloud-setup.sh
+%{nmlibdir}/dispatcher.d/no-wait.d/90-nm-cloud-setup.sh
+%{_mandir}/man8/nm-cloud-setup.8*
 %endif
 
 

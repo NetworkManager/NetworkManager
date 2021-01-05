@@ -1,0 +1,67 @@
+# This file contains the configuration for the gitlab ci.
+#
+# To recreate the .gitlab-ci.yml file, run
+#   ci-fairy generate-template
+#
+# The ci-fairy tool is part of
+# https://gitlab.freedesktop.org/freedesktop/ci-templates
+#
+
+# We're happy to rebuild all containers when one changes.
+.default_tag: &default_tag '2020-11-17.0'
+
+
+# The list of all distributions we want to create job for.
+# The template generates manual jobs for all these.
+distributions:
+  - name: fedora
+    tag: *default_tag
+    base_type: fedora
+    versions:
+      - '28'
+      - '29'
+      - '30'
+      - '31'
+      - '32'
+      - '33'
+      - 'rawhide'
+    always:
+      - '33'
+  - name: ubuntu
+    tag: *default_tag
+    base_type: debian
+    versions:
+      - '16.04'
+      - '18.04'
+      - '20.04'
+      - 'devel'
+      - 'rolling'
+  - name: debian
+    tag: *default_tag
+    base_type: debian
+    versions:
+      - '9'
+      - '10'
+      - 'testing'
+      - 'sid'
+  - name: centos
+    tag: *default_tag
+    base_type: fedora
+    versions:
+      - '7.5.1804'
+      - '7.6.1810'
+      - '7.7.1908'
+      - '7.8.2003'
+      - '7.9.2009'
+      - '8.1.1911'
+      - '8.2.2004'
+  - name: alpine
+    tag: *default_tag
+    base_type: alpine
+    versions:
+      - 'latest'
+
+# specifies which of the above distros is used as source for pages
+pages_build:
+  name: fedora
+  version: '33'

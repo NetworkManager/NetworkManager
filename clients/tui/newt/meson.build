@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 sources = files(
   'nmt-newt-button-box.c',
   'nmt-newt-button.c',

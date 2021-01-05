@@ -2,13 +2,16 @@ A S Alam <aalam@users.sf.net> <amanpreet.alam@gmail.com>
 Aleksander Morgado <aleksander@aleksander.es> <aleksander@lanedo.com>
 Alfonso Sánchez-Beato <alfonso.sanchez-beato@canonical.com>
 Amitakhya Phukan <aphukan@redhat.com> <aphukan@fedoraproject.org>
-Antony Mee <eemynotna@gmail.com> <A.J.Mee@ncl.ac.uk>
+Antony Mee <antony@onlymee.co.uk> <A.J.Mee@ncl.ac.uk>
+Antony Mee <antony@onlymee.co.uk> <eemynotna@gmail.com>
 Artur Flinta <aflinta@svn.gnome.org> <aflinta@cvs.gnome.org>
 Beniamino Galvani <bgalvani@redhat.com> <b.galvani@gmail.com>
+Bryan Clark <clarkbw@cvs.gnome.org>
 Bryan Clark <clarkbw@cvs.gnome.org> <bclark@redhat.com>
 Bryan Clark <clarkbw@cvs.gnome.org> <clarkbw@gnome.org>
 Christian Kirbach <christian.kirbach@gmail.com> <Christian.Kirbach@googlemail.com>
 Christian Persch <chpe@gnome.org> <chpe@cvs.gnome.org>
+Christopher Aillon <caillon@redhat.com>
 Colin Walters <walters@verbum.org> <walters@redhat.com>
 Dan Williams <dcbw@redhat.com> <dcbw@redaht.com>
 Dan Winship <danw@redhat.com> <danw@gnome.org>
@@ -18,10 +21,11 @@ Fran Diéguez <frandieguez@gnome.org>
 Fran Diéguez <frandieguez@gnome.org> <fran.dieguez@mabishu.com>
 Francisco Javier F. Serrador <serrador@cvs.gnome.org> <serrador@openshine.com>
 Frédéric Danis <frederic.danis.oss@gmail.com> <frederic.danis.external@sigfox.com>
+Frédéric Danis <frederic.danis.oss@gmail.com> <frederic.danis@collabora.com>
 Gabor Kelemen <kelemeng@gnome.hu> <kelemeng@gnome.org>
 Gene Czarcinski <gene@czarc.net> <czar@acm.org>
 Giovanni Campagna <gcampagna@src.gnome.org> <scampa.giovanni@gmail.com>
-gunchleoc <fios@foramnagaidhlog.net> <fios@foramnagaidhlig.net>
+GunChleoc <fios@foramnagaidhlig.net> <fios@foramnagaidhlog.net>
 Hendrik Brandt <heb@gnome-de.org> <hebra@cvs.gnome.org>
 Henrique P. Machado <hpmachado@gnome.org> <zehrique@gmail.com>
 Iñaki Larrañaga Murgoitio <dooteo@euskalgnu.org>
@@ -39,6 +43,7 @@ Matej Urbančič <matej.urban@gmail.com> <mateju@svn.gnome.org>
 Mathieu Trudel-Lapierre <mathieu.trudel-lapierre@canonical.com> <mathieu-tl@ubuntu.com>
 Mathieu Trudel-Lapierre <mathieu.trudel-lapierre@canonical.com> <mathieu.tl@gmail.com>
 Mathieu Trudel-Lapierre <mathieu.trudel-lapierre@canonical.com> <mathieu@canonical.com>
+Matt Bernstein <matt@bernstein.org.uk>
 Maxim Dziumanenko <dziumanenko@gmail.com> <mvd@mylinux.com.ua>
 Maxim Dziumanenko <dziumanenko@gmail.com> <mvd@mylinux.ua>
 Michael Biebl <biebl@debian.org> <mbiebl@debian.org>
@@ -53,8 +58,9 @@ Peter Korsgaard <peter@korsgaard.com> <jacmet@sunsite.dk>
 Philip Withnall <withnall@endlessm.com> <philip@tecnocode.co.uk>
 Philip Withnall <withnall@endlessm.com> <pwithnall@svn.gnome.org>
 Priit Laes <plaes@plaes.org> <plaes at svn dot gnome dot org>
-Priit Laes <plaes@plaes.org> <plaes@svn.gnome.org>
 Priit Laes <plaes@plaes.org> <plaes@cvs.gnome.org>
+Priit Laes <plaes@plaes.org> <plaes@svn.gnome.org>
+Ray Strode <rstrode@redhat.com> <halfline@gmail.com>
 Richard Hughes <hughsient@gmail.com> <richard@hughsie.com>
 Robby Workman <rworkman@slackware.com> <rw@rlworkman.net>
 Robert Love <rml@novell.com> <rlove@rlove.org>
@@ -66,10 +72,11 @@ Scott Shambarger <devel@shambarger.net> <scott-gnome@shambarger.net>
 Simos Xenitellis <simos.bugzilla@gmail.com> <simos@gnome.org>
 Sjoerd Simons <sjoerd.simons@collabora.co.uk> <sjoerd@debian.org>
 Sjoerd Simons <sjoerd.simons@collabora.co.uk> <sjoerd@luon.net>
+Soapux <2375-Soapux@users.noreply.gitlab.freedesktop.org> <35306504+Soapux@users.noreply.github.com>
 Tambet Ingo <tambet@gmail.com> <tambet@ximian.com>
 Tomasz Dominikowski <dominikowski@gmail.com> <tdominikowski@aviary.pl>
 William Jon McCann <william.jon.mccann@gmail.com> <mccann@jhu.edu>
-Wouter Bolsterlee <wbolster@svn.gnome.org> <wbolster@gnome.org>
 Wouter Bolsterlee <wbolster@svn.gnome.org> <uws+gnome@xs4all.nl>
+Wouter Bolsterlee <wbolster@svn.gnome.org> <wbolster@gnome.org>
 Øivind Hoel <ohoel@cvs.gnome.org>
 Žygimantas Beručka <uid0@akl.lt> <zygis@gnome.org>

@@ -14,14 +14,17 @@
 #
 
 import gi
-gi.require_version('NM', '1.0')
+
+gi.require_version("NM", "1.0")
 from gi.repository import GLib, NM
 import sys, uuid
 
 main_loop = None
 
+
 def print_values(setting, key, value, flags, data):
     print("  %s.%s: %s" % (setting.get_name(), key, value))
+
 
 # create an Ethernet connection and return it
 def create_profile(name):
@@ -49,6 +52,7 @@ def create_profile(name):
 
     return profile
 
+
 # callback function
 def added_cb(client, result, data):
     try:
@@ -58,16 +62,17 @@ def added_cb(client, result, data):
         sys.stderr.write("Error: %s\n" % e)
     main_loop.quit()
 
+
 if __name__ == "__main__":
     # parse arguments
     persistent = False
     if len(sys.argv) != 2 and len(sys.argv) != 3:
-        sys.exit('Usage: %s <connection name> [persistent]' % sys.argv[0])
+        sys.exit("Usage: %s <connection name> [persistent]" % sys.argv[0])
     if len(sys.argv) == 3:
         if sys.argv[2] in "persistent" and sys.argv[2][:1] == "p":
             persistent = True
         else:
-            sys.exit('Usage: %s <connection name> [persistent]' % sys.argv[0])
+            sys.exit("Usage: %s <connection name> [persistent]" % sys.argv[0])
     profile_name = sys.argv[1]
 
     main_loop = GLib.MainLoop()
@@ -82,4 +87,3 @@ if __name__ == "__main__":
     client.add_connection_async(con, persistent, None, added_cb, None)
 
     main_loop.run()
-

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 sources = files(
   'nm-device-ovs-bridge.c',
   'nm-device-ovs-interface.c',

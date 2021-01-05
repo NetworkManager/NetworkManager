@@ -1,5 +1,4 @@
-version_conf = configuration_data()
-version_conf.set('VERSION', nm_version)
+# SPDX-License-Identifier: LGPL-2.1+
 
 subdir('libnm')
 subdir('api')

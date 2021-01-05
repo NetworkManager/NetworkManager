@@ -1,18 +1,9 @@
-common_conf = configuration_data()
-common_conf.set('NM_VERSION', nm_version)
-common_conf.set('sysconfdir', nm_sysconfdir)
-common_conf.set('nmrundir', nm_pkgrundir)
-common_conf.set('nmstatedir', nm_pkgstatedir)
-common_conf.set('NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_TEXT', config_default_main_auth_polkit)
-common_conf.set('NM_CONFIG_DEFAULT_LOGGING_BACKEND_TEXT', config_logging_backend_default)
-common_conf.set('NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT', config_default_logging_audit)
-common_conf.set('NM_CONFIG_DEFAULT_MAIN_RC_MANAGER', config_dns_rc_manager_default)
-common_conf.set('NM_CONFIG_DEFAULT_MAIN_DHCP', config_dhcp_default)
+# SPDX-License-Identifier: LGPL-2.1+
 
 common_ent_file = configure_file(
   input: 'common.ent.in',
   output: '@BASENAME@',
-  configuration: common_conf,
+  configuration: data_conf,
 )
 
 xsltproc_options = [
@@ -47,6 +38,10 @@ if enable_ovs
   mans += [['nm-openvswitch', '7']]
 endif
 
+if enable_nm_cloud_setup
+  mans += [['nm-cloud-setup', '8']]
+endif
+
 foreach man: mans
   input = man[0] + '.xml'
   content_files += join_paths(meson.current_source_dir(), input)
@@ -65,13 +60,51 @@ foreach man: mans
 endforeach
 
 if enable_introspection
+
+  name = 'dbus'
+  nm_settings_docs_xml_dbus = custom_target(
+    'nm-settings-docs-' + name + '.xml',
+    input: [nm_settings_docs_xml_gir, nm_property_infos_xml[name]],
+    output: 'nm-settings-docs-' + name + '.xml',
+    command: [
+      python.path(),
+      join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-merge.py'),
+      '@OUTPUT@',
+      nm_property_infos_xml[name],
+      nm_settings_docs_xml_gir,
+    ],
+  )
+
+  name = 'nmcli'
+  nm_settings_docs_xml_nmcli = custom_target(
+    'nm-settings-docs-' + name + '.xml',
+    input: [nm_settings_docs_xml_gir, nm_property_infos_xml[name]],
+    output: 'nm-settings-docs-' + name + '.xml',
+    command: [
+      python.path(),
+      join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-merge.py'),
+      '--only-from-first',
+      '@OUTPUT@',
+      generate_docs_nm_settings_nmcli_xml,
+      nm_property_infos_xml[name],
+      nm_settings_docs_xml_gir,
+    ],
+  )
+
+  nm_settings_docs_xml = {
+    'gir':   nm_settings_docs_xml_gir,
+    'dbus':  nm_settings_docs_xml_dbus,
+    'nmcli':  nm_settings_docs_xml_nmcli,
+  }
+
   mans = [
-    ['nm-settings-keyfile', '5', nm_settings_keyfile_docs],
-    ['nm-settings', '5', nm_settings_docs],
+    ['nm-settings-keyfile', '5', nm_property_infos_xml['keyfile']],
+    ['nm-settings-dbus',    '5', nm_settings_docs_xml['dbus']],
+    ['nm-settings-nmcli',   '5', nm_settings_docs_xml['nmcli']],
   ]
 
   if enable_ifcfg_rh
-    mans += [['nm-settings-ifcfg-rh', '5', nm_settings_ifcfg_rh_docs]]
+    mans += [['nm-settings-ifcfg-rh', '5', nm_property_infos_xml['ifcfg-rh']]]
   endif
 
   foreach man: mans

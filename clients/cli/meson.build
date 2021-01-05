@@ -1,4 +1,6 @@
-name = 'nmcli'
+# SPDX-License-Identifier: LGPL-2.1+
+
+if enable_nmcli
 
 # FIXME: nmcli-completion should be renamed to nmcli
 install_data(
@@ -6,36 +8,65 @@ install_data(
   install_dir: join_paths(nm_datadir, 'bash-completion', 'completions'),
 )
 
-sources = files(
-  'agent.c',
-  'common.c',
-  'connections.c',
-  'devices.c',
-  'general.c',
-  'nmcli.c',
-  'polkit-agent.c',
-  'settings.c',
-  'utils.c',
-)
-
-deps = [
-  libnmc_base_dep,
-  libnmc_dep,
-  readline_dep,
-]
-
-if enable_polkit_agent
-  sources += nm_polkit_listener
-
-  deps += polkit_agent_dep
-endif
-
 executable(
-  name,
-  sources,
-  dependencies: deps,
-  c_args: clients_c_flags + ['-DG_LOG_DOMAIN="@0@"'.format(name)],
+  'nmcli',
+  files(
+    'agent.c',
+    'common.c',
+    'connections.c',
+    'devices.c',
+    'general.c',
+    'nmcli.c',
+    'polkit-agent.c',
+    'settings.c',
+    'utils.c',
+  ),
+  dependencies: [
+    libnmc_base_dep,
+    libnmc_dep,
+    readline_dep,
+    libnm_libnm_aux_dep,
+  ],
+  c_args: clients_c_flags + ['-DG_LOG_DOMAIN="@0@"'.format('nmcli')],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true,
 )
+
+endif
+
+generate_docs_nm_settings_nmcli = executable(
+  'generate-docs-nm-settings-nmcli',
+  files(
+    'generate-docs-nm-settings-nmcli.c',
+  ),
+  dependencies: [
+    libnmc_base_dep,
+    libnmc_dep,
+    libnm_libnm_aux_dep,
+  ],
+  c_args: clients_c_flags + ['-DG_LOG_DOMAIN="@0@"'.format('nmcli')],
+  link_args: ldflags_linker_script_binary,
+  link_depends: linker_script_binary,
+)
+
+if enable_docs
+  generate_docs_nm_settings_nmcli_xml = custom_target(
+    'generate-docs-nm-settings-nmcli.xml',
+    output: 'generate-docs-nm-settings-nmcli.xml',
+    command: [ generate_docs_nm_settings_nmcli ],
+    capture: true,
+  )
+
+  test(
+    'check-local-generate-docs-nm-settings-nmcli',
+    find_program(join_paths(source_root, 'tools', 'check-compare-generated.sh')),
+    args: [source_root, build_root, 'clients/cli/generate-docs-nm-settings-nmcli.xml'],
+  )
+else
+  settings_docs_source = configure_file(
+    input: 'generate-docs-nm-settings-nmcli.xml.in',
+    output: '@BASENAME@',
+    configuration: configuration_data(),
+  )
+endif

@@ -1,4 +1,4 @@
-BONDING_OPTS="downdelay=5 miimon=100 mode=balance-rr updelay=10"
+BONDING_OPTS="mode=balance-rr downdelay=5 miimon=100 updelay=10"
 TYPE=Bond
 BONDING_MASTER=yes
 HWADDR=

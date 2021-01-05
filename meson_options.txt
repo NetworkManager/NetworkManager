@@ -14,6 +14,7 @@ option('session_tracking_consolekit', type: 'boolean', value: true, description:
 option('session_tracking', type: 'combo', choices: ['systemd', 'elogind', 'no'], value: 'systemd', description: 'Compatibility option to choose one session tracking module')
 option('suspend_resume', type: 'combo', choices: ['upower', 'systemd', 'elogind', 'consolekit', 'auto'], value: 'auto', description: 'Build NetworkManager with specific suspend/resume support')
 option('polkit', type: 'boolean', value: true, description: 'User auth-polkit configuration option.')
+option('config_auth_polkit_default', type: 'combo', choices: ['default', 'true', 'false', 'root-only'], value: 'default', description: 'Default value for configuration main.auth-polkit.')
 option('modify_system', type: 'boolean', value: false, description: 'Allow users to modify system connections')
 option('polkit_agent', type: 'boolean', value: false, description: 'enable polkit agent for clients')
 option('selinux', type: 'boolean', value: true, description: 'Build with SELinux')
@@ -36,6 +37,7 @@ option('teamdctl', type: 'boolean', value: false, description: 'enable Teamd con
 option('ovs', type: 'boolean', value: true, description: 'enable Open vSwitch support')
 option('nmcli', type: 'boolean', value: true, description: 'Build nmcli')
 option('nmtui', type: 'boolean', value: true, description: 'Build nmtui')
+option('nm_cloud_setup', type: 'boolean', value: false, description: 'Build nm-cloud-setup, a tool for automatically configure networking in cloud (EXPERIMENTAL!)')
 option('bluez5_dun', type: 'boolean', value: false, description: 'enable Bluez5 DUN support')
 option('ebpf', type: 'combo', choices : ['auto', 'true', 'false'], description: 'Enable eBPF support')
 
@@ -47,7 +49,7 @@ option('ifupdown', type: 'boolean', value: false, description: 'enable ifupdown 
 # handlers for resolv.conf
 option('resolvconf', type: 'string', value: '', description: 'Enable resolvconf support')
 option('netconfig', type: 'string', value: '', description: 'Enable SUSE netconfig support')
-option('config_dns_rc_manager_default', type: 'combo', choices: ['symlink', 'file', 'netconfig', 'resolvconf'], value: 'symlink', description: 'Configure default value for main.rc-manager setting')
+option('config_dns_rc_manager_default', type: 'combo', choices: ['auto', 'symlink', 'file', 'netconfig', 'resolvconf'], value: 'auto', description: 'Configure default value for main.rc-manager setting')
 
 # dhcp clients
 option('dhclient', type: 'string', value: '', description: 'Enable dhclient support')
@@ -60,12 +62,12 @@ option('introspection', type: 'boolean', value: true, description: 'Enable intro
 option('vapi', type : 'combo', choices : ['auto', 'true', 'false'], description: 'build Vala bindings')
 option('docs', type: 'boolean', value: false, description: 'use to build documentation')
 option('tests', type: 'combo', choices: ['yes', 'no', 'root'], value: 'yes', description: 'Build NetworkManager tests')
-option('more_asserts', type: 'string', value: 'all', description: 'Enable more assertions for debugging (0 = none, 100 = all, default: all)')
+option('firewalld_zone', type: 'boolean', value: true, description: 'Install and use firewalld zone for shared mode')
+option('more_asserts', type: 'string', value: 'auto', description: 'Enable more assertions for debugging (0 = no, 100 = all, default: auto)')
 option('more_logging', type: 'boolean', value: true, description: 'Enable more debug logging')
 option('valgrind', type: 'array', value: ['no'], description: 'Use valgrind to memory-check the tests')
 option('valgrind_suppressions', type: 'string', value: '', description: 'Use specific valgrind suppression file')
 option('ld_gc', type: 'boolean', value: true, description: 'Enable garbage collection of unused symbols on linking')
 option('libpsl', type: 'boolean', value: true, description: 'Link against libpsl')
-option('json_validation', type: 'boolean', value: true, description: 'Enable JSON validation in libnm')
 option('crypto', type: 'combo', choices: ['nss', 'gnutls'], value: 'nss', description: 'Cryptography library to use for certificate and key operations')
 option('qt', type: 'boolean', value: true, description: 'enable Qt examples')

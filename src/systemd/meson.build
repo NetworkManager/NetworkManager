@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 sources = files(
   'src/libsystemd-network/arp-util.c',
   'src/libsystemd-network/dhcp-identifier.c',

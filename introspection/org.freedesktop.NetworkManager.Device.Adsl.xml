@@ -21,6 +21,9 @@
         Carrier:
 
         Indicates whether the physical carrier is found.
+
+        DEPRECATED: check for the "carrier" flag in the "InterfaceFlags"
+        property on the "org.freedesktop.NetworkManager.Device" interface.
     -->
     <property name="Carrier" type="b" access="read"/>
   </interface>

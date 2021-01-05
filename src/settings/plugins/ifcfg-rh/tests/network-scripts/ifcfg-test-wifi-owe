@@ -1,0 +1,5 @@
+TYPE=Wireless
+DEVICE=wlan1
+ESSID=blahblah_owe
+MODE=Managed
+KEY_MGMT=OWE

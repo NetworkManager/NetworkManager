@@ -244,7 +244,7 @@ int packet_sendto_udp(int sockfd,
  * @buf:                buffor for payload
  * @n_buf:              max length of payload in bytes
  * @n_transmittedp:     output argument for number transmitted bytes
- * @src:                return argumnet for source address, or NULL, see ip(7)
+ * @src:                return argument for source address, or NULL, see ip(7)
  *
  * Receives an UDP packet on a AF_PACKET socket. The difference between
  * this and recvfrom() on an AF_INET socket is that the packet will be
@@ -293,6 +293,8 @@ int packet_recvfrom_udp(int sockfd,
         ssize_t pktlen;
         size_t hdrlen;
 
+        *n_transmittedp = 0;
+
         /* Peek packet to obtain the real IP header length */
         pktlen = recv(sockfd, &ip_hdr.hdr, sizeof(ip_hdr.hdr), MSG_PEEK);
         if (pktlen < 0)
@@ -304,7 +306,6 @@ int packet_recvfrom_udp(int sockfd,
                  * discard it.
                  */
                 recv(sockfd, NULL, 0, 0);
-                *n_transmittedp = 0;
                 return 0;
         }
 
@@ -313,7 +314,6 @@ int packet_recvfrom_udp(int sockfd,
                  * This is not an IPv4 packet, discard it.
                  */
                 recv(sockfd, NULL, 0, 0);
-                *n_transmittedp = 0;
                 return 0;
         }
 
@@ -324,7 +324,6 @@ int packet_recvfrom_udp(int sockfd,
                  * header length, discard the packet.
                  */
                 recv(sockfd, NULL, 0, 0);
-                *n_transmittedp = 0;
                 return 0;
         }
 
@@ -354,7 +353,6 @@ int packet_recvfrom_udp(int sockfd,
                  * provided too small a buffer. In both cases, we simply drop
                  * the packet.
                  */
-                *n_transmittedp = 0;
                 return 0;
         }
 
@@ -366,14 +364,12 @@ int packet_recvfrom_udp(int sockfd,
                  * The packet is too small to even contain an entire UDP
                  * header, so discard it entirely.
                  */
-                *n_transmittedp = 0;
                 return 0;
         } else if ((size_t)pktlen < hdrlen + ntohs(udp_hdr.len)) {
                 /*
                  * The UDP header specified a longer length than the returned
                  * packet, so discard it entirely.
                  */
-                *n_transmittedp = 0;
                 return 0;
         }
 
@@ -386,13 +382,10 @@ int packet_recvfrom_udp(int sockfd,
         /* IP */
 
         if (ip_hdr.hdr.protocol != IPPROTO_UDP) {
-                *n_transmittedp = 0;
                 return 0; /* not a UDP packet, discard it */
         } else if (ip_hdr.hdr.frag_off & htons(IP_MF | IP_OFFMASK)) {
-                *n_transmittedp = 0;
                 return 0; /* fragmented packet, discard it */
         } else if (checksum && packet_internet_checksum(ip_hdr.data, hdrlen)) {
-                *n_transmittedp = 0;
                 return 0; /* invalid checksum, discard it */
         }
 
@@ -411,7 +404,6 @@ int packet_recvfrom_udp(int sockfd,
                                                 buf,
                                                 pktlen,
                                                 udp_hdr.check)) {
-                        *n_transmittedp = 0;
                         return 0;
                }
         }

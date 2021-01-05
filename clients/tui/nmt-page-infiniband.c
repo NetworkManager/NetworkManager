@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0+
+/* SPDX-License-Identifier: GPL-2.0+ */
 /*
  * Copyright (C) 2013 Red Hat, Inc.
  */
@@ -13,82 +13,84 @@
 #include "nmt-page-infiniband.h"
 #include "nmt-mtu-entry.h"
 
-G_DEFINE_TYPE (NmtPageInfiniband, nmt_page_infiniband, NMT_TYPE_EDITOR_PAGE_DEVICE)
+G_DEFINE_TYPE(NmtPageInfiniband, nmt_page_infiniband, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
 NmtEditorPage *
-nmt_page_infiniband_new (NMConnection   *conn,
-                         NmtDeviceEntry *deventry)
+nmt_page_infiniband_new(NMConnection *conn, NmtDeviceEntry *deventry)
 {
-	return g_object_new (NMT_TYPE_PAGE_INFINIBAND,
-	                     "connection", conn,
-	                     "device-entry", deventry,
-	                     NULL);
+    return g_object_new(NMT_TYPE_PAGE_INFINIBAND,
+                        "connection",
+                        conn,
+                        "device-entry",
+                        deventry,
+                        NULL);
 }
 
 static void
-nmt_page_infiniband_init (NmtPageInfiniband *infiniband)
-{
-}
+nmt_page_infiniband_init(NmtPageInfiniband *infiniband)
+{}
 
-static NmtNewtPopupEntry transport_mode[] = {
-	{ N_("Datagram"),  "datagram" },
-	{ N_("Connected"), "connected" },
-	{ NULL, NULL }
-};
+static NmtNewtPopupEntry transport_mode[] = {{N_("Datagram"), "datagram"},
+                                             {N_("Connected"), "connected"},
+                                             {NULL, NULL}};
 
 static void
-nmt_page_infiniband_constructed (GObject *object)
+nmt_page_infiniband_constructed(GObject *object)
 {
-	NmtPageInfiniband *infiniband = NMT_PAGE_INFINIBAND (object);
-	NmtDeviceEntry *deventry;
-	NmtEditorSection *section;
-	NmtEditorGrid *grid;
-	NMSettingInfiniband *s_ib;
-	NmtNewtWidget *widget;
-	NMConnection *conn;
+    NmtPageInfiniband *  infiniband = NMT_PAGE_INFINIBAND(object);
+    NmtDeviceEntry *     deventry;
+    NmtEditorSection *   section;
+    NmtEditorGrid *      grid;
+    NMSettingInfiniband *s_ib;
+    NmtNewtWidget *      widget;
+    NMConnection *       conn;
 
-	conn = nmt_editor_page_get_connection (NMT_EDITOR_PAGE (infiniband));
-	s_ib = nm_connection_get_setting_infiniband (conn);
-	if (!s_ib) {
-		nm_connection_add_setting (conn, nm_setting_infiniband_new ());
-		s_ib = nm_connection_get_setting_infiniband (conn);
-	}
-	/* initialize 'transport-mode' if it is NULL */
-	if (!nm_setting_infiniband_get_transport_mode (s_ib)) {
-		g_object_set (G_OBJECT (s_ib),
-		              NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram",
-		              NULL);
-	}
+    conn = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(infiniband));
+    s_ib = nm_connection_get_setting_infiniband(conn);
+    if (!s_ib) {
+        nm_connection_add_setting(conn, nm_setting_infiniband_new());
+        s_ib = nm_connection_get_setting_infiniband(conn);
+    }
+    /* initialize 'transport-mode' if it is NULL */
+    if (!nm_setting_infiniband_get_transport_mode(s_ib)) {
+        g_object_set(G_OBJECT(s_ib), NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram", NULL);
+    }
 
-	deventry = nmt_editor_page_device_get_device_entry (NMT_EDITOR_PAGE_DEVICE (object));
-	g_object_bind_property (s_ib, NM_SETTING_INFINIBAND_MAC_ADDRESS,
-	                        deventry, "mac-address",
-	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+    deventry = nmt_editor_page_device_get_device_entry(NMT_EDITOR_PAGE_DEVICE(object));
+    g_object_bind_property(s_ib,
+                           NM_SETTING_INFINIBAND_MAC_ADDRESS,
+                           deventry,
+                           "mac-address",
+                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
 
-	section = nmt_editor_section_new (_("INFINIBAND"), NULL, TRUE);
-	grid = nmt_editor_section_get_body (section);
+    section = nmt_editor_section_new(_("INFINIBAND"), NULL, TRUE);
+    grid    = nmt_editor_section_get_body(section);
 
-	widget = nmt_newt_popup_new (transport_mode);
-	g_object_bind_property (s_ib, NM_SETTING_INFINIBAND_TRANSPORT_MODE,
-	                        widget, "active-id",
-	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_editor_grid_append (grid, _("Transport mode"), widget, NULL);
+    widget = nmt_newt_popup_new(transport_mode);
+    g_object_bind_property(s_ib,
+                           NM_SETTING_INFINIBAND_TRANSPORT_MODE,
+                           widget,
+                           "active-id",
+                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+    nmt_editor_grid_append(grid, _("Transport mode"), widget, NULL);
 
-	widget = nmt_mtu_entry_new ();
-	g_object_bind_property (s_ib, NM_SETTING_INFINIBAND_MTU,
-	                        widget, "mtu",
-	                        G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
-	nmt_editor_grid_append (grid, _("MTU"), widget, NULL);
+    widget = nmt_mtu_entry_new();
+    g_object_bind_property(s_ib,
+                           NM_SETTING_INFINIBAND_MTU,
+                           widget,
+                           "mtu",
+                           G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);
+    nmt_editor_grid_append(grid, _("MTU"), widget, NULL);
 
-	nmt_editor_page_add_section (NMT_EDITOR_PAGE (infiniband), section);
+    nmt_editor_page_add_section(NMT_EDITOR_PAGE(infiniband), section);
 
-	G_OBJECT_CLASS (nmt_page_infiniband_parent_class)->constructed (object);
+    G_OBJECT_CLASS(nmt_page_infiniband_parent_class)->constructed(object);
 }
 
 static void
-nmt_page_infiniband_class_init (NmtPageInfinibandClass *infiniband_class)
+nmt_page_infiniband_class_init(NmtPageInfinibandClass *infiniband_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (infiniband_class);
+    GObjectClass *object_class = G_OBJECT_CLASS(infiniband_class);
 
-	object_class->constructed = nmt_page_infiniband_constructed;
+    object_class->constructed = nmt_page_infiniband_constructed;
 }

@@ -1636,10 +1636,151 @@ global:
 
 libnm_1_22_0 {
 global:
+	nm_client_get_context_busy_watcher;
 	nm_client_get_dbus_connection;
 	nm_client_get_dbus_name_owner;
+	nm_client_get_main_context;
+	nm_client_get_metered;
 	nm_client_reload;
 	nm_client_reload_finish;
+	nm_device_get_interface_flags;
+	nm_device_interface_flags_get_type;
+	nm_dhcp_hostname_flags_get_type;
+	nm_ip_address_cmp_flags_get_type;
+	nm_ip_address_cmp_full;
 	nm_manager_reload_flags_get_type;
 	nm_setting_gsm_get_auto_config;
+	nm_setting_ip_config_get_dhcp_hostname_flags;
 } libnm_1_20_0;
+
+libnm_1_22_2 {
+global:
+	nm_client_get_capabilities;
+} libnm_1_22_0;
+
+libnm_1_22_8 {
+global:
+	nm_setting_ip6_config_get_ra_timeout;
+} libnm_1_22_2;
+
+libnm_1_24_0 {
+global:
+	nm_client_dbus_call;
+	nm_client_dbus_call_finish;
+	nm_client_dbus_set_property;
+	nm_client_dbus_set_property_finish;
+	nm_client_get_instance_flags;
+	nm_client_get_object_by_path;
+	nm_client_get_permissions_state;
+	nm_client_instance_flags_get_type;
+	nm_device_vrf_get_table;
+	nm_device_vrf_get_type;
+	nm_object_get_client;
+	nm_secret_agent_old_destroy;
+	nm_secret_agent_old_enable;
+	nm_secret_agent_old_get_context_busy_watcher;
+	nm_secret_agent_old_get_dbus_connection;
+	nm_secret_agent_old_get_dbus_name_owner;
+	nm_secret_agent_old_get_main_context;
+	nm_setting_802_1x_get_domain_match;
+	nm_setting_802_1x_get_phase2_domain_match;
+	nm_setting_bond_get_option_normalized;
+	nm_setting_bridge_get_group_address;
+	nm_setting_bridge_get_multicast_querier;
+	nm_setting_bridge_get_multicast_query_use_ifaddr;
+	nm_setting_bridge_get_multicast_router;
+	nm_setting_bridge_get_vlan_protocol;
+	nm_setting_bridge_get_vlan_stats_enabled;
+	nm_setting_vrf_get_table;
+	nm_setting_vrf_get_type;
+	nm_setting_vrf_new;
+} libnm_1_22_8;
+
+libnm_1_26_0 {
+global:
+	nm_device_get_path;
+	nm_ethtool_optname_is_coalesce;
+	nm_ethtool_optname_is_ring;
+	nm_setting_bridge_get_multicast_hash_max;
+	nm_setting_bridge_get_multicast_last_member_count;
+	nm_setting_bridge_get_multicast_last_member_interval;
+	nm_setting_bridge_get_multicast_membership_interval;
+	nm_setting_bridge_get_multicast_querier_interval;
+	nm_setting_bridge_get_multicast_query_interval;
+	nm_setting_bridge_get_multicast_query_response_interval;
+	nm_setting_bridge_get_multicast_startup_query_count;
+	nm_setting_bridge_get_multicast_startup_query_interval;
+	nm_setting_connection_get_mud_url;
+	nm_setting_match_add_driver;
+	nm_setting_match_add_kernel_command_line;
+	nm_setting_match_add_path;
+	nm_setting_match_clear_drivers;
+	nm_setting_match_clear_kernel_command_lines;
+	nm_setting_match_clear_paths;
+	nm_setting_match_get_driver;
+	nm_setting_match_get_drivers;
+	nm_setting_match_get_kernel_command_line;
+	nm_setting_match_get_kernel_command_lines;
+	nm_setting_match_get_num_drivers;
+	nm_setting_match_get_num_kernel_command_lines;
+	nm_setting_match_get_num_paths;
+	nm_setting_match_get_path;
+	nm_setting_match_get_paths;
+	nm_setting_match_remove_driver;
+	nm_setting_match_remove_driver_by_value;
+	nm_setting_match_remove_kernel_command_line;
+	nm_setting_match_remove_kernel_command_line_by_value;
+	nm_setting_match_remove_path;
+	nm_setting_match_remove_path_by_value;
+	nm_setting_option_clear_by_name;
+	nm_setting_option_get;
+	nm_setting_option_get_all_names;
+	nm_setting_option_get_boolean;
+	nm_setting_option_get_uint32;
+	nm_setting_option_set;
+	nm_setting_option_set_boolean;
+	nm_setting_option_set_uint32;
+} libnm_1_24_0;
+
+libnm_1_26_4 {
+global:
+	nm_setting_ip4_config_get_dhcp_vendor_class_identifier;
+} libnm_1_26_0;
+
+libnm_1_28_0 {
+global:
+	nm_setting_ip_config_add_dhcp_reject_server;
+	nm_setting_ip_config_clear_dhcp_reject_servers;
+	nm_setting_ip_config_get_dhcp_reject_servers;
+	nm_setting_ip_config_remove_dhcp_reject_server;
+	nm_setting_wireless_get_ap_isolation;
+} libnm_1_26_4;
+
+libnm_1_30_0 {
+global:
+	nm_device_veth_get_type;
+	nm_keyfile_handler_data_fail_with_error;
+	nm_keyfile_handler_data_get_context;
+	nm_keyfile_handler_data_warn_get;
+	nm_keyfile_handler_flags_get_type;
+	nm_keyfile_handler_type_get_type;
+	nm_keyfile_read;
+	nm_keyfile_warn_severity_get_type;
+	nm_keyfile_write;
+	nm_setting_hostname_get_from_dhcp;
+	nm_setting_hostname_get_from_dns_lookup;
+	nm_setting_hostname_get_only_from_default;
+	nm_setting_hostname_get_priority;
+	nm_setting_hostname_get_type;
+	nm_setting_ovs_external_ids_check_key;
+	nm_setting_ovs_external_ids_check_val;
+	nm_setting_ovs_external_ids_get_data;
+	nm_setting_ovs_external_ids_get_data_keys;
+	nm_setting_ovs_external_ids_get_type;
+	nm_setting_ovs_external_ids_new;
+	nm_setting_ovs_external_ids_set_data;
+	nm_setting_veth_get_peer;
+	nm_setting_veth_get_type;
+	nm_setting_veth_new;
+	nm_utils_print;
+} libnm_1_28_0;

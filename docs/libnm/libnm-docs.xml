@@ -235,7 +235,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
             <listitem>
               <para>
                 Instead of calling g_dbus_connection_call_sync(), use the
-                asynchronous g_dbus_connection_call(). If we would use a sepaate
+                asynchronous g_dbus_connection_call(). If we would use a separate
                 GMainContext for all D-Bus related calls, we could ensure that
                 while we block for the response, we iterate the internal main context.
                 This might be nice, because all events are processed in order and
@@ -324,6 +324,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-ethtool.xml"/>
     <xi:include href="xml/nm-setting-generic.xml"/>
     <xi:include href="xml/nm-setting-gsm.xml"/>
+    <xi:include href="xml/nm-setting-hostname.xml"/>
     <xi:include href="xml/nm-setting-infiniband.xml"/>
     <xi:include href="xml/nm-setting-ip4-config.xml"/>
     <xi:include href="xml/nm-setting-ip6-config.xml"/>
@@ -338,6 +339,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-ovs-dpdk.xml"/>
     <xi:include href="xml/nm-setting-ovs-patch.xml"/>
     <xi:include href="xml/nm-setting-ovs-port.xml"/>
+    <xi:include href="xml/nm-setting-ovs-external-ids.xml"/>
     <xi:include href="xml/nm-setting-ppp.xml"/>
     <xi:include href="xml/nm-setting-pppoe.xml"/>
     <xi:include href="xml/nm-setting-proxy.xml"/>
@@ -348,8 +350,10 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-team.xml"/>
     <xi:include href="xml/nm-setting-tun.xml"/>
     <xi:include href="xml/nm-setting-user.xml"/>
+    <xi:include href="xml/nm-setting-veth.xml"/>
     <xi:include href="xml/nm-setting-vlan.xml"/>
     <xi:include href="xml/nm-setting-vpn.xml"/>
+    <xi:include href="xml/nm-setting-vrf.xml"/>
     <xi:include href="xml/nm-setting-vxlan.xml"/>
     <xi:include href="xml/nm-setting-wifi-p2p.xml"/>
     <xi:include href="xml/nm-setting-wimax.xml"/>
@@ -385,7 +389,9 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-device-ppp.xml"/>
     <xi:include href="xml/nm-device-team.xml"/>
     <xi:include href="xml/nm-device-tun.xml"/>
+    <xi:include href="xml/nm-device-veth.xml"/>
     <xi:include href="xml/nm-device-vlan.xml"/>
+    <xi:include href="xml/nm-device-vrf.xml"/>
     <xi:include href="xml/nm-device-vxlan.xml"/>
     <xi:include href="xml/nm-device-wifi-p2p.xml"/>
     <xi:include href="xml/nm-device-wifi.xml"/>

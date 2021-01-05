@@ -16,7 +16,9 @@ if len(sys.argv) != 2:
 bus = dbus.SystemBus()
 
 # Get a proxy for the base NetworkManager object
-proxy = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager")
+proxy = bus.get_object(
+    "org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager"
+)
 manager = dbus.Interface(proxy, "org.freedesktop.NetworkManager")
 
 dpath = None
@@ -45,4 +47,3 @@ if state <= 3:
 
 # Tell NM to disconnect it
 dev_iface.Disconnect()
-

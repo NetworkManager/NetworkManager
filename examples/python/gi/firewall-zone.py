@@ -6,7 +6,8 @@
 
 import sys
 import gi
-gi.require_version('NM', '1.0')
+
+gi.require_version("NM", "1.0")
 from gi.repository import GLib, NM
 
 #
@@ -26,13 +27,15 @@ from gi.repository import GLib, NM
 
 main_loop = None
 
+
 def connection_saved(connection, error, data):
-    print ("Connection '%s' saved.") % (connection.get_id())
+    print("Connection '%s' saved.") % (connection.get_id())
     main_loop.quit()
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2 and len(sys.argv) != 3:
-        sys.exit('Usage: %s <connection name or UUID> [new zone]' % sys.argv[0])
+        sys.exit("Usage: %s <connection name or UUID> [new zone]" % sys.argv[0])
 
     main_loop = GLib.MainLoop()
     client = NM.Client.new(None)

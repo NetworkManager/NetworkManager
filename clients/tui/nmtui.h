@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0+
+/* SPDX-License-Identifier: GPL-2.0+ */
 /*
  * Copyright (C) 2013 Red Hat, Inc.
  */
@@ -8,6 +8,6 @@
 
 extern NMClient *nm_client;
 
-void nmtui_quit (void);
+void nmtui_quit(void);
 
 #endif /* NMTUI_H */

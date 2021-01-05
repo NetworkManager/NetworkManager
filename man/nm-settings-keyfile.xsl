@@ -12,7 +12,7 @@
       doctype-system="http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd"
       />
 
-  <xsl:template match="nm-keyfile-docs">
+  <xsl:template match="nm-setting-docs">
     <refentry id="nm-settings-keyfile">
       <refentryinfo>
         <title>nm-settings-keyfile</title>
@@ -40,12 +40,14 @@
         </para>
         <para>
           The <emphasis>keyfile</emphasis> plugin is the generic plugin that supports all
-          the connection types and capabilities that NetworkManager has. It writes files
-          out in a .ini-style format in <filename>/etc/NetworkManager/system-connections/</filename>.
+          the connection types and capabilities that NetworkManager has. The files are
+          in a .ini-style format and located in <filename>/etc/NetworkManager/system-connections/</filename>,
+          <filename>/usr/lib/NetworkManager/system-connections/</filename> and
+          <filename>/run/NetworkManager/system-connections/</filename>.
           This plugin is always enabled and will automatically be used to store
           any connections that are not supported by any other active plugin.
           For security, it will ignore files that are readable or writable by any user
-          or group other than 'root' since private keys and passphrases may be stored
+          other than 'root' since private keys and passphrases may be stored
           in plaintext inside the file.
         </para>
       </refsect1>
@@ -72,9 +74,7 @@
           Users can create or modify the <emphasis>keyfile</emphasis> connection files
           manually, even if that is not the recommended way of managing the profiles.
           However, if they choose to do that, they must inform NetworkManager about
-          their changes (see <emphasis>monitor-connection-file</emphasis> in
-          <citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum>
-          </citerefentry> and <emphasis>nmcli con (re)load</emphasis>).
+          their changes (for example via <emphasis>nmcli con (re)load</emphasis>).
         </para>
         <formalpara>
           <title>Examples of <emphasis>keyfile</emphasis> configuration</title>

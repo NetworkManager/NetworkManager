@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 shared_inc = include_directories('.')
 
 nm_default_dep = declare_dependency(include_directories: [top_inc, shared_inc])
@@ -99,22 +101,11 @@ libn_dhcp4_dep = declare_dependency(
   link_with: libn_dhcp4,
 )
 
-nm_version_macro_conf = configuration_data()
-nm_version_macro_conf.set('NM_MAJOR_VERSION', nm_major_version)
-nm_version_macro_conf.set('NM_MINOR_VERSION', nm_minor_version)
-nm_version_macro_conf.set('NM_MICRO_VERSION', nm_micro_version)
-
 nm_version_macro_header = configure_file(
   input: 'nm-version-macros.h.in',
   output: '@BASENAME@',
-  configuration: nm_version_macro_conf,
+  configuration: data_conf,
 )
-
-nm_ethtool_utils_source = files('nm-libnm-core-intern/nm-ethtool-utils.c')
-
-nm_libnm_core_aux_source = files('nm-libnm-core-aux/nm-libnm-core-aux.c')
-
-nm_libnm_core_utils_source = files('nm-libnm-core-intern/nm-libnm-core-utils.c')
 
 nm_meta_setting_source = files('nm-meta-setting.c')
 
@@ -122,15 +113,17 @@ nm_test_utils_impl_source = files('nm-test-utils-impl.c')
 
 nm_vpn_plugin_utils_source = files('nm-utils/nm-vpn-plugin-utils.c')
 
-c_flags = [
-  '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-  '-DNETWORKMANAGER_COMPILATION=0',
-]
-
 libnm_std_aux = static_library(
   'nm-std-aux',
-  sources: 'nm-std-aux/c-list-util.c',
-  c_args: c_flags,
+  sources: [
+    'nm-std-aux/c-list-util.c',
+    'nm-std-aux/nm-std-utils.c',
+  ],
+  include_directories: top_inc,
+  c_args: [
+    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
+    '-DNETWORKMANAGER_COMPILATION=0',
+  ],
 )
 
 sources = files(
@@ -142,11 +135,12 @@ sources = files(
   'nm-glib-aux/nm-io-utils.c',
   'nm-glib-aux/nm-json-aux.c',
   'nm-glib-aux/nm-keyfile-aux.c',
+  'nm-glib-aux/nm-logging-base.c',
   'nm-glib-aux/nm-random-utils.c',
   'nm-glib-aux/nm-ref-string.c',
   'nm-glib-aux/nm-secret-utils.c',
   'nm-glib-aux/nm-shared-utils.c',
-  'nm-glib-aux/nm-time-utils.c'
+  'nm-glib-aux/nm-time-utils.c',
 )
 
 c_flags = [
@@ -172,15 +166,14 @@ libnm_utils_base_dep = declare_dependency(
   link_with: libnm_utils_base,
 )
 
-deps = [
-  glib_nm_default_dep,
-  libudev_dep,
-]
 
 libnm_udev_aux = static_library(
   'nm-udev-aux',
   sources: 'nm-udev-aux/nm-udev-utils.c',
-  dependencies: deps,
+  dependencies: [
+    glib_nm_default_dep,
+    libudev_dep,
+  ],
   c_args: c_flags,
 )
 
@@ -190,10 +183,11 @@ libnm_udev_aux_dep = declare_dependency(
 )
 
 sources = files(
+  'systemd/nm-sd-utils-shared.c',
   'systemd/src/basic/alloc-util.c',
-  'systemd/src/basic/escape.c',
   'systemd/src/basic/env-file.c',
   'systemd/src/basic/env-util.c',
+  'systemd/src/basic/escape.c',
   'systemd/src/basic/ether-addr-util.c',
   'systemd/src/basic/extract-word.c',
   'systemd/src/basic/fd-util.c',
@@ -213,6 +207,8 @@ sources = files(
   'systemd/src/basic/prioq.c',
   'systemd/src/basic/process-util.c',
   'systemd/src/basic/random-util.c',
+  'systemd/src/basic/ratelimit.c',
+  'systemd/src/basic/signal-util.c',
   'systemd/src/basic/socket-util.c',
   'systemd/src/basic/stat-util.c',
   'systemd/src/basic/string-table.c',
@@ -224,7 +220,7 @@ sources = files(
   'systemd/src/basic/utf8.c',
   'systemd/src/basic/util.c',
   'systemd/src/shared/dns-domain.c',
-  'systemd/nm-sd-utils-shared.c',
+  'systemd/src/shared/web-util.c',
 )
 
 incs = include_directories(
@@ -260,5 +256,5 @@ libnm_systemd_logging_stub = static_library(
 )
 
 if enable_tests
-  subdir('nm-utils/tests')
+  subdir('nm-glib-aux/tests')
 endif

@@ -36,8 +36,7 @@ typedef struct CRBTree CRBTree;
 /* implementation detail */
 #define C_RBNODE_RED                    (0x1UL)
 #define C_RBNODE_ROOT                   (0x2UL)
-#define C_RBNODE_UNUSED3                (0x4UL)
-#define C_RBNODE_FLAG_MASK              (0x7UL)
+#define C_RBNODE_FLAG_MASK              (0x3UL)
 
 /**
  * struct CRBNode - Node of a Red-Black Tree
@@ -60,7 +59,11 @@ typedef struct CRBTree CRBTree;
  * C_RBNODE_INIT.
  */
 struct CRBNode {
-        alignas(8) unsigned long __parent_and_flags;
+        union {
+                unsigned long __parent_and_flags;
+                /* enforce >=4-byte alignment for @__parent_and_flags */
+                alignas(4) unsigned char __align_dummy;
+        };
         CRBNode *left;
         CRBNode *right;
 };
@@ -90,7 +93,11 @@ void c_rbnode_unlink_stale(CRBNode *n);
  * To initialize an RB-Tree, set it to NULL / all zero.
  */
 struct CRBTree {
-        alignas(8) CRBNode *root;
+        union {
+                CRBNode *root;
+                /* enforce >=4-byte alignment for @root */
+                alignas(4) unsigned char __align_dummy;
+        };
 };
 
 #define C_RBTREE_INIT {}

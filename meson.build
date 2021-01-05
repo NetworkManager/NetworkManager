@@ -1,16 +1,18 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 project(
   'NetworkManager', 'c',
 # NOTE: When incrementing version also:
 #  - add corresponding NM_VERSION_x_y_z macros in
 #    "shared/nm-version-macros.h.in"
 #  - update number in configure.ac
-  version: '1.21.3',
+  version: '1.29.7',
   license: 'GPL2+',
   default_options: [
     'buildtype=debugoptimized',
     'c_std=gnu11',
   ],
-  meson_version: '>= 0.44.0',
+  meson_version: '>= 0.47.2',
 )
 
 nm_name = meson.project_name()
@@ -54,6 +56,8 @@ nm_pkgstatedir = join_paths(nm_localstatedir, 'lib', nm_name)
 nm_vpndir = join_paths(nm_libdir, nm_name)
 nm_plugindir = join_paths(nm_libdir, nm_name, dist_version)
 
+introspection_extra_cflags = ['-Wno-incompatible-pointer-types-discards-qualifiers']
+
 libnm_name = 'libnm'
 
 current = 1
@@ -62,8 +66,6 @@ age = 1
 libnm_version = '@0@.@1@.@2@'.format(current - age, age, revision)
 
 libnm_pkgincludedir = join_paths(nm_includedir, libnm_name)
-
-nm_debug = get_option('buildtype').contains('debug')
 
 gnome = import('gnome')
 i18n = import('i18n')
@@ -110,11 +112,22 @@ use_sys_random = cc.has_function('getrandom', prefix: '#include <sys/random.h>')
 config_h.set10('USE_SYS_RANDOM_H', use_sys_random)
 config_h.set10('HAVE_GETRANDOM', use_sys_random or cc.has_function('getrandom', prefix: '#include <linux/random.h>'))
 
-# functions
-# FIXME secure_getenv check is not useful?
+config_h.set10('HAVE_PIDFD_OPEN', cc.has_function('pidfd_open', prefix: '''#include <stdlib.h>
+                                                                           #include <unistd.h>
+                                                                           #include <signal.h>
+                                                                           #include <sys/wait.h>'''))
+config_h.set10('HAVE_PIDFD_SEND_SIGNAL', cc.has_function('pidfd_send_signal', prefix: '''#include <stdlib.h>
+                                                                                         #include <unistd.h>
+                                                                                         #include <signal.h>
+                                                                                         #include <sys/wait.h>'''))
+config_h.set10('HAVE_RT_SIGQUEUEINFO', cc.has_function('rt_sigqueueinfo', prefix: '''#include <stdlib.h>
+                                                                                     #include <unistd.h>
+                                                                                     #include <signal.h>
+                                                                                     #include <sys/wait.h>'''))
 config_h.set('HAVE_SECURE_GETENV', cc.has_function('secure_getenv'))
 config_h.set('HAVE___SECURE_GETENV', cc.has_function('__secure_getenv'))
-config_h.set10('HAVE_DECL_REALLOCARRAY', cc.has_function('reallocarray', prefix: '#include <malloc.h>'))
+config_h.set10('HAVE_DECL_REALLOCARRAY', cc.has_function('reallocarray', prefix: '''#include <malloc.h>
+                                                                                    #include <stdlib.h>'''))
 config_h.set10('HAVE_DECL_EXPLICIT_BZERO', cc.has_function('explicit_bzero', prefix: '#include <string.h>'))
 config_h.set10('HAVE_DECL_MEMFD_CREATE', cc.has_function('memfd_create', prefix: '#include <sys/mman.h>'))
 
@@ -126,10 +139,6 @@ config_h.set('SIZEOF_DEV_T', cc.sizeof('dev_t', prefix : '#include <sys/types.h>
 config_h.set('SIZEOF_INO_T', cc.sizeof('ino_t', prefix : '#include <sys/types.h>'))
 config_h.set('SIZEOF_TIME_T', cc.sizeof('time_t', prefix : '#include <sys/time.h>'))
 config_h.set('SIZEOF_RLIM_T', cc.sizeof('rlim_t', prefix : '#include <sys/resource.h>'))
-
-if not cc.has_type('pid_t', prefix: '#include <sys/types.h>')
-  config_h.set('pid_t', 'int')
-endif
 
 # compiler flags
 common_flags = []
@@ -144,8 +153,12 @@ if enable_ld_gc
 
   test_ldflags = ['-Wl,--gc-sections']
 
-  foreach cflag: test_c_flags + test_ldflags
+  foreach cflag: test_c_flags
     assert(cc.has_argument(cflag), 'Unused symbol eviction requested but not supported. Use -Dld_gc=false to build without it.')
+  endforeach
+
+  foreach ldflag: test_ldflags
+    assert(cc.has_link_argument(ldflag), 'Linker garbage collection requested but not supported. Use -Dld_gc=false to build without it.')
   endforeach
 
   common_flags += test_c_flags
@@ -161,33 +174,64 @@ if enable_lto
   common_ldflags += lto_flag
 endif
 
-if nm_debug
-  common_flags += cc.get_supported_arguments([
-    '-Wdeclaration-after-statement',
-    '-Wfloat-equal',
-    '-Wimplicit-fallthrough',
-    '-Winit-self',
-    '-Wlogical-op',
-    '-Wmissing-declarations',
-    '-Wmissing-include-dirs',
-    '-Wmissing-prototypes',
-    '-Wno-duplicate-decl-specifier',
-    '-Wno-format-truncation',
-    '-Wno-gnu-variable-sized-type-not-at-end',
-    '-Wno-missing-field-initializers',
-    '-Wno-pragmas',
-    '-Wno-sign-compare',
-    '-Wno-unknown-pragmas',
-    '-Wno-unused-parameter',
-    '-Wparentheses-equality',
-    '-Wpointer-arith',
-    '-Wshadow',
-    '-Wstrict-prototypes',
-    '-Wtypedef-redefinition',
-    '-Wundef',
-    '-Wunknown-attributes',
-    '-fno-strict-aliasing',
-  ])
+common_flags += cc.get_supported_arguments([
+  '-Wall',
+  '-Wextra',
+  '-Wdeclaration-after-statement',
+  '-Wfloat-equal',
+  '-Wformat-nonliteral',
+  '-Wformat-security',
+  '-Wimplicit-function-declaration',
+  '-Winit-self',
+  '-Wlogical-op',
+  '-Wmissing-declarations',
+  '-Wmissing-include-dirs',
+  '-Wmissing-prototypes',
+  '-Wpointer-arith',
+  '-Wshadow',
+  '-Wshift-negative-value',
+  '-Wstrict-prototypes',
+  '-Wundef',
+  '-Wvla',
+  '-Wno-duplicate-decl-specifier',
+  '-Wno-format-truncation',
+  '-Wno-format-y2k',
+  '-Wno-gnu-variable-sized-type-not-at-end',
+  '-Wno-missing-field-initializers',
+  '-Wno-pragmas',
+  '-Wno-sign-compare',
+  '-Wno-tautological-constant-out-of-range-compare',
+  '-Wno-unknown-pragmas',
+  '-Wno-unused-parameter',
+  '-Wparentheses-equality',
+  '-Wpointer-arith',
+  '-Wshadow',
+  '-Wstrict-prototypes',
+  '-Wtypedef-redefinition',
+  '-Wundef',
+  '-Wunknown-attributes',
+  '-fno-strict-aliasing',
+])
+
+if cc.has_argument('-Wimplicit-fallthrough')
+  if cc.compiles('''
+                 int main(int argc, char **argv) {
+                     int r = 0;
+                     switch (argc) {
+                     case 0:
+                         r++;
+                         /* fall-through */
+                     case 1:
+                         r++;
+                         break;
+                     }
+                     return r;
+                 }
+                 ''',
+                 args: '-Werror=implicit-fallthrough',
+                 name: '-Werror=implicit-fallthrough')
+    common_flags += '-Wimplicit-fallthrough'
+  endif
 endif
 
 add_project_arguments(common_flags, language: 'c')
@@ -207,9 +251,10 @@ libudev_dep = dependency('libudev', version: '>= 175')
 dbus_dep = dependency('dbus-1', version: '>= 1.1')
 libndp_dep = dependency('libndp')
 
-jansson_dep = dependency('jansson', version: '>= 2.5', required: false)
+jansson_dep = dependency('jansson', version: '>= 2.7', required: false)
 config_h.set10('WITH_JANSSON', jansson_dep.found())
 
+jansson_msg = 'no'
 if jansson_dep.found()
   jansson_libdir = jansson_dep.get_pkgconfig_variable('libdir')
   res = run_command(find_program('eu-readelf', 'readelf'), '-d', join_paths(jansson_libdir, 'libjansson.so'))
@@ -221,6 +266,7 @@ if jansson_dep.found()
   endforeach
   assert(jansson_soname != '', 'Unable to determine Jansson SONAME')
   config_h.set_quoted('JANSSON_SONAME', jansson_soname)
+  jansson_msg = 'yes (soname: ' + jansson_soname + ')'
 endif
 
 libsystemd_dep = dependency('libsystemd', version: '>= 209', required: false)
@@ -451,12 +497,6 @@ if enable_teamdctl
   assert(libteamdctl_dep.found(), 'You must have libteamdctl installed to build. Use -Dteamdctl=false to disable it')
 endif
 
-enable_json_validation = get_option('json_validation')
-if enable_json_validation
-  assert(jansson_dep.found(), 'jansson is needed for team configuration validation. Use -Djson_validation=false to disable it')
-endif
-config_h.set10('WITH_JSON_VALIDATION', enable_json_validation)
-
 # polkit
 enable_polkit = get_option('polkit')
 if enable_polkit
@@ -464,16 +504,20 @@ if enable_polkit
   polkit_gobject_policydir = dependency('polkit-gobject-1').get_pkgconfig_variable('policydir', define_variable: ['prefix', nm_prefix])
 endif
 
-config_default_main_auth_polkit = enable_polkit.to_string()
-config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT', config_default_main_auth_polkit)
+config_auth_polkit_default = get_option('config_auth_polkit_default')
+if config_auth_polkit_default == 'default'
+  config_auth_polkit_default = (enable_polkit ? 'true' : 'false')
+endif
+config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT', config_auth_polkit_default)
 
 enable_modify_system = get_option('modify_system')
 
-enable_polkit_agent = get_option('polkit_agent')
-if enable_polkit_agent
-  polkit_agent_dep = dependency('polkit-agent-1', version: '>= 0.97')
+polkit_agent_dep = dependency('polkit-agent-1', version: '>= 0.97', required : false)
+if polkit_agent_dep.found()
+	config_h.set_quoted('POLKIT_PACKAGE_PREFIX', polkit_agent_dep.get_pkgconfig_variable('prefix'))
+else
+	config_h.set_quoted('POLKIT_PACKAGE_PREFIX', '/usr')
 endif
-config_h.set10('WITH_POLKIT_AGENT', enable_polkit_agent)
 
 
 crypto = get_option('crypto')
@@ -499,6 +543,9 @@ endif
 
 dbus_interfaces_dir = dbus_dep.get_pkgconfig_variable('interfaces_dir',  define_variable: ['datadir', nm_datadir])
 dbus_system_bus_services_dir = dbus_dep.get_pkgconfig_variable('system_bus_services_dir', define_variable: ['datadir', nm_datadir])
+
+enable_firewalld_zone = get_option('firewalld_zone')
+config_h.set10('WITH_FIREWALLD_ZONE', enable_firewalld_zone)
 
 # pppd
 enable_ppp = get_option('ppp')
@@ -595,7 +642,7 @@ foreach prog_name : ['resolvconf', 'netconfig']
       prog = find_program(prog_name,
                           '/usr/' + prog_name,
                           '/usr/sbin/' + prog_name,
-                          '/usr/local/sbin' + prog_name,
+                          '/usr/local/sbin/' + prog_name,
                           required : false)
       if prog.found()
         prog_path = prog.path()
@@ -661,9 +708,10 @@ if enable_libpsl
 endif
 config_h.set10('WITH_LIBPSL', enable_libpsl)
 
+libcurl_dep = dependency('libcurl', version: '>= 7.24.0', required: false)
+
 enable_concheck = get_option('concheck')
 if enable_concheck
-  libcurl_dep = dependency('libcurl', version: '>= 7.24.0', required: false)
   assert(libcurl_dep.found(), 'concheck requires libcurl library. Use -Dconcheck=false to disable it')
 endif
 config_h.set10('WITH_CONCHECK', enable_concheck)
@@ -694,7 +742,21 @@ if enable_nmtui
   assert(newt_dep.found(), 'You must have libnewt installed to build nmtui. Use -Dnmtui=false to disable it')
 endif
 
+enable_nm_cloud_setup = get_option('nm_cloud_setup')
+if enable_nm_cloud_setup
+  assert(libcurl_dep.found(), 'nm-cloud-setup requires libcurl library. Use -Dnm_cloud_setup=false to disable it')
+endif
+
+enable_docs = get_option('docs')
+
 more_asserts = get_option('more_asserts')
+if more_asserts == 'auto'
+  if nm_minor_version % 2 == 0
+    more_asserts = 'no'
+  else
+    more_asserts = 'all'
+  endif
+endif
 if more_asserts == 'no'
   more_asserts = 0
 elif more_asserts == 'all'
@@ -737,6 +799,12 @@ else
   endif
 endif
 
+test(
+  'check-local-gitlab-ci',
+  find_program(join_paths(source_root, 'tools', 'check-gitlab-ci.sh')),
+  args: [source_root],
+)
+
 # Tests, utilities and documentation
 tests = get_option('tests')
 enable_tests = (tests != 'no')
@@ -773,6 +841,27 @@ python = py3.find_python()
 if python.found()
   config_h.set_quoted('TEST_NM_PYTHON', python.path())
 endif
+
+data_conf = configuration_data()
+data_conf.set('DISTRO_NETWORK_SERVICE',                  (enable_ifcfg_rh ? 'network.service' : ''))
+data_conf.set('NM_CONFIG_DEFAULT_LOGGING_AUDIT_TEXT',    config_default_logging_audit)
+data_conf.set('NM_CONFIG_DEFAULT_LOGGING_BACKEND_TEXT',  config_logging_backend_default)
+data_conf.set('NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_TEXT', config_auth_polkit_default)
+data_conf.set('NM_CONFIG_DEFAULT_MAIN_DHCP',             config_dhcp_default)
+data_conf.set('NM_CONFIG_DEFAULT_MAIN_RC_MANAGER',       config_dns_rc_manager_default)
+data_conf.set('NM_MAJOR_VERSION',                        nm_major_version)
+data_conf.set('NM_MICRO_VERSION',                        nm_micro_version)
+data_conf.set('NM_MINOR_VERSION',                        nm_minor_version)
+data_conf.set('NM_MODIFY_SYSTEM_POLICY',                 (enable_modify_system ? 'yes' : 'auth_admin_keep'))
+data_conf.set('NM_VERSION',                              nm_version)
+data_conf.set('VERSION',                                 nm_version)
+data_conf.set('bindir',                                  nm_bindir)
+data_conf.set('libexecdir',                              nm_libexecdir)
+data_conf.set('localstatedir',                           nm_localstatedir)
+data_conf.set('nmrundir',                                nm_pkgrundir)
+data_conf.set('nmstatedir',                              nm_pkgstatedir)
+data_conf.set('sbindir',                                 nm_sbindir)
+data_conf.set('sysconfdir',                              nm_sysconfdir)
 
 # check if we can build setting property documentation
 '''
@@ -835,8 +924,6 @@ if enable_qt
   subdir('examples/C/qt')
 endif
 
-enable_docs = get_option('docs')
-
 if enable_docs
   assert(enable_introspection, '-Ddocs=true requires -Dintrospection=true')
   assert(meson.version().version_compare('>= 0.46.0'), '-Ddocs requires meson >= 0.46')
@@ -885,10 +972,12 @@ meson.add_install_script(
   nm_pkgconfdir,
   nm_pkglibdir,
   nm_pkgstatedir,
-  enable_docs ? 'install_docs' : '',
   nm_mandir,
-  enable_ifcfg_rh ? 'create_network_scripts' : '',
   nm_sysconfdir,
+  enable_docs ? '1' : '0',
+  enable_ifcfg_rh ? '1' : '0',
+  enable_nm_cloud_setup ? '1' : '0',
+  install_systemdunitdir ? '1' : '0',
 )
 
 output = '\nSystem paths:\n'
@@ -903,16 +992,21 @@ output += '  nmstatedir: ' + nm_pkgstatedir + '\n'
 output += '  nmrundir: ' + nm_pkgrundir + '\n'
 output += '  nmvpndir: ' + nm_vpndir + '\n'
 output += '  nmplugindir: ' + nm_plugindir + '\n'
+output += '  system-ca-path: ' + system_ca_path + '\n'
 output += '\nPlatform:\n'
 output += '  session tracking: ' + ','.join(session_trackers) + '\n'
 output += '  suspend/resume: ' + suspend_resume + '\n'
-output += '  policykit: ' + enable_polkit.to_string()
+output += '  policykit: ' + enable_polkit.to_string() + ' (default: ' + config_auth_polkit_default + ')'
 if enable_polkit
-  modify = (enable_modify_system ? 'permissive' : 'restrictive')
-  output += ' (' + modify + ' modify.system) (default: main.auth-polkit=true)'
+  output += ' ('
+  if enable_modify_system
+    output += 'permissive'
+  else
+    output += 'restrictive'
+  endif
+  output += ' modify.system)'
 endif
 output += '\n'
-output += '  polkit agent: ' + enable_polkit_agent.to_string() + '\n'
 output += '  selinux: ' + enable_selinux.to_string() + '\n'
 output += '  systemd-journald: ' + enable_systemd_journal.to_string() + ' (default: logging.backend=' + config_logging_backend_default + ')\n'
 output += '  hostname persist: ' + hostname_persist + '\n'
@@ -926,6 +1020,7 @@ if enable_ppp
   output += ' ' + pppd_path + ' plugins:' + pppd_plugin_dir
 endif
 output += '\n'
+output += '  jansson: ' + jansson_msg + '\n'
 output += '  modemmanager-1: ' + enable_modem_manager.to_string() + '\n'
 output += '  ofono: ' + enable_ofono.to_string() + '\n'
 output += '  concheck: ' + enable_concheck.to_string() + '\n'
@@ -933,6 +1028,7 @@ output += '  libteamdctl: ' + enable_teamdctl.to_string() + '\n'
 output += '  ovs: ' + enable_ovs.to_string() + '\n'
 output += '  nmcli: ' + enable_nmcli.to_string() + '\n'
 output += '  nmtui: ' + enable_nmtui.to_string() + '\n'
+output += '  nm-cloud-setup: ' + enable_nm_cloud_setup.to_string() + '\n'
 output += '\nConfiguration_plugins (main.plugins=' + config_plugins_default + ')\n'
 output += '  ifcfg-rh: ' + enable_ifcfg_rh.to_string() + '\n'
 output += '  ifupdown: ' + enable_ifupdown.to_string() + '\n'
@@ -944,6 +1040,7 @@ output += '\n'
 output += '\nMiscellaneous:\n'
 output += '  have introspection: ' + enable_introspection.to_string() + '\n'
 output += '  build documentation and manpages: ' + enable_docs.to_string() + '\n'
+output += '  firewalld zone for shared mode: ' + enable_firewalld_zone.to_string() + '\n'
 # FIXME
 #output += '  install pregenerated documentation and manpages: no
 output += '  tests: ' + tests + '\n'
@@ -958,7 +1055,6 @@ output += '\n'
 output += '  code coverage: ' + get_option('b_coverage').to_string() + '\n'
 output += '  LTO: ' + enable_lto.to_string() + '\n'
 output += '  Linker garbage collection: ' + enable_ld_gc.to_string() + '\n'
-output += '  JSON validation for libnm: ' + enable_json_validation.to_string() + '\n'
 output += '  crypto: ' + crypto + '\n'
 output += '  sanitizers: ' + get_option('b_sanitize') + '\n'
 output += '  Mozilla Public Suffix List: ' + enable_libpsl.to_string() + '\n'

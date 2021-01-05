@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 subdir('adsl')
 
 if enable_modem_manager

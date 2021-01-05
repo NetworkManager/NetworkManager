@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LGPL-2.1+
+/* SPDX-License-Identifier: LGPL-2.1+ */
 /*
  * Copyright (C) 2018 Red Hat, Inc.
  */
@@ -10,7 +10,7 @@
 
 struct _NMUuid;
 
-struct _NMUuid *nm_sd_utils_id128_get_machine (struct _NMUuid *out_uuid);
+struct _NMUuid *nm_sd_utils_id128_get_machine(struct _NMUuid *out_uuid);
 
 /*****************************************************************************/
 

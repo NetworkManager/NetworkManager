@@ -1,10 +1,12 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 if enable_introspection
   settings = 'settings-spec'
   output = settings + '.xml'
 
   inputs = [
     settings + '.xsl',
-    nm_settings_docs,
+    nm_settings_docs_xml['dbus'],
   ]
 
   content_files += custom_target(
@@ -19,7 +21,7 @@ endif
 content_files += configure_file(
   input: 'version.xml.in',
   output: '@BASENAME@',
-  configuration: version_conf,
+  configuration: data_conf,
 )
 
 filecopier = find_program('cp')

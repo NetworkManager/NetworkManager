@@ -1,18 +1,14 @@
+# SPDX-License-Identifier: LGPL-2.1+
+
 dispatcher_inc = include_directories('.')
 
 name = 'nm-dispatcher'
-
-service_conf = configuration_data()
-service_conf.set('sbindir', nm_sbindir)
-service_conf.set('sysconfdir', nm_sysconfdir)
-service_conf.set('localstatedir', nm_localstatedir)
-service_conf.set('libexecdir', nm_libexecdir)
 
 configure_file(
   input: 'org.freedesktop.nm_dispatcher.service.in',
   output: '@BASENAME@',
   install_dir: dbus_system_bus_services_dir,
-  configuration: service_conf,
+  configuration: data_conf,
 )
 
 install_data(
@@ -23,6 +19,7 @@ install_data(
 deps = [
   libnm_dep,
   libnm_nm_default_dep,
+  libnm_libnm_aux_dep,
 ]
 
 c_flags = [

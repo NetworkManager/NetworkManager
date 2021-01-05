@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <syslog.h>
 #include "n-dhcp4.h"
 
 typedef struct NDhcp4CConnection NDhcp4CConnection;
@@ -23,6 +24,7 @@ typedef struct NDhcp4Outgoing NDhcp4Outgoing;
 typedef struct NDhcp4SConnection NDhcp4SConnection;
 typedef struct NDhcp4SConnectionIp NDhcp4SConnectionIp;
 typedef struct NDhcp4SEventNode NDhcp4SEventNode;
+typedef struct NDhcp4LogQueue NDhcp4LogQueue;
 
 /* specs */
 
@@ -198,6 +200,8 @@ struct NDhcp4Outgoing {
 
         struct {
                 uint8_t type;
+                uint8_t message_type;
+                uint32_t client_addr;
                 uint64_t start_time;
                 uint64_t base_time;
                 uint64_t send_time;
@@ -259,7 +263,7 @@ struct NDhcp4ClientProbeConfig {
         bool inform_only;
         bool init_reboot;
         struct in_addr requested_ip;
-        struct drand48_data entropy;    /* entropy pool */
+        unsigned short int entropy[3];
         uint64_t ms_start_delay;        /* max ms to wait before starting probe */
         NDhcp4ClientProbeOption *options[UINT8_MAX + 1];
         int8_t request_parameters[UINT8_MAX + 1];
@@ -282,9 +286,42 @@ struct NDhcp4CEventNode {
                 .probe_link = C_LIST_INIT((_x).probe_link),                     \
         }
 
+struct NDhcp4LogQueue {
+        CList *event_list;
+        NDhcp4CEventNode nomem_node;
+        int log_level;
+        bool is_client : 1;
+};
+
+#define N_DHCP4_LOG_QUEUE_NULL_DEFUNCT() {                                      \
+                .log_level = -1,                                                \
+                .is_client = false,                                             \
+        }
+
+#define N_DHCP4_LOG_QUEUE_NULL_CLIENT(client) {                                 \
+                .event_list = &((client).event_list),                           \
+                .log_level = -1,                                                \
+                .is_client = true,                                              \
+                .nomem_node = {                                                 \
+                        .client_link = C_LIST_INIT((client).log_queue.nomem_node.client_link), \
+                        .probe_link = C_LIST_INIT((client).log_queue.nomem_node.probe_link), \
+                        .event = {                                              \
+                                .event = N_DHCP4_CLIENT_EVENT_LOG,              \
+                                .log = {                                        \
+                                        .level = LOG_CRIT,                      \
+                                        .message = "one or more logging messages dropped due to out of memory", \
+                                        .allow_steal_message = false,           \
+                                },                                              \
+                        },                                                      \
+                        .is_public = false,                                     \
+                },                                                              \
+        }
+
 struct NDhcp4CConnection {
         NDhcp4ClientConfig *client_config;
         NDhcp4ClientProbeConfig *probe_config;
+        NDhcp4LogQueue *log_queue;
+
         int fd_epoll;
 
         unsigned int state;             /* current connection state */
@@ -316,6 +353,9 @@ struct NDhcp4Client {
         unsigned long n_refs;
         NDhcp4ClientConfig *config;
         CList event_list;
+
+        NDhcp4LogQueue log_queue;
+
         int fd_epoll;
         int fd_timer;
 
@@ -331,6 +371,7 @@ struct NDhcp4Client {
                 .event_list = C_LIST_INIT((_x).event_list),                     \
                 .fd_epoll = -1,                                                 \
                 .fd_timer = -1,                                                 \
+                .log_queue = N_DHCP4_LOG_QUEUE_NULL_CLIENT(_x),                 \
         }
 
 struct NDhcp4ClientProbe {
@@ -341,7 +382,10 @@ struct NDhcp4ClientProbe {
         void *userdata;
 
         unsigned int state;                     /* current probe state */
+        struct in_addr last_address;            /* last address obtained */
         uint64_t ns_deferred;                   /* timeout for deferred action */
+        uint64_t ns_reinit;
+        uint64_t ns_nak_restart_delay;          /* restart delay after a nak */
         NDhcp4ClientLease *current_lease;       /* current lease */
 
         NDhcp4CConnection connection;           /* client connection wrapper */
@@ -466,7 +510,7 @@ int n_dhcp4_outgoing_append_lifetime(NDhcp4Outgoing *message, uint32_t lifetime)
 int n_dhcp4_outgoing_append_server_identifier(NDhcp4Outgoing *message, struct in_addr addr);
 int n_dhcp4_outgoing_append_requested_ip(NDhcp4Outgoing *message, struct in_addr addr);
 
-void n_dhcp4_outgoing_set_secs(NDhcp4Outgoing *message, uint32_t secs);
+void n_dhcp4_outgoing_set_secs(NDhcp4Outgoing *message, uint16_t secs);
 void n_dhcp4_outgoing_set_xid(NDhcp4Outgoing *message, uint32_t xid);
 void n_dhcp4_outgoing_set_yiaddr(NDhcp4Outgoing *message, struct in_addr yiaddr);
 
@@ -559,6 +603,7 @@ NDhcp4CEventNode *n_dhcp4_c_event_node_free(NDhcp4CEventNode *node);
 int n_dhcp4_c_connection_init(NDhcp4CConnection *connection,
                               NDhcp4ClientConfig *client_config,
                               NDhcp4ClientProbeConfig *probe_config,
+                              NDhcp4LogQueue *log_queue,
                               int fd_epoll);
 void n_dhcp4_c_connection_deinit(NDhcp4CConnection *connection);
 
@@ -686,3 +731,29 @@ static inline uint64_t n_dhcp4_gettime(clockid_t clock) {
 
         return ts.tv_sec * 1000ULL * 1000ULL * 1000ULL + ts.tv_nsec;
 }
+
+void n_dhcp4_log_queue_fmt(NDhcp4LogQueue *log_queue,
+                           int level,
+                           const char *fmt,
+                           ...) _c_printf_(3, 4);
+
+/**
+ * n_dhcp4_log() - append a logging event
+ * @x_log_queue:   the logging event queue
+ * @x_level:       the syslog logging level for the message.
+ * @...:           the format string and arguments.
+ *
+ * Warning: this macro only evaluates the format arguments if the logging
+ * level is enabled.
+ */
+#define n_dhcp4_log(x_log_queue, x_level, ...)                                 \
+        do {                                                                   \
+                NDhcp4LogQueue *const _log_queue = (x_log_queue);              \
+                const int _level = (x_level);                                  \
+                                                                               \
+                if (_level <= _log_queue->log_level) {                         \
+                        n_dhcp4_log_queue_fmt(_log_queue,                      \
+                                              _level,                          \
+                                              __VA_ARGS__);                    \
+                }                                                              \
+        } while (0)

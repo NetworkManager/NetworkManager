@@ -34,7 +34,7 @@
 
     <!--
         RequestScan:
-        @options: Options of scan. Currently 'ssids' option with value of "aay" type is supported.
+        @options: Options of scan. Currently, 'ssids' option with value of "aay" type is supported.
 
         Request the device to scan. To know when the scan is finished, use the "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" to listen to changes to the "LastScan" property.
     -->
@@ -46,6 +46,8 @@
         HwAddress:
 
         The active hardware address of the device.
+
+        DEPRECATED. Use the "HwAddress" property in "org.freedesktop.NetworkManager.Device" instead which exists since version NetworkManager 1.24.0.
     -->
     <property name="HwAddress" type="s" access="read"/>
 
