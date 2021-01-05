@@ -319,6 +319,8 @@ nm_utils_is_separator(const char c)
 
 GBytes *nm_gbytes_get_empty(void);
 
+GBytes *nm_g_bytes_new_from_str(const char *str);
+
 static inline gboolean
 nm_gbytes_equal0(GBytes *a, GBytes *b)
 {

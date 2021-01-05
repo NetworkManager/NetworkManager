@@ -364,6 +364,21 @@ again:
     return b;
 }
 
+GBytes *
+nm_g_bytes_new_from_str(const char *str)
+{
+    gsize l;
+
+    if (!str)
+        return NULL;
+
+    /* the returned array is guaranteed to have a trailing '\0'
+     * character *after* the length. */
+
+    l = strlen(str);
+    return g_bytes_new_take(nm_memdup(str, l + 1u), l);
+}
+
 /**
  * nm_utils_gbytes_equals:
  * @bytes: (allow-none): a #GBytes array to compare. Note that
