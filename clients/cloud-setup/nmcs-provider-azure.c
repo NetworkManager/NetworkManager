@@ -96,7 +96,8 @@ detect(NMCSProvider *provider, GTask *task)
 typedef struct {
     NMCSProviderGetConfigTaskData * get_config_data;
     NMCSProviderGetConfigIfaceData *iface_get_config;
-    gssize                          iface_idx;
+    gssize                          intern_iface_idx;
+    gssize                          extern_iface_idx;
     guint                           n_ips_prefix_pending;
     const char *                    hwaddr;
 } AzureIfaceData;
@@ -147,7 +148,7 @@ _get_config_fetch_done_cb(NMHttpClient *  http_client,
             goto out_done;
         }
         _LOGD("interface[%" G_GSSIZE_FORMAT "]: adding private ip %s",
-              iface_data->iface_idx,
+              iface_data->intern_iface_idx,
               _nm_utils_inet4_ntop(tmp_addr, tmp_addr_str));
         iface_get_config->ipv4s_arr[iface_get_config->ipv4s_len] = tmp_addr;
         iface_get_config->has_ipv4s                              = TRUE;
@@ -162,14 +163,14 @@ _get_config_fetch_done_cb(NMHttpClient *  http_client,
             tmp_prefix = _nm_utils_ascii_str_to_int64(fip_str, 10, 0, 32, -1);
 
         if (tmp_prefix == -1) {
-            _LOGD("interface[%" G_GSSIZE_FORMAT "]: invalid prefix", iface_data->iface_idx);
+            _LOGD("interface[%" G_GSSIZE_FORMAT "]: invalid prefix", iface_data->intern_iface_idx);
             error =
                 nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN, "subnet does not give a valid prefix");
             goto out_done;
         }
 
         _LOGD("interface[%" G_GSSIZE_FORMAT "]: adding prefix %d",
-              iface_data->iface_idx,
+              iface_data->intern_iface_idx,
               tmp_prefix);
         iface_get_config->cidr_prefix = tmp_prefix;
         iface_get_config->has_cidr    = TRUE;
@@ -258,7 +259,7 @@ _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer u
                 (uri = _azure_uri_interfaces(nm_sprintf_buf(
                      buf,
                      "%" G_GSSIZE_FORMAT "/ipv4/ipAddress/%" G_GINT64_FORMAT "/privateIpAddress",
-                     iface_data->iface_idx,
+                     iface_data->intern_iface_idx,
                      ips_prefix_idx))),
                 HTTP_TIMEOUT_MS,
                 512 * 1024,
@@ -284,7 +285,7 @@ _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer u
         nm_http_client_poll_get(
             NM_HTTP_CLIENT(source),
             (uri = _azure_uri_interfaces(
-                 nm_sprintf_buf(buf, "%" G_GSSIZE_FORMAT, iface_data->iface_idx),
+                 nm_sprintf_buf(buf, "%" G_GSSIZE_FORMAT, iface_data->intern_iface_idx),
                  "/ipv4/subnet/0/prefix/")),
             HTTP_TIMEOUT_MS,
             512 * 1024,
@@ -328,10 +329,10 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     v_hwaddr = nmcs_utils_hwaddr_normalize_gbytes(response);
     if (!v_hwaddr) {
         _LOGI("interface[%" G_GSSIZE_FORMAT "]: invalid MAC address returned",
-              iface_data->iface_idx);
+              iface_data->intern_iface_idx);
         error = nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN,
                                    "invalid MAC address for index %" G_GSSIZE_FORMAT,
-                                   iface_data->iface_idx);
+                                   iface_data->intern_iface_idx);
         goto out_done;
     }
 
@@ -342,7 +343,7 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         if (!get_config_data->any) {
             _LOGD("get-config: skip fetching meta data for %s (%" G_GSSIZE_FORMAT ")",
                   v_hwaddr,
-                  iface_data->iface_idx);
+                  iface_data->intern_iface_idx);
             goto out_done;
         }
         iface_data->iface_get_config = nmcs_provider_get_config_iface_data_new(FALSE);
@@ -352,22 +353,22 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     } else {
         if (iface_data->iface_get_config->iface_idx >= 0) {
             _LOGI("interface[%" G_GSSIZE_FORMAT "]: duplicate MAC address %s returned",
-                  iface_data->iface_idx,
+                  iface_data->intern_iface_idx,
                   iface_data->hwaddr);
             error = nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN,
                                        "duplicate MAC address for index %" G_GSSIZE_FORMAT,
-                                       iface_data->iface_idx);
+                                       iface_data->intern_iface_idx);
             goto out_done;
         }
     }
 
-    iface_data->iface_get_config->iface_idx = iface_data->iface_idx;
+    iface_data->iface_get_config->iface_idx = iface_data->extern_iface_idx;
 
     _LOGD("interface[%" G_GSSIZE_FORMAT "]: found a matching device with hwaddr %s",
-          iface_data->iface_idx,
+          iface_data->intern_iface_idx,
           iface_data->hwaddr);
 
-    nm_sprintf_buf(buf, "%" G_GSSIZE_FORMAT "/ipv4/ipAddress/", iface_data->iface_idx);
+    nm_sprintf_buf(buf, "%" G_GSSIZE_FORMAT "/ipv4/ipAddress/", iface_data->intern_iface_idx);
 
     nm_http_client_poll_get(NM_HTTP_CLIENT(source),
                             (uri = _azure_uri_interfaces(buf)),
@@ -400,6 +401,7 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
     const char *          line;
     gsize                 line_len;
     guint                 i;
+    gssize                extern_iface_idx_cnt = 0;
 
     nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
 
@@ -421,7 +423,7 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
 
     while (nm_utils_parse_next_line(&response_str, &response_len, &line, &line_len)) {
         AzureIfaceData *iface_data;
-        gssize          iface_idx;
+        gssize          intern_iface_idx;
 
         if (line_len == 0)
             continue;
@@ -433,15 +435,16 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
         if (line[line_len - 1] == '/' && line_len != 0)
             ((char *) line)[--line_len] = '\0';
 
-        iface_idx = _nm_utils_ascii_str_to_int64(line, 10, 0, G_MAXSSIZE, -1);
-        if (iface_idx < 0)
+        intern_iface_idx = _nm_utils_ascii_str_to_int64(line, 10, 0, G_MAXSSIZE, -1);
+        if (intern_iface_idx < 0)
             continue;
 
         iface_data  = g_slice_new(AzureIfaceData);
         *iface_data = (AzureIfaceData){
             .get_config_data      = get_config_data,
             .iface_get_config     = NULL,
-            .iface_idx            = iface_idx,
+            .intern_iface_idx     = intern_iface_idx,
+            .extern_iface_idx     = extern_iface_idx_cnt++,
             .n_ips_prefix_pending = 0,
             .hwaddr               = NULL,
         };
@@ -463,9 +466,9 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
         char                buf[100];
 
         _LOGD("azure interface[%" G_GSSIZE_FORMAT "]: retrieving configuration",
-              iface_data->iface_idx);
+              iface_data->intern_iface_idx);
 
-        nm_sprintf_buf(buf, "%" G_GSSIZE_FORMAT "/macAddress", iface_data->iface_idx);
+        nm_sprintf_buf(buf, "%" G_GSSIZE_FORMAT "/macAddress", iface_data->intern_iface_idx);
 
         get_config_data->n_pending++;
         nm_http_client_poll_get(NM_HTTP_CLIENT(source),

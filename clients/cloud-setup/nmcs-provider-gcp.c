@@ -91,7 +91,8 @@ detect(NMCSProvider *provider, GTask *task)
 typedef struct {
     NMCSProviderGetConfigTaskData * get_config_data;
     NMCSProviderGetConfigIfaceData *iface_get_config;
-    gssize                          iface_idx;
+    gssize                          intern_iface_idx;
+    gssize                          extern_iface_idx;
     guint                           n_fips_pending;
 } GCPIfaceData;
 
@@ -109,7 +110,7 @@ _get_config_fip_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     gs_unref_bytes GBytes *response   = NULL;
     GCPIfaceData *         iface_data = user_data;
     gs_free_error GError *error       = NULL;
-    gs_free char *          ipaddr     = NULL;
+    gs_free char *        ipaddr      = NULL;
     NMIPRoute **          routes_arr;
     NMIPRoute *           route_new;
 
@@ -131,7 +132,7 @@ _get_config_fip_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     }
 
     _LOGI("GCP interface[%" G_GSSIZE_FORMAT "]: adding forwarded-ip %s",
-          iface_data->iface_idx,
+          iface_data->intern_iface_idx,
           ipaddr);
 
     iface_get_config = iface_data->iface_get_config;
@@ -198,14 +199,14 @@ _get_config_ips_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
 
         g_ptr_array_add(uri_arr,
                         g_strdup_printf("%" G_GSSIZE_FORMAT "/forwarded-ips/%" G_GINT64_FORMAT,
-                                        iface_data->iface_idx,
+                                        iface_data->intern_iface_idx,
                                         fip_index));
     }
 
     iface_data->n_fips_pending = uri_arr->len;
 
     _LOGI("GCP interface[%" G_GSSIZE_FORMAT "]: found %u forwarded ips",
-          iface_data->iface_idx,
+          iface_data->intern_iface_idx,
           iface_data->n_fips_pending);
 
     if (iface_data->n_fips_pending == 0) {
@@ -265,10 +266,10 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     v_hwaddr = nmcs_utils_hwaddr_normalize_gbytes(response);
     if (!v_hwaddr) {
         _LOGI("GCP interface[%" G_GSSIZE_FORMAT "]: invalid MAC address returned",
-              iface_data->iface_idx);
+              iface_data->intern_iface_idx);
         error = nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN,
                                    "invalid MAC address for index %" G_GSSIZE_FORMAT,
-                                   iface_data->iface_idx);
+                                   iface_data->intern_iface_idx);
         goto out_done;
     }
 
@@ -279,7 +280,7 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         if (!get_config_data->any) {
             _LOGD("get-config: skip fetching meta data for %s (%" G_GSSIZE_FORMAT ")",
                   v_hwaddr,
-                  iface_data->iface_idx);
+                  iface_data->intern_iface_idx);
             goto out_done;
         }
         iface_data->iface_get_config = nmcs_provider_get_config_iface_data_new(FALSE);
@@ -290,24 +291,24 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     } else {
         if (iface_data->iface_get_config->iface_idx >= 0) {
             _LOGI("GCP interface[%" G_GSSIZE_FORMAT "]: duplicate MAC address %s returned",
-                  iface_data->iface_idx,
+                  iface_data->intern_iface_idx,
                   hwaddr);
             error = nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN,
                                        "duplicate MAC address for index %" G_GSSIZE_FORMAT,
-                                       iface_data->iface_idx);
+                                       iface_data->intern_iface_idx);
             goto out_done;
         }
         is_requested = TRUE;
     }
 
-    iface_data->iface_get_config->iface_idx = iface_data->iface_idx;
+    iface_data->iface_get_config->iface_idx = iface_data->extern_iface_idx;
 
     _LOGI("GCP interface[%" G_GSSIZE_FORMAT "]: found a %sdevice with hwaddr %s",
-          iface_data->iface_idx,
+          iface_data->intern_iface_idx,
           is_requested ? "requested " : "",
           hwaddr);
 
-    nm_sprintf_buf(sbuf, "%" G_GSSIZE_FORMAT "/forwarded-ips/", iface_data->iface_idx);
+    nm_sprintf_buf(sbuf, "%" G_GSSIZE_FORMAT "/forwarded-ips/", iface_data->intern_iface_idx);
 
     nm_http_client_poll_get(NM_HTTP_CLIENT(source),
                             (uri = _gcp_uri_interfaces(sbuf)),
@@ -340,6 +341,7 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
     const char *                   line;
     gsize                          line_len;
     guint                          i;
+    gssize                         extern_iface_idx_cnt = 0;
 
     nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
 
@@ -361,7 +363,7 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
 
     while (nm_utils_parse_next_line(&response_str, &response_len, &line, &line_len)) {
         GCPIfaceData *iface_data;
-        gssize        iface_idx;
+        gssize        intern_iface_idx;
 
         if (line_len == 0)
             continue;
@@ -372,15 +374,16 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
         if (line[line_len - 1] == '/')
             ((char *) line)[--line_len] = '\0';
 
-        iface_idx = _nm_utils_ascii_str_to_int64(line, 10, 0, G_MAXSSIZE, -1);
-        if (iface_idx < 0)
+        intern_iface_idx = _nm_utils_ascii_str_to_int64(line, 10, 0, G_MAXSSIZE, -1);
+        if (intern_iface_idx < 0)
             continue;
 
         iface_data  = g_slice_new(GCPIfaceData);
         *iface_data = (GCPIfaceData){
             .get_config_data  = get_config_data,
             .iface_get_config = NULL,
-            .iface_idx        = iface_idx,
+            .intern_iface_idx = intern_iface_idx,
+            .extern_iface_idx = extern_iface_idx_cnt++,
             .n_fips_pending   = 0,
         };
         g_ptr_array_add(ifaces_arr, iface_data);
@@ -400,9 +403,10 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
         gs_free const char *uri  = NULL;
         char                sbuf[100];
 
-        _LOGD("GCP interface[%" G_GSSIZE_FORMAT "]: retrieving configuration", data->iface_idx);
+        _LOGD("GCP interface[%" G_GSSIZE_FORMAT "]: retrieving configuration",
+              data->intern_iface_idx);
 
-        nm_sprintf_buf(sbuf, "%" G_GSSIZE_FORMAT "/mac", data->iface_idx);
+        nm_sprintf_buf(sbuf, "%" G_GSSIZE_FORMAT "/mac", data->intern_iface_idx);
 
         get_config_data->n_pending++;
         nm_http_client_poll_get(NM_HTTP_CLIENT(source),
