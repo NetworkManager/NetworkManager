@@ -163,6 +163,8 @@ _get_config_fetch_done_cb(NMHttpClient *  http_client,
 
         if (tmp_prefix == -1) {
             _LOGD("interface[%" G_GSSIZE_FORMAT "]: invalid prefix", iface_data->iface_idx);
+            error =
+                nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN, "subnet does not give a valid prefix");
             goto out_done;
         }
 
