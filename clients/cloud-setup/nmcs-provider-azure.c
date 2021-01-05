@@ -118,8 +118,7 @@ _get_config_fetch_done_cb(NMHttpClient *  http_client,
     gs_unref_bytes GBytes *response = NULL;
     gs_free_error GError *error     = NULL;
     const char *          fip_str   = NULL;
-    in_addr_t             tmp_addr;
-    int                   tmp_prefix;
+    gsize                 fip_len;
 
     nm_http_client_poll_get_finish(http_client, result, NULL, &response, &error);
 
@@ -131,32 +130,42 @@ _get_config_fetch_done_cb(NMHttpClient *  http_client,
     if (error)
         goto out_done;
 
-    fip_str = g_bytes_get_data(response, NULL);
+    fip_str = g_bytes_get_data(response, &fip_len);
+    nm_assert(fip_str[fip_len] == '\0');
+
     iface_data->iface_get_config =
         g_hash_table_lookup(get_config_data->result_dict, iface_data->hwaddr);
     iface_get_config = iface_data->iface_get_config;
 
     if (is_ipv4) {
-        if (!nm_utils_parse_inaddr_bin(AF_INET, fip_str, NULL, &tmp_addr)) {
+        char      tmp_addr_str[NM_UTILS_INET_ADDRSTRLEN];
+        in_addr_t tmp_addr;
+
+        if (!nmcs_utils_ipaddr_normalize_bin(AF_INET, fip_str, fip_len, NULL, &tmp_addr)) {
             error =
                 nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN, "ip is not a valid private ip address");
             goto out_done;
         }
         _LOGD("interface[%" G_GSSIZE_FORMAT "]: adding private ip %s",
               iface_data->iface_idx,
-              fip_str);
+              _nm_utils_inet4_ntop(tmp_addr, tmp_addr_str));
         iface_get_config->ipv4s_arr[iface_get_config->ipv4s_len] = tmp_addr;
         iface_get_config->has_ipv4s                              = TRUE;
         iface_get_config->ipv4s_len++;
     } else {
-        tmp_prefix = (_nm_utils_ascii_str_to_int64(fip_str, 10, 0, 32, -1));
+        int tmp_prefix = -1;
+
+        if (fip_len > 0 && memchr(fip_str, '\0', fip_len - 1)) {
+            /* we have an embedded "\0" inside the string (except trailing). That is not
+             * allowed*/
+        } else
+            tmp_prefix = _nm_utils_ascii_str_to_int64(fip_str, 10, 0, 32, -1);
 
         if (tmp_prefix == -1) {
-            _LOGD("interface[%" G_GSSIZE_FORMAT "]: invalid prefix %d",
-                  iface_data->iface_idx,
-                  tmp_prefix);
+            _LOGD("interface[%" G_GSSIZE_FORMAT "]: invalid prefix", iface_data->iface_idx);
             goto out_done;
         }
+
         _LOGD("interface[%" G_GSSIZE_FORMAT "]: adding prefix %d",
               iface_data->iface_idx,
               tmp_prefix);
