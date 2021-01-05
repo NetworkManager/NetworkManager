@@ -533,6 +533,59 @@ nmcs_utils_hwaddr_normalize(const char *hwaddr, gssize len)
 
 /*****************************************************************************/
 
+gboolean
+nmcs_utils_ipaddr_normalize_bin(int         addr_family,
+                                const char *addr,
+                                gssize      len,
+                                int *       out_addr_family,
+                                gpointer    out_addr_bin)
+{
+    gs_free char *addr_clone = NULL;
+    char *        ad;
+    gsize         l;
+
+    nm_assert(len >= -1);
+
+    if (len < 0) {
+        if (!addr)
+            return FALSE;
+        l = strlen(addr);
+    } else {
+        l = len;
+        if (l > 0 && addr[l - 1] == '\0') {
+            /* we accept one '\0' at the end of the string. */
+            l--;
+        }
+        if (memchr(addr, '\0', l)) {
+            /* but we don't accept other NUL characters in the middle. */
+            return FALSE;
+        }
+    }
+
+    if (l == 0)
+        return FALSE;
+
+    nm_assert(addr);
+    ad = nm_strndup_a(300, addr, l, &addr_clone);
+
+    g_strstrip(ad);
+
+    return nm_utils_parse_inaddr_bin(addr_family, ad, out_addr_family, out_addr_bin);
+}
+
+char *
+nmcs_utils_ipaddr_normalize(int addr_family, const char *addr, gssize len)
+{
+    NMIPAddr ipaddr;
+
+    if (!nmcs_utils_ipaddr_normalize_bin(addr_family, addr, len, &addr_family, &ipaddr))
+        return NULL;
+
+    return nm_utils_inet_ntop_dup(addr_family, &ipaddr);
+}
+
+/*****************************************************************************/
+
 const char *
 nmcs_utils_parse_memmem(GBytes *mem, const char *needle)
 {

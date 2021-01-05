@@ -90,6 +90,26 @@ nmcs_utils_hwaddr_normalize_gbytes(GBytes *hwaddr)
 
 /*****************************************************************************/
 
+gboolean nmcs_utils_ipaddr_normalize_bin(int         addr_family,
+                                         const char *addr,
+                                         gssize      len,
+                                         int *       out_addr_family,
+                                         gpointer    out_addr_bin);
+
+char *nmcs_utils_ipaddr_normalize(int addr_family, const char *addr, gssize len);
+
+static inline char *
+nmcs_utils_ipaddr_normalize_gbytes(int addr_family, GBytes *addr)
+{
+    const char *str;
+    gsize       len;
+
+    str = g_bytes_get_data(addr, &len);
+    return nmcs_utils_ipaddr_normalize(addr_family, str, len);
+}
+
+/*****************************************************************************/
+
 const char *nmcs_utils_parse_memmem(GBytes *mem, const char *needle);
 
 const char *nmcs_utils_parse_get_full_line(GBytes *mem, const char *needle);
