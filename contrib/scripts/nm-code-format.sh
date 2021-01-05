@@ -26,16 +26,19 @@ while (( $# )); do
 done
 
 NM_ROOT=$(git rev-parse --show-toplevel)
-EXCLUDE=":(exclude)shared/systemd/src
-         :(exclude)src/systemd/src
-         :(exclude)shared/n-dhcp4
+EXCLUDE="
          :(exclude)shared/c-list
          :(exclude)shared/c-list
          :(exclude)shared/c-list
          :(exclude)shared/c-rbtree
          :(exclude)shared/c-siphash
          :(exclude)shared/c-stdaux
-         :(exclude)shared/n-acd"
+         :(exclude)shared/n-acd
+         :(exclude)shared/n-dhcp4
+         :(exclude)shared/nm-std-aux/unaligned.h
+         :(exclude)shared/systemd/src
+         :(exclude)src/systemd/src
+"
 
 if ! command -v clang-format &> /dev/null; then
     echo -n "Error: clang-format is not installed, "
