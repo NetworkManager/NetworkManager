@@ -109,7 +109,7 @@ _get_config_fip_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     gs_unref_bytes GBytes *response   = NULL;
     GCPIfaceData *         iface_data = user_data;
     gs_free_error GError *error       = NULL;
-    const char *          fip_str     = NULL;
+    gs_free char *          ipaddr     = NULL;
     NMIPRoute **          routes_arr;
     NMIPRoute *           route_new;
 
@@ -123,8 +123,8 @@ _get_config_fip_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     if (error)
         goto out_done;
 
-    fip_str = g_bytes_get_data(response, NULL);
-    if (!nm_utils_ipaddr_valid(AF_INET, fip_str)) {
+    ipaddr = nmcs_utils_ipaddr_normalize_gbytes(AF_INET, response);
+    if (!ipaddr) {
         error =
             nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN, "forwarded-ip is not a valid ip address");
         goto out_done;
@@ -132,12 +132,12 @@ _get_config_fip_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 
     _LOGI("GCP interface[%" G_GSSIZE_FORMAT "]: adding forwarded-ip %s",
           iface_data->iface_idx,
-          fip_str);
+          ipaddr);
 
     iface_get_config = iface_data->iface_get_config;
     routes_arr       = iface_get_config->iproutes_arr;
 
-    route_new = nm_ip_route_new(AF_INET, fip_str, 32, NULL, 100, &error);
+    route_new = nm_ip_route_new(AF_INET, ipaddr, 32, NULL, 100, &error);
     if (error)
         goto out_done;
 
