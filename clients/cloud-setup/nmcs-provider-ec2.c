@@ -72,11 +72,11 @@ G_DEFINE_TYPE(NMCSProviderEC2, nmcs_provider_ec2, NMCS_TYPE_PROVIDER);
 
 static gboolean
 _detect_get_meta_data_check_cb(long     response_code,
-                               GBytes * response_data,
+                               GBytes * response,
                                gpointer check_user_data,
                                GError **error)
 {
-    return response_code == 200 && nmcs_utils_parse_get_full_line(response_data, "ami-id");
+    return response_code == 200 && nmcs_utils_parse_get_full_line(response, "ami-id");
 }
 
 static void
@@ -187,13 +187,13 @@ _get_config_fetch_done_cb(NMHttpClient *http_client,
                           gboolean      is_local_ipv4)
 {
     GetConfigIfaceData *iface_data;
-    const char *        hwaddr           = NULL;
-    gs_unref_bytes GBytes *response_data = NULL;
-    gs_free_error GError *error          = NULL;
+    const char *        hwaddr      = NULL;
+    gs_unref_bytes GBytes *response = NULL;
+    gs_free_error GError *error     = NULL;
 
     nm_utils_user_data_unpack(user_data, &iface_data, &hwaddr);
 
-    nm_http_client_poll_get_finish(http_client, result, NULL, &response_data, &error);
+    nm_http_client_poll_get_finish(http_client, result, NULL, &response, &error);
 
     if (!error) {
         NMCSProviderGetConfigIfaceData *config_iface_data;
@@ -206,7 +206,7 @@ _get_config_fetch_done_cb(NMHttpClient *http_client,
             gs_free const char **s_addrs = NULL;
             gsize                i, len;
 
-            s_addrs = nm_utils_strsplit_set_full(g_bytes_get_data(response_data, NULL),
+            s_addrs = nm_utils_strsplit_set_full(g_bytes_get_data(response, NULL),
                                                  "\n",
                                                  NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
             len     = NM_PTRARRAY_LEN(s_addrs);
@@ -225,7 +225,7 @@ _get_config_fetch_done_cb(NMHttpClient *http_client,
             }
         } else {
             if (nm_utils_parse_inaddr_prefix_bin(AF_INET,
-                                                 g_bytes_get_data(response_data, NULL),
+                                                 g_bytes_get_data(response, NULL),
                                                  NULL,
                                                  &tmp_addr,
                                                  &tmp_prefix)) {
@@ -413,7 +413,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
 
 static gboolean
 _get_config_metadata_ready_check(long     response_code,
-                                 GBytes * response_data,
+                                 GBytes * response,
                                  gpointer check_user_data,
                                  GError **error)
 {
@@ -428,12 +428,12 @@ _get_config_metadata_ready_check(long     response_code,
     const char *                   c_hwaddr;
     gssize                         iface_idx_counter = 0;
 
-    if (response_code != 200 || !response_data) {
+    if (response_code != 200 || !response) {
         /* we wait longer. */
         return FALSE;
     }
 
-    r_data = g_bytes_get_data(response_data, &r_len);
+    r_data = g_bytes_get_data(response, &r_len);
     /* NMHttpClient guarantees that there is a trailing NUL after the data. */
     nm_assert(r_data[r_len] == 0);
 
@@ -444,7 +444,7 @@ _get_config_metadata_ready_check(long     response_code,
         if (cur_line_len == 0)
             continue;
 
-        /* Truncate the string. It's safe to do, because we own @response_data an it has an
+        /* Truncate the string. It's safe to do, because we own @response an it has an
          * extra NUL character after the buffer. */
         ((char *) cur_line)[cur_line_len] = '\0';
 

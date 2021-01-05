@@ -218,7 +218,7 @@ _get_config_ips_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
     while (nm_utils_parse_next_line(&response_str, &response_len, &line, &line_len)) {
         gint64 fip_index;
 
-        /* Truncate the string. It's safe to do, because we own @response_data an it has an
+        /* Truncate the string. It's safe to do, because we own @response an it has an
          * extra NUL character after the buffer. */
         ((char *) line)[line_len] = '\0';
 
@@ -358,7 +358,7 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
         if (line_len == 0)
             continue;
 
-        /* Truncate the string. It's safe to do, because we own @response_data an it has an
+        /* Truncate the string. It's safe to do, because we own @response an it has an
          * extra NUL character after the buffer. */
         ((char *) line)[line_len] = '\0';
         if (line[line_len - 1] == '/')
