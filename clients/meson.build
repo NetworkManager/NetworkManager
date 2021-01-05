@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: LGPL-2.1+
+# SPDX-License-Identifier: LGPL-2.1-or-later
 
 clients_c_flags = ['-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT']
 

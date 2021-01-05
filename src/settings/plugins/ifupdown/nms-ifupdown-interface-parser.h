@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0+ */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * Tom Parker <palfrey@tevp.net>
  * Copyright (C) 2004 Tom Parker

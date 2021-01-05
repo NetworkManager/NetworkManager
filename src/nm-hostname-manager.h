@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0+ */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * Søren Sandmann <sandmann@daimi.au.dk>
  * Dan Williams <dcbw@redhat.com>

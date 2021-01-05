@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: LGPL-2.1+
+# SPDX-License-Identifier: LGPL-2.1-or-later
 
 ifaces_secret_agent_xml = files('org.freedesktop.NetworkManager.SecretAgent.xml')
 

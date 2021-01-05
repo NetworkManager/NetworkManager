@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0+ */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #ifndef __NETWORKMANAGER_DEVICE_VRF_H__
 #define __NETWORKMANAGER_DEVICE_VRF_H__

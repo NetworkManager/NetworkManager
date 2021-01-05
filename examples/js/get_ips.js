@@ -1,5 +1,5 @@
 #!/usr/bin/env gjs
-// SPDX-License-Identifier: GPL-2.0+
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 2014, 2017 Red Hat, Inc.
  */

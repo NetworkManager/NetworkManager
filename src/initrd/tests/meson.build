@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: LGPL-2.1+
+# SPDX-License-Identifier: LGPL-2.1-or-later
 
 c_flags = test_c_flags + ['-DTEST_INITRD_DIR="@0@"'.format(meson.current_source_dir())]
 

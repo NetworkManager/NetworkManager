@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 
 #ifndef __NMCS_PROVIDER_GCP_H__
 #define __NMCS_PROVIDER_GCP_H__

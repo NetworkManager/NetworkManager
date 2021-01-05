@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: LGPL-2.1+ */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 
 #ifndef __NM_L3_IPV4LL_H__
 #define __NM_L3_IPV4LL_H__

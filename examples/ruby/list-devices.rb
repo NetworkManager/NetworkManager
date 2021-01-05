@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# SPDX-License-Identifier: GPL-2.0+
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
 # Copyright (C) 2011 - 2012 Red Hat, Inc.
 #
