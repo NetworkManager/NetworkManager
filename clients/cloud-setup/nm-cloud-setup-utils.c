@@ -495,8 +495,17 @@ nmcs_utils_hwaddr_normalize(const char *hwaddr, gssize len)
         if (!hwaddr)
             return NULL;
         l = strlen(hwaddr);
-    } else
+    } else {
         l = len;
+        if (l > 0 && hwaddr[l - 1] == '\0') {
+            /* we accept one '\0' at the end of the string. */
+            l--;
+        }
+        if (memchr(hwaddr, '\0', l)) {
+            /* but we don't accept other NUL characters in the middle. */
+            return NULL;
+        }
+    }
 
     if (l == 0)
         return NULL;

@@ -315,7 +315,7 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     if (error)
         goto out_done;
 
-    iface_data->hwaddr = nmcs_utils_hwaddr_normalize(g_bytes_get_data(response, NULL), -1);
+    iface_data->hwaddr = nmcs_utils_hwaddr_normalize_gbytes(response);
 
     if (!iface_data->hwaddr)
         goto out_done;

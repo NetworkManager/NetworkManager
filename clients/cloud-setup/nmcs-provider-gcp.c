@@ -261,7 +261,7 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     if (error)
         goto out_error;
 
-    hwaddr = nmcs_utils_hwaddr_normalize(g_bytes_get_data(response, NULL), -1);
+    hwaddr                       = nmcs_utils_hwaddr_normalize_gbytes(response);
     iface_data->iface_get_config = g_hash_table_lookup(get_config_data->result_dict, hwaddr);
     if (!iface_data->iface_get_config) {
         _LOGI("GCP interface[%" G_GSSIZE_FORMAT "]: did not find a matching device",

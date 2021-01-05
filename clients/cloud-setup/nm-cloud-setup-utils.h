@@ -78,6 +78,16 @@ gboolean nmcs_utils_poll_finish(GAsyncResult *result, gpointer *probe_user_data,
 
 char *nmcs_utils_hwaddr_normalize(const char *hwaddr, gssize len);
 
+static inline char *
+nmcs_utils_hwaddr_normalize_gbytes(GBytes *hwaddr)
+{
+    const char *str;
+    gsize       len;
+
+    str = g_bytes_get_data(hwaddr, &len);
+    return nmcs_utils_hwaddr_normalize(str, len);
+}
+
 /*****************************************************************************/
 
 const char *nmcs_utils_parse_memmem(GBytes *mem, const char *needle);
