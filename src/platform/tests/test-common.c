@@ -1572,8 +1572,8 @@ nmtstp_link_veth_add(NMPlatform *platform,
                      const char *name,
                      const char *peer)
 {
-    const NMPlatformLink *pllink = NULL;
-    gboolean              success;
+    const NMPlatformLink *pllink  = NULL;
+    gboolean              success = FALSE;
 
     g_assert(nm_utils_ifname_valid_kernel(name, NULL));
 
@@ -1586,9 +1586,28 @@ nmtstp_link_veth_add(NMPlatform *platform,
         if (success) {
             pllink = nmtstp_assert_wait_for_link(platform, name, NM_LINK_TYPE_VETH, 100);
             nmtstp_assert_wait_for_link(platform, peer, NM_LINK_TYPE_VETH, 10);
+        } else {
+            /* iproute2 might fail in copr. See below.
+             * We accept that and try our platform implementation instead. */
+            _LOGI("iproute2 failed to add veth device. Retry with platform code.");
+            external_command = FALSE;
         }
-    } else
-        success = NMTST_NM_ERR_SUCCESS(nm_platform_link_veth_add(platform, name, peer, &pllink));
+    }
+
+    if (!external_command) {
+        int try_count = 0;
+        int r;
+
+again:
+        r = nm_platform_link_veth_add(platform, name, peer, &pllink);
+        if (r == -EPERM && try_count++ < 5) {
+            /* in copr (mock with Fedora 33 builders), this randomly fails with EPERM.
+             * Very odd. Try to work around by retrying. */
+            _LOGI("netlink failuer EPERM to add veth device. Retry.");
+            goto again;
+        }
+        success = NMTST_NM_ERR_SUCCESS(r);
+    }
 
     g_assert(success);
     _assert_pllink(platform, success, pllink, name, NM_LINK_TYPE_VETH);
