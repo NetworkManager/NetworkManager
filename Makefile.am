@@ -2401,6 +2401,7 @@ src_libNetworkManager_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
 	$(SYSTEMD_LOGIN_LIBS) \
+	$(SYSTEMD_JOURNAL_LIBS) \
 	$(LIBNDP_LIBS) \
 	$(DL_LIBS) \
 	$(SELINUX_LIBS) \
@@ -2508,6 +2509,7 @@ src_nm_iface_helper_LDADD = \
 	shared/libndhcp4.la \
 	shared/libcrbtree.la \
 	shared/libcsiphash.la \
+	$(SYSTEMD_JOURNAL_LIBS) \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
 	$(LIBNDP_LIBS) \
@@ -2558,6 +2560,7 @@ src_initrd_nm_initrd_generator_LDADD = \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libndhcp4.la \
 	shared/libcsiphash.la \
+	$(SYSTEMD_JOURNAL_LIBS) \
 	$(GLIB_LIBS) \
 	$(NULL)
 
