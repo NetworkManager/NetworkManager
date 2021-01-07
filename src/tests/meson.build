@@ -29,28 +29,22 @@ foreach test_unit: test_units
   )
 endforeach
 
-test_unit = 'test-systemd'
-
-c_flags = [
-  '-DNETWORKMANAGER_COMPILATION_TEST',
-  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD',
-]
-
-links = [
-  libnm_systemd_core,
-  libnm_systemd_shared,
-]
-
 exe = executable(
-  test_unit,
-  test_unit + '.c',
+  'test-systemd',
+  'test-systemd.c',
   dependencies: daemon_nm_default_dep,
-  c_args: c_flags,
-  link_with: links,
+  c_args: [
+    '-DNETWORKMANAGER_COMPILATION_TEST',
+    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD',
+  ],
+  link_with: [
+    libnm_systemd_core,
+    libnm_systemd_shared,
+  ],
 )
 
 test(
-  test_unit,
+  'test-systemd',
   test_script,
   args: test_args + [exe.full_path()],
 )
