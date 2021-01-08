@@ -898,7 +898,7 @@ update_system_hostname(NMPolicy *self, const char *msg)
 
                 if (info->from_dns && info->ip_x[IS_IPv4]) {
                     const char *result;
-                    gboolean    wait;
+                    gboolean    wait = FALSE;
 
                     result =
                         nm_device_get_hostname_from_dns_lookup(info->device, addr_family, &wait);
