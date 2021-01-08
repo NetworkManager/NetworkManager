@@ -6,9 +6,8 @@
 #ifndef __NM_PLATFORM_UTILS_H__
 #define __NM_PLATFORM_UTILS_H__
 
-#include "nm-platform.h"
-#include "nm-setting-wired.h"
 #include "nm-base/nm-base.h"
+#include "nm-platform/nmp-base.h"
 
 /*****************************************************************************/
 
@@ -32,62 +31,7 @@ gboolean nmp_utils_ethtool_set_link_settings(int                      ifindex,
 
 gboolean nmp_utils_ethtool_get_permanent_address(int ifindex, guint8 *buf, size_t *length);
 
-typedef struct {
-    /* We don't want to include <linux/ethtool.h> in header files,
-     * thus create a ABI compatible version of struct ethtool_drvinfo.*/
-    guint32 _private_cmd;
-    char    driver[32];
-    char    version[32];
-    char    fw_version[32];
-    char    _private_bus_info[32];
-    char    _private_erom_version[32];
-    char    _private_reserved2[12];
-    guint32 _private_n_priv_flags;
-    guint32 _private_n_stats;
-    guint32 _private_testinfo_len;
-    guint32 _private_eedump_len;
-    guint32 _private_regdump_len;
-} NMPUtilsEthtoolDriverInfo;
-
 gboolean nmp_utils_ethtool_get_driver_info(int ifindex, NMPUtilsEthtoolDriverInfo *data);
-
-typedef struct {
-    NMEthtoolID ethtool_id;
-
-    guint8 n_kernel_names;
-
-    /* one NMEthtoolID refers to one or more kernel_names. The reason for supporting this complexity
-     * (where one NMSettingEthtool option refers to multiple kernel features)  is to follow what
-     * ethtool does, where "tx" is an alias for multiple features. */
-    const char *const *kernel_names;
-} NMEthtoolFeatureInfo;
-
-typedef struct {
-    const NMEthtoolFeatureInfo *info;
-
-    guint idx_ss_features;
-
-    /* one NMEthtoolFeatureInfo references one or more kernel_names. This is the index
-     * of the matching info->kernel_names */
-    guint8 idx_kernel_name;
-
-    bool available : 1;
-    bool requested : 1;
-    bool active : 1;
-    bool never_changed : 1;
-} NMEthtoolFeatureState;
-
-struct _NMEthtoolFeatureStates {
-    guint n_states;
-
-    guint n_ss_features;
-
-    /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */
-    const NMEthtoolFeatureState *const *states_indexed[_NM_ETHTOOL_ID_FEATURE_NUM];
-
-    /* the same content, here as a list of n_states entries. */
-    const NMEthtoolFeatureState states_list[];
-};
 
 NMEthtoolFeatureStates *nmp_utils_ethtool_get_features(int ifindex);
 
@@ -97,22 +41,9 @@ gboolean nmp_utils_ethtool_set_features(
     const NMTernary *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
     gboolean         do_set /* or reset */);
 
-struct _NMEthtoolCoalesceState {
-    guint32
-        s[_NM_ETHTOOL_ID_COALESCE_NUM /* indexed by (NMEthtoolID - _NM_ETHTOOL_ID_COALESCE_FIRST) */
-    ];
-};
-
 gboolean nmp_utils_ethtool_get_coalesce(int ifindex, NMEthtoolCoalesceState *coalesce);
 
 gboolean nmp_utils_ethtool_set_coalesce(int ifindex, const NMEthtoolCoalesceState *coalesce);
-
-struct _NMEthtoolRingState {
-    guint32 rx_pending;
-    guint32 rx_mini_pending;
-    guint32 rx_jumbo_pending;
-    guint32 tx_pending;
-};
 
 gboolean nmp_utils_ethtool_get_ring(int ifindex, NMEthtoolRingState *ring);
 

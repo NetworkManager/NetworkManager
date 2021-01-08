@@ -979,12 +979,6 @@ typedef struct {
 } NMPlatformLnkWireGuard;
 
 typedef enum {
-    NM_PLATFORM_LINK_DUPLEX_UNKNOWN,
-    NM_PLATFORM_LINK_DUPLEX_HALF,
-    NM_PLATFORM_LINK_DUPLEX_FULL,
-} NMPlatformLinkDuplexType;
-
-typedef enum {
     NM_PLATFORM_WIREGUARD_CHANGE_FLAG_NONE            = 0,
     NM_PLATFORM_WIREGUARD_CHANGE_FLAG_REPLACE_PEERS   = (1LL << 0),
     NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_PRIVATE_KEY = (1LL << 1),
@@ -2343,8 +2337,6 @@ gboolean nm_platform_ethtool_get_link_settings(NMPlatform *              self,
                                                guint32 *                 out_speed,
                                                NMPlatformLinkDuplexType *out_duplex);
 
-typedef struct _NMEthtoolFeatureStates NMEthtoolFeatureStates;
-
 NMEthtoolFeatureStates *nm_platform_ethtool_get_link_features(NMPlatform *self, int ifindex);
 gboolean                nm_platform_ethtool_set_features(
                    NMPlatform *                  self,
@@ -2353,8 +2345,6 @@ gboolean                nm_platform_ethtool_set_features(
                    const NMTernary *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
                    gboolean         do_set /* or reset */);
 
-typedef struct _NMEthtoolCoalesceState NMEthtoolCoalesceState;
-
 gboolean nm_platform_ethtool_get_link_coalesce(NMPlatform *            self,
                                                int                     ifindex,
                                                NMEthtoolCoalesceState *coalesce);
@@ -2362,8 +2352,6 @@ gboolean nm_platform_ethtool_get_link_coalesce(NMPlatform *            self,
 gboolean nm_platform_ethtool_set_coalesce(NMPlatform *                  self,
                                           int                           ifindex,
                                           const NMEthtoolCoalesceState *coalesce);
-
-typedef struct _NMEthtoolRingState NMEthtoolRingState;
 
 gboolean nm_platform_ethtool_get_link_ring(NMPlatform *self, int ifindex, NMEthtoolRingState *ring);
 

@@ -18,11 +18,12 @@
 #include <fcntl.h>
 #include <libudev.h>
 
-#include "nm-utils.h"
-#include "nm-setting-wired.h"
 #include "nm-libnm-core-intern/nm-ethtool-utils.h"
-
+#include "nm-utils.h"
+#include "nm-platform.h"
 #include "nm-core-utils.h"
+
+/*****************************************************************************/
 
 #define ONOFF(bool_val) ((bool_val) ? "on" : "off")
 

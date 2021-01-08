@@ -25,6 +25,7 @@
 #include "nm-utils.h"
 #include "platform/nm-platform-utils.h"
 #include "nm-core-internal.h"
+#include "nm-core-utils.h"
 
 typedef struct {
     NMWifiUtils       parent;
