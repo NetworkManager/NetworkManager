@@ -19,9 +19,6 @@
 #include <libudev.h>
 
 #include "nm-libnm-core-intern/nm-ethtool-utils.h"
-#include "nm-utils.h"
-#include "nm-platform.h"
-#include "nm-core-utils.h"
 
 /*****************************************************************************/
 
