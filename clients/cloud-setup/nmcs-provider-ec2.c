@@ -72,11 +72,11 @@ G_DEFINE_TYPE(NMCSProviderEC2, nmcs_provider_ec2, NMCS_TYPE_PROVIDER);
 
 static gboolean
 _detect_get_meta_data_check_cb(long     response_code,
-                               GBytes * response_data,
+                               GBytes * response,
                                gpointer check_user_data,
                                GError **error)
 {
-    return response_code == 200 && nmcs_utils_parse_get_full_line(response_data, "ami-id");
+    return response_code == 200 && nmcs_utils_parse_get_full_line(response, "ami-id");
 }
 
 static void
@@ -129,124 +129,69 @@ detect(NMCSProvider *provider, GTask *task)
 
 /*****************************************************************************/
 
-typedef struct {
-    NMCSProviderGetConfigTaskData *get_config_data;
-    GError *                       error;
-    GCancellable *                 cancellable;
-    gulong                         cancelled_id;
-    guint                          n_pending;
-} GetConfigIfaceData;
-
-static void
-_get_config_task_maybe_return(GetConfigIfaceData *iface_data, GError *error_take)
-{
-    NMCSProviderGetConfigTaskData *get_config_data = iface_data->get_config_data;
-
-    if (error_take) {
-        if (!iface_data->error)
-            iface_data->error = error_take;
-        else if (!nm_utils_error_is_cancelled(iface_data->error)
-                 && nm_utils_error_is_cancelled(error_take)) {
-            nm_clear_error(&iface_data->error);
-            iface_data->error = error_take;
-        } else
-            g_error_free(error_take);
-
-        nm_clear_g_cancellable(&iface_data->cancellable);
-    }
-
-    if (iface_data->n_pending > 0)
-        return;
-
-    nm_clear_g_cancellable_disconnect(g_task_get_cancellable(get_config_data->task),
-                                      &iface_data->cancelled_id);
-
-    nm_clear_g_cancellable(&iface_data->cancellable);
-
-    if (iface_data->error) {
-        if (nm_utils_error_is_cancelled(iface_data->error))
-            _LOGD("get-config: cancelled");
-        else
-            _LOGD("get-config: failed: %s", iface_data->error->message);
-        g_task_return_error(get_config_data->task, g_steal_pointer(&iface_data->error));
-    } else {
-        _LOGD("get-config: success");
-        g_task_return_pointer(get_config_data->task,
-                              g_hash_table_ref(get_config_data->result_dict),
-                              (GDestroyNotify) g_hash_table_unref);
-    }
-
-    nm_g_slice_free(iface_data);
-    g_object_unref(get_config_data->task);
-}
-
 static void
 _get_config_fetch_done_cb(NMHttpClient *http_client,
                           GAsyncResult *result,
                           gpointer      user_data,
                           gboolean      is_local_ipv4)
 {
-    GetConfigIfaceData *iface_data;
-    const char *        hwaddr           = NULL;
-    gs_unref_bytes GBytes *response_data = NULL;
-    gs_free_error GError *error          = NULL;
+    NMCSProviderGetConfigTaskData *get_config_data;
+    const char *                   hwaddr = NULL;
+    gs_unref_bytes GBytes *response       = NULL;
+    gs_free_error GError *          error = NULL;
+    NMCSProviderGetConfigIfaceData *config_iface_data;
+    in_addr_t                       tmp_addr;
+    int                             tmp_prefix;
 
-    nm_utils_user_data_unpack(user_data, &iface_data, &hwaddr);
+    nm_utils_user_data_unpack(user_data, &get_config_data, &hwaddr);
 
-    nm_http_client_poll_get_finish(http_client, result, NULL, &response_data, &error);
+    nm_http_client_poll_get_finish(http_client, result, NULL, &response, &error);
 
-    if (!error) {
-        NMCSProviderGetConfigIfaceData *config_iface_data;
-        in_addr_t                       tmp_addr;
-        int                             tmp_prefix;
+    if (nm_utils_error_is_cancelled(error))
+        return;
 
-        config_iface_data = g_hash_table_lookup(iface_data->get_config_data->result_dict, hwaddr);
+    if (error)
+        goto out;
 
-        if (is_local_ipv4) {
-            gs_free const char **s_addrs = NULL;
-            gsize                i, len;
+    config_iface_data = g_hash_table_lookup(get_config_data->result_dict, hwaddr);
 
-            s_addrs = nm_utils_strsplit_set_full(g_bytes_get_data(response_data, NULL),
-                                                 "\n",
-                                                 NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
-            len     = NM_PTRARRAY_LEN(s_addrs);
+    if (is_local_ipv4) {
+        gs_free const char **s_addrs = NULL;
+        gsize                i, len;
 
-            nm_assert(!config_iface_data->has_ipv4s);
-            nm_assert(!config_iface_data->ipv4s_arr);
-            config_iface_data->has_ipv4s = TRUE;
-            config_iface_data->ipv4s_len = 0;
-            if (len > 0) {
-                config_iface_data->ipv4s_arr = g_new(in_addr_t, len);
+        s_addrs = nm_utils_strsplit_set_full(g_bytes_get_data(response, NULL),
+                                             "\n",
+                                             NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
+        len     = NM_PTRARRAY_LEN(s_addrs);
 
-                for (i = 0; i < len; i++) {
-                    if (nm_utils_parse_inaddr_bin(AF_INET, s_addrs[i], NULL, &tmp_addr))
-                        config_iface_data->ipv4s_arr[config_iface_data->ipv4s_len++] = tmp_addr;
-                }
+        nm_assert(!config_iface_data->has_ipv4s);
+        nm_assert(!config_iface_data->ipv4s_arr);
+        config_iface_data->has_ipv4s = TRUE;
+        config_iface_data->ipv4s_len = 0;
+        if (len > 0) {
+            config_iface_data->ipv4s_arr = g_new(in_addr_t, len);
+
+            for (i = 0; i < len; i++) {
+                if (nm_utils_parse_inaddr_bin(AF_INET, s_addrs[i], NULL, &tmp_addr))
+                    config_iface_data->ipv4s_arr[config_iface_data->ipv4s_len++] = tmp_addr;
             }
-        } else {
-            if (nm_utils_parse_inaddr_prefix_bin(AF_INET,
-                                                 g_bytes_get_data(response_data, NULL),
-                                                 NULL,
-                                                 &tmp_addr,
-                                                 &tmp_prefix)) {
-                nm_assert(!config_iface_data->has_cidr);
-                config_iface_data->has_cidr    = TRUE;
-                config_iface_data->cidr_prefix = tmp_prefix;
-                config_iface_data->cidr_addr   = tmp_addr;
-            }
+        }
+    } else {
+        if (nm_utils_parse_inaddr_prefix_bin(AF_INET,
+                                             g_bytes_get_data(response, NULL),
+                                             NULL,
+                                             &tmp_addr,
+                                             &tmp_prefix)) {
+            nm_assert(!config_iface_data->has_cidr);
+            config_iface_data->has_cidr    = TRUE;
+            config_iface_data->cidr_prefix = tmp_prefix;
+            config_iface_data->cidr_addr   = tmp_addr;
         }
     }
 
-    /* If nm_utils_error_is_cancelled(error), then our internal iface_data->cancellable
-     * was cancelled, because the overall request failed. From point of view of the
-     * caller, this does not mean that a cancellation happened. It also means, our
-     * request overall is already about to fail. */
-    nm_assert(!nm_utils_error_is_cancelled(error) || iface_data->error);
-
-    iface_data->n_pending--;
-    _get_config_task_maybe_return(iface_data,
-                                  nm_utils_error_is_cancelled(error) ? NULL
-                                                                     : g_steal_pointer(&error));
+out:
+    get_config_data->n_pending--;
+    _nmcs_provider_get_config_task_maybe_return(get_config_data, g_steal_pointer(&error));
 }
 
 static void
@@ -263,21 +208,6 @@ _get_config_fetch_done_cb_local_ipv4s(GObject *source, GAsyncResult *result, gpo
     _get_config_fetch_done_cb(NM_HTTP_CLIENT(source), result, user_data, TRUE);
 }
 
-static void
-_get_config_fetch_cancelled_cb(GObject *object, gpointer user_data)
-{
-    GetConfigIfaceData *iface_data = user_data;
-
-    nm_clear_g_signal_handler(g_task_get_cancellable(iface_data->get_config_data->task),
-                              &iface_data->cancelled_id);
-    _get_config_task_maybe_return(iface_data, nm_utils_error_new_cancelled(FALSE, NULL));
-}
-
-typedef struct {
-    NMCSProviderGetConfigTaskData *get_config_data;
-    GHashTable *                   response_parsed;
-} GetConfigMetadataData;
-
 typedef struct {
     gssize iface_idx;
     char   path[0];
@@ -286,59 +216,32 @@ typedef struct {
 static void
 _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    GetConfigMetadataData *        metadata_data = user_data;
-    GetConfigIfaceData *           iface_data;
-    NMCSProviderGetConfigTaskData *get_config_data = metadata_data->get_config_data;
-    gs_unref_hashtable GHashTable *response_parsed =
-        g_steal_pointer(&metadata_data->response_parsed);
-    gs_free_error GError *error = NULL;
-    GCancellable *        cancellable;
+    NMCSProviderGetConfigTaskData *get_config_data;
+    gs_unref_hashtable GHashTable *response_parsed = NULL;
+    gs_free_error GError *error                    = NULL;
     GetConfigMetadataMac *v_mac_data;
     const char *          v_hwaddr;
     GHashTableIter        h_iter;
     NMHttpClient *        http_client;
 
-    nm_g_slice_free(metadata_data);
-
     nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, NULL, &error);
 
-    iface_data  = g_slice_new(GetConfigIfaceData);
-    *iface_data = (GetConfigIfaceData){
-        .get_config_data = get_config_data,
-        .n_pending       = 0,
-    };
-
-    if (nm_utils_error_is_cancelled(error)) {
-        _get_config_task_maybe_return(iface_data, g_steal_pointer(&error));
+    if (nm_utils_error_is_cancelled(error))
         return;
-    }
+
+    get_config_data = user_data;
+
+    response_parsed                     = g_steal_pointer(&get_config_data->extra_data);
+    get_config_data->extra_data_destroy = NULL;
 
     /* We ignore errors. Only if we got no response at all, it's a problem.
      * Otherwise, we proceed with whatever we could fetch. */
     if (!response_parsed) {
-        _get_config_task_maybe_return(
-            iface_data,
+        _nmcs_provider_get_config_task_maybe_return(
+            get_config_data,
             nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN, "meta data for interfaces not found"));
         return;
     }
-
-    cancellable = g_task_get_cancellable(get_config_data->task);
-    if (cancellable) {
-        gulong cancelled_id;
-
-        cancelled_id = g_cancellable_connect(cancellable,
-                                             G_CALLBACK(_get_config_fetch_cancelled_cb),
-                                             iface_data,
-                                             NULL);
-        if (cancelled_id == 0) {
-            /* the callback was already invoked synchronously and the task already returned. */
-            return;
-        }
-
-        iface_data->cancelled_id = cancelled_id;
-    }
-
-    iface_data->cancellable = g_cancellable_new();
 
     http_client = nmcs_provider_get_http_client(g_task_get_source_object(get_config_data->task));
 
@@ -366,6 +269,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
         }
 
         nm_assert(config_iface_data->iface_idx == -1);
+
         config_iface_data->iface_idx = v_mac_data->iface_idx;
 
         _LOGD("get-config: start fetching meta data for #%" G_GSSIZE_FORMAT ", %s (%s)",
@@ -373,7 +277,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
               hwaddr,
               v_mac_data->path);
 
-        iface_data->n_pending++;
+        get_config_data->n_pending++;
         nm_http_client_poll_get(
             http_client,
             (uri1 = _ec2_uri_interfaces(v_mac_data->path,
@@ -384,13 +288,13 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             10000,
             1000,
             NULL,
-            iface_data->cancellable,
+            get_config_data->intern_cancellable,
             NULL,
             NULL,
             _get_config_fetch_done_cb_subnet_ipv4_cidr_block,
-            nm_utils_user_data_pack(iface_data, hwaddr));
+            nm_utils_user_data_pack(get_config_data, hwaddr));
 
-        iface_data->n_pending++;
+        get_config_data->n_pending++;
         nm_http_client_poll_get(
             http_client,
             (uri2 = _ec2_uri_interfaces(v_mac_data->path,
@@ -401,23 +305,23 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             10000,
             1000,
             NULL,
-            iface_data->cancellable,
+            get_config_data->intern_cancellable,
             NULL,
             NULL,
             _get_config_fetch_done_cb_local_ipv4s,
-            nm_utils_user_data_pack(iface_data, hwaddr));
+            nm_utils_user_data_pack(get_config_data, hwaddr));
     }
 
-    _get_config_task_maybe_return(iface_data, NULL);
+    _nmcs_provider_get_config_task_maybe_return(get_config_data, NULL);
 }
 
 static gboolean
 _get_config_metadata_ready_check(long     response_code,
-                                 GBytes * response_data,
+                                 GBytes * response,
                                  gpointer check_user_data,
                                  GError **error)
 {
-    GetConfigMetadataData *metadata_data           = check_user_data;
+    NMCSProviderGetConfigTaskData *get_config_data = check_user_data;
     gs_unref_hashtable GHashTable *response_parsed = NULL;
     const guint8 *                 r_data;
     const char *                   cur_line;
@@ -428,12 +332,12 @@ _get_config_metadata_ready_check(long     response_code,
     const char *                   c_hwaddr;
     gssize                         iface_idx_counter = 0;
 
-    if (response_code != 200 || !response_data) {
+    if (response_code != 200 || !response) {
         /* we wait longer. */
         return FALSE;
     }
 
-    r_data = g_bytes_get_data(response_data, &r_len);
+    r_data = g_bytes_get_data(response, &r_len);
     /* NMHttpClient guarantees that there is a trailing NUL after the data. */
     nm_assert(r_data[r_len] == 0);
 
@@ -444,7 +348,7 @@ _get_config_metadata_ready_check(long     response_code,
         if (cur_line_len == 0)
             continue;
 
-        /* Truncate the string. It's safe to do, because we own @response_data an it has an
+        /* Truncate the string. It's safe to do, because we own @response an it has an
          * extra NUL character after the buffer. */
         ((char *) cur_line)[cur_line_len] = '\0';
 
@@ -461,11 +365,12 @@ _get_config_metadata_ready_check(long     response_code,
         mac_data->iface_idx = iface_idx_counter++;
         memcpy(mac_data->path, cur_line, cur_line_len + 1u);
 
+        /* here we will ignore duplicate responses. */
         g_hash_table_insert(response_parsed, hwaddr, mac_data);
     }
 
     has_all = TRUE;
-    g_hash_table_iter_init(&h_iter, metadata_data->get_config_data->result_dict);
+    g_hash_table_iter_init(&h_iter, get_config_data->result_dict);
     while (g_hash_table_iter_next(&h_iter, (gpointer *) &c_hwaddr, NULL)) {
         if (!response_parsed || !g_hash_table_contains(response_parsed, c_hwaddr)) {
             has_all = FALSE;
@@ -473,21 +378,18 @@ _get_config_metadata_ready_check(long     response_code,
         }
     }
 
-    nm_clear_pointer(&metadata_data->response_parsed, g_hash_table_unref);
-    metadata_data->response_parsed = g_steal_pointer(&response_parsed);
+    nm_clear_pointer(&get_config_data->extra_data, g_hash_table_unref);
+    if (response_parsed) {
+        get_config_data->extra_data         = g_steal_pointer(&response_parsed);
+        get_config_data->extra_data_destroy = (GDestroyNotify) g_hash_table_unref;
+    }
     return has_all;
 }
 
 static void
 get_config(NMCSProvider *provider, NMCSProviderGetConfigTaskData *get_config_data)
 {
-    gs_free char *         uri = NULL;
-    GetConfigMetadataData *metadata_data;
-
-    metadata_data  = g_slice_new(GetConfigMetadataData);
-    *metadata_data = (GetConfigMetadataData){
-        .get_config_data = get_config_data,
-    };
+    gs_free char *uri = NULL;
 
     /* First we fetch the "macs/". If the caller requested some particular
      * MAC addresses, then we poll until we see them. They might not yet be
@@ -500,11 +402,11 @@ get_config(NMCSProvider *provider, NMCSProviderGetConfigTaskData *get_config_dat
                             15000,
                             1000,
                             NULL,
-                            g_task_get_cancellable(get_config_data->task),
+                            get_config_data->intern_cancellable,
                             _get_config_metadata_ready_check,
-                            metadata_data,
+                            get_config_data,
                             _get_config_metadata_ready_cb,
-                            metadata_data);
+                            get_config_data);
 }
 
 /*****************************************************************************/

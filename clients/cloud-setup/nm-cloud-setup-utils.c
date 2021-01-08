@@ -485,22 +485,39 @@ char *
 nmcs_utils_hwaddr_normalize(const char *hwaddr, gssize len)
 {
     gs_free char *hwaddr_clone = NULL;
+    char *        hw;
     guint8        buf[ETH_ALEN];
+    gsize         l;
 
     nm_assert(len >= -1);
 
     if (len < 0) {
         if (!hwaddr)
             return NULL;
+        l = strlen(hwaddr);
     } else {
-        if (len == 0)
+        l = len;
+        if (l > 0 && hwaddr[l - 1] == '\0') {
+            /* we accept one '\0' at the end of the string. */
+            l--;
+        }
+        if (memchr(hwaddr, '\0', l)) {
+            /* but we don't accept other NUL characters in the middle. */
             return NULL;
-        nm_assert(hwaddr);
-        hwaddr = nm_strndup_a(300, hwaddr, len, &hwaddr_clone);
+        }
     }
+
+    if (l == 0)
+        return NULL;
+
+    nm_assert(hwaddr);
+    hw = nm_strndup_a(300, hwaddr, l, &hwaddr_clone);
+
+    g_strstrip(hw);
+
     /* we cannot use _nm_utils_hwaddr_aton() because that requires a delimiter.
      * Azure exposes MAC addresses without delimiter, so accept that too. */
-    if (!nm_utils_hexstr2bin_full(hwaddr,
+    if (!nm_utils_hexstr2bin_full(hw,
                                   FALSE,
                                   FALSE,
                                   FALSE,
@@ -512,6 +529,59 @@ nmcs_utils_hwaddr_normalize(const char *hwaddr, gssize len)
         return NULL;
 
     return nm_utils_hwaddr_ntoa(buf, sizeof(buf));
+}
+
+/*****************************************************************************/
+
+gboolean
+nmcs_utils_ipaddr_normalize_bin(int         addr_family,
+                                const char *addr,
+                                gssize      len,
+                                int *       out_addr_family,
+                                gpointer    out_addr_bin)
+{
+    gs_free char *addr_clone = NULL;
+    char *        ad;
+    gsize         l;
+
+    nm_assert(len >= -1);
+
+    if (len < 0) {
+        if (!addr)
+            return FALSE;
+        l = strlen(addr);
+    } else {
+        l = len;
+        if (l > 0 && addr[l - 1] == '\0') {
+            /* we accept one '\0' at the end of the string. */
+            l--;
+        }
+        if (memchr(addr, '\0', l)) {
+            /* but we don't accept other NUL characters in the middle. */
+            return FALSE;
+        }
+    }
+
+    if (l == 0)
+        return FALSE;
+
+    nm_assert(addr);
+    ad = nm_strndup_a(300, addr, l, &addr_clone);
+
+    g_strstrip(ad);
+
+    return nm_utils_parse_inaddr_bin(addr_family, ad, out_addr_family, out_addr_bin);
+}
+
+char *
+nmcs_utils_ipaddr_normalize(int addr_family, const char *addr, gssize len)
+{
+    NMIPAddr ipaddr;
+
+    if (!nmcs_utils_ipaddr_normalize_bin(addr_family, addr, len, &addr_family, &ipaddr))
+        return NULL;
+
+    return nm_utils_inet_ntop_dup(addr_family, &ipaddr);
 }
 
 /*****************************************************************************/

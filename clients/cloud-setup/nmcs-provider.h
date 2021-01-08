@@ -12,11 +12,16 @@
 typedef struct {
     in_addr_t *ipv4s_arr;
     gsize      ipv4s_len;
-    gssize     iface_idx;
-    in_addr_t  cidr_addr;
-    guint8     cidr_prefix;
-    bool       has_ipv4s : 1;
-    bool       has_cidr : 1;
+
+    /* If the interface was seen, get_config() should set this to a
+     * unique, increasing, positive index. If the interface is requested,
+     * it is initialized to -1. */
+    gssize iface_idx;
+
+    in_addr_t cidr_addr;
+    guint8    cidr_prefix;
+    bool      has_ipv4s : 1;
+    bool      has_cidr : 1;
 
     NMIPRoute **iproutes_arr;
     gsize       iproutes_len;
@@ -37,11 +42,25 @@ nmcs_provider_get_config_iface_data_is_valid(const NMCSProviderGetConfigIfaceDat
 NMCSProviderGetConfigIfaceData *nmcs_provider_get_config_iface_data_new(gboolean was_requested);
 
 typedef struct {
-    GTask *        task;
-    GHashTable *   result_dict;
+    GTask *task;
+
+    GHashTable *result_dict;
+
+    /* this cancellable should be used for the provider implementation
+     * to listen for cancellation. */
+    GCancellable *intern_cancellable;
+
+    /* the provider implementation may attach extra data. */
     gpointer       extra_data;
-    GDestroyNotify extra_destroy;
-    bool           any : 1;
+    GDestroyNotify extra_data_destroy;
+
+    gulong extern_cancelled_id;
+
+    /* the provider implementation may use this field to track the number of pending
+     * operations. */
+    guint n_pending;
+
+    bool any : 1;
 } NMCSProviderGetConfigTaskData;
 
 #define NMCS_TYPE_PROVIDER (nmcs_provider_get_type())
@@ -92,6 +111,9 @@ void nmcs_provider_detect(NMCSProvider *      provider,
 gboolean nmcs_provider_detect_finish(NMCSProvider *provider, GAsyncResult *result, GError **error);
 
 /*****************************************************************************/
+
+void _nmcs_provider_get_config_task_maybe_return(NMCSProviderGetConfigTaskData *get_config_data,
+                                                 GError *                       error_take);
 
 void nmcs_provider_get_config(NMCSProvider *      provider,
                               gboolean            any,

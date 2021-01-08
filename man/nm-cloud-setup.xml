@@ -49,11 +49,12 @@
     desirable to automatically configure the network of that VM.
     In simple setups, the VM only has one network interface and the public
     cloud supports automatic configuration via DHCP, DHCP6 or IPv6 autoconf.
-    However, on the virtual machine might have multiple network
+    However, the virtual machine might have multiple network
     interfaces, or multiple IP addresses and IP subnets
-    on one interface. Also, the administrator can reconfigure those settings
-    while the machine is running. NetworkManager's nm-cloud-setup is a tool
-    that automatically picks up such configuration and updates the network
+    on one interface which cannot be configured via DHCP. Also, the administrator
+    may reconfigure the network while the machine is running. NetworkManager's
+    nm-cloud-setup is a tool
+    that automatically picks up such configuration in cloud environments and updates the network
     configuration of the host.</para>
 
     <para>Multiple cloud providers are supported. See <xref linkend="providers"/>.</para>
@@ -85,6 +86,11 @@
     One possible alternative may be to create such an initial profile with
     <command>nmcli device connect "$DEVICE"</command> or
     <command>nmcli connection add type ethernet ...</command>.
+    </para>
+
+    <para>
+    By setting the user-data <literal>org.freedesktop.nm-cloud-setup.skip=yes</literal>
+    on the profile, nm-cloud-setup will skip the device.
     </para>
 
     <para>nm-cloud-setup modifies the run time configuration akin to <command>nmcli device modify</command>.
@@ -119,7 +125,7 @@
       <para>Usually <command>/usr/libexec/nm-cloud-setup</command> is not run directly,
       but only by <command>systemctl restart nm-cloud-setup.service</command>. This
       ensures that the tool only runs once at any time. It also allows to integrate
-      use the nm-cloud-setup systemd timer,
+      with the nm-cloud-setup systemd timer,
       and to enable/disable the service via systemd.</para>
 
       <para>As you need to set environment variable to configure nm-cloud-setup binary,
@@ -161,7 +167,7 @@
     <itemizedlist>
       <listitem>
         <para><literal>NM_CLOUD_SETUP_LOG</literal>: control the logging verbosity. Set it
-          one of <literal>TRACE</literal>, <literal>DEBUG</literal>, <literal>INFO</literal>,
+          to one of <literal>TRACE</literal>, <literal>DEBUG</literal>, <literal>INFO</literal>,
           <literal>WARN</literal>, <literal>ERR</literal> or <literal>OFF</literal>. The program
           will print message on stdout and the default level is <literal>WARN</literal>.</para>
       </listitem>
@@ -187,7 +193,7 @@
     <refsect2>
       <title>Amazon EC2 (AWS)</title>
 
-      <para>The tools tries to fetch configuration from <literal>http://169.254.169.254/</literal>. Currently, it only
+      <para>For AWS, the tools tries to fetch configuration from <literal>http://169.254.169.254/</literal>. Currently, it only
       configures IPv4 and does nothing about IPv6. It will do the following.</para>
 
       <itemizedlist>
@@ -233,7 +239,7 @@
             <command>nmcli device modify "eth0" ipv4.addresses "172.16.5.3/24,172.16.5.4/24" ipv4.routes "0.0.0.0/0 172.16.5.1 10 table=30401" ipv4.routing-rules "priority 30401 from 172.16.5.3/32 table 30401, priority 30401 from 172.16.5.4/32 table 30401"</command>.
             Note that this replaces the previous addresses, routes and rules with the new information.
             But also note that this only changes the run time configuration of the device. The
-            connection profile is not affected by that.
+            connection profile on disk is not affected.
           </para>
         </listitem>
       </itemizedlist>
@@ -242,13 +248,87 @@
     <refsect2>
       <title>Google Cloud Platform (GCP)</title>
 
-      <para>The tools tries to fetch configuration from <literal>http://metadata.google.internal/</literal>.</para>
+      <para>
+        For GCP, the meta data is fetched from URIs starting with <literal>http://metadata.google.internal/computeMetadata/v1/</literal> with a
+        HTTP header <literal>"Metadata-Flavor: Google"</literal>.
+        Currently, the tool only configures IPv4 and does nothing about IPv6. It will do the following.
+      </para>
+
+      <itemizedlist>
+        <listitem>
+          <para>First fetch <literal>http://metadata.google.internal/computeMetadata/v1/instance/id</literal> to detect whether the tool
+          runs on Google Cloud Platform. Only if the platform is detected, it will continue fetching the configuration.</para>
+        </listitem>
+        <listitem>
+          <para>Fetch <literal>http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/</literal> to get the list
+          of available interface indexes. These indexes can be used for further lookups.</para>
+        </listitem>
+        <listitem>
+          <para>Then, for each interface fetch <literal>http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/$IFACE_INDEX/mac</literal> to get
+          the corresponding MAC address of the found interfaces. The MAC address is used to identify the device later on.</para>
+        </listitem>
+        <listitem>
+          <para>Then, for each interface with a MAC address fetch <literal>http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/$IFACE_INDEX/forwarded-ips/</literal>
+          and then all the found IP addresses at <literal>http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/$IFACE_INDEX/forwarded-ips/$FIPS_INDEX</literal>.
+          </para>
+        </listitem>
+        <listitem>
+          <para>At this point, we have a list of all interfaces (by MAC address) and their configured IPv4 addresses.</para>
+          <para>For each device, we lookup the currently applied connection in NetworkManager. That implies, that the device is currently activated
+          in NetworkManager. If no such device was in NetworkManager, or if the profile has user-data <literal>org.freedesktop.nm-cloud-setup.skip=yes</literal>,
+          we skip the device. Now for each found IP address we add a static route "$FIPS_ADDR/32 0.0.0.0 100 type=local" and reapply the change.</para>
+          <para>The effect is not unlike calling <command>nmcli device modify "$DEVICE" ipv4.routes "$FIPS_ADDR/32 0.0.0.0 100 type=local [,...]"</command> for all relevant
+          devices and all found addresses.</para>
+        </listitem>
+      </itemizedlist>
     </refsect2>
 
     <refsect2>
       <title>Microsoft Azure</title>
 
-      <para>The tools tries to fetch configuration from <literal>http://169.254.169.254/</literal>.</para>
+      <para>
+        For Azure, the meta data is fetched from URIs starting with <literal>http://169.254.169.254/metadata/instance</literal> with a
+        URL parameter <literal>"?format=text&amp;api-version=2017-04-02"</literal> and a HTTP header <literal>"Metadata:true"</literal>.
+        Currently, the tool only configures IPv4 and does nothing about IPv6. It will do the following.
+      </para>
+
+      <itemizedlist>
+        <listitem>
+          <para>First fetch <literal>http://169.254.169.254/metadata/instance?format=text&amp;api-version=2017-04-02</literal> to detect whether the tool
+          runs on Azure Cloud. Only if the platform is detected, it will continue fetching the configuration.</para>
+        </listitem>
+        <listitem>
+          <para>Fetch <literal>http://169.254.169.254/metadata/instance/network/interface/?format=text&amp;api-version=2017-04-02</literal> to get the list
+          of available interface indexes. These indexes can be used for further lookups.</para>
+        </listitem>
+        <listitem>
+          <para>Then, for each interface fetch <literal>http://169.254.169.254/metadata/instance/network/interface/$IFACE_INDEX/macAddress?format=text&amp;api-version=2017-04-02</literal>
+          to get the corresponding MAC address of the found interfaces. The MAC address is used to identify the device later on.</para>
+        </listitem>
+        <listitem>
+          <para>Then, for each interface with a MAC address fetch <literal>http://169.254.169.254/metadata/instance/network/interface/$IFACE_INDEX/ipv4/ipAddress/?format=text&amp;api-version=2017-04-02</literal>
+          to get the list of (indexes of) IP addresses on that interface.
+          </para>
+        </listitem>
+        <listitem>
+          <para>Then, for each IP address index fetch the address at
+          <literal>http://169.254.169.254/metadata/instance/network/interface/$IFACE_INDEX/ipv4/ipAddress/$ADDR_INDEX/privateIpAddress?format=text&amp;api-version=2017-04-02</literal>.
+          Also fetch the size of the subnet (the netmask) for the interface from
+          <literal>http://169.254.169.254/metadata/instance/network/interface/$IFACE_INDEX/ipv4/subnet/0/prefix/?format=text&amp;api-version=2017-04-02</literal>.
+          </para>
+        </listitem>
+        <listitem>
+          <para>At this point, we have a list of all interfaces (by MAC address) and their configured IPv4 addresses.</para>
+          <para>For each device, we lookup the currently applied connection in NetworkManager. That implies, that the device is currently activated
+          in NetworkManager. If no such device was in NetworkManager, or if the profile has user-data <literal>org.freedesktop.nm-cloud-setup.skip=yes</literal>,
+          we skip the device. Now for each found IP address we add a static address "$ADDR/$SUBNET_PREFIX". Also we configure policy routing
+          by adding a static route "$ADDR/$SUBNET_PREFIX $GATEWAY 10, table=$TABLE" where $GATEWAY is the first IP address in the subnet and table
+          is 30400 plus the interface index. Also we add a policy routing rule "priority $TABLE from $ADDR/32 table $TABLE".</para>
+          <para>The effect is not unlike calling
+          <command>nmcli device modify "$DEVICE" ipv4.addresses "$ADDR/$SUBNET [,...]" ipv4.routes "$ADDR/32 $GATEWAY 10 table=$TABLE" ipv4.routing-rules "priority $TABLE from $ADDR/32 table $TABLE"</command>
+          for all relevant devices and all found addresses.</para>
+        </listitem>
+      </itemizedlist>
     </refsect2>
 
   </refsect1>
