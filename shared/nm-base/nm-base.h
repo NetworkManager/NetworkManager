@@ -8,6 +8,11 @@
 
 /*****************************************************************************/
 
+/* this must be the same as NM_UTILS_HWADDR_LEN_MAX from libnm. */
+#define _NM_UTILS_HWADDR_LEN_MAX 20
+
+/*****************************************************************************/
+
 typedef enum {
     NM_ETHTOOL_ID_UNKNOWN = -1,
 

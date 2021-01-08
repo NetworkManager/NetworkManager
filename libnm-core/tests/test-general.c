@@ -75,6 +75,12 @@ G_STATIC_ASSERT(sizeof(bool) <= sizeof(int));
 
 /*****************************************************************************/
 
+/* NM_UTILS_HWADDR_LEN_MAX is public API of libnm(-core) and _NM_UTILS_HWADDR_LEN_MAX
+ * is internal API. They are the same, but the latter can be used without including libnm-core. */
+G_STATIC_ASSERT(NM_UTILS_HWADDR_LEN_MAX == _NM_UTILS_HWADDR_LEN_MAX);
+
+/*****************************************************************************/
+
 static void
 test_nm_ascii_spaces(void)
 {

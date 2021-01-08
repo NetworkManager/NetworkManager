@@ -1117,10 +1117,10 @@ nmp_utils_ethtool_get_permanent_address(int ifindex, guint8 *buf, size_t *length
 {
     struct {
         struct ethtool_perm_addr e;
-        guint8                   _extra_data[NM_UTILS_HWADDR_LEN_MAX + 1];
+        guint8                   _extra_data[_NM_UTILS_HWADDR_LEN_MAX + 1];
     } edata = {
         .e.cmd  = ETHTOOL_GPERMADDR,
-        .e.size = NM_UTILS_HWADDR_LEN_MAX,
+        .e.size = _NM_UTILS_HWADDR_LEN_MAX,
     };
     const guint8 *pdata;
 
@@ -1131,7 +1131,7 @@ nmp_utils_ethtool_get_permanent_address(int ifindex, guint8 *buf, size_t *length
     if (_ethtool_call_once(ifindex, &edata, sizeof(edata)) < 0)
         return FALSE;
 
-    if (edata.e.size > NM_UTILS_HWADDR_LEN_MAX)
+    if (edata.e.size > _NM_UTILS_HWADDR_LEN_MAX)
         return FALSE;
     if (edata.e.size < 1)
         return FALSE;
