@@ -2358,8 +2358,6 @@ gboolean nm_platform_ethtool_get_link_ring(NMPlatform *self, int ifindex, NMEtht
 gboolean
 nm_platform_ethtool_set_ring(NMPlatform *self, int ifindex, const NMEthtoolRingState *ring);
 
-const char *nm_platform_link_duplex_type_to_string(NMPlatformLinkDuplexType duplex);
-
 void nm_platform_ip4_dev_route_blacklist_set(NMPlatform *self,
                                              int         ifindex,
                                              GPtrArray * ip4_dev_route_blacklist);

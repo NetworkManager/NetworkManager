@@ -20,6 +20,8 @@ gboolean    nmp_utils_ethtool_set_wake_on_lan(int                      ifindex,
                                               _NMSettingWiredWakeOnLan wol,
                                               const char *             wol_password);
 
+const char *nm_platform_link_duplex_type_to_string(NMPlatformLinkDuplexType duplex);
+
 gboolean nmp_utils_ethtool_get_link_settings(int                       ifindex,
                                              gboolean *                out_autoneg,
                                              guint32 *                 out_speed,

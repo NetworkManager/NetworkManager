@@ -53,6 +53,15 @@ nmp_utils_if_nametoindex(const char *ifname)
 
 /*****************************************************************************/
 
+NM_UTILS_LOOKUP_STR_DEFINE(nm_platform_link_duplex_type_to_string,
+                           NMPlatformLinkDuplexType,
+                           NM_UTILS_LOOKUP_DEFAULT_WARN(NULL),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_PLATFORM_LINK_DUPLEX_UNKNOWN, "unknown"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_PLATFORM_LINK_DUPLEX_FULL, "full"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_PLATFORM_LINK_DUPLEX_HALF, "half"), );
+
+/*****************************************************************************/
+
 typedef struct {
     int       fd;
     const int ifindex;

@@ -3322,13 +3322,6 @@ nm_platform_ethtool_get_link_settings(NMPlatform *              self,
     return nmp_utils_ethtool_get_link_settings(ifindex, out_autoneg, out_speed, out_duplex);
 }
 
-NM_UTILS_LOOKUP_STR_DEFINE(nm_platform_link_duplex_type_to_string,
-                           NMPlatformLinkDuplexType,
-                           NM_UTILS_LOOKUP_DEFAULT_WARN(NULL),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_PLATFORM_LINK_DUPLEX_UNKNOWN, "unknown"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_PLATFORM_LINK_DUPLEX_FULL, "full"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_PLATFORM_LINK_DUPLEX_HALF, "half"), );
-
 /*****************************************************************************/
 
 NMEthtoolFeatureStates *
