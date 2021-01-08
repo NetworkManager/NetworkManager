@@ -4269,29 +4269,6 @@ nm_utils_g_value_set_strv(GValue *value, GPtrArray *strings)
 
 /*****************************************************************************/
 
-void
-nm_utils_ifname_cpy(char *dst, const char *name)
-{
-    int i;
-
-    g_return_if_fail(dst);
-    g_return_if_fail(name && name[0]);
-
-    nm_assert(nm_utils_ifname_valid_kernel(name, NULL));
-
-    /* ensures NUL padding of the entire IFNAMSIZ buffer. */
-
-    for (i = 0; i < (int) IFNAMSIZ && name[i] != '\0'; i++)
-        dst[i] = name[i];
-
-    nm_assert(name[i] == '\0');
-
-    for (; i < (int) IFNAMSIZ; i++)
-        dst[i] = '\0';
-}
-
-/*****************************************************************************/
-
 /**
  * Takes a pair @timestamp and @duration, and returns the remaining duration based
  * on the new timestamp @now.

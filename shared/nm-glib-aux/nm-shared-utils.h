@@ -2279,6 +2279,8 @@ void nm_indirect_g_free(gpointer arg);
 
 /*****************************************************************************/
 
+void nm_utils_ifname_cpy(char *dst, const char *name);
+
 typedef enum {
     NMU_IFACE_ANY,
     NMU_IFACE_KERNEL,
