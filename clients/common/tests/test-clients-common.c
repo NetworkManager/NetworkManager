@@ -300,7 +300,7 @@ test_client_import_wireguard_missing(void)
                 g_assert_cmpint(-1, ==, *_p_error_line);                                     \
             g_assert(!_local);                                                               \
                                                                                              \
-            for (_i = 0; _i < G_N_ELEMENTS(_values); _i++) {                                 \
+            for (_i = 0; _i < (int) G_N_ELEMENTS(_values); _i++) {                           \
                 const NMUtilsNamedValue *_n = &_values[_i];                                  \
                 const char *             _v;                                                 \
                                                                                              \
