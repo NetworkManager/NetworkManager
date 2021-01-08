@@ -3282,10 +3282,10 @@ _to_string_ifa_flags(guint32 ifa_flags, char *buf, gsize size)
 /*****************************************************************************/
 
 gboolean
-nm_platform_ethtool_set_wake_on_lan(NMPlatform *            self,
-                                    int                     ifindex,
-                                    NMSettingWiredWakeOnLan wol,
-                                    const char *            wol_password)
+nm_platform_ethtool_set_wake_on_lan(NMPlatform *             self,
+                                    int                      ifindex,
+                                    _NMSettingWiredWakeOnLan wol,
+                                    const char *             wol_password)
 {
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 

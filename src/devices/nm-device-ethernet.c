@@ -1392,7 +1392,7 @@ wake_on_lan_enable(NMDevice *device)
 found:
     return nm_platform_ethtool_set_wake_on_lan(nm_device_get_platform(device),
                                                nm_device_get_ifindex(device),
-                                               wol,
+                                               _NM_SETTING_WIRED_WAKE_ON_LAN_CAST(wol),
                                                password);
 }
 

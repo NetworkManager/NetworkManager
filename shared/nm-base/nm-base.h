@@ -139,6 +139,24 @@ nm_ethtool_id_is_ring(NMEthtoolID id)
     return id >= _NM_ETHTOOL_ID_RING_FIRST && id <= _NM_ETHTOOL_ID_RING_LAST;
 }
 
+/*****************************************************************************/
+
+typedef enum {
+    _NM_SETTING_WIRED_WAKE_ON_LAN_NONE      = 0,
+    _NM_SETTING_WIRED_WAKE_ON_LAN_PHY       = 0x2,
+    _NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST   = 0x4,
+    _NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST = 0x8,
+    _NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST = 0x10,
+    _NM_SETTING_WIRED_WAKE_ON_LAN_ARP       = 0x20,
+    _NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC     = 0x40,
+
+    _NM_SETTING_WIRED_WAKE_ON_LAN_ALL = 0x7E,
+
+    _NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT         = 0x1,
+    _NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE          = 0x8000,
+    _NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS = 0x8001,
+} _NMSettingWiredWakeOnLan;
+
 /****************************************************************************/
 
 #endif /* __NM_LIBNM_BASE_H__ */

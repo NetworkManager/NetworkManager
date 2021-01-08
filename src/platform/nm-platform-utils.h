@@ -17,9 +17,9 @@ gboolean    nmp_utils_ethtool_supports_carrier_detect(int ifindex);
 gboolean    nmp_utils_ethtool_supports_vlans(int ifindex);
 int         nmp_utils_ethtool_get_peer_ifindex(int ifindex);
 gboolean    nmp_utils_ethtool_get_wake_on_lan(int ifindex);
-gboolean    nmp_utils_ethtool_set_wake_on_lan(int                     ifindex,
-                                              NMSettingWiredWakeOnLan wol,
-                                              const char *            wol_password);
+gboolean    nmp_utils_ethtool_set_wake_on_lan(int                      ifindex,
+                                              _NMSettingWiredWakeOnLan wol,
+                                              const char *             wol_password);
 
 gboolean nmp_utils_ethtool_get_link_settings(int                       ifindex,
                                              gboolean *                out_autoneg,

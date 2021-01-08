@@ -17,6 +17,7 @@
 #include "nm-glib-aux/nm-enum-utils.h"
 #include "nm-glib-aux/nm-str-buf.h"
 #include "nm-glib-aux/nm-json-aux.h"
+#include "nm-base/nm-base.h"
 #include "systemd/nm-sd-utils-shared.h"
 
 #include "nm-utils.h"
@@ -92,6 +93,57 @@ test_nm_ascii_spaces(void)
             g_assert(strchr(S, (char) i));
         else
             g_assert(!strchr(S, (char) i));
+    }
+}
+
+/*****************************************************************************/
+
+static void
+test_wired_wake_on_lan_enum(void)
+{
+    nm_auto_unref_gtypeclass GFlagsClass *flags_class = NULL;
+    gs_unref_hashtable GHashTable *vals               = g_hash_table_new(nm_direct_hash, NULL);
+    guint                          i;
+
+    G_STATIC_ASSERT_EXPR(sizeof(NMSettingWiredWakeOnLan) == sizeof(_NMSettingWiredWakeOnLan));
+    G_STATIC_ASSERT_EXPR(sizeof(NMSettingWiredWakeOnLan) < sizeof(gint64));
+
+    G_STATIC_ASSERT_EXPR(sizeof(NMSettingWiredWakeOnLan) < sizeof(gint64));
+    g_assert((((gint64)((NMSettingWiredWakeOnLan) -1)) < 0)
+             == (((gint64)((_NMSettingWiredWakeOnLan) -1)) < 0));
+
+#define _E(n)                                                    \
+    G_STMT_START                                                 \
+    {                                                            \
+        G_STATIC_ASSERT_EXPR(n == (gint64) _##n);                \
+        G_STATIC_ASSERT_EXPR(_##n == (gint64) n);                \
+        g_assert(_##n == _NM_SETTING_WIRED_WAKE_ON_LAN_CAST(n)); \
+        if (!g_hash_table_add(vals, GUINT_TO_POINTER(n)))        \
+            g_assert_not_reached();                              \
+    }                                                            \
+    G_STMT_END
+    _E(NM_SETTING_WIRED_WAKE_ON_LAN_NONE);
+    _E(NM_SETTING_WIRED_WAKE_ON_LAN_PHY);
+    _E(NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST);
+    _E(NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST);
+    _E(NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST);
+    _E(NM_SETTING_WIRED_WAKE_ON_LAN_ARP);
+    _E(NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC);
+    _E(NM_SETTING_WIRED_WAKE_ON_LAN_ALL);
+    _E(NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT);
+    _E(NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE);
+    _E(NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS);
+#undef _E
+
+    flags_class = G_FLAGS_CLASS(g_type_class_ref(NM_TYPE_SETTING_WIRED_WAKE_ON_LAN));
+    for (i = 0; i < flags_class->n_values; i++) {
+        const GFlagsValue *value = &flags_class->values[i];
+
+        if (!g_hash_table_contains(vals, GUINT_TO_POINTER(value->value))) {
+            g_error("The enum value %s from NMSettingWiredWakeOnLan is not checked for "
+                    "_NMSettingWiredWakeOnLan",
+                    value->value_name);
+        }
     }
 }
 
@@ -1227,7 +1279,7 @@ _dedup_obj_destroy(NMDedupMultiObj *obj)
 {
     DedupObj *o = (DedupObj *) obj;
 
-    nm_assert(o->parent._ref_count == 0);
+    g_assert(o->parent._ref_count == 0);
     o->parent._ref_count = 1;
     o                    = _dedup_obj_assert(obj);
     g_slice_free(DedupObj, o);
@@ -10222,6 +10274,7 @@ main(int argc, char **argv)
     nmtst_init(&argc, &argv, TRUE);
 
     g_test_add_func("/core/general/test_nm_ascii_spaces", test_nm_ascii_spaces);
+    g_test_add_func("/core/general/test_wired_wake_on_lan_enum", test_wired_wake_on_lan_enum);
     g_test_add_func("/core/general/test_nm_hash", test_nm_hash);
     g_test_add_func("/core/general/test_nm_g_slice_free_fcn", test_nm_g_slice_free_fcn);
     g_test_add_func("/core/general/test_c_list_sort", test_c_list_sort);

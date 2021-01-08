@@ -10,6 +10,7 @@
 #include "nm-core-types-internal.h"
 
 #include "nm-platform/nmp-base.h"
+#include "nm-base/nm-base.h"
 
 #include "nm-core-utils.h"
 #include "nm-setting-vlan.h"
@@ -2327,10 +2328,10 @@ const char *nm_platform_route_scope2str(int scope, char *buf, gsize len);
 
 int nm_platform_ip_address_cmp_expiry(const NMPlatformIPAddress *a, const NMPlatformIPAddress *b);
 
-gboolean nm_platform_ethtool_set_wake_on_lan(NMPlatform *            self,
-                                             int                     ifindex,
-                                             NMSettingWiredWakeOnLan wol,
-                                             const char *            wol_password);
+gboolean nm_platform_ethtool_set_wake_on_lan(NMPlatform *             self,
+                                             int                      ifindex,
+                                             _NMSettingWiredWakeOnLan wol,
+                                             const char *             wol_password);
 gboolean nm_platform_ethtool_set_link_settings(NMPlatform *             self,
                                                int                      ifindex,
                                                gboolean                 autoneg,

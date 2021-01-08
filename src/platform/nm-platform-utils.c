@@ -1405,9 +1405,9 @@ nmp_utils_ethtool_set_link_settings(int                      ifindex,
 }
 
 gboolean
-nmp_utils_ethtool_set_wake_on_lan(int                     ifindex,
-                                  NMSettingWiredWakeOnLan wol,
-                                  const char *            wol_password)
+nmp_utils_ethtool_set_wake_on_lan(int                      ifindex,
+                                  _NMSettingWiredWakeOnLan wol,
+                                  const char *             wol_password)
 {
     struct ethtool_wolinfo wol_info = {
         .cmd     = ETHTOOL_SWOL,
@@ -1416,7 +1416,7 @@ nmp_utils_ethtool_set_wake_on_lan(int                     ifindex,
 
     g_return_val_if_fail(ifindex > 0, FALSE);
 
-    if (wol == NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE)
+    if (wol == _NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE)
         return TRUE;
 
     nm_log_dbg(LOGD_PLATFORM,
@@ -1425,17 +1425,17 @@ nmp_utils_ethtool_set_wake_on_lan(int                     ifindex,
                (unsigned) wol,
                wol_password);
 
-    if (NM_FLAGS_HAS(wol, NM_SETTING_WIRED_WAKE_ON_LAN_PHY))
+    if (NM_FLAGS_HAS(wol, _NM_SETTING_WIRED_WAKE_ON_LAN_PHY))
         wol_info.wolopts |= WAKE_PHY;
-    if (NM_FLAGS_HAS(wol, NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST))
+    if (NM_FLAGS_HAS(wol, _NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST))
         wol_info.wolopts |= WAKE_UCAST;
-    if (NM_FLAGS_HAS(wol, NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST))
+    if (NM_FLAGS_HAS(wol, _NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST))
         wol_info.wolopts |= WAKE_MCAST;
-    if (NM_FLAGS_HAS(wol, NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST))
+    if (NM_FLAGS_HAS(wol, _NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST))
         wol_info.wolopts |= WAKE_BCAST;
-    if (NM_FLAGS_HAS(wol, NM_SETTING_WIRED_WAKE_ON_LAN_ARP))
+    if (NM_FLAGS_HAS(wol, _NM_SETTING_WIRED_WAKE_ON_LAN_ARP))
         wol_info.wolopts |= WAKE_ARP;
-    if (NM_FLAGS_HAS(wol, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
+    if (NM_FLAGS_HAS(wol, _NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
         wol_info.wolopts |= WAKE_MAGIC;
 
     if (wol_password) {

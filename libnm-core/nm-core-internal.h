@@ -20,6 +20,7 @@
     #error Cannot use this header.
 #endif
 
+#include "nm-base/nm-base.h"
 #include "nm-connection.h"
 #include "nm-core-enum-types.h"
 #include "nm-core-types-internal.h"
@@ -212,6 +213,20 @@ nm_bluetooth_capability_to_string(NMBluetoothCapabilities capabilities, char *bu
     (NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED | NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE)
 
 #define NM_DHCP_HOSTNAME_FLAGS_FQDN_DEFAULT_IP6 NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE
+
+/*****************************************************************************/
+
+static inline _NMSettingWiredWakeOnLan
+_NM_SETTING_WIRED_WAKE_ON_LAN_CAST(NMSettingWiredWakeOnLan v)
+{
+    /* _NMSettingWiredWakeOnLan and NMSettingWiredWakeOnLan enums are really
+     * the same.
+     *
+     * The former is used by nm-platform (which should have no libnm-core dependency),
+     * the latter is used by libnm-core. A unit test ensures they are exactly the same,
+     * so we can just cast them. */
+    return (_NMSettingWiredWakeOnLan) v;
+}
 
 /*****************************************************************************/
 
