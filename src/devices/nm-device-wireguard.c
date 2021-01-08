@@ -118,6 +118,9 @@ typedef struct {
     CList       lst_peers_head;
     GHashTable *peers;
 
+    /* counts the numbers of peers that are currently resolving. */
+    guint peers_resolving_cnt;
+
     gint64 resolve_next_try_at;
     gint64 link_config_last_at;
 
@@ -506,9 +509,52 @@ _peers_find(NMDeviceWireGuardPrivate *priv, NMWireGuardPeer *peer)
     return g_hash_table_lookup(priv->peers, &peer);
 }
 
-static void
-_peers_remove(NMDeviceWireGuardPrivate *priv, PeerData *peer_data)
+static guint
+_peers_resolving_cnt(NMDeviceWireGuardPrivate *priv)
 {
+    nm_assert(priv);
+#if NM_MORE_ASSERTS > 3
+    {
+        PeerData *peer_data;
+        guint     cnt = 0;
+
+        c_list_for_each_entry (peer_data, &priv->lst_peers_head, lst_peers) {
+            if (peer_data->ep_resolv.cancellable)
+                cnt++;
+        }
+        nm_assert(cnt == priv->peers_resolving_cnt);
+    }
+#endif
+
+    return priv->peers_resolving_cnt;
+}
+
+static void
+_peers_resolving_cnt_decrement(NMDeviceWireGuard *self)
+{
+    NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
+
+    nm_assert(priv);
+    nm_assert(priv->peers_resolving_cnt > 0);
+
+    priv->peers_resolving_cnt--;
+
+    nm_assert(_peers_resolving_cnt(priv) == priv->peers_resolving_cnt);
+
+    if (priv->peers_resolving_cnt == 0) {
+        if (nm_device_get_state(NM_DEVICE(self)) == NM_DEVICE_STATE_CONFIG) {
+            _LOGT(LOGD_DEVICE,
+                  "activation delayed to resolve DNS names of peers: completed, proceed now");
+            nm_device_activate_schedule_stage2_device_config(NM_DEVICE(self), FALSE);
+        }
+    }
+}
+
+static void
+_peers_remove(NMDeviceWireGuard *self, PeerData *peer_data)
+{
+    NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
+
     nm_assert(peer_data);
     nm_assert(g_hash_table_lookup(priv->peers, peer_data) == peer_data);
 
@@ -517,13 +563,16 @@ _peers_remove(NMDeviceWireGuardPrivate *priv, PeerData *peer_data)
 
     c_list_unlink_stale(&peer_data->lst_peers);
     nm_wireguard_peer_unref(peer_data->peer);
-    nm_clear_g_cancellable(&peer_data->ep_resolv.cancellable);
+    if (nm_clear_g_cancellable(&peer_data->ep_resolv.cancellable))
+        _peers_resolving_cnt_decrement(self);
     g_slice_free(PeerData, peer_data);
 
     if (c_list_is_empty(&priv->lst_peers_head)) {
         nm_clear_g_source(&priv->resolve_next_try_id);
         nm_clear_g_source(&priv->link_config_delayed_id);
     }
+
+    nm_assert(_peers_resolving_cnt(priv) == priv->peers_resolving_cnt);
 }
 
 static PeerData *
@@ -675,8 +724,9 @@ _peers_retry_in_msec(PeerData *peer_data, gboolean after_failure)
 static void
 _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-    NMDeviceWireGuard *self;
-    PeerData *         peer_data;
+    NMDeviceWireGuard *       self;
+    NMDeviceWireGuardPrivate *priv;
+    PeerData *                peer_data;
     gs_free_error GError *resolv_error = NULL;
     GList *               list;
     gboolean              changed = FALSE;
@@ -692,10 +742,13 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 
     peer_data = user_data;
     self      = peer_data->self;
+    priv      = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
 
-    g_clear_object(&peer_data->ep_resolv.cancellable);
+    if (nm_clear_g_object(&peer_data->ep_resolv.cancellable))
+        _peers_resolving_cnt_decrement(self);
 
     nm_assert((!resolv_error) != (!list));
+    nm_assert(_peers_resolving_cnt(priv) == priv->peers_resolving_cnt);
 
 #define _retry_in_msec_to_string(retry_in_msec, s_retry)                               \
     ({                                                                                 \
@@ -797,8 +850,6 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
     _peers_resolve_retry_reschedule_for_peer(self, peer_data, retry_in_msec);
 
     if (changed) {
-        NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
-
         /* schedule the job in the background, to give multiple resolve events time
          * to complete. */
         nm_clear_g_source(&priv->link_config_delayed_id);
@@ -812,6 +863,7 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 static void
 _peers_resolve_start(NMDeviceWireGuard *self, PeerData *peer_data)
 {
+    NMDeviceWireGuardPrivate *priv      = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
     gs_unref_object GResolver *resolver = NULL;
     const char *               host;
 
@@ -820,6 +872,7 @@ _peers_resolve_start(NMDeviceWireGuard *self, PeerData *peer_data)
     nm_assert(!peer_data->ep_resolv.cancellable);
 
     peer_data->ep_resolv.cancellable = g_cancellable_new();
+    priv->peers_resolving_cnt++;
 
     /* set a special next-try timestamp. It is positive, and indicates
      * that we are in the process of trying.
@@ -841,6 +894,8 @@ _peers_resolve_start(NMDeviceWireGuard *self, PeerData *peer_data)
           nm_wireguard_peer_get_public_key(peer_data->peer),
           host,
           nm_wireguard_peer_get_endpoint(peer_data->peer));
+
+    nm_assert(_peers_resolving_cnt(priv) == priv->peers_resolving_cnt);
 }
 
 static void
@@ -915,7 +970,8 @@ _peers_update(NMDeviceWireGuard *self,
     if (nm_sock_addr_union_cmp(&peer_data->ep_resolv.sockaddr, &sockaddr) != 0)
         changed = TRUE;
 
-    nm_clear_g_cancellable(&peer_data->ep_resolv.cancellable);
+    if (nm_clear_g_cancellable(&peer_data->ep_resolv.cancellable))
+        _peers_resolving_cnt_decrement(self);
 
     peer_data->ep_resolv = (PeerEndpointResolveData){
         .sockaddr          = sockaddr,
@@ -948,12 +1004,13 @@ _peers_update(NMDeviceWireGuard *self,
 }
 
 static void
-_peers_remove_all(NMDeviceWireGuardPrivate *priv)
+_peers_remove_all(NMDeviceWireGuard *self)
 {
-    PeerData *peer_data;
+    NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
+    PeerData *                peer_data;
 
     while ((peer_data = c_list_first_entry(&priv->lst_peers_head, PeerData, lst_peers)))
-        _peers_remove(priv, peer_data);
+        _peers_remove(self, peer_data);
 }
 
 static void
@@ -984,7 +1041,7 @@ _peers_update_all(NMDeviceWireGuard *self, NMSettingWireGuard *s_wg, gboolean *o
 
     c_list_for_each_entry_safe (peer_data, peer_data_safe, &priv->lst_peers_head, lst_peers) {
         if (peer_data->dirty_update_all) {
-            _peers_remove(priv, peer_data);
+            _peers_remove(self, peer_data);
             peers_removed = TRUE;
         }
     }
@@ -1515,9 +1572,11 @@ link_config_delayed_resolver_cb(gpointer user_data)
 static NMActStageReturn
 act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMDeviceSysIfaceState sys_iface_state;
-    NMDeviceStateReason   failure_reason;
-    NMActStageReturn      ret;
+    NMDeviceWireGuard *       self = NM_DEVICE_WIREGUARD(device);
+    NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
+    NMDeviceSysIfaceState     sys_iface_state;
+    NMDeviceStateReason       failure_reason;
+    NMActStageReturn          ret;
 
     sys_iface_state = nm_device_sys_iface_state_get(device);
 
@@ -1533,15 +1592,23 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
                                                                           : LINK_CONFIG_MODE_FULL,
                     &failure_reason);
 
-    if (sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_ASSUME) {
-        /* this never fails. */
-        return NM_ACT_STAGE_RETURN_SUCCESS;
-    }
-
     if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
+        if (sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_ASSUME) {
+            /* this never fails. */
+            return NM_ACT_STAGE_RETURN_SUCCESS;
+        }
+
         nm_device_state_changed(device, NM_DEVICE_STATE_FAILED, failure_reason);
         NM_SET_OUT(out_failure_reason, failure_reason);
         return NM_ACT_STAGE_RETURN_FAILURE;
+    }
+
+    nm_assert(NM_IN_SET(ret, NM_ACT_STAGE_RETURN_SUCCESS, NM_ACT_STAGE_RETURN_POSTPONE));
+
+    if (ret == NM_ACT_STAGE_RETURN_SUCCESS && _peers_resolving_cnt(priv) > 0u) {
+        _LOGT(LOGD_DEVICE,
+              "activation delayed to resolve DNS names of peers: resolving and waiting...");
+        return NM_ACT_STAGE_RETURN_POSTPONE;
     }
 
     return ret;
@@ -1732,7 +1799,7 @@ _device_cleanup(NMDeviceWireGuard *self)
 {
     NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
 
-    _peers_remove_all(priv);
+    _peers_remove_all(self);
 
     _secrets_cancel(self);
 
