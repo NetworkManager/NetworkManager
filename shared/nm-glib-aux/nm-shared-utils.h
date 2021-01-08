@@ -2092,6 +2092,24 @@ _nm_utils_hwaddr_aton(const char *asc, gpointer buffer, gsize buffer_length, gsi
                                     out_length);
 }
 
+static inline guint8 *
+_nm_utils_hwaddr_aton_exact(const char *asc, gpointer buffer, gsize buffer_length)
+{
+    g_return_val_if_fail(asc, NULL);
+    g_return_val_if_fail(buffer, NULL);
+    g_return_val_if_fail(buffer_length > 0, NULL);
+
+    return nm_utils_hexstr2bin_full(asc,
+                                    FALSE,
+                                    TRUE,
+                                    FALSE,
+                                    ":-",
+                                    buffer_length,
+                                    buffer,
+                                    buffer_length,
+                                    NULL);
+}
+
 static inline const char *
 _nm_utils_hwaddr_ntoa(gconstpointer addr,
                       gsize         addr_len,

@@ -1439,7 +1439,7 @@ nmp_utils_ethtool_set_wake_on_lan(int                     ifindex,
         wol_info.wolopts |= WAKE_MAGIC;
 
     if (wol_password) {
-        if (!nm_utils_hwaddr_aton(wol_password, wol_info.sopass, ETH_ALEN)) {
+        if (!_nm_utils_hwaddr_aton_exact(wol_password, wol_info.sopass, ETH_ALEN)) {
             nm_log_dbg(LOGD_PLATFORM,
                        "ethtool[%d]: couldn't parse Wake-on-LAN password '%s'",
                        ifindex,

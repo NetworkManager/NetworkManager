@@ -3995,16 +3995,13 @@ GByteArray *
 nm_utils_hwaddr_atoba(const char *asc, gsize length)
 {
     GByteArray *ba;
-    gsize       l;
 
     g_return_val_if_fail(asc, NULL);
     g_return_val_if_fail(length > 0 && length <= NM_UTILS_HWADDR_LEN_MAX, NULL);
 
     ba = g_byte_array_sized_new(length);
     g_byte_array_set_size(ba, length);
-    if (!_nm_utils_hwaddr_aton(asc, ba->data, length, &l))
-        goto fail;
-    if (length != l)
+    if (!_nm_utils_hwaddr_aton_exact(asc, ba->data, length))
         goto fail;
 
     return ba;
@@ -4029,17 +4026,11 @@ fail:
 guint8 *
 nm_utils_hwaddr_aton(const char *asc, gpointer buffer, gsize length)
 {
-    gsize l;
-
     g_return_val_if_fail(asc, NULL);
     g_return_val_if_fail(buffer, NULL);
     g_return_val_if_fail(length > 0 && length <= NM_UTILS_HWADDR_LEN_MAX, NULL);
 
-    if (!_nm_utils_hwaddr_aton(asc, buffer, length, &l))
-        return NULL;
-    if (length != l)
-        return NULL;
-    return buffer;
+    return _nm_utils_hwaddr_aton_exact(asc, buffer, length);
 }
 
 /**
