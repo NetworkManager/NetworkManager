@@ -7,7 +7,7 @@
 #define _UTILS_H_
 
 #include "nm-connection.h"
-#include "nm-libnm-core-intern/nm-ethtool-base.h"
+#include "nm-base/nm-ethtool-base.h"
 
 #include "shvar.h"
 

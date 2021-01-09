@@ -11,7 +11,6 @@
 #endif
 
 #include "nm-setting.h"
-#include "nm-ethtool-utils.h"
 
 G_BEGIN_DECLS
 

@@ -59,7 +59,8 @@
 #include "nm-simple-connection.h"
 #include "nm-keyfile/nm-keyfile-internal.h"
 #include "nm-glib-aux/nm-dedup-multi.h"
-#include "nm-libnm-core-intern/nm-ethtool-base.h"
+#include "nm-base/nm-ethtool-base.h"
+#include "nm-base/nm-ethtool-utils-base.h"
 
 #include "test-general-enums.h"
 

@@ -18,12 +18,6 @@ enum_sources = gnome.mkenums_simple(
   body_prefix: '#include "nm-default.h"',
 )
 
-deps = [
-  libnm_keyfile_dep,
-  libnm_core_dep,
-  libnm_core_nm_default_dep,
-]
-
 c_flags = [
   '-DNETWORKMANAGER_COMPILATION_TEST',
   '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',
@@ -45,7 +39,12 @@ foreach test_unit: test_units
   exe = executable(
     'libnm-core-' + test_unit,
     [test_unit + '.c'] + enum_sources,
-    dependencies: deps,
+    dependencies: [
+      libnm_keyfile_dep,
+      libnm_core_dep,
+      libnm_core_nm_default_dep,
+      libnm_base_dep,
+    ],
     c_args: c_flags,
     link_with: libnm_systemd_logging_stub,
   )

@@ -95,17 +95,22 @@ libnm_libnm_core_intern = static_library(
   'nm-libnm-core-intern',
   sources: files(
     'nm-libnm-core-intern/nm-auth-subject.c',
-    'nm-libnm-core-intern/nm-ethtool-base.c',
     'nm-libnm-core-intern/nm-libnm-core-utils.c',
   ) + [libnm_core_enum_sources[1]],
-  dependencies: libnm_core_nm_default_dep,
+  dependencies: [
+    libnm_core_nm_default_dep,
+    libnm_base_dep,
+  ],
   c_args: common_c_flags,
 )
 
 libnm_libnm_core_intern_dep = declare_dependency(
   sources: [libnm_core_enum_sources[1], nm_version_macro_header],
   include_directories: [libnm_core_inc, shared_inc],
-  dependencies: libnm_utils_base_dep,
+  dependencies: [
+    libnm_utils_base_dep,
+    libnm_base_dep,
+  ],
   link_with: libnm_libnm_core_intern,
 )
 
@@ -232,7 +237,10 @@ libnm_libnm_core_aux = static_library(
   ) + [libnm_core_enum_sources[1]],
   dependencies: libnm_utils_base_dep,
   c_args: c_flags,
-  link_with: libnm_libnm_core_intern,
+  link_with: [
+    libnm_libnm_core_intern,
+    libnm_base,
+  ],
 )
 
 libnm_libnm_core_aux_dep = declare_dependency(

@@ -9,6 +9,7 @@
 #include <net/if.h>
 
 #include "nm-glib-aux/nm-json-aux.h"
+#include "nm-base/nm-ethtool-utils-base.h"
 #include "nm-core-internal.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
