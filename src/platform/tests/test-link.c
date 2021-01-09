@@ -12,7 +12,7 @@
 #include <linux/if_tun.h>
 
 #include "nm-glib-aux/nm-io-utils.h"
-#include "nm-libnm-core-intern/nm-ethtool-utils.h"
+#include "nm-libnm-core-intern/nm-ethtool-base.h"
 #include "platform/nmp-object.h"
 #include "nm-platform/nmp-netns.h"
 #include "platform/nm-platform-utils.h"

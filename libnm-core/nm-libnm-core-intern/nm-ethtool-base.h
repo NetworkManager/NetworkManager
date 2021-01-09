@@ -3,8 +3,8 @@
  * Copyright (C) 2018 Red Hat, Inc.
  */
 
-#ifndef __NM_ETHTOOL_UTILS_H__
-#define __NM_ETHTOOL_UTILS_H__
+#ifndef __NM_ETHTOOL_BASE_H__
+#define __NM_ETHTOOL_BASE_H__
 
 #include "nm-base/nm-base.h"
 
@@ -34,4 +34,4 @@ nm_ethtool_id_get_by_name(const char *optname)
 
 /****************************************************************************/
 
-#endif /* __NM_ETHTOOL_UTILS_H__ */
+#endif /* __NM_ETHTOOL_BASE_H__ */

@@ -18,7 +18,7 @@
 #include <fcntl.h>
 #include <libudev.h>
 
-#include "nm-libnm-core-intern/nm-ethtool-utils.h"
+#include "nm-libnm-core-intern/nm-ethtool-base.h"
 
 /*****************************************************************************/
 

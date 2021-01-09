@@ -95,7 +95,7 @@ libnm_libnm_core_intern = static_library(
   'nm-libnm-core-intern',
   sources: files(
     'nm-libnm-core-intern/nm-auth-subject.c',
-    'nm-libnm-core-intern/nm-ethtool-utils.c',
+    'nm-libnm-core-intern/nm-ethtool-base.c',
     'nm-libnm-core-intern/nm-libnm-core-utils.c',
   ) + [libnm_core_enum_sources[1]],
   dependencies: libnm_core_nm_default_dep,

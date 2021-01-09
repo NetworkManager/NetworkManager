@@ -8,7 +8,7 @@
 
 #include "nm-glib-aux/nm-obj.h"
 #include "nm-meta-setting.h"
-#include "nm-libnm-core-intern/nm-ethtool-utils.h"
+#include "nm-libnm-core-intern/nm-ethtool-base.h"
 
 struct _NMDevice;
 

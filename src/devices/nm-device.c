@@ -28,7 +28,7 @@
 #include "nm-glib-aux/nm-random-utils.h"
 #include "systemd/nm-sd-utils-shared.h"
 
-#include "nm-libnm-core-intern/nm-ethtool-utils.h"
+#include "nm-libnm-core-intern/nm-ethtool-base.h"
 #include "nm-libnm-core-intern/nm-common-macros.h"
 #include "nm-device-private.h"
 #include "nm-l3cfg.h"

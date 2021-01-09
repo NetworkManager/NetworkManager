@@ -5,7 +5,7 @@
 
 #include "nm-default.h"
 
-#include "nm-ethtool-utils.h"
+#include "nm-ethtool-base.h"
 
 #include "nm-setting-ethtool.h"
 

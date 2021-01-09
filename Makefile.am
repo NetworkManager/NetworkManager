@@ -576,8 +576,8 @@ libnm_core_nm_libnm_core_intern_libnm_libnm_core_intern_la_SOURCES = \
 	libnm-core/nm-libnm-core-intern/nm-auth-subject.c \
 	libnm-core/nm-libnm-core-intern/nm-auth-subject.h \
 	libnm-core/nm-libnm-core-intern/nm-common-macros.h \
-	libnm-core/nm-libnm-core-intern/nm-ethtool-utils.c \
-	libnm-core/nm-libnm-core-intern/nm-ethtool-utils.h \
+	libnm-core/nm-libnm-core-intern/nm-ethtool-base.c \
+	libnm-core/nm-libnm-core-intern/nm-ethtool-base.h \
 	libnm-core/nm-libnm-core-intern/nm-libnm-core-utils.c \
 	libnm-core/nm-libnm-core-intern/nm-libnm-core-utils.h \
 	$(NULL)
@@ -1024,6 +1024,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-core-types.h \
 	libnm-core/nm-dbus-interface.h \
 	libnm-core/nm-errors.h \
+	libnm-core/nm-ethtool-utils.h \
 	libnm-core/nm-keyfile.h \
 	libnm-core/nm-setting-6lowpan.h \
 	libnm-core/nm-setting-8021x.h \
