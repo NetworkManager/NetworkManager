@@ -1035,7 +1035,7 @@ _nm_platform_kernel_support_detected(NMPlatformKernelSupportType type)
     return G_LIKELY(g_atomic_int_get(&_nm_platform_kernel_support_state[type]) != 0);
 }
 
-static inline NMTernary
+static inline NMOptionBool
 nm_platform_kernel_support_get_full(NMPlatformKernelSupportType type, gboolean init_if_not_set)
 {
     int v;
@@ -1045,7 +1045,7 @@ nm_platform_kernel_support_get_full(NMPlatformKernelSupportType type, gboolean i
     v = g_atomic_int_get(&_nm_platform_kernel_support_state[type]);
     if (G_UNLIKELY(v == 0)) {
         if (!init_if_not_set)
-            return NM_TERNARY_DEFAULT;
+            return NM_OPTION_BOOL_DEFAULT;
         v = _nm_platform_kernel_support_init(type, 0);
     }
     return (v >= 0);
@@ -1054,7 +1054,7 @@ nm_platform_kernel_support_get_full(NMPlatformKernelSupportType type, gboolean i
 static inline gboolean
 nm_platform_kernel_support_get(NMPlatformKernelSupportType type)
 {
-    return nm_platform_kernel_support_get_full(type, TRUE) != NM_TERNARY_FALSE;
+    return nm_platform_kernel_support_get_full(type, TRUE) != NM_OPTION_BOOL_FALSE;
 }
 
 /*****************************************************************************/
@@ -1118,7 +1118,7 @@ typedef struct {
     void (*link_set_sriov_params_async)(NMPlatform *            self,
                                         int                     ifindex,
                                         guint                   num_vfs,
-                                        int                     autoprobe,
+                                        NMOptionBool            autoprobe,
                                         NMPlatformAsyncCallback callback,
                                         gpointer                callback_data,
                                         GCancellable *          cancellable);
@@ -1853,7 +1853,7 @@ gboolean nm_platform_link_set_name(NMPlatform *self, int ifindex, const char *na
 void nm_platform_link_set_sriov_params_async(NMPlatform *            self,
                                              int                     ifindex,
                                              guint                   num_vfs,
-                                             int                     autoprobe,
+                                             NMOptionBool            autoprobe,
                                              NMPlatformAsyncCallback callback,
                                              gpointer                callback_data,
                                              GCancellable *          cancellable);
@@ -2342,8 +2342,8 @@ gboolean                nm_platform_ethtool_set_features(
                    NMPlatform *                  self,
                    int                           ifindex,
                    const NMEthtoolFeatureStates *features,
-                   const NMTernary *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
-                   gboolean         do_set /* or reset */);
+                   const NMOptionBool *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
+                   gboolean            do_set /* or reset */);
 
 gboolean nm_platform_ethtool_get_link_coalesce(NMPlatform *            self,
                                                int                     ifindex,

@@ -3677,25 +3677,28 @@ test_ethtool_features_get(void)
 
     for (i_run = 0; i_run < 5; i_run++) {
         NMEthtoolFeatureStates *features;
-        NMTernary *             requested;
+        NMOptionBool *          requested;
         gboolean                do_set = TRUE;
 
-        requested = g_new(NMTernary, _NM_ETHTOOL_ID_FEATURE_NUM);
+        requested = g_new(NMOptionBool, _NM_ETHTOOL_ID_FEATURE_NUM);
         for (i = 0; i < _NM_ETHTOOL_ID_FEATURE_NUM; i++)
-            requested[i] = NM_TERNARY_DEFAULT;
+            requested[i] = NM_OPTION_BOOL_DEFAULT;
         g_ptr_array_add(gfree_keeper, requested);
 
         if (i_run == 0) {
-            requested[_NM_ETHTOOL_ID_FEATURE_AS_IDX(NM_ETHTOOL_ID_FEATURE_RX)]  = NM_TERNARY_FALSE;
-            requested[_NM_ETHTOOL_ID_FEATURE_AS_IDX(NM_ETHTOOL_ID_FEATURE_TSO)] = NM_TERNARY_FALSE;
+            requested[_NM_ETHTOOL_ID_FEATURE_AS_IDX(NM_ETHTOOL_ID_FEATURE_RX)] =
+                NM_OPTION_BOOL_FALSE;
+            requested[_NM_ETHTOOL_ID_FEATURE_AS_IDX(NM_ETHTOOL_ID_FEATURE_TSO)] =
+                NM_OPTION_BOOL_FALSE;
             requested[_NM_ETHTOOL_ID_FEATURE_AS_IDX(NM_ETHTOOL_ID_FEATURE_TX_TCP6_SEGMENTATION)] =
-                NM_TERNARY_FALSE;
+                NM_OPTION_BOOL_FALSE;
         } else if (i_run == 1)
             do_set = FALSE;
         else if (i_run == 2) {
-            requested[_NM_ETHTOOL_ID_FEATURE_AS_IDX(NM_ETHTOOL_ID_FEATURE_TSO)] = NM_TERNARY_FALSE;
+            requested[_NM_ETHTOOL_ID_FEATURE_AS_IDX(NM_ETHTOOL_ID_FEATURE_TSO)] =
+                NM_OPTION_BOOL_FALSE;
             requested[_NM_ETHTOOL_ID_FEATURE_AS_IDX(NM_ETHTOOL_ID_FEATURE_TX_TCP6_SEGMENTATION)] =
-                NM_TERNARY_TRUE;
+                NM_OPTION_BOOL_TRUE;
         } else if (i_run == 3)
             do_set = FALSE;
 

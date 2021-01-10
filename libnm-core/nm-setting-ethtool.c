@@ -195,7 +195,7 @@ nm_setting_ethtool_clear_features(NMSettingEthtool *setting)
 guint
 nm_setting_ethtool_init_features(
     NMSettingEthtool *setting,
-    NMTernary *       requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */)
+    NMOptionBool *    requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */)
 {
     GHashTable *   hash;
     GHashTableIter iter;
@@ -208,7 +208,7 @@ nm_setting_ethtool_init_features(
     nm_assert(requested);
 
     for (i = 0; i < _NM_ETHTOOL_ID_FEATURE_NUM; i++)
-        requested[i] = NM_TERNARY_DEFAULT;
+        requested[i] = NM_OPTION_BOOL_DEFAULT;
 
     hash = _nm_setting_option_hash(NM_SETTING(setting), FALSE);
     if (!hash)
@@ -224,7 +224,7 @@ nm_setting_ethtool_init_features(
             continue;
 
         requested[_NM_ETHTOOL_ID_FEATURE_AS_IDX(ethtool_id)] =
-            g_variant_get_boolean(variant) ? NM_TERNARY_TRUE : NM_TERNARY_FALSE;
+            g_variant_get_boolean(variant) ? NM_OPTION_BOOL_TRUE : NM_OPTION_BOOL_FALSE;
         n_req++;
     }
 

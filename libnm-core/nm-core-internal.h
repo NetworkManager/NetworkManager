@@ -360,7 +360,7 @@ gboolean _nm_setting_option_clear(NMSetting *setting, const char *optname);
 
 guint nm_setting_ethtool_init_features(
     NMSettingEthtool *setting,
-    NMTernary *       requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */);
+    NMOptionBool *    requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */);
 
 /*****************************************************************************/
 

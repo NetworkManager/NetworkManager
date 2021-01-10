@@ -40,8 +40,8 @@ NMEthtoolFeatureStates *nmp_utils_ethtool_get_features(int ifindex);
 gboolean nmp_utils_ethtool_set_features(
     int                           ifindex,
     const NMEthtoolFeatureStates *features,
-    const NMTernary *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
-    gboolean         do_set /* or reset */);
+    const NMOptionBool *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
+    gboolean            do_set /* or reset */);
 
 gboolean nmp_utils_ethtool_get_coalesce(int ifindex, NMEthtoolCoalesceState *coalesce);
 

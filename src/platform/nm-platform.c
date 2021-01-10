@@ -1842,7 +1842,7 @@ nm_platform_link_supports_sriov(NMPlatform *self, int ifindex)
  * @ifindex: the index of the interface to change
  * @num_vfs: the number of VFs to create
  * @autoprobe: the new autoprobe-drivers value (pass
- *     %NM_TERNARY_DEFAULT to keep current value)
+ *     %NM_OPTION_BOOL_DEFAULT to keep current value)
  * @callback: called when the operation finishes
  * @callback_data: data passed to @callback
  * @cancellable: cancellable to abort the operation
@@ -1855,7 +1855,7 @@ void
 nm_platform_link_set_sriov_params_async(NMPlatform *            self,
                                         int                     ifindex,
                                         guint                   num_vfs,
-                                        NMTernary               autoprobe,
+                                        NMOptionBool            autoprobe,
                                         NMPlatformAsyncCallback callback,
                                         gpointer                callback_data,
                                         GCancellable *          cancellable)
@@ -3339,8 +3339,8 @@ nm_platform_ethtool_set_features(
     NMPlatform *                  self,
     int                           ifindex,
     const NMEthtoolFeatureStates *features,
-    const NMTernary *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
-    gboolean         do_set /* or reset */)
+    const NMOptionBool *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
+    gboolean            do_set /* or reset */)
 {
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 
