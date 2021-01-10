@@ -15,7 +15,7 @@
 #include "nm-base/nm-ethtool-base.h"
 #include "platform/nmp-object.h"
 #include "nm-platform/nmp-netns.h"
-#include "platform/nm-platform-utils.h"
+#include "nm-platform/nm-platform-utils.h"
 
 #include "test-common.h"
 #include "nm-test-utils-core.h"

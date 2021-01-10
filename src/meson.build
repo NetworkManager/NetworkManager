@@ -37,7 +37,6 @@ sources = files(
   'platform/wpan/nm-wpan-utils.c',
   'platform/nm-linux-platform.c',
   'platform/nm-platform.c',
-  'platform/nm-platform-utils.c',
   'platform/nmp-object.c',
   'platform/nmp-rules-manager.c',
   'main-utils.c',

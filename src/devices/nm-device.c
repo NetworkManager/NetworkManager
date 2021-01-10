@@ -36,7 +36,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"
 #include "platform/nm-platform.h"
-#include "platform/nm-platform-utils.h"
+#include "nm-platform/nm-platform-utils.h"
 #include "platform/nmp-object.h"
 #include "platform/nmp-rules-manager.h"
 #include "ndisc/nm-ndisc.h"

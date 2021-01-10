@@ -16,7 +16,7 @@
 #include "nm-glib-aux/nm-secret-utils.h"
 
 #include "nm-core-utils.h"
-#include "nm-platform-utils.h"
+#include "nm-platform/nm-platform-utils.h"
 
 #include "wifi/nm-wifi-utils.h"
 #include "wpan/nm-wpan-utils.h"

@@ -222,6 +222,7 @@ libnm_platform = static_library(
   'nm-platform',
   sources: [
     'nm-platform/nm-netlink.c',
+    'nm-platform/nm-platform-utils.c',
     'nm-platform/nmp-netns.c',
   ],
   dependencies: [

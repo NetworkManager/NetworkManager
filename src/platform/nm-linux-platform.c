@@ -44,7 +44,7 @@
 #include "nm-core-utils.h"
 #include "nmp-object.h"
 #include "nm-platform/nmp-netns.h"
-#include "nm-platform-utils.h"
+#include "nm-platform/nm-platform-utils.h"
 #include "nm-platform-private.h"
 #include "wifi/nm-wifi-utils.h"
 #include "wifi/nm-wifi-utils-wext.h"

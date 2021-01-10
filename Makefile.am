@@ -527,6 +527,8 @@ shared_nm_platform_libnm_platform_la_CPPFLAGS = \
 shared_nm_platform_libnm_platform_la_SOURCES = \
 	shared/nm-platform/nm-netlink.c \
 	shared/nm-platform/nm-netlink.h \
+	shared/nm-platform/nm-platform-utils.c \
+	shared/nm-platform/nm-platform-utils.h \
 	shared/nm-platform/nmp-base.h \
 	shared/nm-platform/nmp-netns.c \
 	shared/nm-platform/nmp-netns.h \
@@ -2235,8 +2237,6 @@ src_libNetworkManagerBase_la_SOURCES = \
 	\
 	src/platform/nmp-object.c \
 	src/platform/nmp-object.h \
-	src/platform/nm-platform-utils.c \
-	src/platform/nm-platform-utils.h \
 	src/platform/nm-platform.c \
 	src/platform/nm-platform.h \
 	src/platform/nm-platform-private.h \

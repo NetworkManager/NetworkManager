@@ -19,6 +19,7 @@
 #include <libudev.h>
 
 #include "nm-base/nm-ethtool-base.h"
+#include "nm-log-core/nm-logging.h"
 
 /*****************************************************************************/
 
