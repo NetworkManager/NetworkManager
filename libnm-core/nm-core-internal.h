@@ -230,6 +230,24 @@ _NM_SETTING_WIRED_WAKE_ON_LAN_CAST(NMSettingWiredWakeOnLan v)
 
 /*****************************************************************************/
 
+static inline NMTernary
+NM_TERNARY_FROM_OPTION_BOOL(NMOptionBool v)
+{
+    nm_assert(NM_IN_SET(v, NM_OPTION_BOOL_DEFAULT, NM_OPTION_BOOL_TRUE, NM_OPTION_BOOL_FALSE));
+
+    return (NMTernary) v;
+}
+
+static inline NMOptionBool
+NM_TERNARY_TO_OPTION_BOOL(NMTernary v)
+{
+    nm_assert(NM_IN_SET(v, NM_TERNARY_DEFAULT, NM_TERNARY_TRUE, NM_TERNARY_FALSE));
+
+    return (NMOptionBool) v;
+}
+
+/*****************************************************************************/
+
 typedef enum { /*< skip >*/
                NM_SETTING_PARSE_FLAGS_NONE        = 0,
                NM_SETTING_PARSE_FLAGS_STRICT      = 1LL << 0,

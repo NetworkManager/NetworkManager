@@ -8,6 +8,18 @@
 
 #include <netinet/in.h>
 
+/*****************************************************************************/
+
+/* An optional boolean (like NMTernary, with identical numerical
+ * enum values). Note that this enum type is _nm_packed! */
+typedef enum _nm_packed {
+    NM_OPTION_BOOL_DEFAULT = -1,
+    NM_OPTION_BOOL_FALSE   = 0,
+    NM_OPTION_BOOL_TRUE    = 1,
+} NMOptionBool;
+
+/*****************************************************************************/
+
 static inline gboolean
 nm_is_ascii(char ch)
 {
