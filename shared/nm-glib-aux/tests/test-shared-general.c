@@ -763,25 +763,42 @@ test_nm_utils_get_next_realloc_size(void)
         }
 
         {
-            const gsize requested      = requested0;
-            const gsize reserved_true  = nm_utils_get_next_realloc_size(TRUE, requested);
-            const gsize reserved_false = nm_utils_get_next_realloc_size(FALSE, requested);
+            const gsize requested = requested0;
+            gsize       reserved_true;
+            gsize       reserved_false;
+            bool        truncated_true  = FALSE;
+            bool        truncated_false = FALSE;
+
+            if (sizeof(gsize) > 4 && requested > SIZE_MAX / 2u - 24u) {
+                reserved_false  = G_MAXSSIZE;
+                truncated_false = TRUE;
+            } else
+                reserved_false = nm_utils_get_next_realloc_size(FALSE, requested);
+
+            if (sizeof(gsize) > 4 && requested > SIZE_MAX - 0x1000u - 24u) {
+                reserved_true  = G_MAXSSIZE;
+                truncated_true = TRUE;
+            } else
+                reserved_true = nm_utils_get_next_realloc_size(TRUE, requested);
 
             g_assert_cmpuint(reserved_true, >, 0);
             g_assert_cmpuint(reserved_false, >, 0);
-            g_assert_cmpuint(reserved_true, >=, requested);
-            g_assert_cmpuint(reserved_false, >=, requested);
-            g_assert_cmpuint(reserved_false, >=, reserved_true);
+            if (!truncated_true)
+                g_assert_cmpuint(reserved_true, >=, requested);
+            if (!truncated_false)
+                g_assert_cmpuint(reserved_false, >=, requested);
+            if (!truncated_true && !truncated_false)
+                g_assert_cmpuint(reserved_false, >=, reserved_true);
 
             if (i < G_N_ELEMENTS(test_data)) {
-                g_assert_cmpuint(reserved_true, ==, test_data[i].reserved_true);
-                g_assert_cmpuint(reserved_false, ==, test_data[i].reserved_false);
+                if (!truncated_true)
+                    g_assert_cmpuint(reserved_true, ==, test_data[i].reserved_true);
+                if (!truncated_false)
+                    g_assert_cmpuint(reserved_false, ==, test_data[i].reserved_false);
             }
 
             /* reserved_false is generally the next power of two - 24. */
-            if (reserved_false == G_MAXSIZE)
-                g_assert_cmpuint(requested, >, G_MAXSIZE / 2u - 24u);
-            else {
+            if (!truncated_false) {
                 g_assert_cmpuint(reserved_false, <=, G_MAXSIZE - 24u);
                 if (reserved_false >= 40) {
                     const gsize _pow2 = reserved_false + 24u;
@@ -799,9 +816,7 @@ test_nm_utils_get_next_realloc_size(void)
             }
 
             /* reserved_true is generally the next 4k border - 24. */
-            if (reserved_true == G_MAXSIZE)
-                g_assert_cmpuint(requested, >, G_MAXSIZE - 0x1000u - 24u);
-            else {
+            if (!truncated_true) {
                 g_assert_cmpuint(reserved_true, <=, G_MAXSIZE - 24u);
                 if (reserved_true > 8168u) {
                     const gsize page_border = reserved_true + 24u;

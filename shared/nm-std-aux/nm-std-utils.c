@@ -5,6 +5,8 @@
 #include "nm-std-utils.h"
 
 #include <stdint.h>
+#include <assert.h>
+#include <limits.h>
 
 /*****************************************************************************/
 
@@ -50,7 +52,7 @@ nm_utils_get_next_realloc_size(bool true_realloc, size_t requested)
          * We get thus sizes of 104, 232, 488, 1000, 2024, 4072, 8168... */
 
         if (NM_UNLIKELY(requested > SIZE_MAX / 2u - 24u))
-            return SIZE_MAX;
+            goto out_huge;
 
         x = requested + 24u;
         n = 128u;
@@ -63,13 +65,26 @@ nm_utils_get_next_realloc_size(bool true_realloc, size_t requested)
         return n - 24u;
     }
 
-    if (NM_UNLIKELY(requested > SIZE_MAX - 0x1000u - 24u))
-        return SIZE_MAX;
-
     /* For large allocations (with !true_realloc) we allocate memory in chunks of
      * 4K (- 24 bytes extra), assuming that the memory gets mmapped and thus
      * realloc() is efficient by just reordering pages. */
     n = ((requested + (0x0FFFu + 24u)) & ~((size_t) 0x0FFFu)) - 24u;
-    nm_assert(n >= requested);
+
+    if (NM_UNLIKELY(n < requested)) {
+        /* overflow happened. */
+        goto out_huge;
+    }
+
     return n;
+
+out_huge:
+    if (sizeof(size_t) > 4u) {
+        /* on s390x (64 bit), gcc with LTO can complain that the size argument to
+         * malloc must not be larger than 9223372036854775807.
+         *
+         * Work around that by returning SSIZE_MAX. It should be plenty still! */
+        assert(requested <= (size_t) SSIZE_MAX);
+        return (size_t) SSIZE_MAX;
+    }
+    return SIZE_MAX;
 }
