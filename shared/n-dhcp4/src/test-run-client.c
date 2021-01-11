@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <net/if.h>
+#include <netinet/ether.h>
 #include <netinet/in.h>
 #include <poll.h>
 #include <stdbool.h>
