@@ -15119,6 +15119,7 @@ _cancel_activation (NMDevice *self)
 		priv->fw_state = FIREWALL_STATE_INITIALIZED;
 	}
 
+	dispatcher_cleanup (self);
 	ip_check_gw_ping_cleanup (self);
 
 	/* Break the activation chain */
