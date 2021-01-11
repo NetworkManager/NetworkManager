@@ -870,16 +870,6 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
         if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT))
             g_string_append(key_mgmt_conf, " ft-sae");
     } else if (nm_streq(key_mgmt, "wpa-eap-suite-b-192")) {
-        if (!NM_IN_SET(pmf,
-                       NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT,
-                       NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED)) {
-            g_set_error(error,
-                        NM_SUPPLICANT_ERROR,
-                        NM_SUPPLICANT_ERROR_CONFIG,
-                        "PMF must be set to 'required'");
-            return FALSE;
-        }
-
         pmf = NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED;
         if (!nm_supplicant_config_add_option(self, "pairwise", "GCMP-256", -1, NULL, error)
             || !nm_supplicant_config_add_option(self, "group", "GCMP-256", -1, NULL, error))
