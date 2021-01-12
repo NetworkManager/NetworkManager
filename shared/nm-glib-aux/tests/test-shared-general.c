@@ -798,7 +798,9 @@ test_nm_utils_get_next_realloc_size(void)
             }
 
             /* reserved_false is generally the next power of two - 24. */
-            if (!truncated_false) {
+            if (reserved_false == G_MAXSIZE)
+                g_assert_cmpuint(requested, >, G_MAXSIZE / 2u - 24u);
+            else if (!reserved_false) {
                 g_assert_cmpuint(reserved_false, <=, G_MAXSIZE - 24u);
                 if (reserved_false >= 40) {
                     const gsize _pow2 = reserved_false + 24u;
@@ -816,7 +818,9 @@ test_nm_utils_get_next_realloc_size(void)
             }
 
             /* reserved_true is generally the next 4k border - 24. */
-            if (!truncated_true) {
+            if (reserved_true == G_MAXSIZE)
+                g_assert_cmpuint(requested, >, G_MAXSIZE - 0x1000u - 24u);
+            else if (!truncated_true) {
                 g_assert_cmpuint(reserved_true, <=, G_MAXSIZE - 24u);
                 if (reserved_true > 8168u) {
                     const gsize page_border = reserved_true + 24u;

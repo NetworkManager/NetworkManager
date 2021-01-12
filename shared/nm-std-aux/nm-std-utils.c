@@ -65,16 +65,16 @@ nm_utils_get_next_realloc_size(bool true_realloc, size_t requested)
         return n - 24u;
     }
 
-    /* For large allocations (with !true_realloc) we allocate memory in chunks of
-     * 4K (- 24 bytes extra), assuming that the memory gets mmapped and thus
-     * realloc() is efficient by just reordering pages. */
-    n = ((requested + (0x0FFFu + 24u)) & ~((size_t) 0x0FFFu)) - 24u;
-
-    if (NM_UNLIKELY(n < requested)) {
+    if (NM_UNLIKELY(requested > SIZE_MAX - 0x1000u - 24u)) {
         /* overflow happened. */
         goto out_huge;
     }
 
+    /* For large allocations (with !true_realloc) we allocate memory in chunks of
+     * 4K (- 24 bytes extra), assuming that the memory gets mmapped and thus
+     * realloc() is efficient by just reordering pages. */
+    n = ((requested + (0x0FFFu + 24u)) & ~((size_t) 0x0FFFu)) - 24u;
+    nm_assert(n >= requested);
     return n;
 
 out_huge:
