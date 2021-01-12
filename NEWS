@@ -12,6 +12,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   option that is set. Instead, use nm_connection_verify() to validate
   the profile.
 * Increase timeout of NetworkManager-wait-online.service to 60 seconds.
+* Add "ipv4.dhcp-client-id=ipv6-duid" option for RFC4361.
 
 =============================================
 NetworkManager-1.28
