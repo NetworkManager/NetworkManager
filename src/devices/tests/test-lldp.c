@@ -813,10 +813,13 @@ _test_recv_fixture_setup(TestRecvFixture *fixture, gconstpointer user_data)
     } else {
         int          s;
         struct ifreq ifr = {};
+        int          r;
 
         ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
         nm_utils_ifname_cpy(ifr.ifr_name, TEST_IFNAME);
-        g_assert(ioctl(fd, TUNSETIFF, &ifr) >= 0);
+
+        r = ioctl(fd, TUNSETIFF, &ifr);
+        g_assert_cmpint(r, >=, 0);
 
         /* Bring the interface up */
         s = socket(AF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
