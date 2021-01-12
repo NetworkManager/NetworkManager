@@ -889,8 +889,12 @@ fi
 
 
 %post
-/usr/bin/udevadm control --reload-rules || :
-/usr/bin/udevadm trigger --subsystem-match=net || :
+# skip triggering if udevd isn't even accessible, e.g. containers or
+# rpm-ostree-based systems
+if [ -S /run/udev/control ]; then
+    /usr/bin/udevadm control --reload-rules || :
+    /usr/bin/udevadm trigger --subsystem-match=net || :
+fi
 %if %{with firewalld_zone}
 %firewalld_reload
 %endif
