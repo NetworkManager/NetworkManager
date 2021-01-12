@@ -339,7 +339,7 @@ _ndp_msg_add_option(struct ndp_msg *msg, int len)
 
 #define NM_ND_OPT_RDNSS 25
 
-typedef struct {
+typedef struct _nm_packed {
     struct nd_opt_hdr header;
     uint16_t          reserved;
     uint32_t          lifetime;
@@ -354,7 +354,7 @@ G_STATIC_ASSERT(sizeof(NMLndpRdnssOption) == 8u);
 
 #define NM_ND_OPT_DNSSL 31
 
-typedef struct {
+typedef struct _nm_packed {
     struct nd_opt_hdr header;
     uint16_t          reserved;
     uint32_t          lifetime;
