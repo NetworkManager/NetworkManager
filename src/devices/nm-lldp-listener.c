@@ -103,8 +103,8 @@ typedef struct {
 static void
 lldp_neighbor_get_raw(LldpNeighbor *neigh, const guint8 **out_raw_data, gsize *out_raw_len)
 {
-    gconstpointer raw_data;
-    gsize         raw_len;
+    gconstpointer raw_data = NULL;
+    gsize         raw_len  = 0;
     int           r;
 
     nm_assert(neigh);
