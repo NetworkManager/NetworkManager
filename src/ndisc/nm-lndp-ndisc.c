@@ -321,15 +321,19 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 }
 
 static void *
-_ndp_msg_add_option(struct ndp_msg *msg, int len)
+_ndp_msg_add_option(struct ndp_msg *msg, gsize len)
 {
-    void *ret = (uint8_t *) msg + ndp_msg_payload_len(msg);
+    gsize payload_len = ndp_msg_payload_len(msg);
+    void *ret         = &((uint8_t *) msg)[payload_len];
 
-    len += ndp_msg_payload_len(msg);
+    nm_assert(len <= G_MAXSIZE - payload_len);
+    len += payload_len;
+
     if (len > ndp_msg_payload_maxlen(msg))
         return NULL;
 
     ndp_msg_payload_len_set(msg, len);
+    nm_assert(len == ndp_msg_payload_len(msg));
     return ret;
 }
 
@@ -358,7 +362,7 @@ typedef struct _nm_packed {
     struct nd_opt_hdr header;
     uint16_t          reserved;
     uint32_t          lifetime;
-    char              search_list[0];
+    uint8_t           search_list[0];
 } NMLndpDnsslOption;
 
 G_STATIC_ASSERT(sizeof(NMLndpDnsslOption) == 8u);
@@ -368,14 +372,13 @@ G_STATIC_ASSERT(sizeof(NMLndpDnsslOption) == 8u);
 static gboolean
 send_ra(NMNDisc *ndisc, GError **error)
 {
-    NMLndpNDiscPrivate *       priv  = NM_LNDP_NDISC_GET_PRIVATE(ndisc);
-    NMNDiscDataInternal *      rdata = ndisc->rdata;
-    gint32                     now   = nm_utils_get_monotonic_timestamp_sec();
-    int                        errsv;
-    struct in6_addr *          addr;
-    struct ndp_msg *           msg;
-    struct nd_opt_prefix_info *prefix;
-    int                        i;
+    NMLndpNDiscPrivate * priv  = NM_LNDP_NDISC_GET_PRIVATE(ndisc);
+    NMNDiscDataInternal *rdata = ndisc->rdata;
+    gint32               now   = nm_utils_get_monotonic_timestamp_sec();
+    int                  errsv;
+    struct in6_addr *    addr;
+    struct ndp_msg *     msg;
+    guint                i;
 
     errsv = ndp_msg_new(&msg, NDP_MSG_RA);
     if (errsv) {
@@ -400,10 +403,11 @@ send_ra(NMNDisc *ndisc, GError **error)
     /* The device let us know about all addresses that the device got
      * whose prefixes are suitable for delegating. Let's announce them. */
     for (i = 0; i < rdata->addresses->len; i++) {
-        NMNDiscAddress *address = &g_array_index(rdata->addresses, NMNDiscAddress, i);
+        const NMNDiscAddress *address = &g_array_index(rdata->addresses, NMNDiscAddress, i);
         guint32 age      = NM_CLAMP((gint64) now - (gint64) address->timestamp, 0, G_MAXUINT32 - 1);
         guint32 lifetime = address->lifetime;
         guint32 preferred = address->preferred;
+        struct nd_opt_prefix_info *prefix;
 
         /* Clamp the life times if they're not forever. */
         if (lifetime != NM_NDISC_INFINITY)
@@ -431,31 +435,34 @@ send_ra(NMNDisc *ndisc, GError **error)
         prefix->nd_opt_pi_prefix.s6_addr32[3] = 0;
     }
 
-    if (rdata->dns_servers->len) {
+    if (rdata->dns_servers->len > 0u) {
         NMLndpRdnssOption *option;
-        int len = sizeof(*option) + sizeof(option->addrs[0]) * rdata->dns_servers->len;
+        gsize len = sizeof(*option) + (sizeof(option->addrs[0]) * rdata->dns_servers->len);
 
         option = _ndp_msg_add_option(msg, len);
-        if (option) {
-            option->header.nd_opt_type = NM_ND_OPT_RDNSS;
-            option->header.nd_opt_len  = len / 8;
-            option->lifetime           = htonl(900);
-
-            for (i = 0; i < rdata->dns_servers->len; i++) {
-                NMNDiscDNSServer *dns_server =
-                    &g_array_index(rdata->dns_servers, NMNDiscDNSServer, i);
-                option->addrs[i] = dns_server->address;
-            }
-        } else {
+        if (!option) {
             _LOGW("The RA is too big, had to omit DNS information.");
+            goto dns_servers_done;
+        }
+
+        option->header.nd_opt_type = NM_ND_OPT_RDNSS;
+        option->header.nd_opt_len  = len / 8;
+        option->lifetime           = htonl(900);
+
+        for (i = 0; i < rdata->dns_servers->len; i++) {
+            const NMNDiscDNSServer *dns_server =
+                &g_array_index(rdata->dns_servers, NMNDiscDNSServer, i);
+
+            option->addrs[i] = dns_server->address;
         }
     }
+dns_servers_done:
 
     if (rdata->dns_domains->len) {
         NMLndpDnsslOption *option;
         NMNDiscDNSDomain * dns_server;
         int                len = sizeof(*option);
-        char *             search_list;
+        uint8_t *          search_list;
 
         for (i = 0; i < rdata->dns_domains->len; i++) {
             dns_server = &g_array_index(rdata->dns_domains, NMNDiscDNSDomain, i);
