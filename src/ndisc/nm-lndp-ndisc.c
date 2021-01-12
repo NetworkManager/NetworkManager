@@ -13,6 +13,8 @@
 #include <stdarg.h>
 #include <ndp.h>
 
+#include "nm-glib-aux/nm-str-buf.h"
+#include "systemd/nm-sd-utils-shared.h"
 #include "nm-ndisc-private.h"
 #include "NetworkManagerUtils.h"
 #include "platform/nm-platform.h"
@@ -372,13 +374,14 @@ G_STATIC_ASSERT(sizeof(NMLndpDnsslOption) == 8u);
 static gboolean
 send_ra(NMNDisc *ndisc, GError **error)
 {
-    NMLndpNDiscPrivate * priv  = NM_LNDP_NDISC_GET_PRIVATE(ndisc);
-    NMNDiscDataInternal *rdata = ndisc->rdata;
-    gint32               now   = nm_utils_get_monotonic_timestamp_sec();
-    int                  errsv;
-    struct in6_addr *    addr;
-    struct ndp_msg *     msg;
-    guint                i;
+    NMLndpNDiscPrivate *     priv  = NM_LNDP_NDISC_GET_PRIVATE(ndisc);
+    NMNDiscDataInternal *    rdata = ndisc->rdata;
+    gint32                   now   = nm_utils_get_monotonic_timestamp_sec();
+    int                      errsv;
+    struct in6_addr *        addr;
+    struct ndp_msg *         msg;
+    guint                    i;
+    nm_auto_str_buf NMStrBuf sbuf = NM_STR_BUF_INIT(0, FALSE);
 
     errsv = ndp_msg_new(&msg, NDP_MSG_RA);
     if (errsv) {
@@ -458,39 +461,80 @@ send_ra(NMNDisc *ndisc, GError **error)
     }
 dns_servers_done:
 
-    if (rdata->dns_domains->len) {
+    if (rdata->dns_domains->len > 0u) {
         NMLndpDnsslOption *option;
-        NMNDiscDNSDomain * dns_server;
-        int                len = sizeof(*option);
-        uint8_t *          search_list;
+        gsize              padding;
+        gsize              len;
+
+        nm_str_buf_reset(&sbuf, NULL);
 
         for (i = 0; i < rdata->dns_domains->len; i++) {
-            dns_server = &g_array_index(rdata->dns_domains, NMNDiscDNSDomain, i);
-            len += strlen(dns_server->domain) + 2;
-        }
-        len = (len + 8) & ~0x7;
+            const NMNDiscDNSDomain *dns_domain =
+                &g_array_index(rdata->dns_domains, NMNDiscDNSDomain, i);
+            const char *domain = dns_domain->domain;
+            gsize       domain_l;
+            gsize       n_reserved;
+            int         r;
 
-        option = _ndp_msg_add_option(msg, len);
-        if (option) {
-            option->header.nd_opt_type = NM_ND_OPT_DNSSL;
-            option->header.nd_opt_len  = len / 8;
-            option->lifetime           = htonl(900);
-
-            search_list = option->search_list;
-            for (i = 0; i < rdata->dns_domains->len; i++) {
-                NMNDiscDNSDomain *dns_domain =
-                    &g_array_index(rdata->dns_domains, NMNDiscDNSDomain, i);
-                uint8_t domain_len = strlen(dns_domain->domain);
-
-                *search_list++ = domain_len;
-                memcpy(search_list, dns_domain->domain, domain_len);
-                search_list += domain_len;
-                *search_list++ = '\0';
+            if (nm_str_is_empty(domain)) {
+                nm_assert_not_reached();
+                continue;
             }
-        } else {
-            _LOGW("The RA is too big, had to omit DNS search list.");
+
+            domain_l = strlen(domain);
+
+            nm_str_buf_maybe_expand(&sbuf, domain_l + 2u, FALSE);
+            n_reserved = sbuf.allocated - sbuf.len;
+
+            r = nm_sd_dns_name_to_wire_format(
+                domain,
+                (guint8 *) (&nm_str_buf_get_str_unsafe(&sbuf)[sbuf.len]),
+                n_reserved,
+                FALSE);
+
+            if (r < 0 || ((gsize) r) > n_reserved) {
+                nm_assert(r != -ENOBUFS);
+                nm_assert(r < 0);
+                /* we don't expect errors here, unless the domain name is invalid.
+                 * That should have been caught (and rejected) by upper layers, but
+                 * at this point it seems dangerous to assert (as it's hard to review
+                 * that all callers got it correct). So instead silently ignore the error. */
+                continue;
+            }
+
+            nm_str_buf_set_size(&sbuf, sbuf.len + ((gsize) r), TRUE, FALSE);
         }
+
+        if (sbuf.len == 0) {
+            /* no valid domains? */
+            goto dns_domains_done;
+        }
+
+        len     = sizeof(*option) + sbuf.len;
+        padding = len % 8u;
+        if (padding != 0u) {
+            padding = 8u - padding;
+            len += padding;
+        }
+
+        nm_assert(len % 8u == 0u);
+        nm_assert(len > 0u);
+        nm_assert(len / 8u >= 2u);
+
+        if (len / 8u >= 256u || !(option = _ndp_msg_add_option(msg, len))) {
+            _LOGW("The RA is too big, had to omit DNS search list.");
+            goto dns_domains_done;
+        }
+
+        nm_str_buf_append_c_len(&sbuf, '\0', padding);
+
+        option->header.nd_opt_type = NM_ND_OPT_DNSSL;
+        option->header.nd_opt_len  = len / 8u;
+        option->reserved           = 0;
+        option->lifetime           = htonl(900);
+        memcpy(option->search_list, nm_str_buf_get_str_unsafe(&sbuf), sbuf.len);
     }
+dns_domains_done:
 
     errsv = ndp_msg_send(priv->ndp, msg);
 
