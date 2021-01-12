@@ -333,7 +333,12 @@ _ndp_msg_add_option(struct ndp_msg *msg, int len)
     return ret;
 }
 
+/*****************************************************************************/
+
+/* "Recursive DNS Server Option" at https://tools.ietf.org/html/rfc8106#section-5.1 */
+
 #define NM_ND_OPT_RDNSS 25
+
 typedef struct {
     struct nd_opt_hdr header;
     uint16_t          reserved;
@@ -341,13 +346,24 @@ typedef struct {
     struct in6_addr   addrs[0];
 } NMLndpRdnssOption;
 
+G_STATIC_ASSERT(sizeof(NMLndpRdnssOption) == 8u);
+
+/*****************************************************************************/
+
+/* "DNS Search List Option" at https://tools.ietf.org/html/rfc8106#section-5.2 */
+
 #define NM_ND_OPT_DNSSL 31
+
 typedef struct {
     struct nd_opt_hdr header;
     uint16_t          reserved;
     uint32_t          lifetime;
     char              search_list[0];
 } NMLndpDnsslOption;
+
+G_STATIC_ASSERT(sizeof(NMLndpDnsslOption) == 8u);
+
+/*****************************************************************************/
 
 static gboolean
 send_ra(NMNDisc *ndisc, GError **error)
