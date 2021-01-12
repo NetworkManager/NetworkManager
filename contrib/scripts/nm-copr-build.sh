@@ -24,7 +24,7 @@ pushd NetworkManager
 git init .
 
 git remote add origin https://gitlab.freedesktop.org/NetworkManager/NetworkManager.git
-git remote add github https://github.com/NetworkManager/NetworkManager
+git remote add --no-tags github https://github.com/NetworkManager/NetworkManager
 
 get_nm_git_bundle() {
     # try to fetch the refs from nm-git-bundle.
@@ -40,7 +40,7 @@ get_nm_git_bundle() {
     fi
     mkdir nm-git-bundle
     pushd nm-git-bundle
-    curl "$NM_GIT_BUNDLE" \
+    time curl "$NM_GIT_BUNDLE" \
       | rpm2cpio - \
       | cpio -idmv
     popd
@@ -62,4 +62,5 @@ git checkout -b tmp "$GIT_SHA"
 ./contrib/fedora/rpm/build_clean.sh -g -S -w test $DEBUG -s copr
 popd
 
-mv ./NetworkManager/contrib/fedora/rpm/latest/SRPMS/* .
+mv ./NetworkManager/contrib/fedora/rpm/latest/{SOURCES,SPECS}/* .
+rm -rf ./NetworkManager
