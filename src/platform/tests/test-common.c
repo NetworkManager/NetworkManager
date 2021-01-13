@@ -2653,7 +2653,7 @@ nmtstp_acd_defender_new(int ifindex, in_addr_t ip_addr, const NMEtherAddr *mac_a
     nm_auto(n_acd_config_freep) NAcdConfig *           config       = NULL;
     nm_auto(n_acd_unrefp) NAcd *                       nacd         = NULL;
     nm_auto(n_acd_probe_config_freep) NAcdProbeConfig *probe_config = NULL;
-    NAcdProbe *                                        probe;
+    NAcdProbe *                                        probe        = NULL;
     int                                                fd;
     int                                                r;
     char                                               sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
