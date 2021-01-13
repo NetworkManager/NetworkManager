@@ -402,7 +402,10 @@ nm_logging_setup(const char *level, const char *domains, char **bad_domains, GEr
     if (had_platform_debug && !_nm_logging_enabled_lockfree(LOGL_DEBUG, LOGD_PLATFORM)) {
         /* when debug logging is enabled, platform will cache all access to
          * sysctl. When the user disables debug-logging, we want to clear that
-         * cache right away. */
+         * cache right away.
+         *
+         * It's important that we call this without having a lock on "log", because
+         * otherwise we might deadlock. */
         _nm_logging_clear_platform_logging_cache();
     }
 

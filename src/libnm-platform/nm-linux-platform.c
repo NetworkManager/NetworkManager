@@ -429,6 +429,7 @@ typedef struct {
 
     GHashTable *sysctl_get_prev_values;
     CList       sysctl_list;
+    CList       sysctl_clear_cache_lst;
 
     NMUdevClient *udev_client;
 
@@ -447,6 +448,7 @@ typedef struct {
 
         int is_handling;
     } delayed_action;
+
 } NMLinuxPlatformPrivate;
 
 struct _NMLinuxPlatform {
@@ -5462,19 +5464,28 @@ sysctl_set_async(NMPlatform *            platform,
     g_object_unref(task);
 }
 
-static GSList *sysctl_clear_cache_list;
+static CList  sysctl_clear_cache_lst_head = C_LIST_INIT(sysctl_clear_cache_lst_head);
+static GMutex sysctl_clear_cache_lock;
 
 void
 _nm_logging_clear_platform_logging_cache(void)
 {
-    while (sysctl_clear_cache_list) {
-        NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(sysctl_clear_cache_list->data);
+    NM_G_MUTEX_LOCKED(&sysctl_clear_cache_lock);
 
-        sysctl_clear_cache_list =
-            g_slist_delete_link(sysctl_clear_cache_list, sysctl_clear_cache_list);
+    while (TRUE) {
+        NMLinuxPlatformPrivate *priv;
 
-        g_hash_table_destroy(priv->sysctl_get_prev_values);
-        priv->sysctl_get_prev_values = NULL;
+        priv = c_list_first_entry(&sysctl_clear_cache_lst_head,
+                                  NMLinuxPlatformPrivate,
+                                  sysctl_clear_cache_lst);
+        if (!priv)
+            return;
+
+        nm_assert(NM_IS_LINUX_PLATFORM(NM_LINUX_PLATFORM_FROM_PRIVATE(priv)));
+
+        c_list_unlink(&priv->sysctl_clear_cache_lst);
+
+        nm_clear_pointer(&priv->sysctl_get_prev_values, g_hash_table_destroy);
     }
 }
 
@@ -5496,11 +5507,33 @@ sysctl_cache_entry_free(SysctlCacheEntry *entry)
 static void
 _log_dbg_sysctl_get_impl(NMPlatform *platform, const char *pathid, const char *contents)
 {
+    /* Note that we only have on global mutex for all NMPlatform instances. But in general
+     * we hardly run with concurrent threads and there are few NMPlatform instances. So
+     * this is acceptable.
+     *
+     * Note that there are only three functions that touch
+     *   - sysctl_clear_cache_lst_head
+     *   - priv->sysctl_get_prev_values
+     *   - priv->sysctl_list
+     *   - priv->sysctl_clear_cache_lst
+     * these are:
+     *   1) _nm_logging_clear_platform_logging_cache()
+     *   2) _log_dbg_sysctl_get_impl()
+     *   3) finalize()
+     *
+     * Note that 2) keeps the lock while also log! Logging itself may take a lock
+     * and it may even call back into our code again (like g_log() handlers
+     * and _nm_logging_clear_platform_logging_cache() which is called by logging).
+     *
+     * But in practice this is safe because logging code releases its lock before
+     * calling _nm_logging_clear_platform_logging_cache().
+     **/
+    NM_G_MUTEX_LOCKED(&sysctl_clear_cache_lock);
     NMLinuxPlatformPrivate *priv  = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
     SysctlCacheEntry *      entry = NULL;
 
     if (!priv->sysctl_get_prev_values) {
-        sysctl_clear_cache_list = g_slist_prepend(sysctl_clear_cache_list, platform);
+        c_list_link_tail(&sysctl_clear_cache_lst_head, &priv->sysctl_clear_cache_lst);
         c_list_init(&priv->sysctl_list);
         priv->sysctl_get_prev_values =
             g_hash_table_new_full(nm_pstr_hash,
@@ -5522,6 +5555,7 @@ _log_dbg_sysctl_get_impl(NMPlatform *platform, const char *pathid, const char *c
             g_free(entry->value);
             entry->value = g_strdup(contents);
         }
+
         nm_c_list_move_front(&priv->sysctl_list, &entry->lst);
     } else {
         gs_free char *    contents_escaped = g_strescape(contents, NULL);
@@ -5535,7 +5569,7 @@ _log_dbg_sysctl_get_impl(NMPlatform *platform, const char *pathid, const char *c
         memcpy(entry->path_data, pathid, len + 1);
 
         /* Remove oldest entry when the cache becomes too big */
-        if (g_hash_table_size(priv->sysctl_get_prev_values) > 1000) {
+        if (g_hash_table_size(priv->sysctl_get_prev_values) > 1000u) {
             old = c_list_last_entry(&priv->sysctl_list, SysctlCacheEntry, lst);
             g_hash_table_remove(priv->sysctl_get_prev_values, old);
         }
@@ -9374,6 +9408,9 @@ nm_linux_platform_init(NMLinuxPlatform *self)
 {
     NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(self);
 
+    c_list_init(&priv->sysctl_clear_cache_lst);
+    c_list_init(&priv->sysctl_list);
+
     priv->delayed_action.list_master_connected = g_ptr_array_new();
     priv->delayed_action.list_refresh_link     = g_ptr_array_new();
     priv->delayed_action.list_wait_for_nl_response =
@@ -9529,8 +9566,8 @@ path_is_read_only_fs(const char *path)
         return TRUE;
 
     /* On NFS, statvfs() might not reflect whether we can actually
-	 * write to the remote share. Let's try again with
-	 * access(W_OK) which is more reliable, at least sometimes. */
+     * write to the remote share. Let's try again with
+     * access(W_OK) which is more reliable, at least sometimes. */
     if (access(path, W_OK) < 0 && errno == EROFS)
         return TRUE;
 
@@ -9588,9 +9625,16 @@ finalize(GObject *object)
 
     nl_socket_free(priv->nlh);
 
-    if (priv->sysctl_get_prev_values) {
-        sysctl_clear_cache_list = g_slist_remove(sysctl_clear_cache_list, object);
-        g_hash_table_destroy(priv->sysctl_get_prev_values);
+    {
+        NM_G_MUTEX_LOCKED(&sysctl_clear_cache_lock);
+
+        if (priv->sysctl_get_prev_values) {
+            c_list_unlink(&priv->sysctl_clear_cache_lst);
+            g_hash_table_destroy(priv->sysctl_get_prev_values);
+        }
+
+        nm_assert(c_list_is_empty(&priv->sysctl_clear_cache_lst));
+        nm_assert(c_list_is_empty(&priv->sysctl_list));
     }
 
     priv->udev_client = nm_udev_client_destroy(priv->udev_client);
