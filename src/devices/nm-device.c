@@ -17379,7 +17379,10 @@ nm_device_get_permanent_hw_address_full(NMDevice *self,
 {
     NMDevicePrivate *priv;
 
-    g_return_val_if_fail(NM_IS_DEVICE(self), NULL);
+    g_return_val_if_fail(NM_IS_DEVICE(self), ({
+                             NM_SET_OUT(out_is_fake, FALSE);
+                             NULL;
+                         }));
 
     priv = NM_DEVICE_GET_PRIVATE(self);
 
