@@ -463,6 +463,18 @@ G_DEFINE_TYPE(NMLinuxPlatform, nm_linux_platform, NM_TYPE_PLATFORM)
 #define NM_LINUX_PLATFORM_GET_PRIVATE(self) \
     _NM_GET_PRIVATE(self, NMLinuxPlatform, NM_IS_LINUX_PLATFORM, NMPlatform)
 
+static NMPlatform *
+NM_LINUX_PLATFORM_FROM_PRIVATE(NMLinuxPlatformPrivate *priv)
+{
+    gpointer self;
+
+    nm_assert(priv);
+
+    self = (((char *) priv) - G_STRUCT_OFFSET(NMLinuxPlatform, _priv));
+    nm_assert(NM_IS_LINUX_PLATFORM(self));
+    return self;
+}
+
 /*****************************************************************************/
 
 #define _NMLOG_PREFIX_NAME             "platform-linux"
