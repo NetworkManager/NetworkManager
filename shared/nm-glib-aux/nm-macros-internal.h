@@ -1787,8 +1787,13 @@ NM_AUTO_DEFINE_FCN_VOID0(GMutex *, _nm_auto_unlock_g_mutex, g_mutex_unlock);
 
 #define nm_auto_unlock_g_mutex nm_auto(_nm_auto_unlock_g_mutex)
 
-#define _NM_G_MUTEX_LOCKED(lock, uniq) \
-    nm_auto_unlock_g_mutex GMutex *NM_UNIQ_T(nm_lock, uniq) = (lock)
+#define _NM_G_MUTEX_LOCKED(lock, uniq)                                      \
+    _nm_unused nm_auto_unlock_g_mutex GMutex *NM_UNIQ_T(nm_lock, uniq) = ({ \
+        GMutex *const _lock = (lock);                                       \
+                                                                            \
+        g_mutex_lock(_lock);                                                \
+        _lock;                                                              \
+    })
 
 #define NM_G_MUTEX_LOCKED(lock) _NM_G_MUTEX_LOCKED(lock, NM_UNIQ)
 
