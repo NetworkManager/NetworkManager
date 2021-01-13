@@ -113,6 +113,10 @@ if [ $SHOW_FILENAMES = 1 ]; then
     exit 0
 fi
 
+if [ "${#FILES[@]}" = 0 ]; then
+    die "Error: no files to check"
+fi
+
 FLAGS_TEST=( --Werror -n --ferror-limit=1 )
 
 if [ $TEST_ONLY = 1 ]; then
