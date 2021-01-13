@@ -158,7 +158,8 @@ nm_ip6_config_lookup_addresses(const NMIP6Config *self)
 void
 nm_ip_config_iter_ip6_address_init(NMDedupMultiIter *ipconf_iter, const NMIP6Config *self)
 {
-    g_return_if_fail(NM_IS_IP6_CONFIG(self));
+    nm_assert(NM_IS_IP6_CONFIG(self));
+
     nm_dedup_multi_iter_init(ipconf_iter, nm_ip6_config_lookup_addresses(self));
 }
 
@@ -175,7 +176,8 @@ nm_ip6_config_lookup_routes(const NMIP6Config *self)
 void
 nm_ip_config_iter_ip6_route_init(NMDedupMultiIter *ipconf_iter, const NMIP6Config *self)
 {
-    g_return_if_fail(NM_IS_IP6_CONFIG(self));
+    nm_assert(NM_IS_IP6_CONFIG(self));
+
     nm_dedup_multi_iter_init(ipconf_iter, nm_ip6_config_lookup_routes(self));
 }
 

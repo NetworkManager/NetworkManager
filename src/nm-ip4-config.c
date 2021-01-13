@@ -365,7 +365,8 @@ nm_ip4_config_lookup_addresses(const NMIP4Config *self)
 void
 nm_ip_config_iter_ip4_address_init(NMDedupMultiIter *ipconf_iter, const NMIP4Config *self)
 {
-    g_return_if_fail(NM_IS_IP4_CONFIG(self));
+    nm_assert(NM_IS_IP4_CONFIG(self));
+
     nm_dedup_multi_iter_init(ipconf_iter, nm_ip4_config_lookup_addresses(self));
 }
 
@@ -383,6 +384,7 @@ void
 nm_ip_config_iter_ip4_route_init(NMDedupMultiIter *ipconf_iter, const NMIP4Config *self)
 {
     nm_assert(NM_IS_IP4_CONFIG(self));
+
     nm_dedup_multi_iter_init(ipconf_iter, nm_ip4_config_lookup_routes(self));
 }
 
