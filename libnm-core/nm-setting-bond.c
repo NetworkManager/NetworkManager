@@ -147,7 +147,7 @@ static char const *const _option_default_strv_mode[]      = NM_MAKE_STRV("balanc
 static char const *const _option_default_strv_primary_reselect[] =
     NM_MAKE_STRV("always", "better", "failure");
 static char const *const _option_default_strv_xmit_hash_policy[] =
-    NM_MAKE_STRV("layer2", "layer3+4", "layer2+3", "encap2+3", "encap3+4");
+    NM_MAKE_STRV("layer2", "layer3+4", "layer2+3", "encap2+3", "encap3+4", "vlan+srcmac");
 
 static NM_UTILS_STRING_TABLE_LOOKUP_STRUCT_DEFINE(
     _get_option_meta,
@@ -199,7 +199,7 @@ static NM_UTILS_STRING_TABLE_LOOKUP_STRUCT_DEFINE(
     {NM_SETTING_BOND_OPTION_UPDELAY, {"0", NM_BOND_OPTION_TYPE_INT, 0, G_MAXINT}},
     {NM_SETTING_BOND_OPTION_USE_CARRIER, {"1", NM_BOND_OPTION_TYPE_INT, 0, 1}},
     {NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY,
-     {"layer2", NM_BOND_OPTION_TYPE_BOTH, 0, 4, _option_default_strv_xmit_hash_policy}}, );
+     {"layer2", NM_BOND_OPTION_TYPE_BOTH, 0, 5, _option_default_strv_xmit_hash_policy}}, );
 
 /*****************************************************************************/
 
