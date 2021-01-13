@@ -249,13 +249,6 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
                 .lifetime  = ndp_msg_opt_rdnss_lifetime(msg, offset),
             };
 
-            /* Pad the lifetime somewhat to give a bit of slack in cases
-             * where one RA gets lost or something (which can happen on unreliable
-             * links like Wi-Fi where certain types of frames are not retransmitted).
-             * Note that 0 has special meaning and is therefore not adjusted.
-             */
-            if (dns_server.lifetime && dns_server.lifetime < 7200)
-                dns_server.lifetime = 7200;
             if (nm_ndisc_add_dns_server(ndisc, &dns_server))
                 changed |= NM_NDISC_CONFIG_DNS_SERVERS;
         }
@@ -271,13 +264,6 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
                 .lifetime  = ndp_msg_opt_dnssl_lifetime(msg, offset),
             };
 
-            /* Pad the lifetime somewhat to give a bit of slack in cases
-             * where one RA gets lost or something (which can happen on unreliable
-             * links like Wi-Fi where certain types of frames are not retransmitted).
-             * Note that 0 has special meaning and is therefore not adjusted.
-             */
-            if (dns_domain.lifetime && dns_domain.lifetime < 7200)
-                dns_domain.lifetime = 7200;
             if (nm_ndisc_add_dns_domain(ndisc, &dns_domain))
                 changed |= NM_NDISC_CONFIG_DNS_DOMAINS;
         }
