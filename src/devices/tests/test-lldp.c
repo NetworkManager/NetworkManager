@@ -819,13 +819,22 @@ _test_recv_fixture_setup(TestRecvFixture *fixture, gconstpointer user_data)
         nm_utils_ifname_cpy(ifr.ifr_name, TEST_IFNAME);
 
         r = ioctl(fd, TUNSETIFF, &ifr);
-        g_assert_cmpint(r, >=, 0);
+        if (r != 0) {
+            g_assert_cmpint(errno, ==, 0);
+            g_assert_cmpint(r, ==, 0);
+        }
 
         /* Bring the interface up */
         s = socket(AF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
         g_assert(s >= 0);
+
         ifr.ifr_flags |= IFF_UP;
-        g_assert(ioctl(s, SIOCSIFFLAGS, &ifr) >= 0);
+        r = ioctl(s, SIOCSIFFLAGS, &ifr);
+        if (r != 0) {
+            g_assert_cmpint(errno, ==, 0);
+            g_assert_cmpint(r, ==, 0);
+        }
+
         nm_close(s);
 
         link = nmtstp_assert_wait_for_link(NM_PLATFORM_GET, TEST_IFNAME, NM_LINK_TYPE_TUN, 100);
