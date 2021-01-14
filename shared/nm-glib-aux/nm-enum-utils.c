@@ -76,30 +76,34 @@ _ASSERT_enum_values_info(GType type, const NMUtilsEnumValueInfo *value_infos)
 }
 
 static gboolean
-_is_hex_string(const char *str)
+_is_hex_string(const char *str, gboolean allow_sign)
 {
+    if (allow_sign && str[0] == '-')
+        str++;
     return str[0] == '0' && str[1] == 'x' && str[2]
            && NM_STRCHAR_ALL(&str[2], ch, g_ascii_isxdigit(ch));
 }
 
 static gboolean
-_is_dec_string(const char *str)
+_is_dec_string(const char *str, gboolean allow_sign)
 {
+    if (allow_sign && str[0] == '-')
+        str++;
     return str[0] && NM_STRCHAR_ALL(&str[0], ch, g_ascii_isdigit(ch));
 }
 
 static gboolean
 _enum_is_valid_enum_nick(const char *str)
 {
-    return str[0] && !NM_STRCHAR_ANY(str, ch, g_ascii_isspace(ch)) && !_is_dec_string(str)
-           && !_is_hex_string(str);
+    return str[0] && !NM_STRCHAR_ANY(str, ch, g_ascii_isspace(ch)) && !_is_dec_string(str, TRUE)
+           && !_is_hex_string(str, TRUE);
 }
 
 static gboolean
 _enum_is_valid_flags_nick(const char *str)
 {
-    return str[0] && !NM_STRCHAR_ANY(str, ch, IS_FLAGS_SEPARATOR(ch)) && !_is_dec_string(str)
-           && !_is_hex_string(str);
+    return str[0] && !NM_STRCHAR_ANY(str, ch, IS_FLAGS_SEPARATOR(ch)) && !_is_dec_string(str, FALSE)
+           && !_is_hex_string(str, FALSE);
 }
 
 char *
@@ -220,16 +224,31 @@ _nm_utils_enum_from_str_full(GType                       type,
     if (G_IS_ENUM_CLASS(klass)) {
         GEnumValue *enum_value;
 
+        G_STATIC_ASSERT(G_MAXINT < G_MAXINT64);
+        G_STATIC_ASSERT(G_MININT > G_MININT64);
+
         if (s[0]) {
-            if (_is_hex_string(s)) {
-                v64 = _nm_utils_ascii_str_to_int64(s, 16, 0, G_MAXUINT, -1);
-                if (v64 != -1) {
-                    value = (int) v64;
-                    ret   = TRUE;
+            if (_is_hex_string(s, TRUE)) {
+                if (s[0] == '-') {
+                    v64 = _nm_utils_ascii_str_to_int64(&s[3],
+                                                       16,
+                                                       -((gint64) G_MAXINT),
+                                                       -((gint64) G_MININT),
+                                                       G_MAXINT64);
+                    if (v64 != G_MAXINT64) {
+                        value = (int) (-v64);
+                        ret   = TRUE;
+                    }
+                } else {
+                    v64 = _nm_utils_ascii_str_to_int64(&s[2], 16, G_MININT, G_MAXINT, G_MAXINT64);
+                    if (v64 != G_MAXINT64) {
+                        value = (int) v64;
+                        ret   = TRUE;
+                    }
                 }
-            } else if (_is_dec_string(s)) {
-                v64 = _nm_utils_ascii_str_to_int64(s, 10, 0, G_MAXUINT, -1);
-                if (v64 != -1) {
+            } else if (_is_dec_string(s, TRUE)) {
+                v64 = _nm_utils_ascii_str_to_int64(s, 10, G_MININT, G_MAXINT, G_MAXINT64);
+                if (v64 != G_MAXINT64) {
                     value = (int) v64;
                     ret   = TRUE;
                 }
@@ -258,14 +277,14 @@ _nm_utils_enum_from_str_full(GType                       type,
             }
 
             if (s[0]) {
-                if (_is_hex_string(s)) {
+                if (_is_hex_string(s, FALSE)) {
                     v64 = _nm_utils_ascii_str_to_int64(&s[2], 16, 0, G_MAXUINT, -1);
                     if (v64 == -1) {
                         ret = FALSE;
                         break;
                     }
                     uvalue |= (unsigned) v64;
-                } else if (_is_dec_string(s)) {
+                } else if (_is_dec_string(s, FALSE)) {
                     v64 = _nm_utils_ascii_str_to_int64(s, 10, 0, G_MAXUINT, -1);
                     if (v64 == -1) {
                         ret = FALSE;
