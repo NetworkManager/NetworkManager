@@ -1612,6 +1612,16 @@ _nm_strndup_a_step(char *s, const char *str, gsize len)
         _nm_strndup_a_step(_s_snd, _str_snd, _len_snd);            \
     })
 
+#define nm_strdup_maybe_a(alloca_maxlen, str, out_str_free)               \
+    ({                                                                    \
+        const char *const _str_snd = (str);                               \
+                                                                          \
+        (char *) nm_memdup_maybe_a(alloca_maxlen,                         \
+                                   _str_snd,                              \
+                                   _str_snd ? strlen(_str_snd) + 1u : 0u, \
+                                   out_str_free);                         \
+    })
+
 /*****************************************************************************/
 
 /* generic macro to convert an int to a (heap allocated) string.
