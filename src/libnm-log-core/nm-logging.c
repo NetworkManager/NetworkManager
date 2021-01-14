@@ -656,8 +656,9 @@ _nm_log_impl(const char *file,
              const char *fmt,
              ...)
 {
-    va_list            args;
-    char *             msg;
+    char               msg_stack[400];
+    gs_free char *     msg_heap = NULL;
+    const char *       msg;
     GTimeVal           tv;
     int                errsv;
     const NMLogDomain *cur_log_state;
@@ -698,9 +699,7 @@ _nm_log_impl(const char *file,
         errno = error;
     }
 
-    va_start(args, fmt);
-    msg = g_strdup_vprintf(fmt, args);
-    va_end(args);
+    msg = nm_vsprintf_buf_or_alloc(fmt, fmt, msg_stack, &msg_heap, NULL);
 
 #define MESSAGE_FMT "%s%-7s [%ld.%04ld] %s"
 #define MESSAGE_ARG(prefix, tv, msg) \
@@ -796,8 +795,6 @@ _nm_log_impl(const char *file,
               MESSAGE_ARG(g->prefix, tv, msg));
         break;
     }
-
-    g_free(msg);
 
     errno = errsv;
 }
