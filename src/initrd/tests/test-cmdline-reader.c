@@ -1951,18 +1951,19 @@ test_bootif_no_ip(void)
 static void
 test_bootif_hwtype(void)
 {
-    gs_unref_hashtable GHashTable *connections = NULL;
     const char *const *ARGV0  = NM_MAKE_STRV("ip=eth0:dhcp", "BOOTIF=01-00-53-AB-cd-02-03");
     const char *const *ARGV1  = NM_MAKE_STRV("ip=eth0:dhcp", "BOOTIF=00-00-53-Ab-cD-02-03");
     const char *const *ARGV[] = {ARGV0, ARGV1};
-    NMConnection *     connection;
-    NMSettingWired *   s_wired;
-    NMSettingIPConfig *s_ip4;
-    NMSettingIPConfig *s_ip6;
-    gs_free char *     hostname = NULL;
     guint              i;
 
     for (i = 0; i < G_N_ELEMENTS(ARGV); i++) {
+        gs_unref_hashtable GHashTable *connections = NULL;
+        NMConnection *                 connection;
+        NMSettingWired *               s_wired;
+        NMSettingIPConfig *            s_ip4;
+        NMSettingIPConfig *            s_ip6;
+        gs_free char *                 hostname = NULL;
+
         connections = nmi_cmdline_reader_parse(TEST_INITRD_DIR "/sysfs", ARGV[i], &hostname);
         g_assert(connections);
         g_assert_cmpint(g_hash_table_size(connections), ==, 2);
