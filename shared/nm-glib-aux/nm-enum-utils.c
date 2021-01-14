@@ -212,8 +212,7 @@ _nm_utils_enum_from_str_full(GType                       type,
 
     _ASSERT_enum_values_info(type, value_infos);
 
-    str_clone = strdup(str);
-    s         = nm_str_skip_leading_spaces(str_clone);
+    s = nm_strdup_maybe_a(300, nm_str_skip_leading_spaces(str), &str_clone);
     g_strchomp(s);
 
     klass = g_type_class_ref(type);
