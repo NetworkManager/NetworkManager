@@ -1595,6 +1595,60 @@ complete_connection(NMDevice *           device,
     NMSettingWired *s_wired;
     NMSettingPppoe *s_pppoe;
 
+    if (nm_streq0(nm_connection_get_connection_type(connection), NM_SETTING_VETH_SETTING_NAME)) {
+        NMSettingVeth *s_veth;
+        const char *   peer_name     = NULL;
+        const char *   con_peer_name = NULL;
+        int            ifindex;
+
+        nm_utils_complete_generic(nm_device_get_platform(device),
+                                  connection,
+                                  NM_SETTING_VETH_SETTING_NAME,
+                                  existing_connections,
+                                  NULL,
+                                  _("Veth connection"),
+                                  "veth",
+                                  NULL,
+                                  TRUE);
+
+        s_veth = _nm_connection_get_setting(connection, NM_TYPE_SETTING_VETH);
+        if (!s_veth) {
+            s_veth = (NMSettingVeth *) nm_setting_veth_new();
+            nm_connection_add_setting(connection, NM_SETTING(s_veth));
+        }
+
+        ifindex = nm_device_get_ip_ifindex(device);
+        if (ifindex > 0) {
+            const NMPlatformLink *pllink;
+
+            pllink = nm_platform_link_get(nm_device_get_platform(device), ifindex);
+            if (pllink && pllink->type == NM_LINK_TYPE_VETH && pllink->parent > 0) {
+                pllink = nm_platform_link_get(nm_device_get_platform(device), pllink->parent);
+
+                if (pllink && pllink->type == NM_LINK_TYPE_VETH) {
+                    peer_name = pllink->name;
+                }
+            }
+        }
+
+        if (!peer_name) {
+            nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, "cannot find peer for veth device");
+            return FALSE;
+        }
+
+        con_peer_name = nm_setting_veth_get_peer(s_veth);
+        if (con_peer_name) {
+            nm_utils_error_set(error,
+                               NM_UTILS_ERROR_UNKNOWN,
+                               "mismatching veth peer \"%s\"",
+                               con_peer_name);
+            return FALSE;
+        } else
+            g_object_set(s_veth, NM_SETTING_VETH_PEER, peer_name, NULL);
+
+        return TRUE;
+    }
+
     s_pppoe = nm_connection_get_setting_pppoe(connection);
 
     /* We can't telepathically figure out the service name or username, so if
