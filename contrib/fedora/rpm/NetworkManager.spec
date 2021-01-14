@@ -217,6 +217,7 @@ Conflicts: NetworkManager-pptp < 1:0.7.0.99-1
 Conflicts: NetworkManager-openconnect < 0:0.7.0.99-1
 Conflicts: kde-plasma-networkmanagement < 1:0.9-0.49.20110527git.nm09
 
+BuildRequires: make
 BuildRequires: gcc
 BuildRequires: libtool
 BuildRequires: pkgconfig
