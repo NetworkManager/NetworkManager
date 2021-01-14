@@ -268,6 +268,31 @@ nm_str_buf_append_required_delimiter(NMStrBuf *strbuf, char delimiter)
 }
 
 static inline void
+nm_str_buf_append_dirty(NMStrBuf *strbuf, gsize len)
+{
+    _nm_str_buf_assert(strbuf);
+
+    /* this append @len bytes to the buffer, but it does not
+     * initialize them! */
+    if (len > 0) {
+        nm_str_buf_maybe_expand(strbuf, len, FALSE);
+        strbuf->_priv_len += len;
+    }
+}
+
+static inline void
+nm_str_buf_append_c_len(NMStrBuf *strbuf, char ch, gsize len)
+{
+    _nm_str_buf_assert(strbuf);
+
+    if (len > 0) {
+        nm_str_buf_maybe_expand(strbuf, len, FALSE);
+        memset(&strbuf->_priv_str[strbuf->_priv_len], ch, len);
+        strbuf->_priv_len += len;
+    }
+}
+
+static inline void
 nm_str_buf_reset(NMStrBuf *strbuf, const char *str)
 {
     _nm_str_buf_assert(strbuf);

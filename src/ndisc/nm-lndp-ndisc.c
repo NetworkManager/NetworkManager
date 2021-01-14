@@ -13,6 +13,8 @@
 #include <stdarg.h>
 #include <ndp.h>
 
+#include "nm-glib-aux/nm-str-buf.h"
+#include "systemd/nm-sd-utils-shared.h"
 #include "nm-ndisc-private.h"
 #include "NetworkManagerUtils.h"
 #include "platform/nm-platform.h"
@@ -247,13 +249,6 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
                 .lifetime  = ndp_msg_opt_rdnss_lifetime(msg, offset),
             };
 
-            /* Pad the lifetime somewhat to give a bit of slack in cases
-             * where one RA gets lost or something (which can happen on unreliable
-             * links like Wi-Fi where certain types of frames are not retransmitted).
-             * Note that 0 has special meaning and is therefore not adjusted.
-             */
-            if (dns_server.lifetime && dns_server.lifetime < 7200)
-                dns_server.lifetime = 7200;
             if (nm_ndisc_add_dns_server(ndisc, &dns_server))
                 changed |= NM_NDISC_CONFIG_DNS_SERVERS;
         }
@@ -269,13 +264,6 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
                 .lifetime  = ndp_msg_opt_dnssl_lifetime(msg, offset),
             };
 
-            /* Pad the lifetime somewhat to give a bit of slack in cases
-             * where one RA gets lost or something (which can happen on unreliable
-             * links like Wi-Fi where certain types of frames are not retransmitted).
-             * Note that 0 has special meaning and is therefore not adjusted.
-             */
-            if (dns_domain.lifetime && dns_domain.lifetime < 7200)
-                dns_domain.lifetime = 7200;
             if (nm_ndisc_add_dns_domain(ndisc, &dns_domain))
                 changed |= NM_NDISC_CONFIG_DNS_DOMAINS;
         }
@@ -321,45 +309,65 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 }
 
 static void *
-_ndp_msg_add_option(struct ndp_msg *msg, int len)
+_ndp_msg_add_option(struct ndp_msg *msg, gsize len)
 {
-    void *ret = (uint8_t *) msg + ndp_msg_payload_len(msg);
+    gsize payload_len = ndp_msg_payload_len(msg);
+    void *ret         = &((uint8_t *) msg)[payload_len];
 
-    len += ndp_msg_payload_len(msg);
+    nm_assert(len <= G_MAXSIZE - payload_len);
+    len += payload_len;
+
     if (len > ndp_msg_payload_maxlen(msg))
         return NULL;
 
     ndp_msg_payload_len_set(msg, len);
+    nm_assert(len == ndp_msg_payload_len(msg));
     return ret;
 }
 
+/*****************************************************************************/
+
+/* "Recursive DNS Server Option" at https://tools.ietf.org/html/rfc8106#section-5.1 */
+
 #define NM_ND_OPT_RDNSS 25
-typedef struct {
+
+typedef struct _nm_packed {
     struct nd_opt_hdr header;
     uint16_t          reserved;
     uint32_t          lifetime;
     struct in6_addr   addrs[0];
 } NMLndpRdnssOption;
 
+G_STATIC_ASSERT(sizeof(NMLndpRdnssOption) == 8u);
+
+/*****************************************************************************/
+
+/* "DNS Search List Option" at https://tools.ietf.org/html/rfc8106#section-5.2 */
+
 #define NM_ND_OPT_DNSSL 31
-typedef struct {
+
+typedef struct _nm_packed {
     struct nd_opt_hdr header;
     uint16_t          reserved;
     uint32_t          lifetime;
-    char              search_list[0];
+    uint8_t           search_list[0];
 } NMLndpDnsslOption;
+
+G_STATIC_ASSERT(sizeof(NMLndpDnsslOption) == 8u);
+
+/*****************************************************************************/
 
 static gboolean
 send_ra(NMNDisc *ndisc, GError **error)
 {
-    NMLndpNDiscPrivate *       priv  = NM_LNDP_NDISC_GET_PRIVATE(ndisc);
-    NMNDiscDataInternal *      rdata = ndisc->rdata;
-    gint32                     now   = nm_utils_get_monotonic_timestamp_sec();
-    int                        errsv;
-    struct in6_addr *          addr;
-    struct ndp_msg *           msg;
-    struct nd_opt_prefix_info *prefix;
-    int                        i;
+    NMLndpNDiscPrivate *     priv  = NM_LNDP_NDISC_GET_PRIVATE(ndisc);
+    NMNDiscDataInternal *    rdata = ndisc->rdata;
+    gint32                   now   = nm_utils_get_monotonic_timestamp_sec();
+    int                      errsv;
+    struct in6_addr *        addr;
+    struct ndp_msg *         msg;
+    guint                    i;
+    nm_auto_str_buf NMStrBuf sbuf = NM_STR_BUF_INIT(0, FALSE);
 
     errsv = ndp_msg_new(&msg, NDP_MSG_RA);
     if (errsv) {
@@ -384,10 +392,11 @@ send_ra(NMNDisc *ndisc, GError **error)
     /* The device let us know about all addresses that the device got
      * whose prefixes are suitable for delegating. Let's announce them. */
     for (i = 0; i < rdata->addresses->len; i++) {
-        NMNDiscAddress *address = &g_array_index(rdata->addresses, NMNDiscAddress, i);
+        const NMNDiscAddress *address = &g_array_index(rdata->addresses, NMNDiscAddress, i);
         guint32 age      = NM_CLAMP((gint64) now - (gint64) address->timestamp, 0, G_MAXUINT32 - 1);
         guint32 lifetime = address->lifetime;
         guint32 preferred = address->preferred;
+        struct nd_opt_prefix_info *prefix;
 
         /* Clamp the life times if they're not forever. */
         if (lifetime != NM_NDISC_INFINITY)
@@ -415,59 +424,103 @@ send_ra(NMNDisc *ndisc, GError **error)
         prefix->nd_opt_pi_prefix.s6_addr32[3] = 0;
     }
 
-    if (rdata->dns_servers->len) {
+    if (rdata->dns_servers->len > 0u) {
         NMLndpRdnssOption *option;
-        int len = sizeof(*option) + sizeof(option->addrs[0]) * rdata->dns_servers->len;
+        gsize len = sizeof(*option) + (sizeof(option->addrs[0]) * rdata->dns_servers->len);
 
         option = _ndp_msg_add_option(msg, len);
-        if (option) {
-            option->header.nd_opt_type = NM_ND_OPT_RDNSS;
-            option->header.nd_opt_len  = len / 8;
-            option->lifetime           = htonl(900);
-
-            for (i = 0; i < rdata->dns_servers->len; i++) {
-                NMNDiscDNSServer *dns_server =
-                    &g_array_index(rdata->dns_servers, NMNDiscDNSServer, i);
-                option->addrs[i] = dns_server->address;
-            }
-        } else {
+        if (!option) {
             _LOGW("The RA is too big, had to omit DNS information.");
+            goto dns_servers_done;
+        }
+
+        option->header.nd_opt_type = NM_ND_OPT_RDNSS;
+        option->header.nd_opt_len  = len / 8;
+        option->lifetime           = htonl(900);
+
+        for (i = 0; i < rdata->dns_servers->len; i++) {
+            const NMNDiscDNSServer *dns_server =
+                &g_array_index(rdata->dns_servers, NMNDiscDNSServer, i);
+
+            option->addrs[i] = dns_server->address;
         }
     }
+dns_servers_done:
 
-    if (rdata->dns_domains->len) {
+    if (rdata->dns_domains->len > 0u) {
         NMLndpDnsslOption *option;
-        NMNDiscDNSDomain * dns_server;
-        int                len = sizeof(*option);
-        char *             search_list;
+        gsize              padding;
+        gsize              len;
+
+        nm_str_buf_reset(&sbuf, NULL);
 
         for (i = 0; i < rdata->dns_domains->len; i++) {
-            dns_server = &g_array_index(rdata->dns_domains, NMNDiscDNSDomain, i);
-            len += strlen(dns_server->domain) + 2;
-        }
-        len = (len + 8) & ~0x7;
+            const NMNDiscDNSDomain *dns_domain =
+                &g_array_index(rdata->dns_domains, NMNDiscDNSDomain, i);
+            const char *domain = dns_domain->domain;
+            gsize       domain_l;
+            gsize       n_reserved;
+            int         r;
 
-        option = _ndp_msg_add_option(msg, len);
-        if (option) {
-            option->header.nd_opt_type = NM_ND_OPT_DNSSL;
-            option->header.nd_opt_len  = len / 8;
-            option->lifetime           = htonl(900);
-
-            search_list = option->search_list;
-            for (i = 0; i < rdata->dns_domains->len; i++) {
-                NMNDiscDNSDomain *dns_domain =
-                    &g_array_index(rdata->dns_domains, NMNDiscDNSDomain, i);
-                uint8_t domain_len = strlen(dns_domain->domain);
-
-                *search_list++ = domain_len;
-                memcpy(search_list, dns_domain->domain, domain_len);
-                search_list += domain_len;
-                *search_list++ = '\0';
+            if (nm_str_is_empty(domain)) {
+                nm_assert_not_reached();
+                continue;
             }
-        } else {
-            _LOGW("The RA is too big, had to omit DNS search list.");
+
+            domain_l = strlen(domain);
+
+            nm_str_buf_maybe_expand(&sbuf, domain_l + 2u, FALSE);
+            n_reserved = sbuf.allocated - sbuf.len;
+
+            r = nm_sd_dns_name_to_wire_format(
+                domain,
+                (guint8 *) (&nm_str_buf_get_str_unsafe(&sbuf)[sbuf.len]),
+                n_reserved,
+                FALSE);
+
+            if (r < 0 || ((gsize) r) > n_reserved) {
+                nm_assert(r != -ENOBUFS);
+                nm_assert(r < 0);
+                /* we don't expect errors here, unless the domain name is invalid.
+                 * That should have been caught (and rejected) by upper layers, but
+                 * at this point it seems dangerous to assert (as it's hard to review
+                 * that all callers got it correct). So instead silently ignore the error. */
+                continue;
+            }
+
+            nm_str_buf_set_size(&sbuf, sbuf.len + ((gsize) r), TRUE, FALSE);
         }
+
+        if (sbuf.len == 0) {
+            /* no valid domains? */
+            goto dns_domains_done;
+        }
+
+        len     = sizeof(*option) + sbuf.len;
+        padding = len % 8u;
+        if (padding != 0u) {
+            padding = 8u - padding;
+            len += padding;
+        }
+
+        nm_assert(len % 8u == 0u);
+        nm_assert(len > 0u);
+        nm_assert(len / 8u >= 2u);
+
+        if (len / 8u >= 256u || !(option = _ndp_msg_add_option(msg, len))) {
+            _LOGW("The RA is too big, had to omit DNS search list.");
+            goto dns_domains_done;
+        }
+
+        nm_str_buf_append_c_len(&sbuf, '\0', padding);
+
+        option->header.nd_opt_type = NM_ND_OPT_DNSSL;
+        option->header.nd_opt_len  = len / 8u;
+        option->reserved           = 0;
+        option->lifetime           = htonl(900);
+        memcpy(option->search_list, nm_str_buf_get_str_unsafe(&sbuf), sbuf.len);
     }
+dns_domains_done:
 
     errsv = ndp_msg_send(priv->ndp, msg);
 
