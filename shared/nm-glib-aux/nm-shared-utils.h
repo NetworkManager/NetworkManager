@@ -8,6 +8,18 @@
 
 #include <netinet/in.h>
 
+/*****************************************************************************/
+
+/* An optional boolean (like NMTernary, with identical numerical
+ * enum values). Note that this enum type is _nm_packed! */
+typedef enum _nm_packed {
+    NM_OPTION_BOOL_DEFAULT = -1,
+    NM_OPTION_BOOL_FALSE   = 0,
+    NM_OPTION_BOOL_TRUE    = 1,
+} NMOptionBool;
+
+/*****************************************************************************/
+
 static inline gboolean
 nm_is_ascii(char ch)
 {
@@ -981,6 +993,12 @@ typedef enum {
 
 #define NM_UTILS_ERROR (nm_utils_error_quark())
 GQuark nm_utils_error_quark(void);
+
+GQuark nm_manager_error_quark(void);
+#define _NM_MANAGER_ERROR (nm_manager_error_quark())
+
+#define _NM_MANAGER_ERROR_UNKNOWN_LOG_LEVEL  10
+#define _NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN 11
 
 void nm_utils_error_set_cancelled(GError **error, gboolean is_disposing, const char *instance_name);
 
@@ -2092,6 +2110,24 @@ _nm_utils_hwaddr_aton(const char *asc, gpointer buffer, gsize buffer_length, gsi
                                     out_length);
 }
 
+static inline guint8 *
+_nm_utils_hwaddr_aton_exact(const char *asc, gpointer buffer, gsize buffer_length)
+{
+    g_return_val_if_fail(asc, NULL);
+    g_return_val_if_fail(buffer, NULL);
+    g_return_val_if_fail(buffer_length > 0, NULL);
+
+    return nm_utils_hexstr2bin_full(asc,
+                                    FALSE,
+                                    TRUE,
+                                    FALSE,
+                                    ":-",
+                                    buffer_length,
+                                    buffer,
+                                    buffer_length,
+                                    NULL);
+}
+
 static inline const char *
 _nm_utils_hwaddr_ntoa(gconstpointer addr,
                       gsize         addr_len,
@@ -2260,6 +2296,8 @@ nm_utils_strdup_reset_take(char **dst, char *src)
 void nm_indirect_g_free(gpointer arg);
 
 /*****************************************************************************/
+
+void nm_utils_ifname_cpy(char *dst, const char *name);
 
 typedef enum {
     NMU_IFACE_ANY,

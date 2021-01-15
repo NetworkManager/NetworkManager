@@ -40,11 +40,11 @@
 
 #include "nm-glib-aux/nm-secret-utils.h"
 #include "nm-glib-aux/nm-c-list.h"
-#include "nm-netlink.h"
+#include "nm-platform/nm-netlink.h"
 #include "nm-core-utils.h"
 #include "nmp-object.h"
-#include "nmp-netns.h"
-#include "nm-platform-utils.h"
+#include "nm-platform/nmp-netns.h"
+#include "nm-platform/nm-platform-utils.h"
 #include "nm-platform-private.h"
 #include "wifi/nm-wifi-utils.h"
 #include "wifi/nm-wifi-utils-wext.h"
@@ -7653,7 +7653,7 @@ static void
 link_set_sriov_params_async(NMPlatform *            platform,
                             int                     ifindex,
                             guint                   num_vfs,
-                            NMTernary               autoprobe,
+                            NMOptionBool            autoprobe,
                             NMPlatformAsyncCallback callback,
                             gpointer                data,
                             GCancellable *          cancellable)
@@ -7726,10 +7726,11 @@ link_set_sriov_params_async(NMPlatform *            platform,
     }
 
     if (current_num == num_vfs
-        && (autoprobe == NM_TERNARY_DEFAULT || current_autoprobe == autoprobe))
+        && (autoprobe == NM_OPTION_BOOL_DEFAULT || current_autoprobe == autoprobe))
         goto out_idle;
 
-    if (NM_IN_SET(autoprobe, NM_TERNARY_TRUE, NM_TERNARY_FALSE) && current_autoprobe != autoprobe
+    if (NM_IN_SET(autoprobe, NM_OPTION_BOOL_TRUE, NM_OPTION_BOOL_FALSE)
+        && current_autoprobe != autoprobe
         && !nm_platform_sysctl_set(
             NM_PLATFORM_GET,
             NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname, "device/sriov_drivers_autoprobe"),

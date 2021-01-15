@@ -60,7 +60,7 @@ IGNORE_HFILES= \
 	\
 	nm-auth-subject.h \
 	nm-common-macros.h \
-	nm-ethtool-utils.h \
+	nm-ethtool-base.h \
 	nm-libnm-core-utils.h \
 	\
 	nm-dispatcher-api.h \

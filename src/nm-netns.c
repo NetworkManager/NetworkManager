@@ -14,7 +14,7 @@
 #include "nm-core-internal.h"
 #include "nm-l3cfg.h"
 #include "platform/nm-platform.h"
-#include "platform/nmp-netns.h"
+#include "nm-platform/nmp-netns.h"
 #include "platform/nmp-rules-manager.h"
 
 /*****************************************************************************/

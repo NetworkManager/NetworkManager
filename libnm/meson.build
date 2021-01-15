@@ -51,6 +51,7 @@ libnm_headers = files(
   'nm-device-wpan.h',
   'nm-device.h',
   'nm-dhcp-config.h',
+  'nm-ethtool-utils.h',
   'nm-ip-config.h',
   'nm-object.h',
   'nm-remote-connection.h',

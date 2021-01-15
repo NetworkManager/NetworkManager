@@ -2274,18 +2274,18 @@ gboolean
 nmtstp_kernel_support_get(NMPlatformKernelSupportType type)
 {
     const NMPlatformLink *pllink;
-    NMTernary             v;
+    NMOptionBool          v;
 
     v = nm_platform_kernel_support_get_full(type, FALSE);
-    if (v != NM_TERNARY_DEFAULT)
-        return v != NM_TERNARY_FALSE;
+    if (v != NM_OPTION_BOOL_DEFAULT)
+        return v != NM_OPTION_BOOL_FALSE;
 
     switch (type) {
     case NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BR_VLAN_STATS_ENABLED:
         pllink = nmtstp_link_bridge_add(NULL, -1, "br-test-11", &nm_platform_lnk_bridge_default);
         nmtstp_link_delete(NULL, -1, pllink->ifindex, NULL, TRUE);
         v = nm_platform_kernel_support_get_full(type, FALSE);
-        g_assert(v != NM_TERNARY_DEFAULT);
+        g_assert(v != NM_OPTION_BOOL_DEFAULT);
         return v;
     default:
         g_assert_not_reached();

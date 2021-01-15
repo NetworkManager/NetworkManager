@@ -29,10 +29,10 @@
 #include "nm-glib-aux/nm-secret-utils.h"
 
 #include "nm-core-utils.h"
-#include "nm-platform-utils.h"
+#include "nm-platform/nm-platform-utils.h"
 #include "nm-platform-private.h"
 #include "nmp-object.h"
-#include "nmp-netns.h"
+#include "nm-platform/nmp-netns.h"
 
 /*****************************************************************************/
 
@@ -1842,7 +1842,7 @@ nm_platform_link_supports_sriov(NMPlatform *self, int ifindex)
  * @ifindex: the index of the interface to change
  * @num_vfs: the number of VFs to create
  * @autoprobe: the new autoprobe-drivers value (pass
- *     %NM_TERNARY_DEFAULT to keep current value)
+ *     %NM_OPTION_BOOL_DEFAULT to keep current value)
  * @callback: called when the operation finishes
  * @callback_data: data passed to @callback
  * @cancellable: cancellable to abort the operation
@@ -1855,7 +1855,7 @@ void
 nm_platform_link_set_sriov_params_async(NMPlatform *            self,
                                         int                     ifindex,
                                         guint                   num_vfs,
-                                        NMTernary               autoprobe,
+                                        NMOptionBool            autoprobe,
                                         NMPlatformAsyncCallback callback,
                                         gpointer                callback_data,
                                         GCancellable *          cancellable)
@@ -3282,10 +3282,10 @@ _to_string_ifa_flags(guint32 ifa_flags, char *buf, gsize size)
 /*****************************************************************************/
 
 gboolean
-nm_platform_ethtool_set_wake_on_lan(NMPlatform *            self,
-                                    int                     ifindex,
-                                    NMSettingWiredWakeOnLan wol,
-                                    const char *            wol_password)
+nm_platform_ethtool_set_wake_on_lan(NMPlatform *             self,
+                                    int                      ifindex,
+                                    _NMSettingWiredWakeOnLan wol,
+                                    const char *             wol_password)
 {
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 
@@ -3322,13 +3322,6 @@ nm_platform_ethtool_get_link_settings(NMPlatform *              self,
     return nmp_utils_ethtool_get_link_settings(ifindex, out_autoneg, out_speed, out_duplex);
 }
 
-NM_UTILS_LOOKUP_STR_DEFINE(nm_platform_link_duplex_type_to_string,
-                           NMPlatformLinkDuplexType,
-                           NM_UTILS_LOOKUP_DEFAULT_WARN(NULL),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_PLATFORM_LINK_DUPLEX_UNKNOWN, "unknown"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_PLATFORM_LINK_DUPLEX_FULL, "full"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_PLATFORM_LINK_DUPLEX_HALF, "half"), );
-
 /*****************************************************************************/
 
 NMEthtoolFeatureStates *
@@ -3346,8 +3339,8 @@ nm_platform_ethtool_set_features(
     NMPlatform *                  self,
     int                           ifindex,
     const NMEthtoolFeatureStates *features,
-    const NMTernary *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
-    gboolean         do_set /* or reset */)
+    const NMOptionBool *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
+    gboolean            do_set /* or reset */)
 {
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
 

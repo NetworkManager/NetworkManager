@@ -25,7 +25,7 @@
 #include "ppp/nm-ppp-manager-call.h"
 #include "ppp/nm-ppp-status.h"
 #include "platform/nm-platform.h"
-#include "platform/nm-platform-utils.h"
+#include "nm-platform/nm-platform-utils.h"
 #include "nm-dcb.h"
 #include "settings/nm-settings-connection.h"
 #include "nm-config.h"
@@ -1392,7 +1392,7 @@ wake_on_lan_enable(NMDevice *device)
 found:
     return nm_platform_ethtool_set_wake_on_lan(nm_device_get_platform(device),
                                                nm_device_get_ifindex(device),
-                                               wol,
+                                               _NM_SETTING_WIRED_WAKE_ON_LAN_CAST(wol),
                                                password);
 }
 

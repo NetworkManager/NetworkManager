@@ -9,6 +9,9 @@
 #include "nm-dbus-interface.h"
 #include "nm-core-types-internal.h"
 
+#include "nm-platform/nmp-base.h"
+#include "nm-base/nm-base.h"
+
 #include "nm-core-utils.h"
 #include "nm-setting-vlan.h"
 #include "nm-setting-wired.h"
@@ -976,12 +979,6 @@ typedef struct {
 } NMPlatformLnkWireGuard;
 
 typedef enum {
-    NM_PLATFORM_LINK_DUPLEX_UNKNOWN,
-    NM_PLATFORM_LINK_DUPLEX_HALF,
-    NM_PLATFORM_LINK_DUPLEX_FULL,
-} NMPlatformLinkDuplexType;
-
-typedef enum {
     NM_PLATFORM_WIREGUARD_CHANGE_FLAG_NONE            = 0,
     NM_PLATFORM_WIREGUARD_CHANGE_FLAG_REPLACE_PEERS   = (1LL << 0),
     NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_PRIVATE_KEY = (1LL << 1),
@@ -1038,7 +1035,7 @@ _nm_platform_kernel_support_detected(NMPlatformKernelSupportType type)
     return G_LIKELY(g_atomic_int_get(&_nm_platform_kernel_support_state[type]) != 0);
 }
 
-static inline NMTernary
+static inline NMOptionBool
 nm_platform_kernel_support_get_full(NMPlatformKernelSupportType type, gboolean init_if_not_set)
 {
     int v;
@@ -1048,7 +1045,7 @@ nm_platform_kernel_support_get_full(NMPlatformKernelSupportType type, gboolean i
     v = g_atomic_int_get(&_nm_platform_kernel_support_state[type]);
     if (G_UNLIKELY(v == 0)) {
         if (!init_if_not_set)
-            return NM_TERNARY_DEFAULT;
+            return NM_OPTION_BOOL_DEFAULT;
         v = _nm_platform_kernel_support_init(type, 0);
     }
     return (v >= 0);
@@ -1057,7 +1054,7 @@ nm_platform_kernel_support_get_full(NMPlatformKernelSupportType type, gboolean i
 static inline gboolean
 nm_platform_kernel_support_get(NMPlatformKernelSupportType type)
 {
-    return nm_platform_kernel_support_get_full(type, TRUE) != NM_TERNARY_FALSE;
+    return nm_platform_kernel_support_get_full(type, TRUE) != NM_OPTION_BOOL_FALSE;
 }
 
 /*****************************************************************************/
@@ -1121,7 +1118,7 @@ typedef struct {
     void (*link_set_sriov_params_async)(NMPlatform *            self,
                                         int                     ifindex,
                                         guint                   num_vfs,
-                                        int                     autoprobe,
+                                        NMOptionBool            autoprobe,
                                         NMPlatformAsyncCallback callback,
                                         gpointer                callback_data,
                                         GCancellable *          cancellable);
@@ -1856,7 +1853,7 @@ gboolean nm_platform_link_set_name(NMPlatform *self, int ifindex, const char *na
 void nm_platform_link_set_sriov_params_async(NMPlatform *            self,
                                              int                     ifindex,
                                              guint                   num_vfs,
-                                             int                     autoprobe,
+                                             NMOptionBool            autoprobe,
                                              NMPlatformAsyncCallback callback,
                                              gpointer                callback_data,
                                              GCancellable *          cancellable);
@@ -2325,10 +2322,10 @@ const char *nm_platform_route_scope2str(int scope, char *buf, gsize len);
 
 int nm_platform_ip_address_cmp_expiry(const NMPlatformIPAddress *a, const NMPlatformIPAddress *b);
 
-gboolean nm_platform_ethtool_set_wake_on_lan(NMPlatform *            self,
-                                             int                     ifindex,
-                                             NMSettingWiredWakeOnLan wol,
-                                             const char *            wol_password);
+gboolean nm_platform_ethtool_set_wake_on_lan(NMPlatform *             self,
+                                             int                      ifindex,
+                                             _NMSettingWiredWakeOnLan wol,
+                                             const char *             wol_password);
 gboolean nm_platform_ethtool_set_link_settings(NMPlatform *             self,
                                                int                      ifindex,
                                                gboolean                 autoneg,
@@ -2340,17 +2337,13 @@ gboolean nm_platform_ethtool_get_link_settings(NMPlatform *              self,
                                                guint32 *                 out_speed,
                                                NMPlatformLinkDuplexType *out_duplex);
 
-typedef struct _NMEthtoolFeatureStates NMEthtoolFeatureStates;
-
 NMEthtoolFeatureStates *nm_platform_ethtool_get_link_features(NMPlatform *self, int ifindex);
 gboolean                nm_platform_ethtool_set_features(
                    NMPlatform *                  self,
                    int                           ifindex,
                    const NMEthtoolFeatureStates *features,
-                   const NMTernary *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
-                   gboolean         do_set /* or reset */);
-
-typedef struct _NMEthtoolCoalesceState NMEthtoolCoalesceState;
+                   const NMOptionBool *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
+                   gboolean            do_set /* or reset */);
 
 gboolean nm_platform_ethtool_get_link_coalesce(NMPlatform *            self,
                                                int                     ifindex,
@@ -2360,14 +2353,10 @@ gboolean nm_platform_ethtool_set_coalesce(NMPlatform *                  self,
                                           int                           ifindex,
                                           const NMEthtoolCoalesceState *coalesce);
 
-typedef struct _NMEthtoolRingState NMEthtoolRingState;
-
 gboolean nm_platform_ethtool_get_link_ring(NMPlatform *self, int ifindex, NMEthtoolRingState *ring);
 
 gboolean
 nm_platform_ethtool_set_ring(NMPlatform *self, int ifindex, const NMEthtoolRingState *ring);
-
-const char *nm_platform_link_duplex_type_to_string(NMPlatformLinkDuplexType duplex);
 
 void nm_platform_ip4_dev_route_blacklist_set(NMPlatform *self,
                                              int         ifindex,

@@ -45,6 +45,7 @@
 #include "nm-device.h"
 #include "nm-dhcp-config.h"
 #include "nm-enum-types.h"
+#include "nm-ethtool-utils.h"
 #include "nm-ip-config.h"
 #include "nm-keyfile.h"
 #include "nm-object.h"

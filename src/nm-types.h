@@ -77,41 +77,6 @@ typedef enum {
     NM_ACTIVATION_REASON_USER_REQUEST,
 } NMActivationReason;
 
-typedef enum {
-    /* In priority order; higher number == higher priority */
-
-    NM_IP_CONFIG_SOURCE_UNKNOWN = 0,
-
-    /* for routes, the source is mapped to the uint8 field rtm_protocol.
-     * Reserve the range [1,0x100] for native RTPROT values. */
-
-    NM_IP_CONFIG_SOURCE_RTPROT_UNSPEC   = 1 + 0,
-    NM_IP_CONFIG_SOURCE_RTPROT_REDIRECT = 1 + 1,
-    NM_IP_CONFIG_SOURCE_RTPROT_KERNEL   = 1 + 2,
-    NM_IP_CONFIG_SOURCE_RTPROT_BOOT     = 1 + 3,
-    NM_IP_CONFIG_SOURCE_RTPROT_STATIC   = 1 + 4,
-    NM_IP_CONFIG_SOURCE_RTPROT_RA       = 1 + 9,
-    NM_IP_CONFIG_SOURCE_RTPROT_DHCP     = 1 + 16,
-    _NM_IP_CONFIG_SOURCE_RTPROT_LAST    = 1 + 0xFF,
-
-    NM_IP_CONFIG_SOURCE_KERNEL,
-    NM_IP_CONFIG_SOURCE_SHARED,
-    NM_IP_CONFIG_SOURCE_IP4LL,
-    NM_IP_CONFIG_SOURCE_IP6LL,
-    NM_IP_CONFIG_SOURCE_PPP,
-    NM_IP_CONFIG_SOURCE_WWAN,
-    NM_IP_CONFIG_SOURCE_VPN,
-    NM_IP_CONFIG_SOURCE_DHCP,
-    NM_IP_CONFIG_SOURCE_NDISC,
-    NM_IP_CONFIG_SOURCE_USER,
-} NMIPConfigSource;
-
-static inline gboolean
-NM_IS_IP_CONFIG_SOURCE_RTPROT(NMIPConfigSource source)
-{
-    return source > NM_IP_CONFIG_SOURCE_UNKNOWN && source <= _NM_IP_CONFIG_SOURCE_RTPROT_LAST;
-}
-
 /* platform */
 typedef struct _NMPlatform               NMPlatform;
 typedef struct _NMPlatformObject         NMPlatformObject;
@@ -121,7 +86,6 @@ typedef struct _NMPlatformIP4Route       NMPlatformIP4Route;
 typedef struct _NMPlatformIP6Address     NMPlatformIP6Address;
 typedef struct _NMPlatformIP6Route       NMPlatformIP6Route;
 typedef struct _NMPlatformLink           NMPlatformLink;
-typedef struct _NMPNetns                 NMPNetns;
 typedef struct _NMPObject                NMPObject;
 
 typedef enum {

@@ -105,6 +105,32 @@ test_logging_domains(void)
 /*****************************************************************************/
 
 static void
+test_logging_error(void)
+{
+    gs_free_error GError *error = NULL;
+    gboolean              success;
+
+    g_assert_cmpint(NM_MANAGER_ERROR, ==, _NM_MANAGER_ERROR);
+    G_STATIC_ASSERT_EXPR(NM_MANAGER_ERROR_UNKNOWN_LOG_LEVEL == _NM_MANAGER_ERROR_UNKNOWN_LOG_LEVEL);
+    G_STATIC_ASSERT_EXPR(NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN
+                         == _NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN);
+
+    success = nm_logging_setup("bogus", "ALL", NULL, &error);
+    nmtst_assert_no_success(success, error);
+    g_assert_cmpint(error->domain, ==, NM_MANAGER_ERROR);
+    g_assert_cmpint(error->code, ==, NM_MANAGER_ERROR_UNKNOWN_LOG_LEVEL);
+    nm_clear_pointer(&error, g_error_free);
+
+    success = nm_logging_setup("debug", "bogus", NULL, &error);
+    nmtst_assert_no_success(success, error);
+    g_assert_cmpint(error->domain, ==, NM_MANAGER_ERROR);
+    g_assert_cmpint(error->code, ==, NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN);
+    nm_clear_pointer(&error, g_error_free);
+}
+
+/*****************************************************************************/
+
+static void
 _test_same_prefix(const char *a1, const char *a2, guint8 plen)
 {
     struct in6_addr a = *nmtst_inet6_from_string(a1);
@@ -2544,6 +2570,7 @@ main(int argc, char **argv)
     nmtst_init_with_logging(&argc, &argv, NULL, "ALL");
 
     g_test_add_func("/general/test_logging_domains", test_logging_domains);
+    g_test_add_func("/general/test_logging_error", test_logging_error);
 
     g_test_add_func("/general/nm_utils_strbuf_append", test_nm_utils_strbuf_append);
 

@@ -135,6 +135,7 @@ test-*.trs
 
 /shared/nm-glib-aux/tests/test-json-aux
 /shared/nm-glib-aux/tests/test-shared-general
+/shared/nm-platform/tests/test-nm-platform
 /shared/nm-version-macros.h
 
 /introspection/org.freedesktop.NetworkManager*.[ch]

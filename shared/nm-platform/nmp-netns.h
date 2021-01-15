@@ -6,6 +6,8 @@
 #ifndef __NMP_NETNS_UTILS_H__
 #define __NMP_NETNS_UTILS_H__
 
+#include "nmp-base.h"
+
 /*****************************************************************************/
 
 #define NMP_TYPE_NETNS            (nmp_netns_get_type())
@@ -18,6 +20,7 @@
 #define NMP_NETNS_FD_NET "fd-net"
 #define NMP_NETNS_FD_MNT "fd-mnt"
 
+typedef struct _NMPNetns      NMPNetns;
 typedef struct _NMPNetnsClass NMPNetnsClass;
 
 GType nmp_netns_get_type(void);

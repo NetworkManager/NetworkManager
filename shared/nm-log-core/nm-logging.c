@@ -24,7 +24,6 @@
 
 #include "nm-glib-aux/nm-logging-base.h"
 #include "nm-glib-aux/nm-time-utils.h"
-#include "nm-errors.h"
 
 /*****************************************************************************/
 
@@ -247,8 +246,8 @@ match_log_level(const char *level, NMLogLevel *out_level, GError **error)
         return TRUE;
 
     g_set_error(error,
-                NM_MANAGER_ERROR,
-                NM_MANAGER_ERROR_UNKNOWN_LOG_LEVEL,
+                _NM_MANAGER_ERROR,
+                _NM_MANAGER_ERROR_UNKNOWN_LOG_LEVEL,
                 _("Unknown log level '%s'"),
                 level);
     return FALSE;
@@ -355,8 +354,8 @@ nm_logging_setup(const char *level, const char *domains, char **bad_domains, GEr
             if (!bits) {
                 if (!bad_domains) {
                     g_set_error(error,
-                                NM_MANAGER_ERROR,
-                                NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN,
+                                _NM_MANAGER_ERROR,
+                                _NM_MANAGER_ERROR_UNKNOWN_LOG_DOMAIN,
                                 _("Unknown log domain '%s'"),
                                 s);
                     return FALSE;

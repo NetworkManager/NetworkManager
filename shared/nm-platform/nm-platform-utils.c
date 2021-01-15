@@ -18,11 +18,10 @@
 #include <fcntl.h>
 #include <libudev.h>
 
-#include "nm-utils.h"
-#include "nm-setting-wired.h"
-#include "nm-libnm-core-intern/nm-ethtool-utils.h"
+#include "nm-base/nm-ethtool-base.h"
+#include "nm-log-core/nm-logging.h"
 
-#include "nm-core-utils.h"
+/*****************************************************************************/
 
 #define ONOFF(bool_val) ((bool_val) ? "on" : "off")
 
@@ -49,6 +48,15 @@ nmp_utils_if_nametoindex(const char *ifname)
 
     return if_nametoindex(ifname);
 }
+
+/*****************************************************************************/
+
+NM_UTILS_LOOKUP_STR_DEFINE(nm_platform_link_duplex_type_to_string,
+                           NMPlatformLinkDuplexType,
+                           NM_UTILS_LOOKUP_DEFAULT_WARN(NULL),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_PLATFORM_LINK_DUPLEX_UNKNOWN, "unknown"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_PLATFORM_LINK_DUPLEX_FULL, "full"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_PLATFORM_LINK_DUPLEX_HALF, "half"), );
 
 /*****************************************************************************/
 
@@ -686,8 +694,8 @@ gboolean
 nmp_utils_ethtool_set_features(
     int                           ifindex,
     const NMEthtoolFeatureStates *features,
-    const NMTernary *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
-    gboolean         do_set /* or reset */)
+    const NMOptionBool *requested /* indexed by NMEthtoolID - _NM_ETHTOOL_ID_FEATURE_FIRST */,
+    gboolean            do_set /* or reset */)
 {
     nm_auto_socket_handle SocketHandle shandle        = SOCKET_HANDLE_INIT(ifindex);
     gs_free struct ethtool_sfeatures * sfeatures_free = NULL;
@@ -697,7 +705,7 @@ nmp_utils_ethtool_set_features(
     guint                              i, j;
     struct {
         const NMEthtoolFeatureState *f_state;
-        NMTernary                    requested;
+        NMOptionBool                 requested;
     } set_states[N_ETHTOOL_KERNEL_FEATURES];
     guint    set_states_n = 0;
     gboolean success      = TRUE;
@@ -711,7 +719,7 @@ nmp_utils_ethtool_set_features(
     for (i = 0; i < _NM_ETHTOOL_ID_FEATURE_NUM; i++) {
         const NMEthtoolFeatureState *const *states_indexed;
 
-        if (requested[i] == NM_TERNARY_DEFAULT)
+        if (requested[i] == NM_OPTION_BOOL_DEFAULT)
             continue;
 
         if (!(states_indexed = features->states_indexed[i])) {
@@ -742,7 +750,7 @@ nmp_utils_ethtool_set_features(
                              do_set ? "set" : "reset",
                              nm_ethtool_data[i + _NM_ETHTOOL_ID_FEATURE_FIRST]->optname,
                              s->info->kernel_names[s->idx_kernel_name],
-                             ONOFF(do_set ? requested[i] == NM_TERNARY_TRUE : s->active),
+                             ONOFF(do_set ? requested[i] == NM_OPTION_BOOL_TRUE : s->active),
                              _ethtool_feature_state_to_string(sbuf,
                                                               sizeof(sbuf),
                                                               s,
@@ -757,14 +765,14 @@ nmp_utils_ethtool_set_features(
                          do_set ? "set" : "reset",
                          nm_ethtool_data[i + _NM_ETHTOOL_ID_FEATURE_FIRST]->optname,
                          s->info->kernel_names[s->idx_kernel_name],
-                         ONOFF(do_set ? requested[i] == NM_TERNARY_TRUE : s->active),
+                         ONOFF(do_set ? requested[i] == NM_OPTION_BOOL_TRUE : s->active),
                          _ethtool_feature_state_to_string(sbuf,
                                                           sizeof(sbuf),
                                                           s,
                                                           do_set ? " currently:" : " before:"));
 
             if (do_set && (!s->available || s->never_changed)
-                && (s->active != (requested[i] == NM_TERNARY_TRUE))) {
+                && (s->active != (requested[i] == NM_OPTION_BOOL_TRUE))) {
                 /* we request to change a flag which kernel reported as fixed.
                  * While the ethtool operation will silently succeed, mark the request
                  * as failure. */
@@ -804,7 +812,7 @@ nmp_utils_ethtool_set_features(
         sfeatures->features[i_block].valid |= i_flag;
 
         if (do_set)
-            is_requested = (set_states[i].requested == NM_TERNARY_TRUE);
+            is_requested = (set_states[i].requested == NM_OPTION_BOOL_TRUE);
         else
             is_requested = s->active;
 
@@ -1116,10 +1124,10 @@ nmp_utils_ethtool_get_permanent_address(int ifindex, guint8 *buf, size_t *length
 {
     struct {
         struct ethtool_perm_addr e;
-        guint8                   _extra_data[NM_UTILS_HWADDR_LEN_MAX + 1];
+        guint8                   _extra_data[_NM_UTILS_HWADDR_LEN_MAX + 1];
     } edata = {
         .e.cmd  = ETHTOOL_GPERMADDR,
-        .e.size = NM_UTILS_HWADDR_LEN_MAX,
+        .e.size = _NM_UTILS_HWADDR_LEN_MAX,
     };
     const guint8 *pdata;
 
@@ -1130,7 +1138,7 @@ nmp_utils_ethtool_get_permanent_address(int ifindex, guint8 *buf, size_t *length
     if (_ethtool_call_once(ifindex, &edata, sizeof(edata)) < 0)
         return FALSE;
 
-    if (edata.e.size > NM_UTILS_HWADDR_LEN_MAX)
+    if (edata.e.size > _NM_UTILS_HWADDR_LEN_MAX)
         return FALSE;
     if (edata.e.size < 1)
         return FALSE;
@@ -1405,9 +1413,9 @@ nmp_utils_ethtool_set_link_settings(int                      ifindex,
 }
 
 gboolean
-nmp_utils_ethtool_set_wake_on_lan(int                     ifindex,
-                                  NMSettingWiredWakeOnLan wol,
-                                  const char *            wol_password)
+nmp_utils_ethtool_set_wake_on_lan(int                      ifindex,
+                                  _NMSettingWiredWakeOnLan wol,
+                                  const char *             wol_password)
 {
     struct ethtool_wolinfo wol_info = {
         .cmd     = ETHTOOL_SWOL,
@@ -1416,7 +1424,7 @@ nmp_utils_ethtool_set_wake_on_lan(int                     ifindex,
 
     g_return_val_if_fail(ifindex > 0, FALSE);
 
-    if (wol == NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE)
+    if (wol == _NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE)
         return TRUE;
 
     nm_log_dbg(LOGD_PLATFORM,
@@ -1425,21 +1433,21 @@ nmp_utils_ethtool_set_wake_on_lan(int                     ifindex,
                (unsigned) wol,
                wol_password);
 
-    if (NM_FLAGS_HAS(wol, NM_SETTING_WIRED_WAKE_ON_LAN_PHY))
+    if (NM_FLAGS_HAS(wol, _NM_SETTING_WIRED_WAKE_ON_LAN_PHY))
         wol_info.wolopts |= WAKE_PHY;
-    if (NM_FLAGS_HAS(wol, NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST))
+    if (NM_FLAGS_HAS(wol, _NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST))
         wol_info.wolopts |= WAKE_UCAST;
-    if (NM_FLAGS_HAS(wol, NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST))
+    if (NM_FLAGS_HAS(wol, _NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST))
         wol_info.wolopts |= WAKE_MCAST;
-    if (NM_FLAGS_HAS(wol, NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST))
+    if (NM_FLAGS_HAS(wol, _NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST))
         wol_info.wolopts |= WAKE_BCAST;
-    if (NM_FLAGS_HAS(wol, NM_SETTING_WIRED_WAKE_ON_LAN_ARP))
+    if (NM_FLAGS_HAS(wol, _NM_SETTING_WIRED_WAKE_ON_LAN_ARP))
         wol_info.wolopts |= WAKE_ARP;
-    if (NM_FLAGS_HAS(wol, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
+    if (NM_FLAGS_HAS(wol, _NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC))
         wol_info.wolopts |= WAKE_MAGIC;
 
     if (wol_password) {
-        if (!nm_utils_hwaddr_aton(wol_password, wol_info.sopass, ETH_ALEN)) {
+        if (!_nm_utils_hwaddr_aton_exact(wol_password, wol_info.sopass, ETH_ALEN)) {
             nm_log_dbg(LOGD_PLATFORM,
                        "ethtool[%d]: couldn't parse Wake-on-LAN password '%s'",
                        ifindex,
