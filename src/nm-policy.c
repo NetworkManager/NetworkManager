@@ -666,6 +666,7 @@ device_get_hostname_property_boolean(NMDevice *device, const char *name)
     NMSettingHostname *s_hostname;
     char               buf[128];
     int                value;
+    NMTernary          default_value;
 
     nm_assert(NM_IN_STRSET(name,
                            NM_SETTING_HOSTNAME_FROM_DHCP,
@@ -680,12 +681,17 @@ device_get_hostname_property_boolean(NMDevice *device, const char *name)
             return value;
     }
 
+    if (nm_streq(name, NM_SETTING_HOSTNAME_ONLY_FROM_DEFAULT))
+        default_value = NM_TERNARY_FALSE;
+    else
+        default_value = NM_TERNARY_TRUE;
+
     return nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
                                                        nm_sprintf_buf(buf, "hostname.%s", name),
                                                        device,
                                                        NM_TERNARY_FALSE,
                                                        NM_TERNARY_TRUE,
-                                                       NM_TERNARY_TRUE);
+                                                       default_value);
 }
 
 static int
