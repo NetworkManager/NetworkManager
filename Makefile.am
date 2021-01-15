@@ -729,6 +729,7 @@ EXTRA_DIST += libnm/nm-libnm-aux/README.md
 
 EXTRA_DIST += \
 	shared/nm-glib-aux/tests/meson.build \
+	shared/README.md \
 	$(NULL)
 
 ###############################################################################
