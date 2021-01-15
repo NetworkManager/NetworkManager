@@ -640,14 +640,8 @@ typedef struct {
     int       priority;
     bool      from_dhcp : 1;
     bool      from_dns : 1;
-
-    union {
-        struct {
-            bool ip_6;
-            bool ip_4;
-        };
-        bool ip_x[2];
-    };
+    bool      IS_IPv4 : 1;
+    bool      is_default : 1;
 } DeviceHostnameInfo;
 
 static int
@@ -657,6 +651,7 @@ device_hostname_info_compare(gconstpointer a, gconstpointer b)
     const DeviceHostnameInfo *info2 = b;
 
     NM_CMP_FIELD(info1, info2, priority);
+    NM_CMP_FIELD_UNSAFE(info2, info1, is_default);
 
     return 0;
 }
@@ -726,6 +721,8 @@ build_device_hostname_infos(NMPolicy *self)
         DeviceHostnameInfo *info;
         NMDevice *          device;
         gboolean            only_from_default;
+        gboolean            is_default;
+        int                 IS_IPv4;
 
         device = nm_active_connection_get_device(ac);
         if (!device)
@@ -733,23 +730,28 @@ build_device_hostname_infos(NMPolicy *self)
 
         only_from_default =
             device_get_hostname_property_boolean(device, NM_SETTING_HOSTNAME_ONLY_FROM_DEFAULT);
-        if (only_from_default && ac != priv->default_ac4 && ac != priv->default_ac6)
-            continue;
 
-        if (!array)
-            array = g_array_sized_new(FALSE, FALSE, sizeof(DeviceHostnameInfo), 4);
+        for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+            is_default = (ac == (IS_IPv4 ? priv->default_ac4 : priv->default_ac6));
+            if (only_from_default && !is_default)
+                continue;
 
-        info  = nm_g_array_append_new(array, DeviceHostnameInfo);
-        *info = (DeviceHostnameInfo){
-            .device   = device,
-            .priority = device_get_hostname_priority(device),
-            .from_dhcp =
-                device_get_hostname_property_boolean(device, NM_SETTING_HOSTNAME_FROM_DHCP),
-            .from_dns =
-                device_get_hostname_property_boolean(device, NM_SETTING_HOSTNAME_FROM_DNS_LOOKUP),
-            .ip_4 = priv->default_ac4 || !only_from_default,
-            .ip_6 = priv->default_ac6 || !only_from_default,
-        };
+            if (!array)
+                array = g_array_sized_new(FALSE, FALSE, sizeof(DeviceHostnameInfo), 4);
+
+            info  = nm_g_array_append_new(array, DeviceHostnameInfo);
+            *info = (DeviceHostnameInfo){
+                .device   = device,
+                .priority = device_get_hostname_priority(device),
+                .from_dhcp =
+                    device_get_hostname_property_boolean(device, NM_SETTING_HOSTNAME_FROM_DHCP),
+                .from_dns =
+                    device_get_hostname_property_boolean(device,
+                                                         NM_SETTING_HOSTNAME_FROM_DNS_LOOKUP),
+                .IS_IPv4    = IS_IPv4,
+                .is_default = is_default,
+            };
+        }
     }
 
     if (array && array->len > 1) {
@@ -796,7 +798,7 @@ update_system_hostname(NMPolicy *self, const char *msg)
     gs_unref_array GArray *infos = NULL;
     DeviceHostnameInfo *   info;
     guint                  i;
-    int                    IS_IPv4;
+    int                    addr_family;
 
     g_return_if_fail(self != NULL);
 
@@ -854,65 +856,59 @@ update_system_hostname(NMPolicy *self, const char *msg)
         for (i = 0; i < infos->len; i++) {
             info = &g_array_index(infos, DeviceHostnameInfo, i);
             _LOGT(LOGD_DNS,
-                  "  - prio:%4d ipv:%c%c dhcp:%d dns:%d dev:%s",
+                  "  - prio:%5d ipv%c%s %s %s dev:%s",
                   info->priority,
-                  info->ip_4 ? '4' : '-',
-                  info->ip_6 ? '6' : '-',
-                  info->from_dhcp,
-                  info->from_dns,
+                  info->IS_IPv4 ? '4' : '6',
+                  info->is_default ? " (def)" : "      ",
+                  info->from_dhcp ? "dhcp " : "     ",
+                  info->from_dns ? "dns " : "    ",
                   nm_device_get_iface(info->device));
         }
     }
 
     for (i = 0; infos && i < infos->len; i++) {
-        info = &g_array_index(infos, DeviceHostnameInfo, i);
+        info        = &g_array_index(infos, DeviceHostnameInfo, i);
+        addr_family = info->IS_IPv4 ? AF_INET : AF_INET6;
         g_signal_handlers_disconnect_by_func(info->device, device_dns_lookup_done, self);
-        for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
-            const int addr_family = IS_IPv4 ? AF_INET : AF_INET6;
 
-            if (info->from_dhcp && info->ip_x[IS_IPv4]) {
-                dhcp_config = nm_device_get_dhcp_config(info->device, addr_family);
-                if (dhcp_config) {
-                    dhcp_hostname =
-                        nm_dhcp_config_get_option(dhcp_config, IS_IPv4 ? "host_name" : "fqdn_fqdn");
-                    if (dhcp_hostname && dhcp_hostname[0]) {
-                        p = nm_str_skip_leading_spaces(dhcp_hostname);
-                        if (p[0]) {
-                            _set_hostname(self, p, IS_IPv4 ? "from DHCPv4" : "from DHCPv6");
-                            priv->dhcp_hostname = TRUE;
-                            return;
-                        }
-                        _LOGW(LOGD_DNS,
-                              "set-hostname: DHCPv%c-provided hostname '%s' looks invalid; "
-                              "ignoring it",
-                              nm_utils_addr_family_to_char(addr_family),
-                              dhcp_hostname);
+        if (info->from_dhcp) {
+            dhcp_config = nm_device_get_dhcp_config(info->device, addr_family);
+            if (dhcp_config) {
+                dhcp_hostname =
+                    nm_dhcp_config_get_option(dhcp_config,
+                                              info->IS_IPv4 ? "host_name" : "fqdn_fqdn");
+                if (dhcp_hostname && dhcp_hostname[0]) {
+                    p = nm_str_skip_leading_spaces(dhcp_hostname);
+                    if (p[0]) {
+                        _set_hostname(self, p, info->IS_IPv4 ? "from DHCPv4" : "from DHCPv6");
+                        priv->dhcp_hostname = TRUE;
+                        return;
                     }
+                    _LOGW(LOGD_DNS,
+                          "set-hostname: DHCPv%c-provided hostname '%s' looks invalid; "
+                          "ignoring it",
+                          nm_utils_addr_family_to_char(addr_family),
+                          dhcp_hostname);
                 }
             }
         }
 
         if (priv->hostname_mode != NM_POLICY_HOSTNAME_MODE_DHCP) {
-            for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
-                const int addr_family = IS_IPv4 ? AF_INET : AF_INET6;
+            if (info->from_dns) {
+                const char *result;
+                gboolean    wait = FALSE;
 
-                if (info->from_dns && info->ip_x[IS_IPv4]) {
-                    const char *result;
-                    gboolean    wait = FALSE;
-
-                    result =
-                        nm_device_get_hostname_from_dns_lookup(info->device, addr_family, &wait);
-                    if (result) {
-                        _set_hostname(self, result, "from address lookup");
-                        return;
-                    }
-                    if (wait) {
-                        g_signal_connect(info->device,
-                                         NM_DEVICE_DNS_LOOKUP_DONE,
-                                         (GCallback) device_dns_lookup_done,
-                                         self);
-                        return;
-                    }
+                result = nm_device_get_hostname_from_dns_lookup(info->device, addr_family, &wait);
+                if (result) {
+                    _set_hostname(self, result, "from address lookup");
+                    return;
+                }
+                if (wait) {
+                    g_signal_connect(info->device,
+                                     NM_DEVICE_DNS_LOOKUP_DONE,
+                                     (GCallback) device_dns_lookup_done,
+                                     self);
+                    return;
                 }
             }
         }
