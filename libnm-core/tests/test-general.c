@@ -8805,6 +8805,20 @@ test_nm_utils_enum(void)
                                          NULL,
                                          color_value_infos);
 
+    _test_nm_utils_enum_from_str_do_full(NM_TYPE_SETTING_CONNECTION_LLMNR,
+                                         "-1",
+                                         TRUE,
+                                         -1,
+                                         NULL,
+                                         NULL);
+
+    _test_nm_utils_enum_from_str_do_full(NM_TYPE_SETTING_CONNECTION_LLMNR,
+                                         "-0x1",
+                                         TRUE,
+                                         -1,
+                                         NULL,
+                                         NULL);
+
     _test_nm_utils_enum_get_values_do(bool_enum, 0, G_MAXINT, "no,yes,maybe,unknown,67,64");
     _test_nm_utils_enum_get_values_do(bool_enum,
                                       NM_TEST_GENERAL_BOOL_ENUM_YES,
