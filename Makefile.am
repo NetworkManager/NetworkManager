@@ -113,6 +113,7 @@ DISTCLEANFILES += config-extra.h
 $(libnm_core_lib_h_pub_mkenums):     config-extra.h
 libnm-core/.dirstamp:                config-extra.h
 shared/.dirstamp:                    config-extra.h
+shared/nm-base/.dirstamp:            config-extra.h
 shared/nm-glib-aux/.dirstamp:        config-extra.h
 shared/nm-glib-aux/tests/.dirstamp:  config-extra.h
 shared/nm-platform/.dirstamp:        config-extra.h
