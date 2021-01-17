@@ -37,6 +37,8 @@ typedef struct {
     gboolean ignore_auto_dns;
     int      dhcp_timeout;
     char *   dhcp4_vci;
+
+    gint64 carrier_timeout_sec;
 } Reader;
 
 static Reader *
@@ -1033,7 +1035,10 @@ connection_set_needed_cb(gpointer key, gpointer value, gpointer user_data)
 }
 
 GHashTable *
-nmi_cmdline_reader_parse(const char *sysfs_dir, const char *const *argv, char **hostname)
+nmi_cmdline_reader_parse(const char *       sysfs_dir,
+                         const char *const *argv,
+                         char **            hostname,
+                         gint64 *           carrier_timeout_sec)
 {
     Reader *          reader;
     const char *      tag;
@@ -1067,6 +1072,9 @@ nmi_cmdline_reader_parse(const char *sysfs_dir, const char *const *argv, char **
         } else if (nm_streq(tag, "rd.net.dhcp.vendor-class")) {
             if (nm_utils_validate_dhcp4_vendor_class_id(argument, NULL))
                 nm_utils_strdup_reset(&reader->dhcp4_vci, argument);
+        } else if (nm_streq(tag, "rd.net.timeout.carrier")) {
+            reader->carrier_timeout_sec =
+                _nm_utils_ascii_str_to_int64(argument, 10, 0, G_MAXINT32, 0);
         }
     }
 
@@ -1226,6 +1234,8 @@ nmi_cmdline_reader_parse(const char *sysfs_dir, const char *const *argv, char **
     g_hash_table_foreach(reader->hash, _normalize_conn, NULL);
 
     NM_SET_OUT(hostname, g_steal_pointer(&reader->hostname));
+
+    NM_SET_OUT(carrier_timeout_sec, reader->carrier_timeout_sec);
 
     return reader_destroy(reader, FALSE);
 }
