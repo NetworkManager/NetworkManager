@@ -105,6 +105,20 @@
       <varlistentry>
         <term>
           <group choice='plain'>
+            <arg choice='plain'><option>-r</option></arg>
+            <arg choice='plain'><option>--run-config-dir</option></arg>
+          </group>
+          <arg choice='plain'><replaceable>path</replaceable></arg>
+        </term>
+
+        <listitem>
+          <para>Output directory for config files.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <group choice='plain'>
             <arg choice='plain'><option>-s</option></arg>
             <arg choice='plain'><option>--stdout</option></arg>
           </group>
@@ -133,6 +147,7 @@
             <member><option>rd.peerdns</option></member>
             <member><option>rd.bootif</option></member>
             <member><option>rd.net.timeout.dhcp</option></member>
+            <member><option>rd.net.timeout.carrier</option></member>
             <member><option>BOOTIF</option></member>
           </simplelist>
 
