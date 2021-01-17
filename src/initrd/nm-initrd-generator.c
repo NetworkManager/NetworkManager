@@ -9,6 +9,7 @@
 #include "nm-keyfile/nm-keyfile-internal.h"
 #include "nm-initrd-generator.h"
 #include "nm-glib-aux/nm-io-utils.h"
+#include "nm-config.h"
 
 /*****************************************************************************/
 
@@ -65,6 +66,7 @@ err_out:
 
 #define DEFAULT_SYSFS_DIR        "/sys"
 #define DEFAULT_INITRD_DATA_DIR  NMRUNDIR "/initrd"
+#define DEFAULT_RUN_CONFIG_DIR   NMRUNDIR "/conf.d"
 
 int
 main (int argc, char *argv[])
@@ -73,12 +75,14 @@ main (int argc, char *argv[])
 	gs_free char *connections_dir = NULL;
 	gs_free char *initrd_dir = NULL;
 	gs_free char *sysfs_dir = NULL;
+	gs_free char *run_config_dir = NULL;
 	gboolean dump_to_stdout = FALSE;
 	gs_strfreev char **remaining = NULL;
 	GOptionEntry option_entries[] = {
 		{ "connections-dir",  'c',  0, G_OPTION_ARG_FILENAME,     &connections_dir, "Output connection directory",         NM_KEYFILE_PATH_NAME_RUN },
 		{ "initrd-data-dir",  'i',  0, G_OPTION_ARG_FILENAME,     &initrd_dir,      "Output initrd data directory",        DEFAULT_INITRD_DATA_DIR },
 		{ "sysfs-dir",        'd',  0, G_OPTION_ARG_FILENAME,     &sysfs_dir,       "The sysfs mount point",               DEFAULT_SYSFS_DIR },
+		{ "run-config-dir",   'r',  0, G_OPTION_ARG_FILENAME,     &run_config_dir,  "Output config directory",             DEFAULT_RUN_CONFIG_DIR },
 		{ "stdout",           's',  0, G_OPTION_ARG_NONE,         &dump_to_stdout,  "Dump connections to standard output", NULL },
 		{ G_OPTION_REMAINING, '\0', 0, G_OPTION_ARG_STRING_ARRAY, &remaining,       NULL,                                  NULL },
 		{ NULL }
@@ -87,9 +91,11 @@ main (int argc, char *argv[])
 	gs_free_error GError *error = NULL;
 	gs_free char *hostname = NULL;
 	int errsv;
+	gint64 carrier_timeout_sec = 0;
 
 	option_context = g_option_context_new ("-- [ip=...] [rd.route=...] [bridge=...] [bond=...] [team=...] [vlan=...] "
-	                                       "[bootdev=...] [nameserver=...] [rd.peerdns=...] [rd.bootif=...] [BOOTIF=...] [rd.znet=...] ... ");
+	                                       "[bootdev=...] [nameserver=...] [rd.peerdns=...] [rd.bootif=...] [BOOTIF=...] "
+	                                       "[rd.znet=...] [rd.net.timeout.carrier=...] ... ");
 
 	g_option_context_set_summary (option_context, "Generate early NetworkManager configuration.");
 	g_option_context_set_description (option_context,
@@ -114,29 +120,38 @@ main (int argc, char *argv[])
 		sysfs_dir = g_strdup (DEFAULT_SYSFS_DIR);
 	if (!initrd_dir)
 		initrd_dir = g_strdup (DEFAULT_INITRD_DATA_DIR);
-	if (dump_to_stdout)
-		nm_clear_g_free (&connections_dir);
-
-	if (connections_dir && g_mkdir_with_parents (connections_dir, 0755) != 0) {
-		errsv = errno;
-		_LOGW (LOGD_CORE, "%s: %s", connections_dir, nm_strerror_native (errsv));
-		return 1;
-	}
+	if (!run_config_dir)
+		run_config_dir = g_strdup (DEFAULT_RUN_CONFIG_DIR);
 
 	connections = nmi_cmdline_reader_parse (sysfs_dir,
-	                                        (const char *const*) remaining,
-	                                        &hostname);
-
-	g_hash_table_foreach (connections, output_conn, connections_dir);
-	g_hash_table_destroy (connections);
+	                                        (const char *const *) remaining,
+	                                        &hostname,
+	                                        &carrier_timeout_sec);
 
 	if (dump_to_stdout) {
+		nm_clear_g_free (&connections_dir);
+		nm_clear_g_free (&initrd_dir);
+		nm_clear_g_free (&run_config_dir);
 		if (hostname)
 			g_print ("\n*** Hostname '%s' ***\n", hostname);
+		if (carrier_timeout_sec != 0) {
+			g_print ("\n*** Carrier Wait Timeout %" G_GINT64_FORMAT " sec ***\n",
+			        carrier_timeout_sec);
+		}
 	} else {
+		if (g_mkdir_with_parents (connections_dir, 0755) != 0) {
+			errsv = errno;
+			_LOGW (LOGD_CORE, "%s: %s", connections_dir, nm_strerror_native (errsv));
+			return 1;
+		}
 		if (g_mkdir_with_parents (initrd_dir, 0755) != 0) {
 			errsv = errno;
 			_LOGW (LOGD_CORE, "%s: %s", initrd_dir, nm_strerror_native (errsv));
+			return 1;
+		}
+		if (g_mkdir_with_parents (run_config_dir, 0755) != 0) {
+			errsv = errno;
+			_LOGW (LOGD_CORE, "%s: %s", run_config_dir, nm_strerror_native (errsv));
 			return 1;
 		}
 
@@ -152,7 +167,32 @@ main (int argc, char *argv[])
 				return 1;
 			}
 		}
+		if (carrier_timeout_sec != 0) {
+			nm_auto_unref_keyfile GKeyFile *keyfile  = NULL;
+			gs_free char *filename = NULL;
+
+			keyfile = g_key_file_new ();
+			g_key_file_set_list_separator (keyfile, NM_CONFIG_KEYFILE_LIST_SEPARATOR);
+			filename = g_strdup_printf ("%s/15-carrier-timeout.conf", run_config_dir);
+
+			g_key_file_set_value (keyfile,
+			                     NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE "-15-carrier-timeout",
+			                     NM_CONFIG_KEYFILE_KEY_MATCH_DEVICE,
+			                     "*");
+			g_key_file_set_int64 (keyfile,
+			                     NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE "-15-carrier-timeout",
+			                     NM_CONFIG_KEYFILE_KEY_DEVICE_CARRIER_WAIT_TIMEOUT,
+			                     carrier_timeout_sec * 1000);
+
+			if (!g_key_file_save_to_file (keyfile, filename, &error)) {
+				_LOGW (LOGD_CORE, "%s: %s", filename, error->message);
+				return 1;
+			}
+		}
 	}
+
+	g_hash_table_foreach (connections, output_conn, connections_dir);
+	g_hash_table_destroy (connections);
 
 	return 0;
 }
