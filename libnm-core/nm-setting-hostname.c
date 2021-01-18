@@ -312,7 +312,7 @@ nm_setting_hostname_class_init(NMSettingHostnameClass *klass)
      *
      * When set to %NM_TERNARY_DEFAULT, the value from global configuration
      * is used. If the property doesn't have a value in the global
-     * configuration, NetworkManager assumes the value to be %NM_TERNARY_TRUE.
+     * configuration, NetworkManager assumes the value to be %NM_TERNARY_FALSE.
      *
      * Since: 1.30
      **/
