@@ -7,6 +7,11 @@
 # This example prints out all the AP BSSIDs that all Wi-Fi devices on the
 # machine can see.  Useful for location-based services like Skyhook that
 # can geolocate you based on the APs you can see.
+#
+# Note that with NetworkManager clients are required to request scanning.
+# If you don't do that, the scan list may be outdated. That means, you would
+# check the LastScan property, and if necessary call RequestScan() first.
+# After RequestScan(), you wait until the LastScan property gets bumped again.
 
 import dbus
 
