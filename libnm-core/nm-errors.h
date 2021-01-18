@@ -131,7 +131,7 @@ GQuark nm_crypto_error_quark(void);
  * @NM_DEVICE_ERROR_VERSION_ID_MISMATCH: the version id did not match.
  * @NM_DEVICE_ERROR_MISSING_DEPENDENCIES: the requested operation could not
  *   be completed due to missing dependencies.
- * @NM_DEVICE_ERROR_INVALID_ARGUMENT: invalid argument. Since: 1.16
+ * @NM_DEVICE_ERROR_INVALID_ARGUMENT: invalid argument. Since: 1.16.
  *
  * Device-related errors.
  *

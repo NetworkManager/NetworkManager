@@ -94,7 +94,7 @@
  * @NM_CAPABILITY_TEAM: Teams can be managed. This means the team device plugin
  *   is loaded.
  * @NM_CAPABILITY_OVS: OpenVSwitch can be managed. This means the OVS device plugin
- *   is loaded. Since: 1.24
+ *   is loaded. Since: 1.24.
  *
  * #NMCapability names the numbers in the Capabilities property.
  * Capabilities are positive numbers. They are part of stable API
@@ -214,8 +214,8 @@ typedef enum {
  * @NM_DEVICE_TYPE_WPAN: a IEEE 802.15.4 (WPAN) MAC Layer Device
  * @NM_DEVICE_TYPE_6LOWPAN: 6LoWPAN interface
  * @NM_DEVICE_TYPE_WIREGUARD: a WireGuard interface
- * @NM_DEVICE_TYPE_WIFI_P2P: an 802.11 Wi-Fi P2P device (Since: 1.16)
- * @NM_DEVICE_TYPE_VRF: A VRF (Virtual Routing and Forwarding) interface (Since: 1.24)
+ * @NM_DEVICE_TYPE_WIFI_P2P: an 802.11 Wi-Fi P2P device. Since: 1.16.
+ * @NM_DEVICE_TYPE_VRF: A VRF (Virtual Routing and Forwarding) interface. Since: 1.24.
  *
  * #NMDeviceType values indicate the type of hardware represented by a
  * device object.
@@ -940,9 +940,9 @@ typedef enum {
  * @NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL: when creating
  *   a new checkpoint, destroy all existing ones.
  * @NM_CHECKPOINT_CREATE_FLAG_DELETE_NEW_CONNECTIONS: upon rollback,
- *   delete any new connection added after the checkpoint (Since: 1.6)
+ *   delete any new connection added after the checkpoint. Since: 1.6.
  * @NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES: upon rollback,
- *   disconnect any new device appeared after the checkpoint (Since: 1.6)
+ *   disconnect any new device appeared after the checkpoint. Since: 1.6.
  * @NM_CHECKPOINT_CREATE_FLAG_ALLOW_OVERLAPPING: by default, creating
  *   a checkpoint fails if there are already existing checkoints that
  *   reference the same devices. With this flag, creation of such
@@ -954,7 +954,7 @@ typedef enum {
  *   rolling back to an older checkpoint will invalidate all
  *   overlapping younger checkpoints. This opts-in that the
  *   checkpoint can be automatically destroyed by the rollback
- *   of an older checkpoint. (Since: 1.12)
+ *   of an older checkpoint. Since: 1.12.
  *
  * The flags for CheckpointCreate call
  *
@@ -1003,7 +1003,7 @@ typedef enum { /*< skip >*/
  *  always unsaved, but they are also no backing file on disk and are entirely
  *  in-memory only.
  * @NM_SETTINGS_CONNECTION_FLAG_EXTERNAL: the profile was generated to represent
- *  an external configuration of a networking device. Since: 1.26
+ *  an external configuration of a networking device. Since: 1.26.
  *
  * Flags describing the current activation state.
  *
@@ -1030,9 +1030,9 @@ typedef enum { /*< flags >*/
  * @NM_ACTIVATION_STATE_FLAG_LIFETIME_BOUND_TO_PROFILE_VISIBILITY: the lifetime
  *   of the activation is bound to the visibility of the connection profile,
  *   which in turn depends on "connection.permissions" and whether a session
- *   for the user exists. Since: 1.16
+ *   for the user exists. Since: 1.16.
  * @NM_ACTIVATION_STATE_FLAG_EXTERNAL: the active connection was generated to
- *  represent an external configuration of a networking device. Since: 1.26
+ *  represent an external configuration of a networking device. Since: 1.26.
  *
  * Flags describing the current activation state.
  *
