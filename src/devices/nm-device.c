@@ -442,6 +442,7 @@ typedef struct _NMDevicePrivate {
     guint             carrier_defer_id;
     guint             carrier_wait_id;
     gulong            config_changed_id;
+    gulong            ifindex_changed_id;
     guint32           mtu;
     guint32           ip6_mtu;
     guint32           mtu_initial;
@@ -761,6 +762,9 @@ static void concheck_update_state(NMDevice *          self,
                                   gboolean            is_periodic);
 
 static void sriov_op_cb(GError *error, gpointer user_data);
+
+static void device_ifindex_changed_cb(NMManager *manager, NMDevice *device_changed, NMDevice *self);
+static gboolean device_link_changed(NMDevice *self);
 
 /*****************************************************************************/
 
@@ -5107,7 +5111,7 @@ device_recheck_slave_status(NMDevice *self, const NMPlatformLink *plink)
     g_return_if_fail(plink);
 
     if (plink->master <= 0)
-        return;
+        goto out;
 
     master                  = nm_manager_get_device_by_ifindex(NM_MANAGER_GET, plink->master);
     plink_master            = nm_platform_link_get(nm_device_get_platform(self), plink->master);
@@ -5116,7 +5120,7 @@ device_recheck_slave_status(NMDevice *self, const NMPlatformLink *plink)
     if (master == NULL && plink_master && nm_streq0(plink_master->name, "ovs-system")
         && plink_master->type == NM_LINK_TYPE_OPENVSWITCH) {
         _LOGD(LOGD_DEVICE, "the device claimed by openvswitch");
-        return;
+        goto out;
     }
 
     priv->master_ifindex = plink->master;
@@ -5126,7 +5130,7 @@ device_recheck_slave_status(NMDevice *self, const NMPlatformLink *plink)
             /* call add-slave again. We expect @self already to be added to
              * the master, but this also triggers a recheck-assume. */
             nm_device_master_add_slave(priv->master, self, FALSE);
-            return;
+            goto out;
         }
 
         nm_device_master_release_one_slave(priv->master,
@@ -5136,18 +5140,47 @@ device_recheck_slave_status(NMDevice *self, const NMPlatformLink *plink)
                                            NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
     }
 
-    if (master && NM_DEVICE_GET_CLASS(master)->enslave_slave)
+    if (master && NM_DEVICE_GET_CLASS(master)->enslave_slave) {
         nm_device_master_add_slave(master, self, FALSE);
-    else if (master) {
-        _LOGI(LOGD_DEVICE,
+        goto out;
+    }
+
+    if (master) {
+        _LOGD(LOGD_DEVICE,
               "enslaved to non-master-type device %s; ignoring",
               nm_device_get_iface(master));
     } else {
-        _LOGW(LOGD_DEVICE,
+        _LOGD(LOGD_DEVICE,
               "enslaved to unknown device %d (%s%s%s)",
               plink->master,
               NM_PRINT_FMT_QUOTED(plink_master, "\"", plink_master->name, "\"", "??"));
     }
+    if (!priv->ifindex_changed_id) {
+        priv->ifindex_changed_id = g_signal_connect(nm_device_get_manager(self),
+                                                    NM_MANAGER_DEVICE_IFINDEX_CHANGED,
+                                                    G_CALLBACK(device_ifindex_changed_cb),
+                                                    self);
+    }
+    return;
+
+out:
+    nm_clear_g_signal_handler(nm_device_get_manager(self), &priv->ifindex_changed_id);
+}
+
+static void
+device_ifindex_changed_cb(NMManager *manager, NMDevice *device_changed, NMDevice *self)
+{
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+    if (priv->master_ifindex != nm_device_get_ifindex(device_changed))
+        return;
+
+    _LOGD(LOGD_DEVICE,
+          "master %s with ifindex %d appeared",
+          nm_device_get_iface(device_changed),
+          nm_device_get_ifindex(device_changed));
+    if (!priv->device_link_changed_id)
+        priv->device_link_changed_id = g_idle_add((GSourceFunc) device_link_changed, self);
 }
 
 static void
@@ -6244,6 +6277,7 @@ nm_device_unrealize(NMDevice *self, gboolean remove_resources, GError **error)
     _notify(self, PROP_CAPABILITIES);
 
     nm_clear_g_signal_handler(nm_config_get(), &priv->config_changed_id);
+    nm_clear_g_signal_handler(priv->manager, &priv->ifindex_changed_id);
 
     priv->real = FALSE;
     _notify(self, PROP_REAL);
@@ -18262,6 +18296,7 @@ dispose(GObject *object)
     arp_cleanup(self);
 
     nm_clear_g_signal_handler(nm_config_get(), &priv->config_changed_id);
+    nm_clear_g_signal_handler(priv->manager, &priv->ifindex_changed_id);
 
     dispatcher_cleanup(self);
 
