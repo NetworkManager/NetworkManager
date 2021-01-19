@@ -331,6 +331,7 @@ apply_bonding_config(NMDeviceBond *self)
     NMSettingBond *s_bond;
     NMBondMode     mode;
     const char *   mode_str;
+    gs_free char * device_bond_mode = NULL;
 
     s_bond = nm_device_get_applied_setting(device, NM_TYPE_SETTING_BOND);
     g_return_val_if_fail(s_bond, FALSE);
@@ -342,6 +343,13 @@ apply_bonding_config(NMDeviceBond *self)
     /* Set mode first, as some other options (e.g. arp_interval) are valid
      * only for certain modes.
      */
+    device_bond_mode = nm_platform_sysctl_master_get_option(nm_device_get_platform(device),
+                                                            nm_device_get_ifindex(device),
+                                                            NM_SETTING_BOND_OPTION_MODE);
+    /* Need to release all slaves before we can change bond mode */
+    if (!nm_streq0(device_bond_mode, mode_str))
+        nm_device_master_release_slaves(device);
+
     set_bond_attr_or_default(device, s_bond, NM_SETTING_BOND_OPTION_MODE);
 
     set_bond_arp_ip_targets(device, s_bond);

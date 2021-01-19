@@ -4769,7 +4769,7 @@ nm_device_master_release_one_slave(NMDevice *          self,
     nm_assert(slave == info->slave);
 
     /* first, let subclasses handle the release ... */
-    if (info->slave_is_enslaved || force)
+    if (info->slave_is_enslaved || nm_device_sys_iface_state_is_external(slave) || force)
         NM_DEVICE_GET_CLASS(self)->release_slave(self, slave, configure);
 
     /* raise notifications about the release, including clearing is_enslaved. */
