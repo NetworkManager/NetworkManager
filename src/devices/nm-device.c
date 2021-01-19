@@ -17714,7 +17714,7 @@ nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean
      * the resolution with the new address */
     if (address_changed) {
         nm_clear_g_cancellable(&resolver->cancellable);
-        nm_g_object_unref(resolver->address);
+        g_clear_object(&resolver->address);
         resolver->state = RESOLVER_WAIT_ADDRESS;
     }
 
