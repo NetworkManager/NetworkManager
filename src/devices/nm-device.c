@@ -13272,6 +13272,12 @@ nm_device_disconnect_active_connection(NMActiveConnection *          active,
 
     if (NM_ACTIVE_CONNECTION(priv->act_request.obj) == active) {
         if (priv->state < NM_DEVICE_STATE_DEACTIVATING) {
+            /* When the user actively deactivates a profile, we set
+             * the sys-iface-state to managed so that we deconfigure/cleanup the interface.
+             * But for external connections that go down otherwise, we don't want to touch the interface. */
+            if (nm_device_sys_iface_state_is_external(self))
+                nm_device_sys_iface_state_set(self, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
+
             nm_device_state_changed(self, NM_DEVICE_STATE_DEACTIVATING, device_reason);
         } else {
             /* @active is the current ac of @self, but it's going down already.
