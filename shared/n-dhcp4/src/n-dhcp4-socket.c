@@ -348,8 +348,7 @@ static int n_dhcp4_socket_packet_send(int sockfd,
                 .sll_halen = halen,
         };
         const void *buf;
-        size_t n_buf;
-        size_t len = 0;
+        size_t n_buf, len;
         int r;
 
         c_assert(halen <= sizeof(haddr.sll_addr));
