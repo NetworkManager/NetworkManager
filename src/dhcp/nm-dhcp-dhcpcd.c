@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Copyright (C) 2008 Roy Marples
+ * Copyright (C) 2008,2020 Roy Marples <roy@marples.name>
  * Copyright (C) 2010 Dan Williams <dcbw@redhat.com>
  */
 
@@ -40,7 +40,6 @@ static GType nm_dhcp_dhcpcd_get_type(void);
 /*****************************************************************************/
 
 typedef struct {
-    char *          pid_file;
     NMDhcpListener *dhcp_listener;
 } NMDhcpDhcpcdPrivate;
 
@@ -71,25 +70,19 @@ ip4_start(NMDhcpClient *client,
           const char *  last_ip4_address,
           GError **     error)
 {
-    NMDhcpDhcpcd *       self                = NM_DHCP_DHCPCD(client);
-    NMDhcpDhcpcdPrivate *priv                = NM_DHCP_DHCPCD_GET_PRIVATE(self);
-    gs_unref_ptrarray GPtrArray *argv        = NULL;
-    pid_t                        pid         = -1;
-    GError *                     local       = NULL;
-    gs_free char *               cmd_str     = NULL;
-    gs_free char *               binary_name = NULL;
+    NMDhcpDhcpcd *    self            = NM_DHCP_DHCPCD(client);
+    gs_unref_ptrarray GPtrArray *argv = NULL;
+    pid_t                        pid;
+    GError *                     local;
+    gs_free char *               cmd_str = NULL;
     const char *                 iface;
     const char *                 dhcpcd_path;
     const char *                 hostname;
 
-    g_return_val_if_fail(priv->pid_file == NULL, FALSE);
+    pid = nm_dhcp_client_get_pid(client);
+    g_return_val_if_fail(pid == -1, FALSE);
 
     iface = nm_dhcp_client_get_iface(client);
-
-    /* dhcpcd does not allow custom pidfiles; the pidfile is always
-     * RUNSTATEDIR "dhcpcd-<ifname>.pid".
-     */
-    priv->pid_file = g_strdup_printf(RUNSTATEDIR "/dhcpcd-%s.pid", iface);
 
     dhcpcd_path = nm_dhcp_dhcpcd_get_path();
     if (!dhcpcd_path) {
@@ -97,12 +90,16 @@ ip4_start(NMDhcpClient *client,
         return FALSE;
     }
 
-    /* Kill any existing dhcpcd from the pidfile */
-    binary_name = g_path_get_basename(dhcpcd_path);
-    nm_dhcp_client_stop_existing(priv->pid_file, binary_name);
-
     argv = g_ptr_array_new();
     g_ptr_array_add(argv, (gpointer) dhcpcd_path);
+
+    /* Don't configure anything, we will do that instead.
+     * This requires dhcpcd-9.3.3 or newer.
+     * Older versions only had an option not to install a default route,
+     * dhcpcd still added addresses and other routes so we no longer support that
+     * as it doesn't fit how NetworkManager wants to work.
+     */
+    g_ptr_array_add(argv, (gpointer) "--noconfigure");
 
     g_ptr_array_add(argv, (gpointer) "-B"); /* Don't background on lease (disable fork()) */
 
@@ -112,8 +109,6 @@ ip4_start(NMDhcpClient *client,
 
     /* --noarp. Don't request or claim the address by ARP; this also disables IPv4LL. */
     g_ptr_array_add(argv, (gpointer) "-A");
-
-    g_ptr_array_add(argv, (gpointer) "-G"); /* Let NM handle routing */
 
     g_ptr_array_add(argv, (gpointer) "-c"); /* Set script file */
     g_ptr_array_add(argv, (gpointer) nm_dhcp_helper_path);
@@ -146,8 +141,8 @@ ip4_start(NMDhcpClient *client,
     if (!g_spawn_async(NULL,
                        (char **) argv->pdata,
                        NULL,
-                       G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_STDOUT_TO_DEV_NULL
-                           | G_SPAWN_STDERR_TO_DEV_NULL,
+                       G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL
+                           | G_SPAWN_DO_NOT_REAP_CHILD,
                        nm_utils_setpgid,
                        NULL,
                        &pid,
@@ -169,23 +164,32 @@ ip4_start(NMDhcpClient *client,
 static void
 stop(NMDhcpClient *client, gboolean release)
 {
-    NMDhcpDhcpcd *       self = NM_DHCP_DHCPCD(client);
-    NMDhcpDhcpcdPrivate *priv = NM_DHCP_DHCPCD_GET_PRIVATE(self);
-    int                  errsv;
+    NMDhcpDhcpcd *self = NM_DHCP_DHCPCD(client);
+    pid_t         pid;
+    int           sig, errsv;
 
-    NM_DHCP_CLIENT_CLASS(nm_dhcp_dhcpcd_parent_class)->stop(client, release);
+    pid = nm_dhcp_client_get_pid(client);
+    sig = release ? SIGALRM : SIGTERM;
+    _LOGD("sending %s to dhcpcd pid %d", sig == SIGALRM ? "SIGALRM" : "SIGTERM", pid);
 
-    if (priv->pid_file) {
-        if (remove(priv->pid_file) == -1) {
-            errsv = errno;
-            _LOGD("could not remove dhcp pid file \"%s\": %d (%s)",
-                  priv->pid_file,
-                  errsv,
-                  nm_strerror_native(errsv));
-        }
+    /* dhcpcd-9.x features privilege separation.
+     * It's not our job to track all these processes so we rely on dhcpcd
+     * to always cleanup after itself.
+     * Because it also re-parents itself to PID 1, the process cannot be
+     * reaped or waited for.
+     * As such, just send the correct signal.
+     */
+    if (kill(pid, sig) == -1) {
+        errsv = errno;
+        _LOGE("failed to kill dhcpcd %d:%s", errsv, strerror(errsv));
     }
 
-    /* FIXME: implement release... */
+    /* When this function exits NM expects the PID to be -1.
+     * This means we also need to stop watching the pid.
+     * If we need to know the exit status then we need to refactor NM
+     * to allow a non -1 to mean we're waiting to exit still.
+     */
+    nm_dhcp_client_stop_watch_child(client, pid);
 }
 
 /*****************************************************************************/
@@ -213,8 +217,6 @@ dispose(GObject *object)
                                              NM_DHCP_DHCPCD(object));
         g_clear_object(&priv->dhcp_listener);
     }
-
-    nm_clear_g_free(&priv->pid_file);
 
     G_OBJECT_CLASS(nm_dhcp_dhcpcd_parent_class)->dispose(object);
 }

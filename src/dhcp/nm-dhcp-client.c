@@ -367,10 +367,13 @@ reason_to_state(NMDhcpClient *self, const char *iface, const char *reason)
     else if (g_ascii_strcasecmp(reason, "nak") == 0 || g_ascii_strcasecmp(reason, "expire") == 0
              || g_ascii_strcasecmp(reason, "expire6") == 0)
         return NM_DHCP_STATE_EXPIRE;
-    else if (g_ascii_strcasecmp(reason, "end") == 0)
+    else if (g_ascii_strcasecmp(reason, "end") == 0 || g_ascii_strcasecmp(reason, "stop") == 0
+             || g_ascii_strcasecmp(reason, "stopped") == 0)
         return NM_DHCP_STATE_DONE;
     else if (g_ascii_strcasecmp(reason, "fail") == 0 || g_ascii_strcasecmp(reason, "abend") == 0)
         return NM_DHCP_STATE_FAIL;
+    else if (g_ascii_strcasecmp(reason, "preinit") == 0)
+        return NM_DHCP_STATE_NOOP;
 
     _LOGD("unmapped DHCP state '%s'", reason);
     return NM_DHCP_STATE_UNKNOWN;
@@ -545,6 +548,18 @@ nm_dhcp_client_watch_child(NMDhcpClient *self, pid_t pid)
 
     g_return_if_fail(priv->watch_id == 0);
     priv->watch_id = g_child_watch_add(pid, daemon_watch_cb, self);
+}
+
+void
+nm_dhcp_client_stop_watch_child(NMDhcpClient *self, pid_t pid)
+{
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+
+    g_return_if_fail(priv->pid == pid);
+    priv->pid = -1;
+
+    watch_cleanup(self);
+    timeout_cleanup(self);
 }
 
 gboolean
@@ -873,6 +888,9 @@ nm_dhcp_client_handle_event(gpointer      unused,
           state_to_string(old_state),
           state_to_string(new_state),
           reason);
+
+    if (new_state == NM_DHCP_STATE_NOOP)
+        return TRUE;
 
     if (NM_IN_SET(new_state, NM_DHCP_STATE_BOUND, NM_DHCP_STATE_EXTENDED)) {
         GVariantIter iter;
