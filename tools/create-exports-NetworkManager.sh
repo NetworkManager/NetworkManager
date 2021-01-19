@@ -40,7 +40,10 @@ call_nm() {
 }
 
 get_symbols_nm () {
-    base=./src/NetworkManager-all-sym
+    base=./src/.libs/NetworkManager-all-sym
+    if ! test -f "$base"; then
+        base=./src/NetworkManager-all-sym
+    fi
     call_nm "$base" |
         sed -n 's/^[tTDGRBS] //p' |
         _sort
