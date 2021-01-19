@@ -121,34 +121,6 @@ get_generic_capabilities(NMDevice *device)
     return NM_DEVICE_CAP_CARRIER_DETECT | NM_DEVICE_CAP_IS_SOFTWARE;
 }
 
-static gboolean
-complete_connection(NMDevice *           device,
-                    NMConnection *       connection,
-                    const char *         specific_object,
-                    NMConnection *const *existing_connections,
-                    GError **            error)
-{
-    NMSettingVeth *s_veth;
-
-    nm_utils_complete_generic(nm_device_get_platform(device),
-                              connection,
-                              NM_SETTING_VETH_SETTING_NAME,
-                              existing_connections,
-                              NULL,
-                              _("Veth connection"),
-                              "veth",
-                              NULL,
-                              TRUE);
-
-    s_veth = _nm_connection_get_setting(connection, NM_TYPE_SETTING_VETH);
-    if (!s_veth) {
-        s_veth = (NMSettingVeth *) nm_setting_veth_new();
-        nm_connection_add_setting(connection, NM_SETTING(s_veth));
-    }
-
-    return TRUE;
-}
-
 /*****************************************************************************/
 
 static void
@@ -215,7 +187,6 @@ nm_device_veth_class_init(NMDeviceVethClass *klass)
     device_class->link_changed                = link_changed;
     device_class->parent_changed_notify       = parent_changed_notify;
     device_class->create_and_realize          = create_and_realize;
-    device_class->complete_connection         = complete_connection;
     device_class->get_generic_capabilities    = get_generic_capabilities;
 
     obj_properties[PROP_PEER] = g_param_spec_string(NM_DEVICE_VETH_PEER,
