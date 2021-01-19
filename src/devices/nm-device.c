@@ -2885,6 +2885,8 @@ _set_ifindex(NMDevice *self, int ifindex, gboolean is_ip_ifindex)
     if (!is_ip_ifindex)
         _notify(self, PROP_IFINDEX);
 
+    if (priv->manager)
+        nm_manager_emit_device_ifindex_changed(priv->manager, self);
     return TRUE;
 }
 
