@@ -223,7 +223,7 @@ int packet_sendto_udp(int sockfd,
 
         pktlen = sendmsg(sockfd, &msg, 0);
         if (pktlen < 0)
-                return -errno;
+                return -c_errno();
 
         /*
          * Kernel never truncates. Worst case, we get -EMSGSIZE. Kernel *might*
