@@ -17657,6 +17657,11 @@ nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean
 
     /* If the device is not supposed to have addresses,
      * return an immediate empty result.*/
+    if (!nm_device_get_applied_connection(self)) {
+        NM_SET_OUT(out_wait, FALSE);
+        return NULL;
+    }
+
     method = nm_device_get_effective_ip_config_method(self, addr_family);
     if (IS_IPv4) {
         if (NM_IN_STRSET(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
