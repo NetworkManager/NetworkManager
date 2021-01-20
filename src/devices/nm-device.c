@@ -642,6 +642,7 @@ typedef struct _NMDevicePrivate {
     /* master interface for bridge/bond/team slave */
     NMDevice *master;
     gulong    master_ready_id;
+    int       master_ifindex;
 
     /* slave management */
     CList slaves; /* list of SlaveInfo */
@@ -5116,6 +5117,8 @@ device_recheck_slave_status(NMDevice *self, const NMPlatformLink *plink)
         return;
     }
 
+    priv->master_ifindex = plink->master;
+
     if (priv->master) {
         if (plink->master > 0 && plink->master == nm_device_get_ifindex(priv->master)) {
             /* call add-slave again. We expect @self already to be added to
@@ -6196,6 +6199,8 @@ nm_device_unrealize(NMDevice *self, gboolean remove_resources, GError **error)
     _set_ifindex(self, 0, TRUE);
     if (nm_clear_g_free(&priv->ip_iface_))
         _notify(self, PROP_IP_IFACE);
+
+    priv->master_ifindex = 0;
 
     _set_mtu(self, 0);
 
