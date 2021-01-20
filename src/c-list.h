@@ -87,10 +87,12 @@ static inline _Bool c_list_is_linked(const CList *what) {
  * c_list_is_empty() - check whether a list is empty
  * @list:               list to check, or NULL
  *
+ * This is the same as !c_list_is_linked().
+ *
  * Return: True if @list is empty, false if not.
  */
 static inline _Bool c_list_is_empty(const CList *list) {
-        return !list || !c_list_is_linked(list);
+        return !c_list_is_linked(list);
 }
 
 /**
