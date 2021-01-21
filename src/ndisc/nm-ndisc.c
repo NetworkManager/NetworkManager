@@ -241,15 +241,6 @@ get_expiry_time(guint32 timestamp, guint32 lifetime)
         get_expiry_time(_item->timestamp, _item->lifetime); \
     })
 
-#define get_expiry_half(item)                                         \
-    ({                                                                \
-        typeof(item) _item = (item);                                  \
-        nm_assert(_item);                                             \
-        (_item->lifetime == NM_NDISC_INFINITY)                        \
-            ? _EXPIRY_INFINITY                                        \
-            : get_expiry_time(_item->timestamp, _item->lifetime / 2); \
-    })
-
 #define get_expiry_preferred(item)                           \
     ({                                                       \
         typeof(item) _item = (item);                         \
@@ -1328,21 +1319,13 @@ clean_dns_servers(NMNDisc *ndisc, gint32 now, NMNDiscConfigMap *changed, gint32 
 
     for (i = 0; i < rdata->dns_servers->len;) {
         NMNDiscDNSServer *item = &g_array_index(rdata->dns_servers, NMNDiscDNSServer, i);
-        gint64            refresh;
 
-        refresh = get_expiry_half(item);
-        if (refresh != _EXPIRY_INFINITY) {
-            if (!expiry_next(now, get_expiry(item), NULL)) {
-                g_array_remove_index(rdata->dns_servers, i);
-                *changed |= NM_NDISC_CONFIG_DNS_SERVERS;
-                continue;
-            }
-
-            if (now >= refresh)
-                solicit_routers(ndisc);
-            else if (*nextevent > refresh)
-                *nextevent = refresh;
+        if (!expiry_next(now, get_expiry(item), nextevent)) {
+            g_array_remove_index(rdata->dns_servers, i);
+            *changed |= NM_NDISC_CONFIG_DNS_SERVERS;
+            continue;
         }
+
         i++;
     }
 }
@@ -1357,21 +1340,13 @@ clean_dns_domains(NMNDisc *ndisc, gint32 now, NMNDiscConfigMap *changed, gint32 
 
     for (i = 0; i < rdata->dns_domains->len;) {
         NMNDiscDNSDomain *item = &g_array_index(rdata->dns_domains, NMNDiscDNSDomain, i);
-        gint64            refresh;
 
-        refresh = get_expiry_half(item);
-        if (refresh != _EXPIRY_INFINITY) {
-            if (!expiry_next(now, get_expiry(item), NULL)) {
-                g_array_remove_index(rdata->dns_domains, i);
-                *changed |= NM_NDISC_CONFIG_DNS_DOMAINS;
-                continue;
-            }
-
-            if (now >= refresh)
-                solicit_routers(ndisc);
-            else if (*nextevent > refresh)
-                *nextevent = refresh;
+        if (!expiry_next(now, get_expiry(item), nextevent)) {
+            g_array_remove_index(rdata->dns_domains, i);
+            *changed |= NM_NDISC_CONFIG_DNS_DOMAINS;
+            continue;
         }
+
         i++;
     }
 }

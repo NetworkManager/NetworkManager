@@ -222,6 +222,7 @@ nm_fake_ndisc_done(NMFakeNDisc *self)
 static gboolean
 send_rs(NMNDisc *ndisc, GError **error)
 {
+    _LOGT("send_rs()");
     g_signal_emit(ndisc, signals[RS_SENT], 0);
     return TRUE;
 }
