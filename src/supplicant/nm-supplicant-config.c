@@ -100,7 +100,7 @@ nm_supplicant_config_add_option_with_type(NMSupplicantConfig *self,
                                           const char *        value,
                                           gint32              len,
                                           NMSupplOptType      opt_type,
-                                          const char *        hidden,
+                                          const char *        display_value,
                                           GError **           error)
 {
     NMSupplicantConfigPrivate *priv;
@@ -138,7 +138,7 @@ nm_supplicant_config_add_option_with_type(NMSupplicantConfig *self,
                         NM_SUPPLICANT_ERROR_CONFIG,
                         "key '%s' and/or value %s invalid",
                         key,
-                        hidden ?: str);
+                        display_value ?: str);
             return FALSE;
         }
     }
@@ -165,7 +165,10 @@ nm_supplicant_config_add_option_with_type(NMSupplicantConfig *self,
         char buf[255];
         memset(&buf[0], 0, sizeof(buf));
         memcpy(&buf[0], opt->value, opt->len > 254 ? 254 : opt->len);
-        nm_log_info(LOGD_SUPPLICANT, "Config: added '%s' value '%s'", key, hidden ?: &buf[0]);
+        nm_log_info(LOGD_SUPPLICANT,
+                    "Config: added '%s' value '%s'",
+                    key,
+                    display_value ?: &buf[0]);
     }
 
     g_hash_table_insert(priv->config, g_strdup(key), opt);
@@ -178,7 +181,7 @@ nm_supplicant_config_add_option(NMSupplicantConfig *self,
                                 const char *        key,
                                 const char *        value,
                                 gint32              len,
-                                const char *        hidden,
+                                const char *        display_value,
                                 GError **           error)
 {
     return nm_supplicant_config_add_option_with_type(self,
@@ -186,7 +189,7 @@ nm_supplicant_config_add_option(NMSupplicantConfig *self,
                                                      value,
                                                      len,
                                                      NM_SUPPL_OPT_TYPE_INVALID,
-                                                     hidden,
+                                                     display_value,
                                                      error);
 }
 
@@ -633,7 +636,7 @@ add_string_val(NMSupplicantConfig *self,
                const char *        field,
                const char *        name,
                gboolean            ucase,
-               const char *        hidden,
+               const char *        display_value,
                GError **           error)
 {
     if (field) {
@@ -643,7 +646,12 @@ add_string_val(NMSupplicantConfig *self,
             value = g_ascii_strup(field, -1);
             field = value;
         }
-        return nm_supplicant_config_add_option(self, name, field, strlen(field), hidden, error);
+        return nm_supplicant_config_add_option(self,
+                                               name,
+                                               field,
+                                               strlen(field),
+                                               display_value,
+                                               error);
     }
     return TRUE;
 }
@@ -656,7 +664,7 @@ add_string_val(NMSupplicantConfig *self,
                             name,                                                         \
                             separator,                                                    \
                             ucase,                                                        \
-                            hidden,                                                       \
+                            display_value,                                                \
                             error)                                                        \
     ({                                                                                    \
         typeof(*(setting)) *_setting = (setting);                                         \
@@ -685,7 +693,7 @@ add_string_val(NMSupplicantConfig *self,
                                                      (name),                              \
                                                      _str->str,                           \
                                                      -1,                                  \
-                                                     (hidden),                            \
+                                                     (display_value),                     \
                                                      (error)))                            \
                     _success = FALSE;                                                     \
             }                                                                             \
