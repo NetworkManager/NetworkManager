@@ -35,8 +35,7 @@ guint nm_fake_ndisc_add_ra(NMFakeNDisc *    self,
 void nm_fake_ndisc_add_gateway(NMFakeNDisc *      self,
                                guint              ra_id,
                                const char *       addr,
-                               guint32            timestamp,
-                               guint32            lifetime,
+                               gint64             expiry_msec,
                                NMIcmpv6RouterPref preference);
 
 void nm_fake_ndisc_add_prefix(NMFakeNDisc *      self,
@@ -44,22 +43,19 @@ void nm_fake_ndisc_add_prefix(NMFakeNDisc *      self,
                               const char *       network,
                               guint              plen,
                               const char *       gateway,
-                              guint32            timestamp,
-                              guint32            lifetime,
-                              guint32            preferred,
+                              gint64             expiry_msec,
+                              gint64             expiry_preferred_msec,
                               NMIcmpv6RouterPref preference);
 
 void nm_fake_ndisc_add_dns_server(NMFakeNDisc *self,
                                   guint        ra_id,
                                   const char * address,
-                                  guint32      timestamp,
-                                  guint32      lifetime);
+                                  gint64       expiry_msec);
 
 void nm_fake_ndisc_add_dns_domain(NMFakeNDisc *self,
                                   guint        ra_id,
                                   const char * domain,
-                                  guint32      timestamp,
-                                  guint32      lifetime);
+                                  gint64       expiry_msec);
 
 void nm_fake_ndisc_emit_new_ras(NMFakeNDisc *self);
 

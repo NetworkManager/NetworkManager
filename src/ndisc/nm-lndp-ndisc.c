@@ -117,7 +117,7 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
     NMNDiscConfigMap     changed = 0;
     struct ndp_msgra *   msgra   = ndp_msgra(msg);
     struct in6_addr      gateway_addr;
-    gint32               now = nm_utils_get_monotonic_timestamp_sec();
+    const gint64         now_msec = nm_utils_get_monotonic_timestamp_msec();
     int                  offset;
     int                  hop_limit;
     guint32              val;
@@ -133,7 +133,9 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
      * single time when the configuration is finished and updates can
      * come at any time.
      */
-    _LOGD("received router advertisement at %d", (int) now);
+    _LOGD("received router advertisement at timestamp %" G_GINT64_FORMAT ".%03d seconds",
+          now_msec / 1000,
+          (int) (now_msec % 1000));
 
     gateway_addr = *ndp_msg_addrto(msg);
     if (IN6_IS_ADDR_UNSPECIFIED(&gateway_addr))
@@ -175,13 +177,18 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
      */
     {
         const NMNDiscGateway gateway = {
-            .address    = gateway_addr,
-            .timestamp  = now,
-            .lifetime   = ndp_msgra_router_lifetime(msgra),
-            .preference = _route_preference_coerce(ndp_msgra_route_preference(msgra)),
+            .address     = gateway_addr,
+            .expiry_msec = _nm_ndisc_lifetime_to_expiry(now_msec, ndp_msgra_router_lifetime(msgra)),
+            .preference  = _route_preference_coerce(ndp_msgra_route_preference(msgra)),
         };
 
-        if (nm_ndisc_add_gateway(ndisc, &gateway))
+        /* https://tools.ietf.org/html/rfc2461#section-4.2
+         *   > A Lifetime of 0 indicates that the router is not a
+         *   > default router and SHOULD NOT appear on the default
+         *   > router list.
+         * We handle that by tracking a gateway that expires right now. */
+
+        if (nm_ndisc_add_gateway(ndisc, &gateway, now_msec))
             changed |= NM_NDISC_CONFIG_GATEWAYS;
     }
 
@@ -204,64 +211,71 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
 
         if (ndp_msg_opt_prefix_flag_on_link(msg, offset)) {
             const NMNDiscRoute route = {
-                .network   = r_network,
-                .plen      = r_plen,
-                .timestamp = now,
-                .lifetime  = ndp_msg_opt_prefix_valid_time(msg, offset),
+                .network = r_network,
+                .plen    = r_plen,
+                .expiry_msec =
+                    _nm_ndisc_lifetime_to_expiry(now_msec,
+                                                 ndp_msg_opt_prefix_valid_time(msg, offset)),
             };
 
-            if (nm_ndisc_add_route(ndisc, &route))
+            if (nm_ndisc_add_route(ndisc, &route, now_msec))
                 changed |= NM_NDISC_CONFIG_ROUTES;
         }
 
         /* Address */
         if (r_plen == 64 && ndp_msg_opt_prefix_flag_auto_addr_conf(msg, offset)) {
-            NMNDiscAddress address = {
-                .address   = r_network,
-                .timestamp = now,
-                .lifetime  = ndp_msg_opt_prefix_valid_time(msg, offset),
-                .preferred = ndp_msg_opt_prefix_preferred_time(msg, offset),
+            const guint32 valid_time = ndp_msg_opt_prefix_valid_time(msg, offset);
+            const guint32 preferred_time =
+                NM_MIN(ndp_msg_opt_prefix_preferred_time(msg, offset), valid_time);
+            const NMNDiscAddress address = {
+                .address               = r_network,
+                .expiry_msec           = _nm_ndisc_lifetime_to_expiry(now_msec, valid_time),
+                .expiry_preferred_msec = _nm_ndisc_lifetime_to_expiry(now_msec, preferred_time),
             };
 
-            if (address.preferred <= address.lifetime) {
-                if (nm_ndisc_complete_and_add_address(ndisc, &address, now))
-                    changed |= NM_NDISC_CONFIG_ADDRESSES;
-            }
+            if (nm_ndisc_complete_and_add_address(ndisc, &address, now_msec))
+                changed |= NM_NDISC_CONFIG_ADDRESSES;
         }
     }
     ndp_msg_opt_for_each_offset (offset, msg, NDP_MSG_OPT_ROUTE) {
-        NMNDiscRoute route = {
-            .gateway    = gateway_addr,
-            .plen       = ndp_msg_opt_route_prefix_len(msg, offset),
-            .timestamp  = now,
-            .lifetime   = ndp_msg_opt_route_lifetime(msg, offset),
-            .preference = _route_preference_coerce(ndp_msg_opt_route_preference(msg, offset)),
-        };
+        guint8          plen = ndp_msg_opt_route_prefix_len(msg, offset);
+        struct in6_addr network;
 
-        if (route.plen == 0 || route.plen > 128)
+        if (plen == 0 || plen > 128)
             continue;
 
-        /* Routers through this particular gateway */
-        nm_utils_ip6_address_clear_host_address(&route.network,
+        nm_utils_ip6_address_clear_host_address(&network,
                                                 ndp_msg_opt_route_prefix(msg, offset),
-                                                route.plen);
-        if (nm_ndisc_add_route(ndisc, &route))
-            changed |= NM_NDISC_CONFIG_ROUTES;
+                                                plen);
+
+        {
+            const NMNDiscRoute route = {
+                .network = network,
+                .gateway = gateway_addr,
+                .plen    = plen,
+                .expiry_msec =
+                    _nm_ndisc_lifetime_to_expiry(now_msec, ndp_msg_opt_route_lifetime(msg, offset)),
+                .preference = _route_preference_coerce(ndp_msg_opt_route_preference(msg, offset)),
+            };
+
+            /* Routers through this particular gateway */
+            if (nm_ndisc_add_route(ndisc, &route, now_msec))
+                changed |= NM_NDISC_CONFIG_ROUTES;
+        }
     }
 
-    /* DNS information */
     ndp_msg_opt_for_each_offset (offset, msg, NDP_MSG_OPT_RDNSS) {
         struct in6_addr *addr;
         int              addr_index;
 
         ndp_msg_opt_rdnss_for_each_addr (addr, addr_index, msg, offset) {
-            NMNDiscDNSServer dns_server = {
-                .address   = *addr,
-                .timestamp = now,
-                .lifetime  = ndp_msg_opt_rdnss_lifetime(msg, offset),
+            const NMNDiscDNSServer dns_server = {
+                .address = *addr,
+                .expiry_msec =
+                    _nm_ndisc_lifetime_to_expiry(now_msec, ndp_msg_opt_rdnss_lifetime(msg, offset)),
             };
 
-            if (nm_ndisc_add_dns_server(ndisc, &dns_server))
+            if (nm_ndisc_add_dns_server(ndisc, &dns_server, now_msec))
                 changed |= NM_NDISC_CONFIG_DNS_SERVERS;
         }
     }
@@ -270,13 +284,13 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
         int   domain_index;
 
         ndp_msg_opt_dnssl_for_each_domain (domain, domain_index, msg, offset) {
-            NMNDiscDNSDomain dns_domain = {
-                .domain    = domain,
-                .timestamp = now,
-                .lifetime  = ndp_msg_opt_dnssl_lifetime(msg, offset),
+            const NMNDiscDNSDomain dns_domain = {
+                .domain = domain,
+                .expiry_msec =
+                    _nm_ndisc_lifetime_to_expiry(now_msec, ndp_msg_opt_dnssl_lifetime(msg, offset)),
             };
 
-            if (nm_ndisc_add_dns_domain(ndisc, &dns_domain))
+            if (nm_ndisc_add_dns_domain(ndisc, &dns_domain, now_msec))
                 changed |= NM_NDISC_CONFIG_DNS_DOMAINS;
         }
     }
@@ -316,7 +330,7 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
         }
     }
 
-    nm_ndisc_ra_received(ndisc, now, changed);
+    nm_ndisc_ra_received(ndisc, now_msec, changed);
     return 0;
 }
 
@@ -374,7 +388,6 @@ send_ra(NMNDisc *ndisc, GError **error)
 {
     NMLndpNDiscPrivate *     priv  = NM_LNDP_NDISC_GET_PRIVATE(ndisc);
     NMNDiscDataInternal *    rdata = ndisc->rdata;
-    gint32                   now   = nm_utils_get_monotonic_timestamp_sec();
     int                      errsv;
     struct in6_addr *        addr;
     struct ndp_msg *         msg;
@@ -404,17 +417,8 @@ send_ra(NMNDisc *ndisc, GError **error)
     /* The device let us know about all addresses that the device got
      * whose prefixes are suitable for delegating. Let's announce them. */
     for (i = 0; i < rdata->addresses->len; i++) {
-        const NMNDiscAddress *address = &g_array_index(rdata->addresses, NMNDiscAddress, i);
-        guint32 age      = NM_CLAMP((gint64) now - (gint64) address->timestamp, 0, G_MAXUINT32 - 1);
-        guint32 lifetime = address->lifetime;
-        guint32 preferred = address->preferred;
+        const NMNDiscAddress *     address = &g_array_index(rdata->addresses, NMNDiscAddress, i);
         struct nd_opt_prefix_info *prefix;
-
-        /* Clamp the life times if they're not forever. */
-        if (lifetime != NM_NDISC_INFINITY)
-            lifetime = lifetime > age ? lifetime - age : 0;
-        if (preferred != NM_NDISC_INFINITY)
-            preferred = preferred > age ? preferred - age : 0;
 
         prefix = _ndp_msg_add_option(msg, sizeof(*prefix));
         if (!prefix) {
@@ -428,8 +432,14 @@ send_ra(NMNDisc *ndisc, GError **error)
         prefix->nd_opt_pi_prefix_len = 64;
         prefix->nd_opt_pi_flags_reserved |= ND_OPT_PI_FLAG_ONLINK;
         prefix->nd_opt_pi_flags_reserved |= ND_OPT_PI_FLAG_AUTO;
-        prefix->nd_opt_pi_valid_time          = htonl(lifetime);
-        prefix->nd_opt_pi_preferred_time      = htonl(preferred);
+        prefix->nd_opt_pi_valid_time =
+            htonl(_nm_ndisc_lifetime_from_expiry(NM_NDISC_EXPIRY_BASE_TIMESTAMP,
+                                                 address->expiry_msec,
+                                                 TRUE));
+        prefix->nd_opt_pi_preferred_time =
+            htonl(_nm_ndisc_lifetime_from_expiry(NM_NDISC_EXPIRY_BASE_TIMESTAMP,
+                                                 address->expiry_preferred_msec,
+                                                 TRUE));
         prefix->nd_opt_pi_prefix.s6_addr32[0] = address->address.s6_addr32[0];
         prefix->nd_opt_pi_prefix.s6_addr32[1] = address->address.s6_addr32[1];
         prefix->nd_opt_pi_prefix.s6_addr32[2] = 0;

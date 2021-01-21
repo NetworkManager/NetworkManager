@@ -30,11 +30,10 @@ typedef struct {
 
 typedef struct {
     struct in6_addr    network;
-    int                plen;
     struct in6_addr    gateway;
-    guint32            timestamp;
-    guint32            lifetime;
-    guint32            preferred;
+    gint64             expiry_msec;
+    gint64             expiry_preferred_msec;
+    int                plen;
     NMIcmpv6RouterPref preference;
 } FakePrefix;
 
@@ -128,8 +127,7 @@ void
 nm_fake_ndisc_add_gateway(NMFakeNDisc *      self,
                           guint              ra_id,
                           const char *       addr,
-                          guint32            timestamp,
-                          guint32            lifetime,
+                          gint64             expiry_msec,
                           NMIcmpv6RouterPref preference)
 {
     NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE(self);
@@ -137,12 +135,12 @@ nm_fake_ndisc_add_gateway(NMFakeNDisc *      self,
     NMNDiscGateway *    gw;
 
     g_assert(ra);
-    g_array_set_size(ra->gateways, ra->gateways->len + 1);
-    gw = &g_array_index(ra->gateways, NMNDiscGateway, ra->gateways->len - 1);
-    g_assert(inet_pton(AF_INET6, addr, &gw->address) == 1);
-    gw->timestamp  = timestamp;
-    gw->lifetime   = lifetime;
-    gw->preference = preference;
+
+    gw = nm_g_array_append_new(ra->gateways, NMNDiscGateway);
+    if (inet_pton(AF_INET6, addr, &gw->address) != 1)
+        g_assert_not_reached();
+    gw->expiry_msec = expiry_msec;
+    gw->preference  = preference;
 }
 
 void
@@ -151,9 +149,8 @@ nm_fake_ndisc_add_prefix(NMFakeNDisc *      self,
                          const char *       network,
                          guint              plen,
                          const char *       gateway,
-                         guint32            timestamp,
-                         guint32            lifetime,
-                         guint32            preferred,
+                         gint64             expiry_msec,
+                         gint64             expiry_preferred_msec,
                          NMIcmpv6RouterPref preference)
 {
     NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE(self);
@@ -161,54 +158,52 @@ nm_fake_ndisc_add_prefix(NMFakeNDisc *      self,
     FakePrefix *        prefix;
 
     g_assert(ra);
-    g_array_set_size(ra->prefixes, ra->prefixes->len + 1);
-    prefix = &g_array_index(ra->prefixes, FakePrefix, ra->prefixes->len - 1);
-    memset(prefix, 0, sizeof(*prefix));
-    g_assert(inet_pton(AF_INET6, network, &prefix->network) == 1);
-    g_assert(inet_pton(AF_INET6, gateway, &prefix->gateway) == 1);
-    prefix->plen       = plen;
-    prefix->timestamp  = timestamp;
-    prefix->lifetime   = lifetime;
-    prefix->preferred  = preferred;
-    prefix->preference = preference;
+
+    prefix  = nm_g_array_append_new(ra->prefixes, FakePrefix);
+    *prefix = (FakePrefix){
+        .plen                  = plen,
+        .expiry_msec           = expiry_msec,
+        .expiry_preferred_msec = expiry_preferred_msec,
+        .preference            = preference,
+    };
+    if (inet_pton(AF_INET6, network, &prefix->network) != 1)
+        g_assert_not_reached();
+    if (inet_pton(AF_INET6, gateway, &prefix->gateway) != 1)
+        g_assert_not_reached();
 }
 
 void
 nm_fake_ndisc_add_dns_server(NMFakeNDisc *self,
                              guint        ra_id,
                              const char * address,
-                             guint32      timestamp,
-                             guint32      lifetime)
+                             gint64       expiry_msec)
 {
     NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE(self);
     FakeRa *            ra   = find_ra(priv->ras, ra_id);
     NMNDiscDNSServer *  dns;
 
     g_assert(ra);
-    g_array_set_size(ra->dns_servers, ra->dns_servers->len + 1);
-    dns = &g_array_index(ra->dns_servers, NMNDiscDNSServer, ra->dns_servers->len - 1);
-    g_assert(inet_pton(AF_INET6, address, &dns->address) == 1);
-    dns->timestamp = timestamp;
-    dns->lifetime  = lifetime;
+
+    dns = nm_g_array_append_new(ra->dns_servers, NMNDiscDNSServer);
+
+    dns->expiry_msec = expiry_msec;
+    if (inet_pton(AF_INET6, address, &dns->address) != 1)
+        g_assert_not_reached();
 }
 
 void
-nm_fake_ndisc_add_dns_domain(NMFakeNDisc *self,
-                             guint        ra_id,
-                             const char * domain,
-                             guint32      timestamp,
-                             guint32      lifetime)
+nm_fake_ndisc_add_dns_domain(NMFakeNDisc *self, guint ra_id, const char *domain, gint64 expiry_msec)
 {
     NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE(self);
     FakeRa *            ra   = find_ra(priv->ras, ra_id);
     NMNDiscDNSDomain *  dns;
 
     g_assert(ra);
-    g_array_set_size(ra->dns_domains, ra->dns_domains->len + 1);
-    dns            = &g_array_index(ra->dns_domains, NMNDiscDNSDomain, ra->dns_domains->len - 1);
-    dns->domain    = g_strdup(domain);
-    dns->timestamp = timestamp;
-    dns->lifetime  = lifetime;
+
+    dns = nm_g_array_append_new(ra->dns_domains, NMNDiscDNSDomain);
+
+    dns->domain      = g_strdup(domain);
+    dns->expiry_msec = expiry_msec;
 }
 
 gboolean
@@ -230,13 +225,13 @@ send_rs(NMNDisc *ndisc, GError **error)
 static gboolean
 receive_ra(gpointer user_data)
 {
-    NMFakeNDisc *        self    = user_data;
-    NMFakeNDiscPrivate * priv    = NM_FAKE_NDISC_GET_PRIVATE(self);
-    NMNDisc *            ndisc   = NM_NDISC(self);
-    NMNDiscDataInternal *rdata   = ndisc->rdata;
-    FakeRa *             ra      = priv->ras->data;
-    NMNDiscConfigMap     changed = 0;
-    gint32               now     = nm_utils_get_monotonic_timestamp_sec();
+    NMFakeNDisc *        self     = user_data;
+    NMFakeNDiscPrivate * priv     = NM_FAKE_NDISC_GET_PRIVATE(self);
+    NMNDisc *            ndisc    = NM_NDISC(self);
+    NMNDiscDataInternal *rdata    = ndisc->rdata;
+    FakeRa *             ra       = priv->ras->data;
+    NMNDiscConfigMap     changed  = 0;
+    const gint64         now_msec = nm_utils_get_monotonic_timestamp_msec();
     guint                i;
     NMNDiscDHCPLevel     dhcp_level;
 
@@ -251,53 +246,51 @@ receive_ra(gpointer user_data)
     }
 
     for (i = 0; i < ra->gateways->len; i++) {
-        NMNDiscGateway *item = &g_array_index(ra->gateways, NMNDiscGateway, i);
+        const NMNDiscGateway *item = &g_array_index(ra->gateways, NMNDiscGateway, i);
 
-        if (nm_ndisc_add_gateway(ndisc, item))
+        if (nm_ndisc_add_gateway(ndisc, item, now_msec))
             changed |= NM_NDISC_CONFIG_GATEWAYS;
     }
 
     for (i = 0; i < ra->prefixes->len; i++) {
-        FakePrefix * item  = &g_array_index(ra->prefixes, FakePrefix, i);
-        NMNDiscRoute route = {
-            .network    = item->network,
-            .plen       = item->plen,
-            .gateway    = item->gateway,
-            .timestamp  = item->timestamp,
-            .lifetime   = item->lifetime,
-            .preference = item->preference,
+        FakePrefix *       item  = &g_array_index(ra->prefixes, FakePrefix, i);
+        const NMNDiscRoute route = {
+            .network     = item->network,
+            .plen        = item->plen,
+            .gateway     = item->gateway,
+            .expiry_msec = item->expiry_msec,
+            .preference  = item->preference,
         };
 
         g_assert(route.plen > 0 && route.plen <= 128);
 
-        if (nm_ndisc_add_route(ndisc, &route))
+        if (nm_ndisc_add_route(ndisc, &route, now_msec))
             changed |= NM_NDISC_CONFIG_ROUTES;
 
         if (item->plen == 64) {
-            NMNDiscAddress address = {
-                .address     = item->network,
-                .timestamp   = item->timestamp,
-                .lifetime    = item->lifetime,
-                .preferred   = item->preferred,
-                .dad_counter = 0,
+            const NMNDiscAddress address = {
+                .address               = item->network,
+                .expiry_msec           = item->expiry_msec,
+                .expiry_preferred_msec = item->expiry_preferred_msec,
+                .dad_counter           = 0,
             };
 
-            if (nm_ndisc_complete_and_add_address(ndisc, &address, now))
+            if (nm_ndisc_complete_and_add_address(ndisc, &address, now_msec))
                 changed |= NM_NDISC_CONFIG_ADDRESSES;
         }
     }
 
     for (i = 0; i < ra->dns_servers->len; i++) {
-        NMNDiscDNSServer *item = &g_array_index(ra->dns_servers, NMNDiscDNSServer, i);
+        const NMNDiscDNSServer *item = &g_array_index(ra->dns_servers, NMNDiscDNSServer, i);
 
-        if (nm_ndisc_add_dns_server(ndisc, item))
+        if (nm_ndisc_add_dns_server(ndisc, item, now_msec))
             changed |= NM_NDISC_CONFIG_DNS_SERVERS;
     }
 
     for (i = 0; i < ra->dns_domains->len; i++) {
-        NMNDiscDNSDomain *item = &g_array_index(ra->dns_domains, NMNDiscDNSDomain, i);
+        const NMNDiscDNSDomain *item = &g_array_index(ra->dns_domains, NMNDiscDNSDomain, i);
 
-        if (nm_ndisc_add_dns_domain(ndisc, item))
+        if (nm_ndisc_add_dns_domain(ndisc, item, now_msec))
             changed |= NM_NDISC_CONFIG_DNS_DOMAINS;
     }
 
@@ -314,7 +307,7 @@ receive_ra(gpointer user_data)
     priv->ras = g_slist_remove(priv->ras, priv->ras->data);
     fake_ra_free(ra);
 
-    nm_ndisc_ra_received(NM_NDISC(self), now, changed);
+    nm_ndisc_ra_received(NM_NDISC(self), now_msec, changed);
 
     /* Schedule next RA */
     if (priv->ras) {
