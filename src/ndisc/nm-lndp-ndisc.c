@@ -85,14 +85,26 @@ send_rs(NMNDisc *ndisc, GError **error)
 static NMIcmpv6RouterPref
 _route_preference_coerce(enum ndp_route_preference pref)
 {
+#define _ASSERT_ENUM(v1, v2)                                      \
+    G_STMT_START                                                  \
+    {                                                             \
+        G_STATIC_ASSERT((NMIcmpv6RouterPref)(v1) == (v2));        \
+        G_STATIC_ASSERT((enum ndp_route_preference)(v2) == (v1)); \
+        G_STATIC_ASSERT((gint64)(v1) == (v2));                    \
+        G_STATIC_ASSERT((gint64)(v2) == (v1));                    \
+    }                                                             \
+    G_STMT_END
+
     switch (pref) {
     case NDP_ROUTE_PREF_LOW:
-        return NM_ICMPV6_ROUTER_PREF_LOW;
     case NDP_ROUTE_PREF_MEDIUM:
-        return NM_ICMPV6_ROUTER_PREF_MEDIUM;
     case NDP_ROUTE_PREF_HIGH:
-        return NM_ICMPV6_ROUTER_PREF_HIGH;
+        _ASSERT_ENUM(NDP_ROUTE_PREF_LOW, NM_ICMPV6_ROUTER_PREF_LOW);
+        _ASSERT_ENUM(NDP_ROUTE_PREF_MEDIUM, NM_ICMPV6_ROUTER_PREF_MEDIUM);
+        _ASSERT_ENUM(NDP_ROUTE_PREF_HIGH, NM_ICMPV6_ROUTER_PREF_HIGH);
+        return (NMIcmpv6RouterPref) pref;
     }
+
     /* unexpected value must be treated as MEDIUM (RFC 4191). */
     return NM_ICMPV6_ROUTER_PREF_MEDIUM;
 }
