@@ -16390,9 +16390,9 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
                 nm_device_hw_addr_reset(self, "unmanage");
                 set_nm_ipv6ll(self, FALSE);
                 restore_ip6_properties(self);
-                break;
             }
         }
+        nm_device_sys_iface_state_set(self, NM_DEVICE_SYS_IFACE_STATE_EXTERNAL);
         break;
     case NM_DEVICE_STATE_UNAVAILABLE:
         if (old_state == NM_DEVICE_STATE_UNMANAGED) {
