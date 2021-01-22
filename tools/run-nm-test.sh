@@ -90,6 +90,7 @@ if [ "$CALLED_FROM_MAKE" == 1 ]; then
     TEST="$1"; shift
     NMTST_MAKE_FIRST=0
 
+    TEST_ARGV=("$@")
 else
     if [[ -z "${NMTST_USE_VALGRIND+x}" ]]; then
         # by default, disable valgrind checks.
@@ -103,6 +104,7 @@ else
     else
         NMTST_LIBTOOL=("$NMTST_LIBTOOL" "--mode=execute")
     fi
+    TEST_ARGV=()
     unset TEST
     while test $# -gt 0; do
         case "$1" in
@@ -141,19 +143,22 @@ else
             ;;
         "--")
             shift
+            TEST_ARGV+=("$@")
             break
             ;;
         *)
-            break
+            if test -z "${TEST+x}"; then
+               TEST="$1";
+               shift
+            fi
+            TEST_ARGV+=("$1")
+            shift
             ;;
         esac
     done
 
     # we support calling the script directly. In this case,
     # only pass the path to the test to run.
-    if test -z "${TEST+x}"; then
-        TEST="$1"; shift
-    fi
     if [[ -z "${NMTST_SUPPRESSIONS+x}" ]]; then
         NMTST_SUPPRESSIONS="$SCRIPT_PATH/../valgrind.suppressions"
     fi
@@ -177,6 +182,8 @@ fi
 if [ "$NMTST_SET_DEBUG" == 1 -a -z "${NMTST_DEBUG+x}" ]; then
     export NMTST_DEBUG=d
 fi
+
+[ -n "$TEST" ] || die "Missing test name. Specify it on the command line."
 
 if _is_true "$NMTST_MAKE_FIRST" 0; then
     git_dir="$(readlink -f "$(git rev-parse --show-toplevel)")"
@@ -244,7 +251,7 @@ fi
 if ! _is_true "$NMTST_USE_VALGRIND" 0; then
     export NM_TEST_UNDER_VALGRIND=0
     exec "${NMTST_DBUS_RUN_SESSION[@]}" \
-    "$TEST" "$@"
+    "$TEST" "${TEST_ARGV[@]}"
     die "exec \"$TEST\" failed"
 fi
 
@@ -276,7 +283,7 @@ export NM_TEST_UNDER_VALGRIND=1
     --num-callers=100 \
     --log-file="$LOGFILE" \
     "$TEST" \
-    "$@"
+    "${TEST_ARGV[@]}"
 RESULT=$?
 
 test -s "$LOGFILE"
