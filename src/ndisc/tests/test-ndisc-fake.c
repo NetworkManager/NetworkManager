@@ -181,7 +181,7 @@ test_simple(void)
     g_signal_connect(ndisc, NM_NDISC_CONFIG_RECEIVED, G_CALLBACK(test_simple_changed), &data);
 
     nm_ndisc_start(NM_NDISC(ndisc));
-    g_main_loop_run(data.loop);
+    nmtst_main_loop_run_assert(data.loop, 15000);
     g_assert_cmpint(data.counter, ==, 1);
 
     g_object_unref(ndisc);
@@ -273,7 +273,7 @@ test_everything(void)
     g_signal_connect(ndisc, NM_FAKE_NDISC_RS_SENT, G_CALLBACK(test_everything_rs_sent), &data);
 
     nm_ndisc_start(NM_NDISC(ndisc));
-    g_main_loop_run(data.loop);
+    nmtst_main_loop_run_assert(data.loop, 15000);
     g_assert_cmpint(data.counter, ==, 2);
     g_assert_cmpint(data.rs_counter, ==, 1);
 
@@ -335,7 +335,7 @@ test_preference_order(void)
     g_signal_connect(ndisc, NM_NDISC_CONFIG_RECEIVED, G_CALLBACK(test_preference_order_cb), &data);
 
     nm_ndisc_start(NM_NDISC(ndisc));
-    g_main_loop_run(data.loop);
+    nmtst_main_loop_run_assert(data.loop, 15000);
     g_assert_cmpint(data.counter, ==, 2);
 
     g_object_unref(ndisc);
@@ -421,7 +421,7 @@ test_preference_changed(void)
                      &data);
 
     nm_ndisc_start(NM_NDISC(ndisc));
-    g_main_loop_run(data.loop);
+    nmtst_main_loop_run_assert(data.loop, 15000);
     g_assert_cmpint(data.counter, ==, 3);
 
     g_object_unref(ndisc);
@@ -506,7 +506,7 @@ test_dns_solicit_loop(void)
                      &data);
 
     nm_ndisc_start(NM_NDISC(ndisc));
-    g_main_loop_run(data.loop);
+    nmtst_main_loop_run_assert(data.loop, 20000);
     g_assert_cmpint(data.counter, ==, 3);
 
     g_object_unref(ndisc);
