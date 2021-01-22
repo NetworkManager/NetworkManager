@@ -148,10 +148,10 @@ else
             ;;
         *)
             if test -z "${TEST+x}"; then
-               TEST="$1";
-               shift
+                TEST="$1";
+            else
+                TEST_ARGV+=("$1")
             fi
-            TEST_ARGV+=("$1")
             shift
             ;;
         esac
