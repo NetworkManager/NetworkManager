@@ -579,7 +579,7 @@ handle_error:
 /**
  * nm_setting_bond_validate_option:
  * @name: the name of the option to validate
- * @value: the value of the option to validate
+ * @value (allow-none): the value of the option to validate.
  *
  * Checks whether @name is a valid bond option and @value is a valid value for
  * the @name. If @value is %NULL, the function only validates the option name.
