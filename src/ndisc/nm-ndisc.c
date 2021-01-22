@@ -20,6 +20,9 @@
 
 #define _NMLOG_PREFIX_NAME "ndisc"
 
+#define RFC7559_IRT ((gint32) 4)    /* RFC7559, Initial Retransmission Time, in seconds */
+#define RFC7559_MRT ((gint32) 3600) /* RFC7559, Maximum Retransmission Time, in seconds */
+
 /*****************************************************************************/
 
 struct _NMNDiscPrivate {
@@ -29,18 +32,13 @@ struct _NMNDiscPrivate {
     char *   last_error;
     GSource *ra_timeout_source;
 
-    union {
-        gint32 solicitations_left;
-        gint32 announcements_left;
-    };
-    union {
-        guint send_rs_id;
-        guint send_ra_id;
-    };
-    union {
-        gint32 last_rs;
-        gint32 last_ra;
-    };
+    gint32 announcements_left;
+    guint  send_ra_id;
+    gint32 last_ra;
+
+    gint32 solicit_retransmit_time_msec;
+
+    GSource *solicit_timer_source;
 
     GSource *timeout_expire_source;
 
@@ -773,61 +771,110 @@ nm_ndisc_add_dns_domain(NMNDisc *ndisc, const NMNDiscDNSDomain *new_item, gint64
     }                                                                      \
     G_STMT_END
 
-static gboolean
-send_rs_timeout(NMNDisc *ndisc)
+static gint32
+solicit_retransmit_time_jitter(gint32 solicit_retransmit_time_msec)
 {
-    nm_auto_pop_netns NMPNetns *netns = NULL;
-    NMNDiscClass *              klass = NM_NDISC_GET_CLASS(ndisc);
-    NMNDiscPrivate *            priv  = NM_NDISC_GET_PRIVATE(ndisc);
-    GError *                    error = NULL;
+    gint32 ten_percent;
 
-    priv->send_rs_id = 0;
+    nm_assert(solicit_retransmit_time_msec > 0);
+    nm_assert(solicit_retransmit_time_msec < 3 * RFC7559_MRT * 1000);
 
-    if (!nm_ndisc_netns_push(ndisc, &netns))
-        return G_SOURCE_REMOVE;
+    /* Add a ±10% jitter.
+     *
+     * This is the "RAND" parameter from https://tools.ietf.org/html/rfc3315#section-14
+     * as requested by RFC7559.  */
 
-    if (klass->send_rs(ndisc, &error)) {
-        _LOGD("router solicitation sent");
-        priv->solicitations_left--;
+    ten_percent = NM_MAX(1, solicit_retransmit_time_msec / 10);
+
+    return solicit_retransmit_time_msec - ten_percent
+           + ((gint32)(g_random_int() % (2u * ((guint32) ten_percent))));
+}
+
+static gboolean
+solicit_timer_cb(gpointer user_data)
+{
+    const gint32      TIMEOUT_APPROX_THRESHOLD_SEC = 10000;
+    nm_auto_pop_netns NMPNetns *netns              = NULL;
+    NMNDisc *                   ndisc              = user_data;
+    NMNDiscClass *              klass              = NM_NDISC_GET_CLASS(ndisc);
+    NMNDiscPrivate *            priv               = NM_NDISC_GET_PRIVATE(ndisc);
+    gs_free_error GError *error                    = NULL;
+    gint32                timeout_msec;
+
+    if (!nm_ndisc_netns_push(ndisc, &netns)) {
+        nm_utils_error_set(&error,
+                           NM_UTILS_ERROR_UNKNOWN,
+                           "failure to switch netns for soliciting routers");
+    } else
+        klass->send_rs(ndisc, &error);
+
+    if (error)
+        _MAYBE_WARN("solicit: failure sending router solicitation: %s", error->message);
+    else {
+        _LOGT("solicit: router solicitation sent");
         nm_clear_g_free(&priv->last_error);
-    } else {
-        _MAYBE_WARN("failure sending router solicitation: %s", error->message);
-        g_clear_error(&error);
     }
 
-    priv->last_rs = nm_utils_get_monotonic_timestamp_sec();
-    if (priv->solicitations_left > 0) {
-        _LOGD("scheduling router solicitation retry in %d seconds.",
-              (int) priv->router_solicitation_interval);
-        priv->send_rs_id = g_timeout_add_seconds(priv->router_solicitation_interval,
-                                                 (GSourceFunc) send_rs_timeout,
-                                                 ndisc);
+    /* https://tools.ietf.org/html/rfc4861#section-6.3.7 describes how to send solicitations:
+     *
+     *   > ... a host SHOULD transmit up to MAX_RTR_SOLICITATIONS Router Solicitation messages,
+     *   > each separated by at least RTR_SOLICITATION_INTERVAL seconds.
+     *
+     * but this was extended by https://tools.ietf.org/html/rfc7559#section-2 to send continuously
+     * and with exponential backoff (detailed the algorithm in https://tools.ietf.org/html/rfc3315#section-14).
+     * We do RFC7559.
+     */
+    if (priv->solicit_retransmit_time_msec == 0) {
+        G_STATIC_ASSERT(RFC7559_IRT == NM_NDISC_RFC4861_RTR_SOLICITATION_INTERVAL);
+        priv->solicit_retransmit_time_msec = solicit_retransmit_time_jitter(RFC7559_IRT * 1000);
+        timeout_msec                       = priv->solicit_retransmit_time_msec;
     } else {
-        _LOGD("did not receive a router advertisement after %d solicitations.",
-              (int) priv->router_solicitations);
+        priv->solicit_retransmit_time_msec +=
+            solicit_retransmit_time_jitter(priv->solicit_retransmit_time_msec);
+        timeout_msec = priv->solicit_retransmit_time_msec;
+        if (priv->solicit_retransmit_time_msec > RFC7559_MRT * 1000) {
+            priv->solicit_retransmit_time_msec = RFC7559_MRT * 1000;
+            timeout_msec = solicit_retransmit_time_jitter(priv->solicit_retransmit_time_msec);
+        }
     }
 
-    return G_SOURCE_REMOVE;
+    _LOGD("solicit: schedule sending next solicitation in%s %.3f seconds",
+          timeout_msec / 1000 >= TIMEOUT_APPROX_THRESHOLD_SEC ? " about" : "",
+          ((double) timeout_msec) / 1000);
+
+    nm_clear_g_source_inst(&priv->solicit_timer_source);
+    priv->solicit_timer_source = nm_g_timeout_add_source_approx(timeout_msec,
+                                                                TIMEOUT_APPROX_THRESHOLD_SEC,
+                                                                solicit_timer_cb,
+                                                                ndisc);
+    return G_SOURCE_CONTINUE;
 }
 
 static void
-solicit_routers(NMNDisc *ndisc)
+solicit_timer_start(NMNDisc *ndisc)
 {
     NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE(ndisc);
-    gint32          now, next;
-    gint64          t;
+    gint32          delay_msec;
 
-    if (priv->send_rs_id)
-        return;
+    /* rfc4861, Section 6.3.7:
+     *
+     * We should randomly wait up to NM_NDISC_RFC4861_MAX_RTR_SOLICITATION_DELAY (1 second)
+     * before sending the first RS. RFC4861 is from 2007, I don't think 1 second is
+     * a suitable delay in 2021. Wait only up to 250 msec instead. */
 
-    now                      = nm_utils_get_monotonic_timestamp_sec();
-    priv->solicitations_left = priv->router_solicitations;
+    delay_msec =
+        g_random_int() % ((guint32)(NM_NDISC_RFC4861_MAX_RTR_SOLICITATION_DELAY * 1000 / 4));
 
-    t    = (((gint64) priv->last_rs) + priv->router_solicitation_interval) - now;
-    next = CLAMP(t, 0, G_MAXINT32);
-    _LOGD("scheduling explicit router solicitation request in %" G_GINT32_FORMAT " seconds.", next);
-    priv->send_rs_id = g_timeout_add_seconds((guint32) next, (GSourceFunc) send_rs_timeout, ndisc);
+    _LOGD("solicit: schedule sending first solicitation (of %d) in %.3f seconds",
+          priv->router_solicitations,
+          ((double) delay_msec) / 1000);
+
+    priv->solicit_retransmit_time_msec = 0;
+    nm_clear_g_source_inst(&priv->solicit_timer_source);
+    priv->solicit_timer_source = nm_g_timeout_add_source(delay_msec, solicit_timer_cb, ndisc);
 }
+
+/*****************************************************************************/
 
 static gboolean
 announce_router(NMNDisc *ndisc)
@@ -988,7 +1035,7 @@ nm_ndisc_set_iid(NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid)
             _LOGD("IPv6 interface identifier changed, flushing addresses");
             g_array_remove_range(rdata->addresses, 0, rdata->addresses->len);
             nm_ndisc_emit_config_change(ndisc, NM_NDISC_CONFIG_ADDRESSES);
-            solicit_routers(ndisc);
+            solicit_timer_start(ndisc);
         }
         return TRUE;
     }
@@ -1050,7 +1097,7 @@ nm_ndisc_start(NMNDisc *ndisc)
             g_source_attach(priv->ra_timeout_source, NULL);
         }
 
-        solicit_routers(ndisc);
+        solicit_timer_start(ndisc);
         return;
     }
 
@@ -1088,20 +1135,16 @@ nm_ndisc_stop(NMNDisc *ndisc)
     g_array_set_size(rdata->dns_domains, 0);
     priv->rdata.public.hop_limit = 64;
 
-    /* Start at very low number so that last_rs - router_solicitation_interval
-     * is much lower than nm_utils_get_monotonic_timestamp_sec() at startup.
-     */
-    priv->last_rs = G_MININT32;
     nm_clear_g_source_inst(&priv->ra_timeout_source);
-    nm_clear_g_source(&priv->send_rs_id);
     nm_clear_g_source(&priv->send_ra_id);
     nm_clear_g_free(&priv->last_error);
     nm_clear_g_source_inst(&priv->timeout_expire_source);
 
-    priv->solicitations_left = 0;
+    priv->solicit_retransmit_time_msec = 0;
+    nm_clear_g_source_inst(&priv->solicit_timer_source);
+
     priv->announcements_left = 0;
 
-    priv->last_rs = G_MININT32;
     priv->last_ra = G_MININT32;
 }
 
@@ -1422,6 +1465,33 @@ check_timestamps(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap changed)
                                                                      ndisc);
     }
 
+    /* When we receive an RA, we don't disable solicitations entirely. Instead,
+     * we set the interval the maximum (RFC7559_MRT).
+     *
+     * This contradicts https://tools.ietf.org/html/rfc7559#section-2.1, which says
+     * that we SHOULD stop sending RS if we receive an RA -- but only on a multicast
+     * capable link and if the RA has a valid router lifetime.
+     *
+     * But we really want to recover from a dead router on the network, so we
+     * don't want to cease sending RS entirely.
+     *
+     * But we only re-schedule the timer if the current interval is not already
+     * "RFC7559_MRT * 1000". Otherwise, we already have a slow interval counter
+     * pending. */
+    if (priv->solicit_retransmit_time_msec != RFC7559_MRT * 1000) {
+        gint32 timeout_msec;
+
+        priv->solicit_retransmit_time_msec = RFC7559_MRT * 1000;
+        timeout_msec = solicit_retransmit_time_jitter(priv->solicit_retransmit_time_msec);
+
+        _LOGD("solicit: schedule sending next (slow) solicitation in about %.3f seconds",
+              ((double) timeout_msec) / 1000);
+
+        nm_clear_g_source_inst(&priv->solicit_timer_source);
+        priv->solicit_timer_source =
+            nm_g_timeout_add_source_approx(timeout_msec, 0, solicit_timer_cb, ndisc);
+    }
+
     if (changed != NM_NDISC_CONFIG_NONE)
         nm_ndisc_emit_config_change(ndisc, changed);
 }
@@ -1439,7 +1509,6 @@ nm_ndisc_ra_received(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap changed)
     NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE(ndisc);
 
     nm_clear_g_source_inst(&priv->ra_timeout_source);
-    nm_clear_g_source(&priv->send_rs_id);
     nm_clear_g_free(&priv->last_error);
     check_timestamps(ndisc, now_msec, changed);
 }
@@ -1551,11 +1620,6 @@ nm_ndisc_init(NMNDisc *ndisc)
     rdata->dns_domains = g_array_new(FALSE, FALSE, sizeof(NMNDiscDNSDomain));
     g_array_set_clear_func(rdata->dns_domains, dns_domain_free);
     priv->rdata.public.hop_limit = 64;
-
-    /* Start at very low number so that last_rs - router_solicitation_interval
-     * is much lower than nm_utils_get_monotonic_timestamp_sec() at startup.
-     */
-    priv->last_rs = G_MININT32;
 }
 
 static void
@@ -1565,7 +1629,7 @@ dispose(GObject *object)
     NMNDiscPrivate *priv  = NM_NDISC_GET_PRIVATE(ndisc);
 
     nm_clear_g_source_inst(&priv->ra_timeout_source);
-    nm_clear_g_source(&priv->send_rs_id);
+    nm_clear_g_source_inst(&priv->solicit_timer_source);
     nm_clear_g_source(&priv->send_ra_id);
     nm_clear_g_free(&priv->last_error);
 

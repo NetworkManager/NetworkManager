@@ -584,46 +584,9 @@ _test_dns_solicit_loop_changed(NMNDisc *          ndisc,
     data->counter++;
 }
 
-static gboolean
-success_timeout(TestData *data)
-{
-    data->timeout_id = 0;
-    g_main_loop_quit(data->loop);
-    return G_SOURCE_REMOVE;
-}
-
 static void
 _test_dns_solicit_loop_rs_sent(NMFakeNDisc *ndisc, TestData *data)
 {
-    const gint64 now_msec = nm_utils_get_monotonic_timestamp_msec();
-    guint        id;
-
-    if (data->rs_counter > 0 && data->rs_counter < 6) {
-        if (data->rs_counter == 1) {
-            data->first_solicit_msec = now_msec;
-            /* Kill the test after 10 seconds if it hasn't failed yet */
-            data->timeout_id = g_timeout_add_seconds(10, (GSourceFunc) success_timeout, data);
-        }
-
-        /* On all but the first solicitation, which should be triggered by the
-         * DNS servers reaching 1/2 lifetime, emit a new RA without the DNS
-         * servers again.
-         */
-        id = nm_fake_ndisc_add_ra(ndisc, 0, NM_NDISC_DHCP_LEVEL_NONE, 4, 1500);
-        g_assert(id);
-        nm_fake_ndisc_add_gateway(ndisc,
-                                  id,
-                                  "fe80::1",
-                                  now_msec + 10000,
-                                  NM_ICMPV6_ROUTER_PREF_MEDIUM);
-
-        nm_fake_ndisc_emit_new_ras(ndisc);
-    } else if (data->rs_counter >= 6) {
-        /* Fail if we've sent too many solicitations in the past 4 seconds */
-        g_assert_cmpint(now_msec - data->first_solicit_msec, >, 4000);
-        g_source_remove(data->timeout_id);
-        g_main_loop_quit(data->loop);
-    }
     data->rs_counter++;
 }
 
@@ -638,9 +601,6 @@ test_dns_solicit_loop(void)
         .timestamp_msec_1 = now_msec,
     };
     guint id;
-
-    g_test_skip("The solicitation behavior is wrong and need fixing. This test is not working too");
-    return;
 
     /* Ensure that no solicitation loop happens when DNS servers or domains
      * stop being sent in advertisements.  This can happen if two routers
@@ -664,8 +624,10 @@ test_dns_solicit_loop(void)
                      &data);
 
     nm_ndisc_start(NM_NDISC(ndisc));
-    nmtst_main_loop_run_assert(data.loop, 20000);
+    if (nmtst_main_loop_run(data.loop, 10000))
+        g_error("we expect to run the loop until timeout. What is wrong?");
     g_assert_cmpint(data.counter, ==, 3);
+    g_assert_cmpint(data.rs_counter, ==, 1);
 }
 
 /*****************************************************************************/
