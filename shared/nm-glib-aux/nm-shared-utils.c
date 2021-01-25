@@ -4799,7 +4799,7 @@ typedef struct {
     GMainContext *context;
     GHashTable *  fds;
     GPollFD *     fds_arr;
-    int           fds_len;
+    guint         fds_len;
     int           max_priority;
     bool          acquired : 1;
 } CtxIntegSource;
@@ -4842,13 +4842,15 @@ _ctx_integ_source_prepare(GSource *source, int *out_timeout)
     int             max_priority;
     int             timeout = -1;
     gboolean        any_ready;
-    int             fds_allocated;
-    int             fds_len_old;
-    gs_free GPollFD *fds_arr_old = NULL;
-    GHashTableIter   h_iter;
-    PollData *       poll_data;
-    gboolean         fds_changed;
-    int              i;
+    GHashTableIter  h_iter;
+    PollData *      poll_data;
+    gboolean        fds_changed;
+    GPollFD         new_fds_stack[300u / sizeof(GPollFD)];
+    gs_free GPollFD *new_fds_heap = NULL;
+    GPollFD *        new_fds;
+    guint            new_fds_len;
+    guint            new_fds_alloc;
+    guint            i;
 
     _CTX_LOG("prepare...");
 
@@ -4856,30 +4858,44 @@ _ctx_integ_source_prepare(GSource *source, int *out_timeout)
 
     any_ready = g_main_context_prepare(ctx_src->context, &max_priority);
 
-    fds_arr_old = g_steal_pointer(&ctx_src->fds_arr);
-    fds_len_old = ctx_src->fds_len;
+    new_fds_alloc = NM_MAX(G_N_ELEMENTS(new_fds_stack), ctx_src->fds_len);
 
-    fds_allocated    = NM_MAX(1, fds_len_old); /* there is at least the wakeup's FD */
-    ctx_src->fds_arr = g_new(GPollFD, fds_allocated);
+    if (new_fds_alloc > G_N_ELEMENTS(new_fds_stack)) {
+        new_fds_heap = g_new(GPollFD, new_fds_alloc);
+        new_fds      = new_fds_heap;
+    } else
+        new_fds = new_fds_stack;
 
-    while ((ctx_src->fds_len = g_main_context_query(ctx_src->context,
-                                                    max_priority,
-                                                    &timeout,
-                                                    ctx_src->fds_arr,
-                                                    fds_allocated))
-           > fds_allocated) {
-        fds_allocated = ctx_src->fds_len;
-        g_free(ctx_src->fds_arr);
-        ctx_src->fds_arr = g_new(GPollFD, fds_allocated);
+    for (;;) {
+        int l;
+
+        nm_assert(new_fds_alloc <= (guint) G_MAXINT);
+
+        l = g_main_context_query(ctx_src->context,
+                                 max_priority,
+                                 &timeout,
+                                 new_fds,
+                                 (int) new_fds_alloc);
+        nm_assert(l >= 0);
+
+        new_fds_len = (guint) l;
+
+        if (G_LIKELY(new_fds_len <= new_fds_alloc))
+            break;
+
+        new_fds_alloc = new_fds_len;
+        g_free(new_fds_heap);
+        new_fds_heap = g_new(GPollFD, new_fds_alloc);
+        new_fds      = new_fds_heap;
     }
 
     fds_changed = FALSE;
-    if (fds_len_old != ctx_src->fds_len)
+    if (new_fds_len != ctx_src->fds_len)
         fds_changed = TRUE;
     else {
-        for (i = 0; i < ctx_src->fds_len; i++) {
-            if (fds_arr_old[i].fd != ctx_src->fds_arr[i].fd
-                || fds_arr_old[i].events != ctx_src->fds_arr[i].events) {
+        for (i = 0; i < new_fds_len; i++) {
+            if (new_fds[i].fd != ctx_src->fds_arr[i].fd
+                || new_fds[i].events != ctx_src->fds_arr[i].events) {
                 fds_changed = TRUE;
                 break;
             }
@@ -4887,6 +4903,13 @@ _ctx_integ_source_prepare(GSource *source, int *out_timeout)
     }
 
     if (G_UNLIKELY(fds_changed)) {
+        g_free(ctx_src->fds_arr);
+        ctx_src->fds_len = new_fds_len;
+        if (G_LIKELY(new_fds == new_fds_stack) || new_fds_alloc != new_fds_len)
+            ctx_src->fds_arr = nm_memdup(new_fds, sizeof(*new_fds) * new_fds_len);
+        else
+            ctx_src->fds_arr = g_steal_pointer(&new_fds_heap);
+
         g_hash_table_iter_init(&h_iter, ctx_src->fds);
         while (g_hash_table_iter_next(&h_iter, (gpointer *) &poll_data, NULL))
             poll_data->stale = TRUE;
@@ -5021,10 +5044,12 @@ _ctx_integ_source_check(GSource *source)
             ctx_src->fds_arr[poll_data->idx.one].revents = revents;
     }
 
+    nm_assert(ctx_src->fds_len <= (guint) G_MAXINT);
+
     some_ready = g_main_context_check(ctx_src->context,
                                       ctx_src->max_priority,
                                       ctx_src->fds_arr,
-                                      ctx_src->fds_len);
+                                      (int) ctx_src->fds_len);
 
     _CTX_LOG("check (some-ready=%d)...", some_ready);
 
