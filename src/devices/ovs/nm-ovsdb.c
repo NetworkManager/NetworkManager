@@ -15,6 +15,7 @@
 #include "nm-core-utils.h"
 #include "nm-core-internal.h"
 #include "devices/nm-device.h"
+#include "nm-manager.h"
 #include "nm-setting-ovs-external-ids.h"
 
 /*****************************************************************************/
@@ -2268,6 +2269,7 @@ _check_ready(NMOvsdb *self)
     if (priv->num_pending_deletions == 0) {
         priv->ready = TRUE;
         g_signal_emit(self, signals[READY], 0);
+        nm_manager_unblock_failed_ovs_interfaces(nm_manager_get());
     }
 }
 

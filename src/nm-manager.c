@@ -7582,6 +7582,14 @@ periodic_update_active_connection_timestamps(gpointer user_data)
     return G_SOURCE_CONTINUE;
 }
 
+void
+nm_manager_unblock_failed_ovs_interfaces(NMManager *self)
+{
+    NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
+
+    nm_policy_unblock_failed_ovs_interfaces(priv->policy);
+}
+
 /*****************************************************************************/
 
 void

@@ -209,4 +209,6 @@ void nm_manager_device_auth_request(NMManager *                    self,
                                     NMManagerDeviceAuthRequestFunc callback,
                                     gpointer                       user_data);
 
+void nm_manager_unblock_failed_ovs_interfaces(NMManager *self);
+
 #endif /* __NETWORKMANAGER_MANAGER_H__ */

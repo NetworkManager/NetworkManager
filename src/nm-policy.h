@@ -32,6 +32,8 @@ NMActiveConnection *nm_policy_get_default_ip6_ac(NMPolicy *policy);
 NMActiveConnection *nm_policy_get_activating_ip4_ac(NMPolicy *policy);
 NMActiveConnection *nm_policy_get_activating_ip6_ac(NMPolicy *policy);
 
+void nm_policy_unblock_failed_ovs_interfaces(NMPolicy *self);
+
 /**
  * NMPolicyHostnameMode
  * @NM_POLICY_HOSTNAME_MODE_NONE: never update the transient hostname.

@@ -1541,6 +1541,30 @@ hostname_changed(NMHostnameManager *hostname_manager, GParamSpec *pspec, gpointe
     update_system_hostname(self, "hostname changed");
 }
 
+void
+nm_policy_unblock_failed_ovs_interfaces(NMPolicy *self)
+{
+    NMPolicyPrivate *            priv        = NM_POLICY_GET_PRIVATE(self);
+    NMSettingsConnection *const *connections = NULL;
+    guint                        i;
+
+    _LOGT(LOGD_DEVICE, "unblocking failed OVS interfaces");
+
+    connections = nm_settings_get_connections(priv->settings, NULL);
+    for (i = 0; connections[i]; i++) {
+        NMSettingsConnection *sett_conn  = connections[i];
+        NMConnection *        connection = nm_settings_connection_get_connection(sett_conn);
+
+        if (nm_connection_get_setting_ovs_interface(connection)) {
+            nm_settings_connection_autoconnect_retries_reset(sett_conn);
+            nm_settings_connection_autoconnect_blocked_reason_set(
+                sett_conn,
+                NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
+                FALSE);
+        }
+    }
+}
+
 static gboolean
 reset_autoconnect_all(
     NMPolicy *self,
