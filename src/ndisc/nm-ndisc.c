@@ -29,7 +29,8 @@ struct _NMNDiscPrivate {
     /* this *must* be the first field. */
     NMNDiscDataInternal rdata;
 
-    char *   last_error;
+    char *last_error;
+
     GSource *ra_timeout_source;
 
     gint32 announcements_left;
@@ -1044,13 +1045,13 @@ nm_ndisc_set_iid(NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid)
 }
 
 static gboolean
-ndisc_ra_timeout_cb(gpointer user_data)
+ra_timeout_cb(gpointer user_data)
 {
     NMNDisc *ndisc = NM_NDISC(user_data);
 
     nm_clear_g_source_inst(&NM_NDISC_GET_PRIVATE(ndisc)->ra_timeout_source);
     g_signal_emit(ndisc, signals[RA_TIMEOUT_SIGNAL], 0);
-    return G_SOURCE_REMOVE;
+    return G_SOURCE_CONTINUE;
 }
 
 void
@@ -1089,12 +1090,7 @@ nm_ndisc_start(NMNDisc *ndisc)
                 timeout_msec = priv->ra_timeout * 1000u;
             else
                 timeout_msec = G_MAXUINT;
-            priv->ra_timeout_source = nm_g_timeout_source_new(timeout_msec,
-                                                              G_PRIORITY_DEFAULT,
-                                                              ndisc_ra_timeout_cb,
-                                                              ndisc,
-                                                              NULL);
-            g_source_attach(priv->ra_timeout_source, NULL);
+            priv->ra_timeout_source = nm_g_timeout_add_source(timeout_msec, ra_timeout_cb, ndisc);
         }
 
         solicit_timer_start(ndisc);
