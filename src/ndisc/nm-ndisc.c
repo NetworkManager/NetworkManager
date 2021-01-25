@@ -23,6 +23,12 @@
 #define RFC7559_IRT ((gint32) 4)    /* RFC7559, Initial Retransmission Time, in seconds */
 #define RFC7559_MRT ((gint32) 3600) /* RFC7559, Maximum Retransmission Time, in seconds */
 
+#define _SIZE_MAX_GATEWAYS    100u
+#define _SIZE_MAX_ADDRESSES   100u
+#define _SIZE_MAX_ROUTES      1000u
+#define _SIZE_MAX_DNS_SERVERS 64u
+#define _SIZE_MAX_DNS_DOMAINS 64u
+
 /*****************************************************************************/
 
 struct _NMNDiscPrivate {
@@ -49,10 +55,10 @@ struct _NMNDiscPrivate {
     int                           ifindex;
     char *                        ifname;
     char *                        network_id;
+    guint                         max_addresses;
     NMSettingIP6ConfigAddrGenMode addr_gen_mode;
     NMUtilsStableType             stable_type;
     guint32                       ra_timeout;
-    gint32                        max_addresses;
     gint32                        router_solicitations;
     gint32                        router_solicitation_interval;
     NMNDiscNodeType               node_type;
@@ -425,6 +431,9 @@ nm_ndisc_add_gateway(NMNDisc *ndisc, const NMNDiscGateway *new_item, gint64 now_
         i++;
     }
 
+    if (rdata->gateways->len >= _SIZE_MAX_GATEWAYS)
+        return FALSE;
+
     if (new_item->expiry_msec <= now_msec)
         return FALSE;
 
@@ -587,7 +596,7 @@ nm_ndisc_add_address(NMNDisc *             ndisc,
      * what the kernel does, because it considers *all* addresses (including
      * static and other temporary addresses).
      **/
-    if (priv->max_addresses && rdata->addresses->len >= priv->max_addresses)
+    if (rdata->addresses->len >= priv->max_addresses)
         return FALSE;
 
     if (new_item->expiry_msec <= now_msec)
@@ -673,6 +682,9 @@ nm_ndisc_add_route(NMNDisc *ndisc, const NMNDiscRoute *new_item, gint64 now_msec
         i++;
     }
 
+    if (rdata->routes->len >= _SIZE_MAX_ROUTES)
+        return FALSE;
+
     if (new_item->expiry_msec <= now_msec) {
         nm_assert(!changed);
         return FALSE;
@@ -709,6 +721,9 @@ nm_ndisc_add_dns_server(NMNDisc *ndisc, const NMNDiscDNSServer *new_item, gint64
         }
     }
 
+    if (rdata->dns_servers->len >= _SIZE_MAX_DNS_SERVERS)
+        return FALSE;
+
     if (new_item->expiry_msec <= now_msec)
         return FALSE;
 
@@ -744,6 +759,9 @@ nm_ndisc_add_dns_domain(NMNDisc *ndisc, const NMNDiscDNSDomain *new_item, gint64
             return TRUE;
         }
     }
+
+    if (rdata->dns_domains->len >= _SIZE_MAX_DNS_DOMAINS)
+        return FALSE;
 
     if (new_item->expiry_msec <= now_msec)
         return FALSE;
@@ -1285,6 +1303,19 @@ _config_changed_log(NMNDisc *ndisc, NMNDiscConfigMap changed)
 
 /*****************************************************************************/
 
+static gboolean
+_array_set_size_max(GArray *array, guint size_max)
+{
+    nm_assert(array);
+    nm_assert(size_max > 0u);
+
+    if (array->len <= size_max)
+        return FALSE;
+
+    g_array_set_size(array, size_max);
+    return TRUE;
+}
+
 static void
 clean_gateways(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint64 *next_msec)
 {
@@ -1311,12 +1342,16 @@ clean_gateways(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint6
         g_array_set_size(rdata->gateways, j);
     }
 
+    if (_array_set_size_max(rdata->gateways, _SIZE_MAX_GATEWAYS))
+        *changed |= NM_NDISC_CONFIG_GATEWAYS;
+
     _ASSERT_data_gateways(rdata);
 }
 
 static void
 clean_addresses(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint64 *next_msec)
 {
+    NMNDiscPrivate *     priv  = NM_NDISC_GET_PRIVATE(ndisc);
     NMNDiscDataInternal *rdata = &NM_NDISC_GET_PRIVATE(ndisc)->rdata;
     NMNDiscAddress *     arr;
     guint                i;
@@ -1339,6 +1374,9 @@ clean_addresses(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint
         *changed = NM_NDISC_CONFIG_ADDRESSES;
         g_array_set_size(rdata->addresses, j);
     }
+
+    if (_array_set_size_max(rdata->gateways, priv->max_addresses))
+        *changed |= NM_NDISC_CONFIG_ADDRESSES;
 }
 
 static void
@@ -1366,6 +1404,9 @@ clean_routes(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint64 
         *changed |= NM_NDISC_CONFIG_ROUTES;
         g_array_set_size(rdata->routes, j);
     }
+
+    if (_array_set_size_max(rdata->gateways, _SIZE_MAX_ROUTES))
+        *changed |= NM_NDISC_CONFIG_ROUTES;
 }
 
 static void
@@ -1393,6 +1434,9 @@ clean_dns_servers(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gi
         *changed |= NM_NDISC_CONFIG_DNS_SERVERS;
         g_array_set_size(rdata->dns_servers, j);
     }
+
+    if (_array_set_size_max(rdata->gateways, _SIZE_MAX_DNS_SERVERS))
+        *changed |= NM_NDISC_CONFIG_DNS_SERVERS;
 }
 
 static void
@@ -1425,6 +1469,9 @@ clean_dns_domains(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gi
         *changed |= NM_NDISC_CONFIG_DNS_DOMAINS;
         g_array_set_size(rdata->dns_domains, j);
     }
+
+    if (_array_set_size_max(rdata->gateways, _SIZE_MAX_DNS_DOMAINS))
+        *changed |= NM_NDISC_CONFIG_DNS_DOMAINS;
 }
 
 static void
@@ -1531,6 +1578,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 {
     NMNDisc *       self = NM_NDISC(object);
     NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE(self);
+    int             i;
 
     switch (prop_id) {
     case PROP_PLATFORM:
@@ -1572,7 +1620,14 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         break;
     case PROP_MAX_ADDRESSES:
         /* construct-only */
-        priv->max_addresses = g_value_get_int(value);
+        i = g_value_get_int(value);
+        nm_assert(i >= 0);
+        priv->max_addresses = i;
+
+        if (priv->max_addresses <= 0)
+            priv->max_addresses = _SIZE_MAX_ADDRESSES;
+        else if (priv->max_addresses > 3u * _SIZE_MAX_ADDRESSES)
+            priv->max_addresses = 3u * _SIZE_MAX_ADDRESSES;
         break;
     case PROP_RA_TIMEOUT:
         /* construct-only */
