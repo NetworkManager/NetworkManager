@@ -180,7 +180,7 @@ ovsdb_device_removed(NMOvsdb *        ovsdb,
         && device_state < NM_DEVICE_STATE_DEACTIVATING) {
         nm_device_state_changed(device,
                                 NM_DEVICE_STATE_DEACTIVATING,
-                                NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
+                                NM_DEVICE_STATE_REASON_REMOVED);
         return;
     }
 
