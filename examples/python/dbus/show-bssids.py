@@ -35,7 +35,7 @@ for d in devices:
 
     # Make sure the device is enabled before we try to use it
     state = prop_iface.Get("org.freedesktop.NetworkManager.Device", "State")
-    if state <= 2:
+    if state <= 20:  # NM_DEVICE_STATE_UNAVAILABLE
         continue
 
     # Get device's type; we only want wifi devices
