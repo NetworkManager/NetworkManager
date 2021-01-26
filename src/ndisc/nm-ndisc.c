@@ -1680,7 +1680,7 @@ nm_ndisc_class_init(NMNDiscClass *klass)
                          "",
                          1,
                          G_MAXINT32,
-                         NM_NDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT,
+                         NM_NDISC_RFC4861_RTR_SOLICITATION_INTERVAL,
                          G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
     obj_properties[PROP_NODE_TYPE] =
         g_param_spec_int(NM_NDISC_NODE_TYPE,

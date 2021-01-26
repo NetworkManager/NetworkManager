@@ -372,7 +372,7 @@ nm_fake_ndisc_new(int ifindex, const char *ifname)
                         NM_NDISC_ROUTER_SOLICITATIONS,
                         NM_NDISC_ROUTER_SOLICITATIONS_DEFAULT,
                         NM_NDISC_ROUTER_SOLICITATION_INTERVAL,
-                        NM_NDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT,
+                        NM_NDISC_RFC4861_RTR_SOLICITATION_INTERVAL,
                         NM_NDISC_RA_TIMEOUT,
                         30u,
                         NULL);

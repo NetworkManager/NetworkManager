@@ -713,13 +713,12 @@ nm_lndp_ndisc_get_sysctl(NMPlatform *platform,
         NM_SET_OUT(out_router_solicitations, router_solicitations);
     }
     if (out_router_solicitation_interval || out_default_ra_timeout) {
-        router_solicitation_interval =
-            ipv6_sysctl_get(platform,
-                            ifname,
-                            "router_solicitation_interval",
-                            1,
-                            G_MAXINT32,
-                            NM_NDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT);
+        router_solicitation_interval = ipv6_sysctl_get(platform,
+                                                       ifname,
+                                                       "router_solicitation_interval",
+                                                       1,
+                                                       G_MAXINT32,
+                                                       NM_NDISC_RFC4861_RTR_SOLICITATION_INTERVAL);
         NM_SET_OUT(out_router_solicitation_interval, router_solicitation_interval);
     }
     if (out_default_ra_timeout) {
