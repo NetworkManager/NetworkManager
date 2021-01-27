@@ -2789,7 +2789,7 @@ toobig_allowedips:
     if (nest_curr_allowed_ip)
         nla_nest_cancel(msg, nest_curr_allowed_ip);
     if (nest_allowed_ips)
-        nla_nest_cancel(msg, nest_allowed_ips);
+        _nla_nest_end(msg, nest_allowed_ips);
     _nla_nest_end(msg, nest_curr_peer);
     _nla_nest_end(msg, nest_peers);
     goto send;
