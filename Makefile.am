@@ -5436,6 +5436,7 @@ EXTRA_DIST += \
 	po/meson.build \
 	\
 	shared/nm-default.h \
+	shared/nm-gassert-patch.h \
 	shared/nm-test-libnm-utils.h \
 	shared/nm-test-utils-impl.c \
 	shared/nm-utils/nm-compat.c \
