@@ -1,31 +1,25 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
-sources = files(
-  'nmi-cmdline-reader.c',
-  'nmi-dt-reader.c',
-  'nmi-ibft-reader.c',
-)
-
 libnmi_core = static_library(
   'nmi-core',
-  sources: sources,
+  sources: files(
+    'nmi-cmdline-reader.c',
+    'nmi-dt-reader.c',
+    'nmi-ibft-reader.c',
+  ),
   dependencies: daemon_nm_default_dep,
   c_args: daemon_c_flags,
 )
 
-name = 'nm-initrd-generator'
-
-links = [
-  libnetwork_manager_base,
-  libnmi_core,
-]
-
 executable(
-  name,
-  name + '.c',
+  'nm-initrd-generator',
+  'nm-initrd-generator.c',
   dependencies: daemon_nm_default_dep,
   c_args: daemon_c_flags,
-  link_with: links,
+  link_with: [
+    libNetworkManagerBase,
+    libnmi_core,
+  ],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true,

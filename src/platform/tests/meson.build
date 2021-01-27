@@ -22,7 +22,7 @@ foreach test_unit: test_units
   exe = executable(
     test_unit[0],
     test_unit[1],
-    dependencies: libnetwork_manager_test_dep,
+    dependencies: libNetworkManagerTest_dep,
     c_args: test_unit[2],
   )
   test(
@@ -38,6 +38,6 @@ name = 'monitor'
 executable(
   name,
   name + '.c',
-  dependencies: libnetwork_manager_test_dep,
+  dependencies: libNetworkManagerTest_dep,
   c_args: test_c_flags,
 )
