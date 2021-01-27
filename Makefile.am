@@ -1026,7 +1026,7 @@ dbusinterfaces_DATA = \
 CLEANFILES += $(introspection_sources)
 CLEANFILES += $(DBUS_INTERFACE_DOCS)
 
-$(libnm_liblibnm_la_OBJECTS):                   $(introspection_sources)
+$(libnm_libnm_static_la_OBJECTS):               $(introspection_sources)
 $(libnm_libnm_la_OBJECTS):                      $(introspection_sources)
 
 EXTRA_DIST += \
@@ -1595,23 +1595,23 @@ nodist_libnminclude_HEADERS += \
 
 ###############################################################################
 
-noinst_LTLIBRARIES += libnm/liblibnm.la
+noinst_LTLIBRARIES += libnm/libnm_static.la
 
-libnm_liblibnm_la_CPPFLAGS = \
+libnm_libnm_static_la_CPPFLAGS = \
 	$(INTROSPECTION_CFLAGS) \
 	$(libnm_lib_cppflags) \
 	$(NULL)
 
-libnm_liblibnm_la_SOURCES = \
+libnm_libnm_static_la_SOURCES = \
 	$(libnm_lib_c_real) \
 	$(NULL)
 
-nodist_libnm_liblibnm_la_SOURCES = \
+nodist_libnm_libnm_static_la_SOURCES = \
 	$(libnm_lib_h_pub_mkenums) \
 	$(libnm_lib_c_mkenums) \
 	$(NULL)
 
-libnm_liblibnm_la_LIBADD = \
+libnm_libnm_static_la_LIBADD = \
 	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	libnm-core/nm-keyfile/libnm-keyfile.la \
 	libnm-core/libnm-core.la \
@@ -1631,8 +1631,8 @@ libnm_liblibnm_la_LIBADD = \
 	$(LIBUDEV_LIBS) \
 	$(NULL)
 
-$(libnm_liblibnm_la_OBJECTS) : $(libnm_lib_h_pub_mkenums)
-$(libnm_liblibnm_la_OBJECTS) : $(libnm_core_lib_h_pub_mkenums)
+$(libnm_libnm_static_la_OBJECTS) : $(libnm_lib_h_pub_mkenums)
+$(libnm_libnm_static_la_OBJECTS) : $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 
@@ -1667,7 +1667,7 @@ EXTRA_libnm_libnm_la_DEPENDENCIES = \
 	libnm/libnm.ver
 
 libnm_libnm_la_LIBADD = \
-	libnm/liblibnm.la \
+	libnm/libnm_static.la \
 	$(NULL)
 
 libnm_libnm_la_LDFLAGS = \
@@ -1806,7 +1806,7 @@ libnm_tests_cppflags = \
 	$(NULL)
 
 libnm_tests_ldadd = \
-	libnm/liblibnm.la \
+	libnm/libnm_static.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 

@@ -23,7 +23,7 @@ foreach test_unit: test_units
     [test_unit[0] + '.c', nm_test_utils_impl_source, libnm_enum_sources[1]],
     dependencies: deps,
     c_args: c_flags,
-    link_with: liblibnm,
+    link_with: libnm_static,
   )
 
   test(

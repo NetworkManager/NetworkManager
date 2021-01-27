@@ -130,8 +130,8 @@ libnm_sources = files(
   'nm-wimax-nsp.c',
 )
 
-liblibnm = static_library(
-  'libnm',
+libnm_static = static_library(
+  'nm-static',
   sources: libnm_sources + libnm_enum_sources,
   dependencies: [
     libnmdbus_dep,
@@ -155,7 +155,7 @@ libnm = shared_library(
   version: libnm_version,
   dependencies: libnm_nm_default_dep,
   link_whole: [
-    liblibnm,
+    libnm_static,
     libnm_core,
     libnm_keyfile,
     libnmdbus,
