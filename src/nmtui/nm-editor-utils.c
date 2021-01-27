@@ -243,6 +243,14 @@ nm_editor_utils_get_connection_type_list(void)
     }
 #endif
 
+    item                    = g_new0(NMEditorConnectionTypeDataReal, 1);
+    item->data.name         = _("WireGuard");
+    item->data.setting_type = NM_TYPE_SETTING_WIREGUARD;
+    item->data.device_type  = NM_TYPE_DEVICE_WIREGUARD;
+    item->data.virtual      = TRUE;
+    item->id_format         = _("WireGuard tunnel connection %d");
+    g_ptr_array_add(array, item);
+
     g_ptr_array_sort(array, sort_types);
     g_ptr_array_add(array, NULL);
 
