@@ -468,14 +468,18 @@ static const NMEthtoolFeatureInfo _ethtool_feature_infos[_NM_ETHTOOL_ID_FEATURE_
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_HW_TC_OFFLOAD, "hw-tc-offload"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_L2_FWD_OFFLOAD, "l2-fwd-offload"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_LOOPBACK, "loopback"),
+    ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_MACSEC_HW_OFFLOAD, "macsec-hw-offload"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_RX_ALL, "rx-all"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_RX_FCS, "rx-fcs"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_RX_GRO_HW, "rx-gro-hw"),
+    ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_RX_GRO_LIST, "rx-gro-list"),
+    ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_RX_UDP_GRO_FORWARDING, "rx-udp-gro-forwarding"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_RX_UDP_TUNNEL_PORT_OFFLOAD, "rx-udp_tunnel-port-offload"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_RX_VLAN_FILTER, "rx-vlan-filter"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_RX_VLAN_STAG_FILTER, "rx-vlan-stag-filter"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_RX_VLAN_STAG_HW_PARSE, "rx-vlan-stag-hw-parse"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_TLS_HW_RECORD, "tls-hw-record"),
+    ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_TLS_HW_RX_OFFLOAD, "tls-hw-rx-offload"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_TLS_HW_TX_OFFLOAD, "tls-hw-tx-offload"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_TX_CHECKSUM_FCOE_CRC, "tx-checksum-fcoe-crc"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_TX_CHECKSUM_IPV4, "tx-checksum-ipv4"),
@@ -486,6 +490,7 @@ static const NMEthtoolFeatureInfo _ethtool_feature_infos[_NM_ETHTOOL_ID_FEATURE_
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_TX_FCOE_SEGMENTATION, "tx-fcoe-segmentation"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_TX_GRE_CSUM_SEGMENTATION, "tx-gre-csum-segmentation"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_TX_GRE_SEGMENTATION, "tx-gre-segmentation"),
+    ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_TX_GSO_LIST, "tx-gso-list"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_TX_GSO_PARTIAL, "tx-gso-partial"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_TX_GSO_ROBUST, "tx-gso-robust"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_TX_IPXIP4_SEGMENTATION, "tx-ipxip4-segmentation"),
@@ -498,6 +503,8 @@ static const NMEthtoolFeatureInfo _ethtool_feature_infos[_NM_ETHTOOL_ID_FEATURE_
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_TX_TCP_ECN_SEGMENTATION, "tx-tcp-ecn-segmentation"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_TX_TCP_MANGLEID_SEGMENTATION, "tx-tcp-mangleid-segmentation"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_TX_TCP_SEGMENTATION, "tx-tcp-segmentation"),
+    ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_TX_TUNNEL_REMCSUM_SEGMENTATION,
+              "tx-tunnel-remcsum-segmentation"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_TX_UDP_SEGMENTATION, "tx-udp-segmentation"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_TX_UDP_TNL_CSUM_SEGMENTATION, "tx-udp_tnl-csum-segmentation"),
     ETHT_FEAT(NM_ETHTOOL_ID_FEATURE_TX_UDP_TNL_SEGMENTATION, "tx-udp_tnl-segmentation"),
@@ -539,8 +546,15 @@ _ASSERT_ethtool_feature_infos(void)
 
         n += inf->n_kernel_names;
         for (k = 0; k < inf->n_kernel_names; k++) {
-            g_assert(nm_utils_strv_find_first((char **) inf->kernel_names, k, inf->kernel_names[k])
-                     < 0);
+            const char *name = inf->kernel_names[k];
+
+            g_assert(nm_utils_strv_find_first((char **) inf->kernel_names, k, name) < 0);
+
+            /* these offload features are only informational and cannot be set from user-space
+             * (NETIF_F_NEVER_CHANGE). We should not track them in _ethtool_feature_infos. */
+            g_assert(!nm_streq(name, "netns-local"));
+            g_assert(!nm_streq(name, "tx-lockless"));
+            g_assert(!nm_streq(name, "vlan-challenged"));
         }
     }
 

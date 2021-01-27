@@ -460,6 +460,7 @@
         <property name="feature-l2-fwd-offload" />
         <property name="feature-loopback" />
         <property name="feature-lro" />
+        <property name="feature-macsec-hw-offload" />
         <property name="feature-ntuple" />
         <property name="feature-rx" />
         <property name="feature-rxhash" />
@@ -467,12 +468,15 @@
         <property name="feature-rx-all" />
         <property name="feature-rx-fcs" />
         <property name="feature-rx-gro-hw" />
+        <property name="feature-rx-gro-list" />
+        <property name="feature-rx-udp-gro-forwarding" />
         <property name="feature-rx-udp_tunnel-port-offload" />
         <property name="feature-rx-vlan-filter" />
         <property name="feature-rx-vlan-stag-filter" />
         <property name="feature-rx-vlan-stag-hw-parse" />
         <property name="feature-sg" />
         <property name="feature-tls-hw-record" />
+        <property name="feature-tls-hw-rx-offload" />
         <property name="feature-tls-hw-tx-offload" />
         <property name="feature-tso" />
         <property name="feature-tx" />
@@ -486,6 +490,7 @@
         <property name="feature-tx-fcoe-segmentation" />
         <property name="feature-tx-gre-csum-segmentation" />
         <property name="feature-tx-gre-segmentation" />
+        <property name="feature-tx-gso-list" />
         <property name="feature-tx-gso-partial" />
         <property name="feature-tx-gso-robust" />
         <property name="feature-tx-ipxip4-segmentation" />
@@ -498,6 +503,7 @@
         <property name="feature-tx-tcp-ecn-segmentation" />
         <property name="feature-tx-tcp-mangleid-segmentation" />
         <property name="feature-tx-tcp-segmentation" />
+        <property name="feature-tx-tunnel-remcsum-segmentation" />
         <property name="feature-tx-udp-segmentation" />
         <property name="feature-tx-udp_tnl-csum-segmentation" />
         <property name="feature-tx-udp_tnl-segmentation" />

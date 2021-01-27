@@ -9613,6 +9613,11 @@ test_ethtool_offload(void)
     g_assert(d);
     g_assert_cmpint(d->id, ==, NM_ETHTOOL_ID_FEATURE_RXHASH);
     g_assert_cmpstr(d->optname, ==, NM_ETHTOOL_OPTNAME_FEATURE_RXHASH);
+
+    /* these features are NETIF_F_NEVER_CHANGE: */
+    g_assert(!nm_ethtool_data_get_by_optname("feature-netns-local"));
+    g_assert(!nm_ethtool_data_get_by_optname("feature-tx-lockless"));
+    g_assert(!nm_ethtool_data_get_by_optname("feature-vlan-challenged"));
 }
 
 /*****************************************************************************/
