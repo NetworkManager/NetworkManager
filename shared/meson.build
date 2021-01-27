@@ -119,8 +119,8 @@ libnm_std_aux = static_library(
   ],
 )
 
-libnm_utils_base = static_library(
-  'nm-utils-base',
+libnm_glib_aux = static_library(
+  'nm-glib-aux',
   sources: files(
     'nm-glib-aux/nm-dbus-aux.c',
     'nm-glib-aux/nm-dedup-multi.c',
@@ -148,11 +148,10 @@ libnm_utils_base = static_library(
   ],
 )
 
-libnm_utils_base_dep = declare_dependency(
+libnm_glib_aux_dep = declare_dependency(
   dependencies: glib_nm_default_dep,
-  link_with: libnm_utils_base,
+  link_with: libnm_glib_aux,
 )
-
 
 libnm_udev_aux = static_library(
   'nm-udev-aux',
@@ -177,7 +176,7 @@ libnm_base = static_library(
   sources: files(
     'nm-base/nm-ethtool-base.c',
   ),
-  dependencies: libnm_utils_base_dep,
+  dependencies: libnm_glib_aux_dep,
   c_args: [
     '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
     '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
@@ -186,7 +185,7 @@ libnm_base = static_library(
 
 libnm_base_dep = declare_dependency(
   include_directories: shared_inc,
-  dependencies: libnm_utils_base_dep,
+  dependencies: libnm_glib_aux_dep,
   link_with: libnm_base,
 )
 
@@ -206,7 +205,7 @@ libnm_log_core = static_library(
 libnm_log_core_dep = declare_dependency(
   include_directories: shared_inc,
   dependencies: [
-    libnm_utils_base_dep,
+    libnm_glib_aux_dep,
   ],
   link_with: libnm_log_core,
 )
@@ -230,7 +229,7 @@ libnm_platform = static_library(
 libnm_platform_dep = declare_dependency(
   include_directories: shared_inc,
   dependencies: [
-    libnm_utils_base_dep,
+    libnm_glib_aux_dep,
   ],
   link_with: libnm_platform,
 )

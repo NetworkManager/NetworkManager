@@ -160,7 +160,7 @@ links = [
   libnm_keyfile,
   libnmdbus,
   libnm_systemd_logging_stub,
-  libnm_utils_base,
+  libnm_glib_aux,
 ]
 
 linker_script = join_paths(meson.current_source_dir(), 'libnm.ver')
