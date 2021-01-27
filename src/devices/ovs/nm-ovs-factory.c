@@ -106,10 +106,23 @@ new_device_from_type(const char *name, NMDeviceType device_type)
 }
 
 static void
-ovsdb_device_added(NMOvsdb *ovsdb, const char *name, guint device_type_i, NMDeviceFactory *self)
+ovsdb_device_added(NMOvsdb *        ovsdb,
+                   const char *     name,
+                   guint            device_type_i,
+                   const char *     subtype,
+                   NMDeviceFactory *self)
 {
     const NMDeviceType device_type = device_type_i;
     NMDevice *         device;
+
+    if (device_type == NM_DEVICE_TYPE_OVS_INTERFACE
+        && !NM_IN_STRSET(subtype, "internal", "patch")) {
+        /* system interfaces refer to kernel devices and
+         * don't need to be created by this factory. Ignore
+         * anything that is not an internal or patch
+         * interface. */
+        return;
+    }
 
     device = new_device_from_type(name, device_type);
     if (!device)
@@ -120,23 +133,59 @@ ovsdb_device_added(NMOvsdb *ovsdb, const char *name, guint device_type_i, NMDevi
 }
 
 static void
-ovsdb_device_removed(NMOvsdb *ovsdb, const char *name, guint device_type_i, NMDeviceFactory *self)
+ovsdb_device_removed(NMOvsdb *        ovsdb,
+                     const char *     name,
+                     guint            device_type_i,
+                     const char *     subtype,
+                     NMDeviceFactory *self)
 {
     const NMDeviceType device_type = device_type_i;
-    NMDevice *         device;
+    NMDevice *         device      = NULL;
     NMDeviceState      device_state;
+    gboolean           is_system_interface = FALSE;
 
-    device = nm_manager_get_device(NM_MANAGER_GET, name, device_type);
+    if (device_type == NM_DEVICE_TYPE_OVS_INTERFACE
+        && !NM_IN_STRSET(subtype, "internal", "patch", "system"))
+        return;
+
+    if (device_type == NM_DEVICE_TYPE_OVS_INTERFACE && nm_streq0(subtype, "system")) {
+        NMDevice *             d;
+        const CList *          list;
+        NMSettingOvsInterface *s_ovs_int;
+
+        /* The device associated to an OVS system interface can be of
+         * any kind. Find an interface with the same name and which has
+         * the OVS-interface setting. */
+        is_system_interface = TRUE;
+        nm_manager_for_each_device (NM_MANAGER_GET, d, list) {
+            if (!nm_streq0(nm_device_get_iface(d), name))
+                continue;
+            s_ovs_int = nm_device_get_applied_setting(d, NM_TYPE_SETTING_OVS_INTERFACE);
+            if (!s_ovs_int)
+                continue;
+            if (!nm_streq0(nm_setting_ovs_interface_get_interface_type(s_ovs_int), "system"))
+                continue;
+            device = d;
+        }
+    } else {
+        device = nm_manager_get_device(NM_MANAGER_GET, name, device_type);
+    }
+
     if (!device)
         return;
 
     device_state = nm_device_get_state(device);
-    if (device_type == NM_DEVICE_TYPE_OVS_INTERFACE && device_state > NM_DEVICE_STATE_DISCONNECTED
+
+    if (device_type == NM_DEVICE_TYPE_OVS_INTERFACE && nm_device_get_act_request(device)
         && device_state < NM_DEVICE_STATE_DEACTIVATING) {
         nm_device_state_changed(device,
                                 NM_DEVICE_STATE_DEACTIVATING,
-                                NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
-    } else if (device_state == NM_DEVICE_STATE_UNMANAGED) {
+                                NM_DEVICE_STATE_REASON_REMOVED);
+        return;
+    }
+
+    /* OVS system interfaces still exist even without the ovsdb entry */
+    if (!is_system_interface && device_state == NM_DEVICE_STATE_UNMANAGED) {
         nm_device_unrealize(device, TRUE, NULL);
     }
 }

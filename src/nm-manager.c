@@ -4927,11 +4927,11 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
                 if (master_device) {
                     g_prefix_error(error,
                                    "Master device '%s' can't be activated: ",
-                                   nm_device_get_ip_iface(device));
+                                   nm_device_get_ip_iface(master_device));
                 } else {
                     g_prefix_error(error,
                                    "Master connection '%s' can't be activated: ",
-                                   nm_settings_connection_get_id(sett_conn));
+                                   nm_settings_connection_get_id(master_connection));
                 }
                 return FALSE;
             }
@@ -7580,6 +7580,14 @@ periodic_update_active_connection_timestamps(gpointer user_data)
                                                 t);
     }
     return G_SOURCE_CONTINUE;
+}
+
+void
+nm_manager_unblock_failed_ovs_interfaces(NMManager *self)
+{
+    NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
+
+    nm_policy_unblock_failed_ovs_interfaces(priv->policy);
 }
 
 /*****************************************************************************/

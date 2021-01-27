@@ -22,7 +22,8 @@
 /*****************************************************************************/
 
 typedef struct {
-    bool waiting_for_interface : 1;
+    NMOvsdb *ovsdb;
+    bool     waiting_for_interface : 1;
 } NMDeviceOvsInterfacePrivate;
 
 struct _NMDeviceOvsInterface {
@@ -70,7 +71,10 @@ get_generic_capabilities(NMDevice *device)
 static gboolean
 is_available(NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
-    return TRUE;
+    NMDeviceOvsInterface *       self = NM_DEVICE_OVS_INTERFACE(device);
+    NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
+
+    return nm_ovsdb_is_ready(priv->ovsdb);
 }
 
 static gboolean
@@ -152,6 +156,9 @@ set_platform_mtu_cb(GError *error, gpointer user_data)
 static gboolean
 set_platform_mtu(NMDevice *device, guint32 mtu)
 {
+    NMDeviceOvsInterface *       self = NM_DEVICE_OVS_INTERFACE(device);
+    NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
+
     /*
      * If the MTU is not set in ovsdb, Open vSwitch will change
      * the MTU of an internal interface to match the minimum of
@@ -162,7 +169,7 @@ set_platform_mtu(NMDevice *device, guint32 mtu)
      * it can be stopped during shutdown.
      */
     if (_is_internal_interface(device)) {
-        nm_ovsdb_set_interface_mtu(nm_ovsdb_get(),
+        nm_ovsdb_set_interface_mtu(priv->ovsdb,
                                    nm_device_get_ip_iface(device),
                                    mtu,
                                    set_platform_mtu_cb,
@@ -361,8 +368,41 @@ can_update_from_platform_link(NMDevice *device, const NMPlatformLink *plink)
 /*****************************************************************************/
 
 static void
+ovsdb_ready(NMOvsdb *ovsdb, NMDeviceOvsInterface *self)
+{
+    NMDevice *device = NM_DEVICE(self);
+
+    nm_device_queue_recheck_available(device,
+                                      NM_DEVICE_STATE_REASON_NONE,
+                                      NM_DEVICE_STATE_REASON_NONE);
+    nm_device_recheck_available_connections(device);
+    nm_device_emit_recheck_auto_activate(device);
+}
+
+static void
 nm_device_ovs_interface_init(NMDeviceOvsInterface *self)
-{}
+{
+    NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
+
+    priv->ovsdb = g_object_ref(nm_ovsdb_get());
+
+    if (!nm_ovsdb_is_ready(priv->ovsdb))
+        g_signal_connect(priv->ovsdb, NM_OVSDB_READY, G_CALLBACK(ovsdb_ready), self);
+}
+
+static void
+dispose(GObject *object)
+{
+    NMDeviceOvsInterface *       self = NM_DEVICE_OVS_INTERFACE(object);
+    NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
+
+    if (priv->ovsdb) {
+        g_signal_handlers_disconnect_by_func(priv->ovsdb, G_CALLBACK(ovsdb_ready), self);
+        g_clear_object(&priv->ovsdb);
+    }
+
+    G_OBJECT_CLASS(nm_device_ovs_interface_parent_class)->dispose(object);
+}
 
 static const NMDBusInterfaceInfoExtended interface_info_device_ovs_interface = {
     .parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(
@@ -374,8 +414,11 @@ static const NMDBusInterfaceInfoExtended interface_info_device_ovs_interface = {
 static void
 nm_device_ovs_interface_class_init(NMDeviceOvsInterfaceClass *klass)
 {
+    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
     NMDeviceClass *    device_class      = NM_DEVICE_CLASS(klass);
+
+    object_class->dispose = dispose;
 
     dbus_object_class->interface_infos =
         NM_DBUS_INTERFACE_INFOS(&interface_info_device_ovs_interface);
