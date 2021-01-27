@@ -39,6 +39,7 @@
 #include "nmt-page-team-port.h"
 #include "nmt-page-vlan.h"
 #include "nmt-page-wifi.h"
+#include "nmt-page-wireguard.h"
 
 #include "libnmc-setting/nm-meta-setting-access.h"
 
@@ -372,6 +373,8 @@ nmt_editor_constructed(GObject *object)
         page = nmt_page_wifi_new(priv->edit_connection, deventry);
     else if (nm_connection_is_type(priv->edit_connection, NM_SETTING_IP_TUNNEL_SETTING_NAME))
         page = nmt_page_ip_tunnel_new(priv->edit_connection, deventry);
+    else if (nm_connection_is_type(priv->edit_connection, NM_SETTING_WIREGUARD_SETTING_NAME))
+        page = nmt_page_wireguard_new(priv->edit_connection, deventry);
     else
         g_assert_not_reached();
 

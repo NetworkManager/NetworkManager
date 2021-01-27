@@ -66,6 +66,22 @@ bond_connection_setup_func(NMConnection *connection, NMSettingConnection *s_con,
     }
 }
 
+static void
+wireguard_connection_setup_func(NMConnection *       connection,
+                                NMSettingConnection *s_con,
+                                NMSetting *          s_hw)
+{
+    NMSettingIPConfig *s_ip;
+
+    s_ip = (NMSettingIPConfig *) nm_setting_ip4_config_new();
+    g_object_set(s_ip, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_DISABLED, NULL);
+    nm_connection_add_setting(connection, (NMSetting *) s_ip);
+
+    s_ip = (NMSettingIPConfig *) nm_setting_ip6_config_new();
+    g_object_set(s_ip, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_DISABLED, NULL);
+    nm_connection_add_setting(connection, (NMSetting *) s_ip);
+}
+
 typedef void (*NMEditorNewConnectionSetupFunc)(NMConnection *       connection,
                                                NMSettingConnection *s_con,
                                                NMSetting *          s_hw);
@@ -242,6 +258,15 @@ nm_editor_utils_get_connection_type_list(void)
         vpn_plugins = g_slist_sort (vpn_plugins, sort_vpn_plugins);
     }
 #endif
+
+    item                        = g_new0(NMEditorConnectionTypeDataReal, 1);
+    item->data.name             = _("WireGuard");
+    item->data.setting_type     = NM_TYPE_SETTING_WIREGUARD;
+    item->data.device_type      = NM_TYPE_DEVICE_WIREGUARD;
+    item->data.virtual          = TRUE;
+    item->id_format             = _("WireGuard connection %d");
+    item->connection_setup_func = wireguard_connection_setup_func;
+    g_ptr_array_add(array, item);
 
     g_ptr_array_sort(array, sort_types);
     g_ptr_array_add(array, NULL);

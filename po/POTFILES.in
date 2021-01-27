@@ -173,11 +173,14 @@ src/nmtui/nmt-page-team-port.c
 src/nmtui/nmt-page-team.c
 src/nmtui/nmt-page-vlan.c
 src/nmtui/nmt-page-wifi.c
+src/nmtui/nmt-page-wireguard.c
 src/nmtui/nmt-password-dialog.c
 src/nmtui/nmt-password-fields.c
 src/nmtui/nmt-route-editor.c
 src/nmtui/nmt-route-table.c
 src/nmtui/nmt-slave-list.c
+src/nmtui/nmt-wireguard-peer-list.c
+src/nmtui/nmt-wireguard-peer-editor.c
 src/nmtui/nmt-widget-list.c
 src/nmtui/nmtui-connect.c
 src/nmtui/nmtui-edit.c

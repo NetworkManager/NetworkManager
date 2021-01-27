@@ -53,4 +53,54 @@ void nm_editor_bind_wireless_security_wep_key(NMSettingWirelessSecurity *s_wsec,
 
 void nm_editor_bind_vlan_name(NMSettingVlan *s_vlan, NMSettingConnection *s_con);
 
+gboolean peer_transform_to_public_key_string(GBinding *    binding,
+                                             const GValue *source_value,
+                                             GValue *      target_value,
+                                             gpointer      user_data);
+
+gboolean peer_transform_to_allowed_ips_string(GBinding *    binding,
+                                              const GValue *source_value,
+                                              GValue *      target_value,
+                                              gpointer      user_data);
+
+gboolean peer_transform_to_endpoint_string(GBinding *    binding,
+                                           const GValue *source_value,
+                                           GValue *      target_value,
+                                           gpointer      user_data);
+
+gboolean peer_transform_to_preshared_key_string(GBinding *    binding,
+                                                const GValue *source_value,
+                                                GValue *      target_value,
+                                                gpointer      user_data);
+
+gboolean peer_transform_to_persistent_keepalive_string(GBinding *    binding,
+                                                       const GValue *source_value,
+                                                       GValue *      target_value,
+                                                       gpointer      user_data);
+
+gboolean peer_transform_from_public_key_string(GBinding *    binding,
+                                               const GValue *source_value,
+                                               GValue *      target_value,
+                                               gpointer      user_data);
+
+gboolean peer_transform_from_allowed_ips_string(GBinding *    binding,
+                                                const GValue *source_value,
+                                                GValue *      target_value,
+                                                gpointer      user_data);
+
+gboolean peer_transform_from_endpoint_string(GBinding *    binding,
+                                             const GValue *source_value,
+                                             GValue *      target_value,
+                                             gpointer      user_data);
+
+gboolean peer_transform_from_preshared_key_string(GBinding *    binding,
+                                                  const GValue *source_value,
+                                                  GValue *      target_value,
+                                                  gpointer      user_data);
+
+gboolean peer_transform_from_persistent_keepalive_string(GBinding *    binding,
+                                                         const GValue *source_value,
+                                                         GValue *      target_value,
+                                                         gpointer      user_data);
+
 #endif /* NM_EDITOR_BINDINGS_H */
