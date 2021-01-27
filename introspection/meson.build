@@ -1,9 +1,5 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
-ifaces_secret_agent_xml = files('org.freedesktop.NetworkManager.SecretAgent.xml')
-
-ifaces_vpn_plugin_xml = files('org.freedesktop.NetworkManager.VPN.Plugin.xml')
-
 ifaces = [
   'org.freedesktop.NetworkManager',
   'org.freedesktop.NetworkManager.AccessPoint',
