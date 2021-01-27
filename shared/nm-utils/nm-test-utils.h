@@ -1194,6 +1194,14 @@ nmtst_main_loop_run(GMainLoop *loop, guint timeout_msec)
     return loopx != NULL;
 }
 
+#define nmtst_main_loop_run_assert(loop, timeout_msec)    \
+    G_STMT_START                                          \
+    {                                                     \
+        if (!nmtst_main_loop_run((loop), (timeout_msec))) \
+            g_assert_not_reached();                       \
+    }                                                     \
+    G_STMT_END
+
 static inline void
 _nmtst_main_loop_quit_on_notify(GObject *object, GParamSpec *pspec, gpointer user_data)
 {

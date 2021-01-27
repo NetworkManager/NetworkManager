@@ -1364,6 +1364,59 @@ nm_g_source_attach(GSource *source, GMainContext *context)
     return source;
 }
 
+static inline GSource *
+nm_g_idle_add_source(GSourceFunc func, gpointer user_data)
+{
+    /* G convenience function to attach a new timeout source to the default GMainContext.
+     * In that sense it's very similar to g_idle_add() except that it returns a
+     * reference to the new source.  */
+    return nm_g_source_attach(nm_g_idle_source_new(G_PRIORITY_DEFAULT, func, user_data, NULL),
+                              NULL);
+}
+
+static inline GSource *
+nm_g_timeout_add_source(guint timeout_msec, GSourceFunc func, gpointer user_data)
+{
+    /* G convenience function to attach a new timeout source to the default GMainContext.
+     * In that sense it's very similar to g_timeout_add() except that it returns a
+     * reference to the new source.  */
+    return nm_g_source_attach(
+        nm_g_timeout_source_new(timeout_msec, G_PRIORITY_DEFAULT, func, user_data, NULL),
+        NULL);
+}
+
+static inline GSource *
+nm_g_timeout_add_source_seconds(guint timeout_sec, GSourceFunc func, gpointer user_data)
+{
+    /* G convenience function to attach a new timeout source to the default GMainContext.
+     * In that sense it's very similar to g_timeout_add_seconds() except that it returns a
+     * reference to the new source.  */
+    return nm_g_source_attach(
+        nm_g_timeout_source_new_seconds(timeout_sec, G_PRIORITY_DEFAULT, func, user_data, NULL),
+        NULL);
+}
+
+static inline GSource *
+nm_g_timeout_add_source_approx(guint       timeout_msec,
+                               guint       timeout_sec_threshold,
+                               GSourceFunc func,
+                               gpointer    user_data)
+{
+    GSource *source;
+
+    /* If timeout_msec is larger or equal than a threshold, then we use g_timeout_source_new_seconds()
+     * instead. */
+    if (timeout_msec / 1000u >= timeout_sec_threshold)
+        source = nm_g_timeout_source_new_seconds(timeout_msec / 1000u,
+                                                 G_PRIORITY_DEFAULT,
+                                                 func,
+                                                 user_data,
+                                                 NULL);
+    else
+        source = nm_g_timeout_source_new(timeout_msec, G_PRIORITY_DEFAULT, func, user_data, NULL);
+    return nm_g_source_attach(source, NULL);
+}
+
 NM_AUTO_DEFINE_FCN0(GMainContext *, _nm_auto_unref_gmaincontext, g_main_context_unref);
 #define nm_auto_unref_gmaincontext nm_auto(_nm_auto_unref_gmaincontext)
 

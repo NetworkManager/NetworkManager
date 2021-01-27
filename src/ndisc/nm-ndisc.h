@@ -48,48 +48,91 @@ typedef enum {
     NM_NDISC_DHCP_LEVEL_MANAGED
 } NMNDiscDHCPLevel;
 
-/* we rely on the fact that NM_NDISC_INFINITY is the largest possible
- * time duration (G_MAXUINT32) and that the range of finite values
- * goes from 0 to G_MAXUINT32-1. */
-#define NM_NDISC_INFINITY G_MAXUINT32
+#define NM_NDISC_INFINITY_U32 ((uint32_t) -1)
 
-struct _NMNDiscGateway {
+/* It's important that this is G_MAXINT64, so that we can meaningfully do
+ * MIN(e1, e2) to find the minimum expiry time (and properly handle if any
+ * of them is infinity).
+ *
+ * While usually you assign this to "expiry_msec", you might say the
+ * unit of it is milliseconds. But of course, infinity has not really a unit. */
+#define NM_NDISC_EXPIRY_INFINITY G_MAXINT64
+
+/* in common cases, the expiry_msec tracks the timestamp in nm_utils_get_monotonic_timestamp_mses()
+ * timestamp when the item expires.
+ *
+ * When we configure an NMNDiscAddress to be announced via the router advertisement,
+ * then that address does not have a fixed expiry point in time, instead, the expiry
+ * really contains the lifetime from the moment when we send the router advertisement.
+ * In that case, the expiry_msec is more a "lifetime" that starts counting at timestamp
+ * zero.
+ *
+ * The unit is milliseconds (but of course, the timestamp is zero, so it doesn't really matter). */
+#define NM_NDISC_EXPIRY_BASE_TIMESTAMP ((gint64) 0)
+
+static inline gint64
+_nm_ndisc_lifetime_to_expiry(gint64 now_msec, guint32 lifetime)
+{
+    if (lifetime == NM_NDISC_INFINITY_U32)
+        return NM_NDISC_EXPIRY_INFINITY;
+    return now_msec + (((gint64) lifetime) * 1000);
+}
+
+static inline gint64
+_nm_ndisc_lifetime_from_expiry(gint64 now_msec, gint64 expiry_msec, gboolean ceil)
+{
+    gint64 diff;
+
+    if (expiry_msec == NM_NDISC_EXPIRY_INFINITY)
+        return NM_NDISC_INFINITY_U32;
+
+    /* we don't expect nor handle integer overflow. The time stamp and expiry
+     * should be reasonably small so that it cannot happen. */
+
+    diff = expiry_msec - now_msec;
+
+    if (diff <= 0)
+        return 0;
+
+    if (ceil) {
+        /* we ceil() towards the next full second (instead of floor()). */
+        diff += 999;
+    }
+
+    return NM_MIN(diff / 1000, (gint64)(G_MAXUINT32 - 1));
+}
+
+/*****************************************************************************/
+
+typedef struct _NMNDiscGateway {
     struct in6_addr    address;
-    guint32            timestamp;
-    guint32            lifetime;
+    gint64             expiry_msec;
     NMIcmpv6RouterPref preference;
-};
-typedef struct _NMNDiscGateway NMNDiscGateway;
+} NMNDiscGateway;
 
-struct _NMNDiscAddress {
+typedef struct _NMNDiscAddress {
     struct in6_addr address;
+    gint64          expiry_msec;
+    gint64          expiry_preferred_msec;
     guint8          dad_counter;
-    guint32         timestamp;
-    guint32         lifetime;
-    guint32         preferred;
-};
-typedef struct _NMNDiscAddress NMNDiscAddress;
+} NMNDiscAddress;
 
-struct _NMNDiscRoute {
+typedef struct _NMNDiscRoute {
     struct in6_addr    network;
-    guint8             plen;
     struct in6_addr    gateway;
-    guint32            timestamp;
-    guint32            lifetime;
+    gint64             expiry_msec;
     NMIcmpv6RouterPref preference;
-};
-typedef struct _NMNDiscRoute NMNDiscRoute;
+    guint8             plen;
+} NMNDiscRoute;
 
 typedef struct {
     struct in6_addr address;
-    guint32         timestamp;
-    guint32         lifetime;
+    gint64          expiry_msec;
 } NMNDiscDNSServer;
 
 typedef struct {
-    char *  domain;
-    guint32 timestamp;
-    guint32 lifetime;
+    char * domain;
+    gint64 expiry_msec;
 } NMNDiscDNSDomain;
 
 typedef enum {
@@ -112,15 +155,17 @@ typedef enum {
     NM_NDISC_NODE_TYPE_ROUTER,
 } NMNDiscNodeType;
 
-#define NM_NDISC_MAX_ADDRESSES_DEFAULT                16
-#define NM_NDISC_ROUTER_SOLICITATIONS_DEFAULT         3 /* RFC4861 MAX_RTR_SOLICITATIONS */
-#define NM_NDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT 4 /* RFC4861 RTR_SOLICITATION_INTERVAL */
-#define NM_NDISC_ROUTER_ADVERTISEMENTS_DEFAULT        3 /* RFC4861 MAX_INITIAL_RTR_ADVERTISEMENTS */
-#define NM_NDISC_ROUTER_ADVERT_DELAY                  3 /* RFC4861 MIN_DELAY_BETWEEN_RAS */
-#define NM_NDISC_ROUTER_ADVERT_INITIAL_INTERVAL       16 /* RFC4861 MAX_INITIAL_RTR_ADVERT_INTERVAL */
-#define NM_NDISC_ROUTER_ADVERT_DELAY_MS               500 /* RFC4861 MAX_RA_DELAY_TIME */
-#define NM_NDISC_ROUTER_ADVERT_MAX_INTERVAL           600 /* RFC4861 MaxRtrAdvInterval default */
-#define NM_NDISC_ROUTER_LIFETIME                      900 /* 1.5 * NM_NDISC_ROUTER_ADVERT_MAX_INTERVAL */
+#define NM_NDISC_RFC4861_RTR_SOLICITATION_INTERVAL  4 /* seconds */
+#define NM_NDISC_RFC4861_MAX_RTR_SOLICITATION_DELAY 1 /* seconds */
+
+#define NM_NDISC_MAX_ADDRESSES_DEFAULT          16
+#define NM_NDISC_ROUTER_SOLICITATIONS_DEFAULT   3 /* RFC4861, MAX_RTR_SOLICITATIONS */
+#define NM_NDISC_ROUTER_ADVERTISEMENTS_DEFAULT  3 /* RFC4861, MAX_INITIAL_RTR_ADVERTISEMENTS */
+#define NM_NDISC_ROUTER_ADVERT_DELAY            3 /* RFC4861, MIN_DELAY_BETWEEN_RAS */
+#define NM_NDISC_ROUTER_ADVERT_INITIAL_INTERVAL 16 /* RFC4861, MAX_INITIAL_RTR_ADVERT_INTERVAL */
+#define NM_NDISC_ROUTER_ADVERT_DELAY_MS         500 /* RFC4861, MAX_RA_DELAY_TIME */
+#define NM_NDISC_ROUTER_ADVERT_MAX_INTERVAL     600 /* RFC4861, MaxRtrAdvInterval default */
+#define NM_NDISC_ROUTER_LIFETIME                900 /* 1.5 * NM_NDISC_ROUTER_ADVERT_MAX_INTERVAL */
 
 struct _NMNDiscPrivate;
 struct _NMNDiscDataInternal;

@@ -1497,12 +1497,23 @@ nm_ip6_config_reset_addresses_ndisc(NMIP6Config *         self,
     NMIP6ConfigPrivate *priv;
     guint               i;
     gboolean            changed = FALSE;
+    gint32              base_time_sec;
 
     g_return_if_fail(NM_IS_IP6_CONFIG(self));
 
     priv = NM_IP6_CONFIG_GET_PRIVATE(self);
 
     g_return_if_fail(priv->ifindex > 0);
+
+    /* the base-timestamp doesn't matter it's only an anchor for the
+     * expiry. However, try to re-use the same base-time for a while
+     * by rounding it to 10000 seconds.
+     *
+     * That is because we deduplicate and NMPlatformIP6Address instances
+     * so using the same timestamps is preferable. */
+    base_time_sec = nm_utils_get_monotonic_timestamp_sec();
+    base_time_sec = (base_time_sec / 10000) * 10000;
+    base_time_sec = NM_MAX(1, base_time_sec);
 
     nm_dedup_multi_index_dirty_set_idx(priv->multi_idx, &priv->idx_ip6_addresses);
 
@@ -1516,9 +1527,13 @@ nm_ip6_config_reset_addresses_ndisc(NMIP6Config *         self,
         a->ifindex     = priv->ifindex;
         a->address     = ndisc_addr->address;
         a->plen        = plen;
-        a->timestamp   = ndisc_addr->timestamp;
-        a->lifetime    = ndisc_addr->lifetime;
-        a->preferred   = MIN(ndisc_addr->lifetime, ndisc_addr->preferred);
+        a->timestamp   = base_time_sec,
+        a->lifetime    = _nm_ndisc_lifetime_from_expiry(((gint64) base_time_sec) * 1000,
+                                                     ndisc_addr->expiry_msec,
+                                                     TRUE),
+        a->preferred   = _nm_ndisc_lifetime_from_expiry(((gint64) base_time_sec) * 1000,
+                                                      ndisc_addr->expiry_preferred_msec,
+                                                      TRUE),
         a->addr_source = NM_IP_CONFIG_SOURCE_NDISC;
         a->n_ifa_flags = ifa_flags;
 

@@ -20,38 +20,45 @@
 
 #define _NMLOG_PREFIX_NAME "ndisc"
 
+#define RFC7559_IRT ((gint32) 4)    /* RFC7559, Initial Retransmission Time, in seconds */
+#define RFC7559_MRT ((gint32) 3600) /* RFC7559, Maximum Retransmission Time, in seconds */
+
+#define _SIZE_MAX_GATEWAYS    100u
+#define _SIZE_MAX_ADDRESSES   100u
+#define _SIZE_MAX_ROUTES      1000u
+#define _SIZE_MAX_DNS_SERVERS 64u
+#define _SIZE_MAX_DNS_DOMAINS 64u
+
 /*****************************************************************************/
 
 struct _NMNDiscPrivate {
     /* this *must* be the first field. */
     NMNDiscDataInternal rdata;
 
-    char *   last_error;
+    char *last_error;
+
     GSource *ra_timeout_source;
 
-    union {
-        gint32 solicitations_left;
-        gint32 announcements_left;
-    };
-    union {
-        guint send_rs_id;
-        guint send_ra_id;
-    };
-    union {
-        gint32 last_rs;
-        gint32 last_ra;
-    };
-    guint              timeout_id; /* prefix/dns/etc lifetime timeout */
+    gint32 announcements_left;
+    guint  send_ra_id;
+    gint32 last_ra;
+
+    gint32 solicit_retransmit_time_msec;
+
+    GSource *solicit_timer_source;
+
+    GSource *timeout_expire_source;
+
     NMUtilsIPv6IfaceId iid;
 
     /* immutable values: */
     int                           ifindex;
     char *                        ifname;
     char *                        network_id;
+    guint                         max_addresses;
     NMSettingIP6ConfigAddrGenMode addr_gen_mode;
     NMUtilsStableType             stable_type;
     guint32                       ra_timeout;
-    gint32                        max_addresses;
     gint32                        router_solicitations;
     gint32                        router_solicitation_interval;
     NMNDiscNodeType               node_type;
@@ -84,7 +91,8 @@ G_DEFINE_TYPE(NMNDisc, nm_ndisc, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
-static void _config_changed_log(NMNDisc *ndisc, NMNDiscConfigMap changed);
+static void     _config_changed_log(NMNDisc *ndisc, NMNDiscConfigMap changed);
+static gboolean timeout_expire_cb(gpointer user_data);
 
 /*****************************************************************************/
 
@@ -102,6 +110,7 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex *       multi_idx,
     guint32                                 ifa_flags;
     guint8                                  plen;
     guint                                   i;
+    const gint32                            now_sec = nm_utils_get_monotonic_timestamp_sec();
 
     l3cd = nm_l3_config_data_new(multi_idx, ifindex);
 
@@ -129,12 +138,17 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex *       multi_idx,
         NMPlatformIP6Address  a;
 
         a = (NMPlatformIP6Address){
-            .ifindex     = ifindex,
-            .address     = ndisc_addr->address,
-            .plen        = plen,
-            .timestamp   = ndisc_addr->timestamp,
-            .lifetime    = ndisc_addr->lifetime,
-            .preferred   = MIN(ndisc_addr->lifetime, ndisc_addr->preferred),
+            .ifindex   = ifindex,
+            .address   = ndisc_addr->address,
+            .plen      = plen,
+            .timestamp = now_sec,
+            .lifetime  = _nm_ndisc_lifetime_from_expiry(((gint64) now_sec) * 1000,
+                                                       ndisc_addr->expiry_msec,
+                                                       TRUE),
+            .preferred = _nm_ndisc_lifetime_from_expiry(
+                ((gint64) now_sec) * 1000,
+                NM_MIN(ndisc_addr->expiry_msec, ndisc_addr->expiry_preferred_msec),
+                TRUE),
             .addr_source = NM_IP_CONFIG_SOURCE_NDISC,
             .n_ifa_flags = ifa_flags,
         };
@@ -220,77 +234,40 @@ _preference_to_priority(NMIcmpv6RouterPref pref)
 
 /*****************************************************************************/
 
-/* we rely on the fact, that _EXPIRY_INFINITY > any other valid gint64 timestamps. */
-#define _EXPIRY_INFINITY G_MAXINT64
-
-static gint64
-get_expiry_time(guint32 timestamp, guint32 lifetime)
-{
-    nm_assert(timestamp > 0);
-    nm_assert(timestamp <= G_MAXINT32);
-
-    if (lifetime == NM_NDISC_INFINITY)
-        return _EXPIRY_INFINITY;
-    return ((gint64) timestamp) + ((gint64) lifetime);
-}
-
-#define get_expiry(item)                                    \
-    ({                                                      \
-        typeof(item) _item = (item);                        \
-        nm_assert(_item);                                   \
-        get_expiry_time(_item->timestamp, _item->lifetime); \
-    })
-
-#define get_expiry_half(item)                                         \
-    ({                                                                \
-        typeof(item) _item = (item);                                  \
-        nm_assert(_item);                                             \
-        (_item->lifetime == NM_NDISC_INFINITY)                        \
-            ? _EXPIRY_INFINITY                                        \
-            : get_expiry_time(_item->timestamp, _item->lifetime / 2); \
-    })
-
-#define get_expiry_preferred(item)                           \
-    ({                                                       \
-        typeof(item) _item = (item);                         \
-        nm_assert(_item);                                    \
-        get_expiry_time(_item->timestamp, _item->preferred); \
-    })
-
 static gboolean
-expiry_next(gint32 now_s, gint64 expiry_timestamp, gint32 *nextevent)
+expiry_next(gint64 now_msec, gint64 expiry_msec, gint64 *next_msec)
 {
-    gint32 e;
-
-    if (expiry_timestamp == _EXPIRY_INFINITY)
+    if (expiry_msec == NM_NDISC_EXPIRY_INFINITY)
         return TRUE;
-    e = MIN(expiry_timestamp, ((gint64)(G_MAXINT32 - 1)));
-    if (now_s >= e)
+
+    if (expiry_msec <= now_msec) {
+        /* expired. */
         return FALSE;
-    if (nextevent) {
-        if (*nextevent > e)
-            *nextevent = e;
     }
+
+    if (next_msec) {
+        if (*next_msec > expiry_msec)
+            *next_msec = expiry_msec;
+    }
+
+    /* the timestamp is good (not yet expired) */
     return TRUE;
 }
 
 static const char *
-_get_exp(char *buf, gsize buf_size, gint64 now_ns, gint64 expiry_time)
+_get_exp(char *buf, gsize buf_size, gint64 now_msec, gint64 expiry_time)
 {
     int l;
 
-    if (expiry_time == _EXPIRY_INFINITY)
+    if (expiry_time == NM_NDISC_EXPIRY_INFINITY)
         return "permanent";
-    l = g_snprintf(buf,
-                   buf_size,
-                   "%.4f",
-                   ((double) ((expiry_time * NM_UTILS_NSEC_PER_SEC) - now_ns))
-                       / ((double) NM_UTILS_NSEC_PER_SEC));
+    l = g_snprintf(buf, buf_size, "%.3f", ((double) (expiry_time - now_msec)) / 1000);
     nm_assert(l < buf_size);
     return buf;
 }
 
-#define get_exp(buf, now_ns, item) _get_exp((buf), G_N_ELEMENTS(buf), (now_ns), (get_expiry(item)))
+#define get_exp(buf, now_msec, item) \
+    _get_exp((buf), G_N_ELEMENTS(buf), (now_msec), (item)->expiry_msec)
 
 /*****************************************************************************/
 
@@ -361,17 +338,16 @@ _ASSERT_data_gateways(const NMNDiscDataInternal *data)
         const NMNDiscGateway *item = &g_array_index(data->gateways, NMNDiscGateway, i);
 
         nm_assert(!IN6_IS_ADDR_UNSPECIFIED(&item->address));
-        nm_assert(item->timestamp > 0 && item->timestamp <= G_MAXINT32);
         for (j = 0; j < i; j++) {
             const NMNDiscGateway *item2 = &g_array_index(data->gateways, NMNDiscGateway, j);
 
             nm_assert(!IN6_ARE_ADDR_EQUAL(&item->address, &item2->address));
         }
 
-        nm_assert(item->lifetime > 0);
-        if (i > 0)
+        if (i > 0) {
             nm_assert(_preference_to_priority(item_prev->preference)
                       >= _preference_to_priority(item->preference));
+        }
 
         item_prev = item;
     }
@@ -417,7 +393,7 @@ nm_ndisc_emit_config_change(NMNDisc *self, NMNDiscConfigMap changed)
 /*****************************************************************************/
 
 gboolean
-nm_ndisc_add_gateway(NMNDisc *ndisc, const NMNDiscGateway *new)
+nm_ndisc_add_gateway(NMNDisc *ndisc, const NMNDiscGateway *new_item, gint64 now_msec)
 {
     NMNDiscDataInternal *rdata = &NM_NDISC_GET_PRIVATE(ndisc)->rdata;
     guint                i;
@@ -426,41 +402,46 @@ nm_ndisc_add_gateway(NMNDisc *ndisc, const NMNDiscGateway *new)
     for (i = 0; i < rdata->gateways->len;) {
         NMNDiscGateway *item = &g_array_index(rdata->gateways, NMNDiscGateway, i);
 
-        if (IN6_ARE_ADDR_EQUAL(&item->address, &new->address)) {
-            if (new->lifetime == 0) {
+        if (IN6_ARE_ADDR_EQUAL(&item->address, &new_item->address)) {
+            if (new_item->expiry_msec <= now_msec) {
                 g_array_remove_index(rdata->gateways, i);
                 _ASSERT_data_gateways(rdata);
                 return TRUE;
             }
 
-            if (item->preference != new->preference) {
+            if (item->preference != new_item->preference) {
                 g_array_remove_index(rdata->gateways, i);
                 continue;
             }
 
-            if (get_expiry(item) == get_expiry(new))
+            if (item->expiry_msec == new_item->expiry_msec)
                 return FALSE;
 
-            *item = *new;
+            item->expiry_msec = new_item->expiry_msec;
             _ASSERT_data_gateways(rdata);
             return TRUE;
         }
 
         /* Put before less preferable gateways. */
-        if (_preference_to_priority(item->preference) < _preference_to_priority(new->preference)
+        if (_preference_to_priority(item->preference)
+                < _preference_to_priority(new_item->preference)
             && insert_idx == G_MAXUINT)
             insert_idx = i;
 
         i++;
     }
 
-    if (new->lifetime) {
-        g_array_insert_val(rdata->gateways,
-                           insert_idx == G_MAXUINT ? rdata->gateways->len : insert_idx,
-                           *new);
-    }
+    if (rdata->gateways->len >= _SIZE_MAX_GATEWAYS)
+        return FALSE;
+
+    if (new_item->expiry_msec <= now_msec)
+        return FALSE;
+
+    g_array_insert_val(rdata->gateways,
+                       insert_idx == G_MAXUINT ? rdata->gateways->len : insert_idx,
+                       *new_item);
     _ASSERT_data_gateways(rdata);
-    return !!new->lifetime;
+    return TRUE;
 }
 
 /**
@@ -513,25 +494,27 @@ complete_address(NMNDisc *ndisc, NMNDiscAddress *addr)
         return TRUE;
     }
 
-    _LOGW("complete-address: can't generate a new EUI-64 address");
+    _LOGW("complete-address: can't generate a new_item EUI-64 address");
     return FALSE;
 }
 
 static gboolean
-nm_ndisc_add_address(NMNDisc *ndisc, const NMNDiscAddress *new, gint32 now_s, gboolean from_ra)
+nm_ndisc_add_address(NMNDisc *             ndisc,
+                     const NMNDiscAddress *new_item,
+                     gint64                now_msec,
+                     gboolean              from_ra)
 {
     NMNDiscPrivate *     priv  = NM_NDISC_GET_PRIVATE(ndisc);
     NMNDiscDataInternal *rdata = &priv->rdata;
-    NMNDiscAddress       new2;
+    NMNDiscAddress *     new2;
     NMNDiscAddress *     existing = NULL;
     guint                i;
 
-    nm_assert(new);
-    nm_assert(new->timestamp > 0 && new->timestamp < G_MAXINT32);
-    nm_assert(!IN6_IS_ADDR_UNSPECIFIED(&new->address));
-    nm_assert(!IN6_IS_ADDR_LINKLOCAL(&new->address));
-    nm_assert(new->preferred <= new->lifetime);
-    nm_assert(!from_ra || now_s > 0);
+    nm_assert(new_item);
+    nm_assert(!IN6_IS_ADDR_UNSPECIFIED(&new_item->address));
+    nm_assert(!IN6_IS_ADDR_LINKLOCAL(&new_item->address));
+    nm_assert(new_item->expiry_preferred_msec <= new_item->expiry_msec);
+    nm_assert((!!from_ra) == (now_msec > 0));
 
     for (i = 0; i < rdata->addresses->len; i++) {
         NMNDiscAddress *item = &g_array_index(rdata->addresses, NMNDiscAddress, i);
@@ -539,12 +522,12 @@ nm_ndisc_add_address(NMNDisc *ndisc, const NMNDiscAddress *new, gint32 now_s, gb
         if (from_ra) {
             /* RFC4862 5.5.3.d, we find an existing address with the same prefix.
              * (note that all prefixes at this point have implicitly length /64). */
-            if (memcmp(&item->address, &new->address, 8) == 0) {
+            if (memcmp(&item->address, &new_item->address, 8) == 0) {
                 existing = item;
                 break;
             }
         } else {
-            if (IN6_ARE_ADDR_EQUAL(&item->address, &new->address)) {
+            if (IN6_ARE_ADDR_EQUAL(&item->address, &new_item->address)) {
                 existing = item;
                 break;
             }
@@ -552,67 +535,60 @@ nm_ndisc_add_address(NMNDisc *ndisc, const NMNDiscAddress *new, gint32 now_s, gb
     }
 
     if (existing) {
+        gint64 new_expiry_preferred_msec;
+        gint64 new_expiry_msec;
+
         if (from_ra) {
-            const gint32 NM_NDISC_PREFIX_LFT_MIN = 7200; /* seconds, RFC4862 5.5.3.e */
-            gint64       old_expiry_lifetime, old_expiry_preferred;
-
-            old_expiry_lifetime  = get_expiry(existing);
-            old_expiry_preferred = get_expiry_preferred(existing);
-
-            if (new->lifetime == NM_NDISC_INFINITY)
-                existing->lifetime = NM_NDISC_INFINITY;
+            if (new_item->expiry_msec == NM_NDISC_EXPIRY_INFINITY)
+                new_expiry_msec = NM_NDISC_EXPIRY_INFINITY;
             else {
-                gint64 new_lifetime, remaining_lifetime;
+                const gint64 NDISC_PREFIX_LFT_MIN_MSEC = 7200 * 1000; /* RFC4862 5.5.3.e */
+                gint64       new_lifetime;
+                gint64       existing_lifetime;
+
+                new_lifetime = new_item->expiry_msec - now_msec;
+                if (existing->expiry_msec == NM_NDISC_EXPIRY_INFINITY)
+                    existing_lifetime = G_MAXINT64;
+                else
+                    existing_lifetime = existing->expiry_msec - now_msec;
 
                 /* see RFC4862 5.5.3.e */
-                if (existing->lifetime == NM_NDISC_INFINITY)
-                    remaining_lifetime = G_MAXINT64;
-                else
-                    remaining_lifetime = ((gint64) existing->timestamp)
-                                         + ((gint64) existing->lifetime) - ((gint64) now_s);
-                new_lifetime =
-                    ((gint64) new->timestamp) + ((gint64) new->lifetime) - ((gint64) now_s);
-
-                if (new_lifetime > (gint64) NM_NDISC_PREFIX_LFT_MIN
-                    || new_lifetime > remaining_lifetime) {
-                    existing->timestamp = now_s;
-                    existing->lifetime = CLAMP(new_lifetime, (gint64) 0, (gint64)(G_MAXUINT32 - 1));
-                } else if (remaining_lifetime <= (gint64) NM_NDISC_PREFIX_LFT_MIN) {
+                if (new_lifetime >= NDISC_PREFIX_LFT_MIN_MSEC
+                    || new_lifetime >= existing_lifetime) {
+                    /* either extend the lifetime of the new_item lifetime is longer than
+                     * NDISC_PREFIX_LFT_MIN_MSEC. */
+                    new_expiry_msec = new_item->expiry_msec;
+                } else if (existing_lifetime <= NDISC_PREFIX_LFT_MIN_MSEC) {
                     /* keep the current lifetime. */
+                    new_expiry_msec = existing->expiry_msec;
                 } else {
-                    existing->timestamp = now_s;
-                    existing->lifetime  = NM_NDISC_PREFIX_LFT_MIN;
+                    /* trim the current lifetime to NDISC_PREFIX_LFT_MIN_MSEC. */
+                    new_expiry_msec = now_msec + NDISC_PREFIX_LFT_MIN_MSEC;
                 }
             }
 
-            if (new->preferred == NM_NDISC_INFINITY) {
-                nm_assert(existing->lifetime == NM_NDISC_INFINITY);
-                existing->preferred = new->preferred;
-            } else {
-                existing->preferred = NM_CLAMP(((gint64) new->timestamp) + ((gint64) new->preferred)
-                                                   - ((gint64) existing->timestamp),
-                                               0,
-                                               G_MAXUINT32 - 1);
-                if (existing->lifetime != NM_NDISC_INFINITY)
-                    existing->preferred = MIN(existing->preferred, existing->lifetime);
+            new_expiry_preferred_msec =
+                NM_MIN(new_item->expiry_preferred_msec, new_item->expiry_msec);
+            new_expiry_preferred_msec = NM_MIN(new_expiry_preferred_msec, new_expiry_msec);
+        } else {
+            if (new_item->expiry_msec <= now_msec) {
+                g_array_remove_index(rdata->addresses, i);
+                return TRUE;
             }
 
-            return old_expiry_lifetime != get_expiry(existing)
-                   || old_expiry_preferred != get_expiry_preferred(existing);
+            new_expiry_msec = new_item->expiry_msec;
+            new_expiry_preferred_msec =
+                NM_MIN(new_item->expiry_preferred_msec, new_item->expiry_msec);
         }
 
-        if (new->lifetime == 0) {
-            g_array_remove_index(rdata->addresses, i);
-            return TRUE;
-        }
-
-        if (get_expiry(existing) == get_expiry(new)
-            && get_expiry_preferred(existing) == get_expiry_preferred(new))
+        /* the dad_counter does not get modified. */
+        if (new_expiry_msec == existing->expiry_msec
+            && new_expiry_preferred_msec == existing->expiry_preferred_msec) {
             return FALSE;
+        }
 
-        existing->timestamp = new->timestamp;
-        existing->lifetime  = new->lifetime;
-        existing->preferred = new->preferred;
+        existing->expiry_msec           = new_expiry_msec;
+        existing->expiry_preferred_msec = new_expiry_preferred_msec;
         return TRUE;
     }
 
@@ -620,39 +596,45 @@ nm_ndisc_add_address(NMNDisc *ndisc, const NMNDiscAddress *new, gint32 now_s, gb
      * what the kernel does, because it considers *all* addresses (including
      * static and other temporary addresses).
      **/
-    if (priv->max_addresses && rdata->addresses->len >= priv->max_addresses)
+    if (rdata->addresses->len >= priv->max_addresses)
         return FALSE;
 
-    if (new->lifetime == 0)
+    if (new_item->expiry_msec <= now_msec)
         return FALSE;
+
+    new2 = nm_g_array_append_new(rdata->addresses, NMNDiscAddress);
+
+    *new2 = *new_item;
+
+    new2->expiry_preferred_msec = NM_MIN(new2->expiry_preferred_msec, new2->expiry_msec);
 
     if (from_ra) {
-        new2             = *new;
-        new2.dad_counter = 0;
-        if (!complete_address(ndisc, &new2))
+        new2->dad_counter = 0;
+        if (!complete_address(ndisc, new2)) {
+            g_array_set_size(rdata->addresses, rdata->addresses->len - 1);
             return FALSE;
-        new = &new2;
+        }
     }
 
-    g_array_append_val(rdata->addresses, *new);
     return TRUE;
 }
 
 gboolean
-nm_ndisc_complete_and_add_address(NMNDisc *ndisc, const NMNDiscAddress *new, gint32 now_s)
+nm_ndisc_complete_and_add_address(NMNDisc *ndisc, const NMNDiscAddress *new_item, gint64 now_msec)
 {
-    return nm_ndisc_add_address(ndisc, new, now_s, TRUE);
+    return nm_ndisc_add_address(ndisc, new_item, now_msec, TRUE);
 }
 
 gboolean
-nm_ndisc_add_route(NMNDisc *ndisc, const NMNDiscRoute *new)
+nm_ndisc_add_route(NMNDisc *ndisc, const NMNDiscRoute *new_item, gint64 now_msec)
 {
     NMNDiscPrivate *     priv;
     NMNDiscDataInternal *rdata;
     guint                i;
     guint                insert_idx = G_MAXUINT;
+    gboolean             changed    = FALSE;
 
-    if (new->plen == 0 || new->plen > 128) {
+    if (new_item->plen == 0 || new_item->plen > 128) {
         /* Only expect non-default routes.  The router has no idea what the
          * local configuration or user preferences are, so sending routes
          * with a prefix length of 0 must be ignored by NMNDisc.
@@ -669,41 +651,51 @@ nm_ndisc_add_route(NMNDisc *ndisc, const NMNDiscRoute *new)
     for (i = 0; i < rdata->routes->len;) {
         NMNDiscRoute *item = &g_array_index(rdata->routes, NMNDiscRoute, i);
 
-        if (IN6_ARE_ADDR_EQUAL(&item->network, &new->network) && item->plen == new->plen) {
-            if (new->lifetime == 0) {
+        if (IN6_ARE_ADDR_EQUAL(&item->network, &new_item->network)
+            && item->plen == new_item->plen) {
+            if (new_item->expiry_msec <= now_msec) {
                 g_array_remove_index(rdata->routes, i);
                 return TRUE;
             }
 
-            if (item->preference != new->preference) {
+            if (item->preference != new_item->preference) {
                 g_array_remove_index(rdata->routes, i);
+                changed = TRUE;
                 continue;
             }
 
-            if (get_expiry(item) == get_expiry(new)
-                && IN6_ARE_ADDR_EQUAL(&item->gateway, &new->gateway))
+            if (item->expiry_msec == new_item->expiry_msec
+                && IN6_ARE_ADDR_EQUAL(&item->gateway, &new_item->gateway))
                 return FALSE;
 
-            *item = *new;
+            item->expiry_msec = new_item->expiry_msec;
+            item->gateway     = new_item->gateway;
             return TRUE;
         }
 
         /* Put before less preferable routes. */
-        if (_preference_to_priority(item->preference) < _preference_to_priority(new->preference)
+        if (_preference_to_priority(item->preference)
+                < _preference_to_priority(new_item->preference)
             && insert_idx == G_MAXUINT)
             insert_idx = i;
 
         i++;
     }
 
-    if (new->lifetime) {
-        g_array_insert_val(rdata->routes, insert_idx == G_MAXUINT ? 0u : insert_idx, *new);
+    if (rdata->routes->len >= _SIZE_MAX_ROUTES)
+        return FALSE;
+
+    if (new_item->expiry_msec <= now_msec) {
+        nm_assert(!changed);
+        return FALSE;
     }
-    return !!new->lifetime;
+
+    g_array_insert_val(rdata->routes, insert_idx == G_MAXUINT ? 0u : insert_idx, *new_item);
+    return TRUE;
 }
 
 gboolean
-nm_ndisc_add_dns_server(NMNDisc *ndisc, const NMNDiscDNSServer *new)
+nm_ndisc_add_dns_server(NMNDisc *ndisc, const NMNDiscDNSServer *new_item, gint64 now_msec)
 {
     NMNDiscPrivate *     priv;
     NMNDiscDataInternal *rdata;
@@ -715,28 +707,33 @@ nm_ndisc_add_dns_server(NMNDisc *ndisc, const NMNDiscDNSServer *new)
     for (i = 0; i < rdata->dns_servers->len; i++) {
         NMNDiscDNSServer *item = &g_array_index(rdata->dns_servers, NMNDiscDNSServer, i);
 
-        if (IN6_ARE_ADDR_EQUAL(&item->address, &new->address)) {
-            if (new->lifetime == 0) {
+        if (IN6_ARE_ADDR_EQUAL(&item->address, &new_item->address)) {
+            if (new_item->expiry_msec <= now_msec) {
                 g_array_remove_index(rdata->dns_servers, i);
                 return TRUE;
             }
 
-            if (get_expiry(item) == get_expiry(new))
+            if (item->expiry_msec == new_item->expiry_msec)
                 return FALSE;
 
-            *item = *new;
+            item->expiry_msec = new_item->expiry_msec;
             return TRUE;
         }
     }
 
-    if (new->lifetime)
-        g_array_append_val(rdata->dns_servers, *new);
-    return !!new->lifetime;
+    if (rdata->dns_servers->len >= _SIZE_MAX_DNS_SERVERS)
+        return FALSE;
+
+    if (new_item->expiry_msec <= now_msec)
+        return FALSE;
+
+    g_array_append_val(rdata->dns_servers, *new_item);
+    return TRUE;
 }
 
-/* Copies new->domain if 'new' is added to the dns_domains list */
+/* Copies new_item->domain if 'new_item' is added to the dns_domains list */
 gboolean
-nm_ndisc_add_dns_domain(NMNDisc *ndisc, const NMNDiscDNSDomain *new)
+nm_ndisc_add_dns_domain(NMNDisc *ndisc, const NMNDiscDNSDomain *new_item, gint64 now_msec)
 {
     NMNDiscPrivate *     priv;
     NMNDiscDataInternal *rdata;
@@ -749,100 +746,154 @@ nm_ndisc_add_dns_domain(NMNDisc *ndisc, const NMNDiscDNSDomain *new)
     for (i = 0; i < rdata->dns_domains->len; i++) {
         item = &g_array_index(rdata->dns_domains, NMNDiscDNSDomain, i);
 
-        if (!g_strcmp0(item->domain, new->domain)) {
-            if (new->lifetime == 0) {
+        if (nm_streq(item->domain, new_item->domain)) {
+            if (new_item->expiry_msec <= now_msec) {
                 g_array_remove_index(rdata->dns_domains, i);
                 return TRUE;
             }
 
-            if (get_expiry(item) == get_expiry(new))
+            if (item->expiry_msec == new_item->expiry_msec)
                 return FALSE;
 
-            item->timestamp = new->timestamp;
-            item->lifetime  = new->lifetime;
+            item->expiry_msec = new_item->expiry_msec;
             return TRUE;
         }
     }
 
-    if (new->lifetime) {
-        g_array_append_val(rdata->dns_domains, *new);
-        item = &g_array_index(rdata->dns_domains, NMNDiscDNSDomain, rdata->dns_domains->len - 1);
-        item->domain = g_strdup(new->domain);
-    }
-    return !!new->lifetime;
+    if (rdata->dns_domains->len >= _SIZE_MAX_DNS_DOMAINS)
+        return FALSE;
+
+    if (new_item->expiry_msec <= now_msec)
+        return FALSE;
+
+    item  = nm_g_array_append_new(rdata->dns_domains, NMNDiscDNSDomain);
+    *item = (NMNDiscDNSDomain){
+        .domain      = g_strdup(new_item->domain),
+        .expiry_msec = new_item->expiry_msec,
+    };
+    return TRUE;
 }
 
 /*****************************************************************************/
 
-#define _MAYBE_WARN(...)                                                       \
-    G_STMT_START                                                               \
-    {                                                                          \
-        gboolean _different_message;                                           \
-                                                                               \
-        _different_message = g_strcmp0(priv->last_error, error->message) != 0; \
-        _NMLOG(_different_message ? LOGL_WARN : LOGL_DEBUG, __VA_ARGS__);      \
-        if (_different_message) {                                              \
-            nm_clear_g_free(&priv->last_error);                                \
-            priv->last_error = g_strdup(error->message);                       \
-        }                                                                      \
-    }                                                                          \
+#define _MAYBE_WARN(...)                                                   \
+    G_STMT_START                                                           \
+    {                                                                      \
+        gboolean _different_message;                                       \
+                                                                           \
+        _different_message = !nm_streq0(priv->last_error, error->message); \
+        _NMLOG(_different_message ? LOGL_WARN : LOGL_DEBUG, __VA_ARGS__);  \
+        if (_different_message) {                                          \
+            nm_clear_g_free(&priv->last_error);                            \
+            priv->last_error = g_strdup(error->message);                   \
+        }                                                                  \
+    }                                                                      \
     G_STMT_END
 
-static gboolean
-send_rs_timeout(NMNDisc *ndisc)
+static gint32
+solicit_retransmit_time_jitter(gint32 solicit_retransmit_time_msec)
 {
-    nm_auto_pop_netns NMPNetns *netns = NULL;
-    NMNDiscClass *              klass = NM_NDISC_GET_CLASS(ndisc);
-    NMNDiscPrivate *            priv  = NM_NDISC_GET_PRIVATE(ndisc);
-    GError *                    error = NULL;
+    gint32 ten_percent;
 
-    priv->send_rs_id = 0;
+    nm_assert(solicit_retransmit_time_msec > 0);
+    nm_assert(solicit_retransmit_time_msec < 3 * RFC7559_MRT * 1000);
 
-    if (!nm_ndisc_netns_push(ndisc, &netns))
-        return G_SOURCE_REMOVE;
+    /* Add a ±10% jitter.
+     *
+     * This is the "RAND" parameter from https://tools.ietf.org/html/rfc3315#section-14
+     * as requested by RFC7559.  */
 
-    if (klass->send_rs(ndisc, &error)) {
-        _LOGD("router solicitation sent");
-        priv->solicitations_left--;
+    ten_percent = NM_MAX(1, solicit_retransmit_time_msec / 10);
+
+    return solicit_retransmit_time_msec - ten_percent
+           + ((gint32)(g_random_int() % (2u * ((guint32) ten_percent))));
+}
+
+static gboolean
+solicit_timer_cb(gpointer user_data)
+{
+    const gint32      TIMEOUT_APPROX_THRESHOLD_SEC = 10000;
+    nm_auto_pop_netns NMPNetns *netns              = NULL;
+    NMNDisc *                   ndisc              = user_data;
+    NMNDiscClass *              klass              = NM_NDISC_GET_CLASS(ndisc);
+    NMNDiscPrivate *            priv               = NM_NDISC_GET_PRIVATE(ndisc);
+    gs_free_error GError *error                    = NULL;
+    gint32                timeout_msec;
+
+    if (!nm_ndisc_netns_push(ndisc, &netns)) {
+        nm_utils_error_set(&error,
+                           NM_UTILS_ERROR_UNKNOWN,
+                           "failure to switch netns for soliciting routers");
+    } else
+        klass->send_rs(ndisc, &error);
+
+    if (error)
+        _MAYBE_WARN("solicit: failure sending router solicitation: %s", error->message);
+    else {
+        _LOGT("solicit: router solicitation sent");
         nm_clear_g_free(&priv->last_error);
-    } else {
-        _MAYBE_WARN("failure sending router solicitation: %s", error->message);
-        g_clear_error(&error);
     }
 
-    priv->last_rs = nm_utils_get_monotonic_timestamp_sec();
-    if (priv->solicitations_left > 0) {
-        _LOGD("scheduling router solicitation retry in %d seconds.",
-              (int) priv->router_solicitation_interval);
-        priv->send_rs_id = g_timeout_add_seconds(priv->router_solicitation_interval,
-                                                 (GSourceFunc) send_rs_timeout,
-                                                 ndisc);
+    /* https://tools.ietf.org/html/rfc4861#section-6.3.7 describes how to send solicitations:
+     *
+     *   > ... a host SHOULD transmit up to MAX_RTR_SOLICITATIONS Router Solicitation messages,
+     *   > each separated by at least RTR_SOLICITATION_INTERVAL seconds.
+     *
+     * but this was extended by https://tools.ietf.org/html/rfc7559#section-2 to send continuously
+     * and with exponential backoff (detailed the algorithm in https://tools.ietf.org/html/rfc3315#section-14).
+     * We do RFC7559.
+     */
+    if (priv->solicit_retransmit_time_msec == 0) {
+        G_STATIC_ASSERT(RFC7559_IRT == NM_NDISC_RFC4861_RTR_SOLICITATION_INTERVAL);
+        priv->solicit_retransmit_time_msec = solicit_retransmit_time_jitter(RFC7559_IRT * 1000);
+        timeout_msec                       = priv->solicit_retransmit_time_msec;
     } else {
-        _LOGD("did not receive a router advertisement after %d solicitations.",
-              (int) priv->router_solicitations);
+        priv->solicit_retransmit_time_msec +=
+            solicit_retransmit_time_jitter(priv->solicit_retransmit_time_msec);
+        timeout_msec = priv->solicit_retransmit_time_msec;
+        if (priv->solicit_retransmit_time_msec > RFC7559_MRT * 1000) {
+            priv->solicit_retransmit_time_msec = RFC7559_MRT * 1000;
+            timeout_msec = solicit_retransmit_time_jitter(priv->solicit_retransmit_time_msec);
+        }
     }
 
-    return G_SOURCE_REMOVE;
+    _LOGD("solicit: schedule sending next solicitation in%s %.3f seconds",
+          timeout_msec / 1000 >= TIMEOUT_APPROX_THRESHOLD_SEC ? " about" : "",
+          ((double) timeout_msec) / 1000);
+
+    nm_clear_g_source_inst(&priv->solicit_timer_source);
+    priv->solicit_timer_source = nm_g_timeout_add_source_approx(timeout_msec,
+                                                                TIMEOUT_APPROX_THRESHOLD_SEC,
+                                                                solicit_timer_cb,
+                                                                ndisc);
+    return G_SOURCE_CONTINUE;
 }
 
 static void
-solicit_routers(NMNDisc *ndisc)
+solicit_timer_start(NMNDisc *ndisc)
 {
     NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE(ndisc);
-    gint32          now, next;
-    gint64          t;
+    gint32          delay_msec;
 
-    if (priv->send_rs_id)
-        return;
+    /* rfc4861, Section 6.3.7:
+     *
+     * We should randomly wait up to NM_NDISC_RFC4861_MAX_RTR_SOLICITATION_DELAY (1 second)
+     * before sending the first RS. RFC4861 is from 2007, I don't think 1 second is
+     * a suitable delay in 2021. Wait only up to 250 msec instead. */
 
-    now                      = nm_utils_get_monotonic_timestamp_sec();
-    priv->solicitations_left = priv->router_solicitations;
+    delay_msec =
+        g_random_int() % ((guint32)(NM_NDISC_RFC4861_MAX_RTR_SOLICITATION_DELAY * 1000 / 4));
 
-    t    = (((gint64) priv->last_rs) + priv->router_solicitation_interval) - now;
-    next = CLAMP(t, 0, G_MAXINT32);
-    _LOGD("scheduling explicit router solicitation request in %" G_GINT32_FORMAT " seconds.", next);
-    priv->send_rs_id = g_timeout_add_seconds((guint32) next, (GSourceFunc) send_rs_timeout, ndisc);
+    _LOGD("solicit: schedule sending first solicitation (of %d) in %.3f seconds",
+          priv->router_solicitations,
+          ((double) delay_msec) / 1000);
+
+    priv->solicit_retransmit_time_msec = 0;
+    nm_clear_g_source_inst(&priv->solicit_timer_source);
+    priv->solicit_timer_source = nm_g_timeout_add_source(delay_msec, solicit_timer_cb, ndisc);
 }
+
+/*****************************************************************************/
 
 static gboolean
 announce_router(NMNDisc *ndisc)
@@ -946,12 +997,16 @@ nm_ndisc_set_config(NMNDisc *     ndisc,
     }
 
     for (i = 0; i < dns_servers->len; i++) {
-        if (nm_ndisc_add_dns_server(ndisc, &g_array_index(dns_servers, NMNDiscDNSServer, i)))
+        if (nm_ndisc_add_dns_server(ndisc,
+                                    &g_array_index(dns_servers, NMNDiscDNSServer, i),
+                                    G_MININT64))
             changed = TRUE;
     }
 
     for (i = 0; i < dns_domains->len; i++) {
-        if (nm_ndisc_add_dns_domain(ndisc, &g_array_index(dns_domains, NMNDiscDNSDomain, i)))
+        if (nm_ndisc_add_dns_domain(ndisc,
+                                    &g_array_index(dns_domains, NMNDiscDNSDomain, i),
+                                    G_MININT64))
             changed = TRUE;
     }
 
@@ -999,7 +1054,7 @@ nm_ndisc_set_iid(NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid)
             _LOGD("IPv6 interface identifier changed, flushing addresses");
             g_array_remove_range(rdata->addresses, 0, rdata->addresses->len);
             nm_ndisc_emit_config_change(ndisc, NM_NDISC_CONFIG_ADDRESSES);
-            solicit_routers(ndisc);
+            solicit_timer_start(ndisc);
         }
         return TRUE;
     }
@@ -1008,13 +1063,13 @@ nm_ndisc_set_iid(NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid)
 }
 
 static gboolean
-ndisc_ra_timeout_cb(gpointer user_data)
+ra_timeout_cb(gpointer user_data)
 {
     NMNDisc *ndisc = NM_NDISC(user_data);
 
     nm_clear_g_source_inst(&NM_NDISC_GET_PRIVATE(ndisc)->ra_timeout_source);
     g_signal_emit(ndisc, signals[RA_TIMEOUT_SIGNAL], 0);
-    return G_SOURCE_REMOVE;
+    return G_SOURCE_CONTINUE;
 }
 
 void
@@ -1053,15 +1108,10 @@ nm_ndisc_start(NMNDisc *ndisc)
                 timeout_msec = priv->ra_timeout * 1000u;
             else
                 timeout_msec = G_MAXUINT;
-            priv->ra_timeout_source = nm_g_timeout_source_new(timeout_msec,
-                                                              G_PRIORITY_DEFAULT,
-                                                              ndisc_ra_timeout_cb,
-                                                              ndisc,
-                                                              NULL);
-            g_source_attach(priv->ra_timeout_source, NULL);
+            priv->ra_timeout_source = nm_g_timeout_add_source(timeout_msec, ra_timeout_cb, ndisc);
         }
 
-        solicit_routers(ndisc);
+        solicit_timer_start(ndisc);
         return;
     }
 
@@ -1099,20 +1149,16 @@ nm_ndisc_stop(NMNDisc *ndisc)
     g_array_set_size(rdata->dns_domains, 0);
     priv->rdata.public.hop_limit = 64;
 
-    /* Start at very low number so that last_rs - router_solicitation_interval
-     * is much lower than nm_utils_get_monotonic_timestamp_sec() at startup.
-     */
-    priv->last_rs = G_MININT32;
     nm_clear_g_source_inst(&priv->ra_timeout_source);
-    nm_clear_g_source(&priv->send_rs_id);
     nm_clear_g_source(&priv->send_ra_id);
     nm_clear_g_free(&priv->last_error);
-    nm_clear_g_source(&priv->timeout_id);
+    nm_clear_g_source_inst(&priv->timeout_expire_source);
 
-    priv->solicitations_left = 0;
+    priv->solicit_retransmit_time_msec = 0;
+    nm_clear_g_source_inst(&priv->solicit_timer_source);
+
     priv->announcements_left = 0;
 
-    priv->last_rs = G_MININT32;
     priv->last_ra = G_MININT32;
 }
 
@@ -1189,15 +1235,15 @@ _config_changed_log(NMNDisc *ndisc, NMNDiscConfigMap changed)
     NMNDiscDataInternal *rdata;
     guint                i;
     char                 changedstr[CONFIG_MAP_MAX_STR];
-    char                 addrstr[INET6_ADDRSTRLEN];
+    char                 addrstr[NM_UTILS_INET_ADDRSTRLEN];
     char                 str_pref[35];
     char                 str_exp[100];
-    gint64               now_ns;
+    gint64               now_msec;
 
     if (!_LOGD_ENABLED())
         return;
 
-    now_ns = nm_utils_get_monotonic_timestamp_nsec();
+    now_msec = nm_utils_get_monotonic_timestamp_msec();
 
     priv  = NM_NDISC_GET_PRIVATE(ndisc);
     rdata = &priv->rdata;
@@ -1214,215 +1260,300 @@ _config_changed_log(NMNDisc *ndisc, NMNDiscConfigMap changed)
         _LOGD("  retrans timer  : %u", (guint) rdata->public.retrans_timer_ms);
 
     for (i = 0; i < rdata->gateways->len; i++) {
-        NMNDiscGateway *gateway = &g_array_index(rdata->gateways, NMNDiscGateway, i);
+        const NMNDiscGateway *gateway = &g_array_index(rdata->gateways, NMNDiscGateway, i);
 
-        inet_ntop(AF_INET6, &gateway->address, addrstr, sizeof(addrstr));
         _LOGD("  gateway %s pref %s exp %s",
-              addrstr,
+              _nm_utils_inet6_ntop(&gateway->address, addrstr),
               nm_icmpv6_router_pref_to_string(gateway->preference, str_pref, sizeof(str_pref)),
-              get_exp(str_exp, now_ns, gateway));
+              get_exp(str_exp, now_msec, gateway));
     }
     for (i = 0; i < rdata->addresses->len; i++) {
         const NMNDiscAddress *address = &g_array_index(rdata->addresses, NMNDiscAddress, i);
 
-        inet_ntop(AF_INET6, &address->address, addrstr, sizeof(addrstr));
-        _LOGD("  address %s exp %s", addrstr, get_exp(str_exp, now_ns, address));
+        _LOGD("  address %s exp %s",
+              _nm_utils_inet6_ntop(&address->address, addrstr),
+              get_exp(str_exp, now_msec, address));
     }
     for (i = 0; i < rdata->routes->len; i++) {
-        NMNDiscRoute *route = &g_array_index(rdata->routes, NMNDiscRoute, i);
-        char          sbuf[NM_UTILS_INET_ADDRSTRLEN];
+        const NMNDiscRoute *route = &g_array_index(rdata->routes, NMNDiscRoute, i);
+        char                sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
-        inet_ntop(AF_INET6, &route->network, addrstr, sizeof(addrstr));
         _LOGD("  route %s/%u via %s pref %s exp %s",
-              addrstr,
+              _nm_utils_inet6_ntop(&route->network, addrstr),
               (guint) route->plen,
               _nm_utils_inet6_ntop(&route->gateway, sbuf),
               nm_icmpv6_router_pref_to_string(route->preference, str_pref, sizeof(str_pref)),
-              get_exp(str_exp, now_ns, route));
+              get_exp(str_exp, now_msec, route));
     }
     for (i = 0; i < rdata->dns_servers->len; i++) {
-        NMNDiscDNSServer *dns_server = &g_array_index(rdata->dns_servers, NMNDiscDNSServer, i);
+        const NMNDiscDNSServer *dns_server =
+            &g_array_index(rdata->dns_servers, NMNDiscDNSServer, i);
 
-        inet_ntop(AF_INET6, &dns_server->address, addrstr, sizeof(addrstr));
-        _LOGD("  dns_server %s exp %s", addrstr, get_exp(str_exp, now_ns, dns_server));
+        _LOGD("  dns_server %s exp %s",
+              _nm_utils_inet6_ntop(&dns_server->address, addrstr),
+              get_exp(str_exp, now_msec, dns_server));
     }
     for (i = 0; i < rdata->dns_domains->len; i++) {
-        NMNDiscDNSDomain *dns_domain = &g_array_index(rdata->dns_domains, NMNDiscDNSDomain, i);
+        const NMNDiscDNSDomain *dns_domain =
+            &g_array_index(rdata->dns_domains, NMNDiscDNSDomain, i);
 
-        _LOGD("  dns_domain %s exp %s", dns_domain->domain, get_exp(str_exp, now_ns, dns_domain));
+        _LOGD("  dns_domain %s exp %s", dns_domain->domain, get_exp(str_exp, now_msec, dns_domain));
     }
 }
 
-static void
-clean_gateways(NMNDisc *ndisc, gint32 now, NMNDiscConfigMap *changed, gint32 *nextevent)
+/*****************************************************************************/
+
+static gboolean
+_array_set_size_max(GArray *array, guint size_max)
 {
-    NMNDiscDataInternal *rdata;
+    nm_assert(array);
+    nm_assert(size_max > 0u);
+
+    if (array->len <= size_max)
+        return FALSE;
+
+    g_array_set_size(array, size_max);
+    return TRUE;
+}
+
+static void
+clean_gateways(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint64 *next_msec)
+{
+    NMNDiscDataInternal *rdata = &NM_NDISC_GET_PRIVATE(ndisc)->rdata;
+    NMNDiscGateway *     arr;
     guint                i;
+    guint                j;
 
-    rdata = &NM_NDISC_GET_PRIVATE(ndisc)->rdata;
+    if (rdata->gateways->len == 0)
+        return;
 
-    for (i = 0; i < rdata->gateways->len;) {
-        NMNDiscGateway *item = &g_array_index(rdata->gateways, NMNDiscGateway, i);
+    arr = &g_array_index(rdata->gateways, NMNDiscGateway, 0);
 
-        if (!expiry_next(now, get_expiry(item), nextevent)) {
-            g_array_remove_index(rdata->gateways, i);
-            *changed |= NM_NDISC_CONFIG_GATEWAYS;
+    for (i = 0, j = 0; i < rdata->gateways->len; i++) {
+        if (!expiry_next(now_msec, arr[i].expiry_msec, next_msec))
             continue;
-        }
-
-        i++;
+        if (i != j)
+            arr[j] = arr[i];
+        j++;
     }
+
+    if (i != j) {
+        *changed |= NM_NDISC_CONFIG_GATEWAYS;
+        g_array_set_size(rdata->gateways, j);
+    }
+
+    if (_array_set_size_max(rdata->gateways, _SIZE_MAX_GATEWAYS))
+        *changed |= NM_NDISC_CONFIG_GATEWAYS;
 
     _ASSERT_data_gateways(rdata);
 }
 
 static void
-clean_addresses(NMNDisc *ndisc, gint32 now, NMNDiscConfigMap *changed, gint32 *nextevent)
+clean_addresses(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint64 *next_msec)
 {
-    NMNDiscDataInternal *rdata;
+    NMNDiscPrivate *     priv  = NM_NDISC_GET_PRIVATE(ndisc);
+    NMNDiscDataInternal *rdata = &NM_NDISC_GET_PRIVATE(ndisc)->rdata;
+    NMNDiscAddress *     arr;
     guint                i;
+    guint                j;
 
-    rdata = &NM_NDISC_GET_PRIVATE(ndisc)->rdata;
+    if (rdata->addresses->len == 0)
+        return;
 
-    for (i = 0; i < rdata->addresses->len;) {
-        const NMNDiscAddress *item = &g_array_index(rdata->addresses, NMNDiscAddress, i);
+    arr = &g_array_index(rdata->addresses, NMNDiscAddress, 0);
 
-        if (!expiry_next(now, get_expiry(item), nextevent)) {
-            g_array_remove_index(rdata->addresses, i);
-            *changed |= NM_NDISC_CONFIG_ADDRESSES;
+    for (i = 0, j = 0; i < rdata->addresses->len; i++) {
+        if (!expiry_next(now_msec, arr[i].expiry_msec, next_msec))
             continue;
-        }
-
-        i++;
+        if (i != j)
+            arr[j] = arr[i];
+        j++;
     }
+
+    if (i != j) {
+        *changed = NM_NDISC_CONFIG_ADDRESSES;
+        g_array_set_size(rdata->addresses, j);
+    }
+
+    if (_array_set_size_max(rdata->gateways, priv->max_addresses))
+        *changed |= NM_NDISC_CONFIG_ADDRESSES;
 }
 
 static void
-clean_routes(NMNDisc *ndisc, gint32 now, NMNDiscConfigMap *changed, gint32 *nextevent)
+clean_routes(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint64 *next_msec)
 {
-    NMNDiscDataInternal *rdata;
+    NMNDiscDataInternal *rdata = &NM_NDISC_GET_PRIVATE(ndisc)->rdata;
+    NMNDiscRoute *       arr;
     guint                i;
+    guint                j;
 
-    rdata = &NM_NDISC_GET_PRIVATE(ndisc)->rdata;
+    if (rdata->routes->len == 0)
+        return;
 
-    for (i = 0; i < rdata->routes->len;) {
-        NMNDiscRoute *item = &g_array_index(rdata->routes, NMNDiscRoute, i);
+    arr = &g_array_index(rdata->routes, NMNDiscRoute, 0);
 
-        if (!expiry_next(now, get_expiry(item), nextevent)) {
-            g_array_remove_index(rdata->routes, i);
-            *changed |= NM_NDISC_CONFIG_ROUTES;
+    for (i = 0, j = 0; i < rdata->routes->len; i++) {
+        if (!expiry_next(now_msec, arr[i].expiry_msec, next_msec))
             continue;
-        }
-
-        i++;
+        if (i != j)
+            arr[j] = arr[i];
+        j++;
     }
+
+    if (i != j) {
+        *changed |= NM_NDISC_CONFIG_ROUTES;
+        g_array_set_size(rdata->routes, j);
+    }
+
+    if (_array_set_size_max(rdata->gateways, _SIZE_MAX_ROUTES))
+        *changed |= NM_NDISC_CONFIG_ROUTES;
 }
 
 static void
-clean_dns_servers(NMNDisc *ndisc, gint32 now, NMNDiscConfigMap *changed, gint32 *nextevent)
+clean_dns_servers(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint64 *next_msec)
 {
-    NMNDiscDataInternal *rdata;
+    NMNDiscDataInternal *rdata = &NM_NDISC_GET_PRIVATE(ndisc)->rdata;
+    NMNDiscDNSServer *   arr;
     guint                i;
+    guint                j;
 
-    rdata = &NM_NDISC_GET_PRIVATE(ndisc)->rdata;
+    if (rdata->dns_servers->len == 0)
+        return;
 
-    for (i = 0; i < rdata->dns_servers->len;) {
-        NMNDiscDNSServer *item = &g_array_index(rdata->dns_servers, NMNDiscDNSServer, i);
-        gint64            refresh;
+    arr = &g_array_index(rdata->dns_servers, NMNDiscDNSServer, 0);
 
-        refresh = get_expiry_half(item);
-        if (refresh != _EXPIRY_INFINITY) {
-            if (!expiry_next(now, get_expiry(item), NULL)) {
-                g_array_remove_index(rdata->dns_servers, i);
-                *changed |= NM_NDISC_CONFIG_DNS_SERVERS;
-                continue;
-            }
-
-            if (now >= refresh)
-                solicit_routers(ndisc);
-            else if (*nextevent > refresh)
-                *nextevent = refresh;
-        }
-        i++;
+    for (i = 0, j = 0; i < rdata->dns_servers->len; i++) {
+        if (!expiry_next(now_msec, arr[i].expiry_msec, next_msec))
+            continue;
+        if (i != j)
+            arr[j] = arr[i];
+        j++;
     }
+
+    if (i != j) {
+        *changed |= NM_NDISC_CONFIG_DNS_SERVERS;
+        g_array_set_size(rdata->dns_servers, j);
+    }
+
+    if (_array_set_size_max(rdata->gateways, _SIZE_MAX_DNS_SERVERS))
+        *changed |= NM_NDISC_CONFIG_DNS_SERVERS;
 }
 
 static void
-clean_dns_domains(NMNDisc *ndisc, gint32 now, NMNDiscConfigMap *changed, gint32 *nextevent)
+clean_dns_domains(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint64 *next_msec)
 {
-    NMNDiscDataInternal *rdata;
+    NMNDiscDataInternal *rdata = &NM_NDISC_GET_PRIVATE(ndisc)->rdata;
+    NMNDiscDNSDomain *   arr;
     guint                i;
+    guint                j;
 
-    rdata = &NM_NDISC_GET_PRIVATE(ndisc)->rdata;
+    if (rdata->dns_domains->len == 0)
+        return;
 
-    for (i = 0; i < rdata->dns_domains->len;) {
-        NMNDiscDNSDomain *item = &g_array_index(rdata->dns_domains, NMNDiscDNSDomain, i);
-        gint64            refresh;
+    arr = &g_array_index(rdata->dns_domains, NMNDiscDNSDomain, 0);
 
-        refresh = get_expiry_half(item);
-        if (refresh != _EXPIRY_INFINITY) {
-            if (!expiry_next(now, get_expiry(item), NULL)) {
-                g_array_remove_index(rdata->dns_domains, i);
-                *changed |= NM_NDISC_CONFIG_DNS_DOMAINS;
-                continue;
-            }
+    for (i = 0, j = 0; i < rdata->dns_domains->len; i++) {
+        if (!expiry_next(now_msec, arr[i].expiry_msec, next_msec))
+            continue;
 
-            if (now >= refresh)
-                solicit_routers(ndisc);
-            else if (*nextevent > refresh)
-                *nextevent = refresh;
+        if (i != j) {
+            g_free(arr[j].domain);
+            arr[j]        = arr[i];
+            arr[i].domain = NULL;
         }
-        i++;
+
+        j++;
     }
+
+    if (i != 0) {
+        *changed |= NM_NDISC_CONFIG_DNS_DOMAINS;
+        g_array_set_size(rdata->dns_domains, j);
+    }
+
+    if (_array_set_size_max(rdata->gateways, _SIZE_MAX_DNS_DOMAINS))
+        *changed |= NM_NDISC_CONFIG_DNS_DOMAINS;
 }
 
-static gboolean timeout_cb(gpointer user_data);
-
 static void
-check_timestamps(NMNDisc *ndisc, gint32 now, NMNDiscConfigMap changed)
+check_timestamps(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap changed)
 {
-    NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE(ndisc);
-    /* Use a magic date in the distant future (~68 years) */
-    gint32 nextevent = G_MAXINT32;
+    NMNDiscPrivate *priv      = NM_NDISC_GET_PRIVATE(ndisc);
+    gint64          next_msec = G_MAXINT64;
 
-    nm_clear_g_source(&priv->timeout_id);
+    _LOGT("router-data: check for changed router advertisement data");
 
-    clean_gateways(ndisc, now, &changed, &nextevent);
-    clean_addresses(ndisc, now, &changed, &nextevent);
-    clean_routes(ndisc, now, &changed, &nextevent);
-    clean_dns_servers(ndisc, now, &changed, &nextevent);
-    clean_dns_domains(ndisc, now, &changed, &nextevent);
+    clean_gateways(ndisc, now_msec, &changed, &next_msec);
+    clean_addresses(ndisc, now_msec, &changed, &next_msec);
+    clean_routes(ndisc, now_msec, &changed, &next_msec);
+    clean_dns_servers(ndisc, now_msec, &changed, &next_msec);
+    clean_dns_domains(ndisc, now_msec, &changed, &next_msec);
 
-    if (nextevent != G_MAXINT32) {
-        if (nextevent <= now)
-            g_return_if_reached();
-        _LOGD("scheduling next now/lifetime check: %d seconds", (int) (nextevent - now));
-        priv->timeout_id = g_timeout_add_seconds(nextevent - now, timeout_cb, ndisc);
+    nm_assert(next_msec > now_msec);
+
+    nm_clear_g_source_inst(&priv->timeout_expire_source);
+
+    if (next_msec == NM_NDISC_EXPIRY_INFINITY)
+        _LOGD("router-data: next lifetime expiration will happen: never");
+    else {
+        const gint64 timeout_msec = NM_MIN(next_msec - now_msec, ((gint64) G_MAXINT32));
+        const guint  TIMEOUT_APPROX_THRESHOLD_SEC = 10000;
+
+        _LOGD("router-data: next lifetime expiration will happen: in %s%.3f seconds",
+              (timeout_msec / 1000) >= TIMEOUT_APPROX_THRESHOLD_SEC ? " about" : "",
+              ((double) timeout_msec) / 1000);
+
+        priv->timeout_expire_source = nm_g_timeout_add_source_approx(timeout_msec,
+                                                                     TIMEOUT_APPROX_THRESHOLD_SEC,
+                                                                     timeout_expire_cb,
+                                                                     ndisc);
     }
 
-    if (changed)
+    /* When we receive an RA, we don't disable solicitations entirely. Instead,
+     * we set the interval the maximum (RFC7559_MRT).
+     *
+     * This contradicts https://tools.ietf.org/html/rfc7559#section-2.1, which says
+     * that we SHOULD stop sending RS if we receive an RA -- but only on a multicast
+     * capable link and if the RA has a valid router lifetime.
+     *
+     * But we really want to recover from a dead router on the network, so we
+     * don't want to cease sending RS entirely.
+     *
+     * But we only re-schedule the timer if the current interval is not already
+     * "RFC7559_MRT * 1000". Otherwise, we already have a slow interval counter
+     * pending. */
+    if (priv->solicit_retransmit_time_msec != RFC7559_MRT * 1000) {
+        gint32 timeout_msec;
+
+        priv->solicit_retransmit_time_msec = RFC7559_MRT * 1000;
+        timeout_msec = solicit_retransmit_time_jitter(priv->solicit_retransmit_time_msec);
+
+        _LOGD("solicit: schedule sending next (slow) solicitation in about %.3f seconds",
+              ((double) timeout_msec) / 1000);
+
+        nm_clear_g_source_inst(&priv->solicit_timer_source);
+        priv->solicit_timer_source =
+            nm_g_timeout_add_source_approx(timeout_msec, 0, solicit_timer_cb, ndisc);
+    }
+
+    if (changed != NM_NDISC_CONFIG_NONE)
         nm_ndisc_emit_config_change(ndisc, changed);
 }
 
 static gboolean
-timeout_cb(gpointer user_data)
+timeout_expire_cb(gpointer user_data)
 {
-    NMNDisc *self = user_data;
-
-    NM_NDISC_GET_PRIVATE(self)->timeout_id = 0;
-    check_timestamps(self, nm_utils_get_monotonic_timestamp_sec(), 0);
-    return G_SOURCE_REMOVE;
+    check_timestamps(user_data, nm_utils_get_monotonic_timestamp_msec(), NM_NDISC_CONFIG_NONE);
+    return G_SOURCE_CONTINUE;
 }
 
 void
-nm_ndisc_ra_received(NMNDisc *ndisc, gint32 now, NMNDiscConfigMap changed)
+nm_ndisc_ra_received(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap changed)
 {
     NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE(ndisc);
 
     nm_clear_g_source_inst(&priv->ra_timeout_source);
-    nm_clear_g_source(&priv->send_rs_id);
     nm_clear_g_free(&priv->last_error);
-    check_timestamps(ndisc, now, changed);
+    check_timestamps(ndisc, now_msec, changed);
 }
 
 void
@@ -1447,6 +1578,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 {
     NMNDisc *       self = NM_NDISC(object);
     NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE(self);
+    int             i;
 
     switch (prop_id) {
     case PROP_PLATFORM:
@@ -1488,7 +1620,14 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         break;
     case PROP_MAX_ADDRESSES:
         /* construct-only */
-        priv->max_addresses = g_value_get_int(value);
+        i = g_value_get_int(value);
+        nm_assert(i >= 0);
+        priv->max_addresses = i;
+
+        if (priv->max_addresses <= 0)
+            priv->max_addresses = _SIZE_MAX_ADDRESSES;
+        else if (priv->max_addresses > 3u * _SIZE_MAX_ADDRESSES)
+            priv->max_addresses = 3u * _SIZE_MAX_ADDRESSES;
         break;
     case PROP_RA_TIMEOUT:
         /* construct-only */
@@ -1532,11 +1671,6 @@ nm_ndisc_init(NMNDisc *ndisc)
     rdata->dns_domains = g_array_new(FALSE, FALSE, sizeof(NMNDiscDNSDomain));
     g_array_set_clear_func(rdata->dns_domains, dns_domain_free);
     priv->rdata.public.hop_limit = 64;
-
-    /* Start at very low number so that last_rs - router_solicitation_interval
-     * is much lower than nm_utils_get_monotonic_timestamp_sec() at startup.
-     */
-    priv->last_rs = G_MININT32;
 }
 
 static void
@@ -1546,11 +1680,11 @@ dispose(GObject *object)
     NMNDiscPrivate *priv  = NM_NDISC_GET_PRIVATE(ndisc);
 
     nm_clear_g_source_inst(&priv->ra_timeout_source);
-    nm_clear_g_source(&priv->send_rs_id);
+    nm_clear_g_source_inst(&priv->solicit_timer_source);
     nm_clear_g_source(&priv->send_ra_id);
     nm_clear_g_free(&priv->last_error);
 
-    nm_clear_g_source(&priv->timeout_id);
+    nm_clear_g_source_inst(&priv->timeout_expire_source);
 
     G_OBJECT_CLASS(nm_ndisc_parent_class)->dispose(object);
 }
@@ -1661,7 +1795,7 @@ nm_ndisc_class_init(NMNDiscClass *klass)
                          "",
                          1,
                          G_MAXINT32,
-                         NM_NDISC_ROUTER_SOLICITATION_INTERVAL_DEFAULT,
+                         NM_NDISC_RFC4861_RTR_SOLICITATION_INTERVAL,
                          G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
     obj_properties[PROP_NODE_TYPE] =
         g_param_spec_int(NM_NDISC_NODE_TYPE,

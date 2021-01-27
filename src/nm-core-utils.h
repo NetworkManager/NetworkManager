@@ -559,7 +559,7 @@ char *   nm_utils_format_con_diff_for_audit(GHashTable *diff);
 /* this enum is compatible with ICMPV6_ROUTER_PREF_* (from <linux/icmpv6.h>,
  * the values for netlink attribute RTA_PREF) and "enum ndp_route_preference"
  * from <ndp.h>. */
-typedef enum {
+typedef enum _nm_packed {
     NM_ICMPV6_ROUTER_PREF_MEDIUM  = 0x0, /* ICMPV6_ROUTER_PREF_MEDIUM */
     NM_ICMPV6_ROUTER_PREF_LOW     = 0x3, /* ICMPV6_ROUTER_PREF_LOW */
     NM_ICMPV6_ROUTER_PREF_HIGH    = 0x1, /* ICMPV6_ROUTER_PREF_HIGH */
