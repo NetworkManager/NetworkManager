@@ -1,16 +1,20 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
 test_units = [
-  ['test-libnm',                  30],
-  ['test-nm-client',              90],
-  ['test-remote-settings-client', 90],
-  ['test-secret-agent',           90],
+  'test-libnm',
+  'test-nm-client',
+  'test-remote-settings-client',
+  'test-secret-agent',
 ]
 
 foreach test_unit: test_units
   exe = executable(
-    test_unit[0],
-    [test_unit[0] + '.c', nm_test_utils_impl_source, libnm_enum_sources[1]],
+    test_unit,
+    [
+      test_unit + '.c',
+      nm_test_utils_impl_source,
+      libnm_enum_sources[1],
+    ],
     dependencies: [
       libnm_core_dep,
       libnm_nm_default_dep,
@@ -23,9 +27,9 @@ foreach test_unit: test_units
   )
 
   test(
-    test_unit[0],
+    test_unit,
     test_script,
-    timeout: test_unit[1],
+    timeout: 90,
     args: test_args + [exe.full_path()],
   )
 endforeach
