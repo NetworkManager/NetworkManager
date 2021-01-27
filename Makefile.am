@@ -5112,6 +5112,8 @@ src_nmtui_nmtui_SOURCES = \
 	src/nmtui/nmt-page-vlan.h \
 	src/nmtui/nmt-page-wifi.c \
 	src/nmtui/nmt-page-wifi.h \
+	src/nmtui/nmt-page-wireguard.c \
+	src/nmtui/nmt-page-wireguard.h \
 	src/nmtui/nmt-password-dialog.c \
 	src/nmtui/nmt-password-dialog.h \
 	src/nmtui/nmt-password-fields.c \

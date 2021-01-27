@@ -3116,6 +3116,8 @@ nm_connection_get_virtual_device_description(NMConnection *connection)
             nm_connection_get_setting_infiniband(connection));
     } else if (!strcmp(type, NM_SETTING_IP_TUNNEL_SETTING_NAME))
         display_type = _("IP Tunnel");
+    else if (!strcmp(type, NM_SETTING_WIREGUARD_SETTING_NAME))
+        display_type = _("WireGuard");
 
     if (!iface || !display_type)
         return NULL;
