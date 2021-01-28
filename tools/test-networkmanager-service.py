@@ -1424,6 +1424,7 @@ class ActiveConnection(ExportedObj):
 
         self._activation_id = None
         self._deactivation_id = None
+        self.activation_state_change_delay_ms = 50
 
         s_con = con_inst.con_hash[NM.SETTING_CONNECTION_SETTING_NAME]
 
@@ -1495,7 +1496,9 @@ class ActiveConnection(ExportedObj):
 
     def _activation_step1(self):
         assert self._activation_id is not None
-        self._activation_id = GLib.timeout_add(50, self._activation_step2)
+        self._activation_id = GLib.timeout_add(
+            self.activation_state_change_delay_ms, self._activation_step2
+        )
         self.device.set_active_connection(self)
         self.device.set_state(NM.DeviceState.PREPARE, NM.DeviceStateReason.NONE)
         self._set_state(
@@ -1521,7 +1524,9 @@ class ActiveConnection(ExportedObj):
 
     def start_activation(self):
         assert self._activation_id is None
-        self._activation_id = GLib.timeout_add(50, self._activation_step1)
+        self._activation_id = GLib.timeout_add(
+            self.activation_state_change_delay_ms, self._activation_step1
+        )
 
     def start_deactivation(self):
         assert self._deactivation_id is None
@@ -1963,6 +1968,16 @@ class NetworkManager(ExportedObj):
     @dbus.service.method(dbus_interface=IFACE_TEST, in_signature="sb", out_signature="")
     def SetActiveConnectionFailure(self, connection_id, failure):
         gl.force_activation_failure[connection_id] = failure
+
+    @dbus.service.method(dbus_interface=IFACE_TEST, in_signature="ou", out_signature="")
+    def SetActiveConnectionStateChangedDelay(self, devpath, delay_ms):
+        for ac in reversed(self.active_connections):
+            if ac.device.path == devpath:
+                ac.activation_state_change_delay_ms = delay_ms
+                return
+        raise BusErr.UnknownDeviceException(
+            "Device with iface '%s' not found" % devpath
+        )
 
     @dbus.service.method(
         dbus_interface=IFACE_TEST, in_signature="ouu", out_signature=""
