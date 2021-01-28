@@ -118,6 +118,10 @@ _with_valgrind() {
         if rpm -q glib2 | grep -q glib2-2.61.0-2.fc31 ; then
             WITH_VALGRIND=0
         fi
+    elif grep -q '^PRETTY_NAME="Debian.*sid"$' /etc/os-release; then
+        if dpkg -s libglib2.0-bin | grep -q '^Version: 2.66.4-2$' ; then
+            WITH_VALGRIND=0
+        fi
     fi
     if [ "$WITH_VALGRIND" == 0 ]; then
         echo "Don't use valgrind due to known issues in other packages."
