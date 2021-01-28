@@ -8,7 +8,7 @@
 #
 
 # We're happy to rebuild all containers when one changes.
-.default_tag: &default_tag '2020-11-17.0'
+.default_tag: &default_tag '2021-01-28.0'
 
 
 # The list of all distributions we want to create job for.
