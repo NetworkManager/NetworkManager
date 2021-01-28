@@ -189,7 +189,7 @@ def ovs_print_external_ids(prefix):
 
     out = ""
     for cmd in cmds:
-        p = subprocess.run(cmd, stdout=subprocess.PIPE, check=True,)
+        p = subprocess.run(cmd, stdout=subprocess.PIPE, check=True)
         out += p.stdout.decode("utf-8") + "\n"
     out = "\n".join([prefix + s for s in out.split("\n")])
     _print(out)
@@ -636,7 +636,7 @@ if __name__ == "__main__":
         if len(devices) != 1:
             _print(
                 "To apply the external-ids of a device, exactly one connection must be selected. Instead, %s devices matched ([%s])"
-                % (len(devices), ", ".join([device_to_str(c) for c in devices]),)
+                % (len(devices), ", ".join([device_to_str(c) for c in devices]))
             )
             die_usage("Select unique device to apply")
         do_apply(nmc, devices[0], args["ids_arg"], do_test=args["do_test"])
