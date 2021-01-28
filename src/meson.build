@@ -2,7 +2,7 @@
 
 src_inc = include_directories('.')
 
-daemon_nm_default_dep = declare_dependency(
+core_default_dep = declare_dependency(
   sources: libnm_core_enum_sources[1],
   include_directories: src_inc,
   dependencies: [
@@ -60,7 +60,7 @@ libNetworkManagerBase = static_library(
     'nm-ip6-config.c',
   ) + platform_wifi_wext_source,
   dependencies: [
-    daemon_nm_default_dep,
+    core_default_dep,
     libn_dhcp4_dep,
     libnm_keyfile_dep,
     libnm_core_dep,
@@ -73,7 +73,7 @@ libNetworkManagerBase = static_library(
 )
 
 nm_deps = [
-  daemon_nm_default_dep,
+  core_default_dep,
   dl_dep,
   libn_acd_dep,
   libndp_dep,
@@ -192,7 +192,7 @@ executable(
   'nm-iface-helper',
   'nm-iface-helper.c',
   dependencies: [
-    daemon_nm_default_dep,
+    core_default_dep,
     dl_dep,
     libndp_dep,
     libudev_dep,
@@ -223,13 +223,13 @@ if enable_tests
       'platform/tests/test-common.c',
       'platform/nm-fake-platform.c',
     ),
-    dependencies: daemon_nm_default_dep,
+    dependencies: core_default_dep,
     c_args: test_c_flags,
     link_with: libNetworkManager,
   )
 
   libNetworkManagerTest_dep = declare_dependency(
-    dependencies: daemon_nm_default_dep,
+    dependencies: core_default_dep,
     link_with: libNetworkManagerTest,
   )
 

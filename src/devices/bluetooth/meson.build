@@ -7,7 +7,7 @@ sources = files(
 )
 
 deps = [
-  daemon_nm_default_dep,
+  core_default_dep,
   libnm_wwan_dep,
 ]
 

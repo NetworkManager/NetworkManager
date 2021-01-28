@@ -31,7 +31,7 @@ core_sources = files(
 libnms_ifcfg_rh_core = static_library(
   'nms-ifcfg-rh-core',
   sources: core_sources,
-  dependencies: daemon_nm_default_dep,
+  dependencies: core_default_dep,
   c_args: daemon_c_flags,
 )
 
@@ -43,7 +43,7 @@ sources = [dbus_sources] + core_sources + files(
 libnm_settings_plugin_ifcfg_rh = shared_module(
   'nm-settings-plugin-ifcfg-rh',
   sources: sources,
-  dependencies: daemon_nm_default_dep,
+  dependencies: core_default_dep,
   c_args: daemon_c_flags,
   link_with: libnms_ifcfg_rh_core,
   link_args: ldflags_linker_script_settings,

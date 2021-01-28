@@ -9,7 +9,7 @@ sources = files(
 )
 
 deps = [
-  daemon_nm_default_dep,
+  core_default_dep,
   jansson_dep,
 ]
 

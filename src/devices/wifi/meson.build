@@ -19,7 +19,7 @@ libnm_wifi_base = static_library(
     'nm-wifi-p2p-peer.c',
     'nm-wifi-utils.c',
   ) + iwd_sources,
-  dependencies: daemon_nm_default_dep,
+  dependencies: core_default_dep,
   c_args: daemon_c_flags,
 )
 
@@ -32,7 +32,7 @@ libnm_device_plugin_wifi = shared_module(
   sources: files(
     'nm-wifi-factory.c',
   ),
-  dependencies: [ daemon_nm_default_dep, libnm_wifi_base_dep ],
+  dependencies: [ core_default_dep, libnm_wifi_base_dep ],
   c_args: daemon_c_flags,
   link_args: ldflags_linker_script_devices,
   link_depends: linker_script_devices,

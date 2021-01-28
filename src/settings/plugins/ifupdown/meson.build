@@ -8,14 +8,14 @@ sources = files(
 libnms_ifupdown_core = static_library(
   'nms-ifupdown-core',
   sources: sources,
-  dependencies: daemon_nm_default_dep,
+  dependencies: core_default_dep,
   c_args: daemon_c_flags,
 )
 
 libnm_settings_plugin_ifupdown = shared_module(
   'nm-settings-plugin-ifupdown',
   sources: 'nms-ifupdown-plugin.c',
-  dependencies: daemon_nm_default_dep,
+  dependencies: core_default_dep,
   c_args: daemon_c_flags,
   link_with: libnms_ifupdown_core,
   link_args: ldflags_linker_script_settings,

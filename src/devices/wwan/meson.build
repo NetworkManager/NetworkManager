@@ -9,7 +9,7 @@ sources = nm_service_providers_source + files(
 )
 
 deps = [
-  daemon_nm_default_dep,
+  core_default_dep,
   libsystemd_dep,
   mm_glib_dep,
 ]
