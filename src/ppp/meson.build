@@ -20,7 +20,7 @@ core_plugins += shared_module(
   sources: [
     'nm-ppp-manager.c',
   ],
-  dependencies: core_default_dep,
+  dependencies: core_plugin_dep,
   c_args: daemon_c_flags,
   link_args: '-Wl,--version-script,@0@'.format(linker_script),
   link_depends: linker_script,

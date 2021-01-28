@@ -13,7 +13,7 @@ libnm_wwan = shared_module(
   'nm-modem-manager.c',
   ) + (enable_ofono ? files('nm-modem-ofono.c') : files()),
   dependencies: [
-    core_default_dep,
+    core_plugin_dep,
     libsystemd_dep,
     mm_glib_dep,
   ],
@@ -47,7 +47,7 @@ libnm_device_plugin_wwan = shared_module(
     'nm-wwan-factory.c',
   ),
   dependencies: [
-    core_default_dep,
+    core_plugin_dep,
     libsystemd_dep,
     mm_glib_dep,
   ],

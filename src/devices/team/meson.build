@@ -7,7 +7,7 @@ libnm_device_plugin_team = shared_module(
     'nm-team-factory.c',
   ),
   dependencies: [
-    core_default_dep,
+    core_plugin_dep,
     jansson_dep,
     libteamdctl_dep,
   ],

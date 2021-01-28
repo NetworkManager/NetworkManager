@@ -13,7 +13,7 @@ libnms_ifupdown_core = static_library(
 libnm_settings_plugin_ifupdown = shared_module(
   'nm-settings-plugin-ifupdown',
   sources: 'nms-ifupdown-plugin.c',
-  dependencies: core_default_dep,
+  dependencies: core_plugin_dep,
   c_args: daemon_c_flags,
   link_with: libnms_ifupdown_core,
   link_args: ldflags_linker_script_settings,

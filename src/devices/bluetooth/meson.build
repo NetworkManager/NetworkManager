@@ -22,7 +22,7 @@ libnm_device_plugin_bluetooth_static_dep = declare_dependency(
 libnm_device_plugin_bluetooth = shared_module(
   'nm-device-plugin-bluetooth',
   dependencies: [
-    core_default_dep,
+    core_plugin_dep,
     libnm_wwan_dep,
     bluez5_dep,
     libnm_device_plugin_bluetooth_static_dep,

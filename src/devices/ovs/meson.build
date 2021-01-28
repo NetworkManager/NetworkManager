@@ -10,7 +10,7 @@ libnm_device_plugin_ovs = shared_module(
     'nm-ovs-factory.c',
   ),
   dependencies: [
-    core_default_dep,
+    core_plugin_dep,
     jansson_dep,
   ],
   c_args: daemon_c_flags,

@@ -2,6 +2,19 @@
 
 src_inc = include_directories('.')
 
+core_plugin_dep = declare_dependency(
+  sources: libnm_core_enum_sources[1],
+  include_directories: [
+    src_inc,
+    top_inc,
+    shared_inc,
+    libnm_core_inc,
+  ],
+  dependencies: [
+    glib_dep,
+  ],
+)
+
 core_default_dep = declare_dependency(
   sources: libnm_core_enum_sources[1],
   include_directories: src_inc,

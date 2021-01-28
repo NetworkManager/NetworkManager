@@ -37,7 +37,7 @@ libnm_settings_plugin_ifcfg_rh = shared_module(
     'nms-ifcfg-rh-storage.c',
     'nms-ifcfg-rh-plugin.c',
   ),
-  dependencies: core_default_dep,
+  dependencies: core_plugin_dep,
   c_args: daemon_c_flags,
   link_with: libnms_ifcfg_rh_core,
   link_args: ldflags_linker_script_settings,

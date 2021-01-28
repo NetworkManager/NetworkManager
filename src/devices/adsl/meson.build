@@ -6,7 +6,7 @@ libnm_device_plugin_adsl = shared_module(
     'nm-atm-manager.c',
     'nm-device-adsl.c',
   ),
-  dependencies: core_default_dep,
+  dependencies: core_plugin_dep,
   c_args: daemon_c_flags,
   link_args: ldflags_linker_script_devices,
   link_depends: linker_script_devices,
