@@ -12,7 +12,7 @@ foreach test_unit : test_units
   exe = executable(
     test_unit,
     test_unit + '.c',
-    dependencies: libnetwork_manager_test_dep,
+    dependencies: libNetworkManagerTest_dep,
     c_args: c_flags,
     link_with: libnmi_core,
   )

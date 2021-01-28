@@ -8,7 +8,7 @@ exe = executable(
   include_directories: dispatcher_inc,
   dependencies: [
     libnm_nm_default_dep,
-    libnm_utils_base_dep,
+    libnm_glib_aux_dep,
   ],
   c_args: [
     '-DNETWORKMANAGER_COMPILATION_TEST',

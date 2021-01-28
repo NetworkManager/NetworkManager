@@ -54,7 +54,7 @@ if enable_tests
   exe = executable(
     test_unit,
     'tests/' + test_unit + '.c',
-    dependencies: [ libnetwork_manager_test_dep, libnm_wifi_base_dep ],
+    dependencies: [ libNetworkManagerTest_dep, libnm_wifi_base_dep ],
     c_args: test_c_flags,
   )
 

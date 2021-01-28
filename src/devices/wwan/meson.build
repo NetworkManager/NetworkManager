@@ -79,7 +79,7 @@ if enable_tests
     test_unit,
     ['tests/' + test_unit + '.c'] + nm_service_providers_source,
     include_directories: wwan_inc,
-    dependencies: libnetwork_manager_test_dep,
+    dependencies: libNetworkManagerTest_dep,
     c_args: test_c_flags,
   )
 

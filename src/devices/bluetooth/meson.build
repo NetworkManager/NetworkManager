@@ -54,7 +54,7 @@ if enable_tests
   executable(
     test_unit,
     'tests/' + test_unit + '.c',
-    dependencies: [ libnetwork_manager_test_dep, deps ],
+    dependencies: [ libNetworkManagerTest_dep, deps ],
     c_args: test_c_flags,
   )
 endif

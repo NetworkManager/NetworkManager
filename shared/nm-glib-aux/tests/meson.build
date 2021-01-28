@@ -7,7 +7,7 @@ exe = executable(
     '-DNETWORKMANAGER_COMPILATION_TEST',
     '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_PROG)',
   ],
-  dependencies: libnm_utils_base_dep,
+  dependencies: libnm_glib_aux_dep,
   link_with: libnm_systemd_logging_stub,
 )
 
@@ -27,7 +27,7 @@ if jansson_dep.found()
       '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_PROG)',
     ],
     dependencies: [
-      libnm_utils_base_dep,
+      libnm_glib_aux_dep,
       jansson_dep,
       dl_dep,
     ],
