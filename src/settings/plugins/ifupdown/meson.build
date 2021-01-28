@@ -1,13 +1,11 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
-sources = files(
-  'nms-ifupdown-interface-parser.c',
-  'nms-ifupdown-parser.c',
-)
-
 libnms_ifupdown_core = static_library(
   'nms-ifupdown-core',
-  sources: sources,
+  sources: files(
+    'nms-ifupdown-interface-parser.c',
+    'nms-ifupdown-parser.c',
+  ),
   dependencies: core_default_dep,
   c_args: daemon_c_flags,
 )

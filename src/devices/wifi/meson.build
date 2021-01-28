@@ -8,8 +8,8 @@ if enable_iwd
   )
 endif
 
-libnm_wifi_base = static_library(
-  'nm-wifi-base',
+libnm_device_plugin_wifi_static = static_library(
+  'nm-device-plugin-wifi-static',
   sources: files(
     'nm-device-olpc-mesh.c',
     'nm-device-wifi-p2p.c',
@@ -23,8 +23,8 @@ libnm_wifi_base = static_library(
   c_args: daemon_c_flags,
 )
 
-libnm_wifi_base_dep = declare_dependency(
-  link_with: libnm_wifi_base,
+libnm_device_plugin_wifi_static_dep = declare_dependency(
+  link_with: libnm_device_plugin_wifi_static,
 )
 
 libnm_device_plugin_wifi = shared_module(
@@ -32,7 +32,10 @@ libnm_device_plugin_wifi = shared_module(
   sources: files(
     'nm-wifi-factory.c',
   ),
-  dependencies: [ core_default_dep, libnm_wifi_base_dep ],
+  dependencies: [
+    core_default_dep,
+    libnm_device_plugin_wifi_static_dep,
+  ],
   c_args: daemon_c_flags,
   link_args: ldflags_linker_script_devices,
   link_depends: linker_script_devices,
@@ -54,7 +57,10 @@ if enable_tests
   exe = executable(
     test_unit,
     'tests/' + test_unit + '.c',
-    dependencies: [ libNetworkManagerTest_dep, libnm_wifi_base_dep ],
+    dependencies: [
+      libNetworkManagerTest_dep,
+      libnm_device_plugin_wifi_static_dep,
+    ],
     c_args: test_c_flags,
   )
 

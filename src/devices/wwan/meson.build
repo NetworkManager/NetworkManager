@@ -1,37 +1,28 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
-nm_service_providers_source = files('nm-service-providers.c')
-
-sources = nm_service_providers_source + files(
-  'nm-modem-broadband.c',
-  'nm-modem.c',
-  'nm-modem-manager.c',
-)
-
-deps = [
-  core_default_dep,
-  libsystemd_dep,
-  mm_glib_dep,
-]
-
-if enable_ofono
-  sources += files('nm-modem-ofono.c')
-endif
+wwan_inc = include_directories('.')
 
 linker_script = join_paths(meson.current_source_dir(), 'libnm-wwan.ver')
 
 libnm_wwan = shared_module(
   'nm-wwan',
-  sources: sources,
-  dependencies: deps,
+  sources: files(
+  'nm-service-providers.c',
+  'nm-modem-broadband.c',
+  'nm-modem.c',
+  'nm-modem-manager.c',
+  ) + (enable_ofono ? files('nm-modem-ofono.c') : files()),
+  dependencies: [
+    core_default_dep,
+    libsystemd_dep,
+    mm_glib_dep,
+  ],
   c_args: daemon_c_flags,
   link_args: '-Wl,--version-script,@0@'.format(linker_script),
   link_depends: linker_script,
   install: true,
   install_dir: nm_plugindir,
 )
-
-wwan_inc = include_directories('.')
 
 libnm_wwan_dep = declare_dependency(
   include_directories: wwan_inc,
@@ -43,18 +34,23 @@ core_plugins += libnm_wwan
 test(
   'check-wwan',
   check_exports,
-  args: [libnm_wwan.full_path(), linker_script],
-)
-
-sources = files(
-  'nm-device-modem.c',
-  'nm-wwan-factory.c',
+  args: [
+    libnm_wwan.full_path(),
+    linker_script,
+  ],
 )
 
 libnm_device_plugin_wwan = shared_module(
   'nm-device-plugin-wwan',
-  sources: sources,
-  dependencies: deps,
+  sources: files(
+    'nm-device-modem.c',
+    'nm-wwan-factory.c',
+  ),
+  dependencies: [
+    core_default_dep,
+    libsystemd_dep,
+    mm_glib_dep,
+  ],
   c_args: daemon_c_flags,
   link_with: libnm_wwan,
   link_args: ldflags_linker_script_devices,
@@ -73,18 +69,18 @@ run_target(
 )
 
 if enable_tests
-  test_unit = 'test-service-providers'
-
   exe = executable(
-    test_unit,
-    ['tests/' + test_unit + '.c'] + nm_service_providers_source,
+    'test-service-providers',
+    files(
+      'tests/test-service-providers.c',
+      'nm-service-providers.c',
+    ),
     include_directories: wwan_inc,
     dependencies: libNetworkManagerTest_dep,
     c_args: test_c_flags,
   )
-
   test(
-    'wwan/' + test_unit,
+    'wwan/test-service-providers',
     test_script,
     timeout: default_test_timeout,
     args: test_args + [exe.full_path()],

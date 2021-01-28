@@ -5,44 +5,38 @@ install_data(
   install_dir: dbus_conf_dir,
 )
 
-name = 'nmdbus-ifcfg-rh'
-
 dbus_sources = gnome.gdbus_codegen(
-  name,
+  'nmdbus-ifcfg-rh',
   'nm-ifcfg-rh.xml',
   interface_prefix: 'com.redhat',
   namespace: 'NMDBus',
 )
 
 libnmdbus_ifcfg_rh = static_library(
-  name,
+  'nmdbus-ifcfg-rh',
   sources: dbus_sources,
   dependencies: glib_dep,
   c_args: introspection_extra_cflags,
 )
 
-core_sources = files(
-  'nms-ifcfg-rh-reader.c',
-  'nms-ifcfg-rh-utils.c',
-  'nms-ifcfg-rh-writer.c',
-  'shvar.c',
-)
-
 libnms_ifcfg_rh_core = static_library(
   'nms-ifcfg-rh-core',
-  sources: core_sources,
+  sources: files(
+    'nms-ifcfg-rh-reader.c',
+    'nms-ifcfg-rh-utils.c',
+    'nms-ifcfg-rh-writer.c',
+    'shvar.c',
+  ),
   dependencies: core_default_dep,
   c_args: daemon_c_flags,
 )
 
-sources = [dbus_sources] + core_sources + files(
-  'nms-ifcfg-rh-storage.c',
-  'nms-ifcfg-rh-plugin.c',
-)
-
 libnm_settings_plugin_ifcfg_rh = shared_module(
   'nm-settings-plugin-ifcfg-rh',
-  sources: sources,
+  sources: files(
+    'nms-ifcfg-rh-storage.c',
+    'nms-ifcfg-rh-plugin.c',
+  ),
   dependencies: core_default_dep,
   c_args: daemon_c_flags,
   link_with: libnms_ifcfg_rh_core,
@@ -54,13 +48,11 @@ libnm_settings_plugin_ifcfg_rh = shared_module(
 
 core_plugins += libnm_settings_plugin_ifcfg_rh
 
-data = [
-  'nm-ifdown',
-  'nm-ifup',
-]
-
 install_data(
-  data,
+  [
+    'nm-ifdown',
+    'nm-ifup',
+  ],
   install_dir: nm_libexecdir,
   install_mode: 'rwxr-xr-x',
 )
