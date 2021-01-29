@@ -23,6 +23,43 @@ _is_true() {
     esac
 }
 
+usage() {
+    echo "$0 [\$OPTIONS] [--] \$TEST [\$TEST_OPTIONS]"
+    echo ""
+    echo "  Runs the unit test with setting up dbus-session (as necessary),"
+    echo "  optionally build the test first, and run valgrind"
+    echo ""
+    echo "  --help|-h: help"
+    echo "  --launch-dbus: the test runner by default automatically launches a D-Bus session"
+    echo "        depending on a hard-coded list of tests that require it. This flag overwrites"
+    echo "        the automatism to always launch a D-Bus session"
+    echo "  --no-launch-dbus|-D: prevent launching a D-Bus session"
+    echo "  --no-libtool: when running with valgrind, the script tries automatically to"
+    echo "        use libtool as necessary. This disables libtool usage" 
+    echo "  --make-first|-m: before running the test, make it (only works with autotools build)"
+    echo "  --valgrind|-v: run under valgrind"
+    echo "  --no-valgrind|-V: disable running under valgrind (overrides NMTST_USE_VALGRIND=1)"
+    echo "  -d: set NMTST_DEBUG=d"
+    echo "  --test|-t \$TEST: set the test that should be run"
+    echo ""
+    echo " With \"--test\" and \"--\" you can select the test and which arguments are"
+    echo " passed to the test. You can omit these, in which case the first unknown parameter"
+    echo " is the test and all other unknown parameters are passed to the test. For example"
+    echo "   $0 -m --test src/tests/test-core -- -p /general/match-spec/device"
+    echo " can also be called as"
+    echo "   $0 src/tests/test-core -p /general/match-spec/device -m"
+    echo ""
+    echo "  The following environment variables are honored:"
+    echo "    NMTST_USE_VALGRIND=0|1: enable/disable valgrind"
+    echo "    NMTST_LIBTOOL=: libtool path (or disable)"
+    echo "    NMTST_LAUNCH_DBUS=0|1: whether to lounch a D-Bus session"
+    echo "    NMTST_SET_DEBUG=0|1: saet NMTST_DEBUG=d"
+    echo ""
+    echo " This script is also called by the build system as test wrapper. In that case"
+    echo " different, internal command line syntax is used. In that case, environment variables"
+    echo " are still honored, so \`NMTST_USE_VALGRIND=1 make check\` works as expected"
+}
+
 SCRIPT_PATH="${SCRIPT_PATH:-$(readlink -f "$(dirname "$0")")}"
 
 VALGRIND_ERROR=37
@@ -108,6 +145,10 @@ else
     unset TEST
     while test $# -gt 0; do
         case "$1" in
+        --help|-h)
+            usage
+            exit 0
+            ;;
         "--launch-dbus")
             NMTST_LAUNCH_DBUS=1
             shift
@@ -143,6 +184,10 @@ else
             ;;
         "--")
             shift
+            if test -z "${TEST+x}"; then
+                TEST="$1";
+                shift
+            fi
             TEST_ARGV+=("$@")
             break
             ;;
