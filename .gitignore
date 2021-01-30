@@ -72,6 +72,7 @@ test-*.trs
 /clients/cloud-setup/nm-cloud-setup
 /clients/cloud-setup/nm-cloud-setup.service
 /clients/cloud-setup/tests/test-cloud-setup-general
+/clients/common/settings-docs-input.xml
 /clients/common/settings-docs.h
 /clients/common/tests/test-clients-common
 /clients/common/tests/test-libnm-core-aux
