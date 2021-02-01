@@ -244,6 +244,16 @@ typedef struct _NMDeviceClass {
      */
     bool mtu_force_set : 1;
 
+    /* Control whether to call stage1 and stage2 callbacks also for assuming
+     * a device or for external activations. In this case, the callback must
+     * take care not to touch the device's configuration. */
+    bool act_stage1_prepare_also_for_external_or_assume : 1;
+    bool act_stage2_config_also_for_external_or_assume : 1;
+
+    bool act_stage1_prepare_set_hwaddr_ethernet : 1;
+
+    bool can_reapply_change_ovs_external_ids : 1;
+
     void (*state_changed)(NMDevice *          device,
                           NMDeviceState       new_state,
                           NMDeviceState       old_state,
@@ -448,16 +458,6 @@ typedef struct _NMDeviceClass {
     gboolean (*can_update_from_platform_link)(NMDevice *self, const NMPlatformLink *plink);
 
     gboolean (*set_platform_mtu)(NMDevice *self, guint32 mtu);
-
-    /* Control whether to call stage1 and stage2 callbacks also for assuming
-     * a device or for external activations. In this case, the callback must
-     * take care not to touch the device's configuration. */
-    bool act_stage1_prepare_also_for_external_or_assume : 1;
-    bool act_stage2_config_also_for_external_or_assume : 1;
-
-    bool act_stage1_prepare_set_hwaddr_ethernet : 1;
-
-    bool can_reapply_change_ovs_external_ids : 1;
 
 } NMDeviceClass;
 
