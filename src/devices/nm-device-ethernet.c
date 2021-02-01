@@ -1525,6 +1525,7 @@ deactivate(NMDevice *device)
     NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE(self);
     NMSettingDcb *           s_dcb;
     GError *                 error = NULL;
+    int                      ifindex;
 
     nm_clear_g_source(&priv->pppoe_wait_id);
     nm_clear_g_signal_handler(self, &priv->carrier_id);
@@ -1553,7 +1554,8 @@ deactivate(NMDevice *device)
     if (nm_device_get_applied_setting(device, NM_TYPE_SETTING_PPPOE))
         priv->last_pppoe_time = nm_utils_get_monotonic_timestamp_sec();
 
-    if (priv->ethtool_prev_set) {
+    ifindex = nm_device_get_ifindex(device);
+    if (ifindex > 0 && priv->ethtool_prev_set) {
         priv->ethtool_prev_set = FALSE;
 
         _LOGD(LOGD_DEVICE,
@@ -1562,7 +1564,7 @@ deactivate(NMDevice *device)
               priv->ethtool_prev_speed,
               nm_platform_link_duplex_type_to_string(priv->ethtool_prev_duplex));
         if (!nm_platform_ethtool_set_link_settings(nm_device_get_platform(device),
-                                                   nm_device_get_ifindex(device),
+                                                   ifindex,
                                                    priv->ethtool_prev_autoneg,
                                                    priv->ethtool_prev_speed,
                                                    priv->ethtool_prev_duplex)) {
