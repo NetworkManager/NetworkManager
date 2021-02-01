@@ -10198,6 +10198,45 @@ test_nm_utils_wifi_ghz_freqs(void)
 
 /*****************************************************************************/
 
+static void
+test_vpn_connection_state_reason(void)
+{
+#define ASSERT(v1, v2)                                                \
+    G_STMT_START                                                      \
+    {                                                                 \
+        G_STATIC_ASSERT((gint64)(v1) == v2);                          \
+        G_STATIC_ASSERT((gint64)(v2) == v1);                          \
+                                                                      \
+        nm_assert(((NMActiveConnectionStateReason)(int) (v1)) == v2); \
+        nm_assert(((NMVpnConnectionStateReason)(int) (v2)) == v1);    \
+    }                                                                 \
+    G_STMT_END
+
+    ASSERT(NM_VPN_CONNECTION_STATE_REASON_UNKNOWN, NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN);
+    ASSERT(NM_VPN_CONNECTION_STATE_REASON_NONE, NM_ACTIVE_CONNECTION_STATE_REASON_NONE);
+    ASSERT(NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED,
+           NM_ACTIVE_CONNECTION_STATE_REASON_USER_DISCONNECTED);
+    ASSERT(NM_VPN_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED,
+           NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
+    ASSERT(NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED,
+           NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_STOPPED);
+    ASSERT(NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID,
+           NM_ACTIVE_CONNECTION_STATE_REASON_IP_CONFIG_INVALID);
+    ASSERT(NM_VPN_CONNECTION_STATE_REASON_CONNECT_TIMEOUT,
+           NM_ACTIVE_CONNECTION_STATE_REASON_CONNECT_TIMEOUT);
+    ASSERT(NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT,
+           NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT);
+    ASSERT(NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED,
+           NM_ACTIVE_CONNECTION_STATE_REASON_SERVICE_START_FAILED);
+    ASSERT(NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS, NM_ACTIVE_CONNECTION_STATE_REASON_NO_SECRETS);
+    ASSERT(NM_VPN_CONNECTION_STATE_REASON_LOGIN_FAILED,
+           NM_ACTIVE_CONNECTION_STATE_REASON_LOGIN_FAILED);
+    ASSERT(NM_VPN_CONNECTION_STATE_REASON_CONNECTION_REMOVED,
+           NM_ACTIVE_CONNECTION_STATE_REASON_CONNECTION_REMOVED);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -10527,6 +10566,8 @@ main(int argc, char **argv)
     g_test_add_func("/core/general/test_nm_utils_wifi_ghz_freqs", test_nm_utils_wifi_ghz_freqs);
 
     g_test_add_func("/core/general/test_strsplit_quoted", test_strsplit_quoted);
+    g_test_add_func("/core/general/test_vpn_connection_state_reason",
+                    test_vpn_connection_state_reason);
 
     return g_test_run();
 }
