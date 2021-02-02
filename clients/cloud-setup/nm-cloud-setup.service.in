@@ -11,6 +11,9 @@ ExecStart=@libexecdir@/nm-cloud-setup
 # Cloud providers are disabled by default. You need to
 # Opt-in by setting the right environment variable for
 # the provider.
+#
+# Create a drop-in file to overwrite these variables or
+# use systemctl edit.
 #Environment=NM_CLOUD_SETUP_EC2=yes
 #Environment=NM_CLOUD_SETUP_GCP=yes
 #Environment=NM_CLOUD_SETUP_AZURE=yes
