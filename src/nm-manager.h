@@ -50,6 +50,7 @@
 /* Signals */
 #define NM_MANAGER_DEVICE_ADDED             "device-added"
 #define NM_MANAGER_DEVICE_REMOVED           "device-removed"
+#define NM_MANAGER_DEVICE_IFINDEX_CHANGED   "device-ifindex-changed"
 #define NM_MANAGER_USER_PERMISSIONS_CHANGED "user-permissions-changed"
 
 #define NM_MANAGER_ACTIVE_CONNECTION_ADDED   "active-connection-added"
@@ -180,6 +181,7 @@ gboolean nm_manager_deactivate_connection(NMManager *         manager,
                                           GError **           error);
 
 void nm_manager_set_capability(NMManager *self, NMCapability cap);
+void nm_manager_emit_device_ifindex_changed(NMManager *self, NMDevice *device);
 
 NMDevice *nm_manager_get_device(NMManager *self, const char *ifname, NMDeviceType device_type);
 gboolean  nm_manager_remove_device(NMManager *self, const char *ifname, NMDeviceType device_type);

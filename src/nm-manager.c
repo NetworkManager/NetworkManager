@@ -102,6 +102,7 @@ enum {
     ACTIVE_CONNECTION_ADDED,
     ACTIVE_CONNECTION_REMOVED,
     CONFIGURE_QUIT,
+    DEVICE_IFINDEX_CHANGED,
 
     LAST_SIGNAL
 };
@@ -7622,6 +7623,12 @@ nm_manager_set_capability(NMManager *self, NMCapability cap)
     _notify(self, PROP_CAPABILITIES);
 }
 
+void
+nm_manager_emit_device_ifindex_changed(NMManager *self, NMDevice *device)
+{
+    g_signal_emit(self, signals[DEVICE_IFINDEX_CHANGED], 0, device);
+}
+
 /*****************************************************************************/
 
 NM_DEFINE_SINGLETON_REGISTER(NMManager);
@@ -8675,4 +8682,15 @@ nm_manager_class_init(NMManagerClass *manager_class)
                                            NULL,
                                            G_TYPE_NONE,
                                            0);
+
+    signals[DEVICE_IFINDEX_CHANGED] = g_signal_new(NM_MANAGER_DEVICE_IFINDEX_CHANGED,
+                                                   G_OBJECT_CLASS_TYPE(object_class),
+                                                   G_SIGNAL_RUN_FIRST,
+                                                   0,
+                                                   NULL,
+                                                   NULL,
+                                                   NULL,
+                                                   G_TYPE_NONE,
+                                                   1,
+                                                   NM_TYPE_DEVICE);
 }

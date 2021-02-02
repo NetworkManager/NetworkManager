@@ -442,6 +442,7 @@ typedef struct _NMDevicePrivate {
     guint             carrier_defer_id;
     guint             carrier_wait_id;
     gulong            config_changed_id;
+    gulong            ifindex_changed_id;
     guint32           mtu;
     guint32           ip6_mtu;
     guint32           mtu_initial;
@@ -642,6 +643,7 @@ typedef struct _NMDevicePrivate {
     /* master interface for bridge/bond/team slave */
     NMDevice *master;
     gulong    master_ready_id;
+    int       master_ifindex;
 
     /* slave management */
     CList slaves; /* list of SlaveInfo */
@@ -760,6 +762,9 @@ static void concheck_update_state(NMDevice *          self,
                                   gboolean            is_periodic);
 
 static void sriov_op_cb(GError *error, gpointer user_data);
+
+static void device_ifindex_changed_cb(NMManager *manager, NMDevice *device_changed, NMDevice *self);
+static gboolean device_link_changed(NMDevice *self);
 
 /*****************************************************************************/
 
@@ -2884,6 +2889,8 @@ _set_ifindex(NMDevice *self, int ifindex, gboolean is_ip_ifindex)
     if (!is_ip_ifindex)
         _notify(self, PROP_IFINDEX);
 
+    if (priv->manager)
+        nm_manager_emit_device_ifindex_changed(priv->manager, self);
     return TRUE;
 }
 
@@ -4769,7 +4776,7 @@ nm_device_master_release_one_slave(NMDevice *          self,
     nm_assert(slave == info->slave);
 
     /* first, let subclasses handle the release ... */
-    if (info->slave_is_enslaved || force)
+    if (info->slave_is_enslaved || nm_device_sys_iface_state_is_external(slave) || force)
         NM_DEVICE_GET_CLASS(self)->release_slave(self, slave, configure);
 
     /* raise notifications about the release, including clearing is_enslaved. */
@@ -5104,7 +5111,7 @@ device_recheck_slave_status(NMDevice *self, const NMPlatformLink *plink)
     g_return_if_fail(plink);
 
     if (plink->master <= 0)
-        return;
+        goto out;
 
     master                  = nm_manager_get_device_by_ifindex(NM_MANAGER_GET, plink->master);
     plink_master            = nm_platform_link_get(nm_device_get_platform(self), plink->master);
@@ -5113,15 +5120,17 @@ device_recheck_slave_status(NMDevice *self, const NMPlatformLink *plink)
     if (master == NULL && plink_master && nm_streq0(plink_master->name, "ovs-system")
         && plink_master->type == NM_LINK_TYPE_OPENVSWITCH) {
         _LOGD(LOGD_DEVICE, "the device claimed by openvswitch");
-        return;
+        goto out;
     }
+
+    priv->master_ifindex = plink->master;
 
     if (priv->master) {
         if (plink->master > 0 && plink->master == nm_device_get_ifindex(priv->master)) {
             /* call add-slave again. We expect @self already to be added to
              * the master, but this also triggers a recheck-assume. */
             nm_device_master_add_slave(priv->master, self, FALSE);
-            return;
+            goto out;
         }
 
         nm_device_master_release_one_slave(priv->master,
@@ -5131,18 +5140,47 @@ device_recheck_slave_status(NMDevice *self, const NMPlatformLink *plink)
                                            NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
     }
 
-    if (master && NM_DEVICE_GET_CLASS(master)->enslave_slave)
+    if (master && NM_DEVICE_GET_CLASS(master)->enslave_slave) {
         nm_device_master_add_slave(master, self, FALSE);
-    else if (master) {
-        _LOGI(LOGD_DEVICE,
+        goto out;
+    }
+
+    if (master) {
+        _LOGD(LOGD_DEVICE,
               "enslaved to non-master-type device %s; ignoring",
               nm_device_get_iface(master));
     } else {
-        _LOGW(LOGD_DEVICE,
+        _LOGD(LOGD_DEVICE,
               "enslaved to unknown device %d (%s%s%s)",
               plink->master,
               NM_PRINT_FMT_QUOTED(plink_master, "\"", plink_master->name, "\"", "??"));
     }
+    if (!priv->ifindex_changed_id) {
+        priv->ifindex_changed_id = g_signal_connect(nm_device_get_manager(self),
+                                                    NM_MANAGER_DEVICE_IFINDEX_CHANGED,
+                                                    G_CALLBACK(device_ifindex_changed_cb),
+                                                    self);
+    }
+    return;
+
+out:
+    nm_clear_g_signal_handler(nm_device_get_manager(self), &priv->ifindex_changed_id);
+}
+
+static void
+device_ifindex_changed_cb(NMManager *manager, NMDevice *device_changed, NMDevice *self)
+{
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+    if (priv->master_ifindex != nm_device_get_ifindex(device_changed))
+        return;
+
+    _LOGD(LOGD_DEVICE,
+          "master %s with ifindex %d appeared",
+          nm_device_get_iface(device_changed),
+          nm_device_get_ifindex(device_changed));
+    if (!priv->device_link_changed_id)
+        priv->device_link_changed_id = g_idle_add((GSourceFunc) device_link_changed, self);
 }
 
 static void
@@ -6197,6 +6235,8 @@ nm_device_unrealize(NMDevice *self, gboolean remove_resources, GError **error)
     if (nm_clear_g_free(&priv->ip_iface_))
         _notify(self, PROP_IP_IFACE);
 
+    priv->master_ifindex = 0;
+
     _set_mtu(self, 0);
 
     if (priv->driver_version) {
@@ -6237,6 +6277,7 @@ nm_device_unrealize(NMDevice *self, gboolean remove_resources, GError **error)
     _notify(self, PROP_CAPABILITIES);
 
     nm_clear_g_signal_handler(nm_config_get(), &priv->config_changed_id);
+    nm_clear_g_signal_handler(priv->manager, &priv->ifindex_changed_id);
 
     priv->real = FALSE;
     _notify(self, PROP_REAL);
@@ -6488,7 +6529,7 @@ nm_device_master_check_slave_physical_port(NMDevice *self, NMDevice *slave, NMLo
 }
 
 /* release all slaves */
-static void
+void
 nm_device_master_release_slaves(NMDevice *self)
 {
     NMDevicePrivate *   priv = NM_DEVICE_GET_PRIVATE(self);
@@ -13272,6 +13313,12 @@ nm_device_disconnect_active_connection(NMActiveConnection *          active,
 
     if (NM_ACTIVE_CONNECTION(priv->act_request.obj) == active) {
         if (priv->state < NM_DEVICE_STATE_DEACTIVATING) {
+            /* When the user actively deactivates a profile, we set
+             * the sys-iface-state to managed so that we deconfigure/cleanup the interface.
+             * But for external connections that go down otherwise, we don't want to touch the interface. */
+            if (nm_device_sys_iface_state_is_external(self))
+                nm_device_sys_iface_state_set(self, NM_DEVICE_SYS_IFACE_STATE_MANAGED);
+
             nm_device_state_changed(self, NM_DEVICE_STATE_DEACTIVATING, device_reason);
         } else {
             /* @active is the current ac of @self, but it's going down already.
@@ -16390,9 +16437,9 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
                 nm_device_hw_addr_reset(self, "unmanage");
                 set_nm_ipv6ll(self, FALSE);
                 restore_ip6_properties(self);
-                break;
             }
         }
+        nm_device_sys_iface_state_set(self, NM_DEVICE_SYS_IFACE_STATE_EXTERNAL);
         break;
     case NM_DEVICE_STATE_UNAVAILABLE:
         if (old_state == NM_DEVICE_STATE_UNMANAGED) {
@@ -18249,6 +18296,7 @@ dispose(GObject *object)
     arp_cleanup(self);
 
     nm_clear_g_signal_handler(nm_config_get(), &priv->config_changed_id);
+    nm_clear_g_signal_handler(priv->manager, &priv->ifindex_changed_id);
 
     dispatcher_cleanup(self);
 
