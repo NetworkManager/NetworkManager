@@ -161,8 +161,12 @@
   <refsect1 id="env">
     <title>Environment Variables</title>
 
-    <para>The environment variables are used to configure <command>/usr/libexec/nm-cloud-setup</command>.
-    You may want to configure them in the systemd service with <command>systemctl edit nm-cloud-setup.service</command>.</para>
+    <para>The following environment variables are used to configure <command>/usr/libexec/nm-cloud-setup</command>.
+    You may want to configure them with a drop-in for the systemd service.
+    For example by calling <command>systemctl edit nm-cloud-setup.service</command>
+    and configuring <literal>[Service] Environment=</literal>, as described in
+    <link linkend='systemd.exec'><citerefentry><refentrytitle>systemd.exec</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>
+    manual.</para>
 
     <itemizedlist>
       <listitem>
