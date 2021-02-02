@@ -71,6 +71,7 @@ annotation-glossary
 api-index-full
 nm-dbus-interface
 nm-errors
+nm-keyfile
 nm-utils
 nm-version
 "
