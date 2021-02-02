@@ -411,6 +411,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
 
   <chapter>
     <title>Utility API Reference</title>
+    <xi:include href="xml/nm-keyfile.xml"/>
     <xi:include href="xml/nm-utils.xml"/>
     <xi:include href="xml/nm-version.xml"/>
   </chapter>
