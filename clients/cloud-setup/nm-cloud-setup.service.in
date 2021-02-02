@@ -1,5 +1,6 @@
 [Unit]
 Description=Automatically configure NetworkManager in cloud
+Documentation=man:nm-cloud-setup(8)
 After=NetworkManager.service
 
 [Service]
