@@ -165,6 +165,16 @@ ovsdb_device_removed(NMOvsdb *        ovsdb,
                 continue;
             if (!nm_streq0(nm_setting_ovs_interface_get_interface_type(s_ovs_int), "system"))
                 continue;
+            /* Failing the system interface device is almost always the right
+             * thing to do when the ovsdb entry is removed. However, to avoid
+             * that a late device-removed signal tears down a different,
+             * newly-activated connection, let's also check that we have a master.
+             * Or in alternative, that the device is assumed/external: in such
+             * case it's always fine to fail the device.
+             */
+            if (!nm_device_get_master(d) && !nm_device_sys_iface_state_is_external_or_assume(d))
+                continue;
+
             device = d;
         }
     } else {
