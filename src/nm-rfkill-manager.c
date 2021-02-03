@@ -367,7 +367,7 @@ nm_rfkill_manager_init(NMRfkillManager *self)
     for (i = 0; i < RFKILL_TYPE_MAX; i++)
         priv->rfkill_states[i] = RFKILL_UNBLOCKED;
 
-    priv->udev_client = nm_udev_client_new((const char *[]){"rfkill", NULL}, handle_uevent, self);
+    priv->udev_client = nm_udev_client_new(NM_MAKE_STRV("rfkill"), handle_uevent, self);
 
     enumerate = nm_udev_client_enumerate_new(priv->udev_client);
     udev_enumerate_scan_devices(enumerate);

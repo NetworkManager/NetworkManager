@@ -239,7 +239,7 @@ nm_atm_manager_init(NMAtmManager *self)
 {
     NMAtmManagerPrivate *priv = NM_ATM_MANAGER_GET_PRIVATE(self);
 
-    priv->udev_client = nm_udev_client_new((const char *[]){"atm", NULL}, handle_uevent, self);
+    priv->udev_client = nm_udev_client_new(NM_MAKE_STRV("atm"), handle_uevent, self);
 }
 
 static void

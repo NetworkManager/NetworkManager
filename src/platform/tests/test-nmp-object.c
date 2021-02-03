@@ -569,7 +569,7 @@ main(int argc, char **argv)
 
     nmtst_init_assert_logging(&argc, &argv, "INFO", "DEFAULT");
 
-    udev_client = nm_udev_client_new((const char *[]){"net", NULL}, NULL, NULL);
+    udev_client = nm_udev_client_new(NM_MAKE_STRV("net"), NULL, NULL);
     {
         struct udev_enumerate * enumerator;
         struct udev_list_entry *devices, *l;
