@@ -14,7 +14,7 @@ REQUIRED_AUTOMAKE_VERSION=1.9
 PKG_NAME=NetworkManager
 
 (test -f $srcdir/configure.ac \
-  && test -f $srcdir/src/main.c) || {
+  && test -f $srcdir/src/core/main.c) || {
     printf "**Error**: Directory "\`$srcdir\'" does not look like the" >&2
     echo " top-level $PKG_NAME directory" >&2
     exit 1

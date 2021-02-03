@@ -21,7 +21,7 @@
 
 #include "nm-test-utils-core.h"
 
-#define TEST_CERT_DIR NM_BUILD_SRCDIR "/src/supplicant/tests/certs"
+#define TEST_CERT_DIR NM_BUILD_SRCDIR "/src/core/supplicant/tests/certs"
 
 /*****************************************************************************/
 

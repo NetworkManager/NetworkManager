@@ -5,20 +5,20 @@ ret=0
 
 get_supported_options()
 {
-    awk '/START OPTION LIST/{flag=1;next}/END OPTION LIST/{flag=0}flag' "$srcdir/src/nm-config.c" |
+    awk '/START OPTION LIST/{flag=1;next}/END OPTION LIST/{flag=0}flag' "$srcdir/src/core/nm-config.c" |
     grep -o 'NM_CONFIG_KEYFILE_KEY_\w*'
 }
 
 get_missing_options()
 {
-    grep -v '/\* check-config-options skip \*/' "$srcdir/src/nm-config.h" |
+    grep -v '/\* check-config-options skip \*/' "$srcdir/src/core/nm-config.h" |
     grep -o 'NM_CONFIG_KEYFILE_KEY_\w*' |
     grep -v -Fx -f <(get_supported_options)
 }
 
 get_src_con_defaults()
 {
-    sed -n 's/\<NM_CON_DEFAULT/\n\0/gp' $(find "$srcdir/src/" -name \*.c ! -name test\*.c) |
+    sed -n 's/\<NM_CON_DEFAULT/\n\0/gp' $(find "$srcdir/src/core/" -name \*.c ! -name test\*.c) |
     sed -n 's/.*\<NM_CON_DEFAULT\(_NOP\)\?\s*("\([^"]*\)").*/\2/p'
 }
 

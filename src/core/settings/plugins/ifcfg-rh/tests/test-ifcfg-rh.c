@@ -49,8 +49,9 @@
 
 #include "nm-test-utils-core.h"
 
-#define TEST_IFCFG_DIR       NM_BUILD_SRCDIR "/src/settings/plugins/ifcfg-rh/tests/network-scripts"
-#define TEST_SCRATCH_DIR     NM_BUILD_BUILDDIR "/src/settings/plugins/ifcfg-rh/tests/network-scripts"
+#define TEST_IFCFG_DIR NM_BUILD_SRCDIR "/src/core/settings/plugins/ifcfg-rh/tests/network-scripts"
+#define TEST_SCRATCH_DIR \
+    NM_BUILD_BUILDDIR "/src/core/settings/plugins/ifcfg-rh/tests/network-scripts"
 #define TEST_SCRATCH_DIR_TMP TEST_SCRATCH_DIR "/tmp"
 
 #define TEST_SCRATCH_ALIAS_BASE TEST_SCRATCH_DIR "/ifcfg-alias0"

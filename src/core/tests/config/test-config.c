@@ -16,8 +16,8 @@
 
 #include "nm-test-utils-core.h"
 
-#define TEST_DIR  NM_BUILD_SRCDIR "/src/tests/config"
-#define BUILD_DIR NM_BUILD_BUILDDIR "/src/tests/config"
+#define TEST_DIR  NM_BUILD_SRCDIR "/src/core/tests/config"
+#define BUILD_DIR NM_BUILD_BUILDDIR "/src/core/tests/config"
 
 /*****************************************************************************/
 

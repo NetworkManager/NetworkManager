@@ -20,7 +20,7 @@
 
 #include "nm-test-utils-core.h"
 
-#define TEST_DIR    NM_BUILD_SRCDIR "/src/dhcp/tests"
+#define TEST_DIR    NM_BUILD_SRCDIR "/src/core/dhcp/tests"
 #define TEST_MUDURL "https://example.com/mud.json"
 
 static void

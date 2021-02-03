@@ -123,7 +123,7 @@ shared/nm-udev-aux/.dirstamp:        config-extra.h
 shared/systemd/.dirstamp:            config-extra.h
 shared/systemd/src/basic/.dirstamp:  config-extra.h
 shared/systemd/src/shared/.dirstamp: config-extra.h
-src/dhcp/.dirstamp:                  config-extra.h
+src/core/dhcp/.dirstamp:             config-extra.h
 
 ###############################################################################
 
@@ -135,8 +135,8 @@ set_sanitizer_env = \
 	fi
 
 check_so_symbols = \
-	$(call set_sanitizer_env,$(1),$(builddir)/src/NetworkManager); \
-	LD_BIND_NOW=1 LD_PRELOAD=$${LD_PRELOAD}:$(1) $(builddir)/src/NetworkManager --version >/dev/null
+	$(call set_sanitizer_env,$(1),$(builddir)/src/core/NetworkManager); \
+	LD_BIND_NOW=1 LD_PRELOAD=$${LD_PRELOAD}:$(1) $(builddir)/src/core/NetworkManager --version >/dev/null
 
 ###############################################################################
 
@@ -1232,13 +1232,13 @@ $(dispatcher_nm_dispatcher_OBJECTS):                                        $(li
 $(libnm_core_libnm_core_la_OBJECTS):                                        $(libnm_core_lib_h_pub_mkenums)
 $(libnm_libnm_la_OBJECTS):                                                  $(libnm_core_lib_h_pub_mkenums)
 $(libnm_tests_libnm_vpn_plugin_utils_test_la_OBJECTS):                      $(libnm_core_lib_h_pub_mkenums)
-$(src_NetworkManager_OBJECTS):                                              $(libnm_core_lib_h_pub_mkenums)
-$(src_devices_adsl_libnm_device_plugin_adsl_la_OBJECTS):                    $(libnm_core_lib_h_pub_mkenums)
-$(src_devices_bluetooth_libnm_device_plugin_bluetooth_la_OBJECTS):          $(libnm_core_lib_h_pub_mkenums)
-$(src_devices_team_libnm_device_plugin_team_la_OBJECTS):                    $(libnm_core_lib_h_pub_mkenums)
-$(src_devices_wifi_libnm_device_plugin_wifi_la_OBJECTS):                    $(libnm_core_lib_h_pub_mkenums)
-$(src_devices_wwan_libnm_device_plugin_wwan_la_OBJECTS):                    $(libnm_core_lib_h_pub_mkenums)
-$(src_devices_ovs_libnm_device_plugin_ovs_la_OBJECTS):                      $(libnm_core_lib_h_pub_mkenums)
+$(src_core_NetworkManager_OBJECTS):                                         $(libnm_core_lib_h_pub_mkenums)
+$(src_core_devices_adsl_libnm_device_plugin_adsl_la_OBJECTS):               $(libnm_core_lib_h_pub_mkenums)
+$(src_core_devices_bluetooth_libnm_device_plugin_bluetooth_la_OBJECTS):     $(libnm_core_lib_h_pub_mkenums)
+$(src_core_devices_team_libnm_device_plugin_team_la_OBJECTS):               $(libnm_core_lib_h_pub_mkenums)
+$(src_core_devices_wifi_libnm_device_plugin_wifi_la_OBJECTS):               $(libnm_core_lib_h_pub_mkenums)
+$(src_core_devices_wwan_libnm_device_plugin_wwan_la_OBJECTS):               $(libnm_core_lib_h_pub_mkenums)
+$(src_core_devices_ovs_libnm_device_plugin_ovs_la_OBJECTS):                 $(libnm_core_lib_h_pub_mkenums)
 
 libnm_core_libnm_core_la_CPPFLAGS = \
 	$(dflt_cppflags_libnm_core) \
@@ -1892,26 +1892,26 @@ EXTRA_DIST += \
 	libnm/tests/meson.build
 
 ###############################################################################
-# src/
+# src/core/
 ###############################################################################
 
-src_cppflags_base = \
-	-I$(srcdir)/src \
+src_core_cppflags_base = \
+	-I$(srcdir)/src/core \
 	$(dflt_cppflags_libnm_core) \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON \
 	$(SANITIZER_EXEC_CFLAGS) \
 	$(NULL)
 
-src_cppflags_base_test = \
-	$(src_cppflags_base) \
+src_core_cppflags_base_test = \
+	$(src_core_cppflags_base) \
 	-DNETWORKMANAGER_COMPILATION_TEST \
 	$(NULL)
 
-src_cppflags_device_plugin = \
-	$(src_cppflags_base)
+src_core_cppflags_device_plugin = \
+	$(src_core_cppflags_base)
 
-src_cppflags = \
-	$(src_cppflags_base) \
+src_core_cppflags = \
+	$(src_core_cppflags_base) \
 	\
 	$(LIBNDP_CFLAGS) \
 	$(LIBPSL_CFLAGS) \
@@ -1923,27 +1923,27 @@ src_cppflags = \
 	\
 	$(NULL)
 
-src_cppflags_test = \
-	$(src_cppflags) \
+src_core_cppflags_test = \
+	$(src_core_cppflags) \
 	-DNETWORKMANAGER_COMPILATION_TEST \
 	$(NULL)
 
 if REQUIRE_ROOT_TESTS
-src_cppflags_test += -DREQUIRE_ROOT_TESTS=1
+src_core_cppflags_test += -DREQUIRE_ROOT_TESTS=1
 endif
 
-src_ldflags = $(CODE_COVERAGE_LDFLAGS)
+src_core_ldflags = $(CODE_COVERAGE_LDFLAGS)
 
 sbin_PROGRAMS += \
-	src/NetworkManager
+	src/core/NetworkManager
 
 libexec_PROGRAMS += \
-	src/nm-iface-helper
+	src/core/nm-iface-helper
 
 noinst_LTLIBRARIES += \
-	src/libNetworkManagerBase.la \
-	src/libNetworkManager.la \
-	src/libnm-systemd-core.la \
+	src/core/libNetworkManagerBase.la \
+	src/core/libNetworkManager.la \
+	src/core/libnm-systemd-core.la \
 	$(NULL)
 
 check-config-options:
@@ -2128,373 +2128,373 @@ shared_systemd_libnm_systemd_shared_la_LIBADD = \
 
 ###############################################################################
 
-src_libnm_systemd_core_la_cppflags = \
+src_core_libnm_systemd_core_la_cppflags = \
 	$(libsystemd_cppflags) \
 	-I$(srcdir)/libnm-core \
 	-I$(builddir)/libnm-core \
-	-I$(srcdir)/src \
-	-I$(srcdir)/src/systemd/sd-adapt-core \
-	-I$(srcdir)/src/systemd/src/systemd \
-	-I$(srcdir)/src/systemd/src/libsystemd-network \
-	-I$(srcdir)/src/systemd/src/libsystemd/sd-event \
+	-I$(srcdir)/src/core \
+	-I$(srcdir)/src/core/systemd/sd-adapt-core \
+	-I$(srcdir)/src/core/systemd/src/systemd \
+	-I$(srcdir)/src/core/systemd/src/libsystemd-network \
+	-I$(srcdir)/src/core/systemd/src/libsystemd/sd-event \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD \
 	$(NULL)
 
-src_libnm_systemd_core_la_libadd = \
+src_core_libnm_systemd_core_la_libadd = \
 	$(GLIB_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(NULL)
 
-src_libnm_systemd_core_la_SOURCES = \
-	src/systemd/nm-sd-utils-core.c \
-	src/systemd/nm-sd-utils-core.h \
-	src/systemd/nm-sd.c \
-	src/systemd/nm-sd.h \
-	src/systemd/nm-sd-utils-dhcp.h \
-	src/systemd/nm-sd-utils-dhcp.c \
-	src/systemd/sd-adapt-core/condition.h \
-	src/systemd/sd-adapt-core/conf-parser.h \
-	src/systemd/sd-adapt-core/device-util.h \
-	src/systemd/sd-adapt-core/khash.h \
-	src/systemd/sd-adapt-core/network-util.h \
-	src/systemd/sd-adapt-core/nm-sd-adapt-core.c \
-	src/systemd/sd-adapt-core/nm-sd-adapt-core.h \
-	src/systemd/sd-adapt-core/sd-daemon.h \
-	src/systemd/sd-adapt-core/sd-device.h \
-	src/systemd/sd-adapt-core/udev-util.h \
-	src/systemd/src/libsystemd-network/arp-util.c \
-	src/systemd/src/libsystemd-network/arp-util.h \
-	src/systemd/src/libsystemd-network/dhcp-identifier.c \
-	src/systemd/src/libsystemd-network/dhcp-identifier.h \
-	src/systemd/src/libsystemd-network/dhcp-internal.h \
-	src/systemd/src/libsystemd-network/dhcp-lease-internal.h \
-	src/systemd/src/libsystemd-network/dhcp-network.c \
-	src/systemd/src/libsystemd-network/dhcp-option.c \
-	src/systemd/src/libsystemd-network/dhcp-packet.c \
-	src/systemd/src/libsystemd-network/dhcp-protocol.h \
-	src/systemd/src/libsystemd-network/dhcp6-internal.h \
-	src/systemd/src/libsystemd-network/dhcp6-lease-internal.h \
-	src/systemd/src/libsystemd-network/dhcp6-network.c \
-	src/systemd/src/libsystemd-network/dhcp6-option.c \
-	src/systemd/src/libsystemd-network/dhcp6-protocol.h \
-	src/systemd/src/libsystemd-network/lldp-internal.h \
-	src/systemd/src/libsystemd-network/lldp-neighbor.c \
-	src/systemd/src/libsystemd-network/lldp-neighbor.h \
-	src/systemd/src/libsystemd-network/lldp-network.c \
-	src/systemd/src/libsystemd-network/lldp-network.h \
-	src/systemd/src/libsystemd-network/network-internal.c \
-	src/systemd/src/libsystemd-network/network-internal.h \
-	src/systemd/src/libsystemd-network/sd-dhcp-client.c \
-	src/systemd/src/libsystemd-network/sd-dhcp-lease.c \
-	src/systemd/src/libsystemd-network/sd-dhcp6-client.c \
-	src/systemd/src/libsystemd-network/sd-dhcp6-lease.c \
-	src/systemd/src/libsystemd-network/sd-ipv4acd.c \
-	src/systemd/src/libsystemd-network/sd-ipv4ll.c \
-	src/systemd/src/libsystemd-network/sd-lldp.c \
-	src/systemd/src/libsystemd/sd-event/event-source.h \
-	src/systemd/src/libsystemd/sd-event/event-util.c \
-	src/systemd/src/libsystemd/sd-event/event-util.h \
-	src/systemd/src/libsystemd/sd-event/sd-event.c \
-	src/systemd/src/libsystemd/sd-id128/id128-util.c \
-	src/systemd/src/libsystemd/sd-id128/id128-util.h \
-	src/systemd/src/libsystemd/sd-id128/sd-id128.c \
-	src/systemd/src/systemd/_sd-common.h \
-	src/systemd/src/systemd/sd-dhcp-client.h \
-	src/systemd/src/systemd/sd-dhcp-lease.h \
-	src/systemd/src/systemd/sd-dhcp-option.h \
-	src/systemd/src/systemd/sd-dhcp6-client.h \
-	src/systemd/src/systemd/sd-dhcp6-lease.h \
-	src/systemd/src/systemd/sd-dhcp6-option.h \
-	src/systemd/src/systemd/sd-event.h \
-	src/systemd/src/systemd/sd-id128.h \
-	src/systemd/src/systemd/sd-ipv4acd.h \
-	src/systemd/src/systemd/sd-ipv4ll.h \
-	src/systemd/src/systemd/sd-lldp.h \
-	src/systemd/src/systemd/sd-ndisc.h \
+src_core_libnm_systemd_core_la_SOURCES = \
+	src/core/systemd/nm-sd-utils-core.c \
+	src/core/systemd/nm-sd-utils-core.h \
+	src/core/systemd/nm-sd.c \
+	src/core/systemd/nm-sd.h \
+	src/core/systemd/nm-sd-utils-dhcp.h \
+	src/core/systemd/nm-sd-utils-dhcp.c \
+	src/core/systemd/sd-adapt-core/condition.h \
+	src/core/systemd/sd-adapt-core/conf-parser.h \
+	src/core/systemd/sd-adapt-core/device-util.h \
+	src/core/systemd/sd-adapt-core/khash.h \
+	src/core/systemd/sd-adapt-core/network-util.h \
+	src/core/systemd/sd-adapt-core/nm-sd-adapt-core.c \
+	src/core/systemd/sd-adapt-core/nm-sd-adapt-core.h \
+	src/core/systemd/sd-adapt-core/sd-daemon.h \
+	src/core/systemd/sd-adapt-core/sd-device.h \
+	src/core/systemd/sd-adapt-core/udev-util.h \
+	src/core/systemd/src/libsystemd-network/arp-util.c \
+	src/core/systemd/src/libsystemd-network/arp-util.h \
+	src/core/systemd/src/libsystemd-network/dhcp-identifier.c \
+	src/core/systemd/src/libsystemd-network/dhcp-identifier.h \
+	src/core/systemd/src/libsystemd-network/dhcp-internal.h \
+	src/core/systemd/src/libsystemd-network/dhcp-lease-internal.h \
+	src/core/systemd/src/libsystemd-network/dhcp-network.c \
+	src/core/systemd/src/libsystemd-network/dhcp-option.c \
+	src/core/systemd/src/libsystemd-network/dhcp-packet.c \
+	src/core/systemd/src/libsystemd-network/dhcp-protocol.h \
+	src/core/systemd/src/libsystemd-network/dhcp6-internal.h \
+	src/core/systemd/src/libsystemd-network/dhcp6-lease-internal.h \
+	src/core/systemd/src/libsystemd-network/dhcp6-network.c \
+	src/core/systemd/src/libsystemd-network/dhcp6-option.c \
+	src/core/systemd/src/libsystemd-network/dhcp6-protocol.h \
+	src/core/systemd/src/libsystemd-network/lldp-internal.h \
+	src/core/systemd/src/libsystemd-network/lldp-neighbor.c \
+	src/core/systemd/src/libsystemd-network/lldp-neighbor.h \
+	src/core/systemd/src/libsystemd-network/lldp-network.c \
+	src/core/systemd/src/libsystemd-network/lldp-network.h \
+	src/core/systemd/src/libsystemd-network/network-internal.c \
+	src/core/systemd/src/libsystemd-network/network-internal.h \
+	src/core/systemd/src/libsystemd-network/sd-dhcp-client.c \
+	src/core/systemd/src/libsystemd-network/sd-dhcp-lease.c \
+	src/core/systemd/src/libsystemd-network/sd-dhcp6-client.c \
+	src/core/systemd/src/libsystemd-network/sd-dhcp6-lease.c \
+	src/core/systemd/src/libsystemd-network/sd-ipv4acd.c \
+	src/core/systemd/src/libsystemd-network/sd-ipv4ll.c \
+	src/core/systemd/src/libsystemd-network/sd-lldp.c \
+	src/core/systemd/src/libsystemd/sd-event/event-source.h \
+	src/core/systemd/src/libsystemd/sd-event/event-util.c \
+	src/core/systemd/src/libsystemd/sd-event/event-util.h \
+	src/core/systemd/src/libsystemd/sd-event/sd-event.c \
+	src/core/systemd/src/libsystemd/sd-id128/id128-util.c \
+	src/core/systemd/src/libsystemd/sd-id128/id128-util.h \
+	src/core/systemd/src/libsystemd/sd-id128/sd-id128.c \
+	src/core/systemd/src/systemd/_sd-common.h \
+	src/core/systemd/src/systemd/sd-dhcp-client.h \
+	src/core/systemd/src/systemd/sd-dhcp-lease.h \
+	src/core/systemd/src/systemd/sd-dhcp-option.h \
+	src/core/systemd/src/systemd/sd-dhcp6-client.h \
+	src/core/systemd/src/systemd/sd-dhcp6-lease.h \
+	src/core/systemd/src/systemd/sd-dhcp6-option.h \
+	src/core/systemd/src/systemd/sd-event.h \
+	src/core/systemd/src/systemd/sd-id128.h \
+	src/core/systemd/src/systemd/sd-ipv4acd.h \
+	src/core/systemd/src/systemd/sd-ipv4ll.h \
+	src/core/systemd/src/systemd/sd-lldp.h \
+	src/core/systemd/src/systemd/sd-ndisc.h \
 	$(NULL)
 
-src_libnm_systemd_core_la_CPPFLAGS = $(src_libnm_systemd_core_la_cppflags)
-src_libnm_systemd_core_la_LIBADD = \
+src_core_libnm_systemd_core_la_CPPFLAGS = $(src_core_libnm_systemd_core_la_cppflags)
+src_core_libnm_systemd_core_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(NULL)
-$(src_libnm_systemd_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_libnm_systemd_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
-	src/systemd/meson.build
+	src/core/systemd/meson.build
 
 ###############################################################################
 
-src_libNetworkManagerBase_la_CPPFLAGS = \
+src_core_libNetworkManagerBase_la_CPPFLAGS = \
 	$(libsystemd_cppflags) \
-	$(src_cppflags)
+	$(src_core_cppflags)
 
-src_libNetworkManagerBase_la_SOURCES = \
+src_core_libNetworkManagerBase_la_SOURCES = \
 	\
-	src/nm-core-utils.c \
-	src/nm-core-utils.h \
+	src/core/nm-core-utils.c \
+	src/core/nm-core-utils.h \
 	\
-	src/NetworkManagerUtils.c \
-	src/NetworkManagerUtils.h \
+	src/core/NetworkManagerUtils.c \
+	src/core/NetworkManagerUtils.h \
 	\
-	src/platform/nmp-object.c \
-	src/platform/nmp-object.h \
-	src/platform/nm-platform.c \
-	src/platform/nm-platform.h \
-	src/platform/nm-platform-private.h \
-	src/platform/nm-linux-platform.c \
-	src/platform/nm-linux-platform.h \
-	src/platform/nmp-rules-manager.c \
-	src/platform/nmp-rules-manager.h \
-	src/platform/wifi/nm-wifi-utils-nl80211.c \
-	src/platform/wifi/nm-wifi-utils-nl80211.h \
-	src/platform/wifi/nm-wifi-utils-private.h \
-	src/platform/wifi/nm-wifi-utils.c \
-	src/platform/wifi/nm-wifi-utils.h \
-	src/platform/wpan/nm-wpan-utils.c \
-	src/platform/wpan/nm-wpan-utils.h \
+	src/core/platform/nmp-object.c \
+	src/core/platform/nmp-object.h \
+	src/core/platform/nm-platform.c \
+	src/core/platform/nm-platform.h \
+	src/core/platform/nm-platform-private.h \
+	src/core/platform/nm-linux-platform.c \
+	src/core/platform/nm-linux-platform.h \
+	src/core/platform/nmp-rules-manager.c \
+	src/core/platform/nmp-rules-manager.h \
+	src/core/platform/wifi/nm-wifi-utils-nl80211.c \
+	src/core/platform/wifi/nm-wifi-utils-nl80211.h \
+	src/core/platform/wifi/nm-wifi-utils-private.h \
+	src/core/platform/wifi/nm-wifi-utils.c \
+	src/core/platform/wifi/nm-wifi-utils.h \
+	src/core/platform/wpan/nm-wpan-utils.c \
+	src/core/platform/wpan/nm-wpan-utils.h \
 	\
-	src/ndisc/nm-lndp-ndisc.c \
-	src/ndisc/nm-lndp-ndisc.h \
-	src/ndisc/nm-ndisc.c \
-	src/ndisc/nm-ndisc.h \
-	src/ndisc/nm-ndisc-private.h \
+	src/core/ndisc/nm-lndp-ndisc.c \
+	src/core/ndisc/nm-lndp-ndisc.h \
+	src/core/ndisc/nm-ndisc.c \
+	src/core/ndisc/nm-ndisc.h \
+	src/core/ndisc/nm-ndisc-private.h \
 	\
-	src/nm-dbus-utils.c \
-	src/nm-dbus-utils.h \
-	src/nm-dbus-object.c \
-	src/nm-dbus-object.h \
-	src/nm-netns.c \
-	src/nm-netns.h \
-	src/nm-l3-config-data.c \
-	src/nm-l3-config-data.h \
-	src/nm-l3-ipv4ll.c \
-	src/nm-l3-ipv4ll.h \
-	src/nm-l3cfg.c \
-	src/nm-l3cfg.h \
-	src/nm-ip-config.c \
-	src/nm-ip-config.h \
-	src/nm-ip4-config.c \
-	src/nm-ip4-config.h \
-	src/nm-ip6-config.c \
-	src/nm-ip6-config.h \
+	src/core/nm-dbus-utils.c \
+	src/core/nm-dbus-utils.h \
+	src/core/nm-dbus-object.c \
+	src/core/nm-dbus-object.h \
+	src/core/nm-netns.c \
+	src/core/nm-netns.h \
+	src/core/nm-l3-config-data.c \
+	src/core/nm-l3-config-data.h \
+	src/core/nm-l3-ipv4ll.c \
+	src/core/nm-l3-ipv4ll.h \
+	src/core/nm-l3cfg.c \
+	src/core/nm-l3cfg.h \
+	src/core/nm-ip-config.c \
+	src/core/nm-ip-config.h \
+	src/core/nm-ip4-config.c \
+	src/core/nm-ip4-config.h \
+	src/core/nm-ip6-config.c \
+	src/core/nm-ip6-config.h \
 	\
-	src/dhcp/nm-dhcp-client.c \
-	src/dhcp/nm-dhcp-client.h \
-	src/dhcp/nm-dhcp-client-logging.h \
-	src/dhcp/nm-dhcp-nettools.c \
-	src/dhcp/nm-dhcp-utils.c \
-	src/dhcp/nm-dhcp-utils.h \
-	src/dhcp/nm-dhcp-options.c \
-	src/dhcp/nm-dhcp-options.h \
-	src/dhcp/nm-dhcp-systemd.c \
-	src/dhcp/nm-dhcp-manager.c \
-	src/dhcp/nm-dhcp-manager.h \
+	src/core/dhcp/nm-dhcp-client.c \
+	src/core/dhcp/nm-dhcp-client.h \
+	src/core/dhcp/nm-dhcp-client-logging.h \
+	src/core/dhcp/nm-dhcp-nettools.c \
+	src/core/dhcp/nm-dhcp-utils.c \
+	src/core/dhcp/nm-dhcp-utils.h \
+	src/core/dhcp/nm-dhcp-options.c \
+	src/core/dhcp/nm-dhcp-options.h \
+	src/core/dhcp/nm-dhcp-systemd.c \
+	src/core/dhcp/nm-dhcp-manager.c \
+	src/core/dhcp/nm-dhcp-manager.h \
 	\
-	src/main-utils.c \
-	src/main-utils.h \
+	src/core/main-utils.c \
+	src/core/main-utils.h \
 	\
 	$(NULL)
 
 if WITH_WEXT
-src_libNetworkManagerBase_la_SOURCES += \
-	src/platform/wifi/nm-wifi-utils-wext.c \
-	src/platform/wifi/nm-wifi-utils-wext.h
+src_core_libNetworkManagerBase_la_SOURCES += \
+	src/core/platform/wifi/nm-wifi-utils-wext.c \
+	src/core/platform/wifi/nm-wifi-utils-wext.h
 endif
 
-src_libNetworkManagerBase_la_LIBADD = \
+src_core_libNetworkManagerBase_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
 	$(NULL)
 
-$(src_libNetworkManagerBase_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_libNetworkManagerBase_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
-	src/platform/linux/nl802154.h
+	src/core/platform/linux/nl802154.h
 
 ###############################################################################
 
-src_libNetworkManager_la_CPPFLAGS = $(src_cppflags)
+src_core_libNetworkManager_la_CPPFLAGS = $(src_core_cppflags)
 
-src_libNetworkManager_la_SOURCES = \
+src_core_libNetworkManager_la_SOURCES = \
 	\
-	src/nm-checkpoint.c \
-	src/nm-checkpoint.h \
-	src/nm-checkpoint-manager.c \
-	src/nm-checkpoint-manager.h \
+	src/core/nm-checkpoint.c \
+	src/core/nm-checkpoint.h \
+	src/core/nm-checkpoint-manager.c \
+	src/core/nm-checkpoint-manager.h \
 	\
-	src/devices/nm-acd-manager.c \
-	src/devices/nm-acd-manager.h \
-	src/devices/nm-lldp-listener.c \
-	src/devices/nm-lldp-listener.h \
-	src/devices/nm-device.c \
-	src/devices/nm-device.h \
-	src/devices/nm-device-ethernet-utils.c \
-	src/devices/nm-device-ethernet-utils.h \
-	src/devices/nm-device-factory.c \
-	src/devices/nm-device-factory.h \
-	src/devices/nm-device-generic.c \
-	src/devices/nm-device-generic.h \
-	src/devices/nm-device-logging.h \
-	src/devices/nm-device-private.h \
+	src/core/devices/nm-acd-manager.c \
+	src/core/devices/nm-acd-manager.h \
+	src/core/devices/nm-lldp-listener.c \
+	src/core/devices/nm-lldp-listener.h \
+	src/core/devices/nm-device.c \
+	src/core/devices/nm-device.h \
+	src/core/devices/nm-device-ethernet-utils.c \
+	src/core/devices/nm-device-ethernet-utils.h \
+	src/core/devices/nm-device-factory.c \
+	src/core/devices/nm-device-factory.h \
+	src/core/devices/nm-device-generic.c \
+	src/core/devices/nm-device-generic.h \
+	src/core/devices/nm-device-logging.h \
+	src/core/devices/nm-device-private.h \
 	\
-	src/devices/nm-device-6lowpan.c \
-	src/devices/nm-device-6lowpan.h \
-	src/devices/nm-device-bond.c \
-	src/devices/nm-device-bond.h \
-	src/devices/nm-device-bridge.c \
-	src/devices/nm-device-bridge.h \
-	src/devices/nm-device-dummy.c \
-	src/devices/nm-device-dummy.h \
-	src/devices/nm-device-ethernet.c \
-	src/devices/nm-device-ethernet.h \
-	src/devices/nm-device-infiniband.c \
-	src/devices/nm-device-infiniband.h \
-	src/devices/nm-device-ip-tunnel.c \
-	src/devices/nm-device-ip-tunnel.h \
-	src/devices/nm-device-macsec.c \
-	src/devices/nm-device-macsec.h \
-	src/devices/nm-device-macvlan.c \
-	src/devices/nm-device-macvlan.h \
-	src/devices/nm-device-ppp.c \
-	src/devices/nm-device-ppp.h \
-	src/devices/nm-device-tun.c \
-	src/devices/nm-device-tun.h \
-	src/devices/nm-device-veth.c \
-	src/devices/nm-device-veth.h \
-	src/devices/nm-device-vlan.c \
-	src/devices/nm-device-vlan.h \
-	src/devices/nm-device-vrf.c \
-	src/devices/nm-device-vrf.h \
-	src/devices/nm-device-vxlan.c \
-	src/devices/nm-device-vxlan.h \
-	src/devices/nm-device-wireguard.c \
-	src/devices/nm-device-wireguard.h \
-	src/devices/nm-device-wpan.c \
-	src/devices/nm-device-wpan.h \
+	src/core/devices/nm-device-6lowpan.c \
+	src/core/devices/nm-device-6lowpan.h \
+	src/core/devices/nm-device-bond.c \
+	src/core/devices/nm-device-bond.h \
+	src/core/devices/nm-device-bridge.c \
+	src/core/devices/nm-device-bridge.h \
+	src/core/devices/nm-device-dummy.c \
+	src/core/devices/nm-device-dummy.h \
+	src/core/devices/nm-device-ethernet.c \
+	src/core/devices/nm-device-ethernet.h \
+	src/core/devices/nm-device-infiniband.c \
+	src/core/devices/nm-device-infiniband.h \
+	src/core/devices/nm-device-ip-tunnel.c \
+	src/core/devices/nm-device-ip-tunnel.h \
+	src/core/devices/nm-device-macsec.c \
+	src/core/devices/nm-device-macsec.h \
+	src/core/devices/nm-device-macvlan.c \
+	src/core/devices/nm-device-macvlan.h \
+	src/core/devices/nm-device-ppp.c \
+	src/core/devices/nm-device-ppp.h \
+	src/core/devices/nm-device-tun.c \
+	src/core/devices/nm-device-tun.h \
+	src/core/devices/nm-device-veth.c \
+	src/core/devices/nm-device-veth.h \
+	src/core/devices/nm-device-vlan.c \
+	src/core/devices/nm-device-vlan.h \
+	src/core/devices/nm-device-vrf.c \
+	src/core/devices/nm-device-vrf.h \
+	src/core/devices/nm-device-vxlan.c \
+	src/core/devices/nm-device-vxlan.h \
+	src/core/devices/nm-device-wireguard.c \
+	src/core/devices/nm-device-wireguard.h \
+	src/core/devices/nm-device-wpan.c \
+	src/core/devices/nm-device-wpan.h \
 	\
-	src/dhcp/nm-dhcp-dhcpcanon.c \
-	src/dhcp/nm-dhcp-dhclient.c \
-	src/dhcp/nm-dhcp-dhcpcd.c \
-	src/dhcp/nm-dhcp-helper-api.h \
-	src/dhcp/nm-dhcp-listener.c \
-	src/dhcp/nm-dhcp-listener.h \
-	src/dhcp/nm-dhcp-dhclient-utils.c \
-	src/dhcp/nm-dhcp-dhclient-utils.h \
+	src/core/dhcp/nm-dhcp-dhcpcanon.c \
+	src/core/dhcp/nm-dhcp-dhclient.c \
+	src/core/dhcp/nm-dhcp-dhcpcd.c \
+	src/core/dhcp/nm-dhcp-helper-api.h \
+	src/core/dhcp/nm-dhcp-listener.c \
+	src/core/dhcp/nm-dhcp-listener.h \
+	src/core/dhcp/nm-dhcp-dhclient-utils.c \
+	src/core/dhcp/nm-dhcp-dhclient-utils.h \
 	\
-	src/dns/nm-dns-manager.c \
-	src/dns/nm-dns-manager.h \
-	src/dns/nm-dns-plugin.c \
-	src/dns/nm-dns-plugin.h \
-	src/dns/nm-dns-dnsmasq.c \
-	src/dns/nm-dns-dnsmasq.h \
-	src/dns/nm-dns-systemd-resolved.c \
-	src/dns/nm-dns-systemd-resolved.h \
-	src/dns/nm-dns-unbound.c \
-	src/dns/nm-dns-unbound.h \
+	src/core/dns/nm-dns-manager.c \
+	src/core/dns/nm-dns-manager.h \
+	src/core/dns/nm-dns-plugin.c \
+	src/core/dns/nm-dns-plugin.h \
+	src/core/dns/nm-dns-dnsmasq.c \
+	src/core/dns/nm-dns-dnsmasq.h \
+	src/core/dns/nm-dns-systemd-resolved.c \
+	src/core/dns/nm-dns-systemd-resolved.h \
+	src/core/dns/nm-dns-unbound.c \
+	src/core/dns/nm-dns-unbound.h \
 	\
-	src/dnsmasq/nm-dnsmasq-manager.c \
-	src/dnsmasq/nm-dnsmasq-manager.h \
-	src/dnsmasq/nm-dnsmasq-utils.c \
-	src/dnsmasq/nm-dnsmasq-utils.h \
+	src/core/dnsmasq/nm-dnsmasq-manager.c \
+	src/core/dnsmasq/nm-dnsmasq-manager.h \
+	src/core/dnsmasq/nm-dnsmasq-utils.c \
+	src/core/dnsmasq/nm-dnsmasq-utils.h \
 	\
-	src/ppp/nm-ppp-manager-call.c \
-	src/ppp/nm-ppp-manager-call.h \
-	src/ppp/nm-ppp-manager.h \
-	src/ppp/nm-ppp-status.h \
+	src/core/ppp/nm-ppp-manager-call.c \
+	src/core/ppp/nm-ppp-manager-call.h \
+	src/core/ppp/nm-ppp-manager.h \
+	src/core/ppp/nm-ppp-status.h \
 	\
-	src/nm-hostname-manager.c \
-	src/nm-hostname-manager.h \
+	src/core/nm-hostname-manager.c \
+	src/core/nm-hostname-manager.h \
 	\
-	src/settings/nm-agent-manager.c \
-	src/settings/nm-agent-manager.h \
-	src/settings/nm-secret-agent.c \
-	src/settings/nm-secret-agent.h \
-	src/settings/nm-settings-connection.c \
-	src/settings/nm-settings-connection.h \
-	src/settings/nm-settings-storage.c \
-	src/settings/nm-settings-storage.h \
-	src/settings/nm-settings-plugin.c \
-	src/settings/nm-settings-plugin.h \
-	src/settings/nm-settings.c \
-	src/settings/nm-settings.h \
-	src/settings/nm-settings-utils.c \
-	src/settings/nm-settings-utils.h \
+	src/core/settings/nm-agent-manager.c \
+	src/core/settings/nm-agent-manager.h \
+	src/core/settings/nm-secret-agent.c \
+	src/core/settings/nm-secret-agent.h \
+	src/core/settings/nm-settings-connection.c \
+	src/core/settings/nm-settings-connection.h \
+	src/core/settings/nm-settings-storage.c \
+	src/core/settings/nm-settings-storage.h \
+	src/core/settings/nm-settings-plugin.c \
+	src/core/settings/nm-settings-plugin.h \
+	src/core/settings/nm-settings.c \
+	src/core/settings/nm-settings.h \
+	src/core/settings/nm-settings-utils.c \
+	src/core/settings/nm-settings-utils.h \
 	\
-	src/settings/plugins/keyfile/nms-keyfile-storage.c \
-	src/settings/plugins/keyfile/nms-keyfile-storage.h \
-	src/settings/plugins/keyfile/nms-keyfile-plugin.c \
-	src/settings/plugins/keyfile/nms-keyfile-plugin.h \
-	src/settings/plugins/keyfile/nms-keyfile-reader.c \
-	src/settings/plugins/keyfile/nms-keyfile-reader.h \
-	src/settings/plugins/keyfile/nms-keyfile-utils.c \
-	src/settings/plugins/keyfile/nms-keyfile-utils.h \
-	src/settings/plugins/keyfile/nms-keyfile-writer.c \
-	src/settings/plugins/keyfile/nms-keyfile-writer.h \
+	src/core/settings/plugins/keyfile/nms-keyfile-storage.c \
+	src/core/settings/plugins/keyfile/nms-keyfile-storage.h \
+	src/core/settings/plugins/keyfile/nms-keyfile-plugin.c \
+	src/core/settings/plugins/keyfile/nms-keyfile-plugin.h \
+	src/core/settings/plugins/keyfile/nms-keyfile-reader.c \
+	src/core/settings/plugins/keyfile/nms-keyfile-reader.h \
+	src/core/settings/plugins/keyfile/nms-keyfile-utils.c \
+	src/core/settings/plugins/keyfile/nms-keyfile-utils.h \
+	src/core/settings/plugins/keyfile/nms-keyfile-writer.c \
+	src/core/settings/plugins/keyfile/nms-keyfile-writer.h \
 	\
-	src/supplicant/nm-supplicant-config.c \
-	src/supplicant/nm-supplicant-config.h \
-	src/supplicant/nm-supplicant-interface.c \
-	src/supplicant/nm-supplicant-interface.h \
-	src/supplicant/nm-supplicant-manager.c \
-	src/supplicant/nm-supplicant-manager.h \
-	src/supplicant/nm-supplicant-settings-verify.c \
-	src/supplicant/nm-supplicant-settings-verify.h \
-	src/supplicant/nm-supplicant-types.h \
+	src/core/supplicant/nm-supplicant-config.c \
+	src/core/supplicant/nm-supplicant-config.h \
+	src/core/supplicant/nm-supplicant-interface.c \
+	src/core/supplicant/nm-supplicant-interface.h \
+	src/core/supplicant/nm-supplicant-manager.c \
+	src/core/supplicant/nm-supplicant-manager.h \
+	src/core/supplicant/nm-supplicant-settings-verify.c \
+	src/core/supplicant/nm-supplicant-settings-verify.h \
+	src/core/supplicant/nm-supplicant-types.h \
 	\
-	src/vpn/nm-vpn-connection.c \
-	src/vpn/nm-vpn-connection.h \
-	src/vpn/nm-vpn-manager.c \
-	src/vpn/nm-vpn-manager.h \
+	src/core/vpn/nm-vpn-connection.c \
+	src/core/vpn/nm-vpn-connection.h \
+	src/core/vpn/nm-vpn-manager.c \
+	src/core/vpn/nm-vpn-manager.h \
 	\
-	src/nm-act-request.c \
-	src/nm-act-request.h \
-	src/nm-active-connection.c \
-	src/nm-active-connection.h \
-	src/nm-audit-manager.c \
-	src/nm-audit-manager.h \
-	src/nm-dbus-manager.c \
-	src/nm-dbus-manager.h \
-	src/nm-config.c \
-	src/nm-config.h \
-	src/nm-config-data.c \
-	src/nm-config-data.h \
-	src/nm-connectivity.c \
-	src/nm-connectivity.h \
-	src/nm-dcb.c \
-	src/nm-dcb.h \
-	src/nm-dhcp-config.c \
-	src/nm-dhcp-config.h \
-	src/nm-dispatcher.c \
-	src/nm-dispatcher.h \
-	src/nm-firewall-manager.c \
-	src/nm-firewall-manager.h \
-	src/nm-proxy-config.c \
-	src/nm-proxy-config.h \
-	src/nm-auth-manager.c \
-	src/nm-auth-manager.h \
-	src/nm-auth-utils.c \
-	src/nm-auth-utils.h \
-	src/nm-manager.c \
-	src/nm-manager.h \
-	src/nm-pacrunner-manager.c \
-	src/nm-pacrunner-manager.h \
-	src/nm-policy.c \
-	src/nm-policy.h \
-	src/nm-rfkill-manager.c \
-	src/nm-rfkill-manager.h \
-	src/nm-session-monitor.h \
-	src/nm-session-monitor.c \
-	src/nm-keep-alive.c \
-	src/nm-keep-alive.h \
-	src/nm-sleep-monitor.c \
-	src/nm-sleep-monitor.h \
-	src/nm-types.h \
+	src/core/nm-act-request.c \
+	src/core/nm-act-request.h \
+	src/core/nm-active-connection.c \
+	src/core/nm-active-connection.h \
+	src/core/nm-audit-manager.c \
+	src/core/nm-audit-manager.h \
+	src/core/nm-dbus-manager.c \
+	src/core/nm-dbus-manager.h \
+	src/core/nm-config.c \
+	src/core/nm-config.h \
+	src/core/nm-config-data.c \
+	src/core/nm-config-data.h \
+	src/core/nm-connectivity.c \
+	src/core/nm-connectivity.h \
+	src/core/nm-dcb.c \
+	src/core/nm-dcb.h \
+	src/core/nm-dhcp-config.c \
+	src/core/nm-dhcp-config.h \
+	src/core/nm-dispatcher.c \
+	src/core/nm-dispatcher.h \
+	src/core/nm-firewall-manager.c \
+	src/core/nm-firewall-manager.h \
+	src/core/nm-proxy-config.c \
+	src/core/nm-proxy-config.h \
+	src/core/nm-auth-manager.c \
+	src/core/nm-auth-manager.h \
+	src/core/nm-auth-utils.c \
+	src/core/nm-auth-utils.h \
+	src/core/nm-manager.c \
+	src/core/nm-manager.h \
+	src/core/nm-pacrunner-manager.c \
+	src/core/nm-pacrunner-manager.h \
+	src/core/nm-policy.c \
+	src/core/nm-policy.h \
+	src/core/nm-rfkill-manager.c \
+	src/core/nm-rfkill-manager.h \
+	src/core/nm-session-monitor.h \
+	src/core/nm-session-monitor.c \
+	src/core/nm-keep-alive.c \
+	src/core/nm-keep-alive.h \
+	src/core/nm-sleep-monitor.c \
+	src/core/nm-sleep-monitor.h \
+	src/core/nm-types.h \
 	\
 	$(NULL)
 
-src_libNetworkManager_la_LIBADD = \
-	src/libNetworkManagerBase.la \
+src_core_libNetworkManager_la_LIBADD = \
+	src/core/libNetworkManagerBase.la \
 	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	libnm-core/nm-keyfile/libnm-keyfile.la \
 	libnm-core/libnm-core.la \
@@ -2506,7 +2506,7 @@ src_libNetworkManager_la_LIBADD = \
 	shared/nm-udev-aux/libnm-udev-aux.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
-	src/libnm-systemd-core.la \
+	src/core/libnm-systemd-core.la \
 	shared/systemd/libnm-systemd-shared.la \
 	shared/libnacd.la \
 	shared/libndhcp4.la \
@@ -2524,91 +2524,91 @@ src_libNetworkManager_la_LIBADD = \
 	$(LIBCURL_LIBS) \
 	$(NULL)
 
-$(src_libNetworkManager_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_libNetworkManager_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 
-check_ltlibraries += src/libNetworkManagerTest.la
+check_ltlibraries += src/core/libNetworkManagerTest.la
 
-src_tests_cppflags_fake = $(src_cppflags_test) -DSETUP=nm_fake_platform_setup
-src_tests_cppflags_linux = $(src_cppflags_test) -DSETUP=nm_linux_platform_setup
+src_core_tests_cppflags_fake = $(src_core_cppflags_test) -DSETUP=nm_fake_platform_setup
+src_core_tests_cppflags_linux = $(src_core_cppflags_test) -DSETUP=nm_linux_platform_setup
 
-src_libNetworkManagerTest_la_CPPFLAGS = $(src_cppflags_test)
+src_core_libNetworkManagerTest_la_CPPFLAGS = $(src_core_cppflags_test)
 
-src_libNetworkManagerTest_la_SOURCES = \
-	src/ndisc/nm-fake-ndisc.c \
-	src/ndisc/nm-fake-ndisc.h \
-	src/platform/nm-fake-platform.c \
-	src/platform/nm-fake-platform.h \
-	src/platform/tests/test-common.c \
-	src/platform/tests/test-common.h \
+src_core_libNetworkManagerTest_la_SOURCES = \
+	src/core/ndisc/nm-fake-ndisc.c \
+	src/core/ndisc/nm-fake-ndisc.h \
+	src/core/platform/nm-fake-platform.c \
+	src/core/platform/nm-fake-platform.h \
+	src/core/platform/tests/test-common.c \
+	src/core/platform/tests/test-common.h \
 	$(NULL)
 
-src_libNetworkManagerTest_la_LIBADD = \
-	src/libNetworkManager.la \
+src_core_libNetworkManagerTest_la_LIBADD = \
+	src/core/libNetworkManager.la \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
 	$(NULL)
 
-$(src_libNetworkManagerTest_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_libNetworkManagerTest_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 
-noinst_PROGRAMS += src/NetworkManager-all-sym
+noinst_PROGRAMS += src/core/NetworkManager-all-sym
 
-src_NetworkManager_all_sym_CPPFLAGS = $(src_cppflags)
+src_core_NetworkManager_all_sym_CPPFLAGS = $(src_core_cppflags)
 
-src_NetworkManager_all_sym_SOURCES = \
-	src/main.c
+src_core_NetworkManager_all_sym_SOURCES = \
+	src/core/main.c
 
-src_NetworkManager_all_sym_LDADD = \
-	src/libNetworkManager.la \
+src_core_NetworkManager_all_sym_LDADD = \
+	src/core/libNetworkManager.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-src_NetworkManager_all_sym_LDFLAGS = \
+src_core_NetworkManager_all_sym_LDFLAGS = \
 	-rdynamic \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-$(src_NetworkManager_all_sym_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_NetworkManager_all_sym_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
-src/NetworkManager.ver: src/NetworkManager-all-sym $(core_plugins)
+src/core/NetworkManager.ver: src/core/NetworkManager-all-sym $(core_plugins)
 	$(AM_V_GEN) NM="$(NM)" "$(srcdir)/tools/create-exports-NetworkManager.sh" --called-from-build "$(srcdir)"
 
-CLEANFILES += src/NetworkManager.ver
+CLEANFILES += src/core/NetworkManager.ver
 
-EXTRA_src_NetworkManager_DEPENDENCIES = \
-	src/NetworkManager.ver
+EXTRA_src_core_NetworkManager_DEPENDENCIES = \
+	src/core/NetworkManager.ver
 
-src_NetworkManager_CPPFLAGS = $(src_cppflags)
+src_core_NetworkManager_CPPFLAGS = $(src_core_cppflags)
 
-src_NetworkManager_SOURCES = \
-	src/main.c
+src_core_NetworkManager_SOURCES = \
+	src/core/main.c
 
-src_NetworkManager_LDADD = \
-	src/libNetworkManager.la \
+src_core_NetworkManager_LDADD = \
+	src/core/libNetworkManager.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-src_NetworkManager_LDFLAGS = \
+src_core_NetworkManager_LDFLAGS = \
 	-rdynamic \
-	-Wl,--version-script="src/NetworkManager.ver" \
+	-Wl,--version-script="src/core/NetworkManager.ver" \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-$(src_NetworkManager_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_NetworkManager_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 
-src_nm_iface_helper_CPPFLAGS = $(src_cppflags)
+src_core_nm_iface_helper_CPPFLAGS = $(src_core_cppflags)
 
-src_nm_iface_helper_SOURCES = \
-	src/nm-iface-helper.c
+src_core_nm_iface_helper_SOURCES = \
+	src/core/nm-iface-helper.c
 
-src_nm_iface_helper_LDADD = \
-	src/libNetworkManagerBase.la \
+src_core_nm_iface_helper_LDADD = \
+	src/core/libNetworkManagerBase.la \
 	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	libnm-core/nm-keyfile/libnm-keyfile.la \
 	libnm-core/libnm-core.la \
@@ -2620,7 +2620,7 @@ src_nm_iface_helper_LDADD = \
 	shared/nm-udev-aux/libnm-udev-aux.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
-	src/libnm-systemd-core.la \
+	src/core/libnm-systemd-core.la \
 	shared/systemd/libnm-systemd-shared.la \
 	shared/libnacd.la \
 	shared/libndhcp4.la \
@@ -2633,37 +2633,37 @@ src_nm_iface_helper_LDADD = \
 	$(DL_LIBS) \
 	$(NULL)
 
-src_nm_iface_helper_LDFLAGS = \
+src_core_nm_iface_helper_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-$(src_nm_iface_helper_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_nm_iface_helper_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 
-noinst_LTLIBRARIES += src/initrd/libnmi-core.la
+noinst_LTLIBRARIES += src/core/initrd/libnmi-core.la
 
-src_initrd_libnmi_core_la_CPPFLAGS = \
-	$(src_cppflags)
+src_core_initrd_libnmi_core_la_CPPFLAGS = \
+	$(src_core_cppflags)
 
-src_initrd_libnmi_core_la_SOURCES = \
-	src/initrd/nm-initrd-generator.h \
-	src/initrd/nmi-cmdline-reader.c \
-	src/initrd/nmi-dt-reader.c \
-	src/initrd/nmi-ibft-reader.c \
+src_core_initrd_libnmi_core_la_SOURCES = \
+	src/core/initrd/nm-initrd-generator.h \
+	src/core/initrd/nmi-cmdline-reader.c \
+	src/core/initrd/nmi-dt-reader.c \
+	src/core/initrd/nmi-ibft-reader.c \
 	$(NULL)
 
-libexec_PROGRAMS += src/initrd/nm-initrd-generator
+libexec_PROGRAMS += src/core/initrd/nm-initrd-generator
 
-src_initrd_nm_initrd_generator_CPPFLAGS = \
-	$(src_cppflags)
+src_core_initrd_nm_initrd_generator_CPPFLAGS = \
+	$(src_core_cppflags)
 
-src_initrd_nm_initrd_generator_SOURCES = \
-	src/initrd/nm-initrd-generator.c
+src_core_initrd_nm_initrd_generator_SOURCES = \
+	src/core/initrd/nm-initrd-generator.c
 
-src_initrd_nm_initrd_generator_LDADD = \
-	src/initrd/libnmi-core.la \
-	src/libNetworkManagerBase.la \
+src_core_initrd_nm_initrd_generator_LDADD = \
+	src/core/initrd/libnmi-core.la \
+	src/core/libNetworkManagerBase.la \
 	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	libnm-core/nm-keyfile/libnm-keyfile.la \
 	libnm-core/libnm-core.la \
@@ -2684,44 +2684,44 @@ src_initrd_nm_initrd_generator_LDADD = \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-src_initrd_nm_initrd_generator_LDFLAGS = \
+src_core_initrd_nm_initrd_generator_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-check_programs += src/initrd/tests/test-dt-reader
+check_programs += src/core/initrd/tests/test-dt-reader
 
-src_initrd_tests_test_dt_reader_CPPFLAGS = \
+src_core_initrd_tests_test_dt_reader_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION_TEST \
-	-DTEST_INITRD_DIR=\"$(abs_srcdir)/src/initrd/tests\" \
-	$(src_cppflags)
+	-DTEST_INITRD_DIR=\"$(abs_srcdir)/src/core/initrd/tests\" \
+	$(src_core_cppflags)
 
-src_initrd_tests_test_dt_reader_LDFLAGS = \
+src_core_initrd_tests_test_dt_reader_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-src_initrd_tests_test_dt_reader_LDADD = \
-	src/initrd/libnmi-core.la \
-	src/libNetworkManagerTest.la \
+src_core_initrd_tests_test_dt_reader_LDADD = \
+	src/core/initrd/libnmi-core.la \
+	src/core/libNetworkManagerTest.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-check_programs += src/initrd/tests/test-ibft-reader
+check_programs += src/core/initrd/tests/test-ibft-reader
 
-src_initrd_tests_test_ibft_reader_CPPFLAGS = \
+src_core_initrd_tests_test_ibft_reader_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION_TEST \
-	-DTEST_INITRD_DIR=\"$(abs_srcdir)/src/initrd/tests\" \
-	$(src_cppflags)
+	-DTEST_INITRD_DIR=\"$(abs_srcdir)/src/core/initrd/tests\" \
+	$(src_core_cppflags)
 
-src_initrd_tests_test_ibft_reader_LDFLAGS = \
+src_core_initrd_tests_test_ibft_reader_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-src_initrd_tests_test_ibft_reader_LDADD = \
-	src/initrd/libnmi-core.la \
-	src/libNetworkManagerTest.la \
+src_core_initrd_tests_test_ibft_reader_LDADD = \
+	src/core/initrd/libnmi-core.la \
+	src/core/libNetworkManagerTest.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
@@ -2729,261 +2729,261 @@ src_initrd_tests_test_ibft_reader_LDADD = \
 	$(NULL)
 
 EXTRA_DIST += \
-	src/initrd/meson.build \
-	src/initrd/tests/meson.build \
-	src/initrd/tests/sysfs/class/net/eth0/address \
-	src/initrd/tests/sysfs/class/net/eth2/address \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet0/prefix-len \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet0/hostname \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet0/gateway \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet0/mac \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet0/vlan \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet0/primary-dns \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet0/dhcp \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet0/origin \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet0/secondary-dns \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet0/ip-addr \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet0/subnet-mask \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet0/index \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet0/flags \
-	src/initrd/tests/sysfs/firmware/ibft/initiator/isns-server \
-	src/initrd/tests/sysfs/firmware/ibft/initiator/initiator-name \
-	src/initrd/tests/sysfs/firmware/ibft/initiator/pri-radius-server \
-	src/initrd/tests/sysfs/firmware/ibft/initiator/slp-server \
-	src/initrd/tests/sysfs/firmware/ibft/initiator/sec-radius-server \
-	src/initrd/tests/sysfs/firmware/ibft/initiator/index \
-	src/initrd/tests/sysfs/firmware/ibft/initiator/flags \
-	src/initrd/tests/sysfs/firmware/ibft/target0/nic-assoc \
-	src/initrd/tests/sysfs/firmware/ibft/target0/ip-addr \
-	src/initrd/tests/sysfs/firmware/ibft/target0/chap-type \
-	src/initrd/tests/sysfs/firmware/ibft/target0/index \
-	src/initrd/tests/sysfs/firmware/ibft/target0/lun \
-	src/initrd/tests/sysfs/firmware/ibft/target0/flags \
-	src/initrd/tests/sysfs/firmware/ibft/target0/port \
-	src/initrd/tests/sysfs/firmware/ibft/target2/target-name \
-	src/initrd/tests/sysfs/firmware/ibft/target2/nic-assoc \
-	src/initrd/tests/sysfs/firmware/ibft/target2/ip-addr \
-	src/initrd/tests/sysfs/firmware/ibft/target2/chap-type \
-	src/initrd/tests/sysfs/firmware/ibft/target2/index \
-	src/initrd/tests/sysfs/firmware/ibft/target2/lun \
-	src/initrd/tests/sysfs/firmware/ibft/target2/flags \
-	src/initrd/tests/sysfs/firmware/ibft/target2/port \
-	src/initrd/tests/sysfs/firmware/ibft/acpi_header/oem_table_id \
-	src/initrd/tests/sysfs/firmware/ibft/acpi_header/oem_id \
-	src/initrd/tests/sysfs/firmware/ibft/acpi_header/signature \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet2/prefix-len \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet2/hostname \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet2/gateway \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet2/mac \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet2/vlan \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet2/primary-dns \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet2/dhcp \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet2/origin \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet2/secondary-dns \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet2/ip-addr \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet2/subnet-mask \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet2/index \
-	src/initrd/tests/sysfs/firmware/ibft/ethernet2/flags \
-	src/initrd/tests/sysfs-bad-dns1/class/net/eth0/address \
-	src/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/prefix-len \
-	src/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/gateway \
-	src/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/mac \
-	src/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/vlan \
-	src/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/primary-dns \
-	src/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/origin \
-	src/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/secondary-dns \
-	src/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/ip-addr \
-	src/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/subnet-mask \
-	src/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/index \
-	src/initrd/tests/sysfs-bad-dns1/firmware/ibft/initiator/initiator-name \
-	src/initrd/tests/sysfs-bad-dns1/firmware/ibft/target0/target-name \
-	src/initrd/tests/sysfs-bad-dns1/firmware/ibft/target0/ip-addr \
-	src/initrd/tests/sysfs-bad-dns1/firmware/ibft/target0/index \
-	src/initrd/tests/sysfs-bad-dns1/firmware/ibft/target0/lun \
-	src/initrd/tests/sysfs-bad-dns1/firmware/ibft/target0/port \
-	src/initrd/tests/sysfs-bad-dns2/class/net/eth0/address \
-	src/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/prefix-len \
-	src/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/gateway \
-	src/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/mac \
-	src/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/vlan \
-	src/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/primary-dns \
-	src/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/origin \
-	src/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/secondary-dns \
-	src/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/ip-addr \
-	src/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/subnet-mask \
-	src/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/index \
-	src/initrd/tests/sysfs-bad-dns2/firmware/ibft/initiator/initiator-name \
-	src/initrd/tests/sysfs-bad-dns2/firmware/ibft/target0/target-name \
-	src/initrd/tests/sysfs-bad-dns2/firmware/ibft/target0/ip-addr \
-	src/initrd/tests/sysfs-bad-dns2/firmware/ibft/target0/index \
-	src/initrd/tests/sysfs-bad-dns2/firmware/ibft/target0/lun \
-	src/initrd/tests/sysfs-bad-dns2/firmware/ibft/target0/port \
-	src/initrd/tests/sysfs-bad-gateway/class/net/eth0/address \
-	src/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/prefix-len \
-	src/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/gateway \
-	src/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/mac \
-	src/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/vlan \
-	src/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/primary-dns \
-	src/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/origin \
-	src/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/secondary-dns \
-	src/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/ip-addr \
-	src/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/subnet-mask \
-	src/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/index \
-	src/initrd/tests/sysfs-bad-gateway/firmware/ibft/initiator/initiator-name \
-	src/initrd/tests/sysfs-bad-gateway/firmware/ibft/target0/target-name \
-	src/initrd/tests/sysfs-bad-gateway/firmware/ibft/target0/ip-addr \
-	src/initrd/tests/sysfs-bad-gateway/firmware/ibft/target0/index \
-	src/initrd/tests/sysfs-bad-gateway/firmware/ibft/target0/lun \
-	src/initrd/tests/sysfs-bad-gateway/firmware/ibft/target0/port \
-	src/initrd/tests/sysfs-bad-ipaddr/class/net/eth0/address \
-	src/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/prefix-len \
-	src/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/gateway \
-	src/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/mac \
-	src/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/vlan \
-	src/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/primary-dns \
-	src/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/origin \
-	src/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/secondary-dns \
-	src/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/ip-addr \
-	src/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/subnet-mask \
-	src/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/index \
-	src/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/initiator/initiator-name \
-	src/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/target0/target-name \
-	src/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/target0/ip-addr \
-	src/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/target0/index \
-	src/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/target0/lun \
-	src/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/target0/port \
-	src/initrd/tests/sysfs-dhcp/class/net/eth0/address \
-	src/initrd/tests/sysfs-dhcp/class/net/eth1/address \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/gateway \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/mac \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/vlan \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/primary-dns \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/origin \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/secondary-dns \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/index \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/initiator/initiator-name \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/target0/target-name \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/target0/ip-addr \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/target0/index \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/target0/lun \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/target0/port \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/gateway \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/mac \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/vlan \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/primary-dns \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/origin \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/secondary-dns \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/index \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/target1/target-name \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/target1/ip-addr \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/target1/index \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/target1/lun \
-	src/initrd/tests/sysfs-dhcp/firmware/ibft/target1/port \
-	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/bootpath \
-	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/bootp-request \
-	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/bootp-response \
-	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/broadcast-ip \
-	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/client-ip \
-	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/client-name \
-	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/domain-name \
-	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/gateway-ip \
-	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/name \
-	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/netmask-ip \
-	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/root-path \
-	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/server-ip \
-	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/tftp-file \
-	src/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/vendor-options \
-	src/initrd/tests/sysfs-dt/firmware/devicetree/base/ethernet/device_type \
-	src/initrd/tests/sysfs-dt/firmware/devicetree/base/ethernet/local-mac-address \
-	src/initrd/tests/sysfs-dt/firmware/devicetree/base/ethernet/mac-address \
-	src/initrd/tests/sysfs-dt/firmware/devicetree/base/ethernet/name \
-	src/initrd/tests/sysfs-dt-tftp/firmware/devicetree/base/chosen/bootpath \
-	src/initrd/tests/sysfs-static/class/net/eth0/address \
-	src/initrd/tests/sysfs-static/class/net/eth1/address \
-	src/initrd/tests/sysfs-static/firmware/ibft/ethernet0/prefix-len \
-	src/initrd/tests/sysfs-static/firmware/ibft/ethernet0/gateway \
-	src/initrd/tests/sysfs-static/firmware/ibft/ethernet0/mac \
-	src/initrd/tests/sysfs-static/firmware/ibft/ethernet0/vlan \
-	src/initrd/tests/sysfs-static/firmware/ibft/ethernet0/primary-dns \
-	src/initrd/tests/sysfs-static/firmware/ibft/ethernet0/origin \
-	src/initrd/tests/sysfs-static/firmware/ibft/ethernet0/secondary-dns \
-	src/initrd/tests/sysfs-static/firmware/ibft/ethernet0/ip-addr \
-	src/initrd/tests/sysfs-static/firmware/ibft/ethernet0/subnet-mask \
-	src/initrd/tests/sysfs-static/firmware/ibft/ethernet0/index \
-	src/initrd/tests/sysfs-static/firmware/ibft/initiator/initiator-name \
-	src/initrd/tests/sysfs-static/firmware/ibft/target0/target-name \
-	src/initrd/tests/sysfs-static/firmware/ibft/target0/ip-addr \
-	src/initrd/tests/sysfs-static/firmware/ibft/target0/index \
-	src/initrd/tests/sysfs-static/firmware/ibft/target0/lun \
-	src/initrd/tests/sysfs-static/firmware/ibft/target0/port \
-	src/initrd/tests/sysfs-static/firmware/ibft/ethernet1/gateway \
-	src/initrd/tests/sysfs-static/firmware/ibft/ethernet1/mac \
-	src/initrd/tests/sysfs-static/firmware/ibft/ethernet1/vlan \
-	src/initrd/tests/sysfs-static/firmware/ibft/ethernet1/primary-dns \
-	src/initrd/tests/sysfs-static/firmware/ibft/ethernet1/origin \
-	src/initrd/tests/sysfs-static/firmware/ibft/ethernet1/secondary-dns \
-	src/initrd/tests/sysfs-static/firmware/ibft/ethernet1/index \
-	src/initrd/tests/sysfs-static/firmware/ibft/target1/target-name \
-	src/initrd/tests/sysfs-static/firmware/ibft/target1/ip-addr \
-	src/initrd/tests/sysfs-static/firmware/ibft/target1/index \
-	src/initrd/tests/sysfs-static/firmware/ibft/target1/lun \
-	src/initrd/tests/sysfs-static/firmware/ibft/target1/port \
-	src/initrd/tests/sysfs-vlan/class/net/eth0/address \
-	src/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/prefix-len \
-	src/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/mac \
-	src/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/vlan \
-	src/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/origin \
-	src/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/ip-addr \
-	src/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/subnet-mask \
-	src/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/index \
-	src/initrd/tests/sysfs-vlan/firmware/ibft/initiator/initiator-name \
-	src/initrd/tests/sysfs-vlan/firmware/ibft/target0/target-name \
-	src/initrd/tests/sysfs-vlan/firmware/ibft/target0/ip-addr \
-	src/initrd/tests/sysfs-vlan/firmware/ibft/target0/index \
-	src/initrd/tests/sysfs-vlan/firmware/ibft/target0/lun \
-	src/initrd/tests/sysfs-vlan/firmware/ibft/target0/port \
+	src/core/initrd/meson.build \
+	src/core/initrd/tests/meson.build \
+	src/core/initrd/tests/sysfs/class/net/eth0/address \
+	src/core/initrd/tests/sysfs/class/net/eth2/address \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/prefix-len \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/hostname \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/gateway \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/mac \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/vlan \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/primary-dns \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/dhcp \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/origin \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/secondary-dns \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/ip-addr \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/subnet-mask \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/index \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/flags \
+	src/core/initrd/tests/sysfs/firmware/ibft/initiator/isns-server \
+	src/core/initrd/tests/sysfs/firmware/ibft/initiator/initiator-name \
+	src/core/initrd/tests/sysfs/firmware/ibft/initiator/pri-radius-server \
+	src/core/initrd/tests/sysfs/firmware/ibft/initiator/slp-server \
+	src/core/initrd/tests/sysfs/firmware/ibft/initiator/sec-radius-server \
+	src/core/initrd/tests/sysfs/firmware/ibft/initiator/index \
+	src/core/initrd/tests/sysfs/firmware/ibft/initiator/flags \
+	src/core/initrd/tests/sysfs/firmware/ibft/target0/nic-assoc \
+	src/core/initrd/tests/sysfs/firmware/ibft/target0/ip-addr \
+	src/core/initrd/tests/sysfs/firmware/ibft/target0/chap-type \
+	src/core/initrd/tests/sysfs/firmware/ibft/target0/index \
+	src/core/initrd/tests/sysfs/firmware/ibft/target0/lun \
+	src/core/initrd/tests/sysfs/firmware/ibft/target0/flags \
+	src/core/initrd/tests/sysfs/firmware/ibft/target0/port \
+	src/core/initrd/tests/sysfs/firmware/ibft/target2/target-name \
+	src/core/initrd/tests/sysfs/firmware/ibft/target2/nic-assoc \
+	src/core/initrd/tests/sysfs/firmware/ibft/target2/ip-addr \
+	src/core/initrd/tests/sysfs/firmware/ibft/target2/chap-type \
+	src/core/initrd/tests/sysfs/firmware/ibft/target2/index \
+	src/core/initrd/tests/sysfs/firmware/ibft/target2/lun \
+	src/core/initrd/tests/sysfs/firmware/ibft/target2/flags \
+	src/core/initrd/tests/sysfs/firmware/ibft/target2/port \
+	src/core/initrd/tests/sysfs/firmware/ibft/acpi_header/oem_table_id \
+	src/core/initrd/tests/sysfs/firmware/ibft/acpi_header/oem_id \
+	src/core/initrd/tests/sysfs/firmware/ibft/acpi_header/signature \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/prefix-len \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/hostname \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/gateway \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/mac \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/vlan \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/primary-dns \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/dhcp \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/origin \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/secondary-dns \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/ip-addr \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/subnet-mask \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/index \
+	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/flags \
+	src/core/initrd/tests/sysfs-bad-dns1/class/net/eth0/address \
+	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/prefix-len \
+	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/gateway \
+	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/mac \
+	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/vlan \
+	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/primary-dns \
+	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/origin \
+	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/secondary-dns \
+	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/ip-addr \
+	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/subnet-mask \
+	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/index \
+	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/initiator/initiator-name \
+	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/target0/target-name \
+	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/target0/ip-addr \
+	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/target0/index \
+	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/target0/lun \
+	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/target0/port \
+	src/core/initrd/tests/sysfs-bad-dns2/class/net/eth0/address \
+	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/prefix-len \
+	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/gateway \
+	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/mac \
+	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/vlan \
+	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/primary-dns \
+	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/origin \
+	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/secondary-dns \
+	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/ip-addr \
+	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/subnet-mask \
+	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/index \
+	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/initiator/initiator-name \
+	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/target0/target-name \
+	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/target0/ip-addr \
+	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/target0/index \
+	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/target0/lun \
+	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/target0/port \
+	src/core/initrd/tests/sysfs-bad-gateway/class/net/eth0/address \
+	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/prefix-len \
+	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/gateway \
+	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/mac \
+	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/vlan \
+	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/primary-dns \
+	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/origin \
+	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/secondary-dns \
+	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/ip-addr \
+	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/subnet-mask \
+	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/index \
+	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/initiator/initiator-name \
+	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/target0/target-name \
+	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/target0/ip-addr \
+	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/target0/index \
+	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/target0/lun \
+	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/target0/port \
+	src/core/initrd/tests/sysfs-bad-ipaddr/class/net/eth0/address \
+	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/prefix-len \
+	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/gateway \
+	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/mac \
+	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/vlan \
+	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/primary-dns \
+	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/origin \
+	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/secondary-dns \
+	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/ip-addr \
+	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/subnet-mask \
+	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/index \
+	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/initiator/initiator-name \
+	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/target0/target-name \
+	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/target0/ip-addr \
+	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/target0/index \
+	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/target0/lun \
+	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/target0/port \
+	src/core/initrd/tests/sysfs-dhcp/class/net/eth0/address \
+	src/core/initrd/tests/sysfs-dhcp/class/net/eth1/address \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/gateway \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/mac \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/vlan \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/primary-dns \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/origin \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/secondary-dns \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/index \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/initiator/initiator-name \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target0/target-name \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target0/ip-addr \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target0/index \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target0/lun \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target0/port \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/gateway \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/mac \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/vlan \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/primary-dns \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/origin \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/secondary-dns \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/index \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target1/target-name \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target1/ip-addr \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target1/index \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target1/lun \
+	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target1/port \
+	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/bootpath \
+	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/bootp-request \
+	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/bootp-response \
+	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/broadcast-ip \
+	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/client-ip \
+	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/client-name \
+	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/domain-name \
+	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/gateway-ip \
+	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/name \
+	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/netmask-ip \
+	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/root-path \
+	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/server-ip \
+	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/tftp-file \
+	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/vendor-options \
+	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/ethernet/device_type \
+	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/ethernet/local-mac-address \
+	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/ethernet/mac-address \
+	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/ethernet/name \
+	src/core/initrd/tests/sysfs-dt-tftp/firmware/devicetree/base/chosen/bootpath \
+	src/core/initrd/tests/sysfs-static/class/net/eth0/address \
+	src/core/initrd/tests/sysfs-static/class/net/eth1/address \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/prefix-len \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/gateway \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/mac \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/vlan \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/primary-dns \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/origin \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/secondary-dns \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/ip-addr \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/subnet-mask \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/index \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/initiator/initiator-name \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/target0/target-name \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/target0/ip-addr \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/target0/index \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/target0/lun \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/target0/port \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet1/gateway \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet1/mac \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet1/vlan \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet1/primary-dns \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet1/origin \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet1/secondary-dns \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet1/index \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/target1/target-name \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/target1/ip-addr \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/target1/index \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/target1/lun \
+	src/core/initrd/tests/sysfs-static/firmware/ibft/target1/port \
+	src/core/initrd/tests/sysfs-vlan/class/net/eth0/address \
+	src/core/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/prefix-len \
+	src/core/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/mac \
+	src/core/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/vlan \
+	src/core/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/origin \
+	src/core/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/ip-addr \
+	src/core/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/subnet-mask \
+	src/core/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/index \
+	src/core/initrd/tests/sysfs-vlan/firmware/ibft/initiator/initiator-name \
+	src/core/initrd/tests/sysfs-vlan/firmware/ibft/target0/target-name \
+	src/core/initrd/tests/sysfs-vlan/firmware/ibft/target0/ip-addr \
+	src/core/initrd/tests/sysfs-vlan/firmware/ibft/target0/index \
+	src/core/initrd/tests/sysfs-vlan/firmware/ibft/target0/lun \
+	src/core/initrd/tests/sysfs-vlan/firmware/ibft/target0/port \
 	$(NULL)
 
-check_programs += src/initrd/tests/test-cmdline-reader
+check_programs += src/core/initrd/tests/test-cmdline-reader
 
-src_initrd_tests_test_cmdline_reader_CPPFLAGS = \
+src_core_initrd_tests_test_cmdline_reader_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION_TEST \
-	-DTEST_INITRD_DIR=\"$(abs_srcdir)/src/initrd/tests\" \
-	$(src_cppflags)
+	-DTEST_INITRD_DIR=\"$(abs_srcdir)/src/core/initrd/tests\" \
+	$(src_core_cppflags)
 
-src_initrd_tests_test_cmdline_reader_LDFLAGS = \
+src_core_initrd_tests_test_cmdline_reader_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-src_initrd_tests_test_cmdline_reader_LDADD = \
-	src/initrd/libnmi-core.la \
-	src/libNetworkManagerTest.la \
+src_core_initrd_tests_test_cmdline_reader_LDADD = \
+	src/core/initrd/libnmi-core.la \
+	src/core/libNetworkManagerTest.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-$(src_initrd_libnmi_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_initrd_nm_initrd_generator_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_initrd_tests_test_cmdline_reader_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_initrd_tests_test_ibft_reader_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_initrd_tests_test_dt_reader_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_initrd_libnmi_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_initrd_nm_initrd_generator_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_initrd_tests_test_cmdline_reader_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_initrd_tests_test_ibft_reader_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_initrd_tests_test_dt_reader_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 
 EXTRA_DIST += \
-	src/org.freedesktop.NetworkManager.conf \
-	src/nm-test-utils-core.h \
-	src/meson.build
+	src/core/org.freedesktop.NetworkManager.conf \
+	src/core/nm-test-utils-core.h \
+	src/core/meson.build
 
 ###############################################################################
-# src/dhcp
+# src/core/dhcp
 ###############################################################################
 
-libexec_PROGRAMS += src/dhcp/nm-dhcp-helper
+libexec_PROGRAMS += src/core/dhcp/nm-dhcp-helper
 
-src_dhcp_nm_dhcp_helper_CPPFLAGS = \
+src_core_dhcp_nm_dhcp_helper_CPPFLAGS = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
@@ -2992,60 +2992,60 @@ src_dhcp_nm_dhcp_helper_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(NULL)
 
-src_dhcp_nm_dhcp_helper_SOURCES = \
-	src/dhcp/nm-dhcp-helper.c \
-	src/dhcp/nm-dhcp-helper-api.h \
+src_core_dhcp_nm_dhcp_helper_SOURCES = \
+	src/core/dhcp/nm-dhcp-helper.c \
+	src/core/dhcp/nm-dhcp-helper-api.h \
 	$(NULL)
 
-src_dhcp_nm_dhcp_helper_LDFLAGS = \
+src_core_dhcp_nm_dhcp_helper_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver"
 
-src_dhcp_nm_dhcp_helper_LDADD = $(GLIB_LIBS)
+src_core_dhcp_nm_dhcp_helper_LDADD = $(GLIB_LIBS)
 
 EXTRA_DIST += \
-	src/dhcp/meson.build
+	src/core/dhcp/meson.build
 
 ###############################################################################
-# src/dhcp/tests
+# src/core/dhcp/tests
 ###############################################################################
 
-src_dhcp_tests_cppflags = $(src_cppflags_test)
+src_core_dhcp_tests_cppflags = $(src_core_cppflags_test)
 
-src_dhcp_tests_ldadd = \
-	src/libNetworkManagerTest.la
+src_core_dhcp_tests_ldadd = \
+	src/core/libNetworkManagerTest.la
 
 check_programs += \
-	src/dhcp/tests/test-dhcp-dhclient \
-	src/dhcp/tests/test-dhcp-utils
+	src/core/dhcp/tests/test-dhcp-dhclient \
+	src/core/dhcp/tests/test-dhcp-utils
 
-src_dhcp_tests_test_dhcp_dhclient_CPPFLAGS = $(src_dhcp_tests_cppflags)
-src_dhcp_tests_test_dhcp_utils_CPPFLAGS = $(src_dhcp_tests_cppflags)
+src_core_dhcp_tests_test_dhcp_dhclient_CPPFLAGS = $(src_core_dhcp_tests_cppflags)
+src_core_dhcp_tests_test_dhcp_utils_CPPFLAGS = $(src_core_dhcp_tests_cppflags)
 
-src_dhcp_tests_test_dhcp_dhclient_LDADD = $(src_dhcp_tests_ldadd)
-src_dhcp_tests_test_dhcp_utils_LDADD = $(src_dhcp_tests_ldadd)
+src_core_dhcp_tests_test_dhcp_dhclient_LDADD = $(src_core_dhcp_tests_ldadd)
+src_core_dhcp_tests_test_dhcp_utils_LDADD = $(src_core_dhcp_tests_ldadd)
 
-src_dhcp_tests_test_dhcp_dhclient_LDFLAGS = $(src_tests_ldflags)
-src_dhcp_tests_test_dhcp_utils_LDFLAGS = $(src_tests_ldflags)
+src_core_dhcp_tests_test_dhcp_dhclient_LDFLAGS = $(src_core_tests_ldflags)
+src_core_dhcp_tests_test_dhcp_utils_LDFLAGS = $(src_core_tests_ldflags)
 
-$(src_dhcp_tests_test_dhcp_dhclient_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_dhcp_tests_test_dhcp_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_dhcp_tests_test_dhcp_dhclient_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_dhcp_tests_test_dhcp_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
-	src/dhcp/tests/test-dhclient-duid.leases \
-	src/dhcp/tests/test-dhclient-commented-duid.leases \
-	src/dhcp/tests/meson.build
+	src/core/dhcp/tests/test-dhclient-duid.leases \
+	src/core/dhcp/tests/test-dhclient-commented-duid.leases \
+	src/core/dhcp/tests/meson.build
 
 ###############################################################################
-# src/ppp
+# src/core/ppp
 ###############################################################################
 
 if WITH_PPP
 
-core_plugins += src/ppp/libnm-ppp-plugin.la
+core_plugins += src/core/ppp/libnm-ppp-plugin.la
 
-pppd_plugin_LTLIBRARIES += src/ppp/nm-pppd-plugin.la
+pppd_plugin_LTLIBRARIES += src/core/ppp/nm-pppd-plugin.la
 
-src_ppp_nm_pppd_plugin_la_CPPFLAGS = \
+src_core_ppp_nm_pppd_plugin_la_CPPFLAGS = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
@@ -3054,217 +3054,217 @@ src_ppp_nm_pppd_plugin_la_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_GLIB \
 	$(GLIB_CFLAGS)
 
-src_ppp_nm_pppd_plugin_la_SOURCES = \
-	src/ppp/nm-pppd-plugin.c \
-	src/ppp/nm-pppd-plugin.h \
-	src/ppp/nm-ppp-status.h
+src_core_ppp_nm_pppd_plugin_la_SOURCES = \
+	src/core/ppp/nm-pppd-plugin.c \
+	src/core/ppp/nm-pppd-plugin.h \
+	src/core/ppp/nm-ppp-status.h
 
-src_ppp_nm_pppd_plugin_la_LDFLAGS = \
+src_core_ppp_nm_pppd_plugin_la_LDFLAGS = \
 	-module -avoid-version
 
-src_ppp_nm_pppd_plugin_la_LIBADD = \
+src_core_ppp_nm_pppd_plugin_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(DL_LIBS) \
 	$(NULL)
 
-$(src_ppp_nm_pppd_plugin_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_ppp_nm_pppd_plugin_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
-src_ppp_libnm_ppp_plugin_la_SOURCES = \
-	src/ppp/nm-pppd-plugin.h \
-	src/ppp/nm-ppp-manager.c \
-	src/ppp/nm-ppp-manager.h \
-	src/ppp/nm-ppp-plugin-api.h \
-	src/ppp/nm-ppp-status.h \
+src_core_ppp_libnm_ppp_plugin_la_SOURCES = \
+	src/core/ppp/nm-pppd-plugin.h \
+	src/core/ppp/nm-ppp-manager.c \
+	src/core/ppp/nm-ppp-manager.h \
+	src/core/ppp/nm-ppp-plugin-api.h \
+	src/core/ppp/nm-ppp-status.h \
 	$(NULL)
 
-EXTRA_src_ppp_libnm_ppp_plugin_la_DEPENDENCIES = \
-	src/ppp/nm-ppp-plugin.ver \
+EXTRA_src_core_ppp_libnm_ppp_plugin_la_DEPENDENCIES = \
+	src/core/ppp/nm-ppp-plugin.ver \
 	$(NULL)
 
-src_ppp_libnm_ppp_plugin_la_CPPFLAGS = $(src_cppflags_base)
+src_core_ppp_libnm_ppp_plugin_la_CPPFLAGS = $(src_core_cppflags_base)
 
-src_ppp_libnm_ppp_plugin_la_LDFLAGS = \
+src_core_ppp_libnm_ppp_plugin_la_LDFLAGS = \
 	-module -avoid-version \
-	-Wl,--version-script="$(srcdir)/src/ppp/nm-ppp-plugin.ver" \
+	-Wl,--version-script="$(srcdir)/src/core/ppp/nm-ppp-plugin.ver" \
 	$(NULL)
 
-src_ppp_libnm_ppp_plugin_la_LIBADD = \
+src_core_ppp_libnm_ppp_plugin_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-$(src_ppp_libnm_ppp_plugin_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_ppp_libnm_ppp_plugin_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 endif
 
 EXTRA_DIST += \
-	src/ppp/meson.build
+	src/core/ppp/meson.build
 
 ###############################################################################
-# src/settings/plugins/keyfile/tests
+# src/core/settings/plugins/keyfile/tests
 ###############################################################################
 
-check_programs += src/settings/plugins/keyfile/tests/test-keyfile-settings
+check_programs += src/core/settings/plugins/keyfile/tests/test-keyfile-settings
 
-src_settings_plugins_keyfile_tests_test_keyfile_settings_CPPFLAGS = $(src_cppflags_test)
+src_core_settings_plugins_keyfile_tests_test_keyfile_settings_CPPFLAGS = $(src_core_cppflags_test)
 
-src_settings_plugins_keyfile_tests_test_keyfile_settings_LDFLAGS = \
+src_core_settings_plugins_keyfile_tests_test_keyfile_settings_LDFLAGS = \
 	$(GLIB_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-src_settings_plugins_keyfile_tests_test_keyfile_settings_LDADD = \
-	src/libNetworkManagerTest.la
+src_core_settings_plugins_keyfile_tests_test_keyfile_settings_LDADD = \
+	src/core/libNetworkManagerTest.la
 
-$(src_settings_plugins_keyfile_tests_test_keyfile_settings_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_settings_plugins_keyfile_tests_test_keyfile_settings_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_Connection \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_GSM_Connection \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_Wireless_Connection \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_Connection_MAC_Case \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_MAC_Old_Format \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_MAC_IB_Old_Format \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_Connection_IP6 \
-	src/settings/plugins/keyfile/tests/keyfiles/ATT_Data_Connect_BT \
-	src/settings/plugins/keyfile/tests/keyfiles/ATT_Data_Connect_Plain \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_String_SSID \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_Intlist_SSID \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_Intlike_SSID \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_Intlike_SSID_2 \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_TLS_Old \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_TLS_New \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_TLS_Blob \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_Wired_TLS_Path_Missing \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_InfiniBand_Connection \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_Bridge_Main \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_Bridge_Component \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_New_Wired_Group_Name \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_New_Wireless_Group_Names \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_minimal_1 \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_minimal_2 \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_1 \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_2 \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_3 \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_4 \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_Missing_Vlan_Setting \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_Missing_Vlan_Flags \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_Missing_ID_UUID \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_Enum_Property \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_Flags_Property \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_dcb_connection \
-	src/settings/plugins/keyfile/tests/keyfiles/Test_TC_Config \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Wired_Connection \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_GSM_Connection \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Wireless_Connection \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Wired_Connection_MAC_Case \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_MAC_Old_Format \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_MAC_IB_Old_Format \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Wired_Connection_IP6 \
+	src/core/settings/plugins/keyfile/tests/keyfiles/ATT_Data_Connect_BT \
+	src/core/settings/plugins/keyfile/tests/keyfiles/ATT_Data_Connect_Plain \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_String_SSID \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Intlist_SSID \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Intlike_SSID \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Intlike_SSID_2 \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Wired_TLS_Old \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Wired_TLS_New \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Wired_TLS_Blob \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Wired_TLS_Path_Missing \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_InfiniBand_Connection \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Bridge_Main \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Bridge_Component \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_New_Wired_Group_Name \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_New_Wireless_Group_Names \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_1 \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_2 \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_1 \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_2 \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_3 \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_minimal_slave_4 \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Missing_Vlan_Setting \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Missing_Vlan_Flags \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Missing_ID_UUID \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Enum_Property \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_Flags_Property \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_dcb_connection \
+	src/core/settings/plugins/keyfile/tests/keyfiles/Test_TC_Config \
 	\
-	src/settings/plugins/keyfile/tests/keyfiles/test-ca-cert.pem \
-	src/settings/plugins/keyfile/tests/keyfiles/test-key-and-cert.pem \
+	src/core/settings/plugins/keyfile/tests/keyfiles/test-ca-cert.pem \
+	src/core/settings/plugins/keyfile/tests/keyfiles/test-key-and-cert.pem \
 	\
-	src/settings/plugins/keyfile/tests/meson.build
+	src/core/settings/plugins/keyfile/tests/meson.build
 
 ###############################################################################
-# src/settings/plugins/ifcfg-rh
+# src/core/settings/plugins/ifcfg-rh
 ###############################################################################
 
 if CONFIG_PLUGIN_IFCFG_RH
 
-core_plugins += src/settings/plugins/ifcfg-rh/libnm-settings-plugin-ifcfg-rh.la
+core_plugins += src/core/settings/plugins/ifcfg-rh/libnm-settings-plugin-ifcfg-rh.la
 
 noinst_LTLIBRARIES += \
-	src/settings/plugins/ifcfg-rh/libnmdbus-ifcfg-rh.la \
-	src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la
+	src/core/settings/plugins/ifcfg-rh/libnmdbus-ifcfg-rh.la \
+	src/core/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la
 
 ###############################################################################
 
-nodist_src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_SOURCES = \
-	src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.c \
-	src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h
+nodist_src_core_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_SOURCES = \
+	src/core/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.c \
+	src/core/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h
 
-src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_CPPFLAGS = \
-	$(filter-out -DGLIB_VERSION_MAX_ALLOWED%,$(src_cppflags_base)) \
+src_core_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_CPPFLAGS = \
+	$(filter-out -DGLIB_VERSION_MAX_ALLOWED%,$(src_core_cppflags_base)) \
 	$(INTROSPECTION_EXTRA_CFLAGS) \
 	$(NULL)
 
-CLEANFILES += $(nodist_src_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_SOURCES)
+CLEANFILES += $(nodist_src_core_settings_plugins_ifcfg_rh_libnmdbus_ifcfg_rh_la_SOURCES)
 
-src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h: src/settings/plugins/ifcfg-rh/nm-ifcfg-rh.xml
-	@$(MKDIR_P) src/settings/plugins/ifcfg-rh/
+src/core/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h: src/core/settings/plugins/ifcfg-rh/nm-ifcfg-rh.xml
+	@$(MKDIR_P) src/core/settings/plugins/ifcfg-rh/
 	$(AM_V_GEN) gdbus-codegen \
 		--generate-c-code $(basename $@) \
 		--c-namespace NMDBus \
 		--interface-prefix com.redhat \
 		$<
 
-src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.c: src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h
+src/core/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.c: src/core/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h
 	@true
 
 ###############################################################################
 
-src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_SOURCES = \
-	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-common.h \
-	src/settings/plugins/ifcfg-rh/shvar.c \
-	src/settings/plugins/ifcfg-rh/shvar.h \
-	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-utils.c \
-	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-utils.h \
-	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c \
-	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.h \
-	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-writer.c \
-	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-writer.h \
+src_core_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_SOURCES = \
+	src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-common.h \
+	src/core/settings/plugins/ifcfg-rh/shvar.c \
+	src/core/settings/plugins/ifcfg-rh/shvar.h \
+	src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-utils.c \
+	src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-utils.h \
+	src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c \
+	src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.h \
+	src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-writer.c \
+	src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-writer.h \
 	$(NULL)
 
-src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_CPPFLAGS = $(src_cppflags_base)
+src_core_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_CPPFLAGS = $(src_core_cppflags_base)
 
-$(src_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_settings_plugins_ifcfg_rh_libnms_ifcfg_rh_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 
-src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_SOURCES = \
-	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-storage.c \
-	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-storage.h \
-	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-plugin.c \
-	src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-plugin.h \
+src_core_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_SOURCES = \
+	src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-storage.c \
+	src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-storage.h \
+	src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-plugin.c \
+	src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-plugin.h \
 	$(NULL)
 
-src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_CPPFLAGS = $(src_cppflags_base)
+src_core_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_CPPFLAGS = $(src_core_cppflags_base)
 
-src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_LDFLAGS = \
+src_core_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_LDFLAGS = \
 	-module -avoid-version \
 	-Wl,--version-script="$(srcdir)/linker-script-settings.ver" \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_LIBADD = \
-	src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la
+src_core_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_LIBADD = \
+	src/core/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la
 
-$(src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_OBJECTS): src/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h
-$(src_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_OBJECTS): src/core/settings/plugins/ifcfg-rh/nmdbus-ifcfg-rh.h
+$(src_core_settings_plugins_ifcfg_rh_libnm_settings_plugin_ifcfg_rh_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
-check-local-symbols-settings-ifcfg-rh: src/settings/plugins/ifcfg-rh/libnm-settings-plugin-ifcfg-rh.la
-	$(call check_so_symbols,$(builddir)/src/settings/plugins/ifcfg-rh/.libs/libnm-settings-plugin-ifcfg-rh.so)
+check-local-symbols-settings-ifcfg-rh: src/core/settings/plugins/ifcfg-rh/libnm-settings-plugin-ifcfg-rh.la
+	$(call check_so_symbols,$(builddir)/src/core/settings/plugins/ifcfg-rh/.libs/libnm-settings-plugin-ifcfg-rh.so)
 
 check_local += check-local-symbols-settings-ifcfg-rh
 
 ###############################################################################
-# src/settings/plugins/ifcfg-rh/tests
+# src/core/settings/plugins/ifcfg-rh/tests
 ###############################################################################
 
-check_programs += src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh
+check_programs += src/core/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh
 
-src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_SOURCES = \
-	src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c
+src_core_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_SOURCES = \
+	src/core/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c
 
-src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_CPPFLAGS = $(src_cppflags_base_test)
+src_core_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_CPPFLAGS = $(src_core_cppflags_base_test)
 
-src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_LDFLAGS = \
+src_core_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_LDFLAGS = \
 	$(GLIB_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_LDADD = \
-	src/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la \
-	src/libNetworkManagerTest.la
+src_core_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_LDADD = \
+	src/core/settings/plugins/ifcfg-rh/libnms-ifcfg-rh-core.la \
+	src/core/libNetworkManagerTest.la
 
-$(src_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_settings_plugins_ifcfg_rh_tests_test_ifcfg_rh_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 dist_libexec_SCRIPTS += \
-	src/settings/plugins/ifcfg-rh/nm-ifup \
-	src/settings/plugins/ifcfg-rh/nm-ifdown
+	src/core/settings/plugins/ifcfg-rh/nm-ifup \
+	src/core/settings/plugins/ifcfg-rh/nm-ifdown
 
 install-data-hook-ifcfg-rh:
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(sysconfdir)/sysconfig/network-scripts
@@ -3274,229 +3274,229 @@ install_data_hook += install-data-hook-ifcfg-rh
 endif
 
 EXTRA_DIST += \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-System_test-bridge-component-a.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-System_test-bridge-component-b.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-System_test-wired-802-1X-subj-matches.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_User_1.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Bond_Main.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Bridge_Component.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Permissions.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Proxy_Basic.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Routing_Rules.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Team_Infiniband_Port.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Team_Port.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_VLAN_reorder_hdr.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_WiFi_AP_Mode.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_WiFi_Band_A.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_WiFi_Hidden.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_WiFi_MAC_always.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_WiFi_MAC_default.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_WiFi_MAC_missing.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_WiFi_MAC_never.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wifi_LEAP.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wifi_WEP_104_ASCII.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wired_Auto-Negotiate.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wired_Static_Routes.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wired_Wake-on-LAN.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wired_match.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Vlan_test-vlan-interface.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-dcb-test.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-netmask-1 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-netmask-1.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-random_wifi_connection.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-random_wifi_connection_2.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-team-slave-enp31s0f1-142.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-eth-type \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-main \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-mode-numeric \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-slave \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-slave-ib \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bridge-component \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bridge-main \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bridge-missing-stp \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-bad-booleans \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-bad-percent \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-bad-uints \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-default-app-priorities \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-pgpct-not-100 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-short-booleans \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-short-percent \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-short-uints \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dns-options \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-fcoe-fabric \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-fcoe-vn2vn \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-ibft \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-infiniband \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-ip6-disabled.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-minimal \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-misc-variables \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-nm-controlled \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-nm-controlled-unrecognized \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-noip \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-onboot-no \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-permissions \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-read-proxy-basic \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-sit-ignore \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-sriov \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-sriov-write.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-static-routes-legacy \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-static-routes-legacy.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-tc \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-tc-write.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-master-1 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-master-2 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-master-invalid \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-port-1 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-port-2 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-port-empty-config \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-unrecognized \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-variables-corner-cases-1 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-flags-1 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-flags-2 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-interface \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-only-device \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-only-vlanid \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-physdev \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-reorder-hdr-1 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-reorder-hdr-2 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-trailing-spaces \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-band-a \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-band-a-channel-mismatch \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-band-bg-channel-mismatch \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-dynamic-wep-leap \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-hidden \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-leap \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-leap-agent \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-leap-always-ask \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-mac-random-always \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-mac-random-default \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-mac-random-missing \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-mac-random-never \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-auto \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-hex \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-long-hex \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-quoted \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-owe \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-sae \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-104-ascii \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-40-ascii \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-adhoc \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-agent-keys \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-eap-ttls-chap \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-no-keys \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-passphrase \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-eap-tls \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-eap-ttls-tls \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-eap-suite-b-192-tls \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk-2 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk-adhoc \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk-hex \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk-unquoted \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk-unquoted2 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-802-1X-subj-matches \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-802-1x-password-raw \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-802-1x-ttls-eapgtc \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-8021x-peap-mschapv2 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-8021x-tls-agent \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-8021x-tls-always \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-8021x-tls-p12-no-client-cert \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-auto-negotiate-on \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-autoip \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ctc-static \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-defroute-no \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-defroute-no-gatewaydev-yes \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-dhcp \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-dhcp-plus-ip \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-dhcp-send-hostname \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-dhcp6-only \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-dhcpv6-hostname-fallback \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-global-gateway \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-global-gateway-ignore \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv4-manual-1 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv4-manual-2 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv4-manual-3 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv4-manual-4 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv6-manual \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv6-only \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv6-only-1 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-never-default \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-obsolete-gateway-n \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-qeth-static \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-shared-plus-ip \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static-bootproto \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static-no-prefix-16 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static-no-prefix-24 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static-no-prefix-8 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static-routes \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static-routes-legacy \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-unknown-ethtool-opt \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-wake-on-lan \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-write-unknown-1 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-write-unknown-1.expected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-write-unknown-2 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-write-unknown-2.expected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-write-unknown-3 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-write-unknown-3.expected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-write-unknown-4 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-write-unknown-4.expected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test_write_wired_auto_negotiate_on.cexpected \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-dynamic-wep-leap \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-leap \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-sae \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep-104-ascii \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep-40-ascii \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep-adhoc \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep-eap-ttls-chap \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep-passphrase \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-eap-tls \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-eap-ttls-tls \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-psk \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-psk-2 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-psk-adhoc \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-psk-hex \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-psk-unquoted \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-psk-unquoted2 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wired-802-1x-password-raw \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wired-8021x-peap-mschapv2 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/network-test-wired-defroute-no-gatewaydev-yes \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/network-test-wired-global-gateway \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/network-test-wired-global-gateway-ignore \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/network-test-wired-never-default \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/route-test-static-routes-legacy \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/route-test-wired-static-routes \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/route-test-wired-static-routes-legacy \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/route6-test-wired-ipv6-manual \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/test1_key_and_cert.pem \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/test_ca_cert.pem \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/test_client.p12 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-System_test-bridge-component-a.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-System_test-bridge-component-b.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-System_test-wired-802-1X-subj-matches.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_User_1.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Bond_Main.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Bridge_Component.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Permissions.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Proxy_Basic.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Routing_Rules.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Team_Infiniband_Port.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Team_Port.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_VLAN_reorder_hdr.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_WiFi_AP_Mode.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_WiFi_Band_A.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_WiFi_Hidden.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_WiFi_MAC_always.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_WiFi_MAC_default.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_WiFi_MAC_missing.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_WiFi_MAC_never.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wifi_LEAP.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wifi_WEP_104_ASCII.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wired_Auto-Negotiate.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wired_Static_Routes.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wired_Wake-on-LAN.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Test_Write_Wired_match.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-Vlan_test-vlan-interface.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-dcb-test.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-netmask-1 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-netmask-1.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-random_wifi_connection.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-random_wifi_connection_2.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-team-slave-enp31s0f1-142.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-eth-type \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-main \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-mode-numeric \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-slave \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-slave-ib \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bridge-component \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bridge-main \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bridge-missing-stp \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-bad-booleans \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-bad-percent \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-bad-uints \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-default-app-priorities \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-pgpct-not-100 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-short-booleans \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-short-percent \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dcb-short-uints \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-dns-options \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-fcoe-fabric \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-fcoe-vn2vn \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-ibft \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-infiniband \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-ip6-disabled.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-minimal \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-misc-variables \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-nm-controlled \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-nm-controlled-unrecognized \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-noip \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-onboot-no \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-permissions \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-read-proxy-basic \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-sit-ignore \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-sriov \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-sriov-write.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-static-routes-legacy \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-static-routes-legacy.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-tc \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-tc-write.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-master-1 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-master-2 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-master-invalid \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-port-1 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-port-2 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-port-empty-config \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-unrecognized \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-variables-corner-cases-1 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-flags-1 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-flags-2 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-interface \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-only-device \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-only-vlanid \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-physdev \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-reorder-hdr-1 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-reorder-hdr-2 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-vlan-trailing-spaces \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-band-a \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-band-a-channel-mismatch \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-band-bg-channel-mismatch \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-dynamic-wep-leap \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-hidden \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-leap \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-leap-agent \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-leap-always-ask \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-mac-random-always \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-mac-random-default \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-mac-random-missing \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-mac-random-never \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-auto \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-hex \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-long-hex \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-open-ssid-quoted \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-owe \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-sae \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-104-ascii \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-40-ascii \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-adhoc \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-agent-keys \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-eap-ttls-chap \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-no-keys \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wep-passphrase \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-eap-tls \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-eap-ttls-tls \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-eap-suite-b-192-tls \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk-2 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk-adhoc \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk-hex \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk-unquoted \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wifi-wpa-psk-unquoted2 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-802-1X-subj-matches \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-802-1x-password-raw \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-802-1x-ttls-eapgtc \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-8021x-peap-mschapv2 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-8021x-tls-agent \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-8021x-tls-always \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-8021x-tls-p12-no-client-cert \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-auto-negotiate-on \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-autoip \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ctc-static \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-defroute-no \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-defroute-no-gatewaydev-yes \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-dhcp \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-dhcp-plus-ip \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-dhcp-send-hostname \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-dhcp6-only \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-dhcpv6-hostname-fallback \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-global-gateway \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-global-gateway-ignore \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv4-manual-1 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv4-manual-2 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv4-manual-3 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv4-manual-4 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv6-manual \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv6-only \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-ipv6-only-1 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-never-default \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-obsolete-gateway-n \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-qeth-static \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-shared-plus-ip \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static-bootproto \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static-no-prefix-16 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static-no-prefix-24 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static-no-prefix-8 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static-routes \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-static-routes-legacy \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-unknown-ethtool-opt \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-wired-wake-on-lan \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-write-unknown-1 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-write-unknown-1.expected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-write-unknown-2 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-write-unknown-2.expected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-write-unknown-3 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-write-unknown-3.expected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-write-unknown-4 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-write-unknown-4.expected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test_write_wired_auto_negotiate_on.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-dynamic-wep-leap \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-leap \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-sae \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep-104-ascii \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep-40-ascii \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep-adhoc \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep-eap-ttls-chap \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wep-passphrase \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-eap-tls \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-eap-ttls-tls \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-psk \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-psk-2 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-psk-adhoc \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-psk-hex \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-psk-unquoted \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wifi-wpa-psk-unquoted2 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wired-802-1x-password-raw \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/keys-test-wired-8021x-peap-mschapv2 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/network-test-wired-defroute-no-gatewaydev-yes \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/network-test-wired-global-gateway \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/network-test-wired-global-gateway-ignore \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/network-test-wired-never-default \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/route-test-static-routes-legacy \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/route-test-wired-static-routes \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/route-test-wired-static-routes-legacy \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/route6-test-wired-ipv6-manual \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/test1_key_and_cert.pem \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/test_ca_cert.pem \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/test_client.p12 \
 	$(NULL)
 
 # make target dependencies can't have colons in their names, which ends up
 # meaning that we can't add the alias files to EXTRA_DIST. They are instead
 # dist'ed via dist-hook-settings-ifcfg-rh below.
-src_settings_plugins_ifcfg_rh_tests_network_scripts_alias_files = \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem0 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem0:1 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem0:2 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem0:99 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem1 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem1:1 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem2 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem2:1 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem3 \
-	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem3:1
+src_core_settings_plugins_ifcfg_rh_tests_network_scripts_alias_files = \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem0 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem0:1 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem0:2 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem0:99 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem1 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem1:1 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem2 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem2:1 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem3 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-aliasem3:1
 
 dist-hook-settings-ifcfg-rh-alias-files:
-	@for f in $(src_settings_plugins_ifcfg_rh_tests_network_scripts_alias_files); do \
-		cp $(abs_srcdir)/$$f $(distdir)/src/settings/plugins/ifcfg-rh/tests/network-scripts/; \
+	@for f in $(src_core_settings_plugins_ifcfg_rh_tests_network_scripts_alias_files); do \
+		cp $(abs_srcdir)/$$f $(distdir)/src/core/settings/plugins/ifcfg-rh/tests/network-scripts/; \
 	done
 
 dist_hook += dist-hook-settings-ifcfg-rh-alias-files
@@ -3504,473 +3504,473 @@ dist_hook += dist-hook-settings-ifcfg-rh-alias-files
 ###############################################################################
 
 if CONFIG_PLUGIN_IFCFG_RH
-dbusservice_DATA += src/settings/plugins/ifcfg-rh/nm-ifcfg-rh.conf
+dbusservice_DATA += src/core/settings/plugins/ifcfg-rh/nm-ifcfg-rh.conf
 endif
 
 EXTRA_DIST += \
-	src/settings/plugins/ifcfg-rh/nm-ifcfg-rh.conf \
-	src/settings/plugins/ifcfg-rh/nm-ifcfg-rh.xml \
-	src/settings/plugins/ifcfg-rh/meson.build \
-	src/settings/plugins/ifcfg-rh/tests/meson.build
+	src/core/settings/plugins/ifcfg-rh/nm-ifcfg-rh.conf \
+	src/core/settings/plugins/ifcfg-rh/nm-ifcfg-rh.xml \
+	src/core/settings/plugins/ifcfg-rh/meson.build \
+	src/core/settings/plugins/ifcfg-rh/tests/meson.build
 
 ###############################################################################
-# src/settings/plugins/ifupdown
+# src/core/settings/plugins/ifupdown
 ###############################################################################
 
 if CONFIG_PLUGIN_IFUPDOWN
 
-core_plugins += src/settings/plugins/ifupdown/libnm-settings-plugin-ifupdown.la
+core_plugins += src/core/settings/plugins/ifupdown/libnm-settings-plugin-ifupdown.la
 
-noinst_LTLIBRARIES += src/settings/plugins/ifupdown/libnms-ifupdown-core.la
+noinst_LTLIBRARIES += src/core/settings/plugins/ifupdown/libnms-ifupdown-core.la
 
-src_settings_plugins_ifupdown_libnms_ifupdown_core_la_SOURCES = \
-	src/settings/plugins/ifupdown/nms-ifupdown-interface-parser.c \
-	src/settings/plugins/ifupdown/nms-ifupdown-interface-parser.h \
-	src/settings/plugins/ifupdown/nms-ifupdown-parser.c \
-	src/settings/plugins/ifupdown/nms-ifupdown-parser.h \
+src_core_settings_plugins_ifupdown_libnms_ifupdown_core_la_SOURCES = \
+	src/core/settings/plugins/ifupdown/nms-ifupdown-interface-parser.c \
+	src/core/settings/plugins/ifupdown/nms-ifupdown-interface-parser.h \
+	src/core/settings/plugins/ifupdown/nms-ifupdown-parser.c \
+	src/core/settings/plugins/ifupdown/nms-ifupdown-parser.h \
 	$(NULL)
 
-src_settings_plugins_ifupdown_libnms_ifupdown_core_la_CPPFLAGS = $(src_cppflags_base)
+src_core_settings_plugins_ifupdown_libnms_ifupdown_core_la_CPPFLAGS = $(src_core_cppflags_base)
 
-src_settings_plugins_ifupdown_libnms_ifupdown_core_la_LIBADD = \
+src_core_settings_plugins_ifupdown_libnms_ifupdown_core_la_LIBADD = \
 	$(LIBUDEV_LIBS) \
 	$(NULL)
 
-src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_SOURCES = \
-	src/settings/plugins/ifupdown/nms-ifupdown-plugin.c \
-	src/settings/plugins/ifupdown/nms-ifupdown-plugin.h \
+src_core_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_SOURCES = \
+	src/core/settings/plugins/ifupdown/nms-ifupdown-plugin.c \
+	src/core/settings/plugins/ifupdown/nms-ifupdown-plugin.h \
 	$(NULL)
 
-src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_CPPFLAGS = $(src_cppflags_base)
+src_core_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_CPPFLAGS = $(src_core_cppflags_base)
 
-src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_LDFLAGS = \
+src_core_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_LDFLAGS = \
 	-module -avoid-version \
 	-Wl,--version-script="$(srcdir)/linker-script-settings.ver" \
 	$(NULL)
 
-src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_LIBADD = \
-	src/settings/plugins/ifupdown/libnms-ifupdown-core.la \
+src_core_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_LIBADD = \
+	src/core/settings/plugins/ifupdown/libnms-ifupdown-core.la \
 	$(LIBUDEV_LIBS) \
 	$(NULL)
 
-$(src_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_settings_plugins_ifupdown_libnms_ifupdown_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_settings_plugins_ifupdown_libnm_settings_plugin_ifupdown_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_settings_plugins_ifupdown_libnms_ifupdown_core_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
-check-local-symbols-settings-ifupdown: src/settings/plugins/ifupdown/libnm-settings-plugin-ifupdown.la
-	$(call check_so_symbols,$(builddir)/src/settings/plugins/ifupdown/.libs/libnm-settings-plugin-ifupdown.so)
+check-local-symbols-settings-ifupdown: src/core/settings/plugins/ifupdown/libnm-settings-plugin-ifupdown.la
+	$(call check_so_symbols,$(builddir)/src/core/settings/plugins/ifupdown/.libs/libnm-settings-plugin-ifupdown.so)
 
 check_local += check-local-symbols-settings-ifupdown
 
 ###############################################################################
 
-check_programs += src/settings/plugins/ifupdown/tests/test-ifupdown
+check_programs += src/core/settings/plugins/ifupdown/tests/test-ifupdown
 
-src_settings_plugins_ifupdown_tests_test_ifupdown_CPPFLAGS = $(src_cppflags_base_test)
+src_core_settings_plugins_ifupdown_tests_test_ifupdown_CPPFLAGS = $(src_core_cppflags_base_test)
 
-src_settings_plugins_ifupdown_tests_test_ifupdown_LDFLAGS = \
+src_core_settings_plugins_ifupdown_tests_test_ifupdown_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-src_settings_plugins_ifupdown_tests_test_ifupdown_LDADD = \
-	src/settings/plugins/ifupdown/libnms-ifupdown-core.la \
-	src/libNetworkManagerTest.la \
+src_core_settings_plugins_ifupdown_tests_test_ifupdown_LDADD = \
+	src/core/settings/plugins/ifupdown/libnms-ifupdown-core.la \
+	src/core/libNetworkManagerTest.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-$(src_settings_plugins_ifupdown_tests_test_ifupdown_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_settings_plugins_ifupdown_tests_test_ifupdown_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 endif
 
 EXTRA_DIST += \
-	src/settings/plugins/ifupdown/tests/test1 \
-	src/settings/plugins/ifupdown/tests/test2 \
-	src/settings/plugins/ifupdown/tests/test3 \
-	src/settings/plugins/ifupdown/tests/test4 \
-	src/settings/plugins/ifupdown/tests/test5 \
-	src/settings/plugins/ifupdown/tests/test6 \
-	src/settings/plugins/ifupdown/tests/test7 \
-	src/settings/plugins/ifupdown/tests/test8 \
-	src/settings/plugins/ifupdown/tests/test9 \
-	src/settings/plugins/ifupdown/tests/test11 \
-	src/settings/plugins/ifupdown/tests/test12 \
-	src/settings/plugins/ifupdown/tests/test13 \
-	src/settings/plugins/ifupdown/tests/test14 \
-	src/settings/plugins/ifupdown/tests/test15 \
-	src/settings/plugins/ifupdown/tests/test16 \
-	src/settings/plugins/ifupdown/tests/test17-wired-static-verify-ip4 \
-	src/settings/plugins/ifupdown/tests/test18-wired-static-verify-ip6 \
-	src/settings/plugins/ifupdown/tests/test19-wired-static-verify-ip4-plen \
-	src/settings/plugins/ifupdown/tests/test20-source-stanza \
-	src/settings/plugins/ifupdown/tests/test20-source-stanza.eth0 \
-	src/settings/plugins/ifupdown/tests/test20-source-stanza.eth1 \
-	src/settings/plugins/ifupdown/tests/test21-source-dir-stanza \
-	src/settings/plugins/ifupdown/tests/test21-source-dir-stanza.d \
-	src/settings/plugins/ifupdown/tests/test22-duplicate-stanzas \
-	src/settings/plugins/ifupdown/meson.build \
-	src/settings/plugins/ifupdown/tests/meson.build
+	src/core/settings/plugins/ifupdown/tests/test1 \
+	src/core/settings/plugins/ifupdown/tests/test2 \
+	src/core/settings/plugins/ifupdown/tests/test3 \
+	src/core/settings/plugins/ifupdown/tests/test4 \
+	src/core/settings/plugins/ifupdown/tests/test5 \
+	src/core/settings/plugins/ifupdown/tests/test6 \
+	src/core/settings/plugins/ifupdown/tests/test7 \
+	src/core/settings/plugins/ifupdown/tests/test8 \
+	src/core/settings/plugins/ifupdown/tests/test9 \
+	src/core/settings/plugins/ifupdown/tests/test11 \
+	src/core/settings/plugins/ifupdown/tests/test12 \
+	src/core/settings/plugins/ifupdown/tests/test13 \
+	src/core/settings/plugins/ifupdown/tests/test14 \
+	src/core/settings/plugins/ifupdown/tests/test15 \
+	src/core/settings/plugins/ifupdown/tests/test16 \
+	src/core/settings/plugins/ifupdown/tests/test17-wired-static-verify-ip4 \
+	src/core/settings/plugins/ifupdown/tests/test18-wired-static-verify-ip6 \
+	src/core/settings/plugins/ifupdown/tests/test19-wired-static-verify-ip4-plen \
+	src/core/settings/plugins/ifupdown/tests/test20-source-stanza \
+	src/core/settings/plugins/ifupdown/tests/test20-source-stanza.eth0 \
+	src/core/settings/plugins/ifupdown/tests/test20-source-stanza.eth1 \
+	src/core/settings/plugins/ifupdown/tests/test21-source-dir-stanza \
+	src/core/settings/plugins/ifupdown/tests/test21-source-dir-stanza.d \
+	src/core/settings/plugins/ifupdown/tests/test22-duplicate-stanzas \
+	src/core/settings/plugins/ifupdown/meson.build \
+	src/core/settings/plugins/ifupdown/tests/meson.build
 
 ###############################################################################
-# src/devices
+# src/core/devices
 ###############################################################################
 
 EXTRA_DIST += \
-	src/devices/meson.build
+	src/core/devices/meson.build
 
 ###############################################################################
-# src/devices/adsl
+# src/core/devices/adsl
 ###############################################################################
 
-core_plugins += src/devices/adsl/libnm-device-plugin-adsl.la
+core_plugins += src/core/devices/adsl/libnm-device-plugin-adsl.la
 
-src_devices_adsl_libnm_device_plugin_adsl_la_SOURCES = \
-	src/devices/adsl/nm-atm-manager.c \
-	src/devices/adsl/nm-device-adsl.c \
-	src/devices/adsl/nm-device-adsl.h
+src_core_devices_adsl_libnm_device_plugin_adsl_la_SOURCES = \
+	src/core/devices/adsl/nm-atm-manager.c \
+	src/core/devices/adsl/nm-device-adsl.c \
+	src/core/devices/adsl/nm-device-adsl.h
 
-src_devices_adsl_libnm_device_plugin_adsl_la_CPPFLAGS = $(src_cppflags_device_plugin)
+src_core_devices_adsl_libnm_device_plugin_adsl_la_CPPFLAGS = $(src_core_cppflags_device_plugin)
 
-src_devices_adsl_libnm_device_plugin_adsl_la_LDFLAGS = \
+src_core_devices_adsl_libnm_device_plugin_adsl_la_LDFLAGS = \
 	-module -avoid-version \
 	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
 
-src_devices_adsl_libnm_device_plugin_adsl_la_LIBADD = \
+src_core_devices_adsl_libnm_device_plugin_adsl_la_LIBADD = \
 	$(LIBUDEV_LIBS)
 
-check-local-devices-adsl: src/devices/adsl/libnm-device-plugin-adsl.la
-	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/adsl/.libs/libnm-device-plugin-adsl.so "$(srcdir)/linker-script-devices.ver"
-	$(call check_so_symbols,$(builddir)/src/devices/adsl/.libs/libnm-device-plugin-adsl.so)
+check-local-devices-adsl: src/core/devices/adsl/libnm-device-plugin-adsl.la
+	$(srcdir)/tools/check-exports.sh $(builddir)/src/core/devices/adsl/.libs/libnm-device-plugin-adsl.so "$(srcdir)/linker-script-devices.ver"
+	$(call check_so_symbols,$(builddir)/src/core/devices/adsl/.libs/libnm-device-plugin-adsl.so)
 
 check_local += check-local-devices-adsl
 
 EXTRA_DIST += \
-	src/devices/adsl/meson.build
+	src/core/devices/adsl/meson.build
 
 ###############################################################################
-# src/devices/wwan
+# src/core/devices/wwan
 ###############################################################################
 
 if WITH_MODEM_MANAGER_1
 
-src_devices_wwan_cppflags = \
-	$(src_cppflags_device_plugin) \
+src_core_devices_wwan_cppflags = \
+	$(src_core_cppflags_device_plugin) \
 	$(MM_GLIB_CFLAGS) \
 	$(NULL)
 
-core_plugins += src/devices/wwan/libnm-wwan.la
+core_plugins += src/core/devices/wwan/libnm-wwan.la
 
-src_devices_wwan_libnm_wwan_la_SOURCES = \
-	src/devices/wwan/nm-modem-broadband.c \
-	src/devices/wwan/nm-modem-broadband.h \
-	src/devices/wwan/nm-modem-manager.c \
-	src/devices/wwan/nm-modem-manager.h \
-	src/devices/wwan/nm-modem.c \
-	src/devices/wwan/nm-modem.h \
-	src/devices/wwan/nm-service-providers.c \
-	src/devices/wwan/nm-service-providers.h \
+src_core_devices_wwan_libnm_wwan_la_SOURCES = \
+	src/core/devices/wwan/nm-modem-broadband.c \
+	src/core/devices/wwan/nm-modem-broadband.h \
+	src/core/devices/wwan/nm-modem-manager.c \
+	src/core/devices/wwan/nm-modem-manager.h \
+	src/core/devices/wwan/nm-modem.c \
+	src/core/devices/wwan/nm-modem.h \
+	src/core/devices/wwan/nm-service-providers.c \
+	src/core/devices/wwan/nm-service-providers.h \
 	$(NULL)
 
 if WITH_OFONO
-src_devices_wwan_libnm_wwan_la_SOURCES += \
-	src/devices/wwan/nm-modem-ofono.c \
-	src/devices/wwan/nm-modem-ofono.h
+src_core_devices_wwan_libnm_wwan_la_SOURCES += \
+	src/core/devices/wwan/nm-modem-ofono.c \
+	src/core/devices/wwan/nm-modem-ofono.h
 endif
 
-src_devices_wwan_libnm_wwan_la_CPPFLAGS = $(src_devices_wwan_cppflags)
+src_core_devices_wwan_libnm_wwan_la_CPPFLAGS = $(src_core_devices_wwan_cppflags)
 
-src_devices_wwan_libnm_wwan_la_LDFLAGS = \
+src_core_devices_wwan_libnm_wwan_la_LDFLAGS = \
 	-avoid-version \
-	-Wl,--version-script="$(srcdir)/src/devices/wwan/libnm-wwan.ver"
+	-Wl,--version-script="$(srcdir)/src/core/devices/wwan/libnm-wwan.ver"
 
-src_devices_wwan_libnm_wwan_la_LIBADD = \
+src_core_devices_wwan_libnm_wwan_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(LIBSYSTEMD_LIBS) \
 	$(MM_GLIB_LIBS)
 
-$(src_devices_wwan_libnm_wwan_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_devices_wwan_libnm_wwan_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
-EXTRA_src_devices_wwan_libnm_wwan_la_DEPENDENCIES = \
-	src/devices/wwan/libnm-wwan.ver
+EXTRA_src_core_devices_wwan_libnm_wwan_la_DEPENDENCIES = \
+	src/core/devices/wwan/libnm-wwan.ver
 
-core_plugins += src/devices/wwan/libnm-device-plugin-wwan.la
+core_plugins += src/core/devices/wwan/libnm-device-plugin-wwan.la
 
-src_devices_wwan_libnm_device_plugin_wwan_la_SOURCES = \
-	src/devices/wwan/nm-wwan-factory.c \
-	src/devices/wwan/nm-device-modem.c \
-	src/devices/wwan/nm-device-modem.h
+src_core_devices_wwan_libnm_device_plugin_wwan_la_SOURCES = \
+	src/core/devices/wwan/nm-wwan-factory.c \
+	src/core/devices/wwan/nm-device-modem.c \
+	src/core/devices/wwan/nm-device-modem.h
 
-src_devices_wwan_libnm_device_plugin_wwan_la_CPPFLAGS = $(src_devices_wwan_cppflags)
+src_core_devices_wwan_libnm_device_plugin_wwan_la_CPPFLAGS = $(src_core_devices_wwan_cppflags)
 
-src_devices_wwan_libnm_device_plugin_wwan_la_LDFLAGS = \
+src_core_devices_wwan_libnm_device_plugin_wwan_la_LDFLAGS = \
 	-module -avoid-version \
 	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
 
-src_devices_wwan_libnm_device_plugin_wwan_la_LIBADD = \
-	src/devices/wwan/libnm-wwan.la \
+src_core_devices_wwan_libnm_device_plugin_wwan_la_LIBADD = \
+	src/core/devices/wwan/libnm-wwan.la \
 	$(GLIB_LIBS)
 
-check-local-devices-wwan: src/devices/wwan/libnm-device-plugin-wwan.la src/devices/wwan/libnm-wwan.la
-	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/wwan/.libs/libnm-device-plugin-wwan.so "$(srcdir)/linker-script-devices.ver"
-	$(call check_so_symbols,$(builddir)/src/devices/wwan/.libs/libnm-device-plugin-wwan.so)
-	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/wwan/.libs/libnm-wwan.so "$(srcdir)/src/devices/wwan/libnm-wwan.ver"
-	$(call check_so_symbols,$(builddir)/src/devices/wwan/.libs/libnm-wwan.so)
+check-local-devices-wwan: src/core/devices/wwan/libnm-device-plugin-wwan.la src/core/devices/wwan/libnm-wwan.la
+	$(srcdir)/tools/check-exports.sh $(builddir)/src/core/devices/wwan/.libs/libnm-device-plugin-wwan.so "$(srcdir)/linker-script-devices.ver"
+	$(call check_so_symbols,$(builddir)/src/core/devices/wwan/.libs/libnm-device-plugin-wwan.so)
+	$(srcdir)/tools/check-exports.sh $(builddir)/src/core/devices/wwan/.libs/libnm-wwan.so "$(srcdir)/src/core/devices/wwan/libnm-wwan.ver"
+	$(call check_so_symbols,$(builddir)/src/core/devices/wwan/.libs/libnm-wwan.so)
 
 check_local += check-local-devices-wwan
 
-src_devices_wwan_tests_test_service_providers_SOURCES = \
-	src/devices/wwan/tests/test-service-providers.c \
-	src/devices/wwan/nm-service-providers.c \
-	src/devices/wwan/nm-service-providers.h \
+src_core_devices_wwan_tests_test_service_providers_SOURCES = \
+	src/core/devices/wwan/tests/test-service-providers.c \
+	src/core/devices/wwan/nm-service-providers.c \
+	src/core/devices/wwan/nm-service-providers.h \
 	$(NULL)
 
-src_devices_wwan_tests_test_service_providers_CPPFLAGS = \
-	$(src_cppflags_base_test) \
-	-I$(srcdir)/src/devices/wwan \
+src_core_devices_wwan_tests_test_service_providers_CPPFLAGS = \
+	$(src_core_cppflags_base_test) \
+	-I$(srcdir)/src/core/devices/wwan \
 	$(NULL)
 
-src_devices_wwan_tests_test_service_providers_LDFLAGS = \
+src_core_devices_wwan_tests_test_service_providers_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-src_devices_wwan_tests_test_service_providers_LDADD = \
-	src/libNetworkManagerTest.la \
+src_core_devices_wwan_tests_test_service_providers_LDADD = \
+	src/core/libNetworkManagerTest.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-check_programs += src/devices/wwan/tests/test-service-providers
+check_programs += src/core/devices/wwan/tests/test-service-providers
 
-$(src_devices_wwan_tests_test_service_providers_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_devices_wwan_tests_test_service_providers_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 endif
 
 EXTRA_DIST += \
-	src/devices/wwan/libnm-wwan.ver \
-	src/devices/wwan/meson.build \
-	src/devices/wwan/tests/test-service-providers.xml \
+	src/core/devices/wwan/libnm-wwan.ver \
+	src/core/devices/wwan/meson.build \
+	src/core/devices/wwan/tests/test-service-providers.xml \
 	$(NULL)
 
 ###############################################################################
-# src/devices/bluetooth
+# src/core/devices/bluetooth
 ###############################################################################
 
 if WITH_MODEM_MANAGER_1
 
-noinst_LTLIBRARIES += src/devices/bluetooth/libnm-bluetooth-utils.la
+noinst_LTLIBRARIES += src/core/devices/bluetooth/libnm-bluetooth-utils.la
 
-src_devices_bluetooth_libnm_bluetooth_utils_la_SOURCES = \
-	src/devices/bluetooth/nm-bluez-common.h \
-	src/devices/bluetooth/nm-bt-error.c \
-	src/devices/bluetooth/nm-bt-error.h \
+src_core_devices_bluetooth_libnm_bluetooth_utils_la_SOURCES = \
+	src/core/devices/bluetooth/nm-bluez-common.h \
+	src/core/devices/bluetooth/nm-bt-error.c \
+	src/core/devices/bluetooth/nm-bt-error.h \
 	$(NULL)
 
-src_devices_bluetooth_libnm_bluetooth_utils_la_CPPFLAGS = \
-	$(src_cppflags_base) \
+src_core_devices_bluetooth_libnm_bluetooth_utils_la_CPPFLAGS = \
+	$(src_core_cppflags_base) \
 	$(NULL)
 
-src_devices_bluetooth_libnm_bluetooth_utils_la_LIBADD = \
+src_core_devices_bluetooth_libnm_bluetooth_utils_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(NULL)
 
 if WITH_BLUEZ5_DUN
-src_devices_bluetooth_libnm_bluetooth_utils_la_SOURCES += \
-	src/devices/bluetooth/nm-bluez5-dun.c \
-	src/devices/bluetooth/nm-bluez5-dun.h \
+src_core_devices_bluetooth_libnm_bluetooth_utils_la_SOURCES += \
+	src/core/devices/bluetooth/nm-bluez5-dun.c \
+	src/core/devices/bluetooth/nm-bluez5-dun.h \
 	$(NULL)
 
-src_devices_bluetooth_libnm_bluetooth_utils_la_CPPFLAGS += $(BLUEZ5_CFLAGS)
-src_devices_bluetooth_libnm_bluetooth_utils_la_LIBADD += $(BLUEZ5_LIBS)
+src_core_devices_bluetooth_libnm_bluetooth_utils_la_CPPFLAGS += $(BLUEZ5_CFLAGS)
+src_core_devices_bluetooth_libnm_bluetooth_utils_la_LIBADD += $(BLUEZ5_LIBS)
 endif
 
-$(src_devices_bluetooth_libnm_bluetooth_utils_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_devices_bluetooth_libnm_bluetooth_utils_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 
-core_plugins += src/devices/bluetooth/libnm-device-plugin-bluetooth.la
+core_plugins += src/core/devices/bluetooth/libnm-device-plugin-bluetooth.la
 
-src_devices_bluetooth_libnm_device_plugin_bluetooth_la_SOURCES = \
-	src/devices/bluetooth/nm-bluez-manager.c \
-	src/devices/bluetooth/nm-bluez-manager.h \
-	src/devices/bluetooth/nm-device-bt.c \
-	src/devices/bluetooth/nm-device-bt.h \
+src_core_devices_bluetooth_libnm_device_plugin_bluetooth_la_SOURCES = \
+	src/core/devices/bluetooth/nm-bluez-manager.c \
+	src/core/devices/bluetooth/nm-bluez-manager.h \
+	src/core/devices/bluetooth/nm-device-bt.c \
+	src/core/devices/bluetooth/nm-device-bt.h \
 	$(NULL)
 
-src_devices_bluetooth_libnm_device_plugin_bluetooth_la_CPPFLAGS = $(src_cppflags_device_plugin)
+src_core_devices_bluetooth_libnm_device_plugin_bluetooth_la_CPPFLAGS = $(src_core_cppflags_device_plugin)
 
-src_devices_bluetooth_libnm_device_plugin_bluetooth_la_LDFLAGS = \
+src_core_devices_bluetooth_libnm_device_plugin_bluetooth_la_LDFLAGS = \
 	-module -avoid-version \
 	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
 
-src_devices_bluetooth_libnm_device_plugin_bluetooth_la_LIBADD = \
-	src/devices/bluetooth/libnm-bluetooth-utils.la \
-	src/devices/wwan/libnm-wwan.la \
+src_core_devices_bluetooth_libnm_device_plugin_bluetooth_la_LIBADD = \
+	src/core/devices/bluetooth/libnm-bluetooth-utils.la \
+	src/core/devices/wwan/libnm-wwan.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
 ###############################################################################
 
 check_programs_norun += \
-	src/devices/bluetooth/tests/nm-bt-test
+	src/core/devices/bluetooth/tests/nm-bt-test
 
-src_devices_bluetooth_tests_nm_bt_test_CPPFLAGS = \
-	$(src_cppflags_test) \
+src_core_devices_bluetooth_tests_nm_bt_test_CPPFLAGS = \
+	$(src_core_cppflags_test) \
 	$(NULL)
 
-src_devices_bluetooth_tests_nm_bt_test_LDFLAGS = \
+src_core_devices_bluetooth_tests_nm_bt_test_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-src_devices_bluetooth_tests_nm_bt_test_LDADD = \
-	src/devices/bluetooth/libnm-bluetooth-utils.la \
-	src/libNetworkManager.la \
+src_core_devices_bluetooth_tests_nm_bt_test_LDADD = \
+	src/core/devices/bluetooth/libnm-bluetooth-utils.la \
+	src/core/libNetworkManager.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-$(src_devices_bluetooth_tests_nm_bt_test_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_devices_bluetooth_tests_nm_bt_test_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 ###############################################################################
 
-check-local-devices-bluetooth: src/devices/bluetooth/libnm-device-plugin-bluetooth.la
-	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/bluetooth/.libs/libnm-device-plugin-bluetooth.so "$(srcdir)/linker-script-devices.ver"
-	$(call check_so_symbols,$(builddir)/src/devices/bluetooth/.libs/libnm-device-plugin-bluetooth.so)
+check-local-devices-bluetooth: src/core/devices/bluetooth/libnm-device-plugin-bluetooth.la
+	$(srcdir)/tools/check-exports.sh $(builddir)/src/core/devices/bluetooth/.libs/libnm-device-plugin-bluetooth.so "$(srcdir)/linker-script-devices.ver"
+	$(call check_so_symbols,$(builddir)/src/core/devices/bluetooth/.libs/libnm-device-plugin-bluetooth.so)
 
 check_local += check-local-devices-bluetooth
 
 endif
 
 EXTRA_DIST += \
-	src/devices/bluetooth/meson.build \
+	src/core/devices/bluetooth/meson.build \
 	$(NULL)
 
 ###############################################################################
-# src/devices/wifi
+# src/core/devices/wifi
 ###############################################################################
 
 if WITH_WIFI
 
-noinst_LTLIBRARIES += src/devices/wifi/libnm-wifi-base.la
+noinst_LTLIBRARIES += src/core/devices/wifi/libnm-wifi-base.la
 
-src_devices_wifi_libnm_wifi_base_la_SOURCES = \
-	src/devices/wifi/nm-device-olpc-mesh.c \
-	src/devices/wifi/nm-device-olpc-mesh.h \
-	src/devices/wifi/nm-device-wifi-p2p.c \
-	src/devices/wifi/nm-device-wifi-p2p.h \
-	src/devices/wifi/nm-device-wifi.c \
-	src/devices/wifi/nm-device-wifi.h \
-	src/devices/wifi/nm-wifi-ap.c \
-	src/devices/wifi/nm-wifi-ap.h \
-	src/devices/wifi/nm-wifi-common.c \
-	src/devices/wifi/nm-wifi-common.h \
-	src/devices/wifi/nm-wifi-p2p-peer.c \
-	src/devices/wifi/nm-wifi-p2p-peer.h \
-	src/devices/wifi/nm-wifi-utils.c \
-	src/devices/wifi/nm-wifi-utils.h \
+src_core_devices_wifi_libnm_wifi_base_la_SOURCES = \
+	src/core/devices/wifi/nm-device-olpc-mesh.c \
+	src/core/devices/wifi/nm-device-olpc-mesh.h \
+	src/core/devices/wifi/nm-device-wifi-p2p.c \
+	src/core/devices/wifi/nm-device-wifi-p2p.h \
+	src/core/devices/wifi/nm-device-wifi.c \
+	src/core/devices/wifi/nm-device-wifi.h \
+	src/core/devices/wifi/nm-wifi-ap.c \
+	src/core/devices/wifi/nm-wifi-ap.h \
+	src/core/devices/wifi/nm-wifi-common.c \
+	src/core/devices/wifi/nm-wifi-common.h \
+	src/core/devices/wifi/nm-wifi-p2p-peer.c \
+	src/core/devices/wifi/nm-wifi-p2p-peer.h \
+	src/core/devices/wifi/nm-wifi-utils.c \
+	src/core/devices/wifi/nm-wifi-utils.h \
 	$(NULL)
 
 if WITH_IWD
-src_devices_wifi_libnm_wifi_base_la_SOURCES += \
-	src/devices/wifi/nm-device-iwd.c \
-	src/devices/wifi/nm-device-iwd.h \
-	src/devices/wifi/nm-iwd-manager.c \
-	src/devices/wifi/nm-iwd-manager.h \
+src_core_devices_wifi_libnm_wifi_base_la_SOURCES += \
+	src/core/devices/wifi/nm-device-iwd.c \
+	src/core/devices/wifi/nm-device-iwd.h \
+	src/core/devices/wifi/nm-iwd-manager.c \
+	src/core/devices/wifi/nm-iwd-manager.h \
 	$(NULL)
 endif
 
-src_devices_wifi_libnm_wifi_base_la_CPPFLAGS = $(src_cppflags_device_plugin)
+src_core_devices_wifi_libnm_wifi_base_la_CPPFLAGS = $(src_core_cppflags_device_plugin)
 
-src_devices_wifi_libnm_wifi_base_la_LIBADD = \
+src_core_devices_wifi_libnm_wifi_base_la_LIBADD = \
 	$(GLIB_LIBS)
 
-$(src_devices_wifi_libnm_wifi_base_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_devices_wifi_libnm_wifi_base_la_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
-core_plugins += src/devices/wifi/libnm-device-plugin-wifi.la
+core_plugins += src/core/devices/wifi/libnm-device-plugin-wifi.la
 
-src_devices_wifi_libnm_device_plugin_wifi_la_SOURCES = \
-	src/devices/wifi/nm-wifi-factory.c \
+src_core_devices_wifi_libnm_device_plugin_wifi_la_SOURCES = \
+	src/core/devices/wifi/nm-wifi-factory.c \
 	$(NULL)
 
-src_devices_wifi_libnm_device_plugin_wifi_la_CPPFLAGS = $(src_cppflags_device_plugin)
+src_core_devices_wifi_libnm_device_plugin_wifi_la_CPPFLAGS = $(src_core_cppflags_device_plugin)
 
-src_devices_wifi_libnm_device_plugin_wifi_la_LDFLAGS = \
+src_core_devices_wifi_libnm_device_plugin_wifi_la_LDFLAGS = \
 	-module -avoid-version \
 	-Wl,--version-script="$(srcdir)/linker-script-devices.ver"
 
-src_devices_wifi_libnm_device_plugin_wifi_la_LIBADD = \
-	src/devices/wifi/libnm-wifi-base.la \
+src_core_devices_wifi_libnm_device_plugin_wifi_la_LIBADD = \
+	src/core/devices/wifi/libnm-wifi-base.la \
 	$(GLIB_LIBS)
 
-check-local-devices-wifi: src/devices/wifi/libnm-device-plugin-wifi.la
-	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/wifi/.libs/libnm-device-plugin-wifi.so "$(srcdir)/linker-script-devices.ver"
-	$(call check_so_symbols,$(builddir)/src/devices/wifi/.libs/libnm-device-plugin-wifi.so)
+check-local-devices-wifi: src/core/devices/wifi/libnm-device-plugin-wifi.la
+	$(srcdir)/tools/check-exports.sh $(builddir)/src/core/devices/wifi/.libs/libnm-device-plugin-wifi.so "$(srcdir)/linker-script-devices.ver"
+	$(call check_so_symbols,$(builddir)/src/core/devices/wifi/.libs/libnm-device-plugin-wifi.so)
 
 check_local += check-local-devices-wifi
 
-check_programs += src/devices/wifi/tests/test-devices-wifi
+check_programs += src/core/devices/wifi/tests/test-devices-wifi
 
-src_devices_wifi_tests_test_devices_wifi_SOURCES = \
-	src/devices/wifi/tests/test-devices-wifi.c \
+src_core_devices_wifi_tests_test_devices_wifi_SOURCES = \
+	src/core/devices/wifi/tests/test-devices-wifi.c \
 	$(NULL)
 
-src_devices_wifi_tests_test_devices_wifi_CPPFLAGS = $(src_cppflags_base_test)
+src_core_devices_wifi_tests_test_devices_wifi_CPPFLAGS = $(src_core_cppflags_base_test)
 
-src_devices_wifi_tests_test_devices_wifi_LDADD = \
-	src/devices/wifi/libnm-wifi-base.la \
-	src/libNetworkManagerTest.la \
-	src/libNetworkManagerBase.la \
+src_core_devices_wifi_tests_test_devices_wifi_LDADD = \
+	src/core/devices/wifi/libnm-wifi-base.la \
+	src/core/libNetworkManagerTest.la \
+	src/core/libNetworkManagerBase.la \
 	$(NULL)
 
-src_devices_wifi_tests_test_devices_wifi_LDFLAGS = $(SANITIZER_EXEC_LDFLAGS)
+src_core_devices_wifi_tests_test_devices_wifi_LDFLAGS = $(SANITIZER_EXEC_LDFLAGS)
 
-$(src_devices_wifi_tests_test_devices_wifi_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_devices_wifi_tests_test_devices_wifi_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 endif
 
 EXTRA_DIST += \
-	src/devices/wifi/meson.build \
+	src/core/devices/wifi/meson.build \
 	$(NULL)
 
 ###############################################################################
-# src/devices/team
+# src/core/devices/team
 ###############################################################################
 
 if WITH_TEAMDCTL
 
-core_plugins += src/devices/team/libnm-device-plugin-team.la
+core_plugins += src/core/devices/team/libnm-device-plugin-team.la
 
-src_devices_team_libnm_device_plugin_team_la_SOURCES = \
-	src/devices/team/nm-team-factory.c \
-	src/devices/team/nm-device-team.c \
-	src/devices/team/nm-device-team.h \
+src_core_devices_team_libnm_device_plugin_team_la_SOURCES = \
+	src/core/devices/team/nm-team-factory.c \
+	src/core/devices/team/nm-device-team.c \
+	src/core/devices/team/nm-device-team.h \
 	$(NULL)
 
-src_devices_team_libnm_device_plugin_team_la_CPPFLAGS = \
-	$(src_cppflags_device_plugin) \
+src_core_devices_team_libnm_device_plugin_team_la_CPPFLAGS = \
+	$(src_core_cppflags_device_plugin) \
 	$(LIBTEAMDCTL_CFLAGS) \
 	$(JANSSON_CFLAGS) \
 	$(NULL)
 
-src_devices_team_libnm_device_plugin_team_la_LDFLAGS = \
+src_core_devices_team_libnm_device_plugin_team_la_LDFLAGS = \
 	-module -avoid-version \
 	-Wl,--version-script="$(srcdir)/linker-script-devices.ver" \
 	$(NULL)
 
-src_devices_team_libnm_device_plugin_team_la_LIBADD = \
+src_core_devices_team_libnm_device_plugin_team_la_LIBADD = \
 	$(LIBTEAMDCTL_LIBS) \
 	$(JANSSON_LIBS) \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-check-local-devices-team: src/devices/team/libnm-device-plugin-team.la
-	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/team/.libs/libnm-device-plugin-team.so "$(srcdir)/linker-script-devices.ver"
-	$(call check_so_symbols,$(builddir)/src/devices/team/.libs/libnm-device-plugin-team.so)
+check-local-devices-team: src/core/devices/team/libnm-device-plugin-team.la
+	$(srcdir)/tools/check-exports.sh $(builddir)/src/core/devices/team/.libs/libnm-device-plugin-team.so "$(srcdir)/linker-script-devices.ver"
+	$(call check_so_symbols,$(builddir)/src/core/devices/team/.libs/libnm-device-plugin-team.so)
 
 check_local += check-local-devices-team
 
 endif
 
 EXTRA_DIST += \
-	src/devices/team/meson.build
+	src/core/devices/team/meson.build
 
 ###############################################################################
-# src/devices/ovs
+# src/core/devices/ovs
 ###############################################################################
 
 if WITH_OPENVSWITCH
@@ -3983,373 +3983,373 @@ systemdnmunit_DATA = \
 
 endif
 
-core_plugins += src/devices/ovs/libnm-device-plugin-ovs.la
+core_plugins += src/core/devices/ovs/libnm-device-plugin-ovs.la
 
-src_devices_ovs_libnm_device_plugin_ovs_la_SOURCES = \
-	src/devices/ovs/nm-ovsdb.c \
-	src/devices/ovs/nm-ovsdb.h \
-	src/devices/ovs/nm-ovs-factory.c \
-	src/devices/ovs/nm-device-ovs-interface.c \
-	src/devices/ovs/nm-device-ovs-interface.h \
-	src/devices/ovs/nm-device-ovs-port.c \
-	src/devices/ovs/nm-device-ovs-port.h \
-	src/devices/ovs/nm-device-ovs-bridge.c \
-	src/devices/ovs/nm-device-ovs-bridge.h \
+src_core_devices_ovs_libnm_device_plugin_ovs_la_SOURCES = \
+	src/core/devices/ovs/nm-ovsdb.c \
+	src/core/devices/ovs/nm-ovsdb.h \
+	src/core/devices/ovs/nm-ovs-factory.c \
+	src/core/devices/ovs/nm-device-ovs-interface.c \
+	src/core/devices/ovs/nm-device-ovs-interface.h \
+	src/core/devices/ovs/nm-device-ovs-port.c \
+	src/core/devices/ovs/nm-device-ovs-port.h \
+	src/core/devices/ovs/nm-device-ovs-bridge.c \
+	src/core/devices/ovs/nm-device-ovs-bridge.h \
 	$(NULL)
 
-src_devices_ovs_libnm_device_plugin_ovs_la_CPPFLAGS = \
-	$(src_cppflags_device_plugin) \
+src_core_devices_ovs_libnm_device_plugin_ovs_la_CPPFLAGS = \
+	$(src_core_cppflags_device_plugin) \
 	$(JANSSON_CFLAGS) \
 	$(NULL)
 
-src_devices_ovs_libnm_device_plugin_ovs_la_LDFLAGS = \
+src_core_devices_ovs_libnm_device_plugin_ovs_la_LDFLAGS = \
 	-module -avoid-version \
 	-Wl,--version-script="$(srcdir)/linker-script-devices.ver" \
 	$(NULL)
 
-src_devices_ovs_libnm_device_plugin_ovs_la_LIBADD = \
+src_core_devices_ovs_libnm_device_plugin_ovs_la_LIBADD = \
 	$(JANSSON_LIBS) \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-check-local-devices-ovs: src/devices/ovs/libnm-device-plugin-ovs.la
-	$(srcdir)/tools/check-exports.sh $(builddir)/src/devices/ovs/.libs/libnm-device-plugin-ovs.so "$(srcdir)/linker-script-devices.ver"
-	$(call check_so_symbols,$(builddir)/src/devices/ovs/.libs/libnm-device-plugin-ovs.so)
+check-local-devices-ovs: src/core/devices/ovs/libnm-device-plugin-ovs.la
+	$(srcdir)/tools/check-exports.sh $(builddir)/src/core/devices/ovs/.libs/libnm-device-plugin-ovs.so "$(srcdir)/linker-script-devices.ver"
+	$(call check_so_symbols,$(builddir)/src/core/devices/ovs/.libs/libnm-device-plugin-ovs.so)
 
 endif
 
 EXTRA_DIST += \
 	data/NetworkManager-ovs.conf \
-	src/devices/ovs/meson.build
+	src/core/devices/ovs/meson.build
 
 ###############################################################################
-# src/dnsmasq/tests
+# src/core/dnsmasq/tests
 ###############################################################################
 
-check_programs += src/dnsmasq/tests/test-dnsmasq-utils
+check_programs += src/core/dnsmasq/tests/test-dnsmasq-utils
 
-src_dnsmasq_tests_test_dnsmasq_utils_CPPFLAGS = $(src_cppflags_test)
+src_core_dnsmasq_tests_test_dnsmasq_utils_CPPFLAGS = $(src_core_cppflags_test)
 
-src_dnsmasq_tests_test_dnsmasq_utils_LDADD = \
-	src/libNetworkManagerTest.la
+src_core_dnsmasq_tests_test_dnsmasq_utils_LDADD = \
+	src/core/libNetworkManagerTest.la
 
-src_dnsmasq_tests_test_dnsmasq_utils_LDFLAGS = \
+src_core_dnsmasq_tests_test_dnsmasq_utils_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-$(src_dnsmasq_tests_test_dnsmasq_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_dnsmasq_tests_test_dnsmasq_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
-	src/dnsmasq/tests/meson.build
+	src/core/dnsmasq/tests/meson.build
 
 ###############################################################################
-# src/platform/tests
+# src/core/platform/tests
 ###############################################################################
 
-src_platform_tests_ldflags = \
+src_core_platform_tests_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-src_platform_tests_libadd = \
-	src/libNetworkManagerTest.la \
+src_core_platform_tests_libadd = \
+	src/core/libNetworkManagerTest.la \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS)
 
 check_programs_norun += \
-	src/platform/tests/monitor
+	src/core/platform/tests/monitor
 
 check_programs += \
-	src/platform/tests/test-address-fake \
-	src/platform/tests/test-address-linux \
-	src/platform/tests/test-cleanup-fake \
-	src/platform/tests/test-cleanup-linux \
-	src/platform/tests/test-link-fake \
-	src/platform/tests/test-link-linux \
-	src/platform/tests/test-nmp-object \
-	src/platform/tests/test-platform-general \
-	src/platform/tests/test-route-fake \
-	src/platform/tests/test-route-linux \
-	src/platform/tests/test-tc-fake \
-	src/platform/tests/test-tc-linux \
+	src/core/platform/tests/test-address-fake \
+	src/core/platform/tests/test-address-linux \
+	src/core/platform/tests/test-cleanup-fake \
+	src/core/platform/tests/test-cleanup-linux \
+	src/core/platform/tests/test-link-fake \
+	src/core/platform/tests/test-link-linux \
+	src/core/platform/tests/test-nmp-object \
+	src/core/platform/tests/test-platform-general \
+	src/core/platform/tests/test-route-fake \
+	src/core/platform/tests/test-route-linux \
+	src/core/platform/tests/test-tc-fake \
+	src/core/platform/tests/test-tc-linux \
 	$(NULL)
 
-src_platform_tests_monitor_CPPFLAGS = $(src_cppflags_test)
-src_platform_tests_monitor_LDFLAGS = $(src_platform_tests_ldflags)
-src_platform_tests_monitor_LDADD = $(src_platform_tests_libadd)
+src_core_platform_tests_monitor_CPPFLAGS = $(src_core_cppflags_test)
+src_core_platform_tests_monitor_LDFLAGS = $(src_core_platform_tests_ldflags)
+src_core_platform_tests_monitor_LDADD = $(src_core_platform_tests_libadd)
 
-src_platform_tests_test_address_fake_SOURCES = src/platform/tests/test-address.c
-src_platform_tests_test_address_fake_CPPFLAGS = $(src_tests_cppflags_fake)
-src_platform_tests_test_address_fake_LDFLAGS = $(src_platform_tests_ldflags)
-src_platform_tests_test_address_fake_LDADD = $(src_platform_tests_libadd)
+src_core_platform_tests_test_address_fake_SOURCES = src/core/platform/tests/test-address.c
+src_core_platform_tests_test_address_fake_CPPFLAGS = $(src_core_tests_cppflags_fake)
+src_core_platform_tests_test_address_fake_LDFLAGS = $(src_core_platform_tests_ldflags)
+src_core_platform_tests_test_address_fake_LDADD = $(src_core_platform_tests_libadd)
 
-src_platform_tests_test_address_linux_SOURCES = src/platform/tests/test-address.c
-src_platform_tests_test_address_linux_CPPFLAGS = $(src_tests_cppflags_linux)
-src_platform_tests_test_address_linux_LDFLAGS = $(src_platform_tests_ldflags)
-src_platform_tests_test_address_linux_LDADD = $(src_platform_tests_libadd)
+src_core_platform_tests_test_address_linux_SOURCES = src/core/platform/tests/test-address.c
+src_core_platform_tests_test_address_linux_CPPFLAGS = $(src_core_tests_cppflags_linux)
+src_core_platform_tests_test_address_linux_LDFLAGS = $(src_core_platform_tests_ldflags)
+src_core_platform_tests_test_address_linux_LDADD = $(src_core_platform_tests_libadd)
 
-src_platform_tests_test_cleanup_fake_SOURCES = src/platform/tests/test-cleanup.c
-src_platform_tests_test_cleanup_fake_CPPFLAGS = $(src_tests_cppflags_fake)
-src_platform_tests_test_cleanup_fake_LDFLAGS = $(src_platform_tests_ldflags)
-src_platform_tests_test_cleanup_fake_LDADD = $(src_platform_tests_libadd)
+src_core_platform_tests_test_cleanup_fake_SOURCES = src/core/platform/tests/test-cleanup.c
+src_core_platform_tests_test_cleanup_fake_CPPFLAGS = $(src_core_tests_cppflags_fake)
+src_core_platform_tests_test_cleanup_fake_LDFLAGS = $(src_core_platform_tests_ldflags)
+src_core_platform_tests_test_cleanup_fake_LDADD = $(src_core_platform_tests_libadd)
 
-src_platform_tests_test_cleanup_linux_SOURCES = src/platform/tests/test-cleanup.c
-src_platform_tests_test_cleanup_linux_CPPFLAGS = $(src_tests_cppflags_linux)
-src_platform_tests_test_cleanup_linux_LDFLAGS = $(src_platform_tests_ldflags)
-src_platform_tests_test_cleanup_linux_LDADD = $(src_platform_tests_libadd)
+src_core_platform_tests_test_cleanup_linux_SOURCES = src/core/platform/tests/test-cleanup.c
+src_core_platform_tests_test_cleanup_linux_CPPFLAGS = $(src_core_tests_cppflags_linux)
+src_core_platform_tests_test_cleanup_linux_LDFLAGS = $(src_core_platform_tests_ldflags)
+src_core_platform_tests_test_cleanup_linux_LDADD = $(src_core_platform_tests_libadd)
 
-src_platform_tests_test_link_fake_SOURCES = src/platform/tests/test-link.c
-src_platform_tests_test_link_fake_CPPFLAGS = $(src_tests_cppflags_fake)
-src_platform_tests_test_link_fake_LDFLAGS = $(src_platform_tests_ldflags)
-src_platform_tests_test_link_fake_LDADD = $(src_platform_tests_libadd)
+src_core_platform_tests_test_link_fake_SOURCES = src/core/platform/tests/test-link.c
+src_core_platform_tests_test_link_fake_CPPFLAGS = $(src_core_tests_cppflags_fake)
+src_core_platform_tests_test_link_fake_LDFLAGS = $(src_core_platform_tests_ldflags)
+src_core_platform_tests_test_link_fake_LDADD = $(src_core_platform_tests_libadd)
 
-src_platform_tests_test_link_linux_SOURCES = src/platform/tests/test-link.c
-src_platform_tests_test_link_linux_CPPFLAGS = $(src_tests_cppflags_linux)
-src_platform_tests_test_link_linux_LDFLAGS = $(src_platform_tests_ldflags)
-src_platform_tests_test_link_linux_LDADD = $(src_platform_tests_libadd)
+src_core_platform_tests_test_link_linux_SOURCES = src/core/platform/tests/test-link.c
+src_core_platform_tests_test_link_linux_CPPFLAGS = $(src_core_tests_cppflags_linux)
+src_core_platform_tests_test_link_linux_LDFLAGS = $(src_core_platform_tests_ldflags)
+src_core_platform_tests_test_link_linux_LDADD = $(src_core_platform_tests_libadd)
 
-src_platform_tests_test_nmp_object_CPPFLAGS = $(src_cppflags_test)
-src_platform_tests_test_nmp_object_LDFLAGS = $(src_platform_tests_ldflags)
-src_platform_tests_test_nmp_object_LDADD = src/libNetworkManagerTest.la
+src_core_platform_tests_test_nmp_object_CPPFLAGS = $(src_core_cppflags_test)
+src_core_platform_tests_test_nmp_object_LDFLAGS = $(src_core_platform_tests_ldflags)
+src_core_platform_tests_test_nmp_object_LDADD = src/core/libNetworkManagerTest.la
 
-src_platform_tests_test_platform_general_CPPFLAGS = $(src_cppflags_test)
-src_platform_tests_test_platform_general_LDFLAGS = $(src_platform_tests_ldflags)
-src_platform_tests_test_platform_general_LDADD = src/libNetworkManagerTest.la
+src_core_platform_tests_test_platform_general_CPPFLAGS = $(src_core_cppflags_test)
+src_core_platform_tests_test_platform_general_LDFLAGS = $(src_core_platform_tests_ldflags)
+src_core_platform_tests_test_platform_general_LDADD = src/core/libNetworkManagerTest.la
 
-src_platform_tests_test_route_fake_SOURCES = src/platform/tests/test-route.c
-src_platform_tests_test_route_fake_CPPFLAGS = $(src_tests_cppflags_fake)
-src_platform_tests_test_route_fake_LDFLAGS = $(src_platform_tests_ldflags)
-src_platform_tests_test_route_fake_LDADD = $(src_platform_tests_libadd)
+src_core_platform_tests_test_route_fake_SOURCES = src/core/platform/tests/test-route.c
+src_core_platform_tests_test_route_fake_CPPFLAGS = $(src_core_tests_cppflags_fake)
+src_core_platform_tests_test_route_fake_LDFLAGS = $(src_core_platform_tests_ldflags)
+src_core_platform_tests_test_route_fake_LDADD = $(src_core_platform_tests_libadd)
 
-src_platform_tests_test_route_linux_SOURCES = src/platform/tests/test-route.c
-src_platform_tests_test_route_linux_CPPFLAGS = $(src_tests_cppflags_linux)
-src_platform_tests_test_route_linux_LDFLAGS = $(src_platform_tests_ldflags)
-src_platform_tests_test_route_linux_LDADD = $(src_platform_tests_libadd)
+src_core_platform_tests_test_route_linux_SOURCES = src/core/platform/tests/test-route.c
+src_core_platform_tests_test_route_linux_CPPFLAGS = $(src_core_tests_cppflags_linux)
+src_core_platform_tests_test_route_linux_LDFLAGS = $(src_core_platform_tests_ldflags)
+src_core_platform_tests_test_route_linux_LDADD = $(src_core_platform_tests_libadd)
 
-src_platform_tests_test_tc_fake_SOURCES = src/platform/tests/test-tc.c
-src_platform_tests_test_tc_fake_CPPFLAGS = $(src_tests_cppflags_fake)
-src_platform_tests_test_tc_fake_LDFLAGS = $(src_platform_tests_ldflags)
-src_platform_tests_test_tc_fake_LDADD = $(src_platform_tests_libadd)
+src_core_platform_tests_test_tc_fake_SOURCES = src/core/platform/tests/test-tc.c
+src_core_platform_tests_test_tc_fake_CPPFLAGS = $(src_core_tests_cppflags_fake)
+src_core_platform_tests_test_tc_fake_LDFLAGS = $(src_core_platform_tests_ldflags)
+src_core_platform_tests_test_tc_fake_LDADD = $(src_core_platform_tests_libadd)
 
-src_platform_tests_test_tc_linux_SOURCES = src/platform/tests/test-tc.c
-src_platform_tests_test_tc_linux_CPPFLAGS = $(src_tests_cppflags_linux)
-src_platform_tests_test_tc_linux_LDFLAGS = $(src_platform_tests_ldflags)
-src_platform_tests_test_tc_linux_LDADD = $(src_platform_tests_libadd)
+src_core_platform_tests_test_tc_linux_SOURCES = src/core/platform/tests/test-tc.c
+src_core_platform_tests_test_tc_linux_CPPFLAGS = $(src_core_tests_cppflags_linux)
+src_core_platform_tests_test_tc_linux_LDFLAGS = $(src_core_platform_tests_ldflags)
+src_core_platform_tests_test_tc_linux_LDADD = $(src_core_platform_tests_libadd)
 
 
-$(src_platform_tests_monitor_OBJECTS):               $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_address_fake_OBJECTS):     $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_address_linux_OBJECTS):    $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_cleanup_fake_OBJECTS):     $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_cleanup_linux_OBJECTS):    $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_link_fake_OBJECTS):        $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_link_linux_OBJECTS):       $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_nmp_object_OBJECTS):       $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_platform_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_route_fake_OBJECTS):       $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_route_linux_OBJECTS):      $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_tc_fake_OBJECTS):          $(libnm_core_lib_h_pub_mkenums)
-$(src_platform_tests_test_tc_linux_OBJECTS):         $(libnm_core_lib_h_pub_mkenums)
+$(src_core_platform_tests_monitor_OBJECTS):               $(libnm_core_lib_h_pub_mkenums)
+$(src_core_platform_tests_test_address_fake_OBJECTS):     $(libnm_core_lib_h_pub_mkenums)
+$(src_core_platform_tests_test_address_linux_OBJECTS):    $(libnm_core_lib_h_pub_mkenums)
+$(src_core_platform_tests_test_cleanup_fake_OBJECTS):     $(libnm_core_lib_h_pub_mkenums)
+$(src_core_platform_tests_test_cleanup_linux_OBJECTS):    $(libnm_core_lib_h_pub_mkenums)
+$(src_core_platform_tests_test_link_fake_OBJECTS):        $(libnm_core_lib_h_pub_mkenums)
+$(src_core_platform_tests_test_link_linux_OBJECTS):       $(libnm_core_lib_h_pub_mkenums)
+$(src_core_platform_tests_test_nmp_object_OBJECTS):       $(libnm_core_lib_h_pub_mkenums)
+$(src_core_platform_tests_test_platform_general_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_platform_tests_test_route_fake_OBJECTS):       $(libnm_core_lib_h_pub_mkenums)
+$(src_core_platform_tests_test_route_linux_OBJECTS):      $(libnm_core_lib_h_pub_mkenums)
+$(src_core_platform_tests_test_tc_fake_OBJECTS):          $(libnm_core_lib_h_pub_mkenums)
+$(src_core_platform_tests_test_tc_linux_OBJECTS):         $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
-	src/platform/tests/meson.build \
+	src/core/platform/tests/meson.build \
 	$(NULL)
 
 ###############################################################################
-# src/devices/tests
+# src/core/devices/tests
 ###############################################################################
 
-src_devices_tests_ldflags = \
+src_core_devices_tests_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS)
 
 check_programs += \
-	src/devices/tests/test-lldp \
-	src/devices/tests/test-acd
+	src/core/devices/tests/test-lldp \
+	src/core/devices/tests/test-acd
 
-src_devices_tests_test_lldp_CPPFLAGS = $(src_cppflags_test)
-src_devices_tests_test_lldp_LDFLAGS = $(src_devices_tests_ldflags)
-src_devices_tests_test_lldp_LDADD = \
-	src/libNetworkManagerTest.la
+src_core_devices_tests_test_lldp_CPPFLAGS = $(src_core_cppflags_test)
+src_core_devices_tests_test_lldp_LDFLAGS = $(src_core_devices_tests_ldflags)
+src_core_devices_tests_test_lldp_LDADD = \
+	src/core/libNetworkManagerTest.la
 
-src_devices_tests_test_acd_CPPFLAGS = $(src_cppflags_test)
-src_devices_tests_test_acd_LDFLAGS = $(src_devices_tests_ldflags)
-src_devices_tests_test_acd_LDADD = \
-	src/libNetworkManagerTest.la
+src_core_devices_tests_test_acd_CPPFLAGS = $(src_core_cppflags_test)
+src_core_devices_tests_test_acd_LDFLAGS = $(src_core_devices_tests_ldflags)
+src_core_devices_tests_test_acd_LDADD = \
+	src/core/libNetworkManagerTest.la
 
-$(src_devices_tests_test_lldp_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_devices_tests_test_acd_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_devices_tests_test_lldp_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_devices_tests_test_acd_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
-	src/devices/tests/meson.build
+	src/core/devices/tests/meson.build
 
 ###############################################################################
-# src/ndisc/tests
+# src/core/ndisc/tests
 ###############################################################################
 
-src_ndisc_tests_ldflags = \
+src_core_ndisc_tests_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-src_ndisc_tests_ldadd = \
-	src/libNetworkManagerTest.la \
+src_core_ndisc_tests_ldadd = \
+	src/core/libNetworkManagerTest.la \
 	$(GLIB_LIBS)
 
-check_programs += src/ndisc/tests/test-ndisc-fake
-check_programs_norun += src/ndisc/tests/test-ndisc-linux
+check_programs += src/core/ndisc/tests/test-ndisc-fake
+check_programs_norun += src/core/ndisc/tests/test-ndisc-linux
 
-src_ndisc_tests_test_ndisc_linux_CPPFLAGS = $(src_cppflags_test)
-src_ndisc_tests_test_ndisc_linux_LDFLAGS = $(src_ndisc_tests_ldflags)
-src_ndisc_tests_test_ndisc_linux_LDADD = $(src_ndisc_tests_ldadd)
+src_core_ndisc_tests_test_ndisc_linux_CPPFLAGS = $(src_core_cppflags_test)
+src_core_ndisc_tests_test_ndisc_linux_LDFLAGS = $(src_core_ndisc_tests_ldflags)
+src_core_ndisc_tests_test_ndisc_linux_LDADD = $(src_core_ndisc_tests_ldadd)
 
-src_ndisc_tests_test_ndisc_fake_CPPFLAGS = $(src_cppflags_test)
-src_ndisc_tests_test_ndisc_fake_LDFLAGS = $(src_ndisc_tests_ldflags)
-src_ndisc_tests_test_ndisc_fake_LDADD = $(src_ndisc_tests_ldadd)
+src_core_ndisc_tests_test_ndisc_fake_CPPFLAGS = $(src_core_cppflags_test)
+src_core_ndisc_tests_test_ndisc_fake_LDFLAGS = $(src_core_ndisc_tests_ldflags)
+src_core_ndisc_tests_test_ndisc_fake_LDADD = $(src_core_ndisc_tests_ldadd)
 
-$(src_ndisc_tests_test_ndisc_linux_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_ndisc_tests_test_ndisc_fake_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_ndisc_tests_test_ndisc_linux_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_ndisc_tests_test_ndisc_fake_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
-	src/ndisc/tests/meson.build
+	src/core/ndisc/tests/meson.build
 
 ###############################################################################
-# src/supplicant/tests
+# src/core/supplicant/tests
 ###############################################################################
 
-check_programs += src/supplicant/tests/test-supplicant-config
+check_programs += src/core/supplicant/tests/test-supplicant-config
 
-src_supplicant_tests_test_supplicant_config_CPPFLAGS = $(src_cppflags_test)
+src_core_supplicant_tests_test_supplicant_config_CPPFLAGS = $(src_core_cppflags_test)
 
-src_supplicant_tests_test_supplicant_config_LDADD = \
-	src/libNetworkManagerTest.la
+src_core_supplicant_tests_test_supplicant_config_LDADD = \
+	src/core/libNetworkManagerTest.la
 
-src_supplicant_tests_test_supplicant_config_LDFLAGS = \
+src_core_supplicant_tests_test_supplicant_config_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-$(src_supplicant_tests_test_supplicant_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_supplicant_tests_test_supplicant_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
-	src/supplicant/tests/certs/test-ca-cert.pem \
-	src/supplicant/tests/certs/test-cert.p12 \
-	src/supplicant/tests/meson.build
+	src/core/supplicant/tests/certs/test-ca-cert.pem \
+	src/core/supplicant/tests/certs/test-cert.p12 \
+	src/core/supplicant/tests/meson.build
 
 ###############################################################################
-# src/tests/config
+# src/core/tests/config
 ###############################################################################
 
-check_programs += src/tests/config/test-config
+check_programs += src/core/tests/config/test-config
 
-src_tests_config_test_config_SOURCES = \
-	src/tests/config/nm-test-device.c \
-	src/tests/config/nm-test-device.h \
-	src/tests/config/test-config.c
+src_core_tests_config_test_config_SOURCES = \
+	src/core/tests/config/nm-test-device.c \
+	src/core/tests/config/nm-test-device.h \
+	src/core/tests/config/test-config.c
 
-src_tests_config_test_config_CPPFLAGS = $(src_cppflags_test)
+src_core_tests_config_test_config_CPPFLAGS = $(src_core_cppflags_test)
 
-src_tests_config_test_config_LDADD = \
-	src/libNetworkManagerTest.la
+src_core_tests_config_test_config_LDADD = \
+	src/core/libNetworkManagerTest.la
 
-src_tests_config_test_config_LDFLAGS = \
+src_core_tests_config_test_config_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-$(src_tests_config_test_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_tests_config_test_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
-	src/tests/config/NetworkManager.conf \
-	src/tests/config/NetworkManager-warn.conf \
-	src/tests/config/NetworkManager.state \
-	src/tests/config/bad.conf \
-	src/tests/config/global-dns-invalid.conf \
-	src/tests/config/conf.d/00-overrides.conf \
-	src/tests/config/conf.d/10-more.conf \
-	src/tests/config/conf.d/20-config-enable-1.conf \
-	src/tests/config/conf.d/90-last.conf \
-	src/tests/config/meson.build
+	src/core/tests/config/NetworkManager.conf \
+	src/core/tests/config/NetworkManager-warn.conf \
+	src/core/tests/config/NetworkManager.state \
+	src/core/tests/config/bad.conf \
+	src/core/tests/config/global-dns-invalid.conf \
+	src/core/tests/config/conf.d/00-overrides.conf \
+	src/core/tests/config/conf.d/10-more.conf \
+	src/core/tests/config/conf.d/20-config-enable-1.conf \
+	src/core/tests/config/conf.d/90-last.conf \
+	src/core/tests/config/meson.build
 
 ###############################################################################
-# src/tests
+# src/core/tests
 ###############################################################################
 
-src_tests_ldflags = \
+src_core_tests_ldflags = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-src_tests_ldadd = \
-	src/libNetworkManagerTest.la
+src_core_tests_ldadd = \
+	src/core/libNetworkManagerTest.la
 
 check_programs += \
-	src/tests/test-core \
-	src/tests/test-core-with-expect \
-	src/tests/test-dcb \
-	src/tests/test-ip4-config \
-	src/tests/test-ip6-config \
-	src/tests/test-l3cfg \
-	src/tests/test-systemd \
-	src/tests/test-utils \
-	src/tests/test-wired-defname \
+	src/core/tests/test-core \
+	src/core/tests/test-core-with-expect \
+	src/core/tests/test-dcb \
+	src/core/tests/test-ip4-config \
+	src/core/tests/test-ip6-config \
+	src/core/tests/test-l3cfg \
+	src/core/tests/test-systemd \
+	src/core/tests/test-utils \
+	src/core/tests/test-wired-defname \
 	$(NULL)
 
-src_tests_test_ip4_config_CPPFLAGS = $(src_cppflags_test)
-src_tests_test_ip4_config_LDFLAGS = $(src_tests_ldflags)
-src_tests_test_ip4_config_LDADD = $(src_tests_ldadd)
+src_core_tests_test_ip4_config_CPPFLAGS = $(src_core_cppflags_test)
+src_core_tests_test_ip4_config_LDFLAGS = $(src_core_tests_ldflags)
+src_core_tests_test_ip4_config_LDADD = $(src_core_tests_ldadd)
 
-src_tests_test_ip6_config_CPPFLAGS = $(src_cppflags_test)
-src_tests_test_ip6_config_LDFLAGS = $(src_tests_ldflags)
-src_tests_test_ip6_config_LDADD = $(src_tests_ldadd)
+src_core_tests_test_ip6_config_CPPFLAGS = $(src_core_cppflags_test)
+src_core_tests_test_ip6_config_LDFLAGS = $(src_core_tests_ldflags)
+src_core_tests_test_ip6_config_LDADD = $(src_core_tests_ldadd)
 
-src_tests_test_dcb_CPPFLAGS = $(src_cppflags_test)
-src_tests_test_dcb_LDFLAGS = $(src_tests_ldflags)
-src_tests_test_dcb_LDADD = $(src_tests_ldadd)
+src_core_tests_test_dcb_CPPFLAGS = $(src_core_cppflags_test)
+src_core_tests_test_dcb_LDFLAGS = $(src_core_tests_ldflags)
+src_core_tests_test_dcb_LDADD = $(src_core_tests_ldadd)
 
-src_tests_test_core_CPPFLAGS = $(src_cppflags_test)
-src_tests_test_core_LDFLAGS = $(src_tests_ldflags)
-src_tests_test_core_LDADD = $(src_tests_ldadd)
+src_core_tests_test_core_CPPFLAGS = $(src_core_cppflags_test)
+src_core_tests_test_core_LDFLAGS = $(src_core_tests_ldflags)
+src_core_tests_test_core_LDADD = $(src_core_tests_ldadd)
 
-src_tests_test_core_with_expect_CPPFLAGS = $(src_cppflags_test)
-src_tests_test_core_with_expect_LDFLAGS = $(src_tests_ldflags)
-src_tests_test_core_with_expect_LDADD = $(src_tests_ldadd)
+src_core_tests_test_core_with_expect_CPPFLAGS = $(src_core_cppflags_test)
+src_core_tests_test_core_with_expect_LDFLAGS = $(src_core_tests_ldflags)
+src_core_tests_test_core_with_expect_LDADD = $(src_core_tests_ldadd)
 
-src_tests_test_wired_defname_CPPFLAGS = $(src_cppflags_test)
-src_tests_test_wired_defname_LDFLAGS = $(src_tests_ldflags)
-src_tests_test_wired_defname_LDADD = $(src_tests_ldadd)
+src_core_tests_test_wired_defname_CPPFLAGS = $(src_core_cppflags_test)
+src_core_tests_test_wired_defname_LDFLAGS = $(src_core_tests_ldflags)
+src_core_tests_test_wired_defname_LDADD = $(src_core_tests_ldadd)
 
-src_tests_test_utils_CPPFLAGS = $(src_cppflags_test)
-src_tests_test_utils_LDFLAGS = $(src_tests_ldflags)
-src_tests_test_utils_LDADD = $(src_tests_ldadd)
+src_core_tests_test_utils_CPPFLAGS = $(src_core_cppflags_test)
+src_core_tests_test_utils_LDFLAGS = $(src_core_tests_ldflags)
+src_core_tests_test_utils_LDADD = $(src_core_tests_ldadd)
 
-src_tests_test_l3cfg_CPPFLAGS = $(src_cppflags_test)
-src_tests_test_l3cfg_LDFLAGS = $(src_devices_tests_ldflags)
-src_tests_test_l3cfg_LDADD = $(src_tests_ldadd)
+src_core_tests_test_l3cfg_CPPFLAGS = $(src_core_cppflags_test)
+src_core_tests_test_l3cfg_LDFLAGS = $(src_core_devices_tests_ldflags)
+src_core_tests_test_l3cfg_LDADD = $(src_core_tests_ldadd)
 
-$(src_tests_test_core_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_tests_test_core_with_expect_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_tests_test_dcb_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_tests_test_ip4_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_tests_test_ip6_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_tests_test_l3cfg_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_tests_test_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
-$(src_tests_test_wired_defname_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_tests_test_core_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_tests_test_core_with_expect_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_tests_test_dcb_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_tests_test_ip4_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_tests_test_ip6_config_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_tests_test_l3cfg_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_tests_test_utils_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_tests_test_wired_defname_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
-src_tests_test_systemd_CPPFLAGS = \
-	$(src_libnm_systemd_core_la_cppflags) \
+src_core_tests_test_systemd_CPPFLAGS = \
+	$(src_core_libnm_systemd_core_la_cppflags) \
 	-DNETWORKMANAGER_COMPILATION_TEST \
 	$(NULL)
 
-src_tests_test_systemd_LDFLAGS = \
+src_core_tests_test_systemd_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-src_tests_test_systemd_LDADD = \
-	src/libnm-systemd-core.la \
+src_core_tests_test_systemd_LDADD = \
+	src/core/libnm-systemd-core.la \
 	shared/systemd/libnm-systemd-shared.la \
 	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(NULL)
 
-$(src_tests_test_systemd_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(src_core_tests_test_systemd_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 EXTRA_DIST += \
-	src/tests/test-secret-agent.py \
-	src/tests/meson.build
+	src/core/tests/test-secret-agent.py \
+	src/core/tests/meson.build
 
 ###############################################################################
 # dispatcher
@@ -5394,7 +5394,7 @@ typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
 BUILT_SOURCES += $(typelib_DATA)
 
 dbusservicedir = $(DBUS_SYS_DIR)
-dbusservice_DATA += src/org.freedesktop.NetworkManager.conf
+dbusservice_DATA += src/core/org.freedesktop.NetworkManager.conf
 
 ###############################################################################
 
@@ -5422,7 +5422,7 @@ EXTRA_DIST += \
 	linker-script-binary.ver \
 	linker-script-devices.ver \
 	linker-script-settings.ver \
-	src/ppp/nm-ppp-plugin.ver \
+	src/core/ppp/nm-ppp-plugin.ver \
 	Makefile.glib \
 	autogen.sh \
 	lsan.suppressions \
@@ -5462,7 +5462,7 @@ EXTRA_DIST += \
 	tools/test-sudo-wrapper.sh \
 	tools/enums-to-docbook.pl \
 	\
-	src/settings/plugins/meson.build \
+	src/core/settings/plugins/meson.build \
 	\
 	$(NULL)
 

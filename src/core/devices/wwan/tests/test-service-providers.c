@@ -43,7 +43,7 @@ test_positive(void)
     GMainLoop *loop = g_main_loop_new(NULL, FALSE);
 
     nm_service_providers_find_gsm_apn(NM_BUILD_SRCDIR
-                                      "/src/devices/wwan/tests/test-service-providers.xml",
+                                      "/src/core/devices/wwan/tests/test-service-providers.xml",
                                       "13337",
                                       NULL,
                                       test_positive_cb,
@@ -76,7 +76,7 @@ test_negative(void)
     GMainLoop *loop = g_main_loop_new(NULL, FALSE);
 
     nm_service_providers_find_gsm_apn(NM_BUILD_SRCDIR
-                                      "/src/devices/wwan/tests/test-service-providers.xml",
+                                      "/src/core/devices/wwan/tests/test-service-providers.xml",
                                       "78130",
                                       NULL,
                                       test_negative_cb,

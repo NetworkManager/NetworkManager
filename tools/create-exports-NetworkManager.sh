@@ -8,7 +8,7 @@ die() {
     exit 1
 }
 
-# generates the linker version script src/NetworkManager.ver
+# generates the linker version script src/core/NetworkManager.ver
 # by looking at the symbols needed by the device and settings
 # plugins. Note that this depends on how NetworkManager and
 # the plugins are build. For example, compiling without
@@ -40,9 +40,9 @@ call_nm() {
 }
 
 get_symbols_nm () {
-    base=./src/.libs/NetworkManager-all-sym
+    base=./src/core/.libs/NetworkManager-all-sym
     if ! test -f "$base"; then
-        base=./src/NetworkManager-all-sym
+        base=./src/core/NetworkManager-all-sym
     fi
     call_nm "$base" |
         sed -n 's/^[tTDGRBS] //p' |
@@ -56,9 +56,9 @@ EOF
 }
 
 get_symbols_missing() {
-    (for f in $(find ./src/settings/plugins/*/${libs} \
-                     ./src/devices/*/${libs} \
-                     ./src/ppp/${libs} -name '*.so' 2>/dev/null); do
+    (for f in $(find ./src/core/settings/plugins/*/${libs} \
+                     ./src/core/devices/*/${libs} \
+                     ./src/core/ppp/${libs} -name '*.so' 2>/dev/null); do
         call_nm "$f" |
             sed -n 's/^\([U]\) \(\(nm_\|nmp_\|_nm\|NM\|_NM\|nmtst_\|c_siphash_\|c_list_\).*\)$/\2/p'
     done) |
@@ -82,7 +82,7 @@ do_rebuild() {
 }
 
 do_update() {
-    do_generate > ./src/NetworkManager.ver
+    do_generate > ./src/core/NetworkManager.ver
 }
 
 SYMBOLS_MISSING="$(get_symbols_missing | pretty)"
@@ -110,7 +110,7 @@ else
     libs=.libs/
 fi
 
-test -f ./src/${libs}libNetworkManager.a || die "must be called from NetworkManager top build dir after building the tree"
+test -f ./src/core/${libs}libNetworkManager.a || die "must be called from NetworkManager top build dir after building the tree"
 
 case "$1" in
     rebuild)
@@ -125,8 +125,8 @@ case "$1" in
         if test -z "${NM_BUILD_NO_CREATE_EXPORTS+x}"; then
             do_update
         else
-            if test -f "./src/NetworkManager.ver"; then
-                touch ./src/NetworkManager.ver
+            if test -f "./src/core/NetworkManager.ver"; then
+                touch ./src/core/NetworkManager.ver
             fi
         fi
         ;;
