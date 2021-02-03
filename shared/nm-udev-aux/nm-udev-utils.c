@@ -241,11 +241,11 @@ nm_udev_client_new(const char *const *subsystems,
     return self;
 
 fail:
-    return nm_udev_client_unref(self);
+    return nm_udev_client_destroy(self);
 }
 
 NMUdevClient *
-nm_udev_client_unref(NMUdevClient *self)
+nm_udev_client_destroy(NMUdevClient *self)
 {
     if (!self)
         return NULL;

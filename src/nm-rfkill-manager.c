@@ -405,7 +405,7 @@ dispose(GObject *object)
         priv->killswitches = NULL;
     }
 
-    priv->udev_client = nm_udev_client_unref(priv->udev_client);
+    priv->udev_client = nm_udev_client_destroy(priv->udev_client);
 
     G_OBJECT_CLASS(nm_rfkill_manager_parent_class)->dispose(object);
 }

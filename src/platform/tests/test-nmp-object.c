@@ -611,7 +611,7 @@ main(int argc, char **argv)
         global.udev_devices = g_list_delete_link(global.udev_devices, global.udev_devices);
     }
 
-    nm_udev_client_unref(udev_client);
+    nm_udev_client_destroy(udev_client);
 
     return result;
 }
