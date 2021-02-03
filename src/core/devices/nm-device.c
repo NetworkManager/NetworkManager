@@ -11483,28 +11483,31 @@ void
 nm_device_activate_schedule_stage3_ip_config_start(NMDevice *self)
 {
     NMDevicePrivate *priv;
+    int              ifindex;
 
     g_return_if_fail(NM_IS_DEVICE(self));
 
     priv = NM_DEVICE_GET_PRIVATE(self);
     g_return_if_fail(priv->act_request.obj);
+    ifindex = nm_device_get_ip_ifindex(self);
 
     /* Add the interface to the specified firewall zone */
     if (priv->fw_state == FIREWALL_STATE_UNMANAGED) {
-        if (!nm_device_sys_iface_state_is_external(self)) {
+        if (nm_device_sys_iface_state_is_external(self)) {
+            /* fake success */
+            priv->fw_state = FIREWALL_STATE_INITIALIZED;
+        } else if (ifindex > 0) {
             priv->fw_state = FIREWALL_STATE_WAIT_STAGE_3;
             fw_change_zone(self);
             return;
         }
-
-        /* fake success. */
-        priv->fw_state = FIREWALL_STATE_INITIALIZED;
+        /* no ifindex, nothing to do for now */
     } else if (priv->fw_state == FIREWALL_STATE_WAIT_STAGE_3) {
         /* a firewall call for stage3 is pending. Return and wait. */
         return;
     }
 
-    nm_assert(priv->fw_state == FIREWALL_STATE_INITIALIZED);
+    nm_assert(ifindex <= 0 || priv->fw_state == FIREWALL_STATE_INITIALIZED);
 
     activation_source_schedule(self, activate_stage3_ip_config_start, AF_INET);
 }
@@ -16627,8 +16630,22 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
         nm_device_queue_state(self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
         break;
     case NM_DEVICE_STATE_IP_CHECK:
-        if (priv->fw_state >= FIREWALL_STATE_INITIALIZED && priv->ip_iface
-            && !nm_device_sys_iface_state_is_external(self)) {
+    {
+        gboolean change_zone = FALSE;
+
+        if (!nm_device_sys_iface_state_is_external(self)) {
+            if (priv->ip_iface) {
+                /* The device now has a @ip_iface different from the
+                 * @iface on which we previously set the zone. */
+                change_zone = TRUE;
+            } else if (priv->fw_state == FIREWALL_STATE_UNMANAGED && priv->ifindex > 0) {
+                /* We didn't set the zone earlier because there was
+                 * no ifindex. */
+                change_zone = TRUE;
+            }
+        }
+
+        if (change_zone) {
             priv->fw_state = FIREWALL_STATE_WAIT_IP_CONFIG;
             fw_change_zone(self);
         } else
@@ -16639,6 +16656,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
          */
         notify_ip_properties(self);
         break;
+    }
     case NM_DEVICE_STATE_SECONDARIES:
         ip_check_gw_ping_cleanup(self);
         _LOGD(LOGD_DEVICE, "device entered SECONDARIES state");
