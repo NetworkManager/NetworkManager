@@ -2018,7 +2018,6 @@ shared_systemd_libnm_systemd_shared_la_SOURCES = \
 	shared/systemd/sd-adapt-shared/mkdir.h \
 	shared/systemd/sd-adapt-shared/namespace-util.h \
 	shared/systemd/sd-adapt-shared/nm-sd-adapt-shared.h \
-	shared/systemd/sd-adapt-shared/nm-sd-adapt-shared.h \
 	shared/systemd/sd-adapt-shared/nulstr-util.h \
 	shared/systemd/sd-adapt-shared/raw-clone.h \
 	shared/systemd/sd-adapt-shared/rlimit-util.h \
