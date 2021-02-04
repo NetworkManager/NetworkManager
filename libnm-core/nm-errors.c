@@ -3,7 +3,7 @@
  * Copyright (C) 2004 - 2014 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "libnm-core/nm-default-libnm-core.h"
 
 #include "nm-errors.h"
 

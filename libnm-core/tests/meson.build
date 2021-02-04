@@ -4,7 +4,7 @@ enum_sources = gnome.mkenums_simple(
   'nm-core-tests-enum-types',
   sources: 'test-general-enums.h',
   identifier_prefix: nm_id_prefix,
-  body_prefix: '#include "nm-default.h"',
+  body_prefix: '#include "libnm-core/nm-default-libnm-core.h"',
 )
 
 test_units = [
@@ -28,8 +28,7 @@ foreach test_unit: test_units
       libnm_base_dep,
     ],
     c_args: [
-      '-DNETWORKMANAGER_COMPILATION_TEST',
-      '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',
+      '-DG_LOG_DOMAIN="test"',
     ],
     link_with: libnm_systemd_logging_stub,
   )

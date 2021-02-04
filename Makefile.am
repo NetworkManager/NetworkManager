@@ -593,7 +593,6 @@ libnm_core_nm_libnm_core_intern_libnm_libnm_core_intern_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	-DG_LOG_DOMAIN=\""libnm"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE \
 	$(NULL)
 
 libnm_core_nm_libnm_core_intern_libnm_libnm_core_intern_la_SOURCES = \
@@ -666,7 +665,6 @@ libnm_core_nm_keyfile_libnm_keyfile_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	-DG_LOG_DOMAIN=\""libnm"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE \
 	$(NULL)
 
 libnm_core_nm_keyfile_libnm_keyfile_la_SOURCES = \
@@ -1114,6 +1112,7 @@ libnm_core_lib_h_priv = \
 	libnm-core/nm-core-types-internal.h \
 	libnm-core/nm-crypto-impl.h \
 	libnm-core/nm-crypto.h \
+	libnm-core/nm-default-libnm-core.h \
 	libnm-core/nm-property-compare.h \
 	libnm-core/nm-setting-private.h \
 	libnm-core/nm-team-utils.h \
@@ -1219,7 +1218,7 @@ GLIB_GENERATED += \
 	$(libnm_core_lib_c_mkenums)
 nm_core_enum_types_sources = $(libnm_core_lib_h_pub_real)
 
-nm_core_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "nm-default.h"\n'
+nm_core_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "libnm-core/nm-default-libnm-core.h"\n'
 
 libnm-core/nm-core-enum-types.h.stamp:                                      libnm-core/.dirstamp
 libnm-core/nm-core-enum-types.c.stamp:                                      libnm-core/.dirstamp
@@ -1240,7 +1239,6 @@ $(src_core_devices_ovs_libnm_device_plugin_ovs_la_OBJECTS):                 $(li
 libnm_core_libnm_core_la_CPPFLAGS = \
 	$(dflt_cppflags_libnm_core) \
 	-DG_LOG_DOMAIN=\""libnm"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE \
 	$(NULL)
 
 libnm_core_libnm_core_la_SOURCES = \
@@ -1339,7 +1337,7 @@ GLIB_GENERATED += \
 	libnm-core/tests/nm-core-tests-enum-types.h \
 	libnm-core/tests/nm-core-tests-enum-types.c
 nm_core_tests_enum_types_sources = libnm-core/tests/test-general-enums.h
-nm_core_tests_enum_types_MKENUMS_C_FLAGS = --fhead '\#include "nm-default.h"\n'
+nm_core_tests_enum_types_MKENUMS_C_FLAGS = --fhead '\#include "libnm-core/nm-default-libnm-core.h"\n'
 
 libnm-core/tests/nm-core-tests-enum-types.h.stamp: libnm-core/tests/.dirstamp
 libnm-core/tests/nm-core-tests-enum-types.c.stamp: libnm-core/tests/.dirstamp
@@ -1350,8 +1348,7 @@ libnm_core_tests_cppflags = \
 	-I$(srcdir)/libnm-core/tests \
 	-I$(builddir)/libnm-core/tests \
 	$(dflt_cppflags_libnm_core) \
-	-DNETWORKMANAGER_COMPILATION_TEST \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE \
+	-DG_LOG_DOMAIN=\""test"\" \
 	$(SANITIZER_EXEC_CFLAGS) \
 	$(NULL)
 

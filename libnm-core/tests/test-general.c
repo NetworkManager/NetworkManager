@@ -5,7 +5,7 @@
 
 #define NM_GLIB_COMPAT_H_TEST
 
-#include "nm-default.h"
+#include "libnm-core/nm-default-libnm-core.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>

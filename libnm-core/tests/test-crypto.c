@@ -4,7 +4,7 @@
  * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "libnm-core/nm-default-libnm-core.h"
 
 #include <unistd.h>
 #include <stdlib.h>

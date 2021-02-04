@@ -3,10 +3,6 @@
  * Copyright (C) 2017 - 2018 Red Hat, Inc.
  */
 
-#ifdef NETWORKMANAGER_COMPILATION
-    #undef NETWORKMANAGER_COMPILATION
-#endif
-
 #include "nm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-meta-setting.h"

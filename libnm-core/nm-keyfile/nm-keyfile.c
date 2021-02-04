@@ -4,7 +4,7 @@
  * Copyright (C) 2008 - 2017 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "libnm-core/nm-default-libnm-core.h"
 
 #include "nm-keyfile-internal.h"
 

@@ -4,7 +4,7 @@
  * Copyright (C) 2009 Novell, Inc.
  */
 
-#include "nm-default.h"
+#include "libnm-core/nm-default-libnm-core.h"
 
 #include "nm-setting-wimax.h"
 

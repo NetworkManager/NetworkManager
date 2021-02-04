@@ -79,7 +79,7 @@ libnm_core_enum_sources = gnome.mkenums_simple(
   'nm-core-enum-types',
   sources: libnm_core_headers + [nm_version_macro_header],
   identifier_prefix: nm_id_prefix,
-  body_prefix: '#include "nm-default.h"',
+  body_prefix: '#include "libnm-core/nm-default-libnm-core.h"',
   install_header: true,
   install_dir: libnm_pkgincludedir,
 )
@@ -95,8 +95,7 @@ libnm_libnm_core_intern = static_library(
     libnm_base_dep,
   ],
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
 )
 
@@ -118,8 +117,7 @@ libnm_crypto = static_library(
     libnm_glib_aux_dep,
   ],
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
 )
 
@@ -203,8 +201,7 @@ libnm_core = static_library(
     uuid_dep,
   ],
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
   link_with: [
     libnm_crypto,
@@ -251,8 +248,7 @@ libnm_keyfile = static_library(
   sources: nm_keyfile_source + [libnm_core_enum_sources[1]],
   dependencies: libnm_glib_aux_dep,
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
   link_with: libnm_libnm_core_intern,
 )

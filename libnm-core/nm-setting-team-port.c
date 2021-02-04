@@ -4,7 +4,7 @@
  * Copyright (C) 2013 Jiri Pirko <jiri@resnulli.us>
  */
 
-#include "nm-default.h"
+#include "libnm-core/nm-default-libnm-core.h"
 
 #include "nm-setting-team-port.h"
 

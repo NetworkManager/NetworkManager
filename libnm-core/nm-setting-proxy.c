@@ -3,7 +3,7 @@
  * Copyright (C) 2016 Atul Anand <atulhjp@gmail.com>.
  */
 
-#include "nm-default.h"
+#include "libnm-core/nm-default-libnm-core.h"
 
 #include "nm-setting-proxy.h"
 

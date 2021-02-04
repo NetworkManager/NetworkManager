@@ -11,7 +11,7 @@
  * makes requests, like process identifier and user UID.
  */
 
-#include "nm-default.h"
+#include "libnm-core/nm-default-libnm-core.h"
 
 #include "nm-auth-subject.h"
 
