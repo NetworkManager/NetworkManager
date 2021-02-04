@@ -138,8 +138,7 @@ libnm_glib_aux = static_library(
   ),
   dependencies: glib_nm_default_dep,
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
   link_with: [
     libc_siphash,
@@ -160,8 +159,7 @@ libnm_udev_aux = static_library(
     libudev_dep,
   ],
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
 )
 
@@ -177,8 +175,7 @@ libnm_base = static_library(
   ),
   dependencies: libnm_glib_aux_dep,
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
 )
 
@@ -197,7 +194,6 @@ libnm_log_core = static_library(
   ],
   c_args: [
     '-DG_LOG_DOMAIN="NetworkManager"',
-    '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
   ],
 )
 
@@ -221,7 +217,6 @@ libnm_platform = static_library(
   ],
   c_args: [
     '-DG_LOG_DOMAIN="NetworkManager"',
-    '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
   ],
 )
 
@@ -282,7 +277,7 @@ libnm_systemd_shared = static_library(
   ),
   dependencies: glib_nm_default_dep,
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
+    '-DG_LOG_DOMAIN="libnm"',
     '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD_SHARED',
   ],
 )
@@ -302,7 +297,7 @@ libnm_systemd_logging_stub = static_library(
   sources: 'systemd/nm-logging-stub.c',
   dependencies: glib_nm_default_dep,
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
+    '-DG_LOG_DOMAIN="libnm"',
     '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD_SHARED',
   ],
 )

@@ -383,7 +383,6 @@ shared_nm_glib_aux_cppflags = \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	-DG_LOG_DOMAIN=\""libnm"\" \
-	-DNETWORKMANAGER_COMPILATION='(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)' \
 	$(NULL)
 
 noinst_LTLIBRARIES += shared/nm-glib-aux/libnm-glib-aux.la
@@ -398,6 +397,7 @@ shared_nm_glib_aux_libnm_glib_aux_la_SOURCES = \
 	shared/nm-glib-aux/nm-dbus-aux.h \
 	shared/nm-glib-aux/nm-dedup-multi.c \
 	shared/nm-glib-aux/nm-dedup-multi.h \
+	shared/nm-glib-aux/nm-default-glib-i18n-lib.h \
 	shared/nm-glib-aux/nm-default-glib.h \
 	shared/nm-glib-aux/nm-enum-utils.c \
 	shared/nm-glib-aux/nm-enum-utils.h \
@@ -501,7 +501,6 @@ shared_nm_log_core_libnm_log_core_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(SYSTEMD_JOURNAL_CFLAGS) \
 	-DG_LOG_DOMAIN=\""NetworkManager"\" \
-	-DNETWORKMANAGER_COMPILATION='(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)' \
 	$(NULL)
 
 shared_nm_log_core_libnm_log_core_la_SOURCES = \
@@ -632,7 +631,6 @@ libnm_core_nm_libnm_core_aux_libnm_libnm_core_aux_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	-DG_LOG_DOMAIN=\""libnm"\" \
-	-DNETWORKMANAGER_COMPILATION='(NM_NETWORKMANAGER_COMPILATION_WITH_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)' \
 	$(NULL)
 
 libnm_core_nm_libnm_core_aux_libnm_libnm_core_aux_la_SOURCES = \

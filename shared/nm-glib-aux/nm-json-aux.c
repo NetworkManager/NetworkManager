@@ -3,7 +3,7 @@
  * Copyright (C) 2017 - 2019 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "nm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-json-aux.h"
 

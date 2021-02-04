@@ -226,8 +226,7 @@ libnm_libnm_core_aux = static_library(
   ) + [libnm_core_enum_sources[1]],
   dependencies: libnm_glib_aux_dep,
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_WITH_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
   link_with: [
     libnm_libnm_core_intern,

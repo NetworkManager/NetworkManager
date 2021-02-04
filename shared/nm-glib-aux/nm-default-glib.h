@@ -6,6 +6,8 @@
 #ifndef __NM_DEFAULT_GLIB_H__
 #define __NM_DEFAULT_GLIB_H__
 
+/*****************************************************************************/
+
 #include "nm-std-aux/nm-default-std.h"
 
 #undef NETWORKMANAGER_COMPILATION
