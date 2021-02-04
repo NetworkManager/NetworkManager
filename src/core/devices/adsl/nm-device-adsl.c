@@ -3,7 +3,7 @@
  * Pantelis Koukousoulas <pktoss@gmail.com>
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nm-device-adsl.h"
 

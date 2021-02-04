@@ -6,7 +6,7 @@
  * Author: Matthias Clasen
  * Author: Pavel Šimerda <psimerda@redhat.com>
  */
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nm-session-monitor.h"
 

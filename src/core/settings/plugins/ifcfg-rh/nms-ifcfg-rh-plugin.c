@@ -5,7 +5,7 @@
  * Copyright (C) 2007 - 2011 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nms-ifcfg-rh-plugin.h"
 

@@ -3,7 +3,7 @@
  * Copyright (C) 2015 - 2017 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include <libudev.h>
 #include <linux/pkt_sched.h>

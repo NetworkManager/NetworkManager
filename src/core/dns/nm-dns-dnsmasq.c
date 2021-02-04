@@ -3,7 +3,7 @@
  * Copyright (C) 2010 Dan Williams <dcbw@redhat.com>
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nm-dns-dnsmasq.h"
 

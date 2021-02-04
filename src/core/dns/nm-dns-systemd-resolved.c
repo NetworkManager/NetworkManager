@@ -4,7 +4,7 @@
  * Copyright (C) 2016 Sjoerd Simons <sjoerd@luon.net>
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nm-dns-systemd-resolved.h"
 

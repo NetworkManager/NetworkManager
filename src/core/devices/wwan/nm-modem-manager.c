@@ -5,7 +5,7 @@
  * Copyright (C) 2009 - 2013 Canonical Ltd.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nm-modem-manager.h"
 

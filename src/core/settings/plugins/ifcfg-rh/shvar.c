@@ -3,7 +3,7 @@
  * Copyright (C) 1999, 2000 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "shvar.h"
 

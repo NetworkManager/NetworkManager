@@ -3,7 +3,7 @@
  * Copyright (C) 2016 Atul Anand <atulhjp@gmail.com>.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nm-proxy-config.h"
 

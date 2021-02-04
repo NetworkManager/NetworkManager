@@ -3,7 +3,7 @@
  * Copyright (C) 2013 - 2016 Canonical Ltd.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nm-modem-ofono.h"
 

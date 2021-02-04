@@ -3,7 +3,7 @@
  * Copyright (C) 2011 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "devices/wifi/nm-wifi-utils.h"
 #include "devices/wifi/nm-device-wifi.h"

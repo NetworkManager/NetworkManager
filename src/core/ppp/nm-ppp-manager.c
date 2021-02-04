@@ -4,7 +4,7 @@
  * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nm-ppp-manager.h"
 

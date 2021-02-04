@@ -4,7 +4,7 @@
  * Copyright (C) 2008 Canonical Ltd.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nms-ifupdown-parser.h"
 

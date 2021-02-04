@@ -1890,13 +1890,12 @@ EXTRA_DIST += \
 src_core_cppflags_base = \
 	-I$(srcdir)/src/core \
 	$(dflt_cppflags_libnm_core) \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	$(SANITIZER_EXEC_CFLAGS) \
 	$(NULL)
 
 src_core_cppflags_base_test = \
 	$(src_core_cppflags_base) \
-	-DNETWORKMANAGER_COMPILATION_TEST \
 	$(NULL)
 
 src_core_cppflags_device_plugin = \
@@ -1917,7 +1916,6 @@ src_core_cppflags = \
 
 src_core_cppflags_test = \
 	$(src_core_cppflags) \
-	-DNETWORKMANAGER_COMPILATION_TEST \
 	$(NULL)
 
 if REQUIRE_ROOT_TESTS
@@ -2309,6 +2307,8 @@ src_core_libNetworkManager_la_CPPFLAGS = $(src_core_cppflags)
 
 src_core_libNetworkManager_la_SOURCES = \
 	\
+	src/core/nm-default-daemon.h \
+	\
 	src/core/nm-checkpoint.c \
 	src/core/nm-checkpoint.h \
 	src/core/nm-checkpoint-manager.c \
@@ -2682,7 +2682,6 @@ src_core_initrd_nm_initrd_generator_LDFLAGS = \
 check_programs += src/core/initrd/tests/test-dt-reader
 
 src_core_initrd_tests_test_dt_reader_CPPFLAGS = \
-	-DNETWORKMANAGER_COMPILATION_TEST \
 	$(src_core_cppflags) \
 	$(NULL)
 
@@ -2703,7 +2702,6 @@ src_core_initrd_tests_test_dt_reader_LDADD = \
 check_programs += src/core/initrd/tests/test-ibft-reader
 
 src_core_initrd_tests_test_ibft_reader_CPPFLAGS = \
-	-DNETWORKMANAGER_COMPILATION_TEST \
 	$(src_core_cppflags) \
 	$(NULL)
 
@@ -2940,7 +2938,6 @@ EXTRA_DIST += \
 check_programs += src/core/initrd/tests/test-cmdline-reader
 
 src_core_initrd_tests_test_cmdline_reader_CPPFLAGS = \
-	-DNETWORKMANAGER_COMPILATION_TEST \
 	$(src_core_cppflags) \
 	$(NULL)
 
