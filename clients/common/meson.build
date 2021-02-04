@@ -61,7 +61,7 @@ libnmc = static_library(
   'nmc',
   sources: sources,
   dependencies: common_deps + [libnm_libnm_core_aux_dep],
-  c_args: c_flags,
+  c_args: common_c_flags,
   link_depends: settings_docs_source,
 )
 
