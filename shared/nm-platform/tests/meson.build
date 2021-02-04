@@ -4,8 +4,7 @@ exe = executable(
   'test-nm-platform',
   'test-nm-platform.c',
   c_args: [
-    '-DNETWORKMANAGER_COMPILATION_TEST',
-    '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_PROG)',
+    '-DG_LOG_DOMAIN="test"',
   ],
   dependencies: [
     libnm_log_core_dep,

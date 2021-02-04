@@ -2,7 +2,7 @@
 
 #define NM_TEST_UTILS_NO_LIBNM 1
 
-#include "nm-default.h"
+#include "nm-glib-aux/nm-default-glib-i18n-prog.h"
 
 #include "nm-log-core/nm-logging.h"
 #include "nm-platform/nm-netlink.h"

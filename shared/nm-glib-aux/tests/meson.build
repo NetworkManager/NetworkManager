@@ -4,8 +4,7 @@ exe = executable(
   'test-shared-general',
   'test-shared-general.c',
   c_args: [
-    '-DNETWORKMANAGER_COMPILATION_TEST',
-    '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_PROG)',
+    '-DG_LOG_DOMAIN="test"',
   ],
   dependencies: libnm_glib_aux_dep,
   link_with: libnm_systemd_logging_stub,
@@ -23,8 +22,7 @@ if jansson_dep.found()
     'test-json-aux',
     'test-json-aux.c',
     c_args: [
-      '-DNETWORKMANAGER_COMPILATION_TEST',
-      '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_PROG)',
+      '-DG_LOG_DOMAIN="test"',
     ],
     dependencies: [
       libnm_glib_aux_dep,
