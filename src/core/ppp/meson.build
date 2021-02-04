@@ -7,7 +7,6 @@ nm_pppd_plugin = shared_module(
   dependencies: libnm_core_nm_default_dep,
   c_args: [
     '-DG_LOG_DOMAIN="nm-pppd-plugin"',
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_GLIB',
   ],
   install: true,
   install_dir: pppd_plugin_dir,

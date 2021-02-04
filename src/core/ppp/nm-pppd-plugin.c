@@ -20,7 +20,7 @@
 #include <pppd/eui64.h>
 #include <pppd/ipv6cp.h>
 
-#include "nm-default.h"
+#include "nm-glib-aux/nm-default-glib.h"
 
 #include "nm-dbus-interface.h"
 

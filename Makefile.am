@@ -398,6 +398,7 @@ shared_nm_glib_aux_libnm_glib_aux_la_SOURCES = \
 	shared/nm-glib-aux/nm-dbus-aux.h \
 	shared/nm-glib-aux/nm-dedup-multi.c \
 	shared/nm-glib-aux/nm-dedup-multi.h \
+	shared/nm-glib-aux/nm-default-glib.h \
 	shared/nm-glib-aux/nm-enum-utils.c \
 	shared/nm-glib-aux/nm-enum-utils.h \
 	shared/nm-glib-aux/nm-errno.c \
@@ -2986,7 +2987,6 @@ src_core_dhcp_nm_dhcp_helper_CPPFLAGS = \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
 	-DG_LOG_DOMAIN=\""nm-dhcp-helper"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_GLIB \
 	$(GLIB_CFLAGS) \
 	$(NULL)
 
@@ -3049,7 +3049,6 @@ src_core_ppp_nm_pppd_plugin_la_CPPFLAGS = \
 	-I$(builddir)/shared \
 	-I$(srcdir)/libnm-core \
 	-DG_LOG_DOMAIN=\""nm-pppd-plugin"\" \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_GLIB \
 	$(GLIB_CFLAGS)
 
 src_core_ppp_nm_pppd_plugin_la_SOURCES = \
