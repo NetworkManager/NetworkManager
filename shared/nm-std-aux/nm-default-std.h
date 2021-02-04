@@ -12,10 +12,6 @@
     #error Dont define NETWORKMANAGER_COMPILATION
 #endif
 
-#ifdef NETWORKMANAGER_COMPILATION_TEST
-    #error Dont define NETWORKMANAGER_COMPILATION_TEST
-#endif
-
 #ifndef G_LOG_DOMAIN
     #error Define G_LOG_DOMAIN
 #endif
