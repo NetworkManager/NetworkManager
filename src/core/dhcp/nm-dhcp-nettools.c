@@ -13,8 +13,6 @@
 #include <ctype.h>
 #include <net/if_arp.h>
 
-#include "nm-sd-adapt-shared.h"
-
 #include "nm-glib-aux/nm-dedup-multi.h"
 #include "nm-std-aux/unaligned.h"
 
