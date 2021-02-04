@@ -354,7 +354,6 @@ shared_nm_std_aux_libnm_std_aux_la_CPPFLAGS = \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	-DG_LOG_DOMAIN=\""libnm"\" \
-	-DNETWORKMANAGER_COMPILATION='0' \
 	$(NULL)
 
 shared_nm_std_aux_libnm_std_aux_la_SOURCES = \
@@ -362,6 +361,7 @@ shared_nm_std_aux_libnm_std_aux_la_SOURCES = \
 	shared/nm-std-aux/c-list-util.c \
 	shared/nm-std-aux/c-list-util.h \
 	shared/nm-std-aux/nm-dbus-compat.h \
+	shared/nm-std-aux/nm-default-std.h \
 	shared/nm-std-aux/nm-networkmanager-compilation.h \
 	shared/nm-std-aux/nm-std-aux.h \
 	shared/nm-std-aux/nm-std-utils.c \

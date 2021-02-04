@@ -114,8 +114,7 @@ libnm_std_aux = static_library(
   ],
   include_directories: top_inc,
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=0',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
 )
 
