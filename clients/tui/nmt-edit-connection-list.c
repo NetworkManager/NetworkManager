@@ -11,7 +11,7 @@
  * "nmtui edit".
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include "nmtui.h"
 #include "nmtui-edit.h"

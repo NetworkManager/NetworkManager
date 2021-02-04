@@ -41,7 +41,6 @@ libnm_vpn_plugin_utils_test = static_library(
   include_directories: libnm_inc,
   dependencies: libnm_nm_default_dep,
   c_args: [
-    '-DNETWORKMANAGER_COMPILATION_TEST',
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM',
+    '-DG_LOG_DOMAIN="test"',
   ],
 )

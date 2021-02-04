@@ -11,7 +11,7 @@
  * nmtui_edit(), and nmtui_hostname().
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include "nmtui.h"
 

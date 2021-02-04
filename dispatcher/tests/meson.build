@@ -12,8 +12,7 @@ exe = executable(
     libnm_glib_aux_dep,
   ],
   c_args: [
-    '-DNETWORKMANAGER_COMPILATION_TEST',
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
+    '-DG_LOG_DOMAIN="test"',
   ] + introspection_extra_cflags,
   link_with: libnm_dispatcher_core,
 )

@@ -24,7 +24,6 @@ libnm_dispatcher_core = static_library(
   ],
   c_args: [
     '-DG_LOG_DOMAIN="nm-dispatcher"',
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
   ],
 )
 
@@ -45,7 +44,6 @@ executable(
   ],
   c_args: [
     '-DG_LOG_DOMAIN="nm-dispatcher"',
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
   ],
   link_with: libnm_dispatcher_core,
   link_args: ldflags_linker_script_binary,

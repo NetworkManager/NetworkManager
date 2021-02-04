@@ -3,7 +3,11 @@
  * Copyright (C) 2017 - 2018 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#ifdef NETWORKMANAGER_COMPILATION
+    #undef NETWORKMANAGER_COMPILATION
+#endif
+
+#include "nm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-meta-setting.h"
 
@@ -562,6 +566,11 @@ const NMMetaSettingInfo *
 nm_meta_setting_infos_by_gtype(GType gtype)
 {
 #if ((NETWORKMANAGER_COMPILATION) &NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE_INTERNAL)
+    /* FIXME: we no longer define NETWORKMANAGER_COMPILATION via CFLAGS, but it's instead
+     * defined by our source and which files get included.
+     *
+     * For now, this code is unreachable (and we use the slower fallback). Rework how this
+     * works. */
     nm_auto_unref_gtypeclass GTypeClass *gtypeclass_unref = NULL;
     GTypeClass *                         gtypeclass;
     NMSettingClass *                     klass;

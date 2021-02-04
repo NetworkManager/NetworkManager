@@ -300,8 +300,7 @@ libnm_libnm_aux = static_library(
     'nm-libnm-aux/nm-libnm-aux.c',
   ),
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format('libnmc'),
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
+    '-DG_LOG_DOMAIN="libnmc"',
   ],
   dependencies: [
     libnm_core_nm_default_dep,

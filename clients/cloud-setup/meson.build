@@ -40,7 +40,6 @@ executable(
   ],
   c_args: [
     '-DG_LOG_DOMAIN="nm-cloud-setup"',
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
   ],
   link_with: libnm_systemd_logging_stub,
   link_args: ldflags_linker_script_binary,

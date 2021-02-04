@@ -11,7 +11,7 @@
  * including presenting a password dialog if necessary.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include <stdlib.h>
 

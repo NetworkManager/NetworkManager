@@ -4,7 +4,7 @@
  * Copyright (C) 2010 - 2018 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include "nmcli.h"
 

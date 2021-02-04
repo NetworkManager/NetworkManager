@@ -8,7 +8,7 @@
  * @short_description: The editor page for Team ports.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include "nmt-page-team-port.h"
 

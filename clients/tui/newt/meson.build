@@ -30,7 +30,6 @@ libnmt_newt = static_library(
   ],
   c_args: [
     '-DG_LOG_DOMAIN="nmtui"',
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
   ],
 )
 

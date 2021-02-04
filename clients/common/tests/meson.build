@@ -8,8 +8,7 @@ exe = executable(
     libnmc_dep,
   ],
   c_args: [
-    '-DNETWORKMANAGER_COMPILATION_TEST',
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
+    '-DG_LOG_DOMAIN="test"',
   ],
 )
 
@@ -28,8 +27,7 @@ exe = executable(
     libnm_nm_default_dep,
   ],
   c_args: [
-    '-DNETWORKMANAGER_COMPILATION_TEST',
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
+    '-DG_LOG_DOMAIN="test"',
   ],
   link_with: libnm_systemd_logging_stub,
 )

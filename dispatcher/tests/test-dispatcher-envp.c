@@ -3,7 +3,7 @@
  * Copyright (C) 2011 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include <arpa/inet.h>
 #include <stdlib.h>

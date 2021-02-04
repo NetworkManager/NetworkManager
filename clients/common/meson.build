@@ -16,7 +16,6 @@ libnmc_base = static_library(
   ],
   c_args: [
     '-DG_LOG_DOMAIN="libnmc"',
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
   ],
 )
 
@@ -73,7 +72,6 @@ libnmc = static_library(
   ],
   c_args: [
     '-DG_LOG_DOMAIN="libnmc"',
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
   ],
   link_depends: settings_docs_source,
 )

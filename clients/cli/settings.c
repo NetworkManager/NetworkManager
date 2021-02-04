@@ -3,7 +3,7 @@
  * Copyright (C) 2010 - 2015 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include "settings.h"
 

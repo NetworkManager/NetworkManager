@@ -15,7 +15,7 @@
  * functions.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include "nmt-address-list.h"
 

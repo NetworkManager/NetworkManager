@@ -16,7 +16,7 @@
  * replace ShellNetworkAgent.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include "nm-secret-agent-simple.h"
 

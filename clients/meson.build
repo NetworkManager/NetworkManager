@@ -10,7 +10,6 @@ executable(
   ],
   c_args: [
     '-DG_LOG_DOMAIN="nm-online"',
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
   ],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,

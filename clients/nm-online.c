@@ -16,7 +16,7 @@
  * Robert Love <rml@novell.com>
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include <stdio.h>
 #include <stdlib.h>

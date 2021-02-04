@@ -8,7 +8,7 @@
  * @short_description: Utility functions
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include <stdarg.h>
 #include <unistd.h>
