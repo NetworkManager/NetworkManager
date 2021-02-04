@@ -3,6 +3,7 @@
 #define __NM_ENUM_TYPES_H__
 
 #include "nm-core-enum-types.h"
+#
 #include <glib-object.h>
 
 G_BEGIN_DECLS

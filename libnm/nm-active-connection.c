@@ -4,7 +4,7 @@
  * Copyright (C) 2008 Novell, Inc.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-libnm.h"
 
 #include "nm-active-connection.h"
 

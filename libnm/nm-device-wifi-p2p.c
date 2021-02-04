@@ -3,7 +3,7 @@
  * Copyright (C) 2018 - 2019 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-libnm.h"
 
 #include "nm-device-wifi-p2p.h"
 

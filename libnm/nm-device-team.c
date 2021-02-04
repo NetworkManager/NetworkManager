@@ -3,7 +3,7 @@
  * Copyright (C) 2013 Jiri Pirko <jiri@resnulli.us>
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-libnm.h"
 
 #include "nm-device-team.h"
 

@@ -4,7 +4,7 @@
  * Copyright (C) 2007 - 2008 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-libnm.h"
 
 #include "nm-vpn-plugin-old.h"
 

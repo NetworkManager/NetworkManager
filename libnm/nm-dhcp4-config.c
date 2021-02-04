@@ -3,7 +3,7 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-libnm.h"
 
 #include "nm-dhcp4-config.h"
 
