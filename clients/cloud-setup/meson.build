@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
-name = 'nm-cloud-setup'
-
 if install_systemdunitdir
 
   nm_cloud_setup_service = configure_file(
@@ -23,27 +21,27 @@ if install_systemdunitdir
 
 endif
 
-sources = files(
-  'main.c',
-  'nm-cloud-setup-utils.c',
-  'nm-http-client.c',
-  'nmcs-provider-ec2.c',
-  'nmcs-provider-gcp.c',
-  'nmcs-provider-azure.c',
-  'nmcs-provider.c',
-)
-
 executable(
-  name,
-  sources,
+  'nm-cloud-setup',
+  files(
+    'main.c',
+    'nm-cloud-setup-utils.c',
+    'nm-http-client.c',
+    'nmcs-provider-ec2.c',
+    'nmcs-provider-gcp.c',
+    'nmcs-provider-azure.c',
+    'nmcs-provider.c',
+  ),
   dependencies: [
     libnmc_base_dep,
     libnmc_dep,
     libcurl_dep,
     libnm_libnm_aux_dep,
   ],
-  c_args: clients_c_flags +
-          ['-DG_LOG_DOMAIN="@0@"'.format(name)],
+  c_args: [
+    '-DG_LOG_DOMAIN="nm-cloud-setup"',
+    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
+  ],
   link_with: libnm_systemd_logging_stub,
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,

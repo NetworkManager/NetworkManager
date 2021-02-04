@@ -27,7 +27,10 @@ executable(
     readline_dep,
     libnm_libnm_aux_dep,
   ],
-  c_args: clients_c_flags + ['-DG_LOG_DOMAIN="@0@"'.format('nmcli')],
+  c_args: [
+    '-DG_LOG_DOMAIN="nmcli"',
+    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
+  ],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true,
@@ -45,7 +48,10 @@ generate_docs_nm_settings_nmcli = executable(
     libnmc_dep,
     libnm_libnm_aux_dep,
   ],
-  c_args: clients_c_flags + ['-DG_LOG_DOMAIN="@0@"'.format('nmcli')],
+  c_args: [
+    '-DG_LOG_DOMAIN="nmcli"',
+    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
+  ],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
 )
@@ -61,7 +67,11 @@ if enable_docs
   test(
     'check-local-generate-docs-nm-settings-nmcli',
     find_program(join_paths(source_root, 'tools', 'check-compare-generated.sh')),
-    args: [source_root, build_root, 'clients/cli/generate-docs-nm-settings-nmcli.xml'],
+    args: [
+      source_root,
+      build_root,
+      'clients/cli/generate-docs-nm-settings-nmcli.xml',
+    ],
   )
 else
   settings_docs_source = configure_file(

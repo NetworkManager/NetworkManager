@@ -2,72 +2,88 @@
 
 common_inc = include_directories('.')
 
-common_deps = [
-  libnm_dep,
-  libnm_nm_default_dep,
-]
-
-common_c_flags = clients_c_flags + ['-DG_LOG_DOMAIN="libnmc"']
-
-sources = files(
-  'nm-client-utils.c',
-  'nm-secret-agent-simple.c',
-  'nm-vpn-helpers.c',
-  'nm-polkit-listener.c',
-)
-
 libnmc_base = static_library(
   'nmc-base',
-  sources: sources,
-  dependencies: common_deps,
-  c_args: common_c_flags,
+  sources: files(
+    'nm-client-utils.c',
+    'nm-secret-agent-simple.c',
+    'nm-vpn-helpers.c',
+    'nm-polkit-listener.c',
+  ),
+  dependencies: [
+    libnm_dep,
+    libnm_nm_default_dep,
+  ],
+  c_args: [
+    '-DG_LOG_DOMAIN="libnmc"',
+    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
+  ],
 )
 
 libnmc_base_dep = declare_dependency(
   include_directories: common_inc,
-  dependencies: common_deps,
+  dependencies: [
+    libnm_dep,
+    libnm_nm_default_dep,
+  ],
   link_with: libnmc_base,
 )
 
-settings_docs = 'settings-docs.h'
-
 if enable_docs
   settings_docs_source = custom_target(
-    settings_docs,
+    'settings-docs.h',
     input: nm_settings_docs_xml_gir,
-    output: settings_docs,
-    command: [xsltproc, '--output', '@OUTPUT@', join_paths(meson.current_source_dir(), 'settings-docs.xsl'), '@INPUT@'],
+    output: 'settings-docs.h',
+    command: [
+      xsltproc,
+      '--output',
+      '@OUTPUT@',
+      join_paths(meson.current_source_dir(), 'settings-docs.xsl'),
+      '@INPUT@',
+    ],
   )
 
   test(
     'check-settings-docs',
     find_program(join_paths(source_root, 'tools', 'check-compare-generated.sh')),
-    args: [source_root, build_root, 'clients/common/' + settings_docs],
+    args: [
+      source_root,
+      build_root,
+      'clients/common/settings-docs.h',
+    ],
   )
 else
   settings_docs_source = configure_file(
-    input: settings_docs + '.in',
+    input: 'settings-docs.h.in',
     output: '@BASENAME@',
     configuration: configuration_data(),
   )
 endif
 
-sources = nm_meta_setting_source + [settings_docs_source] + files(
-  'nm-meta-setting-access.c',
-  'nm-meta-setting-desc.c',
-)
-
 libnmc = static_library(
   'nmc',
-  sources: sources,
-  dependencies: common_deps + [libnm_libnm_core_aux_dep],
-  c_args: common_c_flags,
+  sources: nm_meta_setting_source + [settings_docs_source] + files(
+    'nm-meta-setting-access.c',
+    'nm-meta-setting-desc.c',
+  ),
+  dependencies: [
+    libnm_dep,
+    libnm_nm_default_dep,
+    libnm_libnm_core_aux_dep,
+  ],
+  c_args: [
+    '-DG_LOG_DOMAIN="libnmc"',
+    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
+  ],
   link_depends: settings_docs_source,
 )
 
 libnmc_dep = declare_dependency(
   include_directories: common_inc,
-  dependencies: common_deps,
+  dependencies: [
+    libnm_dep,
+    libnm_nm_default_dep,
+  ],
   link_with: libnmc,
 )
 
