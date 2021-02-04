@@ -5522,6 +5522,10 @@ cscope:
 
 ###############################################################################
 
+check-progs: all $(check_PROGRAMS) $(check_LTLIBRARIES)
+
+###############################################################################
+
 .PRECIOUS: test-suite.log
 .DELETE_ON_ERROR:
-.PHONY: cscope dist-configure-check $(check_local) $(dist_hook)
+.PHONY: check-progs cscope dist-configure-check $(check_local) $(dist_hook)
