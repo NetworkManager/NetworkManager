@@ -2,8 +2,6 @@
 
 dispatcher_inc = include_directories('.')
 
-name = 'nm-dispatcher'
-
 configure_file(
   input: 'org.freedesktop.nm_dispatcher.service.in',
   output: '@BASENAME@',
@@ -16,36 +14,39 @@ install_data(
   install_dir: dbus_conf_dir,
 )
 
-deps = [
-  libnm_dep,
-  libnm_nm_default_dep,
-  libnm_libnm_aux_dep,
-]
-
-c_flags = [
-  '-DG_LOG_DOMAIN="@0@"'.format(name),
-  '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
-]
-
 libnm_dispatcher_core = static_library(
-  name + '-core',
+  'nm-dispatcher-core',
   sources: 'nm-dispatcher-utils.c',
-  dependencies: deps,
-  c_args: c_flags,
+  dependencies: [
+    libnm_dep,
+    libnm_nm_default_dep,
+    libnm_libnm_aux_dep,
+  ],
+  c_args: [
+    '-DG_LOG_DOMAIN="nm-dispatcher"',
+    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
+  ],
 )
 
 nmdbus_dispatcher_sources = gnome.gdbus_codegen(
   'nmdbus-dispatcher',
-  name + '.xml',
+  'nm-dispatcher.xml',
   interface_prefix: 'org.freedesktop',
   namespace: 'NMDBus',
 )
 
 executable(
-  name,
-  name + '.c',
-  dependencies: deps,
-  c_args: c_flags,
+  'nm-dispatcher',
+  'nm-dispatcher.c',
+  dependencies: [
+    libnm_dep,
+    libnm_nm_default_dep,
+    libnm_libnm_aux_dep,
+  ],
+  c_args: [
+    '-DG_LOG_DOMAIN="nm-dispatcher"',
+    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
+  ],
   link_with: libnm_dispatcher_core,
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,

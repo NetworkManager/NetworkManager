@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
-test_unit = 'test-dispatcher-envp'
-
 exe = executable(
-  test_unit,
-  [test_unit + '.c', nmdbus_dispatcher_sources],
+  'test-dispatcher-envp',
+  [
+    'test-dispatcher-envp.c',
+    nmdbus_dispatcher_sources,
+  ],
   include_directories: dispatcher_inc,
   dependencies: [
     libnm_nm_default_dep,
@@ -18,7 +19,7 @@ exe = executable(
 )
 
 test(
-  'dispatcher/' + test_unit,
+  'dispatcher/test-dispatcher-envp',
   test_script,
   args: test_args + [exe.full_path()],
 )
