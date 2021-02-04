@@ -362,6 +362,7 @@ shared_nm_std_aux_libnm_std_aux_la_SOURCES = \
 	shared/nm-std-aux/c-list-util.c \
 	shared/nm-std-aux/c-list-util.h \
 	shared/nm-std-aux/nm-dbus-compat.h \
+	shared/nm-std-aux/nm-networkmanager-compilation.h \
 	shared/nm-std-aux/nm-std-aux.h \
 	shared/nm-std-aux/nm-std-utils.c \
 	shared/nm-std-aux/nm-std-utils.h \
