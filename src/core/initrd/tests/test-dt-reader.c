@@ -19,6 +19,10 @@
 
 #include "nm-test-utils-core.h"
 
+#define TEST_INITRD_DIR NM_BUILD_SRCDIR "/src/core/initrd/tests"
+
+/*****************************************************************************/
+
 static void
 test_read_dt_ofw(void)
 {

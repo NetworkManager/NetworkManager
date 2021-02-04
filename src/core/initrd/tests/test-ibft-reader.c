@@ -19,6 +19,10 @@
 
 #include "nm-test-utils-core.h"
 
+#define TEST_INITRD_DIR NM_BUILD_SRCDIR "/src/core/initrd/tests"
+
+/*****************************************************************************/
+
 static NMConnection *
 read_connection(const char *sysfs_dir, const char *expected_mac, GError **error)
 {

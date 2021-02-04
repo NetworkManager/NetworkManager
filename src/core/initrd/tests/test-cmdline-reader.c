@@ -19,6 +19,8 @@
 
 #include "nm-test-utils-core.h"
 
+#define TEST_INITRD_DIR NM_BUILD_SRCDIR "/src/core/initrd/tests"
+
 /*****************************************************************************/
 
 #define _parse(ARGV, out_hostname, out_carrier_timeout_sec)                            \

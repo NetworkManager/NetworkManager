@@ -2691,12 +2691,13 @@ check_programs += src/core/initrd/tests/test-dt-reader
 
 src_core_initrd_tests_test_dt_reader_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION_TEST \
-	-DTEST_INITRD_DIR=\"$(abs_srcdir)/src/core/initrd/tests\" \
-	$(src_core_cppflags)
+	$(src_core_cppflags) \
+	$(NULL)
 
 src_core_initrd_tests_test_dt_reader_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
-	$(SANITIZER_EXEC_LDFLAGS)
+	$(SANITIZER_EXEC_LDFLAGS) \
+	$(NULL)
 
 src_core_initrd_tests_test_dt_reader_LDADD = \
 	src/core/initrd/libnmi-core.la \
@@ -2711,12 +2712,13 @@ check_programs += src/core/initrd/tests/test-ibft-reader
 
 src_core_initrd_tests_test_ibft_reader_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION_TEST \
-	-DTEST_INITRD_DIR=\"$(abs_srcdir)/src/core/initrd/tests\" \
-	$(src_core_cppflags)
+	$(src_core_cppflags) \
+	$(NULL)
 
 src_core_initrd_tests_test_ibft_reader_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
-	$(SANITIZER_EXEC_LDFLAGS)
+	$(SANITIZER_EXEC_LDFLAGS) \
+	$(NULL)
 
 src_core_initrd_tests_test_ibft_reader_LDADD = \
 	src/core/initrd/libnmi-core.la \
@@ -2947,8 +2949,8 @@ check_programs += src/core/initrd/tests/test-cmdline-reader
 
 src_core_initrd_tests_test_cmdline_reader_CPPFLAGS = \
 	-DNETWORKMANAGER_COMPILATION_TEST \
-	-DTEST_INITRD_DIR=\"$(abs_srcdir)/src/core/initrd/tests\" \
-	$(src_core_cppflags)
+	$(src_core_cppflags) \
+	$(NULL)
 
 src_core_initrd_tests_test_cmdline_reader_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
