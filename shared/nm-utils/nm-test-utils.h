@@ -92,10 +92,6 @@
 #include <string.h>
 #include <errno.h>
 
-#ifndef NM_TEST_UTILS_NO_LIBNM
-    #include "nm-utils.h"
-#endif
-
 /*****************************************************************************/
 
 #define NMTST_G_RETURN_MSG_S(expr) "*: assertion '" NM_ASSERT_G_RETURN_EXPR(expr) "' failed"

@@ -1960,7 +1960,6 @@ noinst_LTLIBRARIES += shared/systemd/libnm-systemd-logging-stub.la
 
 shared_systemd_libnm_systemd_logging_stub_la_CPPFLAGS = \
 	$(libsystemd_cppflags) \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD_SHARED \
 	-DG_LOG_DOMAIN=\""libnm"\" \
 	$(NULL)
 
@@ -1977,11 +1976,11 @@ noinst_LTLIBRARIES += shared/systemd/libnm-systemd-shared.la
 
 shared_systemd_libnm_systemd_shared_la_CPPFLAGS = \
 	$(libsystemd_cppflags) \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD_SHARED \
 	-DG_LOG_DOMAIN=\""libnm"\" \
 	$(NULL)
 
 shared_systemd_libnm_systemd_shared_la_SOURCES = \
+	shared/systemd/nm-default-systemd-shared.h \
 	shared/systemd/nm-sd-utils-shared.c \
 	shared/systemd/nm-sd-utils-shared.h \
 	shared/systemd/sd-adapt-shared/architecture.h \
@@ -2126,7 +2125,7 @@ src_core_libnm_systemd_core_la_cppflags = \
 	-I$(srcdir)/src/core/systemd/src/systemd \
 	-I$(srcdir)/src/core/systemd/src/libsystemd-network \
 	-I$(srcdir)/src/core/systemd/src/libsystemd/sd-event \
-	-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD \
+	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	$(NULL)
 
 src_core_libnm_systemd_core_la_libadd = \
@@ -2135,6 +2134,7 @@ src_core_libnm_systemd_core_la_libadd = \
 	$(NULL)
 
 src_core_libnm_systemd_core_la_SOURCES = \
+	src/core/systemd/nm-default-systemd.h \
 	src/core/systemd/nm-sd-utils-core.c \
 	src/core/systemd/nm-sd-utils-core.h \
 	src/core/systemd/nm-sd.c \
@@ -4318,7 +4318,6 @@ $(src_core_tests_test_wired_defname_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
 
 src_core_tests_test_systemd_CPPFLAGS = \
 	$(src_core_libnm_systemd_core_la_cppflags) \
-	-DNETWORKMANAGER_COMPILATION_TEST \
 	$(NULL)
 
 src_core_tests_test_systemd_LDFLAGS = \

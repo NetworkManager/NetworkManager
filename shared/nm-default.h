@@ -22,9 +22,7 @@
     #error Define NETWORKMANAGER_COMPILATION accordingly
 #endif
 
-#if NETWORKMANAGER_COMPILATION < NM_NETWORKMANAGER_COMPILATION_SYSTEMD_SHARED
-    #error Dont include this header with such NETWORKMANAGER_COMPILATION
-#endif
+#error We don't expect this header to be used anymore.
 
 #ifndef G_LOG_DOMAIN
     #if defined(NETWORKMANAGER_COMPILATION_TEST)

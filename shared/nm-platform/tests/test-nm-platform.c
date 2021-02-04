@@ -1,7 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 
-#define NM_TEST_UTILS_NO_LIBNM 1
-
 #include "nm-glib-aux/nm-default-glib-i18n-prog.h"
 
 #include "nm-log-core/nm-logging.h"

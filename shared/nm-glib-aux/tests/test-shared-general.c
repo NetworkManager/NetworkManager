@@ -3,8 +3,6 @@
  * Copyright (C) 2018 Red Hat, Inc.
  */
 
-#define NM_TEST_UTILS_NO_LIBNM 1
-
 #include "nm-glib-aux/nm-default-glib-i18n-prog.h"
 
 #include "nm-std-aux/unaligned.h"

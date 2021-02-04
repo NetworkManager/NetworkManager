@@ -278,7 +278,6 @@ libnm_systemd_shared = static_library(
   dependencies: glib_nm_default_dep,
   c_args: [
     '-DG_LOG_DOMAIN="libnm"',
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD_SHARED',
   ],
 )
 
@@ -298,7 +297,6 @@ libnm_systemd_logging_stub = static_library(
   dependencies: glib_nm_default_dep,
   c_args: [
     '-DG_LOG_DOMAIN="libnm"',
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD_SHARED',
   ],
 )
 
