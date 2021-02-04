@@ -1268,8 +1268,6 @@ libnm_core_libnm_core_la_LDFLAGS = \
 EXTRA_DIST += \
 	libnm-core/nm-crypto-gnutls.c \
 	libnm-core/nm-crypto-nss.c \
-	libnm-core/nm-core-enum-types.c.template \
-	libnm-core/nm-core-enum-types.h.template \
 	libnm-core/meson.build \
 	$(NULL)
 
@@ -1777,8 +1775,6 @@ EXTRA_DIST += \
 	tools/generate-docs-nm-settings-docs-merge.py \
 	tools/generate-docs-nm-settings-docs-gir.py \
 	libnm/meson.build \
-	libnm/nm-enum-types.c.template \
-	libnm/nm-enum-types.h.template \
 	$(NULL)
 
 ###############################################################################
