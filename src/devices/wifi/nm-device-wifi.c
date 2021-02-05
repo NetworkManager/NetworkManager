@@ -1731,6 +1731,23 @@ _scan_kickoff (NMDeviceWifi *self)
 		return;
 	}
 
+	if (priv->scan_last_complete_msec + 200 > now_msec) {
+		gint32 timeout_msec = priv->scan_last_complete_msec + 200 - now_msec;
+
+		/* after a scan just completed, it is ratelimited for another 200 msec. This is in
+		 * addition to our rate limiting above (where scanning can take longer than our rate limit
+		 * duration).
+		 *
+		 * This gives the device a chance to autoconnect. Also, if a scanning just completed,
+		 * we want to back off a bit before starting again. */
+		_LOGT_scan ("kickoff: don't scan (rate limited for another %d.%03d sec after previous scan)",
+		            timeout_msec / 1000,
+		            timeout_msec % 1000);
+		nm_clear_g_source (&priv->scan_kickoff_timeout_id);
+		priv->scan_kickoff_timeout_id = g_timeout_add (timeout_msec, _scan_kickoff_timeout_cb, self);
+		return;
+	}
+
 	if (priv->scan_explicit_requested) {
 		if (!priv->scan_explicit_allowed) {
 			_LOGT_scan ("kickoff: don't scan (explicit scan requested but not allowed)");
