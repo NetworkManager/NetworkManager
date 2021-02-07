@@ -5435,6 +5435,7 @@ EXTRA_DIST += \
 	tools/check-exports.sh \
 	tools/check-compare-generated.sh \
 	tools/check-gitlab-ci.sh \
+	tools/check-tree.sh \
 	tools/create-exports-NetworkManager.sh \
 	tools/debug-helper.py \
 	tools/meson-post-install.sh \
@@ -5469,6 +5470,11 @@ check_local += check-python-black
 endif
 
 ###############################################################################
+
+check-tree:
+	"$(top_srcdir)/tools/check-tree.sh"
+
+check_local += check-tree
 
 check-po-msgfmt:
 	@echo "check-po-msgfmt: check $(top_srcdir)/po/*.po files with msgfmt -vc"
