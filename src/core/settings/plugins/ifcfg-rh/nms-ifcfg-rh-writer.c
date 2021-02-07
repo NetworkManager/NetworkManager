@@ -34,7 +34,6 @@
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
-#include "nm-meta-setting.h"
 #include "nm-base/nm-ethtool-base.h"
 
 #include "nms-ifcfg-rh-common.h"

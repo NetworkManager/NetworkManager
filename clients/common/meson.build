@@ -61,8 +61,9 @@ endif
 
 libnmc = static_library(
   'nmc',
-  sources: nm_meta_setting_source + [settings_docs_source] + files(
+  sources: [settings_docs_source] + files(
     'nm-meta-setting-access.c',
+    'nm-meta-setting-base-impl.c',
     'nm-meta-setting-desc.c',
   ),
   dependencies: [

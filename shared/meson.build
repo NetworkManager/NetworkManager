@@ -100,8 +100,6 @@ nm_version_macro_header = configure_file(
   configuration: data_conf,
 )
 
-nm_meta_setting_source = files('nm-meta-setting.c')
-
 nm_test_utils_impl_source = files('nm-test-utils-impl.c')
 
 nm_vpn_plugin_utils_source = files('nm-utils/nm-vpn-plugin-utils.c')

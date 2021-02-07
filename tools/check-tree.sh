@@ -20,3 +20,5 @@ check_cmp() {
 }
 
 check_cmp shared/nm-base/nm-ethtool-utils-base.h libnm/nm-ethtool-utils.h
+check_cmp libnm-core/nm-meta-setting-base-impl.h clients/common/nm-meta-setting-base-impl.h
+check_cmp libnm-core/nm-meta-setting-base-impl.c clients/common/nm-meta-setting-base-impl.c

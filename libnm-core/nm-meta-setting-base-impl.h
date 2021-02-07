@@ -3,8 +3,8 @@
  * Copyright (C) 2017 - 2018 Red Hat, Inc.
  */
 
-#ifndef __NM_META_SETTING_H__
-#define __NM_META_SETTING_H__
+#ifndef __NM_META_SETTING_BASE_IMPL_H__
+#define __NM_META_SETTING_BASE_IMPL_H__
 
 #include "nm-setting-8021x.h"
 
@@ -158,50 +158,21 @@ typedef enum {
     _NM_META_SETTING_TYPE_NUM = NM_META_SETTING_TYPE_UNKNOWN,
 } NMMetaSettingType;
 
-/* this header is statically linked with both libnm-core.la and libnmc.la.
- * Though, there is no stable API/ABI, so whenever on of these components
- * accesses NMMetaSettingInfo or NMMetaSettingType, it only has meaning
- * inside the same component.
- *
- * Note how NMSettingClass has field of type "struct _NMMetaSettingInfo".
- * It would be a serious bug, if libnmc tries to interpret this pointer
- * with the meaning of NMMetaSettingInfo. They might be different, because
- * libnm.so (libnm-core.la) might be a newer version than nmcli (libnmc.la).
- *
- * This define helps to ensure that we don't accidentally use the pointer
- * in different contexts. */
-#if ((NETWORKMANAGER_COMPILATION) &NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE_INTERNAL)
-    #define _NMMetaSettingInfoXX _NMMetaSettingInfo
+#if _NM_META_SETTING_BASE_IMPL_LIBNM
+    #define _NMMetaSettingInfo_Alias _NMMetaSettingInfo
 #else
-    #define _NMMetaSettingInfoXX _NMMetaSettingInfoCli
+    #define _NMMetaSettingInfo_Alias _NMMetaSettingInfoCli
 #endif
-struct _NMMetaSettingInfoXX {
+
+struct _NMMetaSettingInfo_Alias {
     const char *setting_name;
     GType (*get_setting_gtype)(void);
     NMMetaSettingType meta_type;
     NMSettingPriority setting_priority;
 };
 
-typedef struct _NMMetaSettingInfoXX NMMetaSettingInfo;
+typedef struct _NMMetaSettingInfo_Alias NMMetaSettingInfo;
 
-/* note that we statically link nm-meta-setting.h both to libnm-core.la and
- * libnmc.la. That means, there are two versions of nm_meta_setting_infos
- * in nmcli. That is not easily avoidable, because at this point, we don't
- * want yet to making it public API.
- *
- * Eventually, this should become public API of libnm, and nmcli/libnmc.la
- * should use that version.
- *
- * Downsides of the current solution:
- *
- * - duplication of the array in nmcli.
- *
- * - there is no stable API/ABI. That means, when you have a NMMetaSettingInfo
- *   pointer, or a NMMetaSettingType value, the value can only be used within
- *   the current context (libnm-core.la or libnmc.la). In other words, libnmc.la
- *   (and nmcli) must never access a NMMetaSettingInfo/NMMetaSettingType value,
- *   that comes from libnm-core.la.
- */
 extern const NMMetaSettingInfo nm_meta_setting_infos[_NM_META_SETTING_TYPE_NUM + 1];
 
 const NMMetaSettingInfo *nm_meta_setting_infos_by_name(const char *name);
@@ -213,4 +184,4 @@ NMSettingPriority nm_meta_setting_info_get_base_type_priority(const NMMetaSettin
                                                               GType                    gtype);
 NMSettingPriority _nm_setting_type_get_base_type_priority(GType type);
 
-#endif /* __NM_META_SETTING_H__ */
+#endif /* __NM_META_SETTING_BASE_IMPL_H__ */

@@ -1106,13 +1106,14 @@ libnm_core_lib_h_pub_mkenums = \
 	libnm-core/nm-core-enum-types.h \
 	$(NULL)
 libnm_core_lib_h_priv = \
-	shared/nm-meta-setting.h \
 	libnm-core/nm-connection-private.h \
 	libnm-core/nm-core-internal.h \
 	libnm-core/nm-core-types-internal.h \
 	libnm-core/nm-crypto-impl.h \
 	libnm-core/nm-crypto.h \
 	libnm-core/nm-default-libnm-core.h \
+	libnm-core/nm-meta-setting-base-impl.h \
+	libnm-core/nm-meta-setting-base.h \
 	libnm-core/nm-property-compare.h \
 	libnm-core/nm-setting-private.h \
 	libnm-core/nm-team-utils.h \
@@ -1174,11 +1175,11 @@ libnm_core_lib_c_settings_real = \
 	$(NULL)
 libnm_core_lib_c_real = \
 	$(libnm_core_lib_c_settings_real) \
-	shared/nm-meta-setting.c \
 	libnm-core/nm-connection.c \
 	libnm-core/nm-crypto.c \
 	libnm-core/nm-dbus-utils.c \
 	libnm-core/nm-errors.c \
+	libnm-core/nm-meta-setting-base-impl.c \
 	libnm-core/nm-property-compare.c \
 	libnm-core/nm-setting.c \
 	libnm-core/nm-simple-connection.c \
@@ -4608,8 +4609,9 @@ EXTRA_LTLIBRARIES += clients/common/libnmc.la
 endif
 
 clients_common_libnmc_la_SOURCES = \
-	shared/nm-meta-setting.c \
-	shared/nm-meta-setting.h \
+	clients/common/nm-meta-setting-base-impl.c \
+	clients/common/nm-meta-setting-base-impl.h \
+	clients/common/nm-meta-setting-base.h \
 	\
 	clients/common/nm-meta-setting-desc.c \
 	clients/common/nm-meta-setting-desc.h \

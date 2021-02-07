@@ -181,6 +181,7 @@ libnm_core_sources = libnm_core_settings_sources + files(
   'nm-crypto.c',
   'nm-dbus-utils.c',
   'nm-errors.c',
+  'nm-meta-setting-base-impl.c',
   'nm-property-compare.c',
   'nm-setting.c',
   'nm-simple-connection.c',
@@ -192,7 +193,7 @@ libnm_core_sources = libnm_core_settings_sources + files(
 
 libnm_core = static_library(
   'nm-core',
-  sources: libnm_core_sources + libnm_core_enum_sources + nm_meta_setting_source + [nm_version_macro_header],
+  sources: libnm_core_sources + libnm_core_enum_sources + [nm_version_macro_header],
   include_directories: top_inc,
   dependencies: [
     dl_dep,
