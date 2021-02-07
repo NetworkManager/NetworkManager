@@ -11,8 +11,8 @@
 #include "nm-config.h"
 #include "devices/nm-device.h"
 #include "nm-core-internal.h"
-#include "nm-keyfile/nm-keyfile-internal.h"
-#include "nm-keyfile/nm-keyfile-utils.h"
+#include "nm-keyfile-internal.h"
+#include "nm-keyfile-utils.h"
 
 /*****************************************************************************/
 

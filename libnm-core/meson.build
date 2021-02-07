@@ -181,6 +181,8 @@ libnm_core_sources = libnm_core_settings_sources + files(
   'nm-crypto.c',
   'nm-dbus-utils.c',
   'nm-errors.c',
+  'nm-keyfile-utils.c',
+  'nm-keyfile.c',
   'nm-meta-setting-base-impl.c',
   'nm-property-compare.c',
   'nm-setting.c',
@@ -237,28 +239,6 @@ libnm_libnm_core_aux_dep = declare_dependency(
   include_directories: [libnm_core_inc, shared_inc],
   dependencies: glib_dep,
   link_with: libnm_libnm_core_aux,
-)
-
-nm_keyfile_source = files(
-  'nm-keyfile/nm-keyfile-utils.c',
-  'nm-keyfile/nm-keyfile.c',
-)
-
-libnm_keyfile = static_library(
-  'nm-keyfile',
-  sources: nm_keyfile_source + [libnm_core_enum_sources[1]],
-  dependencies: libnm_glib_aux_dep,
-  c_args: [
-    '-DG_LOG_DOMAIN="libnm"',
-  ],
-  link_with: libnm_libnm_core_intern,
-)
-
-libnm_keyfile_dep = declare_dependency(
-  sources: [libnm_core_enum_sources[1], nm_version_macro_header],
-  include_directories: [libnm_core_inc, shared_inc],
-  dependencies: glib_dep,
-  link_with: libnm_keyfile,
 )
 
 docbooks = [

@@ -22,7 +22,6 @@ foreach test_unit: test_units
     'libnm-core-' + test_unit,
     [test_unit + '.c'] + enum_sources,
     dependencies: [
-      libnm_keyfile_dep,
       libnm_core_dep,
       libnm_core_nm_default_dep,
       libnm_base_dep,

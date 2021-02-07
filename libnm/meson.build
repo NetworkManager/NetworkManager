@@ -137,7 +137,6 @@ libnm_static = static_library(
     libnmdbus_dep,
     libnm_libnm_core_intern_dep,
     libnm_nm_default_dep,
-    libnm_keyfile_dep,
     libnm_udev_aux_dep,
     libudev_dep,
   ],
@@ -156,7 +155,6 @@ libnm = shared_library(
   link_whole: [
     libnm_static,
     libnm_core,
-    libnm_keyfile,
     libnmdbus,
     libnm_systemd_logging_stub,
     libnm_glib_aux,
@@ -196,7 +194,7 @@ if enable_introspection
 
   libnm_gir = gnome.generate_gir(
     libnm,
-    sources: libnm_core_sources + nm_keyfile_source + libnm_core_headers + libnm_core_enum_sources + libnm_sources + libnm_headers + libnm_enum_sources + [nm_version_macro_header],
+    sources: libnm_core_sources + libnm_core_headers + libnm_core_enum_sources + libnm_sources + libnm_headers + libnm_enum_sources + [nm_version_macro_header],
     includes: 'Gio-2.0',
     nsversion: nm_gir_version,
     namespace: 'NM',

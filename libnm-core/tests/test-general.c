@@ -57,7 +57,7 @@
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-wpan.h"
 #include "nm-simple-connection.h"
-#include "nm-keyfile/nm-keyfile-internal.h"
+#include "nm-keyfile-internal.h"
 #include "nm-glib-aux/nm-dedup-multi.h"
 #include "nm-base/nm-ethtool-base.h"
 #include "nm-base/nm-ethtool-utils-base.h"
