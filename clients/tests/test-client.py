@@ -26,6 +26,12 @@ from __future__ import print_function
 #    # The important part is that translations work. Test
 #    #  $ LANG=pl_PL.UTF-8 ./clients/cli/nmcli --version
 #    # also ensure that `locale -a` reports the Polish locale.
+#    #
+#    # How to get that right depends on your distro. First check that
+#    # `LANG=pl_PL.UTF-8 /usr/bin/nmcli --version` gives you Polish output
+#    # and that it works in principle.
+#    # Then install NetworkManager in the configured prefix (make install)
+#    # and verify that ./clients/cli/nmcli also gives you Polish.
 #  $ NM_TEST_REGENERATE=1 make check-local-clients-tests-test-client
 #    # Set NM_TEST_REGENERATE=1 to regenerate all files.
 #  $ git diff ... ; git add ...
