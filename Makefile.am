@@ -404,6 +404,7 @@ shared_nm_glib_aux_libnm_glib_aux_la_SOURCES = \
 	shared/nm-glib-aux/nm-enum-utils.h \
 	shared/nm-glib-aux/nm-errno.c \
 	shared/nm-glib-aux/nm-errno.h \
+	shared/nm-glib-aux/nm-gassert-patch.h \
 	shared/nm-glib-aux/nm-glib.h \
 	shared/nm-glib-aux/nm-hash-utils.c \
 	shared/nm-glib-aux/nm-hash-utils.h \
@@ -5383,7 +5384,6 @@ EXTRA_DIST += \
 	\
 	po/meson.build \
 	\
-	shared/nm-gassert-patch.h \
 	shared/nm-test-libnm-utils.h \
 	shared/nm-test-utils-impl.c \
 	shared/nm-utils/nm-compat.c \
