@@ -30,6 +30,37 @@
 
 /*****************************************************************************/
 
+#if NM_MORE_ASSERTS == 0
+    #ifndef G_DISABLE_CAST_CHECKS
+        /* Unless compiling with G_DISABLE_CAST_CHECKS, glib performs type checking
+         * during G_VARIANT_TYPE() via g_variant_type_checked_(). This is not necessary
+         * because commonly this cast is needed during something like
+         *
+         *   g_variant_builder_init (&props, G_VARIANT_TYPE ("a{sv}"));
+         *
+         * Note that in if the variant type would be invalid, the check still
+         * wouldn't make the buggy code magically work. Instead of passing a
+         * bogus type string (bad), it would pass %NULL to g_variant_builder_init()
+         * (also bad).
+         *
+         * Also, a function like g_variant_builder_init() already validates
+         * the input type via something like
+         *
+         *   g_return_if_fail (g_variant_type_is_container (type));
+         *
+         * So, by having G_VARIANT_TYPE() also validate the type, we validate
+         * twice, whereas the first validation is rather pointless because it
+         * doesn't prevent the function to be called with invalid arguments.
+         *
+         * Just patch G_VARIANT_TYPE() to perform no check.
+         */
+        #undef G_VARIANT_TYPE
+        #define G_VARIANT_TYPE(type_string) ((const GVariantType *) (type_string))
+    #endif
+#endif
+
+/*****************************************************************************/
+
 #include "nm-gassert-patch.h"
 
 #include "nm-std-aux/nm-std-aux.h"
