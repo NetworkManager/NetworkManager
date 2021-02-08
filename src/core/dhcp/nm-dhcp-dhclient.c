@@ -437,6 +437,12 @@ dhclient_start(NMDhcpClient *client,
 
     if (addr_family == AF_INET6) {
         g_ptr_array_add(argv, (gpointer) "-6");
+
+        if (prefixes > 0 && nm_streq0(mode_opt, "-S")) {
+            /* -S is incompatible with -P, only use the latter */
+            mode_opt = NULL;
+        }
+
         if (mode_opt)
             g_ptr_array_add(argv, (gpointer) mode_opt);
         while (prefixes--)

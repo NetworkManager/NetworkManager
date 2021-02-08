@@ -9948,13 +9948,16 @@ gboolean
 nm_device_dhcp6_renew(NMDevice *self, gboolean release)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMNDiscDHCPLevel mode;
 
     g_return_val_if_fail(priv->dhcp_data_6.client != NULL, FALSE);
 
     _LOGI(LOGD_DHCP6, "DHCPv6 lease renewal requested");
 
     /* Terminate old DHCP instance and release the old lease */
+    mode = priv->dhcp6.mode;
     dhcp6_cleanup(self, CLEANUP_TYPE_DECONFIGURE, release);
+    priv->dhcp6.mode = mode;
 
     /* Start DHCP again on the interface */
     return dhcp6_start(self, FALSE);
