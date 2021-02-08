@@ -194,7 +194,6 @@ ORIGIN=origin
 
 test -d "$DIR" &&
 cd "$DIR" &&
-test -f ./src/NetworkManagerUtils.h &&
 test -f ./contrib/fedora/rpm/build_clean.sh || die "cannot find NetworkManager base directory"
 
 RELEASE_MODE=""
