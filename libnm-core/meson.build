@@ -2,6 +2,12 @@
 
 libnm_core_inc = include_directories('.')
 
+nm_version_macro_header = configure_file(
+  input: 'nm-version-macros.h.in',
+  output: '@BASENAME@',
+  configuration: data_conf,
+)
+
 libnm_core_nm_default_dep = declare_dependency(
   sources: nm_version_macro_header,
   include_directories: libnm_core_inc,

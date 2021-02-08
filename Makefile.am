@@ -1003,7 +1003,6 @@ check_local += check-docs
 ###############################################################################
 
 libnm_core_lib_h_pub_real = \
-	shared/nm-version-macros.h \
 	libnm-core/nm-connection.h \
 	libnm-core/nm-core-types.h \
 	libnm-core/nm-dbus-interface.h \
@@ -1064,6 +1063,7 @@ libnm_core_lib_h_pub_real = \
 	libnm-core/nm-setting.h \
 	libnm-core/nm-simple-connection.h \
 	libnm-core/nm-utils.h \
+	libnm-core/nm-version-macros.h \
 	libnm-core/nm-version.h \
 	libnm-core/nm-vpn-dbus-interface.h \
 	libnm-core/nm-vpn-editor-plugin.h \
@@ -1420,7 +1420,6 @@ EXTRA_DIST += \
 ###############################################################################
 
 libnm_lib_h_pub_real = \
-	shared/nm-version-macros.h \
 	libnm/NetworkManager.h \
 	libnm/nm-access-point.h \
 	libnm/nm-active-connection.h \
@@ -5393,8 +5392,9 @@ EXTRA_DIST += \
 	shared/nm-utils/nm-vpn-plugin-macros.h \
 	shared/nm-utils/nm-vpn-plugin-utils.c \
 	shared/nm-utils/nm-vpn-plugin-utils.h \
-	shared/nm-version-macros.h.in \
 	shared/meson.build \
+	\
+	libnm-core/nm-version-macros.h.in \
 	\
 	tools/check-config-options.sh \
 	tools/check-docs.sh \

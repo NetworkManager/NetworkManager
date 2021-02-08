@@ -94,12 +94,6 @@ libn_dhcp4_dep = declare_dependency(
   link_with: libn_dhcp4,
 )
 
-nm_version_macro_header = configure_file(
-  input: 'nm-version-macros.h.in',
-  output: '@BASENAME@',
-  configuration: data_conf,
-)
-
 nm_test_utils_impl_source = files('nm-test-utils-impl.c')
 
 nm_vpn_plugin_utils_source = files('nm-utils/nm-vpn-plugin-utils.c')
