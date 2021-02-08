@@ -391,7 +391,7 @@ nm_rfkill_manager_init(NMRfkillManager *self)
 NMRfkillManager *
 nm_rfkill_manager_new(void)
 {
-    return NM_RFKILL_MANAGER(g_object_new(NM_TYPE_RFKILL_MANAGER, NULL));
+    return g_object_new(NM_TYPE_RFKILL_MANAGER, NULL);
 }
 
 static void

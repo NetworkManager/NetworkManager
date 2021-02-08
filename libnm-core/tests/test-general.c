@@ -5486,7 +5486,7 @@ _test_connection_normalize_type_normalizable_type(const char *type,
     if (add_setting_fcn)
         s_base = add_setting_fcn(con);
     else {
-        s_base = NM_SETTING(g_object_new(base_type, NULL));
+        s_base = g_object_new(base_type, NULL);
         nm_connection_add_setting(con, s_base);
     }
 

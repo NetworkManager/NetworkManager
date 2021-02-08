@@ -54,7 +54,7 @@ void _nm_singleton_instance_register_destruction(GObject *instance);
         if (G_UNLIKELY(!singleton_instance)) {                                              \
             g_assert(!(_already_created_##GETTER) || (NM_DEFINE_SINGLETON_ALLOW_MULTIPLE)); \
             (_already_created_##GETTER) = TRUE;                                             \
-            singleton_instance          = (g_object_new(GTYPE, ##__VA_ARGS__, NULL));       \
+            singleton_instance          = g_object_new(GTYPE, ##__VA_ARGS__, NULL);         \
             g_assert(singleton_instance);                                                   \
             nm_singleton_instance_register();                                               \
             nm_log_dbg(LOGD_CORE,                                                           \

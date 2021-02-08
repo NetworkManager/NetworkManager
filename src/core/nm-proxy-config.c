@@ -148,7 +148,7 @@ nm_proxy_config_init(NMProxyConfig *config)
 NMProxyConfig *
 nm_proxy_config_new(void)
 {
-    return NM_PROXY_CONFIG(g_object_new(NM_TYPE_PROXY_CONFIG, NULL));
+    return g_object_new(NM_TYPE_PROXY_CONFIG, NULL);
 }
 
 static void

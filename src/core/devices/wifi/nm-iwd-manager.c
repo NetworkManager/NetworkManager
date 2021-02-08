@@ -615,27 +615,27 @@ mirror_connection(NMIwdManager *        self,
 
     connection = nm_simple_connection_new();
 
-    setting = NM_SETTING(g_object_new(NM_TYPE_SETTING_CONNECTION,
-                                      NM_SETTING_CONNECTION_TYPE,
-                                      NM_SETTING_WIRELESS_SETTING_NAME,
-                                      NM_SETTING_CONNECTION_ID,
-                                      id->name,
-                                      NM_SETTING_CONNECTION_UUID,
-                                      nm_utils_uuid_generate_buf(uuid),
-                                      NM_SETTING_CONNECTION_AUTOCONNECT,
-                                      autoconnectable,
-                                      NULL));
+    setting = g_object_new(NM_TYPE_SETTING_CONNECTION,
+                           NM_SETTING_CONNECTION_TYPE,
+                           NM_SETTING_WIRELESS_SETTING_NAME,
+                           NM_SETTING_CONNECTION_ID,
+                           id->name,
+                           NM_SETTING_CONNECTION_UUID,
+                           nm_utils_uuid_generate_buf(uuid),
+                           NM_SETTING_CONNECTION_AUTOCONNECT,
+                           autoconnectable,
+                           NULL);
     nm_connection_add_setting(connection, setting);
 
     new_ssid = g_bytes_new(id->name, ssid_len);
-    setting  = NM_SETTING(g_object_new(NM_TYPE_SETTING_WIRELESS,
-                                      NM_SETTING_WIRELESS_SSID,
-                                      new_ssid,
-                                      NM_SETTING_WIRELESS_MODE,
-                                      NM_SETTING_WIRELESS_MODE_INFRA,
-                                      NM_SETTING_WIRELESS_HIDDEN,
-                                      hidden,
-                                      NULL));
+    setting  = g_object_new(NM_TYPE_SETTING_WIRELESS,
+                           NM_SETTING_WIRELESS_SSID,
+                           new_ssid,
+                           NM_SETTING_WIRELESS_MODE,
+                           NM_SETTING_WIRELESS_MODE_INFRA,
+                           NM_SETTING_WIRELESS_HIDDEN,
+                           hidden,
+                           NULL);
     nm_connection_add_setting(connection, setting);
 
     switch (id->security) {
@@ -654,12 +654,12 @@ mirror_connection(NMIwdManager *        self,
     }
 
     if (key_mgmt) {
-        setting = NM_SETTING(g_object_new(NM_TYPE_SETTING_WIRELESS_SECURITY,
-                                          NM_SETTING_WIRELESS_SECURITY_AUTH_ALG,
-                                          "open",
-                                          NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
-                                          key_mgmt,
-                                          NULL));
+        setting = g_object_new(NM_TYPE_SETTING_WIRELESS_SECURITY,
+                               NM_SETTING_WIRELESS_SECURITY_AUTH_ALG,
+                               "open",
+                               NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
+                               key_mgmt,
+                               NULL);
         nm_connection_add_setting(connection, setting);
     }
 
@@ -670,12 +670,12 @@ mirror_connection(NMIwdManager *        self,
          * NM settings.  The saved values can not be used anyway because of our
          * use of NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW.
          */
-        setting = NM_SETTING(g_object_new(NM_TYPE_SETTING_802_1X,
-                                          NM_SETTING_802_1X_PASSWORD_FLAGS,
-                                          NM_SETTING_SECRET_FLAG_NOT_SAVED,
-                                          NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS,
-                                          NM_SETTING_SECRET_FLAG_NOT_SAVED,
-                                          NULL));
+        setting = g_object_new(NM_TYPE_SETTING_802_1X,
+                               NM_SETTING_802_1X_PASSWORD_FLAGS,
+                               NM_SETTING_SECRET_FLAG_NOT_SAVED,
+                               NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD_FLAGS,
+                               NM_SETTING_SECRET_FLAG_NOT_SAVED,
+                               NULL);
         nm_setting_802_1x_add_eap_method(NM_SETTING_802_1X(setting), "external");
         nm_connection_add_setting(connection, setting);
     }
