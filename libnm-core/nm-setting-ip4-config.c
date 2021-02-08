@@ -667,7 +667,7 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * ---end---
      * ---ifcfg-rh---
      * property: addresses
-     * variable: IPADDR, PREFIX, IPADDR1, PREFIX1, ...
+     * variable: IPADDR, PREFIX (NETMASK), IPADDR1, PREFIX1 (NETMASK1), ...
      * description: List of static IP addresses.
      * example: IPADDR=10.5.5.23 PREFIX=24 IPADDR1=1.1.1.2 PREFIX1=16
      * ---end---
