@@ -945,7 +945,7 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
                         /* Preserve the trailing slash */
 
                         if (flags & CHASE_TRAIL_SLASH)
-                                if (!strextend(&done, "/", NULL))
+                                if (!strextend(&done, "/"))
                                         return -ENOMEM;
 
                         break;
@@ -1016,7 +1016,7 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
                                 if (streq_ptr(done, "/"))
                                         *done = '\0';
 
-                                if (!strextend(&done, first, todo, NULL))
+                                if (!strextend(&done, first, todo))
                                         return -ENOMEM;
 
                                 exists = false;
@@ -1109,7 +1109,7 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
                         if (streq(done, "/"))
                                 *done = '\0';
 
-                        if (!strextend(&done, first, NULL))
+                        if (!strextend(&done, first))
                                 return -ENOMEM;
                 }
 
