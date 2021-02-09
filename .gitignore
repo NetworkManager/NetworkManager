@@ -6,6 +6,7 @@
 *.gcno
 *.gcda
 *.la
+*.a
 *-*.gir
 *.typelib
 *.stamp
@@ -74,7 +75,6 @@ test-*.trs
 /clients/common/tests/test-clients-common
 /clients/common/tests/test-libnm-core-aux
 /clients/nm-online
-/clients/tui/newt/libnmt-newt.a
 /clients/tui/nmtui
 
 /data/NetworkManager.service
