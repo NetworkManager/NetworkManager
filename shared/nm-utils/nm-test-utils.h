@@ -1001,6 +1001,23 @@ nmtst_rand_perm(GRand *rand, void *dst, const void *src, gsize elmt_size, gsize 
     return dst;
 }
 
+static inline const char **
+nmtst_rand_perm_strv(const char *const *strv)
+{
+    const char **res;
+    gsize        n;
+
+    if (!strv)
+        return NULL;
+
+    /* this returns a (scrambled) SHALLOW copy of the strv array! */
+
+    n   = NM_PTRARRAY_LEN(strv);
+    res = (const char **) (nm_utils_strv_dup(strv, n, FALSE) ?: g_new0(char *, 1));
+    nmtst_rand_perm(NULL, res, res, sizeof(char *), n);
+    return res;
+}
+
 static inline GSList *
 nmtst_rand_perm_gslist(GRand *rand, GSList *list)
 {
