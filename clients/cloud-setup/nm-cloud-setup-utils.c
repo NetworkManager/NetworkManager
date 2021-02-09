@@ -631,7 +631,7 @@ nmcs_setting_ip_replace_ipv4_addresses(NMSettingIPConfig *s_ip,
 
         i_next++;
     }
-    if (any_changes) {
+    if (!any_changes) {
         while (i_next < num) {
             nm_setting_ip_config_remove_address(s_ip, --num);
             any_changes = TRUE;
