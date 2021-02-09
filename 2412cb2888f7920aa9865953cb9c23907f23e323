@@ -1,0 +1,1 @@
+Ignore-Backport: 786e9de3b5eb ('libnm: fix NMVpnConnectionStateReason for glib-mkenums')
