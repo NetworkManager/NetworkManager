@@ -10,7 +10,7 @@
  * #NmtNewtCheckbox implements a checkbox widget.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include "nmt-newt-checkbox.h"
 #include "nmt-newt-utils.h"

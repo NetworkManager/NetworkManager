@@ -809,6 +809,11 @@ test(
   args: [source_root],
 )
 
+test(
+  'check-tree',
+  find_program(join_paths(source_root, 'tools', 'check-tree.sh')),
+)
+
 # Tests, utilities and documentation
 tests = get_option('tests')
 enable_tests = (tests != 'no')

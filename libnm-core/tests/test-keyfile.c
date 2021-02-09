@@ -3,11 +3,11 @@
  * Copyright (C) 2015 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "libnm-core/nm-default-libnm-core.h"
 
 #include "nm-glib-aux/nm-json-aux.h"
-#include "nm-keyfile/nm-keyfile-utils.h"
-#include "nm-keyfile/nm-keyfile-internal.h"
+#include "nm-keyfile-utils.h"
+#include "nm-keyfile-internal.h"
 #include "nm-simple-connection.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"

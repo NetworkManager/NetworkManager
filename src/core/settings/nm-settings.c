@@ -7,7 +7,7 @@
  * Copyright (C) 2008 Novell, Inc.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nm-settings.h"
 
@@ -22,7 +22,7 @@
 
 #include "nm-libnm-core-intern/nm-common-macros.h"
 #include "nm-glib-aux/nm-keyfile-aux.h"
-#include "nm-keyfile/nm-keyfile-internal.h"
+#include "nm-keyfile-internal.h"
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"
 #include "nm-setting-8021x.h"

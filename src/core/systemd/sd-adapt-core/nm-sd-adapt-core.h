@@ -6,13 +6,16 @@
 #ifndef __NM_SD_ADAPT_CORE_H__
 #define __NM_SD_ADAPT_CORE_H__
 
-#include "nm-default.h"
+#include "src/core/systemd/nm-default-systemd.h"
 
 #include <stdbool.h>
 #include <sys/resource.h>
 #include <time.h>
 
+#undef NETWORKMANAGER_COMPILATION
 #include "systemd/sd-adapt-shared/nm-sd-adapt-shared.h"
+#undef NETWORKMANAGER_COMPILATION
+#define NETWORKMANAGER_COMPILATION NM_NETWORKMANAGER_COMPILATION_SYSTEMD
 
 #ifndef HAVE_SYS_AUXV_H
     #define HAVE_SYS_AUXV_H 0

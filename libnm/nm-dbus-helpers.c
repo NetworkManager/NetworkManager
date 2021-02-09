@@ -3,7 +3,7 @@
  * Copyright (C) 2013 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-libnm.h"
 
 #include "nm-dbus-helpers.h"
 

@@ -2,6 +2,12 @@
 
 libnm_core_inc = include_directories('.')
 
+nm_version_macro_header = configure_file(
+  input: 'nm-version-macros.h.in',
+  output: '@BASENAME@',
+  configuration: data_conf,
+)
+
 libnm_core_nm_default_dep = declare_dependency(
   sources: nm_version_macro_header,
   include_directories: libnm_core_inc,
@@ -79,7 +85,7 @@ libnm_core_enum_sources = gnome.mkenums_simple(
   'nm-core-enum-types',
   sources: libnm_core_headers + [nm_version_macro_header],
   identifier_prefix: nm_id_prefix,
-  body_prefix: '#include "nm-default.h"',
+  body_prefix: '#include "libnm-core/nm-default-libnm-core.h"',
   install_header: true,
   install_dir: libnm_pkgincludedir,
 )
@@ -95,8 +101,7 @@ libnm_libnm_core_intern = static_library(
     libnm_base_dep,
   ],
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
 )
 
@@ -118,8 +123,7 @@ libnm_crypto = static_library(
     libnm_glib_aux_dep,
   ],
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
 )
 
@@ -183,6 +187,9 @@ libnm_core_sources = libnm_core_settings_sources + files(
   'nm-crypto.c',
   'nm-dbus-utils.c',
   'nm-errors.c',
+  'nm-keyfile-utils.c',
+  'nm-keyfile.c',
+  'nm-meta-setting-base-impl.c',
   'nm-property-compare.c',
   'nm-setting.c',
   'nm-simple-connection.c',
@@ -194,7 +201,7 @@ libnm_core_sources = libnm_core_settings_sources + files(
 
 libnm_core = static_library(
   'nm-core',
-  sources: libnm_core_sources + libnm_core_enum_sources + nm_meta_setting_source + [nm_version_macro_header],
+  sources: libnm_core_sources + libnm_core_enum_sources + [nm_version_macro_header],
   include_directories: top_inc,
   dependencies: [
     dl_dep,
@@ -203,8 +210,7 @@ libnm_core = static_library(
     uuid_dep,
   ],
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
   link_with: [
     libnm_crypto,
@@ -226,8 +232,7 @@ libnm_libnm_core_aux = static_library(
   ) + [libnm_core_enum_sources[1]],
   dependencies: libnm_glib_aux_dep,
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_WITH_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
   link_with: [
     libnm_libnm_core_intern,
@@ -240,29 +245,6 @@ libnm_libnm_core_aux_dep = declare_dependency(
   include_directories: [libnm_core_inc, shared_inc],
   dependencies: glib_dep,
   link_with: libnm_libnm_core_aux,
-)
-
-nm_keyfile_source = files(
-  'nm-keyfile/nm-keyfile-utils.c',
-  'nm-keyfile/nm-keyfile.c',
-)
-
-libnm_keyfile = static_library(
-  'nm-keyfile',
-  sources: nm_keyfile_source + [libnm_core_enum_sources[1]],
-  dependencies: libnm_glib_aux_dep,
-  c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE_INTERNAL|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
-  ],
-  link_with: libnm_libnm_core_intern,
-)
-
-libnm_keyfile_dep = declare_dependency(
-  sources: [libnm_core_enum_sources[1], nm_version_macro_header],
-  include_directories: [libnm_core_inc, shared_inc],
-  dependencies: glib_dep,
-  link_with: libnm_keyfile,
 )
 
 docbooks = [

@@ -5,7 +5,7 @@
 
 #define NM_VALUE_TYPE_DEFINE_FUNCTIONS
 
-#include "nm-default.h"
+#include "libnm-core/nm-default-libnm-core.h"
 
 #include "nm-team-utils.h"
 

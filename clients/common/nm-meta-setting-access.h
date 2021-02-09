@@ -6,7 +6,6 @@
 #ifndef _NM_META_SETTING_ACCESS_H__
 #define _NM_META_SETTING_ACCESS_H__
 
-#include "nm-meta-setting.h"
 #include "nm-meta-setting-desc.h"
 
 /*****************************************************************************/

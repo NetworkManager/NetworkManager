@@ -3,7 +3,7 @@
  * Copyright (C) 2015 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include <fcntl.h>
 #include <netinet/if_ether.h>

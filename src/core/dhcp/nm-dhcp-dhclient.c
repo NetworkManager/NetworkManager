@@ -10,7 +10,7 @@
 #include <time.h>
 #undef _XOPEN_SOURCE
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #if WITH_DHCLIENT
 

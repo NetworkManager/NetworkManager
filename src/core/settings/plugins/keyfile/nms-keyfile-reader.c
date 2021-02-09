@@ -3,13 +3,13 @@
  * Copyright (C) 2015 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nms-keyfile-reader.h"
 
 #include <sys/stat.h>
 
-#include "nm-keyfile/nm-keyfile-internal.h"
+#include "nm-keyfile-internal.h"
 
 #include "NetworkManagerUtils.h"
 #include "nms-keyfile-utils.h"

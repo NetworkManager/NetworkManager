@@ -17,7 +17,7 @@
  * indicating the units used by the entry.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include <stdlib.h>
 

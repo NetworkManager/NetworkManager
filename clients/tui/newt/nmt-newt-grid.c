@@ -27,7 +27,7 @@
  * must be implemented by the container...
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include "nmt-newt-grid.h"
 

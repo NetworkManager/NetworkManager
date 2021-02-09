@@ -3,7 +3,7 @@
  * Copyright (C) 2010 - 2018 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nms-keyfile-utils.h"
 
@@ -11,7 +11,7 @@
 #include <sys/stat.h>
 
 #include "nm-glib-aux/nm-io-utils.h"
-#include "nm-keyfile/nm-keyfile-internal.h"
+#include "nm-keyfile-internal.h"
 #include "nm-utils.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"

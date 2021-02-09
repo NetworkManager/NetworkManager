@@ -34,7 +34,9 @@ subdir('systemd')
 
 core_plugins = []
 
-daemon_c_flags = ['-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_DAEMON']
+daemon_c_flags = [
+  '-DG_LOG_DOMAIN="NetworkManager"',
+]
 
 platform_wifi_wext_source = files()
 if enable_wext
@@ -75,7 +77,6 @@ libNetworkManagerBase = static_library(
   dependencies: [
     core_default_dep,
     libn_dhcp4_dep,
-    libnm_keyfile_dep,
     libnm_core_dep,
     libnm_systemd_shared_dep,
     libnm_udev_aux_dep,
@@ -224,7 +225,7 @@ executable(
 )
 
 if enable_tests
-  test_c_flags = daemon_c_flags + ['-DNETWORKMANAGER_COMPILATION_TEST']
+  test_c_flags = daemon_c_flags
   if require_root_tests
     test_c_flags += ['-DREQUIRE_ROOT_TESTS=1']
   endif

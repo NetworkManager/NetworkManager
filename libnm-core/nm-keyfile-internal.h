@@ -19,7 +19,6 @@
 #include "nm-setting-8021x.h"
 
 #include "nm-core-internal.h"
-#include "nm-meta-setting.h"
 
 /*****************************************************************************/
 

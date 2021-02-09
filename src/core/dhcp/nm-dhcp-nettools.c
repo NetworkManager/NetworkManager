@@ -3,7 +3,7 @@
  * Copyright (C) 2014 - 2019 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -12,8 +12,6 @@
 #include <arpa/inet.h>
 #include <ctype.h>
 #include <net/if_arp.h>
-
-#include "nm-sd-adapt-shared.h"
 
 #include "nm-glib-aux/nm-dedup-multi.h"
 #include "nm-std-aux/unaligned.h"

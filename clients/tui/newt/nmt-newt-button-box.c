@@ -16,7 +16,7 @@
  * within each of the two sections.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include "nmt-newt-button-box.h"
 

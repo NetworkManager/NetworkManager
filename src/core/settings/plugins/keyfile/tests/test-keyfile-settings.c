@@ -3,7 +3,7 @@
  * Copyright (C) 2008 - 2017 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include <stdio.h>
 #include <stdarg.h>

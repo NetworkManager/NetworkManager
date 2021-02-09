@@ -3,7 +3,7 @@
  * Copyright (C) 2018 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "src/core/systemd/nm-default-systemd.h"
 
 #include "nm-sd-utils-core.h"
 

@@ -4,7 +4,7 @@
  * Copyright (C) 2013 Thomas Bechtold <thomasbechtold@jpberlin.de>
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nm-config.h"
 
@@ -14,8 +14,8 @@
 #include "devices/nm-device.h"
 #include "NetworkManagerUtils.h"
 #include "nm-core-internal.h"
-#include "nm-keyfile/nm-keyfile-internal.h"
-#include "nm-keyfile/nm-keyfile-utils.h"
+#include "nm-keyfile-internal.h"
+#include "nm-keyfile-utils.h"
 
 #define DEFAULT_CONFIG_MAIN_FILE     NMCONFDIR "/NetworkManager.conf"
 #define DEFAULT_CONFIG_DIR           NMCONFDIR "/conf.d"

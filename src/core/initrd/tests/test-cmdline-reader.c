@@ -3,7 +3,7 @@
  * Copyright (C) 2018 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -18,6 +18,8 @@
 #include "../nm-initrd-generator.h"
 
 #include "nm-test-utils-core.h"
+
+#define TEST_INITRD_DIR NM_BUILD_SRCDIR "/src/core/initrd/tests"
 
 /*****************************************************************************/
 

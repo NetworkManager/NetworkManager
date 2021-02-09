@@ -3,7 +3,7 @@
  * Copyright (C) 2008 - 2017 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "libnm-core/nm-default-libnm-core.h"
 
 #include <linux/pkt_sched.h>
 #include <net/if.h>
@@ -26,7 +26,7 @@
 #include "nm-simple-connection.h"
 #include "nm-setting-connection.h"
 #include "nm-errors.h"
-#include "nm-keyfile/nm-keyfile-internal.h"
+#include "nm-keyfile-internal.h"
 
 #include "nm-utils/nm-test-utils.h"
 

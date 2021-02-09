@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nm-l3-ipv4ll.h"
 

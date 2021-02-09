@@ -4,7 +4,7 @@
  * Copyright (C) 2008 - 2014 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-libnm.h"
 
 #include "nm-ip-config.h"
 

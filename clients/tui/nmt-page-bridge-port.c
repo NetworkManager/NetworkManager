@@ -8,7 +8,7 @@
  * @short_description: The editor page for Bridge ports
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include "nmt-page-bridge-port.h"
 

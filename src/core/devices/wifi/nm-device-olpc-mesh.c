@@ -8,7 +8,7 @@
  * Copyright (C) 2009 One Laptop per Child
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nm-device-olpc-mesh.h"
 

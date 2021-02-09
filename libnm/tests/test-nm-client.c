@@ -3,7 +3,7 @@
  * Copyright (C) 2010 - 2014 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-libnm.h"
 
 #include <sys/types.h>
 #include <signal.h>

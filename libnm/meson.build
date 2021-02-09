@@ -137,13 +137,11 @@ libnm_static = static_library(
     libnmdbus_dep,
     libnm_libnm_core_intern_dep,
     libnm_nm_default_dep,
-    libnm_keyfile_dep,
     libnm_udev_aux_dep,
     libudev_dep,
   ],
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
   link_with: libnm_systemd_logging_stub,
 )
@@ -157,7 +155,6 @@ libnm = shared_library(
   link_whole: [
     libnm_static,
     libnm_core,
-    libnm_keyfile,
     libnmdbus,
     libnm_systemd_logging_stub,
     libnm_glib_aux,
@@ -197,7 +194,7 @@ if enable_introspection
 
   libnm_gir = gnome.generate_gir(
     libnm,
-    sources: libnm_core_sources + nm_keyfile_source + libnm_core_headers + libnm_core_enum_sources + libnm_sources + libnm_headers + libnm_enum_sources + [nm_version_macro_header],
+    sources: libnm_core_sources + libnm_core_headers + libnm_core_enum_sources + libnm_sources + libnm_headers + libnm_enum_sources + [nm_version_macro_header],
     includes: 'Gio-2.0',
     nsversion: nm_gir_version,
     namespace: 'NM',
@@ -206,8 +203,8 @@ if enable_introspection
     header: 'NetworkManager.h',
     export_packages: libnm_name,
     extra_args: [
-      '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-      '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_LIBNM',
+      '-DG_LOG_DOMAIN="libnm"',
+      '-DNETWORKMANAGER_COMPILATION',
     ],
     install: true,
   )
@@ -300,8 +297,7 @@ libnm_libnm_aux = static_library(
     'nm-libnm-aux/nm-libnm-aux.c',
   ),
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format('libnmc'),
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_CLIENT',
+    '-DG_LOG_DOMAIN="libnmc"',
   ],
   dependencies: [
     libnm_core_nm_default_dep,

@@ -4,7 +4,7 @@
  * Copyright (C) 2015 - 2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
-#include "nm-default.h"
+#include "nm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-secret-utils.h"
 

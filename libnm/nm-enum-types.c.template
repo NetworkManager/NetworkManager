@@ -2,7 +2,8 @@
 #include "config.h"
 
 #include "nm-enum-types.h"
-#include "nm-default.h"
+#
+#include "libnm/nm-default-libnm.h"
 
 #include "nm-version-macros.h"
 #include "NetworkManager.h"

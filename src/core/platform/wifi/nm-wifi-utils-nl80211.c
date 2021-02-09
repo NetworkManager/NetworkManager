@@ -5,7 +5,7 @@
  * Copyright (C) 2011 Intel Corporation. All rights reserved.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nm-wifi-utils-nl80211.h"
 

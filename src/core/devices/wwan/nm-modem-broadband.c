@@ -3,7 +3,7 @@
  * Copyright (C) 2012 Aleksander Morgado <aleksander@gnu.org>
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nm-modem-broadband.h"
 #include "nm-service-providers.h"

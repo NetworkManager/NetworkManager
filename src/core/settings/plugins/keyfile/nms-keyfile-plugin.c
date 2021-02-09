@@ -4,7 +4,7 @@
  * Copyright (C) 2008 - 2018 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nms-keyfile-plugin.h"
 
@@ -23,7 +23,7 @@
 #include "nm-utils.h"
 #include "nm-config.h"
 #include "nm-core-internal.h"
-#include "nm-keyfile/nm-keyfile-internal.h"
+#include "nm-keyfile-internal.h"
 
 #include "systemd/nm-sd-utils-shared.h"
 

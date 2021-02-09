@@ -94,14 +94,6 @@ libn_dhcp4_dep = declare_dependency(
   link_with: libn_dhcp4,
 )
 
-nm_version_macro_header = configure_file(
-  input: 'nm-version-macros.h.in',
-  output: '@BASENAME@',
-  configuration: data_conf,
-)
-
-nm_meta_setting_source = files('nm-meta-setting.c')
-
 nm_test_utils_impl_source = files('nm-test-utils-impl.c')
 
 nm_vpn_plugin_utils_source = files('nm-utils/nm-vpn-plugin-utils.c')
@@ -114,8 +106,7 @@ libnm_std_aux = static_library(
   ],
   include_directories: top_inc,
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=0',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
 )
 
@@ -139,8 +130,7 @@ libnm_glib_aux = static_library(
   ),
   dependencies: glib_nm_default_dep,
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
   link_with: [
     libc_siphash,
@@ -161,8 +151,7 @@ libnm_udev_aux = static_library(
     libudev_dep,
   ],
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
 )
 
@@ -178,8 +167,7 @@ libnm_base = static_library(
   ),
   dependencies: libnm_glib_aux_dep,
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
 )
 
@@ -198,7 +186,6 @@ libnm_log_core = static_library(
   ],
   c_args: [
     '-DG_LOG_DOMAIN="NetworkManager"',
-    '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
   ],
 )
 
@@ -222,7 +209,6 @@ libnm_platform = static_library(
   ],
   c_args: [
     '-DG_LOG_DOMAIN="NetworkManager"',
-    '-DNETWORKMANAGER_COMPILATION=(NM_NETWORKMANAGER_COMPILATION_GLIB|NM_NETWORKMANAGER_COMPILATION_WITH_GLIB_I18N_LIB)',
   ],
 )
 
@@ -283,8 +269,7 @@ libnm_systemd_shared = static_library(
   ),
   dependencies: glib_nm_default_dep,
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD_SHARED',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
 )
 
@@ -303,8 +288,7 @@ libnm_systemd_logging_stub = static_library(
   sources: 'systemd/nm-logging-stub.c',
   dependencies: glib_nm_default_dep,
   c_args: [
-    '-DG_LOG_DOMAIN="@0@"'.format(libnm_name),
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD_SHARED',
+    '-DG_LOG_DOMAIN="libnm"',
   ],
 )
 

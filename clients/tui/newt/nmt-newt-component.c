@@ -11,7 +11,7 @@
  * wrap a (single) #newtComponent.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include "nmt-newt-component.h"
 #include "nmt-newt-form.h"

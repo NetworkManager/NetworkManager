@@ -3,7 +3,7 @@
  * Copyright (C) 2009 - 2015 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nms-ifcfg-rh-writer.h"
 
@@ -34,7 +34,6 @@
 #include "nm-utils.h"
 #include "nm-core-internal.h"
 #include "NetworkManagerUtils.h"
-#include "nm-meta-setting.h"
 #include "nm-base/nm-ethtool-base.h"
 
 #include "nms-ifcfg-rh-common.h"

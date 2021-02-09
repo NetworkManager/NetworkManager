@@ -3,7 +3,7 @@
  * Copyright (C) 2017 juga <juga at riseup dot net>
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #if WITH_DHCPCANON
 

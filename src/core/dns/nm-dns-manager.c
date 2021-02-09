@@ -5,7 +5,7 @@
  * Copyright (C) 2005 - 2008 Novell, Inc.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include <fcntl.h>
 #include <resolv.h>

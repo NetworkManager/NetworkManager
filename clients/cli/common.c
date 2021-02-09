@@ -3,7 +3,7 @@
  * Copyright (C) 2012 - 2018 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include "common.h"
 

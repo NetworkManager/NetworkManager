@@ -3,7 +3,7 @@
  * Copyright (C) 2006 - 2012 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nm-supplicant-settings-verify.h"
 

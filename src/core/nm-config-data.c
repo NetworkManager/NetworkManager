@@ -4,15 +4,15 @@
  * Copyright (C) 2013 Thomas Bechtold <thomasbechtold@jpberlin.de>
  */
 
-#include "nm-default.h"
+#include "src/core/nm-default-daemon.h"
 
 #include "nm-config-data.h"
 
 #include "nm-config.h"
 #include "devices/nm-device.h"
 #include "nm-core-internal.h"
-#include "nm-keyfile/nm-keyfile-internal.h"
-#include "nm-keyfile/nm-keyfile-utils.h"
+#include "nm-keyfile-internal.h"
+#include "nm-keyfile-utils.h"
 
 /*****************************************************************************/
 

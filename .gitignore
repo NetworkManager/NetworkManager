@@ -136,7 +136,6 @@ test-*.trs
 /shared/nm-glib-aux/tests/test-json-aux
 /shared/nm-glib-aux/tests/test-shared-general
 /shared/nm-platform/tests/test-nm-platform
-/shared/nm-version-macros.h
 
 /introspection/org.freedesktop.NetworkManager*.[ch]
 
@@ -149,6 +148,7 @@ test-*.trs
 /libnm-core/tests/test-secrets
 /libnm-core/tests/test-setting
 /libnm-core/nm-dbus-types.xml
+/libnm-core/nm-version-macros.h
 /libnm-core/nm-vpn-dbus-types.xml
 
 /libnm/nm-property-infos-dbus.xml
@@ -349,6 +349,7 @@ test-*.trs
 /policy/org.freedesktop.NetworkManager.policy
 /policy/org.freedesktop.NetworkManager.policy.in
 /shared/nm-utils/tests/test-shared-general
+/shared/nm-version-macros.h
 /src/devices/tests/test-arping
 /src/devices/wifi/tests/test-general
 /src/devices/wifi/tests/test-wifi-ap-utils

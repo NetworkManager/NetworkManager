@@ -4,7 +4,7 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#include "nm-default.h"
+#include "nm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-logging.h"
 

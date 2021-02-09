@@ -1293,7 +1293,7 @@ AC_SUBST(AM_CFLAGS)
 
 AC_CONFIG_FILES([
 Makefile
-shared/nm-version-macros.h
+libnm-core/nm-version-macros.h
 libnm/libnm.pc
 po/Makefile.in
 data/org.freedesktop.NetworkManager.policy.in

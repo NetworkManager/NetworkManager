@@ -16,7 +16,7 @@
  * children.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include "nmt-newt-stack.h"
 

@@ -13,6 +13,7 @@ private_headers = [
   'nm-crypto-impl.h',
   'nm-crypto.h',
   'nm-dbus-helpers.h',
+  'nm-default-libnm-core.h',
   'nm-device-private.h',
   'nm-dhcp4-config.h',
   'nm-dhcp6-config.h',

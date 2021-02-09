@@ -24,7 +24,7 @@
  * section border into account as well.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include "nmt-editor-grid.h"
 

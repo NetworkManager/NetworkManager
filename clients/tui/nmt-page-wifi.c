@@ -12,7 +12,7 @@
  * properties.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include <stdlib.h>
 #include <linux/if_ether.h>

@@ -3,9 +3,9 @@
  * Copyright (C) 2017 - 2018 Red Hat, Inc.
  */
 
-#include "nm-default.h"
+#include "nm-glib-aux/nm-default-glib-i18n-lib.h"
 
-#include "nm-meta-setting.h"
+#include "nm-meta-setting-base.h"
 
 #include "nm-setting-6lowpan.h"
 #include "nm-setting-8021x.h"
@@ -516,8 +516,7 @@ nm_meta_setting_infos_by_name(const char *name)
 {
     gssize idx;
 
-#if NM_MORE_ASSERTS > 10
-    {
+    if (NM_MORE_ASSERTS > 10) {
         guint i, j;
 
         for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
@@ -545,7 +544,6 @@ nm_meta_setting_infos_by_name(const char *name)
             }
         }
     }
-#endif
 
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(NMMetaSettingInfo, setting_name) == 0);
     idx = nm_utils_array_find_binary_search(nm_meta_setting_infos,
@@ -561,7 +559,7 @@ nm_meta_setting_infos_by_name(const char *name)
 const NMMetaSettingInfo *
 nm_meta_setting_infos_by_gtype(GType gtype)
 {
-#if ((NETWORKMANAGER_COMPILATION) &NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE_INTERNAL)
+#if _NM_META_SETTING_BASE_IMPL_LIBNM
     nm_auto_unref_gtypeclass GTypeClass *gtypeclass_unref = NULL;
     GTypeClass *                         gtypeclass;
     NMSettingClass *                     klass;
@@ -587,20 +585,19 @@ nm_meta_setting_infos_by_gtype(GType gtype)
 
 out_none:
 
-    #if NM_MORE_ASSERTS > 10
-{
-    int i;
+    if (NM_MORE_ASSERTS > 10) {
+        int i;
 
-    /* this might hint to a bug, but it would be expected for NM_TYPE_SETTING
+        /* this might hint to a bug, but it would be expected for NM_TYPE_SETTING
          * and NM_TYPE_SETTING_IP_CONFIG.
          *
          * Assert that we didn't lookup for a gtype, which we would expect to find.
          * An assertion failure here, hints to a bug in nm_setting_*_class_init().
          */
-    for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++)
-        nm_assert(nm_meta_setting_infos[i].get_setting_gtype() != gtype);
-}
-    #endif
+        for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++)
+            nm_assert(nm_meta_setting_infos[i].get_setting_gtype() != gtype);
+    }
+
     return NULL;
 #else
     guint i;

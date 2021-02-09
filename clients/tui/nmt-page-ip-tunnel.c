@@ -7,7 +7,7 @@
  * @short_description: The editor page for IP tunnel connections
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include "nmt-page-ip-tunnel.h"
 

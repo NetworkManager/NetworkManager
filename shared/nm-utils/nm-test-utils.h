@@ -6,10 +6,6 @@
 #ifndef __NM_TEST_UTILS_H__
 #define __NM_TEST_UTILS_H__
 
-#if defined(NETWORKMANAGER_COMPILATION) && !defined(NETWORKMANAGER_COMPILATION_TEST)
-    #error Need to mark the compilation with NETWORKMANAGER_COMPILATION_TEST.
-#endif
-
 /*******************************************************************************
  * HOWTO run tests.
  *
@@ -84,8 +80,6 @@
  *
  *******************************************************************************/
 
-#include "nm-default.h"
-
 #if defined(NM_ASSERT_NO_MSG) && NM_ASSERT_NO_MSG
     #undef g_return_if_fail_warning
     #undef g_assertion_message_expr
@@ -97,10 +91,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-
-#ifndef NM_TEST_UTILS_NO_LIBNM
-    #include "nm-utils.h"
-#endif
 
 /*****************************************************************************/
 

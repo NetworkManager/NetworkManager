@@ -11,7 +11,7 @@
  * word-wrapping.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include "nmt-newt-textbox.h"
 

@@ -41,8 +41,7 @@ exe = executable(
     libnm_systemd_shared_dep,
   ],
   c_args: [
-    '-DNETWORKMANAGER_COMPILATION_TEST',
-    '-DNETWORKMANAGER_COMPILATION=NM_NETWORKMANAGER_COMPILATION_SYSTEMD',
+    '-DG_LOG_DOMAIN="test"',
   ],
 )
 

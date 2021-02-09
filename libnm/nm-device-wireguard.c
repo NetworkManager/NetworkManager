@@ -3,7 +3,7 @@
  * Copyright (C) 2018 Javier Arteaga <jarteaga@jbeta.is>
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-libnm.h"
 
 #include "nm-device-wireguard.h"
 

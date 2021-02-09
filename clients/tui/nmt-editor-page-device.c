@@ -15,7 +15,7 @@
  * an actual page type.
  */
 
-#include "nm-default.h"
+#include "libnm/nm-default-client.h"
 
 #include "nmt-editor-page-device.h"
 
