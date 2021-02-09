@@ -327,27 +327,6 @@ lease_get_in_addr(NDhcp4ClientLease *lease, guint8 option, struct in_addr *addrp
 }
 
 static gboolean
-lease_get_u16(NDhcp4ClientLease *lease, uint8_t option, uint16_t *u16p)
-{
-    uint8_t *data;
-    size_t   n_data;
-    uint16_t be16;
-    int      r;
-
-    r = n_dhcp4_client_lease_query(lease, option, &data, &n_data);
-    if (r)
-        return FALSE;
-
-    if (n_data != sizeof(be16))
-        return FALSE;
-
-    memcpy(&be16, data, sizeof(be16));
-
-    *u16p = ntohs(be16);
-    return TRUE;
-}
-
-static gboolean
 lease_parse_address(NDhcp4ClientLease *lease,
                     NMIP4Config *      ip4_config,
                     GHashTable *       options,
@@ -711,24 +690,6 @@ lease_parse_routes(NDhcp4ClientLease *lease,
 }
 
 static void
-lease_parse_mtu(NDhcp4ClientLease *lease, NMIP4Config *ip4_config, GHashTable *options)
-{
-    uint16_t mtu;
-
-    if (!lease_get_u16(lease, NM_DHCP_OPTION_DHCP4_INTERFACE_MTU, &mtu))
-        return;
-
-    if (mtu < 68)
-        return;
-
-    nm_dhcp_option_add_option_u64(options,
-                                  _nm_dhcp_option_dhcp4_options,
-                                  NM_DHCP_OPTION_DHCP4_INTERFACE_MTU,
-                                  mtu);
-    nm_ip4_config_set_mtu(ip4_config, mtu, NM_IP_CONFIG_SOURCE_DHCP);
-}
-
-static void
 lease_parse_metered(NDhcp4ClientLease *lease, NMIP4Config *ip4_config, GHashTable *options)
 {
     gboolean metered = FALSE;
@@ -997,6 +958,10 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
 {
     gs_unref_object NMIP4Config *ip4_config = NULL;
     gs_unref_hashtable GHashTable *options  = NULL;
+    guint8 *                       l_data;
+    gsize                          l_data_len;
+    guint16                        v_u16;
+    int                            r;
 
     g_return_val_if_fail(lease != NULL, NULL);
 
@@ -1012,7 +977,16 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
     lease_parse_address_list(lease, ip4_config, NM_DHCP_OPTION_DHCP4_DOMAIN_NAME_SERVER, options);
     lease_parse_domainname(lease, ip4_config, options);
     lease_parse_search_domains(lease, ip4_config, options);
-    lease_parse_mtu(lease, ip4_config, options);
+
+    r = n_dhcp4_client_lease_query(lease, NM_DHCP_OPTION_DHCP4_INTERFACE_MTU, &l_data, &l_data_len);
+    if (r == 0 && nm_dhcp_lease_data_parse_mtu(l_data, l_data_len, &v_u16)) {
+        nm_dhcp_option_add_option_u64(options,
+                                      _nm_dhcp_option_dhcp4_options,
+                                      NM_DHCP_OPTION_DHCP4_INTERFACE_MTU,
+                                      v_u16);
+        nm_ip4_config_set_mtu(ip4_config, v_u16, NM_IP_CONFIG_SOURCE_DHCP);
+    }
+
     lease_parse_metered(lease, ip4_config, options);
 
     lease_parse_hostname(lease, options);

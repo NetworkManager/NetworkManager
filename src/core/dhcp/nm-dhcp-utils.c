@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 
 #include "nm-glib-aux/nm-dedup-multi.h"
+#include "nm-std-aux/unaligned.h"
 
 #include "nm-dhcp-utils.h"
 #include "nm-utils.h"
@@ -833,4 +834,35 @@ nm_dhcp_utils_get_dhcp6_event_id(GHashTable *lease)
         return NULL;
 
     return g_strdup_printf("%s|%s", iaid, start);
+}
+
+/*****************************************************************************/
+
+gboolean
+nm_dhcp_lease_data_parse_u16(const guint8 *data, gsize n_data, uint16_t *out_val)
+{
+    if (n_data != 2)
+        return FALSE;
+
+    *out_val = unaligned_read_be16(data);
+    return TRUE;
+}
+
+gboolean
+nm_dhcp_lease_data_parse_mtu(const guint8 *data, gsize n_data, uint16_t *out_val)
+{
+    uint16_t mtu;
+
+    if (!nm_dhcp_lease_data_parse_u16(data, n_data, &mtu))
+        return FALSE;
+
+    if (mtu < 68) {
+        /* https://tools.ietf.org/html/rfc2132#section-5.1:
+         *
+         * The minimum legal value for the MTU is 68. */
+        return FALSE;
+    }
+
+    *out_val = mtu;
+    return TRUE;
 }

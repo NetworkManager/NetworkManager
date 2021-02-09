@@ -40,4 +40,9 @@ char **nm_dhcp_parse_search_list(guint8 *data, size_t n_data);
 
 char *nm_dhcp_utils_get_dhcp6_event_id(GHashTable *lease);
 
+/*****************************************************************************/
+
+gboolean nm_dhcp_lease_data_parse_u16(const guint8 *data, gsize n_data, guint16 *out_val);
+gboolean nm_dhcp_lease_data_parse_mtu(const guint8 *data, gsize n_data, guint16 *out_val);
+
 #endif /* __NETWORKMANAGER_DHCP_UTILS_H__ */
