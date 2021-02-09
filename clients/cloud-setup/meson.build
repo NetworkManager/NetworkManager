@@ -21,10 +21,9 @@ if install_systemdunitdir
 
 endif
 
-executable(
-  'nm-cloud-setup',
-  files(
-    'main.c',
+libnm_cloud_setup_core = static_library(
+  'nm-cloud-setup-core',
+  sources: files(
     'nm-cloud-setup-utils.c',
     'nm-http-client.c',
     'nmcs-provider-ec2.c',
@@ -37,6 +36,28 @@ executable(
     libnmc_dep,
     libcurl_dep,
     libnm_libnm_aux_dep,
+  ],
+  c_args: [
+    '-DG_LOG_DOMAIN="nm-cloud-setup"',
+  ],
+)
+
+libnm_cloud_setup_core_dep = declare_dependency(
+  include_directories: include_directories('.'),
+  link_with: libnm_cloud_setup_core,
+)
+
+executable(
+  'nm-cloud-setup',
+  files(
+    'main.c',
+  ),
+  dependencies: [
+    libnmc_base_dep,
+    libnmc_dep,
+    libcurl_dep,
+    libnm_libnm_aux_dep,
+    libnm_cloud_setup_core_dep,
   ],
   c_args: [
     '-DG_LOG_DOMAIN="nm-cloud-setup"',

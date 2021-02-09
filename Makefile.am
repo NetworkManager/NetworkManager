@@ -4990,10 +4990,9 @@ EXTRA_DIST += \
 
 if BUILD_NM_CLOUD_SETUP
 
-libexec_PROGRAMS += clients/cloud-setup/nm-cloud-setup
+noinst_LIBRARIES += clients/cloud-setup/libnm-cloud-setup-core.a
 
-clients_cloud_setup_nm_cloud_setup_SOURCES = \
-	clients/cloud-setup/main.c \
+clients_cloud_setup_libnm_cloud_setup_core_a_SOURCES = \
 	clients/cloud-setup/nm-cloud-setup-utils.c \
 	clients/cloud-setup/nm-cloud-setup-utils.h \
 	clients/cloud-setup/nm-http-client.c \
@@ -5008,6 +5007,21 @@ clients_cloud_setup_nm_cloud_setup_SOURCES = \
 	clients/cloud-setup/nmcs-provider-azure.h \
 	$(NULL)
 
+clients_cloud_setup_libnm_cloud_setup_core_a_CPPFLAGS = \
+	$(clients_cppflags) \
+	-DG_LOG_DOMAIN=\""nm-cloud-setup"\" \
+	$(LIBCURL_CFLAGS) \
+	$(NULL)
+
+$(clients_cloud_setup_libnm_cloud_setup_core_a_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(clients_cloud_setup_libnm_cloud_setup_core_a_OBJECTS): $(libnm_lib_h_pub_mkenums)
+
+libexec_PROGRAMS += clients/cloud-setup/nm-cloud-setup
+
+clients_cloud_setup_nm_cloud_setup_SOURCES = \
+	clients/cloud-setup/main.c \
+	$(NULL)
+
 clients_cloud_setup_nm_cloud_setup_CPPFLAGS = \
 	$(clients_cppflags) \
 	-DG_LOG_DOMAIN=\""nm-cloud-setup"\" \
@@ -5020,6 +5034,7 @@ clients_cloud_setup_nm_cloud_setup_LDFLAGS = \
 	$(NULL)
 
 clients_cloud_setup_nm_cloud_setup_LDADD = \
+	clients/cloud-setup/libnm-cloud-setup-core.a \
 	libnm/nm-libnm-aux/libnm-libnm-aux.la \
 	libnm-core/nm-libnm-core-aux/libnm-libnm-core-aux.la \
 	libnm-core/nm-libnm-core-intern/libnm-libnm-core-intern.la \
