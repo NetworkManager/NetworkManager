@@ -2762,4 +2762,29 @@ nmtst_keyfile_get_num_keys(GKeyFile *keyfile, const char *group_name)
 
 /*****************************************************************************/
 
+#if defined(NM_SETTING_IP_CONFIG_H) && defined(__NM_SHARED_UTILS_H__)
+
+static inline NMIPAddress *
+nmtst_ip_address_new(int addr_family, const char *str)
+{
+    NMIPAddr     addr;
+    int          plen;
+    GError *     error = NULL;
+    NMIPAddress *a;
+
+    if (!nm_utils_parse_inaddr_prefix_bin(addr_family, str, &addr_family, &addr, &plen))
+        g_assert_not_reached();
+
+    if (plen == -1)
+        plen = addr_family == AF_INET ? 32 : 128;
+
+    a = nm_ip_address_new_binary(addr_family, &addr, plen, &error);
+    nmtst_assert_success(a, error);
+    return a;
+}
+
+#endif
+
+/*****************************************************************************/
+
 #endif /* __NM_TEST_UTILS_H__ */
