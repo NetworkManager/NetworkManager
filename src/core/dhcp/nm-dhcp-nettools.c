@@ -690,24 +690,6 @@ lease_parse_routes(NDhcp4ClientLease *lease,
 }
 
 static void
-lease_parse_metered(NDhcp4ClientLease *lease, NMIP4Config *ip4_config, GHashTable *options)
-{
-    gboolean metered = FALSE;
-    uint8_t *data;
-    size_t   n_data;
-    int      r;
-
-    r = n_dhcp4_client_lease_query(lease, NM_DHCP_OPTION_DHCP4_VENDOR_SPECIFIC, &data, &n_data);
-    if (r)
-        metered = FALSE;
-    else
-        metered = !!memmem(data, n_data, "ANDROID_METERED", NM_STRLEN("ANDROID_METERED"));
-
-    /* TODO: expose the vendor specific option when present */
-    nm_ip4_config_set_metered(ip4_config, metered);
-}
-
-static void
 lease_parse_ntps(NDhcp4ClientLease *lease, GHashTable *options)
 {
     nm_auto_free_gstring GString *str = NULL;
@@ -961,6 +943,7 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
     guint8 *                       l_data;
     gsize                          l_data_len;
     guint16                        v_u16;
+    gboolean                       v_bool;
     int                            r;
 
     g_return_val_if_fail(lease != NULL, NULL);
@@ -987,7 +970,13 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
         nm_ip4_config_set_mtu(ip4_config, v_u16, NM_IP_CONFIG_SOURCE_DHCP);
     }
 
-    lease_parse_metered(lease, ip4_config, options);
+    r = n_dhcp4_client_lease_query(lease,
+                                   NM_DHCP_OPTION_DHCP4_VENDOR_SPECIFIC,
+                                   &l_data,
+                                   &l_data_len);
+    v_bool =
+        (r == 0) && memmem(l_data, l_data_len, "ANDROID_METERED", NM_STRLEN("ANDROID_METERED"));
+    nm_ip4_config_set_metered(ip4_config, v_bool);
 
     lease_parse_hostname(lease, options);
     lease_parse_ntps(lease, options);
