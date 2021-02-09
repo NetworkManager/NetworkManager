@@ -68,3 +68,7 @@ executable(
   install: true,
   install_dir: nm_libexecdir,
 )
+
+if enable_tests
+  subdir('tests')
+endif
