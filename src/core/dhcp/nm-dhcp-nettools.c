@@ -825,31 +825,6 @@ lease_parse_root_path(NDhcp4ClientLease *lease, GHashTable *options)
 }
 
 static void
-lease_parse_wpad(NDhcp4ClientLease *lease, GHashTable *options)
-{
-    gs_free char *wpad = NULL;
-    uint8_t *     data;
-    size_t        n_data;
-    int           r;
-
-    r = n_dhcp4_client_lease_query(lease,
-                                   NM_DHCP_OPTION_DHCP4_PRIVATE_PROXY_AUTODISCOVERY,
-                                   &data,
-                                   &n_data);
-    if (r)
-        return;
-
-    nm_utils_buf_utf8safe_escape((char *) data, n_data, 0, &wpad);
-    if (wpad == NULL)
-        wpad = g_strndup((char *) data, n_data);
-
-    nm_dhcp_option_add_option(options,
-                              _nm_dhcp_option_dhcp4_options,
-                              NM_DHCP_OPTION_DHCP4_PRIVATE_PROXY_AUTODISCOVERY,
-                              wpad);
-}
-
-static void
 lease_parse_nis_domain(NDhcp4ClientLease *lease, NMIP4Config *ip4_config, GHashTable *options)
 {
     gs_free char *str_free = NULL;
@@ -971,7 +946,19 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
 
     lease_parse_ntps(lease, options);
     lease_parse_root_path(lease, options);
-    lease_parse_wpad(lease, options);
+
+    r = n_dhcp4_client_lease_query(lease,
+                                   NM_DHCP_OPTION_DHCP4_PRIVATE_PROXY_AUTODISCOVERY,
+                                   &l_data,
+                                   &l_data_len);
+    if (r == 0) {
+        nm_dhcp_option_add_option_utf8safe_escape(options,
+                                                  _nm_dhcp_option_dhcp4_options,
+                                                  NM_DHCP_OPTION_DHCP4_PRIVATE_PROXY_AUTODISCOVERY,
+                                                  l_data,
+                                                  l_data_len);
+    }
+
     lease_parse_nis_domain(lease, ip4_config, options);
     lease_parse_address_list(lease, ip4_config, NM_DHCP_OPTION_DHCP4_NIS_SERVERS, options);
     lease_parse_address_list(lease, ip4_config, NM_DHCP_OPTION_DHCP4_NETBIOS_NAMESERVER, options);
