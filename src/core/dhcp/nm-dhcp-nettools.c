@@ -488,33 +488,31 @@ lease_parse_routes(NDhcp4ClientLease *lease,
     }
 }
 
-/*****************************************************************************/
-
 static void
 lease_parse_search_domains(NDhcp4ClientLease *lease, NMIP4Config *ip4_config, GHashTable *options)
 {
-    nm_auto_free_gstring GString *str = NULL;
-    uint8_t *                     data;
-    size_t                        n_data;
-    gs_strfreev char **           domains = NULL;
-    guint                         i;
-    int                           r;
+    gs_strfreev char **domains = NULL;
+    const guint8 *     l_data;
+    gsize              l_data_len;
+    guint              i;
+    int                r;
 
-    r = n_dhcp4_client_lease_query(lease, NM_DHCP_OPTION_DHCP4_DOMAIN_SEARCH_LIST, &data, &n_data);
-    if (r)
+    r = _client_lease_query(lease, NM_DHCP_OPTION_DHCP4_DOMAIN_SEARCH_LIST, &l_data, &l_data_len);
+    if (r != 0)
         return;
 
-    domains = nm_dhcp_lease_data_parse_search_list(data, n_data);
-    nm_gstring_prepare(&str);
+    domains = nm_dhcp_lease_data_parse_search_list(l_data, l_data_len);
 
-    for (i = 0; domains && domains[i]; i++) {
-        g_string_append(nm_gstring_add_space_delimiter(str), domains[i]);
+    if (!domains || !domains[0])
+        return;
+
+    for (i = 0; domains[i]; i++)
         nm_ip4_config_add_search(ip4_config, domains[i]);
-    }
-    nm_dhcp_option_add_option(options,
-                              _nm_dhcp_option_dhcp4_options,
-                              NM_DHCP_OPTION_DHCP4_DOMAIN_SEARCH_LIST,
-                              str->str);
+
+    nm_dhcp_option_take_option(options,
+                               _nm_dhcp_option_dhcp4_options,
+                               NM_DHCP_OPTION_DHCP4_DOMAIN_SEARCH_LIST,
+                               g_strjoinv(" ", domains));
 }
 
 static void
