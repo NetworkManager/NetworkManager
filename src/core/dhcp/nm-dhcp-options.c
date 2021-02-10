@@ -268,6 +268,17 @@ nm_dhcp_option_add_option_u64(GHashTable *        options,
 }
 
 void
+nm_dhcp_option_add_option_in_addr(GHashTable *        options,
+                                  const NMDhcpOption *requests,
+                                  guint               option,
+                                  in_addr_t           value)
+{
+    char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+
+    nm_dhcp_option_add_option(options, requests, option, _nm_utils_inet4_ntop(value, sbuf));
+}
+
+void
 nm_dhcp_option_add_requests_to_options(GHashTable *options, const NMDhcpOption *requests)
 {
     guint i;
