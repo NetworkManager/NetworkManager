@@ -48,5 +48,6 @@ gboolean nm_dhcp_lease_data_parse_u16(const guint8 *data, gsize n_data, guint16 
 gboolean nm_dhcp_lease_data_parse_mtu(const guint8 *data, gsize n_data, guint16 *out_val);
 gboolean nm_dhcp_lease_data_parse_cstr(const guint8 *data, gsize n_data, gsize *out_new_len);
 gboolean nm_dhcp_lease_data_parse_domain(const guint8 *data, gsize n_data, char **out_val);
+gboolean nm_dhcp_lease_data_parse_in_addr(const guint8 *data, gsize n_data, in_addr_t *out_val);
 
 #endif /* __NETWORKMANAGER_DHCP_UTILS_H__ */

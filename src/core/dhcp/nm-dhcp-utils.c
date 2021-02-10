@@ -950,3 +950,16 @@ nm_dhcp_lease_data_parse_domain(const guint8 *data, gsize n_data, char **out_val
     *out_val = g_steal_pointer(&s);
     return TRUE;
 }
+
+gboolean
+nm_dhcp_lease_data_parse_in_addr(const guint8 *data, gsize n_data, in_addr_t *out_val)
+{
+    /* - option 28, https://tools.ietf.org/html/rfc2132#section-5.3
+     */
+
+    if (n_data != 4)
+        return FALSE;
+
+    *out_val = unaligned_read_ne32(data);
+    return TRUE;
+}
