@@ -806,33 +806,6 @@ lease_parse_search_domains(NDhcp4ClientLease *lease, NMIP4Config *ip4_config, GH
 }
 
 static void
-lease_parse_nis_domain(NDhcp4ClientLease *lease, NMIP4Config *ip4_config, GHashTable *options)
-{
-    gs_free char *str_free = NULL;
-    const char *  str;
-    uint8_t *     data;
-    size_t        n_data;
-    guint         i;
-    int           r;
-
-    r = n_dhcp4_client_lease_query(lease, NM_DHCP_OPTION_DHCP4_NIS_DOMAIN, &data, &n_data);
-    if (r)
-        return;
-
-    for (i = 0; i < n_data; i++) {
-        if (!nm_is_ascii((char) data[i]))
-            return;
-    }
-
-    str = nm_strndup_a(300, (const char *) data, n_data, &str_free);
-    nm_dhcp_option_add_option(options,
-                              _nm_dhcp_option_dhcp4_options,
-                              NM_DHCP_OPTION_DHCP4_NIS_DOMAIN,
-                              str);
-    nm_ip4_config_set_nis_domain(ip4_config, str);
-}
-
-static void
 lease_parse_private_options(NDhcp4ClientLease *lease, GHashTable *options)
 {
     int i;
@@ -877,9 +850,11 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
     gs_unref_hashtable GHashTable *options  = NULL;
     guint8 *                       l_data;
     gsize                          l_data_len;
+    const char *                   v_str;
     guint16                        v_u16;
     gboolean                       v_bool;
     int                            r;
+    gsize                          i;
 
     g_return_val_if_fail(lease != NULL, NULL);
 
@@ -963,7 +938,24 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
                                                   l_data_len);
     }
 
-    lease_parse_nis_domain(lease, ip4_config, options);
+    r = n_dhcp4_client_lease_query(lease, NM_DHCP_OPTION_DHCP4_NIS_DOMAIN, &l_data, &l_data_len);
+    if (r == 0) {
+        gs_free char *str_free = NULL;
+
+        for (i = 0; i < l_data_len; i++) {
+            if (!nm_is_ascii((char) l_data[i]))
+                goto nis_domain_done;
+        }
+
+        v_str = nm_strndup_a(300, (const char *) l_data, l_data_len, &str_free);
+        nm_dhcp_option_add_option(options,
+                                  _nm_dhcp_option_dhcp4_options,
+                                  NM_DHCP_OPTION_DHCP4_NIS_DOMAIN,
+                                  v_str);
+        nm_ip4_config_set_nis_domain(ip4_config, v_str);
+    }
+nis_domain_done:
+
     lease_parse_address_list(lease, ip4_config, NM_DHCP_OPTION_DHCP4_NIS_SERVERS, options);
     lease_parse_address_list(lease, ip4_config, NM_DHCP_OPTION_DHCP4_NETBIOS_NAMESERVER, options);
     lease_parse_private_options(lease, options);
