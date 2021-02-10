@@ -717,38 +717,6 @@ lease_parse_ntps(NDhcp4ClientLease *lease, GHashTable *options)
                               str->str);
 }
 
-static void
-lease_parse_domainname(NDhcp4ClientLease *lease, NMIP4Config *ip4_config, GHashTable *options)
-{
-    nm_auto_free_gstring GString *str     = NULL;
-    gs_strfreev char **           domains = NULL;
-    uint8_t *                     data;
-    size_t                        n_data;
-    int                           r;
-
-    r = n_dhcp4_client_lease_query(lease, NM_DHCP_OPTION_DHCP4_DOMAIN_NAME, &data, &n_data);
-    if (r)
-        return;
-
-    str = g_string_new_len((char *) data, n_data);
-
-    /* Multiple domains sometimes stuffed into option 15 "Domain Name". */
-    domains = g_strsplit(str->str, " ", 0);
-    nm_gstring_prepare(&str);
-
-    for (char **d = domains; *d; d++) {
-        if (nm_utils_is_localhost(*d))
-            return;
-
-        g_string_append(nm_gstring_add_space_delimiter(str), *d);
-        nm_ip4_config_add_domain(ip4_config, *d);
-    }
-    nm_dhcp_option_add_option(options,
-                              _nm_dhcp_option_dhcp4_options,
-                              NM_DHCP_OPTION_DHCP4_DOMAIN_NAME,
-                              str->str);
-}
-
 char **
 nm_dhcp_parse_search_list(guint8 *data, size_t n_data)
 {
@@ -867,7 +835,38 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
     lease_parse_broadcast(lease, ip4_config, options);
     lease_parse_routes(lease, ip4_config, options, route_table, route_metric);
     lease_parse_address_list(lease, ip4_config, NM_DHCP_OPTION_DHCP4_DOMAIN_NAME_SERVER, options);
-    lease_parse_domainname(lease, ip4_config, options);
+
+    r = n_dhcp4_client_lease_query(lease, NM_DHCP_OPTION_DHCP4_DOMAIN_NAME, &l_data, &l_data_len);
+    if (r == 0) {
+        gs_free const char **domains = NULL;
+
+        nm_str_buf_reset(&sbuf);
+        nm_str_buf_append_len(&sbuf, (const char *) l_data, l_data_len);
+
+        /* Multiple domains sometimes stuffed into option 15 "Domain Name". */
+        domains = nm_utils_strsplit_set(nm_str_buf_get_str(&sbuf), " ");
+
+        nm_str_buf_reset(&sbuf);
+        if (domains) {
+            gsize i;
+
+            for (i = 0; domains[i]; i++) {
+                if (nm_utils_is_localhost(domains[i]))
+                    goto domain_name_done;
+
+                nm_str_buf_append_required_delimiter(&sbuf, ' ');
+                nm_str_buf_append(&sbuf, domains[i]);
+                nm_ip4_config_add_domain(ip4_config, domains[i]);
+            }
+        }
+
+        nm_dhcp_option_add_option(options,
+                                  _nm_dhcp_option_dhcp4_options,
+                                  NM_DHCP_OPTION_DHCP4_DOMAIN_NAME,
+                                  nm_str_buf_get_str(&sbuf));
+    }
+domain_name_done:
+
     lease_parse_search_domains(lease, ip4_config, options);
 
     r = n_dhcp4_client_lease_query(lease, NM_DHCP_OPTION_DHCP4_INTERFACE_MTU, &l_data, &l_data_len);
