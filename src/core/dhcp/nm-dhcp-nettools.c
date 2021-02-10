@@ -854,7 +854,6 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
     guint16                        v_u16;
     gboolean                       v_bool;
     int                            r;
-    gsize                          i;
 
     g_return_val_if_fail(lease != NULL, NULL);
 
@@ -939,22 +938,19 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
     }
 
     r = n_dhcp4_client_lease_query(lease, NM_DHCP_OPTION_DHCP4_NIS_DOMAIN, &l_data, &l_data_len);
-    if (r == 0) {
-        gs_free char *str_free = NULL;
+    if (r == 0 && nm_dhcp_lease_data_parse_cstr(l_data, l_data_len, &l_data_len)) {
+        gs_free char *to_free = NULL;
 
-        for (i = 0; i < l_data_len; i++) {
-            if (!nm_is_ascii((char) l_data[i]))
-                goto nis_domain_done;
-        }
+        /* https://tools.ietf.org/html/rfc2132#section-8.1 */
 
-        v_str = nm_strndup_a(300, (const char *) l_data, l_data_len, &str_free);
+        v_str = nm_utils_buf_utf8safe_escape((char *) l_data, l_data_len, 0, &to_free);
+
         nm_dhcp_option_add_option(options,
                                   _nm_dhcp_option_dhcp4_options,
                                   NM_DHCP_OPTION_DHCP4_NIS_DOMAIN,
                                   v_str);
         nm_ip4_config_set_nis_domain(ip4_config, v_str);
     }
-nis_domain_done:
 
     lease_parse_address_list(lease, ip4_config, NM_DHCP_OPTION_DHCP4_NIS_SERVERS, options);
     lease_parse_address_list(lease, ip4_config, NM_DHCP_OPTION_DHCP4_NETBIOS_NAMESERVER, options);
