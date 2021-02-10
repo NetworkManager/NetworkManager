@@ -202,7 +202,7 @@ test_parse_search_list(void)
     char ** domains;
 
     data    = (guint8[]){0x05, 'l', 'o', 'c', 'a', 'l', 0x00};
-    domains = nm_dhcp_parse_search_list(data, 7);
+    domains = nm_dhcp_lease_data_parse_search_list(data, 7);
     g_assert(domains);
     g_assert_cmpint(g_strv_length(domains), ==, 1);
     g_assert_cmpstr(domains[0], ==, "local");
@@ -211,7 +211,7 @@ test_parse_search_list(void)
     data    = (guint8[]){0x04, 't',  'e',  's', 't', 0x07, 'e',  'x',  'a',  'm', 'p', 'l',
                       'e',  0x03, 'c',  'o', 'm', 0x00, 0xc0, 0x05, 0x03, 'a', 'b', 'c',
                       0xc0, 0x0d, 0x06, 'f', 'o', 'o',  'b',  'a',  'r',  0x00};
-    domains = nm_dhcp_parse_search_list(data, 34);
+    domains = nm_dhcp_lease_data_parse_search_list(data, 34);
     g_assert(domains);
     g_assert_cmpint(g_strv_length(domains), ==, 4);
     g_assert_cmpstr(domains[0], ==, "test.example.com");
@@ -226,7 +226,7 @@ test_parse_search_list(void)
         'a',
         'd',
     };
-    domains = nm_dhcp_parse_search_list(data, 4);
+    domains = nm_dhcp_lease_data_parse_search_list(data, 4);
     g_assert(!domains);
 
     data = (guint8[]){
@@ -241,7 +241,7 @@ test_parse_search_list(void)
         'a',
         'd',
     };
-    domains = nm_dhcp_parse_search_list(data, 10);
+    domains = nm_dhcp_lease_data_parse_search_list(data, 10);
     g_assert(domains);
     g_assert_cmpint(g_strv_length(domains), ==, 1);
     g_assert_cmpstr(domains[0], ==, "okay");

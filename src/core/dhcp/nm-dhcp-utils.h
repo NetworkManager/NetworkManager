@@ -36,11 +36,21 @@ gboolean nm_dhcp_utils_get_leasefile_path(int         addr_family,
                                           const char *uuid,
                                           char **     out_leasefile_path);
 
-char **nm_dhcp_parse_search_list(guint8 *data, size_t n_data);
-
 char *nm_dhcp_utils_get_dhcp6_event_id(GHashTable *lease);
 
 /*****************************************************************************/
+
+static inline gboolean
+nm_dhcp_lease_data_consume(const uint8_t **datap, size_t *n_datap, void *out, size_t n_out)
+{
+    if (*n_datap < n_out)
+        return FALSE;
+
+    memcpy(out, *datap, n_out);
+    *datap += n_out;
+    *n_datap -= n_out;
+    return TRUE;
+}
 
 char *nm_dhcp_lease_data_parse_domain_validate(const char *str);
 
@@ -49,5 +59,6 @@ gboolean nm_dhcp_lease_data_parse_mtu(const guint8 *data, gsize n_data, guint16 
 gboolean nm_dhcp_lease_data_parse_cstr(const guint8 *data, gsize n_data, gsize *out_new_len);
 gboolean nm_dhcp_lease_data_parse_domain(const guint8 *data, gsize n_data, char **out_val);
 gboolean nm_dhcp_lease_data_parse_in_addr(const guint8 *data, gsize n_data, in_addr_t *out_val);
+char **  nm_dhcp_lease_data_parse_search_list(const guint8 *data, gsize n_data);
 
 #endif /* __NETWORKMANAGER_DHCP_UTILS_H__ */

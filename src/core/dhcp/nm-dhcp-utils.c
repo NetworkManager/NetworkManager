@@ -964,3 +964,158 @@ nm_dhcp_lease_data_parse_in_addr(const guint8 *data, gsize n_data, in_addr_t *ou
     *out_val = unaligned_read_ne32(data);
     return TRUE;
 }
+
+/*****************************************************************************/
+
+static gboolean
+lease_option_print_label(GString *str, size_t n_label, const uint8_t **datap, size_t *n_datap)
+{
+    gsize i;
+
+    for (i = 0; i < n_label; ++i) {
+        uint8_t c = 0;
+
+        if (!nm_dhcp_lease_data_consume(datap, n_datap, &c, sizeof(c)))
+            return FALSE;
+
+        switch (c) {
+        case 'a' ... 'z':
+        case 'A' ... 'Z':
+        case '0' ... '9':
+        case '-':
+        case '_':
+            g_string_append_c(str, c);
+            break;
+        case '.':
+        case '\\':
+            g_string_append_printf(str, "\\%c", c);
+            break;
+        default:
+            g_string_append_printf(str, "\\%3d", c);
+        }
+    }
+
+    return TRUE;
+}
+
+static gboolean
+lease_option_print_domain_name(GString *       str,
+                               const uint8_t * cache,
+                               size_t *        n_cachep,
+                               const uint8_t **datap,
+                               size_t *        n_datap)
+{
+    const uint8_t * domain;
+    size_t          n_domain, n_cache = *n_cachep;
+    const uint8_t **domainp   = datap;
+    size_t *        n_domainp = n_datap;
+    gboolean        first     = TRUE;
+    uint8_t         c;
+
+    /*
+     * We are given two adjacent memory regions. The @cache contains alreday parsed
+     * domain names, and the @datap contains the remaining data to parse.
+     *
+     * A domain name is formed from a sequence of labels. Each label start with
+     * a length byte, where the two most significant bits are unset. A zero-length
+     * label indicates the end of the domain name.
+     *
+     * Alternatively, a label can be followed by an offset (indicated by the two
+     * most significant bits being set in the next byte that is read). The offset
+     * is an offset into the cache, where the next label of the domain name can
+     * be found.
+     *
+     * Note, that each time a jump to an offset is performed, the size of the
+     * cache shrinks, so this is guaranteed to terminate.
+     */
+    if (cache + n_cache != *datap)
+        return FALSE;
+
+    for (;;) {
+        if (!nm_dhcp_lease_data_consume(domainp, n_domainp, &c, sizeof(c)))
+            return FALSE;
+
+        switch (c & 0xC0) {
+        case 0x00: /* label length */
+        {
+            size_t n_label = c;
+
+            if (n_label == 0) {
+                /*
+                 * We reached the final label of the domain name. Adjust
+                 * the cache to include the consumed data, and return.
+                 */
+                *n_cachep = *datap - cache;
+                return TRUE;
+            }
+
+            if (!first)
+                g_string_append_c(str, '.');
+            else
+                first = FALSE;
+
+            if (!lease_option_print_label(str, n_label, domainp, n_domainp))
+                return FALSE;
+
+            break;
+        }
+        case 0xC0: /* back pointer */
+        {
+            size_t offset = (c & 0x3F) << 16;
+
+            /*
+             * The offset is given as two bytes (in big endian), where the
+             * two high bits are masked out.
+             */
+
+            if (!nm_dhcp_lease_data_consume(domainp, n_domainp, &c, sizeof(c)))
+                return FALSE;
+
+            offset += c;
+
+            if (offset >= n_cache)
+                return FALSE;
+
+            domain   = cache + offset;
+            n_domain = n_cache - offset;
+            n_cache  = offset;
+
+            domainp   = &domain;
+            n_domainp = &n_domain;
+
+            break;
+        }
+        default:
+            return FALSE;
+        }
+    }
+}
+
+char **
+nm_dhcp_lease_data_parse_search_list(const guint8 *data, gsize n_data)
+{
+    GPtrArray *   array   = NULL;
+    const guint8 *cache   = data;
+    gsize         n_cache = 0;
+
+    for (;;) {
+        nm_auto_free_gstring GString *domain = NULL;
+
+        nm_gstring_prepare(&domain);
+
+        if (!lease_option_print_domain_name(domain, cache, &n_cache, &data, &n_data))
+            break;
+
+        if (!array)
+            array = g_ptr_array_new();
+
+        g_ptr_array_add(array, g_string_free(domain, FALSE));
+        domain = NULL;
+    }
+
+    if (array) {
+        g_ptr_array_add(array, NULL);
+        return (char **) g_ptr_array_free(array, FALSE);
+    } else
+        return NULL;
+}
