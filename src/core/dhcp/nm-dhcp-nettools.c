@@ -734,25 +734,24 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
 static void
 lease_save(NMDhcpNettools *self, NDhcp4ClientLease *lease, const char *lease_file)
 {
-    struct in_addr       a_address;
-    nm_auto_free_gstring GString *new_contents = NULL;
-    char                          sbuf[NM_UTILS_INET_ADDRSTRLEN];
+    struct in_addr           a_address;
+    nm_auto_str_buf NMStrBuf sbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
+    char                     addr_str[NM_UTILS_INET_ADDRSTRLEN];
     gs_free_error GError *error = NULL;
 
     nm_assert(lease);
     nm_assert(lease_file);
 
-    new_contents = g_string_new("# This is private data. Do not parse.\n");
-
     n_dhcp4_client_lease_get_yiaddr(lease, &a_address);
     if (a_address.s_addr == INADDR_ANY)
         return;
 
-    g_string_append_printf(new_contents,
-                           "ADDRESS=%s\n",
-                           _nm_utils_inet4_ntop(a_address.s_addr, sbuf));
+    nm_str_buf_append(&sbuf, "# This is private data. Do not parse.\n");
+    nm_str_buf_append_printf(&sbuf,
+                             "ADDRESS=%s\n",
+                             _nm_utils_inet4_ntop(a_address.s_addr, addr_str));
 
-    if (!g_file_set_contents(lease_file, new_contents->str, -1, &error))
+    if (!g_file_set_contents(lease_file, nm_str_buf_get_str_unsafe(&sbuf), sbuf.len, &error))
         _LOGW("error saving lease to %s: %s", lease_file, error->message);
 }
 
