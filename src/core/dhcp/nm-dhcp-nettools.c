@@ -15,6 +15,7 @@
 
 #include "nm-glib-aux/nm-dedup-multi.h"
 #include "nm-std-aux/unaligned.h"
+#include "nm-glib-aux/nm-str-buf.h"
 
 #include "nm-utils.h"
 #include "nm-config.h"
@@ -717,29 +718,6 @@ lease_parse_ntps(NDhcp4ClientLease *lease, GHashTable *options)
 }
 
 static void
-lease_parse_hostname(NDhcp4ClientLease *lease, GHashTable *options)
-{
-    nm_auto_free_gstring GString *str = NULL;
-    uint8_t *                     data;
-    size_t                        n_data;
-    int                           r;
-
-    r = n_dhcp4_client_lease_query(lease, NM_DHCP_OPTION_DHCP4_HOST_NAME, &data, &n_data);
-    if (r)
-        return;
-
-    str = g_string_new_len((char *) data, n_data);
-
-    if (nm_utils_is_localhost(str->str))
-        return;
-
-    nm_dhcp_option_add_option(options,
-                              _nm_dhcp_option_dhcp4_options,
-                              NM_DHCP_OPTION_DHCP4_HOST_NAME,
-                              str->str);
-}
-
-static void
 lease_parse_domainname(NDhcp4ClientLease *lease, NMIP4Config *ip4_config, GHashTable *options)
 {
     nm_auto_free_gstring GString *str     = NULL;
@@ -938,10 +916,12 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
                     GHashTable **      out_options,
                     GError **          error)
 {
+    nm_auto_str_buf NMStrBuf sbuf           = NM_STR_BUF_INIT(0, FALSE);
     gs_unref_object NMIP4Config *ip4_config = NULL;
     gs_unref_hashtable GHashTable *options  = NULL;
     guint8 *                       l_data;
     gsize                          l_data_len;
+    const char *                   v_str;
     guint16                        v_u16;
     gboolean                       v_bool;
     int                            r;
@@ -978,7 +958,19 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
         (r == 0) && memmem(l_data, l_data_len, "ANDROID_METERED", NM_STRLEN("ANDROID_METERED"));
     nm_ip4_config_set_metered(ip4_config, v_bool);
 
-    lease_parse_hostname(lease, options);
+    r = n_dhcp4_client_lease_query(lease, NM_DHCP_OPTION_DHCP4_HOST_NAME, &l_data, &l_data_len);
+    if (r == 0) {
+        nm_str_buf_reset(&sbuf);
+        nm_str_buf_append_len(&sbuf, (const char *) l_data, l_data_len);
+        v_str = nm_str_buf_get_str(&sbuf);
+        if (!nm_utils_is_localhost(v_str)) {
+            nm_dhcp_option_add_option(options,
+                                      _nm_dhcp_option_dhcp4_options,
+                                      NM_DHCP_OPTION_DHCP4_HOST_NAME,
+                                      v_str);
+        }
+    }
+
     lease_parse_ntps(lease, options);
     lease_parse_root_path(lease, options);
     lease_parse_wpad(lease, options);
