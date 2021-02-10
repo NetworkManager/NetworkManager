@@ -86,27 +86,7 @@ set_error_nettools(GError **error, int r, const char *message)
 
 #define DHCP_MAX_FQDN_LENGTH 255
 
-enum {
-    NM_IN_ADDR_CLASS_A,
-    NM_IN_ADDR_CLASS_B,
-    NM_IN_ADDR_CLASS_C,
-    NM_IN_ADDR_CLASS_INVALID,
-};
-
-static int
-in_addr_class(in_addr_t addr)
-{
-    switch (ntohl(addr) >> 24) {
-    case 0 ... 127:
-        return NM_IN_ADDR_CLASS_A;
-    case 128 ... 191:
-        return NM_IN_ADDR_CLASS_B;
-    case 192 ... 223:
-        return NM_IN_ADDR_CLASS_C;
-    default:
-        return NM_IN_ADDR_CLASS_INVALID;
-    }
-}
+/*****************************************************************************/
 
 static gboolean
 lease_option_consume(uint8_t **datap, size_t *n_datap, void *out, size_t n_out)
@@ -158,19 +138,9 @@ lease_option_consume_route(uint8_t ** datap,
         if (!lease_option_consume_in_addr(&data, &n_data, &dest))
             return FALSE;
 
-        switch (in_addr_class(dest)) {
-        case NM_IN_ADDR_CLASS_A:
-            plen = 8;
-            break;
-        case NM_IN_ADDR_CLASS_B:
-            plen = 16;
-            break;
-        case NM_IN_ADDR_CLASS_C:
-            plen = 24;
-            break;
-        case NM_IN_ADDR_CLASS_INVALID:
+        plen = _nm_utils_ip4_get_default_prefix0(dest);
+        if (plen == 0)
             return FALSE;
-        }
     }
 
     dest = nm_utils_ip4_address_clear_host_address(dest, plen);

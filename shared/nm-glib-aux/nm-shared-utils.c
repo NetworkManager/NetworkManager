@@ -786,27 +786,27 @@ nm_utils_ip6_address_same_prefix_cmp(const struct in6_addr *addr_a,
     return 0;
 }
 
-/**
- * _nm_utils_ip4_get_default_prefix:
- * @ip: an IPv4 address (in network byte order)
- *
- * When the Internet was originally set up, various ranges of IP addresses were
- * segmented into three network classes: A, B, and C.  This function will return
- * a prefix that is associated with the IP address specified defining where it
- * falls in the predefined classes.
- *
- * Returns: the default class prefix for the given IP
- **/
-/* The function is originally from ipcalc.c of Red Hat's initscripts. */
-guint32
-_nm_utils_ip4_get_default_prefix(guint32 ip)
-{
-    if (((ntohl(ip) & 0xFF000000) >> 24) <= 127)
-        return 8; /* Class A - 255.0.0.0 */
-    else if (((ntohl(ip) & 0xFF000000) >> 24) <= 191)
-        return 16; /* Class B - 255.255.0.0 */
+/*****************************************************************************/
 
-    return 24; /* Class C - 255.255.255.0 */
+guint32
+_nm_utils_ip4_get_default_prefix0(in_addr_t ip)
+{
+    /* The function is originally from ipcalc.c of Red Hat's initscripts. */
+    switch (ntohl(ip) >> 24) {
+    case 0 ... 127:
+        return 8; /* Class A */
+    case 128 ... 191:
+        return 16; /* Class B */
+    case 192 ... 223:
+        return 24; /* Class C */
+    }
+    return 0;
+}
+
+guint32
+_nm_utils_ip4_get_default_prefix(in_addr_t ip)
+{
+    return _nm_utils_ip4_get_default_prefix0(ip) ?: 24;
 }
 
 gboolean
