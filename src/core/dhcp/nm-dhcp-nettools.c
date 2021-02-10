@@ -928,11 +928,22 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
     lease_parse_ntps(lease, options);
 
     r = n_dhcp4_client_lease_query(lease, NM_DHCP_OPTION_DHCP4_ROOT_PATH, &l_data, &l_data_len);
-    if (r == 0) {
-        nm_dhcp_option_add_option(options,
-                                  _nm_dhcp_option_dhcp4_options,
-                                  NM_DHCP_OPTION_DHCP4_ROOT_PATH,
-                                  g_strndup((char *) l_data, l_data_len));
+    if (r == 0 && nm_dhcp_lease_data_parse_cstr(l_data, l_data_len, &l_data_len)) {
+        /* https://tools.ietf.org/html/rfc2132#section-3.19
+         *
+         *   The path is formatted as a character string consisting of
+         *   characters from the NVT ASCII character set.
+         *
+         * We still accept any character set and backslash escape it! */
+        if (l_data_len == 0) {
+            /* "Its minimum length is 1." */
+        } else {
+            nm_dhcp_option_add_option_utf8safe_escape(options,
+                                                      _nm_dhcp_option_dhcp4_options,
+                                                      NM_DHCP_OPTION_DHCP4_ROOT_PATH,
+                                                      l_data,
+                                                      l_data_len);
+        }
     }
 
     r = n_dhcp4_client_lease_query(lease,
