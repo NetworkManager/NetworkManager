@@ -1001,6 +1001,23 @@ nmtst_rand_perm(GRand *rand, void *dst, const void *src, gsize elmt_size, gsize 
     return dst;
 }
 
+static inline const char **
+nmtst_rand_perm_strv(const char *const *strv)
+{
+    const char **res;
+    gsize        n;
+
+    if (!strv)
+        return NULL;
+
+    /* this returns a (scrambled) SHALLOW copy of the strv array! */
+
+    n   = NM_PTRARRAY_LEN(strv);
+    res = (const char **) (nm_utils_strv_dup(strv, n, FALSE) ?: g_new0(char *, 1));
+    nmtst_rand_perm(NULL, res, res, sizeof(char *), n);
+    return res;
+}
+
 static inline GSList *
 nmtst_rand_perm_gslist(GRand *rand, GSList *list)
 {
@@ -2759,6 +2776,31 @@ nmtst_keyfile_get_num_keys(GKeyFile *keyfile, const char *group_name)
 
     return l;
 }
+
+/*****************************************************************************/
+
+#if defined(NM_SETTING_IP_CONFIG_H) && defined(__NM_SHARED_UTILS_H__)
+
+static inline NMIPAddress *
+nmtst_ip_address_new(int addr_family, const char *str)
+{
+    NMIPAddr     addr;
+    int          plen;
+    GError *     error = NULL;
+    NMIPAddress *a;
+
+    if (!nm_utils_parse_inaddr_prefix_bin(addr_family, str, &addr_family, &addr, &plen))
+        g_assert_not_reached();
+
+    if (plen == -1)
+        plen = addr_family == AF_INET ? 32 : 128;
+
+    a = nm_ip_address_new_binary(addr_family, &addr, plen, &error);
+    nmtst_assert_success(a, error);
+    return a;
+}
+
+#endif
 
 /*****************************************************************************/
 
