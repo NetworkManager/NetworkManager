@@ -8,10 +8,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/NetworkMan"
-"ager/issues\n"
-"POT-Creation-Date: 2021-01-14 15:30+0000\n"
-"PO-Revision-Date: 2021-01-14 18:21+0200\n"
+"Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/NetworkManager/issues\n"
+"POT-Creation-Date: 2021-02-10 03:28+0000\n"
+"PO-Revision-Date: 2021-02-10 11:26+0200\n"
 "Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
 "Language-Team: Ukrainian <kde-i18n-uk@kde.org>\n"
 "Language: uk\n"
@@ -19,8 +18,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Lokalize 20.11.70\n"
-"Plural-Forms: nplurals=4; plural=n==1 ? 3 : n%10==1 && n%100!=11 ? 0 : n"
-"%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"Plural-Forms: nplurals=4; plural=n==1 ? 3 : n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 
 #: ../clients/cli/agent.c:22
 #, c-format
@@ -2893,7 +2891,8 @@ msgstr "Ad-Hoc"
 msgid "Infra"
 msgstr "Інфраструктура"
 
-#: ../clients/cli/devices.c:1338 ../src/devices/wifi/nm-device-olpc-mesh.c:115
+#: ../clients/cli/devices.c:1338
+#: ../src/core/devices/wifi/nm-device-olpc-mesh.c:115
 msgid "Mesh"
 msgstr "Сітка"
 
@@ -4775,7 +4774,7 @@ msgid "invalid option '%s', use a combination of [%s]"
 msgstr "некоректний параметр «%s», скористайтеся комбінацією [%s]"
 
 #: ../clients/common/nm-meta-setting-desc.c:1623
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1103
+#: ../libnm-core/nm-keyfile.c:1103
 #, c-format
 msgid "invalid option '%s', use one of [%s]"
 msgstr ""
@@ -4857,7 +4856,7 @@ msgstr ""
 
 #: ../clients/common/nm-meta-setting-desc.c:2107
 #: ../clients/common/nm-meta-setting-desc.c:4103
-#: ../libnm-core/nm-setting-ovs-bridge.c:187 ../src/nm-config.c:548
+#: ../libnm-core/nm-setting-ovs-bridge.c:187 ../src/core/nm-config.c:548
 #, c-format
 msgid "'%s' is not valid"
 msgstr "«%s» не є коректним"
@@ -5318,8 +5317,8 @@ msgstr "Користувач"
 
 #: ../clients/common/nm-meta-setting-desc.c:4885
 #: ../clients/common/nm-meta-setting-desc.c:5169
-#: ../clients/common/nm-meta-setting-desc.c:5596
-#: ../clients/common/nm-meta-setting-desc.c:6602
+#: ../clients/common/nm-meta-setting-desc.c:5602
+#: ../clients/common/nm-meta-setting-desc.c:6608
 msgid "Password [none]"
 msgstr "Пароль [типово немає]"
 
@@ -5328,11 +5327,11 @@ msgid "Bluetooth device address"
 msgstr "Адреса пристрою Bluetooth"
 
 #: ../clients/common/nm-meta-setting-desc.c:4979
-#: ../clients/common/nm-meta-setting-desc.c:5667
-#: ../clients/common/nm-meta-setting-desc.c:7322
-#: ../clients/common/nm-meta-setting-desc.c:7360
-#: ../clients/common/nm-meta-setting-desc.c:7542
-#: ../clients/common/nm-meta-setting-desc.c:7775
+#: ../clients/common/nm-meta-setting-desc.c:5673
+#: ../clients/common/nm-meta-setting-desc.c:7328
+#: ../clients/common/nm-meta-setting-desc.c:7366
+#: ../clients/common/nm-meta-setting-desc.c:7548
+#: ../clients/common/nm-meta-setting-desc.c:7781
 msgid "MAC [none]"
 msgstr "MAC [типово немає]"
 
@@ -5381,8 +5380,8 @@ msgid "Hairpin [no]"
 msgstr "Початкова зона [типово немає]"
 
 #: ../clients/common/nm-meta-setting-desc.c:5163
-#: ../clients/common/nm-meta-setting-desc.c:5590
-#: ../clients/common/nm-meta-setting-desc.c:7169
+#: ../clients/common/nm-meta-setting-desc.c:5596
+#: ../clients/common/nm-meta-setting-desc.c:7175
 msgid "Username [none]"
 msgstr "Користувач [типово немає]"
 
@@ -5438,25 +5437,25 @@ msgstr ""
 "«unknown» — дозволити NetworkManager вибирати значення за допомогою "
 "евристики\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5606
+#: ../clients/common/nm-meta-setting-desc.c:5612
 msgid "APN"
 msgstr "APN"
 
-#: ../clients/common/nm-meta-setting-desc.c:5676
-#: ../clients/common/nm-meta-setting-desc.c:7391
-#: ../clients/common/nm-meta-setting-desc.c:7582
+#: ../clients/common/nm-meta-setting-desc.c:5682
+#: ../clients/common/nm-meta-setting-desc.c:7397
+#: ../clients/common/nm-meta-setting-desc.c:7588
 msgid "MTU [auto]"
 msgstr "MTU [типово авто]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5695
+#: ../clients/common/nm-meta-setting-desc.c:5701
 msgid "P_KEY [none]"
 msgstr "P_KEY [типово немає]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5704
+#: ../clients/common/nm-meta-setting-desc.c:5710
 msgid "Parent interface [none]"
 msgstr "Батьківський інтерфейс [типово немає]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5731
+#: ../clients/common/nm-meta-setting-desc.c:5737
 msgid ""
 "Enter a list of IPv4 addresses of DNS servers.\n"
 "\n"
@@ -5466,11 +5465,11 @@ msgstr ""
 "\n"
 "Приклад: 8.8.8.8, 8.8.4.4\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5779
+#: ../clients/common/nm-meta-setting-desc.c:5785
 msgid "IPv4 address (IP[/plen]) [none]"
 msgstr "Адреса IPv4 (IP[/plen]) [немає]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5781
+#: ../clients/common/nm-meta-setting-desc.c:5787
 msgid ""
 "Enter a list of IPv4 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5484,11 +5483,11 @@ msgstr ""
 "\n"
 "Приклад: 192.168.1.5/24, 10.0.0.11/24\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5800
+#: ../clients/common/nm-meta-setting-desc.c:5806
 msgid "IPv4 gateway [none]"
 msgstr "Шлюз IPv4 [немає]"
 
-#: ../clients/common/nm-meta-setting-desc.c:5808
+#: ../clients/common/nm-meta-setting-desc.c:5814
 msgid ""
 "Enter a list of IPv4 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5511,7 +5510,7 @@ msgstr ""
 "Приклади: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
 "          10.1.2.0/24\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5848
+#: ../clients/common/nm-meta-setting-desc.c:5854
 msgid ""
 "Enter a list of IPv4 routing rules formatted as:\n"
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
@@ -5521,7 +5520,7 @@ msgstr ""
 "  priority [пріоритетність] [from [джерело]] [to [призначення]], ,...\n"
 "\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:5955
+#: ../clients/common/nm-meta-setting-desc.c:5961
 msgid ""
 "Enter a list of IPv6 addresses of DNS servers.  If the IPv6 configuration "
 "method is 'auto' these DNS servers are appended to those (if any) returned "
@@ -5542,11 +5541,11 @@ msgstr ""
 "\n"
 "Приклад: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:6009
+#: ../clients/common/nm-meta-setting-desc.c:6015
 msgid "IPv6 address (IP[/plen]) [none]"
 msgstr "Адреса IPv6 (IP[/plen]) [немає]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6011
+#: ../clients/common/nm-meta-setting-desc.c:6017
 msgid ""
 "Enter a list of IPv6 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5560,11 +5559,11 @@ msgstr ""
 "\n"
 "Приклад: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:6030
+#: ../clients/common/nm-meta-setting-desc.c:6036
 msgid "IPv6 gateway [none]"
 msgstr "Шлюз IPv6 [типово немає]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6038
+#: ../clients/common/nm-meta-setting-desc.c:6044
 msgid ""
 "Enter a list of IPv6 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5589,7 +5588,7 @@ msgstr ""
 "db8:beef::3 2\n"
 "          abbe::/64 55\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:6078
+#: ../clients/common/nm-meta-setting-desc.c:6084
 msgid ""
 "Enter a list of IPv6 routing rules formatted as:\n"
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
@@ -5599,174 +5598,174 @@ msgstr ""
 "  priority [пріоритетність] [from [джерело]] [to [призначення]], ,...\n"
 "\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:6185
-#: ../clients/common/nm-meta-setting-desc.c:7222
+#: ../clients/common/nm-meta-setting-desc.c:6191
+#: ../clients/common/nm-meta-setting-desc.c:7228
 msgid "Parent device [none]"
 msgstr "Батьківський пристрій [типово немає]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6191
+#: ../clients/common/nm-meta-setting-desc.c:6197
 msgid "Local endpoint [none]"
 msgstr "Локальна кінцева точка [типово немає]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6198
-#: ../clients/common/nm-meta-setting-desc.c:7241
+#: ../clients/common/nm-meta-setting-desc.c:6204
+#: ../clients/common/nm-meta-setting-desc.c:7247
 msgid "Remote"
 msgstr "Віддалений"
 
-#: ../clients/common/nm-meta-setting-desc.c:6243
+#: ../clients/common/nm-meta-setting-desc.c:6249
 msgid "MACsec parent device or connection UUID"
 msgstr "Батьківський пристрій MACsec або UUID з'єднання"
 
-#: ../clients/common/nm-meta-setting-desc.c:6264
+#: ../clients/common/nm-meta-setting-desc.c:6270
 msgid "Enable encryption [yes]"
 msgstr "Увімкнути шифрування [типово «так»]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6270
+#: ../clients/common/nm-meta-setting-desc.c:6276
 #: ../clients/common/nm-secret-agent-simple.c:929
 msgid "MKA CAK"
 msgstr "MKA CAK"
 
-#: ../clients/common/nm-meta-setting-desc.c:6280
+#: ../clients/common/nm-meta-setting-desc.c:6286
 msgid "MKA_CKN"
 msgstr "MKA_CKN"
 
-#: ../clients/common/nm-meta-setting-desc.c:6286
+#: ../clients/common/nm-meta-setting-desc.c:6292
 msgid "SCI port [1]"
 msgstr "Порт SCI [1]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6312
+#: ../clients/common/nm-meta-setting-desc.c:6318
 msgid "MACVLAN parent device or connection UUID"
 msgstr "Батьківський пристрій MACVLAN або UUID з'єднання"
 
-#: ../clients/common/nm-meta-setting-desc.c:6333
+#: ../clients/common/nm-meta-setting-desc.c:6339
 msgid "Tap [no]"
 msgstr "Tap [типово ні]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6400
-#: ../clients/common/nm-meta-setting-desc.c:7496
+#: ../clients/common/nm-meta-setting-desc.c:6406
+#: ../clients/common/nm-meta-setting-desc.c:7502
 #: ../clients/tui/nmt-page-wifi.c:203
 msgid "SSID"
 msgstr "SSID"
 
-#: ../clients/common/nm-meta-setting-desc.c:6409
+#: ../clients/common/nm-meta-setting-desc.c:6415
 msgid "OLPC Mesh channel [1]"
 msgstr "Канал OLPC Mesh [типово 1]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6418
+#: ../clients/common/nm-meta-setting-desc.c:6424
 msgid "DHCP anycast MAC address [none]"
 msgstr "MAC-адреса довільного надсилання (anycast) DHCP [типово немає]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6583
+#: ../clients/common/nm-meta-setting-desc.c:6589
 msgid "PPPoE parent device"
 msgstr "Батьківський пристрій PPPoE"
 
-#: ../clients/common/nm-meta-setting-desc.c:6589
+#: ../clients/common/nm-meta-setting-desc.c:6595
 msgid "Service [none]"
 msgstr "Служба [типово немає]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6596
+#: ../clients/common/nm-meta-setting-desc.c:6602
 msgid "PPPoE username"
 msgstr "Користувач PPPoE"
 
-#: ../clients/common/nm-meta-setting-desc.c:6632
+#: ../clients/common/nm-meta-setting-desc.c:6638
 msgid "Browser only [no]"
 msgstr "Лише навігатор [типово «ні»]"
 
-#: ../clients/common/nm-meta-setting-desc.c:6638
+#: ../clients/common/nm-meta-setting-desc.c:6644
 msgid "PAC URL"
 msgstr "Адреса PAC"
 
-#: ../clients/common/nm-meta-setting-desc.c:6644
+#: ../clients/common/nm-meta-setting-desc.c:6650
 msgid "PAC script"
 msgstr "Скрипт PAC"
 
-#: ../clients/common/nm-meta-setting-desc.c:6768
-#: ../clients/common/nm-meta-setting-desc.c:6956
+#: ../clients/common/nm-meta-setting-desc.c:6774
+#: ../clients/common/nm-meta-setting-desc.c:6962
 msgid "Team JSON configuration [none]"
 msgstr "Налаштування JSON команди [немає]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7059
+#: ../clients/common/nm-meta-setting-desc.c:7065
 msgid "User ID [none]"
 msgstr "Ідентифікатор користувача [типово немає]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7065
+#: ../clients/common/nm-meta-setting-desc.c:7071
 msgid "Group ID [none]"
 msgstr "Ідентифікатор групи [типово немає]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7071
+#: ../clients/common/nm-meta-setting-desc.c:7077
 msgid "Enable PI [no]"
 msgstr "Увімкнути PI [типово ні]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7077
+#: ../clients/common/nm-meta-setting-desc.c:7083
 msgid "Enable VNET header [no]"
 msgstr "Увімкнути заголовок VNET [типово ні]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7083
+#: ../clients/common/nm-meta-setting-desc.c:7089
 msgid "Enable multi queue [no]"
 msgstr "Увімкнути декілька черг [типово ні]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7096
+#: ../clients/common/nm-meta-setting-desc.c:7102
 msgid "veth peer"
 msgstr "вузол veth"
 
-#: ../clients/common/nm-meta-setting-desc.c:7109
+#: ../clients/common/nm-meta-setting-desc.c:7115
 msgid "VLAN parent device or connection UUID"
 msgstr "Батьківський пристрій VLAN або UUID з'єднання"
 
-#: ../clients/common/nm-meta-setting-desc.c:7116
+#: ../clients/common/nm-meta-setting-desc.c:7122
 msgid "VLAN ID (<0-4094>)"
 msgstr "Ід. VLAN (<0-4094>)"
 
-#: ../clients/common/nm-meta-setting-desc.c:7122
+#: ../clients/common/nm-meta-setting-desc.c:7128
 msgid "VLAN flags (<0-7>) [none]"
 msgstr "Прапорці VLAN (<0-7>) [типово немає]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7131
+#: ../clients/common/nm-meta-setting-desc.c:7137
 msgid "Ingress priority maps [none]"
 msgstr "Відображення пріоритетності вхідного доступу [типово немає]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7141
+#: ../clients/common/nm-meta-setting-desc.c:7147
 msgid "Egress priority maps [none]"
 msgstr "Відображення пріоритетності вихідного доступу [типово немає]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7209
+#: ../clients/common/nm-meta-setting-desc.c:7215
 msgid "Table [0]"
 msgstr "Таблиця [0]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7229
+#: ../clients/common/nm-meta-setting-desc.c:7235
 msgid "VXLAN ID"
 msgstr "Ід. VXLAN"
 
-#: ../clients/common/nm-meta-setting-desc.c:7235
+#: ../clients/common/nm-meta-setting-desc.c:7241
 msgid "Local address [none]"
 msgstr "Локальна адреса [типово немає]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7247
+#: ../clients/common/nm-meta-setting-desc.c:7253
 msgid "Minimum source port [0]"
 msgstr "Мінімальний порт джерела [0]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7253
+#: ../clients/common/nm-meta-setting-desc.c:7259
 msgid "Maximum source port [0]"
 msgstr "Максимальний порт джерела [0]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7259
+#: ../clients/common/nm-meta-setting-desc.c:7265
 msgid "Destination port [8472]"
 msgstr "Порт призначення [типово 8472]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7299
+#: ../clients/common/nm-meta-setting-desc.c:7305
 msgid "Peer"
 msgstr "Вузол"
 
-#: ../clients/common/nm-meta-setting-desc.c:7329
+#: ../clients/common/nm-meta-setting-desc.c:7335
 msgid "WiMAX NSP name"
 msgstr "Назва NSP WiMAX"
 
-#: ../clients/common/nm-meta-setting-desc.c:7366
-#: ../clients/common/nm-meta-setting-desc.c:7547
+#: ../clients/common/nm-meta-setting-desc.c:7372
+#: ../clients/common/nm-meta-setting-desc.c:7553
 msgid "Cloned MAC [none]"
 msgstr "Клонований MAC [типово немає]"
 
-#: ../clients/common/nm-meta-setting-desc.c:7399
+#: ../clients/common/nm-meta-setting-desc.c:7405
 msgid ""
 "Enter a list of subchannels (comma or space separated).\n"
 "\n"
@@ -5776,7 +5775,7 @@ msgstr ""
 "\n"
 "Приклад: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:7724
+#: ../clients/common/nm-meta-setting-desc.c:7730
 msgid ""
 "Enter the type of WEP keys. The accepted values are: 0 or unknown, 1 or key, "
 "and 2 or passphrase.\n"
@@ -5784,234 +5783,234 @@ msgstr ""
 "Вкажіть тип ключів WEP. Можливі значення: 0 або unknown (невідомо), 1 або "
 "key (ключ) та 2 або passphrase (пароль).\n"
 
-#: ../clients/common/nm-meta-setting-desc.c:7783
+#: ../clients/common/nm-meta-setting-desc.c:7789
 msgid "Short address (<0x0000-0xffff>)"
 msgstr "Коротка адреса (<0x0000-0xffff>)"
 
-#: ../clients/common/nm-meta-setting-desc.c:7799
+#: ../clients/common/nm-meta-setting-desc.c:7805
 msgid "PAN Identifier (<0x0000-0xffff>)"
 msgstr "Ідентифікатор PAN (<0x0000-0xffff>)"
 
-#: ../clients/common/nm-meta-setting-desc.c:7814
+#: ../clients/common/nm-meta-setting-desc.c:7820
 msgid "Page (<default|0-31>)"
 msgstr "Сторінка (<default|0-31>)"
 
-#: ../clients/common/nm-meta-setting-desc.c:7828
+#: ../clients/common/nm-meta-setting-desc.c:7834
 msgid "Channel (<default|0-26>)"
 msgstr "Канал (<default|0-26>)"
 
 #. ***************************************************************************
-#: ../clients/common/nm-meta-setting-desc.c:7963
+#: ../clients/common/nm-meta-setting-desc.c:7969
 msgid "6LOWPAN settings"
 msgstr "Параметри 6LOWPAN"
 
-#: ../clients/common/nm-meta-setting-desc.c:7964
+#: ../clients/common/nm-meta-setting-desc.c:7970
 msgid "802-1x settings"
 msgstr "Параметри 802-1x"
 
-#: ../clients/common/nm-meta-setting-desc.c:7965
-#: ../src/devices/adsl/nm-device-adsl.c:117
+#: ../clients/common/nm-meta-setting-desc.c:7971
+#: ../src/core/devices/adsl/nm-device-adsl.c:117
 msgid "ADSL connection"
 msgstr "З'єднання ADSL"
 
-#: ../clients/common/nm-meta-setting-desc.c:7966
+#: ../clients/common/nm-meta-setting-desc.c:7972
 msgid "bluetooth connection"
 msgstr "з'єднання bluetooth"
 
-#: ../clients/common/nm-meta-setting-desc.c:7967
+#: ../clients/common/nm-meta-setting-desc.c:7973
 msgid "Bond device"
 msgstr "Пристрій Bond"
 
-#: ../clients/common/nm-meta-setting-desc.c:7968
+#: ../clients/common/nm-meta-setting-desc.c:7974
 msgid "Bridge device"
 msgstr "Пристрій містка"
 
-#: ../clients/common/nm-meta-setting-desc.c:7969
+#: ../clients/common/nm-meta-setting-desc.c:7975
 msgid "Bridge port"
 msgstr "Порт містка"
 
-#: ../clients/common/nm-meta-setting-desc.c:7970
+#: ../clients/common/nm-meta-setting-desc.c:7976
 msgid "CDMA mobile broadband connection"
 msgstr "мобільне широкосмугове з'єднання CDMA"
 
-#: ../clients/common/nm-meta-setting-desc.c:7971
+#: ../clients/common/nm-meta-setting-desc.c:7977
 msgid "General settings"
 msgstr "Загальні параметри"
 
-#: ../clients/common/nm-meta-setting-desc.c:7972
+#: ../clients/common/nm-meta-setting-desc.c:7978
 msgid "DCB settings"
 msgstr "Параметри DCB"
 
-#: ../clients/common/nm-meta-setting-desc.c:7973
+#: ../clients/common/nm-meta-setting-desc.c:7979
 msgid "Dummy settings"
 msgstr "Фіктивні параметри"
 
-#: ../clients/common/nm-meta-setting-desc.c:7974
+#: ../clients/common/nm-meta-setting-desc.c:7980
 msgid "Ethtool settings"
 msgstr "Параметри Ethtool"
 
-#: ../clients/common/nm-meta-setting-desc.c:7975
+#: ../clients/common/nm-meta-setting-desc.c:7981
 msgid "Generic settings"
 msgstr "Загальні параметри"
 
-#: ../clients/common/nm-meta-setting-desc.c:7976
+#: ../clients/common/nm-meta-setting-desc.c:7982
 msgid "GSM mobile broadband connection"
 msgstr "мобільне широкосмугове з'єднання GSM"
 
-#: ../clients/common/nm-meta-setting-desc.c:7977
+#: ../clients/common/nm-meta-setting-desc.c:7983
 msgid "Hostname settings"
 msgstr "Параметри назви вузла"
 
-#: ../clients/common/nm-meta-setting-desc.c:7978
-#: ../src/devices/nm-device-infiniband.c:161
+#: ../clients/common/nm-meta-setting-desc.c:7984
+#: ../src/core/devices/nm-device-infiniband.c:161
 msgid "InfiniBand connection"
 msgstr "З'єднання InfiniBand"
 
-#: ../clients/common/nm-meta-setting-desc.c:7979
+#: ../clients/common/nm-meta-setting-desc.c:7985
 msgid "IPv4 protocol"
 msgstr "Протокол IPv4"
 
-#: ../clients/common/nm-meta-setting-desc.c:7980
+#: ../clients/common/nm-meta-setting-desc.c:7986
 msgid "IPv6 protocol"
 msgstr "Протокол IPv6"
 
-#: ../clients/common/nm-meta-setting-desc.c:7981
+#: ../clients/common/nm-meta-setting-desc.c:7987
 msgid "IP-tunnel settings"
 msgstr "Параметри IP-тунелювання"
 
-#: ../clients/common/nm-meta-setting-desc.c:7982
+#: ../clients/common/nm-meta-setting-desc.c:7988
 msgid "MACsec connection"
 msgstr "З'єднання MACsec"
 
-#: ../clients/common/nm-meta-setting-desc.c:7983
+#: ../clients/common/nm-meta-setting-desc.c:7989
 msgid "macvlan connection"
 msgstr "З'єднання MACVLAN"
 
-#: ../clients/common/nm-meta-setting-desc.c:7984
+#: ../clients/common/nm-meta-setting-desc.c:7990
 msgid "Match"
 msgstr "Відповідність"
 
-#: ../clients/common/nm-meta-setting-desc.c:7985
+#: ../clients/common/nm-meta-setting-desc.c:7991
 msgid "OLPC Mesh connection"
 msgstr "З'єднання OLPC Mesh"
 
-#: ../clients/common/nm-meta-setting-desc.c:7986
+#: ../clients/common/nm-meta-setting-desc.c:7992
 msgid "Open vSwitch bridge settings"
 msgstr "Параметри містка Open vSwitch"
 
-#: ../clients/common/nm-meta-setting-desc.c:7987
+#: ../clients/common/nm-meta-setting-desc.c:7993
 msgid "Open vSwitch DPDK interface settings"
 msgstr "Параметри інтерфейсу Open vSwitch DPDK"
 
-#: ../clients/common/nm-meta-setting-desc.c:7988
+#: ../clients/common/nm-meta-setting-desc.c:7994
 msgid "OVS External IDs"
 msgstr "Зовнішні ідентифікатори OVS"
 
-#: ../clients/common/nm-meta-setting-desc.c:7989
+#: ../clients/common/nm-meta-setting-desc.c:7995
 msgid "Open vSwitch interface settings"
 msgstr "Параметри інтерфейсу Open vSwitch"
 
-#: ../clients/common/nm-meta-setting-desc.c:7990
+#: ../clients/common/nm-meta-setting-desc.c:7996
 msgid "Open vSwitch patch interface settings"
 msgstr "Параметри інтерфейсу латок Open vSwitch"
 
-#: ../clients/common/nm-meta-setting-desc.c:7991
+#: ../clients/common/nm-meta-setting-desc.c:7997
 msgid "Open vSwitch port settings"
 msgstr "Параметри портів Open vSwitch"
 
-#: ../clients/common/nm-meta-setting-desc.c:7992
+#: ../clients/common/nm-meta-setting-desc.c:7998
 msgid "PPP settings"
 msgstr "Параметри PPP"
 
-#: ../clients/common/nm-meta-setting-desc.c:7993
+#: ../clients/common/nm-meta-setting-desc.c:7999
 msgid "PPPoE"
 msgstr "PPPoE"
 
-#: ../clients/common/nm-meta-setting-desc.c:7994
+#: ../clients/common/nm-meta-setting-desc.c:8000
 msgid "Proxy"
 msgstr "Проксі"
 
-#: ../clients/common/nm-meta-setting-desc.c:7995
+#: ../clients/common/nm-meta-setting-desc.c:8001
 msgid "Serial settings"
 msgstr "Параметри послідовного з'єднання"
 
-#: ../clients/common/nm-meta-setting-desc.c:7996
+#: ../clients/common/nm-meta-setting-desc.c:8002
 msgid "SR-IOV settings"
 msgstr "Параметри SR-IOV"
 
-#: ../clients/common/nm-meta-setting-desc.c:7997
+#: ../clients/common/nm-meta-setting-desc.c:8003
 msgid "Traffic controls"
 msgstr "Засоби керування обміном даними"
 
-#: ../clients/common/nm-meta-setting-desc.c:7998
+#: ../clients/common/nm-meta-setting-desc.c:8004
 msgid "Team device"
 msgstr "Пристрій Team"
 
-#: ../clients/common/nm-meta-setting-desc.c:7999
+#: ../clients/common/nm-meta-setting-desc.c:8005
 msgid "Team port"
 msgstr "Порт Team"
 
-#: ../clients/common/nm-meta-setting-desc.c:8000
+#: ../clients/common/nm-meta-setting-desc.c:8006
 msgid "Tun device"
 msgstr "Пристрій TUN"
 
-#: ../clients/common/nm-meta-setting-desc.c:8001
+#: ../clients/common/nm-meta-setting-desc.c:8007
 msgid "User settings"
 msgstr "Параметри користувача"
 
-#: ../clients/common/nm-meta-setting-desc.c:8002
-#: ../src/devices/nm-device-veth.c:138
+#: ../clients/common/nm-meta-setting-desc.c:8008
+#: ../src/core/devices/nm-device-ethernet.c:1611
 msgid "Veth connection"
 msgstr "З'єднання veth"
 
-#: ../clients/common/nm-meta-setting-desc.c:8003
-#: ../src/devices/nm-device-vlan.c:400
+#: ../clients/common/nm-meta-setting-desc.c:8009
+#: ../src/core/devices/nm-device-vlan.c:400
 msgid "VLAN connection"
 msgstr "З'єднання VLAN"
 
-#: ../clients/common/nm-meta-setting-desc.c:8004 ../src/nm-manager.c:5866
+#: ../clients/common/nm-meta-setting-desc.c:8010 ../src/core/nm-manager.c:5867
 msgid "VPN connection"
 msgstr "З'єднання VPN"
 
-#: ../clients/common/nm-meta-setting-desc.c:8005
-#: ../src/devices/nm-device-vrf.c:181
+#: ../clients/common/nm-meta-setting-desc.c:8011
+#: ../src/core/devices/nm-device-vrf.c:181
 msgid "VRF connection"
 msgstr "З'єднання VRF"
 
-#: ../clients/common/nm-meta-setting-desc.c:8006
-#: ../src/devices/nm-device-vxlan.c:382
+#: ../clients/common/nm-meta-setting-desc.c:8012
+#: ../src/core/devices/nm-device-vxlan.c:382
 msgid "VXLAN connection"
 msgstr "З'єднання VXLAN"
 
-#: ../clients/common/nm-meta-setting-desc.c:8007
+#: ../clients/common/nm-meta-setting-desc.c:8013
 msgid "Wi-Fi P2P connection"
 msgstr "З'єднання P2P Wi-Fi"
 
-#: ../clients/common/nm-meta-setting-desc.c:8008
+#: ../clients/common/nm-meta-setting-desc.c:8014
 msgid "WiMAX connection"
 msgstr "З'єднання WiMAX"
 
-#: ../clients/common/nm-meta-setting-desc.c:8009
+#: ../clients/common/nm-meta-setting-desc.c:8015
 msgid "Wired Ethernet"
 msgstr "Дротовий Ethernet"
 
-#: ../clients/common/nm-meta-setting-desc.c:8010
+#: ../clients/common/nm-meta-setting-desc.c:8016
 msgid "WireGuard VPN settings"
 msgstr "Параметри VPN WireGuard"
 
-#: ../clients/common/nm-meta-setting-desc.c:8011
+#: ../clients/common/nm-meta-setting-desc.c:8017
 msgid "Wi-Fi connection"
 msgstr "З'єднання Wi-Fi"
 
-#: ../clients/common/nm-meta-setting-desc.c:8012
+#: ../clients/common/nm-meta-setting-desc.c:8018
 msgid "Wi-Fi security settings"
 msgstr "Параметри захисту Wi-Fi"
 
-#: ../clients/common/nm-meta-setting-desc.c:8013
+#: ../clients/common/nm-meta-setting-desc.c:8019
 msgid "WPAN settings"
 msgstr "Параметри WPAN"
 
-#: ../clients/common/nm-meta-setting-desc.c:8413
+#: ../clients/common/nm-meta-setting-desc.c:8419
 msgid "name"
 msgstr "назва"
 
@@ -7109,33 +7108,34 @@ msgstr ""
 
 #: ../clients/common/settings-docs.h.in:70
 msgid ""
-"Specifies the allowed \"phase 2\" inner non-EAP authentication method when "
-"an EAP method that uses an inner TLS tunnel is specified in the \"eap\" "
-"property.  Recognized non-EAP \"phase 2\" methods are \"pap\", \"chap\", "
-"\"mschap\", \"mschapv2\", \"gtc\", \"otp\", \"md5\", and \"tls\". Each "
-"\"phase 2\" inner method requires specific parameters for successful "
-"authentication; see the wpa_supplicant documentation for more details."
+"Specifies the allowed \"phase 2\" inner authentication method when an EAP "
+"method that uses an inner TLS tunnel is specified in the \"eap\" property.  "
+"For TTLS this property selects one of the supported non-EAP inner methods: "
+"\"pap\", \"chap\", \"mschap\", \"mschapv2\" while \"phase2-autheap\" selects "
+"an EAP inner method.  For PEAP this selects an inner EAP method, one of: "
+"\"gtc\", \"otp\", \"md5\" and \"tls\". Each \"phase 2\" inner method "
+"requires specific parameters for successful authentication; see the "
+"wpa_supplicant documentation for more details. Both \"phase2-auth\" and "
+"\"phase2-autheap\" cannot be specified."
 msgstr ""
-"Визначає дозволені способи внутрішнього непов'язаного із EAP розпізнавання, "
+"Визначає дозволені способи внутрішнього розпізнавання, "
 "якщо у властивості «eap» вказано спосіб EAP, який використовує внутрішній "
-"тунель TLS. Відомими програмі способами «phase 2» без EAP є «pap», «chap», "
-"«mschap», «mschapv2», «gtc», «otp», «md5» і «tls». Для успішного "
+"тунель TLS. Для TLS ця властивість вибирає один із не пов'язаних із EAP методів «phase 2» є «pap», «chap», "
+"«mschap», «mschapv2», а «phase2-autheap» вибирає внутрішній метод EAP. Для PEAP цей параметр вибирає внутрішній метод EAP, один із таких варіантів: «gtc», «otp», «md5» і «tls». Для успішного "
 "розпізнавання для кожного з внутрішніх способів «phase 2» слід вказати "
 "специфічні параметри. Докладніший опис параметрів можна знайти у "
-"документації з wpa_supplicant."
+"документації з wpa_supplicant. Не можна одночасно вказувати «phase2-auth» і «phase2-autheap»."
 
 #: ../clients/common/settings-docs.h.in:71
 msgid ""
 "Specifies the allowed \"phase 2\" inner EAP-based authentication method when "
-"an EAP method that uses an inner TLS tunnel is specified in the \"eap\" "
-"property.  Recognized EAP-based \"phase 2\" methods are \"md5\", "
-"\"mschapv2\", \"otp\", \"gtc\", and \"tls\". Each \"phase 2\" inner method "
-"requires specific parameters for successful authentication; see the "
-"wpa_supplicant documentation for more details."
+"TTLS is specified in the \"eap\" property.  Recognized EAP-based \"phase 2\" "
+"methods are \"md5\", \"mschapv2\", \"otp\", \"gtc\", and \"tls\". Each "
+"\"phase 2\" inner method requires specific parameters for successful "
+"authentication; see the wpa_supplicant documentation for more details."
 msgstr ""
 "Визначає дозволені способи внутрішнього розпізнавання на основі EAP, якщо у "
-"властивості «eap» вказано спосіб EAP, який використовує внутрішній тунель "
-"TLS. Відомими програмі способами «phase 2» на основі EAP є «md5», "
+"властивості «eap» вказано TTLS. Відомими програмі способами «phase 2» на основі EAP є «md5», "
 "«mschapv2», «otp», «gtc» і «tls». Для успішного розпізнавання для кожного з "
 "внутрішніх способів «phase 2» слід вказати специфічні параметри. Докладніший "
 "опис параметрів можна знайти у документації з wpa_supplicant."
@@ -8735,7 +8735,7 @@ msgid ""
 "doesn't have the default route. When set to NM_TERNARY_DEFAULT (-1), the "
 "value from global configuration is used. If the property doesn't have a "
 "value in the global configuration, NetworkManager assumes the value to be "
-"NM_TERNARY_TRUE (1)."
+"NM_TERNARY_FALSE (0)."
 msgstr ""
 "Якщо встановити значення NM_TERNARY_TRUE (1), NetworkManager намагатиметься "
 "отримати назву вузла за допомогою DHCPv4/DHCPv6 або зворотного пошуку DNS на "
@@ -8745,7 +8745,7 @@ msgstr ""
 "типового маршруту. Якщо встановити значення NM_TERNARY_DEFAULT (-1), буде "
 "використано значення із загальних налаштувань. Якщо у властивості немає "
 "значення у загальних налаштуваннях, NetworkManager припускає значення "
-"NM_TERNARY_TRUE (1)."
+"NM_TERNARY_FALSE (0)."
 
 #: ../clients/common/settings-docs.h.in:209
 msgid ""
@@ -8971,30 +8971,29 @@ msgid ""
 msgstr ""
 "Рядок, надісланий до сервера DHCP для ідентифікації локального комп'ютера, "
 "який сервер DHCP може використовувати для налаштовування надання послуг і "
-"параметрів DHCP. Якщо властивість є шістнадцятковим рядком («aa:bb:cc»), його"
-" буде оброблено як двійковий ідентифікатор клієнта, а перший байт вважається "
-"значенням поля «type», відповідно до RFC 2132, розділ 9.14, а інші байти "
-"можуть бути апаратною адресою (наприклад, «01:xx:xx:xx:xx:xx:xx», де 1 є "
-"типом ARP Ethernet, а решта є MAC-адресою). Якщо властивість не є "
+"параметрів DHCP. Якщо властивість є шістнадцятковим рядком («aa:bb:cc»), "
+"його буде оброблено як двійковий ідентифікатор клієнта, а перший байт "
+"вважається значенням поля «type», відповідно до RFC 2132, розділ 9.14, а "
+"інші байти можуть бути апаратною адресою (наприклад, «01:xx:xx:xx:xx:xx:xx», "
+"де 1 є типом ARP Ethernet, а решта є MAC-адресою). Якщо властивість не є "
 "шістнадцятковим рядком, він вважається ідентифікатором клієнта без апаратної "
 "адреси, а для поля «type» встановлюється значення 0. Передбачено підтримку "
 "особливих значень «mac» та «perm-mac», використання яких призводить до "
 "використання поточної або сталої адреси MAC пристрою для створення "
-"ідентифікатора клієнта із типом ethernet (01). Якщо буде використано"
-" спеціальне значення «ipv6-duid», як сумісний із RFC4361 ідентифікатор"
-" клієнта буде використано DUID з властивості «ipv6.dhcp-duid». Як IAID буде"
-" використано «ipv4.dhcp-iaid». Якщо це значення не встановлено, буде"
-" використано резервне значення «ipv6.dhcp-iaid». Якщо буде використано "
+"ідентифікатора клієнта із типом ethernet (01). Якщо буде використано "
+"спеціальне значення «ipv6-duid», як сумісний із RFC4361 ідентифікатор "
+"клієнта буде використано DUID з властивості «ipv6.dhcp-duid». Як IAID буде "
+"використано «ipv4.dhcp-iaid». Якщо це значення не встановлено, буде "
+"використано резервне значення «ipv6.dhcp-iaid». Якщо буде використано "
 "спеціальне значення «duid», буде створено сумісний із RFC4361 ідентифікатор "
-"клієнта на основі «ipv4.dhcp-iaid» і використано DUID, який створено"
-" хешуванням /etc/machine-id. "
-"Передбачено підтримку спеціального значення «stable» для створення "
-"ідентифікатора клієнта типу 0 на основі stable-id (див. connection.stable-"
-"id) та власного ключа вузла. Якщо ви встановили stable-id, ймовірно, варто "
-"включити специфікатор «${DEVICE}» або «${MAC}» для отримання власного ключа "
-"пристрою. Якщо значення не встановлено, буде використано загальне типове "
-"налаштоване значення. Якщо і це значення не налаштовано, типове значення "
-"залежатиме від додатка DHCP."
+"клієнта на основі «ipv4.dhcp-iaid» і використано DUID, який створено "
+"хешуванням /etc/machine-id. Передбачено підтримку спеціального значення "
+"«stable» для створення ідентифікатора клієнта типу 0 на основі stable-id "
+"(див. connection.stable-id) та власного ключа вузла. Якщо ви встановили "
+"stable-id, ймовірно, варто включити специфікатор «${DEVICE}» або «${MAC}» "
+"для отримання власного ключа пристрою. Якщо значення не встановлено, буде "
+"використано загальне типове налаштоване значення. Якщо і це значення не "
+"налаштовано, типове значення залежатиме від додатка DHCP."
 
 #: ../clients/common/settings-docs.h.in:231
 msgid ""
@@ -9165,7 +9164,8 @@ msgid ""
 "request\", \"single-request-reopen\", \"timeout\", \"trust-ad\", \"use-vc\". "
 "The \"trust-ad\" setting is only honored if the profile contributes name "
 "servers to resolv.conf, and if all contributing profiles have \"trust-ad\" "
-"enabled."
+"enabled. When using a caching DNS plugin (dnsmasq or systemd-resolved in "
+"NetworkManager.conf) then \"edns0\" and \"trust-ad\" are automatically added."
 msgstr ""
 "Масив параметрів DNS, який описано на сторінці підручника (man 5) resolv."
 "conf. NULL означає, що параметри не встановлено і NetworkManager слід "
@@ -9176,7 +9176,7 @@ msgstr ""
 "reload», «no-tld-query», «rotate», «single-request», «single-request-"
 "reopen», «timeout», «trust-ad», «use-vc». Варіант «trust-ad» буде взято до "
 "уваги, лише якщо профіль вказує сервери назв у resolv.conf і для всіх "
-"відповідних профілів увімкнено «trust-ad»."
+"відповідних профілів увімкнено «trust-ad». Якщо використано додаток DNS із кешуванням (dnsmasq або systemd-resolved у NetworkManager.conf), «edns0» і «trust-ad» буде додано автоматично."
 
 #: ../clients/common/settings-docs.h.in:241
 #: ../clients/common/settings-docs.h.in:264
@@ -10896,7 +10896,7 @@ msgstr "З'єднання DSL %d"
 
 #: ../clients/tui/nm-editor-utils.c:180 ../libnm-core/nm-connection.c:2696
 #: ../libnm/nm-device.c:1675
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5467
+#: ../src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5467
 msgid "Bond"
 msgstr "Прив'язка"
 
@@ -10907,7 +10907,7 @@ msgstr "Прив'язане з'єднання %d"
 
 #: ../clients/tui/nm-editor-utils.c:189 ../libnm-core/nm-connection.c:2700
 #: ../libnm/nm-device.c:1679
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5875
+#: ../src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5875
 msgid "Bridge"
 msgstr "Місток"
 
@@ -10918,7 +10918,7 @@ msgstr "З'єднання містка %d"
 
 #: ../clients/tui/nm-editor-utils.c:198 ../libnm-core/nm-connection.c:2698
 #: ../libnm/nm-device.c:1677
-#: ../src/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5538
+#: ../src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5538
 msgid "Team"
 msgstr "Команда"
 
@@ -12131,242 +12131,237 @@ msgstr "IP-тунель"
 msgid "Method returned type '%s', but expected '%s'"
 msgstr "Методом повернуто тип «%s», хоча мав бути «%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile-utils.c:174
+#: ../libnm-core/nm-keyfile-utils.c:174
 #, c-format
 msgid "Value cannot be interpreted as a list of numbers."
 msgstr "Значення не може бути оброблено як список чисел."
 
-#: ../libnm-core/nm-keyfile/nm-keyfile-utils.c:303
+#: ../libnm-core/nm-keyfile-utils.c:303
 #, c-format
 msgid "value is not an integer in range [%lld, %lld]"
 msgstr "значення не є цілим числом у діапазоні [%lld, %lld]"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:269
+#: ../libnm-core/nm-keyfile.c:269
 msgid "ignoring missing number"
 msgstr "ігноруємо пропущене число"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:281
+#: ../libnm-core/nm-keyfile.c:281
 #, c-format
 msgid "ignoring invalid number '%s'"
 msgstr "ігноруємо некоректне число «%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:310
+#: ../libnm-core/nm-keyfile.c:310
 #, c-format
 msgid "ignoring invalid %s address: %s"
 msgstr "ігноруємо некоректну адресу %s: %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:356
+#: ../libnm-core/nm-keyfile.c:356
 #, c-format
 msgid "ignoring invalid gateway '%s' for %s route"
 msgstr "ігноруємо некоректний шлюз «%s» для маршруту %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:378
+#: ../libnm-core/nm-keyfile.c:378
 #, c-format
 msgid "ignoring invalid %s route: %s"
 msgstr "ігноруємо некоректний маршрут %s: %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:556
+#: ../libnm-core/nm-keyfile.c:556
 #, c-format
 msgid "unexpected character '%c' for address %s: '%s' (position %td)"
 msgstr "неочікуваний символ «%c» для адреси %s: «%s» (позиція %td)"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:572
+#: ../libnm-core/nm-keyfile.c:572
 #, c-format
 msgid "unexpected character '%c' for %s: '%s' (position %td)"
 msgstr "неочікуваний символ «%c» для %s: «%s» (позиція %td)"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:587
+#: ../libnm-core/nm-keyfile.c:587
 #, c-format
 msgid "unexpected character '%c' in prefix length for %s: '%s' (position %td)"
 msgstr "неочікуваний символ «%c» у префіксі довжини для %s: «%s» (позиція %td)"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:604
+#: ../libnm-core/nm-keyfile.c:604
 #, c-format
 msgid "garbage at the end of value %s: '%s'"
 msgstr "зайві дані наприкінці значення %s: «%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:614
+#: ../libnm-core/nm-keyfile.c:614
 #, c-format
 msgid "deprecated semicolon at the end of value %s: '%s'"
 msgstr "застаріла крапка з комою наприкінці значення %s: «%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:633
+#: ../libnm-core/nm-keyfile.c:633
 #, c-format
 msgid "invalid prefix length for %s '%s', defaulting to %d"
 msgstr "некоректний префікс довжини для %s «%s», повертаємося до типового, %d"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:645
+#: ../libnm-core/nm-keyfile.c:645
 #, c-format
 msgid "missing prefix length for %s '%s', defaulting to %d"
 msgstr "пропущено префікс довжини для %s «%s», повертаємося до типового, %d"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:988
+#: ../libnm-core/nm-keyfile.c:988
 #: ../libnm-core/nm-setting-ovs-external-ids.c:320
 #: ../libnm-core/nm-setting-user.c:372
 #, c-format
 msgid "invalid value for \"%s\": %s"
 msgstr "некоректне значення для «%s»: %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1066
+#: ../libnm-core/nm-keyfile.c:1066
 #, c-format
 msgid "ignoring invalid DNS server IPv%c address '%s'"
 msgstr "ігноруємо некоректну адресу IPv%c сервера DNS «%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1161
+#: ../libnm-core/nm-keyfile.c:1161
 msgid "ignoring invalid MAC address"
 msgstr "ігноруємо некоректну MAC-адресу"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1237
+#: ../libnm-core/nm-keyfile.c:1237
 #, c-format
 msgid "ignoring invalid bond option %s%s%s = %s%s%s: %s"
 msgstr "ігноруємо некоректний параметр bond %s%s%s = %s%s%s: %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1427
+#: ../libnm-core/nm-keyfile.c:1427
 msgid "ignoring invalid SSID"
 msgstr "ігноруємо некоректний SSID"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1445
+#: ../libnm-core/nm-keyfile.c:1445
 msgid "ignoring invalid raw password"
 msgstr "ігноруємо некоректний необроблений пароль"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1586
+#: ../libnm-core/nm-keyfile.c:1586
 msgid "invalid key/cert value"
 msgstr "некоректне значення ключа/сертифіката"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1601
+#: ../libnm-core/nm-keyfile.c:1601
 #, c-format
 msgid "invalid key/cert value path \"%s\""
 msgstr "некоректний шлях до ключа/сертифіката, «%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1626
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1723
+#: ../libnm-core/nm-keyfile.c:1626 ../libnm-core/nm-keyfile.c:1723
 #, c-format
 msgid "certificate or key file '%s' does not exist"
 msgstr "файла сертифіката або ключа «%s» не існує"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1639
+#: ../libnm-core/nm-keyfile.c:1639
 #, c-format
 msgid "invalid PKCS#11 URI \"%s\""
 msgstr "некоректна адреса PKCS#11 «%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1685
+#: ../libnm-core/nm-keyfile.c:1685
 msgid "invalid key/cert value data:;base64, is not base64"
 msgstr "некоректні дані значення ключа/сертифіката data:;base64, не є base64"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1698
+#: ../libnm-core/nm-keyfile.c:1698
 msgid "invalid key/cert value data:;base64,file://"
 msgstr "некоректне значення ключа/сертифіката data:;base64,file://"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1739
+#: ../libnm-core/nm-keyfile.c:1739
 msgid "invalid key/cert value is not a valid blob"
 msgstr ""
 "некоректне значення ключа/сертифіката, не є коректним значення «%s» не є "
 "коректним великим бінарним об'єктом"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1841
+#: ../libnm-core/nm-keyfile.c:1841
 #, c-format
 msgid "invalid parity value '%s'"
 msgstr "некоректне значення парності, «%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1863
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3336
+#: ../libnm-core/nm-keyfile.c:1863 ../libnm-core/nm-keyfile.c:3336
 #, c-format
 msgid "invalid setting: %s"
 msgstr "некоректний параметр: %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1883
+#: ../libnm-core/nm-keyfile.c:1883
 #, c-format
 msgid "ignoring invalid team configuration: %s"
 msgstr "ігноруємо некоректне налаштування команди: %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:1966
+#: ../libnm-core/nm-keyfile.c:1966
 #, c-format
 msgid "invalid qdisc: %s"
 msgstr "некоректний qdisc: %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:2016
+#: ../libnm-core/nm-keyfile.c:2016
 #, c-format
 msgid "invalid tfilter: %s"
 msgstr "некоректний tfilter: %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3161
+#: ../libnm-core/nm-keyfile.c:3161
 #, c-format
 msgid "error loading setting value: %s"
 msgstr "помилка під час завантаження значення параметра: %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3192
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3204
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3223
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3235
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3247
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3309
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3321
+#: ../libnm-core/nm-keyfile.c:3192 ../libnm-core/nm-keyfile.c:3204
+#: ../libnm-core/nm-keyfile.c:3223 ../libnm-core/nm-keyfile.c:3235
+#: ../libnm-core/nm-keyfile.c:3247 ../libnm-core/nm-keyfile.c:3309
+#: ../libnm-core/nm-keyfile.c:3321
 msgid "value cannot be interpreted as integer"
 msgstr "значення не може бути оброблено як ціле число"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3277
+#: ../libnm-core/nm-keyfile.c:3277
 #, c-format
 msgid "ignoring invalid byte element '%u' (not between 0 and 255 inclusive)"
 msgstr ""
 "ігноруємо некоректний байтовий елемент «%u» (не у діапазоні від 0 до 255, "
 "включно)"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3361
+#: ../libnm-core/nm-keyfile.c:3361
 #, c-format
 msgid "invalid setting name '%s'"
 msgstr "некоректна назва параметра, «%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3408
+#: ../libnm-core/nm-keyfile.c:3408
 #, c-format
 msgid "invalid key '%s.%s'"
 msgstr "некоректний ключ «%s.%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3424
+#: ../libnm-core/nm-keyfile.c:3424
 #, c-format
 msgid "key '%s.%s' is not boolean"
 msgstr "ключ «%s.%s» не є булевим значенням"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3441
+#: ../libnm-core/nm-keyfile.c:3441
 #, c-format
 msgid "key '%s.%s' is not a uint32"
 msgstr "ключ «%s.%s» не є значенням uint32"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3498
+#: ../libnm-core/nm-keyfile.c:3498
 #, c-format
 msgid "invalid peer public key in section '%s'"
 msgstr "некоректний відкритий ключ вузла у розділі «%s»"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3513
+#: ../libnm-core/nm-keyfile.c:3513
 #, c-format
 msgid "key '%s.%s' is not a valid 256 bit key in base64 encoding"
 msgstr "ключ «%s.%s» не є коректним 256-бітовим ключем у кодуванні base64"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3536
+#: ../libnm-core/nm-keyfile.c:3536
 #, c-format
 msgid "key '%s.%s' is not a valid secret flag"
 msgstr "ключ «%s.%s» не є коректним прапорцем реєстраційних даних"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3559
+#: ../libnm-core/nm-keyfile.c:3559
 #, c-format
 msgid "key '%s.%s' is not a integer in range 0 to 2^32"
 msgstr "ключ «%s.%s» не є цілими числом у діапазоні від 0 до 2^32"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3575
+#: ../libnm-core/nm-keyfile.c:3575
 #, c-format
 msgid "key '%s.%s' is not a valid endpoint"
 msgstr "ключ «%s.%s» не є коректною кінцевою точкою"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3601
+#: ../libnm-core/nm-keyfile.c:3601
 #, c-format
 msgid "key '%s.%s' has invalid allowed-ips"
 msgstr "для ключа «%s.%s» вказано некоректне значення allowed-ips"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:3616
+#: ../libnm-core/nm-keyfile.c:3616
 #, c-format
 msgid "peer '%s' is invalid: %s"
 msgstr "вузол «%s» є некоректним: %s"
 
-#: ../libnm-core/nm-keyfile/nm-keyfile.c:4107
+#: ../libnm-core/nm-keyfile.c:4107
 #, c-format
 msgid "the profile is not valid: %s"
 msgstr "профіль є некоректним: %s"
@@ -12545,7 +12540,7 @@ msgstr "можна вмикати лише для з'єднань Ethernet"
 #: ../libnm-core/nm-setting-wireless.c:884
 #: ../libnm-core/nm-setting-wireless.c:896
 #: ../libnm-core/nm-setting-wireless.c:909 ../libnm-core/nm-setting-wpan.c:161
-#: ../libnm-core/nm-utils.c:4541
+#: ../libnm-core/nm-utils.c:4532
 msgid "property is invalid"
 msgstr "властивість є некоректною"
 
@@ -14012,7 +14007,7 @@ msgid "team config is not valid UTF-8"
 msgstr "файл налаштувань team не є коректними даними у кодуванні UTF-8"
 
 #: ../libnm-core/nm-team-utils.c:2396
-#: ../src/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c:9939
+#: ../src/core/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c:9941
 #, c-format
 msgid "invalid json"
 msgstr "некоректний код JSON"
@@ -14119,136 +14114,136 @@ msgstr "Підтримки архівів libtool не передбачено (%
 msgid "Could not find \"%s\" binary"
 msgstr "Не вдалося знайти виконуваний файл «%s»"
 
-#: ../libnm-core/nm-utils.c:4492
+#: ../libnm-core/nm-utils.c:4483
 msgid "unknown secret flags"
 msgstr "невідомі прапорці реєстраційних даних"
 
-#: ../libnm-core/nm-utils.c:4502
+#: ../libnm-core/nm-utils.c:4493
 msgid "conflicting secret flags"
 msgstr "конфлікт прапорців реєстраційних даних"
 
-#: ../libnm-core/nm-utils.c:4513
+#: ../libnm-core/nm-utils.c:4504
 msgid "secret flags must not be \"not-required\""
 msgstr "прапорці реєстраційних даних не можуть бути «not-required»"
 
-#: ../libnm-core/nm-utils.c:4521
+#: ../libnm-core/nm-utils.c:4512
 msgid "unsupported secret flags"
 msgstr "непідтримувані прапорці реєстраційних даних"
 
-#: ../libnm-core/nm-utils.c:4551
+#: ../libnm-core/nm-utils.c:4542
 msgid "can't be simultaneously disabled and enabled"
 msgstr "не може бути одночасно вимкнено і увімкнено"
 
-#: ../libnm-core/nm-utils.c:4559
+#: ../libnm-core/nm-utils.c:4550
 msgid "WPS is required"
 msgstr "Потрібна WPS"
 
-#: ../libnm-core/nm-utils.c:4627
+#: ../libnm-core/nm-utils.c:4618
 #, c-format
 msgid "not a valid ethernet MAC address for mask at position %lld"
 msgstr "некоректна адреса MAC ethernet для маски у позиції %lld"
 
-#: ../libnm-core/nm-utils.c:4646
+#: ../libnm-core/nm-utils.c:4637
 #, c-format
 msgid "not a valid ethernet MAC address #%u at position %lld"
 msgstr "некоректна адреса MAC ethernet #%u у позиції %lld"
 
-#: ../libnm-core/nm-utils.c:5301
+#: ../libnm-core/nm-utils.c:5292
 msgid "not valid utf-8"
 msgstr "некоректні дані UTF-8"
 
-#: ../libnm-core/nm-utils.c:5322 ../libnm-core/nm-utils.c:5375
+#: ../libnm-core/nm-utils.c:5313 ../libnm-core/nm-utils.c:5366
 msgid "is not a JSON object"
 msgstr "не є об'єктом JSON"
 
-#: ../libnm-core/nm-utils.c:5351
+#: ../libnm-core/nm-utils.c:5342
 msgid "value is NULL"
 msgstr "значенням є NULL"
 
-#: ../libnm-core/nm-utils.c:5351
+#: ../libnm-core/nm-utils.c:5342
 msgid "value is empty"
 msgstr "порожнє значення"
 
-#: ../libnm-core/nm-utils.c:5363
+#: ../libnm-core/nm-utils.c:5354
 #, c-format
 msgid "invalid JSON at position %d (%s)"
 msgstr "некоректний код JSON на позиції %d (%s)"
 
-#: ../libnm-core/nm-utils.c:5493 ../libnm-core/nm-utils.c:5513
+#: ../libnm-core/nm-utils.c:5484 ../libnm-core/nm-utils.c:5504
 msgid "unterminated escape sequence"
 msgstr "незавершена екранована послідовність"
 
-#: ../libnm-core/nm-utils.c:5539
+#: ../libnm-core/nm-utils.c:5530
 #, c-format
 msgid "unknown attribute '%s'"
 msgstr "невідомий атрибут «%s»"
 
-#: ../libnm-core/nm-utils.c:5557
+#: ../libnm-core/nm-utils.c:5548
 #, c-format
 msgid "missing key-value separator '%c' after '%s'"
 msgstr "пропущено роздільник пар ключ-значення «%c» після «%s»"
 
-#: ../libnm-core/nm-utils.c:5577
+#: ../libnm-core/nm-utils.c:5568
 #, c-format
 msgid "invalid uint32 value '%s' for attribute '%s'"
 msgstr "некоректне значення uint32 «%s» атрибута «%s»"
 
-#: ../libnm-core/nm-utils.c:5591
+#: ../libnm-core/nm-utils.c:5582
 #, c-format
 msgid "invalid int32 value '%s' for attribute '%s'"
 msgstr "некоректне значення int32 «%s» атрибута «%s»"
 
-#: ../libnm-core/nm-utils.c:5604
+#: ../libnm-core/nm-utils.c:5595
 #, c-format
 msgid "invalid uint64 value '%s' for attribute '%s'"
 msgstr "некоректне значення uint64 «%s» атрибута «%s»"
 
-#: ../libnm-core/nm-utils.c:5617
+#: ../libnm-core/nm-utils.c:5608
 #, c-format
 msgid "invalid uint8 value '%s' for attribute '%s'"
 msgstr "некоректне значення uint8 «%s» атрибута «%s»"
 
-#: ../libnm-core/nm-utils.c:5631
+#: ../libnm-core/nm-utils.c:5622
 #, c-format
 msgid "invalid boolean value '%s' for attribute '%s'"
 msgstr "некоректне булеве значення «%s» атрибута «%s»"
 
-#: ../libnm-core/nm-utils.c:5645
+#: ../libnm-core/nm-utils.c:5636
 #, c-format
 msgid "unsupported attribute '%s' of type '%s'"
 msgstr "непідтримуваний атрибут «%s» типу «%s»"
 
-#: ../libnm-core/nm-utils.c:5947
+#: ../libnm-core/nm-utils.c:5938
 #, c-format
 msgid "Bridge VLANs %d and %d are not sorted by ascending vid"
 msgstr "VLAN містка %d і %d не упорядковано за зростанням vid"
 
-#: ../libnm-core/nm-utils.c:5971
+#: ../libnm-core/nm-utils.c:5962
 #, c-format
 msgid "duplicate bridge VLAN vid %u"
 msgstr "дублікат містка vid VLAN %u"
 
-#: ../libnm-core/nm-utils.c:5983
+#: ../libnm-core/nm-utils.c:5974
 msgid "only one VLAN can be the PVID"
 msgstr "лише одна з VLAN може бути PVID"
 
-#: ../libnm-core/nm-utils.c:6028
+#: ../libnm-core/nm-utils.c:6019
 #, c-format
 msgid "unknown flags 0x%x"
 msgstr "невідомі прапорці 0x%x"
 
-#: ../libnm-core/nm-utils.c:6040
+#: ../libnm-core/nm-utils.c:6031
 msgid ""
 "'fqdn-no-update' and 'fqdn-serv-update' flags cannot be set at the same time"
 msgstr ""
 "не можна одночасно встановлювати прапорці «fqdn-no-update» і «fqdn-serv-"
 "update»"
 
-#: ../libnm-core/nm-utils.c:6051
+#: ../libnm-core/nm-utils.c:6042
 msgid "'fqdn-clear-flags' flag is incompatible with other FQDN flags"
 msgstr "прапорець «fqdn-clear-flags» є несумісним із іншими прапорцями FQDN"
 
-#: ../libnm-core/nm-utils.c:6059
+#: ../libnm-core/nm-utils.c:6050
 msgid "DHCPv6 does not support the E (encoded) FQDN flag"
 msgstr "у DHCPv6 не передбачено підтримки прапорця E (закодовано) FQDN"
 
@@ -14815,36 +14810,36 @@ msgstr ""
 "Правила системи забороняють вмикання або вимикання перевірки придатності до "
 "з'єднання"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:2350
+#: ../shared/nm-glib-aux/nm-shared-utils.c:2352
 #, c-format
 msgid "object class '%s' has no property named '%s'"
 msgstr "у класі об'єктів «%s» немає властивості із назвою «%s»"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:2359
+#: ../shared/nm-glib-aux/nm-shared-utils.c:2361
 #, c-format
 msgid "property '%s' of object class '%s' is not writable"
 msgstr "властивість «%s» класу об'єктів «%s» є непридатною до запису"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:2368
+#: ../shared/nm-glib-aux/nm-shared-utils.c:2370
 #, c-format
 msgid ""
 "construct property \"%s\" for object '%s' can't be set after construction"
 msgstr ""
 "властивість construct «%s» об'єкта «%s» не можна встановлювати після побудови"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:2379
+#: ../shared/nm-glib-aux/nm-shared-utils.c:2381
 #, c-format
 msgid "'%s::%s' is not a valid property name; '%s' is not a GObject subtype"
 msgstr "«%s::%s» не є коректною назвою властивості; «%s» не є підтипом GObject"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:2392
+#: ../shared/nm-glib-aux/nm-shared-utils.c:2394
 #, c-format
 msgid "unable to set property '%s' of type '%s' from value of type '%s'"
 msgstr ""
 "не вдалося встановити значення властивості «%s» типу «%s» на основі значення "
 "типу «%s»"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:2404
+#: ../shared/nm-glib-aux/nm-shared-utils.c:2406
 #, c-format
 msgid ""
 "value \"%s\" of type '%s' is invalid or out of range for property '%s' of "
@@ -14853,99 +14848,109 @@ msgstr ""
 "значення «%s» типу «%s» є некоректним для властивості «%s» типу «%s» або не "
 "належить до припустимого діапазону значень"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5152
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5204
 msgid "interface name is missing"
 msgstr "пропущено назву інтерфейсу"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5160
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5212
 msgid "interface name is too short"
 msgstr "назва інтерфейсу є надто короткою"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5168
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5220
 msgid "interface name is reserved"
 msgstr "таку назву інтерфейсу зарезервовано"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5181
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5233
 msgid "interface name contains an invalid character"
 msgstr "назва інтерфейсу містить некоректний символ"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5189
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5241
 msgid "interface name is longer than 15 characters"
 msgstr "назва інтерфейсу є довшою за 15 символів"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5214
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5266
 #, c-format
 msgid "'%%' is not allowed in interface names"
 msgstr "«%%» не можна використовувати у назвах інтерфейсів"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5226
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5278
 #, c-format
 msgid "'%s' is not allowed as interface name"
 msgstr "«%s» не можна використовувати як назву інтерфейсу"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5248
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5300
 msgid ""
 "interface name must be alphanumerical with no forward or backward slashes"
 msgstr ""
 "назва інтерфейсу має складатися з літер і цифр без початкового і "
 "завершального символів похилої риски"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5265
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5317
 msgid "interface name must not be empty"
 msgstr "назва інтерфейсу не може бути порожньою"
 
-#: ../shared/nm-glib-aux/nm-shared-utils.c:5273
+#: ../shared/nm-glib-aux/nm-shared-utils.c:5325
 msgid "interface name must be UTF-8 encoded"
 msgstr "назва інтерфейсу має бути набором символів у кодуванні UTF-8"
+
+#: ../shared/nm-log-core/nm-logging.c:251
+#, c-format
+msgid "Unknown log level '%s'"
+msgstr "Невідомий рівень ведення журналу, «%s»"
+
+#: ../shared/nm-log-core/nm-logging.c:359
+#, c-format
+msgid "Unknown log domain '%s'"
+msgstr "Невідомий домен ведення журналу, «%s»"
 
 #. TRANSLATORS: the first %s is a prefix for the connection id, such
 #. * as "Wired Connection" or "VPN Connection". The %d is a number
 #. * that is combined with the first argument to create a unique
 #. * connection id.
-#: ../src/NetworkManagerUtils.c:109
+#: ../src/core/NetworkManagerUtils.c:109
 #, c-format
 msgctxt "connection id fallback"
 msgid "%s %u"
 msgstr "%s %u"
 
-#: ../src/main.c:163 ../src/main.c:384
+#: ../src/core/main.c:163 ../src/core/main.c:384
 #, c-format
 msgid "Failed to read configuration: %s\n"
 msgstr "Не вдалося прочитати налаштування: %s\n"
 
-#: ../src/main.c:190 ../src/nm-iface-helper.c:406
+#: ../src/core/main.c:190 ../src/core/nm-iface-helper.c:406
 msgid "Print NetworkManager version and exit"
 msgstr "Вивести дані щодо версії NetworkManager і завершити роботу"
 
-#: ../src/main.c:197 ../src/nm-iface-helper.c:413
+#: ../src/core/main.c:197 ../src/core/nm-iface-helper.c:413
 msgid "Don't become a daemon"
 msgstr "Не переходити у стан фонової служби"
 
-#: ../src/main.c:204 ../src/nm-iface-helper.c:427
+#: ../src/core/main.c:204 ../src/core/nm-iface-helper.c:427
 #, c-format
 msgid "Log level: one of [%s]"
 msgstr "Рівень докладності журналу: одне з таких значень: [%s]"
 
-#: ../src/main.c:211 ../src/nm-iface-helper.c:434
+#: ../src/core/main.c:211 ../src/core/nm-iface-helper.c:434
 #, c-format
 msgid "Log domains separated by ',': any combination of [%s]"
 msgstr ""
 "Список доменів для ведення журналу, відокремлених символом «,»: будь-яка "
 "комбінація з [%s]"
 
-#: ../src/main.c:218 ../src/nm-iface-helper.c:441
+#: ../src/core/main.c:218 ../src/core/nm-iface-helper.c:441
 msgid "Make all warnings fatal"
 msgstr "Вважати всі попередження помилками"
 
-#: ../src/main.c:225
+#: ../src/core/main.c:225
 msgid "Specify the location of a PID file"
 msgstr "Вказати розташування файла ідентифікатора процесу (PID)"
 
-#: ../src/main.c:239
+#: ../src/core/main.c:239
 msgid "Print NetworkManager configuration and exit"
 msgstr "Вивести дані щодо налаштувань NetworkManager і завершити роботу"
 
-#: ../src/main.c:250
+#: ../src/core/main.c:250
 msgid ""
 "NetworkManager monitors all network connections and automatically\n"
 "chooses the best connection to use.  It also allows the user to\n"
@@ -14958,53 +14963,54 @@ msgstr ""
 "з якими слід пов'язувати картки бездротового доступу на вашому\n"
 "комп'ютері."
 
-#: ../src/main.c:374 ../src/main-utils.c:284 ../src/nm-iface-helper.c:585
+#: ../src/core/main.c:374 ../src/core/main-utils.c:284
+#: ../src/core/nm-iface-helper.c:585
 #, c-format
 msgid "%s.  Please use --help to see a list of valid options.\n"
 msgstr ""
 "%s. Щоб ознайомитися зі списком параметрів, скористайтеся параметром --"
 "help.\n"
 
-#: ../src/main.c:407 ../src/nm-iface-helper.c:599
+#: ../src/core/main.c:407 ../src/core/nm-iface-helper.c:599
 #, c-format
 msgid "Could not daemonize: %s [error %u]\n"
 msgstr "Не вдалося створити фонову службу: %s [помилка %u]\n"
 
-#: ../src/main-utils.c:87
+#: ../src/core/main-utils.c:87
 #, c-format
 msgid "Opening %s failed: %s\n"
 msgstr "Помилка під час спроби відкрити %s: %s\n"
 
-#: ../src/main-utils.c:94
+#: ../src/core/main-utils.c:94
 #, c-format
 msgid "Writing to %s failed: %s\n"
 msgstr "Помилка під час спроби запису даних до %s: %s\n"
 
-#: ../src/main-utils.c:100
+#: ../src/core/main-utils.c:100
 #, c-format
 msgid "Closing %s failed: %s\n"
 msgstr "Не вдалося завершити роботу %s: %s\n"
 
-#: ../src/main-utils.c:140 ../src/main-utils.c:152
+#: ../src/core/main-utils.c:140 ../src/core/main-utils.c:152
 #, c-format
 msgid "Cannot create '%s': %s"
 msgstr "Не вдалося створити «%s»: %s"
 
-#: ../src/main-utils.c:207
+#: ../src/core/main-utils.c:207
 #, c-format
 msgid "%s is already running (pid %ld)\n"
 msgstr "%s вже працює (pid %ld)\n"
 
-#: ../src/main-utils.c:217
+#: ../src/core/main-utils.c:217
 #, c-format
 msgid "You must be root to run %s!\n"
 msgstr "Для виконання %s потрібно перейти у режим root!\n"
 
-#: ../src/dhcp/nm-dhcp-dhclient-utils.c:316
+#: ../src/core/dhcp/nm-dhcp-dhclient-utils.c:316
 msgid "# Created by NetworkManager\n"
 msgstr "# Створено за допомогою NetworkManager\n"
 
-#: ../src/dhcp/nm-dhcp-dhclient-utils.c:329
+#: ../src/core/dhcp/nm-dhcp-dhclient-utils.c:329
 #, c-format
 msgid ""
 "# Merged from %s\n"
@@ -15013,251 +15019,251 @@ msgstr ""
 "# Об'єднано з %s\n"
 "\n"
 
-#: ../src/devices/bluetooth/nm-bluez-manager.c:1325
+#: ../src/core/devices/bluetooth/nm-bluez-manager.c:1325
 #, c-format
 msgid "%s Network"
 msgstr "Мережа %s"
 
-#: ../src/devices/bluetooth/nm-device-bt.c:301
+#: ../src/core/devices/bluetooth/nm-device-bt.c:301
 msgid "PAN requested, but Bluetooth device does not support NAP"
 msgstr ""
 "Надіслано запит щодо PAN, але у пристрої Bluetooth не передбачено підтримки "
 "NAP"
 
-#: ../src/devices/bluetooth/nm-device-bt.c:314
+#: ../src/core/devices/bluetooth/nm-device-bt.c:314
 msgid "PAN connections cannot specify GSM, CDMA, or serial settings"
 msgstr ""
 "Записи з'єднання PAN не можуть вказувати параметрів GSM, CDMA або "
 "послідовного пристрою"
 
-#: ../src/devices/bluetooth/nm-device-bt.c:329
+#: ../src/core/devices/bluetooth/nm-device-bt.c:329
 msgid "PAN connection"
 msgstr "З'єднання PAN"
 
-#: ../src/devices/bluetooth/nm-device-bt.c:336
+#: ../src/core/devices/bluetooth/nm-device-bt.c:336
 msgid "DUN requested, but Bluetooth device does not support DUN"
 msgstr ""
 "Надіслано запит щодо DUN, але у пристрої Bluetooth не передбачено підтримки "
 "DUN"
 
-#: ../src/devices/bluetooth/nm-device-bt.c:349
+#: ../src/core/devices/bluetooth/nm-device-bt.c:349
 msgid "DUN connection must include a GSM or CDMA setting"
 msgstr "З'єднання DUN має включати параметр GSM або CDMA"
 
-#: ../src/devices/bluetooth/nm-device-bt.c:360
-#: ../src/devices/wwan/nm-modem-broadband.c:821
+#: ../src/core/devices/bluetooth/nm-device-bt.c:360
+#: ../src/core/devices/wwan/nm-modem-broadband.c:821
 msgid "GSM connection"
 msgstr "З'єднання GSM"
 
-#: ../src/devices/bluetooth/nm-device-bt.c:362
-#: ../src/devices/wwan/nm-modem-broadband.c:846
+#: ../src/core/devices/bluetooth/nm-device-bt.c:362
+#: ../src/core/devices/wwan/nm-modem-broadband.c:846
 msgid "CDMA connection"
 msgstr "З'єднання CDMA"
 
-#: ../src/devices/bluetooth/nm-device-bt.c:370
+#: ../src/core/devices/bluetooth/nm-device-bt.c:370
 msgid "Unknown/unhandled Bluetooth connection type"
 msgstr "Невідомий або непридатний тип з'єднання Bluetooth"
 
-#: ../src/devices/bluetooth/nm-device-bt.c:395
+#: ../src/core/devices/bluetooth/nm-device-bt.c:395
 msgid "connection does not match device"
 msgstr "з'єднання не відповідає пристрою"
 
-#: ../src/devices/nm-device-6lowpan.c:190
+#: ../src/core/devices/nm-device-6lowpan.c:190
 msgid "6LOWPAN connection"
 msgstr "З'єднання 6LOWPAN"
 
-#: ../src/devices/nm-device-bond.c:89
+#: ../src/core/devices/nm-device-bond.c:89
 msgid "Bond connection"
 msgstr "Прив'язане з'єднання"
 
-#: ../src/devices/nm-device-bridge.c:155
+#: ../src/core/devices/nm-device-bridge.c:155
 msgid "Bridge connection"
 msgstr "З'єднання містка"
 
-#: ../src/devices/nm-device-dummy.c:58
+#: ../src/core/devices/nm-device-dummy.c:58
 msgid "Dummy connection"
 msgstr "Фіктивне з'єднання"
 
-#: ../src/devices/nm-device-ethernet.c:1621
+#: ../src/core/devices/nm-device-ethernet.c:1677
 msgid "PPPoE connection"
 msgstr "З'єднання PPPoE"
 
-#: ../src/devices/nm-device-ethernet.c:1621
+#: ../src/core/devices/nm-device-ethernet.c:1677
 msgid "Wired connection"
 msgstr "Дротове з'єднання"
 
-#: ../src/devices/nm-device-ethernet-utils.c:20
+#: ../src/core/devices/nm-device-ethernet-utils.c:20
 #, c-format
 msgid "Wired connection %d"
 msgstr "Дротове з'єднання %d"
 
-#: ../src/devices/nm-device-ip-tunnel.c:399
+#: ../src/core/devices/nm-device-ip-tunnel.c:399
 msgid "IP tunnel connection"
 msgstr "З'єднання IP-тунель"
 
-#: ../src/devices/nm-device-macvlan.c:389
+#: ../src/core/devices/nm-device-macvlan.c:389
 msgid "MACVLAN connection"
 msgstr "З'єднання MACVLAN"
 
-#: ../src/devices/nm-device-tun.c:144
+#: ../src/core/devices/nm-device-tun.c:144
 msgid "TUN connection"
 msgstr "З'єднання TUN"
 
-#: ../src/devices/nm-device-wpan.c:54
+#: ../src/core/devices/nm-device-wpan.c:54
 msgid "WPAN connection"
 msgstr "З'єднання WPAN"
 
-#: ../src/devices/team/nm-device-team.c:88
+#: ../src/core/devices/team/nm-device-team.c:88
 msgid "Team connection"
 msgstr "Командне з'єднання"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:28
+#: ../src/core/devices/wifi/nm-wifi-utils.c:28
 #, c-format
 msgid "%s is incompatible with static WEP keys"
 msgstr "%s є несумісним зі статичними ключами WEP"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:63
+#: ../src/core/devices/wifi/nm-wifi-utils.c:63
 msgid "LEAP authentication requires a LEAP username"
 msgstr "Для розпізнавання LEAP потрібне ім'я користувача LEAP"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:75
+#: ../src/core/devices/wifi/nm-wifi-utils.c:75
 msgid "LEAP username requires 'leap' authentication"
 msgstr "Ім'я користувача LEAP потребує розпізнавання «leap»"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:90
+#: ../src/core/devices/wifi/nm-wifi-utils.c:90
 msgid "LEAP authentication requires IEEE 802.1x key management"
 msgstr "Розпізнавання LEAP потребує керування ключами IEEE 802.1x"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:112
+#: ../src/core/devices/wifi/nm-wifi-utils.c:112
 msgid "LEAP authentication is incompatible with Ad-Hoc mode"
 msgstr "Розпізнавання LEAP є несумісним зі спеціальним (Ad-Hoc) режимом"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:124
+#: ../src/core/devices/wifi/nm-wifi-utils.c:124
 msgid "LEAP authentication is incompatible with 802.1x setting"
 msgstr "Розпізнавання LEAP є несумісним із встановленням 802.1x"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:144
+#: ../src/core/devices/wifi/nm-wifi-utils.c:144
 #, c-format
 msgid "a connection using '%s' authentication cannot use WPA key management"
 msgstr ""
 "з'єднання, де використовується розпізнавання «%s», не може використовувати "
 "керування ключами WPA"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:157
+#: ../src/core/devices/wifi/nm-wifi-utils.c:157
 #, c-format
 msgid "a connection using '%s' authentication cannot specify WPA protocols"
 msgstr ""
 "з'єднання, де використовується розпізнавання «%s», не може використовувати "
 "специфічні протоколи WPA"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:175
-#: ../src/devices/wifi/nm-wifi-utils.c:194
+#: ../src/core/devices/wifi/nm-wifi-utils.c:175
+#: ../src/core/devices/wifi/nm-wifi-utils.c:194
 #, c-format
 msgid "a connection using '%s' authentication cannot specify WPA ciphers"
 msgstr ""
 "з'єднання, де використовується розпізнавання «%s», не може використовувати "
 "специфічні шифри WPA"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:208
+#: ../src/core/devices/wifi/nm-wifi-utils.c:208
 #, c-format
 msgid "a connection using '%s' authentication cannot specify a WPA password"
 msgstr ""
 "з'єднання, де використовується розпізнавання «%s», не може використовувати "
 "специфічний пароль WPA"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:241
+#: ../src/core/devices/wifi/nm-wifi-utils.c:241
 msgid "Dynamic WEP requires an 802.1x setting"
 msgstr "Динамічний WEP потребує встановлення параметра 802.1x"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:251
-#: ../src/devices/wifi/nm-wifi-utils.c:283
+#: ../src/core/devices/wifi/nm-wifi-utils.c:251
+#: ../src/core/devices/wifi/nm-wifi-utils.c:283
 msgid "Dynamic WEP requires 'open' authentication"
 msgstr "Динамічний WEP потребує розпізнавання «open»"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:268
+#: ../src/core/devices/wifi/nm-wifi-utils.c:268
 msgid "Dynamic WEP requires 'ieee8021x' key management"
 msgstr "Динамічний WEP потребує керування ключами «ieee8021x»"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:319
+#: ../src/core/devices/wifi/nm-wifi-utils.c:319
 msgid "WPA-PSK authentication is incompatible with 802.1x"
 msgstr "Розпізнавання за допомогою WPA-PSK є несумісним з 802.1x"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:329
+#: ../src/core/devices/wifi/nm-wifi-utils.c:329
 msgid "WPA-PSK requires 'open' authentication"
 msgstr "WPA-PSK потребує розпізнавання «open»"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:343
+#: ../src/core/devices/wifi/nm-wifi-utils.c:343
 msgid "Access point does not support PSK but setting requires it"
 msgstr ""
 "У точці доступу не передбачено підтримки PSK, але параметром передбачено "
 "таку підтримку"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:358
+#: ../src/core/devices/wifi/nm-wifi-utils.c:358
 msgid "WPA Ad-Hoc authentication requires 'rsn' protocol"
 msgstr "Розпізнавання за спеціальним WPA потребує протоколу «rsn»"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:371
+#: ../src/core/devices/wifi/nm-wifi-utils.c:371
 msgid "WPA Ad-Hoc authentication requires 'ccmp' pairwise cipher"
 msgstr "Розпізнавання за спеціальним WPA потребує парного шифру «ccmp»"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:384
+#: ../src/core/devices/wifi/nm-wifi-utils.c:384
 msgid "WPA Ad-Hoc requires 'ccmp' group cipher"
 msgstr "Спеціальний (Ad-Hoc) режим WPA потребує групового шифрування «ccmp»"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:415
+#: ../src/core/devices/wifi/nm-wifi-utils.c:415
 msgid "WPA-EAP authentication requires an 802.1x setting"
 msgstr "Розпізнавання WPA-EAP потребує параметра 802.1x"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:425
+#: ../src/core/devices/wifi/nm-wifi-utils.c:425
 msgid "WPA-EAP requires 'open' authentication"
 msgstr "WPA-EAP потребує розпізнавання «open»"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:438
+#: ../src/core/devices/wifi/nm-wifi-utils.c:438
 msgid "802.1x setting requires 'wpa-eap' key management"
 msgstr "Параметр 802.1x потребує керування ключами «wpa-eap»"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:452
+#: ../src/core/devices/wifi/nm-wifi-utils.c:452
 msgid "Access point does not support 802.1x but setting requires it"
 msgstr ""
 "У точці доступу не передбачено підтримки 802.1x, але параметром передбачено "
 "таку підтримку"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:482
+#: ../src/core/devices/wifi/nm-wifi-utils.c:482
 msgid "Ad-Hoc mode requires 'none' or 'wpa-psk' key management"
 msgstr ""
 "Для ситуативного режиму слід використовувати керування ключами «none» або "
 "«wpa-psk»"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:494
+#: ../src/core/devices/wifi/nm-wifi-utils.c:494
 msgid "Ad-Hoc mode is incompatible with 802.1x security"
 msgstr "Спеціальний (Ad-Hoc) режим є несумісним із захистом 802.1x"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:503
+#: ../src/core/devices/wifi/nm-wifi-utils.c:503
 msgid "Ad-Hoc mode is incompatible with LEAP security"
 msgstr "Спеціальний (Ad-Hoc) режим є несумісним із захистом LEAP"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:515
+#: ../src/core/devices/wifi/nm-wifi-utils.c:515
 msgid "Ad-Hoc mode requires 'open' authentication"
 msgstr "Для спеціального (Ad-Hoc) режиму потрібне розпізнавання «open»"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:559
-#: ../src/devices/wifi/nm-wifi-utils.c:594
+#: ../src/core/devices/wifi/nm-wifi-utils.c:559
+#: ../src/core/devices/wifi/nm-wifi-utils.c:594
 #, c-format
 msgid "connection does not match access point"
 msgstr "з'єднання не відповідає точці доступу"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:648
+#: ../src/core/devices/wifi/nm-wifi-utils.c:648
 #, c-format
 msgid "connection does not match mesh point"
 msgstr "з'єднання не відповідає точці сітки"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:667
+#: ../src/core/devices/wifi/nm-wifi-utils.c:667
 msgid "Access point is unencrypted but setting specifies security"
 msgstr ""
 "Обмін даними із точкою доступу є незашифрованим, але запис вказує за "
 "захищене з'єднання"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:758
+#: ../src/core/devices/wifi/nm-wifi-utils.c:758
 msgid ""
 "WPA authentication is incompatible with non-EAP (original) LEAP or Dynamic "
 "WEP"
@@ -15265,158 +15271,158 @@ msgstr ""
 "Розпізнавання за допомогою WPA є несумісним з LEAP без EAP (оригінальним) "
 "або динамічним WEP"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:771
+#: ../src/core/devices/wifi/nm-wifi-utils.c:771
 msgid "WPA authentication is incompatible with Shared Key authentication"
 msgstr ""
 "Розпізнавання за допомогою WPA є несумісним із розпізнаванням за допомогою "
 "розповсюдженого ключа"
 
-#: ../src/devices/wifi/nm-wifi-utils.c:854
+#: ../src/core/devices/wifi/nm-wifi-utils.c:854
 msgid "Failed to determine AP security information"
 msgstr "Не вдалося визначити дані щодо захисту точки доступу"
 
-#: ../src/nm-config.c:567
+#: ../src/core/nm-config.c:567
 #, c-format
 msgid "Bad '%s' option: "
 msgstr "Помилковий параметр «%s»: "
 
-#: ../src/nm-config.c:584
+#: ../src/core/nm-config.c:584
 msgid "Config file location"
 msgstr "Розташування файла налаштувань"
 
-#: ../src/nm-config.c:591
+#: ../src/core/nm-config.c:591
 msgid "Config directory location"
 msgstr "Розташування каталогу налаштувань"
 
-#: ../src/nm-config.c:598
+#: ../src/core/nm-config.c:598
 msgid "System config directory location"
 msgstr "Розташування загальносистемного каталогу налаштувань"
 
-#: ../src/nm-config.c:605
+#: ../src/core/nm-config.c:605
 msgid "Internal config file location"
 msgstr "Розташування внутрішнього файла налаштувань"
 
-#: ../src/nm-config.c:612
+#: ../src/core/nm-config.c:612
 msgid "State file location"
 msgstr "Розташування файла стану"
 
-#: ../src/nm-config.c:619
+#: ../src/core/nm-config.c:619
 msgid "State file for no-auto-default devices"
 msgstr ""
 "Файл станів для пристроїв без автоматичних типових параметрів (no-auto-"
 "default)"
 
-#: ../src/nm-config.c:626
+#: ../src/core/nm-config.c:626
 msgid "List of plugins separated by ','"
 msgstr "Список додатків, відокремлених комами («,»)"
 
-#: ../src/nm-config.c:633
+#: ../src/core/nm-config.c:633
 msgid "Quit after initial configuration"
 msgstr "Вийти після початкового налаштовування"
 
-#: ../src/nm-config.c:640 ../src/nm-iface-helper.c:420
+#: ../src/core/nm-config.c:640 ../src/core/nm-iface-helper.c:420
 msgid "Don't become a daemon, and log to stderr"
 msgstr ""
 "Не переходити у стан фонової служби і записувати повідомлення журналу до "
 "stderr"
 
-#: ../src/nm-config.c:649
+#: ../src/core/nm-config.c:649
 msgid "An http(s) address for checking internet connectivity"
 msgstr "Адреса http(s) для спроб перевірки можливості встановлення з'єднання"
 
-#: ../src/nm-config.c:656
+#: ../src/core/nm-config.c:656
 msgid "The interval between connectivity checks (in seconds)"
 msgstr "Інтервал між перевірками можливості з'єднання (у секундах)"
 
-#: ../src/nm-config.c:663
+#: ../src/core/nm-config.c:663
 msgid "The expected start of the response"
 msgstr "Очікуваний початок відповіді"
 
-#: ../src/nm-config.c:672
+#: ../src/core/nm-config.c:672
 msgid "NetworkManager options"
 msgstr "Параметри NetworkManager"
 
-#: ../src/nm-config.c:673
+#: ../src/core/nm-config.c:673
 msgid "Show NetworkManager options"
 msgstr "Показати параметри NetworkManager"
 
-#: ../src/nm-iface-helper.c:292
+#: ../src/core/nm-iface-helper.c:292
 msgid "The interface to manage"
 msgstr "Інтерфейс для керування"
 
-#: ../src/nm-iface-helper.c:299
+#: ../src/core/nm-iface-helper.c:299
 msgid "Connection UUID"
 msgstr "UUID з'єднання"
 
-#: ../src/nm-iface-helper.c:306
+#: ../src/core/nm-iface-helper.c:306
 msgid "Connection Token for Stable IDs"
 msgstr "Жетон з'єднання для стабільних ідентифікаторів"
 
-#: ../src/nm-iface-helper.c:313
+#: ../src/core/nm-iface-helper.c:313
 msgid "Whether to manage IPv6 SLAAC"
 msgstr "Чи слід керувати SLAAC IPv6"
 
-#: ../src/nm-iface-helper.c:320
+#: ../src/core/nm-iface-helper.c:320
 msgid "Whether SLAAC must be successful"
 msgstr "Чи має бути SLAAC успішним"
 
-#: ../src/nm-iface-helper.c:327
+#: ../src/core/nm-iface-helper.c:327
 msgid "Use an IPv6 temporary privacy address"
 msgstr "Використовувати тимчасову приватну адресу IPv6"
 
-#: ../src/nm-iface-helper.c:334
+#: ../src/core/nm-iface-helper.c:334
 msgid "Current DHCPv4 address"
 msgstr "Поточна адреса DHCPv4"
 
-#: ../src/nm-iface-helper.c:341
+#: ../src/core/nm-iface-helper.c:341
 msgid "Whether DHCPv4 must be successful"
 msgstr "Чи має DHCPv4 бути успішним"
 
-#: ../src/nm-iface-helper.c:348
+#: ../src/core/nm-iface-helper.c:348
 msgid "Hex-encoded DHCPv4 client ID"
 msgstr "Закодований у шістнадцяткову форму ідентифікатор клієнта DHCPv4"
 
-#: ../src/nm-iface-helper.c:355
+#: ../src/core/nm-iface-helper.c:355
 msgid "Hostname to send to DHCP server"
 msgstr "Назва вузла для надсилання на сервер DHCP"
 
-#: ../src/nm-iface-helper.c:356
+#: ../src/core/nm-iface-helper.c:356
 msgid "barbar"
 msgstr "щосьщось"
 
-#: ../src/nm-iface-helper.c:362
+#: ../src/core/nm-iface-helper.c:362
 msgid "FQDN to send to DHCP server"
 msgstr "Повна назва вузла (FQDN) для надсилання на сервер DHCP"
 
-#: ../src/nm-iface-helper.c:363
+#: ../src/core/nm-iface-helper.c:363
 msgid "host.domain.org"
 msgstr "вузол.домен.org"
 
-#: ../src/nm-iface-helper.c:369
+#: ../src/core/nm-iface-helper.c:369
 msgid "Route priority for IPv4"
 msgstr "Пріоритет маршруту для IPv4"
 
-#: ../src/nm-iface-helper.c:370
+#: ../src/core/nm-iface-helper.c:370
 msgid "0"
 msgstr "0"
 
-#: ../src/nm-iface-helper.c:376
+#: ../src/core/nm-iface-helper.c:376
 msgid "Route priority for IPv6"
 msgstr "Пріоритет маршруту для IPv6"
 
-#: ../src/nm-iface-helper.c:377
+#: ../src/core/nm-iface-helper.c:377
 msgid "1024"
 msgstr "1024"
 
-#: ../src/nm-iface-helper.c:383
+#: ../src/core/nm-iface-helper.c:383
 msgid "Hex-encoded Interface Identifier"
 msgstr "Закодований у шістнадцяткове число ідентифікатор інтерфейсу"
 
-#: ../src/nm-iface-helper.c:390
+#: ../src/core/nm-iface-helper.c:390
 msgid "IPv6 SLAAC address generation mode"
 msgstr "Режим створення адреси SLAAC IPv6"
 
-#: ../src/nm-iface-helper.c:397
+#: ../src/core/nm-iface-helper.c:397
 msgid ""
 "The logging backend configuration value. See logging.backend in "
 "NetworkManager.conf"
@@ -15424,7 +15430,7 @@ msgstr ""
 "Значення налаштування модуля ведення журналу. Див. logging.backend у "
 "NetworkManager.conf"
 
-#: ../src/nm-iface-helper.c:451
+#: ../src/core/nm-iface-helper.c:451
 msgid ""
 "nm-iface-helper is a small, standalone process that manages a single network "
 "interface."
@@ -15432,39 +15438,29 @@ msgstr ""
 "nm-iface-helper — малий окремий процес, який керує окремим інтерфейсом "
 "мережі."
 
-#: ../src/nm-iface-helper.c:562
+#: ../src/core/nm-iface-helper.c:562
 #, c-format
 msgid "An interface name and UUID are required\n"
 msgstr "Потрібні назва і UUID інтерфейсу\n"
 
-#: ../src/nm-iface-helper.c:570
+#: ../src/core/nm-iface-helper.c:570
 #, c-format
 msgid "Failed to find interface index for %s (%s)\n"
 msgstr "Не вдалося знайти покажчик інтерфейсу для %s (%s)\n"
 
-#: ../src/nm-iface-helper.c:590
+#: ../src/core/nm-iface-helper.c:590
 #, c-format
 msgid "Ignoring unrecognized log domain(s) '%s' passed on command line.\n"
 msgstr ""
 "Ігноруємо нерозпізнані домени журналювання, «%s», передані за допомогою "
 "командного рядка.\n"
 
-#: ../src/nm-iface-helper.c:636
+#: ../src/core/nm-iface-helper.c:636
 #, c-format
 msgid "(%s): Invalid IID %s\n"
 msgstr "(%s): некоректний IID %s\n"
 
-#: ../src/nm-iface-helper.c:648
+#: ../src/core/nm-iface-helper.c:648
 #, c-format
 msgid "(%s): Invalid DHCP client-id %s\n"
 msgstr "(%s): некоректний ідентифікатор клієнта DHCP %s\n"
-
-#: ../src/nm-logging.c:252
-#, c-format
-msgid "Unknown log level '%s'"
-msgstr "Невідомий рівень ведення журналу, «%s»"
-
-#: ../src/nm-logging.c:360
-#, c-format
-msgid "Unknown log domain '%s'"
-msgstr "Невідомий домен ведення журналу, «%s»"
