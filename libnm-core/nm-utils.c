@@ -3623,7 +3623,8 @@ nm_utils_file_search_in_paths(const char *                      progname,
             if (!path[0])
                 continue;
 
-            nm_str_buf_reset(&strbuf, path);
+            nm_str_buf_reset(&strbuf);
+            nm_str_buf_append(&strbuf, path);
             nm_str_buf_ensure_trailing_c(&strbuf, '/');
             s = nm_str_buf_append0(&strbuf, progname);
 
