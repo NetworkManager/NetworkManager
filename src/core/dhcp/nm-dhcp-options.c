@@ -219,7 +219,12 @@ nm_dhcp_option_take_option(GHashTable *        options,
                            guint               option,
                            char *              value)
 {
-    nm_assert(options);
+    if (!options) {
+        nm_assert_not_reached();
+        g_free(value);
+        return;
+    }
+
     nm_assert(requests);
     nm_assert(value);
     nm_assert(g_utf8_validate(value, -1, NULL));
@@ -233,8 +238,7 @@ nm_dhcp_option_add_option(GHashTable *        options,
                           guint               option,
                           const char *        value)
 {
-    if (options)
-        nm_dhcp_option_take_option(options, requests, option, g_strdup(value));
+    nm_dhcp_option_take_option(options, requests, option, g_strdup(value));
 }
 
 void
@@ -243,11 +247,10 @@ nm_dhcp_option_add_option_u64(GHashTable *        options,
                               guint               option,
                               guint64             value)
 {
-    if (options)
-        nm_dhcp_option_take_option(options,
-                                   requests,
-                                   option,
-                                   g_strdup_printf("%" G_GUINT64_FORMAT, value));
+    nm_dhcp_option_take_option(options,
+                               requests,
+                               option,
+                               g_strdup_printf("%" G_GUINT64_FORMAT, value));
 }
 
 void
@@ -255,8 +258,10 @@ nm_dhcp_option_add_requests_to_options(GHashTable *options, const NMDhcpOption *
 {
     guint i;
 
-    if (!options)
+    if (!options) {
+        nm_assert_not_reached();
         return;
+    }
 
     for (i = 0; requests[i].name; i++) {
         if (requests[i].include)
