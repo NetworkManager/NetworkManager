@@ -433,46 +433,53 @@ static void
 lease_parse_address_list(NDhcp4ClientLease *      lease,
                          NMIP4Config *            ip4_config,
                          NMDhcpOptionDhcp4Options option,
-                         GHashTable *             options)
+                         GHashTable *             options,
+                         NMStrBuf *               sbuf)
 {
-    nm_auto_free_gstring GString *str = NULL;
-    char                          addr_str[NM_UTILS_INET_ADDRSTRLEN];
-    struct in_addr                addr;
-    uint8_t *                     data;
-    size_t                        n_data;
-    int                           r;
+    guint8 *l_data;
+    gsize   l_data_len;
+    int     r;
 
-    r = n_dhcp4_client_lease_query(lease, option, &data, &n_data);
-    if (r)
+    r = n_dhcp4_client_lease_query(lease, option, &l_data, &l_data_len);
+    if (r != 0)
         return;
 
-    nm_gstring_prepare(&str);
+    if (l_data_len == 0 || l_data_len % 4 != 0)
+        return;
 
-    while (lease_option_next_in_addr(&addr, &data, &n_data)) {
-        _nm_utils_inet4_ntop(addr.s_addr, addr_str);
-        g_string_append(nm_gstring_add_space_delimiter(str), addr_str);
+    nm_str_buf_reset(sbuf);
+
+    for (; l_data_len > 0; l_data_len -= 4, l_data += 4) {
+        char            addr_str[NM_UTILS_INET_ADDRSTRLEN];
+        const in_addr_t addr = unaligned_read_ne32(l_data);
+
+        nm_str_buf_append_required_delimiter(sbuf, ' ');
+        nm_str_buf_append(sbuf, _nm_utils_inet4_ntop(addr, addr_str));
 
         switch (option) {
         case NM_DHCP_OPTION_DHCP4_DOMAIN_NAME_SERVER:
-            if (addr.s_addr == 0 || nm_ip4_addr_is_localhost(addr.s_addr)) {
+            if (addr == 0 || nm_ip4_addr_is_localhost(addr)) {
                 /* Skip localhost addresses, like also networkd does.
                  * See https://github.com/systemd/systemd/issues/4524. */
                 continue;
             }
-            nm_ip4_config_add_nameserver(ip4_config, addr.s_addr);
+            nm_ip4_config_add_nameserver(ip4_config, addr);
             break;
         case NM_DHCP_OPTION_DHCP4_NIS_SERVERS:
-            nm_ip4_config_add_nis_server(ip4_config, addr.s_addr);
+            nm_ip4_config_add_nis_server(ip4_config, addr);
             break;
         case NM_DHCP_OPTION_DHCP4_NETBIOS_NAMESERVER:
-            nm_ip4_config_add_wins(ip4_config, addr.s_addr);
+            nm_ip4_config_add_wins(ip4_config, addr);
             break;
         default:
             nm_assert_not_reached();
         }
     }
 
-    nm_dhcp_option_add_option(options, _nm_dhcp_option_dhcp4_options, option, str->str);
+    nm_dhcp_option_add_option(options,
+                              _nm_dhcp_option_dhcp4_options,
+                              option,
+                              nm_str_buf_get_str(sbuf));
 }
 
 static void
@@ -797,7 +804,12 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
     }
 
     lease_parse_routes(lease, ip4_config, options, route_table, route_metric);
-    lease_parse_address_list(lease, ip4_config, NM_DHCP_OPTION_DHCP4_DOMAIN_NAME_SERVER, options);
+
+    lease_parse_address_list(lease,
+                             ip4_config,
+                             NM_DHCP_OPTION_DHCP4_DOMAIN_NAME_SERVER,
+                             options,
+                             &sbuf);
 
     r = n_dhcp4_client_lease_query(lease, NM_DHCP_OPTION_DHCP4_DOMAIN_NAME, &l_data, &l_data_len);
     if (r == 0 && nm_dhcp_lease_data_parse_cstr(l_data, l_data_len, &l_data_len)) {
@@ -918,8 +930,14 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
         nm_ip4_config_set_nis_domain(ip4_config, v_str);
     }
 
-    lease_parse_address_list(lease, ip4_config, NM_DHCP_OPTION_DHCP4_NIS_SERVERS, options);
-    lease_parse_address_list(lease, ip4_config, NM_DHCP_OPTION_DHCP4_NETBIOS_NAMESERVER, options);
+    lease_parse_address_list(lease, ip4_config, NM_DHCP_OPTION_DHCP4_NIS_SERVERS, options, &sbuf);
+
+    lease_parse_address_list(lease,
+                             ip4_config,
+                             NM_DHCP_OPTION_DHCP4_NETBIOS_NAMESERVER,
+                             options,
+                             &sbuf);
+
     lease_parse_private_options(lease, options);
 
     NM_SET_OUT(out_options, g_steal_pointer(&options));
