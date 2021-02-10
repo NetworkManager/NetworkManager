@@ -837,11 +837,11 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
     lease_parse_address_list(lease, ip4_config, NM_DHCP_OPTION_DHCP4_DOMAIN_NAME_SERVER, options);
 
     r = n_dhcp4_client_lease_query(lease, NM_DHCP_OPTION_DHCP4_DOMAIN_NAME, &l_data, &l_data_len);
-    if (r == 0) {
+    if (r == 0 && nm_dhcp_lease_data_parse_cstr(l_data, l_data_len, &l_data_len)) {
         gs_free const char **domains = NULL;
 
         nm_str_buf_reset(&sbuf);
-        nm_str_buf_append_len(&sbuf, (const char *) l_data, l_data_len);
+        nm_str_buf_append_len0(&sbuf, (const char *) l_data, l_data_len);
 
         /* Multiple domains sometimes stuffed into option 15 "Domain Name". */
         domains = nm_utils_strsplit_set(nm_str_buf_get_str(&sbuf), " ");
@@ -851,21 +851,25 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
             gsize i;
 
             for (i = 0; domains[i]; i++) {
-                if (nm_utils_is_localhost(domains[i]))
-                    goto domain_name_done;
+                gs_free char *s = NULL;
+
+                s = nm_dhcp_lease_data_parse_domain_validate(domains[i]);
+                if (!s)
+                    continue;
 
                 nm_str_buf_append_required_delimiter(&sbuf, ' ');
-                nm_str_buf_append(&sbuf, domains[i]);
-                nm_ip4_config_add_domain(ip4_config, domains[i]);
+                nm_str_buf_append(&sbuf, s);
+                nm_ip4_config_add_domain(ip4_config, s);
             }
         }
 
-        nm_dhcp_option_add_option(options,
-                                  _nm_dhcp_option_dhcp4_options,
-                                  NM_DHCP_OPTION_DHCP4_DOMAIN_NAME,
-                                  nm_str_buf_get_str(&sbuf));
+        if (sbuf.len > 0) {
+            nm_dhcp_option_add_option(options,
+                                      _nm_dhcp_option_dhcp4_options,
+                                      NM_DHCP_OPTION_DHCP4_DOMAIN_NAME,
+                                      nm_str_buf_get_str(&sbuf));
+        }
     }
-domain_name_done:
 
     lease_parse_search_domains(lease, ip4_config, options);
 
