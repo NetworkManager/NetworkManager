@@ -43,7 +43,7 @@ for dir in "${nm_pkgconfdir}/conf.d" \
 done
 
 mkdir -p "${DESTDIR}${nm_pkgstatedir}"
-chmod 0700 "${DESTDIR}${nm_pkgstatedir}"
+chmod 0755 "${DESTDIR}${nm_pkgstatedir}"
 
 if [ "$enable_docs" = 1 ]; then
 
