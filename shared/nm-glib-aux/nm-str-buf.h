@@ -294,7 +294,7 @@ nm_str_buf_append_c_len(NMStrBuf *strbuf, char ch, gsize len)
 
 /*****************************************************************************/
 
-static inline void
+static inline NMStrBuf *
 nm_str_buf_reset(NMStrBuf *strbuf)
 {
     _nm_str_buf_assert(strbuf);
@@ -306,6 +306,8 @@ nm_str_buf_reset(NMStrBuf *strbuf)
         }
         strbuf->_priv_len = 0;
     }
+
+    return strbuf;
 }
 
 /*****************************************************************************/
