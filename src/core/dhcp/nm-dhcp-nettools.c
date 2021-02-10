@@ -306,42 +306,22 @@ lease_option_print_domain_name(GString * str,
 }
 
 static gboolean
-lease_get_in_addr(NDhcp4ClientLease *lease, guint8 option, struct in_addr *addrp)
-{
-    struct in_addr addr;
-    uint8_t *      data;
-    size_t         n_data;
-    int            r;
-
-    r = n_dhcp4_client_lease_query(lease, option, &data, &n_data);
-    if (r)
-        return FALSE;
-
-    if (!lease_option_next_in_addr(&addr, &data, &n_data))
-        return FALSE;
-
-    if (n_data != 0)
-        return FALSE;
-
-    *addrp = addr;
-    return TRUE;
-}
-
-static gboolean
 lease_parse_address(NDhcp4ClientLease *lease,
                     NMIP4Config *      ip4_config,
                     GHashTable *       options,
                     GError **          error)
 {
-    char           addr_str[NM_UTILS_INET_ADDRSTRLEN];
     struct in_addr a_address;
-    struct in_addr a_netmask;
+    in_addr_t      a_netmask;
     struct in_addr a_next_server;
     guint32        a_plen;
     guint64        nettools_lifetime;
     guint32        a_lifetime;
     guint32        a_timestamp;
     guint64        a_expiry;
+    guint8 *       l_data;
+    gsize          l_data_len;
+    int            r;
 
     n_dhcp4_client_lease_get_yiaddr(lease, &a_address);
     if (a_address.s_addr == INADDR_ANY) {
@@ -396,24 +376,24 @@ lease_parse_address(NDhcp4ClientLease *lease,
                       / NM_UTILS_NSEC_PER_SEC);
     }
 
-    if (!lease_get_in_addr(lease, NM_DHCP_OPTION_DHCP4_SUBNET_MASK, &a_netmask)) {
+    r = n_dhcp4_client_lease_query(lease, NM_DHCP_OPTION_DHCP4_SUBNET_MASK, &l_data, &l_data_len);
+    if (r != 0 || !nm_dhcp_lease_data_parse_in_addr(l_data, l_data_len, &a_netmask)) {
         nm_utils_error_set_literal(error,
                                    NM_UTILS_ERROR_UNKNOWN,
                                    "could not get netmask from lease");
         return FALSE;
     }
 
-    _nm_utils_inet4_ntop(a_address.s_addr, addr_str);
-    a_plen = nm_utils_ip4_netmask_to_prefix(a_netmask.s_addr);
+    a_plen = nm_utils_ip4_netmask_to_prefix(a_netmask);
 
-    nm_dhcp_option_add_option(options,
-                              _nm_dhcp_option_dhcp4_options,
-                              NM_DHCP_OPTION_DHCP4_NM_IP_ADDRESS,
-                              addr_str);
-    nm_dhcp_option_add_option(options,
-                              _nm_dhcp_option_dhcp4_options,
-                              NM_DHCP_OPTION_DHCP4_SUBNET_MASK,
-                              _nm_utils_inet4_ntop(a_netmask.s_addr, addr_str));
+    nm_dhcp_option_add_option_in_addr(options,
+                                      _nm_dhcp_option_dhcp4_options,
+                                      NM_DHCP_OPTION_DHCP4_NM_IP_ADDRESS,
+                                      a_address.s_addr);
+    nm_dhcp_option_add_option_in_addr(options,
+                                      _nm_dhcp_option_dhcp4_options,
+                                      NM_DHCP_OPTION_DHCP4_SUBNET_MASK,
+                                      a_netmask);
 
     nm_dhcp_option_add_option_u64(options,
                                   _nm_dhcp_option_dhcp4_options,
@@ -429,11 +409,10 @@ lease_parse_address(NDhcp4ClientLease *lease,
 
     n_dhcp4_client_lease_get_siaddr(lease, &a_next_server);
     if (a_next_server.s_addr != INADDR_ANY) {
-        _nm_utils_inet4_ntop(a_next_server.s_addr, addr_str);
-        nm_dhcp_option_add_option(options,
-                                  _nm_dhcp_option_dhcp4_options,
-                                  NM_DHCP_OPTION_DHCP4_NM_NEXT_SERVER,
-                                  addr_str);
+        nm_dhcp_option_add_option_in_addr(options,
+                                          _nm_dhcp_option_dhcp4_options,
+                                          NM_DHCP_OPTION_DHCP4_NM_NEXT_SERVER,
+                                          a_next_server.s_addr);
     }
 
     nm_ip4_config_add_address(ip4_config,
