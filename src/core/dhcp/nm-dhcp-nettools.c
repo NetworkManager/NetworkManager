@@ -806,25 +806,6 @@ lease_parse_search_domains(NDhcp4ClientLease *lease, NMIP4Config *ip4_config, GH
 }
 
 static void
-lease_parse_root_path(NDhcp4ClientLease *lease, GHashTable *options)
-{
-    nm_auto_free_gstring GString *str = NULL;
-    uint8_t *                     data;
-    size_t                        n_data;
-    int                           r;
-
-    r = n_dhcp4_client_lease_query(lease, NM_DHCP_OPTION_DHCP4_ROOT_PATH, &data, &n_data);
-    if (r)
-        return;
-
-    str = g_string_new_len((char *) data, n_data);
-    nm_dhcp_option_add_option(options,
-                              _nm_dhcp_option_dhcp4_options,
-                              NM_DHCP_OPTION_DHCP4_ROOT_PATH,
-                              str->str);
-}
-
-static void
 lease_parse_nis_domain(NDhcp4ClientLease *lease, NMIP4Config *ip4_config, GHashTable *options)
 {
     gs_free char *str_free = NULL;
@@ -945,7 +926,14 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
     }
 
     lease_parse_ntps(lease, options);
-    lease_parse_root_path(lease, options);
+
+    r = n_dhcp4_client_lease_query(lease, NM_DHCP_OPTION_DHCP4_ROOT_PATH, &l_data, &l_data_len);
+    if (r == 0) {
+        nm_dhcp_option_add_option(options,
+                                  _nm_dhcp_option_dhcp4_options,
+                                  NM_DHCP_OPTION_DHCP4_ROOT_PATH,
+                                  g_strndup((char *) l_data, l_data_len));
+    }
 
     r = n_dhcp4_client_lease_query(lease,
                                    NM_DHCP_OPTION_DHCP4_PRIVATE_PROXY_AUTODISCOVERY,
