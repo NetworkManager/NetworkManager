@@ -242,6 +242,20 @@ nm_dhcp_option_add_option(GHashTable *        options,
 }
 
 void
+nm_dhcp_option_add_option_utf8safe_escape(GHashTable *        options,
+                                          const NMDhcpOption *requests,
+                                          guint               option,
+                                          const guint8 *      data,
+                                          gsize               n_data)
+{
+    gs_free char *to_free = NULL;
+    const char *  escaped;
+
+    escaped = nm_utils_buf_utf8safe_escape((char *) data, n_data, 0, &to_free);
+    nm_dhcp_option_add_option(options, requests, option, escaped ?: "");
+}
+
+void
 nm_dhcp_option_add_option_u64(GHashTable *        options,
                               const NMDhcpOption *requests,
                               guint               option,

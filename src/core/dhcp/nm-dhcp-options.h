@@ -195,6 +195,11 @@ void        nm_dhcp_option_add_option(GHashTable *        options,
                                       const NMDhcpOption *requests,
                                       guint               option,
                                       const char *        value);
+void        nm_dhcp_option_add_option_utf8safe_escape(GHashTable *        options,
+                                                      const NMDhcpOption *requests,
+                                                      guint               option,
+                                                      const guint8 *      data,
+                                                      gsize               n_data);
 void        nm_dhcp_option_add_option_u64(GHashTable *        options,
                                           const NMDhcpOption *requests,
                                           guint               option,
