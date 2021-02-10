@@ -497,22 +497,6 @@ lease_parse_address_list(NDhcp4ClientLease *      lease,
 }
 
 static void
-lease_parse_server_id(NDhcp4ClientLease *lease, NMIP4Config *ip4_config, GHashTable *options)
-{
-    struct in_addr addr;
-    char           addr_str[NM_UTILS_INET_ADDRSTRLEN];
-
-    if (n_dhcp4_client_lease_get_server_identifier(lease, &addr))
-        return;
-
-    _nm_utils_inet4_ntop(addr.s_addr, addr_str);
-    nm_dhcp_option_add_option(options,
-                              _nm_dhcp_option_dhcp4_options,
-                              NM_DHCP_OPTION_DHCP4_SERVER_ID,
-                              addr_str);
-}
-
-static void
 lease_parse_routes(NDhcp4ClientLease *lease,
                    NMIP4Config *      ip4_config,
                    GHashTable *       options,
@@ -806,6 +790,7 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
     guint16                        v_u16;
     gboolean                       v_bool;
     in_addr_t                      v_inaddr;
+    struct in_addr                 v_inaddr_s;
     int                            r;
 
     g_return_val_if_fail(lease != NULL, NULL);
@@ -816,7 +801,13 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
     if (!lease_parse_address(lease, ip4_config, options, error))
         return NULL;
 
-    lease_parse_server_id(lease, ip4_config, options);
+    r = n_dhcp4_client_lease_get_server_identifier(lease, &v_inaddr_s);
+    if (r == 0) {
+        nm_dhcp_option_add_option_in_addr(options,
+                                          _nm_dhcp_option_dhcp4_options,
+                                          NM_DHCP_OPTION_DHCP4_SERVER_ID,
+                                          v_inaddr_s.s_addr);
+    }
 
     r = n_dhcp4_client_lease_query(lease, NM_DHCP_OPTION_DHCP4_BROADCAST, &l_data, &l_data_len);
     if (r == 0 && nm_dhcp_lease_data_parse_in_addr(l_data, l_data_len, &v_inaddr)) {
