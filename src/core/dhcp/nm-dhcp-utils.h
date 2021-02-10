@@ -52,6 +52,12 @@ nm_dhcp_lease_data_consume(const uint8_t **datap, size_t *n_datap, void *out, si
     return TRUE;
 }
 
+static inline gboolean
+nm_dhcp_lease_data_consume_in_addr(const uint8_t **datap, size_t *n_datap, in_addr_t *addrp)
+{
+    return nm_dhcp_lease_data_consume(datap, n_datap, addrp, sizeof(struct in_addr));
+}
+
 char *nm_dhcp_lease_data_parse_domain_validate(const char *str);
 
 gboolean nm_dhcp_lease_data_parse_u16(const guint8 *data, gsize n_data, guint16 *out_val);
