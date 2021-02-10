@@ -10,6 +10,7 @@
 
 #include "nm-std-aux/unaligned.h"
 #include "nm-glib-aux/nm-dedup-multi.h"
+#include "nm-glib-aux/nm-str-buf.h"
 #include "systemd/nm-sd-utils-shared.h"
 
 #include "nm-dhcp-utils.h"
@@ -968,7 +969,7 @@ nm_dhcp_lease_data_parse_in_addr(const guint8 *data, gsize n_data, in_addr_t *ou
 /*****************************************************************************/
 
 static gboolean
-lease_option_print_label(GString *str, size_t n_label, const uint8_t **datap, size_t *n_datap)
+lease_option_print_label(NMStrBuf *sbuf, size_t n_label, const uint8_t **datap, size_t *n_datap)
 {
     gsize i;
 
@@ -984,33 +985,34 @@ lease_option_print_label(GString *str, size_t n_label, const uint8_t **datap, si
         case '0' ... '9':
         case '-':
         case '_':
-            g_string_append_c(str, c);
+            nm_str_buf_append_c(sbuf, c);
             break;
         case '.':
         case '\\':
-            g_string_append_printf(str, "\\%c", c);
+            nm_str_buf_append_c2(sbuf, '\\', c);
             break;
         default:
-            g_string_append_printf(str, "\\%3d", c);
+            nm_str_buf_append_printf(sbuf, "\\%3d", c);
         }
     }
 
     return TRUE;
 }
 
-static gboolean
-lease_option_print_domain_name(GString *       str,
-                               const uint8_t * cache,
+static char *
+lease_option_print_domain_name(const uint8_t * cache,
                                size_t *        n_cachep,
                                const uint8_t **datap,
                                size_t *        n_datap)
 {
-    const uint8_t * domain;
-    size_t          n_domain, n_cache = *n_cachep;
-    const uint8_t **domainp   = datap;
-    size_t *        n_domainp = n_datap;
-    gboolean        first     = TRUE;
-    uint8_t         c;
+    nm_auto_str_buf NMStrBuf sbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_40, FALSE);
+    const uint8_t *          domain;
+    size_t                   n_domain;
+    size_t                   n_cache   = *n_cachep;
+    const uint8_t **         domainp   = datap;
+    size_t *                 n_domainp = n_datap;
+    gboolean                 first     = TRUE;
+    uint8_t                  c;
 
     /*
      * We are given two adjacent memory regions. The @cache contains alreday parsed
@@ -1029,11 +1031,11 @@ lease_option_print_domain_name(GString *       str,
      * cache shrinks, so this is guaranteed to terminate.
      */
     if (cache + n_cache != *datap)
-        return FALSE;
+        return NULL;
 
     for (;;) {
         if (!nm_dhcp_lease_data_consume(domainp, n_domainp, &c, sizeof(c)))
-            return FALSE;
+            return NULL;
 
         switch (c & 0xC0) {
         case 0x00: /* label length */
@@ -1046,16 +1048,16 @@ lease_option_print_domain_name(GString *       str,
                  * the cache to include the consumed data, and return.
                  */
                 *n_cachep = *datap - cache;
-                return TRUE;
+                return nm_str_buf_finalize(&sbuf, NULL);
             }
 
             if (!first)
-                g_string_append_c(str, '.');
+                nm_str_buf_append_c(&sbuf, '.');
             else
                 first = FALSE;
 
-            if (!lease_option_print_label(str, n_label, domainp, n_domainp))
-                return FALSE;
+            if (!lease_option_print_label(&sbuf, n_label, domainp, n_domainp))
+                return NULL;
 
             break;
         }
@@ -1069,12 +1071,12 @@ lease_option_print_domain_name(GString *       str,
              */
 
             if (!nm_dhcp_lease_data_consume(domainp, n_domainp, &c, sizeof(c)))
-                return FALSE;
+                return NULL;
 
             offset += c;
 
             if (offset >= n_cache)
-                return FALSE;
+                return NULL;
 
             domain   = cache + offset;
             n_domain = n_cache - offset;
@@ -1086,7 +1088,7 @@ lease_option_print_domain_name(GString *       str,
             break;
         }
         default:
-            return FALSE;
+            return NULL;
         }
     }
 }
@@ -1099,23 +1101,21 @@ nm_dhcp_lease_data_parse_search_list(const guint8 *data, gsize n_data)
     gsize         n_cache = 0;
 
     for (;;) {
-        nm_auto_free_gstring GString *domain = NULL;
+        gs_free char *s = NULL;
 
-        nm_gstring_prepare(&domain);
-
-        if (!lease_option_print_domain_name(domain, cache, &n_cache, &data, &n_data))
+        s = lease_option_print_domain_name(cache, &n_cache, &data, &n_data);
+        if (!s)
             break;
 
         if (!array)
             array = g_ptr_array_new();
 
-        g_ptr_array_add(array, g_string_free(domain, FALSE));
-        domain = NULL;
+        g_ptr_array_add(array, g_steal_pointer(&s));
     }
 
-    if (array) {
-        g_ptr_array_add(array, NULL);
-        return (char **) g_ptr_array_free(array, FALSE);
-    } else
+    if (!array)
         return NULL;
+
+    g_ptr_array_add(array, NULL);
+    return (char **) g_ptr_array_free(array, FALSE);
 }
