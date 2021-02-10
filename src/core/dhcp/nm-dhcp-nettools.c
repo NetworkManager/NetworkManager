@@ -921,7 +921,6 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
     gs_unref_hashtable GHashTable *options  = NULL;
     guint8 *                       l_data;
     gsize                          l_data_len;
-    const char *                   v_str;
     guint16                        v_u16;
     gboolean                       v_bool;
     int                            r;
@@ -960,14 +959,13 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
 
     r = n_dhcp4_client_lease_query(lease, NM_DHCP_OPTION_DHCP4_HOST_NAME, &l_data, &l_data_len);
     if (r == 0) {
-        nm_str_buf_reset(&sbuf);
-        nm_str_buf_append_len(&sbuf, (const char *) l_data, l_data_len);
-        v_str = nm_str_buf_get_str(&sbuf);
-        if (!nm_utils_is_localhost(v_str)) {
+        gs_free char *s = NULL;
+
+        if (nm_dhcp_lease_data_parse_domain(l_data, l_data_len, &s)) {
             nm_dhcp_option_add_option(options,
                                       _nm_dhcp_option_dhcp4_options,
                                       NM_DHCP_OPTION_DHCP4_HOST_NAME,
-                                      v_str);
+                                      s);
         }
     }
 

@@ -8,8 +8,9 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#include "nm-glib-aux/nm-dedup-multi.h"
 #include "nm-std-aux/unaligned.h"
+#include "nm-glib-aux/nm-dedup-multi.h"
+#include "systemd/nm-sd-utils-shared.h"
 
 #include "nm-dhcp-utils.h"
 #include "nm-utils.h"
@@ -864,5 +865,88 @@ nm_dhcp_lease_data_parse_mtu(const guint8 *data, gsize n_data, uint16_t *out_val
     }
 
     *out_val = mtu;
+    return TRUE;
+}
+
+gboolean
+nm_dhcp_lease_data_parse_cstr(const guint8 *data, gsize n_data, gsize *out_new_len)
+{
+    /* WARNING: this function only validates that the string does not contain
+     * NUL characters (and ignores one trailing NUL). It does not check character
+     * encoding! */
+
+    if (n_data > 0) {
+        if (memchr(data, n_data - 1, '\0')) {
+            /* we accept one trailing NUL (not more).
+             *
+             * https://tools.ietf.org/html/rfc2132#section-2
+             * https://github.com/systemd/systemd/issues/1337 */
+            return FALSE;
+        }
+
+        if (data[n_data - 1] == '\0')
+            n_data--;
+    }
+
+    NM_SET_OUT(out_new_len, n_data);
+    return TRUE;
+}
+
+char *
+nm_dhcp_lease_data_parse_domain_validate(const char *str)
+{
+    gs_free char *s = NULL;
+
+    s = nm_sd_dns_name_normalize(str);
+    if (!s)
+        return NULL;
+
+    if (nm_str_is_empty(s) || (s[0] == '.' && s[1] == '\0')) {
+        /* root domains are not allowed. */
+        return NULL;
+    }
+
+    if (nm_utils_is_localhost(s))
+        return NULL;
+
+    if (!g_utf8_validate(s, -1, NULL)) {
+        /* the result must be valid UTF-8. */
+        return NULL;
+    }
+
+    return g_steal_pointer(&s);
+}
+
+gboolean
+nm_dhcp_lease_data_parse_domain(const guint8 *data, gsize n_data, char **out_val)
+{
+    gs_free char *str1_free = NULL;
+    const char *  str1;
+    gs_free char *s = NULL;
+
+    /* this is mostly the same as systemd's lease_parse_domain(). */
+
+    if (!nm_dhcp_lease_data_parse_cstr(data, n_data, &n_data))
+        return FALSE;
+
+    if (n_data == 0) {
+        /* empty domains are rejected. See
+         * https://tools.ietf.org/html/rfc2132#section-3.14
+         * https://tools.ietf.org/html/rfc2132#section-3.17
+         *
+         *   Its minimum length is 1.
+         *
+         * Note that this is *after* we potentially stripped a trailing NUL.
+         */
+        return FALSE;
+    }
+
+    str1 = nm_strndup_a(300, (char *) data, n_data, &str1_free);
+
+    s = nm_dhcp_lease_data_parse_domain_validate(str1);
+    if (!s)
+        return FALSE;
+
+    *out_val = g_steal_pointer(&s);
     return TRUE;
 }
