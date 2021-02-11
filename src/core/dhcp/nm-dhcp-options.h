@@ -177,38 +177,50 @@ typedef enum {
 
 } NMDhcpOptionDhcp6Options;
 
+#define NM_DHCP_OPTION_REQPREFIX "requested_"
+
 typedef struct {
     const char *name;
     uint16_t    option_num;
     bool        include;
 } NMDhcpOption;
 
-extern const NMDhcpOption _nm_dhcp_option_dhcp4_options[];
-extern const NMDhcpOption _nm_dhcp_option_dhcp6_options[];
+extern const NMDhcpOption _nm_dhcp_option_dhcp4_options[142];
+extern const NMDhcpOption _nm_dhcp_option_dhcp6_options[16];
 
-const char *nm_dhcp_option_request_string(const NMDhcpOption *requests, guint option);
-void        nm_dhcp_option_take_option(GHashTable *        options,
-                                       const NMDhcpOption *requests,
-                                       guint               option,
-                                       char *              value);
-void        nm_dhcp_option_add_option(GHashTable *        options,
-                                      const NMDhcpOption *requests,
-                                      guint               option,
-                                      const char *        value);
-void        nm_dhcp_option_add_option_utf8safe_escape(GHashTable *        options,
-                                                      const NMDhcpOption *requests,
-                                                      guint               option,
-                                                      const guint8 *      data,
-                                                      gsize               n_data);
-void        nm_dhcp_option_add_option_in_addr(GHashTable *        options,
-                                              const NMDhcpOption *requests,
-                                              guint               option,
-                                              in_addr_t           value);
-void        nm_dhcp_option_add_option_u64(GHashTable *        options,
-                                          const NMDhcpOption *requests,
-                                          guint               option,
-                                          guint64             value);
-void nm_dhcp_option_add_requests_to_options(GHashTable *options, const NMDhcpOption *requests);
+static inline const char *
+nm_dhcp_option_get_name(const NMDhcpOption *option)
+{
+    nm_assert(option);
+    nm_assert(option->name);
+    nm_assert(NM_STR_HAS_PREFIX(option->name, NM_DHCP_OPTION_REQPREFIX));
+
+    return &option->name[NM_STRLEN(NM_DHCP_OPTION_REQPREFIX)];
+}
+
+const NMDhcpOption *nm_dhcp_option_find(int addr_family, guint option);
+
+static inline const char *
+nm_dhcp_option_request_string(int addr_family, guint option)
+{
+    return nm_dhcp_option_get_name(nm_dhcp_option_find(addr_family, option));
+}
+
+void nm_dhcp_option_take_option(GHashTable *options, int addr_family, guint option, char *value);
+void
+nm_dhcp_option_add_option(GHashTable *options, int addr_family, guint option, const char *value);
+void nm_dhcp_option_add_option_utf8safe_escape(GHashTable *  options,
+                                               int           addr_family,
+                                               guint         option,
+                                               const guint8 *data,
+                                               gsize         n_data);
+void nm_dhcp_option_add_option_in_addr(GHashTable *options,
+                                       int         addr_family,
+                                       guint       option,
+                                       in_addr_t   value);
+void
+nm_dhcp_option_add_option_u64(GHashTable *options, int addr_family, guint option, guint64 value);
+void        nm_dhcp_option_add_requests_to_options(GHashTable *options, int addr_family);
 GHashTable *nm_dhcp_option_create_options_dict(void);
 
 #endif /* __NM_DHCP_OPTIONS_H__ */
