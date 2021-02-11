@@ -812,14 +812,21 @@ _test_recv_fixture_setup(TestRecvFixture *fixture, gconstpointer user_data)
         link = nmtstp_assert_wait_for_link(NM_PLATFORM_GET, TEST_IFNAME, NM_LINK_TYPE_TUN, 0);
     } else {
         int          s;
-        struct ifreq ifr = {};
+        struct ifreq ifr;
         int          r;
+        int          try_cnt = 0;
 
+again:
+        memset(&ifr, 0, sizeof(ifr));
         ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
         nm_utils_ifname_cpy(ifr.ifr_name, TEST_IFNAME);
 
         r = ioctl(fd, TUNSETIFF, &ifr);
         if (r != 0) {
+            if (errno == EPERM && try_cnt++ < 10) {
+                g_usleep(2);
+                goto again;
+            }
             g_assert_cmpint(errno, ==, 0);
             g_assert_cmpint(r, ==, 0);
         }
