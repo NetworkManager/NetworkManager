@@ -20,6 +20,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-dhcp-utils.h"
+#include "nm-dhcp-options.h"
 #include "platform/nm-platform.h"
 
 #include "nm-dhcp-client-logging.h"
@@ -437,8 +438,7 @@ nm_dhcp_client_set_state(NMDhcpClient *self,
                          NMIPConfig *  ip_config,
                          GHashTable *  options)
 {
-    NMDhcpClientPrivate *priv     = NM_DHCP_CLIENT_GET_PRIVATE(self);
-    gs_free char *       event_id = NULL;
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
     if (NM_IN_SET(new_state, NM_DHCP_STATE_BOUND, NM_DHCP_STATE_EXTENDED)) {
         g_return_if_fail(NM_IS_IP_CONFIG_ADDR_FAMILY(ip_config, priv->addr_family));
@@ -462,23 +462,36 @@ nm_dhcp_client_set_state(NMDhcpClient *self,
         && !NM_IN_SET(new_state, NM_DHCP_STATE_BOUND, NM_DHCP_STATE_EXTENDED))
         return;
 
-    if (_LOGI_ENABLED()) {
+    if (_LOGD_ENABLED()) {
         gs_free const char **keys = NULL;
         guint                i, nkeys;
 
         keys = nm_utils_strdict_get_keys(options, TRUE, &nkeys);
         for (i = 0; i < nkeys; i++) {
-            _LOGI("option %-20s => '%s'", keys[i], (char *) g_hash_table_lookup(options, keys[i]));
+            _LOGD("option %-20s => '%s'", keys[i], (char *) g_hash_table_lookup(options, keys[i]));
         }
     }
 
-    if (priv->addr_family == AF_INET6)
-        event_id = nm_dhcp_utils_get_dhcp6_event_id(options);
+    if (_LOGT_ENABLED() && priv->addr_family == AF_INET6) {
+        gs_free char *event_id = NULL;
 
-    _LOGI("state changed %s -> %s%s%s%s",
-          state_to_string(priv->state),
-          state_to_string(new_state),
-          NM_PRINT_FMT_QUOTED(event_id, ", event ID=\"", event_id, "\"", ""));
+        event_id = nm_dhcp_utils_get_dhcp6_event_id(options);
+        if (event_id)
+            _LOGT("event-id: \"%s\"", event_id);
+    }
+
+    if (_LOGI_ENABLED()) {
+        const char *req_str =
+            NM_IS_IPv4(priv->addr_family)
+                ? nm_dhcp_option_request_string(AF_INET, NM_DHCP_OPTION_DHCP4_NM_IP_ADDRESS)
+                : nm_dhcp_option_request_string(AF_INET6, NM_DHCP_OPTION_DHCP6_NM_IP_ADDRESS);
+        const char *addr = nm_g_hash_table_lookup(options, req_str);
+
+        _LOGI("state changed %s -> %s%s%s%s",
+              state_to_string(priv->state),
+              state_to_string(new_state),
+              NM_PRINT_FMT_QUOTED(addr, ", address=", addr, "", ""));
+    }
 
     priv->state = new_state;
     g_signal_emit(G_OBJECT(self), signals[SIGNAL_STATE_CHANGED], 0, new_state, ip_config, options);
