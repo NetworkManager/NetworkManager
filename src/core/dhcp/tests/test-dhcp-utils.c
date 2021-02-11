@@ -13,9 +13,12 @@
 #include "nm-utils.h"
 
 #include "dhcp/nm-dhcp-utils.h"
+#include "dhcp/nm-dhcp-options.h"
 #include "platform/nm-platform.h"
 
 #include "nm-test-utils-core.h"
+
+/*****************************************************************************/
 
 static NMIP4Config *
 _ip4_config_from_options(int ifindex, const char *iface, GHashTable *options, guint32 route_metric)
@@ -202,7 +205,7 @@ test_parse_search_list(void)
     char ** domains;
 
     data    = (guint8[]){0x05, 'l', 'o', 'c', 'a', 'l', 0x00};
-    domains = nm_dhcp_parse_search_list(data, 7);
+    domains = nm_dhcp_lease_data_parse_search_list(data, 7);
     g_assert(domains);
     g_assert_cmpint(g_strv_length(domains), ==, 1);
     g_assert_cmpstr(domains[0], ==, "local");
@@ -211,7 +214,7 @@ test_parse_search_list(void)
     data    = (guint8[]){0x04, 't',  'e',  's', 't', 0x07, 'e',  'x',  'a',  'm', 'p', 'l',
                       'e',  0x03, 'c',  'o', 'm', 0x00, 0xc0, 0x05, 0x03, 'a', 'b', 'c',
                       0xc0, 0x0d, 0x06, 'f', 'o', 'o',  'b',  'a',  'r',  0x00};
-    domains = nm_dhcp_parse_search_list(data, 34);
+    domains = nm_dhcp_lease_data_parse_search_list(data, 34);
     g_assert(domains);
     g_assert_cmpint(g_strv_length(domains), ==, 4);
     g_assert_cmpstr(domains[0], ==, "test.example.com");
@@ -226,7 +229,7 @@ test_parse_search_list(void)
         'a',
         'd',
     };
-    domains = nm_dhcp_parse_search_list(data, 4);
+    domains = nm_dhcp_lease_data_parse_search_list(data, 4);
     g_assert(!domains);
 
     data = (guint8[]){
@@ -241,7 +244,7 @@ test_parse_search_list(void)
         'a',
         'd',
     };
-    domains = nm_dhcp_parse_search_list(data, 10);
+    domains = nm_dhcp_lease_data_parse_search_list(data, 10);
     g_assert(domains);
     g_assert_cmpint(g_strv_length(domains), ==, 1);
     g_assert_cmpstr(domains[0], ==, "okay");
@@ -740,6 +743,46 @@ test_client_id_from_string(void)
     COMPARE_ID(endcolon, TRUE, endcolon, strlen(endcolon));
 }
 
+/*****************************************************************************/
+
+static void
+test_dhcp_opt_list(gconstpointer test_data)
+{
+    const gboolean            IS_IPv4     = (GPOINTER_TO_INT(test_data) == 0);
+    const int                 addr_family = IS_IPv4 ? AF_INET : AF_INET6;
+    const NMDhcpOption *const options =
+        IS_IPv4 ? _nm_dhcp_option_dhcp4_options : _nm_dhcp_option_dhcp6_options;
+    const guint n = (IS_IPv4 ? G_N_ELEMENTS(_nm_dhcp_option_dhcp4_options)
+                             : G_N_ELEMENTS(_nm_dhcp_option_dhcp6_options));
+    guint       i;
+    guint       j;
+
+    g_assert(options);
+    g_assert(n > 0);
+
+    for (i = 0; i < n; i++) {
+        const NMDhcpOption *const opt = &options[i];
+
+        g_assert_cmpstr(opt->name, !=, NULL);
+        g_assert(NM_STR_HAS_PREFIX(opt->name, NM_DHCP_OPTION_REQPREFIX));
+
+        for (j = 0; j < i; j++) {
+            const NMDhcpOption *const opt2 = &options[j];
+
+            g_assert_cmpstr(opt->name, !=, opt2->name);
+            g_assert_cmpint(opt->option_num, !=, opt2->option_num);
+        }
+    }
+
+    for (i = 0; i < n; i++) {
+        const NMDhcpOption *const opt = &options[i];
+
+        g_assert(opt == nm_dhcp_option_find(addr_family, opt->option_num));
+    }
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -776,6 +819,8 @@ main(int argc, char **argv)
     g_test_add_func("/dhcp/client-id-from-string", test_client_id_from_string);
     g_test_add_func("/dhcp/vendor-option-metered", test_vendor_option_metered);
     g_test_add_func("/dhcp/parse-search-list", test_parse_search_list);
+    g_test_add_data_func("/dhcp/test_dhcp_opt_list/IPv4", GINT_TO_POINTER(0), test_dhcp_opt_list);
+    g_test_add_data_func("/dhcp/test_dhcp_opt_list/IPv6", GINT_TO_POINTER(1), test_dhcp_opt_list);
 
     return g_test_run();
 }

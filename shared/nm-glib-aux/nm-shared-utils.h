@@ -699,7 +699,8 @@ nm_utils_escaped_tokens_options_escape_val(const char *val, char **out_to_free)
 /*****************************************************************************/
 
 guint32 _nm_utils_ip4_prefix_to_netmask(guint32 prefix);
-guint32 _nm_utils_ip4_get_default_prefix(guint32 ip);
+guint32 _nm_utils_ip4_get_default_prefix0(in_addr_t ip);
+guint32 _nm_utils_ip4_get_default_prefix(in_addr_t ip);
 
 gconstpointer
 nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer src, guint8 plen);

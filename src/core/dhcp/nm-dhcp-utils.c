@@ -8,7 +8,10 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
+#include "nm-std-aux/unaligned.h"
 #include "nm-glib-aux/nm-dedup-multi.h"
+#include "nm-glib-aux/nm-str-buf.h"
+#include "systemd/nm-sd-utils-shared.h"
 
 #include "nm-dhcp-utils.h"
 #include "nm-utils.h"
@@ -833,4 +836,286 @@ nm_dhcp_utils_get_dhcp6_event_id(GHashTable *lease)
         return NULL;
 
     return g_strdup_printf("%s|%s", iaid, start);
+}
+
+/*****************************************************************************/
+
+gboolean
+nm_dhcp_lease_data_parse_u16(const guint8 *data, gsize n_data, uint16_t *out_val)
+{
+    if (n_data != 2)
+        return FALSE;
+
+    *out_val = unaligned_read_be16(data);
+    return TRUE;
+}
+
+gboolean
+nm_dhcp_lease_data_parse_mtu(const guint8 *data, gsize n_data, uint16_t *out_val)
+{
+    uint16_t mtu;
+
+    if (!nm_dhcp_lease_data_parse_u16(data, n_data, &mtu))
+        return FALSE;
+
+    if (mtu < 68) {
+        /* https://tools.ietf.org/html/rfc2132#section-5.1:
+         *
+         * The minimum legal value for the MTU is 68. */
+        return FALSE;
+    }
+
+    *out_val = mtu;
+    return TRUE;
+}
+
+gboolean
+nm_dhcp_lease_data_parse_cstr(const guint8 *data, gsize n_data, gsize *out_new_len)
+{
+    /* WARNING: this function only validates that the string does not contain
+     * NUL characters (and ignores trailing NULs). It does not check character
+     * encoding! */
+
+    while (n_data > 0 && data[n_data - 1] == '\0')
+        n_data--;
+
+    if (n_data > 0) {
+        if (memchr(data, n_data, '\0')) {
+            /* we accept trailing NUL, but none in between.
+             *
+             * https://tools.ietf.org/html/rfc2132#section-2
+             * https://github.com/systemd/systemd/issues/1337 */
+            return FALSE;
+        }
+    }
+
+    NM_SET_OUT(out_new_len, n_data);
+    return TRUE;
+}
+
+char *
+nm_dhcp_lease_data_parse_domain_validate(const char *str)
+{
+    gs_free char *s = NULL;
+
+    s = nm_sd_dns_name_normalize(str);
+    if (!s)
+        return NULL;
+
+    if (nm_str_is_empty(s) || (s[0] == '.' && s[1] == '\0')) {
+        /* root domains are not allowed. */
+        return NULL;
+    }
+
+    if (nm_utils_is_localhost(s))
+        return NULL;
+
+    if (!g_utf8_validate(s, -1, NULL)) {
+        /* the result must be valid UTF-8. */
+        return NULL;
+    }
+
+    return g_steal_pointer(&s);
+}
+
+gboolean
+nm_dhcp_lease_data_parse_domain(const guint8 *data, gsize n_data, char **out_val)
+{
+    gs_free char *str1_free = NULL;
+    const char *  str1;
+    gs_free char *s = NULL;
+
+    /* this is mostly the same as systemd's lease_parse_domain(). */
+
+    if (!nm_dhcp_lease_data_parse_cstr(data, n_data, &n_data))
+        return FALSE;
+
+    if (n_data == 0) {
+        /* empty domains are rejected. See
+         * https://tools.ietf.org/html/rfc2132#section-3.14
+         * https://tools.ietf.org/html/rfc2132#section-3.17
+         *
+         *   Its minimum length is 1.
+         *
+         * Note that this is *after* we potentially stripped trailing NULs.
+         */
+        return FALSE;
+    }
+
+    str1 = nm_strndup_a(300, (char *) data, n_data, &str1_free);
+
+    s = nm_dhcp_lease_data_parse_domain_validate(str1);
+    if (!s)
+        return FALSE;
+
+    *out_val = g_steal_pointer(&s);
+    return TRUE;
+}
+
+gboolean
+nm_dhcp_lease_data_parse_in_addr(const guint8 *data, gsize n_data, in_addr_t *out_val)
+{
+    /* - option 1, https://tools.ietf.org/html/rfc2132#section-3.3
+     * - option 28, https://tools.ietf.org/html/rfc2132#section-5.3
+     */
+
+    if (n_data != 4)
+        return FALSE;
+
+    *out_val = unaligned_read_ne32(data);
+    return TRUE;
+}
+
+/*****************************************************************************/
+
+static gboolean
+lease_option_print_label(NMStrBuf *sbuf, size_t n_label, const uint8_t **datap, size_t *n_datap)
+{
+    gsize i;
+
+    for (i = 0; i < n_label; ++i) {
+        uint8_t c = 0;
+
+        if (!nm_dhcp_lease_data_consume(datap, n_datap, &c, sizeof(c)))
+            return FALSE;
+
+        switch (c) {
+        case 'a' ... 'z':
+        case 'A' ... 'Z':
+        case '0' ... '9':
+        case '-':
+        case '_':
+            nm_str_buf_append_c(sbuf, c);
+            break;
+        case '.':
+        case '\\':
+            nm_str_buf_append_c2(sbuf, '\\', c);
+            break;
+        default:
+            nm_str_buf_append_printf(sbuf, "\\%3d", c);
+        }
+    }
+
+    return TRUE;
+}
+
+static char *
+lease_option_print_domain_name(const uint8_t * cache,
+                               size_t *        n_cachep,
+                               const uint8_t **datap,
+                               size_t *        n_datap)
+{
+    nm_auto_str_buf NMStrBuf sbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_40, FALSE);
+    const uint8_t *          domain;
+    size_t                   n_domain;
+    size_t                   n_cache   = *n_cachep;
+    const uint8_t **         domainp   = datap;
+    size_t *                 n_domainp = n_datap;
+    gboolean                 first     = TRUE;
+    uint8_t                  c;
+
+    /*
+     * We are given two adjacent memory regions. The @cache contains alreday parsed
+     * domain names, and the @datap contains the remaining data to parse.
+     *
+     * A domain name is formed from a sequence of labels. Each label start with
+     * a length byte, where the two most significant bits are unset. A zero-length
+     * label indicates the end of the domain name.
+     *
+     * Alternatively, a label can be followed by an offset (indicated by the two
+     * most significant bits being set in the next byte that is read). The offset
+     * is an offset into the cache, where the next label of the domain name can
+     * be found.
+     *
+     * Note, that each time a jump to an offset is performed, the size of the
+     * cache shrinks, so this is guaranteed to terminate.
+     */
+    if (cache + n_cache != *datap)
+        return NULL;
+
+    for (;;) {
+        if (!nm_dhcp_lease_data_consume(domainp, n_domainp, &c, sizeof(c)))
+            return NULL;
+
+        switch (c & 0xC0) {
+        case 0x00: /* label length */
+        {
+            size_t n_label = c;
+
+            if (n_label == 0) {
+                /*
+                 * We reached the final label of the domain name. Adjust
+                 * the cache to include the consumed data, and return.
+                 */
+                *n_cachep = *datap - cache;
+                return nm_str_buf_finalize(&sbuf, NULL);
+            }
+
+            if (!first)
+                nm_str_buf_append_c(&sbuf, '.');
+            else
+                first = FALSE;
+
+            if (!lease_option_print_label(&sbuf, n_label, domainp, n_domainp))
+                return NULL;
+
+            break;
+        }
+        case 0xC0: /* back pointer */
+        {
+            size_t offset = (c & 0x3F) << 16;
+
+            /*
+             * The offset is given as two bytes (in big endian), where the
+             * two high bits are masked out.
+             */
+
+            if (!nm_dhcp_lease_data_consume(domainp, n_domainp, &c, sizeof(c)))
+                return NULL;
+
+            offset += c;
+
+            if (offset >= n_cache)
+                return NULL;
+
+            domain   = cache + offset;
+            n_domain = n_cache - offset;
+            n_cache  = offset;
+
+            domainp   = &domain;
+            n_domainp = &n_domain;
+
+            break;
+        }
+        default:
+            return NULL;
+        }
+    }
+}
+
+char **
+nm_dhcp_lease_data_parse_search_list(const guint8 *data, gsize n_data)
+{
+    GPtrArray *   array   = NULL;
+    const guint8 *cache   = data;
+    gsize         n_cache = 0;
+
+    for (;;) {
+        gs_free char *s = NULL;
+
+        s = lease_option_print_domain_name(cache, &n_cache, &data, &n_data);
+        if (!s)
+            break;
+
+        if (!array)
+            array = g_ptr_array_new();
+
+        g_ptr_array_add(array, g_steal_pointer(&s));
+    }
+
+    if (!array)
+        return NULL;
+
+    g_ptr_array_add(array, NULL);
+    return (char **) g_ptr_array_free(array, FALSE);
 }

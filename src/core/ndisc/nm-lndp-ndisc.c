@@ -474,7 +474,7 @@ dns_servers_done:
         gsize              padding;
         gsize              len;
 
-        nm_str_buf_reset(&sbuf, NULL);
+        nm_str_buf_reset(&sbuf);
 
         for (i = 0; i < rdata->dns_domains->len; i++) {
             const NMNDiscDNSDomain *dns_domain =
