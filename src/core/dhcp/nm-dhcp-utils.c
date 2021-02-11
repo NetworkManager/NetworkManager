@@ -873,20 +873,20 @@ gboolean
 nm_dhcp_lease_data_parse_cstr(const guint8 *data, gsize n_data, gsize *out_new_len)
 {
     /* WARNING: this function only validates that the string does not contain
-     * NUL characters (and ignores one trailing NUL). It does not check character
+     * NUL characters (and ignores trailing NULs). It does not check character
      * encoding! */
 
+    while (n_data > 0 && data[n_data - 1] == '\0')
+        n_data--;
+
     if (n_data > 0) {
-        if (memchr(data, n_data - 1, '\0')) {
-            /* we accept one trailing NUL (not more).
+        if (memchr(data, n_data, '\0')) {
+            /* we accept trailing NUL, but none in between.
              *
              * https://tools.ietf.org/html/rfc2132#section-2
              * https://github.com/systemd/systemd/issues/1337 */
             return FALSE;
         }
-
-        if (data[n_data - 1] == '\0')
-            n_data--;
     }
 
     NM_SET_OUT(out_new_len, n_data);
@@ -937,7 +937,7 @@ nm_dhcp_lease_data_parse_domain(const guint8 *data, gsize n_data, char **out_val
          *
          *   Its minimum length is 1.
          *
-         * Note that this is *after* we potentially stripped a trailing NUL.
+         * Note that this is *after* we potentially stripped trailing NULs.
          */
         return FALSE;
     }

@@ -690,7 +690,7 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
     if (r == 0 && nm_dhcp_lease_data_parse_cstr(l_data, l_data_len, &l_data_len)) {
         /* https://tools.ietf.org/html/draft-ietf-wrec-wpad-01#section-4.4.1
          *
-         * We reject NUL characters inside the string (except one trailing NUL).
+         * We reject NUL characters inside the string (except trailing NULs).
          * Otherwise, we allow any encoding and backslash-escape the result to
          * UTF-8. */
         nm_dhcp_option_add_option_utf8safe_escape(options,
