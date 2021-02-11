@@ -1282,14 +1282,14 @@ get_agent_request_network_path(GDBusMethodInvocation *invocation)
     const char *network_path = NULL;
 
     if (nm_streq(method_name, "RequestPassphrase"))
-        g_variant_get(params, "(s)", &network_path);
+        g_variant_get(params, "(o)", &network_path);
     else if (nm_streq(method_name, "RequestPrivateKeyPassphrase"))
-        g_variant_get(params, "(s)", &network_path);
+        g_variant_get(params, "(o)", &network_path);
     else if (nm_streq(method_name, "RequestUserNameAndPassword"))
-        g_variant_get(params, "(s)", &network_path);
+        g_variant_get(params, "(o)", &network_path);
     else if (nm_streq(method_name, "RequestUserPassword")) {
         const char *user;
-        g_variant_get(params, "(ss)", &network_path, &user);
+        g_variant_get(params, "(os)", &network_path, &user);
     }
 
     return network_path;
