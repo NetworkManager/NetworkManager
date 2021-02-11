@@ -56,9 +56,9 @@ typedef enum {
     NM_SETTINGS_CONNECTION_UPDATE_REASON_CLEAR_AGENT_SECRETS = (1u << 5),
     NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_AGENT_SECRETS = (1u << 6),
 
-    /* if a profile was greated as default-wired connection for a device, then
+    /* if a profile was generated as default-wired connection for a device, then
      * when the user modifies it via D-Bus, the profile should become persisted
-     * to disk and it the purpose why the profile was created should be forgotten. */
+     * to disk and the initial purpose the profile was created should be forgotten. */
     NM_SETTINGS_CONNECTION_UPDATE_REASON_CLEAR_DEFAULT_WIRED = (1u << 7),
 
     NM_SETTINGS_CONNECTION_UPDATE_REASON_BLOCK_AUTOCONNECT = (1u << 8),
