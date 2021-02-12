@@ -1078,8 +1078,12 @@ nmi_cmdline_reader_parse(const char *       sysfs_dir,
         else if (nm_streq(tag, "rd.peerdns"))
             reader->ignore_auto_dns = !_nm_utils_ascii_str_to_bool(argument, TRUE);
         else if (nm_streq(tag, "rd.net.timeout.dhcp")) {
-            reader->dhcp_timeout =
-                _nm_utils_ascii_str_to_int64(argument, 10, 1, G_MAXINT32, reader->dhcp_timeout);
+            if (nm_streq0(argument, "infinity")) {
+                reader->dhcp_timeout = G_MAXINT32;
+            } else {
+                reader->dhcp_timeout =
+                    _nm_utils_ascii_str_to_int64(argument, 10, 1, G_MAXINT32, reader->dhcp_timeout);
+            }
         } else if (nm_streq(tag, "rd.net.dhcp.vendor-class")) {
             if (nm_utils_validate_dhcp4_vendor_class_id(argument, NULL))
                 nm_utils_strdup_reset(&reader->dhcp4_vci, argument);

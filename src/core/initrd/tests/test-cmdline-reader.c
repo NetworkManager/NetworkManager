@@ -240,6 +240,7 @@ test_dhcp_timeout(void)
         {NM_MAKE_STRV("ip=dhcp", "rd.net.timeout.dhcp=0"), 90},
         {NM_MAKE_STRV("ip=dhcp", "rd.net.timeout.dhcp=foobar"), 90},
         {NM_MAKE_STRV("ip=dhcp", "rd.net.timeout.dhcp=42"), 42},
+        {NM_MAKE_STRV("ip=dhcp", "rd.net.timeout.dhcp=infinity"), G_MAXINT32},
     };
     guint i;
 
