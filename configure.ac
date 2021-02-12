@@ -642,16 +642,25 @@ fi
 AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT, "$enable_polkit", [The default value of the auth-polkit configuration option])
 AC_SUBST(NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_TEXT, "$enable_polkit")
 
-PKG_CHECK_MODULES(POLKIT, [polkit-agent-1 >= 0.97], [have_pk_agent=yes],[have_pk_agent=no])
-if test x"$have_pk_agent" = x"no"; then
-	POLKIT_PACKAGE_PREFIX="/usr"
-else
-	POLKIT_PACKAGE_PREFIX=`$PKG_CONFIG --variable=prefix polkit-agent-1`
+AC_ARG_WITH([polkit-agent-helper-1-path],
+            AS_HELP_STRING([--with-polkit-agent-helper-1-path=PATH],
+                           [Path name to the polkit-agent-helper-1 binary from polkit]),
+            POLKIT_AGENT_HELPER_1_PATH="$withval",
+            POLKIT_AGENT_HELPER_1_PATH="")
+if test -z "$POLKIT_AGENT_HELPER_1_PATH" ; then
+    for p in /usr/libexec/polkit-agent-helper-1 \
+             /usr/lib/polkit-1/polkit-agent-helper-1 \
+             /usr/lib/policykit-1/polkit-agent-helper-1 ; do
+        if test -f "$p" ; then
+            POLKIT_AGENT_HELPER_1_PATH="$p"
+            break
+        fi
+    done
 fi
-AC_DEFINE_UNQUOTED([POLKIT_PACKAGE_PREFIX],
-                   ["$POLKIT_PACKAGE_PREFIX"],
-                   [polkit-agent package prefix])
-
+test -z "$POLKIT_AGENT_HELPER_1_PATH" && POLKIT_AGENT_HELPER_1_PATH=/usr/lib/polkit-1/polkit-agent-helper-1
+AC_DEFINE_UNQUOTED([POLKIT_AGENT_HELPER_1_PATH],
+                   ["$POLKIT_AGENT_HELPER_1_PATH"],
+                   [path to polkit-agent-helper-1 binary])
 
 AC_ARG_ENABLE(modify-system, AS_HELP_STRING([--enable-modify-system], [Allow users to modify system connections]))
 if test "${enable_modify_system}" = "yes"; then
@@ -1332,6 +1341,7 @@ if test "${enable_modify_system}" = "yes"; then
 else
 	echo "  policykit: main.auth-polkit=${enable_polkit} (restrictive modify.system)"
 fi
+echo "  polkit-agent-helper-1: $POLKIT_AGENT_HELPER_1_PATH"
 echo "  selinux: $have_selinux"
 echo "  systemd-journald: $have_systemd_journal (default: logging.backend=${nm_config_logging_backend_default})"
 echo "  hostname persist: ${hostname_persist}"

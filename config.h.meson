@@ -109,6 +109,9 @@
 /* Define to the full name and version of this package. */
 #mesondefine PACKAGE_STRING
 
+/* path to polkit-agent-helper-1 binary */
+#mesondefine POLKIT_AGENT_HELPER_1_PATH
+
 /* Path to resolvconf */
 #mesondefine RESOLVCONF_PATH
 
@@ -217,9 +220,6 @@
 
 /* Define if you have oFono support (experimental) */
 #mesondefine WITH_OFONO
-
-/* Define the polkit agent package prefix */
-#mesondefine POLKIT_PACKAGE_PREFIX
 
 /* Define if you have PPP support */
 #mesondefine WITH_PPP

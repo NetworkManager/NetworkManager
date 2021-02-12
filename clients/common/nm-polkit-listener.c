@@ -501,7 +501,7 @@ begin_authentication(AuthRequest *request)
 {
     int         fd_flags;
     const char *helper_argv[] = {
-        POLKIT_PACKAGE_PREFIX "/lib/polkit-1/polkit-agent-helper-1",
+        POLKIT_AGENT_HELPER_1_PATH,
         request->username,
         NULL,
     };

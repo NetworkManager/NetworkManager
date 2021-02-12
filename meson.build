@@ -514,12 +514,18 @@ config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT', config_auth_polkit_def
 
 enable_modify_system = get_option('modify_system')
 
-polkit_agent_dep = dependency('polkit-agent-1', version: '>= 0.97', required : false)
-if polkit_agent_dep.found()
-	config_h.set_quoted('POLKIT_PACKAGE_PREFIX', polkit_agent_dep.get_pkgconfig_variable('prefix'))
-else
-	config_h.set_quoted('POLKIT_PACKAGE_PREFIX', '/usr')
+polkit_agent_helper_1_path = get_option('polkit_agent_helper_1_path')
+foreach p : [ '/usr/libexec/polkit-agent-helper-1',
+              '/usr/lib/polkit-1/polkit-agent-helper-1',
+              '/usr/lib/policykit-1/polkit-agent-helper-1' ]
+  if polkit_agent_helper_1_path == '' and run_command('test', '-f', p).returncode() == 0
+    polkit_agent_helper_1_path = p
+  endif
+endforeach
+if polkit_agent_helper_1_path == ''
+  polkit_agent_helper_1_path = '/usr/lib/polkit-1/polkit-agent-helper-1'
 endif
+config_h.set_quoted('POLKIT_AGENT_HELPER_1_PATH', polkit_agent_helper_1_path)
 
 
 crypto = get_option('crypto')
@@ -1016,6 +1022,7 @@ if enable_polkit
   output += ' modify.system)'
 endif
 output += '\n'
+output += '  polkit-agent-helper-1: ' + polkit_agent_helper_1_path + '\n'
 output += '  selinux: ' + enable_selinux.to_string() + '\n'
 output += '  systemd-journald: ' + enable_systemd_journal.to_string() + ' (default: logging.backend=' + config_logging_backend_default + ')\n'
 output += '  hostname persist: ' + hostname_persist + '\n'
