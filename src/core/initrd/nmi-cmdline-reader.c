@@ -53,6 +53,7 @@ reader_new(void)
             g_hash_table_new_full(nm_direct_hash, NULL, g_object_unref, NULL),
         .vlan_parents = g_ptr_array_new_with_free_func(g_free),
         .array        = g_ptr_array_new(),
+        .dhcp_timeout = 90,
     };
 
     return reader;
@@ -147,6 +148,8 @@ reader_create_connection(Reader *                 reader,
                  type_name,
                  NM_SETTING_CONNECTION_MULTI_CONNECT,
                  multi_connect,
+                 NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES,
+                 1,
                  NULL);
 
     if (nm_streq0(type_name, NM_SETTING_INFINIBAND_SETTING_NAME)) {
@@ -1082,7 +1085,8 @@ nmi_cmdline_reader_parse(const char *       sysfs_dir,
         else if (nm_streq(tag, "rd.peerdns"))
             reader->ignore_auto_dns = !_nm_utils_ascii_str_to_bool(argument, TRUE);
         else if (nm_streq(tag, "rd.net.timeout.dhcp")) {
-            reader->dhcp_timeout = _nm_utils_ascii_str_to_int64(argument, 10, 0, G_MAXINT32, 0);
+            reader->dhcp_timeout =
+                _nm_utils_ascii_str_to_int64(argument, 10, 1, G_MAXINT32, reader->dhcp_timeout);
         } else if (nm_streq(tag, "rd.net.dhcp.vendor-class")) {
             if (nm_utils_validate_dhcp4_vendor_class_id(argument, NULL))
                 nm_utils_strdup_reset(&reader->dhcp4_vci, argument);
