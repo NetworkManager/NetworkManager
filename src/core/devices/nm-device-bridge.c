@@ -14,7 +14,7 @@
 #include "nm-device-private.h"
 #include "platform/nm-platform.h"
 #include "nm-device-factory.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceBridge
 #include "nm-device-logging.h"

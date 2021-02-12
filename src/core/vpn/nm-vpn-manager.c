@@ -12,7 +12,7 @@
 #include "nm-vpn-connection.h"
 #include "nm-setting-vpn.h"
 #include "nm-vpn-dbus-interface.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 
 typedef struct {
     GSList *      plugins;

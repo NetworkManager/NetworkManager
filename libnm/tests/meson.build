@@ -16,13 +16,16 @@ foreach test_unit: test_units
       libnm_enum_sources[1],
     ],
     dependencies: [
-      libnm_core_dep,
+      libnm_core_impl_dep_link,
       libnm_nm_default_dep,
     ],
     c_args: [
       '-DG_LOG_DOMAIN="test"',
     ],
-    link_with: libnm_static,
+    link_with: [
+      libnm_static,
+      libnm_base,
+    ],
   )
 
   test(

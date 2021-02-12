@@ -4,9 +4,10 @@ exe = executable(
   'test-cloud-setup-general',
   'test-cloud-setup-general.c',
   dependencies: [
+    libnm_cloud_setup_core_dep,
     libnmc_base_dep,
     libnmc_dep,
-    libnm_cloud_setup_core_dep,
+    libnm_glib_aux_dep_link,
   ],
   c_args: [
     '-DG_LOG_DOMAIN="test"',

@@ -20,7 +20,7 @@
 #include "devices/nm-device-private.h"
 #include "platform/nm-platform.h"
 #include "nm-config.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-manager.h"
 #include "nm-ip4-config.h"
 #include "nm-std-aux/nm-dbus-compat.h"

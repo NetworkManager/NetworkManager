@@ -11,10 +11,10 @@
 #include <stdlib.h>
 
 #include "nm-glib-aux/nm-str-buf.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-supplicant-settings-verify.h"
 #include "nm-setting.h"
-#include "nm-libnm-core-intern/nm-auth-subject.h"
+#include "libnm-core-aux-intern/nm-auth-subject.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-setting-ip4-config.h"

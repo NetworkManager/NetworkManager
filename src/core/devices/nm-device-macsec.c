@@ -15,7 +15,7 @@
 #include "nm-device-factory.h"
 #include "nm-manager.h"
 #include "nm-setting-macsec.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "supplicant/nm-supplicant-manager.h"
 #include "supplicant/nm-supplicant-interface.h"
 #include "supplicant/nm-supplicant-config.h"

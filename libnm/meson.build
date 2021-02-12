@@ -3,9 +3,16 @@
 libnm_inc = include_directories('.')
 
 libnm_nm_default_dep = declare_dependency(
-  sources: libnm_core_enum_sources[1],
-  include_directories: libnm_inc,
-  dependencies: libnm_core_nm_default_dep,
+  include_directories: [
+    libnm_inc,
+    libnm_core_public_inc,
+    top_inc,
+    shared_inc,
+    src_inc,
+  ],
+  dependencies: [
+    libnm_core_public_dep,
+  ],
 )
 
 libnm_headers = files(
@@ -135,7 +142,7 @@ libnm_static = static_library(
   sources: libnm_sources + libnm_enum_sources,
   dependencies: [
     libnmdbus_dep,
-    libnm_libnm_core_intern_dep,
+    libnm_core_aux_intern_dep,
     libnm_nm_default_dep,
     libnm_udev_aux_dep,
     libudev_dep,
@@ -154,10 +161,11 @@ libnm = shared_library(
   dependencies: libnm_nm_default_dep,
   link_whole: [
     libnm_static,
-    libnm_core,
+    libnm_core_impl,
     libnmdbus,
     libnm_systemd_logging_stub,
     libnm_glib_aux,
+    libnm_base,
   ],
   link_args: '-Wl,--version-script,@0@'.format(linker_script),
   link_depends: linker_script,
@@ -194,8 +202,11 @@ if enable_introspection
 
   libnm_gir = gnome.generate_gir(
     libnm,
-    sources: libnm_core_sources + libnm_core_headers + libnm_core_enum_sources + libnm_sources + libnm_headers + libnm_enum_sources + [nm_version_macro_header],
+    sources: libnm_core_settings_sources + libnm_core_impl_sources + libnm_core_public_enum_sources + libnm_core_headers + libnm_sources + libnm_headers + libnm_enum_sources + [nm_version_macro_header],
     includes: 'Gio-2.0',
+    include_directories: [
+      libnm_core_public_inc,
+    ],
     nsversion: nm_gir_version,
     namespace: 'NM',
     identifier_prefix: nm_id_prefix,
@@ -300,8 +311,7 @@ libnm_libnm_aux = static_library(
     '-DG_LOG_DOMAIN="libnmc"',
   ],
   dependencies: [
-    libnm_core_nm_default_dep,
-    libnm_libnm_core_intern_dep,
+    libnm_core_aux_intern_dep,
     libnm_dep,
   ],
 )

@@ -16,7 +16,7 @@
 #include <linux/if.h>
 
 #include "nm-glib-aux/nm-dbus-aux.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "platform/nm-platform.h"
 #include "nm-utils.h"
 #include "nm-ip4-config.h"

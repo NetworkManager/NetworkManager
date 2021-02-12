@@ -20,7 +20,7 @@
 #include "nm-ip6-config.h"
 #include "nm-object-private.h"
 #include "nm-remote-connection.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-utils.h"
 #include "nm-dbus-helpers.h"
 #include "nm-device-tun.h"

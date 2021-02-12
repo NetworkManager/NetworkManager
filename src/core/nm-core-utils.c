@@ -28,7 +28,7 @@
 #include "nm-glib-aux/nm-secret-utils.h"
 #include "nm-glib-aux/nm-time-utils.h"
 #include "nm-utils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"

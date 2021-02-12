@@ -35,7 +35,7 @@
 #include "nm-std-aux/unaligned.h"
 
 #include "nm-utils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-setting-vlan.h"
 
 #include "nm-glib-aux/nm-secret-utils.h"

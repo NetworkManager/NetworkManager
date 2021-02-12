@@ -917,8 +917,7 @@ content_files = []
 
 subdir('introspection')
 subdir('shared')
-subdir('libnm-core')
-subdir('src/core')
+subdir('src')
 subdir('libnm')
 subdir('dispatcher')
 subdir('clients')

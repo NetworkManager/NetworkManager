@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <linux/if_ether.h>
 
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-bluez-common.h"
 #include "nm-bluez-manager.h"
 #include "devices/nm-device-private.h"

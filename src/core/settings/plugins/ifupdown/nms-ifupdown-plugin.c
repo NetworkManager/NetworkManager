@@ -9,7 +9,7 @@
 
 #include "nms-ifupdown-plugin.h"
 
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-core-utils.h"
 #include "nm-config.h"
 #include "settings/nm-settings-plugin.h"

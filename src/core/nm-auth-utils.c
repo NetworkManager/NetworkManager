@@ -9,7 +9,7 @@
 
 #include "nm-glib-aux/nm-c-list.h"
 #include "nm-setting-connection.h"
-#include "nm-libnm-core-intern/nm-auth-subject.h"
+#include "libnm-core-aux-intern/nm-auth-subject.h"
 #include "nm-auth-manager.h"
 #include "nm-session-monitor.h"
 #include "nm-dbus-manager.h"

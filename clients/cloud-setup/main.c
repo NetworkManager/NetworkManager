@@ -8,7 +8,7 @@
 #include "nmcs-provider-ec2.h"
 #include "nmcs-provider-gcp.h"
 #include "nmcs-provider-azure.h"
-#include "nm-libnm-core-intern/nm-libnm-core-utils.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 /*****************************************************************************/
 

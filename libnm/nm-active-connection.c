@@ -10,7 +10,7 @@
 
 #include "nm-dbus-interface.h"
 #include "nm-object-private.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-device.h"
 #include "nm-connection.h"
 #include "nm-vpn-connection.h"

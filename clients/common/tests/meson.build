@@ -6,6 +6,10 @@ exe = executable(
   dependencies: [
     libnmc_base_dep,
     libnmc_dep,
+    libnm_core_aux_intern_dep_link,
+    libnm_core_aux_extern_dep_link,
+    libnm_glib_aux_dep_link,
+    libnm_base_dep_link,
   ],
   c_args: [
     '-DG_LOG_DOMAIN="test"',
@@ -23,8 +27,9 @@ exe = executable(
   'test-libnm-core-aux.c',
   dependencies: [
     libnm_dep,
-    libnm_libnm_core_aux_dep,
+    libnm_core_aux_extern_dep_link,
     libnm_nm_default_dep,
+    libnm_glib_aux_dep_link,
   ],
   c_args: [
     '-DG_LOG_DOMAIN="test"',

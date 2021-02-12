@@ -6,7 +6,7 @@ exe = executable(
   c_args: [
     '-DG_LOG_DOMAIN="test"',
   ],
-  dependencies: libnm_glib_aux_dep,
+  dependencies: libnm_glib_aux_dep_link,
   link_with: libnm_systemd_logging_stub,
 )
 
@@ -25,7 +25,7 @@ if jansson_dep.found()
       '-DG_LOG_DOMAIN="test"',
     ],
     dependencies: [
-      libnm_glib_aux_dep,
+      libnm_glib_aux_dep_link,
       jansson_dep,
       dl_dep,
     ],

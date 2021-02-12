@@ -30,7 +30,7 @@
 #include "nm-glib-aux/nm-str-buf.h"
 #include "nm-glib-aux/nm-secret-utils.h"
 #include "nm-glib-aux/nm-io-utils.h"
-#include "nm-libnm-core-intern/nm-auth-subject.h"
+#include "libnm-core-aux-intern/nm-auth-subject.h"
 #include "c-list/src/c-list.h"
 
 #define LOGIND_BUS_NAME "org.freedesktop.login1"

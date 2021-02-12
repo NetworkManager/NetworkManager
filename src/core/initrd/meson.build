@@ -19,6 +19,8 @@ executable(
   link_with: [
     libNetworkManagerBase,
     libnmi_core,
+    libnm_core_impl,
+    libnm_base,
   ],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,

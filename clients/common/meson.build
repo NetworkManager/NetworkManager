@@ -76,7 +76,7 @@ libnmc = static_library(
   dependencies: [
     libnm_dep,
     libnm_nm_default_dep,
-    libnm_libnm_core_aux_dep,
+    libnm_core_aux_extern_dep,
   ],
   c_args: [
     '-DG_LOG_DOMAIN="libnmc"',

@@ -1305,7 +1305,6 @@ AC_SUBST(AM_CFLAGS)
 
 AC_CONFIG_FILES([
 Makefile
-libnm-core/nm-version-macros.h
 libnm/libnm.pc
 po/Makefile.in
 data/org.freedesktop.NetworkManager.policy.in
@@ -1314,6 +1313,7 @@ docs/api/version.xml
 docs/libnm/Makefile
 docs/libnm/version.xml
 NetworkManager.pc
+src/libnm-core-public/nm-version-macros.h
 ])
 AC_OUTPUT
 

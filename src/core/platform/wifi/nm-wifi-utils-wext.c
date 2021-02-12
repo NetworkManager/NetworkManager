@@ -24,7 +24,7 @@
 #include "nm-wifi-utils-private.h"
 #include "nm-utils.h"
 #include "nm-platform/nm-platform-utils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-core-utils.h"
 
 typedef struct {

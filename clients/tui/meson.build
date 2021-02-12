@@ -51,6 +51,10 @@ executable(
     libnmc_dep,
     libnmt_newt_dep,
     libnm_libnm_aux_dep,
+    libnm_core_aux_extern_dep_link,
+    libnm_core_aux_intern_dep_link,
+    libnm_base_dep_link,
+    libnm_glib_aux_dep_link,
   ],
   c_args: [
     '-DG_LOG_DOMAIN="nmtui"',

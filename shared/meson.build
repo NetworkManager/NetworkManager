@@ -4,8 +4,8 @@ shared_inc = include_directories('.')
 
 glib_nm_default_dep = declare_dependency(
   include_directories: [
-    top_inc,
     shared_inc,
+    top_inc,
   ],
   dependencies: [
     glib_dep,
@@ -139,7 +139,17 @@ libnm_glib_aux = static_library(
 )
 
 libnm_glib_aux_dep = declare_dependency(
-  dependencies: glib_nm_default_dep,
+  include_directories: [
+    shared_inc,
+    top_inc,
+  ],
+  dependencies: [
+    glib_nm_default_dep,
+  ],
+)
+
+libnm_glib_aux_dep_link = declare_dependency(
+  dependencies: libnm_glib_aux_dep,
   link_with: libnm_glib_aux,
 )
 
@@ -165,7 +175,7 @@ libnm_base = static_library(
   sources: files(
     'nm-base/nm-ethtool-base.c',
   ),
-  dependencies: libnm_glib_aux_dep,
+  dependencies: libnm_glib_aux_dep_link,
   c_args: [
     '-DG_LOG_DOMAIN="libnm"',
   ],
@@ -174,6 +184,10 @@ libnm_base = static_library(
 libnm_base_dep = declare_dependency(
   include_directories: shared_inc,
   dependencies: libnm_glib_aux_dep,
+)
+
+libnm_base_dep_link = declare_dependency(
+  dependencies: libnm_glib_aux_dep_link,
   link_with: libnm_base,
 )
 
@@ -192,7 +206,7 @@ libnm_log_core = static_library(
 libnm_log_core_dep = declare_dependency(
   include_directories: shared_inc,
   dependencies: [
-    libnm_glib_aux_dep,
+    libnm_glib_aux_dep_link,
   ],
   link_with: libnm_log_core,
 )
@@ -215,7 +229,7 @@ libnm_platform = static_library(
 libnm_platform_dep = declare_dependency(
   include_directories: shared_inc,
   dependencies: [
-    libnm_glib_aux_dep,
+    libnm_glib_aux_dep_link,
   ],
   link_with: libnm_platform,
 )

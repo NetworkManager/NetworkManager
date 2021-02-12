@@ -8,7 +8,7 @@
 
 #include "nm-dispatcher.h"
 
-#include "nm-libnm-core-aux/nm-dispatcher-api.h"
+#include "libnm-core-aux-extern/nm-dispatcher-api.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-connectivity.h"
@@ -21,7 +21,7 @@
 #include "nm-manager.h"
 #include "settings/nm-settings-connection.h"
 #include "platform/nm-platform.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 
 #define CALL_TIMEOUT (1000 * 60 * 10) /* 10 minutes for all scripts */
 

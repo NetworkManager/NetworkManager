@@ -265,7 +265,7 @@
 
     <chapter id="dbus-types">
       <title>Types</title>
-      <xi:include href="../../libnm-core/nm-dbus-types.xml"/>
+      <xi:include href="../../src/libnm-core-public/nm-dbus-types.xml"/>
     </chapter>
   </part>
 
@@ -289,7 +289,7 @@
     </chapter>
     <chapter id="dbus-vpn-types">
       <title>Types</title>
-      <xi:include href="../../libnm-core/nm-vpn-dbus-types.xml"/>
+      <xi:include href="../../src/libnm-core-public/nm-vpn-dbus-types.xml"/>
     </chapter>
   </part>
 

@@ -1,10 +1,5 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
-src_dirs = [
-  libnm_core_inc,
-  libnm_inc,
-]
-
 private_headers = [
   'common.h',
   'nm-core-internal.h',
@@ -57,7 +52,10 @@ version_xml = configure_file(
 gnome.gtkdoc(
   libnm_name,
   main_xml: libnm_name + '-docs.xml',
-  src_dir: src_dirs,
+  src_dir: [
+    libnm_core_public_inc,
+    libnm_inc,
+  ],
   dependencies: libnm_dep,
   scan_args: scan_args,
   scanobjs_args: '--type-init-func="g_type_init();"',

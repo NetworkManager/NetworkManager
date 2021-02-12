@@ -13,7 +13,7 @@
 
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-manager.h"
 #include "nm-glib-aux/nm-ref-string.h"
 #include "nm-setting-wireless.h"

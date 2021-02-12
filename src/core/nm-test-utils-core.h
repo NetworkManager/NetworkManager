@@ -7,7 +7,7 @@
 #define __NM_TEST_UTILS_CORE_H__
 
 #include "NetworkManagerUtils.h"
-#include "nm-keyfile-internal.h"
+#include "libnm-core-intern/nm-keyfile-internal.h"
 
 #define _NMTST_INSIDE_CORE 1
 

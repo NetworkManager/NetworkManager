@@ -8,7 +8,7 @@
 
 #include "nm-supplicant-manager.h"
 
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-manager.h"
 #include "nm-glib-aux/nm-dbus-aux.h"
 #include "nm-glib-aux/nm-ref-string.h"

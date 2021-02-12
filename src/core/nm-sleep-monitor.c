@@ -11,7 +11,7 @@
 #include <sys/stat.h>
 #include <gio/gunixfdlist.h>
 
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 
 #if defined(SUSPEND_RESUME_UPOWER)

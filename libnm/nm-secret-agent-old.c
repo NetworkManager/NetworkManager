@@ -8,7 +8,7 @@
 #include "nm-secret-agent-old.h"
 
 #include "c-list/src/c-list.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-helpers.h"
 #include "nm-dbus-interface.h"
 #include "nm-enum-types.h"

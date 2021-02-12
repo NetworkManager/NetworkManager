@@ -16,7 +16,7 @@
 #include <arpa/inet.h>
 #include <glib-unix.h>
 
-#include "nm-libnm-core-aux/nm-dispatcher-api.h"
+#include "libnm-core-aux-extern/nm-dispatcher-api.h"
 #include "nm-dispatcher-utils.h"
 
 /*****************************************************************************/

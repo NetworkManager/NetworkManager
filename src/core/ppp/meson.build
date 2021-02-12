@@ -4,7 +4,11 @@ nm_pppd_plugin = shared_module(
   'nm-pppd-plugin',
   name_prefix: '',
   sources: 'nm-pppd-plugin.c',
-  dependencies: libnm_core_nm_default_dep,
+  dependencies: [
+    libnm_core_impl_dep_link,
+    libnm_glib_aux_dep_link,
+    glib_dep,
+  ],
   c_args: [
     '-DG_LOG_DOMAIN="nm-pppd-plugin"',
   ],

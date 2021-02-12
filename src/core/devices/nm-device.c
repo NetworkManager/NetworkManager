@@ -29,7 +29,7 @@
 #include "systemd/nm-sd-utils-shared.h"
 
 #include "nm-base/nm-ethtool-base.h"
-#include "nm-libnm-core-intern/nm-common-macros.h"
+#include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-device-private.h"
 #include "nm-l3cfg.h"
 #include "nm-l3-config-data.h"
@@ -65,7 +65,7 @@
 #include "c-list/src/c-list.h"
 #include "dns/nm-dns-manager.h"
 #include "nm-acd-manager.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "systemd/nm-sd.h"
 #include "nm-lldp-listener.h"
 #include "nm-audit-manager.h"

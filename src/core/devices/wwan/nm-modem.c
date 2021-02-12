@@ -12,7 +12,7 @@
 #include <termios.h>
 #include <linux/rtnetlink.h>
 
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "platform/nm-platform.h"
 #include "nm-setting-connection.h"
 #include "NetworkManagerUtils.h"

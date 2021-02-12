@@ -12,7 +12,7 @@
 #include "nm-client.h"
 #include "nm-object-private.h"
 #include "nm-dbus-helpers.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 
 /*****************************************************************************
  * NMDnsEntry

@@ -32,7 +32,7 @@
 #include "nm-setting-team.h"
 #include "nm-setting-team-port.h"
 #include "nm-utils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "nm-base/nm-ethtool-base.h"
 

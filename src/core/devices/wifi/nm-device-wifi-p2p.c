@@ -15,7 +15,7 @@
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device-private.h"
 #include "nm-act-request.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-glib-aux/nm-ref-string.h"
 #include "nm-ip4-config.h"
 #include "nm-manager.h"

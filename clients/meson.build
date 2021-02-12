@@ -7,6 +7,7 @@ executable(
     libnm_dep,
     libnm_nm_default_dep,
     libnm_libnm_aux_dep,
+    libnm_glib_aux_dep_link,
   ],
   c_args: [
     '-DG_LOG_DOMAIN="nm-online"',

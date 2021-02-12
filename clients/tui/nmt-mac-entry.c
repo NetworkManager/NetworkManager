@@ -20,7 +20,7 @@
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
-#include "nm-libnm-core-intern/nm-common-macros.h"
+#include "libnm-core-aux-intern/nm-common-macros.h"
 
 G_DEFINE_TYPE(NmtMacEntry, nmt_mac_entry, NMT_TYPE_NEWT_ENTRY)
 

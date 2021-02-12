@@ -35,6 +35,7 @@ exe = executable(
   include_directories: [
     top_inc,
     src_inc,
+    src_core_inc,
   ],
   dependencies: [
     libnm_systemd_core_dep,

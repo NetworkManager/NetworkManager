@@ -9,7 +9,7 @@
 
 #include "nm-active-connection.h"
 #include "nm-act-request.h"
-#include "nm-libnm-core-intern/nm-auth-subject.h"
+#include "libnm-core-aux-intern/nm-auth-subject.h"
 #include "nm-core-utils.h"
 #include "nm-dbus-interface.h"
 #include "devices/nm-device.h"

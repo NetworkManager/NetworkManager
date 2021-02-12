@@ -5,7 +5,7 @@
 
 #include "src/core/nm-default-daemon.h"
 
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 
 #include "settings/plugins/ifupdown/nms-ifupdown-interface-parser.h"
 #include "settings/plugins/ifupdown/nms-ifupdown-parser.h"
