@@ -28,6 +28,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * initrd: support new ip method "link6" for IPv6 link-local only.
 * ci: use ci-templates for containers on gitlab-ci.
 * ci: test build against Alpine Linux on gitlab-ci.
+* build: new configure option to set path to "polkit-agent-helper-1".
 * Many bugfixes and improvements.
 
 =============================================
