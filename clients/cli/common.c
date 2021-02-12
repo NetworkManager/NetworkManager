@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/file.h>
 #include <sys/ioctl.h>
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -1488,6 +1489,51 @@ nmc_dbus_call_sync(NmCli *             nmc,
         g_dbus_error_strip_remote_error(*error);
 
     return result;
+}
+
+gboolean
+nmc_lock_lockfile(NmCli *nmc)
+{
+    int      errsv;
+    gboolean success = FALSE;
+
+    if ((nmc->lockfd = open(nmc->lockfile, O_CREAT | O_WRONLY, 00644)) < 0) {
+        errsv = errno;
+        fprintf(stderr, _("Opening %s failed: %s\n"), nmc->lockfile, nm_strerror_native(errsv));
+        return FALSE;
+    }
+
+    if (flock(nmc->lockfd, LOCK_EX) < 0) {
+        errsv = errno;
+        fprintf(stderr, _("Locking to %s failed: %s\n"), nmc->lockfile, nm_strerror_native(errsv));
+    } else
+        success = TRUE;
+
+    return success;
+}
+
+gboolean
+nmc_unlock_lockfile(NmCli *nmc)
+{
+    int      errsv;
+    gboolean success = FALSE;
+
+    if (nmc->lockfd == -1)
+        return success;
+
+    if (flock(nmc->lockfd, LOCK_UN) < 0) {
+        errsv = errno;
+        fprintf(stderr, _("Unlocking to %s failed: %s\n"), nmc->lockfile, nm_strerror_native(errsv));
+    } else
+        success = TRUE;
+
+    if (nm_close(nmc->lockfd)) {
+        errsv = errno;
+        fprintf(stderr, _("Closing %s failed: %s\n"), nmc->lockfile, nm_strerror_native(errsv));
+    } else
+        nmc->lockfd = -1;
+
+    return success;
 }
 
 /*****************************************************************************/

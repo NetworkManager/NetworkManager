@@ -76,6 +76,8 @@
         },                                                     \
     }
 
+#define DEFAULT_NMCLI_LOCK_FILE      NMSTATEDIR "/nmcli.lock"
+
 static NmCli nm_cli = {
     .client = NULL,
 
@@ -101,6 +103,9 @@ static NmCli nm_cli = {
     .nmc_config.palette          = _NMC_COLOR_PALETTE_INIT(),
     .editor_status_line          = FALSE,
     .editor_save_confirmation    = TRUE,
+
+    .lockfile = DEFAULT_NMCLI_LOCK_FILE,
+    .lockfd = -1,
 };
 
 const NmCli *const nm_cli_global_readline   = &nm_cli;
@@ -1013,6 +1018,8 @@ nmc_cleanup(NmCli *nmc)
 int
 main(int argc, char *argv[])
 {
+    gboolean                locked = FALSE;
+
     /* Set locale to use environment variables */
     setlocale(LC_ALL, "");
 
@@ -1032,8 +1039,16 @@ main(int argc, char *argv[])
     g_unix_signal_add(SIGTERM, signal_handler, GINT_TO_POINTER(SIGTERM));
     g_unix_signal_add(SIGINT, signal_handler, GINT_TO_POINTER(SIGINT));
 
+    locked = nmc_lock_lockfile(&nm_cli);
+    if (!locked)
+	    return locked;
+
     if (process_command_line(&nm_cli, argc, argv))
         g_main_loop_run(loop);
+
+    locked = nmc_unlock_lockfile(&nm_cli);
+    if (!locked)
+	    return locked;
 
     if (nm_cli.complete) {
         /* Remove error statuses from command completion runs. */
