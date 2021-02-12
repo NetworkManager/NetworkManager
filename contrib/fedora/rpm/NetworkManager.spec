@@ -55,11 +55,7 @@
 %if "x__BCOND_DEFAULT_TEST__" == "x1" || "x__BCOND_DEFAULT_TEST__" == "x0"
 %global bcond_default_test __BCOND_DEFAULT_TEST__
 %else
-%if 0%{?rhel} >= 9
-%global bcond_default_test 1
-%else
 %global bcond_default_test 0
-%endif
 %endif
 
 %bcond_with meson
