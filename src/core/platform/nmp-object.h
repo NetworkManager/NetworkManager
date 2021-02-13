@@ -34,10 +34,14 @@ typedef union {
     struct sockaddr_in6 in6;
 } NMSockAddrUnion;
 
+G_STATIC_ASSERT(sizeof(NMSockAddrUnion) == sizeof(((NMSockAddrUnion *) NULL)->in6));
+
+/* we initialize the largest union member, to ensure that all fields are initialized. */
+
 #define NM_SOCK_ADDR_UNION_INIT_UNSPEC \
     {                                  \
-        .sa = {                        \
-            .sa_family = AF_UNSPEC,    \
+        .in6 = {                       \
+            .sin6_family = AF_UNSPEC,  \
         },                             \
     }
 
