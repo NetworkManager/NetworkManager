@@ -46,6 +46,7 @@ _nml_dbus_log(NMLDBusLogLevel level, gboolean use_stdout, const char *fmt, ...)
     va_list         args;
     const char *    prefix = "";
     gint64          ts;
+    pid_t           pid;
 
     /* we only call _nml_dbus_log() after nml_dbus_log_enabled(), which already does
      * an atomic access to the variable. Since the value is only initialized once and
@@ -89,14 +90,18 @@ _nml_dbus_log(NMLDBusLogLevel level, gboolean use_stdout, const char *fmt, ...)
 
     ts = nm_utils_clock_gettime_nsec(CLOCK_BOOTTIME);
 
+    pid = getpid();
+
     if (use_stdout) {
-        g_print("libnm-dbus: %s[%" G_GINT64_FORMAT ".%05" G_GINT64_FORMAT "] %s\n",
+        g_print("libnm-dbus[%lld]: %s[%" G_GINT64_FORMAT ".%05" G_GINT64_FORMAT "] %s\n",
+                (long long) pid,
                 prefix,
                 ts / NM_UTILS_NSEC_PER_SEC,
                 (ts / (NM_UTILS_NSEC_PER_SEC / 10000)) % 10000,
                 msg);
     } else {
-        g_printerr("libnm-dbus: %s[%" G_GINT64_FORMAT ".%05" G_GINT64_FORMAT "] %s\n",
+        g_printerr("libnm-dbus[%lld]: %s[%" G_GINT64_FORMAT ".%05" G_GINT64_FORMAT "] %s\n",
+                   (long long) pid,
                    prefix,
                    ts / NM_UTILS_NSEC_PER_SEC,
                    (ts / (NM_UTILS_NSEC_PER_SEC / 10000)) % 10000,
