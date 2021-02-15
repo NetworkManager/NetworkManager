@@ -49,20 +49,28 @@ _ref_string_equal(gconstpointer pa, gconstpointer pb)
 static void
 _ASSERT(const RefString *rstr0)
 {
-#if NM_MORE_ASSERTS
     int r;
 
     nm_assert(rstr0);
 
-    G_LOCK(gl_lock);
-    r = g_atomic_int_get(&rstr0->ref_count);
+    if (NM_MORE_ASSERTS > 0) {
+        r = g_atomic_int_get(&rstr0->ref_count);
+        nm_assert(r > 0);
+        nm_assert(r < G_MAXINT);
+    }
 
-    nm_assert(r > 0);
-    nm_assert(r < G_MAXINT);
+    nm_assert(rstr0->r.str == rstr0->str_data);
+    nm_assert(rstr0->r.str[rstr0->r.len] == '\0');
 
-    nm_assert(rstr0 == g_hash_table_lookup(gl_hash, rstr0));
-    G_UNLOCK(gl_lock);
-#endif
+    if (NM_MORE_ASSERTS > 10) {
+        G_LOCK(gl_lock);
+        r = g_atomic_int_get(&rstr0->ref_count);
+        nm_assert(r > 0);
+        nm_assert(r < G_MAXINT);
+
+        nm_assert(rstr0 == g_hash_table_lookup(gl_hash, rstr0));
+        G_UNLOCK(gl_lock);
+    }
 }
 
 /**
