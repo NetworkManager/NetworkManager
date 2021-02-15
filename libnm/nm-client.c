@@ -2950,9 +2950,12 @@ _dbus_handle_properties_changed(NMClient *      self,
         dbobj     = _dbobjs_dbobj_get_r(self, dbus_path);
     }
 
-    if (dbobj)
+    if (dbobj) {
+        nm_assert(dbobj->obj_state >= NML_DBUS_OBJ_STATE_WATCHED_ONLY);
         db_iface_data = nml_dbus_object_iface_data_get(dbobj, interface_name, allow_add_iface);
-    else if (allow_add_iface) {
+        if (db_iface_data && dbobj->obj_state == NML_DBUS_OBJ_STATE_WATCHED_ONLY)
+            nml_dbus_object_set_obj_state(dbobj, NML_DBUS_OBJ_STATE_ON_DBUS, self);
+    } else if (allow_add_iface) {
         dbobj = _dbobjs_dbobj_create(self, g_steal_pointer(&dbus_path));
         nml_dbus_object_set_obj_state(dbobj, NML_DBUS_OBJ_STATE_ON_DBUS, self);
         db_iface_data = nml_dbus_object_iface_data_get(dbobj, interface_name, TRUE);
