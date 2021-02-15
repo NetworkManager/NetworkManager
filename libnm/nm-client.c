@@ -2959,6 +2959,7 @@ _dbus_handle_properties_changed(NMClient *      self,
         dbobj = _dbobjs_dbobj_create(self, g_steal_pointer(&dbus_path));
         nml_dbus_object_set_obj_state(dbobj, NML_DBUS_OBJ_STATE_ON_DBUS, self);
         db_iface_data = nml_dbus_object_iface_data_get(dbobj, interface_name, TRUE);
+        nm_assert(db_iface_data);
     }
 
     NM_SET_OUT(inout_dbobj, dbobj);
