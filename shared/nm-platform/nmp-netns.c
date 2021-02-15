@@ -171,7 +171,7 @@ _netns_stack_get_impl(void)
     netns = _netns_new(&error);
 
     if (!netns) {
-        _LOGE(NULL, "failed to create initial netns: %s", error->message);
+        _LOGD(NULL, "failed to create initial netns: %s", error->message);
         return s;
     }
 
