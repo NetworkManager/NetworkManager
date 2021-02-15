@@ -2563,7 +2563,20 @@ main(int argc, char **argv)
 
         if (unshare(CLONE_NEWNET | CLONE_NEWNS) != 0) {
             errsv = errno;
-            g_error("unshare(CLONE_NEWNET|CLONE_NEWNS) failed with %s (%d)",
+            if (errsv == EPERM) {
+#ifdef REQUIRE_ROOT_TESTS
+                g_print("Fail test: unshare(CLONE_NEWNET|CLONE_NEWNS) failed with %s (%d)\n",
+                        nm_strerror_native(errsv),
+                        errsv);
+                return EXIT_FAILURE;
+#else
+                g_print("Skipping test: unshare(CLONE_NEWNET|CLONE_NEWNS) failed with %s (%d)\n",
+                        nm_strerror_native(errsv),
+                        errsv);
+                return g_test_run();
+#endif
+            }
+            g_error("Fail test: unshare(CLONE_NEWNET|CLONE_NEWNS) failed with %s (%d)",
                     nm_strerror_native(errsv),
                     errsv);
         }
