@@ -624,6 +624,23 @@ __nmtst_init(int *       argc,
         g_setenv("G_MESSAGES_DEBUG", "all", TRUE);
     }
 
+    /* "tc" is in /sbin, which might not be in $PATH of a regular user. Unconditionally
+     * add "/bin" and "/sbin" to $PATH for all tests. */
+    {
+        static char *path_new;
+        const char * path_old;
+
+        g_assert(!path_new);
+
+        path_old = g_getenv("PATH");
+        path_new = g_strjoin("",
+                             path_old ?: "",
+                             (nm_str_is_empty(path_old) ? "" : ":"),
+                             "/bin:/sbin",
+                             NULL);
+        g_setenv("PATH", path_new, TRUE);
+    }
+
     /* Delay messages until we setup logging. */
     for (i = 0; i < debug_messages->len; i++)
         __NMTST_LOG(g_message, "%s", g_array_index(debug_messages, const char *, i));
