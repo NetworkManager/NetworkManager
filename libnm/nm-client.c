@@ -2930,11 +2930,15 @@ _dbus_handle_properties_changed(NMClient *      self,
         gs_free char *ss = NULL;
 
         NML_NMCLIENT_LOG_T(self,
-                           "[%s]: %s: properties changed for interface %s { %s }",
+                           "[%s]: %s: properties changed for interface %s %s%s%s",
                            object_path,
                            log_context,
                            interface_name,
-                           (ss = g_variant_print(changed_properties, TRUE)));
+                           NM_PRINT_FMT_QUOTED(changed_properties,
+                                               "{ ",
+                                               (ss = g_variant_print(changed_properties, TRUE)),
+                                               " }",
+                                               "(no changed properties)"));
     }
 
     if (inout_dbobj) {
