@@ -642,9 +642,9 @@ fi
 AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT, "$enable_polkit", [The default value of the auth-polkit configuration option])
 AC_SUBST(NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_TEXT, "$enable_polkit")
 
-AC_ARG_WITH([polkit-agent-helper-1-path],
-            AS_HELP_STRING([--with-polkit-agent-helper-1-path=PATH],
-                           [Path name to the polkit-agent-helper-1 binary from polkit]),
+AC_ARG_WITH([polkit-agent-helper-1],
+            AS_HELP_STRING([--with-polkit-agent-helper-1=/path/to/polkit-agent-helper-1],
+                           [Path to the polkit-agent-helper-1 binary from polkit]),
             POLKIT_AGENT_HELPER_1_PATH="$withval",
             POLKIT_AGENT_HELPER_1_PATH="")
 if test -z "$POLKIT_AGENT_HELPER_1_PATH" ; then
@@ -658,6 +658,9 @@ if test -z "$POLKIT_AGENT_HELPER_1_PATH" ; then
     done
 fi
 test -z "$POLKIT_AGENT_HELPER_1_PATH" && POLKIT_AGENT_HELPER_1_PATH=/usr/lib/polkit-1/polkit-agent-helper-1
+if test "$POLKIT_AGENT_HELPER_1_PATH" = "${POLKIT_AGENT_HELPER_1_PATH#/}" ; then
+    AC_MSG_ERROR(["polkit_agent_helper_1 must be an absolute path, but is '$POLKIT_AGENT_HELPER_1_PATH'"])
+fi
 AC_DEFINE_UNQUOTED([POLKIT_AGENT_HELPER_1_PATH],
                    ["$POLKIT_AGENT_HELPER_1_PATH"],
                    [path to polkit-agent-helper-1 binary])

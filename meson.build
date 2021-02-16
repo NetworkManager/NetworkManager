@@ -514,7 +514,7 @@ config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT', config_auth_polkit_def
 
 enable_modify_system = get_option('modify_system')
 
-polkit_agent_helper_1_path = get_option('polkit_agent_helper_1_path')
+polkit_agent_helper_1_path = get_option('polkit_agent_helper_1')
 foreach p : [ '/usr/libexec/polkit-agent-helper-1',
               '/usr/lib/polkit-1/polkit-agent-helper-1',
               '/usr/lib/policykit-1/polkit-agent-helper-1' ]
@@ -524,6 +524,9 @@ foreach p : [ '/usr/libexec/polkit-agent-helper-1',
 endforeach
 if polkit_agent_helper_1_path == ''
   polkit_agent_helper_1_path = '/usr/lib/polkit-1/polkit-agent-helper-1'
+endif
+if polkit_agent_helper_1_path[0] != '/'
+  error('polkit_agent_helper_1 must be an absolute path, but is ' + polkit_agent_helper_1_path)
 endif
 config_h.set_quoted('POLKIT_AGENT_HELPER_1_PATH', polkit_agent_helper_1_path)
 
