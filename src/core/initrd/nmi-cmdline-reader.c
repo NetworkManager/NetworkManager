@@ -408,10 +408,12 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
     int                            client_ip_family = AF_UNSPEC;
     int                            client_ip_prefix = -1;
     const char *                   dns[2]           = {
-        0,
+        NULL,
+        NULL,
     };
     int dns_addr_family[2] = {
-        0,
+        AF_UNSPEC,
+        AF_UNSPEC,
     };
     int     i;
     GError *error = NULL;
@@ -469,11 +471,15 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
         tmp                = get_word(&argument, ':');
         dns_addr_family[0] = get_ip_address_family(tmp, FALSE);
         if (dns_addr_family[0] != AF_UNSPEC) {
-            dns[0]             = tmp;
-            dns[1]             = get_word(&argument, ':');
-            dns_addr_family[1] = get_ip_address_family(dns[1], FALSE);
-            if (*argument)
-                _LOGW(LOGD_CORE, "Ignoring extra: '%s'.", argument);
+            dns[0] = tmp;
+            dns[1] = get_word(&argument, ':');
+            if (dns[1]) {
+                dns_addr_family[1] = get_ip_address_family(dns[1], FALSE);
+                if (dns_addr_family[1] == AF_UNSPEC)
+                    _LOGW(LOGD_CORE, "Ignoring invalid DNS server: '%s'.", dns[1]);
+                if (*argument)
+                    _LOGW(LOGD_CORE, "Ignoring extra: '%s'.", argument);
+            }
         } else {
             mtu     = tmp;
             macaddr = argument;
@@ -683,21 +689,8 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
     for (i = 0; i < 2; i++) {
         if (dns_addr_family[i] == AF_UNSPEC)
             break;
-        if (nm_utils_ipaddr_is_valid(dns_addr_family[i], dns[i])) {
-            switch (dns_addr_family[i]) {
-            case AF_INET:
-                nm_setting_ip_config_add_dns(s_ip4, dns[i]);
-                break;
-            case AF_INET6:
-                nm_setting_ip_config_add_dns(s_ip6, dns[i]);
-                break;
-            default:
-                _LOGW(LOGD_CORE, "Unknown address family: %s", dns[i]);
-                break;
-            }
-        } else {
-            _LOGW(LOGD_CORE, "Invalid name server: %s", dns[i]);
-        }
+        nm_assert(nm_utils_ipaddr_is_valid(dns_addr_family[i], dns[i]));
+        nm_setting_ip_config_add_dns(NM_IS_IPv4(dns_addr_family[i]) ? s_ip4 : s_ip6, dns[i]);
     }
 
     if (mtu && *mtu)
