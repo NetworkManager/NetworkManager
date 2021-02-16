@@ -6,7 +6,7 @@
 <policyconfig>
 
   <vendor>NetworkManager</vendor>
-  <vendor_url>http://www.gnome.org/projects/NetworkManager</vendor_url>
+  <vendor_url>https://networkmanager.dev/</vendor_url>
   <icon_name>nm-icon</icon_name>
 
   <action id="org.freedesktop.NetworkManager.enable-disable-network">
