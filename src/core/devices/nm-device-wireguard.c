@@ -729,7 +729,7 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
     PeerData *                peer_data;
     gs_free_error GError *resolv_error = NULL;
     GList *               list;
-    gboolean              changed = FALSE;
+    gboolean              changed;
     NMSockAddrUnion       sockaddr;
     gint64                retry_in_msec;
     char                  s_sockaddr[100];
@@ -775,36 +775,49 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
     }
 
     sockaddr = (NMSockAddrUnion) NM_SOCK_ADDR_UNION_INIT_UNSPEC;
+    changed  = FALSE;
 
     if (!resolv_error) {
         GList *iter;
 
         for (iter = list; iter; iter = iter->next) {
-            GInetAddress *a = iter->data;
-            GSocketFamily f = g_inet_address_get_family(a);
+            GInetAddress *   a = iter->data;
+            NMSockAddrUnion  sockaddr_tmp;
+            NMSockAddrUnion *s;
 
-            if (f == G_SOCKET_FAMILY_IPV4) {
+            s = sockaddr.sa.sa_family == AF_UNSPEC ? &sockaddr : &sockaddr_tmp;
+
+            switch (g_inet_address_get_family(a)) {
+            case G_SOCKET_FAMILY_IPV4:
                 nm_assert(g_inet_address_get_native_size(a) == sizeof(struct in_addr));
-                sockaddr.in = (struct sockaddr_in){
+                s->in = (struct sockaddr_in){
                     .sin_family = AF_INET,
                     .sin_port   = htons(nm_sock_addr_endpoint_get_port(
                         _nm_wireguard_peer_get_endpoint(peer_data->peer))),
                 };
-                memcpy(&sockaddr.in.sin_addr, g_inet_address_to_bytes(a), sizeof(struct in_addr));
+                memcpy(&s->in.sin_addr, g_inet_address_to_bytes(a), sizeof(struct in_addr));
                 break;
-            }
-            if (f == G_SOCKET_FAMILY_IPV6) {
+            case G_SOCKET_FAMILY_IPV6:
                 nm_assert(g_inet_address_get_native_size(a) == sizeof(struct in6_addr));
-                sockaddr.in6 = (struct sockaddr_in6){
+                s->in6 = (struct sockaddr_in6){
                     .sin6_family   = AF_INET6,
                     .sin6_port     = htons(nm_sock_addr_endpoint_get_port(
                         _nm_wireguard_peer_get_endpoint(peer_data->peer))),
                     .sin6_scope_id = 0,
                     .sin6_flowinfo = 0,
                 };
-                memcpy(&sockaddr.in6.sin6_addr,
-                       g_inet_address_to_bytes(a),
-                       sizeof(struct in6_addr));
+                memcpy(&s->in6.sin6_addr, g_inet_address_to_bytes(a), sizeof(struct in6_addr));
+                break;
+            default:
+                continue;
+            }
+
+            changed = TRUE;
+            if (peer_data->ep_resolv.sockaddr.sa.sa_family == AF_UNSPEC)
+                break;
+
+            if (nm_sock_addr_union_cmp(&peer_data->ep_resolv.sockaddr, &sockaddr) == 0) {
+                changed = FALSE;
                 break;
             }
         }
@@ -819,11 +832,8 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
          * a possibly good IP address, since WireGuard supports automatic roaming
          * anyway. Either the IP address is still good (and we would wrongly
          * reject it), or it isn't -- in which case it does not hurt much. */
-    } else {
-        if (nm_sock_addr_union_cmp(&peer_data->ep_resolv.sockaddr, &sockaddr) != 0)
-            changed = TRUE;
+    } else if (changed)
         peer_data->ep_resolv.sockaddr = sockaddr;
-    }
 
     if (resolv_error || peer_data->ep_resolv.sockaddr.sa.sa_family == AF_UNSPEC) {
         /* while it technically did not fail, something is probably odd. Retry frequently to
