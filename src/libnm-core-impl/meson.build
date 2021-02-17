@@ -2,19 +2,38 @@
 
 libnm_core_impl_inc = include_directories('.')
 
-# FIXME: compile both crypto backends.
-libnm_crypto = static_library(
-  'nm-crypto',
-  sources: 'nm-crypto-@0@.c'.format(crypto),
+libnm_crypto_nss = static_library(
+  'nm-crypto-nss',
+  sources: 'nm-crypto-nss.c',
   dependencies: [
     libnm_core_public_dep,
-    crypto_dep,
     libnm_glib_aux_dep_link,
+    crypto_nss_dep,
   ],
   c_args: [
     '-DG_LOG_DOMAIN="libnm"',
   ],
 )
+
+libnm_crypto_gnutls = static_library(
+  'nm-crypto-gnutls',
+  sources: 'nm-crypto-gnutls.c',
+  dependencies: [
+    libnm_core_public_dep,
+    libnm_glib_aux_dep_link,
+    crypto_gnutls_dep,
+  ],
+  c_args: [
+    '-DG_LOG_DOMAIN="libnm"',
+  ],
+)
+
+if crypto == 'nss'
+  libnm_crypto = libnm_crypto_nss
+else
+  assert(crypto == 'gnutls', 'Unexpected setting "crypto=' + crypto + '"')
+  libnm_crypto = libnm_crypto_gnutls
+endif
 
 libnm_core_settings_sources = files(
   'nm-setting-6lowpan.c',

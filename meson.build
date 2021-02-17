@@ -530,20 +530,23 @@ if polkit_agent_helper_1_path[0] != '/'
 endif
 config_h.set_quoted('POLKIT_AGENT_HELPER_1_PATH', polkit_agent_helper_1_path)
 
-
+crypto_nss_dep = dependency(
+  'nss',
+  required: false,
+)
+crypto_gnutls_dep = dependency(
+  'gnutls',
+  version: '>= 2.12',
+  required: false,
+)
 crypto = get_option('crypto')
 if crypto == 'nss'
-    crypto_dep = dependency('nss', required: false)
-    assert(crypto_dep.found(), 'Requires nss crypto support')
-elif crypto == 'gnutls'
-    crypto_dep = dependency(
-      'gnutls',
-      version: '>= 2.12',
-      required: false,
-    )
-    assert(crypto_dep.found(), 'Requires gnutls crypto support')
+    assert(crypto_nss_dep.found(), 'Requires nss crypto support')
+    crypto_dep = crypto_nss_dep
 else
-  error('bug')
+    assert(crypto == 'gnutls', 'Unexpected setting "crypto=' + crypto + '"')
+    assert(crypto_gnutls_dep.found(), 'Requires gnutls crypto support')
+    crypto_dep = crypto_gnutls_dep
 endif
 
 dbus_conf_dir = get_option('dbus_conf_dir')
