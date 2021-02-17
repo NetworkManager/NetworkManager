@@ -147,6 +147,8 @@ reader_create_connection(Reader *                 reader,
                  type_name,
                  NM_SETTING_CONNECTION_MULTI_CONNECT,
                  multi_connect,
+                 NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES,
+                 1,
                  NULL);
 
     if (nm_streq0(type_name, NM_SETTING_INFINIBAND_SETTING_NAME)) {
@@ -1065,6 +1067,8 @@ nmi_cmdline_reader_parse(const char *       sysfs_dir,
     gs_unref_ptrarray GPtrArray *routes      = NULL;
     gs_unref_ptrarray GPtrArray *znets       = NULL;
     int                          i;
+    guint64                      dhcp_timeout   = 90;
+    guint64                      dhcp_num_tries = 1;
 
     reader = reader_new();
 
@@ -1082,7 +1086,15 @@ nmi_cmdline_reader_parse(const char *       sysfs_dir,
         else if (nm_streq(tag, "rd.peerdns"))
             reader->ignore_auto_dns = !_nm_utils_ascii_str_to_bool(argument, TRUE);
         else if (nm_streq(tag, "rd.net.timeout.dhcp")) {
-            reader->dhcp_timeout = _nm_utils_ascii_str_to_int64(argument, 10, 0, G_MAXINT32, 0);
+            if (nm_streq0(argument, "infinity")) {
+                dhcp_timeout = G_MAXINT32;
+            } else {
+                dhcp_timeout =
+                    _nm_utils_ascii_str_to_int64(argument, 10, 1, G_MAXINT32, dhcp_timeout);
+            }
+        } else if (nm_streq(tag, "rd.net.dhcp.retry")) {
+            dhcp_num_tries =
+                _nm_utils_ascii_str_to_int64(argument, 10, 1, G_MAXINT32, dhcp_num_tries);
         } else if (nm_streq(tag, "rd.net.dhcp.vendor-class")) {
             if (nm_utils_validate_dhcp4_vendor_class_id(argument, NULL))
                 nm_utils_strdup_reset(&reader->dhcp4_vci, argument);
@@ -1091,6 +1103,8 @@ nmi_cmdline_reader_parse(const char *       sysfs_dir,
                 _nm_utils_ascii_str_to_int64(argument, 10, 0, G_MAXINT32, 0);
         }
     }
+
+    reader->dhcp_timeout = NM_CLAMP(dhcp_timeout * dhcp_num_tries, 1, G_MAXINT32);
 
     for (i = 0; argv[i]; i++) {
         gs_free char *argument_clone = NULL;
