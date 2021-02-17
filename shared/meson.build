@@ -105,9 +105,6 @@ libnm_std_aux = static_library(
     'nm-std-aux/nm-std-utils.c',
   ],
   include_directories: top_inc,
-  c_args: [
-    '-DG_LOG_DOMAIN="libnm"',
-  ],
 )
 
 libnm_glib_aux = static_library(
@@ -129,9 +126,6 @@ libnm_glib_aux = static_library(
     'nm-glib-aux/nm-time-utils.c',
   ),
   dependencies: glib_nm_default_dep,
-  c_args: [
-    '-DG_LOG_DOMAIN="libnm"',
-  ],
   link_with: [
     libc_siphash,
     libnm_std_aux,
@@ -160,9 +154,6 @@ libnm_udev_aux = static_library(
     glib_nm_default_dep,
     libudev_dep,
   ],
-  c_args: [
-    '-DG_LOG_DOMAIN="libnm"',
-  ],
 )
 
 libnm_udev_aux_dep = declare_dependency(
@@ -176,9 +167,6 @@ libnm_base = static_library(
     'nm-base/nm-ethtool-base.c',
   ),
   dependencies: libnm_glib_aux_dep_link,
-  c_args: [
-    '-DG_LOG_DOMAIN="libnm"',
-  ],
 )
 
 libnm_base_dep = declare_dependency(
@@ -197,9 +185,6 @@ libnm_log_core = static_library(
   dependencies: [
     glib_nm_default_dep,
     libsystemd_dep,
-  ],
-  c_args: [
-    '-DG_LOG_DOMAIN="NetworkManager"',
   ],
 )
 
@@ -220,9 +205,6 @@ libnm_platform = static_library(
   ],
   dependencies: [
     glib_nm_default_dep,
-  ],
-  c_args: [
-    '-DG_LOG_DOMAIN="NetworkManager"',
   ],
 )
 
@@ -282,9 +264,6 @@ libnm_systemd_shared = static_library(
     'systemd/src/shared',
   ),
   dependencies: glib_nm_default_dep,
-  c_args: [
-    '-DG_LOG_DOMAIN="libnm"',
-  ],
 )
 
 libnm_systemd_shared_dep = declare_dependency(
@@ -301,9 +280,6 @@ libnm_systemd_logging_stub = static_library(
   'nm-systemd-logging-stub',
   sources: 'systemd/nm-logging-stub.c',
   dependencies: glib_nm_default_dep,
-  c_args: [
-    '-DG_LOG_DOMAIN="libnm"',
-  ],
 )
 
 if enable_tests

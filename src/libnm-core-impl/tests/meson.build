@@ -30,9 +30,6 @@ foreach test_unit: test_units
       libnm_core_impl_dep_link,
       libnm_base_dep_link,
     ],
-    c_args: [
-      '-DG_LOG_DOMAIN="test"',
-    ],
     link_with: libnm_systemd_logging_stub,
   )
 

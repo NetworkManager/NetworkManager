@@ -47,9 +47,6 @@ libnm_systemd_core = static_library(
     libnm_core_impl_dep,
     libnm_systemd_shared_dep,
   ],
-  c_args: [
-    '-DG_LOG_DOMAIN="NetworkManager"',
-  ],
   link_with: libc_siphash,
 )
 

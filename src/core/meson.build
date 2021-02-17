@@ -39,10 +39,6 @@ subdir('systemd')
 
 core_plugins = []
 
-daemon_c_flags = [
-  '-DG_LOG_DOMAIN="NetworkManager"',
-]
-
 platform_wifi_wext_source = files()
 if enable_wext
   platform_wifi_wext_source += files('platform/wifi/nm-wifi-utils-wext.c')
@@ -88,7 +84,6 @@ libNetworkManagerBase = static_library(
     libsystemd_dep,
     libudev_dep,
   ],
-  c_args: daemon_c_flags,
 )
 
 nm_deps = [
@@ -201,7 +196,6 @@ libNetworkManager = static_library(
     'nm-sleep-monitor.c',
   ),
   dependencies: nm_deps,
-  c_args: daemon_c_flags,
   link_with: [
     libNetworkManagerBase,
     libnm_systemd_core,
@@ -221,7 +215,6 @@ executable(
     libnm_glib_aux_dep_link,
     libnm_core_impl_dep_link,
   ],
-  c_args: daemon_c_flags,
   link_with: [
     libNetworkManagerBase,
     libnm_systemd_core,
@@ -236,7 +229,7 @@ executable(
 )
 
 if enable_tests
-  test_c_flags = daemon_c_flags
+  test_c_flags = []
   if require_root_tests
     test_c_flags += ['-DREQUIRE_ROOT_TESTS=1']
   endif
@@ -290,7 +283,6 @@ NetworkManager_all_sym = executable(
   'NetworkManager-all-sym',
   'main.c',
   dependencies: nm_deps,
-  c_args: daemon_c_flags,
   link_args: '-Wl,--no-gc-sections',
   link_whole: [
     libNetworkManager,
@@ -318,7 +310,6 @@ NetworkManager = executable(
   'NetworkManager',
   'main.c',
   dependencies: nm_deps,
-  c_args: daemon_c_flags,
   link_with: [
     libNetworkManager,
     libNetworkManagerBase,

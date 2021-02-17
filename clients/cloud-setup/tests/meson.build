@@ -9,9 +9,6 @@ exe = executable(
     libnmc_dep,
     libnm_glib_aux_dep_link,
   ],
-  c_args: [
-    '-DG_LOG_DOMAIN="test"',
-  ],
 )
 
 test(

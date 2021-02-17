@@ -10,9 +10,6 @@ libnm_crypto_nss = static_library(
     libnm_glib_aux_dep_link,
     crypto_nss_dep,
   ],
-  c_args: [
-    '-DG_LOG_DOMAIN="libnm"',
-  ],
 )
 
 libnm_crypto_gnutls = static_library(
@@ -22,9 +19,6 @@ libnm_crypto_gnutls = static_library(
     libnm_core_public_dep,
     libnm_glib_aux_dep_link,
     crypto_gnutls_dep,
-  ],
-  c_args: [
-    '-DG_LOG_DOMAIN="libnm"',
   ],
 )
 
@@ -122,9 +116,6 @@ libnm_core_impl = static_library(
     libnm_core_intern_dep,
     libnm_glib_aux_dep_link,
     uuid_dep,
-  ],
-  c_args: [
-    '-DG_LOG_DOMAIN="libnm"',
   ],
   link_with: [
     libnm_crypto,

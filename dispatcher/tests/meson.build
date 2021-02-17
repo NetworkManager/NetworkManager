@@ -11,9 +11,7 @@ exe = executable(
     libnm_nm_default_dep,
     libnm_glib_aux_dep_link,
   ],
-  c_args: [
-    '-DG_LOG_DOMAIN="test"',
-  ] + introspection_extra_cflags,
+  c_args: introspection_extra_cflags,
   link_with: libnm_dispatcher_core,
 )
 

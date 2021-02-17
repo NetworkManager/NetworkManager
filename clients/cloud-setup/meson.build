@@ -37,9 +37,6 @@ libnm_cloud_setup_core = static_library(
     libcurl_dep,
     libnm_libnm_aux_dep,
   ],
-  c_args: [
-    '-DG_LOG_DOMAIN="nm-cloud-setup"',
-  ],
 )
 
 libnm_cloud_setup_core_dep = declare_dependency(
@@ -60,9 +57,6 @@ executable(
     libnm_core_aux_extern_dep_link,
     libnm_glib_aux_dep_link,
     libcurl_dep,
-  ],
-  c_args: [
-    '-DG_LOG_DOMAIN="nm-cloud-setup"',
   ],
   link_with: libnm_systemd_logging_stub,
   link_args: ldflags_linker_script_binary,

@@ -9,9 +9,6 @@ executable(
     libnm_libnm_aux_dep,
     libnm_glib_aux_dep_link,
   ],
-  c_args: [
-    '-DG_LOG_DOMAIN="nm-online"',
-  ],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true,

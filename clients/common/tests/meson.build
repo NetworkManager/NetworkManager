@@ -11,9 +11,6 @@ exe = executable(
     libnm_glib_aux_dep_link,
     libnm_base_dep_link,
   ],
-  c_args: [
-    '-DG_LOG_DOMAIN="test"',
-  ],
 )
 
 test(
@@ -30,9 +27,6 @@ exe = executable(
     libnm_core_aux_extern_dep_link,
     libnm_nm_default_dep,
     libnm_glib_aux_dep_link,
-  ],
-  c_args: [
-    '-DG_LOG_DOMAIN="test"',
   ],
   link_with: libnm_systemd_logging_stub,
 )

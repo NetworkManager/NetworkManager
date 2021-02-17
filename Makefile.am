@@ -355,7 +355,6 @@ shared_nm_std_aux_libnm_std_aux_la_CPPFLAGS = \
 	-I$(srcdir)/shared \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
-	-DG_LOG_DOMAIN=\""libnm"\" \
 	$(NULL)
 
 shared_nm_std_aux_libnm_std_aux_la_SOURCES = \
@@ -384,7 +383,6 @@ shared_nm_glib_aux_cppflags = \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	-DG_LOG_DOMAIN=\""libnm"\" \
 	$(NULL)
 
 noinst_LTLIBRARIES += shared/nm-glib-aux/libnm-glib-aux.la
@@ -504,7 +502,6 @@ shared_nm_log_core_libnm_log_core_la_CPPFLAGS = \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(SYSTEMD_JOURNAL_CFLAGS) \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	$(NULL)
 
 shared_nm_log_core_libnm_log_core_la_SOURCES = \
@@ -556,7 +553,6 @@ check_programs += shared/nm-platform/tests/test-nm-platform
 shared_nm_platform_tests_test_nm_platform_CPPFLAGS = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
-	-DG_LOG_DOMAIN=\""test"\" \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SYSTEMD_JOURNAL_CFLAGS) \
 	$(GLIB_CFLAGS) \
@@ -595,7 +591,6 @@ src_libnm_core_aux_intern_libnm_core_aux_intern_la_CPPFLAGS = \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
-	-DG_LOG_DOMAIN=\""libnm"\" \
 	$(NULL)
 
 src_libnm_core_aux_intern_libnm_core_aux_intern_la_SOURCES = \
@@ -636,7 +631,6 @@ src_libnm_core_aux_extern_libnm_core_aux_extern_la_CPPFLAGS = \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
-	-DG_LOG_DOMAIN=\""libnm"\" \
 	$(NULL)
 
 src_libnm_core_aux_extern_libnm_core_aux_extern_la_SOURCES = \
@@ -676,7 +670,6 @@ libnm_nm_libnm_aux_libnm_libnm_aux_la_CPPFLAGS = \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
-	-DG_LOG_DOMAIN=\""libnmc"\" \
 	$(NULL)
 
 libnm_nm_libnm_aux_libnm_libnm_aux_la_SOURCES = \
@@ -713,7 +706,6 @@ check_programs += shared/nm-glib-aux/tests/test-shared-general
 shared_nm_glib_aux_tests_test_shared_general_CPPFLAGS = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
-	-DG_LOG_DOMAIN=\""test"\" \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
@@ -741,7 +733,6 @@ check_programs += shared/nm-glib-aux/tests/test-json-aux
 shared_nm_glib_aux_tests_test_json_aux_CPPFLAGS = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
-	-DG_LOG_DOMAIN=\""test"\" \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(JANSSON_CFLAGS) \
@@ -1211,7 +1202,7 @@ GLIB_GENERATED += \
 	$(NULL)
 nm_core_enum_types_sources = $(src_libnm_core_impl_lib_h_pub_real)
 
-nm_core_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "src/libnm-core-impl/nm-default-libnm-core.h"\n'
+nm_core_enum_types_MKENUMS_C_FLAGS = --fhead '\#undef G_LOG_DOMAIN\n\#include "src/libnm-core-impl/nm-default-libnm-core.h"\n'
 
 src/libnm-core-public/nm-core-enum-types.h.stamp:                           src/libnm-core-public/.dirstamp
 src/libnm-core-public/nm-core-enum-types.c.stamp:                           src/libnm-core-public/.dirstamp
@@ -1232,7 +1223,6 @@ $(src_core_devices_ovs_libnm_device_plugin_ovs_la_OBJECTS):                 $(sr
 src_libnm_core_impl_libnm_core_impl_la_CPPFLAGS = \
 	$(dflt_cppflags_libnm_core) \
 	-I$(srcdir)/src/libnm-core-intern/ \
-	-DG_LOG_DOMAIN=\""libnm"\" \
 	$(NULL)
 
 src_libnm_core_impl_libnm_core_impl_la_SOURCES = \
@@ -1332,7 +1322,7 @@ GLIB_GENERATED += \
 	src/libnm-core-impl/tests/nm-core-tests-enum-types.h \
 	src/libnm-core-impl/tests/nm-core-tests-enum-types.c
 nm_core_tests_enum_types_sources = src/libnm-core-impl/tests/test-general-enums.h
-nm_core_tests_enum_types_MKENUMS_C_FLAGS = --fhead '\#include "src/libnm-core-impl/nm-default-libnm-core.h"\n'
+nm_core_tests_enum_types_MKENUMS_C_FLAGS = --fhead '\#undef G_LOG_DOMAIN\n\#include "src/libnm-core-impl/nm-default-libnm-core.h"\n'
 
 src/libnm-core-impl/tests/nm-core-tests-enum-types.h.stamp: src/libnm-core-impl/tests/.dirstamp
 src/libnm-core-impl/tests/nm-core-tests-enum-types.c.stamp: src/libnm-core-impl/tests/.dirstamp
@@ -1344,7 +1334,6 @@ src_libnm_core_impl_tests_cppflags = \
 	-I$(srcdir)/src/libnm-core-impl/tests \
 	-I$(srcdir)/src/libnm-core-impl \
 	$(dflt_cppflags_libnm_core) \
-	-DG_LOG_DOMAIN=\""test"\" \
 	$(SANITIZER_EXEC_CFLAGS) \
 	$(NULL)
 
@@ -1582,7 +1571,6 @@ libnm_libnm_static_la_CPPFLAGS = \
 	-I$(srcdir)/libnm \
 	-I$(srcdir)/src \
 	$(dflt_cppflags_libnm_core) \
-	-DG_LOG_DOMAIN=\""libnm"\" \
 	$(INTROSPECTION_CFLAGS) \
 	$(NULL)
 
@@ -1627,8 +1615,8 @@ GLIB_GENERATED += \
 nm_enum_types_sources = \
 	$(libnm_lib_h_pub_mkenums) \
 	$(libnm_lib_h_pub_real)
-nm_enum_types_MKENUMS_H_FLAGS = --identifier-prefix NM --fhead '\#include "nm-core-enum-types.h"\n'
-nm_enum_types_MKENUMS_C_FLAGS = --identifier-prefix NM --fhead '\#include "libnm/nm-default-libnm.h"\n'
+nm_enum_types_MKENUMS_H_FLAGS = --fhead '\#include "nm-core-enum-types.h"\n'
+nm_enum_types_MKENUMS_C_FLAGS = --fhead '\#undef G_LOG_DOMAIN\n\#include "libnm/nm-default-libnm.h"\n'
 
 $(dispatcher_nm_dispatcher_OBJECTS):                    $(libnm_lib_h_pub_mkenums)
 $(dispatcher_libnm_dispatcher_core_la_OBJECTS):         $(libnm_lib_h_pub_mkenums)
@@ -1640,7 +1628,6 @@ libnm_libnm_la_CPPFLAGS = \
 	-I$(srcdir)/libnm \
 	-I$(srcdir)/src \
 	$(dflt_cppflags_libnm_core) \
-	-DG_LOG_DOMAIN=\""libnm"\" \
 	$(LIBUDEV_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(NULL)
@@ -1793,7 +1780,6 @@ libnm_tests_cppflags = \
 	-I$(srcdir)/libnm \
 	-I$(builddir)/libnm \
 	$(dflt_cppflags_libnm_core) \
-	-DG_LOG_DOMAIN=\""test"\" \
 	$(SANITIZER_EXEC_CFLAGS) \
 	$(NULL)
 
@@ -1872,7 +1858,6 @@ libnm_tests_libnm_vpn_plugin_utils_test_la_CFLAGS = \
 	-I$(builddir)/libnm \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_EXEC_CFLAGS) \
-	-DG_LOG_DOMAIN=\""test"\" \
 	$(NULL)
 
 libnm_tests_libnm_vpn_plugin_utils_test_la_LIBADD = \
@@ -1889,7 +1874,6 @@ EXTRA_DIST += \
 src_core_cppflags_base = \
 	-I$(srcdir)/src/core \
 	$(dflt_cppflags_libnm_core) \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	$(SANITIZER_EXEC_CFLAGS) \
 	$(NULL)
 
@@ -1959,7 +1943,6 @@ noinst_LTLIBRARIES += shared/systemd/libnm-systemd-logging-stub.la
 
 shared_systemd_libnm_systemd_logging_stub_la_CPPFLAGS = \
 	$(libsystemd_cppflags) \
-	-DG_LOG_DOMAIN=\""libnm"\" \
 	$(NULL)
 
 shared_systemd_libnm_systemd_logging_stub_la_SOURCES = \
@@ -1975,7 +1958,6 @@ noinst_LTLIBRARIES += shared/systemd/libnm-systemd-shared.la
 
 shared_systemd_libnm_systemd_shared_la_CPPFLAGS = \
 	$(libsystemd_cppflags) \
-	-DG_LOG_DOMAIN=\""libnm"\" \
 	$(NULL)
 
 shared_systemd_libnm_systemd_shared_la_SOURCES = \
@@ -2125,7 +2107,6 @@ src_core_libnm_systemd_core_la_cppflags = \
 	-I$(srcdir)/src/core/systemd/src/systemd \
 	-I$(srcdir)/src/core/systemd/src/libsystemd-network \
 	-I$(srcdir)/src/core/systemd/src/libsystemd/sd-event \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	$(NULL)
 
 src_core_libnm_systemd_core_la_libadd = \
@@ -2974,7 +2955,6 @@ src_core_dhcp_nm_dhcp_helper_CPPFLAGS = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
-	-DG_LOG_DOMAIN=\""nm-dhcp-helper"\" \
 	$(GLIB_CFLAGS) \
 	$(NULL)
 
@@ -3037,7 +3017,6 @@ src_core_ppp_nm_pppd_plugin_la_CPPFLAGS = \
 	-I$(builddir)/shared \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
-	-DG_LOG_DOMAIN=\""nm-pppd-plugin"\" \
 	$(GLIB_CFLAGS)
 
 src_core_ppp_nm_pppd_plugin_la_SOURCES = \
@@ -4376,7 +4355,6 @@ dispatcher_cppflags = \
 	-I$(srcdir)/libnm \
 	-I$(srcdir)/src \
 	$(GLIB_CFLAGS) \
-	-DG_LOG_DOMAIN=\""nm-dispatcher"\" \
 	$(NULL)
 
 dispatcher_libnm_dispatcher_core_la_SOURCES = \
@@ -4458,7 +4436,6 @@ dispatcher_tests_test_dispatcher_envp_CPPFLAGS = \
 	-I$(srcdir)/libnm \
 	-I$(builddir)/libnm \
 	-I$(srcdir)/src \
-	-DG_LOG_DOMAIN=\""NetworkManager"\" \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_EXEC_CFLAGS) \
 	$(INTROSPECTION_EXTRA_CFLAGS) \
@@ -4513,7 +4490,6 @@ clients_nm_online_CPPFLAGS = \
 	-I$(srcdir)/libnm \
 	-I$(builddir)/libnm \
 	$(GLIB_CFLAGS) \
-	-DG_LOG_DOMAIN=\""nm-online"\" \
 	$(NULL)
 
 clients_nm_online_LDFLAGS = \
@@ -4574,7 +4550,6 @@ EXTRA_DIST += \
 
 clients_common_libnmc_base_la_CPPFLAGS = \
 	$(clients_cppflags) \
-	-DG_LOG_DOMAIN=\""libnmc"\" \
 	$(NULL)
 
 clients_common_libnmc_base_la_LIBADD = \
@@ -4622,7 +4597,6 @@ clients_common_libnmc_la_SOURCES = \
 
 clients_common_libnmc_la_CPPFLAGS = \
 	$(clients_cppflags) \
-	-DG_LOG_DOMAIN=\""libnmc"\" \
 	$(NULL)
 
 clients_common_libnmc_la_LIBADD = \
@@ -4645,7 +4619,6 @@ endif
 clients_common_tests_test_clients_common_CPPFLAGS = \
 	-I$(srcdir)/clients/common/tests \
 	$(clients_cppflags) \
-	-DG_LOG_DOMAIN=\""test"\" \
 	$(NULL)
 
 clients_common_tests_test_clients_common_LDFLAGS = \
@@ -4687,7 +4660,6 @@ clients_common_tests_test_libnm_core_aux_CPPFLAGS = \
 	-I$(builddir)/libnm \
 	-I$(srcdir)/libnm \
 	-I$(srcdir)/src \
-	-DG_LOG_DOMAIN=\""test"\" \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
@@ -4741,7 +4713,6 @@ clients_cli_nmcli_SOURCES = \
 clients_cli_nmcli_CPPFLAGS = \
 	-I$(srcdir)/clients/cli \
 	$(clients_cppflags) \
-	-DG_LOG_DOMAIN=\""nmcli"\" \
 	$(NULL)
 
 clients_cli_nmcli_LDADD = \
@@ -4789,7 +4760,6 @@ clients_cli_generate_docs_nm_settings_nmcli_SOURCES = \
 clients_cli_generate_docs_nm_settings_nmcli_CPPFLAGS = \
 	-I$(srcdir)/clients/common \
 	$(clients_cppflags) \
-	-DG_LOG_DOMAIN=\""nmcli"\" \
 	$(NULL)
 
 clients_cli_generate_docs_nm_settings_nmcli_LDADD = \
@@ -4878,7 +4848,6 @@ clients_tui_newt_libnmt_newt_a_SOURCES = \
 
 clients_tui_newt_libnmt_newt_a_CPPFLAGS = \
 	$(clients_cppflags) \
-	-DG_LOG_DOMAIN=\""nmtui"\" \
 	$(NEWT_CFLAGS) \
 	$(NULL)
 
@@ -4974,7 +4943,6 @@ clients_tui_nmtui_SOURCES = \
 clients_tui_nmtui_CPPFLAGS = \
 	-I$(srcdir)/clients/tui/newt \
 	$(clients_cppflags) \
-	-DG_LOG_DOMAIN=\""nmtui"\" \
 	$(NEWT_CFLAGS) \
 	$(NULL)
 
@@ -5047,7 +5015,6 @@ clients_cloud_setup_libnm_cloud_setup_core_a_SOURCES = \
 
 clients_cloud_setup_libnm_cloud_setup_core_a_CPPFLAGS = \
 	$(clients_cppflags) \
-	-DG_LOG_DOMAIN=\""nm-cloud-setup"\" \
 	$(LIBCURL_CFLAGS) \
 	$(NULL)
 
@@ -5062,7 +5029,6 @@ clients_cloud_setup_nm_cloud_setup_SOURCES = \
 
 clients_cloud_setup_nm_cloud_setup_CPPFLAGS = \
 	$(clients_cppflags) \
-	-DG_LOG_DOMAIN=\""nm-cloud-setup"\" \
 	$(LIBCURL_CFLAGS) \
 	$(NULL)
 
@@ -5128,7 +5094,6 @@ check_programs += clients/cloud-setup/tests/test-cloud-setup-general
 clients_cloud_setup_tests_test_cloud_setup_general_CPPFLAGS = \
 	$(clients_cppflags) \
 	-I$(srcdir)/clients/cloud-setup \
-	-DG_LOG_DOMAIN=\""tests"\" \
 	$(LIBCURL_CFLAGS) \
 	$(NULL)
 

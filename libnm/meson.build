@@ -147,9 +147,6 @@ libnm_static = static_library(
     libnm_udev_aux_dep,
     libudev_dep,
   ],
-  c_args: [
-    '-DG_LOG_DOMAIN="libnm"',
-  ],
   link_with: libnm_systemd_logging_stub,
 )
 
@@ -214,7 +211,6 @@ if enable_introspection
     header: 'NetworkManager.h',
     export_packages: libnm_name,
     extra_args: [
-      '-DG_LOG_DOMAIN="libnm"',
       '-DNETWORKMANAGER_COMPILATION',
     ],
     install: true,
@@ -307,9 +303,6 @@ libnm_libnm_aux = static_library(
   sources: files(
     'nm-libnm-aux/nm-libnm-aux.c',
   ),
-  c_args: [
-    '-DG_LOG_DOMAIN="libnmc"',
-  ],
   dependencies: [
     libnm_core_aux_intern_dep,
     libnm_dep,

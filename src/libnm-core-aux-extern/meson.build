@@ -11,9 +11,6 @@ libnm_core_aux_extern = static_library(
     libnm_glib_aux_dep,
     glib_dep,
   ],
-  c_args: [
-    '-DG_LOG_DOMAIN="libnm"',
-  ],
 )
 
 libnm_core_aux_extern_dep = declare_dependency(

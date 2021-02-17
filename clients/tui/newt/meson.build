@@ -28,9 +28,6 @@ libnmt_newt = static_library(
     libnm_nm_default_dep,
     newt_dep,
   ],
-  c_args: [
-    '-DG_LOG_DOMAIN="nmtui"',
-  ],
 )
 
 libnmt_newt_dep = declare_dependency(

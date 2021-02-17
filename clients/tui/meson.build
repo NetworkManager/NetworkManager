@@ -56,9 +56,6 @@ executable(
     libnm_base_dep_link,
     libnm_glib_aux_dep_link,
   ],
-  c_args: [
-    '-DG_LOG_DOMAIN="nmtui"',
-  ],
   link_with: libnm_systemd_logging_stub,
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,

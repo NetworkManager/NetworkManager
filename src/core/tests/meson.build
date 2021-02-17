@@ -41,9 +41,6 @@ exe = executable(
     libnm_systemd_core_dep,
     libnm_systemd_shared_dep,
   ],
-  c_args: [
-    '-DG_LOG_DOMAIN="test"',
-  ],
 )
 
 test(

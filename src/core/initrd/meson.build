@@ -8,14 +8,12 @@ libnmi_core = static_library(
     'nmi-ibft-reader.c',
   ),
   dependencies: core_default_dep,
-  c_args: daemon_c_flags,
 )
 
 executable(
   'nm-initrd-generator',
   'nm-initrd-generator.c',
   dependencies: core_default_dep,
-  c_args: daemon_c_flags,
   link_with: [
     libNetworkManagerBase,
     libnmi_core,

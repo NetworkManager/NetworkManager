@@ -31,9 +31,6 @@ executable(
     libnm_glib_aux_dep_link,
     readline_dep,
   ],
-  c_args: [
-    '-DG_LOG_DOMAIN="nmcli"',
-  ],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true,
@@ -54,9 +51,6 @@ generate_docs_nm_settings_nmcli = executable(
     libnm_core_aux_intern_dep_link,
     libnm_base_dep_link,
     libnm_glib_aux_dep_link,
-  ],
-  c_args: [
-    '-DG_LOG_DOMAIN="nmcli"',
   ],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
