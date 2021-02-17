@@ -1649,6 +1649,9 @@ DISTCLEANFILES += \
 	libnm/libnm.pc
 
 EXTRA_DIST += \
+	libnm/nm-enum-types.c.template \
+	libnm/nm-enum-types.h.template \
+	\
 	libnm/libnm.pc.in \
 	libnm/libnm.ver
 
