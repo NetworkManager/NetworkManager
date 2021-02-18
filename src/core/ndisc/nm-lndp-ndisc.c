@@ -14,7 +14,7 @@
 #include <ndp.h>
 
 #include "nm-glib-aux/nm-str-buf.h"
-#include "systemd/nm-sd-utils-shared.h"
+#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 #include "nm-ndisc-private.h"
 #include "NetworkManagerUtils.h"
 #include "platform/nm-platform.h"

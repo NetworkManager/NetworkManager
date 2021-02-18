@@ -11,7 +11,7 @@
 #include "nm-std-aux/unaligned.h"
 #include "nm-glib-aux/nm-dedup-multi.h"
 #include "nm-glib-aux/nm-str-buf.h"
-#include "systemd/nm-sd-utils-shared.h"
+#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "nm-dhcp-utils.h"
 #include "nm-utils.h"

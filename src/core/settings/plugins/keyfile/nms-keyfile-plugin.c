@@ -25,7 +25,7 @@
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-core-intern/nm-keyfile-internal.h"
 
-#include "systemd/nm-sd-utils-shared.h"
+#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "settings/nm-settings-plugin.h"
 #include "settings/nm-settings-storage.h"

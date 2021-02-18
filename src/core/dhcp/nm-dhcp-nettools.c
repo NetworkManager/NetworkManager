@@ -26,7 +26,7 @@
 #include "platform/nm-platform.h"
 #include "nm-dhcp-client-logging.h"
 #include "n-dhcp4/src/n-dhcp4.h"
-#include "systemd/nm-sd-utils-shared.h"
+#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 #include "systemd/nm-sd-utils-dhcp.h"
 
 /*****************************************************************************/

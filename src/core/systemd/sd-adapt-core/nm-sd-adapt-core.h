@@ -13,7 +13,7 @@
 #include <time.h>
 
 #undef NETWORKMANAGER_COMPILATION
-#include "systemd/sd-adapt-shared/nm-sd-adapt-shared.h"
+#include "libnm-systemd-shared/sd-adapt-shared/nm-sd-adapt-shared.h"
 #undef NETWORKMANAGER_COMPILATION
 #define NETWORKMANAGER_COMPILATION NM_NETWORKMANAGER_COMPILATION_SYSTEMD
 

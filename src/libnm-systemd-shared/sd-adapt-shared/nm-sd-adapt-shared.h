@@ -6,7 +6,7 @@
 #ifndef __NM_SD_ADAPT_SHARED_H__
 #define __NM_SD_ADAPT_SHARED_H__
 
-#include "shared/systemd/nm-default-systemd-shared.h"
+#include "libnm-systemd-shared/nm-default-systemd-shared.h"
 
 #include "nm-glib-aux/nm-logging-fwd.h"
 

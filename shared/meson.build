@@ -222,66 +222,6 @@ libnm_platform_dep = declare_dependency(
   link_with: libnm_platform,
 )
 
-libnm_systemd_shared = static_library(
-  'nm-systemd-shared',
-  sources: files(
-    'systemd/nm-sd-utils-shared.c',
-    'systemd/src/basic/alloc-util.c',
-    'systemd/src/basic/env-file.c',
-    'systemd/src/basic/env-util.c',
-    'systemd/src/basic/escape.c',
-    'systemd/src/basic/ether-addr-util.c',
-    'systemd/src/basic/extract-word.c',
-    'systemd/src/basic/fd-util.c',
-    'systemd/src/basic/fileio.c',
-    'systemd/src/basic/format-util.c',
-    'systemd/src/basic/fs-util.c',
-    'systemd/src/basic/hash-funcs.c',
-    'systemd/src/basic/hashmap.c',
-    'systemd/src/basic/hexdecoct.c',
-    'systemd/src/basic/hostname-util.c',
-    'systemd/src/basic/in-addr-util.c',
-    'systemd/src/basic/io-util.c',
-    'systemd/src/basic/memory-util.c',
-    'systemd/src/basic/mempool.c',
-    'systemd/src/basic/parse-util.c',
-    'systemd/src/basic/path-util.c',
-    'systemd/src/basic/prioq.c',
-    'systemd/src/basic/process-util.c',
-    'systemd/src/basic/random-util.c',
-    'systemd/src/basic/ratelimit.c',
-    'systemd/src/basic/signal-util.c',
-    'systemd/src/basic/socket-util.c',
-    'systemd/src/basic/stat-util.c',
-    'systemd/src/basic/string-table.c',
-    'systemd/src/basic/string-util.c',
-    'systemd/src/basic/strv.c',
-    'systemd/src/basic/strxcpyx.c',
-    'systemd/src/basic/time-util.c',
-    'systemd/src/basic/tmpfile-util.c',
-    'systemd/src/basic/utf8.c',
-    'systemd/src/basic/util.c',
-    'systemd/src/shared/dns-domain.c',
-    'systemd/src/shared/web-util.c',
-  ),
-  include_directories: include_directories(
-    'systemd/sd-adapt-shared',
-    'systemd/src/basic',
-    'systemd/src/shared',
-  ),
-  dependencies: glib_nm_default_dep,
-)
-
-libnm_systemd_shared_dep = declare_dependency(
-  include_directories: include_directories(
-    'systemd/sd-adapt-shared',
-    'systemd/src/basic',
-    'systemd/src/shared',
-  ),
-  dependencies: glib_dep,
-  link_with: libnm_systemd_shared,
-)
-
 if enable_tests
   subdir('nm-glib-aux/tests')
   subdir('nm-platform/tests')
