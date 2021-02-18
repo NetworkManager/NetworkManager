@@ -8,7 +8,7 @@
 #include "nm-setting-ethtool.h"
 
 #include "nm-setting-private.h"
-#include "nm-base/nm-ethtool-base.h"
+#include "libnm-base/nm-ethtool-base.h"
 
 /*****************************************************************************/
 

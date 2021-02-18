@@ -40,7 +40,7 @@
 #include "nm-setting-generic.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-utils.h"
-#include "nm-base/nm-ethtool-base.h"
+#include "libnm-base/nm-ethtool-base.h"
 
 #include "platform/nm-platform.h"
 #include "NetworkManagerUtils.h"

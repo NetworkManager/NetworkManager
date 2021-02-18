@@ -115,13 +115,13 @@ $(src_libnm_core_public_mkenums_c):           config-extra.h
 src/libnm-core-impl/.dirstamp:                config-extra.h
 src/libnm-core-impl/.dirstamp:                config-extra.h
 shared/.dirstamp:                             config-extra.h
-shared/nm-base/.dirstamp:                     config-extra.h
+src/libnm-base/.dirstamp:                     config-extra.h
 shared/nm-glib-aux/.dirstamp:                 config-extra.h
 shared/nm-glib-aux/tests/.dirstamp:           config-extra.h
 src/libnm-platform/.dirstamp:                 config-extra.h
 src/libnm-platform/tests/.dirstamp:           config-extra.h
 shared/nm-std-aux/.dirstamp:                  config-extra.h
-shared/nm-udev-aux/.dirstamp:                 config-extra.h
+src/libnm-udev-aux/.dirstamp:                 config-extra.h
 src/libnm-systemd-shared/.dirstamp:                 config-extra.h
 src/libnm-systemd-shared/src/basic/.dirstamp:       config-extra.h
 src/libnm-systemd-shared/src/shared/.dirstamp:      config-extra.h
@@ -445,51 +445,57 @@ shared_nm_glib_aux_libnm_glib_aux_la_LIBADD = \
 
 ###############################################################################
 
-noinst_LTLIBRARIES += shared/nm-udev-aux/libnm-udev-aux.la
+noinst_LTLIBRARIES += src/libnm-udev-aux/libnm-udev-aux.la
 
-shared_nm_udev_aux_libnm_udev_aux_la_CPPFLAGS = \
+src_libnm_udev_aux_libnm_udev_aux_la_CPPFLAGS = \
 	$(shared_nm_glib_aux_cppflags) \
 	$(LIBUDEV_CFLAGS) \
 	$(NULL)
 
-shared_nm_udev_aux_libnm_udev_aux_la_SOURCES = \
-	shared/nm-udev-aux/nm-udev-utils.c \
-	shared/nm-udev-aux/nm-udev-utils.h \
+src_libnm_udev_aux_libnm_udev_aux_la_SOURCES = \
+	src/libnm-udev-aux/nm-udev-utils.c \
+	src/libnm-udev-aux/nm-udev-utils.h \
 	$(NULL)
 
-shared_nm_udev_aux_libnm_udev_aux_la_LDFLAGS = \
+src_libnm_udev_aux_libnm_udev_aux_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
-shared_nm_udev_aux_libnm_udev_aux_la_LIBADD = \
+src_libnm_udev_aux_libnm_udev_aux_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
 	$(NULL)
 
+EXTRA_DIST += src/libnm-udev-aux/meson.build
+
 ###############################################################################
 
-noinst_LTLIBRARIES += shared/nm-base/libnm-base.la
+noinst_LTLIBRARIES += src/libnm-base/libnm-base.la
 
-shared_nm_base_libnm_base_la_CPPFLAGS = \
+src_libnm_base_libnm_base_la_CPPFLAGS = \
 	$(shared_nm_glib_aux_cppflags) \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
 	$(NULL)
 
-shared_nm_base_libnm_base_la_SOURCES = \
-	shared/nm-base/nm-base.h \
-	shared/nm-base/nm-ethtool-base.c \
-	shared/nm-base/nm-ethtool-base.h \
-	shared/nm-base/nm-ethtool-utils-base.h \
+src_libnm_base_libnm_base_la_SOURCES = \
+	src/libnm-base/nm-base.h \
+	src/libnm-base/nm-ethtool-base.c \
+	src/libnm-base/nm-ethtool-base.h \
+	src/libnm-base/nm-ethtool-utils-base.h \
 	$(NULL)
 
-shared_nm_base_libnm_base_la_LDFLAGS = \
+src_libnm_base_libnm_base_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
-shared_nm_base_libnm_base_la_LIBADD = \
+src_libnm_base_libnm_base_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(NULL)
+
+EXTRA_DIST += src/libnm-base/meson.build
 
 ###############################################################################
 
@@ -1385,7 +1391,7 @@ src_libnm_core_impl_tests_ldadd = \
 	src/libnm-core-impl/libnm-core-impl.la \
 	$(libnm_crypto_lib) \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-base/libnm-base.la \
+	src/libnm-base/libnm-base.la \
 	src/libnm-systemd-shared/libnm-systemd-shared.la \
 	shared/nm-log-null/libnm-log-null.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
@@ -1613,12 +1619,12 @@ libnm_libnm_static_la_LIBADD = \
 	src/libnm-core-impl/libnm-core-impl.la \
 	$(libnm_crypto_lib) \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-base/libnm-base.la \
+	src/libnm-base/libnm-base.la \
 	introspection/libnmdbus.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	src/libnm-systemd-shared/libnm-systemd-shared.la \
 	shared/nm-log-null/libnm-log-null.la \
-	shared/nm-udev-aux/libnm-udev-aux.la \
+	src/libnm-udev-aux/libnm-udev-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
@@ -2484,9 +2490,9 @@ src_core_libNetworkManager_la_LIBADD = \
 	$(libnm_crypto_lib) \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
 	src/libnm-platform/libnm-platform.la \
-	shared/nm-base/libnm-base.la \
+	src/libnm-base/libnm-base.la \
 	shared/nm-log-core/libnm-log-core.la \
-	shared/nm-udev-aux/libnm-udev-aux.la \
+	src/libnm-udev-aux/libnm-udev-aux.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	src/core/libnm-systemd-core.la \
@@ -2597,9 +2603,9 @@ src_core_nm_iface_helper_LDADD = \
 	$(libnm_crypto_lib) \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
 	src/libnm-platform/libnm-platform.la \
-	shared/nm-base/libnm-base.la \
+	src/libnm-base/libnm-base.la \
 	shared/nm-log-core/libnm-log-core.la \
-	shared/nm-udev-aux/libnm-udev-aux.la \
+	src/libnm-udev-aux/libnm-udev-aux.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	src/core/libnm-systemd-core.la \
@@ -2651,9 +2657,9 @@ src_core_initrd_nm_initrd_generator_LDADD = \
 	$(libnm_crypto_lib) \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
 	src/libnm-platform/libnm-platform.la \
-	shared/nm-base/libnm-base.la \
+	src/libnm-base/libnm-base.la \
 	shared/nm-log-core/libnm-log-core.la \
-	shared/nm-udev-aux/libnm-udev-aux.la \
+	src/libnm-udev-aux/libnm-udev-aux.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	src/libnm-systemd-shared/libnm-systemd-shared.la \
@@ -4644,7 +4650,7 @@ clients_common_tests_test_clients_common_LDADD = \
 	clients/common/libnmc-base.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-base/libnm-base.la \
+	src/libnm-base/libnm-base.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
@@ -4736,7 +4742,7 @@ clients_cli_nmcli_LDADD = \
 	clients/common/libnmc-base.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-base/libnm-base.la \
+	src/libnm-base/libnm-base.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
@@ -4784,7 +4790,7 @@ clients_cli_generate_docs_nm_settings_nmcli_LDADD = \
 	libnm/nm-libnm-aux/libnm-libnm-aux.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-base/libnm-base.la \
+	src/libnm-base/libnm-base.la \
 	libnm/libnm.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
@@ -4974,7 +4980,7 @@ clients_tui_nmtui_LDADD = \
 	libnm/nm-libnm-aux/libnm-libnm-aux.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-base/libnm-base.la \
+	src/libnm-base/libnm-base.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
@@ -5060,7 +5066,7 @@ clients_cloud_setup_nm_cloud_setup_LDADD = \
 	libnm/nm-libnm-aux/libnm-libnm-aux.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-base/libnm-base.la \
+	src/libnm-base/libnm-base.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
@@ -5125,7 +5131,7 @@ clients_cloud_setup_tests_test_cloud_setup_general_LDADD = \
 	libnm/nm-libnm-aux/libnm-libnm-aux.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-base/libnm-base.la \
+	src/libnm-base/libnm-base.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \

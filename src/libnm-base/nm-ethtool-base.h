@@ -6,7 +6,7 @@
 #ifndef __NM_ETHTOOL_BASE_H__
 #define __NM_ETHTOOL_BASE_H__
 
-#include "nm-base/nm-base.h"
+#include "libnm-base/nm-base.h"
 
 /*****************************************************************************/
 

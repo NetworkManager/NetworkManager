@@ -25,7 +25,7 @@
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-glib-aux/nm-dedup-multi.h"
-#include "nm-udev-aux/nm-udev-utils.h"
+#include "libnm-udev-aux/nm-udev-utils.h"
 #include "nm-glib-aux/nm-secret-utils.h"
 
 #include "nm-core-utils.h"

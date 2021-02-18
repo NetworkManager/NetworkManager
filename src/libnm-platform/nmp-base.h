@@ -3,7 +3,7 @@
 #ifndef __NMP_FWD_H__
 #define __NMP_FWD_H__
 
-#include "nm-base/nm-base.h"
+#include "libnm-base/nm-base.h"
 
 /*****************************************************************************/
 

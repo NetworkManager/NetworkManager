@@ -25,7 +25,7 @@
 #include "nm-dbus-helpers.h"
 #include "nm-device-tun.h"
 #include "nm-setting-connection.h"
-#include "nm-udev-aux/nm-udev-utils.h"
+#include "libnm-udev-aux/nm-udev-utils.h"
 
 /*****************************************************************************/
 
