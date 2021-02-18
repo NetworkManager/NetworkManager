@@ -3,7 +3,7 @@
  * Copyright (C) 2018 Red Hat, Inc.
  */
 
-#include "shared/systemd/nm-default-systemd-shared.h"
+#include "nm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-glib-aux/nm-logging-fwd.h"
 

@@ -147,7 +147,7 @@ libnm_static = static_library(
     libnm_udev_aux_dep,
     libudev_dep,
   ],
-  link_with: libnm_systemd_logging_stub,
+  link_with: libnm_log_null,
 )
 
 linker_script = join_paths(meson.current_source_dir(), 'libnm.ver')
@@ -160,7 +160,7 @@ libnm = shared_library(
     libnm_static,
     libnm_core_impl,
     libnmdbus,
-    libnm_systemd_logging_stub,
+    libnm_log_null,
     libnm_glib_aux,
     libnm_base,
   ],

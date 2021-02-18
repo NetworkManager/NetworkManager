@@ -196,6 +196,12 @@ libnm_log_core_dep = declare_dependency(
   link_with: libnm_log_core,
 )
 
+libnm_log_null = static_library(
+  'nm-log-null',
+  sources: 'nm-log-null/nm-logging-null.c',
+  dependencies: glib_nm_default_dep,
+)
+
 libnm_platform = static_library(
   'nm-platform',
   sources: [
@@ -274,12 +280,6 @@ libnm_systemd_shared_dep = declare_dependency(
   ),
   dependencies: glib_dep,
   link_with: libnm_systemd_shared,
-)
-
-libnm_systemd_logging_stub = static_library(
-  'nm-systemd-logging-stub',
-  sources: 'systemd/nm-logging-stub.c',
-  dependencies: glib_nm_default_dep,
 )
 
 if enable_tests

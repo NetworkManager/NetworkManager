@@ -28,7 +28,7 @@ exe = executable(
     libnm_nm_default_dep,
     libnm_glib_aux_dep_link,
   ],
-  link_with: libnm_systemd_logging_stub,
+  link_with: libnm_log_null,
 )
 
 test(

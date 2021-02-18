@@ -519,6 +519,25 @@ shared_nm_log_core_libnm_log_core_la_LIBADD = \
 	$(SYSTEMD_JOURNAL_LIBS) \
 	$(NULL)
 
+noinst_LTLIBRARIES += shared/nm-log-null/libnm-log-null.la
+
+shared_nm_log_null_libnm_log_null_la_CPPFLAGS = \
+	$(dflt_cppflags) \
+	-I$(srcdir)/shared \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(NULL)
+
+shared_nm_log_null_libnm_log_null_la_SOURCES = \
+	shared/nm-log-null/nm-logging-null.c \
+	$(NULL)
+
+shared_nm_log_null_libnm_log_null_la_LIBADD = \
+	$(GLIB_LIBS) \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(NULL)
+
 ###############################################################################
 
 noinst_LTLIBRARIES += shared/nm-platform/libnm-platform.la
@@ -718,7 +737,7 @@ shared_nm_glib_aux_tests_test_shared_general_LDFLAGS = \
 
 shared_nm_glib_aux_tests_test_shared_general_LDADD = \
 	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/systemd/libnm-systemd-logging-stub.la \
+	shared/nm-log-null/libnm-log-null.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
@@ -747,7 +766,7 @@ shared_nm_glib_aux_tests_test_json_aux_LDFLAGS = \
 shared_nm_glib_aux_tests_test_json_aux_LDADD = \
 	$(JANSSON_LIBS) \
 	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/systemd/libnm-systemd-logging-stub.la \
+	shared/nm-log-null/libnm-log-null.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
@@ -1362,7 +1381,7 @@ src_libnm_core_impl_tests_ldadd = \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
 	shared/nm-base/libnm-base.la \
 	shared/systemd/libnm-systemd-shared.la \
-	shared/systemd/libnm-systemd-logging-stub.la \
+	shared/nm-log-null/libnm-log-null.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
@@ -1592,7 +1611,7 @@ libnm_libnm_static_la_LIBADD = \
 	introspection/libnmdbus.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/systemd/libnm-systemd-shared.la \
-	shared/systemd/libnm-systemd-logging-stub.la \
+	shared/nm-log-null/libnm-log-null.la \
 	shared/nm-udev-aux/libnm-udev-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libcsiphash.la \
@@ -1937,21 +1956,6 @@ libsystemd_cppflags = \
 	$(LIBSYSTEMD_NM_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS) \
-	$(NULL)
-
-noinst_LTLIBRARIES += shared/systemd/libnm-systemd-logging-stub.la
-
-shared_systemd_libnm_systemd_logging_stub_la_CPPFLAGS = \
-	$(libsystemd_cppflags) \
-	$(NULL)
-
-shared_systemd_libnm_systemd_logging_stub_la_SOURCES = \
-	shared/systemd/nm-logging-stub.c \
-	$(NULL)
-
-shared_systemd_libnm_systemd_logging_stub_la_LIBADD = \
-	$(GLIB_LIBS) \
-	$(CODE_COVERAGE_LDFLAGS) \
 	$(NULL)
 
 noinst_LTLIBRARIES += shared/systemd/libnm-systemd-shared.la

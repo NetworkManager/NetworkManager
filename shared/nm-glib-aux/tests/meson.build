@@ -4,7 +4,7 @@ exe = executable(
   'test-shared-general',
   'test-shared-general.c',
   dependencies: libnm_glib_aux_dep_link,
-  link_with: libnm_systemd_logging_stub,
+  link_with: libnm_log_null,
 )
 
 test(
@@ -23,7 +23,7 @@ if jansson_dep.found()
       jansson_dep,
       dl_dep,
     ],
-    link_with: libnm_systemd_logging_stub,
+    link_with: libnm_log_null,
   )
 
   test(
