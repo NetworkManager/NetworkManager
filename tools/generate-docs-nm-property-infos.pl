@@ -65,7 +65,8 @@ close $fo;
 # get setting name from NM_SETTING_*_SETTING_NAME constant in C header file
 sub get_setting_name {
   my $path = $_[0];
-  $path =~ s/c$/h/;  # use header file to find out setting name
+  $path =~ s/\/libnm-core-impl\/nm-setting-(.*)\.c$/\/libnm-core-public\/nm-setting-$1.h/;  # use header file to find out setting name
+  $path =~ s/\.c$/.h/;  # use header file to find out setting name
   open my $fh, '<', $path or die "Can't open $path: $!";
   while (my $line = <$fh>) {
     if ($line =~ /NM_SETTING_.+SETTING_NAME\s+\"(\S+)\"/) {

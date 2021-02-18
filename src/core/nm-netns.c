@@ -11,7 +11,7 @@
 #include "nm-glib-aux/nm-c-list.h"
 
 #include "NetworkManagerUtils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-l3cfg.h"
 #include "platform/nm-platform.h"
 #include "nm-platform/nmp-netns.h"

@@ -12,7 +12,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "nm-keyfile-internal.h"
+#include "libnm-core-intern/nm-keyfile-internal.h"
 
 #include "nms-keyfile-utils.h"
 #include "nms-keyfile-reader.h"

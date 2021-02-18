@@ -36,7 +36,7 @@
 #include "nm-setting-serial.h"
 #include "nm-setting-vlan.h"
 #include "nm-setting-dcb.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-base/nm-ethtool-base.h"
 #include "nm-base/nm-ethtool-utils-base.h"
 

@@ -7,7 +7,7 @@
 
 #include <stdlib.h>
 
-#include "nm-libnm-core-intern/nm-common-macros.h"
+#include "libnm-core-aux-intern/nm-common-macros.h"
 
 #include "nm-client-utils.h"
 

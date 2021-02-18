@@ -12,7 +12,7 @@
 #include "nm-dbus-interface.h"
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-remote-connection-private.h"
 #include "nm-object-private.h"
 #include "nm-dbus-helpers.h"

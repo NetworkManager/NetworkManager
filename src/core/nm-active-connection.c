@@ -7,17 +7,17 @@
 
 #include "nm-active-connection.h"
 
-#include "nm-libnm-core-intern/nm-common-macros.h"
+#include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-dbus-interface.h"
 #include "devices/nm-device.h"
 #include "settings/nm-settings-connection.h"
 #include "nm-simple-connection.h"
 #include "nm-auth-utils.h"
 #include "nm-auth-manager.h"
-#include "nm-libnm-core-intern/nm-auth-subject.h"
+#include "libnm-core-aux-intern/nm-auth-subject.h"
 #include "nm-keep-alive.h"
 #include "NetworkManagerUtils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 
 #define AUTH_CALL_ID_SHARED_WIFI_PERMISSION_FAILED ((NMAuthManagerCallId *) GINT_TO_POINTER(1))
 

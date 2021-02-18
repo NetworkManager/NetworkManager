@@ -1,25 +1,30 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
-src_inc = include_directories('.')
+src_core_inc = include_directories('.')
 
 core_plugin_dep = declare_dependency(
-  sources: libnm_core_enum_sources[1],
   include_directories: [
-    src_inc,
+    src_core_inc,
     top_inc,
     shared_inc,
-    libnm_core_inc,
+    libnm_core_public_inc,
   ],
   dependencies: [
+    libnm_core_intern_dep,
+    libnm_core_public_dep,
     glib_dep,
   ],
 )
 
 core_default_dep = declare_dependency(
-  sources: libnm_core_enum_sources[1],
-  include_directories: src_inc,
+  include_directories: [
+    src_core_inc,
+    shared_inc,
+    top_inc,
+  ],
   dependencies: [
-    libnm_core_nm_default_dep,
+    libnm_core_public_dep,
+    libnm_core_intern_dep,
     libnm_log_core_dep,
     libnm_platform_dep,
   ],
@@ -33,10 +38,6 @@ install_data(
 subdir('systemd')
 
 core_plugins = []
-
-daemon_c_flags = [
-  '-DG_LOG_DOMAIN="NetworkManager"',
-]
 
 platform_wifi_wext_source = files()
 if enable_wext
@@ -77,16 +78,17 @@ libNetworkManagerBase = static_library(
   dependencies: [
     core_default_dep,
     libn_dhcp4_dep,
-    libnm_core_dep,
+    libnm_core_impl_dep,
     libnm_systemd_shared_dep,
     libnm_udev_aux_dep,
     libsystemd_dep,
     libudev_dep,
   ],
-  c_args: daemon_c_flags,
 )
 
 nm_deps = [
+  libnm_core_public_dep,
+  libnm_core_impl_dep,
   core_default_dep,
   dl_dep,
   libn_acd_dep,
@@ -194,7 +196,6 @@ libNetworkManager = static_library(
     'nm-sleep-monitor.c',
   ),
   dependencies: nm_deps,
-  c_args: daemon_c_flags,
   link_with: [
     libNetworkManagerBase,
     libnm_systemd_core,
@@ -211,12 +212,15 @@ executable(
     libndp_dep,
     libudev_dep,
     libn_acd_dep,
+    libnm_glib_aux_dep_link,
+    libnm_core_impl_dep_link,
   ],
-  c_args: daemon_c_flags,
   link_with: [
     libNetworkManagerBase,
     libnm_systemd_core,
     libnm_systemd_shared,
+    libnm_base,
+    libnm_glib_aux,
   ],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
@@ -225,7 +229,7 @@ executable(
 )
 
 if enable_tests
-  test_c_flags = daemon_c_flags
+  test_c_flags = []
   if require_root_tests
     test_c_flags += ['-DREQUIRE_ROOT_TESTS=1']
   endif
@@ -244,7 +248,11 @@ if enable_tests
 
   libNetworkManagerTest_dep = declare_dependency(
     dependencies: core_default_dep,
-    link_with: libNetworkManagerTest,
+    link_with: [
+      libNetworkManagerTest,
+      libnm_base,
+      libnm_core_impl,
+    ],
   )
 
   subdir('dnsmasq/tests')
@@ -275,12 +283,12 @@ NetworkManager_all_sym = executable(
   'NetworkManager-all-sym',
   'main.c',
   dependencies: nm_deps,
-  c_args: daemon_c_flags,
   link_args: '-Wl,--no-gc-sections',
   link_whole: [
     libNetworkManager,
     libNetworkManagerBase,
-    libnm_core,
+    libnm_core_impl,
+    libnm_base,
   ],
 )
 
@@ -302,8 +310,12 @@ NetworkManager = executable(
   'NetworkManager',
   'main.c',
   dependencies: nm_deps,
-  c_args: daemon_c_flags,
-  link_with: libNetworkManager,
+  link_with: [
+    libNetworkManager,
+    libNetworkManagerBase,
+    libnm_core_impl,
+    libnm_base,
+  ],
   link_args: [
     '-rdynamic',
     '-Wl,--version-script,@0@'.format(ver_script.full_path()),

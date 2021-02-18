@@ -11,7 +11,7 @@
 #include "nm-utils.h"
 #include "nm-device-bridge.h"
 #include "nm-object-private.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 
 /*****************************************************************************/
 

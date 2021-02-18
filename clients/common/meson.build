@@ -14,9 +14,6 @@ libnmc_base = static_library(
     libnm_dep,
     libnm_nm_default_dep,
   ],
-  c_args: [
-    '-DG_LOG_DOMAIN="libnmc"',
-  ],
 )
 
 libnmc_base_dep = declare_dependency(
@@ -76,10 +73,7 @@ libnmc = static_library(
   dependencies: [
     libnm_dep,
     libnm_nm_default_dep,
-    libnm_libnm_core_aux_dep,
-  ],
-  c_args: [
-    '-DG_LOG_DOMAIN="libnmc"',
+    libnm_core_aux_extern_dep,
   ],
   link_depends: settings_docs_source,
 )

@@ -14,11 +14,11 @@
     #include <selinux/label.h>
 #endif
 
-#include "nm-libnm-core-intern/nm-common-macros.h"
+#include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"
 #include "nm-utils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 
 #include "NetworkManagerUtils.h"
 

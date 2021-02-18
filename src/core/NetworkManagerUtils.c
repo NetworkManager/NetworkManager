@@ -14,12 +14,12 @@
 
 #include "nm-glib-aux/nm-c-list.h"
 
-#include "nm-libnm-core-intern/nm-common-macros.h"
+#include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "platform/nmp-object.h"
 
 #include "platform/nm-platform.h"

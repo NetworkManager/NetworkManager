@@ -7,7 +7,7 @@
 
 #include "nm-modem-ofono.h"
 
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "devices/nm-device-private.h"
 #include "nm-modem.h"
 #include "platform/nm-platform.h"

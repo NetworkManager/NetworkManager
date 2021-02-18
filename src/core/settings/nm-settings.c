@@ -20,9 +20,9 @@
     #include <selinux/selinux.h>
 #endif
 
-#include "nm-libnm-core-intern/nm-common-macros.h"
+#include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-glib-aux/nm-keyfile-aux.h"
-#include "nm-keyfile-internal.h"
+#include "libnm-core-intern/nm-keyfile-internal.h"
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"
 #include "nm-setting-8021x.h"
@@ -44,7 +44,7 @@
 #include "nm-setting-proxy.h"
 #include "nm-setting-bond.h"
 #include "nm-utils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 
 #include "nm-std-aux/c-list-util.h"
 #include "nm-glib-aux/nm-c-list.h"
@@ -54,7 +54,7 @@
 #include "nm-settings-plugin.h"
 #include "nm-dbus-manager.h"
 #include "nm-auth-utils.h"
-#include "nm-libnm-core-intern/nm-auth-subject.h"
+#include "libnm-core-aux-intern/nm-auth-subject.h"
 #include "nm-session-monitor.h"
 #include "plugins/keyfile/nms-keyfile-plugin.h"
 #include "plugins/keyfile/nms-keyfile-storage.h"

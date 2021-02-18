@@ -18,7 +18,7 @@
 #include "nm-glib-aux/nm-io-utils.h"
 #include "nm-std-aux/nm-dbus-compat.h"
 #include "nm-utils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-config.h"
 #include "nm-dbus-manager.h"
 #include "settings/nm-settings-plugin.h"

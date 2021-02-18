@@ -7,7 +7,7 @@
 #define __NM_TEST_UTILS_CORE_H__
 
 #include "NetworkManagerUtils.h"
-#include "nm-keyfile-internal.h"
+#include "libnm-core-intern/nm-keyfile-internal.h"
 
 #define _NMTST_INSIDE_CORE 1
 
@@ -15,7 +15,7 @@
 
 /*****************************************************************************/
 
-#define NMTST_EXPECT_NM(level, msg) NMTST_EXPECT("NetworkManager", level, msg)
+#define NMTST_EXPECT_NM(level, msg) NMTST_EXPECT("nm", level, msg)
 
 #define NMTST_EXPECT_NM_ERROR(msg) NMTST_EXPECT_NM(G_LOG_LEVEL_MESSAGE, "*<error> [*] " msg)
 #define NMTST_EXPECT_NM_WARN(msg)  NMTST_EXPECT_NM(G_LOG_LEVEL_MESSAGE, "*<warn>  [*] " msg)

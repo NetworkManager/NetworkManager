@@ -141,17 +141,17 @@ test-*.trs
 
 /introspection/org.freedesktop.NetworkManager*.[ch]
 
-/libnm-core/tests/test-compare
-/libnm-core/tests/test-crypto
-/libnm-core/tests/test-settings-defaults
-/libnm-core/tests/test-general
-/libnm-core/tests/test-keyfile
-/libnm-core/tests/test-need-secrets
-/libnm-core/tests/test-secrets
-/libnm-core/tests/test-setting
-/libnm-core/nm-dbus-types.xml
-/libnm-core/nm-version-macros.h
-/libnm-core/nm-vpn-dbus-types.xml
+/src/libnm-core-public/nm-version-macros.h
+/src/libnm-core-public/nm-dbus-types.xml
+/src/libnm-core-public/nm-vpn-dbus-types.xml
+/src/libnm-core-impl/tests/test-compare
+/src/libnm-core-impl/tests/test-crypto
+/src/libnm-core-impl/tests/test-settings-defaults
+/src/libnm-core-impl/tests/test-general
+/src/libnm-core-impl/tests/test-keyfile
+/src/libnm-core-impl/tests/test-need-secrets
+/src/libnm-core-impl/tests/test-secrets
+/src/libnm-core-impl/tests/test-setting
 
 /libnm/nm-property-infos-dbus.xml
 /libnm/nm-property-infos-ifcfg-rh.xml
@@ -323,6 +323,17 @@ test-*.trs
 /libnm-core/tests/test-setting-8021x
 /libnm-core/tests/test-setting-bond
 /libnm-core/tests/test-setting-dcb
+/libnm-core/tests/test-compare
+/libnm-core/tests/test-crypto
+/libnm-core/tests/test-settings-defaults
+/libnm-core/tests/test-general
+/libnm-core/tests/test-keyfile
+/libnm-core/tests/test-need-secrets
+/libnm-core/tests/test-secrets
+/libnm-core/tests/test-setting
+/libnm-core/nm-dbus-types.xml
+/libnm-core/nm-version-macros.h
+/libnm-core/nm-vpn-dbus-types.xml
 /libnm-glib/libnm-glib-test
 /libnm-glib/nm-secret-agent-glue.h
 /libnm-glib/nm-vpn-plugin-glue.h

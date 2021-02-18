@@ -7,7 +7,7 @@
 
 #include <stdlib.h>
 
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-device-veth.h"
 #include "nm-device-private.h"
 #include "nm-manager.h"

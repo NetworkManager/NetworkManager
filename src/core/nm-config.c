@@ -13,9 +13,9 @@
 #include "nm-utils.h"
 #include "devices/nm-device.h"
 #include "NetworkManagerUtils.h"
-#include "nm-core-internal.h"
-#include "nm-keyfile-internal.h"
-#include "nm-keyfile-utils.h"
+#include "libnm-core-intern/nm-core-internal.h"
+#include "libnm-core-intern/nm-keyfile-internal.h"
+#include "libnm-core-intern/nm-keyfile-utils.h"
 
 #define DEFAULT_CONFIG_MAIN_FILE     NMCONFDIR "/NetworkManager.conf"
 #define DEFAULT_CONFIG_DIR           NMCONFDIR "/conf.d"

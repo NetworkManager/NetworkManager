@@ -7,9 +7,7 @@ executable(
     libnm_dep,
     libnm_nm_default_dep,
     libnm_libnm_aux_dep,
-  ],
-  c_args: [
-    '-DG_LOG_DOMAIN="nm-online"',
+    libnm_glib_aux_dep_link,
   ],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,

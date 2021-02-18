@@ -14,7 +14,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 
 #include "supplicant/nm-supplicant-config.h"
 #include "supplicant/nm-supplicant-settings-verify.h"

@@ -13,7 +13,7 @@
 
 #include "platform/nm-platform.h"
 #include "nm-utils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-setting-bluetooth.h"
 
 #define PLUGIN_PREFIX "libnm-device-plugin-"

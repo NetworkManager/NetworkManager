@@ -11,7 +11,7 @@
 #include "nm-device-ovs-port.h"
 #include "nm-device-ovs-bridge.h"
 #include "platform/nm-platform.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "settings/nm-settings.h"
 #include "devices/nm-device-factory.h"
 #include "devices/nm-device-private.h"

@@ -733,7 +733,7 @@ nmtst_test_quick(void)
 
 #define NMTST_EXPECT(domain, level, msg) g_test_expect_message(domain, level, msg)
 
-#define NMTST_EXPECT_LIBNM(level, msg) NMTST_EXPECT("libnm", level, msg)
+#define NMTST_EXPECT_LIBNM(level, msg) NMTST_EXPECT("nm", level, msg)
 
 #define NMTST_EXPECT_LIBNM_WARNING(msg)  NMTST_EXPECT_LIBNM(G_LOG_LEVEL_WARNING, msg)
 #define NMTST_EXPECT_LIBNM_CRITICAL(msg) NMTST_EXPECT_LIBNM(G_LOG_LEVEL_CRITICAL, msg)

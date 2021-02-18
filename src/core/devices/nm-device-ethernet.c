@@ -32,7 +32,7 @@
 #include "nm-device-ethernet-utils.h"
 #include "settings/nm-settings.h"
 #include "nm-device-factory.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "nm-udev-aux/nm-udev-utils.h"
 #include "nm-device-veth.h"

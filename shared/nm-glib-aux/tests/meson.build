@@ -3,10 +3,7 @@
 exe = executable(
   'test-shared-general',
   'test-shared-general.c',
-  c_args: [
-    '-DG_LOG_DOMAIN="test"',
-  ],
-  dependencies: libnm_glib_aux_dep,
+  dependencies: libnm_glib_aux_dep_link,
   link_with: libnm_systemd_logging_stub,
 )
 
@@ -21,11 +18,8 @@ if jansson_dep.found()
   exe = executable(
     'test-json-aux',
     'test-json-aux.c',
-    c_args: [
-      '-DG_LOG_DOMAIN="test"',
-    ],
     dependencies: [
-      libnm_glib_aux_dep,
+      libnm_glib_aux_dep_link,
       jansson_dep,
       dl_dep,
     ],

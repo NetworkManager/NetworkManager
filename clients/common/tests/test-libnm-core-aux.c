@@ -5,8 +5,8 @@
 
 #include "libnm/nm-default-client.h"
 
-#include "nm-libnm-core-aux/nm-libnm-core-aux.h"
-#include "nm-libnm-core-intern/nm-libnm-core-utils.h"
+#include "libnm-core-aux-extern/nm-libnm-core-aux.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 #include "nm-utils/nm-test-utils.h"
 

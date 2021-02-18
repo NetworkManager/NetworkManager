@@ -3,12 +3,10 @@
 ###############################################################################
 
 examples_C_glib_cppflags = \
-	-I$(top_srcdir)/shared \
-	-I$(top_builddir)/shared \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
-	-I$(top_srcdir)/libnm \
+	-I$(top_builddir)/src/libnm-core-public \
+	-I$(top_srcdir)/src/libnm-core-public \
 	-I$(top_builddir)/libnm \
+	-I$(top_srcdir)/libnm \
 	$(GLIB_CFLAGS)
 
 examples_C_glib_cppflags_gdbus = $(examples_C_glib_cppflags)
@@ -75,8 +73,10 @@ EXTRA_DIST += \
 if WITH_QT
 
 examples_C_qt_cppflags = \
-	-I$(top_srcdir)/libnm-core \
-	-I$(top_builddir)/libnm-core \
+	-I$(top_builddir)/src/libnm-core-public \
+	-I$(top_srcdir)/src/libnm-core-public \
+	-I$(top_builddir)/libnm \
+	-I$(top_srcdir)/libnm \
 	-I$(builddir)/examples/C/qt \
 	$(DBUS_CFLAGS) \
 	$(QT_CFLAGS)

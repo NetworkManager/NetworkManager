@@ -8,11 +8,12 @@ libnm_device_plugin_bluetooth_static = static_library(
     'nm-device-bt.c',
   ) + (enable_bluez5_dun ? files('nm-bluez5-dun.c') : files()),
   dependencies: [
+    libnm_core_public_dep,
+    libnm_core_intern_dep,
     core_default_dep,
     libnm_wwan_dep,
     bluez5_dep,
   ],
-  c_args: daemon_c_flags,
 )
 
 libnm_device_plugin_bluetooth_static_dep = declare_dependency(

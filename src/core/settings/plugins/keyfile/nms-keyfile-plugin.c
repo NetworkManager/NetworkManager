@@ -22,8 +22,8 @@
 #include "nm-setting-connection.h"
 #include "nm-utils.h"
 #include "nm-config.h"
-#include "nm-core-internal.h"
-#include "nm-keyfile-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
+#include "libnm-core-intern/nm-keyfile-internal.h"
 
 #include "systemd/nm-sd-utils-shared.h"
 

@@ -23,7 +23,7 @@
 #include "nm-device-bt.h"
 #include "nm-manager.h"
 #include "nm-bluez5-dun.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "platform/nm-platform.h"
 #include "nm-std-aux/nm-dbus-compat.h"
 

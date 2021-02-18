@@ -29,7 +29,7 @@
 #include "nm-dispatcher.h"
 #include "settings/nm-settings.h"
 #include "nm-auth-manager.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-object.h"
 #include "nm-connectivity.h"
 #include "dns/nm-dns-manager.h"

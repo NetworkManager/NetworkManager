@@ -15,11 +15,11 @@
 #include "c-list/src/c-list.h"
 #include "nm-glib-aux/nm-c-list.h"
 #include "nm-dbus-interface.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-std-aux/nm-dbus-compat.h"
 #include "nm-dbus-object.h"
 #include "NetworkManagerUtils.h"
-#include "nm-libnm-core-intern/nm-auth-subject.h"
+#include "libnm-core-aux-intern/nm-auth-subject.h"
 
 /* The base path for our GDBusObjectManagerServers.  They do not contain
  * "NetworkManager" because GDBusObjectManagerServer requires that all

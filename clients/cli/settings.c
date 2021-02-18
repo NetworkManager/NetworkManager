@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 
-#include "nm-libnm-core-intern/nm-common-macros.h"
+#include "libnm-core-aux-intern/nm-common-macros.h"
 
 #include "nm-client-utils.h"
 #include "nm-vpn-helpers.h"

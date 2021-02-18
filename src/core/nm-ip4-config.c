@@ -19,7 +19,7 @@
 #include "platform/nm-platform.h"
 #include "nm-platform/nm-platform-utils.h"
 #include "NetworkManagerUtils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-object.h"
 
 /*****************************************************************************/

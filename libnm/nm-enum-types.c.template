@@ -1,9 +1,7 @@
 /*** BEGIN file-header ***/
-#include "config.h"
+#include "libnm/nm-default-libnm.h"
 
 #include "nm-enum-types.h"
-#
-#include "libnm/nm-default-libnm.h"
 
 #include "nm-version-macros.h"
 #include "NetworkManager.h"
