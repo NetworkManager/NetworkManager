@@ -25,7 +25,7 @@
 #include "ppp/nm-ppp-manager-call.h"
 #include "ppp/nm-ppp-status.h"
 #include "platform/nm-platform.h"
-#include "nm-platform/nm-platform-utils.h"
+#include "libnm-platform/nm-platform-utils.h"
 #include "nm-dcb.h"
 #include "settings/nm-settings-connection.h"
 #include "nm-config.h"

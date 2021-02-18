@@ -8,7 +8,7 @@
 #define __WIFI_UTILS_NL80211_H__
 
 #include "nm-wifi-utils.h"
-#include "nm-platform/nm-netlink.h"
+#include "libnm-platform/nm-netlink.h"
 
 #define NM_TYPE_WIFI_UTILS_NL80211 (nm_wifi_utils_nl80211_get_type())
 #define NM_WIFI_UTILS_NL80211(obj) \

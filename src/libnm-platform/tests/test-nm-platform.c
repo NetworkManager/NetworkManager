@@ -3,8 +3,8 @@
 #include "nm-glib-aux/nm-default-glib-i18n-prog.h"
 
 #include "nm-log-core/nm-logging.h"
-#include "nm-platform/nm-netlink.h"
-#include "nm-platform/nmp-netns.h"
+#include "libnm-platform/nm-netlink.h"
+#include "libnm-platform/nmp-netns.h"
 
 #include "nm-utils/nm-test-utils.h"
 
