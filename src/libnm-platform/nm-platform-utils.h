@@ -6,7 +6,7 @@
 #ifndef __NM_PLATFORM_UTILS_H__
 #define __NM_PLATFORM_UTILS_H__
 
-#include "nm-base/nm-base.h"
+#include "libnm-base/nm-base.h"
 #include "libnm-platform/nmp-base.h"
 
 /*****************************************************************************/

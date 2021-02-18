@@ -10,7 +10,7 @@
 #include "libnm-core-intern/nm-core-types-internal.h"
 
 #include "libnm-platform/nmp-base.h"
-#include "nm-base/nm-base.h"
+#include "libnm-base/nm-base.h"
 
 #include "nm-core-utils.h"
 #include "nm-setting-vlan.h"

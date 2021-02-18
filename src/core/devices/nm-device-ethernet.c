@@ -34,7 +34,7 @@
 #include "nm-device-factory.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "NetworkManagerUtils.h"
-#include "nm-udev-aux/nm-udev-utils.h"
+#include "libnm-udev-aux/nm-udev-utils.h"
 #include "nm-device-veth.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceEthernet

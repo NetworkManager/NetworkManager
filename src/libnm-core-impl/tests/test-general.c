@@ -17,7 +17,7 @@
 #include "nm-glib-aux/nm-enum-utils.h"
 #include "nm-glib-aux/nm-str-buf.h"
 #include "nm-glib-aux/nm-json-aux.h"
-#include "nm-base/nm-base.h"
+#include "libnm-base/nm-base.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "nm-utils.h"
@@ -59,8 +59,8 @@
 #include "nm-simple-connection.h"
 #include "libnm-core-intern/nm-keyfile-internal.h"
 #include "nm-glib-aux/nm-dedup-multi.h"
-#include "nm-base/nm-ethtool-base.h"
-#include "nm-base/nm-ethtool-utils-base.h"
+#include "libnm-base/nm-ethtool-base.h"
+#include "libnm-base/nm-ethtool-utils-base.h"
 
 #include "test-general-enums.h"
 

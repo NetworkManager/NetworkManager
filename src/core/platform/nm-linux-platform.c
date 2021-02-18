@@ -50,7 +50,7 @@
 #include "wifi/nm-wifi-utils-wext.h"
 #include "wpan/nm-wpan-utils.h"
 #include "nm-glib-aux/nm-io-utils.h"
-#include "nm-udev-aux/nm-udev-utils.h"
+#include "libnm-udev-aux/nm-udev-utils.h"
 
 /*****************************************************************************/
 

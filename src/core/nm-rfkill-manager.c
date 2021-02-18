@@ -9,7 +9,7 @@
 
 #include <libudev.h>
 
-#include "nm-udev-aux/nm-udev-utils.h"
+#include "libnm-udev-aux/nm-udev-utils.h"
 
 /*****************************************************************************/
 

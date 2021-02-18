@@ -3,6 +3,8 @@
 src_inc = include_directories('.')
 
 subdir('libnm-systemd-shared')
+subdir('libnm-udev-aux')
+subdir('libnm-base')
 subdir('libnm-platform')
 subdir('libnm-core-public')
 subdir('libnm-core-intern')

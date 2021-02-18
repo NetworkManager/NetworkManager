@@ -12,7 +12,7 @@
 #include "nm-device-adsl.h"
 #include "devices/nm-device-factory.h"
 #include "platform/nm-platform.h"
-#include "nm-udev-aux/nm-udev-utils.h"
+#include "libnm-udev-aux/nm-udev-utils.h"
 
 /*****************************************************************************/
 

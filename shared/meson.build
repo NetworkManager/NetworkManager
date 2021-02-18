@@ -147,38 +147,6 @@ libnm_glib_aux_dep_link = declare_dependency(
   link_with: libnm_glib_aux,
 )
 
-libnm_udev_aux = static_library(
-  'nm-udev-aux',
-  sources: 'nm-udev-aux/nm-udev-utils.c',
-  dependencies: [
-    glib_nm_default_dep,
-    libudev_dep,
-  ],
-)
-
-libnm_udev_aux_dep = declare_dependency(
-  include_directories: shared_inc,
-  link_with: libnm_udev_aux,
-)
-
-libnm_base = static_library(
-  'nm-base',
-  sources: files(
-    'nm-base/nm-ethtool-base.c',
-  ),
-  dependencies: libnm_glib_aux_dep_link,
-)
-
-libnm_base_dep = declare_dependency(
-  include_directories: shared_inc,
-  dependencies: libnm_glib_aux_dep,
-)
-
-libnm_base_dep_link = declare_dependency(
-  dependencies: libnm_glib_aux_dep_link,
-  link_with: libnm_base,
-)
-
 libnm_log_core = static_library(
   'nm-log-core',
   sources: 'nm-log-core/nm-logging.c',
