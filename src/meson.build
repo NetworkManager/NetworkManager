@@ -13,4 +13,5 @@ subdir('core')
 
 if enable_tests
   subdir('libnm-platform/tests')
+  subdir('libnm-core-impl/tests')
 endif
