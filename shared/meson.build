@@ -202,27 +202,6 @@ libnm_log_null = static_library(
   dependencies: glib_nm_default_dep,
 )
 
-libnm_platform = static_library(
-  'nm-platform',
-  sources: [
-    'nm-platform/nm-netlink.c',
-    'nm-platform/nm-platform-utils.c',
-    'nm-platform/nmp-netns.c',
-  ],
-  dependencies: [
-    glib_nm_default_dep,
-  ],
-)
-
-libnm_platform_dep = declare_dependency(
-  include_directories: shared_inc,
-  dependencies: [
-    libnm_glib_aux_dep_link,
-  ],
-  link_with: libnm_platform,
-)
-
 if enable_tests
   subdir('nm-glib-aux/tests')
-  subdir('nm-platform/tests')
 endif

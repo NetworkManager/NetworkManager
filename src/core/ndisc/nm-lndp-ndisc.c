@@ -18,7 +18,7 @@
 #include "nm-ndisc-private.h"
 #include "NetworkManagerUtils.h"
 #include "platform/nm-platform.h"
-#include "nm-platform/nmp-netns.h"
+#include "libnm-platform/nmp-netns.h"
 
 #define _NMLOG_PREFIX_NAME "ndisc-lndp"
 
