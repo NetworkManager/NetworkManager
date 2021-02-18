@@ -3,11 +3,6 @@ NetworkManager-1.30
 Overview of changes since NetworkManager-1.28
 =============================================
 
-This is a snapshot of NetworkManager 1.30 development series.
-The API is subject to change and not guaranteed to be compatible
-with the later release.
-USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
-
 * Increase timeout of NetworkManager-wait-online.service to 60 seconds.
 * Add "ipv4.dhcp-client-id=ipv6-duid" option for RFC4361.
 * The dhcpcd plugin now requires a minimum version of dhcpcd-9.3.3 with
