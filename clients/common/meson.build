@@ -29,17 +29,24 @@ libnmc_base_dep = declare_dependency(
 )
 
 if enable_docs
+  settings_docs_input_xml = custom_target(
+    'settings-docs-input.xml',
+    input: [nm_settings_docs_xml_gir, nm_property_infos_xml['nmcli']],
+    output: 'settings-docs-input.xml',
+    command: [
+      python.path(),
+      join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-merge.py'),
+      '@OUTPUT@',
+      nm_property_infos_xml['nmcli'],
+      nm_settings_docs_xml_gir,
+    ],
+  )
+
   settings_docs_source = custom_target(
     'settings-docs.h',
-    input: nm_settings_docs_xml_gir,
+    input: settings_docs_input_xml,
     output: 'settings-docs.h',
-    command: [
-      xsltproc,
-      '--output',
-      '@OUTPUT@',
-      join_paths(meson.current_source_dir(), 'settings-docs.xsl'),
-      '@INPUT@',
-    ],
+    command: [xsltproc, '--output', '@OUTPUT@', join_paths(meson.current_source_dir(), 'settings-docs.xsl'), '@INPUT@'],
   )
 
   test(

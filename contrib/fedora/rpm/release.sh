@@ -266,7 +266,7 @@ if [ "$CUR_BRANCH" = master ]; then
     number_is_odd "${VERSION_ARR[1]}" || die "Unexpected version number on master. Should be an odd development version"
     [ "$RELEASE_MODE" = devel -o "$RELEASE_MODE" = rc1 -o "$RELEASE_MODE" = major-post ] || die "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
 else
-    re='^nm-[0-9][1-9]*-[0-9][1-9]*$'
+    re='^nm-[0-9]+-[0-9]+$'
     [[ "$CUR_BRANCH" =~ $re ]] || die "Unexpected current branch $CUR_BRANCH. Should be master or nm-?-??"
     if number_is_odd "${VERSION_ARR[1]}"; then
         # we are on a release candiate branch.
