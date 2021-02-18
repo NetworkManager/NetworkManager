@@ -136,7 +136,3 @@ libnm_core_impl_dep_link = declare_dependency(
   ],
   link_with: libnm_core_impl,
 )
-
-if enable_tests
-  subdir('tests')
-endif
