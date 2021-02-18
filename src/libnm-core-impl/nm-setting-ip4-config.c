@@ -998,6 +998,15 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      *   property.)
      * ---end---
      */
+    /* ---nmcli---
+     * property: routes
+     * format: a comma separated list of routes
+     * description: A list of IPv4 destination addresses, prefix length, optional IPv4
+     * next hop addresses, optional route metric, optional attribute. The valid syntax is:
+     * "ip[/prefix] [next-hop] [metric] [attribute=val]...[,ip[/prefix]...]". For example
+     * "192.0.2.0/24 10.1.1.1 77, 198.51.100.0/24".
+     * ---end---
+     */
     _nm_properties_override_gobj(
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ROUTES),

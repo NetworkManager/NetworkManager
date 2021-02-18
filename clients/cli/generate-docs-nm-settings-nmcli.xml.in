@@ -647,7 +647,7 @@
                   alias="gw4"
                   description="The gateway associated with this configuration. This is only meaningful if &quot;addresses&quot; is also set. The gateway&apos;s main purpose is to control the next hop of the standard default route on the device. Hence, the gateway property conflicts with &quot;never-default&quot; and will be automatically dropped if the IP configuration is set to never-default. As an alternative to set the gateway, configure a static default route with /0 as prefix length." />
         <property name="routes"
-                  description="Array of IP routes." />
+                  description="A list of IPv4 destination addresses, prefix length, optional IPv4 next hop addresses, optional route metric, optional attribute. The valid syntax is: &quot;ip[/prefix] [next-hop] [metric] [attribute=val]...[,ip[/prefix]...]&quot;. For example &quot;192.0.2.0/24 10.1.1.1 77, 198.51.100.0/24&quot;." />
         <property name="route-metric"
                   description="The default metric for routes that don&apos;t explicitly specify a metric. The default value -1 means that the metric is chosen automatically based on the device type. The metric applies to dynamic routes, manual (static) routes that don&apos;t have an explicit metric setting, address prefix routes, and the default route. Note that for IPv6, the kernel accepts zero (0) but coerces it to 1024 (user default). Hence, setting this property to zero effectively mean setting it to 1024. For IPv4, zero is a regular value for the metric." />
         <property name="route-table"
