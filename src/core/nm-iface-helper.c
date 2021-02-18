@@ -16,7 +16,7 @@
 #include <signal.h>
 #include <linux/rtnetlink.h>
 
-#include "nm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-c-list.h"
 
 #include "main-utils.h"
 #include "NetworkManagerUtils.h"

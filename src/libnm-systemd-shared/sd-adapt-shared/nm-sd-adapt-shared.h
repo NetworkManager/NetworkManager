@@ -8,7 +8,7 @@
 
 #include "libnm-systemd-shared/nm-default-systemd-shared.h"
 
-#include "nm-glib-aux/nm-logging-fwd.h"
+#include "libnm-glib-aux/nm-logging-fwd.h"
 
 /*****************************************************************************/
 

@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <linux/if_tun.h>
 
-#include "nm-glib-aux/nm-io-utils.h"
+#include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-base/nm-ethtool-base.h"
 #include "platform/nmp-object.h"
 #include "libnm-platform/nmp-netns.h"

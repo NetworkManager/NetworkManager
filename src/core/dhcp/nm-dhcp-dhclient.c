@@ -21,7 +21,7 @@
     #include <arpa/inet.h>
     #include <ctype.h>
 
-    #include "nm-glib-aux/nm-dedup-multi.h"
+    #include "libnm-glib-aux/nm-dedup-multi.h"
 
     #include "nm-utils.h"
     #include "nm-dhcp-dhclient-utils.h"

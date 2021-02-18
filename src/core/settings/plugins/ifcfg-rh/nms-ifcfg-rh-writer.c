@@ -15,8 +15,8 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include "nm-glib-aux/nm-enum-utils.h"
-#include "nm-glib-aux/nm-io-utils.h"
+#include "libnm-glib-aux/nm-enum-utils.h"
+#include "libnm-glib-aux/nm-io-utils.h"
 #include "nm-manager.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"

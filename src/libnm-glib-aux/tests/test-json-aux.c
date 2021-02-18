@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 
-#include "nm-glib-aux/nm-default-glib-i18n-prog.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-prog.h"
 
 #include <jansson.h>
 
-#include "nm-glib-aux/nm-json-aux.h"
+#include "libnm-glib-aux/nm-json-aux.h"
 
 #include "nm-utils/nm-test-utils.h"
 

@@ -12,7 +12,7 @@
 #include <linux/pkt_sched.h>
 #include <linux/if_ether.h>
 
-#include "nm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-c-list.h"
 
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-utils.h"

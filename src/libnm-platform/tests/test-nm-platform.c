@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 
-#include "nm-glib-aux/nm-default-glib-i18n-prog.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-prog.h"
 
-#include "nm-log-core/nm-logging.h"
+#include "libnm-log-core/nm-logging.h"
 #include "libnm-platform/nm-netlink.h"
 #include "libnm-platform/nmp-netns.h"
 

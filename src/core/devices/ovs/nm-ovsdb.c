@@ -10,8 +10,8 @@
 #include <gmodule.h>
 #include <gio/gunixsocketaddress.h>
 
-#include "nm-glib-aux/nm-jansson.h"
-#include "nm-glib-aux/nm-str-buf.h"
+#include "libnm-glib-aux/nm-jansson.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 #include "nm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "devices/nm-device.h"

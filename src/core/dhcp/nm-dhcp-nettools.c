@@ -13,9 +13,9 @@
 #include <ctype.h>
 #include <net/if_arp.h>
 
-#include "nm-glib-aux/nm-dedup-multi.h"
+#include "libnm-glib-aux/nm-dedup-multi.h"
 #include "nm-std-aux/unaligned.h"
-#include "nm-glib-aux/nm-str-buf.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 
 #include "nm-utils.h"
 #include "nm-config.h"

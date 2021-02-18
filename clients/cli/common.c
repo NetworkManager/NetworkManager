@@ -17,7 +17,7 @@
 
 #include "nm-vpn-helpers.h"
 #include "nm-client-utils.h"
-#include "nm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
 
 #include "utils.h"
 

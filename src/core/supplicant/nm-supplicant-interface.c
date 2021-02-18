@@ -13,12 +13,12 @@
 
 #include "NetworkManagerUtils.h"
 #include "libnm-core-intern/nm-core-internal.h"
-#include "nm-glib-aux/nm-c-list.h"
-#include "nm-glib-aux/nm-ref-string.h"
+#include "libnm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-ref-string.h"
+#include "libnm-glib-aux/nm-dbus-aux.h"
 #include "nm-std-aux/nm-dbus-compat.h"
 #include "nm-supplicant-config.h"
 #include "nm-supplicant-manager.h"
-#include "shared/nm-glib-aux/nm-dbus-aux.h"
 
 #define DBUS_TIMEOUT_MSEC 20000
 

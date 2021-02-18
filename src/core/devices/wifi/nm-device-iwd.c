@@ -15,7 +15,7 @@
 #include "nm-config.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-manager.h"
-#include "nm-glib-aux/nm-ref-string.h"
+#include "libnm-glib-aux/nm-ref-string.h"
 #include "nm-iwd-manager.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-setting-8021x.h"

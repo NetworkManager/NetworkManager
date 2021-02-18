@@ -38,8 +38,8 @@
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-setting-vlan.h"
 
-#include "nm-glib-aux/nm-secret-utils.h"
-#include "nm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-c-list.h"
 #include "libnm-platform/nm-netlink.h"
 #include "nm-core-utils.h"
 #include "nmp-object.h"
@@ -49,7 +49,7 @@
 #include "wifi/nm-wifi-utils.h"
 #include "wifi/nm-wifi-utils-wext.h"
 #include "wpan/nm-wpan-utils.h"
-#include "nm-glib-aux/nm-io-utils.h"
+#include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-udev-aux/nm-udev-utils.h"
 
 /*****************************************************************************/

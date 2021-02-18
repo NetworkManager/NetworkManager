@@ -4,7 +4,7 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#include "nm-glib-aux/nm-default-glib-i18n-lib.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-logging.h"
 
@@ -22,8 +22,8 @@
     #include <systemd/sd-journal.h>
 #endif
 
-#include "nm-glib-aux/nm-logging-base.h"
-#include "nm-glib-aux/nm-time-utils.h"
+#include "libnm-glib-aux/nm-logging-base.h"
+#include "libnm-glib-aux/nm-time-utils.h"
 
 /*****************************************************************************/
 

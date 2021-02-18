@@ -13,7 +13,7 @@
 #include "nm-manager.h"
 #include "nm-device-iwd.h"
 #include "nm-wifi-utils.h"
-#include "nm-glib-aux/nm-random-utils.h"
+#include "libnm-glib-aux/nm-random-utils.h"
 #include "settings/nm-settings.h"
 #include "nm-std-aux/nm-dbus-compat.h"
 

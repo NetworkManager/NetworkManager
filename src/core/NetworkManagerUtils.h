@@ -8,7 +8,7 @@
 #define __NETWORKMANAGER_UTILS_H__
 
 #include "nm-core-utils.h"
-#include "nm-glib-aux/nm-dedup-multi.h"
+#include "libnm-glib-aux/nm-dedup-multi.h"
 #include "nm-setting-ip-config.h"
 #include "nm-setting-ip6-config.h"
 #include "platform/nm-platform.h"

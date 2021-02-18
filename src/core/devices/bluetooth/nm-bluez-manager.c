@@ -12,8 +12,8 @@
 #include <gmodule.h>
 #include <linux/if_ether.h>
 
-#include "nm-glib-aux/nm-dbus-aux.h"
-#include "nm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-dbus-aux.h"
+#include "libnm-glib-aux/nm-c-list.h"
 #include "nm-dbus-manager.h"
 #include "devices/nm-device-factory.h"
 #include "devices/nm-device-bridge.h"

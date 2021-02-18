@@ -7,7 +7,7 @@
 
 #include "nm-firewall-manager.h"
 
-#include "nm-glib-aux/nm-dbus-aux.h"
+#include "libnm-glib-aux/nm-dbus-aux.h"
 #include "c-list/src/c-list.h"
 
 #include "NetworkManagerUtils.h"

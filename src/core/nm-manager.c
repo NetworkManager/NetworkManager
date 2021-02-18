@@ -16,7 +16,7 @@
 #include <sys/sendfile.h>
 #include <limits.h>
 
-#include "nm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-c-list.h"
 
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-dbus-manager.h"

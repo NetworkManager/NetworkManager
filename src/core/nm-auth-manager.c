@@ -8,7 +8,7 @@
 #include "nm-auth-manager.h"
 
 #include "c-list/src/c-list.h"
-#include "nm-glib-aux/nm-dbus-aux.h"
+#include "libnm-glib-aux/nm-dbus-aux.h"
 #include "nm-errors.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-manager.h"

@@ -7,7 +7,7 @@
 #include <curl/curl.h>
 
 #include "nm-cloud-setup-utils.h"
-#include "nm-glib-aux/nm-str-buf.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 
 #define NM_CURL_DEBUG 0
 

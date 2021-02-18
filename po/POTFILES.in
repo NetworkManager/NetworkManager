@@ -85,8 +85,6 @@ libnm/nm-remote-connection.c
 libnm/nm-secret-agent-old.c
 libnm/nm-vpn-plugin-old.c
 libnm/nm-vpn-service-plugin.c
-shared/nm-glib-aux/nm-shared-utils.c
-shared/nm-log-core/nm-logging.c
 src/core/NetworkManagerUtils.c
 src/core/devices/adsl/nm-device-adsl.c
 src/core/devices/bluetooth/nm-bluez-manager.c
@@ -183,3 +181,5 @@ src/libnm-core-impl/nm-team-utils.c
 src/libnm-core-impl/nm-utils.c
 src/libnm-core-impl/nm-vpn-editor-plugin.c
 src/libnm-core-impl/nm-vpn-plugin-info.c
+src/libnm-glib-aux/nm-shared-utils.c
+src/libnm-log-core/nm-logging.c

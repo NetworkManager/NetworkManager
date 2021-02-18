@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
-#include "nm-glib-aux/nm-io-utils.h"
+#include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-core-intern/nm-keyfile-internal.h"
 #include "nm-utils.h"
 #include "nm-setting-wired.h"

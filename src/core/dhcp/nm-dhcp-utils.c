@@ -9,8 +9,8 @@
 #include <arpa/inet.h>
 
 #include "nm-std-aux/unaligned.h"
-#include "nm-glib-aux/nm-dedup-multi.h"
-#include "nm-glib-aux/nm-str-buf.h"
+#include "libnm-glib-aux/nm-dedup-multi.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "nm-dhcp-utils.h"

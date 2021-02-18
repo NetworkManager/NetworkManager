@@ -10,8 +10,8 @@
 
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-manager.h"
-#include "nm-glib-aux/nm-dbus-aux.h"
-#include "nm-glib-aux/nm-ref-string.h"
+#include "libnm-glib-aux/nm-dbus-aux.h"
+#include "libnm-glib-aux/nm-ref-string.h"
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-types.h"
 #include "platform/nm-platform.h"

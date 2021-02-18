@@ -13,7 +13,7 @@
 #include <sys/types.h>
 
 #include "c-list/src/c-list.h"
-#include "nm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-c-list.h"
 #include "nm-dbus-interface.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-std-aux/nm-dbus-compat.h"

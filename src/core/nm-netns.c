@@ -7,8 +7,8 @@
 
 #include "nm-netns.h"
 
-#include "nm-glib-aux/nm-dedup-multi.h"
-#include "nm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-dedup-multi.h"
+#include "libnm-glib-aux/nm-c-list.h"
 
 #include "NetworkManagerUtils.h"
 #include "libnm-core-intern/nm-core-internal.h"

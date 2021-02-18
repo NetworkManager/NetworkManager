@@ -9,7 +9,7 @@
 
 #include <stdlib.h>
 
-#include "nm-glib-aux/nm-str-buf.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 
 #include "nm-keyfile.h"
 #include "nm-setting-wired.h"

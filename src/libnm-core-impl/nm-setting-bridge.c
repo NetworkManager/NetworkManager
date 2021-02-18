@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <linux/if_ether.h>
 
-#include "nm-glib-aux/nm-str-buf.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 #include "nm-connection-private.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"

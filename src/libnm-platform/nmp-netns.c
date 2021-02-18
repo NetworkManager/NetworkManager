@@ -3,7 +3,7 @@
  * Copyright (C) 2016 Red Hat, Inc.
  */
 
-#include "nm-glib-aux/nm-default-glib-i18n-lib.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nmp-netns.h"
 
@@ -13,7 +13,7 @@
 #include <sys/types.h>
 #include <pthread.h>
 
-#include "nm-log-core/nm-logging.h"
+#include "libnm-log-core/nm-logging.h"
 
 /*****************************************************************************/
 

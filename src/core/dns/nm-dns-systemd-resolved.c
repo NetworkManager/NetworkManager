@@ -16,8 +16,8 @@
 #include <sys/stat.h>
 #include <linux/if.h>
 
-#include "nm-glib-aux/nm-c-list.h"
-#include "nm-glib-aux/nm-dbus-aux.h"
+#include "libnm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-dbus-aux.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "platform/nm-platform.h"
 #include "nm-utils.h"

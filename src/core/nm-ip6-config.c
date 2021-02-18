@@ -13,7 +13,7 @@
 #include <linux/rtnetlink.h>
 #include <linux/if.h>
 
-#include "nm-glib-aux/nm-dedup-multi.h"
+#include "libnm-glib-aux/nm-dedup-multi.h"
 
 #include "nm-utils.h"
 #include "platform/nmp-object.h"

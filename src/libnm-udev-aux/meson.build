@@ -3,6 +3,11 @@
 libnm_udev_aux = static_library(
   'nm-udev-aux',
   sources: 'nm-udev-utils.c',
+  include_directories: [
+    shared_inc,
+    src_inc,
+    top_inc,
+  ],
   dependencies: [
     glib_nm_default_dep,
     libudev_dep,
