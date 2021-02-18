@@ -23,13 +23,15 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * libnm: nm_setting_bond_add_option() no longer validates the
   option that is set. Instead, use nm_connection_verify() to validate
   the profile.
-* libnm: add support for reading/writing keyfile format.
+* libnm: add support for reading/writing keyfile format. This required to
+  relicense previously GPL-2.0+ code as LGPL-2.1+ with the agreement of the
+  copyright holders.
 * initrd: support for rd.net.timeout.carrier option.
 * initrd: support new ip method "link6" for IPv6 link-local only.
 * ci: use ci-templates for containers on gitlab-ci.
 * ci: test build against Alpine Linux on gitlab-ci.
 * build: new configure option to set path to "polkit-agent-helper-1".
-* Many bugfixes and improvements.
+* Many bugfixes, improvements and translation updates.
 
 =============================================
 NetworkManager-1.28
