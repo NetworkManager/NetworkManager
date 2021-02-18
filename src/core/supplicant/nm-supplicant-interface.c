@@ -16,7 +16,7 @@
 #include "libnm-glib-aux/nm-c-list.h"
 #include "libnm-glib-aux/nm-ref-string.h"
 #include "libnm-glib-aux/nm-dbus-aux.h"
-#include "nm-std-aux/nm-dbus-compat.h"
+#include "libnm-std-aux/nm-dbus-compat.h"
 #include "nm-supplicant-config.h"
 #include "nm-supplicant-manager.h"
 

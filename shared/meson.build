@@ -97,12 +97,3 @@ libn_dhcp4_dep = declare_dependency(
 nm_test_utils_impl_source = files('nm-test-utils-impl.c')
 
 nm_vpn_plugin_utils_source = files('nm-utils/nm-vpn-plugin-utils.c')
-
-libnm_std_aux = static_library(
-  'nm-std-aux',
-  sources: [
-    'nm-std-aux/c-list-util.c',
-    'nm-std-aux/nm-std-utils.c',
-  ],
-  include_directories: top_inc,
-)

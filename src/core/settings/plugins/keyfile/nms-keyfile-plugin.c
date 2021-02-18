@@ -13,7 +13,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
-#include "nm-std-aux/c-list-util.h"
+#include "libnm-std-aux/c-list-util.h"
 #include "libnm-glib-aux/nm-c-list.h"
 #include "libnm-glib-aux/nm-io-utils.h"
 

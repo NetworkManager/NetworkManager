@@ -10,7 +10,7 @@
 
 #include <libudev.h>
 
-#include "nm-std-aux/c-list-util.h"
+#include "libnm-std-aux/c-list-util.h"
 #include "libnm-glib-aux/nm-c-list.h"
 #include "libnm-glib-aux/nm-dbus-aux.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"

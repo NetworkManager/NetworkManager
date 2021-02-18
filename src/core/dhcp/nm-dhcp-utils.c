@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#include "nm-std-aux/unaligned.h"
+#include "libnm-std-aux/unaligned.h"
 #include "libnm-glib-aux/nm-dedup-multi.h"
 #include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"

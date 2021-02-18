@@ -10,7 +10,7 @@
     #error Cannot use this header.
 #endif
 
-#include "nm-std-aux/nm-dbus-compat.h"
+#include "libnm-std-aux/nm-dbus-compat.h"
 
 #define NM_DBUS_DEFAULT_TIMEOUT_MSEC 25000
 

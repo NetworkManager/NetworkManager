@@ -5,7 +5,7 @@
 
 #include "libnm-glib-aux/nm-default-glib-i18n-prog.h"
 
-#include "nm-std-aux/unaligned.h"
+#include "libnm-std-aux/unaligned.h"
 #include "libnm-glib-aux/nm-random-utils.h"
 #include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-glib-aux/nm-time-utils.h"

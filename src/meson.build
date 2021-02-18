@@ -2,6 +2,7 @@
 
 src_inc = include_directories('.')
 
+subdir('libnm-std-aux')
 subdir('libnm-glib-aux')
 subdir('libnm-log-null')
 subdir('libnm-log-core')

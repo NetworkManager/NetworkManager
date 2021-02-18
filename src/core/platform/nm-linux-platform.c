@@ -32,7 +32,7 @@
 #include <sys/statvfs.h>
 #include <unistd.h>
 
-#include "nm-std-aux/unaligned.h"
+#include "libnm-std-aux/unaligned.h"
 
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"

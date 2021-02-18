@@ -14,7 +14,7 @@
 #include <net/if_arp.h>
 
 #include "libnm-glib-aux/nm-dedup-multi.h"
-#include "nm-std-aux/unaligned.h"
+#include "libnm-std-aux/unaligned.h"
 
 #include "nm-utils.h"
 #include "nm-dhcp-utils.h"
