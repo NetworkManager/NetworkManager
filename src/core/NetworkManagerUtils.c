@@ -24,7 +24,7 @@
 
 #include "platform/nm-platform.h"
 #include "nm-auth-utils.h"
-#include "systemd/nm-sd-utils-shared.h"
+#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 /*****************************************************************************/
 

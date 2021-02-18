@@ -122,9 +122,9 @@ shared/nm-platform/.dirstamp:                 config-extra.h
 shared/nm-platform/tests/.dirstamp:           config-extra.h
 shared/nm-std-aux/.dirstamp:                  config-extra.h
 shared/nm-udev-aux/.dirstamp:                 config-extra.h
-shared/systemd/.dirstamp:                     config-extra.h
-shared/systemd/src/basic/.dirstamp:           config-extra.h
-shared/systemd/src/shared/.dirstamp:          config-extra.h
+src/libnm-systemd-shared/.dirstamp:                 config-extra.h
+src/libnm-systemd-shared/src/basic/.dirstamp:       config-extra.h
+src/libnm-systemd-shared/src/shared/.dirstamp:      config-extra.h
 src/core/dhcp/.dirstamp:                      config-extra.h
 
 ###############################################################################
@@ -1380,7 +1380,7 @@ src_libnm_core_impl_tests_ldadd = \
 	$(libnm_crypto_lib) \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
 	shared/nm-base/libnm-base.la \
-	shared/systemd/libnm-systemd-shared.la \
+	src/libnm-systemd-shared/libnm-systemd-shared.la \
 	shared/nm-log-null/libnm-log-null.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
@@ -1610,7 +1610,7 @@ libnm_libnm_static_la_LIBADD = \
 	shared/nm-base/libnm-base.la \
 	introspection/libnmdbus.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/systemd/libnm-systemd-shared.la \
+	src/libnm-systemd-shared/libnm-systemd-shared.la \
 	shared/nm-log-null/libnm-log-null.la \
 	shared/nm-udev-aux/libnm-udev-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
@@ -1949,152 +1949,154 @@ libsystemd_cppflags = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
 	-I$(builddir)/shared \
-	-I$(srcdir)/shared/systemd/ \
-	-I$(srcdir)/shared/systemd/sd-adapt-shared \
-	-I$(srcdir)/shared/systemd/src/basic \
-	-I$(srcdir)/shared/systemd/src/shared \
+	-I$(srcdir)/src/ \
+	-I$(builddir)/src/ \
+	-I$(srcdir)/src/libnm-systemd-shared/ \
+	-I$(srcdir)/src/libnm-systemd-shared/sd-adapt-shared \
+	-I$(srcdir)/src/libnm-systemd-shared/src/basic \
+	-I$(srcdir)/src/libnm-systemd-shared/src/shared \
 	$(LIBSYSTEMD_NM_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(NULL)
 
-noinst_LTLIBRARIES += shared/systemd/libnm-systemd-shared.la
+noinst_LTLIBRARIES += src/libnm-systemd-shared/libnm-systemd-shared.la
 
-shared_systemd_libnm_systemd_shared_la_CPPFLAGS = \
+src_libnm_systemd_shared_libnm_systemd_shared_la_CPPFLAGS = \
 	$(libsystemd_cppflags) \
 	$(NULL)
 
-shared_systemd_libnm_systemd_shared_la_SOURCES = \
-	shared/systemd/nm-default-systemd-shared.h \
-	shared/systemd/nm-sd-utils-shared.c \
-	shared/systemd/nm-sd-utils-shared.h \
-	shared/systemd/sd-adapt-shared/architecture.h \
-	shared/systemd/sd-adapt-shared/arphrd-list.h \
-	shared/systemd/sd-adapt-shared/blockdev-util.h \
-	shared/systemd/sd-adapt-shared/build.h \
-	shared/systemd/sd-adapt-shared/copy.h \
-	shared/systemd/sd-adapt-shared/def.h \
-	shared/systemd/sd-adapt-shared/dhcp-server-internal.h \
-	shared/systemd/sd-adapt-shared/dirent-util.h \
-	shared/systemd/sd-adapt-shared/errno-list.h \
-	shared/systemd/sd-adapt-shared/glob-util.h \
-	shared/systemd/sd-adapt-shared/gunicode.h \
-	shared/systemd/sd-adapt-shared/idn-util.h \
-	shared/systemd/sd-adapt-shared/ioprio.h \
-	shared/systemd/sd-adapt-shared/locale-util.h \
-	shared/systemd/sd-adapt-shared/memfd-util.h \
-	shared/systemd/sd-adapt-shared/missing_fs.h \
-	shared/systemd/sd-adapt-shared/missing_keyctl.h \
-	shared/systemd/sd-adapt-shared/missing_magic.h \
-	shared/systemd/sd-adapt-shared/missing_network.h \
-	shared/systemd/sd-adapt-shared/missing_sched.h \
-	shared/systemd/sd-adapt-shared/missing_timerfd.h \
-	shared/systemd/sd-adapt-shared/mkdir.h \
-	shared/systemd/sd-adapt-shared/namespace-util.h \
-	shared/systemd/sd-adapt-shared/nm-sd-adapt-shared.h \
-	shared/systemd/sd-adapt-shared/nulstr-util.h \
-	shared/systemd/sd-adapt-shared/raw-clone.h \
-	shared/systemd/sd-adapt-shared/rlimit-util.h \
-	shared/systemd/sd-adapt-shared/terminal-util.h \
-	shared/systemd/sd-adapt-shared/unaligned.h \
-	shared/systemd/sd-adapt-shared/user-util.h \
-	shared/systemd/sd-adapt-shared/virt.h \
-	shared/systemd/src/basic/alloc-util.c \
-	shared/systemd/src/basic/alloc-util.h \
-	shared/systemd/src/basic/async.h \
-	shared/systemd/src/basic/cgroup-util.h \
-	shared/systemd/src/basic/env-file.c \
-	shared/systemd/src/basic/env-file.h \
-	shared/systemd/src/basic/env-util.c \
-	shared/systemd/src/basic/env-util.h \
-	shared/systemd/src/basic/errno-util.h \
-	shared/systemd/src/basic/escape.c \
-	shared/systemd/src/basic/escape.h \
-	shared/systemd/src/basic/ether-addr-util.c \
-	shared/systemd/src/basic/ether-addr-util.h \
-	shared/systemd/src/basic/extract-word.c \
-	shared/systemd/src/basic/extract-word.h \
-	shared/systemd/src/basic/fd-util.c \
-	shared/systemd/src/basic/fd-util.h \
-	shared/systemd/src/basic/fileio.c \
-	shared/systemd/src/basic/fileio.h \
-	shared/systemd/src/basic/format-util.c \
-	shared/systemd/src/basic/format-util.h \
-	shared/systemd/src/basic/fs-util.c \
-	shared/systemd/src/basic/fs-util.h \
-	shared/systemd/src/basic/hash-funcs.c \
-	shared/systemd/src/basic/hash-funcs.h \
-	shared/systemd/src/basic/hashmap.c \
-	shared/systemd/src/basic/hashmap.h \
-	shared/systemd/src/basic/hexdecoct.c \
-	shared/systemd/src/basic/hexdecoct.h \
-	shared/systemd/src/basic/hostname-util.c \
-	shared/systemd/src/basic/hostname-util.h \
-	shared/systemd/src/basic/in-addr-util.c \
-	shared/systemd/src/basic/in-addr-util.h \
-	shared/systemd/src/basic/io-util.c \
-	shared/systemd/src/basic/io-util.h \
-	shared/systemd/src/basic/list.h \
-	shared/systemd/src/basic/log.h \
-	shared/systemd/src/basic/macro.h \
-	shared/systemd/src/basic/memory-util.c \
-	shared/systemd/src/basic/memory-util.h \
-	shared/systemd/src/basic/mempool.c \
-	shared/systemd/src/basic/mempool.h \
-	shared/systemd/src/basic/missing_fcntl.h \
-	shared/systemd/src/basic/missing_random.h \
-	shared/systemd/src/basic/missing_socket.h \
-	shared/systemd/src/basic/missing_stat.h \
-	shared/systemd/src/basic/missing_syscall.h \
-	shared/systemd/src/basic/missing_type.h \
-	shared/systemd/src/basic/parse-util.c \
-	shared/systemd/src/basic/parse-util.h \
-	shared/systemd/src/basic/path-util.c \
-	shared/systemd/src/basic/path-util.h \
-	shared/systemd/src/basic/prioq.c \
-	shared/systemd/src/basic/prioq.h \
-	shared/systemd/src/basic/process-util.c \
-	shared/systemd/src/basic/process-util.h \
-	shared/systemd/src/basic/random-util.c \
-	shared/systemd/src/basic/random-util.h \
-	shared/systemd/src/basic/ratelimit.c \
-	shared/systemd/src/basic/ratelimit.h \
-	shared/systemd/src/basic/set.h \
-	shared/systemd/src/basic/signal-util.c \
-	shared/systemd/src/basic/signal-util.h \
-	shared/systemd/src/basic/siphash24.h \
-	shared/systemd/src/basic/socket-util.c \
-	shared/systemd/src/basic/socket-util.h \
-	shared/systemd/src/basic/sort-util.h \
-	shared/systemd/src/basic/sparse-endian.h \
-	shared/systemd/src/basic/stat-util.c \
-	shared/systemd/src/basic/stat-util.h \
-	shared/systemd/src/basic/stdio-util.h \
-	shared/systemd/src/basic/string-table.c \
-	shared/systemd/src/basic/string-table.h \
-	shared/systemd/src/basic/string-util.c \
-	shared/systemd/src/basic/string-util.h \
-	shared/systemd/src/basic/strv.c \
-	shared/systemd/src/basic/strv.h \
-	shared/systemd/src/basic/strxcpyx.c \
-	shared/systemd/src/basic/strxcpyx.h \
-	shared/systemd/src/basic/time-util.c \
-	shared/systemd/src/basic/time-util.h \
-	shared/systemd/src/basic/tmpfile-util.c \
-	shared/systemd/src/basic/tmpfile-util.h \
-	shared/systemd/src/basic/umask-util.h \
-	shared/systemd/src/basic/utf8.c \
-	shared/systemd/src/basic/utf8.h \
-	shared/systemd/src/basic/util.c \
-	shared/systemd/src/basic/util.h \
-	shared/systemd/src/shared/dns-domain.c \
-	shared/systemd/src/shared/dns-domain.h \
-	shared/systemd/src/shared/log-link.h \
-	shared/systemd/src/shared/web-util.c \
-	shared/systemd/src/shared/web-util.h \
+src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
+	src/libnm-systemd-shared/nm-default-systemd-shared.h \
+	src/libnm-systemd-shared/nm-sd-utils-shared.c \
+	src/libnm-systemd-shared/nm-sd-utils-shared.h \
+	src/libnm-systemd-shared/sd-adapt-shared/architecture.h \
+	src/libnm-systemd-shared/sd-adapt-shared/arphrd-list.h \
+	src/libnm-systemd-shared/sd-adapt-shared/blockdev-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/build.h \
+	src/libnm-systemd-shared/sd-adapt-shared/copy.h \
+	src/libnm-systemd-shared/sd-adapt-shared/def.h \
+	src/libnm-systemd-shared/sd-adapt-shared/dhcp-server-internal.h \
+	src/libnm-systemd-shared/sd-adapt-shared/dirent-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/errno-list.h \
+	src/libnm-systemd-shared/sd-adapt-shared/glob-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/gunicode.h \
+	src/libnm-systemd-shared/sd-adapt-shared/idn-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/ioprio.h \
+	src/libnm-systemd-shared/sd-adapt-shared/locale-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/memfd-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/missing_fs.h \
+	src/libnm-systemd-shared/sd-adapt-shared/missing_keyctl.h \
+	src/libnm-systemd-shared/sd-adapt-shared/missing_magic.h \
+	src/libnm-systemd-shared/sd-adapt-shared/missing_network.h \
+	src/libnm-systemd-shared/sd-adapt-shared/missing_sched.h \
+	src/libnm-systemd-shared/sd-adapt-shared/missing_timerfd.h \
+	src/libnm-systemd-shared/sd-adapt-shared/mkdir.h \
+	src/libnm-systemd-shared/sd-adapt-shared/namespace-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/nm-sd-adapt-shared.h \
+	src/libnm-systemd-shared/sd-adapt-shared/nulstr-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/raw-clone.h \
+	src/libnm-systemd-shared/sd-adapt-shared/rlimit-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/terminal-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/unaligned.h \
+	src/libnm-systemd-shared/sd-adapt-shared/user-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/virt.h \
+	src/libnm-systemd-shared/src/basic/alloc-util.c \
+	src/libnm-systemd-shared/src/basic/alloc-util.h \
+	src/libnm-systemd-shared/src/basic/async.h \
+	src/libnm-systemd-shared/src/basic/cgroup-util.h \
+	src/libnm-systemd-shared/src/basic/env-file.c \
+	src/libnm-systemd-shared/src/basic/env-file.h \
+	src/libnm-systemd-shared/src/basic/env-util.c \
+	src/libnm-systemd-shared/src/basic/env-util.h \
+	src/libnm-systemd-shared/src/basic/errno-util.h \
+	src/libnm-systemd-shared/src/basic/escape.c \
+	src/libnm-systemd-shared/src/basic/escape.h \
+	src/libnm-systemd-shared/src/basic/ether-addr-util.c \
+	src/libnm-systemd-shared/src/basic/ether-addr-util.h \
+	src/libnm-systemd-shared/src/basic/extract-word.c \
+	src/libnm-systemd-shared/src/basic/extract-word.h \
+	src/libnm-systemd-shared/src/basic/fd-util.c \
+	src/libnm-systemd-shared/src/basic/fd-util.h \
+	src/libnm-systemd-shared/src/basic/fileio.c \
+	src/libnm-systemd-shared/src/basic/fileio.h \
+	src/libnm-systemd-shared/src/basic/format-util.c \
+	src/libnm-systemd-shared/src/basic/format-util.h \
+	src/libnm-systemd-shared/src/basic/fs-util.c \
+	src/libnm-systemd-shared/src/basic/fs-util.h \
+	src/libnm-systemd-shared/src/basic/hash-funcs.c \
+	src/libnm-systemd-shared/src/basic/hash-funcs.h \
+	src/libnm-systemd-shared/src/basic/hashmap.c \
+	src/libnm-systemd-shared/src/basic/hashmap.h \
+	src/libnm-systemd-shared/src/basic/hexdecoct.c \
+	src/libnm-systemd-shared/src/basic/hexdecoct.h \
+	src/libnm-systemd-shared/src/basic/hostname-util.c \
+	src/libnm-systemd-shared/src/basic/hostname-util.h \
+	src/libnm-systemd-shared/src/basic/in-addr-util.c \
+	src/libnm-systemd-shared/src/basic/in-addr-util.h \
+	src/libnm-systemd-shared/src/basic/io-util.c \
+	src/libnm-systemd-shared/src/basic/io-util.h \
+	src/libnm-systemd-shared/src/basic/list.h \
+	src/libnm-systemd-shared/src/basic/log.h \
+	src/libnm-systemd-shared/src/basic/macro.h \
+	src/libnm-systemd-shared/src/basic/memory-util.c \
+	src/libnm-systemd-shared/src/basic/memory-util.h \
+	src/libnm-systemd-shared/src/basic/mempool.c \
+	src/libnm-systemd-shared/src/basic/mempool.h \
+	src/libnm-systemd-shared/src/basic/missing_fcntl.h \
+	src/libnm-systemd-shared/src/basic/missing_random.h \
+	src/libnm-systemd-shared/src/basic/missing_socket.h \
+	src/libnm-systemd-shared/src/basic/missing_stat.h \
+	src/libnm-systemd-shared/src/basic/missing_syscall.h \
+	src/libnm-systemd-shared/src/basic/missing_type.h \
+	src/libnm-systemd-shared/src/basic/parse-util.c \
+	src/libnm-systemd-shared/src/basic/parse-util.h \
+	src/libnm-systemd-shared/src/basic/path-util.c \
+	src/libnm-systemd-shared/src/basic/path-util.h \
+	src/libnm-systemd-shared/src/basic/prioq.c \
+	src/libnm-systemd-shared/src/basic/prioq.h \
+	src/libnm-systemd-shared/src/basic/process-util.c \
+	src/libnm-systemd-shared/src/basic/process-util.h \
+	src/libnm-systemd-shared/src/basic/random-util.c \
+	src/libnm-systemd-shared/src/basic/random-util.h \
+	src/libnm-systemd-shared/src/basic/ratelimit.c \
+	src/libnm-systemd-shared/src/basic/ratelimit.h \
+	src/libnm-systemd-shared/src/basic/set.h \
+	src/libnm-systemd-shared/src/basic/signal-util.c \
+	src/libnm-systemd-shared/src/basic/signal-util.h \
+	src/libnm-systemd-shared/src/basic/siphash24.h \
+	src/libnm-systemd-shared/src/basic/socket-util.c \
+	src/libnm-systemd-shared/src/basic/socket-util.h \
+	src/libnm-systemd-shared/src/basic/sort-util.h \
+	src/libnm-systemd-shared/src/basic/sparse-endian.h \
+	src/libnm-systemd-shared/src/basic/stat-util.c \
+	src/libnm-systemd-shared/src/basic/stat-util.h \
+	src/libnm-systemd-shared/src/basic/stdio-util.h \
+	src/libnm-systemd-shared/src/basic/string-table.c \
+	src/libnm-systemd-shared/src/basic/string-table.h \
+	src/libnm-systemd-shared/src/basic/string-util.c \
+	src/libnm-systemd-shared/src/basic/string-util.h \
+	src/libnm-systemd-shared/src/basic/strv.c \
+	src/libnm-systemd-shared/src/basic/strv.h \
+	src/libnm-systemd-shared/src/basic/strxcpyx.c \
+	src/libnm-systemd-shared/src/basic/strxcpyx.h \
+	src/libnm-systemd-shared/src/basic/time-util.c \
+	src/libnm-systemd-shared/src/basic/time-util.h \
+	src/libnm-systemd-shared/src/basic/tmpfile-util.c \
+	src/libnm-systemd-shared/src/basic/tmpfile-util.h \
+	src/libnm-systemd-shared/src/basic/umask-util.h \
+	src/libnm-systemd-shared/src/basic/utf8.c \
+	src/libnm-systemd-shared/src/basic/utf8.h \
+	src/libnm-systemd-shared/src/basic/util.c \
+	src/libnm-systemd-shared/src/basic/util.h \
+	src/libnm-systemd-shared/src/shared/dns-domain.c \
+	src/libnm-systemd-shared/src/shared/dns-domain.h \
+	src/libnm-systemd-shared/src/shared/log-link.h \
+	src/libnm-systemd-shared/src/shared/web-util.c \
+	src/libnm-systemd-shared/src/shared/web-util.h \
 	$(NULL)
 
-shared_systemd_libnm_systemd_shared_la_LIBADD = \
+src_libnm_systemd_shared_libnm_systemd_shared_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(NULL)
@@ -2482,7 +2484,7 @@ src_core_libNetworkManager_la_LIBADD = \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	src/core/libnm-systemd-core.la \
-	shared/systemd/libnm-systemd-shared.la \
+	src/libnm-systemd-shared/libnm-systemd-shared.la \
 	shared/libnacd.la \
 	shared/libndhcp4.la \
 	shared/libcrbtree.la \
@@ -2595,7 +2597,7 @@ src_core_nm_iface_helper_LDADD = \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	src/core/libnm-systemd-core.la \
-	shared/systemd/libnm-systemd-shared.la \
+	src/libnm-systemd-shared/libnm-systemd-shared.la \
 	shared/libnacd.la \
 	shared/libndhcp4.la \
 	shared/libcrbtree.la \
@@ -2648,7 +2650,7 @@ src_core_initrd_nm_initrd_generator_LDADD = \
 	shared/nm-udev-aux/libnm-udev-aux.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
-	shared/systemd/libnm-systemd-shared.la \
+	src/libnm-systemd-shared/libnm-systemd-shared.la \
 	shared/nm-glib-aux/libnm-glib-aux.la \
 	shared/nm-std-aux/libnm-std-aux.la \
 	shared/libndhcp4.la \
@@ -4307,7 +4309,7 @@ src_core_tests_test_systemd_LDFLAGS = \
 
 src_core_tests_test_systemd_LDADD = \
 	src/core/libnm-systemd-core.la \
-	shared/systemd/libnm-systemd-shared.la \
+	src/libnm-systemd-shared/libnm-systemd-shared.la \
 	shared/libcsiphash.la \
 	$(GLIB_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS) \

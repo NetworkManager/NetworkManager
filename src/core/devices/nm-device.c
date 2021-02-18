@@ -26,7 +26,7 @@
 #include "nm-std-aux/unaligned.h"
 #include "nm-glib-aux/nm-dedup-multi.h"
 #include "nm-glib-aux/nm-random-utils.h"
-#include "systemd/nm-sd-utils-shared.h"
+#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "nm-base/nm-ethtool-base.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"

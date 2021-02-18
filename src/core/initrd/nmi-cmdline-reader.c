@@ -10,7 +10,7 @@
 
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-initrd-generator.h"
-#include "systemd/nm-sd-utils-shared.h"
+#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 /*****************************************************************************/
 

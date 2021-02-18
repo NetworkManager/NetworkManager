@@ -17,7 +17,7 @@
 #include <stdio.h>
 
 #include "nm-glib-aux/nm-dedup-multi.h"
-#include "systemd/nm-sd-utils-shared.h"
+#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"

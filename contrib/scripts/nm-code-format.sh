@@ -17,8 +17,8 @@ EXCLUDE=(
     ":(exclude)shared/n-acd"
     ":(exclude)shared/n-dhcp4"
     ":(exclude)shared/nm-std-aux/unaligned.h"
-    ":(exclude)shared/systemd/src"
     ":(exclude)src/core/systemd/src"
+    ":(exclude)src/libnm-systemd-shared/src"
 )
 
 NM_ROOT="$(git rev-parse --show-toplevel)" || die "not inside a git repository"

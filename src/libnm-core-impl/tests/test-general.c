@@ -18,7 +18,7 @@
 #include "nm-glib-aux/nm-str-buf.h"
 #include "nm-glib-aux/nm-json-aux.h"
 #include "nm-base/nm-base.h"
-#include "systemd/nm-sd-utils-shared.h"
+#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "nm-utils.h"
 #include "nm-setting-private.h"
