@@ -446,7 +446,7 @@ test_ip6_route(void)
                          metric,
                          mss);
     g_assert(nmtstp_ip6_route_get(NM_PLATFORM_GET, ifindex, &network, plen, metric, NULL, 0));
-    accept_signal(route_added);
+    accept_signals(route_added, 1, 2);
 
     /* Add route again */
     nmtstp_ip6_route_add(NM_PLATFORM_GET,
