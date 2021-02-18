@@ -14,9 +14,9 @@
 #include <linux/if_infiniband.h>
 
 #include "nm-std-aux/c-list-util.h"
-#include "nm-glib-aux/nm-enum-utils.h"
-#include "nm-glib-aux/nm-str-buf.h"
-#include "nm-glib-aux/nm-json-aux.h"
+#include "libnm-glib-aux/nm-enum-utils.h"
+#include "libnm-glib-aux/nm-str-buf.h"
+#include "libnm-glib-aux/nm-json-aux.h"
 #include "libnm-base/nm-base.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
@@ -58,7 +58,7 @@
 #include "nm-setting-wpan.h"
 #include "nm-simple-connection.h"
 #include "libnm-core-intern/nm-keyfile-internal.h"
-#include "nm-glib-aux/nm-dedup-multi.h"
+#include "libnm-glib-aux/nm-dedup-multi.h"
 #include "libnm-base/nm-ethtool-base.h"
 #include "libnm-base/nm-ethtool-utils-base.h"
 

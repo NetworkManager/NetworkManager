@@ -12,7 +12,7 @@
 
 #include "nm-connection.h"
 
-#include "nm-glib-aux/nm-time-utils.h"
+#include "libnm-glib-aux/nm-time-utils.h"
 
 /*****************************************************************************/
 

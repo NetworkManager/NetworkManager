@@ -15,7 +15,7 @@
 #include <teamdctl.h>
 #include <stdlib.h>
 
-#include "nm-glib-aux/nm-jansson.h"
+#include "libnm-glib-aux/nm-jansson.h"
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device-private.h"
 #include "platform/nm-platform.h"

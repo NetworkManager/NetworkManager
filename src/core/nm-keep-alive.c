@@ -8,7 +8,7 @@
 #include "nm-keep-alive.h"
 
 #include "settings/nm-settings-connection.h"
-#include "nm-glib-aux/nm-dbus-aux.h"
+#include "libnm-glib-aux/nm-dbus-aux.h"
 
 /*****************************************************************************/
 

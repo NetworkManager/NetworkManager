@@ -8,7 +8,7 @@
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-core-intern/nm-keyfile-internal.h"
 #include "nm-initrd-generator.h"
-#include "nm-glib-aux/nm-io-utils.h"
+#include "libnm-glib-aux/nm-io-utils.h"
 #include "nm-config.h"
 
 /*****************************************************************************/

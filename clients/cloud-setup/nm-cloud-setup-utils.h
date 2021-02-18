@@ -3,7 +3,7 @@
 #ifndef __NM_CLOUD_SETUP_UTILS_H__
 #define __NM_CLOUD_SETUP_UTILS_H__
 
-#include "nm-glib-aux/nm-logging-fwd.h"
+#include "libnm-glib-aux/nm-logging-fwd.h"
 
 /*****************************************************************************/
 

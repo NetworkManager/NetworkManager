@@ -7,9 +7,9 @@
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
-#include "nm-glib-aux/nm-time-utils.h"
-#include "nm-glib-aux/nm-logging-base.h"
-#include "nm-glib-aux/nm-str-buf.h"
+#include "libnm-glib-aux/nm-time-utils.h"
+#include "libnm-glib-aux/nm-logging-base.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 
 /*****************************************************************************/
 

@@ -11,7 +11,7 @@
     #error nm-test-utils.h must be included as last header
 #endif
 
-#include "nm-glib-aux/nm-logging-fwd.h"
+#include "libnm-glib-aux/nm-logging-fwd.h"
 
 #define NM_LOG_CONFIG_BACKEND_DEBUG   "debug"
 #define NM_LOG_CONFIG_BACKEND_SYSLOG  "syslog"

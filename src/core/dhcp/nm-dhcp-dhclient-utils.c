@@ -12,7 +12,7 @@
 #include <net/if.h>
 #include <linux/if_ether.h>
 
-#include "nm-glib-aux/nm-dedup-multi.h"
+#include "libnm-glib-aux/nm-dedup-multi.h"
 
 #include "nm-dhcp-utils.h"
 #include "nm-ip4-config.h"

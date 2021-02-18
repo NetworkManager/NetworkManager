@@ -3,7 +3,7 @@
  * Copyright (C) 2015 Red Hat, Inc.
  */
 
-#include "nm-glib-aux/nm-default-glib-i18n-lib.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-platform-utils.h"
 
@@ -19,7 +19,7 @@
 #include <libudev.h>
 
 #include "libnm-base/nm-ethtool-base.h"
-#include "nm-log-core/nm-logging.h"
+#include "libnm-log-core/nm-logging.h"
 
 /*****************************************************************************/
 

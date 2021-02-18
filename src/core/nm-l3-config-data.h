@@ -3,7 +3,7 @@
 #ifndef __NM_L3_CONFIG_DATA_H__
 #define __NM_L3_CONFIG_DATA_H__
 
-#include "nm-glib-aux/nm-dedup-multi.h"
+#include "libnm-glib-aux/nm-dedup-multi.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-ip6-config.h"
 #include "platform/nm-platform.h"

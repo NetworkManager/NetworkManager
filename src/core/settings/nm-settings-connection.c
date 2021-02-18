@@ -10,7 +10,7 @@
 
 #include "c-list/src/c-list.h"
 
-#include "nm-glib-aux/nm-keyfile-aux.h"
+#include "libnm-glib-aux/nm-keyfile-aux.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-config.h"
 #include "nm-config-data.h"

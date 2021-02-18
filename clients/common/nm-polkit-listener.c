@@ -26,10 +26,10 @@
 #include <pwd.h>
 #include <fcntl.h>
 
-#include "nm-glib-aux/nm-dbus-aux.h"
-#include "nm-glib-aux/nm-str-buf.h"
-#include "nm-glib-aux/nm-secret-utils.h"
-#include "nm-glib-aux/nm-io-utils.h"
+#include "libnm-glib-aux/nm-dbus-aux.h"
+#include "libnm-glib-aux/nm-str-buf.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-core-aux-intern/nm-auth-subject.h"
 #include "c-list/src/c-list.h"
 

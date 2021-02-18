@@ -14,8 +14,8 @@
 #include <unistd.h>
 
 #include "nm-std-aux/c-list-util.h"
-#include "nm-glib-aux/nm-c-list.h"
-#include "nm-glib-aux/nm-io-utils.h"
+#include "libnm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-io-utils.h"
 #include "nm-std-aux/nm-dbus-compat.h"
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"

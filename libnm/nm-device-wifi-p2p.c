@@ -7,7 +7,7 @@
 
 #include "nm-device-wifi-p2p.h"
 
-#include "nm-glib-aux/nm-dbus-aux.h"
+#include "libnm-glib-aux/nm-dbus-aux.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wifi-p2p.h"
 #include "nm-utils.h"

@@ -10,7 +10,7 @@
     #error Cannot use this header.
 #endif
 
-#include "nm-glib-aux/nm-value-type.h"
+#include "libnm-glib-aux/nm-value-type.h"
 #include "libnm-core-intern/nm-core-internal.h"
 
 struct _NMSetting;

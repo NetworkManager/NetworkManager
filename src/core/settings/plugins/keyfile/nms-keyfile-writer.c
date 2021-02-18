@@ -17,7 +17,7 @@
 #include "nms-keyfile-utils.h"
 #include "nms-keyfile-reader.h"
 
-#include "nm-glib-aux/nm-io-utils.h"
+#include "libnm-glib-aux/nm-io-utils.h"
 
 /*****************************************************************************/
 

@@ -10,7 +10,7 @@
 
 #include <stdlib.h>
 
-#include "nm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"

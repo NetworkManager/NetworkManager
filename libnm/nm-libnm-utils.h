@@ -8,8 +8,8 @@
 
 #include "c-list/src/c-list.h"
 #include "nm-device.h"
-#include "nm-glib-aux/nm-ref-string.h"
-#include "nm-glib-aux/nm-logging-fwd.h"
+#include "libnm-glib-aux/nm-ref-string.h"
+#include "libnm-glib-aux/nm-logging-fwd.h"
 #include "nm-types.h"
 #include "nm-object.h"
 #include "nm-client.h"

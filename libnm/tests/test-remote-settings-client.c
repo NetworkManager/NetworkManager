@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#include "nm-glib-aux/nm-time-utils.h"
+#include "libnm-glib-aux/nm-time-utils.h"
 
 #include "nm-test-libnm-utils.h"
 

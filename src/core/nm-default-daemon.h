@@ -8,7 +8,7 @@
 
 /*****************************************************************************/
 
-#include "nm-glib-aux/nm-default-glib-i18n-prog.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-prog.h"
 
 #undef NETWORKMANAGER_COMPILATION
 #define NETWORKMANAGER_COMPILATION NM_NETWORKMANAGER_COMPILATION_DAEMON
@@ -19,7 +19,7 @@
 
 #include "nm-core-types.h"
 #include "nm-types.h"
-#include "nm-log-core/nm-logging.h"
+#include "libnm-log-core/nm-logging.h"
 
 /*****************************************************************************/
 

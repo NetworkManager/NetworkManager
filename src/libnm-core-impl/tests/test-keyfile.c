@@ -5,7 +5,7 @@
 
 #include "libnm-core-impl/nm-default-libnm-core.h"
 
-#include "nm-glib-aux/nm-json-aux.h"
+#include "libnm-glib-aux/nm-json-aux.h"
 #include "libnm-core-intern/nm-keyfile-utils.h"
 #include "libnm-core-intern/nm-keyfile-internal.h"
 #include "nm-simple-connection.h"

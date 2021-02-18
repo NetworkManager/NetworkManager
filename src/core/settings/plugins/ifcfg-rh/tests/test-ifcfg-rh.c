@@ -17,7 +17,7 @@
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
-#include "nm-glib-aux/nm-json-aux.h"
+#include "libnm-glib-aux/nm-json-aux.h"
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"

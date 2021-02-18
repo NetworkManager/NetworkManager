@@ -15,7 +15,7 @@
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 #include "c-list/src/c-list.h"
-#include "nm-glib-aux/nm-dbus-aux.h"
+#include "libnm-glib-aux/nm-dbus-aux.h"
 
 #define PACRUNNER_DBUS_SERVICE   "org.pacrunner"
 #define PACRUNNER_DBUS_INTERFACE "org.pacrunner.Manager"

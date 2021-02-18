@@ -8,7 +8,7 @@
 
 #include "nm-remote-connection.h"
 
-#include "nm-glib-aux/nm-dbus-aux.h"
+#include "libnm-glib-aux/nm-dbus-aux.h"
 #include "nm-dbus-interface.h"
 #include "nm-utils.h"
 #include "nm-setting-connection.h"

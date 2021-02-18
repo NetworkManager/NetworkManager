@@ -18,11 +18,11 @@
 #include <linux/pkt_sched.h>
 #include <linux/if_infiniband.h>
 
-#include "nm-glib-aux/nm-json-aux.h"
-#include "nm-glib-aux/nm-str-buf.h"
-#include "nm-glib-aux/nm-enum-utils.h"
-#include "nm-glib-aux/nm-time-utils.h"
-#include "nm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-json-aux.h"
+#include "libnm-glib-aux/nm-str-buf.h"
+#include "libnm-glib-aux/nm-enum-utils.h"
+#include "libnm-glib-aux/nm-time-utils.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-utils-private.h"

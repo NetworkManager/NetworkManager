@@ -4,7 +4,7 @@
  * Copyright (C) 2007 - 2015 Red Hat, Inc.
  */
 
-#include "nm-glib-aux/nm-default-glib-i18n-lib.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-crypto-impl.h"
 
@@ -13,7 +13,7 @@
 #include <gnutls/x509.h>
 #include <gnutls/pkcs12.h>
 
-#include "nm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
 #include "nm-errors.h"
 
 /*****************************************************************************/

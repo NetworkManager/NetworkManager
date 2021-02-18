@@ -13,7 +13,7 @@
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
 #include "nm-setting-wireless.h"
-#include "nm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
 
 /**
  * SECTION:nm-setting-wireless-security

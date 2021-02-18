@@ -12,9 +12,9 @@
 #include "nm-dbus-helpers.h"
 #include "nm-dbus-interface.h"
 #include "nm-enum-types.h"
-#include "nm-glib-aux/nm-c-list.h"
-#include "nm-glib-aux/nm-dbus-aux.h"
-#include "nm-glib-aux/nm-time-utils.h"
+#include "libnm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-dbus-aux.h"
+#include "libnm-glib-aux/nm-time-utils.h"
 #include "nm-simple-connection.h"
 
 #define REGISTER_RETRY_TIMEOUT_MSEC 3000

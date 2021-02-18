@@ -11,8 +11,8 @@
 #include <signal.h>
 #include <stdlib.h>
 
-#include "nm-glib-aux/nm-secret-utils.h"
-#include "nm-glib-aux/nm-dbus-aux.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-dbus-aux.h"
 #include "nm-enum-types.h"
 #include "nm-utils.h"
 #include "nm-connection.h"

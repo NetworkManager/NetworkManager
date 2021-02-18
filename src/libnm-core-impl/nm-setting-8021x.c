@@ -8,7 +8,7 @@
 
 #include "nm-setting-8021x.h"
 
-#include "nm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
 #include "nm-utils.h"
 #include "nm-crypto.h"
 #include "nm-utils-private.h"

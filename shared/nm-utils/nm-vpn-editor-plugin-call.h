@@ -17,7 +17,7 @@
 #include <NetworkManager.h>
 
 /* we make use of other internal header files, you need those too. */
-#include "nm-glib-aux/nm-macros-internal.h"
+#include "libnm-glib-aux/nm-macros-internal.h"
 
 /*****************************************************************************/
 

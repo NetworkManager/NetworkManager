@@ -13,7 +13,7 @@
 #include <libudev.h>
 
 #include "nm-utils.h"
-#include "nm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
 
 #include "nm-core-utils.h"
 #include "libnm-platform/nm-platform-utils.h"
