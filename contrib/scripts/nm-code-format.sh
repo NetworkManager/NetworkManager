@@ -16,8 +16,8 @@ EXCLUDE=(
     ":(exclude)shared/c-stdaux"
     ":(exclude)shared/n-acd"
     ":(exclude)shared/n-dhcp4"
-    ":(exclude)shared/nm-std-aux/unaligned.h"
     ":(exclude)src/core/systemd/src"
+    ":(exclude)src/libnm-std-aux/unaligned.h"
     ":(exclude)src/libnm-systemd-shared/src"
 )
 

@@ -22,7 +22,7 @@
 #include <net/if_arp.h>
 #include <net/ethernet.h>
 
-#include "nm-std-aux/unaligned.h"
+#include "libnm-std-aux/unaligned.h"
 #include "libnm-glib-aux/nm-random-utils.h"
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-glib-aux/nm-secret-utils.h"

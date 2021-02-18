@@ -15,7 +15,7 @@
 #include "nm-wifi-utils.h"
 #include "libnm-glib-aux/nm-random-utils.h"
 #include "settings/nm-settings.h"
-#include "nm-std-aux/nm-dbus-compat.h"
+#include "libnm-std-aux/nm-dbus-compat.h"
 
 /*****************************************************************************/
 

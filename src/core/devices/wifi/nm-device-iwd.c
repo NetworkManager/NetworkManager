@@ -22,7 +22,7 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-wireless.h"
-#include "nm-std-aux/nm-dbus-compat.h"
+#include "libnm-std-aux/nm-dbus-compat.h"
 #include "nm-utils.h"
 #include "nm-wifi-common.h"
 #include "nm-wifi-utils.h"

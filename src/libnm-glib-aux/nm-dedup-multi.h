@@ -7,7 +7,7 @@
 #define __NM_DEDUP_MULTI_H__
 
 #include "nm-obj.h"
-#include "nm-std-aux/c-list-util.h"
+#include "libnm-std-aux/c-list-util.h"
 
 /*****************************************************************************/
 

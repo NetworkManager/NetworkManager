@@ -46,7 +46,7 @@
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 
-#include "nm-std-aux/c-list-util.h"
+#include "libnm-std-aux/c-list-util.h"
 #include "libnm-glib-aux/nm-c-list.h"
 #include "nm-dbus-object.h"
 #include "devices/nm-device-ethernet.h"

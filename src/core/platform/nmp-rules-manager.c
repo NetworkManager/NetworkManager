@@ -7,7 +7,7 @@
 #include <linux/fib_rules.h>
 #include <linux/rtnetlink.h>
 
-#include "nm-std-aux/c-list-util.h"
+#include "libnm-std-aux/c-list-util.h"
 #include "nmp-object.h"
 
 /*****************************************************************************/

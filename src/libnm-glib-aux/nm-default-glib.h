@@ -8,7 +8,7 @@
 
 /*****************************************************************************/
 
-#include "nm-std-aux/nm-default-std.h"
+#include "libnm-std-aux/nm-default-std.h"
 
 #undef NETWORKMANAGER_COMPILATION
 #define NETWORKMANAGER_COMPILATION NM_NETWORKMANAGER_COMPILATION_WITH_GLIB
@@ -63,8 +63,8 @@
 
 #include "nm-gassert-patch.h"
 
-#include "nm-std-aux/nm-std-aux.h"
-#include "nm-std-aux/nm-std-utils.h"
+#include "libnm-std-aux/nm-std-aux.h"
+#include "libnm-std-aux/nm-std-utils.h"
 #include "libnm-glib-aux/nm-macros-internal.h"
 #include "libnm-glib-aux/nm-shared-utils.h"
 #include "libnm-glib-aux/nm-errno.h"

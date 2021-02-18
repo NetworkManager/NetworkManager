@@ -23,7 +23,7 @@
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
-#include "nm-std-aux/unaligned.h"
+#include "libnm-std-aux/unaligned.h"
 #include "libnm-glib-aux/nm-dedup-multi.h"
 #include "libnm-glib-aux/nm-random-utils.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"

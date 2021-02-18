@@ -6,7 +6,7 @@
 #ifndef __NM_DBUS_AUX_H__
 #define __NM_DBUS_AUX_H__
 
-#include "nm-std-aux/nm-dbus-compat.h"
+#include "libnm-std-aux/nm-dbus-compat.h"
 
 /*****************************************************************************/
 
