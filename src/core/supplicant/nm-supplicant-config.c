@@ -815,7 +815,7 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
     nm_auto_free_gstring GString *key_mgmt_conf = NULL;
     const char *                  key_mgmt, *auth_alg;
     const char *                  psk;
-    gboolean                      set_pmf;
+    gboolean                      set_pmf, wps_disabled;
 
     g_return_val_if_fail(NM_IS_SUPPLICANT_CONFIG(self), FALSE);
     g_return_val_if_fail(setting != NULL, FALSE);
@@ -1100,6 +1100,13 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
                                                  error))
                 return FALSE;
         }
+    }
+
+    wps_disabled = (nm_setting_wireless_security_get_wps_method(setting)
+                    == NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DISABLED);
+    if (wps_disabled) {
+        if (!nm_supplicant_config_add_option(self, "wps_disabled", "1", 1, NULL, error))
+            return FALSE;
     }
 
     return TRUE;

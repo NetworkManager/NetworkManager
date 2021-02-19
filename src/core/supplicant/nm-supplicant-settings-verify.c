@@ -144,6 +144,7 @@ static const struct Opt opt_table[] = {
     OPT_BYTES("wep_key2", 0),
     OPT_BYTES("wep_key3", 0),
     OPT_INT("wep_tx_keyidx", 0, 3),
+    OPT_INT("wps_disabled", 0, 1),
 };
 
 static gboolean
