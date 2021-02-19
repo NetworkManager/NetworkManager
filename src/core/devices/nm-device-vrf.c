@@ -4,7 +4,7 @@
 
 #include "nm-device-vrf.h"
 
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-device-factory.h"
 #include "nm-device-private.h"
 #include "nm-manager.h"

@@ -12,11 +12,11 @@
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
-#include "nm-libnm-core-intern/nm-common-macros.h"
+#include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-glib-aux/nm-enum-utils.h"
 #include "nm-glib-aux/nm-secret-utils.h"
-#include "nm-libnm-core-intern/nm-libnm-core-utils.h"
-#include "nm-libnm-core-aux/nm-libnm-core-aux.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
+#include "libnm-core-aux-extern/nm-libnm-core-aux.h"
 
 #include "nm-vpn-helpers.h"
 #include "nm-client-utils.h"

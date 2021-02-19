@@ -16,7 +16,7 @@
 #include "nm-object-private.h"
 #include "nm-dbus-helpers.h"
 #include "nm-client.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "c-list/src/c-list.h"
 
 /*****************************************************************************/

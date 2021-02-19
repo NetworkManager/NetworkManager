@@ -17,7 +17,7 @@
 #include "nm-utils.h"
 #include "nm-access-point.h"
 #include "nm-object-private.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-helpers.h"
 
 /*****************************************************************************/

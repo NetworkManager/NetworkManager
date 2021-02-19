@@ -11,7 +11,7 @@
 #include "nm-setting-ovs-port.h"
 #include "nm-setting-ovs-port.h"
 #include "nm-setting-connection.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 
 /*****************************************************************************/
 

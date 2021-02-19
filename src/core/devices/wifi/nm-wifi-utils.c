@@ -10,7 +10,7 @@
 #include <stdlib.h>
 
 #include "nm-utils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 
 static gboolean
 verify_no_wep(NMSettingWirelessSecurity *s_wsec, const char *tag, GError **error)

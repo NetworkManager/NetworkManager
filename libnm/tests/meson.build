@@ -16,13 +16,13 @@ foreach test_unit: test_units
       libnm_enum_sources[1],
     ],
     dependencies: [
-      libnm_core_dep,
+      libnm_core_impl_dep_link,
       libnm_nm_default_dep,
     ],
-    c_args: [
-      '-DG_LOG_DOMAIN="test"',
+    link_with: [
+      libnm_static,
+      libnm_base,
     ],
-    link_with: libnm_static,
   )
 
   test(
@@ -39,7 +39,4 @@ libnm_vpn_plugin_utils_test = static_library(
   sources: nm_vpn_plugin_utils_source + [libnm_enum_sources[1]],
   include_directories: libnm_inc,
   dependencies: libnm_nm_default_dep,
-  c_args: [
-    '-DG_LOG_DOMAIN="test"',
-  ],
 )

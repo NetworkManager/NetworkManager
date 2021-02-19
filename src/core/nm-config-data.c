@@ -10,9 +10,9 @@
 
 #include "nm-config.h"
 #include "devices/nm-device.h"
-#include "nm-core-internal.h"
-#include "nm-keyfile-internal.h"
-#include "nm-keyfile-utils.h"
+#include "libnm-core-intern/nm-core-internal.h"
+#include "libnm-core-intern/nm-keyfile-internal.h"
+#include "libnm-core-intern/nm-keyfile-utils.h"
 
 /*****************************************************************************/
 

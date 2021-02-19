@@ -9,7 +9,7 @@
 #include "nm-libnm-utils.h"
 
 #include "nm-glib-aux/nm-time-utils.h"
-#include "nm-libnm-core-intern/nm-common-macros.h"
+#include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-object.h"
 
 /*****************************************************************************/

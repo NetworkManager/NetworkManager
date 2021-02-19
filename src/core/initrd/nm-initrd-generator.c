@@ -5,8 +5,8 @@
 
 #include "src/core/nm-default-daemon.h"
 #include "nm-core-utils.h"
-#include "nm-core-internal.h"
-#include "nm-keyfile-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
+#include "libnm-core-intern/nm-keyfile-internal.h"
 #include "nm-initrd-generator.h"
 #include "nm-glib-aux/nm-io-utils.h"
 #include "nm-config.h"

@@ -22,7 +22,6 @@ libnm_device_plugin_wifi_static = static_library(
   dependencies: [
     core_plugin_dep,
   ],
-  c_args: daemon_c_flags,
 )
 
 libnm_device_plugin_wifi_static_dep = declare_dependency(
@@ -38,7 +37,6 @@ libnm_device_plugin_wifi = shared_module(
     core_plugin_dep,
     libnm_device_plugin_wifi_static_dep
   ],
-  c_args: daemon_c_flags,
   link_args: ldflags_linker_script_devices,
   link_depends: linker_script_devices,
   install: true,

@@ -15,7 +15,7 @@
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 
 #include "settings/plugins/keyfile/nms-keyfile-reader.h"
 #include "settings/plugins/keyfile/nms-keyfile-writer.h"

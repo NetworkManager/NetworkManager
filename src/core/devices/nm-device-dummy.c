@@ -16,7 +16,7 @@
 #include "platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-setting-dummy.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceDummy
 #include "nm-device-logging.h"

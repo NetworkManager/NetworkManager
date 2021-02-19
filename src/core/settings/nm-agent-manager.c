@@ -9,7 +9,7 @@
 
 #include <pwd.h>
 
-#include "nm-libnm-core-intern/nm-common-macros.h"
+#include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-dbus-interface.h"
 #include "nm-secret-agent.h"
 #include "nm-auth-utils.h"
@@ -19,7 +19,7 @@
 #include "nm-session-monitor.h"
 #include "nm-simple-connection.h"
 #include "NetworkManagerUtils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "c-list/src/c-list.h"
 
 /*****************************************************************************/

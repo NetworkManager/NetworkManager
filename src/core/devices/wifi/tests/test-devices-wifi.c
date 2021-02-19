@@ -7,7 +7,7 @@
 
 #include "devices/wifi/nm-wifi-utils.h"
 #include "devices/wifi/nm-device-wifi.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 
 #include "nm-test-utils-core.h"
 

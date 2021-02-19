@@ -3,9 +3,6 @@
 exe = executable(
   'test-nm-platform',
   'test-nm-platform.c',
-  c_args: [
-    '-DG_LOG_DOMAIN="test"',
-  ],
   dependencies: [
     libnm_log_core_dep,
     libnm_platform_dep,

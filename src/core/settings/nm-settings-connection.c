@@ -11,7 +11,7 @@
 #include "c-list/src/c-list.h"
 
 #include "nm-glib-aux/nm-keyfile-aux.h"
-#include "nm-libnm-core-intern/nm-common-macros.h"
+#include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-config.h"
 #include "nm-config-data.h"
 #include "nm-dbus-interface.h"
@@ -20,7 +20,7 @@
 #include "nm-auth-utils.h"
 #include "nm-agent-manager.h"
 #include "NetworkManagerUtils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-audit-manager.h"
 #include "nm-settings.h"
 #include "nm-dbus-manager.h"

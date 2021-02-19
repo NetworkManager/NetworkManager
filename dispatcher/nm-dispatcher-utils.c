@@ -13,7 +13,7 @@
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-connection.h"
 
-#include "nm-libnm-core-aux/nm-dispatcher-api.h"
+#include "libnm-core-aux-extern/nm-dispatcher-api.h"
 #include "nm-utils.h"
 
 /*****************************************************************************/

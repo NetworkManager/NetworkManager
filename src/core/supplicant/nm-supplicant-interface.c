@@ -12,7 +12,7 @@
 #include <linux/if_ether.h>
 
 #include "NetworkManagerUtils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-glib-aux/nm-c-list.h"
 #include "nm-glib-aux/nm-ref-string.h"
 #include "nm-std-aux/nm-dbus-compat.h"

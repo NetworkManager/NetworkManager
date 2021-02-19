@@ -38,7 +38,7 @@
 #include "nm-setting-user.h"
 #include "nm-setting-proxy.h"
 #include "nm-setting-generic.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-utils.h"
 #include "nm-base/nm-ethtool-base.h"
 

@@ -16,7 +16,7 @@
 #include "nm-glib-aux/nm-c-list.h"
 #include "nm-device-wifi-p2p.h"
 #include "nm-wifi-ap.h"
-#include "nm-libnm-core-intern/nm-common-macros.h"
+#include "libnm-core-aux-intern/nm-common-macros.h"
 #include "devices/nm-device.h"
 #include "devices/nm-device-private.h"
 #include "nm-dbus-manager.h"
@@ -39,7 +39,7 @@
 #include "settings/nm-settings.h"
 #include "nm-wifi-utils.h"
 #include "nm-wifi-common.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-config.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceWifi

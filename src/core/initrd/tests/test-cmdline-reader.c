@@ -12,7 +12,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 
 #include "../nm-initrd-generator.h"

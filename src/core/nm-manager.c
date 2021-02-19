@@ -18,7 +18,7 @@
 
 #include "nm-glib-aux/nm-c-list.h"
 
-#include "nm-libnm-core-intern/nm-common-macros.h"
+#include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-dbus-manager.h"
 #include "vpn/nm-vpn-manager.h"
 #include "devices/nm-device.h"
@@ -40,7 +40,7 @@
 #include "nm-policy.h"
 #include "nm-session-monitor.h"
 #include "nm-act-request.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-config.h"
 #include "nm-audit-manager.h"
 #include "nm-std-aux/nm-dbus-compat.h"

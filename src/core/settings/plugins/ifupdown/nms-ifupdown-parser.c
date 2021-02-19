@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "settings/nm-settings-plugin.h"
 
 #include "nms-ifupdown-plugin.h"

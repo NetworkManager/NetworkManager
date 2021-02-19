@@ -12,7 +12,7 @@
 #include <math.h>
 
 #include "NetworkManagerUtils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-core-utils.h"
 #include "systemd/nm-sd-utils-core.h"
 

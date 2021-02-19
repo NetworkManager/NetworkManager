@@ -13,7 +13,6 @@ libnm_device_plugin_ovs = shared_module(
     core_plugin_dep,
     jansson_dep,
   ],
-  c_args: daemon_c_flags,
   link_args: ldflags_linker_script_devices,
   link_depends: linker_script_devices,
   install: true,

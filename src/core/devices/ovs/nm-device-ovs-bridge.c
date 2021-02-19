@@ -16,7 +16,7 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-ovs-bridge.h"
 #include "nm-setting-ovs-external-ids.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceOvsBridge
 #include "devices/nm-device-logging.h"

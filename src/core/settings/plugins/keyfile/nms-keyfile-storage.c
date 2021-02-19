@@ -8,7 +8,7 @@
 #include "nms-keyfile-storage.h"
 
 #include "nm-utils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nms-keyfile-plugin.h"
 
 /*****************************************************************************/

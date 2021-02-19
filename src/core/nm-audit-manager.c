@@ -11,7 +11,7 @@
     #include <libaudit.h>
 #endif
 
-#include "nm-libnm-core-intern/nm-auth-subject.h"
+#include "libnm-core-aux-intern/nm-auth-subject.h"
 #include "nm-config.h"
 #include "nm-dbus-manager.h"
 #include "settings/nm-settings-connection.h"

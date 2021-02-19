@@ -18,7 +18,7 @@
 #include "platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-setting-wpan.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceWpan
 #include "nm-device-logging.h"

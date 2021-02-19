@@ -12,9 +12,7 @@
     #error Dont define NETWORKMANAGER_COMPILATION
 #endif
 
-#ifndef G_LOG_DOMAIN
-    #error Define G_LOG_DOMAIN
-#endif
+#define G_LOG_DOMAIN "nm"
 
 /*****************************************************************************/
 

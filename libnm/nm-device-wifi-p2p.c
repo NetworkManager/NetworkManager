@@ -13,7 +13,7 @@
 #include "nm-utils.h"
 #include "nm-wifi-p2p-peer.h"
 #include "nm-object-private.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-helpers.h"
 
 /*****************************************************************************/

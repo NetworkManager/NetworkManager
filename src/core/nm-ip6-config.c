@@ -19,7 +19,7 @@
 #include "platform/nmp-object.h"
 #include "platform/nm-platform.h"
 #include "nm-platform/nm-platform-utils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "nm-ip4-config.h"
 #include "ndisc/nm-ndisc.h"

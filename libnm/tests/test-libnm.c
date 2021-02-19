@@ -22,7 +22,7 @@
 #include "nm-libnm-utils.h"
 #include "nm-object.h"
 #include "nm-vpn-service-plugin.h"
-#include "nm-libnm-core-intern/nm-libnm-core-utils.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 #include "nm-utils/nm-test-utils.h"
 

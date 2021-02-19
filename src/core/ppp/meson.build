@@ -4,9 +4,10 @@ nm_pppd_plugin = shared_module(
   'nm-pppd-plugin',
   name_prefix: '',
   sources: 'nm-pppd-plugin.c',
-  dependencies: libnm_core_nm_default_dep,
-  c_args: [
-    '-DG_LOG_DOMAIN="nm-pppd-plugin"',
+  dependencies: [
+    libnm_core_impl_dep_link,
+    libnm_glib_aux_dep_link,
+    glib_dep,
   ],
   install: true,
   install_dir: pppd_plugin_dir,
@@ -20,7 +21,6 @@ core_plugins += shared_module(
     'nm-ppp-manager.c',
   ],
   dependencies: core_plugin_dep,
-  c_args: daemon_c_flags,
   link_args: '-Wl,--version-script,@0@'.format(linker_script),
   link_depends: linker_script,
   install: true,

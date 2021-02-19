@@ -9,7 +9,7 @@
 #include "nm-settings-plugin.h"
 
 #include "nm-utils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 
 #include "nm-settings-connection.h"
 

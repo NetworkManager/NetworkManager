@@ -16,7 +16,7 @@
 #include "nm-ip4-config.h"
 #include "platform/nm-platform.h"
 #include "nm-device-factory.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 
 #define NM_DEVICE_INFINIBAND_IS_PARTITION "is-partition"
 

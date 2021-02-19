@@ -8,7 +8,7 @@
 #include "nms-ifcfg-rh-storage.h"
 
 #include "nm-utils.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-connection.h"
 #include "nms-ifcfg-rh-plugin.h"
 

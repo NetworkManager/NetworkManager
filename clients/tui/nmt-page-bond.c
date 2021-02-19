@@ -19,7 +19,7 @@
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
-#include "nm-libnm-core-intern/nm-libnm-core-utils.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nmt-mac-entry.h"
 #include "nmt-address-list.h"
 #include "nmt-slave-list.h"

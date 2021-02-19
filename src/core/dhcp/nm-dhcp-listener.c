@@ -16,7 +16,7 @@
 #include "nm-dhcp-helper-api.h"
 #include "nm-dhcp-client.h"
 #include "nm-dhcp-manager.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-manager.h"
 #include "NetworkManagerUtils.h"
 

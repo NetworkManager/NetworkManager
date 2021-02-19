@@ -9,7 +9,7 @@
 
 #include <stdlib.h>
 
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 
 #include "nms-ifcfg-rh-common.h"

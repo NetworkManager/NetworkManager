@@ -26,7 +26,7 @@
 #include "nm-dispatcher.h"
 #include "nm-netns.h"
 #include "settings/nm-agent-manager.h"
-#include "nm-core-internal.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-pacrunner-manager.h"
 #include "nm-firewall-manager.h"
 #include "nm-config.h"
