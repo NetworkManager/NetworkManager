@@ -110,22 +110,21 @@ include config-extra.h.mk
 
 DISTCLEANFILES += config-extra.h
 
-$(src_libnm_core_public_mkenums_h):           config-extra.h
-$(src_libnm_core_public_mkenums_c):           config-extra.h
-src/libnm-core-impl/.dirstamp:                config-extra.h
-src/libnm-core-impl/.dirstamp:                config-extra.h
-shared/.dirstamp:                             config-extra.h
-src/libnm-base/.dirstamp:                     config-extra.h
-src/libnm-glib-aux/.dirstamp:                 config-extra.h
-src/libnm-glib-aux/tests/.dirstamp:           config-extra.h
-src/libnm-platform/.dirstamp:                 config-extra.h
-src/libnm-platform/tests/.dirstamp:           config-extra.h
-src/libnm-std-aux/.dirstamp:                  config-extra.h
-src/libnm-udev-aux/.dirstamp:                 config-extra.h
+$(src_libnm_core_public_mkenums_h):                 config-extra.h
+$(src_libnm_core_public_mkenums_c):                 config-extra.h
+src/libnm-core-impl/.dirstamp:                      config-extra.h
+src/libnm-core-impl/.dirstamp:                      config-extra.h
+src/libnm-base/.dirstamp:                           config-extra.h
+src/libnm-glib-aux/.dirstamp:                       config-extra.h
+src/libnm-glib-aux/tests/.dirstamp:                 config-extra.h
+src/libnm-platform/.dirstamp:                       config-extra.h
+src/libnm-platform/tests/.dirstamp:                 config-extra.h
+src/libnm-std-aux/.dirstamp:                        config-extra.h
+src/libnm-udev-aux/.dirstamp:                       config-extra.h
 src/libnm-systemd-shared/.dirstamp:                 config-extra.h
 src/libnm-systemd-shared/src/basic/.dirstamp:       config-extra.h
 src/libnm-systemd-shared/src/shared/.dirstamp:      config-extra.h
-src/core/dhcp/.dirstamp:                      config-extra.h
+src/core/dhcp/.dirstamp:                            config-extra.h
 
 ###############################################################################
 
@@ -214,136 +213,137 @@ DISTCLEANFILES += $(polkit_policy_DATA)
 ###############################################################################
 
 EXTRA_DIST += \
-	shared/c-stdaux/src/c-stdaux.h \
+	src/c-stdaux/src/c-stdaux.h \
 	$(NULL)
 
 ###############################################################################
 
-noinst_LTLIBRARIES += shared/libcsiphash.la
+noinst_LTLIBRARIES += src/c-siphash/libc-siphash.la
 
-shared_libcsiphash_la_CFLAGS = \
+src_c_siphash_libc_siphash_la_CFLAGS = \
 	$(AM_CFLAGS) \
 	-std=c11 \
-	-I$(srcdir)/shared/c-stdaux/src \
+	-I$(srcdir)/src/c-stdaux/src \
 	$(NULL)
 
-shared_libcsiphash_la_CPPFLAGS = \
+src_c_siphash_libc_siphash_la_CPPFLAGS = \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(NULL)
 
-shared_libcsiphash_la_LDFLAGS = \
+src_c_siphash_libc_siphash_la_LDFLAGS = \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
-shared_libcsiphash_la_SOURCES = \
-	shared/c-siphash/src/c-siphash.c \
-	shared/c-siphash/src/c-siphash.h \
+src_c_siphash_libc_siphash_la_SOURCES = \
+	src/c-siphash/src/c-siphash.c \
+	src/c-siphash/src/c-siphash.h \
 	$(NULL)
 
 ###############################################################################
 
-noinst_LTLIBRARIES += shared/libcrbtree.la
+noinst_LTLIBRARIES += src/c-rbtree/libc-rbtree.la
 
-shared_libcrbtree_la_CFLAGS = \
+src_c_rbtree_libc_rbtree_la_CFLAGS = \
 	$(AM_CFLAGS) \
 	-std=c11 \
-	-I$(srcdir)/shared/c-stdaux/src \
+	-I$(srcdir)/src/c-stdaux/src \
 	$(NULL)
 
-shared_libcrbtree_la_CPPFLAGS = \
+src_c_rbtree_libc_rbtree_la_CPPFLAGS = \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(NULL)
 
-shared_libcrbtree_la_LDFLAGS = \
+src_c_rbtree_libc_rbtree_la_LDFLAGS = \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
-shared_libcrbtree_la_SOURCES = \
-	shared/c-rbtree/src/c-rbtree.c \
-	shared/c-rbtree/src/c-rbtree.h \
-	shared/c-rbtree/src/c-rbtree-private.h \
+src_c_rbtree_libc_rbtree_la_SOURCES = \
+	src/c-rbtree/src/c-rbtree.c \
+	src/c-rbtree/src/c-rbtree.h \
+	src/c-rbtree/src/c-rbtree-private.h \
 	$(NULL)
 
 ###############################################################################
 
-noinst_LTLIBRARIES += shared/libnacd.la
+noinst_LTLIBRARIES += src/n-acd/libn-acd.la
 
-shared_libnacd_la_CFLAGS = \
+src_n_acd_libn_acd_la_CFLAGS = \
 	$(AM_CFLAGS) \
 	-std=c11 \
 	-Wno-pointer-arith \
 	-Wno-vla \
 	$(NULL)
 
-shared_libnacd_la_CPPFLAGS = \
+src_n_acd_libn_acd_la_CPPFLAGS = \
 	-D_GNU_SOURCE \
 	-DSO_ATTACH_BPF=50 \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
-	-I$(srcdir)/shared/c-stdaux/src \
-	-I$(srcdir)/shared/c-list/src \
-	-I$(srcdir)/shared/c-siphash/src \
-	-I$(srcdir)/shared/c-rbtree/src \
+	-I$(srcdir)/src/c-stdaux/src \
+	-I$(srcdir)/src/c-list/src \
+	-I$(srcdir)/src/c-siphash/src \
+	-I$(srcdir)/src/c-rbtree/src \
 	$(NULL)
 
-shared_libnacd_la_LDFLAGS = \
+src_n_acd_libn_acd_la_LDFLAGS = \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
-shared_libnacd_la_SOURCES = \
-	shared/n-acd/src/n-acd.c \
-	shared/n-acd/src/n-acd.h \
-	shared/n-acd/src/n-acd-private.h \
-	shared/n-acd/src/n-acd-probe.c \
-	shared/n-acd/src/util/timer.c \
-	shared/n-acd/src/util/timer.h \
+src_n_acd_libn_acd_la_SOURCES = \
+	src/n-acd/src/n-acd.c \
+	src/n-acd/src/n-acd.h \
+	src/n-acd/src/n-acd-private.h \
+	src/n-acd/src/n-acd-probe.c \
+	src/n-acd/src/util/timer.c \
+	src/n-acd/src/util/timer.h \
 	$(NULL)
 
 if WITH_EBPF
-shared_libnacd_la_SOURCES += shared/n-acd/src/n-acd-bpf.c
+src_n_acd_libn_acd_la_SOURCES += src/n-acd/src/n-acd-bpf.c
 else
-shared_libnacd_la_SOURCES += shared/n-acd/src/n-acd-bpf-fallback.c
+src_n_acd_libn_acd_la_SOURCES += src/n-acd/src/n-acd-bpf-fallback.c
 endif
 
 ###############################################################################
 
-noinst_LTLIBRARIES += shared/libndhcp4.la
+noinst_LTLIBRARIES += src/n-dhcp4/libn-dhcp4.la
 
-shared_libndhcp4_la_CFLAGS = \
+src_n_dhcp4_libn_dhcp4_la_CFLAGS = \
 	$(AM_CFLAGS) \
 	-std=c11 \
 	-Wno-error=declaration-after-statement \
 	-Wno-pointer-arith \
 	$(NULL)
 
-shared_libndhcp4_la_CPPFLAGS = \
+src_n_dhcp4_libn_dhcp4_la_CPPFLAGS = \
 	-D_GNU_SOURCE \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
-	-I$(srcdir)/shared/c-stdaux/src \
-	-I$(srcdir)/shared/c-list/src \
-	-I$(srcdir)/shared/c-siphash/src \
+	-I$(srcdir)/src/c-stdaux/src \
+	-I$(srcdir)/src/c-list/src \
+	-I$(srcdir)/src/c-siphash/src \
 	$(NULL)
 
-shared_libndhcp4_la_LDFLAGS = \
-	$(SANITIZER_LIB_LDFLAGS)
+src_n_dhcp4_libn_dhcp4_la_LDFLAGS = \
+	$(SANITIZER_LIB_LDFLAGS) \
+	$(NULL)
 
-shared_libndhcp4_la_SOURCES = \
-	shared/n-dhcp4/src/n-dhcp4-c-connection.c \
-	shared/n-dhcp4/src/n-dhcp4-c-lease.c \
-	shared/n-dhcp4/src/n-dhcp4-c-probe.c \
-	shared/n-dhcp4/src/n-dhcp4-client.c \
-	shared/n-dhcp4/src/n-dhcp4-incoming.c \
-	shared/n-dhcp4/src/n-dhcp4-outgoing.c \
-	shared/n-dhcp4/src/n-dhcp4-private.h \
-	shared/n-dhcp4/src/n-dhcp4-socket.c \
-	shared/n-dhcp4/src/n-dhcp4.h \
-	shared/n-dhcp4/src/util/packet.c \
-	shared/n-dhcp4/src/util/packet.h \
-	shared/n-dhcp4/src/util/socket.c \
-	shared/n-dhcp4/src/util/socket.h \
+src_n_dhcp4_libn_dhcp4_la_SOURCES = \
+	src/n-dhcp4/src/n-dhcp4-c-connection.c \
+	src/n-dhcp4/src/n-dhcp4-c-lease.c \
+	src/n-dhcp4/src/n-dhcp4-c-probe.c \
+	src/n-dhcp4/src/n-dhcp4-client.c \
+	src/n-dhcp4/src/n-dhcp4-incoming.c \
+	src/n-dhcp4/src/n-dhcp4-outgoing.c \
+	src/n-dhcp4/src/n-dhcp4-private.h \
+	src/n-dhcp4/src/n-dhcp4-socket.c \
+	src/n-dhcp4/src/n-dhcp4.h \
+	src/n-dhcp4/src/util/packet.c \
+	src/n-dhcp4/src/util/packet.h \
+	src/n-dhcp4/src/util/socket.c \
+	src/n-dhcp4/src/util/socket.h \
 	$(NULL)
 
 ###############################################################################
@@ -360,7 +360,7 @@ src_libnm_std_aux_libnm_std_aux_la_CPPFLAGS = \
 	$(NULL)
 
 src_libnm_std_aux_libnm_std_aux_la_SOURCES = \
-	shared/c-list/src/c-list.h \
+	src/c-list/src/c-list.h \
 	src/libnm-std-aux/c-list-util.c \
 	src/libnm-std-aux/c-list-util.h \
 	src/libnm-std-aux/nm-dbus-compat.h \
@@ -616,7 +616,7 @@ src_libnm_platform_tests_test_nm_platform_LDADD = \
 	src/libnm-log-core/libnm-log-core.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/c-siphash/libc-siphash.la \
 	$(SYSTEMD_JOURNAL_LIBS) \
 	$(GLIB_LIBS) \
 	$(NULL)
@@ -631,7 +631,6 @@ noinst_LTLIBRARIES += src/libnm-core-aux-intern/libnm-core-aux-intern.la
 
 src_libnm_core_aux_intern_libnm_core_aux_intern_la_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(builddir)/shared \
 	-I$(srcdir)/shared \
 	-I$(builddir)/src \
 	-I$(srcdir)/src \
@@ -672,7 +671,6 @@ noinst_LTLIBRARIES += src/libnm-core-aux-extern/libnm-core-aux-extern.la
 
 src_libnm_core_aux_extern_libnm_core_aux_extern_la_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(builddir)/shared \
 	-I$(srcdir)/shared \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
@@ -711,7 +709,6 @@ noinst_LTLIBRARIES += libnm/nm-libnm-aux/libnm-libnm-aux.la
 libnm_nm_libnm_aux_libnm_libnm_aux_la_CPPFLAGS = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
 	-I$(builddir)/src/libnm-core-public \
@@ -773,7 +770,7 @@ src_libnm_glib_aux_tests_test_shared_general_LDADD = \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-log-null/libnm-log-null.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -804,7 +801,7 @@ src_libnm_glib_aux_tests_test_json_aux_LDADD = \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-log-null/libnm-log-null.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -1239,7 +1236,6 @@ EXTRA_DIST += \
 dflt_cppflags_libnm_core = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
 	-I$(srcdir)/src \
@@ -1422,7 +1418,7 @@ src_libnm_core_impl_tests_ldadd = \
 	src/libnm-log-null/libnm-log-null.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -1652,7 +1648,7 @@ libnm_libnm_static_la_LIBADD = \
 	src/libnm-log-null/libnm-log-null.la \
 	src/libnm-udev-aux/libnm-udev-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(DL_LIBS) \
 	$(UUID_LIBS) \
@@ -1908,7 +1904,6 @@ libnm_tests_libnm_vpn_plugin_utils_test_la_SOURCES = \
 libnm_tests_libnm_vpn_plugin_utils_test_la_CFLAGS = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
 	-I$(builddir)/src/libnm-core-public \
@@ -1988,7 +1983,6 @@ check_local += check-config-options
 libsystemd_cppflags = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
 	-I$(srcdir)/src/ \
 	-I$(builddir)/src/ \
 	-I$(srcdir)/src/libnm-systemd-shared/ \
@@ -2525,10 +2519,10 @@ src_core_libNetworkManager_la_LIBADD = \
 	src/libnm-std-aux/libnm-std-aux.la \
 	src/core/libnm-systemd-core.la \
 	src/libnm-systemd-shared/libnm-systemd-shared.la \
-	shared/libnacd.la \
-	shared/libndhcp4.la \
-	shared/libcrbtree.la \
-	shared/libcsiphash.la \
+	src/n-acd/libn-acd.la \
+	src/n-dhcp4/libn-dhcp4.la \
+	src/c-rbtree/libc-rbtree.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
 	$(SYSTEMD_LOGIN_LIBS) \
@@ -2638,10 +2632,10 @@ src_core_nm_iface_helper_LDADD = \
 	src/libnm-std-aux/libnm-std-aux.la \
 	src/core/libnm-systemd-core.la \
 	src/libnm-systemd-shared/libnm-systemd-shared.la \
-	shared/libnacd.la \
-	shared/libndhcp4.la \
-	shared/libcrbtree.la \
-	shared/libcsiphash.la \
+	src/n-acd/libn-acd.la \
+	src/n-dhcp4/libn-dhcp4.la \
+	src/c-rbtree/libc-rbtree.la \
+	src/c-siphash/libc-siphash.la \
 	$(SYSTEMD_JOURNAL_LIBS) \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
@@ -2693,8 +2687,8 @@ src_core_initrd_nm_initrd_generator_LDADD = \
 	src/libnm-systemd-shared/libnm-systemd-shared.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	shared/libndhcp4.la \
-	shared/libcsiphash.la \
+	src/n-dhcp4/libn-dhcp4.la \
+	src/c-siphash/libc-siphash.la \
 	$(SYSTEMD_JOURNAL_LIBS) \
 	$(GLIB_LIBS) \
 	$(NULL)
@@ -2719,7 +2713,7 @@ src_core_initrd_tests_test_dt_reader_LDADD = \
 	src/core/libNetworkManagerTest.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -2739,7 +2733,7 @@ src_core_initrd_tests_test_ibft_reader_LDADD = \
 	src/core/libNetworkManagerTest.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -2974,7 +2968,7 @@ src_core_initrd_tests_test_cmdline_reader_LDADD = \
 	src/core/libNetworkManagerTest.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -3000,7 +2994,6 @@ libexec_PROGRAMS += src/core/dhcp/nm-dhcp-helper
 src_core_dhcp_nm_dhcp_helper_CPPFLAGS = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
 	$(GLIB_CFLAGS) \
@@ -3062,7 +3055,6 @@ pppd_plugin_LTLIBRARIES += src/core/ppp/nm-pppd-plugin.la
 src_core_ppp_nm_pppd_plugin_la_CPPFLAGS = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
 	-I$(builddir)/src/libnm-core-public \
@@ -4354,7 +4346,7 @@ src_core_tests_test_systemd_LDFLAGS = \
 src_core_tests_test_systemd_LDADD = \
 	src/core/libnm-systemd-core.la \
 	src/libnm-systemd-shared/libnm-systemd-shared.la \
-	shared/libcsiphash.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(NULL)
@@ -4395,7 +4387,6 @@ noinst_LTLIBRARIES += \
 
 dispatcher_cppflags = \
 	$(dflt_cppflags) \
-	-I$(builddir)/shared \
 	-I$(srcdir)/shared \
 	-I$(builddir)/dispatcher \
 	-I$(srcdir)/dispatcher \
@@ -4434,7 +4425,7 @@ dispatcher_nm_dispatcher_LDADD = \
 	libnm/libnm.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS)
 
 dispatcher/org.freedesktop.nm_dispatcher.service: $(srcdir)/dispatcher/org.freedesktop.nm_dispatcher.service.in
@@ -4477,7 +4468,6 @@ check_programs += dispatcher/tests/test-dispatcher-envp
 
 dispatcher_tests_test_dispatcher_envp_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(builddir)/shared \
 	-I$(srcdir)/shared \
 	-I$(srcdir)/dispatcher \
 	-I$(builddir)/dispatcher \
@@ -4509,7 +4499,7 @@ dispatcher_tests_test_dispatcher_envp_LDADD = \
 	dispatcher/libnm-dispatcher-core.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/c-siphash/libc-siphash.la \
 	libnm/libnm.la \
 	$(GLIB_LIBS) \
 	$(NULL)
@@ -4536,7 +4526,6 @@ bin_PROGRAMS += clients/nm-online
 clients_nm_online_CPPFLAGS = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
 	-I$(builddir)/src/libnm-core-public \
@@ -4556,7 +4545,7 @@ clients_nm_online_LDADD = \
 	libnm/nm-libnm-aux/libnm-libnm-aux.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -4573,7 +4562,6 @@ EXTRA_DIST += \
 clients_cppflags = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
 	-I$(builddir)/clients/common \
 	-I$(srcdir)/clients/common \
 	-I$(builddir)/src/libnm-core-public \
@@ -4687,7 +4675,7 @@ clients_common_tests_test_clients_common_LDADD = \
 	src/libnm-base/libnm-base.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/c-siphash/libc-siphash.la \
 	libnm/libnm.la \
 	$(GLIB_LIBS)
 
@@ -4709,7 +4697,6 @@ check_programs += clients/common/tests/test-libnm-core-aux
 
 clients_common_tests_test_libnm_core_aux_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(builddir)/shared \
 	-I$(srcdir)/shared \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
@@ -4731,7 +4718,7 @@ clients_common_tests_test_libnm_core_aux_LDADD = \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/c-siphash/libc-siphash.la \
 	libnm/libnm.la \
 	$(GLIB_LIBS) \
 	$(NULL)
@@ -4779,7 +4766,7 @@ clients_cli_nmcli_LDADD = \
 	src/libnm-base/libnm-base.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/c-siphash/libc-siphash.la \
 	libnm/nm-libnm-aux/libnm-libnm-aux.la \
 	libnm/libnm.la \
 	$(GLIB_LIBS) \
@@ -4828,7 +4815,7 @@ clients_cli_generate_docs_nm_settings_nmcli_LDADD = \
 	libnm/libnm.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -5017,7 +5004,7 @@ clients_tui_nmtui_LDADD = \
 	src/libnm-base/libnm-base.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/c-siphash/libc-siphash.la \
 	libnm/libnm.la \
 	$(GLIB_LIBS) \
 	$(NEWT_LIBS) \
@@ -5103,7 +5090,7 @@ clients_cloud_setup_nm_cloud_setup_LDADD = \
 	src/libnm-base/libnm-base.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/c-siphash/libc-siphash.la \
 	libnm/libnm.la \
 	$(GLIB_LIBS) \
 	$(LIBCURL_LIBS) \
@@ -5168,7 +5155,7 @@ clients_cloud_setup_tests_test_cloud_setup_general_LDADD = \
 	src/libnm-base/libnm-base.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/c-siphash/libc-siphash.la \
 	libnm/libnm.la \
 	$(GLIB_LIBS) \
 	$(LIBCURL_LIBS) \
