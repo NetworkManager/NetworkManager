@@ -3,7 +3,7 @@
  * Copyright (C) 2010 - 2015 Red Hat, Inc.
  */
 
-#include "libnm/nm-default-libnm.h"
+#include "libnm-client-impl/nm-default-libnm.h"
 
 #include <sys/wait.h>
 

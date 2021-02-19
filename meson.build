@@ -921,7 +921,6 @@ content_files = []
 subdir('introspection')
 subdir('shared')
 subdir('src')
-subdir('libnm')
 subdir('dispatcher')
 subdir('clients')
 subdir('data')

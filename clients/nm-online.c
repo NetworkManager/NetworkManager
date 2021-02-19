@@ -16,14 +16,14 @@
  * Robert Love <rml@novell.com>
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
 #include <locale.h>
 
-#include "nm-libnm-aux/nm-libnm-aux.h"
+#include "libnm-client-aux-extern/nm-libnm-aux.h"
 
 #define PROGRESS_STEPS 15
 

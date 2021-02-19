@@ -8,7 +8,7 @@
  * @short_description: The editor page for IP4 configuration
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include <stdlib.h>
 

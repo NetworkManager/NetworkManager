@@ -3,7 +3,7 @@
  * Copyright (C) 2016, 2018 Red Hat, Inc.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "nm-vpn-plugin-utils.h"
 

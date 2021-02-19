@@ -13,7 +13,7 @@
  * This is used as a building block by #NmtRouteTable.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>

@@ -54,7 +54,7 @@ gnome.gtkdoc(
   main_xml: libnm_name + '-docs.xml',
   src_dir: [
     libnm_core_public_inc,
-    libnm_inc,
+    libnm_client_public_inc,
   ],
   dependencies: libnm_dep,
   scan_args: scan_args,

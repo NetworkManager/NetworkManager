@@ -3,7 +3,7 @@
  * Copyright (C) 2012 - 2018 Red Hat, Inc.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "common.h"
 
@@ -13,7 +13,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include "nm-libnm-aux/nm-libnm-aux.h"
+#include "libnm-client-aux-extern/nm-libnm-aux.h"
 
 #include "nm-vpn-helpers.h"
 #include "nm-client-utils.h"

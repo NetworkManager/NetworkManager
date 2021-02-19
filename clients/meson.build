@@ -6,7 +6,7 @@ executable(
   dependencies: [
     libnm_dep,
     libnm_nm_default_dep,
-    libnm_libnm_aux_dep,
+    libnm_client_aux_extern_dep,
     libnm_glib_aux_dep_link,
   ],
   link_args: ldflags_linker_script_binary,

@@ -12,7 +12,7 @@
  * wide to fit into the main window.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "nmt-route-editor.h"
 #include "nmt-route-table.h"

@@ -20,7 +20,7 @@ libnm_dispatcher_core = static_library(
   dependencies: [
     libnm_dep,
     libnm_nm_default_dep,
-    libnm_libnm_aux_dep,
+    libnm_client_aux_extern_dep,
   ],
 )
 
