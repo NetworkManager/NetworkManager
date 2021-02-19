@@ -11,7 +11,7 @@
 
 #define _NMTST_INSIDE_CORE 1
 
-#include "nm-utils/nm-test-utils.h"
+#include "libnm-glib-aux/nm-test-utils.h"
 
 /*****************************************************************************/
 

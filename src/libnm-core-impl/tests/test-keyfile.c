@@ -16,7 +16,7 @@
 #include "nm-setting-user.h"
 #include "nm-setting-proxy.h"
 
-#include "nm-utils/nm-test-utils.h"
+#include "libnm-glib-aux/nm-test-utils.h"
 
 #define TEST_CERT_DIR          NM_BUILD_SRCDIR "/src/libnm-core-impl/tests/certs"
 #define TEST_WIRED_TLS_CA_CERT TEST_CERT_DIR "/test-ca-cert.pem"

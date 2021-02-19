@@ -9,7 +9,7 @@
 #include "nm-vpn-helpers.h"
 #include "nm-client-utils.h"
 
-#include "nm-utils/nm-test-utils.h"
+#include "libnm-glib-aux/nm-test-utils.h"
 
 /*****************************************************************************/
 
