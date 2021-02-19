@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
-#include "nm-libnm-aux/nm-libnm-aux.h"
+#include "libnm-client-aux-extern/nm-libnm-aux.h"
 
 #include "nm-cloud-setup-utils.h"
 #include "nmcs-provider-ec2.h"

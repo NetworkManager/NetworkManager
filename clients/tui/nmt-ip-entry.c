@@ -14,7 +14,7 @@
  * contains a valid IP address.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>

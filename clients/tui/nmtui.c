@@ -11,14 +11,14 @@
  * nmtui_edit(), and nmtui_hostname().
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "nmtui.h"
 
 #include <locale.h>
 #include <stdlib.h>
 
-#include "nm-libnm-aux/nm-libnm-aux.h"
+#include "libnm-client-aux-extern/nm-libnm-aux.h"
 
 #include "nmt-newt.h"
 #include "nm-editor-bindings.h"

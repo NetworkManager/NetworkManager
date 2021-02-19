@@ -10,7 +10,7 @@
  * #NmtEditorSection is the abstract base class for #NmtEditor sections.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "nmt-editor-section.h"
 #include "nmt-newt-toggle-button.h"

@@ -35,7 +35,7 @@ libnm_cloud_setup_core = static_library(
     libnmc_base_dep,
     libnmc_dep,
     libcurl_dep,
-    libnm_libnm_aux_dep,
+    libnm_client_aux_extern_dep,
   ],
 )
 

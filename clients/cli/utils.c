@@ -4,7 +4,7 @@
  * Copyright (C) 2010 - 2018 Red Hat, Inc.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "utils.h"
 

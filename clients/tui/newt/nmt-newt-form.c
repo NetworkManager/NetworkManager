@@ -11,7 +11,7 @@
  * "form" (aka dialog) to the user.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include <fcntl.h>
 #include <unistd.h>

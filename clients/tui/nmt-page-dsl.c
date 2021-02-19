@@ -8,7 +8,7 @@
  * @short_description: The editor page for DSL connections
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "nmt-page-dsl.h"
 #include "nmt-page-ethernet.h"

@@ -18,7 +18,7 @@
  * https://github.com/lxde/lxqt-policykit/tree/master/src
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "nm-polkit-listener.h"
 
