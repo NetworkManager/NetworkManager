@@ -6,7 +6,7 @@
 
 #include "libnm-glib-aux/nm-json-aux.h"
 
-#include "nm-utils/nm-test-utils.h"
+#include "libnm-glib-aux/nm-test-utils.h"
 
 /*****************************************************************************/
 

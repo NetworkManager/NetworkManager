@@ -11,7 +11,7 @@
 #include "nm-dispatcher-utils.h"
 #include "libnm-core-aux-extern/nm-dispatcher-api.h"
 
-#include "nm-utils/nm-test-utils.h"
+#include "libnm-glib-aux/nm-test-utils.h"
 
 #include "nmdbus-dispatcher.h"
 

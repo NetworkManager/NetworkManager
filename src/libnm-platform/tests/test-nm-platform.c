@@ -6,7 +6,7 @@
 #include "libnm-platform/nm-netlink.h"
 #include "libnm-platform/nmp-netns.h"
 
-#include "nm-utils/nm-test-utils.h"
+#include "libnm-glib-aux/nm-test-utils.h"
 
 /*****************************************************************************/
 

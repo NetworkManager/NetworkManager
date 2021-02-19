@@ -11,7 +11,7 @@
 #include "libnm-glib-aux/nm-time-utils.h"
 #include "libnm-glib-aux/nm-ref-string.h"
 
-#include "nm-utils/nm-test-utils.h"
+#include "libnm-glib-aux/nm-test-utils.h"
 
 /*****************************************************************************/
 

@@ -28,7 +28,7 @@
 #include "nm-errors.h"
 #include "libnm-core-intern/nm-keyfile-internal.h"
 
-#include "nm-utils/nm-test-utils.h"
+#include "libnm-glib-aux/nm-test-utils.h"
 
 #define TEST_CERT_DIR NM_BUILD_SRCDIR "/src/libnm-core-impl/tests/certs"
 

@@ -435,6 +435,7 @@ src_libnm_glib_aux_libnm_glib_aux_la_SOURCES = \
 	src/libnm-glib-aux/nm-shared-utils.c \
 	src/libnm-glib-aux/nm-shared-utils.h \
 	src/libnm-glib-aux/nm-str-buf.h \
+	src/libnm-glib-aux/nm-test-utils.h \
 	src/libnm-glib-aux/nm-time-utils.c \
 	src/libnm-glib-aux/nm-time-utils.h \
 	src/libnm-glib-aux/nm-value-type.h \
@@ -5478,11 +5479,8 @@ EXTRA_DIST += \
 	\
 	po/meson.build \
 	\
-	shared/nm-test-libnm-utils.h \
-	shared/nm-test-utils-impl.c \
 	shared/nm-utils/nm-compat.c \
 	shared/nm-utils/nm-compat.h \
-	shared/nm-utils/nm-test-utils.h \
 	shared/nm-utils/nm-vpn-editor-plugin-call.h \
 	shared/nm-utils/nm-vpn-plugin-macros.h \
 	shared/nm-utils/nm-vpn-plugin-utils.c \
