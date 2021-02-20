@@ -32,11 +32,3 @@ foreach test_unit: test_units
     args: test_args + [exe.full_path()],
   )
 endforeach
-
-# just test, that we can build "nm-vpn-plugin-utils.c"
-libnm_vpn_plugin_utils_test = static_library(
-  'nm-vpn-plugin-utils-test',
-  sources: nm_vpn_plugin_utils_source + [libnm_client_public_enum_sources[1]],
-  include_directories: libnm_client_public_inc,
-  dependencies: libnm_nm_default_dep,
-)

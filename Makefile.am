@@ -1309,7 +1309,7 @@ $(dispatcher_libnm_dispatcher_core_la_OBJECTS):                             $(sr
 $(dispatcher_nm_dispatcher_OBJECTS):                                        $(src_libnm_core_public_mkenums_h)
 $(src_libnm_core_impl_libnm_core_impl_la_OBJECTS):                          $(src_libnm_core_public_mkenums_h)
 $(src_libnm_client_impl_libnm_la_OBJECTS):                                  $(src_libnm_core_public_mkenums_h)
-$(src_libnm_client_impl_tests_libnm_vpn_plugin_utils_test_la_OBJECTS):      $(src_libnm_core_public_mkenums_h)
+$(src_contrib_tests_libnm_vpn_plugin_utils_test_la_OBJECTS):                $(src_libnm_core_public_mkenums_h)
 $(src_core_NetworkManager_OBJECTS):                                         $(src_libnm_core_public_mkenums_h)
 $(src_core_devices_adsl_libnm_device_plugin_adsl_la_OBJECTS):               $(src_libnm_core_public_mkenums_h)
 $(src_core_devices_bluetooth_libnm_device_plugin_bluetooth_la_OBJECTS):     $(src_libnm_core_public_mkenums_h)
@@ -1724,7 +1724,7 @@ nm_enum_types_MKENUMS_C_FLAGS = --fhead '\#undef G_LOG_DOMAIN\n\#include "libnm-
 $(dispatcher_nm_dispatcher_OBJECTS):                                    $(src_libnm_client_public_mkenums_h)
 $(dispatcher_libnm_dispatcher_core_la_OBJECTS):                         $(src_libnm_client_public_mkenums_h)
 $(src_libnm_client_impl_libnm_la_OBJECTS):                              $(src_libnm_client_public_mkenums_h)
-$(src_libnm_client_impl_tests_libnm_vpn_plugin_utils_test_la_OBJECTS):  $(src_libnm_core_public_mkenums_h)
+$(src_contrib_tests_libnm_vpn_plugin_utils_test_la_OBJECTS):            $(src_libnm_client_public_mkenums_h)
 
 src_libnm_client_impl_libnm_la_CPPFLAGS = \
 	-I$(builddir)/src/libnm-client-public \
@@ -1926,20 +1926,22 @@ $(src_libnm_client_impl_tests_test_nm_client_OBJECTS):              $(src_libnm_
 $(src_libnm_client_impl_tests_test_remote_settings_client_OBJECTS): $(src_libnm_client_impl_NM_1_0_typelib)
 $(src_libnm_client_impl_tests_test_secret_agent_OBJECTS):           $(src_libnm_client_impl_NM_1_0_typelib)
 
+EXTRA_DIST += \
+	src/libnm-client-impl/tests/meson.build
+
 ###############################################################################
 
 # just test, that we can build "nm-vpn-plugin-utils.c"
 
-check_ltlibraries += src/libnm-client-impl/tests/libnm-vpn-plugin-utils-test.la
+check_ltlibraries += src/contrib/tests/libnm-vpn-plugin-utils-test.la
 
-src_libnm_client_impl_tests_libnm_vpn_plugin_utils_test_la_SOURCES = \
-	shared/nm-utils/nm-vpn-plugin-utils.c \
-	shared/nm-utils/nm-vpn-plugin-utils.h \
+src_contrib_tests_libnm_vpn_plugin_utils_test_la_SOURCES = \
+	src/contrib/nm-vpn-plugin-utils.c \
+	src/contrib/nm-vpn-plugin-utils.h \
 	$(NULL)
 
-src_libnm_client_impl_tests_libnm_vpn_plugin_utils_test_la_CFLAGS = \
+src_contrib_tests_libnm_vpn_plugin_utils_test_la_CFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
 	-I$(builddir)/src/libnm-core-public \
@@ -1950,12 +1952,14 @@ src_libnm_client_impl_tests_libnm_vpn_plugin_utils_test_la_CFLAGS = \
 	$(SANITIZER_EXEC_CFLAGS) \
 	$(NULL)
 
-src_libnm_client_impl_tests_libnm_vpn_plugin_utils_test_la_LIBADD = \
+src_contrib_tests_libnm_vpn_plugin_utils_test_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(NULL)
 
 EXTRA_DIST += \
-	src/libnm-client-impl/tests/meson.build
+	src/contrib/meson.build \
+	src/contrib/tests/meson.build \
+	$(NULL)
 
 ###############################################################################
 # src/core/
@@ -5520,8 +5524,6 @@ EXTRA_DIST += \
 	shared/nm-utils/nm-compat.h \
 	shared/nm-utils/nm-vpn-editor-plugin-call.h \
 	shared/nm-utils/nm-vpn-plugin-macros.h \
-	shared/nm-utils/nm-vpn-plugin-utils.c \
-	shared/nm-utils/nm-vpn-plugin-utils.h \
 	shared/meson.build \
 	\
 	src/meson.build \
