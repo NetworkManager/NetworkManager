@@ -107,6 +107,7 @@ subdir('libnm-client-public')
 subdir('libnm-client-impl')
 subdir('libnm-client-aux-extern')
 subdir('core')
+subdir('contrib')
 
 if enable_tests
   subdir('libnm-client-test')
@@ -114,4 +115,5 @@ if enable_tests
   subdir('libnm-platform/tests')
   subdir('libnm-core-impl/tests')
   subdir('libnm-client-impl/tests')
+  subdir('contrib/tests')
 endif
