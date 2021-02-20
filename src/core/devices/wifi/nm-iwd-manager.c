@@ -1119,6 +1119,7 @@ object_compare_interfaces(gconstpointer a, gconstpointer b)
         NM_IWD_KNOWN_NETWORK_INTERFACE,
         NM_IWD_NETWORK_INTERFACE,
         NM_IWD_DEVICE_INTERFACE,
+        NULL,
     };
     int   rank_a = G_N_ELEMENTS(interface_order);
     int   rank_b = G_N_ELEMENTS(interface_order);
