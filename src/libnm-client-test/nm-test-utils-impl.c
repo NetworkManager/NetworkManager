@@ -10,7 +10,7 @@
 #include "NetworkManager.h"
 #include "libnm-std-aux/nm-dbus-compat.h"
 
-#include "nm-test-libnm-utils.h"
+#include "libnm-client-test/nm-test-libnm-utils.h"
 
 #define NMTSTC_NM_SERVICE NM_BUILD_SRCDIR "/tools/test-networkmanager-service.py"
 

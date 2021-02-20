@@ -10,7 +10,7 @@
 
 #include "libnm-glib-aux/nm-time-utils.h"
 
-#include "nm-test-libnm-utils.h"
+#include "libnm-client-test/nm-test-libnm-utils.h"
 
 static struct {
     NMTstcServiceInfo * sinfo;

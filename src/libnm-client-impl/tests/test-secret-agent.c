@@ -10,7 +10,7 @@
 
 #include "nm-secret-agent-old.h"
 
-#include "nm-test-libnm-utils.h"
+#include "libnm-client-test/nm-test-libnm-utils.h"
 
 /*****************************************************************************/
 

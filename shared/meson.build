@@ -12,6 +12,4 @@ glib_nm_default_dep = declare_dependency(
   ],
 )
 
-nm_test_utils_impl_source = files('nm-test-utils-impl.c')
-
 nm_vpn_plugin_utils_source = files('nm-utils/nm-vpn-plugin-utils.c')

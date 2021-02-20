@@ -10,11 +10,7 @@ test_units = [
 foreach test_unit: test_units
   exe = executable(
     test_unit,
-    [
-      test_unit + '.c',
-      nm_test_utils_impl_source,
-      libnm_client_public_enum_sources[1],
-    ],
+    test_unit + '.c',
     include_directories: [
       libnm_client_public_inc,
     ],
@@ -24,6 +20,7 @@ foreach test_unit: test_units
     ],
     link_with: [
       libnm_client_impl,
+      libnm_client_test,
       libnm_base,
     ],
   )

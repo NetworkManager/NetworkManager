@@ -748,12 +748,50 @@ EXTRA_DIST += \
 
 ###############################################################################
 
+noinst_LTLIBRARIES += src/libnm-client-test/libnm-client-test.la
+
+src_libnm_client_test_libnm_client_test_la_CPPFLAGS = \
+	$(dflt_cppflags) \
+	-I$(srcdir)/shared \
+	-I$(builddir)/shared \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	-I$(builddir)/src/libnm-core-public \
+	-I$(srcdir)/src/libnm-core-public \
+	-I$(srcdir)/src/libnm-client-public \
+	-I$(builddir)/src/libnm-client-public \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	$(NULL)
+
+src_libnm_client_test_libnm_client_test_la_SOURCES = \
+	src/libnm-client-test/nm-test-libnm-utils.h \
+	src/libnm-client-test/nm-test-utils-impl.c \
+	$(NULL)
+
+src_libnm_client_test_libnm_client_test_la_LDFLAGS = \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_LIB_LDFLAGS) \
+	$(NULL)
+
+src_libnm_client_test_libnm_client_test_la_LIBADD = \
+	$(GLIB_LIBS) \
+	$(NULL)
+
+$(src_libnm_client_test_libnm_client_test_la_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_libnm_client_test_libnm_client_test_la_OBJECTS): $(src_libnm_client_public_mkenums_h)
+
+EXTRA_DIST += \
+	src/libnm-client-test/meson.build \
+	$(NULL)
+
+###############################################################################
+
 EXTRA_DIST += \
 	src/libnm-glib-aux/tests/meson.build \
 	shared/README.md \
 	$(NULL)
-
-###############################################################################
 
 check_programs += src/libnm-glib-aux/tests/test-shared-general
 
@@ -1849,6 +1887,7 @@ src_libnm_client_impl_tests_cppflags = \
 	$(NULL)
 
 src_libnm_client_impl_tests_ldadd = \
+	src/libnm-client-test/libnm-client-test.la \
 	src/libnm-client-impl/libnm-client-impl.la \
 	$(GLIB_LIBS) \
 	$(NULL)
@@ -1865,21 +1904,6 @@ src_libnm_client_impl_tests_test_libnm_SOURCES = \
 	shared/nm-utils/nm-compat.c \
 	src/libnm-client-impl/tests/test-libnm.c \
 	$(NULL)
-
-src_libnm_client_impl_tests_test_nm_client_SOURCES = \
-	shared/nm-test-utils-impl.c \
-	shared/nm-test-libnm-utils.h \
-	src/libnm-client-impl/tests/test-nm-client.c
-
-src_libnm_client_impl_tests_test_remote_settings_client_SOURCES = \
-	shared/nm-test-utils-impl.c \
-	shared/nm-test-libnm-utils.h \
-	src/libnm-client-impl/tests/test-remote-settings-client.c
-
-src_libnm_client_impl_tests_test_secret_agent_SOURCES = \
-	shared/nm-test-utils-impl.c \
-	shared/nm-test-libnm-utils.h \
-	src/libnm-client-impl/tests/test-secret-agent.c
 
 src_libnm_client_impl_tests_test_libnm_LDADD = $(src_libnm_client_impl_tests_ldadd)
 src_libnm_client_impl_tests_test_nm_client_LDADD = $(src_libnm_client_impl_tests_ldadd)

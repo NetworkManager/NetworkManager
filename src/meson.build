@@ -109,6 +109,7 @@ subdir('libnm-client-aux-extern')
 subdir('core')
 
 if enable_tests
+  subdir('libnm-client-test')
   subdir('libnm-glib-aux/tests')
   subdir('libnm-platform/tests')
   subdir('libnm-core-impl/tests')
