@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#include "nm-test-libnm-utils.h"
+#include "libnm-client-test/nm-test-libnm-utils.h"
 
 static struct {
     GMainLoop *loop;
