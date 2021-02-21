@@ -1542,7 +1542,10 @@ nmtstp_link_bridge_add(NMPlatform *               platform,
 
     ll = NMP_OBJECT_CAST_LNK_BRIDGE(NMP_OBJECT_UP_CAST(pllink)->_link.netlink.lnk);
 
-    g_assert_cmpint(lnk->forward_delay, ==, ll->forward_delay);
+    /* account for roundtrip rounding error with clock_t_to_jiffies()/jiffies_to_clock_t(). */
+    g_assert_cmpint(lnk->forward_delay, >=, ll->forward_delay - 1);
+    g_assert_cmpint(lnk->forward_delay, <=, ll->forward_delay);
+
     g_assert_cmpint(lnk->hello_time, ==, ll->hello_time);
     g_assert_cmpint(lnk->max_age, ==, ll->max_age);
     g_assert_cmpint(lnk->ageing_time, ==, ll->ageing_time);
