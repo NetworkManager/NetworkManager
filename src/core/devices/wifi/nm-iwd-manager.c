@@ -1115,7 +1115,7 @@ device_removed(NMManager *manager, NMDevice *device, gpointer user_data)
 static int
 object_compare_interfaces(gconstpointer a, gconstpointer b)
 {
-    static const char *interface_order[] = {
+    static const char *const interface_order[] = {
         NM_IWD_KNOWN_NETWORK_INTERFACE,
         NM_IWD_NETWORK_INTERFACE,
         NM_IWD_DEVICE_INTERFACE,
