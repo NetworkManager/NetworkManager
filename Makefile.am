@@ -1826,10 +1826,10 @@ libnm_tests_test_nm_client_LDFLAGS = $(libnm_tests_ldflags)
 libnm_tests_test_remote_settings_client_LDFLAGS = $(libnm_tests_ldflags)
 libnm_tests_test_secret_agent_LDFLAGS = $(libnm_tests_ldflags)
 
-$(libnm_tests_test_libnm_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(libnm_tests_test_nm_client_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(libnm_tests_test_remote_settings_client_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(libnm_tests_test_secret_agent_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(libnm_tests_test_libnm_OBJECTS):                  $(src_libnm_core_public_mkenums_h) $(libnm_lib_h_pub_mkenums)
+$(libnm_tests_test_nm_client_OBJECTS):              $(src_libnm_core_public_mkenums_h) $(libnm_lib_h_pub_mkenums)
+$(libnm_tests_test_remote_settings_client_OBJECTS): $(src_libnm_core_public_mkenums_h) $(libnm_lib_h_pub_mkenums)
+$(libnm_tests_test_secret_agent_OBJECTS):           $(src_libnm_core_public_mkenums_h) $(libnm_lib_h_pub_mkenums)
 
 # tools/test-networkmanager-service.py uses libnm's typelib. Ensure it
 # is built first.
@@ -4448,6 +4448,8 @@ dispatcher_tests_test_dispatcher_envp_SOURCES = \
 nodist_dispatcher_tests_test_dispatcher_envp_SOURCES = $(dispatcher_nmdbus_dispatcher_sources)
 
 $(dispatcher_tests_test_dispatcher_envp_OBJECTS): $(dispatcher_nmdbus_dispatcher_sources)
+$(dispatcher_tests_test_dispatcher_envp_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(dispatcher_tests_test_dispatcher_envp_OBJECTS): $(libnm_lib_h_pub_mkenums)
 
 dispatcher_tests_test_dispatcher_envp_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS) \
@@ -4605,6 +4607,7 @@ clients_common_libnmc_la_LIBADD = \
 	$(NULL)
 
 $(clients_common_libnmc_la_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(clients_common_libnmc_la_OBJECTS): $(libnm_lib_h_pub_mkenums)
 $(clients_common_libnmc_la_OBJECTS): $(clients_common_settings_doc_h)
 $(clients_common_libnmc_la_OBJECTS): clients/common/.dirstamp
 
@@ -4637,6 +4640,7 @@ clients_common_tests_test_clients_common_LDADD = \
 	$(GLIB_LIBS)
 
 $(clients_common_tests_test_clients_common_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(clients_common_tests_test_clients_common_OBJECTS): $(libnm_lib_h_pub_mkenums)
 
 ###############################################################################
 
@@ -4852,6 +4856,7 @@ clients_tui_newt_libnmt_newt_a_CPPFLAGS = \
 	$(NULL)
 
 $(clients_tui_newt_libnmt_newt_a_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(clients_tui_newt_libnmt_newt_a_OBJECTS): $(libnm_lib_h_pub_mkenums)
 
 bin_PROGRAMS += clients/tui/nmtui
 
@@ -4967,6 +4972,7 @@ clients_tui_nmtui_LDADD = \
 	$(NULL)
 
 $(clients_tui_nmtui_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(clients_tui_nmtui_OBJECTS): $(libnm_lib_h_pub_mkenums)
 
 nmtui_links = nmtui-edit nmtui-connect nmtui-hostname
 
