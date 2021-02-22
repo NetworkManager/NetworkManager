@@ -143,6 +143,8 @@ typedef struct _NmCli {
         editor_save_confirmation; /* Whether to ask for confirmation on saving connections with 'autoconnect=yes' */
 
     char *palette_buffer; /* Buffer with sequences for terminal-colors.d(5)-based coloring. */
+    char *lockfile; /* for serializing nmcli execution */
+    int lockfd; /* for serializing nmcli execution */
 } NmCli;
 
 extern const NmCli *const nm_cli_global_readline;

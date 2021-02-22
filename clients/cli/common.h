@@ -82,4 +82,7 @@ GVariant *nmc_dbus_call_sync(NmCli *             nmc,
                              const GVariantType *reply_type,
                              GError **           error);
 
+gboolean nmc_lock_lockfile(NmCli *nmc);
+gboolean nmc_unlock_lockfile(NmCli *nmc);
+
 #endif /* NMC_COMMON_H */
