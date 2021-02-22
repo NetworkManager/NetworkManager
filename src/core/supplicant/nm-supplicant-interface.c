@@ -1260,6 +1260,15 @@ _starting_check_ready(NMSupplicantInterface *self)
         return;
     }
 
+    _LOGD("interface supported features:"
+          " AP%c"
+          " FT%c"
+          " SAE%c"
+          "",
+          NM_SUPPL_CAP_TO_CHAR(priv->iface_capabilities, NM_SUPPL_CAP_TYPE_AP),
+          NM_SUPPL_CAP_TO_CHAR(priv->iface_capabilities, NM_SUPPL_CAP_TYPE_FT),
+          NM_SUPPL_CAP_TO_CHAR(priv->iface_capabilities, NM_SUPPL_CAP_TYPE_SAE));
+
     set_state(self, priv->supp_state);
 }
 
