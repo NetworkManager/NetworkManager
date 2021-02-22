@@ -116,6 +116,19 @@ NM_SUPPL_CAP_MASK_GET(NMSupplCapMask features, NMSupplCapType type)
     return (NMTernary)(f - 1);
 }
 
+static inline char
+NM_SUPPL_CAP_TO_CHAR(NMSupplCapMask features, NMSupplCapType type)
+{
+    NMTernary val;
+
+    val = NM_SUPPL_CAP_MASK_GET(features, type);
+    if (val == NM_TERNARY_TRUE)
+        return '+';
+    if (val == NM_TERNARY_FALSE)
+        return '-';
+    return '?';
+}
+
 /*****************************************************************************/
 
 /**

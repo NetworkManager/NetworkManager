@@ -168,19 +168,6 @@ _caps_set(NMSupplicantManagerPrivate *priv, NMSupplCapType type, NMTernary value
     priv->capabilities = NM_SUPPL_CAP_MASK_SET(priv->capabilities, type, value);
 }
 
-static char
-_caps_to_char(NMSupplicantManagerPrivate *priv, NMSupplCapType type)
-{
-    NMTernary val;
-
-    val = NM_SUPPL_CAP_MASK_GET(priv->capabilities, type);
-    if (val == NM_TERNARY_TRUE)
-        return '+';
-    if (val == NM_TERNARY_FALSE)
-        return '-';
-    return '?';
-}
-
 /*****************************************************************************/
 
 static void
@@ -1008,15 +995,15 @@ _dbus_get_capabilities_cb(GVariant *res, GError *error, gpointer user_data)
           " FAST%c"
           " WFD%c"
           "",
-          _caps_to_char(priv, NM_SUPPL_CAP_TYPE_AP),
-          _caps_to_char(priv, NM_SUPPL_CAP_TYPE_PMF),
-          _caps_to_char(priv, NM_SUPPL_CAP_TYPE_FILS),
-          _caps_to_char(priv, NM_SUPPL_CAP_TYPE_P2P),
-          _caps_to_char(priv, NM_SUPPL_CAP_TYPE_FT),
-          _caps_to_char(priv, NM_SUPPL_CAP_TYPE_SHA384),
-          _caps_to_char(priv, NM_SUPPL_CAP_TYPE_MESH),
-          _caps_to_char(priv, NM_SUPPL_CAP_TYPE_FAST),
-          _caps_to_char(priv, NM_SUPPL_CAP_TYPE_WFD));
+          NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_AP),
+          NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_PMF),
+          NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_FILS),
+          NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_P2P),
+          NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_FT),
+          NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_SHA384),
+          NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_MESH),
+          NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_FAST),
+          NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_WFD));
 
     nm_assert(g_hash_table_size(priv->supp_ifaces) == 0);
     nm_assert(c_list_is_empty(&priv->supp_lst_head));
