@@ -26,24 +26,24 @@ examples_C_glib_add_connection_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus
 examples_C_glib_add_connection_gdbus_LDADD = \
 	$(GLIB_LIBS) \
 	$(UUID_LIBS)
-$(examples_C_glib_add_connection_gdbus_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(examples_C_glib_add_connection_gdbus_OBJECTS): $(src_libnm_core_public_mkenums_h) $(libnm_lib_h_pub_mkenums)
 
 examples_C_glib_add_connection_libnm_CPPFLAGS = $(examples_C_glib_cppflags_libnm)
 examples_C_glib_add_connection_libnm_LDADD = \
 	libnm/libnm.la \
 	$(GLIB_LIBS)
-$(examples_C_glib_add_connection_libnm_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(examples_C_glib_add_connection_libnm_OBJECTS): $(src_libnm_core_public_mkenums_h) $(libnm_lib_h_pub_mkenums)
 
 examples_C_glib_get_active_connections_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus)
 examples_C_glib_get_active_connections_gdbus_LDADD = \
 	$(GLIB_LIBS)
-$(examples_C_glib_get_active_connections_gdbus_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(examples_C_glib_get_active_connections_gdbus_OBJECTS): $(src_libnm_core_public_mkenums_h) $(libnm_lib_h_pub_mkenums)
 
 examples_C_glib_get_ap_info_libnm_CPPFLAGS = $(examples_C_glib_cppflags_libnm)
 examples_C_glib_get_ap_info_libnm_LDADD = \
 	libnm/libnm.la \
 	$(GLIB_LIBS)
-$(examples_C_glib_get_ap_info_libnm_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(examples_C_glib_get_ap_info_libnm_OBJECTS): $(src_libnm_core_public_mkenums_h) $(libnm_lib_h_pub_mkenums)
 
 examples_C_glib_list_connections_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus)
 examples_C_glib_list_connections_gdbus_LDADD = \
@@ -53,7 +53,7 @@ examples_C_glib_list_connections_libnm_CPPFLAGS = $(examples_C_glib_cppflags_lib
 examples_C_glib_list_connections_libnm_LDADD = \
 	libnm/libnm.la \
 	$(GLIB_LIBS)
-$(examples_C_glib_list_connections_libnm_OBJECTS): $(libnm_core_lib_h_pub_mkenums)
+$(examples_C_glib_list_connections_libnm_OBJECTS): $(src_libnm_core_public_mkenums_h) $(libnm_lib_h_pub_mkenums)
 
 examples_C_glib_monitor_nm_running_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus)
 examples_C_glib_monitor_nm_running_gdbus_LDADD = \
