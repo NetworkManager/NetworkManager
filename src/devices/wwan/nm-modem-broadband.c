@@ -358,7 +358,7 @@ connect_ready (MMModemSimple *simple_iface,
 	GError *error = NULL;
 	NMModemIPMethod ip4_method = NM_MODEM_IP_METHOD_UNKNOWN;
 	NMModemIPMethod ip6_method = NM_MODEM_IP_METHOD_UNKNOWN;
-	MMBearer *bearer;
+	gs_unref_object MMBearer *bearer = NULL;
 
 	bearer = mm_modem_simple_connect_finish (simple_iface, res, &error);
 
@@ -372,7 +372,7 @@ connect_ready (MMModemSimple *simple_iface,
 	if (!ctx)
 		return;
 
-	self->_priv.bearer = bearer;
+	self->_priv.bearer = g_steal_pointer (&bearer);
 
 	if (!self->_priv.bearer) {
 		if (g_error_matches (error, MM_MOBILE_EQUIPMENT_ERROR, MM_MOBILE_EQUIPMENT_ERROR_SIM_PIN) ||
