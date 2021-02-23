@@ -109,6 +109,24 @@ _set_bond_attr(NMDevice *device, const char *attr, const char *value)
     int           ifindex = nm_device_get_ifindex(device);
     gboolean      ret;
 
+    nm_assert(attr && attr[0]);
+    nm_assert(value);
+
+    if (nm_streq(value, NM_BOND_AD_ACTOR_SYSTEM_DEFAULT)
+        && nm_streq(attr, NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM)) {
+        gs_free char *cur_val = NULL;
+
+        /* kernel does not allow setting ad_actor_system to "00:00:00:00:00:00". We would thus
+         * log an EINVAL error. Avoid that... at least, if the value is already "00:00:00:00:00:00". */
+        cur_val =
+            nm_platform_sysctl_master_get_option(nm_device_get_platform(device), ifindex, attr);
+        if (nm_streq0(cur_val, NM_BOND_AD_ACTOR_SYSTEM_DEFAULT))
+            return TRUE;
+
+        /* OK, the current value is different, and we will proceed setting "00:00:00:00:00:00".
+         * That will fail, and we will log a warning. There is nothing else to do. */
+    }
+
     ret =
         nm_platform_sysctl_master_set_option(nm_device_get_platform(device), ifindex, attr, value);
     if (!ret)

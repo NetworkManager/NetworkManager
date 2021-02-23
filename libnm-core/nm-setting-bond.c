@@ -337,7 +337,7 @@ _bond_get_option_normalized(NMSettingBond *self, const char *option, gboolean ge
     if (nm_streq(option, NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM)) {
         /* The default value depends on the current mode */
         if (mode == NM_BOND_MODE_8023AD)
-            return "00:00:00:00:00:00";
+            return NM_BOND_AD_ACTOR_SYSTEM_DEFAULT;
         return "";
     }
 
