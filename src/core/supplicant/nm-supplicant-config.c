@@ -841,6 +841,11 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
             g_string_append(key_mgmt_conf, " wpa-psk-sha256");
         if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT))
             g_string_append(key_mgmt_conf, " ft-psk");
+        if (_get_capability(priv, NM_SUPPL_CAP_TYPE_SAE)) {
+            g_string_append(key_mgmt_conf, " sae");
+            if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT))
+                g_string_append(key_mgmt_conf, " ft-sae");
+        }
     } else if (nm_streq(key_mgmt, "wpa-eap")) {
         if (_get_capability(priv, NM_SUPPL_CAP_TYPE_PMF)) {
             g_string_append(key_mgmt_conf, " wpa-eap-sha256");
