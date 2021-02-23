@@ -586,6 +586,8 @@ NMBondOptionType _nm_setting_bond_get_option_type(NMSettingBond *setting, const 
 
 const char *nm_setting_bond_get_option_or_default(NMSettingBond *self, const char *option);
 
+#define NM_BOND_AD_ACTOR_SYSTEM_DEFAULT "00:00:00:00:00:00"
+
 /*****************************************************************************/
 
 /* nm_connection_get_uuid() asserts against NULL, which is the right thing to
