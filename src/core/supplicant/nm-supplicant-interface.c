@@ -1171,19 +1171,24 @@ parse_capabilities(NMSupplicantInterface *self, GVariant *capabilities)
     const gboolean                old_prop_scan_ssid   = priv->prop_scan_ssid;
     const guint32                 old_max_scan_ssids   = priv->max_scan_ssids;
     gboolean                      have_ft              = FALSE;
+    gboolean                      have_sae             = FALSE;
     gint32                        max_scan_ssids;
     const char **                 array;
 
     nm_assert(capabilities && g_variant_is_of_type(capabilities, G_VARIANT_TYPE_VARDICT));
 
     if (g_variant_lookup(capabilities, "KeyMgmt", "^a&s", &array)) {
-        have_ft = g_strv_contains(array, "wpa-ft-psk");
+        have_ft  = g_strv_contains(array, "wpa-ft-psk");
+        have_sae = g_strv_contains(array, "sae");
         g_free(array);
     }
 
     priv->iface_capabilities = NM_SUPPL_CAP_MASK_SET(priv->iface_capabilities,
                                                      NM_SUPPL_CAP_TYPE_FT,
                                                      have_ft ? NM_TERNARY_TRUE : NM_TERNARY_FALSE);
+    priv->iface_capabilities = NM_SUPPL_CAP_MASK_SET(priv->iface_capabilities,
+                                                     NM_SUPPL_CAP_TYPE_SAE,
+                                                     have_sae ? NM_TERNARY_TRUE : NM_TERNARY_FALSE);
 
     if (g_variant_lookup(capabilities, "Modes", "^a&s", &array)) {
         /* Setting p2p_capable might toggle _prop_p2p_available_get(). However,
@@ -1255,6 +1260,15 @@ _starting_check_ready(NMSupplicantInterface *self)
         return;
     }
 
+    _LOGD("interface supported features:"
+          " AP%c"
+          " FT%c"
+          " SAE%c"
+          "",
+          NM_SUPPL_CAP_TO_CHAR(priv->iface_capabilities, NM_SUPPL_CAP_TYPE_AP),
+          NM_SUPPL_CAP_TO_CHAR(priv->iface_capabilities, NM_SUPPL_CAP_TYPE_FT),
+          NM_SUPPL_CAP_TO_CHAR(priv->iface_capabilities, NM_SUPPL_CAP_TYPE_SAE));
+
     set_state(self, priv->supp_state);
 }
 
@@ -1277,6 +1291,10 @@ _get_capability(NMSupplicantInterfacePrivate *priv, NMSupplCapType type)
             if (iface_value != NM_TERNARY_DEFAULT)
                 value = iface_value;
         }
+        break;
+    case NM_SUPPL_CAP_TYPE_SAE:
+        nm_assert(NM_SUPPL_CAP_MASK_GET(priv->global_capabilities, type) == NM_TERNARY_DEFAULT);
+        value = NM_SUPPL_CAP_MASK_GET(priv->iface_capabilities, type);
         break;
     default:
         nm_assert(NM_SUPPL_CAP_MASK_GET(priv->iface_capabilities, type) == NM_TERNARY_DEFAULT);
@@ -1305,9 +1323,13 @@ nm_supplicant_interface_get_capabilities(NMSupplicantInterface *self)
     caps = NM_SUPPL_CAP_MASK_SET(caps,
                                  NM_SUPPL_CAP_TYPE_FT,
                                  _get_capability(priv, NM_SUPPL_CAP_TYPE_FT));
+    caps = NM_SUPPL_CAP_MASK_SET(caps,
+                                 NM_SUPPL_CAP_TYPE_SAE,
+                                 _get_capability(priv, NM_SUPPL_CAP_TYPE_SAE));
 
     nm_assert(!NM_FLAGS_ANY(priv->iface_capabilities,
-                            ~(NM_SUPPL_CAP_MASK_T_AP_MASK | NM_SUPPL_CAP_MASK_T_FT_MASK)));
+                            ~(NM_SUPPL_CAP_MASK_T_AP_MASK | NM_SUPPL_CAP_MASK_T_FT_MASK
+                              | NM_SUPPL_CAP_MASK_T_SAE_MASK)));
 
 #if NM_MORE_ASSERTS > 10
     {

@@ -41,6 +41,7 @@ typedef enum {
     NM_SUPPL_CAP_TYPE_FILS,
     NM_SUPPL_CAP_TYPE_P2P,
     NM_SUPPL_CAP_TYPE_FT,
+    NM_SUPPL_CAP_TYPE_SAE,
     NM_SUPPL_CAP_TYPE_SHA384,
     NM_SUPPL_CAP_TYPE_MESH,
     NM_SUPPL_CAP_TYPE_FAST,
@@ -71,6 +72,7 @@ typedef enum {
     _NM_SUPPL_CAP_MASK_DEFINE(MESH),
     _NM_SUPPL_CAP_MASK_DEFINE(WFD),
     _NM_SUPPL_CAP_MASK_DEFINE(FT),
+    _NM_SUPPL_CAP_MASK_DEFINE(SAE),
     _NM_SUPPL_CAP_MASK_DEFINE(SHA384),
 #undef _NM_SUPPL_CAP_MASK_DEFINE
 } NMSupplCapMask;
@@ -112,6 +114,19 @@ NM_SUPPL_CAP_MASK_GET(NMSupplCapMask features, NMSupplCapType type)
     nm_assert(NM_IN_SET(f, 0, 1, 2));
 
     return (NMTernary)(f - 1);
+}
+
+static inline char
+NM_SUPPL_CAP_TO_CHAR(NMSupplCapMask features, NMSupplCapType type)
+{
+    NMTernary val;
+
+    val = NM_SUPPL_CAP_MASK_GET(features, type);
+    if (val == NM_TERNARY_TRUE)
+        return '+';
+    if (val == NM_TERNARY_FALSE)
+        return '-';
+    return '?';
 }
 
 /*****************************************************************************/
