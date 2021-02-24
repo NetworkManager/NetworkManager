@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <signal.h>
 
-#include "nm-utils/nm-vpn-plugin-macros.h"
+#include "libnm-glib-aux/nm-logging-syslog.h"
 
 #include "nm-dhcp-helper-api.h"
 
