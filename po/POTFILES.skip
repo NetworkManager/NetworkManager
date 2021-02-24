@@ -5,7 +5,7 @@ data/NetworkManager.service.in
 data/org.freedesktop.NetworkManager.policy.in
 examples/python/NetworkManager.py
 examples/python/systray/eggtrayicon.c
-shared/nm-utils/nm-vpn-editor-plugin-call.h
+src/contrib/nm-vpn-editor-plugin-call.h
 src/contrib/nm-vpn-plugin-utils.c
 vpn-daemons/openvpn
 vpn-daemons/pptp

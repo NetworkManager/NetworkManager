@@ -5522,13 +5522,14 @@ EXTRA_DIST += \
 	\
 	shared/nm-utils/nm-compat.c \
 	shared/nm-utils/nm-compat.h \
-	shared/nm-utils/nm-vpn-editor-plugin-call.h \
 	shared/nm-utils/nm-vpn-plugin-macros.h \
 	shared/meson.build \
 	\
 	src/meson.build \
 	\
 	src/libnm-core-public/nm-version-macros.h.in \
+	\
+	src/contrib/nm-vpn-editor-plugin-call.h \
 	\
 	tools/check-config-options.sh \
 	tools/check-docs.sh \
