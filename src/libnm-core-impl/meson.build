@@ -110,7 +110,6 @@ libnm_core_impl = static_library(
   dependencies: [
     dl_dep,
     libnm_core_public_dep,
-    libnm_core_intern_dep,
     uuid_dep,
   ],
   link_with: [

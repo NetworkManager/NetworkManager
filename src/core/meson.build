@@ -9,7 +9,6 @@ core_plugin_dep = declare_dependency(
     libnm_core_public_inc,
   ],
   dependencies: [
-    libnm_core_intern_dep,
     libnm_core_public_dep,
     glib_dep,
   ],
@@ -23,7 +22,6 @@ core_default_dep = declare_dependency(
   ],
   dependencies: [
     libnm_core_public_dep,
-    libnm_core_intern_dep,
   ],
 )
 
