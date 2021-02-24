@@ -38,13 +38,14 @@ libnm_systemd_core = static_library(
   ),
   include_directories: [
     incs,
+    top_inc,
     src_inc,
     src_core_inc,
   ],
   dependencies: [
-    glib_nm_default_dep,
     libnm_core_impl_dep,
     libnm_systemd_shared_dep,
+    glib_dep,
   ],
   link_with: libc_siphash,
 )

@@ -8,8 +8,8 @@ libnm_log_core = static_library(
     top_inc,
   ],
   dependencies: [
-    glib_nm_default_dep,
     libsystemd_dep,
+    glib_dep,
   ],
 )
 

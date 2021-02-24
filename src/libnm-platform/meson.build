@@ -4,6 +4,7 @@ libnm_platform = static_library(
   'nm-platform',
   include_directories: [
     src_inc,
+    top_inc,
   ],
   sources: [
     'nm-netlink.c',
@@ -11,7 +12,7 @@ libnm_platform = static_library(
     'nmp-netns.c',
   ],
   dependencies: [
-    glib_nm_default_dep,
+    glib_dep,
   ],
 )
 

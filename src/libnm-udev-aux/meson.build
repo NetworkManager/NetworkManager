@@ -8,7 +8,7 @@ libnm_udev_aux = static_library(
     top_inc,
   ],
   dependencies: [
-    glib_nm_default_dep,
+    glib_dep,
     libudev_dep,
   ],
 )
