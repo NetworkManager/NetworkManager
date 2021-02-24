@@ -112,7 +112,4 @@ libnm_core_impl = static_library(
     libnm_core_public_dep,
     uuid_dep,
   ],
-  link_with: [
-    libnm_crypto,
-  ],
 )

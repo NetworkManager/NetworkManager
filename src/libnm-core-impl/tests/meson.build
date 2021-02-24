@@ -30,6 +30,7 @@ foreach test_unit: test_units
     link_with: [
       libnm_core_aux_intern,
       libnm_core_impl,
+      libnm_crypto,
       libnm_base,
       libnm_log_null,
       libnm_systemd_shared,

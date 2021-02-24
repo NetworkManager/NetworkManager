@@ -91,6 +91,7 @@ libnm = shared_library(
     libnm_client_impl,
     libnm_core_aux_intern,
     libnm_core_impl,
+    libnm_crypto,
     libnm_base,
     libnm_udev_aux,
     libnm_systemd_shared,

@@ -19,6 +19,7 @@ executable(
     libnmi_core,
     libnm_core_aux_intern,
     libnm_core_impl,
+    libnm_crypto,
     libnm_platform,
     libnm_base,
     libnm_systemd_shared,
