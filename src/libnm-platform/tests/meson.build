@@ -3,13 +3,13 @@
 exe = executable(
   'test-nm-platform',
   'test-nm-platform.c',
-  dependencies: [
-    glib_dep,
-    libudev_dep,
-  ],
   include_directories: [
     src_inc,
     top_inc,
+  ],
+  dependencies: [
+    glib_dep,
+    libudev_dep,
   ],
   link_with: [
     libnm_platform,
@@ -23,7 +23,7 @@ exe = executable(
 )
 
 test(
-  'shared/nm-glib-aux/test-nm-platform',
+  'src/libnm-platform/tests/test-nm-platform',
   test_script,
   args: test_args + [exe.full_path()],
   timeout: default_test_timeout,

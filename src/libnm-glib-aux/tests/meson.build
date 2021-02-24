@@ -3,10 +3,12 @@
 exe = executable(
   'test-shared-general',
   'test-shared-general.c',
-  dependencies: glib_dep,
   include_directories: [
     src_inc,
     top_inc,
+  ],
+  dependencies: [
+    glib_dep,
   ],
   link_with: [
     libnm_log_null,
@@ -17,7 +19,7 @@ exe = executable(
 )
 
 test(
-  'shared/nm-glib-aux/test-shared-general',
+  'src/libnm-glib-aux/tests/test-shared-general',
   test_script,
   args: test_args + [exe.full_path()],
   timeout: default_test_timeout,
@@ -45,7 +47,7 @@ if jansson_dep.found()
   )
 
   test(
-    'shared/nm-glib-aux/test-json-aux',
+    'src/libnm-glib-aux/tests/test-json-aux',
     test_script,
     args: test_args + [exe.full_path()],
     timeout: default_test_timeout,

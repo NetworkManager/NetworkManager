@@ -38,7 +38,7 @@ foreach test_unit: test_units
   )
 
   test(
-    test_unit,
+    'src/libnm-client-impl/tests/' + test_unit,
     test_script,
     timeout: 90,
     args: test_args + [exe.full_path()],
