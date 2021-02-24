@@ -12,7 +12,3 @@ libnm_log_core = static_library(
     glib_dep,
   ],
 )
-
-libnm_log_core_dep = declare_dependency(
-  link_with: libnm_log_core,
-)

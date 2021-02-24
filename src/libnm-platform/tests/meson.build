@@ -4,7 +4,6 @@ exe = executable(
   'test-nm-platform',
   'test-nm-platform.c',
   dependencies: [
-    libnm_log_core_dep,
     libnm_platform_dep,
     glib_dep,
   ],
@@ -13,6 +12,7 @@ exe = executable(
     top_inc,
   ],
   link_with: [
+    libnm_log_core,
     libnm_glib_aux,
     libnm_std_aux,
     libc_siphash,
