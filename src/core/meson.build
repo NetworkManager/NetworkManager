@@ -76,7 +76,6 @@ libNetworkManagerBase = static_library(
   ) + platform_wifi_wext_source,
   dependencies: [
     core_default_dep,
-    libn_dhcp4_dep,
     libnm_core_impl_dep,
     libnm_systemd_shared_dep,
     libnm_udev_aux_dep,
@@ -90,7 +89,6 @@ nm_deps = [
   libnm_core_impl_dep,
   core_default_dep,
   dl_dep,
-  libn_acd_dep,
   libndp_dep,
   libudev_dep,
   logind_dep,
@@ -210,7 +208,6 @@ executable(
     dl_dep,
     libndp_dep,
     libudev_dep,
-    libn_acd_dep,
     libnm_glib_aux_dep_link,
     libnm_core_impl_dep_link,
   ],
@@ -220,6 +217,10 @@ executable(
     libnm_systemd_shared,
     libnm_base,
     libnm_glib_aux,
+    libn_acd,
+    libn_dhcp4,
+    libc_rbtree,
+    libc_siphash,
   ],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
@@ -251,6 +252,10 @@ if enable_tests
       libNetworkManagerTest,
       libnm_base,
       libnm_core_impl,
+      libn_acd,
+      libn_dhcp4,
+      libc_siphash,
+      libc_rbtree,
     ],
   )
 
@@ -288,6 +293,10 @@ NetworkManager_all_sym = executable(
     libNetworkManagerBase,
     libnm_core_impl,
     libnm_base,
+    libn_acd,
+    libn_dhcp4,
+    libc_rbtree,
+    libc_siphash,
   ],
 )
 
@@ -314,6 +323,10 @@ NetworkManager = executable(
     libNetworkManagerBase,
     libnm_core_impl,
     libnm_base,
+    libn_acd,
+    libn_dhcp4,
+    libc_rbtree,
+    libc_siphash,
   ],
   link_args: [
     '-rdynamic',
