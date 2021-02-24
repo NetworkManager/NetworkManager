@@ -1613,6 +1613,15 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      *
      * Since: 1.2
      **/
+    /* ---ifcfg-rh---
+     * property: wake-on-lan
+     * variable: ETHTOOL_OPTS, ETHTOOL_WAKE_ON_LAN
+     * description: Wake on Lan mode for ethernet. The setting "ignore" is expressed
+     * with "ETHTOOL_WAKE_ON_LAN=ignore". Otherwise, the "ETHTOOL_OPTS" variable is set
+     * with the value "wol" and several of the characters "p|u|m|b|a|g|s|f|d" as explained
+     * in the ethtool manual page.
+     * ---end---
+     */
     obj_properties[PROP_WAKE_ON_LAN] =
         g_param_spec_uint(NM_SETTING_WIRED_WAKE_ON_LAN,
                           "",
@@ -1631,6 +1640,14 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      *
      * Since: 1.2
      **/
+    /* ---ifcfg-rh---
+     * property: wake-on-lan-password
+     * variable: ETHTOOL_OPTS
+     * description: Password for secure-on based Wake-on-Lan. It is added as "sopass"
+     *    parameter in the ETHTOOL_OPTS variable.
+     * example: ETHTOOL_OPTS="wol gs sopass 00:11:22:33:44:55"
+     * ---end---
+     */
     obj_properties[PROP_WAKE_ON_LAN_PASSWORD] =
         g_param_spec_string(NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD,
                             "",
