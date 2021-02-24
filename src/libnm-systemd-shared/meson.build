@@ -51,7 +51,7 @@ libnm_systemd_shared = static_library(
     top_inc,
     src_inc,
   ],
-  dependencies: glib_nm_default_dep,
+  dependencies: glib_dep,
 )
 
 libnm_systemd_shared_dep = declare_dependency(

@@ -781,7 +781,6 @@ EXTRA_DIST += \
 
 EXTRA_DIST += \
 	src/libnm-glib-aux/tests/meson.build \
-	shared/README.md \
 	$(NULL)
 
 check_programs += src/libnm-glib-aux/tests/test-shared-general
@@ -5499,8 +5498,6 @@ EXTRA_DIST += \
 	docs/meson.build \
 	\
 	po/meson.build \
-	\
-	shared/meson.build \
 	\
 	src/meson.build \
 	\

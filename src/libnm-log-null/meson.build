@@ -7,5 +7,5 @@ libnm_log_null = static_library(
     src_inc,
     top_inc,
   ],
-  dependencies: glib_nm_default_dep,
+  dependencies: glib_dep,
 )
