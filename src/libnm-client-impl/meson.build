@@ -65,7 +65,6 @@ libnm_client_impl = static_library(
     libudev_dep,
     glib_dep,
   ],
-  link_with: libnm_log_null,
 )
 
 linker_script = join_paths(meson.current_source_dir(), 'libnm.ver')

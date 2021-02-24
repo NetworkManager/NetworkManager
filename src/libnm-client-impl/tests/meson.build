@@ -29,6 +29,7 @@ foreach test_unit: test_units
       libnm_base,
       libnm_udev_aux,
       libnm_systemd_shared,
+      libnm_log_null,
       libnm_glib_aux,
       libnm_std_aux,
       libc_siphash,
