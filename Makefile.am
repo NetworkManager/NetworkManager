@@ -1902,7 +1902,8 @@ src_libnm_client_impl_tests_test_remote_settings_client_CPPFLAGS = $(src_libnm_c
 src_libnm_client_impl_tests_test_secret_agent_CPPFLAGS = $(src_libnm_client_impl_tests_cppflags)
 
 src_libnm_client_impl_tests_test_libnm_SOURCES = \
-	shared/nm-utils/nm-compat.c \
+	src/contrib/nm-compat.c \
+	src/contrib/nm-compat.h \
 	src/libnm-client-impl/tests/test-libnm.c \
 	$(NULL)
 
@@ -5521,8 +5522,6 @@ EXTRA_DIST += \
 	\
 	po/meson.build \
 	\
-	shared/nm-utils/nm-compat.c \
-	shared/nm-utils/nm-compat.h \
 	shared/meson.build \
 	\
 	src/meson.build \
