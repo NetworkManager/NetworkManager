@@ -18,6 +18,7 @@ executable(
     libNetworkManagerBase,
     libnmi_core,
     libnm_core_impl,
+    libnm_platform,
     libnm_base,
     libnm_systemd_shared,
     libnm_log_core,

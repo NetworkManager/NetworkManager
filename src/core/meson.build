@@ -24,7 +24,6 @@ core_default_dep = declare_dependency(
   dependencies: [
     libnm_core_public_dep,
     libnm_core_intern_dep,
-    libnm_platform_dep,
   ],
 )
 
@@ -211,6 +210,7 @@ executable(
   link_with: [
     libNetworkManagerBase,
     libnm_systemd_core,
+    libnm_platform,
     libnm_systemd_shared,
     libnm_base,
     libnm_udev_aux,
@@ -250,8 +250,9 @@ if enable_tests
     dependencies: core_default_dep,
     link_with: [
       libNetworkManagerTest,
-      libnm_base,
       libnm_core_impl,
+      libnm_platform,
+      libnm_base,
       libnm_systemd_shared,
       libnm_udev_aux,
       libnm_log_core,
@@ -300,6 +301,7 @@ NetworkManager_all_sym = executable(
     libNetworkManager,
     libNetworkManagerBase,
     libnm_core_impl,
+    libnm_platform,
     libnm_base,
     libnm_log_core,
     libnm_udev_aux,
@@ -337,6 +339,7 @@ NetworkManager = executable(
     libNetworkManager,
     libNetworkManagerBase,
     libnm_core_impl,
+    libnm_platform,
     libnm_base,
     libnm_udev_aux,
     libnm_log_core,
