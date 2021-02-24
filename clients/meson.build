@@ -7,7 +7,12 @@ executable(
     libnm_dep,
     libnm_nm_default_dep,
     libnm_client_aux_extern_dep,
-    libnm_glib_aux_dep_link,
+    glib_dep,
+  ],
+  link_with: [
+    libnm_glib_aux,
+    libnm_std_aux,
+    libc_siphash,
   ],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,

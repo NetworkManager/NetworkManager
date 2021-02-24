@@ -8,7 +8,6 @@ libnm_core_aux_extern = static_library(
   dependencies: [
     libnm_core_aux_intern_dep,
     libnm_core_public_dep,
-    libnm_glib_aux_dep,
     glib_dep,
   ],
 )
@@ -20,7 +19,6 @@ libnm_core_aux_extern_dep = declare_dependency(
   dependencies: [
     libnm_core_aux_intern_dep,
     libnm_core_public_dep,
-    libnm_glib_aux_dep,
     glib_dep,
   ],
 )

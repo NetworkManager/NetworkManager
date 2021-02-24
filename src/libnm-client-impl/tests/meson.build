@@ -17,11 +17,15 @@ foreach test_unit: test_units
     dependencies: [
       libnm_core_impl_dep_link,
       libnm_nm_default_dep,
+      glib_dep,
     ],
     link_with: [
       libnm_client_impl,
       libnm_client_test,
       libnm_base,
+      libnm_glib_aux,
+      libnm_std_aux,
+      libc_siphash,
       libnmdbus,
     ],
   )

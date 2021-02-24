@@ -6,6 +6,16 @@ exe = executable(
   dependencies: [
     libnm_log_core_dep,
     libnm_platform_dep,
+    glib_dep,
+  ],
+  include_directories: [
+    src_inc,
+    top_inc,
+  ],
+  link_with: [
+    libnm_glib_aux,
+    libnm_std_aux,
+    libc_siphash,
   ],
 )
 

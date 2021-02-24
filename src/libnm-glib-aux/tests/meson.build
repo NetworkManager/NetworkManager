@@ -3,8 +3,17 @@
 exe = executable(
   'test-shared-general',
   'test-shared-general.c',
-  dependencies: libnm_glib_aux_dep_link,
-  link_with: libnm_log_null,
+  dependencies: glib_dep,
+  include_directories: [
+    src_inc,
+    top_inc,
+  ],
+  link_with: [
+    libnm_log_null,
+    libnm_glib_aux,
+    libnm_std_aux,
+    libc_siphash,
+  ],
 )
 
 test(
@@ -19,11 +28,20 @@ if jansson_dep.found()
     'test-json-aux',
     'test-json-aux.c',
     dependencies: [
-      libnm_glib_aux_dep_link,
+      glib_dep,
       jansson_dep,
       dl_dep,
     ],
-    link_with: libnm_log_null,
+    include_directories: [
+      src_inc,
+      top_inc,
+    ],
+    link_with: [
+      libnm_log_null,
+      libnm_glib_aux,
+      libnm_std_aux,
+      libc_siphash,
+    ],
   )
 
   test(

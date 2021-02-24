@@ -7,7 +7,12 @@ exe = executable(
     libnm_cloud_setup_core_dep,
     libnmc_base_dep,
     libnmc_dep,
-    libnm_glib_aux_dep_link,
+    glib_dep,
+  ],
+  link_with: [
+    libnm_glib_aux,
+    libnm_std_aux,
+    libc_siphash,
   ],
 )
 

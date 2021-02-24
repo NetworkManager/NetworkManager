@@ -9,14 +9,19 @@ libnm_base = static_library(
   sources: files(
     'nm-ethtool-base.c',
   ),
-  dependencies: libnm_glib_aux_dep_link,
+  dependencies: glib_dep,
 )
 
 libnm_base_dep = declare_dependency(
-  dependencies: libnm_glib_aux_dep,
+  dependencies: glib_dep,
 )
 
 libnm_base_dep_link = declare_dependency(
-  dependencies: libnm_glib_aux_dep_link,
-  link_with: libnm_base,
+  dependencies: glib_dep,
+  link_with: [
+    libnm_base,
+    libnm_glib_aux,
+    libnm_std_aux,
+    libc_siphash,
+  ],
 )

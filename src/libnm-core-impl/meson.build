@@ -7,7 +7,6 @@ libnm_crypto_nss = static_library(
   sources: 'nm-crypto-nss.c',
   dependencies: [
     libnm_core_public_dep,
-    libnm_glib_aux_dep_link,
     crypto_nss_dep,
   ],
 )
@@ -17,7 +16,6 @@ libnm_crypto_gnutls = static_library(
   sources: 'nm-crypto-gnutls.c',
   dependencies: [
     libnm_core_public_dep,
-    libnm_glib_aux_dep_link,
     crypto_gnutls_dep,
   ],
 )
@@ -114,7 +112,6 @@ libnm_core_impl = static_library(
     libnm_systemd_shared_dep,
     libnm_core_public_dep,
     libnm_core_intern_dep,
-    libnm_glib_aux_dep_link,
     uuid_dep,
   ],
   link_with: [

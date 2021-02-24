@@ -6,13 +6,18 @@ exe = executable(
     'test-dispatcher-envp.c',
     nmdbus_dispatcher_sources,
   ],
-  include_directories: dispatcher_inc,
   dependencies: [
     libnm_nm_default_dep,
-    libnm_glib_aux_dep_link,
+    glib_dep,
   ],
+  include_directories: dispatcher_inc,
   c_args: introspection_extra_cflags,
-  link_with: libnm_dispatcher_core,
+  link_with: [
+    libnm_dispatcher_core,
+    libnm_glib_aux,
+    libnm_std_aux,
+    libc_siphash,
+  ],
 )
 
 test(

@@ -6,8 +6,12 @@ nm_pppd_plugin = shared_module(
   sources: 'nm-pppd-plugin.c',
   dependencies: [
     libnm_core_impl_dep_link,
-    libnm_glib_aux_dep_link,
     glib_dep,
+  ],
+  link_with: [
+    libnm_glib_aux,
+    libnm_std_aux,
+    libc_siphash,
   ],
   install: true,
   install_dir: pppd_plugin_dir,
