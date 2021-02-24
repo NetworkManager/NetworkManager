@@ -1,17 +1,5 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
-libnm_nm_default_dep = declare_dependency(
-  include_directories: [
-    libnm_client_public_inc,
-    libnm_core_public_inc,
-    top_inc,
-    src_inc,
-  ],
-  dependencies: [
-    libnm_core_public_dep,
-  ],
-)
-
 libnm_client_impl_sources = files(
   'nm-access-point.c',
   'nm-active-connection.c',
@@ -72,8 +60,10 @@ libnm_client_impl = static_library(
   sources: libnm_client_impl_sources + libnm_client_public_enum_sources,
   dependencies: [
     libnmdbus_dep,
-    libnm_nm_default_dep,
+    libnm_core_public_dep,
+    libnm_client_public_dep,
     libudev_dep,
+    glib_dep,
   ],
   link_with: libnm_log_null,
 )
@@ -84,8 +74,10 @@ libnm = shared_library(
   'nm',
   version: libnm_version,
   dependencies: [
-    libnm_nm_default_dep,
+    libnm_core_public_dep,
+    libnm_client_public_dep,
     libudev_dep,
+    glib_dep,
   ],
   link_whole: [
     libnm_client_impl,
@@ -109,6 +101,11 @@ libnm = shared_library(
 libnm_dep = declare_dependency(
   sources: libnm_client_public_enum_sources[1],
   include_directories: libnm_client_public_inc,
+  dependencies: [
+    libnm_core_public_dep,
+    libnm_client_public_dep,
+    glib_dep,
+  ],
   link_with: libnm,
 )
 

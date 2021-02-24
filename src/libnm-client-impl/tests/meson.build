@@ -16,7 +16,7 @@ foreach test_unit: test_units
     ],
     dependencies: [
       libnm_core_public_dep,
-      libnm_nm_default_dep,
+      libnm_client_public_dep,
       glib_dep,
       libudev_dep,
     ],

@@ -7,7 +7,7 @@ exe = executable(
     nmdbus_dispatcher_sources,
   ],
   dependencies: [
-    libnm_nm_default_dep,
+    libnm_dep,
     glib_dep,
   ],
   include_directories: dispatcher_inc,

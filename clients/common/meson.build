@@ -12,7 +12,6 @@ libnmc_base = static_library(
   ),
   dependencies: [
     libnm_dep,
-    libnm_nm_default_dep,
   ],
 )
 
@@ -20,7 +19,6 @@ libnmc_base_dep = declare_dependency(
   include_directories: common_inc,
   dependencies: [
     libnm_dep,
-    libnm_nm_default_dep,
   ],
   link_with: libnmc_base,
 )
@@ -72,7 +70,6 @@ libnmc = static_library(
   ),
   dependencies: [
     libnm_dep,
-    libnm_nm_default_dep,
   ],
   link_depends: settings_docs_source,
 )
@@ -81,7 +78,6 @@ libnmc_dep = declare_dependency(
   include_directories: common_inc,
   dependencies: [
     libnm_dep,
-    libnm_nm_default_dep,
   ],
   link_with: libnmc,
 )

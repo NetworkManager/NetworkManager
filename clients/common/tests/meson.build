@@ -29,7 +29,6 @@ exe = executable(
   'test-libnm-core-aux.c',
   dependencies: [
     libnm_dep,
-    libnm_nm_default_dep,
     glib_dep,
   ],
   link_with: [

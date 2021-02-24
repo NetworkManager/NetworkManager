@@ -5,7 +5,6 @@ executable(
   'nm-online' + '.c',
   dependencies: [
     libnm_dep,
-    libnm_nm_default_dep,
     libnm_client_aux_extern_dep,
     glib_dep,
   ],

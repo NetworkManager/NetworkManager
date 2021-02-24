@@ -19,7 +19,6 @@ libnm_dispatcher_core = static_library(
   sources: 'nm-dispatcher-utils.c',
   dependencies: [
     libnm_dep,
-    libnm_nm_default_dep,
     libnm_client_aux_extern_dep,
   ],
 )
@@ -36,7 +35,6 @@ executable(
   'nm-dispatcher.c',
   dependencies: [
     libnm_dep,
-    libnm_nm_default_dep,
     glib_dep,
   ],
   link_with: [
