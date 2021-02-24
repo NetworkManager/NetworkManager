@@ -56,7 +56,7 @@ libnm_client_headers = files(
 
 libnm_client_public_enum_sources = gnome.mkenums(
   'nm-enum-types',
-  sources: libnm_client_headers + [nm_version_macro_header],
+  sources: libnm_client_headers,
   identifier_prefix: nm_id_prefix,
   c_template: 'nm-enum-types.c.template',
   h_template: 'nm-enum-types.h.template',
