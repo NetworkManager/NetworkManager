@@ -426,6 +426,7 @@ src_libnm_glib_aux_libnm_glib_aux_la_SOURCES = \
 	src/libnm-glib-aux/nm-logging-base.c \
 	src/libnm-glib-aux/nm-logging-base.h \
 	src/libnm-glib-aux/nm-logging-fwd.h \
+	src/libnm-glib-aux/nm-logging-syslog.h \
 	src/libnm-glib-aux/nm-macros-internal.h \
 	src/libnm-glib-aux/nm-obj.h \
 	src/libnm-glib-aux/nm-random-utils.c \
@@ -5522,7 +5523,6 @@ EXTRA_DIST += \
 	\
 	shared/nm-utils/nm-compat.c \
 	shared/nm-utils/nm-compat.h \
-	shared/nm-utils/nm-vpn-plugin-macros.h \
 	shared/meson.build \
 	\
 	src/meson.build \
