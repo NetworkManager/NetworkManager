@@ -205,6 +205,7 @@ executable(
   ],
   link_with: [
     libNetworkManagerBase,
+    libnm_core_aux_intern,
     libnm_core_impl,
     libnm_systemd_core,
     libnm_platform,
@@ -247,6 +248,7 @@ if enable_tests
     dependencies: core_default_dep,
     link_with: [
       libNetworkManagerTest,
+      libnm_core_aux_intern,
       libnm_core_impl,
       libnm_platform,
       libnm_base,
@@ -297,6 +299,7 @@ NetworkManager_all_sym = executable(
   link_whole: [
     libNetworkManager,
     libNetworkManagerBase,
+    libnm_core_aux_intern,
     libnm_core_impl,
     libnm_platform,
     libnm_base,
@@ -335,6 +338,7 @@ NetworkManager = executable(
   link_with: [
     libNetworkManager,
     libNetworkManagerBase,
+    libnm_core_aux_intern,
     libnm_core_impl,
     libnm_platform,
     libnm_base,

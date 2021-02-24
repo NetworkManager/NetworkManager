@@ -17,6 +17,7 @@ executable(
   link_with: [
     libNetworkManagerBase,
     libnmi_core,
+    libnm_core_aux_intern,
     libnm_core_impl,
     libnm_platform,
     libnm_base,

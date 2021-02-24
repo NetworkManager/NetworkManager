@@ -89,6 +89,7 @@ libnm = shared_library(
   ],
   link_whole: [
     libnm_client_impl,
+    libnm_core_aux_intern,
     libnm_core_impl,
     libnm_base,
     libnm_udev_aux,

@@ -114,6 +114,5 @@ libnm_core_impl = static_library(
   ],
   link_with: [
     libnm_crypto,
-    libnm_core_aux_intern,
   ],
 )

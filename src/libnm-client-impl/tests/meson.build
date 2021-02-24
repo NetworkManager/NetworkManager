@@ -23,6 +23,7 @@ foreach test_unit: test_units
     link_with: [
       libnm_client_impl,
       libnm_client_test,
+      libnm_core_aux_intern,
       libnm_core_impl,
       libnm_base,
       libnm_udev_aux,

@@ -28,6 +28,7 @@ foreach test_unit: test_units
       libnm_core_public_dep,
     ],
     link_with: [
+      libnm_core_aux_intern,
       libnm_core_impl,
       libnm_base,
       libnm_log_null,
