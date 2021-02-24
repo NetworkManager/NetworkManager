@@ -6,7 +6,6 @@ libnm_core_aux_extern = static_library(
     'nm-libnm-core-aux.c',
   ),
   dependencies: [
-    libnm_core_aux_intern_dep,
     libnm_core_public_dep,
     glib_dep,
   ],
@@ -17,7 +16,6 @@ libnm_core_aux_extern_dep = declare_dependency(
     src_inc,
   ],
   dependencies: [
-    libnm_core_aux_intern_dep,
     libnm_core_public_dep,
     glib_dep,
   ],

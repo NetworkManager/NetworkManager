@@ -6,7 +6,7 @@ libnm_client_aux_extern = static_library(
     'nm-libnm-aux.c',
   ),
   dependencies: [
-    libnm_core_aux_intern_dep,
+    libnm_core_public_dep,
     libnm_dep,
   ],
 )

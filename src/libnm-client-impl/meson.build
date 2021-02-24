@@ -72,7 +72,6 @@ libnm_client_impl = static_library(
   sources: libnm_client_impl_sources + libnm_client_public_enum_sources,
   dependencies: [
     libnmdbus_dep,
-    libnm_core_aux_intern_dep,
     libnm_nm_default_dep,
     libudev_dep,
   ],

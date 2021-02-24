@@ -12,7 +12,6 @@ libnm_client_test = static_library(
     top_inc,
   ],
   dependencies: [
-    libnm_core_aux_intern_dep,
     libnm_core_public_dep,
     glib_dep,
   ],
