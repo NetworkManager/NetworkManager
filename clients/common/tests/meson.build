@@ -6,10 +6,10 @@ exe = executable(
   dependencies: [
     libnmc_base_dep,
     libnmc_dep,
-    libnm_core_aux_extern_dep_link,
     glib_dep,
   ],
   link_with: [
+    libnm_core_aux_extern,
     libnm_core_aux_intern,
     libnm_base,
     libnm_glib_aux,
@@ -29,11 +29,11 @@ exe = executable(
   'test-libnm-core-aux.c',
   dependencies: [
     libnm_dep,
-    libnm_core_aux_extern_dep_link,
     libnm_nm_default_dep,
     glib_dep,
   ],
   link_with: [
+    libnm_core_aux_extern,
     libnm_log_null,
     libnm_glib_aux,
     libnm_std_aux,

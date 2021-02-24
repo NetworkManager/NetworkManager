@@ -73,7 +73,6 @@ libnmc = static_library(
   dependencies: [
     libnm_dep,
     libnm_nm_default_dep,
-    libnm_core_aux_extern_dep,
   ],
   link_depends: settings_docs_source,
 )

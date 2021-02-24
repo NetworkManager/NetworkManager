@@ -53,11 +53,11 @@ executable(
     libnm_cloud_setup_core_dep,
     libnmc_base_dep,
     libnmc_dep,
-    libnm_core_aux_extern_dep_link,
     libcurl_dep,
     glib_dep,
   ],
   link_with: [
+    libnm_core_aux_extern,
     libnm_core_aux_intern,
     libnm_log_null,
     libnm_glib_aux,

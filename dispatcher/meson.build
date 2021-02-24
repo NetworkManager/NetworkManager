@@ -37,10 +37,10 @@ executable(
   dependencies: [
     libnm_dep,
     libnm_nm_default_dep,
-    libnm_core_aux_extern_dep_link,
     glib_dep,
   ],
   link_with: [
+    libnm_core_aux_extern,
     libnm_dispatcher_core,
     libnm_glib_aux,
     libnm_std_aux,

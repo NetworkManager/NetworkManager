@@ -51,10 +51,10 @@ executable(
     libnmc_dep,
     libnmt_newt_dep,
     libnm_client_aux_extern_dep,
-    libnm_core_aux_extern_dep_link,
     glib_dep,
   ],
   link_with: [
+    libnm_core_aux_extern,
     libnm_core_aux_intern,
     libnm_base,
     libnm_log_null,

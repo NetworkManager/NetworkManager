@@ -10,18 +10,3 @@ libnm_core_aux_extern = static_library(
     glib_dep,
   ],
 )
-
-libnm_core_aux_extern_dep = declare_dependency(
-  include_directories: [
-    src_inc,
-  ],
-  dependencies: [
-    libnm_core_public_dep,
-    glib_dep,
-  ],
-)
-
-libnm_core_aux_extern_dep_link = declare_dependency(
-  dependencies: libnm_core_aux_extern_dep,
-  link_with: libnm_core_aux_extern,
-)
