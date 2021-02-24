@@ -40,7 +40,6 @@ libnm_systemd_core = static_library(
     incs,
     src_inc,
     src_core_inc,
-    shared_inc,
   ],
   dependencies: [
     glib_nm_default_dep,
@@ -53,7 +52,6 @@ libnm_systemd_core = static_library(
 libnm_systemd_core_dep = declare_dependency(
   include_directories: [
     incs,
-    shared_inc,
   ],
   dependencies: [
     glib_dep,

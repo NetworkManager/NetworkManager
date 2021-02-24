@@ -52,7 +52,6 @@ libn_acd = static_library(
 )
 
 libn_acd_dep = declare_dependency(
-  include_directories: shared_inc,
   link_with: libn_acd,
 )
 
@@ -84,7 +83,6 @@ libn_dhcp4 = static_library(
 )
 
 libn_dhcp4_dep = declare_dependency(
-  include_directories: shared_inc,
   link_with: libn_dhcp4,
 )
 

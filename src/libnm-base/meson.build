@@ -3,7 +3,6 @@
 libnm_base = static_library(
   'nm-base',
   include_directories: [
-    shared_inc,
     src_inc,
     top_inc,
   ],
@@ -14,7 +13,6 @@ libnm_base = static_library(
 )
 
 libnm_base_dep = declare_dependency(
-  include_directories: shared_inc,
   dependencies: libnm_glib_aux_dep,
 )
 

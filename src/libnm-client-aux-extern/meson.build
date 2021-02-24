@@ -12,6 +12,5 @@ libnm_client_aux_extern = static_library(
 )
 
 libnm_client_aux_extern_dep = declare_dependency(
-  include_directories: [shared_inc],
   link_with: [libnm_client_aux_extern],
 )
