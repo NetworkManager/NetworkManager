@@ -39,7 +39,10 @@ exe = executable(
   ],
   dependencies: [
     libnm_systemd_core_dep,
-    libnm_systemd_shared_dep,
+  ],
+  link_with: [
+    libnm_systemd_shared,
+    libc_siphash,
   ],
 )
 

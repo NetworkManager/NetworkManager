@@ -19,6 +19,7 @@ executable(
     libnmi_core,
     libnm_core_impl,
     libnm_base,
+    libnm_systemd_shared,
     libnm_log_core,
     libnm_glib_aux,
     libnm_std_aux,

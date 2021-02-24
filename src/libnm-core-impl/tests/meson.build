@@ -30,7 +30,10 @@ foreach test_unit: test_units
       libnm_core_impl_dep_link,
       libnm_base_dep_link,
     ],
-    link_with: libnm_log_null,
+    link_with: [
+      libnm_log_null,
+      libnm_systemd_shared,
+    ],
   )
 
   test(

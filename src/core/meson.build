@@ -76,7 +76,6 @@ libNetworkManagerBase = static_library(
   dependencies: [
     core_default_dep,
     libnm_core_impl_dep,
-    libnm_systemd_shared_dep,
     libnm_udev_aux_dep,
     libsystemd_dep,
     libudev_dep,

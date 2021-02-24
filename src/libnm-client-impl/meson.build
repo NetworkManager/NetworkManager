@@ -90,6 +90,7 @@ libnm = shared_library(
     libnm_client_impl,
     libnm_core_impl,
     libnm_base,
+    libnm_systemd_shared,
     libnm_log_null,
     libnm_glib_aux,
     libnm_std_aux,

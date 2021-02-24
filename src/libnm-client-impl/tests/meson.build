@@ -23,6 +23,7 @@ foreach test_unit: test_units
       libnm_client_impl,
       libnm_client_test,
       libnm_base,
+      libnm_systemd_shared,
       libnm_glib_aux,
       libnm_std_aux,
       libc_siphash,

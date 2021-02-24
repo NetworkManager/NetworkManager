@@ -54,12 +54,10 @@ libnm_systemd_shared = static_library(
   dependencies: glib_dep,
 )
 
-libnm_systemd_shared_dep = declare_dependency(
+libnm_systemd_shared_dep_inc = declare_dependency(
   include_directories: include_directories(
     'sd-adapt-shared',
     'src/basic',
     'src/shared',
   ),
-  dependencies: glib_dep,
-  link_with: libnm_systemd_shared,
 )
