@@ -21,6 +21,7 @@ executable(
     libnm_base,
     libnm_systemd_shared,
     libnm_log_core,
+    libnm_udev_aux,
     libnm_glib_aux,
     libnm_std_aux,
     libc_siphash,

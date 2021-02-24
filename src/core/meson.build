@@ -76,7 +76,6 @@ libNetworkManagerBase = static_library(
   dependencies: [
     core_default_dep,
     libnm_core_impl_dep,
-    libnm_udev_aux_dep,
     libsystemd_dep,
     libudev_dep,
   ],
@@ -203,17 +202,18 @@ executable(
   'nm-iface-helper.c',
   dependencies: [
     core_default_dep,
-    dl_dep,
-    libndp_dep,
-    libudev_dep,
     libnm_core_impl_dep_link,
     glib_dep,
+    libudev_dep,
+    libndp_dep,
+    dl_dep,
   ],
   link_with: [
     libNetworkManagerBase,
     libnm_systemd_core,
     libnm_systemd_shared,
     libnm_base,
+    libnm_udev_aux,
     libnm_log_core,
     libnm_glib_aux,
     libnm_std_aux,
@@ -252,6 +252,8 @@ if enable_tests
       libNetworkManagerTest,
       libnm_base,
       libnm_core_impl,
+      libnm_systemd_shared,
+      libnm_udev_aux,
       libnm_log_core,
       libnm_glib_aux,
       libnm_std_aux,
@@ -289,7 +291,10 @@ subdir('settings/plugins')
 NetworkManager_all_sym = executable(
   'NetworkManager-all-sym',
   'main.c',
-  dependencies: nm_deps,
+  dependencies: [
+    nm_deps,
+    libudev_dep,
+  ],
   link_args: '-Wl,--no-gc-sections',
   link_whole: [
     libNetworkManager,
@@ -297,6 +302,7 @@ NetworkManager_all_sym = executable(
     libnm_core_impl,
     libnm_base,
     libnm_log_core,
+    libnm_udev_aux,
     libnm_glib_aux,
     libnm_std_aux,
     libn_acd,
@@ -323,12 +329,16 @@ ver_script = custom_target(
 NetworkManager = executable(
   'NetworkManager',
   'main.c',
-  dependencies: nm_deps,
+  dependencies: [
+    nm_deps,
+    libudev_dep,
+  ],
   link_with: [
     libNetworkManager,
     libNetworkManagerBase,
     libnm_core_impl,
     libnm_base,
+    libnm_udev_aux,
     libnm_log_core,
     libnm_glib_aux,
     libnm_std_aux,

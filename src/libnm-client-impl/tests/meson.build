@@ -18,11 +18,13 @@ foreach test_unit: test_units
       libnm_core_impl_dep_link,
       libnm_nm_default_dep,
       glib_dep,
+      libudev_dep,
     ],
     link_with: [
       libnm_client_impl,
       libnm_client_test,
       libnm_base,
+      libnm_udev_aux,
       libnm_systemd_shared,
       libnm_glib_aux,
       libnm_std_aux,

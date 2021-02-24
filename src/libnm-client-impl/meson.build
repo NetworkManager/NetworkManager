@@ -74,7 +74,6 @@ libnm_client_impl = static_library(
     libnmdbus_dep,
     libnm_core_aux_intern_dep,
     libnm_nm_default_dep,
-    libnm_udev_aux_dep,
     libudev_dep,
   ],
   link_with: libnm_log_null,
@@ -85,11 +84,15 @@ linker_script = join_paths(meson.current_source_dir(), 'libnm.ver')
 libnm = shared_library(
   'nm',
   version: libnm_version,
-  dependencies: libnm_nm_default_dep,
+  dependencies: [
+    libnm_nm_default_dep,
+    libudev_dep,
+  ],
   link_whole: [
     libnm_client_impl,
     libnm_core_impl,
     libnm_base,
+    libnm_udev_aux,
     libnm_systemd_shared,
     libnm_log_null,
     libnm_glib_aux,
