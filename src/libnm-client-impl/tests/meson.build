@@ -22,6 +22,7 @@ foreach test_unit: test_units
       libnm_client_impl,
       libnm_client_test,
       libnm_base,
+      libnmdbus,
     ],
   )
 
