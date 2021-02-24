@@ -19,6 +19,6 @@ check_cmp() {
     die "files \"$a\" and \"$b\" differ!"
 }
 
-check_cmp shared/nm-base/nm-ethtool-utils-base.h libnm/nm-ethtool-utils.h
+check_cmp src/libnm-base/nm-ethtool-utils-base.h src/libnm-client-public/nm-ethtool-utils.h
 check_cmp src/libnm-core-intern/nm-meta-setting-base-impl.h clients/common/nm-meta-setting-base-impl.h
 check_cmp src/libnm-core-impl/nm-meta-setting-base-impl.c clients/common/nm-meta-setting-base-impl.c

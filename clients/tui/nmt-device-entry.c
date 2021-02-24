@@ -21,7 +21,7 @@
  * to implement that then we should make it just an #NmtNewtEntry.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "nmt-device-entry.h"
 

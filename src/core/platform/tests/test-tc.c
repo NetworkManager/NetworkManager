@@ -6,8 +6,8 @@
 
 #include "nm-test-utils-core.h"
 #include "platform/nmp-object.h"
-#include "nm-platform/nmp-netns.h"
-#include "nm-platform/nm-platform-utils.h"
+#include "libnm-platform/nmp-netns.h"
+#include "libnm-platform/nm-platform-utils.h"
 #include "test-common.h"
 
 static NMPObject *

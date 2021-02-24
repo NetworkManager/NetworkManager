@@ -13,9 +13,9 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
-#include "nm-std-aux/c-list-util.h"
-#include "nm-glib-aux/nm-c-list.h"
-#include "nm-glib-aux/nm-io-utils.h"
+#include "libnm-std-aux/c-list-util.h"
+#include "libnm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-io-utils.h"
 
 #include "nm-connection.h"
 #include "nm-setting.h"
@@ -25,7 +25,7 @@
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-core-intern/nm-keyfile-internal.h"
 
-#include "systemd/nm-sd-utils-shared.h"
+#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "settings/nm-settings-plugin.h"
 #include "settings/nm-settings-storage.h"

@@ -216,8 +216,8 @@ else
                 BUILDDIR="$(dirname "$BUILDDIR")"
                 [[ "$BUILDDIR" == / ]] && BUILDDIR=
                 [[ -z "$BUILDDIR" ]] && break
-                [[ -e "$BUILDDIR/libnm/.libs/libnm.so" ]] && break
-                [[ -e "$BUILDDIR/libnm/libnm.so" ]] && break
+                [[ -e "$BUILDDIR/src/libnm-client-impl/.libs/libnm.so" ]] && break
+                [[ -e "$BUILDDIR/src/libnm-client-impl/libnm.so" ]] && break
             done
         fi
     fi
@@ -244,7 +244,7 @@ TEST_NAME="${TEST##*/}"
 
 if [ -z "${NMTST_LAUNCH_DBUS}" ]; then
     # autodetect whether to launch D-Bus based on the test path.
-    if [[ $TEST_PATH == */libnm/tests ]]; then
+    if [[ $TEST_PATH == */src/libnm-client-impl/tests ]]; then
         NMTST_LAUNCH_DBUS=1
     else
         NMTST_LAUNCH_DBUS=0
@@ -270,12 +270,12 @@ fi
 [ -x "$TEST" ] || die "Cannot execute test \"$TEST\""
 
 if [[ -n "$BUILDDIR" ]]; then
-    if [[ -d "$BUILDDIR/libnm" ]]; then
-        export GI_TYPELIB_PATH="$BUILDDIR/libnm/${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH}"
-        if [[ -d "$BUILDDIR/libnm/.libs" ]]; then
-            export LD_LIBRARY_PATH="$BUILDDIR/libnm/.libs${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    if [[ -d "$BUILDDIR/src/libnm-client-impl" ]]; then
+        export GI_TYPELIB_PATH="$BUILDDIR/src/libnm-client-impl/${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH}"
+        if [[ -d "$BUILDDIR/src/libnm-client-impl/.libs" ]]; then
+            export LD_LIBRARY_PATH="$BUILDDIR/src/libnm-client-impl/.libs${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
         else
-            export LD_LIBRARY_PATH="$BUILDDIR/libnm${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+            export LD_LIBRARY_PATH="$BUILDDIR/src/libnm-client-impl${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
         fi
     fi
 fi

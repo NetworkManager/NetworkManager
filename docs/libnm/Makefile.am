@@ -17,8 +17,11 @@ DOC_SOURCE_DIR= \
 	$(top_srcdir)/src/libnm-core-public \
 	$(top_builddir)/src/libnm-core-impl \
 	$(top_srcdir)/src/libnm-core-impl \
-	$(top_srcdir)/libnm \
-	$(top_builddir)/libnm
+	$(top_srcdir)/src/libnm-client-public \
+	$(top_builddir)/src/libnm-client-public \
+	$(top_srcdir)/src/libnm-client-impl \
+	$(top_builddir)/src/libnm-client-impl \
+	$(NULL)
 
 # Extra options to supply to gtkdoc-scan.
 SCAN_OPTIONS=--rebuild-types --rebuild-sections --ignore-decorators="NM_AVAILABLE_IN_\d_\d\d?|NM_DEPRECATED_IN_\d_\d\d?"
@@ -30,8 +33,8 @@ MKDB_OPTIONS=--sgml-mode --output-format=xml
 FIXXREF_OPTIONS=
 
 # Used for dependencies.
-HFILE_GLOB=$(top_srcdir)/src/libnm-core-public/*.h $(top_srcdir)/libnm/*.h
-CFILE_GLOB=$(top_srcdir)/src/libnm-core-impl/*.c $(top_srcdir)/libnm/*.c
+HFILE_GLOB=$(top_srcdir)/src/libnm-core-public/*.h $(top_srcdir)/src/libnm-client-public/*.h
+CFILE_GLOB=$(top_srcdir)/src/libnm-core-impl/*.c $(top_srcdir)/src/libnm-client-impl/*.c
 
 # Header files to ignore when scanning.
 IGNORE_HFILES= \
@@ -88,14 +91,14 @@ extra_files = libnm.png
 GTKDOC_CFLAGS = \
 	-I$(top_builddir)/src/libnm-core-public \
 	-I$(top_srcdir)/src/libnm-core-public \
-	-I$(top_builddir)/libnm \
-	-I$(top_srcdir)/libnm \
+	-I$(top_srcdir)/src/libnm-client-public \
+	-I$(top_builddir)/src/libnm-client-public \
 	-DNM_VERSION_MIN_REQUIRED=NM_VERSION_0_9_8 \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_EXEC_CFLAGS)
 
 GTKDOC_LIBS = \
-	$(top_builddir)/libnm/libnm.la \
+	$(top_builddir)/src/libnm-client-impl/libnm.la \
 	$(GLIB_LIBS) \
 	$(SANITIZER_EXEC_LDFLAGS)
 

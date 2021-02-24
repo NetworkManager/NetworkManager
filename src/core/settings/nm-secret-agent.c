@@ -10,8 +10,8 @@
 #include <sys/types.h>
 #include <pwd.h>
 
-#include "nm-glib-aux/nm-c-list.h"
-#include "nm-glib-aux/nm-dbus-aux.h"
+#include "libnm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-dbus-aux.h"
 #include "nm-dbus-interface.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-core-aux-intern/nm-auth-subject.h"

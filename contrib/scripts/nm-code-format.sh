@@ -8,17 +8,17 @@ die() {
 }
 
 EXCLUDE=(
-    ":(exclude)shared/c-list"
-    ":(exclude)shared/c-list"
-    ":(exclude)shared/c-list"
-    ":(exclude)shared/c-rbtree"
-    ":(exclude)shared/c-siphash"
-    ":(exclude)shared/c-stdaux"
-    ":(exclude)shared/n-acd"
-    ":(exclude)shared/n-dhcp4"
-    ":(exclude)shared/nm-std-aux/unaligned.h"
-    ":(exclude)shared/systemd/src"
+    ":(exclude)src/c-list"
+    ":(exclude)src/c-list"
+    ":(exclude)src/c-list"
+    ":(exclude)src/c-rbtree"
+    ":(exclude)src/c-siphash"
+    ":(exclude)src/c-stdaux"
     ":(exclude)src/core/systemd/src"
+    ":(exclude)src/libnm-std-aux/unaligned.h"
+    ":(exclude)src/libnm-systemd-shared/src"
+    ":(exclude)src/n-acd"
+    ":(exclude)src/n-dhcp4"
 )
 
 NM_ROOT="$(git rev-parse --show-toplevel)" || die "not inside a git repository"

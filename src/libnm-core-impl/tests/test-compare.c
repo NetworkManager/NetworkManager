@@ -11,7 +11,7 @@
 
 #include "nm-property-compare.h"
 
-#include "nm-utils/nm-test-utils.h"
+#include "libnm-glib-aux/nm-test-utils.h"
 
 static void
 compare_ints(void)

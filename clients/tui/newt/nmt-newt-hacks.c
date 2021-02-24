@@ -11,7 +11,7 @@
  * functions that were added after 0.52.15.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "nmt-newt-hacks.h"
 

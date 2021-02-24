@@ -13,12 +13,12 @@
 #include <stdarg.h>
 #include <ndp.h>
 
-#include "nm-glib-aux/nm-str-buf.h"
-#include "systemd/nm-sd-utils-shared.h"
+#include "libnm-glib-aux/nm-str-buf.h"
+#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 #include "nm-ndisc-private.h"
 #include "NetworkManagerUtils.h"
 #include "platform/nm-platform.h"
-#include "nm-platform/nmp-netns.h"
+#include "libnm-platform/nmp-netns.h"
 
 #define _NMLOG_PREFIX_NAME "ndisc-lndp"
 

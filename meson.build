@@ -4,7 +4,7 @@ project(
   'NetworkManager', 'c',
 # NOTE: When incrementing version also:
 #  - add corresponding NM_VERSION_x_y_z macros in
-#    "shared/nm-version-macros.h.in"
+#    "src/libnm-core-public/nm-version-macros.h.in"
 #  - update number in configure.ac
   version: '1.31.1',
   license: 'GPL2+',
@@ -919,9 +919,7 @@ fi
 content_files = []
 
 subdir('introspection')
-subdir('shared')
 subdir('src')
-subdir('libnm')
 subdir('dispatcher')
 subdir('clients')
 subdir('data')

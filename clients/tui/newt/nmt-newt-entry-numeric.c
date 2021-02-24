@@ -13,7 +13,7 @@
  * #NmtNewtEntryValidator functions, so you should not set your own.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include <stdlib.h>
 

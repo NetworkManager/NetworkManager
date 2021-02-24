@@ -4,7 +4,7 @@
  * Copyright (C) 2007 - 2009 Red Hat, Inc.
  */
 
-#include "nm-glib-aux/nm-default-glib-i18n-lib.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-crypto-impl.h"
 
@@ -20,7 +20,7 @@ NM_PRAGMA_WARNING_DISABLE("-Wstrict-prototypes")
 #include <p12plcy.h>
 NM_PRAGMA_WARNING_REENABLE
 
-#include "nm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
 #include "nm-errors.h"
 
 /*****************************************************************************/

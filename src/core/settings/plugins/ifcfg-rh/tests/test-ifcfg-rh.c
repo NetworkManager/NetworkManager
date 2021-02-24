@@ -17,7 +17,7 @@
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
-#include "nm-glib-aux/nm-json-aux.h"
+#include "libnm-glib-aux/nm-json-aux.h"
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"
@@ -37,8 +37,8 @@
 #include "nm-setting-vlan.h"
 #include "nm-setting-dcb.h"
 #include "libnm-core-intern/nm-core-internal.h"
-#include "nm-base/nm-ethtool-base.h"
-#include "nm-base/nm-ethtool-utils-base.h"
+#include "libnm-base/nm-ethtool-base.h"
+#include "libnm-base/nm-ethtool-utils-base.h"
 
 #include "NetworkManagerUtils.h"
 

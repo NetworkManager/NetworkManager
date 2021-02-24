@@ -3,13 +3,13 @@
  * Copyright (C) 2007 - 2013 Red Hat, Inc.
  */
 
-#include "nm-glib-aux/nm-default-glib.h"
+#include "libnm-glib-aux/nm-default-glib.h"
 
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
 
-#include "nm-utils/nm-vpn-plugin-macros.h"
+#include "libnm-glib-aux/nm-logging-syslog.h"
 
 #include "nm-dhcp-helper-api.h"
 

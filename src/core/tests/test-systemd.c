@@ -6,7 +6,7 @@
 #include "src/core/systemd/nm-default-systemd.h"
 
 #include "systemd/nm-sd.h"
-#include "systemd/nm-sd-utils-shared.h"
+#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "nm-test-utils-core.h"
 

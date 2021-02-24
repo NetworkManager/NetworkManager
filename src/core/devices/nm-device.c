@@ -23,12 +23,12 @@
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
-#include "nm-std-aux/unaligned.h"
-#include "nm-glib-aux/nm-dedup-multi.h"
-#include "nm-glib-aux/nm-random-utils.h"
-#include "systemd/nm-sd-utils-shared.h"
+#include "libnm-std-aux/unaligned.h"
+#include "libnm-glib-aux/nm-dedup-multi.h"
+#include "libnm-glib-aux/nm-random-utils.h"
+#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
-#include "nm-base/nm-ethtool-base.h"
+#include "libnm-base/nm-ethtool-base.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-device-private.h"
 #include "nm-l3cfg.h"
@@ -36,7 +36,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"
 #include "platform/nm-platform.h"
-#include "nm-platform/nm-platform-utils.h"
+#include "libnm-platform/nm-platform-utils.h"
 #include "platform/nmp-object.h"
 #include "platform/nmp-rules-manager.h"
 #include "ndisc/nm-ndisc.h"

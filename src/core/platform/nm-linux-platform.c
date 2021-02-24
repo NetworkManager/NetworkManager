@@ -32,25 +32,25 @@
 #include <sys/statvfs.h>
 #include <unistd.h>
 
-#include "nm-std-aux/unaligned.h"
+#include "libnm-std-aux/unaligned.h"
 
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-setting-vlan.h"
 
-#include "nm-glib-aux/nm-secret-utils.h"
-#include "nm-glib-aux/nm-c-list.h"
-#include "nm-platform/nm-netlink.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-c-list.h"
+#include "libnm-platform/nm-netlink.h"
 #include "nm-core-utils.h"
 #include "nmp-object.h"
-#include "nm-platform/nmp-netns.h"
-#include "nm-platform/nm-platform-utils.h"
+#include "libnm-platform/nmp-netns.h"
+#include "libnm-platform/nm-platform-utils.h"
 #include "nm-platform-private.h"
 #include "wifi/nm-wifi-utils.h"
 #include "wifi/nm-wifi-utils-wext.h"
 #include "wpan/nm-wpan-utils.h"
-#include "nm-glib-aux/nm-io-utils.h"
-#include "nm-udev-aux/nm-udev-utils.h"
+#include "libnm-glib-aux/nm-io-utils.h"
+#include "libnm-udev-aux/nm-udev-utils.h"
 
 /*****************************************************************************/
 

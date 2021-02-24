@@ -135,10 +135,6 @@ test-*.trs
 /examples/C/qt/monitor-nm-running
 /examples/C/qt/monitor-nm-running.moc
 
-/shared/nm-glib-aux/tests/test-json-aux
-/shared/nm-glib-aux/tests/test-shared-general
-/shared/nm-platform/tests/test-nm-platform
-
 /introspection/org.freedesktop.NetworkManager*.[ch]
 
 /src/libnm-core-public/nm-version-macros.h
@@ -152,16 +148,19 @@ test-*.trs
 /src/libnm-core-impl/tests/test-need-secrets
 /src/libnm-core-impl/tests/test-secrets
 /src/libnm-core-impl/tests/test-setting
+/src/libnm-glib-aux/tests/test-json-aux
+/src/libnm-glib-aux/tests/test-shared-general
+/src/libnm-platform/tests/test-nm-platform
 
-/libnm/nm-property-infos-dbus.xml
-/libnm/nm-property-infos-ifcfg-rh.xml
-/libnm/nm-property-infos-keyfile.xml
-/libnm/nm-property-infos-nmcli.xml
-/libnm/nm-settings-docs-gir.xml
-/libnm/tests/test-libnm
-/libnm/tests/test-nm-client
-/libnm/tests/test-remote-settings-client
-/libnm/tests/test-secret-agent
+/src/libnm-client-impl/nm-property-infos-dbus.xml
+/src/libnm-client-impl/nm-property-infos-ifcfg-rh.xml
+/src/libnm-client-impl/nm-property-infos-keyfile.xml
+/src/libnm-client-impl/nm-property-infos-nmcli.xml
+/src/libnm-client-impl/nm-settings-docs-gir.xml
+/src/libnm-client-impl/tests/test-libnm
+/src/libnm-client-impl/tests/test-nm-client
+/src/libnm-client-impl/tests/test-remote-settings-client
+/src/libnm-client-impl/tests/test-secret-agent
 
 /clients/cli/generate-docs-nm-settings-nmcli
 /clients/cli/generate-docs-nm-settings-nmcli.xml
@@ -352,15 +351,27 @@ test-*.trs
 /libnm/nm-ifcfg-rh-docs.xml
 /libnm/nm-keyfile-docs.xml
 /libnm/nm-property-docs.xml
+/libnm/nm-property-infos-dbus.xml
+/libnm/nm-property-infos-ifcfg-rh.xml
+/libnm/nm-property-infos-keyfile.xml
+/libnm/nm-property-infos-nmcli.xml
 /libnm/nm-setting-docs-overrides.xml
 /libnm/nm-setting-docs.xml
+/libnm/nm-settings-docs-gir.xml
 /libnm/nm-settings-docs-overrides.xml
 /libnm/nm-settings-docs.xml
 /libnm/nm-settings-ifcfg-rh-docs.xml
 /libnm/nm-settings-keyfile-docs.xml
 /libnm/tests/test-general
+/libnm/tests/test-libnm
+/libnm/tests/test-nm-client
+/libnm/tests/test-remote-settings-client
+/libnm/tests/test-secret-agent
 /policy/org.freedesktop.NetworkManager.policy
 /policy/org.freedesktop.NetworkManager.policy.in
+/shared/nm-glib-aux/tests/test-json-aux
+/shared/nm-glib-aux/tests/test-shared-general
+/shared/nm-platform/tests/test-nm-platform
 /shared/nm-utils/tests/test-shared-general
 /shared/nm-version-macros.h
 /src/devices/tests/test-arping

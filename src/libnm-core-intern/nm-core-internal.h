@@ -20,7 +20,7 @@
     #error Cannot use this header.
 #endif
 
-#include "nm-base/nm-base.h"
+#include "libnm-base/nm-base.h"
 #include "nm-connection.h"
 #include "nm-core-enum-types.h"
 #include "nm-core-types-internal.h"

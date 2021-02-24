@@ -13,9 +13,9 @@
 #include <ctype.h>
 #include <net/if_arp.h>
 
-#include "nm-glib-aux/nm-dedup-multi.h"
-#include "nm-std-aux/unaligned.h"
-#include "nm-glib-aux/nm-str-buf.h"
+#include "libnm-glib-aux/nm-dedup-multi.h"
+#include "libnm-std-aux/unaligned.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 
 #include "nm-utils.h"
 #include "nm-config.h"
@@ -26,7 +26,7 @@
 #include "platform/nm-platform.h"
 #include "nm-dhcp-client-logging.h"
 #include "n-dhcp4/src/n-dhcp4.h"
-#include "systemd/nm-sd-utils-shared.h"
+#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 #include "systemd/nm-sd-utils-dhcp.h"
 
 /*****************************************************************************/

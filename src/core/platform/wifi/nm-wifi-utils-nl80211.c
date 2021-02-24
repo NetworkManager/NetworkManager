@@ -15,10 +15,10 @@
 #include <linux/nl80211.h>
 #include <linux/if.h>
 
-#include "nm-platform/nm-netlink.h"
+#include "libnm-platform/nm-netlink.h"
 #include "nm-wifi-utils-private.h"
 #include "platform/nm-platform.h"
-#include "nm-platform/nm-platform-utils.h"
+#include "libnm-platform/nm-platform-utils.h"
 #include "nm-utils.h"
 
 #define _NMLOG_PREFIX_NAME "wifi-nl80211"

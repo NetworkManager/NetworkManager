@@ -11,7 +11,7 @@
  * and buttons to add and remove entries.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>

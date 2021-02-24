@@ -7,14 +7,14 @@
 
 #include "nm-netns.h"
 
-#include "nm-glib-aux/nm-dedup-multi.h"
-#include "nm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-dedup-multi.h"
+#include "libnm-glib-aux/nm-c-list.h"
 
 #include "NetworkManagerUtils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-l3cfg.h"
 #include "platform/nm-platform.h"
-#include "nm-platform/nmp-netns.h"
+#include "libnm-platform/nmp-netns.h"
 #include "platform/nmp-rules-manager.h"
 
 /*****************************************************************************/

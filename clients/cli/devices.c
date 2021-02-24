@@ -3,7 +3,7 @@
  * Copyright (C) 2010 - 2018 Red Hat, Inc.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "devices.h"
 
@@ -12,7 +12,7 @@
 #include <readline/readline.h>
 #include <linux/if_ether.h>
 
-#include "nm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
 #include "common.h"
 #include "connections.h"
 #include "nm-client-utils.h"

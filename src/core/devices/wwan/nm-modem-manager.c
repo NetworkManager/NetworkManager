@@ -17,7 +17,7 @@
     #define sd_booted() FALSE
 #endif
 
-#include "nm-std-aux/nm-dbus-compat.h"
+#include "libnm-std-aux/nm-dbus-compat.h"
 #include "nm-modem.h"
 #include "nm-modem-broadband.h"
 

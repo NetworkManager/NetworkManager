@@ -11,7 +11,7 @@
 #include <arpa/inet.h>
 #include <linux/fib_rules.h>
 
-#include "nm-glib-aux/nm-str-buf.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "nm-utils.h"

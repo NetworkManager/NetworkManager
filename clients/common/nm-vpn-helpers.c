@@ -8,7 +8,7 @@
  * @short_description: VPN-related utilities
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "nm-vpn-helpers.h"
 
@@ -17,8 +17,8 @@
 
 #include "nm-client-utils.h"
 #include "nm-utils.h"
-#include "nm-glib-aux/nm-io-utils.h"
-#include "nm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-io-utils.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
 
 /*****************************************************************************/
 

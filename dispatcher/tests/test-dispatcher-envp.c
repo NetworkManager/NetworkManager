@@ -3,7 +3,7 @@
  * Copyright (C) 2011 Red Hat, Inc.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include <arpa/inet.h>
 #include <stdlib.h>
@@ -11,7 +11,7 @@
 #include "nm-dispatcher-utils.h"
 #include "libnm-core-aux-extern/nm-dispatcher-api.h"
 
-#include "nm-utils/nm-test-utils.h"
+#include "libnm-glib-aux/nm-test-utils.h"
 
 #include "nmdbus-dispatcher.h"
 

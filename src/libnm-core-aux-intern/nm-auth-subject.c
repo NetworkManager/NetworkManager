@@ -11,7 +11,7 @@
  * makes requests, like process identifier and user UID.
  */
 
-#include "nm-glib-aux/nm-default-glib-i18n-lib.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-auth-subject.h"
 

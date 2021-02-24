@@ -6,9 +6,9 @@
 #ifndef __NM_META_SETTING_DESC_H__
 #define __NM_META_SETTING_DESC_H__
 
-#include "nm-glib-aux/nm-obj.h"
+#include "libnm-glib-aux/nm-obj.h"
 #include "nm-meta-setting-base.h"
-#include "nm-base/nm-ethtool-base.h"
+#include "libnm-base/nm-ethtool-base.h"
 
 struct _NMDevice;
 

@@ -8,8 +8,8 @@
 #include <linux/pkt_sched.h>
 #include <net/if.h>
 
-#include "nm-glib-aux/nm-json-aux.h"
-#include "nm-base/nm-ethtool-utils-base.h"
+#include "libnm-glib-aux/nm-json-aux.h"
+#include "libnm-base/nm-ethtool-utils-base.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
@@ -28,7 +28,7 @@
 #include "nm-errors.h"
 #include "libnm-core-intern/nm-keyfile-internal.h"
 
-#include "nm-utils/nm-test-utils.h"
+#include "libnm-glib-aux/nm-test-utils.h"
 
 #define TEST_CERT_DIR NM_BUILD_SRCDIR "/src/libnm-core-impl/tests/certs"
 

@@ -15,7 +15,7 @@
 #include "devices/nm-device.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-manager.h"
-#include "nm-glib-aux/nm-ref-string.h"
+#include "libnm-glib-aux/nm-ref-string.h"
 #include "nm-setting-wireless.h"
 #include "nm-utils.h"
 #include "nm-wifi-utils.h"

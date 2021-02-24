@@ -8,7 +8,7 @@
  * @short_description: The editor page for Ethernet connections
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "nmt-page-ethernet.h"
 

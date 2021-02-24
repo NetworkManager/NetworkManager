@@ -23,15 +23,15 @@ same_lines() {
 
 libnm_headers() {
     (
-        ls -1 "$1/libnm"/*.h "$1/src/libnm-core-public"/*.h | \
+        ls -1 "$1/src/libnm-client-public"/*.h "$1/src/libnm-core-public"/*.h | \
         if [ -n "$2" ]; then
-            grep -v -F "$1/libnm-core/nm-core-enum-types.h" | \
-            grep -v -F "$1/libnm/nm-enum-types.h"
+            grep -v -F "$1/src/libnm-core-public/nm-core-enum-types.h" | \
+            grep -v -F "$1/src/libnm-client-public/nm-enum-types.h"
         else
             cat
         fi
         if [ -n "$2" ]; then
-            ls -1 "$2/libnm"/*.h "$2/src/libnm-core-public"/*.h
+            ls -1 "$2/src/libnm-client-public"/*.h "$2/src/libnm-core-public"/*.h
         fi
     ) | sort | uniq
 }
@@ -63,7 +63,7 @@ F1_EXTRA="
 nm-core-enum-types
 nm-enum-types
 "
-F2="$(grep -l "$(sed -n 's/^[\t ]*\(.*_get_type\);/\1/p' "$SOURCEDIR/libnm/libnm.ver" | word_regex)" \
+F2="$(grep -l "$(sed -n 's/^[\t ]*\(.*_get_type\);/\1/p' "$SOURCEDIR/src/libnm-client-impl/libnm.ver" | word_regex)" \
            $(libnm_headers "$SOURCEDIR" "$BUILDDIR") \
       | sed 's,.*/\([^/]\+\)\.h$,\1,')"
 F2_EXTRA="

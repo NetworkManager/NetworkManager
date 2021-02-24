@@ -9,9 +9,9 @@
 
 #include <net/ethernet.h>
 
-#include "nm-std-aux/unaligned.h"
+#include "libnm-std-aux/unaligned.h"
 #include "platform/nm-platform.h"
-#include "nm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-c-list.h"
 #include "nm-utils.h"
 
 #include "systemd/nm-sd.h"

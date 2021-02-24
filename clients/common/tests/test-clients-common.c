@@ -3,13 +3,13 @@
  * Copyright (C) 2017 Red Hat, Inc.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "nm-meta-setting-access.h"
 #include "nm-vpn-helpers.h"
 #include "nm-client-utils.h"
 
-#include "nm-utils/nm-test-utils.h"
+#include "libnm-glib-aux/nm-test-utils.h"
 
 /*****************************************************************************/
 

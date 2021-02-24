@@ -110,22 +110,23 @@ include config-extra.h.mk
 
 DISTCLEANFILES += config-extra.h
 
-$(src_libnm_core_public_mkenums_h):           config-extra.h
-$(src_libnm_core_public_mkenums_c):           config-extra.h
-src/libnm-core-impl/.dirstamp:                config-extra.h
-src/libnm-core-impl/.dirstamp:                config-extra.h
-shared/.dirstamp:                             config-extra.h
-shared/nm-base/.dirstamp:                     config-extra.h
-shared/nm-glib-aux/.dirstamp:                 config-extra.h
-shared/nm-glib-aux/tests/.dirstamp:           config-extra.h
-shared/nm-platform/.dirstamp:                 config-extra.h
-shared/nm-platform/tests/.dirstamp:           config-extra.h
-shared/nm-std-aux/.dirstamp:                  config-extra.h
-shared/nm-udev-aux/.dirstamp:                 config-extra.h
-shared/systemd/.dirstamp:                     config-extra.h
-shared/systemd/src/basic/.dirstamp:           config-extra.h
-shared/systemd/src/shared/.dirstamp:          config-extra.h
-src/core/dhcp/.dirstamp:                      config-extra.h
+$(src_libnm_core_public_mkenums_h):                 config-extra.h
+$(src_libnm_core_public_mkenums_c):                 config-extra.h
+src/libnm-core-impl/.dirstamp:                      config-extra.h
+src/libnm-core-impl/.dirstamp:                      config-extra.h
+src/libnm-base/.dirstamp:                           config-extra.h
+src/libnm-glib-aux/.dirstamp:                       config-extra.h
+src/libnm-glib-aux/tests/.dirstamp:                 config-extra.h
+src/libnm-platform/.dirstamp:                       config-extra.h
+src/libnm-platform/tests/.dirstamp:                 config-extra.h
+src/libnm-std-aux/.dirstamp:                        config-extra.h
+src/libnm-udev-aux/.dirstamp:                       config-extra.h
+src/libnm-systemd-shared/.dirstamp:                 config-extra.h
+src/libnm-systemd-shared/src/basic/.dirstamp:       config-extra.h
+src/libnm-systemd-shared/src/shared/.dirstamp:      config-extra.h
+src/libnm-client-public/.dirstamp:                  config-extra.h
+src/libnm-client-public/.dirstamp:                  config-extra.h
+src/core/dhcp/.dirstamp:                            config-extra.h
 
 ###############################################################################
 
@@ -214,368 +215,413 @@ DISTCLEANFILES += $(polkit_policy_DATA)
 ###############################################################################
 
 EXTRA_DIST += \
-	shared/c-stdaux/src/c-stdaux.h \
+	src/c-stdaux/src/c-stdaux.h \
 	$(NULL)
 
 ###############################################################################
 
-noinst_LTLIBRARIES += shared/libcsiphash.la
+noinst_LTLIBRARIES += src/c-siphash/libc-siphash.la
 
-shared_libcsiphash_la_CFLAGS = \
+src_c_siphash_libc_siphash_la_CFLAGS = \
 	$(AM_CFLAGS) \
 	-std=c11 \
-	-I$(srcdir)/shared/c-stdaux/src \
+	-I$(srcdir)/src/c-stdaux/src \
 	$(NULL)
 
-shared_libcsiphash_la_CPPFLAGS = \
+src_c_siphash_libc_siphash_la_CPPFLAGS = \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(NULL)
 
-shared_libcsiphash_la_LDFLAGS = \
+src_c_siphash_libc_siphash_la_LDFLAGS = \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
-shared_libcsiphash_la_SOURCES = \
-	shared/c-siphash/src/c-siphash.c \
-	shared/c-siphash/src/c-siphash.h \
+src_c_siphash_libc_siphash_la_SOURCES = \
+	src/c-siphash/src/c-siphash.c \
+	src/c-siphash/src/c-siphash.h \
 	$(NULL)
 
 ###############################################################################
 
-noinst_LTLIBRARIES += shared/libcrbtree.la
+noinst_LTLIBRARIES += src/c-rbtree/libc-rbtree.la
 
-shared_libcrbtree_la_CFLAGS = \
+src_c_rbtree_libc_rbtree_la_CFLAGS = \
 	$(AM_CFLAGS) \
 	-std=c11 \
-	-I$(srcdir)/shared/c-stdaux/src \
+	-I$(srcdir)/src/c-stdaux/src \
 	$(NULL)
 
-shared_libcrbtree_la_CPPFLAGS = \
+src_c_rbtree_libc_rbtree_la_CPPFLAGS = \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(NULL)
 
-shared_libcrbtree_la_LDFLAGS = \
+src_c_rbtree_libc_rbtree_la_LDFLAGS = \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
-shared_libcrbtree_la_SOURCES = \
-	shared/c-rbtree/src/c-rbtree.c \
-	shared/c-rbtree/src/c-rbtree.h \
-	shared/c-rbtree/src/c-rbtree-private.h \
+src_c_rbtree_libc_rbtree_la_SOURCES = \
+	src/c-rbtree/src/c-rbtree.c \
+	src/c-rbtree/src/c-rbtree.h \
+	src/c-rbtree/src/c-rbtree-private.h \
 	$(NULL)
 
 ###############################################################################
 
-noinst_LTLIBRARIES += shared/libnacd.la
+noinst_LTLIBRARIES += src/n-acd/libn-acd.la
 
-shared_libnacd_la_CFLAGS = \
+src_n_acd_libn_acd_la_CFLAGS = \
 	$(AM_CFLAGS) \
 	-std=c11 \
 	-Wno-pointer-arith \
 	-Wno-vla \
 	$(NULL)
 
-shared_libnacd_la_CPPFLAGS = \
+src_n_acd_libn_acd_la_CPPFLAGS = \
 	-D_GNU_SOURCE \
 	-DSO_ATTACH_BPF=50 \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
-	-I$(srcdir)/shared/c-stdaux/src \
-	-I$(srcdir)/shared/c-list/src \
-	-I$(srcdir)/shared/c-siphash/src \
-	-I$(srcdir)/shared/c-rbtree/src \
+	-I$(srcdir)/src/c-stdaux/src \
+	-I$(srcdir)/src/c-list/src \
+	-I$(srcdir)/src/c-siphash/src \
+	-I$(srcdir)/src/c-rbtree/src \
 	$(NULL)
 
-shared_libnacd_la_LDFLAGS = \
+src_n_acd_libn_acd_la_LDFLAGS = \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
-shared_libnacd_la_SOURCES = \
-	shared/n-acd/src/n-acd.c \
-	shared/n-acd/src/n-acd.h \
-	shared/n-acd/src/n-acd-private.h \
-	shared/n-acd/src/n-acd-probe.c \
-	shared/n-acd/src/util/timer.c \
-	shared/n-acd/src/util/timer.h \
+src_n_acd_libn_acd_la_SOURCES = \
+	src/n-acd/src/n-acd.c \
+	src/n-acd/src/n-acd.h \
+	src/n-acd/src/n-acd-private.h \
+	src/n-acd/src/n-acd-probe.c \
+	src/n-acd/src/util/timer.c \
+	src/n-acd/src/util/timer.h \
 	$(NULL)
 
 if WITH_EBPF
-shared_libnacd_la_SOURCES += shared/n-acd/src/n-acd-bpf.c
+src_n_acd_libn_acd_la_SOURCES += src/n-acd/src/n-acd-bpf.c
 else
-shared_libnacd_la_SOURCES += shared/n-acd/src/n-acd-bpf-fallback.c
+src_n_acd_libn_acd_la_SOURCES += src/n-acd/src/n-acd-bpf-fallback.c
 endif
 
 ###############################################################################
 
-noinst_LTLIBRARIES += shared/libndhcp4.la
+noinst_LTLIBRARIES += src/n-dhcp4/libn-dhcp4.la
 
-shared_libndhcp4_la_CFLAGS = \
+src_n_dhcp4_libn_dhcp4_la_CFLAGS = \
 	$(AM_CFLAGS) \
 	-std=c11 \
 	-Wno-error=declaration-after-statement \
 	-Wno-pointer-arith \
 	$(NULL)
 
-shared_libndhcp4_la_CPPFLAGS = \
+src_n_dhcp4_libn_dhcp4_la_CPPFLAGS = \
 	-D_GNU_SOURCE \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
-	-I$(srcdir)/shared/c-stdaux/src \
-	-I$(srcdir)/shared/c-list/src \
-	-I$(srcdir)/shared/c-siphash/src \
+	-I$(srcdir)/src/c-stdaux/src \
+	-I$(srcdir)/src/c-list/src \
+	-I$(srcdir)/src/c-siphash/src \
 	$(NULL)
 
-shared_libndhcp4_la_LDFLAGS = \
-	$(SANITIZER_LIB_LDFLAGS)
+src_n_dhcp4_libn_dhcp4_la_LDFLAGS = \
+	$(SANITIZER_LIB_LDFLAGS) \
+	$(NULL)
 
-shared_libndhcp4_la_SOURCES = \
-	shared/n-dhcp4/src/n-dhcp4-c-connection.c \
-	shared/n-dhcp4/src/n-dhcp4-c-lease.c \
-	shared/n-dhcp4/src/n-dhcp4-c-probe.c \
-	shared/n-dhcp4/src/n-dhcp4-client.c \
-	shared/n-dhcp4/src/n-dhcp4-incoming.c \
-	shared/n-dhcp4/src/n-dhcp4-outgoing.c \
-	shared/n-dhcp4/src/n-dhcp4-private.h \
-	shared/n-dhcp4/src/n-dhcp4-socket.c \
-	shared/n-dhcp4/src/n-dhcp4.h \
-	shared/n-dhcp4/src/util/packet.c \
-	shared/n-dhcp4/src/util/packet.h \
-	shared/n-dhcp4/src/util/socket.c \
-	shared/n-dhcp4/src/util/socket.h \
+src_n_dhcp4_libn_dhcp4_la_SOURCES = \
+	src/n-dhcp4/src/n-dhcp4-c-connection.c \
+	src/n-dhcp4/src/n-dhcp4-c-lease.c \
+	src/n-dhcp4/src/n-dhcp4-c-probe.c \
+	src/n-dhcp4/src/n-dhcp4-client.c \
+	src/n-dhcp4/src/n-dhcp4-incoming.c \
+	src/n-dhcp4/src/n-dhcp4-outgoing.c \
+	src/n-dhcp4/src/n-dhcp4-private.h \
+	src/n-dhcp4/src/n-dhcp4-socket.c \
+	src/n-dhcp4/src/n-dhcp4.h \
+	src/n-dhcp4/src/util/packet.c \
+	src/n-dhcp4/src/util/packet.h \
+	src/n-dhcp4/src/util/socket.c \
+	src/n-dhcp4/src/util/socket.h \
 	$(NULL)
 
 ###############################################################################
 
-noinst_LTLIBRARIES += shared/nm-std-aux/libnm-std-aux.la
+noinst_LTLIBRARIES += src/libnm-std-aux/libnm-std-aux.la
 
-shared_nm_std_aux_libnm_std_aux_la_CPPFLAGS = \
+src_libnm_std_aux_libnm_std_aux_la_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(NULL)
 
-shared_nm_std_aux_libnm_std_aux_la_SOURCES = \
-	shared/c-list/src/c-list.h \
-	shared/nm-std-aux/c-list-util.c \
-	shared/nm-std-aux/c-list-util.h \
-	shared/nm-std-aux/nm-dbus-compat.h \
-	shared/nm-std-aux/nm-default-std.h \
-	shared/nm-std-aux/nm-networkmanager-compilation.h \
-	shared/nm-std-aux/nm-std-aux.h \
-	shared/nm-std-aux/nm-std-utils.c \
-	shared/nm-std-aux/nm-std-utils.h \
-	shared/nm-std-aux/unaligned.h \
+src_libnm_std_aux_libnm_std_aux_la_SOURCES = \
+	src/c-list/src/c-list.h \
+	src/libnm-std-aux/c-list-util.c \
+	src/libnm-std-aux/c-list-util.h \
+	src/libnm-std-aux/nm-dbus-compat.h \
+	src/libnm-std-aux/nm-default-std.h \
+	src/libnm-std-aux/nm-networkmanager-compilation.h \
+	src/libnm-std-aux/nm-std-aux.h \
+	src/libnm-std-aux/nm-std-utils.c \
+	src/libnm-std-aux/nm-std-utils.h \
+	src/libnm-std-aux/unaligned.h \
 	$(NULL)
 
-shared_nm_std_aux_libnm_std_aux_la_LDFLAGS = \
+src_libnm_std_aux_libnm_std_aux_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
+EXTRA_DIST += src/libnm-std-aux/meson.build
+
 ###############################################################################
 
-shared_nm_glib_aux_cppflags = \
+src_libnm_glib_aux_cppflags = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(NULL)
 
-noinst_LTLIBRARIES += shared/nm-glib-aux/libnm-glib-aux.la
+noinst_LTLIBRARIES += src/libnm-glib-aux/libnm-glib-aux.la
 
-shared_nm_glib_aux_libnm_glib_aux_la_CPPFLAGS = \
-	$(shared_nm_glib_aux_cppflags) \
+src_libnm_glib_aux_libnm_glib_aux_la_CPPFLAGS = \
+	$(src_libnm_glib_aux_cppflags) \
 	$(NULL)
 
-shared_nm_glib_aux_libnm_glib_aux_la_SOURCES = \
-	shared/nm-glib-aux/nm-c-list.h \
-	shared/nm-glib-aux/nm-dbus-aux.c \
-	shared/nm-glib-aux/nm-dbus-aux.h \
-	shared/nm-glib-aux/nm-dedup-multi.c \
-	shared/nm-glib-aux/nm-dedup-multi.h \
-	shared/nm-glib-aux/nm-default-glib-i18n-lib.h \
-	shared/nm-glib-aux/nm-default-glib-i18n-prog.h \
-	shared/nm-glib-aux/nm-default-glib.h \
-	shared/nm-glib-aux/nm-enum-utils.c \
-	shared/nm-glib-aux/nm-enum-utils.h \
-	shared/nm-glib-aux/nm-errno.c \
-	shared/nm-glib-aux/nm-errno.h \
-	shared/nm-glib-aux/nm-gassert-patch.h \
-	shared/nm-glib-aux/nm-glib.h \
-	shared/nm-glib-aux/nm-hash-utils.c \
-	shared/nm-glib-aux/nm-hash-utils.h \
-	shared/nm-glib-aux/nm-io-utils.c \
-	shared/nm-glib-aux/nm-io-utils.h \
-	shared/nm-glib-aux/nm-jansson.h \
-	shared/nm-glib-aux/nm-json-aux.c \
-	shared/nm-glib-aux/nm-json-aux.h \
-	shared/nm-glib-aux/nm-keyfile-aux.c \
-	shared/nm-glib-aux/nm-keyfile-aux.h \
-	shared/nm-glib-aux/nm-logging-base.c \
-	shared/nm-glib-aux/nm-logging-base.h \
-	shared/nm-glib-aux/nm-logging-fwd.h \
-	shared/nm-glib-aux/nm-macros-internal.h \
-	shared/nm-glib-aux/nm-obj.h \
-	shared/nm-glib-aux/nm-random-utils.c \
-	shared/nm-glib-aux/nm-random-utils.h \
-	shared/nm-glib-aux/nm-ref-string.c \
-	shared/nm-glib-aux/nm-ref-string.h \
-	shared/nm-glib-aux/nm-secret-utils.c \
-	shared/nm-glib-aux/nm-secret-utils.h \
-	shared/nm-glib-aux/nm-shared-utils.c \
-	shared/nm-glib-aux/nm-shared-utils.h \
-	shared/nm-glib-aux/nm-str-buf.h \
-	shared/nm-glib-aux/nm-time-utils.c \
-	shared/nm-glib-aux/nm-time-utils.h \
-	shared/nm-glib-aux/nm-value-type.h \
+src_libnm_glib_aux_libnm_glib_aux_la_SOURCES = \
+	src/libnm-glib-aux/nm-c-list.h \
+	src/libnm-glib-aux/nm-dbus-aux.c \
+	src/libnm-glib-aux/nm-dbus-aux.h \
+	src/libnm-glib-aux/nm-dedup-multi.c \
+	src/libnm-glib-aux/nm-dedup-multi.h \
+	src/libnm-glib-aux/nm-default-glib-i18n-lib.h \
+	src/libnm-glib-aux/nm-default-glib-i18n-prog.h \
+	src/libnm-glib-aux/nm-default-glib.h \
+	src/libnm-glib-aux/nm-enum-utils.c \
+	src/libnm-glib-aux/nm-enum-utils.h \
+	src/libnm-glib-aux/nm-errno.c \
+	src/libnm-glib-aux/nm-errno.h \
+	src/libnm-glib-aux/nm-gassert-patch.h \
+	src/libnm-glib-aux/nm-glib.h \
+	src/libnm-glib-aux/nm-hash-utils.c \
+	src/libnm-glib-aux/nm-hash-utils.h \
+	src/libnm-glib-aux/nm-io-utils.c \
+	src/libnm-glib-aux/nm-io-utils.h \
+	src/libnm-glib-aux/nm-jansson.h \
+	src/libnm-glib-aux/nm-json-aux.c \
+	src/libnm-glib-aux/nm-json-aux.h \
+	src/libnm-glib-aux/nm-keyfile-aux.c \
+	src/libnm-glib-aux/nm-keyfile-aux.h \
+	src/libnm-glib-aux/nm-logging-base.c \
+	src/libnm-glib-aux/nm-logging-base.h \
+	src/libnm-glib-aux/nm-logging-fwd.h \
+	src/libnm-glib-aux/nm-logging-syslog.h \
+	src/libnm-glib-aux/nm-macros-internal.h \
+	src/libnm-glib-aux/nm-obj.h \
+	src/libnm-glib-aux/nm-random-utils.c \
+	src/libnm-glib-aux/nm-random-utils.h \
+	src/libnm-glib-aux/nm-ref-string.c \
+	src/libnm-glib-aux/nm-ref-string.h \
+	src/libnm-glib-aux/nm-secret-utils.c \
+	src/libnm-glib-aux/nm-secret-utils.h \
+	src/libnm-glib-aux/nm-shared-utils.c \
+	src/libnm-glib-aux/nm-shared-utils.h \
+	src/libnm-glib-aux/nm-str-buf.h \
+	src/libnm-glib-aux/nm-test-utils.h \
+	src/libnm-glib-aux/nm-time-utils.c \
+	src/libnm-glib-aux/nm-time-utils.h \
+	src/libnm-glib-aux/nm-value-type.h \
 	$(NULL)
 
-shared_nm_glib_aux_libnm_glib_aux_la_LDFLAGS = \
+src_libnm_glib_aux_libnm_glib_aux_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
-shared_nm_glib_aux_libnm_glib_aux_la_LIBADD = \
+src_libnm_glib_aux_libnm_glib_aux_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(NULL)
 
+EXTRA_DIST += src/libnm-glib-aux/meson.build
+
 ###############################################################################
 
-noinst_LTLIBRARIES += shared/nm-udev-aux/libnm-udev-aux.la
+noinst_LTLIBRARIES += src/libnm-udev-aux/libnm-udev-aux.la
 
-shared_nm_udev_aux_libnm_udev_aux_la_CPPFLAGS = \
-	$(shared_nm_glib_aux_cppflags) \
+src_libnm_udev_aux_libnm_udev_aux_la_CPPFLAGS = \
+	$(src_libnm_glib_aux_cppflags) \
 	$(LIBUDEV_CFLAGS) \
 	$(NULL)
 
-shared_nm_udev_aux_libnm_udev_aux_la_SOURCES = \
-	shared/nm-udev-aux/nm-udev-utils.c \
-	shared/nm-udev-aux/nm-udev-utils.h \
+src_libnm_udev_aux_libnm_udev_aux_la_SOURCES = \
+	src/libnm-udev-aux/nm-udev-utils.c \
+	src/libnm-udev-aux/nm-udev-utils.h \
 	$(NULL)
 
-shared_nm_udev_aux_libnm_udev_aux_la_LDFLAGS = \
+src_libnm_udev_aux_libnm_udev_aux_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
-shared_nm_udev_aux_libnm_udev_aux_la_LIBADD = \
+src_libnm_udev_aux_libnm_udev_aux_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
 	$(NULL)
 
+EXTRA_DIST += src/libnm-udev-aux/meson.build
+
 ###############################################################################
 
-noinst_LTLIBRARIES += shared/nm-base/libnm-base.la
+noinst_LTLIBRARIES += src/libnm-base/libnm-base.la
 
-shared_nm_base_libnm_base_la_CPPFLAGS = \
-	$(shared_nm_glib_aux_cppflags) \
+src_libnm_base_libnm_base_la_CPPFLAGS = \
+	$(src_libnm_glib_aux_cppflags) \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
 	$(NULL)
 
-shared_nm_base_libnm_base_la_SOURCES = \
-	shared/nm-base/nm-base.h \
-	shared/nm-base/nm-ethtool-base.c \
-	shared/nm-base/nm-ethtool-base.h \
-	shared/nm-base/nm-ethtool-utils-base.h \
+src_libnm_base_libnm_base_la_SOURCES = \
+	src/libnm-base/nm-base.h \
+	src/libnm-base/nm-ethtool-base.c \
+	src/libnm-base/nm-ethtool-base.h \
+	src/libnm-base/nm-ethtool-utils-base.h \
 	$(NULL)
 
-shared_nm_base_libnm_base_la_LDFLAGS = \
+src_libnm_base_libnm_base_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
-shared_nm_base_libnm_base_la_LIBADD = \
+src_libnm_base_libnm_base_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(NULL)
 
+EXTRA_DIST += src/libnm-base/meson.build
+
 ###############################################################################
 
-noinst_LTLIBRARIES += shared/nm-log-core/libnm-log-core.la
+noinst_LTLIBRARIES += src/libnm-log-core/libnm-log-core.la
 
-shared_nm_log_core_libnm_log_core_la_CPPFLAGS = \
+src_libnm_log_core_libnm_log_core_la_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(SYSTEMD_JOURNAL_CFLAGS) \
 	$(NULL)
 
-shared_nm_log_core_libnm_log_core_la_SOURCES = \
-	shared/nm-log-core/nm-logging.c \
-	shared/nm-log-core/nm-logging.h \
+src_libnm_log_core_libnm_log_core_la_SOURCES = \
+	src/libnm-log-core/nm-logging.c \
+	src/libnm-log-core/nm-logging.h \
 	$(NULL)
 
-shared_nm_log_core_libnm_log_core_la_LDFLAGS = \
+src_libnm_log_core_libnm_log_core_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
-shared_nm_log_core_libnm_log_core_la_LIBADD = \
+src_libnm_log_core_libnm_log_core_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(SYSTEMD_JOURNAL_LIBS) \
 	$(NULL)
 
+EXTRA_DIST += src/libnm-log-core/meson.build
+
+noinst_LTLIBRARIES += src/libnm-log-null/libnm-log-null.la
+
+src_libnm_log_null_libnm_log_null_la_CPPFLAGS = \
+	$(dflt_cppflags) \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(NULL)
+
+src_libnm_log_null_libnm_log_null_la_SOURCES = \
+	src/libnm-log-null/nm-logging-null.c \
+	$(NULL)
+
+src_libnm_log_null_libnm_log_null_la_LIBADD = \
+	$(GLIB_LIBS) \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(NULL)
+
+EXTRA_DIST += src/libnm-log-null/meson.build
+
 ###############################################################################
 
-noinst_LTLIBRARIES += shared/nm-platform/libnm-platform.la
+noinst_LTLIBRARIES += src/libnm-platform/libnm-platform.la
 
-shared_nm_platform_libnm_platform_la_CPPFLAGS = \
-	$(shared_nm_glib_aux_cppflags) \
+src_libnm_platform_libnm_platform_la_CPPFLAGS = \
+	$(src_libnm_glib_aux_cppflags) \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
 	$(NULL)
 
-shared_nm_platform_libnm_platform_la_SOURCES = \
-	shared/nm-platform/nm-netlink.c \
-	shared/nm-platform/nm-netlink.h \
-	shared/nm-platform/nm-platform-utils.c \
-	shared/nm-platform/nm-platform-utils.h \
-	shared/nm-platform/nmp-base.h \
-	shared/nm-platform/nmp-netns.c \
-	shared/nm-platform/nmp-netns.h \
+src_libnm_platform_libnm_platform_la_SOURCES = \
+	src/libnm-platform/nm-netlink.c \
+	src/libnm-platform/nm-netlink.h \
+	src/libnm-platform/nm-platform-utils.c \
+	src/libnm-platform/nm-platform-utils.h \
+	src/libnm-platform/nmp-base.h \
+	src/libnm-platform/nmp-netns.c \
+	src/libnm-platform/nmp-netns.h \
 	$(NULL)
 
-shared_nm_platform_libnm_platform_la_LDFLAGS = \
+src_libnm_platform_libnm_platform_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
-shared_nm_platform_libnm_platform_la_LIBADD = \
+src_libnm_platform_libnm_platform_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(NULL)
 
+EXTRA_DIST += src/libnm-platform/meson.build
+
 ###############################################################################
 
-check_programs += shared/nm-platform/tests/test-nm-platform
+check_programs += src/libnm-platform/tests/test-nm-platform
 
-shared_nm_platform_tests_test_nm_platform_CPPFLAGS = \
+src_libnm_platform_tests_test_nm_platform_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(SYSTEMD_JOURNAL_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(NULL)
 
-shared_nm_platform_tests_test_nm_platform_LDFLAGS = \
+src_libnm_platform_tests_test_nm_platform_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-shared_nm_platform_tests_test_nm_platform_LDADD = \
-	shared/nm-platform/libnm-platform.la \
-	shared/nm-log-core/libnm-log-core.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+src_libnm_platform_tests_test_nm_platform_LDADD = \
+	src/libnm-platform/libnm-platform.la \
+	src/libnm-log-core/libnm-log-core.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
 	$(SYSTEMD_JOURNAL_LIBS) \
 	$(GLIB_LIBS) \
 	$(NULL)
 
 EXTRA_DIST += \
-	shared/nm-platform/tests/meson.build \
+	src/libnm-platform/tests/meson.build \
 	$(NULL)
 
 ###############################################################################
@@ -584,8 +630,8 @@ noinst_LTLIBRARIES += src/libnm-core-aux-intern/libnm-core-aux-intern.la
 
 src_libnm_core_aux_intern_libnm_core_aux_intern_la_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(builddir)/shared \
-	-I$(srcdir)/shared \
+	-I$(builddir)/src \
+	-I$(srcdir)/src \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
 	$(CODE_COVERAGE_CFLAGS) \
@@ -623,8 +669,6 @@ noinst_LTLIBRARIES += src/libnm-core-aux-extern/libnm-core-aux-extern.la
 
 src_libnm_core_aux_extern_libnm_core_aux_extern_la_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(builddir)/shared \
-	-I$(srcdir)/shared \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
 	-I$(srcdir)/src \
@@ -657,70 +701,109 @@ EXTRA_DIST += \
 
 ###############################################################################
 
-noinst_LTLIBRARIES += libnm/nm-libnm-aux/libnm-libnm-aux.la
+noinst_LTLIBRARIES += src/libnm-client-aux-extern/libnm-client-aux-extern.la
 
-libnm_nm_libnm_aux_libnm_libnm_aux_la_CPPFLAGS = \
+src_libnm_client_aux_extern_libnm_client_aux_extern_la_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
-	-I$(srcdir)/libnm \
-	-I$(builddir)/libnm \
+	-I$(srcdir)/src/libnm-client-public \
+	-I$(builddir)/src/libnm-client-public \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(NULL)
 
-libnm_nm_libnm_aux_libnm_libnm_aux_la_SOURCES = \
-	libnm/nm-libnm-aux/nm-libnm-aux.c \
-	libnm/nm-libnm-aux/nm-libnm-aux.h \
+src_libnm_client_aux_extern_libnm_client_aux_extern_la_SOURCES = \
+	src/libnm-client-aux-extern/nm-libnm-aux.c \
+	src/libnm-client-aux-extern/nm-libnm-aux.h \
 	$(NULL)
 
-libnm_nm_libnm_aux_libnm_libnm_aux_la_LDFLAGS = \
+src_libnm_client_aux_extern_libnm_client_aux_extern_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_LIB_LDFLAGS) \
 	$(NULL)
 
-libnm_nm_libnm_aux_libnm_libnm_aux_la_LIBADD = \
+src_libnm_client_aux_extern_libnm_client_aux_extern_la_LIBADD = \
 	$(GLIB_LIBS) \
-	libnm/libnm.la \
+	src/libnm-client-impl/libnm.la \
 	$(NULL)
 
-$(libnm_nm_libnm_aux_libnm_libnm_aux_la_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(libnm_nm_libnm_aux_libnm_libnm_aux_la_OBJECTS): $(libnm_lib_h_pub_mkenums)
-
-EXTRA_DIST += libnm/nm-libnm-aux/README.md
-
-###############################################################################
+$(src_libnm_client_aux_extern_libnm_client_aux_extern_la_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_libnm_client_aux_extern_libnm_client_aux_extern_la_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 EXTRA_DIST += \
-	shared/nm-glib-aux/tests/meson.build \
-	shared/README.md \
+	src/libnm-client-aux-extern/README.md \
+	src/libnm-client-aux-extern/meson.build \
 	$(NULL)
 
 ###############################################################################
 
-check_programs += shared/nm-glib-aux/tests/test-shared-general
+noinst_LTLIBRARIES += src/libnm-client-test/libnm-client-test.la
 
-shared_nm_glib_aux_tests_test_shared_general_CPPFLAGS = \
+src_libnm_client_test_libnm_client_test_la_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	-I$(builddir)/src/libnm-core-public \
+	-I$(srcdir)/src/libnm-core-public \
+	-I$(srcdir)/src/libnm-client-public \
+	-I$(builddir)/src/libnm-client-public \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(NULL)
 
-shared_nm_glib_aux_tests_test_shared_general_LDFLAGS = \
+src_libnm_client_test_libnm_client_test_la_SOURCES = \
+	src/libnm-client-test/nm-test-libnm-utils.h \
+	src/libnm-client-test/nm-test-utils-impl.c \
+	$(NULL)
+
+src_libnm_client_test_libnm_client_test_la_LDFLAGS = \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_LIB_LDFLAGS) \
+	$(NULL)
+
+src_libnm_client_test_libnm_client_test_la_LIBADD = \
+	$(GLIB_LIBS) \
+	$(NULL)
+
+$(src_libnm_client_test_libnm_client_test_la_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_libnm_client_test_libnm_client_test_la_OBJECTS): $(src_libnm_client_public_mkenums_h)
+
+EXTRA_DIST += \
+	src/libnm-client-test/meson.build \
+	$(NULL)
+
+###############################################################################
+
+EXTRA_DIST += \
+	src/libnm-glib-aux/tests/meson.build \
+	$(NULL)
+
+check_programs += src/libnm-glib-aux/tests/test-shared-general
+
+src_libnm_glib_aux_tests_test_shared_general_CPPFLAGS = \
+	$(dflt_cppflags) \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	$(NULL)
+
+src_libnm_glib_aux_tests_test_shared_general_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-shared_nm_glib_aux_tests_test_shared_general_LDADD = \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/systemd/libnm-systemd-logging-stub.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+src_libnm_glib_aux_tests_test_shared_general_LDADD = \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-log-null/libnm-log-null.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -728,28 +811,29 @@ shared_nm_glib_aux_tests_test_shared_general_LDADD = \
 
 if WITH_JANSSON
 
-check_programs += shared/nm-glib-aux/tests/test-json-aux
+check_programs += src/libnm-glib-aux/tests/test-json-aux
 
-shared_nm_glib_aux_tests_test_json_aux_CPPFLAGS = \
+src_libnm_glib_aux_tests_test_json_aux_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(JANSSON_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(NULL)
 
-shared_nm_glib_aux_tests_test_json_aux_LDFLAGS = \
+src_libnm_glib_aux_tests_test_json_aux_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-shared_nm_glib_aux_tests_test_json_aux_LDADD = \
+src_libnm_glib_aux_tests_test_json_aux_LDADD = \
 	$(JANSSON_LIBS) \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/systemd/libnm-systemd-logging-stub.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-log-null/libnm-log-null.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -988,8 +1072,8 @@ dbusinterfaces_DATA = \
 CLEANFILES += $(introspection_sources)
 CLEANFILES += $(DBUS_INTERFACE_DOCS)
 
-$(libnm_libnm_static_la_OBJECTS):               $(introspection_sources)
-$(libnm_libnm_la_OBJECTS):                      $(introspection_sources)
+$(src_libnm_client_impl_libnm_client_impl_la_OBJECTS):               $(introspection_sources)
+$(src_libnm_client_impl_libnm_la_OBJECTS):                      $(introspection_sources)
 
 EXTRA_DIST += \
 	$(dbusinterfaces_DATA) \
@@ -1183,8 +1267,6 @@ EXTRA_DIST += \
 
 dflt_cppflags_libnm_core = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
 	-I$(srcdir)/src \
@@ -1195,6 +1277,9 @@ dflt_cppflags_libnm_core = \
 	$(NULL)
 
 noinst_LTLIBRARIES += src/libnm-core-impl/libnm-core-impl.la
+
+src/libnm-client-public/nm-enum-types.h.stamp:           src/libnm-client-public/.dirstamp
+src/libnm-client-public/nm-enum-types.c.stamp:           src/libnm-client-public/.dirstamp
 
 GLIB_GENERATED += \
 	$(src_libnm_core_public_mkenums_h) \
@@ -1210,8 +1295,8 @@ src/libnm-core-public/nm-core-enum-types.c.stamp:                           src/
 $(dispatcher_libnm_dispatcher_core_la_OBJECTS):                             $(src_libnm_core_public_mkenums_h)
 $(dispatcher_nm_dispatcher_OBJECTS):                                        $(src_libnm_core_public_mkenums_h)
 $(src_libnm_core_impl_libnm_core_impl_la_OBJECTS):                          $(src_libnm_core_public_mkenums_h)
-$(libnm_libnm_la_OBJECTS):                                                  $(src_libnm_core_public_mkenums_h)
-$(libnm_tests_libnm_vpn_plugin_utils_test_la_OBJECTS):                      $(src_libnm_core_public_mkenums_h)
+$(src_libnm_client_impl_libnm_la_OBJECTS):                                  $(src_libnm_core_public_mkenums_h)
+$(src_contrib_tests_libnm_vpn_plugin_utils_test_la_OBJECTS):                $(src_libnm_core_public_mkenums_h)
 $(src_core_NetworkManager_OBJECTS):                                         $(src_libnm_core_public_mkenums_h)
 $(src_core_devices_adsl_libnm_device_plugin_adsl_la_OBJECTS):               $(src_libnm_core_public_mkenums_h)
 $(src_core_devices_bluetooth_libnm_device_plugin_bluetooth_la_OBJECTS):     $(src_libnm_core_public_mkenums_h)
@@ -1333,6 +1418,8 @@ src_libnm_core_impl_tests_cppflags = \
 	-I$(builddir)/src/libnm-core-impl/tests \
 	-I$(srcdir)/src/libnm-core-impl/tests \
 	-I$(srcdir)/src/libnm-core-impl \
+	-I$(srcdir)/src/ \
+	-I$(builddir)/src/ \
 	$(dflt_cppflags_libnm_core) \
 	$(SANITIZER_EXEC_CFLAGS) \
 	$(NULL)
@@ -1360,12 +1447,12 @@ src_libnm_core_impl_tests_ldadd = \
 	src/libnm-core-impl/libnm-core-impl.la \
 	$(libnm_crypto_lib) \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-base/libnm-base.la \
-	shared/systemd/libnm-systemd-shared.la \
-	shared/systemd/libnm-systemd-logging-stub.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/libnm-base/libnm-base.la \
+	src/libnm-systemd-shared/libnm-systemd-shared.la \
+	src/libnm-log-null/libnm-log-null.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -1433,277 +1520,280 @@ EXTRA_DIST += \
 ###############################################################################
 
 libnm_lib_h_pub_real = \
-	libnm/NetworkManager.h \
-	libnm/nm-access-point.h \
-	libnm/nm-active-connection.h \
-	libnm/nm-autoptr.h \
-	libnm/nm-checkpoint.h \
-	libnm/nm-client.h \
-	libnm/nm-device-6lowpan.h \
-	libnm/nm-device-adsl.h \
-	libnm/nm-device-bond.h \
-	libnm/nm-device-bridge.h \
-	libnm/nm-device-bt.h \
-	libnm/nm-device-dummy.h \
-	libnm/nm-device-ethernet.h \
-	libnm/nm-device-generic.h \
-	libnm/nm-device-infiniband.h \
-	libnm/nm-device-ip-tunnel.h \
-	libnm/nm-device-macsec.h \
-	libnm/nm-device-macvlan.h \
-	libnm/nm-device-modem.h \
-	libnm/nm-device-olpc-mesh.h \
-	libnm/nm-device-ovs-bridge.h \
-	libnm/nm-device-ovs-interface.h \
-	libnm/nm-device-ovs-port.h \
-	libnm/nm-device-ppp.h \
-	libnm/nm-device-team.h \
-	libnm/nm-device-tun.h \
-	libnm/nm-device-veth.h \
-	libnm/nm-device-vlan.h \
-	libnm/nm-device-vrf.h \
-	libnm/nm-device-vxlan.h \
-	libnm/nm-device-wifi-p2p.h \
-	libnm/nm-device-wifi.h \
-	libnm/nm-device-wimax.h \
-	libnm/nm-device-wireguard.h \
-	libnm/nm-device-wpan.h \
-	libnm/nm-device.h \
-	libnm/nm-dhcp-config.h \
-	libnm/nm-ethtool-utils.h \
-	libnm/nm-ip-config.h \
-	libnm/nm-object.h \
-	libnm/nm-remote-connection.h \
-	libnm/nm-secret-agent-old.h \
-	libnm/nm-types.h \
-	libnm/nm-vpn-connection.h \
-	libnm/nm-vpn-editor.h \
-	libnm/nm-vpn-plugin-old.h \
-	libnm/nm-vpn-service-plugin.h \
-	libnm/nm-wifi-p2p-peer.h \
-	libnm/nm-wimax-nsp.h
-libnm_lib_h_pub_mkenums = \
-	libnm/nm-enum-types.h
+	src/libnm-client-public/NetworkManager.h \
+	src/libnm-client-public/nm-access-point.h \
+	src/libnm-client-public/nm-active-connection.h \
+	src/libnm-client-public/nm-autoptr.h \
+	src/libnm-client-public/nm-checkpoint.h \
+	src/libnm-client-public/nm-client.h \
+	src/libnm-client-public/nm-device-6lowpan.h \
+	src/libnm-client-public/nm-device-adsl.h \
+	src/libnm-client-public/nm-device-bond.h \
+	src/libnm-client-public/nm-device-bridge.h \
+	src/libnm-client-public/nm-device-bt.h \
+	src/libnm-client-public/nm-device-dummy.h \
+	src/libnm-client-public/nm-device-ethernet.h \
+	src/libnm-client-public/nm-device-generic.h \
+	src/libnm-client-public/nm-device-infiniband.h \
+	src/libnm-client-public/nm-device-ip-tunnel.h \
+	src/libnm-client-public/nm-device-macsec.h \
+	src/libnm-client-public/nm-device-macvlan.h \
+	src/libnm-client-public/nm-device-modem.h \
+	src/libnm-client-public/nm-device-olpc-mesh.h \
+	src/libnm-client-public/nm-device-ovs-bridge.h \
+	src/libnm-client-public/nm-device-ovs-interface.h \
+	src/libnm-client-public/nm-device-ovs-port.h \
+	src/libnm-client-public/nm-device-ppp.h \
+	src/libnm-client-public/nm-device-team.h \
+	src/libnm-client-public/nm-device-tun.h \
+	src/libnm-client-public/nm-device-veth.h \
+	src/libnm-client-public/nm-device-vlan.h \
+	src/libnm-client-public/nm-device-vrf.h \
+	src/libnm-client-public/nm-device-vxlan.h \
+	src/libnm-client-public/nm-device-wifi-p2p.h \
+	src/libnm-client-public/nm-device-wifi.h \
+	src/libnm-client-public/nm-device-wimax.h \
+	src/libnm-client-public/nm-device-wireguard.h \
+	src/libnm-client-public/nm-device-wpan.h \
+	src/libnm-client-public/nm-device.h \
+	src/libnm-client-public/nm-dhcp-config.h \
+	src/libnm-client-public/nm-ethtool-utils.h \
+	src/libnm-client-public/nm-ip-config.h \
+	src/libnm-client-public/nm-object.h \
+	src/libnm-client-public/nm-remote-connection.h \
+	src/libnm-client-public/nm-secret-agent-old.h \
+	src/libnm-client-public/nm-types.h \
+	src/libnm-client-public/nm-vpn-connection.h \
+	src/libnm-client-public/nm-vpn-editor.h \
+	src/libnm-client-public/nm-vpn-plugin-old.h \
+	src/libnm-client-public/nm-vpn-service-plugin.h \
+	src/libnm-client-public/nm-wifi-p2p-peer.h \
+	src/libnm-client-public/nm-wimax-nsp.h \
+	$(NULL)
+src_libnm_client_public_mkenums_h = \
+	src/libnm-client-public/nm-enum-types.h \
+	$(NULL)
 libnm_lib_h_priv = \
-	libnm/nm-dbus-helpers.h \
-	libnm/nm-default-client.h \
-	libnm/nm-default-libnm.h \
-	libnm/nm-device-private.h \
-	libnm/nm-dhcp4-config.h \
-	libnm/nm-dhcp6-config.h \
-	libnm/nm-dns-manager.h \
-	libnm/nm-ip4-config.h \
-	libnm/nm-ip6-config.h \
-	libnm/nm-libnm-utils.h \
-	libnm/nm-object-private.h \
-	libnm/nm-remote-connection-private.h \
+	src/libnm-client-impl/nm-dbus-helpers.h \
+	src/libnm-client-aux-extern/nm-default-client.h \
+	src/libnm-client-impl/nm-default-libnm.h \
+	src/libnm-client-impl/nm-device-private.h \
+	src/libnm-client-impl/nm-dhcp4-config.h \
+	src/libnm-client-impl/nm-dhcp6-config.h \
+	src/libnm-client-impl/nm-dns-manager.h \
+	src/libnm-client-impl/nm-ip4-config.h \
+	src/libnm-client-impl/nm-ip6-config.h \
+	src/libnm-client-impl/nm-libnm-utils.h \
+	src/libnm-client-impl/nm-object-private.h \
+	src/libnm-client-impl/nm-remote-connection-private.h \
 	$(NULL)
 libnm_lib_c_real = \
-	libnm/nm-client.c \
-	libnm/nm-object.c \
-	libnm/nm-device.c \
-	libnm/nm-active-connection.c \
+	src/libnm-client-impl/nm-client.c \
+	src/libnm-client-impl/nm-object.c \
+	src/libnm-client-impl/nm-device.c \
+	src/libnm-client-impl/nm-active-connection.c \
 	\
-	libnm/nm-access-point.c \
-	libnm/nm-checkpoint.c \
-	libnm/nm-dbus-helpers.c \
-	libnm/nm-device-6lowpan.c \
-	libnm/nm-device-adsl.c \
-	libnm/nm-device-bond.c \
-	libnm/nm-device-bridge.c \
-	libnm/nm-device-bt.c \
-	libnm/nm-device-dummy.c \
-	libnm/nm-device-ethernet.c \
-	libnm/nm-device-generic.c \
-	libnm/nm-device-infiniband.c \
-	libnm/nm-device-ip-tunnel.c \
-	libnm/nm-device-macsec.c \
-	libnm/nm-device-macvlan.c \
-	libnm/nm-device-modem.c \
-	libnm/nm-device-olpc-mesh.c \
-	libnm/nm-device-ovs-bridge.c \
-	libnm/nm-device-ovs-interface.c \
-	libnm/nm-device-ovs-port.c \
-	libnm/nm-device-ppp.c \
-	libnm/nm-device-team.c \
-	libnm/nm-device-tun.c \
-	libnm/nm-device-veth.c \
-	libnm/nm-device-vlan.c \
-	libnm/nm-device-vrf.c \
-	libnm/nm-device-vxlan.c \
-	libnm/nm-device-wifi-p2p.c \
-	libnm/nm-device-wifi.c \
-	libnm/nm-device-wimax.c \
-	libnm/nm-device-wireguard.c \
-	libnm/nm-device-wpan.c \
-	libnm/nm-dhcp-config.c \
-	libnm/nm-dhcp4-config.c \
-	libnm/nm-dhcp6-config.c \
-	libnm/nm-dns-manager.c \
-	libnm/nm-ip-config.c \
-	libnm/nm-ip4-config.c \
-	libnm/nm-ip6-config.c \
-	libnm/nm-libnm-utils.c \
-	libnm/nm-remote-connection.c \
-	libnm/nm-secret-agent-old.c \
-	libnm/nm-vpn-connection.c \
-	libnm/nm-vpn-editor.c \
-	libnm/nm-vpn-plugin-old.c \
-	libnm/nm-vpn-service-plugin.c \
-	libnm/nm-wifi-p2p-peer.c \
-	libnm/nm-wimax-nsp.c \
+	src/libnm-client-impl/nm-access-point.c \
+	src/libnm-client-impl/nm-checkpoint.c \
+	src/libnm-client-impl/nm-dbus-helpers.c \
+	src/libnm-client-impl/nm-device-6lowpan.c \
+	src/libnm-client-impl/nm-device-adsl.c \
+	src/libnm-client-impl/nm-device-bond.c \
+	src/libnm-client-impl/nm-device-bridge.c \
+	src/libnm-client-impl/nm-device-bt.c \
+	src/libnm-client-impl/nm-device-dummy.c \
+	src/libnm-client-impl/nm-device-ethernet.c \
+	src/libnm-client-impl/nm-device-generic.c \
+	src/libnm-client-impl/nm-device-infiniband.c \
+	src/libnm-client-impl/nm-device-ip-tunnel.c \
+	src/libnm-client-impl/nm-device-macsec.c \
+	src/libnm-client-impl/nm-device-macvlan.c \
+	src/libnm-client-impl/nm-device-modem.c \
+	src/libnm-client-impl/nm-device-olpc-mesh.c \
+	src/libnm-client-impl/nm-device-ovs-bridge.c \
+	src/libnm-client-impl/nm-device-ovs-interface.c \
+	src/libnm-client-impl/nm-device-ovs-port.c \
+	src/libnm-client-impl/nm-device-ppp.c \
+	src/libnm-client-impl/nm-device-team.c \
+	src/libnm-client-impl/nm-device-tun.c \
+	src/libnm-client-impl/nm-device-veth.c \
+	src/libnm-client-impl/nm-device-vlan.c \
+	src/libnm-client-impl/nm-device-vrf.c \
+	src/libnm-client-impl/nm-device-vxlan.c \
+	src/libnm-client-impl/nm-device-wifi-p2p.c \
+	src/libnm-client-impl/nm-device-wifi.c \
+	src/libnm-client-impl/nm-device-wimax.c \
+	src/libnm-client-impl/nm-device-wireguard.c \
+	src/libnm-client-impl/nm-device-wpan.c \
+	src/libnm-client-impl/nm-dhcp-config.c \
+	src/libnm-client-impl/nm-dhcp4-config.c \
+	src/libnm-client-impl/nm-dhcp6-config.c \
+	src/libnm-client-impl/nm-dns-manager.c \
+	src/libnm-client-impl/nm-ip-config.c \
+	src/libnm-client-impl/nm-ip4-config.c \
+	src/libnm-client-impl/nm-ip6-config.c \
+	src/libnm-client-impl/nm-libnm-utils.c \
+	src/libnm-client-impl/nm-remote-connection.c \
+	src/libnm-client-impl/nm-secret-agent-old.c \
+	src/libnm-client-impl/nm-vpn-connection.c \
+	src/libnm-client-impl/nm-vpn-editor.c \
+	src/libnm-client-impl/nm-vpn-plugin-old.c \
+	src/libnm-client-impl/nm-vpn-service-plugin.c \
+	src/libnm-client-impl/nm-wifi-p2p-peer.c \
+	src/libnm-client-impl/nm-wimax-nsp.c \
 	$(NULL)
-libnm_lib_c_mkenums = \
-	libnm/nm-enum-types.c
+src_libnm_client_public_mkenums_c = \
+	src/libnm-client-public/nm-enum-types.c \
+	$(NULL)
 
 libnminclude_HEADERS += \
 	$(libnm_lib_h_pub_real)
 
 nodist_libnminclude_HEADERS += \
-	$(libnm_lib_h_pub_mkenums)
+	$(src_libnm_client_public_mkenums_h)
 
 ###############################################################################
 
-noinst_LTLIBRARIES += libnm/libnm_static.la
+noinst_LTLIBRARIES += src/libnm-client-impl/libnm-client-impl.la
 
-libnm_libnm_static_la_CPPFLAGS = \
-	-I$(builddir)/libnm \
-	-I$(srcdir)/libnm \
+src_libnm_client_impl_libnm_client_impl_la_CPPFLAGS = \
+	-I$(builddir)/src/libnm-client-public \
+	-I$(srcdir)/src/libnm-client-public \
 	-I$(srcdir)/src \
 	$(dflt_cppflags_libnm_core) \
 	$(INTROSPECTION_CFLAGS) \
 	$(NULL)
 
-libnm_libnm_static_la_SOURCES = \
+src_libnm_client_impl_libnm_client_impl_la_SOURCES = \
 	$(libnm_lib_c_real) \
 	$(NULL)
 
-nodist_libnm_libnm_static_la_SOURCES = \
-	$(libnm_lib_h_pub_mkenums) \
-	$(libnm_lib_c_mkenums) \
+nodist_src_libnm_client_impl_libnm_client_impl_la_SOURCES = \
+	$(src_libnm_client_public_mkenums_h) \
+	$(src_libnm_client_public_mkenums_c) \
 	$(NULL)
 
-libnm_libnm_static_la_LIBADD = \
+src_libnm_client_impl_libnm_client_impl_la_LIBADD = \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-impl/libnm-core-impl.la \
 	$(libnm_crypto_lib) \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-base/libnm-base.la \
+	src/libnm-base/libnm-base.la \
 	introspection/libnmdbus.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/systemd/libnm-systemd-shared.la \
-	shared/systemd/libnm-systemd-logging-stub.la \
-	shared/nm-udev-aux/libnm-udev-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-systemd-shared/libnm-systemd-shared.la \
+	src/libnm-log-null/libnm-log-null.la \
+	src/libnm-udev-aux/libnm-udev-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(DL_LIBS) \
 	$(UUID_LIBS) \
 	$(LIBUDEV_LIBS) \
 	$(NULL)
 
-$(libnm_libnm_static_la_OBJECTS) : $(libnm_lib_h_pub_mkenums)
-$(libnm_libnm_static_la_OBJECTS) : $(src_libnm_core_public_mkenums_h)
+$(src_libnm_client_impl_libnm_client_impl_la_OBJECTS) : $(src_libnm_client_public_mkenums_h)
+$(src_libnm_client_impl_libnm_client_impl_la_OBJECTS) : $(src_libnm_core_public_mkenums_h)
 
 ###############################################################################
 
-lib_LTLIBRARIES += libnm/libnm.la
+lib_LTLIBRARIES += src/libnm-client-impl/libnm.la
 
 GLIB_GENERATED += \
-	$(libnm_lib_h_pub_mkenums) \
-	$(libnm_lib_c_mkenums)
+	$(src_libnm_client_public_mkenums_h) \
+	$(src_libnm_client_public_mkenums_c)
 nm_enum_types_sources = \
-	$(libnm_lib_h_pub_mkenums) \
+	$(src_libnm_client_public_mkenums_h) \
 	$(libnm_lib_h_pub_real)
 nm_enum_types_MKENUMS_H_FLAGS = --fhead '\#include "nm-core-enum-types.h"\n'
-nm_enum_types_MKENUMS_C_FLAGS = --fhead '\#undef G_LOG_DOMAIN\n\#include "libnm/nm-default-libnm.h"\n'
+nm_enum_types_MKENUMS_C_FLAGS = --fhead '\#undef G_LOG_DOMAIN\n\#include "libnm-client-impl/nm-default-libnm.h"\n'
 
-$(dispatcher_nm_dispatcher_OBJECTS):                    $(libnm_lib_h_pub_mkenums)
-$(dispatcher_libnm_dispatcher_core_la_OBJECTS):         $(libnm_lib_h_pub_mkenums)
-$(libnm_libnm_la_OBJECTS):                              $(libnm_lib_h_pub_mkenums)
-$(libnm_tests_libnm_vpn_plugin_utils_test_la_OBJECTS):  $(src_libnm_core_public_mkenums_h)
+$(dispatcher_nm_dispatcher_OBJECTS):                                    $(src_libnm_client_public_mkenums_h)
+$(dispatcher_libnm_dispatcher_core_la_OBJECTS):                         $(src_libnm_client_public_mkenums_h)
+$(src_libnm_client_impl_libnm_la_OBJECTS):                              $(src_libnm_client_public_mkenums_h)
+$(src_contrib_tests_libnm_vpn_plugin_utils_test_la_OBJECTS):            $(src_libnm_client_public_mkenums_h)
 
-libnm_libnm_la_CPPFLAGS = \
-	-I$(builddir)/libnm \
-	-I$(srcdir)/libnm \
+src_libnm_client_impl_libnm_la_CPPFLAGS = \
+	-I$(builddir)/src/libnm-client-public \
+	-I$(srcdir)/src/libnm-client-public \
 	-I$(srcdir)/src \
 	$(dflt_cppflags_libnm_core) \
 	$(LIBUDEV_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
 	$(NULL)
 
-libnm_libnm_la_SOURCES = \
+src_libnm_client_impl_libnm_la_SOURCES = \
 	$(libnm_lib_h_pub_real) \
 	$(libnm_lib_h_priv) \
 	$(NULL)
 
-EXTRA_libnm_libnm_la_DEPENDENCIES = \
-	libnm/libnm.ver
+EXTRA_src_libnm_client_impl_libnm_la_DEPENDENCIES = \
+	src/libnm-client-impl/libnm.ver
 
-libnm_libnm_la_LIBADD = \
-	libnm/libnm_static.la \
+src_libnm_client_impl_libnm_la_LIBADD = \
+	src/libnm-client-impl/libnm-client-impl.la \
 	$(NULL)
 
-libnm_libnm_la_LDFLAGS = \
-	-Wl,--version-script="$(srcdir)/libnm/libnm.ver" \
+src_libnm_client_impl_libnm_la_LDFLAGS = \
+	-Wl,--version-script="$(srcdir)/src/libnm-client-impl/libnm.ver" \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_LIB_LDFLAGS) \
 	-version-info "1:0:1"
 
-check-local-exports-libnm: libnm/libnm.la
-	$(srcdir)/tools/check-exports.sh "$(builddir)/libnm/.libs/libnm.so" "$(srcdir)/libnm/libnm.ver"
+check-local-exports-libnm: src/libnm-client-impl/libnm.la
+	$(srcdir)/tools/check-exports.sh "$(builddir)/src/libnm-client-impl/.libs/libnm.so" "$(srcdir)/src/libnm-client-impl/libnm.ver"
 
 check_local += check-local-exports-libnm
 
-pkgconfig_DATA += libnm/libnm.pc
+pkgconfig_DATA += src/libnm-client-impl/libnm.pc
 
 DISTCLEANFILES += \
-	libnm/libnm.pc
+	src/libnm-client-impl/libnm.pc
 
 EXTRA_DIST += \
-	libnm/nm-enum-types.c.template \
-	libnm/nm-enum-types.h.template \
+	src/libnm-client-public/nm-enum-types.c.template \
+	src/libnm-client-public/nm-enum-types.h.template \
 	\
-	libnm/libnm.pc.in \
-	libnm/libnm.ver
+	src/libnm-client-impl/libnm.pc.in \
+	src/libnm-client-impl/libnm.ver
 
-libnm_NM_1_0_typelib =
+src_libnm_client_impl_NM_1_0_typelib =
 
 if HAVE_INTROSPECTION
-libnm_NM_1_0_typelib += libnm/NM-1.0.typelib
+src_libnm_client_impl_NM_1_0_typelib += src/libnm-client-impl/NM-1.0.typelib
 
-libnm/NM-1.0.gir: libnm/libnm.la
-libnm_NM_1_0_gir_INCLUDES = Gio-2.0
-libnm_NM_1_0_gir_PACKAGES = gio-2.0
-libnm_NM_1_0_gir_EXPORT_PACKAGES = libnm
-libnm_NM_1_0_gir_CFLAGS = \
-	$(libnm_libnm_la_CPPFLAGS) \
+src/libnm-client-impl/NM-1.0.gir: src/libnm-client-impl/libnm.la
+src_libnm_client_impl_NM_1_0_gir_INCLUDES = Gio-2.0
+src_libnm_client_impl_NM_1_0_gir_PACKAGES = gio-2.0
+src_libnm_client_impl_NM_1_0_gir_EXPORT_PACKAGES = libnm
+src_libnm_client_impl_NM_1_0_gir_CFLAGS = \
+	$(src_libnm_client_impl_libnm_la_CPPFLAGS) \
 	-DNETWORKMANAGER_COMPILATION \
 	$(NULL)
-libnm_NM_1_0_gir_LIBS = libnm/libnm.la
-libnm_NM_1_0_gir_FILES = \
+src_libnm_client_impl_NM_1_0_gir_LIBS = src/libnm-client-impl/libnm.la
+src_libnm_client_impl_NM_1_0_gir_FILES = \
 	$(src_libnm_core_public_mkenums_h) \
 	$(src_libnm_core_impl_lib_h_pub_real) \
 	$(src_libnm_core_public_mkenums_c) \
 	$(src_libnm_core_impl_lib_c_real) \
-	$(libnm_lib_h_pub_mkenums) \
+	$(src_libnm_client_public_mkenums_h) \
 	$(libnm_lib_h_pub_real) \
-	$(libnm_lib_c_mkenums) \
+	$(src_libnm_client_public_mkenums_c) \
 	$(libnm_lib_c_real)
-libnm_NM_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=NM --symbol-prefix=nm
+src_libnm_client_impl_NM_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=NM --symbol-prefix=nm
 
-libnm/libnm.typelib: libnm/libnm.gir
-	$(INTROSPECTION_COMPILER) --includedir=$(srcdir)/src/libnm-core-public --includedir=$(builddir)/src/libnm-core-public --includedir=$(srcdir)/libnm --includedir=$(builddir)/libnm $< -o $@
+src/libnm-client-impl/libnm.typelib: src/libnm-client-impl/libnm.gir
+	$(INTROSPECTION_COMPILER) --includedir=$(srcdir)/src/libnm-core-public --includedir=$(builddir)/src/libnm-core-public --includedir=$(srcdir)/libnm-client-public --includedir=$(builddir)/libnm-client-public $< -o $@
 
-INTROSPECTION_GIRS += libnm/NM-1.0.gir
+INTROSPECTION_GIRS += src/libnm-client-impl/NM-1.0.gir
 
 libnm_noinst_data = \
 	clients/cli/generate-docs-nm-settings-nmcli.xml \
-	libnm/nm-property-infos-dbus.xml \
-	libnm/nm-property-infos-ifcfg-rh.xml \
-	libnm/nm-property-infos-keyfile.xml \
-	libnm/nm-property-infos-nmcli.xml \
-	libnm/nm-settings-docs-gir.xml \
+	src/libnm-client-impl/nm-property-infos-dbus.xml \
+	src/libnm-client-impl/nm-property-infos-ifcfg-rh.xml \
+	src/libnm-client-impl/nm-property-infos-keyfile.xml \
+	src/libnm-client-impl/nm-property-infos-nmcli.xml \
+	src/libnm-client-impl/nm-settings-docs-gir.xml \
 	man/nm-settings-docs-dbus.xml \
 	man/nm-settings-docs-nmcli.xml \
 	$(NULL)
@@ -1727,26 +1817,26 @@ endif
 
 libnm_docs_sources = $(src_libnm_core_impl_lib_c_settings_real)
 
-libnm/nm-property-infos-%.xml: tools/generate-docs-nm-property-infos.pl $(libnm_docs_sources)
+src/libnm-client-impl/nm-property-infos-%.xml: tools/generate-docs-nm-property-infos.pl $(libnm_docs_sources)
 	$(AM_V_GEN) $(srcdir)/tools/generate-docs-nm-property-infos.pl $(patsubst nm-property-infos-%.xml,%,$(notdir $@)) $@ $(filter-out $<,$^)
 
-libnm/nm-settings-docs-gir.xml: tools/generate-docs-nm-settings-docs-gir.py libnm/NM-1.0.gir libnm/NM-1.0.typelib libnm/libnm.la $(libnm_docs_sources)
+src/libnm-client-impl/nm-settings-docs-gir.xml: tools/generate-docs-nm-settings-docs-gir.py src/libnm-client-impl/NM-1.0.gir src/libnm-client-impl/NM-1.0.typelib src/libnm-client-impl/libnm.la $(libnm_docs_sources)
 	$(AM_V_GEN) \
-	export GI_TYPELIB_PATH=$(abs_builddir)/libnm$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
-	export LD_LIBRARY_PATH=$(abs_builddir)/libnm/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
-	$(call set_sanitizer_env,$(abs_builddir)/libnm/.libs/libnm.so); \
+	export GI_TYPELIB_PATH=$(abs_builddir)/src/libnm-client-impl$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
+	export LD_LIBRARY_PATH=$(abs_builddir)/src/libnm-client-impl/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
+	$(call set_sanitizer_env,$(abs_builddir)/src/libnm-client-impl/.libs/libnm.so); \
 	"$(PYTHON)" \
 	$(srcdir)/tools/generate-docs-nm-settings-docs-gir.py \
-		--gir $(builddir)/libnm/NM-1.0.gir \
+		--gir $(builddir)/src/libnm-client-impl/NM-1.0.gir \
 		--output $@
 
-man/nm-settings-docs-nmcli.xml: clients/cli/generate-docs-nm-settings-nmcli.xml libnm/nm-property-infos-nmcli.xml libnm/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py man/common.ent
+man/nm-settings-docs-nmcli.xml: clients/cli/generate-docs-nm-settings-nmcli.xml src/libnm-client-impl/nm-property-infos-nmcli.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py man/common.ent
 	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/tools/generate-docs-nm-settings-docs-merge.py --only-from-first $@ $(wordlist 1,3,$^)
 
-clients/common/settings-docs-input.xml: libnm/nm-property-infos-nmcli.xml libnm/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py
+clients/common/settings-docs-input.xml: src/libnm-client-impl/nm-property-infos-nmcli.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py
 	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/tools/generate-docs-nm-settings-docs-merge.py $@ $(wordlist 1,2,$^)
 
-man/nm-settings-docs-%.xml: libnm/nm-property-infos-%.xml libnm/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py man/common.ent
+man/nm-settings-docs-%.xml: src/libnm-client-impl/nm-property-infos-%.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py man/common.ent
 	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/tools/generate-docs-nm-settings-docs-merge.py $@ $(wordlist 1,2,$^)
 
 EXTRA_DIST += $(libnm_noinst_data)
@@ -1758,114 +1848,106 @@ EXTRA_DIST += \
 	tools/generate-docs-nm-property-infos.pl \
 	tools/generate-docs-nm-settings-docs-merge.py \
 	tools/generate-docs-nm-settings-docs-gir.py \
-	libnm/meson.build \
+	src/libnm-client-impl/meson.build \
 	$(NULL)
 
 ###############################################################################
 
-check_programs += libnm/tests/test-libnm
+check_programs += src/libnm-client-impl/tests/test-libnm
 
-libnm_tests_programs_req_introspection = \
-	libnm/tests/test-nm-client \
-	libnm/tests/test-remote-settings-client \
-	libnm/tests/test-secret-agent
+src_libnm_client_impl_tests_programs_req_introspection = \
+	src/libnm-client-impl/tests/test-nm-client \
+	src/libnm-client-impl/tests/test-remote-settings-client \
+	src/libnm-client-impl/tests/test-secret-agent
 
 if HAVE_INTROSPECTION
-check_programs += $(libnm_tests_programs_req_introspection)
+check_programs += $(src_libnm_client_impl_tests_programs_req_introspection)
 else
-check_programs_norun += $(libnm_tests_programs_req_introspection)
+check_programs_norun += $(src_libnm_client_impl_tests_programs_req_introspection)
 endif
 
-libnm_tests_cppflags = \
-	-I$(srcdir)/libnm \
-	-I$(builddir)/libnm \
+src_libnm_client_impl_tests_cppflags = \
+	-I$(srcdir)/src/libnm-client-public \
+	-I$(builddir)/src/libnm-client-public \
 	$(dflt_cppflags_libnm_core) \
 	$(SANITIZER_EXEC_CFLAGS) \
 	$(NULL)
 
-libnm_tests_ldadd = \
-	libnm/libnm_static.la \
+src_libnm_client_impl_tests_ldadd = \
+	src/libnm-client-test/libnm-client-test.la \
+	src/libnm-client-impl/libnm-client-impl.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-libnm_tests_ldflags = \
+src_libnm_client_impl_tests_ldflags = \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-libnm_tests_test_libnm_CPPFLAGS = $(libnm_tests_cppflags)
-libnm_tests_test_nm_client_CPPFLAGS = $(libnm_tests_cppflags)
-libnm_tests_test_remote_settings_client_CPPFLAGS = $(libnm_tests_cppflags)
-libnm_tests_test_secret_agent_CPPFLAGS = $(libnm_tests_cppflags)
+src_libnm_client_impl_tests_test_libnm_CPPFLAGS = $(src_libnm_client_impl_tests_cppflags)
+src_libnm_client_impl_tests_test_nm_client_CPPFLAGS = $(src_libnm_client_impl_tests_cppflags)
+src_libnm_client_impl_tests_test_remote_settings_client_CPPFLAGS = $(src_libnm_client_impl_tests_cppflags)
+src_libnm_client_impl_tests_test_secret_agent_CPPFLAGS = $(src_libnm_client_impl_tests_cppflags)
 
-libnm_tests_test_libnm_SOURCES = \
-	shared/nm-utils/nm-compat.c \
-	libnm/tests/test-libnm.c \
+src_libnm_client_impl_tests_test_libnm_SOURCES = \
+	src/contrib/nm-compat.c \
+	src/contrib/nm-compat.h \
+	src/libnm-client-impl/tests/test-libnm.c \
 	$(NULL)
 
-libnm_tests_test_nm_client_SOURCES = \
-	shared/nm-test-utils-impl.c \
-	shared/nm-test-libnm-utils.h \
-	libnm/tests/test-nm-client.c
+src_libnm_client_impl_tests_test_libnm_LDADD = $(src_libnm_client_impl_tests_ldadd)
+src_libnm_client_impl_tests_test_nm_client_LDADD = $(src_libnm_client_impl_tests_ldadd)
+src_libnm_client_impl_tests_test_remote_settings_client_LDADD = $(src_libnm_client_impl_tests_ldadd)
+src_libnm_client_impl_tests_test_secret_agent_LDADD = $(src_libnm_client_impl_tests_ldadd)
 
-libnm_tests_test_remote_settings_client_SOURCES = \
-	shared/nm-test-utils-impl.c \
-	shared/nm-test-libnm-utils.h \
-	libnm/tests/test-remote-settings-client.c
+src_libnm_client_impl_tests_test_libnm_LDFLAGS = $(src_libnm_client_impl_tests_ldflags)
+src_libnm_client_impl_tests_test_nm_client_LDFLAGS = $(src_libnm_client_impl_tests_ldflags)
+src_libnm_client_impl_tests_test_remote_settings_client_LDFLAGS = $(src_libnm_client_impl_tests_ldflags)
+src_libnm_client_impl_tests_test_secret_agent_LDFLAGS = $(src_libnm_client_impl_tests_ldflags)
 
-libnm_tests_test_secret_agent_SOURCES = \
-	shared/nm-test-utils-impl.c \
-	shared/nm-test-libnm-utils.h \
-	libnm/tests/test-secret-agent.c
-
-libnm_tests_test_libnm_LDADD = $(libnm_tests_ldadd)
-libnm_tests_test_nm_client_LDADD = $(libnm_tests_ldadd)
-libnm_tests_test_remote_settings_client_LDADD = $(libnm_tests_ldadd)
-libnm_tests_test_secret_agent_LDADD = $(libnm_tests_ldadd)
-
-libnm_tests_test_libnm_LDFLAGS = $(libnm_tests_ldflags)
-libnm_tests_test_nm_client_LDFLAGS = $(libnm_tests_ldflags)
-libnm_tests_test_remote_settings_client_LDFLAGS = $(libnm_tests_ldflags)
-libnm_tests_test_secret_agent_LDFLAGS = $(libnm_tests_ldflags)
-
-$(libnm_tests_test_libnm_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(libnm_tests_test_nm_client_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(libnm_tests_test_remote_settings_client_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(libnm_tests_test_secret_agent_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_libnm_client_impl_tests_test_libnm_OBJECTS):                  $(src_libnm_core_public_mkenums_h) $(src_libnm_client_public_mkenums_h)
+$(src_libnm_client_impl_tests_test_nm_client_OBJECTS):              $(src_libnm_core_public_mkenums_h) $(src_libnm_client_public_mkenums_h)
+$(src_libnm_client_impl_tests_test_remote_settings_client_OBJECTS): $(src_libnm_core_public_mkenums_h) $(src_libnm_client_public_mkenums_h)
+$(src_libnm_client_impl_tests_test_secret_agent_OBJECTS):           $(src_libnm_core_public_mkenums_h) $(src_libnm_client_public_mkenums_h)
 
 # tools/test-networkmanager-service.py uses libnm's typelib. Ensure it
 # is built first.
-$(libnm_tests_test_nm_client_OBJECTS):              $(libnm_NM_1_0_typelib)
-$(libnm_tests_test_remote_settings_client_OBJECTS): $(libnm_NM_1_0_typelib)
-$(libnm_tests_test_secret_agent_OBJECTS):           $(libnm_NM_1_0_typelib)
+$(src_libnm_client_impl_tests_test_nm_client_OBJECTS):              $(src_libnm_client_impl_NM_1_0_typelib)
+$(src_libnm_client_impl_tests_test_remote_settings_client_OBJECTS): $(src_libnm_client_impl_NM_1_0_typelib)
+$(src_libnm_client_impl_tests_test_secret_agent_OBJECTS):           $(src_libnm_client_impl_NM_1_0_typelib)
+
+EXTRA_DIST += \
+	src/libnm-client-impl/tests/meson.build
 
 ###############################################################################
 
 # just test, that we can build "nm-vpn-plugin-utils.c"
 
-check_ltlibraries += libnm/tests/libnm-vpn-plugin-utils-test.la
+check_ltlibraries += src/contrib/tests/libnm-vpn-plugin-utils-test.la
 
-libnm_tests_libnm_vpn_plugin_utils_test_la_SOURCES = \
-	shared/nm-utils/nm-vpn-plugin-utils.c \
-	shared/nm-utils/nm-vpn-plugin-utils.h \
+src_contrib_tests_libnm_vpn_plugin_utils_test_la_SOURCES = \
+	src/contrib/nm-vpn-plugin-utils.c \
+	src/contrib/nm-vpn-plugin-utils.h \
 	$(NULL)
 
-libnm_tests_libnm_vpn_plugin_utils_test_la_CFLAGS = \
+src_contrib_tests_libnm_vpn_plugin_utils_test_la_CFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
-	-I$(srcdir)/libnm \
-	-I$(builddir)/libnm \
+	-I$(srcdir)/src/libnm-client-public \
+	-I$(builddir)/src/libnm-client-public \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_EXEC_CFLAGS) \
 	$(NULL)
 
-libnm_tests_libnm_vpn_plugin_utils_test_la_LIBADD = \
+src_contrib_tests_libnm_vpn_plugin_utils_test_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(NULL)
 
 EXTRA_DIST += \
-	libnm/tests/meson.build
+	src/contrib/meson.build \
+	src/contrib/tests/meson.build \
+	$(NULL)
 
 ###############################################################################
 # src/core/
@@ -1928,169 +2010,154 @@ check_local += check-config-options
 
 libsystemd_cppflags = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
-	-I$(srcdir)/shared/systemd/ \
-	-I$(srcdir)/shared/systemd/sd-adapt-shared \
-	-I$(srcdir)/shared/systemd/src/basic \
-	-I$(srcdir)/shared/systemd/src/shared \
+	-I$(srcdir)/src/ \
+	-I$(builddir)/src/ \
+	-I$(srcdir)/src/libnm-systemd-shared/ \
+	-I$(srcdir)/src/libnm-systemd-shared/sd-adapt-shared \
+	-I$(srcdir)/src/libnm-systemd-shared/src/basic \
+	-I$(srcdir)/src/libnm-systemd-shared/src/shared \
 	$(LIBSYSTEMD_NM_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(NULL)
 
-noinst_LTLIBRARIES += shared/systemd/libnm-systemd-logging-stub.la
+noinst_LTLIBRARIES += src/libnm-systemd-shared/libnm-systemd-shared.la
 
-shared_systemd_libnm_systemd_logging_stub_la_CPPFLAGS = \
+src_libnm_systemd_shared_libnm_systemd_shared_la_CPPFLAGS = \
 	$(libsystemd_cppflags) \
 	$(NULL)
 
-shared_systemd_libnm_systemd_logging_stub_la_SOURCES = \
-	shared/systemd/nm-logging-stub.c \
+src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
+	src/libnm-systemd-shared/nm-default-systemd-shared.h \
+	src/libnm-systemd-shared/nm-sd-utils-shared.c \
+	src/libnm-systemd-shared/nm-sd-utils-shared.h \
+	src/libnm-systemd-shared/sd-adapt-shared/architecture.h \
+	src/libnm-systemd-shared/sd-adapt-shared/arphrd-list.h \
+	src/libnm-systemd-shared/sd-adapt-shared/blockdev-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/build.h \
+	src/libnm-systemd-shared/sd-adapt-shared/copy.h \
+	src/libnm-systemd-shared/sd-adapt-shared/def.h \
+	src/libnm-systemd-shared/sd-adapt-shared/dhcp-server-internal.h \
+	src/libnm-systemd-shared/sd-adapt-shared/dirent-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/errno-list.h \
+	src/libnm-systemd-shared/sd-adapt-shared/glob-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/gunicode.h \
+	src/libnm-systemd-shared/sd-adapt-shared/idn-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/ioprio.h \
+	src/libnm-systemd-shared/sd-adapt-shared/locale-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/memfd-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/missing_fs.h \
+	src/libnm-systemd-shared/sd-adapt-shared/missing_keyctl.h \
+	src/libnm-systemd-shared/sd-adapt-shared/missing_magic.h \
+	src/libnm-systemd-shared/sd-adapt-shared/missing_network.h \
+	src/libnm-systemd-shared/sd-adapt-shared/missing_sched.h \
+	src/libnm-systemd-shared/sd-adapt-shared/missing_timerfd.h \
+	src/libnm-systemd-shared/sd-adapt-shared/mkdir.h \
+	src/libnm-systemd-shared/sd-adapt-shared/namespace-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/nm-sd-adapt-shared.h \
+	src/libnm-systemd-shared/sd-adapt-shared/nulstr-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/raw-clone.h \
+	src/libnm-systemd-shared/sd-adapt-shared/rlimit-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/terminal-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/unaligned.h \
+	src/libnm-systemd-shared/sd-adapt-shared/user-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/virt.h \
+	src/libnm-systemd-shared/src/basic/alloc-util.c \
+	src/libnm-systemd-shared/src/basic/alloc-util.h \
+	src/libnm-systemd-shared/src/basic/async.h \
+	src/libnm-systemd-shared/src/basic/cgroup-util.h \
+	src/libnm-systemd-shared/src/basic/env-file.c \
+	src/libnm-systemd-shared/src/basic/env-file.h \
+	src/libnm-systemd-shared/src/basic/env-util.c \
+	src/libnm-systemd-shared/src/basic/env-util.h \
+	src/libnm-systemd-shared/src/basic/errno-util.h \
+	src/libnm-systemd-shared/src/basic/escape.c \
+	src/libnm-systemd-shared/src/basic/escape.h \
+	src/libnm-systemd-shared/src/basic/ether-addr-util.c \
+	src/libnm-systemd-shared/src/basic/ether-addr-util.h \
+	src/libnm-systemd-shared/src/basic/extract-word.c \
+	src/libnm-systemd-shared/src/basic/extract-word.h \
+	src/libnm-systemd-shared/src/basic/fd-util.c \
+	src/libnm-systemd-shared/src/basic/fd-util.h \
+	src/libnm-systemd-shared/src/basic/fileio.c \
+	src/libnm-systemd-shared/src/basic/fileio.h \
+	src/libnm-systemd-shared/src/basic/format-util.c \
+	src/libnm-systemd-shared/src/basic/format-util.h \
+	src/libnm-systemd-shared/src/basic/fs-util.c \
+	src/libnm-systemd-shared/src/basic/fs-util.h \
+	src/libnm-systemd-shared/src/basic/hash-funcs.c \
+	src/libnm-systemd-shared/src/basic/hash-funcs.h \
+	src/libnm-systemd-shared/src/basic/hashmap.c \
+	src/libnm-systemd-shared/src/basic/hashmap.h \
+	src/libnm-systemd-shared/src/basic/hexdecoct.c \
+	src/libnm-systemd-shared/src/basic/hexdecoct.h \
+	src/libnm-systemd-shared/src/basic/hostname-util.c \
+	src/libnm-systemd-shared/src/basic/hostname-util.h \
+	src/libnm-systemd-shared/src/basic/in-addr-util.c \
+	src/libnm-systemd-shared/src/basic/in-addr-util.h \
+	src/libnm-systemd-shared/src/basic/io-util.c \
+	src/libnm-systemd-shared/src/basic/io-util.h \
+	src/libnm-systemd-shared/src/basic/list.h \
+	src/libnm-systemd-shared/src/basic/log.h \
+	src/libnm-systemd-shared/src/basic/macro.h \
+	src/libnm-systemd-shared/src/basic/memory-util.c \
+	src/libnm-systemd-shared/src/basic/memory-util.h \
+	src/libnm-systemd-shared/src/basic/mempool.c \
+	src/libnm-systemd-shared/src/basic/mempool.h \
+	src/libnm-systemd-shared/src/basic/missing_fcntl.h \
+	src/libnm-systemd-shared/src/basic/missing_random.h \
+	src/libnm-systemd-shared/src/basic/missing_socket.h \
+	src/libnm-systemd-shared/src/basic/missing_stat.h \
+	src/libnm-systemd-shared/src/basic/missing_syscall.h \
+	src/libnm-systemd-shared/src/basic/missing_type.h \
+	src/libnm-systemd-shared/src/basic/parse-util.c \
+	src/libnm-systemd-shared/src/basic/parse-util.h \
+	src/libnm-systemd-shared/src/basic/path-util.c \
+	src/libnm-systemd-shared/src/basic/path-util.h \
+	src/libnm-systemd-shared/src/basic/prioq.c \
+	src/libnm-systemd-shared/src/basic/prioq.h \
+	src/libnm-systemd-shared/src/basic/process-util.c \
+	src/libnm-systemd-shared/src/basic/process-util.h \
+	src/libnm-systemd-shared/src/basic/random-util.c \
+	src/libnm-systemd-shared/src/basic/random-util.h \
+	src/libnm-systemd-shared/src/basic/ratelimit.c \
+	src/libnm-systemd-shared/src/basic/ratelimit.h \
+	src/libnm-systemd-shared/src/basic/set.h \
+	src/libnm-systemd-shared/src/basic/signal-util.c \
+	src/libnm-systemd-shared/src/basic/signal-util.h \
+	src/libnm-systemd-shared/src/basic/siphash24.h \
+	src/libnm-systemd-shared/src/basic/socket-util.c \
+	src/libnm-systemd-shared/src/basic/socket-util.h \
+	src/libnm-systemd-shared/src/basic/sort-util.h \
+	src/libnm-systemd-shared/src/basic/sparse-endian.h \
+	src/libnm-systemd-shared/src/basic/stat-util.c \
+	src/libnm-systemd-shared/src/basic/stat-util.h \
+	src/libnm-systemd-shared/src/basic/stdio-util.h \
+	src/libnm-systemd-shared/src/basic/string-table.c \
+	src/libnm-systemd-shared/src/basic/string-table.h \
+	src/libnm-systemd-shared/src/basic/string-util.c \
+	src/libnm-systemd-shared/src/basic/string-util.h \
+	src/libnm-systemd-shared/src/basic/strv.c \
+	src/libnm-systemd-shared/src/basic/strv.h \
+	src/libnm-systemd-shared/src/basic/strxcpyx.c \
+	src/libnm-systemd-shared/src/basic/strxcpyx.h \
+	src/libnm-systemd-shared/src/basic/time-util.c \
+	src/libnm-systemd-shared/src/basic/time-util.h \
+	src/libnm-systemd-shared/src/basic/tmpfile-util.c \
+	src/libnm-systemd-shared/src/basic/tmpfile-util.h \
+	src/libnm-systemd-shared/src/basic/umask-util.h \
+	src/libnm-systemd-shared/src/basic/utf8.c \
+	src/libnm-systemd-shared/src/basic/utf8.h \
+	src/libnm-systemd-shared/src/basic/util.c \
+	src/libnm-systemd-shared/src/basic/util.h \
+	src/libnm-systemd-shared/src/shared/dns-domain.c \
+	src/libnm-systemd-shared/src/shared/dns-domain.h \
+	src/libnm-systemd-shared/src/shared/log-link.h \
+	src/libnm-systemd-shared/src/shared/web-util.c \
+	src/libnm-systemd-shared/src/shared/web-util.h \
 	$(NULL)
 
-shared_systemd_libnm_systemd_logging_stub_la_LIBADD = \
-	$(GLIB_LIBS) \
-	$(CODE_COVERAGE_LDFLAGS) \
-	$(NULL)
-
-noinst_LTLIBRARIES += shared/systemd/libnm-systemd-shared.la
-
-shared_systemd_libnm_systemd_shared_la_CPPFLAGS = \
-	$(libsystemd_cppflags) \
-	$(NULL)
-
-shared_systemd_libnm_systemd_shared_la_SOURCES = \
-	shared/systemd/nm-default-systemd-shared.h \
-	shared/systemd/nm-sd-utils-shared.c \
-	shared/systemd/nm-sd-utils-shared.h \
-	shared/systemd/sd-adapt-shared/architecture.h \
-	shared/systemd/sd-adapt-shared/arphrd-list.h \
-	shared/systemd/sd-adapt-shared/blockdev-util.h \
-	shared/systemd/sd-adapt-shared/build.h \
-	shared/systemd/sd-adapt-shared/copy.h \
-	shared/systemd/sd-adapt-shared/def.h \
-	shared/systemd/sd-adapt-shared/dhcp-server-internal.h \
-	shared/systemd/sd-adapt-shared/dirent-util.h \
-	shared/systemd/sd-adapt-shared/errno-list.h \
-	shared/systemd/sd-adapt-shared/glob-util.h \
-	shared/systemd/sd-adapt-shared/gunicode.h \
-	shared/systemd/sd-adapt-shared/idn-util.h \
-	shared/systemd/sd-adapt-shared/ioprio.h \
-	shared/systemd/sd-adapt-shared/locale-util.h \
-	shared/systemd/sd-adapt-shared/memfd-util.h \
-	shared/systemd/sd-adapt-shared/missing_fs.h \
-	shared/systemd/sd-adapt-shared/missing_keyctl.h \
-	shared/systemd/sd-adapt-shared/missing_magic.h \
-	shared/systemd/sd-adapt-shared/missing_network.h \
-	shared/systemd/sd-adapt-shared/missing_sched.h \
-	shared/systemd/sd-adapt-shared/missing_timerfd.h \
-	shared/systemd/sd-adapt-shared/mkdir.h \
-	shared/systemd/sd-adapt-shared/namespace-util.h \
-	shared/systemd/sd-adapt-shared/nm-sd-adapt-shared.h \
-	shared/systemd/sd-adapt-shared/nulstr-util.h \
-	shared/systemd/sd-adapt-shared/raw-clone.h \
-	shared/systemd/sd-adapt-shared/rlimit-util.h \
-	shared/systemd/sd-adapt-shared/terminal-util.h \
-	shared/systemd/sd-adapt-shared/unaligned.h \
-	shared/systemd/sd-adapt-shared/user-util.h \
-	shared/systemd/sd-adapt-shared/virt.h \
-	shared/systemd/src/basic/alloc-util.c \
-	shared/systemd/src/basic/alloc-util.h \
-	shared/systemd/src/basic/async.h \
-	shared/systemd/src/basic/cgroup-util.h \
-	shared/systemd/src/basic/env-file.c \
-	shared/systemd/src/basic/env-file.h \
-	shared/systemd/src/basic/env-util.c \
-	shared/systemd/src/basic/env-util.h \
-	shared/systemd/src/basic/errno-util.h \
-	shared/systemd/src/basic/escape.c \
-	shared/systemd/src/basic/escape.h \
-	shared/systemd/src/basic/ether-addr-util.c \
-	shared/systemd/src/basic/ether-addr-util.h \
-	shared/systemd/src/basic/extract-word.c \
-	shared/systemd/src/basic/extract-word.h \
-	shared/systemd/src/basic/fd-util.c \
-	shared/systemd/src/basic/fd-util.h \
-	shared/systemd/src/basic/fileio.c \
-	shared/systemd/src/basic/fileio.h \
-	shared/systemd/src/basic/format-util.c \
-	shared/systemd/src/basic/format-util.h \
-	shared/systemd/src/basic/fs-util.c \
-	shared/systemd/src/basic/fs-util.h \
-	shared/systemd/src/basic/hash-funcs.c \
-	shared/systemd/src/basic/hash-funcs.h \
-	shared/systemd/src/basic/hashmap.c \
-	shared/systemd/src/basic/hashmap.h \
-	shared/systemd/src/basic/hexdecoct.c \
-	shared/systemd/src/basic/hexdecoct.h \
-	shared/systemd/src/basic/hostname-util.c \
-	shared/systemd/src/basic/hostname-util.h \
-	shared/systemd/src/basic/in-addr-util.c \
-	shared/systemd/src/basic/in-addr-util.h \
-	shared/systemd/src/basic/io-util.c \
-	shared/systemd/src/basic/io-util.h \
-	shared/systemd/src/basic/list.h \
-	shared/systemd/src/basic/log.h \
-	shared/systemd/src/basic/macro.h \
-	shared/systemd/src/basic/memory-util.c \
-	shared/systemd/src/basic/memory-util.h \
-	shared/systemd/src/basic/mempool.c \
-	shared/systemd/src/basic/mempool.h \
-	shared/systemd/src/basic/missing_fcntl.h \
-	shared/systemd/src/basic/missing_random.h \
-	shared/systemd/src/basic/missing_socket.h \
-	shared/systemd/src/basic/missing_stat.h \
-	shared/systemd/src/basic/missing_syscall.h \
-	shared/systemd/src/basic/missing_type.h \
-	shared/systemd/src/basic/parse-util.c \
-	shared/systemd/src/basic/parse-util.h \
-	shared/systemd/src/basic/path-util.c \
-	shared/systemd/src/basic/path-util.h \
-	shared/systemd/src/basic/prioq.c \
-	shared/systemd/src/basic/prioq.h \
-	shared/systemd/src/basic/process-util.c \
-	shared/systemd/src/basic/process-util.h \
-	shared/systemd/src/basic/random-util.c \
-	shared/systemd/src/basic/random-util.h \
-	shared/systemd/src/basic/ratelimit.c \
-	shared/systemd/src/basic/ratelimit.h \
-	shared/systemd/src/basic/set.h \
-	shared/systemd/src/basic/signal-util.c \
-	shared/systemd/src/basic/signal-util.h \
-	shared/systemd/src/basic/siphash24.h \
-	shared/systemd/src/basic/socket-util.c \
-	shared/systemd/src/basic/socket-util.h \
-	shared/systemd/src/basic/sort-util.h \
-	shared/systemd/src/basic/sparse-endian.h \
-	shared/systemd/src/basic/stat-util.c \
-	shared/systemd/src/basic/stat-util.h \
-	shared/systemd/src/basic/stdio-util.h \
-	shared/systemd/src/basic/string-table.c \
-	shared/systemd/src/basic/string-table.h \
-	shared/systemd/src/basic/string-util.c \
-	shared/systemd/src/basic/string-util.h \
-	shared/systemd/src/basic/strv.c \
-	shared/systemd/src/basic/strv.h \
-	shared/systemd/src/basic/strxcpyx.c \
-	shared/systemd/src/basic/strxcpyx.h \
-	shared/systemd/src/basic/time-util.c \
-	shared/systemd/src/basic/time-util.h \
-	shared/systemd/src/basic/tmpfile-util.c \
-	shared/systemd/src/basic/tmpfile-util.h \
-	shared/systemd/src/basic/umask-util.h \
-	shared/systemd/src/basic/utf8.c \
-	shared/systemd/src/basic/utf8.h \
-	shared/systemd/src/basic/util.c \
-	shared/systemd/src/basic/util.h \
-	shared/systemd/src/shared/dns-domain.c \
-	shared/systemd/src/shared/dns-domain.h \
-	shared/systemd/src/shared/log-link.h \
-	shared/systemd/src/shared/web-util.c \
-	shared/systemd/src/shared/web-util.h \
-	$(NULL)
-
-shared_systemd_libnm_systemd_shared_la_LIBADD = \
+src_libnm_systemd_shared_libnm_systemd_shared_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(NULL)
@@ -2471,18 +2538,18 @@ src_core_libNetworkManager_la_LIBADD = \
 	src/libnm-core-impl/libnm-core-impl.la \
 	$(libnm_crypto_lib) \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-platform/libnm-platform.la \
-	shared/nm-base/libnm-base.la \
-	shared/nm-log-core/libnm-log-core.la \
-	shared/nm-udev-aux/libnm-udev-aux.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
+	src/libnm-platform/libnm-platform.la \
+	src/libnm-base/libnm-base.la \
+	src/libnm-log-core/libnm-log-core.la \
+	src/libnm-udev-aux/libnm-udev-aux.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
 	src/core/libnm-systemd-core.la \
-	shared/systemd/libnm-systemd-shared.la \
-	shared/libnacd.la \
-	shared/libndhcp4.la \
-	shared/libcrbtree.la \
-	shared/libcsiphash.la \
+	src/libnm-systemd-shared/libnm-systemd-shared.la \
+	src/n-acd/libn-acd.la \
+	src/n-dhcp4/libn-dhcp4.la \
+	src/c-rbtree/libc-rbtree.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
 	$(SYSTEMD_LOGIN_LIBS) \
@@ -2584,18 +2651,18 @@ src_core_nm_iface_helper_LDADD = \
 	src/libnm-core-impl/libnm-core-impl.la \
 	$(libnm_crypto_lib) \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-platform/libnm-platform.la \
-	shared/nm-base/libnm-base.la \
-	shared/nm-log-core/libnm-log-core.la \
-	shared/nm-udev-aux/libnm-udev-aux.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
+	src/libnm-platform/libnm-platform.la \
+	src/libnm-base/libnm-base.la \
+	src/libnm-log-core/libnm-log-core.la \
+	src/libnm-udev-aux/libnm-udev-aux.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
 	src/core/libnm-systemd-core.la \
-	shared/systemd/libnm-systemd-shared.la \
-	shared/libnacd.la \
-	shared/libndhcp4.la \
-	shared/libcrbtree.la \
-	shared/libcsiphash.la \
+	src/libnm-systemd-shared/libnm-systemd-shared.la \
+	src/n-acd/libn-acd.la \
+	src/n-dhcp4/libn-dhcp4.la \
+	src/c-rbtree/libc-rbtree.la \
+	src/c-siphash/libc-siphash.la \
 	$(SYSTEMD_JOURNAL_LIBS) \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
@@ -2638,17 +2705,17 @@ src_core_initrd_nm_initrd_generator_LDADD = \
 	src/libnm-core-impl/libnm-core-impl.la \
 	$(libnm_crypto_lib) \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-platform/libnm-platform.la \
-	shared/nm-base/libnm-base.la \
-	shared/nm-log-core/libnm-log-core.la \
-	shared/nm-udev-aux/libnm-udev-aux.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/systemd/libnm-systemd-shared.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/libndhcp4.la \
-	shared/libcsiphash.la \
+	src/libnm-platform/libnm-platform.la \
+	src/libnm-base/libnm-base.la \
+	src/libnm-log-core/libnm-log-core.la \
+	src/libnm-udev-aux/libnm-udev-aux.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/libnm-systemd-shared/libnm-systemd-shared.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/n-dhcp4/libn-dhcp4.la \
+	src/c-siphash/libc-siphash.la \
 	$(SYSTEMD_JOURNAL_LIBS) \
 	$(GLIB_LIBS) \
 	$(NULL)
@@ -2671,9 +2738,9 @@ src_core_initrd_tests_test_dt_reader_LDFLAGS = \
 src_core_initrd_tests_test_dt_reader_LDADD = \
 	src/core/initrd/libnmi-core.la \
 	src/core/libNetworkManagerTest.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -2691,9 +2758,9 @@ src_core_initrd_tests_test_ibft_reader_LDFLAGS = \
 src_core_initrd_tests_test_ibft_reader_LDADD = \
 	src/core/initrd/libnmi-core.la \
 	src/core/libNetworkManagerTest.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -2926,9 +2993,9 @@ src_core_initrd_tests_test_cmdline_reader_LDFLAGS = \
 src_core_initrd_tests_test_cmdline_reader_LDADD = \
 	src/core/initrd/libnmi-core.la \
 	src/core/libNetworkManagerTest.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -2953,8 +3020,8 @@ libexec_PROGRAMS += src/core/dhcp/nm-dhcp-helper
 
 src_core_dhcp_nm_dhcp_helper_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
 	$(GLIB_CFLAGS) \
 	$(NULL)
 
@@ -3013,8 +3080,8 @@ pppd_plugin_LTLIBRARIES += src/core/ppp/nm-pppd-plugin.la
 
 src_core_ppp_nm_pppd_plugin_la_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
 	$(GLIB_CFLAGS)
@@ -4303,8 +4370,8 @@ src_core_tests_test_systemd_LDFLAGS = \
 
 src_core_tests_test_systemd_LDADD = \
 	src/core/libnm-systemd-core.la \
-	shared/systemd/libnm-systemd-shared.la \
-	shared/libcsiphash.la \
+	src/libnm-systemd-shared/libnm-systemd-shared.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(NULL)
@@ -4345,14 +4412,12 @@ noinst_LTLIBRARIES += \
 
 dispatcher_cppflags = \
 	$(dflt_cppflags) \
-	-I$(builddir)/shared \
-	-I$(srcdir)/shared \
 	-I$(builddir)/dispatcher \
 	-I$(srcdir)/dispatcher \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
-	-I$(builddir)/libnm \
-	-I$(srcdir)/libnm \
+	-I$(builddir)/src/libnm-client-public \
+	-I$(srcdir)/src/libnm-client-public \
 	-I$(srcdir)/src \
 	$(GLIB_CFLAGS) \
 	$(NULL)
@@ -4365,7 +4430,7 @@ dispatcher_libnm_dispatcher_core_la_SOURCES = \
 dispatcher_libnm_dispatcher_core_la_CPPFLAGS = $(dispatcher_cppflags)
 
 dispatcher_libnm_dispatcher_core_la_LIBADD = \
-	libnm/libnm.la \
+	src/libnm-client-impl/libnm.la \
 	$(GLIB_LIBS)
 
 dispatcher_nm_dispatcher_SOURCES = \
@@ -4381,10 +4446,10 @@ dispatcher_nm_dispatcher_LDFLAGS = \
 
 dispatcher_nm_dispatcher_LDADD = \
 	dispatcher/libnm-dispatcher-core.la \
-	libnm/libnm.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/libnm-client-impl/libnm.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS)
 
 dispatcher/org.freedesktop.nm_dispatcher.service: $(srcdir)/dispatcher/org.freedesktop.nm_dispatcher.service.in
@@ -4427,14 +4492,12 @@ check_programs += dispatcher/tests/test-dispatcher-envp
 
 dispatcher_tests_test_dispatcher_envp_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(builddir)/shared \
-	-I$(srcdir)/shared \
 	-I$(srcdir)/dispatcher \
 	-I$(builddir)/dispatcher \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
-	-I$(srcdir)/libnm \
-	-I$(builddir)/libnm \
+	-I$(srcdir)/src/libnm-client-public \
+	-I$(builddir)/src/libnm-client-public \
 	-I$(srcdir)/src \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_EXEC_CFLAGS) \
@@ -4448,6 +4511,8 @@ dispatcher_tests_test_dispatcher_envp_SOURCES = \
 nodist_dispatcher_tests_test_dispatcher_envp_SOURCES = $(dispatcher_nmdbus_dispatcher_sources)
 
 $(dispatcher_tests_test_dispatcher_envp_OBJECTS): $(dispatcher_nmdbus_dispatcher_sources)
+$(dispatcher_tests_test_dispatcher_envp_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(dispatcher_tests_test_dispatcher_envp_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 dispatcher_tests_test_dispatcher_envp_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS) \
@@ -4455,10 +4520,10 @@ dispatcher_tests_test_dispatcher_envp_LDFLAGS = \
 
 dispatcher_tests_test_dispatcher_envp_LDADD = \
 	dispatcher/libnm-dispatcher-core.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
-	libnm/libnm.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
+	src/libnm-client-impl/libnm.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -4483,12 +4548,12 @@ bin_PROGRAMS += clients/nm-online
 
 clients_nm_online_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
-	-I$(srcdir)/libnm \
-	-I$(builddir)/libnm \
+	-I$(srcdir)/src/libnm-client-public \
+	-I$(builddir)/src/libnm-client-public \
 	$(GLIB_CFLAGS) \
 	$(NULL)
 
@@ -4498,16 +4563,16 @@ clients_nm_online_LDFLAGS = \
 	$(NULL)
 
 clients_nm_online_LDADD = \
-	libnm/libnm.la \
-	libnm/nm-libnm-aux/libnm-libnm-aux.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/libnm-client-impl/libnm.la \
+	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
 $(clients_nm_online_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_nm_online_OBJECTS): $(libnm_lib_h_pub_mkenums)
+$(clients_nm_online_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 EXTRA_DIST += \
 	clients/meson.build
@@ -4518,14 +4583,12 @@ EXTRA_DIST += \
 
 clients_cppflags = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
 	-I$(builddir)/clients/common \
 	-I$(srcdir)/clients/common \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
-	-I$(builddir)/libnm \
-	-I$(srcdir)/libnm \
+	-I$(builddir)/src/libnm-client-public \
+	-I$(srcdir)/src/libnm-client-public \
 	-I$(srcdir)/src \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_EXEC_CFLAGS) \
@@ -4553,12 +4616,12 @@ clients_common_libnmc_base_la_CPPFLAGS = \
 	$(NULL)
 
 clients_common_libnmc_base_la_LIBADD = \
-	libnm/libnm.la \
+	src/libnm-client-impl/libnm.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
 $(clients_common_libnmc_base_la_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_common_libnmc_base_la_OBJECTS): $(libnm_lib_h_pub_mkenums)
+$(clients_common_libnmc_base_la_OBJECTS): $(src_libnm_client_public_mkenums_h)
 $(clients_common_libnmc_base_la_OBJECTS): clients/common/.dirstamp
 
 clients_common_settings_doc_h = clients/common/settings-docs.h
@@ -4600,11 +4663,12 @@ clients_common_libnmc_la_CPPFLAGS = \
 	$(NULL)
 
 clients_common_libnmc_la_LIBADD = \
-	libnm/libnm.la \
+	src/libnm-client-impl/libnm.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
 $(clients_common_libnmc_la_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(clients_common_libnmc_la_OBJECTS): $(src_libnm_client_public_mkenums_h)
 $(clients_common_libnmc_la_OBJECTS): $(clients_common_settings_doc_h)
 $(clients_common_libnmc_la_OBJECTS): clients/common/.dirstamp
 
@@ -4629,14 +4693,15 @@ clients_common_tests_test_clients_common_LDADD = \
 	clients/common/libnmc-base.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-base/libnm-base.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
-	libnm/libnm.la \
+	src/libnm-base/libnm-base.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
+	src/libnm-client-impl/libnm.la \
 	$(GLIB_LIBS)
 
 $(clients_common_tests_test_clients_common_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(clients_common_tests_test_clients_common_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 ###############################################################################
 
@@ -4653,13 +4718,12 @@ check_programs += clients/common/tests/test-libnm-core-aux
 
 clients_common_tests_test_libnm_core_aux_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(builddir)/shared \
-	-I$(srcdir)/shared \
-	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
-	-I$(builddir)/libnm \
-	-I$(srcdir)/libnm \
+	-I$(builddir)/src/libnm-core-public \
+	-I$(srcdir)/src/libnm-client-public \
+	-I$(builddir)/src/libnm-client-public \
 	-I$(srcdir)/src \
+	-I$(builddir)/src \
 	$(CODE_COVERAGE_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_LIB_CFLAGS) \
@@ -4673,15 +4737,15 @@ clients_common_tests_test_libnm_core_aux_LDFLAGS = \
 clients_common_tests_test_libnm_core_aux_LDADD = \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
-	libnm/libnm.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
+	src/libnm-client-impl/libnm.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
 $(clients_common_tests_test_libnm_core_aux_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_common_tests_test_libnm_core_aux_OBJECTS): $(libnm_lib_h_pub_mkenums)
+$(clients_common_tests_test_libnm_core_aux_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 ###############################################################################
 # clients/cli
@@ -4720,12 +4784,12 @@ clients_cli_nmcli_LDADD = \
 	clients/common/libnmc-base.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-base/libnm-base.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
-	libnm/nm-libnm-aux/libnm-libnm-aux.la \
-	libnm/libnm.la \
+	src/libnm-base/libnm-base.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
+	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
+	src/libnm-client-impl/libnm.la \
 	$(GLIB_LIBS) \
 	$(READLINE_LIBS)
 
@@ -4734,7 +4798,7 @@ clients_cli_nmcli_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS)
 
 $(clients_cli_nmcli_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_cli_nmcli_OBJECTS): $(libnm_lib_h_pub_mkenums)
+$(clients_cli_nmcli_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 install-data-hook-nmcli:
 	$(mkinstalldirs) $(DESTDIR)$(completiondir)
@@ -4765,14 +4829,14 @@ clients_cli_generate_docs_nm_settings_nmcli_CPPFLAGS = \
 clients_cli_generate_docs_nm_settings_nmcli_LDADD = \
 	clients/common/libnmc.la \
 	clients/common/libnmc-base.la \
-	libnm/nm-libnm-aux/libnm-libnm-aux.la \
+	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-base/libnm-base.la \
-	libnm/libnm.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
+	src/libnm-base/libnm-base.la \
+	src/libnm-client-impl/libnm.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
@@ -4782,7 +4846,7 @@ clients_cli_generate_docs_nm_settings_nmcli_LDFLAGS = \
 	$(NULL)
 
 $(clients_cli_generate_docs_nm_settings_nmcli_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_cli_generate_docs_nm_settings_nmcli_OBJECTS): $(libnm_lib_h_pub_mkenums)
+$(clients_cli_generate_docs_nm_settings_nmcli_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 ###############################################################################
 
@@ -4852,6 +4916,7 @@ clients_tui_newt_libnmt_newt_a_CPPFLAGS = \
 	$(NULL)
 
 $(clients_tui_newt_libnmt_newt_a_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(clients_tui_newt_libnmt_newt_a_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 bin_PROGRAMS += clients/tui/nmtui
 
@@ -4954,19 +5019,20 @@ clients_tui_nmtui_LDADD = \
 	clients/tui/newt/libnmt-newt.a \
 	clients/common/libnmc.la \
 	clients/common/libnmc-base.la \
-	libnm/nm-libnm-aux/libnm-libnm-aux.la \
+	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-base/libnm-base.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
-	libnm/libnm.la \
+	src/libnm-base/libnm-base.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
+	src/libnm-client-impl/libnm.la \
 	$(GLIB_LIBS) \
 	$(NEWT_LIBS) \
 	$(NULL)
 
 $(clients_tui_nmtui_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(clients_tui_nmtui_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 nmtui_links = nmtui-edit nmtui-connect nmtui-hostname
 
@@ -5019,7 +5085,7 @@ clients_cloud_setup_libnm_cloud_setup_core_a_CPPFLAGS = \
 	$(NULL)
 
 $(clients_cloud_setup_libnm_cloud_setup_core_a_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_cloud_setup_libnm_cloud_setup_core_a_OBJECTS): $(libnm_lib_h_pub_mkenums)
+$(clients_cloud_setup_libnm_cloud_setup_core_a_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 libexec_PROGRAMS += clients/cloud-setup/nm-cloud-setup
 
@@ -5039,20 +5105,20 @@ clients_cloud_setup_nm_cloud_setup_LDFLAGS = \
 
 clients_cloud_setup_nm_cloud_setup_LDADD = \
 	clients/cloud-setup/libnm-cloud-setup-core.a \
-	libnm/nm-libnm-aux/libnm-libnm-aux.la \
+	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-base/libnm-base.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
-	libnm/libnm.la \
+	src/libnm-base/libnm-base.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
+	src/libnm-client-impl/libnm.la \
 	$(GLIB_LIBS) \
 	$(LIBCURL_LIBS) \
 	$(NULL)
 
 $(clients_cloud_setup_nm_cloud_setup_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_cloud_setup_nm_cloud_setup_OBJECTS): $(libnm_lib_h_pub_mkenums)
+$(clients_cloud_setup_nm_cloud_setup_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 if HAVE_SYSTEMD
 
@@ -5104,20 +5170,20 @@ clients_cloud_setup_tests_test_cloud_setup_general_LDFLAGS = \
 
 clients_cloud_setup_tests_test_cloud_setup_general_LDADD = \
 	clients/cloud-setup/libnm-cloud-setup-core.a \
-	libnm/nm-libnm-aux/libnm-libnm-aux.la \
+	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	shared/nm-base/libnm-base.la \
-	shared/nm-glib-aux/libnm-glib-aux.la \
-	shared/nm-std-aux/libnm-std-aux.la \
-	shared/libcsiphash.la \
-	libnm/libnm.la \
+	src/libnm-base/libnm-base.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
+	src/libnm-client-impl/libnm.la \
 	$(GLIB_LIBS) \
 	$(LIBCURL_LIBS) \
 	$(NULL)
 
 $(clients_cloud_setup_tests_test_cloud_setup_general_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_cloud_setup_tests_test_cloud_setup_general_OBJECTS): $(libnm_lib_h_pub_mkenums)
+$(clients_cloud_setup_tests_test_cloud_setup_general_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 endif
 
@@ -5128,8 +5194,8 @@ endif
 check-local-clients-tests-test-client: clients/cli/nmcli clients/tests/test-client.py
 	mkdir -p "$(builddir)/clients/tests/"
 	"$(builddir)/clients/cli/nmcli" --version
-	GI_TYPELIB_PATH="$(abs_builddir)/libnm$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}" \
-	LD_LIBRARY_PATH="$(abs_builddir)/libnm/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}" \
+	GI_TYPELIB_PATH="$(abs_builddir)/src/libnm-client-impl$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}" \
+	LD_LIBRARY_PATH="$(abs_builddir)/src/libnm-client-impl/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}" \
 	NM_TEST_CLIENT_BUILDDIR="$(abs_builddir)" \
 	NM_TEST_CLIENT_NMCLI_PATH=clients/cli/nmcli \
 	"$(PYTHON)" \
@@ -5259,9 +5325,9 @@ if HAVE_INTROSPECTION
 man/nm-settings-%.xml: man/nm-settings-%.xsl man/nm-settings-docs-%.xml man/common.ent
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $(xsltproc_flags) $< $(word 2,$^)
 
-man/nm-settings-keyfile.xml: man/nm-settings-keyfile.xsl libnm/nm-property-infos-keyfile.xml man/common.ent
+man/nm-settings-keyfile.xml: man/nm-settings-keyfile.xsl src/libnm-client-impl/nm-property-infos-keyfile.xml man/common.ent
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $(xsltproc_flags) $< $(word 2,$^)
-man/nm-settings-ifcfg-rh.xml: man/nm-settings-ifcfg-rh.xsl libnm/nm-property-infos-ifcfg-rh.xml man/common.ent
+man/nm-settings-ifcfg-rh.xml: man/nm-settings-ifcfg-rh.xsl src/libnm-client-impl/nm-property-infos-ifcfg-rh.xml man/common.ent
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $(xsltproc_flags) $< $(word 2,$^)
 
 CLEANFILES += $(man_nm_settings_xml)
@@ -5362,10 +5428,10 @@ if ENABLE_VAPIGEN
 VAPIGEN_VAPIS += \
 	vapi/libnm.vapi
 
-vapi/libnm.vapi:      $(builddir)/libnm/NM-1.0.gir                   vapi/libnm.deps      vapi/NM-1.0.metadata
+vapi/libnm.vapi:      $(builddir)/src/libnm-client-impl/NM-1.0.gir                   vapi/libnm.deps      vapi/NM-1.0.metadata
 
 vapi_libnm_vapi_METADATADIRS = $(srcdir)/vapi
-vapi_libnm_vapi_FILES = $(builddir)/libnm/NM-1.0.gir
+vapi_libnm_vapi_FILES = $(builddir)/src/libnm-client-impl/NM-1.0.gir
 vapi_libnm_vapi_DEPS = gio-2.0
 
 vapi_DATA += \
@@ -5433,20 +5499,11 @@ EXTRA_DIST += \
 	\
 	po/meson.build \
 	\
-	shared/nm-test-libnm-utils.h \
-	shared/nm-test-utils-impl.c \
-	shared/nm-utils/nm-compat.c \
-	shared/nm-utils/nm-compat.h \
-	shared/nm-utils/nm-test-utils.h \
-	shared/nm-utils/nm-vpn-editor-plugin-call.h \
-	shared/nm-utils/nm-vpn-plugin-macros.h \
-	shared/nm-utils/nm-vpn-plugin-utils.c \
-	shared/nm-utils/nm-vpn-plugin-utils.h \
-	shared/meson.build \
-	\
 	src/meson.build \
 	\
 	src/libnm-core-public/nm-version-macros.h.in \
+	\
+	src/contrib/nm-vpn-editor-plugin-call.h \
 	\
 	tools/check-config-options.sh \
 	tools/check-docs.sh \

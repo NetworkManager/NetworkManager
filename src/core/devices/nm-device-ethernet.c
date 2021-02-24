@@ -25,7 +25,7 @@
 #include "ppp/nm-ppp-manager-call.h"
 #include "ppp/nm-ppp-status.h"
 #include "platform/nm-platform.h"
-#include "nm-platform/nm-platform-utils.h"
+#include "libnm-platform/nm-platform-utils.h"
 #include "nm-dcb.h"
 #include "settings/nm-settings-connection.h"
 #include "nm-config.h"
@@ -34,7 +34,7 @@
 #include "nm-device-factory.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "NetworkManagerUtils.h"
-#include "nm-udev-aux/nm-udev-utils.h"
+#include "libnm-udev-aux/nm-udev-utils.h"
 #include "nm-device-veth.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceEthernet

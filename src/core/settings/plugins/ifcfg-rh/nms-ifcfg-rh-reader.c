@@ -18,7 +18,7 @@
 #include <linux/rtnetlink.h>
 #include <linux/if_ether.h>
 
-#include "nm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
 #include "nm-connection.h"
 #include "nm-dbus-interface.h"
 #include "nm-setting-connection.h"
@@ -40,7 +40,7 @@
 #include "nm-setting-generic.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-utils.h"
-#include "nm-base/nm-ethtool-base.h"
+#include "libnm-base/nm-ethtool-base.h"
 
 #include "platform/nm-platform.h"
 #include "NetworkManagerUtils.h"

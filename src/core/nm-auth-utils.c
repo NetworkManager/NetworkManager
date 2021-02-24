@@ -7,7 +7,7 @@
 
 #include "nm-auth-utils.h"
 
-#include "nm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-c-list.h"
 #include "nm-setting-connection.h"
 #include "libnm-core-aux-intern/nm-auth-subject.h"
 #include "nm-auth-manager.h"

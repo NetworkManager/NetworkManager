@@ -3,7 +3,7 @@
  * Copyright (C) 2010 - 2018 Red Hat, Inc.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "nm-meta-setting-desc.h"
 
@@ -13,8 +13,8 @@
 #include <linux/if_infiniband.h>
 
 #include "libnm-core-aux-intern/nm-common-macros.h"
-#include "nm-glib-aux/nm-enum-utils.h"
-#include "nm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-enum-utils.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-aux-extern/nm-libnm-core-aux.h"
 

@@ -3,7 +3,7 @@
  * Copyright (C) 2014 Red Hat, Inc.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include <stdio.h>
 #include <stdlib.h>

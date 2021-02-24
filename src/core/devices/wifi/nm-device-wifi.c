@@ -12,8 +12,8 @@
 #include <unistd.h>
 #include <linux/if_ether.h>
 
-#include "nm-glib-aux/nm-ref-string.h"
-#include "nm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-ref-string.h"
+#include "libnm-glib-aux/nm-c-list.h"
 #include "nm-device-wifi-p2p.h"
 #include "nm-wifi-ap.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"

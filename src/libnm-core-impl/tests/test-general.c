@@ -13,12 +13,12 @@
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
-#include "nm-std-aux/c-list-util.h"
-#include "nm-glib-aux/nm-enum-utils.h"
-#include "nm-glib-aux/nm-str-buf.h"
-#include "nm-glib-aux/nm-json-aux.h"
-#include "nm-base/nm-base.h"
-#include "systemd/nm-sd-utils-shared.h"
+#include "libnm-std-aux/c-list-util.h"
+#include "libnm-glib-aux/nm-enum-utils.h"
+#include "libnm-glib-aux/nm-str-buf.h"
+#include "libnm-glib-aux/nm-json-aux.h"
+#include "libnm-base/nm-base.h"
+#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "nm-utils.h"
 #include "nm-setting-private.h"
@@ -58,13 +58,13 @@
 #include "nm-setting-wpan.h"
 #include "nm-simple-connection.h"
 #include "libnm-core-intern/nm-keyfile-internal.h"
-#include "nm-glib-aux/nm-dedup-multi.h"
-#include "nm-base/nm-ethtool-base.h"
-#include "nm-base/nm-ethtool-utils-base.h"
+#include "libnm-glib-aux/nm-dedup-multi.h"
+#include "libnm-base/nm-ethtool-base.h"
+#include "libnm-base/nm-ethtool-utils-base.h"
 
 #include "test-general-enums.h"
 
-#include "nm-utils/nm-test-utils.h"
+#include "libnm-glib-aux/nm-test-utils.h"
 
 /* When passing a "bool" typed argument to a variadic function that
  * expects a gboolean, the compiler will promote the integer type

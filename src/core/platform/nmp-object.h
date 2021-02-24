@@ -8,8 +8,8 @@
 
 #include <netinet/in.h>
 
-#include "nm-glib-aux/nm-obj.h"
-#include "nm-glib-aux/nm-dedup-multi.h"
+#include "libnm-glib-aux/nm-obj.h"
+#include "libnm-glib-aux/nm-dedup-multi.h"
 #include "nm-platform.h"
 
 struct udev_device;

@@ -15,7 +15,7 @@
 #include <teamdctl.h>
 #include <stdlib.h>
 
-#include "nm-glib-aux/nm-jansson.h"
+#include "libnm-glib-aux/nm-jansson.h"
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device-private.h"
 #include "platform/nm-platform.h"
@@ -23,7 +23,7 @@
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-manager.h"
 #include "nm-ip4-config.h"
-#include "nm-std-aux/nm-dbus-compat.h"
+#include "libnm-std-aux/nm-dbus-compat.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceTeam
 #include "devices/nm-device-logging.h"

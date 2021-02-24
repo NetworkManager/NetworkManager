@@ -10,7 +10,7 @@
 
 #include <stdlib.h>
 
-#include "nm-glib-aux/nm-str-buf.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-supplicant-settings-verify.h"
 #include "nm-setting.h"

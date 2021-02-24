@@ -11,7 +11,7 @@
 
 #define _NMTST_INSIDE_CORE 1
 
-#include "nm-utils/nm-test-utils.h"
+#include "libnm-glib-aux/nm-test-utils.h"
 
 /*****************************************************************************/
 
@@ -347,7 +347,7 @@ nmtst_platform_ip6_routes_equal_aptr(const NMPObject *const *  a,
 
 #ifdef __NETWORKMANAGER_IP4_CONFIG_H__
 
-    #include "nm-glib-aux/nm-dedup-multi.h"
+    #include "libnm-glib-aux/nm-dedup-multi.h"
 
 static inline NMIP4Config *
 nmtst_ip4_config_new(int ifindex)
@@ -361,7 +361,7 @@ nmtst_ip4_config_new(int ifindex)
 
 #ifdef __NETWORKMANAGER_IP6_CONFIG_H__
 
-    #include "nm-glib-aux/nm-dedup-multi.h"
+    #include "libnm-glib-aux/nm-dedup-multi.h"
 
 static inline NMIP6Config *
 nmtst_ip6_config_new(int ifindex)

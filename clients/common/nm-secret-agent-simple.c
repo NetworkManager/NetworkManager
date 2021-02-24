@@ -16,7 +16,7 @@
  * replace ShellNetworkAgent.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "nm-secret-agent-simple.h"
 
@@ -25,7 +25,7 @@
 
 #include "nm-vpn-service-plugin.h"
 #include "nm-vpn-helpers.h"
-#include "nm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
 
 /*****************************************************************************/
 

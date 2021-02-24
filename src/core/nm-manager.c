@@ -16,7 +16,7 @@
 #include <sys/sendfile.h>
 #include <limits.h>
 
-#include "nm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-c-list.h"
 
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-dbus-manager.h"
@@ -43,7 +43,7 @@
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-config.h"
 #include "nm-audit-manager.h"
-#include "nm-std-aux/nm-dbus-compat.h"
+#include "libnm-std-aux/nm-dbus-compat.h"
 #include "nm-checkpoint.h"
 #include "nm-checkpoint-manager.h"
 #include "nm-dbus-object.h"

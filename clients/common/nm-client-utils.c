@@ -3,12 +3,12 @@
  * Copyright (C) 2010 - 2017 Red Hat, Inc.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "nm-client-utils.h"
 
-#include "nm-glib-aux/nm-secret-utils.h"
-#include "nm-glib-aux/nm-io-utils.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-io-utils.h"
 #include "nm-utils.h"
 #include "nm-device-bond.h"
 #include "nm-device-bridge.h"

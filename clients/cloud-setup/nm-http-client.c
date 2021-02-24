@@ -1,13 +1,13 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "nm-http-client.h"
 
 #include <curl/curl.h>
 
 #include "nm-cloud-setup-utils.h"
-#include "nm-glib-aux/nm-str-buf.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 
 #define NM_CURL_DEBUG 0
 

@@ -8,7 +8,7 @@
 
 /*****************************************************************************/
 
-#include "nm-glib-aux/nm-default-glib-i18n-lib.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #undef NETWORKMANAGER_COMPILATION
 #define NETWORKMANAGER_COMPILATION NM_NETWORKMANAGER_COMPILATION_LIBNM_CORE

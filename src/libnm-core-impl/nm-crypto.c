@@ -12,8 +12,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "nm-glib-aux/nm-secret-utils.h"
-#include "nm-glib-aux/nm-io-utils.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-io-utils.h"
 
 #include "nm-crypto-impl.h"
 #include "nm-utils.h"

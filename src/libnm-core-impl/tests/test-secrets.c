@@ -20,7 +20,7 @@
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 
-#include "nm-utils/nm-test-utils.h"
+#include "libnm-glib-aux/nm-test-utils.h"
 
 #define TEST_CERT_DIR                         NM_BUILD_SRCDIR "/src/libnm-core-impl/tests/certs"
 #define TEST_NEED_SECRETS_EAP_TLS_CA_CERT     TEST_CERT_DIR "/test_ca_cert.pem"

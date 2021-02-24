@@ -3,7 +3,7 @@
  * Copyright (C) 2017 - 2018 Red Hat, Inc.
  */
 
-#include "nm-glib-aux/nm-default-glib-i18n-lib.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-meta-setting-base.h"
 

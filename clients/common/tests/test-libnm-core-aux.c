@@ -3,12 +3,12 @@
  * Copyright (C) 2019 Red Hat, Inc.
  */
 
-#include "libnm/nm-default-client.h"
+#include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "libnm-core-aux-extern/nm-libnm-core-aux.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
-#include "nm-utils/nm-test-utils.h"
+#include "libnm-glib-aux/nm-test-utils.h"
 
 /*****************************************************************************/
 

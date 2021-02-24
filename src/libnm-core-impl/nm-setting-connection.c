@@ -17,7 +17,7 @@
 #include "nm-setting-bridge.h"
 #include "nm-setting-team.h"
 #include "nm-setting-vlan.h"
-#include "systemd/nm-sd-utils-shared.h"
+#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 /**
  * SECTION:nm-setting-connection

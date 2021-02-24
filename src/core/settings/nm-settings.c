@@ -21,7 +21,7 @@
 #endif
 
 #include "libnm-core-aux-intern/nm-common-macros.h"
-#include "nm-glib-aux/nm-keyfile-aux.h"
+#include "libnm-glib-aux/nm-keyfile-aux.h"
 #include "libnm-core-intern/nm-keyfile-internal.h"
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"
@@ -46,8 +46,8 @@
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 
-#include "nm-std-aux/c-list-util.h"
-#include "nm-glib-aux/nm-c-list.h"
+#include "libnm-std-aux/c-list-util.h"
+#include "libnm-glib-aux/nm-c-list.h"
 #include "nm-dbus-object.h"
 #include "devices/nm-device-ethernet.h"
 #include "nm-settings-connection.h"
