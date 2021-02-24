@@ -98,8 +98,6 @@ libnm = shared_library(
 )
 
 libnm_dep = declare_dependency(
-  sources: libnm_client_public_enum_sources[1],
-  include_directories: libnm_client_public_inc,
   dependencies: [
     libnm_core_public_dep,
     libnm_client_public_dep,
@@ -138,6 +136,9 @@ if enable_introspection
     includes: 'Gio-2.0',
     include_directories: [
       libnm_core_public_inc,
+      libnm_client_public_inc,
+      src_inc,
+      top_inc,
     ],
     nsversion: nm_gir_version,
     namespace: 'NM',
@@ -210,18 +211,14 @@ if enable_introspection
   endif
   ld_library_path = meson.current_build_dir() + ld_library_path
 
-  generate_setting_docs_env = [
-    'env',
-    'GI_TYPELIB_PATH=' + gi_typelib_path,
-    'LD_LIBRARY_PATH=' + ld_library_path,
-  ]
-
   nm_settings_docs_xml_gir = custom_target(
     'nm-settings-docs-gir.xml',
     input: libnm_gir[0],
     output: 'nm-settings-docs-gir.xml',
     command: [
-      generate_setting_docs_env,
+      'env',
+      'GI_TYPELIB_PATH=' + gi_typelib_path,
+      'LD_LIBRARY_PATH=' + ld_library_path,
       python.path(),
       join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-gir.py'),
       '--lib-path', meson.current_build_dir(),
