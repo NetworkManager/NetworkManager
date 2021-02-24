@@ -7,7 +7,6 @@ libnm_std_aux = static_library(
     'nm-std-utils.c',
   ],
   include_directories: [
-    shared_inc,
     src_inc,
     top_inc,
   ],

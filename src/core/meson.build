@@ -6,7 +6,6 @@ core_plugin_dep = declare_dependency(
   include_directories: [
     src_core_inc,
     top_inc,
-    shared_inc,
     libnm_core_public_inc,
   ],
   dependencies: [
@@ -19,7 +18,6 @@ core_plugin_dep = declare_dependency(
 core_default_dep = declare_dependency(
   include_directories: [
     src_core_inc,
-    shared_inc,
     src_inc,
     top_inc,
   ],

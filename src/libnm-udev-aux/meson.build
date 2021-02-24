@@ -4,7 +4,6 @@ libnm_udev_aux = static_library(
   'nm-udev-aux',
   sources: 'nm-udev-utils.c',
   include_directories: [
-    shared_inc,
     src_inc,
     top_inc,
   ],
@@ -15,6 +14,5 @@ libnm_udev_aux = static_library(
 )
 
 libnm_udev_aux_dep = declare_dependency(
-  include_directories: shared_inc,
   link_with: libnm_udev_aux,
 )

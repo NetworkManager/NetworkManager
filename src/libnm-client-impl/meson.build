@@ -5,7 +5,6 @@ libnm_nm_default_dep = declare_dependency(
     libnm_client_public_inc,
     libnm_core_public_inc,
     top_inc,
-    shared_inc,
     src_inc,
   ],
   dependencies: [

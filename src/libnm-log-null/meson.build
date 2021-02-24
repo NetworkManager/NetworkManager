@@ -4,7 +4,6 @@ libnm_log_null = static_library(
   'nm-log-null',
   sources: 'nm-logging-null.c',
   include_directories: [
-    shared_inc,
     src_inc,
     top_inc,
   ],

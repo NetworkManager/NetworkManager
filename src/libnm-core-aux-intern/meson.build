@@ -15,7 +15,6 @@ libnm_core_aux_intern = static_library(
 
 libnm_core_aux_intern_dep = declare_dependency(
   include_directories: [
-    shared_inc,
     src_inc,
     top_inc,
   ],

@@ -354,7 +354,6 @@ noinst_LTLIBRARIES += src/libnm-std-aux/libnm-std-aux.la
 
 src_libnm_std_aux_libnm_std_aux_la_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
 	$(CODE_COVERAGE_CFLAGS) \
@@ -385,7 +384,6 @@ EXTRA_DIST += src/libnm-std-aux/meson.build
 
 src_libnm_glib_aux_cppflags = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
 	$(CODE_COVERAGE_CFLAGS) \
@@ -515,7 +513,6 @@ noinst_LTLIBRARIES += src/libnm-log-core/libnm-log-core.la
 
 src_libnm_log_core_libnm_log_core_la_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
 	$(CODE_COVERAGE_CFLAGS) \
@@ -545,7 +542,6 @@ noinst_LTLIBRARIES += src/libnm-log-null/libnm-log-null.la
 
 src_libnm_log_null_libnm_log_null_la_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
 	$(CODE_COVERAGE_CFLAGS) \
@@ -601,7 +597,6 @@ check_programs += src/libnm-platform/tests/test-nm-platform
 
 src_libnm_platform_tests_test_nm_platform_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
 	$(CODE_COVERAGE_CFLAGS) \
@@ -635,7 +630,6 @@ noinst_LTLIBRARIES += src/libnm-core-aux-intern/libnm-core-aux-intern.la
 
 src_libnm_core_aux_intern_libnm_core_aux_intern_la_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
 	-I$(builddir)/src \
 	-I$(srcdir)/src \
 	-I$(builddir)/src/libnm-core-public \
@@ -675,7 +669,6 @@ noinst_LTLIBRARIES += src/libnm-core-aux-extern/libnm-core-aux-extern.la
 
 src_libnm_core_aux_extern_libnm_core_aux_extern_la_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
 	-I$(srcdir)/src \
@@ -712,7 +705,6 @@ noinst_LTLIBRARIES += src/libnm-client-aux-extern/libnm-client-aux-extern.la
 
 src_libnm_client_aux_extern_libnm_client_aux_extern_la_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
 	-I$(builddir)/src/libnm-core-public \
@@ -753,8 +745,6 @@ noinst_LTLIBRARIES += src/libnm-client-test/libnm-client-test.la
 
 src_libnm_client_test_libnm_client_test_la_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
 	-I$(builddir)/src/libnm-core-public \
@@ -798,7 +788,6 @@ check_programs += src/libnm-glib-aux/tests/test-shared-general
 
 src_libnm_glib_aux_tests_test_shared_general_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
 	$(CODE_COVERAGE_CFLAGS) \
@@ -827,7 +816,6 @@ check_programs += src/libnm-glib-aux/tests/test-json-aux
 
 src_libnm_glib_aux_tests_test_json_aux_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
 	$(CODE_COVERAGE_CFLAGS) \
@@ -1280,7 +1268,6 @@ EXTRA_DIST += \
 
 dflt_cppflags_libnm_core = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
 	-I$(srcdir)/src \
@@ -2024,7 +2011,6 @@ check_local += check-config-options
 
 libsystemd_cppflags = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
 	-I$(srcdir)/src/ \
 	-I$(builddir)/src/ \
 	-I$(srcdir)/src/libnm-systemd-shared/ \
@@ -3035,7 +3021,6 @@ libexec_PROGRAMS += src/core/dhcp/nm-dhcp-helper
 
 src_core_dhcp_nm_dhcp_helper_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
 	$(GLIB_CFLAGS) \
@@ -3096,7 +3081,6 @@ pppd_plugin_LTLIBRARIES += src/core/ppp/nm-pppd-plugin.la
 
 src_core_ppp_nm_pppd_plugin_la_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
 	-I$(builddir)/src/libnm-core-public \
@@ -4429,7 +4413,6 @@ noinst_LTLIBRARIES += \
 
 dispatcher_cppflags = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
 	-I$(builddir)/dispatcher \
 	-I$(srcdir)/dispatcher \
 	-I$(builddir)/src/libnm-core-public \
@@ -4510,7 +4493,6 @@ check_programs += dispatcher/tests/test-dispatcher-envp
 
 dispatcher_tests_test_dispatcher_envp_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
 	-I$(srcdir)/dispatcher \
 	-I$(builddir)/dispatcher \
 	-I$(builddir)/src/libnm-core-public \
@@ -4567,7 +4549,6 @@ bin_PROGRAMS += clients/nm-online
 
 clients_nm_online_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
 	-I$(builddir)/src/libnm-core-public \
@@ -4603,7 +4584,6 @@ EXTRA_DIST += \
 
 clients_cppflags = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
 	-I$(builddir)/clients/common \
 	-I$(srcdir)/clients/common \
 	-I$(builddir)/src/libnm-core-public \
@@ -4739,8 +4719,6 @@ check_programs += clients/common/tests/test-libnm-core-aux
 
 clients_common_tests_test_libnm_core_aux_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/shared \
-	-I$(builddir)/shared \
 	-I$(srcdir)/src/libnm-core-public \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-client-public \

@@ -19,7 +19,6 @@ libnm_glib_aux = static_library(
     'nm-time-utils.c',
   ),
   include_directories: [
-    shared_inc,
     src_inc,
     top_inc,
   ],
@@ -32,7 +31,6 @@ libnm_glib_aux = static_library(
 
 libnm_glib_aux_dep = declare_dependency(
   include_directories: [
-    shared_inc,
     src_inc,
     top_inc,
   ],
