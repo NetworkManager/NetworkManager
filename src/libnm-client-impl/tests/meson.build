@@ -15,7 +15,7 @@ foreach test_unit: test_units
       libnm_client_public_inc,
     ],
     dependencies: [
-      libnm_core_impl_dep_link,
+      libnm_core_public_dep,
       libnm_nm_default_dep,
       glib_dep,
       libudev_dep,
@@ -23,6 +23,7 @@ foreach test_unit: test_units
     link_with: [
       libnm_client_impl,
       libnm_client_test,
+      libnm_core_impl,
       libnm_base,
       libnm_udev_aux,
       libnm_systemd_shared,

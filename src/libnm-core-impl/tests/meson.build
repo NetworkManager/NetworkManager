@@ -26,9 +26,9 @@ foreach test_unit: test_units
     ],
     dependencies: [
       libnm_core_public_dep,
-      libnm_core_impl_dep_link,
     ],
     link_with: [
+      libnm_core_impl,
       libnm_base,
       libnm_log_null,
       libnm_systemd_shared,

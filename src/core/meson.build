@@ -72,7 +72,7 @@ libNetworkManagerBase = static_library(
   ) + platform_wifi_wext_source,
   dependencies: [
     core_default_dep,
-    libnm_core_impl_dep,
+    libnm_core_public_dep,
     libsystemd_dep,
     libudev_dep,
   ],
@@ -80,7 +80,6 @@ libNetworkManagerBase = static_library(
 
 nm_deps = [
   libnm_core_public_dep,
-  libnm_core_impl_dep,
   core_default_dep,
   dl_dep,
   libndp_dep,
@@ -199,7 +198,6 @@ executable(
   'nm-iface-helper.c',
   dependencies: [
     core_default_dep,
-    libnm_core_impl_dep_link,
     glib_dep,
     libudev_dep,
     libndp_dep,
@@ -207,6 +205,7 @@ executable(
   ],
   link_with: [
     libNetworkManagerBase,
+    libnm_core_impl,
     libnm_systemd_core,
     libnm_platform,
     libnm_systemd_shared,

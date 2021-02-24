@@ -38,6 +38,7 @@ exe = executable(
     src_core_inc,
   ],
   dependencies: [
+    libnm_core_public_dep,
     libnm_systemd_core_dep,
   ],
   link_with: [

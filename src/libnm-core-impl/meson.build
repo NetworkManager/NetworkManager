@@ -117,17 +117,3 @@ libnm_core_impl = static_library(
     libnm_core_aux_intern,
   ],
 )
-
-libnm_core_impl_dep = declare_dependency(
-  dependencies: [
-    libnm_core_public_dep,
-    glib_dep,
-  ],
-)
-
-libnm_core_impl_dep_link = declare_dependency(
-  dependencies: [
-    libnm_core_impl_dep,
-  ],
-  link_with: libnm_core_impl,
-)
