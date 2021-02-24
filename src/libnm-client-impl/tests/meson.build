@@ -10,7 +10,7 @@ test_units = [
 foreach test_unit: test_units
   exe = executable(
     test_unit,
-    test_unit + '.c',
+    [ test_unit + '.c' ] + (test_unit == 'test-libnm' ? src_contrib_nm_compat_source : []),
     include_directories: [
       libnm_client_public_inc,
     ],
