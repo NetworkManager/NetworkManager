@@ -34,8 +34,8 @@ libnm_cloud_setup_core = static_library(
   dependencies: [
     libnmc_base_dep,
     libnmc_dep,
+    libnm_dep,
     libcurl_dep,
-    libnm_client_aux_extern_dep,
   ],
 )
 
@@ -57,6 +57,7 @@ executable(
     glib_dep,
   ],
   link_with: [
+    libnm_client_aux_extern,
     libnm_core_aux_extern,
     libnm_core_aux_intern,
     libnm_log_null,

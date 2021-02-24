@@ -24,11 +24,12 @@ executable(
   dependencies: [
     libnmc_base_dep,
     libnmc_dep,
-    libnm_client_aux_extern_dep,
+    libnm_dep,
     glib_dep,
     readline_dep,
   ],
   link_with: [
+    libnm_client_aux_extern,
     libnm_core_aux_extern,
     libnm_core_aux_intern,
     libnm_base,
@@ -51,7 +52,7 @@ generate_docs_nm_settings_nmcli = executable(
   dependencies: [
     libnmc_base_dep,
     libnmc_dep,
-    libnm_client_aux_extern_dep,
+    libnm_dep,
     glib_dep,
   ],
   link_with: [

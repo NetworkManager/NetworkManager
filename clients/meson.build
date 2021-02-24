@@ -5,10 +5,10 @@ executable(
   'nm-online' + '.c',
   dependencies: [
     libnm_dep,
-    libnm_client_aux_extern_dep,
     glib_dep,
   ],
   link_with: [
+    libnm_client_aux_extern,
     libnm_glib_aux,
     libnm_std_aux,
     libc_siphash,
