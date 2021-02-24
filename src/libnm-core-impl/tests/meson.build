@@ -28,11 +28,14 @@ foreach test_unit: test_units
       libnm_core_public_dep,
       libnm_core_intern_dep,
       libnm_core_impl_dep_link,
-      libnm_base_dep_link,
     ],
     link_with: [
+      libnm_base,
       libnm_log_null,
       libnm_systemd_shared,
+      libnm_glib_aux,
+      libnm_std_aux,
+      libc_siphash,
     ],
   )
 

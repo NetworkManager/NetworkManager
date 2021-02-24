@@ -53,10 +53,10 @@ executable(
     libnm_client_aux_extern_dep,
     libnm_core_aux_extern_dep_link,
     libnm_core_aux_intern_dep_link,
-    libnm_base_dep_link,
     glib_dep,
   ],
   link_with: [
+    libnm_base,
     libnm_log_null,
     libnm_glib_aux,
     libnm_std_aux,
