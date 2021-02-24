@@ -1291,3 +1291,10 @@ main(int argc, char **argv)
 
     return g_test_run();
 }
+
+/*****************************************************************************/
+
+/* this header is intended to be copied to users of nm_vpn_editor_plugin_call(),
+ * to simplify invocation of generic functions. Include it here, to compile
+ * the code. */
+#include "contrib/nm-vpn-editor-plugin-call.h"
