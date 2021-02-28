@@ -19,6 +19,10 @@ CapabilityBoundingSet=CAP_NET_ADMIN CAP_DAC_OVERRIDE CAP_NET_RAW CAP_NET_BIND_SE
 ProtectSystem=true
 ProtectHome=read-only
 
+# We require file descriptors for DHCP etc. When activating many interfaces,
+# the default limit of 1024 is easily reached.
+LimitNOFILE=65536
+
 [Install]
 WantedBy=multi-user.target
 Also=NetworkManager-dispatcher.service
