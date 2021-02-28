@@ -5,7 +5,7 @@ static_library(
   'nm-vpn-plugin-utils-test',
   sources: nm_vpn_plugin_utils_source,
   dependencies: [
-    libnm_client_public_dep,
+    libnm_dep,
     glib_dep,
   ],
 )

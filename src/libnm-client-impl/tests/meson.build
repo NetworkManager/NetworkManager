@@ -15,18 +15,30 @@ foreach test_unit: test_units
       libnm_client_public_inc,
     ],
     dependencies: [
-      libnm_core_impl_dep_link,
-      libnm_nm_default_dep,
+      libnm_core_public_dep,
+      libnm_client_public_dep,
+      glib_dep,
+      libudev_dep,
     ],
     link_with: [
       libnm_client_impl,
       libnm_client_test,
+      libnm_core_aux_intern,
+      libnm_core_impl,
+      libnm_crypto,
       libnm_base,
+      libnm_udev_aux,
+      libnm_systemd_shared,
+      libnm_log_null,
+      libnm_glib_aux,
+      libnm_std_aux,
+      libc_siphash,
+      libnmdbus,
     ],
   )
 
   test(
-    test_unit,
+    'src/libnm-client-impl/tests/' + test_unit,
     test_script,
     timeout: 90,
     args: test_args + [exe.full_path()],

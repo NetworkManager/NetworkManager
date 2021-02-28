@@ -62,11 +62,11 @@ test-*.trs
 /contrib/fedora/rpm/latest0
 /contrib/fedora/rpm/latest
 
-/dispatcher/nm-avahi-autoipd.action
-/dispatcher/nm-dispatcher
-/dispatcher/nmdbus-dispatcher.*
-/dispatcher/org.freedesktop.nm_dispatcher.service
-/dispatcher/tests/test-dispatcher-envp
+/src/nm-dispatcher/nm-avahi-autoipd.action
+/src/nm-dispatcher/nm-dispatcher
+/src/nm-dispatcher/nmdbus-dispatcher.*
+/src/nm-dispatcher/org.freedesktop.nm_dispatcher.service
+/src/nm-dispatcher/tests/test-dispatcher-envp
 
 /clients/cli/nmcli
 /clients/cloud-setup/nm-cloud-setup
@@ -286,6 +286,11 @@ test-*.trs
 /clients/cli/settings-docs.c
 /clients/common/settings-docs.c
 /clients/common/tests/test-general
+/dispatcher/nm-avahi-autoipd.action
+/dispatcher/nm-dispatcher
+/dispatcher/nmdbus-dispatcher.*
+/dispatcher/org.freedesktop.nm_dispatcher.service
+/dispatcher/tests/test-dispatcher-envp
 /docs/libnm-glib/*.stamp
 /docs/libnm-glib/html/
 /docs/libnm-glib/libnm-glib-*.txt

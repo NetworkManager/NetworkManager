@@ -8,7 +8,7 @@
 
 /*****************************************************************************/
 
-const LogLevelDesc level_desc[_LOGL_N] = {
+const LogLevelDesc nm_log_level_desc[_LOGL_N] = {
     [LOGL_TRACE] =
         {
             "TRACE",
@@ -68,8 +68,8 @@ _nm_log_parse_level(const char *level, NMLogLevel *out_level)
     if (!level)
         return FALSE;
 
-    for (i = 0; i < (int) G_N_ELEMENTS(level_desc); i++) {
-        if (!g_ascii_strcasecmp(level_desc[i].name, level)) {
+    for (i = 0; i < (int) G_N_ELEMENTS(nm_log_level_desc); i++) {
+        if (!g_ascii_strcasecmp(nm_log_level_desc[i].name, level)) {
             NM_SET_OUT(out_level, i);
             return TRUE;
         }

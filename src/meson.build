@@ -18,19 +18,13 @@ libc_rbtree = static_library(
   c_args: '-std=c11',
 )
 
-if enable_ebpf
-  n_acd_bpf_source = 'n-acd/src/n-acd-bpf.c'
-else
-  n_acd_bpf_source = 'n-acd/src/n-acd-bpf-fallback.c'
-endif
-
 libn_acd = static_library(
   'n-acd',
   sources: files(
     'n-acd/src/n-acd.c',
     'n-acd/src/n-acd-probe.c',
     'n-acd/src/util/timer.c',
-    n_acd_bpf_source,
+    enable_ebpf ? 'n-acd/src/n-acd-bpf.c' : 'n-acd/src/n-acd-bpf-fallback.c',
   ),
   include_directories: include_directories(
     'c-list/src',
@@ -45,14 +39,6 @@ libn_acd = static_library(
     '-Wno-pointer-arith',
     '-Wno-vla',
   ],
-  link_with: [
-    libc_rbtree,
-    libc_siphash,
-  ],
-)
-
-libn_acd_dep = declare_dependency(
-  link_with: libn_acd,
 )
 
 libn_dhcp4 = static_library(
@@ -68,22 +54,17 @@ libn_dhcp4 = static_library(
     'n-dhcp4/src/util/packet.c',
     'n-dhcp4/src/util/socket.c',
   ),
+  include_directories: include_directories(
+    'c-list/src',
+    'c-siphash/src',
+    'c-stdaux/src',
+  ),
   c_args: [
     '-std=c11',
     '-D_GNU_SOURCE',
     '-Wno-declaration-after-statement',
     '-Wno-pointer-arith',
   ],
-  include_directories: include_directories(
-    'c-list/src',
-    'c-siphash/src',
-    'c-stdaux/src',
-  ),
-  link_with: libc_siphash,
-)
-
-libn_dhcp4_dep = declare_dependency(
-  link_with: libn_dhcp4,
 )
 
 ###############################################################################
@@ -105,6 +86,7 @@ subdir('libnm-client-public')
 subdir('libnm-client-impl')
 subdir('libnm-client-aux-extern')
 subdir('core')
+subdir('nm-dispatcher')
 subdir('contrib')
 
 if enable_tests
@@ -113,5 +95,6 @@ if enable_tests
   subdir('libnm-platform/tests')
   subdir('libnm-core-impl/tests')
   subdir('libnm-client-impl/tests')
+  subdir('nm-dispatcher/tests')
   subdir('contrib/tests')
 endif

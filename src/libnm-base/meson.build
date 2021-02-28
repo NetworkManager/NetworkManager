@@ -2,21 +2,12 @@
 
 libnm_base = static_library(
   'nm-base',
+  sources: files(
+    'nm-ethtool-base.c',
+  ),
   include_directories: [
     src_inc,
     top_inc,
   ],
-  sources: files(
-    'nm-ethtool-base.c',
-  ),
-  dependencies: libnm_glib_aux_dep_link,
-)
-
-libnm_base_dep = declare_dependency(
-  dependencies: libnm_glib_aux_dep,
-)
-
-libnm_base_dep_link = declare_dependency(
-  dependencies: libnm_glib_aux_dep_link,
-  link_with: libnm_base,
+  dependencies: glib_dep,
 )

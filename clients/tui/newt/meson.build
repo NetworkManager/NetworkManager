@@ -24,9 +24,14 @@ libnmt_newt = static_library(
     'nmt-newt-utils.c',
     'nmt-newt-widget.c',
   ),
+  include_directories: [
+    src_inc,
+    top_inc,
+  ],
   dependencies: [
-    libnm_nm_default_dep,
+    libnm_dep,
     newt_dep,
+    glib_dep,
   ],
 )
 
