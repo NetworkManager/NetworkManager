@@ -6,7 +6,7 @@
 #ifndef NMT_CONNECT_CONNECTION_LIST_H
 #define NMT_CONNECT_CONNECTION_LIST_H
 
-#include "nmt-newt.h"
+#include "libnmt-newt/nmt-newt.h"
 
 #define NMT_TYPE_CONNECT_CONNECTION_LIST (nmt_connect_connection_list_get_type())
 #define NMT_CONNECT_CONNECTION_LIST(obj) \

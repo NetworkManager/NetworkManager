@@ -6,7 +6,7 @@
 #ifndef NMT_EDITOR_SECTION_H
 #define NMT_EDITOR_SECTION_H
 
-#include "nmt-newt-section.h"
+#include "libnmt-newt/nmt-newt-section.h"
 #include "nmt-editor-grid.h"
 
 #define NMT_TYPE_EDITOR_SECTION (nmt_editor_section_get_type())

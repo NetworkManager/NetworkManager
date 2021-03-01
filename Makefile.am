@@ -4848,65 +4848,75 @@ EXTRA_DIST += \
 	src/libnmc-setting/tests/meson.build
 
 ###############################################################################
-# clients/tui
+# src/libnmt-newt
 ###############################################################################
 
 if BUILD_NMTUI
 
-noinst_LIBRARIES += clients/tui/newt/libnmt-newt.a
+noinst_LIBRARIES += src/libnmt-newt/libnmt-newt.a
 
-clients_tui_newt_libnmt_newt_a_SOURCES = \
-	clients/tui/newt/nmt-newt.h \
-	clients/tui/newt/nmt-newt-types.h \
-	clients/tui/newt/nmt-newt-button.c \
-	clients/tui/newt/nmt-newt-button.h \
-	clients/tui/newt/nmt-newt-button-box.c \
-	clients/tui/newt/nmt-newt-button-box.h \
-	clients/tui/newt/nmt-newt-checkbox.c \
-	clients/tui/newt/nmt-newt-checkbox.h \
-	clients/tui/newt/nmt-newt-component.c \
-	clients/tui/newt/nmt-newt-component.h \
-	clients/tui/newt/nmt-newt-container.c \
-	clients/tui/newt/nmt-newt-container.h \
-	clients/tui/newt/nmt-newt-entry.c \
-	clients/tui/newt/nmt-newt-entry.h \
-	clients/tui/newt/nmt-newt-entry-numeric.c \
-	clients/tui/newt/nmt-newt-entry-numeric.h \
-	clients/tui/newt/nmt-newt-form.c \
-	clients/tui/newt/nmt-newt-form.h \
-	clients/tui/newt/nmt-newt-grid.c \
-	clients/tui/newt/nmt-newt-grid.h \
-	clients/tui/newt/nmt-newt-hacks.c \
-	clients/tui/newt/nmt-newt-hacks.h \
-	clients/tui/newt/nmt-newt-label.c \
-	clients/tui/newt/nmt-newt-label.h \
-	clients/tui/newt/nmt-newt-listbox.c \
-	clients/tui/newt/nmt-newt-listbox.h \
-	clients/tui/newt/nmt-newt-popup.c \
-	clients/tui/newt/nmt-newt-popup.h \
-	clients/tui/newt/nmt-newt-section.c \
-	clients/tui/newt/nmt-newt-section.h \
-	clients/tui/newt/nmt-newt-separator.c \
-	clients/tui/newt/nmt-newt-separator.h \
-	clients/tui/newt/nmt-newt-stack.c \
-	clients/tui/newt/nmt-newt-stack.h \
-	clients/tui/newt/nmt-newt-textbox.c \
-	clients/tui/newt/nmt-newt-textbox.h \
-	clients/tui/newt/nmt-newt-toggle-button.c \
-	clients/tui/newt/nmt-newt-toggle-button.h \
-	clients/tui/newt/nmt-newt-utils.c \
-	clients/tui/newt/nmt-newt-utils.h \
-	clients/tui/newt/nmt-newt-widget.c \
-	clients/tui/newt/nmt-newt-widget.h \
+src_libnmt_newt_libnmt_newt_a_SOURCES = \
+	src/libnmt-newt/nmt-newt-button-box.c \
+	src/libnmt-newt/nmt-newt-button-box.h \
+	src/libnmt-newt/nmt-newt-button.c \
+	src/libnmt-newt/nmt-newt-button.h \
+	src/libnmt-newt/nmt-newt-checkbox.c \
+	src/libnmt-newt/nmt-newt-checkbox.h \
+	src/libnmt-newt/nmt-newt-component.c \
+	src/libnmt-newt/nmt-newt-component.h \
+	src/libnmt-newt/nmt-newt-container.c \
+	src/libnmt-newt/nmt-newt-container.h \
+	src/libnmt-newt/nmt-newt-entry-numeric.c \
+	src/libnmt-newt/nmt-newt-entry-numeric.h \
+	src/libnmt-newt/nmt-newt-entry.c \
+	src/libnmt-newt/nmt-newt-entry.h \
+	src/libnmt-newt/nmt-newt-form.c \
+	src/libnmt-newt/nmt-newt-form.h \
+	src/libnmt-newt/nmt-newt-grid.c \
+	src/libnmt-newt/nmt-newt-grid.h \
+	src/libnmt-newt/nmt-newt-hacks.c \
+	src/libnmt-newt/nmt-newt-hacks.h \
+	src/libnmt-newt/nmt-newt-label.c \
+	src/libnmt-newt/nmt-newt-label.h \
+	src/libnmt-newt/nmt-newt-listbox.c \
+	src/libnmt-newt/nmt-newt-listbox.h \
+	src/libnmt-newt/nmt-newt-popup.c \
+	src/libnmt-newt/nmt-newt-popup.h \
+	src/libnmt-newt/nmt-newt-section.c \
+	src/libnmt-newt/nmt-newt-section.h \
+	src/libnmt-newt/nmt-newt-separator.c \
+	src/libnmt-newt/nmt-newt-separator.h \
+	src/libnmt-newt/nmt-newt-stack.c \
+	src/libnmt-newt/nmt-newt-stack.h \
+	src/libnmt-newt/nmt-newt-textbox.c \
+	src/libnmt-newt/nmt-newt-textbox.h \
+	src/libnmt-newt/nmt-newt-toggle-button.c \
+	src/libnmt-newt/nmt-newt-toggle-button.h \
+	src/libnmt-newt/nmt-newt-types.h \
+	src/libnmt-newt/nmt-newt-utils.c \
+	src/libnmt-newt/nmt-newt-utils.h \
+	src/libnmt-newt/nmt-newt-widget.c \
+	src/libnmt-newt/nmt-newt-widget.h \
+	src/libnmt-newt/nmt-newt.h \
 	$(NULL)
 
-clients_tui_newt_libnmt_newt_a_CPPFLAGS = \
+src_libnmt_newt_libnmt_newt_a_CPPFLAGS = \
 	$(clients_cppflags) \
 	$(NEWT_CFLAGS) \
 	$(NULL)
 
-$(clients_tui_newt_libnmt_newt_a_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_tui_newt_libnmt_newt_a_OBJECTS): $(src_libnm_client_public_mkenums_h)
+$(src_libnmt_newt_libnmt_newt_a_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_libnmt_newt_libnmt_newt_a_OBJECTS): $(src_libnm_client_public_mkenums_h)
+
+endif
+
+EXTRA_DIST += src/libnmt-newt/meson.build
+
+###############################################################################
+# clients/tui
+###############################################################################
+
+if BUILD_NMTUI
 
 bin_PROGRAMS += clients/tui/nmtui
 
@@ -4996,7 +5006,6 @@ clients_tui_nmtui_SOURCES = \
 	$(NULL)
 
 clients_tui_nmtui_CPPFLAGS = \
-	-I$(srcdir)/clients/tui/newt \
 	$(clients_cppflags) \
 	$(NEWT_CFLAGS) \
 	$(NULL)
@@ -5006,7 +5015,7 @@ clients_tui_nmtui_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS)
 
 clients_tui_nmtui_LDADD = \
-	clients/tui/newt/libnmt-newt.a \
+	src/libnmt-newt/libnmt-newt.a \
 	src/libnmc-setting/libnmc-setting.la \
 	src/libnmc-base/libnmc-base.la \
 	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
@@ -5042,9 +5051,7 @@ uninstall_hook += uninstall-hook-nmtui
 
 endif
 
-EXTRA_DIST += \
-	clients/tui/meson.build \
-	clients/tui/newt/meson.build
+EXTRA_DIST += clients/tui/meson.build
 
 ###############################################################################
 # clients/nm-cloud-setup

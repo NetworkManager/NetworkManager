@@ -13,7 +13,7 @@
 #include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "nmt-editor-section.h"
-#include "nmt-newt-toggle-button.h"
+#include "libnmt-newt/nmt-newt-toggle-button.h"
 
 G_DEFINE_TYPE(NmtEditorSection, nmt_editor_section, NMT_TYPE_NEWT_SECTION)
 

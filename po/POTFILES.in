@@ -12,7 +12,6 @@ clients/cli/settings.c
 clients/cli/utils.c
 clients/cli/utils.h
 clients/nm-online.c
-clients/tui/newt/nmt-newt-utils.c
 clients/tui/nm-editor-utils.c
 clients/tui/nmt-connect-connection-list.c
 clients/tui/nmt-device-entry.c
@@ -183,3 +182,4 @@ src/libnmc-base/nm-vpn-helpers.c
 src/libnmc-setting/nm-meta-setting-access.c
 src/libnmc-setting/nm-meta-setting-desc.c
 src/libnmc-setting/settings-docs.h.in
+src/libnmt-newt/nmt-newt-utils.c

@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
-subdir('newt')
-
 executable(
   'nmtui',
   files(
@@ -47,11 +45,11 @@ executable(
     'nmt-widget-list.c',
   ),
   dependencies: [
-    libnmt_newt_dep,
     libnm_dep,
     glib_dep,
   ],
   link_with: [
+    libnmt_newt,
     libnmc_setting,
     libnmc_base,
     libnm_client_aux_extern,

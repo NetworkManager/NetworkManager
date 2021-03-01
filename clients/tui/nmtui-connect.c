@@ -15,7 +15,7 @@
 
 #include <stdlib.h>
 
-#include "nmt-newt.h"
+#include "libnmt-newt/nmt-newt.h"
 
 #include "nmtui.h"
 #include "nmtui-connect.h"

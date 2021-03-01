@@ -6,7 +6,7 @@
 #ifndef NMT_MTU_ENTRY_H
 #define NMT_MTU_ENTRY_H
 
-#include "nmt-newt.h"
+#include "libnmt-newt/nmt-newt.h"
 
 #define NMT_TYPE_MTU_ENTRY (nmt_mtu_entry_get_type())
 #define NMT_MTU_ENTRY(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_MTU_ENTRY, NmtMtuEntry))

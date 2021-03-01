@@ -12,7 +12,7 @@
 
 #include "libnm-client-aux-extern/nm-default-client.h"
 
-#include "nmt-newt.h"
+#include "libnmt-newt/nmt-newt.h"
 
 #include "nmtui.h"
 #include "nmtui-hostname.h"
