@@ -757,6 +757,9 @@ reader_parse_master(Reader *reader, char *argument, const char *type_name, const
         mtu = get_word(&argument, ':');
     }
 
+    if (mtu)
+        connection_set(connection, NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MTU, mtu);
+
     do {
         slave = get_word(&slaves, ',');
         if (slave == NULL)
@@ -770,8 +773,6 @@ reader_parse_master(Reader *reader, char *argument, const char *type_name, const
                      NM_SETTING_CONNECTION_MASTER,
                      master,
                      NULL);
-        if (mtu)
-            connection_set(connection, NM_SETTING_WIRED_SETTING_NAME, NM_SETTING_WIRED_MTU, mtu);
     } while (slaves && *slaves != '\0');
 
     if (argument && *argument)
