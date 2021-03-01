@@ -1016,16 +1016,27 @@ managed=1
           <listitem>
             <para>
               Specify the timeout for waiting for carrier in milliseconds.
+              The default is 5000 milliseconds.
+              This setting exists because certain drivers/hardware can take
+              a long time to detect whether the cable is plugged in.
+            </para>
+            <para>
               When the device loses carrier, NetworkManager does not react
               immediately. Instead, it waits for this timeout before considering
-              the link lost. Also, on startup, NetworkManager considers the
+              the link lost.
+            </para>
+            <para>
+              Also, on startup, NetworkManager considers the
               device as busy for this time, as long as the device has no carrier.
               This delays startup-complete signal and NetworkManager-wait-online.
               Configuring this too high means to block NetworkManager-wait-online
-              longer then necessary. Configuring it too low, means that NetworkManager
-              will declare startup-complete, although carrier is about to come
-              and auto-activation to kick in.
-              The default is 5000 milliseconds.
+              longer then necessary when booting with cable unplugged. Configuring
+              it too low, means that NetworkManager will declare startup-complete too
+              soon, although carrier is about to come and auto-activation to kick in.
+              Note that if a profile only has static IP configuration or Layer 3 configuration
+              disabled, then it can already autoconnect without carrier on the device.
+              Once such a profile reaches full activated state, startup-complete
+              is considered as reached even if the device has no carrier yet.
             </para>
           </listitem>
         </varlistentry>
