@@ -704,13 +704,14 @@ test_bond (void)
 {
 	gs_unref_hashtable GHashTable *connections = NULL;
 	const char *const*ARGV = NM_MAKE_STRV ("rd.route=192.0.2.53::bong0",
-	                                       "bond=bong0:eth0,eth1:mode=balance-rr",
+	                                       "bond=bong0:eth0,eth1:mode=balance-rr:9000",
 	                                       "nameserver=203.0.113.53");
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingIPConfig *s_ip4;
 	NMSettingIPConfig *s_ip6;
 	NMSettingBond *s_bond;
+	NMSettingWired *s_wired;
 	NMIPRoute *ip_route;
 	const char *master_uuid;
 	gs_free char *hostname = NULL;
@@ -727,6 +728,10 @@ test_bond (void)
 	g_assert_cmpstr (nm_connection_get_id (connection), ==, "bong0");
 	master_uuid = nm_connection_get_uuid (connection);
 	g_assert (master_uuid);
+
+	s_wired = nm_connection_get_setting_wired (connection);
+	g_assert (s_wired);
+	g_assert_cmpint (nm_setting_wired_get_mtu (s_wired), ==, 9000);
 
 	s_ip4 = nm_connection_get_setting_ip4_config (connection);
 	g_assert (s_ip4);
