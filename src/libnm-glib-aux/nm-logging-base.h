@@ -21,7 +21,7 @@ typedef struct {
     GLogLevelFlags g_log_level;
 } LogLevelDesc;
 
-extern const LogLevelDesc level_desc[_LOGL_N];
+extern const LogLevelDesc nm_log_level_desc[_LOGL_N];
 
 gboolean _nm_log_parse_level(const char *level, NMLogLevel *out_level);
 

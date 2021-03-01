@@ -1,17 +1,5 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
-libnm_nm_default_dep = declare_dependency(
-  include_directories: [
-    libnm_client_public_inc,
-    libnm_core_public_inc,
-    top_inc,
-    src_inc,
-  ],
-  dependencies: [
-    libnm_core_public_dep,
-  ],
-)
-
 libnm_client_impl_sources = files(
   'nm-access-point.c',
   'nm-active-connection.c',
@@ -72,12 +60,11 @@ libnm_client_impl = static_library(
   sources: libnm_client_impl_sources + libnm_client_public_enum_sources,
   dependencies: [
     libnmdbus_dep,
-    libnm_core_aux_intern_dep,
-    libnm_nm_default_dep,
-    libnm_udev_aux_dep,
+    libnm_core_public_dep,
+    libnm_client_public_dep,
     libudev_dep,
+    glib_dep,
   ],
-  link_with: libnm_log_null,
 )
 
 linker_script = join_paths(meson.current_source_dir(), 'libnm.ver')
@@ -85,14 +72,25 @@ linker_script = join_paths(meson.current_source_dir(), 'libnm.ver')
 libnm = shared_library(
   'nm',
   version: libnm_version,
-  dependencies: libnm_nm_default_dep,
+  dependencies: [
+    libnm_core_public_dep,
+    libnm_client_public_dep,
+    libudev_dep,
+    glib_dep,
+  ],
   link_whole: [
     libnm_client_impl,
+    libnm_core_aux_intern,
     libnm_core_impl,
-    libnmdbus,
+    libnm_crypto,
+    libnm_base,
+    libnm_udev_aux,
+    libnm_systemd_shared,
     libnm_log_null,
     libnm_glib_aux,
-    libnm_base,
+    libnm_std_aux,
+    libnmdbus,
+    libc_siphash,
   ],
   link_args: '-Wl,--version-script,@0@'.format(linker_script),
   link_depends: linker_script,
@@ -100,8 +98,11 @@ libnm = shared_library(
 )
 
 libnm_dep = declare_dependency(
-  sources: libnm_client_public_enum_sources[1],
-  include_directories: libnm_client_public_inc,
+  dependencies: [
+    libnm_core_public_dep,
+    libnm_client_public_dep,
+    glib_dep,
+  ],
   link_with: libnm,
 )
 
@@ -135,6 +136,9 @@ if enable_introspection
     includes: 'Gio-2.0',
     include_directories: [
       libnm_core_public_inc,
+      libnm_client_public_inc,
+      src_inc,
+      top_inc,
     ],
     nsversion: nm_gir_version,
     namespace: 'NM',
@@ -207,18 +211,14 @@ if enable_introspection
   endif
   ld_library_path = meson.current_build_dir() + ld_library_path
 
-  generate_setting_docs_env = [
-    'env',
-    'GI_TYPELIB_PATH=' + gi_typelib_path,
-    'LD_LIBRARY_PATH=' + ld_library_path,
-  ]
-
   nm_settings_docs_xml_gir = custom_target(
     'nm-settings-docs-gir.xml',
     input: libnm_gir[0],
     output: 'nm-settings-docs-gir.xml',
     command: [
-      generate_setting_docs_env,
+      'env',
+      'GI_TYPELIB_PATH=' + gi_typelib_path,
+      'LD_LIBRARY_PATH=' + ld_library_path,
       python.path(),
       join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-gir.py'),
       '--lib-path', meson.current_build_dir(),

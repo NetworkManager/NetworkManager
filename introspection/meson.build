@@ -57,8 +57,6 @@ sources = []
 introspection_files = []
 headers = []
 
-# FIXME?: DBUS_INTERFACE_DOCS/docbook files are generated in
-# "meson.current_build_dir()" instead of "meson.source_root()/docs/api"
 foreach iface: ifaces
   iface_xml = iface + '.xml'
   ifaces_xmls += files(iface_xml)
@@ -99,12 +97,12 @@ libnmdbus = static_library(
   'nmdbus',
   sources: sources,
   include_directories: top_inc,
-  dependencies: glib_dep,
   c_args: introspection_extra_cflags,
+  dependencies: glib_dep,
 )
 
 libnmdbus_dep = declare_dependency(
   sources: headers,
-  include_directories: include_directories('.'),
-  link_with: libnmdbus,
+  include_directories: top_inc,
+  dependencies: glib_dep,
 )

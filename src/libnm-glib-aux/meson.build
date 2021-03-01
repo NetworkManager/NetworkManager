@@ -23,23 +23,4 @@ libnm_glib_aux = static_library(
     top_inc,
   ],
   dependencies: glib_dep,
-  link_with: [
-    libc_siphash,
-    libnm_std_aux,
-  ],
-)
-
-libnm_glib_aux_dep = declare_dependency(
-  include_directories: [
-    src_inc,
-    top_inc,
-  ],
-  dependencies: [
-    glib_dep,
-  ],
-)
-
-libnm_glib_aux_dep_link = declare_dependency(
-  dependencies: libnm_glib_aux_dep,
-  link_with: libnm_glib_aux,
 )

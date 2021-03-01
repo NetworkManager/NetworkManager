@@ -1292,8 +1292,8 @@ nm_core_enum_types_MKENUMS_C_FLAGS = --fhead '\#undef G_LOG_DOMAIN\n\#include "s
 src/libnm-core-public/nm-core-enum-types.h.stamp:                           src/libnm-core-public/.dirstamp
 src/libnm-core-public/nm-core-enum-types.c.stamp:                           src/libnm-core-public/.dirstamp
 
-$(dispatcher_libnm_dispatcher_core_la_OBJECTS):                             $(src_libnm_core_public_mkenums_h)
-$(dispatcher_nm_dispatcher_OBJECTS):                                        $(src_libnm_core_public_mkenums_h)
+$(src_nm_dispatcher_libnm_dispatcher_core_la_OBJECTS):                      $(src_libnm_core_public_mkenums_h)
+$(src_nm_dispatcher_nm_dispatcher_OBJECTS):                                 $(src_libnm_core_public_mkenums_h)
 $(src_libnm_core_impl_libnm_core_impl_la_OBJECTS):                          $(src_libnm_core_public_mkenums_h)
 $(src_libnm_client_impl_libnm_la_OBJECTS):                                  $(src_libnm_core_public_mkenums_h)
 $(src_contrib_tests_libnm_vpn_plugin_utils_test_la_OBJECTS):                $(src_libnm_core_public_mkenums_h)
@@ -1708,8 +1708,8 @@ nm_enum_types_sources = \
 nm_enum_types_MKENUMS_H_FLAGS = --fhead '\#include "nm-core-enum-types.h"\n'
 nm_enum_types_MKENUMS_C_FLAGS = --fhead '\#undef G_LOG_DOMAIN\n\#include "libnm-client-impl/nm-default-libnm.h"\n'
 
-$(dispatcher_nm_dispatcher_OBJECTS):                                    $(src_libnm_client_public_mkenums_h)
-$(dispatcher_libnm_dispatcher_core_la_OBJECTS):                         $(src_libnm_client_public_mkenums_h)
+$(src_nm_dispatcher_nm_dispatcher_OBJECTS):                             $(src_libnm_client_public_mkenums_h)
+$(src_nm_dispatcher_libnm_dispatcher_core_la_OBJECTS):                  $(src_libnm_client_public_mkenums_h)
 $(src_libnm_client_impl_libnm_la_OBJECTS):                              $(src_libnm_client_public_mkenums_h)
 $(src_contrib_tests_libnm_vpn_plugin_utils_test_la_OBJECTS):            $(src_libnm_client_public_mkenums_h)
 
@@ -4383,76 +4383,75 @@ EXTRA_DIST += \
 	src/core/tests/meson.build
 
 ###############################################################################
-# dispatcher
+# src/nm-dispatcher
 ###############################################################################
 
 dispatcher_nmdbus_dispatcher_sources = \
-	dispatcher/nmdbus-dispatcher.h \
-	dispatcher/nmdbus-dispatcher.c \
+	src/nm-dispatcher/nmdbus-dispatcher.h \
+	src/nm-dispatcher/nmdbus-dispatcher.c \
 	$(NULL)
 
-dispatcher/nmdbus-dispatcher.h: dispatcher/nm-dispatcher.xml
-	@$(MKDIR_P) dispatcher/
+src/nm-dispatcher/nmdbus-dispatcher.h: src/nm-dispatcher/nm-dispatcher.xml
+	@$(MKDIR_P) src/nm-dispatcher/
 	$(AM_V_GEN) gdbus-codegen \
 		--generate-c-code $(basename $@) \
 		--c-namespace NMDBus \
 		--interface-prefix org.freedesktop \
 		$<
 
-dispatcher/nmdbus-dispatcher.c: dispatcher/nmdbus-dispatcher.h
+src/nm-dispatcher/nmdbus-dispatcher.c: src/nm-dispatcher/nmdbus-dispatcher.h
 
 CLEANFILES += $(dispatcher_nmdbus_dispatcher_sources)
 
 ###############################################################################
 
-libexec_PROGRAMS += dispatcher/nm-dispatcher
+libexec_PROGRAMS += src/nm-dispatcher/nm-dispatcher
 
-noinst_LTLIBRARIES += \
-	dispatcher/libnm-dispatcher-core.la
+noinst_LTLIBRARIES += src/nm-dispatcher/libnm-dispatcher-core.la
 
 dispatcher_cppflags = \
 	$(dflt_cppflags) \
-	-I$(builddir)/dispatcher \
-	-I$(srcdir)/dispatcher \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
 	-I$(builddir)/src/libnm-client-public \
 	-I$(srcdir)/src/libnm-client-public \
 	-I$(srcdir)/src \
+	-I$(builddir)/src \
 	$(GLIB_CFLAGS) \
 	$(NULL)
 
-dispatcher_libnm_dispatcher_core_la_SOURCES = \
-	dispatcher/nm-dispatcher-utils.c \
-	dispatcher/nm-dispatcher-utils.h \
+src_nm_dispatcher_libnm_dispatcher_core_la_SOURCES = \
+	src/nm-dispatcher/nm-dispatcher-utils.c \
+	src/nm-dispatcher/nm-dispatcher-utils.h \
 	$(NULL)
 
-dispatcher_libnm_dispatcher_core_la_CPPFLAGS = $(dispatcher_cppflags)
+src_nm_dispatcher_libnm_dispatcher_core_la_CPPFLAGS = $(dispatcher_cppflags)
 
-dispatcher_libnm_dispatcher_core_la_LIBADD = \
+src_nm_dispatcher_libnm_dispatcher_core_la_LIBADD = \
 	src/libnm-client-impl/libnm.la \
 	$(GLIB_LIBS)
 
-dispatcher_nm_dispatcher_SOURCES = \
-	dispatcher/nm-dispatcher.c \
+src_nm_dispatcher_nm_dispatcher_SOURCES = \
+	src/nm-dispatcher/nm-dispatcher.c \
 	$(NULL)
 
-dispatcher_nm_dispatcher_CPPFLAGS = $(dispatcher_cppflags)
+src_nm_dispatcher_nm_dispatcher_CPPFLAGS = $(dispatcher_cppflags)
 
-dispatcher_nm_dispatcher_LDFLAGS = \
+src_nm_dispatcher_nm_dispatcher_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-dispatcher_nm_dispatcher_LDADD = \
-	dispatcher/libnm-dispatcher-core.la \
+src_nm_dispatcher_nm_dispatcher_LDADD = \
+	src/nm-dispatcher/libnm-dispatcher-core.la \
 	src/libnm-client-impl/libnm.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
 	src/c-siphash/libc-siphash.la \
-	$(GLIB_LIBS)
+	$(GLIB_LIBS) \
+	$(NULL)
 
-dispatcher/org.freedesktop.nm_dispatcher.service: $(srcdir)/dispatcher/org.freedesktop.nm_dispatcher.service.in
+src/nm-dispatcher/org.freedesktop.nm_dispatcher.service: $(srcdir)/src/nm-dispatcher/org.freedesktop.nm_dispatcher.service.in
 	@sed \
 	-e 's|@sbindir[@]|$(sbindir)|g' \
 	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
@@ -4460,8 +4459,8 @@ dispatcher/org.freedesktop.nm_dispatcher.service: $(srcdir)/dispatcher/org.freed
 	-e 's|@libexecdir[@]|$(libexecdir)|g' \
 	$< >$@
 
-dbusactivation_DATA += dispatcher/org.freedesktop.nm_dispatcher.service
-CLEANFILES += dispatcher/org.freedesktop.nm_dispatcher.service
+dbusactivation_DATA += src/nm-dispatcher/org.freedesktop.nm_dispatcher.service
+CLEANFILES += src/nm-dispatcher/org.freedesktop.nm_dispatcher.service
 
 install-data-hook-dispatcher:
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmconfdir)/dispatcher.d
@@ -4475,51 +4474,50 @@ install-data-hook-dispatcher:
 
 install_data_hook += install-data-hook-dispatcher
 
-
-dbusservice_DATA += dispatcher/nm-dispatcher.conf
+dbusservice_DATA += src/nm-dispatcher/nm-dispatcher.conf
 
 EXTRA_DIST += \
-	dispatcher/nm-dispatcher.conf \
-	dispatcher/org.freedesktop.nm_dispatcher.service.in \
-	dispatcher/nm-dispatcher.xml \
-	dispatcher/meson.build
+	src/nm-dispatcher/nm-dispatcher.conf \
+	src/nm-dispatcher/org.freedesktop.nm_dispatcher.service.in \
+	src/nm-dispatcher/nm-dispatcher.xml \
+	src/nm-dispatcher/meson.build \
+	$(NULL)
 
 ###############################################################################
-# dispatcher/tests
+# src/nm-dispatcher/tests
 ###############################################################################
 
-check_programs += dispatcher/tests/test-dispatcher-envp
+check_programs += src/nm-dispatcher/tests/test-dispatcher-envp
 
-dispatcher_tests_test_dispatcher_envp_CPPFLAGS = \
+src_nm_dispatcher_tests_test_dispatcher_envp_CPPFLAGS = \
 	$(dflt_cppflags) \
-	-I$(srcdir)/dispatcher \
-	-I$(builddir)/dispatcher \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-client-public \
 	-I$(builddir)/src/libnm-client-public \
 	-I$(srcdir)/src \
+	-I$(builddir)/src \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_EXEC_CFLAGS) \
 	$(INTROSPECTION_EXTRA_CFLAGS) \
 	$(NULL)
 
-dispatcher_tests_test_dispatcher_envp_SOURCES = \
-	dispatcher/tests/test-dispatcher-envp.c \
+src_nm_dispatcher_tests_test_dispatcher_envp_SOURCES = \
+	src/nm-dispatcher/tests/test-dispatcher-envp.c \
 	$(NULL)
 
-nodist_dispatcher_tests_test_dispatcher_envp_SOURCES = $(dispatcher_nmdbus_dispatcher_sources)
+nodist_src_nm_dispatcher_tests_test_dispatcher_envp_SOURCES = $(dispatcher_nmdbus_dispatcher_sources)
 
-$(dispatcher_tests_test_dispatcher_envp_OBJECTS): $(dispatcher_nmdbus_dispatcher_sources)
-$(dispatcher_tests_test_dispatcher_envp_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(dispatcher_tests_test_dispatcher_envp_OBJECTS): $(src_libnm_client_public_mkenums_h)
+$(src_nm_dispatcher_tests_test_dispatcher_envp_OBJECTS): $(dispatcher_nmdbus_dispatcher_sources)
+$(src_nm_dispatcher_tests_test_dispatcher_envp_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_nm_dispatcher_tests_test_dispatcher_envp_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
-dispatcher_tests_test_dispatcher_envp_LDFLAGS = \
+src_nm_dispatcher_tests_test_dispatcher_envp_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-dispatcher_tests_test_dispatcher_envp_LDADD = \
-	dispatcher/libnm-dispatcher-core.la \
+src_nm_dispatcher_tests_test_dispatcher_envp_LDADD = \
+	src/nm-dispatcher/libnm-dispatcher-core.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
 	src/c-siphash/libc-siphash.la \
@@ -4527,17 +4525,17 @@ dispatcher_tests_test_dispatcher_envp_LDADD = \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-$(dispatcher_tests_test_dispatcher_envp_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_nm_dispatcher_tests_test_dispatcher_envp_OBJECTS): $(src_libnm_core_public_mkenums_h)
 
 EXTRA_DIST += \
-	dispatcher/tests/dispatcher-connectivity-full \
-	dispatcher/tests/dispatcher-connectivity-unknown \
-	dispatcher/tests/dispatcher-down \
-	dispatcher/tests/dispatcher-external \
-	dispatcher/tests/dispatcher-up \
-	dispatcher/tests/dispatcher-vpn-down \
-	dispatcher/tests/dispatcher-vpn-up \
-	dispatcher/tests/meson.build \
+	src/nm-dispatcher/tests/dispatcher-connectivity-full \
+	src/nm-dispatcher/tests/dispatcher-connectivity-unknown \
+	src/nm-dispatcher/tests/dispatcher-down \
+	src/nm-dispatcher/tests/dispatcher-external \
+	src/nm-dispatcher/tests/dispatcher-up \
+	src/nm-dispatcher/tests/dispatcher-vpn-down \
+	src/nm-dispatcher/tests/dispatcher-vpn-up \
+	src/nm-dispatcher/tests/meson.build \
 	$(NULL)
 
 ###############################################################################

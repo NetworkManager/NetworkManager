@@ -8,14 +8,14 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 
-#include "nm-dispatcher-utils.h"
+#include "nm-dispatcher/nm-dispatcher-utils.h"
 #include "libnm-core-aux-extern/nm-dispatcher-api.h"
 
 #include "libnm-glib-aux/nm-test-utils.h"
 
-#include "nmdbus-dispatcher.h"
+#include "nm-dispatcher/nmdbus-dispatcher.h"
 
-#define TEST_DIR NM_BUILD_SRCDIR "/dispatcher/tests"
+#define TEST_DIR NM_BUILD_SRCDIR "/src/nm-dispatcher/tests"
 
 /*****************************************************************************/
 
@@ -52,6 +52,7 @@ parse_main(GKeyFile *  kf,
     gs_free char *                                id    = NULL;
     gs_unref_object NMConnection *connection            = NULL;
     NMSettingConnection *         s_con;
+    const char *                  s;
 
     *out_expected_iface = g_key_file_get_string(kf, "main", "expected-iface", NULL);
 
@@ -84,7 +85,14 @@ parse_main(GKeyFile *  kf,
         g_variant_new_object_path("/org/freedesktop/NetworkManager/Connections/5"));
 
     /* Strip out the non-fixed portion of the filename */
-    filename = strstr(filename, "/dispatcher");
+    s        = filename;
+    filename = NULL;
+    while ((s = strstr(s, "/src/nm-dispatcher"))) {
+        filename = s;
+        s += 1;
+    }
+    g_assert(filename);
+    g_assert(g_str_has_prefix(filename, "/src/nm-dispatcher"));
     g_variant_builder_add(&props, "{sv}", "filename", g_variant_new_string(filename));
 
     if (g_key_file_get_boolean(kf, "main", "external", NULL)) {

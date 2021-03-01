@@ -12,7 +12,3 @@ libnm_udev_aux = static_library(
     libudev_dep,
   ],
 )
-
-libnm_udev_aux_dep = declare_dependency(
-  link_with: libnm_udev_aux,
-)

@@ -34,8 +34,8 @@ libnm_cloud_setup_core = static_library(
   dependencies: [
     libnmc_base_dep,
     libnmc_dep,
+    libnm_dep,
     libcurl_dep,
-    libnm_client_aux_extern_dep,
   ],
 )
 
@@ -53,12 +53,18 @@ executable(
     libnm_cloud_setup_core_dep,
     libnmc_base_dep,
     libnmc_dep,
-    libnm_core_aux_intern_dep_link,
-    libnm_core_aux_extern_dep_link,
-    libnm_glib_aux_dep_link,
     libcurl_dep,
+    glib_dep,
   ],
-  link_with: libnm_log_null,
+  link_with: [
+    libnm_client_aux_extern,
+    libnm_core_aux_extern,
+    libnm_core_aux_intern,
+    libnm_log_null,
+    libnm_glib_aux,
+    libnm_std_aux,
+    libc_siphash,
+  ],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
   install: true,

@@ -416,7 +416,7 @@ nm_logging_level_to_string(void)
 {
     NM_ASSERT_ON_MAIN_THREAD();
 
-    return level_desc[gl.imm.log_level].name;
+    return nm_log_level_desc[gl.imm.log_level].name;
 }
 
 const char *
@@ -428,10 +428,10 @@ nm_logging_all_levels_to_string(void)
         int i;
 
         str = g_string_new(NULL);
-        for (i = 0; i < G_N_ELEMENTS(level_desc); i++) {
+        for (i = 0; i < G_N_ELEMENTS(nm_log_level_desc); i++) {
             if (str->len)
                 g_string_append_c(str, ',');
-            g_string_append(str, level_desc[i].name);
+            g_string_append(str, nm_log_level_desc[i].name);
         }
     }
 
@@ -480,7 +480,7 @@ _domains_to_string(gboolean          include_level_override,
         /* Check if it's logging at a lower level than the default. */
         for (i = 0; i < log_level; i++) {
             if (diter->num & log_state[i]) {
-                g_string_append_printf(str, ":%s", level_desc[i].name);
+                g_string_append_printf(str, ":%s", nm_log_level_desc[i].name);
                 break;
             }
         }
@@ -488,7 +488,7 @@ _domains_to_string(gboolean          include_level_override,
         if (!(diter->num & log_state[log_level])) {
             for (i = log_level + 1; i < _LOGL_N_REAL; i++) {
                 if (diter->num & log_state[i]) {
-                    g_string_append_printf(str, ":%s", level_desc[i].name);
+                    g_string_append_printf(str, ":%s", nm_log_level_desc[i].name);
                     break;
                 }
             }
@@ -704,7 +704,7 @@ _nm_log_impl(const char *file,
 
 #define MESSAGE_FMT "%s%-7s [%ld.%04ld] %s"
 #define MESSAGE_ARG(prefix, tv, msg) \
-    prefix, level_desc[level].level_str, (tv).tv_sec, ((tv).tv_usec / 100), (msg)
+    prefix, nm_log_level_desc[level].level_str, (tv).tv_sec, ((tv).tv_usec / 100), (msg)
 
     g_get_current_time(&tv);
 
@@ -729,7 +729,7 @@ _nm_log_impl(const char *file,
         now      = nm_utils_get_monotonic_timestamp_nsec();
         boottime = nm_utils_monotonic_timestamp_as_boottime(now, 1);
 
-        _iovec_set_format_a(iov++, 30, "PRIORITY=%d", level_desc[level].syslog_level);
+        _iovec_set_format_a(iov++, 30, "PRIORITY=%d", nm_log_level_desc[level].syslog_level);
         _iovec_set_format(iov++,
                           iov_free++,
                           "MESSAGE=" MESSAGE_FMT,
@@ -755,7 +755,7 @@ _nm_log_impl(const char *file,
 
         G_STATIC_ASSERT_EXPR(LOG_FAC(LOG_DAEMON) == 3);
         _iovec_set_string_literal(iov++, "SYSLOG_FACILITY=3");
-        _iovec_set_format_str_a(iov++, 15, "NM_LOG_LEVEL=%s", level_desc[level].name);
+        _iovec_set_format_str_a(iov++, 15, "NM_LOG_LEVEL=%s", nm_log_level_desc[level].name);
         if (func)
             _iovec_set_format(iov++, iov_free++, "CODE_FUNC=%s", func);
         _iovec_set_format(iov++, iov_free++, "CODE_FILE=%s", file ?: "");
@@ -787,11 +787,11 @@ _nm_log_impl(const char *file,
     } break;
 #endif
     case LOG_BACKEND_SYSLOG:
-        syslog(level_desc[level].syslog_level, MESSAGE_FMT, MESSAGE_ARG(g->prefix, tv, msg));
+        syslog(nm_log_level_desc[level].syslog_level, MESSAGE_FMT, MESSAGE_ARG(g->prefix, tv, msg));
         break;
     default:
         g_log(syslog_identifier_domain(g->syslog_identifier),
-              level_desc[level].g_log_level,
+              nm_log_level_desc[level].g_log_level,
               MESSAGE_FMT,
               MESSAGE_ARG(g->prefix, tv, msg));
         break;
