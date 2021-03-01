@@ -14,7 +14,7 @@
 #include "libnm-client-aux-extern/nm-default-client.h"
 
 #include "nmt-password-dialog.h"
-#include "nm-secret-agent-simple.h"
+#include "libnmc-base/nm-secret-agent-simple.h"
 #include "nmtui.h"
 
 G_DEFINE_TYPE(NmtPasswordDialog, nmt_password_dialog, NMT_TYPE_NEWT_FORM)

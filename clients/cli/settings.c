@@ -12,9 +12,9 @@
 
 #include "libnm-core-aux-intern/nm-common-macros.h"
 
-#include "nm-client-utils.h"
-#include "nm-vpn-helpers.h"
-#include "nm-meta-setting-access.h"
+#include "libnmc-base/nm-client-utils.h"
+#include "libnmc-base/nm-vpn-helpers.h"
+#include "libnmc-setting/nm-meta-setting-access.h"
 
 #include "utils.h"
 #include "common.h"

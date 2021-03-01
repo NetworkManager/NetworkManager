@@ -22,13 +22,13 @@ executable(
     'utils.c',
   ),
   dependencies: [
-    libnmc_base_dep,
-    libnmc_dep,
     libnm_dep,
     glib_dep,
     readline_dep,
   ],
   link_with: [
+    libnmc_setting,
+    libnmc_base,
     libnm_client_aux_extern,
     libnm_core_aux_extern,
     libnm_core_aux_intern,
@@ -50,12 +50,12 @@ generate_docs_nm_settings_nmcli = executable(
     'generate-docs-nm-settings-nmcli.c',
   ),
   dependencies: [
-    libnmc_base_dep,
-    libnmc_dep,
     libnm_dep,
     glib_dep,
   ],
   link_with: [
+    libnmc_setting,
+    libnmc_base,
     libnm_core_aux_extern,
     libnm_core_aux_intern,
     libnm_base,

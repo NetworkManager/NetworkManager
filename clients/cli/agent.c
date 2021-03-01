@@ -12,9 +12,9 @@
 
 #include "common.h"
 #include "utils.h"
-#include "nm-secret-agent-simple.h"
+#include "libnmc-base/nm-secret-agent-simple.h"
 #include "polkit-agent.h"
-#include "nm-polkit-listener.h"
+#include "libnmc-base/nm-polkit-listener.h"
 
 static void
 usage(void)

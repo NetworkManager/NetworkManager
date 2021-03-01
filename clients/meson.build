@@ -18,7 +18,6 @@ executable(
   install: true,
 )
 
-subdir('common')
 subdir('cli')
 
 if enable_nmtui

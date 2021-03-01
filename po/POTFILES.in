@@ -11,13 +11,6 @@ clients/cli/polkit-agent.c
 clients/cli/settings.c
 clients/cli/utils.c
 clients/cli/utils.h
-clients/common/nm-client-utils.c
-clients/common/nm-meta-setting-access.c
-clients/common/nm-meta-setting-desc.c
-clients/common/nm-polkit-listener.c
-clients/common/nm-secret-agent-simple.c
-clients/common/nm-vpn-helpers.c
-clients/common/settings-docs.h.in
 clients/nm-online.c
 clients/tui/newt/nmt-newt-utils.c
 clients/tui/nm-editor-utils.c
@@ -183,3 +176,10 @@ src/libnm-core-impl/nm-vpn-editor-plugin.c
 src/libnm-core-impl/nm-vpn-plugin-info.c
 src/libnm-glib-aux/nm-shared-utils.c
 src/libnm-log-core/nm-logging.c
+src/libnmc-base/nm-client-utils.c
+src/libnmc-base/nm-polkit-listener.c
+src/libnmc-base/nm-secret-agent-simple.c
+src/libnmc-base/nm-vpn-helpers.c
+src/libnmc-setting/nm-meta-setting-access.c
+src/libnmc-setting/nm-meta-setting-desc.c
+src/libnmc-setting/settings-docs.h.in

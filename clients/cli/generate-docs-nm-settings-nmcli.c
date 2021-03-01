@@ -2,7 +2,7 @@
 
 #include "libnm-client-aux-extern/nm-default-client.h"
 
-#include "nm-meta-setting-desc.h"
+#include "libnmc-setting/nm-meta-setting-desc.h"
 
 #define INDENT 4
 

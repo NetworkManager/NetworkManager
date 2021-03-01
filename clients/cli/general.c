@@ -9,7 +9,7 @@
 
 #include "libnm-core-aux-intern/nm-common-macros.h"
 
-#include "nm-client-utils.h"
+#include "libnmc-base/nm-client-utils.h"
 
 #include "polkit-agent.h"
 #include "utils.h"

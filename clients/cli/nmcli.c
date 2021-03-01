@@ -18,7 +18,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include "nm-client-utils.h"
+#include "libnmc-base/nm-client-utils.h"
 
 #include "polkit-agent.h"
 #include "utils.h"

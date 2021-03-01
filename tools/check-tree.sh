@@ -20,5 +20,5 @@ check_cmp() {
 }
 
 check_cmp src/libnm-base/nm-ethtool-utils-base.h src/libnm-client-public/nm-ethtool-utils.h
-check_cmp src/libnm-core-intern/nm-meta-setting-base-impl.h clients/common/nm-meta-setting-base-impl.h
-check_cmp src/libnm-core-impl/nm-meta-setting-base-impl.c clients/common/nm-meta-setting-base-impl.c
+check_cmp src/libnm-core-intern/nm-meta-setting-base-impl.h src/libnmc-setting/nm-meta-setting-base-impl.h
+check_cmp src/libnm-core-impl/nm-meta-setting-base-impl.c src/libnmc-setting/nm-meta-setting-base-impl.c

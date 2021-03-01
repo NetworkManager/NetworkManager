@@ -15,8 +15,8 @@
 #include "libnm-glib-aux/nm-secret-utils.h"
 #include "common.h"
 #include "connections.h"
-#include "nm-client-utils.h"
-#include "nm-secret-agent-simple.h"
+#include "libnmc-base/nm-client-utils.h"
+#include "libnmc-base/nm-secret-agent-simple.h"
 #include "polkit-agent.h"
 #include "utils.h"
 
