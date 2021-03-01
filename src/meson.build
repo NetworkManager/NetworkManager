@@ -90,6 +90,7 @@ subdir('libnmc-setting')
 subdir('libnmt-newt')
 subdir('core')
 subdir('nm-dispatcher')
+subdir('nm-online')
 subdir('contrib')
 
 if enable_tests

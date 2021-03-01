@@ -72,7 +72,6 @@ test-*.trs
 /clients/cloud-setup/nm-cloud-setup
 /clients/cloud-setup/nm-cloud-setup.service
 /clients/cloud-setup/tests/test-cloud-setup-general
-/clients/nm-online
 /clients/tui/nmtui
 
 /data/NetworkManager.service
@@ -162,6 +161,8 @@ test-*.trs
 /src/libnmc-setting/settings-docs-input.xml
 /src/libnmc-setting/settings-docs.h
 /src/libnmc-setting/tests/test-libnmc-setting
+
+/src/nm-online/nm-online
 
 /clients/cli/generate-docs-nm-settings-nmcli
 /clients/cli/generate-docs-nm-settings-nmcli.xml
@@ -291,6 +292,7 @@ test-*.trs
 /clients/common/tests/test-clients-common
 /clients/common/tests/test-general
 /clients/common/tests/test-libnm-core-aux
+/clients/nm-online
 /dispatcher/nm-avahi-autoipd.action
 /dispatcher/nm-dispatcher
 /dispatcher/nmdbus-dispatcher.*

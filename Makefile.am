@@ -4575,12 +4575,12 @@ EXTRA_DIST += \
 	$(NULL)
 
 ###############################################################################
-# clients
+# src/nm-online
 ###############################################################################
 
-bin_PROGRAMS += clients/nm-online
+bin_PROGRAMS += src/nm-online/nm-online
 
-clients_nm_online_CPPFLAGS = \
+src_nm_online_nm_online_CPPFLAGS = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
@@ -4591,12 +4591,12 @@ clients_nm_online_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(NULL)
 
-clients_nm_online_LDFLAGS = \
+src_nm_online_nm_online_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-clients_nm_online_LDADD = \
+src_nm_online_nm_online_LDADD = \
 	src/libnm-client-impl/libnm.la \
 	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
@@ -4605,11 +4605,14 @@ clients_nm_online_LDADD = \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-$(clients_nm_online_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_nm_online_OBJECTS): $(src_libnm_client_public_mkenums_h)
+$(src_nm_online_nm_online_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_nm_online_nm_online_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
-EXTRA_DIST += \
-	clients/meson.build
+EXTRA_DIST += src/nm-online/meson.build
+
+###############################################################################
+
+EXTRA_DIST += clients/meson.build
 
 ###############################################################################
 # src/libnmc-base

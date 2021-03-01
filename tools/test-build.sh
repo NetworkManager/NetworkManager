@@ -31,15 +31,15 @@ build_out_of_tree() {
 TARGETS=("$@")
 if [ "${#TARGETS}" -lt 1 ]; then
     TARGETS=(
-        src/core/NetworkManager
-        src/core/nm-iface-helper
-        src/core/dhcp/nm-dhcp-helper
-        dispatcher/nm-dispatcher
-        clients/nm-online
         clients/cli/nmcli
         clients/tui/nmtui
-        src/core/platform/tests/monitor
+        dispatcher/nm-dispatcher
+        src/core/NetworkManager
+        src/core/dhcp/nm-dhcp-helper
         src/core/ndisc/tests/test-ndisc-linux
+        src/core/nm-iface-helper
+        src/core/platform/tests/monitor
+        src/nm-online/nm-online
         $(git grep -h '\.l\?a\>' Makefile.am | sed 's/[a-zA-Z.0-9_-/]\+/\n\0\n/g' | sort -u | grep '\.l\?a$')
     )
 fi
