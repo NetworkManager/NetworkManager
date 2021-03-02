@@ -10,7 +10,7 @@
 #include <linux/if.h>
 
 #include "libnm-platform/nm-netlink.h"
-#include "platform/linux/nl802154.h"
+#include "linux-headers/nl802154.h"
 #include "libnm-platform/nm-platform-utils.h"
 
 #define _NMLOG_PREFIX_NAME "wpan-nl802154"

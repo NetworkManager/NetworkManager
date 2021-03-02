@@ -571,6 +571,9 @@ src_libnm_platform_libnm_platform_la_CPPFLAGS = \
 	$(NULL)
 
 src_libnm_platform_libnm_platform_la_SOURCES = \
+	\
+	src/linux-headers/nl802154.h \
+	\
 	src/libnm-platform/nm-netlink.c \
 	src/libnm-platform/nm-netlink.h \
 	src/libnm-platform/nm-platform-utils.c \
@@ -2380,9 +2383,6 @@ src_core_libNetworkManagerBase_la_LIBADD = \
 	$(NULL)
 
 $(src_core_libNetworkManagerBase_la_OBJECTS): $(src_libnm_core_public_mkenums_h)
-
-EXTRA_DIST += \
-	src/core/platform/linux/nl802154.h
 
 ###############################################################################
 
