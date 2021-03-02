@@ -2491,4 +2491,8 @@ gboolean nm_utils_is_specific_hostname(const char *name);
 char *   nm_utils_uid_to_name(uid_t uid);
 gboolean nm_utils_name_to_uid(const char *name, uid_t *out_uid);
 
+/*****************************************************************************/
+
+double nm_utils_exp10(gint16 e);
+
 #endif /* __NM_SHARED_UTILS_H__ */

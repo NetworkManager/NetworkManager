@@ -5708,3 +5708,34 @@ nm_utils_name_to_uid(const char *name, uid_t *out_uid)
         buf      = buf_heap;
     }
 }
+
+/*****************************************************************************/
+
+static double
+_exp10(guint16 ex)
+{
+    double v;
+
+    if (ex == 0)
+        return 1.0;
+
+    v = _exp10(ex / 2);
+    v = v * v;
+    if (ex % 2)
+        v *= 10;
+    return v;
+}
+
+/*
+ * nm_utils_exp10:
+ * @ex: the exponent
+ *
+ * Returns: 10^ex, or pow(10, ex), or exp10(ex).
+ */
+double
+nm_utils_exp10(gint16 ex)
+{
+    if (ex >= 0)
+        return _exp10(ex);
+    return 1.0 / _exp10(-((gint32) ex));
+}
