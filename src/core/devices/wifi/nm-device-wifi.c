@@ -2565,6 +2565,7 @@ supplicant_iface_notify_current_bss(NMSupplicantInterface *iface,
     NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE(self);
     NMRefString *        current_bss;
     NMWifiAP *           new_ap = NULL;
+    NMActRequest *       req;
 
     current_bss = nm_supplicant_interface_get_current_bss(iface);
     if (current_bss)
@@ -2612,6 +2613,13 @@ supplicant_iface_notify_current_bss(NMSupplicantInterface *iface,
         }
 
         set_current_ap(self, new_ap, TRUE);
+
+        req = nm_device_get_act_request(NM_DEVICE(self));
+        if (req) {
+            nm_active_connection_set_specific_object(
+                NM_ACTIVE_CONNECTION(req),
+                new_ap ? nm_dbus_object_get_path(NM_DBUS_OBJECT(new_ap)) : NULL);
+        }
     }
 }
 
