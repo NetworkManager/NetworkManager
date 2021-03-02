@@ -1,15 +1,15 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
 exe = executable(
-  'test-cloud-setup-general',
-  'test-cloud-setup-general.c',
+  'test-libnm-client-aux',
+  'test-libnm-client-aux.c',
   dependencies: [
-    libnm_cloud_setup_core_dep,
     libnm_dep,
     glib_dep,
   ],
   link_with: [
-    libnmc_base,
+    libnm_core_aux_extern,
+    libnm_log_null,
     libnm_glib_aux,
     libnm_std_aux,
     libc_siphash,
@@ -17,7 +17,7 @@ exe = executable(
 )
 
 test(
-  'clients/cloud-setup/tests/test-cloud-setup-general',
+  'src/libnm-client-aux-extern/tests/test-libnm-client-aux',
   test_script,
-  args: test_args + [exe.full_path()],
+  args: test_args + [exe.full_path()]
 )

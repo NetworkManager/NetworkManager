@@ -6,8 +6,8 @@
 #ifndef NMC_NMCLI_H
 #define NMC_NMCLI_H
 
-#include "nm-secret-agent-simple.h"
-#include "nm-meta-setting-desc.h"
+#include "libnmc-base/nm-secret-agent-simple.h"
+#include "libnmc-setting/nm-meta-setting-desc.h"
 
 struct _NMPolkitListener;
 

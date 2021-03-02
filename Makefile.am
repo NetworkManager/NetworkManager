@@ -741,6 +741,41 @@ EXTRA_DIST += \
 
 ###############################################################################
 
+check_programs += src/libnm-client-aux-extern/tests/test-libnm-client-aux
+
+src_libnm_client_aux_extern_tests_test_libnm_client_aux_CPPFLAGS = \
+	$(dflt_cppflags) \
+	-I$(srcdir)/src/libnm-core-public \
+	-I$(builddir)/src/libnm-core-public \
+	-I$(srcdir)/src/libnm-client-public \
+	-I$(builddir)/src/libnm-client-public \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	$(NULL)
+
+src_libnm_client_aux_extern_tests_test_libnm_client_aux_LDFLAGS = \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_EXEC_LDFLAGS) \
+	$(NULL)
+
+src_libnm_client_aux_extern_tests_test_libnm_client_aux_LDADD = \
+	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
+	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
+	src/libnm-client-impl/libnm.la \
+	$(GLIB_LIBS) \
+	$(NULL)
+
+$(src_libnm_client_aux_extern_tests_test_libnm_client_aux_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_libnm_client_aux_extern_tests_test_libnm_client_aux_OBJECTS): $(src_libnm_client_public_mkenums_h)
+
+###############################################################################
+
 noinst_LTLIBRARIES += src/libnm-client-test/libnm-client-test.la
 
 src_libnm_client_test_libnm_client_test_la_CPPFLAGS = \
@@ -1789,13 +1824,14 @@ INTROSPECTION_GIRS += src/libnm-client-impl/NM-1.0.gir
 
 libnm_noinst_data = \
 	clients/cli/generate-docs-nm-settings-nmcli.xml \
+	man/nm-settings-docs-dbus.xml \
+	man/nm-settings-docs-nmcli.xml \
 	src/libnm-client-impl/nm-property-infos-dbus.xml \
 	src/libnm-client-impl/nm-property-infos-ifcfg-rh.xml \
 	src/libnm-client-impl/nm-property-infos-keyfile.xml \
 	src/libnm-client-impl/nm-property-infos-nmcli.xml \
 	src/libnm-client-impl/nm-settings-docs-gir.xml \
-	man/nm-settings-docs-dbus.xml \
-	man/nm-settings-docs-nmcli.xml \
+	src/libnmc-setting/settings-docs-input.xml \
 	$(NULL)
 
 noinst_DATA += $(libnm_noinst_data)
@@ -1833,7 +1869,7 @@ src/libnm-client-impl/nm-settings-docs-gir.xml: tools/generate-docs-nm-settings-
 man/nm-settings-docs-nmcli.xml: clients/cli/generate-docs-nm-settings-nmcli.xml src/libnm-client-impl/nm-property-infos-nmcli.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py man/common.ent
 	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/tools/generate-docs-nm-settings-docs-merge.py --only-from-first $@ $(wordlist 1,3,$^)
 
-clients/common/settings-docs-input.xml: src/libnm-client-impl/nm-property-infos-nmcli.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py
+src/libnmc-setting/settings-docs-input.xml: src/libnm-client-impl/nm-property-infos-nmcli.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py
 	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/tools/generate-docs-nm-settings-docs-merge.py $@ $(wordlist 1,2,$^)
 
 man/nm-settings-docs-%.xml: src/libnm-client-impl/nm-property-infos-%.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py man/common.ent
@@ -4539,12 +4575,12 @@ EXTRA_DIST += \
 	$(NULL)
 
 ###############################################################################
-# clients
+# src/nm-online
 ###############################################################################
 
-bin_PROGRAMS += clients/nm-online
+bin_PROGRAMS += src/nm-online/nm-online
 
-clients_nm_online_CPPFLAGS = \
+src_nm_online_nm_online_CPPFLAGS = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
@@ -4555,12 +4591,12 @@ clients_nm_online_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(NULL)
 
-clients_nm_online_LDFLAGS = \
+src_nm_online_nm_online_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-clients_nm_online_LDADD = \
+src_nm_online_nm_online_LDADD = \
 	src/libnm-client-impl/libnm.la \
 	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
@@ -4569,126 +4605,123 @@ clients_nm_online_LDADD = \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-$(clients_nm_online_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_nm_online_OBJECTS): $(src_libnm_client_public_mkenums_h)
+$(src_nm_online_nm_online_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_nm_online_nm_online_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
-EXTRA_DIST += \
-	clients/meson.build
+EXTRA_DIST += src/nm-online/meson.build
 
 ###############################################################################
-# clients/common
+
+EXTRA_DIST += clients/meson.build
+
+###############################################################################
+# src/libnmc-base
 ###############################################################################
 
 clients_cppflags = \
 	$(dflt_cppflags) \
-	-I$(builddir)/clients/common \
-	-I$(srcdir)/clients/common \
-	-I$(builddir)/src/libnm-core-public \
-	-I$(srcdir)/src/libnm-core-public \
-	-I$(builddir)/src/libnm-client-public \
-	-I$(srcdir)/src/libnm-client-public \
 	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	-I$(srcdir)/src/libnm-core-public \
+	-I$(builddir)/src/libnm-core-public \
+	-I$(srcdir)/src/libnm-client-public \
+	-I$(builddir)/src/libnm-client-public \
 	$(GLIB_CFLAGS) \
 	$(SANITIZER_EXEC_CFLAGS) \
 	$(NULL)
 
-check_ltlibraries += clients/common/libnmc-base.la
+check_ltlibraries += src/libnmc-base/libnmc-base.la
 
-clients_common_libnmc_base_la_SOURCES = \
-	clients/common/nm-secret-agent-simple.c \
-	clients/common/nm-secret-agent-simple.h \
-	clients/common/nm-vpn-helpers.c \
-	clients/common/nm-vpn-helpers.h \
-	clients/common/nm-client-utils.c \
-	clients/common/nm-client-utils.h \
-	clients/common/nm-polkit-listener.c \
-	clients/common/nm-polkit-listener.h \
+src_libnmc_base_libnmc_base_la_SOURCES = \
+	src/libnmc-base/nm-client-utils.c \
+	src/libnmc-base/nm-client-utils.h \
+	src/libnmc-base/nm-polkit-listener.c \
+	src/libnmc-base/nm-polkit-listener.h \
+	src/libnmc-base/nm-secret-agent-simple.c \
+	src/libnmc-base/nm-secret-agent-simple.h \
+	src/libnmc-base/nm-vpn-helpers.c \
+	src/libnmc-base/nm-vpn-helpers.h \
 	$(NULL)
 
 EXTRA_DIST += \
-	clients/common/qrcodegen.c \
-	clients/common/qrcodegen.h
+	src/libnmc-base/qrcodegen.c \
+	src/libnmc-base/qrcodegen.h \
+	$(NULL)
 
-clients_common_libnmc_base_la_CPPFLAGS = \
+src_libnmc_base_libnmc_base_la_CPPFLAGS = \
 	$(clients_cppflags) \
 	$(NULL)
 
-clients_common_libnmc_base_la_LIBADD = \
+src_libnmc_base_libnmc_base_la_LIBADD = \
 	src/libnm-client-impl/libnm.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-$(clients_common_libnmc_base_la_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_common_libnmc_base_la_OBJECTS): $(src_libnm_client_public_mkenums_h)
-$(clients_common_libnmc_base_la_OBJECTS): clients/common/.dirstamp
+$(src_libnmc_base_libnmc_base_la_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_libnmc_base_libnmc_base_la_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
-clients_common_settings_doc_h = clients/common/settings-docs.h
+###############################################################################
+# src/libnmc-setting
+###############################################################################
+
+libnmc_setting_settings_doc_h = src/libnmc-setting/settings-docs.h
 if BUILD_DOCS
-$(clients_common_settings_doc_h): clients/common/settings-docs.xsl clients/common/settings-docs-input.xml clients/common/.dirstamp
+$(libnmc_setting_settings_doc_h): src/libnmc-setting/settings-docs.xsl src/libnmc-setting/settings-docs-input.xml src/libnmc-setting/.dirstamp
 	$(AM_V_GEN) $(XSLTPROC) --output $@ $< $(word 2,$^)
-DISTCLEANFILES += $(clients_common_settings_doc_h)
-check-local-settings-docs: $(clients_common_settings_doc_h)
-	$(srcdir)/tools/check-compare-generated.sh "$(srcdir)" "$(builddir)" "$(clients_common_settings_doc_h)"
+DISTCLEANFILES += $(libnmc_setting_settings_doc_h)
+check-local-settings-docs: $(libnmc_setting_settings_doc_h)
+	$(srcdir)/tools/check-compare-generated.sh "$(srcdir)" "$(builddir)" "$(libnmc_setting_settings_doc_h)"
 check_local += check-local-settings-docs
 else
-$(clients_common_settings_doc_h): $(clients_common_settings_doc_h).in clients/common/.dirstamp
-	$(AM_V_GEN) cp "$(srcdir)/$(clients_common_settings_doc_h).in" "$(builddir)/$(clients_common_settings_doc_h)"
+$(libnmc_setting_settings_doc_h): $(libnmc_setting_settings_doc_h).in src/libnmc-setting/.dirstamp
+	$(AM_V_GEN) cp "$(srcdir)/$(libnmc_setting_settings_doc_h).in" "$(builddir)/$(libnmc_setting_settings_doc_h)"
 check-local-settings-docs:
 endif
 EXTRA_DIST += \
-	$(clients_common_settings_doc_h) \
-	$(clients_common_settings_doc_h).in
+	$(libnmc_setting_settings_doc_h) \
+	$(libnmc_setting_settings_doc_h).in
 
-if HAVE_INTROSPECTION
-check_ltlibraries += clients/common/libnmc.la
-else
-EXTRA_LTLIBRARIES += clients/common/libnmc.la
-endif
+check_ltlibraries += src/libnmc-setting/libnmc-setting.la
 
-clients_common_libnmc_la_SOURCES = \
-	clients/common/nm-meta-setting-base-impl.c \
-	clients/common/nm-meta-setting-base-impl.h \
-	clients/common/nm-meta-setting-base.h \
-	\
-	clients/common/nm-meta-setting-desc.c \
-	clients/common/nm-meta-setting-desc.h \
-	clients/common/nm-meta-setting-access.c \
-	clients/common/nm-meta-setting-access.h \
+src_libnmc_setting_libnmc_setting_la_SOURCES = \
+	src/libnmc-setting/nm-meta-setting-access.c \
+	src/libnmc-setting/nm-meta-setting-access.h \
+	src/libnmc-setting/nm-meta-setting-base-impl.c \
+	src/libnmc-setting/nm-meta-setting-base-impl.h \
+	src/libnmc-setting/nm-meta-setting-base.h \
+	src/libnmc-setting/nm-meta-setting-desc.c \
+	src/libnmc-setting/nm-meta-setting-desc.h \
 	$(NULL)
 
-clients_common_libnmc_la_CPPFLAGS = \
+src_libnmc_setting_libnmc_setting_la_CPPFLAGS = \
 	$(clients_cppflags) \
 	$(NULL)
 
-clients_common_libnmc_la_LIBADD = \
+src_libnmc_setting_libnmc_setting_la_LIBADD = \
 	src/libnm-client-impl/libnm.la \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-$(clients_common_libnmc_la_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_common_libnmc_la_OBJECTS): $(src_libnm_client_public_mkenums_h)
-$(clients_common_libnmc_la_OBJECTS): $(clients_common_settings_doc_h)
-$(clients_common_libnmc_la_OBJECTS): clients/common/.dirstamp
+$(src_libnmc_setting_libnmc_setting_la_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_libnmc_setting_libnmc_setting_la_OBJECTS): $(src_libnm_client_public_mkenums_h)
+$(src_libnmc_setting_libnmc_setting_la_OBJECTS): $(libnmc_setting_settings_doc_h)
+$(src_libnmc_setting_libnmc_setting_la_OBJECTS): src/libnmc-setting/.dirstamp
 
-if HAVE_INTROSPECTION
-check_programs += clients/common/tests/test-clients-common
-else
-if BUILD_NMCLI
-check_programs += clients/common/tests/test-clients-common
-endif
-endif
+###############################################################################
 
-clients_common_tests_test_clients_common_CPPFLAGS = \
-	-I$(srcdir)/clients/common/tests \
+check_programs += src/libnmc-setting/tests/test-libnmc-setting
+
+src_libnmc_setting_tests_test_libnmc_setting_CPPFLAGS = \
 	$(clients_cppflags) \
 	$(NULL)
 
-clients_common_tests_test_clients_common_LDFLAGS = \
-	$(SANITIZER_EXEC_LDFLAGS)
+src_libnmc_setting_tests_test_libnmc_setting_LDFLAGS = \
+	$(SANITIZER_EXEC_LDFLAGS) \
+	$(NULL)
 
-clients_common_tests_test_clients_common_LDADD = \
-	clients/common/libnmc.la \
-	clients/common/libnmc-base.la \
+src_libnmc_setting_tests_test_libnmc_setting_LDADD = \
+	src/libnmc-setting/libnmc-setting.la \
+	src/libnmc-base/libnmc-base.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
 	src/libnm-base/libnm-base.la \
@@ -4698,52 +4731,15 @@ clients_common_tests_test_clients_common_LDADD = \
 	src/libnm-client-impl/libnm.la \
 	$(GLIB_LIBS)
 
-$(clients_common_tests_test_clients_common_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_common_tests_test_clients_common_OBJECTS): $(src_libnm_client_public_mkenums_h)
-
-###############################################################################
+$(src_libnmc_setting_tests_test_libnmc_setting_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_libnmc_setting_tests_test_libnmc_setting_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 EXTRA_DIST += \
-	clients/common/tests/wg-test0.conf \
-	clients/common/tests/wg-test1.conf \
-	clients/common/tests/wg-test2.conf \
-	clients/common/tests/wg-test3.conf \
+	src/libnmc-setting/tests/wg-test0.conf \
+	src/libnmc-setting/tests/wg-test1.conf \
+	src/libnmc-setting/tests/wg-test2.conf \
+	src/libnmc-setting/tests/wg-test3.conf \
 	$(NULL)
-
-###############################################################################
-
-check_programs += clients/common/tests/test-libnm-core-aux
-
-clients_common_tests_test_libnm_core_aux_CPPFLAGS = \
-	$(dflt_cppflags) \
-	-I$(srcdir)/src/libnm-core-public \
-	-I$(builddir)/src/libnm-core-public \
-	-I$(srcdir)/src/libnm-client-public \
-	-I$(builddir)/src/libnm-client-public \
-	-I$(srcdir)/src \
-	-I$(builddir)/src \
-	$(CODE_COVERAGE_CFLAGS) \
-	$(GLIB_CFLAGS) \
-	$(SANITIZER_LIB_CFLAGS) \
-	$(NULL)
-
-clients_common_tests_test_libnm_core_aux_LDFLAGS = \
-	$(CODE_COVERAGE_LDFLAGS) \
-	$(SANITIZER_EXEC_LDFLAGS) \
-	$(NULL)
-
-clients_common_tests_test_libnm_core_aux_LDADD = \
-	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
-	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
-	src/libnm-glib-aux/libnm-glib-aux.la \
-	src/libnm-std-aux/libnm-std-aux.la \
-	src/c-siphash/libc-siphash.la \
-	src/libnm-client-impl/libnm.la \
-	$(GLIB_LIBS) \
-	$(NULL)
-
-$(clients_common_tests_test_libnm_core_aux_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_common_tests_test_libnm_core_aux_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 ###############################################################################
 # clients/cli
@@ -4778,8 +4774,8 @@ clients_cli_nmcli_CPPFLAGS = \
 	$(NULL)
 
 clients_cli_nmcli_LDADD = \
-	clients/common/libnmc.la \
-	clients/common/libnmc-base.la \
+	src/libnmc-setting/libnmc-setting.la \
+	src/libnmc-base/libnmc-base.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
 	src/libnm-base/libnm-base.la \
@@ -4820,13 +4816,12 @@ clients_cli_generate_docs_nm_settings_nmcli_SOURCES = \
 	$(NULL)
 
 clients_cli_generate_docs_nm_settings_nmcli_CPPFLAGS = \
-	-I$(srcdir)/clients/common \
 	$(clients_cppflags) \
 	$(NULL)
 
 clients_cli_generate_docs_nm_settings_nmcli_LDADD = \
-	clients/common/libnmc.la \
-	clients/common/libnmc-base.la \
+	src/libnmc-setting/libnmc-setting.la \
+	src/libnmc-base/libnmc-base.la \
 	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
@@ -4851,70 +4846,80 @@ $(clients_cli_generate_docs_nm_settings_nmcli_OBJECTS): $(src_libnm_client_publi
 EXTRA_DIST += \
 	clients/cli/nmcli-completion \
 	clients/cli/meson.build \
-	clients/common/settings-docs.xsl \
-	clients/common/meson.build \
-	clients/common/tests/meson.build
+	src/libnmc-setting/settings-docs.xsl \
+	src/libnmc-setting/meson.build \
+	src/libnmc-setting/tests/meson.build
+
+###############################################################################
+# src/libnmt-newt
+###############################################################################
+
+if BUILD_NMTUI
+
+noinst_LIBRARIES += src/libnmt-newt/libnmt-newt.a
+
+src_libnmt_newt_libnmt_newt_a_SOURCES = \
+	src/libnmt-newt/nmt-newt-button-box.c \
+	src/libnmt-newt/nmt-newt-button-box.h \
+	src/libnmt-newt/nmt-newt-button.c \
+	src/libnmt-newt/nmt-newt-button.h \
+	src/libnmt-newt/nmt-newt-checkbox.c \
+	src/libnmt-newt/nmt-newt-checkbox.h \
+	src/libnmt-newt/nmt-newt-component.c \
+	src/libnmt-newt/nmt-newt-component.h \
+	src/libnmt-newt/nmt-newt-container.c \
+	src/libnmt-newt/nmt-newt-container.h \
+	src/libnmt-newt/nmt-newt-entry-numeric.c \
+	src/libnmt-newt/nmt-newt-entry-numeric.h \
+	src/libnmt-newt/nmt-newt-entry.c \
+	src/libnmt-newt/nmt-newt-entry.h \
+	src/libnmt-newt/nmt-newt-form.c \
+	src/libnmt-newt/nmt-newt-form.h \
+	src/libnmt-newt/nmt-newt-grid.c \
+	src/libnmt-newt/nmt-newt-grid.h \
+	src/libnmt-newt/nmt-newt-hacks.c \
+	src/libnmt-newt/nmt-newt-hacks.h \
+	src/libnmt-newt/nmt-newt-label.c \
+	src/libnmt-newt/nmt-newt-label.h \
+	src/libnmt-newt/nmt-newt-listbox.c \
+	src/libnmt-newt/nmt-newt-listbox.h \
+	src/libnmt-newt/nmt-newt-popup.c \
+	src/libnmt-newt/nmt-newt-popup.h \
+	src/libnmt-newt/nmt-newt-section.c \
+	src/libnmt-newt/nmt-newt-section.h \
+	src/libnmt-newt/nmt-newt-separator.c \
+	src/libnmt-newt/nmt-newt-separator.h \
+	src/libnmt-newt/nmt-newt-stack.c \
+	src/libnmt-newt/nmt-newt-stack.h \
+	src/libnmt-newt/nmt-newt-textbox.c \
+	src/libnmt-newt/nmt-newt-textbox.h \
+	src/libnmt-newt/nmt-newt-toggle-button.c \
+	src/libnmt-newt/nmt-newt-toggle-button.h \
+	src/libnmt-newt/nmt-newt-types.h \
+	src/libnmt-newt/nmt-newt-utils.c \
+	src/libnmt-newt/nmt-newt-utils.h \
+	src/libnmt-newt/nmt-newt-widget.c \
+	src/libnmt-newt/nmt-newt-widget.h \
+	src/libnmt-newt/nmt-newt.h \
+	$(NULL)
+
+src_libnmt_newt_libnmt_newt_a_CPPFLAGS = \
+	$(clients_cppflags) \
+	$(NEWT_CFLAGS) \
+	$(NULL)
+
+$(src_libnmt_newt_libnmt_newt_a_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_libnmt_newt_libnmt_newt_a_OBJECTS): $(src_libnm_client_public_mkenums_h)
+
+endif
+
+EXTRA_DIST += src/libnmt-newt/meson.build
 
 ###############################################################################
 # clients/tui
 ###############################################################################
 
 if BUILD_NMTUI
-
-noinst_LIBRARIES += clients/tui/newt/libnmt-newt.a
-
-clients_tui_newt_libnmt_newt_a_SOURCES = \
-	clients/tui/newt/nmt-newt.h \
-	clients/tui/newt/nmt-newt-types.h \
-	clients/tui/newt/nmt-newt-button.c \
-	clients/tui/newt/nmt-newt-button.h \
-	clients/tui/newt/nmt-newt-button-box.c \
-	clients/tui/newt/nmt-newt-button-box.h \
-	clients/tui/newt/nmt-newt-checkbox.c \
-	clients/tui/newt/nmt-newt-checkbox.h \
-	clients/tui/newt/nmt-newt-component.c \
-	clients/tui/newt/nmt-newt-component.h \
-	clients/tui/newt/nmt-newt-container.c \
-	clients/tui/newt/nmt-newt-container.h \
-	clients/tui/newt/nmt-newt-entry.c \
-	clients/tui/newt/nmt-newt-entry.h \
-	clients/tui/newt/nmt-newt-entry-numeric.c \
-	clients/tui/newt/nmt-newt-entry-numeric.h \
-	clients/tui/newt/nmt-newt-form.c \
-	clients/tui/newt/nmt-newt-form.h \
-	clients/tui/newt/nmt-newt-grid.c \
-	clients/tui/newt/nmt-newt-grid.h \
-	clients/tui/newt/nmt-newt-hacks.c \
-	clients/tui/newt/nmt-newt-hacks.h \
-	clients/tui/newt/nmt-newt-label.c \
-	clients/tui/newt/nmt-newt-label.h \
-	clients/tui/newt/nmt-newt-listbox.c \
-	clients/tui/newt/nmt-newt-listbox.h \
-	clients/tui/newt/nmt-newt-popup.c \
-	clients/tui/newt/nmt-newt-popup.h \
-	clients/tui/newt/nmt-newt-section.c \
-	clients/tui/newt/nmt-newt-section.h \
-	clients/tui/newt/nmt-newt-separator.c \
-	clients/tui/newt/nmt-newt-separator.h \
-	clients/tui/newt/nmt-newt-stack.c \
-	clients/tui/newt/nmt-newt-stack.h \
-	clients/tui/newt/nmt-newt-textbox.c \
-	clients/tui/newt/nmt-newt-textbox.h \
-	clients/tui/newt/nmt-newt-toggle-button.c \
-	clients/tui/newt/nmt-newt-toggle-button.h \
-	clients/tui/newt/nmt-newt-utils.c \
-	clients/tui/newt/nmt-newt-utils.h \
-	clients/tui/newt/nmt-newt-widget.c \
-	clients/tui/newt/nmt-newt-widget.h \
-	$(NULL)
-
-clients_tui_newt_libnmt_newt_a_CPPFLAGS = \
-	$(clients_cppflags) \
-	$(NEWT_CFLAGS) \
-	$(NULL)
-
-$(clients_tui_newt_libnmt_newt_a_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_tui_newt_libnmt_newt_a_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 bin_PROGRAMS += clients/tui/nmtui
 
@@ -5004,7 +5009,6 @@ clients_tui_nmtui_SOURCES = \
 	$(NULL)
 
 clients_tui_nmtui_CPPFLAGS = \
-	-I$(srcdir)/clients/tui/newt \
 	$(clients_cppflags) \
 	$(NEWT_CFLAGS) \
 	$(NULL)
@@ -5014,9 +5018,9 @@ clients_tui_nmtui_LDFLAGS = \
 	$(SANITIZER_EXEC_LDFLAGS)
 
 clients_tui_nmtui_LDADD = \
-	clients/tui/newt/libnmt-newt.a \
-	clients/common/libnmc.la \
-	clients/common/libnmc-base.la \
+	src/libnmt-newt/libnmt-newt.a \
+	src/libnmc-setting/libnmc-setting.la \
+	src/libnmc-base/libnmc-base.la \
 	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
@@ -5050,9 +5054,7 @@ uninstall_hook += uninstall-hook-nmtui
 
 endif
 
-EXTRA_DIST += \
-	clients/tui/meson.build \
-	clients/tui/newt/meson.build
+EXTRA_DIST += clients/tui/meson.build
 
 ###############################################################################
 # clients/nm-cloud-setup
@@ -5531,8 +5533,6 @@ CLEANFILES += \
 	cscope.po.out \
 	\
 	$(NULL)
-
-CLEANFILES += clients/common/settings-docs-input.xml
 
 ###############################################################################
 

@@ -7,7 +7,7 @@
 #define NMT_MAC_ENTRY_H
 
 #include "nm-utils.h"
-#include "nmt-newt.h"
+#include "libnmt-newt/nmt-newt.h"
 
 typedef enum { /*< skip >*/
                NMT_MAC_ENTRY_TYPE_MAC,

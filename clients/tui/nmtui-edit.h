@@ -6,7 +6,7 @@
 #ifndef NMTUI_EDIT_H
 #define NMTUI_EDIT_H
 
-#include "nmt-newt.h"
+#include "libnmt-newt/nmt-newt.h"
 
 typedef gboolean (*NmtAddConnectionTypeFilter)(GType connection_type, gpointer user_data);
 

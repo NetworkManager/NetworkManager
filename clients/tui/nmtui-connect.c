@@ -15,15 +15,15 @@
 
 #include <stdlib.h>
 
-#include "nmt-newt.h"
+#include "libnmt-newt/nmt-newt.h"
 
 #include "nmtui.h"
 #include "nmtui-connect.h"
 #include "nmt-connect-connection-list.h"
 #include "nmt-password-dialog.h"
-#include "nm-secret-agent-simple.h"
-#include "nm-vpn-helpers.h"
-#include "nm-client-utils.h"
+#include "libnmc-base/nm-secret-agent-simple.h"
+#include "libnmc-base/nm-vpn-helpers.h"
+#include "libnmc-base/nm-client-utils.h"
 #include "nmt-utils.h"
 
 /**

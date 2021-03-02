@@ -7,7 +7,7 @@
 #define NMC_COMMON_H
 
 #include "nmcli.h"
-#include "nm-secret-agent-simple.h"
+#include "libnmc-base/nm-secret-agent-simple.h"
 
 gboolean print_ip_config(NMIPConfig *     cfg,
                          int              addr_family,

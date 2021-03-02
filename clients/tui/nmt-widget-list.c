@@ -25,7 +25,7 @@
 #include <netinet/in.h>
 #include <stdlib.h>
 
-#include "nmt-newt.h"
+#include "libnmt-newt/nmt-newt.h"
 
 G_DEFINE_TYPE(NmtWidgetList, nmt_widget_list, NMT_TYPE_NEWT_GRID)
 

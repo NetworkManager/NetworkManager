@@ -6,7 +6,6 @@
 #ifndef __NM_CLIENT_UTILS_H__
 #define __NM_CLIENT_UTILS_H__
 
-#include "nm-meta-setting-desc.h"
 #include "nm-active-connection.h"
 #include "nm-device.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"

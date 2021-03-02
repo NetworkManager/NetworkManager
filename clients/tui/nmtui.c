@@ -20,7 +20,7 @@
 
 #include "libnm-client-aux-extern/nm-libnm-aux.h"
 
-#include "nmt-newt.h"
+#include "libnmt-newt/nmt-newt.h"
 #include "nm-editor-bindings.h"
 
 #include "nmtui-edit.h"

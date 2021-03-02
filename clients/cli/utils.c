@@ -16,8 +16,8 @@
 #include <sys/auxv.h>
 #include <sys/prctl.h>
 
-#include "nm-client-utils.h"
-#include "nm-meta-setting-access.h"
+#include "libnmc-base/nm-client-utils.h"
+#include "libnmc-setting/nm-meta-setting-access.h"
 
 #include "common.h"
 #include "nmcli.h"

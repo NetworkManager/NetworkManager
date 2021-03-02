@@ -5,9 +5,9 @@
 
 #include "libnm-client-aux-extern/nm-default-client.h"
 
-#include "nm-meta-setting-access.h"
-#include "nm-vpn-helpers.h"
-#include "nm-client-utils.h"
+#include "libnmc-setting/nm-meta-setting-access.h"
+#include "libnmc-base/nm-vpn-helpers.h"
+#include "libnmc-base/nm-client-utils.h"
 
 #include "libnm-glib-aux/nm-test-utils.h"
 
@@ -169,7 +169,7 @@ test_client_import_wireguard_test0(void)
     gs_free_error GError *error = NULL;
 
     connection =
-        nm_vpn_wireguard_import(NM_BUILD_SRCDIR "/clients/common/tests/wg-test0.conf", &error);
+        nm_vpn_wireguard_import(NM_BUILD_SRCDIR "/src/libnmc-setting/tests/wg-test0.conf", &error);
 
     g_assert_no_error(error);
 
@@ -231,7 +231,7 @@ test_client_import_wireguard_test1(void)
 {
     gs_free_error GError *error = NULL;
 
-    nm_vpn_wireguard_import(NM_BUILD_SRCDIR "/clients/common/tests/wg-test1.conf", &error);
+    nm_vpn_wireguard_import(NM_BUILD_SRCDIR "/src/libnmc-setting/tests/wg-test1.conf", &error);
     g_assert_error(error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT);
     g_assert(g_str_has_prefix(error->message, "invalid secret 'PrivateKey'"));
     g_assert(g_str_has_suffix(error->message, "wg-test1.conf:2"));
@@ -242,7 +242,7 @@ test_client_import_wireguard_test2(void)
 {
     gs_free_error GError *error = NULL;
 
-    nm_vpn_wireguard_import(NM_BUILD_SRCDIR "/clients/common/tests/wg-test2.conf", &error);
+    nm_vpn_wireguard_import(NM_BUILD_SRCDIR "/src/libnmc-setting/tests/wg-test2.conf", &error);
 
     g_assert_error(error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT);
     g_assert(g_str_has_prefix(error->message, "unrecognized line at"));
@@ -254,7 +254,7 @@ test_client_import_wireguard_test3(void)
 {
     gs_free_error GError *error = NULL;
 
-    nm_vpn_wireguard_import(NM_BUILD_SRCDIR "/clients/common/tests/wg-test3.conf", &error);
+    nm_vpn_wireguard_import(NM_BUILD_SRCDIR "/src/libnmc-setting/tests/wg-test3.conf", &error);
     g_assert_error(error, NM_UTILS_ERROR, NM_UTILS_ERROR_INVALID_ARGUMENT);
     g_assert(g_str_has_prefix(error->message, "invalid value for 'ListenPort'"));
     g_assert(g_str_has_suffix(error->message, "wg-test3.conf:3"));
@@ -265,7 +265,7 @@ test_client_import_wireguard_missing(void)
 {
     gs_free_error GError *error = NULL;
 
-    nm_vpn_wireguard_import(NM_BUILD_SRCDIR "/clients/common/tests/wg-missing.conf", &error);
+    nm_vpn_wireguard_import(NM_BUILD_SRCDIR "/src/libnmc-setting/tests/wg-missing.conf", &error);
     g_assert_error(error, G_FILE_ERROR, G_FILE_ERROR_NOENT);
 }
 

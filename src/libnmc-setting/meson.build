@@ -1,28 +1,5 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
-common_inc = include_directories('.')
-
-libnmc_base = static_library(
-  'nmc-base',
-  sources: files(
-    'nm-client-utils.c',
-    'nm-secret-agent-simple.c',
-    'nm-vpn-helpers.c',
-    'nm-polkit-listener.c',
-  ),
-  dependencies: [
-    libnm_dep,
-  ],
-)
-
-libnmc_base_dep = declare_dependency(
-  include_directories: common_inc,
-  dependencies: [
-    libnm_dep,
-  ],
-  link_with: libnmc_base,
-)
-
 if enable_docs
   settings_docs_input_xml = custom_target(
     'settings-docs-input.xml',
@@ -50,7 +27,7 @@ if enable_docs
     args: [
       source_root,
       build_root,
-      'clients/common/settings-docs.h',
+      'src/libnmc-setting/settings-docs.h',
     ],
   )
 else
@@ -61,8 +38,8 @@ else
   )
 endif
 
-libnmc = static_library(
-  'nmc',
+libnmc_setting = static_library(
+  'nmc-setting',
   sources: [settings_docs_source] + files(
     'nm-meta-setting-access.c',
     'nm-meta-setting-base-impl.c',
@@ -73,15 +50,3 @@ libnmc = static_library(
   ],
   link_depends: settings_docs_source,
 )
-
-libnmc_dep = declare_dependency(
-  include_directories: common_inc,
-  dependencies: [
-    libnm_dep,
-  ],
-  link_with: libnmc,
-)
-
-if (enable_introspection or enable_nmtui) and enable_tests
-  subdir('tests')
-endif

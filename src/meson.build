@@ -85,8 +85,12 @@ subdir('libnm-core-aux-extern')
 subdir('libnm-client-public')
 subdir('libnm-client-impl')
 subdir('libnm-client-aux-extern')
+subdir('libnmc-base')
+subdir('libnmc-setting')
+subdir('libnmt-newt')
 subdir('core')
 subdir('nm-dispatcher')
+subdir('nm-online')
 subdir('contrib')
 
 if enable_tests
@@ -95,6 +99,8 @@ if enable_tests
   subdir('libnm-platform/tests')
   subdir('libnm-core-impl/tests')
   subdir('libnm-client-impl/tests')
+  subdir('libnm-client-aux-extern/tests')
+  subdir('libnmc-setting/tests')
   subdir('nm-dispatcher/tests')
   subdir('contrib/tests')
 endif

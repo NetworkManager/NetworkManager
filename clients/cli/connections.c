@@ -15,10 +15,10 @@
 #include <readline/history.h>
 #include <fcntl.h>
 
-#include "nm-client-utils.h"
-#include "nm-vpn-helpers.h"
-#include "nm-meta-setting-access.h"
-#include "nm-secret-agent-simple.h"
+#include "libnmc-base/nm-client-utils.h"
+#include "libnmc-base/nm-vpn-helpers.h"
+#include "libnmc-setting/nm-meta-setting-access.h"
+#include "libnmc-base/nm-secret-agent-simple.h"
 
 #include "utils.h"
 #include "common.h"
