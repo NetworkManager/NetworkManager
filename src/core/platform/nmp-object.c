@@ -12,12 +12,8 @@
 #include <linux/if.h>
 #include <libudev.h>
 
-#include "nm-utils.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
-
-#include "nm-core-utils.h"
 #include "libnm-platform/nm-platform-utils.h"
-
 #include "libnm-platform/wifi/nm-wifi-utils.h"
 #include "libnm-platform/wpan/nm-wpan-utils.h"
 

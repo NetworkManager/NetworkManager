@@ -13,9 +13,6 @@
 #include <linux/if.h>
 #include <linux/rtnetlink.h>
 
-#include "nm-utils.h"
-
-#include "nm-core-utils.h"
 #include "libnm-platform/nm-platform-utils.h"
 #include "nm-platform-private.h"
 #include "nmp-object.h"
