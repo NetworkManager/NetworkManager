@@ -8,8 +8,8 @@ libnmt_newt = static_library(
     'nmt-newt-checkbox.c',
     'nmt-newt-component.c',
     'nmt-newt-container.c',
-    'nmt-newt-entry.c',
     'nmt-newt-entry-numeric.c',
+    'nmt-newt-entry.c',
     'nmt-newt-form.c',
     'nmt-newt-grid.c',
     'nmt-newt-hacks.c',
@@ -24,19 +24,9 @@ libnmt_newt = static_library(
     'nmt-newt-utils.c',
     'nmt-newt-widget.c',
   ),
-  include_directories: [
-    src_inc,
-    top_inc,
-  ],
   dependencies: [
     libnm_dep,
     newt_dep,
     glib_dep,
   ],
-)
-
-libnmt_newt_dep = declare_dependency(
-  include_directories: include_directories('.'),
-  dependencies: newt_dep,
-  link_with: libnmt_newt,
 )

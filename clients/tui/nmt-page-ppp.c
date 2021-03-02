@@ -13,8 +13,8 @@
 #include <stdlib.h>
 
 #include "nmt-page-ppp.h"
-#include "nmt-newt-section.h"
-#include "nmt-newt-separator.h"
+#include "libnmt-newt/nmt-newt-section.h"
+#include "libnmt-newt/nmt-newt-separator.h"
 
 G_DEFINE_TYPE(NmtPagePpp, nmt_page_ppp, NMT_TYPE_EDITOR_PAGE)
 

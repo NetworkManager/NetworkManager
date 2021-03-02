@@ -6,7 +6,7 @@
 #ifndef NMT_ROUTE_ENTRY_H
 #define NMT_ROUTE_ENTRY_H
 
-#include "nmt-newt.h"
+#include "libnmt-newt/nmt-newt.h"
 
 #define NMT_TYPE_ROUTE_ENTRY (nmt_route_entry_get_type())
 #define NMT_ROUTE_ENTRY(obj) \

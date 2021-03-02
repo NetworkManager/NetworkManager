@@ -15,8 +15,8 @@
 
 #include "libnm-client-aux-extern/nm-libnm-aux.h"
 
-#include "nm-vpn-helpers.h"
-#include "nm-client-utils.h"
+#include "libnmc-base/nm-vpn-helpers.h"
+#include "libnmc-base/nm-client-utils.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
 
 #include "utils.h"

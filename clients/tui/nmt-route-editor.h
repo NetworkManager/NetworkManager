@@ -6,7 +6,7 @@
 #ifndef NMT_ROUTE_EDITOR_H
 #define NMT_ROUTE_EDITOR_H
 
-#include "nmt-newt.h"
+#include "libnmt-newt/nmt-newt.h"
 
 #define NMT_TYPE_ROUTE_EDITOR (nmt_route_editor_get_type())
 #define NMT_ROUTE_EDITOR(obj) \

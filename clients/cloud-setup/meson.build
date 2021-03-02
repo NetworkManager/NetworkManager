@@ -32,8 +32,6 @@ libnm_cloud_setup_core = static_library(
     'nmcs-provider.c',
   ),
   dependencies: [
-    libnmc_base_dep,
-    libnmc_dep,
     libnm_dep,
     libcurl_dep,
   ],
@@ -51,12 +49,12 @@ executable(
   ),
   dependencies: [
     libnm_cloud_setup_core_dep,
-    libnmc_base_dep,
-    libnmc_dep,
+    libnm_dep,
     libcurl_dep,
     glib_dep,
   ],
   link_with: [
+    libnmc_base,
     libnm_client_aux_extern,
     libnm_core_aux_extern,
     libnm_core_aux_intern,

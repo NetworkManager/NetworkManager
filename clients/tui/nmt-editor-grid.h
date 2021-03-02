@@ -6,7 +6,7 @@
 #ifndef NMT_EDITOR_GRID_H
 #define NMT_EDITOR_GRID_H
 
-#include "nmt-newt.h"
+#include "libnmt-newt/nmt-newt.h"
 
 #define NMT_TYPE_EDITOR_GRID (nmt_editor_grid_get_type())
 #define NMT_EDITOR_GRID(obj) \

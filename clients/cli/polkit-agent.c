@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "nm-polkit-listener.h"
+#include "libnmc-base/nm-polkit-listener.h"
 #include "common.h"
 
 static char *

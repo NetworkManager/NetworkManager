@@ -6,7 +6,7 @@
 #ifndef NMT_PASSWORD_FIELDS_H
 #define NMT_PASSWORD_FIELDS_H
 
-#include "nmt-newt.h"
+#include "libnmt-newt/nmt-newt.h"
 
 #define NMT_TYPE_PASSWORD_FIELDS (nmt_password_fields_get_type())
 #define NMT_PASSWORD_FIELDS(obj) \

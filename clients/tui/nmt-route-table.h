@@ -6,7 +6,7 @@
 #ifndef NMT_ROUTE_TABLE_H
 #define NMT_ROUTE_TABLE_H
 
-#include "nmt-newt.h"
+#include "libnmt-newt/nmt-newt.h"
 
 #define NMT_TYPE_ROUTE_TABLE (nmt_route_table_get_type())
 #define NMT_ROUTE_TABLE(obj) \

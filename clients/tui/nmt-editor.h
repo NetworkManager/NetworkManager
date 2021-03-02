@@ -6,7 +6,7 @@
 #ifndef NMT_EDITOR_H
 #define NMT_EDITOR_H
 
-#include "nmt-newt.h"
+#include "libnmt-newt/nmt-newt.h"
 
 #define NMT_TYPE_EDITOR            (nmt_editor_get_type())
 #define NMT_EDITOR(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_EDITOR, NmtEditor))

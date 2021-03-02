@@ -18,8 +18,8 @@
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-aux-extern/nm-libnm-core-aux.h"
 
-#include "nm-vpn-helpers.h"
-#include "nm-client-utils.h"
+#include "libnmc-base/nm-vpn-helpers.h"
+#include "libnmc-base/nm-client-utils.h"
 #include "nm-meta-setting-access.h"
 
 /*****************************************************************************/
@@ -4512,7 +4512,7 @@ static const NMMetaPropertyType _pt_objlist = {
 
 /*****************************************************************************/
 
-#include "settings-docs.h"
+#include "libnmc-setting/settings-docs.h"
 
 /*****************************************************************************/
 

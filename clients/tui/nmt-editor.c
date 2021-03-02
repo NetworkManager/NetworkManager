@@ -40,7 +40,7 @@
 #include "nmt-page-vlan.h"
 #include "nmt-page-wifi.h"
 
-#include "nm-meta-setting-access.h"
+#include "libnmc-setting/nm-meta-setting-access.h"
 
 G_DEFINE_TYPE(NmtEditor, nmt_editor, NMT_TYPE_NEWT_FORM)
 

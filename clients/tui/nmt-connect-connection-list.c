@@ -17,7 +17,7 @@
 
 #include "nmtui.h"
 #include "nmt-connect-connection-list.h"
-#include "nm-client-utils.h"
+#include "libnmc-base/nm-client-utils.h"
 
 G_DEFINE_TYPE(NmtConnectConnectionList, nmt_connect_connection_list, NMT_TYPE_NEWT_LISTBOX)
 

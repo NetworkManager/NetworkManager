@@ -6,7 +6,7 @@
 #ifndef NMT_IP_ENTRY_H
 #define NMT_IP_ENTRY_H
 
-#include "nmt-newt.h"
+#include "libnmt-newt/nmt-newt.h"
 
 #define NMT_TYPE_IP_ENTRY (nmt_ip_entry_get_type())
 #define NMT_IP_ENTRY(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_IP_ENTRY, NmtIPEntry))

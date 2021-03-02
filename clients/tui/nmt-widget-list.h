@@ -6,7 +6,7 @@
 #ifndef NMT_WIDGET_LIST_H
 #define NMT_WIDGET_LIST_H
 
-#include "nmt-newt-grid.h"
+#include "libnmt-newt/nmt-newt-grid.h"
 
 #define NMT_TYPE_WIDGET_LIST (nmt_widget_list_get_type())
 #define NMT_WIDGET_LIST(obj) \

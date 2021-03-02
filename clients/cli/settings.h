@@ -6,7 +6,7 @@
 #ifndef NMC_SETTINGS_H
 #define NMC_SETTINGS_H
 
-#include "nm-meta-setting-desc.h"
+#include "libnmc-setting/nm-meta-setting-desc.h"
 
 #include "nmcli.h"
 
