@@ -17,9 +17,7 @@
 
 #include "libnm-platform/nm-netlink.h"
 #include "nm-wifi-utils-private.h"
-#include "platform/nm-platform.h"
 #include "libnm-platform/nm-platform-utils.h"
-#include "nm-utils.h"
 
 #define _NMLOG_PREFIX_NAME "wifi-nl80211"
 #define _NMLOG_DOMAIN      LOGD_PLATFORM | LOGD_WIFI

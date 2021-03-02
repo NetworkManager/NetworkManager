@@ -17,8 +17,6 @@
 #if HAVE_WEXT
     #include "nm-wifi-utils-wext.h"
 #endif
-#include "nm-core-utils.h"
-
 #include "libnm-platform/nm-platform-utils.h"
 
 G_DEFINE_ABSTRACT_TYPE(NMWifiUtils, nm_wifi_utils, G_TYPE_OBJECT)
