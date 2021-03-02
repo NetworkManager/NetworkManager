@@ -9,6 +9,7 @@
 #include <linux/if_ether.h>
 #include <linux/rtnetlink.h>
 
+#include "libnm-glib-aux/nm-time-utils.h"
 #include "platform/nm-platform.h"
 #include "platform/nmp-object.h"
 #include "nm-netns.h"

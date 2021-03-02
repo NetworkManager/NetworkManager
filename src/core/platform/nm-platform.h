@@ -6,16 +6,8 @@
 #ifndef __NETWORKMANAGER_PLATFORM_H__
 #define __NETWORKMANAGER_PLATFORM_H__
 
-#include "nm-dbus-interface.h"
-
 #include "libnm-platform/nmp-base.h"
 #include "libnm-base/nm-base.h"
-
-#include "nm-core-utils.h"
-#include "nm-setting-vlan.h"
-#include "nm-setting-wired.h"
-#include "nm-setting-wireless.h"
-#include "nm-setting-ip-tunnel.h"
 
 #define NM_TYPE_PLATFORM (nm_platform_get_type())
 #define NM_PLATFORM(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_PLATFORM, NMPlatform))

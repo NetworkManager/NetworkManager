@@ -22,17 +22,14 @@
 #include <linux/tc_act/tc_mirred.h>
 #include <libudev.h>
 
-#include "nm-utils.h"
-#include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-glib-aux/nm-dedup-multi.h"
-#include "libnm-udev-aux/nm-udev-utils.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
-
-#include "nm-core-utils.h"
+#include "libnm-glib-aux/nm-time-utils.h"
 #include "libnm-platform/nm-platform-utils.h"
+#include "libnm-platform/nmp-netns.h"
+#include "libnm-udev-aux/nm-udev-utils.h"
 #include "nm-platform-private.h"
 #include "nmp-object.h"
-#include "libnm-platform/nmp-netns.h"
 
 /*****************************************************************************/
 
