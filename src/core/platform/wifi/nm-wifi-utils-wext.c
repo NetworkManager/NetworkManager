@@ -22,10 +22,7 @@
 #include <linux/wireless.h>
 
 #include "nm-wifi-utils-private.h"
-#include "nm-utils.h"
 #include "libnm-platform/nm-platform-utils.h"
-#include "libnm-core-intern/nm-core-internal.h"
-#include "nm-core-utils.h"
 
 typedef struct {
     NMWifiUtils       parent;

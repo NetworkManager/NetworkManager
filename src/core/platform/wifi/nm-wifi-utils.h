@@ -9,8 +9,6 @@
 
 #include <net/ethernet.h>
 
-#include "nm-dbus-interface.h"
-#include "nm-setting-wireless.h"
 #include "libnm-platform/nm-netlink.h"
 #include "libnm-base/nm-base.h"
 
