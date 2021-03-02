@@ -185,8 +185,6 @@ nm_hash_update_in6addr_prefix(NMHashState *h, const struct in6_addr *addr, guint
     nm_hash_update_in6addr(h, &a);
 }
 
-double nm_utils_exp10(gint16 e);
-
 /**
  * nm_utils_ip6_route_metric_normalize:
  * @metric: the route metric
