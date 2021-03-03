@@ -46,9 +46,9 @@
 #include "libnm-platform/nmp-netns.h"
 #include "libnm-platform/nm-platform-utils.h"
 #include "nm-platform-private.h"
-#include "wifi/nm-wifi-utils.h"
-#include "wifi/nm-wifi-utils-wext.h"
-#include "wpan/nm-wpan-utils.h"
+#include "libnm-platform/wifi/nm-wifi-utils.h"
+#include "libnm-platform/wifi/nm-wifi-utils-wext.h"
+#include "libnm-platform/wpan/nm-wpan-utils.h"
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-udev-aux/nm-udev-utils.h"
 

@@ -4,7 +4,7 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#include "src/core/nm-default-daemon.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-wifi-utils-wext.h"
 
@@ -21,6 +21,7 @@
 #include <sys/socket.h>
 #include <linux/wireless.h>
 
+#include "libnm-log-core/nm-logging.h"
 #include "nm-wifi-utils-private.h"
 #include "libnm-platform/nm-platform-utils.h"
 

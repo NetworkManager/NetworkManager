@@ -5,7 +5,7 @@
  * Copyright (C) 2011 Intel Corporation. All rights reserved.
  */
 
-#include "src/core/nm-default-daemon.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-wifi-utils-nl80211.h"
 
@@ -15,6 +15,7 @@
 #include <linux/nl80211.h>
 #include <linux/if.h>
 
+#include "libnm-log-core/nm-logging.h"
 #include "libnm-platform/nm-netlink.h"
 #include "nm-wifi-utils-private.h"
 #include "libnm-platform/nm-platform-utils.h"

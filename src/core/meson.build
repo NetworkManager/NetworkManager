@@ -34,11 +34,6 @@ subdir('systemd')
 
 core_plugins = []
 
-platform_wifi_wext_source = files()
-if enable_wext
-  platform_wifi_wext_source += files('platform/wifi/nm-wifi-utils-wext.c')
-endif
-
 libNetworkManagerBase = static_library(
   'NetworkManagerBase',
   sources: files(
@@ -50,9 +45,6 @@ libNetworkManagerBase = static_library(
     'dhcp/nm-dhcp-options.c',
     'ndisc/nm-lndp-ndisc.c',
     'ndisc/nm-ndisc.c',
-    'platform/wifi/nm-wifi-utils-nl80211.c',
-    'platform/wifi/nm-wifi-utils.c',
-    'platform/wpan/nm-wpan-utils.c',
     'platform/nm-linux-platform.c',
     'platform/nm-platform.c',
     'platform/nmp-object.c',
@@ -69,7 +61,7 @@ libNetworkManagerBase = static_library(
     'nm-ip-config.c',
     'nm-ip4-config.c',
     'nm-ip6-config.c',
-  ) + platform_wifi_wext_source,
+  ),
   dependencies: [
     core_default_dep,
     libnm_core_public_dep,
