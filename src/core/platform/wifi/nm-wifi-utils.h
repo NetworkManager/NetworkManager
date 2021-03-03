@@ -31,7 +31,7 @@ gboolean nm_wifi_utils_is_wifi(int dirfd, const char *ifname);
 
 NMWifiUtils *nm_wifi_utils_new(int ifindex, struct nl_sock *genl, gboolean check_scan);
 
-NMDeviceWifiCapabilities nm_wifi_utils_get_caps(NMWifiUtils *data);
+_NMDeviceWifiCapabilities nm_wifi_utils_get_caps(NMWifiUtils *data);
 
 NM80211Mode nm_wifi_utils_get_mode(NMWifiUtils *data);
 

@@ -55,7 +55,7 @@ typedef struct {
     CList                         aps_lst_head;
     NMWifiAP *                    current_ap;
     GCancellable *                cancellable;
-    NMDeviceWifiCapabilities      capabilities;
+    _NMDeviceWifiCapabilities     capabilities;
     NMActRequestGetSecretsCallId *wifi_secrets_id;
     guint                         periodic_scan_id;
     guint                         periodic_update_id;
@@ -801,7 +801,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
         NMSettingWirelessSecurity *s_wireless_sec =
             nm_connection_get_setting_wireless_security(connection);
 
-        if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_AP)) {
+        if (!(priv->capabilities & _NM_WIFI_DEVICE_CAP_AP)) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                                        "device does not support Access Point mode");
@@ -819,7 +819,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
         NMSettingWirelessSecurity *s_wireless_sec =
             nm_connection_get_setting_wireless_security(connection);
 
-        if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_ADHOC)) {
+        if (!(priv->capabilities & _NM_WIFI_DEVICE_CAP_ADHOC)) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                                        "device does not support Ad-Hoc mode");
@@ -3034,7 +3034,7 @@ nm_device_iwd_set_dbus_object(NMDeviceIwd *self, GDBusObject *object)
     GVariantIter *              iter;
     const char *                mode;
     gboolean                    powered;
-    NMDeviceWifiCapabilities    capabilities;
+    _NMDeviceWifiCapabilities   capabilities;
 
     if (!nm_g_object_ref_set(&priv->dbus_obj, object))
         return;
@@ -3096,14 +3096,14 @@ nm_device_iwd_set_dbus_object(NMDeviceIwd *self, GDBusObject *object)
         goto error;
     }
 
-    capabilities = NM_WIFI_DEVICE_CAP_CIPHER_CCMP | NM_WIFI_DEVICE_CAP_RSN;
+    capabilities = _NM_WIFI_DEVICE_CAP_CIPHER_CCMP | _NM_WIFI_DEVICE_CAP_RSN;
 
     g_variant_get(value, "as", &iter);
     while (g_variant_iter_next(iter, "&s", &mode)) {
         if (nm_streq(mode, "ap"))
-            capabilities |= NM_WIFI_DEVICE_CAP_AP;
+            capabilities |= _NM_WIFI_DEVICE_CAP_AP;
         else if (nm_streq(mode, "ad-hoc"))
-            capabilities |= NM_WIFI_DEVICE_CAP_ADHOC;
+            capabilities |= _NM_WIFI_DEVICE_CAP_ADHOC;
     }
     g_variant_iter_free(iter);
 
@@ -3485,7 +3485,7 @@ nm_device_iwd_class_init(NMDeviceIwdClass *klass)
                           "",
                           0,
                           G_MAXUINT32,
-                          NM_WIFI_DEVICE_CAP_NONE,
+                          _NM_WIFI_DEVICE_CAP_NONE,
                           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     obj_properties[PROP_SCANNING] = g_param_spec_boolean(NM_DEVICE_IWD_SCANNING,

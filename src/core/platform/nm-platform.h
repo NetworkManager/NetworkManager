@@ -1176,9 +1176,9 @@ typedef struct {
                                          const NMPlatformLink **out_link);
     gboolean (*infiniband_partition_delete)(NMPlatform *self, int parent, int p_key);
 
-    gboolean (*wifi_get_capabilities)(NMPlatform *              self,
-                                      int                       ifindex,
-                                      NMDeviceWifiCapabilities *caps);
+    gboolean (*wifi_get_capabilities)(NMPlatform *               self,
+                                      int                        ifindex,
+                                      _NMDeviceWifiCapabilities *caps);
     gboolean (*wifi_get_station)(NMPlatform * self,
                                  int          ifindex,
                                  NMEtherAddr *out_bssid,
@@ -1963,7 +1963,7 @@ gboolean nm_platform_link_tun_get_properties(NMPlatform *      self,
                                              NMPlatformLnkTun *out_properties);
 
 gboolean
-nm_platform_wifi_get_capabilities(NMPlatform *self, int ifindex, NMDeviceWifiCapabilities *caps);
+nm_platform_wifi_get_capabilities(NMPlatform *self, int ifindex, _NMDeviceWifiCapabilities *caps);
 guint32     nm_platform_wifi_get_frequency(NMPlatform *self, int ifindex);
 gboolean    nm_platform_wifi_get_station(NMPlatform * self,
                                          int          ifindex,

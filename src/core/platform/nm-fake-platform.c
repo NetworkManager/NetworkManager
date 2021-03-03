@@ -819,7 +819,7 @@ infiniband_partition_delete(NMPlatform *platform, int parent, int p_key)
 }
 
 static gboolean
-wifi_get_capabilities(NMPlatform *platform, int ifindex, NMDeviceWifiCapabilities *caps)
+wifi_get_capabilities(NMPlatform *platform, int ifindex, _NMDeviceWifiCapabilities *caps)
 {
     NMFakePlatformLink *device = link_get(platform, ifindex);
 
@@ -829,10 +829,10 @@ wifi_get_capabilities(NMPlatform *platform, int ifindex, NMDeviceWifiCapabilitie
         return FALSE;
 
     if (caps) {
-        *caps = (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104
-                 | NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_CIPHER_CCMP
-                 | NM_WIFI_DEVICE_CAP_WPA | NM_WIFI_DEVICE_CAP_RSN | NM_WIFI_DEVICE_CAP_AP
-                 | NM_WIFI_DEVICE_CAP_ADHOC);
+        *caps = (_NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | _NM_WIFI_DEVICE_CAP_CIPHER_WEP104
+                 | _NM_WIFI_DEVICE_CAP_CIPHER_TKIP | _NM_WIFI_DEVICE_CAP_CIPHER_CCMP
+                 | _NM_WIFI_DEVICE_CAP_WPA | _NM_WIFI_DEVICE_CAP_RSN | _NM_WIFI_DEVICE_CAP_AP
+                 | _NM_WIFI_DEVICE_CAP_ADHOC);
     }
     return TRUE;
 }

@@ -687,12 +687,12 @@ nl80211_wiphy_info_handler(struct nl_msg *msg, void *arg)
 
             info->freqs[freq_idx] = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_FREQ]);
 
-            info->caps |= NM_WIFI_DEVICE_CAP_FREQ_VALID;
+            info->caps |= _NM_WIFI_DEVICE_CAP_FREQ_VALID;
 
             if (info->freqs[freq_idx] > 2400 && info->freqs[freq_idx] < 2500)
-                info->caps |= NM_WIFI_DEVICE_CAP_FREQ_2GHZ;
+                info->caps |= _NM_WIFI_DEVICE_CAP_FREQ_2GHZ;
             if (info->freqs[freq_idx] > 4900 && info->freqs[freq_idx] < 6000)
-                info->caps |= NM_WIFI_DEVICE_CAP_FREQ_5GHZ;
+                info->caps |= _NM_WIFI_DEVICE_CAP_FREQ_5GHZ;
 
             freq_idx++;
         }
@@ -707,16 +707,16 @@ nl80211_wiphy_info_handler(struct nl_msg *msg, void *arg)
         for (i = 0; i < num; i++) {
             switch (ciphers[i]) {
             case WLAN_CIPHER_SUITE_WEP40:
-                info->caps |= NM_WIFI_DEVICE_CAP_CIPHER_WEP40;
+                info->caps |= _NM_WIFI_DEVICE_CAP_CIPHER_WEP40;
                 break;
             case WLAN_CIPHER_SUITE_WEP104:
-                info->caps |= NM_WIFI_DEVICE_CAP_CIPHER_WEP104;
+                info->caps |= _NM_WIFI_DEVICE_CAP_CIPHER_WEP104;
                 break;
             case WLAN_CIPHER_SUITE_TKIP:
-                info->caps |= (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_WPA);
+                info->caps |= (_NM_WIFI_DEVICE_CAP_CIPHER_TKIP | _NM_WIFI_DEVICE_CAP_WPA);
                 break;
             case WLAN_CIPHER_SUITE_CCMP:
-                info->caps |= (NM_WIFI_DEVICE_CAP_CIPHER_CCMP | NM_WIFI_DEVICE_CAP_RSN);
+                info->caps |= (_NM_WIFI_DEVICE_CAP_CIPHER_CCMP | _NM_WIFI_DEVICE_CAP_RSN);
                 break;
             case WLAN_CIPHER_SUITE_AES_CMAC:
             case WLAN_CIPHER_SUITE_GCMP:
@@ -736,13 +736,13 @@ nl80211_wiphy_info_handler(struct nl_msg *msg, void *arg)
         nla_for_each_nested (nl_mode, tb[NL80211_ATTR_SUPPORTED_IFTYPES], i) {
             switch (nla_type(nl_mode)) {
             case NL80211_IFTYPE_AP:
-                info->caps |= NM_WIFI_DEVICE_CAP_AP;
+                info->caps |= _NM_WIFI_DEVICE_CAP_AP;
                 break;
             case NL80211_IFTYPE_ADHOC:
-                info->caps |= NM_WIFI_DEVICE_CAP_ADHOC;
+                info->caps |= _NM_WIFI_DEVICE_CAP_ADHOC;
                 break;
             case NL80211_IFTYPE_MESH_POINT:
-                info->caps |= NM_WIFI_DEVICE_CAP_MESH;
+                info->caps |= _NM_WIFI_DEVICE_CAP_MESH;
                 break;
             }
         }
@@ -752,7 +752,7 @@ nl80211_wiphy_info_handler(struct nl_msg *msg, void *arg)
         info->can_wowlan = TRUE;
 
     if (tb[NL80211_ATTR_SUPPORT_IBSS_RSN])
-        info->caps |= NM_WIFI_DEVICE_CAP_IBSS_RSN;
+        info->caps |= _NM_WIFI_DEVICE_CAP_IBSS_RSN;
 
     info->success = TRUE;
 

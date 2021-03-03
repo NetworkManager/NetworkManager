@@ -33,7 +33,7 @@ typedef struct _NMDeviceWifiClass NMDeviceWifiClass;
 
 GType nm_device_wifi_get_type(void);
 
-NMDevice *nm_device_wifi_new(const char *iface, NMDeviceWifiCapabilities capabilities);
+NMDevice *nm_device_wifi_new(const char *iface, _NMDeviceWifiCapabilities capabilities);
 
 const CList *_nm_device_wifi_get_aps(NMDeviceWifi *self);
 

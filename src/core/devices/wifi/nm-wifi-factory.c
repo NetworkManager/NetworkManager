@@ -97,9 +97,9 @@ create_device(NMDeviceFactory *     factory,
                NM_PRINT_FMT_QUOTE_STRING(backend),
                WITH_IWD ? " (iwd support enabled)" : "");
     if (!backend || !g_ascii_strcasecmp(backend, "wpa_supplicant")) {
-        NMDevice *               device;
-        NMDeviceWifiCapabilities capabilities;
-        NM80211Mode              mode;
+        NMDevice *                device;
+        _NMDeviceWifiCapabilities capabilities;
+        NM80211Mode               mode;
 
         if (!nm_platform_wifi_get_capabilities(NM_PLATFORM_GET, plink->ifindex, &capabilities)) {
             nm_log_warn(LOGD_PLATFORM | LOGD_WIFI,

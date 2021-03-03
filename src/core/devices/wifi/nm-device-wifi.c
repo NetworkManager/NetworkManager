@@ -114,7 +114,7 @@ typedef struct {
     guint wps_timeout_id;
     guint sup_timeout_id; /* supplicant association timeout */
 
-    NMDeviceWifiCapabilities     capabilities;
+    _NMDeviceWifiCapabilities    capabilities;
     _NMSettingWirelessWakeOnWLan wowlan_restore;
 
     NMDeviceWifiP2P *p2p_device;
@@ -1010,14 +1010,14 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
     /* Early exit if supplicant or device doesn't support requested mode */
     mode = nm_setting_wireless_get_mode(s_wireless);
     if (g_strcmp0(mode, NM_SETTING_WIRELESS_MODE_ADHOC) == 0) {
-        if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_ADHOC)) {
+        if (!(priv->capabilities & _NM_WIFI_DEVICE_CAP_ADHOC)) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
                                        "the device does not support Ad-Hoc networks");
             return FALSE;
         }
     } else if (g_strcmp0(mode, NM_SETTING_WIRELESS_MODE_AP) == 0) {
-        if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_AP)) {
+        if (!(priv->capabilities & _NM_WIFI_DEVICE_CAP_AP)) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
                                        "the device does not support Access Point mode");
@@ -1034,7 +1034,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
             }
         }
     } else if (g_strcmp0(mode, NM_SETTING_WIRELESS_MODE_MESH) == 0) {
-        if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_MESH)) {
+        if (!(priv->capabilities & _NM_WIFI_DEVICE_CAP_MESH)) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
                                        "the device does not support Mesh mode");
@@ -3701,7 +3701,7 @@ constructed(GObject *object)
 
     G_OBJECT_CLASS(nm_device_wifi_parent_class)->constructed(object);
 
-    if (priv->capabilities & NM_WIFI_DEVICE_CAP_AP)
+    if (priv->capabilities & _NM_WIFI_DEVICE_CAP_AP)
         _LOGI(LOGD_PLATFORM | LOGD_WIFI, "driver supports Access Point (AP) mode");
 
     /* Connect to the supplicant manager */
@@ -3709,7 +3709,7 @@ constructed(GObject *object)
 }
 
 NMDevice *
-nm_device_wifi_new(const char *iface, NMDeviceWifiCapabilities capabilities)
+nm_device_wifi_new(const char *iface, _NMDeviceWifiCapabilities capabilities)
 {
     return g_object_new(NM_TYPE_DEVICE_WIFI,
                         NM_DEVICE_IFACE,
@@ -3850,7 +3850,7 @@ nm_device_wifi_class_init(NMDeviceWifiClass *klass)
                           "",
                           0,
                           G_MAXUINT32,
-                          NM_WIFI_DEVICE_CAP_NONE,
+                          _NM_WIFI_DEVICE_CAP_NONE,
                           G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
 
     obj_properties[PROP_SCANNING] = g_param_spec_boolean(NM_DEVICE_WIFI_SCANNING,

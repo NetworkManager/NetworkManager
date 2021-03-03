@@ -8277,7 +8277,7 @@ get_ext_data(NMPlatform *platform, int ifindex)
         return retval;
 
 static gboolean
-wifi_get_capabilities(NMPlatform *platform, int ifindex, NMDeviceWifiCapabilities *caps)
+wifi_get_capabilities(NMPlatform *platform, int ifindex, _NMDeviceWifiCapabilities *caps)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, FALSE);
     if (caps)
