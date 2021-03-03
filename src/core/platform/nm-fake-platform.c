@@ -608,7 +608,7 @@ link_set_address(NMPlatform *platform, int ifindex, gconstpointer addr, size_t l
     NMFakePlatformLink *device        = link_get(platform, ifindex);
     nm_auto_nmpobj NMPObject *obj_tmp = NULL;
 
-    if (len == 0 || len > NM_UTILS_HWADDR_LEN_MAX || !addr)
+    if (len == 0 || len > _NM_UTILS_HWADDR_LEN_MAX || !addr)
         g_return_val_if_reached(-NME_BUG);
 
     if (!device)

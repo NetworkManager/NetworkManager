@@ -55,18 +55,22 @@ G_STATIC_ASSERT(_nm_alignof(NMPlatformIPAddress) == _nm_alignof(NMPlatformIPXAdd
 
 /*****************************************************************************/
 
-G_STATIC_ASSERT(sizeof(((NMPLinkAddress *) NULL)->data) == NM_UTILS_HWADDR_LEN_MAX);
-G_STATIC_ASSERT(sizeof(((NMPlatformLink *) NULL)->l_address.data) == NM_UTILS_HWADDR_LEN_MAX);
-G_STATIC_ASSERT(sizeof(((NMPlatformLink *) NULL)->l_broadcast.data) == NM_UTILS_HWADDR_LEN_MAX);
+G_STATIC_ASSERT(sizeof(((NMPLinkAddress *) NULL)->data) == _NM_UTILS_HWADDR_LEN_MAX);
+G_STATIC_ASSERT(sizeof(((NMPlatformLink *) NULL)->l_address.data) == _NM_UTILS_HWADDR_LEN_MAX);
+G_STATIC_ASSERT(sizeof(((NMPlatformLink *) NULL)->l_broadcast.data) == _NM_UTILS_HWADDR_LEN_MAX);
 
 static const char *
 _nmp_link_address_to_string(const NMPLinkAddress *addr,
-                            char                  buf[static(NM_UTILS_HWADDR_LEN_MAX * 3)])
+                            char                  buf[static(_NM_UTILS_HWADDR_LEN_MAX * 3)])
 {
     nm_assert(addr);
 
     if (addr->len > 0) {
-        if (!_nm_utils_hwaddr_ntoa(addr->data, addr->len, TRUE, buf, NM_UTILS_HWADDR_LEN_MAX * 3)) {
+        if (!_nm_utils_hwaddr_ntoa(addr->data,
+                                   addr->len,
+                                   TRUE,
+                                   buf,
+                                   _NM_UTILS_HWADDR_LEN_MAX * 3)) {
             buf[0] = '\0';
             g_return_val_if_reached(buf);
         }
@@ -84,7 +88,7 @@ nmp_link_address_get(const NMPLinkAddress *addr, size_t *length)
         return NULL;
     }
 
-    if (addr->len > NM_UTILS_HWADDR_LEN_MAX) {
+    if (addr->len > _NM_UTILS_HWADDR_LEN_MAX) {
         NM_SET_OUT(length, 0);
         g_return_val_if_reached(NULL);
     }
@@ -1159,7 +1163,7 @@ nm_platform_link_get_by_address(NMPlatform *  self,
     if (length == 0)
         return NULL;
 
-    if (length > NM_UTILS_HWADDR_LEN_MAX)
+    if (length > _NM_UTILS_HWADDR_LEN_MAX)
         g_return_val_if_reached(NULL);
     if (!address)
         g_return_val_if_reached(NULL);
@@ -1235,7 +1239,7 @@ nm_platform_link_add(NMPlatform *           self,
                      const NMPlatformLink **out_link)
 {
     int  r;
-    char addr_buf[NM_UTILS_HWADDR_LEN_MAX * 3];
+    char addr_buf[_NM_UTILS_HWADDR_LEN_MAX * 3];
     char mtu_buf[16];
     char parent_buf[64];
     char buf[512];
@@ -1244,7 +1248,7 @@ nm_platform_link_add(NMPlatform *           self,
 
     g_return_val_if_fail(name, -NME_BUG);
     g_return_val_if_fail((address != NULL) ^ (address_len == 0), -NME_BUG);
-    g_return_val_if_fail(address_len <= NM_UTILS_HWADDR_LEN_MAX, -NME_BUG);
+    g_return_val_if_fail(address_len <= _NM_UTILS_HWADDR_LEN_MAX, -NME_BUG);
     g_return_val_if_fail(parent >= 0, -NME_BUG);
 
     r = _link_add_check_existing(self, name, type, out_link);
@@ -1784,7 +1788,7 @@ nm_platform_link_get_address(NMPlatform *self, int ifindex, size_t *length)
  * nm_platform_link_get_permanent_address:
  * @self: platform instance
  * @ifindex: Interface index
- * @buf: buffer of at least %NM_UTILS_HWADDR_LEN_MAX bytes, on success
+ * @buf: buffer of at least %_NM_UTILS_HWADDR_LEN_MAX bytes, on success
  * the permanent hardware address
  * @length: Pointer to a variable to store address length
  *
@@ -5459,8 +5463,8 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
     char *      s;
     gsize       l;
     char        str_addrmode[30];
-    char        str_address[NM_UTILS_HWADDR_LEN_MAX * 3];
-    char        str_broadcast[NM_UTILS_HWADDR_LEN_MAX * 3];
+    char        str_address[_NM_UTILS_HWADDR_LEN_MAX * 3];
+    char        str_broadcast[_NM_UTILS_HWADDR_LEN_MAX * 3];
     char        str_inet6_token[NM_UTILS_INET_ADDRSTRLEN];
     const char *str_link_type;
 

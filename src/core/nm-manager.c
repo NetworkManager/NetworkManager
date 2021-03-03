@@ -1305,7 +1305,7 @@ find_device_by_permanent_hw_addr(NMManager *self, const char *hwaddr)
     NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
     NMDevice *        device;
     const char *      device_addr;
-    guint8            hwaddr_bin[NM_UTILS_HWADDR_LEN_MAX];
+    guint8            hwaddr_bin[_NM_UTILS_HWADDR_LEN_MAX];
     gsize             hwaddr_len;
 
     g_return_val_if_fail(hwaddr != NULL, NULL);

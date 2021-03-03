@@ -152,7 +152,7 @@ typedef enum {
 
 typedef struct {
     union {
-        guint8      data[20 /* NM_UTILS_HWADDR_LEN_MAX */];
+        guint8      data[20 /* _NM_UTILS_HWADDR_LEN_MAX */];
         NMEtherAddr ether_addr;
     };
     guint8 len;
@@ -799,7 +799,7 @@ typedef struct {
     guint             num_vlans;
     NMPlatformVFVlan *vlans;
     struct {
-        guint8 data[20]; /* NM_UTILS_HWADDR_LEN_MAX */
+        guint8 data[20]; /* _NM_UTILS_HWADDR_LEN_MAX */
         guint8 len;
     } mac;
     gint8 spoofchk;
