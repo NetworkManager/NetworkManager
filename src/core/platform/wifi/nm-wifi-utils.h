@@ -12,6 +12,7 @@
 #include "nm-dbus-interface.h"
 #include "nm-setting-wireless.h"
 #include "libnm-platform/nm-netlink.h"
+#include "libnm-base/nm-base.h"
 
 typedef struct NMWifiUtils NMWifiUtils;
 
@@ -60,9 +61,9 @@ gboolean nm_wifi_utils_indicate_addressing_running(NMWifiUtils *data, gboolean r
 
 gboolean nm_wifi_utils_set_powersave(NMWifiUtils *data, guint32 powersave);
 
-NMSettingWirelessWakeOnWLan nm_wifi_utils_get_wake_on_wlan(NMWifiUtils *data);
+_NMSettingWirelessWakeOnWLan nm_wifi_utils_get_wake_on_wlan(NMWifiUtils *data);
 
-gboolean nm_wifi_utils_set_wake_on_wlan(NMWifiUtils *data, NMSettingWirelessWakeOnWLan wowl);
+gboolean nm_wifi_utils_set_wake_on_wlan(NMWifiUtils *data, _NMSettingWirelessWakeOnWLan wowl);
 
 /* OLPC Mesh-only functions */
 guint32 nm_wifi_utils_get_mesh_channel(NMWifiUtils *data);

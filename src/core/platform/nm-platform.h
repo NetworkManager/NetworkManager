@@ -1193,10 +1193,10 @@ typedef struct {
     void (*wifi_set_powersave)(NMPlatform *self, int ifindex, guint32 powersave);
     guint32 (*wifi_find_frequency)(NMPlatform *self, int ifindex, const guint32 *freqs);
     void (*wifi_indicate_addressing_running)(NMPlatform *self, int ifindex, gboolean running);
-    NMSettingWirelessWakeOnWLan (*wifi_get_wake_on_wlan)(NMPlatform *self, int ifindex);
-    gboolean (*wifi_set_wake_on_wlan)(NMPlatform *                self,
-                                      int                         ifindex,
-                                      NMSettingWirelessWakeOnWLan wowl);
+    _NMSettingWirelessWakeOnWLan (*wifi_get_wake_on_wlan)(NMPlatform *self, int ifindex);
+    gboolean (*wifi_set_wake_on_wlan)(NMPlatform *                 self,
+                                      int                          ifindex,
+                                      _NMSettingWirelessWakeOnWLan wowl);
 
     guint32 (*mesh_get_channel)(NMPlatform *self, int ifindex);
     gboolean (*mesh_set_channel)(NMPlatform *self, int ifindex, guint32 channel);
@@ -1975,9 +1975,9 @@ void        nm_platform_wifi_set_mode(NMPlatform *self, int ifindex, NM80211Mode
 void        nm_platform_wifi_set_powersave(NMPlatform *self, int ifindex, guint32 powersave);
 guint32     nm_platform_wifi_find_frequency(NMPlatform *self, int ifindex, const guint32 *freqs);
 void nm_platform_wifi_indicate_addressing_running(NMPlatform *self, int ifindex, gboolean running);
-NMSettingWirelessWakeOnWLan nm_platform_wifi_get_wake_on_wlan(NMPlatform *self, int ifindex);
+_NMSettingWirelessWakeOnWLan nm_platform_wifi_get_wake_on_wlan(NMPlatform *self, int ifindex);
 gboolean
-nm_platform_wifi_set_wake_on_wlan(NMPlatform *self, int ifindex, NMSettingWirelessWakeOnWLan wowl);
+nm_platform_wifi_set_wake_on_wlan(NMPlatform *self, int ifindex, _NMSettingWirelessWakeOnWLan wowl);
 
 guint32  nm_platform_mesh_get_channel(NMPlatform *self, int ifindex);
 gboolean nm_platform_mesh_set_channel(NMPlatform *self, int ifindex, guint32 channel);
