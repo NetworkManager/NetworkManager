@@ -3077,18 +3077,18 @@ nm_platform_wifi_get_station(NMPlatform * self,
     return klass->wifi_get_station(self, ifindex, out_bssid, out_quality, out_rate);
 }
 
-NM80211Mode
+_NM80211Mode
 nm_platform_wifi_get_mode(NMPlatform *self, int ifindex)
 {
-    _CHECK_SELF(self, klass, NM_802_11_MODE_UNKNOWN);
+    _CHECK_SELF(self, klass, _NM_802_11_MODE_UNKNOWN);
 
-    g_return_val_if_fail(ifindex > 0, NM_802_11_MODE_UNKNOWN);
+    g_return_val_if_fail(ifindex > 0, _NM_802_11_MODE_UNKNOWN);
 
     return klass->wifi_get_mode(self, ifindex);
 }
 
 void
-nm_platform_wifi_set_mode(NMPlatform *self, int ifindex, NM80211Mode mode)
+nm_platform_wifi_set_mode(NMPlatform *self, int ifindex, _NM80211Mode mode)
 {
     _CHECK_SELF_VOID(self, klass);
 

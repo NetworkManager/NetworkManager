@@ -1188,8 +1188,8 @@ typedef struct {
     guint32 (*wifi_get_frequency)(NMPlatform *self, int ifindex);
     int (*wifi_get_quality)(NMPlatform *self, int ifindex);
     guint32 (*wifi_get_rate)(NMPlatform *self, int ifindex);
-    NM80211Mode (*wifi_get_mode)(NMPlatform *self, int ifindex);
-    void (*wifi_set_mode)(NMPlatform *self, int ifindex, NM80211Mode mode);
+    _NM80211Mode (*wifi_get_mode)(NMPlatform *self, int ifindex);
+    void (*wifi_set_mode)(NMPlatform *self, int ifindex, _NM80211Mode mode);
     void (*wifi_set_powersave)(NMPlatform *self, int ifindex, guint32 powersave);
     guint32 (*wifi_find_frequency)(NMPlatform *self, int ifindex, const guint32 *freqs);
     void (*wifi_indicate_addressing_running)(NMPlatform *self, int ifindex, gboolean running);
@@ -1964,16 +1964,16 @@ gboolean nm_platform_link_tun_get_properties(NMPlatform *      self,
 
 gboolean
 nm_platform_wifi_get_capabilities(NMPlatform *self, int ifindex, _NMDeviceWifiCapabilities *caps);
-guint32     nm_platform_wifi_get_frequency(NMPlatform *self, int ifindex);
-gboolean    nm_platform_wifi_get_station(NMPlatform * self,
-                                         int          ifindex,
-                                         NMEtherAddr *out_bssid,
-                                         int *        out_quality,
-                                         guint32 *    out_rate);
-NM80211Mode nm_platform_wifi_get_mode(NMPlatform *self, int ifindex);
-void        nm_platform_wifi_set_mode(NMPlatform *self, int ifindex, NM80211Mode mode);
-void        nm_platform_wifi_set_powersave(NMPlatform *self, int ifindex, guint32 powersave);
-guint32     nm_platform_wifi_find_frequency(NMPlatform *self, int ifindex, const guint32 *freqs);
+guint32      nm_platform_wifi_get_frequency(NMPlatform *self, int ifindex);
+gboolean     nm_platform_wifi_get_station(NMPlatform * self,
+                                          int          ifindex,
+                                          NMEtherAddr *out_bssid,
+                                          int *        out_quality,
+                                          guint32 *    out_rate);
+_NM80211Mode nm_platform_wifi_get_mode(NMPlatform *self, int ifindex);
+void         nm_platform_wifi_set_mode(NMPlatform *self, int ifindex, _NM80211Mode mode);
+void         nm_platform_wifi_set_powersave(NMPlatform *self, int ifindex, guint32 powersave);
+guint32      nm_platform_wifi_find_frequency(NMPlatform *self, int ifindex, const guint32 *freqs);
 void nm_platform_wifi_indicate_addressing_running(NMPlatform *self, int ifindex, gboolean running);
 _NMSettingWirelessWakeOnWLan nm_platform_wifi_get_wake_on_wlan(NMPlatform *self, int ifindex);
 gboolean

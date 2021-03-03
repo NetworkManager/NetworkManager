@@ -557,7 +557,7 @@ _bss_info_properties_changed(NMSupplicantInterface *self,
     guint16        v_u16;
     guint32        v_u32;
     NM80211ApFlags p_ap_flags;
-    NM80211Mode    p_mode;
+    _NM80211Mode   p_mode;
     guint8         p_signal_percent;
     const guint8 * arr_data;
     gsize          arr_len;
@@ -605,15 +605,15 @@ _bss_info_properties_changed(NMSupplicantInterface *self,
 
     if (nm_g_variant_lookup(properties, "Mode", "&s", &v_s)) {
         if (nm_streq(v_s, "infrastructure"))
-            p_mode = NM_802_11_MODE_INFRA;
+            p_mode = _NM_802_11_MODE_INFRA;
         else if (nm_streq(v_s, "ad-hoc"))
-            p_mode = NM_802_11_MODE_ADHOC;
+            p_mode = _NM_802_11_MODE_ADHOC;
         else if (nm_streq(v_s, "mesh"))
-            p_mode = NM_802_11_MODE_MESH;
+            p_mode = _NM_802_11_MODE_MESH;
         else
-            p_mode = NM_802_11_MODE_UNKNOWN;
+            p_mode = _NM_802_11_MODE_UNKNOWN;
     } else if (initial)
-        p_mode = NM_802_11_MODE_UNKNOWN;
+        p_mode = _NM_802_11_MODE_UNKNOWN;
     else
         p_mode = bss_info->mode;
     if (bss_info->mode != p_mode) {

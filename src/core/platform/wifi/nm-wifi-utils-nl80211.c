@@ -162,8 +162,8 @@ dispose(GObject *object)
 }
 
 struct nl80211_iface_info {
-    NM80211Mode mode;
-    uint32_t    freq;
+    _NM80211Mode mode;
+    uint32_t     freq;
 };
 
 static int
@@ -181,16 +181,16 @@ nl80211_iface_info_handler(struct nl_msg *msg, void *arg)
 
     switch (nla_get_u32(tb[NL80211_ATTR_IFTYPE])) {
     case NL80211_IFTYPE_ADHOC:
-        info->mode = NM_802_11_MODE_ADHOC;
+        info->mode = _NM_802_11_MODE_ADHOC;
         break;
     case NL80211_IFTYPE_AP:
-        info->mode = NM_802_11_MODE_AP;
+        info->mode = _NM_802_11_MODE_AP;
         break;
     case NL80211_IFTYPE_STATION:
-        info->mode = NM_802_11_MODE_INFRA;
+        info->mode = _NM_802_11_MODE_INFRA;
         break;
     case NL80211_IFTYPE_MESH_POINT:
-        info->mode = NM_802_11_MODE_MESH;
+        info->mode = _NM_802_11_MODE_MESH;
         break;
     }
 
@@ -200,25 +200,25 @@ nl80211_iface_info_handler(struct nl_msg *msg, void *arg)
     return NL_SKIP;
 }
 
-static NM80211Mode
+static _NM80211Mode
 wifi_nl80211_get_mode(NMWifiUtils *data)
 {
     NMWifiUtilsNl80211 *      self       = (NMWifiUtilsNl80211 *) data;
     struct nl80211_iface_info iface_info = {
-        .mode = NM_802_11_MODE_UNKNOWN,
+        .mode = _NM_802_11_MODE_UNKNOWN,
     };
     nm_auto_nlmsg struct nl_msg *msg = NULL;
 
     msg = nl80211_alloc_msg(self, NL80211_CMD_GET_INTERFACE, 0);
 
     if (nl80211_send_and_recv(self, msg, nl80211_iface_info_handler, &iface_info) < 0)
-        return NM_802_11_MODE_UNKNOWN;
+        return _NM_802_11_MODE_UNKNOWN;
 
     return iface_info.mode;
 }
 
 static gboolean
-wifi_nl80211_set_mode(NMWifiUtils *data, const NM80211Mode mode)
+wifi_nl80211_set_mode(NMWifiUtils *data, const _NM80211Mode mode)
 {
     NMWifiUtilsNl80211 *         self = (NMWifiUtilsNl80211 *) data;
     nm_auto_nlmsg struct nl_msg *msg  = NULL;
@@ -227,16 +227,16 @@ wifi_nl80211_set_mode(NMWifiUtils *data, const NM80211Mode mode)
     msg = nl80211_alloc_msg(self, NL80211_CMD_SET_INTERFACE, 0);
 
     switch (mode) {
-    case NM_802_11_MODE_INFRA:
+    case _NM_802_11_MODE_INFRA:
         NLA_PUT_U32(msg, NL80211_ATTR_IFTYPE, NL80211_IFTYPE_STATION);
         break;
-    case NM_802_11_MODE_ADHOC:
+    case _NM_802_11_MODE_ADHOC:
         NLA_PUT_U32(msg, NL80211_ATTR_IFTYPE, NL80211_IFTYPE_ADHOC);
         break;
-    case NM_802_11_MODE_AP:
+    case _NM_802_11_MODE_AP:
         NLA_PUT_U32(msg, NL80211_ATTR_IFTYPE, NL80211_IFTYPE_AP);
         break;
-    case NM_802_11_MODE_MESH:
+    case _NM_802_11_MODE_MESH:
         NLA_PUT_U32(msg, NL80211_ATTR_IFTYPE, NL80211_IFTYPE_MESH_POINT);
         break;
     default:

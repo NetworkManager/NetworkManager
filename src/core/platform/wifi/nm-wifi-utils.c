@@ -58,21 +58,21 @@ nm_wifi_utils_get_caps(NMWifiUtils *data)
     return data->caps;
 }
 
-NM80211Mode
+_NM80211Mode
 nm_wifi_utils_get_mode(NMWifiUtils *data)
 {
-    g_return_val_if_fail(data != NULL, NM_802_11_MODE_UNKNOWN);
+    g_return_val_if_fail(data != NULL, _NM_802_11_MODE_UNKNOWN);
     return NM_WIFI_UTILS_GET_CLASS(data)->get_mode(data);
 }
 
 gboolean
-nm_wifi_utils_set_mode(NMWifiUtils *data, const NM80211Mode mode)
+nm_wifi_utils_set_mode(NMWifiUtils *data, const _NM80211Mode mode)
 {
     NMWifiUtilsClass *klass;
 
     g_return_val_if_fail(data != NULL, FALSE);
-    g_return_val_if_fail((mode == NM_802_11_MODE_INFRA) || (mode == NM_802_11_MODE_AP)
-                             || (mode == NM_802_11_MODE_ADHOC) || (mode == NM_802_11_MODE_MESH),
+    g_return_val_if_fail((mode == _NM_802_11_MODE_INFRA) || (mode == _NM_802_11_MODE_AP)
+                             || (mode == _NM_802_11_MODE_ADHOC) || (mode == _NM_802_11_MODE_MESH),
                          FALSE);
 
     klass = NM_WIFI_UTILS_GET_CLASS(data);

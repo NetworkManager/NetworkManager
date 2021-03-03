@@ -114,7 +114,7 @@ get_ifname(int ifindex, char *buffer, const char *op)
     return TRUE;
 }
 
-static NM80211Mode
+static _NM80211Mode
 wifi_wext_get_mode_ifname(NMWifiUtils *data, const char *ifname)
 {
     NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
@@ -129,24 +129,24 @@ wifi_wext_get_mode_ifname(NMWifiUtils *data, const char *ifname)
         if (errsv != ENODEV) {
             _LOGW(LOGD_PLATFORM | LOGD_WIFI, "(%s): error %d getting card mode", ifname, errsv);
         }
-        return NM_802_11_MODE_UNKNOWN;
+        return _NM_802_11_MODE_UNKNOWN;
     }
 
     switch (wrq.u.mode) {
     case IW_MODE_ADHOC:
-        return NM_802_11_MODE_ADHOC;
+        return _NM_802_11_MODE_ADHOC;
     case IW_MODE_MASTER:
-        return NM_802_11_MODE_AP;
+        return _NM_802_11_MODE_AP;
     case IW_MODE_INFRA:
     case IW_MODE_AUTO: /* hack for WEXT devices reporting IW_MODE_AUTO */
-        return NM_802_11_MODE_INFRA;
+        return _NM_802_11_MODE_INFRA;
     default:
         break;
     }
-    return NM_802_11_MODE_UNKNOWN;
+    return _NM_802_11_MODE_UNKNOWN;
 }
 
-static NM80211Mode
+static _NM80211Mode
 wifi_wext_get_mode(NMWifiUtils *data)
 {
     char ifname[IFNAMSIZ];
@@ -158,7 +158,7 @@ wifi_wext_get_mode(NMWifiUtils *data)
 }
 
 static gboolean
-wifi_wext_set_mode(NMWifiUtils *data, const NM80211Mode mode)
+wifi_wext_set_mode(NMWifiUtils *data, const _NM80211Mode mode)
 {
     NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
     struct iwreq     wrq;
@@ -172,13 +172,13 @@ wifi_wext_set_mode(NMWifiUtils *data, const NM80211Mode mode)
 
     memset(&wrq, 0, sizeof(struct iwreq));
     switch (mode) {
-    case NM_802_11_MODE_ADHOC:
+    case _NM_802_11_MODE_ADHOC:
         wrq.u.mode = IW_MODE_ADHOC;
         break;
-    case NM_802_11_MODE_AP:
+    case _NM_802_11_MODE_AP:
         wrq.u.mode = IW_MODE_MASTER;
         break;
-    case NM_802_11_MODE_INFRA:
+    case _NM_802_11_MODE_INFRA:
         wrq.u.mode = IW_MODE_INFRA;
         break;
     default:

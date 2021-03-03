@@ -12,9 +12,9 @@
 typedef struct {
     GObjectClass parent;
 
-    NM80211Mode (*get_mode)(NMWifiUtils *data);
+    _NM80211Mode (*get_mode)(NMWifiUtils *data);
 
-    gboolean (*set_mode)(NMWifiUtils *data, const NM80211Mode mode);
+    gboolean (*set_mode)(NMWifiUtils *data, const _NM80211Mode mode);
 
     /* Set power saving mode on an interface */
     gboolean (*set_powersave)(NMWifiUtils *data, guint32 powersave);
