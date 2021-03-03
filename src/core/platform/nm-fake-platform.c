@@ -749,8 +749,8 @@ link_release(NMPlatform *platform, int master_idx, int slave_idx)
 static gboolean
 link_vlan_change(NMPlatform *            platform,
                  int                     ifindex,
-                 NMVlanFlags             flags_mask,
-                 NMVlanFlags             flags_set,
+                 _NMVlanFlags            flags_mask,
+                 _NMVlanFlags            flags_set,
                  gboolean                ingress_reset_all,
                  const NMVlanQosMapping *ingress_map,
                  gsize                   n_ingress_map,

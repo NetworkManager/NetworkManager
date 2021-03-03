@@ -4156,8 +4156,8 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
 
         {
             struct ifla_vlan_flags flags = {
-                .flags = props->flags & NM_VLAN_FLAGS_ALL,
-                .mask  = NM_VLAN_FLAGS_ALL,
+                .flags = props->flags & _NM_VLAN_FLAGS_ALL,
+                .mask  = _NM_VLAN_FLAGS_ALL,
             };
 
             NLA_PUT(msg, IFLA_VLAN_FLAGS, sizeof(flags), &flags);
@@ -4433,10 +4433,10 @@ _nl_msg_new_link_set_linkinfo_vlan(struct nl_msg *         msg,
     guint          i;
     gboolean       has_any_vlan_properties = FALSE;
 
-    G_STATIC_ASSERT(NM_VLAN_FLAG_REORDER_HEADERS == (guint32) VLAN_FLAG_REORDER_HDR);
-    G_STATIC_ASSERT(NM_VLAN_FLAG_GVRP == (guint32) VLAN_FLAG_GVRP);
-    G_STATIC_ASSERT(NM_VLAN_FLAG_LOOSE_BINDING == (guint32) VLAN_FLAG_LOOSE_BINDING);
-    G_STATIC_ASSERT(NM_VLAN_FLAG_MVRP == (guint32) VLAN_FLAG_MVRP);
+    G_STATIC_ASSERT(_NM_VLAN_FLAG_REORDER_HEADERS == (guint32) VLAN_FLAG_REORDER_HDR);
+    G_STATIC_ASSERT(_NM_VLAN_FLAG_GVRP == (guint32) VLAN_FLAG_GVRP);
+    G_STATIC_ASSERT(_NM_VLAN_FLAG_LOOSE_BINDING == (guint32) VLAN_FLAG_LOOSE_BINDING);
+    G_STATIC_ASSERT(_NM_VLAN_FLAG_MVRP == (guint32) VLAN_FLAG_MVRP);
 
 #define VLAN_XGRESS_PRIO_VALID(from) (((from) & ~(guint32) 0x07) == 0)
 
@@ -8084,8 +8084,8 @@ _vlan_change_vlan_qos_mapping_create(gboolean                is_ingress_map,
 static gboolean
 link_vlan_change(NMPlatform *            platform,
                  int                     ifindex,
-                 NMVlanFlags             flags_mask,
-                 NMVlanFlags             flags_set,
+                 _NMVlanFlags            flags_mask,
+                 _NMVlanFlags            flags_set,
                  gboolean                ingress_reset_all,
                  const NMVlanQosMapping *ingress_map,
                  gsize                   n_ingress_map,

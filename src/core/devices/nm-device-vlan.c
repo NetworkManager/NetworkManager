@@ -436,7 +436,7 @@ update_connection(NMDevice *device, NMConnection *connection)
     const NMPlatformLink *plink;
     const NMPObject *     polnk;
     guint                 vlan_id;
-    guint                 vlan_flags;
+    _NMVlanFlags          vlan_flags;
 
     if (!s_vlan) {
         s_vlan = (NMSettingVlan *) nm_setting_vlan_new();
@@ -463,9 +463,9 @@ update_connection(NMDevice *device, NMConnection *connection)
     if (polnk)
         vlan_flags = polnk->lnk_vlan.flags;
     else
-        vlan_flags = NM_VLAN_FLAG_REORDER_HEADERS;
-    if (vlan_flags != nm_setting_vlan_get_flags(s_vlan))
-        g_object_set(s_vlan, NM_SETTING_VLAN_FLAGS, (NMVlanFlags) vlan_flags, NULL);
+        vlan_flags = _NM_VLAN_FLAG_REORDER_HEADERS;
+    if (NM_VLAN_FLAGS_CAST(vlan_flags) != nm_setting_vlan_get_flags(s_vlan))
+        g_object_set(s_vlan, NM_SETTING_VLAN_FLAGS, NM_VLAN_FLAGS_CAST(vlan_flags), NULL);
 
     if (polnk) {
         _nm_setting_vlan_set_priorities(s_vlan,
@@ -507,7 +507,7 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
         nm_platform_link_vlan_change(nm_device_get_platform(device),
                                      nm_device_get_ifindex(device),
-                                     NM_VLAN_FLAGS_ALL,
+                                     _NM_VLAN_FLAGS_ALL,
                                      nm_setting_vlan_get_flags(s_vlan),
                                      TRUE,
                                      ingress_map,
