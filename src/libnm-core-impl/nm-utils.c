@@ -4786,29 +4786,6 @@ nm_utils_ipaddr_valid(int family, const char *ip)
 }
 
 /**
- * nm_utils_iinet6_is_token:
- * @in6addr: the AF_INET6 address structure
- *
- * Checks if only the bottom 64bits of the address are set.
- *
- * Return value: %TRUE or %FALSE
- */
-gboolean
-_nm_utils_inet6_is_token(const struct in6_addr *in6addr)
-{
-    if (in6addr->s6_addr[0] || in6addr->s6_addr[1] || in6addr->s6_addr[2] || in6addr->s6_addr[3]
-        || in6addr->s6_addr[4] || in6addr->s6_addr[5] || in6addr->s6_addr[6] || in6addr->s6_addr[7])
-        return FALSE;
-
-    if (in6addr->s6_addr[8] || in6addr->s6_addr[9] || in6addr->s6_addr[10] || in6addr->s6_addr[11]
-        || in6addr->s6_addr[12] || in6addr->s6_addr[13] || in6addr->s6_addr[14]
-        || in6addr->s6_addr[15])
-        return TRUE;
-
-    return FALSE;
-}
-
-/**
  * _nm_utils_dhcp_duid_valid:
  * @duid: the candidate DUID
  *
