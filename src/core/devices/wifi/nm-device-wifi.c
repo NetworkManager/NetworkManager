@@ -114,8 +114,8 @@ typedef struct {
     guint wps_timeout_id;
     guint sup_timeout_id; /* supplicant association timeout */
 
-    NMDeviceWifiCapabilities    capabilities;
-    NMSettingWirelessWakeOnWLan wowlan_restore;
+    NMDeviceWifiCapabilities     capabilities;
+    _NMSettingWirelessWakeOnWLan wowlan_restore;
 
     NMDeviceWifiP2P *p2p_device;
     NM80211Mode      mode;
@@ -845,14 +845,14 @@ remove_all_aps(NMDeviceWifi *self)
 static gboolean
 wake_on_wlan_restore(NMDeviceWifi *self)
 {
-    NMDeviceWifiPrivate *       priv = NM_DEVICE_WIFI_GET_PRIVATE(self);
-    NMSettingWirelessWakeOnWLan w;
+    NMDeviceWifiPrivate *        priv = NM_DEVICE_WIFI_GET_PRIVATE(self);
+    _NMSettingWirelessWakeOnWLan w;
 
     w = priv->wowlan_restore;
-    if (w == NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE)
+    if (w == _NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE)
         return TRUE;
 
-    priv->wowlan_restore = NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
+    priv->wowlan_restore = _NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
     return nm_platform_wifi_set_wake_on_wlan(NM_PLATFORM_GET,
                                              nm_device_get_ifindex(NM_DEVICE(self)),
                                              w);
@@ -2956,9 +2956,10 @@ error:
 static gboolean
 wake_on_wlan_enable(NMDeviceWifi *self)
 {
-    NMDeviceWifiPrivate *       priv = NM_DEVICE_WIFI_GET_PRIVATE(self);
-    NMSettingWirelessWakeOnWLan wowl;
-    NMSettingWireless *         s_wireless;
+    NMDeviceWifiPrivate *        priv = NM_DEVICE_WIFI_GET_PRIVATE(self);
+    NMSettingWirelessWakeOnWLan  wowl;
+    _NMSettingWirelessWakeOnWLan wowl2;
+    NMSettingWireless *          s_wireless;
 
     s_wireless = nm_device_get_applied_setting(NM_DEVICE(self), NM_TYPE_SETTING_WIRELESS);
     if (s_wireless) {
@@ -2990,9 +2991,11 @@ wake_on_wlan_enable(NMDeviceWifi *self)
         goto found;
 
     wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
+
 found:
-    if (wowl == NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE) {
-        priv->wowlan_restore = wowl;
+    wowl2 = _NM_SETTING_WIRELESS_WAKE_ON_WLAN_CAST(wowl);
+    if (wowl2 == _NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE) {
+        priv->wowlan_restore = wowl2;
         return TRUE;
     }
 
@@ -3001,7 +3004,7 @@ found:
 
     return nm_platform_wifi_set_wake_on_wlan(NM_PLATFORM_GET,
                                              nm_device_get_ifindex(NM_DEVICE(self)),
-                                             wowl);
+                                             wowl2);
 }
 
 static NMActStageReturn
@@ -3695,7 +3698,7 @@ nm_device_wifi_init(NMDeviceWifi *self)
     priv->scan_last_request_started_at_msec = G_MININT64;
     priv->hidden_probe_scan_warn            = TRUE;
     priv->mode                              = NM_802_11_MODE_INFRA;
-    priv->wowlan_restore                    = NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
+    priv->wowlan_restore                    = _NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
 }
 
 static void

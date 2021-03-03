@@ -20,10 +20,10 @@ typedef struct {
     gboolean (*set_powersave)(NMWifiUtils *data, guint32 powersave);
 
     /* Get WakeOnWLAN configuration on an interface */
-    NMSettingWirelessWakeOnWLan (*get_wake_on_wlan)(NMWifiUtils *data);
+    _NMSettingWirelessWakeOnWLan (*get_wake_on_wlan)(NMWifiUtils *data);
 
     /* Set WakeOnWLAN mode on an interface */
-    gboolean (*set_wake_on_wlan)(NMWifiUtils *data, NMSettingWirelessWakeOnWLan wowl);
+    gboolean (*set_wake_on_wlan)(NMWifiUtils *data, _NMSettingWirelessWakeOnWLan wowl);
 
     /* Return current frequency in MHz (really associated BSS frequency) */
     guint32 (*get_freq)(NMWifiUtils *data);

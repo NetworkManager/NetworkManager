@@ -3134,7 +3134,7 @@ nm_platform_wifi_indicate_addressing_running(NMPlatform *self, int ifindex, gboo
     klass->wifi_indicate_addressing_running(self, ifindex, running);
 }
 
-NMSettingWirelessWakeOnWLan
+_NMSettingWirelessWakeOnWLan
 nm_platform_wifi_get_wake_on_wlan(NMPlatform *self, int ifindex)
 {
     _CHECK_SELF(self, klass, FALSE);
@@ -3145,7 +3145,7 @@ nm_platform_wifi_get_wake_on_wlan(NMPlatform *self, int ifindex)
 }
 
 gboolean
-nm_platform_wifi_set_wake_on_wlan(NMPlatform *self, int ifindex, NMSettingWirelessWakeOnWLan wowl)
+nm_platform_wifi_set_wake_on_wlan(NMPlatform *self, int ifindex, _NMSettingWirelessWakeOnWLan wowl)
 {
     _CHECK_SELF(self, klass, FALSE);
 

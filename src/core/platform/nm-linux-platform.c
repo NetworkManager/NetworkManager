@@ -8338,7 +8338,7 @@ wifi_indicate_addressing_running(NMPlatform *platform, int ifindex, gboolean run
     nm_wifi_utils_indicate_addressing_running(wifi_data, running);
 }
 
-static NMSettingWirelessWakeOnWLan
+static _NMSettingWirelessWakeOnWLan
 wifi_get_wake_on_wlan(NMPlatform *platform, int ifindex)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, FALSE);
@@ -8346,7 +8346,7 @@ wifi_get_wake_on_wlan(NMPlatform *platform, int ifindex)
 }
 
 static gboolean
-wifi_set_wake_on_wlan(NMPlatform *platform, int ifindex, NMSettingWirelessWakeOnWLan wowl)
+wifi_set_wake_on_wlan(NMPlatform *platform, int ifindex, _NMSettingWirelessWakeOnWLan wowl)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, FALSE);
     return nm_wifi_utils_set_wake_on_wlan(wifi_data, wowl);
@@ -8473,8 +8473,8 @@ link_get_wake_on_lan(NMPlatform *platform, int ifindex)
             return FALSE;
 
         return !NM_IN_SET(nm_wifi_utils_get_wake_on_wlan(wifi_data),
-                          NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE,
-                          NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE);
+                          _NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE,
+                          _NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE);
 
     } else
         return FALSE;

@@ -92,21 +92,21 @@ nm_wifi_utils_set_powersave(NMWifiUtils *data, guint32 powersave)
     return klass->set_powersave ? klass->set_powersave(data, powersave) : TRUE;
 }
 
-NMSettingWirelessWakeOnWLan
+_NMSettingWirelessWakeOnWLan
 nm_wifi_utils_get_wake_on_wlan(NMWifiUtils *data)
 {
     NMWifiUtilsClass *klass;
 
-    g_return_val_if_fail(data != NULL, NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE);
+    g_return_val_if_fail(data != NULL, _NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE);
 
     klass = NM_WIFI_UTILS_GET_CLASS(data);
 
     return klass->get_wake_on_wlan ? klass->get_wake_on_wlan(data)
-                                   : NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
+                                   : _NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
 }
 
 gboolean
-nm_wifi_utils_set_wake_on_wlan(NMWifiUtils *data, NMSettingWirelessWakeOnWLan wowl)
+nm_wifi_utils_set_wake_on_wlan(NMWifiUtils *data, _NMSettingWirelessWakeOnWLan wowl)
 {
     NMWifiUtilsClass *klass;
 
