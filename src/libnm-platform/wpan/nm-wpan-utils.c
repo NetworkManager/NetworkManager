@@ -3,12 +3,13 @@
  * Copyright (C) 2018 Red Hat, Inc.
  */
 
-#include "src/core/nm-default-daemon.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-wpan-utils.h"
 
 #include <linux/if.h>
 
+#include "libnm-log-core/nm-logging.h"
 #include "libnm-platform/nm-netlink.h"
 #include "linux-headers/nl802154.h"
 #include "libnm-platform/nm-platform-utils.h"

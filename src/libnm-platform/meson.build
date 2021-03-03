@@ -6,7 +6,10 @@ libnm_platform = static_library(
     'nm-netlink.c',
     'nm-platform-utils.c',
     'nmp-netns.c',
-  ],
+    'wifi/nm-wifi-utils-nl80211.c',
+    'wifi/nm-wifi-utils.c',
+    'wpan/nm-wpan-utils.c',
+  ] + (enable_wext ? [ 'wifi/nm-wifi-utils-wext.c' ] : []),
   include_directories: [
     src_inc,
     top_inc,

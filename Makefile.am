@@ -581,7 +581,21 @@ src_libnm_platform_libnm_platform_la_SOURCES = \
 	src/libnm-platform/nmp-base.h \
 	src/libnm-platform/nmp-netns.c \
 	src/libnm-platform/nmp-netns.h \
+	src/libnm-platform/wifi/nm-wifi-utils-nl80211.c \
+	src/libnm-platform/wifi/nm-wifi-utils-nl80211.h \
+	src/libnm-platform/wifi/nm-wifi-utils-private.h \
+	src/libnm-platform/wifi/nm-wifi-utils.c \
+	src/libnm-platform/wifi/nm-wifi-utils.h \
+	src/libnm-platform/wpan/nm-wpan-utils.c \
+	src/libnm-platform/wpan/nm-wpan-utils.h \
 	$(NULL)
+
+if WITH_WEXT
+src_libnm_platform_libnm_platform_la_SOURCES += \
+	src/libnm-platform/wifi/nm-wifi-utils-wext.c \
+	src/libnm-platform/wifi/nm-wifi-utils-wext.h \
+	$(NULL)
+endif
 
 src_libnm_platform_libnm_platform_la_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
@@ -2321,13 +2335,6 @@ src_core_libNetworkManagerBase_la_SOURCES = \
 	src/core/platform/nm-linux-platform.h \
 	src/core/platform/nmp-rules-manager.c \
 	src/core/platform/nmp-rules-manager.h \
-	src/core/platform/wifi/nm-wifi-utils-nl80211.c \
-	src/core/platform/wifi/nm-wifi-utils-nl80211.h \
-	src/core/platform/wifi/nm-wifi-utils-private.h \
-	src/core/platform/wifi/nm-wifi-utils.c \
-	src/core/platform/wifi/nm-wifi-utils.h \
-	src/core/platform/wpan/nm-wpan-utils.c \
-	src/core/platform/wpan/nm-wpan-utils.h \
 	\
 	src/core/ndisc/nm-lndp-ndisc.c \
 	src/core/ndisc/nm-lndp-ndisc.h \
@@ -2370,12 +2377,6 @@ src_core_libNetworkManagerBase_la_SOURCES = \
 	src/core/main-utils.h \
 	\
 	$(NULL)
-
-if WITH_WEXT
-src_core_libNetworkManagerBase_la_SOURCES += \
-	src/core/platform/wifi/nm-wifi-utils-wext.c \
-	src/core/platform/wifi/nm-wifi-utils-wext.h
-endif
 
 src_core_libNetworkManagerBase_la_LIBADD = \
 	$(GLIB_LIBS) \

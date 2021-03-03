@@ -18,8 +18,8 @@
 #include "nm-core-utils.h"
 #include "libnm-platform/nm-platform-utils.h"
 
-#include "wifi/nm-wifi-utils.h"
-#include "wpan/nm-wpan-utils.h"
+#include "libnm-platform/wifi/nm-wifi-utils.h"
+#include "libnm-platform/wpan/nm-wpan-utils.h"
 
 /*****************************************************************************/
 
