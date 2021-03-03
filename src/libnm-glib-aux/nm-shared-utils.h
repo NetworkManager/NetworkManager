@@ -353,6 +353,75 @@ gboolean nm_utils_get_ipv6_interface_identifier(NMLinkType          link_type,
 
 /*****************************************************************************/
 
+gconstpointer
+nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer src, guint8 plen);
+in_addr_t              nm_utils_ip4_address_clear_host_address(in_addr_t addr, guint8 plen);
+const struct in6_addr *nm_utils_ip6_address_clear_host_address(struct in6_addr *      dst,
+                                                               const struct in6_addr *src,
+                                                               guint8                 plen);
+
+static inline int
+nm_utils_ip4_address_same_prefix_cmp(in_addr_t addr_a, in_addr_t addr_b, guint8 plen)
+{
+    NM_CMP_DIRECT(htonl(nm_utils_ip4_address_clear_host_address(addr_a, plen)),
+                  htonl(nm_utils_ip4_address_clear_host_address(addr_b, plen)));
+    return 0;
+}
+
+int nm_utils_ip6_address_same_prefix_cmp(const struct in6_addr *addr_a,
+                                         const struct in6_addr *addr_b,
+                                         guint8                 plen);
+
+static inline int
+nm_utils_ip_address_same_prefix_cmp(int           addr_family,
+                                    gconstpointer addr_a,
+                                    gconstpointer addr_b,
+                                    guint8        plen)
+{
+    nm_assert_addr_family(addr_family);
+
+    NM_CMP_SELF(addr_a, addr_b);
+
+    if (NM_IS_IPv4(addr_family)) {
+        return nm_utils_ip4_address_same_prefix_cmp(*((const in_addr_t *) addr_a),
+                                                    *((const in_addr_t *) addr_b),
+                                                    plen);
+    }
+
+    return nm_utils_ip6_address_same_prefix_cmp(addr_a, addr_b, plen);
+}
+
+static inline gboolean
+nm_utils_ip4_address_same_prefix(in_addr_t addr_a, in_addr_t addr_b, guint8 plen)
+{
+    return nm_utils_ip4_address_same_prefix_cmp(addr_a, addr_b, plen) == 0;
+}
+
+static inline gboolean
+nm_utils_ip6_address_same_prefix(const struct in6_addr *addr_a,
+                                 const struct in6_addr *addr_b,
+                                 guint8                 plen)
+{
+    return nm_utils_ip6_address_same_prefix_cmp(addr_a, addr_b, plen) == 0;
+}
+
+static inline gboolean
+nm_utils_ip_address_same_prefix(int           addr_family,
+                                gconstpointer addr_a,
+                                gconstpointer addr_b,
+                                guint8        plen)
+{
+    return nm_utils_ip_address_same_prefix_cmp(addr_family, addr_a, addr_b, plen) == 0;
+}
+
+#define NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX(a, b, plen) \
+    NM_CMP_RETURN(nm_utils_ip4_address_same_prefix_cmp((a), (b), (plen)))
+
+#define NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX(a, b, plen) \
+    NM_CMP_RETURN(nm_utils_ip6_address_same_prefix_cmp((a), (b), (plen)))
+
+/*****************************************************************************/
+
 #define NM_UTILS_INET_ADDRSTRLEN INET6_ADDRSTRLEN
 
 static inline const char *
