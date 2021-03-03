@@ -222,10 +222,16 @@ _NM_SETTING_WIRED_WAKE_ON_LAN_CAST(NMSettingWiredWakeOnLan v)
     /* _NMSettingWiredWakeOnLan and NMSettingWiredWakeOnLan enums are really
      * the same.
      *
-     * The former is used by nm-platform (which should have no libnm-core dependency),
-     * the latter is used by libnm-core. A unit test ensures they are exactly the same,
+     * The former is used by libnm-platform (which should have no libnm-core* dependency),
+     * the latter is public API in libnm-core-public. A unit test ensures they are exactly the same,
      * so we can just cast them. */
     return (_NMSettingWiredWakeOnLan) v;
+}
+
+static inline _NMSettingWirelessWakeOnWLan
+_NM_SETTING_WIRELESS_WAKE_ON_WLAN_CAST(NMSettingWirelessWakeOnWLan v)
+{
+    return (_NMSettingWirelessWakeOnWLan) v;
 }
 
 /*****************************************************************************/

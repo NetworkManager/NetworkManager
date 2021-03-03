@@ -156,6 +156,60 @@ test_wired_wake_on_lan_enum(void)
 
 /*****************************************************************************/
 
+static void
+test_wireless_wake_on_wlan_enum(void)
+{
+    nm_auto_unref_gtypeclass GFlagsClass *flags_class = NULL;
+    gs_unref_hashtable GHashTable *vals               = g_hash_table_new(nm_direct_hash, NULL);
+    guint                          i;
+
+    G_STATIC_ASSERT_EXPR(sizeof(NMSettingWirelessWakeOnWLan)
+                         == sizeof(_NMSettingWirelessWakeOnWLan));
+    G_STATIC_ASSERT_EXPR(sizeof(NMSettingWirelessWakeOnWLan) < sizeof(gint64));
+
+    G_STATIC_ASSERT_EXPR(sizeof(NMSettingWirelessWakeOnWLan) < sizeof(gint64));
+    g_assert((((gint64)((NMSettingWirelessWakeOnWLan) -1)) < 0)
+             == (((gint64)((_NMSettingWirelessWakeOnWLan) -1)) < 0));
+
+#define _E(n)                                                        \
+    G_STMT_START                                                     \
+    {                                                                \
+        G_STATIC_ASSERT_EXPR(n == (gint64) _##n);                    \
+        G_STATIC_ASSERT_EXPR(_##n == (gint64) n);                    \
+        g_assert(_##n == _NM_SETTING_WIRELESS_WAKE_ON_WLAN_CAST(n)); \
+        if (!g_hash_table_add(vals, GUINT_TO_POINTER(n)))            \
+            g_assert_not_reached();                                  \
+    }                                                                \
+    G_STMT_END
+    _E(NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE);
+    _E(NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY);
+    _E(NM_SETTING_WIRELESS_WAKE_ON_WLAN_DISCONNECT);
+    _E(NM_SETTING_WIRELESS_WAKE_ON_WLAN_MAGIC);
+    _E(NM_SETTING_WIRELESS_WAKE_ON_WLAN_GTK_REKEY_FAILURE);
+    _E(NM_SETTING_WIRELESS_WAKE_ON_WLAN_EAP_IDENTITY_REQUEST);
+    _E(NM_SETTING_WIRELESS_WAKE_ON_WLAN_4WAY_HANDSHAKE);
+    _E(NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE);
+    _E(NM_SETTING_WIRELESS_WAKE_ON_WLAN_TCP);
+    _E(NM_SETTING_WIRELESS_WAKE_ON_WLAN_ALL);
+    _E(NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT);
+    _E(NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE);
+    _E(NM_SETTING_WIRELESS_WAKE_ON_WLAN_EXCLUSIVE_FLAGS);
+#undef _E
+
+    flags_class = G_FLAGS_CLASS(g_type_class_ref(NM_TYPE_SETTING_WIRELESS_WAKE_ON_WLAN));
+    for (i = 0; i < flags_class->n_values; i++) {
+        const GFlagsValue *value = &flags_class->values[i];
+
+        if (!g_hash_table_contains(vals, GUINT_TO_POINTER(value->value))) {
+            g_error("The enum value %s from NMSettingWirelessWakeOnWLan is not checked for "
+                    "_NMSettingWirelessWakeOnWLan",
+                    value->value_name);
+        }
+    }
+}
+
+/*****************************************************************************/
+
 typedef struct _nm_packed {
     int    v0;
     char   v1;
@@ -10326,6 +10380,8 @@ main(int argc, char **argv)
 
     g_test_add_func("/core/general/test_nm_ascii_spaces", test_nm_ascii_spaces);
     g_test_add_func("/core/general/test_wired_wake_on_lan_enum", test_wired_wake_on_lan_enum);
+    g_test_add_func("/core/general/test_wireless_wake_on_wlan_enum",
+                    test_wireless_wake_on_wlan_enum);
     g_test_add_func("/core/general/test_nm_hash", test_nm_hash);
     g_test_add_func("/core/general/test_nm_g_slice_free_fcn", test_nm_g_slice_free_fcn);
     g_test_add_func("/core/general/test_c_list_sort", test_c_list_sort);
