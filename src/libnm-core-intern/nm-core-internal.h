@@ -240,6 +240,12 @@ NM_802_11_MODE_CAST(_NM80211Mode v)
     return (NM80211Mode) v;
 }
 
+static inline NMVlanFlags
+NM_VLAN_FLAGS_CAST(_NMVlanFlags v)
+{
+    return (NMVlanFlags) v;
+}
+
 /*****************************************************************************/
 
 static inline NMTernary
