@@ -307,6 +307,50 @@ test_80211_mode(void)
 
 /*****************************************************************************/
 
+static void
+test_vlan_flags(void)
+{
+    nm_auto_unref_gtypeclass GFlagsClass *flags_class = NULL;
+    gs_unref_hashtable GHashTable *vals               = g_hash_table_new(nm_direct_hash, NULL);
+    guint                          i;
+
+    G_STATIC_ASSERT_EXPR(sizeof(NMVlanFlags) == sizeof(_NMVlanFlags));
+    G_STATIC_ASSERT_EXPR(sizeof(NMVlanFlags) < sizeof(gint64));
+
+    G_STATIC_ASSERT_EXPR(sizeof(NMVlanFlags) < sizeof(gint64));
+    g_assert((((gint64)((NMVlanFlags) -1)) < 0) == (((gint64)((_NMVlanFlags) -1)) < 0));
+
+#define _E(n)                                             \
+    G_STMT_START                                          \
+    {                                                     \
+        G_STATIC_ASSERT_EXPR(n == (gint64) _##n);         \
+        G_STATIC_ASSERT_EXPR(_##n == (gint64) n);         \
+        g_assert(n == NM_VLAN_FLAGS_CAST(_##n));          \
+        if (!g_hash_table_add(vals, GUINT_TO_POINTER(n))) \
+            g_assert_not_reached();                       \
+    }                                                     \
+    G_STMT_END
+    _E(NM_VLAN_FLAG_REORDER_HEADERS);
+    _E(NM_VLAN_FLAG_GVRP);
+    _E(NM_VLAN_FLAG_LOOSE_BINDING);
+    _E(NM_VLAN_FLAG_MVRP);
+    _E(NM_VLAN_FLAGS_ALL);
+#undef _E
+
+    flags_class = G_FLAGS_CLASS(g_type_class_ref(NM_TYPE_VLAN_FLAGS));
+    for (i = 0; i < flags_class->n_values; i++) {
+        const GFlagsValue *value = &flags_class->values[i];
+
+        if (!g_hash_table_contains(vals, GUINT_TO_POINTER(value->value))) {
+            g_error("The enum value %s from NMVlanFlags is not checked for "
+                    "_NMVlanFlags",
+                    value->value_name);
+        }
+    }
+}
+
+/*****************************************************************************/
+
 typedef struct _nm_packed {
     int    v0;
     char   v1;
@@ -10481,6 +10525,7 @@ main(int argc, char **argv)
                     test_wireless_wake_on_wlan_enum);
     g_test_add_func("/core/general/test_device_wifi_capabilities", test_device_wifi_capabilities);
     g_test_add_func("/core/general/test_80211_mode", test_80211_mode);
+    g_test_add_func("/core/general/test_vlan_flags", test_vlan_flags);
     g_test_add_func("/core/general/test_nm_hash", test_nm_hash);
     g_test_add_func("/core/general/test_nm_g_slice_free_fcn", test_nm_g_slice_free_fcn);
     g_test_add_func("/core/general/test_c_list_sort", test_c_list_sort);

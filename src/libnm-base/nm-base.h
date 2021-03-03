@@ -217,6 +217,17 @@ typedef enum {
     _NM_802_11_MODE_MESH    = 4,
 } _NM80211Mode;
 
+typedef enum {
+    /* Mirrors libnm's NMVlanFlags */
+    _NM_VLAN_FLAG_REORDER_HEADERS = 0x1,
+    _NM_VLAN_FLAG_GVRP            = 0x2,
+    _NM_VLAN_FLAG_LOOSE_BINDING   = 0x4,
+    _NM_VLAN_FLAG_MVRP            = 0x8,
+
+    _NM_VLAN_FLAGS_ALL = _NM_VLAN_FLAG_REORDER_HEADERS | _NM_VLAN_FLAG_GVRP
+                         | _NM_VLAN_FLAG_LOOSE_BINDING | _NM_VLAN_FLAG_MVRP,
+} _NMVlanFlags;
+
 /*****************************************************************************/
 
 typedef enum {

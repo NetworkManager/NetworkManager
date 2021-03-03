@@ -78,6 +78,7 @@ typedef enum {
  * #NMVlanFlags values control the behavior of the VLAN interface.
  **/
 typedef enum { /*< flags >*/
+
                NM_VLAN_FLAG_REORDER_HEADERS = 0x1,
                NM_VLAN_FLAG_GVRP            = 0x2,
                NM_VLAN_FLAG_LOOSE_BINDING   = 0x4,
@@ -86,7 +87,7 @@ typedef enum { /*< flags >*/
                /* NOTE: if adding flags update nm-setting-vlan.c::verify() */
 
                /* NOTE: these flags must correspond to the value from the kernel
-     * header files. */
+                * header files. */
 } NMVlanFlags;
 
 #define NM_VLAN_FLAGS_ALL                                                          \
