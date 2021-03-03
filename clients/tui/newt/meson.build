@@ -26,6 +26,7 @@ libnmt_newt = static_library(
   ),
   dependencies: [
     libnm_nm_default_dep,
+    libnm_dep,
     newt_dep,
   ],
   c_args: [
