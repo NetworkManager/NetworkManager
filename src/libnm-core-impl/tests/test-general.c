@@ -224,14 +224,14 @@ test_device_wifi_capabilities(void)
     g_assert((((gint64)((NMDeviceWifiCapabilities) -1)) < 0)
              == (((gint64)((_NMDeviceWifiCapabilities) -1)) < 0));
 
-#define _E(n)                                                        \
-    G_STMT_START                                                     \
-    {                                                                \
-        G_STATIC_ASSERT_EXPR(n == (gint64) _##n);                    \
-        G_STATIC_ASSERT_EXPR(_##n == (gint64) n);                    \
-        if (!g_hash_table_add(vals, GUINT_TO_POINTER(n)))            \
-            g_assert_not_reached();                                  \
-    }                                                                \
+#define _E(n)                                             \
+    G_STMT_START                                          \
+    {                                                     \
+        G_STATIC_ASSERT_EXPR(n == (gint64) _##n);         \
+        G_STATIC_ASSERT_EXPR(_##n == (gint64) n);         \
+        if (!g_hash_table_add(vals, GUINT_TO_POINTER(n))) \
+            g_assert_not_reached();                       \
+    }                                                     \
     G_STMT_END
     _E(NM_WIFI_DEVICE_CAP_NONE);
     _E(NM_WIFI_DEVICE_CAP_CIPHER_WEP40);
@@ -256,6 +256,50 @@ test_device_wifi_capabilities(void)
         if (!g_hash_table_contains(vals, GUINT_TO_POINTER(value->value))) {
             g_error("The enum value %s from NMDeviceWifiCapabilities is not checked for "
                     "_NMDeviceWifiCapabilities",
+                    value->value_name);
+        }
+    }
+}
+
+/*****************************************************************************/
+
+static void
+test_80211_mode(void)
+{
+    nm_auto_unref_gtypeclass GEnumClass *enum_class = NULL;
+    gs_unref_hashtable GHashTable *vals             = g_hash_table_new(nm_direct_hash, NULL);
+    guint                          i;
+
+    G_STATIC_ASSERT_EXPR(sizeof(NM80211Mode) == sizeof(_NM80211Mode));
+    G_STATIC_ASSERT_EXPR(sizeof(NM80211Mode) < sizeof(gint64));
+
+    G_STATIC_ASSERT_EXPR(sizeof(NM80211Mode) < sizeof(gint64));
+    g_assert((((gint64)((NM80211Mode) -1)) < 0) == (((gint64)((_NM80211Mode) -1)) < 0));
+
+#define _E(n)                                            \
+    G_STMT_START                                         \
+    {                                                    \
+        G_STATIC_ASSERT_EXPR(n == (gint64) _##n);        \
+        G_STATIC_ASSERT_EXPR(_##n == (gint64) n);        \
+        g_assert(n == NM_802_11_MODE_CAST(_##n));        \
+        if (!g_hash_table_add(vals, GINT_TO_POINTER(n))) \
+            g_assert_not_reached();                      \
+    }                                                    \
+    G_STMT_END
+    _E(NM_802_11_MODE_UNKNOWN);
+    _E(NM_802_11_MODE_ADHOC);
+    _E(NM_802_11_MODE_INFRA);
+    _E(NM_802_11_MODE_AP);
+    _E(NM_802_11_MODE_MESH);
+#undef _E
+
+    enum_class = G_ENUM_CLASS(g_type_class_ref(NM_TYPE_802_11_MODE));
+    for (i = 0; i < enum_class->n_values; i++) {
+        const GEnumValue *value = &enum_class->values[i];
+
+        if (!g_hash_table_contains(vals, GINT_TO_POINTER(value->value))) {
+            g_error("The enum value %s from NM80211Mode is not checked for "
+                    "_NM80211Mode",
                     value->value_name);
         }
     }
@@ -10436,6 +10480,7 @@ main(int argc, char **argv)
     g_test_add_func("/core/general/test_wireless_wake_on_wlan_enum",
                     test_wireless_wake_on_wlan_enum);
     g_test_add_func("/core/general/test_device_wifi_capabilities", test_device_wifi_capabilities);
+    g_test_add_func("/core/general/test_80211_mode", test_80211_mode);
     g_test_add_func("/core/general/test_nm_hash", test_nm_hash);
     g_test_add_func("/core/general/test_nm_g_slice_free_fcn", test_nm_g_slice_free_fcn);
     g_test_add_func("/core/general/test_c_list_sort", test_c_list_sort);

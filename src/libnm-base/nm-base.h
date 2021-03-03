@@ -208,6 +208,15 @@ typedef enum {
     _NM_WIFI_DEVICE_CAP_IBSS_RSN      = 0x00002000,
 } _NMDeviceWifiCapabilities;
 
+typedef enum {
+    /* Mirrors libnm's NM80211Mode */
+    _NM_802_11_MODE_UNKNOWN = 0,
+    _NM_802_11_MODE_ADHOC   = 1,
+    _NM_802_11_MODE_INFRA   = 2,
+    _NM_802_11_MODE_AP      = 3,
+    _NM_802_11_MODE_MESH    = 4,
+} _NM80211Mode;
+
 /*****************************************************************************/
 
 typedef enum {
