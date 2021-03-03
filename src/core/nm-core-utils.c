@@ -1238,7 +1238,7 @@ typedef struct {
         const char *value;
         gboolean    is_parsed;
         guint       len;
-        guint8      bin[NM_UTILS_HWADDR_LEN_MAX];
+        guint8      bin[_NM_UTILS_HWADDR_LEN_MAX];
     } hwaddr;
     struct {
         const char *value;

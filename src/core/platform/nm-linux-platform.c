@@ -2884,8 +2884,8 @@ _nmp_link_address_set(NMPLinkAddress *dst, const struct nlattr *nla)
     if (nla) {
         int l = nla_len(nla);
 
-        if (l > 0 && l <= NM_UTILS_HWADDR_LEN_MAX) {
-            G_STATIC_ASSERT_EXPR(sizeof(dst->data) == NM_UTILS_HWADDR_LEN_MAX);
+        if (l > 0 && l <= _NM_UTILS_HWADDR_LEN_MAX) {
+            G_STATIC_ASSERT_EXPR(sizeof(dst->data) == _NM_UTILS_HWADDR_LEN_MAX);
             memcpy(dst->data, nla_data(nla), l);
             dst->len = l;
         }

@@ -1033,7 +1033,7 @@ create_and_realize(NMDevice *             device,
     const char *        iface = nm_device_get_iface(device);
     const char *        hwaddr;
     gs_free char *      hwaddr_cloned = NULL;
-    guint8              mac_address[NM_UTILS_HWADDR_LEN_MAX];
+    guint8              mac_address[_NM_UTILS_HWADDR_LEN_MAX];
     NMPlatformLnkBridge props;
     int                 r;
     guint32             mtu = 0;
