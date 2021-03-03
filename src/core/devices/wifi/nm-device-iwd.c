@@ -265,7 +265,7 @@ ap_from_network(NMDeviceIwd *self,
         .bss_path       = bss_path,
         .last_seen_msec = last_seen_msec,
         .bssid_valid    = TRUE,
-        .mode           = NM_802_11_MODE_INFRA,
+        .mode           = _NM_802_11_MODE_INFRA,
         .rsn_flags      = ap_security_flags_from_network_type(type),
         .ssid           = ssid,
         .signal_percent = nm_wifi_utils_level_to_quality(signal / 100),
@@ -2610,9 +2610,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     switch (prop_id) {
     case PROP_MODE:
         if (!priv->current_ap)
-            g_value_set_uint(value, NM_802_11_MODE_UNKNOWN);
+            g_value_set_uint(value, _NM_802_11_MODE_UNKNOWN);
         else if (nm_wifi_ap_is_hotspot(priv->current_ap))
-            g_value_set_uint(value, NM_802_11_MODE_AP);
+            g_value_set_uint(value, _NM_802_11_MODE_AP);
         else
             g_value_set_uint(value, nm_wifi_ap_get_mode(priv->current_ap));
 
@@ -3452,9 +3452,9 @@ nm_device_iwd_class_init(NMDeviceIwdClass *klass)
     obj_properties[PROP_MODE] = g_param_spec_uint(NM_DEVICE_IWD_MODE,
                                                   "",
                                                   "",
-                                                  NM_802_11_MODE_UNKNOWN,
-                                                  NM_802_11_MODE_AP,
-                                                  NM_802_11_MODE_INFRA,
+                                                  _NM_802_11_MODE_UNKNOWN,
+                                                  _NM_802_11_MODE_AP,
+                                                  _NM_802_11_MODE_INFRA,
                                                   G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     obj_properties[PROP_BITRATE] = g_param_spec_uint(NM_DEVICE_IWD_BITRATE,

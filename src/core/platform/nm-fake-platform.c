@@ -861,14 +861,14 @@ wifi_get_rate(NMPlatform *platform, int ifindex)
     return 0;
 }
 
-static NM80211Mode
+static _NM80211Mode
 wifi_get_mode(NMPlatform *platform, int ifindex)
 {
-    return NM_802_11_MODE_UNKNOWN;
+    return _NM_802_11_MODE_UNKNOWN;
 }
 
 static void
-wifi_set_mode(NMPlatform *platform, int ifindex, NM80211Mode mode)
+wifi_set_mode(NMPlatform *platform, int ifindex, _NM80211Mode mode)
 {
     ;
 }

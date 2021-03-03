@@ -526,7 +526,7 @@ verify_adhoc(NMSettingWirelessSecurity *s_wsec,
 gboolean
 nm_wifi_utils_complete_connection(GBytes *      ap_ssid,
                                   const char *  bssid,
-                                  NM80211Mode   ap_mode,
+                                  _NM80211Mode  ap_mode,
                                   guint32       ap_freq,
                                   guint32       ap_flags,
                                   guint32       ap_wpa_flags,
@@ -575,14 +575,14 @@ nm_wifi_utils_complete_connection(GBytes *      ap_ssid,
         /* Make sure the supplied mode matches the AP's */
         if (!strcmp(mode, NM_SETTING_WIRELESS_MODE_INFRA)
             || !strcmp(mode, NM_SETTING_WIRELESS_MODE_AP)) {
-            if (ap_mode == NM_802_11_MODE_INFRA)
+            if (ap_mode == _NM_802_11_MODE_INFRA)
                 valid = TRUE;
         } else if (!strcmp(mode, NM_SETTING_WIRELESS_MODE_ADHOC)) {
-            if (ap_mode == NM_802_11_MODE_ADHOC)
+            if (ap_mode == _NM_802_11_MODE_ADHOC)
                 valid = TRUE;
             adhoc = TRUE;
         } else if (!strcmp(mode, NM_SETTING_WIRELESS_MODE_MESH)) {
-            if (ap_mode == NM_802_11_MODE_MESH)
+            if (ap_mode == _NM_802_11_MODE_MESH)
                 valid = TRUE;
             mesh = TRUE;
         }
@@ -600,10 +600,10 @@ nm_wifi_utils_complete_connection(GBytes *      ap_ssid,
         }
     } else {
         mode = NM_SETTING_WIRELESS_MODE_INFRA;
-        if (ap_mode == NM_802_11_MODE_ADHOC) {
+        if (ap_mode == _NM_802_11_MODE_ADHOC) {
             mode  = NM_SETTING_WIRELESS_MODE_ADHOC;
             adhoc = TRUE;
-        } else if (ap_mode == NM_802_11_MODE_MESH) {
+        } else if (ap_mode == _NM_802_11_MODE_MESH) {
             mode = NM_SETTING_WIRELESS_MODE_MESH;
             mesh = TRUE;
         }

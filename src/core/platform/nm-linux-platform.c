@@ -8303,15 +8303,15 @@ wifi_get_station(NMPlatform * platform,
     return nm_wifi_utils_get_station(wifi_data, out_bssid, out_quality, out_rate);
 }
 
-static NM80211Mode
+static _NM80211Mode
 wifi_get_mode(NMPlatform *platform, int ifindex)
 {
-    WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, NM_802_11_MODE_UNKNOWN);
+    WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, _NM_802_11_MODE_UNKNOWN);
     return nm_wifi_utils_get_mode(wifi_data);
 }
 
 static void
-wifi_set_mode(NMPlatform *platform, int ifindex, NM80211Mode mode)
+wifi_set_mode(NMPlatform *platform, int ifindex, _NM80211Mode mode)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, );
     nm_wifi_utils_set_mode(wifi_data, mode);

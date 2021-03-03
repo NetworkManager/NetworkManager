@@ -11,6 +11,7 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
+#include "libnm-base/nm-base.h"
 
 typedef enum {
     NM_IWD_NETWORK_SECURITY_OPEN,
@@ -21,7 +22,7 @@ typedef enum {
 
 gboolean nm_wifi_utils_complete_connection(GBytes *      ssid,
                                            const char *  bssid,
-                                           NM80211Mode   mode,
+                                           _NM80211Mode  mode,
                                            guint32       ap_freq,
                                            guint32       flags,
                                            guint32       wpa_flags,

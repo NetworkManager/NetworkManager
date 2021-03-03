@@ -99,7 +99,7 @@ create_device(NMDeviceFactory *     factory,
     if (!backend || !g_ascii_strcasecmp(backend, "wpa_supplicant")) {
         NMDevice *                device;
         _NMDeviceWifiCapabilities capabilities;
-        NM80211Mode               mode;
+        _NM80211Mode              mode;
 
         if (!nm_platform_wifi_get_capabilities(NM_PLATFORM_GET, plink->ifindex, &capabilities)) {
             nm_log_warn(LOGD_PLATFORM | LOGD_WIFI,
@@ -114,7 +114,7 @@ create_device(NMDeviceFactory *     factory,
          * them if/when they change to a handled type.
          */
         mode = nm_platform_wifi_get_mode(NM_PLATFORM_GET, plink->ifindex);
-        if (mode == NM_802_11_MODE_UNKNOWN) {
+        if (mode == _NM_802_11_MODE_UNKNOWN) {
             *out_ignore = TRUE;
             return NULL;
         }

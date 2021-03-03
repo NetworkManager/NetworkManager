@@ -7,6 +7,7 @@
 #define __NETWORKMANAGER_SUPPLICANT_TYPES_H__
 
 #include "c-list/src/c-list.h"
+#include "libnm-base/nm-base.h"
 
 #define NM_WPAS_DBUS_SERVICE   "fi.w1.wpa_supplicant1"
 #define NM_WPAS_DBUS_PATH      "/fi/w1/wpa_supplicant1"
@@ -178,7 +179,7 @@ typedef struct _NMSupplicantBssInfo {
 
     NM80211ApFlags ap_flags : 5;
 
-    NM80211Mode mode : 4;
+    _NM80211Mode mode : 4;
 
     bool bssid_valid : 1;
 

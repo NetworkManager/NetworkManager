@@ -33,9 +33,9 @@ NMWifiUtils *nm_wifi_utils_new(int ifindex, struct nl_sock *genl, gboolean check
 
 _NMDeviceWifiCapabilities nm_wifi_utils_get_caps(NMWifiUtils *data);
 
-NM80211Mode nm_wifi_utils_get_mode(NMWifiUtils *data);
+_NM80211Mode nm_wifi_utils_get_mode(NMWifiUtils *data);
 
-gboolean nm_wifi_utils_set_mode(NMWifiUtils *data, const NM80211Mode mode);
+gboolean nm_wifi_utils_set_mode(NMWifiUtils *data, const _NM80211Mode mode);
 
 /* Returns frequency in MHz */
 guint32 nm_wifi_utils_get_freq(NMWifiUtils *data);
