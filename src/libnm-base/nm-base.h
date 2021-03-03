@@ -153,6 +153,7 @@ nm_ethtool_id_is_ring(NMEthtoolID id)
 /*****************************************************************************/
 
 typedef enum {
+    /* Mirrors libnm's NMSettingWiredWakeOnLan */
     _NM_SETTING_WIRED_WAKE_ON_LAN_NONE      = 0,
     _NM_SETTING_WIRED_WAKE_ON_LAN_PHY       = 0x2,
     _NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST   = 0x4,
@@ -167,6 +168,27 @@ typedef enum {
     _NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE          = 0x8000,
     _NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS = 0x8001,
 } _NMSettingWiredWakeOnLan;
+
+typedef enum {
+    /* Mirrors libnm's NMSettingWirelessWakeOnWLan */
+    _NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE                 = 0,
+    _NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY                  = 0x2,
+    _NM_SETTING_WIRELESS_WAKE_ON_WLAN_DISCONNECT           = 0x4,
+    _NM_SETTING_WIRELESS_WAKE_ON_WLAN_MAGIC                = 0x8,
+    _NM_SETTING_WIRELESS_WAKE_ON_WLAN_GTK_REKEY_FAILURE    = 0x10,
+    _NM_SETTING_WIRELESS_WAKE_ON_WLAN_EAP_IDENTITY_REQUEST = 0x20,
+    _NM_SETTING_WIRELESS_WAKE_ON_WLAN_4WAY_HANDSHAKE       = 0x40,
+    _NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE       = 0x80,
+    _NM_SETTING_WIRELESS_WAKE_ON_WLAN_TCP                  = 0x100,
+
+    _NM_SETTING_WIRELESS_WAKE_ON_WLAN_ALL = 0x1FE,
+
+    _NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT = 0x1,
+    _NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE  = 0x8000,
+
+    _NM_SETTING_WIRELESS_WAKE_ON_WLAN_EXCLUSIVE_FLAGS =
+        _NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT | _NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE,
+} _NMSettingWirelessWakeOnWLan;
 
 /*****************************************************************************/
 
