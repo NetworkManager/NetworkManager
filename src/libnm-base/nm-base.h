@@ -190,6 +190,24 @@ typedef enum {
         _NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT | _NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE,
 } _NMSettingWirelessWakeOnWLan;
 
+typedef enum {
+    /* Mirrors libnm's NMDeviceWifiCapabilities */
+    _NM_WIFI_DEVICE_CAP_NONE          = 0x00000000,
+    _NM_WIFI_DEVICE_CAP_CIPHER_WEP40  = 0x00000001,
+    _NM_WIFI_DEVICE_CAP_CIPHER_WEP104 = 0x00000002,
+    _NM_WIFI_DEVICE_CAP_CIPHER_TKIP   = 0x00000004,
+    _NM_WIFI_DEVICE_CAP_CIPHER_CCMP   = 0x00000008,
+    _NM_WIFI_DEVICE_CAP_WPA           = 0x00000010,
+    _NM_WIFI_DEVICE_CAP_RSN           = 0x00000020,
+    _NM_WIFI_DEVICE_CAP_AP            = 0x00000040,
+    _NM_WIFI_DEVICE_CAP_ADHOC         = 0x00000080,
+    _NM_WIFI_DEVICE_CAP_FREQ_VALID    = 0x00000100,
+    _NM_WIFI_DEVICE_CAP_FREQ_2GHZ     = 0x00000200,
+    _NM_WIFI_DEVICE_CAP_FREQ_5GHZ     = 0x00000400,
+    _NM_WIFI_DEVICE_CAP_MESH          = 0x00001000,
+    _NM_WIFI_DEVICE_CAP_IBSS_RSN      = 0x00002000,
+} _NMDeviceWifiCapabilities;
+
 /*****************************************************************************/
 
 typedef enum {
