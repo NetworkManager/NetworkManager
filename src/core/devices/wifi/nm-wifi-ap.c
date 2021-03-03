@@ -517,7 +517,7 @@ nm_wifi_ap_to_string(const NMWifiAP *self, char *str_buf, gulong buf_len, gint64
                buf_len,
                "%17s %-35s [ %c %3u %3u%% %c%c %c%c W:%04X R:%04X ] %s sup:%s [nm:%s]",
                priv->address ?: "(none)",
-               (ssid_to_free = _nm_utils_ssid_to_string(priv->ssid)),
+               (ssid_to_free = _nm_utils_ssid_to_string_gbytes(priv->ssid)),
                (priv->mode == NM_802_11_MODE_ADHOC
                     ? '*'
                     : (priv->hotspot

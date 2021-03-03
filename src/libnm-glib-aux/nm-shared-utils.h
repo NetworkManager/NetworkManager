@@ -2495,4 +2495,11 @@ gboolean nm_utils_name_to_uid(const char *name, uid_t *out_uid);
 
 double nm_utils_exp10(gint16 e);
 
+/*****************************************************************************/
+
+gboolean _nm_utils_is_empty_ssid_arr(const guint8 *ssid, gsize len);
+gboolean _nm_utils_is_empty_ssid_gbytes(GBytes *ssid);
+char *   _nm_utils_ssid_to_string_arr(const guint8 *ssid, gsize len);
+char *   _nm_utils_ssid_to_string_gbytes(GBytes *ssid);
+
 #endif /* __NM_SHARED_UTILS_H__ */

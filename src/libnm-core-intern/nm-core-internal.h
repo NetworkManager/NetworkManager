@@ -484,10 +484,7 @@ gboolean _nm_dbus_error_has_name(GError *error, const char *dbus_error_name);
 
 /*****************************************************************************/
 
-char *   _nm_utils_ssid_to_string_arr(const guint8 *ssid, gsize len);
-char *   _nm_utils_ssid_to_string(GBytes *ssid);
-char *   _nm_utils_ssid_to_utf8(GBytes *ssid);
-gboolean _nm_utils_is_empty_ssid(GBytes *ssid);
+char *_nm_utils_ssid_to_utf8(GBytes *ssid);
 
 /*****************************************************************************/
 
