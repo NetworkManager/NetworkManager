@@ -1030,7 +1030,7 @@ managed=1
               device as busy for this time, as long as the device has no carrier.
               This delays startup-complete signal and NetworkManager-wait-online.
               Configuring this too high means to block NetworkManager-wait-online
-              longer then necessary when booting with cable unplugged. Configuring
+              longer than necessary when booting with cable unplugged. Configuring
               it too low, means that NetworkManager will declare startup-complete too
               soon, although carrier is about to come and auto-activation to kick in.
               Note that if a profile only has static IP configuration or Layer 3 configuration
