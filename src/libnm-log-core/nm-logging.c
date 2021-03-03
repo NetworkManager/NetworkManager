@@ -126,7 +126,7 @@ static union {
             /* nm_logging_setup ("INFO", LOGD_DEFAULT_STRING, NULL, NULL); */
             .log_level         = LOGL_INFO,
             .log_backend       = LOG_BACKEND_GLIB,
-            .syslog_identifier = "SYSLOG_IDENTIFIER=" G_LOG_DOMAIN,
+            .syslog_identifier = "SYSLOG_IDENTIFIER=NetworkManager",
             .prefix            = "",
         },
 };
