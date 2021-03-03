@@ -939,8 +939,8 @@ typedef struct {
 
 typedef struct {
     /* rtnl_link_vlan_get_id(), IFLA_VLAN_ID */
-    guint16     id;
-    NMVlanFlags flags;
+    guint16      id;
+    _NMVlanFlags flags;
 } NMPlatformLnkVlan;
 
 typedef struct {
@@ -1156,8 +1156,8 @@ typedef struct {
 
     gboolean (*link_vlan_change)(NMPlatform *            self,
                                  int                     ifindex,
-                                 NMVlanFlags             flags_mask,
-                                 NMVlanFlags             flags_set,
+                                 _NMVlanFlags            flags_mask,
+                                 _NMVlanFlags            flags_set,
                                  gboolean                ingress_reset_all,
                                  const NMVlanQosMapping *ingress_map,
                                  gsize                   n_ingress_map,
@@ -1937,8 +1937,8 @@ gboolean nm_platform_link_vlan_set_ingress_map(NMPlatform *self, int ifindex, in
 gboolean nm_platform_link_vlan_set_egress_map(NMPlatform *self, int ifindex, int from, int to);
 gboolean nm_platform_link_vlan_change(NMPlatform *            self,
                                       int                     ifindex,
-                                      NMVlanFlags             flags_mask,
-                                      NMVlanFlags             flags_set,
+                                      _NMVlanFlags            flags_mask,
+                                      _NMVlanFlags            flags_set,
                                       gboolean                ingress_reset_all,
                                       const NMVlanQosMapping *ingress_map,
                                       gsize                   n_ingress_map,

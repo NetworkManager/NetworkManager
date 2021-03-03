@@ -867,7 +867,7 @@ test_connection_no_match_vlan(void)
     /* Check that the connections do not match if VLAN flags differ */
     s_vlan_orig = nm_connection_get_setting_vlan(orig);
     g_assert(s_vlan_orig);
-    g_object_set(G_OBJECT(s_vlan_orig), NM_SETTING_VLAN_FLAGS, NM_VLAN_FLAG_REORDER_HEADERS, NULL);
+    g_object_set(G_OBJECT(s_vlan_orig), NM_SETTING_VLAN_FLAGS, _NM_VLAN_FLAG_REORDER_HEADERS, NULL);
 
     s_vlan_copy = nm_connection_get_setting_vlan(copy);
     g_assert(s_vlan_copy);

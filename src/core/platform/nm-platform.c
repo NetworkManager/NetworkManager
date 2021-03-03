@@ -2686,8 +2686,8 @@ nm_platform_sysctl_slave_get_option(NMPlatform *self, int ifindex, const char *o
 gboolean
 nm_platform_link_vlan_change(NMPlatform *            self,
                              int                     ifindex,
-                             NMVlanFlags             flags_mask,
-                             NMVlanFlags             flags_set,
+                             _NMVlanFlags            flags_mask,
+                             _NMVlanFlags            flags_set,
                              gboolean                ingress_reset_all,
                              const NMVlanQosMapping *ingress_map,
                              gsize                   n_ingress_map,

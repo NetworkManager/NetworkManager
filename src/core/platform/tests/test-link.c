@@ -2049,7 +2049,7 @@ _assert_xgress_qos_mappings_impl(int ifindex, gboolean is_ingress_map, int n_ent
     _assert_xgress_qos_mappings(ifindex, FALSE, n_entries, __VA_ARGS__)
 
 static void
-_assert_vlan_flags(int ifindex, NMVlanFlags flags)
+_assert_vlan_flags(int ifindex, _NMVlanFlags flags)
 {
     const NMPlatformLnkVlan *plnk;
 
@@ -2362,8 +2362,8 @@ test_vlan_set_xgress(void)
 
         g_assert(nm_platform_link_vlan_change(NM_PLATFORM_GET,
                                               ifindex,
-                                              NM_VLAN_FLAG_REORDER_HEADERS | NM_VLAN_FLAG_GVRP,
-                                              NM_VLAN_FLAG_REORDER_HEADERS,
+                                              _NM_VLAN_FLAG_REORDER_HEADERS | _NM_VLAN_FLAG_GVRP,
+                                              _NM_VLAN_FLAG_REORDER_HEADERS,
                                               TRUE,
                                               ingress_map,
                                               G_N_ELEMENTS(ingress_map),
@@ -2372,7 +2372,7 @@ test_vlan_set_xgress(void)
                                               G_N_ELEMENTS(egress_map)));
         _assert_ingress_qos_mappings(ifindex, 2, 4, 1, 6, 12);
         _assert_egress_qos_mappings(ifindex, 2, 1, 5, 3232, 7);
-        _assert_vlan_flags(ifindex, NM_VLAN_FLAG_REORDER_HEADERS);
+        _assert_vlan_flags(ifindex, _NM_VLAN_FLAG_REORDER_HEADERS);
     }
 
     {
@@ -2393,8 +2393,8 @@ test_vlan_set_xgress(void)
 
         g_assert(nm_platform_link_vlan_change(NM_PLATFORM_GET,
                                               ifindex,
-                                              NM_VLAN_FLAG_GVRP,
-                                              NM_VLAN_FLAG_GVRP,
+                                              _NM_VLAN_FLAG_GVRP,
+                                              _NM_VLAN_FLAG_GVRP,
                                               FALSE,
                                               ingress_map,
                                               G_N_ELEMENTS(ingress_map),
@@ -2403,7 +2403,7 @@ test_vlan_set_xgress(void)
                                               G_N_ELEMENTS(egress_map)));
         _assert_ingress_qos_mappings(ifindex, 2, 4, 1, 6, 12);
         _assert_egress_qos_mappings(ifindex, 2, 1, 7, 64, 4);
-        _assert_vlan_flags(ifindex, NM_VLAN_FLAG_REORDER_HEADERS | NM_VLAN_FLAG_GVRP);
+        _assert_vlan_flags(ifindex, _NM_VLAN_FLAG_REORDER_HEADERS | _NM_VLAN_FLAG_GVRP);
     }
 
     nmtstp_link_delete(NULL, -1, ifindex, DEVICE_NAME, TRUE);
