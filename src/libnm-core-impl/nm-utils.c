@@ -630,28 +630,7 @@ _nm_utils_ssid_to_utf8(GBytes *ssid)
 gboolean
 nm_utils_is_empty_ssid(const guint8 *ssid, gsize len)
 {
-    /* Single white space is for Linksys APs */
-    if (len == 1 && ssid[0] == ' ')
-        return TRUE;
-
-    /* Otherwise, if the entire ssid is 0, we assume it is hidden */
-    while (len--) {
-        if (ssid[len] != '\0')
-            return FALSE;
-    }
-    return TRUE;
-}
-
-gboolean
-_nm_utils_is_empty_ssid(GBytes *ssid)
-{
-    const guint8 *p;
-    gsize         l;
-
-    g_return_val_if_fail(ssid, FALSE);
-
-    p = g_bytes_get_data(ssid, &l);
-    return nm_utils_is_empty_ssid(p, l);
+    return _nm_utils_is_empty_ssid_arr(ssid, len);
 }
 
 #define ESSID_MAX_SIZE 32
@@ -693,38 +672,6 @@ nm_utils_escape_ssid(const guint8 *ssid, gsize len)
     }
     *d = '\0';
     return escaped;
-}
-
-char *
-_nm_utils_ssid_to_string_arr(const guint8 *ssid, gsize len)
-{
-    gs_free char *s_copy = NULL;
-    const char *  s_cnst;
-
-    if (len == 0)
-        return g_strdup("(empty)");
-
-    s_cnst =
-        nm_utils_buf_utf8safe_escape(ssid, len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL, &s_copy);
-    nm_assert(s_cnst);
-
-    if (nm_utils_is_empty_ssid(ssid, len))
-        return g_strdup_printf("\"%s\" (hidden)", s_cnst);
-
-    return g_strdup_printf("\"%s\"", s_cnst);
-}
-
-char *
-_nm_utils_ssid_to_string(GBytes *ssid)
-{
-    gconstpointer p;
-    gsize         l;
-
-    if (!ssid)
-        return g_strdup("(none)");
-
-    p = g_bytes_get_data(ssid, &l);
-    return _nm_utils_ssid_to_string_arr(p, l);
 }
 
 /**

@@ -1822,7 +1822,7 @@ _scan_kickoff(NMDeviceWifi *self)
 
             strv = g_new(char *, ssids->len + 1u);
             for (i = 0; i < ssids->len; i++)
-                strv[i] = _nm_utils_ssid_to_string(ssids->pdata[i]);
+                strv[i] = _nm_utils_ssid_to_string_gbytes(ssids->pdata[i]);
             strv[i] = NULL;
 
             nm_assert(ssids->len > 0);
@@ -1986,19 +1986,19 @@ supplicant_iface_bss_changed_cb(NMSupplicantInterface *iface,
 
         /* Let the manager try to fill in the SSID from seen-bssids lists */
         ssid = nm_wifi_ap_get_ssid(ap);
-        if (!ssid || _nm_utils_is_empty_ssid(ssid)) {
+        if (!ssid || _nm_utils_is_empty_ssid_gbytes(ssid)) {
             /* Try to fill the SSID from the AP database */
             try_fill_ssid_for_hidden_ap(self, ap);
 
             ssid = nm_wifi_ap_get_ssid(ap);
-            if (ssid && !_nm_utils_is_empty_ssid(ssid)) {
+            if (ssid && !_nm_utils_is_empty_ssid_gbytes(ssid)) {
                 gs_free char *s = NULL;
 
                 /* Yay, matched it, no longer treat as hidden */
                 _LOGD(LOGD_WIFI,
                       "matched hidden AP %s => %s",
                       nm_wifi_ap_get_address(ap),
-                      (s = _nm_utils_ssid_to_string(ssid)));
+                      (s = _nm_utils_ssid_to_string_gbytes(ssid)));
             } else {
                 /* Didn't have an entry for this AP in the database */
                 _LOGD(LOGD_WIFI, "failed to match hidden AP %s", nm_wifi_ap_get_address(ap));
@@ -2483,7 +2483,7 @@ supplicant_iface_state(NMDeviceWifi *             self,
                   "Activation: (wifi) Stage 2 of 5 (Device Configure) successful. %s %s",
                   priv->mode == NM_802_11_MODE_AP ? "Started Wi-Fi Hotspot"
                                                   : "Connected to wireless network",
-                  (ssid_str = _nm_utils_ssid_to_string(ssid)));
+                  (ssid_str = _nm_utils_ssid_to_string_gbytes(ssid)));
             nm_device_activate_schedule_stage3_ip_config_start(device);
         } else if (devstate == NM_DEVICE_STATE_ACTIVATED)
             periodic_update(self);
@@ -2598,9 +2598,9 @@ supplicant_iface_notify_current_bss(NMSupplicantInterface *iface,
         _LOGD(LOGD_WIFI,
               "roamed from BSSID %s (%s) to %s (%s)",
               old_bssid ?: "(none)",
-              (old_ssid_s = _nm_utils_ssid_to_string(old_ssid)),
+              (old_ssid_s = _nm_utils_ssid_to_string_gbytes(old_ssid)),
               new_bssid ?: "(none)",
-              (new_ssid_s = _nm_utils_ssid_to_string(new_ssid)));
+              (new_ssid_s = _nm_utils_ssid_to_string_gbytes(new_ssid)));
 
         if (new_bssid) {
             /* The new AP could be in a different layer 3 network
