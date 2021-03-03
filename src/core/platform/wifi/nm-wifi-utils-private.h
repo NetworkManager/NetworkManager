@@ -59,8 +59,8 @@ typedef struct {
 struct NMWifiUtils {
     GObject parent;
 
-    int                      ifindex;
-    NMDeviceWifiCapabilities caps;
+    int                       ifindex;
+    _NMDeviceWifiCapabilities caps;
 };
 
 #endif /* __WIFI_UTILS_PRIVATE_H__ */

@@ -3044,7 +3044,7 @@ nm_platform_link_tun_get_properties(NMPlatform *self, int ifindex, NMPlatformLnk
 }
 
 gboolean
-nm_platform_wifi_get_capabilities(NMPlatform *self, int ifindex, NMDeviceWifiCapabilities *caps)
+nm_platform_wifi_get_capabilities(NMPlatform *self, int ifindex, _NMDeviceWifiCapabilities *caps)
 {
     _CHECK_SELF(self, klass, FALSE);
 

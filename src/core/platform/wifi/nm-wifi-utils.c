@@ -50,10 +50,10 @@ nm_wifi_utils_new(int ifindex, struct nl_sock *genl, gboolean check_scan)
     return ret;
 }
 
-NMDeviceWifiCapabilities
+_NMDeviceWifiCapabilities
 nm_wifi_utils_get_caps(NMWifiUtils *data)
 {
-    g_return_val_if_fail(data != NULL, NM_WIFI_DEVICE_CAP_NONE);
+    g_return_val_if_fail(data != NULL, _NM_WIFI_DEVICE_CAP_NONE);
 
     return data->caps;
 }

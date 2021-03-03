@@ -637,36 +637,36 @@ wext_get_range_ifname(NMWifiUtilsWext *wext,
     return success;
 }
 
-#define WPA_CAPS                                                                              \
-    (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_CIPHER_CCMP | NM_WIFI_DEVICE_CAP_WPA \
-     | NM_WIFI_DEVICE_CAP_RSN)
+#define WPA_CAPS                                                                                 \
+    (_NM_WIFI_DEVICE_CAP_CIPHER_TKIP | _NM_WIFI_DEVICE_CAP_CIPHER_CCMP | _NM_WIFI_DEVICE_CAP_WPA \
+     | _NM_WIFI_DEVICE_CAP_RSN)
 
 static guint32
 wext_get_caps(NMWifiUtilsWext *wext, const char *ifname, struct iw_range *range)
 {
-    guint32 caps = NM_WIFI_DEVICE_CAP_NONE;
+    guint32 caps = _NM_WIFI_DEVICE_CAP_NONE;
 
-    g_return_val_if_fail(wext != NULL, NM_WIFI_DEVICE_CAP_NONE);
-    g_return_val_if_fail(range != NULL, NM_WIFI_DEVICE_CAP_NONE);
+    g_return_val_if_fail(wext != NULL, _NM_WIFI_DEVICE_CAP_NONE);
+    g_return_val_if_fail(range != NULL, _NM_WIFI_DEVICE_CAP_NONE);
 
     /* All drivers should support WEP by default */
-    caps |= NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104;
+    caps |= _NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | _NM_WIFI_DEVICE_CAP_CIPHER_WEP104;
 
     if (range->enc_capa & IW_ENC_CAPA_CIPHER_TKIP)
-        caps |= NM_WIFI_DEVICE_CAP_CIPHER_TKIP;
+        caps |= _NM_WIFI_DEVICE_CAP_CIPHER_TKIP;
 
     if (range->enc_capa & IW_ENC_CAPA_CIPHER_CCMP)
-        caps |= NM_WIFI_DEVICE_CAP_CIPHER_CCMP;
+        caps |= _NM_WIFI_DEVICE_CAP_CIPHER_CCMP;
 
     if (range->enc_capa & IW_ENC_CAPA_WPA)
-        caps |= NM_WIFI_DEVICE_CAP_WPA;
+        caps |= _NM_WIFI_DEVICE_CAP_WPA;
 
     if (range->enc_capa & IW_ENC_CAPA_WPA2)
-        caps |= NM_WIFI_DEVICE_CAP_RSN;
+        caps |= _NM_WIFI_DEVICE_CAP_RSN;
 
     /* Check for cipher support but not WPA support */
-    if ((caps & (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
-        && !(caps & (NM_WIFI_DEVICE_CAP_WPA | NM_WIFI_DEVICE_CAP_RSN))) {
+    if ((caps & (_NM_WIFI_DEVICE_CAP_CIPHER_TKIP | _NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
+        && !(caps & (_NM_WIFI_DEVICE_CAP_WPA | _NM_WIFI_DEVICE_CAP_RSN))) {
         _LOGW(LOGD_WIFI,
               "%s: device supports WPA ciphers but not WPA protocol; WPA unavailable.",
               ifname);
@@ -674,8 +674,8 @@ wext_get_caps(NMWifiUtilsWext *wext, const char *ifname, struct iw_range *range)
     }
 
     /* Check for WPA support but not cipher support */
-    if ((caps & (NM_WIFI_DEVICE_CAP_WPA | NM_WIFI_DEVICE_CAP_RSN))
-        && !(caps & (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_CIPHER_CCMP))) {
+    if ((caps & (_NM_WIFI_DEVICE_CAP_WPA | _NM_WIFI_DEVICE_CAP_RSN))
+        && !(caps & (_NM_WIFI_DEVICE_CAP_CIPHER_TKIP | _NM_WIFI_DEVICE_CAP_CIPHER_CCMP))) {
         _LOGW(LOGD_WIFI,
               "%s: device supports WPA protocol but not WPA ciphers; WPA unavailable.",
               ifname);
@@ -686,7 +686,7 @@ wext_get_caps(NMWifiUtilsWext *wext, const char *ifname, struct iw_range *range)
      * (other than actually trying to do it), so just assume that
      * Ad-Hoc is supported and AP isn't.
      */
-    caps |= NM_WIFI_DEVICE_CAP_ADHOC;
+    caps |= _NM_WIFI_DEVICE_CAP_ADHOC;
 
     return caps;
 }
@@ -793,11 +793,11 @@ nm_wifi_utils_wext_new(int ifindex, gboolean check_scan)
 
     wext->parent.caps = wext_get_caps(wext, ifname, &range);
     if (freq_valid)
-        wext->parent.caps |= NM_WIFI_DEVICE_CAP_FREQ_VALID;
+        wext->parent.caps |= _NM_WIFI_DEVICE_CAP_FREQ_VALID;
     if (has_2ghz)
-        wext->parent.caps |= NM_WIFI_DEVICE_CAP_FREQ_2GHZ;
+        wext->parent.caps |= _NM_WIFI_DEVICE_CAP_FREQ_2GHZ;
     if (has_5ghz)
-        wext->parent.caps |= NM_WIFI_DEVICE_CAP_FREQ_5GHZ;
+        wext->parent.caps |= _NM_WIFI_DEVICE_CAP_FREQ_5GHZ;
 
     _LOGI(LOGD_PLATFORM | LOGD_WIFI, "(%s): using WEXT for Wi-Fi device control", ifname);
 
