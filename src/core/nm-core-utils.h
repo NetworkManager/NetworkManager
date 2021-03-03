@@ -342,49 +342,6 @@ nm_utils_arp_type_get_hwaddr_relevant_part(int arp_type, const guint8 **hwaddr, 
 
 /*****************************************************************************/
 
-/* IPv6 Interface Identifier helpers */
-
-/**
- * NMUtilsIPv6IfaceId:
- * @id: convenience member for validity checking; never use directly
- * @id_u8: the 64-bit Interface Identifier
- *
- * Holds a 64-bit IPv6 Interface Identifier.  The IID is a sequence of bytes
- * and should not normally be treated as a %guint64, but this is done for
- * convenience of validity checking and initialization.
- */
-struct _NMUtilsIPv6IfaceId {
-    union {
-        guint64 id;
-        guint8  id_u8[8];
-    };
-};
-
-#define NM_UTILS_IPV6_IFACE_ID_INIT \
-    {                               \
-        {                           \
-            .id = 0                 \
-        }                           \
-    }
-
-void nm_utils_ipv6_addr_set_interface_identifier(struct in6_addr *        addr,
-                                                 const NMUtilsIPv6IfaceId iid);
-
-void nm_utils_ipv6_interface_identifier_get_from_addr(NMUtilsIPv6IfaceId *   iid,
-                                                      const struct in6_addr *addr);
-
-gboolean nm_utils_ipv6_interface_identifier_get_from_token(NMUtilsIPv6IfaceId *iid,
-                                                           const char *        token);
-
-const char *nm_utils_inet6_interface_identifier_to_token(NMUtilsIPv6IfaceId iid,
-                                                         char buf[static INET6_ADDRSTRLEN]);
-
-gboolean nm_utils_get_ipv6_interface_identifier(NMLinkType          link_type,
-                                                const guint8 *      hwaddr,
-                                                guint               len,
-                                                guint               dev_id,
-                                                NMUtilsIPv6IfaceId *out_iid);
-
 typedef enum {
     /* The stable type. Note that this value is encoded in the
      * generated addresses, thus the numbers MUST not change.

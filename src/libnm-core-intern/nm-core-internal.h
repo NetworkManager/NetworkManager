@@ -631,8 +631,6 @@ gboolean _nm_setting_bond_option_supported(const char *option, NMBondMode mode);
 
 NMSettingBluetooth *_nm_connection_get_setting_bluetooth_for_nap(NMConnection *connection);
 
-gboolean _nm_utils_inet6_is_token(const struct in6_addr *in6addr);
-
 /*****************************************************************************/
 
 NMTeamLinkWatcher *_nm_team_link_watcher_ref(NMTeamLinkWatcher *watcher);
