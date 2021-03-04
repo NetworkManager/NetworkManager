@@ -11,7 +11,6 @@
 
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nm-utils.h"
-#include "libnm-core-intern/nm-core-types-internal.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-private.h"
 #include "nm-setting-wired.h"

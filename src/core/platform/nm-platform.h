@@ -7,7 +7,6 @@
 #define __NETWORKMANAGER_PLATFORM_H__
 
 #include "nm-dbus-interface.h"
-#include "libnm-core-intern/nm-core-types-internal.h"
 
 #include "libnm-platform/nmp-base.h"
 #include "libnm-base/nm-base.h"

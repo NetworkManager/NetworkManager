@@ -23,7 +23,6 @@
 #include "libnm-base/nm-base.h"
 #include "nm-connection.h"
 #include "nm-core-enum-types.h"
-#include "nm-core-types-internal.h"
 #include "nm-meta-setting-base.h"
 #include "nm-setting-6lowpan.h"
 #include "nm-setting-8021x.h"
