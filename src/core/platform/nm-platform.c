@@ -1756,7 +1756,9 @@ nm_platform_link_set_address(NMPlatform *self, int ifindex, gconstpointer addres
     g_return_val_if_fail(address, -NME_BUG);
     g_return_val_if_fail(length > 0, -NME_BUG);
 
-    _LOG3D("link: setting hardware address to %s", (mac = nm_utils_hwaddr_ntoa(address, length)));
+    _LOG3D("link: setting hardware address to %s",
+           _nm_utils_hwaddr_ntoa_maybe_a(address, length, &mac));
+
     return klass->link_set_address(self, ifindex, address, length);
 }
 
