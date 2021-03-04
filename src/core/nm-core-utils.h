@@ -400,24 +400,6 @@ guint32 nm_utils_lifetime_get(guint32  timestamp,
 
 /*****************************************************************************/
 
-#define NM_IPV4LL_NETWORK ((in_addr_t)(htonl(0xA9FE0000lu)))
-#define NM_IPV4LL_NETMASK ((in_addr_t)(htonl(0xFFFF0000lu)))
-
-static inline gboolean
-nm_utils_ip4_address_is_link_local(in_addr_t addr)
-{
-    return (addr & NM_IPV4LL_NETMASK) == NM_IPV4LL_NETWORK;
-}
-
-static inline gboolean
-nm_utils_ip4_address_is_zeronet(in_addr_t network)
-{
-    /* Same as ipv4_is_zeronet() from kernel's include/linux/in.h. */
-    return (network & htonl(0xFF000000u)) == htonl(0x00000000u);
-}
-
-/*****************************************************************************/
-
 const char *nm_utils_dnsmasq_status_to_string(int status, char *dest, gsize size);
 
 void nm_utils_get_reverse_dns_domains_ip_4(guint32 ip, guint8 plen, GPtrArray *domains);
