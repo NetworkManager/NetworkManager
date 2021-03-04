@@ -7359,7 +7359,7 @@ link_add(NMPlatform *           platform,
          * bond0 automatically.
          */
         if (!g_file_test("/sys/class/net/bonding_masters", G_FILE_TEST_EXISTS))
-            (void) nm_utils_modprobe(NULL, TRUE, "bonding", "max_bonds=0", NULL);
+            (void) nmp_utils_modprobe(NULL, TRUE, "bonding", "max_bonds=0", NULL);
     }
 
     nlmsg = _nl_msg_new_link(RTM_NEWLINK, NLM_F_CREATE | NLM_F_EXCL, 0, name);

@@ -11634,7 +11634,7 @@ share_init(NMDevice *self, GError **error)
     }
 
     for (i = 0; i < G_N_ELEMENTS(modules); i++)
-        nm_utils_modprobe(NULL, FALSE, modules[i], NULL);
+        nmp_utils_modprobe(NULL, FALSE, modules[i], NULL);
 
     return TRUE;
 }
