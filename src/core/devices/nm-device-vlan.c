@@ -21,6 +21,7 @@
 #include "nm-manager.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "platform/nmp-object.h"
+#include "libnm-platform/nm-platform-utils.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceVlan
 #include "nm-device-logging.h"
@@ -674,7 +675,7 @@ get_connection_iface(NMDeviceFactory *factory, NMConnection *connection, const c
      * device, we create one for it using the VLAN ID and the parent
      * interface's name.
      */
-    return nm_utils_new_vlan_name(parent_iface, nm_setting_vlan_get_id(s_vlan));
+    return nmp_utils_new_vlan_name(parent_iface, nm_setting_vlan_get_id(s_vlan));
 }
 
 NM_DEVICE_FACTORY_DEFINE_INTERNAL(
