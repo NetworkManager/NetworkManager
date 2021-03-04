@@ -8,6 +8,7 @@
 #define __NETWORKMANAGER_CONNECTIVITY_H__
 
 #include "nm-dbus-interface.h"
+#include "libnm-platform/nmp-base.h"
 
 /*****************************************************************************/
 

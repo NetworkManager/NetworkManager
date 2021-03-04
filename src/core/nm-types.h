@@ -77,70 +77,6 @@ typedef enum {
     NM_ACTIVATION_REASON_USER_REQUEST,
 } NMActivationReason;
 
-/* platform */
-typedef struct _NMPlatform               NMPlatform;
-typedef struct _NMPlatformObject         NMPlatformObject;
-typedef struct _NMPlatformObjWithIfindex NMPlatformObjWithIfindex;
-typedef struct _NMPlatformIP4Address     NMPlatformIP4Address;
-typedef struct _NMPlatformIP4Route       NMPlatformIP4Route;
-typedef struct _NMPlatformIP6Address     NMPlatformIP6Address;
-typedef struct _NMPlatformIP6Route       NMPlatformIP6Route;
-typedef struct _NMPlatformLink           NMPlatformLink;
-typedef struct _NMPObject                NMPObject;
-
-typedef enum {
-    NMP_OBJECT_TYPE_UNKNOWN,
-    NMP_OBJECT_TYPE_LINK,
-
-#define NMP_OBJECT_TYPE_IP_ADDRESS(is_ipv4) \
-    ((is_ipv4) ? NMP_OBJECT_TYPE_IP4_ADDRESS : NMP_OBJECT_TYPE_IP6_ADDRESS)
-    NMP_OBJECT_TYPE_IP4_ADDRESS,
-    NMP_OBJECT_TYPE_IP6_ADDRESS,
-
-#define NMP_OBJECT_TYPE_IP_ROUTE(is_ipv4) \
-    ((is_ipv4) ? NMP_OBJECT_TYPE_IP4_ROUTE : NMP_OBJECT_TYPE_IP6_ROUTE)
-    NMP_OBJECT_TYPE_IP4_ROUTE,
-    NMP_OBJECT_TYPE_IP6_ROUTE,
-
-    NMP_OBJECT_TYPE_ROUTING_RULE,
-
-    NMP_OBJECT_TYPE_QDISC,
-
-    NMP_OBJECT_TYPE_TFILTER,
-
-    NMP_OBJECT_TYPE_LNK_BRIDGE,
-    NMP_OBJECT_TYPE_LNK_GRE,
-    NMP_OBJECT_TYPE_LNK_GRETAP,
-    NMP_OBJECT_TYPE_LNK_INFINIBAND,
-    NMP_OBJECT_TYPE_LNK_IP6TNL,
-    NMP_OBJECT_TYPE_LNK_IP6GRE,
-    NMP_OBJECT_TYPE_LNK_IP6GRETAP,
-    NMP_OBJECT_TYPE_LNK_IPIP,
-    NMP_OBJECT_TYPE_LNK_MACSEC,
-    NMP_OBJECT_TYPE_LNK_MACVLAN,
-    NMP_OBJECT_TYPE_LNK_MACVTAP,
-    NMP_OBJECT_TYPE_LNK_SIT,
-    NMP_OBJECT_TYPE_LNK_TUN,
-    NMP_OBJECT_TYPE_LNK_VLAN,
-    NMP_OBJECT_TYPE_LNK_VRF,
-    NMP_OBJECT_TYPE_LNK_VXLAN,
-    NMP_OBJECT_TYPE_LNK_WIREGUARD,
-
-    __NMP_OBJECT_TYPE_LAST,
-    NMP_OBJECT_TYPE_MAX = __NMP_OBJECT_TYPE_LAST - 1,
-} NMPObjectType;
-
-static inline guint32
-nmp_object_type_to_flags(NMPObjectType obj_type)
-{
-    G_STATIC_ASSERT_EXPR(NMP_OBJECT_TYPE_MAX < 32);
-
-    nm_assert(_NM_INT_NOT_NEGATIVE(obj_type));
-    nm_assert(obj_type < NMP_OBJECT_TYPE_MAX);
-
-    return ((guint32) 1u) << obj_type;
-}
-
 /**
  * NMIPConfigMergeFlags:
  * @NM_IP_CONFIG_MERGE_DEFAULT: no flags set
@@ -158,23 +94,6 @@ typedef enum {
     NM_IP_CONFIG_MERGE_NO_DNS            = (1LL << 2),
     NM_IP_CONFIG_MERGE_EXTERNAL          = (1LL << 3),
 } NMIPConfigMergeFlags;
-
-/**
- * NMIPRouteTableSyncMode:
- * @NM_IP_ROUTE_TABLE_SYNC_MODE_NONE: indicate an invalid setting.
- * @NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN: only the main table is synced. For all
- *   other tables, NM won't delete any extra routes.
- * @NM_IP_ROUTE_TABLE_SYNC_MODE_FULL: NM will sync all tables, except the
- *   local table (255).
- * @NM_IP_ROUTE_TABLE_SYNC_MODE_ALL: NM will sync all tables, including the
- *   local table (255).
- */
-typedef enum {
-    NM_IP_ROUTE_TABLE_SYNC_MODE_NONE = 0,
-    NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN = 1,
-    NM_IP_ROUTE_TABLE_SYNC_MODE_FULL = 2,
-    NM_IP_ROUTE_TABLE_SYNC_MODE_ALL  = 3,
-} NMIPRouteTableSyncMode;
 
 /* settings */
 typedef struct _NMAgentManager       NMAgentManager;
