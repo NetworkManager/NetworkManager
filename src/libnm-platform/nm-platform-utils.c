@@ -20,6 +20,7 @@
 
 #include "libnm-base/nm-ethtool-base.h"
 #include "libnm-log-core/nm-logging.h"
+#include "libnm-glib-aux/nm-time-utils.h"
 
 /*****************************************************************************/
 
@@ -1865,4 +1866,89 @@ nmp_utils_new_infiniband_name(char *name, const char *parent_name, int p_key)
      * the name. We do the same. See ipoib_vlan_add().  */
     g_snprintf(name, IFNAMSIZ, "%s.%04x", parent_name, p_key);
     return name;
+}
+
+/*****************************************************************************/
+
+/**
+ * Takes a pair @timestamp and @duration, and returns the remaining duration based
+ * on the new timestamp @now.
+ */
+guint32
+nmp_utils_lifetime_rebase_relative_time_on_now(guint32 timestamp, guint32 duration, gint32 now)
+{
+    gint64 t;
+
+    nm_assert(now >= 0);
+
+    if (duration == NM_PLATFORM_LIFETIME_PERMANENT)
+        return NM_PLATFORM_LIFETIME_PERMANENT;
+
+    if (timestamp == 0) {
+        /* if the @timestamp is zero, assume it was just left unset and that the relative
+         * @duration starts counting from @now. This is convenient to construct an address
+         * and print it in nm_platform_ip4_address_to_string().
+         *
+         * In general it does not make sense to set the @duration without anchoring at
+         * @timestamp because you don't know the absolute expiration time when looking
+         * at the address at a later moment. */
+        timestamp = now;
+    }
+
+    /* For timestamp > now, just accept it and calculate the expected(?) result. */
+    t = (gint64) timestamp + (gint64) duration - (gint64) now;
+
+    if (t <= 0)
+        return 0;
+    if (t >= NM_PLATFORM_LIFETIME_PERMANENT)
+        return NM_PLATFORM_LIFETIME_PERMANENT - 1;
+    return t;
+}
+
+guint32
+nmp_utils_lifetime_get(guint32  timestamp,
+                       guint32  lifetime,
+                       guint32  preferred,
+                       gint32   now,
+                       guint32 *out_preferred)
+{
+    guint32 t_lifetime, t_preferred;
+
+    nm_assert(now >= 0);
+
+    if (timestamp == 0 && lifetime == 0) {
+        /* We treat lifetime==0 && timestamp==0 addresses as permanent addresses to allow easy
+         * creation of such addresses (without requiring to set the lifetime fields to
+         * NM_PLATFORM_LIFETIME_PERMANENT). The real lifetime==0 addresses (E.g. DHCP6 telling us
+         * to drop an address will have timestamp set.
+         */
+        NM_SET_OUT(out_preferred, NM_PLATFORM_LIFETIME_PERMANENT);
+        g_return_val_if_fail(preferred == 0, NM_PLATFORM_LIFETIME_PERMANENT);
+        return NM_PLATFORM_LIFETIME_PERMANENT;
+    }
+
+    if (now <= 0)
+        now = nm_utils_get_monotonic_timestamp_sec();
+
+    t_lifetime = nmp_utils_lifetime_rebase_relative_time_on_now(timestamp, lifetime, now);
+    if (!t_lifetime) {
+        NM_SET_OUT(out_preferred, 0);
+        return 0;
+    }
+
+    t_preferred = nmp_utils_lifetime_rebase_relative_time_on_now(timestamp, preferred, now);
+
+    NM_SET_OUT(out_preferred, MIN(t_preferred, t_lifetime));
+
+    /* Assert that non-permanent addresses have a (positive) @timestamp. nmp_utils_lifetime_rebase_relative_time_on_now()
+     * treats addresses with timestamp 0 as *now*. Addresses passed to _address_get_lifetime() always
+     * should have a valid @timestamp, otherwise on every re-sync, their lifetime will be extended anew.
+     */
+    g_return_val_if_fail(timestamp != 0
+                             || (lifetime == NM_PLATFORM_LIFETIME_PERMANENT
+                                 && preferred == NM_PLATFORM_LIFETIME_PERMANENT),
+                         t_lifetime);
+    g_return_val_if_fail(t_preferred <= t_lifetime, t_lifetime);
+
+    return t_lifetime;
 }

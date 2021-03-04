@@ -73,4 +73,13 @@ int nmp_utils_sysctl_open_netdir(int ifindex, const char *ifname_guess, char *ou
 char *      nmp_utils_new_vlan_name(const char *parent_iface, guint32 vlan_id);
 const char *nmp_utils_new_infiniband_name(char *name, const char *parent_name, int p_key);
 
+guint32
+nmp_utils_lifetime_rebase_relative_time_on_now(guint32 timestamp, guint32 duration, gint32 now);
+
+guint32 nmp_utils_lifetime_get(guint32  timestamp,
+                               guint32  lifetime,
+                               guint32  preferred,
+                               gint32   now,
+                               guint32 *out_preferred);
+
 #endif /* __NM_PLATFORM_UTILS_H__ */

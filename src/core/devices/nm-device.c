@@ -5216,11 +5216,11 @@ ndisc_set_router_config(NMNDisc *ndisc, NMDevice *self)
         if (addr->plen != 64)
             continue;
 
-        lifetime = nm_utils_lifetime_get(addr->timestamp,
-                                         addr->lifetime,
-                                         addr->preferred,
-                                         NM_NDISC_EXPIRY_BASE_TIMESTAMP / 1000,
-                                         &preferred);
+        lifetime = nmp_utils_lifetime_get(addr->timestamp,
+                                          addr->lifetime,
+                                          addr->preferred,
+                                          NM_NDISC_EXPIRY_BASE_TIMESTAMP / 1000,
+                                          &preferred);
         if (!lifetime)
             continue;
 

@@ -3737,7 +3737,7 @@ _addr_array_clean_expired(int          addr_family,
             goto clear_and_next;
         }
 
-        if (!nm_utils_lifetime_get(a->timestamp, a->lifetime, a->preferred, now, NULL))
+        if (!nmp_utils_lifetime_get(a->timestamp, a->lifetime, a->preferred, now, NULL))
             goto clear_and_next;
 
         if (idx) {
@@ -4222,11 +4222,11 @@ next_plat:;
 
         known_address = NMP_OBJECT_CAST_IPX_ADDRESS(o);
 
-        lifetime = nm_utils_lifetime_get(known_address->ax.timestamp,
-                                         known_address->ax.lifetime,
-                                         known_address->ax.preferred,
-                                         now,
-                                         &preferred);
+        lifetime = nmp_utils_lifetime_get(known_address->ax.timestamp,
+                                          known_address->ax.lifetime,
+                                          known_address->ax.preferred,
+                                          now,
+                                          &preferred);
         nm_assert(lifetime > 0);
 
         if (IS_IPv4) {
@@ -5421,7 +5421,7 @@ _lifetime_to_string(guint32 timestamp, guint32 lifetime, gint32 now, char *buf, 
     g_snprintf(buf,
                buf_size,
                "%usec",
-               nm_utils_lifetime_rebase_relative_time_on_now(timestamp, lifetime, now));
+               nmp_utils_lifetime_rebase_relative_time_on_now(timestamp, lifetime, now));
     return buf;
 }
 
