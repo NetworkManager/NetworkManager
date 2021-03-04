@@ -574,13 +574,22 @@ src_libnm_platform_libnm_platform_la_SOURCES = \
 	\
 	src/linux-headers/nl802154.h \
 	\
+	src/libnm-platform/nm-linux-platform.c \
+	src/libnm-platform/nm-linux-platform.h \
 	src/libnm-platform/nm-netlink.c \
 	src/libnm-platform/nm-netlink.h \
+	src/libnm-platform/nm-platform-private.h \
 	src/libnm-platform/nm-platform-utils.c \
 	src/libnm-platform/nm-platform-utils.h \
+	src/libnm-platform/nm-platform.c \
+	src/libnm-platform/nm-platform.h \
 	src/libnm-platform/nmp-base.h \
 	src/libnm-platform/nmp-netns.c \
 	src/libnm-platform/nmp-netns.h \
+	src/libnm-platform/nmp-object.c \
+	src/libnm-platform/nmp-object.h \
+	src/libnm-platform/nmp-rules-manager.c \
+	src/libnm-platform/nmp-rules-manager.h \
 	src/libnm-platform/wifi/nm-wifi-utils-nl80211.c \
 	src/libnm-platform/wifi/nm-wifi-utils-nl80211.h \
 	src/libnm-platform/wifi/nm-wifi-utils-private.h \
@@ -588,6 +597,7 @@ src_libnm_platform_libnm_platform_la_SOURCES = \
 	src/libnm-platform/wifi/nm-wifi-utils.h \
 	src/libnm-platform/wpan/nm-wpan-utils.c \
 	src/libnm-platform/wpan/nm-wpan-utils.h \
+	\
 	$(NULL)
 
 if WITH_WEXT
@@ -2325,16 +2335,6 @@ src_core_libNetworkManagerBase_la_SOURCES = \
 	\
 	src/core/NetworkManagerUtils.c \
 	src/core/NetworkManagerUtils.h \
-	\
-	src/core/platform/nmp-object.c \
-	src/core/platform/nmp-object.h \
-	src/core/platform/nm-platform.c \
-	src/core/platform/nm-platform.h \
-	src/core/platform/nm-platform-private.h \
-	src/core/platform/nm-linux-platform.c \
-	src/core/platform/nm-linux-platform.h \
-	src/core/platform/nmp-rules-manager.c \
-	src/core/platform/nmp-rules-manager.h \
 	\
 	src/core/ndisc/nm-lndp-ndisc.c \
 	src/core/ndisc/nm-lndp-ndisc.h \

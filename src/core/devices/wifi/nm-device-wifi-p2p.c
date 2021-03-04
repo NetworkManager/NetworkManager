@@ -23,8 +23,8 @@
 #include "nm-setting-wifi-p2p.h"
 #include "nm-utils.h"
 #include "nm-wifi-p2p-peer.h"
-#include "platform/nm-platform.h"
-#include "platform/nmp-object.h"
+#include "libnm-platform/nm-platform.h"
+#include "libnm-platform/nmp-object.h"
 #include "settings/nm-settings.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceWifiP2P

@@ -1,12 +1,13 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 
-#include "src/core/nm-default-daemon.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nmp-rules-manager.h"
 
 #include <linux/fib_rules.h>
 #include <linux/rtnetlink.h>
 
+#include "libnm-log-core/nm-logging.h"
 #include "libnm-std-aux/c-list-util.h"
 #include "nmp-object.h"
 

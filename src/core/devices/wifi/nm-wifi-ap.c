@@ -19,7 +19,7 @@
 #include "nm-setting-wireless.h"
 #include "nm-utils.h"
 #include "nm-wifi-utils.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "supplicant/nm-supplicant-interface.h"
 
 #define PROTO_WPA "wpa"

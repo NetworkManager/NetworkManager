@@ -11,7 +11,7 @@
 
 #include "nm-act-request.h"
 #include "nm-device-private.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-manager.h"
 #include "nm-setting-macsec.h"

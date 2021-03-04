@@ -13,7 +13,7 @@
 #include <linux/rtnetlink.h>
 
 #include "libnm-core-intern/nm-core-internal.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "nm-setting-connection.h"
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device-private.h"

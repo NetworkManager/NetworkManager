@@ -3,7 +3,7 @@
  * Copyright (C) 2015 - 2018 Red Hat, Inc.
  */
 
-#include "src/core/nm-default-daemon.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nmp-object.h"
 

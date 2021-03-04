@@ -33,7 +33,7 @@
 #include "nm-setting-ip4-config.h"
 #include "nm-ip4-config.h"
 #include "nm-setting-ip6-config.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "nm-auth-utils.h"
 #include "settings/nm-settings-connection.h"
 #include "settings/nm-settings.h"

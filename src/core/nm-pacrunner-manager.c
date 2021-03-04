@@ -9,7 +9,7 @@
 
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "nm-dbus-manager.h"
 #include "nm-proxy-config.h"
 #include "nm-ip4-config.h"

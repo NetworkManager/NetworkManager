@@ -6,7 +6,7 @@
 #ifndef __NETWORKMANAGER_DNSMASQ_UTILS_H__
 #define __NETWORKMANAGER_DNSMASQ_UTILS_H__
 
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 
 gboolean nm_dnsmasq_utils_get_range(const NMPlatformIP4Address *addr,
                                     char *                      out_first,

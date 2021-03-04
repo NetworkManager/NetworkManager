@@ -9,7 +9,7 @@
 
 #include "nm-device-private.h"
 #include "settings/nm-settings.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-setting-6lowpan.h"
 #include "nm-utils.h"

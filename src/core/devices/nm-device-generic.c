@@ -8,7 +8,7 @@
 #include "nm-device-generic.h"
 
 #include "nm-device-private.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "libnm-core-intern/nm-core-internal.h"
 
 /*****************************************************************************/

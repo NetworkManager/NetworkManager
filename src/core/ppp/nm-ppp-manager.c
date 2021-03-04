@@ -28,7 +28,7 @@
 #include <linux/rtnetlink.h>
 
 #include "NetworkManagerUtils.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nm-platform-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-act-request.h"
