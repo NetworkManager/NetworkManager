@@ -235,19 +235,6 @@ void nm_utils_log_connection_diff(NMConnection *connection,
                                   const char *  prefix,
                                   const char *  dbus_path);
 
-gboolean    nm_utils_is_valid_path_component(const char *name);
-const char *NM_ASSERT_VALID_PATH_COMPONENT(const char *name);
-
-#define NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE 100
-
-const char *
-nm_utils_sysctl_ip_conf_path(int addr_family, char *buf, const char *ifname, const char *property);
-
-gboolean nm_utils_sysctl_ip_conf_is_path(int         addr_family,
-                                         const char *path,
-                                         const char *ifname,
-                                         const char *property);
-
 gboolean nm_utils_is_specific_hostname(const char *name);
 
 struct _NMUuid;
