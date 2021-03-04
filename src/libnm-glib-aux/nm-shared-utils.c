@@ -1152,6 +1152,15 @@ nm_utils_ipaddr_is_normalized(int addr_family, const char *str_addr)
 
 /*****************************************************************************/
 
+NM_UTILS_ENUM2STR_DEFINE(nm_icmpv6_router_pref_to_string,
+                         NMIcmpv6RouterPref,
+                         NM_UTILS_ENUM2STR(NM_ICMPV6_ROUTER_PREF_LOW, "low"),
+                         NM_UTILS_ENUM2STR(NM_ICMPV6_ROUTER_PREF_MEDIUM, "medium"),
+                         NM_UTILS_ENUM2STR(NM_ICMPV6_ROUTER_PREF_HIGH, "high"),
+                         NM_UTILS_ENUM2STR(NM_ICMPV6_ROUTER_PREF_INVALID, "invalid"), );
+
+/*****************************************************************************/
+
 /**
  * nm_g_ascii_strtoll()
  * @nptr: the string to parse

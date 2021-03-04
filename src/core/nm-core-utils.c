@@ -4860,13 +4860,6 @@ nm_wifi_utils_level_to_quality(int val)
 
 /*****************************************************************************/
 
-NM_UTILS_ENUM2STR_DEFINE(nm_icmpv6_router_pref_to_string,
-                         NMIcmpv6RouterPref,
-                         NM_UTILS_ENUM2STR(NM_ICMPV6_ROUTER_PREF_LOW, "low"),
-                         NM_UTILS_ENUM2STR(NM_ICMPV6_ROUTER_PREF_MEDIUM, "medium"),
-                         NM_UTILS_ENUM2STR(NM_ICMPV6_ROUTER_PREF_HIGH, "high"),
-                         NM_UTILS_ENUM2STR(NM_ICMPV6_ROUTER_PREF_INVALID, "invalid"), );
-
 NM_UTILS_LOOKUP_STR_DEFINE(nm_activation_type_to_string,
                            NMActivationType,
                            NM_UTILS_LOOKUP_DEFAULT_WARN("(unknown)"),
