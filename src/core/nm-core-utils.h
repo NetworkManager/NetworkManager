@@ -371,15 +371,6 @@ void             _nm_utils_set_testing(NMUtilsTestFlags flags);
 
 void nm_utils_g_value_set_strv(GValue *value, GPtrArray *strings);
 
-guint32
-nm_utils_lifetime_rebase_relative_time_on_now(guint32 timestamp, guint32 duration, gint32 now);
-
-guint32 nm_utils_lifetime_get(guint32  timestamp,
-                              guint32  lifetime,
-                              guint32  preferred,
-                              gint32   now,
-                              guint32 *out_preferred);
-
 /*****************************************************************************/
 
 const char *nm_utils_dnsmasq_status_to_string(int status, char *dest, gsize size);
