@@ -23,6 +23,7 @@
 #include "platform/nmp-object.h"
 
 #include "platform/nm-platform.h"
+#include "platform/nm-linux-platform.h"
 #include "nm-auth-utils.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
@@ -1828,4 +1829,64 @@ nm_utils_share_rules_add_all_rules(NMUtilsShareRules *self,
         "filter",
         "INPUT --in-interface %s --protocol tcp --destination-port 53 --jump ACCEPT",
         ip_iface);
+}
+
+/*****************************************************************************/
+
+/* Singleton NMPlatform subclass instance and cached class object */
+NM_DEFINE_SINGLETON_INSTANCE(NMPlatform);
+
+NM_DEFINE_SINGLETON_REGISTER(NMPlatform);
+
+/**
+ * nm_platform_setup:
+ * @instance: the #NMPlatform instance
+ *
+ * Failing to set up #NMPlatform singleton results in a fatal error,
+ * as well as trying to initialize it multiple times without freeing
+ * it.
+ *
+ * NetworkManager will typically use only one platform object during
+ * its run. Test programs might want to switch platform implementations,
+ * though.
+ */
+void
+nm_platform_setup(NMPlatform *instance)
+{
+    g_return_if_fail(NM_IS_PLATFORM(instance));
+    g_return_if_fail(!singleton_instance);
+
+    singleton_instance = instance;
+
+    nm_singleton_instance_register();
+
+    nm_log_dbg(LOGD_CORE,
+               "setup %s singleton (" NM_HASH_OBFUSCATE_PTR_FMT ")",
+               "NMPlatform",
+               NM_HASH_OBFUSCATE_PTR(instance));
+}
+
+/**
+ * nm_platform_get:
+ * @self: platform instance
+ *
+ * Retrieve #NMPlatform singleton. Use this whenever you want to connect to
+ * #NMPlatform signals. It is an error to call it before nm_platform_setup().
+ *
+ * Returns: (transfer none): The #NMPlatform singleton reference.
+ */
+NMPlatform *
+nm_platform_get()
+{
+    g_assert(singleton_instance);
+
+    return singleton_instance;
+}
+
+/*****************************************************************************/
+
+void
+nm_linux_platform_setup(void)
+{
+    nm_platform_setup(nm_linux_platform_new(FALSE, FALSE));
 }

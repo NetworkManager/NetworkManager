@@ -7732,7 +7732,7 @@ link_set_sriov_params_async(NMPlatform *            platform,
     if (NM_IN_SET(autoprobe, NM_OPTION_BOOL_TRUE, NM_OPTION_BOOL_FALSE)
         && current_autoprobe != autoprobe
         && !nm_platform_sysctl_set(
-            NM_PLATFORM_GET,
+            platform,
             NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname, "device/sriov_drivers_autoprobe"),
             nm_sprintf_buf(buf, "%d", (int) autoprobe))) {
         g_set_error(&error,
@@ -9357,14 +9357,6 @@ handle_udev_event(NMUdevClient *udev_client, struct udev_device *udevice, gpoint
         udev_device_added(platform, udevice);
     else if (NM_IN_STRSET(action, "remove"))
         udev_device_removed(platform, udevice);
-}
-
-/*****************************************************************************/
-
-void
-nm_linux_platform_setup(void)
-{
-    nm_platform_setup(nm_linux_platform_new(FALSE, FALSE));
 }
 
 /*****************************************************************************/
