@@ -7,6 +7,10 @@
 
 /*****************************************************************************/
 
+#define NM_PLATFORM_LIFETIME_PERMANENT G_MAXUINT32
+
+/*****************************************************************************/
+
 typedef enum {
     NM_PLATFORM_LINK_DUPLEX_UNKNOWN,
     NM_PLATFORM_LINK_DUPLEX_HALF,
