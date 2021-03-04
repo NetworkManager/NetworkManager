@@ -1201,7 +1201,6 @@ src_libnm_core_impl_lib_h_priv = \
 	src/libnm-core-impl/nm-team-utils.h \
 	src/libnm-core-impl/nm-utils-private.h \
 	src/libnm-core-intern/nm-core-internal.h \
-	src/libnm-core-intern/nm-core-types-internal.h \
 	src/libnm-core-intern/nm-keyfile-internal.h \
 	src/libnm-core-intern/nm-keyfile-utils.h \
 	src/libnm-core-intern/nm-meta-setting-base-impl.h \
