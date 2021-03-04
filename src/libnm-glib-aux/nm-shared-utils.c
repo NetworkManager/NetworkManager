@@ -3802,6 +3802,32 @@ _nm_utils_strv_dup_packed(const char *const *strv, gssize len)
 /*****************************************************************************/
 
 gssize
+nm_utils_ptrarray_find_first(gconstpointer *list, gssize len, gconstpointer needle)
+{
+    gssize i;
+
+    if (len == 0)
+        return -1;
+
+    if (len > 0) {
+        g_return_val_if_fail(list, -1);
+        for (i = 0; i < len; i++) {
+            if (list[i] == needle)
+                return i;
+        }
+    } else {
+        g_return_val_if_fail(needle, -1);
+        for (i = 0; list && list[i]; i++) {
+            if (list[i] == needle)
+                return i;
+        }
+    }
+    return -1;
+}
+
+/*****************************************************************************/
+
+gssize
 nm_utils_ptrarray_find_binary_search(gconstpointer *  list,
                                      gsize            len,
                                      gconstpointer    needle,

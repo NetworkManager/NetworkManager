@@ -2027,6 +2027,8 @@ gssize nm_utils_array_find_binary_search(gconstpointer    list,
                                          GCompareDataFunc cmpfcn,
                                          gpointer         user_data);
 
+gssize nm_utils_ptrarray_find_first(gconstpointer *list, gssize len, gconstpointer needle);
+
 /*****************************************************************************/
 
 void _nm_utils_strv_sort(const char **strv, gssize len);

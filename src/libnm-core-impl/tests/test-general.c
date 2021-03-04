@@ -8618,7 +8618,7 @@ _test_find_binary_search_do(const int *array, gsize len)
     for (i = 0; i < len; i++)
         parray[i] = GINT_TO_POINTER(array[i]);
 
-    expected_result = _nm_utils_ptrarray_find_first(parray, len, pneedle);
+    expected_result = nm_utils_ptrarray_find_first(parray, len, pneedle);
 
     idx = nm_utils_ptrarray_find_binary_search(parray,
                                                len,
@@ -8795,7 +8795,7 @@ test_nm_utils_ptrarray_find_binary_search_with_duplicates(void)
                                                            &idx_first,
                                                            &idx_last);
 
-                idx_first2 = _nm_utils_ptrarray_find_first(arr, i_len, p);
+                idx_first2 = nm_utils_ptrarray_find_first(arr, i_len, p);
 
                 idx2 = nm_utils_array_find_binary_search(arr,
                                                          sizeof(gpointer),
