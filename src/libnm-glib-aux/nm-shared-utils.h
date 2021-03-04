@@ -422,6 +422,24 @@ nm_utils_ip_address_same_prefix(int           addr_family,
 
 /*****************************************************************************/
 
+#define NM_IPV4LL_NETWORK ((in_addr_t)(htonl(0xA9FE0000lu)))
+#define NM_IPV4LL_NETMASK ((in_addr_t)(htonl(0xFFFF0000lu)))
+
+static inline gboolean
+nm_utils_ip4_address_is_link_local(in_addr_t addr)
+{
+    return (addr & NM_IPV4LL_NETMASK) == NM_IPV4LL_NETWORK;
+}
+
+static inline gboolean
+nm_utils_ip4_address_is_zeronet(in_addr_t network)
+{
+    /* Same as ipv4_is_zeronet() from kernel's include/linux/in.h. */
+    return (network & htonl(0xFF000000u)) == htonl(0x00000000u);
+}
+
+/*****************************************************************************/
+
 #define NM_UTILS_INET_ADDRSTRLEN INET6_ADDRSTRLEN
 
 static inline const char *
