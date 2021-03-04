@@ -8210,7 +8210,7 @@ _infiniband_partition_action(NMPlatform *           platform,
         return FALSE;
     }
 
-    nm_utils_new_infiniband_name(name, ifname_parent, p_key);
+    nmp_utils_new_infiniband_name(name, ifname_parent, p_key);
     do_request_link(platform, 0, name);
 
     if (action == INFINIBAND_ACTION_DELETE_CHILD)

@@ -1805,3 +1805,64 @@ nmp_utils_sysctl_open_netdir(int ifindex, const char *ifname_guess, char *out_if
 
     return -1;
 }
+
+/*****************************************************************************/
+
+char *
+nmp_utils_new_vlan_name(const char *parent_iface, guint32 vlan_id)
+{
+    guint id_len;
+    gsize parent_len;
+    char *ifname;
+
+    g_return_val_if_fail(parent_iface && *parent_iface, NULL);
+
+    if (vlan_id < 10)
+        id_len = 2;
+    else if (vlan_id < 100)
+        id_len = 3;
+    else if (vlan_id < 1000)
+        id_len = 4;
+    else {
+        g_return_val_if_fail(vlan_id < 4095, NULL);
+        id_len = 5;
+    }
+
+    ifname = g_new(char, IFNAMSIZ);
+
+    parent_len = strlen(parent_iface);
+    parent_len = MIN(parent_len, IFNAMSIZ - 1 - id_len);
+    memcpy(ifname, parent_iface, parent_len);
+    g_snprintf(&ifname[parent_len], IFNAMSIZ - parent_len, ".%u", vlan_id);
+
+    return ifname;
+}
+
+/*****************************************************************************/
+
+/* nmp_utils_new_infiniband_name:
+ * @name: the output-buffer where the value will be written. Must be
+ *   not %NULL and point to a string buffer of at least IFNAMSIZ bytes.
+ * @parent_name: the parent interface name
+ * @p_key: the partition key.
+ *
+ * Returns: the infiniband name will be written to @name and @name
+ *   is returned.
+ */
+const char *
+nmp_utils_new_infiniband_name(char *name, const char *parent_name, int p_key)
+{
+    g_return_val_if_fail(name, NULL);
+    g_return_val_if_fail(parent_name && parent_name[0], NULL);
+    g_return_val_if_fail(strlen(parent_name) < IFNAMSIZ, NULL);
+
+    /* technically, p_key of 0x0000 and 0x8000 is not allowed either. But we don't
+     * want to assert against that in nmp_utils_new_infiniband_name(). So be more
+     * resilient here, and accept those. */
+    g_return_val_if_fail(p_key >= 0 && p_key <= 0xffff, NULL);
+
+    /* If parent+suffix is too long, kernel would just truncate
+     * the name. We do the same. See ipoib_vlan_add().  */
+    g_snprintf(name, IFNAMSIZ, "%s.%04x", parent_name, p_key);
+    return name;
+}

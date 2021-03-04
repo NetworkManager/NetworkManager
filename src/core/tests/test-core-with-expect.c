@@ -11,6 +11,7 @@
 #include <fcntl.h>
 
 #include "NetworkManagerUtils.h"
+#include "libnm-platform/nm-platform-utils.h"
 
 #include "nm-test-utils-core.h"
 
@@ -586,7 +587,7 @@ test_nm_ethernet_address_is_valid(void)
 /*****************************************************************************/
 
 static void
-test_nm_utils_new_vlan_name(void)
+test_nmp_utils_new_vlan_name(void)
 {
     guint       i, j;
     const char *parent_names[] = {
@@ -614,7 +615,7 @@ test_nm_utils_new_vlan_name(void)
 
             vlan_id_s = g_strdup_printf(".%d", vlan_id);
 
-            ifname = nm_utils_new_vlan_name(parent_names[i], vlan_id);
+            ifname = nmp_utils_new_vlan_name(parent_names[i], vlan_id);
             g_assert(ifname && ifname[0]);
             g_assert_cmpint(strlen(ifname),
                             ==,
@@ -643,7 +644,7 @@ main(int argc, char **argv)
     g_test_add_func("/general/nm_utils_array_remove_at_indexes",
                     test_nm_utils_array_remove_at_indexes);
     g_test_add_func("/general/nm_ethernet_address_is_valid", test_nm_ethernet_address_is_valid);
-    g_test_add_func("/general/nm_utils_new_vlan_name", test_nm_utils_new_vlan_name);
+    g_test_add_func("/general/nmp_utils_new_vlan_name", test_nmp_utils_new_vlan_name);
 
     return g_test_run();
 }

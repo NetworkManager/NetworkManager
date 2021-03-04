@@ -220,9 +220,6 @@ gboolean nm_utils_connection_has_default_route(NMConnection *connection,
                                                int           addr_family,
                                                gboolean *    out_is_never_default);
 
-char *      nm_utils_new_vlan_name(const char *parent_iface, guint32 vlan_id);
-const char *nm_utils_new_infiniband_name(char *name, const char *parent_name, int p_key);
-
 int nm_utils_cmp_connection_by_autoconnect_priority(NMConnection *a, NMConnection *b);
 
 void nm_utils_log_connection_diff(NMConnection *connection,

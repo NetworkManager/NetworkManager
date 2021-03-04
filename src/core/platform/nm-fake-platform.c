@@ -799,7 +799,7 @@ infiniband_partition_add(NMPlatform *           platform,
     parent_device = link_get(platform, parent);
     g_return_val_if_fail(parent_device != NULL, FALSE);
 
-    nm_utils_new_infiniband_name(name, parent_device->obj->link.name, p_key);
+    nmp_utils_new_infiniband_name(name, parent_device->obj->link.name, p_key);
 
     link_add_one(platform, name, NM_LINK_TYPE_INFINIBAND, _infiniband_add_prepare, &d, out_link);
     return TRUE;
@@ -814,7 +814,7 @@ infiniband_partition_delete(NMPlatform *platform, int parent, int p_key)
     parent_device = link_get(platform, parent);
     g_return_val_if_fail(parent_device != NULL, FALSE);
 
-    nm_utils_new_infiniband_name(name, parent_device->obj->link.name, p_key);
+    nmp_utils_new_infiniband_name(name, parent_device->obj->link.name, p_key);
     return link_delete(platform, nm_platform_link_get_ifindex(platform, name));
 }
 

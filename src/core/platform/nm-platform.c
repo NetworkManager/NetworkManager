@@ -2806,7 +2806,7 @@ _infiniband_add_add_or_delete(NMPlatform *           self,
     if (parent_link->type != NM_LINK_TYPE_INFINIBAND)
         return -NME_PL_WRONG_TYPE;
 
-    nm_utils_new_infiniband_name(name, parent_link->name, p_key);
+    nmp_utils_new_infiniband_name(name, parent_link->name, p_key);
 
     if (add) {
         r = _link_add_check_existing(self, name, NM_LINK_TYPE_INFINIBAND, out_link);
