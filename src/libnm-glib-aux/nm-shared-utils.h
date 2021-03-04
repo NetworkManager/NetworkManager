@@ -2198,6 +2198,20 @@ _nm_utils_hwaddr_ntoa(gconstpointer addr,
     return nm_utils_bin2hexstr_full(addr, addr_len, ':', upper_case, buf);
 }
 
+#define _nm_utils_hwaddr_ntoa_maybe_a(addr, addr_len, buf_to_free)                       \
+    ({                                                                                   \
+        gconstpointer const _addr        = (addr);                                       \
+        const gsize         _addr_len    = (addr_len);                                   \
+        char **const        _buf_to_free = (buf_to_free);                                \
+                                                                                         \
+        nm_utils_bin2hexstr_full(                                                        \
+            _addr,                                                                       \
+            _addr_len,                                                                   \
+            ':',                                                                         \
+            TRUE,                                                                        \
+            nm_malloc_maybe_a(3 * 20, _addr_len ? (_addr_len * 3u) : 1u, _buf_to_free)); \
+    })
+
 /*****************************************************************************/
 
 #define _NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(fcn_name,                                         \
