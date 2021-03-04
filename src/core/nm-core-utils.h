@@ -16,8 +16,6 @@
 
 /*****************************************************************************/
 
-#define NM_PLATFORM_LIFETIME_PERMANENT G_MAXUINT32
-
 #define NM_DEFINE_SINGLETON_INSTANCE(TYPE) static TYPE *singleton_instance
 
 #define NM_DEFINE_SINGLETON_REGISTER(TYPE)                                                      \
