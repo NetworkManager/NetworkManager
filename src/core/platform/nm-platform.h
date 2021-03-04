@@ -1282,11 +1282,6 @@ const char *nm_platform_signal_change_type_to_string(NMPlatformSignalChangeType 
 
 GType nm_platform_get_type(void);
 
-void        nm_platform_setup(NMPlatform *instance);
-NMPlatform *nm_platform_get(void);
-
-#define NM_PLATFORM_GET (nm_platform_get())
-
 /*****************************************************************************/
 
 static inline in_addr_t

@@ -251,4 +251,13 @@ void nm_utils_share_rules_apply(NMUtilsShareRules *self, gboolean shared);
 
 /*****************************************************************************/
 
+void        nm_platform_setup(NMPlatform *instance);
+NMPlatform *nm_platform_get(void);
+
+#define NM_PLATFORM_GET (nm_platform_get())
+
+void nm_linux_platform_setup(void);
+
+/*****************************************************************************/
+
 #endif /* __NETWORKMANAGER_UTILS_H__ */

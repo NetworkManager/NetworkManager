@@ -225,11 +225,6 @@ _nm_platform_signal_id_get(NMPlatformSignalIdType signal_type)
 
 /*****************************************************************************/
 
-/* Singleton NMPlatform subclass instance and cached class object */
-NM_DEFINE_SINGLETON_INSTANCE(NMPlatform);
-
-NM_DEFINE_SINGLETON_REGISTER(NMPlatform);
-
 /* Just always initialize a @klass instance. NM_PLATFORM_GET_CLASS()
  * is only a plain read on the self instance, which the compiler
  * like can optimize out.
@@ -260,51 +255,6 @@ NM_DEFINE_SINGLETON_REGISTER(NMPlatform);
         if (!nm_platform_netns_push(self, &netns))           \
             return (err_val);                                \
     } while (0)
-
-/**
- * nm_platform_setup:
- * @instance: the #NMPlatform instance
- *
- * Failing to set up #NMPlatform singleton results in a fatal error,
- * as well as trying to initialize it multiple times without freeing
- * it.
- *
- * NetworkManager will typically use only one platform object during
- * its run. Test programs might want to switch platform implementations,
- * though.
- */
-void
-nm_platform_setup(NMPlatform *instance)
-{
-    g_return_if_fail(NM_IS_PLATFORM(instance));
-    g_return_if_fail(!singleton_instance);
-
-    singleton_instance = instance;
-
-    nm_singleton_instance_register();
-
-    nm_log_dbg(LOGD_CORE,
-               "setup %s singleton (" NM_HASH_OBFUSCATE_PTR_FMT ")",
-               "NMPlatform",
-               NM_HASH_OBFUSCATE_PTR(instance));
-}
-
-/**
- * nm_platform_get:
- * @self: platform instance
- *
- * Retrieve #NMPlatform singleton. Use this whenever you want to connect to
- * #NMPlatform signals. It is an error to call it before nm_platform_setup().
- *
- * Returns: (transfer none): The #NMPlatform singleton reference.
- */
-NMPlatform *
-nm_platform_get()
-{
-    g_assert(singleton_instance);
-
-    return singleton_instance;
-}
 
 /*****************************************************************************/
 
