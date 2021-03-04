@@ -1815,8 +1815,8 @@ plugin_skip:;
                            NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED);
     }
 
-    /* signal that resolv.conf was changed */
-    if (do_update && result == SR_SUCCESS)
+    /* signal that DNS resolution configs were changed */
+    if ((do_update || caching) && result == SR_SUCCESS)
         g_signal_emit(self, signals[CONFIG_CHANGED], 0);
 
     nm_clear_pointer(&priv->config_variant, g_variant_unref);
