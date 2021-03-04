@@ -6,6 +6,8 @@
 #ifndef NM_CONFIG_DATA_H
 #define NM_CONFIG_DATA_H
 
+#include "libnm-platform/nmp-base.h"
+
 /*****************************************************************************/
 
 typedef enum {
