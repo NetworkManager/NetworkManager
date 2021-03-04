@@ -82,4 +82,7 @@ guint32 nmp_utils_lifetime_get(guint32  timestamp,
                                gint32   now,
                                guint32 *out_preferred);
 
+int nmp_utils_modprobe(GError **error, gboolean suppress_error_logging, const char *arg1, ...)
+    G_GNUC_NULL_TERMINATED;
+
 #endif /* __NM_PLATFORM_UTILS_H__ */

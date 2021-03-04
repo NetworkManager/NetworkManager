@@ -1952,3 +1952,84 @@ nmp_utils_lifetime_get(guint32  timestamp,
 
     return t_lifetime;
 }
+
+/*****************************************************************************/
+
+static const char *
+_trunk_first_line(char *str)
+{
+    char *s;
+
+    s = strchr(str, '\n');
+    if (s)
+        s[0] = '\0';
+    return str;
+}
+
+int
+nmp_utils_modprobe(GError **error, gboolean suppress_error_logging, const char *arg1, ...)
+{
+    gs_unref_ptrarray GPtrArray *argv = NULL;
+    int                          exit_status;
+    gs_free char *               _log_str = NULL;
+#define ARGV_TO_STR(argv) \
+    (_log_str ? _log_str : (_log_str = g_strjoinv(" ", (char **) argv->pdata)))
+    GError *      local = NULL;
+    va_list       ap;
+    NMLogLevel    llevel  = suppress_error_logging ? LOGL_DEBUG : LOGL_ERR;
+    gs_free char *std_out = NULL, *std_err = NULL;
+
+    g_return_val_if_fail(!error || !*error, -1);
+    g_return_val_if_fail(arg1, -1);
+
+    /* construct the argument list */
+    argv = g_ptr_array_sized_new(4);
+    g_ptr_array_add(argv, "/sbin/modprobe");
+    g_ptr_array_add(argv, "--use-blacklist");
+    g_ptr_array_add(argv, (char *) arg1);
+
+    va_start(ap, arg1);
+    while ((arg1 = va_arg(ap, const char *)))
+        g_ptr_array_add(argv, (char *) arg1);
+    va_end(ap);
+
+    g_ptr_array_add(argv, NULL);
+
+    nm_log_dbg(LOGD_CORE, "modprobe: '%s'", ARGV_TO_STR(argv));
+    if (!g_spawn_sync(NULL,
+                      (char **) argv->pdata,
+                      NULL,
+                      0,
+                      NULL,
+                      NULL,
+                      &std_out,
+                      &std_err,
+                      &exit_status,
+                      &local)) {
+        nm_log(llevel,
+               LOGD_CORE,
+               NULL,
+               NULL,
+               "modprobe: '%s' failed: %s",
+               ARGV_TO_STR(argv),
+               local->message);
+        g_propagate_error(error, local);
+        return -1;
+    } else if (exit_status != 0) {
+        nm_log(llevel,
+               LOGD_CORE,
+               NULL,
+               NULL,
+               "modprobe: '%s' exited with error %d%s%s%s%s%s%s",
+               ARGV_TO_STR(argv),
+               exit_status,
+               std_out && *std_out ? " (" : "",
+               std_out && *std_out ? _trunk_first_line(std_out) : "",
+               std_out && *std_out ? ")" : "",
+               std_err && *std_err ? " (" : "",
+               std_err && *std_err ? _trunk_first_line(std_err) : "",
+               std_err && *std_err ? ")" : "");
+    }
+
+    return exit_status;
+}

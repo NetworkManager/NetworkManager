@@ -1303,7 +1303,7 @@ test_software_detect(gconstpointer user_data)
 
         if (!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "gre0")) {
             /* Seems that the ip_gre module is not loaded... try to load it. */
-            gracefully_skip = nm_utils_modprobe(NULL, TRUE, "ip_gre", NULL) != 0;
+            gracefully_skip = nmp_utils_modprobe(NULL, TRUE, "ip_gre", NULL) != 0;
         }
 
         if (!nmtstp_link_gre_add(NULL, ext, DEVICE_NAME, &lnk_gre)) {
@@ -1330,7 +1330,7 @@ test_software_detect(gconstpointer user_data)
 
         if (!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "gretap0")) {
             /* Seems that the ip_gre module is not loaded... try to load it. */
-            gracefully_skip = nm_utils_modprobe(NULL, TRUE, "ip_gre", NULL) != 0;
+            gracefully_skip = nmp_utils_modprobe(NULL, TRUE, "ip_gre", NULL) != 0;
         }
 
         if (!nmtstp_link_gre_add(NULL, ext, DEVICE_NAME, &lnk_gre)) {
@@ -1350,7 +1350,7 @@ test_software_detect(gconstpointer user_data)
 
         if (!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "tunl0")) {
             /* Seems that the ipip module is not loaded... try to load it. */
-            gracefully_skip = nm_utils_modprobe(NULL, TRUE, "ipip", NULL) != 0;
+            gracefully_skip = nmp_utils_modprobe(NULL, TRUE, "ipip", NULL) != 0;
         }
 
         lnk_ipip.local              = nmtst_inet4_from_string("1.2.3.4");
@@ -1376,7 +1376,7 @@ test_software_detect(gconstpointer user_data)
 
         if (!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "ip6tnl0")) {
             /* Seems that the ip6_tunnel module is not loaded... try to load it. */
-            gracefully_skip = nm_utils_modprobe(NULL, TRUE, "ip6_tunnel", NULL) != 0;
+            gracefully_skip = nmp_utils_modprobe(NULL, TRUE, "ip6_tunnel", NULL) != 0;
         }
 
         switch (test_data->test_mode) {
@@ -1418,7 +1418,7 @@ test_software_detect(gconstpointer user_data)
 
         if (!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "ip6gre0")) {
             /* Seems that the ip6_tunnel module is not loaded... try to load it. */
-            gracefully_skip = nm_utils_modprobe(NULL, TRUE, "ip6_gre", NULL) != 0;
+            gracefully_skip = nmp_utils_modprobe(NULL, TRUE, "ip6_gre", NULL) != 0;
         }
 
         lnk_ip6tnl.local          = *nmtst_inet6_from_string("fd01::42");
@@ -1445,7 +1445,7 @@ test_software_detect(gconstpointer user_data)
 
         if (!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "ip6gre0")) {
             /* Seems that the ip6_tunnel module is not loaded... try to load it. */
-            gracefully_skip = nm_utils_modprobe(NULL, TRUE, "ip6_gre", NULL) != 0;
+            gracefully_skip = nmp_utils_modprobe(NULL, TRUE, "ip6_gre", NULL) != 0;
         }
 
         lnk_ip6tnl.local          = *nmtst_inet6_from_string("fe80::abcd");
@@ -1526,7 +1526,7 @@ test_software_detect(gconstpointer user_data)
 
         if (!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "sit0")) {
             /* Seems that the sit module is not loaded... try to load it. */
-            gracefully_skip = nm_utils_modprobe(NULL, TRUE, "sit", NULL) != 0;
+            gracefully_skip = nmp_utils_modprobe(NULL, TRUE, "sit", NULL) != 0;
         }
 
         if (!nmtstp_link_sit_add(NULL, ext, DEVICE_NAME, &lnk_sit)) {

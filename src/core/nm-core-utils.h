@@ -150,9 +150,6 @@ nm_utils_ip_route_metric_penalize(guint32 metric, guint32 penalty)
     return G_MAXUINT32;
 }
 
-int nm_utils_modprobe(GError **error, gboolean suppress_error_loggin, const char *arg1, ...)
-    G_GNUC_NULL_TERMINATED;
-
 void nm_utils_kill_process_sync(pid_t       pid,
                                 guint64     start_time,
                                 int         sig,
