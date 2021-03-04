@@ -6000,7 +6000,7 @@ delayed_action_handle_one(NMPlatform *platform)
         g_ptr_array_remove_index_fast(priv->delayed_action.list_master_connected, 0);
         if (priv->delayed_action.list_master_connected->len == 0)
             priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_MASTER_CONNECTED;
-        nm_assert(_nm_utils_ptrarray_find_first(
+        nm_assert(nm_utils_ptrarray_find_first(
                       (gconstpointer *) priv->delayed_action.list_master_connected->pdata,
                       priv->delayed_action.list_master_connected->len,
                       user_data)
@@ -6044,7 +6044,7 @@ delayed_action_handle_one(NMPlatform *platform)
         g_ptr_array_remove_index_fast(priv->delayed_action.list_refresh_link, 0);
         if (priv->delayed_action.list_refresh_link->len == 0)
             priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_LINK;
-        nm_assert(_nm_utils_ptrarray_find_first(
+        nm_assert(nm_utils_ptrarray_find_first(
                       (gconstpointer *) priv->delayed_action.list_refresh_link->pdata,
                       priv->delayed_action.list_refresh_link->len,
                       user_data)
@@ -6097,7 +6097,7 @@ delayed_action_schedule(NMPlatform *platform, DelayedActionType action_type, gpo
 
     switch (action_type) {
     case DELAYED_ACTION_TYPE_REFRESH_LINK:
-        if (_nm_utils_ptrarray_find_first(
+        if (nm_utils_ptrarray_find_first(
                 (gconstpointer *) priv->delayed_action.list_refresh_link->pdata,
                 priv->delayed_action.list_refresh_link->len,
                 user_data)
@@ -6105,7 +6105,7 @@ delayed_action_schedule(NMPlatform *platform, DelayedActionType action_type, gpo
             g_ptr_array_add(priv->delayed_action.list_refresh_link, user_data);
         break;
     case DELAYED_ACTION_TYPE_MASTER_CONNECTED:
-        if (_nm_utils_ptrarray_find_first(
+        if (nm_utils_ptrarray_find_first(
                 (gconstpointer *) priv->delayed_action.list_master_connected->pdata,
                 priv->delayed_action.list_master_connected->len,
                 user_data)
