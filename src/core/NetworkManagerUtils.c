@@ -20,10 +20,10 @@
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "libnm-core-intern/nm-core-internal.h"
-#include "platform/nmp-object.h"
+#include "libnm-platform/nmp-object.h"
 
-#include "platform/nm-platform.h"
-#include "platform/nm-linux-platform.h"
+#include "libnm-platform/nm-platform.h"
+#include "libnm-platform/nm-linux-platform.h"
 #include "nm-auth-utils.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
 

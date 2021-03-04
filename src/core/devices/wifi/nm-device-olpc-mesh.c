@@ -28,7 +28,7 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-olpc-mesh.h"
 #include "nm-manager.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceOlpcMesh
 #include "devices/nm-device-logging.h"

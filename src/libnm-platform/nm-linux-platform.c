@@ -3,7 +3,7 @@
  * Copyright (C) 2012 - 2018 Red Hat, Inc.
  */
 
-#include "src/core/nm-default-daemon.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-linux-platform.h"
 
@@ -36,6 +36,7 @@
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
 #include "libnm-glib-aux/nm-time-utils.h"
+#include "libnm-log-core/nm-logging.h"
 #include "libnm-platform/nm-netlink.h"
 #include "libnm-platform/nm-platform-utils.h"
 #include "libnm-platform/nmp-netns.h"

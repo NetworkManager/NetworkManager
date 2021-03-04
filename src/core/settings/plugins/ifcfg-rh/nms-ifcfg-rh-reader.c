@@ -42,7 +42,7 @@
 #include "nm-utils.h"
 #include "libnm-base/nm-ethtool-base.h"
 
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "NetworkManagerUtils.h"
 
 #include "nms-ifcfg-rh-common.h"

@@ -13,7 +13,7 @@
 #include "libnm-core-public/nm-errors.h"
 #include "libnm-glib-aux/nm-time-utils.h"
 #include "libnm-std-aux/unaligned.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "libnm-glib-aux/nm-c-list.h"
 #include "nm-utils.h"
 

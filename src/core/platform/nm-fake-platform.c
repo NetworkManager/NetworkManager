@@ -14,8 +14,8 @@
 #include <linux/rtnetlink.h>
 
 #include "libnm-platform/nm-platform-utils.h"
-#include "nm-platform-private.h"
-#include "nmp-object.h"
+#include "libnm-platform/nm-platform-private.h"
+#include "libnm-platform/nmp-object.h"
 
 #include "nm-test-utils-core.h"
 

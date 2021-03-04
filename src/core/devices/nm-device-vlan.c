@@ -16,11 +16,11 @@
 #include "settings/nm-settings.h"
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-manager.h"
 #include "libnm-core-intern/nm-core-internal.h"
-#include "platform/nmp-object.h"
+#include "libnm-platform/nmp-object.h"
 #include "libnm-platform/nm-platform-utils.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceVlan

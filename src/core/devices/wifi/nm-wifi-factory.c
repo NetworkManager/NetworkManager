@@ -15,7 +15,7 @@
 #include "nm-device-olpc-mesh.h"
 #include "nm-device-iwd.h"
 #include "settings/nm-settings-connection.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "nm-config.h"
 
 /*****************************************************************************/

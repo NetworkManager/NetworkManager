@@ -6,7 +6,7 @@
 #ifndef __NETWORKMANAGER_FAKE_PLATFORM_H__
 #define __NETWORKMANAGER_FAKE_PLATFORM_H__
 
-#include "nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 
 #define NM_TYPE_FAKE_PLATFORM (nm_fake_platform_get_type())
 #define NM_FAKE_PLATFORM(obj) \

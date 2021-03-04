@@ -11,7 +11,7 @@
 #include <sys/stat.h>
 #include <gmodule.h>
 
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-setting-bluetooth.h"

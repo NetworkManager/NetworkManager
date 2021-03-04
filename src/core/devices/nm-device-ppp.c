@@ -13,7 +13,7 @@
 #include "nm-device-private.h"
 #include "nm-manager.h"
 #include "nm-setting-pppoe.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "ppp/nm-ppp-manager.h"
 #include "ppp/nm-ppp-manager-call.h"
 #include "ppp/nm-ppp-status.h"

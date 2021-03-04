@@ -11,10 +11,10 @@
 #include <linux/if_link.h>
 #include <linux/ip6_tunnel.h>
 
-#include "platform/nm-platform.h"
-#include "platform/nmp-object.h"
+#include "libnm-platform/nm-platform.h"
+#include "libnm-platform/nmp-object.h"
 #include "platform/nm-fake-platform.h"
-#include "platform/nm-linux-platform.h"
+#include "libnm-platform/nm-linux-platform.h"
 
 #include "nm-test-utils-core.h"
 

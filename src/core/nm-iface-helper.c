@@ -20,7 +20,7 @@
 
 #include "main-utils.h"
 #include "NetworkManagerUtils.h"
-#include "platform/nm-linux-platform.h"
+#include "libnm-platform/nm-linux-platform.h"
 #include "libnm-platform/nm-platform-utils.h"
 #include "dhcp/nm-dhcp-manager.h"
 #include "ndisc/nm-ndisc.h"

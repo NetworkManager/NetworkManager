@@ -8,7 +8,7 @@
 #include <sys/wait.h>
 
 #include "nm-dcb.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "NetworkManagerUtils.h"
 
 static const char *helper_names[] = {"dcbtool", "fcoeadm"};

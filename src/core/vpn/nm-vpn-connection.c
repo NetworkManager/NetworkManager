@@ -19,7 +19,7 @@
 #include "nm-proxy-config.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "nm-active-connection.h"
 #include "NetworkManagerUtils.h"
 #include "settings/nm-settings-connection.h"

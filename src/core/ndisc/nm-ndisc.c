@@ -14,7 +14,7 @@
 
 #include "nm-ndisc-private.h"
 #include "nm-utils.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nmp-netns.h"
 #include "nm-l3-config-data.h"
 

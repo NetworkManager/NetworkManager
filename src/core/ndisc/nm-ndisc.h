@@ -13,8 +13,8 @@
 #include "nm-setting-ip6-config.h"
 #include "NetworkManagerUtils.h"
 
-#include "platform/nm-platform.h"
-#include "platform/nmp-object.h"
+#include "libnm-platform/nm-platform.h"
+#include "libnm-platform/nmp-object.h"
 
 #define NM_RA_TIMEOUT_DEFAULT  ((guint32) 0)
 #define NM_RA_TIMEOUT_INFINITY ((guint32) G_MAXINT32)

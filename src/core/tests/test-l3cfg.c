@@ -5,7 +5,7 @@
 #include "nm-l3cfg.h"
 #include "nm-l3-ipv4ll.h"
 #include "nm-netns.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 
 #include "platform/tests/test-common.h"
 

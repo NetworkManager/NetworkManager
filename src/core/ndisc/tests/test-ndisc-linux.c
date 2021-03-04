@@ -10,7 +10,7 @@
 #include "ndisc/nm-ndisc.h"
 #include "ndisc/nm-lndp-ndisc.h"
 
-#include "platform/nm-linux-platform.h"
+#include "libnm-platform/nm-linux-platform.h"
 
 #include "nm-test-utils-core.h"
 

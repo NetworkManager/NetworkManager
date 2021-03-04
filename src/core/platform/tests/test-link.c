@@ -13,7 +13,7 @@
 
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-base/nm-ethtool-base.h"
-#include "platform/nmp-object.h"
+#include "libnm-platform/nmp-object.h"
 #include "libnm-platform/nmp-netns.h"
 #include "libnm-platform/nm-platform-utils.h"
 

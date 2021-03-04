@@ -3,7 +3,7 @@
 #ifndef __NM_L3CFG_H__
 #define __NM_L3CFG_H__
 
-#include "platform/nmp-object.h"
+#include "libnm-platform/nmp-object.h"
 #include "nm-l3-config-data.h"
 
 #define NM_L3CFG_CONFIG_PRIORITY_IPV4LL 0
