@@ -146,10 +146,6 @@ NMClientPermission nm_auth_permission_from_string(const char *str);
 NMClientPermissionResult nm_client_permission_result_from_string(const char *nm);
 const char *             nm_client_permission_result_to_string(NMClientPermissionResult permission);
 
-guint8 nm_utils_route_type_by_name(const char *name);
-
-const char *nm_utils_route_type2str(guint8 val, char *buf, gsize len);
-
 gboolean nm_utils_validate_dhcp4_vendor_class_id(const char *vci, GError **error);
 
 /*****************************************************************************/

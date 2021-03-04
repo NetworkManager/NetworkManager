@@ -15,6 +15,7 @@
 #include <glib-unix.h>
 #include <net/if.h>
 #include <net/ethernet.h>
+#include <linux/rtnetlink.h>
 
 #include "nm-errno.h"
 #include "nm-str-buf.h"
@@ -6071,3 +6072,33 @@ NM_ASSERT_VALID_PATH_COMPONENT(const char *name)
             NM_PRINT_FMT_QUOTED(name, "\"", name, "\"", "(null)"));
     g_assert_not_reached();
 }
+
+/*****************************************************************************/
+
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
+    nm_utils_route_type_by_name,
+    guint8,
+    { nm_assert(name); },
+    { return RTN_UNSPEC; },
+    {"blackhole", RTN_BLACKHOLE},
+    {"broadcast", RTN_BROADCAST},
+    {"local", RTN_LOCAL},
+    {"multicast", RTN_MULTICAST},
+    {"nat", RTN_NAT},
+    {"prohibit", RTN_PROHIBIT},
+    {"throw", RTN_THROW},
+    {"unicast", RTN_UNICAST},
+    {"unreachable", RTN_UNREACHABLE}, );
+
+NM_UTILS_ENUM2STR_DEFINE(nm_utils_route_type2str,
+                         guint8,
+                         NM_UTILS_ENUM2STR(RTN_BLACKHOLE, "blackhole"),
+                         NM_UTILS_ENUM2STR(RTN_BROADCAST, "broadcast"),
+                         NM_UTILS_ENUM2STR(RTN_LOCAL, "local"),
+                         NM_UTILS_ENUM2STR(RTN_MULTICAST, "multicast"),
+                         NM_UTILS_ENUM2STR(RTN_NAT, "nat"),
+                         NM_UTILS_ENUM2STR(RTN_PROHIBIT, "prohibit"),
+                         NM_UTILS_ENUM2STR(RTN_THROW, "throw"),
+                         NM_UTILS_ENUM2STR(RTN_UNICAST, "unicast"),
+                         NM_UTILS_ENUM2STR(RTN_UNREACHABLE, "unreachable"),
+                         NM_UTILS_ENUM2STR(RTN_UNSPEC, "unspecified"), );
