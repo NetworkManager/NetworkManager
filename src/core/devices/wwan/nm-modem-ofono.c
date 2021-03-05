@@ -316,10 +316,9 @@ handle_sim_property(GDBusProxy *proxy, const char *property, GVariant *v, gpoint
 static void
 sim_property_changed(GDBusProxy *proxy, const char *property, GVariant *v, gpointer user_data)
 {
-    GVariant *v_child = g_variant_get_child_value(v, 0);
+    gs_unref_variant GVariant *v_child = g_variant_get_child_value(v, 0);
 
     handle_sim_property(proxy, property, v_child, user_data);
-    g_variant_unref(v_child);
 }
 
 static void
@@ -330,7 +329,7 @@ sim_get_properties_done(GObject *source, GAsyncResult *result, gpointer user_dat
     gs_free_error GError *error             = NULL;
     gs_unref_variant GVariant *v_properties = NULL;
     gs_unref_variant GVariant *v_dict       = NULL;
-    GVariant *                 v;
+    gs_unref_variant GVariant *v            = NULL;
     GVariantIter               i;
     const char *               property;
 
@@ -370,9 +369,8 @@ sim_get_properties_done(GObject *source, GAsyncResult *result, gpointer user_dat
      */
 
     g_variant_iter_init(&i, v_dict);
-    while (g_variant_iter_next(&i, "{&sv}", &property, &v)) {
+    while (g_variant_iter_loop(&i, "{&sv}", &property, &v)) {
         handle_sim_property(NULL, property, v, self);
-        g_variant_unref(v);
     }
 }
 
@@ -477,10 +475,9 @@ handle_connman_property(GDBusProxy *proxy, const char *property, GVariant *v, gp
 static void
 connman_property_changed(GDBusProxy *proxy, const char *property, GVariant *v, gpointer user_data)
 {
-    GVariant *v_child = g_variant_get_child_value(v, 0);
+    gs_unref_variant GVariant *v_child = g_variant_get_child_value(v, 0);
 
     handle_connman_property(proxy, property, v_child, user_data);
-    g_variant_unref(v_child);
 }
 
 static void
@@ -491,7 +488,7 @@ connman_get_properties_done(GObject *source, GAsyncResult *result, gpointer user
     gs_free_error GError *error             = NULL;
     gs_unref_variant GVariant *v_properties = NULL;
     gs_unref_variant GVariant *v_dict       = NULL;
-    GVariant *                 v;
+    gs_unref_variant GVariant *v            = NULL;
     GVariantIter               i;
     const char *               property;
 
@@ -523,9 +520,8 @@ connman_get_properties_done(GObject *source, GAsyncResult *result, gpointer user
      */
 
     g_variant_iter_init(&i, v_dict);
-    while (g_variant_iter_next(&i, "{&sv}", &property, &v)) {
+    while (g_variant_iter_loop(&i, "{&sv}", &property, &v)) {
         handle_connman_property(NULL, property, v, self);
-        g_variant_unref(v);
     }
 }
 
@@ -700,9 +696,8 @@ modem_get_properties_done(GObject *source, GAsyncResult *result, gpointer user_d
      */
 
     g_variant_iter_init(&i, v_dict);
-    while (g_variant_iter_next(&i, "{&sv}", &property, &v)) {
+    while (g_variant_iter_loop(&i, "{&sv}", &property, &v)) {
         handle_modem_property(NULL, property, v, self);
-        g_variant_unref(v);
     }
 }
 
@@ -898,8 +893,8 @@ out:
 static void
 context_property_changed(GDBusProxy *proxy, const char *property, GVariant *v, gpointer user_data)
 {
-    NMModemOfono *self = NM_MODEM_OFONO(user_data);
-    gs_unref_variant GVariant *    v_dict = NULL;
+    NMModemOfono *   self             = NM_MODEM_OFONO(user_data);
+    gs_unref_variant GVariant *v_dict = NULL;
 
     _LOGD("PropertyChanged: %s", property);
 
