@@ -25,6 +25,8 @@
 #define OFONO_DBUS_INTERFACE_CONNECTION_CONTEXT "org.ofono.ConnectionContext"
 #define OFONO_DBUS_INTERFACE_SIM_MANAGER        "org.ofono.SimManager"
 
+#define OFONO_ERROR_IN_PROGRESS "org.ofono.Error.InProgress"
+
 typedef struct _NMModemOfono      NMModemOfono;
 typedef struct _NMModemOfonoClass NMModemOfonoClass;
 
