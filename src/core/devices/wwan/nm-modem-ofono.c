@@ -726,50 +726,36 @@ stage1_prepare_done(GObject *source, GAsyncResult *result, gpointer user_data)
     nm_clear_pointer(&priv->connect_properties, g_hash_table_destroy);
 
     if (error) {
-        _LOGW("connection failed: %s", error->message);
-
-        nm_modem_emit_prepare_result(NM_MODEM(self), FALSE, NM_DEVICE_STATE_REASON_MODEM_BUSY);
-        /*
-         * FIXME: add code to check for InProgress so that the
-         * connection doesn't continue to try and activate,
-         * leading to the connection being disabled, and a 5m
-         * timeout...
-         */
+        if (!g_strstr_len(error->message,
+                          NM_STRLEN(OFONO_ERROR_IN_PROGRESS),
+                          OFONO_ERROR_IN_PROGRESS)) {
+            nm_modem_emit_prepare_result(NM_MODEM(self), FALSE, NM_DEVICE_STATE_REASON_MODEM_BUSY);
+        }
     }
 }
 
 static void
-context_property_changed(GDBusProxy *proxy, const char *property, GVariant *v, gpointer user_data)
+handle_settings(GVariant *v_dict, gpointer user_data)
 {
     NMModemOfono *       self = NM_MODEM_OFONO(user_data);
     NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE(self);
     NMPlatformIP4Address addr;
-    gboolean             ret          = FALSE;
-    gs_unref_variant GVariant *v_dict = NULL;
-    const char *               interface;
-    const char *               s;
-    const char **              array, **iter;
-    guint32                    address_network, gateway_network;
-    guint32                    ip4_route_table, ip4_route_metric;
-    int                        ifindex;
-    GError *                   error = NULL;
+    gboolean             ret = FALSE;
+    const char *         interface;
+    const char *         s;
+    const char **        array, **iter;
+    guint32              address_network, gateway_network;
+    guint32              ip4_route_table, ip4_route_metric;
+    int                  ifindex;
+    GError *             error = NULL;
 
-    _LOGD("PropertyChanged: %s", property);
+    //_LOGD("PropertyChanged: %s", property);
 
     /*
      * TODO: might be a good idea and re-factor this to mimic bluez-device,
      * ie. have this function just check the key, and call a sub-func to
      * handle the action.
      */
-
-    if (g_strcmp0(property, "Settings") != 0)
-        return;
-
-    v_dict = g_variant_get_child_value(v, 0);
-    if (!v_dict) {
-        _LOGW("error getting IPv4 Settings: no v_dict");
-        goto out;
-    }
 
     _LOGI("IPv4 static Settings:");
 
@@ -909,6 +895,28 @@ out:
     }
 }
 
+static void
+context_property_changed(GDBusProxy *proxy, const char *property, GVariant *v, gpointer user_data)
+{
+    NMModemOfono *self = NM_MODEM_OFONO(user_data);
+    gs_unref_variant GVariant *    v_dict = NULL;
+
+    _LOGD("PropertyChanged: %s", property);
+
+    if (g_strcmp0(property, "Settings") != 0)
+        return;
+
+    v_dict = g_variant_get_child_value(v, 0);
+    if (!v_dict) {
+        _LOGW("ofono: (%s): error getting IPv4 Settings", nm_modem_get_uid(NM_MODEM(self)));
+        return;
+    }
+
+    g_assert(g_variant_is_of_type(v_dict, G_VARIANT_TYPE_VARDICT));
+
+    handle_settings(v_dict, user_data);
+}
+
 static NMActStageReturn
 static_stage3_ip4_config_start(NMModem *            modem,
                                NMActRequest *       req,
@@ -933,6 +941,72 @@ static_stage3_ip4_config_start(NMModem *            modem,
                        NM_MODEM_STATE_CONNECTED,
                        nm_modem_state_to_string(NM_MODEM_STATE_CONNECTED));
     return NM_ACT_STAGE_RETURN_POSTPONE;
+}
+
+static void
+context_properties_cb(GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
+{
+    NMModemOfono *       self;
+    NMModemOfonoPrivate *priv;
+    gs_free_error GError *error           = NULL;
+    gs_unref_variant GVariant *properties = NULL;
+    gs_unref_variant GVariant *settings   = NULL;
+    gs_unref_variant GVariant *v_dict     = NULL;
+    gboolean                   active;
+
+    self = NM_MODEM_OFONO(user_data);
+    priv = NM_MODEM_OFONO_GET_PRIVATE(self);
+
+    properties = g_dbus_proxy_call_finish(proxy, result, &error);
+
+    if (!properties) {
+        _LOGW("ofono: connection failed: no context properties returned %s", error->message);
+        g_clear_error(&error);
+        goto error;
+    }
+
+    v_dict = g_variant_get_child_value(properties, 0);
+    if (!v_dict || !g_variant_is_of_type(v_dict, G_VARIANT_TYPE_VARDICT)) {
+        _LOGW("ofono: connection failed; could not read connection properties");
+        goto error;
+    }
+
+    if (!g_variant_lookup(v_dict, "Active", "b", &active)) {
+        _LOGW("ofono: connection failed; can not read 'Active' property");
+        goto error;
+    }
+
+    /* Watch for custom ofono PropertyChanged signals */
+    _nm_dbus_signal_connect(priv->context_proxy,
+                            "PropertyChanged",
+                            G_VARIANT_TYPE("(sv)"),
+                            G_CALLBACK(context_property_changed),
+                            self);
+
+    if (active) {
+        _LOGD("ofono: connection is already Active");
+
+        settings = g_variant_lookup_value(v_dict, "Settings", G_VARIANT_TYPE_VARDICT);
+        if (settings == NULL) {
+            _LOGW("ofono: connection failed; can not read 'Settings' property");
+            goto error;
+        }
+
+        handle_settings(settings, user_data);
+    } else {
+        g_dbus_proxy_call(priv->context_proxy,
+                          "SetProperty",
+                          g_variant_new("(sv)", "Active", g_variant_new("b", TRUE)),
+                          G_DBUS_CALL_FLAGS_NONE,
+                          20000,
+                          NULL,
+                          (GAsyncReadyCallback) stage1_prepare_done,
+                          self);
+    }
+    return;
+
+error:
+    nm_modem_emit_prepare_result(NM_MODEM(self), FALSE, NM_DEVICE_STATE_REASON_MODEM_BUSY);
 }
 
 static void
@@ -973,19 +1047,15 @@ context_proxy_new_cb(GObject *source, GAsyncResult *result, gpointer user_data)
      */
     g_clear_object(&priv->ip4_config);
 
-    _nm_dbus_signal_connect(priv->context_proxy,
-                            "PropertyChanged",
-                            G_VARIANT_TYPE("(sv)"),
-                            G_CALLBACK(context_property_changed),
-                            self);
-
+    /* We need to directly query ConnectionContextinteface to get the current
+     * property values */
     g_dbus_proxy_call(priv->context_proxy,
-                      "SetProperty",
-                      g_variant_new("(sv)", "Active", g_variant_new("b", TRUE)),
+                      "GetProperties",
+                      NULL,
                       G_DBUS_CALL_FLAGS_NONE,
                       20000,
-                      priv->context_proxy_cancellable,
-                      stage1_prepare_done,
+                      NULL,
+                      (GAsyncReadyCallback) context_properties_cb,
                       self);
 }
 
@@ -1069,6 +1139,7 @@ modem_act_stage1_prepare(NMModem *            modem,
 
     _LOGI("activating context %s", priv->context_path);
 
+    update_modem_state(self);
     if (nm_modem_get_state(modem) == NM_MODEM_STATE_REGISTERED) {
         do_context_activate(self);
     } else {
