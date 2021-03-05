@@ -357,7 +357,6 @@ modem_state_cb(NMModem *modem, int new_state_i, int old_state_i, gpointer user_d
         nm_device_state_changed(device,
                                 NM_DEVICE_STATE_FAILED,
                                 NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER);
-        return;
     }
 
     if (new_state > NM_MODEM_STATE_LOCKED && old_state == NM_MODEM_STATE_LOCKED) {
