@@ -10,7 +10,7 @@
 
 #include "nm-core-utils.h"
 #include "libnm-platform/nm-platform-utils.h"
-#include "platform/nmp-rules-manager.h"
+#include "libnm-platform/nmp-rules-manager.h"
 
 #include "test-common.h"
 

@@ -14,7 +14,7 @@
 #include "libnm-glib-aux/nm-ref-string.h"
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-types.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 
 /*****************************************************************************/
 

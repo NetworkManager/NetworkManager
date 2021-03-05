@@ -13,7 +13,7 @@
 
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-base/nm-ethtool-base.h"
-#include "platform/nmp-object.h"
+#include "libnm-platform/nmp-object.h"
 #include "libnm-platform/nmp-netns.h"
 #include "libnm-platform/nm-platform-utils.h"
 
@@ -1303,7 +1303,7 @@ test_software_detect(gconstpointer user_data)
 
         if (!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "gre0")) {
             /* Seems that the ip_gre module is not loaded... try to load it. */
-            gracefully_skip = nm_utils_modprobe(NULL, TRUE, "ip_gre", NULL) != 0;
+            gracefully_skip = nmp_utils_modprobe(NULL, TRUE, "ip_gre", NULL) != 0;
         }
 
         if (!nmtstp_link_gre_add(NULL, ext, DEVICE_NAME, &lnk_gre)) {
@@ -1330,7 +1330,7 @@ test_software_detect(gconstpointer user_data)
 
         if (!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "gretap0")) {
             /* Seems that the ip_gre module is not loaded... try to load it. */
-            gracefully_skip = nm_utils_modprobe(NULL, TRUE, "ip_gre", NULL) != 0;
+            gracefully_skip = nmp_utils_modprobe(NULL, TRUE, "ip_gre", NULL) != 0;
         }
 
         if (!nmtstp_link_gre_add(NULL, ext, DEVICE_NAME, &lnk_gre)) {
@@ -1350,7 +1350,7 @@ test_software_detect(gconstpointer user_data)
 
         if (!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "tunl0")) {
             /* Seems that the ipip module is not loaded... try to load it. */
-            gracefully_skip = nm_utils_modprobe(NULL, TRUE, "ipip", NULL) != 0;
+            gracefully_skip = nmp_utils_modprobe(NULL, TRUE, "ipip", NULL) != 0;
         }
 
         lnk_ipip.local              = nmtst_inet4_from_string("1.2.3.4");
@@ -1376,7 +1376,7 @@ test_software_detect(gconstpointer user_data)
 
         if (!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "ip6tnl0")) {
             /* Seems that the ip6_tunnel module is not loaded... try to load it. */
-            gracefully_skip = nm_utils_modprobe(NULL, TRUE, "ip6_tunnel", NULL) != 0;
+            gracefully_skip = nmp_utils_modprobe(NULL, TRUE, "ip6_tunnel", NULL) != 0;
         }
 
         switch (test_data->test_mode) {
@@ -1418,7 +1418,7 @@ test_software_detect(gconstpointer user_data)
 
         if (!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "ip6gre0")) {
             /* Seems that the ip6_tunnel module is not loaded... try to load it. */
-            gracefully_skip = nm_utils_modprobe(NULL, TRUE, "ip6_gre", NULL) != 0;
+            gracefully_skip = nmp_utils_modprobe(NULL, TRUE, "ip6_gre", NULL) != 0;
         }
 
         lnk_ip6tnl.local          = *nmtst_inet6_from_string("fd01::42");
@@ -1445,7 +1445,7 @@ test_software_detect(gconstpointer user_data)
 
         if (!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "ip6gre0")) {
             /* Seems that the ip6_tunnel module is not loaded... try to load it. */
-            gracefully_skip = nm_utils_modprobe(NULL, TRUE, "ip6_gre", NULL) != 0;
+            gracefully_skip = nmp_utils_modprobe(NULL, TRUE, "ip6_gre", NULL) != 0;
         }
 
         lnk_ip6tnl.local          = *nmtst_inet6_from_string("fe80::abcd");
@@ -1526,7 +1526,7 @@ test_software_detect(gconstpointer user_data)
 
         if (!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "sit0")) {
             /* Seems that the sit module is not loaded... try to load it. */
-            gracefully_skip = nm_utils_modprobe(NULL, TRUE, "sit", NULL) != 0;
+            gracefully_skip = nmp_utils_modprobe(NULL, TRUE, "sit", NULL) != 0;
         }
 
         if (!nmtstp_link_sit_add(NULL, ext, DEVICE_NAME, &lnk_sit)) {
@@ -2049,7 +2049,7 @@ _assert_xgress_qos_mappings_impl(int ifindex, gboolean is_ingress_map, int n_ent
     _assert_xgress_qos_mappings(ifindex, FALSE, n_entries, __VA_ARGS__)
 
 static void
-_assert_vlan_flags(int ifindex, NMVlanFlags flags)
+_assert_vlan_flags(int ifindex, _NMVlanFlags flags)
 {
     const NMPlatformLnkVlan *plnk;
 
@@ -2362,8 +2362,8 @@ test_vlan_set_xgress(void)
 
         g_assert(nm_platform_link_vlan_change(NM_PLATFORM_GET,
                                               ifindex,
-                                              NM_VLAN_FLAG_REORDER_HEADERS | NM_VLAN_FLAG_GVRP,
-                                              NM_VLAN_FLAG_REORDER_HEADERS,
+                                              _NM_VLAN_FLAG_REORDER_HEADERS | _NM_VLAN_FLAG_GVRP,
+                                              _NM_VLAN_FLAG_REORDER_HEADERS,
                                               TRUE,
                                               ingress_map,
                                               G_N_ELEMENTS(ingress_map),
@@ -2372,7 +2372,7 @@ test_vlan_set_xgress(void)
                                               G_N_ELEMENTS(egress_map)));
         _assert_ingress_qos_mappings(ifindex, 2, 4, 1, 6, 12);
         _assert_egress_qos_mappings(ifindex, 2, 1, 5, 3232, 7);
-        _assert_vlan_flags(ifindex, NM_VLAN_FLAG_REORDER_HEADERS);
+        _assert_vlan_flags(ifindex, _NM_VLAN_FLAG_REORDER_HEADERS);
     }
 
     {
@@ -2393,8 +2393,8 @@ test_vlan_set_xgress(void)
 
         g_assert(nm_platform_link_vlan_change(NM_PLATFORM_GET,
                                               ifindex,
-                                              NM_VLAN_FLAG_GVRP,
-                                              NM_VLAN_FLAG_GVRP,
+                                              _NM_VLAN_FLAG_GVRP,
+                                              _NM_VLAN_FLAG_GVRP,
                                               FALSE,
                                               ingress_map,
                                               G_N_ELEMENTS(ingress_map),
@@ -2403,7 +2403,7 @@ test_vlan_set_xgress(void)
                                               G_N_ELEMENTS(egress_map)));
         _assert_ingress_qos_mappings(ifindex, 2, 4, 1, 6, 12);
         _assert_egress_qos_mappings(ifindex, 2, 1, 7, 64, 4);
-        _assert_vlan_flags(ifindex, NM_VLAN_FLAG_REORDER_HEADERS | NM_VLAN_FLAG_GVRP);
+        _assert_vlan_flags(ifindex, _NM_VLAN_FLAG_REORDER_HEADERS | _NM_VLAN_FLAG_GVRP);
     }
 
     nmtstp_link_delete(NULL, -1, ifindex, DEVICE_NAME, TRUE);

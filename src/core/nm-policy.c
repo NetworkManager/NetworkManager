@@ -17,7 +17,7 @@
 #include "devices/nm-device.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-connection.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "dns/nm-dns-manager.h"
 #include "vpn/nm-vpn-manager.h"
 #include "nm-auth-utils.h"

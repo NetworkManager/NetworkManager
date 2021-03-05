@@ -10,6 +10,7 @@
 #include "nm-dbus-object.h"
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"
+#include "libnm-base/nm-base.h"
 
 #define NM_TYPE_WIFI_AP            (nm_wifi_ap_get_type())
 #define NM_WIFI_AP(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_WIFI_AP, NMWifiAP))
@@ -69,7 +70,7 @@ gboolean               nm_wifi_ap_set_ssid(NMWifiAP *ap, GBytes *ssid);
 const char *           nm_wifi_ap_get_address(const NMWifiAP *ap);
 gboolean               nm_wifi_ap_set_address(NMWifiAP *ap, const char *addr);
 gboolean               nm_wifi_ap_set_address_bin(NMWifiAP *ap, const NMEtherAddr *addr);
-NM80211Mode            nm_wifi_ap_get_mode(NMWifiAP *ap);
+_NM80211Mode           nm_wifi_ap_get_mode(NMWifiAP *ap);
 gboolean               nm_wifi_ap_is_hotspot(NMWifiAP *ap);
 gint8                  nm_wifi_ap_get_strength(NMWifiAP *ap);
 gboolean               nm_wifi_ap_set_strength(NMWifiAP *ap, gint8 strength);

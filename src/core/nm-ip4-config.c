@@ -15,8 +15,8 @@
 #include "libnm-glib-aux/nm-dedup-multi.h"
 
 #include "nm-utils.h"
-#include "platform/nmp-object.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nmp-object.h"
+#include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nm-platform-utils.h"
 #include "NetworkManagerUtils.h"
 #include "libnm-core-intern/nm-core-internal.h"

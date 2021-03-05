@@ -20,6 +20,7 @@
 
 #include "libnm-base/nm-ethtool-base.h"
 #include "libnm-log-core/nm-logging.h"
+#include "libnm-glib-aux/nm-time-utils.h"
 
 /*****************************************************************************/
 
@@ -1804,4 +1805,231 @@ nmp_utils_sysctl_open_netdir(int ifindex, const char *ifname_guess, char *out_if
     }
 
     return -1;
+}
+
+/*****************************************************************************/
+
+char *
+nmp_utils_new_vlan_name(const char *parent_iface, guint32 vlan_id)
+{
+    guint id_len;
+    gsize parent_len;
+    char *ifname;
+
+    g_return_val_if_fail(parent_iface && *parent_iface, NULL);
+
+    if (vlan_id < 10)
+        id_len = 2;
+    else if (vlan_id < 100)
+        id_len = 3;
+    else if (vlan_id < 1000)
+        id_len = 4;
+    else {
+        g_return_val_if_fail(vlan_id < 4095, NULL);
+        id_len = 5;
+    }
+
+    ifname = g_new(char, IFNAMSIZ);
+
+    parent_len = strlen(parent_iface);
+    parent_len = MIN(parent_len, IFNAMSIZ - 1 - id_len);
+    memcpy(ifname, parent_iface, parent_len);
+    g_snprintf(&ifname[parent_len], IFNAMSIZ - parent_len, ".%u", vlan_id);
+
+    return ifname;
+}
+
+/*****************************************************************************/
+
+/* nmp_utils_new_infiniband_name:
+ * @name: the output-buffer where the value will be written. Must be
+ *   not %NULL and point to a string buffer of at least IFNAMSIZ bytes.
+ * @parent_name: the parent interface name
+ * @p_key: the partition key.
+ *
+ * Returns: the infiniband name will be written to @name and @name
+ *   is returned.
+ */
+const char *
+nmp_utils_new_infiniband_name(char *name, const char *parent_name, int p_key)
+{
+    g_return_val_if_fail(name, NULL);
+    g_return_val_if_fail(parent_name && parent_name[0], NULL);
+    g_return_val_if_fail(strlen(parent_name) < IFNAMSIZ, NULL);
+
+    /* technically, p_key of 0x0000 and 0x8000 is not allowed either. But we don't
+     * want to assert against that in nmp_utils_new_infiniband_name(). So be more
+     * resilient here, and accept those. */
+    g_return_val_if_fail(p_key >= 0 && p_key <= 0xffff, NULL);
+
+    /* If parent+suffix is too long, kernel would just truncate
+     * the name. We do the same. See ipoib_vlan_add().  */
+    g_snprintf(name, IFNAMSIZ, "%s.%04x", parent_name, p_key);
+    return name;
+}
+
+/*****************************************************************************/
+
+/**
+ * Takes a pair @timestamp and @duration, and returns the remaining duration based
+ * on the new timestamp @now.
+ */
+guint32
+nmp_utils_lifetime_rebase_relative_time_on_now(guint32 timestamp, guint32 duration, gint32 now)
+{
+    gint64 t;
+
+    nm_assert(now >= 0);
+
+    if (duration == NM_PLATFORM_LIFETIME_PERMANENT)
+        return NM_PLATFORM_LIFETIME_PERMANENT;
+
+    if (timestamp == 0) {
+        /* if the @timestamp is zero, assume it was just left unset and that the relative
+         * @duration starts counting from @now. This is convenient to construct an address
+         * and print it in nm_platform_ip4_address_to_string().
+         *
+         * In general it does not make sense to set the @duration without anchoring at
+         * @timestamp because you don't know the absolute expiration time when looking
+         * at the address at a later moment. */
+        timestamp = now;
+    }
+
+    /* For timestamp > now, just accept it and calculate the expected(?) result. */
+    t = (gint64) timestamp + (gint64) duration - (gint64) now;
+
+    if (t <= 0)
+        return 0;
+    if (t >= NM_PLATFORM_LIFETIME_PERMANENT)
+        return NM_PLATFORM_LIFETIME_PERMANENT - 1;
+    return t;
+}
+
+guint32
+nmp_utils_lifetime_get(guint32  timestamp,
+                       guint32  lifetime,
+                       guint32  preferred,
+                       gint32   now,
+                       guint32 *out_preferred)
+{
+    guint32 t_lifetime, t_preferred;
+
+    nm_assert(now >= 0);
+
+    if (timestamp == 0 && lifetime == 0) {
+        /* We treat lifetime==0 && timestamp==0 addresses as permanent addresses to allow easy
+         * creation of such addresses (without requiring to set the lifetime fields to
+         * NM_PLATFORM_LIFETIME_PERMANENT). The real lifetime==0 addresses (E.g. DHCP6 telling us
+         * to drop an address will have timestamp set.
+         */
+        NM_SET_OUT(out_preferred, NM_PLATFORM_LIFETIME_PERMANENT);
+        g_return_val_if_fail(preferred == 0, NM_PLATFORM_LIFETIME_PERMANENT);
+        return NM_PLATFORM_LIFETIME_PERMANENT;
+    }
+
+    if (now <= 0)
+        now = nm_utils_get_monotonic_timestamp_sec();
+
+    t_lifetime = nmp_utils_lifetime_rebase_relative_time_on_now(timestamp, lifetime, now);
+    if (!t_lifetime) {
+        NM_SET_OUT(out_preferred, 0);
+        return 0;
+    }
+
+    t_preferred = nmp_utils_lifetime_rebase_relative_time_on_now(timestamp, preferred, now);
+
+    NM_SET_OUT(out_preferred, MIN(t_preferred, t_lifetime));
+
+    /* Assert that non-permanent addresses have a (positive) @timestamp. nmp_utils_lifetime_rebase_relative_time_on_now()
+     * treats addresses with timestamp 0 as *now*. Addresses passed to _address_get_lifetime() always
+     * should have a valid @timestamp, otherwise on every re-sync, their lifetime will be extended anew.
+     */
+    g_return_val_if_fail(timestamp != 0
+                             || (lifetime == NM_PLATFORM_LIFETIME_PERMANENT
+                                 && preferred == NM_PLATFORM_LIFETIME_PERMANENT),
+                         t_lifetime);
+    g_return_val_if_fail(t_preferred <= t_lifetime, t_lifetime);
+
+    return t_lifetime;
+}
+
+/*****************************************************************************/
+
+static const char *
+_trunk_first_line(char *str)
+{
+    char *s;
+
+    s = strchr(str, '\n');
+    if (s)
+        s[0] = '\0';
+    return str;
+}
+
+int
+nmp_utils_modprobe(GError **error, gboolean suppress_error_logging, const char *arg1, ...)
+{
+    gs_unref_ptrarray GPtrArray *argv = NULL;
+    int                          exit_status;
+    gs_free char *               _log_str = NULL;
+#define ARGV_TO_STR(argv) \
+    (_log_str ? _log_str : (_log_str = g_strjoinv(" ", (char **) argv->pdata)))
+    GError *      local = NULL;
+    va_list       ap;
+    NMLogLevel    llevel  = suppress_error_logging ? LOGL_DEBUG : LOGL_ERR;
+    gs_free char *std_out = NULL, *std_err = NULL;
+
+    g_return_val_if_fail(!error || !*error, -1);
+    g_return_val_if_fail(arg1, -1);
+
+    /* construct the argument list */
+    argv = g_ptr_array_sized_new(4);
+    g_ptr_array_add(argv, "/sbin/modprobe");
+    g_ptr_array_add(argv, "--use-blacklist");
+    g_ptr_array_add(argv, (char *) arg1);
+
+    va_start(ap, arg1);
+    while ((arg1 = va_arg(ap, const char *)))
+        g_ptr_array_add(argv, (char *) arg1);
+    va_end(ap);
+
+    g_ptr_array_add(argv, NULL);
+
+    nm_log_dbg(LOGD_CORE, "modprobe: '%s'", ARGV_TO_STR(argv));
+    if (!g_spawn_sync(NULL,
+                      (char **) argv->pdata,
+                      NULL,
+                      0,
+                      NULL,
+                      NULL,
+                      &std_out,
+                      &std_err,
+                      &exit_status,
+                      &local)) {
+        nm_log(llevel,
+               LOGD_CORE,
+               NULL,
+               NULL,
+               "modprobe: '%s' failed: %s",
+               ARGV_TO_STR(argv),
+               local->message);
+        g_propagate_error(error, local);
+        return -1;
+    } else if (exit_status != 0) {
+        nm_log(llevel,
+               LOGD_CORE,
+               NULL,
+               NULL,
+               "modprobe: '%s' exited with error %d%s%s%s%s%s%s",
+               ARGV_TO_STR(argv),
+               exit_status,
+               std_out && *std_out ? " (" : "",
+               std_out && *std_out ? _trunk_first_line(std_out) : "",
+               std_out && *std_out ? ")" : "",
+               std_err && *std_err ? " (" : "",
+               std_err && *std_err ? _trunk_first_line(std_err) : "",
+               std_err && *std_err ? ")" : "");
+    }
+
+    return exit_status;
 }

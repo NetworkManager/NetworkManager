@@ -35,10 +35,10 @@
 #include "nm-l3-config-data.h"
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nm-platform-utils.h"
-#include "platform/nmp-object.h"
-#include "platform/nmp-rules-manager.h"
+#include "libnm-platform/nmp-object.h"
+#include "libnm-platform/nmp-rules-manager.h"
 #include "ndisc/nm-ndisc.h"
 #include "ndisc/nm-lndp-ndisc.h"
 #include "dhcp/nm-dhcp-manager.h"
@@ -1567,7 +1567,7 @@ _prop_get_ipvx_dhcp_iaid(NMDevice *    self,
         iaid = unaligned_read_be32(&pllink->l_address.data[pllink->l_address.len - 4]);
         goto out_good;
     } else if (nm_streq0(iaid_str, NM_IAID_PERM_MAC)) {
-        guint8      hwaddr_buf[NM_UTILS_HWADDR_LEN_MAX];
+        guint8      hwaddr_buf[_NM_UTILS_HWADDR_LEN_MAX];
         const char *hwaddr_str;
         gsize       hwaddr_len;
 
@@ -1729,7 +1729,7 @@ _prop_get_ipv4_dhcp_client_id(NMDevice *self, NMConnection *connection, GBytes *
     gs_free char *     client_id_default = NULL;
     guint8 *           client_id_buf;
     const char *       fail_reason;
-    guint8             hwaddr_bin_buf[NM_UTILS_HWADDR_LEN_MAX];
+    guint8             hwaddr_bin_buf[_NM_UTILS_HWADDR_LEN_MAX];
     const guint8 *     hwaddr_bin;
     int                arp_type;
     gsize              hwaddr_len;
@@ -5216,11 +5216,11 @@ ndisc_set_router_config(NMNDisc *ndisc, NMDevice *self)
         if (addr->plen != 64)
             continue;
 
-        lifetime = nm_utils_lifetime_get(addr->timestamp,
-                                         addr->lifetime,
-                                         addr->preferred,
-                                         NM_NDISC_EXPIRY_BASE_TIMESTAMP / 1000,
-                                         &preferred);
+        lifetime = nmp_utils_lifetime_get(addr->timestamp,
+                                          addr->lifetime,
+                                          addr->preferred,
+                                          NM_NDISC_EXPIRY_BASE_TIMESTAMP / 1000,
+                                          &preferred);
         if (!lifetime)
             continue;
 
@@ -11634,7 +11634,7 @@ share_init(NMDevice *self, GError **error)
     }
 
     for (i = 0; i < G_N_ELEMENTS(modules); i++)
-        nm_utils_modprobe(NULL, FALSE, modules[i], NULL);
+        nmp_utils_modprobe(NULL, FALSE, modules[i], NULL);
 
     return TRUE;
 }
@@ -16821,7 +16821,7 @@ const char *
 nm_device_get_hw_address(NMDevice *self)
 {
     NMDevicePrivate *priv;
-    char             buf[NM_UTILS_HWADDR_LEN_MAX];
+    char             buf[_NM_UTILS_HWADDR_LEN_MAX];
     gsize            l;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), NULL);
@@ -16915,7 +16915,7 @@ void
 nm_device_update_permanent_hw_address(NMDevice *self, gboolean force_freeze)
 {
     NMDevicePrivate *              priv = NM_DEVICE_GET_PRIVATE(self);
-    guint8                         buf[NM_UTILS_HWADDR_LEN_MAX];
+    guint8                         buf[_NM_UTILS_HWADDR_LEN_MAX];
     size_t                         len = 0;
     gboolean                       success_read;
     int                            ifindex;
@@ -17033,7 +17033,7 @@ _hw_addr_set(NMDevice *        self,
     NMDevicePrivate *priv;
     gboolean         success = FALSE;
     int              r;
-    guint8           addr_bytes[NM_UTILS_HWADDR_LEN_MAX];
+    guint8           addr_bytes[_NM_UTILS_HWADDR_LEN_MAX];
     gsize            addr_len;
     gboolean         was_taken_down = FALSE;
     gboolean         retry_down;
@@ -18216,7 +18216,7 @@ constructor(GType type, guint n_construct_params, GObjectConstructParam *constru
     }
 
     if (priv->hw_addr_perm) {
-        guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
+        guint8 buf[_NM_UTILS_HWADDR_LEN_MAX];
         gsize  l;
 
         if (!_nm_utils_hwaddr_aton(priv->hw_addr_perm, buf, sizeof(buf), &l)) {

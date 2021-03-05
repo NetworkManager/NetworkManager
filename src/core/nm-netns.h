@@ -19,13 +19,15 @@
 
 typedef struct _NMNetnsClass NMNetnsClass;
 
+struct _NMPlatform;
+
 GType nm_netns_get_type(void);
 
 NMNetns *nm_netns_get(void);
-NMNetns *nm_netns_new(NMPlatform *platform);
+NMNetns *nm_netns_new(struct _NMPlatform *platform);
 
-NMPlatform *nm_netns_get_platform(NMNetns *self);
-NMPNetns *  nm_netns_get_platform_netns(NMNetns *self);
+struct _NMPlatform *nm_netns_get_platform(NMNetns *self);
+NMPNetns *          nm_netns_get_platform_netns(NMNetns *self);
 
 struct _NMPRulesManager *nm_netns_get_rules_manager(NMNetns *self);
 

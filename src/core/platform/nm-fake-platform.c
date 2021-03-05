@@ -13,12 +13,9 @@
 #include <linux/if.h>
 #include <linux/rtnetlink.h>
 
-#include "nm-utils.h"
-
-#include "nm-core-utils.h"
 #include "libnm-platform/nm-platform-utils.h"
-#include "nm-platform-private.h"
-#include "nmp-object.h"
+#include "libnm-platform/nm-platform-private.h"
+#include "libnm-platform/nmp-object.h"
 
 #include "nm-test-utils-core.h"
 
@@ -608,7 +605,7 @@ link_set_address(NMPlatform *platform, int ifindex, gconstpointer addr, size_t l
     NMFakePlatformLink *device        = link_get(platform, ifindex);
     nm_auto_nmpobj NMPObject *obj_tmp = NULL;
 
-    if (len == 0 || len > NM_UTILS_HWADDR_LEN_MAX || !addr)
+    if (len == 0 || len > _NM_UTILS_HWADDR_LEN_MAX || !addr)
         g_return_val_if_reached(-NME_BUG);
 
     if (!device)
@@ -749,8 +746,8 @@ link_release(NMPlatform *platform, int master_idx, int slave_idx)
 static gboolean
 link_vlan_change(NMPlatform *            platform,
                  int                     ifindex,
-                 NMVlanFlags             flags_mask,
-                 NMVlanFlags             flags_set,
+                 _NMVlanFlags            flags_mask,
+                 _NMVlanFlags            flags_set,
                  gboolean                ingress_reset_all,
                  const NMVlanQosMapping *ingress_map,
                  gsize                   n_ingress_map,
@@ -799,7 +796,7 @@ infiniband_partition_add(NMPlatform *           platform,
     parent_device = link_get(platform, parent);
     g_return_val_if_fail(parent_device != NULL, FALSE);
 
-    nm_utils_new_infiniband_name(name, parent_device->obj->link.name, p_key);
+    nmp_utils_new_infiniband_name(name, parent_device->obj->link.name, p_key);
 
     link_add_one(platform, name, NM_LINK_TYPE_INFINIBAND, _infiniband_add_prepare, &d, out_link);
     return TRUE;
@@ -814,12 +811,12 @@ infiniband_partition_delete(NMPlatform *platform, int parent, int p_key)
     parent_device = link_get(platform, parent);
     g_return_val_if_fail(parent_device != NULL, FALSE);
 
-    nm_utils_new_infiniband_name(name, parent_device->obj->link.name, p_key);
+    nmp_utils_new_infiniband_name(name, parent_device->obj->link.name, p_key);
     return link_delete(platform, nm_platform_link_get_ifindex(platform, name));
 }
 
 static gboolean
-wifi_get_capabilities(NMPlatform *platform, int ifindex, NMDeviceWifiCapabilities *caps)
+wifi_get_capabilities(NMPlatform *platform, int ifindex, _NMDeviceWifiCapabilities *caps)
 {
     NMFakePlatformLink *device = link_get(platform, ifindex);
 
@@ -829,10 +826,10 @@ wifi_get_capabilities(NMPlatform *platform, int ifindex, NMDeviceWifiCapabilitie
         return FALSE;
 
     if (caps) {
-        *caps = (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104
-                 | NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_CIPHER_CCMP
-                 | NM_WIFI_DEVICE_CAP_WPA | NM_WIFI_DEVICE_CAP_RSN | NM_WIFI_DEVICE_CAP_AP
-                 | NM_WIFI_DEVICE_CAP_ADHOC);
+        *caps = (_NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | _NM_WIFI_DEVICE_CAP_CIPHER_WEP104
+                 | _NM_WIFI_DEVICE_CAP_CIPHER_TKIP | _NM_WIFI_DEVICE_CAP_CIPHER_CCMP
+                 | _NM_WIFI_DEVICE_CAP_WPA | _NM_WIFI_DEVICE_CAP_RSN | _NM_WIFI_DEVICE_CAP_AP
+                 | _NM_WIFI_DEVICE_CAP_ADHOC);
     }
     return TRUE;
 }
@@ -861,14 +858,14 @@ wifi_get_rate(NMPlatform *platform, int ifindex)
     return 0;
 }
 
-static NM80211Mode
+static _NM80211Mode
 wifi_get_mode(NMPlatform *platform, int ifindex)
 {
-    return NM_802_11_MODE_UNKNOWN;
+    return _NM_802_11_MODE_UNKNOWN;
 }
 
 static void
-wifi_set_mode(NMPlatform *platform, int ifindex, NM80211Mode mode)
+wifi_set_mode(NMPlatform *platform, int ifindex, _NM80211Mode mode)
 {
     ;
 }

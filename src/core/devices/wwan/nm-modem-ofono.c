@@ -10,7 +10,7 @@
 #include "libnm-core-intern/nm-core-internal.h"
 #include "devices/nm-device-private.h"
 #include "nm-modem.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "nm-ip4-config.h"
 
 #define VARIANT_IS_OF_TYPE_BOOLEAN(v) \

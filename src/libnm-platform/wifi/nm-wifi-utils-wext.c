@@ -4,7 +4,7 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#include "src/core/nm-default-daemon.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-wifi-utils-wext.h"
 
@@ -21,11 +21,9 @@
 #include <sys/socket.h>
 #include <linux/wireless.h>
 
+#include "libnm-log-core/nm-logging.h"
 #include "nm-wifi-utils-private.h"
-#include "nm-utils.h"
 #include "libnm-platform/nm-platform-utils.h"
-#include "libnm-core-intern/nm-core-internal.h"
-#include "nm-core-utils.h"
 
 typedef struct {
     NMWifiUtils       parent;
@@ -114,7 +112,7 @@ get_ifname(int ifindex, char *buffer, const char *op)
     return TRUE;
 }
 
-static NM80211Mode
+static _NM80211Mode
 wifi_wext_get_mode_ifname(NMWifiUtils *data, const char *ifname)
 {
     NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
@@ -129,24 +127,24 @@ wifi_wext_get_mode_ifname(NMWifiUtils *data, const char *ifname)
         if (errsv != ENODEV) {
             _LOGW(LOGD_PLATFORM | LOGD_WIFI, "(%s): error %d getting card mode", ifname, errsv);
         }
-        return NM_802_11_MODE_UNKNOWN;
+        return _NM_802_11_MODE_UNKNOWN;
     }
 
     switch (wrq.u.mode) {
     case IW_MODE_ADHOC:
-        return NM_802_11_MODE_ADHOC;
+        return _NM_802_11_MODE_ADHOC;
     case IW_MODE_MASTER:
-        return NM_802_11_MODE_AP;
+        return _NM_802_11_MODE_AP;
     case IW_MODE_INFRA:
     case IW_MODE_AUTO: /* hack for WEXT devices reporting IW_MODE_AUTO */
-        return NM_802_11_MODE_INFRA;
+        return _NM_802_11_MODE_INFRA;
     default:
         break;
     }
-    return NM_802_11_MODE_UNKNOWN;
+    return _NM_802_11_MODE_UNKNOWN;
 }
 
-static NM80211Mode
+static _NM80211Mode
 wifi_wext_get_mode(NMWifiUtils *data)
 {
     char ifname[IFNAMSIZ];
@@ -158,7 +156,7 @@ wifi_wext_get_mode(NMWifiUtils *data)
 }
 
 static gboolean
-wifi_wext_set_mode(NMWifiUtils *data, const NM80211Mode mode)
+wifi_wext_set_mode(NMWifiUtils *data, const _NM80211Mode mode)
 {
     NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
     struct iwreq     wrq;
@@ -172,13 +170,13 @@ wifi_wext_set_mode(NMWifiUtils *data, const NM80211Mode mode)
 
     memset(&wrq, 0, sizeof(struct iwreq));
     switch (mode) {
-    case NM_802_11_MODE_ADHOC:
+    case _NM_802_11_MODE_ADHOC:
         wrq.u.mode = IW_MODE_ADHOC;
         break;
-    case NM_802_11_MODE_AP:
+    case _NM_802_11_MODE_AP:
         wrq.u.mode = IW_MODE_MASTER;
         break;
-    case NM_802_11_MODE_INFRA:
+    case _NM_802_11_MODE_INFRA:
         wrq.u.mode = IW_MODE_INFRA;
         break;
     default:
@@ -637,36 +635,36 @@ wext_get_range_ifname(NMWifiUtilsWext *wext,
     return success;
 }
 
-#define WPA_CAPS                                                                              \
-    (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_CIPHER_CCMP | NM_WIFI_DEVICE_CAP_WPA \
-     | NM_WIFI_DEVICE_CAP_RSN)
+#define WPA_CAPS                                                                                 \
+    (_NM_WIFI_DEVICE_CAP_CIPHER_TKIP | _NM_WIFI_DEVICE_CAP_CIPHER_CCMP | _NM_WIFI_DEVICE_CAP_WPA \
+     | _NM_WIFI_DEVICE_CAP_RSN)
 
 static guint32
 wext_get_caps(NMWifiUtilsWext *wext, const char *ifname, struct iw_range *range)
 {
-    guint32 caps = NM_WIFI_DEVICE_CAP_NONE;
+    guint32 caps = _NM_WIFI_DEVICE_CAP_NONE;
 
-    g_return_val_if_fail(wext != NULL, NM_WIFI_DEVICE_CAP_NONE);
-    g_return_val_if_fail(range != NULL, NM_WIFI_DEVICE_CAP_NONE);
+    g_return_val_if_fail(wext != NULL, _NM_WIFI_DEVICE_CAP_NONE);
+    g_return_val_if_fail(range != NULL, _NM_WIFI_DEVICE_CAP_NONE);
 
     /* All drivers should support WEP by default */
-    caps |= NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104;
+    caps |= _NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | _NM_WIFI_DEVICE_CAP_CIPHER_WEP104;
 
     if (range->enc_capa & IW_ENC_CAPA_CIPHER_TKIP)
-        caps |= NM_WIFI_DEVICE_CAP_CIPHER_TKIP;
+        caps |= _NM_WIFI_DEVICE_CAP_CIPHER_TKIP;
 
     if (range->enc_capa & IW_ENC_CAPA_CIPHER_CCMP)
-        caps |= NM_WIFI_DEVICE_CAP_CIPHER_CCMP;
+        caps |= _NM_WIFI_DEVICE_CAP_CIPHER_CCMP;
 
     if (range->enc_capa & IW_ENC_CAPA_WPA)
-        caps |= NM_WIFI_DEVICE_CAP_WPA;
+        caps |= _NM_WIFI_DEVICE_CAP_WPA;
 
     if (range->enc_capa & IW_ENC_CAPA_WPA2)
-        caps |= NM_WIFI_DEVICE_CAP_RSN;
+        caps |= _NM_WIFI_DEVICE_CAP_RSN;
 
     /* Check for cipher support but not WPA support */
-    if ((caps & (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
-        && !(caps & (NM_WIFI_DEVICE_CAP_WPA | NM_WIFI_DEVICE_CAP_RSN))) {
+    if ((caps & (_NM_WIFI_DEVICE_CAP_CIPHER_TKIP | _NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
+        && !(caps & (_NM_WIFI_DEVICE_CAP_WPA | _NM_WIFI_DEVICE_CAP_RSN))) {
         _LOGW(LOGD_WIFI,
               "%s: device supports WPA ciphers but not WPA protocol; WPA unavailable.",
               ifname);
@@ -674,8 +672,8 @@ wext_get_caps(NMWifiUtilsWext *wext, const char *ifname, struct iw_range *range)
     }
 
     /* Check for WPA support but not cipher support */
-    if ((caps & (NM_WIFI_DEVICE_CAP_WPA | NM_WIFI_DEVICE_CAP_RSN))
-        && !(caps & (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_CIPHER_CCMP))) {
+    if ((caps & (_NM_WIFI_DEVICE_CAP_WPA | _NM_WIFI_DEVICE_CAP_RSN))
+        && !(caps & (_NM_WIFI_DEVICE_CAP_CIPHER_TKIP | _NM_WIFI_DEVICE_CAP_CIPHER_CCMP))) {
         _LOGW(LOGD_WIFI,
               "%s: device supports WPA protocol but not WPA ciphers; WPA unavailable.",
               ifname);
@@ -686,7 +684,7 @@ wext_get_caps(NMWifiUtilsWext *wext, const char *ifname, struct iw_range *range)
      * (other than actually trying to do it), so just assume that
      * Ad-Hoc is supported and AP isn't.
      */
-    caps |= NM_WIFI_DEVICE_CAP_ADHOC;
+    caps |= _NM_WIFI_DEVICE_CAP_ADHOC;
 
     return caps;
 }
@@ -793,11 +791,11 @@ nm_wifi_utils_wext_new(int ifindex, gboolean check_scan)
 
     wext->parent.caps = wext_get_caps(wext, ifname, &range);
     if (freq_valid)
-        wext->parent.caps |= NM_WIFI_DEVICE_CAP_FREQ_VALID;
+        wext->parent.caps |= _NM_WIFI_DEVICE_CAP_FREQ_VALID;
     if (has_2ghz)
-        wext->parent.caps |= NM_WIFI_DEVICE_CAP_FREQ_2GHZ;
+        wext->parent.caps |= _NM_WIFI_DEVICE_CAP_FREQ_2GHZ;
     if (has_5ghz)
-        wext->parent.caps |= NM_WIFI_DEVICE_CAP_FREQ_5GHZ;
+        wext->parent.caps |= _NM_WIFI_DEVICE_CAP_FREQ_5GHZ;
 
     _LOGI(LOGD_PLATFORM | LOGD_WIFI, "(%s): using WEXT for Wi-Fi device control", ifname);
 

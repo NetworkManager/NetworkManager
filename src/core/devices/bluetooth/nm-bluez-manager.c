@@ -24,7 +24,7 @@
 #include "nm-manager.h"
 #include "nm-bluez5-dun.h"
 #include "libnm-core-intern/nm-core-internal.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "libnm-std-aux/nm-dbus-compat.h"
 
 /*****************************************************************************/

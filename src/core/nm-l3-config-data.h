@@ -6,8 +6,8 @@
 #include "libnm-glib-aux/nm-dedup-multi.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-ip6-config.h"
-#include "platform/nm-platform.h"
-#include "platform/nmp-object.h"
+#include "libnm-platform/nm-platform.h"
+#include "libnm-platform/nmp-object.h"
 
 typedef enum {
     NM_L3_CONFIG_DAT_FLAGS_NONE = 0,

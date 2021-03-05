@@ -3,7 +3,7 @@
  * Copyright (C) 2012 - 2018 Red Hat, Inc.
  */
 
-#include "src/core/nm-default-daemon.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-platform.h"
 
@@ -22,17 +22,15 @@
 #include <linux/tc_act/tc_mirred.h>
 #include <libudev.h>
 
-#include "nm-utils.h"
-#include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-glib-aux/nm-dedup-multi.h"
-#include "libnm-udev-aux/nm-udev-utils.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
-
-#include "nm-core-utils.h"
+#include "libnm-glib-aux/nm-time-utils.h"
+#include "libnm-log-core/nm-logging.h"
 #include "libnm-platform/nm-platform-utils.h"
+#include "libnm-platform/nmp-netns.h"
+#include "libnm-udev-aux/nm-udev-utils.h"
 #include "nm-platform-private.h"
 #include "nmp-object.h"
-#include "libnm-platform/nmp-netns.h"
 
 /*****************************************************************************/
 
@@ -55,18 +53,22 @@ G_STATIC_ASSERT(_nm_alignof(NMPlatformIPAddress) == _nm_alignof(NMPlatformIPXAdd
 
 /*****************************************************************************/
 
-G_STATIC_ASSERT(sizeof(((NMPLinkAddress *) NULL)->data) == NM_UTILS_HWADDR_LEN_MAX);
-G_STATIC_ASSERT(sizeof(((NMPlatformLink *) NULL)->l_address.data) == NM_UTILS_HWADDR_LEN_MAX);
-G_STATIC_ASSERT(sizeof(((NMPlatformLink *) NULL)->l_broadcast.data) == NM_UTILS_HWADDR_LEN_MAX);
+G_STATIC_ASSERT(sizeof(((NMPLinkAddress *) NULL)->data) == _NM_UTILS_HWADDR_LEN_MAX);
+G_STATIC_ASSERT(sizeof(((NMPlatformLink *) NULL)->l_address.data) == _NM_UTILS_HWADDR_LEN_MAX);
+G_STATIC_ASSERT(sizeof(((NMPlatformLink *) NULL)->l_broadcast.data) == _NM_UTILS_HWADDR_LEN_MAX);
 
 static const char *
 _nmp_link_address_to_string(const NMPLinkAddress *addr,
-                            char                  buf[static(NM_UTILS_HWADDR_LEN_MAX * 3)])
+                            char                  buf[static(_NM_UTILS_HWADDR_LEN_MAX * 3)])
 {
     nm_assert(addr);
 
     if (addr->len > 0) {
-        if (!_nm_utils_hwaddr_ntoa(addr->data, addr->len, TRUE, buf, NM_UTILS_HWADDR_LEN_MAX * 3)) {
+        if (!_nm_utils_hwaddr_ntoa(addr->data,
+                                   addr->len,
+                                   TRUE,
+                                   buf,
+                                   _NM_UTILS_HWADDR_LEN_MAX * 3)) {
             buf[0] = '\0';
             g_return_val_if_reached(buf);
         }
@@ -84,7 +86,7 @@ nmp_link_address_get(const NMPLinkAddress *addr, size_t *length)
         return NULL;
     }
 
-    if (addr->len > NM_UTILS_HWADDR_LEN_MAX) {
+    if (addr->len > _NM_UTILS_HWADDR_LEN_MAX) {
         NM_SET_OUT(length, 0);
         g_return_val_if_reached(NULL);
     }
@@ -221,11 +223,6 @@ _nm_platform_signal_id_get(NMPlatformSignalIdType signal_type)
 
 /*****************************************************************************/
 
-/* Singleton NMPlatform subclass instance and cached class object */
-NM_DEFINE_SINGLETON_INSTANCE(NMPlatform);
-
-NM_DEFINE_SINGLETON_REGISTER(NMPlatform);
-
 /* Just always initialize a @klass instance. NM_PLATFORM_GET_CLASS()
  * is only a plain read on the self instance, which the compiler
  * like can optimize out.
@@ -256,51 +253,6 @@ NM_DEFINE_SINGLETON_REGISTER(NMPlatform);
         if (!nm_platform_netns_push(self, &netns))           \
             return (err_val);                                \
     } while (0)
-
-/**
- * nm_platform_setup:
- * @instance: the #NMPlatform instance
- *
- * Failing to set up #NMPlatform singleton results in a fatal error,
- * as well as trying to initialize it multiple times without freeing
- * it.
- *
- * NetworkManager will typically use only one platform object during
- * its run. Test programs might want to switch platform implementations,
- * though.
- */
-void
-nm_platform_setup(NMPlatform *instance)
-{
-    g_return_if_fail(NM_IS_PLATFORM(instance));
-    g_return_if_fail(!singleton_instance);
-
-    singleton_instance = instance;
-
-    nm_singleton_instance_register();
-
-    nm_log_dbg(LOGD_CORE,
-               "setup %s singleton (" NM_HASH_OBFUSCATE_PTR_FMT ")",
-               "NMPlatform",
-               NM_HASH_OBFUSCATE_PTR(instance));
-}
-
-/**
- * nm_platform_get:
- * @self: platform instance
- *
- * Retrieve #NMPlatform singleton. Use this whenever you want to connect to
- * #NMPlatform signals. It is an error to call it before nm_platform_setup().
- *
- * Returns: (transfer none): The #NMPlatform singleton reference.
- */
-NMPlatform *
-nm_platform_get()
-{
-    g_assert(singleton_instance);
-
-    return singleton_instance;
-}
 
 /*****************************************************************************/
 
@@ -1159,7 +1111,7 @@ nm_platform_link_get_by_address(NMPlatform *  self,
     if (length == 0)
         return NULL;
 
-    if (length > NM_UTILS_HWADDR_LEN_MAX)
+    if (length > _NM_UTILS_HWADDR_LEN_MAX)
         g_return_val_if_reached(NULL);
     if (!address)
         g_return_val_if_reached(NULL);
@@ -1235,7 +1187,7 @@ nm_platform_link_add(NMPlatform *           self,
                      const NMPlatformLink **out_link)
 {
     int  r;
-    char addr_buf[NM_UTILS_HWADDR_LEN_MAX * 3];
+    char addr_buf[_NM_UTILS_HWADDR_LEN_MAX * 3];
     char mtu_buf[16];
     char parent_buf[64];
     char buf[512];
@@ -1244,7 +1196,7 @@ nm_platform_link_add(NMPlatform *           self,
 
     g_return_val_if_fail(name, -NME_BUG);
     g_return_val_if_fail((address != NULL) ^ (address_len == 0), -NME_BUG);
-    g_return_val_if_fail(address_len <= NM_UTILS_HWADDR_LEN_MAX, -NME_BUG);
+    g_return_val_if_fail(address_len <= _NM_UTILS_HWADDR_LEN_MAX, -NME_BUG);
     g_return_val_if_fail(parent >= 0, -NME_BUG);
 
     r = _link_add_check_existing(self, name, type, out_link);
@@ -1756,7 +1708,9 @@ nm_platform_link_set_address(NMPlatform *self, int ifindex, gconstpointer addres
     g_return_val_if_fail(address, -NME_BUG);
     g_return_val_if_fail(length > 0, -NME_BUG);
 
-    _LOG3D("link: setting hardware address to %s", (mac = nm_utils_hwaddr_ntoa(address, length)));
+    _LOG3D("link: setting hardware address to %s",
+           _nm_utils_hwaddr_ntoa_maybe_a(address, length, &mac));
+
     return klass->link_set_address(self, ifindex, address, length);
 }
 
@@ -1782,7 +1736,7 @@ nm_platform_link_get_address(NMPlatform *self, int ifindex, size_t *length)
  * nm_platform_link_get_permanent_address:
  * @self: platform instance
  * @ifindex: Interface index
- * @buf: buffer of at least %NM_UTILS_HWADDR_LEN_MAX bytes, on success
+ * @buf: buffer of at least %_NM_UTILS_HWADDR_LEN_MAX bytes, on success
  * the permanent hardware address
  * @length: Pointer to a variable to store address length
  *
@@ -2684,8 +2638,8 @@ nm_platform_sysctl_slave_get_option(NMPlatform *self, int ifindex, const char *o
 gboolean
 nm_platform_link_vlan_change(NMPlatform *            self,
                              int                     ifindex,
-                             NMVlanFlags             flags_mask,
-                             NMVlanFlags             flags_set,
+                             _NMVlanFlags            flags_mask,
+                             _NMVlanFlags            flags_set,
                              gboolean                ingress_reset_all,
                              const NMVlanQosMapping *ingress_map,
                              gsize                   n_ingress_map,
@@ -2800,7 +2754,7 @@ _infiniband_add_add_or_delete(NMPlatform *           self,
     if (parent_link->type != NM_LINK_TYPE_INFINIBAND)
         return -NME_PL_WRONG_TYPE;
 
-    nm_utils_new_infiniband_name(name, parent_link->name, p_key);
+    nmp_utils_new_infiniband_name(name, parent_link->name, p_key);
 
     if (add) {
         r = _link_add_check_existing(self, name, NM_LINK_TYPE_INFINIBAND, out_link);
@@ -3042,7 +2996,7 @@ nm_platform_link_tun_get_properties(NMPlatform *self, int ifindex, NMPlatformLnk
 }
 
 gboolean
-nm_platform_wifi_get_capabilities(NMPlatform *self, int ifindex, NMDeviceWifiCapabilities *caps)
+nm_platform_wifi_get_capabilities(NMPlatform *self, int ifindex, _NMDeviceWifiCapabilities *caps)
 {
     _CHECK_SELF(self, klass, FALSE);
 
@@ -3075,18 +3029,18 @@ nm_platform_wifi_get_station(NMPlatform * self,
     return klass->wifi_get_station(self, ifindex, out_bssid, out_quality, out_rate);
 }
 
-NM80211Mode
+_NM80211Mode
 nm_platform_wifi_get_mode(NMPlatform *self, int ifindex)
 {
-    _CHECK_SELF(self, klass, NM_802_11_MODE_UNKNOWN);
+    _CHECK_SELF(self, klass, _NM_802_11_MODE_UNKNOWN);
 
-    g_return_val_if_fail(ifindex > 0, NM_802_11_MODE_UNKNOWN);
+    g_return_val_if_fail(ifindex > 0, _NM_802_11_MODE_UNKNOWN);
 
     return klass->wifi_get_mode(self, ifindex);
 }
 
 void
-nm_platform_wifi_set_mode(NMPlatform *self, int ifindex, NM80211Mode mode)
+nm_platform_wifi_set_mode(NMPlatform *self, int ifindex, _NM80211Mode mode)
 {
     _CHECK_SELF_VOID(self, klass);
 
@@ -3132,7 +3086,7 @@ nm_platform_wifi_indicate_addressing_running(NMPlatform *self, int ifindex, gboo
     klass->wifi_indicate_addressing_running(self, ifindex, running);
 }
 
-NMSettingWirelessWakeOnWLan
+_NMSettingWirelessWakeOnWLan
 nm_platform_wifi_get_wake_on_wlan(NMPlatform *self, int ifindex)
 {
     _CHECK_SELF(self, klass, FALSE);
@@ -3143,7 +3097,7 @@ nm_platform_wifi_get_wake_on_wlan(NMPlatform *self, int ifindex)
 }
 
 gboolean
-nm_platform_wifi_set_wake_on_wlan(NMPlatform *self, int ifindex, NMSettingWirelessWakeOnWLan wowl)
+nm_platform_wifi_set_wake_on_wlan(NMPlatform *self, int ifindex, _NMSettingWirelessWakeOnWLan wowl)
 {
     _CHECK_SELF(self, klass, FALSE);
 
@@ -3731,7 +3685,7 @@ _addr_array_clean_expired(int          addr_family,
             goto clear_and_next;
         }
 
-        if (!nm_utils_lifetime_get(a->timestamp, a->lifetime, a->preferred, now, NULL))
+        if (!nmp_utils_lifetime_get(a->timestamp, a->lifetime, a->preferred, now, NULL))
             goto clear_and_next;
 
         if (idx) {
@@ -4216,11 +4170,11 @@ next_plat:;
 
         known_address = NMP_OBJECT_CAST_IPX_ADDRESS(o);
 
-        lifetime = nm_utils_lifetime_get(known_address->ax.timestamp,
-                                         known_address->ax.lifetime,
-                                         known_address->ax.preferred,
-                                         now,
-                                         &preferred);
+        lifetime = nmp_utils_lifetime_get(known_address->ax.timestamp,
+                                          known_address->ax.lifetime,
+                                          known_address->ax.preferred,
+                                          now,
+                                          &preferred);
         nm_assert(lifetime > 0);
 
         if (IS_IPv4) {
@@ -5415,7 +5369,7 @@ _lifetime_to_string(guint32 timestamp, guint32 lifetime, gint32 now, char *buf, 
     g_snprintf(buf,
                buf_size,
                "%usec",
-               nm_utils_lifetime_rebase_relative_time_on_now(timestamp, lifetime, now));
+               nmp_utils_lifetime_rebase_relative_time_on_now(timestamp, lifetime, now));
     return buf;
 }
 
@@ -5457,8 +5411,8 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
     char *      s;
     gsize       l;
     char        str_addrmode[30];
-    char        str_address[NM_UTILS_HWADDR_LEN_MAX * 3];
-    char        str_broadcast[NM_UTILS_HWADDR_LEN_MAX * 3];
+    char        str_address[_NM_UTILS_HWADDR_LEN_MAX * 3];
+    char        str_broadcast[_NM_UTILS_HWADDR_LEN_MAX * 3];
     char        str_inet6_token[NM_UTILS_INET_ADDRSTRLEN];
     const char *str_link_type;
 

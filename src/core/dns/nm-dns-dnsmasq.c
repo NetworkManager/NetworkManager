@@ -17,7 +17,7 @@
 
 #include "libnm-glib-aux/nm-dbus-aux.h"
 #include "libnm-core-intern/nm-core-internal.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "nm-utils.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"

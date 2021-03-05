@@ -25,6 +25,4 @@ GType nm_linux_platform_get_type(void);
 
 NMPlatform *nm_linux_platform_new(gboolean log_with_ptr, gboolean netns_support);
 
-void nm_linux_platform_setup(void);
-
 #endif /* __NETWORKMANAGER_LINUX_PLATFORM_H__ */

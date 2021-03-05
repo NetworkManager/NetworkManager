@@ -55,7 +55,7 @@ typedef struct {
     CList                         aps_lst_head;
     NMWifiAP *                    current_ap;
     GCancellable *                cancellable;
-    NMDeviceWifiCapabilities      capabilities;
+    _NMDeviceWifiCapabilities     capabilities;
     NMActRequestGetSecretsCallId *wifi_secrets_id;
     guint                         periodic_scan_id;
     guint                         periodic_update_id;
@@ -265,7 +265,7 @@ ap_from_network(NMDeviceIwd *self,
         .bss_path       = bss_path,
         .last_seen_msec = last_seen_msec,
         .bssid_valid    = TRUE,
-        .mode           = NM_802_11_MODE_INFRA,
+        .mode           = _NM_802_11_MODE_INFRA,
         .rsn_flags      = ap_security_flags_from_network_type(type),
         .ssid           = ssid,
         .signal_percent = nm_wifi_utils_level_to_quality(signal / 100),
@@ -801,7 +801,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
         NMSettingWirelessSecurity *s_wireless_sec =
             nm_connection_get_setting_wireless_security(connection);
 
-        if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_AP)) {
+        if (!(priv->capabilities & _NM_WIFI_DEVICE_CAP_AP)) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                                        "device does not support Access Point mode");
@@ -819,7 +819,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
         NMSettingWirelessSecurity *s_wireless_sec =
             nm_connection_get_setting_wireless_security(connection);
 
-        if (!(priv->capabilities & NM_WIFI_DEVICE_CAP_ADHOC)) {
+        if (!(priv->capabilities & _NM_WIFI_DEVICE_CAP_ADHOC)) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                                        "device does not support Ad-Hoc mode");
@@ -2610,9 +2610,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     switch (prop_id) {
     case PROP_MODE:
         if (!priv->current_ap)
-            g_value_set_uint(value, NM_802_11_MODE_UNKNOWN);
+            g_value_set_uint(value, _NM_802_11_MODE_UNKNOWN);
         else if (nm_wifi_ap_is_hotspot(priv->current_ap))
-            g_value_set_uint(value, NM_802_11_MODE_AP);
+            g_value_set_uint(value, _NM_802_11_MODE_AP);
         else
             g_value_set_uint(value, nm_wifi_ap_get_mode(priv->current_ap));
 
@@ -3034,7 +3034,7 @@ nm_device_iwd_set_dbus_object(NMDeviceIwd *self, GDBusObject *object)
     GVariantIter *              iter;
     const char *                mode;
     gboolean                    powered;
-    NMDeviceWifiCapabilities    capabilities;
+    _NMDeviceWifiCapabilities   capabilities;
 
     if (!nm_g_object_ref_set(&priv->dbus_obj, object))
         return;
@@ -3096,14 +3096,14 @@ nm_device_iwd_set_dbus_object(NMDeviceIwd *self, GDBusObject *object)
         goto error;
     }
 
-    capabilities = NM_WIFI_DEVICE_CAP_CIPHER_CCMP | NM_WIFI_DEVICE_CAP_RSN;
+    capabilities = _NM_WIFI_DEVICE_CAP_CIPHER_CCMP | _NM_WIFI_DEVICE_CAP_RSN;
 
     g_variant_get(value, "as", &iter);
     while (g_variant_iter_next(iter, "&s", &mode)) {
         if (nm_streq(mode, "ap"))
-            capabilities |= NM_WIFI_DEVICE_CAP_AP;
+            capabilities |= _NM_WIFI_DEVICE_CAP_AP;
         else if (nm_streq(mode, "ad-hoc"))
-            capabilities |= NM_WIFI_DEVICE_CAP_ADHOC;
+            capabilities |= _NM_WIFI_DEVICE_CAP_ADHOC;
     }
     g_variant_iter_free(iter);
 
@@ -3452,9 +3452,9 @@ nm_device_iwd_class_init(NMDeviceIwdClass *klass)
     obj_properties[PROP_MODE] = g_param_spec_uint(NM_DEVICE_IWD_MODE,
                                                   "",
                                                   "",
-                                                  NM_802_11_MODE_UNKNOWN,
-                                                  NM_802_11_MODE_AP,
-                                                  NM_802_11_MODE_INFRA,
+                                                  _NM_802_11_MODE_UNKNOWN,
+                                                  _NM_802_11_MODE_AP,
+                                                  _NM_802_11_MODE_INFRA,
                                                   G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     obj_properties[PROP_BITRATE] = g_param_spec_uint(NM_DEVICE_IWD_BITRATE,
@@ -3485,7 +3485,7 @@ nm_device_iwd_class_init(NMDeviceIwdClass *klass)
                           "",
                           0,
                           G_MAXUINT32,
-                          NM_WIFI_DEVICE_CAP_NONE,
+                          _NM_WIFI_DEVICE_CAP_NONE,
                           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     obj_properties[PROP_SCANNING] = g_param_spec_boolean(NM_DEVICE_IWD_SCANNING,

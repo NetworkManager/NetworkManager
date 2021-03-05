@@ -10,9 +10,9 @@
 
 #include "libnm-glib-aux/nm-enum-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nm-platform-utils.h"
-#include "platform/nmp-object.h"
+#include "libnm-platform/nmp-object.h"
 #include "NetworkManagerUtils.h"
 
 /*****************************************************************************/

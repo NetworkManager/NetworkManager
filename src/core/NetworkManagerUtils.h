@@ -11,7 +11,7 @@
 #include "libnm-glib-aux/nm-dedup-multi.h"
 #include "nm-setting-ip-config.h"
 #include "nm-setting-ip6-config.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 
 /*****************************************************************************/
 
@@ -248,6 +248,15 @@ void nm_utils_share_rules_add_all_rules(NMUtilsShareRules *self,
                                         guint              plen);
 
 void nm_utils_share_rules_apply(NMUtilsShareRules *self, gboolean shared);
+
+/*****************************************************************************/
+
+void        nm_platform_setup(NMPlatform *instance);
+NMPlatform *nm_platform_get(void);
+
+#define NM_PLATFORM_GET (nm_platform_get())
+
+void nm_linux_platform_setup(void);
 
 /*****************************************************************************/
 

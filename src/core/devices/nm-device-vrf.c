@@ -9,7 +9,7 @@
 #include "nm-device-private.h"
 #include "nm-manager.h"
 #include "nm-setting-vrf.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "settings/nm-settings.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceVrf

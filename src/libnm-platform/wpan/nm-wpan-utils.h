@@ -8,7 +8,6 @@
 
 #include <net/ethernet.h>
 
-#include "nm-dbus-interface.h"
 #include "libnm-platform/nm-netlink.h"
 
 typedef struct NMWpanUtils NMWpanUtils;

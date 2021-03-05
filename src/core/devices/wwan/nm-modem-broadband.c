@@ -14,7 +14,7 @@
 #include "libnm-core-intern/nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device-private.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 

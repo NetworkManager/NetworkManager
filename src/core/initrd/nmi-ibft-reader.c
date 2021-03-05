@@ -18,6 +18,7 @@
 #include <linux/if_ether.h>
 
 #include "libnm-core-intern/nm-core-internal.h"
+#include "libnm-platform/nm-platform-utils.h"
 #include "NetworkManagerUtils.h"
 
 /*****************************************************************************/
@@ -92,7 +93,7 @@ nmi_ibft_read(const char *sysfs_dir)
                                  (GDestroyNotify) g_hash_table_unref);
 
     if (!g_file_test(ibft_path, G_FILE_TEST_IS_DIR))
-        nm_utils_modprobe(NULL, FALSE, "iscsi_ibft", NULL);
+        nmp_utils_modprobe(NULL, FALSE, "iscsi_ibft", NULL);
     if (!g_file_test(ibft_path, G_FILE_TEST_IS_DIR))
         return ibft;
 

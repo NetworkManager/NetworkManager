@@ -3,7 +3,7 @@
  * Copyright (C) 2015 - 2018 Red Hat, Inc.
  */
 
-#include "src/core/nm-default-daemon.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nmp-object.h"
 
@@ -12,14 +12,10 @@
 #include <linux/if.h>
 #include <libudev.h>
 
-#include "nm-utils.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
-
-#include "nm-core-utils.h"
 #include "libnm-platform/nm-platform-utils.h"
-
-#include "wifi/nm-wifi-utils.h"
-#include "wpan/nm-wpan-utils.h"
+#include "libnm-platform/wifi/nm-wifi-utils.h"
+#include "libnm-platform/wpan/nm-wpan-utils.h"
 
 /*****************************************************************************/
 

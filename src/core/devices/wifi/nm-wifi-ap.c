@@ -19,7 +19,7 @@
 #include "nm-setting-wireless.h"
 #include "nm-utils.h"
 #include "nm-wifi-utils.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "supplicant/nm-supplicant-interface.h"
 
 #define PROTO_WPA "wpa"
@@ -41,12 +41,12 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMWifiAP,
 
 struct _NMWifiAPPrivate {
     /* Scanned or cached values */
-    GBytes *    ssid;
-    char *      address;
-    NM80211Mode mode;
-    guint8      strength;
-    guint32     freq;        /* Frequency in MHz; ie 2412 (== 2.412 GHz) */
-    guint32     max_bitrate; /* Maximum bitrate of the AP in Kbit/s (ie 54000 Kb/s == 54Mbit/s) */
+    GBytes *     ssid;
+    char *       address;
+    _NM80211Mode mode;
+    guint8       strength;
+    guint32      freq;        /* Frequency in MHz; ie 2412 (== 2.412 GHz) */
+    guint32      max_bitrate; /* Maximum bitrate of the AP in Kbit/s (ie 54000 Kb/s == 54Mbit/s) */
 
     gint64
         last_seen_msec; /* Timestamp when the AP was seen lastly (in nm_utils_get_monotonic_timestamp_*() scale).
@@ -191,24 +191,24 @@ nm_wifi_ap_set_address(NMWifiAP *ap, const char *addr)
     return nm_wifi_ap_set_address_bin(ap, &addr_buf);
 }
 
-NM80211Mode
+_NM80211Mode
 nm_wifi_ap_get_mode(NMWifiAP *ap)
 {
-    g_return_val_if_fail(NM_IS_WIFI_AP(ap), NM_802_11_MODE_UNKNOWN);
+    g_return_val_if_fail(NM_IS_WIFI_AP(ap), _NM_802_11_MODE_UNKNOWN);
 
     return NM_WIFI_AP_GET_PRIVATE(ap)->mode;
 }
 
 static gboolean
-nm_wifi_ap_set_mode(NMWifiAP *ap, NM80211Mode mode)
+nm_wifi_ap_set_mode(NMWifiAP *ap, _NM80211Mode mode)
 {
     NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE(ap);
 
     nm_assert(NM_IN_SET(mode,
-                        NM_802_11_MODE_UNKNOWN,
-                        NM_802_11_MODE_ADHOC,
-                        NM_802_11_MODE_INFRA,
-                        NM_802_11_MODE_MESH));
+                        _NM_802_11_MODE_UNKNOWN,
+                        _NM_802_11_MODE_ADHOC,
+                        _NM_802_11_MODE_INFRA,
+                        _NM_802_11_MODE_MESH));
 
     if (priv->mode != mode) {
         priv->mode = mode;
@@ -513,34 +513,35 @@ nm_wifi_ap_to_string(const NMWifiAP *self, char *str_buf, gulong buf_len, gint64
 
     nm_utils_get_monotonic_timestamp_msec_cached(&now_msec);
 
-    g_snprintf(str_buf,
-               buf_len,
-               "%17s %-35s [ %c %3u %3u%% %c%c %c%c W:%04X R:%04X ] %s sup:%s [nm:%s]",
-               priv->address ?: "(none)",
-               (ssid_to_free = _nm_utils_ssid_to_string(priv->ssid)),
-               (priv->mode == NM_802_11_MODE_ADHOC
-                    ? '*'
-                    : (priv->hotspot
-                           ? '#'
-                           : (priv->fake ? 'f' : (priv->mode == NM_802_11_MODE_MESH ? 'm' : 'a')))),
-               chan,
-               priv->strength,
-               priv->flags & NM_802_11_AP_FLAGS_PRIVACY ? 'P' : '_',
-               priv->metered ? 'M' : '_',
-               priv->flags & NM_802_11_AP_FLAGS_WPS ? 'W' : '_',
-               priv->flags & NM_802_11_AP_FLAGS_WPS_PIN
-                   ? 'p'
-                   : (priv->flags & NM_802_11_AP_FLAGS_WPS_PBC ? '#' : '_'),
-               priv->wpa_flags & 0xFFFF,
-               priv->rsn_flags & 0xFFFF,
-               priv->last_seen_msec != G_MININT64
-                   ? nm_sprintf_buf(str_buf_ts,
-                                    "%3u.%03us",
-                                    (guint)((now_msec - priv->last_seen_msec) / 1000),
-                                    (guint)((now_msec - priv->last_seen_msec) % 1000))
-                   : "        ",
-               supplicant_id,
-               export_path);
+    g_snprintf(
+        str_buf,
+        buf_len,
+        "%17s %-35s [ %c %3u %3u%% %c%c %c%c W:%04X R:%04X ] %s sup:%s [nm:%s]",
+        priv->address ?: "(none)",
+        (ssid_to_free = _nm_utils_ssid_to_string_gbytes(priv->ssid)),
+        (priv->mode == _NM_802_11_MODE_ADHOC
+             ? '*'
+             : (priv->hotspot
+                    ? '#'
+                    : (priv->fake ? 'f' : (priv->mode == _NM_802_11_MODE_MESH ? 'm' : 'a')))),
+        chan,
+        priv->strength,
+        priv->flags & NM_802_11_AP_FLAGS_PRIVACY ? 'P' : '_',
+        priv->metered ? 'M' : '_',
+        priv->flags & NM_802_11_AP_FLAGS_WPS ? 'W' : '_',
+        priv->flags & NM_802_11_AP_FLAGS_WPS_PIN
+            ? 'p'
+            : (priv->flags & NM_802_11_AP_FLAGS_WPS_PBC ? '#' : '_'),
+        priv->wpa_flags & 0xFFFF,
+        priv->rsn_flags & 0xFFFF,
+        priv->last_seen_msec != G_MININT64
+            ? nm_sprintf_buf(str_buf_ts,
+                             "%3u.%03us",
+                             (guint)((now_msec - priv->last_seen_msec) / 1000),
+                             (guint)((now_msec - priv->last_seen_msec) % 1000))
+            : "        ",
+        supplicant_id,
+        export_path);
     return str_buf;
 }
 
@@ -589,13 +590,13 @@ nm_wifi_ap_check_compatible(NMWifiAP *self, NMConnection *connection)
 
     mode = nm_setting_wireless_get_mode(s_wireless);
     if (mode) {
-        if (!strcmp(mode, "infrastructure") && (priv->mode != NM_802_11_MODE_INFRA))
+        if (!strcmp(mode, "infrastructure") && (priv->mode != _NM_802_11_MODE_INFRA))
             return FALSE;
-        if (!strcmp(mode, "adhoc") && (priv->mode != NM_802_11_MODE_ADHOC))
+        if (!strcmp(mode, "adhoc") && (priv->mode != _NM_802_11_MODE_ADHOC))
             return FALSE;
-        if (!strcmp(mode, "ap") && (priv->mode != NM_802_11_MODE_INFRA || priv->hotspot != TRUE))
+        if (!strcmp(mode, "ap") && (priv->mode != _NM_802_11_MODE_INFRA || priv->hotspot != TRUE))
             return FALSE;
-        if (!strcmp(mode, "mesh") && (priv->mode != NM_802_11_MODE_MESH))
+        if (!strcmp(mode, "mesh") && (priv->mode != _NM_802_11_MODE_MESH))
             return FALSE;
     }
 
@@ -624,7 +625,7 @@ nm_wifi_ap_check_compatible(NMWifiAP *self, NMConnection *connection)
                                                       priv->flags,
                                                       priv->wpa_flags,
                                                       priv->rsn_flags,
-                                                      priv->mode);
+                                                      NM_802_11_MODE_CAST(priv->mode));
 }
 
 gboolean
@@ -713,7 +714,7 @@ nm_wifi_ap_init(NMWifiAP *self)
 
     c_list_init(&self->aps_lst);
 
-    priv->mode           = NM_802_11_MODE_INFRA;
+    priv->mode           = _NM_802_11_MODE_INFRA;
     priv->flags          = NM_802_11_AP_FLAGS_NONE;
     priv->wpa_flags      = NM_802_11_AP_SEC_NONE;
     priv->rsn_flags      = NM_802_11_AP_SEC_NONE;
@@ -758,19 +759,19 @@ nm_wifi_ap_new_fake_from_connection(NMConnection *connection)
     mode = nm_setting_wireless_get_mode(s_wireless);
     if (mode) {
         if (!strcmp(mode, "infrastructure"))
-            nm_wifi_ap_set_mode(ap, NM_802_11_MODE_INFRA);
+            nm_wifi_ap_set_mode(ap, _NM_802_11_MODE_INFRA);
         else if (!strcmp(mode, "adhoc")) {
-            nm_wifi_ap_set_mode(ap, NM_802_11_MODE_ADHOC);
+            nm_wifi_ap_set_mode(ap, _NM_802_11_MODE_ADHOC);
             adhoc = TRUE;
         } else if (!strcmp(mode, "mesh"))
-            nm_wifi_ap_set_mode(ap, NM_802_11_MODE_MESH);
+            nm_wifi_ap_set_mode(ap, _NM_802_11_MODE_MESH);
         else if (!strcmp(mode, "ap")) {
-            nm_wifi_ap_set_mode(ap, NM_802_11_MODE_INFRA);
+            nm_wifi_ap_set_mode(ap, _NM_802_11_MODE_INFRA);
             NM_WIFI_AP_GET_PRIVATE(ap)->hotspot = TRUE;
         } else
             goto error;
     } else {
-        nm_wifi_ap_set_mode(ap, NM_802_11_MODE_INFRA);
+        nm_wifi_ap_set_mode(ap, _NM_802_11_MODE_INFRA);
     }
 
     band    = nm_setting_wireless_get_band(s_wireless);
@@ -955,9 +956,9 @@ nm_wifi_ap_class_init(NMWifiAPClass *ap_class)
     obj_properties[PROP_MODE] = g_param_spec_uint(NM_WIFI_AP_MODE,
                                                   "",
                                                   "",
-                                                  NM_802_11_MODE_ADHOC,
-                                                  NM_802_11_MODE_INFRA,
-                                                  NM_802_11_MODE_INFRA,
+                                                  _NM_802_11_MODE_ADHOC,
+                                                  _NM_802_11_MODE_INFRA,
+                                                  _NM_802_11_MODE_INFRA,
                                                   G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     obj_properties[PROP_MAX_BITRATE] = g_param_spec_uint(NM_WIFI_AP_MAX_BITRATE,

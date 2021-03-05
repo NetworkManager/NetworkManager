@@ -13,7 +13,7 @@
 #include "settings/nm-settings.h"
 #include "nm-act-request.h"
 #include "nm-manager.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-setting-macvlan.h"
 #include "nm-setting-wired.h"

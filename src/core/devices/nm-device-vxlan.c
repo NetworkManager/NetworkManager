@@ -9,7 +9,7 @@
 
 #include "nm-device-private.h"
 #include "nm-manager.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "nm-utils.h"
 #include "nm-device-factory.h"
 #include "nm-setting-vxlan.h"

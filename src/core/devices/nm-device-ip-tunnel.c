@@ -16,7 +16,7 @@
 
 #include "nm-device-private.h"
 #include "nm-manager.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "settings/nm-settings.h"

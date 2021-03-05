@@ -12,7 +12,7 @@
 #include "nm-setting-cdma.h"
 #include "nm-modem-manager.h"
 #include "nm-device-modem.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 
 /*****************************************************************************/
 

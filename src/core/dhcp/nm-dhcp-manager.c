@@ -252,7 +252,7 @@ client_start(NMDhcpManager *           self,
         }
 
         hwaddr_len = g_bytes_get_size(hwaddr);
-        if (hwaddr_len == 0 || hwaddr_len > NM_UTILS_HWADDR_LEN_MAX) {
+        if (hwaddr_len == 0 || hwaddr_len > _NM_UTILS_HWADDR_LEN_MAX) {
             nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, "invalid MAC address");
             g_return_val_if_reached(NULL);
         }

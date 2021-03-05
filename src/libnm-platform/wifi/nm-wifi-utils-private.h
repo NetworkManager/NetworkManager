@@ -6,24 +6,23 @@
 #ifndef __WIFI_UTILS_PRIVATE_H__
 #define __WIFI_UTILS_PRIVATE_H__
 
-#include "nm-dbus-interface.h"
 #include "nm-wifi-utils.h"
 
 typedef struct {
     GObjectClass parent;
 
-    NM80211Mode (*get_mode)(NMWifiUtils *data);
+    _NM80211Mode (*get_mode)(NMWifiUtils *data);
 
-    gboolean (*set_mode)(NMWifiUtils *data, const NM80211Mode mode);
+    gboolean (*set_mode)(NMWifiUtils *data, const _NM80211Mode mode);
 
     /* Set power saving mode on an interface */
     gboolean (*set_powersave)(NMWifiUtils *data, guint32 powersave);
 
     /* Get WakeOnWLAN configuration on an interface */
-    NMSettingWirelessWakeOnWLan (*get_wake_on_wlan)(NMWifiUtils *data);
+    _NMSettingWirelessWakeOnWLan (*get_wake_on_wlan)(NMWifiUtils *data);
 
     /* Set WakeOnWLAN mode on an interface */
-    gboolean (*set_wake_on_wlan)(NMWifiUtils *data, NMSettingWirelessWakeOnWLan wowl);
+    gboolean (*set_wake_on_wlan)(NMWifiUtils *data, _NMSettingWirelessWakeOnWLan wowl);
 
     /* Return current frequency in MHz (really associated BSS frequency) */
     guint32 (*get_freq)(NMWifiUtils *data);
@@ -59,8 +58,8 @@ typedef struct {
 struct NMWifiUtils {
     GObject parent;
 
-    int                      ifindex;
-    NMDeviceWifiCapabilities caps;
+    int                       ifindex;
+    _NMDeviceWifiCapabilities caps;
 };
 
 #endif /* __WIFI_UTILS_PRIVATE_H__ */

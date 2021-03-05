@@ -20,7 +20,7 @@
 #include "nm-dbus-interface.h"
 #include "NetworkManagerUtils.h"
 #include "nm-manager.h"
-#include "platform/nm-linux-platform.h"
+#include "libnm-platform/nm-linux-platform.h"
 #include "nm-dbus-manager.h"
 #include "devices/nm-device.h"
 #include "dhcp/nm-dhcp-manager.h"

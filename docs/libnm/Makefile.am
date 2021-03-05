@@ -41,7 +41,6 @@ IGNORE_HFILES= \
 	common.h \
 	nm-core-internal.h \
 	nm-core-tests-enum-types.h \
-	nm-core-types-internal.h \
 	nm-crypto-impl.h \
 	nm-crypto.h \
 	nm-dbus-helpers.h \

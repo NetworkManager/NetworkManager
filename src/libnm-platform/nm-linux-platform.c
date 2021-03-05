@@ -3,7 +3,7 @@
  * Copyright (C) 2012 - 2018 Red Hat, Inc.
  */
 
-#include "src/core/nm-default-daemon.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-linux-platform.h"
 
@@ -32,25 +32,21 @@
 #include <sys/statvfs.h>
 #include <unistd.h>
 
-#include "libnm-std-aux/unaligned.h"
-
-#include "nm-utils.h"
-#include "libnm-core-intern/nm-core-internal.h"
-#include "nm-setting-vlan.h"
-
-#include "libnm-glib-aux/nm-secret-utils.h"
 #include "libnm-glib-aux/nm-c-list.h"
-#include "libnm-platform/nm-netlink.h"
-#include "nm-core-utils.h"
-#include "nmp-object.h"
-#include "libnm-platform/nmp-netns.h"
-#include "libnm-platform/nm-platform-utils.h"
-#include "nm-platform-private.h"
-#include "wifi/nm-wifi-utils.h"
-#include "wifi/nm-wifi-utils-wext.h"
-#include "wpan/nm-wpan-utils.h"
 #include "libnm-glib-aux/nm-io-utils.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-time-utils.h"
+#include "libnm-log-core/nm-logging.h"
+#include "libnm-platform/nm-netlink.h"
+#include "libnm-platform/nm-platform-utils.h"
+#include "libnm-platform/nmp-netns.h"
+#include "libnm-platform/wifi/nm-wifi-utils-wext.h"
+#include "libnm-platform/wifi/nm-wifi-utils.h"
+#include "libnm-platform/wpan/nm-wpan-utils.h"
+#include "libnm-std-aux/unaligned.h"
 #include "libnm-udev-aux/nm-udev-utils.h"
+#include "nm-platform-private.h"
+#include "nmp-object.h"
 
 /*****************************************************************************/
 
@@ -2884,8 +2880,8 @@ _nmp_link_address_set(NMPLinkAddress *dst, const struct nlattr *nla)
     if (nla) {
         int l = nla_len(nla);
 
-        if (l > 0 && l <= NM_UTILS_HWADDR_LEN_MAX) {
-            G_STATIC_ASSERT_EXPR(sizeof(dst->data) == NM_UTILS_HWADDR_LEN_MAX);
+        if (l > 0 && l <= _NM_UTILS_HWADDR_LEN_MAX) {
+            G_STATIC_ASSERT_EXPR(sizeof(dst->data) == _NM_UTILS_HWADDR_LEN_MAX);
             memcpy(dst->data, nla_data(nla), l);
             dst->len = l;
         }
@@ -4156,8 +4152,8 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
 
         {
             struct ifla_vlan_flags flags = {
-                .flags = props->flags & NM_VLAN_FLAGS_ALL,
-                .mask  = NM_VLAN_FLAGS_ALL,
+                .flags = props->flags & _NM_VLAN_FLAGS_ALL,
+                .mask  = _NM_VLAN_FLAGS_ALL,
             };
 
             NLA_PUT(msg, IFLA_VLAN_FLAGS, sizeof(flags), &flags);
@@ -4433,10 +4429,10 @@ _nl_msg_new_link_set_linkinfo_vlan(struct nl_msg *         msg,
     guint          i;
     gboolean       has_any_vlan_properties = FALSE;
 
-    G_STATIC_ASSERT(NM_VLAN_FLAG_REORDER_HEADERS == (guint32) VLAN_FLAG_REORDER_HDR);
-    G_STATIC_ASSERT(NM_VLAN_FLAG_GVRP == (guint32) VLAN_FLAG_GVRP);
-    G_STATIC_ASSERT(NM_VLAN_FLAG_LOOSE_BINDING == (guint32) VLAN_FLAG_LOOSE_BINDING);
-    G_STATIC_ASSERT(NM_VLAN_FLAG_MVRP == (guint32) VLAN_FLAG_MVRP);
+    G_STATIC_ASSERT(_NM_VLAN_FLAG_REORDER_HEADERS == (guint32) VLAN_FLAG_REORDER_HDR);
+    G_STATIC_ASSERT(_NM_VLAN_FLAG_GVRP == (guint32) VLAN_FLAG_GVRP);
+    G_STATIC_ASSERT(_NM_VLAN_FLAG_LOOSE_BINDING == (guint32) VLAN_FLAG_LOOSE_BINDING);
+    G_STATIC_ASSERT(_NM_VLAN_FLAG_MVRP == (guint32) VLAN_FLAG_MVRP);
 
 #define VLAN_XGRESS_PRIO_VALID(from) (((from) & ~(guint32) 0x07) == 0)
 
@@ -6000,7 +5996,7 @@ delayed_action_handle_one(NMPlatform *platform)
         g_ptr_array_remove_index_fast(priv->delayed_action.list_master_connected, 0);
         if (priv->delayed_action.list_master_connected->len == 0)
             priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_MASTER_CONNECTED;
-        nm_assert(_nm_utils_ptrarray_find_first(
+        nm_assert(nm_utils_ptrarray_find_first(
                       (gconstpointer *) priv->delayed_action.list_master_connected->pdata,
                       priv->delayed_action.list_master_connected->len,
                       user_data)
@@ -6044,7 +6040,7 @@ delayed_action_handle_one(NMPlatform *platform)
         g_ptr_array_remove_index_fast(priv->delayed_action.list_refresh_link, 0);
         if (priv->delayed_action.list_refresh_link->len == 0)
             priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_LINK;
-        nm_assert(_nm_utils_ptrarray_find_first(
+        nm_assert(nm_utils_ptrarray_find_first(
                       (gconstpointer *) priv->delayed_action.list_refresh_link->pdata,
                       priv->delayed_action.list_refresh_link->len,
                       user_data)
@@ -6097,7 +6093,7 @@ delayed_action_schedule(NMPlatform *platform, DelayedActionType action_type, gpo
 
     switch (action_type) {
     case DELAYED_ACTION_TYPE_REFRESH_LINK:
-        if (_nm_utils_ptrarray_find_first(
+        if (nm_utils_ptrarray_find_first(
                 (gconstpointer *) priv->delayed_action.list_refresh_link->pdata,
                 priv->delayed_action.list_refresh_link->len,
                 user_data)
@@ -6105,7 +6101,7 @@ delayed_action_schedule(NMPlatform *platform, DelayedActionType action_type, gpo
             g_ptr_array_add(priv->delayed_action.list_refresh_link, user_data);
         break;
     case DELAYED_ACTION_TYPE_MASTER_CONNECTED:
-        if (_nm_utils_ptrarray_find_first(
+        if (nm_utils_ptrarray_find_first(
                 (gconstpointer *) priv->delayed_action.list_master_connected->pdata,
                 priv->delayed_action.list_master_connected->len,
                 user_data)
@@ -7359,7 +7355,7 @@ link_add(NMPlatform *           platform,
          * bond0 automatically.
          */
         if (!g_file_test("/sys/class/net/bonding_masters", G_FILE_TEST_EXISTS))
-            (void) nm_utils_modprobe(NULL, TRUE, "bonding", "max_bonds=0", NULL);
+            (void) nmp_utils_modprobe(NULL, TRUE, "bonding", "max_bonds=0", NULL);
     }
 
     nlmsg = _nl_msg_new_link(RTM_NEWLINK, NLM_F_CREATE | NLM_F_EXCL, 0, name);
@@ -7732,7 +7728,7 @@ link_set_sriov_params_async(NMPlatform *            platform,
     if (NM_IN_SET(autoprobe, NM_OPTION_BOOL_TRUE, NM_OPTION_BOOL_FALSE)
         && current_autoprobe != autoprobe
         && !nm_platform_sysctl_set(
-            NM_PLATFORM_GET,
+            platform,
             NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname, "device/sriov_drivers_autoprobe"),
             nm_sprintf_buf(buf, "%d", (int) autoprobe))) {
         g_set_error(&error,
@@ -8084,8 +8080,8 @@ _vlan_change_vlan_qos_mapping_create(gboolean                is_ingress_map,
 static gboolean
 link_vlan_change(NMPlatform *            platform,
                  int                     ifindex,
-                 NMVlanFlags             flags_mask,
-                 NMVlanFlags             flags_set,
+                 _NMVlanFlags            flags_mask,
+                 _NMVlanFlags            flags_set,
                  gboolean                ingress_reset_all,
                  const NMVlanQosMapping *ingress_map,
                  gsize                   n_ingress_map,
@@ -8210,7 +8206,7 @@ _infiniband_partition_action(NMPlatform *           platform,
         return FALSE;
     }
 
-    nm_utils_new_infiniband_name(name, ifname_parent, p_key);
+    nmp_utils_new_infiniband_name(name, ifname_parent, p_key);
     do_request_link(platform, 0, name);
 
     if (action == INFINIBAND_ACTION_DELETE_CHILD)
@@ -8277,7 +8273,7 @@ get_ext_data(NMPlatform *platform, int ifindex)
         return retval;
 
 static gboolean
-wifi_get_capabilities(NMPlatform *platform, int ifindex, NMDeviceWifiCapabilities *caps)
+wifi_get_capabilities(NMPlatform *platform, int ifindex, _NMDeviceWifiCapabilities *caps)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, FALSE);
     if (caps)
@@ -8303,15 +8299,15 @@ wifi_get_station(NMPlatform * platform,
     return nm_wifi_utils_get_station(wifi_data, out_bssid, out_quality, out_rate);
 }
 
-static NM80211Mode
+static _NM80211Mode
 wifi_get_mode(NMPlatform *platform, int ifindex)
 {
-    WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, NM_802_11_MODE_UNKNOWN);
+    WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, _NM_802_11_MODE_UNKNOWN);
     return nm_wifi_utils_get_mode(wifi_data);
 }
 
 static void
-wifi_set_mode(NMPlatform *platform, int ifindex, NM80211Mode mode)
+wifi_set_mode(NMPlatform *platform, int ifindex, _NM80211Mode mode)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, );
     nm_wifi_utils_set_mode(wifi_data, mode);
@@ -8338,7 +8334,7 @@ wifi_indicate_addressing_running(NMPlatform *platform, int ifindex, gboolean run
     nm_wifi_utils_indicate_addressing_running(wifi_data, running);
 }
 
-static NMSettingWirelessWakeOnWLan
+static _NMSettingWirelessWakeOnWLan
 wifi_get_wake_on_wlan(NMPlatform *platform, int ifindex)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, FALSE);
@@ -8346,7 +8342,7 @@ wifi_get_wake_on_wlan(NMPlatform *platform, int ifindex)
 }
 
 static gboolean
-wifi_set_wake_on_wlan(NMPlatform *platform, int ifindex, NMSettingWirelessWakeOnWLan wowl)
+wifi_set_wake_on_wlan(NMPlatform *platform, int ifindex, _NMSettingWirelessWakeOnWLan wowl)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, FALSE);
     return nm_wifi_utils_set_wake_on_wlan(wifi_data, wowl);
@@ -8473,8 +8469,8 @@ link_get_wake_on_lan(NMPlatform *platform, int ifindex)
             return FALSE;
 
         return !NM_IN_SET(nm_wifi_utils_get_wake_on_wlan(wifi_data),
-                          NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE,
-                          NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE);
+                          _NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE,
+                          _NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE);
 
     } else
         return FALSE;
@@ -9357,14 +9353,6 @@ handle_udev_event(NMUdevClient *udev_client, struct udev_device *udevice, gpoint
         udev_device_added(platform, udevice);
     else if (NM_IN_STRSET(action, "remove"))
         udev_device_removed(platform, udevice);
-}
-
-/*****************************************************************************/
-
-void
-nm_linux_platform_setup(void)
-{
-    nm_platform_setup(nm_linux_platform_new(FALSE, FALSE));
 }
 
 /*****************************************************************************/

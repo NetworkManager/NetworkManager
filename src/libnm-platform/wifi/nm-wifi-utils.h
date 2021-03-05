@@ -9,9 +9,8 @@
 
 #include <net/ethernet.h>
 
-#include "nm-dbus-interface.h"
-#include "nm-setting-wireless.h"
 #include "libnm-platform/nm-netlink.h"
+#include "libnm-base/nm-base.h"
 
 typedef struct NMWifiUtils NMWifiUtils;
 
@@ -30,11 +29,11 @@ gboolean nm_wifi_utils_is_wifi(int dirfd, const char *ifname);
 
 NMWifiUtils *nm_wifi_utils_new(int ifindex, struct nl_sock *genl, gboolean check_scan);
 
-NMDeviceWifiCapabilities nm_wifi_utils_get_caps(NMWifiUtils *data);
+_NMDeviceWifiCapabilities nm_wifi_utils_get_caps(NMWifiUtils *data);
 
-NM80211Mode nm_wifi_utils_get_mode(NMWifiUtils *data);
+_NM80211Mode nm_wifi_utils_get_mode(NMWifiUtils *data);
 
-gboolean nm_wifi_utils_set_mode(NMWifiUtils *data, const NM80211Mode mode);
+gboolean nm_wifi_utils_set_mode(NMWifiUtils *data, const _NM80211Mode mode);
 
 /* Returns frequency in MHz */
 guint32 nm_wifi_utils_get_freq(NMWifiUtils *data);
@@ -60,9 +59,9 @@ gboolean nm_wifi_utils_indicate_addressing_running(NMWifiUtils *data, gboolean r
 
 gboolean nm_wifi_utils_set_powersave(NMWifiUtils *data, guint32 powersave);
 
-NMSettingWirelessWakeOnWLan nm_wifi_utils_get_wake_on_wlan(NMWifiUtils *data);
+_NMSettingWirelessWakeOnWLan nm_wifi_utils_get_wake_on_wlan(NMWifiUtils *data);
 
-gboolean nm_wifi_utils_set_wake_on_wlan(NMWifiUtils *data, NMSettingWirelessWakeOnWLan wowl);
+gboolean nm_wifi_utils_set_wake_on_wlan(NMWifiUtils *data, _NMSettingWirelessWakeOnWLan wowl);
 
 /* OLPC Mesh-only functions */
 guint32 nm_wifi_utils_get_mesh_channel(NMWifiUtils *data);

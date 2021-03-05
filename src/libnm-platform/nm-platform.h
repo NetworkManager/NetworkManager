@@ -6,17 +6,8 @@
 #ifndef __NETWORKMANAGER_PLATFORM_H__
 #define __NETWORKMANAGER_PLATFORM_H__
 
-#include "nm-dbus-interface.h"
-#include "libnm-core-intern/nm-core-types-internal.h"
-
 #include "libnm-platform/nmp-base.h"
 #include "libnm-base/nm-base.h"
-
-#include "nm-core-utils.h"
-#include "nm-setting-vlan.h"
-#include "nm-setting-wired.h"
-#include "nm-setting-wireless.h"
-#include "nm-setting-ip-tunnel.h"
 
 #define NM_TYPE_PLATFORM (nm_platform_get_type())
 #define NM_PLATFORM(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_PLATFORM, NMPlatform))
@@ -152,7 +143,7 @@ typedef enum {
 
 typedef struct {
     union {
-        guint8      data[20 /* NM_UTILS_HWADDR_LEN_MAX */];
+        guint8      data[20 /* _NM_UTILS_HWADDR_LEN_MAX */];
         NMEtherAddr ether_addr;
     };
     guint8 len;
@@ -799,7 +790,7 @@ typedef struct {
     guint             num_vlans;
     NMPlatformVFVlan *vlans;
     struct {
-        guint8 data[20]; /* NM_UTILS_HWADDR_LEN_MAX */
+        guint8 data[20]; /* _NM_UTILS_HWADDR_LEN_MAX */
         guint8 len;
     } mac;
     gint8 spoofchk;
@@ -939,8 +930,8 @@ typedef struct {
 
 typedef struct {
     /* rtnl_link_vlan_get_id(), IFLA_VLAN_ID */
-    guint16     id;
-    NMVlanFlags flags;
+    guint16      id;
+    _NMVlanFlags flags;
 } NMPlatformLnkVlan;
 
 typedef struct {
@@ -1156,8 +1147,8 @@ typedef struct {
 
     gboolean (*link_vlan_change)(NMPlatform *            self,
                                  int                     ifindex,
-                                 NMVlanFlags             flags_mask,
-                                 NMVlanFlags             flags_set,
+                                 _NMVlanFlags            flags_mask,
+                                 _NMVlanFlags            flags_set,
                                  gboolean                ingress_reset_all,
                                  const NMVlanQosMapping *ingress_map,
                                  gsize                   n_ingress_map,
@@ -1176,9 +1167,9 @@ typedef struct {
                                          const NMPlatformLink **out_link);
     gboolean (*infiniband_partition_delete)(NMPlatform *self, int parent, int p_key);
 
-    gboolean (*wifi_get_capabilities)(NMPlatform *              self,
-                                      int                       ifindex,
-                                      NMDeviceWifiCapabilities *caps);
+    gboolean (*wifi_get_capabilities)(NMPlatform *               self,
+                                      int                        ifindex,
+                                      _NMDeviceWifiCapabilities *caps);
     gboolean (*wifi_get_station)(NMPlatform * self,
                                  int          ifindex,
                                  NMEtherAddr *out_bssid,
@@ -1188,15 +1179,15 @@ typedef struct {
     guint32 (*wifi_get_frequency)(NMPlatform *self, int ifindex);
     int (*wifi_get_quality)(NMPlatform *self, int ifindex);
     guint32 (*wifi_get_rate)(NMPlatform *self, int ifindex);
-    NM80211Mode (*wifi_get_mode)(NMPlatform *self, int ifindex);
-    void (*wifi_set_mode)(NMPlatform *self, int ifindex, NM80211Mode mode);
+    _NM80211Mode (*wifi_get_mode)(NMPlatform *self, int ifindex);
+    void (*wifi_set_mode)(NMPlatform *self, int ifindex, _NM80211Mode mode);
     void (*wifi_set_powersave)(NMPlatform *self, int ifindex, guint32 powersave);
     guint32 (*wifi_find_frequency)(NMPlatform *self, int ifindex, const guint32 *freqs);
     void (*wifi_indicate_addressing_running)(NMPlatform *self, int ifindex, gboolean running);
-    NMSettingWirelessWakeOnWLan (*wifi_get_wake_on_wlan)(NMPlatform *self, int ifindex);
-    gboolean (*wifi_set_wake_on_wlan)(NMPlatform *                self,
-                                      int                         ifindex,
-                                      NMSettingWirelessWakeOnWLan wowl);
+    _NMSettingWirelessWakeOnWLan (*wifi_get_wake_on_wlan)(NMPlatform *self, int ifindex);
+    gboolean (*wifi_set_wake_on_wlan)(NMPlatform *                 self,
+                                      int                          ifindex,
+                                      _NMSettingWirelessWakeOnWLan wowl);
 
     guint32 (*mesh_get_channel)(NMPlatform *self, int ifindex);
     gboolean (*mesh_set_channel)(NMPlatform *self, int ifindex, guint32 channel);
@@ -1282,11 +1273,6 @@ const char *nm_platform_signal_change_type_to_string(NMPlatformSignalChangeType 
 /*****************************************************************************/
 
 GType nm_platform_get_type(void);
-
-void        nm_platform_setup(NMPlatform *instance);
-NMPlatform *nm_platform_get(void);
-
-#define NM_PLATFORM_GET (nm_platform_get())
 
 /*****************************************************************************/
 
@@ -1937,8 +1923,8 @@ gboolean nm_platform_link_vlan_set_ingress_map(NMPlatform *self, int ifindex, in
 gboolean nm_platform_link_vlan_set_egress_map(NMPlatform *self, int ifindex, int from, int to);
 gboolean nm_platform_link_vlan_change(NMPlatform *            self,
                                       int                     ifindex,
-                                      NMVlanFlags             flags_mask,
-                                      NMVlanFlags             flags_set,
+                                      _NMVlanFlags            flags_mask,
+                                      _NMVlanFlags            flags_set,
                                       gboolean                ingress_reset_all,
                                       const NMVlanQosMapping *ingress_map,
                                       gsize                   n_ingress_map,
@@ -1963,21 +1949,21 @@ gboolean nm_platform_link_tun_get_properties(NMPlatform *      self,
                                              NMPlatformLnkTun *out_properties);
 
 gboolean
-nm_platform_wifi_get_capabilities(NMPlatform *self, int ifindex, NMDeviceWifiCapabilities *caps);
-guint32     nm_platform_wifi_get_frequency(NMPlatform *self, int ifindex);
-gboolean    nm_platform_wifi_get_station(NMPlatform * self,
-                                         int          ifindex,
-                                         NMEtherAddr *out_bssid,
-                                         int *        out_quality,
-                                         guint32 *    out_rate);
-NM80211Mode nm_platform_wifi_get_mode(NMPlatform *self, int ifindex);
-void        nm_platform_wifi_set_mode(NMPlatform *self, int ifindex, NM80211Mode mode);
-void        nm_platform_wifi_set_powersave(NMPlatform *self, int ifindex, guint32 powersave);
-guint32     nm_platform_wifi_find_frequency(NMPlatform *self, int ifindex, const guint32 *freqs);
+nm_platform_wifi_get_capabilities(NMPlatform *self, int ifindex, _NMDeviceWifiCapabilities *caps);
+guint32      nm_platform_wifi_get_frequency(NMPlatform *self, int ifindex);
+gboolean     nm_platform_wifi_get_station(NMPlatform * self,
+                                          int          ifindex,
+                                          NMEtherAddr *out_bssid,
+                                          int *        out_quality,
+                                          guint32 *    out_rate);
+_NM80211Mode nm_platform_wifi_get_mode(NMPlatform *self, int ifindex);
+void         nm_platform_wifi_set_mode(NMPlatform *self, int ifindex, _NM80211Mode mode);
+void         nm_platform_wifi_set_powersave(NMPlatform *self, int ifindex, guint32 powersave);
+guint32      nm_platform_wifi_find_frequency(NMPlatform *self, int ifindex, const guint32 *freqs);
 void nm_platform_wifi_indicate_addressing_running(NMPlatform *self, int ifindex, gboolean running);
-NMSettingWirelessWakeOnWLan nm_platform_wifi_get_wake_on_wlan(NMPlatform *self, int ifindex);
+_NMSettingWirelessWakeOnWLan nm_platform_wifi_get_wake_on_wlan(NMPlatform *self, int ifindex);
 gboolean
-nm_platform_wifi_set_wake_on_wlan(NMPlatform *self, int ifindex, NMSettingWirelessWakeOnWLan wowl);
+nm_platform_wifi_set_wake_on_wlan(NMPlatform *self, int ifindex, _NMSettingWirelessWakeOnWLan wowl);
 
 guint32  nm_platform_mesh_get_channel(NMPlatform *self, int ifindex);
 gboolean nm_platform_mesh_set_channel(NMPlatform *self, int ifindex, guint32 channel);

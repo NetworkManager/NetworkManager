@@ -23,8 +23,8 @@
 #include "vpn/nm-vpn-manager.h"
 #include "devices/nm-device.h"
 #include "devices/nm-device-generic.h"
-#include "platform/nm-platform.h"
-#include "platform/nmp-object.h"
+#include "libnm-platform/nm-platform.h"
+#include "libnm-platform/nmp-object.h"
 #include "nm-hostname-manager.h"
 #include "nm-keep-alive.h"
 #include "nm-rfkill-manager.h"
@@ -1305,7 +1305,7 @@ find_device_by_permanent_hw_addr(NMManager *self, const char *hwaddr)
     NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
     NMDevice *        device;
     const char *      device_addr;
-    guint8            hwaddr_bin[NM_UTILS_HWADDR_LEN_MAX];
+    guint8            hwaddr_bin[_NM_UTILS_HWADDR_LEN_MAX];
     gsize             hwaddr_len;
 
     g_return_val_if_fail(hwaddr != NULL, NULL);

@@ -17,7 +17,7 @@
 
 #include "nm-ip4-config.h"
 #include "devices/nm-device-private.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "ppp/nm-ppp-manager-call.h"
 #include "ppp/nm-ppp-status.h"
 #include "nm-setting-adsl.h"

@@ -12,7 +12,7 @@
 #include <sys/wait.h>
 #include <linux/if_ether.h>
 
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "n-acd/src/n-acd.h"

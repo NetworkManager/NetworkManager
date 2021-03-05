@@ -17,7 +17,7 @@
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
 #include "nm-ndisc-private.h"
 #include "NetworkManagerUtils.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nmp-netns.h"
 
 #define _NMLOG_PREFIX_NAME "ndisc-lndp"

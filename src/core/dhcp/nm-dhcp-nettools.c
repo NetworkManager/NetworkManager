@@ -23,7 +23,7 @@
 #include "nm-dhcp-options.h"
 #include "nm-core-utils.h"
 #include "NetworkManagerUtils.h"
-#include "platform/nm-platform.h"
+#include "libnm-platform/nm-platform.h"
 #include "nm-dhcp-client-logging.h"
 #include "n-dhcp4/src/n-dhcp4.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"

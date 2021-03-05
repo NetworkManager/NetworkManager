@@ -15,6 +15,7 @@
 #include <glib-unix.h>
 #include <net/if.h>
 #include <net/ethernet.h>
+#include <linux/rtnetlink.h>
 
 #include "nm-errno.h"
 #include "nm-str-buf.h"
@@ -102,6 +103,112 @@ nm_ip_addr_set_from_untrusted(int           addr_family,
 
 G_STATIC_ASSERT(ETH_ALEN == sizeof(struct ether_addr));
 G_STATIC_ASSERT(ETH_ALEN == 6);
+
+/*****************************************************************************/
+
+/**
+ * nm_utils_inet6_is_token:
+ * @in6addr: the AF_INET6 address structure
+ *
+ * Checks if only the bottom 64bits of the address are set.
+ *
+ * Return value: %TRUE or %FALSE
+ */
+gboolean
+_nm_utils_inet6_is_token(const struct in6_addr *in6addr)
+{
+    if (in6addr->s6_addr[0] || in6addr->s6_addr[1] || in6addr->s6_addr[2] || in6addr->s6_addr[3]
+        || in6addr->s6_addr[4] || in6addr->s6_addr[5] || in6addr->s6_addr[6] || in6addr->s6_addr[7])
+        return FALSE;
+
+    if (in6addr->s6_addr[8] || in6addr->s6_addr[9] || in6addr->s6_addr[10] || in6addr->s6_addr[11]
+        || in6addr->s6_addr[12] || in6addr->s6_addr[13] || in6addr->s6_addr[14]
+        || in6addr->s6_addr[15])
+        return TRUE;
+
+    return FALSE;
+}
+
+/**
+ * nm_utils_ipv6_addr_set_interface_identifier:
+ * @addr: output token encoded as %in6_addr
+ * @iid: %NMUtilsIPv6IfaceId interface identifier
+ *
+ * Converts the %NMUtilsIPv6IfaceId to an %in6_addr (suitable for use
+ * with Linux platform). This only copies the lower 8 bytes, ignoring
+ * the /64 network prefix which is expected to be all-zero for a valid
+ * token.
+ */
+void
+nm_utils_ipv6_addr_set_interface_identifier(struct in6_addr *addr, const NMUtilsIPv6IfaceId iid)
+{
+    memcpy(addr->s6_addr + 8, &iid.id_u8, 8);
+}
+
+/**
+ * nm_utils_ipv6_interface_identifier_get_from_addr:
+ * @iid: output %NMUtilsIPv6IfaceId interface identifier set from the token
+ * @addr: token encoded as %in6_addr
+ *
+ * Converts the %in6_addr encoded token (as used by Linux platform) to
+ * the interface identifier.
+ */
+void
+nm_utils_ipv6_interface_identifier_get_from_addr(NMUtilsIPv6IfaceId *   iid,
+                                                 const struct in6_addr *addr)
+{
+    memcpy(iid, addr->s6_addr + 8, 8);
+}
+
+/**
+ * nm_utils_ipv6_interface_identifier_get_from_token:
+ * @iid: output %NMUtilsIPv6IfaceId interface identifier set from the token
+ * @token: token encoded as string
+ *
+ * Converts the %in6_addr encoded token (as used in ip6 settings) to
+ * the interface identifier.
+ *
+ * Returns: %TRUE if the @token is a valid token, %FALSE otherwise
+ */
+gboolean
+nm_utils_ipv6_interface_identifier_get_from_token(NMUtilsIPv6IfaceId *iid, const char *token)
+{
+    struct in6_addr i6_token;
+
+    g_return_val_if_fail(token, FALSE);
+
+    if (!inet_pton(AF_INET6, token, &i6_token))
+        return FALSE;
+
+    if (!_nm_utils_inet6_is_token(&i6_token))
+        return FALSE;
+
+    nm_utils_ipv6_interface_identifier_get_from_addr(iid, &i6_token);
+    return TRUE;
+}
+
+/**
+ * nm_utils_inet6_interface_identifier_to_token:
+ * @iid: %NMUtilsIPv6IfaceId interface identifier
+ * @buf: the destination buffer of at least %NM_UTILS_INET_ADDRSTRLEN
+ *   bytes.
+ *
+ * Converts the interface identifier to a string token.
+ *
+ * Returns: the input buffer filled with the id as string.
+ */
+const char *
+nm_utils_inet6_interface_identifier_to_token(NMUtilsIPv6IfaceId iid,
+                                             char               buf[static INET6_ADDRSTRLEN])
+{
+    struct in6_addr i6_token = {.s6_addr = {
+                                    0,
+                                }};
+
+    nm_assert(buf);
+    nm_utils_ipv6_addr_set_interface_identifier(&i6_token, iid);
+    return _nm_utils_inet6_ntop(&i6_token, buf);
+}
 
 /*****************************************************************************/
 
@@ -686,106 +793,6 @@ _nm_utils_ip4_prefix_to_netmask(guint32 prefix)
     return prefix < 32 ? ~htonl(0xFFFFFFFFu >> prefix) : 0xFFFFFFFFu;
 }
 
-gconstpointer
-nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer src, guint8 plen)
-{
-    g_return_val_if_fail(dst, NULL);
-
-    switch (family) {
-    case AF_INET:
-        g_return_val_if_fail(plen <= 32, NULL);
-
-        if (!src) {
-            /* allow "self-assignment", by specifying %NULL as source. */
-            src = dst;
-        }
-
-        *((guint32 *) dst) = nm_utils_ip4_address_clear_host_address(*((guint32 *) src), plen);
-        break;
-    case AF_INET6:
-        nm_utils_ip6_address_clear_host_address(dst, src, plen);
-        break;
-    default:
-        g_return_val_if_reached(NULL);
-    }
-    return dst;
-}
-
-/* nm_utils_ip4_address_clear_host_address:
- * @addr: source ip6 address
- * @plen: prefix length of network
- *
- * returns: the input address, with the host address set to 0.
- */
-in_addr_t
-nm_utils_ip4_address_clear_host_address(in_addr_t addr, guint8 plen)
-{
-    return addr & _nm_utils_ip4_prefix_to_netmask(plen);
-}
-
-/* nm_utils_ip6_address_clear_host_address:
- * @dst: destination output buffer, will contain the network part of the @src address
- * @src: source ip6 address
- * @plen: prefix length of network
- *
- * Note: this function is self assignment safe, to update @src inplace, set both
- * @dst and @src to the same destination or set @src NULL.
- */
-const struct in6_addr *
-nm_utils_ip6_address_clear_host_address(struct in6_addr *      dst,
-                                        const struct in6_addr *src,
-                                        guint8                 plen)
-{
-    g_return_val_if_fail(plen <= 128, NULL);
-    g_return_val_if_fail(dst, NULL);
-
-    if (!src)
-        src = dst;
-
-    if (plen < 128) {
-        guint nbytes = plen / 8;
-        guint nbits  = plen % 8;
-
-        if (nbytes && dst != src)
-            memcpy(dst, src, nbytes);
-        if (nbits) {
-            dst->s6_addr[nbytes] = (src->s6_addr[nbytes] & (0xFF << (8 - nbits)));
-            nbytes++;
-        }
-        if (nbytes <= 15)
-            memset(&dst->s6_addr[nbytes], 0, 16 - nbytes);
-    } else if (src != dst)
-        *dst = *src;
-
-    return dst;
-}
-
-int
-nm_utils_ip6_address_same_prefix_cmp(const struct in6_addr *addr_a,
-                                     const struct in6_addr *addr_b,
-                                     guint8                 plen)
-{
-    int    nbytes;
-    guint8 va, vb, m;
-
-    if (plen >= 128)
-        NM_CMP_DIRECT_MEMCMP(addr_a, addr_b, sizeof(struct in6_addr));
-    else {
-        nbytes = plen / 8;
-        if (nbytes)
-            NM_CMP_DIRECT_MEMCMP(addr_a, addr_b, nbytes);
-
-        plen = plen % 8;
-        if (plen != 0) {
-            m  = ~((1 << (8 - plen)) - 1);
-            va = ((((const guint8 *) addr_a))[nbytes]) & m;
-            vb = ((((const guint8 *) addr_b))[nbytes]) & m;
-            NM_CMP_DIRECT(va, vb);
-        }
-    }
-    return 0;
-}
-
 /*****************************************************************************/
 
 guint32
@@ -1143,6 +1150,15 @@ nm_utils_ipaddr_is_normalized(int addr_family, const char *str_addr)
     nm_utils_inet_ntop(addr_family, &addr, sbuf);
     return nm_streq(sbuf, str_addr);
 }
+
+/*****************************************************************************/
+
+NM_UTILS_ENUM2STR_DEFINE(nm_icmpv6_router_pref_to_string,
+                         NMIcmpv6RouterPref,
+                         NM_UTILS_ENUM2STR(NM_ICMPV6_ROUTER_PREF_LOW, "low"),
+                         NM_UTILS_ENUM2STR(NM_ICMPV6_ROUTER_PREF_MEDIUM, "medium"),
+                         NM_UTILS_ENUM2STR(NM_ICMPV6_ROUTER_PREF_HIGH, "high"),
+                         NM_UTILS_ENUM2STR(NM_ICMPV6_ROUTER_PREF_INVALID, "invalid"), );
 
 /*****************************************************************************/
 
@@ -3787,6 +3803,32 @@ _nm_utils_strv_dup_packed(const char *const *strv, gssize len)
 /*****************************************************************************/
 
 gssize
+nm_utils_ptrarray_find_first(gconstpointer *list, gssize len, gconstpointer needle)
+{
+    gssize i;
+
+    if (len == 0)
+        return -1;
+
+    if (len > 0) {
+        g_return_val_if_fail(list, -1);
+        for (i = 0; i < len; i++) {
+            if (list[i] == needle)
+                return i;
+        }
+    } else {
+        g_return_val_if_fail(needle, -1);
+        for (i = 0; list && list[i]; i++) {
+            if (list[i] == needle)
+                return i;
+        }
+    }
+    return -1;
+}
+
+/*****************************************************************************/
+
+gssize
 nm_utils_ptrarray_find_binary_search(gconstpointer *  list,
                                      gsize            len,
                                      gconstpointer    needle,
@@ -5708,3 +5750,355 @@ nm_utils_name_to_uid(const char *name, uid_t *out_uid)
         buf      = buf_heap;
     }
 }
+
+/*****************************************************************************/
+
+static double
+_exp10(guint16 ex)
+{
+    double v;
+
+    if (ex == 0)
+        return 1.0;
+
+    v = _exp10(ex / 2);
+    v = v * v;
+    if (ex % 2)
+        v *= 10;
+    return v;
+}
+
+/*
+ * nm_utils_exp10:
+ * @ex: the exponent
+ *
+ * Returns: 10^ex, or pow(10, ex), or exp10(ex).
+ */
+double
+nm_utils_exp10(gint16 ex)
+{
+    if (ex >= 0)
+        return _exp10(ex);
+    return 1.0 / _exp10(-((gint32) ex));
+}
+
+/*****************************************************************************/
+
+gboolean
+_nm_utils_is_empty_ssid_arr(const guint8 *ssid, gsize len)
+{
+    /* Single white space is for Linksys APs */
+    if (len == 1 && ssid[0] == ' ')
+        return TRUE;
+
+    /* Otherwise, if the entire ssid is 0, we assume it is hidden */
+    while (len--) {
+        if (ssid[len] != '\0')
+            return FALSE;
+    }
+    return TRUE;
+}
+
+gboolean
+_nm_utils_is_empty_ssid_gbytes(GBytes *ssid)
+{
+    const guint8 *p;
+    gsize         l;
+
+    g_return_val_if_fail(ssid, FALSE);
+
+    p = g_bytes_get_data(ssid, &l);
+    return _nm_utils_is_empty_ssid_arr(p, l);
+}
+
+char *
+_nm_utils_ssid_to_string_arr(const guint8 *ssid, gsize len)
+{
+    gs_free char *s_copy = NULL;
+    const char *  s_cnst;
+
+    if (len == 0)
+        return g_strdup("(empty)");
+
+    s_cnst =
+        nm_utils_buf_utf8safe_escape(ssid, len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL, &s_copy);
+    nm_assert(s_cnst);
+
+    if (_nm_utils_is_empty_ssid_arr(ssid, len))
+        return g_strdup_printf("\"%s\" (hidden)", s_cnst);
+
+    return g_strdup_printf("\"%s\"", s_cnst);
+}
+
+char *
+_nm_utils_ssid_to_string_gbytes(GBytes *ssid)
+{
+    gconstpointer p;
+    gsize         l;
+
+    if (!ssid)
+        return g_strdup("(none)");
+
+    p = g_bytes_get_data(ssid, &l);
+    return _nm_utils_ssid_to_string_arr(p, l);
+}
+
+/*****************************************************************************/
+
+gconstpointer
+nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer src, guint8 plen)
+{
+    g_return_val_if_fail(dst, NULL);
+
+    switch (family) {
+    case AF_INET:
+        g_return_val_if_fail(plen <= 32, NULL);
+
+        if (!src) {
+            /* allow "self-assignment", by specifying %NULL as source. */
+            src = dst;
+        }
+
+        *((guint32 *) dst) = nm_utils_ip4_address_clear_host_address(*((guint32 *) src), plen);
+        break;
+    case AF_INET6:
+        nm_utils_ip6_address_clear_host_address(dst, src, plen);
+        break;
+    default:
+        g_return_val_if_reached(NULL);
+    }
+    return dst;
+}
+
+/* nm_utils_ip4_address_clear_host_address:
+ * @addr: source ip6 address
+ * @plen: prefix length of network
+ *
+ * returns: the input address, with the host address set to 0.
+ */
+in_addr_t
+nm_utils_ip4_address_clear_host_address(in_addr_t addr, guint8 plen)
+{
+    return addr & _nm_utils_ip4_prefix_to_netmask(plen);
+}
+
+/* nm_utils_ip6_address_clear_host_address:
+ * @dst: destination output buffer, will contain the network part of the @src address
+ * @src: source ip6 address
+ * @plen: prefix length of network
+ *
+ * Note: this function is self assignment safe, to update @src inplace, set both
+ * @dst and @src to the same destination or set @src NULL.
+ */
+const struct in6_addr *
+nm_utils_ip6_address_clear_host_address(struct in6_addr *      dst,
+                                        const struct in6_addr *src,
+                                        guint8                 plen)
+{
+    g_return_val_if_fail(plen <= 128, NULL);
+    g_return_val_if_fail(dst, NULL);
+
+    if (!src)
+        src = dst;
+
+    if (plen < 128) {
+        guint nbytes = plen / 8;
+        guint nbits  = plen % 8;
+
+        if (nbytes && dst != src)
+            memcpy(dst, src, nbytes);
+        if (nbits) {
+            dst->s6_addr[nbytes] = (src->s6_addr[nbytes] & (0xFF << (8 - nbits)));
+            nbytes++;
+        }
+        if (nbytes <= 15)
+            memset(&dst->s6_addr[nbytes], 0, 16 - nbytes);
+    } else if (src != dst)
+        *dst = *src;
+
+    return dst;
+}
+
+int
+nm_utils_ip6_address_same_prefix_cmp(const struct in6_addr *addr_a,
+                                     const struct in6_addr *addr_b,
+                                     guint8                 plen)
+{
+    int    nbytes;
+    guint8 va, vb, m;
+
+    if (plen >= 128)
+        NM_CMP_DIRECT_MEMCMP(addr_a, addr_b, sizeof(struct in6_addr));
+    else {
+        nbytes = plen / 8;
+        if (nbytes)
+            NM_CMP_DIRECT_MEMCMP(addr_a, addr_b, nbytes);
+
+        plen = plen % 8;
+        if (plen != 0) {
+            m  = ~((1 << (8 - plen)) - 1);
+            va = ((((const guint8 *) addr_a))[nbytes]) & m;
+            vb = ((((const guint8 *) addr_b))[nbytes]) & m;
+            NM_CMP_DIRECT(va, vb);
+        }
+    }
+    return 0;
+}
+
+/*****************************************************************************/
+
+#define IPV6_PROPERTY_DIR "/proc/sys/net/ipv6/conf/"
+#define IPV4_PROPERTY_DIR "/proc/sys/net/ipv4/conf/"
+
+G_STATIC_ASSERT(sizeof(IPV4_PROPERTY_DIR) == sizeof(IPV6_PROPERTY_DIR));
+G_STATIC_ASSERT(NM_STRLEN(IPV6_PROPERTY_DIR) + IFNAMSIZ + 60
+                == NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE);
+
+/**
+ * nm_utils_sysctl_ip_conf_path:
+ * @addr_family: either AF_INET or AF_INET6.
+ * @buf: the output buffer where to write the path. It
+ *   must be at least NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE bytes
+ *   long.
+ * @ifname: an interface name
+ * @property: a property name
+ *
+ * Returns: the path to IPv6 property @property on @ifname. Note that
+ * this returns the input argument @buf.
+ */
+const char *
+nm_utils_sysctl_ip_conf_path(int addr_family, char *buf, const char *ifname, const char *property)
+{
+    int len;
+
+    nm_assert(buf);
+    nm_assert_addr_family(addr_family);
+
+    g_assert(nm_utils_ifname_valid_kernel(ifname, NULL));
+    property = NM_ASSERT_VALID_PATH_COMPONENT(property);
+
+    len = g_snprintf(buf,
+                     NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE,
+                     "%s%s/%s",
+                     addr_family == AF_INET6 ? IPV6_PROPERTY_DIR : IPV4_PROPERTY_DIR,
+                     ifname,
+                     property);
+    g_assert(len < NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE - 1);
+    return buf;
+}
+
+gboolean
+nm_utils_sysctl_ip_conf_is_path(int         addr_family,
+                                const char *path,
+                                const char *ifname,
+                                const char *property)
+{
+    g_return_val_if_fail(path, FALSE);
+    NM_ASSERT_VALID_PATH_COMPONENT(property);
+    g_assert(!ifname || nm_utils_ifname_valid_kernel(ifname, NULL));
+
+    if (addr_family == AF_INET) {
+        if (!g_str_has_prefix(path, IPV4_PROPERTY_DIR))
+            return FALSE;
+        path += NM_STRLEN(IPV4_PROPERTY_DIR);
+    } else if (addr_family == AF_INET6) {
+        if (!g_str_has_prefix(path, IPV6_PROPERTY_DIR))
+            return FALSE;
+        path += NM_STRLEN(IPV6_PROPERTY_DIR);
+    } else
+        g_return_val_if_reached(FALSE);
+
+    if (ifname) {
+        if (!g_str_has_prefix(path, ifname))
+            return FALSE;
+        path += strlen(ifname);
+        if (path[0] != '/')
+            return FALSE;
+        path++;
+    } else {
+        const char *slash;
+        char        buf[IFNAMSIZ];
+        gsize       l;
+
+        slash = strchr(path, '/');
+        if (!slash)
+            return FALSE;
+        l = slash - path;
+        if (l >= IFNAMSIZ)
+            return FALSE;
+        memcpy(buf, path, l);
+        buf[l] = '\0';
+        if (!nm_utils_ifname_valid_kernel(buf, NULL))
+            return FALSE;
+        path = slash + 1;
+    }
+
+    if (!nm_streq(path, property))
+        return FALSE;
+
+    return TRUE;
+}
+
+gboolean
+nm_utils_is_valid_path_component(const char *name)
+{
+    const char *n;
+
+    if (name == NULL || name[0] == '\0')
+        return FALSE;
+
+    if (name[0] == '.') {
+        if (name[1] == '\0')
+            return FALSE;
+        if (name[1] == '.' && name[2] == '\0')
+            return FALSE;
+    }
+    n = name;
+    do {
+        if (*n == '/')
+            return FALSE;
+    } while (*(++n) != '\0');
+
+    return TRUE;
+}
+
+const char *
+NM_ASSERT_VALID_PATH_COMPONENT(const char *name)
+{
+    if (G_LIKELY(nm_utils_is_valid_path_component(name)))
+        return name;
+
+    g_error("FATAL: Failed asserting path component: %s%s%s",
+            NM_PRINT_FMT_QUOTED(name, "\"", name, "\"", "(null)"));
+    g_assert_not_reached();
+}
+
+/*****************************************************************************/
+
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
+    nm_utils_route_type_by_name,
+    guint8,
+    { nm_assert(name); },
+    { return RTN_UNSPEC; },
+    {"blackhole", RTN_BLACKHOLE},
+    {"broadcast", RTN_BROADCAST},
+    {"local", RTN_LOCAL},
+    {"multicast", RTN_MULTICAST},
+    {"nat", RTN_NAT},
+    {"prohibit", RTN_PROHIBIT},
+    {"throw", RTN_THROW},
+    {"unicast", RTN_UNICAST},
+    {"unreachable", RTN_UNREACHABLE}, );
+
+NM_UTILS_ENUM2STR_DEFINE(nm_utils_route_type2str,
+                         guint8,
+                         NM_UTILS_ENUM2STR(RTN_BLACKHOLE, "blackhole"),
+                         NM_UTILS_ENUM2STR(RTN_BROADCAST, "broadcast"),
+                         NM_UTILS_ENUM2STR(RTN_LOCAL, "local"),
+                         NM_UTILS_ENUM2STR(RTN_MULTICAST, "multicast"),
+                         NM_UTILS_ENUM2STR(RTN_NAT, "nat"),
+                         NM_UTILS_ENUM2STR(RTN_PROHIBIT, "prohibit"),
+                         NM_UTILS_ENUM2STR(RTN_THROW, "throw"),
+                         NM_UTILS_ENUM2STR(RTN_UNICAST, "unicast"),
+                         NM_UTILS_ENUM2STR(RTN_UNREACHABLE, "unreachable"),
+                         NM_UTILS_ENUM2STR(RTN_UNSPEC, "unspecified"), );

@@ -16,8 +16,6 @@
 
 /*****************************************************************************/
 
-#define NM_PLATFORM_LIFETIME_PERMANENT G_MAXUINT32
-
 #define NM_DEFINE_SINGLETON_INSTANCE(TYPE) static TYPE *singleton_instance
 
 #define NM_DEFINE_SINGLETON_REGISTER(TYPE)                                                      \
@@ -98,73 +96,6 @@ void _nm_singleton_instance_register_destruction(GObject *instance);
 gboolean nm_ether_addr_is_valid(const NMEtherAddr *addr);
 gboolean nm_ether_addr_is_valid_str(const char *str);
 
-gconstpointer
-nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer src, guint8 plen);
-in_addr_t              nm_utils_ip4_address_clear_host_address(in_addr_t addr, guint8 plen);
-const struct in6_addr *nm_utils_ip6_address_clear_host_address(struct in6_addr *      dst,
-                                                               const struct in6_addr *src,
-                                                               guint8                 plen);
-
-static inline int
-nm_utils_ip4_address_same_prefix_cmp(in_addr_t addr_a, in_addr_t addr_b, guint8 plen)
-{
-    NM_CMP_DIRECT(htonl(nm_utils_ip4_address_clear_host_address(addr_a, plen)),
-                  htonl(nm_utils_ip4_address_clear_host_address(addr_b, plen)));
-    return 0;
-}
-
-int nm_utils_ip6_address_same_prefix_cmp(const struct in6_addr *addr_a,
-                                         const struct in6_addr *addr_b,
-                                         guint8                 plen);
-
-static inline int
-nm_utils_ip_address_same_prefix_cmp(int           addr_family,
-                                    gconstpointer addr_a,
-                                    gconstpointer addr_b,
-                                    guint8        plen)
-{
-    nm_assert_addr_family(addr_family);
-
-    NM_CMP_SELF(addr_a, addr_b);
-
-    if (NM_IS_IPv4(addr_family)) {
-        return nm_utils_ip4_address_same_prefix_cmp(*((const in_addr_t *) addr_a),
-                                                    *((const in_addr_t *) addr_b),
-                                                    plen);
-    }
-
-    return nm_utils_ip6_address_same_prefix_cmp(addr_a, addr_b, plen);
-}
-
-static inline gboolean
-nm_utils_ip4_address_same_prefix(in_addr_t addr_a, in_addr_t addr_b, guint8 plen)
-{
-    return nm_utils_ip4_address_same_prefix_cmp(addr_a, addr_b, plen) == 0;
-}
-
-static inline gboolean
-nm_utils_ip6_address_same_prefix(const struct in6_addr *addr_a,
-                                 const struct in6_addr *addr_b,
-                                 guint8                 plen)
-{
-    return nm_utils_ip6_address_same_prefix_cmp(addr_a, addr_b, plen) == 0;
-}
-
-static inline gboolean
-nm_utils_ip_address_same_prefix(int           addr_family,
-                                gconstpointer addr_a,
-                                gconstpointer addr_b,
-                                guint8        plen)
-{
-    return nm_utils_ip_address_same_prefix_cmp(addr_family, addr_a, addr_b, plen) == 0;
-}
-
-#define NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX(a, b, plen) \
-    NM_CMP_RETURN(nm_utils_ip4_address_same_prefix_cmp((a), (b), (plen)))
-
-#define NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX(a, b, plen) \
-    NM_CMP_RETURN(nm_utils_ip6_address_same_prefix_cmp((a), (b), (plen)))
-
 static inline void
 nm_hash_update_in6addr(NMHashState *h, const struct in6_addr *addr)
 {
@@ -184,8 +115,6 @@ nm_hash_update_in6addr_prefix(NMHashState *h, const struct in6_addr *addr, guint
     /* we don't hash plen itself. The caller may want to do that.*/
     nm_hash_update_in6addr(h, &a);
 }
-
-double nm_utils_exp10(gint16 e);
 
 /**
  * nm_utils_ip6_route_metric_normalize:
@@ -220,9 +149,6 @@ nm_utils_ip_route_metric_penalize(guint32 metric, guint32 penalty)
         return metric + penalty;
     return G_MAXUINT32;
 }
-
-int nm_utils_modprobe(GError **error, gboolean suppress_error_loggin, const char *arg1, ...)
-    G_GNUC_NULL_TERMINATED;
 
 void nm_utils_kill_process_sync(pid_t       pid,
                                 guint64     start_time,
@@ -291,9 +217,6 @@ gboolean nm_utils_connection_has_default_route(NMConnection *connection,
                                                int           addr_family,
                                                gboolean *    out_is_never_default);
 
-char *      nm_utils_new_vlan_name(const char *parent_iface, guint32 vlan_id);
-const char *nm_utils_new_infiniband_name(char *name, const char *parent_name, int p_key);
-
 int nm_utils_cmp_connection_by_autoconnect_priority(NMConnection *a, NMConnection *b);
 
 void nm_utils_log_connection_diff(NMConnection *connection,
@@ -303,19 +226,6 @@ void nm_utils_log_connection_diff(NMConnection *connection,
                                   const char *  name,
                                   const char *  prefix,
                                   const char *  dbus_path);
-
-gboolean    nm_utils_is_valid_path_component(const char *name);
-const char *NM_ASSERT_VALID_PATH_COMPONENT(const char *name);
-
-#define NM_UTILS_SYSCTL_IP_CONF_PATH_BUFSIZE 100
-
-const char *
-nm_utils_sysctl_ip_conf_path(int addr_family, char *buf, const char *ifname, const char *property);
-
-gboolean nm_utils_sysctl_ip_conf_is_path(int         addr_family,
-                                         const char *path,
-                                         const char *ifname,
-                                         const char *property);
 
 gboolean nm_utils_is_specific_hostname(const char *name);
 
@@ -343,49 +253,6 @@ gboolean
 nm_utils_arp_type_get_hwaddr_relevant_part(int arp_type, const guint8 **hwaddr, gsize *hwaddr_len);
 
 /*****************************************************************************/
-
-/* IPv6 Interface Identifier helpers */
-
-/**
- * NMUtilsIPv6IfaceId:
- * @id: convenience member for validity checking; never use directly
- * @id_u8: the 64-bit Interface Identifier
- *
- * Holds a 64-bit IPv6 Interface Identifier.  The IID is a sequence of bytes
- * and should not normally be treated as a %guint64, but this is done for
- * convenience of validity checking and initialization.
- */
-struct _NMUtilsIPv6IfaceId {
-    union {
-        guint64 id;
-        guint8  id_u8[8];
-    };
-};
-
-#define NM_UTILS_IPV6_IFACE_ID_INIT \
-    {                               \
-        {                           \
-            .id = 0                 \
-        }                           \
-    }
-
-void nm_utils_ipv6_addr_set_interface_identifier(struct in6_addr *        addr,
-                                                 const NMUtilsIPv6IfaceId iid);
-
-void nm_utils_ipv6_interface_identifier_get_from_addr(NMUtilsIPv6IfaceId *   iid,
-                                                      const struct in6_addr *addr);
-
-gboolean nm_utils_ipv6_interface_identifier_get_from_token(NMUtilsIPv6IfaceId *iid,
-                                                           const char *        token);
-
-const char *nm_utils_inet6_interface_identifier_to_token(NMUtilsIPv6IfaceId iid,
-                                                         char buf[static INET6_ADDRSTRLEN]);
-
-gboolean nm_utils_get_ipv6_interface_identifier(NMLinkType          link_type,
-                                                const guint8 *      hwaddr,
-                                                guint               len,
-                                                guint               dev_id,
-                                                NMUtilsIPv6IfaceId *out_iid);
 
 typedef enum {
     /* The stable type. Note that this value is encoded in the
@@ -501,33 +368,6 @@ void             _nm_utils_set_testing(NMUtilsTestFlags flags);
 
 void nm_utils_g_value_set_strv(GValue *value, GPtrArray *strings);
 
-guint32
-nm_utils_lifetime_rebase_relative_time_on_now(guint32 timestamp, guint32 duration, gint32 now);
-
-guint32 nm_utils_lifetime_get(guint32  timestamp,
-                              guint32  lifetime,
-                              guint32  preferred,
-                              gint32   now,
-                              guint32 *out_preferred);
-
-/*****************************************************************************/
-
-#define NM_IPV4LL_NETWORK ((in_addr_t)(htonl(0xA9FE0000lu)))
-#define NM_IPV4LL_NETMASK ((in_addr_t)(htonl(0xFFFF0000lu)))
-
-static inline gboolean
-nm_utils_ip4_address_is_link_local(in_addr_t addr)
-{
-    return (addr & NM_IPV4LL_NETMASK) == NM_IPV4LL_NETWORK;
-}
-
-static inline gboolean
-nm_utils_ip4_address_is_zeronet(in_addr_t network)
-{
-    /* Same as ipv4_is_zeronet() from kernel's include/linux/in.h. */
-    return (network & htonl(0xFF000000u)) == htonl(0x00000000u);
-}
-
 /*****************************************************************************/
 
 const char *nm_utils_dnsmasq_status_to_string(int status, char *dest, gsize size);
@@ -553,20 +393,6 @@ struct stat;
 gboolean nm_utils_validate_plugin(const char *path, struct stat *stat, GError **error);
 char **  nm_utils_read_plugin_paths(const char *dirname, const char *prefix);
 char *   nm_utils_format_con_diff_for_audit(GHashTable *diff);
-
-/*****************************************************************************/
-
-/* this enum is compatible with ICMPV6_ROUTER_PREF_* (from <linux/icmpv6.h>,
- * the values for netlink attribute RTA_PREF) and "enum ndp_route_preference"
- * from <ndp.h>. */
-typedef enum _nm_packed {
-    NM_ICMPV6_ROUTER_PREF_MEDIUM  = 0x0, /* ICMPV6_ROUTER_PREF_MEDIUM */
-    NM_ICMPV6_ROUTER_PREF_LOW     = 0x3, /* ICMPV6_ROUTER_PREF_LOW */
-    NM_ICMPV6_ROUTER_PREF_HIGH    = 0x1, /* ICMPV6_ROUTER_PREF_HIGH */
-    NM_ICMPV6_ROUTER_PREF_INVALID = 0x2, /* ICMPV6_ROUTER_PREF_INVALID */
-} NMIcmpv6RouterPref;
-
-const char *nm_icmpv6_router_pref_to_string(NMIcmpv6RouterPref pref, char *buf, gsize len);
 
 /*****************************************************************************/
 

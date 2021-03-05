@@ -4,7 +4,7 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
-#include "src/core/nm-default-daemon.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-wifi-utils.h"
 
@@ -17,8 +17,6 @@
 #if HAVE_WEXT
     #include "nm-wifi-utils-wext.h"
 #endif
-#include "nm-core-utils.h"
-
 #include "libnm-platform/nm-platform-utils.h"
 
 G_DEFINE_ABSTRACT_TYPE(NMWifiUtils, nm_wifi_utils, G_TYPE_OBJECT)
@@ -50,29 +48,29 @@ nm_wifi_utils_new(int ifindex, struct nl_sock *genl, gboolean check_scan)
     return ret;
 }
 
-NMDeviceWifiCapabilities
+_NMDeviceWifiCapabilities
 nm_wifi_utils_get_caps(NMWifiUtils *data)
 {
-    g_return_val_if_fail(data != NULL, NM_WIFI_DEVICE_CAP_NONE);
+    g_return_val_if_fail(data != NULL, _NM_WIFI_DEVICE_CAP_NONE);
 
     return data->caps;
 }
 
-NM80211Mode
+_NM80211Mode
 nm_wifi_utils_get_mode(NMWifiUtils *data)
 {
-    g_return_val_if_fail(data != NULL, NM_802_11_MODE_UNKNOWN);
+    g_return_val_if_fail(data != NULL, _NM_802_11_MODE_UNKNOWN);
     return NM_WIFI_UTILS_GET_CLASS(data)->get_mode(data);
 }
 
 gboolean
-nm_wifi_utils_set_mode(NMWifiUtils *data, const NM80211Mode mode)
+nm_wifi_utils_set_mode(NMWifiUtils *data, const _NM80211Mode mode)
 {
     NMWifiUtilsClass *klass;
 
     g_return_val_if_fail(data != NULL, FALSE);
-    g_return_val_if_fail((mode == NM_802_11_MODE_INFRA) || (mode == NM_802_11_MODE_AP)
-                             || (mode == NM_802_11_MODE_ADHOC) || (mode == NM_802_11_MODE_MESH),
+    g_return_val_if_fail((mode == _NM_802_11_MODE_INFRA) || (mode == _NM_802_11_MODE_AP)
+                             || (mode == _NM_802_11_MODE_ADHOC) || (mode == _NM_802_11_MODE_MESH),
                          FALSE);
 
     klass = NM_WIFI_UTILS_GET_CLASS(data);
@@ -92,21 +90,21 @@ nm_wifi_utils_set_powersave(NMWifiUtils *data, guint32 powersave)
     return klass->set_powersave ? klass->set_powersave(data, powersave) : TRUE;
 }
 
-NMSettingWirelessWakeOnWLan
+_NMSettingWirelessWakeOnWLan
 nm_wifi_utils_get_wake_on_wlan(NMWifiUtils *data)
 {
     NMWifiUtilsClass *klass;
 
-    g_return_val_if_fail(data != NULL, NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE);
+    g_return_val_if_fail(data != NULL, _NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE);
 
     klass = NM_WIFI_UTILS_GET_CLASS(data);
 
     return klass->get_wake_on_wlan ? klass->get_wake_on_wlan(data)
-                                   : NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
+                                   : _NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
 }
 
 gboolean
-nm_wifi_utils_set_wake_on_wlan(NMWifiUtils *data, NMSettingWirelessWakeOnWLan wowl)
+nm_wifi_utils_set_wake_on_wlan(NMWifiUtils *data, _NMSettingWirelessWakeOnWLan wowl)
 {
     NMWifiUtilsClass *klass;
 

@@ -630,28 +630,7 @@ _nm_utils_ssid_to_utf8(GBytes *ssid)
 gboolean
 nm_utils_is_empty_ssid(const guint8 *ssid, gsize len)
 {
-    /* Single white space is for Linksys APs */
-    if (len == 1 && ssid[0] == ' ')
-        return TRUE;
-
-    /* Otherwise, if the entire ssid is 0, we assume it is hidden */
-    while (len--) {
-        if (ssid[len] != '\0')
-            return FALSE;
-    }
-    return TRUE;
-}
-
-gboolean
-_nm_utils_is_empty_ssid(GBytes *ssid)
-{
-    const guint8 *p;
-    gsize         l;
-
-    g_return_val_if_fail(ssid, FALSE);
-
-    p = g_bytes_get_data(ssid, &l);
-    return nm_utils_is_empty_ssid(p, l);
+    return _nm_utils_is_empty_ssid_arr(ssid, len);
 }
 
 #define ESSID_MAX_SIZE 32
@@ -693,38 +672,6 @@ nm_utils_escape_ssid(const guint8 *ssid, gsize len)
     }
     *d = '\0';
     return escaped;
-}
-
-char *
-_nm_utils_ssid_to_string_arr(const guint8 *ssid, gsize len)
-{
-    gs_free char *s_copy = NULL;
-    const char *  s_cnst;
-
-    if (len == 0)
-        return g_strdup("(empty)");
-
-    s_cnst =
-        nm_utils_buf_utf8safe_escape(ssid, len, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL, &s_copy);
-    nm_assert(s_cnst);
-
-    if (nm_utils_is_empty_ssid(ssid, len))
-        return g_strdup_printf("\"%s\" (hidden)", s_cnst);
-
-    return g_strdup_printf("\"%s\"", s_cnst);
-}
-
-char *
-_nm_utils_ssid_to_string(GBytes *ssid)
-{
-    gconstpointer p;
-    gsize         l;
-
-    if (!ssid)
-        return g_strdup("(none)");
-
-    p = g_bytes_get_data(ssid, &l);
-    return _nm_utils_ssid_to_string_arr(p, l);
 }
 
 /**
@@ -875,30 +822,6 @@ GPtrArray *
 _nm_utils_copy_object_array(const GPtrArray *array)
 {
     return _nm_utils_copy_array(array, g_object_ref, g_object_unref);
-}
-
-gssize
-_nm_utils_ptrarray_find_first(gconstpointer *list, gssize len, gconstpointer needle)
-{
-    gssize i;
-
-    if (len == 0)
-        return -1;
-
-    if (len > 0) {
-        g_return_val_if_fail(list, -1);
-        for (i = 0; i < len; i++) {
-            if (list[i] == needle)
-                return i;
-        }
-    } else {
-        g_return_val_if_fail(needle, -1);
-        for (i = 0; list && list[i]; i++) {
-            if (list[i] == needle)
-                return i;
-        }
-    }
-    return -1;
 }
 
 void
@@ -4836,29 +4759,6 @@ nm_utils_ipaddr_valid(int family, const char *ip)
     g_return_val_if_fail(family == AF_INET || family == AF_INET6 || family == AF_UNSPEC, FALSE);
 
     return nm_utils_ipaddr_is_valid(family, ip);
-}
-
-/**
- * nm_utils_iinet6_is_token:
- * @in6addr: the AF_INET6 address structure
- *
- * Checks if only the bottom 64bits of the address are set.
- *
- * Return value: %TRUE or %FALSE
- */
-gboolean
-_nm_utils_inet6_is_token(const struct in6_addr *in6addr)
-{
-    if (in6addr->s6_addr[0] || in6addr->s6_addr[1] || in6addr->s6_addr[2] || in6addr->s6_addr[3]
-        || in6addr->s6_addr[4] || in6addr->s6_addr[5] || in6addr->s6_addr[6] || in6addr->s6_addr[7])
-        return FALSE;
-
-    if (in6addr->s6_addr[8] || in6addr->s6_addr[9] || in6addr->s6_addr[10] || in6addr->s6_addr[11]
-        || in6addr->s6_addr[12] || in6addr->s6_addr[13] || in6addr->s6_addr[14]
-        || in6addr->s6_addr[15])
-        return TRUE;
-
-    return FALSE;
 }
 
 /**

@@ -5,7 +5,7 @@
  * Copyright (C) 2011 Intel Corporation. All rights reserved.
  */
 
-#include "src/core/nm-default-daemon.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-wifi-utils-nl80211.h"
 
@@ -15,11 +15,10 @@
 #include <linux/nl80211.h>
 #include <linux/if.h>
 
+#include "libnm-log-core/nm-logging.h"
 #include "libnm-platform/nm-netlink.h"
 #include "nm-wifi-utils-private.h"
-#include "platform/nm-platform.h"
 #include "libnm-platform/nm-platform-utils.h"
-#include "nm-utils.h"
 
 #define _NMLOG_PREFIX_NAME "wifi-nl80211"
 #define _NMLOG_DOMAIN      LOGD_PLATFORM | LOGD_WIFI
@@ -162,8 +161,8 @@ dispose(GObject *object)
 }
 
 struct nl80211_iface_info {
-    NM80211Mode mode;
-    uint32_t    freq;
+    _NM80211Mode mode;
+    uint32_t     freq;
 };
 
 static int
@@ -181,16 +180,16 @@ nl80211_iface_info_handler(struct nl_msg *msg, void *arg)
 
     switch (nla_get_u32(tb[NL80211_ATTR_IFTYPE])) {
     case NL80211_IFTYPE_ADHOC:
-        info->mode = NM_802_11_MODE_ADHOC;
+        info->mode = _NM_802_11_MODE_ADHOC;
         break;
     case NL80211_IFTYPE_AP:
-        info->mode = NM_802_11_MODE_AP;
+        info->mode = _NM_802_11_MODE_AP;
         break;
     case NL80211_IFTYPE_STATION:
-        info->mode = NM_802_11_MODE_INFRA;
+        info->mode = _NM_802_11_MODE_INFRA;
         break;
     case NL80211_IFTYPE_MESH_POINT:
-        info->mode = NM_802_11_MODE_MESH;
+        info->mode = _NM_802_11_MODE_MESH;
         break;
     }
 
@@ -200,25 +199,25 @@ nl80211_iface_info_handler(struct nl_msg *msg, void *arg)
     return NL_SKIP;
 }
 
-static NM80211Mode
+static _NM80211Mode
 wifi_nl80211_get_mode(NMWifiUtils *data)
 {
     NMWifiUtilsNl80211 *      self       = (NMWifiUtilsNl80211 *) data;
     struct nl80211_iface_info iface_info = {
-        .mode = NM_802_11_MODE_UNKNOWN,
+        .mode = _NM_802_11_MODE_UNKNOWN,
     };
     nm_auto_nlmsg struct nl_msg *msg = NULL;
 
     msg = nl80211_alloc_msg(self, NL80211_CMD_GET_INTERFACE, 0);
 
     if (nl80211_send_and_recv(self, msg, nl80211_iface_info_handler, &iface_info) < 0)
-        return NM_802_11_MODE_UNKNOWN;
+        return _NM_802_11_MODE_UNKNOWN;
 
     return iface_info.mode;
 }
 
 static gboolean
-wifi_nl80211_set_mode(NMWifiUtils *data, const NM80211Mode mode)
+wifi_nl80211_set_mode(NMWifiUtils *data, const _NM80211Mode mode)
 {
     NMWifiUtilsNl80211 *         self = (NMWifiUtilsNl80211 *) data;
     nm_auto_nlmsg struct nl_msg *msg  = NULL;
@@ -227,16 +226,16 @@ wifi_nl80211_set_mode(NMWifiUtils *data, const NM80211Mode mode)
     msg = nl80211_alloc_msg(self, NL80211_CMD_SET_INTERFACE, 0);
 
     switch (mode) {
-    case NM_802_11_MODE_INFRA:
+    case _NM_802_11_MODE_INFRA:
         NLA_PUT_U32(msg, NL80211_ATTR_IFTYPE, NL80211_IFTYPE_STATION);
         break;
-    case NM_802_11_MODE_ADHOC:
+    case _NM_802_11_MODE_ADHOC:
         NLA_PUT_U32(msg, NL80211_ATTR_IFTYPE, NL80211_IFTYPE_ADHOC);
         break;
-    case NM_802_11_MODE_AP:
+    case _NM_802_11_MODE_AP:
         NLA_PUT_U32(msg, NL80211_ATTR_IFTYPE, NL80211_IFTYPE_AP);
         break;
-    case NM_802_11_MODE_MESH:
+    case _NM_802_11_MODE_MESH:
         NLA_PUT_U32(msg, NL80211_ATTR_IFTYPE, NL80211_IFTYPE_MESH_POINT);
         break;
     default:
@@ -271,10 +270,10 @@ nla_put_failure:
 static int
 nl80211_get_wake_on_wlan_handler(struct nl_msg *msg, void *arg)
 {
-    NMSettingWirelessWakeOnWLan *wowl = arg;
-    struct nlattr *              attrs[NL80211_ATTR_MAX + 1];
-    struct nlattr *              trig[NUM_NL80211_WOWLAN_TRIG];
-    struct genlmsghdr *          gnlh = nlmsg_data(nlmsg_hdr(msg));
+    _NMSettingWirelessWakeOnWLan *wowl = arg;
+    struct nlattr *               attrs[NL80211_ATTR_MAX + 1];
+    struct nlattr *               trig[NUM_NL80211_WOWLAN_TRIG];
+    struct genlmsghdr *           gnlh = nlmsg_data(nlmsg_hdr(msg));
 
     nla_parse_arr(attrs, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
@@ -286,32 +285,32 @@ nl80211_get_wake_on_wlan_handler(struct nl_msg *msg, void *arg)
                   nla_len(attrs[NL80211_ATTR_WOWLAN_TRIGGERS]),
                   NULL);
 
-    *wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE;
+    *wowl = _NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE;
     if (trig[NL80211_WOWLAN_TRIG_ANY])
-        *wowl |= NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY;
+        *wowl |= _NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY;
     if (trig[NL80211_WOWLAN_TRIG_DISCONNECT])
-        *wowl |= NM_SETTING_WIRELESS_WAKE_ON_WLAN_DISCONNECT;
+        *wowl |= _NM_SETTING_WIRELESS_WAKE_ON_WLAN_DISCONNECT;
     if (trig[NL80211_WOWLAN_TRIG_MAGIC_PKT])
-        *wowl |= NM_SETTING_WIRELESS_WAKE_ON_WLAN_MAGIC;
+        *wowl |= _NM_SETTING_WIRELESS_WAKE_ON_WLAN_MAGIC;
     if (trig[NL80211_WOWLAN_TRIG_GTK_REKEY_FAILURE])
-        *wowl |= NM_SETTING_WIRELESS_WAKE_ON_WLAN_GTK_REKEY_FAILURE;
+        *wowl |= _NM_SETTING_WIRELESS_WAKE_ON_WLAN_GTK_REKEY_FAILURE;
     if (trig[NL80211_WOWLAN_TRIG_EAP_IDENT_REQUEST])
-        *wowl |= NM_SETTING_WIRELESS_WAKE_ON_WLAN_EAP_IDENTITY_REQUEST;
+        *wowl |= _NM_SETTING_WIRELESS_WAKE_ON_WLAN_EAP_IDENTITY_REQUEST;
     if (trig[NL80211_WOWLAN_TRIG_4WAY_HANDSHAKE])
-        *wowl |= NM_SETTING_WIRELESS_WAKE_ON_WLAN_4WAY_HANDSHAKE;
+        *wowl |= _NM_SETTING_WIRELESS_WAKE_ON_WLAN_4WAY_HANDSHAKE;
     if (trig[NL80211_WOWLAN_TRIG_RFKILL_RELEASE])
-        *wowl |= NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE;
+        *wowl |= _NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE;
     if (trig[NL80211_WOWLAN_TRIG_TCP_CONNECTION])
-        *wowl |= NM_SETTING_WIRELESS_WAKE_ON_WLAN_TCP;
+        *wowl |= _NM_SETTING_WIRELESS_WAKE_ON_WLAN_TCP;
 
     return NL_SKIP;
 }
 
-static NMSettingWirelessWakeOnWLan
+static _NMSettingWirelessWakeOnWLan
 wifi_nl80211_get_wake_on_wlan(NMWifiUtils *data)
 {
     NMWifiUtilsNl80211 *         self = (NMWifiUtilsNl80211 *) data;
-    NMSettingWirelessWakeOnWLan  wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
+    _NMSettingWirelessWakeOnWLan wowl = _NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
     nm_auto_nlmsg struct nl_msg *msg  = NULL;
 
     msg = nl80211_alloc_msg(self, NL80211_CMD_GET_WOWLAN, 0);
@@ -322,14 +321,14 @@ wifi_nl80211_get_wake_on_wlan(NMWifiUtils *data)
 }
 
 static gboolean
-wifi_nl80211_set_wake_on_wlan(NMWifiUtils *data, NMSettingWirelessWakeOnWLan wowl)
+wifi_nl80211_set_wake_on_wlan(NMWifiUtils *data, _NMSettingWirelessWakeOnWLan wowl)
 {
     NMWifiUtilsNl80211 *         self = (NMWifiUtilsNl80211 *) data;
     nm_auto_nlmsg struct nl_msg *msg  = NULL;
     struct nlattr *              triggers;
     int                          err;
 
-    if (wowl == NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE)
+    if (wowl == _NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE)
         return TRUE;
 
     msg = nl80211_alloc_msg(self, NL80211_CMD_SET_WOWLAN, 0);
@@ -338,19 +337,19 @@ wifi_nl80211_set_wake_on_wlan(NMWifiUtils *data, NMSettingWirelessWakeOnWLan wow
     if (!triggers)
         goto nla_put_failure;
 
-    if (NM_FLAGS_HAS(wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY))
+    if (NM_FLAGS_HAS(wowl, _NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY))
         NLA_PUT_FLAG(msg, NL80211_WOWLAN_TRIG_ANY);
-    if (NM_FLAGS_HAS(wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_DISCONNECT))
+    if (NM_FLAGS_HAS(wowl, _NM_SETTING_WIRELESS_WAKE_ON_WLAN_DISCONNECT))
         NLA_PUT_FLAG(msg, NL80211_WOWLAN_TRIG_DISCONNECT);
-    if (NM_FLAGS_HAS(wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_MAGIC))
+    if (NM_FLAGS_HAS(wowl, _NM_SETTING_WIRELESS_WAKE_ON_WLAN_MAGIC))
         NLA_PUT_FLAG(msg, NL80211_WOWLAN_TRIG_MAGIC_PKT);
-    if (NM_FLAGS_HAS(wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_GTK_REKEY_FAILURE))
+    if (NM_FLAGS_HAS(wowl, _NM_SETTING_WIRELESS_WAKE_ON_WLAN_GTK_REKEY_FAILURE))
         NLA_PUT_FLAG(msg, NL80211_WOWLAN_TRIG_GTK_REKEY_FAILURE);
-    if (NM_FLAGS_HAS(wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_EAP_IDENTITY_REQUEST))
+    if (NM_FLAGS_HAS(wowl, _NM_SETTING_WIRELESS_WAKE_ON_WLAN_EAP_IDENTITY_REQUEST))
         NLA_PUT_FLAG(msg, NL80211_WOWLAN_TRIG_EAP_IDENT_REQUEST);
-    if (NM_FLAGS_HAS(wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_4WAY_HANDSHAKE))
+    if (NM_FLAGS_HAS(wowl, _NM_SETTING_WIRELESS_WAKE_ON_WLAN_4WAY_HANDSHAKE))
         NLA_PUT_FLAG(msg, NL80211_WOWLAN_TRIG_4WAY_HANDSHAKE);
-    if (NM_FLAGS_HAS(wowl, NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE))
+    if (NM_FLAGS_HAS(wowl, _NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE))
         NLA_PUT_FLAG(msg, NL80211_WOWLAN_TRIG_RFKILL_RELEASE);
 
     nla_nest_end(msg, triggers);
@@ -687,12 +686,12 @@ nl80211_wiphy_info_handler(struct nl_msg *msg, void *arg)
 
             info->freqs[freq_idx] = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_FREQ]);
 
-            info->caps |= NM_WIFI_DEVICE_CAP_FREQ_VALID;
+            info->caps |= _NM_WIFI_DEVICE_CAP_FREQ_VALID;
 
             if (info->freqs[freq_idx] > 2400 && info->freqs[freq_idx] < 2500)
-                info->caps |= NM_WIFI_DEVICE_CAP_FREQ_2GHZ;
+                info->caps |= _NM_WIFI_DEVICE_CAP_FREQ_2GHZ;
             if (info->freqs[freq_idx] > 4900 && info->freqs[freq_idx] < 6000)
-                info->caps |= NM_WIFI_DEVICE_CAP_FREQ_5GHZ;
+                info->caps |= _NM_WIFI_DEVICE_CAP_FREQ_5GHZ;
 
             freq_idx++;
         }
@@ -707,16 +706,16 @@ nl80211_wiphy_info_handler(struct nl_msg *msg, void *arg)
         for (i = 0; i < num; i++) {
             switch (ciphers[i]) {
             case WLAN_CIPHER_SUITE_WEP40:
-                info->caps |= NM_WIFI_DEVICE_CAP_CIPHER_WEP40;
+                info->caps |= _NM_WIFI_DEVICE_CAP_CIPHER_WEP40;
                 break;
             case WLAN_CIPHER_SUITE_WEP104:
-                info->caps |= NM_WIFI_DEVICE_CAP_CIPHER_WEP104;
+                info->caps |= _NM_WIFI_DEVICE_CAP_CIPHER_WEP104;
                 break;
             case WLAN_CIPHER_SUITE_TKIP:
-                info->caps |= (NM_WIFI_DEVICE_CAP_CIPHER_TKIP | NM_WIFI_DEVICE_CAP_WPA);
+                info->caps |= (_NM_WIFI_DEVICE_CAP_CIPHER_TKIP | _NM_WIFI_DEVICE_CAP_WPA);
                 break;
             case WLAN_CIPHER_SUITE_CCMP:
-                info->caps |= (NM_WIFI_DEVICE_CAP_CIPHER_CCMP | NM_WIFI_DEVICE_CAP_RSN);
+                info->caps |= (_NM_WIFI_DEVICE_CAP_CIPHER_CCMP | _NM_WIFI_DEVICE_CAP_RSN);
                 break;
             case WLAN_CIPHER_SUITE_AES_CMAC:
             case WLAN_CIPHER_SUITE_GCMP:
@@ -736,13 +735,13 @@ nl80211_wiphy_info_handler(struct nl_msg *msg, void *arg)
         nla_for_each_nested (nl_mode, tb[NL80211_ATTR_SUPPORTED_IFTYPES], i) {
             switch (nla_type(nl_mode)) {
             case NL80211_IFTYPE_AP:
-                info->caps |= NM_WIFI_DEVICE_CAP_AP;
+                info->caps |= _NM_WIFI_DEVICE_CAP_AP;
                 break;
             case NL80211_IFTYPE_ADHOC:
-                info->caps |= NM_WIFI_DEVICE_CAP_ADHOC;
+                info->caps |= _NM_WIFI_DEVICE_CAP_ADHOC;
                 break;
             case NL80211_IFTYPE_MESH_POINT:
-                info->caps |= NM_WIFI_DEVICE_CAP_MESH;
+                info->caps |= _NM_WIFI_DEVICE_CAP_MESH;
                 break;
             }
         }
@@ -752,7 +751,7 @@ nl80211_wiphy_info_handler(struct nl_msg *msg, void *arg)
         info->can_wowlan = TRUE;
 
     if (tb[NL80211_ATTR_SUPPORT_IBSS_RSN])
-        info->caps |= NM_WIFI_DEVICE_CAP_IBSS_RSN;
+        info->caps |= _NM_WIFI_DEVICE_CAP_IBSS_RSN;
 
     info->success = TRUE;
 

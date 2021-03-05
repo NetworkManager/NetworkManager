@@ -23,7 +23,6 @@
 #include "libnm-base/nm-base.h"
 #include "nm-connection.h"
 #include "nm-core-enum-types.h"
-#include "nm-core-types-internal.h"
 #include "nm-meta-setting-base.h"
 #include "nm-setting-6lowpan.h"
 #include "nm-setting-8021x.h"
@@ -79,91 +78,6 @@
 #include "nm-vpn-dbus-interface.h"
 #include "nm-vpn-editor-plugin.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
-
-/* IEEE 802.1D-1998 timer values */
-#define NM_BRIDGE_HELLO_TIME_MIN     1u
-#define NM_BRIDGE_HELLO_TIME_DEF     2u
-#define NM_BRIDGE_HELLO_TIME_DEF_SYS (NM_BRIDGE_HELLO_TIME_DEF * 100u)
-#define NM_BRIDGE_HELLO_TIME_MAX     10u
-
-#define NM_BRIDGE_FORWARD_DELAY_MIN     2u
-#define NM_BRIDGE_FORWARD_DELAY_DEF     15u
-#define NM_BRIDGE_FORWARD_DELAY_DEF_SYS (NM_BRIDGE_FORWARD_DELAY_DEF * 100u)
-#define NM_BRIDGE_FORWARD_DELAY_MAX     30u
-
-#define NM_BRIDGE_MAX_AGE_MIN     6u
-#define NM_BRIDGE_MAX_AGE_DEF     20u
-#define NM_BRIDGE_MAX_AGE_DEF_SYS (NM_BRIDGE_MAX_AGE_DEF * 100u)
-#define NM_BRIDGE_MAX_AGE_MAX     40u
-
-/* IEEE 802.1D-1998 Table 7.4 */
-#define NM_BRIDGE_AGEING_TIME_MIN     0u
-#define NM_BRIDGE_AGEING_TIME_DEF     300u
-#define NM_BRIDGE_AGEING_TIME_DEF_SYS (NM_BRIDGE_AGEING_TIME_DEF * 100u)
-#define NM_BRIDGE_AGEING_TIME_MAX     1000000u
-
-#define NM_BRIDGE_PORT_PRIORITY_MIN 0u
-#define NM_BRIDGE_PORT_PRIORITY_DEF 32u
-#define NM_BRIDGE_PORT_PRIORITY_MAX 63u
-
-#define NM_BRIDGE_PORT_PATH_COST_MIN 0u
-#define NM_BRIDGE_PORT_PATH_COST_DEF 100u
-#define NM_BRIDGE_PORT_PATH_COST_MAX 65535u
-
-#define NM_BRIDGE_MULTICAST_HASH_MAX_MIN 1u
-#define NM_BRIDGE_MULTICAST_HASH_MAX_DEF 4096u
-#define NM_BRIDGE_MULTICAST_HASH_MAX_MAX ((guint) G_MAXUINT32)
-
-#define NM_BRIDGE_STP_DEF TRUE
-
-#define NM_BRIDGE_GROUP_ADDRESS_DEF_BIN 0x01, 0x80, 0xC2, 0x00, 0x00, 0x00
-#define NM_BRIDGE_GROUP_ADDRESS_DEF_STR "01:80:C2:00:00:00"
-
-#define NM_BRIDGE_PRIORITY_MIN 0u
-#define NM_BRIDGE_PRIORITY_DEF 0x8000u
-#define NM_BRIDGE_PRIORITY_MAX ((guint) G_MAXUINT16)
-
-#define NM_BRIDGE_MULTICAST_LAST_MEMBER_COUNT_MIN 0u
-#define NM_BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEF 2u
-#define NM_BRIDGE_MULTICAST_LAST_MEMBER_COUNT_MAX ((guint) G_MAXUINT32)
-
-#define NM_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_MIN ((guint64) 0)
-#define NM_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEF ((guint64) 100)
-#define NM_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_MAX G_MAXUINT64
-
-#define NM_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_MIN ((guint64) 0)
-#define NM_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_DEF ((guint64) 26000)
-#define NM_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_MAX G_MAXUINT64
-
-#define NM_BRIDGE_MULTICAST_QUERIER_INTERVAL_MIN ((guint64) 0)
-#define NM_BRIDGE_MULTICAST_QUERIER_INTERVAL_DEF ((guint64) 25500)
-#define NM_BRIDGE_MULTICAST_QUERIER_INTERVAL_MAX G_MAXUINT64
-
-#define NM_BRIDGE_MULTICAST_QUERIER_DEF FALSE
-
-#define NM_BRIDGE_MULTICAST_QUERY_INTERVAL_MIN ((guint64) 0)
-#define NM_BRIDGE_MULTICAST_QUERY_INTERVAL_DEF ((guint64) 12500)
-#define NM_BRIDGE_MULTICAST_QUERY_INTERVAL_MAX G_MAXUINT64
-
-#define NM_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_MIN ((guint64) 0)
-#define NM_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_DEF ((guint64) 1000)
-#define NM_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_MAX G_MAXUINT64
-
-#define NM_BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEF FALSE
-
-#define NM_BRIDGE_MULTICAST_SNOOPING_DEF TRUE
-
-#define NM_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_MIN 0u
-#define NM_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEF 2u
-#define NM_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_MAX ((guint) G_MAXUINT32)
-
-#define NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_MIN ((guint64) 0)
-#define NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEF ((guint64) 3125)
-#define NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_MAX G_MAXUINT64
-
-#define NM_BRIDGE_VLAN_STATS_ENABLED_DEF FALSE
-
-#define NM_BRIDGE_VLAN_DEFAULT_PVID_DEF 1u
 
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
  * connection can be replaced by a already-defined connection. This flag only
@@ -222,10 +136,28 @@ _NM_SETTING_WIRED_WAKE_ON_LAN_CAST(NMSettingWiredWakeOnLan v)
     /* _NMSettingWiredWakeOnLan and NMSettingWiredWakeOnLan enums are really
      * the same.
      *
-     * The former is used by nm-platform (which should have no libnm-core dependency),
-     * the latter is used by libnm-core. A unit test ensures they are exactly the same,
+     * The former is used by libnm-platform (which should have no libnm-core* dependency),
+     * the latter is public API in libnm-core-public. A unit test ensures they are exactly the same,
      * so we can just cast them. */
     return (_NMSettingWiredWakeOnLan) v;
+}
+
+static inline _NMSettingWirelessWakeOnWLan
+_NM_SETTING_WIRELESS_WAKE_ON_WLAN_CAST(NMSettingWirelessWakeOnWLan v)
+{
+    return (_NMSettingWirelessWakeOnWLan) v;
+}
+
+static inline NM80211Mode
+NM_802_11_MODE_CAST(_NM80211Mode v)
+{
+    return (NM80211Mode) v;
+}
+
+static inline NMVlanFlags
+NM_VLAN_FLAGS_CAST(_NMVlanFlags v)
+{
+    return (NMVlanFlags) v;
 }
 
 /*****************************************************************************/
@@ -394,8 +326,6 @@ GPtrArray *
 _nm_utils_copy_array(const GPtrArray *array, NMUtilsCopyFunc copy_func, GDestroyNotify free_func);
 GPtrArray *_nm_utils_copy_object_array(const GPtrArray *array);
 
-gssize _nm_utils_ptrarray_find_first(gconstpointer *list, gssize len, gconstpointer needle);
-
 GSList *_nm_utils_strv_to_slist(char **strv, gboolean deep_copy);
 char ** _nm_utils_slist_to_strv(const GSList *slist, gboolean deep_copy);
 
@@ -484,10 +414,7 @@ gboolean _nm_dbus_error_has_name(GError *error, const char *dbus_error_name);
 
 /*****************************************************************************/
 
-char *   _nm_utils_ssid_to_string_arr(const guint8 *ssid, gsize len);
-char *   _nm_utils_ssid_to_string(GBytes *ssid);
-char *   _nm_utils_ssid_to_utf8(GBytes *ssid);
-gboolean _nm_utils_is_empty_ssid(GBytes *ssid);
+char *_nm_utils_ssid_to_utf8(GBytes *ssid);
 
 /*****************************************************************************/
 
@@ -615,8 +542,6 @@ gboolean _nm_setting_bond_option_supported(const char *option, NMBondMode mode);
 /*****************************************************************************/
 
 NMSettingBluetooth *_nm_connection_get_setting_bluetooth_for_nap(NMConnection *connection);
-
-gboolean _nm_utils_inet6_is_token(const struct in6_addr *in6addr);
 
 /*****************************************************************************/
 
