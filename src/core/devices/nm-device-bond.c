@@ -444,9 +444,10 @@ release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
         _LOGD(LOGD_BOND, "bond slave %s is already released", nm_device_get_ip_iface(slave));
 
     if (configure) {
-        /* When the last slave is released the bond MAC will be set to a random
-         * value by kernel; remember the current one and restore it afterwards.
-         */
+        NMConnection *  applied;
+        NMSettingWired *s_wired;
+        const char *    cloned_mac;
+
         address = g_strdup(nm_device_get_hw_address(device));
 
         if (ifindex_slave > 0) {
@@ -461,9 +462,16 @@ release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
             }
         }
 
-        nm_platform_process_events(nm_device_get_platform(device));
-        if (nm_device_update_hw_address(device))
-            nm_device_hw_addr_set(device, address, "restore", FALSE);
+        if ((applied = nm_device_get_applied_connection(device))
+            && ((s_wired = nm_connection_get_setting_wired(applied)))
+            && ((cloned_mac = nm_setting_wired_get_cloned_mac_address(s_wired)))) {
+            /* When the last slave is released the bond MAC will be set to a random
+             * value by kernel; if we have set a cloned-mac-address, we need to
+             * restore it to the previous value. */
+            nm_platform_process_events(nm_device_get_platform(device));
+            if (nm_device_update_hw_address(device))
+                nm_device_hw_addr_set(device, address, "restore", FALSE);
+        }
 
         /* Kernel bonding code "closes" the slave when releasing it, (which clears
          * IFF_UP), so we must bring it back up here to ensure carrier changes and
