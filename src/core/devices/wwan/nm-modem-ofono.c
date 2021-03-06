@@ -8,7 +8,10 @@
 #include "nm-modem-ofono.h"
 
 #include "libnm-core-intern/nm-core-internal.h"
+#include "libnm-glib-aux/nm-uuid.h"
 #include "devices/nm-device-private.h"
+#include "nm-setting-gsm.h"
+#include "settings/nm-settings.h"
 #include "nm-modem.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-ip4-config.h"
@@ -28,6 +31,8 @@
 
 typedef struct {
     GHashTable *connect_properties;
+    GHashTable *connections;
+    GHashTable *contexts;
 
     GDBusProxy *modem_proxy;
     GDBusProxy *connman_proxy;
@@ -48,6 +53,7 @@ typedef struct {
     gboolean gprs_attached;
 
     NMIP4Config *ip4_config;
+    NMSettings * settings;
 } NMModemOfonoPrivate;
 
 struct _NMModemOfono {
@@ -251,7 +257,7 @@ check_connection_compatible_with_modem(NMModem *modem, NMConnection *connection,
 {
     NMModemOfono *       self = NM_MODEM_OFONO(modem);
     NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE(self);
-    const char *         id;
+    const char *         uuid;
 
     if (!_nm_connection_check_main_setting(connection, NM_SETTING_GSM_SETTING_NAME, NULL)) {
         nm_utils_error_set(error,
@@ -268,19 +274,12 @@ check_connection_compatible_with_modem(NMModem *modem, NMConnection *connection,
         return FALSE;
     }
 
-    id = nm_connection_get_id(connection);
+    uuid = nm_connection_get_uuid(connection);
 
-    if (!strstr(id, "/context")) {
+    if (!g_hash_table_contains(priv->connections, uuid)) {
         nm_utils_error_set_literal(error,
                                    NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-                                   "the connection ID has no context");
-        return FALSE;
-    }
-
-    if (!strstr(id, priv->imsi)) {
-        nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-                                   "the connection ID does not contain the IMSI");
+                                   "connection ID does not match active contexts");
         return FALSE;
     }
 
@@ -500,7 +499,7 @@ connman_get_properties_done(GObject *source, GAsyncResult *result, gpointer user
     self = NM_MODEM_OFONO(user_data);
     priv = NM_MODEM_OFONO_GET_PRIVATE(self);
 
-    g_clear_object(&priv->connman_proxy_cancellable);
+    //g_clear_object(&priv->connman_proxy_cancellable);
 
     if (!v_properties) {
         g_dbus_error_strip_remote_error(error);
@@ -522,6 +521,168 @@ connman_get_properties_done(GObject *source, GAsyncResult *result, gpointer user
     g_variant_iter_init(&i, v_dict);
     while (g_variant_iter_loop(&i, "{&sv}", &property, &v)) {
         handle_connman_property(NULL, property, v, self);
+    }
+}
+
+static NMSettingsConnection *
+nm_ofono_connection_new(GVariant *v, const char *object_path, gpointer user_data)
+{
+    NMModemOfono *        self;
+    NMModemOfonoPrivate * priv;
+    NMConnection *        connection;
+    NMSetting *           setting;
+    NMSettingsConnection *added;
+
+    const char *  context_name = NULL;
+    char *        uuid, *idstr;
+    gs_free_error GError *error = NULL;
+
+    self = user_data;
+    priv = NM_MODEM_OFONO_GET_PRIVATE(self);
+
+    context_name =
+        g_variant_get_string(g_variant_lookup_value(v, "Name", G_VARIANT_TYPE_STRING), NULL);
+    idstr = g_strconcat("/", priv->imsi, "/", object_path, NULL);
+    uuid  = nm_uuid_generate_from_string_str(idstr, -1, NM_UUID_TYPE_LEGACY, NULL);
+    g_free(idstr);
+
+    connection = nm_simple_connection_new();
+    setting    = nm_setting_connection_new();
+    g_object_set(setting,
+                 NM_SETTING_CONNECTION_ID,
+                 context_name,
+                 NM_SETTING_CONNECTION_UUID,
+                 uuid,
+                 NM_SETTING_CONNECTION_AUTOCONNECT,
+                 TRUE,
+                 NM_SETTING_CONNECTION_TYPE,
+                 NM_SETTING_GSM_SETTING_NAME,
+                 NULL);
+    nm_connection_add_setting(connection, setting);
+
+    setting = nm_setting_gsm_new();
+
+    /*
+	 * oFono should already know how to handle placing the call, but NM
+	 * insists on having a number. Pass the usual *99#.
+	 */
+    g_object_set(setting, NM_SETTING_GSM_NUMBER, "*99#", NULL);
+    nm_connection_add_setting(connection, setting);
+
+    if (!nm_connection_normalize(connection, NULL, NULL, &error)) {
+        nm_log_err(LOGD_MB,
+                   "ofono: could not not generate a connection for %s: %s",
+                   context_name,
+                   error->message);
+        return NULL;
+    }
+
+    g_clear_error(&error);
+
+    //nm_assert(_conn_track_is_relevant_connection(connection, NULL, NULL));
+    nm_settings_add_connection(priv->settings,
+                               connection,
+                               NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY,
+                               NM_SETTINGS_CONNECTION_ADD_REASON_NONE,
+                               NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED,
+                               &added,
+                               &error);
+
+    if (!added) {
+        nm_log_warn(LOGD_MB,
+                    "ofono: could not add new connection for '%s' (%s): %s",
+                    context_name,
+                    uuid,
+                    error->message);
+    }
+
+    return (g_steal_pointer(&added));
+}
+
+static void
+handle_context_properties(GDBusProxy *proxy,
+                          const char *object_path,
+                          GVariant *  v,
+                          gpointer    user_data)
+{
+    NMModemOfono *        self;
+    NMModemOfonoPrivate * priv;
+    NMSettingsConnection *exported;
+    const char *          context_type = NULL;
+    const char *          context_name = NULL;
+    char *                uuid, *idstr;
+
+    self = user_data;
+    priv = NM_MODEM_OFONO_GET_PRIVATE(self);
+
+    context_name =
+        g_variant_get_string(g_variant_lookup_value(v, "Name", G_VARIANT_TYPE_STRING), NULL);
+
+    context_type =
+        g_variant_get_string(g_variant_lookup_value(v, "Type", G_VARIANT_TYPE_STRING), NULL);
+    if (nm_streq(context_type, "internet")) {
+        nm_log_warn(LOGD_MB, "ofono: skip the context %s of type %s", context_name, context_type);
+        return;
+    }
+
+    idstr = g_strconcat("/", priv->imsi, "/", object_path, NULL);
+    uuid  = nm_uuid_generate_from_string_str(idstr, -1, NM_UUID_TYPE_LEGACY, NULL);
+    g_free(idstr);
+
+    exported = g_hash_table_lookup(priv->connections, uuid);
+    if (exported) {
+        nm_log_info(LOGD_MB, "context %s is already exported", context_name);
+    }
+
+    exported = nm_ofono_connection_new(v, object_path, user_data);
+    nm_log_info(LOGD_MB, "ofono: adding conneciton for context %s", context_name);
+
+    g_hash_table_insert(priv->connections, g_strdup(uuid), exported);
+    g_hash_table_insert(priv->contexts, g_strdup(uuid), g_strdup(object_path));
+
+    /*
+    while (g_variant_iter_loop(&i, "{&sv}", &properties, &values)) {
+    }*/
+}
+
+static void
+connman_get_contexts_done(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    NMModemOfono *       self;
+    NMModemOfonoPrivate *priv;
+    gs_free_error GError *error           = NULL;
+    gs_unref_variant GVariant *v_contexts = NULL;
+    gs_unref_variant GVariant *v_objects  = NULL;
+    gs_unref_variant GVariant *v          = NULL;
+    GVariantIter               i;
+    const char *               object_path;
+
+    v_contexts = _nm_dbus_proxy_call_finish(G_DBUS_PROXY(source),
+                                            result,
+                                            G_VARIANT_TYPE("(a(oa{sv}))"),
+                                            &error);
+    if (!v_contexts && g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+        return;
+
+    self = user_data;
+    priv = NM_MODEM_OFONO_GET_PRIVATE(self);
+
+    //g_clear_object(&priv->connman_proxy_cancellable);
+
+    if (!v_contexts) {
+        g_dbus_error_strip_remote_error(error);
+        _LOGW("Error getting list of contexts: %s", error->message);
+        return;
+    }
+
+    nm_log_info(LOGD_MB, "ofono: printing %s", g_variant_get_type_string(v_contexts));
+
+    v_objects = g_variant_get_child_value(v_contexts, 0);
+
+    g_variant_iter_init(&i, v_objects);
+    while (g_variant_iter_loop(&i, "(&o@a{sv})", &object_path, &v)) {
+        nm_log_info(LOGD_MB, "ofono: processing context settings %s", object_path);
+        handle_context_properties(NULL, object_path, v, self);
     }
 }
 
@@ -561,6 +722,15 @@ _connman_proxy_new_cb(GObject *source, GAsyncResult *result, gpointer user_data)
                       20000,
                       priv->connman_proxy_cancellable,
                       connman_get_properties_done,
+                      self);
+
+    g_dbus_proxy_call(priv->connman_proxy,
+                      "GetContexts",
+                      NULL,
+                      G_DBUS_CALL_FLAGS_NONE,
+                      20000,
+                      priv->connman_proxy_cancellable,
+                      connman_get_contexts_done,
                       self);
 }
 
@@ -1109,18 +1279,10 @@ modem_act_stage1_prepare(NMModem *            modem,
 {
     NMModemOfono *       self = NM_MODEM_OFONO(modem);
     NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE(self);
-    const char *         context_id;
-    char **              id = NULL;
 
-    context_id = nm_connection_get_id(connection);
-    id         = g_strsplit(context_id, "/", 0);
-    g_return_val_if_fail(id[2], NM_ACT_STAGE_RETURN_FAILURE);
+    const char *uuid = nm_connection_get_uuid(connection);
 
-    _LOGD("trying %s %s", id[1], id[2]);
-
-    g_free(priv->context_path);
-    priv->context_path = g_strdup_printf("%s/%s", nm_modem_get_path(modem), id[2]);
-    g_strfreev(id);
+    priv->context_path = g_hash_table_lookup(priv->contexts, uuid);
 
     if (!priv->context_path) {
         NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_GSM_APN_FAILED);
@@ -1189,15 +1351,19 @@ modem_proxy_new_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 
 static void
 nm_modem_ofono_init(NMModemOfono *self)
-{}
+{
+    NMModemOfonoPrivate *priv     = NM_MODEM_OFONO_GET_PRIVATE(self);
+    priv->modem_proxy_cancellable = g_cancellable_new();
+    priv->connections = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_object_unref);
+    priv->contexts    = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_object_unref);
+    priv->settings    = g_object_ref(NM_SETTINGS_GET);
+}
 
 static void
 constructed(GObject *object)
 {
     NMModemOfono *       self = NM_MODEM_OFONO(object);
     NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE(self);
-
-    priv->modem_proxy_cancellable = g_cancellable_new();
 
     g_dbus_proxy_new_for_bus(G_BUS_TYPE_SYSTEM,
                              G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
