@@ -12,6 +12,8 @@
       doctype-system="http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd"
       />
 
+  <xsl:variable name="paragraphSeparator"><xsl:text>&lt;br&gt;</xsl:text></xsl:variable>
+
   <xsl:template match="nm-setting-docs">
     <refentry id="nm-settings-nmcli">
       <refentryinfo>
@@ -138,24 +140,32 @@
   <xsl:template match="property">
     <xsl:variable name="setting_name" select="../@name"/>
     <varlistentry>
+
       <term>
         <option>
           <xsl:attribute name="id">nm-settings-nmcli.property.<xsl:value-of select="../@name"/>.<xsl:value-of select="@name"/></xsl:attribute>
           <xsl:value-of select="@name"/>
         </option>
       </term>
+
       <listitem>
         <xsl:if test="@alias">
           <para>
             Alias: <xsl:value-of select="@alias"/>
           </para>
         </xsl:if>
-        <para>
-          <xsl:value-of select="@description"/>
-          <xsl:if test="@type = 'NMSettingSecretFlags (uint32)'">
-           See <xref linkend="secrets-flags"/> for flag values.
-          </xsl:if>
-        </para>
+
+        <xsl:call-template name="TextWithLineBreaks">
+          <xsl:with-param name="string" select="@description"/>
+          <xsl:with-param name="delimiter" select="$paragraphSeparator"/>
+        </xsl:call-template>
+
+        <xsl:if test="@type = 'NMSettingSecretFlags (uint32)'">
+	  <para>
+            See <xref linkend="secrets-flags"/> for flag values.
+	  </para>
+        </xsl:if>
+
         <xsl:if test="@type">
           <para>
             Format: <xsl:value-of select="@type"/>
@@ -163,6 +173,42 @@
         </xsl:if>
       </listitem>
     </varlistentry>
+  </xsl:template>
+
+  <xsl:template name="TextWithLineBreaks">
+    <xsl:param name="string"/>
+    <xsl:param name="delimiter"/>
+    <xsl:variable name="Result">
+      <xsl:call-template name="extract-bodytext">
+        <xsl:with-param name="GetString" select="$string"/>
+        <xsl:with-param name="Separator" select="$delimiter"/>
+      </xsl:call-template>
+    </xsl:variable>
+    <xsl:copy-of select="$Result"/>
+  </xsl:template>
+
+  <xsl:template name="extract-bodytext">
+    <xsl:param name="GetString"/>
+    <xsl:param name="Separator"/>
+    <xsl:choose>
+      <xsl:when test="contains($GetString, $Separator)">
+        <xsl:variable name="firstline" select="substring-before($GetString, $Separator)"/>
+        <xsl:if test="string-length($firstline) > 0">
+          <para>
+            <xsl:value-of select="substring-before($GetString, $Separator)"/>
+          </para>
+        </xsl:if>
+        <xsl:call-template name="extract-bodytext">
+          <xsl:with-param name="GetString">
+            <xsl:value-of select="substring-after($GetString,$Separator)"/>
+          </xsl:with-param>
+          <xsl:with-param name="Separator" select="$paragraphSeparator"/>
+        </xsl:call-template>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:value-of select="$GetString"/>
+      </xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
 
 </xsl:stylesheet>

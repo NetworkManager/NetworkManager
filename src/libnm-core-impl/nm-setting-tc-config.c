@@ -1811,6 +1811,149 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
      *
      * Array of TC queueing disciplines.
      **/
+    /* ---nmcli---
+     * property: qdiscs
+     * format: GPtrArray(NMTCQdisc)
+     * description: Array of TC queueing disciplines. qdisc is a basic block in the Linux traffic
+     * control subsystem.
+     *
+     * Each qdisc can be specified by the following attributes: <br>
+     *
+     *     "handle HANDLE": specifies the qdisc handle. A qdisc, which potentially can have children, gets
+     *     assigned a major number, called a 'handle', leaving the minor number namespace
+     *     available for classes. The handle is expressed as '10:'. It is customary to
+     *     explicitly assign a handle to qdiscs expected to have children. <br>
+     *
+     *     "parent HANDLE": specifies the handle of the parent qdisc the current qdisc must be
+     *     attached to. <br>
+     *
+     *     "root": specifies that the qdisc is attached to the root of device. <br>
+     *
+     *     "KIND": this is the qdisc kind. NetworkManager currently supports the
+     *     following kinds: fq_codel, sfq, tbf. Each qdisc kind has a
+     *     different set of parameters, described below. There are also some
+     *     kinds like pfifo, pfifo_fast, prio supported by NetworkManager
+     *     but their parameters are not supported by NetworkManager. <br>
+     *
+     * Parameters for 'fq_codel': <br>
+     *
+     *     "limit U32": the hard limit on the real queue size.  When this limit is
+     *     reached, incoming packets are dropped. Default is 10240 packets. <br>
+     *
+     *     "memory_limit U32": sets a limit on the total number of bytes that can be queued in
+     *     this FQ-CoDel instance. The lower of the packet limit of the
+     *     limit parameter and the memory limit will be enforced. Default is
+     *     32 MB. <br>
+     *
+     *     "flows U32":
+     *     the number of flows into which the incoming packets are
+     *     classified. Due to the stochastic nature of hashing, multiple
+     *     flows may end up being hashed into the same slot. Newer flows
+     *     have priority over older ones. This parameter can be set only at
+     *     load time since memory has to be allocated for the hash table.
+     *     Default value is 1024. <br>
+     *
+     *     "target U32":
+     *     the acceptable minimum standing/persistent queue delay. This minimum
+     *     delay is identified by tracking the local minimum queue delay that packets
+     *     experience. The unit of measurement is microsecond(us). Default value is 5ms. <br>
+     *
+     *     "interval U32":
+     *     used to ensure that the measured minimum delay does not become too stale.
+     *     The minimum delay must be experienced in the last epoch of length .B
+     *     interval.  It should be set on the order of the worst-case RTT
+     *     through the bottleneck to give endpoints sufficient time to
+     *     react. Default value is 100ms. <br>
+     *
+     *     "quantum U32":
+     *     the number of bytes used as 'deficit' in the fair queuing
+     *     algorithm. Default is set to 1514 bytes which corresponds to the
+     *     Ethernet MTU plus the hardware header length of 14 bytes. <br>
+     *
+     *     "ecn BOOL":
+     *     can be used to mark packets instead of dropping them. ecn is turned
+     *     on by default. <br>
+     *
+     *     "ce_threshold U32":
+     *     sets a threshold above which all packets are marked with ECN
+     *     Congestion Experienced. This is useful for DCTCP-style congestion
+     *     control algorithms that require marking at very shallow queueing
+     *     thresholds. <br>
+     *
+     * Parameters for 'sfq': <br>
+     *
+     *     "divisor U32":
+     *     can be used to set a different hash table size, available
+     *     from kernel 2.6.39 onwards.  The specified divisor must be
+     *     a power of two and cannot be larger than 65536.  Default
+     *     value: 1024. <br>
+     *
+     *     "limit U32":
+     *     Upper limit of the SFQ. Can be used to reduce the default
+     *     length of 127 packets. <br>
+     *
+     *     "depth U32":
+     *     Limit of packets per flow. Default to
+     *     127 and can be lowered. <br>
+     *
+     *     "perturb_period U32":
+     *     Interval in seconds for queue algorithm perturbation.
+     *     Defaults to 0, which means that no perturbation occurs. Do
+     *     not set too low for each perturbation may cause some
+     *     packet reordering or losses. Advised value: 60 This value
+     *     has no effect when external flow classification is used.
+     *     Its better to increase divisor value to lower risk of hash
+     *     collisions. <br>
+     *
+     *     "quantum U32":
+     *     Amount of bytes a flow is allowed to dequeue during a
+     *     round of the round robin process.  Defaults to the MTU of
+     *     the interface which is also the advised value and the
+     *     minimum value. <br>
+     *
+     *     "flows U32":
+     *     Default value is 127. <br>
+     *
+     * Parameters for 'tbf':
+     *
+     *     "rate U64":
+     *     Bandwidth or rate.  These parameters accept a floating
+     *     point number, possibly followed by either a unit (both SI
+     *     and IEC units supported), or a float followed by a percent
+     *     character to specify the rate as a percentage of the
+     *     device's speed. <br>
+     *
+     *     "burst U32":
+     *     Also known as buffer or maxburst.  Size of the bucket, in
+     *     bytes. This is the maximum amount of bytes that tokens can
+     *     be available for instantaneously.  In general, larger
+     *     shaping rates require a larger buffer. For 10mbit/s on
+     *     Intel, you need at least 10kbyte buffer if you want to
+     *     reach your configured rate!
+     *
+     *     If your buffer is too small, packets may be dropped
+     *     because more tokens arrive per timer tick than fit in your
+     *     bucket.  The minimum buffer size can be calculated by
+     *     dividing the rate by HZ.
+     *
+     *     Token usage calculations are performed using a table which
+     *     by default has a resolution of 8 packets.  This resolution
+     *     can be changed by specifying the cell size with the burst.
+     *     For example, to specify a 6000 byte buffer with a 16 byte
+     *     cell size, set a burst of 6000/16. You will probably never
+     *     have to set this. Must be an integral power of 2. <br>
+     *
+     *     "limit U32":
+     *     Limit is the number of bytes that can be queued waiting
+     *     for tokens to become available. <br>
+     *
+     *     "latency U32":
+     *     specifies the maximum amount of time a packet can
+     *     sit in the TBF. The latency calculation takes into account
+     *     the size of the bucket, the rate and possibly the peakrate
+     *     (if set). The latency and limit are mutually exclusive. <br>
+     * ---end---
+     **/
     /* ---ifcfg-rh---
      * property: qdiscs
      * variable: QDISC1(+), QDISC2(+), ...
@@ -1833,10 +1976,11 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
     /**
      * NMSettingTCConfig:tfilters: (type GPtrArray(NMTCTfilter))
      *
-     * Array of TC traffic filters.
+     * Array of TC traffic filters. Traffic control can manage the packet content during
+     * classification by using filters.
      **/
     /* ---ifcfg-rh---
-     * property: qdiscs
+     * property: tfilters
      * variable: FILTER1(+), FILTER2(+), ...
      * description: Traffic filters
      * example: FILTER1="parent ffff: matchall action simple sdata Input", ...
