@@ -1733,6 +1733,54 @@ nm_decode_version(guint version, guint *major, guint *minor, guint *micro)
         _buf;                                                                               \
     })
 
+#define nm_vsprintf_buf_or_alloc(format, va_last_arg, sbuf_stack, out_sbuf_heap, out_len) \
+    ({                                                                                    \
+        const char *const _format        = (format);                                      \
+        char *const       _sbuf_stack    = (sbuf_stack);                                  \
+        char **const      _out_sbuf_heap = (out_sbuf_heap);                               \
+        gsize *const      _out_len       = (out_len);                                     \
+        const char *      _msg;                                                           \
+        va_list           _va_args;                                                       \
+        int               _l;                                                             \
+                                                                                          \
+        G_STATIC_ASSERT_EXPR(G_N_ELEMENTS(sbuf_stack) > sizeof(_sbuf_stack));             \
+                                                                                          \
+        va_start(_va_args, va_last_arg);                                                  \
+        _l = g_vsnprintf(_sbuf_stack, sizeof(sbuf_stack), _format, _va_args);             \
+        va_end(_va_args);                                                                 \
+                                                                                          \
+        nm_assert(_l >= 0 && _l < G_MAXINT);                                              \
+                                                                                          \
+        if ((gsize) _l >= sizeof(sbuf_stack)) {                                           \
+            const gsize _l2 = ((gsize) _l) + 1u;                                          \
+            char *      _sbuf_heap;                                                       \
+                                                                                          \
+            /* Don't use g_strdup_vprintf() here either, because that also needs
+             * to first determine the length (which is commonly does by printing
+             * to a stack allocated buffer of size 1. We already know the required
+             * size. */          \
+                                                                                          \
+            _sbuf_heap = g_malloc(_l2);                                                   \
+                                                                                          \
+            va_start(_va_args, va_last_arg);                                              \
+            _l = g_vsnprintf(_sbuf_heap, _l2, _format, _va_args);                         \
+            va_end(_va_args);                                                             \
+                                                                                          \
+            nm_assert(_l >= 0 && ((gsize) _l) == _l2 - 1u);                               \
+                                                                                          \
+            _msg            = _sbuf_heap;                                                 \
+            *_out_sbuf_heap = _sbuf_heap;                                                 \
+        } else {                                                                          \
+            _msg            = _sbuf_stack;                                                \
+            *_out_sbuf_heap = NULL;                                                       \
+        }                                                                                 \
+                                                                                          \
+        nm_assert(strlen(_msg) == (gsize) _l);                                            \
+        NM_SET_OUT(_out_len, (gsize) _l);                                                 \
+                                                                                          \
+        _msg;                                                                             \
+    })
+
 /* it is "unsafe" because @bufsize must not be a constant expression and
  * there is no check at compiletime. Regardless of that, the buffer size
  * must not be larger than 300 bytes, as this gets stack allocated. */
@@ -1805,8 +1853,13 @@ NM_AUTO_DEFINE_FCN_VOID0(GMutex *, _nm_auto_unlock_g_mutex, g_mutex_unlock);
 
 #define nm_auto_unlock_g_mutex nm_auto(_nm_auto_unlock_g_mutex)
 
-#define _NM_G_MUTEX_LOCKED(lock, uniq) \
-    nm_auto_unlock_g_mutex GMutex *NM_UNIQ_T(nm_lock, uniq) = (lock)
+#define _NM_G_MUTEX_LOCKED(lock, uniq)                                      \
+    _nm_unused nm_auto_unlock_g_mutex GMutex *NM_UNIQ_T(nm_lock, uniq) = ({ \
+        GMutex *const _lock = (lock);                                       \
+                                                                            \
+        g_mutex_lock(_lock);                                                \
+        _lock;                                                              \
+    })
 
 #define NM_G_MUTEX_LOCKED(lock) _NM_G_MUTEX_LOCKED(lock, NM_UNIQ)
 
