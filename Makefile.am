@@ -491,6 +491,7 @@ src_libnm_base_libnm_base_la_CPPFLAGS = \
 
 src_libnm_base_libnm_base_la_SOURCES = \
 	src/libnm-base/nm-base.h \
+	src/libnm-base/nm-config-base.h \
 	src/libnm-base/nm-ethtool-base.c \
 	src/libnm-base/nm-ethtool-base.h \
 	src/libnm-base/nm-ethtool-utils-base.h \
