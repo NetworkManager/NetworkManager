@@ -24,6 +24,7 @@
 
 #include "libnm-glib-aux/nm-logging-base.h"
 #include "libnm-glib-aux/nm-time-utils.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 
 /*****************************************************************************/
 
@@ -401,7 +402,10 @@ nm_logging_setup(const char *level, const char *domains, char **bad_domains, GEr
     if (had_platform_debug && !_nm_logging_enabled_lockfree(LOGL_DEBUG, LOGD_PLATFORM)) {
         /* when debug logging is enabled, platform will cache all access to
          * sysctl. When the user disables debug-logging, we want to clear that
-         * cache right away. */
+         * cache right away.
+         *
+         * It's important that we call this without having a lock on "log", because
+         * otherwise we might deadlock. */
         _nm_logging_clear_platform_logging_cache();
     }
 
@@ -457,22 +461,22 @@ _domains_to_string(gboolean          include_level_override,
                    const NMLogDomain log_state[static _LOGL_N_REAL])
 {
     const LogDesc *diter;
-    GString *      str;
+    NMStrBuf       sbuf;
     int            i;
 
     /* We don't just return g_strdup() the logging domains that were set during
      * nm_logging_setup(), because we want to expand "DEFAULT" and "ALL".
      */
 
-    str = g_string_sized_new(75);
+    nm_str_buf_init(&sbuf, NM_UTILS_GET_NEXT_REALLOC_SIZE_40, FALSE);
+
     for (diter = &domain_desc[0]; diter->name; diter++) {
         /* If it's set for any lower level, it will also be set for LOGL_ERR */
         if (!(diter->num & log_state[LOGL_ERR]))
             continue;
 
-        if (str->len)
-            g_string_append_c(str, ',');
-        g_string_append(str, diter->name);
+        nm_str_buf_append_required_delimiter(&sbuf, ',');
+        nm_str_buf_append(&sbuf, diter->name);
 
         if (!include_level_override)
             continue;
@@ -480,7 +484,8 @@ _domains_to_string(gboolean          include_level_override,
         /* Check if it's logging at a lower level than the default. */
         for (i = 0; i < log_level; i++) {
             if (diter->num & log_state[i]) {
-                g_string_append_printf(str, ":%s", nm_log_level_desc[i].name);
+                nm_str_buf_append_c(&sbuf, ':');
+                nm_str_buf_append(&sbuf, nm_log_level_desc[i].name);
                 break;
             }
         }
@@ -488,13 +493,14 @@ _domains_to_string(gboolean          include_level_override,
         if (!(diter->num & log_state[log_level])) {
             for (i = log_level + 1; i < _LOGL_N_REAL; i++) {
                 if (diter->num & log_state[i]) {
-                    g_string_append_printf(str, ":%s", nm_log_level_desc[i].name);
+                    nm_str_buf_append_c(&sbuf, ':');
+                    nm_str_buf_append(&sbuf, nm_log_level_desc[i].name);
                     break;
                 }
             }
         }
     }
-    return g_string_free(str, FALSE);
+    return nm_str_buf_finalize(&sbuf, NULL);
 }
 
 static char _all_logging_domains_to_str[273];
@@ -656,8 +662,9 @@ _nm_log_impl(const char *file,
              const char *fmt,
              ...)
 {
-    va_list            args;
-    char *             msg;
+    char               msg_stack[400];
+    gs_free char *     msg_heap = NULL;
+    const char *       msg;
     GTimeVal           tv;
     int                errsv;
     const NMLogDomain *cur_log_state;
@@ -698,9 +705,7 @@ _nm_log_impl(const char *file,
         errno = error;
     }
 
-    va_start(args, fmt);
-    msg = g_strdup_vprintf(fmt, args);
-    va_end(args);
+    msg = nm_vsprintf_buf_or_alloc(fmt, fmt, msg_stack, &msg_heap, NULL);
 
 #define MESSAGE_FMT "%s%-7s [%ld.%04ld] %s"
 #define MESSAGE_ARG(prefix, tv, msg) \
@@ -796,8 +801,6 @@ _nm_log_impl(const char *file,
               MESSAGE_ARG(g->prefix, tv, msg));
         break;
     }
-
-    g_free(msg);
 
     errno = errsv;
 }
