@@ -7,15 +7,26 @@ libnmi_core = static_library(
     'nmi-dt-reader.c',
     'nmi-ibft-reader.c',
   ),
-  dependencies: core_default_dep,
+  include_directories: [
+    src_inc,
+    top_inc,
+  ],
+  dependencies: [
+    libnm_core_public_dep,
+  ],
 )
 
 executable(
   'nm-initrd-generator',
   'nm-initrd-generator.c',
-  dependencies: core_default_dep,
+  include_directories: [
+    src_inc,
+    top_inc,
+  ],
+  dependencies: [
+    libnm_core_public_dep,
+  ],
   link_with: [
-    libNetworkManagerBase,
     libnmi_core,
     libnm_core_aux_intern,
     libnm_core_impl,
@@ -34,7 +45,3 @@ executable(
   install: true,
   install_dir: nm_libexecdir,
 )
-
-if enable_tests
-  subdir('tests')
-endif

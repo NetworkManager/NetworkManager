@@ -90,9 +90,10 @@ subdir('libnmc-setting')
 if enable_nmtui
   subdir('libnmt-newt')
 endif
-subdir('core')
 subdir('nm-dispatcher')
 subdir('nm-online')
+subdir('nm-initrd-generator')
+subdir('core')
 subdir('contrib')
 
 if enable_tests
@@ -104,5 +105,6 @@ if enable_tests
   subdir('libnm-client-aux-extern/tests')
   subdir('libnmc-setting/tests')
   subdir('nm-dispatcher/tests')
+  subdir('nm-initrd-generator/tests')
   subdir('contrib/tests')
 endif
