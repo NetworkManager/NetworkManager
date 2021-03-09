@@ -19,7 +19,6 @@
 
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-platform/nm-platform-utils.h"
-#include "NetworkManagerUtils.h"
 
 /*****************************************************************************/
 
