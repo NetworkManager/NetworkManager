@@ -1816,6 +1816,40 @@ _nmtst_assert_resolve_relative_path_equals(const char *f1,
 /*****************************************************************************/
 
 #ifdef __NETWORKMANAGER_LOGGING_H__
+
+    #define NMTST_EXPECT_NM(level, msg) NMTST_EXPECT("NetworkManager", level, msg)
+
+    #define NMTST_EXPECT_NM_ERROR(msg) NMTST_EXPECT_NM(G_LOG_LEVEL_MESSAGE, "*<error> [*] " msg)
+    #define NMTST_EXPECT_NM_WARN(msg)  NMTST_EXPECT_NM(G_LOG_LEVEL_MESSAGE, "*<warn>  [*] " msg)
+    #define NMTST_EXPECT_NM_INFO(msg)  NMTST_EXPECT_NM(G_LOG_LEVEL_INFO, "*<info>  [*] " msg)
+    #define NMTST_EXPECT_NM_DEBUG(msg) NMTST_EXPECT_NM(G_LOG_LEVEL_DEBUG, "*<debug> [*] " msg)
+    #define NMTST_EXPECT_NM_TRACE(msg) NMTST_EXPECT_NM(G_LOG_LEVEL_DEBUG, "*<trace> [*] " msg)
+
+static inline void
+nmtst_init_with_logging(int *argc, char ***argv, const char *log_level, const char *log_domains)
+{
+    __nmtst_init(argc, argv, FALSE, log_level, log_domains, NULL);
+}
+static inline void
+nmtst_init_assert_logging(int *argc, char ***argv, const char *log_level, const char *log_domains)
+{
+    gboolean set_logging;
+
+    __nmtst_init(argc, argv, TRUE, NULL, NULL, &set_logging);
+
+    if (!set_logging) {
+        gboolean success;
+
+        success = nm_logging_setup(log_level, log_domains, NULL, NULL);
+        g_assert(success);
+    }
+}
+
+#endif
+
+/*****************************************************************************/
+
+#ifdef __NETWORKMANAGER_LOGGING_H__
 static inline gpointer
 nmtst_logging_disable(gboolean always)
 {
