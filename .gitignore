@@ -162,6 +162,11 @@ test-*.trs
 /src/libnmc-setting/settings-docs.h
 /src/libnmc-setting/tests/test-libnmc-setting
 
+/src/nm-initrd-generator/nm-initrd-generator
+/src/nm-initrd-generator/tests/test-cmdline-reader
+/src/nm-initrd-generator/tests/test-dt-reader
+/src/nm-initrd-generator/tests/test-ibft-reader
+
 /src/nm-online/nm-online
 
 /clients/cli/generate-docs-nm-settings-nmcli
@@ -235,10 +240,6 @@ test-*.trs
 /src/core/dhcp/tests/test-dhcp-options
 /src/core/dhcp/tests/test-dhcp-utils
 /src/core/dnsmasq/tests/test-dnsmasq-utils
-/src/core/initrd/nm-initrd-generator
-/src/core/initrd/tests/test-cmdline-reader
-/src/core/initrd/tests/test-dt-reader
-/src/core/initrd/tests/test-ibft-reader
 /src/core/nm-iface-helper
 /src/core/ndisc/tests/test-ndisc-fake
 /src/core/ndisc/tests/test-ndisc-linux
@@ -409,6 +410,10 @@ test-*.trs
 /src/NetworkManager
 /src/NetworkManager-all-sym
 /src/NetworkManager.ver
+/src/core/initrd/nm-initrd-generator
+/src/core/initrd/tests/test-cmdline-reader
+/src/core/initrd/tests/test-dt-reader
+/src/core/initrd/tests/test-ibft-reader
 /src/devices/bluetooth/tests/nm-bt-test
 /src/devices/tests/test-acd
 /src/devices/tests/test-lldp

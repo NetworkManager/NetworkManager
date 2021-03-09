@@ -268,7 +268,6 @@ if enable_ppp
 endif
 
 subdir('devices')
-subdir('initrd')
 subdir('settings/plugins')
 
 # NetworkManager binary

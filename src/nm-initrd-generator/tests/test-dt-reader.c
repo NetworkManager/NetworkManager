@@ -14,11 +14,11 @@
 
 #include "libnm-core-intern/nm-core-internal.h"
 
-#include "../nm-initrd-generator.h"
+#include "nm-initrd-generator/nm-initrd-generator.h"
 
-#include "nm-test-utils-core.h"
+#include "libnm-glib-aux/nm-test-utils.h"
 
-#define TEST_INITRD_DIR NM_BUILD_SRCDIR "/src/core/initrd/tests"
+#define TEST_INITRD_DIR NM_BUILD_SRCDIR "/src/nm-initrd-generator/tests"
 
 /*****************************************************************************/
 

@@ -3,11 +3,12 @@
  * Copyright (C) 2018 Red Hat, Inc.
  */
 
-#include "src/core/nm-default-daemon.h"
+#include "libnm-core-impl/nm-default-libnm-core.h"
 
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
+#include "libnm-log-core/nm-logging.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-initrd-generator.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"

@@ -3,13 +3,15 @@
  * Copyright (C) 2018 Red Hat, Inc.
  */
 
-#include "src/core/nm-default-daemon.h"
+#include "libnm-core-impl/nm-default-libnm-core.h"
+
+#include "nm-initrd-generator.h"
 
 #include "libnm-base/nm-config-base.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-core-intern/nm-keyfile-internal.h"
 #include "libnm-glib-aux/nm-io-utils.h"
-#include "nm-initrd-generator.h"
+#include "libnm-log-core/nm-logging.h"
 
 /*****************************************************************************/
 
