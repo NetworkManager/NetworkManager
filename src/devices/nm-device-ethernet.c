@@ -726,7 +726,9 @@ supplicant_iface_state_cb(NMSupplicantInterface *iface,
 
     if (new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
         supplicant_interface_release(self);
-        wired_auth_cond_fail(self, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+        nm_device_state_changed(NM_DEVICE(self),
+                                NM_DEVICE_STATE_FAILED,
+                                NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
         return;
     }
 
