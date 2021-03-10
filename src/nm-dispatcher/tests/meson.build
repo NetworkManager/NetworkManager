@@ -20,7 +20,7 @@ exe = executable(
 )
 
 test(
-  'src/nm-ddispatcher/test/test-dispatcher-envp',
+  'src/nm-dispatcher/tests/test-dispatcher-envp',
   test_script,
   args: test_args + [exe.full_path()],
 )
