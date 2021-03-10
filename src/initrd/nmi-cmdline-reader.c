@@ -552,7 +552,7 @@ reader_parse_ip (Reader *reader, const char *sysfs_dir, char *argument)
 			              NULL);
 		}
 	} else if (NM_IN_STRSET (kind, "auto6", "dhcp6")) {
-		g_object_set (s_ip4,
+		g_object_set (s_ip6,
 		              NM_SETTING_IP_CONFIG_MAY_FAIL, FALSE,
 		              NULL);
 		if (nm_setting_ip_config_get_num_addresses (s_ip4) == 0) {
