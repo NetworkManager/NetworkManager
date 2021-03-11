@@ -2963,21 +2963,13 @@ nm_lldp_neighbor_unref(NMLldpNeighbor *neighbor)
 char **
 nm_lldp_neighbor_get_attr_names(NMLldpNeighbor *neighbor)
 {
-    GHashTableIter iter;
-    const char *   key;
-    GPtrArray *    names;
+    const char **keys;
 
     g_return_val_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor), NULL);
 
-    names = g_ptr_array_new();
+    keys = nm_utils_strdict_get_keys(neighbor->attrs, TRUE, NULL);
 
-    g_hash_table_iter_init(&iter, neighbor->attrs);
-    while (g_hash_table_iter_next(&iter, (gpointer *) &key, NULL))
-        g_ptr_array_add(names, g_strdup(key));
-
-    g_ptr_array_add(names, NULL);
-
-    return (char **) g_ptr_array_free(names, FALSE);
+    return nm_utils_strv_make_deep_copied_nonnull(keys);
 }
 
 /**
