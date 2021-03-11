@@ -1784,3 +1784,8 @@ global:
 	nm_setting_veth_new;
 	nm_utils_print;
 } libnm_1_28_0;
+
+libnm_1_32_0 {
+global:
+	nm_setting_match_new;
+} libnm_1_30_0;

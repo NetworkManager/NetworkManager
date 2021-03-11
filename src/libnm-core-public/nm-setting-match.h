@@ -35,7 +35,7 @@ typedef struct _NMSettingMatchClass NMSettingMatchClass;
 
 NM_AVAILABLE_IN_1_14
 GType nm_setting_match_get_type(void);
-NM_AVAILABLE_IN_1_14
+NM_AVAILABLE_IN_1_32
 NMSetting *nm_setting_match_new(void);
 
 NM_AVAILABLE_IN_1_14

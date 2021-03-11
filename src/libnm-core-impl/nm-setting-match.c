@@ -678,11 +678,24 @@ nm_setting_match_init(NMSettingMatch *setting)
  *
  * Returns: (transfer full): the new empty #NMSettingMatch object
  *
- * Since: 1.14
+ * Note that this function was present in header files since version 1.14.
+ * But due to a bug the symbol is only exposed and usable since version 1.32.
+ * As workaround, use g_object_new(NM_TYPE_SETTING_MATCH) which works with all
+ * versions since 1.14.
+ *
+ * Since: 1.32
  **/
 NMSetting *
 nm_setting_match_new(void)
 {
+    /* Note that function nm_setting_match_new() was libnm headers from 1.14+,
+     * but due to a bug was the symbol only exposed since version 1.32+.
+     *
+     * The workaround is to always use g_object_new(), which works for all
+     * versions since 1.14.
+     *
+     * As such, this function must never do anything except calling
+     * g_object_new() to not break the workaround. */
     return g_object_new(NM_TYPE_SETTING_MATCH, NULL);
 }
 
