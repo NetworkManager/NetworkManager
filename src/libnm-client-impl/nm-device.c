@@ -134,7 +134,7 @@ static NMLldpNeighbor *nm_lldp_neighbor_dup(NMLldpNeighbor *neighbor);
 /*****************************************************************************/
 
 struct _NMLldpNeighbor {
-    guint       refcount;
+    int         refcount;
     GHashTable *attrs;
 };
 
@@ -2881,10 +2881,14 @@ nm_lldp_neighbor_new(void)
 {
     NMLldpNeighbor *neigh;
 
-    neigh           = g_new0(NMLldpNeighbor, 1);
-    neigh->refcount = 1;
-    neigh->attrs =
-        g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, (GDestroyNotify) g_variant_unref);
+    neigh  = g_slice_new(NMLldpNeighbor);
+    *neigh = (NMLldpNeighbor){
+        .refcount = 1,
+        .attrs    = g_hash_table_new_full(nm_str_hash,
+                                       g_str_equal,
+                                       g_free,
+                                       (GDestroyNotify) g_variant_unref),
+    };
 
     return neigh;
 }
@@ -2912,6 +2916,8 @@ nm_lldp_neighbor_dup(NMLldpNeighbor *neighbor)
  *
  * Increases the reference count of the object.
  *
+ * Since 1.32, ref-counting of #NMLldpNeighbor is thread-safe.
+ *
  * Since: 1.2
  **/
 void
@@ -2919,7 +2925,7 @@ nm_lldp_neighbor_ref(NMLldpNeighbor *neighbor)
 {
     g_return_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor));
 
-    neighbor->refcount++;
+    g_atomic_int_inc(&neighbor->refcount);
 }
 
 /**
@@ -2929,6 +2935,8 @@ nm_lldp_neighbor_ref(NMLldpNeighbor *neighbor)
  * Decreases the reference count of the object.  If the reference count
  * reaches zero, the object will be destroyed.
  *
+ * Since 1.32, ref-counting of #NMLldpNeighbor is thread-safe.
+ *
  * Since: 1.2
  **/
 void
@@ -2936,9 +2944,9 @@ nm_lldp_neighbor_unref(NMLldpNeighbor *neighbor)
 {
     g_return_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor));
 
-    if (--neighbor->refcount == 0) {
+    if (g_atomic_int_dec_and_test(&neighbor->refcount)) {
         g_hash_table_unref(neighbor->attrs);
-        g_free(neighbor);
+        nm_g_slice_free(neighbor);
     }
 }
 
