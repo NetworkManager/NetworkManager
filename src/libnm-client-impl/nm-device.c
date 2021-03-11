@@ -2995,12 +2995,11 @@ nm_lldp_neighbor_get_attr_string_value(NMLldpNeighbor *neighbor,
     g_return_val_if_fail(name && name[0], FALSE);
 
     variant = g_hash_table_lookup(neighbor->attrs, name);
-    if (variant && g_variant_is_of_type(variant, G_VARIANT_TYPE_STRING)) {
-        if (out_value)
-            *out_value = g_variant_get_string(variant, NULL);
-        return TRUE;
-    } else
+    if (!variant || !g_variant_is_of_type(variant, G_VARIANT_TYPE_STRING))
         return FALSE;
+
+    NM_SET_OUT(out_value, g_variant_get_string(variant, NULL));
+    return TRUE;
 }
 
 /**
@@ -3009,9 +3008,9 @@ nm_lldp_neighbor_get_attr_string_value(NMLldpNeighbor *neighbor,
  * @name: the attribute name
  * @out_value: (out) (allow-none): on return, the attribute value
  *
- * Gets the uint value of attribute with name @name on @neighbor
+ * Gets the uint32 value of attribute with name @name on @neighbor
  *
- * Returns: %TRUE if a uint attribute with name @name was found, %FALSE otherwise
+ * Returns: %TRUE if a uint32 attribute with name @name was found, %FALSE otherwise
  *
  * Since: 1.2
  **/
@@ -3024,12 +3023,11 @@ nm_lldp_neighbor_get_attr_uint_value(NMLldpNeighbor *neighbor, const char *name,
     g_return_val_if_fail(name && name[0], FALSE);
 
     variant = g_hash_table_lookup(neighbor->attrs, name);
-    if (variant && g_variant_is_of_type(variant, G_VARIANT_TYPE_UINT32)) {
-        if (out_value)
-            *out_value = g_variant_get_uint32(variant);
-        return TRUE;
-    } else
+    if (!variant || !g_variant_is_of_type(variant, G_VARIANT_TYPE_UINT32))
         return FALSE;
+
+    NM_SET_OUT(out_value, g_variant_get_uint32(variant));
+    return TRUE;
 }
 
 /**
@@ -3073,8 +3071,8 @@ nm_lldp_neighbor_get_attr_type(NMLldpNeighbor *neighbor, const char *name)
     g_return_val_if_fail(name && name[0], NULL);
 
     variant = g_hash_table_lookup(neighbor->attrs, name);
-    if (variant)
-        return g_variant_get_type(variant);
-    else
+    if (!variant)
         return NULL;
+
+    return g_variant_get_type(variant);
 }
