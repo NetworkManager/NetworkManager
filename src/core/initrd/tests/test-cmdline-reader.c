@@ -456,6 +456,47 @@ test_if_ip4_manual(void)
 }
 
 static void
+test_if_ip4_manual_no_dev(void)
+{
+    gs_unref_hashtable GHashTable *connections = NULL;
+    const char *const *            ARGV        = NM_MAKE_STRV("ip=192.0.2.2::192.0.2.1:24:::");
+    NMConnection *                 connection;
+    NMSettingConnection *          s_con;
+    NMSettingIPConfig *            s_ip4;
+    NMSettingIPConfig *            s_ip6;
+    NMIPAddress *                  ip_addr;
+
+    connection = _parse_con(ARGV, "default_connection");
+    g_assert_cmpstr(nm_connection_get_id(connection), ==, "Wired Connection");
+
+    s_con = nm_connection_get_setting_connection(connection);
+    g_assert(s_con);
+    g_assert_cmpint(nm_setting_connection_get_wait_device_timeout(s_con), ==, -1);
+    g_assert_cmpint(nm_setting_connection_get_multi_connect(s_con),
+                    ==,
+                    NM_CONNECTION_MULTI_CONNECT_SINGLE);
+
+    s_ip4 = nm_connection_get_setting_ip4_config(connection);
+    g_assert(s_ip4);
+    g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip4),
+                    ==,
+                    NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
+    g_assert(!nm_setting_ip_config_get_ignore_auto_dns(s_ip4));
+    g_assert_cmpint(nm_setting_ip_config_get_num_routes(s_ip4), ==, 0);
+    g_assert_cmpint(nm_setting_ip_config_get_num_addresses(s_ip4), ==, 1);
+    ip_addr = nm_setting_ip_config_get_address(s_ip4, 0);
+    g_assert(ip_addr);
+    g_assert_cmpstr(nm_ip_address_get_address(ip_addr), ==, "192.0.2.2");
+    g_assert_cmpint(nm_ip_address_get_prefix(ip_addr), ==, 24);
+    g_assert_cmpstr(nm_setting_ip_config_get_gateway(s_ip4), ==, "192.0.2.1");
+
+    s_ip6 = nm_connection_get_setting_ip6_config(connection);
+    g_assert(s_ip6);
+    g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+    g_assert(nm_setting_ip_config_get_may_fail(s_ip6));
+}
+
+static void
 test_if_ip6_manual(void)
 {
     gs_unref_hashtable GHashTable *connections = NULL;
@@ -2123,6 +2164,7 @@ main(int argc, char **argv)
     g_test_add_func("/initrd/cmdline/if_dhcp6", test_if_dhcp6);
     g_test_add_func("/initrd/cmdline/if_auto_with_mtu_and_mac", test_if_auto_with_mtu_and_mac);
     g_test_add_func("/initrd/cmdline/if_ip4_manual", test_if_ip4_manual);
+    g_test_add_func("/initrd/cmdline/if_ip4_manual_no_dev", test_if_ip4_manual_no_dev);
     g_test_add_func("/initrd/cmdline/if_ip6_manual", test_if_ip6_manual);
     g_test_add_func("/initrd/cmdline/if_mac_ifname", test_if_mac_ifname);
     g_test_add_func("/initrd/cmdline/if_off", test_if_off);
