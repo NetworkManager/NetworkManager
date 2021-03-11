@@ -1214,12 +1214,11 @@ nmi_cmdline_reader_parse(const char *       sysfs_dir,
 
         s_wired = nm_connection_get_setting_wired(connection);
 
-        if (nm_connection_get_interface_name(connection)
-            || (nm_setting_wired_get_mac_address(s_wired)
-                && !nm_utils_hwaddr_matches(nm_setting_wired_get_mac_address(s_wired),
-                                            -1,
-                                            bootif,
-                                            -1))) {
+        if (nm_setting_wired_get_mac_address(s_wired)
+            && !nm_utils_hwaddr_matches(nm_setting_wired_get_mac_address(s_wired),
+                                        -1,
+                                        bootif,
+                                        -1)) {
             connection = reader_create_connection(reader,
                                                   "bootif_connection",
                                                   "BOOTIF Connection",
