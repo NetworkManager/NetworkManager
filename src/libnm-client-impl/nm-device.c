@@ -129,7 +129,7 @@ G_DEFINE_ABSTRACT_TYPE(NMDevice, nm_device, NM_TYPE_OBJECT);
 /*****************************************************************************/
 
 static gboolean connection_compatible(NMDevice *device, NMConnection *connection, GError **error);
-static NMLldpNeighbor *nm_lldp_neighbor_dup(NMLldpNeighbor *neighbor);
+static NMLldpNeighbor *_nm_lldp_neighbor_dup(NMLldpNeighbor *neighbor);
 
 /*****************************************************************************/
 
@@ -138,7 +138,7 @@ struct _NMLldpNeighbor {
     GHashTable *attrs;
 };
 
-G_DEFINE_BOXED_TYPE(NMLldpNeighbor, nm_lldp_neighbor, nm_lldp_neighbor_dup, nm_lldp_neighbor_unref)
+G_DEFINE_BOXED_TYPE(NMLldpNeighbor, nm_lldp_neighbor, _nm_lldp_neighbor_dup, nm_lldp_neighbor_unref)
 
 /*****************************************************************************/
 
@@ -244,9 +244,12 @@ _notify_update_prop_lldp_neighbors(NMClient *              client,
             const char *    attr_name;
             NMLldpNeighbor *neigh;
 
+            /* Note that there is no public API to mutate a NMLldpNeighbor instance.
+             * This is the only place where we actually mutate it. */
             neigh = nm_lldp_neighbor_new();
             while (g_variant_iter_next(attrs_iter, "{&sv}", &attr_name, &attr_variant))
                 g_hash_table_insert(neigh->attrs, g_strdup(attr_name), attr_variant);
+
             g_ptr_array_add(new, neigh);
 
             g_variant_iter_free(attrs_iter);
@@ -2872,6 +2875,14 @@ NM_IS_LLDP_NEIGHBOR(const NMLldpNeighbor *self)
  *
  * Creates a new #NMLldpNeighbor object.
  *
+ * Note that #NMLldpNeighbor has no public API for mutating
+ * an instance. Also, libnm will not internally mutate a
+ * once exposed object. They are guaranteed to be immutable.
+ * Since 1.32, ref-counting is thread-safe.
+ *
+ * This function is not useful, as there is no public API to
+ * actually modify the (empty) instance.
+ *
  * Returns: (transfer full): the new #NMLldpNeighbor object.
  *
  * Since: 1.2
@@ -2894,20 +2905,15 @@ nm_lldp_neighbor_new(void)
 }
 
 static NMLldpNeighbor *
-nm_lldp_neighbor_dup(NMLldpNeighbor *neighbor)
+_nm_lldp_neighbor_dup(NMLldpNeighbor *neighbor)
 {
-    NMLldpNeighbor *copy;
-    GHashTableIter  iter;
-    const char *    key;
-    GVariant *      value;
-
-    copy = nm_lldp_neighbor_new();
-
-    g_hash_table_iter_init(&iter, neighbor->attrs);
-    while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &value))
-        g_hash_table_insert(copy->attrs, g_strdup(key), g_variant_ref(value));
-
-    return copy;
+    /* There is no public API for mutating a NMLldpNeighbor. Nor should
+     * we ever add one, because immutable types (or at least, sealable types)
+     * are great.
+     *
+     * As such, dup is merely taking another ref. */
+    nm_lldp_neighbor_ref(neighbor);
+    return neighbor;
 }
 
 /**
