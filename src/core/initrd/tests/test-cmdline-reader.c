@@ -458,12 +458,12 @@ test_if_ip4_manual(void)
 static void
 test_if_ip4_manual_no_dev(void)
 {
-    const char *const *            ARGV        = NM_MAKE_STRV("ip=192.0.2.2::192.0.2.1:24:::");
-    NMConnection *                 connection;
-    NMSettingConnection *          s_con;
-    NMSettingIPConfig *            s_ip4;
-    NMSettingIPConfig *            s_ip6;
-    NMIPAddress *                  ip_addr;
+    const char *const *  ARGV = NM_MAKE_STRV("ip=192.0.2.2::192.0.2.1:24:::");
+    NMConnection *       connection;
+    NMSettingConnection *s_con;
+    NMSettingIPConfig *  s_ip4;
+    NMSettingIPConfig *  s_ip6;
+    NMIPAddress *        ip_addr;
 
     connection = _parse_con(ARGV, "default_connection");
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "Wired Connection");
