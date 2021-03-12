@@ -1787,5 +1787,7 @@ global:
 
 libnm_1_32_0 {
 global:
+	nm_lldp_neighbor_get_attr_at_index;
+	nm_lldp_neighbor_get_attr_names2;
 	nm_setting_match_new;
 } libnm_1_30_0;

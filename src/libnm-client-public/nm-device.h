@@ -188,11 +188,19 @@ GType nm_device_get_setting_type(NMDevice *device);
 NM_AVAILABLE_IN_1_2
 GType nm_lldp_neighbor_get_type(void);
 NM_AVAILABLE_IN_1_2
-NMLldpNeighbor *nm_lldp_neighbor_new(void);
-NM_AVAILABLE_IN_1_2
 void nm_lldp_neighbor_ref(NMLldpNeighbor *neighbor);
 NM_AVAILABLE_IN_1_2
 void nm_lldp_neighbor_unref(NMLldpNeighbor *neighbor);
+NM_AVAILABLE_IN_1_32
+const char *const *nm_lldp_neighbor_get_attr_names2(NMLldpNeighbor *neighbor, gsize *out_len);
+NM_AVAILABLE_IN_1_32
+GVariant *
+nm_lldp_neighbor_get_attr_at_index(NMLldpNeighbor *neighbor, gsize idx, const char **name);
+NM_AVAILABLE_IN_1_18
+GVariant *nm_lldp_neighbor_get_attr_value(NMLldpNeighbor *neighbor, const char *name);
+
+NM_AVAILABLE_IN_1_2
+NMLldpNeighbor *nm_lldp_neighbor_new(void);
 NM_AVAILABLE_IN_1_2
 char **nm_lldp_neighbor_get_attr_names(NMLldpNeighbor *neighbor);
 NM_AVAILABLE_IN_1_2
@@ -204,8 +212,6 @@ gboolean
 nm_lldp_neighbor_get_attr_uint_value(NMLldpNeighbor *neighbor, const char *name, guint *out_value);
 NM_AVAILABLE_IN_1_2
 const GVariantType *nm_lldp_neighbor_get_attr_type(NMLldpNeighbor *neighbor, const char *name);
-NM_AVAILABLE_IN_1_18
-GVariant *nm_lldp_neighbor_get_attr_value(NMLldpNeighbor *neighbor, const char *name);
 
 G_END_DECLS
 

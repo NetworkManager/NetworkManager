@@ -129,16 +129,19 @@ G_DEFINE_ABSTRACT_TYPE(NMDevice, nm_device, NM_TYPE_OBJECT);
 /*****************************************************************************/
 
 static gboolean connection_compatible(NMDevice *device, NMConnection *connection, GError **error);
-static NMLldpNeighbor *nm_lldp_neighbor_dup(NMLldpNeighbor *neighbor);
+static NMLldpNeighbor *_nm_lldp_neighbor_dup(NMLldpNeighbor *neighbor);
+static NMLldpNeighbor *_nm_lldp_neighbor_new(guint n_attrs);
 
 /*****************************************************************************/
 
 struct _NMLldpNeighbor {
-    guint       refcount;
-    GHashTable *attrs;
+    int        refcount;
+    guint      n_attrs;
+    GVariant **attr_vals;
+    char *     attr_names[];
 };
 
-G_DEFINE_BOXED_TYPE(NMLldpNeighbor, nm_lldp_neighbor, nm_lldp_neighbor_dup, nm_lldp_neighbor_unref)
+G_DEFINE_BOXED_TYPE(NMLldpNeighbor, nm_lldp_neighbor, _nm_lldp_neighbor_dup, nm_lldp_neighbor_unref)
 
 /*****************************************************************************/
 
@@ -238,16 +241,77 @@ _notify_update_prop_lldp_neighbors(NMClient *              client,
     new = g_ptr_array_new_with_free_func((GDestroyNotify) nm_lldp_neighbor_unref);
 
     if (value) {
+        gs_unref_array GArray *tmp_array = NULL;
+
         g_variant_iter_init(&iter, value);
         while (g_variant_iter_next(&iter, "a{sv}", &attrs_iter)) {
-            GVariant *      attr_variant;
-            const char *    attr_name;
-            NMLldpNeighbor *neigh;
+            NMLldpNeighbor *   neighbor;
+            GVariant *         attr_variant;
+            const char *       attr_name;
+            NMUtilsNamedValue *named_val;
+            guint              i;
+            guint              j;
 
-            neigh = nm_lldp_neighbor_new();
-            while (g_variant_iter_next(attrs_iter, "{&sv}", &attr_name, &attr_variant))
-                g_hash_table_insert(neigh->attrs, g_strdup(attr_name), attr_variant);
-            g_ptr_array_add(new, neigh);
+            if (!tmp_array)
+                tmp_array = g_array_new(FALSE, FALSE, sizeof(NMUtilsNamedValue));
+            else
+                g_array_set_size(tmp_array, 0);
+
+            while (g_variant_iter_next(attrs_iter, "{&sv}", &attr_name, &attr_variant)) {
+                if (attr_name[0] == '\0') {
+                    g_variant_unref(attr_variant);
+                    continue;
+                }
+                named_val  = nm_g_array_append_new(tmp_array, NMUtilsNamedValue);
+                *named_val = (NMUtilsNamedValue){
+                    .name      = g_strdup(attr_name),
+                    .value_ptr = attr_variant,
+                };
+            }
+
+            if (tmp_array->len > 1u) {
+                g_array_sort(tmp_array, nm_strcmp_p);
+
+                /* Remove duplicate entries. We don't actually expect them as NetworkManager
+                 * should never expose them. Still, make sure! */
+                named_val = (NMUtilsNamedValue *) (gpointer) tmp_array->data;
+                for (i = 1, j = 1; i < tmp_array->len; i++) {
+                    if (G_UNLIKELY(nm_streq(named_val[j - 1].name, named_val[i].name))) {
+                        /* duplicate. We keep the latter. */
+                        j--;
+                        g_free((char *) named_val[j].name);
+                        g_variant_unref(named_val[j].value_ptr);
+                    }
+
+                    if (j != i) {
+                        named_val[j].name      = named_val[i].name;
+                        named_val[j].value_ptr = named_val[i].value_ptr;
+                    }
+                    j++;
+                }
+                if (j != tmp_array->len)
+                    g_array_set_size(tmp_array, j);
+            }
+
+            /* Note that there is no public API to mutate a NMLldpNeighbor instance.
+             * This is the only place where we actually create (mutate) it. */
+
+            neighbor = _nm_lldp_neighbor_new(tmp_array->len);
+
+            named_val = (NMUtilsNamedValue *) (gpointer) tmp_array->data;
+            for (i = 0; i < tmp_array->len; i++) {
+                /* we transfer ownership here! */
+                neighbor->attr_names[i] = (char *) named_val[i].name;
+                neighbor->attr_vals[i]  = named_val[i].value_ptr;
+            }
+            neighbor->attr_names[i] = NULL;
+            neighbor->attr_vals[i]  = NULL;
+
+            nm_assert(neighbor->n_attrs == i);
+            nm_assert(NM_PTRARRAY_LEN(neighbor->attr_names) == neighbor->n_attrs);
+            nm_assert(NM_PTRARRAY_LEN(neighbor->attr_vals) == neighbor->n_attrs);
+
+            g_ptr_array_add(new, neighbor);
 
             g_variant_iter_free(attrs_iter);
         }
@@ -2861,16 +2925,40 @@ nm_device_get_setting_type(NMDevice *device)
 /*****************************************************************************/
 
 static gboolean
-NM_IS_LLDP_NEIGHBOR(const NMLldpNeighbor *self)
+NM_IS_LLDP_NEIGHBOR(const NMLldpNeighbor *neighbor)
 {
-    nm_assert(!self || (self->refcount > 0 && self->attrs));
-    return self && self->refcount > 0;
+    nm_assert(!neighbor || neighbor->refcount > 0);
+    if (NM_MORE_ASSERTS > 10)
+        nm_assert(!neighbor || NM_PTRARRAY_LEN(neighbor->attr_names) == neighbor->n_attrs);
+    return neighbor && neighbor->refcount > 0;
+}
+
+static NMLldpNeighbor *
+_nm_lldp_neighbor_new(guint n_attrs)
+{
+    NMLldpNeighbor *neighbor;
+
+    neighbor = g_malloc(G_STRUCT_OFFSET(NMLldpNeighbor, attr_names)
+                        + (((gsize) n_attrs) + 1u) * 2u * sizeof(gpointer));
+
+    neighbor->refcount  = 1;
+    neighbor->n_attrs   = n_attrs;
+    neighbor->attr_vals = (GVariant **) &neighbor->attr_names[(((gsize) n_attrs) + 1u)];
+    return neighbor;
 }
 
 /**
  * nm_lldp_neighbor_new:
  *
  * Creates a new #NMLldpNeighbor object.
+ *
+ * Note that #NMLldpNeighbor has no public API for mutating
+ * an instance. Also, libnm will not internally mutate a
+ * once exposed object. They are guaranteed to be immutable.
+ * Since 1.32, ref-counting is thread-safe.
+ *
+ * This function is not useful, as there is no public API to
+ * actually modify the (empty) instance.
  *
  * Returns: (transfer full): the new #NMLldpNeighbor object.
  *
@@ -2879,31 +2967,24 @@ NM_IS_LLDP_NEIGHBOR(const NMLldpNeighbor *self)
 NMLldpNeighbor *
 nm_lldp_neighbor_new(void)
 {
-    NMLldpNeighbor *neigh;
+    NMLldpNeighbor *neighbor;
 
-    neigh           = g_new0(NMLldpNeighbor, 1);
-    neigh->refcount = 1;
-    neigh->attrs =
-        g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, (GDestroyNotify) g_variant_unref);
-
-    return neigh;
+    neighbor                = _nm_lldp_neighbor_new(0);
+    neighbor->attr_vals[0]  = NULL;
+    neighbor->attr_names[0] = NULL;
+    return neighbor;
 }
 
 static NMLldpNeighbor *
-nm_lldp_neighbor_dup(NMLldpNeighbor *neighbor)
+_nm_lldp_neighbor_dup(NMLldpNeighbor *neighbor)
 {
-    NMLldpNeighbor *copy;
-    GHashTableIter  iter;
-    const char *    key;
-    GVariant *      value;
-
-    copy = nm_lldp_neighbor_new();
-
-    g_hash_table_iter_init(&iter, neighbor->attrs);
-    while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &value))
-        g_hash_table_insert(copy->attrs, g_strdup(key), g_variant_ref(value));
-
-    return copy;
+    /* There is no public API for mutating a NMLldpNeighbor. Nor should
+     * we ever add one, because immutable types (or at least, sealable types)
+     * are great.
+     *
+     * As such, dup is merely taking another ref. */
+    nm_lldp_neighbor_ref(neighbor);
+    return neighbor;
 }
 
 /**
@@ -2912,6 +2993,8 @@ nm_lldp_neighbor_dup(NMLldpNeighbor *neighbor)
  *
  * Increases the reference count of the object.
  *
+ * Since 1.32, ref-counting of #NMLldpNeighbor is thread-safe.
+ *
  * Since: 1.2
  **/
 void
@@ -2919,7 +3002,7 @@ nm_lldp_neighbor_ref(NMLldpNeighbor *neighbor)
 {
     g_return_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor));
 
-    neighbor->refcount++;
+    g_atomic_int_inc(&neighbor->refcount);
 }
 
 /**
@@ -2929,17 +3012,119 @@ nm_lldp_neighbor_ref(NMLldpNeighbor *neighbor)
  * Decreases the reference count of the object.  If the reference count
  * reaches zero, the object will be destroyed.
  *
+ * Since 1.32, ref-counting of #NMLldpNeighbor is thread-safe.
+ *
  * Since: 1.2
  **/
 void
 nm_lldp_neighbor_unref(NMLldpNeighbor *neighbor)
 {
+    guint i;
+
     g_return_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor));
 
-    if (--neighbor->refcount == 0) {
-        g_hash_table_unref(neighbor->attrs);
-        g_free(neighbor);
+    if (!g_atomic_int_dec_and_test(&neighbor->refcount))
+        return;
+
+    for (i = 0; i < neighbor->n_attrs; i++) {
+        g_free(neighbor->attr_names[i]);
+        g_variant_unref(neighbor->attr_vals[i]);
     }
+    g_free(neighbor);
+}
+
+/**
+ * nm_lldp_neighbor_get_attr_names2:
+ * @neighbor: the #NMLldpNeighbor
+ * @out_len: (out) (allow-none): the number of attributes.
+ *
+ * Gets an array of attribute names available for @neighbor.
+ *
+ * This is like nm_lldp_neighbor_get_attr_names() but it does not copy
+ * the names nor the strv array. Note that #NMLldpNeighbor is immutable,
+ * thus the values stay valid as long as @neighbor is.
+ *
+ * The names are sorted asciibetically.
+ *
+ * Returns: (array length=out_len) (transfer none): a %NULL-terminated array of attribute names.
+ *
+ * Since: 1.32
+ **/
+const char *const *
+nm_lldp_neighbor_get_attr_names2(NMLldpNeighbor *neighbor, gsize *out_len)
+{
+    g_return_val_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor), NULL);
+
+    NM_SET_OUT(out_len, neighbor->n_attrs);
+    return (const char *const *) neighbor->attr_names;
+}
+
+/**
+ * nm_lldp_neighbor_get_attr_at_index:
+ * @neighbor: the #NMLldpNeighbor
+ * @idx: the index of the attribute that is requested.
+ * @name: (out) (allow-none): the corresponding name of the attribute.
+ *
+ * Note that nm_lldp_neighbor_get_attr_names2() gives the number of attributes
+ * that are available. Also, nm_lldp_neighbor_get_attr_names2() gives the attribute
+ * names with the same order as the numbering via @idx.
+ *
+ * Note that it is permissible to pass @idx out of range. In that case, @name
+ * will be set to %NULL and %NULL will be returned.
+ *
+ * Returns: (transfer none): the #GVariant attribute at the given @idx
+ *   or %NULL if the index is out of range.
+ *
+ * Since: 1.32
+ */
+GVariant *
+nm_lldp_neighbor_get_attr_at_index(NMLldpNeighbor *neighbor, gsize idx, const char **name)
+{
+    g_return_val_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor), NULL);
+
+    if (idx >= neighbor->n_attrs) {
+        /* we accept out of range access and return %NULL. It's even documented behavior,
+         * so the caller may also start accessing the attributes without knowing how
+         * many there are (and stop when getting the first %NULL). */
+        NM_SET_OUT(name, NULL);
+        return NULL;
+    }
+
+    NM_SET_OUT(name, neighbor->attr_names[idx]);
+    return neighbor->attr_vals[idx];
+}
+
+/**
+ * nm_lldp_neighbor_get_attr_value:
+ * @neighbor: the #NMLldpNeighbor
+ * @name: the attribute name
+ *
+ * Gets the value (as a GVariant) of attribute with name @name on @neighbor
+ *
+ * Returns: (transfer none): the value or %NULL if the attribute with @name was
+ * not found.
+ *
+ * Since: 1.18
+ **/
+GVariant *
+nm_lldp_neighbor_get_attr_value(NMLldpNeighbor *neighbor, const char *name)
+{
+    gssize idx;
+
+    g_return_val_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor), FALSE);
+    g_return_val_if_fail(name && name[0], FALSE);
+
+    idx = nm_utils_ptrarray_find_binary_search((gconstpointer *) neighbor->attr_names,
+                                               neighbor->n_attrs,
+                                               name,
+                                               nm_strcmp_with_data,
+                                               NULL,
+                                               NULL,
+                                               NULL);
+    if (idx < 0)
+        return NULL;
+
+    return neighbor->attr_vals[idx];
 }
 
 /**
@@ -2955,21 +3140,9 @@ nm_lldp_neighbor_unref(NMLldpNeighbor *neighbor)
 char **
 nm_lldp_neighbor_get_attr_names(NMLldpNeighbor *neighbor)
 {
-    GHashTableIter iter;
-    const char *   key;
-    GPtrArray *    names;
-
     g_return_val_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor), NULL);
 
-    names = g_ptr_array_new();
-
-    g_hash_table_iter_init(&iter, neighbor->attrs);
-    while (g_hash_table_iter_next(&iter, (gpointer *) &key, NULL))
-        g_ptr_array_add(names, g_strdup(key));
-
-    g_ptr_array_add(names, NULL);
-
-    return (char **) g_ptr_array_free(names, FALSE);
+    return nm_utils_strv_dup(neighbor->attr_names, neighbor->n_attrs, TRUE) ?: g_new0(char *, 1);
 }
 
 /**
@@ -2991,16 +3164,12 @@ nm_lldp_neighbor_get_attr_string_value(NMLldpNeighbor *neighbor,
 {
     GVariant *variant;
 
-    g_return_val_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor), FALSE);
-    g_return_val_if_fail(name && name[0], FALSE);
-
-    variant = g_hash_table_lookup(neighbor->attrs, name);
-    if (variant && g_variant_is_of_type(variant, G_VARIANT_TYPE_STRING)) {
-        if (out_value)
-            *out_value = g_variant_get_string(variant, NULL);
-        return TRUE;
-    } else
+    variant = nm_lldp_neighbor_get_attr_value(neighbor, name);
+    if (!variant || !g_variant_is_of_type(variant, G_VARIANT_TYPE_STRING))
         return FALSE;
+
+    NM_SET_OUT(out_value, g_variant_get_string(variant, NULL));
+    return TRUE;
 }
 
 /**
@@ -3009,9 +3178,9 @@ nm_lldp_neighbor_get_attr_string_value(NMLldpNeighbor *neighbor,
  * @name: the attribute name
  * @out_value: (out) (allow-none): on return, the attribute value
  *
- * Gets the uint value of attribute with name @name on @neighbor
+ * Gets the uint32 value of attribute with name @name on @neighbor
  *
- * Returns: %TRUE if a uint attribute with name @name was found, %FALSE otherwise
+ * Returns: %TRUE if a uint32 attribute with name @name was found, %FALSE otherwise
  *
  * Since: 1.2
  **/
@@ -3020,37 +3189,12 @@ nm_lldp_neighbor_get_attr_uint_value(NMLldpNeighbor *neighbor, const char *name,
 {
     GVariant *variant;
 
-    g_return_val_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor), FALSE);
-    g_return_val_if_fail(name && name[0], FALSE);
-
-    variant = g_hash_table_lookup(neighbor->attrs, name);
-    if (variant && g_variant_is_of_type(variant, G_VARIANT_TYPE_UINT32)) {
-        if (out_value)
-            *out_value = g_variant_get_uint32(variant);
-        return TRUE;
-    } else
+    variant = nm_lldp_neighbor_get_attr_value(neighbor, name);
+    if (!variant || !g_variant_is_of_type(variant, G_VARIANT_TYPE_UINT32))
         return FALSE;
-}
 
-/**
- * nm_lldp_neighbor_get_attr_value:
- * @neighbor: the #NMLldpNeighbor
- * @name: the attribute name
- *
- * Gets the value (as a GVariant) of attribute with name @name on @neighbor
- *
- * Returns: (transfer none): the value or %NULL if the attribute with @name was
- * not found.
- *
- * Since: 1.18
- **/
-GVariant *
-nm_lldp_neighbor_get_attr_value(NMLldpNeighbor *neighbor, const char *name)
-{
-    g_return_val_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor), FALSE);
-    g_return_val_if_fail(name && name[0], FALSE);
-
-    return g_hash_table_lookup(neighbor->attrs, name);
+    NM_SET_OUT(out_value, g_variant_get_uint32(variant));
+    return TRUE;
 }
 
 /**
@@ -3069,12 +3213,9 @@ nm_lldp_neighbor_get_attr_type(NMLldpNeighbor *neighbor, const char *name)
 {
     GVariant *variant;
 
-    g_return_val_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor), NULL);
-    g_return_val_if_fail(name && name[0], NULL);
-
-    variant = g_hash_table_lookup(neighbor->attrs, name);
-    if (variant)
-        return g_variant_get_type(variant);
-    else
+    variant = nm_lldp_neighbor_get_attr_value(neighbor, name);
+    if (!variant)
         return NULL;
+
+    return g_variant_get_type(variant);
 }
