@@ -458,7 +458,6 @@ test_if_ip4_manual(void)
 static void
 test_if_ip4_manual_no_dev(void)
 {
-    gs_unref_hashtable GHashTable *connections = NULL;
     const char *const *            ARGV        = NM_MAKE_STRV("ip=192.0.2.2::192.0.2.1:24:::");
     NMConnection *                 connection;
     NMSettingConnection *          s_con;
