@@ -94,11 +94,15 @@ AC_DEFUN([AX_LIB_READLINE], [
     AC_DEFINE(HAVE_LIBREADLINE, 1,
               [Define if you have a readline compatible library])
     AC_CHECK_HEADERS(readline.h readline/readline.h)
+    ORIG_LIBS="$LIBS"
+    LIBS="$ORIG_LIBS $ax_cv_lib_readline"
     AC_CACHE_CHECK([whether readline supports history],
                    ax_cv_lib_readline_history, [
       ax_cv_lib_readline_history="no"
       AC_LINK_IFELSE([AC_LANG_CALL([], [add_history])], [ax_cv_lib_readline_history="yes"])
     ])
+    LIBS=$ORIG_LIBS
+
     if test "$ax_cv_lib_readline_history" = "yes"; then
       AC_DEFINE(HAVE_READLINE_HISTORY, 1,
                 [Define if your readline library has \`add_history'])
