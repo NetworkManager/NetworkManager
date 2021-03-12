@@ -253,6 +253,9 @@ static inline int nm_close (int fd);
 NM_AUTO_DEFINE_FCN_VOID0 (void *, _nm_auto_free_impl, free)
 #define nm_auto_free nm_auto(_nm_auto_free_impl)
 
+NM_AUTO_DEFINE_FCN0 (GKeyFile *, _nm_auto_unref_keyfile, g_key_file_unref);
+#define nm_auto_unref_keyfile nm_auto(_nm_auto_unref_keyfile)
+
 NM_AUTO_DEFINE_FCN0 (GVariantIter *, _nm_auto_free_variant_iter, g_variant_iter_free)
 #define nm_auto_free_variant_iter nm_auto(_nm_auto_free_variant_iter)
 
