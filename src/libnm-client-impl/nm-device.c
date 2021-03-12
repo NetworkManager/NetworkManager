@@ -247,8 +247,13 @@ _notify_update_prop_lldp_neighbors(NMClient *              client,
             /* Note that there is no public API to mutate a NMLldpNeighbor instance.
              * This is the only place where we actually mutate it. */
             neigh = nm_lldp_neighbor_new();
-            while (g_variant_iter_next(attrs_iter, "{&sv}", &attr_name, &attr_variant))
+            while (g_variant_iter_next(attrs_iter, "{&sv}", &attr_name, &attr_variant)) {
+                if (attr_name[0] == '\0') {
+                    g_variant_unref(attr_variant);
+                    continue;
+                }
                 g_hash_table_insert(neigh->attrs, g_strdup(attr_name), attr_variant);
+            }
 
             g_ptr_array_add(new, neigh);
 
