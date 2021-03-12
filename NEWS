@@ -1,3 +1,20 @@
+===============================================
+NetworkManager-1.30.2
+Overview of changes since NetworkManager-1.30.0
+===============================================
+
+* Increase the limit of open file descriptors in NetworkManager.service
+* Fix hostname lookup via DNS when resolv.conf is managed by
+  systemd-resolved
+* Enable WPA3 for Wi-Fi connections with key_mgmt=WPA-PSK
+* Fix crash with the IWD Wi-Fi backend
+* Avoid logging warning when setting bond option
+  "ad_actor_system=00:00:00:00:00:00"
+* Update SpecificObject D-Bus property of ActiveConnection after WiFi
+  roaming
+* Multiple bugfixes in the initrd generator
+* Various minor bugfixes
+
 =============================================
 NetworkManager-1.30
 Overview of changes since NetworkManager-1.28
