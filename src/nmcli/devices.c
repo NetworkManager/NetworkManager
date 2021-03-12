@@ -9,7 +9,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <readline/readline.h>
+#ifdef HAVE_READLINE_READLINE_H
+    #include <readline/readline.h>
+#elif HAVE_EDITLINE_READLINE_H
+    #include <editline/readline.h>
+#endif
 #include <linux/if_ether.h>
 
 #include "libnm-glib-aux/nm-secret-utils.h"

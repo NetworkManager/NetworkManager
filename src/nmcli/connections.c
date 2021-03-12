@@ -11,8 +11,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
-#include <readline/readline.h>
-#include <readline/history.h>
+#ifdef HAVE_READLINE_READLINE_H
+    #include <readline/readline.h>
+#elif HAVE_EDITLINE_READLINE_H
+    #include <editline/readline.h>
+#endif
+#ifdef HAVE_READLINE_HISTORY_H
+    #include <readline/history.h>
+#endif
 #include <fcntl.h>
 
 #include "libnmc-base/nm-client-utils.h"
@@ -6430,8 +6436,10 @@ gen_property_values(const char *text, int state)
     return nmc_rl_gen_func_basic(text, state, avals);
 }
 
+#ifdef HAVE_READLINE_HISTORY_H
 /* from readline */
 extern int rl_complete_with_tilde_expansion;
+#endif
 
 /*
  * Attempt to complete on the contents of TEXT.  START and END show the
@@ -6459,8 +6467,10 @@ nmcli_editor_tab_completion(const char *text, int start, int end)
     /* Disable default filename completion */
     rl_attempted_completion_over = 1;
 
+#ifdef HAVE_READLINE_HISTORY_H
     /* Enable tilde expansion when filenames are completed */
     rl_complete_with_tilde_expansion = 1;
+#endif
 
     /* Filter out possible ANSI color escape sequences */
     prompt_tmp = nmc_filter_out_colors((const char *) rl_prompt);
@@ -9580,8 +9590,10 @@ nmcli_con_tab_completion(const char *text, int start, int end)
         nmc_tab_completion.words = _meta_abstract_complete(info, text);
         generator_func           = _meta_abstract_generator;
     } else if (g_strcmp0(rl_prompt, PROMPT_IMPORT_FILE) == 0) {
-        rl_attempted_completion_over     = 0;
+        rl_attempted_completion_over = 0;
+#ifdef HAVE_READLINE_HISTORY_H
         rl_complete_with_tilde_expansion = 1;
+#endif
     } else if (g_strcmp0(rl_prompt, PROMPT_VPN_CONNECTION) == 0) {
         generator_func = gen_vpn_ids;
     }

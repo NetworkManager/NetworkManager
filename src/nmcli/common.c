@@ -10,8 +10,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
-#include <readline/readline.h>
-#include <readline/history.h>
+#ifdef HAVE_READLINE_READLINE_H
+    #include <readline/readline.h>
+#elif HAVE_EDITLINE_READLINE_H
+    #include <editline/readline.h>
+#endif
+#ifdef HAVE_READLINE_HISTORY_H
+    #include <readline/history.h>
+#endif
 
 #include "libnm-client-aux-extern/nm-libnm-aux.h"
 
@@ -995,10 +1001,14 @@ nmc_readline_echo(const NmcConfig *nmc_config, gboolean echo_on, const char *pro
     va_list       args;
     gs_free char *prompt = NULL;
     char *        str;
+#ifdef HAVE_READLINE_HISTORY_H
     nm_auto_free HISTORY_STATE *saved_history  = NULL;
     HISTORY_STATE               passwd_history = {
         0,
     };
+#else
+    int whence, curpos;
+#endif
 
     va_start(args, prompt_fmt);
     prompt = g_strdup_vprintf(prompt_fmt, args);
@@ -1008,8 +1018,12 @@ nmc_readline_echo(const NmcConfig *nmc_config, gboolean echo_on, const char *pro
 
     /* Hide the actual password */
     if (!echo_on) {
+#ifdef HAVE_READLINE_HISTORY_H
         saved_history = history_get_history_state();
         history_set_history_state(&passwd_history);
+#else
+        whence = where_history ();
+#endif
         /* stifling history is important as it tells readline to
          * not store anything, otherwise sensitive data could be
          * leaked */
@@ -1022,7 +1036,14 @@ nmc_readline_echo(const NmcConfig *nmc_config, gboolean echo_on, const char *pro
     /* Restore the non-hiding behavior */
     if (!echo_on) {
         rl_redisplay_function = rl_redisplay;
+#ifdef HAVE_READLINE_HISTORY_H
         history_set_history_state(saved_history);
+#else
+        curpos = where_history ();
+        for (; curpos > whence; curpos--) {
+            remove_history (curpos);
+        }
+#endif
     }
 
     return str;

@@ -92,7 +92,7 @@ AC_DEFUN([AX_LIB_READLINE], [
 
   ORIG_LIBS="$LIBS"
   LIBS="$LIBS $ax_cv_lib_readline"
-  AC_CHECK_HEADERS(readline.h readline/readline.h)
+  AC_CHECK_HEADERS(readline.h readline/readline.h editline/readline.h)
 
   # Check history
   AC_CACHE_CHECK([whether readline supports history],
@@ -103,7 +103,7 @@ AC_DEFUN([AX_LIB_READLINE], [
   if test "$ax_cv_lib_readline_history" != "yes"; then
     AC_MSG_ERROR(readline history support is required)
   fi
-  AC_CHECK_HEADERS(history.h readline/history.h)
+  AC_CHECK_HEADERS(history.h readline/history.h histedit.h)
 
   # check rl_echo_signal_char()
   AC_CACHE_CHECK([whether readline supports rl_echo_signal_char()],

@@ -15,8 +15,14 @@
 #include <unistd.h>
 #include <locale.h>
 #include <glib-unix.h>
-#include <readline/readline.h>
-#include <readline/history.h>
+#ifdef HAVE_READLINE_READLINE_H
+    #include <readline/readline.h>
+#elif HAVE_EDITLINE_READLINE_H
+    #include <editline/readline.h>
+#endif
+#ifdef HAVE_READLINE_HISTORY_H
+    #include <readline/history.h>
+#endif
 
 #include "libnmc-base/nm-client-utils.h"
 
