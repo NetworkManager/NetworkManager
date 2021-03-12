@@ -3018,10 +3018,7 @@ nm_lldp_neighbor_get_attr_string_value(NMLldpNeighbor *neighbor,
 {
     GVariant *variant;
 
-    g_return_val_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor), FALSE);
-    g_return_val_if_fail(name && name[0], FALSE);
-
-    variant = g_hash_table_lookup(neighbor->attrs, name);
+    variant = nm_lldp_neighbor_get_attr_value(neighbor, name);
     if (!variant || !g_variant_is_of_type(variant, G_VARIANT_TYPE_STRING))
         return FALSE;
 
@@ -3046,10 +3043,7 @@ nm_lldp_neighbor_get_attr_uint_value(NMLldpNeighbor *neighbor, const char *name,
 {
     GVariant *variant;
 
-    g_return_val_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor), FALSE);
-    g_return_val_if_fail(name && name[0], FALSE);
-
-    variant = g_hash_table_lookup(neighbor->attrs, name);
+    variant = nm_lldp_neighbor_get_attr_value(neighbor, name);
     if (!variant || !g_variant_is_of_type(variant, G_VARIANT_TYPE_UINT32))
         return FALSE;
 
@@ -3073,10 +3067,7 @@ nm_lldp_neighbor_get_attr_type(NMLldpNeighbor *neighbor, const char *name)
 {
     GVariant *variant;
 
-    g_return_val_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor), NULL);
-    g_return_val_if_fail(name && name[0], NULL);
-
-    variant = g_hash_table_lookup(neighbor->attrs, name);
+    variant = nm_lldp_neighbor_get_attr_value(neighbor, name);
     if (!variant)
         return NULL;
 
