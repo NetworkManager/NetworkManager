@@ -33,13 +33,9 @@ libnm_cloud_setup_core = static_library(
   ),
   dependencies: [
     libnm_dep,
+    glib_dep,
     libcurl_dep,
   ],
-)
-
-libnm_cloud_setup_core_dep = declare_dependency(
-  include_directories: include_directories('.'),
-  link_with: libnm_cloud_setup_core,
 )
 
 executable(
@@ -48,12 +44,12 @@ executable(
     'main.c',
   ),
   dependencies: [
-    libnm_cloud_setup_core_dep,
     libnm_dep,
-    libcurl_dep,
     glib_dep,
+    libcurl_dep,
   ],
   link_with: [
+    libnm_cloud_setup_core,
     libnmc_base,
     libnm_client_aux_extern,
     libnm_core_aux_extern,
@@ -68,7 +64,3 @@ executable(
   install: true,
   install_dir: nm_libexecdir,
 )
-
-if enable_tests
-  subdir('tests')
-endif

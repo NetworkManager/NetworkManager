@@ -1,4 +1,3 @@
-clients/cloud-setup/nm-cloud-setup.service.in
 contrib/fedora/rpm/
 data/NetworkManager-wait-online.service.in
 data/NetworkManager.service.in
@@ -7,6 +6,7 @@ examples/python/NetworkManager.py
 examples/python/systray/eggtrayicon.c
 src/contrib/nm-vpn-editor-plugin-call.h
 src/contrib/nm-vpn-plugin-utils.c
+src/nm-cloud-setup/nm-cloud-setup.service.in
 vpn-daemons/openvpn
 vpn-daemons/pptp
 vpn-daemons/vpnc

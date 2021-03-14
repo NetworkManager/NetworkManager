@@ -5052,54 +5052,54 @@ endif
 EXTRA_DIST += clients/tui/meson.build
 
 ###############################################################################
-# clients/nm-cloud-setup
+# src/nm-cloud-setup
 ###############################################################################
 
 if BUILD_NM_CLOUD_SETUP
 
-noinst_LIBRARIES += clients/cloud-setup/libnm-cloud-setup-core.a
+noinst_LIBRARIES += src/nm-cloud-setup/libnm-cloud-setup-core.a
 
-clients_cloud_setup_libnm_cloud_setup_core_a_SOURCES = \
-	clients/cloud-setup/nm-cloud-setup-utils.c \
-	clients/cloud-setup/nm-cloud-setup-utils.h \
-	clients/cloud-setup/nm-http-client.c \
-	clients/cloud-setup/nm-http-client.h \
-	clients/cloud-setup/nmcs-provider.c \
-	clients/cloud-setup/nmcs-provider.h \
-	clients/cloud-setup/nmcs-provider-ec2.c \
-	clients/cloud-setup/nmcs-provider-ec2.h \
-	clients/cloud-setup/nmcs-provider-gcp.c \
-	clients/cloud-setup/nmcs-provider-gcp.h \
-	clients/cloud-setup/nmcs-provider-azure.c \
-	clients/cloud-setup/nmcs-provider-azure.h \
+src_nm_cloud_setup_libnm_cloud_setup_core_a_SOURCES = \
+	src/nm-cloud-setup/nm-cloud-setup-utils.c \
+	src/nm-cloud-setup/nm-cloud-setup-utils.h \
+	src/nm-cloud-setup/nm-http-client.c \
+	src/nm-cloud-setup/nm-http-client.h \
+	src/nm-cloud-setup/nmcs-provider.c \
+	src/nm-cloud-setup/nmcs-provider.h \
+	src/nm-cloud-setup/nmcs-provider-ec2.c \
+	src/nm-cloud-setup/nmcs-provider-ec2.h \
+	src/nm-cloud-setup/nmcs-provider-gcp.c \
+	src/nm-cloud-setup/nmcs-provider-gcp.h \
+	src/nm-cloud-setup/nmcs-provider-azure.c \
+	src/nm-cloud-setup/nmcs-provider-azure.h \
 	$(NULL)
 
-clients_cloud_setup_libnm_cloud_setup_core_a_CPPFLAGS = \
+src_nm_cloud_setup_libnm_cloud_setup_core_a_CPPFLAGS = \
 	$(clients_cppflags) \
 	$(LIBCURL_CFLAGS) \
 	$(NULL)
 
-$(clients_cloud_setup_libnm_cloud_setup_core_a_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_cloud_setup_libnm_cloud_setup_core_a_OBJECTS): $(src_libnm_client_public_mkenums_h)
+$(src_nm_cloud_setup_libnm_cloud_setup_core_a_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_nm_cloud_setup_libnm_cloud_setup_core_a_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
-libexec_PROGRAMS += clients/cloud-setup/nm-cloud-setup
+libexec_PROGRAMS += src/nm-cloud-setup/nm-cloud-setup
 
-clients_cloud_setup_nm_cloud_setup_SOURCES = \
-	clients/cloud-setup/main.c \
+src_nm_cloud_setup_nm_cloud_setup_SOURCES = \
+	src/nm-cloud-setup/main.c \
 	$(NULL)
 
-clients_cloud_setup_nm_cloud_setup_CPPFLAGS = \
+src_nm_cloud_setup_nm_cloud_setup_CPPFLAGS = \
 	$(clients_cppflags) \
 	$(LIBCURL_CFLAGS) \
 	$(NULL)
 
-clients_cloud_setup_nm_cloud_setup_LDFLAGS = \
+src_nm_cloud_setup_nm_cloud_setup_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-clients_cloud_setup_nm_cloud_setup_LDADD = \
-	clients/cloud-setup/libnm-cloud-setup-core.a \
+src_nm_cloud_setup_nm_cloud_setup_LDADD = \
+	src/nm-cloud-setup/libnm-cloud-setup-core.a \
 	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
@@ -5112,21 +5112,21 @@ clients_cloud_setup_nm_cloud_setup_LDADD = \
 	$(LIBCURL_LIBS) \
 	$(NULL)
 
-$(clients_cloud_setup_nm_cloud_setup_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_cloud_setup_nm_cloud_setup_OBJECTS): $(src_libnm_client_public_mkenums_h)
+$(src_nm_cloud_setup_nm_cloud_setup_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_nm_cloud_setup_nm_cloud_setup_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 if HAVE_SYSTEMD
 
 systemdsystemunit_DATA += \
-	clients/cloud-setup/nm-cloud-setup.service \
-	clients/cloud-setup/nm-cloud-setup.timer \
+	src/nm-cloud-setup/nm-cloud-setup.service \
+	src/nm-cloud-setup/nm-cloud-setup.timer \
 	$(NULL)
 
-clients/cloud-setup/nm-cloud-setup.service: $(srcdir)/clients/cloud-setup/nm-cloud-setup.service.in
+src/nm-cloud-setup/nm-cloud-setup.service: $(srcdir)/src/nm-cloud-setup/nm-cloud-setup.service.in
 	$(AM_V_GEN) $(data_edit) $< >$@
 
 install-data-hook-cloud-setup: install-data-hook-dispatcher
-	$(INSTALL_SCRIPT) "$(srcdir)/clients/cloud-setup/90-nm-cloud-setup.sh" "$(DESTDIR)$(nmlibdir)/dispatcher.d/no-wait.d/"
+	$(INSTALL_SCRIPT) "$(srcdir)/src/nm-cloud-setup/90-nm-cloud-setup.sh" "$(DESTDIR)$(nmlibdir)/dispatcher.d/no-wait.d/"
 	ln -fs no-wait.d/90-nm-cloud-setup.sh "$(DESTDIR)$(nmlibdir)/dispatcher.d/90-nm-cloud-setup.sh"
 
 install_data_hook += install-data-hook-cloud-setup
@@ -5140,31 +5140,30 @@ uninstall_hook += uninstall-hook-cloud-setup
 endif
 
 EXTRA_DIST += \
-	clients/cloud-setup/90-nm-cloud-setup.sh \
-	clients/cloud-setup/meson.build \
-	clients/cloud-setup/nm-cloud-setup.service.in \
-	clients/cloud-setup/nm-cloud-setup.timer \
-	clients/cloud-setup/tests/meson.build \
+	src/nm-cloud-setup/90-nm-cloud-setup.sh \
+	src/nm-cloud-setup/meson.build \
+	src/nm-cloud-setup/nm-cloud-setup.service.in \
+	src/nm-cloud-setup/nm-cloud-setup.timer \
+	src/nm-cloud-setup/tests/meson.build \
 	$(NULL)
 
 CLEANFILES += \
-	clients/cloud-setup/nm-cloud-setup.service
+	src/nm-cloud-setup/nm-cloud-setup.service
 
-check_programs += clients/cloud-setup/tests/test-cloud-setup-general
+check_programs += src/nm-cloud-setup/tests/test-cloud-setup-general
 
-clients_cloud_setup_tests_test_cloud_setup_general_CPPFLAGS = \
+src_nm_cloud_setup_tests_test_cloud_setup_general_CPPFLAGS = \
 	$(clients_cppflags) \
-	-I$(srcdir)/clients/cloud-setup \
 	$(LIBCURL_CFLAGS) \
 	$(NULL)
 
-clients_cloud_setup_tests_test_cloud_setup_general_LDFLAGS = \
+src_nm_cloud_setup_tests_test_cloud_setup_general_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-clients_cloud_setup_tests_test_cloud_setup_general_LDADD = \
-	clients/cloud-setup/libnm-cloud-setup-core.a \
+src_nm_cloud_setup_tests_test_cloud_setup_general_LDADD = \
+	src/nm-cloud-setup/libnm-cloud-setup-core.a \
 	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
@@ -5177,8 +5176,8 @@ clients_cloud_setup_tests_test_cloud_setup_general_LDADD = \
 	$(LIBCURL_LIBS) \
 	$(NULL)
 
-$(clients_cloud_setup_tests_test_cloud_setup_general_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_cloud_setup_tests_test_cloud_setup_general_OBJECTS): $(src_libnm_client_public_mkenums_h)
+$(src_nm_cloud_setup_tests_test_cloud_setup_general_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_nm_cloud_setup_tests_test_cloud_setup_general_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 endif
 
