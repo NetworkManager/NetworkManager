@@ -4,11 +4,12 @@ exe = executable(
   'test-cloud-setup-general',
   'test-cloud-setup-general.c',
   dependencies: [
-    libnm_cloud_setup_core_dep,
     libnm_dep,
     glib_dep,
+    libcurl_dep,
   ],
   link_with: [
+    libnm_cloud_setup_core,
     libnmc_base,
     libnm_glib_aux,
     libnm_std_aux,
@@ -17,7 +18,7 @@ exe = executable(
 )
 
 test(
-  'clients/cloud-setup/tests/test-cloud-setup-general',
+  'src/nm-cloud-setup/tests/test-cloud-setup-general',
   test_script,
   args: test_args + [exe.full_path()],
 )

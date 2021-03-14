@@ -2,7 +2,7 @@
 
 #include "libnm-client-aux-extern/nm-default-client.h"
 
-#include "nm-cloud-setup-utils.h"
+#include "nm-cloud-setup/nm-cloud-setup-utils.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 #include "libnm-glib-aux/nm-test-utils.h"
