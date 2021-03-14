@@ -46,6 +46,7 @@ executable(
   ),
   dependencies: [
     libnm_dep,
+    newt_dep,
     glib_dep,
   ],
   link_with: [

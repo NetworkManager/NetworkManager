@@ -920,7 +920,6 @@ content_files = []
 
 subdir('introspection')
 subdir('src')
-subdir('clients')
 subdir('data')
 subdir('po')
 

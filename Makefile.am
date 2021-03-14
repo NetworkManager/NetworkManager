@@ -4606,10 +4606,6 @@ $(src_nm_online_nm_online_OBJECTS): $(src_libnm_client_public_mkenums_h)
 EXTRA_DIST += src/nm-online/meson.build
 
 ###############################################################################
-
-EXTRA_DIST += clients/meson.build
-
-###############################################################################
 # src/libnmc-base
 ###############################################################################
 
@@ -4910,108 +4906,108 @@ endif
 EXTRA_DIST += src/libnmt-newt/meson.build
 
 ###############################################################################
-# clients/tui
+# src/nmtui
 ###############################################################################
 
 if BUILD_NMTUI
 
-bin_PROGRAMS += clients/tui/nmtui
+bin_PROGRAMS += src/nmtui/nmtui
 
-clients_tui_nmtui_SOURCES = \
-	clients/tui/nmtui.c \
-	clients/tui/nmtui.h \
-	clients/tui/nmtui-connect.c \
-	clients/tui/nmtui-connect.h \
-	clients/tui/nmtui-edit.c \
-	clients/tui/nmtui-edit.h \
-	clients/tui/nmtui-hostname.c \
-	clients/tui/nmtui-hostname.h \
+src_nmtui_nmtui_SOURCES = \
+	src/nmtui/nmtui.c \
+	src/nmtui/nmtui.h \
+	src/nmtui/nmtui-connect.c \
+	src/nmtui/nmtui-connect.h \
+	src/nmtui/nmtui-edit.c \
+	src/nmtui/nmtui-edit.h \
+	src/nmtui/nmtui-hostname.c \
+	src/nmtui/nmtui-hostname.h \
 	\
-	clients/tui/nm-editor-bindings.c \
-	clients/tui/nm-editor-bindings.h \
-	clients/tui/nm-editor-utils.c \
-	clients/tui/nm-editor-utils.h \
+	src/nmtui/nm-editor-bindings.c \
+	src/nmtui/nm-editor-bindings.h \
+	src/nmtui/nm-editor-utils.c \
+	src/nmtui/nm-editor-utils.h \
 	\
-	clients/tui/nmt-address-list.c \
-	clients/tui/nmt-address-list.h \
-	clients/tui/nmt-connect-connection-list.c \
-	clients/tui/nmt-connect-connection-list.h \
-	clients/tui/nmt-device-entry.c \
-	clients/tui/nmt-device-entry.h \
-	clients/tui/nmt-edit-connection-list.c \
-	clients/tui/nmt-edit-connection-list.h \
-	clients/tui/nmt-editor-grid.c \
-	clients/tui/nmt-editor-grid.h \
-	clients/tui/nmt-editor-page.c \
-	clients/tui/nmt-editor-page.h \
-	clients/tui/nmt-editor-page-device.c \
-	clients/tui/nmt-editor-page-device.h \
-	clients/tui/nmt-editor-section.c \
-	clients/tui/nmt-editor-section.h \
-	clients/tui/nmt-editor.c \
-	clients/tui/nmt-editor.h \
-	clients/tui/nmt-ip-entry.c \
-	clients/tui/nmt-ip-entry.h \
-	clients/tui/nmt-mac-entry.c \
-	clients/tui/nmt-mac-entry.h \
-	clients/tui/nmt-mtu-entry.c \
-	clients/tui/nmt-mtu-entry.h \
-	clients/tui/nmt-page-bond.c \
-	clients/tui/nmt-page-bond.h \
-	clients/tui/nmt-page-bridge.c \
-	clients/tui/nmt-page-bridge.h \
-	clients/tui/nmt-page-bridge-port.c \
-	clients/tui/nmt-page-bridge-port.h \
-	clients/tui/nmt-page-dsl.c \
-	clients/tui/nmt-page-dsl.h \
-	clients/tui/nmt-page-ethernet.c \
-	clients/tui/nmt-page-ethernet.h \
-	clients/tui/nmt-page-infiniband.c \
-	clients/tui/nmt-page-infiniband.h \
-	clients/tui/nmt-page-ip-tunnel.c \
-	clients/tui/nmt-page-ip-tunnel.h \
-	clients/tui/nmt-page-ip4.c \
-	clients/tui/nmt-page-ip4.h \
-	clients/tui/nmt-page-ip6.c \
-	clients/tui/nmt-page-ip6.h \
-	clients/tui/nmt-page-ppp.c \
-	clients/tui/nmt-page-ppp.h \
-	clients/tui/nmt-page-team.c \
-	clients/tui/nmt-page-team.h \
-	clients/tui/nmt-page-team-port.c \
-	clients/tui/nmt-page-team-port.h \
-	clients/tui/nmt-page-vlan.c \
-	clients/tui/nmt-page-vlan.h \
-	clients/tui/nmt-page-wifi.c \
-	clients/tui/nmt-page-wifi.h \
-	clients/tui/nmt-password-dialog.c \
-	clients/tui/nmt-password-dialog.h \
-	clients/tui/nmt-password-fields.c \
-	clients/tui/nmt-password-fields.h \
-	clients/tui/nmt-route-editor.c \
-	clients/tui/nmt-route-editor.h \
-	clients/tui/nmt-route-entry.c \
-	clients/tui/nmt-route-entry.h \
-	clients/tui/nmt-route-table.c \
-	clients/tui/nmt-route-table.h \
-	clients/tui/nmt-slave-list.c \
-	clients/tui/nmt-slave-list.h \
-	clients/tui/nmt-utils.c \
-	clients/tui/nmt-utils.h \
-	clients/tui/nmt-widget-list.c \
-	clients/tui/nmt-widget-list.h \
+	src/nmtui/nmt-address-list.c \
+	src/nmtui/nmt-address-list.h \
+	src/nmtui/nmt-connect-connection-list.c \
+	src/nmtui/nmt-connect-connection-list.h \
+	src/nmtui/nmt-device-entry.c \
+	src/nmtui/nmt-device-entry.h \
+	src/nmtui/nmt-edit-connection-list.c \
+	src/nmtui/nmt-edit-connection-list.h \
+	src/nmtui/nmt-editor-grid.c \
+	src/nmtui/nmt-editor-grid.h \
+	src/nmtui/nmt-editor-page.c \
+	src/nmtui/nmt-editor-page.h \
+	src/nmtui/nmt-editor-page-device.c \
+	src/nmtui/nmt-editor-page-device.h \
+	src/nmtui/nmt-editor-section.c \
+	src/nmtui/nmt-editor-section.h \
+	src/nmtui/nmt-editor.c \
+	src/nmtui/nmt-editor.h \
+	src/nmtui/nmt-ip-entry.c \
+	src/nmtui/nmt-ip-entry.h \
+	src/nmtui/nmt-mac-entry.c \
+	src/nmtui/nmt-mac-entry.h \
+	src/nmtui/nmt-mtu-entry.c \
+	src/nmtui/nmt-mtu-entry.h \
+	src/nmtui/nmt-page-bond.c \
+	src/nmtui/nmt-page-bond.h \
+	src/nmtui/nmt-page-bridge.c \
+	src/nmtui/nmt-page-bridge.h \
+	src/nmtui/nmt-page-bridge-port.c \
+	src/nmtui/nmt-page-bridge-port.h \
+	src/nmtui/nmt-page-dsl.c \
+	src/nmtui/nmt-page-dsl.h \
+	src/nmtui/nmt-page-ethernet.c \
+	src/nmtui/nmt-page-ethernet.h \
+	src/nmtui/nmt-page-infiniband.c \
+	src/nmtui/nmt-page-infiniband.h \
+	src/nmtui/nmt-page-ip-tunnel.c \
+	src/nmtui/nmt-page-ip-tunnel.h \
+	src/nmtui/nmt-page-ip4.c \
+	src/nmtui/nmt-page-ip4.h \
+	src/nmtui/nmt-page-ip6.c \
+	src/nmtui/nmt-page-ip6.h \
+	src/nmtui/nmt-page-ppp.c \
+	src/nmtui/nmt-page-ppp.h \
+	src/nmtui/nmt-page-team.c \
+	src/nmtui/nmt-page-team.h \
+	src/nmtui/nmt-page-team-port.c \
+	src/nmtui/nmt-page-team-port.h \
+	src/nmtui/nmt-page-vlan.c \
+	src/nmtui/nmt-page-vlan.h \
+	src/nmtui/nmt-page-wifi.c \
+	src/nmtui/nmt-page-wifi.h \
+	src/nmtui/nmt-password-dialog.c \
+	src/nmtui/nmt-password-dialog.h \
+	src/nmtui/nmt-password-fields.c \
+	src/nmtui/nmt-password-fields.h \
+	src/nmtui/nmt-route-editor.c \
+	src/nmtui/nmt-route-editor.h \
+	src/nmtui/nmt-route-entry.c \
+	src/nmtui/nmt-route-entry.h \
+	src/nmtui/nmt-route-table.c \
+	src/nmtui/nmt-route-table.h \
+	src/nmtui/nmt-slave-list.c \
+	src/nmtui/nmt-slave-list.h \
+	src/nmtui/nmt-utils.c \
+	src/nmtui/nmt-utils.h \
+	src/nmtui/nmt-widget-list.c \
+	src/nmtui/nmt-widget-list.h \
 	$(NULL)
 
-clients_tui_nmtui_CPPFLAGS = \
+src_nmtui_nmtui_CPPFLAGS = \
 	$(clients_cppflags) \
 	$(NEWT_CFLAGS) \
 	$(NULL)
 
-clients_tui_nmtui_LDFLAGS = \
+src_nmtui_nmtui_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-clients_tui_nmtui_LDADD = \
+src_nmtui_nmtui_LDADD = \
 	src/libnmt-newt/libnmt-newt.a \
 	src/libnmc-setting/libnmc-setting.la \
 	src/libnmc-base/libnmc-base.la \
@@ -5027,10 +5023,14 @@ clients_tui_nmtui_LDADD = \
 	$(NEWT_LIBS) \
 	$(NULL)
 
-$(clients_tui_nmtui_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_tui_nmtui_OBJECTS): $(src_libnm_client_public_mkenums_h)
+$(src_nmtui_nmtui_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_nmtui_nmtui_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
-nmtui_links = nmtui-edit nmtui-connect nmtui-hostname
+nmtui_links = \
+	nmtui-edit \
+	nmtui-connect \
+	nmtui-hostname \
+	$(NULL)
 
 install-exec-hook-nmtui:
 	for link in $(nmtui_links); do \
@@ -5048,7 +5048,7 @@ uninstall_hook += uninstall-hook-nmtui
 
 endif
 
-EXTRA_DIST += clients/tui/meson.build
+EXTRA_DIST += src/nmtui/meson.build
 
 ###############################################################################
 # src/nm-cloud-setup

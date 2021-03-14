@@ -93,6 +93,9 @@ endif
 subdir('nmcli')
 subdir('nm-dispatcher')
 subdir('nm-online')
+if enable_nmtui
+  subdir('nmtui')
+endif
 subdir('nm-initrd-generator')
 if enable_nm_cloud_setup
   subdir('nm-cloud-setup')
