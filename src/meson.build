@@ -87,7 +87,9 @@ subdir('libnm-client-impl')
 subdir('libnm-client-aux-extern')
 subdir('libnmc-base')
 subdir('libnmc-setting')
-subdir('libnmt-newt')
+if enable_nmtui
+  subdir('libnmt-newt')
+endif
 subdir('core')
 subdir('nm-dispatcher')
 subdir('nm-online')
