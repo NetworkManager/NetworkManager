@@ -90,6 +90,7 @@ subdir('libnmc-setting')
 if enable_nmtui
   subdir('libnmt-newt')
 endif
+subdir('nmcli')
 subdir('nm-dispatcher')
 subdir('nm-online')
 subdir('nm-initrd-generator')

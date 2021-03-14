@@ -68,7 +68,6 @@ test-*.trs
 /src/nm-dispatcher/org.freedesktop.nm_dispatcher.service
 /src/nm-dispatcher/tests/test-dispatcher-envp
 
-/clients/cli/nmcli
 /clients/tui/nmtui
 
 /data/NetworkManager.service
@@ -168,10 +167,11 @@ test-*.trs
 /src/nm-cloud-setup/nm-cloud-setup.service
 /src/nm-cloud-setup/tests/test-cloud-setup-general
 
-/src/nm-online/nm-online
+/src/nmcli/nmcli
+/src/nmcli/generate-docs-nm-settings-nmcli
+/src/nmcli/generate-docs-nm-settings-nmcli.xml
 
-/clients/cli/generate-docs-nm-settings-nmcli
-/clients/cli/generate-docs-nm-settings-nmcli.xml
+/src/nm-online/nm-online
 
 /m4/codeset.m4
 /m4/gettext.m4
@@ -287,6 +287,9 @@ test-*.trs
 /callouts/nmdbus-dispatcher.*
 /callouts/org.freedesktop.nm_dispatcher.service
 /callouts/tests/test-dispatcher-envp
+/clients/cli/generate-docs-nm-settings-nmcli
+/clients/cli/generate-docs-nm-settings-nmcli.xml
+/clients/cli/nmcli
 /clients/cli/settings-docs.c
 /clients/cloud-setup/nm-cloud-setup
 /clients/cloud-setup/nm-cloud-setup.service

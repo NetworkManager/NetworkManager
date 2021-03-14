@@ -1,16 +1,6 @@
 [encoding: UTF-8]
 # List of source files containing translatable strings.
 # Please keep this file sorted alphabetically.
-clients/cli/agent.c
-clients/cli/common.c
-clients/cli/connections.c
-clients/cli/devices.c
-clients/cli/general.c
-clients/cli/nmcli.c
-clients/cli/polkit-agent.c
-clients/cli/settings.c
-clients/cli/utils.c
-clients/cli/utils.h
 clients/tui/nm-editor-utils.c
 clients/tui/nmt-connect-connection-list.c
 clients/tui/nmt-device-entry.c
@@ -183,3 +173,13 @@ src/libnmc-setting/nm-meta-setting-desc.c
 src/libnmc-setting/settings-docs.h.in
 src/libnmt-newt/nmt-newt-utils.c
 src/nm-online/nm-online.c
+src/nmcli/agent.c
+src/nmcli/common.c
+src/nmcli/connections.c
+src/nmcli/devices.c
+src/nmcli/general.c
+src/nmcli/nmcli.c
+src/nmcli/polkit-agent.c
+src/nmcli/settings.c
+src/nmcli/utils.c
+src/nmcli/utils.h
