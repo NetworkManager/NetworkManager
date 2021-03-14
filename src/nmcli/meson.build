@@ -2,7 +2,9 @@
 
 if enable_nmcli
 
-# FIXME: nmcli-completion should be renamed to nmcli
+# The file is called "nmcli-completion" but should be installed with
+# name "nmcli". Currently it gets renamed by "tools/meson-post-install.sh",
+# but if we depend on meson 0.46.0, we could use "rename" option.
 install_data(
   'nmcli-completion',
   install_dir: join_paths(nm_datadir, 'bash-completion', 'completions'),
@@ -81,7 +83,7 @@ if enable_docs
     args: [
       source_root,
       build_root,
-      'clients/cli/generate-docs-nm-settings-nmcli.xml',
+      'src/nmcli/generate-docs-nm-settings-nmcli.xml',
     ],
   )
 else

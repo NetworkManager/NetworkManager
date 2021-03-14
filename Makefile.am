@@ -1850,7 +1850,7 @@ src/libnm-client-impl/libnm.typelib: src/libnm-client-impl/libnm.gir
 INTROSPECTION_GIRS += src/libnm-client-impl/NM-1.0.gir
 
 libnm_noinst_data = \
-	clients/cli/generate-docs-nm-settings-nmcli.xml \
+	src/nmcli/generate-docs-nm-settings-nmcli.xml \
 	man/nm-settings-docs-dbus.xml \
 	man/nm-settings-docs-nmcli.xml \
 	src/libnm-client-impl/nm-property-infos-dbus.xml \
@@ -1863,17 +1863,17 @@ libnm_noinst_data = \
 
 noinst_DATA += $(libnm_noinst_data)
 
-EXTRA_DIST += clients/cli/generate-docs-nm-settings-nmcli.xml.in
+EXTRA_DIST += src/nmcli/generate-docs-nm-settings-nmcli.xml.in
 
 if BUILD_DOCS
-clients/cli/generate-docs-nm-settings-nmcli.xml: clients/cli/generate-docs-nm-settings-nmcli
-	$(AM_V_GEN) clients/cli/generate-docs-nm-settings-nmcli > "$@"
-check-local-generate-docs-nm-settings-nmcli: clients/cli/generate-docs-nm-settings-nmcli.xml
+src/nmcli/generate-docs-nm-settings-nmcli.xml: src/nmcli/generate-docs-nm-settings-nmcli
+	$(AM_V_GEN) src/nmcli/generate-docs-nm-settings-nmcli > "$@"
+check-local-generate-docs-nm-settings-nmcli: src/nmcli/generate-docs-nm-settings-nmcli.xml
 	$(srcdir)/tools/check-compare-generated.sh "$(srcdir)" "$(builddir)" "$<"
 check_local += check-local-generate-docs-nm-settings-nmcli
-DISTCLEANFILES += clients/cli/generate-docs-nm-settings-nmcli.xml
+DISTCLEANFILES += src/nmcli/generate-docs-nm-settings-nmcli.xml
 else
-clients/cli/generate-docs-nm-settings-nmcli.xml: clients/cli/generate-docs-nm-settings-nmcli.xml.in
+src/nmcli/generate-docs-nm-settings-nmcli.xml: src/nmcli/generate-docs-nm-settings-nmcli.xml.in
 	$(AM_V_GEN) cp $^ $@
 check-local-generate-docs-nm-settings-nmcli:
 endif
@@ -1893,7 +1893,7 @@ src/libnm-client-impl/nm-settings-docs-gir.xml: tools/generate-docs-nm-settings-
 		--gir $(builddir)/src/libnm-client-impl/NM-1.0.gir \
 		--output $@
 
-man/nm-settings-docs-nmcli.xml: clients/cli/generate-docs-nm-settings-nmcli.xml src/libnm-client-impl/nm-property-infos-nmcli.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py man/common.ent
+man/nm-settings-docs-nmcli.xml: src/nmcli/generate-docs-nm-settings-nmcli.xml src/libnm-client-impl/nm-property-infos-nmcli.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py man/common.ent
 	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/tools/generate-docs-nm-settings-docs-merge.py --only-from-first $@ $(wordlist 1,3,$^)
 
 src/libnmc-setting/settings-docs-input.xml: src/libnm-client-impl/nm-property-infos-nmcli.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py
@@ -4737,38 +4737,37 @@ EXTRA_DIST += \
 	$(NULL)
 
 ###############################################################################
-# clients/cli
+# src/nmcli
 ###############################################################################
 
 if BUILD_NMCLI
 
-bin_PROGRAMS += clients/cli/nmcli
+bin_PROGRAMS += src/nmcli/nmcli
 
-clients_cli_nmcli_SOURCES = \
-	clients/cli/common.c \
-	clients/cli/common.h \
-	clients/cli/utils.c \
-	clients/cli/utils.h \
-	clients/cli/agent.c \
-	clients/cli/general.c \
-	clients/cli/connections.c \
-	clients/cli/connections.h \
-	clients/cli/devices.c \
-	clients/cli/devices.h \
-	clients/cli/settings.c \
-	clients/cli/settings.h \
-	clients/cli/nmcli.c \
-	clients/cli/nmcli.h \
-	clients/cli/polkit-agent.c \
-	clients/cli/polkit-agent.h \
+src_nmcli_nmcli_SOURCES = \
+	src/nmcli/common.c \
+	src/nmcli/common.h \
+	src/nmcli/utils.c \
+	src/nmcli/utils.h \
+	src/nmcli/agent.c \
+	src/nmcli/general.c \
+	src/nmcli/connections.c \
+	src/nmcli/connections.h \
+	src/nmcli/devices.c \
+	src/nmcli/devices.h \
+	src/nmcli/settings.c \
+	src/nmcli/settings.h \
+	src/nmcli/nmcli.c \
+	src/nmcli/nmcli.h \
+	src/nmcli/polkit-agent.c \
+	src/nmcli/polkit-agent.h \
 	$(NULL)
 
-clients_cli_nmcli_CPPFLAGS = \
-	-I$(srcdir)/clients/cli \
+src_nmcli_nmcli_CPPFLAGS = \
 	$(clients_cppflags) \
 	$(NULL)
 
-clients_cli_nmcli_LDADD = \
+src_nmcli_nmcli_LDADD = \
 	src/libnmc-setting/libnmc-setting.la \
 	src/libnmc-base/libnmc-base.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
@@ -4782,16 +4781,16 @@ clients_cli_nmcli_LDADD = \
 	$(GLIB_LIBS) \
 	$(READLINE_LIBS)
 
-clients_cli_nmcli_LDFLAGS = \
+src_nmcli_nmcli_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-$(clients_cli_nmcli_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_cli_nmcli_OBJECTS): $(src_libnm_client_public_mkenums_h)
+$(src_nmcli_nmcli_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_nmcli_nmcli_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 install-data-hook-nmcli:
 	$(mkinstalldirs) $(DESTDIR)$(completiondir)
-	$(INSTALL_DATA) $(srcdir)/clients/cli/nmcli-completion $(DESTDIR)$(completiondir)/nmcli
+	$(INSTALL_DATA) $(srcdir)/src/nmcli/nmcli-completion $(DESTDIR)$(completiondir)/nmcli
 
 install_data_hook += install-data-hook-nmcli
 
@@ -4804,17 +4803,17 @@ endif
 
 ###############################################################################
 
-noinst_PROGRAMS += clients/cli/generate-docs-nm-settings-nmcli
+noinst_PROGRAMS += src/nmcli/generate-docs-nm-settings-nmcli
 
-clients_cli_generate_docs_nm_settings_nmcli_SOURCES = \
-	clients/cli/generate-docs-nm-settings-nmcli.c \
+src_nmcli_generate_docs_nm_settings_nmcli_SOURCES = \
+	src/nmcli/generate-docs-nm-settings-nmcli.c \
 	$(NULL)
 
-clients_cli_generate_docs_nm_settings_nmcli_CPPFLAGS = \
+src_nmcli_generate_docs_nm_settings_nmcli_CPPFLAGS = \
 	$(clients_cppflags) \
 	$(NULL)
 
-clients_cli_generate_docs_nm_settings_nmcli_LDADD = \
+src_nmcli_generate_docs_nm_settings_nmcli_LDADD = \
 	src/libnmc-setting/libnmc-setting.la \
 	src/libnmc-base/libnmc-base.la \
 	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
@@ -4828,19 +4827,19 @@ clients_cli_generate_docs_nm_settings_nmcli_LDADD = \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-clients_cli_generate_docs_nm_settings_nmcli_LDFLAGS = \
+src_nmcli_generate_docs_nm_settings_nmcli_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-$(clients_cli_generate_docs_nm_settings_nmcli_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_cli_generate_docs_nm_settings_nmcli_OBJECTS): $(src_libnm_client_public_mkenums_h)
+$(src_nmcli_generate_docs_nm_settings_nmcli_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_nmcli_generate_docs_nm_settings_nmcli_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 ###############################################################################
 
 EXTRA_DIST += \
-	clients/cli/nmcli-completion \
-	clients/cli/meson.build \
+	src/nmcli/nmcli-completion \
+	src/nmcli/meson.build \
 	src/libnmc-setting/settings-docs.xsl \
 	src/libnmc-setting/meson.build \
 	src/libnmc-setting/tests/meson.build
@@ -5185,13 +5184,13 @@ endif
 # clients/tests
 ###############################################################################
 
-check-local-clients-tests-test-client: clients/cli/nmcli clients/tests/test-client.py
+check-local-clients-tests-test-client: src/nmcli/nmcli clients/tests/test-client.py
 	mkdir -p "$(builddir)/clients/tests/"
-	"$(builddir)/clients/cli/nmcli" --version
+	"$(builddir)/src/nmcli/nmcli" --version
 	GI_TYPELIB_PATH="$(abs_builddir)/src/libnm-client-impl$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}" \
 	LD_LIBRARY_PATH="$(abs_builddir)/src/libnm-client-impl/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}" \
 	NM_TEST_CLIENT_BUILDDIR="$(abs_builddir)" \
-	NM_TEST_CLIENT_NMCLI_PATH=clients/cli/nmcli \
+	NM_TEST_CLIENT_NMCLI_PATH=src/nmcli/nmcli \
 	"$(PYTHON)" \
 	$(srcdir)/clients/tests/test-client.py -v &> "$(builddir)/clients/tests/test-client.log" && r=ok; \
 	cat "$(builddir)/clients/tests/test-client.log"; \
