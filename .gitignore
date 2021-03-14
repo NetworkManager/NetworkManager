@@ -68,8 +68,6 @@ test-*.trs
 /src/nm-dispatcher/org.freedesktop.nm_dispatcher.service
 /src/nm-dispatcher/tests/test-dispatcher-envp
 
-/clients/tui/nmtui
-
 /data/NetworkManager.service
 /data/NetworkManager-wait-online.service
 /data/NetworkManager-dispatcher.service
@@ -162,6 +160,8 @@ test-*.trs
 /src/nm-initrd-generator/tests/test-cmdline-reader
 /src/nm-initrd-generator/tests/test-dt-reader
 /src/nm-initrd-generator/tests/test-ibft-reader
+
+/src/nmtui/nmtui
 
 /src/nm-cloud-setup/nm-cloud-setup
 /src/nm-cloud-setup/nm-cloud-setup.service
@@ -301,6 +301,7 @@ test-*.trs
 /clients/common/tests/test-general
 /clients/common/tests/test-libnm-core-aux
 /clients/nm-online
+/clients/tui/nmtui
 /dispatcher/nm-avahi-autoipd.action
 /dispatcher/nm-dispatcher
 /dispatcher/nmdbus-dispatcher.*
