@@ -5185,27 +5185,21 @@ endif
 ###############################################################################
 
 check-local-tests-client: src/nmcli/nmcli src/tests/client/test-client.py
-	mkdir -p "$(builddir)/src/tests/client/"
-	"$(builddir)/src/nmcli/nmcli" --version
-	GI_TYPELIB_PATH="$(abs_builddir)/src/libnm-client-impl$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}" \
-	LD_LIBRARY_PATH="$(abs_builddir)/src/libnm-client-impl/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}" \
-	NM_TEST_CLIENT_BUILDDIR="$(abs_builddir)" \
-	NM_TEST_CLIENT_NMCLI_PATH=src/nmcli/nmcli \
-	"$(PYTHON)" \
-	$(srcdir)/src/tests/client/test-client.py -v &> "$(builddir)/src/tests/client/test-client.log" && r=ok; \
-	cat "$(builddir)/src/tests/client/test-client.log"; \
-	test "$$r" = ok
+	"$(srcdir)/src/tests/client/test-client.sh" "$(builddir)" "$(srcdir)" "$(PYTHON)"
 
 check_local += check-local-tests-client
 
 CLEANFILES += src/tests/client/test-client.log
 
 EXTRA_DIST += \
+	src/tests/client/test-client.sh \
 	src/tests/client/test-client.py \
 	src/tests/client/test-client.check-on-disk/test_001.expected \
 	src/tests/client/test-client.check-on-disk/test_002.expected \
 	src/tests/client/test-client.check-on-disk/test_003.expected \
 	src/tests/client/test-client.check-on-disk/test_004.expected \
+	\
+	src/tests/client/meson.build \
 	$(NULL)
 
 ###############################################################################

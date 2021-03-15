@@ -116,5 +116,6 @@ if enable_tests
   if enable_nm_cloud_setup
     subdir('nm-cloud-setup/tests')
   endif
+  subdir('tests/client')
   subdir('contrib/tests')
 endif

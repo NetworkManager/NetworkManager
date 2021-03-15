@@ -223,6 +223,8 @@ run_meson() {
     fi
     meson build \
         \
+        -Dprefix="$PWD/INST" \
+        \
         --warnlevel 2 \
         $_WITH_WERROR_VAL \
         \
@@ -257,7 +259,10 @@ run_meson() {
         \
         #end
 
+    export NM_TEST_CLIENT_CHECK_L10N=1
+
     ninja -C build
+    ninja -C build install
     ninja -C build test
 
     if _with_valgrind; then
