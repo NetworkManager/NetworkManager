@@ -87,10 +87,20 @@ subdir('libnm-client-impl')
 subdir('libnm-client-aux-extern')
 subdir('libnmc-base')
 subdir('libnmc-setting')
-subdir('libnmt-newt')
-subdir('core')
+if enable_nmtui
+  subdir('libnmt-newt')
+endif
+subdir('nmcli')
 subdir('nm-dispatcher')
 subdir('nm-online')
+if enable_nmtui
+  subdir('nmtui')
+endif
+subdir('nm-initrd-generator')
+if enable_nm_cloud_setup
+  subdir('nm-cloud-setup')
+endif
+subdir('core')
 subdir('contrib')
 
 if enable_tests
@@ -102,5 +112,10 @@ if enable_tests
   subdir('libnm-client-aux-extern/tests')
   subdir('libnmc-setting/tests')
   subdir('nm-dispatcher/tests')
+  subdir('nm-initrd-generator/tests')
+  if enable_nm_cloud_setup
+    subdir('nm-cloud-setup/tests')
+  endif
+  subdir('tests/client')
   subdir('contrib/tests')
 endif

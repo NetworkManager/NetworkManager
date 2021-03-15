@@ -119,6 +119,8 @@ src/libnm-glib-aux/.dirstamp:                       config-extra.h
 src/libnm-glib-aux/tests/.dirstamp:                 config-extra.h
 src/libnm-platform/.dirstamp:                       config-extra.h
 src/libnm-platform/tests/.dirstamp:                 config-extra.h
+src/libnm-platform/wifi/.dirstamp:                  config-extra.h
+src/libnm-platform/wpan/.dirstamp:                  config-extra.h
 src/libnm-std-aux/.dirstamp:                        config-extra.h
 src/libnm-udev-aux/.dirstamp:                       config-extra.h
 src/libnm-systemd-shared/.dirstamp:                 config-extra.h
@@ -491,6 +493,7 @@ src_libnm_base_libnm_base_la_CPPFLAGS = \
 
 src_libnm_base_libnm_base_la_SOURCES = \
 	src/libnm-base/nm-base.h \
+	src/libnm-base/nm-config-base.h \
 	src/libnm-base/nm-ethtool-base.c \
 	src/libnm-base/nm-ethtool-base.h \
 	src/libnm-base/nm-ethtool-utils-base.h \
@@ -1849,7 +1852,7 @@ src/libnm-client-impl/libnm.typelib: src/libnm-client-impl/libnm.gir
 INTROSPECTION_GIRS += src/libnm-client-impl/NM-1.0.gir
 
 libnm_noinst_data = \
-	clients/cli/generate-docs-nm-settings-nmcli.xml \
+	src/nmcli/generate-docs-nm-settings-nmcli.xml \
 	man/nm-settings-docs-dbus.xml \
 	man/nm-settings-docs-nmcli.xml \
 	src/libnm-client-impl/nm-property-infos-dbus.xml \
@@ -1862,17 +1865,17 @@ libnm_noinst_data = \
 
 noinst_DATA += $(libnm_noinst_data)
 
-EXTRA_DIST += clients/cli/generate-docs-nm-settings-nmcli.xml.in
+EXTRA_DIST += src/nmcli/generate-docs-nm-settings-nmcli.xml.in
 
 if BUILD_DOCS
-clients/cli/generate-docs-nm-settings-nmcli.xml: clients/cli/generate-docs-nm-settings-nmcli
-	$(AM_V_GEN) clients/cli/generate-docs-nm-settings-nmcli > "$@"
-check-local-generate-docs-nm-settings-nmcli: clients/cli/generate-docs-nm-settings-nmcli.xml
+src/nmcli/generate-docs-nm-settings-nmcli.xml: src/nmcli/generate-docs-nm-settings-nmcli
+	$(AM_V_GEN) src/nmcli/generate-docs-nm-settings-nmcli > "$@"
+check-local-generate-docs-nm-settings-nmcli: src/nmcli/generate-docs-nm-settings-nmcli.xml
 	$(srcdir)/tools/check-compare-generated.sh "$(srcdir)" "$(builddir)" "$<"
 check_local += check-local-generate-docs-nm-settings-nmcli
-DISTCLEANFILES += clients/cli/generate-docs-nm-settings-nmcli.xml
+DISTCLEANFILES += src/nmcli/generate-docs-nm-settings-nmcli.xml
 else
-clients/cli/generate-docs-nm-settings-nmcli.xml: clients/cli/generate-docs-nm-settings-nmcli.xml.in
+src/nmcli/generate-docs-nm-settings-nmcli.xml: src/nmcli/generate-docs-nm-settings-nmcli.xml.in
 	$(AM_V_GEN) cp $^ $@
 check-local-generate-docs-nm-settings-nmcli:
 endif
@@ -1892,7 +1895,7 @@ src/libnm-client-impl/nm-settings-docs-gir.xml: tools/generate-docs-nm-settings-
 		--gir $(builddir)/src/libnm-client-impl/NM-1.0.gir \
 		--output $@
 
-man/nm-settings-docs-nmcli.xml: clients/cli/generate-docs-nm-settings-nmcli.xml src/libnm-client-impl/nm-property-infos-nmcli.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py man/common.ent
+man/nm-settings-docs-nmcli.xml: src/nmcli/generate-docs-nm-settings-nmcli.xml src/libnm-client-impl/nm-property-infos-nmcli.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py man/common.ent
 	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/tools/generate-docs-nm-settings-docs-merge.py --only-from-first $@ $(wordlist 1,3,$^)
 
 src/libnmc-setting/settings-docs-input.xml: src/libnm-client-impl/nm-property-infos-nmcli.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py
@@ -1990,7 +1993,7 @@ src_contrib_tests_libnm_vpn_plugin_utils_test_la_SOURCES = \
 	src/contrib/nm-vpn-plugin-utils.h \
 	$(NULL)
 
-src_contrib_tests_libnm_vpn_plugin_utils_test_la_CFLAGS = \
+src_contrib_tests_libnm_vpn_plugin_utils_test_la_CPPFLAGS = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
@@ -2714,332 +2717,326 @@ $(src_core_nm_iface_helper_OBJECTS): $(src_libnm_core_public_mkenums_h)
 
 ###############################################################################
 
-noinst_LTLIBRARIES += src/core/initrd/libnmi-core.la
+noinst_LTLIBRARIES += src/nm-initrd-generator/libnmi-core.la
 
-src_core_initrd_libnmi_core_la_CPPFLAGS = \
-	$(src_core_cppflags)
-
-src_core_initrd_libnmi_core_la_SOURCES = \
-	src/core/initrd/nm-initrd-generator.h \
-	src/core/initrd/nmi-cmdline-reader.c \
-	src/core/initrd/nmi-dt-reader.c \
-	src/core/initrd/nmi-ibft-reader.c \
+src_nm_initrd_generator_libnmi_core_la_CPPFLAGS = \
+	$(dflt_cppflags) \
+	-I$(srcdir)/src/libnm-core-public \
+	-I$(builddir)/src/libnm-core-public \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(LIBUDEV_CFLAGS) \
+	$(SYSTEMD_JOURNAL_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
 	$(NULL)
 
-libexec_PROGRAMS += src/core/initrd/nm-initrd-generator
+src_nm_initrd_generator_libnmi_core_la_SOURCES = \
+	src/nm-initrd-generator/nm-initrd-generator.h \
+	src/nm-initrd-generator/nmi-cmdline-reader.c \
+	src/nm-initrd-generator/nmi-dt-reader.c \
+	src/nm-initrd-generator/nmi-ibft-reader.c \
+	$(NULL)
 
-src_core_initrd_nm_initrd_generator_CPPFLAGS = \
-	$(src_core_cppflags)
+libexec_PROGRAMS += src/nm-initrd-generator/nm-initrd-generator
 
-src_core_initrd_nm_initrd_generator_SOURCES = \
-	src/core/initrd/nm-initrd-generator.c
+src_nm_initrd_generator_nm_initrd_generator_CPPFLAGS = \
+	$(dflt_cppflags) \
+	-I$(srcdir)/src/libnm-core-public \
+	-I$(builddir)/src/libnm-core-public \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(LIBUDEV_CFLAGS) \
+	$(SYSTEMD_JOURNAL_CFLAGS) \
+	$(SANITIZER_EXEC_CFLAGS) \
+	$(NULL)
 
-src_core_initrd_nm_initrd_generator_LDADD = \
-	src/core/initrd/libnmi-core.la \
-	src/core/libNetworkManagerBase.la \
-	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
+src_nm_initrd_generator_nm_initrd_generator_LDADD = \
+	src/nm-initrd-generator/libnmi-core.la \
 	src/libnm-core-impl/libnm-core-impl.la \
 	$(libnm_crypto_lib) \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
 	src/libnm-platform/libnm-platform.la \
 	src/libnm-base/libnm-base.la \
 	src/libnm-log-core/libnm-log-core.la \
+	src/libnm-platform/libnm-platform.la \
 	src/libnm-udev-aux/libnm-udev-aux.la \
-	src/libnm-glib-aux/libnm-glib-aux.la \
-	src/libnm-std-aux/libnm-std-aux.la \
 	src/libnm-systemd-shared/libnm-systemd-shared.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	src/n-dhcp4/libn-dhcp4.la \
 	src/c-siphash/libc-siphash.la \
 	$(SYSTEMD_JOURNAL_LIBS) \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-src_core_initrd_nm_initrd_generator_LDFLAGS = \
+src_nm_initrd_generator_nm_initrd_generator_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
-	$(SANITIZER_EXEC_LDFLAGS)
-
-check_programs += src/core/initrd/tests/test-dt-reader
-
-src_core_initrd_tests_test_dt_reader_CPPFLAGS = \
-	$(src_core_cppflags) \
+	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-src_core_initrd_tests_test_dt_reader_LDFLAGS = \
+check_programs += src/nm-initrd-generator/tests/test-dt-reader
+
+src_nm_initrd_generator_tests_test_dt_reader_CPPFLAGS = \
+	$(src_nm_initrd_generator_nm_initrd_generator_CPPFLAGS)
+
+src_nm_initrd_generator_tests_test_dt_reader_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-src_core_initrd_tests_test_dt_reader_LDADD = \
-	src/core/initrd/libnmi-core.la \
-	src/core/libNetworkManagerTest.la \
-	src/libnm-glib-aux/libnm-glib-aux.la \
-	src/libnm-std-aux/libnm-std-aux.la \
-	src/c-siphash/libc-siphash.la \
-	$(GLIB_LIBS) \
-	$(NULL)
+src_nm_initrd_generator_tests_test_dt_reader_LDADD = \
+	$(src_nm_initrd_generator_nm_initrd_generator_LDADD)
 
-check_programs += src/core/initrd/tests/test-ibft-reader
+check_programs += src/nm-initrd-generator/tests/test-ibft-reader
 
-src_core_initrd_tests_test_ibft_reader_CPPFLAGS = \
-	$(src_core_cppflags) \
-	$(NULL)
+src_nm_initrd_generator_tests_test_ibft_reader_CPPFLAGS = \
+	$(src_nm_initrd_generator_nm_initrd_generator_CPPFLAGS)
 
-src_core_initrd_tests_test_ibft_reader_LDFLAGS = \
+src_nm_initrd_generator_tests_test_ibft_reader_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-src_core_initrd_tests_test_ibft_reader_LDADD = \
-	src/core/initrd/libnmi-core.la \
-	src/core/libNetworkManagerTest.la \
-	src/libnm-glib-aux/libnm-glib-aux.la \
-	src/libnm-std-aux/libnm-std-aux.la \
-	src/c-siphash/libc-siphash.la \
-	$(GLIB_LIBS) \
+src_nm_initrd_generator_tests_test_ibft_reader_LDADD = \
+	$(src_nm_initrd_generator_nm_initrd_generator_LDADD)
+
+check_programs += src/nm-initrd-generator/tests/test-cmdline-reader
+
+src_nm_initrd_generator_tests_test_cmdline_reader_CPPFLAGS = \
+	$(src_nm_initrd_generator_nm_initrd_generator_CPPFLAGS)
+
+src_nm_initrd_generator_tests_test_cmdline_reader_LDFLAGS = \
+	$(CODE_COVERAGE_LDFLAGS) \
+	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
+
+src_nm_initrd_generator_tests_test_cmdline_reader_LDADD = \
+	$(src_nm_initrd_generator_nm_initrd_generator_LDADD)
+
+$(src_nm_initrd_generator_libnmi_core_la_OBJECTS):            $(src_libnm_core_public_mkenums_h)
+$(src_nm_initrd_generator_nm_initrd_generator_OBJECTS):       $(src_libnm_core_public_mkenums_h)
+$(src_nm_initrd_generator_tests_test_cmdline_reader_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_nm_initrd_generator_tests_test_ibft_reader_OBJECTS):    $(src_libnm_core_public_mkenums_h)
+$(src_nm_initrd_generator_tests_test_dt_reader_OBJECTS):      $(src_libnm_core_public_mkenums_h)
 
 EXTRA_DIST += \
-	src/core/initrd/meson.build \
-	src/core/initrd/tests/meson.build \
-	src/core/initrd/tests/sysfs/class/net/eth0/address \
-	src/core/initrd/tests/sysfs/class/net/eth2/address \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/prefix-len \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/hostname \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/gateway \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/mac \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/vlan \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/primary-dns \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/dhcp \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/origin \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/secondary-dns \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/ip-addr \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/subnet-mask \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/index \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet0/flags \
-	src/core/initrd/tests/sysfs/firmware/ibft/initiator/isns-server \
-	src/core/initrd/tests/sysfs/firmware/ibft/initiator/initiator-name \
-	src/core/initrd/tests/sysfs/firmware/ibft/initiator/pri-radius-server \
-	src/core/initrd/tests/sysfs/firmware/ibft/initiator/slp-server \
-	src/core/initrd/tests/sysfs/firmware/ibft/initiator/sec-radius-server \
-	src/core/initrd/tests/sysfs/firmware/ibft/initiator/index \
-	src/core/initrd/tests/sysfs/firmware/ibft/initiator/flags \
-	src/core/initrd/tests/sysfs/firmware/ibft/target0/nic-assoc \
-	src/core/initrd/tests/sysfs/firmware/ibft/target0/ip-addr \
-	src/core/initrd/tests/sysfs/firmware/ibft/target0/chap-type \
-	src/core/initrd/tests/sysfs/firmware/ibft/target0/index \
-	src/core/initrd/tests/sysfs/firmware/ibft/target0/lun \
-	src/core/initrd/tests/sysfs/firmware/ibft/target0/flags \
-	src/core/initrd/tests/sysfs/firmware/ibft/target0/port \
-	src/core/initrd/tests/sysfs/firmware/ibft/target2/target-name \
-	src/core/initrd/tests/sysfs/firmware/ibft/target2/nic-assoc \
-	src/core/initrd/tests/sysfs/firmware/ibft/target2/ip-addr \
-	src/core/initrd/tests/sysfs/firmware/ibft/target2/chap-type \
-	src/core/initrd/tests/sysfs/firmware/ibft/target2/index \
-	src/core/initrd/tests/sysfs/firmware/ibft/target2/lun \
-	src/core/initrd/tests/sysfs/firmware/ibft/target2/flags \
-	src/core/initrd/tests/sysfs/firmware/ibft/target2/port \
-	src/core/initrd/tests/sysfs/firmware/ibft/acpi_header/oem_table_id \
-	src/core/initrd/tests/sysfs/firmware/ibft/acpi_header/oem_id \
-	src/core/initrd/tests/sysfs/firmware/ibft/acpi_header/signature \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/prefix-len \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/hostname \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/gateway \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/mac \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/vlan \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/primary-dns \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/dhcp \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/origin \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/secondary-dns \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/ip-addr \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/subnet-mask \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/index \
-	src/core/initrd/tests/sysfs/firmware/ibft/ethernet2/flags \
-	src/core/initrd/tests/sysfs-bad-dns1/class/net/eth0/address \
-	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/prefix-len \
-	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/gateway \
-	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/mac \
-	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/vlan \
-	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/primary-dns \
-	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/origin \
-	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/secondary-dns \
-	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/ip-addr \
-	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/subnet-mask \
-	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/index \
-	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/initiator/initiator-name \
-	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/target0/target-name \
-	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/target0/ip-addr \
-	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/target0/index \
-	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/target0/lun \
-	src/core/initrd/tests/sysfs-bad-dns1/firmware/ibft/target0/port \
-	src/core/initrd/tests/sysfs-bad-dns2/class/net/eth0/address \
-	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/prefix-len \
-	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/gateway \
-	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/mac \
-	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/vlan \
-	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/primary-dns \
-	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/origin \
-	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/secondary-dns \
-	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/ip-addr \
-	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/subnet-mask \
-	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/index \
-	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/initiator/initiator-name \
-	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/target0/target-name \
-	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/target0/ip-addr \
-	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/target0/index \
-	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/target0/lun \
-	src/core/initrd/tests/sysfs-bad-dns2/firmware/ibft/target0/port \
-	src/core/initrd/tests/sysfs-bad-gateway/class/net/eth0/address \
-	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/prefix-len \
-	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/gateway \
-	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/mac \
-	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/vlan \
-	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/primary-dns \
-	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/origin \
-	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/secondary-dns \
-	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/ip-addr \
-	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/subnet-mask \
-	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/index \
-	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/initiator/initiator-name \
-	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/target0/target-name \
-	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/target0/ip-addr \
-	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/target0/index \
-	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/target0/lun \
-	src/core/initrd/tests/sysfs-bad-gateway/firmware/ibft/target0/port \
-	src/core/initrd/tests/sysfs-bad-ipaddr/class/net/eth0/address \
-	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/prefix-len \
-	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/gateway \
-	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/mac \
-	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/vlan \
-	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/primary-dns \
-	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/origin \
-	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/secondary-dns \
-	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/ip-addr \
-	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/subnet-mask \
-	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/index \
-	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/initiator/initiator-name \
-	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/target0/target-name \
-	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/target0/ip-addr \
-	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/target0/index \
-	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/target0/lun \
-	src/core/initrd/tests/sysfs-bad-ipaddr/firmware/ibft/target0/port \
-	src/core/initrd/tests/sysfs-dhcp/class/net/eth0/address \
-	src/core/initrd/tests/sysfs-dhcp/class/net/eth1/address \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/gateway \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/mac \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/vlan \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/primary-dns \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/origin \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/secondary-dns \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet0/index \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/initiator/initiator-name \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target0/target-name \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target0/ip-addr \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target0/index \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target0/lun \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target0/port \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/gateway \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/mac \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/vlan \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/primary-dns \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/origin \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/secondary-dns \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/ethernet1/index \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target1/target-name \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target1/ip-addr \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target1/index \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target1/lun \
-	src/core/initrd/tests/sysfs-dhcp/firmware/ibft/target1/port \
-	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/bootpath \
-	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/bootp-request \
-	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/bootp-response \
-	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/broadcast-ip \
-	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/client-ip \
-	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/client-name \
-	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/domain-name \
-	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/gateway-ip \
-	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/name \
-	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/netmask-ip \
-	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/root-path \
-	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/server-ip \
-	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/tftp-file \
-	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/chosen/vendor-options \
-	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/ethernet/device_type \
-	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/ethernet/local-mac-address \
-	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/ethernet/mac-address \
-	src/core/initrd/tests/sysfs-dt/firmware/devicetree/base/ethernet/name \
-	src/core/initrd/tests/sysfs-dt-tftp/firmware/devicetree/base/chosen/bootpath \
-	src/core/initrd/tests/sysfs-static/class/net/eth0/address \
-	src/core/initrd/tests/sysfs-static/class/net/eth1/address \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/prefix-len \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/gateway \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/mac \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/vlan \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/primary-dns \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/origin \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/secondary-dns \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/ip-addr \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/subnet-mask \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet0/index \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/initiator/initiator-name \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/target0/target-name \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/target0/ip-addr \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/target0/index \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/target0/lun \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/target0/port \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet1/gateway \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet1/mac \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet1/vlan \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet1/primary-dns \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet1/origin \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet1/secondary-dns \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/ethernet1/index \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/target1/target-name \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/target1/ip-addr \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/target1/index \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/target1/lun \
-	src/core/initrd/tests/sysfs-static/firmware/ibft/target1/port \
-	src/core/initrd/tests/sysfs-vlan/class/net/eth0/address \
-	src/core/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/prefix-len \
-	src/core/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/mac \
-	src/core/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/vlan \
-	src/core/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/origin \
-	src/core/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/ip-addr \
-	src/core/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/subnet-mask \
-	src/core/initrd/tests/sysfs-vlan/firmware/ibft/ethernet0/index \
-	src/core/initrd/tests/sysfs-vlan/firmware/ibft/initiator/initiator-name \
-	src/core/initrd/tests/sysfs-vlan/firmware/ibft/target0/target-name \
-	src/core/initrd/tests/sysfs-vlan/firmware/ibft/target0/ip-addr \
-	src/core/initrd/tests/sysfs-vlan/firmware/ibft/target0/index \
-	src/core/initrd/tests/sysfs-vlan/firmware/ibft/target0/lun \
-	src/core/initrd/tests/sysfs-vlan/firmware/ibft/target0/port \
+	src/nm-initrd-generator/meson.build \
+	src/nm-initrd-generator/tests/meson.build \
+	src/nm-initrd-generator/tests/sysfs/class/net/eth0/address \
+	src/nm-initrd-generator/tests/sysfs/class/net/eth2/address \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet0/prefix-len \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet0/hostname \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet0/gateway \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet0/mac \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet0/vlan \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet0/primary-dns \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet0/dhcp \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet0/origin \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet0/secondary-dns \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet0/ip-addr \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet0/subnet-mask \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet0/index \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet0/flags \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/initiator/isns-server \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/initiator/initiator-name \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/initiator/pri-radius-server \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/initiator/slp-server \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/initiator/sec-radius-server \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/initiator/index \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/initiator/flags \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/target0/nic-assoc \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/target0/ip-addr \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/target0/chap-type \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/target0/index \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/target0/lun \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/target0/flags \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/target0/port \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/target2/target-name \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/target2/nic-assoc \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/target2/ip-addr \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/target2/chap-type \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/target2/index \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/target2/lun \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/target2/flags \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/target2/port \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/acpi_header/oem_table_id \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/acpi_header/oem_id \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/acpi_header/signature \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet2/prefix-len \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet2/hostname \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet2/gateway \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet2/mac \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet2/vlan \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet2/primary-dns \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet2/dhcp \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet2/origin \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet2/secondary-dns \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet2/ip-addr \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet2/subnet-mask \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet2/index \
+	src/nm-initrd-generator/tests/sysfs/firmware/ibft/ethernet2/flags \
+	src/nm-initrd-generator/tests/sysfs-bad-dns1/class/net/eth0/address \
+	src/nm-initrd-generator/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/prefix-len \
+	src/nm-initrd-generator/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/gateway \
+	src/nm-initrd-generator/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/mac \
+	src/nm-initrd-generator/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/vlan \
+	src/nm-initrd-generator/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/primary-dns \
+	src/nm-initrd-generator/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/origin \
+	src/nm-initrd-generator/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/secondary-dns \
+	src/nm-initrd-generator/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/ip-addr \
+	src/nm-initrd-generator/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/subnet-mask \
+	src/nm-initrd-generator/tests/sysfs-bad-dns1/firmware/ibft/ethernet0/index \
+	src/nm-initrd-generator/tests/sysfs-bad-dns1/firmware/ibft/initiator/initiator-name \
+	src/nm-initrd-generator/tests/sysfs-bad-dns1/firmware/ibft/target0/target-name \
+	src/nm-initrd-generator/tests/sysfs-bad-dns1/firmware/ibft/target0/ip-addr \
+	src/nm-initrd-generator/tests/sysfs-bad-dns1/firmware/ibft/target0/index \
+	src/nm-initrd-generator/tests/sysfs-bad-dns1/firmware/ibft/target0/lun \
+	src/nm-initrd-generator/tests/sysfs-bad-dns1/firmware/ibft/target0/port \
+	src/nm-initrd-generator/tests/sysfs-bad-dns2/class/net/eth0/address \
+	src/nm-initrd-generator/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/prefix-len \
+	src/nm-initrd-generator/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/gateway \
+	src/nm-initrd-generator/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/mac \
+	src/nm-initrd-generator/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/vlan \
+	src/nm-initrd-generator/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/primary-dns \
+	src/nm-initrd-generator/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/origin \
+	src/nm-initrd-generator/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/secondary-dns \
+	src/nm-initrd-generator/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/ip-addr \
+	src/nm-initrd-generator/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/subnet-mask \
+	src/nm-initrd-generator/tests/sysfs-bad-dns2/firmware/ibft/ethernet0/index \
+	src/nm-initrd-generator/tests/sysfs-bad-dns2/firmware/ibft/initiator/initiator-name \
+	src/nm-initrd-generator/tests/sysfs-bad-dns2/firmware/ibft/target0/target-name \
+	src/nm-initrd-generator/tests/sysfs-bad-dns2/firmware/ibft/target0/ip-addr \
+	src/nm-initrd-generator/tests/sysfs-bad-dns2/firmware/ibft/target0/index \
+	src/nm-initrd-generator/tests/sysfs-bad-dns2/firmware/ibft/target0/lun \
+	src/nm-initrd-generator/tests/sysfs-bad-dns2/firmware/ibft/target0/port \
+	src/nm-initrd-generator/tests/sysfs-bad-gateway/class/net/eth0/address \
+	src/nm-initrd-generator/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/prefix-len \
+	src/nm-initrd-generator/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/gateway \
+	src/nm-initrd-generator/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/mac \
+	src/nm-initrd-generator/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/vlan \
+	src/nm-initrd-generator/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/primary-dns \
+	src/nm-initrd-generator/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/origin \
+	src/nm-initrd-generator/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/secondary-dns \
+	src/nm-initrd-generator/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/ip-addr \
+	src/nm-initrd-generator/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/subnet-mask \
+	src/nm-initrd-generator/tests/sysfs-bad-gateway/firmware/ibft/ethernet0/index \
+	src/nm-initrd-generator/tests/sysfs-bad-gateway/firmware/ibft/initiator/initiator-name \
+	src/nm-initrd-generator/tests/sysfs-bad-gateway/firmware/ibft/target0/target-name \
+	src/nm-initrd-generator/tests/sysfs-bad-gateway/firmware/ibft/target0/ip-addr \
+	src/nm-initrd-generator/tests/sysfs-bad-gateway/firmware/ibft/target0/index \
+	src/nm-initrd-generator/tests/sysfs-bad-gateway/firmware/ibft/target0/lun \
+	src/nm-initrd-generator/tests/sysfs-bad-gateway/firmware/ibft/target0/port \
+	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/class/net/eth0/address \
+	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/prefix-len \
+	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/gateway \
+	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/mac \
+	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/vlan \
+	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/primary-dns \
+	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/origin \
+	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/secondary-dns \
+	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/ip-addr \
+	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/subnet-mask \
+	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/firmware/ibft/ethernet0/index \
+	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/firmware/ibft/initiator/initiator-name \
+	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/firmware/ibft/target0/target-name \
+	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/firmware/ibft/target0/ip-addr \
+	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/firmware/ibft/target0/index \
+	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/firmware/ibft/target0/lun \
+	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/firmware/ibft/target0/port \
+	src/nm-initrd-generator/tests/sysfs-dhcp/class/net/eth0/address \
+	src/nm-initrd-generator/tests/sysfs-dhcp/class/net/eth1/address \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/ethernet0/gateway \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/ethernet0/mac \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/ethernet0/vlan \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/ethernet0/primary-dns \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/ethernet0/origin \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/ethernet0/secondary-dns \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/ethernet0/index \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/initiator/initiator-name \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/target0/target-name \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/target0/ip-addr \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/target0/index \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/target0/lun \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/target0/port \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/ethernet1/gateway \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/ethernet1/mac \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/ethernet1/vlan \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/ethernet1/primary-dns \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/ethernet1/origin \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/ethernet1/secondary-dns \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/ethernet1/index \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/target1/target-name \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/target1/ip-addr \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/target1/index \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/target1/lun \
+	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/target1/port \
+	src/nm-initrd-generator/tests/sysfs-dt/firmware/devicetree/base/chosen/bootpath \
+	src/nm-initrd-generator/tests/sysfs-dt/firmware/devicetree/base/chosen/bootp-request \
+	src/nm-initrd-generator/tests/sysfs-dt/firmware/devicetree/base/chosen/bootp-response \
+	src/nm-initrd-generator/tests/sysfs-dt/firmware/devicetree/base/chosen/broadcast-ip \
+	src/nm-initrd-generator/tests/sysfs-dt/firmware/devicetree/base/chosen/client-ip \
+	src/nm-initrd-generator/tests/sysfs-dt/firmware/devicetree/base/chosen/client-name \
+	src/nm-initrd-generator/tests/sysfs-dt/firmware/devicetree/base/chosen/domain-name \
+	src/nm-initrd-generator/tests/sysfs-dt/firmware/devicetree/base/chosen/gateway-ip \
+	src/nm-initrd-generator/tests/sysfs-dt/firmware/devicetree/base/chosen/name \
+	src/nm-initrd-generator/tests/sysfs-dt/firmware/devicetree/base/chosen/netmask-ip \
+	src/nm-initrd-generator/tests/sysfs-dt/firmware/devicetree/base/chosen/root-path \
+	src/nm-initrd-generator/tests/sysfs-dt/firmware/devicetree/base/chosen/server-ip \
+	src/nm-initrd-generator/tests/sysfs-dt/firmware/devicetree/base/chosen/tftp-file \
+	src/nm-initrd-generator/tests/sysfs-dt/firmware/devicetree/base/chosen/vendor-options \
+	src/nm-initrd-generator/tests/sysfs-dt/firmware/devicetree/base/ethernet/device_type \
+	src/nm-initrd-generator/tests/sysfs-dt/firmware/devicetree/base/ethernet/local-mac-address \
+	src/nm-initrd-generator/tests/sysfs-dt/firmware/devicetree/base/ethernet/mac-address \
+	src/nm-initrd-generator/tests/sysfs-dt/firmware/devicetree/base/ethernet/name \
+	src/nm-initrd-generator/tests/sysfs-dt-tftp/firmware/devicetree/base/chosen/bootpath \
+	src/nm-initrd-generator/tests/sysfs-static/class/net/eth0/address \
+	src/nm-initrd-generator/tests/sysfs-static/class/net/eth1/address \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/ethernet0/prefix-len \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/ethernet0/gateway \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/ethernet0/mac \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/ethernet0/vlan \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/ethernet0/primary-dns \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/ethernet0/origin \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/ethernet0/secondary-dns \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/ethernet0/ip-addr \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/ethernet0/subnet-mask \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/ethernet0/index \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/initiator/initiator-name \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/target0/target-name \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/target0/ip-addr \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/target0/index \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/target0/lun \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/target0/port \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/ethernet1/gateway \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/ethernet1/mac \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/ethernet1/vlan \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/ethernet1/primary-dns \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/ethernet1/origin \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/ethernet1/secondary-dns \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/ethernet1/index \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/target1/target-name \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/target1/ip-addr \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/target1/index \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/target1/lun \
+	src/nm-initrd-generator/tests/sysfs-static/firmware/ibft/target1/port \
+	src/nm-initrd-generator/tests/sysfs-vlan/class/net/eth0/address \
+	src/nm-initrd-generator/tests/sysfs-vlan/firmware/ibft/ethernet0/prefix-len \
+	src/nm-initrd-generator/tests/sysfs-vlan/firmware/ibft/ethernet0/mac \
+	src/nm-initrd-generator/tests/sysfs-vlan/firmware/ibft/ethernet0/vlan \
+	src/nm-initrd-generator/tests/sysfs-vlan/firmware/ibft/ethernet0/origin \
+	src/nm-initrd-generator/tests/sysfs-vlan/firmware/ibft/ethernet0/ip-addr \
+	src/nm-initrd-generator/tests/sysfs-vlan/firmware/ibft/ethernet0/subnet-mask \
+	src/nm-initrd-generator/tests/sysfs-vlan/firmware/ibft/ethernet0/index \
+	src/nm-initrd-generator/tests/sysfs-vlan/firmware/ibft/initiator/initiator-name \
+	src/nm-initrd-generator/tests/sysfs-vlan/firmware/ibft/target0/target-name \
+	src/nm-initrd-generator/tests/sysfs-vlan/firmware/ibft/target0/ip-addr \
+	src/nm-initrd-generator/tests/sysfs-vlan/firmware/ibft/target0/index \
+	src/nm-initrd-generator/tests/sysfs-vlan/firmware/ibft/target0/lun \
+	src/nm-initrd-generator/tests/sysfs-vlan/firmware/ibft/target0/port \
 	$(NULL)
-
-check_programs += src/core/initrd/tests/test-cmdline-reader
-
-src_core_initrd_tests_test_cmdline_reader_CPPFLAGS = \
-	$(src_core_cppflags) \
-	$(NULL)
-
-src_core_initrd_tests_test_cmdline_reader_LDFLAGS = \
-	$(CODE_COVERAGE_LDFLAGS) \
-	$(SANITIZER_EXEC_LDFLAGS)
-
-src_core_initrd_tests_test_cmdline_reader_LDADD = \
-	src/core/initrd/libnmi-core.la \
-	src/core/libNetworkManagerTest.la \
-	src/libnm-glib-aux/libnm-glib-aux.la \
-	src/libnm-std-aux/libnm-std-aux.la \
-	src/c-siphash/libc-siphash.la \
-	$(GLIB_LIBS) \
-	$(NULL)
-
-$(src_core_initrd_libnmi_core_la_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(src_core_initrd_nm_initrd_generator_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(src_core_initrd_tests_test_cmdline_reader_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(src_core_initrd_tests_test_ibft_reader_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(src_core_initrd_tests_test_dt_reader_OBJECTS): $(src_libnm_core_public_mkenums_h)
 
 ###############################################################################
 
@@ -4611,10 +4608,6 @@ $(src_nm_online_nm_online_OBJECTS): $(src_libnm_client_public_mkenums_h)
 EXTRA_DIST += src/nm-online/meson.build
 
 ###############################################################################
-
-EXTRA_DIST += clients/meson.build
-
-###############################################################################
 # src/libnmc-base
 ###############################################################################
 
@@ -4742,38 +4735,37 @@ EXTRA_DIST += \
 	$(NULL)
 
 ###############################################################################
-# clients/cli
+# src/nmcli
 ###############################################################################
 
 if BUILD_NMCLI
 
-bin_PROGRAMS += clients/cli/nmcli
+bin_PROGRAMS += src/nmcli/nmcli
 
-clients_cli_nmcli_SOURCES = \
-	clients/cli/common.c \
-	clients/cli/common.h \
-	clients/cli/utils.c \
-	clients/cli/utils.h \
-	clients/cli/agent.c \
-	clients/cli/general.c \
-	clients/cli/connections.c \
-	clients/cli/connections.h \
-	clients/cli/devices.c \
-	clients/cli/devices.h \
-	clients/cli/settings.c \
-	clients/cli/settings.h \
-	clients/cli/nmcli.c \
-	clients/cli/nmcli.h \
-	clients/cli/polkit-agent.c \
-	clients/cli/polkit-agent.h \
+src_nmcli_nmcli_SOURCES = \
+	src/nmcli/common.c \
+	src/nmcli/common.h \
+	src/nmcli/utils.c \
+	src/nmcli/utils.h \
+	src/nmcli/agent.c \
+	src/nmcli/general.c \
+	src/nmcli/connections.c \
+	src/nmcli/connections.h \
+	src/nmcli/devices.c \
+	src/nmcli/devices.h \
+	src/nmcli/settings.c \
+	src/nmcli/settings.h \
+	src/nmcli/nmcli.c \
+	src/nmcli/nmcli.h \
+	src/nmcli/polkit-agent.c \
+	src/nmcli/polkit-agent.h \
 	$(NULL)
 
-clients_cli_nmcli_CPPFLAGS = \
-	-I$(srcdir)/clients/cli \
+src_nmcli_nmcli_CPPFLAGS = \
 	$(clients_cppflags) \
 	$(NULL)
 
-clients_cli_nmcli_LDADD = \
+src_nmcli_nmcli_LDADD = \
 	src/libnmc-setting/libnmc-setting.la \
 	src/libnmc-base/libnmc-base.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
@@ -4787,16 +4779,16 @@ clients_cli_nmcli_LDADD = \
 	$(GLIB_LIBS) \
 	$(READLINE_LIBS)
 
-clients_cli_nmcli_LDFLAGS = \
+src_nmcli_nmcli_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-$(clients_cli_nmcli_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_cli_nmcli_OBJECTS): $(src_libnm_client_public_mkenums_h)
+$(src_nmcli_nmcli_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_nmcli_nmcli_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 install-data-hook-nmcli:
 	$(mkinstalldirs) $(DESTDIR)$(completiondir)
-	$(INSTALL_DATA) $(srcdir)/clients/cli/nmcli-completion $(DESTDIR)$(completiondir)/nmcli
+	$(INSTALL_DATA) $(srcdir)/src/nmcli/nmcli-completion $(DESTDIR)$(completiondir)/nmcli
 
 install_data_hook += install-data-hook-nmcli
 
@@ -4809,17 +4801,17 @@ endif
 
 ###############################################################################
 
-noinst_PROGRAMS += clients/cli/generate-docs-nm-settings-nmcli
+noinst_PROGRAMS += src/nmcli/generate-docs-nm-settings-nmcli
 
-clients_cli_generate_docs_nm_settings_nmcli_SOURCES = \
-	clients/cli/generate-docs-nm-settings-nmcli.c \
+src_nmcli_generate_docs_nm_settings_nmcli_SOURCES = \
+	src/nmcli/generate-docs-nm-settings-nmcli.c \
 	$(NULL)
 
-clients_cli_generate_docs_nm_settings_nmcli_CPPFLAGS = \
+src_nmcli_generate_docs_nm_settings_nmcli_CPPFLAGS = \
 	$(clients_cppflags) \
 	$(NULL)
 
-clients_cli_generate_docs_nm_settings_nmcli_LDADD = \
+src_nmcli_generate_docs_nm_settings_nmcli_LDADD = \
 	src/libnmc-setting/libnmc-setting.la \
 	src/libnmc-base/libnmc-base.la \
 	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
@@ -4833,19 +4825,19 @@ clients_cli_generate_docs_nm_settings_nmcli_LDADD = \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-clients_cli_generate_docs_nm_settings_nmcli_LDFLAGS = \
+src_nmcli_generate_docs_nm_settings_nmcli_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-$(clients_cli_generate_docs_nm_settings_nmcli_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_cli_generate_docs_nm_settings_nmcli_OBJECTS): $(src_libnm_client_public_mkenums_h)
+$(src_nmcli_generate_docs_nm_settings_nmcli_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_nmcli_generate_docs_nm_settings_nmcli_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 ###############################################################################
 
 EXTRA_DIST += \
-	clients/cli/nmcli-completion \
-	clients/cli/meson.build \
+	src/nmcli/nmcli-completion \
+	src/nmcli/meson.build \
 	src/libnmc-setting/settings-docs.xsl \
 	src/libnmc-setting/meson.build \
 	src/libnmc-setting/tests/meson.build
@@ -4916,108 +4908,108 @@ endif
 EXTRA_DIST += src/libnmt-newt/meson.build
 
 ###############################################################################
-# clients/tui
+# src/nmtui
 ###############################################################################
 
 if BUILD_NMTUI
 
-bin_PROGRAMS += clients/tui/nmtui
+bin_PROGRAMS += src/nmtui/nmtui
 
-clients_tui_nmtui_SOURCES = \
-	clients/tui/nmtui.c \
-	clients/tui/nmtui.h \
-	clients/tui/nmtui-connect.c \
-	clients/tui/nmtui-connect.h \
-	clients/tui/nmtui-edit.c \
-	clients/tui/nmtui-edit.h \
-	clients/tui/nmtui-hostname.c \
-	clients/tui/nmtui-hostname.h \
+src_nmtui_nmtui_SOURCES = \
+	src/nmtui/nmtui.c \
+	src/nmtui/nmtui.h \
+	src/nmtui/nmtui-connect.c \
+	src/nmtui/nmtui-connect.h \
+	src/nmtui/nmtui-edit.c \
+	src/nmtui/nmtui-edit.h \
+	src/nmtui/nmtui-hostname.c \
+	src/nmtui/nmtui-hostname.h \
 	\
-	clients/tui/nm-editor-bindings.c \
-	clients/tui/nm-editor-bindings.h \
-	clients/tui/nm-editor-utils.c \
-	clients/tui/nm-editor-utils.h \
+	src/nmtui/nm-editor-bindings.c \
+	src/nmtui/nm-editor-bindings.h \
+	src/nmtui/nm-editor-utils.c \
+	src/nmtui/nm-editor-utils.h \
 	\
-	clients/tui/nmt-address-list.c \
-	clients/tui/nmt-address-list.h \
-	clients/tui/nmt-connect-connection-list.c \
-	clients/tui/nmt-connect-connection-list.h \
-	clients/tui/nmt-device-entry.c \
-	clients/tui/nmt-device-entry.h \
-	clients/tui/nmt-edit-connection-list.c \
-	clients/tui/nmt-edit-connection-list.h \
-	clients/tui/nmt-editor-grid.c \
-	clients/tui/nmt-editor-grid.h \
-	clients/tui/nmt-editor-page.c \
-	clients/tui/nmt-editor-page.h \
-	clients/tui/nmt-editor-page-device.c \
-	clients/tui/nmt-editor-page-device.h \
-	clients/tui/nmt-editor-section.c \
-	clients/tui/nmt-editor-section.h \
-	clients/tui/nmt-editor.c \
-	clients/tui/nmt-editor.h \
-	clients/tui/nmt-ip-entry.c \
-	clients/tui/nmt-ip-entry.h \
-	clients/tui/nmt-mac-entry.c \
-	clients/tui/nmt-mac-entry.h \
-	clients/tui/nmt-mtu-entry.c \
-	clients/tui/nmt-mtu-entry.h \
-	clients/tui/nmt-page-bond.c \
-	clients/tui/nmt-page-bond.h \
-	clients/tui/nmt-page-bridge.c \
-	clients/tui/nmt-page-bridge.h \
-	clients/tui/nmt-page-bridge-port.c \
-	clients/tui/nmt-page-bridge-port.h \
-	clients/tui/nmt-page-dsl.c \
-	clients/tui/nmt-page-dsl.h \
-	clients/tui/nmt-page-ethernet.c \
-	clients/tui/nmt-page-ethernet.h \
-	clients/tui/nmt-page-infiniband.c \
-	clients/tui/nmt-page-infiniband.h \
-	clients/tui/nmt-page-ip-tunnel.c \
-	clients/tui/nmt-page-ip-tunnel.h \
-	clients/tui/nmt-page-ip4.c \
-	clients/tui/nmt-page-ip4.h \
-	clients/tui/nmt-page-ip6.c \
-	clients/tui/nmt-page-ip6.h \
-	clients/tui/nmt-page-ppp.c \
-	clients/tui/nmt-page-ppp.h \
-	clients/tui/nmt-page-team.c \
-	clients/tui/nmt-page-team.h \
-	clients/tui/nmt-page-team-port.c \
-	clients/tui/nmt-page-team-port.h \
-	clients/tui/nmt-page-vlan.c \
-	clients/tui/nmt-page-vlan.h \
-	clients/tui/nmt-page-wifi.c \
-	clients/tui/nmt-page-wifi.h \
-	clients/tui/nmt-password-dialog.c \
-	clients/tui/nmt-password-dialog.h \
-	clients/tui/nmt-password-fields.c \
-	clients/tui/nmt-password-fields.h \
-	clients/tui/nmt-route-editor.c \
-	clients/tui/nmt-route-editor.h \
-	clients/tui/nmt-route-entry.c \
-	clients/tui/nmt-route-entry.h \
-	clients/tui/nmt-route-table.c \
-	clients/tui/nmt-route-table.h \
-	clients/tui/nmt-slave-list.c \
-	clients/tui/nmt-slave-list.h \
-	clients/tui/nmt-utils.c \
-	clients/tui/nmt-utils.h \
-	clients/tui/nmt-widget-list.c \
-	clients/tui/nmt-widget-list.h \
+	src/nmtui/nmt-address-list.c \
+	src/nmtui/nmt-address-list.h \
+	src/nmtui/nmt-connect-connection-list.c \
+	src/nmtui/nmt-connect-connection-list.h \
+	src/nmtui/nmt-device-entry.c \
+	src/nmtui/nmt-device-entry.h \
+	src/nmtui/nmt-edit-connection-list.c \
+	src/nmtui/nmt-edit-connection-list.h \
+	src/nmtui/nmt-editor-grid.c \
+	src/nmtui/nmt-editor-grid.h \
+	src/nmtui/nmt-editor-page.c \
+	src/nmtui/nmt-editor-page.h \
+	src/nmtui/nmt-editor-page-device.c \
+	src/nmtui/nmt-editor-page-device.h \
+	src/nmtui/nmt-editor-section.c \
+	src/nmtui/nmt-editor-section.h \
+	src/nmtui/nmt-editor.c \
+	src/nmtui/nmt-editor.h \
+	src/nmtui/nmt-ip-entry.c \
+	src/nmtui/nmt-ip-entry.h \
+	src/nmtui/nmt-mac-entry.c \
+	src/nmtui/nmt-mac-entry.h \
+	src/nmtui/nmt-mtu-entry.c \
+	src/nmtui/nmt-mtu-entry.h \
+	src/nmtui/nmt-page-bond.c \
+	src/nmtui/nmt-page-bond.h \
+	src/nmtui/nmt-page-bridge.c \
+	src/nmtui/nmt-page-bridge.h \
+	src/nmtui/nmt-page-bridge-port.c \
+	src/nmtui/nmt-page-bridge-port.h \
+	src/nmtui/nmt-page-dsl.c \
+	src/nmtui/nmt-page-dsl.h \
+	src/nmtui/nmt-page-ethernet.c \
+	src/nmtui/nmt-page-ethernet.h \
+	src/nmtui/nmt-page-infiniband.c \
+	src/nmtui/nmt-page-infiniband.h \
+	src/nmtui/nmt-page-ip-tunnel.c \
+	src/nmtui/nmt-page-ip-tunnel.h \
+	src/nmtui/nmt-page-ip4.c \
+	src/nmtui/nmt-page-ip4.h \
+	src/nmtui/nmt-page-ip6.c \
+	src/nmtui/nmt-page-ip6.h \
+	src/nmtui/nmt-page-ppp.c \
+	src/nmtui/nmt-page-ppp.h \
+	src/nmtui/nmt-page-team.c \
+	src/nmtui/nmt-page-team.h \
+	src/nmtui/nmt-page-team-port.c \
+	src/nmtui/nmt-page-team-port.h \
+	src/nmtui/nmt-page-vlan.c \
+	src/nmtui/nmt-page-vlan.h \
+	src/nmtui/nmt-page-wifi.c \
+	src/nmtui/nmt-page-wifi.h \
+	src/nmtui/nmt-password-dialog.c \
+	src/nmtui/nmt-password-dialog.h \
+	src/nmtui/nmt-password-fields.c \
+	src/nmtui/nmt-password-fields.h \
+	src/nmtui/nmt-route-editor.c \
+	src/nmtui/nmt-route-editor.h \
+	src/nmtui/nmt-route-entry.c \
+	src/nmtui/nmt-route-entry.h \
+	src/nmtui/nmt-route-table.c \
+	src/nmtui/nmt-route-table.h \
+	src/nmtui/nmt-slave-list.c \
+	src/nmtui/nmt-slave-list.h \
+	src/nmtui/nmt-utils.c \
+	src/nmtui/nmt-utils.h \
+	src/nmtui/nmt-widget-list.c \
+	src/nmtui/nmt-widget-list.h \
 	$(NULL)
 
-clients_tui_nmtui_CPPFLAGS = \
+src_nmtui_nmtui_CPPFLAGS = \
 	$(clients_cppflags) \
 	$(NEWT_CFLAGS) \
 	$(NULL)
 
-clients_tui_nmtui_LDFLAGS = \
+src_nmtui_nmtui_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
 	$(SANITIZER_EXEC_LDFLAGS)
 
-clients_tui_nmtui_LDADD = \
+src_nmtui_nmtui_LDADD = \
 	src/libnmt-newt/libnmt-newt.a \
 	src/libnmc-setting/libnmc-setting.la \
 	src/libnmc-base/libnmc-base.la \
@@ -5033,10 +5025,14 @@ clients_tui_nmtui_LDADD = \
 	$(NEWT_LIBS) \
 	$(NULL)
 
-$(clients_tui_nmtui_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_tui_nmtui_OBJECTS): $(src_libnm_client_public_mkenums_h)
+$(src_nmtui_nmtui_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_nmtui_nmtui_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
-nmtui_links = nmtui-edit nmtui-connect nmtui-hostname
+nmtui_links = \
+	nmtui-edit \
+	nmtui-connect \
+	nmtui-hostname \
+	$(NULL)
 
 install-exec-hook-nmtui:
 	for link in $(nmtui_links); do \
@@ -5054,57 +5050,57 @@ uninstall_hook += uninstall-hook-nmtui
 
 endif
 
-EXTRA_DIST += clients/tui/meson.build
+EXTRA_DIST += src/nmtui/meson.build
 
 ###############################################################################
-# clients/nm-cloud-setup
+# src/nm-cloud-setup
 ###############################################################################
 
 if BUILD_NM_CLOUD_SETUP
 
-noinst_LIBRARIES += clients/cloud-setup/libnm-cloud-setup-core.a
+noinst_LIBRARIES += src/nm-cloud-setup/libnm-cloud-setup-core.a
 
-clients_cloud_setup_libnm_cloud_setup_core_a_SOURCES = \
-	clients/cloud-setup/nm-cloud-setup-utils.c \
-	clients/cloud-setup/nm-cloud-setup-utils.h \
-	clients/cloud-setup/nm-http-client.c \
-	clients/cloud-setup/nm-http-client.h \
-	clients/cloud-setup/nmcs-provider.c \
-	clients/cloud-setup/nmcs-provider.h \
-	clients/cloud-setup/nmcs-provider-ec2.c \
-	clients/cloud-setup/nmcs-provider-ec2.h \
-	clients/cloud-setup/nmcs-provider-gcp.c \
-	clients/cloud-setup/nmcs-provider-gcp.h \
-	clients/cloud-setup/nmcs-provider-azure.c \
-	clients/cloud-setup/nmcs-provider-azure.h \
+src_nm_cloud_setup_libnm_cloud_setup_core_a_SOURCES = \
+	src/nm-cloud-setup/nm-cloud-setup-utils.c \
+	src/nm-cloud-setup/nm-cloud-setup-utils.h \
+	src/nm-cloud-setup/nm-http-client.c \
+	src/nm-cloud-setup/nm-http-client.h \
+	src/nm-cloud-setup/nmcs-provider.c \
+	src/nm-cloud-setup/nmcs-provider.h \
+	src/nm-cloud-setup/nmcs-provider-ec2.c \
+	src/nm-cloud-setup/nmcs-provider-ec2.h \
+	src/nm-cloud-setup/nmcs-provider-gcp.c \
+	src/nm-cloud-setup/nmcs-provider-gcp.h \
+	src/nm-cloud-setup/nmcs-provider-azure.c \
+	src/nm-cloud-setup/nmcs-provider-azure.h \
 	$(NULL)
 
-clients_cloud_setup_libnm_cloud_setup_core_a_CPPFLAGS = \
+src_nm_cloud_setup_libnm_cloud_setup_core_a_CPPFLAGS = \
 	$(clients_cppflags) \
 	$(LIBCURL_CFLAGS) \
 	$(NULL)
 
-$(clients_cloud_setup_libnm_cloud_setup_core_a_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_cloud_setup_libnm_cloud_setup_core_a_OBJECTS): $(src_libnm_client_public_mkenums_h)
+$(src_nm_cloud_setup_libnm_cloud_setup_core_a_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_nm_cloud_setup_libnm_cloud_setup_core_a_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
-libexec_PROGRAMS += clients/cloud-setup/nm-cloud-setup
+libexec_PROGRAMS += src/nm-cloud-setup/nm-cloud-setup
 
-clients_cloud_setup_nm_cloud_setup_SOURCES = \
-	clients/cloud-setup/main.c \
+src_nm_cloud_setup_nm_cloud_setup_SOURCES = \
+	src/nm-cloud-setup/main.c \
 	$(NULL)
 
-clients_cloud_setup_nm_cloud_setup_CPPFLAGS = \
+src_nm_cloud_setup_nm_cloud_setup_CPPFLAGS = \
 	$(clients_cppflags) \
 	$(LIBCURL_CFLAGS) \
 	$(NULL)
 
-clients_cloud_setup_nm_cloud_setup_LDFLAGS = \
+src_nm_cloud_setup_nm_cloud_setup_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-clients_cloud_setup_nm_cloud_setup_LDADD = \
-	clients/cloud-setup/libnm-cloud-setup-core.a \
+src_nm_cloud_setup_nm_cloud_setup_LDADD = \
+	src/nm-cloud-setup/libnm-cloud-setup-core.a \
 	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
@@ -5117,21 +5113,21 @@ clients_cloud_setup_nm_cloud_setup_LDADD = \
 	$(LIBCURL_LIBS) \
 	$(NULL)
 
-$(clients_cloud_setup_nm_cloud_setup_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_cloud_setup_nm_cloud_setup_OBJECTS): $(src_libnm_client_public_mkenums_h)
+$(src_nm_cloud_setup_nm_cloud_setup_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_nm_cloud_setup_nm_cloud_setup_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 if HAVE_SYSTEMD
 
 systemdsystemunit_DATA += \
-	clients/cloud-setup/nm-cloud-setup.service \
-	clients/cloud-setup/nm-cloud-setup.timer \
+	src/nm-cloud-setup/nm-cloud-setup.service \
+	src/nm-cloud-setup/nm-cloud-setup.timer \
 	$(NULL)
 
-clients/cloud-setup/nm-cloud-setup.service: $(srcdir)/clients/cloud-setup/nm-cloud-setup.service.in
+src/nm-cloud-setup/nm-cloud-setup.service: $(srcdir)/src/nm-cloud-setup/nm-cloud-setup.service.in
 	$(AM_V_GEN) $(data_edit) $< >$@
 
 install-data-hook-cloud-setup: install-data-hook-dispatcher
-	$(INSTALL_SCRIPT) "$(srcdir)/clients/cloud-setup/90-nm-cloud-setup.sh" "$(DESTDIR)$(nmlibdir)/dispatcher.d/no-wait.d/"
+	$(INSTALL_SCRIPT) "$(srcdir)/src/nm-cloud-setup/90-nm-cloud-setup.sh" "$(DESTDIR)$(nmlibdir)/dispatcher.d/no-wait.d/"
 	ln -fs no-wait.d/90-nm-cloud-setup.sh "$(DESTDIR)$(nmlibdir)/dispatcher.d/90-nm-cloud-setup.sh"
 
 install_data_hook += install-data-hook-cloud-setup
@@ -5145,31 +5141,30 @@ uninstall_hook += uninstall-hook-cloud-setup
 endif
 
 EXTRA_DIST += \
-	clients/cloud-setup/90-nm-cloud-setup.sh \
-	clients/cloud-setup/meson.build \
-	clients/cloud-setup/nm-cloud-setup.service.in \
-	clients/cloud-setup/nm-cloud-setup.timer \
-	clients/cloud-setup/tests/meson.build \
+	src/nm-cloud-setup/90-nm-cloud-setup.sh \
+	src/nm-cloud-setup/meson.build \
+	src/nm-cloud-setup/nm-cloud-setup.service.in \
+	src/nm-cloud-setup/nm-cloud-setup.timer \
+	src/nm-cloud-setup/tests/meson.build \
 	$(NULL)
 
 CLEANFILES += \
-	clients/cloud-setup/nm-cloud-setup.service
+	src/nm-cloud-setup/nm-cloud-setup.service
 
-check_programs += clients/cloud-setup/tests/test-cloud-setup-general
+check_programs += src/nm-cloud-setup/tests/test-cloud-setup-general
 
-clients_cloud_setup_tests_test_cloud_setup_general_CPPFLAGS = \
+src_nm_cloud_setup_tests_test_cloud_setup_general_CPPFLAGS = \
 	$(clients_cppflags) \
-	-I$(srcdir)/clients/cloud-setup \
 	$(LIBCURL_CFLAGS) \
 	$(NULL)
 
-clients_cloud_setup_tests_test_cloud_setup_general_LDFLAGS = \
+src_nm_cloud_setup_tests_test_cloud_setup_general_LDFLAGS = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-clients_cloud_setup_tests_test_cloud_setup_general_LDADD = \
-	clients/cloud-setup/libnm-cloud-setup-core.a \
+src_nm_cloud_setup_tests_test_cloud_setup_general_LDADD = \
+	src/nm-cloud-setup/libnm-cloud-setup-core.a \
 	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
@@ -5182,38 +5177,34 @@ clients_cloud_setup_tests_test_cloud_setup_general_LDADD = \
 	$(LIBCURL_LIBS) \
 	$(NULL)
 
-$(clients_cloud_setup_tests_test_cloud_setup_general_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(clients_cloud_setup_tests_test_cloud_setup_general_OBJECTS): $(src_libnm_client_public_mkenums_h)
+$(src_nm_cloud_setup_tests_test_cloud_setup_general_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_nm_cloud_setup_tests_test_cloud_setup_general_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 endif
 
 ###############################################################################
-# clients/tests
+# src/tests/client
 ###############################################################################
 
-check-local-clients-tests-test-client: clients/cli/nmcli clients/tests/test-client.py
-	mkdir -p "$(builddir)/clients/tests/"
-	"$(builddir)/clients/cli/nmcli" --version
-	GI_TYPELIB_PATH="$(abs_builddir)/src/libnm-client-impl$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}" \
-	LD_LIBRARY_PATH="$(abs_builddir)/src/libnm-client-impl/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}" \
-	NM_TEST_CLIENT_BUILDDIR="$(abs_builddir)" \
-	NM_TEST_CLIENT_NMCLI_PATH=clients/cli/nmcli \
-	"$(PYTHON)" \
-	$(srcdir)/clients/tests/test-client.py -v &> "$(builddir)/clients/tests/test-client.log" && r=ok; \
-	cat "$(builddir)/clients/tests/test-client.log"; \
-	test "$$r" = ok
+check-local-tests-client: src/nmcli/nmcli src/tests/client/test-client.py
+	"$(srcdir)/src/tests/client/test-client.sh" "$(builddir)" "$(srcdir)" "$(PYTHON)"
 
-check_local += check-local-clients-tests-test-client
+check_local += check-local-tests-client
 
-CLEANFILES += clients/tests/test-client.log
+CLEANFILES += src/tests/client/test-client.log
 
 EXTRA_DIST += \
-	clients/tests/test-client.py \
-	clients/tests/test-client.check-on-disk/test_001.expected \
-	clients/tests/test-client.check-on-disk/test_002.expected \
-	clients/tests/test-client.check-on-disk/test_003.expected \
-	clients/tests/test-client.check-on-disk/test_004.expected \
+	src/tests/client/test-client.sh \
+	src/tests/client/test-client.py \
+	src/tests/client/test-client.check-on-disk/test_001.expected \
+	src/tests/client/test-client.check-on-disk/test_002.expected \
+	src/tests/client/test-client.check-on-disk/test_003.expected \
+	src/tests/client/test-client.check-on-disk/test_004.expected \
+	\
+	src/tests/client/meson.build \
 	$(NULL)
+
+###############################################################################
 
 check-local-gitlab-ci:
 	"$(srcdir)/tools/check-gitlab-ci.sh" "$(srcdir)"

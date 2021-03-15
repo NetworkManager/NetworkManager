@@ -3,7 +3,7 @@
  * Copyright (C) 2014 - 2018 Red Hat, Inc.
  */
 
-#include "src/core/nm-default-daemon.h"
+#include "libnm-core-impl/nm-default-libnm-core.h"
 
 #include "nm-initrd-generator.h"
 
@@ -17,9 +17,9 @@
 #include <unistd.h>
 #include <linux/if_ether.h>
 
+#include "libnm-log-core/nm-logging.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-platform/nm-platform-utils.h"
-#include "NetworkManagerUtils.h"
 
 /*****************************************************************************/
 

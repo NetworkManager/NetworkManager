@@ -6,7 +6,7 @@ from __future__ import print_function
 #
 # This test starts NetworkManager stub service in a user D-Bus session,
 # and runs nmcli against it. The output is recorded and compared to a pre-generated
-# expected output (clients/tests/test-client.check-on-disk/*.expected) which
+# expected output (src/tests/client/test-client.check-on-disk/*.expected) which
 # is also committed to git.
 #
 ###############################################################################
@@ -24,15 +24,15 @@ from __future__ import print_function
 #    # of translations must be installed. In practice, the tests only care about
 #    # Polish (pl) translations.
 #    # The important part is that translations work. Test
-#    #  $ LANG=pl_PL.UTF-8 ./clients/cli/nmcli --version
+#    #  $ LANG=pl_PL.UTF-8 ./src/nmcli/nmcli --version
 #    # also ensure that `locale -a` reports the Polish locale.
 #    #
 #    # How to get that right depends on your distro. First check that
 #    # `LANG=pl_PL.UTF-8 /usr/bin/nmcli --version` gives you Polish output
 #    # and that it works in principle.
 #    # Then install NetworkManager in the configured prefix (make install)
-#    # and verify that ./clients/cli/nmcli also gives you Polish.
-#  $ NM_TEST_REGENERATE=1 make check-local-clients-tests-test-client
+#    # and verify that ./src/nmcli/nmcli also gives you Polish.
+#  $ NM_TEST_REGENERATE=1 make check-local-tests-client
 #    # Set NM_TEST_REGENERATE=1 to regenerate all files.
 #  $ git diff ... ; git add ...
 #    # (optional step)
@@ -117,7 +117,7 @@ class PathConfiguration:
 
     @staticmethod
     def top_srcdir():
-        return os.path.abspath(PathConfiguration.srcdir() + "/../..")
+        return os.path.abspath(PathConfiguration.srcdir() + "/../../..")
 
     @staticmethod
     def test_networkmanager_service_path():
@@ -129,7 +129,7 @@ class PathConfiguration:
 
     @staticmethod
     def canonical_script_filename():
-        p = "clients/tests/test-client.py"
+        p = "src/tests/client/test-client.py"
         assert (PathConfiguration.top_srcdir() + "/" + p) == os.path.abspath(__file__)
         return p
 
@@ -408,7 +408,7 @@ class Configuration:
             if v is None:
                 try:
                     v = os.path.abspath(
-                        self.get(ENV_NM_TEST_CLIENT_BUILDDIR) + "/clients/cli/nmcli"
+                        self.get(ENV_NM_TEST_CLIENT_BUILDDIR) + "/src/nmcli/nmcli"
                     )
                 except:
                     pass
