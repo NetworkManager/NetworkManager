@@ -119,6 +119,8 @@ src/libnm-glib-aux/.dirstamp:                       config-extra.h
 src/libnm-glib-aux/tests/.dirstamp:                 config-extra.h
 src/libnm-platform/.dirstamp:                       config-extra.h
 src/libnm-platform/tests/.dirstamp:                 config-extra.h
+src/libnm-platform/wifi/.dirstamp:                  config-extra.h
+src/libnm-platform/wpan/.dirstamp:                  config-extra.h
 src/libnm-std-aux/.dirstamp:                        config-extra.h
 src/libnm-udev-aux/.dirstamp:                       config-extra.h
 src/libnm-systemd-shared/.dirstamp:                 config-extra.h
