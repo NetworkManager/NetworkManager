@@ -1990,7 +1990,7 @@ src_contrib_tests_libnm_vpn_plugin_utils_test_la_SOURCES = \
 	src/contrib/nm-vpn-plugin-utils.h \
 	$(NULL)
 
-src_contrib_tests_libnm_vpn_plugin_utils_test_la_CFLAGS = \
+src_contrib_tests_libnm_vpn_plugin_utils_test_la_CPPFLAGS = \
 	$(dflt_cppflags) \
 	-I$(srcdir)/src \
 	-I$(builddir)/src \
