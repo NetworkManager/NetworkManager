@@ -806,14 +806,24 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
         nm_assert(v->name);
 
-        if (!valid_s390_opts_check(v->name) || v->value_str[0] == '\0'
-            || strlen(v->value_str) > 200) {
+        if (!valid_s390_opts_check(v->name)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("invalid '%s' or its value '%s'"),
-                        v->name,
-                        v->value_str);
+                        _("invalid key '%s'"),
+                        v->name);
+            g_prefix_error(error,
+                           "%s.%s: ",
+                           NM_SETTING_WIRED_SETTING_NAME,
+                           NM_SETTING_WIRED_S390_OPTIONS);
+            return FALSE;
+        }
+        if (v->value_str[0] == '\0' || strlen(v->value_str) > 200u) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("invalid value for key '%s'"),
+                        v->name);
             g_prefix_error(error,
                            "%s.%s: ",
                            NM_SETTING_WIRED_SETTING_NAME,
