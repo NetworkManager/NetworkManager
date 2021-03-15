@@ -816,7 +816,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                            NM_SETTING_WIRED_S390_OPTIONS);
             return FALSE;
         }
-        if (v->value_str[0] == '\0' || strlen(v->value_str) > 200u) {
+        if (!_nm_setting_wired_is_valid_s390_option_value(v->value_str)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,

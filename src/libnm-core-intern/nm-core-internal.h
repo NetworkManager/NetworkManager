@@ -312,6 +312,14 @@ _nm_ip_address_get_attribute_names(const NMIPAddress *addr, gboolean sorted, gui
 void     _nm_setting_wired_clear_s390_options(NMSettingWired *setting);
 gboolean _nm_setting_wired_is_valid_s390_option(const char *option);
 
+#define NM_SETTING_WIRED_S390_OPTION_MAX_LEN 200u
+
+static inline gboolean
+_nm_setting_wired_is_valid_s390_option_value(const char *option)
+{
+    return option && option[0] != '\0' && strlen(option) <= NM_SETTING_WIRED_S390_OPTION_MAX_LEN;
+}
+
 gboolean _nm_ip_route_attribute_validate_all(const NMIPRoute *route, GError **error);
 const char **
 _nm_ip_route_get_attribute_names(const NMIPRoute *route, gboolean sorted, guint *out_length);
