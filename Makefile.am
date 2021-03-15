@@ -5181,32 +5181,34 @@ $(src_nm_cloud_setup_tests_test_cloud_setup_general_OBJECTS): $(src_libnm_client
 endif
 
 ###############################################################################
-# clients/tests
+# src/tests/client
 ###############################################################################
 
-check-local-clients-tests-test-client: src/nmcli/nmcli clients/tests/test-client.py
-	mkdir -p "$(builddir)/clients/tests/"
+check-local-tests-client: src/nmcli/nmcli src/tests/client/test-client.py
+	mkdir -p "$(builddir)/src/tests/client/"
 	"$(builddir)/src/nmcli/nmcli" --version
 	GI_TYPELIB_PATH="$(abs_builddir)/src/libnm-client-impl$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}" \
 	LD_LIBRARY_PATH="$(abs_builddir)/src/libnm-client-impl/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}" \
 	NM_TEST_CLIENT_BUILDDIR="$(abs_builddir)" \
 	NM_TEST_CLIENT_NMCLI_PATH=src/nmcli/nmcli \
 	"$(PYTHON)" \
-	$(srcdir)/clients/tests/test-client.py -v &> "$(builddir)/clients/tests/test-client.log" && r=ok; \
-	cat "$(builddir)/clients/tests/test-client.log"; \
+	$(srcdir)/src/tests/client/test-client.py -v &> "$(builddir)/src/tests/client/test-client.log" && r=ok; \
+	cat "$(builddir)/src/tests/client/test-client.log"; \
 	test "$$r" = ok
 
-check_local += check-local-clients-tests-test-client
+check_local += check-local-tests-client
 
-CLEANFILES += clients/tests/test-client.log
+CLEANFILES += src/tests/client/test-client.log
 
 EXTRA_DIST += \
-	clients/tests/test-client.py \
-	clients/tests/test-client.check-on-disk/test_001.expected \
-	clients/tests/test-client.check-on-disk/test_002.expected \
-	clients/tests/test-client.check-on-disk/test_003.expected \
-	clients/tests/test-client.check-on-disk/test_004.expected \
+	src/tests/client/test-client.py \
+	src/tests/client/test-client.check-on-disk/test_001.expected \
+	src/tests/client/test-client.check-on-disk/test_002.expected \
+	src/tests/client/test-client.check-on-disk/test_003.expected \
+	src/tests/client/test-client.check-on-disk/test_004.expected \
 	$(NULL)
+
+###############################################################################
 
 check-local-gitlab-ci:
 	"$(srcdir)/tools/check-gitlab-ci.sh" "$(srcdir)"

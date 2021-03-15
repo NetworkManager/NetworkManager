@@ -6,7 +6,7 @@ from __future__ import print_function
 #
 # This test starts NetworkManager stub service in a user D-Bus session,
 # and runs nmcli against it. The output is recorded and compared to a pre-generated
-# expected output (clients/tests/test-client.check-on-disk/*.expected) which
+# expected output (src/tests/client/test-client.check-on-disk/*.expected) which
 # is also committed to git.
 #
 ###############################################################################
@@ -32,7 +32,7 @@ from __future__ import print_function
 #    # and that it works in principle.
 #    # Then install NetworkManager in the configured prefix (make install)
 #    # and verify that ./src/nmcli/nmcli also gives you Polish.
-#  $ NM_TEST_REGENERATE=1 make check-local-clients-tests-test-client
+#  $ NM_TEST_REGENERATE=1 make check-local-tests-client
 #    # Set NM_TEST_REGENERATE=1 to regenerate all files.
 #  $ git diff ... ; git add ...
 #    # (optional step)
@@ -117,7 +117,7 @@ class PathConfiguration:
 
     @staticmethod
     def top_srcdir():
-        return os.path.abspath(PathConfiguration.srcdir() + "/../..")
+        return os.path.abspath(PathConfiguration.srcdir() + "/../../..")
 
     @staticmethod
     def test_networkmanager_service_path():
@@ -129,7 +129,7 @@ class PathConfiguration:
 
     @staticmethod
     def canonical_script_filename():
-        p = "clients/tests/test-client.py"
+        p = "src/tests/client/test-client.py"
         assert (PathConfiguration.top_srcdir() + "/" + p) == os.path.abspath(__file__)
         return p
 
