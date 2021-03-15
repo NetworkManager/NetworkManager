@@ -74,7 +74,7 @@ G_DEFINE_TYPE(NMSettingWired, nm_setting_wired, NM_TYPE_SETTING)
 
 /*****************************************************************************/
 
-static const char *valid_s390_opts[] = {
+static const char *const valid_s390_opts[] = {
     "bridge_role",
     "broadcast_mode",
     "buffer_count",
@@ -680,7 +680,7 @@ _nm_setting_wired_clear_s390_options(NMSettingWired *setting)
 const char **
 nm_setting_wired_get_valid_s390_options(NMSettingWired *setting)
 {
-    return valid_s390_opts;
+    return (const char **) valid_s390_opts;
 }
 
 /**
