@@ -38,6 +38,7 @@ executable(
     'nmt-route-entry.c',
     'nmt-route-table.c',
     'nmt-slave-list.c',
+    'nmt-peer-list.c',
     'nmtui.c',
     'nmtui-connect.c',
     'nmtui-edit.c',
