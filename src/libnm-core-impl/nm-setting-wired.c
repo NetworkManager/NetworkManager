@@ -553,7 +553,6 @@ nm_setting_wired_add_s390_option(NMSettingWired *setting, const char *key, const
 {
     NMSettingWiredPrivate *priv;
     gssize                 idx;
-    NMUtilsNamedValue *    v;
 
     g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), FALSE);
     g_return_val_if_fail(value, FALSE);
@@ -569,14 +568,16 @@ nm_setting_wired_add_s390_option(NMSettingWired *setting, const char *key, const
     if (idx < 0) {
         gsize dst_idx = ~idx;
 
-        if (priv->s390_options.n_alloc < priv->s390_options.len + 1) {
-            priv->s390_options.n_alloc = NM_MAX(4, (priv->s390_options.len + 1) * 2);
+        g_return_val_if_fail(priv->s390_options.len < G_MAXUINT32 - 1u, FALSE);
+
+        if (priv->s390_options.n_alloc < ((gsize) priv->s390_options.len) + 1u) {
+            priv->s390_options.n_alloc = NM_MAX(4u, (((gsize) priv->s390_options.len) + 1u) * 2u);
             priv->s390_options.arr =
                 g_realloc(priv->s390_options.arr,
                           priv->s390_options.n_alloc * sizeof(NMUtilsNamedValue));
         }
         if (dst_idx < priv->s390_options.len) {
-            memmove(&priv->s390_options.arr[dst_idx + 1],
+            memmove(&priv->s390_options.arr[dst_idx + 1u],
                     &priv->s390_options.arr[dst_idx],
                     (priv->s390_options.len - dst_idx) * sizeof(NMUtilsNamedValue));
         }
@@ -586,11 +587,8 @@ nm_setting_wired_add_s390_option(NMSettingWired *setting, const char *key, const
         };
         priv->s390_options.len++;
     } else {
-        v = &priv->s390_options.arr[idx];
-        if (nm_streq(value, v->value_str))
+        if (!nm_utils_strdup_reset(&priv->s390_options.arr[idx].value_str_mutable, value))
             return TRUE;
-        g_free((char *) v->value_str);
-        v->value_str = g_strdup(value);
     }
 
     _notify(setting, PROP_S390_OPTIONS);
@@ -628,10 +626,10 @@ nm_setting_wired_remove_s390_option(NMSettingWired *setting, const char *key)
 
     g_free((char *) priv->s390_options.arr[dst_idx].name);
     g_free((char *) priv->s390_options.arr[dst_idx].value_str);
-    if (dst_idx + 1 != priv->s390_options.len) {
+    if (dst_idx + 1u != priv->s390_options.len) {
         memmove(&priv->s390_options.arr[dst_idx],
-                &priv->s390_options.arr[dst_idx + 1],
-                (priv->s390_options.len - dst_idx - 1) * sizeof(NMUtilsNamedValue));
+                &priv->s390_options.arr[dst_idx + 1u],
+                (priv->s390_options.len - dst_idx - 1u) * sizeof(NMUtilsNamedValue));
     }
 
     priv->s390_options.len--;
@@ -1094,23 +1092,27 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
         hash = g_value_get_boxed(value);
 
-        priv->s390_options.n_alloc = hash ? g_hash_table_size(hash) : 0u;
+        priv->s390_options.n_alloc = nm_g_hash_table_size(hash);
 
-        if (priv->s390_options.n_alloc > 0) {
+        if (priv->s390_options.n_alloc > 0u) {
             gboolean       invalid_content = FALSE;
             GHashTableIter iter;
             const char *   key;
             const char *   val;
-            guint          i, j;
+            guint          j;
+            guint          i;
 
             priv->s390_options.arr = g_new(NMUtilsNamedValue, priv->s390_options.n_alloc);
+
             g_hash_table_iter_init(&iter, hash);
             while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &val)) {
                 if (!key || !val) {
                     invalid_content = TRUE;
                     continue;
                 }
+
                 nm_assert(priv->s390_options.len < priv->s390_options.n_alloc);
+
                 priv->s390_options.arr[priv->s390_options.len] = (NMUtilsNamedValue){
                     .name      = g_strdup(key),
                     .value_str = g_strdup(val),
@@ -1123,10 +1125,10 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                                                NULL,
                                                NULL);
                 /* prune duplicate keys. This is only possible if @hash does not use
-                     * g_str_equal() as compare function (which would be a bug).
-                     * Still, handle this, because we use later binary sort and rely
-                     * on unique names. One bug here, should not bork the remainder
-                     * of the program. */
+                 * g_str_equal() as compare function (which would be a bug).
+                 * Still, handle this, because we use later binary sort and rely
+                 * on unique names. One bug here, should not bork the remainder
+                 * of the program. */
                 j = 1;
                 for (i = 1; i < priv->s390_options.len; i++) {
                     if (nm_streq(priv->s390_options.arr[j - 1].name,
