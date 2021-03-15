@@ -111,23 +111,22 @@ static const char *const valid_s390_opts[] = {
 static gboolean
 valid_s390_opts_check(const char *option)
 {
-#if NM_MORE_ASSERTS > 5
-    nm_assert(NM_PTRARRAY_LEN(valid_s390_opts) + 1 == G_N_ELEMENTS(valid_s390_opts));
-    {
+    if (NM_MORE_ASSERT_ONCE(10)) {
         gsize i;
 
+        nm_assert(NM_PTRARRAY_LEN(valid_s390_opts) + 1u == G_N_ELEMENTS(valid_s390_opts));
+
         for (i = 0; i < G_N_ELEMENTS(valid_s390_opts); i++) {
-            if (i == G_N_ELEMENTS(valid_s390_opts) - 1)
+            if (i == G_N_ELEMENTS(valid_s390_opts) - 1u)
                 nm_assert(!valid_s390_opts[i]);
             else {
                 nm_assert(valid_s390_opts[i]);
                 nm_assert(valid_s390_opts[i][0] != '\0');
                 if (i > 0)
-                    g_assert(strcmp(valid_s390_opts[i - 1], valid_s390_opts[i]) < 0);
+                    nm_assert(strcmp(valid_s390_opts[i - 1], valid_s390_opts[i]) < 0);
             }
         }
     }
-#endif
 
     return option
            && (nm_utils_array_find_binary_search(valid_s390_opts,
