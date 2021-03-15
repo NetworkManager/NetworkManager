@@ -108,8 +108,8 @@ static const char *const valid_s390_opts[] = {
     NULL,
 };
 
-static gboolean
-valid_s390_opts_check(const char *option)
+gboolean
+_nm_setting_wired_is_valid_s390_option(const char *option)
 {
     if (NM_MORE_ASSERT_ONCE(10)) {
         gsize i;
@@ -804,7 +804,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
         nm_assert(v->name);
 
-        if (!valid_s390_opts_check(v->name)) {
+        if (!_nm_setting_wired_is_valid_s390_option(v->name)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
