@@ -549,7 +549,6 @@ test_if_off(void)
         const char name[32];
         const char ipv4_method[32];
         const char ipv6_method[32];
-
     } conn_expected[] = {
         {"default_connection",
          NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
@@ -558,11 +557,12 @@ test_if_off(void)
         {"ens4", NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NM_SETTING_IP6_CONFIG_METHOD_DISABLED},
         {"ens5", NM_SETTING_IP4_CONFIG_METHOD_DISABLED, NM_SETTING_IP6_CONFIG_METHOD_MANUAL},
     };
+    guint i;
 
     connections = _parse_cons(ARGV);
     g_assert_cmpint(g_hash_table_size(connections), ==, G_N_ELEMENTS(conn_expected));
 
-    for (int i = 0; i < G_N_ELEMENTS(conn_expected); ++i) {
+    for (i = 0; i < G_N_ELEMENTS(conn_expected); i++) {
         connection = g_hash_table_lookup(connections, conn_expected[i].name);
         nmtst_assert_connection_verifies_without_normalization(connection);
 
