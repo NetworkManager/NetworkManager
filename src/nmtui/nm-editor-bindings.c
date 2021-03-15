@@ -576,6 +576,229 @@ nm_editor_bind_ip_route_to_strings(int           addr_family,
                                 NULL);
 }
 
+gboolean
+peer_transform_to_public_key_string(GBinding *    binding,
+                                    const GValue *source_value,
+                                    GValue *      target_value,
+                                    gpointer      user_data)
+{
+    NMWireGuardPeer *peer;
+    char *           string;
+
+    peer = g_value_get_boxed(source_value);
+    if (peer && nm_wireguard_peer_get_public_key(peer)) {
+        string = g_strdup(nm_wireguard_peer_get_public_key(peer));
+        g_value_take_string(target_value, string);
+    } else
+        g_value_set_string(target_value, "");
+    return TRUE;
+}
+
+gboolean
+peer_transform_to_allowed_ips_string(GBinding *    binding,
+                                     const GValue *source_value,
+                                     GValue *      target_value,
+                                     gpointer      user_data)
+{
+    NMWireGuardPeer *peer;
+    GString *        string = NULL;
+    guint            i, len;
+
+    peer = g_value_get_boxed(source_value);
+    if (!peer)
+        return TRUE;
+
+    len = nm_wireguard_peer_get_allowed_ips_len(peer);
+    for (i = 0; i < len; i++) {
+        if (!string)
+            string = g_string_new("");
+        else
+            g_string_append_c(string, ',');
+        g_string_append(string, nm_wireguard_peer_get_allowed_ip(peer, i, NULL));
+    }
+    if (string)
+        g_value_take_string(target_value, g_string_free(string, FALSE));
+
+    return TRUE;
+}
+
+gboolean
+peer_transform_to_endpoint_string(GBinding *    binding,
+                                  const GValue *source_value,
+                                  GValue *      target_value,
+                                  gpointer      user_data)
+{
+    NMWireGuardPeer *peer;
+    char *           string;
+
+    peer = g_value_get_boxed(source_value);
+    if (peer && nm_wireguard_peer_get_endpoint(peer)) {
+        string = g_strdup_printf("%s", nm_wireguard_peer_get_endpoint(peer));
+        g_value_take_string(target_value, string);
+    } else
+        g_value_set_string(target_value, "");
+    return TRUE;
+}
+
+gboolean
+peer_transform_to_preshared_key_string(GBinding *    binding,
+                                       const GValue *source_value,
+                                       GValue *      target_value,
+                                       gpointer      user_data)
+{
+    NMWireGuardPeer *peer;
+    char *           string;
+
+    peer = g_value_get_boxed(source_value);
+    if (peer && nm_wireguard_peer_get_preshared_key(peer)) {
+        string = g_strdup_printf("%s", nm_wireguard_peer_get_preshared_key(peer));
+        g_value_take_string(target_value, string);
+    } else
+        g_value_set_string(target_value, "");
+    return TRUE;
+}
+
+gboolean
+peer_transform_to_persistent_keepalive_string(GBinding *    binding,
+                                              const GValue *source_value,
+                                              GValue *      target_value,
+                                              gpointer      user_data)
+{
+    NMWireGuardPeer *peer;
+    char *           string;
+
+    peer = g_value_get_boxed(source_value);
+    if (peer && nm_wireguard_peer_get_persistent_keepalive(peer)) {
+        string = g_strdup_printf("%d", nm_wireguard_peer_get_persistent_keepalive(peer));
+        g_value_take_string(target_value, string);
+    } else
+        g_value_set_string(target_value, "");
+    return TRUE;
+}
+
+gboolean
+peer_transform_from_public_key_string(GBinding *    binding,
+                                      const GValue *source_value,
+                                      GValue *      target_value,
+                                      gpointer      user_data)
+{
+    NMWireGuardPeer *peer;
+    const char *     text;
+
+    text = g_value_get_string(source_value);
+
+    /* Fetch the original property value */
+    g_object_get(g_binding_get_source(binding),
+                 g_binding_get_source_property(binding),
+                 &peer,
+                 NULL);
+
+    nm_wireguard_peer_set_public_key(peer, text, TRUE);
+
+    g_value_take_boxed(target_value, peer);
+    return TRUE;
+}
+
+gboolean
+peer_transform_from_allowed_ips_string(GBinding *    binding,
+                                       const GValue *source_value,
+                                       GValue *      target_value,
+                                       gpointer      user_data)
+{
+    NMWireGuardPeer *peer;
+    const char *     text;
+    char **          strv;
+    guint            i;
+
+    text = g_value_get_string(source_value);
+
+    /* Fetch the original property value */
+    g_object_get(g_binding_get_source(binding),
+                 g_binding_get_source_property(binding),
+                 &peer,
+                 NULL);
+
+    nm_wireguard_peer_clear_allowed_ips(peer);
+
+    strv = g_strsplit(text, ",", -1);
+    for (i = 0; strv && strv[i]; i++)
+        nm_wireguard_peer_append_allowed_ip(peer, g_strstrip(strv[i]), TRUE);
+    g_strfreev(strv);
+
+    g_value_take_boxed(target_value, peer);
+    return TRUE;
+}
+
+gboolean
+peer_transform_from_endpoint_string(GBinding *    binding,
+                                    const GValue *source_value,
+                                    GValue *      target_value,
+                                    gpointer      user_data)
+{
+    NMWireGuardPeer *peer;
+    const char *     text;
+
+    text = g_value_get_string(source_value);
+
+    /* Fetch the original property value */
+    g_object_get(g_binding_get_source(binding),
+                 g_binding_get_source_property(binding),
+                 &peer,
+                 NULL);
+
+    nm_wireguard_peer_set_endpoint(peer, text, TRUE);
+
+    g_value_take_boxed(target_value, peer);
+    return TRUE;
+}
+
+gboolean
+peer_transform_from_preshared_key_string(GBinding *    binding,
+                                         const GValue *source_value,
+                                         GValue *      target_value,
+                                         gpointer      user_data)
+{
+    NMWireGuardPeer *peer;
+    const char *     text;
+
+    text = g_value_get_string(source_value);
+
+    /* Fetch the original property value */
+    g_object_get(g_binding_get_source(binding),
+                 g_binding_get_source_property(binding),
+                 &peer,
+                 NULL);
+
+    nm_wireguard_peer_set_preshared_key(peer, text && text[0] ? text : NULL, TRUE);
+    nm_wireguard_peer_set_preshared_key_flags(peer, NM_SETTING_SECRET_FLAG_NONE);
+
+    g_value_take_boxed(target_value, peer);
+    return TRUE;
+}
+
+gboolean
+peer_transform_from_persistent_keepalive_string(GBinding *    binding,
+                                                const GValue *source_value,
+                                                GValue *      target_value,
+                                                gpointer      user_data)
+{
+    NMWireGuardPeer *peer;
+    const char *     text;
+
+    text = g_value_get_string(source_value);
+
+    /* Fetch the original property value */
+    g_object_get(g_binding_get_source(binding),
+                 g_binding_get_source_property(binding),
+                 &peer,
+                 NULL);
+
+    nm_wireguard_peer_set_persistent_keepalive(peer, atoi(text));
+
+    g_value_take_boxed(target_value, peer);
+    return TRUE;
+}
+
 /* Wireless security method binding */
 typedef struct {
     NMConnection *             connection;

@@ -13,11 +13,16 @@
 
 #include "nmt-device-entry.h"
 #include "nmt-mtu-entry.h"
+#include "nmt-wireguard-peer-list.h"
 
 G_DEFINE_TYPE(NmtPageWireGuard, nmt_page_wireguard, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
 #define NMT_PAGE_WIREGUARD_GET_PRIVATE(o) \
     (G_TYPE_INSTANCE_GET_PRIVATE((o), NMT_TYPE_PAGE_WIREGUARD, NmtPageWireGuardPrivate))
+
+typedef struct {
+    NmtWireguardPeerList *peers;
+} NmtPageWireGuardPrivate;
 
 NmtEditorPage *
 nmt_page_wireguard_new(NMConnection *conn, NmtDeviceEntry *deventry)
@@ -95,6 +100,14 @@ nmt_page_wireguard_constructed(GObject *object)
                            widget,
                            "active",
                            G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
+
+    widget = nmt_newt_separator_new();
+    nmt_editor_grid_append(grid, _("Peers"), widget, NULL);
+    nmt_editor_grid_set_row_flags(grid, widget, NMT_EDITOR_GRID_ROW_LABEL_ALIGN_LEFT);
+
+    widget = nmt_wireguard_peer_list_new(s_wireguard);
+    nmt_editor_grid_append(grid, NULL, widget, NULL);
+    priv->peers = NMT_WIREGUARD_PEER_LIST(widget);
 
     nmt_editor_page_add_section(NMT_EDITOR_PAGE(wireguard), section);
 

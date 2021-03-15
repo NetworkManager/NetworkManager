@@ -5126,6 +5126,10 @@ src_nmtui_nmtui_SOURCES = \
 	src/nmtui/nmt-route-table.h \
 	src/nmtui/nmt-slave-list.c \
 	src/nmtui/nmt-slave-list.h \
+	src/nmtui/nmt-wireguard-peer-list.c \
+	src/nmtui/nmt-wireguard-peer-list.h \
+	src/nmtui/nmt-wireguard-peer-editor.c \
+	src/nmtui/nmt-wireguard-peer-editor.h \
 	src/nmtui/nmt-utils.c \
 	src/nmtui/nmt-utils.h \
 	src/nmtui/nmt-widget-list.c \
