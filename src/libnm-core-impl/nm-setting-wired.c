@@ -524,7 +524,7 @@ nm_setting_wired_get_s390_option_by_key(NMSettingWired *setting, const char *key
     gssize                 idx;
 
     g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), NULL);
-    g_return_val_if_fail(key && key[0], NULL);
+    g_return_val_if_fail(key, NULL);
 
     priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
 
@@ -540,13 +540,13 @@ nm_setting_wired_get_s390_option_by_key(NMSettingWired *setting, const char *key
  * @key: key name for the option
  * @value: value for the option
  *
- * Add an option to the table.  The option is compared to an internal list
- * of allowed options.  Key names may contain only alphanumeric characters
- * (ie [a-zA-Z0-9]).  Adding a new key replaces any existing key/value pair that
- * may already exist.
+ * Add an option to the table. If the key already exists, the value gets
+ * replaced.
  *
- * Returns: %TRUE if the option was valid and was added to the internal option
- * list, %FALSE if it was not.
+ * Before 1.32, the function would assert that the key is valid. Since then,
+ * an invalid key gets silently added but renders the profile as invalid.
+ *
+ * Returns: since 1.32 this always returns %TRUE.
  **/
 gboolean
 nm_setting_wired_add_s390_option(NMSettingWired *setting, const char *key, const char *value)
@@ -555,12 +555,8 @@ nm_setting_wired_add_s390_option(NMSettingWired *setting, const char *key, const
     gssize                 idx;
 
     g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), FALSE);
+    g_return_val_if_fail(key, FALSE);
     g_return_val_if_fail(value, FALSE);
-
-    if (!valid_s390_opts_check(key)) {
-        g_return_val_if_fail(key, FALSE);
-        return FALSE;
-    }
 
     priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
 
