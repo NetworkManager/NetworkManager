@@ -122,7 +122,7 @@ nm_main_utils_ensure_statedir()
         exit(1);
     }
     /* Ensure state directory exists */
-    if (g_mkdir_with_parents(NMSTATEDIR, 0700) != 0) {
+    if (g_mkdir_with_parents(NMSTATEDIR, 0755) != 0) {
         errsv = errno;
         fprintf(stderr, "Cannot create '%s': %s", NMSTATEDIR, nm_strerror_native(errsv));
         exit(1);

@@ -176,7 +176,7 @@ install-data-hook-dirs:
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/conf.d
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/VPN
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmlibdir)/system-connections
-	$(mkinstalldirs) -m 0700 $(DESTDIR)$(nmstatedir)
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(nmstatedir)
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(plugindir)
 
 install_data_hook += install-data-hook-dirs
