@@ -1727,9 +1727,11 @@ typedef struct {
     union {
         NMUtilsNamedEntry named_entry;
         const char *      name;
+        char *            name_mutable;
     };
     union {
         const char *value_str;
+        char *      value_str_mutable;
         gpointer    value_ptr;
     };
 } NMUtilsNamedValue;
