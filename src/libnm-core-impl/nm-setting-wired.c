@@ -129,12 +129,9 @@ valid_s390_opts_check(const char *option)
     }
 
     return option
-           && (nm_utils_array_find_binary_search(valid_s390_opts,
-                                                 sizeof(const char *),
-                                                 G_N_ELEMENTS(valid_s390_opts) - 1,
-                                                 &option,
-                                                 nm_strcmp_p_with_data,
-                                                 NULL)
+           && (nm_utils_strv_find_binary_search(valid_s390_opts,
+                                                G_N_ELEMENTS(valid_s390_opts) - 1,
+                                                option)
                >= 0);
 }
 
