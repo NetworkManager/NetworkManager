@@ -2018,9 +2018,15 @@ gssize nm_utils_ptrarray_find_binary_search(gconstpointer *  list,
                                             gsize            len,
                                             gconstpointer    needle,
                                             GCompareDataFunc cmpfcn,
-                                            gpointer         user_data,
-                                            gssize *         out_idx_first,
-                                            gssize *         out_idx_last);
+                                            gpointer         user_data);
+
+gssize nm_utils_ptrarray_find_binary_search_range(gconstpointer *  list,
+                                                  gsize            len,
+                                                  gconstpointer    needle,
+                                                  GCompareDataFunc cmpfcn,
+                                                  gpointer         user_data,
+                                                  gssize *         out_idx_first,
+                                                  gssize *         out_idx_last);
 
 #define nm_utils_strv_find_binary_search(strv, len, needle)           \
     ({                                                                \
@@ -2035,8 +2041,6 @@ gssize nm_utils_ptrarray_find_binary_search(gconstpointer *  list,
                                              _len,                    \
                                              _needle,                 \
                                              nm_strcmp_with_data,     \
-                                             NULL,                    \
-                                             NULL,                    \
                                              NULL);                   \
     })
 

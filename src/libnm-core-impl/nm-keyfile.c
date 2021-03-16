@@ -3087,8 +3087,6 @@ _parse_info_find(NMSetting *               setting,
                                                    NM_PTRARRAY_LEN(pis->properties),
                                                    &property_name,
                                                    nm_strcmp_p_with_data,
-                                                   NULL,
-                                                   NULL,
                                                    NULL);
         if (idx >= 0)
             pip = pis->properties[idx];

@@ -751,8 +751,6 @@ nml_dbus_meta_iface_get(const char *dbus_iface_name)
                                                    G_N_ELEMENTS(_nml_dbus_meta_ifaces),
                                                    &dbus_iface_name[NM_STRLEN(COMMON_PREFIX)],
                                                    _strcmp_common_prefix,
-                                                   NULL,
-                                                   NULL,
                                                    NULL);
     } else
         return NULL;
