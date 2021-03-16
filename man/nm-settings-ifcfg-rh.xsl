@@ -228,9 +228,10 @@ DEVICETYPE=TeamPort
               </para></listitem>
             </varlistentry>
             <varlistentry>
-              <term><emphasis role="bold">Semantic change of variables</emphasis></term>
-              <listitem><para>
-                NetworkManager had to slightly change the semantic for a few variables.
+              <term><emphasis role="bold">Semantic change of variables and differences</emphasis></term>
+              <listitem>
+                <para>
+                  NetworkManager changes the semantics for a few variables and there are other behavioral differences.
                 <itemizedlist>
                   <listitem>
                     <para><literal>PEERDNS</literal> -
@@ -253,14 +254,22 @@ DEVICETYPE=TeamPort
                     connection sharing. When <emphasis>shared</emphasis> is used, NetworkManager
                     assigns the interface 10.42.0.1, or it uses the first static address,
                     if configured.</para>
-                 </listitem>
+                  </listitem>
                   <listitem>
                     <para><literal>HWADDR</literal> -
                     initscripts compare the currently set hardware address of a device, while
                     NetworkManager considers the permanent one.</para>
                   </listitem>
+                  <listitem>
+                    <para><literal>NOZEROCONF</literal> -
+                    initscripts add an on-link route to 169.254.0.0/16 for ethernet profiles that don't
+                    explicitly opt-out by setting <literal>NOZEROCONF</literal> variable. NetworkManager does
+                    not do that. Instead a static, manual route with scope=253 (link) should be added to get
+                    that behavior.</para>
+                  </listitem>
                 </itemizedlist>
-              </para></listitem>
+                </para>
+              </listitem>
             </varlistentry>
           </variablelist>
         </para>
