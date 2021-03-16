@@ -5466,7 +5466,7 @@ plugin_LTLIBRARIES += $(core_plugins)
 TESTS += $(check_programs)
 
 EXTRA_DIST += \
-	CONTRIBUTING \
+	CONTRIBUTING.md \
 	COPYING.LGPL \
 	COPYING.GFDL \
 	\

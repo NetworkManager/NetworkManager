@@ -1019,7 +1019,7 @@ fi
 %{systemd_dir}/NetworkManager-dispatcher.service
 %dir %{_datadir}/doc/NetworkManager/examples
 %{_datadir}/doc/NetworkManager/examples/server.conf
-%doc NEWS AUTHORS README CONTRIBUTING TODO
+%doc NEWS AUTHORS README CONTRIBUTING.md TODO
 %license COPYING
 %license COPYING.LGPL
 %license COPYING.GFDL
