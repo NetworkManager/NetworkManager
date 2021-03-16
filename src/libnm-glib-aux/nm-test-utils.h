@@ -977,6 +977,8 @@ nmtst_rand_buf(GRand *rand, gpointer buffer, gsize buffer_length)
 
 #define nmtst_rand_select(...) _nmtst_rand_select(NM_UNIQ, __VA_ARGS__)
 
+#define nmtst_rand_select_str(x, ...) nmtst_rand_select((const char *) (x), ##__VA_ARGS__)
+
 static inline void *
 nmtst_rand_perm(GRand *rand, void *dst, const void *src, gsize elmt_size, gsize n_elmt)
 {

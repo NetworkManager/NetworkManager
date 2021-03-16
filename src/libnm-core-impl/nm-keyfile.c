@@ -2286,6 +2286,8 @@ wired_s390_options_parser_full(KeyfileReaderInfo *       info,
         if (!value)
             continue;
 
+        /* Here we don't verify the key/value further. If the file contains invalid keys,
+         * we will later reject the connection as invalid. */
         nm_setting_wired_add_s390_option(s_wired,
                                          nm_keyfile_key_decode(keys[i], &key_to_free),
                                          value);
@@ -3085,8 +3087,6 @@ _parse_info_find(NMSetting *               setting,
                                                    NM_PTRARRAY_LEN(pis->properties),
                                                    &property_name,
                                                    nm_strcmp_p_with_data,
-                                                   NULL,
-                                                   NULL,
                                                    NULL);
         if (idx >= 0)
             pip = pis->properties[idx];

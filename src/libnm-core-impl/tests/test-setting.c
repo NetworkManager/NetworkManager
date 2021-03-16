@@ -2904,17 +2904,20 @@ _rndt_wired_add_s390_options(NMSettingWired *s_wired, char **out_keyfile_entries
     opt_vals  = g_new0(char *, n_opts + 1);
     opt_found = g_new0(bool, n_opts + 1);
     for (i = 0; i < n_opts; i++) {
-        guint p = nmtst_get_rand_uint32() % 1000;
-
-        if (p < 200)
-            opt_vals[i] = nm_strdup_int(i);
+        if (nm_streq(opt_keys[i], "bridge_role"))
+            opt_vals[i] = g_strdup(nmtst_rand_select_str("primary", "secondary", "none"));
         else {
-            opt_vals[i] = g_strdup_printf("%s%s%s%s-%zu",
-                                          ((p % 5) % 2) ? "\n" : "",
-                                          ((p % 7) % 2) ? "\t" : "",
-                                          ((p % 11) % 2) ? "x" : "",
-                                          ((p % 13) % 2) ? "=" : "",
-                                          i);
+            guint p = nmtst_get_rand_uint32() % 1000;
+            if (p < 200)
+                opt_vals[i] = nm_strdup_int(i);
+            else {
+                opt_vals[i] = g_strdup_printf("%s%s%s%s-%zu",
+                                              ((p % 5) % 2) ? "\n" : "",
+                                              ((p % 7) % 2) ? "\t" : "",
+                                              ((p % 11) % 2) ? "x" : "",
+                                              ((p % 13) % 2) ? "=" : "",
+                                              i);
+            }
         }
     }
 

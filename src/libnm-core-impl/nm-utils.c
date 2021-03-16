@@ -5325,8 +5325,6 @@ _nm_variant_attribute_spec_find_binary_search(const NMVariantAttributeSpec *cons
                                                len,
                                                &name,
                                                nm_strcmp_p_with_data,
-                                               NULL,
-                                               NULL,
                                                NULL);
     if (idx < 0)
         return NULL;

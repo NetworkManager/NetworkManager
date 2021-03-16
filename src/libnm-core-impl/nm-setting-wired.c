@@ -74,7 +74,8 @@ G_DEFINE_TYPE(NMSettingWired, nm_setting_wired, NM_TYPE_SETTING)
 
 /*****************************************************************************/
 
-static const char *valid_s390_opts[] = {
+static const char *const valid_s390_opts[] = {
+    "bridge_role",
     "broadcast_mode",
     "buffer_count",
     "canonical_macaddr",
@@ -107,35 +108,56 @@ static const char *valid_s390_opts[] = {
     NULL,
 };
 
-static gboolean
-valid_s390_opts_check(const char *option)
+gboolean
+_nm_setting_wired_is_valid_s390_option(const char *option)
 {
-#if NM_MORE_ASSERTS > 5
-    nm_assert(NM_PTRARRAY_LEN(valid_s390_opts) + 1 == G_N_ELEMENTS(valid_s390_opts));
-    {
+    if (NM_MORE_ASSERT_ONCE(10)) {
         gsize i;
 
+        nm_assert(NM_PTRARRAY_LEN(valid_s390_opts) + 1u == G_N_ELEMENTS(valid_s390_opts));
+
         for (i = 0; i < G_N_ELEMENTS(valid_s390_opts); i++) {
-            if (i == G_N_ELEMENTS(valid_s390_opts) - 1)
+            if (i == G_N_ELEMENTS(valid_s390_opts) - 1u)
                 nm_assert(!valid_s390_opts[i]);
             else {
                 nm_assert(valid_s390_opts[i]);
                 nm_assert(valid_s390_opts[i][0] != '\0');
                 if (i > 0)
-                    g_assert(strcmp(valid_s390_opts[i - 1], valid_s390_opts[i]) < 0);
+                    nm_assert(strcmp(valid_s390_opts[i - 1], valid_s390_opts[i]) < 0);
             }
         }
     }
-#endif
 
     return option
-           && (nm_utils_array_find_binary_search(valid_s390_opts,
-                                                 sizeof(const char *),
-                                                 G_N_ELEMENTS(valid_s390_opts) - 1,
-                                                 &option,
-                                                 nm_strcmp_p_with_data,
-                                                 NULL)
+           && (nm_utils_strv_find_binary_search(valid_s390_opts,
+                                                G_N_ELEMENTS(valid_s390_opts) - 1,
+                                                option)
                >= 0);
+}
+
+gboolean
+_nm_setting_wired_is_valid_s390_option_value(const char *name, const char *option)
+{
+    nm_assert(name);
+
+    if (!option)
+        return FALSE;
+
+    /* For historic reasons, the s390-options values were not validated beyond
+     * simple length check (below).
+     *
+     * Here, for certain (recently added) options we add strict validation.
+     * As this is only done for a few hand picked options, do it right here.
+     *
+     * Maybe we should find a backward compatible way to validate all options.
+     * In that case, the validation should become more elaborate, like we do
+     * for bond options. */
+
+    if (nm_streq(name, "bridge_role")) {
+        return NM_IN_STRSET(option, "primary", "secondary", "none");
+    }
+
+    return option[0] != '\0' && strlen(option) <= NM_SETTING_WIRED_S390_OPTION_MAX_LEN;
 }
 
 /**
@@ -467,9 +489,9 @@ nm_setting_wired_get_num_s390_options(NMSettingWired *setting)
  * @setting: the #NMSettingWired
  * @idx: index of the desired option, from 0 to
  * nm_setting_wired_get_num_s390_options() - 1
- * @out_key: (out) (transfer none): on return, the key name of the s390 specific
+ * @out_key: (allow-none) (out) (transfer none): on return, the key name of the s390 specific
  *   option; this value is owned by the setting and should not be modified
- * @out_value: (out) (transfer none): on return, the value of the key of the
+ * @out_value: (allow-none) (out) (transfer none): on return, the value of the key of the
  *   s390 specific option; this value is owned by the setting and should not be
  *   modified
  *
@@ -527,7 +549,7 @@ nm_setting_wired_get_s390_option_by_key(NMSettingWired *setting, const char *key
     gssize                 idx;
 
     g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), NULL);
-    g_return_val_if_fail(key && key[0], NULL);
+    g_return_val_if_fail(key, NULL);
 
     priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
 
@@ -543,28 +565,23 @@ nm_setting_wired_get_s390_option_by_key(NMSettingWired *setting, const char *key
  * @key: key name for the option
  * @value: value for the option
  *
- * Add an option to the table.  The option is compared to an internal list
- * of allowed options.  Key names may contain only alphanumeric characters
- * (ie [a-zA-Z0-9]).  Adding a new key replaces any existing key/value pair that
- * may already exist.
+ * Add an option to the table. If the key already exists, the value gets
+ * replaced.
  *
- * Returns: %TRUE if the option was valid and was added to the internal option
- * list, %FALSE if it was not.
+ * Before 1.32, the function would assert that the key is valid. Since then,
+ * an invalid key gets silently added but renders the profile as invalid.
+ *
+ * Returns: since 1.32 this always returns %TRUE.
  **/
 gboolean
 nm_setting_wired_add_s390_option(NMSettingWired *setting, const char *key, const char *value)
 {
     NMSettingWiredPrivate *priv;
     gssize                 idx;
-    NMUtilsNamedValue *    v;
 
     g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), FALSE);
+    g_return_val_if_fail(key, FALSE);
     g_return_val_if_fail(value, FALSE);
-
-    if (!valid_s390_opts_check(key)) {
-        g_return_val_if_fail(key, FALSE);
-        return FALSE;
-    }
 
     priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
 
@@ -572,14 +589,16 @@ nm_setting_wired_add_s390_option(NMSettingWired *setting, const char *key, const
     if (idx < 0) {
         gsize dst_idx = ~idx;
 
-        if (priv->s390_options.n_alloc < priv->s390_options.len + 1) {
-            priv->s390_options.n_alloc = NM_MAX(4, (priv->s390_options.len + 1) * 2);
+        g_return_val_if_fail(priv->s390_options.len < G_MAXUINT32 - 1u, FALSE);
+
+        if (priv->s390_options.n_alloc < ((gsize) priv->s390_options.len) + 1u) {
+            priv->s390_options.n_alloc = NM_MAX(4u, (((gsize) priv->s390_options.len) + 1u) * 2u);
             priv->s390_options.arr =
                 g_realloc(priv->s390_options.arr,
                           priv->s390_options.n_alloc * sizeof(NMUtilsNamedValue));
         }
         if (dst_idx < priv->s390_options.len) {
-            memmove(&priv->s390_options.arr[dst_idx + 1],
+            memmove(&priv->s390_options.arr[dst_idx + 1u],
                     &priv->s390_options.arr[dst_idx],
                     (priv->s390_options.len - dst_idx) * sizeof(NMUtilsNamedValue));
         }
@@ -589,11 +608,8 @@ nm_setting_wired_add_s390_option(NMSettingWired *setting, const char *key, const
         };
         priv->s390_options.len++;
     } else {
-        v = &priv->s390_options.arr[idx];
-        if (nm_streq(value, v->value_str))
+        if (!nm_utils_strdup_reset(&priv->s390_options.arr[idx].value_str_mutable, value))
             return TRUE;
-        g_free((char *) v->value_str);
-        v->value_str = g_strdup(value);
     }
 
     _notify(setting, PROP_S390_OPTIONS);
@@ -631,10 +647,10 @@ nm_setting_wired_remove_s390_option(NMSettingWired *setting, const char *key)
 
     g_free((char *) priv->s390_options.arr[dst_idx].name);
     g_free((char *) priv->s390_options.arr[dst_idx].value_str);
-    if (dst_idx + 1 != priv->s390_options.len) {
+    if (dst_idx + 1u != priv->s390_options.len) {
         memmove(&priv->s390_options.arr[dst_idx],
-                &priv->s390_options.arr[dst_idx + 1],
-                (priv->s390_options.len - dst_idx - 1) * sizeof(NMUtilsNamedValue));
+                &priv->s390_options.arr[dst_idx + 1u],
+                (priv->s390_options.len - dst_idx - 1u) * sizeof(NMUtilsNamedValue));
     }
 
     priv->s390_options.len--;
@@ -679,7 +695,7 @@ _nm_setting_wired_clear_s390_options(NMSettingWired *setting)
 const char **
 nm_setting_wired_get_valid_s390_options(NMSettingWired *setting)
 {
-    return valid_s390_opts;
+    return (const char **) valid_s390_opts;
 }
 
 /**
@@ -809,14 +825,24 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
         nm_assert(v->name);
 
-        if (!valid_s390_opts_check(v->name) || v->value_str[0] == '\0'
-            || strlen(v->value_str) > 200) {
+        if (!_nm_setting_wired_is_valid_s390_option(v->name)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("invalid '%s' or its value '%s'"),
-                        v->name,
-                        v->value_str);
+                        _("invalid key '%s'"),
+                        v->name);
+            g_prefix_error(error,
+                           "%s.%s: ",
+                           NM_SETTING_WIRED_SETTING_NAME,
+                           NM_SETTING_WIRED_S390_OPTIONS);
+            return FALSE;
+        }
+        if (!_nm_setting_wired_is_valid_s390_option_value(v->name, v->value_str)) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("invalid value for key '%s'"),
+                        v->name);
             g_prefix_error(error,
                            "%s.%s: ",
                            NM_SETTING_WIRED_SETTING_NAME,
@@ -1087,23 +1113,27 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
         hash = g_value_get_boxed(value);
 
-        priv->s390_options.n_alloc = hash ? g_hash_table_size(hash) : 0u;
+        priv->s390_options.n_alloc = nm_g_hash_table_size(hash);
 
-        if (priv->s390_options.n_alloc > 0) {
+        if (priv->s390_options.n_alloc > 0u) {
             gboolean       invalid_content = FALSE;
             GHashTableIter iter;
             const char *   key;
             const char *   val;
-            guint          i, j;
+            guint          j;
+            guint          i;
 
             priv->s390_options.arr = g_new(NMUtilsNamedValue, priv->s390_options.n_alloc);
+
             g_hash_table_iter_init(&iter, hash);
             while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &val)) {
                 if (!key || !val) {
                     invalid_content = TRUE;
                     continue;
                 }
+
                 nm_assert(priv->s390_options.len < priv->s390_options.n_alloc);
+
                 priv->s390_options.arr[priv->s390_options.len] = (NMUtilsNamedValue){
                     .name      = g_strdup(key),
                     .value_str = g_strdup(val),
@@ -1116,10 +1146,10 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                                                NULL,
                                                NULL);
                 /* prune duplicate keys. This is only possible if @hash does not use
-                     * g_str_equal() as compare function (which would be a bug).
-                     * Still, handle this, because we use later binary sort and rely
-                     * on unique names. One bug here, should not bork the remainder
-                     * of the program. */
+                 * g_str_equal() as compare function (which would be a bug).
+                 * Still, handle this, because we use later binary sort and rely
+                 * on unique names. One bug here, should not bork the remainder
+                 * of the program. */
                 j = 1;
                 for (i = 1; i < priv->s390_options.len; i++) {
                     if (nm_streq(priv->s390_options.arr[j - 1].name,
