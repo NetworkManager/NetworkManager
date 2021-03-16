@@ -1005,6 +1005,7 @@ fi
 %{_mandir}/man7/nmcli-examples.7*
 %{_mandir}/man8/nm-initrd-generator.8.gz
 %{_mandir}/man8/NetworkManager.8.gz
+%{_mandir}/man8/NetworkManager-dispatcher.8.gz
 %dir %{_localstatedir}/lib/NetworkManager
 %dir %{_sysconfdir}/sysconfig/network-scripts
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_dispatcher.service

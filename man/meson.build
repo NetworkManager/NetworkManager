@@ -26,6 +26,7 @@ mans_xmls = []
 
 mans = [
   ['NetworkManager', '8'],
+  ['NetworkManager-dispatcher', '8'],
   ['NetworkManager.conf', '5'],
   ['nm-online', '1'],
   ['nmcli-examples', '7'],

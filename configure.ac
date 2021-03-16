@@ -1276,6 +1276,7 @@ AM_CONDITIONAL(WITH_PYTHON_BLACK, test "${BLACK}" != "")
 use_pregen_docs=no
 if test "$build_docs" != "yes" -a \
         -f "$srcdir"/man/NetworkManager.8 -a \
+        -f "$srcdir"/man/NetworkManager-dispatcher.8 -a \
         -f "$srcdir"/man/NetworkManager.conf.5 -a \
         -f "$srcdir"/man/nm-online.1 -a \
         -f "$srcdir"/man/nmcli-examples.7 -a \
