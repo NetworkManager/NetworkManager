@@ -1855,6 +1855,24 @@ test_rd_znet_no_ip(void)
 }
 
 static void
+test_rd_znet_malformed(void)
+{
+    const char *const *const ARGV0  = NM_MAKE_STRV("rd.znet=");
+    const char *const *const ARGV1  = NM_MAKE_STRV("rd.znet=,");
+    const char *const *const ARGV2  = NM_MAKE_STRV("rd.znet=foobar");
+    const char *const *const ARGV3  = NM_MAKE_STRV("rd.znet=qeth,0.0.0800,,,layer2=0,portno=1");
+    const char *const *const ARGV[] = {ARGV0, ARGV1, ARGV2, ARGV3};
+    guint                    i;
+
+    for (i = 0; i < G_N_ELEMENTS(ARGV); i++) {
+        gs_unref_hashtable GHashTable *connections = NULL;
+
+        connections = _parse_cons(ARGV[i]);
+        g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    }
+}
+
+static void
 test_bootif_ip(void)
 {
     const char *const *ARGV                  = NM_MAKE_STRV("BOOTIF=00:53:AB:cd:02:03", "ip=dhcp");
@@ -2189,6 +2207,7 @@ main(int argc, char **argv)
     g_test_add_func("/initrd/cmdline/rd_znet", test_rd_znet);
     g_test_add_func("/initrd/cmdline/rd_znet/legacy", test_rd_znet_legacy);
     g_test_add_func("/initrd/cmdline/rd_znet/no_ip", test_rd_znet_no_ip);
+    g_test_add_func("/initrd/cmdline/rd_znet/empty", test_rd_znet_malformed);
     g_test_add_func("/initrd/cmdline/bootif/ip", test_bootif_ip);
     g_test_add_func("/initrd/cmdline/bootif/no_ip", test_bootif_no_ip);
     g_test_add_func("/initrd/cmdline/bootif/hwtype", test_bootif_hwtype);
