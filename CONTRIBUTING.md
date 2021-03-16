@@ -2,6 +2,37 @@ Guidelines for Contributing
 ===========================
 
 
+Community
+---------
+
+Check out website https://networkmanager.dev and our [GNOME page](https://wiki.gnome.org/Projects/NetworkManager).
+
+The release tarballs can be found at [download.gnome.org](https://download.gnome.org/sources/NetworkManager/).
+
+Our mailing list is networkmanager-list@gnome.org ([archive](https://mail.gnome.org/archives/networkmanager-list/)).
+
+Find us on IRC channel `#nm` on freenode.
+
+Report issues and send patches via [gitlab.freedesktop.org](https://gitlab.freedesktop.org/NetworkManager/NetworkManager/)
+or our mailing list.
+
+
+Legal
+-----
+
+NetworkManager is partly licensed under terms of GNU Lesser General Public License
+version 2 or later ([LGPL-2.1-or-later](COPYING.LGPL)). That is for example the case for libnm.
+For historical reasons, the daemon itself is licensed under terms of GNU General
+Public License, version 2 or later ([GPL-2.0-or-later](COPYING)). See the SPDX license comment
+in the source files.
+
+Note that all new contributions to NetworkManager **MUST** be made under terms of
+LGPL-2.1-or-later, that is also the case for files that are currently licensed GPL-2.0-or-later.
+The reason is that we might one day use the code under terms of LGPL-2.1-or-later and all
+new contributions already must already agree to that.
+For more details see [RELICENSE.md](RELICENSE.md).
+
+
 Coding Standard
 ---------------
 
@@ -47,102 +78,89 @@ some details of the style we use:
   - BAD:  `static const unsigned myConstant = 42;`
 
 
-Legal
------
-
-NetworkManager is partly licensed under terms of GNU Lesser General Public License
-version 2 or later (LGPL-2.1+). That is for example the case for libnm.
-For historical reasons, the daemon itself is licensed under terms of GNU General
-Public License, version 2 or later (GPL-2.0+). See the license comment in the source
-files.
-Note that all new contributions to NetworkManager MUST be made under terms of
-LGPL-2.1+, that is also the case for parts that are currently licensed GPL-2.0+.
-The reason for that is that we might eventually relicense everything as LGPL and
-new contributions already must agree with that future change.
-For more details see [RELICENSE.md](RELICENSE.md).
-
-
 Assertions in NetworkManager code
 ---------------------------------
 
 There are different kind of assertions. Use the one that is appropriate.
 
-1) g_return_*() from glib. This is usually enabled in release builds and
-  can be disabled with G_DISABLE_CHECKS define. This uses g_log() with
-  G_LOG_LEVEL_CRITICAL level (which allows the program to continue,
-  unless G_DEBUG=fatal-criticals or G_DEBUG=fatal-warnings is set). As such,
+1) `g_return_*()` from glib. This is usually enabled in release builds and
+  can be disabled with `G_DISABLE_CHECKS` define. This uses `g_log()` with
+  `G_LOG_LEVEL_CRITICAL` level (which allows the program to continue,
+  unless `G_DEBUG=fatal-criticals` or `G_DEBUG=fatal-warnings` is set). As such,
   this is usually the preferred way for assertions that are supposed to be
-  enabled by default.
-
-  Optimally, after a g_return_*() failure the program can still continue. This is
-  also the reason why g_return_*() is preferable over g_assert().
-  For example, that is often not given for functions that return a GError, because
-  g_return_*() will return failure without setting the error output. That often leads
-  to a crash immidiately after, because the caller requires the GError to be set.
+  enabled by default. \
+  \
+  Optimally, after a `g_return_*()` failure the program can still continue. This is
+  also the reason why `g_return_*()` is preferable over `g_assert()`.
+  For example, that is often not the case for functions that return a `GError`, because
+  `g_return_*()` will return failure without setting the error output. That often leads
+  to a crash immediately after, because the caller requires the `GError` to be set.
   Make a reasonable effort so that an assertion failure may allow the process
   to proceed. But don't put too much effort in it. After all, it's an assertion
   failure that is not supposed to happen either way.
 
-2) nm_assert() from NetworkManager. This is disabled by default in release
-  builds, but enabled if you build --with-more-assertions. See "WITH_MORE_ASSERTS"
+2) `nm_assert()` from NetworkManager. This is disabled by default in release
+  builds, but enabled if you build `--with-more-assertions`. See the `WITH_MORE_ASSERTS`
   define. This is preferred for assertions that are expensive to check or
   nor necessary to check frequently. It's also for conditions that can easily
-  verified to be true and where future refactoring is unlikley to break that
-  condition.
-  Use this deliberately and assume it is removed from production builds.
+  be verified to be true and where future refactoring is unlikely to break the
+  invariant.
+  Use such asserts deliberately and assume they are removed from production builds.
 
-3) g_assert() from glib. This is used in unit tests and commonly enabled
-  in release builds. It can be disabled with G_DISABLE_ASSERT assert
-  define. Since this results in a hard crash on assertion failure, you
-  should almost always prefer g_return_*() over this (except in unit tests).
+3) `g_assert()` from glib. This is used in unit tests and commonly enabled
+  in release builds. It can be disabled with `G_DISABLE_ASSERT` define.
+  Since such an assertion failure results in a hard crash, you
+  should almost always prefer `g_return_*()` over `g_assert()` (except in unit tests).
 
-4) assert() from <assert.h>. It is usually enabled in release builds and
-  can be disabled with NDEBUG define. Don't use it in NetworkManager,
+4) `assert()` from C89's `<assert.h>`. It is usually enabled in release builds and
+  can be disabled with `NDEBUG` define. Don't use it in NetworkManager,
   it's basically like g_assert().
 
-5) g_log() from glib. These are always compiled in, depending on the logging level
-  these are assertions too. G_LOG_LEVEL_ERROR aborts the program, G_LOG_LEVEL_CRITICAL
-  logs a critical warning (like g_return_*(), see G_DEBUG=fatal-criticals)
-  and G_LOG_LEVEL_WARNING logs a warning (see G_DEBUG=fatal-warnings).
-  G_LOG_LEVEL_DEBUG level is usually not printed, unless G_MESSAGES_DEBUG environment
-  is set.
-  In general, avoid using g_log() in NetworkManager. We have nm-logging instead
-  which logs to syslog/systemd-journald.
-  From a library like libnm it might make sense to log warnings (if someting
+5) `g_log()` from glib. These are always compiled in, depending on the logging level
+  they act as assertions too. `G_LOG_LEVEL_ERROR` messages abort the program, `G_LOG_LEVEL_CRITICAL`
+  log a critical warning (like `g_return_*()`, see `G_DEBUG=fatal-criticals`)
+  and `G_LOG_LEVEL_WARNING` logs a warning (see `G_DEBUG=fatal-warnings`).
+  `G_LOG_LEVEL_DEBUG` level is usually not printed, unless `G_MESSAGES_DEBUG` environment
+  variable enables it. \
+  \
+  In general, avoid using `g_log()` in NetworkManager. We have nm-logging instead
+  which logs to syslog or systemd-journald.
+  From a library like libnm it might make sense to log warnings (if something
   is really wrong) or debug messages. But better don't. If it's important,
-  find a way to report the notification via the API to the caller. If it's
+  find a way to report the condition via the API to the caller. If it's
   not important, keep silent.
-  In particular, don't use levels G_LOG_LEVEL_CRITICAL and G_LOG_LEVEL_WARNING because
-  these are effectively assertions and we want to run with G_DEBUG=fatal-warnings.
+  In particular, don't use levels `G_LOG_LEVEL_CRITICAL` and `G_LOG_LEVEL_WARNING` because
+  we treat them as assertions and we want to run all out tests with `G_DEBUG=fatal-warnings`.
 
-6) g_warn_if_*() from glib. These are always compiled in and log a G_LOG_LEVEL_WARNING
+6) `g_warn_if_*()` from glib. These are always compiled in and log a `G_LOG_LEVEL_WARNING`
   warning. Don't use this.
 
-7) G_TYPE_CHECK_INSTANCE_CAST() from glib. Unless building with "WITH_MORE_ASSERTS",
-  we set G_DISABLE_CAST_CHECKS. This means, cast macros like NM_DEVICE(ptr)
+7) `G_TYPE_CHECK_INSTANCE_CAST()` from glib. Unless building with `WITH_MORE_ASSERTS`,
+  we set `G_DISABLE_CAST_CHECKS`. This means, cast macros like `NM_DEVICE(ptr)`
   translate to plain C pointer casts. Use such cast macros deliberately, in production
-  code they are cheap, with more asserts enabled the check that the pointer type is
+  code they are cheap, with more asserts enabled they check that the pointer type is
   suitable.
 
 Of course, every assertion failure is a bug, and calling it must have no side effects.
 
-Theoretically, you are welcome to disable G_DISABLE_CHECKS and G_DISABLE_ASSERT
-in production builds. In practice, nobody tests such a configuration, so beware.
+Theoretically, you are welcome to set `G_DISABLE_CHECKS`, `G_DISABLE_ASSERT` and
+`NDEBUG` in production builds. In practice, nobody tests such a configuration, so beware.
 
 For testing, you also want to run NetworkManager with environment variable
-G_DEBUG=fatal-warnings to crash upon G_LOG_LEVEL_CRITICAL and G_LOG_LEVEL_WARNING
-g_log() message. NetworkManager won't use these levels for regular logging
+`G_DEBUG=fatal-warnings` to crash upon `G_LOG_LEVEL_CRITICAL` and `G_LOG_LEVEL_WARNING`
+`g_log()` message. NetworkManager won't use these levels for regular logging
 but for assertions.
 
 
 Git Notes (refs/notes/bugs)
 ---------------------------
 
-There are special notes to annotate git commit messages with information
-about "Fixes" and "cherry picked from". Annotating the history is useful
-if it was not done initially because our scripts can make use of it.
+We use special tags in commit messages like "Fixes", "cherry picked from" and "Ignore-Backport".
+The [find-backports](contrib/scripts/find-backports) script uses these to find patches that
+should be backported to older branches. Sometimes we don't know a-priory to mark a commit
+with these tags so we can instead use the `bugs` notes.
 
-The notes it are called "refs/notes/bugs".
+The git notes reference is called "refs/notes/bugs".
 
 So configure:
 
