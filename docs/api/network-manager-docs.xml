@@ -70,6 +70,7 @@
     <title>Manual Pages</title>
     <xi:include href="../../man/NetworkManager.xml"/>
     <xi:include href="../../man/NetworkManager.conf.xml"/>
+    <xi:include href="../../man/NetworkManager-dispatcher.xml"/>
     <xi:include href="../../man/nmcli.xml"/>
     <xi:include href="../../man/nmcli-examples.xml"/>
     <xi:include href="../../man/nmtui.xml"/>
