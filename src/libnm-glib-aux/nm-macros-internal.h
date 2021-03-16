@@ -520,9 +520,9 @@ NM_G_ERROR_MSG(GError *error)
 
 #ifndef _NM_CC_SUPPORT_GENERIC
     /* In the meantime, NetworkManager requires C11 and _Generic() should always be available.
- * However, shared/nm-utils may also be used in VPN/applet, which possibly did not yet
- * bump the C standard requirement. Leave this for the moment, but eventually we can
- * drop it. */
+     * However, shared/nm-utils may also be used in VPN/applet, which possibly did not yet
+     * bump the C standard requirement. Leave this for the moment, but eventually we can
+     * drop it. */
     #if (defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9))) \
         || (defined(__clang__))
         #define _NM_CC_SUPPORT_GENERIC 1
@@ -682,21 +682,21 @@ NM_G_ERROR_MSG(GError *error)
 
 #if _NM_CC_SUPPORT_GENERIC
     /* these macros cast (value) to
- *  - "const char **"      (for "MC", mutable-const)
- *  - "const char *const*" (for "CC", const-const)
- * The point is to do this cast, but only accepting pointers
- * that are compatible already.
- *
- * The problem is, if you add a function like g_strdupv(), the input
- * argument is not modified (CC), but you want to make it work also
- * for "char **". C doesn't allow this form of casting (for good reasons),
- * so the function makes a choice like g_strdupv(char**). That means,
- * every time you want to call it with a const argument, you need to
- * explicitly cast it.
- *
- * These macros do the cast, but they only accept a compatible input
- * type, otherwise they will fail compilation.
- */
+     *  - "const char **"      (for "MC", mutable-const)
+     *  - "const char *const*" (for "CC", const-const)
+     * The point is to do this cast, but only accepting pointers
+     * that are compatible already.
+     *
+     * The problem is, if you add a function like g_strdupv(), the input
+     * argument is not modified (CC), but you want to make it work also
+     * for "char **". C doesn't allow this form of casting (for good reasons),
+     * so the function makes a choice like g_strdupv(char**). That means,
+     * every time you want to call it with a const argument, you need to
+     * explicitly cast it.
+     *
+     * These macros do the cast, but they only accept a compatible input
+     * type, otherwise they will fail compilation.
+     */
     #define NM_CAST_STRV_MC(value) \
         (_Generic ((value), \
                const char *     *: (const char *     *) (value), \

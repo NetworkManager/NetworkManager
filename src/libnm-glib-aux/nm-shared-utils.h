@@ -1727,9 +1727,11 @@ typedef struct {
     union {
         NMUtilsNamedEntry named_entry;
         const char *      name;
+        char *            name_mutable;
     };
     union {
         const char *value_str;
+        char *      value_str_mutable;
         gpointer    value_ptr;
     };
 } NMUtilsNamedValue;
@@ -2016,9 +2018,31 @@ gssize nm_utils_ptrarray_find_binary_search(gconstpointer *  list,
                                             gsize            len,
                                             gconstpointer    needle,
                                             GCompareDataFunc cmpfcn,
-                                            gpointer         user_data,
-                                            gssize *         out_idx_first,
-                                            gssize *         out_idx_last);
+                                            gpointer         user_data);
+
+gssize nm_utils_ptrarray_find_binary_search_range(gconstpointer *  list,
+                                                  gsize            len,
+                                                  gconstpointer    needle,
+                                                  GCompareDataFunc cmpfcn,
+                                                  gpointer         user_data,
+                                                  gssize *         out_idx_first,
+                                                  gssize *         out_idx_last);
+
+#define nm_utils_strv_find_binary_search(strv, len, needle)           \
+    ({                                                                \
+        const char *const *const _strv   = NM_CAST_STRV_CC(strv);     \
+        const gsize              _len    = (len);                     \
+        const char *const        _needle = (needle);                  \
+                                                                      \
+        nm_assert(_len == 0 || _strv);                                \
+        nm_assert(_needle);                                           \
+                                                                      \
+        nm_utils_ptrarray_find_binary_search((gconstpointer *) _strv, \
+                                             _len,                    \
+                                             _needle,                 \
+                                             nm_strcmp_with_data,     \
+                                             NULL);                   \
+    })
 
 gssize nm_utils_array_find_binary_search(gconstpointer    list,
                                          gsize            elem_size,

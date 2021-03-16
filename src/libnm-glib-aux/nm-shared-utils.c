@@ -3833,9 +3833,46 @@ nm_utils_ptrarray_find_binary_search(gconstpointer *  list,
                                      gsize            len,
                                      gconstpointer    needle,
                                      GCompareDataFunc cmpfcn,
-                                     gpointer         user_data,
-                                     gssize *         out_idx_first,
-                                     gssize *         out_idx_last)
+                                     gpointer         user_data)
+{
+    gssize imin, imax, imid;
+    int    cmp;
+
+    g_return_val_if_fail(list || !len, ~((gssize) 0));
+    g_return_val_if_fail(cmpfcn, ~((gssize) 0));
+
+    imin = 0;
+    if (len > 0) {
+        imax = len - 1;
+
+        while (imin <= imax) {
+            imid = imin + (imax - imin) / 2;
+
+            cmp = cmpfcn(list[imid], needle, user_data);
+            if (cmp == 0)
+                return imid;
+
+            if (cmp < 0)
+                imin = imid + 1;
+            else
+                imax = imid - 1;
+        }
+    }
+
+    /* return the inverse of @imin. This is a negative number, but
+     * also is ~imin the position where the value should be inserted. */
+    imin = ~imin;
+    return imin;
+}
+
+gssize
+nm_utils_ptrarray_find_binary_search_range(gconstpointer *  list,
+                                           gsize            len,
+                                           gconstpointer    needle,
+                                           GCompareDataFunc cmpfcn,
+                                           gpointer         user_data,
+                                           gssize *         out_idx_first,
+                                           gssize *         out_idx_last)
 {
     gssize imin, imax, imid, i2min, i2max, i2mid;
     int    cmp;

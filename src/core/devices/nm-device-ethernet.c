@@ -1786,7 +1786,8 @@ update_connection(NMDevice *device, NMConnection *connection)
     const char *             mac      = nm_device_get_hw_address(device);
     const char *             mac_prop = NM_SETTING_WIRED_MAC_ADDRESS;
     GHashTableIter           iter;
-    gpointer                 key, value;
+    const char *             key;
+    const char *             value;
 
     if (!s_wired) {
         s_wired = (NMSettingWired *) nm_setting_wired_new();
@@ -1824,8 +1825,8 @@ update_connection(NMDevice *device, NMConnection *connection)
 
     _nm_setting_wired_clear_s390_options(s_wired);
     g_hash_table_iter_init(&iter, priv->s390_options);
-    while (g_hash_table_iter_next(&iter, &key, &value))
-        nm_setting_wired_add_s390_option(s_wired, (const char *) key, (const char *) value);
+    while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &value))
+        nm_setting_wired_add_s390_option(s_wired, key, value);
 }
 
 static void

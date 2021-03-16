@@ -433,13 +433,7 @@ nm_config_set_no_auto_default_for_device(NMConfig *self, NMDevice *device)
 
     len = NM_PTRARRAY_LEN(no_auto_default_current);
 
-    idx = nm_utils_ptrarray_find_binary_search((gconstpointer *) no_auto_default_current,
-                                               len,
-                                               spec,
-                                               nm_strcmp_with_data,
-                                               NULL,
-                                               NULL,
-                                               NULL);
+    idx = nm_utils_strv_find_binary_search(no_auto_default_current, len, spec);
     if (idx >= 0) {
         /* @spec is already blocked. We don't have to update our in-memory representation.
          * Maybe we should write to no_auto_default_file anew, but let's save that too. */

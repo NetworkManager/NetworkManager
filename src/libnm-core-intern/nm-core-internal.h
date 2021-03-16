@@ -309,7 +309,11 @@ typedef gpointer (*NMUtilsCopyFunc)(gpointer);
 const char **
 _nm_ip_address_get_attribute_names(const NMIPAddress *addr, gboolean sorted, guint *out_length);
 
-void _nm_setting_wired_clear_s390_options(NMSettingWired *setting);
+#define NM_SETTING_WIRED_S390_OPTION_MAX_LEN 200u
+
+void     _nm_setting_wired_clear_s390_options(NMSettingWired *setting);
+gboolean _nm_setting_wired_is_valid_s390_option(const char *option);
+gboolean _nm_setting_wired_is_valid_s390_option_value(const char *name, const char *option);
 
 gboolean _nm_ip_route_attribute_validate_all(const NMIPRoute *route, GError **error);
 const char **
