@@ -930,6 +930,11 @@ reader_parse_rd_znet(Reader *reader, char *argument, gboolean net_ifnames)
     subchannels[0] = get_word(&argument, ',');
     subchannels[1] = get_word(&argument, ',');
 
+    /* Without subchannels we can't univocally match
+     * a device. */
+    if (!subchannels[0] || !subchannels[1])
+        return;
+
     if (nm_streq0(nettype, "ctc")) {
         if (net_ifnames == TRUE) {
             prefix = "sl";
