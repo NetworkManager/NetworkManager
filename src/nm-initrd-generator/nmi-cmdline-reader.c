@@ -979,7 +979,7 @@ reader_parse_rd_znet(Reader *reader, char *argument, gboolean net_ifnames)
             val[0] = '\0';
             val++;
             if (!_nm_setting_wired_is_valid_s390_option(key)
-                || !_nm_setting_wired_is_valid_s390_option_value(val)) {
+                || !_nm_setting_wired_is_valid_s390_option_value(key, val)) {
                 /* Invalid setting. Silently ignore, but also ensure we
                  * didn't already set it. */
                 nm_setting_wired_remove_s390_option(s_wired, key);

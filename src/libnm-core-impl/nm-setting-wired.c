@@ -135,6 +135,31 @@ _nm_setting_wired_is_valid_s390_option(const char *option)
                >= 0);
 }
 
+gboolean
+_nm_setting_wired_is_valid_s390_option_value(const char *name, const char *option)
+{
+    nm_assert(name);
+
+    if (!option)
+        return FALSE;
+
+    /* For historic reasons, the s390-options values were not validated beyond
+     * simple length check (below).
+     *
+     * Here, for certain (recently added) options we add strict validation.
+     * As this is only done for a few hand picked options, do it right here.
+     *
+     * Maybe we should find a backward compatible way to validate all options.
+     * In that case, the validation should become more elaborate, like we do
+     * for bond options. */
+
+    if (nm_streq(name, "bridge_role")) {
+        return NM_IN_STRSET(option, "primary", "secondary", "none");
+    }
+
+    return option[0] != '\0' && strlen(option) <= NM_SETTING_WIRED_S390_OPTION_MAX_LEN;
+}
+
 /**
  * nm_setting_wired_get_port:
  * @setting: the #NMSettingWired
@@ -812,7 +837,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                            NM_SETTING_WIRED_S390_OPTIONS);
             return FALSE;
         }
-        if (!_nm_setting_wired_is_valid_s390_option_value(v->value_str)) {
+        if (!_nm_setting_wired_is_valid_s390_option_value(v->name, v->value_str)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
