@@ -596,10 +596,13 @@ test_nm_ref_string(void)
     nm_auto_ref_string NMRefString *s1 = NULL;
     NMRefString *                   s2;
 
+    g_assert(NULL == NM_REF_STRING_UPCAST(NULL));
+
     s1 = nm_ref_string_new("hallo");
     g_assert(s1);
     g_assert_cmpstr(s1->str, ==, "hallo");
     g_assert_cmpint(s1->len, ==, strlen("hallo"));
+    g_assert(s1 == NM_REF_STRING_UPCAST(s1->str));
 
     s2 = nm_ref_string_new("hallo");
     g_assert(s2 == s1);
