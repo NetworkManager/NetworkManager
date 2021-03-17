@@ -588,10 +588,16 @@ deactivate(NMDevice *device)
             return;
     }
 
-    cleanup_association_attempt(self, TRUE);
+    cleanup_association_attempt(self, FALSE);
     priv->act_mode_switch = FALSE;
 
-    if (!priv->dbus_station_proxy)
+    /* Don't trigger any actions on the IWD side until the device is managed */
+    if (priv->iwd_autoconnect && nm_device_get_state(device) < NM_DEVICE_STATE_DISCONNECTED)
+        return;
+
+    if (priv->dbus_station_proxy)
+        send_disconnect(self);
+    else
         reset_mode(self, NULL, NULL, NULL);
 }
 
@@ -646,6 +652,11 @@ deactivate_async(NMDevice *                 device,
 
     cleanup_association_attempt(self, FALSE);
     priv->act_mode_switch = FALSE;
+
+    if (priv->iwd_autoconnect && nm_device_get_state(device) < NM_DEVICE_STATE_DISCONNECTED) {
+        nm_utils_invoke_on_idle(cancellable, disconnect_cb_on_idle, user_data);
+        return;
+    }
 
     if (priv->dbus_station_proxy) {
         g_dbus_proxy_call(priv->dbus_station_proxy,
