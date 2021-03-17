@@ -6,69 +6,71 @@
 
 /*****************************************************************************/
 
-typedef struct {
-    NMRefString  r;
-    volatile int ref_count;
-    char         str_data[];
-} RefString;
-
 G_LOCK_DEFINE_STATIC(gl_lock);
 static GHashTable *gl_hash;
 
-/* the first field of NMRefString is a pointer to the NUL terminated string.
- * This also allows to compare strings with nm_pstr_equal(), although, pointer
- * equality might be better. */
-G_STATIC_ASSERT(G_STRUCT_OFFSET(NMRefString, str) == 0);
-G_STATIC_ASSERT(G_STRUCT_OFFSET(RefString, r) == 0);
-G_STATIC_ASSERT(G_STRUCT_OFFSET(RefString, r.str) == 0);
-
 /*****************************************************************************/
+
+static void
+_ref_string_get(const NMRefString *rstr, const char **out_str, gsize *out_len)
+{
+    if (rstr->len == G_MAXSIZE) {
+        *out_len = rstr->_priv_lookup.l_len;
+        *out_str = rstr->_priv_lookup.l_str;
+    } else {
+        *out_len = rstr->len;
+        *out_str = rstr->str;
+    }
+}
 
 static guint
 _ref_string_hash(gconstpointer ptr)
 {
-    const RefString *a = ptr;
-    NMHashState      h;
+    const char *cstr;
+    gsize       len;
 
-    nm_hash_init(&h, 1463435489u);
-    nm_hash_update(&h, a->r.str, a->r.len);
-    return nm_hash_complete(&h);
+    _ref_string_get(ptr, &cstr, &len);
+    return nm_hash_mem(1463435489u, cstr, len);
 }
 
 static gboolean
-_ref_string_equal(gconstpointer pa, gconstpointer pb)
+_ref_string_equal(gconstpointer ptr_a, gconstpointer ptr_b)
 {
-    const RefString *a = pa;
-    const RefString *b = pb;
+    const char *cstr_a;
+    const char *cstr_b;
+    gsize       len_a;
+    gsize       len_b;
 
-    return a->r.len == b->r.len && memcmp(a->r.str, b->r.str, a->r.len) == 0;
+    _ref_string_get(ptr_a, &cstr_a, &len_a);
+    _ref_string_get(ptr_b, &cstr_b, &len_b);
+
+    return len_a == len_b && memcmp(cstr_a, cstr_b, len_a) == 0;
 }
 
 /*****************************************************************************/
 
 static void
-_ASSERT(const RefString *rstr0)
+_ASSERT(const NMRefString *rstr)
 {
     int r;
 
-    nm_assert(rstr0);
+    nm_assert(rstr);
 
     if (NM_MORE_ASSERTS > 0) {
-        r = g_atomic_int_get(&rstr0->ref_count);
+        r = g_atomic_int_get(&rstr->_ref_count);
         nm_assert(r > 0);
         nm_assert(r < G_MAXINT);
     }
 
-    nm_assert(rstr0->r.str == rstr0->str_data);
-    nm_assert(rstr0->r.str[rstr0->r.len] == '\0');
+    nm_assert(rstr->str[rstr->len] == '\0');
 
     if (NM_MORE_ASSERTS > 10) {
         G_LOCK(gl_lock);
-        r = g_atomic_int_get(&rstr0->ref_count);
+        r = g_atomic_int_get(&rstr->_ref_count);
         nm_assert(r > 0);
         nm_assert(r < G_MAXINT);
 
-        nm_assert(rstr0 == g_hash_table_lookup(gl_hash, rstr0));
+        nm_assert(rstr == g_hash_table_lookup(gl_hash, rstr));
         G_UNLOCK(gl_lock);
     }
 }
@@ -117,83 +119,88 @@ _ASSERT(const RefString *rstr0)
 NMRefString *
 nm_ref_string_new_len(const char *cstr, gsize len)
 {
-    RefString *rstr0;
+    NMRefString *rstr;
+
+    /* @len cannot be close to G_MAXSIZE. For one, that would mean our call
+     * to malloc() below overflows. Also, we use G_MAXSIZE as special length
+     * to indicate using _priv_lookup. */
+    nm_assert(len < G_MAXSIZE - G_STRUCT_OFFSET(NMRefString, str) - 1u);
 
     G_LOCK(gl_lock);
 
     if (G_UNLIKELY(!gl_hash)) {
         gl_hash = g_hash_table_new_full(_ref_string_hash, _ref_string_equal, g_free, NULL);
-        rstr0   = NULL;
+        rstr    = NULL;
     } else {
         NMRefString rr_lookup = {
-            .len = len,
-            .str = cstr,
+            .len = G_MAXSIZE,
+            ._priv_lookup =
+                {
+                    .l_len = len,
+                    .l_str = cstr,
+                },
         };
 
-        rstr0 = g_hash_table_lookup(gl_hash, &rr_lookup);
+        rstr = g_hash_table_lookup(gl_hash, &rr_lookup);
     }
 
-    if (rstr0) {
+    if (rstr) {
         nm_assert(({
-            int r = g_atomic_int_get(&rstr0->ref_count);
+            int r = g_atomic_int_get(&rstr->_ref_count);
 
             (r >= 0 && r < G_MAXINT);
         }));
-        g_atomic_int_inc(&rstr0->ref_count);
+        g_atomic_int_inc(&rstr->_ref_count);
     } else {
-        rstr0                            = g_malloc(sizeof(RefString) + 1 + len);
-        rstr0->ref_count                 = 1;
-        *((gsize *) &rstr0->r.len)       = len;
-        *((const char **) &rstr0->r.str) = rstr0->str_data;
+        rstr = g_malloc((G_STRUCT_OFFSET(NMRefString, str) + 1u) + len);
         if (len > 0)
-            memcpy(rstr0->str_data, cstr, len);
-        rstr0->str_data[len] = '\0';
+            memcpy((char *) rstr->str, cstr, len);
+        ((char *) rstr->str)[len] = '\0';
+        *((gsize *) &rstr->len)   = len;
+        rstr->_ref_count          = 1;
 
-        if (!g_hash_table_add(gl_hash, rstr0))
+        if (!g_hash_table_add(gl_hash, rstr))
             nm_assert_not_reached();
     }
 
     G_UNLOCK(gl_lock);
 
-    return &rstr0->r;
+    return rstr;
 }
 
 NMRefString *
 nm_ref_string_ref(NMRefString *rstr)
 {
-    RefString *const rstr0 = (RefString *) rstr;
-
     if (!rstr)
         return NULL;
 
-    _ASSERT(rstr0);
+    _ASSERT(rstr);
 
-    g_atomic_int_inc(&rstr0->ref_count);
-    return &rstr0->r;
+    g_atomic_int_inc(&rstr->_ref_count);
+    return rstr;
 }
 
 void
 _nm_ref_string_unref_non_null(NMRefString *rstr)
 {
-    RefString *const rstr0 = (RefString *) rstr;
-    int              r;
+    int r;
 
-    _ASSERT(rstr0);
+    _ASSERT(rstr);
 
     /* fast-path: first try to decrement the ref-count without bringing it
      * to zero. */
-    r = rstr0->ref_count;
-    if (G_LIKELY(r > 1 && g_atomic_int_compare_and_exchange(&rstr0->ref_count, r, r - 1)))
+    r = rstr->_ref_count;
+    if (G_LIKELY(r > 1 && g_atomic_int_compare_and_exchange(&rstr->_ref_count, r, r - 1)))
         return;
 
     /* We apparently are about to return the last reference. Take a lock. */
 
     G_LOCK(gl_lock);
 
-    nm_assert(g_hash_table_lookup(gl_hash, rstr0) == rstr0);
+    nm_assert(g_hash_table_lookup(gl_hash, rstr) == rstr);
 
-    if (G_LIKELY(g_atomic_int_dec_and_test(&rstr0->ref_count))) {
-        if (!g_hash_table_remove(gl_hash, rstr0))
+    if (G_LIKELY(g_atomic_int_dec_and_test(&rstr->_ref_count))) {
+        if (!g_hash_table_remove(gl_hash, rstr))
             nm_assert_not_reached();
     }
 
