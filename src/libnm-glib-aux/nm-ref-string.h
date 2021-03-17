@@ -6,8 +6,20 @@
 /*****************************************************************************/
 
 typedef struct _NMRefString {
-    const char *const str;
-    const gsize       len;
+    const gsize len;
+    union {
+        struct {
+            volatile int _ref_count;
+            const char   str[];
+        };
+        struct {
+            /* This union field is only used during lookup by external string.
+             * In that case, len will be set to G_MAXSIZE, and the actual len/str values
+             * are set in _priv_lookup. */
+            gsize       l_len;
+            const char *l_str;
+        } _priv_lookup;
+    };
 } NMRefString;
 
 /*****************************************************************************/
