@@ -575,7 +575,7 @@ class NMStubServer:
 
 
 class AsyncProcess:
-    def __init__(self, args, env, complete_cb, max_waittime_msec=20000):
+    def __init__(self, args, env, complete_cb, max_waittime_msec=40000):
         self._args = list(args)
         self._env = env
         self._complete_cb = complete_cb
