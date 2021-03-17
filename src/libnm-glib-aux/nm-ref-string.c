@@ -49,8 +49,8 @@ _ref_string_equal(gconstpointer ptr_a, gconstpointer ptr_b)
 
 /*****************************************************************************/
 
-static void
-_ASSERT(const NMRefString *rstr)
+void
+_nm_assert_nm_ref_string(NMRefString *rstr)
 {
     int r;
 
@@ -168,33 +168,9 @@ nm_ref_string_new_len(const char *cstr, gsize len)
     return rstr;
 }
 
-NMRefString *
-nm_ref_string_ref(NMRefString *rstr)
-{
-    if (!rstr)
-        return NULL;
-
-    _ASSERT(rstr);
-
-    g_atomic_int_inc(&rstr->_ref_count);
-    return rstr;
-}
-
 void
-_nm_ref_string_unref_non_null(NMRefString *rstr)
+_nm_ref_string_unref_slow_path(NMRefString *rstr)
 {
-    int r;
-
-    _ASSERT(rstr);
-
-    /* fast-path: first try to decrement the ref-count without bringing it
-     * to zero. */
-    r = rstr->_ref_count;
-    if (G_LIKELY(r > 1 && g_atomic_int_compare_and_exchange(&rstr->_ref_count, r, r - 1)))
-        return;
-
-    /* We apparently are about to return the last reference. Take a lock. */
-
     G_LOCK(gl_lock);
 
     nm_assert(g_hash_table_lookup(gl_hash, rstr) == rstr);
