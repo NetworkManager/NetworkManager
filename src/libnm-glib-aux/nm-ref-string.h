@@ -117,4 +117,17 @@ NM_IS_REF_STRING(NMRefString *rstr)
     return !!rstr;
 }
 
+static inline NMRefString *
+NM_REF_STRING_UPCAST(const char *str)
+{
+    NMRefString *rstr;
+
+    if (!str)
+        return NULL;
+
+    rstr = (gpointer)(((char *) str) - G_STRUCT_OFFSET(NMRefString, str));
+    nm_assert_nm_ref_string(rstr);
+    return rstr;
+}
+
 #endif /* __NM_REF_STRING_H__ */
