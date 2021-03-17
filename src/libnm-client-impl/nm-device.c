@@ -139,7 +139,10 @@ struct _NMLldpNeighbor {
     int        refcount;
     guint      n_attrs;
     GVariant **attr_vals;
-    char *     attr_names[];
+
+    /* these points to NMRefString.str values. Need to be freed with
+     * nm_ref_string_unref(). */
+    const char *attr_names[];
 };
 
 G_DEFINE_BOXED_TYPE(NMLldpNeighbor, nm_lldp_neighbor, _nm_lldp_neighbor_dup, nm_lldp_neighbor_unref)
@@ -2917,7 +2920,7 @@ _nm_lldp_neighbor_new_from_variant(GVariantIter *attrs_iter, GArray **inout_tmp_
         }
         named_val  = nm_g_array_append_new(tmp_array, NMUtilsNamedValue);
         *named_val = (NMUtilsNamedValue){
-            .name      = g_strdup(attr_name),
+            .name      = nm_ref_string_new(attr_name)->str,
             .value_ptr = attr_variant,
         };
     }
@@ -2927,10 +2930,10 @@ _nm_lldp_neighbor_new_from_variant(GVariantIter *attrs_iter, GArray **inout_tmp_
         g_array_sort(tmp_array, nm_strcmp_p);
         named_val = (NMUtilsNamedValue *) (gpointer) tmp_array->data;
         for (i = 1, j = 1; i < tmp_array->len; i++) {
-            if (nm_streq(named_val[j - 1].name, named_val[i].name)) {
+            if (named_val[j - 1].name == named_val[i].name) {
                 /* duplicate. We keep the latter. */
                 j--;
-                g_free(named_val[j].name_mutable);
+                nm_ref_string_unref(NM_REF_STRING_UPCAST(named_val[j].name));
                 g_variant_unref(named_val[j].value_ptr);
             }
 
@@ -2949,7 +2952,7 @@ _nm_lldp_neighbor_new_from_variant(GVariantIter *attrs_iter, GArray **inout_tmp_
     named_val = (NMUtilsNamedValue *) (gpointer) tmp_array->data;
     for (i = 0; i < tmp_array->len; i++) {
         /* we transfer ownership here from tmp_array! */
-        neighbor->attr_names[i] = named_val[i].name_mutable;
+        neighbor->attr_names[i] = named_val[i].name;
         neighbor->attr_vals[i]  = named_val[i].value_ptr;
     }
 
@@ -3035,7 +3038,7 @@ nm_lldp_neighbor_unref(NMLldpNeighbor *neighbor)
         return;
 
     for (i = 0; i < neighbor->n_attrs; i++) {
-        g_free(neighbor->attr_names[i]);
+        nm_ref_string_unref(NM_REF_STRING_UPCAST(neighbor->attr_names[i]));
         g_variant_unref(neighbor->attr_vals[i]);
     }
     g_free(neighbor);
