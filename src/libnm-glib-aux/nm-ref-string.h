@@ -24,6 +24,18 @@ typedef struct _NMRefString {
 
 /*****************************************************************************/
 
+void _nm_assert_nm_ref_string(NMRefString *rstr);
+
+static inline void
+nm_assert_nm_ref_string(NMRefString *rstr)
+{
+#if NM_MORE_ASSERTS
+    _nm_assert_nm_ref_string(rstr);
+#endif
+}
+
+/*****************************************************************************/
+
 NMRefString *nm_ref_string_new_len(const char *cstr, gsize len);
 
 static inline NMRefString *
@@ -32,17 +44,40 @@ nm_ref_string_new(const char *cstr)
     return cstr ? nm_ref_string_new_len(cstr, strlen(cstr)) : NULL;
 }
 
-NMRefString *nm_ref_string_ref(NMRefString *rstr);
-void         _nm_ref_string_unref_non_null(NMRefString *rstr);
+/*****************************************************************************/
+
+static inline NMRefString *
+nm_ref_string_ref(NMRefString *rstr)
+{
+    if (rstr) {
+        nm_assert_nm_ref_string(rstr);
+        g_atomic_int_inc(&rstr->_ref_count);
+    }
+    return rstr;
+}
+
+void _nm_ref_string_unref_slow_path(NMRefString *rstr);
 
 static inline void
 nm_ref_string_unref(NMRefString *rstr)
 {
-    if (rstr)
-        _nm_ref_string_unref_non_null(rstr);
+    int r;
+
+    if (!rstr)
+        return;
+
+    nm_assert_nm_ref_string(rstr);
+
+    /* fast-path: first try to decrement the ref-count without bringing it
+     * to zero. */
+    r = rstr->_ref_count;
+    if (G_LIKELY(r > 1 && g_atomic_int_compare_and_exchange(&rstr->_ref_count, r, r - 1)))
+        return;
+
+    _nm_ref_string_unref_slow_path(rstr);
 }
 
-NM_AUTO_DEFINE_FCN_VOID0(NMRefString *, _nm_auto_ref_string, _nm_ref_string_unref_non_null);
+NM_AUTO_DEFINE_FCN_VOID(NMRefString *, _nm_auto_ref_string, nm_ref_string_unref);
 #define nm_auto_ref_string nm_auto(_nm_auto_ref_string)
 
 /*****************************************************************************/
