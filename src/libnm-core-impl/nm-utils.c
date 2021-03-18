@@ -633,8 +633,6 @@ nm_utils_is_empty_ssid(const guint8 *ssid, gsize len)
     return _nm_utils_is_empty_ssid_arr(ssid, len);
 }
 
-#define ESSID_MAX_SIZE 32
-
 /**
  * nm_utils_escape_ssid:
  * @ssid: (array length=len): pointer to a buffer containing the SSID data
@@ -651,7 +649,7 @@ nm_utils_is_empty_ssid(const guint8 *ssid, gsize len)
 const char *
 nm_utils_escape_ssid(const guint8 *ssid, gsize len)
 {
-    static char   escaped[ESSID_MAX_SIZE * 2 + 1];
+    static char   escaped[NM_IW_ESSID_MAX_SIZE * 2 + 1];
     const guint8 *s = ssid;
     char *        d = escaped;
 
@@ -660,7 +658,7 @@ nm_utils_escape_ssid(const guint8 *ssid, gsize len)
         return escaped;
     }
 
-    len = MIN(len, (guint32) ESSID_MAX_SIZE);
+    len = MIN(len, (guint32) NM_IW_ESSID_MAX_SIZE);
     while (len--) {
         if (*s == '\0') {
             *d++ = '\\';
