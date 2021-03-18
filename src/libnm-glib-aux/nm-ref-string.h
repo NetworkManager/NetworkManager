@@ -58,7 +58,7 @@ nm_ref_string_equals_str(NMRefString *rstr, const char *s)
 }
 
 static inline gboolean
-NM_IS_REF_STRING(const NMRefString *rstr)
+NM_IS_REF_STRING(NMRefString *rstr)
 {
 #if NM_MORE_ASSERTS > 10
     if (rstr) {
