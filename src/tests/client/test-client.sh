@@ -47,6 +47,11 @@ export GI_TYPELIB_PATH="$BUILDDIR/src/libnm-client-impl${GI_TYPELIB_PATH:+:$GI_T
 export LD_LIBRARY_PATH="$LIBDIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 export NM_TEST_CLIENT_BUILDDIR="$BUILDDIR"
 
+# Run nmcli at least once. With libtool, nmcli is a shell script and with LTO
+# this seems to perform some slow setup during the first run. If we do that
+# during the test, it will timeout and fail.
+"$NM_TEST_CLIENT_NMCLI_PATH" --version &>/dev/null
+
 # we first collect all the output in "test-client.log" and print it at once
 # afterwards. The only reason is that when you run with `make -j` that the
 # test output is grouped together.
