@@ -107,14 +107,8 @@ nm_ref_string_equals_str(NMRefString *rstr, const char *s)
 static inline gboolean
 NM_IS_REF_STRING(NMRefString *rstr)
 {
-#if NM_MORE_ASSERTS > 10
-    if (rstr) {
-        nm_auto_ref_string NMRefString *r2 = NULL;
-
-        r2 = nm_ref_string_new_len(rstr->str, rstr->len);
-        nm_assert(rstr == r2);
-    }
-#endif
+    if (rstr)
+        nm_assert_nm_ref_string(rstr);
 
     /* Technically, %NULL is also a valid NMRefString (according to nm_ref_string_new(),
      * nm_ref_string_get_str() and nm_ref_string_unref()). However, NM_IS_REF_STRING()
