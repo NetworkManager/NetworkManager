@@ -3,6 +3,8 @@
  * Copyright (C) 2008 - 2012 Red Hat, Inc.
  */
 
+#define G_LOG_DOMAIN "nm-dispatcher"
+
 #include "libnm-client-aux-extern/nm-default-client.h"
 
 #include <syslog.h>
