@@ -44,7 +44,11 @@ _ref_string_equal(gconstpointer ptr_a, gconstpointer ptr_b)
     _ref_string_get(ptr_a, &cstr_a, &len_a);
     _ref_string_get(ptr_b, &cstr_b, &len_b);
 
-    return len_a == len_b && memcmp(cstr_a, cstr_b, len_a) == 0;
+    /* memcmp() accepts "n=0" argument, but it's not clear whether in that case
+     * all pointers must still be valid. The input pointer might be provided by
+     * the user via nm_ref_string_new_len(), and for len=0 we want to allow
+     * also invalid pointers. Hence, this extra "len_a==0" check. */
+    return len_a == len_b && (len_a == 0 || (memcmp(cstr_a, cstr_b, len_a) == 0));
 }
 
 /*****************************************************************************/
