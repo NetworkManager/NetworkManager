@@ -862,7 +862,7 @@ write_wireless_setting(NMConnection *connection,
         return FALSE;
     }
     ssid_data = g_bytes_get_data(ssid, &ssid_len);
-    if (!ssid_len || ssid_len > 32) {
+    if (ssid_len == 0 || ssid_len > NM_IW_ESSID_MAX_SIZE) {
         g_set_error(error,
                     NM_SETTINGS_ERROR,
                     NM_SETTINGS_ERROR_FAILED,
@@ -903,9 +903,9 @@ write_wireless_setting(NMConnection *connection,
         svSetValueStr(ifcfg, "ESSID", str->str);
         g_string_free(str, TRUE);
     } else {
-        char buf[33];
+        char buf[NM_IW_ESSID_MAX_SIZE + 1];
 
-        nm_assert(ssid_len <= 32);
+        nm_assert(ssid_len <= NM_IW_ESSID_MAX_SIZE);
         memcpy(buf, ssid_data, ssid_len);
         buf[ssid_len] = '\0';
         svSetValueStr(ifcfg, "ESSID", buf);

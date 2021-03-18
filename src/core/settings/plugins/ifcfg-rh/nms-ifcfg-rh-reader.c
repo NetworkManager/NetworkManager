@@ -4302,7 +4302,7 @@ make_wireless_setting(shvarFile *ifcfg, GError **error)
             bytes = g_bytes_new(value, value_len);
 
         ssid_len = g_bytes_get_size(bytes);
-        if (ssid_len > 32 || ssid_len == 0) {
+        if (ssid_len == 0 || ssid_len > NM_IW_ESSID_MAX_SIZE) {
             g_set_error(error,
                         NM_SETTINGS_ERROR,
                         NM_SETTINGS_ERROR_INVALID_CONNECTION,

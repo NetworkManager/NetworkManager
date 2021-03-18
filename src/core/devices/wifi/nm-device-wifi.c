@@ -1434,7 +1434,7 @@ ssids_options_to_ptrarray(GVariant *value, GError **error)
 
             v     = g_variant_get_child_value(value, i);
             bytes = g_variant_get_fixed_array(v, &len, sizeof(guint8));
-            if (len > 32) {
+            if (len > NM_IW_ESSID_MAX_SIZE) {
                 g_set_error(error,
                             NM_DEVICE_ERROR,
                             NM_DEVICE_ERROR_INVALID_ARGUMENT,

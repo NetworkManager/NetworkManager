@@ -98,7 +98,7 @@ nm_wifi_ap_set_ssid(NMWifiAP *ap, GBytes *ssid)
     }
 
     l = g_bytes_get_size(ssid);
-    if (l == 0 || l > 32)
+    if (l == 0 || l > NM_IW_ESSID_MAX_SIZE)
         g_return_val_if_reached(FALSE);
 
     priv = NM_WIFI_AP_GET_PRIVATE(ap);
