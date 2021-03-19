@@ -11,6 +11,7 @@
 #include <arpa/inet.h>
 #include <linux/fib_rules.h>
 
+#include "libnm-base/nm-net-aux.h"
 #include "libnm-glib-aux/nm-str-buf.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
@@ -1385,7 +1386,7 @@ nm_ip_route_attribute_validate(const char *name,
             break;
         }
         case 'T': /* route type. */
-            if (!NM_IN_SET(nm_utils_route_type_by_name(string), RTN_UNICAST, RTN_LOCAL)) {
+            if (!NM_IN_SET(nm_net_aux_rtnl_rtntype_a2n(string), RTN_UNICAST, RTN_LOCAL)) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -1432,10 +1433,14 @@ _nm_ip_route_attribute_validate_all(const NMIPRoute *route, GError **error)
     }
 
     if ((val = g_hash_table_lookup(route->attributes, NM_IP_ROUTE_ATTRIBUTE_TYPE))) {
-        nm_assert(g_variant_is_of_type(val, G_VARIANT_TYPE_STRING));
-        u8 = nm_utils_route_type_by_name(g_variant_get_string(val, NULL));
+        int v_i;
 
-        if (u8 == RTN_LOCAL && route->family == AF_INET
+        nm_assert(g_variant_is_of_type(val, G_VARIANT_TYPE_STRING));
+
+        v_i = nm_net_aux_rtnl_rtntype_a2n(g_variant_get_string(val, NULL));
+        nm_assert(v_i >= 0);
+
+        if (v_i == RTN_LOCAL && route->family == AF_INET
             && (val = g_hash_table_lookup(route->attributes, NM_IP_ROUTE_ATTRIBUTE_SCOPE))) {
             nm_assert(g_variant_is_of_type(val, G_VARIANT_TYPE_BYTE));
             u8 = g_variant_get_byte(val);
