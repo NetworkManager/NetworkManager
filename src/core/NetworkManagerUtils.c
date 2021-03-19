@@ -14,6 +14,7 @@
 
 #include "libnm-glib-aux/nm-c-list.h"
 
+#include "libnm-base/nm-net-aux.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
@@ -1294,9 +1295,9 @@ nm_utils_ip_route_attribute_to_platform(int                addr_family,
 
     if ((variant = nm_ip_route_get_attribute(s_route, NM_IP_ROUTE_ATTRIBUTE_TYPE))
         && g_variant_is_of_type(variant, G_VARIANT_TYPE_STRING)) {
-        guint8 type;
+        int type;
 
-        type = nm_utils_route_type_by_name(g_variant_get_string(variant, NULL));
+        type = nm_net_aux_rtnl_rtntype_a2n(g_variant_get_string(variant, NULL));
         nm_assert(NM_IN_SET(type, RTN_UNICAST, RTN_LOCAL));
 
         r->type_coerced = nm_platform_route_type_coerce(type);
