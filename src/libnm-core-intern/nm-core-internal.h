@@ -655,6 +655,8 @@ gboolean nm_ip_routing_rule_get_xifname_bin(const NMIPRoutingRule *self,
 #define NM_IP_ROUTING_RULE_ATTR_TO                    "to"
 #define NM_IP_ROUTING_RULE_ATTR_TOS                   "tos"
 #define NM_IP_ROUTING_RULE_ATTR_TO_LEN                "to-len"
+#define NM_IP_ROUTING_RULE_ATTR_UID_RANGE_START       "uid-range-start"
+#define NM_IP_ROUTING_RULE_ATTR_UID_RANGE_END         "uid-range-end"
 
 NMIPRoutingRule *nm_ip_routing_rule_from_dbus(GVariant *variant, gboolean strict, GError **error);
 GVariant *       nm_ip_routing_rule_to_dbus(const NMIPRoutingRule *self);
