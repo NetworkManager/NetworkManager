@@ -904,9 +904,15 @@ nm_match_spec_device_by_pllink(const NMPlatformLink *pllink,
 NMPlatformRoutingRule *
 nm_ip_routing_rule_to_platform(const NMIPRoutingRule *rule, NMPlatformRoutingRule *out_pl)
 {
+    gboolean uid_range_has;
+    guint32  uid_range_start = 0;
+    guint32  uid_range_end   = 0;
+
     nm_assert(rule);
     nm_assert(nm_ip_routing_rule_validate(rule, NULL));
     nm_assert(out_pl);
+
+    uid_range_has = nm_ip_routing_rule_get_uid_range(rule, &uid_range_start, &uid_range_end);
 
     *out_pl = (NMPlatformRoutingRule){
         .addr_family = nm_ip_routing_rule_get_addr_family(rule),
@@ -934,6 +940,12 @@ nm_ip_routing_rule_to_platform(const NMIPRoutingRule *rule, NMPlatformRoutingRul
         .table   = nm_ip_routing_rule_get_table(rule),
         .suppress_prefixlen_inverse =
             ~((guint32) nm_ip_routing_rule_get_suppress_prefixlength(rule)),
+        .uid_range_has = uid_range_has,
+        .uid_range =
+            {
+                .start = uid_range_start,
+                .end   = uid_range_end,
+            },
     };
 
     nm_ip_routing_rule_get_xifname_bin(rule, TRUE, out_pl->iifname);
