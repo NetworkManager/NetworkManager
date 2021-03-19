@@ -20,7 +20,9 @@ check_programs_norun += \
 	examples/C/glib/list-connections-gdbus \
 	examples/C/glib/list-connections-libnm \
 	examples/C/glib/monitor-nm-running-gdbus \
-	examples/C/glib/monitor-nm-state-gdbus
+	examples/C/glib/monitor-nm-state-gdbus \
+	examples/C/glib/vpn-import-libnm \
+	$(NULL)
 
 examples_C_glib_add_connection_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus)
 examples_C_glib_add_connection_gdbus_LDADD = \
@@ -62,6 +64,12 @@ examples_C_glib_monitor_nm_running_gdbus_LDADD = \
 examples_C_glib_monitor_nm_state_gdbus_CPPFLAGS = $(examples_C_glib_cppflags_gdbus)
 examples_C_glib_monitor_nm_state_gdbus_LDADD = \
 	$(GLIB_LIBS)
+
+examples_C_glib_vpn_import_libnm_CPPFLAGS = $(examples_C_glib_cppflags_libnm)
+examples_C_glib_vpn_import_libnm_LDADD = \
+	src/libnm-client-impl/libnm.la \
+	$(GLIB_LIBS)
+$(examples_C_glib_vpn_import_libnm_OBJECTS): $(src_libnm_core_public_mkenums_h) $(src_libnm_client_public_mkenums_h)
 
 EXTRA_DIST += \
 	examples/C/glib/meson.build
