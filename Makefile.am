@@ -499,6 +499,8 @@ src_libnm_base_libnm_base_la_SOURCES = \
 	src/libnm-base/nm-ethtool-base.c \
 	src/libnm-base/nm-ethtool-base.h \
 	src/libnm-base/nm-ethtool-utils-base.h \
+	src/libnm-base/nm-net-aux.c \
+	src/libnm-base/nm-net-aux.h \
 	$(NULL)
 
 src_libnm_base_libnm_base_la_LDFLAGS = \
