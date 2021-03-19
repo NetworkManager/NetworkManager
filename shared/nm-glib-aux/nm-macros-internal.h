@@ -122,7 +122,7 @@ _nm_auto_free_gstring(GString **str)
 #define nm_auto_free_gstring nm_auto(_nm_auto_free_gstring)
 
 static inline void
-_nm_auto_protect_errno(int *p_saved_errno)
+_nm_auto_protect_errno(const int *p_saved_errno)
 {
     errno = *p_saved_errno;
 }
