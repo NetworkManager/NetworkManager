@@ -56,8 +56,8 @@ export NM_TEST_CLIENT_BUILDDIR="$BUILDDIR"
 # afterwards. The only reason is that when you run with `make -j` that the
 # test output is grouped together.
 
-r=""
-"$PYTHON" "$SRCDIR/src/tests/client/test-client.py" -v &> "$BUILDDIR/src/tests/client/test-client.log" && r=ok
+r="ok"
+"$PYTHON" "$SRCDIR/src/tests/client/test-client.py" -v &> "$BUILDDIR/src/tests/client/test-client.log" || r=fail
 
 cat "$BUILDDIR/src/tests/client/test-client.log"
 
