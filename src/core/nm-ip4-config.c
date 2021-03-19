@@ -649,21 +649,6 @@ nm_ip4_config_add_dependent_routes(NMIP4Config *self,
         if (my_addr->external)
             continue;
 
-        /* Pre-generate local route added by kernel */
-        r                   = nmp_object_new(NMP_OBJECT_TYPE_IP4_ROUTE, NULL);
-        route               = NMP_OBJECT_CAST_IP4_ROUTE(r);
-        route->ifindex      = ifindex;
-        route->rt_source    = NM_IP_CONFIG_SOURCE_KERNEL;
-        route->network      = my_addr->address;
-        route->plen         = 32;
-        route->pref_src     = my_addr->address;
-        route->type_coerced = nm_platform_route_type_coerce(RTN_LOCAL);
-        route->scope_inv    = nm_platform_route_scope_inv(RT_SCOPE_HOST);
-        route->table_coerced =
-            nm_platform_route_table_coerce(is_vrf ? route_table : RT_TABLE_LOCAL);
-        _add_route(self, r, NULL, NULL);
-        nm_clear_pointer(&r, nmp_object_unref);
-
         if (nm_utils_ip4_address_is_zeronet(network)) {
             /* Kernel doesn't add device-routes for destinations that
              * start with 0.x.y.z. Skip them. */

@@ -404,22 +404,6 @@ nm_ip6_config_add_dependent_routes(NMIP6Config *self,
         if (my_addr->external)
             continue;
 
-        {
-            nm_auto_nmpobj NMPObject *r = NULL;
-
-            /* Pre-generate local route added by kernel */
-            r                   = nmp_object_new(NMP_OBJECT_TYPE_IP6_ROUTE, NULL);
-            route               = NMP_OBJECT_CAST_IP6_ROUTE(r);
-            route->ifindex      = ifindex;
-            route->network      = my_addr->address;
-            route->plen         = 128;
-            route->type_coerced = nm_platform_route_type_coerce(RTN_LOCAL);
-            route->metric       = 0;
-            route->table_coerced =
-                nm_platform_route_table_coerce(is_vrf ? route_table : RT_TABLE_LOCAL);
-            _add_route(self, r, NULL, NULL);
-        }
-
         if (NM_FLAGS_HAS(my_addr->n_ifa_flags, IFA_F_NOPREFIXROUTE))
             continue;
         if (my_addr->plen == 0)
