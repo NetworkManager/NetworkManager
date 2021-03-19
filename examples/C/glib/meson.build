@@ -9,6 +9,7 @@ examples = [
   ['list-connections-libnm',       []],
   ['monitor-nm-running-gdbus',     []],
   ['monitor-nm-state-gdbus',       []],
+  ['vpn-import-libnm',              []],
 ]
 
 foreach example: examples
