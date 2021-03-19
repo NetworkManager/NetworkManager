@@ -2644,12 +2644,14 @@ nm_ip_routing_rule_validate(const NMIPRoutingRule *self, GError **error)
                                 _("missing table"));
             return FALSE;
         }
+    } else if (NM_IN_SET(self->action, FR_ACT_BLACKHOLE, FR_ACT_PROHIBIT, FR_ACT_UNREACHABLE)) {
+        /* pass */
     } else {
-        /* whitelist the actions that we currently. */
+        /* we currently only support the listed actions. */
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("invalid action"));
+                            _("invalid action type"));
         return FALSE;
     }
 
@@ -3055,11 +3057,17 @@ nm_ip_routing_rule_from_dbus(GVariant *variant, gboolean strict, GError **error)
         nm_ip_routing_rule_set_oifname(self,
                                        g_variant_get_string(variants[RR_DBUS_ATTR_OIFNAME], NULL));
 
-    if (variants[RR_DBUS_ATTR_ACTION])
-        nm_ip_routing_rule_set_action(self, g_variant_get_byte(variants[RR_DBUS_ATTR_ACTION]));
-
-    if (variants[RR_DBUS_ATTR_TABLE])
-        nm_ip_routing_rule_set_table(self, g_variant_get_uint32(variants[RR_DBUS_ATTR_TABLE]));
+    /* For the ip-rule string format, the table default depends on the action. For
+     * our D-Bus format it's always the same: either a table is specified or it defaults
+     * to zero. And either the action is specified or it defaults to FR_ACT_TO_TBL. */
+    nm_ip_routing_rule_set_action(self,
+                                  !variants[RR_DBUS_ATTR_ACTION]
+                                      ? (guint8) FR_ACT_TO_TBL
+                                      : g_variant_get_byte(variants[RR_DBUS_ATTR_ACTION]));
+    nm_ip_routing_rule_set_table(self,
+                                 !variants[RR_DBUS_ATTR_TABLE]
+                                     ? (guint32) 0
+                                     : g_variant_get_uint32(variants[RR_DBUS_ATTR_TABLE]));
 
     if (variants[RR_DBUS_ATTR_SUPPRESS_PREFIXLENGTH])
         nm_ip_routing_rule_set_suppress_prefixlength(
@@ -3267,6 +3275,7 @@ nm_ip_routing_rule_from_string(const char *                 str,
     gint64                                         i64_suppress_prefixlength = -1;
     guint16                                        sport_end                 = 0;
     gint64                                         i64_dport_start           = -1;
+    int                                            i_action                  = -1;
     guint16                                        dport_end                 = 0;
     guint32                                        uid_range_start           = 0;
     guint32                                        uid_range_end             = 0;
@@ -3372,7 +3381,7 @@ nm_ip_routing_rule_from_string(const char *                 str,
                 continue;
             if (i64_table != -1)
                 goto next_fail_word0_duplicate_key;
-            i64_table = _nm_utils_ascii_str_to_int64(word1, 0, 1, G_MAXUINT32, -1);
+            i64_table = _nm_utils_ascii_str_to_int64(word1, 0, 0, G_MAXUINT32, -1);
             if (i64_table == -1) {
                 if (nm_streq(word1, "main"))
                     i64_table = RT_TABLE_MAIN;
@@ -3490,6 +3499,22 @@ nm_ip_routing_rule_from_string(const char *                 str,
             uid_range_has = TRUE;
             goto next_words_consumed;
         }
+        if (NM_IN_STRSET(word0, "type")) {
+            if (!word1)
+                continue;
+            if (i_action >= 0)
+                goto next_fail_word0_duplicate_key;
+            i_action = nm_net_aux_rtnl_rtntype_a2n(word1);
+            if (i_action < 0)
+                goto next_fail_word1_invalid_value;
+            goto next_words_consumed;
+        }
+
+        if (i_action < 0) {
+            i_action = nm_net_aux_rtnl_rtntype_a2n(word1);
+            if (i_action >= 0)
+                goto next_words_consumed;
+        }
 
         /* also the action is still unsupported. For the moment, we only support
          * FR_ACT_TO_TBL, which is the default (by not expressing it on the command
@@ -3583,6 +3608,16 @@ next_words_consumed:
 
     if (i64_priority != -1)
         nm_ip_routing_rule_set_priority(self, i64_priority);
+
+    if (i_action >= 0) {
+        nm_ip_routing_rule_set_action(self, i_action);
+        if (i64_table == -1) {
+            if (i_action != FR_ACT_TO_TBL)
+                i64_table = 0;
+            else
+                i64_table = RT_TABLE_MAIN;
+        }
+    }
 
     if (i64_tos != -1)
         nm_ip_routing_rule_set_tos(self, i64_tos);
@@ -3813,16 +3848,24 @@ nm_ip_routing_rule_to_string(const NMIPRoutingRule *      self,
                                  self->uid_range_end);
     }
 
-    if (self->table != 0) {
+    if (self->suppress_prefixlength != -1) {
+        nm_str_buf_append_printf(nm_str_buf_append_required_delimiter(&str, ' '),
+                                 "suppress_prefixlength %d",
+                                 (int) self->suppress_prefixlength);
+    }
+
+    if (self->table != 0 || self->action == FR_ACT_TO_TBL) {
         nm_str_buf_append_printf(nm_str_buf_append_required_delimiter(&str, ' '),
                                  "table %u",
                                  (guint) self->table);
     }
 
-    if (self->suppress_prefixlength != -1) {
+    if (self->action != FR_ACT_TO_TBL) {
+        char sbuf[100];
+
         nm_str_buf_append_printf(nm_str_buf_append_required_delimiter(&str, ' '),
-                                 "suppress_prefixlength %d",
-                                 (int) self->suppress_prefixlength);
+                                 "type %s",
+                                 nm_net_aux_rtnl_rtntype_n2a_maybe_buf(self->action, sbuf));
     }
 
     return nm_str_buf_finalize(&str, NULL);
