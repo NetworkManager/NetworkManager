@@ -4,6 +4,7 @@ libnm_base = static_library(
   'nm-base',
   sources: files(
     'nm-ethtool-base.c',
+    'nm-net-aux.c',
   ),
   include_directories: [
     src_inc,
