@@ -2723,11 +2723,11 @@ typedef enum {
     RR_DBUS_ATTR_PRIORITY,
     RR_DBUS_ATTR_SPORT_END,
     RR_DBUS_ATTR_SPORT_START,
-    RR_DBUS_ATTR_TABLE,
     RR_DBUS_ATTR_SUPPRESS_PREFIXLENGTH,
+    RR_DBUS_ATTR_TABLE,
     RR_DBUS_ATTR_TO,
-    RR_DBUS_ATTR_TOS,
     RR_DBUS_ATTR_TO_LEN,
+    RR_DBUS_ATTR_TOS,
 
     _RR_DBUS_ATTR_NUM,
 } RRDbusAttr;
@@ -2768,6 +2768,35 @@ static const RRDbusData rr_dbus_data[_RR_DBUS_ATTR_NUM] = {
 #undef _D
 };
 
+static RRDbusAttr
+_rr_dbus_attr_from_name(const char *name)
+{
+    gssize idx;
+
+    nm_assert(name);
+
+    if (NM_MORE_ASSERT_ONCE(10)) {
+        int i;
+
+        for (i = 0; i < _RR_DBUS_ATTR_NUM; i++) {
+            nm_assert(rr_dbus_data[i].name);
+            nm_assert(g_variant_type_string_is_valid((const char *) rr_dbus_data[i].dbus_type));
+            if (i > 0)
+                nm_assert(strcmp(rr_dbus_data[i - 1].name, rr_dbus_data[i].name) < 0);
+        }
+    }
+
+    idx = nm_utils_array_find_binary_search(rr_dbus_data,
+                                            sizeof(rr_dbus_data[0]),
+                                            _RR_DBUS_ATTR_NUM,
+                                            &name,
+                                            nm_strcmp_p_with_data,
+                                            NULL);
+    if (idx < 0)
+        return _RR_DBUS_ATTR_NUM;
+    return idx;
+}
+
 static void
 _rr_variants_free(GVariant *(*p_variants)[])
 {
@@ -2793,42 +2822,35 @@ nm_ip_routing_rule_from_dbus(GVariant *variant, gboolean strict, GError **error)
 
     g_variant_iter_init(&iter, variant);
 
-#if NM_MORE_ASSERTS > 10
-    for (attr = 0; attr < _RR_DBUS_ATTR_NUM; attr++) {
-        nm_assert(rr_dbus_data[attr].name);
-        nm_assert(g_variant_type_string_is_valid((const char *) rr_dbus_data[attr].dbus_type));
-    }
-#endif
-
     while (g_variant_iter_next(&iter, "{&sv}", &iter_key, &iter_val)) {
         gs_unref_variant GVariant *iter_val2 = iter_val;
 
-        for (attr = 0; attr < _RR_DBUS_ATTR_NUM; attr++) {
-            if (nm_streq(iter_key, rr_dbus_data[attr].name)) {
-                if (variants[attr]) {
-                    if (strict) {
-                        g_set_error(error,
-                                    NM_CONNECTION_ERROR,
-                                    NM_CONNECTION_ERROR_FAILED,
-                                    _("duplicate key %s"),
-                                    iter_key);
-                        return NULL;
-                    }
-                    g_variant_unref(variants[attr]);
-                }
-                variants[attr] = g_steal_pointer(&iter_val2);
-                break;
+        attr = _rr_dbus_attr_from_name(iter_key);
+
+        if (attr >= _RR_DBUS_ATTR_NUM) {
+            if (strict) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("invalid key \"%s\""),
+                            iter_key);
+                return NULL;
             }
+            continue;
         }
 
-        if (attr >= _RR_DBUS_ATTR_NUM && strict) {
-            g_set_error(error,
-                        NM_CONNECTION_ERROR,
-                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("invalid key \"%s\""),
-                        iter_key);
-            return NULL;
+        if (variants[attr]) {
+            if (strict) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_FAILED,
+                            _("duplicate key %s"),
+                            iter_key);
+                return NULL;
+            }
+            g_variant_unref(variants[attr]);
         }
+        variants[attr] = g_steal_pointer(&iter_val2);
     }
 
     for (attr = 0; attr < _RR_DBUS_ATTR_NUM; attr++) {
