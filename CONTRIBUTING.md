@@ -182,3 +182,35 @@ To resync our local notes use:
 ```
 $ git fetch origin refs/notes/bugs:refs/notes/bugs -f
 ```
+
+Code Structure
+---------------------------
+
+`./contrib`- Contains a lot of required package, configuration for different platform and environment, build NM from source tree.
+
+`./data`- Contains some configurations and rules.
+
+`./docs`- Contains the generated documentation for libnm and for the D-Bus API.
+
+`./examples`- Some code examples for basic networking operations and status checking.
+
+`./introspection`- XML docs describing various D-Bus interface and their properties.
+
+`./m4`- Contains M4 macros source files for autoconf.
+
+`./man`- NM manual files.
+
+`./po`- contains text-based portable object file. These .PO files are referenced by GNU gettext as a property file and these files are human readable used for translating purpose.
+
+`./src`- source code for libnm, nmcli, nm-cloud-setup, nmtui…
+
+`./tools`- tools for generating the intermediate files or merging the file.
+
+Cscope/ctags
+---------------------------
+
+NetworkManager's source code is large. It may be a good idea to use tools like cscope/ctags to index the
+source code and navigate it. These tools can integrate with editors like `Vim` and `Emacs`. See:
+
+- http://cscope.sourceforge.net/cscope_vim_tutorial.html
+- https://www.emacswiki.org/emacs/CScopeAndEmacs
