@@ -117,6 +117,8 @@ src/libnm-core-impl/.dirstamp:                      config-extra.h
 src/libnm-base/.dirstamp:                           config-extra.h
 src/libnm-glib-aux/.dirstamp:                       config-extra.h
 src/libnm-glib-aux/tests/.dirstamp:                 config-extra.h
+src/libnm-log-core/.dirstamp:                       config-extra.h
+src/libnm-log-null/.dirstamp:                       config-extra.h
 src/libnm-platform/.dirstamp:                       config-extra.h
 src/libnm-platform/tests/.dirstamp:                 config-extra.h
 src/libnm-platform/wifi/.dirstamp:                  config-extra.h
