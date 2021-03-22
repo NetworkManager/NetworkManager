@@ -584,7 +584,7 @@ _merge_keyfiles(GKeyFile *keyfile_user, GKeyFile *keyfile_intern)
             const char *  key   = keys[k];
             gs_free char *value = NULL;
 
-            if (is_atomic && strcmp(key, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS) == 0)
+            if (is_atomic && nm_streq(key, NM_CONFIG_KEYFILE_KEY_ATOMIC_SECTION_WAS))
                 continue;
 
             if (!is_intern && !is_atomic
@@ -1125,7 +1125,7 @@ load_global_dns(GKeyFile *keyfile, gboolean internal)
 
         g_hash_table_insert(dns_config->domains, strdup(name), domain);
 
-        if (!strcmp(name, "*"))
+        if (name[0] == '*' && name[1] == '\0')
             default_found = TRUE;
     }
 
@@ -1222,7 +1222,7 @@ global_dns_domain_from_dbus(char *name, GVariant *variant)
 
     g_variant_iter_init(&iter, variant);
     while (g_variant_iter_next(&iter, "{&sv}", &key, &val)) {
-        if (!g_strcmp0(key, "servers") && g_variant_is_of_type(val, G_VARIANT_TYPE("as"))) {
+        if (nm_streq0(key, "servers") && g_variant_is_of_type(val, G_VARIANT_TYPE("as"))) {
             strv = g_variant_dup_strv(val, NULL);
             _nm_utils_strv_cleanup(strv, TRUE, TRUE, TRUE);
             for (i = 0, j = 0; strv && strv[i]; i++) {
@@ -1239,7 +1239,7 @@ global_dns_domain_from_dbus(char *name, GVariant *variant)
                 g_strfreev(domain->servers);
                 domain->servers = strv;
             }
-        } else if (!g_strcmp0(key, "options") && g_variant_is_of_type(val, G_VARIANT_TYPE("as"))) {
+        } else if (nm_streq0(key, "options") && g_variant_is_of_type(val, G_VARIANT_TYPE("as"))) {
             strv = g_variant_dup_strv(val, NULL);
             g_strfreev(domain->options);
             domain->options = _nm_utils_strv_cleanup(strv, TRUE, TRUE, TRUE);
@@ -1287,10 +1287,10 @@ nm_global_dns_config_from_dbus(const GValue *value, GError **error)
 
     g_variant_iter_init(&iter, variant);
     while (g_variant_iter_next(&iter, "{&sv}", &key, &val)) {
-        if (!g_strcmp0(key, "searches") && g_variant_is_of_type(val, G_VARIANT_TYPE("as"))) {
+        if (nm_streq0(key, "searches") && g_variant_is_of_type(val, G_VARIANT_TYPE("as"))) {
             strv                 = g_variant_dup_strv(val, NULL);
             dns_config->searches = _nm_utils_strv_cleanup(strv, TRUE, TRUE, TRUE);
-        } else if (!g_strcmp0(key, "options") && g_variant_is_of_type(val, G_VARIANT_TYPE("as"))) {
+        } else if (nm_streq0(key, "options") && g_variant_is_of_type(val, G_VARIANT_TYPE("as"))) {
             strv = g_variant_dup_strv(val, NULL);
             _nm_utils_strv_cleanup(strv, TRUE, TRUE, TRUE);
 
@@ -1306,7 +1306,7 @@ nm_global_dns_config_from_dbus(const GValue *value, GError **error)
                 strv[j]             = NULL;
                 dns_config->options = strv;
             }
-        } else if (!g_strcmp0(key, "domains")
+        } else if (nm_streq0(key, "domains")
                    && g_variant_is_of_type(val, G_VARIANT_TYPE("a{sv}"))) {
             NMGlobalDnsDomain *domain;
             GVariantIter       domain_iter;
@@ -1659,22 +1659,20 @@ nm_config_data_diff(NMConfigData *old_data, NMConfigData *new_data)
     if (!_nm_keyfile_equals(priv_old->keyfile_intern, priv_new->keyfile_intern, TRUE))
         changes |= NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_INTERN;
 
-    if (g_strcmp0(nm_config_data_get_config_main_file(old_data),
-                  nm_config_data_get_config_main_file(new_data))
-            != 0
-        || g_strcmp0(nm_config_data_get_config_description(old_data),
-                     nm_config_data_get_config_description(new_data))
-               != 0)
+    if (!nm_streq0(nm_config_data_get_config_main_file(old_data),
+                   nm_config_data_get_config_main_file(new_data))
+        || !nm_streq0(nm_config_data_get_config_description(old_data),
+                      nm_config_data_get_config_description(new_data)))
         changes |= NM_CONFIG_CHANGE_CONFIG_FILES;
 
     if (nm_config_data_get_connectivity_enabled(old_data)
             != nm_config_data_get_connectivity_enabled(new_data)
         || nm_config_data_get_connectivity_interval(old_data)
                != nm_config_data_get_connectivity_interval(new_data)
-        || g_strcmp0(nm_config_data_get_connectivity_uri(old_data),
-                     nm_config_data_get_connectivity_uri(new_data))
-        || g_strcmp0(nm_config_data_get_connectivity_response(old_data),
-                     nm_config_data_get_connectivity_response(new_data)))
+        || !nm_streq0(nm_config_data_get_connectivity_uri(old_data),
+                      nm_config_data_get_connectivity_uri(new_data))
+        || !nm_streq0(nm_config_data_get_connectivity_response(old_data),
+                      nm_config_data_get_connectivity_response(new_data)))
         changes |= NM_CONFIG_CHANGE_CONNECTIVITY;
 
     if (nm_utils_g_slist_strlist_cmp(priv_old->no_auto_default.specs,
@@ -1685,10 +1683,11 @@ nm_config_data_diff(NMConfigData *old_data, NMConfigData *new_data)
                != 0)
         changes |= NM_CONFIG_CHANGE_NO_AUTO_DEFAULT;
 
-    if (g_strcmp0(nm_config_data_get_dns_mode(old_data), nm_config_data_get_dns_mode(new_data)))
+    if (!nm_streq0(nm_config_data_get_dns_mode(old_data), nm_config_data_get_dns_mode(new_data)))
         changes |= NM_CONFIG_CHANGE_DNS_MODE;
 
-    if (g_strcmp0(nm_config_data_get_rc_manager(old_data), nm_config_data_get_rc_manager(new_data)))
+    if (!nm_streq0(nm_config_data_get_rc_manager(old_data),
+                   nm_config_data_get_rc_manager(new_data)))
         changes |= NM_CONFIG_CHANGE_RC_MANAGER;
 
     if (!global_dns_equal(priv_old->global_dns, priv_new->global_dns))
