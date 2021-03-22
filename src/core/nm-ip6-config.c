@@ -396,23 +396,6 @@ nm_ip6_config_add_dependent_routes(NMIP6Config *self,
      *
      * For manually added IPv6 routes, add the device routes explicitly. */
 
-    /* Pre-generate multicast route */
-    {
-        nm_auto_nmpobj NMPObject *r = NULL;
-        NMPlatformIP6Route *      route;
-
-        r                         = nmp_object_new(NMP_OBJECT_TYPE_IP6_ROUTE, NULL);
-        route                     = NMP_OBJECT_CAST_IP6_ROUTE(r);
-        route->ifindex            = ifindex;
-        route->network.s6_addr[0] = 0xffu;
-        route->plen               = 8;
-        route->table_coerced      = nm_platform_route_table_coerce(RT_TABLE_LOCAL);
-        route->type_coerced       = nm_platform_route_type_coerce(RTN_UNICAST);
-        route->metric             = 256;
-
-        _add_route(self, r, NULL, NULL);
-    }
-
     nm_ip_config_iter_ip6_address_for_each (&iter, self, &my_addr) {
         NMPlatformIP6Route *route;
         gboolean            has_peer;
