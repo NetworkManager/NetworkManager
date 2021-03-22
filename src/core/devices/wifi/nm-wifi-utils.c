@@ -947,6 +947,8 @@ nm_wifi_connection_get_iwd_ssid_and_security(NMConnection *        connection,
     return TRUE;
 }
 
+/*****************************************************************************/
+
 /* Builds the IWD network configuration file name for a given SSID
  * and security type pair.  The SSID should be valid UTF-8 and in
  * any case must contain no NUL-bytes.  If @ssid is NUL-terminated,
@@ -985,11 +987,14 @@ nm_wifi_utils_get_iwd_config_filename(const char *         ssid,
         return g_strdup_printf("%.*s.%s", (int) (ptr - ssid), ssid, security_suffix);
     } else {
         char ssid_buf[NM_IW_ESSID_MAX_SIZE * 2 + 1];
+
         return g_strdup_printf("=%s.%s",
                                nm_utils_bin2hexstr_full(ssid, ptr - ssid, '\0', FALSE, ssid_buf),
                                security_suffix);
     }
 }
+
+/*****************************************************************************/
 
 static gboolean
 psk_setting_to_iwd_config(GKeyFile *file, NMSettingWirelessSecurity *s_wsec, GError **error)
@@ -1306,7 +1311,7 @@ eap_optional_password_to_iwd_config(GKeyFile *      file,
          * file, i.e. containing NUL characters.  Those that don't have NULs
          * could in theory be written to the config file but GKeyFile may not
          * like that if they're no UTF-8, and the password-raw property is
-	 * not written by nm-connection-editor anyway.
+         * not written by nm-connection-editor anyway.
          */
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
@@ -1554,8 +1559,8 @@ ip4_config_to_iwd_config(GKeyFile *file, NMSettingIPConfig *s_ip, GError **error
 
     num = nm_setting_ip_config_get_num_dns(s_ip);
     if (num) {
-        GString *s = g_string_sized_new(128);
-        int      i;
+        nm_auto_free_gstring GString *s = g_string_sized_new(128);
+        guint                         i;
 
         for (i = 0; i < num; i++) {
             if (s->len)
@@ -1570,7 +1575,6 @@ ip4_config_to_iwd_config(GKeyFile *file, NMSettingIPConfig *s_ip, GError **error
          * overrides the DHCP DNSes.
          */
         g_key_file_set_string(file, "IPv4", "DNS", s->str);
-        g_string_free(s, TRUE);
     }
 
     if (!nm_streq0(nm_setting_ip_config_get_method(s_ip), NM_SETTING_IP4_CONFIG_METHOD_MANUAL))
@@ -1621,8 +1625,8 @@ ip6_config_to_iwd_config(GKeyFile *file, NMSettingIPConfig *s_ip, GError **error
 
     num = nm_setting_ip_config_get_num_dns(s_ip);
     if (num) {
-        GString *s = g_string_sized_new(128);
-        int      i;
+        nm_auto_free_gstring GString *s = g_string_sized_new(128);
+        guint                         i;
 
         for (i = 0; i < num; i++) {
             if (s->len)
@@ -1630,7 +1634,6 @@ ip6_config_to_iwd_config(GKeyFile *file, NMSettingIPConfig *s_ip, GError **error
             g_string_append(s, nm_setting_ip_config_get_dns(s_ip, i));
         }
         g_key_file_set_string(file, "IPv6", "DNS", s->str);
-        g_string_free(s, TRUE);
     }
 
     if (!NM_IN_STRSET(nm_setting_ip_config_get_method(s_ip),
