@@ -69,4 +69,6 @@ main(int argc, char **argv)
 
     nm_client_add_connection_async(client, conn, TRUE, NULL, (GAsyncReadyCallback) add_cb, loop);
     g_main_loop_run(loop);
+
+    return 0;
 }
