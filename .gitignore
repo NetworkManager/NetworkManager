@@ -118,6 +118,7 @@ test-*.trs
 /examples/C/glib/list-connections-libnm
 /examples/C/glib/monitor-nm-running-gdbus
 /examples/C/glib/monitor-nm-state-gdbus
+/examples/C/glib/vpn-import-libnm
 /examples/C/qt/add-connection-wired
 /examples/C/qt/list-connections
 /examples/C/qt/change-ipv4-addresses
