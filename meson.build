@@ -785,11 +785,17 @@ config_h.set('NM_MORE_ASSERTS', more_asserts)
 more_logging = get_option('more_logging')
 config_h.set10('NM_MORE_LOGGING', more_logging)
 
-generic_support_src = 'int main() { int a = 0; int b = _Generic (a, int: 4); return b + a; };'
-config_h.set10('_NM_CC_SUPPORT_GENERIC', cc.compiles(generic_support_src))
+config_h.set10('_NM_CC_SUPPORT_GENERIC',
+  cc.compiles(
+    'int foo(void); static const char *const buf[1] = { "a" }; int foo() { int a = 0; int b = _Generic (a, int: 4) + _Generic(buf, const char *const*: 5); return b + a; }'
+  )
+)
 
-auto_support_src = 'int main() { int a = 0; __auto_type b = a; return b + a; };'
-config_h.set10('_NM_CC_SUPPORT_AUTO_TYPE', cc.compiles(auto_support_src))
+config_h.set10('_NM_CC_SUPPORT_AUTO_TYPE',
+  cc.compiles(
+    'int main() { int a = 0; __auto_type b = a; return b + a; };'
+  )
+)
 
 # Vala bindings
 vapi_opt = get_option('vapi')

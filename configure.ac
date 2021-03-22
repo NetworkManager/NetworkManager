@@ -1177,7 +1177,7 @@ if test -n "$sanitizers"; then
 fi
 
 AC_MSG_CHECKING([CC support C11 _Generic()])
-AC_COMPILE_IFELSE([AC_LANG_SOURCE([[int foo(void); int foo() { int a = 0; int b = _Generic (a, int: 4); return b + a; }]],
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[int foo(void); static const char *const buf[1] = { "a" }; int foo() { int a = 0; int b = _Generic (a, int: 4) + _Generic(buf, const char *const*: 5); return b + a; }]],
                                   [[foo();]])],
                   [cc_support_generic=1],
                   [cc_support_generic=0])
