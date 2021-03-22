@@ -4318,7 +4318,8 @@ nm_platform_ip_route_get_prune_list(NMPlatform *           self,
     nm_assert(NM_IN_SET(route_table_sync,
                         NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN,
                         NM_IP_ROUTE_TABLE_SYNC_MODE_FULL,
-                        NM_IP_ROUTE_TABLE_SYNC_MODE_ALL));
+                        NM_IP_ROUTE_TABLE_SYNC_MODE_ALL,
+                        NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_PRUNE));
 
     nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ROUTE(NM_IS_IPv4(addr_family)), ifindex);
     head_entry = nm_platform_lookup(self, &lookup);
@@ -4330,16 +4331,24 @@ nm_platform_ip_route_get_prune_list(NMPlatform *           self,
     c_list_for_each (iter, &head_entry->lst_entries_head) {
         const NMPObject *obj = c_list_entry(iter, NMDedupMultiEntry, lst_entries)->obj;
 
-        if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_FULL) {
-            if (nm_platform_ip_route_get_effective_table(NMP_OBJECT_CAST_IP_ROUTE(obj))
-                == RT_TABLE_LOCAL)
-                continue;
-        } else if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN) {
+        switch (route_table_sync) {
+        case NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN:
             if (!nm_platform_route_table_is_main(
                     nm_platform_ip_route_get_effective_table(NMP_OBJECT_CAST_IP_ROUTE(obj))))
                 continue;
-        } else
-            nm_assert(route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_ALL);
+            break;
+        case NM_IP_ROUTE_TABLE_SYNC_MODE_FULL:
+            if (nm_platform_ip_route_get_effective_table(NMP_OBJECT_CAST_IP_ROUTE(obj))
+                == RT_TABLE_LOCAL)
+                continue;
+            break;
+        case NM_IP_ROUTE_TABLE_SYNC_MODE_ALL:
+        case NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_PRUNE:
+            break;
+        default:
+            nm_assert_not_reached();
+            break;
+        }
 
         g_ptr_array_add(routes_prune, (gpointer) nmp_object_ref(obj));
     }
@@ -4634,7 +4643,7 @@ nm_platform_ip_route_flush(NMPlatform *self, int addr_family, int ifindex)
         routes_prune = nm_platform_ip_route_get_prune_list(self,
                                                            AF_INET,
                                                            ifindex,
-                                                           NM_IP_ROUTE_TABLE_SYNC_MODE_ALL);
+                                                           NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_PRUNE);
         success &= nm_platform_ip_route_sync(self, AF_INET, ifindex, NULL, routes_prune, NULL);
     }
     if (NM_IN_SET(addr_family, AF_UNSPEC, AF_INET6)) {
@@ -4643,7 +4652,7 @@ nm_platform_ip_route_flush(NMPlatform *self, int addr_family, int ifindex)
         routes_prune = nm_platform_ip_route_get_prune_list(self,
                                                            AF_INET6,
                                                            ifindex,
-                                                           NM_IP_ROUTE_TABLE_SYNC_MODE_ALL);
+                                                           NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_PRUNE);
         success &= nm_platform_ip_route_sync(self, AF_INET6, ifindex, NULL, routes_prune, NULL);
     }
     return success;
