@@ -63,10 +63,9 @@ main(int argc, char **argv)
             g_print("%s imported with %s plugin.\n", argv[1], plugin_name);
             break;
         }
-
-        plugins = plugins->next;
     }
 
+    g_slist_free_full(plugins, g_object_unref);
     g_assert(conn != NULL);
 
     client = nm_client_new(NULL, NULL);
