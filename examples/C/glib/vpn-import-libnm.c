@@ -1,11 +1,9 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
  * Copyright (C) 2011, 2014 Red Hat, Inc.
  */
-
 /*
  * The example shows how to import VPN connection from a file.
- * 
  * @author: Jagadeesh Kotra <jagadeesh@stdin.top>
  *
  * Compile with:
@@ -33,12 +31,13 @@ add_cb(NMClient *client, GAsyncResult *result, GMainLoop *loop)
 int
 main(int argc, char **argv)
 {
-    GMainLoop *   loop = g_main_loop_new(NULL, FALSE);
-    GSList *plugins;
+    GMainLoop *        loop = g_main_loop_new(NULL, FALSE);
+    GSList *           plugins;
+    GSList *           iter;
     NMVpnEditorPlugin *editor;
-    NMClient *client;
-    GError *err = NULL;
-    NMConnection *conn = NULL;
+    NMClient *         client;
+    GError *           err  = NULL;
+    NMConnection *     conn = NULL;
 
     if (argc < 2) {
         g_print("program takes exactly one(1) argument.\n");
@@ -46,14 +45,14 @@ main(int argc, char **argv)
     }
 
     plugins = nm_vpn_plugin_info_list_load();
+    g_assert(plugins != NULL);
 
-    while (plugins != NULL) {
-        NMVpnPluginInfo *plugin      = plugins->data;
-        const char *     plugin_name = nm_vpn_plugin_info_get_name(plugin);
+    for (iter = plugins; iter; iter = iter->next) {
+        const char *plugin_name = nm_vpn_plugin_info_get_name(iter->data);
         g_print("Trying Plugin: %s\n", plugin_name);
 
         //try to load plugin
-        editor = nm_vpn_plugin_info_load_editor_plugin(plugin, NULL);
+        editor = nm_vpn_plugin_info_load_editor_plugin(iter->data, NULL);
 
         conn = nm_vpn_editor_plugin_import(editor, argv[1], &err);
         if (err != NULL) {
