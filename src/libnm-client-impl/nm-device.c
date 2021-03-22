@@ -130,12 +130,19 @@ G_DEFINE_ABSTRACT_TYPE(NMDevice, nm_device, NM_TYPE_OBJECT);
 
 static gboolean connection_compatible(NMDevice *device, NMConnection *connection, GError **error);
 static NMLldpNeighbor *_nm_lldp_neighbor_dup(NMLldpNeighbor *neighbor);
+static NMLldpNeighbor *_nm_lldp_neighbor_new_from_variant(GVariantIter *attrs_iter,
+                                                          GArray **     inout_tmp_array);
 
 /*****************************************************************************/
 
 struct _NMLldpNeighbor {
-    int         refcount;
-    GHashTable *attrs;
+    int        refcount;
+    guint      n_attrs;
+    GVariant **attr_vals;
+
+    /* these points to NMRefString.str values. Need to be freed with
+     * nm_ref_string_unref(). */
+    const char *attr_names[];
 };
 
 G_DEFINE_BOXED_TYPE(NMLldpNeighbor, nm_lldp_neighbor, _nm_lldp_neighbor_dup, nm_lldp_neighbor_unref)
@@ -238,25 +245,11 @@ _notify_update_prop_lldp_neighbors(NMClient *              client,
     new = g_ptr_array_new_with_free_func((GDestroyNotify) nm_lldp_neighbor_unref);
 
     if (value) {
+        gs_unref_array GArray *tmp_array = NULL;
+
         g_variant_iter_init(&iter, value);
         while (g_variant_iter_next(&iter, "a{sv}", &attrs_iter)) {
-            GVariant *      attr_variant;
-            const char *    attr_name;
-            NMLldpNeighbor *neigh;
-
-            /* Note that there is no public API to mutate a NMLldpNeighbor instance.
-             * This is the only place where we actually mutate it. */
-            neigh = nm_lldp_neighbor_new();
-            while (g_variant_iter_next(attrs_iter, "{&sv}", &attr_name, &attr_variant)) {
-                if (attr_name[0] == '\0') {
-                    g_variant_unref(attr_variant);
-                    continue;
-                }
-                g_hash_table_insert(neigh->attrs, g_strdup(attr_name), attr_variant);
-            }
-
-            g_ptr_array_add(new, neigh);
-
+            g_ptr_array_add(new, _nm_lldp_neighbor_new_from_variant(attrs_iter, &tmp_array));
             g_variant_iter_free(attrs_iter);
         }
     }
@@ -2869,10 +2862,105 @@ nm_device_get_setting_type(NMDevice *device)
 /*****************************************************************************/
 
 static gboolean
-NM_IS_LLDP_NEIGHBOR(const NMLldpNeighbor *self)
+NM_IS_LLDP_NEIGHBOR(const NMLldpNeighbor *neighbor)
 {
-    nm_assert(!self || (self->refcount > 0 && self->attrs));
-    return self && self->refcount > 0;
+    nm_assert(!neighbor || neighbor->refcount > 0);
+    if (NM_MORE_ASSERTS > 10)
+        nm_assert(!neighbor || NM_PTRARRAY_LEN(neighbor->attr_names) == neighbor->n_attrs);
+    return neighbor && neighbor->refcount > 0;
+}
+
+static NMLldpNeighbor *
+_nm_lldp_neighbor_new(guint n_attrs)
+{
+    NMLldpNeighbor *neighbor;
+
+    neighbor = g_malloc(G_STRUCT_OFFSET(NMLldpNeighbor, attr_names)
+                        + (((gsize) n_attrs) + 1u) * 2u * sizeof(gpointer));
+
+    neighbor->refcount  = 1;
+    neighbor->n_attrs   = n_attrs;
+    neighbor->attr_vals = (gpointer) &neighbor->attr_names[(((gsize) n_attrs) + 1u)];
+
+    /* We only NULL terminate the arrays. The elements are not initialized and
+     * the caller needs to do that. */
+    neighbor->attr_names[n_attrs] = NULL;
+    neighbor->attr_vals[n_attrs]  = NULL;
+
+    return neighbor;
+}
+
+static NMLldpNeighbor *
+_nm_lldp_neighbor_new_from_variant(GVariantIter *attrs_iter, GArray **inout_tmp_array)
+{
+    GArray *           tmp_array;
+    NMLldpNeighbor *   neighbor;
+    GVariant *         attr_variant;
+    const char *       attr_name;
+    NMUtilsNamedValue *named_val;
+    guint              i;
+    guint              j;
+
+    nm_assert(attrs_iter);
+    nm_assert(inout_tmp_array);
+
+    /* inout_tmp_array is a temporary buffer that we reuse for multiple invocations. */
+    tmp_array = *inout_tmp_array;
+    if (!tmp_array) {
+        tmp_array        = g_array_new(FALSE, FALSE, sizeof(NMUtilsNamedValue));
+        *inout_tmp_array = tmp_array;
+    } else
+        g_array_set_size(tmp_array, 0);
+
+    /* collect attributes in tmp_array as array of NMUtilsNamedValue. */
+    while (g_variant_iter_next(attrs_iter, "{&sv}", &attr_name, &attr_variant)) {
+        if (attr_name[0] == '\0') {
+            g_variant_unref(attr_variant);
+            continue;
+        }
+        named_val  = nm_g_array_append_new(tmp_array, NMUtilsNamedValue);
+        *named_val = (NMUtilsNamedValue){
+            .name      = nm_ref_string_new(attr_name)->str,
+            .value_ptr = attr_variant,
+        };
+    }
+
+    /* sort and ensure uniqueness of tmp_array. */
+    if (tmp_array->len > 1u) {
+        g_array_sort(tmp_array, nm_strcmp_p);
+        named_val = (NMUtilsNamedValue *) (gpointer) tmp_array->data;
+        for (i = 1, j = 1; i < tmp_array->len; i++) {
+            if (named_val[j - 1].name == named_val[i].name) {
+                /* duplicate. We keep the latter. */
+                j--;
+                nm_ref_string_unref(NM_REF_STRING_UPCAST(named_val[j].name));
+                g_variant_unref(named_val[j].value_ptr);
+            }
+
+            if (j != i) {
+                named_val[j].name      = named_val[i].name;
+                named_val[j].value_ptr = named_val[i].value_ptr;
+            }
+            j++;
+        }
+        if (j != tmp_array->len)
+            g_array_set_size(tmp_array, j);
+    }
+
+    neighbor = _nm_lldp_neighbor_new(tmp_array->len);
+
+    named_val = (NMUtilsNamedValue *) (gpointer) tmp_array->data;
+    for (i = 0; i < tmp_array->len; i++) {
+        /* we transfer ownership here from tmp_array! */
+        neighbor->attr_names[i] = named_val[i].name;
+        neighbor->attr_vals[i]  = named_val[i].value_ptr;
+    }
+
+    nm_assert(neighbor->n_attrs == i);
+    nm_assert(NM_PTRARRAY_LEN(neighbor->attr_names) == neighbor->n_attrs);
+    nm_assert(NM_PTRARRAY_LEN(neighbor->attr_vals) == neighbor->n_attrs);
+    nm_assert(NM_IS_LLDP_NEIGHBOR(neighbor));
+    return neighbor;
 }
 
 /**
@@ -2895,18 +2983,7 @@ NM_IS_LLDP_NEIGHBOR(const NMLldpNeighbor *self)
 NMLldpNeighbor *
 nm_lldp_neighbor_new(void)
 {
-    NMLldpNeighbor *neigh;
-
-    neigh  = g_slice_new(NMLldpNeighbor);
-    *neigh = (NMLldpNeighbor){
-        .refcount = 1,
-        .attrs    = g_hash_table_new_full(nm_str_hash,
-                                       g_str_equal,
-                                       g_free,
-                                       (GDestroyNotify) g_variant_unref),
-    };
-
-    return neigh;
+    return _nm_lldp_neighbor_new(0);
 }
 
 static NMLldpNeighbor *
@@ -2953,12 +3030,18 @@ nm_lldp_neighbor_ref(NMLldpNeighbor *neighbor)
 void
 nm_lldp_neighbor_unref(NMLldpNeighbor *neighbor)
 {
+    guint i;
+
     g_return_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor));
 
-    if (g_atomic_int_dec_and_test(&neighbor->refcount)) {
-        g_hash_table_unref(neighbor->attrs);
-        nm_g_slice_free(neighbor);
+    if (!g_atomic_int_dec_and_test(&neighbor->refcount))
+        return;
+
+    for (i = 0; i < neighbor->n_attrs; i++) {
+        nm_ref_string_unref(NM_REF_STRING_UPCAST(neighbor->attr_names[i]));
+        g_variant_unref(neighbor->attr_vals[i]);
     }
+    g_free(neighbor);
 }
 
 /**
@@ -2976,10 +3059,16 @@ nm_lldp_neighbor_unref(NMLldpNeighbor *neighbor)
 GVariant *
 nm_lldp_neighbor_get_attr_value(NMLldpNeighbor *neighbor, const char *name)
 {
+    gssize idx;
+
     g_return_val_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor), FALSE);
     g_return_val_if_fail(name && name[0], FALSE);
 
-    return g_hash_table_lookup(neighbor->attrs, name);
+    idx = nm_utils_strv_find_binary_search(neighbor->attr_names, neighbor->n_attrs, name);
+    if (idx < 0)
+        return NULL;
+
+    return neighbor->attr_vals[idx];
 }
 
 /**
@@ -2995,13 +3084,9 @@ nm_lldp_neighbor_get_attr_value(NMLldpNeighbor *neighbor, const char *name)
 char **
 nm_lldp_neighbor_get_attr_names(NMLldpNeighbor *neighbor)
 {
-    const char **keys;
-
     g_return_val_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor), NULL);
 
-    keys = nm_utils_strdict_get_keys(neighbor->attrs, TRUE, NULL);
-
-    return nm_utils_strv_make_deep_copied_nonnull(keys);
+    return nm_utils_strv_dup(neighbor->attr_names, neighbor->n_attrs, TRUE) ?: g_new0(char *, 1);
 }
 
 /**
