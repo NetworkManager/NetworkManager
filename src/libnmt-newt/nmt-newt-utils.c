@@ -13,6 +13,7 @@
 #include <stdarg.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include "libnm-glib-aux/nm-io-utils.h"
 
 #include "nmt-newt-utils.h"
 
@@ -101,8 +102,109 @@ nmt_newt_suspend_callback(gpointer user_data)
     newtResume();
 }
 
+static void
+_newtSetColor(int colorset, const char *fg, const char *bg)
+{
+    newtSetColor(colorset, (char *) fg, (char *) bg);
+}
+
 /**
- * nmt_newt_init:
+ * nmt_newt_parse_colors:
+ * @s: buffer with color settings
+ * @is_newt: boolean indicating if buffer s
+ *           contains NEWT (true) or NMT (false) color setting
+ *
+ * Parses content of buffer s and sets color accordingly
+ * with newtSetColor()
+ */
+static void
+nmt_newt_parse_colors(const char *s, bool is_newt)
+{
+    gs_free const char **lines = NULL;
+    size_t               i;
+
+    lines = nm_utils_strsplit_set(s, ";:\n\r\t ");
+
+    if (!lines)
+        return;
+
+    for (i = 0; lines[i]; i++) {
+        const char *name;
+        const char *fg;
+        const char *bg;
+        char *      parsed_s;
+
+        parsed_s = (char *) lines[i];
+        name     = parsed_s;
+
+        if (!(parsed_s = strchr(parsed_s, '=')) || !*parsed_s)
+            continue;
+
+        *parsed_s = '\0';
+        fg        = ++parsed_s;
+
+        if (!(parsed_s = strchr(parsed_s, ',')) || !*parsed_s)
+            continue;
+
+        *parsed_s = '\0';
+
+        bg = ++parsed_s;
+
+        if (is_newt) {
+            if (nm_streq(name, "checkbox"))
+                _newtSetColor(NEWT_COLORSET_CHECKBOX, fg, bg);
+        } else {
+            if (nm_streq(name, "badLabel")) {
+                _newtSetColor(NMT_NEWT_COLORSET_BAD_LABEL, fg, bg);
+            } else if (nm_streq(name, "plainLabel")) {
+                _newtSetColor(NMT_NEWT_COLORSET_PLAIN_LABEL, fg, bg);
+            } else if (nm_streq(name, "disabledButton")) {
+                _newtSetColor(NMT_NEWT_COLORSET_DISABLED_BUTTON, fg, bg);
+            } else if (nm_streq(name, "textboxWithBackground")) {
+                _newtSetColor(NMT_NEWT_COLORSET_TEXTBOX_WITH_BACKGROUND, fg, bg);
+            }
+        }
+    }
+}
+
+/**
+ * nmt_newt_nit_colors:
+ * @is_newt: boolean indicating if the function is looking for NEWT or NMT env var
+ *
+ * Looks for enviroment variables for aditional
+ * color set up in nmtui
+ */
+static void
+nmt_newt_init_colors(gboolean is_newt)
+{
+    const char *  colors;
+    gs_free char *file_content = NULL;
+
+    colors = getenv(is_newt ? "NEWT_COLORS" : "NMT_NEWT_COLORS");
+
+    if (!colors) {
+        const char *file_name;
+
+        file_name = getenv(is_newt ? "NEWT_COLORS_FILE" : "NMT_NEWT_COLORS_FILE");
+
+        if (file_name && file_name[0] != '\0'
+            && (nm_utils_file_get_contents(-1,
+                                           file_name,
+                                           16384,
+                                           NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
+                                           &file_content,
+                                           NULL,
+                                           NULL,
+                                           NULL))) {
+            colors = file_content;
+        }
+    }
+
+    nmt_newt_parse_colors(colors, is_newt);
+}
+
+/**
+libnm-client-aux-extern * nmt_newt_init:
  *
  * Wrapper for newtInit() that also does some nmt-newt-internal setup.
  * This should be called once, before any other nmt-newt functions.
@@ -118,6 +220,9 @@ nmt_newt_init(void)
     newtSetColor(NMT_NEWT_COLORSET_PLAIN_LABEL, "black", "lightgray");
     newtSetColor(NMT_NEWT_COLORSET_DISABLED_BUTTON, "blue", "lightgray");
     newtSetColor(NMT_NEWT_COLORSET_TEXTBOX_WITH_BACKGROUND, "black", "white");
+
+    nmt_newt_init_colors(TRUE);
+    nmt_newt_init_colors(FALSE);
 
     if (g_getenv("NMTUI_DEBUG"))
         g_log_set_default_handler(nmt_newt_dialog_g_log_handler, NULL);
