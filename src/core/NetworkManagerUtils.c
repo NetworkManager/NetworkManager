@@ -14,6 +14,7 @@
 
 #include "libnm-glib-aux/nm-c-list.h"
 
+#include "libnm-base/nm-net-aux.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
@@ -903,9 +904,15 @@ nm_match_spec_device_by_pllink(const NMPlatformLink *pllink,
 NMPlatformRoutingRule *
 nm_ip_routing_rule_to_platform(const NMIPRoutingRule *rule, NMPlatformRoutingRule *out_pl)
 {
+    gboolean uid_range_has;
+    guint32  uid_range_start = 0;
+    guint32  uid_range_end   = 0;
+
     nm_assert(rule);
     nm_assert(nm_ip_routing_rule_validate(rule, NULL));
     nm_assert(out_pl);
+
+    uid_range_has = nm_ip_routing_rule_get_uid_range(rule, &uid_range_start, &uid_range_end);
 
     *out_pl = (NMPlatformRoutingRule){
         .addr_family = nm_ip_routing_rule_get_addr_family(rule),
@@ -933,6 +940,12 @@ nm_ip_routing_rule_to_platform(const NMIPRoutingRule *rule, NMPlatformRoutingRul
         .table   = nm_ip_routing_rule_get_table(rule),
         .suppress_prefixlen_inverse =
             ~((guint32) nm_ip_routing_rule_get_suppress_prefixlength(rule)),
+        .uid_range_has = uid_range_has,
+        .uid_range =
+            {
+                .start = uid_range_start,
+                .end   = uid_range_end,
+            },
     };
 
     nm_ip_routing_rule_get_xifname_bin(rule, TRUE, out_pl->iifname);
@@ -1294,9 +1307,9 @@ nm_utils_ip_route_attribute_to_platform(int                addr_family,
 
     if ((variant = nm_ip_route_get_attribute(s_route, NM_IP_ROUTE_ATTRIBUTE_TYPE))
         && g_variant_is_of_type(variant, G_VARIANT_TYPE_STRING)) {
-        guint8 type;
+        int type;
 
-        type = nm_utils_route_type_by_name(g_variant_get_string(variant, NULL));
+        type = nm_net_aux_rtnl_rtntype_a2n(g_variant_get_string(variant, NULL));
         nm_assert(NM_IN_SET(type, RTN_UNICAST, RTN_LOCAL));
 
         r->type_coerced = nm_platform_route_type_coerce(type);

@@ -2768,10 +2768,4 @@ gboolean nm_utils_sysctl_ip_conf_is_path(int         addr_family,
                                          const char *ifname,
                                          const char *property);
 
-/*****************************************************************************/
-
-guint8 nm_utils_route_type_by_name(const char *name);
-
-const char *nm_utils_route_type2str(guint8 val, char *buf, gsize len);
-
 #endif /* __NM_SHARED_UTILS_H__ */

@@ -11,6 +11,7 @@
 #include <arpa/inet.h>
 #include <linux/fib_rules.h>
 
+#include "libnm-base/nm-net-aux.h"
 #include "libnm-glib-aux/nm-str-buf.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
@@ -1385,7 +1386,7 @@ nm_ip_route_attribute_validate(const char *name,
             break;
         }
         case 'T': /* route type. */
-            if (!NM_IN_SET(nm_utils_route_type_by_name(string), RTN_UNICAST, RTN_LOCAL)) {
+            if (!NM_IN_SET(nm_net_aux_rtnl_rtntype_a2n(string), RTN_UNICAST, RTN_LOCAL)) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -1432,10 +1433,14 @@ _nm_ip_route_attribute_validate_all(const NMIPRoute *route, GError **error)
     }
 
     if ((val = g_hash_table_lookup(route->attributes, NM_IP_ROUTE_ATTRIBUTE_TYPE))) {
-        nm_assert(g_variant_is_of_type(val, G_VARIANT_TYPE_STRING));
-        u8 = nm_utils_route_type_by_name(g_variant_get_string(val, NULL));
+        int v_i;
 
-        if (u8 == RTN_LOCAL && route->family == AF_INET
+        nm_assert(g_variant_is_of_type(val, G_VARIANT_TYPE_STRING));
+
+        v_i = nm_net_aux_rtnl_rtntype_a2n(g_variant_get_string(val, NULL));
+        nm_assert(v_i >= 0);
+
+        if (v_i == RTN_LOCAL && route->family == AF_INET
             && (val = g_hash_table_lookup(route->attributes, NM_IP_ROUTE_ATTRIBUTE_SCOPE))) {
             nm_assert(g_variant_is_of_type(val, G_VARIANT_TYPE_BYTE));
             u8 = g_variant_get_byte(val);
@@ -1468,6 +1473,8 @@ struct NMIPRoutingRule {
     gint32   suppress_prefixlength;
     guint32  fwmark;
     guint32  fwmask;
+    guint32  uid_range_start;
+    guint32  uid_range_end;
     guint16  sport_start;
     guint16  sport_end;
     guint16  dport_start;
@@ -1480,6 +1487,7 @@ struct NMIPRoutingRule {
     bool     is_v4 : 1;
     bool     sealed : 1;
     bool     priority_has : 1;
+    bool     uid_range_has : 1;
     bool     from_has : 1;
     bool     from_valid : 1;
     bool     to_has : 1;
@@ -1591,6 +1599,10 @@ nm_ip_routing_rule_new_clone(const NMIPRoutingRule *rule)
         .sport_end   = rule->sport_end,
         .dport_start = rule->dport_start,
         .dport_end   = rule->dport_end,
+
+        .uid_range_start = rule->uid_range_start,
+        .uid_range_end   = rule->uid_range_end,
+        .uid_range_has   = rule->uid_range_has,
 
         .ipproto = rule->ipproto,
 
@@ -2408,6 +2420,61 @@ nm_ip_routing_rule_set_suppress_prefixlength(NMIPRoutingRule *self, gint32 suppr
 }
 
 /**
+ * nm_ip_routing_rule_get_uid_range:
+ * @self: the #NMIPRoutingRule instance
+ * @out_range_start: (out) (allow-none): returns the start of the range
+ *   or 0 if the range is not set.
+ * @out_range_end: (out) (allow-none): returns the end of the range
+ *   or 0 if the range is not set.
+ *
+ * Returns: %TRUE if a uid range is set.
+ *
+ * Since: 1.32
+ */
+gboolean
+nm_ip_routing_rule_get_uid_range(const NMIPRoutingRule *self,
+                                 guint32 *              out_range_start,
+                                 guint32 *              out_range_end)
+{
+    g_return_val_if_fail(NM_IS_IP_ROUTING_RULE(self, TRUE), -1);
+
+    nm_assert(self->uid_range_has || (self->uid_range_start == 0 && self->uid_range_end == 0));
+
+    NM_SET_OUT(out_range_start, self->uid_range_start);
+    NM_SET_OUT(out_range_end, self->uid_range_end);
+    return self->uid_range_has;
+}
+
+/**
+ * nm_ip_routing_rule_set_uid_range:
+ * @self: the #NMIPRoutingRule instance
+ * @uid_range_start: the uid_range start to set.
+ * @uid_range_end: the uid_range start to set.
+ *
+ * For a valid range, start must be less or equal to end.
+ * If set to an invalid range, the range gets unset.
+ *
+ * Since: 1.32
+ */
+void
+nm_ip_routing_rule_set_uid_range(NMIPRoutingRule *self,
+                                 guint32          uid_range_start,
+                                 guint32          uid_range_end)
+{
+    g_return_if_fail(NM_IS_IP_ROUTING_RULE(self, FALSE));
+
+    if (uid_range_start > uid_range_end) {
+        self->uid_range_start = 0;
+        self->uid_range_end   = 0;
+        self->uid_range_has   = FALSE;
+        return;
+    }
+    self->uid_range_start = uid_range_start;
+    self->uid_range_end   = uid_range_end;
+    self->uid_range_has   = TRUE;
+}
+
+/**
  * nm_ip_routing_rule_cmp:
  * @rule: (allow-none): the #NMIPRoutingRule instance to compare
  * @other: (allow-none): the other #NMIPRoutingRule instance to compare
@@ -2450,6 +2517,12 @@ nm_ip_routing_rule_cmp(const NMIPRoutingRule *rule, const NMIPRoutingRule *other
     NM_CMP_FIELD(rule, other, dport_end);
 
     NM_CMP_FIELD(rule, other, ipproto);
+
+    NM_CMP_FIELD_UNSAFE(rule, other, uid_range_has);
+    if (rule->uid_range_has) {
+        NM_CMP_FIELD(rule, other, uid_range_end);
+        NM_CMP_FIELD(rule, other, uid_range_start);
+    }
 
     /* We compare the plain strings, not the binary values after utf8safe unescaping.
      *
@@ -2571,12 +2644,14 @@ nm_ip_routing_rule_validate(const NMIPRoutingRule *self, GError **error)
                                 _("missing table"));
             return FALSE;
         }
+    } else if (NM_IN_SET(self->action, FR_ACT_BLACKHOLE, FR_ACT_PROHIBIT, FR_ACT_UNREACHABLE)) {
+        /* pass */
     } else {
-        /* whitelist the actions that we currently. */
+        /* we currently only support the listed actions. */
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("invalid action"));
+                            _("invalid action type"));
         return FALSE;
     }
 
@@ -2718,11 +2793,13 @@ typedef enum {
     RR_DBUS_ATTR_PRIORITY,
     RR_DBUS_ATTR_SPORT_END,
     RR_DBUS_ATTR_SPORT_START,
-    RR_DBUS_ATTR_TABLE,
     RR_DBUS_ATTR_SUPPRESS_PREFIXLENGTH,
+    RR_DBUS_ATTR_TABLE,
     RR_DBUS_ATTR_TO,
-    RR_DBUS_ATTR_TOS,
     RR_DBUS_ATTR_TO_LEN,
+    RR_DBUS_ATTR_TOS,
+    RR_DBUS_ATTR_UID_RANGE_END,
+    RR_DBUS_ATTR_UID_RANGE_START,
 
     _RR_DBUS_ATTR_NUM,
 } RRDbusAttr;
@@ -2760,8 +2837,41 @@ static const RRDbusData rr_dbus_data[_RR_DBUS_ATTR_NUM] = {
     _D(RR_DBUS_ATTR_TO, NM_IP_ROUTING_RULE_ATTR_TO, G_VARIANT_TYPE_STRING),
     _D(RR_DBUS_ATTR_TOS, NM_IP_ROUTING_RULE_ATTR_TOS, G_VARIANT_TYPE_BYTE),
     _D(RR_DBUS_ATTR_TO_LEN, NM_IP_ROUTING_RULE_ATTR_TO_LEN, G_VARIANT_TYPE_BYTE),
+    _D(RR_DBUS_ATTR_UID_RANGE_END, NM_IP_ROUTING_RULE_ATTR_UID_RANGE_END, G_VARIANT_TYPE_UINT32),
+    _D(RR_DBUS_ATTR_UID_RANGE_START,
+       NM_IP_ROUTING_RULE_ATTR_UID_RANGE_START,
+       G_VARIANT_TYPE_UINT32),
 #undef _D
 };
+
+static RRDbusAttr
+_rr_dbus_attr_from_name(const char *name)
+{
+    gssize idx;
+
+    nm_assert(name);
+
+    if (NM_MORE_ASSERT_ONCE(10)) {
+        int i;
+
+        for (i = 0; i < _RR_DBUS_ATTR_NUM; i++) {
+            nm_assert(rr_dbus_data[i].name);
+            nm_assert(g_variant_type_string_is_valid((const char *) rr_dbus_data[i].dbus_type));
+            if (i > 0)
+                nm_assert(strcmp(rr_dbus_data[i - 1].name, rr_dbus_data[i].name) < 0);
+        }
+    }
+
+    idx = nm_utils_array_find_binary_search(rr_dbus_data,
+                                            sizeof(rr_dbus_data[0]),
+                                            _RR_DBUS_ATTR_NUM,
+                                            &name,
+                                            nm_strcmp_p_with_data,
+                                            NULL);
+    if (idx < 0)
+        return _RR_DBUS_ATTR_NUM;
+    return idx;
+}
 
 static void
 _rr_variants_free(GVariant *(*p_variants)[])
@@ -2785,45 +2895,40 @@ nm_ip_routing_rule_from_dbus(GVariant *variant, gboolean strict, GError **error)
     GVariant *                                     iter_val;
     int                                            addr_family;
     int                                            i;
+    GVariant *                                     v_start;
+    GVariant *                                     v_end;
 
     g_variant_iter_init(&iter, variant);
-
-#if NM_MORE_ASSERTS > 10
-    for (attr = 0; attr < _RR_DBUS_ATTR_NUM; attr++) {
-        nm_assert(rr_dbus_data[attr].name);
-        nm_assert(g_variant_type_string_is_valid((const char *) rr_dbus_data[attr].dbus_type));
-    }
-#endif
 
     while (g_variant_iter_next(&iter, "{&sv}", &iter_key, &iter_val)) {
         gs_unref_variant GVariant *iter_val2 = iter_val;
 
-        for (attr = 0; attr < _RR_DBUS_ATTR_NUM; attr++) {
-            if (nm_streq(iter_key, rr_dbus_data[attr].name)) {
-                if (variants[attr]) {
-                    if (strict) {
-                        g_set_error(error,
-                                    NM_CONNECTION_ERROR,
-                                    NM_CONNECTION_ERROR_FAILED,
-                                    _("duplicate key %s"),
-                                    iter_key);
-                        return NULL;
-                    }
-                    g_variant_unref(variants[attr]);
-                }
-                variants[attr] = g_steal_pointer(&iter_val2);
-                break;
+        attr = _rr_dbus_attr_from_name(iter_key);
+
+        if (attr >= _RR_DBUS_ATTR_NUM) {
+            if (strict) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("invalid key \"%s\""),
+                            iter_key);
+                return NULL;
             }
+            continue;
         }
 
-        if (attr >= _RR_DBUS_ATTR_NUM && strict) {
-            g_set_error(error,
-                        NM_CONNECTION_ERROR,
-                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("invalid key \"%s\""),
-                        iter_key);
-            return NULL;
+        if (variants[attr]) {
+            if (strict) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_FAILED,
+                            _("duplicate key %s"),
+                            iter_key);
+                return NULL;
+            }
+            g_variant_unref(variants[attr]);
         }
+        variants[attr] = g_steal_pointer(&iter_val2);
     }
 
     for (attr = 0; attr < _RR_DBUS_ATTR_NUM; attr++) {
@@ -2872,27 +2977,50 @@ nm_ip_routing_rule_from_dbus(GVariant *variant, gboolean strict, GError **error)
         nm_ip_routing_rule_set_ipproto(self, g_variant_get_byte(variants[RR_DBUS_ATTR_IPPROTO]));
 
     for (i = 0; i < 2; i++) {
-        GVariant *v_start = variants[i ? RR_DBUS_ATTR_SPORT_START : RR_DBUS_ATTR_DPORT_START];
-        GVariant *v_end   = variants[i ? RR_DBUS_ATTR_SPORT_END : RR_DBUS_ATTR_DPORT_END];
-        guint16   start, end;
+        guint16 start, end;
 
+        v_start = variants[i ? RR_DBUS_ATTR_SPORT_START : RR_DBUS_ATTR_DPORT_START];
+        v_end   = variants[i ? RR_DBUS_ATTR_SPORT_END : RR_DBUS_ATTR_DPORT_END];
         if (!v_start && !v_end)
             continue;
 
         /* if start or end is missing, it defaults to the other parameter, respectively. */
-        if (v_start)
-            start = g_variant_get_uint16(v_start);
-        else
-            start = g_variant_get_uint16(v_end);
-        if (v_end)
+        start = g_variant_get_uint16(v_start ?: v_end);
+        if (v_end && v_start)
             end = g_variant_get_uint16(v_end);
         else
-            end = g_variant_get_uint16(v_start);
+            end = start;
 
         if (i)
             nm_ip_routing_rule_set_source_port(self, start, end);
         else
             nm_ip_routing_rule_set_destination_port(self, start, end);
+    }
+
+    v_start = variants[RR_DBUS_ATTR_UID_RANGE_START];
+    v_end   = variants[RR_DBUS_ATTR_UID_RANGE_END];
+    if (v_start || v_end) {
+        guint32 start, end;
+
+        /* if start or end is missing, it defaults to the other parameter, respectively. */
+        start = g_variant_get_uint32(v_start ?: v_end);
+        if (v_end && v_start)
+            end = g_variant_get_uint32(v_end);
+        else
+            end = start;
+
+        if (end < start) {
+            if (strict) {
+                g_set_error_literal(error,
+                                    NM_CONNECTION_ERROR,
+                                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                    _("\"" NM_IP_ROUTING_RULE_ATTR_UID_RANGE_START
+                                      "\" is greater than \"" NM_IP_ROUTING_RULE_ATTR_UID_RANGE_END
+                                      "\""));
+                return FALSE;
+            }
+        } else
+            nm_ip_routing_rule_set_uid_range(self, start, end);
     }
 
     if (variants[RR_DBUS_ATTR_FWMARK] || variants[RR_DBUS_ATTR_FWMASK]) {
@@ -2929,11 +3057,17 @@ nm_ip_routing_rule_from_dbus(GVariant *variant, gboolean strict, GError **error)
         nm_ip_routing_rule_set_oifname(self,
                                        g_variant_get_string(variants[RR_DBUS_ATTR_OIFNAME], NULL));
 
-    if (variants[RR_DBUS_ATTR_ACTION])
-        nm_ip_routing_rule_set_action(self, g_variant_get_byte(variants[RR_DBUS_ATTR_ACTION]));
-
-    if (variants[RR_DBUS_ATTR_TABLE])
-        nm_ip_routing_rule_set_table(self, g_variant_get_uint32(variants[RR_DBUS_ATTR_TABLE]));
+    /* For the ip-rule string format, the table default depends on the action. For
+     * our D-Bus format it's always the same: either a table is specified or it defaults
+     * to zero. And either the action is specified or it defaults to FR_ACT_TO_TBL. */
+    nm_ip_routing_rule_set_action(self,
+                                  !variants[RR_DBUS_ATTR_ACTION]
+                                      ? (guint8) FR_ACT_TO_TBL
+                                      : g_variant_get_byte(variants[RR_DBUS_ATTR_ACTION]));
+    nm_ip_routing_rule_set_table(self,
+                                 !variants[RR_DBUS_ATTR_TABLE]
+                                     ? (guint32) 0
+                                     : g_variant_get_uint32(variants[RR_DBUS_ATTR_TABLE]));
 
     if (variants[RR_DBUS_ATTR_SUPPRESS_PREFIXLENGTH])
         nm_ip_routing_rule_set_suppress_prefixlength(
@@ -3048,6 +3182,16 @@ nm_ip_routing_rule_to_dbus(const NMIPRoutingRule *self)
                         RR_DBUS_ATTR_SUPPRESS_PREFIXLENGTH,
                         g_variant_new_int32(self->suppress_prefixlength));
 
+    if (self->uid_range_has) {
+        _rr_to_dbus_add(&builder,
+                        RR_DBUS_ATTR_UID_RANGE_START,
+                        g_variant_new_uint32(self->uid_range_start));
+        if (self->uid_range_start != self->uid_range_end)
+            _rr_to_dbus_add(&builder,
+                            RR_DBUS_ATTR_UID_RANGE_END,
+                            g_variant_new_uint32(self->uid_range_end));
+    }
+
     return g_variant_builder_end(&builder);
 }
 
@@ -3131,7 +3275,11 @@ nm_ip_routing_rule_from_string(const char *                 str,
     gint64                                         i64_suppress_prefixlength = -1;
     guint16                                        sport_end                 = 0;
     gint64                                         i64_dport_start           = -1;
+    int                                            i_action                  = -1;
     guint16                                        dport_end                 = 0;
+    guint32                                        uid_range_start           = 0;
+    guint32                                        uid_range_end             = 0;
+    gboolean                                       uid_range_has             = FALSE;
     gboolean                                       val_invert                = FALSE;
     int                                            addr_family               = AF_UNSPEC;
     NMIPAddr                                       val_from                  = {};
@@ -3233,7 +3381,7 @@ nm_ip_routing_rule_from_string(const char *                 str,
                 continue;
             if (i64_table != -1)
                 goto next_fail_word0_duplicate_key;
-            i64_table = _nm_utils_ascii_str_to_int64(word1, 0, 1, G_MAXUINT32, -1);
+            i64_table = _nm_utils_ascii_str_to_int64(word1, 0, 0, G_MAXUINT32, -1);
             if (i64_table == -1) {
                 if (nm_streq(word1, "main"))
                     i64_table = RT_TABLE_MAIN;
@@ -3329,6 +3477,44 @@ nm_ip_routing_rule_from_string(const char *                 str,
                 goto next_fail_word1_invalid_value;
             goto next_words_consumed;
         }
+        if (NM_IN_STRSET(word0, "uidrange")) {
+            if (!word1)
+                continue;
+            if (uid_range_has)
+                goto next_fail_word0_duplicate_key;
+            s = strchr(word1, '-');
+            if (s)
+                (s++)[0] = '\0';
+            uid_range_start = _nm_utils_ascii_str_to_int64(word1, 0, 0, G_MAXUINT32, 0);
+            if (errno)
+                goto next_fail_word1_invalid_value;
+            if (s) {
+                uid_range_end = _nm_utils_ascii_str_to_int64(s, 0, 0, G_MAXUINT32, 0);
+                if (errno)
+                    goto next_fail_word1_invalid_value;
+                if (uid_range_end < uid_range_start)
+                    goto next_fail_word1_invalid_value;
+            } else
+                uid_range_end = uid_range_start;
+            uid_range_has = TRUE;
+            goto next_words_consumed;
+        }
+        if (NM_IN_STRSET(word0, "type")) {
+            if (!word1)
+                continue;
+            if (i_action >= 0)
+                goto next_fail_word0_duplicate_key;
+            i_action = nm_net_aux_rtnl_rtntype_a2n(word1);
+            if (i_action < 0)
+                goto next_fail_word1_invalid_value;
+            goto next_words_consumed;
+        }
+
+        if (i_action < 0) {
+            i_action = nm_net_aux_rtnl_rtntype_a2n(word1);
+            if (i_action >= 0)
+                goto next_words_consumed;
+        }
 
         /* also the action is still unsupported. For the moment, we only support
          * FR_ACT_TO_TBL, which is the default (by not expressing it on the command
@@ -3423,6 +3609,16 @@ next_words_consumed:
     if (i64_priority != -1)
         nm_ip_routing_rule_set_priority(self, i64_priority);
 
+    if (i_action >= 0) {
+        nm_ip_routing_rule_set_action(self, i_action);
+        if (i64_table == -1) {
+            if (i_action != FR_ACT_TO_TBL)
+                i64_table = 0;
+            else
+                i64_table = RT_TABLE_MAIN;
+        }
+    }
+
     if (i64_tos != -1)
         nm_ip_routing_rule_set_tos(self, i64_tos);
 
@@ -3457,6 +3653,9 @@ next_words_consumed:
 
     if (i64_table != -1)
         nm_ip_routing_rule_set_table(self, i64_table);
+
+    if (uid_range_has)
+        nm_ip_routing_rule_set_uid_range(self, uid_range_start, uid_range_end);
 
     if (NM_FLAGS_HAS(to_string_flags, NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE)) {
         gs_free_error GError *local = NULL;
@@ -3642,16 +3841,31 @@ nm_ip_routing_rule_to_string(const NMIPRoutingRule *      self,
         nm_utils_escaped_tokens_escape_strbuf(self->oifname, NM_ASCII_SPACES, &str);
     }
 
-    if (self->table != 0) {
+    if (self->uid_range_has) {
         nm_str_buf_append_printf(nm_str_buf_append_required_delimiter(&str, ' '),
-                                 "table %u",
-                                 (guint) self->table);
+                                 "uidrange %u-%u",
+                                 self->uid_range_start,
+                                 self->uid_range_end);
     }
 
     if (self->suppress_prefixlength != -1) {
         nm_str_buf_append_printf(nm_str_buf_append_required_delimiter(&str, ' '),
                                  "suppress_prefixlength %d",
                                  (int) self->suppress_prefixlength);
+    }
+
+    if (self->table != 0 || self->action == FR_ACT_TO_TBL) {
+        nm_str_buf_append_printf(nm_str_buf_append_required_delimiter(&str, ' '),
+                                 "table %u",
+                                 (guint) self->table);
+    }
+
+    if (self->action != FR_ACT_TO_TBL) {
+        char sbuf[100];
+
+        nm_str_buf_append_printf(nm_str_buf_append_required_delimiter(&str, ' '),
+                                 "type %s",
+                                 nm_net_aux_rtnl_rtntype_n2a_maybe_buf(self->action, sbuf));
     }
 
     return nm_str_buf_finalize(&str, NULL);

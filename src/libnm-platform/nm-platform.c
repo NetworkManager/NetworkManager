@@ -22,6 +22,7 @@
 #include <linux/tc_act/tc_mirred.h>
 #include <libudev.h>
 
+#include "libnm-base/nm-net-aux.h"
 #include "libnm-glib-aux/nm-dedup-multi.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
 #include "libnm-glib-aux/nm-time-utils.h"
@@ -6434,9 +6435,8 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
         "%s"                                   /* initrwnd */
         "%s"                                   /* mtu */
         "",
-        nm_utils_route_type2str(nm_platform_route_type_uncoerce(route->type_coerced),
-                                str_type,
-                                sizeof(str_type)),
+        nm_net_aux_rtnl_rtntype_n2a_maybe_buf(nm_platform_route_type_uncoerce(route->type_coerced),
+                                              str_type),
         route->table_any
             ? "table ?? "
             : (route->table_coerced
@@ -6560,9 +6560,8 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
         "%s"                                   /* mtu */
         "%s"                                   /* pref */
         "",
-        nm_utils_route_type2str(nm_platform_route_type_uncoerce(route->type_coerced),
-                                str_type,
-                                sizeof(str_type)),
+        nm_net_aux_rtnl_rtntype_n2a_maybe_buf(nm_platform_route_type_uncoerce(route->type_coerced),
+                                              str_type),
         route->table_any
             ? "table ?? "
             : (route->table_coerced
@@ -6820,53 +6819,13 @@ nm_platform_routing_rule_to_string(const NMPlatformRoutingRule *routing_rule, ch
         if (NM_FLAGS_HAS(routing_rule->flags, FIB_RULE_UNRESOLVED))
             nm_utils_strbuf_append_str(&buf, &len, " unresolved");
     } else if (routing_rule->action != FR_ACT_TO_TBL) {
-        const char *ss;
-        char        ss_buf[60];
+        char ss_buf[60];
 
-#define _V(v1, v2) ((sizeof(char[(((int) (v1)) == ((int) (v2))) ? 1 : -1]) * 0) + (v1))
-        switch (routing_rule->action) {
-        case _V(FR_ACT_UNSPEC, RTN_UNSPEC):
-            ss = "none";
-            break;
-        case _V(FR_ACT_TO_TBL, RTN_UNICAST):
-            ss = "unicast";
-            break;
-        case _V(FR_ACT_GOTO, RTN_LOCAL):
-            ss = "local";
-            break;
-        case _V(FR_ACT_NOP, RTN_BROADCAST):
-            ss = "nop";
-            break;
-        case _V(FR_ACT_RES3, RTN_ANYCAST):
-            ss = "anycast";
-            break;
-        case _V(FR_ACT_RES4, RTN_MULTICAST):
-            ss = "multicast";
-            break;
-        case _V(FR_ACT_BLACKHOLE, RTN_BLACKHOLE):
-            ss = "blackhole";
-            break;
-        case _V(FR_ACT_UNREACHABLE, RTN_UNREACHABLE):
-            ss = "unreachable";
-            break;
-        case _V(FR_ACT_PROHIBIT, RTN_PROHIBIT):
-            ss = "prohibit";
-            break;
-        case RTN_THROW:
-            ss = "throw";
-            break;
-        case RTN_NAT:
-            ss = "nat";
-            break;
-        case RTN_XRESOLVE:
-            ss = "xresolve";
-            break;
-        default:
-            ss = nm_sprintf_buf(ss_buf, "action-%u", routing_rule->action);
-            break;
-        }
-#undef _V
-        nm_utils_strbuf_append(&buf, &len, " %s", ss);
+        nm_utils_strbuf_append(&buf,
+                               &len,
+                               " %s",
+                               nm_net_aux_rtnl_rtntype_n2a(routing_rule->action)
+                                   ?: nm_sprintf_buf(ss_buf, "action-%u", routing_rule->action));
     }
 
     if (routing_rule->protocol != RTPROT_UNSPEC)
