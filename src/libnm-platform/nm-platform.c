@@ -4329,22 +4329,22 @@ nm_platform_ip_route_get_prune_list(NMPlatform *           self,
     routes_prune = g_ptr_array_new_full(head_entry->len, (GDestroyNotify) nm_dedup_multi_obj_unref);
 
     c_list_for_each (iter, &head_entry->lst_entries_head) {
-        const NMPObject *obj = c_list_entry(iter, NMDedupMultiEntry, lst_entries)->obj;
+        const NMPObject *         obj = c_list_entry(iter, NMDedupMultiEntry, lst_entries)->obj;
+        const NMPlatformIPXRoute *rt  = NMP_OBJECT_CAST_IPX_ROUTE(obj);
 
         switch (route_table_sync) {
         case NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN:
-            if (!nm_platform_route_table_is_main(
-                    nm_platform_ip_route_get_effective_table(NMP_OBJECT_CAST_IP_ROUTE(obj))))
+            if (!nm_platform_route_table_is_main(nm_platform_ip_route_get_effective_table(&rt->rx)))
                 continue;
             break;
         case NM_IP_ROUTE_TABLE_SYNC_MODE_FULL:
-            if (nm_platform_ip_route_get_effective_table(NMP_OBJECT_CAST_IP_ROUTE(obj))
-                == RT_TABLE_LOCAL)
+            if (nm_platform_ip_route_get_effective_table(&rt->rx) == RT_TABLE_LOCAL)
                 continue;
             break;
         case NM_IP_ROUTE_TABLE_SYNC_MODE_ALL:
         case NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_PRUNE:
             break;
+
         default:
             nm_assert_not_reached();
             break;
