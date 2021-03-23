@@ -13496,10 +13496,10 @@ nm_device_set_ip_config(NMDevice *  self,
     nm_assert(IS_IPv4 || !ip4_dev_route_blacklist);
 
     _LOGD(LOGD_IPX(IS_IPv4),
-          "ip%c-config: update (commit=%d, new-config=%p)",
+          "ip%c-config: update (commit=%d, new-config=" NM_HASH_OBFUSCATE_PTR_FMT")",
           nm_utils_addr_family_to_char(addr_family),
           commit,
-          new_config);
+          NM_HASH_OBFUSCATE_PTR(new_config));
 
     /* Always commit to nm-platform to update lifetimes */
     if (commit && new_config) {
