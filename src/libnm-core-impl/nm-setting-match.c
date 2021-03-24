@@ -828,16 +828,16 @@ nm_setting_match_class_init(NMSettingMatchClass *klass)
      * NMSettingMatch:kernel-command-line
      *
      * A list of kernel command line arguments to match. This may be used to check
-     * whether a specific kernel command line option is set (or if prefixed with
-     * the exclamation mark unset). The argument must either be a single word, or
-     * an assignment (i.e. two words, separated "="). In the former case the kernel
+     * whether a specific kernel command line option is set (or unset, if prefixed with
+     * the exclamation mark). The argument must either be a single word, or
+     * an assignment (i.e. two words, joined by "="). In the former case the kernel
      * command line is searched for the word appearing as is, or as left hand side
      * of an assignment. In the latter case, the exact assignment is looked for
-     * with right and left hand side matching.
+     * with right and left hand side matching. Wildcard patterns are not supported.
      *
      * See NMSettingMatch:interface-name for how special characters '|', '&',
      * '!' and '\\' are used for optional and mandatory matches and inverting the
-     * pattern.
+     * match.
      *
      * Since: 1.26
      **/
