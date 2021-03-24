@@ -7467,11 +7467,10 @@ check_connection_compatible(NMDevice *self, NMConnection *connection, GError **e
     s_match = (NMSettingMatch *) nm_connection_get_setting(connection, NM_TYPE_SETTING_MATCH);
     if (s_match) {
         const char *const *patterns;
-        const char *       device_driver;
         guint              num_patterns = 0;
 
         patterns = nm_setting_match_get_interface_names(s_match, &num_patterns);
-        if (!nm_wildcard_match_check(device_iface, patterns, num_patterns)) {
+        if (num_patterns > 0 && !nm_wildcard_match_check(device_iface, patterns, num_patterns)) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
                                        "device does not satisfy match.interface-name property");
@@ -7486,9 +7485,9 @@ check_connection_compatible(NMDevice *self, NMConnection *connection, GError **e
                                                     error))
             return FALSE;
 
-        device_driver = nm_device_get_driver(self);
-        patterns      = nm_setting_match_get_drivers(s_match, &num_patterns);
-        if (!nm_wildcard_match_check(device_driver, patterns, num_patterns)) {
+        patterns = nm_setting_match_get_drivers(s_match, &num_patterns);
+        if (num_patterns > 0
+            && !nm_wildcard_match_check(nm_device_get_driver(self), patterns, num_patterns)) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
                                        "device does not satisfy match.driver property");
@@ -7496,7 +7495,7 @@ check_connection_compatible(NMDevice *self, NMConnection *connection, GError **e
         }
 
         patterns = nm_setting_match_get_paths(s_match, &num_patterns);
-        if (!nm_wildcard_match_check(priv->path, patterns, num_patterns)) {
+        if (num_patterns > 0 && !nm_wildcard_match_check(priv->path, patterns, num_patterns)) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                                        "device does not satisfy match.path property");
