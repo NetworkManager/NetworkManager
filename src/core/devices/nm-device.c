@@ -13478,12 +13478,13 @@ nm_device_set_ip_config(NMDevice *  self,
                         gboolean    commit,
                         GPtrArray * ip4_dev_route_blacklist)
 {
-    NMDevicePrivate *     priv    = NM_DEVICE_GET_PRIVATE(self);
-    const int             IS_IPv4 = NM_IS_IPv4(addr_family);
-    NMIPConfig *          old_config;
-    gboolean              has_changes = FALSE;
-    gboolean              success     = TRUE;
-    NMSettingsConnection *settings_connection;
+    NMDevicePrivate *      priv    = NM_DEVICE_GET_PRIVATE(self);
+    const int              IS_IPv4 = NM_IS_IPv4(addr_family);
+    NMIPConfig *           old_config;
+    gboolean               has_changes = FALSE;
+    gboolean               success     = TRUE;
+    NMSettingsConnection * settings_connection;
+    NMIPRouteTableSyncMode route_table_sync_mode;
 
     nm_assert_addr_family(addr_family);
     nm_assert(!new_config || nm_ip_config_get_addr_family(new_config) == addr_family);
@@ -13495,11 +13496,18 @@ nm_device_set_ip_config(NMDevice *  self,
                   })));
     nm_assert(IS_IPv4 || !ip4_dev_route_blacklist);
 
+    if (commit && new_config)
+        route_table_sync_mode = _get_route_table_sync_mode_stateful(self, addr_family);
+    else
+        route_table_sync_mode = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE;
+
     _LOGD(LOGD_IPX(IS_IPv4),
-          "ip%c-config: update (commit=%d, new-config=%p)",
+          "ip%c-config: update (commit=%d, new-config=" NM_HASH_OBFUSCATE_PTR_FMT
+          ", route-table-sync-mode=%d)",
           nm_utils_addr_family_to_char(addr_family),
           commit,
-          new_config);
+          NM_HASH_OBFUSCATE_PTR(new_config),
+          (int) route_table_sync_mode);
 
     /* Always commit to nm-platform to update lifetimes */
     if (commit && new_config) {
@@ -13508,7 +13516,7 @@ nm_device_set_ip_config(NMDevice *  self,
         if (IS_IPv4) {
             success = nm_ip4_config_commit(NM_IP4_CONFIG(new_config),
                                            nm_device_get_platform(self),
-                                           _get_route_table_sync_mode_stateful(self, AF_INET));
+                                           route_table_sync_mode);
             nm_platform_ip4_dev_route_blacklist_set(nm_device_get_platform(self),
                                                     nm_ip_config_get_ifindex(new_config),
                                                     ip4_dev_route_blacklist);
@@ -13517,7 +13525,7 @@ nm_device_set_ip_config(NMDevice *  self,
 
             success = nm_ip6_config_commit(NM_IP6_CONFIG(new_config),
                                            nm_device_get_platform(self),
-                                           _get_route_table_sync_mode_stateful(self, AF_INET6),
+                                           route_table_sync_mode,
                                            &temporary_not_available);
 
             if (!_rt6_temporary_not_available_set(self, temporary_not_available))

@@ -245,12 +245,16 @@ typedef enum {
  *   local table (255).
  * @NM_IP_ROUTE_TABLE_SYNC_MODE_ALL: NM will sync all tables, including the
  *   local table (255).
+ * @NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_PRUNE: NM will sync all tables (including
+ *   the local table). It will thereby remove all addresses, that is during
+ *   deactivation.
  */
 typedef enum {
-    NM_IP_ROUTE_TABLE_SYNC_MODE_NONE = 0,
-    NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN = 1,
-    NM_IP_ROUTE_TABLE_SYNC_MODE_FULL = 2,
-    NM_IP_ROUTE_TABLE_SYNC_MODE_ALL  = 3,
+    NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
+    NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN,
+    NM_IP_ROUTE_TABLE_SYNC_MODE_FULL,
+    NM_IP_ROUTE_TABLE_SYNC_MODE_ALL,
+    NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_PRUNE,
 } NMIPRouteTableSyncMode;
 
 /* settings */
