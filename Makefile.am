@@ -2231,6 +2231,8 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_LIBADD = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(NULL)
 
+EXTRA_DIST += src/libnm-systemd-shared/meson.build
+
 ###############################################################################
 
 src_core_libnm_systemd_core_la_cppflags = \
@@ -2326,8 +2328,7 @@ src_core_libnm_systemd_core_la_LIBADD = \
 	$(NULL)
 $(src_core_libnm_systemd_core_la_OBJECTS): $(src_libnm_core_public_mkenums_h)
 
-EXTRA_DIST += \
-	src/core/systemd/meson.build
+EXTRA_DIST += src/core/systemd/meson.build
 
 ###############################################################################
 
