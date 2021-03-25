@@ -771,6 +771,7 @@ $(src_libnm_client_aux_extern_libnm_client_aux_extern_la_OBJECTS): $(src_libnm_c
 EXTRA_DIST += \
 	src/libnm-client-aux-extern/README.md \
 	src/libnm-client-aux-extern/meson.build \
+	src/libnm-client-aux-extern/tests/meson.build \
 	$(NULL)
 
 ###############################################################################
@@ -1719,6 +1720,8 @@ libnminclude_HEADERS += \
 
 nodist_libnminclude_HEADERS += \
 	$(src_libnm_client_public_mkenums_h)
+
+EXTRA_DIST += src/libnm-client-public/meson.build
 
 ###############################################################################
 
@@ -4657,6 +4660,8 @@ src_libnmc_base_libnmc_base_la_LIBADD = \
 
 $(src_libnmc_base_libnmc_base_la_OBJECTS): $(src_libnm_core_public_mkenums_h)
 $(src_libnmc_base_libnmc_base_la_OBJECTS): $(src_libnm_client_public_mkenums_h)
+
+EXTRA_DIST += src/libnmc-base/meson.build
 
 ###############################################################################
 # src/libnmc-setting
