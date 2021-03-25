@@ -862,8 +862,11 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
      **/
     /* ---ifcfg-rh---
      * property: id
-     * variable: VLAN_ID or DEVICE
-     * description: VLAN identifier.
+     * variable: VLAN_ID, DEVICE.
+     * description: VLAN identifier. If VLAN_ID is not set, it is attempted
+     *   to be detected from the suffix of DEVICE=.
+     *   Note that older versions of NetworkManager had a bug where they would
+     *   prefer the detected ID from the DEVICE over VLAN_ID.
      * ---end---
      */
     obj_properties[PROP_ID] =
