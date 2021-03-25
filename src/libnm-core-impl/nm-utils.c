@@ -4306,7 +4306,8 @@ _nm_utils_hwaddr_cloned_data_synth(const NMSettInfoSetting *               sett_
 {
     gs_free char *addr = NULL;
 
-    if (flags & NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
+    if (flags != NM_CONNECTION_SERIALIZE_ALL
+        && !NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_WITH_NON_SECRET))
         return NULL;
 
     nm_assert(nm_streq0(sett_info->property_infos[property_idx].name, "assigned-mac-address"));

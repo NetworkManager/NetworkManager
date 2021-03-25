@@ -937,21 +937,30 @@ vpn_secrets_to_dbus(const NMSettInfoSetting *               sett_info,
     gs_free const char **keys = NULL;
     guint                i, len;
 
-    if (NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_NO_SECRETS))
+    if (flags != NM_CONNECTION_SERIALIZE_ALL
+        && !NM_FLAGS_ANY(flags,
+                         NM_CONNECTION_SERIALIZE_WITH_SECRETS
+                             | NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED
+                             | NM_CONNECTION_SERIALIZE_WITH_SECRETS_SYSTEM_OWNED
+                             | NM_CONNECTION_SERIALIZE_WITH_SECRETS_NOT_SAVED))
         return NULL;
 
     g_variant_builder_init(&builder, G_VARIANT_TYPE("a{ss}"));
 
     keys = nm_utils_strdict_get_keys(priv->secrets, TRUE, &len);
     for (i = 0; i < len; i++) {
-        const char *         key = keys[i];
-        NMSettingSecretFlags secret_flags;
+        const char *         key          = keys[i];
+        NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
-        if (NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED)) {
-            if (!nm_setting_get_secret_flags(setting, key, &secret_flags, NULL)
-                || !NM_FLAGS_HAS(secret_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED))
-                continue;
-        }
+        if (NM_FLAGS_ANY(flags,
+                         NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED
+                             | NM_CONNECTION_SERIALIZE_WITH_SECRETS_SYSTEM_OWNED
+                             | NM_CONNECTION_SERIALIZE_WITH_SECRETS_NOT_SAVED))
+            nm_setting_get_secret_flags(setting, key, &secret_flags, NULL);
+
+        if (!_nm_connection_serialize_secrets(flags, secret_flags))
+            continue;
+
         g_variant_builder_add(&builder, "{ss}", key, g_hash_table_lookup(priv->secrets, key));
     }
 

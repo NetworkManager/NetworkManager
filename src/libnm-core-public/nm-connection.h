@@ -91,19 +91,35 @@ NMSetting *nm_connection_get_setting_by_name(NMConnection *connection, const cha
 /**
  * NMConnectionSerializationFlags:
  * @NM_CONNECTION_SERIALIZE_ALL: serialize all properties (including secrets)
- * @NM_CONNECTION_SERIALIZE_NO_SECRETS: do not include secrets
- * @NM_CONNECTION_SERIALIZE_ONLY_SECRETS: only serialize secrets
- * @NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED: if set, only secrets that
- *   are agent owned will be serialized. Since: 1.20.
+ * @NM_CONNECTION_SERIALIZE_WITH_NON_SECRET: serialize properties that are
+ *   not secrets. Since 1.32.
+ * @NM_CONNECTION_SERIALIZE_NO_SECRETS: this is a deprecated alias for
+ *   @NM_CONNECTION_SERIALIZE_WITH_NON_SECRET.
+ * @NM_CONNECTION_SERIALIZE_WITH_SECRETS: serialize all secrets. This flag is
+ *   ignored if any of @NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED,
+ *   @NM_CONNECTION_SERIALIZE_WITH_SECRETS_SYSTEM_OWNED or
+ *   @NM_CONNECTION_SERIALIZE_WITH_SECRETS_NOT_SAVED is set. Since 1.32.
+ * @NM_CONNECTION_SERIALIZE_ONLY_SECRETS: a deprecated alias for
+ *   @NM_CONNECTION_SERIALIZE_WITH_SECRETS.
+ * @NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED: serialize agent-owned
+ *   secrets. Since: 1.20.
+ * @NM_CONNECTION_SERIALIZE_WITH_SECRETS_SYSTEM_OWNED: serialize system-owned
+ *   secrets. Since: 1.32.
+ * @NM_CONNECTION_SERIALIZE_WITH_SECRETS_NOT_SAVED: serialize secrets that
+ *   are marked as never saved. Since: 1.32.
  *
- * These flags determine which properties are serialized when calling when
- * calling nm_connection_to_dbus().
+ * These flags determine which properties are serialized when calling
+ * nm_connection_to_dbus().
  **/
 typedef enum { /*< flags >*/
-               NM_CONNECTION_SERIALIZE_ALL                      = 0x00000000,
-               NM_CONNECTION_SERIALIZE_NO_SECRETS               = 0x00000001,
-               NM_CONNECTION_SERIALIZE_ONLY_SECRETS             = 0x00000002,
-               NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED = 0x00000004,
+               NM_CONNECTION_SERIALIZE_ALL                       = 0x00000000,
+               NM_CONNECTION_SERIALIZE_WITH_NON_SECRET           = 0x00000001,
+               NM_CONNECTION_SERIALIZE_NO_SECRETS                = 0x00000001,
+               NM_CONNECTION_SERIALIZE_WITH_SECRETS              = 0x00000002,
+               NM_CONNECTION_SERIALIZE_ONLY_SECRETS              = 0x00000002,
+               NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED  = 0x00000004,
+               NM_CONNECTION_SERIALIZE_WITH_SECRETS_SYSTEM_OWNED = 0x00000008,
+               NM_CONNECTION_SERIALIZE_WITH_SECRETS_NOT_SAVED    = 0x00000010,
 } NMConnectionSerializationFlags;
 
 GVariant *nm_connection_to_dbus(NMConnection *connection, NMConnectionSerializationFlags flags);

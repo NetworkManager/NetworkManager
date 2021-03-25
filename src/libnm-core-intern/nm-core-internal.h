@@ -802,15 +802,42 @@ GBytes *_nm_setting_802_1x_cert_value_to_bytes(NMSetting8021xCKScheme scheme,
 /*****************************************************************************/
 
 static inline gboolean
+_nm_connection_serialize_non_secret(NMConnectionSerializationFlags flags)
+{
+    if (flags == NM_CONNECTION_SERIALIZE_ALL)
+        return TRUE;
+
+    return NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_WITH_NON_SECRET);
+}
+
+static inline gboolean
 _nm_connection_serialize_secrets(NMConnectionSerializationFlags flags,
                                  NMSettingSecretFlags           secret_flags)
 {
-    if (NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_NO_SECRETS))
-        return FALSE;
+    if (flags == NM_CONNECTION_SERIALIZE_ALL)
+        return TRUE;
+
+    if (NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_WITH_SECRETS)
+        && !NM_FLAGS_ANY(flags,
+                         NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED
+                             | NM_CONNECTION_SERIALIZE_WITH_SECRETS_SYSTEM_OWNED
+                             | NM_CONNECTION_SERIALIZE_WITH_SECRETS_NOT_SAVED))
+        return TRUE;
+
     if (NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED)
-        && !NM_FLAGS_HAS(secret_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED))
-        return FALSE;
-    return TRUE;
+        && NM_FLAGS_HAS(secret_flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED))
+        return TRUE;
+
+    if (NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_WITH_SECRETS_SYSTEM_OWNED)
+        && !NM_FLAGS_ANY(secret_flags,
+                         NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED))
+        return TRUE;
+
+    if (NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_WITH_SECRETS_NOT_SAVED)
+        && NM_FLAGS_HAS(secret_flags, NM_SETTING_SECRET_FLAG_NOT_SAVED))
+        return TRUE;
+
+    return FALSE;
 }
 
 void _nm_connection_clear_secrets_by_secret_flags(NMConnection *       self,

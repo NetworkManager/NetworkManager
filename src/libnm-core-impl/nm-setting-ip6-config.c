@@ -410,7 +410,7 @@ ip6_address_data_get(const NMSettInfoSetting *               sett_info,
 {
     gs_unref_ptrarray GPtrArray *addrs = NULL;
 
-    if (flags & NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
+    if (!_nm_connection_serialize_non_secret(flags))
         return NULL;
 
     g_object_get(setting, NM_SETTING_IP_CONFIG_ADDRESSES, &addrs, NULL);
@@ -484,7 +484,7 @@ ip6_route_data_get(const NMSettInfoSetting *               sett_info,
 {
     gs_unref_ptrarray GPtrArray *routes = NULL;
 
-    if (flags & NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
+    if (!_nm_connection_serialize_non_secret(flags))
         return NULL;
 
     g_object_get(setting, NM_SETTING_IP_CONFIG_ROUTES, &routes, NULL);
