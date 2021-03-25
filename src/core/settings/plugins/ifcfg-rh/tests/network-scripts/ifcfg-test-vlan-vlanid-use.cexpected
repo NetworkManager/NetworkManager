@@ -1,0 +1,15 @@
+VLAN=yes
+TYPE=Vlan
+PHYSDEV=eth0
+VLAN_ID=10
+REORDER_HDR=yes
+GVRP=no
+MVRP=no
+HWADDR=
+PROXY_METHOD=none
+BROWSER_ONLY=no
+IPV6INIT=no
+NAME="Vlan test-vlan-vlanid-use"
+UUID=${UUID}
+DEVICE=eth0.9
+ONBOOT=yes

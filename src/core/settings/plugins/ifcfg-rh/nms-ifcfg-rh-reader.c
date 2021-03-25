@@ -6071,15 +6071,14 @@ make_vlan_setting(shvarFile *ifcfg, const char *file, GError **error)
                 v = iface_name + 4;
         }
 
-        if (v) {
-            int device_vlan_id;
-
-            /* Grab VLAN ID from interface name; this takes precedence over the
-             * separate VLAN_ID property for backwards compat.
+        if (vlan_id == -1 && v) {
+            /* Grab VLAN ID from interface name; The explicit VLAN_ID option takes precedence
+             * over detecting the ID based on PHYSDEV.
+             *
+             * Note that older versions of NetworkManager had a bug and this would overwrite the
+             * VLAN_ID in this case.
              */
-            device_vlan_id = _nm_utils_ascii_str_to_int64(v, 10, 0, 4095, -1);
-            if (device_vlan_id != -1)
-                vlan_id = device_vlan_id;
+            vlan_id = _nm_utils_ascii_str_to_int64(v, 10, 0, 4095, -1);
         }
     }
 

@@ -8787,6 +8787,38 @@ test_read_vlan_only_vlan_id(void)
 }
 
 static void
+test_read_vlan_vlanid_use(void)
+{
+    nmtst_auto_unlinkfile char *testfile     = NULL;
+    gs_unref_object NMConnection *connection = NULL;
+    gs_unref_object NMConnection *reread     = NULL;
+    NMSettingVlan *               s_vlan;
+
+    connection = _connection_from_file(TEST_IFCFG_DIR "/ifcfg-test-vlan-vlanid-use",
+                                       NULL,
+                                       TYPE_ETHERNET,
+                                       NULL);
+
+    g_assert_cmpstr(nm_connection_get_interface_name(connection), ==, "eth0.9");
+
+    s_vlan = nm_connection_get_setting_vlan(connection);
+    g_assert(s_vlan);
+
+    g_assert_cmpstr(nm_setting_vlan_get_parent(s_vlan), ==, "eth0");
+    g_assert_cmpint(nm_setting_vlan_get_id(s_vlan), ==, 10);
+    g_assert_cmpint(nm_setting_vlan_get_flags(s_vlan), ==, NM_VLAN_FLAG_REORDER_HEADERS);
+
+    _writer_new_connec_exp(connection,
+                           TEST_SCRATCH_DIR,
+                           TEST_IFCFG_DIR "/ifcfg-test-vlan-vlanid-use.cexpected",
+                           &testfile);
+
+    reread = _connection_from_file(testfile, NULL, TYPE_ETHERNET, NULL);
+
+    nmtst_assert_connection_equals(connection, TRUE, reread, FALSE);
+}
+
+static void
 test_read_vlan_only_device(void)
 {
     NMConnection * connection;
@@ -11626,6 +11658,7 @@ main(int argc, char **argv)
     g_test_add_func(TPATH "vlan/read/physdev", test_read_vlan_physdev);
     g_test_add_func(TPATH "vlan/read/reorder-hdr-1", test_read_vlan_reorder_hdr_1);
     g_test_add_func(TPATH "vlan/read/reorder-hdr-2", test_read_vlan_reorder_hdr_2);
+    g_test_add_func(TPATH "vlan/read/vlanid-use", test_read_vlan_vlanid_use);
     g_test_add_func(TPATH "wired/read/read-wake-on-lan", test_read_wired_wake_on_lan);
     g_test_add_func(TPATH "wired/read/read-auto-negotiate-off", test_read_wired_auto_negotiate_off);
     g_test_add_func(TPATH "wired/read/read-auto-negotiate-on", test_read_wired_auto_negotiate_on);
