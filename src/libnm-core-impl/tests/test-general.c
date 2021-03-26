@@ -2583,7 +2583,10 @@ test_setting_to_dbus_no_secrets(void)
 
     s_wsec = make_test_wsec_setting("setting-to-dbus-no-secrets");
 
-    dict = _nm_setting_to_dbus(NM_SETTING(s_wsec), NULL, NM_CONNECTION_SERIALIZE_NO_SECRETS, NULL);
+    dict = _nm_setting_to_dbus(NM_SETTING(s_wsec),
+                               NULL,
+                               NM_CONNECTION_SERIALIZE_WITH_NON_SECRET,
+                               NULL);
 
     /* Make sure non-secret keys are there */
     g_assert(_variant_contains(dict, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT));
@@ -2606,7 +2609,7 @@ test_setting_to_dbus_only_secrets(void)
     s_wsec = make_test_wsec_setting("setting-to-dbus-only-secrets");
 
     dict =
-        _nm_setting_to_dbus(NM_SETTING(s_wsec), NULL, NM_CONNECTION_SERIALIZE_ONLY_SECRETS, NULL);
+        _nm_setting_to_dbus(NM_SETTING(s_wsec), NULL, NM_CONNECTION_SERIALIZE_WITH_SECRETS, NULL);
 
     /* Make sure non-secret keys are not there */
     g_assert(!_variant_contains(dict, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT));

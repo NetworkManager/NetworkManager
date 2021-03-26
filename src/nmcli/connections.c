@@ -5821,7 +5821,7 @@ gen_cmd_print0(const char *text, int state)
         int          i = 0;
 
         settings = nm_connection_to_dbus(nmc_tab_completion.connection,
-                                         NM_CONNECTION_SERIALIZE_NO_SECRETS);
+                                         NM_CONNECTION_SERIALIZE_WITH_NON_SECRET);
         words    = g_new(char *, g_variant_n_children(settings) + 2);
         g_variant_iter_init(&iter, settings);
         while (g_variant_iter_next(&iter, "{&s@a{sv}}", &setting_name, NULL))

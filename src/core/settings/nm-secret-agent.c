@@ -583,7 +583,7 @@ nm_secret_agent_delete_secrets(NMSecretAgent *       self,
     priv = NM_SECRET_AGENT_GET_PRIVATE(self);
 
     /* No secrets sent; agents must be smart enough to track secrets using the UUID or something */
-    dict = nm_connection_to_dbus(connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
+    dict = nm_connection_to_dbus(connection, NM_CONNECTION_SERIALIZE_WITH_NON_SECRET);
 
     call_id = _call_id_new(self, METHOD_DELETE_SECRETS, path, NULL, callback, callback_data);
 
