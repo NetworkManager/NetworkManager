@@ -12926,7 +12926,8 @@ impl_device_get_applied_connection(NMDBusObject *                     obj,
         return;
     }
 
-    var_settings = nm_connection_to_dbus(applied_connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
+    var_settings =
+        nm_connection_to_dbus(applied_connection, NM_CONNECTION_SERIALIZE_WITH_NON_SECRET);
     if (!var_settings)
         var_settings = g_variant_new_array(G_VARIANT_TYPE("{sa{sv}}"), NULL, 0);
 

@@ -1333,7 +1333,7 @@ get_settings_auth_cb(NMSettingsConnection * self,
      * protected against leakage of secrets to unprivileged callers.
      */
     settings = nm_connection_to_dbus_full(nm_settings_connection_get_connection(self),
-                                          NM_CONNECTION_SERIALIZE_NO_SECRETS,
+                                          NM_CONNECTION_SERIALIZE_WITH_NON_SECRET,
                                           &options);
     g_dbus_method_invocation_return_value(context, g_variant_new("(@a{sa{sv}})", settings));
 }
@@ -1866,7 +1866,7 @@ dbus_get_agent_secrets_cb(NMSettingsConnection *      self,
          * by the time we get here.
          */
         dict = nm_connection_to_dbus(nm_settings_connection_get_connection(self),
-                                     NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+                                     NM_CONNECTION_SERIALIZE_WITH_SECRETS);
         if (!dict)
             dict = g_variant_new_array(G_VARIANT_TYPE("{sa{sv}}"), NULL, 0);
         g_dbus_method_invocation_return_value(context, g_variant_new("(@a{sa{sv}})", dict));
