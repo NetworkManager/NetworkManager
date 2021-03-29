@@ -7177,6 +7177,18 @@ nml_cleanup_context_busy_watcher_on_idle(GObject *context_busy_watcher_take, GMa
      * no destroy notify to g_dbus_connection_signal_subscribe().
      * That means, there should be no other unaccounted GSource'es left.
      *
+     * Another reason is g_dbus_connection_signal_unsubscribe() which does
+     * not guarantee that everything was unsubscribed right away. Instead,
+     * there might still be idle actions queued (which will be thrown away
+     * once processed). Still, that means, the caller must continue to iterate
+     * the main context afterwards. Maybe we should pass a GDestroyNotify to
+     * g_dbus_connection_signal_subscribe() which handles an additional reference
+     * to the context_busy_watcher object. That would be the proper way to handle
+     * this. We don't do that, so in practice at this point there might still
+     * be some idle actions (with G_PRIORITY_DEFAULT) pending. As we schedule here
+     * another idle action with lower priority, we handle those cases without
+     * using a GDestroyNotify.
+     *
      * However, we really need to be sure that the context_busy_watcher's
      * lifetime matches the time that the context is busy. That is especially
      * important with synchronous initialization, where the context-busy-watcher
@@ -7198,7 +7210,13 @@ nml_cleanup_context_busy_watcher_on_idle(GObject *context_busy_watcher_take, GMa
      * the user *MUST* always keep iterating the context after NMClient got destroyed.
      * But that is not a severe limitation, because the user anyway must be prepared
      * to do that. That is because in many cases it is necessary anyway (and the user
-     * wouldn't know a priory when not). This way, it is just always necessary. */
+     * wouldn't know a priory when not). This way, it is just always necessary.
+     *
+     * It might be nice to use G_DEFAULT_PRIORITY here to minimize how long the
+     * instance stays alive. Probably that would be fine, even without passing
+     * a GDestroyNotify to g_dbus_connection_signal_subscribe(). But to be extra
+     * careful, use a low priority.
+     **/
 
     cleanup_source =
         nm_g_idle_source_new(G_PRIORITY_LOW + 10,
@@ -7263,12 +7281,20 @@ _init_start_check_complete(NMClient *self)
 static void
 _init_start_cancelled_cb(GCancellable *cancellable, gpointer user_data)
 {
-    NMClient *self = user_data;
-    GError *  error;
+    NMClient *       self = user_data;
+    NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE(self);
+    GError *         error;
 
     nm_assert(NM_IS_CLIENT(self));
-    nm_assert(NM_CLIENT_GET_PRIVATE(self)->init_data);
-    nm_assert(NM_CLIENT_GET_PRIVATE(self)->init_data->cancellable == cancellable);
+    nm_assert(priv->init_data);
+    nm_assert(priv->init_data->cancellable == cancellable);
+
+    if (priv->init_data->cancelled_id == 0) {
+        /* this only can happen if the cancellable was already cancelled initially.
+         * In this case we are called synchronously. Do nothing, and let the caller
+         * handle it. */
+        return;
+    }
 
     nm_utils_error_set_cancelled(&error, FALSE, NULL);
     _init_start_complete(self, error);
@@ -7291,19 +7317,20 @@ _init_start_with_bus(NMClient *self)
     NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE(self);
 
     if (priv->init_data->cancellable) {
-        priv->init_data->cancelled_id = g_signal_connect(priv->init_data->cancellable,
-                                                         "cancelled",
-                                                         G_CALLBACK(_init_start_cancelled_cb),
-                                                         self);
-        if (g_cancellable_is_cancelled(priv->init_data->cancellable)) {
-            priv->init_data->cancel_on_idle_source = g_idle_source_new();
-            g_source_set_callback(priv->init_data->cancel_on_idle_source,
-                                  _init_start_cancel_on_idle_cb,
-                                  self,
-                                  NULL);
+        gulong id;
+
+        id = g_cancellable_connect(priv->init_data->cancellable,
+                                   G_CALLBACK(_init_start_cancelled_cb),
+                                   self,
+                                   NULL);
+        if (id == 0) {
+            priv->init_data->cancel_on_idle_source =
+                nm_g_idle_source_new(G_PRIORITY_DEFAULT, _init_start_cancel_on_idle_cb, self, NULL);
             g_source_attach(priv->init_data->cancel_on_idle_source, priv->main_context);
             return;
         }
+
+        priv->init_data->cancelled_id = id;
     }
 
     _assert_main_context_is_current_thread_default(self, dbus_context);
@@ -7731,11 +7758,31 @@ nm_client_init(NMClient *self)
  * @cancellable: a #GCancellable, or %NULL
  * @error: location for a #GError, or %NULL
  *
- * Creates a new #NMClient.
+ * Creates a new #NMClient synchronously.
  *
- * Note that this will do blocking D-Bus calls to initialize the
- * client. You can use nm_client_new_async() if you want to avoid
- * that.
+ * Note that this will block until a NMClient instance is fully initialized.
+ * This does nothing beside calling g_initable_new(). You are free to call
+ * g_initable_new() or g_object_new()/g_initable_init() directly for more
+ * control, to set GObject properties or get access to the NMClient instance
+ * while it is still initializing.
+ *
+ * Using the synchronous initialization creates an #NMClient instance
+ * that uses an internal #GMainContext. This introduces an additional
+ * overhead that you can avoid by using the asynchronous initialization
+ * with g_async_initable_init_async() or nm_client_new_async().
+ *
+ * Creating an #NMClient instance can only fail for two reasons. First, if you didn't
+ * provide a %NM_CLIENT_DBUS_CONNECTION and the call to g_bus_get()
+ * fails. You can avoid that by using g_initable_new() directly and
+ * set a D-Bus connection.
+ * Second, if you cancelled the creation. If you do that, then note
+ * that after the failure there might still be idle actions pending
+ * which keep nm_client_get_main_context() alive. That means,
+ * in that case you must continue iterating the context to avoid
+ * leaks. See nm_client_get_context_busy_watcher().
+ *
+ * Creating an #NMClient instance when NetworkManager is not running
+ * does not cause a failure.
  *
  * Returns: a new #NMClient or NULL on an error
  **/
@@ -7751,10 +7798,27 @@ nm_client_new(GCancellable *cancellable, GError **error)
  * @callback: callback to call when the client is created
  * @user_data: data for @callback
  *
- * Creates a new #NMClient and begins asynchronously initializing it.
- * @callback will be called when it is done; use
- * nm_client_new_finish() to get the result. Note that on an error,
- * the callback can be invoked with two first parameters as NULL.
+ * Creates a new #NMClient asynchronously.
+ * @callback will be called when it is done. Use
+ * nm_client_new_finish() to get the result.
+ *
+ * This does nothing beside calling g_async_initable_new_async(). You are free to
+ * call g_async_initable_new_async() or g_object_new()/g_async_initable_init_async()
+ * directly for more control, to set GObject properties or get access to the NMClient
+ * instance while it is still initializing.
+ *
+ * Creating an #NMClient instance can only fail for two reasons. First, if you didn't
+ * provide a %NM_CLIENT_DBUS_CONNECTION and the call to g_bus_get()
+ * fails. You can avoid that by using g_initable_new() directly and
+ * set a D-Bus connection.
+ * Second, if you cancelled the creation. If you do that, then note
+ * that after the failure there might still be idle actions pending
+ * which keep nm_client_get_main_context() alive. That means,
+ * in that case you must continue iterating the context to avoid
+ * leaks. See nm_client_get_context_busy_watcher().
+ *
+ * Creating an #NMClient instance when NetworkManager is not running
+ * does not cause a failure.
  **/
 void
 nm_client_new_async(GCancellable *cancellable, GAsyncReadyCallback callback, gpointer user_data)
