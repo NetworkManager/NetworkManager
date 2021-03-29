@@ -7177,6 +7177,18 @@ nml_cleanup_context_busy_watcher_on_idle(GObject *context_busy_watcher_take, GMa
      * no destroy notify to g_dbus_connection_signal_subscribe().
      * That means, there should be no other unaccounted GSource'es left.
      *
+     * Another reason is g_dbus_connection_signal_unsubscribe() which does
+     * not guarantee that everything was unsubscribed right away. Instead,
+     * there might still be idle actions queued (which will be thrown away
+     * once processed). Still, that means, the caller must continue to iterate
+     * the main context afterwards. Maybe we should pass a GDestroyNotify to
+     * g_dbus_connection_signal_subscribe() which handles an additional reference
+     * to the context_busy_watcher object. That would be the proper way to handle
+     * this. We don't do that, so in practice at this point there might still
+     * be some idle actions (with G_PRIORITY_DEFAULT) pending. As we schedule here
+     * another idle action with lower priority, we handle those cases without
+     * using a GDestroyNotify.
+     *
      * However, we really need to be sure that the context_busy_watcher's
      * lifetime matches the time that the context is busy. That is especially
      * important with synchronous initialization, where the context-busy-watcher
@@ -7198,7 +7210,13 @@ nml_cleanup_context_busy_watcher_on_idle(GObject *context_busy_watcher_take, GMa
      * the user *MUST* always keep iterating the context after NMClient got destroyed.
      * But that is not a severe limitation, because the user anyway must be prepared
      * to do that. That is because in many cases it is necessary anyway (and the user
-     * wouldn't know a priory when not). This way, it is just always necessary. */
+     * wouldn't know a priory when not). This way, it is just always necessary.
+     *
+     * It might be nice to use G_DEFAULT_PRIORITY here to minimize how long the
+     * instance stays alive. Probably that would be fine, even without passing
+     * a GDestroyNotify to g_dbus_connection_signal_subscribe(). But to be extra
+     * careful, use a low priority.
+     **/
 
     cleanup_source =
         nm_g_idle_source_new(G_PRIORITY_LOW + 10,
