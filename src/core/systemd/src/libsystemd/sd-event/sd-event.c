@@ -407,7 +407,7 @@ _public_ int sd_event_new(sd_event** ret) {
         e->epoll_fd = fd_move_above_stdio(e->epoll_fd);
 
         if (secure_getenv("SD_EVENT_PROFILE_DELAYS")) {
-                log_debug("Event loop profiling enabled. Logarithmic histogram of event loop iterations in the range 2^0 ... 2^63 us will be logged every 5s.");
+                log_debug("Event loop profiling enabled. Logarithmic histogram of event loop iterations in the range 2^0 … 2^63 us will be logged every 5s.");
                 e->profile_delays = true;
         }
 
@@ -629,10 +629,6 @@ static int event_make_signal_data(
                         return 0;
                 }
         } else {
-                r = hashmap_ensure_allocated(&e->signal_data, &uint64_hash_ops);
-                if (r < 0)
-                        return r;
-
                 d = new(struct signal_data, 1);
                 if (!d)
                         return -ENOMEM;
@@ -643,7 +639,7 @@ static int event_make_signal_data(
                         .priority = priority,
                 };
 
-                r = hashmap_put(e->signal_data, &d->priority, d);
+                r = hashmap_ensure_put(&e->signal_data, &uint64_hash_ops, &d->priority, d);
                 if (r < 0) {
                         free(d);
                         return r;
@@ -943,7 +939,7 @@ static void source_disconnect(sd_event_source *s) {
                 sd_event_unref(event);
 }
 
-static void source_free(sd_event_source *s) {
+static sd_event_source* source_free(sd_event_source *s) {
         assert(s);
 
         source_disconnect(s);
@@ -993,7 +989,7 @@ static void source_free(sd_event_source *s) {
                 s->destroy_callback(s->userdata);
 
         free(s->description);
-        free(s);
+        return mfree(s);
 }
 DEFINE_TRIVIAL_CLEANUP_FUNC(sd_event_source*, source_free);
 
@@ -1043,7 +1039,7 @@ static int source_set_pending(sd_event_source *s, bool b) {
                 }
         }
 
-        return 0;
+        return 1;
 }
 
 static sd_event_source *source_new(sd_event *e, bool floating, EventSourceType type) {
@@ -1240,7 +1236,7 @@ _public_ int sd_event_add_time(
 
         assert_return(e, -EINVAL);
         assert_return(e = event_resolve(e), -ENOPKG);
-        assert_return(accuracy != (uint64_t) -1, -EINVAL);
+        assert_return(accuracy != UINT64_MAX, -EINVAL);
         assert_return(e->state != SD_EVENT_FINISHED, -ESTALE);
         assert_return(!event_pid_changed(e), -ECHILD);
 
@@ -1727,10 +1723,6 @@ static int event_make_inotify_data(
 
         fd = fd_move_above_stdio(fd);
 
-        r = hashmap_ensure_allocated(&e->inotify_data, &uint64_hash_ops);
-        if (r < 0)
-                return r;
-
         d = new(struct inotify_data, 1);
         if (!d)
                 return -ENOMEM;
@@ -1741,7 +1733,7 @@ static int event_make_inotify_data(
                 .priority = priority,
         };
 
-        r = hashmap_put(e->inotify_data, &d->priority, d);
+        r = hashmap_ensure_put(&e->inotify_data, &uint64_hash_ops, &d->priority, d);
         if (r < 0) {
                 d->fd = safe_close(d->fd);
                 free(d);
@@ -2602,10 +2594,11 @@ _public_ int sd_event_source_set_time_relative(sd_event_source *s, uint64_t usec
         if (r < 0)
                 return r;
 
-        if (usec >= USEC_INFINITY - t)
+        usec = usec_add(t, usec);
+        if (usec == USEC_INFINITY)
                 return -EOVERFLOW;
 
-        return sd_event_source_set_time(s, t + usec);
+        return sd_event_source_set_time(s, usec);
 }
 
 _public_ int sd_event_source_get_time_accuracy(sd_event_source *s, uint64_t *usec) {
@@ -2622,7 +2615,7 @@ _public_ int sd_event_source_set_time_accuracy(sd_event_source *s, uint64_t usec
         int r;
 
         assert_return(s, -EINVAL);
-        assert_return(usec != (uint64_t) -1, -EINVAL);
+        assert_return(usec != UINT64_MAX, -EINVAL);
         assert_return(EVENT_SOURCE_IS_TIME(s->type), -EDOM);
         assert_return(s->event->state != SD_EVENT_FINISHED, -ESTALE);
         assert_return(!event_pid_changed(s->event), -ECHILD);
@@ -3123,11 +3116,19 @@ static int process_timer(
         return 0;
 }
 
-static int process_child(sd_event *e) {
+static int process_child(sd_event *e, int64_t threshold, int64_t *ret_min_priority) {
+        int64_t min_priority = threshold;
+        bool something_new = false;
         sd_event_source *s;
         int r;
 
         assert(e);
+        assert(ret_min_priority);
+
+        if (!e->need_process_child) {
+                *ret_min_priority = min_priority;
+                return 0;
+        }
 
         e->need_process_child = false;
 
@@ -3151,6 +3152,9 @@ static int process_child(sd_event *e) {
 
         HASHMAP_FOREACH(s, e->child_sources) {
                 assert(s->type == SOURCE_CHILD);
+
+                if (s->priority > threshold)
+                        continue;
 
                 if (s->pending)
                         continue;
@@ -3188,10 +3192,15 @@ static int process_child(sd_event *e) {
                         r = source_set_pending(s, true);
                         if (r < 0)
                                 return r;
+                        if (r > 0) {
+                                something_new = true;
+                                min_priority = MIN(min_priority, s->priority);
+                        }
                 }
         }
 
-        return 0;
+        *ret_min_priority = min_priority;
+        return something_new;
 }
 
 static int process_pidfd(sd_event *e, sd_event_source *s, uint32_t revents) {
@@ -3221,13 +3230,13 @@ static int process_pidfd(sd_event *e, sd_event_source *s, uint32_t revents) {
         return source_set_pending(s, true);
 }
 
-static int process_signal(sd_event *e, struct signal_data *d, uint32_t events) {
-        bool read_one = false;
+static int process_signal(sd_event *e, struct signal_data *d, uint32_t events, int64_t *min_priority) {
         int r;
 
         assert(e);
         assert(d);
         assert_return(events == EPOLLIN, -EIO);
+        assert(min_priority);
 
         /* If there's a signal queued on this priority and SIGCHLD is
            on this priority too, then make sure to recheck the
@@ -3253,7 +3262,7 @@ static int process_signal(sd_event *e, struct signal_data *d, uint32_t events) {
                 n = read(d->fd, &si, sizeof(si));
                 if (n < 0) {
                         if (IN_SET(errno, EAGAIN, EINTR))
-                                return read_one;
+                                return 0;
 
                         return -errno;
                 }
@@ -3262,8 +3271,6 @@ static int process_signal(sd_event *e, struct signal_data *d, uint32_t events) {
                         return -EIO;
 
                 assert(SIGNAL_VALID(si.ssi_signo));
-
-                read_one = true;
 
                 if (e->signal_sources)
                         s = e->signal_sources[si.ssi_signo];
@@ -3278,12 +3285,16 @@ static int process_signal(sd_event *e, struct signal_data *d, uint32_t events) {
                 r = source_set_pending(s, true);
                 if (r < 0)
                         return r;
+                if (r > 0 && *min_priority >= s->priority) {
+                        *min_priority = s->priority;
+                        return 1; /* an event source with smaller priority is queued. */
+                }
 
-                return 1;
+                return 0;
         }
 }
 
-static int event_inotify_data_read(sd_event *e, struct inotify_data *d, uint32_t revents) {
+static int event_inotify_data_read(sd_event *e, struct inotify_data *d, uint32_t revents, int64_t threshold) {
         ssize_t n;
 
         assert(e);
@@ -3297,6 +3308,9 @@ static int event_inotify_data_read(sd_event *e, struct inotify_data *d, uint32_t
 
         /* Is the read buffer non-empty? If so, let's not read more */
         if (d->buffer_filled > 0)
+                return 0;
+
+        if (d->priority > threshold)
                 return 0;
 
         n = read(d->fd, &d->buffer, sizeof(d->buffer));
@@ -3788,44 +3802,103 @@ pending:
         return r;
 }
 
-_public_ int sd_event_wait(sd_event *e, uint64_t timeout) {
-        size_t event_queue_max;
-        int r, m, i;
+static int epoll_wait_usec(
+                int fd,
+                struct epoll_event *events,
+                int maxevents,
+                usec_t timeout) {
 
-        assert_return(e, -EINVAL);
-        assert_return(e = event_resolve(e), -ENOPKG);
-        assert_return(!event_pid_changed(e), -ECHILD);
-        assert_return(e->state != SD_EVENT_FINISHED, -ESTALE);
-        assert_return(e->state == SD_EVENT_ARMED, -EBUSY);
+        int r, msec;
+#if 0
+        static bool epoll_pwait2_absent = false;
 
-        if (e->exit_requested) {
-                e->state = SD_EVENT_PENDING;
-                return 1;
+        /* A wrapper that uses epoll_pwait2() if available, and falls back to epoll_wait() if not.
+         *
+         * FIXME: this is temporarily disabled until epoll_pwait2() becomes more widely available.
+         * See https://github.com/systemd/systemd/pull/18973 and
+         * https://github.com/systemd/systemd/issues/19052. */
+
+        if (!epoll_pwait2_absent && timeout != USEC_INFINITY) {
+                struct timespec ts;
+
+                r = epoll_pwait2(fd,
+                                 events,
+                                 maxevents,
+                                 timespec_store(&ts, timeout),
+                                 NULL);
+                if (r >= 0)
+                        return r;
+                if (!ERRNO_IS_NOT_SUPPORTED(errno) && !ERRNO_IS_PRIVILEGE(errno))
+                        return -errno; /* Only fallback to old epoll_wait() if the syscall is masked or not
+                                        * supported. */
+
+                epoll_pwait2_absent = true;
+        }
+#endif
+
+        if (timeout == USEC_INFINITY)
+                msec = -1;
+        else {
+                usec_t k;
+
+                k = DIV_ROUND_UP(timeout, USEC_PER_MSEC);
+                if (k >= INT_MAX)
+                        msec = INT_MAX; /* Saturate */
+                else
+                        msec = (int) k;
         }
 
-        event_queue_max = MAX(e->n_sources, 1u);
-        if (!GREEDY_REALLOC(e->event_queue, e->event_queue_allocated, event_queue_max))
+        r = epoll_wait(fd,
+                       events,
+                       maxevents,
+                       msec);
+        if (r < 0)
+                return -errno;
+
+        return r;
+}
+
+static int process_epoll(sd_event *e, usec_t timeout, int64_t threshold, int64_t *ret_min_priority) {
+        int64_t min_priority = threshold;
+        bool something_new = false;
+        size_t n_event_queue, m;
+        int r;
+
+        assert(e);
+        assert(ret_min_priority);
+
+        n_event_queue = MAX(e->n_sources, 1u);
+        if (!GREEDY_REALLOC(e->event_queue, e->event_queue_allocated, n_event_queue))
                 return -ENOMEM;
 
         /* If we still have inotify data buffered, then query the other fds, but don't wait on it */
         if (e->inotify_data_buffered)
                 timeout = 0;
 
-        m = epoll_wait(e->epoll_fd, e->event_queue, event_queue_max,
-                       timeout == (uint64_t) -1 ? -1 : (int) DIV_ROUND_UP(timeout, USEC_PER_MSEC));
-        if (m < 0) {
-                if (errno == EINTR) {
-                        e->state = SD_EVENT_PENDING;
-                        return 1;
-                }
+        for (;;) {
+                r = epoll_wait_usec(e->epoll_fd, e->event_queue, e->event_queue_allocated, timeout);
+                if (r < 0)
+                        return r;
 
-                r = -errno;
-                goto finish;
+                m = (size_t) r;
+
+                if (m < e->event_queue_allocated)
+                        break;
+
+                if (e->event_queue_allocated >= n_event_queue * 10)
+                        break;
+
+                if (!GREEDY_REALLOC(e->event_queue, e->event_queue_allocated, e->event_queue_allocated + n_event_queue))
+                        return -ENOMEM;
+
+                timeout = 0;
         }
 
-        triple_timestamp_get(&e->timestamp);
+        /* Set timestamp only when this is called first time. */
+        if (threshold == INT64_MAX)
+                triple_timestamp_get(&e->timestamp);
 
-        for (i = 0; i < m; i++) {
+        for (size_t i = 0; i < m; i++) {
 
                 if (e->event_queue[i].data.ptr == INT_TO_PTR(SOURCE_WATCHDOG))
                         r = flush_timer(e, e->watchdog_fd, e->event_queue[i].events, NULL);
@@ -3838,6 +3911,11 @@ _public_ int sd_event_wait(sd_event *e, uint64_t timeout) {
                                 sd_event_source *s = e->event_queue[i].data.ptr;
 
                                 assert(s);
+
+                                if (s->priority > threshold)
+                                        continue;
+
+                                min_priority = MIN(min_priority, s->priority);
 
                                 switch (s->type) {
 
@@ -3866,11 +3944,11 @@ _public_ int sd_event_wait(sd_event *e, uint64_t timeout) {
                         }
 
                         case WAKEUP_SIGNAL_DATA:
-                                r = process_signal(e, e->event_queue[i].data.ptr, e->event_queue[i].events);
+                                r = process_signal(e, e->event_queue[i].data.ptr, e->event_queue[i].events, &min_priority);
                                 break;
 
                         case WAKEUP_INOTIFY_DATA:
-                                r = event_inotify_data_read(e, e->event_queue[i].data.ptr, e->event_queue[i].events);
+                                r = event_inotify_data_read(e, e->event_queue[i].data.ptr, e->event_queue[i].events, threshold);
                                 break;
 
                         default:
@@ -3878,7 +3956,63 @@ _public_ int sd_event_wait(sd_event *e, uint64_t timeout) {
                         }
                 }
                 if (r < 0)
+                        return r;
+                if (r > 0)
+                        something_new = true;
+        }
+
+        *ret_min_priority = min_priority;
+        return something_new;
+}
+
+_public_ int sd_event_wait(sd_event *e, uint64_t timeout) {
+        int r;
+
+        assert_return(e, -EINVAL);
+        assert_return(e = event_resolve(e), -ENOPKG);
+        assert_return(!event_pid_changed(e), -ECHILD);
+        assert_return(e->state != SD_EVENT_FINISHED, -ESTALE);
+        assert_return(e->state == SD_EVENT_ARMED, -EBUSY);
+
+        if (e->exit_requested) {
+                e->state = SD_EVENT_PENDING;
+                return 1;
+        }
+
+        for (int64_t threshold = INT64_MAX; ; threshold--) {
+                int64_t epoll_min_priority, child_min_priority;
+
+                /* There may be a possibility that new epoll (especially IO) and child events are
+                 * triggered just after process_epoll() call but before process_child(), and the new IO
+                 * events may have higher priority than the child events. To salvage these events,
+                 * let's call epoll_wait() again, but accepts only events with higher priority than the
+                 * previous. See issue https://github.com/systemd/systemd/issues/18190 and comments
+                 * https://github.com/systemd/systemd/pull/18750#issuecomment-785801085
+                 * https://github.com/systemd/systemd/pull/18922#issuecomment-792825226 */
+
+                r = process_epoll(e, timeout, threshold, &epoll_min_priority);
+                if (r == -EINTR) {
+                        e->state = SD_EVENT_PENDING;
+                        return 1;
+                }
+                if (r < 0)
                         goto finish;
+                if (r == 0 && threshold < INT64_MAX)
+                        /* No new epoll event. */
+                        break;
+
+                r = process_child(e, threshold, &child_min_priority);
+                if (r < 0)
+                        goto finish;
+                if (r == 0)
+                        /* No new child event. */
+                        break;
+
+                threshold = MIN(epoll_min_priority, child_min_priority);
+                if (threshold == INT64_MIN)
+                        break;
+
+                timeout = 0;
         }
 
         r = process_watchdog(e);
@@ -3905,19 +4039,12 @@ _public_ int sd_event_wait(sd_event *e, uint64_t timeout) {
         if (r < 0)
                 goto finish;
 
-        if (e->need_process_child) {
-                r = process_child(e);
-                if (r < 0)
-                        goto finish;
-        }
-
         r = process_inotify(e);
         if (r < 0)
                 goto finish;
 
         if (event_next_pending(e)) {
                 e->state = SD_EVENT_PENDING;
-
                 return 1;
         }
 
@@ -4029,7 +4156,7 @@ _public_ int sd_event_loop(sd_event *e) {
         _unused_ _cleanup_(sd_event_unrefp) sd_event *ref = NULL;
 
         while (e->state != SD_EVENT_FINISHED) {
-                r = sd_event_run(e, (uint64_t) -1);
+                r = sd_event_run(e, UINT64_MAX);
                 if (r < 0)
                         return r;
         }

@@ -124,14 +124,10 @@ int get_process_comm(pid_t pid, char **ret) {
 }
 
 int get_process_cmdline(pid_t pid, size_t max_columns, ProcessCmdlineFlags flags, char **line) {
-        _cleanup_fclose_ FILE *f = NULL;
         _cleanup_free_ char *t = NULL, *ans = NULL;
         const char *p;
-        int r;
         size_t k;
-
-        /* This is supposed to be a safety guard against runaway command lines. */
-        size_t max_length = sc_arg_max();
+        int r;
 
         assert(line);
         assert(pid >= 0);
@@ -147,36 +143,18 @@ int get_process_cmdline(pid_t pid, size_t max_columns, ProcessCmdlineFlags flags
          * comm_fallback is false). Returns 0 and sets *line otherwise. */
 
         p = procfs_file_alloca(pid, "cmdline");
-        r = fopen_unlocked(p, "re", &f);
+        r = read_full_virtual_file(p, &t, &k);
         if (r == -ENOENT)
                 return -ESRCH;
         if (r < 0)
                 return r;
 
-        /* We assume that each four-byte character uses one or two columns. If we ever check for combining
-         * characters, this assumption will need to be adjusted. */
-        if ((size_t) 4 * max_columns + 1 < max_columns)
-                max_length = MIN(max_length, (size_t) 4 * max_columns + 1);
-
-        t = new(char, max_length);
-        if (!t)
-                return -ENOMEM;
-
-        k = fread(t, 1, max_length, f);
         if (k > 0) {
                 /* Arguments are separated by NULs. Let's replace those with spaces. */
                 for (size_t i = 0; i < k - 1; i++)
                         if (t[i] == '\0')
                                 t[i] = ' ';
-
-                t[k] = '\0'; /* Normally, t[k] is already NUL, so this is just a guard in case of short read */
         } else {
-                /* We only treat getting nothing as an error. We *could* also get an error after reading some
-                 * data, but we ignore that case, as such an error is rather unlikely and we prefer to get
-                 * some data rather than none. */
-                if (ferror(f))
-                        return -errno;
-
                 if (!(flags & PROCESS_CMDLINE_COMM_FALLBACK))
                         return -ENOENT;
 
@@ -187,7 +165,7 @@ int get_process_cmdline(pid_t pid, size_t max_columns, ProcessCmdlineFlags flags
                 if (r < 0)
                         return r;
 
-                mfree(t);
+                free(t);
                 t = strjoin("[", t2, "]");
                 if (!t)
                         return -ENOMEM;
@@ -756,7 +734,7 @@ int wait_for_terminate_with_timeout(pid_t pid, usec_t timeout) {
 
         /* Drop into a sigtimewait-based timeout. Waiting for the
          * pid to exit. */
-        until = now(CLOCK_MONOTONIC) + timeout;
+        until = usec_add(now(CLOCK_MONOTONIC), timeout);
         for (;;) {
                 usec_t n;
                 siginfo_t status = {};
@@ -1230,6 +1208,11 @@ int safe_fork_full(
 
         original_pid = getpid_cached();
 
+        if (flags & FORK_FLUSH_STDIO) {
+                fflush(stdout);
+                fflush(stderr); /* This one shouldn't be necessary, stderr should be unbuffered anyway, but let's better be safe than sorry */
+        }
+
         if (flags & (FORK_RESET_SIGNALS|FORK_DEATHSIG)) {
                 /* We temporarily block all signals, so that the new child has them blocked initially. This way, we can
                  * be sure that SIGTERMs are not lost we might send to the child. */
@@ -1462,7 +1445,11 @@ int fork_agent(const char *name, const int except[], size_t n_except, pid_t *ret
 
         /* Spawns a temporary TTY agent, making sure it goes away when we go away */
 
-        r = safe_fork_full(name, except, n_except, FORK_RESET_SIGNALS|FORK_DEATHSIG|FORK_CLOSE_ALL_FDS, ret_pid);
+        r = safe_fork_full(name,
+                           except,
+                           n_except,
+                           FORK_RESET_SIGNALS|FORK_DEATHSIG|FORK_CLOSE_ALL_FDS|FORK_REOPEN_LOG,
+                           ret_pid);
         if (r < 0)
                 return r;
         if (r > 0)
@@ -1543,7 +1530,7 @@ int pidfd_get_pid(int fd, pid_t *ret) {
 
         xsprintf(path, "/proc/self/fdinfo/%i", fd);
 
-        r = read_full_file(path, &fdinfo, NULL);
+        r = read_full_virtual_file(path, &fdinfo, NULL);
         if (r == -ENOENT) /* if fdinfo doesn't exist we assume the process does not exist */
                 return -ESRCH;
         if (r < 0)
@@ -1618,6 +1605,16 @@ int setpriority_closest(int priority) {
 
         log_debug("Cannot set requested nice level (%i), used next best (%i).", priority, limit);
         return 0;
+}
+
+bool invoked_as(char *argv[], const char *token) {
+        if (!argv || isempty(argv[0]))
+                return false;
+
+        if (isempty(token))
+                return false;
+
+        return strstr(last_path_component(argv[0]), token);
 }
 
 static const char *const ioprio_class_table[] = {

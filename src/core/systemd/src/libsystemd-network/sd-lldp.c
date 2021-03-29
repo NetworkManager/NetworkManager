@@ -21,13 +21,13 @@
 #define LLDP_DEFAULT_NEIGHBORS_MAX 128U
 
 static const char * const lldp_event_table[_SD_LLDP_EVENT_MAX] = {
-        [SD_LLDP_EVENT_ADDED]   = "added",
-        [SD_LLDP_EVENT_REMOVED] = "removed",
+        [SD_LLDP_EVENT_ADDED]     = "added",
+        [SD_LLDP_EVENT_REMOVED]   = "removed",
         [SD_LLDP_EVENT_UPDATED]   = "updated",
         [SD_LLDP_EVENT_REFRESHED] = "refreshed",
 };
 
-DEFINE_STRING_TABLE_LOOKUP(lldp_event, sd_lldp_event);
+DEFINE_STRING_TABLE_LOOKUP(lldp_event, sd_lldp_event_t);
 
 static void lldp_flush_neighbors(sd_lldp *lldp) {
         assert(lldp);
@@ -35,7 +35,7 @@ static void lldp_flush_neighbors(sd_lldp *lldp) {
         hashmap_clear(lldp->neighbor_by_id);
 }
 
-static void lldp_callback(sd_lldp *lldp, sd_lldp_event event, sd_lldp_neighbor *n) {
+static void lldp_callback(sd_lldp *lldp, sd_lldp_event_t event, sd_lldp_neighbor *n) {
         assert(lldp);
         assert(event >= 0 && event < _SD_LLDP_EVENT_MAX);
 
@@ -373,7 +373,7 @@ _public_ int sd_lldp_new(sd_lldp **ret) {
                 .n_ref = 1,
                 .fd = -1,
                 .neighbors_max = LLDP_DEFAULT_NEIGHBORS_MAX,
-                .capability_mask = (uint16_t) -1,
+                .capability_mask = UINT16_MAX,
         };
 
         lldp->neighbor_by_id = hashmap_new(&lldp_neighbor_hash_ops);

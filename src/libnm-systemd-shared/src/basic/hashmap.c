@@ -845,6 +845,16 @@ int _set_ensure_allocated(Set **s, const struct hash_ops *hash_ops  HASHMAP_DEBU
         return hashmap_base_ensure_allocated((HashmapBase**)s, hash_ops, HASHMAP_TYPE_SET  HASHMAP_DEBUG_PASS_ARGS);
 }
 
+int _hashmap_ensure_put(Hashmap **h, const struct hash_ops *hash_ops, const void *key, void *value  HASHMAP_DEBUG_PARAMS) {
+        int r;
+
+        r = _hashmap_ensure_allocated(h, hash_ops  HASHMAP_DEBUG_PASS_ARGS);
+        if (r < 0)
+                return r;
+
+        return hashmap_put(*h, key, value);
+}
+
 int _ordered_hashmap_ensure_put(OrderedHashmap **h, const struct hash_ops *hash_ops, const void *key, void *value  HASHMAP_DEBUG_PARAMS) {
         int r;
 
@@ -2025,4 +2035,36 @@ int set_strjoin(Set *s, const char *separator, bool wrap_with_separator, char **
 
         *ret = TAKE_PTR(str);
         return 0;
+}
+
+bool set_equal(Set *a, Set *b) {
+        void *p;
+
+        /* Checks whether each entry of 'a' is also in 'b' and vice versa, i.e. the two sets contain the same
+         * entries */
+
+        if (a == b)
+                return true;
+
+        if (set_isempty(a) && set_isempty(b))
+                return true;
+
+        if (set_size(a) != set_size(b)) /* Cheap check that hopefully catches a lot of inequality cases
+                                         * already */
+                return false;
+
+        SET_FOREACH(p, a)
+                if (!set_contains(b, p))
+                        return false;
+
+        /* If we have the same hashops, then we don't need to check things backwards given we compared the
+         * size and that all of a is in b. */
+        if (a->b.hash_ops == b->b.hash_ops)
+                return true;
+
+        SET_FOREACH(p, b)
+                if (!set_contains(a, p))
+                        return false;
+
+        return true;
 }

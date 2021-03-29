@@ -63,7 +63,7 @@ typedef enum SocketAddressBindIPv6Only {
         SOCKET_ADDRESS_BOTH,
         SOCKET_ADDRESS_IPV6_ONLY,
         _SOCKET_ADDRESS_BIND_IPV6_ONLY_MAX,
-        _SOCKET_ADDRESS_BIND_IPV6_ONLY_INVALID = -1
+        _SOCKET_ADDRESS_BIND_IPV6_ONLY_INVALID = -EINVAL,
 } SocketAddressBindIPv6Only;
 
 #define socket_address_family(a) ((a)->sockaddr.sa.sa_family)
@@ -101,6 +101,7 @@ bool socket_address_equal(const SocketAddress *a, const SocketAddress *b) _pure_
 const char* socket_address_get_path(const SocketAddress *a);
 
 bool socket_ipv6_is_supported(void);
+bool socket_ipv6_is_enabled(void);
 
 int sockaddr_port(const struct sockaddr *_sa, unsigned *port);
 const union in_addr_union *sockaddr_in_addr(const struct sockaddr *sa);
@@ -133,9 +134,9 @@ int ip_tos_to_string_alloc(int i, char **s);
 int ip_tos_from_string(const char *s);
 
 typedef enum {
-      IFNAME_VALID_ALTERNATIVE = 1 << 0,
-      IFNAME_VALID_NUMERIC     = 1 << 1,
-      _IFNAME_VALID_ALL        = IFNAME_VALID_ALTERNATIVE | IFNAME_VALID_NUMERIC,
+        IFNAME_VALID_ALTERNATIVE = 1 << 0,
+        IFNAME_VALID_NUMERIC     = 1 << 1,
+        _IFNAME_VALID_ALL        = IFNAME_VALID_ALTERNATIVE | IFNAME_VALID_NUMERIC,
 } IfnameValidFlags;
 bool ifname_valid_full(const char *p, IfnameValidFlags flags);
 static inline bool ifname_valid(const char *p) {

@@ -27,7 +27,8 @@
 #include "string-util.h"
 #include "tmpfile-util.h"
 
-#define READ_FULL_BYTES_MAX (4U*1024U*1024U)
+/* The maximum size of the file we'll read in one go. */
+#define READ_FULL_BYTES_MAX (4U*1024U*1024U - 1)
 
 int fopen_unlocked(const char *path, const char *options, FILE **ret) {
         assert(ret);
@@ -368,7 +369,6 @@ int read_full_virtual_file(const char *filename, char **ret_contents, size_t *re
         struct stat st;
         size_t n, size;
         int n_retries;
-        char *p;
 
         assert(ret_contents);
 
@@ -385,8 +385,12 @@ int read_full_virtual_file(const char *filename, char **ret_contents, size_t *re
         if (fd < 0)
                 return -errno;
 
-        /* Start size for files in /proc which usually report a file size of 0. */
-        size = LINE_MAX / 2;
+        /* Start size for files in /proc/ which usually report a file size of 0. (Files in /sys/ report a
+         * file size of 4K, which is probably OK for sizing our initial buffer, and sysfs attributes can't be
+         * larger anyway.)
+         *
+         * It's one less than 4k, so that the malloc() below allocates exactly 4k. */
+        size = 4095;
 
         /* Limit the number of attempts to read the number of bytes returned by fstat(). */
         n_retries = 3;
@@ -402,19 +406,27 @@ int read_full_virtual_file(const char *filename, char **ret_contents, size_t *re
                         return -EBADF;
 
                 /* Be prepared for files from /proc which generally report a file size of 0. */
+                assert_cc(READ_FULL_BYTES_MAX < SSIZE_MAX);
                 if (st.st_size > 0) {
+                        if (st.st_size > READ_FULL_BYTES_MAX)
+                                return -E2BIG;
+
                         size = st.st_size;
                         n_retries--;
-                } else
-                        size = size * 2;
+                } else {
+                        /* Double the buffer size */
+                        if (size >= READ_FULL_BYTES_MAX)
+                                return -E2BIG;
+                        if (size > READ_FULL_BYTES_MAX / 2 - 1)
+                                size = READ_FULL_BYTES_MAX; /* clamp to max */
+                        else
+                                size = size * 2 + 1; /* Stay always one less than page size, so we malloc evenly */
+                }
 
-                if (size > READ_FULL_BYTES_MAX)
-                        return -E2BIG;
-
-                p = realloc(buf, size + 1);
-                if (!p)
+                buf = malloc(size + 1);
+                if (!buf)
                         return -ENOMEM;
-                buf = TAKE_PTR(p);
+                size = malloc_usable_size(buf) - 1; /* Use a bigger allocation if we got it anyway */
 
                 for (;;) {
                         ssize_t k;
@@ -443,25 +455,28 @@ int read_full_virtual_file(const char *filename, char **ret_contents, size_t *re
 
                 if (lseek(fd, 0, SEEK_SET) < 0)
                         return -errno;
+
+                buf = mfree(buf);
         }
 
         if (n < size) {
+                char *p;
+
+                /* Return rest of the buffer to libc */
                 p = realloc(buf, n + 1);
                 if (!p)
                         return -ENOMEM;
+
                 buf = TAKE_PTR(p);
         }
 
-        if (!ret_size) {
-                /* Safety check: if the caller doesn't want to know the size of what we
-                 * just read it will rely on the trailing NUL byte. But if there's an
-                 * embedded NUL byte, then we should refuse operation as otherwise
-                 * there'd be ambiguity about what we just read. */
-
-                if (memchr(buf, 0, n))
-                        return -EBADMSG;
-        } else
+        if (ret_size)
                 *ret_size = n;
+        else if (memchr(buf, 0, n))
+                /* Safety check: if the caller doesn't want to know the size of what we just read it will
+                 * rely on the trailing NUL byte. But if there's an embedded NUL byte, then we should refuse
+                 * operation as otherwise there'd be ambiguity about what we just read. */
+                return -EBADMSG;
 
         buf[n] = 0;
         *ret_contents = TAKE_PTR(buf);
@@ -546,7 +561,9 @@ int read_full_stream_full(
                 }
 
                 buf = t;
-                n = n_next;
+                /* Unless a size has been explicitly specified, try to read as much as fits into the memory
+                 * we allocated (minus 1, to leave one byte for the safety NUL byte) */
+                n = size == SIZE_MAX ? malloc_usable_size(buf) - 1 : n_next;
 
                 errno = 0;
                 k = fread(buf + l, 1, n - l, f);
@@ -1146,7 +1163,7 @@ static EndOfLineMarker categorize_eol(char c, ReadLineFlags flags) {
         return EOL_NONE;
 }
 
-DEFINE_TRIVIAL_CLEANUP_FUNC(FILE*, funlockfile);
+DEFINE_TRIVIAL_CLEANUP_FUNC_FULL(FILE*, funlockfile, NULL);
 
 int read_line_full(FILE *f, size_t limit, ReadLineFlags flags, char **ret) {
         size_t n = 0, allocated = 0, count = 0;
@@ -1321,15 +1338,6 @@ int warn_file_is_world_accessible(const char *filename, struct stat *st, const c
                 log_warning("%s has %04o mode that is too permissive, please adjust the ownership and access mode.",
                             filename, st->st_mode & 07777);
         return 0;
-}
-
-int sync_rights(int from, int to) {
-        struct stat st;
-
-        if (fstat(from, &st) < 0)
-                return -errno;
-
-        return fchmod_and_chown(to, st.st_mode & 07777, st.st_uid, st.st_gid);
 }
 
 int rename_and_apply_smack_floor_label(const char *from, const char *to) {

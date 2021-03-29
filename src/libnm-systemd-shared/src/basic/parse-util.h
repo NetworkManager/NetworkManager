@@ -22,9 +22,6 @@ int parse_mtu(int family, const char *s, uint32_t *ret);
 int parse_size(const char *t, uint64_t base, uint64_t *size);
 int parse_range(const char *t, unsigned *lower, unsigned *upper);
 int parse_errno(const char *t);
-#if HAVE_SECCOMP
-int parse_syscall_and_errno(const char *in, char **name, int *error);
-#endif
 
 #define SAFE_ATO_REFUSE_PLUS_MINUS (1U << 30)
 #define SAFE_ATO_REFUSE_LEADING_ZERO (1U << 29)
@@ -129,12 +126,6 @@ static inline int safe_atozu(const char *s, size_t *ret_u) {
 int safe_atod(const char *s, double *ret_d);
 
 int parse_fractional_part_u(const char **s, size_t digits, unsigned *res);
-
-int parse_percent_unbounded(const char *p);
-int parse_percent(const char *p);
-
-int parse_permille_unbounded(const char *p);
-int parse_permille(const char *p);
 
 int parse_nice(const char *p, int *ret);
 
