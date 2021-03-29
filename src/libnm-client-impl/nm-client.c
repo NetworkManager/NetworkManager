@@ -7740,11 +7740,31 @@ nm_client_init(NMClient *self)
  * @cancellable: a #GCancellable, or %NULL
  * @error: location for a #GError, or %NULL
  *
- * Creates a new #NMClient.
+ * Creates a new #NMClient synchronously.
  *
- * Note that this will do blocking D-Bus calls to initialize the
- * client. You can use nm_client_new_async() if you want to avoid
- * that.
+ * Note that this will block until a NMClient instance is fully initialized.
+ * This does nothing beside calling g_initable_new(). You are free to call
+ * g_initable_new() or g_object_new()/g_initable_init() directly for more
+ * control, to set GObject properties or get access to the NMClient instance
+ * while it is still initializing.
+ *
+ * Using the synchronous initialization creates an #NMClient instance
+ * that uses an internal #GMainContext. This introduces an additional
+ * overhead that you can avoid by using the asynchronous initialization
+ * with g_async_initable_init_async() or nm_client_new_async().
+ *
+ * Creating an #NMClient instance can only fail for two reasons. First, if you didn't
+ * provide a %NM_CLIENT_DBUS_CONNECTION and the call to g_bus_get()
+ * fails. You can avoid that by using g_initable_new() directly and
+ * set a D-Bus connection.
+ * Second, if you cancelled the creation. If you do that, then note
+ * that after the failure there might still be idle actions pending
+ * which keep nm_client_get_main_context() alive. That means,
+ * in that case you must continue iterating the context to avoid
+ * leaks. See nm_client_get_context_busy_watcher().
+ *
+ * Creating an #NMClient instance when NetworkManager is not running
+ * does not cause a failure.
  *
  * Returns: a new #NMClient or NULL on an error
  **/
@@ -7760,10 +7780,27 @@ nm_client_new(GCancellable *cancellable, GError **error)
  * @callback: callback to call when the client is created
  * @user_data: data for @callback
  *
- * Creates a new #NMClient and begins asynchronously initializing it.
- * @callback will be called when it is done; use
- * nm_client_new_finish() to get the result. Note that on an error,
- * the callback can be invoked with two first parameters as NULL.
+ * Creates a new #NMClient asynchronously.
+ * @callback will be called when it is done. Use
+ * nm_client_new_finish() to get the result.
+ *
+ * This does nothing beside calling g_async_initable_new_async(). You are free to
+ * call g_async_initable_new_async() or g_object_new()/g_async_initable_init_async()
+ * directly for more control, to set GObject properties or get access to the NMClient
+ * instance while it is still initializing.
+ *
+ * Creating an #NMClient instance can only fail for two reasons. First, if you didn't
+ * provide a %NM_CLIENT_DBUS_CONNECTION and the call to g_bus_get()
+ * fails. You can avoid that by using g_initable_new() directly and
+ * set a D-Bus connection.
+ * Second, if you cancelled the creation. If you do that, then note
+ * that after the failure there might still be idle actions pending
+ * which keep nm_client_get_main_context() alive. That means,
+ * in that case you must continue iterating the context to avoid
+ * leaks. See nm_client_get_context_busy_watcher().
+ *
+ * Creating an #NMClient instance when NetworkManager is not running
+ * does not cause a failure.
  **/
 void
 nm_client_new_async(GCancellable *cancellable, GAsyncReadyCallback callback, gpointer user_data)
