@@ -7263,12 +7263,20 @@ _init_start_check_complete(NMClient *self)
 static void
 _init_start_cancelled_cb(GCancellable *cancellable, gpointer user_data)
 {
-    NMClient *self = user_data;
-    GError *  error;
+    NMClient *       self = user_data;
+    NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE(self);
+    GError *         error;
 
     nm_assert(NM_IS_CLIENT(self));
-    nm_assert(NM_CLIENT_GET_PRIVATE(self)->init_data);
-    nm_assert(NM_CLIENT_GET_PRIVATE(self)->init_data->cancellable == cancellable);
+    nm_assert(priv->init_data);
+    nm_assert(priv->init_data->cancellable == cancellable);
+
+    if (priv->init_data->cancelled_id == 0) {
+        /* this only can happen if the cancellable was already cancelled initially.
+         * In this case we are called synchronously. Do nothing, and let the caller
+         * handle it. */
+        return;
+    }
 
     nm_utils_error_set_cancelled(&error, FALSE, NULL);
     _init_start_complete(self, error);
@@ -7291,19 +7299,20 @@ _init_start_with_bus(NMClient *self)
     NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE(self);
 
     if (priv->init_data->cancellable) {
-        priv->init_data->cancelled_id = g_signal_connect(priv->init_data->cancellable,
-                                                         "cancelled",
-                                                         G_CALLBACK(_init_start_cancelled_cb),
-                                                         self);
-        if (g_cancellable_is_cancelled(priv->init_data->cancellable)) {
-            priv->init_data->cancel_on_idle_source = g_idle_source_new();
-            g_source_set_callback(priv->init_data->cancel_on_idle_source,
-                                  _init_start_cancel_on_idle_cb,
-                                  self,
-                                  NULL);
+        gulong id;
+
+        id = g_cancellable_connect(priv->init_data->cancellable,
+                                   G_CALLBACK(_init_start_cancelled_cb),
+                                   self,
+                                   NULL);
+        if (id == 0) {
+            priv->init_data->cancel_on_idle_source =
+                nm_g_idle_source_new(G_PRIORITY_DEFAULT, _init_start_cancel_on_idle_cb, self, NULL);
             g_source_attach(priv->init_data->cancel_on_idle_source, priv->main_context);
             return;
         }
+
+        priv->init_data->cancelled_id = id;
     }
 
     _assert_main_context_is_current_thread_default(self, dbus_context);
