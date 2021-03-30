@@ -28,90 +28,6 @@
 
 /*****************************************************************************/
 
-static inline int
-_nm_log_get_max_level_realm(void)
-{
-    /* inline function, to avoid coverity warning about constant expression. */
-    return 7 /* LOG_DEBUG */;
-}
-#define log_get_max_level_realm(realm) _nm_log_get_max_level_realm()
-
-#define log_internal_realm(level, error, file, line, func, format, ...)                    \
-    ({                                                                                     \
-        const int        _nm_e = (error);                                                  \
-        const NMLogLevel _nm_l = nm_log_level_from_syslog(LOG_PRI(level));                 \
-                                                                                           \
-        if (_nm_log_enabled_impl(!(NM_THREAD_SAFE_ON_MAIN_THREAD), _nm_l, LOGD_SYSTEMD)) { \
-            const char *_nm_location = strrchr(("" file), '/');                            \
-                                                                                           \
-            _nm_log_impl(_nm_location ? _nm_location + 1 : ("" file),                      \
-                         (line),                                                           \
-                         (func),                                                           \
-                         !(NM_THREAD_SAFE_ON_MAIN_THREAD),                                 \
-                         _nm_l,                                                            \
-                         LOGD_SYSTEMD,                                                     \
-                         _nm_e,                                                            \
-                         NULL,                                                             \
-                         NULL,                                                             \
-                         ("%s" format),                                                    \
-                         "libsystemd: ",                                                   \
-                         ##__VA_ARGS__);                                                   \
-        }                                                                                  \
-        (_nm_e > 0 ? -_nm_e : _nm_e);                                                      \
-    })
-
-#define log_assert_failed(text, file, line, func)                                \
-    G_STMT_START                                                                 \
-    {                                                                            \
-        log_internal(LOG_CRIT,                                                   \
-                     0,                                                          \
-                     file,                                                       \
-                     line,                                                       \
-                     func,                                                       \
-                     "Assertion '%s' failed at %s:%u, function %s(). Aborting.", \
-                     text,                                                       \
-                     file,                                                       \
-                     line,                                                       \
-                     func);                                                      \
-        g_assert_not_reached();                                                  \
-    }                                                                            \
-    G_STMT_END
-
-#define log_assert_failed_unreachable(text, file, line, func)                              \
-    G_STMT_START                                                                           \
-    {                                                                                      \
-        log_internal(LOG_CRIT,                                                             \
-                     0,                                                                    \
-                     file,                                                                 \
-                     line,                                                                 \
-                     func,                                                                 \
-                     "Code should not be reached '%s' at %s:%u, function %s(). Aborting.", \
-                     text,                                                                 \
-                     file,                                                                 \
-                     line,                                                                 \
-                     func);                                                                \
-        g_assert_not_reached();                                                            \
-    }                                                                                      \
-    G_STMT_END
-
-#define log_assert_failed_return(text, file, line, func)                         \
-    ({                                                                           \
-        log_internal(LOG_DEBUG,                                                  \
-                     0,                                                          \
-                     file,                                                       \
-                     line,                                                       \
-                     func,                                                       \
-                     "Assertion '%s' failed at %s:%u, function %s(). Ignoring.", \
-                     text,                                                       \
-                     file,                                                       \
-                     line,                                                       \
-                     func);                                                      \
-        g_return_if_fail_warning(G_LOG_DOMAIN, G_STRFUNC, text);                 \
-        (void) 0;                                                                \
-    })
-
-/*****************************************************************************/
-
 #ifndef VALGRIND
     #define VALGRIND 0
 #endif
@@ -132,6 +48,8 @@ _nm_log_get_max_level_realm(void)
     #define ENABLE_GSHADOW FALSE
 
     #define HAVE_SECCOMP 0
+
+    #define LOG_TRACE 0
 
 /*****************************************************************************/
 
@@ -195,6 +113,8 @@ _nm_gettid(void)
     #else
         #define HAVE_RT_SIGQUEUEINFO 0
     #endif
+
+    #define HAVE_LINUX_TIME_TYPES_H 0
 
     #ifndef __COMPAR_FN_T
         #define __COMPAR_FN_T

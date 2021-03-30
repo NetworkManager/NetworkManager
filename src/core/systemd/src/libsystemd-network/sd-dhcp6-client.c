@@ -163,7 +163,6 @@ int sd_dhcp6_client_set_callback(
 }
 
 int sd_dhcp6_client_set_ifindex(sd_dhcp6_client *client, int ifindex) {
-
         assert_return(client, -EINVAL);
         assert_return(ifindex > 0, -EINVAL);
         assert_return(IN_SET(client->state, DHCP6_STATE_STOPPED), -EBUSY);
@@ -178,7 +177,7 @@ int sd_dhcp6_client_set_local_address(
 
         assert_return(client, -EINVAL);
         assert_return(local_address, -EINVAL);
-        assert_return(in_addr_is_link_local(AF_INET6, (const union in_addr_union *) local_address) > 0, -EINVAL);
+        assert_return(in6_addr_is_link_local(local_address) > 0, -EINVAL);
 
         assert_return(IN_SET(client->state, DHCP6_STATE_STOPPED), -EBUSY);
 
@@ -241,11 +240,7 @@ int sd_dhcp6_client_add_vendor_option(sd_dhcp6_client *client, sd_dhcp6_option *
         assert_return(client, -EINVAL);
         assert_return(v, -EINVAL);
 
-        r = ordered_hashmap_ensure_allocated(&client->vendor_options, &dhcp6_option_hash_ops);
-        if (r < 0)
-                return r;
-
-        r = ordered_hashmap_put(client->vendor_options, v, v);
+        r = ordered_hashmap_ensure_put(&client->vendor_options, &dhcp6_option_hash_ops, v, v);
         if (r < 0)
                 return r;
 
@@ -361,6 +356,7 @@ int sd_dhcp6_client_duid_as_string(
 
         assert_return(client, -EINVAL);
         assert_return(client->duid_len > 0, -ENODATA);
+        assert_return(duid, -EINVAL);
 
         v = dhcp6_duid_type_to_string(be16toh(client->duid.type));
         if (v) {
@@ -464,7 +460,6 @@ int sd_dhcp6_client_set_request_option(sd_dhcp6_client *client, uint16_t option)
 }
 
 int sd_dhcp6_client_set_request_mud_url(sd_dhcp6_client *client, const char *mudurl) {
-
         assert_return(client, -EINVAL);
         assert_return(client->state == DHCP6_STATE_STOPPED, -EBUSY);
         assert_return(mudurl, -EINVAL);
@@ -474,47 +469,48 @@ int sd_dhcp6_client_set_request_mud_url(sd_dhcp6_client *client, const char *mud
         return free_and_strdup(&client->mudurl, mudurl);
 }
 
-int sd_dhcp6_client_set_request_user_class(sd_dhcp6_client *client, char **user_class) {
-        _cleanup_strv_free_ char **s = NULL;
-        char **p;
+int sd_dhcp6_client_set_request_user_class(sd_dhcp6_client *client, char * const *user_class) {
+        char * const *p;
+        char **s;
 
         assert_return(client, -EINVAL);
         assert_return(client->state == DHCP6_STATE_STOPPED, -EBUSY);
+        assert_return(!strv_isempty(user_class), -EINVAL);
 
-        assert_return(user_class, -EINVAL);
+        STRV_FOREACH(p, user_class) {
+                size_t len = strlen(*p);
 
-        STRV_FOREACH(p, user_class)
-                if (strlen(*p) > UINT16_MAX)
-                        return -ENAMETOOLONG;
+                if (len > UINT16_MAX || len == 0)
+                        return -EINVAL;
+        }
 
         s = strv_copy(user_class);
         if (!s)
                 return -ENOMEM;
 
-        client->user_class = TAKE_PTR(s);
-
-        return 0;
+        return strv_free_and_replace(client->user_class, s);
 }
 
-int sd_dhcp6_client_set_request_vendor_class(sd_dhcp6_client *client, char **vendor_class) {
-        _cleanup_strv_free_ char **s = NULL;
-        char **p;
+int sd_dhcp6_client_set_request_vendor_class(sd_dhcp6_client *client, char * const *vendor_class) {
+        char * const *p;
+        char **s;
 
         assert_return(client, -EINVAL);
         assert_return(client->state == DHCP6_STATE_STOPPED, -EBUSY);
-        assert_return(vendor_class, -EINVAL);
+        assert_return(!strv_isempty(vendor_class), -EINVAL);
 
-        STRV_FOREACH(p, vendor_class)
-                if (strlen(*p) > UINT8_MAX)
-                        return -ENAMETOOLONG;
+        STRV_FOREACH(p, vendor_class) {
+                size_t len = strlen(*p);
+
+                if (len > UINT16_MAX || len == 0)
+                        return -EINVAL;
+        }
 
         s = strv_copy(vendor_class);
         if (!s)
                 return -ENOMEM;
 
-        client->vendor_class = TAKE_PTR(s);
-
-        return 0;
+        return strv_free_and_replace(client->vendor_class, s);
 }
 
 int sd_dhcp6_client_get_prefix_delegation(sd_dhcp6_client *client, int *delegation) {
@@ -577,11 +573,7 @@ int sd_dhcp6_client_add_option(sd_dhcp6_client *client, sd_dhcp6_option *v) {
         assert_return(client, -EINVAL);
         assert_return(v, -EINVAL);
 
-        r = ordered_hashmap_ensure_allocated(&client->extra_options, &dhcp6_option_hash_ops);
-        if (r < 0)
-                return r;
-
-        r = ordered_hashmap_put(client->extra_options, UINT_TO_PTR(v->option), v);
+        r = ordered_hashmap_ensure_put(&client->extra_options, &dhcp6_option_hash_ops, UINT_TO_PTR(v->option), v);
         if (r < 0)
                 return r;
 
@@ -716,12 +708,9 @@ static int client_send_message(sd_dhcp6_client *client, usec_t time_now) {
                 }
 
                 if (FLAGS_SET(client->request, DHCP6_REQUEST_IA_PD)) {
-                        r = dhcp6_option_append_pd(opt, optlen, &client->ia_pd, &client->hint_pd_prefix);
+                        r = dhcp6_option_append_pd(&opt, &optlen, &client->ia_pd, &client->hint_pd_prefix);
                         if (r < 0)
                                 return r;
-
-                        opt += r;
-                        optlen -= r;
                 }
 
                 break;
@@ -780,12 +769,9 @@ static int client_send_message(sd_dhcp6_client *client, usec_t time_now) {
                 }
 
                 if (FLAGS_SET(client->request, DHCP6_REQUEST_IA_PD) && client->lease->pd.addresses) {
-                        r = dhcp6_option_append_pd(opt, optlen, &client->lease->pd, NULL);
+                        r = dhcp6_option_append_pd(&opt, &optlen, &client->lease->pd, NULL);
                         if (r < 0)
                                 return r;
-
-                        opt += r;
-                        optlen -= r;
                 }
 
                 break;
@@ -832,12 +818,9 @@ static int client_send_message(sd_dhcp6_client *client, usec_t time_now) {
                 }
 
                 if (FLAGS_SET(client->request, DHCP6_REQUEST_IA_PD)) {
-                        r = dhcp6_option_append_pd(opt, optlen, &client->lease->pd, NULL);
+                        r = dhcp6_option_append_pd(&opt, &optlen, &client->lease->pd, NULL);
                         if (r < 0)
                                 return r;
-
-                        opt += r;
-                        optlen -= r;
                 }
 
                 break;
@@ -1711,7 +1694,7 @@ int sd_dhcp6_client_start(sd_dhcp6_client *client) {
         assert_return(client, -EINVAL);
         assert_return(client->event, -EINVAL);
         assert_return(client->ifindex > 0, -EINVAL);
-        assert_return(in_addr_is_link_local(AF_INET6, (const union in_addr_union *) &client->local_address) > 0, -EINVAL);
+        assert_return(in6_addr_is_link_local(&client->local_address) > 0, -EINVAL);
 
         if (!IN_SET(client->state, DHCP6_STATE_STOPPED))
                 return -EBUSY;

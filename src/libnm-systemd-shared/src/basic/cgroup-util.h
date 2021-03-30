@@ -32,7 +32,7 @@ typedef enum CGroupController {
         CGROUP_CONTROLLER_BPF_DEVICES,
 
         _CGROUP_CONTROLLER_MAX,
-        _CGROUP_CONTROLLER_INVALID = -1,
+        _CGROUP_CONTROLLER_INVALID = -EINVAL,
 } CGroupController;
 
 #define CGROUP_CONTROLLER_TO_MASK(c) (1U << (c))
@@ -75,13 +75,13 @@ CGroupMask get_cpu_accounting_mask(void);
 bool cpu_accounting_is_cheap(void);
 
 /* Special values for all weight knobs on unified hierarchy */
-#define CGROUP_WEIGHT_INVALID ((uint64_t) -1)
+#define CGROUP_WEIGHT_INVALID UINT64_MAX
 #define CGROUP_WEIGHT_MIN UINT64_C(1)
 #define CGROUP_WEIGHT_MAX UINT64_C(10000)
 #define CGROUP_WEIGHT_DEFAULT UINT64_C(100)
 
 #define CGROUP_LIMIT_MIN UINT64_C(0)
-#define CGROUP_LIMIT_MAX ((uint64_t) -1)
+#define CGROUP_LIMIT_MAX UINT64_MAX
 
 static inline bool CGROUP_WEIGHT_IS_OK(uint64_t x) {
         return
@@ -97,7 +97,7 @@ typedef enum CGroupIOLimitType {
         CGROUP_IO_WIOPS_MAX,
 
         _CGROUP_IO_LIMIT_TYPE_MAX,
-        _CGROUP_IO_LIMIT_TYPE_INVALID = -1
+        _CGROUP_IO_LIMIT_TYPE_INVALID = -EINVAL,
 } CGroupIOLimitType;
 
 extern const uint64_t cgroup_io_limit_defaults[_CGROUP_IO_LIMIT_TYPE_MAX];
@@ -106,7 +106,7 @@ const char* cgroup_io_limit_type_to_string(CGroupIOLimitType t) _const_;
 CGroupIOLimitType cgroup_io_limit_type_from_string(const char *s) _pure_;
 
 /* Special values for the cpu.shares attribute */
-#define CGROUP_CPU_SHARES_INVALID ((uint64_t) -1)
+#define CGROUP_CPU_SHARES_INVALID UINT64_MAX
 #define CGROUP_CPU_SHARES_MIN UINT64_C(2)
 #define CGROUP_CPU_SHARES_MAX UINT64_C(262144)
 #define CGROUP_CPU_SHARES_DEFAULT UINT64_C(1024)
@@ -118,7 +118,7 @@ static inline bool CGROUP_CPU_SHARES_IS_OK(uint64_t x) {
 }
 
 /* Special values for the blkio.weight attribute */
-#define CGROUP_BLKIO_WEIGHT_INVALID ((uint64_t) -1)
+#define CGROUP_BLKIO_WEIGHT_INVALID UINT64_MAX
 #define CGROUP_BLKIO_WEIGHT_MIN UINT64_C(10)
 #define CGROUP_BLKIO_WEIGHT_MAX UINT64_C(1000)
 #define CGROUP_BLKIO_WEIGHT_DEFAULT UINT64_C(500)
@@ -212,10 +212,13 @@ int cg_get_attribute_as_uint64(const char *controller, const char *path, const c
 int cg_get_attribute_as_bool(const char *controller, const char *path, const char *attribute, bool *ret);
 
 int cg_set_access(const char *controller, const char *path, uid_t uid, gid_t gid);
+int cg_get_owner(const char *controller, const char *path, uid_t *ret_uid);
 
 int cg_set_xattr(const char *controller, const char *path, const char *name, const void *value, size_t size, int flags);
 int cg_get_xattr(const char *controller, const char *path, const char *name, void *value, size_t size);
 int cg_get_xattr_malloc(const char *controller, const char *path, const char *name, char **ret);
+/* Returns negative on error, and 0 or 1 on success for the bool value */
+int cg_get_xattr_bool(const char *controller, const char *path, const char *name);
 int cg_remove_xattr(const char *controller, const char *path, const char *name);
 
 int cg_install_release_agent(const char *controller, const char *agent);
@@ -257,6 +260,7 @@ int cg_slice_to_path(const char *unit, char **ret);
 typedef const char* (*cg_migrate_callback_t)(CGroupMask mask, void *userdata);
 
 int cg_mask_supported(CGroupMask *ret);
+int cg_mask_supported_subtree(const char *root, CGroupMask *ret);
 int cg_mask_from_string(const char *s, CGroupMask *ret);
 int cg_mask_to_string(CGroupMask mask, char **ret);
 
@@ -283,8 +287,19 @@ typedef enum ManagedOOMMode {
         MANAGED_OOM_AUTO,
         MANAGED_OOM_KILL,
         _MANAGED_OOM_MODE_MAX,
-        _MANAGED_OOM_MODE_INVALID = -1,
+        _MANAGED_OOM_MODE_INVALID = -EINVAL,
 } ManagedOOMMode;
 
 const char* managed_oom_mode_to_string(ManagedOOMMode m) _const_;
 ManagedOOMMode managed_oom_mode_from_string(const char *s) _pure_;
+
+typedef enum ManagedOOMPreference {
+        MANAGED_OOM_PREFERENCE_NONE = 0,
+        MANAGED_OOM_PREFERENCE_AVOID = 1,
+        MANAGED_OOM_PREFERENCE_OMIT = 2,
+        _MANAGED_OOM_PREFERENCE_MAX,
+        _MANAGED_OOM_PREFERENCE_INVALID = -EINVAL,
+} ManagedOOMPreference;
+
+const char* managed_oom_preference_to_string(ManagedOOMPreference a) _const_;
+ManagedOOMPreference managed_oom_preference_from_string(const char *s) _pure_;

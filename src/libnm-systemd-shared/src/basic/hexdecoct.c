@@ -121,7 +121,7 @@ int unhexmem_full(const char *p, size_t l, bool secure, void **ret, size_t *ret_
         assert(ret_len);
         assert(p || l == 0);
 
-        if (l == (size_t) -1)
+        if (l == SIZE_MAX)
                 l = strlen(p);
 
         /* Note that the calculation of memory size is an upper boundary, as we ignore whitespace while decoding */
@@ -312,7 +312,7 @@ int unbase32hexmem(const char *p, size_t l, bool padding, void **mem, size_t *_l
         assert(mem);
         assert(_len);
 
-        if (l == (size_t) -1)
+        if (l == SIZE_MAX)
                 l = strlen(p);
 
         /* padding ensures any base32hex input has input divisible by 8 */
@@ -714,7 +714,7 @@ int unbase64mem_full(const char *p, size_t l, bool secure, void **ret, size_t *r
         assert(ret);
         assert(ret_size);
 
-        if (l == (size_t) -1)
+        if (l == SIZE_MAX)
                 l = strlen(p);
 
         /* A group of four input bytes needs three output bytes, in case of padding we need to add two or three extra

@@ -17,6 +17,7 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include <errno.h>
 #include <inttypes.h>
 #include <net/ethernet.h>
 #include <sys/types.h>
@@ -80,7 +81,7 @@ enum {
         SD_LLDP_SYSTEM_CAPABILITIES_TPMR     = 1 << 10,
 };
 
-#define SD_LLDP_SYSTEM_CAPABILITIES_ALL ((uint16_t) -1)
+#define SD_LLDP_SYSTEM_CAPABILITIES_ALL UINT16_MAX
 
 #define SD_LLDP_SYSTEM_CAPABILITIES_ALL_ROUTERS                         \
         ((uint16_t)                                                     \
@@ -121,16 +122,17 @@ enum {
 typedef struct sd_lldp sd_lldp;
 typedef struct sd_lldp_neighbor sd_lldp_neighbor;
 
-typedef enum sd_lldp_event {
+typedef enum sd_lldp_event_t {
         SD_LLDP_EVENT_ADDED,
         SD_LLDP_EVENT_REMOVED,
         SD_LLDP_EVENT_UPDATED,
         SD_LLDP_EVENT_REFRESHED,
         _SD_LLDP_EVENT_MAX,
-        _SD_LLDP_EVENT_INVALID = -1,
-} sd_lldp_event;
+        _SD_LLDP_EVENT_INVALID = -EINVAL,
+        _SD_ENUM_FORCE_S64(LLDP_EVENT),
+} sd_lldp_event_t;
 
-typedef void (*sd_lldp_callback_t)(sd_lldp *lldp, sd_lldp_event event, sd_lldp_neighbor *n, void *userdata);
+typedef void (*sd_lldp_callback_t)(sd_lldp *lldp, sd_lldp_event_t event, sd_lldp_neighbor *n, void *userdata);
 
 int sd_lldp_new(sd_lldp **ret);
 sd_lldp* sd_lldp_ref(sd_lldp *lldp);

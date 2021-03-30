@@ -22,6 +22,7 @@ libnm_systemd_shared = static_library(
     'src/basic/io-util.c',
     'src/basic/memory-util.c',
     'src/basic/mempool.c',
+    'src/basic/ordered-set.c',
     'src/basic/parse-util.c',
     'src/basic/path-util.c',
     'src/basic/prioq.c',
@@ -39,6 +40,7 @@ libnm_systemd_shared = static_library(
     'src/basic/tmpfile-util.c',
     'src/basic/utf8.c',
     'src/basic/util.c',
+    'src/fundamental/string-util-fundamental.c',
     'src/shared/dns-domain.c',
     'src/shared/web-util.c',
   ),
@@ -46,6 +48,7 @@ libnm_systemd_shared = static_library(
     include_directories(
       'sd-adapt-shared',
       'src/basic',
+      'src/fundamental',
       'src/shared',
     ),
     top_inc,
@@ -58,6 +61,7 @@ libnm_systemd_shared_dep_inc = declare_dependency(
   include_directories: include_directories(
     'sd-adapt-shared',
     'src/basic',
+    'src/fundamental',
     'src/shared',
   ),
 )
