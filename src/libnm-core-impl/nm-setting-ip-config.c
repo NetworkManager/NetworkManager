@@ -2949,7 +2949,8 @@ nm_ip_routing_rule_from_dbus(GVariant *variant, gboolean strict, GError **error)
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("missing \"" NM_IP_ROUTING_RULE_ATTR_FAMILY "\""));
+                            _("missing \"%s\""),
+                            NM_IP_ROUTING_RULE_ATTR_FAMILY);
         return NULL;
     }
     addr_family = g_variant_get_int32(variants[RR_DBUS_ATTR_FAMILY]);
@@ -2957,7 +2958,8 @@ nm_ip_routing_rule_from_dbus(GVariant *variant, gboolean strict, GError **error)
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("invalid \"" NM_IP_ROUTING_RULE_ATTR_FAMILY "\""));
+                            _("invalid \"%s\""),
+                            NM_IP_ROUTING_RULE_ATTR_FAMILY);
         return NULL;
     }
 
@@ -3014,9 +3016,10 @@ nm_ip_routing_rule_from_dbus(GVariant *variant, gboolean strict, GError **error)
                 g_set_error_literal(error,
                                     NM_CONNECTION_ERROR,
                                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                                    _("\"" NM_IP_ROUTING_RULE_ATTR_UID_RANGE_START
-                                      "\" is greater than \"" NM_IP_ROUTING_RULE_ATTR_UID_RANGE_END
-                                      "\""));
+                                    _("\"%s\" is greater than \"%s\""),
+                                    NM_IP_ROUTING_RULE_ATTR_UID_RANGE_START,
+                                    NM_IP_ROUTING_RULE_ATTR_UID_RANGE_END
+                                    );
                 return FALSE;
             }
         } else
