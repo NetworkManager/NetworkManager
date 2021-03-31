@@ -256,8 +256,7 @@ BuildRequires: meson
 BuildRequires: automake
 BuildRequires: autoconf
 %endif
-BuildRequires: intltool
-BuildRequires: gettext-devel
+BuildRequires: gettext-devel >= 0.19.8
 
 BuildRequires: dbus-devel >= %{dbus_version}
 BuildRequires: glib2-devel >= 2.40.0
@@ -748,7 +747,6 @@ Preferably use nmcli instead.
 gtkdocize
 %endif
 autoreconf --install --force
-intltoolize --automake --copy --force
 %configure \
 	--with-runstatedir=%{_rundir} \
 	--disable-silent-rules \
