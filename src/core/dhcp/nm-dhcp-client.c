@@ -749,7 +749,7 @@ nm_dhcp_client_stop(NMDhcpClient *self, gboolean release)
         _LOGI("canceled DHCP transaction");
     nm_assert(priv->pid == -1);
 
-    nm_dhcp_client_set_state(self, NM_DHCP_STATE_DONE, NULL, NULL);
+    nm_dhcp_client_set_state(self, NM_DHCP_STATE_TERMINATED, NULL, NULL);
 }
 
 /*****************************************************************************/

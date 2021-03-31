@@ -51,7 +51,7 @@ typedef enum {
     NM_DHCP_STATE_BOUND,      /* new lease */
     NM_DHCP_STATE_EXTENDED,   /* lease extended */
     NM_DHCP_STATE_TIMEOUT,    /* timed out contacting server */
-    NM_DHCP_STATE_DONE,       /* client quit or stopped */
+    NM_DHCP_STATE_DONE,       /* client reported it's stopping */
     NM_DHCP_STATE_EXPIRE,     /* lease expired or NAKed */
     NM_DHCP_STATE_FAIL,       /* failed for some reason */
     NM_DHCP_STATE_TERMINATED, /* client is no longer running */
