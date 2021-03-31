@@ -1,5 +1,5 @@
 # ===========================================================================
-#      http://www.gnu.org/software/autoconf-archive/ax_lib_readline.html
+#     https://www.gnu.org/software/autoconf-archive/ax_lib_readline.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -58,7 +58,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 6
+#serial 8
 
 AU_ALIAS([VL_LIB_READLINE], [AX_LIB_READLINE])
 AC_DEFUN([AX_LIB_READLINE], [
@@ -66,15 +66,14 @@ AC_DEFUN([AX_LIB_READLINE], [
                  ax_cv_lib_readline, [
     ORIG_LIBS="$LIBS"
     for readline_lib in readline edit editline; do
-      # prefer ncurses since we use it for nmtui too
-      for termcap_lib in "" ncurses termcap curses; do
+      for termcap_lib in "" termcap curses ncurses; do
         if test -z "$termcap_lib"; then
           TRY_LIB="-l$readline_lib"
         else
           TRY_LIB="-l$readline_lib -l$termcap_lib"
         fi
         LIBS="$ORIG_LIBS $TRY_LIB"
-        AC_TRY_LINK_FUNC(readline, ax_cv_lib_readline="$TRY_LIB")
+        AC_LINK_IFELSE([AC_LANG_CALL([], [readline])], [ax_cv_lib_readline="$TRY_LIB"])
         if test -n "$ax_cv_lib_readline"; then
           break
         fi
@@ -83,39 +82,26 @@ AC_DEFUN([AX_LIB_READLINE], [
         break
       fi
     done
+    if test -z "$ax_cv_lib_readline"; then
+      ax_cv_lib_readline="no"
+    fi
     LIBS="$ORIG_LIBS"
   ])
 
-  if test -z "$ax_cv_lib_readline"; then
-    AC_MSG_ERROR([readline library with terminfo support is required (one of readline, edit, or editline, AND one of ncurses, curses, or termcap)])
+  if test "$ax_cv_lib_readline" != "no"; then
+    LIBS="$LIBS $ax_cv_lib_readline"
+    AC_DEFINE(HAVE_LIBREADLINE, 1,
+              [Define if you have a readline compatible library])
+    AC_CHECK_HEADERS(readline.h readline/readline.h)
+    AC_CACHE_CHECK([whether readline supports history],
+                   ax_cv_lib_readline_history, [
+      ax_cv_lib_readline_history="no"
+      AC_LINK_IFELSE([AC_LANG_CALL([], [add_history])], [ax_cv_lib_readline_history="yes"])
+    ])
+    if test "$ax_cv_lib_readline_history" = "yes"; then
+      AC_DEFINE(HAVE_READLINE_HISTORY, 1,
+                [Define if your readline library has \`add_history'])
+      AC_CHECK_HEADERS(history.h readline/history.h)
+    fi
   fi
-
-  ORIG_LIBS="$LIBS"
-  LIBS="$LIBS $ax_cv_lib_readline"
-  AC_CHECK_HEADERS(readline.h readline/readline.h)
-
-  # Check history
-  AC_CACHE_CHECK([whether readline supports history],
-                 ax_cv_lib_readline_history, [
-    ax_cv_lib_readline_history="no"
-    AC_TRY_LINK_FUNC(add_history, ax_cv_lib_readline_history="yes")
-  ])
-  if test "$ax_cv_lib_readline_history" != "yes"; then
-    AC_MSG_ERROR(readline history support is required)
-  fi
-  AC_CHECK_HEADERS(history.h readline/history.h)
-
-  # check rl_echo_signal_char()
-  AC_CACHE_CHECK([whether readline supports rl_echo_signal_char()],
-                 ax_cv_lib_readline_echo_signal_char, [
-    ax_cv_lib_readline_echo_signal_char="no"
-    AC_TRY_LINK_FUNC(rl_echo_signal_char, ax_cv_lib_readline_echo_signal_char="yes")
-  ])
-  if test "$ax_cv_lib_readline_echo_signal_char" != "yes"; then
-    AC_MSG_ERROR(rl_echo_signal_char() is required (install readline6?))
-  fi
-
-  LIBS="$ORIG_LIBS"
-  READLINE_LIBS="$ax_cv_lib_readline"
-  AC_SUBST(READLINE_LIBS)
 ])dnl
