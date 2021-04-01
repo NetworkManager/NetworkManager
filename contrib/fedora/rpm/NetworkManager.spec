@@ -304,7 +304,7 @@ Provides: %{name}-dispatcher%{?_isa} = %{epoch}:%{version}-%{release}
 # that the scripts that would parse the SPEC file naively would be unlikely
 # to fail. Refer to git log for the real date and commit number of last
 # synchronization:
-# https://gitlab.freedesktop.org/NetworkManager/NetworkManager/commits/master/src/systemd
+# https://gitlab.freedesktop.org/NetworkManager/NetworkManager/commits/main/src/
 Provides: bundled(systemd) = 0
 
 
