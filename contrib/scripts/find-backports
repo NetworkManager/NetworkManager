@@ -247,11 +247,11 @@ if __name__ == "__main__":
                     if not git_ref_exists(r):
                         break
                 ref_upstreams.append(r)
-            ref_upstreams.append("master")
+            ref_upstreams.append("main")
 
     if not ref_upstreams:
         if len(sys.argv) <= 2:
-            ref_upstreams = ["master"]
+            ref_upstreams = ["main"]
         else:
             ref_upstreams = list(sys.argv[2:])
 
