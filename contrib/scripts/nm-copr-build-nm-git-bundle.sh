@@ -8,7 +8,7 @@
 # downloading the entire upstream git repository of NetworkManager.
 #
 # This script is also used by [1] to generate the SRPM.
-# [1] https://copr.fedorainfracloud.org/coprs/networkmanager/NetworkManager-master/package/nm-git-bundle/
+# [1] https://copr.fedorainfracloud.org/coprs/networkmanager/NetworkManager-main/package/nm-git-bundle/
 
 set -ex
 
@@ -22,7 +22,7 @@ git clone -n "$GIT_URL"
 pushd NetworkManager
 
 REFS=(
-    $(git branch -a | sed -n 's#^ *remotes/origin/\(master\|nm-1-[0-9]\+\)$#\1#p')
+    $(git branch -a | sed -n 's#^ *remotes/origin/\(main\|nm-1-[0-9]\+\)$#\1#p')
 )
 
 unset R
@@ -48,7 +48,7 @@ Release: $(date '+%H%M%S')
 Summary: git-bundle of NetworkManager upstream repository
 
 License: Public Domain
-URL: https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/tree/master/contrib/fedora/rpm/nm-git-bundle.spec
+URL: https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/tree/main/contrib/fedora/rpm/nm-git-bundle.spec
 
 %global GIT_URL 'https://github.com/NetworkManager/NetworkManager'
 #global GIT_URL 'https://gitlab.freedesktop.org/NetworkManager/NetworkManager.git'

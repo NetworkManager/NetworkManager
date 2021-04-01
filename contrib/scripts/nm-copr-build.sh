@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # environment variables:
-# - GIT_REF: the ref that should be build. Can be "master" or a git sha.
+# - GIT_REF: the ref that should be build. Can be "main" or a git sha.
 # - DEBUG: set to 1 to build "--with debug".
 # - NM_GIT_BUNDLE: set to a HTTP url where to fetch the nm-git-bundle-*.noarch.rpm
 #     from. Set to empty to skip it. By default, it fetches the bundle from copr.
@@ -36,7 +36,7 @@ get_nm_git_bundle() {
         if [ -n "${NM_GIT_BUNDLE+x}" ]; then
             return 0
         fi
-        NM_GIT_BUNDLE='https://download.copr.fedorainfracloud.org/results/networkmanager/NetworkManager-master/fedora-33-x86_64/01999272-nm-git-bundle/nm-git-bundle-20210219-141432.noarch.rpm'
+        NM_GIT_BUNDLE='https://download.copr.fedorainfracloud.org/results/networkmanager/NetworkManager-main/fedora-34-x86_64/02112661-nm-git-bundle/nm-git-bundle-20210401-201640.noarch.rpm'
     fi
     mkdir nm-git-bundle
     pushd nm-git-bundle
